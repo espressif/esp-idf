@@ -11,6 +11,7 @@
 #include "hal/misc.h"
 #include "hal/assert.h"
 #include "hal/hal_utils.h"
+#include "hal/config.h"
 #include "hal/isp_types.h"
 #include "hal/color_types.h"
 #include "hal/config.h"
@@ -130,8 +131,13 @@ extern "C" {
 /*---------------------------------------------------------------
                       CCM
 ---------------------------------------------------------------*/
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+#define ISP_LL_CCM_MATRIX_INT_BITS      (4)
+#define ISP_LL_CCM_MATRIX_FRAC_BITS     (8)
+#else
 #define ISP_LL_CCM_MATRIX_INT_BITS      (2)
 #define ISP_LL_CCM_MATRIX_FRAC_BITS     (10)
+#endif
 #define ISP_LL_CCM_MATRIX_TOT_BITS      (ISP_LL_CCM_MATRIX_INT_BITS + ISP_LL_CCM_MATRIX_FRAC_BITS + 1)  // including one sign bit
 
 typedef union {

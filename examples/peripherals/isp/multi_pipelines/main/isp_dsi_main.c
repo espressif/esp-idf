@@ -441,7 +441,9 @@ void app_main(void)
     }
 
     ESP_ERROR_CHECK(esp_cam_ctlr_enable(handle));
-    //---------------ISP Init------------------//
+    /*---------------------------------------------------------------
+                          ISP Init
+    ---------------------------------------------------------------*/
     isp_proc_handle_t isp_proc = NULL;
     esp_isp_processor_cfg_t isp_config = {
         .clk_hz = 80 * 1000 * 1000,
@@ -456,6 +458,9 @@ void app_main(void)
     ESP_ERROR_CHECK(esp_isp_new_processor(&isp_config, &isp_proc));
     ESP_ERROR_CHECK(esp_isp_enable(isp_proc));
 
+    /*---------------------------------------------------------------
+                          BF
+    ---------------------------------------------------------------*/
     esp_isp_bf_config_t bf_config = {
         .denoising_level = 5,
         .padding_mode = ISP_BF_EDGE_PADDING_MODE_SRND_DATA,
@@ -470,6 +475,9 @@ void app_main(void)
     ESP_ERROR_CHECK(esp_isp_bf_configure(isp_proc, &bf_config));
     ESP_ERROR_CHECK(esp_isp_bf_enable(isp_proc));
 
+    /*---------------------------------------------------------------
+                          BLC
+    ---------------------------------------------------------------*/
 #if CONFIG_ESP32P4_REV_MIN_FULL >= 300
     /**
      * This piece of BLC code is to show how to use the BLC related APIs.
@@ -513,6 +521,9 @@ void app_main(void)
     ESP_ERROR_CHECK(esp_isp_blc_set_correction_offset(isp_proc, &blc_offset));
 #endif
 
+    /*---------------------------------------------------------------
+                          DEMOSAIC
+    ---------------------------------------------------------------*/
     esp_isp_demosaic_config_t demosaic_config = {
         .grad_ratio = {
             .integer = 2,
@@ -522,6 +533,38 @@ void app_main(void)
     ESP_ERROR_CHECK(esp_isp_demosaic_configure(isp_proc, &demosaic_config));
     ESP_ERROR_CHECK(esp_isp_demosaic_enable(isp_proc));
 
+    /*---------------------------------------------------------------
+                          CCM
+    ---------------------------------------------------------------*/
+    /**
+     * CCM is used for color correction and white balance adjustment.
+     * It should be configured after demosaic and before gamma correction.
+     *
+     * The matrix format is:
+     * [R_out]   [RR RG RB] [R_in]
+     * [G_out] = [GR GG GB] [G_in]
+     * [B_out]   [BR BG BB] [B_in]
+     *
+     * For ESP32P4 ECO5:
+     * - Matrix coefficients range: ±15.996 (4-bit integer + 8-bit fraction)
+     * - For earlier versions: ±3.999 (2-bit integer + 10-bit fraction)
+     */
+    esp_isp_ccm_config_t ccm_config = {
+        .matrix = {
+            // Default identity matrix (no color correction)
+            {1.0, 0.0, 0.0},   // R channel: R = 1.0*R + 0.0*G + 0.0*B
+            {0.0, 1.0, 0.0},   // G channel: G = 0.0*R + 1.0*G + 0.0*B
+            {0.0, 0.0, 1.0}    // B channel: B = 0.0*R + 0.0*G + 1.0*B
+        },
+        .saturation = false        // Don't use saturation for out-of-range values
+    };
+
+    ESP_ERROR_CHECK(esp_isp_ccm_configure(isp_proc, &ccm_config));
+    ESP_ERROR_CHECK(esp_isp_ccm_enable(isp_proc));
+
+    /*---------------------------------------------------------------
+                          GAMMA
+    ---------------------------------------------------------------*/
     isp_gamma_curve_points_t pts = {};
     ESP_ERROR_CHECK(esp_isp_gamma_fill_curve_points(s_gamma_correction_curve, &pts));
     ESP_ERROR_CHECK(esp_isp_gamma_configure(isp_proc, COLOR_COMPONENT_R, &pts));
@@ -529,6 +572,9 @@ void app_main(void)
     ESP_ERROR_CHECK(esp_isp_gamma_configure(isp_proc, COLOR_COMPONENT_B, &pts));
     ESP_ERROR_CHECK(esp_isp_gamma_enable(isp_proc));
 
+    /*---------------------------------------------------------------
+                          SHARPEN
+    ---------------------------------------------------------------*/
     esp_isp_sharpen_config_t sharpen_config = {
         .h_freq_coeff = {
             .integer = 2,
@@ -552,6 +598,9 @@ void app_main(void)
     ESP_ERROR_CHECK(esp_isp_sharpen_configure(isp_proc, &sharpen_config));
     ESP_ERROR_CHECK(esp_isp_sharpen_enable(isp_proc));
 
+    /*---------------------------------------------------------------
+                          COLOR
+    ---------------------------------------------------------------*/
     esp_isp_color_config_t color_config = {
         .color_contrast = {
             .integer = 1,
@@ -568,6 +617,9 @@ void app_main(void)
     ESP_ERROR_CHECK(esp_isp_color_enable(isp_proc));
 
 #if CONFIG_ESP32P4_REV_MIN_FULL >= 100
+    /*---------------------------------------------------------------
+                          LSC
+    ---------------------------------------------------------------*/
     esp_isp_lsc_gain_array_t gain_array = {};
     esp_isp_lsc_config_t lsc_config = {
         .gain_array = &gain_array,
