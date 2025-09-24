@@ -14,6 +14,8 @@
 # their specific function instead.
 import codecs
 import glob
+import importlib.metadata
+import importlib.util
 import json
 import locale
 import os.path
@@ -246,6 +248,8 @@ def init_cli(verbose_output: list | None = None) -> Any:
             self.callback(self.name, context, global_args, **action_args)
 
     class Action(click.Command):
+        callback: Callable
+
         def __init__(
             self,
             name: str | None = None,
@@ -721,6 +725,90 @@ def init_cli(verbose_output: list | None = None) -> Any:
 
             return tasks_to_run
 
+    def load_cli_extension_from_dir(ext_dir: str) -> Any | None:
+        """Load extension 'idf_ext.py' from directory and return the action_extensions function"""
+        ext_file = os.path.join(ext_dir, 'idf_ext.py')
+        if not os.path.exists(ext_file):
+            return None
+
+        try:
+            module_name = f'idf_ext_{os.path.basename(ext_dir)}'
+            spec = importlib.util.spec_from_file_location(module_name, ext_file)
+            if spec is None or spec.loader is None:
+                raise ImportError('Failed to load python module')
+            ext_module = importlib.util.module_from_spec(spec)
+            sys.modules[module_name] = ext_module
+            spec.loader.exec_module(ext_module)
+
+            if hasattr(ext_module, 'action_extensions'):
+                return ext_module.action_extensions
+            else:
+                print_warning(f"Warning: Extension {ext_file} has no attribute 'action_extensions'")
+
+        except (ImportError, SyntaxError) as e:
+            print_warning(f'Warning: Failed to import extension {ext_file}: {e}')
+
+        return None
+
+    def load_cli_extensions_from_entry_points() -> list[tuple[str, Any]]:
+        """Load extensions from Python entry points"""
+        extensions: list[tuple[str, Any]] = []
+        eps = importlib.metadata.entry_points(group='idf_extension')
+
+        # declarative value is the path-like identifier of entry point defined in the components config file
+        # having same declarative value for multiple entry points results in loading only one of them (undeterministic)
+        eps_declarative_values: list[str] = []
+        for ep in eps:
+            if ep.value in eps_declarative_values:
+                conflicting_names = [e.name for e in eps if e.value == ep.value]
+                print_warning(
+                    f"Warning: Entry point's declarative value [extension_file_name:method_name] "
+                    f'name collision detected for - {ep.value}. The same {ep.value} is used by '
+                    f'{conflicting_names} entry points. To ensure successful loading, please use'
+                    ' a different extension file name or method name for the entry point.'
+                )
+                # Remove any already loaded extensions with conflicting names
+                extensions[:] = [ext for ext in extensions if ext[0] not in conflicting_names]
+                continue
+
+            if ep.value == 'idf_ext:action_extensions':
+                print_warning(
+                    f'Entry point "{ep.name}" has declarative value "{ep.value}". For external components, '
+                    'it is recommended to use name like <<COMPONENT_NAME>>_ext:action_extensions, '
+                    "so it does not interfere with the project's idf_ext.py file."
+                )
+
+            eps_declarative_values.append(ep.value)
+            try:
+                extension_func = ep.load()
+                extensions.append((ep.name, extension_func))
+            except Exception as e:
+                print_warning(f'Warning: Failed to load entry point extension "{ep.name}": {e}')
+
+        return extensions
+
+    def resolve_build_dir() -> str:
+        """Resolve build directory from command line arguments
+        return build path if explicitly set, otherwise default build path"""
+        import argparse
+
+        parser = argparse.ArgumentParser(add_help=False)
+        parser.add_argument('-B', '--build-dir', default=os.path.join(project_dir, 'build'))
+        args, _ = parser.parse_known_args()
+        build_dir: str = args.build_dir
+        return os.path.abspath(build_dir)
+
+    def _extract_relevant_path(path: str) -> str:
+        """
+        Returns part of the path starting from 'components' or 'managed_components'.
+        If neither is found, returns the full path.
+        """
+        for keyword in ('components', 'managed_components'):
+            # arg path is loaded from project_description.json, where paths are always defined with '/'
+            if keyword in path.split('/'):
+                return keyword + path.split(keyword, 1)[1]
+        return path
+
     # That's a tiny parser that parse project-dir even before constructing
     # fully featured click parser to be sure that extensions are loaded from the right place
     @click.command(
@@ -774,21 +862,40 @@ def init_cli(verbose_output: list | None = None) -> Any:
         except AttributeError:
             print_warning(f'WARNING: Cannot load idf.py extension "{name}"')
 
-    # Load extensions from project dir
-    if os.path.exists(os.path.join(project_dir, 'idf_ext.py')):
-        sys.path.append(project_dir)
+    component_idf_ext_dirs = []
+    # Get component directories with idf extensions that participate in the build
+    build_dir_path = resolve_build_dir()
+    project_description_json_file = os.path.join(build_dir_path, 'project_description.json')
+    if os.path.exists(project_description_json_file):
         try:
-            from idf_ext import action_extensions
-        except ImportError:
-            print_warning('Error importing extension file idf_ext.py. Skipping.')
-            print_warning(
-                "Please make sure that it contains implementation (even if it's empty) of add_action_extensions"
-            )
+            with open(project_description_json_file, encoding='utf-8') as f:
+                project_desc = json.load(f)
+                all_component_info = project_desc.get('build_component_info', {})
+                for _, comp_info in all_component_info.items():
+                    comp_dir = comp_info.get('dir')
+                    if comp_dir and os.path.isdir(comp_dir) and os.path.exists(os.path.join(comp_dir, 'idf_ext.py')):
+                        component_idf_ext_dirs.append(comp_dir)
+        except (OSError, json.JSONDecodeError) as e:
+            print_warning(f'Warning: Failed to read component info from project_description.json: {e}')
+    # Load extensions from directories that participate in the build (components and project)
+    for ext_dir in component_idf_ext_dirs + [project_dir]:
+        extension_func = load_cli_extension_from_dir(ext_dir)
+        if extension_func:
+            try:
+                all_actions = merge_action_lists(all_actions, custom_actions=extension_func(all_actions, project_dir))
+            except Exception as e:
+                print_warning(f'WARNING: Cannot load directory extension from "{ext_dir}": {e}')
+            else:
+                if ext_dir != project_dir:
+                    print(f'INFO: Loaded component extension from "{_extract_relevant_path(ext_dir)}"')
 
+    # Load extensions from Python entry points
+    entry_point_extensions = load_cli_extensions_from_entry_points()
+    for name, extension_func in entry_point_extensions:
         try:
-            all_actions = merge_action_lists(all_actions, action_extensions(all_actions, project_dir))
-        except NameError:
-            pass
+            all_actions = merge_action_lists(all_actions, custom_actions=extension_func(all_actions, project_dir))
+        except Exception as e:
+            print_warning(f'WARNING: Cannot load entry point extension "{name}": {e}')
 
     cli_help = (
         'ESP-IDF CLI build management tool. '
