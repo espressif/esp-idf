@@ -1972,6 +1972,7 @@ esp_err_t esp_bt_controller_disable(void)
 #endif
 
     esp_phy_disable(PHY_MODEM_BT);
+    s_time_phy_rf_just_enabled = 0;
     btdm_controller_status = ESP_BT_CONTROLLER_STATUS_INITED;
     esp_unregister_shutdown_handler(bt_shutdown);
 
