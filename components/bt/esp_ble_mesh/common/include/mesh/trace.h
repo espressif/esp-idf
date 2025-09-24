@@ -13,6 +13,9 @@
 #include "esp_log.h"
 #include "mesh/utils.h"
 #include "esp_rom_sys.h"
+#if CONFIG_BLE_MESH_COMPRESSED_LOG_ENABLE
+#include "mesh_log_index.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
