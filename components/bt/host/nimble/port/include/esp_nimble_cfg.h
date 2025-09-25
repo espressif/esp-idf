@@ -2200,4 +2200,12 @@
 #endif
 #endif
 
+#ifndef MYNEWT_VAL_BLE_MONITOR_ADV
+#ifdef CONFIG_BT_NIMBLE_MONITOR_ADV
+#define MYNEWT_VAL_BLE_MONITOR_ADV CONFIG_BT_NIMBLE_MONITOR_ADV
+#else
+#define MYNEWT_VAL_BLE_MONITOR_ADV (0)
+#endif
+#endif
+
 #endif
