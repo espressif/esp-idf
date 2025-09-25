@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -50,9 +50,6 @@ static void nan_receive_event_handler(void *arg, esp_event_base_t event_base,
     if (evt->ssi_len) {
         ESP_LOGI(TAG, "Received payload from Peer "MACSTR" [Peer Service id - %d] - ", MAC2STR(evt->peer_if_mac), evt->peer_inst_id);
         ESP_LOG_BUFFER_HEXDUMP(TAG, evt->ssi, evt->ssi_len, ESP_LOG_INFO);
-    } else {
-        ESP_LOGI(TAG, "Received message '%s' from Peer "MACSTR" [Peer Service id - %d]",
-                 evt->peer_svc_info, MAC2STR(evt->peer_if_mac), evt->peer_inst_id);
     }
     xEventGroupSetBits(nan_event_group, NAN_RECEIVE);
 }
@@ -83,12 +80,6 @@ void wifi_nan_publish(void)
                     NULL,
                     &instance_any_id));
 
-    /* ndp_require_consent
-     * If set to false - All incoming NDP requests will be internally accepted if valid.
-     * If set to true - All incoming NDP requests raise NDP_INDICATION event, upon which application can either accept or reject them.
-     */
-    bool ndp_require_consent = true;
-
     /* Start NAN Discovery */
     wifi_nan_config_t nan_cfg = WIFI_NAN_CONFIG_DEFAULT();
 
@@ -112,9 +103,12 @@ void wifi_nan_publish(void)
 #endif
         .matching_filter = EXAMPLE_NAN_MATCHING_FILTER,
         .single_replied_event = 1,
+        /* 0 - All incoming NDP requests will be internally accepted,
+           1 - All incoming NDP requests raise NDP_INDICATION event and require esp_wifi_nan_datapath_resp to accept or reject. */
+        .ndp_resp_needed = 1,
     };
 
-    pub_id = esp_wifi_nan_publish_service(&publish_cfg, ndp_require_consent);
+    pub_id = esp_wifi_nan_publish_service(&publish_cfg);
     if (pub_id == 0) {
         return;
     }
