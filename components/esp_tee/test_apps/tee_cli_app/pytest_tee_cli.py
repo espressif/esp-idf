@@ -21,8 +21,7 @@ from ecdsa.util import sigdecode_der
 from pytest_embedded import Dut
 from pytest_embedded_idf.utils import idf_parametrize
 
-# TODO: Enable for ESP32-C5 once support is stable
-SUPPORTED_TARGETS = ['esp32c6', 'esp32h2']
+SUPPORTED_TARGETS = ['esp32c6', 'esp32c5']
 
 TEST_MSG = 'hello world'
 

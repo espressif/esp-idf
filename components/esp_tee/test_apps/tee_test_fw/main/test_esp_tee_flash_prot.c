@@ -44,6 +44,7 @@ __attribute__((unused)) static const uint32_t mmu_op_fail_seq[8] = {[0 ... 7] = 
 #define CHECK_MMU_OP_FAIL(ptr_) \
     do { \
         TEST_ASSERT_EQUAL_HEX8_ARRAY(mmu_op_fail_seq, (ptr_), 0x20); \
+        printf("Failed MMU operation, rebooting!\n"); \
         esp_restart(); \
     } while (0)
 #endif
@@ -256,6 +257,7 @@ TEST_CASE("Test REE-TEE isolation: MMU-spillover", "[exception]")
     spi_flash_mmap_handle_t handle;
     const size_t len = 0x100000;  // 1MB
     TEST_ESP_OK(spi_flash_mmap(0x00, len, SPI_FLASH_MMAP_DATA, &ptr, &handle));
+    CHECK_MMU_OP_FAIL(ptr);
     ESP_LOG_BUFFER_HEXDUMP(TAG, ptr, 32, ESP_LOG_INFO);
     TEST_FAIL_MESSAGE("Exception should have been generated!");
 }
