@@ -26,6 +26,7 @@
 #include "soc/interrupts.h"
 #include "soc/soc_etm_source.h"
 #include "soc/efuse_reg.h"
+#include "soc/efuse_struct.h"
 #include "hal/temperature_sensor_types.h"
 #include "hal/assert.h"
 #include "hal/misc.h"

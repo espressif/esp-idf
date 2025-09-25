@@ -12,6 +12,7 @@
 #include "soc/hp_sys_clkrst_struct.h"
 #include "soc/soc_caps.h"
 #include "soc/efuse_reg.h"
+#include "soc/efuse_struct.h"
 #include "hal/ecdsa_types.h"
 
 #ifdef __cplusplus
