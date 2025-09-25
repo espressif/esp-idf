@@ -194,6 +194,11 @@ Enabling "Nano" formatting reduces the stack usage of each function that calls `
 
 .. _Newlib README file: https://sourceware.org/newlib/README
 
+libstdc++
+@@@@@@@@@
+
+- Enable :ref:`CONFIG_COMPILER_CXX_GLIBCXX_CONSTEXPR_COLD_CONSTEXPR<CONFIG_COMPILER_CXX_GLIBCXX_CONSTEXPR_COLD_CONSTEXPR>` or :ref:`CONFIG_COMPILER_CXX_GLIBCXX_CONSTEXPR_COLD<CONFIG_COMPILER_CXX_GLIBCXX_CONSTEXPR_COLD>` to observe the impact on your application's binary size.
+
 .. _minimizing_binary_mbedtls:
 
 MbedTLS Features
