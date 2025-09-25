@@ -384,9 +384,38 @@ function(idf_build_library library)
 
     # Create a sanitized library interface name that can be used as a suffix
     # for files and targets specific to the library.
-    string(REGEX REPLACE "[^A-Za-z0-9_]" "_" suffix "_${library}")
+    string(MAKE_C_IDENTIFIER "_${library}" suffix)
 
     foreach(component_interface IN LISTS component_interfaces_linked)
+        set(scripts)
+        idf_component_get_property(component_build_dir "${component_interface}" COMPONENT_BUILD_DIR)
+        idf_component_get_property(preprocessed "${component_interface}" __LINKER_SCRIPTS_PREPROCESSED)
+
+        # Add linker scripts that do not require ldgen processing.
+        idf_component_get_property(scripts_static "${component_interface}" LINKER_SCRIPTS_STATIC)
+        foreach(script IN LISTS scripts_static)
+            if(script MATCHES "\\.in$")
+                # If the linker script file name ends with the ".in" extension,
+                # preprocess it with the C preprocessor.
+                get_filename_component(script_name "${script}" NAME_WLE)
+                set(script_out "${component_build_dir}/ld/${script_name}")
+                string(MAKE_C_IDENTIFIER "gen_${script_name}" script_target)
+
+                if(NOT preprocessed)
+                    file(MAKE_DIRECTORY "${component_build_dir}/ld")
+                    __preprocess_linker_script("${script}" "${script_out}")
+                    # Add a custom target for the preprocessed script.
+                    add_custom_target(${script_target} DEPENDS "${script_out}")
+                endif()
+                # Add dependency for the library interface to ensure the script is
+                # generated before linking.
+                add_dependencies("${library}" ${script_target})
+                list(APPEND scripts "${script_out}")
+            else()
+                list(APPEND scripts "${script}")
+            endif()
+        endforeach()
+
         # Generate linker scripts from templates.
         # LINKER_SCRIPTS_TEMPLATE and LINKER_SCRIPTS_GENERATED are parallel
         # lists. The first holds the template linker script path, and the
@@ -394,8 +423,18 @@ function(idf_build_library library)
         idf_component_get_property(template_scripts "${component_interface}" LINKER_SCRIPTS_TEMPLATE)
         idf_component_get_property(generated_scripts "${component_interface}" LINKER_SCRIPTS_GENERATED)
 
-        set(scripts)
         foreach(template script IN ZIP_LISTS template_scripts generated_scripts)
+            if(template MATCHES "\\.in$")
+                # If the linker script file name ends with the ".in" extension,
+                # preprocess it with the C preprocessor.
+                get_filename_component(template_name "${template}" NAME)
+                set(template_out "${component_build_dir}/ld/${template_name}")
+                if(NOT preprocessed)
+                    file(MAKE_DIRECTORY "${component_build_dir}/ld")
+                    __preprocess_linker_script("${template}" "${template_out}")
+                endif()
+                set(template "${template_out}")
+            endif()
             set(script "${script}${suffix}")
             __ldgen_process_template(LIBRARY "${library}"
                                      TEMPLATE "${template}"
@@ -406,14 +445,20 @@ function(idf_build_library library)
             # dependency for the library interface to ensure the script is
             # generated before linking.
             get_filename_component(basename "${script}" NAME)
-            string(REGEX REPLACE "[^A-Za-z0-9_]" "_" basename "${basename}")
-            add_custom_target(__ldgen_output_${basename} DEPENDS "${script}")
-            add_dependencies("${library}" __ldgen_output_${basename})
+            string(MAKE_C_IDENTIFIER "${basename}" basename)
+            add_custom_target(gen_${basename} DEPENDS "${script}")
+            add_dependencies("${library}" gen_${basename})
         endforeach()
 
-        # Add linker scripts.
-        idf_component_get_property(scripts_static "${component_interface}" LINKER_SCRIPTS_STATIC)
-        list(PREPEND scripts "${scripts_static}")
+        # The static scripts for the given component have already been
+        # preprocessed and are identical across all libraries. Therefore, there
+        # is no need to preprocess them multiple times. Set the component
+        # property to indicate that the linker scripts have already been
+        # preprocessed.
+        idf_component_set_property("${component_interface}" __LINKER_SCRIPTS_PREPROCESSED YES)
+
+        # Finally, add all preprocessed and ldgen-generated linker scripts to
+        # the library interface.
         foreach(script IN LISTS scripts)
             get_filename_component(script_dir "${script}" DIRECTORY)
             get_filename_component(script_name "${script}" NAME)
