@@ -9,6 +9,7 @@
 
 #include "esp_err.h"
 #include "sdkconfig.h"
+#include <stddef.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -18,10 +19,11 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "driver/gptimer.h"
+#include "esp_trace.h"
 
 static const char *TAG = "example";
 
-#if CONFIG_APPTRACE_SV_ENABLE
+#if CONFIG_ESP_TRACE_LIB_SEGGER_SYSVIEW
 #if !CONFIG_USE_CUSTOM_EVENT_ID
 
 #define SYSVIEW_EXAMPLE_SEND_EVENT_ID     0
@@ -76,7 +78,7 @@ static void example_sysview_event_send(uint32_t id, uint32_t val)
 #define SYSVIEW_EXAMPLE_WAIT_EVENT_START()
 #define SYSVIEW_EXAMPLE_WAIT_EVENT_END(_val_)
 
-#endif // CONFIG_APPTRACE_SV_ENABLE
+#endif // CONFIG_ESP_TRACE_LIB_SEGGER_SYSVIEW
 
 typedef struct {
     gptimer_handle_t gptimer;
@@ -140,7 +142,7 @@ void app_main(void)
 
     static example_event_data_t event_data[CONFIG_FREERTOS_NUMBER_OF_CORES];
 
-#if CONFIG_APPTRACE_SV_ENABLE && CONFIG_USE_CUSTOM_EVENT_ID
+#if CONFIG_ESP_TRACE_LIB_SEGGER_SYSVIEW && CONFIG_USE_CUSTOM_EVENT_ID
     // Currently OpenOCD does not support requesting module info from target. So do the following...
     // Wait until SystemView module receives START command from host,
     // after that data can be sent to the host using onboard API,

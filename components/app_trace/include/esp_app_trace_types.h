@@ -27,7 +27,7 @@ typedef struct {
 /** Tracing module synchronization lock */
 typedef struct {
     spinlock_t mux;
-    unsigned int_state;
+    unsigned int int_state;
 } esp_apptrace_lock_t;
 
 /** Ring buffer control structure.
@@ -59,7 +59,6 @@ typedef struct {
     int tx_pin_num;         ///< TX pin number
     int rx_pin_num;         ///< RX pin number
     int baud_rate;          ///< Baud rate
-    uint32_t rx_buff_size;  ///< RX ring buffer size
     uint32_t tx_buff_size;  ///< TX ring buffer size
     uint32_t tx_msg_size;   ///< Maximum size of the single message to transfer.
     int task_prio;          ///< Task priority
@@ -86,8 +85,8 @@ typedef struct {
         } jtag;
     } dest_cfg; ///< Destination-specific configuration
 
-    uint32_t panic_flush_tmo;    ///< Panic flush timeout in milliseconds
-    uint32_t panic_flush_thresh; ///< Panic flush threshold in bytes
+    uint32_t flush_tmo;    ///< Flush timeout in milliseconds
+    uint32_t flush_thresh; ///< Flush threshold in bytes
 } esp_apptrace_config_t;
 
 #ifdef __cplusplus

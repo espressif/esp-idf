@@ -16,14 +16,14 @@
 #include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "esp_app_trace.h"
 #include "soc/uart_pins.h"
 #include "esp_log.h"
+#include "esp_app_trace.h"
 
 static const char *TAG = "example";
 
 #if !CONFIG_APPTRACE_DEST_JTAG
-/* Override default config to use console pins as a uart channel */
+/* Override default uart config to use console pins as a uart channel */
 esp_apptrace_config_t esp_apptrace_get_user_params(void)
 {
     esp_apptrace_config_t config = APPTRACE_UART_CONFIG_DEFAULT();
@@ -56,7 +56,7 @@ void app_main(void)
         if (res != ESP_OK) {
             ESP_LOGE(TAG, "Failed to write data to host [0x%x] (%s)", res, esp_err_to_name(res));
         }
-        esp_apptrace_flush(1000);
+        esp_apptrace_flush( 1000);
         vTaskDelay(50 / portTICK_PERIOD_MS);
     }
 

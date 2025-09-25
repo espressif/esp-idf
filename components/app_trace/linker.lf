@@ -1,24 +1,16 @@
 [mapping:app_trace]
 archive: libapp_trace.a
 entries:
-    if APPTRACE_ENABLE = y:
+    if ESP_TRACE_TRANSPORT_APPTRACE = y:
         app_trace (noflash)
         app_trace_util (noflash)
-        if APPTRACE_DEST_JTAG = y || APPTRACE_DEST_NONE = y:
+        if APPTRACE_DEST_JTAG = y || APPTRACE_DEST_ALL = y:
             port_jtag (noflash)
             app_trace_membufs_proto (noflash)
-        if APPTRACE_DEST_UART = y || APPTRACE_DEST_NONE = y:
+        if APPTRACE_DEST_UART = y || APPTRACE_DEST_ALL = y:
             port_uart (noflash)
-    if APPTRACE_SV_ENABLE = y:
-      SEGGER_SYSVIEW (noflash)
-      SEGGER_RTT_esp (noflash)
-      SEGGER_SYSVIEW_Config_FreeRTOS (noflash)
-      SEGGER_SYSVIEW_FreeRTOS (noflash)
-
-[mapping:app_trace_driver]
-archive: libesp_driver_gptimer.a
-entries:
-    if APPTRACE_SV_TS_SOURCE_GPTIMER = y:
-        gptimer: gptimer_get_raw_count (noflash)
-    else:
-        * (default)
+    if ESP_TRACE_LIB_SEGGER_SYSVIEW = y:
+        SEGGER_SYSVIEW (noflash)
+        SEGGER_RTT_esp (noflash)
+        SEGGER_SYSVIEW_Config_FreeRTOS (noflash)
+        SEGGER_SYSVIEW_FreeRTOS (noflash)

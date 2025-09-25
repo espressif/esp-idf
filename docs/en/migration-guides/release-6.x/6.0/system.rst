@@ -73,61 +73,44 @@ App Trace
 Configuration Changes
 ^^^^^^^^^^^^^^^^^^^^^
 
-Previously, application tracing was automatically enabled when a destination was configured. Now you must explicitly enable application tracing through ``CONFIG_APPTRACE_ENABLE``` option before configuring any destination.
+The application tracing configuration menu has been moved. Previously located at ``Component config`` > ``Application Level Tracing``, it is now under ``Component config`` > ``ESP Trace Configuration``.
 
-To enable application tracing, go to "Component config" → "Application Level Tracing" → "Enable Application Level Tracing" in menuconfig.
+Previously, application tracing was automatically enabled when a destination was configured. Now you must explicitly enable application tracing by selecting the trace transport before configuring any destination.
+
+To enable application tracing, go to ``Component config`` > ``ESP Trace Configuration`` > ``Trace transport`` and select ``ESP-IDF apptrace`` in menuconfig. After that, configuration can be done at ``Component config`` > ``ESP Trace Configuration`` > ``Application Level Tracing``.
+
+If apptrace will be used without a library (for example when SEGGER SystemView is disabled) in standalone mode, the following configurations need to be set in your sdkconfig file:
+
+.. code-block:: none
+
+    CONFIG_ESP_TRACE_ENABLE=y
+    CONFIG_ESP_TRACE_LIB_NONE=y
+    CONFIG_ESP_TRACE_TRANSPORT_APPTRACE=y
+
+These can also be configured through menuconfig as described above.
 
 Removed extra data buffering option. ``CONFIG_APPTRACE_PENDING_DATA_SIZE_MAX`` is no longer supported.
 
 Removed deprecated ``ESP_APPTRACE_DEST_TRAX`` enum value. Use ``ESP_APPTRACE_DEST_JTAG`` instead.
 
+Component Dependency Changes
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Applications now require the ``esp_trace`` component instead of ``app_trace``. Update your component's ``CMakeLists.txt`` file to reflect this change.
+
+The ``app_trace`` component is now a sub-component of ``esp_trace`` and will be included automatically when needed.
+
 Initialization Flow Changes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-If you need to override the default configuration at runtime, you can implement the ``esp_apptrace_get_user_params()`` callback function. A weak default implementation exists that returns menuconfig defaults (``APPTRACE_CONFIG_DEFAULT()``). Your application can override this by providing its own configuration.
-
-   .. code-block:: c
-
-       esp_apptrace_config_t esp_apptrace_get_user_params(void)
-       {
-           esp_apptrace_config_t config = APPTRACE_CONFIG_DEFAULT();
-
-           // Override with custom values (example for UART)
-           config.dest_cfg.uart.uart_num = UART_NUM_0;
-           config.dest_cfg.uart.baud_rate = 921600;
-           config.dest_cfg.uart.tx_pin_num = GPIO_NUM_17;
-           config.dest_cfg.uart.rx_pin_num = GPIO_NUM_16;
-
-           return config;
-       }
-
-   **Important:**
-
-   - Do **not** add ``__attribute__((weak))`` to your implementation
-   - You can also use destination-specific macros: ``APPTRACE_JTAG_CONFIG_DEFAULT()`` or ``APPTRACE_UART_CONFIG_DEFAULT()``
+For runtime configuration override, a new callback system is available. See the :doc:`Application Tracing documentation <../../../api-guides/app_trace>` for details on ``esp_apptrace_get_user_params()`` and ``esp_trace_get_user_params()``.
 
 API Changes
 ^^^^^^^^^^^
 
 The destination parameter has been removed from all apptrace APIs.
 
-Old Version:
-
-.. code-block:: c
-
-    esp_apptrace_write(ESP_APPTRACE_DEST_JTAG, data, size, timeout);
-    esp_apptrace_read(ESP_APPTRACE_DEST_UART, buffer, &size, timeout);
-    esp_apptrace_flush(ESP_APPTRACE_DEST_JTAG, min_sz, timeout);
-
-Update to:
-
-.. code-block:: c
-
-    esp_apptrace_write(data, size, timeout);
-    esp_apptrace_read(buffer, &size, timeout);
-    esp_apptrace_flush(min_sz, timeout);
-
-The destination is now configured in menuconfig under "Application Level Tracing" → "Data Destination".
+Default destination is now configured in menuconfig under ``Component config`` > ``ESP Trace Configuration`` > ``Application Level Tracing`` and can be altered at runtime by providing callback with custom tracing configuration.
 
 The UART destination configuration has been simplified:
 
@@ -151,12 +134,12 @@ New configuration:
     CONFIG_APPTRACE_DEST_UART=y
     CONFIG_APPTRACE_DEST_UART_NUM=0  # or 1, 2 depending on target
 
-SystemView Destination
-^^^^^^^^^^^^^^^^^^^^^^
+SystemView Configuration
+^^^^^^^^^^^^^^^^^^^^^^^^
 
-The SystemView destination is now controlled by the same configuration as the application trace destination. When SystemView is enabled, it will use the destination configured under "Application Level Tracing" → "Data Destination".
+The SystemView configuration has been moved to a new location in the menuconfig: ``Component config`` > ``ESP Trace Configuration`` > ``Trace library`` > ``SEGGER SystemView``.
 
-This means that if you have both application tracing and SystemView enabled, they will share the same destination (JTAG or UART) as configured in the menuconfig. SystemView will not have its own destination configuration.
+The SystemView no longer has its own separate destination configuration. It shares the configuration with the application tracing transport (JTAG or UART).
 
 FreeRTOS
 --------
@@ -249,7 +232,7 @@ OTA Updates
 
 The partial download functionality in ESP HTTPS OTA has been moved under a configuration option in order to reduce the memory footprint if partial download is not used.
 
-To use partial download features in your OTA applications, you need to enable the component-level configuration :ref:`CONFIG_ESP_HTTPS_OTA_ENABLE_PARTIAL_DOWNLOAD` in menuconfig (``Component config`` → ``ESP HTTPS OTA`` → ``Enable partial HTTP download for OTA``).
+To use partial download features in your OTA applications, you need to enable the component-level configuration :ref:`CONFIG_ESP_HTTPS_OTA_ENABLE_PARTIAL_DOWNLOAD` in menuconfig (``Component config`` > ``ESP HTTPS OTA`` > ``Enable partial HTTP download for OTA``).
 
 Removed Deprecated APIs
 ^^^^^^^^^^^^^^^^^^^^^^^

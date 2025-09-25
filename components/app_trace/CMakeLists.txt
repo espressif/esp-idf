@@ -4,14 +4,14 @@ if(${target} STREQUAL "linux")
     return() # This component is not supported by the POSIX/Linux simulator
 endif()
 
-if(CONFIG_APPTRACE_ENABLE)
+if(CONFIG_ESP_TRACE_TRANSPORT_APPTRACE)
     set(srcs
         "app_trace.c"
         "app_trace_util.c"
         "host_file_io.c"
         )
 
-    if(NOT CONFIG_APPTRACE_DEST_UART)  # JTAG or ALL
+    if(NOT CONFIG_APPTRACE_DEST_UART)  # JTAG or None
         if(CONFIG_IDF_TARGET_ARCH_XTENSA)
             list(APPEND srcs "port/xtensa/port_jtag.c")
         elseif(CONFIG_IDF_TARGET_ARCH_RISCV)
@@ -20,7 +20,7 @@ if(CONFIG_APPTRACE_ENABLE)
         list(APPEND srcs "app_trace_membufs_proto.c")
     endif()
 
-    if(NOT CONFIG_APPTRACE_DEST_JTAG)  # UART or ALL
+    if(NOT CONFIG_APPTRACE_DEST_JTAG)  # UART or None
         list(APPEND srcs "port/port_uart.c")
     endif()
 endif()
@@ -33,7 +33,7 @@ set(include_dirs "include")
 
 set(priv_include_dirs "private_include" "port/include")
 
-if(CONFIG_APPTRACE_SV_ENABLE)
+if(CONFIG_ESP_TRACE_LIB_SEGGER_SYSVIEW)
     list(APPEND include_dirs
         sys_view/Config
         sys_view/SEGGER
