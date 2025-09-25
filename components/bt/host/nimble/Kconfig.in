@@ -721,11 +721,15 @@ menu "BLE 6.x Features"
     if BT_NIMBLE_60_FEATURE_SUPPORT
         config BT_NIMBLE_CHANNEL_SOUNDING
             bool "ble channel souding feature"
-            depends on BT_NIMBLE_ENABLED
             default n
             help
                 Used to enable/disable the channel sounding feature
 
+        config BT_NIMBLE_MONITOR_ADV
+            bool "Enable Monitor Advertising"
+            default n
+            help
+                Enable support for Monitor Advertisers.
     endif
 endmenu #BLE6.x
 
