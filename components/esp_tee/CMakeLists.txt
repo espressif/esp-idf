@@ -15,7 +15,6 @@ endif()
 
 if(BOOTLOADER_BUILD)
     idf_component_register()
-    return()
 elseif(esp_tee_build)
     # TEE build currently only uses the shared headers.
     idf_component_register(INCLUDE_DIRS include)
@@ -84,6 +83,20 @@ else()
         list(APPEND EXTRA_LINK_FLAGS "-u esp_tee_app_config")
         target_link_libraries(${COMPONENT_LIB} INTERFACE "${EXTRA_LINK_FLAGS}")
     endif()
+endif()
+
+# TODO: IDF-14145
+if((CONFIG_SECURE_ENABLE_TEE OR esp_tee_build) AND CMAKE_C_COMPILER_ID MATCHES "GNU")
+    if(CONFIG_IDF_TARGET_ESP32C5 OR CONFIG_IDF_TARGET_ESP32C61)
+        # Disable zcmp extension to avoid hardware issue with interrupts (DIG-661)
+        set(march_option "-march=rv32imac_zicsr_zifencei_zaamo_zalrsc")
+        idf_build_set_property(COMPILE_OPTIONS "${march_option}" APPEND)
+        idf_build_set_property(LINK_OPTIONS "${march_option}" APPEND)
+    endif()
+endif()
+
+if(BOOTLOADER_BUILD)
+    return()
 endif()
 
 set(secure_service_yml
