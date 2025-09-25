@@ -15,7 +15,6 @@
 #include "hal/pmu_types.h"
 #include "soc/pmu_struct.h"
 #include "soc/efuse_struct.h"
-#include "hal/config.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -69,15 +68,13 @@ static inline bool ldo_ll_is_valid_ldo_channel(int ldo_chan)
 __attribute__((always_inline))
 static inline void ldo_ll_voltage_to_dref_mul(int ldo_unit, int voltage_mv, uint8_t *dref, uint8_t *mul, bool *use_rail_voltage)
 {
+    uint8_t efuse_k = 0;
+    uint8_t efuse_vos = 0;
+    uint8_t efuse_c = 0;
     // to avoid using FPU, enlarge the constants by 1000 as fixed point
     int K_1000 = 1000;
     int Vos_1000 = 0;
     int C_1000 = 1000;
-
-#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) < 300
-    uint8_t efuse_k = 0;
-    uint8_t efuse_vos = 0;
-    uint8_t efuse_c = 0;
 
     if (efuse_hal_blk_version() >= 1) {
         // load the calibration values from the eFuse
@@ -102,7 +99,6 @@ static inline void ldo_ll_voltage_to_dref_mul(int ldo_unit, int voltage_mv, uint
             C_1000 = efuse_c & 0x20 ? -1 * (efuse_c & 0x1F) + 990 : efuse_c + 990;
         }
     }
-#endif
 
     // iterate all the possible dref and mul values to find the best match
     int min_voltage_diff = 400000000;
@@ -124,7 +120,6 @@ static inline void ldo_ll_voltage_to_dref_mul(int ldo_unit, int voltage_mv, uint
         }
     }
 
-#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) < 300
     if (efuse_hal_blk_version() >= 1) {
         // For unit0 and unit1, the mul and dref value are calibrated and saved in the efuse, load them when available
         if (ldo_unit == 0 && voltage_mv == 1800) {
@@ -140,7 +135,6 @@ static inline void ldo_ll_voltage_to_dref_mul(int ldo_unit, int voltage_mv, uint
             }
         }
     }
-#endif
 
     *dref = matched_dref;
     *mul = matched_mul;
