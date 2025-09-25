@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,6 +20,17 @@ static const char *TAG = "ISP_CCM";
 esp_err_t esp_isp_ccm_configure(isp_proc_handle_t proc, const esp_isp_ccm_config_t *ccm_cfg)
 {
     ESP_RETURN_ON_FALSE(proc && ccm_cfg, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
+
+    // Check matrix values are within valid range
+    float max_range = (1 << ISP_LL_CCM_MATRIX_INT_BITS);
+    float min_range = -(1 << ISP_LL_CCM_MATRIX_INT_BITS);
+    for (int i = 0; i < ISP_CCM_DIMENSION; i++) {
+        for (int j = 0; j < ISP_CCM_DIMENSION; j++) {
+            float value = ccm_cfg->matrix[i][j];
+            ESP_RETURN_ON_FALSE(value >= min_range && value <= max_range, ESP_ERR_INVALID_ARG, TAG,
+                                "Matrix[%d][%d] value %f is out of range [%f, %f]", i, j, value, min_range, max_range);
+        }
+    }
 
     bool ret = true;
     portENTER_CRITICAL(&proc->spinlock);
