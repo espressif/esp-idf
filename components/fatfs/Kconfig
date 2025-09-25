@@ -9,7 +9,7 @@ menu "FAT Filesystem support"
 
     choice FATFS_LONG_FILENAMES
         prompt "Long filename support"
-        default FATFS_LFN_NONE
+        default FATFS_LFN_HEAP
         help
             Support long filenames in FAT. Long filename data increases
             memory usage. FATFS can be configured to store the buffer for
@@ -313,7 +313,7 @@ menu "FAT Filesystem support"
 
     config FATFS_USE_DYN_BUFFERS
         bool "Use dynamic buffers"
-        default n
+        default y
         help
             If enabled, the buffers used by FATFS will be allocated separately from the rest of the structure.
             This option is useful when using multiple FATFS instances with different
