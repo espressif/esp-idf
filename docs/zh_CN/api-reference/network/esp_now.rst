@@ -126,19 +126,9 @@ ESP-NOW 数据可以从 Station 或 SoftAP 接口发送。确保在发送 ESP-NO
 相反，将必要的数据发布到队列，并交给优先级较低的任务处理。
 
 配置 ESP-NOW 速率
-----------------------
+-------------------
 
-.. only:: esp32 or esp32s2 or esp32s3 or esp32c2 or esp32c3
-
-    调用 :cpp:func:`esp_wifi_config_espnow_rate()` 配置指定接口的 ESP-NOW 速率。确保在配置速率之前启用接口。这个 API 应该在 :cpp:func:`esp_wifi_start()` 之后调用。
-
-.. only:: esp32c5 or esp32c6
-
-    调用 :cpp:func:`esp_now_set_peer_rate_config()` 配置指定 peer 的 ESP-NOW 速率。确保在配置速率之前添加 peer。这个 API 应该在 :cpp:func:`esp_wifi_start()` 和 :cpp:func:`esp_now_add_peer()` 之后调用。
-
-    .. note::
-
-        :cpp:func:`esp_wifi_config_espnow_rate()` 已弃用，请使用 :cpp:func:`esp_now_set_peer_rate_config()`
+调用 :cpp:func:`esp_now_set_peer_rate_config()` 配置每个 peer 的 ESP-NOW 速率。请确保在配置速率之前添加 peer。此 API 应在 :cpp:func:`esp_wifi_start()` 和 :cpp:func:`esp_now_add_peer()` 之后调用。
 
 配置 ESP-NOW 功耗参数
 ----------------------

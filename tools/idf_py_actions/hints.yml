@@ -628,7 +628,7 @@
 
 -
     re: "fatal error: esp_interface.h: No such file or directory"
-    hint: "The header file 'esp_interface.h' has been removed. The 'wifi_interface_t' enum is now defined in 'esp_wifi_types_generic.h'."
+    hint: "The header file 'esp_interface.h' has been removed. The 'wifi_interface_t' enum is now defined in 'esp_wifi_types_generic.h'. The enum values (e.g. 'WIFI_IF_STA', 'WIFI_IF_AP') are no longer defined based on 'ESP_IF_WIFI_STA', 'ESP_IF_WIFI_AP', etc."
 
 -
     re: "error: 'use_get_report_api' undeclared"
@@ -649,3 +649,17 @@
 -
     re: "error: too few arguments to function 'esp_wifi_nan_publish_service'"
     hint: "The function argument 'ndp_resp_needed' of 'esp_wifi_nan_publish_service' has been moved to structure 'wifi_nan_publish_cfg_t'."
+
+-
+    re: "error: '(WIFI_REASON_ASSOC_EXPIRE|WIFI_REASON_NOT_AUTHED|WIFI_REASON_NOT_ASSOCED)' undeclared"
+    hint: "The Wi-Fi disconnection reason codes '{0}' have been removed. Please use '{1}', '{2}', and '{3}' respectively."
+    variables:
+        -
+            re_variables: ['WIFI_REASON_ASSOC_EXPIRE']
+            hint_variables: ['WIFI_REASON_ASSOC_EXPIRE', 'WIFI_REASON_AUTH_EXPIRE']
+        -
+            re_variables: ['WIFI_REASON_NOT_AUTHED']
+            hint_variables: ['WIFI_REASON_NOT_AUTHED', 'WIFI_REASON_CLASS2_FRAME_FROM_NONAUTH_STA']
+        -
+            re_variables: ['WIFI_REASON_NOT_ASSOCED']
+            hint_variables: ['WIFI_REASON_NOT_ASSOCED', 'WIFI_REASON_CLASS3_FRAME_FROM_NONASSOC_STA']
