@@ -508,12 +508,12 @@ typedef struct {
     volatile icm_rdn_eco_cs_reg_t rdn_eco_cs;
     volatile icm_rdn_eco_low_reg_t rdn_eco_low;
     volatile icm_rdn_eco_high_reg_t rdn_eco_high;
-} icm_dev_t;
+} axi_icm_dev_t;
 
-extern icm_dev_t ICM_SYS;
+extern axi_icm_dev_t AXI_ICM;
 
 #ifndef __cplusplus
-_Static_assert(sizeof(icm_dev_t) == 0x5c, "Invalid size of icm_dev_t structure");
+_Static_assert(sizeof(axi_icm_dev_t) == 0x5c, "Invalid size of axi_icm_dev_t structure");
 #endif
 
 #ifdef __cplusplus
