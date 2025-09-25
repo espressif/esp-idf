@@ -77,23 +77,11 @@ test_fatfsgen_on_host:
     - ./test_wl_fatfsgen.py
     - ./test_fatfsparse.py
 
-test_multi_heap_on_host:
-  extends: .host_test_template
-  script:
-    - cd components/heap/test_multi_heap_host
-    - ./test_all_configs.sh
-
 test_certificate_bundle_on_host:
   extends: .host_test_template
   script:
     - cd components/mbedtls/esp_crt_bundle/test_gen_crt_bundle/
     - ./test_gen_crt_bundle.py
-
-test_gdbstub_on_host:
-  extends: .host_test_template
-  script:
-    - cd components/esp_gdbstub/test_gdbstub_host
-    - make test
 
 # Test for create virtualenv. It must be invoked from Python, not from virtualenv.
 # Use docker image system python without any extra dependencies

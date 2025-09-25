@@ -1,9 +1,9 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
 
 extern "C" {
 #include "esp_gdbstub_common.h"
@@ -468,7 +468,6 @@ struct inst_list_s xesppie_nojump[] = {
 
 TEST_CASE("decode rv32i instructions")
 {
-    uintptr_t pc;
     uint32_t inst;
     uintptr_t inst_addr = (uintptr_t)&inst;
 
@@ -615,7 +614,6 @@ TEST_CASE("decode rv32i instructions")
 
 TEST_CASE("decode rv32c instructions")
 {
-    uintptr_t pc;
     uint32_t inst;
     uintptr_t inst_addr = (uintptr_t)&inst;
 
@@ -675,7 +673,6 @@ TEST_CASE("decode rv32c instructions")
 
 TEST_CASE("decode rv32a instructions")
 {
-    uintptr_t pc;
     uint32_t inst;
     uintptr_t inst_addr = (uintptr_t)&inst;
 
@@ -688,7 +685,6 @@ TEST_CASE("decode rv32a instructions")
 
 TEST_CASE("decode rv32m instructions")
 {
-    uintptr_t pc;
     uint32_t inst;
     uintptr_t inst_addr = (uintptr_t)&inst;
 
@@ -701,7 +697,6 @@ TEST_CASE("decode rv32m instructions")
 
 TEST_CASE("decode xesppie instructions")
 {
-    uintptr_t pc;
     uint32_t inst;
     uintptr_t inst_addr = (uintptr_t)&inst;
 

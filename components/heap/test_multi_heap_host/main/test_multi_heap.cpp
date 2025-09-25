@@ -1,10 +1,10 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "catch.hpp"
+#include "catch2/catch_test_macros.hpp"
 #include "multi_heap.h"
 
 #include "../multi_heap_config.h"
@@ -42,11 +42,28 @@ static void __free__(void *ptr)
 #undef realloc
 #define realloc #error
 
+static uint8_t s_small_heap[4 * 1024];
+static multi_heap_handle_t s_small_heap_hdl = NULL;
+
+void get_small_heap(uint8_t **heap, multi_heap_handle_t *heap_hdl, size_t *heap_size)
+{
+    if (s_small_heap_hdl == NULL) {
+        memset(s_small_heap, 0, sizeof(s_small_heap));
+        s_small_heap_hdl = multi_heap_register(s_small_heap, sizeof(s_small_heap));
+    }
+
+    *heap = s_small_heap;
+    *heap_hdl = s_small_heap_hdl;
+    *heap_size = sizeof(s_small_heap);
+    multi_heap_dump(*heap_hdl);
+}
+
 TEST_CASE("multi_heap simple allocations", "[multi_heap]")
 {
-    uint8_t small_heap[4 * 1024];
-
-    multi_heap_handle_t heap = multi_heap_register(small_heap, sizeof(small_heap));
+    uint8_t *small_heap = NULL;
+    multi_heap_handle_t heap = NULL;
+    size_t small_heap_size = 0;
+    get_small_heap(&small_heap, &heap, &small_heap_size);
 
     size_t test_alloc_size = (multi_heap_free_size(heap) + 4) / 2;
 
@@ -59,7 +76,7 @@ TEST_CASE("multi_heap simple allocations", "[multi_heap]")
     printf("small_heap %p buf %p\n", small_heap, buf);
     REQUIRE( buf != NULL );
     REQUIRE((intptr_t)buf >= (intptr_t)small_heap);
-    REQUIRE( (intptr_t)buf < (intptr_t)(small_heap + sizeof(small_heap)));
+    REQUIRE( (intptr_t)buf < (intptr_t)(small_heap + small_heap_size));
 
     REQUIRE( multi_heap_get_allocated_size(heap, buf) >= test_alloc_size );
     printf("test alloc size %d\n", test_alloc_size);
@@ -82,12 +99,12 @@ TEST_CASE("multi_heap simple allocations", "[multi_heap]")
     REQUIRE( multi_heap_free_size(heap) > multi_heap_minimum_free_size(heap) );
 }
 
-
 TEST_CASE("multi_heap fragmentation", "[multi_heap]")
 {
-    const size_t HEAP_SIZE = 4 * 1024;
-    uint8_t small_heap[HEAP_SIZE];
-    multi_heap_handle_t heap = multi_heap_register(small_heap, sizeof(small_heap));
+    uint8_t *small_heap = NULL;
+    multi_heap_handle_t heap = NULL;
+    size_t small_heap_size = 0;
+    get_small_heap(&small_heap, &heap, &small_heap_size);
 
     const size_t alloc_size = 500;
 
@@ -135,13 +152,15 @@ TEST_CASE("multi_heap fragmentation", "[multi_heap]")
 /* Test that malloc/free does not leave free space fragmented */
 TEST_CASE("multi_heap defrag", "[multi_heap]")
 {
+    uint8_t *small_heap = NULL;
+    multi_heap_handle_t heap = NULL;
+    size_t small_heap_size = 0;
+    get_small_heap(&small_heap, &heap, &small_heap_size);
+
     void *p[4];
-    uint8_t small_heap[4 * 1024];
     multi_heap_info_t info, info2;
-    multi_heap_handle_t heap = multi_heap_register(small_heap, sizeof(small_heap));
 
     printf("0 ---\n");
-    multi_heap_dump(heap);
     REQUIRE( multi_heap_check(heap, true) );
     multi_heap_get_info(heap, &info);
     REQUIRE( 0 == info.allocated_blocks );
@@ -149,9 +168,13 @@ TEST_CASE("multi_heap defrag", "[multi_heap]")
 
     printf("1 ---\n");
     p[0] = multi_heap_malloc(heap, 128);
-    p[1] = multi_heap_malloc(heap, 32);
-    multi_heap_dump(heap);
+    REQUIRE(p[0] != NULL);
     REQUIRE( multi_heap_check(heap, true) );
+    multi_heap_dump(heap);
+    p[1] = multi_heap_malloc(heap, 32);
+    REQUIRE(p[1] != NULL);
+    REQUIRE( multi_heap_check(heap, true) );
+    multi_heap_dump(heap);
 
     printf("2 ---\n");
     multi_heap_free(heap, p[0]);
@@ -388,7 +411,6 @@ TEST_CASE("multi_heap minimum-size allocations", "[multi_heap]")
     uint8_t heapdata[4096];
     void *p[sizeof(heapdata) / sizeof(void *)] = {NULL};
     const size_t NUM_P = sizeof(p) / sizeof(void *);
-    size_t allocated_size = 0;
     multi_heap_handle_t heap = multi_heap_register(heapdata, sizeof(heapdata));
     size_t before_free = multi_heap_free_size(heap);
 

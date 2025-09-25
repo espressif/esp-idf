@@ -62,3 +62,8 @@ The legacy unit-test-app has been moved out of ESP-IDF repository as no ESP-IDF 
 .. code-block:: bash
 
     idf.py create-project-from-example espressif/unit-test-app:unit-test-app
+
+Catch
+-----
+
+The header-only copy of Catch2 unit testing library previously located in tools/catch directory has been removed. To continue using Catch2 in your project, migrate to Catch2 3.x, available from the `ESP component registry <https://components.espressif.com/components/espressif/catch2>`_. For an example of migrating from Catch2 2.x to Catch2 3.x, see commit 79a2c15477dc327550ff46a64ee0f8b4679cc417.
