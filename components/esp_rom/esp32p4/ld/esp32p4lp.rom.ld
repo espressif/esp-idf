@@ -38,22 +38,22 @@ GetUartDevice = 0x501000c8;
  ***************************************/
 
 /* Functions */
-gpio_set_output_level = 0x501000cc;
-gpio_get_input_level = 0x501000d0;
-gpio_matrix_in = 0x501000d4;
-gpio_matrix_out = 0x501000d8;
-gpio_bypass_matrix_in = 0x501000dc;
-gpio_output_disable = 0x501000e0;
-/* gpio_output_enable = 0x501000e4; */
-/* gpio_pad_input_disable = 0x501000e8; */
-gpio_pad_input_enable = 0x501000ec;
-gpio_pad_pulldown = 0x501000f0;
-gpio_pad_pullup = 0x501000f4;
-gpio_pad_select_gpio = 0x501000f8;
-gpio_pad_set_drv = 0x501000fc;
-gpio_pad_unhold = 0x50100100;
-gpio_pad_hold = 0x50100104;
-gpio_lppad_select_mux = 0x50100108;
+rom_gpio_set_output_level = 0x501000cc;
+rom_gpio_get_input_level = 0x501000d0;
+rom_gpio_matrix_in = 0x501000d4;
+rom_gpio_matrix_out = 0x501000d8;
+rom_gpio_bypass_matrix_in = 0x501000dc;
+rom_gpio_output_disable = 0x501000e0;
+rom_gpio_output_enable = 0x501000e4;
+rom_gpio_pad_input_disable = 0x501000e8;
+rom_gpio_pad_input_enable = 0x501000ec;
+rom_gpio_pad_pulldown = 0x501000f0;
+rom_gpio_pad_pullup = 0x501000f4;
+rom_gpio_pad_select_gpio = 0x501000f8;
+rom_gpio_pad_set_drv = 0x501000fc;
+rom_gpio_pad_unhold = 0x50100100;
+rom_gpio_pad_hold = 0x50100104;
+rom_gpio_lppad_select_mux = 0x50100108;
 
 
 /***************************************
