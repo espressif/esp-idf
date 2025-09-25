@@ -615,6 +615,9 @@ function(__init_component)
     # Real component library target that needs to be created by the component.
     set(component_target "_${component_interface}")
 
+    idf_build_get_property(build_dir BUILD_DIR)
+    set(component_build_dir "${build_dir}/esp-idf/${component_name}")
+
     # Interface target is used to attach all component properties and is also
     # used when the component is linked to other targets.
     add_library("${component_interface}" INTERFACE)
@@ -638,6 +641,7 @@ function(__init_component)
     idf_component_set_property("${component_name}" COMPONENT_TARGET "${component_target}")
     idf_component_set_property("${component_name}" COMPONENT_NAME "${component_name}")
     idf_component_set_property("${component_name}" COMPONENT_DIR "${component_directory}")
+    idf_component_set_property("${component_name}" COMPONENT_BUILD_DIR "${component_build_dir}")
     idf_component_set_property("${component_name}" COMPONENT_ALIAS "${component_alias}")
     idf_component_set_property("${component_name}" COMPONENT_SOURCE "${component_source}")
     idf_component_set_property("${component_name}" COMPONENT_INTERFACE "${component_interface}")
@@ -765,8 +769,8 @@ function(idf_component_include name)
 
     list(APPEND __DEPENDENCY_CHAIN "${name}")
     # Evaluate the CMakeLists.txt file of the component.
-    idf_build_get_property(build_dir BUILD_DIR build_dir)
-    add_subdirectory("${component_directory}" "${build_dir}/esp-idf/${component_name}")
+    idf_component_get_property(component_build_dir "${component_name}" COMPONENT_BUILD_DIR)
+    add_subdirectory("${component_directory}" "${component_build_dir}")
 
     # The component has been evaluated; remove it from the dependency chain.
     list(POP_BACK __DEPENDENCY_CHAIN)
