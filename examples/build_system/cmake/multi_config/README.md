@@ -62,10 +62,23 @@ To build and run the app with `prod2` configuration, repeat the steps above, rep
 
 To avoid having to specify `--preset` argument every time you run `idf.py`, you can set `IDF_PRESET` environment variable:
 
-<!-- FIXME: Windows instructions -->
+For UNIX-like systems (Linux, macOS):
 ```shell
 export IDF_PRESET=prod1
-# subsequent commands will work with 'prod1' configuration:
+```
+
+For Windows (PowerShell):
+```powershell
+$ENV:IDF_PRESET='prod1'
+```
+
+For Windows (cmd.exe):
+```shell
+set IDF_PRESET=prod1
+```
+
+Then subsequent commands will work with `prod1` configuration:
+```shell
 idf.py build
 idf.py flash monitor
 ```

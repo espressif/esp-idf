@@ -28,14 +28,14 @@ from idf_py_actions.tools import PropertyDict
 from idf_py_actions.tools import TargetChoice
 from idf_py_actions.tools import ensure_build_directory
 from idf_py_actions.tools import generate_hints
-from idf_py_actions.tools import get_build_directory_from_preset
-from idf_py_actions.tools import get_cmake_preset
 from idf_py_actions.tools import get_target
 from idf_py_actions.tools import idf_version
-from idf_py_actions.tools import load_cmake_presets
 from idf_py_actions.tools import merge_action_lists
 from idf_py_actions.tools import run_target
 from idf_py_actions.tools import yellow_print
+
+# If a CMake preset with this name exists, it will be used by default when no '--preset' argument is given.
+DEFAULT_CMAKE_PRESET_NAME = 'default'
 
 
 def action_extensions(base_actions: dict, project_path: str) -> Any:
@@ -276,26 +276,85 @@ def action_extensions(base_actions: dict, project_path: str) -> Any:
         args.build_dir = os.path.realpath(args.build_dir)
 
     def initialize_cmake_presets(args: PropertyDict) -> None:
-        # Load the CMake presets from the project directory and determine the preset name to use.
-        load_cmake_presets(args.project_dir, args.preset)
-        # Get the selected CMake configuration preset, if any
-        preset_info = get_cmake_preset()
-        if preset_info:
-            # If the preset specifies a build directory, use it
-            build_dir_from_preset = get_build_directory_from_preset()
-            if build_dir_from_preset:
-                if args.build_dir:
-                    raise FatalError(
-                        'Build directory specified both in CMake preset and on the command line. This is not supported.'
-                    )
-                if not os.path.isabs(build_dir_from_preset):
-                    build_dir_from_preset = os.path.join(args.project_dir, build_dir_from_preset)
-                # Store the build directory back into the args object, the rest of idf.py will look for it there
-                args.build_dir = build_dir_from_preset
-            else:
-                yellow_print(
-                    f'Warning: preset {preset_info["name"]} doesn\'t specify the build directory ("binaryDir")'
-                )
+        """
+        Initialize and validate the use of CMake presets.
+        Parse preset, extract variables (like build_dir, generator, preset), and update fields in args accordingly
+        to ensure ESP-IDF actions use correct values from chosen preset.
+        """
+        preset_name = args.preset
+
+        # Load CMake presets from the project directory
+        cmakepresets_file_names = ['CMakePresets.json', 'CMakeUserPresets.json']
+        config_presets_info = []
+
+        for cmakepresets_file_name in cmakepresets_file_names:
+            cmakepresets_file_path = os.path.join(args.project_dir, cmakepresets_file_name)
+            if not os.path.exists(cmakepresets_file_path):
+                continue
+            try:
+                with open(cmakepresets_file_path) as f_in:
+                    presets_info = json.load(f_in)
+
+                    if not presets_info.get('version'):
+                        raise FatalError(
+                            f'Found CMake preset file without a version in {cmakepresets_file_name}, '
+                            'field "version" is required. '
+                            'Current recommended version is 3, as minimal supported cmake version by ESP-IDF is 3.22.1'
+                        )
+
+                    for config_preset in presets_info['configurePresets']:
+                        if not config_preset.get('name'):
+                            raise FatalError(
+                                f'Found CMake preset without a name in {cmakepresets_file_name}, '
+                                'field "name" is required'
+                            )
+                        config_presets_info.append(config_preset)
+            except FatalError as err:
+                raise err
+            except Exception as err:
+                yellow_print(f'Failed to load CMake presets from {cmakepresets_file_name}, {str(err)}')
+
+        if not config_presets_info:
+            if preset_name:
+                raise FatalError(f"Preset '{preset_name}' specified, but no CMake presets found")
+            return
+
+        preset_names = [preset['name'] for preset in config_presets_info]
+
+        # Determine which preset to use
+        if not preset_name and DEFAULT_CMAKE_PRESET_NAME in preset_names:
+            yellow_print(
+                f"CMake presets file found but no preset name given; using '{DEFAULT_CMAKE_PRESET_NAME}' preset"
+            )
+            preset_name = DEFAULT_CMAKE_PRESET_NAME
+        elif not preset_name:
+            preset_name = preset_names[0]
+            yellow_print(f"CMake presets file found but no preset name given; using first preset: '{preset_name}'")
+        elif preset_name not in preset_names:
+            raise FatalError(f"No preset '{preset_name}' found in CMake presets")
+
+        selected_preset_info = next((p_info for p_info in config_presets_info if p_info['name'] == preset_name), None)
+
+        if selected_preset_info:
+            if selected_preset_info.get('inherits'):
+                yellow_print(f"Preset '{preset_name}' uses inheritance, which is not yet supported.")
+
+            # Set build directory from preset
+            binary_dir = selected_preset_info.get('binaryDir')
+            if binary_dir and not args.build_dir:
+                if not os.path.isabs(binary_dir):
+                    binary_dir = os.path.join(args.project_dir, binary_dir)
+                args.build_dir = binary_dir
+            elif not binary_dir and not args.build_dir:
+                yellow_print(f'Warning: preset {preset_name} does not specify the build directory ("binaryDir")')
+
+            # Set generator from preset if specified
+            generator = selected_preset_info.get('generator', None)
+            if generator and not args.generator:
+                args.generator = generator
+
+            # Store preset name for cmake (we still need to pass --preset to cmake)
+            args.preset = preset_name
 
     def idf_version_callback(ctx: Context, param: str, value: str) -> None:
         if not value or ctx.resilient_parsing:

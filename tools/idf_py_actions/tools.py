@@ -34,9 +34,6 @@ SHELL_COMPLETE_VAR = '_IDF.PY_COMPLETE'
 # was shell completion invoked?
 SHELL_COMPLETE_RUN = SHELL_COMPLETE_VAR in os.environ
 
-# If a CMake preset with this name exists, it will be used by default when no '--preset' argument is given.
-DEFAULT_CMAKE_PRESET_NAME = 'default'
-
 
 # The ctx dict "abuses" how python evaluates default parameter values.
 # https://docs.python.org/3/reference/compound_stmts.html#function-definitions
@@ -49,7 +46,6 @@ def get_build_context(ctx: dict = {}) -> dict:
     It returns dictionary with the following keys:
 
     'proj_desc' - loaded project_description.json file
-    'presets' - loaded CMake presets dictionary
 
     Please make sure that ensure_build_directory was called otherwise the build
     context dictionary will be empty. Also note that it might not be thread-safe to
@@ -58,23 +54,16 @@ def get_build_context(ctx: dict = {}) -> dict:
     return ctx
 
 
-def _set_build_context_proj_desc(build_dir: str) -> None:
-    # private helper to save project description to global build context
+def _set_build_context(args: 'PropertyDict') -> None:
+    # private helper to set global build context from ensure_build_directory
     ctx = get_build_context()
 
-    proj_desc_fn = f'{build_dir}/project_description.json'
+    proj_desc_fn = f'{args.build_dir}/project_description.json'
     try:
         with open(proj_desc_fn, encoding='utf-8') as f:
             ctx['proj_desc'] = json.load(f)
     except (OSError, ValueError) as e:
         raise FatalError(f'Cannot load {proj_desc_fn}: {e}')
-
-
-def _set_build_context_presets(presets: list[dict[str, Any]], preset_name: str | None = None) -> None:
-    # private helper to save CMake presets to global build context
-    ctx = get_build_context()
-    ctx['presets'] = presets
-    ctx['preset_name'] = preset_name
 
 
 def executable_exists(args: list) -> bool:
@@ -622,107 +611,6 @@ def _detect_cmake_generator(prog_name: str) -> Any:
     raise FatalError(f"To use {prog_name}, either the 'ninja' or 'GNU make' build tool must be available in the PATH")
 
 
-def load_cmake_presets(project_dir: str, preset_name: str | None = None) -> None:
-    """
-    Try to load CMake presets from the project directory and determine the preset name to use.
-
-    If a preset name is provided, check that such a preset exists and select it.
-    If no preset name is provided, check if the "default" preset exists and select it.
-    Otherwise, select the first preset.
-    """
-    # See if we have loaded the presets already
-    cached_presets = get_build_context().get('presets')
-    if cached_presets:
-        return
-
-    # Load CMake presets from the project directory
-    cmakepresets_file_names = ['CMakePresets.json', 'CMakeUserPresets.json']
-    config_presets_info = []
-    for cmakepresets_file_name in cmakepresets_file_names:
-        cmakepresets_file_path = os.path.join(project_dir, cmakepresets_file_name)
-        if not os.path.exists(cmakepresets_file_path):
-            continue
-        try:
-            with open(cmakepresets_file_path) as f_in:
-                presets_info = json.load(f_in)
-                for config_preset in presets_info['configurePresets']:
-                    if not config_preset.get('name'):
-                        yellow_print(
-                            f'Found CMake preset without a name in {cmakepresets_file_name}, skipping the preset'
-                        )
-                        continue
-                    # add more preset validations here, if needed
-                    config_presets_info.append(config_preset)
-        except Exception as err:
-            yellow_print(f'Failed to load CMake presets from {cmakepresets_file_name}, {str(err)}')
-
-    preset_names = [preset['name'] for preset in config_presets_info]
-    print(preset_names)
-    if not preset_names:
-        if preset_name:
-            raise FatalError(f"Preset '{preset_name}' specified, but no CMake presets found")
-        return
-
-    if not preset_name and DEFAULT_CMAKE_PRESET_NAME in preset_names:
-        yellow_print(f"CMake presets file found but no preset name given; using '{DEFAULT_CMAKE_PRESET_NAME}' preset")
-        preset_name = DEFAULT_CMAKE_PRESET_NAME
-    elif not preset_name:
-        preset_name = preset_names[0]
-        yellow_print(f"CMake presets file found but no preset name given; using first preset: '{preset_name}'")
-    elif preset_name not in preset_names:
-        raise FatalError(f"No preset '{preset_name}' found in CMake presets")
-
-    # Stash the presets dictionary and the selected preset name in the global build context for future use
-    _set_build_context_presets(config_presets_info, preset_name)
-
-
-def get_cmake_preset() -> dict[str, Any] | None:
-    """
-    Get the selected CMake configuration preset, or None if no preset is selected.
-
-    See the description of load_cmake_presets for details on how the preset is selected.
-    """
-    ctx = get_build_context()
-    if not ctx.get('presets') or not ctx.get('preset_name'):
-        return None
-
-    return next((p_info for p_info in ctx['presets'] if p_info['name'] == ctx['preset_name']), dict())
-
-
-def get_build_directory_from_preset() -> str | None:
-    """
-    Get build directory (binaryDir) from the selected CMake configuration preset.
-
-    See the description of load_cmake_presets for details on how the preset is selected.
-    """
-    preset_info = get_cmake_preset()
-    preset_name = preset_info.get('name')  # type: ignore
-    if not preset_info:
-        return None
-
-    if preset_info.get('inherits'):
-        # TODO: here we also need to check if the preset inherits from other presets,
-        # and possibly get the build directory from the inherited presets.
-        yellow_print(f"Preset '{preset_name}' uses inheritance, which is not yet supported. YMMV.")
-
-    binary_dir = preset_info.get('binaryDir', None)
-    if not binary_dir:
-        raise FatalError(f'Preset \'{preset_name}\' does not specify "binaryDir", this is not supported.')
-
-    return str(binary_dir)
-
-
-def get_generator_from_preset() -> str | None:
-    """Return the generator from the selected CMake configuration preset, if any.
-
-    Returns ``None`` when no preset is selected or the preset omits the generator.
-    """
-    preset_info = get_cmake_preset()
-    if not preset_info:
-        return None
-    return preset_info.get('generator')
-
-
 def ensure_build_directory(
     args: 'PropertyDict', prog_name: str, always_run_cmake: bool = False, env: dict | None = None
 ) -> None:
@@ -767,28 +655,16 @@ def ensure_build_directory(
     _check_idf_target(args, prog_name, cache, cache_cmdl, env)
 
     if always_run_cmake or _new_cmakecache_entries(cache, cache_cmdl):
-        # Check if CMake preset specifies the generator
-        generator_defined_by_preset = False
-        if args.preset:
-            generator = get_generator_from_preset()
-            if generator:
-                # Won't try to auto-detect the generator and pass it to CMake, as that would
-                # override the choice made by the preset.
-                generator_defined_by_preset = True
-
-        # No generator specified in CLI or in preset, so auto-detect it
-        if args.generator is None and not generator_defined_by_preset:
+        if args.generator is None:
             args.generator = _detect_cmake_generator(prog_name)
-
-        # Pass the generator to CMake if one was specified in CLI or auto-detected
-        generator_args = []
-        if args.generator:
-            generator_args = ['-G', args.generator]
 
         try:
             cmake_args = [
                 'cmake',
-                *generator_args,
+                '-G',
+                args.generator,
+                '-B',
+                args.build_dir,
                 '-DPYTHON_DEPS_CHECKED=1',
                 f'-DPYTHON={sys.executable}',
                 '-DESP_PLATFORM=1',
@@ -848,8 +724,8 @@ def ensure_build_directory(
     except KeyError:
         pass
 
-    # Load project metadata file into global build context
-    _set_build_context_proj_desc(args.build_dir)
+    # set global build context
+    _set_build_context(args)
 
 
 def merge_action_lists(*action_lists: dict, custom_actions: dict[str, Any] | None = None) -> dict:
