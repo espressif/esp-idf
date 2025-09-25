@@ -47,5 +47,3 @@ examples/network/vlan_support:
   depends_components:
     - esp_eth
     - esp_netif
-  depends_filepatterns:
-    - examples/ethernet/basic/components/ethernet_init/**/*

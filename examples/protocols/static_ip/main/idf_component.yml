@@ -1,5 +1,3 @@
 dependencies:
-  idf:
-    version: '>=5.0'
   espressif/ethernet_init:
-    version: '*'
+    version: "0.7.0"
