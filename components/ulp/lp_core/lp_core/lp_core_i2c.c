@@ -5,6 +5,7 @@
  */
 
 #include "sdkconfig.h"
+#include <sys/param.h>  /* For MIN macro */
 #include "soc/soc_caps.h"
 #include "ulp_lp_core_i2c.h"
 #include "ulp_lp_core_utils.h"
@@ -19,8 +20,6 @@
 #define LP_I2C_WRITE_MODE   I2C_MASTER_WRITE
 #define LP_I2C_ACK          I2C_MASTER_ACK
 #define LP_I2C_NACK         I2C_MASTER_NACK
-
-#define MIN(x, y) (((x) < (y)) ? (x) : (y))
 
 /* I2C LL context */
 
