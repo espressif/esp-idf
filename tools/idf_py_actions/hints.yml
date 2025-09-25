@@ -663,3 +663,8 @@
         -
             re_variables: ['WIFI_REASON_NOT_ASSOCED']
             hint_variables: ['WIFI_REASON_NOT_ASSOCED', 'WIFI_REASON_CLASS3_FRAME_FROM_NONASSOC_STA']
+
+-
+    re: "error: '(ESP_IF_WIFI_STA|ESP_IF_WIFI_AP)' undeclared"
+    hint: "The macros '{}' have been removed. Please use the enum values 'WIFI_IF_STA' and 'WIFI_IF_AP' directly."
+    match_to_output: True

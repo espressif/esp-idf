@@ -27,6 +27,8 @@ Wi-Fi
 
 - **Wi-Fi 接口：** 头文件 :project_file:`components/esp_wifi/include/esp_interface.h` 已被移除。``wifi_interface_t`` 枚举现在定义在 :project_file:`components/esp_wifi/include/esp_wifi_types_generic.h` 中。枚举值（例如 ``WIFI_IF_STA``、``WIFI_IF_AP``）不再基于 ``ESP_IF_WIFI_STA``、``ESP_IF_WIFI_AP`` 等定义。
 
+- **Wi-Fi 接口宏：** 宏 ``ESP_IF_WIFI_STA`` 和 ``ESP_IF_WIFI_AP`` 已被移除。请直接使用枚举值 ``WIFI_IF_STA`` 和 ``WIFI_IF_AP``。
+
 - **Wi-Fi 断开连接原因：** 断开连接原因代码 ``WIFI_REASON_ASSOC_EXPIRE``、``WIFI_REASON_NOT_AUTHED`` 和 ``WIFI_REASON_NOT_ASSOCED`` 已被移除。请改用 ``WIFI_REASON_AUTH_EXPIRE``、``WIFI_REASON_CLASS2_FRAME_FROM_NONAUTH_STA`` 和 ``WIFI_REASON_CLASS3_FRAME_FROM_NONASSOC_STA``。
 
 - **NAN：**

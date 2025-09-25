@@ -95,8 +95,8 @@ typedef enum {
     WIFI_AUTH_WAPI_PSK,         /**< Authenticate mode : WAPI_PSK */
     WIFI_AUTH_OWE,              /**< Authenticate mode : OWE */
     WIFI_AUTH_WPA3_ENT_192,     /**< Authenticate mode : WPA3_ENT_SUITE_B_192_BIT */
-    WIFI_AUTH_DUMMY_1,          /**< Placeholder: Previously used by WIFI_AUTH_WPA3_EXT_PSK. Can be reused in the future if needed. */
-    WIFI_AUTH_DUMMY_2,          /**< Placeholder: Previously used by WIFI_AUTH_WPA3_EXT_PSK_MIXED_MODE. Can be reused in the future if needed. */
+    WIFI_AUTH_DUMMY_1,          /**< Placeholder: Previously used by WIFI_AUTH_WPA3_EXT_PSK */
+    WIFI_AUTH_DUMMY_2,          /**< Placeholder: Previously used by WIFI_AUTH_WPA3_EXT_PSK_MIXED_MODE */
     WIFI_AUTH_DPP,              /**< Authenticate mode : DPP */
     WIFI_AUTH_WPA3_ENTERPRISE,  /**< Authenticate mode : WPA3-Enterprise Only Mode */
     WIFI_AUTH_WPA2_WPA3_ENTERPRISE, /**< Authenticate mode : WPA3-Enterprise Transition Mode */

@@ -27,6 +27,8 @@ Removed Variables, Macros and Enum Values
 
 - **Wi-Fi Interface:** The header file :project_file:`components/esp_wifi/include/esp_interface.h` has been removed. The ``wifi_interface_t`` enum is now defined in :project_file:`components/esp_wifi/include/esp_wifi_types_generic.h`. The enum values (e.g. ``WIFI_IF_STA``, ``WIFI_IF_AP``) are no longer defined based on ``ESP_IF_WIFI_STA``, ``ESP_IF_WIFI_AP``, etc.
 
+- **Wi-Fi Interface Macros:** The macros ``ESP_IF_WIFI_STA`` and ``ESP_IF_WIFI_AP`` have been removed. Please use the enum values ``WIFI_IF_STA`` and ``WIFI_IF_AP`` directly.
+
 - **Wi-Fi Disconnection Reasons:** The disconnection reason codes ``WIFI_REASON_ASSOC_EXPIRE``, ``WIFI_REASON_NOT_AUTHED``, and ``WIFI_REASON_NOT_ASSOCED`` have been removed. Please use ``WIFI_REASON_AUTH_EXPIRE``, ``WIFI_REASON_CLASS2_FRAME_FROM_NONAUTH_STA``, and ``WIFI_REASON_CLASS3_FRAME_FROM_NONASSOC_STA`` respectively.
 
 - **NAN:**
