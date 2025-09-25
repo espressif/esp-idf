@@ -5,9 +5,9 @@ Wi-Fi 场景下低功耗模式介绍
 
 本节将结合纯系统下的功耗模式来介绍 Wi-Fi 场景下的低功耗模式。因为 Wi-Fi 场景的复杂性，本节会首先介绍 Wi-Fi 省电的基本原理，然后再介绍具体的低功耗模式。本节主要针对 station 模式。
 
-.. todo - add sleep-current/esp32c5_summary.inc and sleep-current/esp32c61_summary.inc
+.. todo - add sleep-current/esp32c61_summary.inc
 
-.. only:: not esp32c5 and not esp32c61
+.. only:: not esp32c61
 
   Wi-Fi 场景如何选择低功耗模式
   --------------------------------------
@@ -355,17 +355,17 @@ Modem-sleep 模式配置
           - 1000
 
         * - ``max_freq_mhz``
-          - 160
+          - {IDF_TARGET_NAME} 支持的最大 CPU 频率
 
         * - ``min_freq_mhz``
-          - 40
+          - {CONFIG_XTAL_FREQ}
 
         * - ``light_sleep_enable``
           - false
 
-    .. todo - add sleep-current/esp32c5_modem_sleep.inc sleep-current/esp32c61_modem_sleep.inc
+    .. todo - add sleep-current/esp32c61_modem_sleep.inc
 
-    .. only:: not esp32c5 and not esp32c61
+    .. only:: not esp32c61
 
       - 配置表现
 
@@ -377,9 +377,9 @@ Auto Light-sleep 模式 + Wi-Fi 场景配置
 
 Auto Light-sleep 在 Wi-Fi 场景下的配置比纯系统下少了唤醒源的配置要求，其余几乎与纯系统下配置一致，因此可配置选项、配置步骤、推荐配置的详细介绍可以参考上文 :ref:`Deep-sleep 模式`。同时 Wi-Fi 相关配置保持默认。
 
-.. todo - add sleep-current/esp32c5_light_sleep.inc and leep-current/esp32c61_light_sleep.inc
+.. todo - add sleep-current/esp32c61_light_sleep.inc
 
-.. only:: not esp32c5 and not esp32c61
+.. only:: not esp32c61
 
   - 配置表现
 
@@ -415,3 +415,11 @@ Deep-sleep 模式在 Wi-Fi 场景下的配置与纯系统下配置基本一致�
     .. only:: esp32c2
 
       平均电流约 4.9 μA
+
+    .. only:: esp32c6
+
+      平均电流约 6.7 μA
+
+    .. only:: esp32c5
+
+      平均电流约 10.0 μA
