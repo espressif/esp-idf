@@ -37,7 +37,6 @@ examples/ethernet/iperf:
     - esp_driver_gpio
     - esp_driver_spi
     - cmd_system
-    - ethernet_init
     - protocol_examples_common
 
 examples/ethernet/ptp:
