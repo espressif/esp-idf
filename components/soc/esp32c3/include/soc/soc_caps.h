@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -29,6 +29,7 @@
 #define SOC_DEDICATED_GPIO_SUPPORTED    1
 #define SOC_UART_SUPPORTED              1
 #define SOC_GDMA_SUPPORTED              1
+#define SOC_UHCI_SUPPORTED              1
 #define SOC_GPTIMER_SUPPORTED           1
 #define SOC_TWAI_SUPPORTED              1
 #define SOC_BT_SUPPORTED                1
@@ -386,6 +387,9 @@
 
 // UART has an extra TX_WAIT_SEND state when the FIFO is not empty and XOFF is enabled
 #define SOC_UART_SUPPORT_FSM_TX_WAIT_SEND   (1)
+
+/*--------------------------- UHCI CAPS -------------------------------------*/
+#define SOC_UHCI_NUM               (1UL)
 
 /*-------------------------- COEXISTENCE HARDWARE PTI CAPS -------------------------------*/
 #define SOC_COEX_HW_PTI                 (1)
