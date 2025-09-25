@@ -1,8 +1,5 @@
-| Supported Targets | ESP32-C6 |
-| ----------------- | -------- |
-
-## Important Note
-*This example currently requires an external Bluetooth controller supporting PAwR functionality, as the ESP chips listed above do not have native controller support for PAwR features and under development phase*
+| Supported Targets | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP32-H2 |
+| ----------------- | -------- | -------- | --------- | -------- |
 
 # BLE Periodic Advertiser With Response (PAwR) Sync Connection Example
 
