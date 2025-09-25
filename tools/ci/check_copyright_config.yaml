@@ -223,6 +223,19 @@ zigbee:
     - Apache-2.0
     - LicenseRef-Included
 
+esp_trace:
+  include:
+    - components/esp_trace/include/
+    - components/esp_trace/adapters/transport/
+    - components/esp_trace/adapters/encoder/
+    - components/esp_trace/src/core/
+    - components/esp_trace/src/ports/
+  allowed_licenses:
+    - Apache-2.0
+    - MIT
+    - CC0-1.0
+
+
 # files matching this section do not perform the check
 # file patterns starting with ! are negated, meaning files matching them won't match the section.
 ignore:

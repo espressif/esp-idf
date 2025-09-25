@@ -41,7 +41,7 @@ ESP-IDF 中提供了应用层跟踪功能，用于分析应用程序的行为。
 
 1. **主机端：** 应用程序跟踪通过 JTAG 来完成，因此需要在主机上安装并运行 OpenOCD。详细信息请参阅 :doc:`JTAG 调试 <../api-guides/jtag-debugging/index>`。
 
-2. **目标端：** 在 menuconfig 中开启应用程序跟踪功能。**重要提示：** 您必须首先通过 ``Component config`` > ``Application Level Tracing`` > ``Enable Application Level Tracing`` (:ref:`CONFIG_APPTRACE_ENABLE`) 启用应用程序跟踪。启用此选项后，您可以配置跟踪数据的传输目标。对于 UART 接口，用户需要定义端口号、波特率、TX 和 RX 管脚及其他相关参数。当启用 FreeRTOS SystemView 跟踪功能时，所选目标也将被用于 SystemView 跟踪。
+2. **目标端：** 在 menuconfig 中开启应用程序跟踪功能。**重要提示：** 须首先通过 ``Component config`` > ``ESP Trace Configuration`` > ``Trace transport`` 并选择 ``ESP-IDF apptrace`` 启用应用程序跟踪。之后，可以在 ``Component config`` > ``ESP Trace Configuration`` > ``Application Level Tracing`` 中进行详细配置，例如配置跟踪数据的传输目标。对于 UART 接口，需定义端口号、波特率、TX 和 RX 管脚及其他相关参数。当选择任何跟踪库（例如 SEGGER SystemView）时，这些配置也将同步用于该库。
 
 .. note::
 
@@ -53,7 +53,7 @@ ESP-IDF 中提供了应用层跟踪功能，用于分析应用程序的行为。
 
 2. *Timeout for flushing last trace data to host on panic* (:ref:`CONFIG_APPTRACE_ONPANIC_HOST_FLUSH_TMO`)。该选项仅在流模式下才可发挥作用，它可用于控制跟踪模块在发生 Panic 时等待主机读取最新数据的最长时间。
 
-3. *Internal Sync Lock* (:ref:`CONFIG_APPTRACE_LOCK_ENABLE`)。启用此选项可使用锁保护跟踪缓冲区写入操作，防止多个任务并发生成跟踪数据时发生数据损坏。
+3. *Internal Sync Lock* (:ref:`CONFIG_APPTRACE_LOCK_ENABLE`)。启用此选项可使用锁保护跟踪缓冲区的写入操作，防止多个任务并发生成跟踪数据时发生数据损坏。
 
 4. *UART RX/TX ring buffer size* (:ref:`CONFIG_APPTRACE_UART_TX_BUFF_SIZE`)。缓冲区的大小取决于通过 UART 传输的数据量。
 
@@ -63,9 +63,42 @@ ESP-IDF 中提供了应用层跟踪功能，用于分析应用程序的行为。
 如何使用此库
 --------------
 
-该库提供了用于在主机和 {IDF_TARGET_NAME} 之间传输任意数据的 API。在 menuconfig 中启用该库后，应用程序跟踪模块会在系统启动期间使用 menuconfig 配置自动初始化。然后用户可以调用相应的 API 来发送、接收或者刷新数据。
+该库提供了用于在主机和 {IDF_TARGET_NAME} 之间传输任意数据的 API。在 menuconfig 中启用该库后，应用程序跟踪模块会在系统启动期间使用 menuconfig 配置自动初始化。随后用户可以调用相应的 API 来发送、接收或者刷新数据。
 
-用户可以通过实现弱回调函数 :cpp:func:`esp_apptrace_get_user_params()` 来覆盖默认配置（可选）。
+用户可选择通过实现弱回调函数 :cpp:func:`esp_apptrace_get_user_params()` 来覆盖默认配置。该函数仅在未选择任何跟踪库时生效，此时，仅应用层跟踪库（``app_trace`` 组件）独立运行。否则，系统将调用 :cpp:func:`esp_trace_get_user_params()` 来覆盖默认配置。
+
+快速入门
+---------
+
+1. 独立使用应用层跟踪 API
+
+   在 menuconfig 中禁用跟踪库并启用应用层跟踪传输：
+
+   - ``Component config`` > ``ESP Trace Configuration`` > ``Trace library``：选择 ``None``
+   - ``Component config`` > ``ESP Trace Configuration`` > ``Trace transport``：选择 ``ESP-IDF apptrace``
+
+   也可在 ``sdkconfig.defaults`` 中设置以下选项以强制启用独立模式：
+
+   .. code-block:: none
+
+      CONFIG_ESP_TRACE_ENABLE=y
+      CONFIG_ESP_TRACE_LIB_NONE=y
+      CONFIG_ESP_TRACE_TRANSPORT_APPTRACE=y
+
+   通过上述任一方式启用独立应用层跟踪传输后，即可在 ``Component config`` > ``ESP Trace Configuration`` > ``Application Level Tracing`` 中配置目标传输。
+
+2. 通过 ``esp_apptrace_get_user_params()`` 进行运行时配置
+
+   - 如果在 Kconfig 中选择 ``All (runtime selection)`` （即 ``APPTRACE_DEST_ALL``），可通过回调函数在运行时切换 JTAG 和 UART 并调整其参数。
+   - 如果在 Kconfig 中选定单一目标（JTAG 或 UART），回调函数可在运行时覆盖该目标的参数，但无法切换目标类型。
+
+.. note::
+
+    应用程序跟踪也可作为 esp_trace 库的传输适配器。在这种情况下，应用层跟踪库不会被直接使用，而是通过已选择的 esp_trace 库及其 API 间接使用。
+
+.. note::
+
+    以下代码示例适用于应用层跟踪库独立运行（未绑定任何跟踪库）的场景。
 
 
 .. _app_trace-application-specific-tracing:
@@ -85,8 +118,8 @@ ESP-IDF 中提供了应用层跟踪功能，用于分析应用程序的行为。
         {
             esp_apptrace_config_t config = APPTRACE_CONFIG_DEFAULT();
 
-            // Customize configuration if needed
-            // For example, to use different UART pins:
+            // 根据需要自定义配置
+            // 例如，使用不同的 UART 引脚：
             config.dest_cfg.uart.tx_pin_num = GPIO_NUM_17;
             config.dest_cfg.uart.rx_pin_num = GPIO_NUM_16;
 
@@ -110,7 +143,7 @@ ESP-IDF 中提供了应用层跟踪功能，用于分析应用程序的行为。
            return res;
        }
 
-   ``esp_apptrace_write()`` 函数使用 memcpy 把用户数据复制到内部缓存中。在某些情况下，使用 ``esp_apptrace_buffer_get()`` 和 ``esp_apptrace_buffer_put()`` 函数会更加理想，它们允许开发人员自行分配缓冲区并填充。下面的代码片段展示了如何执行此操作。
+   函数 :cpp:func:`esp_apptrace_write()` 通过 memcpy 将用户数据复制到内部缓冲区。在某些情况下，使用 :cpp:func:`esp_apptrace_buffer_get()` 和 :cpp:func:`esp_apptrace_buffer_put()` 函数可能是更优的选择。这两个函数允许开发者自行分配缓冲区并填充数据。以下代码片段展示了具体实现方法。
 
    .. code-block:: c
 
@@ -157,7 +190,7 @@ ESP-IDF 中提供了应用层跟踪功能，用于分析应用程序的行为。
           ...
       }
 
-   ``esp_apptrace_read()`` 函数使用 memcpy 把主机端的数据复制到用户缓存区。在某些情况下，使用 ``esp_apptrace_down_buffer_get()`` 和 ``esp_apptrace_down_buffer_put()`` 函数可能更为理想。它们允许开发人员占用一块读缓冲区并就地进行有关处理操作。下面的代码片段展示了如何执行此操作。
+   函数 :cpp:func:`esp_apptrace_read()` 通过 memcpy 将主机数据复制到用户缓冲区。在某些情况下，使用 :cpp:func:`esp_apptrace_down_buffer_get()` 和 :cpp:func:`esp_apptrace_down_buffer_put()` 函数可能是更优的选择。这两个函数允许开发者直接占用读取缓冲区的数据块并进行原地处理。以下代码片段展示了具体实现方法。
 
    .. code-block:: c
 
@@ -197,7 +230,7 @@ ESP-IDF 中提供了应用层跟踪功能，用于分析应用程序的行为。
 
 5. 连接到 OpenOCD 的 telnet 服务器。用户可在终端执行命令 ``telnet <oocd_host> 4444``。如果用户是在运行 OpenOCD 的同一台机器上打开 telnet 会话，可以使用 ``localhost`` 替换上面命令中的 ``<oocd_host>``。
 
-6. 使用特殊的 OpenOCD 命令开始收集待跟踪的命令。此命令将传输跟踪数据并将其重定向到指定的文件或套接字（当前仅支持文件作为跟踪数据目标）。相关命令的说明，请参阅 :ref:`jtag-debugging-launching-debugger`。
+6. 使用特殊的 OpenOCD 命令开始收集待跟踪的命令。此命令将传输跟踪数据并将其重定向到指定的文件或套接字。相关命令的说明，请参阅 `OpenOCD 应用程序跟踪命令`_。
 
 7. 最后，处理接收到的数据。由于数据格式由用户自己定义，本文档中省略数据处理的具体流程。数据处理的范例可以参考位于 ``$IDF_PATH/tools/esp_app_trace`` 下的 Python 脚本 ``apptrace_proc.py`` （用于功能测试）和 ``logtrace_proc.py`` （请参阅 :ref:`app_trace-logging-to-host` 章节中的详细信息）。
 
@@ -232,7 +265,7 @@ OpenOCD 应用程序跟踪命令
 
 Start 子命令的语法：
 
-    ``start <outfile> [poll_period [trace_size [stop_tmo [wait4halt [skip_size]]]]``
+  ``start <outfile> [poll_period [trace_size [stop_tmo [wait4halt [skip_size]]]]``
 
 ``outfile``
     用于保存来自两个 CPU 的数据文件的路径，该参数需要具有以下格式： ``file://path/to/file``。
@@ -261,11 +294,11 @@ Start 子命令的语法：
 
         esp apptrace start file://trace.log 1 2048 5 0 0
 
-        跟踪数据会被检索并以非阻塞的模式保存到文件中，如果收集满 2048 字节的数据或者在 5 秒内都没有新的数据，那么该过程就会停止。
+    跟踪数据会被检索并以非阻塞的模式保存到文件中，如果收集满 2048 字节的数据或者在 5 秒内都没有新的数据，那么该过程就会停止。
 
-        .. note::
+    .. note::
 
-            在将数据提供给 OpenOCD 之前，会对其进行缓冲。如果看到 “Data timeout!” 的消息，则表示目标可能在超时之前没有向 OpenOCD 发送足够的数据以清空缓冲区。要解决这个问题，可以增加超时时间或者使用函数 ``esp_apptrace_flush()`` 以特定间隔刷新数据。
+        在将数据提供给 OpenOCD 之前，会对其进行缓冲。如果看到 “Data timeout!” 的消息，则表示目标可能在超时之前没有向 OpenOCD 发送足够的数据以清空缓冲区。要解决这个问题，可以增加超时时间或者使用函数 ``esp_apptrace_flush()`` 以特定间隔刷新数据。
 
 2.  在非阻塞模式下无限地检索跟踪数据。
 
@@ -273,7 +306,7 @@ Start 子命令的语法：
 
         esp apptrace start file://trace.log 1 -1 -1 0 0
 
-        对收集数据的大小没有限制，也不设置超时时间。要停止此过程，可以在 OpenOCD 的 telnet 会话窗口中发送 ``esp apptrace stop`` 命令，或者在 OpenOCD 窗口中使用快捷键 Ctrl+C。
+    对收集数据的大小没有限制，也不设置超时时间。要停止此过程，可以在 OpenOCD 的 telnet 会话窗口中发送 ``esp apptrace stop`` 命令，或者在 OpenOCD 窗口中使用快捷键 Ctrl+C。
 
 3.  检索跟踪数据并无限期保存。
 
@@ -281,7 +314,7 @@ Start 子命令的语法：
 
         esp apptrace start file://trace.log 0 -1 -1 0 0
 
-        在跟踪停止之前，OpenOCD 的 telnet 会话窗口将不可用。要停止跟踪，请在 OpenOCD 的窗口中使用快捷键 Ctrl+C。
+    在跟踪停止之前，OpenOCD 的 telnet 会话窗口将不可用。要停止跟踪，请在 OpenOCD 的窗口中使用快捷键 Ctrl+C。
 
 4.  等待目标停止，然后恢复目标的操作并开始检索数据。当收集满 2048 字节的数据后就停止：
 
@@ -289,7 +322,7 @@ Start 子命令的语法：
 
         esp apptrace start file://trace.log 0 2048 -1 1 0
 
-        想要复位后立即开始跟踪，请使用 OpenOCD 的 ``reset halt`` 命令。
+    想要复位后立即开始跟踪，请使用 OpenOCD 的 ``reset halt`` 命令。
 
 
 .. _app_trace-logging-to-host:
@@ -328,9 +361,9 @@ ESP-IDF 的日志库会默认使用类 vprintf 的函数将格式化的字符串
 
 为了使用跟踪模块来记录日志，用户需要执行以下步骤：
 
-1. 在 menuconfig 中启用应用程序跟踪功能（路径为 ``Component config`` > ``Application Level Tracing`` > ``Enable Application Level Tracing``）。
+1. 在 menuconfig 中开启应用程序跟踪功能。须首先通过 ``Component config`` > ``ESP Trace Configuration`` > ``Trace transport`` 并选择 ``ESP-IDF apptrace`` 启用应用程序跟踪。之后，可以在 ``Component config`` > ``ESP Trace Configuration`` > ``Application Level Tracing`` 中进行详细配置。
 2. 在目标端，需要安装特殊的类 vprintf 函数 :cpp:func:`esp_apptrace_vprintf`，该函数负责将日志数据发送给主机，使用方法为 ``esp_log_set_vprintf(esp_apptrace_vprintf);``。如需将日志数据再次重定向给 UART，请使用 ``esp_log_set_vprintf(vprintf);``。
-3. 按照 :ref:`app_trace-application-specific-tracing` 章节中的第 1-5 步进行操作。
+3. 按照 :ref:`app_trace-application-specific-tracing` 章节中的第 4-6 步进行操作（OpenOCD 设置和跟踪数据收集）。
 4. 打印接收到的日志记录，请在终端运行以下命令：``$IDF_PATH/tools/esp_app_trace/logtrace_proc.py /path/to/trace/file /path/to/program/elf/file``。
 
 
@@ -367,11 +400,11 @@ ESP-IDF 中另一个基于应用层跟踪库的实用功能是系统级跟踪，
 如何使用
 """"""""
 
-若需使用这个功能，需要在 menuconfig 中开启 :ref:`CONFIG_APPTRACE_SV_ENABLE` 选项，具体路径为 ``Component config`` > ``Application Level Tracing`` > ``FreeRTOS SystemView Tracing``。同一菜单栏下还开启了其它几个选项：
+若需使用这个功能，需要在 menuconfig 中通过 ``Component config`` > ``ESP Trace Configuration`` > ``Trace library`` > ``SEGGER SystemView`` 选项启用此功能。同一菜单栏下还有其它几个选项：
 
-1. {IDF_TARGET_NAME} 用作 SystemView 时间戳源的定时器选择：（:ref:`CONFIG_APPTRACE_SV_TS_SOURCE`）用于选择 SystemView 事件的时间戳源。在单核模式下，时间戳由以最大频率运行的 {IDF_TARGET_NAME} 内部周期计数器生成。（:ref:`CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ`）在双核模式下，使用外部定时器生成时间戳，其频率为 CPU 频率的 1/2。
+1. {IDF_TARGET_NAME} 用作 SystemView 时间戳源的定时器选择：（:ref:`CONFIG_ESP_TRACE_TIMESTAMP_SOURCE`）用于选择 SystemView 事件的时间戳源。在单核模式下，时间戳由以最大频率运行的 {IDF_TARGET_NAME} 内部周期计数器生成。（:ref:`CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ`）在双核模式下，使用外部定时器生成时间戳，其频率为 CPU 频率的 1/2。
 
-2. 可以单独启用或禁用的 SystemView 事件集合 (``CONFIG_APPTRACE_SV_EVT_XXX``)：
+2. 可以单独启用或禁用的 SystemView 事件集合 (``CONFIG_SEGGER_SYSVIEW_EVT_XXX``)：
 
     - Trace Buffer Overflow Event
     - ISR Enter Event
@@ -389,7 +422,7 @@ ESP-IDF 中另一个基于应用层跟踪库的实用功能是系统级跟踪，
 
 ESP-IDF 中已经包含了所有用于生成兼容 SystemView 跟踪信息的代码。
 
-3. 想要通过 UART 接口进行实时跟踪，请在菜单配置选项 ``Component config`` > ``Application Level Tracing`` > ``FreeRTOS SystemView Tracing`` 中选择 Pro 或 App CPU。
+3. 想要通过 UART 接口进行实时跟踪，请首先在 ``Component config`` > ``ESP Trace Configuration`` > ``Application Level Tracing`` 中选择 UART 作为目标传输方式。然后在 ``Component config`` > ``ESP Trace Configuration`` > ``SEGGER SystemView`` 中选择 Pro 或 App CPU。
 
 OpenOCD SystemView 跟踪命令选项
 """""""""""""""""""""""""""""""
@@ -447,6 +480,22 @@ Start 子命令语法：
     OpenOCD 的 telnet 命令行在跟踪停止前会无法使用，要停止跟踪，请在 OpenOCD 窗口使用 Ctrl+C 快捷键。
 
 
+多核 SystemView 跟踪命令
+""""""""""""""""""""""""""
+
+对于支持多核跟踪的 SystemView 3.60 及更高版本，请使用 ``esp sysview_mcore`` 命令。此命令与 ``esp sysview`` 相同，但使用官方 SEGGER SystemView 多核格式。所有核心的跟踪数据都保存在同一文件中，可在 SEGGER SystemView v3.60 或更高版本中打开。
+
+命令使用示例：
+
+.. highlight:: none
+
+::
+
+    esp sysview_mcore start file://heap_log_mcore.SVDat
+
+有关详细的命令语法和选项，请参考前文所述的 ``esp sysview`` 命令，因为 ``esp sysview_mcore`` 支持相同的参数。
+
+
 数据可视化
 """"""""""
 
@@ -454,9 +503,19 @@ Start 子命令语法：
 
 .. only:: SOC_HP_CPU_HAS_MULTIPLE_CORES
 
-    遗憾的是，SystemView 不支持从多个核心进行跟踪。所以当使用 JTAG 跟踪双核模式下的 {IDF_TARGET_NAME} 时会生成两个文件：一个用于 PRO CPU，另一个用于 APP CPU。用户可以将每个文件加载到工具中单独分析。使用 UART 进行跟踪时，用户可以在 menuconfig Pro 或 App 中点击 ``Component config`` > ``Application Level Tracing`` > ``FreeRTOS SystemView Tracing`` 并选择要跟踪的 CPU。
+    **多核跟踪**
 
-在工具中单独分析每个核的跟踪数据是比较棘手的，但是 Eclipse 提供了 *Impulse* 插件，该插件可以加载多个跟踪文件，并且可以在同一视图中检查来自两个内核的事件。此外，与免费版的 SystemView 相比，此插件没有 1,000,000 个事件的限制。
+    SystemView 3.60 及更高版本支持多核心进行跟踪。对于多核跟踪，使用 ``esp sysview_mcore`` 命令可以生成与 SystemView 多核格式兼容的单个文件：
+
+    ::
+
+        esp sysview_mcore start file://heap_log_mcore.SVDat
+
+    此命令将创建一个单独的跟踪文件，可以直接加载到 SystemView 3.60+ 中进行多核可视化。
+
+    **注意：** SystemView 3.60 之前的版本不支持多核跟踪。对于旧版本，当使用 JTAG 接口跟踪双核模式下的 {IDF_TARGET_NAME} 时会生成两个文件：一个用于 PRO CPU，另一个用于 APP CPU。用户可将每个文件载入不同的工具实例。使用 UART 进行跟踪时，用户可以在 menuconfig 中选择 ``Component config`` > ``ESP Trace Configuration`` > ``SEGGER SystemView`` 来指定需要跟踪的 CPU（Pro 或 App）。
+
+    对于旧版本的 SystemView，在不同的实例中分别分析每个核的数据可能较为不便。另一个选择是使用名为 *Impulse* 的 Eclipse 插件，该插件可同时加载多个跟踪文件，实现在同一视图中检查来自两个核心的事件。与 SystemView 免费版相比，此插件还不受 100 万事件数量的限制。
 
 关于如何安装、配置 Impulse 并使用它来可视化来自单个核心的跟踪数据，请参阅 `官方教程 <https://mcuoneclipse.com/2016/07/31/impulse-segger-systemview-in-eclipse/>`_ 。
 
@@ -484,7 +543,6 @@ Start 子命令语法：
     .. note::
 
         如果你在可视化方面遇到了问题（未显示数据或者缩放操作异常），可以尝试删除当前的信号层次结构，再双击必要的文件或端口。Eclipse 会请求创建新的信号层次结构。
-
 
 .. _app_trace-gcov-source-code-coverage:
 

@@ -15,16 +15,37 @@ extern "C" {
 #include "SEGGER_RTT.h" // SEGGER_RTT_ESP_Flush
 #include "esp_app_trace_util.h" // ESP_APPTRACE_TMO_INFINITE
 
+/* Forward declaration for esp_trace integration */
+typedef struct esp_trace_encoder esp_trace_encoder_t;
+
+/**
+ * @brief Inject encoder handle to SEGGER RTT layer.
+ *
+ * This maintains proper architectural layering. SEGGER RTT can accesses it's transport
+ *
+ * @param encoder  Pointer to encoder instance from esp_trace
+ *
+ * @return 0 if successful, -1 if encoder is not initialized or missing required functions.
+ */
+int SEGGER_RTT_ESP_SetEncoder(esp_trace_encoder_t *encoder);
+
+/**
+ * @brief Get the encoder handle for accessing transport functions.
+ *
+ * This is used by SEGGER_SYSVIEW_Config_FreeRTOS.c to access transport lock functions.
+ *
+ * @return Pointer to encoder instance, or NULL if not initialized.
+ */
+esp_trace_encoder_t* SEGGER_SYSVIEW_GetEncoder(void);
+
 /**
  * @brief Flushes remaining data in SystemView trace buffer to host.
  *
- * @param tmo  Timeout for operation (in us). Use ESP_APPTRACE_TMO_INFINITE to wait indefinitely.
- *
  * @return ESP_OK.
  */
-static inline esp_err_t esp_sysview_flush(uint32_t tmo)
+static inline esp_err_t esp_sysview_flush(void)
 {
-    SEGGER_RTT_ESP_Flush(0, tmo);
+    SEGGER_RTT_ESP_Flush();
     return ESP_OK;
 }
 

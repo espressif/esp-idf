@@ -16,22 +16,19 @@ extern "C" {
 #endif
 
 /**
- * @brief Get custom trace initialization parameters (optional callback)
+ * @brief  Initializes application tracing module for the selected destination and configuration.
  *
- * This is an optional callback function that user applications can implement to provide
- * custom trace configuration. A weak default implementation exists in the app_trace component
- * that returns menuconfig defaults (APPTRACE_CONFIG_DEFAULT()). User applications can override
- * this by providing their own implementation.
+ * @note   Should be called before any esp_apptrace_xxx call.
  *
- * This function is called during early system initialization (before app_main) on all cores.
- *
+ * @return ESP_OK on success, otherwise see esp_err_t
  */
-esp_apptrace_config_t esp_apptrace_get_user_params(void);
+esp_err_t esp_apptrace_init(const esp_apptrace_config_t *config);
 
 /**
  * @brief Configures down buffer.
- *        @note Needs to be called before attempting to receive any data using esp_apptrace_down_buffer_get and esp_apptrace_read.
- *              This function does not protect internal data by lock.
+ *
+ * @note Needs to be called before attempting to receive any data using esp_apptrace_down_buffer_get and
+ *       esp_apptrace_read. This function does not protect internal data by lock.
  *
  * @param buf Address of buffer to use for down channel (host to target) data.
  * @param size Size of the buffer.
@@ -262,8 +259,8 @@ int esp_apptrace_feof(void *stream);
 #define APPTRACE_JTAG_CONFIG_DEFAULT() {                 \
     .dest = ESP_APPTRACE_DEST_JTAG,                      \
     .dest_cfg.jtag = {0},                                \
-    .panic_flush_tmo    = CONFIG_APPTRACE_ONPANIC_HOST_FLUSH_TMO, \
-    .panic_flush_thresh = CONFIG_APPTRACE_POSTMORTEM_FLUSH_THRESH, \
+    .flush_tmo    = CONFIG_APPTRACE_ONPANIC_HOST_FLUSH_TMO, \
+    .flush_thresh = CONFIG_APPTRACE_POSTMORTEM_FLUSH_THRESH, \
 }
 #endif
 
@@ -275,13 +272,12 @@ int esp_apptrace_feof(void *stream);
         .tx_pin_num   = CONFIG_APPTRACE_UART_TX_GPIO,       \
         .rx_pin_num   = CONFIG_APPTRACE_UART_RX_GPIO,       \
         .baud_rate    = CONFIG_APPTRACE_UART_BAUDRATE,      \
-        .rx_buff_size = CONFIG_APPTRACE_UART_RX_BUFF_SIZE,  \
         .tx_buff_size = CONFIG_APPTRACE_UART_TX_BUFF_SIZE,  \
         .tx_msg_size  = CONFIG_APPTRACE_UART_TX_MSG_SIZE,   \
         .task_prio    = CONFIG_APPTRACE_UART_TASK_PRIO,     \
     },                                                      \
-    .panic_flush_tmo    = CONFIG_APPTRACE_ONPANIC_HOST_FLUSH_TMO, \
-    .panic_flush_thresh = CONFIG_APPTRACE_POSTMORTEM_FLUSH_THRESH, \
+    .flush_tmo    = CONFIG_APPTRACE_ONPANIC_HOST_FLUSH_TMO, \
+    .flush_thresh = CONFIG_APPTRACE_POSTMORTEM_FLUSH_THRESH, \
 }
 #endif
 

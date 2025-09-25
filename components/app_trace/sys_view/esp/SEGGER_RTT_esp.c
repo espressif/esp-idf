@@ -10,10 +10,13 @@
 #include "SEGGER_SYSVIEW.h"
 #include "SEGGER_SYSVIEW_Conf.h"
 
-#include "esp_app_trace.h"
 #include "esp_log.h"
 #include "esp_cpu.h"
+#include "esp_trace_port_transport.h"
+#include "esp_trace_port_encoder.h"
+#include "esp_trace_types.h"
 #include "esp_private/startup_internal.h"
+#include "adapters/adapter_encoder_sysview.h"
 
 const static char *TAG = "segger_rtt";
 
@@ -21,22 +24,27 @@ const static char *TAG = "segger_rtt";
 
 // size of down channel data buf
 #define SYSVIEW_DOWN_BUF_SIZE   32
-#define SEGGER_STOP_WAIT_TMO    1000000 //us
-#if CONFIG_APPTRACE_SV_BUF_WAIT_TMO == -1
-#define SEGGER_HOST_WAIT_TMO    ESP_APPTRACE_TMO_INFINITE
+#if CONFIG_SEGGER_SYSVIEW_BUF_WAIT_TMO == -1
+#define SEGGER_HOST_WAIT_TMO    ESP_TRACE_TMO_INFINITE
 #else
-#define SEGGER_HOST_WAIT_TMO    CONFIG_APPTRACE_SV_BUF_WAIT_TMO
+#define SEGGER_HOST_WAIT_TMO    CONFIG_SEGGER_SYSVIEW_BUF_WAIT_TMO
 #endif
 
 static uint8_t s_events_buf[SYSVIEW_EVENTS_BUF_SZ];
 static uint16_t s_events_buf_filled;
 static uint8_t s_down_buf[SYSVIEW_DOWN_BUF_SIZE];
 
-#if CONFIG_APPTRACE_SV_DEST_CPU_0 || CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
-#define APPTRACE_SV_DEST_CPU 0
-#else
-#define APPTRACE_SV_DEST_CPU 1
-#endif // CONFIG_APPTRACE_SV_DEST_CPU_0
+/**
+ * @brief Encoder reference for SEGGER RTT layer
+ *
+ * This maintains proper architectural layering:
+ * - SEGGER RTT is part of the SystemView encoder implementation
+ * - It accesses transport through the encoder's transport reference (s_encoder->tp)
+ * - NOT through global singleton (that would be a layer violation)
+ *
+ * Set by SEGGER_RTT_ESP_SetEncoder() during encoder init.
+ */
+static esp_trace_encoder_t *s_encoder = NULL;
 
 /*********************************************************************
 *
@@ -44,6 +52,80 @@ static uint8_t s_down_buf[SYSVIEW_DOWN_BUF_SIZE];
 *
 **********************************************************************
 */
+
+/*********************************************************************
+*
+*       SEGGER_RTT_ESP_SetEncoder()
+*
+*  Function description
+*    Inject encoder handle from esp_trace adapter.
+*    This allows SEGGER RTT to access transport through the encoder's
+*    transport reference, maintaining proper architectural layering.
+*
+*  Parameters
+*    encoder  Pointer to encoder instance from esp_trace
+*
+*  Return value
+*    0 if successful, -1 if encoder is not initialized or missing required functions in transport.
+*/
+int SEGGER_RTT_ESP_SetEncoder(esp_trace_encoder_t *encoder)
+{
+    /* Check if adapters have all required functions */
+    if (!encoder || !encoder->ctx ||
+            !encoder->vt->give_lock ||
+            !encoder->vt->take_lock ||
+            !encoder->tp->vt->down_buffer_config ||
+            !encoder->tp->vt->write ||
+            !encoder->tp->vt->flush_nolock ||
+            !encoder->tp->vt->read ||
+            !encoder->tp->vt->get_link_type) {
+        ESP_LOGE(TAG, "Encoder not initialized or missing required functions in transport");
+        return -1;
+    }
+
+    s_encoder = encoder;
+
+    return 0;
+}
+
+/*********************************************************************
+*
+*       SEGGER_SYSVIEW_GetEncoder()
+*
+*  Function description
+*    Returns the encoder handle for accessing transport functions.
+*    This is used by SEGGER_SYSVIEW_Config_FreeRTOS.c to access
+*    transport lock functions.
+*
+*  Parameters
+*    None
+*
+*  Return value
+*    Pointer to encoder instance, or NULL if not initialized.
+*/
+esp_trace_encoder_t* SEGGER_SYSVIEW_GetEncoder(void)
+{
+    return s_encoder;
+}
+
+/*********************************************************************
+*
+*       SEGGER_RTT_ESP_GetDestCpu()
+*
+*  Function description
+*    Gets the destination CPU from the encoder context.
+*
+*  Parameters
+*    None
+*
+*  Return value
+*    CPU ID (0 or 1) to trace
+*/
+static int SEGGER_RTT_ESP_GetDestCpu(void)
+{
+    sysview_encoder_ctx_t *ctx = s_encoder->ctx;
+    return ctx->dest_cpu;
+}
 
 /*********************************************************************
 *
@@ -59,20 +141,29 @@ static uint8_t s_down_buf[SYSVIEW_DOWN_BUF_SIZE];
 *  Return value
 *    None.
 */
-void SEGGER_RTT_ESP_FlushNoLock(unsigned long min_sz, unsigned long tmo)
+void SEGGER_RTT_ESP_FlushNoLock(void)
 {
     esp_err_t res;
+
+    if (!s_encoder) {
+        ESP_LOGE(TAG, "Encoder not initialized");
+        return;
+    }
+
+    esp_trace_transport_t *tp = s_encoder->tp;
+
     if (s_events_buf_filled > 0) {
-        res = esp_apptrace_write(s_events_buf, s_events_buf_filled, tmo);
+        res = tp->vt->write(tp, s_events_buf, s_events_buf_filled, SEGGER_HOST_WAIT_TMO);
         if (res != ESP_OK) {
-            ESP_LOGE(TAG, "Failed to flush buffered events (%d)!", res);
+            ESP_LOGE(TAG, "Failed to write buffered events (%d)!", res);
         }
     }
     // flush even if we failed to write buffered events, because no new events will be sent after STOP
-    res = esp_apptrace_flush_nolock(min_sz, tmo);
+    res = tp->vt->flush_nolock(tp);
     if (res != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to flush apptrace data (%d)!", res);
+        ESP_LOGE(TAG, "Failed to flush buffered events (%d)!", res);
     }
+
     s_events_buf_filled = 0;
 }
 
@@ -83,17 +174,14 @@ void SEGGER_RTT_ESP_FlushNoLock(unsigned long min_sz, unsigned long tmo)
 *  Function description
 *    Flushes buffered events.
 *
-*  Parameters
-*    min_sz  Threshold for flushing data. If current filling level is above this value, data will be flushed. JTAG destinations only.
-*    tmo     Timeout for operation (in us). Use ESP_APPTRACE_TMO_INFINITE to wait indefinitely.
 *
 *  Return value
 *    None.
 */
-void SEGGER_RTT_ESP_Flush(unsigned long min_sz, unsigned long tmo)
+void SEGGER_RTT_ESP_Flush(void)
 {
     SEGGER_SYSVIEW_LOCK();
-    SEGGER_RTT_ESP_FlushNoLock(min_sz, tmo);
+    SEGGER_RTT_ESP_FlushNoLock();
     SEGGER_SYSVIEW_UNLOCK();
 }
 
@@ -116,12 +204,12 @@ void SEGGER_RTT_ESP_Flush(unsigned long min_sz, unsigned long tmo)
 */
 unsigned SEGGER_RTT_ReadNoLock(unsigned BufferIndex, void* pData, unsigned BufferSize)
 {
-    uint32_t size = BufferSize;
-    esp_err_t res = esp_apptrace_read(pData, &size, 0);
-    if (res != ESP_OK) {
+    if (!s_encoder) {
         return 0;
     }
-    return size;
+    size_t size = BufferSize;
+    esp_err_t res = s_encoder->tp->vt->read(s_encoder->tp, pData, &size, 0);
+    return res != ESP_OK ? 0 : size;
 }
 
 /*********************************************************************
@@ -150,12 +238,18 @@ unsigned SEGGER_RTT_ReadNoLock(unsigned BufferIndex, void* pData, unsigned Buffe
 */
 unsigned SEGGER_RTT_WriteSkipNoLock(unsigned BufferIndex, const void* pBuffer, unsigned NumBytes)
 {
+    if (!s_encoder) {
+        return 0;  // Encoder is not initialized
+    }
+
+    esp_trace_transport_t *tp = s_encoder->tp;
     uint8_t *pbuf = (uint8_t *)pBuffer;
     uint8_t event_id = *pbuf;
 
-    if (esp_apptrace_get_destination() == ESP_APPTRACE_DEST_UART) {
+    if (tp->vt->get_link_type(tp) == ESP_TRACE_LINK_UART) {
+        int dest_cpu = SEGGER_RTT_ESP_GetDestCpu();
         if (
-            (APPTRACE_SV_DEST_CPU != esp_cpu_get_core_id()) &&
+            (dest_cpu != esp_cpu_get_core_id()) &&
             (
                 (event_id == SYSVIEW_EVTID_ISR_ENTER) ||
                 (event_id == SYSVIEW_EVTID_ISR_EXIT) ||
@@ -185,7 +279,7 @@ unsigned SEGGER_RTT_WriteSkipNoLock(unsigned BufferIndex, const void* pBuffer, u
         ESP_LOGE(TAG, "Too large event %u bytes!", NumBytes);
         return 0;
     }
-    if (esp_apptrace_get_destination() == ESP_APPTRACE_DEST_JTAG) {
+    if (tp->vt->get_link_type(tp) == ESP_TRACE_LINK_DEBUG_PROBE) {
         if (esp_cpu_get_core_id()) { // dual core specific code
             // use the highest - 1 bit of event ID to indicate core ID
             // the highest bit can not be used due to event ID encoding method
@@ -199,7 +293,7 @@ unsigned SEGGER_RTT_WriteSkipNoLock(unsigned BufferIndex, const void* pBuffer, u
 
         if (s_events_buf_filled + NumBytes > SYSVIEW_EVENTS_BUF_SZ) {
 
-            esp_err_t res = esp_apptrace_write(s_events_buf, s_events_buf_filled, SEGGER_HOST_WAIT_TMO);
+            esp_err_t res = tp->vt->write(tp, s_events_buf, s_events_buf_filled, SEGGER_HOST_WAIT_TMO);
             if (res != ESP_OK) {
                 return 0; // skip current data buffer only, accumulated events are kept
             }
@@ -209,8 +303,8 @@ unsigned SEGGER_RTT_WriteSkipNoLock(unsigned BufferIndex, const void* pBuffer, u
     memcpy(&s_events_buf[s_events_buf_filled], pBuffer, NumBytes);
     s_events_buf_filled += NumBytes;
 
-    if (esp_apptrace_get_destination() == ESP_APPTRACE_DEST_UART) {
-        esp_err_t res = esp_apptrace_write(pBuffer, NumBytes, SEGGER_HOST_WAIT_TMO);
+    if (tp->vt->get_link_type(tp) == ESP_TRACE_LINK_UART) {
+        esp_err_t res = tp->vt->write(tp, pBuffer, NumBytes, SEGGER_HOST_WAIT_TMO);
         if (res != ESP_OK) {
             return 0; // skip current data buffer only, accumulated events are kept
         }
@@ -218,7 +312,7 @@ unsigned SEGGER_RTT_WriteSkipNoLock(unsigned BufferIndex, const void* pBuffer, u
     }
 
     if (event_id == SYSVIEW_EVTID_TRACE_STOP) {
-        SEGGER_RTT_ESP_FlushNoLock(0, SEGGER_STOP_WAIT_TMO);
+        SEGGER_RTT_ESP_FlushNoLock();
     }
     return NumBytes;
 }
@@ -281,20 +375,8 @@ int SEGGER_RTT_ConfigUpBuffer(unsigned BufferIndex, const char* sName, void* pBu
 */
 int SEGGER_RTT_ConfigDownBuffer(unsigned BufferIndex, const char* sName, void* pBuffer, unsigned BufferSize, unsigned Flags)
 {
-    return esp_apptrace_down_buffer_config(s_down_buf, sizeof(s_down_buf));
+    if (!s_encoder) {
+        return -1;
+    }
+    return s_encoder->tp->vt->down_buffer_config(s_encoder->tp, s_down_buf, sizeof(s_down_buf));
 }
-
-/*************************** Init hook ****************************
- *
- * This init function is placed here because this port file will be linked whenever SystemView is used.
- * It is used to initialize SystemView and app trace configuration by the init hook function.
- * Otherwise, SystemView and app trace initialization needs to be done later in the app_main.
- */
-ESP_SYSTEM_INIT_FN(sysview_early_init, SECONDARY, BIT(0), 120)
-{
-    esp_apptrace_set_header_size(ESP_APPTRACE_HEADER_SIZE_16);
-    SEGGER_SYSVIEW_Conf();
-
-    return ESP_OK;
-}
-/*************************** End of file ****************************/
