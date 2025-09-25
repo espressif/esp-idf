@@ -48,6 +48,10 @@
 #include "task.h"            /* Required for TaskHandle_t, tskNO_AFFINITY, and vTaskStartScheduler */
 #include "port_systick.h"
 #include "esp_cpu.h"
+#include <xtensa/hal.h>             /* required for xthal_get_ccount() */
+#if CONFIG_FREERTOS_RUN_TIME_STATS_USING_ESP_TIMER
+#include "esp_timer.h"
+#endif
 #include "esp_memory_utils.h"
 
 _Static_assert(portBYTE_ALIGNMENT == 16, "portBYTE_ALIGNMENT must be set to 16");
@@ -659,3 +663,18 @@ void vPortTCBPreDeleteHook( void *pxTCB )
         vPortCleanUpCoprocArea( pxTCB );
     #endif /* XCHAL_CP_NUM > 0 */
 }
+
+/* ------------------------------------------------ Run Time Stats ------------------------------------------------- */
+
+#if ( CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS )
+
+configRUN_TIME_COUNTER_TYPE xPortGetRunTimeCounterValue( void )
+{
+#ifdef CONFIG_FREERTOS_RUN_TIME_STATS_USING_ESP_TIMER
+    return (configRUN_TIME_COUNTER_TYPE) esp_timer_get_time();
+#else // Uses CCOUNT
+    return (configRUN_TIME_COUNTER_TYPE) xthal_get_ccount();
+#endif // CONFIG_FREERTOS_RUN_TIME_STATS_USING_ESP_TIMER
+}
+
+#endif /* CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS */

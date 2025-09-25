@@ -34,6 +34,10 @@
 #include "esp_freertos_hooks.h"
 #include "esp_intr_alloc.h"
 #include "esp_memory_utils.h"
+#include <xtensa/hal.h>             /* required for xthal_get_ccount() */
+#if CONFIG_FREERTOS_RUN_TIME_STATS_USING_ESP_TIMER
+#include "esp_timer.h"
+#endif
 #ifdef CONFIG_FREERTOS_SYSTICK_USES_SYSTIMER
 #include "soc/periph_defs.h"
 #include "soc/system_reg.h"
@@ -695,3 +699,18 @@ void vApplicationPassiveIdleHook( void )
     esp_vApplicationIdleHook(); //Run IDF style hooks
 }
 #endif // CONFIG_FREERTOS_USE_PASSIVE_IDLE_HOOK
+
+/* ------------------------------------------------ Run Time Stats ------------------------------------------------- */
+
+#if ( CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS )
+
+configRUN_TIME_COUNTER_TYPE xPortGetRunTimeCounterValue( void )
+{
+#ifdef CONFIG_FREERTOS_RUN_TIME_STATS_USING_ESP_TIMER
+    return (configRUN_TIME_COUNTER_TYPE) esp_timer_get_time();
+#else // Uses CCOUNT
+    return (configRUN_TIME_COUNTER_TYPE) xthal_get_ccount();
+#endif // CONFIG_FREERTOS_RUN_TIME_STATS_USING_ESP_TIMER
+}
+
+#endif /* CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS */

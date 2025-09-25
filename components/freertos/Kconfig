@@ -299,7 +299,7 @@ menu "FreeRTOS"
 
         choice FREERTOS_RUN_TIME_COUNTER_TYPE
             prompt "configRUN_TIME_COUNTER_TYPE"
-            depends on FREERTOS_GENERATE_RUN_TIME_STATS && !FREERTOS_SMP
+            depends on FREERTOS_GENERATE_RUN_TIME_STATS
             default FREERTOS_RUN_TIME_COUNTER_TYPE_U32
             help
                 Sets the data type used for the FreeRTOS run time stats. A larger data type can be used to reduce the
