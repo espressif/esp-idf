@@ -1027,3 +1027,55 @@ function(fail_at_build_time target_name message_line0)
                 ${CMAKE_COMMAND} -P ${idf_path}/tools/cmake/scripts/fail.cmake
         VERBATIM)
 endfunction()
+
+#[[
+    __preprocess_linker_script(<script_in> <script_out>)
+
+    *script_in[in]*
+
+        Path to the linker script that needs preprocessing.
+
+    *script_out[out]*
+
+        Path where the preprocessed linker script will be saved.
+
+    Run the C preprocessor on ``script_in`` and store the result in
+    ``script_out``.
+#]]
+function(__preprocess_linker_script script_in script_out)
+    idf_build_get_property(sdkconfig_header __SDKCONFIG_HEADER)
+    idf_build_get_property(idf_path IDF_PATH)
+    idf_build_get_property(config_dir CONFIG_DIR)
+    idf_build_get_property(idf_target IDF_TARGET)
+
+    # This approach is not ideal, but it is the current method used in cmakev1
+    # for the esp_system component. The linker script files for specific
+    # targets within the esp_system component include the ld.common file. This
+    # adds the ld.common directory to the search path for the C preprocessor.
+    # This method works for the specific directory layout of esp_common, but if
+    # other components with different layouts adopt this approach, adjustments
+    # will be necessary. It might be better to include the files using relative
+    # paths in the linker scripts.
+    get_filename_component(script_parent_dir "${script_in}" DIRECTORY)
+    get_filename_component(script_parent_name "${script_parent_dir}" NAME)
+    set(extra_cflags "")
+    if(script_parent_name STREQUAL idf_target)
+        get_filename_component(dir_to_include "${script_parent_dir}" DIRECTORY)
+        set(extra_cflags "-I\"${dir_to_include}\"")
+    endif()
+
+    set(linker_script_generator "${idf_path}/tools/cmake/linker_script_preprocessor.cmake")
+
+    add_custom_command(
+        OUTPUT ${script_out}
+        COMMAND ${CMAKE_COMMAND}
+            "-DCC=${CMAKE_C_COMPILER}"
+            "-DSOURCE=${script_in}"
+            "-DTARGET=${script_out}"
+            "-DCFLAGS=-I\"${config_dir}\" ${extra_cflags}"
+            -P "${linker_script_generator}"
+        MAIN_DEPENDENCY "${script_in}"
+        DEPENDS "${sdkconfig_header}"
+        COMMENT "Preprocessing linker script ${script_in} -> ${script_out}"
+        VERBATIM)
+endfunction()
