@@ -190,7 +190,12 @@ endif()
 
 if(CONFIG_ESP32P4_SELECTS_REV_LESS_V3)
     if(CMAKE_C_COMPILER_ID MATCHES "GNU")
-        idf_build_set_property(COMPILE_OPTIONS "-mespv-spec=2p1" APPEND)
+        # 1. Set xespv2p1 explicitly to override the default xespv2p2.
+        # 2. Remove zc* extensions:
+        #    The ESP32-P4 has always supported the zc* extensions,
+        #    but revisions earlier than v3.0 are affected by hardware issue DIG-661
+        #    and lack the mintthresh_csr register needed for the workaround.
+        idf_build_set_property(COMPILE_OPTIONS "-march=rv32imafc_zicsr_zifencei_zaamo_zalrsc_xesploop_xespv2p1" APPEND)
     endif()
 elseif(CONFIG_IDF_TARGET_ESP32P4)
     if(CMAKE_C_COMPILER_ID MATCHES "Clang") # TODO: LLVM-478
