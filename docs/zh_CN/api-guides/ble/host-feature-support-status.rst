@@ -93,7 +93,7 @@ ESP 主机主要功能支持状态
     * -
       - Enhanced Attribute Protocol
       - |unsupported|
-      - |developing202412|
+      - |experimental|
     * -
       - LE Power Control
       - |unsupported|
@@ -112,7 +112,7 @@ ESP 主机主要功能支持状态
       - |supported|
     * - .. centered:: |5.4|
       - Advertising Coding Selection
-      - |unsupported|
+      - |experimental|
       - |supported|
     * -
       - Encrypted Advertising Data
@@ -120,10 +120,34 @@ ESP 主机主要功能支持状态
       - |experimental|
     * -
       - LE GATT Security Levels Characteristic
-      - |unsupported|
-      - |developing202412|
+      - |experimental|
+      - |experimental|
     * -
       - Periodic Advertising with Responses
+      - |experimental|
+      - |experimental|
+    * - .. centered:: |6.0|
+      - Channel Sounding
+      - |experimental|
+      - |unsupported|
+    * -
+      - LL Extended Feature Set
+      - |unsupported|
+      - |unsupported|
+    * -
+      - Decision-Based Advertising Filtering
+      - |unsupported|
+      - |unsupported|
+    * -
+      - Enhancements for ISOAL
+      - |unsupported|
+      - |unsupported|
+    * -
+      - Monitoring Advertisers
+      - |unsupported|
+      - |unsupported|
+    * -
+      - Frame Space Update
       - |unsupported|
       - |unsupported|
 
@@ -137,8 +161,6 @@ ESP 主机主要功能支持状态
 
 
 .. |supported| image:: ../../../_static/ble/feature_status/supported.svg
-   :class: align-center
-.. |developing202412| image:: ../../../_static/ble/feature_status/developing202412.svg
    :class: align-center
 .. |unsupported| image:: ../../../_static/ble/feature_status/unsupported.svg
    :class: align-center
@@ -157,3 +179,4 @@ ESP 主机主要功能支持状态
 .. |5.2| replace:: `5.2 <https://www.bluetooth.com/specifications/specs/core-specification-5-2/>`__
 .. |5.3| replace:: `5.3 <https://www.bluetooth.com/specifications/specs/core-specification-5-3/>`__
 .. |5.4| replace:: `5.4 <https://www.bluetooth.com/specifications/specs/core-specification-5-4/>`__
+.. |6.0| replace:: `6.0 <https://www.bluetooth.com/specifications/specs/core-specification-6-0/>`__

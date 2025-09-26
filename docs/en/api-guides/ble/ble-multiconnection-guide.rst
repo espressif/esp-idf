@@ -58,6 +58,6 @@ Note
    .. |max_nimble_connections| replace:: 70
 
 .. only:: esp32c6
-   
+
    .. |max_bluedroid_connections| replace:: 50
    .. |max_nimble_connections| replace:: 70
