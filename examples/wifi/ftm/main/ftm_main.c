@@ -571,7 +571,6 @@ static int wifi_cmd_ftm(int argc, char **argv)
     wifi_ftm_initiator_cfg_t ftmi_cfg = {
         .frm_count = 32,
         .burst_period = 2,
-        .use_get_report_api = true,
     };
 
     if (nerrors != 0) {
