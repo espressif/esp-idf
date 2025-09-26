@@ -1258,7 +1258,7 @@ menu "Extra Features"
 
     config BT_NIMBLE_STATIC_PASSKEY
         bool "Enable support for Static Passkey"
-        default y
+        default n
         depends on BT_NIMBLE_ENABLED && BT_NIMBLE_SECURITY_ENABLE
         help
             Enable support for user defined static passkey for SMP
