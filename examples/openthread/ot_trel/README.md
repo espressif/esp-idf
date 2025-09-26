@@ -44,7 +44,7 @@ Now you'll get an OpenThread command line shell.
 
 The `help` command will print all of the supported commands.
 ```bash
->  help
+esp32s3> ot help
 I(7058) OPENTHREAD:[INFO]-CLI-----: execute command: help
 bbr
 bufferinfo
@@ -78,51 +78,51 @@ To run this example, at least two ESP32-S3 boards flashed with this ot_trel exam
 
 On the first device, run the following commands:
 ```bash
-> factoryreset
+esp32s3> ot factoryreset
 ... # the device will reboot
 
-> dataset init new
+esp32s3> ot dataset init new
 Done
-> dataset commit active
+esp32s3> ot dataset commit active
 Done
-> ifconfig up
+esp32s3> ot ifconfig up
 Done
-> thread start
+esp32s3> ot thread start
 Done
 
 # After some seconds
 
-> state
+esp32s3> ot state
 leader
 Done
 ```
 Now the first device has formed a Thread network as a leader. Get some information which will be used in next steps:
 ```bash
-> ipaddr
+esp32s3> ot ipaddr
 fdde:ad00:beef:0:0:ff:fe00:fc00
 fdde:ad00:beef:0:0:ff:fe00:8000
 fdde:ad00:beef:0:a7c6:6311:9c8c:271b
 fe80:0:0:0:5c27:a723:7115:c8f8
 
 # Get the Active Dataset
-> dataset active -x
+esp32s3> ot dataset active -x
 0e080000000000010000000300001835060004001fffe00208fe7bb701f5f1125d0708fd75cbde7c6647bd0510b3914792d44f45b6c7d76eb9306eec94030f4f70656e5468726561642d35383332010258320410e35c581af5029b054fc904a24c2b27700c0402a0fff8
 ```
 
 On the second device, set the active dataset from leader, and start Thread interface:
 ```bash
-> factoryreset
+esp32s3> ot factoryreset
 ... # the device will reboot
 
-> dataset set active 0e080000000000010000000300001835060004001fffe00208fe7bb701f5f1125d0708fd75cbde7c6647bd0510b3914792d44f45b6c7d76eb9306eec94030f4f70656e5468726561642d35383332010258320410e35c581af5029b054fc904a24c2b27700c0402a0fff8
-> ifconfig up
+esp32s3> ot dataset set active 0e080000000000010000000300001835060004001fffe00208fe7bb701f5f1125d0708fd75cbde7c6647bd0510b3914792d44f45b6c7d76eb9306eec94030f4f70656e5468726561642d35383332010258320410e35c581af5029b054fc904a24c2b27700c0402a0fff8
+esp32s3> ot ifconfig up
 Done
-> thread start
+esp32s3> ot thread start
 Done
 
 # After some seconds
 
-> state
+esp32s3> ot state
 router  # child is also a valid state
 Done
 ```
