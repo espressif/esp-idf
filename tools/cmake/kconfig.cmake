@@ -253,6 +253,9 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
     endif()
 
     # Generate the menuconfig target
+    # WARNING: If you change anything here, please ensure that only the necessary files are touched!
+    # If unnecessary files (those not affected by the change from menuconfig) are touched
+    # (their timestamp changed), it will cause unnecessary rebuilds of the whole project!
     add_custom_target(menuconfig
         ${menuconfig_depends}
         # create any missing config file, with defaults if necessary
@@ -263,7 +266,7 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
         --env "IDF_ENV_FPGA=${idf_env_fpga}"
         --env "IDF_INIT_VERSION=${idf_init_version}"
         --dont-write-deprecated
-        ${kconfgen_output_options}
+        --output config ${sdkconfig} # Do NOT regenerate the rest of the config files!
         COMMAND ${TERM_CHECK_CMD}
         COMMAND ${CMAKE_COMMAND} -E env
         "COMPONENT_KCONFIGS_SOURCE_FILE=${kconfigs_path}"
@@ -275,8 +278,8 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
         "IDF_INIT_VERSION=${idf_init_version}"
         ${MENUCONFIG_CMD} ${root_kconfig}
         USES_TERMINAL
-        # additional run of kconfgen esures that the deprecated options will be inserted into sdkconfig (for backward
-        # compatibility)
+        # additional run of kconfgen ensures that the deprecated options will be inserted into config files
+        # (for backward compatibility)
         COMMAND ${kconfgen_basecommand}
         --env "IDF_TARGET=${idf_target}"
         --env "IDF_TOOLCHAIN=${idf_toolchain}"
