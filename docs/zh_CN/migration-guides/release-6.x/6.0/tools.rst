@@ -14,9 +14,9 @@
 
 gdbgui 自 v0.14 起不再支持 Windows 操作系统。由于其他兼容性问题，Windows 下需使用 Python 3.10，并配合特定依赖版本。可通过以下命令安装已知可用的 gdbgui 及其所需版本的依赖：
 
-```bash
-pipx install "gdbgui==0.13.2.0" "pygdbmi<=0.9.0.2" "python-socketio<5" "jinja2<3.1" "itsdangerous<2.1"
-```
+.. code-block:: bash
+
+    pipx install "gdbgui==0.13.2.0" "pygdbmi<=0.9.0.2" "python-socketio<5" "jinja2<3.1" "itsdangerous<2.1"
 
 如果操作系统为 Linux 或 macOS，可以使用 Python 3.11 或 3.12 以及 gdbgui v0.15.2.0。
 
@@ -53,3 +53,35 @@ CMake 版本升级
 如果无法升级操作系统，可以使用以下命令安装推荐的 CMake 版本：``./tools/idf_tools.py install cmake``。
 
 此变更影响所有使用系统自带 CMake 或自定义 CMake 的 ESP-IDF 用户。
+
+移除 ``idf.py size --legacy`` 选项
+-------------------------------------
+
+``idf.py size`` 命令的 ``--legacy`` 参数已被移除，因为旧版实现已不再受支持。``ESP_IDF_SIZE_LEGACY`` 环境变量也随之失效。如需继续使用旧版选项，请使用 ESP-IDF 5.5 或更早版本。对于 ESP-IDF v6.0 及更高版本，请直接将 ``idf.py size --legacy`` 替换为 ``idf.py size``。若遇到 esp-idf-size 版本问题，请运行安装脚本更新至正确版本。
+
+更改 ``idf.py size --format json`` 为 ``--format json2``
+------------------------------------------------------------
+
+``--format json`` 选项已替换为 ``--format json2``。``json2`` 格式提供了更完善的结构，为每个内存区域提供明确的 ``total``、``used`` 和 ``free`` 字段，并在 ``parts`` 部分提供详细分类。迁移时，请将 ``idf.py size --format json`` 替换为 ``idf.py size --format json2``。
+
+- **旧格式 (json)**：扁平结构，内存类型字段直接列出，如 ``"dram_data": 9192, "iram_text": 43295``。
+- **新格式 (json2)**：分层结构，包含一个 ``layout`` 数组来表示内存区域：
+
+    .. code-block:: json
+
+        {
+            "version": "1.1",
+            "layout": [
+                {
+                    "name": "DRAM",
+                    "total": 180736,
+                    "used": 11344,
+                    "free": 169392,
+                    "parts": {
+                        ".data": {"size": 9192},
+                        ".bss": {"size": 2152}
+                    }
+                }
+            ]
+        }
+
