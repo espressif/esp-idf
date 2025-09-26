@@ -741,7 +741,7 @@ TEST_CASE("I2S_loopback_test", "[i2s]")
     TEST_ESP_OK(i2s_del_channel(rx_handle));
 }
 
-#if SOC_I2S_NUM > 1
+#if SOC_I2S_NUM > 1 && !CONFIG_ESP32P4_SELECTS_REV_LESS_V3
 TEST_CASE("I2S_master_write_slave_read_test", "[i2s]")
 {
     i2s_chan_handle_t tx_handle;
@@ -907,8 +907,8 @@ TEST_CASE("I2S_default_PLL_clock_test", "[i2s]")
     TEST_ESP_OK(i2s_new_channel(&chan_cfg, NULL, &rx_handle));
     TEST_ESP_OK(i2s_channel_init_std_mode(rx_handle, &std_cfg));
 
-#if CONFIG_IDF_TARGET_ESP32P4 && CONFIG_ESP_REV_MIN_FULL >= 300
-    std_cfg.clk_cfg.clk_src = I2S_CLK_SRC_PLL_160M;
+#ifdef I2S_LL_DEFAULT_CLK_SRC
+    std_cfg.clk_cfg.clk_src = I2S_LL_DEFAULT_CLK_SRC;
 #endif
     i2s_test_common_sample_rate(rx_handle, &std_cfg.clk_cfg);
 #if SOC_I2S_SUPPORTS_XTAL
