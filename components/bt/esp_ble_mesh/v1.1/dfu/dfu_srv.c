@@ -530,8 +530,13 @@ static void blob_end(struct bt_mesh_blob_srv *b, uint64_t id, bool success)
     BT_DBG("success: %u", success);
 
     if (!success) {
-        srv->update.phase = BLE_MESH_DFU_PHASE_TRANSFER_ERR;
+        /**
+         * Changed by Espressif,
+         * The xfer_failed must be executed before updating the state;
+         * otherwise, the end_cb inside xfer_failed will never be delivered.
+         */
         xfer_failed(srv);
+        srv->update.phase = BLE_MESH_DFU_PHASE_TRANSFER_ERR;
         return;
     }
 
