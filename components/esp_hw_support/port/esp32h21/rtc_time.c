@@ -205,10 +205,7 @@ uint64_t rtc_time_slowclk_to_us(uint64_t rtc_cycles, uint32_t period)
 
 uint64_t rtc_time_get(void)
 {
-    ESP_EARLY_LOGW(TAG, "rtc_timer has not been implemented yet");
-    return 0;
-    // TODO: [ESP32H21] IDF-11512
-    // return lp_timer_hal_get_cycle_count();
+    return lp_timer_hal_get_cycle_count();
 }
 
 uint32_t rtc_clk_freq_cal(uint32_t cal_val)

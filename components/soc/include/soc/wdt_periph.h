@@ -20,7 +20,7 @@ extern "C" {
 /* The value that needs to be written to TIMG_WDT_WKEY to write-enable the wdt registers */
 #define TIMG_WDT_WKEY_VALUE 0x50D83AA1
 
-#if SOC_MWDT_SUPPORT_SLEEP_RETENTION
+#if SOC_MWDT_SUPPORT_SLEEP_RETENTION && SOC_PAU_SUPPORTED
 typedef struct {
     const regdma_entries_config_t *link_list;
     uint32_t link_num;

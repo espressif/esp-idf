@@ -349,7 +349,7 @@ static IRAM_ATTR uint32_t modem_clock_get_module_deps(periph_module_t module)
 #define ICG_NOGATING_SLEEP  (BIT(PMU_HP_ICG_MODEM_CODE_SLEEP))
 #define ICG_NOGATING_MODEM  (BIT(PMU_HP_ICG_MODEM_CODE_MODEM))
 
-#if !CONFIG_IDF_TARGET_ESP32H2
+#if SOC_PM_SUPPORT_PMU_MODEM_STATE
 static const DRAM_ATTR uint32_t initial_gating_mode[MODEM_CLOCK_DOMAIN_MAX] = {
     [MODEM_CLOCK_DOMAIN_MODEM_APB]      = ICG_NOGATING_ACTIVE | ICG_NOGATING_MODEM,
     [MODEM_CLOCK_DOMAIN_MODEM_PERIPH]   = ICG_NOGATING_ACTIVE,
@@ -364,7 +364,7 @@ static const DRAM_ATTR uint32_t initial_gating_mode[MODEM_CLOCK_DOMAIN_MAX] = {
 };
 #endif
 
-#if !CONFIG_IDF_TARGET_ESP32H2  //TODO: PM-92
+#if SOC_PM_SUPPORT_PMU_MODEM_STATE
 static IRAM_ATTR void modem_clock_module_icg_map_init_all(void)
 {
     esp_os_enter_critical_safe(&MODEM_CLOCK_instance()->lock);
@@ -379,7 +379,7 @@ static IRAM_ATTR void modem_clock_module_icg_map_init_all(void)
 void IRAM_ATTR modem_clock_module_enable(periph_module_t module)
 {
     assert(IS_MODEM_MODULE(module));
-#if !CONFIG_IDF_TARGET_ESP32H2
+#if SOC_PM_SUPPORT_PMU_MODEM_STATE
     modem_clock_module_icg_map_init_all();
 #endif
     uint32_t deps = modem_clock_get_module_deps(module);

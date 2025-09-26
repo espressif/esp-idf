@@ -10,6 +10,7 @@
 #include <sys/lock.h>
 #include <sys/param.h>
 
+#include "sdkconfig.h"
 #include "esp_attr.h"
 #include "esp_check.h"
 #include "esp_ipc_isr.h"
@@ -18,19 +19,14 @@
 #include "esp_rom_crc.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "esp_heap_caps.h"
 #include "riscv/csr.h"
-#include "soc/soc_caps.h"
-#include "soc/intpri_reg.h"
-#include "soc/cache_reg.h"
-#include "soc/clint_reg.h"
-#include "soc/clic_reg.h"
 #include "soc/pcr_reg.h"
+#include "soc/intpri_reg.h"
+#include "soc/soc_caps.h"
 #include "soc/rtc_periph.h"
 #include "esp_private/esp_pmu.h"
 #include "esp_private/sleep_cpu.h"
 #include "esp_private/sleep_event.h"
-#include "sdkconfig.h"
 
 #include "esp32h4/rom/rtc.h"
 #include "esp32h4/rom/cache.h"

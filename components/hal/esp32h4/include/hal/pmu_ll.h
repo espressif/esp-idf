@@ -571,11 +571,11 @@ FORCE_INLINE_ATTR void pmu_ll_hp_set_memory_power_up(pmu_dev_t *hw, uint32_t fpu
     hw->power.mem_cntl.force_hp_mem_pu = fpu;
 }
 
-FORCE_INLINE_ATTR void pmu_ll_hp_set_memory_power_on_mask(pmu_dev_t *hw, uint32_t mem0_mask, uint32_t mem1_mask, uint32_t mem2_mask)
+FORCE_INLINE_ATTR void pmu_ll_hp_set_memory_power_on_mask(pmu_dev_t *hw, uint32_t mem_mask)
 {
-    hw->power.mem_mask.mem0_mask = mem0_mask;
-    hw->power.mem_mask.mem1_mask = mem1_mask;
-    hw->power.mem_mask.mem2_mask = mem2_mask;
+    hw->power.mem_mask.mem0_mask = mem_mask & BIT(0);
+    hw->power.mem_mask.mem1_mask = mem_mask & BIT(1);
+    hw->power.mem_mask.mem2_mask = mem_mask & BIT(2);
 }
 
 FORCE_INLINE_ATTR void pmu_ll_hp_set_memory_power_off_mask(pmu_dev_t *hw, uint32_t mem0_pd_mask, uint32_t mem1_pd_mask, uint32_t mem2_pd_mask)

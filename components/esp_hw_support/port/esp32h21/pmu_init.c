@@ -86,6 +86,7 @@ void pmu_hp_system_init(pmu_context_t *ctx, pmu_hp_mode_t mode, const pmu_hp_sys
     pmu_ll_hp_set_dcm_mode                     (ctx->hal->dev, mode, anlg->bias.dcm_mode);
     pmu_ll_hp_set_bias_xpd                     (ctx->hal->dev, mode, anlg->bias.xpd_bias);
     pmu_ll_hp_set_trx_xpd                      (ctx->hal->dev, mode, anlg->bias.xpd_trx);
+    pmu_ll_hp_set_discnnt_dig_rtc              (ctx->hal->dev, mode, anlg->bias.discnnt_dig_rtc);
     pmu_ll_hp_set_current_power_off            (ctx->hal->dev, mode, anlg->bias.pd_cur);
     pmu_ll_hp_set_bias_sleep_enable            (ctx->hal->dev, mode, anlg->bias.bias_sleep);
     if (mode == PMU_MODE_HP_ACTIVE) {
@@ -113,6 +114,9 @@ void pmu_hp_system_init(pmu_context_t *ctx, pmu_hp_mode_t mode, const pmu_hp_sys
     pmu_ll_imm_update_dig_icg_switch(ctx->hal->dev, true);
 
     pmu_ll_hp_set_sleep_protect_mode(ctx->hal->dev, PMU_SLEEP_PROTECT_HP_LP_SLEEP);
+
+    /* set dcdc ccm mode software enable */
+    pmu_ll_set_dcdc_ccm_sw_en(&PMU, true);
 }
 
 void pmu_lp_system_init(pmu_context_t *ctx, pmu_lp_mode_t mode, const pmu_lp_system_param_t *param)
@@ -135,6 +139,7 @@ void pmu_lp_system_init(pmu_context_t *ctx, pmu_lp_mode_t mode, const pmu_lp_sys
         pmu_ll_lp_set_dcm_vset          (ctx->hal->dev, mode, anlg->bias.dcm_vset);
         pmu_ll_lp_set_dcm_mode          (ctx->hal->dev, mode, anlg->bias.dcm_mode);
         pmu_ll_lp_set_bias_xpd          (ctx->hal->dev, mode, anlg->bias.xpd_bias);
+        pmu_ll_lp_set_discnnt_dig_rtc   (ctx->hal->dev, mode, anlg->bias.discnnt_dig_rtc);
         pmu_ll_lp_set_current_power_off (ctx->hal->dev, mode, anlg->bias.pd_cur);
         pmu_ll_lp_set_bias_sleep_enable (ctx->hal->dev, mode, anlg->bias.bias_sleep);
     }
@@ -166,6 +171,8 @@ static inline void pmu_power_domain_force_default(pmu_context_t *ctx)
 
     /* Isolate all memory banks while sleeping, avoid memory leakage current */
     pmu_ll_hp_set_memory_no_isolate     (ctx->hal->dev, 0);
+    /* Disable memory force pu for memory pd during deep sleep */
+    pmu_ll_hp_set_memory_power_up       (ctx->hal->dev, 0);
 
     pmu_ll_lp_set_power_force_power_up  (ctx->hal->dev, false);
     pmu_ll_lp_set_power_force_no_reset  (ctx->hal->dev, false);
@@ -194,6 +201,7 @@ static void pmu_hp_system_init_default(pmu_context_t *ctx)
 {
     assert(ctx);
     for (pmu_hp_mode_t mode = PMU_MODE_HP_ACTIVE; mode < PMU_MODE_HP_MAX; mode++) {
+        if (mode == PMU_MODE_HP_MODEM) continue;
         pmu_hp_system_analog_param_t analog = {};
         pmu_hp_system_param_t param = {.analog = &analog};
 
@@ -228,8 +236,12 @@ static void pmu_lp_system_init_default(pmu_context_t *ctx)
 
 void pmu_init()
 {
-    /* No peripheral reg i2c power up required on the target */
+    pmu_hp_system_init_default(PMU_instance());
+    pmu_lp_system_init_default(PMU_instance());
 
+    pmu_power_domain_force_default(PMU_instance());
+    /* No peripheral reg i2c power up required on the target */
+#if !CONFIG_IDF_ENV_FPGA
     REGI2C_WRITE_MASK(I2C_PMU, I2C_PMU_EN_I2C_RTC_DREG, 0);
     REGI2C_WRITE_MASK(I2C_PMU, I2C_PMU_EN_I2C_DIG_DREG, 0);
     REGI2C_WRITE_MASK(I2C_PMU, I2C_PMU_EN_I2C_RTC_DREG_SLP, 0);
@@ -237,22 +249,7 @@ void pmu_init()
     REGI2C_WRITE_MASK(I2C_PMU, I2C_PMU_OR_XPD_RTC_REG, 0);
     REGI2C_WRITE_MASK(I2C_PMU, I2C_PMU_OR_XPD_DIG_REG, 0);
     REGI2C_WRITE_MASK(I2C_PMU, I2C_PMU_OR_XPD_TRX, 0);
-
-    WRITE_PERI_REG(PMU_POWER_PD_TOP_CNTL_REG, 0);
-    WRITE_PERI_REG(PMU_POWER_PD_HPAON_CNTL_REG, 0);
-    WRITE_PERI_REG(PMU_POWER_PD_HPCPU_CNTL_REG, 0);
-    WRITE_PERI_REG(PMU_POWER_PD_HPPERI_RESERVE_REG, 0);
-    WRITE_PERI_REG(PMU_POWER_PD_HPWIFI_CNTL_REG, 0);
-    WRITE_PERI_REG(PMU_POWER_PD_LPPERI_CNTL_REG, 0);
-
-    pmu_hp_system_init_default(PMU_instance());
-    pmu_lp_system_init_default(PMU_instance());
-
-    pmu_power_domain_force_default(PMU_instance());
-
-    // default ccm mode
-    REG_SET_FIELD(PMU_DCM_CTRL_REG, PMU_DCDC_CCM_SW_EN, 1);
-    REG_SET_FIELD(PMU_HP_ACTIVE_BIAS_REG, PMU_HP_ACTIVE_DCDC_CCM_ENB, 0);
+#endif
 
 #if !CONFIG_IDF_ENV_FPGA
     // TODO: IDF-11548

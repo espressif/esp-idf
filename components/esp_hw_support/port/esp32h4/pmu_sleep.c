@@ -140,9 +140,6 @@ const pmu_sleep_config_t* pmu_sleep_config_default(
     config->param = *pmu_sleep_param_config_default(&param_default, &power_default, sleep_flags, adjustment, slowclk_period, fastclk_period);
 
     if (dslp) {
-        power_default.hp_sys.memory.mem0_mask = 0;
-        power_default.hp_sys.memory.mem1_mask = 0;
-        power_default.hp_sys.memory.mem2_mask = 0;
         config->param.lp_sys.analog_wait_target_cycle  = rtc_time_us_to_slowclk(PMU_LP_ANALOG_WAIT_TARGET_TIME_DSLP_US, slowclk_period);
         pmu_sleep_analog_config_t analog_default = PMU_SLEEP_ANALOG_DSLP_CONFIG_DEFAULT(sleep_flags);
         config->analog = analog_default;
@@ -177,14 +174,18 @@ static void pmu_sleep_power_init(pmu_context_t *ctx, const pmu_sleep_power_confi
     pmu_ll_hp_set_clk_power(ctx->hal->dev, HP(SLEEP), power->hp_sys.clk_power.val);
     pmu_ll_hp_set_xtal_xpd (ctx->hal->dev, HP(SLEEP), power->hp_sys.xtal.xpd_xtal);
 
+    if (dslp) {
+        pmu_ll_hp_set_memory_power_on_mask(ctx->hal->dev, 0);
+    } else {
+        pmu_ll_hp_set_memory_power_on_mask(ctx->hal->dev, 0xf);
+    }
+
     pmu_ll_lp_set_dig_power(ctx->hal->dev, LP(ACTIVE), power->lp_sys[LP(ACTIVE)].dig_power.val);
     pmu_ll_lp_set_clk_power(ctx->hal->dev, LP(ACTIVE), power->lp_sys[LP(ACTIVE)].clk_power.val);
 
     pmu_ll_lp_set_dig_power(ctx->hal->dev, LP(SLEEP), power->lp_sys[LP(SLEEP)].dig_power.val);
     pmu_ll_lp_set_clk_power(ctx->hal->dev, LP(SLEEP), power->lp_sys[LP(SLEEP)].clk_power.val);
     pmu_ll_lp_set_xtal_xpd (ctx->hal->dev, LP(SLEEP), power->lp_sys[LP(SLEEP)].xtal.xpd_xtal);
-
-    pmu_ll_hp_set_memory_power_on_mask(ctx->hal->dev, power->hp_sys.memory.mem0_mask, power->hp_sys.memory.mem1_mask, power->hp_sys.memory.mem2_mask);
 }
 
 static void pmu_sleep_digital_init(pmu_context_t *ctx, const pmu_sleep_digital_config_t *dig)
@@ -210,14 +211,8 @@ static void pmu_sleep_analog_init(pmu_context_t *ctx, const pmu_sleep_analog_con
     pmu_ll_lp_set_regulator_dbias      (ctx->hal->dev, LP(SLEEP), analog->lp_sys[LP(SLEEP)].analog.dbias);
     pmu_ll_lp_set_regulator_driver_bar (ctx->hal->dev, LP(SLEEP), analog->lp_sys[LP(SLEEP)].analog.drv_b);
 
-    pmu_ll_hp_set_discnnt_dig_rtc      (ctx->hal->dev, HP(SLEEP), analog->hp_sys.analog.discnnt_dig_rtc);
-    pmu_ll_hp_set_regulator_driver_bar (ctx->hal->dev, HP(SLEEP), analog->hp_sys.analog.drv_b);
     pmu_ll_hp_set_dcm_mode             (ctx->hal->dev, HP(SLEEP), analog->hp_sys.analog.dcm_mode);
     pmu_ll_hp_set_dcm_vset             (ctx->hal->dev, HP(SLEEP), analog->hp_sys.analog.dcm_vset);
-    pmu_ll_lp_set_discnnt_dig_rtc      (ctx->hal->dev, LP(SLEEP), analog->lp_sys[LP(SLEEP)].analog.discnnt_dig_rtc);
-    pmu_ll_lp_set_regulator_dbias      (ctx->hal->dev, LP(SLEEP), analog->lp_sys[LP(SLEEP)].analog.dbias);
-    pmu_ll_lp_set_regulator_xpd        (ctx->hal->dev, LP(SLEEP), analog->lp_sys[LP(SLEEP)].analog.xpd);
-    pmu_ll_lp_set_regulator_driver_bar (ctx->hal->dev, LP(SLEEP), analog->lp_sys[LP(SLEEP)].analog.drv_b);
     pmu_ll_lp_set_dcm_mode             (ctx->hal->dev, LP(SLEEP), analog->lp_sys[LP(SLEEP)].analog.dcm_mode);
     pmu_ll_lp_set_dcm_vset             (ctx->hal->dev, LP(SLEEP), analog->lp_sys[LP(SLEEP)].analog.dcm_vset);
 }

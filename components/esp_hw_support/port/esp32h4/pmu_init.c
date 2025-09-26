@@ -173,6 +173,7 @@ static inline void pmu_power_domain_force_default(pmu_context_t *ctx)
     }
     /* Isolate all memory banks while sleeping, avoid memory leakage current */
     pmu_ll_hp_set_memory_no_isolate     (ctx->hal->dev, 0);
+    /* Disable memory force pu for memory pd during deep sleep */
     pmu_ll_hp_set_memory_power_up       (ctx->hal->dev, 0);
 
     pmu_ll_lp_set_power_force_power_up  (ctx->hal->dev, false);

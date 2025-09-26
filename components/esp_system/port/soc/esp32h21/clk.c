@@ -185,5 +185,10 @@ void rtc_clk_select_rtc_slow_clk(void)
  */
 __attribute__((weak)) void esp_perip_clk_init(void)
 {
+    soc_rtc_slow_clk_src_t rtc_slow_clk_src = rtc_clk_slow_src_get();
+    esp_sleep_pd_domain_t pu_domain = (esp_sleep_pd_domain_t)(\
+                                                              (rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_XTAL32K) ? ESP_PD_DOMAIN_XTAL32K \
+                                                              : ESP_PD_DOMAIN_MAX);
+    esp_sleep_pd_config(pu_domain, ESP_PD_OPTION_ON);
     ESP_EARLY_LOGW(TAG, "esp_perip_clk_init() has not been implemented yet");
 }

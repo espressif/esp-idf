@@ -195,7 +195,7 @@ inline __attribute__((always_inline)) bool sleep_modem_wifi_modem_link_done(void
 
 bool modem_domain_pd_allowed(void)
 {
-#if SOC_PM_MODEM_RETENTION_BY_REGDMA
+#if SOC_PM_MODEM_RETENTION_BY_REGDMA && SOC_PAU_SUPPORTED
     const sleep_retention_module_bitmap_t inited_modules = sleep_retention_get_inited_modules();
     const sleep_retention_module_bitmap_t created_modules = sleep_retention_get_created_modules();
 
