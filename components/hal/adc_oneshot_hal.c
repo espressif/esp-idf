@@ -5,7 +5,6 @@
  */
 
 #include <sys/param.h>
-#include "sdkconfig.h"
 #include "soc/soc_caps.h"
 #include "hal/adc_oneshot_hal.h"
 #include "hal/adc_hal_common.h"
@@ -13,7 +12,7 @@
 #include "hal/assert.h"
 #include "hal/log.h"
 
-#if SOC_DAC_SUPPORTED
+#if SOC_HAS(DAC)
 #include "hal/dac_ll.h"
 #endif
 
@@ -26,11 +25,10 @@
 
 HAL_LOG_ATTR_TAG(TAG, "adc_hal");
 
-#if CONFIG_ADC_DISABLE_DAC_OUTPUT
+#if SOC_HAS(DAC)
 // To disable DAC, workarounds, see this function body to know more
 static void s_disable_dac(adc_oneshot_hal_ctx_t *hal, adc_channel_t channel);
 #endif
-
 
 void adc_oneshot_hal_init(adc_oneshot_hal_ctx_t *hal, const adc_oneshot_hal_cfg_t *config)
 {
@@ -38,6 +36,7 @@ void adc_oneshot_hal_init(adc_oneshot_hal_ctx_t *hal, const adc_oneshot_hal_cfg_
     hal->work_mode = config->work_mode;
     hal->clk_src = config->clk_src;
     hal->clk_src_freq_hz = config->clk_src_freq_hz;
+    hal->disable_dac_output = config->disable_dac_output;
 }
 
 void adc_oneshot_hal_channel_config(adc_oneshot_hal_ctx_t *hal, const adc_oneshot_hal_chan_cfg_t *config, adc_channel_t chan)
@@ -50,13 +49,15 @@ void adc_oneshot_hal_setup(adc_oneshot_hal_ctx_t *hal, adc_channel_t chan)
 {
     adc_unit_t unit = hal->unit;
 
-#ifdef CONFIG_IDF_TARGET_ESP32
+#if SOC_IS(ESP32)
     adc_ll_hall_disable(); //Disable other peripherals.
     adc_ll_amp_disable();  //Currently the LNA is not open, close it by default.
 #endif
 
-#if CONFIG_ADC_DISABLE_DAC_OUTPUT
-    s_disable_dac(hal, chan);
+#if SOC_HAS(DAC)
+    if (hal->disable_dac_output) {
+        s_disable_dac(hal, chan);
+    }
 #endif
 
 #if ADC_LL_POWER_MANAGE_SUPPORTED
@@ -171,7 +172,7 @@ bool adc_oneshot_hal_convert(adc_oneshot_hal_ctx_t *hal, int *out_raw)
 /*---------------------------------------------------------------
                     Workarounds
 ---------------------------------------------------------------*/
-#if CONFIG_ADC_DISABLE_DAC_OUTPUT
+#if SOC_HAS(DAC)
 static void s_disable_dac(adc_oneshot_hal_ctx_t *hal, adc_channel_t channel)
 {
     /**
@@ -182,7 +183,7 @@ static void s_disable_dac(adc_oneshot_hal_ctx_t *hal, adc_channel_t channel)
         dac_ll_rtc_sync_by_adc(false);
     }
 
-#if CONFIG_IDF_TARGET_ESP32
+#if SOC_IS(ESP32)
     if (hal->unit == ADC_UNIT_2) {
         if (channel == ADC_CHANNEL_8) {
             dac_ll_power_down(DAC_CHAN_0);  // the same as DAC channel 0
@@ -191,7 +192,7 @@ static void s_disable_dac(adc_oneshot_hal_ctx_t *hal, adc_channel_t channel)
             dac_ll_power_down(DAC_CHAN_1);
         }
     }
-#elif CONFIG_IDF_TARGET_ESP32S2
+#elif SOC_IS(ESP32S2)
     if (hal->unit == ADC_UNIT_2) {
         if (channel == ADC_CHANNEL_6) {
             dac_ll_power_down(DAC_CHAN_0);  // the same as DAC channel 0
@@ -204,4 +205,4 @@ static void s_disable_dac(adc_oneshot_hal_ctx_t *hal, adc_channel_t channel)
     //Nothing needed (DAC is only supported on ESP32 and ESP32S2), add this if future chips needs
 #endif
 }
-#endif
+#endif // SOC_HAS(DAC)
