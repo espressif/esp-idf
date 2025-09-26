@@ -44,7 +44,8 @@ Startup code called from the reset vector determines the boot mode by checking `
 
 .. note::
 
-    During normal boot modes the RTC watchdog is enabled when this happens, so if the process is interrupted or stalled then the watchdog will reset the SOC automatically and repeat the boot process. This may cause the SoC to strap into a new boot mode, if the strapping GPIOs have changed.
+    - During normal boot modes the RTC watchdog is enabled when this happens, so if the process is interrupted or stalled then the watchdog will reset the SOC automatically and repeat the boot process. This may cause the SoC to strap into a new boot mode, if the strapping GPIOs have changed.
+    - During the lifecycle of a chip, multiple Engineering Change Orders (ECOs) may occur. If such changes do not affect the ROM behavior (e.g., modifications limited to fixing digital logic, adjusting analog circuits, or optimizing manufacturing processes), the ROM firmware typically remains unchanged. As a result, the ROM version number printed in the boot log may be lower than the actual chip revision number.
 
 .. only:: esp32
 
