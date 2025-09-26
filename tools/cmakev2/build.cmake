@@ -527,7 +527,9 @@ function(idf_build_executable executable)
     idf_build_library(${library} COMPONENTS "${ARG_COMPONENTS}")
 
     set(executable_src ${CMAKE_BINARY_DIR}/executable_${executable}.c)
-    file(TOUCH "${executable_src}")
+    if(NOT EXISTS "${executable_src}")
+        file(TOUCH "${executable_src}")
+    endif()
     add_executable(${executable} "${executable_src}")
 
     if(ARG_NAME)
