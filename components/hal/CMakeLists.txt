@@ -94,10 +94,6 @@ elseif(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "rtc_io_hal.c")
     endif()
 
-    if(CONFIG_SOC_GPTIMER_SUPPORTED)
-        list(APPEND srcs "timer_hal.c")
-    endif()
-
     if(CONFIG_SOC_LEDC_SUPPORTED)
         list(APPEND srcs "ledc_hal.c" "ledc_hal_iram.c")
     endif()

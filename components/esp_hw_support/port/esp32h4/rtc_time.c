@@ -9,7 +9,7 @@
 #include "soc/rtc.h"
 #include "hal/lp_timer_hal.h"
 #include "hal/clk_tree_ll.h"
-#include "hal/timer_ll.h"
+#include "hal/timg_ll.h"
 #include "soc/timer_group_reg.h"
 #include "esp_rom_sys.h"
 #include "assert.h"
@@ -72,7 +72,7 @@ static uint32_t rtc_clk_cal_internal(soc_clk_freq_calculation_src_t cal_clk_sel,
     // If the clock is already on, then do nothing
     bool dig_32k_xtal_enabled = clk_ll_xtal32k_digi_is_enabled();
     if (cal_clk_sel == CLK_CAL_32K_XTAL && !dig_32k_xtal_enabled) {
-            clk_ll_xtal32k_digi_enable();
+        clk_ll_xtal32k_digi_enable();
     }
 
     bool rc_fast_enabled = clk_ll_rc_fast_is_enabled();
@@ -96,7 +96,7 @@ static uint32_t rtc_clk_cal_internal(soc_clk_freq_calculation_src_t cal_clk_sel,
          */
         REG_SET_FIELD(TIMG_RTCCALICFG2_REG(0), TIMG_RTC_CALI_TIMEOUT_THRES, 1);
         while (!GET_PERI_REG_MASK(TIMG_RTCCALICFG_REG(0), TIMG_RTC_CALI_RDY)
-               && !GET_PERI_REG_MASK(TIMG_RTCCALICFG2_REG(0), TIMG_RTC_CALI_TIMEOUT));
+                && !GET_PERI_REG_MASK(TIMG_RTCCALICFG2_REG(0), TIMG_RTC_CALI_TIMEOUT));
     }
 
     /* Prepare calibration */
@@ -120,7 +120,7 @@ static uint32_t rtc_clk_cal_internal(soc_clk_freq_calculation_src_t cal_clk_sel,
         expected_freq = SOC_CLK_RC_SLOW_FREQ_APPROX;
     }
     expected_freq /= clk_cal_divider;
-    uint32_t us_time_estimate = (uint32_t) (((uint64_t) slowclk_cycles) * MHZ / expected_freq);
+    uint32_t us_time_estimate = (uint32_t)(((uint64_t) slowclk_cycles) * MHZ / expected_freq);
     /* Start calibration */
     CLEAR_PERI_REG_MASK(TIMG_RTCCALICFG_REG(0), TIMG_RTC_CALI_START);
     SET_PERI_REG_MASK(TIMG_RTCCALICFG_REG(0), TIMG_RTC_CALI_START);
@@ -221,10 +221,15 @@ uint32_t rtc_clk_freq_to_period(uint32_t) __attribute__((alias("rtc_clk_freq_cal
 __attribute__((constructor))
 static void enable_timer_group0_for_calibration(void)
 {
+#ifndef BOOTLOADER_BUILD
     PERIPH_RCC_ACQUIRE_ATOMIC(PERIPH_TIMG0_MODULE, ref_count) {
         if (ref_count == 0) {
-            timer_ll_enable_bus_clock(0, true);
-            timer_ll_reset_register(0);
+            timg_ll_enable_bus_clock(0, true);
+            timg_ll_reset_register(0);
         }
     }
+#else
+    _timg_ll_enable_bus_clock(0, true);
+    _timg_ll_reset_register(0);
+#endif
 }

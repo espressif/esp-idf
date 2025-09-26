@@ -15,7 +15,6 @@ extern "C" {
 
 #include <stdint.h>
 #include <stdbool.h>
-#include "soc/timer_periph.h"
 #include "soc/timer_group_struct.h"
 #include "soc/pcr_struct.h"
 #include "hal/wdt_types.h"

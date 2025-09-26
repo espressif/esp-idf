@@ -5,3 +5,4 @@ components/esp_driver_gptimer/test_apps/gptimer:
     - if: SOC_GPTIMER_SUPPORTED != 1
   depends_components:
     - esp_driver_gptimer
+    - esp_hal_timg

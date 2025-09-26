@@ -10,7 +10,7 @@
 #include "soc/rtc.h"
 #include "hal/lp_timer_hal.h"
 #include "hal/clk_tree_ll.h"
-#include "hal/timer_ll.h"
+#include "hal/timg_ll.h"
 #include "soc/hp_sys_clkrst_reg.h"
 #include "soc/timer_group_reg.h"
 #include "esp_rom_sys.h"
@@ -110,7 +110,7 @@ static uint32_t rtc_clk_cal_internal(soc_clk_freq_calculation_src_t cal_clk_sel,
          */
         REG_SET_FIELD(TIMG_RTCCALICFG2_REG(0), TIMG_RTC_CALI_TIMEOUT_THRES, 1);
         while (!GET_PERI_REG_MASK(TIMG_RTCCALICFG_REG(0), TIMG_RTC_CALI_RDY)
-               && !GET_PERI_REG_MASK(TIMG_RTCCALICFG2_REG(0), TIMG_RTC_CALI_TIMEOUT));
+                && !GET_PERI_REG_MASK(TIMG_RTCCALICFG2_REG(0), TIMG_RTC_CALI_TIMEOUT));
     }
 
     /* Prepare calibration */
@@ -125,7 +125,7 @@ static uint32_t rtc_clk_cal_internal(soc_clk_freq_calculation_src_t cal_clk_sel,
     REG_SET_FIELD(TIMG_RTCCALICFG2_REG(0), TIMG_RTC_CALI_TIMEOUT_THRES, CLK_CAL_TIMEOUT_THRES(cal_clk_sel, slowclk_cycles));
     uint32_t expected_freq = CLK_CAL_FREQ_APPROX(cal_clk_sel);
     assert(expected_freq);
-    uint32_t us_time_estimate = (uint32_t) (((uint64_t) slowclk_cycles) * MHZ / expected_freq);
+    uint32_t us_time_estimate = (uint32_t)(((uint64_t) slowclk_cycles) * MHZ / expected_freq);
     /* Start calibration */
     CLEAR_PERI_REG_MASK(TIMG_RTCCALICFG_REG(0), TIMG_RTC_CALI_START);
     SET_PERI_REG_MASK(TIMG_RTCCALICFG_REG(0), TIMG_RTC_CALI_START);
@@ -233,12 +233,12 @@ static void enable_timer_group0_for_calibration(void)
 #ifndef BOOTLOADER_BUILD
     PERIPH_RCC_ACQUIRE_ATOMIC(PERIPH_TIMG0_MODULE, ref_count) {
         if (ref_count == 0) {
-            timer_ll_enable_bus_clock(0, true);
-            timer_ll_reset_register(0);
+            timg_ll_enable_bus_clock(0, true);
+            timg_ll_reset_register(0);
         }
     }
 #else
-    _timer_ll_enable_bus_clock(0, true);
-    _timer_ll_reset_register(0);
+    _timg_ll_enable_bus_clock(0, true);
+    _timg_ll_reset_register(0);
 #endif
 }

@@ -1,11 +1,8 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
-// Attention: Timer Group has 3 independent functions: General Purpose Timer, Watchdog Timer and Clock calibration.
-//            This Low Level driver only serve the General Purpose Timer function.
 
 #pragma once
 
@@ -13,99 +10,17 @@
 #include "hal/assert.h"
 #include "hal/misc.h"
 #include "hal/timer_types.h"
+#include "hal/timg_ll.h"
 #include "soc/timer_group_struct.h"
-#include "soc/pcr_struct.h"
-#include "soc/soc_etm_source.h"
+#include "soc/system_struct.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 // Get timer group register base address with giving group number
-#define TIMER_LL_GET_HW(group_id) ((group_id == 0) ? (&TIMERG0) : (&TIMERG1))
-
-// Get alarm interrupt mask with the given timer ID
+#define TIMER_LL_GET_HW(group_id) (&TIMERG0)
 #define TIMER_LL_EVENT_ALARM(timer_id) (1 << (timer_id))
-
-// Support RC_FAST as function clock
-#define TIMER_LL_FUNC_CLOCK_SUPPORT_RC_FAST 1
-
-#define TIMER_LL_ETM_TASK_TABLE(group, timer, task)                                     \
-    (uint32_t [2][1][GPTIMER_ETM_TASK_MAX]){{{                                          \
-                            [GPTIMER_ETM_TASK_START_COUNT] = TG0_TASK_CNT_START_TIMER0, \
-                            [GPTIMER_ETM_TASK_STOP_COUNT] = TG0_TASK_CNT_STOP_TIMER0,   \
-                            [GPTIMER_ETM_TASK_EN_ALARM] = TG0_TASK_ALARM_START_TIMER0,  \
-                            [GPTIMER_ETM_TASK_RELOAD] = TG0_TASK_CNT_RELOAD_TIMER0,     \
-                            [GPTIMER_ETM_TASK_CAPTURE] = TG0_TASK_CNT_CAP_TIMER0,       \
-                        }},                                                             \
-                        {{                                                              \
-                            [GPTIMER_ETM_TASK_START_COUNT] = TG1_TASK_CNT_START_TIMER0, \
-                            [GPTIMER_ETM_TASK_STOP_COUNT] = TG1_TASK_CNT_STOP_TIMER0,   \
-                            [GPTIMER_ETM_TASK_EN_ALARM] = TG1_TASK_ALARM_START_TIMER0,  \
-                            [GPTIMER_ETM_TASK_RELOAD] = TG1_TASK_CNT_RELOAD_TIMER0,     \
-                            [GPTIMER_ETM_TASK_CAPTURE] = TG1_TASK_CNT_CAP_TIMER0,       \
-                        }},                                                             \
-    }[group][timer][task]
-
-#define TIMER_LL_ETM_EVENT_TABLE(group, timer, event)                                   \
-    (uint32_t [2][1][GPTIMER_ETM_EVENT_MAX]){{{                                         \
-                            [GPTIMER_ETM_EVENT_ALARM_MATCH] = TG0_EVT_CNT_CMP_TIMER0,   \
-                        }},                                                             \
-                        {{                                                              \
-                            [GPTIMER_ETM_EVENT_ALARM_MATCH] = TG1_EVT_CNT_CMP_TIMER0,   \
-                        }},                                                             \
-    }[group][timer][event]
-
-/**
- * @brief Enable the bus clock for timer group module
- *
- * @param group_id Group ID
- * @param enable true to enable, false to disable
- */
-static inline void _timer_ll_enable_bus_clock(int group_id, bool enable)
-{
-    if (group_id == 0) {
-        PCR.timergroup0_conf.tg0_clk_en = enable;
-    } else {
-        PCR.timergroup1_conf.tg1_clk_en = enable;
-    }
-}
-
-/// use a macro to wrap the function, force the caller to use it in a critical section
-/// the critical section needs to declare the __DECLARE_RCC_RC_ATOMIC_ENV variable in advance
-#define timer_ll_enable_bus_clock(...) do { \
-        (void)__DECLARE_RCC_RC_ATOMIC_ENV; \
-        _timer_ll_enable_bus_clock(__VA_ARGS__); \
-    } while(0)
-
-/**
- * @brief Reset the timer group module
- *
- * @note  After reset the register, the "flash boot protection" will be enabled again.
- *        FLash boot protection is not used anymore after system boot up.
- *        This function will disable it by default in order to prevent the system from being reset unexpectedly.
- *
- * @param group_id Group ID
- */
-static inline void _timer_ll_reset_register(int group_id)
-{
-    if (group_id == 0) {
-        PCR.timergroup0_conf.tg0_rst_en = 1;
-        PCR.timergroup0_conf.tg0_rst_en = 0;
-        TIMERG0.wdtconfig0.wdt_flashboot_mod_en = 0;
-    } else {
-        PCR.timergroup1_conf.tg1_rst_en = 1;
-        PCR.timergroup1_conf.tg1_rst_en = 0;
-        TIMERG1.wdtconfig0.wdt_flashboot_mod_en = 0;
-    }
-}
-
-/// use a macro to wrap the function, force the caller to use it in a critical section
-/// the critical section needs to declare the __DECLARE_RCC_RC_ATOMIC_ENV variable in advance
-#define timer_ll_reset_register(...) do { \
-        (void)__DECLARE_RCC_RC_ATOMIC_ENV; \
-        _timer_ll_reset_register(__VA_ARGS__); \
-    } while(0)
 
 /**
  * @brief Set clock source for timer
@@ -116,26 +31,17 @@ static inline void _timer_ll_reset_register(int group_id)
  */
 static inline void timer_ll_set_clock_source(int group_id, uint32_t timer_num, gptimer_clock_source_t clk_src)
 {
-    (void)timer_num; // only one timer in each group
-    uint8_t clk_id = 0;
+    timg_dev_t *hw = TIMER_LL_GET_HW(group_id);
     switch (clk_src) {
+    case GPTIMER_CLK_SRC_PLL_F40M:
+        hw->hw_timer[timer_num].config.tx_use_xtal = 0;
+        break;
     case GPTIMER_CLK_SRC_XTAL:
-        clk_id = 0;
-        break;
-    case GPTIMER_CLK_SRC_RC_FAST:
-        clk_id = 1;
-        break;
-    case GPTIMER_CLK_SRC_PLL_F48M:
-        clk_id = 2;
+        hw->hw_timer[timer_num].config.tx_use_xtal = 1;
         break;
     default:
-        HAL_ASSERT(false);
+        HAL_ASSERT(false && "unsupported clock source");
         break;
-    }
-    if (group_id == 0) {
-        PCR.timergroup0_timer_clk_conf.tg0_timer_clk_sel = clk_id;
-    } else {
-        PCR.timergroup1_timer_clk_conf.tg1_timer_clk_sel = clk_id;
     }
 }
 
@@ -148,12 +54,9 @@ static inline void timer_ll_set_clock_source(int group_id, uint32_t timer_num, g
  */
 static inline void timer_ll_enable_clock(int group_id, uint32_t timer_num, bool en)
 {
-    (void)timer_num; // only one timer in each group
-    if (group_id == 0) {
-        PCR.timergroup0_timer_clk_conf.tg0_timer_clk_en = en;
-    } else {
-        PCR.timergroup1_timer_clk_conf.tg1_timer_clk_en = en;
-    }
+    (void)timer_num; // only one timer in the group
+    timg_dev_t *hw = TIMER_LL_GET_HW(group_id);
+    hw->regclk.timer_clk_is_active = en;
 }
 
 /**
@@ -210,7 +113,7 @@ static inline void timer_ll_enable_auto_reload(timg_dev_t *hw, uint32_t timer_nu
  */
 static inline void timer_ll_set_count_direction(timg_dev_t *hw, uint32_t timer_num, gptimer_count_direction_t direction)
 {
-    hw->hw_timer[timer_num].config.tx_increase = (direction == GPTIMER_COUNT_UP);
+    hw->hw_timer[timer_num].config.tx_increase = direction == GPTIMER_COUNT_UP;
 }
 
 /**
@@ -254,7 +157,7 @@ static inline void timer_ll_trigger_soft_capture(timg_dev_t *hw, uint32_t timer_
 __attribute__((always_inline))
 static inline uint64_t timer_ll_get_counter_value(timg_dev_t *hw, uint32_t timer_num)
 {
-    return ((uint64_t)hw->hw_timer[timer_num].hi.tx_hi << 32) | (hw->hw_timer[timer_num].lo.tx_lo);
+    return ((uint64_t) hw->hw_timer[timer_num].hi.tx_hi << 32) | (hw->hw_timer[timer_num].lo.tx_lo);
 }
 
 /**
@@ -268,7 +171,7 @@ __attribute__((always_inline))
 static inline void timer_ll_set_alarm_value(timg_dev_t *hw, uint32_t timer_num, uint64_t alarm_value)
 {
     hw->hw_timer[timer_num].alarmhi.tx_alarm_hi = (uint32_t)(alarm_value >> 32);
-    hw->hw_timer[timer_num].alarmlo.tx_alarm_lo = (uint32_t)alarm_value;
+    hw->hw_timer[timer_num].alarmlo.tx_alarm_lo = (uint32_t) alarm_value;
 }
 
 /**
@@ -279,10 +182,10 @@ static inline void timer_ll_set_alarm_value(timg_dev_t *hw, uint32_t timer_num, 
  * @param reload_val Reload counter value
  */
 __attribute__((always_inline))
-static inline void timer_ll_set_reload_value(timg_dev_t *hw, uint32_t timer_num, uint64_t reload_val)
+static inline void timer_ll_set_reload_value(timg_dev_t *hw, uint32_t timer_num, uint64_t load_val)
 {
-    hw->hw_timer[timer_num].loadhi.tx_load_hi = (uint32_t)(reload_val >> 32);
-    hw->hw_timer[timer_num].loadlo.tx_load_lo = (uint32_t)reload_val;
+    hw->hw_timer[timer_num].loadhi.tx_load_hi = (uint32_t)(load_val >> 32);
+    hw->hw_timer[timer_num].loadlo.tx_load_lo = (uint32_t) load_val;
 }
 
 /**
@@ -308,17 +211,6 @@ __attribute__((always_inline))
 static inline void timer_ll_trigger_soft_reload(timg_dev_t *hw, uint32_t timer_num)
 {
     hw->hw_timer[timer_num].load.tx_load = 1;
-}
-
-/**
- * @brief Enable ETM module
- *
- * @param hw Timer Group register base address
- * @param en True: enable ETM module, False: disable ETM module
- */
-static inline void timer_ll_enable_etm(timg_dev_t *hw, bool en)
-{
-    hw->regclk.etm_en = en;
 }
 
 /**
@@ -385,7 +277,7 @@ static inline void timer_ll_enable_register_clock_always_on(timg_dev_t *hw, bool
  */
 static inline volatile void *timer_ll_get_intr_status_reg(timg_dev_t *hw)
 {
-    return &hw->int_st_timers;
+    return &hw->int_st_timers.val;
 }
 
 #ifdef __cplusplus

@@ -77,8 +77,8 @@ static void test_timer_init(volatile uint32_t *arg)
     test_timer_deinit();
 
     // Enable peripheral clock and reset hardware
-    _timer_ll_enable_bus_clock(group_id, true);
-    _timer_ll_reset_register(group_id);
+    _timg_ll_enable_bus_clock(group_id, true);
+    _timg_ll_reset_register(group_id);
 
     // Select clock source and enable module clock
     // Enable the default clock source PLL_F80M
