@@ -117,6 +117,8 @@ GPIO
 
 - ``MAX_PAD_GPIO_NUM``, ``MAX_GPIO_NUM``, and ``DIG_IO_HOLD_BIT_SHIFT`` macros have been removed.
 
+- Added the :cpp:type:`esp_err_t` return type to :func:`gpio_uninstall_isr_service`.
+
 LEDC
 ----
 

@@ -117,6 +117,8 @@ GPIO
 
 - ``MAX_PAD_GPIO_NUM``、 ``MAX_GPIO_NUM`` 和 ``DIG_IO_HOLD_BIT_SHIFT`` 宏已被移除。
 
+- 为 :func:`gpio_uninstall_isr_service` 添加了 :cpp:type:`esp_err_t` 返回类型。
+
 LEDC
 ----
 

@@ -344,8 +344,11 @@ esp_err_t gpio_install_isr_service(int intr_alloc_flags);
 
 /**
   * @brief Uninstall the driver's GPIO ISR service, freeing related resources.
+  *
+  * @return
+  *     - ESP_OK Success
   */
-void gpio_uninstall_isr_service(void);
+esp_err_t gpio_uninstall_isr_service(void);
 
 /**
   * @brief Add ISR handler for the corresponding GPIO pin.
