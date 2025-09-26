@@ -80,6 +80,10 @@
 #define MBEDTLS_ECP_VERIFY_ALT
 #endif
 
+#if !SOC_HMAC_SUPPORTED
+#define MBEDTLS_MD_C
+#endif
+
 #define MBEDTLS_ENTROPY_C
 
 #endif /* ESP_TEE_MBEDTLS_CONFIG_H */
