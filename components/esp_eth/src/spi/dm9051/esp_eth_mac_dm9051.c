@@ -699,6 +699,31 @@ static esp_err_t emac_dm9051_set_peer_pause_ability(esp_eth_mac_t *mac, uint32_t
     return ESP_OK;
 }
 
+esp_err_t emac_dm9051_custom_ioctl(esp_eth_mac_t *mac, int cmd, void *data)
+{
+    emac_dm9051_t *emac = __containerof(mac, emac_dm9051_t, parent);
+
+    switch (cmd)
+    {
+    case ETH_MAC_SPI_CMD_S_EEE: {
+        ESP_RETURN_ON_FALSE(data, ESP_ERR_INVALID_ARG, TAG, "EEE set configuration invalid argument, cant' be NULL");
+        bool enable = *((bool *)data);
+        uint8_t eee_out = 0;
+        ESP_RETURN_ON_ERROR(dm9051_register_read(emac, DM9051_EEE_OUT, &eee_out), TAG, "failed to read DM9051_EEE_OUT");
+        if (enable) {
+            eee_out |= EEE_EN;
+        } else {
+            eee_out &= ~EEE_EN;
+        }
+        ESP_RETURN_ON_ERROR(dm9051_register_write(emac, DM9051_EEE_OUT, eee_out), TAG, "failed to write DM9051_EEE_OUT");
+        break;
+    }
+    default:
+        ESP_RETURN_ON_ERROR(ESP_ERR_INVALID_ARG, TAG, "unknown io command: %i", cmd);
+    }
+    return ESP_OK;
+}
+
 static esp_err_t emac_dm9051_transmit(esp_eth_mac_t *mac, uint8_t *buf, uint32_t length)
 {
     esp_err_t ret = ESP_OK;
@@ -981,6 +1006,7 @@ esp_eth_mac_t *esp_eth_mac_new_dm9051(const eth_dm9051_config_t *dm9051_config, 
     emac->parent.receive = emac_dm9051_receive;
     emac->parent.add_mac_filter = emac_dm9051_add_mac_filter;
     emac->parent.rm_mac_filter = emac_dm9051_rm_mac_filter;
+    emac->parent.custom_ioctl = emac_dm9051_custom_ioctl;
 
     if (dm9051_config->custom_spi_driver.init != NULL && dm9051_config->custom_spi_driver.deinit != NULL
             && dm9051_config->custom_spi_driver.read != NULL && dm9051_config->custom_spi_driver.write != NULL) {

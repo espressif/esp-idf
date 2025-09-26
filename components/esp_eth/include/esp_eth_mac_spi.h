@@ -112,6 +112,14 @@ typedef struct
         .read = NULL,    \
         .write = NULL    \
     }
+
+/**
+ * @brief List of SPI EMAC specific commands for ioctl API
+ *
+ */
+typedef enum {
+    ETH_MAC_SPI_CMD_S_EEE = ETH_CMD_CUSTOM_MAC_CMDS_OFFSET, /*!< Enable or disable Energy Efficient Ethernet */
+} eth_mac_spi_io_cmd_t;
 #endif // CONFIG_ETH_USE_SPI_ETHERNET
 
 #if CONFIG_ETH_SPI_ETHERNET_DM9051
