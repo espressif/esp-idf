@@ -115,6 +115,8 @@ GPIO
 
 - ``rom_`` prefix has been added to all GPIO ROM APIs in ``components/esp_rom/esp32xx/include/esp32xx/rom/gpio.h``. For example, :func:`gpio_iomux_in` is now :func:`rom_gpio_iomux_in`.
 
+- ``MAX_PAD_GPIO_NUM``, ``MAX_GPIO_NUM``, and ``DIG_IO_HOLD_BIT_SHIFT`` macros have been removed.
+
 LEDC
 ----
 
