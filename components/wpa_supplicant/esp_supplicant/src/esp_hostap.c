@@ -111,7 +111,6 @@ void *hostap_init(void)
 #endif /* CONFIG_IEEE80211W */
     if (esp_wifi_is_wpa3_compatible_mode_enabled(WIFI_IF_AP)) {
 #ifdef CONFIG_WPA3_COMPAT
-        hapd->conf->sae_pwe = SAE_PWE_HASH_TO_ELEMENT;
         auth_conf->rsn_override_omit_rsnxe = 1;
         hapd->conf->rsn_override_omit_rsnxe = 1;
         hapd->conf->rsn_override_key_mgmt = WPA_KEY_MGMT_SAE;
@@ -219,10 +218,13 @@ void *hostap_init(void)
     hapd->conf->ssid.wpa_passphrase[WIFI_PASSWORD_LEN_MAX - 1] = '\0';
     hapd->conf->max_num_sta = esp_wifi_ap_get_max_sta_conn();
     auth_conf->transition_disable = esp_wifi_ap_get_transition_disable_internal();
+
     if (authmode != WIFI_AUTH_WPA3_PSK &&
-            authmode != WIFI_AUTH_WPA2_WPA3_PSK && auth_conf->transition_disable) {
+            authmode != WIFI_AUTH_WPA2_WPA3_PSK &&
+            !esp_wifi_is_wpa3_compatible_mode_enabled(WIFI_IF_AP) &&
+            auth_conf->transition_disable) {
         auth_conf->transition_disable = 0;
-        wpa_printf(MSG_DEBUG, "overriding transition_disable config with 0 as authmode is not WPA3");
+        wpa_printf(MSG_DEBUG, "overriding transition_disable config with 0 as authmode is not WPA3/WPA2-WPA3/compatible");
     }
 
 #ifdef CONFIG_SAE

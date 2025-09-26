@@ -75,8 +75,6 @@ void wifi_init_softap(void)
 #ifdef CONFIG_ESP_WIFI_SOFTAP_SAE_SUPPORT
             .authmode = WIFI_AUTH_WPA3_PSK,
             .sae_pwe_h2e = WPA3_SAE_PWE_BOTH,
-            .pairwise_cipher = WIFI_CIPHER_TYPE_GCMP256,
-            .sae_ext = 1,
 #else /* CONFIG_ESP_WIFI_SOFTAP_SAE_SUPPORT */
             .authmode = WIFI_AUTH_WPA2_PSK,
 #endif
