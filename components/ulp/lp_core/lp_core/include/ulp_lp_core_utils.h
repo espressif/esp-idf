@@ -13,6 +13,7 @@ extern "C" {
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include "riscv/csr.h"
 #include "soc/soc_caps.h"
 
 /**
@@ -40,6 +41,16 @@ uint32_t ulp_lp_core_get_wakeup_cause(void);
  * exit from sleep or deep sleep.
  */
 void ulp_lp_core_wakeup_main_processor(void);
+
+/**
+ * @brief Retrieves the current number of CPU cycles.
+ *
+ * @return The current CPU cycle count.
+ */
+static inline uint32_t ulp_lp_core_get_cpu_cycles(void)
+{
+    return RV_READ_CSR(mcycle);
+}
 
 /**
  * @brief Makes the co-processor busy wait for a certain number of microseconds
@@ -89,6 +100,11 @@ __attribute__((__noreturn__))  void ulp_lp_core_stop_lp_core(void);
 void __attribute__((noreturn)) ulp_lp_core_abort(void);
 
 /**
+ * @brief Trigger a software interrupt on the HP core
+ */
+void ulp_lp_core_sw_intr_to_hp_trigger(void);
+
+/**
  * @brief Enable the SW triggered interrupt from the PMU
  *
  * @note This is the same SW trigger interrupt that is used to wake up the LP CPU
@@ -96,13 +112,34 @@ void __attribute__((noreturn)) ulp_lp_core_abort(void);
  * @param enable true to enable, false to disable
  *
  */
-void ulp_lp_core_sw_intr_enable(bool enable);
+void ulp_lp_core_sw_intr_from_hp_enable(bool enable);
+
+/**
+ * @brief Enable the SW triggered interrupt from the PMU
+ *
+ * @note Alias for the `ulp_lp_core_sw_intr_from_hp_enable` function, for backward compatibility.
+ *
+ * @param enable true to enable, false to disable
+ */
+static inline void ulp_lp_core_sw_intr_enable(bool enable)
+{
+    return ulp_lp_core_sw_intr_from_hp_enable(enable);
+}
+
+/**
+ * @brief Clear the interrupt status for the SW triggered interrupt from the PMU
+ */
+void ulp_lp_core_sw_intr_from_hp_clear(void);
 
 /**
  * @brief Clear the interrupt status for the SW triggered interrupt from the PMU
  *
+ * @note Alias for the `ulp_lp_core_sw_intr_from_hp_clear` function, for backward compatibility.
  */
-void ulp_lp_core_sw_intr_clear(void);
+static inline void ulp_lp_core_sw_intr_clear(void)
+{
+    return ulp_lp_core_sw_intr_from_hp_clear();
+}
 
 #if SOC_LP_TIMER_SUPPORTED
 /**

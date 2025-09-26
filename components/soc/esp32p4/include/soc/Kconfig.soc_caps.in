@@ -283,6 +283,10 @@ config SOC_LP_VAD_SUPPORTED
     bool
     default y
 
+config SOC_LP_MAILBOX_SUPPORTED
+    bool
+    default y
+
 config SOC_SPIRAM_SUPPORTED
     bool
     default y

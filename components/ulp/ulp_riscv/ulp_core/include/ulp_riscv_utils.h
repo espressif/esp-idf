@@ -90,6 +90,16 @@ void ulp_riscv_timer_resume(void);
 #define ULP_RISCV_CYCLES_PER_MS ULP_RISCV_CYCLES_PER_US*1000
 
 /**
+ * @brief Retrieves the current number of CPU cycles.
+ *
+ * @return The current CPU cycle count.
+ */
+static inline uint32_t ulp_riscv_get_cpu_cycles(void)
+{
+    return ULP_RISCV_GET_CCOUNT();
+}
+
+/**
  * @brief Makes the co-processor busy wait for a certain number of cycles
  *
  * @note This function is not accurate for delays shorter than 20 cycles,
