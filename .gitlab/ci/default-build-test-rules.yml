@@ -2,15 +2,12 @@
 # - extra_default_build_targets:
 #     besides of the SUPPORTED_TARGETS in IDF,
 #     enable build for the specified targets by default as well.
+# !!! DEPRECATED: use `additional_build_targets` in .idf_build_apps.toml instead
+#
 # - bypass_check_test_targets:
 #     suppress the check_build_test_rules check-test-script warnings for the specified targets
 #
 # This file should ONLY be used during bringup. Should be reset to empty after the bringup process
-extra_default_build_targets:
-  - esp32c5
-  - esp32c61
-  - esp32h21
-  - esp32h4
 
 bypass_check_test_targets:
   - esp32h21
