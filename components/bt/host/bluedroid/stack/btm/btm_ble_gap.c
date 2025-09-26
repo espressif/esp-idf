@@ -4842,4 +4842,17 @@ bool btm_ble_adv_pkt_post(pkt_linked_item_t *pkt)
     pkt_queue_enqueue(p_cb->adv_rpt_queue, pkt);
     return true;
 }
+
+#if (SMP_INCLUDED == TRUE)
+/* Retrieve local IRK safely */
+bool BTM_GetLocalIRK(uint8_t *irk)
+{
+    if (!irk) {
+        return false;
+    }
+
+    memcpy(irk, btm_cb.devcb.id_keys.irk, sizeof(btm_cb.devcb.id_keys.irk));
+    return true;
+}
+#endif // (SMP_INCLUDED == TRUE)
 #endif  /* BLE_INCLUDED */
