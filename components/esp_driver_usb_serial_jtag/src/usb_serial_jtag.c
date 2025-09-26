@@ -14,6 +14,7 @@
 #include "freertos/ringbuf.h"
 #include "esp_intr_alloc.h"
 #include "driver/usb_serial_jtag.h"
+#include "driver/usb_serial_jtag_select.h"
 #include "soc/periph_defs.h"
 #include "soc/soc_caps.h"
 #include "esp_check.h"
@@ -44,7 +45,13 @@ typedef struct {
     // TX parameters
     RingbufHandle_t tx_ring_buf;        /*!< TX ring buffer handler */
     uint8_t tx_stash_buf[USB_SER_JTAG_ENDP_SIZE];  /*!< Data buffer to stash TX FIFO data */
-    size_t tx_stash_cnt;                          /*!< Number of stashed TX FIFO bytes */
+    size_t tx_stash_cnt;                           /*!< Number of stashed TX FIFO bytes */
+
+    //Synchronization stuff, only used for flush for now
+    SemaphoreHandle_t tx_mux;
+    SemaphoreHandle_t tx_idle_sem;
+
+    usj_select_notif_callback_t usj_select_notif_callback; /*!< Notification about select() events */
 } usb_serial_jtag_obj_t;
 
 static usb_serial_jtag_obj_t *p_usb_serial_jtag_obj = NULL;
@@ -99,6 +106,12 @@ static void usb_serial_jtag_isr_handler_default(void *arg)
                 // Return the buffer if we got it from the ring buffer.
                 if (queued_buf != p_usb_serial_jtag_obj->tx_stash_buf) {
                     vRingbufferReturnItemFromISR(p_usb_serial_jtag_obj->tx_ring_buf, queued_buf, &xTaskWoken);
+
+                    // We just moved items out of the TX ring buffer, the driver is considered write ready, since
+                    // the TX ring buffer is assured to be not full.
+                    if (p_usb_serial_jtag_obj->usj_select_notif_callback) {
+                        p_usb_serial_jtag_obj->usj_select_notif_callback(USJ_SELECT_WRITE_NOTIF, &xTaskWoken);
+                    }
                 }
             } else {
                 // No data to send.
@@ -122,6 +135,10 @@ static void usb_serial_jtag_isr_handler_default(void *arg)
         uint8_t buf[USB_SER_JTAG_RX_MAX_SIZE];
         uint32_t rx_fifo_len = usb_serial_jtag_ll_read_rxfifo(buf, USB_SER_JTAG_RX_MAX_SIZE);
         xRingbufferSendFromISR(p_usb_serial_jtag_obj->rx_ring_buf, buf, rx_fifo_len, &xTaskWoken);
+
+        if (p_usb_serial_jtag_obj->usj_select_notif_callback) {
+            p_usb_serial_jtag_obj->usj_select_notif_callback(USJ_SELECT_READ_NOTIF, &xTaskWoken);
+        }
     }
 
     if (xTaskWoken == pdTRUE) {
@@ -274,6 +291,13 @@ size_t usb_serial_jtag_get_read_bytes_available(void)
     }
 
     return (size_t)bytes_available;
+}
+
+void usb_serial_jtag_set_select_notif_callback(usj_select_notif_callback_t usj_select_notif_callback)
+{
+    if (usb_serial_jtag_is_driver_installed()) {
+        p_usb_serial_jtag_obj->usj_select_notif_callback = usj_select_notif_callback;
+    }
 }
 
 bool usb_serial_jtag_read_ready(void)
