@@ -170,7 +170,6 @@ Change into the test app directory to configure and build it:
 * ``idf.py menuconfig`` - configure unit test app.
 * ``idf.py build`` - build unit test app.
 
-
 When the build finishes, it will print instructions for flashing the chip. You can simply run ``idf.py flash`` to flash all build output.
 
 Running Unit Tests

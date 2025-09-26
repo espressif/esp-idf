@@ -3,7 +3,6 @@ Protocols
 
 :link_to_translation:`zh_CN:[中文]`
 
-
 ESP-TLS
 -------
 
@@ -40,13 +39,13 @@ Since ESP-IDF version v6.0, the examples for component ``esp-modbus v1`` which i
 
 The examples below demonstrate the ESP-Modbus library of serial and TCP ports for both slave and master implementations respectively.
 
-- `mb_serial_slave - demonstrates how to use {IDF_TARGET_NAME} as a Modbus serial slave device with the esp-modbus stack, enabling an external Modbus host to read and write device parameters using the Modbus protocol. <https://github.com/espressif/esp-modbus/tree/main/examples/serial/mb_serial_slave>`__
+- `mb_serial_slave <https://github.com/espressif/esp-modbus/tree/main/examples/serial/mb_serial_slave>`__ - demonstrates how to use {IDF_TARGET_NAME} as a Modbus serial slave device with the esp-modbus stack, enabling an external Modbus host to read and write device parameters using the Modbus protocol.
 
-- `mb_serial_master - demonstrates how to use the esp-modbus stack port on {IDF_TARGET_NAME} as a Modbus serial master device, capable of reading and writing values from slave devices in a Modbus segment. <https://github.com/espressif/esp-modbus/tree/main/examples/serial/mb_serial_master>`__
+- `mb_serial_master <https://github.com/espressif/esp-modbus/tree/main/examples/serial/mb_serial_master>`__ - demonstrates how to use the esp-modbus stack port on {IDF_TARGET_NAME} as a Modbus serial master device, capable of reading and writing values from slave devices in a Modbus segment.
 
-- `mb_tcp_slave - demonstrates the esp-modbus TCP slave stack port, allowing an external Modbus host to read and write device parameters via the Modbus protocol. <https://github.com/espressif/esp-modbus/tree/main/examples/tcp/mb_tcp_slave>`__
+- `mb_tcp_slave <https://github.com/espressif/esp-modbus/tree/main/examples/tcp/mb_tcp_slave>`__ - demonstrates the esp-modbus TCP slave stack port, allowing an external Modbus host to read and write device parameters via the Modbus protocol.
 
-- `mb_tcp_master` - demonstrates how to use the esp-modbus stack port on {IDF_TARGET_NAME} as a Modbus TCP master device, capable of reading and writing values from slave devices in a Modbus network. <https://github.com/espressif/esp-modbus/tree/main/examples/tcp/mb_tcp_master>`__
+- `mb_tcp_master <https://github.com/espressif/esp-modbus/tree/main/examples/tcp/mb_tcp_master>`__ - demonstrates how to use the esp-modbus stack port on {IDF_TARGET_NAME} as a Modbus TCP master device, capable of reading and writing values from slave devices in a Modbus network.
 
 Please refer to the ``README.md`` documents of each specific example for details.
 
