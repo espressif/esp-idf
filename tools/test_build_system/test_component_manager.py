@@ -4,7 +4,6 @@ import json
 import os.path
 from pathlib import Path
 
-import pytest
 from test_build_system_helpers import IdfPyFunc
 from test_build_system_helpers import replace_in_file
 
@@ -159,9 +158,6 @@ class TestOptionalDependencyWithKconfig:
         )
         assert 'Missing required kconfig option after retry.' in res.stderr
 
-    @pytest.mark.buildv2_skip(
-        'cmakev2 needs explicit REQUIRES for EXTRA_COMPONENT_DIRS as no special handling of the main component occurs'
-    )
     def test_kconfig_in_transitive_dependency(self, idf_py: IdfPyFunc, test_app_copy: Path) -> None:
         idf_py('create-component', 'foo')
         (test_app_copy / 'foo' / 'idf_component.yml').write_text("""
@@ -189,6 +185,13 @@ class TestOptionalDependencyWithKconfig:
             (test_app_copy / 'CMakeLists.txt'),
             '# placeholder_before_include_project_cmake',
             'set(EXTRA_COMPONENT_DIRS foo)',
+        )
+
+        # Add explicit PRIV_REQUIRES for cmakev2 compatibility
+        replace_in_file(
+            (test_app_copy / 'main' / 'CMakeLists.txt'),
+            '# placeholder_inside_idf_component_register',
+            'PRIV_REQUIRES foo',
         )
 
         idf_py('reconfigure')
