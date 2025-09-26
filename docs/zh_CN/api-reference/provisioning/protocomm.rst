@@ -54,7 +54,7 @@ Protocomm 为以下各种传输提供框架：
     使用 Security 2 的 SoftAP + HTTP 传输方案示例
     --------------------------------------------------
 
-    示例用法请参阅 :component_file:`wifi_provisioning/src/scheme_softap.c`。
+    示例用法请参阅 `network_provisioning/src/scheme_softap.c <https://github.com/espressif/idf-extra-components/blob/master/network_provisioning/src/scheme_softap.c>`_。
 
     .. highlight:: c
 
@@ -161,7 +161,7 @@ Protocomm 为以下各种传输提供框架：
     使用 Security 1 的 SoftAP + HTTP 传输方案示例
     -------------------------------------------------
 
-    示例用法请参阅 :component_file:`wifi_provisioning/src/scheme_softap.c`。
+    示例用法请参阅 `network_provisioning/src/scheme_softap.c <https://github.com/espressif/idf-extra-components/blob/master/network_provisioning/src/scheme_softap.c>`_。
 
     .. highlight:: c
 
@@ -245,7 +245,7 @@ Protocomm 为以下各种传输提供框架：
     使用 Security 0 的低功耗蓝牙传输方案示例
     -------------------------------------------
 
-    示例用法请参阅 :component_file:`wifi_provisioning/src/scheme_ble.c`。
+    示例用法请参阅 `network_provisioning/src/scheme_ble.c <https://github.com/espressif/idf-extra-components/blob/master/network_provisioning/src/scheme_ble.c>`_。
 
     .. highlight:: c
 

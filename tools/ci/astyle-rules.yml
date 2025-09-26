@@ -89,7 +89,6 @@ components_not_formatted_temporary:
     - "/components/unity/"
     - "/components/vfs/"
     - "/components/wear_levelling/"
-    - "/components/wifi_provisioning/"
     - "/components/xtensa/"
     - "/examples/bluetooth/"
     - "/examples/build_system/"

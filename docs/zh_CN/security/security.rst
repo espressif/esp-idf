@@ -265,7 +265,7 @@ UART 下载模式
 
     ESP-IDF 提供了多种安全方案，可以在 ESP 设备和配网实体之间建立安全会话，具体方案请参阅 :ref:`provisioning_security_schemes`。
 
-    关于该功能的更多详情和代码示例，请参阅 :doc:`../api-reference/provisioning/wifi_provisioning`。
+    关于该功能的更多详情和代码示例，请参阅 `network_provisioning <https://github.com/espressif/idf-extra-components/tree/master/network_provisioning>`_。
 
     .. note::
 

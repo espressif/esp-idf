@@ -59,7 +59,6 @@ api-reference/index.rst
 api-reference/provisioning/index.rst
 api-reference/provisioning/provisioning.rst
 api-reference/provisioning/protocomm.rst
-api-reference/provisioning/wifi_provisioning.rst
 api-reference/template.rst
 api-reference/kconfig-reference.rst
 api-reference/protocols/index.rst

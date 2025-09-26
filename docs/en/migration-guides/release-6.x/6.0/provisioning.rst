@@ -6,7 +6,34 @@ Provisioning
 Breaking Changes
 ----------------
 
-The return type of :cpp:func:`wifi_prov_mgr_deinit` has been changed from ``void`` to :cpp:type:`esp_err_t`. This change allows applications to properly handle potential failures during provisioning manager deinitialization.
+The ESP-IDF component ``wifi_provisioning`` has been removed from ESP-IDF and is supported as a separate component. It has been renamed to ``network_provisioning`` and Thread network provisioning support has been added to the new component. Additional information for the ``network_provisioning`` component can be found in ESP Component Registry:
+
+* `network_provisioning component <https://components.espressif.com/component/espressif/network_provisioning>`__
+
+The ``main`` component folder of the new application shall include the component manager manifest file ``idf_component.yml`` as in the example below:
+
+.. code-block:: text
+
+  dependencies:
+    espressif/network_provisioning:
+      version: "^1.1.0"
+
+For applications targeting v5.x releases of ESP-IDF that need to use new ``network_provisioning`` component, adding the component manager manifest file ``idf_component.yml`` will be sufficient to pull in the new component. However, users should also exclude the legacy ``wifi_provisioning`` component from the build. This can be achieved using the statement below in the project's ``CMakeLists.txt``:
+
+.. code-block:: cmake
+
+  set(EXCLUDE_COMPONENTS wifi_provisioning)
+
+The API names have been updated after migrating to the new component. Most changes involve renaming API names from ``wifi_prov_xx`` to ``network_prov_xx``. The table below summarizes the remaining differences between the old APIs and their new counterparts.
+
+.. csv-table::
+   :header: "Previous API", "Current API"
+
+   "wifi_prov_mgr_is_provisioned", "network_prov_mgr_is_wifi_provisioned"
+   "wifi_prov_mgr_configure_sta", "network_prov_mgr_configure_wifi_sta"
+   "wifi_prov_mgr_reset_provisioning", "network_prov_mgr_reset_wifi_provisioning"
+   "wifi_prov_mgr_reset_sm_state_on_failure", "network_prov_mgr_reset_wifi_sm_state_on_failure"
+   "wifi_prov_mgr_reset_sm_state_for_reprovision", "network_prov_mgr_reset_wifi_sm_state_for_reprovision"
 
 Configuration Changes
 ---------------------

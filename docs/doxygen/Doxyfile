@@ -328,12 +328,6 @@ INPUT = \
     $(PROJECT_PATH)/components/vfs/include/esp_vfs_ops.h \
     $(PROJECT_PATH)/components/vfs/include/esp_vfs.h \
     $(PROJECT_PATH)/components/wear_levelling/include/wear_levelling.h \
-    $(PROJECT_PATH)/components/wifi_provisioning/include/wifi_provisioning/manager.h \
-    $(PROJECT_PATH)/components/wifi_provisioning/include/wifi_provisioning/scheme_ble.h \
-    $(PROJECT_PATH)/components/wifi_provisioning/include/wifi_provisioning/scheme_console.h \
-    $(PROJECT_PATH)/components/wifi_provisioning/include/wifi_provisioning/scheme_softap.h \
-    $(PROJECT_PATH)/components/wifi_provisioning/include/wifi_provisioning/wifi_config.h \
-    $(PROJECT_PATH)/components/wifi_provisioning/include/wifi_provisioning/wifi_scan.h \
     $(PROJECT_PATH)/components/wpa_supplicant/esp_supplicant/include/esp_dpp.h \
     $(PROJECT_PATH)/components/wpa_supplicant/esp_supplicant/include/esp_supplicant_utils.h \
     $(PROJECT_PATH)/components/esp_driver_uart/include/driver/uart_wakeup.h \

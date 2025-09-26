@@ -92,8 +92,6 @@ WIFI_DOCS = [
     'api-reference/network/esp_smartconfig.rst',
     'api-reference/network/esp_wifi.rst',
     'api-reference/network/esp_dpp.rst',
-    'api-reference/provisioning/provisioning.rst',
-    'api-reference/provisioning/wifi_provisioning.rst',
     'migration-guides/release-5.x/5.2/wifi.rst',
     'migration-guides/release-5.x/5.4/wifi.rst',
     'migration-guides/release-5.x/5.5/wifi.rst',
@@ -447,7 +445,6 @@ linkcheck_anchors = False
 linkcheck_exclude_documents = [
     'index',  # several false positives due to the way we link to different sections
     'api-reference/protocols/esp_local_ctrl',  # Fails due to `https://<mdns-hostname>.local`
-    'api-reference/provisioning/wifi_provisioning',  # Fails due to `https://<mdns-hostname>.local`
 ]
 
 
