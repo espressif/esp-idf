@@ -20,6 +20,7 @@
 
 #if SOC_KEY_MANAGER_SUPPORT_KEY_DEPLOYMENT
 #include "hal/key_mgr_ll.h"
+#include "hal/key_mgr_types.h"
 #endif /* SOC_KEY_MANAGER_SUPPORT_KEY_DEPLOYMENT */
 
 #if SOC_ECDSA_P192_CURVE_DEFAULT_DISABLED
@@ -31,14 +32,24 @@ __attribute__((unused)) static const char *TAG = "esp_security";
 static void esp_key_mgr_init(void)
 {
     // The following code initializes the key manager.
+    // When Flash Encryption is already enabled, Key Manager is initialized by the
+    // ROM, and when Flash Encryption is enabled during boot up, Key Manager is
+    // initialized by the bootloader.
 #if SOC_KEY_MANAGER_SUPPORT_KEY_DEPLOYMENT
-    // Enable key manager clock
-    // Using ll APIs which do not require critical section
-    _key_mgr_ll_enable_bus_clock(true);
-    _key_mgr_ll_enable_peripheral_clock(true);
-    _key_mgr_ll_reset_register();
-    while (key_mgr_ll_get_state() != ESP_KEY_MGR_STATE_IDLE) {
-    };
+    if (!efuse_hal_flash_encryption_enabled()) {
+        // Enable key manager clock
+        key_mgr_ll_power_up();
+        // Using ll APIs which do not require critical section
+        _key_mgr_ll_enable_bus_clock(true);
+        _key_mgr_ll_enable_peripheral_clock(true);
+        _key_mgr_ll_reset_register();
+
+        while (key_mgr_ll_get_state() != ESP_KEY_MGR_STATE_IDLE) {
+        };
+
+        // Force Key Manager to use eFuse key by-default for an XTS-AES operation.
+        key_mgr_ll_set_key_usage(ESP_KEY_MGR_XTS_AES_128_KEY, ESP_KEY_MGR_USE_EFUSE_KEY);
+    }
 #endif /* SOC_KEY_MANAGER_SUPPORT_KEY_DEPLOYMENT */
 }
 

@@ -25,6 +25,16 @@
 extern "C" {
 #endif
 
+static inline void key_mgr_ll_power_up(void)
+{
+    // TODO: IDF-13524
+}
+
+static inline void key_mgr_ll_power_down(void)
+{
+    // TODO: IDF-13524
+}
+
 /**
  * @brief Enable the bus clock for Key Manager peripheral
  * Note: Please use key_mgr_ll_enable_bus_clock which requires the critical section
