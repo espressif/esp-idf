@@ -140,9 +140,6 @@
 #define USB_INT_PHY0_DP_GPIO_NUM              13
 
 #define MAX_RTC_GPIO_NUM              7
-#define MAX_PAD_GPIO_NUM             30
-#define MAX_GPIO_NUM                 34
-#define DIG_IO_HOLD_BIT_SHIFT        32
 
 
 #define REG_IO_MUX_BASE DR_REG_IO_MUX_BASE

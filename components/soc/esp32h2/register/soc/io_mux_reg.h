@@ -152,8 +152,6 @@
 #define USB_INT_PHY0_DP_GPIO_NUM              27
 
 #define MAX_RTC_GPIO_NUM             14            // GPIO7~14 are the pads with LP function
-#define MAX_PAD_GPIO_NUM             27
-#define MAX_GPIO_NUM                 31
 
 
 #define REG_IO_MUX_BASE DR_REG_IO_MUX_BASE

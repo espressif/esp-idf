@@ -114,10 +114,10 @@ void IRAM_ATTR bootloader_configure_spi_pins(int drv)
     esp_rom_gpio_pad_set_drv(q_gpio_num,   drv);
     esp_rom_gpio_pad_set_drv(d_gpio_num,   drv);
     esp_rom_gpio_pad_set_drv(cs0_gpio_num, drv);
-    if (hd_gpio_num <= MAX_PAD_GPIO_NUM) {
+    if (hd_gpio_num < SOC_GPIO_PIN_COUNT) {
         esp_rom_gpio_pad_set_drv(hd_gpio_num, drv);
     }
-    if (wp_gpio_num <= MAX_PAD_GPIO_NUM) {
+    if (wp_gpio_num < SOC_GPIO_PIN_COUNT) {
         esp_rom_gpio_pad_set_drv(wp_gpio_num, drv);
     }
 }
