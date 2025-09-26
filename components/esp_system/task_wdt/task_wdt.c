@@ -819,7 +819,10 @@ esp_err_t esp_task_wdt_print_triggered_tasks(task_wdt_msg_handler msg_handler, v
                 msg_handler(opaque, name);
                 msg_handler(opaque, cpu);
             }
+
+            esp_backtrace_print_task(entry->task_handle, 100, true);
         }
     }
+
     return ESP_OK;
 }
