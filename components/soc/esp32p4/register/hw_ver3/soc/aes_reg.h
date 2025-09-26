@@ -12,7 +12,7 @@ extern "C" {
 #endif
 
 /** AES_KEY_0_REG register
- *  Key material key_0 configure register
+ *  AES key data register 0
  */
 #define AES_KEY_0_REG (DR_REG_AES_BASE + 0x0)
 /** AES_KEY_0 : R/W; bitpos: [31:0]; default: 0;
@@ -24,7 +24,7 @@ extern "C" {
 #define AES_KEY_0_S  0
 
 /** AES_KEY_1_REG register
- *  Key material key_1 configure register
+ *  AES key data register 1
  */
 #define AES_KEY_1_REG (DR_REG_AES_BASE + 0x4)
 /** AES_KEY_1 : R/W; bitpos: [31:0]; default: 0;
@@ -36,7 +36,7 @@ extern "C" {
 #define AES_KEY_1_S  0
 
 /** AES_KEY_2_REG register
- *  Key material key_2 configure register
+ *  AES key data register 2
  */
 #define AES_KEY_2_REG (DR_REG_AES_BASE + 0x8)
 /** AES_KEY_2 : R/W; bitpos: [31:0]; default: 0;
@@ -48,7 +48,7 @@ extern "C" {
 #define AES_KEY_2_S  0
 
 /** AES_KEY_3_REG register
- *  Key material key_3 configure register
+ *  AES key data register 3
  */
 #define AES_KEY_3_REG (DR_REG_AES_BASE + 0xc)
 /** AES_KEY_3 : R/W; bitpos: [31:0]; default: 0;
@@ -60,7 +60,7 @@ extern "C" {
 #define AES_KEY_3_S  0
 
 /** AES_KEY_4_REG register
- *  Key material key_4 configure register
+ *  AES key data register 4
  */
 #define AES_KEY_4_REG (DR_REG_AES_BASE + 0x10)
 /** AES_KEY_4 : R/W; bitpos: [31:0]; default: 0;
@@ -72,7 +72,7 @@ extern "C" {
 #define AES_KEY_4_S  0
 
 /** AES_KEY_5_REG register
- *  Key material key_5 configure register
+ *  AES key data register 5
  */
 #define AES_KEY_5_REG (DR_REG_AES_BASE + 0x14)
 /** AES_KEY_5 : R/W; bitpos: [31:0]; default: 0;
@@ -84,7 +84,7 @@ extern "C" {
 #define AES_KEY_5_S  0
 
 /** AES_KEY_6_REG register
- *  Key material key_6 configure register
+ *  AES key data register 6
  */
 #define AES_KEY_6_REG (DR_REG_AES_BASE + 0x18)
 /** AES_KEY_6 : R/W; bitpos: [31:0]; default: 0;
@@ -96,7 +96,7 @@ extern "C" {
 #define AES_KEY_6_S  0
 
 /** AES_KEY_7_REG register
- *  Key material key_7 configure register
+ *  AES key data register 7
  */
 #define AES_KEY_7_REG (DR_REG_AES_BASE + 0x1c)
 /** AES_KEY_7 : R/W; bitpos: [31:0]; default: 0;
@@ -108,7 +108,7 @@ extern "C" {
 #define AES_KEY_7_S  0
 
 /** AES_TEXT_IN_0_REG register
- *  source text material text_in_0 configure register
+ *  Source text data register 0
  */
 #define AES_TEXT_IN_0_REG (DR_REG_AES_BASE + 0x20)
 /** AES_TEXT_IN_0 : R/W; bitpos: [31:0]; default: 0;
@@ -120,7 +120,7 @@ extern "C" {
 #define AES_TEXT_IN_0_S  0
 
 /** AES_TEXT_IN_1_REG register
- *  source text material text_in_1 configure register
+ *  Source text data register 1
  */
 #define AES_TEXT_IN_1_REG (DR_REG_AES_BASE + 0x24)
 /** AES_TEXT_IN_1 : R/W; bitpos: [31:0]; default: 0;
@@ -132,7 +132,7 @@ extern "C" {
 #define AES_TEXT_IN_1_S  0
 
 /** AES_TEXT_IN_2_REG register
- *  source text material text_in_2 configure register
+ *  Source text data register 2
  */
 #define AES_TEXT_IN_2_REG (DR_REG_AES_BASE + 0x28)
 /** AES_TEXT_IN_2 : R/W; bitpos: [31:0]; default: 0;
@@ -144,7 +144,7 @@ extern "C" {
 #define AES_TEXT_IN_2_S  0
 
 /** AES_TEXT_IN_3_REG register
- *  source text material text_in_3 configure register
+ *  Source text data register 3
  */
 #define AES_TEXT_IN_3_REG (DR_REG_AES_BASE + 0x2c)
 /** AES_TEXT_IN_3 : R/W; bitpos: [31:0]; default: 0;
@@ -156,7 +156,7 @@ extern "C" {
 #define AES_TEXT_IN_3_S  0
 
 /** AES_TEXT_OUT_0_REG register
- *  result text material text_out_0 configure register
+ *  Result text data register 0
  */
 #define AES_TEXT_OUT_0_REG (DR_REG_AES_BASE + 0x30)
 /** AES_TEXT_OUT_0 : R/W; bitpos: [31:0]; default: 0;
@@ -168,7 +168,7 @@ extern "C" {
 #define AES_TEXT_OUT_0_S  0
 
 /** AES_TEXT_OUT_1_REG register
- *  result text material text_out_1 configure register
+ *  Result text data register 1
  */
 #define AES_TEXT_OUT_1_REG (DR_REG_AES_BASE + 0x34)
 /** AES_TEXT_OUT_1 : R/W; bitpos: [31:0]; default: 0;
@@ -180,7 +180,7 @@ extern "C" {
 #define AES_TEXT_OUT_1_S  0
 
 /** AES_TEXT_OUT_2_REG register
- *  result text material text_out_2 configure register
+ *  Result text data register 2
  */
 #define AES_TEXT_OUT_2_REG (DR_REG_AES_BASE + 0x38)
 /** AES_TEXT_OUT_2 : R/W; bitpos: [31:0]; default: 0;
@@ -192,7 +192,7 @@ extern "C" {
 #define AES_TEXT_OUT_2_S  0
 
 /** AES_TEXT_OUT_3_REG register
- *  result text material text_out_3 configure register
+ *  Result text data register 3
  */
 #define AES_TEXT_OUT_3_REG (DR_REG_AES_BASE + 0x3c)
 /** AES_TEXT_OUT_3 : R/W; bitpos: [31:0]; default: 0;
@@ -204,12 +204,19 @@ extern "C" {
 #define AES_TEXT_OUT_3_S  0
 
 /** AES_MODE_REG register
- *  AES Mode register
+ *  Defines key length and encryption / decryption
  */
 #define AES_MODE_REG (DR_REG_AES_BASE + 0x40)
 /** AES_MODE : R/W; bitpos: [2:0]; default: 0;
- *  This bits decides which one operation mode will be used. 3'd0: AES-EN-128, 3'd1:
- *  Reserved, 3'd2: AES-EN-256, 3'd4: AES-DE-128, 3'd5: Reserved, 3'd6: AES-DE-256.
+ *  Configures the key length and encryption / decryption of the AES accelerator.
+ *  0: AES-128 encryption
+ *  1: AES-192 encryption
+ *  2: AES-256 encryption
+ *  3: Reserved
+ *  4: AES-128 decryption
+ *  5: AES-192 decryption
+ *  6: AES-256 decryption
+ *  7: Reserved
  */
 #define AES_MODE    0x00000007U
 #define AES_MODE_M  (AES_MODE_V << AES_MODE_S)
@@ -230,11 +237,13 @@ extern "C" {
 #define AES_ENDIAN_S  0
 
 /** AES_TRIGGER_REG register
- *  AES trigger register
+ *  Operation start controlling register
  */
 #define AES_TRIGGER_REG (DR_REG_AES_BASE + 0x48)
 /** AES_TRIGGER : WT; bitpos: [0]; default: 0;
- *  Set this bit to start AES calculation.
+ *  Configures whether or not to start AES operation.
+ *  0: No effect
+ *  1: Start
  */
 #define AES_TRIGGER    (BIT(0))
 #define AES_TRIGGER_M  (AES_TRIGGER_V << AES_TRIGGER_S)
@@ -242,12 +251,21 @@ extern "C" {
 #define AES_TRIGGER_S  0
 
 /** AES_STATE_REG register
- *  AES state register
+ *  Operation status register
  */
 #define AES_STATE_REG (DR_REG_AES_BASE + 0x4c)
 /** AES_STATE : RO; bitpos: [1:0]; default: 0;
- *  Those bits shows AES status. For typical AES, 0: idle, 1: busy. For DMA-AES, 0:
- *  idle, 1: busy, 2: calculation_done.
+ *  Represents the working status of the AES accelerator.
+ *  In Typical AES working mode:
+ *  0: IDLE
+ *  1: WORK
+ *  2: No effect
+ *  3: No effect
+ *  In DMA-AES working mode:
+ *  0: IDLE
+ *  1: WORK
+ *  2: DONE
+ *  3: No effect
  */
 #define AES_STATE    0x00000003U
 #define AES_STATE_M  (AES_STATE_V << AES_STATE_S)
@@ -279,11 +297,13 @@ extern "C" {
 #define AES_T0_MEM_SIZE_BYTES 16
 
 /** AES_DMA_ENABLE_REG register
- *  DMA-AES working mode register
+ *  Selects the working mode of the AES accelerator
  */
 #define AES_DMA_ENABLE_REG (DR_REG_AES_BASE + 0x90)
 /** AES_DMA_ENABLE : R/W; bitpos: [0]; default: 0;
- *  1'b0: typical AES working mode, 1'b1: DMA-AES working mode.
+ *  Configures the working mode of the AES accelerator.
+ *  0: Typical AES
+ *  1: DMA-AES
  */
 #define AES_DMA_ENABLE    (BIT(0))
 #define AES_DMA_ENABLE_M  (AES_DMA_ENABLE_V << AES_DMA_ENABLE_S)
@@ -291,12 +311,20 @@ extern "C" {
 #define AES_DMA_ENABLE_S  0
 
 /** AES_BLOCK_MODE_REG register
- *  AES cipher block mode register
+ *  Defines the block cipher mode
  */
 #define AES_BLOCK_MODE_REG (DR_REG_AES_BASE + 0x94)
 /** AES_BLOCK_MODE : R/W; bitpos: [2:0]; default: 0;
- *  Those bits decides which block mode will be used. 0x0: ECB, 0x1: CBC, 0x2: OFB,
- *  0x3: CTR, 0x4: CFB-8, 0x5: CFB-128, 0x6: GCM, 0x7: reserved.
+ *  Configures the block cipher mode of the AES accelerator operating under the DMA-AES
+ *  working mode.
+ *  0: ECB (Electronic Code Block)
+ *  1: CBC (Cipher Block Chaining)
+ *  2: OFB (Output FeedBack)
+ *  3: CTR (Counter)
+ *  4: CFB8 (8-bit Cipher FeedBack)
+ *  5: CFB128 (128-bit Cipher FeedBack)
+ *  6: GCM
+ *  7: Reserved
  */
 #define AES_BLOCK_MODE    0x00000007U
 #define AES_BLOCK_MODE_M  (AES_BLOCK_MODE_V << AES_BLOCK_MODE_S)
@@ -304,11 +332,12 @@ extern "C" {
 #define AES_BLOCK_MODE_S  0
 
 /** AES_BLOCK_NUM_REG register
- *  AES block number register
+ *  Block number configuration register
  */
 #define AES_BLOCK_NUM_REG (DR_REG_AES_BASE + 0x98)
 /** AES_BLOCK_NUM : R/W; bitpos: [31:0]; default: 0;
- *  Those bits stores the number of Plaintext/ciphertext block.
+ *  Represents the Block Number of plaintext or ciphertext when the AES accelerator
+ *  operates under the DMA-AES working mode. For details, see Section . "
  */
 #define AES_BLOCK_NUM    0xFFFFFFFFU
 #define AES_BLOCK_NUM_M  (AES_BLOCK_NUM_V << AES_BLOCK_NUM_S)
@@ -316,11 +345,13 @@ extern "C" {
 #define AES_BLOCK_NUM_S  0
 
 /** AES_INC_SEL_REG register
- *  Standard incrementing function configure register
+ *  Standard incrementing function register
  */
 #define AES_INC_SEL_REG (DR_REG_AES_BASE + 0x9c)
 /** AES_INC_SEL : R/W; bitpos: [0]; default: 0;
- *  This bit decides the standard incrementing function. 0: INC32. 1: INC128.
+ *  Configures the Standard Incrementing Function for CTR block operation.
+ *  0: INC_32
+ *  1: INC_128
  */
 #define AES_INC_SEL    (BIT(0))
 #define AES_INC_SEL_M  (AES_INC_SEL_V << AES_INC_SEL_S)
@@ -364,11 +395,13 @@ extern "C" {
 #define AES_CONTINUE_S  0
 
 /** AES_INT_CLEAR_REG register
- *  AES Interrupt clear register
+ *  DMA-AES interrupt clear register
  */
 #define AES_INT_CLEAR_REG (DR_REG_AES_BASE + 0xac)
 /** AES_INT_CLEAR : WT; bitpos: [0]; default: 0;
- *  Set this bit to clear the AES interrupt.
+ *  Configures whether or not to clear AES interrupt.
+ *  0: No effect
+ *  1: Clear
  */
 #define AES_INT_CLEAR    (BIT(0))
 #define AES_INT_CLEAR_M  (AES_INT_CLEAR_V << AES_INT_CLEAR_S)
@@ -376,11 +409,13 @@ extern "C" {
 #define AES_INT_CLEAR_S  0
 
 /** AES_INT_ENA_REG register
- *  AES Interrupt enable register
+ *  DMA-AES interrupt enable register
  */
 #define AES_INT_ENA_REG (DR_REG_AES_BASE + 0xb0)
 /** AES_INT_ENA : R/W; bitpos: [0]; default: 0;
- *  Set this bit to enable interrupt that occurs when DMA-AES calculation is done.
+ *  Configures whether or not to enable AES interrupt.
+ *  0: Disable
+ *  1: Enable
  */
 #define AES_INT_ENA    (BIT(0))
 #define AES_INT_ENA_M  (AES_INT_ENA_V << AES_INT_ENA_S)
@@ -391,26 +426,85 @@ extern "C" {
  *  AES version control register
  */
 #define AES_DATE_REG (DR_REG_AES_BASE + 0xb4)
-/** AES_DATE : R/W; bitpos: [29:0]; default: 538513936;
+/** AES_DATE : R/W; bitpos: [27:0]; default: 36774000;
  *  This bits stores the version information of AES.
  */
-#define AES_DATE    0x3FFFFFFFU
+#define AES_DATE    0x0FFFFFFFU
 #define AES_DATE_M  (AES_DATE_V << AES_DATE_S)
-#define AES_DATE_V  0x3FFFFFFFU
+#define AES_DATE_V  0x0FFFFFFFU
 #define AES_DATE_S  0
 
 /** AES_DMA_EXIT_REG register
- *  AES-DMA exit config
+ *  Operation exit controlling register
  */
 #define AES_DMA_EXIT_REG (DR_REG_AES_BASE + 0xb8)
 /** AES_DMA_EXIT : WT; bitpos: [0]; default: 0;
- *  Set this register to leave calculation done stage. Recommend to use it after
- *  software finishes reading DMA's output buffer.
+ *  Configures whether or not to exit AES operation.
+ *  0: No effect
+ *  1: Exit
+ *  Only valid for DMA-AES operation.
  */
 #define AES_DMA_EXIT    (BIT(0))
 #define AES_DMA_EXIT_M  (AES_DMA_EXIT_V << AES_DMA_EXIT_S)
 #define AES_DMA_EXIT_V  0x00000001U
 #define AES_DMA_EXIT_S  0
+
+/** AES_RX_RESET_REG register
+ *  AES-DMA reset rx-fifo register
+ */
+#define AES_RX_RESET_REG (DR_REG_AES_BASE + 0xc0)
+/** AES_RX_RESET : WT; bitpos: [0]; default: 0;
+ *  Set this bit to reset rx_fifo under dma_aes working mode.
+ */
+#define AES_RX_RESET    (BIT(0))
+#define AES_RX_RESET_M  (AES_RX_RESET_V << AES_RX_RESET_S)
+#define AES_RX_RESET_V  0x00000001U
+#define AES_RX_RESET_S  0
+
+/** AES_TX_RESET_REG register
+ *  AES-DMA reset tx-fifo register
+ */
+#define AES_TX_RESET_REG (DR_REG_AES_BASE + 0xc4)
+/** AES_TX_RESET : WT; bitpos: [0]; default: 0;
+ *  Set this bit to reset tx_fifo under dma_aes working mode.
+ */
+#define AES_TX_RESET    (BIT(0))
+#define AES_TX_RESET_M  (AES_TX_RESET_V << AES_TX_RESET_S)
+#define AES_TX_RESET_V  0x00000001U
+#define AES_TX_RESET_S  0
+
+/** AES_PSEUDO_REG register
+ *  AES PSEUDO function configure register
+ */
+#define AES_PSEUDO_REG (DR_REG_AES_BASE + 0xd0)
+/** AES_PSEUDO_EN : R/W; bitpos: [0]; default: 0;
+ *  This bit decides whether the pseudo round function is enable or not.
+ */
+#define AES_PSEUDO_EN    (BIT(0))
+#define AES_PSEUDO_EN_M  (AES_PSEUDO_EN_V << AES_PSEUDO_EN_S)
+#define AES_PSEUDO_EN_V  0x00000001U
+#define AES_PSEUDO_EN_S  0
+/** AES_PSEUDO_BASE : R/W; bitpos: [4:1]; default: 2;
+ *  Those bits decides the basic number of pseudo round number.
+ */
+#define AES_PSEUDO_BASE    0x0000000FU
+#define AES_PSEUDO_BASE_M  (AES_PSEUDO_BASE_V << AES_PSEUDO_BASE_S)
+#define AES_PSEUDO_BASE_V  0x0000000FU
+#define AES_PSEUDO_BASE_S  1
+/** AES_PSEUDO_INC : R/W; bitpos: [6:5]; default: 2;
+ *  Those bits decides the increment number of pseudo round number
+ */
+#define AES_PSEUDO_INC    0x00000003U
+#define AES_PSEUDO_INC_M  (AES_PSEUDO_INC_V << AES_PSEUDO_INC_S)
+#define AES_PSEUDO_INC_V  0x00000003U
+#define AES_PSEUDO_INC_S  5
+/** AES_PSEUDO_RNG_CNT : R/W; bitpos: [9:7]; default: 7;
+ *  Those bits decides the update frequency of the pseudo-key.
+ */
+#define AES_PSEUDO_RNG_CNT    0x00000007U
+#define AES_PSEUDO_RNG_CNT_M  (AES_PSEUDO_RNG_CNT_V << AES_PSEUDO_RNG_CNT_S)
+#define AES_PSEUDO_RNG_CNT_V  0x00000007U
+#define AES_PSEUDO_RNG_CNT_S  7
 
 #ifdef __cplusplus
 }
