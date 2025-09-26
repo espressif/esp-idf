@@ -451,7 +451,7 @@
 #define CORE_GPIO_IN_PAD_IN27_IDX                          241
 #define CORE_GPIO_OUT_PAD_OUT27_IDX                        241
 #define CORE_GPIO_IN_PAD_IN28_IDX                          242
-#define PARLIO_TX_CS_PAD_OUT_IDX                           242
+#define PARLIO_TX_CS_PAD_OUT_IDX                           242    // only exists on ESP32P4 Rev. 3.0 and later
 #define CORE_GPIO_IN_PAD_IN29_IDX                          243
 #define EMAC_PTP_PPS_PAD_OUT_IDX                           243
 #define CORE_GPIO_IN_PAD_IN30_IDX                          244
