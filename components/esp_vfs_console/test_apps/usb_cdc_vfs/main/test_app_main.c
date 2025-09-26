@@ -25,6 +25,41 @@ static void test_setup(const char* func_name, const size_t func_name_size)
     flush_write();
 }
 
+static int read_bytes_with_select(FILE *stream, void *buf, size_t buf_len, struct timeval* tv)
+{
+    int fd = fileno(stream);
+    fd_set read_fds;
+    FD_ZERO(&read_fds);
+    FD_SET(fd, &read_fds);
+    /* call select to wait for either a read ready or an except to happen */
+    int nread = select(fd + 1, &read_fds, NULL, NULL, tv);
+    if (nread < 0) {
+        return -1;
+    } else if (FD_ISSET(fd, &read_fds)) {
+        int read_count = 0;
+        int total_read = 0;
+
+        do {
+            read_count = read(fd, buf + total_read, buf_len - total_read);
+            if (read_count < 0 && errno != EWOULDBLOCK) {
+                return -1;
+            } else if (read_count > 0) {
+                total_read += read_count;
+                if (total_read > buf_len) {
+                    fflush(stream);
+                    break;
+                }
+            }
+        } while (read_count > 0);
+
+        return total_read;
+    } else {
+        /* select timed out */
+        return -2;
+    }
+    return nread;
+}
+
 static bool wait_for_read_ready(FILE *stream)
 {
     int fd = fileno(stream);
@@ -233,6 +268,7 @@ static void test_usb_cdc_read_no_exit_on_newline_reception(void)
  */
 void app_main(void)
 {
+    test_usb_cdc_select();
     test_usb_cdc_read_non_blocking();
     test_usb_cdc_read_blocking();
     test_usb_cdc_read_no_exit_on_newline_reception();
