@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -55,6 +55,31 @@ void s_cache_hal_init_ctx(void)
     ctx.l2.i_autoload_en = cache_ll_is_cache_autoload_enabled(2, CACHE_TYPE_INSTRUCTION, CACHE_LL_ID_ALL);
 }
 
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+//TODO: IDF-5670, add cache init API, then don't need sdkconfig
+void cache_hal_init_l2_cache(void)
+{
+    cache_size_t cache_size;
+    cache_line_size_t cache_line_size;
+#if CONFIG_CACHE_L2_CACHE_128KB
+    cache_size = CACHE_SIZE_128K;
+#elif CONFIG_CACHE_L2_CACHE_256KB
+    cache_size = CACHE_SIZE_256K;
+#else
+    cache_size = CACHE_SIZE_512K;
+#endif
+
+#if CONFIG_CACHE_L2_CACHE_LINE_64B
+    cache_line_size = CACHE_LINE_SIZE_64B;
+#else
+    cache_line_size = CACHE_LINE_SIZE_128B;
+#endif
+
+    Cache_Set_L2_Cache_Mode(cache_size, 8, cache_line_size);
+    Cache_Invalidate_All(CACHE_MAP_L2_CACHE);
+}
+#endif
+
 void cache_hal_init(void)
 {
     s_cache_hal_init_ctx();
@@ -77,6 +102,10 @@ void cache_hal_init(void)
     ctx.l1.d_cache_enabled = 1;
     ctx.l2.i_cache_enabled = 1;
     ctx.l2.d_cache_enabled = 1;
+#endif
+
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+    cache_hal_init_l2_cache();
 #endif
 }
 
