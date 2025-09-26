@@ -174,10 +174,11 @@ typedef struct {
     esp_ip4_addr_t ip; /*!< IP address which was assigned to the station */
     uint8_t mac[6];    /*!< MAC address of the connected client */
     /* Client hostname as provided via DHCP option 12 (if available). */
-#ifndef CONFIG_LWIP_DHCPS_MAX_HOSTNAME_LEN
-#define CONFIG_LWIP_DHCPS_MAX_HOSTNAME_LEN 64
-#endif
+#ifdef CONFIG_LWIP_DHCPS_REPORT_CLIENT_HOSTNAME
 #define ESP_NETIF_HOSTNAME_MAX_LEN CONFIG_LWIP_DHCPS_MAX_HOSTNAME_LEN
+#else
+#define ESP_NETIF_HOSTNAME_MAX_LEN 1 /* Minimal footprint when hostname reporting is disabled - just null terminator for API compatibility */
+#endif
     char hostname[ESP_NETIF_HOSTNAME_MAX_LEN]; /*!< Optional DHCP client hostname (may be empty string) */
 } ip_event_assigned_ip_to_client_t;
 
