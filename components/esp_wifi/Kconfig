@@ -317,7 +317,7 @@ menu "Wi-Fi"
         config ESP_WIFI_ENABLE_SAE_PK
             bool "Enable SAE-PK"
             default y
-            depends on (ESP_WIFI_ENABLE_WPA3_SAE && ESP_WIFI_ENABLE_SAE_H2E)
+            depends on ESP_WIFI_ENABLE_SAE_H2E
             help
                 Select this option to enable SAE-PK
 
