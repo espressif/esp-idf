@@ -12,6 +12,7 @@
     peripherals
     provisioning
     protocols
+    :SOC_WIFI_SUPPORTED: wifi
     security
     tools
     storage

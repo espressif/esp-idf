@@ -95,6 +95,7 @@ WIFI_DOCS = [
     'migration-guides/release-5.x/5.2/wifi.rst',
     'migration-guides/release-5.x/5.4/wifi.rst',
     'migration-guides/release-5.x/5.5/wifi.rst',
+    'migration-guides/release-6.x/6.0/wifi.rst',
 ]
 
 IEEE802154_DOCS = ['migration-guides/release-5.x/5.1/ieee802154.rst', 'migration-guides/release-5.x/5.2/ieee802154.rst']
