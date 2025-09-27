@@ -368,7 +368,7 @@ class RunTool:
             p = await asyncio.create_subprocess_exec(
                 *cmd,
                 env=env_copy,
-                limit=1024 * 256,
+                limit=1024 * 1024,
                 cwd=self.cwd,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
