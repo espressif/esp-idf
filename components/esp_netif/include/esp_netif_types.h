@@ -109,6 +109,8 @@ typedef enum {
     IP_EVENT_PPP_GOT_IP,               /*!< PPP interface got IP */
     IP_EVENT_PPP_LOST_IP,              /*!< PPP interface lost IP */
     IP_EVENT_TX_RX,                    /*!< transmitting/receiving data packet */
+    IP_EVENT_NETIF_UP,                 /*!< unified netif status: interface became up */
+    IP_EVENT_NETIF_DOWN,               /*!< unified netif status: interface went down */
 } ip_event_t;
 
 /** @brief IP event base declaration */
@@ -197,6 +199,11 @@ typedef struct {
     esp_netif_tx_rx_direction_t dir; /*!< Directions for data transfer >*/
 } ip_event_tx_rx_t;
 #endif
+
+/** Event structure for IP_EVENT_LINK_UP/DOWN and IP_EVENT_NETIF_UP/DOWN */
+typedef struct {
+    esp_netif_t *esp_netif; /*!< Pointer to the associated netif handle */
+} ip_event_netif_status_t;
 
 typedef enum esp_netif_flags {
     ESP_NETIF_DHCP_CLIENT = 1 << 0,

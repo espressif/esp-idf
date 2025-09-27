@@ -137,6 +137,15 @@ static void netif_unset_mldv6_flag(esp_netif_t *netif);
 
 static esp_err_t esp_netif_destroy_api(esp_netif_api_msg_t *msg);
 
+static inline esp_netif_t* lwip_get_esp_netif(struct netif *netif)
+{
+#if LWIP_ESP_NETIF_DATA
+    return (esp_netif_t*)netif_get_client_data(netif, lwip_netif_client_id);
+#else
+    return (esp_netif_t*)netif->state;
+#endif
+}
+
 static void netif_callback_fn(struct netif* netif, netif_nsc_reason_t reason, const netif_ext_callback_args_t* args)
 {
 #if LWIP_IPV4
@@ -144,6 +153,19 @@ static void netif_callback_fn(struct netif* netif, netif_nsc_reason_t reason, co
         esp_netif_internal_dhcpc_cb(netif);
     }
 #endif /* LWIP_IPV4 */
+    // Normalize link/admin status: post only NETIF_UP/NETIF_DOWN when the effective state flips
+    if ((reason & (LWIP_NSC_LINK_CHANGED | LWIP_NSC_STATUS_CHANGED)) != 0) {
+        esp_netif_t *esp_netif = lwip_get_esp_netif(netif);
+        if (esp_netif) {
+            bool now_up = esp_netif_is_netif_up(esp_netif);
+            if (now_up != esp_netif->last_status_up) {
+                ip_event_netif_status_t evt = { .esp_netif = esp_netif };
+                esp_event_post(IP_EVENT, now_up ? IP_EVENT_NETIF_UP : IP_EVENT_NETIF_DOWN,
+                               &evt, sizeof(evt), 0);
+                esp_netif->last_status_up = now_up;
+            }
+        }
+    }
 #if LWIP_IPV6
     if ((reason & LWIP_NSC_IPV6_ADDR_STATE_CHANGED) && (args != NULL)) {
         s8_t addr_idx = args->ipv6_addr_state_changed.addr_index;
@@ -393,15 +415,6 @@ esp_err_t esp_netif_set_default_netif(esp_netif_t *esp_netif)
 esp_netif_t *esp_netif_get_default_netif(void)
 {
     return s_last_default_esp_netif;
-}
-
-static inline esp_netif_t* lwip_get_esp_netif(struct netif *netif)
-{
-#if LWIP_ESP_NETIF_DATA
-    return (esp_netif_t*)netif_get_client_data(netif, lwip_netif_client_id);
-#else
-    return (esp_netif_t*)netif->state;
-#endif
 }
 
 static inline void lwip_set_esp_netif(struct netif *netif, esp_netif_t* esp_netif)
