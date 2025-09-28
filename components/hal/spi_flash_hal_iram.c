@@ -155,9 +155,11 @@ void spi_flash_hal_setup_auto_suspend_mode(spi_flash_host_inst_t *host)
     uint32_t tsus = (ctx->tsus_val * ctx->freq_mhz / spimem_flash_ll_get_tsus_unit_in_cycles(dev)) + ((ctx->tsus_val * ctx->freq_mhz) % spimem_flash_ll_get_tsus_unit_in_cycles(dev) != 0);
     spimem_flash_ll_set_sus_delay(dev, tsus);
 #if SOC_SPI_MEM_SUPPORT_TSUS_TRES_SEPERATE_CTR
+#if (HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300) && SOC_IS(ESP32P4)
     // trs = ceil(ctx->trs_val * ctx->freq_mhz / spimem_flash_ll_get_tsus_unit_in_cycles);
     uint32_t trs = (ctx->trs_val * ctx->freq_mhz / spimem_flash_ll_get_tsus_unit_in_cycles(dev)) + ((ctx->trs_val * ctx->freq_mhz) % spimem_flash_ll_get_tsus_unit_in_cycles(dev) != 0);
     spimem_flash_ll_set_rs_delay(dev, trs);
+#endif
 #endif // SOC_SPI_MEM_SUPPORT_TSUS_TRES_SEPERATE_CTR
     // tshsl2 = ceil(SPI_FLASH_TSHSL2_SAFE_VAL_NS * spimem_flash_ll_get_source_freq_mhz() * 0.001);
     uint32_t tshsl2 = (SPI_FLASH_TSHSL2_SAFE_VAL_NS * spimem_flash_ll_get_source_freq_mhz() / 1000) + ((SPI_FLASH_TSHSL2_SAFE_VAL_NS * spimem_flash_ll_get_source_freq_mhz()) % 1000 != 0);
