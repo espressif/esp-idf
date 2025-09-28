@@ -441,7 +441,7 @@
 
     - KEY_PURPOSE_X - 将 SECURE_BOOT_DIGESTX (X = 0, 1, 2) 烧录到 KEY_PURPOSE_X (X = 0, 1, 2, 3, 4, 5)，设置密钥块功能。例如：若设置 KEY_PURPOSE_2 为 SECURE_BOOT_DIGEST1，则 BLOCK_KEY2 将具有安全启动 v2 公钥摘要。注意，必须设置写保护位，该字段无读保护位。
 
-    - BLOCK_KEYX - 该块包含其在 KEY_PURPOSE_X 中烧录的功能的对应数据，并存储公钥的 SHA-256 哈希摘要。公钥模数、指数、预先计算的 R 和 M' 值的 SHA-256 哈希摘要都将写入 eFuse 密钥块。这个摘要大小为 776 字节，偏移量从 36 到 812，如 :ref:`signature-block-format` 所示。注意，必须设置写保护位，但切勿设置读保护位。
+    - BLOCK_KEYX - 该块包含其在 KEY_PURPOSE_X 中烧录的功能的对应数据，并存储公钥的 SHA-256 哈希摘要。这个摘要大小为 32 字节。该摘要是根据签名块中的 776 字节数据（偏移量 36 到 812，包括公钥模数、指数、预先计算的 R 和 M' 值）计算得到的，具体内容见 :ref:`signature-block-format`。注意，必须设置写保护位，但切勿设置读保护位。
 
     - KEY_REVOKEX - 与 3 个密钥块中的每一个相对应的撤销标记。例如，设置 KEY_REVOKE2 将撤销密钥功能为 SECURE_BOOT_DIGEST2 的密钥块。
 
