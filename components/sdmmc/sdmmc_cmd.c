@@ -468,7 +468,7 @@ esp_err_t sdmmc_write_sectors(sdmmc_card_t* card, const void* src,
         // SDMMC peripheral needs DMA-capable buffers. Split the write into
         // separate (multi) block writes, if needed, and allocate a temporary
         // DMA-capable buffer.
-        size_t blocks_per_write = MIN(MAX_NUM_BLOCKS_PER_MULTI_BLOCK_RW, block_count);
+        size_t blocks_per_write = MIN(CONFIG_SD_UNALIGNED_MULTI_BLOCK_RW_MAX_CHUNK_SIZE, block_count);
         void *tmp_buf = NULL;
         size_t actual_size = 0;
         // We don't want to force the allocation into SPIRAM, the allocator
@@ -609,7 +609,7 @@ esp_err_t sdmmc_read_sectors(sdmmc_card_t* card, void* dst,
         // SDMMC peripheral needs DMA-capable buffers. Split the read into
         // separate (multi) block reads, if needed, and allocate a temporary
         // DMA-capable buffer.
-        size_t blocks_per_read = MIN(MAX_NUM_BLOCKS_PER_MULTI_BLOCK_RW, block_count);
+        size_t blocks_per_read = MIN(CONFIG_SD_UNALIGNED_MULTI_BLOCK_RW_MAX_CHUNK_SIZE, block_count);
         void *tmp_buf = NULL;
         size_t actual_size = 0;
         // We don't want to force the allocation into SPIRAM, the allocator
