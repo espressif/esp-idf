@@ -311,7 +311,7 @@ TEST_CASE("sem_timedwait wait on locked semaphore (timeout)", "[semaphore]")
     abstime.tv_nsec = abstime.tv_nsec + 20000000;
     if (abstime.tv_nsec >= 1000000000) {
         abstime.tv_sec = abstime.tv_sec + 1;
-        abstime.tv_sec = abstime.tv_nsec % 1000000000;
+        abstime.tv_nsec = abstime.tv_nsec % 1000000000;
     }
 
     TEST_ASSERT_EQUAL_INT(-1, sem_timedwait(&semaphore, &abstime));
