@@ -46,7 +46,7 @@ Removed the following RMII clock Kconfig options from `components/esp_eth`. Cloc
 ESP-NETIF
 *********
 
-Removal of deprecated :cpp:func:`esp_netif_next`
+Removed Deprecated :cpp:func:`esp_netif_next`
 ------------------------------------------------
 
 The deprecated iteration helper :cpp:func:`esp_netif_next` has been removed from :doc:`/api-reference/network/esp_netif`. This API was inherently unsafe because it did not lock the interface list or the TCP/IP context during iteration.
