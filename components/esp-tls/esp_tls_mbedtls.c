@@ -266,7 +266,7 @@ int esp_mbedtls_handshake(esp_tls_t *tls, const esp_tls_cfg_t *cfg)
             ret = esp_mbedtls_dynamic_set_rx_buf_static(&tls->ssl);
             if (ret != 0) {
                 ESP_LOGE(TAG, "esp_mbedtls_dynamic_set_rx_buf_static returned -0x%04X", -ret);
-                return ret;
+                return -1;
             }
         }
 #endif
