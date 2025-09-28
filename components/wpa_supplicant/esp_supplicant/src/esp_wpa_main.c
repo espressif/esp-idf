@@ -31,6 +31,7 @@
 #include "esp_eap_client.h"
 #include "esp_common_i.h"
 #include "esp_owe_i.h"
+#include "esp_roaming.h"
 
 #include "esp_wps.h"
 #include "esp_wps_i.h"
@@ -140,6 +141,9 @@ bool  wpa_attach(void)
         ret = (esp_wifi_register_eapol_txdonecb_internal(eapol_txcb) == ESP_OK);
     }
     esp_set_scan_ie();
+#if CONFIG_ESP_WIFI_ENABLE_ROAMING_APP
+    roam_init_app();
+#endif
     return ret;
 }
 
@@ -192,6 +196,9 @@ void wpa_ap_get_peer_spp_msg(void *sm_data, bool *spp_cap, bool *spp_req)
 bool wpa_deattach(void)
 {
     struct wpa_sm *sm = &gWpaSm;
+#if CONFIG_ESP_WIFI_ENABLE_ROAMING_APP
+    roam_deinit_app();
+#endif
     esp_wpa3_free_sae_data();
 #ifdef CONFIG_ESP_WIFI_ENTERPRISE_SUPPORT
     if (sm->wpa_sm_eap_disable) {
