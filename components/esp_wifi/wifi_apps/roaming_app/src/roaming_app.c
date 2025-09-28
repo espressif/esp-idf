@@ -373,13 +373,13 @@ static void roaming_app_neighbor_report_recv_handler(void* arg, esp_event_base_t
     wifi_event_neighbor_report_t *neighbor_report_event = (wifi_event_neighbor_report_t*)event_data;
     ESP_LOGD(ROAMING_TAG, "Received cb for Neighbor Report Request");
 
-    uint8_t *pos = (uint8_t *)neighbor_report_event->report;
-    if (!pos) {
+    uint8_t *pos = (uint8_t *)neighbor_report_event->n_report;
+    uint8_t report_len = neighbor_report_event->report_len;
+    if (!report_len) {
         ESP_LOGE(ROAMING_TAG, "Neighbor report is empty");
         return;
     }
 
-    uint8_t report_len = neighbor_report_event->report_len;
     /* dump report info */
     ESP_LOGD(ROAMING_TAG, "rrm: neighbor report len=%d", report_len);
     ESP_LOG_BUFFER_HEXDUMP(ROAMING_TAG, pos, report_len, ESP_LOG_DEBUG);

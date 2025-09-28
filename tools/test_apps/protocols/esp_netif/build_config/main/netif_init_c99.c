@@ -70,7 +70,7 @@ static void test_wps_init(void)
 {
     esp_wps_config_t config = WPS_CONFIG_INIT_DEFAULT(WPS_TYPE_DISABLE);
     ESP_ERROR_CHECK(esp_wifi_wps_enable(&config));
-    ESP_ERROR_CHECK(esp_wifi_wps_start(0));
+    ESP_ERROR_CHECK(esp_wifi_wps_start());
 }
 
 

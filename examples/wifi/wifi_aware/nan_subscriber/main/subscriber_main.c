@@ -52,9 +52,6 @@ static void nan_receive_event_handler(void *arg, esp_event_base_t event_base,
     if (evt->ssi_len) {
         ESP_LOGI(TAG, "Received payload from Peer "MACSTR" [Peer Service id - %d] - ", MAC2STR(evt->peer_if_mac), evt->peer_inst_id);
         ESP_LOG_BUFFER_HEXDUMP(TAG, evt->ssi, evt->ssi_len, ESP_LOG_INFO);
-    } else {
-        ESP_LOGI(TAG, "Received message '%s' from Peer "MACSTR" [Peer Service id - %d]",
-                 evt->peer_svc_info, MAC2STR(evt->peer_if_mac), evt->peer_inst_id);
     }
 }
 

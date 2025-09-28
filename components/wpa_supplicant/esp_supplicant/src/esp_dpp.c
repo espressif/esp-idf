@@ -70,29 +70,6 @@ static esp_err_t dpp_api_unlock(void)
     return ESP_OK;
 }
 
-static void dpp_event_handler(void *arg, esp_event_base_t event_base,
-                              int32_t event_id, void *event_data)
-{
-    if (!s_dpp_ctx.dpp_event_cb) {
-        return;
-    }
-    switch (event_id) {
-    case WIFI_EVENT_DPP_URI_READY:
-        wifi_event_dpp_uri_ready_t *event = (wifi_event_dpp_uri_ready_t *) event_data;
-        s_dpp_ctx.dpp_event_cb(ESP_SUPP_DPP_URI_READY, (void *)(event->uri));
-        break;
-    case WIFI_EVENT_DPP_CFG_RECVD:
-        s_dpp_ctx.dpp_event_cb(ESP_SUPP_DPP_CFG_RECVD, (wifi_config_t *)event_data);
-        break;
-    case WIFI_EVENT_DPP_FAILED:
-        s_dpp_ctx.dpp_event_cb(ESP_SUPP_DPP_FAIL, (void *)event_data);
-        break;
-    default:
-        break;
-    }
-    return;
-}
-
 static uint8_t dpp_deinit_auth(void)
 {
     if (s_dpp_ctx.dpp_auth) {
@@ -703,14 +680,6 @@ static int esp_dpp_deinit(void *data, void *user_ctx)
     esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_ROC_DONE,
                                  &roc_status_handler);
 
-    if (s_dpp_ctx.dpp_event_cb) {
-        esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_DPP_URI_READY,
-                                     &dpp_event_handler);
-        esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_DPP_CFG_RECVD,
-                                     &dpp_event_handler);
-        esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_DPP_FAILED,
-                                     &dpp_event_handler);
-    }
     if (params->info) {
         os_free(params->info);
         params->info = NULL;
@@ -726,7 +695,6 @@ static int esp_dpp_deinit(void *data, void *user_ctx)
     }
     s_dpp_ctx.dpp_init_done = false;
     s_dpp_ctx.bootstrap_done = false;
-    s_dpp_ctx.dpp_event_cb = NULL;
     if (s_dpp_event_group) {
         os_event_group_delete(s_dpp_event_group);
         s_dpp_event_group = NULL;
@@ -1061,7 +1029,6 @@ static int esp_dpp_init(void *eloop_data, void *user_ctx)
 {
     struct dpp_global_config cfg = {0};
     int ret;
-    esp_supp_dpp_event_cb_t cb = user_ctx;
 
     cfg.cb_ctx = &s_dpp_ctx;
     cfg.msg_ctx = &s_dpp_ctx;
@@ -1074,16 +1041,6 @@ static int esp_dpp_init(void *eloop_data, void *user_ctx)
         goto init_fail;
     }
 
-    s_dpp_ctx.dpp_event_cb = cb;
-
-    if (cb) {
-        esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_DPP_URI_READY,
-                                   &dpp_event_handler, NULL);
-        esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_DPP_CFG_RECVD,
-                                   &dpp_event_handler, NULL);
-        esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_DPP_FAILED,
-                                   &dpp_event_handler, NULL);
-    }
     esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_ACTION_TX_STATUS,
                                &tx_status_handler, NULL);
     esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_ROC_DONE,
@@ -1103,7 +1060,7 @@ init_fail:
 
 }
 
-esp_err_t esp_supp_dpp_init(esp_supp_dpp_event_cb_t cb)
+esp_err_t esp_supp_dpp_init(void)
 {
     esp_err_t ret = ESP_OK;
 
@@ -1127,7 +1084,7 @@ esp_err_t esp_supp_dpp_init(esp_supp_dpp_event_cb_t cb)
         dpp_api_unlock();
         return ESP_FAIL;
     }
-    ret = eloop_register_timeout_blocking(esp_dpp_init, NULL, cb);
+    ret = eloop_register_timeout_blocking(esp_dpp_init, NULL, NULL);
     dpp_api_unlock();
     return ret;
 }

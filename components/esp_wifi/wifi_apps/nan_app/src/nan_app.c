@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -476,8 +476,8 @@ static void nan_app_action_receive(void *arg, esp_event_base_t event_base, int32
         ESP_LOGD(TAG, "Received payload from Peer "MACSTR" [Peer Service id - %d] - ", MAC2STR(evt->peer_if_mac), evt->peer_inst_id);
         ESP_LOG_BUFFER_HEXDUMP(TAG, evt->ssi, evt->ssi_len, ESP_LOG_DEBUG);
     } else {
-        ESP_LOGD(TAG, "Received message '%s' from Peer "MACSTR" [Peer Service id - %d]",
-                 evt->peer_svc_info, MAC2STR(evt->peer_if_mac), evt->peer_inst_id);
+        ESP_LOGD(TAG, "Received message from Peer "MACSTR" [Peer Service id - %d]",
+                 MAC2STR(evt->peer_if_mac), evt->peer_inst_id);
     }
 
     NAN_DATA_LOCK();
@@ -826,7 +826,7 @@ esp_err_t esp_wifi_nan_stop(void)
     return ESP_OK;
 }
 
-uint8_t esp_wifi_nan_publish_service(const wifi_nan_publish_cfg_t *publish_cfg, bool ndp_resp_needed)
+uint8_t esp_wifi_nan_publish_service(const wifi_nan_publish_cfg_t *publish_cfg)
 {
     uint8_t pub_id;
 
@@ -865,7 +865,7 @@ uint8_t esp_wifi_nan_publish_service(const wifi_nan_publish_cfg_t *publish_cfg, 
     }
 
     ESP_LOGI(TAG, "Started Publishing %s [Service ID - %u]", publish_cfg->service_name, pub_id);
-    nan_record_own_svc(pub_id, ESP_NAN_PUBLISH, publish_cfg->service_name, ndp_resp_needed);
+    nan_record_own_svc(pub_id, ESP_NAN_PUBLISH, publish_cfg->service_name, publish_cfg->ndp_resp_needed);
     NAN_DATA_UNLOCK();
 
     return pub_id;
@@ -969,9 +969,6 @@ esp_err_t esp_wifi_nan_send_message(wifi_nan_followup_params_t *fup_params)
         ESP_LOGD(TAG, "Sent below payload to Peer "MACSTR" with Service ID %d",
                       MAC2STR(fup_params->peer_mac), fup_params->peer_inst_id);
         ESP_LOG_BUFFER_HEXDUMP(TAG, fup_params->ssi, fup_params->ssi_len, ESP_LOG_DEBUG);
-    } else {
-        ESP_LOGI(TAG, "Sent message '%s' to Peer "MACSTR" with Service ID %d", fup_params->svc_info,
-                  MAC2STR(fup_params->peer_mac), fup_params->peer_inst_id);
     }
     return ESP_OK;
 }

@@ -139,7 +139,7 @@ static void register_mgmt_frames(struct wpa_supplicant *wpa_s)
 
 #ifdef CONFIG_IEEE80211R
     /* register auth/assoc frames if FT is enabled */
-    if (esp_wifi_is_ft_enabled_internal(ESP_IF_WIFI_STA))
+    if (esp_wifi_is_ft_enabled_internal(WIFI_IF_STA))
         wpa_s->type |= (1 << WLAN_FC_STYPE_AUTH) |
                        (1 << WLAN_FC_STYPE_ASSOC_RESP) |
                        (1 << WLAN_FC_STYPE_REASSOC_RESP);
@@ -381,32 +381,6 @@ bool esp_rrm_is_rrm_supported_connection(void)
 
     return true;
 }
-/*This function has been deprecated in favour of esp_rrm_send_neighbor_report_request*/
-int esp_rrm_send_neighbor_rep_request(neighbor_rep_request_cb cb,
-                                      void *cb_ctx)
-{
-    struct wpa_supplicant *wpa_s = &g_wpa_supp;
-    struct wpa_ssid_value wpa_ssid = {0};
-    struct wifi_ssid *ssid;
-
-    if (!wpa_s->current_bss) {
-        wpa_printf(MSG_ERROR, "STA not associated, return");
-        return -2;
-    }
-
-    if (!(wpa_s->rrm_ie[0] & WLAN_RRM_CAPS_NEIGHBOR_REPORT)) {
-        wpa_printf(MSG_ERROR,
-                   "RRM: No network support for Neighbor Report.");
-        return -1;
-    }
-
-    ssid = esp_wifi_sta_get_prof_ssid_internal();
-
-    os_memcpy(wpa_ssid.ssid, ssid->ssid, ssid->len);
-    wpa_ssid.ssid_len = ssid->len;
-
-    return wpas_rrm_send_neighbor_rep_request(wpa_s, &wpa_ssid, 0, 0, cb, cb_ctx);
-}
 
 void neighbor_report_recvd_cb(void *ctx, const uint8_t *report, size_t report_len)
 {
@@ -423,7 +397,6 @@ void neighbor_report_recvd_cb(void *ctx, const uint8_t *report, size_t report_le
         return;
     }
 
-    os_memcpy(neighbor_report_event->report, report, ESP_WIFI_MAX_NEIGHBOR_REP_LEN);
     os_memcpy(neighbor_report_event->n_report, report, report_len);
     neighbor_report_event->report_len = report_len;
     esp_event_post(WIFI_EVENT, WIFI_EVENT_STA_NEIGHBOR_REP, neighbor_report_event, sizeof(wifi_event_neighbor_report_t) + report_len, 0);
@@ -819,12 +792,6 @@ bool esp_rrm_is_rrm_supported_connection(void)
 }
 
 int esp_rrm_send_neighbor_report_request(void)
-{
-    return -1;
-}
-
-int esp_rrm_send_neighbor_rep_request(neighbor_rep_request_cb cb,
-                                      void *cb_ctx)
 {
     return -1;
 }

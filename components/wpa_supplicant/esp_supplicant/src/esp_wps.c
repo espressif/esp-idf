@@ -1656,7 +1656,7 @@ int esp_wifi_wps_disable(void)
     return ESP_OK;
 }
 
-int esp_wifi_wps_start(int timeout_ms)
+int esp_wifi_wps_start(void)
 {
     int ret;
 

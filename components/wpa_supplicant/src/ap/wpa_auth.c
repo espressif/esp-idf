@@ -174,7 +174,7 @@ static inline int wpa_auth_set_key(struct wpa_authenticator *wpa_auth,
 	    } else {
                 return -1;
 	    }
-	    ret = esp_wifi_set_igtk_internal(ESP_IF_WIFI_AP, igtk);
+	    ret = esp_wifi_set_igtk_internal(WIFI_IF_AP, igtk);
 	    os_free(igtk);
 	    return ret;
 
