@@ -488,7 +488,7 @@ esp_err_t sdmmc_write_sectors(sdmmc_card_t* card, const void* src,
             cur_src += block_size * blocks_per_write;
             err = sdmmc_write_sectors_dma(card, tmp_buf, start_block + i, blocks_per_write, actual_size);
             if (err != ESP_OK) {
-                ESP_LOGD(TAG, "%s: error 0x%x writing blocks %zu+[%zu..%zu]",
+                ESP_LOGD(TAG, "%s: error 0x%x writing blocks %d+[%d..%d]",
                         __func__, err, start_block, i, i + blocks_per_write - 1);
                 break;
             }
@@ -627,7 +627,7 @@ esp_err_t sdmmc_read_sectors(sdmmc_card_t* card, void* dst,
             blocks_per_read = MIN(blocks_per_read, (block_count - i));
             err = sdmmc_read_sectors_dma(card, tmp_buf, start_block + i, blocks_per_read, actual_size);
             if (err != ESP_OK) {
-                ESP_LOGD(TAG, "%s: error 0x%x reading blocks %zu+[%zu..%zu]",
+                ESP_LOGD(TAG, "%s: error 0x%x reading blocks %d+[%d..%d]",
                         __func__, err, start_block, i, i + blocks_per_read - 1);
                 break;
             }
