@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -571,10 +571,10 @@ typedef union {
          *  Minor chip version
          */
         uint32_t wafer_version_minor:4;
-        /** wafer_version_major : R; bitpos: [5:4]; default: 0;
-         *  Major chip version
+        /** wafer_version_major_lo : R; bitpos: [5:4]; default: 0;
+         *  Major chip version (lower 2 bits)
          */
-        uint32_t wafer_version_major:2;
+        uint32_t wafer_version_major_lo:2;
         /** disable_wafer_version_major : R; bitpos: [6]; default: 0;
          *  Disables check of wafer version major
          */
@@ -607,10 +607,10 @@ typedef union {
          *  Package version
          */
         uint32_t pkg_version:3;
-        /** reserved_1_87 : R; bitpos: [23]; default: 0;
-         *  reserved
+        /** wafer_version_major_hi : R; bitpos: [23]; default: 0;
+         *  Major chip version (MSB)
          */
-        uint32_t reserved_1_87:1;
+        uint32_t wafer_version_major_hi:1;
         /** ldo_vo1_dref : R; bitpos: [27:24]; default: 0;
          *  Output VO1 parameter
          */
