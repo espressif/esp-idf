@@ -1327,6 +1327,21 @@ static inline uint32_t timeout_from_offered(uint32_t lease, uint32_t min)
  * LWIP_ND6_NUM_DESTINATIONS: Maximum number of entries in IPv6 destinations cache
  */
 #define LWIP_ND6_NUM_DESTINATIONS          CONFIG_LWIP_IPV6_ND6_NUM_DESTINATIONS
+
+/**
+ * LWIP_ND6_SUPPORT_RIO: Support route information options in IPv6 nd6 packets
+ */
+#ifdef CONFIG_LWIP_IPV6_ND6_ROUTE_INFO_OPTION_SUPPORT
+#define LWIP_ND6_SUPPORT_RIO            1
+#else
+#define LWIP_ND6_SUPPORT_RIO            0
+#endif
+
+/**
+ * LWIP_IPV6_ND6_NUM_ROUTE_INFO: Maximum number of entries in IPv6 route information options cache
+ */
+#define LWIP_ND6_NUM_ROUTES          CONFIG_LWIP_IPV6_ND6_NUM_ROUTE_INFO
+
 /*
    ---------------------------------------
    ---------- Hook options ---------------
