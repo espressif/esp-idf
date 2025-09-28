@@ -1795,6 +1795,24 @@ esp_err_t esp_ble_gap_set_sch_len(uint8_t role, uint32_t len)
     return esp_ble_gap_vendor_command_send(&vs_cmd);
 }
 #endif // CONFIG_SOC_BLE_MULTI_CONN_OPTIMIZATION
+
+esp_err_t esp_ble_gap_set_scan_chan_map(uint8_t state, uint8_t chan_map[5])
+{
+    esp_ble_vendor_cmd_params_t vs_cmd;
+    uint8_t cmd_param[6];
+
+    if (chan_map == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    cmd_param[0] = state;
+    memcpy(&cmd_param[1], chan_map, 5);
+    vs_cmd.opcode = 0xFD19;
+    vs_cmd.param_len = 6;
+    vs_cmd.p_param_buf = cmd_param;
+
+    return esp_ble_gap_vendor_command_send(&vs_cmd);
+}
 #endif // (BLE_VENDOR_HCI_EN == TRUE)
 
 #if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
