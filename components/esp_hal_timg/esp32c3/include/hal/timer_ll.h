@@ -4,15 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// Attention: Timer Group has 3 independent functions: General Purpose Timer, Watchdog Timer and Clock calibration.
-//            This Low Level driver only serve the General Purpose Timer function.
-
 #pragma once
 
 #include <stdbool.h>
 #include "hal/assert.h"
 #include "hal/misc.h"
 #include "hal/timer_types.h"
+#include "hal/timg_ll.h"
 #include "soc/timer_group_struct.h"
 #include "soc/system_struct.h"
 
@@ -28,57 +26,6 @@ extern "C" {
 
 // Support APB as function clock
 #define TIMER_LL_FUNC_CLOCK_SUPPORT_APB 1
-
-/**
- * @brief Enable the bus clock for timer group module
- *
- * @param group_id Group ID
- * @param enable true to enable, false to disable
- */
-static inline void _timer_ll_enable_bus_clock(int group_id, bool enable)
-{
-    if (group_id == 0) {
-        SYSTEM.perip_clk_en0.reg_timergroup_clk_en = enable;
-    } else {
-        SYSTEM.perip_clk_en0.reg_timergroup1_clk_en = enable;
-    }
-}
-
-/// use a macro to wrap the function, force the caller to use it in a critical section
-/// the critical section needs to declare the __DECLARE_RCC_RC_ATOMIC_ENV variable in advance
-#define timer_ll_enable_bus_clock(...) do { \
-        (void)__DECLARE_RCC_RC_ATOMIC_ENV; \
-        _timer_ll_enable_bus_clock(__VA_ARGS__); \
-    } while(0)
-
-/**
- * @brief Reset the timer group module
- *
- * @note  After reset the register, the "flash boot protection" will be enabled again.
- *        FLash boot protection is not used anymore after system boot up.
- *        This function will disable it by default in order to prevent the system from being reset unexpectedly.
- *
- * @param group_id Group ID
- */
-static inline void _timer_ll_reset_register(int group_id)
-{
-    if (group_id == 0) {
-        SYSTEM.perip_rst_en0.reg_timergroup_rst = 1;
-        SYSTEM.perip_rst_en0.reg_timergroup_rst = 0;
-        TIMERG0.wdtconfig0.wdt_flashboot_mod_en = 0;
-    } else {
-        SYSTEM.perip_rst_en0.reg_timergroup1_rst = 1;
-        SYSTEM.perip_rst_en0.reg_timergroup1_rst = 0;
-        TIMERG1.wdtconfig0.wdt_flashboot_mod_en = 0;
-    }
-}
-
-/// use a macro to wrap the function, force the caller to use it in a critical section
-/// the critical section needs to declare the __DECLARE_RCC_RC_ATOMIC_ENV variable in advance
-#define timer_ll_reset_register(...) do { \
-        (void)__DECLARE_RCC_RC_ATOMIC_ENV; \
-        _timer_ll_reset_register(__VA_ARGS__); \
-    } while(0)
 
 /**
  * @brief Set clock source for timer
@@ -228,7 +175,7 @@ static inline uint64_t timer_ll_get_counter_value(timg_dev_t *hw, uint32_t timer
 __attribute__((always_inline))
 static inline void timer_ll_set_alarm_value(timg_dev_t *hw, uint32_t timer_num, uint64_t alarm_value)
 {
-    hw->hw_timer[timer_num].alarmhi.tx_alarm_hi = (uint32_t) (alarm_value >> 32);
+    hw->hw_timer[timer_num].alarmhi.tx_alarm_hi = (uint32_t)(alarm_value >> 32);
     hw->hw_timer[timer_num].alarmlo.tx_alarm_lo = (uint32_t) alarm_value;
 }
 
@@ -242,7 +189,7 @@ static inline void timer_ll_set_alarm_value(timg_dev_t *hw, uint32_t timer_num, 
 __attribute__((always_inline))
 static inline void timer_ll_set_reload_value(timg_dev_t *hw, uint32_t timer_num, uint64_t load_val)
 {
-    hw->hw_timer[timer_num].loadhi.tx_load_hi = (uint32_t) (load_val >> 32);
+    hw->hw_timer[timer_num].loadhi.tx_load_hi = (uint32_t)(load_val >> 32);
     hw->hw_timer[timer_num].loadlo.tx_load_lo = (uint32_t) load_val;
 }
 

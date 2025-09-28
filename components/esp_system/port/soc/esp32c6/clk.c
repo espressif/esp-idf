@@ -251,8 +251,8 @@ __attribute__((weak)) void esp_perip_clk_init(void)
         ledc_ll_enable_bus_clock(false);
         timer_ll_enable_clock(0, 0, false);
         timer_ll_enable_clock(1, 0, false);
-        _timer_ll_enable_bus_clock(0, false);
-        _timer_ll_enable_bus_clock(1, false);
+        _timg_ll_enable_bus_clock(0, false);
+        _timg_ll_enable_bus_clock(1, false);
         twai_ll_enable_clock(0, false);
         twai_ll_enable_bus_clock(0, false);
         twai_ll_enable_clock(1, false);

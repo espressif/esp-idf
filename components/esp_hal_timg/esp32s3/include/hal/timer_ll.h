@@ -4,18 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// Attention: Timer Group has 3 independent functions: General Purpose Timer, Watchdog Timer and Clock calibration.
-//            This Low Level driver only serve the General Purpose Timer function.
-
 #pragma once
 
 #include <stdbool.h>
-#include "esp_attr.h"
 #include "hal/assert.h"
 #include "hal/misc.h"
 #include "hal/timer_types.h"
+#include "hal/timg_ll.h"
 #include "soc/timer_group_struct.h"
-#include "soc/dport_reg.h"
+#include "soc/system_struct.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -31,61 +28,6 @@ extern "C" {
 #define TIMER_LL_FUNC_CLOCK_SUPPORT_APB 1
 
 /**
- * @brief Enable the bus clock for timer group module
- *
- * @param group_id Group ID
- * @param enable true to enable, false to disable
- */
-static inline void _timer_ll_enable_bus_clock(int group_id, bool enable)
-{
-    uint32_t reg_val = DPORT_READ_PERI_REG(DPORT_PERIP_CLK_EN_REG);
-    if (group_id == 0) {
-        reg_val &= ~DPORT_TIMERGROUP_CLK_EN;
-        reg_val |= enable << 13;
-    } else {
-        reg_val &= ~DPORT_TIMERGROUP1_CLK_EN;
-        reg_val |= enable << 15;
-    }
-    DPORT_WRITE_PERI_REG(DPORT_PERIP_CLK_EN_REG, reg_val);
-}
-
-/// use a macro to wrap the function, force the caller to use it in a critical section
-/// the critical section needs to declare the __DECLARE_RCC_RC_ATOMIC_ENV variable in advance
-#define timer_ll_enable_bus_clock(...) do { \
-        (void)__DECLARE_RCC_RC_ATOMIC_ENV; \
-        _timer_ll_enable_bus_clock(__VA_ARGS__); \
-    } while(0)
-
-/**
- * @brief Reset the timer group module
- *
- * @note  After reset the register, the "flash boot protection" will be enabled again.
- *        FLash boot protection is not used anymore after system boot up.
- *        This function will disable it by default in order to prevent the system from being reset unexpectedly.
- *
- * @param group_id Group ID
- */
-static inline void _timer_ll_reset_register(int group_id)
-{
-    if (group_id == 0) {
-        DPORT_WRITE_PERI_REG(DPORT_PERIP_RST_EN_REG, DPORT_TIMERGROUP_RST);
-        DPORT_WRITE_PERI_REG(DPORT_PERIP_RST_EN_REG, 0);
-        TIMERG0.wdtconfig0.wdt_flashboot_mod_en = 0;
-    } else {
-        DPORT_WRITE_PERI_REG(DPORT_PERIP_RST_EN_REG, DPORT_TIMERGROUP1_RST);
-        DPORT_WRITE_PERI_REG(DPORT_PERIP_RST_EN_REG, 0);
-        TIMERG1.wdtconfig0.wdt_flashboot_mod_en = 0;
-    }
-}
-
-/// use a macro to wrap the function, force the caller to use it in a critical section
-/// the critical section needs to declare the __DECLARE_RCC_RC_ATOMIC_ENV variable in advance
-#define timer_ll_reset_register(...) do { \
-        (void)__DECLARE_RCC_RC_ATOMIC_ENV; \
-        _timer_ll_reset_register(__VA_ARGS__); \
-    } while(0)
-
-/**
  * @brief Set clock source for timer
  *
  * @param group_id Group ID
@@ -94,10 +36,13 @@ static inline void _timer_ll_reset_register(int group_id)
  */
 static inline void timer_ll_set_clock_source(int group_id, uint32_t timer_num, gptimer_clock_source_t clk_src)
 {
-    (void)group_id;
-    (void)timer_num;
+    timg_dev_t *hw = TIMER_LL_GET_HW(group_id);
     switch (clk_src) {
     case GPTIMER_CLK_SRC_APB:
+        hw->hw_timer[timer_num].config.tn_use_xtal = 0;
+        break;
+    case GPTIMER_CLK_SRC_XTAL:
+        hw->hw_timer[timer_num].config.tn_use_xtal = 1;
         break;
     default:
         HAL_ASSERT(false && "unsupported clock source");
@@ -132,9 +77,7 @@ static inline void timer_ll_enable_clock(int group_id, uint32_t timer_num, bool 
 __attribute__((always_inline))
 static inline void timer_ll_enable_alarm(timg_dev_t *hw, uint32_t timer_num, bool en)
 {
-    hw->hw_timer[timer_num].config.tx_alarm_en = en;
-    // use level type interrupt
-    hw->hw_timer[timer_num].config.tx_level_int_en = en;
+    hw->hw_timer[timer_num].config.tn_alarm_en = en;
 }
 
 /**
@@ -150,7 +93,8 @@ static inline void timer_ll_set_clock_prescale(timg_dev_t *hw, uint32_t timer_nu
     if (divider >= 65536) {
         divider = 0;
     }
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->hw_timer[timer_num].config, tx_divider, divider);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->hw_timer[timer_num].config, tn_divider, divider);
+    hw->hw_timer[timer_num].config.tn_divcnt_rst = 1;
 }
 
 /**
@@ -164,7 +108,7 @@ static inline void timer_ll_set_clock_prescale(timg_dev_t *hw, uint32_t timer_nu
 __attribute__((always_inline))
 static inline void timer_ll_enable_auto_reload(timg_dev_t *hw, uint32_t timer_num, bool en)
 {
-    hw->hw_timer[timer_num].config.tx_autoreload = en;
+    hw->hw_timer[timer_num].config.tn_autoreload = en;
 }
 
 /**
@@ -176,7 +120,7 @@ static inline void timer_ll_enable_auto_reload(timg_dev_t *hw, uint32_t timer_nu
  */
 static inline void timer_ll_set_count_direction(timg_dev_t *hw, uint32_t timer_num, gptimer_count_direction_t direction)
 {
-    hw->hw_timer[timer_num].config.tx_increase = direction == GPTIMER_COUNT_UP;
+    hw->hw_timer[timer_num].config.tn_increase = (direction == GPTIMER_COUNT_UP);
 }
 
 /**
@@ -190,7 +134,7 @@ static inline void timer_ll_set_count_direction(timg_dev_t *hw, uint32_t timer_n
 __attribute__((always_inline))
 static inline void timer_ll_enable_counter(timg_dev_t *hw, uint32_t timer_num, bool en)
 {
-    hw->hw_timer[timer_num].config.tx_en = en;
+    hw->hw_timer[timer_num].config.tn_en = en;
 }
 
 /**
@@ -202,10 +146,10 @@ static inline void timer_ll_enable_counter(timg_dev_t *hw, uint32_t timer_num, b
 __attribute__((always_inline))
 static inline void timer_ll_trigger_soft_capture(timg_dev_t *hw, uint32_t timer_num)
 {
-    hw->hw_timer[timer_num].update.tx_update = 1;
+    hw->hw_timer[timer_num].update.tn_update = 1;
     // Timer register is in a different clock domain from Timer hardware logic
     // We need to wait for the update to take effect before fetching the count value
-    while (hw->hw_timer[timer_num].update.tx_update) {
+    while (hw->hw_timer[timer_num].update.tn_update) {
     }
 }
 
@@ -220,7 +164,7 @@ static inline void timer_ll_trigger_soft_capture(timg_dev_t *hw, uint32_t timer_
 __attribute__((always_inline))
 static inline uint64_t timer_ll_get_counter_value(timg_dev_t *hw, uint32_t timer_num)
 {
-    return ((uint64_t) hw->hw_timer[timer_num].hi.tx_hi << 32) | (hw->hw_timer[timer_num].lo.tx_lo);
+    return ((uint64_t)hw->hw_timer[timer_num].hi.tn_hi << 32) | (hw->hw_timer[timer_num].lo.tn_lo);
 }
 
 /**
@@ -233,8 +177,8 @@ static inline uint64_t timer_ll_get_counter_value(timg_dev_t *hw, uint32_t timer
 __attribute__((always_inline))
 static inline void timer_ll_set_alarm_value(timg_dev_t *hw, uint32_t timer_num, uint64_t alarm_value)
 {
-    hw->hw_timer[timer_num].alarmhi.tx_alarm_hi = (uint32_t) (alarm_value >> 32);
-    hw->hw_timer[timer_num].alarmlo.tx_alarm_lo = (uint32_t) alarm_value;
+    hw->hw_timer[timer_num].alarmhi.tn_alarm_hi = (uint32_t)(alarm_value >> 32);
+    hw->hw_timer[timer_num].alarmlo.tn_alarm_lo = (uint32_t)alarm_value;
 }
 
 /**
@@ -245,10 +189,10 @@ static inline void timer_ll_set_alarm_value(timg_dev_t *hw, uint32_t timer_num, 
  * @param reload_val Reload counter value
  */
 __attribute__((always_inline))
-static inline void timer_ll_set_reload_value(timg_dev_t *hw, uint32_t timer_num, uint64_t load_val)
+static inline void timer_ll_set_reload_value(timg_dev_t *hw, uint32_t timer_num, uint64_t reload_val)
 {
-    hw->hw_timer[timer_num].loadhi.tx_load_hi = (uint32_t) (load_val >> 32);
-    hw->hw_timer[timer_num].loadlo.tx_load_lo = (uint32_t) load_val;
+    hw->hw_timer[timer_num].loadhi.tn_load_hi = (uint32_t)(reload_val >> 32);
+    hw->hw_timer[timer_num].loadlo.tn_load_lo = (uint32_t)reload_val;
 }
 
 /**
@@ -261,7 +205,7 @@ static inline void timer_ll_set_reload_value(timg_dev_t *hw, uint32_t timer_num,
 __attribute__((always_inline))
 static inline uint64_t timer_ll_get_reload_value(timg_dev_t *hw, uint32_t timer_num)
 {
-    return ((uint64_t)hw->hw_timer[timer_num].loadhi.tx_load_hi << 32) | (hw->hw_timer[timer_num].loadlo.tx_load_lo);
+    return ((uint64_t)hw->hw_timer[timer_num].loadhi.tn_load_hi << 32) | (hw->hw_timer[timer_num].loadlo.tn_load_lo);
 }
 
 /**
@@ -273,7 +217,7 @@ static inline uint64_t timer_ll_get_reload_value(timg_dev_t *hw, uint32_t timer_
 __attribute__((always_inline))
 static inline void timer_ll_trigger_soft_reload(timg_dev_t *hw, uint32_t timer_num)
 {
-    hw->hw_timer[timer_num].load.tx_load = 1;
+    hw->hw_timer[timer_num].load.tn_load = 1;
 }
 
 /**
@@ -332,28 +276,15 @@ static inline void timer_ll_enable_register_clock_always_on(timg_dev_t *hw, bool
 }
 
 /**
- * @brief Get interrupt status register address.
+ * @brief Get interrupt status register address
  *
- * @param hw Beginning address of the peripheral registers.
+ * @param hw Timer Group register base address
  *
  * @return Interrupt status register address
  */
 static inline volatile void *timer_ll_get_intr_status_reg(timg_dev_t *hw)
 {
-    return &hw->int_st_timers.val;
-}
-
-/**
- * @brief Set clock prescale for LACT timer
- *
- * @param hw Timer Group register base address
- * @param timer_num Timer number in the group
- * @param divider Prescale value (0 and 1 are not valid)
- */
-FORCE_INLINE_ATTR void timer_ll_set_lact_clock_prescale(timg_dev_t *hw, uint32_t divider)
-{
-    HAL_ASSERT(divider>=2);
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->lactconfig, lact_divider, divider);
+    return &hw->int_st_timers;
 }
 
 #ifdef __cplusplus

@@ -80,6 +80,7 @@ else()
                                     # [REFACTOR-TODO] Provide system hook to release dependency reversion.
                                     # IDF-13980
                                     esp_hal_i2c
+                                    esp_hal_timg # task_wdt_impl_timergroup.c relies on it
                         LDFRAGMENTS "linker.lf" "app.lf")
     add_subdirectory(port)
 

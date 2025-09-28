@@ -20,7 +20,7 @@
 #include "soc/soc.h"
 #include "soc/timer_group_reg.h"
 #include "soc/rtc.h"
-#include "hal/timer_ll.h"
+#include "hal/lact_ll.h"
 #include "freertos/FreeRTOS.h"
 
 /**
@@ -226,8 +226,8 @@ esp_err_t esp_timer_impl_early_init(void)
 {
     PERIPH_RCC_ACQUIRE_ATOMIC(PERIPH_LACT, ref_count) {
         if (ref_count == 0) {
-            timer_ll_enable_bus_clock(LACT_MODULE, true);
-            timer_ll_reset_register(LACT_MODULE);
+            timg_ll_enable_bus_clock(LACT_MODULE, true);
+            timg_ll_reset_register(LACT_MODULE);
         }
     }
 
@@ -277,7 +277,7 @@ esp_err_t esp_timer_impl_init(intr_handler_t alarm_handler)
         */
         REG_SET_BIT(INT_ENA_REG, TIMG_LACT_INT_ENA);
         portENTER_CRITICAL_SAFE(&s_time_update_lock);
-        timer_ll_set_lact_clock_prescale(TIMER_LL_GET_HW(LACT_MODULE), esp_clk_apb_freq() / MHZ / LACT_TICKS_PER_US);
+        lact_ll_set_clock_prescale(LACT_LL_GET_HW(LACT_MODULE), esp_clk_apb_freq() / MHZ / LACT_TICKS_PER_US);
         portEXIT_CRITICAL_SAFE(&s_time_update_lock);
         // Set the step for the sleep mode when the timer will work
         // from a slow_clk frequency instead of the APB frequency.
@@ -308,7 +308,7 @@ void esp_timer_impl_deinit(void)
     s_alarm_handler = NULL;
     PERIPH_RCC_RELEASE_ATOMIC(PERIPH_LACT, ref_count) {
         if (ref_count == 0) {
-            timer_ll_enable_bus_clock(LACT_MODULE, false);
+            timg_ll_enable_bus_clock(LACT_MODULE, false);
         }
     }
 }

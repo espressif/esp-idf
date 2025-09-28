@@ -24,7 +24,6 @@
 #include "soc/rtc.h"
 #include "soc/efuse_periph.h"
 #include "soc/rtc_periph.h"
-#include "soc/timer_periph.h"
 #include "hal/mmu_hal.h"
 #include "hal/mmu_ll.h"
 #include "hal/cache_types.h"

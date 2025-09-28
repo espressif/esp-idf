@@ -290,11 +290,11 @@ __attribute__((weak)) void esp_perip_clk_init(void)
         _uart_ll_enable_bus_clock(UART_NUM_4, false);
         _uart_ll_sclk_disable(&UART4);
 
-        _timer_ll_enable_bus_clock(0, false);
+        _timg_ll_enable_bus_clock(0, false);
         _timer_ll_enable_clock(0, 0, false);
         _timer_ll_enable_clock(0, 1, false);
 
-        _timer_ll_enable_bus_clock(1, false);
+        _timg_ll_enable_bus_clock(1, false);
         _timer_ll_enable_clock(1, 0, false);
         _timer_ll_enable_clock(1, 1, false);
 

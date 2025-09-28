@@ -11,7 +11,7 @@
 #include "soc/soc_caps.h"
 #include "hal/wdt_hal.h"
 #include "hal/mwdt_ll.h"
-#include "hal/timer_ll.h"
+#include "hal/timg_ll.h"
 #include "soc/system_intr.h"
 #include "freertos/FreeRTOS.h"
 #include "esp_cpu.h"
@@ -144,8 +144,8 @@ void esp_int_wdt_init(void)
 {
     PERIPH_RCC_ACQUIRE_ATOMIC(IWDT_PERIPH, ref_count) {
         if (ref_count == 0) {
-            timer_ll_enable_bus_clock(IWDT_TIMER_GROUP, true);
-            timer_ll_reset_register(IWDT_TIMER_GROUP);
+            timg_ll_enable_bus_clock(IWDT_TIMER_GROUP, true);
+            timg_ll_reset_register(IWDT_TIMER_GROUP);
         }
     }
     /*

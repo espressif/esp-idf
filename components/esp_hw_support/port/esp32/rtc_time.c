@@ -8,7 +8,7 @@
 #include "esp_rom_sys.h"
 #include "hal/clk_tree_ll.h"
 #include "hal/rtc_cntl_ll.h"
-#include "hal/timer_ll.h"
+#include "hal/timg_ll.h"
 #include "soc/rtc.h"
 #include "soc/timer_periph.h"
 #include "esp_hw_log.h"
@@ -201,12 +201,12 @@ static void enable_timer_group0_for_calibration(void)
 #ifndef BOOTLOADER_BUILD
     PERIPH_RCC_ACQUIRE_ATOMIC(PERIPH_TIMG0_MODULE, ref_count) {
         if (ref_count == 0) {
-            timer_ll_enable_bus_clock(0, true);
-            timer_ll_reset_register(0);
+            timg_ll_enable_bus_clock(0, true);
+            timg_ll_reset_register(0);
         }
     }
 #else
-    _timer_ll_enable_bus_clock(0, true);
-    _timer_ll_reset_register(0);
+    _timg_ll_enable_bus_clock(0, true);
+    _timg_ll_reset_register(0);
 #endif
 }
