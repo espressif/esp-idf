@@ -74,7 +74,7 @@ entries:
             spi_flash_hpm_enable (noflash)
 
 [mapping:spi_flash_hal]
-archive: libhal.a
+archive: libesp_hal_mspi.a
 entries:
     if SPI_FLASH_PLACE_FUNCTIONS_IN_IRAM = y:
         spi_flash_hal_iram (noflash)

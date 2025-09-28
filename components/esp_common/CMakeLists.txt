@@ -32,6 +32,7 @@ set(optional_reqs ulp
                     soc
                     esp-tls
                     esp_https_ota
+                    esp_hal_mspi
                     esp_hw_support)
 
 idf_build_get_property(build_components BUILD_COMPONENTS)

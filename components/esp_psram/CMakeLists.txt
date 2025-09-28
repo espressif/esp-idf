@@ -10,7 +10,7 @@ if(CONFIG_SOC_SPIRAM_XIP_SUPPORTED)
     list(APPEND includes xip_impl/include)
 endif()
 
-set(priv_requires heap spi_flash esp_mm)
+set(priv_requires heap spi_flash esp_mm esp_hal_mspi)
 if(${target} STREQUAL "esp32")
     list(APPEND priv_requires bootloader_support esp_driver_spi esp_driver_gpio)
 endif()
