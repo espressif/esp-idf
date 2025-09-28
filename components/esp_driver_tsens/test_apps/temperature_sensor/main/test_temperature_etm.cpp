@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,7 +21,7 @@
 // from 0 to 1 on logic analyzer or oscilloscope.
 TEST_CASE("temperature sensor alarm cause gpio pull up", "[etm]")
 {
-    const uint32_t output_gpio = 5;
+    const gpio_num_t output_gpio = GPIO_NUM_5;
     // temperature sensor alarm ---> ETM channel A ---> GPIO level to high
     printf("allocate etm channel\r\n");
     esp_etm_channel_config_t etm_config = {};
@@ -30,9 +30,8 @@ TEST_CASE("temperature sensor alarm cause gpio pull up", "[etm]")
 
     printf("allocate GPIO etm task\r\n");
     esp_etm_task_handle_t gpio_task = NULL;
-    gpio_etm_task_config_t gpio_task_config = {
-        .action = GPIO_ETM_TASK_ACTION_SET,
-    };
+    gpio_etm_task_config_t gpio_task_config = {};
+    gpio_task_config.actions[0] = GPIO_ETM_TASK_ACTION_SET;
     TEST_ESP_OK(gpio_new_etm_task(&gpio_task_config, &gpio_task));
     // set gpio number for the gpio etm primitives
     TEST_ESP_OK(gpio_etm_task_add_gpio(gpio_task, output_gpio));
@@ -40,9 +39,14 @@ TEST_CASE("temperature sensor alarm cause gpio pull up", "[etm]")
     printf("initialize gpio\r\n");
     gpio_set_level(output_gpio, 0);
     gpio_config_t task_gpio_config = {
-        .intr_type = GPIO_INTR_DISABLE,
-        .mode = GPIO_MODE_OUTPUT,
         .pin_bit_mask = 1ULL << output_gpio,
+                             .mode = GPIO_MODE_OUTPUT,
+                             .pull_up_en = GPIO_PULLUP_DISABLE,
+                             .pull_down_en = GPIO_PULLDOWN_DISABLE,
+                             .intr_type = GPIO_INTR_DISABLE,
+#if SOC_GPIO_SUPPORT_PIN_HYS_FILTER
+                             .hys_ctrl_mode = GPIO_HYS_SOFT_DISABLE,
+#endif
     };
     TEST_ESP_OK(gpio_config(&task_gpio_config));
 
