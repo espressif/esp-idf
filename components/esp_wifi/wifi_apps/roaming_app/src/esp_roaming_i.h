@@ -135,6 +135,16 @@ struct roaming_app {
 #if PERIODIC_SCAN_MONITORING
     bool periodic_scan_active;
 #endif
+#if CONFIG_ESP_WIFI_ROAMING_BSSID_BLACKLIST
+    struct blacklist_entry {
+        uint8_t bssid[ETH_ALEN];
+#if CONFIG_ESP_WIFI_ROAMING_AUTO_BLACKLISTING
+        uint8_t failures;
+#endif
+        struct timeval timestamp;
+    } bssid_blacklist[CONFIG_ESP_WIFI_ROAMING_MAX_CANDIDATES];
+    uint8_t bssid_blacklist_count;
+#endif
     bool allow_reconnect;
 };
 

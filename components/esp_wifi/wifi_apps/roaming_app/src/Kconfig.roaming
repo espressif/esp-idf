@@ -139,13 +139,7 @@ menu "Scan Configuration"
             Duration for which the results from the most recent scans can be used
             by the roaming app for determining the roaming candidates.
 
-    config ESP_WIFI_ROAMING_MAX_CANDIDATES
-        int "Max Candidates in the network"
-        default 3
-        range 3 20
-        help
-            Max candidates that can be considered while scanning as a part of the
-            network at one time.
+
 
 endmenu #"Scan Configuration"
 
@@ -182,3 +176,50 @@ config ESP_WIFI_ROAMING_RRM_MONITOR_THRESHOLD
     range -99 0
     help
         The RSSI threshold beyond which we start sending periodic neighbor report requests.
+
+menu "Blacklist Configuration"
+    config ESP_WIFI_ROAMING_BSSID_BLACKLIST
+        bool "Enable BSSID blacklisting"
+        default n
+        help
+            Enable this to blacklist BSSIDs.
+
+    config ESP_WIFI_ROAMING_AUTO_BLACKLISTING
+        bool "Enable automatic BSSID blacklisting"
+        depends on ESP_WIFI_ROAMING_BSSID_BLACKLIST
+        help
+            Enable this to automatically blacklist BSSIDs after multiple failed connection attempts.
+
+    config ESP_WIFI_ROAMING_MAX_CONN_FAILURES
+        int "Maximum connection failures"
+        depends on ESP_WIFI_ROAMING_AUTO_BLACKLISTING
+        range 1 10
+        default 3
+        help
+            Maximum number of connection failures before a BSSID is blacklisted.
+
+    config ESP_WIFI_ROAMING_BLACKLIST_TIMEOUT
+        int "Blacklist timeout (in seconds)"
+        depends on ESP_WIFI_ROAMING_BSSID_BLACKLIST
+        range 10 3600
+        default 300
+        help
+            Time in seconds for which a BSSID remains in the blacklist.
+            This applies to both automatically and manually blacklisted BSSIDs.
+
+    config ESP_WIFI_ROAMING_MAX_CANDIDATES
+        int "Maximum number of roaming candidates"
+        range 1 10
+        default 5
+        help
+            Maximum number of roaming candidates to consider. This also defines the size of the blacklist.
+
+    config ESP_WIFI_ROAMING_PREVENT_DOWNGRADE
+        bool "Prevent security downgrade when roaming"
+        default n
+        help
+            If the currently connected AP sends a "transition disable" bit,
+            this option will make the roaming logic ignore less secure APs.
+            This helps prevent security downgrades when roaming in a mixed
+            security environment (e.g., WPA2/WPA3).
+endmenu # "Blacklist Configuration"
