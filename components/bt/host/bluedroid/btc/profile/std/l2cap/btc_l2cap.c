@@ -300,6 +300,7 @@ static inline void btc_l2cap_cb_to_app(esp_bt_l2cap_cb_event_t event, esp_bt_l2c
 {
     esp_bt_l2cap_cb_t btc_l2cap_cb = (esp_bt_l2cap_cb_t)btc_profile_cb_get(BTC_PID_L2CAP);
     if (btc_l2cap_cb) {
+        BTC_TRACE_DEBUG("btc_l2cap_cb_to_app, event=%d", event);
         btc_l2cap_cb(event, param);
     }
 }
@@ -772,6 +773,7 @@ static void btc_l2cap_disconnect(uint32_t handle)
 void btc_l2cap_call_handler(btc_msg_t *msg)
 {
     btc_l2cap_args_t *arg = (btc_l2cap_args_t *)(msg->arg);
+    BTC_TRACE_DEBUG("%s act %d", __func__, msg->act);
     switch (msg->act) {
     case BTC_L2CAP_ACT_INIT:
         btc_l2cap_init();
@@ -808,6 +810,8 @@ void btc_l2cap_cb_handler(btc_msg_t *msg)
     uint8_t event = msg->act;
     uint8_t serial = 0;
     uint32_t count = 0;
+
+    BTC_TRACE_DEBUG("%s act %d", __func__, msg->act);
 
     switch (event) {
     case BTA_JV_ENABLE_EVT:
