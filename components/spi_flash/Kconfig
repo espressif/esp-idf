@@ -113,7 +113,7 @@ menu "Main Flash configuration"
             int "SPI flash tRS value (refer to chapter AC CHARACTERISTICS)"
             default 50
             range 20 200
-            depends on SOC_SPI_MEM_SUPPORT_TSUS_TRES_SEPERATE_CTR
+            depends on SOC_SPI_MEM_SUPPORT_TSUS_TRES_SEPERATE_CTR && (!ESP32P4_SELECTS_REV_LESS_V3)
             help
                 This config is used for setting Trs parameter. Trs means CS Latency Between Resume And Next Suspend.
                 You can refer to the chapter of AC CHARACTERISTICS of flash datasheet.
