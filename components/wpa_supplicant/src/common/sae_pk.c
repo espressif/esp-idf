@@ -618,9 +618,7 @@ int sae_check_confirm_pk(struct sae_data *sae, const u8 *ies, size_t ies_len)
 	u8 hash[SAE_MAX_HASH_LEN];
 	size_t hash_len;
 	int group;
-	struct wpa_supplicant *wpa_s = &g_wpa_supp;
-	struct sae_pk_elems elems;
-	int ret = 0;
+	struct ieee802_11_elems elems;
 
 	if (!tmp) {
 		return -1;
@@ -644,15 +642,16 @@ int sae_check_confirm_pk(struct sae_data *sae, const u8 *ies, size_t ies_len)
 	}
 
 	wpa_hexdump(MSG_DEBUG, "SAE-PK: Received confirm IEs", ies, ies_len);
-	ieee802_11_parse_elems(wpa_s, ies, ies_len);
 
-	elems = wpa_s->sae_pk_elems;
+	if (ieee802_11_parse_elems(ies, ies_len, &elems, 1) == ParseFailed) {
+		wpa_printf(MSG_INFO, "SAE-PK: Failed to parse confirm IEs");
+		return -1;
+	}
 
 	if (!elems.fils_pk || !elems.fils_key_confirm || !elems.sae_pk) {
 		wpa_printf(MSG_INFO,
 				   "SAE-PK: Not all mandatory IEs included in confirm");
-		ret = -1;
-		goto done;
+		return -1;
 	}
 
 	/* TODO: Fragment reassembly */
@@ -660,8 +659,7 @@ int sae_check_confirm_pk(struct sae_data *sae, const u8 *ies, size_t ies_len)
 	if (elems.sae_pk_len < SAE_PK_M_LEN + AES_BLOCK_SIZE) {
 		wpa_printf(MSG_INFO,
 				   "SAE-PK: No room for EncryptedModifier in SAE-PK element");
-		ret = -1;
-		goto done;
+		return -1;
 	}
 
 	wpa_hexdump(MSG_DEBUG, "SAE-PK: EncryptedModifier",
@@ -672,16 +670,14 @@ int sae_check_confirm_pk(struct sae_data *sae, const u8 *ies, size_t ies_len)
 						0, NULL, NULL, m) < 0) {
 		wpa_printf(MSG_INFO,
 				   "SAE-PK: Failed to decrypt EncryptedModifier");
-		ret = -1;
-		goto done;
+		return -1;
 	}
 	wpa_hexdump_key(MSG_DEBUG, "SAE-PK: Modifier M", m, SAE_PK_M_LEN);
 
 	if (elems.fils_pk[0] != 2) {
 		wpa_printf(MSG_INFO, "SAE-PK: Unsupported public key type %u",
 				   elems.fils_pk[0]);
-		ret = -1;
-		goto done;
+		return -1;
 	}
 	k_ap_len = elems.fils_pk_len - 1;
 	k_ap = elems.fils_pk + 1;
@@ -691,15 +687,13 @@ int sae_check_confirm_pk(struct sae_data *sae, const u8 *ies, size_t ies_len)
 	key = crypto_ec_key_parse_pub(k_ap, k_ap_len);
 	if (!key) {
 		wpa_printf(MSG_INFO, "SAE-PK: Failed to parse K_AP");
-		ret = -1;
-		goto done;
+		return -1;
 	}
 	group = crypto_ec_key_group(key);
 	if (!sae_pk_valid_fingerprint(sae, m, SAE_PK_M_LEN, k_ap, k_ap_len,
 								  group)) {
 		crypto_ec_key_deinit(key);
-		ret = -1;
-		goto done;
+		return -1;
 	}
 
 	wpa_hexdump(MSG_DEBUG, "SAE-PK: Received KeyAuth",
@@ -709,8 +703,7 @@ int sae_check_confirm_pk(struct sae_data *sae, const u8 *ies, size_t ies_len)
 	if (sae_pk_hash_sig_data(sae, hash_len, false, m, SAE_PK_M_LEN,
 							 k_ap, k_ap_len, hash) < 0) {
 		crypto_ec_key_deinit(key);
-		ret = -1;
-		goto done;
+		return -1;
 	}
 
 	res = crypto_ec_key_verify_signature(key, hash, hash_len,
@@ -721,25 +714,12 @@ int sae_check_confirm_pk(struct sae_data *sae, const u8 *ies, size_t ies_len)
 	if (res != 1) {
 		wpa_printf(MSG_INFO,
 				   "SAE-PK: Invalid or incorrect signature in KeyAuth");
-		ret = -1;
-		goto done;
+		return -1;
 	}
 
 	wpa_printf(MSG_DEBUG, "SAE-PK: Valid KeyAuth signature received");
 
 	/* TODO: Store validated public key into network profile */
-done:
-	if (wpa_s->sae_pk_elems.fils_pk) {
-		os_free(wpa_s->sae_pk_elems.fils_pk);
-	}
-	if (wpa_s->sae_pk_elems.sae_pk) {
-		os_free(wpa_s->sae_pk_elems.sae_pk);
-	}
-	if (wpa_s->sae_pk_elems.fils_key_confirm) {
-		os_free(wpa_s->sae_pk_elems.fils_key_confirm);
-	}
-	os_memset(&wpa_s->sae_pk_elems, 0, sizeof(wpa_s->sae_pk_elems));
-
-	return ret;
+	return 0;
 }
 #endif /* CONFIG_SAE_PK */

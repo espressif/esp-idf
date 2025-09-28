@@ -1,4 +1,3 @@
-
 menu "Wi-Fi"
     visible if (SOC_WIFI_SUPPORTED || SOC_WIRELESS_HOST_SUPPORTED)
 
@@ -308,19 +307,19 @@ menu "Wi-Fi"
                 explicitly configured before attempting connection. Please refer to the Wi-Fi Driver API Guide
                 for details.
 
-        config ESP_WIFI_ENABLE_SAE_PK
-            bool "Enable SAE-PK"
-            default y
-            depends on (ESP_WIFI_ENABLE_WPA3_SAE && ESP_WIFI_ENABLE_SAE_H2E)
-            help
-                Select this option to enable SAE-PK
-
         config ESP_WIFI_ENABLE_SAE_H2E
             bool "Enable SAE-H2E"
             default y
             depends on ESP_WIFI_ENABLE_WPA3_SAE
             help
                 Select this option to enable SAE-H2E
+
+        config ESP_WIFI_ENABLE_SAE_PK
+            bool "Enable SAE-PK"
+            default y
+            depends on ESP_WIFI_ENABLE_SAE_H2E
+            help
+                Select this option to enable SAE-PK
 
         config ESP_WIFI_SOFTAP_SAE_SUPPORT
             bool "Enable WPA3 Personal(SAE) SoftAP"
@@ -339,6 +338,13 @@ menu "Wi-Fi"
                 PMF (Protected Management Frames) is a prerequisite feature for a WPA3 connection, it needs to be
                 explicitly configured before attempting connection. Please refer to the Wi-Fi Driver API Guide
                 for details.
+
+        config ESP_WIFI_WPA3_COMPATIBLE_SUPPORT
+            bool "Enable WPA3 Compatible support"
+            default y
+            depends on ESP_WIFI_ENABLE_SAE_H2E
+            help
+                Select this option to support wpa3_compatible mode for station and AP
 
         config ESP_WIFI_SLP_IRAM_OPT
             bool "WiFi SLP IRAM speed optimization"

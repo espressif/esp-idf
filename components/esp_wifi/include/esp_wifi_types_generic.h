@@ -533,8 +533,10 @@ typedef struct {
     bool ftm_responder;                       /**< Enable FTM Responder mode */
     wifi_pmf_config_t pmf_cfg;                /**< Configuration for Protected Management Frame */
     wifi_sae_pwe_method_t sae_pwe_h2e;        /**< Configuration for SAE PWE derivation method */
-    uint8_t transition_disable;               /**< Whether to enable transition disable feature */
-    uint8_t sae_ext;                          /**< Enable SAE EXT feature. SOC_GCMP_SUPPORT is required for this feature. */
+    uint8_t transition_disable: 1;            /**< Whether to enable transition disable feature */
+    uint8_t sae_ext: 1;                       /**< Enable SAE EXT feature. SOC_GCMP_SUPPORT is required for this feature. */
+    uint8_t wpa3_compatible_mode: 1;          /**< Enable WPA3 compatible authmode feature. Note: Enabling this will override the AP configuration's authmode and pairwise_cipher. The AP will operate as a WPA2 access point for all stations except for those that support WPA3 compatible mode. Only WPA3 compatibility mode stations will be able to use WPA3-SAE */
+    uint8_t reserved: 5;                      /**< Reserved for future feature set */
     wifi_bss_max_idle_config_t bss_max_idle_cfg;  /**< Configuration for bss max idle, effective if CONFIG_WIFI_BSS_MAX_IDLE_SUPPORT is enabled */
     uint16_t gtk_rekey_interval;              /**< GTK rekeying interval in seconds. If set to 0, GTK rekeying is disabled. Range: 60 ~ 65535 including 0. */
 } wifi_ap_config_t;
@@ -561,7 +563,8 @@ typedef struct {
     uint32_t ft_enabled: 1;                   /**< Whether FT is enabled for the connection */
     uint32_t owe_enabled: 1;                  /**< Whether OWE is enabled for the connection */
     uint32_t transition_disable: 1;           /**< Whether to enable transition disable feature */
-    uint32_t reserved1: 26;                   /**< Reserved for future feature set */
+    uint32_t disable_wpa3_compatible_mode: 1; /**< Whether to disable wpa3 compatible authmode feature. Disabling this prevents connecting to WPA3-Personal RSN override (compatibility mode) APs; connection falls back to WPA2 only. */
+    uint32_t reserved1: 25;                   /**< Reserved for future feature set */
     wifi_sae_pwe_method_t sae_pwe_h2e;        /**< Configuration for SAE PWE derivation method */
     wifi_sae_pk_mode_t sae_pk_mode;           /**< Configuration for SAE-PK (Public Key) Authentication method */
     uint8_t failure_retry_cnt;                /**< Number of connection retries station will do before moving to next AP. scan_method should be set as WIFI_ALL_CHANNEL_SCAN to use this config.
@@ -578,7 +581,7 @@ typedef struct {
     uint32_t vht_mu_beamformee_disabled: 1;                       /**< Whether to disable support for operation as an VHT MU beamformee. */
     uint32_t vht_mcs8_enabled: 1;                                 /**< Whether to support VHT-MCS8. The default value is 0. */
     uint32_t reserved2: 19;                                       /**< Reserved for future feature set */
-    uint8_t sae_h2e_identifier[SAE_H2E_IDENTIFIER_LEN];/**< Password identifier for H2E. this needs to be null terminated string */
+    uint8_t sae_h2e_identifier[SAE_H2E_IDENTIFIER_LEN];           /**< Password identifier for H2E. Strings null-terminated (length < SAE_H2E_IDENTIFIER_LEN) or non-null terminated (length = SAE_H2E_IDENTIFIER_LEN) are accepted. Non-null terminated string with 0xFF for full length of SAE_H2E_IDENTIFIER_LEN is not considered a valid identifier */
 } wifi_sta_config_t;
 
 /**
