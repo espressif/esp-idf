@@ -5,6 +5,7 @@
  */
 
 #include "diskio_impl.h"
+#include "private_include/diskio_sdmmc_private.h"
 #include "ffconf.h"
 #include "ff.h"
 #include "sdmmc_cmd.h"
@@ -142,4 +143,15 @@ BYTE ff_diskio_get_pdrv_card(const sdmmc_card_t* card)
         }
     }
     return 0xff;
+}
+
+BYTE ff_diskio_get_pdrv_cnt_card(const sdmmc_card_t* card)
+{
+    BYTE num = 0;
+    for (int i = 0; i < FF_VOLUMES; i++) {
+        if (card == s_cards[i]) {
+            num += 1;
+        }
+    }
+    return num;
 }
