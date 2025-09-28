@@ -66,7 +66,7 @@ static inline void temperature_sensor_ll_bus_clk_enable(bool enable)
 /**
  * @brief Reset the Temperature sensor module
  */
-static inline void temperature_sensor_ll_reset_module(void)
+static inline void _temperature_sensor_ll_reset_module(void)
 {
     SYSTEM.perip_rst_en1.reg_tsens_rst = 1;
     SYSTEM.perip_rst_en1.reg_tsens_rst = 0;
@@ -74,7 +74,7 @@ static inline void temperature_sensor_ll_reset_module(void)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define temperature_sensor_ll_reset_module(...) do {(void)__DECLARE_RCC_ATOMIC_ENV; temperature_sensor_ll_reset_module(__VA_ARGS__);} while(0)
+#define temperature_sensor_ll_reset_module(...) do {(void)__DECLARE_RCC_ATOMIC_ENV; _temperature_sensor_ll_reset_module(__VA_ARGS__);} while(0)
 
 /**
  * @brief Select the clock source for temperature sensor. On ESP32-C3, temperautre sensor
