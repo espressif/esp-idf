@@ -474,7 +474,6 @@ void nan_app_service_match_cb(uint8_t sub_id, uint8_t pub_id, uint8_t pub_mac[6]
         if (ssi_ver) {
             evt->ssi_version = ssi_ver;
         }
-        evt->ssi = (uint8_t *)(evt + 1);
         memcpy(evt->ssi, ssi, ssi_len);
         evt->ssi_len = ssi_len;
         ESP_LOG_BUFFER_HEXDUMP(TAG, ssi, ssi_len, ESP_LOG_DEBUG);
@@ -508,7 +507,6 @@ void nan_app_replied_cb(uint8_t pub_id, uint8_t sub_id, uint8_t sub_nmi[6], uint
 
     ESP_LOGI(TAG, "Sent Publish to Peer "MACSTR" [Peer Subscribe id - %d]", MAC2STR(sub_nmi), sub_id);
     if (ssi && ssi_len) {
-        evt->ssi = (uint8_t *)(evt + 1);
         memcpy(evt->ssi, ssi, ssi_len);
         evt->ssi_len = ssi_len;
         ESP_LOG_BUFFER_HEXDUMP(TAG, ssi, ssi_len, ESP_LOG_DEBUG);
@@ -537,7 +535,6 @@ void nan_app_receive_cb(uint8_t svc_id, uint8_t peer_svc_id, uint8_t peer_mac[6]
     evt->peer_inst_id = peer_svc_id;
     MACADDR_COPY(evt->peer_if_mac, peer_mac);
     if (ssi && ssi_len) {
-        evt->ssi = (uint8_t *)(evt + 1);
         memcpy(evt->ssi, ssi, ssi_len);
         evt->ssi_len = ssi_len;
         ESP_LOGD(TAG, "Received payload from Peer "MACSTR" [Peer Service id - %d] - ", MAC2STR(peer_mac), peer_svc_id);
@@ -593,7 +590,6 @@ void nan_app_ndp_indication_cb(uint8_t pub_id, uint8_t ndp_id, uint8_t peer_nmi[
     MACADDR_COPY(evt->peer_nmi, peer_nmi);
     MACADDR_COPY(evt->peer_ndi, peer_ndi);
     if (ssi && ssi_len) {
-        evt->ssi = (uint8_t *)(evt + 1);
         memcpy(evt->ssi, ssi, ssi_len);
         evt->ssi_len = ssi_len;
         ESP_LOG_BUFFER_HEXDUMP(TAG, ssi, ssi_len, ESP_LOG_DEBUG);
@@ -653,7 +649,6 @@ void nan_app_ndp_confirm_cb(uint8_t status, uint8_t ndp_id, uint8_t peer_nmi[6],
     MACADDR_COPY(evt->peer_ndi, peer_ndi);
     MACADDR_COPY(evt->own_ndi, own_ndi);
     if (ssi && ssi_len) {
-        evt->ssi = (uint8_t *)(evt + 1);
         memcpy(evt->ssi, ssi, ssi_len);
         evt->ssi_len = ssi_len;
         ESP_LOG_BUFFER_HEXDUMP(TAG, ssi, ssi_len, ESP_LOG_DEBUG);

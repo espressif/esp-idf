@@ -1366,7 +1366,7 @@ typedef struct {
     uint32_t reserved_2;        /**< Reserved */
     uint8_t ssi_version;        /**< Indicates version of SSI in Publish instance, 0 if not available */
     uint16_t ssi_len;           /**< Length of service specific info */
-    uint8_t *ssi;               /**< Service specific info of Publisher */
+    uint8_t ssi[];              /**< Service specific info of Publisher */
 } wifi_event_nan_svc_match_t;
 
 /**
@@ -1379,7 +1379,7 @@ typedef struct {
     uint32_t reserved_1;        /**< Reserved */
     uint32_t reserved_2;        /**< Reserved */
     uint16_t ssi_len;           /**< Length of service specific info */
-    uint8_t *ssi;               /**< Service specific info of Subscriber */
+    uint8_t ssi[];              /**< Service specific info of Subscriber */
 } wifi_event_nan_replied_t;
 
 /**
@@ -1392,7 +1392,7 @@ typedef struct {
     uint32_t reserved_1;                             /**< Reserved */
     uint32_t reserved_2;                             /**< Reserved */
     uint16_t ssi_len;                                /**< Length of service specific info */
-    uint8_t *ssi;                                    /**< Service specific info from Follow-up */
+    uint8_t ssi[];                                   /**< Service specific info from Follow-up */
 } wifi_event_nan_receive_t;
 
 /**
@@ -1406,7 +1406,7 @@ typedef struct {
     uint32_t reserved_1;                        /**< Reserved */
     uint32_t reserved_2;                        /**< Reserved */
     uint16_t ssi_len;                           /**< Length of service specific info */
-    uint8_t *ssi;                               /**< Service specific info from NDP/NDPE Attribute */
+    uint8_t ssi[];                              /**< Service specific info from NDP/NDPE Attribute */
 } wifi_event_ndp_indication_t;
 
 /**
@@ -1421,7 +1421,7 @@ typedef struct {
     uint32_t reserved_1;                        /**< Reserved */
     uint32_t reserved_2;                        /**< Reserved */
     uint16_t ssi_len;                           /**< Length of Service Specific Info */
-    uint8_t *ssi;                               /**< Service specific info from NDP/NDPE Attribute */
+    uint8_t ssi[];                              /**< Service specific info from NDP/NDPE Attribute */
 } wifi_event_ndp_confirm_t;
 
 /**
