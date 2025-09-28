@@ -48,8 +48,8 @@
 
 typedef struct gdma_platform_t {
     portMUX_TYPE spinlock;                         // platform level spinlock, protect the group handle slots and reference count of each group.
-    gdma_group_t *groups[SOC_GDMA_NUM_GROUPS_MAX]; // array of GDMA group instances
-    int group_ref_counts[SOC_GDMA_NUM_GROUPS_MAX]; // reference count used to protect group install/uninstall
+    gdma_group_t *groups[GDMA_LL_GET(INST_NUM)]; // array of GDMA group instances
+    int group_ref_counts[GDMA_LL_GET(INST_NUM)]; // reference count used to protect group install/uninstall
 } gdma_platform_t;
 
 static gdma_group_t *gdma_acquire_group_handle(int group_id, void (*hal_init)(gdma_hal_context_t *hal, const gdma_hal_config_t *config));
@@ -191,7 +191,7 @@ err:
     return ret;
 }
 
-#if SOC_AHB_GDMA_SUPPORTED
+#if SOC_HAS(AHB_GDMA)
 esp_err_t gdma_new_ahb_channel(const gdma_channel_alloc_config_t *config, gdma_channel_handle_t *ret_chan)
 {
     gdma_channel_search_info_t search_info = {
@@ -203,9 +203,9 @@ esp_err_t gdma_new_ahb_channel(const gdma_channel_alloc_config_t *config, gdma_c
     };
     return do_allocate_gdma_channel(&search_info, config, ret_chan);
 }
-#endif // SOC_AHB_GDMA_SUPPORTED
+#endif // SOC_HAS(AHB_GDMA)
 
-#if SOC_AXI_GDMA_SUPPORTED
+#if SOC_HAS(AXI_GDMA)
 esp_err_t gdma_new_axi_channel(const gdma_channel_alloc_config_t *config, gdma_channel_handle_t *ret_chan)
 {
     gdma_channel_search_info_t search_info = {
@@ -217,12 +217,12 @@ esp_err_t gdma_new_axi_channel(const gdma_channel_alloc_config_t *config, gdma_c
     };
     return do_allocate_gdma_channel(&search_info, config, ret_chan);
 }
-#endif // SOC_AXI_GDMA_SUPPORTED
+#endif // SOC_HAS(AXI_GDMA)
 
-#if SOC_AHB_GDMA_SUPPORTED
+#if SOC_HAS(AHB_GDMA)
 esp_err_t gdma_new_channel(const gdma_channel_alloc_config_t *config, gdma_channel_handle_t *ret_chan)
 __attribute__((alias("gdma_new_ahb_channel")));
-#elif SOC_AXI_GDMA_SUPPORTED
+#elif SOC_HAS(AXI_GDMA)
 esp_err_t gdma_new_channel(const gdma_channel_alloc_config_t *config, gdma_channel_handle_t *ret_chan)
 __attribute__((alias("gdma_new_axi_channel")));
 #endif
@@ -353,7 +353,7 @@ esp_err_t gdma_config_transfer(gdma_channel_handle_t dma_chan, const gdma_transf
         // burst size must be power of 2
         ESP_RETURN_ON_FALSE((max_data_burst_size & (max_data_burst_size - 1)) == 0, ESP_ERR_INVALID_ARG,
                             TAG, "invalid max_data_burst_size: %"PRIu32, max_data_burst_size);
-#if SOC_AHB_GDMA_SUPPORT_PSRAM || SOC_AXI_GDMA_SUPPORT_PSRAM
+#if GDMA_LL_GET(AHB_PSRAM_CAPABLE) || GDMA_LL_GET(AXI_PSRAM_CAPABLE)
         if (config->access_ext_mem) {
             ESP_RETURN_ON_FALSE(max_data_burst_size <= GDMA_LL_MAX_BURST_SIZE_PSRAM, ESP_ERR_INVALID_ARG,
                                 TAG, "max_data_burst_size must not exceed %d when accessing external memory", GDMA_LL_MAX_BURST_SIZE_PSRAM);

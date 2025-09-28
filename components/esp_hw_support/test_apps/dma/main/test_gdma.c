@@ -30,11 +30,11 @@
 TEST_CASE("GDMA channel allocation", "[GDMA]")
 {
     gdma_channel_alloc_config_t channel_config = {};
-    gdma_channel_handle_t tx_channels[SOC_GDMA_PAIRS_PER_GROUP_MAX] = {};
-    gdma_channel_handle_t rx_channels[SOC_GDMA_PAIRS_PER_GROUP_MAX] = {};
+    gdma_channel_handle_t tx_channels[GDMA_LL_GET(PAIRS_PER_INST)] = {};
+    gdma_channel_handle_t rx_channels[GDMA_LL_GET(PAIRS_PER_INST)] = {};
     channel_config.direction = GDMA_CHANNEL_DIRECTION_TX;
 
-#if SOC_AHB_GDMA_SUPPORTED
+#if SOC_HAS(AHB_GDMA)
     // install TX channels
     for (int i = 0; i < GDMA_LL_AHB_PAIRS_PER_GROUP; i++) {
         TEST_ESP_OK(gdma_new_ahb_channel(&channel_config, &tx_channels[i]));
@@ -56,7 +56,7 @@ TEST_CASE("GDMA channel allocation", "[GDMA]")
     for (int i = 0; i < GDMA_LL_AHB_PAIRS_PER_GROUP; i++) {
         TEST_ESP_OK(gdma_del_channel(rx_channels[i]));
     }
-#endif // SOC_AHB_GDMA_SUPPORTED
+#endif // SOC_HAS(AHB_GDMA)
 
     // install single and paired TX/RX channels
 #if GDMA_LL_AHB_PAIRS_PER_GROUP >= 2
@@ -102,7 +102,7 @@ TEST_CASE("GDMA channel allocation", "[GDMA]")
     }
 #endif // GDMA_LL_AHB_PAIRS_PER_GROUP >= 2
 
-#if SOC_AXI_GDMA_SUPPORTED
+#if SOC_HAS(AXI_GDMA)
     // install TX channels
     channel_config.direction = GDMA_CHANNEL_DIRECTION_TX;
     for (int i = 0; i < GDMA_LL_AXI_PAIRS_PER_GROUP; i++) {
@@ -125,7 +125,7 @@ TEST_CASE("GDMA channel allocation", "[GDMA]")
     for (int i = 0; i < GDMA_LL_AXI_PAIRS_PER_GROUP; i++) {
         TEST_ESP_OK(gdma_del_channel(rx_channels[i]));
     }
-#endif // SOC_AXI_GDMA_SUPPORTED
+#endif // SOC_HAS(AXI_GDMA)
 
     // install single and paired TX/RX channels
 #if GDMA_LL_AXI_PAIRS_PER_GROUP >= 2
@@ -347,7 +347,7 @@ static void test_gdma_m2m_mode(bool trig_retention_backup)
     gdma_channel_alloc_config_t tx_chan_alloc_config = {};
     gdma_channel_alloc_config_t rx_chan_alloc_config = {};
 
-#if SOC_AHB_GDMA_SUPPORTED
+#if SOC_HAS(AHB_GDMA)
     tx_chan_alloc_config = (gdma_channel_alloc_config_t) {
         .direction = GDMA_CHANNEL_DIRECTION_TX,
         .flags.reserve_sibling = true,
@@ -363,9 +363,9 @@ static void test_gdma_m2m_mode(bool trig_retention_backup)
 
     TEST_ESP_OK(gdma_del_channel(tx_chan));
     TEST_ESP_OK(gdma_del_channel(rx_chan));
-#endif // SOC_AHB_GDMA_SUPPORTED
+#endif // SOC_HAS(AHB_GDMA)
 
-#if SOC_AXI_GDMA_SUPPORTED
+#if SOC_HAS(AXI_GDMA)
     tx_chan_alloc_config = (gdma_channel_alloc_config_t) {
         .direction = GDMA_CHANNEL_DIRECTION_TX,
         .flags.reserve_sibling = true,
@@ -382,7 +382,7 @@ static void test_gdma_m2m_mode(bool trig_retention_backup)
 
     TEST_ESP_OK(gdma_del_channel(tx_chan));
     TEST_ESP_OK(gdma_del_channel(rx_chan));
-#endif // SOC_AXI_GDMA_SUPPORTED
+#endif // SOC_HAS(AXI_GDMA)
 }
 
 TEST_CASE("GDMA M2M Mode", "[GDMA][M2M]")
@@ -676,7 +676,8 @@ TEST_CASE("GDMA memory copy SRAM->PSRAM->SRAM", "[GDMA][M2M]")
     [[maybe_unused]] gdma_channel_alloc_config_t tx_chan_alloc_config = {};
     [[maybe_unused]] gdma_channel_alloc_config_t rx_chan_alloc_config = {};
 
-#if SOC_AHB_GDMA_SUPPORTED && SOC_AHB_GDMA_SUPPORT_PSRAM
+#if SOC_HAS(AHB_GDMA)
+#if GDMA_LL_GET(AHB_PSRAM_CAPABLE)
     printf("Testing AHB-GDMA memory copy SRAM->PSRAM->SRAM\n");
     tx_chan_alloc_config = (gdma_channel_alloc_config_t) {
         .direction = GDMA_CHANNEL_DIRECTION_TX,
@@ -694,8 +695,10 @@ TEST_CASE("GDMA memory copy SRAM->PSRAM->SRAM", "[GDMA][M2M]")
     TEST_ESP_OK(gdma_del_channel(tx_chan));
     TEST_ESP_OK(gdma_del_channel(rx_chan));
 #endif
+#endif // SOC_HAS(AHB_GDMA)
 
-#if SOC_AXI_GDMA_SUPPORTED && SOC_AXI_GDMA_SUPPORT_PSRAM
+#if SOC_HAS(AXI_GDMA)
+#if GDMA_LL_GET(AXI_PSRAM_CAPABLE)
     printf("Testing AXI-GDMA memory copy SRAM->PSRAM->SRAM\n");
     tx_chan_alloc_config = (gdma_channel_alloc_config_t) {
         .direction = GDMA_CHANNEL_DIRECTION_TX,
@@ -713,5 +716,6 @@ TEST_CASE("GDMA memory copy SRAM->PSRAM->SRAM", "[GDMA][M2M]")
     TEST_ESP_OK(gdma_del_channel(tx_chan));
     TEST_ESP_OK(gdma_del_channel(rx_chan));
 #endif
+#endif // SOC_HAS(AXI_GDMA)
 }
 #endif // SOC_SPIRAM_SUPPORTED

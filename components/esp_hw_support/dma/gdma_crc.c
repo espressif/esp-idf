@@ -15,16 +15,16 @@ esp_err_t gdma_config_crc_calculator(gdma_channel_handle_t dma_chan, const gdma_
     gdma_group_t *group = pair->group;
     gdma_hal_context_t *hal = &group->hal;
     switch (group->bus_id) {
-#if SOC_AHB_GDMA_SUPPORTED
+#if SOC_HAS(AHB_GDMA)
     case SOC_GDMA_BUS_AHB:
         ESP_RETURN_ON_FALSE(config->crc_bit_width <= GDMA_LL_AHB_MAX_CRC_BIT_WIDTH, ESP_ERR_INVALID_ARG, TAG, "invalid crc bit width");
         break;
-#endif // SOC_AHB_GDMA_SUPPORTED
-#if SOC_AXI_GDMA_SUPPORTED
+#endif // SOC_HAS(AHB_GDMA)
+#if SOC_HAS(AXI_GDMA)
     case SOC_GDMA_BUS_AXI:
         ESP_RETURN_ON_FALSE(config->crc_bit_width <= GDMA_LL_AXI_MAX_CRC_BIT_WIDTH, ESP_ERR_INVALID_ARG, TAG, "invalid crc bit width");
         break;
-#endif // SOC_AXI_GDMA_SUPPORTED
+#endif // SOC_HAS(AXI_GDMA)
     default:
         ESP_LOGE(TAG, "invalid bus id: %d", group->bus_id);
         return ESP_ERR_INVALID_ARG;

@@ -1,0 +1,165 @@
+/*
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "hal/gdma_periph.h"
+#include "soc/ahb_dma_reg.h"
+
+const gdma_signal_conn_t gdma_periph_signals = {
+    .groups = {
+        [0] = {
+            .pairs = {
+                [0]  = {
+                    .rx_irq_id = ETS_DMA_IN_CH0_INTR_SOURCE,
+                    .tx_irq_id = ETS_DMA_OUT_CH0_INTR_SOURCE,
+                },
+                [1]  = {
+                    .rx_irq_id = ETS_DMA_IN_CH1_INTR_SOURCE,
+                    .tx_irq_id = ETS_DMA_OUT_CH1_INTR_SOURCE,
+                },
+                [2]  = {
+                    .rx_irq_id = ETS_DMA_IN_CH2_INTR_SOURCE,
+                    .tx_irq_id = ETS_DMA_OUT_CH2_INTR_SOURCE,
+                }
+            }
+        }
+    }
+};
+
+/* AHB_DMA Channel (Group0, Pair0) Registers Context
+   Include: AHB_DMA_MISC_CONF_REG
+            AHB_DMA_IN_INT_ENA_CH0_REG / AHB_DMA_OUT_INT_ENA_CH0_REG / AHB_DMA_IN_PERI_SEL_CH0_REG / AHB_DMA_OUT_PERI_SEL_CH0_REG
+            AHB_DMA_IN_CONF0_CH0_REG / AHB_DMA_IN_CONF1_CH0_REG / AHB_DMA_IN_LINK_CH0_REG / AHB_DMA_IN_PRI_CH0_REG
+            AHB_DMA_OUT_CONF0_CH0_REG / AHB_DMA_OUT_CONF1_CH0_REG / AHB_DMA_OUT_LINK_CH0_REG / AHB_DMA_OUT_PRI_CH0_REG
+
+            AHB_DMA_TX_CH_ARB_WEIGHT_CH0_REG / AHB_DMA_TX_ARB_WEIGHT_OPT_DIS_CH0_REG
+            AHB_DMA_RX_CH_ARB_WEIGHT_CH0_REG / AHB_DMA_RX_ARB_WEIGHT_OPT_DIS_CH0_REG
+            AHB_DMA_IN_LINK_ADDR_CH0_REG / AHB_DMA_OUT_LINK_ADDR_CH0_REG
+            AHB_DMA_INTR_MEM_START_ADDR_REG / AHB_DMA_INTR_MEM_END_ADDR_REG
+            AHB_DMA_ARB_TIMEOUT_REG / AHB_DMA_WEIGHT_EN_REG
+            AHB_DMA_MODULE_CLK_EN_REG
+*/
+#define G0P0_RETENTION_REGS_CNT_0 13
+#define G0P0_RETENTION_MAP_BASE_0 (DR_REG_AHB_DMA_BASE + 0x8)
+#define G0P0_RETENTION_REGS_CNT_1 11
+#define G0P0_RETENTION_MAP_BASE_1 (DR_REG_AHB_DMA_BASE + 0x2dc)
+static const uint32_t g0p0_regs_map0[4] = {0x4c801001, 0x604c0060, 0x0, 0x0};
+static const uint32_t g0p0_regs_map1[4] = {0xc0000003, 0x0c900000, 0x601, 0x0};
+static const regdma_entries_config_t gdma_g0p0_regs_retention[] = {
+    [0] = {
+        .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_GDMA_LINK(0x00), \
+                                            G0P0_RETENTION_MAP_BASE_0, G0P0_RETENTION_MAP_BASE_0, \
+                                            G0P0_RETENTION_REGS_CNT_0, 0, 0, \
+                                            g0p0_regs_map0[0], g0p0_regs_map0[1], \
+                                            g0p0_regs_map0[2], g0p0_regs_map0[3]), \
+        .owner = GDMA_RETENTION_ENTRY
+    }, \
+    [1] = {
+        .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_GDMA_LINK(0x01), \
+                                            G0P0_RETENTION_MAP_BASE_1, G0P0_RETENTION_MAP_BASE_1, \
+                                            G0P0_RETENTION_REGS_CNT_1, 0, 0, \
+                                            g0p0_regs_map1[0], g0p0_regs_map1[1],   \
+                                            g0p0_regs_map1[2], g0p0_regs_map1[3]),  \
+        .owner = GDMA_RETENTION_ENTRY
+    },
+};
+
+/* AHB_DMA Channel (Group0, Pair1) Registers Context
+   Include: AHB_DMA_MISC_CONF_REG
+            AHB_DMA_IN_INT_ENA_CH1_REG / AHB_DMA_OUT_INT_ENA_CH1_REG / AHB_DMA_IN_PERI_SEL_CH1_REG / AHB_DMA_OUT_PERI_SEL_CH1_REG
+            AHB_DMA_IN_CONF0_CH1_REG / AHB_DMA_IN_CONF1_CH1_REG / AHB_DMA_IN_LINK_CH1_REG / AHB_DMA_IN_PRI_CH1_REG
+            AHB_DMA_OUT_CONF0_CH1_REG / AHB_DMA_OUT_CONF1_CH1_REG / AHB_DMA_OUT_LINK_CH1_REG / AHB_DMA_OUT_PRI_CH1_REG
+
+            AHB_DMA_TX_CH_ARB_WEIGHT_CH1_REG / AHB_DMA_TX_ARB_WEIGHT_OPT_DIS_CH1_REG
+            AHB_DMA_RX_CH_ARB_WEIGHT_CH1_REG / AHB_DMA_RX_ARB_WEIGHT_OPT_DIS_CH1_REG
+            AHB_DMA_IN_LINK_ADDR_CH1_REG / AHB_DMA_OUT_LINK_ADDR_CH1_REG
+            AHB_DMA_INTR_MEM_START_ADDR_REG / AHB_DMA_INTR_MEM_END_ADDR_REG
+            AHB_DMA_ARB_TIMEOUT_REG / AHB_DMA_WEIGHT_EN_REG
+            AHB_DMA_MODULE_CLK_EN_REG
+*/
+#define G0P1_RETENTION_REGS_CNT_0  13
+#define G0P1_RETENTION_MAP_BASE_0  (DR_REG_AHB_DMA_BASE + 0x18)
+#define G0P1_RETENTION_REGS_CNT_1  11
+#define G0P1_RETENTION_MAP_BASE_1  (DR_REG_AHB_DMA_BASE + 0x304)
+static const uint32_t g0p1_regs_map0[4] = {0x81001, 0x0, 0xc00604c0, 0x604};
+static const uint32_t g0p1_regs_map1[4] = {0xc0000003, 0x434800, 0x18, 0x0};
+static const regdma_entries_config_t gdma_g0p1_regs_retention[] = {
+    [0] = {
+        .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_GDMA_LINK(0x00), \
+                                            G0P1_RETENTION_MAP_BASE_0, G0P1_RETENTION_MAP_BASE_0, \
+                                            G0P1_RETENTION_REGS_CNT_0, 0, 0, \
+                                            g0p1_regs_map0[0], g0p1_regs_map0[1],   \
+                                            g0p1_regs_map0[2], g0p1_regs_map0[3]),  \
+        .owner = GDMA_RETENTION_ENTRY
+    },
+    [1] = {
+        .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_GDMA_LINK(0x01), \
+                                            G0P1_RETENTION_MAP_BASE_1, G0P1_RETENTION_MAP_BASE_1, \
+                                            G0P1_RETENTION_REGS_CNT_1, 0, 0, \
+                                            g0p1_regs_map1[0], g0p1_regs_map1[1],   \
+                                            g0p1_regs_map1[2], g0p1_regs_map1[3]),  \
+        .owner = GDMA_RETENTION_ENTRY
+    },
+};
+
+/* AHB_DMA Channel (Group0, Pair2) Registers Context
+   Include: AHB_DMA_MISC_CONF_REG
+            AHB_DMA_IN_INT_ENA_CH2_REG / AHB_DMA_OUT_INT_ENA_CH2_REG
+            AHB_DMA_IN_PERI_SEL_CH2_REG
+            AHB_DMA_IN_CONF0_CH2_REG / AHB_DMA_IN_CONF1_CH2_REG / AHB_DMA_IN_LINK_CH2_REG / AHB_DMA_IN_PRI_CH2_REG
+
+            AHB_DMA_OUT_PERI_SEL_CH2_REG
+            AHB_DMA_OUT_CONF0_CH2_REG / AHB_DMA_OUT_CONF1_CH2_REG / AHB_DMA_OUT_LINK_CH2_REG / AHB_DMA_OUT_PRI_CH2_REG
+            AHB_DMA_TX_CH_ARB_WEIGHT_CH2_REG / AHB_DMA_TX_ARB_WEIGHT_OPT_DIS_CH2_REG
+            AHB_DMA_RX_CH_ARB_WEIGHT_CH2_REG / AHB_DMA_RX_ARB_WEIGHT_OPT_DIS_CH2_REG
+            AHB_DMA_IN_LINK_ADDR_CH2_REG / AHB_DMA_OUT_LINK_ADDR_CH2_REG
+            AHB_DMA_INTR_MEM_START_ADDR_REG / AHB_DMA_INTR_MEM_END_ADDR_REG
+            AHB_DMA_ARB_TIMEOUT_REG / AHB_DMA_WEIGHT_EN_REG
+            AHB_DMA_MODULE_CLK_EN_REG
+*/
+#define G0P2_RETENTION_REGS_CNT_0  8
+#define G0P2_RETENTION_MAP_BASE_0  (DR_REG_AHB_DMA_BASE + 0x28)
+#define G0P2_RETENTION_REGS_CNT_1  16
+#define G0P2_RETENTION_MAP_BASE_1  (DR_REG_AHB_DMA_BASE + 0x250)
+static const uint32_t g0p2_regs_map0[4] = {0x9001, 0x0, 0x0, 0x604c0000};
+static const uint32_t g0p2_regs_map1[4] =  {0x1813, 0x1800000, 0x72600000, 0x3008};
+static const regdma_entries_config_t gdma_g0p2_regs_retention[] = {
+    [0] = {
+        .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_GDMA_LINK(0x00), \
+                                            G0P2_RETENTION_MAP_BASE_0, G0P2_RETENTION_MAP_BASE_0, \
+                                            G0P2_RETENTION_REGS_CNT_0, 0, 0, \
+                                            g0p2_regs_map0[0], g0p2_regs_map0[1],   \
+                                            g0p2_regs_map0[2], g0p2_regs_map0[3]),  \
+        .owner = GDMA_RETENTION_ENTRY
+    },
+    [1] = {
+        .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_GDMA_LINK(0x01), \
+                                            G0P2_RETENTION_MAP_BASE_1, G0P2_RETENTION_MAP_BASE_1, \
+                                            G0P2_RETENTION_REGS_CNT_1, 0, 0, \
+                                            g0p2_regs_map1[0], g0p2_regs_map1[1],   \
+                                            g0p2_regs_map1[2], g0p2_regs_map1[3]),  \
+        .owner = GDMA_RETENTION_ENTRY
+    },
+};
+
+const gdma_chx_reg_ctx_link_t gdma_chx_regs_retention[1][3] = {
+    [0] = {
+        [0] = {
+            gdma_g0p0_regs_retention,
+            ARRAY_SIZE(gdma_g0p0_regs_retention),
+            SLEEP_RETENTION_MODULE_GDMA_CH0,
+        },
+        [1] = {
+            gdma_g0p1_regs_retention,
+            ARRAY_SIZE(gdma_g0p1_regs_retention),
+            SLEEP_RETENTION_MODULE_GDMA_CH1,
+        },
+        [2] = {
+            gdma_g0p2_regs_retention,
+            ARRAY_SIZE(gdma_g0p2_regs_retention),
+            SLEEP_RETENTION_MODULE_GDMA_CH2,
+        }
+    }
+};
