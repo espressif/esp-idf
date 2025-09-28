@@ -318,7 +318,7 @@ Generator Actions on Events
 Set Generator Action on Timer Event
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-One generator can set multiple actions on different timer events, by calling :cpp:func:`mcpwm_generator_set_actions_on_timer_event` with a variable number of action configurations. The action configuration is defined in :cpp:type:`mcpwm_gen_timer_event_action_t`:
+A single generator can be configured to perform multiple actions in response to different timer events. To achieve this, invoke :cpp:func:`mcpwm_generator_set_action_on_timer_event` for each desired event-action pair. The details of each action are specified using the :cpp:type:`mcpwm_gen_timer_event_action_t` structure.
 
 - :cpp:member:`mcpwm_gen_timer_event_action_t::direction` specifies the timer direction. The supported directions are listed in :cpp:type:`mcpwm_timer_direction_t`.
 - :cpp:member:`mcpwm_gen_timer_event_action_t::event` specifies the timer event. The supported timer events are listed in :cpp:type:`mcpwm_timer_event_t`.
@@ -326,14 +326,10 @@ One generator can set multiple actions on different timer events, by calling :cp
 
 There is a helper macro :c:macro:`MCPWM_GEN_TIMER_EVENT_ACTION` to simplify the construction of a timer event action entry.
 
-Please note, the argument list of :cpp:func:`mcpwm_generator_set_actions_on_timer_event` **must** be terminated by :c:macro:`MCPWM_GEN_TIMER_EVENT_ACTION_END`.
-
-You can also set the timer action one by one by calling :cpp:func:`mcpwm_generator_set_action_on_timer_event` without varargs.
-
 Set Generator Action on Compare Event
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-One generator can set multiple actions on different compare events, by calling :cpp:func:`mcpwm_generator_set_actions_on_compare_event` with a variable number of action configurations. The action configuration is defined in :cpp:type:`mcpwm_gen_compare_event_action_t`:
+A single generator can be configured to perform multiple actions in response to different compare events. To achieve this, invoke :cpp:func:`mcpwm_generator_set_action_on_compare_event` for each desired compare event and action pair. The specific action settings are encapsulated in the :cpp:type:`mcpwm_gen_compare_event_action_t` structure.
 
 - :cpp:member:`mcpwm_gen_compare_event_action_t::direction` specifies the timer direction. The supported directions are listed in :cpp:type:`mcpwm_timer_direction_t`.
 - :cpp:member:`mcpwm_gen_compare_event_action_t::comparator` specifies the comparator handle. See `MCPWM Comparators <#mcpwm-comparators>`__ for how to allocate a comparator.
@@ -341,14 +337,10 @@ One generator can set multiple actions on different compare events, by calling :
 
 There is a helper macro :c:macro:`MCPWM_GEN_COMPARE_EVENT_ACTION` to simplify the construction of a compare event action entry.
 
-Please note, the argument list of :cpp:func:`mcpwm_generator_set_actions_on_compare_event` **must** be terminated by :c:macro:`MCPWM_GEN_COMPARE_EVENT_ACTION_END`.
-
-You can also set the compare action one by one by calling :cpp:func:`mcpwm_generator_set_action_on_compare_event` without varargs.
-
 Set Generator Action on Fault Event
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-One generator can set action on fault based trigger events, by calling :cpp:func:`mcpwm_generator_set_action_on_fault_event` with an action configurations. The action configuration is defined in :cpp:type:`mcpwm_gen_fault_event_action_t`:
+A single generator can be configured to perform multiple actions in response to fault events. To achieve this, invoke :cpp:func:`mcpwm_generator_set_action_on_fault_event` for each desired action. The specific actions to be taken are described by the :cpp:type:`mcpwm_gen_fault_event_action_t` structure.
 
 - :cpp:member:`mcpwm_gen_fault_event_action_t::direction` specifies the timer direction. The supported directions are listed in :cpp:type:`mcpwm_timer_direction_t`.
 - :cpp:member:`mcpwm_gen_fault_event_action_t::fault` specifies the fault used for the trigger. See `MCPWM Faults <#mcpwm-faults>`__ for how to allocate a fault.
@@ -360,12 +352,10 @@ The trigger only support GPIO fault. when the input is not a GPIO fault, this fu
 
 There is a helper macro :c:macro:`MCPWM_GEN_FAULT_EVENT_ACTION` to simplify the construction of a trigger event action entry.
 
-Please note, fault event does not have variadic function like :cpp:func:`mcpwm_generator_set_actions_on_fault_event`.
-
 Set Generator Action on Sync Event
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-One generator can set action on sync based trigger events, by calling :cpp:func:`mcpwm_generator_set_action_on_sync_event` with an action configurations. The action configuration is defined in :cpp:type:`mcpwm_gen_sync_event_action_t`:
+A single generator can be configured to perform multiple actions in response to different synchronization events. This is achieved by invoking :cpp:func:`mcpwm_generator_set_action_on_sync_event` for each desired event-action pair. The specific action to be taken for each synchronization event is described by the :cpp:type:`mcpwm_gen_sync_event_action_t` structure.
 
 - :cpp:member:`mcpwm_gen_sync_event_action_t::direction` specifies the timer direction. The supported directions are listed in :cpp:type:`mcpwm_timer_direction_t`.
 - :cpp:member:`mcpwm_gen_sync_event_action_t::sync` specifies the sync source used for the trigger. See `MCPWM Sync Sources  <#mcpwm-sync-sources>`__ for how to allocate a sync source.
@@ -376,8 +366,6 @@ When no free trigger slot is left in the operator to which the generator belongs
 The trigger only support one sync action, regardless of the kinds. When set sync actions more than once, this function will return the :c:macro:`ESP_ERR_INVALID_STATE` error.
 
 There is a helper macro :c:macro:`MCPWM_GEN_SYNC_EVENT_ACTION` to simplify the construction of a trigger event action entry.
-
-Please note, sync event does not have variadic function like :cpp:func:`mcpwm_generator_set_actions_on_sync_event`.
 
 
 .. _mcpwm-classical-pwm-waveforms-and-generator-configurations:
@@ -439,13 +427,12 @@ Pulse Placement Asymmetric Waveform
 
     static void gen_action_config(mcpwm_gen_handle_t gena, mcpwm_gen_handle_t genb, mcpwm_cmpr_handle_t cmpa, mcpwm_cmpr_handle_t cmpb)
     {
-        ESP_ERROR_CHECK(mcpwm_generator_set_actions_on_compare_event(gena,
-                        MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, cmpa, MCPWM_GEN_ACTION_HIGH),
-                        MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, cmpb, MCPWM_GEN_ACTION_LOW),
-                        MCPWM_GEN_COMPARE_EVENT_ACTION_END()));
-        ESP_ERROR_CHECK(mcpwm_generator_set_actions_on_timer_event(genb,
-                        MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_GEN_ACTION_TOGGLE),
-                        MCPWM_GEN_TIMER_EVENT_ACTION_END()));
+        ESP_ERROR_CHECK(mcpwm_generator_set_action_on_compare_event(gena,
+                        MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, cmpa, MCPWM_GEN_ACTION_HIGH)));
+        ESP_ERROR_CHECK(mcpwm_generator_set_action_on_compare_event(gena,
+                        MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, cmpb, MCPWM_GEN_ACTION_LOW)));
+        ESP_ERROR_CHECK(mcpwm_generator_set_action_on_timer_event(genb,
+                        MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_GEN_ACTION_TOGGLE)));
     }
 
 Dual Edge Asymmetric Waveform - Active Low
@@ -457,14 +444,14 @@ Dual Edge Asymmetric Waveform - Active Low
 
     static void gen_action_config(mcpwm_gen_handle_t gena, mcpwm_gen_handle_t genb, mcpwm_cmpr_handle_t cmpa, mcpwm_cmpr_handle_t cmpb)
     {
-        ESP_ERROR_CHECK(mcpwm_generator_set_actions_on_compare_event(gena,
-                        MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, cmpa, MCPWM_GEN_ACTION_HIGH),
-                        MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_DOWN, cmpb, MCPWM_GEN_ACTION_LOW),
-                        MCPWM_GEN_COMPARE_EVENT_ACTION_END()));
-        ESP_ERROR_CHECK(mcpwm_generator_set_actions_on_timer_event(genb,
-                        MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_GEN_ACTION_LOW),
-                        MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_DOWN, MCPWM_TIMER_EVENT_FULL, MCPWM_GEN_ACTION_HIGH),
-                        MCPWM_GEN_TIMER_EVENT_ACTION_END()));
+        ESP_ERROR_CHECK(mcpwm_generator_set_action_on_compare_event(gena,
+                        MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, cmpa, MCPWM_GEN_ACTION_HIGH)));
+        ESP_ERROR_CHECK(mcpwm_generator_set_action_on_compare_event(gena,
+                        MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_DOWN, cmpb, MCPWM_GEN_ACTION_LOW)));
+        ESP_ERROR_CHECK(mcpwm_generator_set_action_on_timer_event(genb,
+                        MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_GEN_ACTION_LOW)));
+        ESP_ERROR_CHECK(mcpwm_generator_set_action_on_timer_event(genb,
+                        MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_DOWN, MCPWM_TIMER_EVENT_FULL, MCPWM_GEN_ACTION_HIGH)));
     }
 
 Dual Edge Symmetric Waveform - Active Low
@@ -476,14 +463,14 @@ Dual Edge Symmetric Waveform - Active Low
 
     static void gen_action_config(mcpwm_gen_handle_t gena, mcpwm_gen_handle_t genb, mcpwm_cmpr_handle_t cmpa, mcpwm_cmpr_handle_t cmpb)
     {
-        ESP_ERROR_CHECK(mcpwm_generator_set_actions_on_compare_event(gena,
-                        MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, cmpa, MCPWM_GEN_ACTION_HIGH),
-                        MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_DOWN, cmpa, MCPWM_GEN_ACTION_LOW),
-                        MCPWM_GEN_COMPARE_EVENT_ACTION_END()));
-        ESP_ERROR_CHECK(mcpwm_generator_set_actions_on_compare_event(genb,
-                        MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, cmpb, MCPWM_GEN_ACTION_HIGH),
-                        MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_DOWN, cmpb, MCPWM_GEN_ACTION_LOW),
-                        MCPWM_GEN_COMPARE_EVENT_ACTION_END()));
+        ESP_ERROR_CHECK(mcpwm_generator_set_action_on_compare_event(gena,
+                        MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, cmpa, MCPWM_GEN_ACTION_HIGH)));
+        ESP_ERROR_CHECK(mcpwm_generator_set_action_on_compare_event(gena,
+                        MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_DOWN, cmpa, MCPWM_GEN_ACTION_LOW)));
+        ESP_ERROR_CHECK(mcpwm_generator_set_action_on_compare_event(genb,
+                        MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, cmpb, MCPWM_GEN_ACTION_HIGH)));
+        ESP_ERROR_CHECK(mcpwm_generator_set_action_on_compare_event(genb,
+                        MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_DOWN, cmpb, MCPWM_GEN_ACTION_LOW)));
     }
 
 Dual Edge Symmetric Waveform - Complementary
@@ -495,14 +482,14 @@ Dual Edge Symmetric Waveform - Complementary
 
     static void gen_action_config(mcpwm_gen_handle_t gena, mcpwm_gen_handle_t genb, mcpwm_cmpr_handle_t cmpa, mcpwm_cmpr_handle_t cmpb)
     {
-        ESP_ERROR_CHECK(mcpwm_generator_set_actions_on_compare_event(gena,
-                        MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, cmpa, MCPWM_GEN_ACTION_HIGH),
-                        MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_DOWN, cmpa, MCPWM_GEN_ACTION_LOW),
-                        MCPWM_GEN_COMPARE_EVENT_ACTION_END()));
-        ESP_ERROR_CHECK(mcpwm_generator_set_actions_on_compare_event(genb,
-                        MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, cmpb, MCPWM_GEN_ACTION_LOW),
-                        MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_DOWN, cmpb, MCPWM_GEN_ACTION_HIGH),
-                        MCPWM_GEN_COMPARE_EVENT_ACTION_END()));
+        ESP_ERROR_CHECK(mcpwm_generator_set_action_on_compare_event(gena,
+                        MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, cmpa, MCPWM_GEN_ACTION_HIGH)));
+        ESP_ERROR_CHECK(mcpwm_generator_set_action_on_compare_event(gena,
+                        MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_DOWN, cmpa, MCPWM_GEN_ACTION_LOW)));
+        ESP_ERROR_CHECK(mcpwm_generator_set_action_on_compare_event(genb,
+                        MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, cmpb, MCPWM_GEN_ACTION_LOW)));
+        ESP_ERROR_CHECK(mcpwm_generator_set_action_on_compare_event(genb,
+                        MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_DOWN, cmpb, MCPWM_GEN_ACTION_HIGH)));
     }
 
 
@@ -797,17 +784,13 @@ The way that MCPWM operator reacts to the fault is called **Brake**. The MCPWM o
 Set Generator Action on Brake Event
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-One generator can set multiple actions on different brake events, by calling :cpp:func:`mcpwm_generator_set_actions_on_brake_event` with a variable number of action configurations. The action configuration is defined in :cpp:type:`mcpwm_gen_brake_event_action_t`:
+A single generator can be configured to perform multiple actions in response to brake events. To achieve this, invoke :cpp:func:`mcpwm_generator_set_action_on_brake_event` for each desired action. The specific actions available for configuration are defined in :cpp:type:`mcpwm_gen_brake_event_action_t`.
 
 - :cpp:member:`mcpwm_gen_brake_event_action_t::direction` specifies the timer direction. The supported directions are listed in :cpp:type:`mcpwm_timer_direction_t`.
 - :cpp:member:`mcpwm_gen_brake_event_action_t::brake_mode` specifies the brake mode. The supported brake modes are listed in the :cpp:type:`mcpwm_operator_brake_mode_t`.
 - :cpp:member:`mcpwm_gen_brake_event_action_t::action` specifies the generator action to be taken. The supported actions are listed in :cpp:type:`mcpwm_generator_action_t`.
 
 There is a helper macro :c:macro:`MCPWM_GEN_BRAKE_EVENT_ACTION` to simplify the construction of a brake event action entry.
-
-Please note, the argument list of :cpp:func:`mcpwm_generator_set_actions_on_brake_event` **must** be terminated by :c:macro:`MCPWM_GEN_BRAKE_EVENT_ACTION_END`.
-
-You can also set the brake action one by one by calling :cpp:func:`mcpwm_generator_set_action_on_brake_event` without varargs.
 
 Register Fault Event Callbacks
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -843,7 +826,7 @@ This function will lazy the install interrupt service for the MCPWM operator, wh
 Generator Force Actions
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-Software can override generator output level at runtime, by calling :cpp:func:`mcpwm_generator_set_force_level`. The software force level always has a higher priority than other event actions set in e.g., :cpp:func:`mcpwm_generator_set_actions_on_timer_event`.
+Software can override generator output level at runtime, by calling :cpp:func:`mcpwm_generator_set_force_level`. The software force level always has a higher priority than other event actions set in e.g., :cpp:func:`mcpwm_generator_set_action_on_timer_event`.
 
 - Set the ``level`` to -1 means to disable the force action, and the generator's output level will be controlled by the event actions again.
 - Set the ``hold_on`` to true, and the force output level will keep alive until it is removed by assigning ``level`` to -1.

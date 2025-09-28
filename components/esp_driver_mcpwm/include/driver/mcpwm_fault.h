@@ -8,7 +8,6 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include <stdarg.h>
 #include "esp_err.h"
 #include "driver/mcpwm_types.h"
 

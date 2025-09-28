@@ -85,6 +85,29 @@ The ``io_od_mode`` member in the :cpp:type:`rmt_tx_channel_config_t` configurati
 
     The legacy MCPWM driver ``driver/mcpwm.h`` is deprecated since version 5.0 (see :ref:`deprecate_mcpwm_legacy_driver`). Starting from version 6.0, the legacy driver is completely removed. The new driver is placed in the :component:`esp_driver_mcpwm`, and the header file path is ``driver/mcpwm_prelude``.
 
+    Variadic Generator APIs are Removed
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    The legacy variadic ("varg") generator APIs have been removed in this release. Code that used vararg-style calls for generator action setup must be migrated to the explicit, typed APIs. These APIs use configuration structs and clearly-typed setter functions (for example, :cpp:type:`mcpwm_generator_config_t`, :cpp:type:`mcpwm_gen_timer_event_action_t` and :cpp:type:`mcpwm_generator_set_action_on_timer_event`).
+
+    Migration steps (summary):
+
+    - Replace varg-style action configuration with helper structs/macros and dedicated setter functions::
+
+        .. code-block:: c
+
+            /* Old (varg) */
+            mcpwm_generator_set_actions_on_compare_event(my_generator,
+                MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, my_comparator, MCPWM_GEN_ACTION_LOW),
+                MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_DOWN, my_comparator, MCPWM_GEN_ACTION_HIGH),
+                MCPWM_GEN_COMPARE_EVENT_ACTION_END());
+
+            /* New */
+            mcpwm_generator_set_action_on_compare_event(my_generator,
+                MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, my_comparator, MCPWM_GEN_ACTION_LOW));
+            mcpwm_generator_set_action_on_compare_event(my_generator,
+                MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_DOWN, my_comparator, MCPWM_GEN_ACTION_HIGH));
+
 GPIO
 ----
 
