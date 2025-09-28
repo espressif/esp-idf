@@ -35,15 +35,6 @@ struct roaming_app g_roaming_app;
 
 typedef void (* scan_done_cb_t)(void *arg, ETS_STATUS status);
 extern int esp_wifi_promiscuous_scan_start(wifi_scan_config_t *config, scan_done_cb_t cb);
-static void *scan_results_lock = NULL;
-#define ROAM_SCAN_RESULTS_LOCK() os_mutex_lock(scan_results_lock)
-#define ROAM_SCAN_RESULTS_UNLOCK() os_mutex_unlock(scan_results_lock)
-
-#if PERIODIC_RRM_MONITORING
-static void *neighbor_list_lock = NULL;
-#define ROAM_NEIGHBOR_LIST_LOCK() os_mutex_lock(neighbor_list_lock)
-#define ROAM_NEIGHBOR_LIST_UNLOCK() os_mutex_unlock(neighbor_list_lock)
-#endif /*PERIODIC_RRM_MONITORING*/
 
 static int wifi_post_roam_event(struct cand_bss *bss);
 static void determine_best_ap(int8_t rssi_threshold);
@@ -149,12 +140,6 @@ static void init_periodic_rrm_event(void)
     if (!g_roaming_app.config.rrm_monitor) {
         ESP_LOGI(ROAMING_TAG, "RRM monitor is disabled in config");
         return;
-    }
-    if (!neighbor_list_lock) {
-        neighbor_list_lock = os_recursive_mutex_create();
-        if (!neighbor_list_lock) {
-            ESP_LOGE(ROAMING_TAG, "%s: failed to create roaming neighbor list lock", __func__);
-        }
     }
     ESP_LOGV(ROAMING_TAG, "Initialised Periodic RRM Monitoring event!");
     g_roaming_app.periodic_rrm_active = true;
@@ -422,26 +407,27 @@ cleanup:
     }
     return buf;
 }
-static void roaming_app_neighbor_report_recv_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
+
+static void roaming_app_neighbor_report_recv_internal_handler(void *ctx, void *data)
 {
+    wifi_event_neighbor_report_t *neighbor_report_event = data;
     if (!g_roaming_app.rrm_request_active) {
         ESP_LOGV(ROAMING_TAG, "Not the response for our Neighbor Report Request");
-        return;
+        goto cleanup;
     }
     g_roaming_app.rrm_request_active = false;
 
-    if (!event_data) {
+    if (!neighbor_report_event) {
         ESP_LOGE(ROAMING_TAG, "No data received for neighbor report");
-        return;
+        goto cleanup;
     }
 
-    wifi_event_neighbor_report_t *neighbor_report_event = (wifi_event_neighbor_report_t*)event_data;
     ESP_LOGD(ROAMING_TAG, "Received cb for Neighbor Report Request");
 
     uint8_t *pos = (uint8_t *)neighbor_report_event->report;
     if (!pos) {
         ESP_LOGE(ROAMING_TAG, "Neighbor report is empty");
-        return;
+        goto cleanup;
     }
 
     uint8_t report_len = neighbor_report_event->report_len;
@@ -449,22 +435,42 @@ static void roaming_app_neighbor_report_recv_handler(void* arg, esp_event_base_t
     ESP_LOGD(ROAMING_TAG, "rrm: neighbor report len=%d", report_len);
     ESP_LOG_BUFFER_HEXDUMP(ROAMING_TAG, pos, report_len, ESP_LOG_DEBUG);
 
-    ROAM_NEIGHBOR_LIST_LOCK();
     if (g_roaming_app.btm_neighbor_list) {
         os_free(g_roaming_app.btm_neighbor_list);
         g_roaming_app.btm_neighbor_list = NULL;
     }
     /* create neighbor list */
     g_roaming_app.btm_neighbor_list = get_btm_neighbor_list(pos + 1, report_len - 1);
-    ROAM_NEIGHBOR_LIST_UNLOCK();
 
+cleanup:
+    if (neighbor_report_event) {
+        os_free(neighbor_report_event);
+    }
+}
+
+static void roaming_app_neighbor_report_recv_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
+{
+    wifi_event_neighbor_report_t *event = (wifi_event_neighbor_report_t*)event_data;
+    if (!event) {
+        return;
+    }
+    wifi_event_neighbor_report_t *event_copy = os_malloc(sizeof(wifi_event_neighbor_report_t) + event->report_len);
+    if (!event_copy) {
+        ESP_LOGE(ROAMING_TAG, "Failed to allocate memory for neighbor report event");
+        return;
+    }
+    memcpy(event_copy, event, sizeof(wifi_event_neighbor_report_t) + event->report_len);
+
+    if (eloop_register_timeout(0, 0, roaming_app_neighbor_report_recv_internal_handler, NULL, event_copy) != 0) {
+        os_free(event_copy);
+    }
 }
 #endif /*PERIODIC_RRM_MONITORING*/
 
 #if LOW_RSSI_ROAMING_ENABLED
-static void roaming_app_rssi_low_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
+static void roaming_app_rssi_low_internal_handler(void *ctx, void *data)
 {
-    wifi_event_bss_rssi_low_t *event = event_data;
+    wifi_event_bss_rssi_low_t *event = data;
     ESP_LOGI(ROAMING_TAG, "%s:bss rssi is=%ld", __func__, event->rssi);
 
     roaming_app_get_ap_info(&g_roaming_app.current_bss.ap);
@@ -473,25 +479,34 @@ static void roaming_app_rssi_low_handler(void* arg, esp_event_base_t event_base,
     ESP_LOGD(ROAMING_TAG, "Resetting RSSI Threshold to %d", g_roaming_app.current_low_rssi_threshold);
     esp_wifi_set_rssi_threshold(g_roaming_app.current_low_rssi_threshold);
 
+    os_free(event);
+}
+
+static void roaming_app_rssi_low_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
+{
+    wifi_event_bss_rssi_low_t *event = event_data;
+    if (!event) {
+        return;
+    }
+    wifi_event_bss_rssi_low_t *event_copy = os_malloc(sizeof(wifi_event_bss_rssi_low_t));
+    if (!event_copy) {
+        ESP_LOGE(ROAMING_TAG, "Failed to allocate memory for rssi low event");
+        return;
+    }
+    memcpy(event_copy, event, sizeof(wifi_event_bss_rssi_low_t));
+
+    if (eloop_register_timeout(0, 0, roaming_app_rssi_low_internal_handler, NULL, event_copy) != 0) {
+        os_free(event_copy);
+    }
 }
 #endif
 
 #if NETWORK_ASSISTED_ROAMING_ENABLED
 static void trigger_network_assisted_roam(void)
 {
-#if PERIODIC_RRM_MONITORING
-    if (g_roaming_app.current_bss.rrm_support) {
-        ROAM_NEIGHBOR_LIST_LOCK();
-    }
-#endif /*PERIODIC_RRM_MONITORING*/
     if (esp_wnm_send_bss_transition_mgmt_query(REASON_RSSI, g_roaming_app.btm_neighbor_list, 1) < 0) {
         ESP_LOGD(ROAMING_TAG, "failed to send btm query");
     }
-#if PERIODIC_RRM_MONITORING
-    if (g_roaming_app.current_bss.rrm_support) {
-        ROAM_NEIGHBOR_LIST_UNLOCK();
-    }
-#endif /*PERIODIC_RRM_MONITORING*/
     ESP_LOGD(ROAMING_TAG, "Sent BTM Query");
     gettimeofday(&g_roaming_app.last_roamed_time, NULL);
 #if LEGACY_ROAM_ENABLED
@@ -630,9 +645,6 @@ static bool candidate_security_match(wifi_ap_record_t candidate)
     }
 #if TODO // application doesn't have a way to know SAE-PK enabled AP atm
     if (transition_disable & TRANSITION_DISABLE_SAE_PK) {
-        /* This is a simplification. A more accurate check would involve
-         * parsing the candidate's RSN IE to see if it supports SAE-PK.
-         * For now, we reject all SAE APs if SAE-PK is enforced. */
         if (candidate.authmode == WIFI_AUTH_WPA3_PSK) {
             return false;
         }
@@ -649,9 +661,6 @@ static bool candidate_security_match(wifi_ap_record_t candidate)
     wifi_config_t wifi_cfg = {0};
     esp_wifi_get_config(WIFI_IF_STA, &wifi_cfg);
     if (wifi_cfg.sta.owe_enabled && OWE_COMPATIBLE(curr_auth, cand_auth)) {
-        /*
-         * OWE <--> Open allowed if threshold is Open
-         */
         if (wifi_cfg.sta.threshold.authmode == WIFI_AUTH_OPEN) {
             ESP_LOGV(ROAMING_TAG, "transition between OWE and open permitted");
             return true;
@@ -661,7 +670,7 @@ static bool candidate_security_match(wifi_ap_record_t candidate)
         }
     } else if (wifi_cfg.sta.threshold.authmode > cand_auth) {
         /* If the authmode of the candidate AP is less than our threshold, it
-         * will fail during connection*/
+         * will fail during connection */
         ESP_LOGV(ROAMING_TAG, "Authmode threshold failure %d -> %d", wifi_cfg.sta.threshold.authmode, cand_auth);
         return false;
     } else if (PSK_COMPATIBLE(curr_auth, cand_auth)) {
@@ -713,7 +722,6 @@ static bool is_bssid_blacklisted(const uint8_t *bssid)
     return false;
 }
 
-/* Remember to always call this function with the ROAM_SCAN_RESULTS_LOCK */
 static void parse_scan_results_and_roam(void)
 {
     int8_t rssi_threshold = g_roaming_app.current_rssi_threshold;
@@ -762,26 +770,21 @@ static void parse_scan_results_and_roam(void)
 static void scan_done_event_handler(void *arg, ETS_STATUS status)
 {
     if (status == ETS_OK) {
-        ROAM_SCAN_RESULTS_LOCK();
         ESP_LOGD(ROAMING_TAG, "Scan Done properly");
         g_roaming_app.scanned_aps.current_count = MAX_CANDIDATE_COUNT;
         esp_wifi_scan_get_ap_records(&g_roaming_app.scanned_aps.current_count, g_roaming_app.scanned_aps.ap_records);
         print_ap_records(&g_roaming_app.scanned_aps);
         parse_scan_results_and_roam();
-        ROAM_SCAN_RESULTS_UNLOCK();
     } else {
         ESP_LOGD(ROAMING_TAG, "Scan Done with error %d ", status);
     }
-    ROAM_SCAN_RESULTS_LOCK();
     g_roaming_app.scan_ongoing = false;
-    ROAM_SCAN_RESULTS_UNLOCK();
 }
 static bool conduct_scan(void)
 {
-    /* Update scan time in global structure */
     gettimeofday(&g_roaming_app.scanned_aps.time, NULL);
-        /* Issue scan */
     os_memset(&g_roaming_app.scanned_aps, 0, sizeof(struct scanned_ap_info));
+    /* Issue scan */
     if (esp_wifi_promiscuous_scan_start(&g_roaming_app.config.scan_config, scan_done_event_handler) < 0) {
         ESP_LOGE(ROAMING_TAG, "failed to issue scan");
         return false;
@@ -794,7 +797,6 @@ static void determine_best_ap(int8_t rssi_threshold)
 {
     struct timeval now;
     gettimeofday(&now, NULL);
-    ROAM_SCAN_RESULTS_LOCK();
     /* If the scan results are recent enough or a scan is already ongoing we should not trigger a new scan */
     if (!g_roaming_app.scan_ongoing) {
         g_roaming_app.scan_ongoing = true;
@@ -810,7 +812,6 @@ static void determine_best_ap(int8_t rssi_threshold)
     } else if(rssi_threshold < g_roaming_app.current_rssi_threshold) {
         g_roaming_app.current_rssi_threshold = rssi_threshold;
     }
-    ROAM_SCAN_RESULTS_UNLOCK();
 }
 #if PERIODIC_SCAN_MONITORING
 static void periodic_scan_roam(struct timeval *now)
@@ -914,6 +915,7 @@ static int8_t parse_scan_chan_list(void)
 {
     int8_t ret = 0;
     char *scan_chan_string = NULL;
+    char *scan_chan_string_p = NULL;
     if (validate_scan_chan_list(SCAN_PREFERRED_CHAN_LIST) == false) {
         ESP_LOGE(ROAMING_TAG, "scan chan list validation failed.");
         ret = -1;
@@ -927,22 +929,27 @@ static int8_t parse_scan_chan_list(void)
     }
     strlcpy(scan_chan_string, SCAN_PREFERRED_CHAN_LIST, strlen(SCAN_PREFERRED_CHAN_LIST) + 1);
     char* token;
-    token = strsep(&scan_chan_string, ",");
+    scan_chan_string_p = scan_chan_string;
+    token = strsep(&scan_chan_string_p, ",");
 
     g_roaming_app.config.scan_config.channel_bitmap.ghz_2_channels = 0;
+    g_roaming_app.config.scan_config.channel_bitmap.ghz_5_channels = 0;
 
     while (token != NULL) {
         uint8_t channel = atoi(token);
         /* Check if the number is within the required range */
         if (channel >= 1 && channel <= 14) {
-            /* Check if the number is already present in the array */
             g_roaming_app.config.scan_config.channel_bitmap.ghz_2_channels |= (1 << channel);
+#if CONFIG_SOC_WIFI_SUPPORT_5G
+        } else if (channel >= 36 && channel <= 177) {
+            g_roaming_app.config.scan_config.channel_bitmap.ghz_5_channels |= CHANNEL_TO_BIT(channel);
+#endif
         } else {
             ESP_LOGE(ROAMING_TAG, "Channel out of range: %d", channel);
             ret = -1;
             goto cleanup;
         }
-        token = strsep(&scan_chan_string, ",");
+        token = strsep(&scan_chan_string_p, ",");
     }
 
 cleanup:
@@ -997,14 +1004,6 @@ static esp_err_t init_config_params(void)
 
 static esp_err_t init_scan_config(void)
 {
-    if (!scan_results_lock) {
-        scan_results_lock = os_recursive_mutex_create();
-        if (!scan_results_lock) {
-            ESP_LOGE(ROAMING_TAG, "%s: failed to create scan results lock", __func__);
-            return ESP_FAIL;
-        }
-    }
-
     if (strcmp(DEFAULT_PREFERRED_SCAN_CHAN_LIST, SCAN_PREFERRED_CHAN_LIST)) {
         ESP_ERROR_CHECK(parse_scan_chan_list());
     }
@@ -1070,15 +1069,7 @@ void roam_deinit_app(void)
         os_free(g_roaming_app.btm_neighbor_list);
         g_roaming_app.btm_neighbor_list = NULL;
     }
-    if (neighbor_list_lock) {
-        os_mutex_delete(neighbor_list_lock);
-        neighbor_list_lock = NULL;
-    }
 #endif /*PERIODIC_RRM_MONITORING*/
-    if (scan_results_lock) {
-        os_mutex_delete(scan_results_lock);
-        scan_results_lock = NULL;
-    }
 }
 
 #if CONFIG_ESP_WIFI_ROAMING_BSSID_BLACKLIST
