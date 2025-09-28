@@ -112,6 +112,15 @@ esp_err_t twai_node_get_info(twai_node_handle_t node, twai_node_status_t *status
 esp_err_t twai_node_transmit(twai_node_handle_t node, const twai_frame_t *frame, int timeout_ms);
 
 /**
+ * @brief Wait for all pending transfers to finish, if bus-off happens during waiting, wait until node recovered and tx is finished, or timeout
+ *
+ * @param[in] node Handle to the TWAI node
+ * @param[in] timeout_ms Maximum wait time for all pending transfers to finish (milliseconds), -1 to wait forever
+ * @return ESP_OK on success, error code otherwise
+ */
+esp_err_t twai_node_transmit_wait_all_done(twai_node_handle_t node, int timeout_ms);
+
+/**
  * @brief Receive a TWAI frame from 'rx_done_cb'
  *
  * @note This function can only be called from the `rx_done_cb` callback, you can't call it from a task.

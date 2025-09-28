@@ -113,6 +113,16 @@ void twai_hal_start_bus_recovery(twai_hal_context_t *hal_ctx)
     twaifd_ll_set_operate_cmd(hal_ctx->dev, TWAIFD_LL_HW_CMD_RST_ERR_CNT);
 }
 
+uint16_t twai_hal_get_tec(twai_hal_context_t *hal_ctx)
+{
+    return twaifd_ll_get_tec((hal_ctx)->dev);
+}
+
+uint16_t twai_hal_get_rec(twai_hal_context_t *hal_ctx)
+{
+    return twaifd_ll_get_rec((hal_ctx)->dev);
+}
+
 // /* ------------------------------------ IRAM Content ------------------------------------ */
 
 void twai_hal_format_frame(const twai_hal_trans_desc_t *trans_desc, twai_hal_frame_t *frame)

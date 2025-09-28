@@ -90,12 +90,6 @@ Below are additional configuration fields of the :cpp:type:`twai_onchip_node_con
     - :cpp:member:`twai_onchip_node_config_t::flags::enable_listen_only`: Configures the node in listen-only mode. In this mode, the node only receives and does not transmit any dominant bits, including ACK and error frames.
     - :cpp:member:`twai_onchip_node_config_t::flags::no_receive_rtr`: When using filters, determines whether remote frames matching the ID pattern should be filtered out.
 
-.. only:: esp32c5
-
-    .. note::
-
-        Note: The listen-only mode on ESP32C5 can't work properly when there are multiple nodes on the bus that are sending ACKs to each other. An alternative is to use transceiver which supports listen-only mode itself (e.g. TJA1145), and combine it with self-test mode enabled.
-
 The :cpp:func:`twai_node_enable` function starts the TWAI controller. Once enabled, the controller is connected to the bus and can transmit messages. It also generates events upon receiving messages from other nodes on the bus or when bus errors are detected.
 
 The corresponding function, :cpp:func:`twai_node_disable`, immediately stops the node and disconnects it from the bus. Any ongoing transmissions will be aborted. When the node is re-enabled later, if there are pending transmissions in the queue, the driver will immediately initiate a new transmission attempt.
@@ -120,6 +114,7 @@ To reduce performance overhead caused by memory copying, the TWAI driver uses po
         .buffer_len = sizeof(send_buff),  // Length of data to transmit
     };
     ESP_ERROR_CHECK(twai_node_transmit(node_hdl, &tx_msg, 0));  // Timeout = 0: returns immediately if queue is full
+    ESP_ERROR_CHECK(twai_node_transmit_wait_all_done(node_hdl, -1));  // Wait for transmission to finish
 
 In this example, :cpp:member:`twai_frame_t::header::id` specifies the ID of the message as 0x01. Message IDs are typically used to indicate the type of message in an application and also play a role in bus arbitration during transmission—lower values indicate higher priority on the bus. :cpp:member:`twai_frame_t::buffer` points to the memory address where the data to be transmitted is stored, and :cpp:member:`twai_frame_t::buffer_len` specifies the length of that data. The :cpp:func:`twai_node_transmit` function is thread-safe and can also be called from an ISR. When called from an ISR, the ``timeout`` parameter is ignored, and the function will not block.
 
@@ -399,7 +394,8 @@ Application Examples
 
 .. list::
 
-    - Temporary no.
+    - :example:`peripherals/twai/twai_error_recovery` demonstrates how to recover nodes from the bus-off state and resume communication, as well as bus error reporting, node state changes, and other event information.
+    - :example:`peripherals/twai/twai_network` using 2 nodes with different roles: transmitting and listening, demonstrates how to use the driver for single and bulk data transmission, as well as configure filters to receive these data.
 
 API Reference
 -------------
