@@ -575,7 +575,7 @@ mainmenu "Espressif IoT Development Framework Configuration"
 
         config COMPILER_DISABLE_DEFAULT_ERRORS
             bool "Disable errors for default warnings"
-            default "y"
+            default "n"
             help
                 Enable this option if you do not want default warnings to be considered as errors,
                 especially when updating IDF.
