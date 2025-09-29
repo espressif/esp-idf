@@ -16,7 +16,7 @@ TWAI is a highly reliable, multi-master, real-time, serial asynchronous communic
 
 .. only:: SOC_TWAI_SUPPORT_FD
 
-    The TWAI controllers on the {IDF_TARGET_NAME} also compatible with FD format frames defined in ISO 11898-1, and can transmit and receive both classic and FD format frames.
+    The TWAI controllers on the {IDF_TARGET_NAME} also compatible with FD format (a.k.a. CAN FD) frames defined in ISO 11898-1, and can transmit and receive both classic and FD format frames.
 
 .. only:: not SOC_TWAI_SUPPORT_FD
 
