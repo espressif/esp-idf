@@ -122,7 +122,7 @@ endfunction()
 #
 function(__component_validation_run_checks)
     # Get all component targets
-    idf_build_get_property(component_targets __COMPONENT_TARGETS)
+    idf_build_get_property(component_targets __BUILD_COMPONENT_TARGETS)
 
     # Run validation checks for each component
     foreach(component_target ${component_targets})
