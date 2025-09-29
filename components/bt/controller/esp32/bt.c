@@ -44,9 +44,13 @@
 #include "esp_rom_sys.h"
 #include "hli_api.h"
 
+#if CONFIG_BLE_LOG_ENABLED
+#include "ble_log.h"
+#else /* !CONFIG_BLE_LOG_ENABLED */
 #if CONFIG_BT_BLE_LOG_SPI_OUT_ENABLED
 #include "ble_log/ble_log_spi_out.h"
 #endif // CONFIG_BT_BLE_LOG_SPI_OUT_ENABLED
+#endif /* CONFIG_BLE_LOG_ENABLED */
 
 #if CONFIG_BT_ENABLED
 
@@ -1707,6 +1711,13 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
     coex_init();
 #endif
 
+#if CONFIG_BLE_LOG_ENABLED
+    if (!ble_log_init()) {
+        ESP_LOGE(BTDM_LOG_TAG, "BLE Log v2 init failed");
+        err = ESP_ERR_NO_MEM;
+        goto error;
+    }
+#else /* !CONFIG_BLE_LOG_ENABLED */
 #if CONFIG_BT_BLE_LOG_SPI_OUT_ENABLED
     if (ble_log_spi_out_init() != 0) {
         ESP_LOGE(BTDM_LOG_TAG, "BLE Log SPI output init failed");
@@ -1714,6 +1725,7 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
         goto error;
     }
 #endif // CONFIG_BT_BLE_LOG_SPI_OUT_ENABLED
+#endif /* CONFIG_BLE_LOG_ENABLED */
 
     btdm_cfg_mask = btdm_config_mask_load();
 
@@ -1742,9 +1754,13 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 
 error:
 
+#if CONFIG_BLE_LOG_ENABLED
+    ble_log_deinit();
+#else /* !CONFIG_BLE_LOG_ENABLED */
 #if CONFIG_BT_BLE_LOG_SPI_OUT_ENABLED
     ble_log_spi_out_deinit();
 #endif // CONFIG_BT_BLE_LOG_SPI_OUT_ENABLED
+#endif /* CONFIG_BLE_LOG_ENABLED */
 
     bt_controller_deinit_internal();
 
@@ -1757,9 +1773,13 @@ esp_err_t esp_bt_controller_deinit(void)
         return ESP_ERR_INVALID_STATE;
     }
 
+#if CONFIG_BLE_LOG_ENABLED
+    ble_log_deinit();
+#else /* !CONFIG_BLE_LOG_ENABLED */
 #if CONFIG_BT_BLE_LOG_SPI_OUT_ENABLED
     ble_log_spi_out_deinit();
 #endif // CONFIG_BT_BLE_LOG_SPI_OUT_ENABLED
+#endif /* CONFIG_BLE_LOG_ENABLED */
 
     btdm_controller_deinit();
 
