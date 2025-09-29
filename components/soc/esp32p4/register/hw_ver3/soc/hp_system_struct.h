@@ -2123,7 +2123,7 @@ typedef union {
 } hp_hp2lp_intr_group3_st_reg_t;
 
 
-typedef struct {
+typedef struct hp_system_dev_t {
     volatile hp_sys_ver_date_reg_t sys_ver_date;
     volatile hp_clk_en_reg_t clk_en;
     uint32_t reserved_008[2];
@@ -2244,12 +2244,12 @@ typedef struct {
     volatile hp_hp2lp_wakeup_group1_en_reg_t hp2lp_wakeup_group1_en;
     volatile hp_hp2lp_wakeup_group2_en_reg_t hp2lp_wakeup_group2_en;
     volatile hp_hp2lp_wakeup_group3_en_reg_t hp2lp_wakeup_group3_en;
-} hp_dev_t;
+} hp_system_dev_t;
 
-extern hp_dev_t HP_SYSTEM;
+extern hp_system_dev_t HP_SYSTEM;
 
 #ifndef __cplusplus
-_Static_assert(sizeof(hp_dev_t) == 0x220, "Invalid size of hp_dev_t structure");
+_Static_assert(sizeof(hp_system_dev_t) == 0x220, "Invalid size of hp_dev_t structure");
 #endif
 
 #ifdef __cplusplus

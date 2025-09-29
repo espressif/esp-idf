@@ -24,6 +24,7 @@
 #include "soc/spi1_mem_s_struct.h"
 #include "soc/hp_sys_clkrst_struct.h"
 #include "soc/clk_tree_defs.h"
+#include "soc/hp_system_struct.h"
 #include "rom/opi_flash.h"
 
 #ifdef __cplusplus
@@ -355,20 +356,20 @@ static inline void _psram_ctrlr_ll_enable_module_clock(uint32_t mspi_id, bool en
  * @param mspi_id      mspi_id
  */
 __attribute__((always_inline))
-static inline void psram_ctrlr_ll_reset_module_clock(uint32_t mspi_id)
+static inline void _psram_ctrlr_ll_reset_module_clock(uint32_t mspi_id)
 {
     (void)mspi_id;
     HP_SYS_CLKRST.hp_rst_en0.reg_rst_en_dual_mspi_axi = 1;
-    HP_SYS_CLKRST.hp_rst_en0.reg_rst_en_dual_mspi_axi = 0;
     HP_SYS_CLKRST.hp_rst_en0.reg_rst_en_dual_mspi_apb = 1;
     HP_SYS_CLKRST.hp_rst_en0.reg_rst_en_dual_mspi_apb = 0;
+    HP_SYS_CLKRST.hp_rst_en0.reg_rst_en_dual_mspi_axi = 0;
 }
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
 #define psram_ctrlr_ll_reset_module_clock(...) do { \
         (void)__DECLARE_RCC_ATOMIC_ENV; \
-        psram_ctrlr_ll_reset_module_clock(__VA_ARGS__); \
+        _psram_ctrlr_ll_reset_module_clock(__VA_ARGS__); \
     } while(0)
 
 /**
@@ -826,6 +827,48 @@ static inline void psram_ctrlr_ll_wait_all_transaction_done(void)
     while (SPIMEM2.smem_axi_addr_ctrl.val != ALL_TRANSACTION_DONE) {
         ;
     }
+}
+
+/**
+ * @brief Backup PSRAM controller registers
+ *
+ * @param mspi_id     mspi_id
+ * @param reg         registers
+ */
+__attribute__((always_inline))
+static inline void psram_ctrlr_ll_backup_registers(uint32_t mspi_id, spi_mem_s_dev_t *reg)
+{
+    memcpy(reg, &SPIMEM2, sizeof(spi_mem_s_dev_t));
+}
+
+/**
+ * @brief Restore PSRAM controller registers
+ *
+ * @param mspi_id     mspi_id
+ * @param reg         registers
+ */
+__attribute__((always_inline))
+static inline void psram_ctrlr_ll_restore_registers(uint32_t mspi_id, spi_mem_s_dev_t *reg)
+{
+    memcpy(&SPIMEM2, reg, sizeof(spi_mem_s_dev_t));
+}
+
+/**
+ * @brief Disable core error response
+ */
+__attribute__((always_inline))
+static inline void psram_ctrlr_ll_disable_core_err_resp(void)
+{
+    HP_SYSTEM.core_err_resp_dis.val = 0x7;
+}
+
+/**
+ * @brief Enable core error response
+ */
+__attribute__((always_inline))
+static inline void psram_ctrlr_ll_enable_core_err_resp(void)
+{
+    HP_SYSTEM.core_err_resp_dis.val = 0x0;
 }
 
 #ifdef __cplusplus
