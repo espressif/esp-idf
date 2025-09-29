@@ -24,6 +24,10 @@
 #include "lwip/dhcp.h"
 #include "lwip/ip_addr.h"
 #include "lwip/ip6_addr.h"
+#include "lwip/ip4_addr.h"
+#if LWIP_IPV4 && LWIP_IGMP
+#include "lwip/igmp.h"
+#endif
 #include "lwip/mld6.h"
 #include "lwip/prot/mld6.h"
 #include "lwip/nd6.h"
@@ -626,7 +630,9 @@ static err_t netif_igmp_mac_filter_cb(struct netif *netif, const ip4_addr_t *gro
         // internal pointer hasn't been configured yet (probably in the interface init_fn())
         return ERR_VAL;
     }
-    ESP_LOGD(TAG, "Multicast add filter IPv4: " IPSTR, IP2STR(group));
+    ESP_LOGD(TAG, "Multicast %s filter IPv4: " IPSTR,
+             (action == NETIF_ADD_MAC_FILTER) ? "add" : "remove",
+             IP2STR(group));
     uint8_t mac[NETIF_MAX_HWADDR_LEN];
     mac[0] = 0x01;
     mac[1] = 0x00;
@@ -1004,6 +1010,15 @@ static esp_err_t esp_netif_lwip_add(esp_netif_t *esp_netif)
     if (esp_netif->driver_set_mac_filter) {
 #if LWIP_IPV4 && LWIP_IGMP
         netif_set_igmp_mac_filter(esp_netif->lwip_netif, netif_igmp_mac_filter_cb);
+        /* Align L2 multicast filters with current IGMP groups, since igmp_start()
+         * was called before the callback was registered. */
+        if (esp_netif->lwip_netif && (esp_netif->lwip_netif->flags & NETIF_FLAG_IGMP)) {
+            struct igmp_group *group = netif_igmp_data(esp_netif->lwip_netif);
+            while (group) {
+                netif_igmp_mac_filter_cb(esp_netif->lwip_netif, &group->group_address, NETIF_ADD_MAC_FILTER);
+                group = group->next;
+            }
+        }
 #endif
 #if LWIP_IPV6 && LWIP_IPV6_MLD
         netif_set_mld_mac_filter(esp_netif->lwip_netif, netif_mld_mac_filter_cb);
