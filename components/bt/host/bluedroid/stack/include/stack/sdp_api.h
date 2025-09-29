@@ -409,7 +409,7 @@ extern BOOLEAN SDP_FindProfileVersionInRec (tSDP_DISC_REC *p_rec,
 **
 ** Description      This function is called to create a record in the database.
 **                  This would be through the SDP database maintenance API. The
-**                  record is created empty, teh application should then call
+**                  record is created empty, the application should then call
 **                  "add_attribute" to add the record's attributes.
 **
 ** Returns          Record handle if OK, else 0.
