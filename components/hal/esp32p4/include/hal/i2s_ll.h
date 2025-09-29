@@ -42,7 +42,14 @@ extern "C" {
 #define I2S_LL_SLOT_FRAME_BIT_MAX      512 // Up-to 512 bits in one frame, determined by MAX(half_sample_bits) * 2
 
 #define I2S_LL_XTAL_CLK_FREQ           (40 * 1000000)   // XTAL_CLK: 40MHz
-#define I2S_LL_DEFAULT_CLK_FREQ        I2S_LL_XTAL_CLK_FREQ  // No PLL clock source on P4, use XTAL as default
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+#define I2S_LL_DEFAULT_CLK_FREQ        (160 * 1000000)  // PLL_F160M_CLK: 160MHz
+#define I2S_LL_DEFAULT_CLK_SRC         I2S_CLK_SRC_PLL_160M
+#else
+#define I2S_LL_DEFAULT_CLK_FREQ        I2S_LL_XTAL_CLK_FREQ  // No PLL clock source before version 3, use XTAL as default
+#define I2S_LL_DEFAULT_CLK_SRC         I2S_CLK_SRC_XTAL
+#endif
+
 
 #define I2S_LL_ETM_EVENT_TABLE(i2s_port, chan_dir, event)  \
     (uint32_t[SOC_I2S_NUM][2][I2S_ETM_EVENT_MAX]){  \
@@ -442,10 +449,14 @@ static inline uint32_t i2s_ll_get_clk_src(i2s_clock_src_t src)
             return 1;
         case I2S_CLK_SRC_EXTERNAL:
             return 2;
+        case I2S_CLK_SRC_DEFAULT:
 #if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+            return 3;
         // Only support PLL_160M on P4 ver3 and later
         case I2S_CLK_SRC_PLL_160M:
             return 3;
+#else
+            return 0;
 #endif
         default:
             HAL_ASSERT(false && "unsupported clock source");
