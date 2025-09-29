@@ -468,27 +468,32 @@ static u8_t *add_offer_options(dhcps_t *dhcps, u8_t *optptr)
         }
     }
 
-    // In order of preference
-    if (dhcps_dns_enabled(dhcps->dhcps_dns)) {
-        uint8_t size = 4;
+    // Add DNS option if either main or backup DNS is set
+    if (dhcps_dns_enabled(dhcps->dhcps_dns) &&
+        (dhcps->dns_server[DNS_TYPE_MAIN].addr || dhcps->dns_server[DNS_TYPE_BACKUP].addr)) {
 
+        uint8_t size = 0;
+
+        if (dhcps->dns_server[DNS_TYPE_MAIN].addr) {
+            size += 4;
+        }
         if (dhcps->dns_server[DNS_TYPE_BACKUP].addr) {
             size += 4;
         }
 
         *optptr++ = DHCP_OPTION_DNS_SERVER;
         *optptr++ = size;
-        optptr = dhcps_option_ip(optptr, &dhcps->dns_server[DNS_TYPE_MAIN]);
 
+        if (dhcps->dns_server[DNS_TYPE_MAIN].addr) {
+            optptr = dhcps_option_ip(optptr, &dhcps->dns_server[DNS_TYPE_MAIN]);
+        }
         if (dhcps->dns_server[DNS_TYPE_BACKUP].addr) {
             optptr = dhcps_option_ip(optptr, &dhcps->dns_server[DNS_TYPE_BACKUP]);
         }
-#ifdef CONFIG_LWIP_DHCPS_ADD_DNS
     } else {
         *optptr++ = DHCP_OPTION_DNS_SERVER;
         *optptr++ = 4;
         optptr = dhcps_option_ip(optptr, &ipadd);
-#endif /* CONFIG_LWIP_DHCPS_ADD_DNS */
     }
 
     ip4_addr_t broadcast_addr = { .addr = (ipadd.addr & dhcps->dhcps_mask.addr) | ~dhcps->dhcps_mask.addr };
