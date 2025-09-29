@@ -990,7 +990,7 @@ void Cache_Set_Default_Mode(void);
   *
   * @return None
   */
-void Cache_Enable_Defalut_ICache_Mode(void);
+void Cache_Enable_Default_ICache_Mode(void);
 
 /**
   * @brief Occupy the cache items for DCache.
