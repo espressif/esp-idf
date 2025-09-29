@@ -5,7 +5,7 @@ import logging
 import os
 import socket
 import sys
-from typing import Iterator
+from collections.abc import Iterator
 
 import pytest
 from pytest_embedded import Dut
@@ -103,7 +103,7 @@ def actual_test(dut: Dut) -> None:
 
 
 @pytest.mark.eth_ip101
-@pytest.mark.flaky(reruns=3, reruns_delay=5)
+@pytest.mark.flaky(reruns=1, reruns_delay=5)
 @idf_parametrize('target', ['esp32'], indirect=['target'])
 def test_esp_netif_l2tap_example(dut: Dut) -> None:
     actual_test(dut)
