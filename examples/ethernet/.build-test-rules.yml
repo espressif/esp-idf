@@ -4,20 +4,13 @@ examples/ethernet/basic:
   enable:
     - if: INCLUDE_DEFAULT == 1
   disable:
-    - if: IDF_TARGET in ["esp32h21", "esp32h4"]
-      temporary: true
-      reason: not supported yet # TODO: [ESP32H21] IDF-11581 [ESP32H4] IDF-12360
-  disable_test:
-    - if: IDF_TARGET not in ["esp32"]
-      temporary: true
-      reason: lack of runners
+    - if: IDF_TARGET not in ["esp32", "esp32p4"]
   depends_components:
     - esp_eth
     - esp_netif
     - lwip
     - esp_event
     - esp_driver_gpio
-    - esp_driver_spi
 
 examples/ethernet/iperf:
   disable:

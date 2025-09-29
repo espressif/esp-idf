@@ -114,7 +114,10 @@ esp_eth_phy_t *phy_init(eth_phy_config_t *phy_config)
     }
 #if CONFIG_TARGET_USE_INTERNAL_ETHERNET
     phy_config->phy_addr = ESP_ETH_PHY_ADDR_AUTO;
-#if CONFIG_TARGET_ETH_PHY_DEVICE_IP101
+#if CONFIG_TARGET_ETH_PHY_DEVICE_GENERIC
+    phy = esp_eth_phy_new_generic(phy_config);
+    ESP_LOGI(TAG, "DUT PHY: Generic");
+#elif CONFIG_TARGET_ETH_PHY_DEVICE_IP101
     phy = esp_eth_phy_new_ip101(phy_config);
     ESP_LOGI(TAG, "DUT PHY: IP101");
 #elif CONFIG_TARGET_ETH_PHY_DEVICE_LAN8720

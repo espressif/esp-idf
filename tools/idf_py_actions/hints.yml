@@ -668,3 +668,32 @@
     re: "error: '(ESP_IF_WIFI_STA|ESP_IF_WIFI_AP)' undeclared"
     hint: "The macros '{}' have been removed. Please use the enum values 'WIFI_IF_STA' and 'WIFI_IF_AP' directly."
     match_to_output: True
+
+-
+    re: "error: implicit declaration of function 'esp_eth_phy_new_{}'"
+    hint: "The Ethernet {} driver has been moved out of ESP-IDF and is now hosted in the Component Registry. You can add it to your project by running idf.py add-dependency \"espressif/{}\""
+    variables:
+        -
+            re_variables: ['ip101']
+            hint_variables: ['IP101', 'ip101']
+        -
+            re_variables: ['lan87xx']
+            hint_variables: ['LAN87XX', 'lan87xx']
+        -
+            re_variables: ['rtl8201']
+            hint_variables: ['RTL8201', 'rtl8201']
+        -
+            re_variables: ['dp83848']
+            hint_variables: ['DP83848', 'dp83848']
+        -
+            re_variables: ['ksz80xx']
+            hint_variables: ['KSZ80XX', 'ksz80xx']
+        -
+            re_variables: ['dm9051']
+            hint_variables: ['DM9051', 'dm9051']
+        -
+            re_variables: ['ksz8851snl']
+            hint_variables: ['KSZ8851SNL', 'ksz8851snl']
+        -
+            re_variables: ['w5500']
+            hint_variables: ['W5500', 'w5500']

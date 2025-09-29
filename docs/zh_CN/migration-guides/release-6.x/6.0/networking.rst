@@ -43,6 +43,32 @@
 **影响**：使用 ``ETH_ESP32_EMAC_DEFAULT_CONFIG()`` 的应用程序可继续正常工作。自定义时钟配置需在 EMAC 配置结构体中显式设置，或使用 `Ethernet Init 组件 <https://components.espressif.com/components/espressif/ethernet_init>`_。
 
 
+以太网 PHY 和以太网 SPI 模块驱动已从 ESP-IDF 移至外部仓库
+-------------------------------------------------------------
+
+以太网 PHY 和以太网 SPI 模块驱动已从 ESP-IDF 中移除，并迁移至 `esp-eth-drivers <https://github.com/espressif/esp-eth-drivers>`_ 仓库。如果你在项目中使用这些驱动，需要将其作为组件集成。相关驱动现已在 `ESP 组件库 <https://components.espressif.com/>`_ 上提供。
+
+**移除的 API**：
+- :cpp:func:`esp_eth_phy_new_ip101`
+- :cpp:func:`esp_eth_phy_new_lan87xx`
+- :cpp:func:`esp_eth_phy_new_rtl8201`
+- :cpp:func:`esp_eth_phy_new_dp83848`
+- :cpp:func:`esp_eth_phy_new_ksz80xx`
+- :cpp:func:`esp_eth_mac_new_dm9051`
+- :cpp:func:`esp_eth_phy_new_dm9051`
+- :cpp:func:`esp_eth_mac_new_ksz8851snl`
+- :cpp:func:`esp_eth_phy_new_ksz8851snl`
+- :cpp:func:`esp_eth_mac_new_w5500`
+- :cpp:func:`esp_eth_phy_new_w5500`
+
+
+**影响**：原本依赖 ESP-IDF 内置以太网 PHY 和以太网 SPI 模块驱动的应用将无法继续工作。
+
+**迁移方式**：
+
+请通过 `idf.py add-dependency` 命令，从 `IDF 组件管理器 <https://components.espressif.com/>`_ 添加驱动组件到你的项目，并包含相应的 `esp_eth_phy_xxxx.h` 和 `esp_eth_mac_xxxx.h` 头文件，或使用 `Ethernet Init 组件 <https://components.espressif.com/components/espressif/ethernet_init>`_。
+
+
 ESP-NETIF
 *********
 

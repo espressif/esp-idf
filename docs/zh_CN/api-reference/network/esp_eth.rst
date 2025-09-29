@@ -305,14 +305,12 @@ ESP-IDF 在宏 :c:macro:`ETH_MAC_DEFAULT_CONFIG` 和 :c:macro:`ETH_PHY_DEFAULT_C
         phy_config.phy_addr = CONFIG_ETHERNET_PHY_ADDR;              // 根据开发板设计更改 PHY 地址
         phy_config.reset_gpio_num = CONFIG_ETHERNET_PHY_RST_GPIO;    // 更改用于 PHY 复位的 GPIO
         esp_eth_phy_t *phy = esp_eth_phy_new_generic(&phy_config);     // 创建通用 PHY 实例
-        // ESP-IDF 为数种特定以太网 PHY 芯片驱动提供官方支持
-        // esp_eth_phy_t *phy = esp_eth_phy_new_ip101(&phy_config);
-        // esp_eth_phy_t *phy = esp_eth_phy_new_rtl8201(&phy_config);
-        // esp_eth_phy_t *phy = esp_eth_phy_new_lan8720(&phy_config);
-        // esp_eth_phy_t *phy = esp_eth_phy_new_dp83848(&phy_config);
 
     .. note::
         使用 :cpp:func:`esp_eth_phy_new_generic` 创建新的 PHY 实例时，可以使用任何符合 IEEE 802.3 标准的以太网 PHY 芯片。然而，尽管 PHY 芯片符合 IEEE 802.3 标准，能提供基本功能，但某些特定的功能可能无法完全实现。例如，某些以太网 PHY 芯片可能需要配置特定的速度模式才能启用环回功能。遇到这种情况，需要配置 PHY 驱动程序以满足特定芯片需求，请使用 ESP-IDF 官方支持的 PHY 芯片驱动程序，或参阅 :ref:`Custom PHY Driver <custom-phy-driver>` 小节以创建新的自定义驱动程序。
+
+    .. tip::
+        乐鑫为多种特定的以太网 PHY 芯片提供了驱动程序，这些驱动程序可在 `esp-eth-drivers <https://github.com/espressif/esp-eth-drivers>`_ 仓库中获取。驱动以组件形式分发，并可在 `ESP 组件库 <https://components.espressif.com/>`_ 上获取。
 
     可选的运行时 MAC 时钟配置
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -329,7 +327,7 @@ ESP-IDF 在宏 :c:macro:`ETH_MAC_DEFAULT_CONFIG` 和 :c:macro:`ETH_PHY_DEFAULT_C
 
         esp32_emac_config.interface = EMAC_DATA_INTERFACE_RMII;                      // 更改 EMAC 数据接口
         esp32_emac_config.clock_config.rmii.clock_mode = EMAC_CLK_OUT;               // 配置 EMAC REF_CLK 模式
-        esp32_emac_config.clock_config.rmii.clock_gpio = EMAC_CLK_OUT_GPIO;          // 配置用于输入/输出 EMAC REF_CLK 的 GPIO 编号
+        esp32_emac_config.clock_config.rmii.clock_gpio = 17;                         // 配置用于输入/输出 EMAC REF_CLK 的 GPIO 编号
         esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&esp32_emac_config, &mac_config); // 创建 MAC 实例
 
 
@@ -375,6 +373,8 @@ SPI-Ethernet 模块
 
     * 针对不同的以太网模块，或是为了满足特定 PCB 上的 SPI 时序，SPI 从机设备配置（即 `spi_device_interface_config_t`）可能略有不同。具体配置请查看模块规格以及 ESP-IDF 中的示例。
 
+.. tip::
+    乐鑫为多种 SPI-Ethernet 模块提供了驱动程序，这些驱动程序可在 `esp-eth-drivers <https://github.com/espressif/esp-eth-drivers>`_ 仓库中获取。驱动以组件形式分发，并可在 `ESP 组件库 <https://components.espressif.com/>`_ 上获取。
 
 安装驱动程序
 --------------
@@ -383,7 +383,7 @@ SPI-Ethernet 模块
 
 * :cpp:member:`esp_eth_config_t::mac`：由 MAC 生成器创建的实例（例如 :cpp:func:`esp_eth_mac_new_esp32`）。
 
-* :cpp:member:`esp_eth_config_t::phy`：由 PHY 生成器创建的实例（例如 :cpp:func:`esp_eth_phy_new_ip101`）。
+* :cpp:member:`esp_eth_config_t::phy`：由 PHY 生成器创建的实例（例如 :cpp:func:`esp_eth_phy_new_generic`）。
 
 * :cpp:member:`esp_eth_config_t::check_link_period_ms`：以太网驱动程序会启用操作系统定时器来定期检查链接状态。该字段用于设置间隔时间，单位为毫秒。
 
@@ -644,11 +644,11 @@ ESP-IDF 以太网驱动程序所需的大部分 PHY 管理功能都已涵盖在 
 
 **创建自定义 PHY 驱动程序的步骤：**
 
-1. 请根据 PHY 数据手册，定义针对供应商的特定注册表布局。示例请参见 :component_file:`esp_eth/src/phy/esp_eth_phy_ip101.c`。
+1. 请根据 PHY 数据手册，定义厂家私有的寄存器。
 2. 准备衍生的 PHY 管理对象信息结构，该结构：
 
     * 必须至少包含 IEEE 802.3 :cpp:class:`phy_802_3_t` 父对象
-    * 可选择包含额外的变量，以支持非 IEEE 802.3 或定制功能。示例请参见 :component_file:`esp_eth/src/phy/esp_eth_phy_ksz80xx.c`。
+    * 可选择包含额外的变量，以支持非 IEEE 802.3 或定制功能。
 
 3. 定义针对芯片的特定管理回调功能。
 4. 初始化 IEEE 802.3 父对象并重新分配针对芯片的特定管理回调功能。
