@@ -22,10 +22,6 @@ Besides that, `esp_eth` component can drive third-party Ethernet module which in
 > [!NOTE]
 > `Generic 802.3 PHY` basic functionality should always work for PHY compliant with IEEE 802.3. However, some specific features might be limited. A typical example is loopback functionality, where certain PHYs may require setting a specific speed mode to operate correctly. If this is a case, use driver tailored to that specific chip.
 
-#### Pin Assignment
-
-See common pin assignments for Ethernet examples from [upper level](../README.md#common-pin-assignments).
-
 ### Software Tools Preparation
 
 1. Install iperf tool on PC

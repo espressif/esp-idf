@@ -33,14 +33,14 @@ endif()
 
 idf_component_register(SRCS "${srcs}"
                        INCLUDE_DIRS "include"
-                       PRIV_REQUIRES esp_netif esp_driver_gpio esp_driver_uart esp_wifi vfs console esp_eth openthread)
+                       PRIV_REQUIRES esp_netif esp_driver_gpio esp_driver_uart esp_wifi vfs console openthread)
 
 if(CONFIG_EXAMPLE_PROVIDE_WIFI_CONSOLE_CMD)
     idf_component_optional_requires(PRIVATE console)
 endif()
 
 if(CONFIG_EXAMPLE_CONNECT_ETHERNET)
-    idf_component_optional_requires(PUBLIC esp_eth)
+    idf_component_optional_requires(PRIVATE esp_eth)
 endif()
 
 if(CONFIG_EXAMPLE_CONNECT_THREAD)
