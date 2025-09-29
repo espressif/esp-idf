@@ -108,3 +108,31 @@ Alternative (find with predicate):
     if (target) {
         // use "target"
     }
+
+
+DHCP Server DNS Option Behavior
+-------------------------------
+
+The ``LWIP_DHCPS_ADD_DNS`` macro has been removed.
+
+Previously, when running a DHCP server on SoftAP, if no DNS offer option was set, the server IP address was automatically advertised as the DNS server.
+
+**Current behavior:**
+
+From this release onward, the DHCP server includes DNS information in its offers only when explicitly configured using :cpp:func:`esp_netif_dhcps_option` with the ``ESP_NETIF_DOMAIN_NAME_SERVER`` option. In that case, the currently configured main and/or backup DNS addresses for the SoftAP interface are sent to clients.
+
+If the option is not enabled, the DHCP server's own IP address is sent as the DNS server, which preserves the previous default behavior.
+
+**Migration:**
+
+If applications rely on custom DNS settings, developers should:
+
+1. Enable the DHCP server to include DNS information in its offers using :cpp:func:`esp_netif_dhcps_option` with the ``ESP_NETIF_DOMAIN_NAME_SERVER`` option.
+2. Configure one or more DNS server addresses for the SoftAP interface using :cpp:func:`esp_netif_set_dns_info`.
+3. If no DNS information should be sent at all, configure :cpp:func:`esp_netif_dhcps_option` but set the DNS server address to ``0.0.0.0`` using :cpp:func:`esp_netif_set_dns_info`.
+
+This allows developers to:
+
+- replicate the old behavior (advertising the SoftAP IP),
+- provide custom DNS servers (for example, public resolvers), or
+- suppress DNS information entirely by setting the DNS server to ``0.0.0.0``.

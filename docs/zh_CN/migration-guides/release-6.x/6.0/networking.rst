@@ -108,3 +108,31 @@ ESP-NETIF
     if (target) {
         // 使用 "target"
     }
+
+
+DHCP 服务器 DNS 选项行为
+-------------------------
+
+``LWIP_DHCPS_ADD_DNS`` 宏已被移除。
+
+在此之前，在 SoftAP 上运行 DHCP 服务器时，如果没有设置 DNS 选项，则服务器的 IP 地址会被自动公布为 DNS 服务器。
+
+**当前行为：**
+
+从本版本开始，DHCP 服务器只有在显式配置了 :cpp:func:`esp_netif_dhcps_option` 并启用了 ``ESP_NETIF_DOMAIN_NAME_SERVER`` 选项时，才会在 DHCP offer 报文中包含 DNS 信息。此时，SoftAP 接口当前配置的主 DNS 和/或备用 DNS 地址将被发送给客户端。
+
+如果没有启用该选项，DHCP 服务器会将自己的 IP 地址作为 DNS 服务器发送给客户端，从而与之前的默认行为保持一致。
+
+**迁移说明：**
+
+如果应用程序依赖自定义 DNS 设置，开发者应：
+
+1. 使用 :cpp:func:`esp_netif_dhcps_option` 并启用 ``ESP_NETIF_DOMAIN_NAME_SERVER`` 选项，让 DHCP 服务器在 offer 报文中包含 DNS 信息。
+2. 使用 :cpp:func:`esp_netif_set_dns_info` 为 SoftAP 接口配置一个或多个 DNS 服务器地址。
+3. 若需完全禁止发送 DNS 信息，仍需配置 :cpp:func:`esp_netif_dhcps_option`，但应通过 :cpp:func:`esp_netif_set_dns_info` 将 DNS 服务器地址设置为 ``0.0.0.0``。
+
+这样开发者可以：
+
+- 复现旧的行为（通告 SoftAP IP），
+- 提供自定义的 DNS 服务器（例如公共解析器），
+- 通过将 DNS 地址设置为 ``0.0.0.0`` 来完全禁止 DNS 信息通告。
