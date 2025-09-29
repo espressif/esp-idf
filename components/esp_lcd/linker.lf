@@ -3,6 +3,7 @@ archive: libesp_lcd.a
 entries:
     if LCD_DSI_ISR_HANDLER_IN_IRAM = y:
         esp_lcd_panel_dpi: mipi_dsi_dma_trans_done_cb (noflash)
+        esp_lcd_panel_dpi: mipi_dsi_bridge_isr_handler (noflash)
 
 [mapping:esp_lcd_dsi_dma]
 archive: libesp_hw_support.a

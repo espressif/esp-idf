@@ -1,10 +1,11 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include "soc/mipi_dsi_periph.h"
+#include "soc/interrupts.h"
 
 const soc_mipi_dsi_phy_pll_freq_range_t soc_mipi_dsi_phy_pll_ranges[] = {
     {80, 89, 0x00},     // [80,90) Mbps
@@ -49,3 +50,9 @@ const soc_mipi_dsi_phy_pll_freq_range_t soc_mipi_dsi_phy_pll_ranges[] = {
 };
 
 const size_t num_of_soc_mipi_dsi_phy_pll_ranges = sizeof(soc_mipi_dsi_phy_pll_ranges) / sizeof(soc_mipi_dsi_phy_pll_freq_range_t);
+
+const soc_mipi_dsi_signal_desc_t soc_mipi_dsi_signals[1] = {
+    [0] = {
+        .brg_irq_id = ETS_DSI_BRIDGE_INTR_SOURCE,
+    }
+};
