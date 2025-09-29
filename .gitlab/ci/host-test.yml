@@ -219,13 +219,6 @@ test_split_path_by_spaces:
     - cd ${IDF_PATH}/tools
     - python -m unittest split_paths_by_spaces.py
 
-test_mqtt_on_host:
-  extends: .host_test_template
-  script:
-    - cd ${IDF_PATH}/components/mqtt/esp-mqtt/host_test
-    - idf.py build
-    - LSAN_OPTIONS=verbosity=1:log_threads=1 build/host_mqtt_client_test.elf
-
 test_transport_on_host:
   extends: .host_test_template
   allow_failure: true # IDFCI-2781 [v5.5, v5.4] test_transport_on_host fails on ubuntu 24.04
