@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
- * SPDX-FileContributor: 2018-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2018-2025 Espressif Systems (Shanghai) CO LTD
  */
 
 /* lwIP includes. */
@@ -215,7 +215,7 @@ sys_mbox_new(sys_mbox_t *mbox, int size)
 
   if ((*mbox)->os_mbox == NULL) {
     LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("fail to new (*mbox)->os_mbox\n"));
-    free(*mbox);
+    mem_free(*mbox);
     return ERR_MEM;
   }
 
@@ -363,7 +363,7 @@ sys_mbox_free(sys_mbox_t *mbox)
   LWIP_ASSERT("mbox quence not empty", msgs_waiting == 0);
 
   vQueueDelete((*mbox)->os_mbox);
-  free(*mbox);
+  mem_free(*mbox);
   *mbox = NULL;
 
   (void)msgs_waiting;
@@ -497,7 +497,7 @@ sys_thread_sem_free(void* data) // destructor for TLS semaphore
 
   if (sem) {
     LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("sem pointer del, sem_p=%p\n", sem));
-    free(sem);
+    mem_free(sem);
   }
 }
 
@@ -513,7 +513,7 @@ sys_thread_sem_init(void)
 
   *sem = xSemaphoreCreateBinary();
   if (!(*sem)){
-    free(sem);
+    mem_free(sem);
     ESP_LOGE(TAG, "thread_sem_init: out of memory");
     return 0;
   }
