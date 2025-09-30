@@ -30,6 +30,7 @@
 #include "hal/efuse_hal.h"
 #include "soc/chip_revision.h"
 #include "hal/clk_tree_ll.h"
+#include "hal/config.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -229,6 +230,20 @@ static inline void spimem_flash_ll_set_sus_delay(spi_mem_dev_t *dev, uint32_t dl
     dev->sus_status.flash_pes_dly_128 = 1;
     dev->sus_status.flash_per_dly_128 = 1;
 }
+
+#if (HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300)
+/**
+ * Configure the delay after Resume
+ *
+ * @param dev Beginning address of the peripheral registers.
+ * @param dly_val delay time
+ */
+static inline void spimem_flash_ll_set_rs_delay(spi_mem_dev_t *dev, uint32_t dly_val)
+{
+    dev->ctrl1.cs_hold_dly_per = dly_val;
+    dev->sus_status.flash_per_dly_128 = 1;
+}
+#endif
 
 /**
  * Configure the cs hold delay time(used to set the minimum CS high time tSHSL)
