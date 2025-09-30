@@ -6,6 +6,37 @@
 公共变化
 --------
 
+旧版驱动依赖移除
+~~~~~~~~~~~~~~~~
+
+旧版驱动组件 :component:`driver` 已被弃用，不再包含对以下驱动组件的公共依赖：
+
+.. list::
+    :class: no-bullet
+
+    - :component:`esp_driver_ana_cmpr`
+    - :component:`esp_driver_dac`
+    - :component:`esp_driver_gptimer`
+    - :component:`esp_driver_i2s`
+    - :component:`esp_driver_ledc`
+    - :component:`esp_driver_mcpwm`
+    - :component:`esp_driver_parlio`
+    - :component:`esp_driver_pcnt`
+    - :component:`esp_driver_rmt`
+    - :component:`esp_driver_sdio`
+    - :component:`esp_driver_sdm`
+    - :component:`esp_driver_sdmmc`
+    - :component:`esp_driver_sdspi`
+    - :component:`esp_driver_spi`
+    - :component:`esp_driver_tsens`
+    - :component:`esp_driver_twai`
+    - :component:`esp_driver_uart`
+    - :component:`esp_driver_usb_serial_jtag`
+
+如果您的项目使用了老旧的 :component:`driver` 驱动组件，强烈建议移除对 :component:`driver` 驱动组件的依赖，并为项目添加新驱动组件（通常是 ``esp_driver_xxx``）的依赖。
+
+如仍需保留老旧的 :component:`driver` 驱动组件（例如您的项目依赖旧版 ``i2c`` 驱动），请将 :component:`driver` 组件保留在项目的组件依赖列表文件中（通常是 ``<project_root>/main/CMakeLists.txt`` ），并根据项目需要手动添加 :component:`driver` 中不再包含的驱动组件依赖。
+
 所有驱动的 ``io_loop_back`` 配置已被移除
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

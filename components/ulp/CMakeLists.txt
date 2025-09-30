@@ -96,4 +96,4 @@ endif()
 
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS ${includes}
-                       REQUIRES driver esp_adc)
+                       REQUIRES esp_adc esp_driver_gpio esp_driver_uart esp_driver_i2s esp_hal_i2c)

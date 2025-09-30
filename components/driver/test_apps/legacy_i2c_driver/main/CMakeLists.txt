@@ -3,5 +3,5 @@ set(srcs "test_app_main.c"
     )
 
 idf_component_register(SRCS ${srcs}
-                       PRIV_REQUIRES unity test_utils driver
+                       PRIV_REQUIRES unity test_utils driver esp_driver_gpio
                        WHOLE_ARCHIVE)

@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <string.h>
 #include <stdio.h>
 #include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
@@ -20,7 +21,7 @@ TEST_CASE("driver_life_cycle", "[twai-loop-back]")
 {
     twai_timing_config_t t_config = TWAI_TIMING_CONFIG_100KBITS();
     twai_filter_config_t f_config = TWAI_FILTER_CONFIG_ACCEPT_ALL();
-    twai_general_config_t g_config = TWAI_GENERAL_CONFIG_DEFAULT(0, 0, TWAI_MODE_NO_ACK);
+    twai_general_config_t g_config = TWAI_GENERAL_CONFIG_DEFAULT(GPIO_NUM_0, GPIO_NUM_0, TWAI_MODE_NO_ACK);
     printf("install driver\r\n");
     TEST_ESP_OK(twai_driver_install(&g_config, &t_config, &f_config));
     // can't install the driver multiple times
@@ -42,13 +43,13 @@ TEST_CASE("driver_life_cycle", "[twai-loop-back]")
 TEST_CASE("twai_bit_timing", "[twai-loop-back]")
 {
     twai_filter_config_t f_config = TWAI_FILTER_CONFIG_ACCEPT_ALL();
-    twai_general_config_t g_config = TWAI_GENERAL_CONFIG_DEFAULT(0, 0, TWAI_MODE_NO_ACK);
-    twai_timing_config_t t_config = {
-        .quanta_resolution_hz = 33333, // invalid resolution
-        .tseg_1 = 15,
-        .tseg_2 = 4,
-        .sjw = 1,
-    };
+    twai_general_config_t g_config = TWAI_GENERAL_CONFIG_DEFAULT(GPIO_NUM_0, GPIO_NUM_0, TWAI_MODE_NO_ACK);
+    twai_timing_config_t t_config{};
+    t_config.quanta_resolution_hz = 33333; // invalid resolution
+    t_config.tseg_1 = 15;
+    t_config.tseg_2 = 4;
+    t_config.sjw = 1;
+
     TEST_ESP_ERR(ESP_ERR_INVALID_ARG, twai_driver_install(&g_config, &t_config, &f_config));
 
     t_config.quanta_resolution_hz = 2000000;
@@ -61,16 +62,17 @@ TEST_CASE("twai_mode_std_no_ack_25kbps", "[twai-loop-back]")
     twai_timing_config_t t_config = TWAI_TIMING_CONFIG_25KBITS();
     twai_filter_config_t f_config = TWAI_FILTER_CONFIG_ACCEPT_ALL();
     // bind the TX and RX to the same GPIO to act like a loopback
-    twai_general_config_t g_config = TWAI_GENERAL_CONFIG_DEFAULT(0, 0, TWAI_MODE_NO_ACK);
+    twai_general_config_t g_config = TWAI_GENERAL_CONFIG_DEFAULT(GPIO_NUM_0, GPIO_NUM_0, TWAI_MODE_NO_ACK);
     printf("install twai driver\r\n");
     TEST_ESP_OK(twai_driver_install(&g_config, &t_config, &f_config));
     TEST_ESP_OK(twai_start());
 
-    twai_message_t tx_msg = {
-        .identifier = 0x123,
-        .data = {0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88},
-        .self = true, // Transmitted message will also received by the same node
-    };
+    twai_message_t tx_msg{};
+    tx_msg.identifier = 0x123;
+    uint8_t data[] = {0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88};
+    memcpy(tx_msg.data, data, sizeof(data));
+    tx_msg.self = true; // Transmitted message will also received by the same node
+
     for (int len = 0; len <= 8; len++) {
         tx_msg.data_length_code = len;
         printf("TX id %lx len %d\r\n", tx_msg.identifier, tx_msg.data_length_code);
@@ -95,19 +97,19 @@ TEST_CASE("twai_mode_ext_no_ack_250kbps", "[twai-loop-back]")
     twai_timing_config_t t_config = TWAI_TIMING_CONFIG_250KBITS();
     twai_filter_config_t f_config = TWAI_FILTER_CONFIG_ACCEPT_ALL();
     // bind the TX and RX to the same GPIO to act like a loopback
-    twai_general_config_t g_config = TWAI_GENERAL_CONFIG_DEFAULT(0, 0, TWAI_MODE_NO_ACK);
-    twai_message_t tx_msg = {
-        .identifier = 0x12345,
-        .data_length_code = 6,
-        .data = {0x11, 0x22, 0x33, 0x44, 0x55, 0x66},
-        .self = true, // Transmitted message will also received by the same node
-        .extd = true, // Extended Frame Format (29bit ID)
-    };
+    twai_general_config_t g_config = TWAI_GENERAL_CONFIG_DEFAULT(GPIO_NUM_0, GPIO_NUM_0, TWAI_MODE_NO_ACK);
+    twai_message_t tx_msg{};
+    tx_msg.identifier = 0x12345;
+    tx_msg.data_length_code = 6;
+    uint8_t data[] = {0x11, 0x22, 0x33, 0x44, 0x55, 0x66};
+    memcpy(tx_msg.data, data, sizeof(data));
+    tx_msg.self = true; // Transmitted message will also received by the same node
+    tx_msg.extd = true; // Extended Frame Format (29bit ID)
 
     for (int i = 0; i < SOC_TWAI_CONTROLLER_NUM; i++) {
         g_config.controller_id = i;
-        g_config.tx_io = i;
-        g_config.rx_io = i;
+        g_config.tx_io = static_cast<gpio_num_t>(i);
+        g_config.rx_io = static_cast<gpio_num_t>(i);
         printf("install twai driver %d\r\n", g_config.controller_id);
         TEST_ESP_OK(twai_driver_install_v2(&g_config, &t_config, &f_config, &twai_buses[i]));
         TEST_ESP_OK(twai_start_v2(twai_buses[i]));
@@ -151,20 +153,20 @@ static void s_test_sleep_retention(bool allow_pd)
     twai_timing_config_t t_config = TWAI_TIMING_CONFIG_250KBITS();
     twai_filter_config_t f_config = TWAI_FILTER_CONFIG_ACCEPT_ALL();
     // bind the TX and RX to the same GPIO to act like a loopback
-    twai_general_config_t g_config = TWAI_GENERAL_CONFIG_DEFAULT(0, 0, TWAI_MODE_NO_ACK);
+    twai_general_config_t g_config = TWAI_GENERAL_CONFIG_DEFAULT(GPIO_NUM_0, GPIO_NUM_0, TWAI_MODE_NO_ACK);
     g_config.general_flags.sleep_allow_pd = allow_pd;
-    twai_message_t tx_msg = {
-        .identifier = 0x12345,
-        .data_length_code = 6,
-        .data = {0x11, 0x22, 0x33, 0x44, 0x55, 0x66},
-        .self = true, // Transmitted message will also received by the same node
-        .extd = true, // Extended Frame Format (29bit ID)
-    };
+    twai_message_t tx_msg{};
+    tx_msg.identifier = 0x12345;
+    tx_msg.data_length_code = 6;
+    uint8_t data[] = {0x11, 0x22, 0x33, 0x44, 0x55, 0x66};
+    memcpy(tx_msg.data, data, sizeof(data));
+    tx_msg.self = true; // Transmitted message will also received by the same node
+    tx_msg.extd = true; // Extended Frame Format (29bit ID)
 
     for (int i = 0; i < SOC_TWAI_CONTROLLER_NUM; i++) {
         g_config.controller_id = i;
-        g_config.tx_io = i;
-        g_config.rx_io = i;
+        g_config.tx_io = static_cast<gpio_num_t>(i);
+        g_config.rx_io = static_cast<gpio_num_t>(i);
         printf("install twai driver %d\r\n", g_config.controller_id);
         TEST_ESP_OK(twai_driver_install_v2(&g_config, &t_config, &f_config, &twai_buses[i]));
     }

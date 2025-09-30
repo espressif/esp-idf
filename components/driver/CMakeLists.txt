@@ -8,8 +8,7 @@ endif()
 set(srcs)
 
 # Always included headers
-set(includes "deprecated"
-             "i2c/include"
+set(includes "i2c/include"
              "touch_sensor/include"
              "twai/include")
 
@@ -45,15 +44,8 @@ else()
     # (REQUIRES cannot hide soc headers, since many arguments in the driver headers are chip-dependent)
     idf_component_register(SRCS "${srcs}"
                            INCLUDE_DIRS ${includes}
-                           PRIV_REQUIRES efuse esp_timer esp_mm
-                           REQUIRES esp_pm esp_ringbuf freertos soc hal esp_hw_support
-                           # for backward compatibility, the driver component needs to
-                           # have a public dependency on other "esp_driver_foo" components
-                                    esp_driver_gpio esp_driver_pcnt esp_driver_gptimer esp_driver_spi esp_driver_mcpwm
-                                    esp_driver_ana_cmpr esp_driver_i2s esp_driver_sdmmc esp_driver_sdspi esp_driver_sdio
-                                    esp_driver_dac esp_driver_rmt esp_driver_tsens esp_driver_sdm esp_driver_i2c
-                                    esp_driver_uart esp_driver_ledc esp_driver_parlio esp_driver_usb_serial_jtag
-                                    esp_driver_twai
+                           PRIV_REQUIRES esp_timer esp_mm esp_driver_gpio esp_ringbuf esp_pm
+                           REQUIRES freertos soc hal esp_hw_support esp_hal_i2c
                            LDFRAGMENTS ${ldfragments}
                           )
 endif()

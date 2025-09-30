@@ -61,6 +61,7 @@ endif()
 idf_component_register(SRCS ${app_sources}
                        INCLUDE_DIRS "lp_core"
                        REQUIRES ulp unity esp_timer test_utils
+                       PRIV_REQUIRES driver esp_driver_gptimer esp_driver_tsens
                        WHOLE_ARCHIVE
                        EMBED_FILES "test_vad_8k.pcm")
 

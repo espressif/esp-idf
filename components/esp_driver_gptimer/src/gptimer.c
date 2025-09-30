@@ -76,7 +76,7 @@ static esp_err_t gptimer_register_to_group(gptimer_t *timer)
         .depends = RETENTION_MODULE_BITMAP_INIT(CLOCK_SYSTEM)
     };
     if (sleep_retention_module_init(module, &init_param) != ESP_OK) {
-        // even though the sleep retention module init failed, RMT driver should still work, so just warning here
+        // even though the sleep retention module init failed, gptimer driver should still work, so just warning here
         ESP_LOGW(TAG, "init sleep retention failed on TimerGroup%d Timer%d, power domain may be turned off during sleep", group->group_id, timer_id);
     }
 #endif // GPTIMER_USE_RETENTION_LINK

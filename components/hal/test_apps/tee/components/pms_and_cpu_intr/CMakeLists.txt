@@ -22,6 +22,7 @@ idf_component_register(SRCS "${srcs}"
                        INCLUDE_DIRS "include" "priv_include"
                        PRIV_INCLUDE_DIRS "priv_include/${target}"
                        REQUIRES ulp unity
+                       PRIV_REQUIRES esp_hal_timg
                        LDFRAGMENTS linker.lf)
 
 if(CONFIG_ULP_COPROC_ENABLED)

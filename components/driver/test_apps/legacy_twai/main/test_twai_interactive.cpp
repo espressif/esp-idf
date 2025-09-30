@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,10 +16,10 @@
 #include "soc/soc_caps.h"
 #include "esp_log.h"
 
-#define TEST_TWAI_TX_PIN     4
-#define TEST_TWAI_RX_PIN     5
+#define TEST_TWAI_TX_PIN     GPIO_NUM_4
+#define TEST_TWAI_RX_PIN     GPIO_NUM_5
 
-#if CONFIG_TWAI_ISR_IN_IRAM
+#if CONFIG_TWAI_ISR_IN_IRAM_LEGACY || CONFIG_TWAI_ISR_IN_IRAM
 static void IRAM_ATTR test_delay_post_cache_disable(void *args)
 {
     esp_rom_delay_us(1000);
@@ -31,7 +31,7 @@ TEST_CASE("twai_listen_only", "[twai]")
     twai_timing_config_t t_config = TWAI_TIMING_CONFIG_250KBITS();
     twai_filter_config_t f_config = TWAI_FILTER_CONFIG_ACCEPT_ALL();
     twai_general_config_t g_config = TWAI_GENERAL_CONFIG_DEFAULT(TEST_TWAI_TX_PIN, TEST_TWAI_RX_PIN, TWAI_MODE_LISTEN_ONLY);
-#if CONFIG_TWAI_ISR_IN_IRAM
+#if CONFIG_TWAI_ISR_IN_IRAM_LEGACY || CONFIG_TWAI_ISR_IN_IRAM
     g_config.intr_flags |= ESP_INTR_FLAG_IRAM;
 #endif
     // listen only mode doesn't need a tx queue
@@ -39,7 +39,7 @@ TEST_CASE("twai_listen_only", "[twai]")
     TEST_ESP_OK(twai_driver_install(&g_config, &t_config, &f_config));
     TEST_ESP_OK(twai_start());
 
-#if CONFIG_TWAI_ISR_IN_IRAM
+#if CONFIG_TWAI_ISR_IN_IRAM_LEGACY || CONFIG_TWAI_ISR_IN_IRAM
     printf("disable flash cache and check if we can still receive the frame\n");
     for (int i = 0; i < 100; i++) {
         unity_utils_run_cache_disable_stub(test_delay_post_cache_disable, NULL);
@@ -70,12 +70,12 @@ TEST_CASE("twai_remote_request", "[twai]")
     TEST_ESP_OK(twai_driver_install_v2(&g_config, &t_config, &f_config, &bus_handle));
     TEST_ESP_OK(twai_start_v2(bus_handle));
 
-    twai_message_t req_msg = {
-        .identifier = 0x6688,
-        .data_length_code = 8,
-        .rtr = true, // remote request
-        .extd = true,// extended ID
-    };
+    twai_message_t req_msg{};
+    req_msg.identifier = 0x6688;
+    req_msg.data_length_code = 8;
+    req_msg.rtr = true; // remote request
+    req_msg.extd = true; // extended ID
+
     TEST_ESP_OK(twai_transmit_v2(bus_handle, &req_msg, portMAX_DELAY));
     ESP_LOGI("TWAI", "send remote frame");
 
