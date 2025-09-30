@@ -464,9 +464,11 @@ static esp_err_t panel_io_i80_tx_param(esp_lcd_panel_io_t *io, int lcd_cmd, cons
     trans_desc->data = (param && param_len) ? bus->format_buffer : NULL;
     trans_desc->data_length = trans_desc->data ? param_len : 0;
     trans_desc->trans_done_cb = NULL; // no callback for parameter transaction
+    size_t buffer_alignment = esp_ptr_internal(trans_desc->data) ? bus->int_mem_align : bus->ext_mem_align;
     // mount data to DMA links
     gdma_buffer_mount_config_t mount_config = {
         .buffer = (void *)trans_desc->data,
+        .buffer_alignment = buffer_alignment,
         .length = trans_desc->data_length,
         .flags = {
             .mark_eof = true,
@@ -599,7 +601,6 @@ static esp_err_t lcd_i80_init_dma_link(esp_lcd_i80_bus_handle_t bus, const esp_l
     size_t num_dma_nodes = esp_dma_calculate_node_count(bus->max_transfer_bytes, buffer_alignment, LCD_DMA_DESCRIPTOR_BUFFER_MAX_SIZE);
     // create DMA link list
     gdma_link_list_config_t dma_link_config = {
-        .buffer_alignment = buffer_alignment,
         .item_alignment = LCD_GDMA_DESCRIPTOR_ALIGN,
         .num_items = num_dma_nodes,
         .flags = {

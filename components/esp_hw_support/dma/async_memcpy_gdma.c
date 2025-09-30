@@ -356,7 +356,6 @@ static esp_err_t mcp_gdma_memcpy(async_memcpy_context_t *ctx, void *dst, void *s
     buffer_alignment = esp_ptr_internal(src) ? mcp_gdma->tx_int_mem_alignment : mcp_gdma->tx_ext_mem_alignment;
     num_dma_nodes = esp_dma_calculate_node_count(n, buffer_alignment, MCP_DMA_DESCRIPTOR_BUFFER_MAX_SIZE);
     gdma_link_list_config_t tx_link_cfg = {
-        .buffer_alignment = buffer_alignment,
         .item_alignment = dma_link_item_alignment,
         .num_items = num_dma_nodes,
         .flags = {
@@ -369,6 +368,7 @@ static esp_err_t mcp_gdma_memcpy(async_memcpy_context_t *ctx, void *dst, void *s
     gdma_buffer_mount_config_t tx_buf_mount_config[1] = {
         [0] = {
             .buffer = src,
+            .buffer_alignment = buffer_alignment,
             .length = n,
             .flags = {
                 .mark_eof = true,   // mark the last item as EOF, so the RX channel can also received an EOF list item
@@ -389,7 +389,6 @@ static esp_err_t mcp_gdma_memcpy(async_memcpy_context_t *ctx, void *dst, void *s
     buffer_alignment = esp_ptr_internal(dst) ? mcp_gdma->rx_int_mem_alignment : mcp_gdma->rx_ext_mem_alignment;
     num_dma_nodes = esp_dma_calculate_node_count(n, buffer_alignment, MCP_DMA_DESCRIPTOR_BUFFER_MAX_SIZE);
     gdma_link_list_config_t rx_link_cfg = {
-        .buffer_alignment = buffer_alignment,
         .item_alignment = dma_link_item_alignment,
         .num_items = num_dma_nodes + 3, // add 3 extra items for the cache aligned buffers
         .flags = {
@@ -406,6 +405,7 @@ static esp_err_t mcp_gdma_memcpy(async_memcpy_context_t *ctx, void *dst, void *s
     gdma_buffer_mount_config_t rx_buf_mount_config[3] = {0};
     for (int i = 0; i < 3; i++) {
         rx_buf_mount_config[i].buffer = trans->rx_buf_array.aligned_buffer[i].aligned_buffer;
+        rx_buf_mount_config[i].buffer_alignment = buffer_alignment;
         rx_buf_mount_config[i].length = trans->rx_buf_array.aligned_buffer[i].length;
     }
     gdma_link_mount_buffers(trans->rx_link_list, 0, rx_buf_mount_config, 3, NULL);

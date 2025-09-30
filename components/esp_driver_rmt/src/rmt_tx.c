@@ -86,7 +86,6 @@ static esp_err_t rmt_tx_init_dma_link(rmt_tx_channel_t *tx_channel, const rmt_tx
 
     // create DMA link list
     gdma_link_list_config_t dma_link_config = {
-        .buffer_alignment = int_alignment,
         .item_alignment = RMT_DMA_DESC_ALIGN,
         .num_items = RMT_DMA_NODES_PING_PONG,
         .flags = {
@@ -100,6 +99,7 @@ static esp_err_t rmt_tx_init_dma_link(rmt_tx_channel_t *tx_channel, const rmt_tx
         // each descriptor shares half of the DMA buffer
         mount_configs[i] = (gdma_buffer_mount_config_t) {
             .buffer = tx_channel->dma_mem_base + tx_channel->ping_pong_symbols * i,
+            .buffer_alignment = int_alignment,
             .length = tx_channel->ping_pong_symbols * sizeof(rmt_symbol_word_t),
             .flags = {
                 // each node can generate the DMA eof interrupt, and the driver will do a ping-pong trick in the eof callback
@@ -276,9 +276,8 @@ esp_err_t rmt_new_tx_channel(const rmt_tx_channel_config_t *config, rmt_channel_
     ESP_RETURN_ON_FALSE(config->flags.allow_pd == 0, ESP_ERR_NOT_SUPPORTED, TAG, "not able to power down in light sleep");
 #endif // SOC_RMT_SUPPORT_SLEEP_RETENTION
 
-    // malloc channel memory
-    uint32_t mem_caps = RMT_MEM_ALLOC_CAPS;
-    tx_channel = heap_caps_calloc(1, sizeof(rmt_tx_channel_t) + sizeof(rmt_tx_trans_desc_t) * config->trans_queue_depth, mem_caps);
+    // allocate channel memory from internal memory because it contains atomic variable
+    tx_channel = heap_caps_calloc(1, sizeof(rmt_tx_channel_t) + sizeof(rmt_tx_trans_desc_t) * config->trans_queue_depth, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     ESP_GOTO_ON_FALSE(tx_channel, ESP_ERR_NO_MEM, err, TAG, "no mem for tx channel");
     // GPIO configuration is not done yet
     tx_channel->base.gpio_num = -1;

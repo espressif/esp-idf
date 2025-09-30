@@ -111,7 +111,6 @@ esp_err_t esp_lcd_new_i80_bus(const esp_lcd_i80_bus_config_t *bus_config, esp_lc
     size_t num_dma_nodes = esp_dma_calculate_node_count(max_transfer_bytes, 1, LCD_DMA_DESCRIPTOR_BUFFER_MAX_SIZE);
     // create DMA link list
     gdma_link_list_config_t dma_link_config = {
-        .buffer_alignment = 1, // no special buffer alignment for LCD TX buffer
         .item_alignment = 4,  // 4 bytes alignment for each DMA descriptor
         .num_items = num_dma_nodes,
         .flags = {
@@ -704,6 +703,7 @@ static void i2s_lcd_trigger_quick_trans_done_event(esp_lcd_i80_bus_handle_t bus)
     static uint32_t fake_trigger = 0;
     gdma_buffer_mount_config_t mount_config = {
         .buffer = &fake_trigger,
+        .buffer_alignment = 1, // no special buffer alignment for fake trigger
         .length = 4,
         .flags = {
             .mark_eof = true,   // mark the "EOF" flag to trigger I2S EOF interrupt
@@ -792,6 +792,7 @@ static IRAM_ATTR void i2s_lcd_default_isr_handler(void *args)
                 // mount data to DMA links
                 gdma_buffer_mount_config_t mount_config = {
                     .buffer = (void *)trans_desc->data,
+                    .buffer_alignment = 1, // no special buffer alignment for LCD TX buffer
                     .length = trans_desc->data_length,
                     .flags = {
                         .mark_eof = true,
