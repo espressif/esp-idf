@@ -216,7 +216,7 @@ uf2 二进制文件也可以通过 :ref:`idf.py uf2 <generate-uf2-binary>` 生�
 选项
 ^^^^^^^
 
-- ``--format`` 指定输出格式，可输出 ``text``、``csv``、 ``json`` 格式，默认格式为 ``text``。
+- ``--format`` 指定输出格式，可输出 ``text``、``csv``、``json2``、``tree``、``raw`` 格式，默认格式为 ``text``。
 - ``--output-file`` 可选参数，可以指定命令输出文件的文件名，而非标准输出。
 
 重新配置工程：``reconfigure``

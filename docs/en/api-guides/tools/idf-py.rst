@@ -216,7 +216,7 @@ This command prints size information per source file in the project.
 Options
 ^^^^^^^
 
-- ``--format`` specifies the output format with available options: ``text``, ``csv``, ``json``, default being ``text``.
+- ``--format`` specifies the output format with available options: ``text``, ``csv``, ``json2``, ``tree``, ``raw``, default being ``text``.
 - ``--output-file`` optionally specifies the name of the file to print the command output to instead of the standard output.
 
 Reconfigure the Project: ``reconfigure``

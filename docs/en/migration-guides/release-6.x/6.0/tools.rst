@@ -14,9 +14,9 @@ For example, `Python 3.13 is not supported <https://github.com/cs01/gdbgui/issue
 
 The Windows operating system is not supported since gdbgui version 0.14. Because of the existence of other issues, you will need Python 3.10 with some specific versions of the dependencies. The last known working gdbgui and dependency versions can be installed with the following command:
 
-```bash
-pipx install "gdbgui==0.13.2.0" "pygdbmi<=0.9.0.2" "python-socketio<5" "jinja2<3.1" "itsdangerous<2.1"
-```
+.. code-block:: bash
+
+    pipx install "gdbgui==0.13.2.0" "pygdbmi<=0.9.0.2" "python-socketio<5" "jinja2<3.1" "itsdangerous<2.1"
 
 On Linux or macOS, you can use Python 3.11 or 3.12 and gdbgui version 0.15.2.0.
 
@@ -67,3 +67,35 @@ Catch
 -----
 
 The header-only copy of Catch2 unit testing library previously located in tools/catch directory has been removed. To continue using Catch2 in your project, migrate to Catch2 3.x, available from the `ESP component registry <https://components.espressif.com/components/espressif/catch2>`_. For an example of migrating from Catch2 2.x to Catch2 3.x, see commit 79a2c15477dc327550ff46a64ee0f8b4679cc417.
+
+Dropped ``idf.py size --legacy`` option
+---------------------------------------
+
+The ``--legacy`` argument for ``idf.py size`` has been removed, as the legacy implementation is no longer supported. The ``ESP_IDF_SIZE_LEGACY`` environment variable also no longer has any effect. To continue using the legacy option, use ESP-IDF version 5.5 or lower. For ESP-IDF v6.0 and later, simply replace ``idf.py size --legacy`` with ``idf.py size``. If you encounter esp-idf-size version problems, please run the install script to update to the correct version.
+
+Changed ``idf.py size --format json`` to ``--format json2``
+-----------------------------------------------------------
+
+The ``--format json`` option has been replaced with ``--format json2``. The ``json2`` format provides better structure with explicit ``total``, ``used``, and ``free`` fields for each memory region, and detailed breakdown in the ``parts`` section. To migrate, replace ``idf.py size --format json`` with ``idf.py size --format json2``.
+
+- **Old format (json)**: Flat structure with direct memory type fields like ``"dram_data": 9192, "iram_text": 43295``.
+- **New format (json2)**: Hierarchical structure with a ``layout`` array containing memory regions:
+
+    .. code-block:: json
+
+        {
+            "version": "1.1",
+            "layout": [
+                {
+                    "name": "DRAM",
+                    "total": 180736,
+                    "used": 11344,
+                    "free": 169392,
+                    "parts": {
+                        ".data": {"size": 9192},
+                        ".bss": {"size": 2152}
+                    }
+                }
+            ]
+        }
+
