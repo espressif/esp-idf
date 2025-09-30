@@ -592,8 +592,7 @@ typedef struct {
     uint8_t master_pref;   /**< Device's preference value to serve as NAN Master */
     uint8_t scan_time;     /**< Scan time in seconds while searching for a NAN cluster */
     uint16_t warm_up_sec;  /**< Warm up time before assuming NAN Anchor Master role */
-    bool discovery_flag;   /**< False in case of NAN Synchronization, True in case of Unsynchronized service discovery (USD)*/
-} wifi_nan_config_t;
+} wifi_nan_sync_config_t;
 
 /**
   * @brief Configuration data for device's AP or STA or NAN.
@@ -605,7 +604,7 @@ typedef struct {
 typedef union {
     wifi_ap_config_t  ap;  /**< Configuration of AP */
     wifi_sta_config_t sta; /**< Configuration of STA */
-    wifi_nan_config_t nan; /**< Configuration of NAN */
+    wifi_nan_sync_config_t nan; /**< Configuration of NAN */
 } wifi_config_t;
 
 /**
@@ -799,8 +798,8 @@ typedef struct {
     bool no_ack;                /**< Indicates no ack required */
     wifi_action_rx_cb_t rx_cb;  /**< Rx Callback to receive action frames */
     uint8_t op_id;              /**< Unique Identifier for operation provided by wifi driver */
-    uint32_t data_len;          /**< Length of the appended Data */
     uint8_t bssid[6];           /**< BSSID (A3) address. If all zeroes, broadcast address will be used */
+    uint32_t data_len;          /**< Length of the appended Data */
     uint8_t data[0];            /**< Appended Data payload */
 } wifi_action_tx_req_t;
 
@@ -835,10 +834,11 @@ typedef struct {
     wifi_action_rx_cb_t rx_cb;         /**< Rx Callback to receive action mgmt frames */
     uint8_t op_id;                     /**< ID of this specific ROC operation provided by wifi driver */
     wifi_action_roc_done_cb_t done_cb; /**< Callback to function that will be called upon ROC done. If assigned, WIFI_EVENT_ROC_DONE event will not be posted */
-    bool allow_broadcast;              /**< If set to true, broadcast/multicast action frames will be received
-                                            in the ROC Rx callback, enabling peer discovery.
-                                            If false (default), broadcast/multicast action frames will be filtered out
-                                            and not passed to the Rx callback, reducing CPU usage. */
+    bool allow_broadcast;              /**< If set to true, broadcast/multicast action frames from any network (Address3/BSSID=ANY)
+                                            will be received in the ROC Rx callback, enabling peer discovery.
+                                            If false (default), broadcast/multicast action frames from other networks
+                                            will be filtered out in hardware and not passed to the Rx callback, reducing CPU usage.
+                                            Frames whose Address3/BSSID is already broadcast are always delivered. */
 } wifi_roc_req_t;
 
 /**
@@ -1125,8 +1125,8 @@ typedef enum {
     WIFI_EVENT_BTWT_SETUP,              /**< bTWT setup */
     WIFI_EVENT_BTWT_TEARDOWN,           /**< bTWT teardown*/
 
-    WIFI_EVENT_NAN_STARTED,              /**< NAN Discovery has started */
-    WIFI_EVENT_NAN_STOPPED,              /**< NAN Discovery has stopped */
+    WIFI_EVENT_NAN_SYNC_STARTED,         /**< NAN Synchronization Discovery has started */
+    WIFI_EVENT_NAN_SYNC_STOPPED,         /**< NAN Synchronization Discovery has stopped */
     WIFI_EVENT_NAN_SVC_MATCH,            /**< NAN Service Discovery match found */
     WIFI_EVENT_NAN_REPLIED,              /**< Replied to a NAN peer with Service Discovery match */
     WIFI_EVENT_NAN_RECEIVE,              /**< Received a Follow-up message */

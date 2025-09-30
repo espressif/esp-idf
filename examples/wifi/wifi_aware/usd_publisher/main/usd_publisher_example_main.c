@@ -59,9 +59,10 @@ void wifi_usd_publish(void)
                     NULL,
                     &instance_any_id));
 
+    ESP_RETURN_VOID_ON_ERROR(esp_wifi_start(), TAG, "NAN-USD failed to start Wi-Fi");
+
     /* Start USD-NAN Discovery */
-    wifi_nan_config_t usd_nan_cfg = WIFI_USD_NAN_CONFIG_DEFAULT();
-    ESP_RETURN_VOID_ON_ERROR(esp_wifi_nan_start(&usd_nan_cfg), TAG, "NAN-USD initialization failed");
+    ESP_RETURN_VOID_ON_ERROR(esp_wifi_nan_usd_start(), TAG, "NAN-USD initialization failed");
 
     wifi_nan_publish_cfg_t publish_cfg = {
         .service_name = EXAMPLE_USD_SVC_NAME,
@@ -101,7 +102,7 @@ void wifi_usd_publish(void)
     }
 
     esp_wifi_nan_cancel_service(g_publish_id);
-    esp_wifi_nan_stop();
+    esp_wifi_nan_usd_stop();
 }
 
 void initialise_wifi(void)
@@ -110,6 +111,7 @@ void initialise_wifi(void)
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
     ESP_ERROR_CHECK(esp_wifi_set_storage(WIFI_STORAGE_RAM) );
+    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_NULL));
 }
 
 void app_main(void)

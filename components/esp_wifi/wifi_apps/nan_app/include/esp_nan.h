@@ -15,17 +15,12 @@
 extern "C" {
 #endif
 
-#define WIFI_NAN_CONFIG_DEFAULT() { \
+#ifdef CONFIG_ESP_WIFI_NAN_SYNC_ENABLE
+#define WIFI_NAN_SYNC_CONFIG_DEFAULT() { \
     .op_channel = 6, \
     .master_pref = 2, \
     .scan_time = 3, \
     .warm_up_sec = 5, \
-    .discovery_flag = 0, \
-};
-
-/* For USD, all parameters other than discovery_flag are ignored */
-#define WIFI_USD_NAN_CONFIG_DEFAULT() { \
-    .discovery_flag = 1, \
 };
 
 #define NDP_STATUS_ACCEPTED     1
@@ -46,7 +41,8 @@ struct nan_peer_record {
 };
 
 /**
-  * @brief      Start NAN Discovery or Unsynchronized service discovery (USD) with provided configuration
+  * @brief      Start NAN Synchronization using the provided parameters.
+  * @note       Discovery traffic begins only after publish/subscribe services are started.
   *
   * @attention  This API should be called after esp_wifi_init().
   *
@@ -56,30 +52,132 @@ struct nan_peer_record {
   *    - ESP_OK: succeed
   *    - others: failed
   */
-esp_err_t esp_wifi_nan_start(const wifi_nan_config_t *nan_cfg);
+esp_err_t esp_wifi_nan_sync_start(const wifi_nan_sync_config_t *nan_cfg);
 
 /**
-  * @brief      Stop NAN Discovery or USD and end publish/subscribe services
+  * @brief      Stop NAN Synchronization discovery and end publish/subscribe services
   *
   * @attention  This API will end datapaths if any in NAN synchronization
-  * @attention  This API will stop USD if discovery_flag is set to true, else it will stop NAN Discovery
   *
   * @return
   *    - ESP_OK: succeed
   *    - others: failed
   */
-esp_err_t esp_wifi_nan_stop(void);
+esp_err_t esp_wifi_nan_sync_stop(void);
 
 /**
-  * @brief      Start Publishing a service to the NAN/USD Peers in vicinity
+  * @brief      Send a NAN datapath request to a matched publisher within the synchronized NAN cluster
   *
-  * @attention  This API should be called after esp_wifi_nan_start().
-  * @attention  This API will start a publisher in USD if discovery_flag is true
+  * @attention  This API should be called by the Subscriber after a match occurs with a Publisher.
+  *
+  * @param      req  NAN Datapath Request parameters.
+  *
+  * @return
+  *    - non-zero NAN Datapath identifier: If NAN datapath req was accepted by publisher
+  *    - zero: If NAN datapath req was rejected by publisher or a timeout occurs
+  */
+uint8_t esp_wifi_nan_datapath_req(wifi_nan_datapath_req_t *req);
+
+/**
+  * @brief      Respond to a NAN datapath request within the synchronized NAN cluster
+  *
+  * @attention  This API should be called if ndp_resp_needed is set 1 in wifi_nan_publish_cfg_t and
+  *             a WIFI_EVENT_NDP_INDICATION event is received due to an incoming NDP request.
+  *
+  * @param      resp  NAN Datapath Response parameters.
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - others: failed
+  */
+esp_err_t esp_wifi_nan_datapath_resp(wifi_nan_datapath_resp_t *resp);
+
+/**
+  * @brief      Terminate an active NAN datapath within the synchronized NAN cluster
+  *
+  * @param      req  NAN Datapath end request parameters.
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - others: failed
+  */
+esp_err_t esp_wifi_nan_datapath_end(wifi_nan_datapath_end_req_t *req);
+
+/**
+  * @brief      Get IPv6 Link Local address using MAC address
+  *
+  * @param[out]      ip6  Derived IPv6 Link Local address.
+  * @param[in]       mac_addr  Input MAC Address.
+  */
+void esp_wifi_nan_get_ipv6_linklocal_from_mac(ip6_addr_t *ip6, uint8_t *mac_addr);
+
+/**
+ * brief         Get own Service information from Service ID OR Name.
+ *
+ * @attention    If service information is to be fetched from service name, set own_svc_id as zero.
+ * @note         Returns records discovered while participating in a synchronized NAN cluster.
+ *
+ * @param[inout] own_svc_id As input, it indicates Service ID to search for.
+ *                          As output, it indicates Service ID of the service found using Service Name.
+ * @param[inout] svc_name   As input, it indicates Service Name to search for.
+ *                          As output, it indicates Service Name of the service found using Service ID.
+ * @param[out]   num_peer_records  Number of peers discovered by corresponding service.
+ * @return
+ *   - ESP_OK: succeed
+ *   - ESP_FAIL: failed
+ */
+
+esp_err_t esp_wifi_nan_get_own_svc_info(uint8_t *own_svc_id, char *svc_name, int *num_peer_records);
+
+/**
+ * brief         Get a list of Peers discovered by the given Service.
+ *
+ * @note         Reports peers discovered via synchronized NAN operations.
+ *
+ * @param[inout] num_peer_records As input param, it stores max peers peer_record can hold.
+ *               As output param, it specifies the actual number of peers this API returns.
+ * @param        own_svc_id  Service ID of own service.
+ * @param[out]   peer_record Pointer to first peer record.
+ * @return
+ *   - ESP_OK: succeed
+ *   - ESP_FAIL: failed
+ */
+
+esp_err_t esp_wifi_nan_get_peer_records(int *num_peer_records, uint8_t own_svc_id, struct nan_peer_record *peer_record);
+
+/**
+ * brief         Find Peer's Service information using Peer MAC and optionally Service Name.
+ *
+ * @note         Provides peer information available from synchronized NAN discovery.
+ *
+ * @param       svc_name    Service Name of the published/subscribed service.
+ * @param       peer_mac    Peer's NAN Management Interface MAC address.
+ * @param[out]  peer_info   Peer's service information structure.
+ * @return
+ *   - ESP_OK: succeed
+ *   - ESP_FAIL: failed
+ */
+
+esp_err_t esp_wifi_nan_get_peer_info(char *svc_name, uint8_t *peer_mac, struct nan_peer_record *peer_info);
+
+#endif /* CONFIG_ESP_WIFI_NAN_SYNC_ENABLE */
+
+#if defined(CONFIG_ESP_WIFI_NAN_SYNC_ENABLE) ||  defined(CONFIG_ESP_WIFI_NAN_USD_ENABLE)
+/**
+  * @brief      Start publishing a service to NAN peers within a synchronized cluster or to NAN-USD peers
+  *
+  * @attention  Call after `esp_wifi_nan_sync_start()` when operating in NAN-Sync, or after
+  *             `esp_wifi_nan_usd_start()` when operating in NAN-USD.
+  * @attention  When NAN-USD discovery is active the publish request is routed through the
+  *             USD engine, otherwise it uses NAN synchronization.
   * @attention  A maximum of two services is allowed simultaneously
   *             (e.g., one publish and one subscribe, or two publish/subscribe).
   *             This limit is defined by the ESP_WIFI_NAN_MAX_SVC_SUPPORTED.
   *
   * @param      publish_cfg  Configuration parameters for publishing a service.
+  *                          When operating in NAN-USD, populate `publish_cfg->usd_publish_config`
+  *                          (for example using `esp_wifi_usd_get_default_publish_cfg()`) to tune
+  *                          the USD dwell and channel parameters.
   *
   * @return
   *    - non-zero: Publish service identifier
@@ -88,15 +186,20 @@ esp_err_t esp_wifi_nan_stop(void);
 uint8_t esp_wifi_nan_publish_service(const wifi_nan_publish_cfg_t *publish_cfg);
 
 /**
-  * @brief      Subscribe to a service published by a NAN peer within a cluster or a USD peer
+  * @brief      Subscribe to a service published by a NAN peer within a synchronized cluster or by a NAN-USD peer
   *
-  * @attention  This API should be called after esp_wifi_nan_start().
-  * @attention  This API will start a subscriber in USD if discovery_flag is true
+  * @attention  Call after `esp_wifi_nan_sync_start()` when operating in NAN-Sync, or after
+  *             `esp_wifi_nan_usd_start()` when operating in NAN-USD.
+  * @attention  With NAN-USD discovery enabled the subscribe request is handled by the USD
+  *             engine, otherwise it uses NAN synchronization.
   * @attention  A maximum of two services is allowed simultaneously
   *             (e.g., one publish and one subscribe, or two publish/subscribe).
   *             This limit is defined by the ESP_WIFI_NAN_MAX_SVC_SUPPORTED.
   *
   * @param      subscribe_cfg  Configuration parameters for subscribing for a service.
+  *                            When operating in NAN-USD, populate `subscribe_cfg->usd_subscribe_config`
+  *                            (for example using `esp_wifi_usd_get_default_subscribe_cfg()`) to tune
+  *                            the USD dwell and channel parameters.
   *
   * @return
   *    - non-zero: Subscribe service identifier
@@ -128,92 +231,29 @@ esp_err_t esp_wifi_nan_send_message(wifi_nan_followup_params_t *fup_params);
   */
 esp_err_t esp_wifi_nan_cancel_service(uint8_t service_id);
 
-/**
-  * @brief      Send NAN Datapath Request to a NAN Publisher with matched service
-  *
-  * @attention  This API should be called by the Subscriber after a match occurs with a Publisher.
-  *
-  * @param      req  NAN Datapath Request parameters.
-  *
-  * @return
-  *    - non-zero NAN Datapath identifier: If NAN datapath req was accepted by publisher
-  *    - zero: If NAN datapath req was rejected by publisher or a timeout occurs
-  */
-uint8_t esp_wifi_nan_datapath_req(wifi_nan_datapath_req_t *req);
+#endif /* NAN-Sync || NAN-USD */
 
+#ifdef CONFIG_ESP_WIFI_NAN_USD_ENABLE
 /**
-  * @brief      Respond to a NAN Datapath request with Accept or Reject
+  * @brief      Start NAN Unsynchronized service discovery (USD)
   *
-  * @attention  This API should be called if ndp_resp_needed is set 1 in wifi_nan_publish_cfg_t and
-  *             a WIFI_EVENT_NDP_INDICATION event is received due to an incoming NDP request.
-  *
-  * @param      resp  NAN Datapath Response parameters.
+  * @attention  This API should be called after esp_wifi_start().
+  * @note       USD currently operates over the Station interface; this may change in future releases.
   *
   * @return
   *    - ESP_OK: succeed
   *    - others: failed
   */
-esp_err_t esp_wifi_nan_datapath_resp(wifi_nan_datapath_resp_t *resp);
+esp_err_t esp_wifi_nan_usd_start(void);
 
 /**
-  * @brief      Terminate a NAN Datapath
-  *
-  * @param      req  NAN Datapath end request parameters.
+  * @brief      Stop NAN Unsynchronized service discovery (USD) and end publish/subscribe services
   *
   * @return
   *    - ESP_OK: succeed
   *    - others: failed
   */
-esp_err_t esp_wifi_nan_datapath_end(wifi_nan_datapath_end_req_t *req);
-
-/**
-  * @brief      Get IPv6 Link Local address using MAC address
-  *
-  * @param[out]      ip6  Derived IPv6 Link Local address.
-  * @param[in]       mac_addr  Input MAC Address.
-  */
-void esp_wifi_nan_get_ipv6_linklocal_from_mac(ip6_addr_t *ip6, uint8_t *mac_addr);
-
-/**
- * brief         Get own Service information from Service ID OR Name.
- *
- * @attention    If service information is to be fetched from service name, set own_svc_id as zero.
- *
- * @param[inout] own_svc_id As input, it indicates Service ID to search for.
- *                          As output, it indicates Service ID of the service found using Service Name.
- * @param[inout] svc_name   As input, it indicates Service Name to search for.
- *                          As output, it indicates Service Name of the service found using Service ID.
- * @param[out]   num_peer_records  Number of peers discovered by corresponding service.
- * @return
- *   - ESP_OK: succeed
- *   - ESP_FAIL: failed
- */
-esp_err_t esp_wifi_nan_get_own_svc_info(uint8_t *own_svc_id, char *svc_name, int *num_peer_records);
-
-/**
- * brief         Get a list of Peers discovered by the given Service.
- *
- * @param[inout] num_peer_records As input param, it stores max peers peer_record can hold.
- *               As output param, it specifies the actual number of peers this API returns.
- * @param        own_svc_id  Service ID of own service.
- * @param[out]   peer_record Pointer to first peer record.
- * @return
- *   - ESP_OK: succeed
- *   - ESP_FAIL: failed
- */
-esp_err_t esp_wifi_nan_get_peer_records(int *num_peer_records, uint8_t own_svc_id, struct nan_peer_record *peer_record);
-
-/**
- * brief         Find Peer's Service information using Peer MAC and optionally Service Name.
- *
- * @param       svc_name    Service Name of the published/subscribed service.
- * @param       peer_mac    Peer's NAN Management Interface MAC address.
- * @param[out]  peer_info   Peer's service information structure.
- * @return
- *   - ESP_OK: succeed
- *   - ESP_FAIL: failed
- */
-esp_err_t esp_wifi_nan_get_peer_info(char *svc_name, uint8_t *peer_mac, struct nan_peer_record *peer_info);
+esp_err_t esp_wifi_nan_usd_stop(void);
 
 /**
   * @brief      Get default configuration for USD publish operation.
@@ -249,6 +289,8 @@ wifi_nan_usd_config_t esp_wifi_usd_get_default_publish_cfg(void);
  * @return     wifi_nan_usd_config_t structure with pre-filled default values for subscribing.
  */
 wifi_nan_usd_config_t esp_wifi_usd_get_default_subscribe_cfg(void);
+
+#endif /* CONFIG_ESP_WIFI_NAN_USD_ENABLE */
 
 #ifdef __cplusplus
 }

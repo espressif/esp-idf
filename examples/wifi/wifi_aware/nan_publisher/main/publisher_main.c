@@ -81,10 +81,10 @@ void wifi_nan_publish(void)
                     &instance_any_id));
 
     /* Start NAN Discovery */
-    wifi_nan_config_t nan_cfg = WIFI_NAN_CONFIG_DEFAULT();
+    wifi_nan_sync_config_t nan_cfg = WIFI_NAN_SYNC_CONFIG_DEFAULT();
 
     esp_netif_create_default_wifi_nan();
-    esp_wifi_nan_start(&nan_cfg);
+    esp_wifi_nan_sync_start(&nan_cfg);
 
     ESP_ERROR_CHECK(esp_event_handler_instance_register(WIFI_EVENT,
                     WIFI_EVENT_NDP_INDICATION,

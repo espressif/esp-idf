@@ -625,6 +625,10 @@
     hint: "The function 'esp_wifi_config_espnow_rate' has been removed. Use 'esp_now_set_peer_rate_config' instead."
 
 -
+    re: "(initialization|assignment) of 'wifi_nan_svc_proto_t \\*' from incompatible pointer type 'uint8_t \\*'"
+    hint: "The field 'proto' in structure 'wifi_nan_wfa_ssi_t' is now declared as 'uint8_t'. Update pointer usage accordingly, for example by using a 'uint8_t *' or copying the enum value into a separate variable."
+
+-
     re: "error: too many arguments to function 'esp_wifi_wps_start'"
     hint: "The function 'esp_wifi_wps_start' no longer accepts a 'timeout_ms' argument."
 
@@ -657,8 +661,34 @@
     hint: "The field 'peer_svc_info' from structure 'wifi_event_nan_receive_t' has been removed. Please use the equivalent fields 'ssi' and 'ssi_len' instead."
 
 -
+    re: "error: 'WIFI_EVENT_NAN_STARTED' undeclared"
+    hint: "The Wi-Fi NAN event 'WIFI_EVENT_NAN_STARTED' has been renamed to 'WIFI_EVENT_NAN_SYNC_STARTED'."
+
+-
+    re: "error: 'WIFI_EVENT_NAN_STOPPED' undeclared"
+    hint: "The Wi-Fi NAN event 'WIFI_EVENT_NAN_STOPPED' has been renamed to 'WIFI_EVENT_NAN_SYNC_STOPPED'."
+
+-
     re: "error: too few arguments to function 'esp_wifi_nan_publish_service'"
     hint: "The function argument 'ndp_resp_needed' of 'esp_wifi_nan_publish_service' has been moved to structure 'wifi_nan_publish_cfg_t'."
+
+-
+    re: "error: implicit declaration of function '{}'"
+    hint: "The NAN synchronization API '{}' has been renamed to '{}'."
+    variables:
+        -
+            re_variables: ['esp_wifi_nan_start']
+            hint_variables: ['esp_wifi_nan_start', 'esp_wifi_nan_sync_start']
+        -
+            re_variables: ['esp_wifi_nan_stop']
+            hint_variables: ['esp_wifi_nan_stop', 'esp_wifi_nan_sync_stop']
+        -
+            re_variables: ['WIFI_NAN_CONFIG_DEFAULT']
+            hint_variables: ['WIFI_NAN_CONFIG_DEFAULT', 'WIFI_NAN_SYNC_CONFIG_DEFAULT']
+
+-
+    re: "error: unknown type name 'wifi_nan_config_t'"
+    hint: "The structure 'wifi_nan_config_t' has been renamed to 'wifi_nan_sync_config_t'."
 
 -
     re: "error: '(WIFI_REASON_ASSOC_EXPIRE|WIFI_REASON_NOT_AUTHED|WIFI_REASON_NOT_ASSOCED)' undeclared"

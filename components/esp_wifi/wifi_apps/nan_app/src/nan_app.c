@@ -45,13 +45,13 @@
 
 /* Global Variables */
 static const char *TAG = "nan_app";
-#ifdef CONFIG_ESP_WIFI_NAN_ENABLE
+#ifdef CONFIG_ESP_WIFI_NAN_SYNC_ENABLE
 static EventGroupHandle_t nan_event_group;
 static bool s_app_default_handlers_set = false;
 static uint8_t null_mac[MACADDR_LEN] = {0};
 static void *s_nan_data_lock = NULL;
 static uint32_t s_fup_context;
-#endif /* CONFIG_ESP_WIFI_NAN_ENABLE */
+#endif /* CONFIG_ESP_WIFI_NAN_SYNC_ENABLE */
 #ifdef CONFIG_ESP_WIFI_NAN_USD_ENABLE
 #endif /* CONFIG_ESP_WIFI_NAN_USD_ENABLE */
 static bool s_usd_in_progress = false;
@@ -62,7 +62,7 @@ static const uint8_t s_wfa_oui[3] = {0x50, 0x6f, 0x9a};
 #define NAN_SDEA_CTRL_FSD_GAS       BIT(1)
 #define NAN_SDEA_CTRL_DATAPATH_REQD BIT(2)
 
-#ifdef CONFIG_ESP_WIFI_NAN_ENABLE
+#ifdef CONFIG_ESP_WIFI_NAN_SYNC_ENABLE
 #define NAN_DATA_LOCK() os_mutex_lock(s_nan_data_lock)
 #define NAN_DATA_UNLOCK() os_mutex_unlock(s_nan_data_lock)
 
@@ -760,7 +760,7 @@ void esp_nan_action_start(esp_netif_t *nan_netif)
     s_nan_ctx.state = NAN_STARTED_BIT;
     NAN_DATA_UNLOCK();
 
-    struct nan_callbacks nan_cb = {
+    struct nan_sync_callbacks nan_cb = {
         .service_match = nan_app_service_match_cb,
         .replied = nan_app_replied_cb,
         .receive = nan_app_receive_cb,
@@ -794,13 +794,10 @@ void esp_nan_action_stop(void)
     os_event_group_set_bits(nan_event_group, NAN_STOPPED_BIT);
 }
 
-#endif /* CONFIG_ESP_WIFI_NAN_ENABLE */
-
-esp_err_t esp_wifi_nan_start(const wifi_nan_config_t *nan_cfg)
+esp_err_t esp_wifi_nan_sync_start(const wifi_nan_sync_config_t *nan_cfg)
 {
     wifi_mode_t mode;
     esp_err_t ret;
-    s_usd_in_progress = false;
 
     ret = esp_wifi_get_mode(&mode);
     if (ret == ESP_ERR_WIFI_NOT_INIT) {
@@ -811,89 +808,48 @@ esp_err_t esp_wifi_nan_start(const wifi_nan_config_t *nan_cfg)
         return ret;
     }
 
-#if (!CONFIG_ESP_WIFI_NAN_ENABLE)
-    if (!nan_cfg->discovery_flag) {
-        ESP_LOGE(TAG, "discovery_flag must be set when"
-                "ESP_WIFI_NAN_USD_ENABLE is enabled");
-        return ESP_FAIL;
-    }
-#endif
 
     /* XXX: For now, NAN-USD and NAN-Sync can not coexist. */
-#ifdef CONFIG_ESP_WIFI_NAN_USD_ENABLE
-    if (nan_cfg->discovery_flag) {
-        /* NAN-USD Only */
-        ESP_RETURN_ON_ERROR(esp_wifi_set_mode(WIFI_MODE_STA), "NAN-USD", "Setting STA mode failed");
-        ESP_RETURN_ON_ERROR(esp_wifi_start(), "NAN-USD", "Starting WiFi failed");
-        ESP_RETURN_ON_ERROR(esp_nan_usd_init(), "NAN-USD", "Failed to initialise NAN USD engine");
-        s_usd_in_progress = true;
-        ESP_LOGI(TAG, "NaN-USD Started");
-        return ESP_OK;
+    /* NAN-Synchronization Only */
+    wifi_config_t config = {0};
+    if (!s_nan_data_lock) {
+        ESP_LOGE(TAG, "NAN Data lock doesn't exist");
+        return ESP_FAIL;
     }
-#endif /* CONFIG_ESP_WIFI_NAN_USD_ENABLE */
-#ifdef CONFIG_ESP_WIFI_NAN_ENABLE
-    else {
-        if (nan_cfg->discovery_flag) {
-            /* Should reach here only if ESP_WIFI_NAN_USD_ENABLE is disabled */
-            ESP_LOGE(TAG, "Can not set discovery_flag without "
-                    "ESP_WIFI_NAN_USD_ENABLE enabled");
-            return ESP_FAIL;
-        }
 
-        /* NAN-Synchronization Only */
-        wifi_config_t config = {0};
-        if (!s_nan_data_lock) {
-            ESP_LOGE(TAG, "NAN Data lock doesn't exist");
-            return ESP_FAIL;
-        }
-
-        NAN_DATA_LOCK();
-        if (s_nan_ctx.state & NAN_STARTED_BIT) {
-            ESP_LOGI(TAG, "NAN already started");
-            NAN_DATA_UNLOCK();
-            return ESP_OK;
-        }
+    NAN_DATA_LOCK();
+    if (s_nan_ctx.state & NAN_STARTED_BIT) {
+        ESP_LOGI(TAG, "NAN already started");
         NAN_DATA_UNLOCK();
-
-        ESP_RETURN_ON_ERROR(esp_wifi_set_mode(WIFI_MODE_NAN), TAG, "Set mode NAN failed");
-
-        memcpy(&config.nan, nan_cfg, sizeof(wifi_nan_config_t));
-        ESP_RETURN_ON_ERROR(esp_wifi_set_config(WIFI_IF_NAN, &config), TAG, "Setting NAN config failed");
-
-        if (esp_wifi_start() != ESP_OK) {
-            ESP_LOGE(TAG, "Starting wifi failed");
-            NAN_DATA_LOCK();
-            s_nan_ctx.nan_netif = NULL;
-            NAN_DATA_UNLOCK();
-            return ESP_FAIL;
-        }
-
-        EventBits_t bits = os_event_group_wait_bits(nan_event_group, NAN_STARTED_BIT, pdFALSE, pdFALSE, portMAX_DELAY);
-        if (!(bits & NAN_STARTED_BIT)) {
-            NAN_DATA_LOCK();
-            s_nan_ctx.nan_netif = NULL;
-            NAN_DATA_UNLOCK();
-            return ESP_FAIL;
-        }
         return ESP_OK;
     }
-#endif /* CONFIG_ESP_WIFI_NAN_ENABLE */
-    return ESP_FAIL;
+    NAN_DATA_UNLOCK();
+
+    ESP_RETURN_ON_ERROR(esp_wifi_set_mode(WIFI_MODE_NAN), TAG, "Set mode NAN failed");
+
+    memcpy(&config.nan, nan_cfg, sizeof(wifi_nan_sync_config_t));
+    ESP_RETURN_ON_ERROR(esp_wifi_set_config(WIFI_IF_NAN, &config), TAG, "Setting NAN config failed");
+
+    if (esp_wifi_start() != ESP_OK) {
+        ESP_LOGE(TAG, "Starting wifi failed");
+        NAN_DATA_LOCK();
+        s_nan_ctx.nan_netif = NULL;
+        NAN_DATA_UNLOCK();
+        return ESP_FAIL;
+    }
+
+    EventBits_t bits = os_event_group_wait_bits(nan_event_group, NAN_STARTED_BIT, pdFALSE, pdFALSE, portMAX_DELAY);
+    if (!(bits & NAN_STARTED_BIT)) {
+        NAN_DATA_LOCK();
+        s_nan_ctx.nan_netif = NULL;
+        NAN_DATA_UNLOCK();
+        return ESP_FAIL;
+    }
+    return ESP_OK;
 }
 
-esp_err_t esp_wifi_nan_stop(void)
+esp_err_t esp_wifi_nan_sync_stop(void)
 {
-#ifdef CONFIG_ESP_WIFI_NAN_USD_ENABLE
-    if (s_usd_in_progress) {
-        s_usd_in_progress = false;
-        esp_nan_usd_deinit();
-        ESP_RETURN_ON_ERROR(esp_wifi_stop(), TAG, "Stopping NAN-USD failed");
-        ESP_LOGI(TAG, "NaN-USD Stopped");
-        return ESP_OK;
-    }
-#endif /* CONFIG_ESP_WIFI_NAN_USD_ENABLE */
-
-#ifdef CONFIG_ESP_WIFI_NAN_ENABLE
     NAN_DATA_LOCK();
     if (!(s_nan_ctx.state & NAN_STARTED_BIT)) {
         ESP_LOGE(TAG, "NAN isn't started");
@@ -930,9 +886,9 @@ esp_err_t esp_wifi_nan_stop(void)
     NAN_DATA_LOCK();
     memset(&s_nan_ctx, 0, sizeof(nan_ctx_t));
     NAN_DATA_UNLOCK();
-#endif /* CONFIG_ESP_WIFI_NAN_ENABLE */
     return ESP_OK;
 }
+#endif /* CONFIG_ESP_WIFI_NAN_SYNC_ENABLE */
 
 uint8_t esp_wifi_nan_publish_service(const wifi_nan_publish_cfg_t *publish_cfg)
 {
@@ -983,7 +939,7 @@ uint8_t esp_wifi_nan_publish_service(const wifi_nan_publish_cfg_t *publish_cfg)
     }
 #endif /* CONFIG_ESP_WIFI_NAN_USD_ENABLE */
 
-#ifdef CONFIG_ESP_WIFI_NAN_ENABLE
+#ifdef CONFIG_ESP_WIFI_NAN_SYNC_ENABLE
     NAN_DATA_LOCK();
     if (!(s_nan_ctx.state & NAN_STARTED_BIT)) {
         ESP_LOGE(TAG, "NAN not started!");
@@ -1015,7 +971,7 @@ uint8_t esp_wifi_nan_publish_service(const wifi_nan_publish_cfg_t *publish_cfg)
 fail:
     NAN_DATA_UNLOCK();
     return 0;
-#endif /* CONFIG_ESP_WIFI_NAN_ENABLE */
+#endif /* CONFIG_ESP_WIFI_NAN_SYNC_ENABLE */
     return 0;
 }
 
@@ -1063,7 +1019,7 @@ uint8_t esp_wifi_nan_subscribe_service(const wifi_nan_subscribe_cfg_t *subscribe
     }
 #endif /* CONFIG_ESP_WIFI_NAN_USD_ENABLE */
 
-#ifdef CONFIG_ESP_WIFI_NAN_ENABLE
+#ifdef CONFIG_ESP_WIFI_NAN_SYNC_ENABLE
     NAN_DATA_LOCK();
     if (!(s_nan_ctx.state & NAN_STARTED_BIT)) {
         ESP_LOGE(TAG, "NAN not started!");
@@ -1093,7 +1049,7 @@ uint8_t esp_wifi_nan_subscribe_service(const wifi_nan_subscribe_cfg_t *subscribe
 fail:
     NAN_DATA_UNLOCK();
     return 0;
-#endif /* CONFIG_ESP_WIFI_NAN_ENABLE */
+#endif /* CONFIG_ESP_WIFI_NAN_SYNC_ENABLE */
     return 0;
 }
 
@@ -1132,7 +1088,7 @@ esp_err_t esp_wifi_nan_send_message(wifi_nan_followup_params_t *fup_params)
     }
 #endif /* CONFIG_ESP_WIFI_NAN_USD_ENABLE */
 
-#ifdef CONFIG_ESP_WIFI_NAN_ENABLE
+#ifdef CONFIG_ESP_WIFI_NAN_SYNC_ENABLE
     struct peer_svc_info *p_peer_svc;
     NAN_DATA_LOCK();
     p_peer_svc = nan_find_peer_svc(fup_params->inst_id,
@@ -1178,7 +1134,7 @@ esp_err_t esp_wifi_nan_send_message(wifi_nan_followup_params_t *fup_params)
         ESP_LOGE(TAG, "Timeout, failed to send Follow-up message!");
         ret = ESP_FAIL;
     }
-#endif /* CONFIG_ESP_WIFI_NAN_ENABLE */
+#endif /* CONFIG_ESP_WIFI_NAN_SYNC_ENABLE */
 
     return ret;
 }
@@ -1189,9 +1145,8 @@ esp_err_t esp_wifi_nan_cancel_service(uint8_t service_id)
     if (s_usd_in_progress) {
         return esp_nan_usd_cancel_service(service_id);
     }
-    else
 #endif /* CONFIG_ESP_WIFI_NAN_USD_ENABLE */
-#ifdef CONFIG_ESP_WIFI_NAN_ENABLE
+#ifdef CONFIG_ESP_WIFI_NAN_SYNC_ENABLE
     NAN_DATA_LOCK();
     struct own_svc_info *p_own_svc = nan_find_own_svc(service_id);
 
@@ -1223,12 +1178,12 @@ fail:
 done:
     NAN_DATA_UNLOCK();
     return ESP_OK;
-#endif /* CONFIG_ESP_WIFI_NAN_ENABLE */
+#endif /* CONFIG_ESP_WIFI_NAN_SYNC_ENABLE */
     return ESP_FAIL;
 }
 
 
-#ifdef CONFIG_ESP_WIFI_NAN_ENABLE
+#ifdef CONFIG_ESP_WIFI_NAN_SYNC_ENABLE
 uint8_t esp_wifi_nan_datapath_req(wifi_nan_datapath_req_t *req)
 {
     uint8_t ndp_id = 0;
@@ -1497,9 +1452,32 @@ esp_err_t esp_wifi_nan_get_peer_info(char *svc_name, uint8_t *peer_mac, struct n
         return ESP_FAIL;
     }
 }
-#endif /* CONFIG_ESP_WIFI_NAN_ENABLE */
+#endif /* CONFIG_ESP_WIFI_NAN_SYNC_ENABLE */
 
 #ifdef CONFIG_ESP_WIFI_NAN_USD_ENABLE
+esp_err_t esp_wifi_nan_usd_start(void)
+{
+    if (!s_usd_in_progress) {
+        ESP_RETURN_ON_ERROR(esp_wifi_set_mode(WIFI_MODE_STA), "NAN-USD", "Setting STA mode failed");
+        ESP_RETURN_ON_ERROR(esp_nan_usd_init(), "NAN-USD", "Failed to initialise NAN USD engine");
+        s_usd_in_progress = true;
+        ESP_LOGI(TAG, "NaN-USD Started");
+        return ESP_OK;
+    }
+    return ESP_OK;
+}
+
+esp_err_t esp_wifi_nan_usd_stop(void)
+{
+    if (s_usd_in_progress) {
+        s_usd_in_progress = false;
+        esp_nan_usd_deinit();
+        ESP_LOGI(TAG, "NaN-USD Stopped");
+        return ESP_OK;
+    }
+    return ESP_OK;
+}
+
 wifi_nan_usd_config_t esp_wifi_usd_get_default_publish_cfg(void)
 {
     wifi_country_t country;

@@ -38,7 +38,7 @@ static void nan_sta_stop_handler(void *arg, esp_event_base_t event_base,
                                  int32_t event_id, void *event_data)
 {
     if (event_id == WIFI_EVENT_STA_STOP) {
-        esp_wifi_nan_stop();
+        esp_wifi_nan_usd_stop();
     }
 }
 

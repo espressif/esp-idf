@@ -234,7 +234,7 @@ static int wifi_cmd_nan_disc(int argc, char **argv)
     }
 
     if (nan_args.init->count) {
-        wifi_nan_config_t nan_cfg = WIFI_NAN_CONFIG_DEFAULT();
+        wifi_nan_sync_config_t nan_cfg = WIFI_NAN_SYNC_CONFIG_DEFAULT();
 
         if (nan_args.master_pref->count) {
             nan_cfg.master_pref = nan_args.master_pref->ival[0];
@@ -250,7 +250,7 @@ static int wifi_cmd_nan_disc(int argc, char **argv)
             g_nan_netif = esp_netif_create_default_wifi_nan();
         }
 
-        if ((esp_wifi_nan_start(&nan_cfg)) != ESP_OK) {
+        if ((esp_wifi_nan_sync_start(&nan_cfg)) != ESP_OK) {
             ESP_LOGI(TAG, "Failed to start NAN");
             esp_netif_destroy_default_wifi(g_nan_netif);
             g_nan_netif = NULL;
@@ -266,7 +266,7 @@ static int wifi_cmd_nan_disc(int argc, char **argv)
     }
 
     if (nan_args.deinit->count) {
-        ret = esp_wifi_nan_stop();
+        ret = esp_wifi_nan_sync_stop();
 
         if (ret != ESP_OK) {
             ESP_LOGI(TAG, "Failed to stop NAN");
