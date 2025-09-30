@@ -575,7 +575,7 @@ UINT8 *sdpu_extract_attr_seq (UINT8 *p, UINT16 param_len, tSDP_ATTR_SEQ *p_seq)
 ** Returns          void
 **
 *******************************************************************************/
-UINT8 *sdpu_get_len_from_type (UINT8 *p, UINT8 type, UINT32 *p_len)
+UINT8 *sdpu_get_len_from_type (UINT8 *p, UINT8 *p_end, UINT8 type, UINT32 *p_len)
 {
     UINT8   u8;
     UINT16  u16;
@@ -598,14 +598,26 @@ UINT8 *sdpu_get_len_from_type (UINT8 *p, UINT8 type, UINT32 *p_len)
         *p_len = 16;
         break;
     case SIZE_IN_NEXT_BYTE:
+        if (p + 1 > p_end) {
+            *p_len = 0;
+            return NULL;
+        }
         BE_STREAM_TO_UINT8 (u8, p);
         *p_len = u8;
         break;
     case SIZE_IN_NEXT_WORD:
+        if (p + 2 > p_end) {
+            *p_len = 0;
+            return NULL;
+        }
         BE_STREAM_TO_UINT16 (u16, p);
         *p_len = u16;
         break;
     case SIZE_IN_NEXT_LONG:
+        if (p + 4 > p_end) {
+            *p_len = 0;
+            return NULL;
+        }
         BE_STREAM_TO_UINT32 (u32, p);
         *p_len = (UINT16) u32;
         break;
@@ -753,7 +765,7 @@ BOOLEAN sdpu_compare_bt_uuids (tBT_UUID *p_uuid1, tBT_UUID *p_uuid2)
 **
 ** NOTE           - it is assumed that BT UUID structures are compressed to the
 **                  smallest possible UUIDs (by removing the base SDP UUID).
-**                - it is also assumed that the discovery atribute is compressed
+**                - it is also assumed that the discovery attribute is compressed
 **                  to the smallest possible
 **
 ** Returns          TRUE if matched, else FALSE
@@ -768,9 +780,9 @@ BOOLEAN sdpu_compare_uuid_with_attr (tBT_UUID *p_btuuid, tSDP_DISC_ATTR *p_attr)
         return (FALSE);
     }
 
-    if (p_btuuid->len == 2) {
+    if (p_btuuid->len == LEN_UUID_16) {
         return (BOOLEAN)(p_btuuid->uu.uuid16 == p_attr->attr_value.v.u16);
-    } else if (p_btuuid->len == 4) {
+    } else if (p_btuuid->len == LEN_UUID_32) {
         return (BOOLEAN)(p_btuuid->uu.uuid32 == p_attr->attr_value.v.u32);
     }
     /* coverity[overrun-buffer-arg] */
@@ -781,8 +793,8 @@ BOOLEAN sdpu_compare_uuid_with_attr (tBT_UUID *p_btuuid, tSDP_DISC_ATTR *p_attr)
        The actual size of tSDP_DISC_ATVAL does not matter.
        If the array size in tSDP_DISC_ATVAL is increase, we would increase the system RAM usage unnecessarily
     */
-    else if (!memcmp (p_btuuid->uu.uuid128, (void *) p_attr->attr_value.v.array, MAX_UUID_SIZE)) {
-        return (TRUE);
+    else if (p_btuuid->len == LEN_UUID_128) {
+        return (BOOLEAN)(!memcmp(p_btuuid->uu.uuid128, (void *) p_attr->attr_value.v.array, LEN_UUID_128));
     }
 
     return (FALSE);
