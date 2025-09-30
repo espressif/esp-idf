@@ -800,6 +800,7 @@ typedef struct {
     wifi_action_rx_cb_t rx_cb;  /**< Rx Callback to receive action frames */
     uint8_t op_id;              /**< Unique Identifier for operation provided by wifi driver */
     uint32_t data_len;          /**< Length of the appended Data */
+    uint8_t bssid[6];           /**< BSSID (A3) address. If all zeroes, broadcast address will be used */
     uint8_t data[0];            /**< Appended Data payload */
 } wifi_action_tx_req_t;
 

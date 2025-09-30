@@ -175,6 +175,7 @@ static int esp_nan_de_tx(void *ctx, unsigned int freq, unsigned int wait_time,
     req->type = WIFI_OFFCHAN_TX_REQ;
     req->wait_time_ms = wait_time;
     memcpy(req->dest_mac, dst, ETH_ALEN);
+    memcpy(req->bssid, bssid, ETH_ALEN);
     req->no_ack = false;
     req->data_len = buf_len;
     req->rx_cb = esp_nan_de_rx_action;
