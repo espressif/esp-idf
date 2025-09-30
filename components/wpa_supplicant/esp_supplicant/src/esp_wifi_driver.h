@@ -77,6 +77,7 @@ enum {
     WPA3_AUTH_PSK_EXT_KEY = 0x10,
     /* this enum is in C2 ROM, do not change before WPA3_AUTH_PSK_EXT_KEY */
     WPA3_AUTH_DPP       = 0x11,
+    WPA3_AUTH_FT_SAE    = 0x12,
     WPA2_AUTH_INVALID
 };
 

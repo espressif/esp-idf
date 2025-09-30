@@ -137,6 +137,17 @@ RSN_SELECTOR(0x00, 0x0f, 0xac, 13)
 #define FT_R1KH_ID_LEN 6
 #define WPA_PMK_NAME_LEN 16
 
+/* FTE - MIC Control - RSNXE Used */
+#define FTE_MIC_CTRL_RSNXE_USED BIT(0)
+#define FTE_MIC_CTRL_MIC_LEN_MASK (BIT(1) | BIT(2) | BIT(3))
+#define FTE_MIC_CTRL_MIC_LEN_SHIFT 1
+
+/* FTE - MIC Length subfield values */
+enum ft_mic_len_subfield {
+        FTE_MIC_LEN_16 = 0,
+        FTE_MIC_LEN_24 = 1,
+        FTE_MIC_LEN_32 = 2,
+};
 
 /* IEEE 802.11, 8.5.2 EAPOL-Key frames */
 #define WPA_KEY_INFO_TYPE_MASK ((u16) (BIT(0) | BIT(1) | BIT(2)))
@@ -337,6 +348,7 @@ int wpa_ft_mic(const u8 *kck, size_t kck_len, const u8 *sta_addr,
                const u8 *mdie, size_t mdie_len,
 	       const u8 *ftie, size_t ftie_len,
 	       const u8 *rsnie, size_t rsnie_len,
+               const u8 *rsnxe, size_t rsnxe_len,
 	       const u8 *ric, size_t ric_len, u8 *mic);
 void wpa_derive_pmk_r0(const u8 *xxkey, size_t xxkey_len,
 		       const u8 *ssid, size_t ssid_len,
@@ -425,6 +437,8 @@ struct wpa_ft_ies {
 	size_t igtk_len;
 	const u8 *ric;
 	size_t ric_len;
+        const u8 *rsnxe;
+        size_t rsnxe_len;
 };
 
 /* WPA3 specification - RSN Selection element */
