@@ -41,12 +41,12 @@ static esp_err_t gptimer_register_to_group(gptimer_t *timer)
 {
     gptimer_group_t *group = NULL;
     int timer_id = -1;
-    for (int i = 0; i < SOC_TIMG_ATTR(INST_NUM); i++) {
+    for (int i = 0; i < TIMG_LL_GET(INST_NUM); i++) {
         group = gptimer_acquire_group_handle(i);
         ESP_RETURN_ON_FALSE(group, ESP_ERR_NO_MEM, TAG, "no mem for group (%d)", i);
         // loop to search free timer in the group
         portENTER_CRITICAL(&group->spinlock);
-        for (int j = 0; j < SOC_GPTIMER_ATTR(TIMERS_PER_TIMG); j++) {
+        for (int j = 0; j < TIMG_LL_GET(GPTIMERS_PER_INST); j++) {
             if (!group->timers[j]) {
                 timer_id = j;
                 group->timers[j] = timer;

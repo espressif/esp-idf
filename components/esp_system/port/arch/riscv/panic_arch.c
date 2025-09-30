@@ -12,7 +12,6 @@
 #include "riscv/rvruntime-frames.h"
 #include "riscv/rv_utils.h"
 #include "esp_private/cache_err_int.h"
-#include "soc/timer_periph.h"
 
 #if CONFIG_ESP_SYSTEM_MEMPROT && CONFIG_ESP_SYSTEM_MEMPROT_PMS
 #include "esp_private/esp_memprot_internal.h"

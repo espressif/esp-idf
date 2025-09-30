@@ -9,17 +9,6 @@
 #include "soc/soc_caps.h"
 #include "soc/soc_caps_eval.h"
 
-/*--------------------------- Timer Group -------------------------------------------*/
-#define _SOC_CAPS_TIMG_INST_NUM                   2 // Number of Timer Group instances
-
-/*--------------------------- GPTIMER ---------------------------------------*/
-#define _SOC_CAPS_GPTIMER_COUNTER_BIT_WIDTH       64 // Bit width of GPTIMER counter
-#define _SOC_CAPS_GPTIMER_TIMERS_PER_TIMG         2  // Number of general purpose timers in each Timer Group
-#define _SOC_CAPS_GPTIMER_TIMERS_TOTAL            (_SOC_CAPS_TIMG_INST_NUM * _SOC_CAPS_GPTIMER_TIMERS_PER_TIMG)
-
-/*--------------------------- Watch Dog ------------------------------------------*/
-#define _SOC_CAPS_WDT_MWDTS_PER_TIMG              1  // Number of main watchdog timers in each Timer Group
-
 /*--------------------------- SDM (Sigma-Delta Modulator) ------------------------*/
 #define _SOC_CAPS_SDM_INST_NUM                    1  // Number of SDM instances
 #define _SOC_CAPS_SDM_CHANS_PER_INST              8  // Number of channels in each SDM instance

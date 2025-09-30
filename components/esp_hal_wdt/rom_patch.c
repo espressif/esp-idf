@@ -7,10 +7,8 @@
 #include <stddef.h>
 #include "soc/soc_caps.h"
 #include "esp_rom_caps.h"
-
-#include "hal/wdt_types.h"
+#include "hal/mwdt_periph.h"
 #include "hal/wdt_hal.h"
-#include "hal/mwdt_ll.h"
 
 #if ESP_ROM_WDT_INIT_PATCH
 void wdt_hal_init(wdt_hal_context_t *hal, wdt_inst_t wdt_inst, uint32_t prescaler, bool enable_intr)
@@ -20,7 +18,7 @@ void wdt_hal_init(wdt_hal_context_t *hal, wdt_inst_t wdt_inst, uint32_t prescale
     if (wdt_inst == WDT_MWDT0) {
         hal->mwdt_dev = &TIMERG0;
     }
-#if SOC_MODULE_ATTR(TIMG, INST_NUM) >= 2
+#if TIMG_LL_GET(INST_NUM) >= 2
     else if (wdt_inst == WDT_MWDT1) {
         hal->mwdt_dev = &TIMERG1;
     }

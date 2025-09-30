@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "soc/timer_periph.h"
+#include "hal/timer_periph.h"
 
 const soc_timg_gptimer_signal_desc_t soc_timg_gptimer_signals[2][1] = {
     [0] = {

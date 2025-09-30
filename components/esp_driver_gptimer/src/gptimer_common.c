@@ -12,8 +12,8 @@
 
 typedef struct gptimer_platform_t {
     _lock_t mutex;                             // platform level mutex lock
-    gptimer_group_t *groups[SOC_TIMG_ATTR(INST_NUM)]; // timer group pool
-    int group_ref_counts[SOC_TIMG_ATTR(INST_NUM)];    // reference count used to protect group install/uninstall
+    gptimer_group_t *groups[TIMG_LL_GET(INST_NUM)]; // timer group pool
+    int group_ref_counts[TIMG_LL_GET(INST_NUM)];    // reference count used to protect group install/uninstall
 } gptimer_platform_t;
 
 // gptimer driver platform, it's always a singleton

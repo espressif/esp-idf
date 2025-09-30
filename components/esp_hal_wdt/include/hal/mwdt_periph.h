@@ -27,7 +27,7 @@ typedef struct {
     uint32_t link_num;
 } tg_reg_ctx_link_t;
 
-extern const tg_reg_ctx_link_t tg_wdt_regs_retention[TIMG_LL_INST_NUM];
+extern const tg_reg_ctx_link_t tg_wdt_regs_retention[TIMG_LL_GET(INST_NUM)];
 #endif // SOC_MWDT_SUPPORT_SLEEP_RETENTION
 
 #ifdef __cplusplus

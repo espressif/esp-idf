@@ -11,7 +11,7 @@ endif()
 
 set(requires soc)
 # only esp_hw_support/adc_share_hw_ctrl.c requires efuse component
-set(priv_requires efuse spi_flash bootloader_support esp_hal_timg)
+set(priv_requires efuse spi_flash bootloader_support esp_hal_wdt)
 
 if(${target} STREQUAL "esp32c6")
     list(APPEND priv_requires hal)

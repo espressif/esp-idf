@@ -9,7 +9,6 @@
 #include "soc/rtc.h"
 #include "soc/dport_reg.h"
 #include "soc/i2s_periph.h"
-#include "soc/timer_periph.h"
 #include "soc/bb_reg.h"
 #include "soc/nrx_reg.h"
 #include "soc/fe_reg.h"

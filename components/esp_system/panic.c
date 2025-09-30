@@ -18,7 +18,6 @@
 #include "hal/timer_hal.h"
 #include "hal/wdt_types.h"
 #include "hal/wdt_hal.h"
-#include "hal/mwdt_ll.h"
 #include "esp_private/esp_int_wdt.h"
 
 #include "esp_private/panic_internal.h"
@@ -195,12 +194,12 @@ void esp_panic_handler_disable_timg_wdts(void)
     wdt_hal_disable(&wdt0_context);
     wdt_hal_write_protect_enable(&wdt0_context);
 
-#if SOC_MODULE_ATTR(TIMG, INST_NUM) >= 2
+#if TIMG_LL_GET(INST_NUM) >= 2
     wdt_hal_context_t wdt1_context = {.inst = WDT_MWDT1, .mwdt_dev = &TIMERG1};
     wdt_hal_write_protect_disable(&wdt1_context);
     wdt_hal_disable(&wdt1_context);
     wdt_hal_write_protect_enable(&wdt1_context);
-#endif /* SOC_MODULE_ATTR(TIMG, INST_NUM) >= 2 */
+#endif /* TIMG_LL_GET(INST_NUM) >= 2 */
 }
 
 /* This function enables the RTC WDT with the given timeout in milliseconds */
@@ -235,7 +234,7 @@ void esp_panic_handler_feed_wdts(void)
         wdt_hal_write_protect_enable(&wdt0_context);
     }
 
-#if SOC_MODULE_ATTR(TIMG, INST_NUM) >= 2
+#if TIMG_LL_GET(INST_NUM) >= 2
     // Feed Timer Group 1 WDT
     wdt_hal_context_t wdt1_context = {.inst = WDT_MWDT1, .mwdt_dev = &TIMERG1};
     if (wdt_hal_is_enabled(&wdt1_context)) {
@@ -243,7 +242,7 @@ void esp_panic_handler_feed_wdts(void)
         wdt_hal_feed(&wdt1_context);
         wdt_hal_write_protect_enable(&wdt1_context);
     }
-#endif /* SOC_MODULE_ATTR(TIMG, INST_NUM) >= 2 */
+#endif /* TIMG_LL_GET(INST_NUM) >= 2 */
 
     // Feed RTC WDT
     if (wdt_hal_is_enabled(&rtc_wdt_ctx)) {

@@ -205,7 +205,7 @@ SECTIONS
     *libhal.a:apm_hal.c*(.literal .text .literal.* .text.*)
 #endif
     *libhal.a:brownout_hal.c*(.literal .text .literal.* .text.*)
-    *libhal.a:spi_flash_hal.c*(.literal .text .literal.* .text.*)
+    *libesp_hal_mspi.a:spi_flash_hal.c*(.literal .text .literal.* .text.*)
     /* These HAL modules have functions marked with the IRAM_ATTR attribute which get placed in the SRAM */
     *libhal.a:efuse_hal.c*(.literal .text .literal.* .text.*)
     *libhal.a:lp_timer_hal.c*(.literal .text .literal.* .text.*)
