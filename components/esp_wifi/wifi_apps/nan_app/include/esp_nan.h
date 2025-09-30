@@ -20,6 +20,12 @@ extern "C" {
     .master_pref = 2, \
     .scan_time = 3, \
     .warm_up_sec = 5, \
+    .discovery_flag = 0, \
+};
+
+/* For USD, all parameters other than discovery_flag are ignored */
+#define WIFI_USD_NAN_CONFIG_DEFAULT() { \
+    .discovery_flag = 1, \
 };
 
 #define NDP_STATUS_ACCEPTED     1
@@ -40,7 +46,7 @@ struct nan_peer_record {
 };
 
 /**
-  * @brief      Start NAN Discovery with provided configuration
+  * @brief      Start NAN Discovery or Unsynchronized service discovery (USD) with provided configuration
   *
   * @attention  This API should be called after esp_wifi_init().
   *
@@ -53,7 +59,10 @@ struct nan_peer_record {
 esp_err_t esp_wifi_nan_start(const wifi_nan_config_t *nan_cfg);
 
 /**
-  * @brief      Stop NAN Discovery, end NAN Services and Datapaths
+  * @brief      Stop NAN Discovery or USD and end publish/subscribe services
+  *
+  * @attention  This API will end datapaths if any in NAN synchronization
+  * @attention  This API will stop USD if discovery_flag is set to true, else it will stop NAN Discovery
   *
   * @return
   *    - ESP_OK: succeed
@@ -62,9 +71,13 @@ esp_err_t esp_wifi_nan_start(const wifi_nan_config_t *nan_cfg);
 esp_err_t esp_wifi_nan_stop(void);
 
 /**
-  * @brief      Start Publishing a service to the NAN Peers in vicinity
+  * @brief      Start Publishing a service to the NAN/USD Peers in vicinity
   *
   * @attention  This API should be called after esp_wifi_nan_start().
+  * @attention  This API will start a publisher in USD if discovery_flag is true
+  * @attention  A maximum of two services is allowed simultaneously
+  *             (e.g., one publish and one subscribe, or two publish/subscribe).
+  *             This limit is defined by the ESP_WIFI_NAN_MAX_SVC_SUPPORTED.
   *
   * @param      publish_cfg  Configuration parameters for publishing a service.
   *
@@ -75,9 +88,13 @@ esp_err_t esp_wifi_nan_stop(void);
 uint8_t esp_wifi_nan_publish_service(const wifi_nan_publish_cfg_t *publish_cfg);
 
 /**
-  * @brief      Subscribe for a service within the NAN cluster
+  * @brief      Subscribe to a service published by a NAN peer within a cluster or a USD peer
   *
   * @attention  This API should be called after esp_wifi_nan_start().
+  * @attention  This API will start a subscriber in USD if discovery_flag is true
+  * @attention  A maximum of two services is allowed simultaneously
+  *             (e.g., one publish and one subscribe, or two publish/subscribe).
+  *             This limit is defined by the ESP_WIFI_NAN_MAX_SVC_SUPPORTED.
   *
   * @param      subscribe_cfg  Configuration parameters for subscribing for a service.
   *
@@ -88,9 +105,9 @@ uint8_t esp_wifi_nan_publish_service(const wifi_nan_publish_cfg_t *publish_cfg);
 uint8_t esp_wifi_nan_subscribe_service(const wifi_nan_subscribe_cfg_t *subscribe_cfg);
 
 /**
-  * @brief      Send a follow-up message to the NAN Peer with matched service
+  * @brief      Send a follow-up message to a matched peer in NAN synchronization or USD
   *
-  * @attention  This API should be called after a NAN service is discovered due to a match.
+  * @attention  This API should be called after a NAN/USD service is discovered due to a match.
   *
   * @param      fup_params  Configuration parameters for sending a Follow-up message.
   *
@@ -101,7 +118,7 @@ uint8_t esp_wifi_nan_subscribe_service(const wifi_nan_subscribe_cfg_t *subscribe
 esp_err_t esp_wifi_nan_send_message(wifi_nan_followup_params_t *fup_params);
 
 /**
-  * @brief      Cancel a NAN service
+  * @brief      Cancel a NAN synchronization or NAN-USD service
   *
   * @param      service_id Publish/Subscribe service id to be cancelled.
   *
@@ -197,6 +214,41 @@ esp_err_t esp_wifi_nan_get_peer_records(int *num_peer_records, uint8_t own_svc_i
  *   - ESP_FAIL: failed
  */
 esp_err_t esp_wifi_nan_get_peer_info(char *svc_name, uint8_t *peer_mac, struct nan_peer_record *peer_info);
+
+/**
+  * @brief      Get default configuration for USD publish operation.
+  *
+  * @note       This function returns a default configuration structure for initiating
+  *             a USD (Unsynchronized Service Discovery) publish session.
+  *             - The default channel is set to channel 6 (2.437 GHz) in the 2.4 GHz band.
+  *             - The channel list will include all 20 MHz channels in the 2.4 GHz frequency band,
+  *               as permitted by the regulatory domain of the current geographic location.
+  *             - Default values for dwell periods are set as per Wi-Fi Aware Specification:
+  *                 - Nmin = 5, Nmax = 10
+  *                 - Mmin = 5, Mmax = 10
+  *
+  * @return     wifi_nan_usd_config_t structure with pre-filled default values for publishing.
+  */
+wifi_nan_usd_config_t esp_wifi_usd_get_default_publish_cfg(void);
+
+/**
+ * @brief      Get default configuration for USD subscribe operation.
+ *
+ * @note       This function returns a default configuration structure for initiating
+ *             a USD (Unsynchronized Service Discovery) subscribe session.
+ *             - The default channel is set to channel 6 (2.437 GHz) in the 2.4 GHz band.
+ *             - The channel list will include all 20 MHz channels in the 2.4 GHz frequency band,
+ *               as permitted by the regulatory domain of the current geographic location.
+ *             - Default values for dwell periods are set as per Wi-Fi Aware Specification:
+ *                 - Nmin = 5, Nmax = 10
+ *                 - Mmin = 5, Mmax = 10
+ *
+ *             @warning Currently, the subscribe function operates only on the default channel.
+ *                      It does not alternate between the default channel and channels in the channel list.
+ *
+ * @return     wifi_nan_usd_config_t structure with pre-filled default values for subscribing.
+ */
+wifi_nan_usd_config_t esp_wifi_usd_get_default_subscribe_cfg(void);
 
 #ifdef __cplusplus
 }

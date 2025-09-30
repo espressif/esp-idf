@@ -15,6 +15,7 @@
 #include "ieee802_11_defs.h"
 #include "nan.h"
 #include "nan_de.h"
+#include "ctype.h"
 
 static const u8 nan_network_id[ETH_ALEN] =
 { 0x51, 0x6f, 0x9a, 0x01, 0x00, 0x00 };
@@ -282,6 +283,12 @@ static void nan_de_tx_sdf(struct nan_de *de, struct nan_de_service *srv,
 		wpabuf_put_le16(buf, sdea_ctrl);
 		if (ssi) {
 #ifdef ESP_SUPPLICANT
+			/* Note: In our NaN-USD implementation, the user-provided SSI value must
+			 * include both the OUI and the Service Protocol Type.
+			 * This differs from the upstream wpa_supplicant implementation, where
+			 * the USD supplicant driver constructs the SSI internally using the
+			 * Wi-Fi OUI and a separately provided srv_proto_type.
+			 */
 			wpabuf_put_le16(buf, wpabuf_len(ssi));
 			wpabuf_put_buf(buf, ssi);
 #else
@@ -544,9 +551,11 @@ static int nan_de_srv_time_to_next(struct nan_de *de,
 
 	if (os_reltime_initialized(&srv->next_publish_state)) {
 		os_reltime_sub(&srv->next_publish_state, now, &diff);
+#ifndef ESP_SUPPLICANT
 		if (diff.sec < 0 || (diff.sec == 0 && diff.usec < 0))
 			tmp = 0;
 		else
+#endif /* ESP_SUPPLICANT */
 			tmp = os_reltime_in_ms(&diff);
 		if (next == -1 || tmp < next)
 			next = tmp;
@@ -656,7 +665,9 @@ static void nan_de_timer(void *eloop_ctx, void *timeout_ctx)
 
 		if (srv_next == 0 && !started && !de->offload &&
 		    de->listen_freq == 0 && de->ext_listen_freq == 0 &&
+#ifndef ESP_SUPPLICANT
 		    de->tx_wait_end_freq == 0 &&
+#endif
 		    nan_de_next_multicast(de, srv, &now) == 0) {
 			started = true;
 			nan_de_tx_multicast(de, srv, 0);
@@ -1001,6 +1012,12 @@ static void nan_de_rx_subscribe(struct nan_de *de, struct nan_de_service *srv,
 		wpabuf_put_le16(buf, sdea_ctrl);
 		if (srv->ssi) {
 #ifdef ESP_SUPPLICANT
+			/* Note: In our NaN-USD implementation, the SSI value must
+			 * include both the OUI and the Service Protocol Type.
+			 * This differs from the upstream wpa_supplicant implementation, where
+			 * the USD supplicant driver constructs the SSI internally using the
+			 * Wi-Fi OUI and a separately provided srv_proto_type.
+			 */
 			wpabuf_put_le16(buf, wpabuf_len(srv->ssi));
 			wpabuf_put_buf(buf, srv->ssi);
 #else
@@ -1038,7 +1055,18 @@ static void nan_de_rx_subscribe(struct nan_de *de, struct nan_de_service *srv,
 		  de->nmi, a3, buf);
 	wpabuf_free(buf);
 
-	nan_de_pause_state(srv, peer_addr, instance_id);
+	if (!srv->is_p2p) {
+#ifdef ESP_SUPPLICANT
+		if (os_reltime_initialized(&srv->pause_state_end) &&
+			ether_addr_equal(peer_addr, srv->sel_peer_addr) &&
+			 instance_id == srv->sel_peer_id) {
+			wpa_printf(MSG_DEBUG,
+				   "NAN: In pauseState - skipping pauseStateTimeout reset for"
+				   " Subscribe message from selected peer");
+		} else
+#endif /* ESP_SUPPLICANT */
+		nan_de_pause_state(srv, peer_addr, instance_id);
+	}
 
 offload:
 	if (!srv->publish.disable_events && de->cb.replied)
@@ -1540,3 +1568,20 @@ int nan_de_transmit(struct nan_de *de, int handle,
 
 	return 0;
 }
+
+#ifdef ESP_SUPPLICANT
+void nan_de_cancel_service(struct nan_de *de, int service_id)
+{
+	struct nan_de_service *srv;
+
+	wpa_printf(MSG_DEBUG, "NAN: CancelService(service_id=%d)", service_id);
+
+	if (service_id < 1 || service_id > NAN_DE_MAX_SERVICE)
+		return;
+
+	srv = de->service[service_id - 1];
+	if (!srv)
+		return;
+	nan_de_del_srv(de, srv, NAN_DE_REASON_USER_REQUEST);
+}
+#endif

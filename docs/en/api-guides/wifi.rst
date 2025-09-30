@@ -2094,6 +2094,14 @@ Detailed information on creating certificates and how to run wpa2_enterprise exa
 
     Refer to ESP-IDF examples :idf_file:`examples/wifi/wifi_aware/nan_publisher/README.md` and :idf_file:`examples/wifi/wifi_aware/nan_subscriber/README.md` to setup a NAN Publisher and Subscriber.
 
+Wi-Fi Aware\ :sup:`TM` (NAN): Unsynchronized Service Discovery (USD)
+--------------------------------------------------------------------
+Unsynchronized Service Discovery (USD) is a mechanism for devices to discover the services that have been made discoverable on new devices that enter the RF environment, without requiring synchronization between the devices.
+
+USD uses Service Info field in the SDEA of a Publish and Follow-up message to convey the service specific information.
+
+Refer to ESP-IDF examples :idf_file:`examples/wifi/wifi_aware/usd_publisher/README.md` and :idf_file:`examples/wifi/wifi_aware/usd_subscriber/README.md` to setup a NAN-USD Publisher and Subscriber.
+
 Wireless Network Management
 ----------------------------
 

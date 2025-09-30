@@ -584,6 +584,12 @@ menu "Wi-Fi"
             help
                 Enable WiFi Aware (NAN) feature.
 
+        config ESP_WIFI_NAN_USD_ENABLE
+            bool "Enable NAN USD"
+            default n
+            help
+                Enable NAN(WiFi Aware) Unsynchronized service discovery
+
         config ESP_WIFI_MBEDTLS_CRYPTO
             bool "Use MbedTLS crypto APIs"
             default y

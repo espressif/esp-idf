@@ -10,10 +10,15 @@
 #define NAN_DE_H
 
 #include "nan.h"
+#include "utils/common.h"
 
 /* Maximum number of active local publish and subscribe instances */
 #ifndef NAN_DE_MAX_SERVICE
+#ifndef ESP_SUPPLICANT
 #define NAN_DE_MAX_SERVICE 20
+#else
+#define NAN_DE_MAX_SERVICE 2
+#endif
 #endif /* NAN_DE_MAX_SERVICE */
 
 struct nan_de;
@@ -149,4 +154,7 @@ int nan_de_transmit(struct nan_de *de, int handle,
 		    const struct wpabuf *ssi, const struct wpabuf *elems,
 		    const u8 *peer_addr, u8 req_instance_id);
 
+#ifdef ESP_SUPPLICANT
+void nan_de_cancel_service(struct nan_de *de, int service_id);
+#endif
 #endif /* NAN_DE_H */
