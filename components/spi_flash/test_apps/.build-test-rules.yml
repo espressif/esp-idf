@@ -84,3 +84,8 @@ components/spi_flash/test_apps/mspi_test:
     - esp_driver_spi
     - esptool_py # Some flash related kconfigs are listed here.
     - esp_hal_mspi
+
+components/spi_flash/test_apps/no_flash_delay:
+  disable:
+    - if: IDF_TARGET not in ["esp32c3"]
+      reason: Testing on a single target is sufficient
