@@ -88,6 +88,62 @@ TEST(partition_api, test_partition_find_first)
     TEST_ASSERT_NOT_NULL(partition_data);
 }
 
+TEST(partition_api, test_partition_find_err)
+{
+    esp_partition_iterator_t iter = NULL;
+    esp_err_t err = esp_partition_find_err(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, "storage", &iter);
+    TEST_ESP_OK(err);
+    TEST_ASSERT_NOT_NULL(iter);
+
+    const esp_partition_t *part = esp_partition_get(iter);
+    TEST_ASSERT_NOT_NULL(part);
+
+    esp_partition_iterator_release(iter);
+
+    // Test error cases
+    err = esp_partition_find_err(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, "nonexistent", &iter);
+    TEST_ASSERT_EQUAL(ESP_ERR_NOT_FOUND, err);
+    TEST_ASSERT_NULL(iter);  // But iterator should be NULL
+
+    // Test invalid argument
+    err = esp_partition_find_err(ESP_PARTITION_TYPE_ANY, ESP_PARTITION_SUBTYPE_DATA_NVS, NULL, &iter);
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, err);
+    TEST_ASSERT_NULL(iter);  // But iterator should be NULL
+
+    // Test NULL pointer
+    err = esp_partition_find_err(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, "storage", NULL);
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, err);
+    TEST_ASSERT_NULL(iter);  // But iterator should be NULL
+}
+
+TEST(partition_api, test_partition_find_first_err)
+{
+    const esp_partition_t *partition_app = NULL;
+    esp_err_t err = esp_partition_find_first_err(ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_ANY, NULL, &partition_app);
+    TEST_ESP_OK(err);
+    TEST_ASSERT_NOT_NULL(partition_app);
+
+    const esp_partition_t *partition_data = NULL;
+    err = esp_partition_find_first_err(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, "storage", &partition_data);
+    TEST_ESP_OK(err);
+    TEST_ASSERT_NOT_NULL(partition_data);
+
+    // Test partition not found
+    const esp_partition_t *partition_nonexistent = NULL;
+    err = esp_partition_find_first_err(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, "nonexistent", &partition_nonexistent);
+    TEST_ASSERT_EQUAL(ESP_ERR_NOT_FOUND, err);
+    TEST_ASSERT_NULL(partition_nonexistent);  // But partition should be NULL
+
+    // Test error cases
+    err = esp_partition_find_first_err(ESP_PARTITION_TYPE_ANY, ESP_PARTITION_SUBTYPE_DATA_NVS, NULL, &partition_data);
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, err);
+    TEST_ASSERT_NULL(partition_data);  // But partition should be NULL
+
+    // Test NULL pointer
+    err = esp_partition_find_first_err(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, "storage", NULL);
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, err);
+}
+
 TEST(partition_api, test_partition_ops)
 {
     const esp_partition_t *partition_data = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, "storage");
@@ -120,6 +176,59 @@ TEST(partition_api, test_partition_ops)
     // esp_partition_verify (partition_data)
     const esp_partition_t *verified_partition = esp_partition_verify(partition_data);
     TEST_ASSERT_NOT_NULL(verified_partition);
+}
+
+TEST(partition_api, test_partition_verify_err)
+{
+    // Get a valid partition for testing
+    const esp_partition_t *partition_data = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, "storage");
+    TEST_ASSERT_NOT_NULL(partition_data);
+
+    const esp_partition_t *verified_partition = NULL;
+    esp_err_t err;
+
+    // Test 1: Valid partition verification
+    err = esp_partition_verify_err(partition_data, &verified_partition);
+    TEST_ESP_OK(err);
+    TEST_ASSERT_EQUAL_PTR(partition_data, verified_partition);
+
+    // Test 2: Both parameters NULL
+    err = esp_partition_verify_err(NULL, NULL);
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, err);
+
+    // Test 3: Partition with wrong address should not match
+    esp_partition_t partition_copy = *partition_data;
+    partition_copy.address = 0xFFFFFFFF; // Invalid address
+    verified_partition = NULL;
+    err = esp_partition_verify_err(&partition_copy, &verified_partition);
+    TEST_ASSERT_EQUAL(ESP_ERR_NOT_FOUND, err);
+    TEST_ASSERT_NULL(verified_partition);
+
+    // Test 4: Partition with wrong size should not match
+    partition_copy = *partition_data;
+    partition_copy.size = 0xFFFFFFFF; // Invalid size
+    verified_partition = NULL;
+    err = esp_partition_verify_err(&partition_copy, &verified_partition);
+    TEST_ASSERT_EQUAL(ESP_ERR_NOT_FOUND, err);
+    TEST_ASSERT_NULL(verified_partition);
+
+    // Test 5: Partition with wrong type should not match
+    partition_copy = *partition_data;
+    partition_copy.type = ESP_PARTITION_TYPE_APP; // Wrong type
+    verified_partition = NULL;
+    err = esp_partition_verify_err(&partition_copy, &verified_partition);
+    TEST_ASSERT_EQUAL(ESP_ERR_NOT_FOUND, err);
+    TEST_ASSERT_NULL(verified_partition);
+
+    // Test 6: Test with a partition that has empty label
+    const esp_partition_t *app_partition = esp_partition_find_first(ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_ANY, NULL);
+    if (app_partition != NULL && strlen(app_partition->label) == 0) {
+        verified_partition = NULL;
+        err = esp_partition_verify_err(app_partition, &verified_partition);
+        TEST_ESP_OK(err);
+        TEST_ASSERT_NOT_NULL(verified_partition);
+        TEST_ASSERT_EQUAL_PTR(app_partition, verified_partition);
+    }
 }
 
 TEST(partition_api, test_partition_mmap)
@@ -750,8 +859,11 @@ TEST_GROUP_RUNNER(partition_api)
     RUN_TEST_CASE(partition_api, test_partition_find_app);
     RUN_TEST_CASE(partition_api, test_partition_find_data);
     RUN_TEST_CASE(partition_api, test_partition_find_first);
+    RUN_TEST_CASE(partition_api, test_partition_find_err);
+    RUN_TEST_CASE(partition_api, test_partition_find_first_err);
     RUN_TEST_CASE(partition_api, test_partition_ops);
     RUN_TEST_CASE(partition_api, test_partition_mmap);
+    RUN_TEST_CASE(partition_api, test_partition_verify_err);
     RUN_TEST_CASE(partition_api, test_partition_mmap_support_for_greater_than_4M);
     RUN_TEST_CASE(partition_api, test_partition_mmap_diff_size);
     RUN_TEST_CASE(partition_api, test_partition_mmap_reopen);

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -300,26 +300,47 @@ static esp_partition_iterator_opaque_t *iterator_create(esp_partition_type_t typ
     return it;
 }
 
-esp_partition_iterator_t esp_partition_find(esp_partition_type_t type,
-        esp_partition_subtype_t subtype, const char *label)
+esp_err_t esp_partition_find_err(esp_partition_type_t type,
+        esp_partition_subtype_t subtype, const char *label, esp_partition_iterator_t *it)
 {
-    if (ensure_partitions_loaded() != ESP_OK) {
-        return NULL;
+    if (it == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    *it  = NULL;
+    esp_err_t err = ensure_partitions_loaded();
+    if (err != ESP_OK) {
+        return err;
     }
     // Searching for a specific subtype without specifying the type doesn't make
     // sense, and is likely a usage error.
     if (type == ESP_PARTITION_TYPE_ANY && subtype != ESP_PARTITION_SUBTYPE_ANY) {
-        return NULL;
+        return ESP_ERR_INVALID_ARG;
     }
     // create an iterator pointing to the start of the list
     // (next item will be the first one)
-    esp_partition_iterator_t it = iterator_create(type, subtype, label);
-    if (it == NULL) {
-        return NULL;
+    *it = iterator_create(type, subtype, label);
+    if (*it == NULL) {
+        return ESP_ERR_NO_MEM;
     }
     // advance iterator to the next item which matches constraints
-    it = esp_partition_next(it);
+    *it = esp_partition_next(*it);
+    if (*it == NULL) {
+        return ESP_ERR_NOT_FOUND;
+    }
     // if nothing found, it == NULL and iterator has been released
+    return ESP_OK;
+}
+
+esp_partition_iterator_t esp_partition_find(esp_partition_type_t type,
+        esp_partition_subtype_t subtype, const char *label)
+{
+    esp_partition_iterator_t it;
+    esp_err_t err = esp_partition_find_err(type, subtype, label, &it);
+    if (err != ESP_OK) {
+        return NULL;
+    }
+
     return it;
 }
 
@@ -356,16 +377,36 @@ esp_partition_iterator_t esp_partition_next(esp_partition_iterator_t it)
     return it;
 }
 
+esp_err_t esp_partition_find_first_err(esp_partition_type_t type,
+        esp_partition_subtype_t subtype, const char *label, const esp_partition_t **partition)
+{
+    if (partition == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    esp_partition_iterator_t it = NULL;
+    esp_err_t err = esp_partition_find_err(type, subtype, label, &it);
+    if (err != ESP_OK || it == NULL) {
+        *partition = NULL;
+        return err;
+    }
+    *partition = esp_partition_get(it);
+    esp_partition_iterator_release(it);
+    if (*partition == NULL) {
+        return ESP_ERR_NOT_FOUND;
+    }
+    return ESP_OK;
+}
+
 const esp_partition_t *esp_partition_find_first(esp_partition_type_t type,
         esp_partition_subtype_t subtype, const char *label)
 {
-    esp_partition_iterator_t it = esp_partition_find(type, subtype, label);
-    if (it == NULL) {
+    const esp_partition_t *partition;
+    esp_err_t err = esp_partition_find_first_err(type, subtype, label, &partition);
+    if (err != ESP_OK) {
         return NULL;
     }
-    const esp_partition_t *res = esp_partition_get(it);
-    esp_partition_iterator_release(it);
-    return res;
+    return partition;
 }
 
 void esp_partition_iterator_release(esp_partition_iterator_t iterator)
@@ -380,27 +421,49 @@ const esp_partition_t *esp_partition_get(esp_partition_iterator_t iterator)
     return iterator->info;
 }
 
-const esp_partition_t *esp_partition_verify(const esp_partition_t *partition)
+esp_err_t esp_partition_verify_err(const esp_partition_t *partition, const esp_partition_t **out_partition)
 {
-    assert(partition != NULL);
+    // Validate input parameters
+    if (partition == NULL || out_partition == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    *out_partition = NULL;
     const char *label = (strlen(partition->label) > 0) ? partition->label : NULL;
-    esp_partition_iterator_t it = esp_partition_find(partition->type,
-                                  partition->subtype,
-                                  label);
+    esp_partition_iterator_t it = NULL;
+    esp_err_t err = esp_partition_find_err(partition->type,
+                                          partition->subtype,
+                                          label, &it);
+    if (err != ESP_OK) {
+        return err;
+    }
+
     while (it != NULL) {
         const esp_partition_t *p = esp_partition_get(it);
         /* Can't memcmp() whole structure here as padding contents may be different */
         if (p->flash_chip == partition->flash_chip
                 && p->address == partition->address
-                && partition->size == p->size
-                && partition->encrypted == p->encrypted) {
+                && p->size == partition->size
+                && p->encrypted == partition->encrypted) {
             esp_partition_iterator_release(it);
-            return p;
+            *out_partition = p;
+            return ESP_OK;
         }
         it = esp_partition_next(it);
     }
-    esp_partition_iterator_release(it);
-    return NULL;
+
+    // Iterator is automatically released by esp_partition_next when it reaches the end
+    return ESP_ERR_NOT_FOUND;
+}
+
+const esp_partition_t *esp_partition_verify(const esp_partition_t *partition)
+{
+    const esp_partition_t *out_partition;
+    esp_err_t err = esp_partition_verify_err(partition, &out_partition);
+    if (err != ESP_OK) {
+        return NULL;
+    }
+    return out_partition;
 }
 
 esp_err_t esp_partition_register_external(esp_flash_t *flash_chip, size_t offset, size_t size,
