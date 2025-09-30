@@ -1058,12 +1058,14 @@ void roam_deinit_app(void)
 
 #if PERIODIC_SCAN_MONITORING
     g_roaming_app.periodic_scan_active = false;
+    eloop_cancel_timeout(roaming_app_periodic_scan_internal_handler, NULL, NULL);
 #endif /*PERIODIC_SCAN_MONITORING*/
 #if PERIODIC_RRM_MONITORING
     ESP_ERROR_CHECK(esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_STA_NEIGHBOR_REP,
                                                  &roaming_app_neighbor_report_recv_handler));
     /* Disabling the periodic scan and RRM events */
     g_roaming_app.periodic_rrm_active = false;
+    eloop_cancel_timeout(roaming_app_periodic_rrm_internal_handler, NULL, NULL);
     if (g_roaming_app.btm_neighbor_list) {
         os_free(g_roaming_app.btm_neighbor_list);
         g_roaming_app.btm_neighbor_list = NULL;
