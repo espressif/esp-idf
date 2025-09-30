@@ -665,10 +665,10 @@ static SPI_MASTER_ISR_ATTR void spi_setup_device(spi_device_t *dev, spi_trans_pr
             .use_gpio = !(dev->host->bus_attr->flags & SPICOMMON_BUSFLAG_IOMUX_PINS),
         };
 
-        if (ESP_OK == spi_hal_cal_clock_conf(&timing_param, &dev->hal_dev.timing_conf)) {
+        if ((trans_buf->trans->override_freq_hz <= SPI_PERIPH_SRC_FREQ_MAX) && (ESP_OK == spi_hal_cal_clock_conf(&timing_param, &dev->hal_dev.timing_conf))) {
             clock_changed = true;
         } else {
-            ESP_EARLY_LOGW(SPI_TAG, "assigned clock speed %d not supported", trans_buf->trans->override_freq_hz);
+            ESP_EARLY_LOGW(SPI_TAG, "assigned override_freq_hz %d not supported", trans_buf->trans->override_freq_hz);
         }
     }
 
