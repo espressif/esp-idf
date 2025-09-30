@@ -109,7 +109,7 @@ def test_examples_protocol_https_server_simple(dut: Dut) -> None:
     # check and log bin size
     binary_file = os.path.join(dut.app.binary_path, 'https_server.bin')
     bin_size = os.path.getsize(binary_file)
-    logging.info('https_server_simple_bin_size : {}KB'.format(bin_size // 1024))
+    logging.info(f'https_server_simple_bin_size : {bin_size // 1024}KB')
     # start test
     logging.info('Waiting to connect with AP')
     if dut.app.sdkconfig.get('EXAMPLE_WIFI_SSID_PWD_FROM_STDIN') is True:
@@ -125,8 +125,8 @@ def test_examples_protocol_https_server_simple(dut: Dut) -> None:
 
     # Expected logs
 
-    logging.info('Got IP   : {}'.format(got_ip))
-    logging.info('Got Port : {}'.format(got_port))
+    logging.info(f'Got IP   : {got_ip}')
+    logging.info(f'Got Port : {got_port}')
 
     logging.info('Performing GET request over an SSL connection with the server')
 
@@ -156,7 +156,7 @@ def test_examples_protocol_https_server_simple(dut: Dut) -> None:
 
     if dut.app.sdkconfig.get('CONFIG_EXAMPLE_ENABLE_HTTPS_USER_CALLBACK') is True:
         current_cipher = dut.expect(r'Current Ciphersuite(.*)', timeout=5)[0]
-        logging.info('Current Ciphersuite {}'.format(current_cipher))
+        logging.info(f'Current Ciphersuite {current_cipher}')
 
         logging.info('Checking user callback: Obtaining client certificate...')
 
@@ -166,9 +166,9 @@ def test_examples_protocol_https_server_simple(dut: Dut) -> None:
             1
         ].decode()
 
-        logging.info('Serial No. {}'.format(serial_number))
-        logging.info('Issuer Name {}'.format(issuer_name))
-        logging.info('Expires on {}'.format(expiry))
+        logging.info(f'Serial No. {serial_number}')
+        logging.info(f'Issuer Name {issuer_name}')
+        logging.info(f'Expires on {expiry}')
 
     # Close the connection
     conn.close()
@@ -203,8 +203,8 @@ def test_examples_protocol_https_server_simple_dynamic_buffers(dut: Dut) -> None
 
     # Expected logs
 
-    logging.info('Got IP   : {}'.format(got_ip))
-    logging.info('Got Port : {}'.format(got_port))
+    logging.info(f'Got IP   : {got_ip}')
+    logging.info(f'Got Port : {got_port}')
 
     logging.info('Performing GET request over an SSL connection with the server')
 
@@ -233,7 +233,7 @@ def test_examples_protocol_https_server_simple_dynamic_buffers(dut: Dut) -> None
 
     if dut.app.sdkconfig.get('CONFIG_EXAMPLE_ENABLE_HTTPS_USER_CALLBACK') is True:
         current_cipher = dut.expect(r'Current Ciphersuite(.*)', timeout=5)[0]
-        logging.info('Current Ciphersuite {}'.format(current_cipher))
+        logging.info(f'Current Ciphersuite {current_cipher}')
 
         logging.info('Checking user callback: Obtaining client certificate...')
 
@@ -243,9 +243,9 @@ def test_examples_protocol_https_server_simple_dynamic_buffers(dut: Dut) -> None
             1
         ].decode()
 
-        logging.info('Serial No. : {}'.format(serial_number))
-        logging.info('Issuer Name : {}'.format(issuer_name))
-        logging.info('Expires on : {}'.format(expiry))
+        logging.info(f'Serial No. : {serial_number}')
+        logging.info(f'Issuer Name : {issuer_name}')
+        logging.info(f'Expires on : {expiry}')
 
     # Close the connection
     conn.close()
@@ -277,8 +277,8 @@ def test_examples_protocol_https_server_tls1_3(dut: Dut) -> None:
 
     # Expected logs
 
-    logging.info('Got IP   : {}'.format(got_ip))
-    logging.info('Got Port : {}'.format(got_port))
+    logging.info(f'Got IP   : {got_ip}')
+    logging.info(f'Got Port : {got_port}')
     logging.info('Performing GET request over an SSL connection with the server using TLSv1.3')
 
     CLIENT_CERT_FILE = 'client_cert.pem'
@@ -288,14 +288,25 @@ def test_examples_protocol_https_server_tls1_3(dut: Dut) -> None:
         cert.write(client_cert_pem)
         key.write(client_key_pem)
 
+    # First try with TLSv1.2 and that should fail
     ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
-    ssl_context.minimum_version = ssl.TLSVersion.TLSv1_3
-    ssl_context.maximum_version = ssl.TLSVersion.TLSv1_3
+    ssl_context.minimum_version = ssl.TLSVersion.TLSv1_2
+    ssl_context.maximum_version = ssl.TLSVersion.TLSv1_2
     ssl_context.verify_mode = ssl.CERT_REQUIRED
     ssl_context.check_hostname = False
     ssl_context.load_verify_locations(cadata=server_cert_pem)
-
     ssl_context.load_cert_chain(certfile=CLIENT_CERT_FILE, keyfile=CLIENT_KEY_FILE)
+    conn = http.client.HTTPSConnection(got_ip, got_port, context=ssl_context)
+    try:
+        conn.request('GET', '/')
+    except ssl.SSLError as e:
+        logging.info(f'SSL handshake failed with TLSv1.2: {e}')
+    else:
+        logging.info('SSL handshake succeeded with TLSv1.2')
+        raise RuntimeError('This should have failed')
+
+    ssl_context.minimum_version = ssl.TLSVersion.TLSv1_3
+    ssl_context.maximum_version = ssl.TLSVersion.TLSv1_3
 
     os.remove(CLIENT_CERT_FILE)
     os.remove(CLIENT_KEY_FILE)
@@ -312,7 +323,7 @@ def test_examples_protocol_https_server_tls1_3(dut: Dut) -> None:
 
     if dut.app.sdkconfig.get('CONFIG_EXAMPLE_ENABLE_HTTPS_USER_CALLBACK') is True:
         current_cipher = dut.expect(r'Current Ciphersuite(.*)', timeout=5)[0]
-        logging.info('Current Ciphersuite {}'.format(current_cipher))
+        logging.info(f'Current Ciphersuite {current_cipher}')
 
         logging.info('Checking user callback: Obtaining client certificate...')
 
@@ -323,9 +334,120 @@ def test_examples_protocol_https_server_tls1_3(dut: Dut) -> None:
             timeout=5,
         )[1].decode()
 
-        logging.info('Serial No. : {}'.format(serial_number))
-        logging.info('Issuer Name : {}'.format(issuer_name))
-        logging.info('Expires on : {}'.format(expiry))
+        logging.info(f'Serial No. : {serial_number}')
+        logging.info(f'Issuer Name : {issuer_name}')
+        logging.info(f'Expires on : {expiry}')
+
+    # Close the connection
+    conn.close()
+    logging.info('Correct response obtained')
+    logging.info('SSL connection test successful\nClosing the connection')
+
+
+@pytest.mark.wifi_router
+@pytest.mark.parametrize(
+    'config',
+    [
+        'tls1_2_only',
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', ['esp32', 'esp32c3', 'esp32s3'], indirect=['target'])
+def test_examples_protocol_https_server_tls1_2_only(dut: Dut) -> None:
+    logging.info('Waiting to connect with AP')
+    if dut.app.sdkconfig.get('EXAMPLE_WIFI_SSID_PWD_FROM_STDIN') is True:
+        dut.expect('Please input ssid password:')
+        env_name = 'wifi_router'
+        ap_ssid = get_env_config_variable(env_name, 'ap_ssid')
+        ap_password = get_env_config_variable(env_name, 'ap_password')
+        dut.write(f'{ap_ssid} {ap_password}')
+    # Parse IP address and port of the server
+    dut.expect(r'Starting server')
+    got_port = int(dut.expect(r'Server listening on port (\d+)', timeout=30)[1].decode())
+    got_ip = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=30)[1].decode()
+
+    # Expected logs
+    logging.info(f'Got IP   : {got_ip}')
+    logging.info(f'Got Port : {got_port}')
+    logging.info('Performing GET request over an SSL connection with the server using TLSv1.2')
+
+    CLIENT_CERT_FILE = 'client_cert.pem'
+    CLIENT_KEY_FILE = 'client_key.pem'
+
+    with open(CLIENT_CERT_FILE, 'w', encoding='utf-8') as cert, open(CLIENT_KEY_FILE, 'w', encoding='utf-8') as key:
+        cert.write(client_cert_pem)
+        key.write(client_key_pem)
+
+    # First try with TLSv1.3 and that should fail
+    ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+    ssl_context.minimum_version = ssl.TLSVersion.TLSv1_3
+    ssl_context.maximum_version = ssl.TLSVersion.TLSv1_3
+    ssl_context.verify_mode = ssl.CERT_REQUIRED
+    ssl_context.check_hostname = False
+    ssl_context.load_verify_locations(cadata=server_cert_pem)
+    ssl_context.load_cert_chain(certfile=CLIENT_CERT_FILE, keyfile=CLIENT_KEY_FILE)
+    conn = http.client.HTTPSConnection(got_ip, got_port, context=ssl_context)
+    try:
+        conn.request('GET', '/')
+    except ssl.SSLError as e:
+        logging.info(f'SSL handshake failed with TLSv1.3: {e}')
+    else:
+        logging.info('SSL handshake succeeded with TLSv1.3')
+        raise RuntimeError('This should have failed')
+
+    ssl_context.minimum_version = ssl.TLSVersion.TLSv1_2
+    ssl_context.maximum_version = ssl.TLSVersion.TLSv1_2
+
+    # Also now with TLS1.2, try with a non matching ciphersuite and that should fail
+    # Server only accepts: DHE-RSA-AES128-SHA256, DHE-RSA-AES256-SHA256,
+    # ECDHE-RSA-AES256-SHA384, ECDHE-RSA-AES128-SHA256
+    # Try AES128-GCM-SHA256 which is NOT in the list
+    ssl_context.set_ciphers('AES128-GCM-SHA256')
+
+    conn = http.client.HTTPSConnection(got_ip, got_port, context=ssl_context)
+    try:
+        logging.info('Trying SSL handshake with non-matching ciphersuite (should fail)')
+        conn.request('GET', '/')
+    except ssl.SSLError as e:
+        logging.info(f'SSL handshake failed with non-matching ciphersuite (expected): {e}')
+    else:
+        logging.info('SSL handshake succeeded with non-matching ciphersuite')
+        raise RuntimeError('This should have failed - custom ciphersuites not enforced')
+    finally:
+        conn.close()
+
+    # Now try with the matching ciphersuite
+    ssl_context.set_ciphers('DHE-RSA-AES128-SHA256')
+
+    os.remove(CLIENT_CERT_FILE)
+    os.remove(CLIENT_KEY_FILE)
+
+    conn = http.client.HTTPSConnection(got_ip, got_port, context=ssl_context)
+    logging.info('Performing SSL handshake with the server')
+    conn.request('GET', '/')
+    resp = conn.getresponse()
+    dut.expect('performing session handshake')
+    got_resp = resp.read().decode('utf-8')
+    if got_resp != success_response:
+        logging.info('Response obtained does not match with correct response')
+        raise RuntimeError('Failed to test SSL connection')
+
+    if dut.app.sdkconfig.get('CONFIG_EXAMPLE_ENABLE_HTTPS_USER_CALLBACK') is True:
+        current_cipher = dut.expect(r'Current Ciphersuite(.*)', timeout=5)[0]
+        logging.info(f'Current Ciphersuite {current_cipher}')
+
+        logging.info('Checking user callback: Obtaining client certificate...')
+
+        serial_number = dut.expect(r'serial number\s*:([^\n]*)', timeout=5)[0]
+        issuer_name = dut.expect(r'issuer name\s*:([^\n]*)', timeout=5)[0]
+        expiry = dut.expect(
+            r'expires on\s*:((.*)\d{4}\-(0?[1-9]|1[012])\-(0?[1-9]|[12][0-9]|3[01])*)',
+            timeout=5,
+        )[1].decode()
+
+        logging.info(f'Serial No. : {serial_number}')
+        logging.info(f'Issuer Name : {issuer_name}')
+        logging.info(f'Expires on : {expiry}')
 
     # Close the connection
     conn.close()
