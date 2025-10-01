@@ -54,7 +54,7 @@ idf.py
 
 - CMake_，配置待构建的项目
 - Ninja_，用于构建项目
-- `esptool.py`_，烧录目标硬件设备
+- `esptool`_，烧录目标硬件设备
 
 可通过 ``idf.py`` 配置构建系统，具体可参考 :doc:`IDF 前端工具 <tools/idf-py>`。
 
@@ -718,7 +718,7 @@ project_include.cmake
 
 如果组件的某些构建行为需要在组件 CMakeLists 文件之前被执行，你可以在组件目录下创建名为 ``project_include.cmake`` 的文件，``project.cmake`` 在运行过程中会导入此 CMake 文件。
 
-``project_include.cmake`` 文件在 ESP-IDF 内部使用，以定义项目范围内的构建功能，比如 ``esptool.py`` 的命令行参数和 ``bootloader`` 这个特殊的应用程序。
+``project_include.cmake`` 文件在 ESP-IDF 内部使用，以定义项目范围内的构建功能，比如 ``esptool`` 的命令行参数和 ``bootloader`` 这个特殊的应用程序。
 
 与组件 ``CMakeLists.txt`` 文件有所不同，在导入 ``project_include.cmake`` 文件的时候，当前源文件目录（即 ``CMAKE_CURRENT_SOURCE_DIR`` 和工作目录）为项目目录。如果想获得当前组件的绝对路径，可以使用 ``COMPONENT_PATH`` 变量。
 
@@ -1109,7 +1109,7 @@ ExternalProject 的依赖与构建清理
 flash 参数
 ==========
 
-有些情况下，我们希望在没有 IDF 时也能烧写目标板，为此，我们希望可以保存已构建的二进制文件、esptool.py 和 esptool write_flash 命令的参数。可以通过编写一段简单的脚本来保存二进制文件和 esptool.py。
+有些情况下，我们希望在没有 IDF 时也能烧写目标板，为此，我们希望可以保存已构建的二进制文件、esptool 和 esptool write-flash 命令的参数。可以通过编写一段简单的脚本来保存二进制文件和 esptool。
 
 运行项目构建之后，构建目录将包含项目二进制输出文件（``.bin`` 文件），同时也包含以下烧录数据文件：
 
@@ -1119,9 +1119,9 @@ flash 参数
 
 .. highlight:: bash
 
-你可以参照如下命令将任意烧录参数文件传递给 ``esptool.py``::
+你可以参照如下命令将任意烧录参数文件传递给 ``esptool``::
 
-    python esptool.py --chip {IDF_TARGET_PATH_NAME} write_flash @build/flash_project_args
+    esptool --chip {IDF_TARGET_PATH_NAME} write-flash @build/flash_project_args
 
 也可以手动复制参数文件中的数据到命令行中执行。
 
@@ -1380,7 +1380,6 @@ ESP-IDF 构建命令
     # 注册该依赖，使其在 ELF 链接完成后、BIN 生成之前运行
     idf_build_add_post_elf_dependency("${CMAKE_PROJECT_NAME}.elf" strip_elf)
 
-
 .. code-block:: none
 
   idf_build_get_post_elf_dependencies(elf_filename out_var)
@@ -1568,7 +1567,7 @@ ESP-IDF 中的组件使用了第三方的 Git CMake 集成模块（:idf_file:`/t
 
 - ``compile_commands.json`` 是标准格式的 JSON 文件，它描述了在项目中参与编译的每个源文件。CMake 其中的一个功能就是生成此文件，许多 IDE 都知道如何解析此文件。
 - ``project_description.json`` 包含有关 ESP-IDF 项目、已配置路径等的一些常规信息。
-- ``flasher_args.json`` 包含 esptool.py 工具用于烧录项目二进制文件的参数，此外还有 ``flash_*_args`` 文件，可直接与 esptool.py 一起使用。更多详细信息请参阅 :ref:`flash_parameters`。
+- ``flasher_args.json`` 包含 esptool 工具用于烧录项目二进制文件的参数，此外还有 ``flash_*_args`` 文件，可直接与 esptool 一起使用。更多详细信息请参阅 :ref:`flash_parameters`。
 - ``CMakeCache.txt`` 是 CMake 的缓存文件，包含 CMake 进程、工具链等其它信息。
 - ``config/sdkconfig.json`` 包含 JSON 格式的项目配置结果。
 - ``config/kconfig_menus.json`` 是在 menuconfig 中显示菜单的 JSON 格式版本，用于外部 IDE 的 UI。
@@ -1751,7 +1750,7 @@ CMake 中不可用的功能
 .. _esp-idf-template: https://github.com/espressif/esp-idf-template
 .. _Cmake: https://cmake.org
 .. _ninja: https://ninja-build.org
-.. _esptool.py: https://github.com/espressif/esptool/#readme
+.. _esptool: https://github.com/espressif/esptool/#readme
 .. _CMake v3.22 官方文档: https://cmake.org/cmake/help/v3.22/index.html
 .. _cmake 命令行文档: https://cmake.org/cmake/help/v3.22/manual/cmake.1.html#options
 .. _cmake add_library: https://cmake.org/cmake/help/v3.22/command/add_library.html

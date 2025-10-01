@@ -145,7 +145,7 @@ if(CONFIG_SECURE_SIGNED_APPS_ECDSA_SCHEME)
                         "${build_dir}/partition_table/${unsigned_partition_bin}")
 
         add_custom_command(OUTPUT "${build_dir}/partition_table/${final_partition_bin}"
-            COMMAND ${espsecure_py_cmd} sign_data --version 1 --keyfile "${SECURE_BOOT_SIGNING_KEY}"
+            COMMAND ${espsecure_py_cmd} sign-data --version 1 --keyfile "${SECURE_BOOT_SIGNING_KEY}"
             -o "${build_dir}/partition_table/${final_partition_bin}"
             "${build_dir}/partition_table/${unsigned_partition_bin}"
             DEPENDS "${build_dir}/partition_table/${unsigned_partition_bin}"
@@ -156,7 +156,7 @@ if(CONFIG_SECURE_SIGNED_APPS_ECDSA_SCHEME)
             COMMAND ${CMAKE_COMMAND} -E echo
                 "Partition table built but not signed. Sign partition data before flashing:"
             COMMAND ${CMAKE_COMMAND} -E echo
-                "\t${espsecurepy} sign_data --keyfile KEYFILE ${build_dir}/partition_table/${final_partition_bin}"
+                "\t${espsecurepy} sign-data --keyfile KEYFILE ${build_dir}/partition_table/${final_partition_bin}"
             VERBATIM)
     endif()
 elseif(CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME OR CONFIG_SECURE_SIGNED_APPS_ECDSA_V2_SCHEME)

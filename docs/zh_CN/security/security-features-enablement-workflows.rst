@@ -9,7 +9,7 @@
 {IDF_TARGET_CRYPT_CNT:default="SPI_BOOT_CRYPT_CNT",esp32="FLASH_CRYPT_CNT"}
 {IDF_TARGET_CRYPT_CNT_MAX_VAL:default="7",esp32="127"}
 {IDF_TARGET_SBV2_DEFAULT_SCHEME:default="RSA", esp32c2="ECDSA (V2)"}
-{IDF_TARGET_FLASH_ENC_ARGS:default="--aes_xts", esp32=""}
+{IDF_TARGET_FLASH_ENC_ARGS:default="--aes-xts", esp32=""}
 
 概述
 ----
@@ -83,7 +83,7 @@
 
     .. code:: bash
 
-        esptool.py --port PORT erase_flash
+        esptool --port PORT erase-flash
 
 2. 生成一个 flash 加密密钥
 
@@ -93,7 +93,7 @@
 
         .. code-block:: bash
 
-            espsecure.py generate_flash_encryption_key my_flash_encryption_key.bin
+            espsecure generate-flash-encryption-key my_flash_encryption_key.bin
 
     .. only:: SOC_FLASH_ENCRYPTION_XTS_AES_256
 
@@ -101,20 +101,20 @@
 
         .. code-block:: bash
 
-            espsecure.py generate_flash_encryption_key my_flash_encryption_key.bin
+            espsecure generate-flash-encryption-key my_flash_encryption_key.bin
 
         如果 :ref:`生成的 AES-XTS 密钥的大小 <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>` 为 AES-256（512 位密钥）：
 
         .. code-block:: bash
 
-            espsecure.py generate_flash_encryption_key --keylen 512 my_flash_encryption_key.bin
+            espsecure generate-flash-encryption-key --keylen 512 my_flash_encryption_key.bin
 
 
     .. only:: SOC_FLASH_ENCRYPTION_XTS_AES_128 and not SOC_FLASH_ENCRYPTION_XTS_AES_256 and not SOC_EFUSE_CONSISTS_OF_ONE_KEY_BLOCK
 
         .. code-block:: bash
 
-            espsecure.py generate_flash_encryption_key my_flash_encryption_key.bin
+            espsecure generate-flash-encryption-key my_flash_encryption_key.bin
 
     .. only:: SOC_FLASH_ENCRYPTION_XTS_AES_128 and SOC_EFUSE_CONSISTS_OF_ONE_KEY_BLOCK
 
@@ -122,13 +122,13 @@
 
         .. code-block:: bash
 
-            espsecure.py generate_flash_encryption_key my_flash_encryption_key.bin
+            espsecure generate-flash-encryption-key my_flash_encryption_key.bin
 
         如果 :ref:`生成的 AES-XTS 密钥的大小 <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>` 是从 128 位（SHA256（128 位））派生的 AES-128 密钥：
 
         .. code-block:: bash
 
-            espsecure.py generate_flash_encryption_key --keylen 128 my_flash_encryption_key.bin
+            espsecure generate-flash-encryption-key --keylen 128 my_flash_encryption_key.bin
 
 3. 将 flash 加密密钥烧录到 eFuse 中
 
@@ -142,13 +142,13 @@
 
         .. code-block:: bash
 
-            espefuse.py --port PORT burn_key flash_encryption my_flash_encryption_key.bin
+            espefuse --port PORT burn-key flash-encryption my_flash_encryption_key.bin
 
     .. only:: SOC_FLASH_ENCRYPTION_XTS_AES_256
 
         .. code-block:: bash
 
-            espefuse.py --port PORT burn_key BLOCK my_flash_encryption_key.bin KEYPURPOSE
+            espefuse --port PORT burn-key BLOCK my_flash_encryption_key.bin KEYPURPOSE
 
         其中， ``BLOCK`` 是位于 ``BLOCK_KEY0`` 和 ``BLOCK_KEY5`` 之间的空闲密钥块， ``KEYPURPOSE`` 是 ``XTS_AES_256_KEY_1``， ``XTS_AES_256_KEY_2`` 或 ``XTS_AES_128_KEY``。有关密钥用途的说明，请参阅 `{IDF_TARGET_NAME} 技术参考手册 <{IDF_TARGET_TRM_EN_URL}>`__。
 
@@ -156,28 +156,28 @@
 
         .. code-block:: bash
 
-            espefuse.py --port PORT burn_key BLOCK my_flash_encryption_key.bin XTS_AES_128_KEY
+            espefuse --port PORT burn-key BLOCK my_flash_encryption_key.bin XTS_AES_128_KEY
 
-        对于 AES-256（512 位密钥）- ``XTS_AES_256_KEY_1`` 和 ``XTS_AES_256_KEY_2``。 ``espefuse.py`` 支持通过虚拟密钥用途 ``XTS_AES_256_KEY`` 将这两个密钥用途和一个 512 位密钥一起烧录到两个单独的密钥块中。使用时， ``espefuse.py`` 会把密钥的前 256 位烧录到指定的 ``BLOCK``，并把相应块的密钥用途烧录为 ``XTS_AES_256_KEY_1``。密钥的后 256 位会被烧录到 ``BLOCK`` 后的第一个空闲密钥块，相应块的密钥用途会烧录为 ``XTS_AES_256_KEY_2``。
+        对于 AES-256（512 位密钥）- ``XTS_AES_256_KEY_1`` 和 ``XTS_AES_256_KEY_2``。 ``espefuse`` 支持通过虚拟密钥用途 ``XTS_AES_256_KEY`` 将这两个密钥用途和一个 512 位密钥一起烧录到两个单独的密钥块中。使用时， ``espefuse`` 会把密钥的前 256 位烧录到指定的 ``BLOCK``，并把相应块的密钥用途烧录为 ``XTS_AES_256_KEY_1``。密钥的后 256 位会被烧录到 ``BLOCK`` 后的第一个空闲密钥块，相应块的密钥用途会烧录为 ``XTS_AES_256_KEY_2``。
 
         .. code-block:: bash
 
-            espefuse.py --port PORT burn_key BLOCK my_flash_encryption_key.bin XTS_AES_256_KEY
+            espefuse --port PORT burn-key BLOCK my_flash_encryption_key.bin XTS_AES_256_KEY
 
         如果要指定使用两个块，那么可以将密钥分成两个 256 位密钥并手动烧录，以 ``XTS_AES_256_KEY_1`` 和 ``XTS_AES_256_KEY_2`` 作为密钥用途：
 
         .. code-block:: bash
 
             split -b 32 my_flash_encryption_key.bin my_flash_encryption_key.bin
-            espefuse.py --port PORT burn_key BLOCK my_flash_encryption_key.bin.aa XTS_AES_256_KEY_1
-            espefuse.py --port PORT burn_key BLOCK+1 my_flash_encryption_key.bin.ab XTS_AES_256_KEY_2
+            espefuse --port PORT burn-key BLOCK my_flash_encryption_key.bin.aa XTS_AES_256_KEY_1
+            espefuse --port PORT burn-key BLOCK+1 my_flash_encryption_key.bin.ab XTS_AES_256_KEY_2
 
 
     .. only:: SOC_FLASH_ENCRYPTION_XTS_AES_128 and not SOC_FLASH_ENCRYPTION_XTS_AES_256 and not SOC_EFUSE_CONSISTS_OF_ONE_KEY_BLOCK
 
         .. code-block:: bash
 
-            espefuse.py --port PORT burn_key BLOCK my_flash_encryption_key.bin XTS_AES_128_KEY
+            espefuse --port PORT burn-key BLOCK my_flash_encryption_key.bin XTS_AES_128_KEY
 
         其中， ``BLOCK`` 是 ``BLOCK_KEY0`` 和 ``BLOCK_KEY5`` 之间的空闲密钥块。
 
@@ -187,20 +187,20 @@
 
         .. code-block:: bash
 
-            espefuse.py --port PORT burn_key BLOCK_KEY0 flash_encryption_key256.bin XTS_AES_128_KEY
+            espefuse --port PORT burn-key BLOCK_KEY0 flash_encryption_key256.bin XTS_AES_128_KEY
 
         对于从 SHA256（128 eFuse 位）派生的 AES-128 密钥 - ``XTS_AES_128_KEY_DERIVED_FROM_128_EFUSE_BITS``。FE 密钥会被写入 eFuse BLOCK_KEY0 的后半部分。前 128 位不会被使用，并保持可供软件读取状态。使用 espefuse 工具的特殊模式，可以用任何 espefuse 命令将数据写入其中，可参考下文 ``同时烧录两个密钥``。
 
         .. code-block:: bash
 
-            espefuse.py --port PORT burn_key BLOCK_KEY0 flash_encryption_key128.bin XTS_AES_128_KEY_DERIVED_FROM_128_EFUSE_BITS
+            espefuse --port PORT burn-key BLOCK_KEY0 flash_encryption_key128.bin XTS_AES_128_KEY_DERIVED_FROM_128_EFUSE_BITS
 
         同时烧录两个密钥（Secure Boot 和 flash 加密）：
 
         .. code-block:: bash
 
-            espefuse.py --port PORT --chip esp32c2 burn_key_digest secure_boot_signing_key.pem \
-                                                    burn_key BLOCK_KEY0 flash_encryption_key128.bin XTS_AES_128_KEY_DERIVED_FROM_128_EFUSE_BITS
+            espefuse --port PORT --chip esp32c2 burn-key-digest secure_boot_signing_key.pem \
+                                                burn-key BLOCK_KEY0 flash_encryption_key128.bin XTS_AES_128_KEY_DERIVED_FROM_128_EFUSE_BITS
 
 
     .. only:: SOC_EFUSE_BLOCK9_KEY_PURPOSE_QUIRK
@@ -216,7 +216,7 @@
 
     .. code-block:: bash
 
-        espefuse.py --port PORT --chip {IDF_TARGET_PATH_NAME} burn_efuse {IDF_TARGET_CRYPT_CNT} {IDF_TARGET_CRYPT_CNT_MAX_VAL}
+        espefuse --port PORT --chip {IDF_TARGET_PATH_NAME} burn-efuse {IDF_TARGET_CRYPT_CNT} {IDF_TARGET_CRYPT_CNT_MAX_VAL}
 
     .. only:: esp32
 
@@ -224,7 +224,7 @@
 
         .. code-block:: bash
 
-            espefuse.py --port PORT --chip {IDF_TARGET_PATH_NAME} burn_efuse FLASH_CRYPT_CONFIG 0xF
+            espefuse --port PORT --chip {IDF_TARGET_PATH_NAME} burn-efuse FLASH_CRYPT_CONFIG 0xF
 
 5. 烧录下列与 flash 加密相关的安全 eFuse
 
@@ -256,11 +256,11 @@
 
     .. code:: bash
 
-        espefuse.py burn_efuse --port PORT EFUSE_NAME 0x1
+        espefuse --port PORT burn-efuse EFUSE_NAME 0x1
 
     .. note::
 
-        请将 ``EFUSE_NAME`` 更新为需要烧录的 eFuse。可以在上述命令中添加多个 efuse 同时进行烧录（例如：``EFUSE_NAME VAL EFUSE_NAME2 VAL2``）。有关 `espefuse.py` 的更多信息，请参阅 `此文档 <https://docs.espressif.com/projects/esptool/en/latest/esp32/espefuse/index.html>`__。
+        请将 ``EFUSE_NAME`` 更新为需要烧录的 eFuse。可以在上述命令中添加多个 efuse 同时进行烧录（例如：``EFUSE_NAME VAL EFUSE_NAME2 VAL2``）。有关 `espefuse` 的更多信息，请参阅 `此文档 <https://docs.espressif.com/projects/esptool/en/latest/esp32/espefuse/index.html>`__。
 
     .. only:: esp32
 
@@ -270,7 +270,7 @@
 
         .. code:: bash
 
-            espefuse.py --port PORT write_protect_efuse DIS_CACHE
+            espefuse --port PORT write-protect-efuse DIS_CACHE
 
         .. note::
 
@@ -284,7 +284,7 @@
 
         .. code:: bash
 
-            espefuse.py --port PORT write_protect_efuse DIS_ICACHE
+            espefuse --port PORT write-protect-efuse DIS_ICACHE
 
         .. note::
 
@@ -312,15 +312,15 @@
 
     .. code-block:: bash
 
-        espsecure.py encrypt_flash_data {IDF_TARGET_FLASH_ENC_ARGS} --keyfile my_flash_encryption_key.bin --address {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH} --output bootloader-enc.bin build/bootloader/bootloader.bin
+        espsecure encrypt-flash-data {IDF_TARGET_FLASH_ENC_ARGS} --keyfile my_flash_encryption_key.bin --address {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH} --output bootloader-enc.bin build/bootloader/bootloader.bin
 
-        espsecure.py encrypt_flash_data {IDF_TARGET_FLASH_ENC_ARGS} --keyfile my_flash_encryption_key.bin --address 0x8000 --output partition-table-enc.bin build/partition_table/partition-table.bin
+        espsecure encrypt-flash-data {IDF_TARGET_FLASH_ENC_ARGS} --keyfile my_flash_encryption_key.bin --address 0x8000 --output partition-table-enc.bin build/partition_table/partition-table.bin
 
-        espsecure.py encrypt_flash_data {IDF_TARGET_FLASH_ENC_ARGS} --keyfile my_flash_encryption_key.bin --address 0x10000 --output my-app-enc.bin build/my-app.bin
+        espsecure encrypt-flash-data {IDF_TARGET_FLASH_ENC_ARGS} --keyfile my_flash_encryption_key.bin --address 0x10000 --output my-app-enc.bin build/my-app.bin
 
     上述命令中的偏移量仅适用于示例固件，请通过检查分区表条目或运行 `idf.py partition-table` 来获取你固件的实际偏移量。请注意，不需要加密所有二进制文件，只需加密在分区表定义文件中带有 ``encrypted`` 标记的文件，其他二进制文件只作为构建过程的普通输出进行烧录。
 
-    使用 ``esptool.py`` 可以将上述文件烧写到各自的偏移地址。要查看所有推荐的 ``esptool.py`` 命令行选项，请查阅 ``idf.py build`` 构建成功后打印的输出。
+    使用 ``esptool`` 可以将上述文件烧写到各自的偏移地址。要查看所有推荐的 ``esptool`` 命令行选项，请查阅 ``idf.py build`` 构建成功后打印的输出。
 
     若应用程序包含分区 ``otadata`` 和 ``nvs_encryption_keys``，则该分区也需加密。详情请参阅 :ref:`encrypted-partitions`。
 
@@ -330,9 +330,9 @@
 
         .. only:: esp32
 
-            如果 ESP32 在 eFuse 中使用非默认的 :ref:`FLASH_CRYPT_CONFIG 值 <setting-flash-crypt-config>`，需要将 ``--flash_crypt_conf`` 参数传递给 ``espsecure.py`` 以设置匹配值。如果通过二级引导加载程序配置 flash 加密，则不会发生这种情况，但是如果手动烧录了 eFuses 启用 flash 加密，就有可能发生。
+            如果 ESP32 在 eFuse 中使用非默认的 :ref:`FLASH_CRYPT_CONFIG 值 <setting-flash-crypt-config>`，需要将 ``--flash-crypt-conf`` 参数传递给 ``espsecure`` 以设置匹配值。如果通过二级引导加载程序配置 flash 加密，则不会发生这种情况，但是如果手动烧录了 eFuses 启用 flash 加密，就有可能发生。
 
-    使用 ``espsecure.py decrypt_flash_data`` 命令时，可以用相同的选项（和不同的输入或输出文件）来解密密文 flash 或之前加密的文件。
+    使用 ``espsecure decrypt-flash-data`` 命令时，可以用相同的选项（和不同的输入或输出文件）来解密密文 flash 或之前加密的文件。
 
 8. 确保 ROM 下载模式安全
 
@@ -352,7 +352,7 @@
 
                 .. code:: bash
 
-                    espefuse.py --port PORT burn_efuse UART_DOWNLOAD_DIS
+                    espefuse --port PORT burn-efuse UART_DOWNLOAD_DIS
 
     .. only:: not esp32
 
@@ -366,7 +366,7 @@
 
                 .. code:: bash
 
-                    espefuse.py --port PORT burn_efuse ENABLE_SECURITY_DOWNLOAD
+                    espefuse --port PORT burn-efuse ENABLE_SECURITY_DOWNLOAD
 
 .. important::
 
@@ -396,7 +396,7 @@ flash 加密指南
 
         .. code:: bash
 
-            espsecure.py generate_signing_key --version 2 --scheme rsa3072 secure_boot_signinig_key.pem
+            espsecure generate-signing-key --version 2 --scheme rsa3072 secure_boot_signinig_key.pem
 
     .. only:: SOC_SECURE_BOOT_V2_ECC
 
@@ -404,7 +404,7 @@ flash 加密指南
 
         .. code:: bash
 
-            bashespsecure.py generate_signing_key --version 2 --scheme ecdsa256 secure_boot_signing_key.pem
+            espsecure generate-signing-key --version 2 --scheme ecdsa256 secure_boot_signing_key.pem
 
         .. only:: not SOC_ECDSA_SUPPORT_CURVE_P384
 
@@ -424,7 +424,7 @@ flash 加密指南
 
     .. code:: bash
 
-        espsecure.py digest_sbv2_public_key --keyfile secure_boot_signing_key.pem --output digest.bin
+        espsecure digest-sbv2-public-key --keyfile secure_boot_signing_key.pem --output digest.bin
 
     .. only:: SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS
 
@@ -438,19 +438,19 @@ flash 加密指南
 
         .. code:: bash
 
-            espefuse.py --port PORT --chip esp32 burn_key secure_boot_v2 digest.bin
+            espefuse --port PORT --chip esp32 burn-key secure_boot_v2 digest.bin
 
     .. only:: esp32c2
 
         .. code:: bash
 
-            espefuse.py --port PORT --chip esp32c2 burn_key KEY_BLOCK0 digest.bin SECURE_BOOT_DIGEST
+            espefuse --port PORT --chip esp32c2 burn-key KEY_BLOCK0 digest.bin SECURE_BOOT_DIGEST
 
     .. only:: SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS
 
         .. code:: bash
 
-            espefuse.py --port PORT --chip {IDF_TARGET_PATH_NAME} burn_key BLOCK digest.bin SECURE_BOOT_DIGEST0
+            espefuse --port PORT --chip {IDF_TARGET_PATH_NAME} burn-key BLOCK digest.bin SECURE_BOOT_DIGEST0
 
         其中，``BLOCK`` 是 ``BLOCK_KEY0`` 和 ``BLOCK_KEY5`` 之间的一个空闲密钥块。
 
@@ -464,13 +464,13 @@ flash 加密指南
 
         .. code:: bash
 
-            espefuse.py --port PORT --chip esp32 burn_efuse ABS_DONE_1
+            espefuse --port PORT --chip esp32 burn-efuse ABS_DONE_1
 
     .. only:: not esp32
 
         .. code:: bash
 
-            espefuse.py --port PORT --chip {IDF_TARGET_PATH_NAME} burn_efuse SECURE_BOOT_EN
+            espefuse --port PORT --chip {IDF_TARGET_PATH_NAME} burn-efuse SECURE_BOOT_EN
 
     .. only:: SOC_ECDSA_SUPPORT_CURVE_P384
 
@@ -478,7 +478,7 @@ flash 加密指南
 
         .. code:: bash
 
-            espefuse.py --port PORT --chip {IDF_TARGET_PATH_NAME} burn_efuse SECURE_BOOT_SHA384_EN
+            espefuse --port PORT --chip {IDF_TARGET_PATH_NAME} burn-efuse SECURE_BOOT_SHA384_EN
 
 
 5. 烧录相关 eFuse
@@ -507,11 +507,11 @@ flash 加密指南
 
     .. code:: bash
 
-        espefuse.py burn_efuse --port PORT EFUSE_NAME 0x1
+        espefuse --port PORT burn-efuse EFUSE_NAME 0x1
 
     .. note::
 
-        请将 EFUSE_NAME 更新为需烧录的 eFuse。在上述命令中添加多个 eFuse 可以同时烧录（例如：EFUSE_NAME VAL EFUSE_NAME2 VAL2）。有关 `espefuse.py` 的更多信息，请参阅 `此文档 <https://docs.espressif.com/projects/esptool/en/latest/esp32/espefuse/index.html>`__。
+        请将 EFUSE_NAME 更新为需烧录的 eFuse。在上述命令中添加多个 eFuse 可以同时烧录（例如：EFUSE_NAME VAL EFUSE_NAME2 VAL2）。有关 `espefuse` 的更多信息，请参阅 `此文档 <https://docs.espressif.com/projects/esptool/en/latest/esp32/espefuse/index.html>`__。
 
     B) 与 Secure Boot v2 相关的 eFuse
 
@@ -521,7 +521,7 @@ flash 加密指南
 
     .. code:: bash
 
-        espefuse.py -p $ESPPORT write_protect_efuse RD_DIS
+        espefuse -p $ESPPORT write-protect-efuse RD_DIS
 
     .. important::
 
@@ -535,7 +535,7 @@ flash 加密指南
 
         .. code:: bash
 
-            espefuse.py --port PORT --chip {IDF_TARGET_PATH_NAME} burn_efuse EFUSE_REVOKE_BIT
+            espefuse --port PORT --chip {IDF_TARGET_PATH_NAME} burn-efuse EFUSE_REVOKE_BIT
 
         上述命令中的 ``EFUSE_REVOKE_BIT`` 可以是 ``SECURE_BOOT_KEY_REVOKE0`` 或 ``SECURE_BOOT_KEY_REVOKE1`` 或 ``SECURE_BOOT_KEY_REVOKE2``。注意，只有未使用的密钥摘要必须吊销。一旦吊销，相应的摘要就不能再次使用。
 
@@ -565,9 +565,9 @@ flash 加密指南
 
     .. code:: bash
 
-        espsecure.py sign_data --version 2 --keyfile secure_boot_signing_key.pem --output bootloader-signed.bin build/bootloader/bootloader.bin
+        espsecure sign-data --version 2 --keyfile secure_boot_signing_key.pem --output bootloader-signed.bin build/bootloader/bootloader.bin
 
-        espsecure.py sign_data --version 2 --keyfile secure_boot_signing_key.pem --output my-app-signed.bin build/my-app.bin
+        espsecure sign-data --version 2 --keyfile secure_boot_signing_key.pem --output my-app-signed.bin build/my-app.bin
 
     .. only:: SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS
 
@@ -575,9 +575,9 @@ flash 加密指南
 
         .. code:: bash
 
-            espsecure.py sign_data --keyfile secure_boot_signing_key2.pem --version 2 --amend_signatures -o bootloader-signed.bin bootloader-signed.bin
+            espsecure sign-data --keyfile secure_boot_signing_key2.pem --version 2 --append-signatures -o bootloader-signed.bin bootloader-signed.bin
 
-            espsecure.py sign_data --keyfile secure_boot_signing_key2.pem --version 2 --apend_signatures -o my-app-signed.bin my-app-signed.bin
+            espsecure sign-data --keyfile secure_boot_signing_key2.pem --version 2 --append-signatures -o my-app-signed.bin my-app-signed.bin
 
         如果有第三个密钥，则可以重复以上过程。注意：输入和输出文件不能用相同名字来命名。
 
@@ -585,9 +585,9 @@ flash 加密指南
 
     .. code:: bash
 
-        espsecure.py signature_info_v2 bootloader-signed.bin
+        espsecure signature-info-v2 bootloader-signed.bin
 
-    然后使用 ``esptool.py`` 将上述文件和其他二进制文件（如分区表）烧录到各自的偏移地址。要查看所有推荐的 ``esptool.py`` 命令行选项，请参阅 ``idf.py build`` 的输出结果。要获得固件的 flash 偏移地址，可查找分区表条目或运行 ``idf.py partition-table`` 查看。
+    然后使用 ``esptool`` 将上述文件和其他二进制文件（如分区表）烧录到各自的偏移地址。要查看所有推荐的 ``esptool`` 命令行选项，请参阅 ``idf.py build`` 的输出结果。要获得固件的 flash 偏移地址，可查找分区表条目或运行 ``idf.py partition-table`` 查看。
 
 8. 确保 ROM 下载模式安全
 
@@ -607,7 +607,7 @@ flash 加密指南
 
             .. code:: bash
 
-                espefuse.py --port PORT burn_efuse UART_DOWNLOAD_DIS
+                espefuse --port PORT burn-efuse UART_DOWNLOAD_DIS
 
     .. only:: not esp32
 
@@ -621,7 +621,7 @@ flash 加密指南
 
             .. code:: bash
 
-                espefuse.py --port PORT burn_efuse ENABLE_SECURITY_DOWNLOAD
+                espefuse --port PORT burn-efuse ENABLE_SECURITY_DOWNLOAD
 
 Secure Boot v2 指南
 ~~~~~~~~~~~~~~~~~~~
@@ -667,7 +667,7 @@ Secure Boot v2 指南
 
         .. code:: bash
 
-            espefuse.py --port PORT burn_key BLOCK hmac_key.bin HMAC_UP
+            espefuse --port PORT burn-key BLOCK hmac_key.bin HMAC_UP
 
         其中，``BLOCK`` 是 ``BLOCK_KEY0`` 和 ``BLOCK_KEY5`` 之间的一个空闲密钥块。
 
@@ -697,7 +697,7 @@ Secure Boot v2 指南
 
     5. 烧录 NVS 分区
 
-        使用 ``esptool.py`` 命令，将步骤 3 中生成的 NVS 分区 (``nvs_encr_partition.bin``) 烧录到相应的偏移地址。要查看所有推荐的 ``esptool.py`` 命令行选项，请查阅 ``idf.py build`` 构建成功后打印的输出。
+        使用 ``esptool`` 命令，将步骤 3 中生成的 NVS 分区 (``nvs_encr_partition.bin``) 烧录到相应的偏移地址。要查看所有推荐的 ``esptool`` 命令行选项，请查阅 ``idf.py build`` 构建成功后打印的输出。
 
         如果芯片启用了 flash 加密，请先加密分区再进行烧录。详情请参阅 `flash 加密工作流程 <enable-flash-encryption-externally_>`_ 的相关烧录步骤。
 
@@ -743,6 +743,6 @@ Secure Boot v2 指南
 
 4. 烧录 NVS 分区和 NVS 加密密钥
 
-    使用 ``esptool.py`` 命令，将 NVS 分区 (``nvs_encr_partition.bin``) 和 NVS 加密密钥 (``nvs_encr_key.bin``) 烧录到各自的偏移地址。通过 ``idf.py build`` 成功后打印的输出，可查看所有推荐的 ``esptool.py`` 命令行选项。
+    使用 ``esptool`` 命令，将 NVS 分区 (``nvs_encr_partition.bin``) 和 NVS 加密密钥 (``nvs_encr_key.bin``) 烧录到各自的偏移地址。通过 ``idf.py build`` 成功后打印的输出，可查看所有推荐的 ``esptool`` 命令行选项。
 
     若芯片启用了 flash 加密，请在烧录之前先加密分区。详情请参阅 `flash 加密工作流程 <enable-flash-encryption-externally_>`_ 中与烧录相关的步骤。

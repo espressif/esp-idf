@@ -167,7 +167,7 @@ if(CONFIG_SECURE_SIGNED_APPS AND (CONFIG_SECURE_BOOT_V1_ENABLED OR CONFIG_SECURE
                 ABSOLUTE BASE_DIR "${CMAKE_CURRENT_BINARY_DIR}")
             add_custom_command(OUTPUT "${secure_boot_verification_key}"
                 COMMAND ${espsecure_py_cmd}
-                extract_public_key --keyfile "${secure_boot_signing_key}"
+                extract-public-key --keyfile "${secure_boot_signing_key}"
                 "${secure_boot_verification_key}"
                 DEPENDS ${secure_boot_signing_key}
                 VERBATIM)
@@ -195,7 +195,7 @@ if(CONFIG_SECURE_SIGNED_APPS AND (CONFIG_SECURE_BOOT_V1_ENABLED OR CONFIG_SECURE
 
             add_custom_command(OUTPUT "${secure_boot_verification_key}"
                 COMMAND ${espsecure_py_cmd}
-                extract_public_key --keyfile "${secure_boot_signing_key}"
+                extract-public-key --keyfile "${secure_boot_signing_key}"
                 "${secure_boot_verification_key}"
                 WORKING_DIRECTORY ${project_dir}
                 DEPENDS ${secure_boot_signing_key}

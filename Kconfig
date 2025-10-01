@@ -219,10 +219,10 @@ mainmenu "Espressif IoT Development Framework Configuration"
 
                 When loading the BIN with UART, the ROM will jump to ram and run the app after finishing the ROM
                 startup code, so there's no additional startup initialization required. You can use the
-                `load_ram` in esptool.py to load the generated .bin file into ram and execute.
+                `load-ram` in esptool to load the generated .bin file into ram and execute.
 
                 Example:
-                    esptool.py --chip {chip} -p {port} -b {baud} --no-stub load_ram {app.bin}
+                    esptool --chip {chip} -p {port} -b {baud} --no-stub load-ram {app.bin}
 
                 Recommended sdkconfig.defaults for building loadable ELF files is as follows.
                 CONFIG_APP_BUILD_TYPE_RAM is required, other options help reduce application

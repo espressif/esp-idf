@@ -20,7 +20,7 @@ eFuse 管理器组件中集合了多种工具和 API，可帮助定义、烧录�
 eFuse Manager 与 ``idf.py``
 ---------------------------
 
-``idf.py`` 通过 ``idf.py efuse-<subcommand>`` 命令为 eFuse 管理器提供了部分功能。本文档主要使用基于 ``idf.py`` 的命令，只有在涉及高级功能或罕见情况时，会使用基于 ``espefuse.py`` 的命令。要查看所有可用的命令，请运行 ``idf.py --help`` 并搜索以 ``efuse-`` 为前缀的命令。
+``idf.py`` 通过 ``idf.py efuse-<subcommand>`` 命令为 eFuse 管理器提供了部分功能。本文档主要使用基于 ``idf.py`` 的命令，只有在涉及高级功能或罕见情况时，会使用基于 ``espefuse`` 的命令。要查看所有可用的命令，请运行 ``idf.py --help`` 并搜索以 ``efuse-`` 为前缀的命令。
 
 硬件描述
 --------------------
@@ -488,7 +488,7 @@ eFuse 位序采取小字节序（参见下方示例），这说明 eFuse 位按�
 
 要在项目的构建阶段获取 eFuse 状态，可以使用以下两个 CMake 函数：
 
-* ``espefuse_get_json_summary()`` - 调用 ``espefuse.py summary --format json`` 命令并返回一个 JSON 字符串（该字符串不存储在文件中）。
+* ``espefuse_get_json_summary()`` - 调用 ``espefuse summary --format json`` 命令并返回一个 JSON 字符串（该字符串不存储在文件中）。
 * ``espefuse_get_efuse()`` - 在此 JSON 字符串中找到给定的 eFuse 名称并返回其属性。
 
 该 JSON 字符串具有以下属性：
@@ -522,7 +522,7 @@ eFuse 位序采取小字节序（参见下方示例），这说明 eFuse 位按�
     espefuse_get_efuse(ret_data ${efuse_json} "MAC" "value")
     message("MAC:" ${ret_data})
 
-``value`` 属性的格式与 ``espefuse.py summary`` 或 ``idf.py efuse-summary`` 中显示的格式相同。
+``value`` 属性的格式与 ``espefuse summary`` 或 ``idf.py efuse-summary`` 中显示的格式相同。
 
 .. code-block:: none
 
@@ -557,12 +557,12 @@ flash 加密是一项硬件功能，需要物理烧录 eFuse ``key`` 和 ``FLASH
 
 为此，可使用 :cpp:func:`bootloader_flash_write` 函数。但是，如果运行应用程序时芯片已启用 flash 加密，或者以 :ref:`CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH` 选项创建了引导加载程序，则 flash 加密/解密操作会正常进行。这意味着数据写入加密 flash 分区时被加密，从加密分区读取时被解密。
 
-``espefuse.py``
-^^^^^^^^^^^^^^^
+``espefuse``
+^^^^^^^^^^^^
 
-esptool 中包含一个用于读取/写入 {IDF_TARGET_NAME} eFuse 位的有用工具： `espefuse.py <https://docs.espressif.com/projects/esptool/en/latest/{IDF_TARGET_PATH_NAME}/espefuse/index.html>`_。
+esptool 中包含一个用于读取/写入 {IDF_TARGET_NAME} eFuse 位的有用工具： `espefuse <https://docs.espressif.com/projects/esptool/en/latest/{IDF_TARGET_PATH_NAME}/espefuse/index.html>`_。
 
-``idf.py`` 命令也可以直接提供上述工具的部分功能。例如，运行 ``idf.py efuse-summary`` 命令，效果等同于 ``espefuse.py summary``。
+``idf.py`` 命令也可以直接提供上述工具的部分功能。例如，运行 ``idf.py efuse-summary`` 命令，效果等同于 ``espefuse summary``。
 
 .. include:: inc/espefuse_summary_{IDF_TARGET_NAME}.rst
 

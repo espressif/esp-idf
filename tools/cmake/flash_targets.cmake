@@ -36,8 +36,9 @@ function(__idf_build_generate_flasher_args)
 
     idf_build_get_property(target IDF_TARGET)
     set(ESPTOOLPY_CHIP "${target}")
-    set(ESPTOOLPY_BEFORE "${CONFIG_ESPTOOLPY_BEFORE}")
-    set(ESPTOOLPY_AFTER  "${CONFIG_ESPTOOLPY_AFTER}")
+    # Hyphenate reset modes for esptool v5
+    string(REPLACE "_" "-" ESPTOOLPY_BEFORE "${CONFIG_ESPTOOLPY_BEFORE}")
+    string(REPLACE "_" "-" ESPTOOLPY_AFTER  "${CONFIG_ESPTOOLPY_AFTER}")
     if(CONFIG_ESPTOOLPY_NO_STUB)
         set(ESPTOOLPY_WITH_STUB false)
     else()
@@ -46,7 +47,7 @@ function(__idf_build_generate_flasher_args)
 
     if(CONFIG_SECURE_BOOT OR CONFIG_SECURE_FLASH_ENC_ENABLED)
         # If security enabled then override post flash option
-        set(ESPTOOLPY_AFTER "no_reset")
+        set(ESPTOOLPY_AFTER "no-reset")
     endif()
 
     idf_component_get_property(ESPFLASHMODE esptool_py ESPFLASHMODE)

@@ -13,7 +13,7 @@ This is a quick start guide to {IDF_TARGET_NAME}'s flash encryption feature. Usi
 
 .. note::
 
-    In this guide, most used commands are in the form of ``idf.py secure-<command>``, which is a wrapper around corresponding ``espsecure.py <command>``. The ``idf.py`` based commands provides more user-friendly experience, although may lack some of the advanced functionality of their ``espsecure.py`` based counterparts.
+    In this guide, most used commands are in the form of ``idf.py secure-<command>``, which is a wrapper around corresponding ``espsecure <command>``. The ``idf.py`` based commands provides more user-friendly experience, although may lack some of the advanced functionality of their ``espsecure`` based counterparts.
 
 Introduction
 ------------
@@ -55,7 +55,7 @@ Other types of data can be encrypted conditionally:
 Relevant eFuses
 ---------------
 
-The flash encryption operation is controlled by various eFuses available on {IDF_TARGET_NAME}. The list of eFuses and their descriptions is given in the table below. The names in eFuse column are also used by ``espefuse.py`` tool and ``idf.py`` based eFuse commands. For usage in the eFuse API, modify the name by adding ``ESP_EFUSE_``, for example: esp_efuse_read_field_bit (ESP_EFUSE_DISABLE_DL_ENCRYPT).
+The flash encryption operation is controlled by various eFuses available on {IDF_TARGET_NAME}. The list of eFuses and their descriptions is given in the table below. The names in eFuse column are also used by ``espefuse`` tool and ``idf.py`` based eFuse commands. For usage in the eFuse API, modify the name by adding ``ESP_EFUSE_``, for example: esp_efuse_read_field_bit (ESP_EFUSE_DISABLE_DL_ENCRYPT).
 
 .. Comment: As text in cells of list-table header rows does not wrap, it is necessary to make 0 header rows and apply bold typeface to the first row. Otherwise, the table goes beyond the html page limits on the right.
 
@@ -164,7 +164,7 @@ The flash encryption operation is controlled by various eFuses available on {IDF
   * R/W access control is available for all the eFuse bits listed in the table above.
   * The default value of these bits is 0 after manufacturing.
 
-Read and write access to eFuse bits is controlled by appropriate fields in the registers ``WR_DIS`` and ``RD_DIS``. For more information on {IDF_TARGET_NAME} eFuses, see :doc:`eFuse manager <../api-reference/system/efuse>`. To change protection bits of eFuse field using ``idf.py``, use these two commands: efuse-read-protect and efuse-write-protect (idf.py based aliases of espefuse.py commands write_protect_efuse and read_protect_efuse). Example ``idf.py efuse-write-protect DISABLE_DL_ENCRYPT``.
+Read and write access to eFuse bits is controlled by appropriate fields in the registers ``WR_DIS`` and ``RD_DIS``. For more information on {IDF_TARGET_NAME} eFuses, see :doc:`eFuse manager <../api-reference/system/efuse>`. To change protection bits of eFuse field using ``idf.py``, use these two commands: efuse-read-protect and efuse-write-protect (idf.py based aliases of espefuse commands write-protect-efuse and read-protect-efuse). Example ``idf.py efuse-write-protect DISABLE_DL_ENCRYPT``.
 
 .. only:: esp32c2
 
@@ -462,8 +462,8 @@ To use a host generated key, take the following steps:
 
     .. code-block:: bash
 
-        espefuse.py --port PORT --chip esp32c2 burn_key_digest secure_boot_signing_key.pem \
-                                                burn_key BLOCK_KEY0 flash_encryption_key128.bin XTS_AES_128_KEY_DERIVED_FROM_128_EFUSE_BITS
+        espefuse --port PORT --chip esp32c2 burn-key-digest secure_boot_signing_key.pem \
+                                            burn-key BLOCK_KEY0 flash_encryption_key128.bin XTS_AES_128_KEY_DERIVED_FROM_128_EFUSE_BITS
 
   If the key is not burned and the device is started after enabling flash encryption, the {IDF_TARGET_NAME} will generate a random key that software cannot access or modify.
 
@@ -571,7 +571,7 @@ When using Flash Encryption in production:
 
    - Do not reuse the same flash encryption key between multiple devices. This means that an attacker who copies encrypted data from one device cannot transfer it to a second device.
    :esp32: - When using ESP32 V3, if the UART ROM Download Mode is not needed for a production device then it should be disabled to provide an extra level of protection. Do this by calling :cpp:func:`esp_efuse_disable_rom_download_mode` during application startup. Alternatively, configure the project :ref:`CONFIG_ESP32_REV_MIN` level to 3 (targeting ESP32 V3 only) and select the :ref:`CONFIG_SECURE_UART_ROM_DL_MODE` to "Permanently disable ROM Download Mode (recommended)". The ability to disable ROM Download Mode is not available on earlier ESP32 versions.
-   :not esp32: - The UART ROM Download Mode should be disabled entirely if it is not needed, or permanently set to "Secure Download Mode" otherwise. Secure Download Mode permanently limits the available commands to updating SPI config, changing baud rate, basic flash write, and returning a summary of the currently enabled security features with the `get_security_info` command. The default behaviour is to set Secure Download Mode on first boot in Release mode. To disable Download Mode entirely, select :ref:`CONFIG_SECURE_UART_ROM_DL_MODE` to "Permanently disable ROM Download Mode (recommended)" or call :cpp:func:`esp_efuse_disable_rom_download_mode` at runtime.
+   :not esp32: - The UART ROM Download Mode should be disabled entirely if it is not needed, or permanently set to "Secure Download Mode" otherwise. Secure Download Mode permanently limits the available commands to updating SPI config, changing baud rate, basic flash write, and returning a summary of the currently enabled security features with the `get-security-info` command. The default behaviour is to set Secure Download Mode on first boot in Release mode. To disable Download Mode entirely, select :ref:`CONFIG_SECURE_UART_ROM_DL_MODE` to "Permanently disable ROM Download Mode (recommended)" or call :cpp:func:`esp_efuse_disable_rom_download_mode` at runtime.
    - Enable :doc:`Secure Boot <secure-boot-v2>` as an extra layer of protection, and to prevent an attacker from selectively corrupting any part of the flash before boot.
 
 Enable Flash Encryption Externally
@@ -961,7 +961,7 @@ However, before the first boot you can choose to keep any of these features enab
 
       Write protection of all the three eFuses is controlled by one bit. It means that write-protecting one eFuse bit will inevitably write-protect all unset eFuse bits.
 
-  Write protecting these eFuses to keep them unset is not currently very useful, as ``esptool.py`` does not support reading encrypted flash.
+  Write protecting these eFuses to keep them unset is not currently very useful, as ``esptool`` does not support reading encrypted flash.
 
 .. only:: esp32
 
@@ -1018,7 +1018,7 @@ For example, these are the steps to encrypt the file ``my-app.bin`` to flash at 
 
        idf.py secure-encrypt-flash-data --aes-xts --keyfile /path/to/key.bin --address 0x10000 --output my-app-ciphertext.bin my-app.bin
 
-The file ``my-app-ciphertext.bin`` can then be flashed to offset 0x10000 using ``esptool.py``. To see all of the command line options recommended for ``esptool.py``, see the output printed when ``idf.py build`` succeeds.
+The file ``my-app-ciphertext.bin`` can then be flashed to offset 0x10000 using ``esptool``. To see all of the command line options recommended for ``esptool``, see the output printed when ``idf.py build`` succeeds.
 
 .. note::
 
@@ -1075,9 +1075,9 @@ The following sections provide some reference information about the operation of
 
   - The high 19 bits of the block offset (bit 5 to bit 23) are XORed with the main flash encryption key. This range is chosen for two reasons: the maximum flash size is 16MB (24 bits), and each block is 32 bytes so the least significant 5 bits are always zero.
 
-  - There is a particular mapping from each of the 19 block offset bits to the 256 bits of the flash encryption key to determine which bit is XORed with which. See the variable ``_FLASH_ENCRYPTION_TWEAK_PATTERN`` in the ``espsecure.py`` source code for complete mapping.
+  - There is a particular mapping from each of the 19 block offset bits to the 256 bits of the flash encryption key to determine which bit is XORed with which. See the variable ``_FLASH_ENCRYPTION_TWEAK_PATTERN`` in the ``espsecure`` source code for complete mapping.
 
-  - To see the full flash encryption algorithm implemented in Python, refer to the ``_flash_encryption_operation()`` function in the ``espsecure.py`` source code.
+  - To see the full flash encryption algorithm implemented in Python, refer to the ``_flash_encryption_operation()`` function in the ``espsecure`` source code.
 
 .. only:: SOC_FLASH_ENCRYPTION_XTS_AES_256
 
@@ -1092,7 +1092,7 @@ The following sections provide some reference information about the operation of
 
   - The flash encryption key is stored in one or two ``BLOCK_KEYN`` eFuses and, by default, is protected from further writes or software readout.
 
-  - To see the full flash encryption algorithm implemented in Python, refer to the `_flash_encryption_operation()` function in the ``espsecure.py`` source code.
+  - To see the full flash encryption algorithm implemented in Python, refer to the `_flash_encryption_operation()` function in the ``espsecure`` source code.
 
 .. only:: SOC_FLASH_ENCRYPTION_XTS_AES_128 and not SOC_FLASH_ENCRYPTION_XTS_AES_256 and not SOC_EFUSE_CONSISTS_OF_ONE_KEY_BLOCK
 
@@ -1108,7 +1108,7 @@ The following sections provide some reference information about the operation of
 
   - The flash encryption key is stored in one ``BLOCK_KEYN`` eFuse and, by default, is protected from further writes or software readout.
 
-  - To see the full flash encryption algorithm implemented in Python, refer to the `_flash_encryption_operation()` function in the ``espsecure.py`` source code.
+  - To see the full flash encryption algorithm implemented in Python, refer to the `_flash_encryption_operation()` function in the ``espsecure`` source code.
 
 .. only:: SOC_FLASH_ENCRYPTION_XTS_AES_128 and SOC_EFUSE_CONSISTS_OF_ONE_KEY_BLOCK
 
@@ -1123,7 +1123,7 @@ The following sections provide some reference information about the operation of
 
   - The flash encryption key is stored in ``BLOCK_KEY0`` eFuse and, by default, is protected from further writes or software readout.
 
-  - To see the full flash encryption algorithm implemented in Python, refer to the `_flash_encryption_operation()` function in the ``espsecure.py`` source code.
+  - To see the full flash encryption algorithm implemented in Python, refer to the `_flash_encryption_operation()` function in the ``espsecure`` source code.
 
 .. only:: SOC_FLASH_ENCRYPTION_XTS_AES_SUPPORT_PSEUDO_ROUND
 

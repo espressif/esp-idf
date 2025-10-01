@@ -28,7 +28,7 @@ The HMAC key stored at this key block will be used to generate the encryption ke
 
 ```shell
 # Burning the HMAC-key in eFuse block 0 - key ID 0
-espefuse.py -p PORT burn_key BLOCK_KEY0 hmac_key_file.bin HMAC_UP
+espefuse -p PORT burn-key BLOCK_KEY0 hmac_key_file.bin HMAC_UP
 ```
 
 ### Build and Flash

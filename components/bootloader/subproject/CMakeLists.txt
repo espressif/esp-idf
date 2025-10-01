@@ -108,7 +108,7 @@ idf_component_get_property(espefuse_py_cmd esptool_py ESPEFUSEPY_CMD)
 # String for printing flash command
 string(REPLACE ";" " " esptoolpy_write_flash
     "${esptool_py_cmd} --port=(PORT) --baud=(BAUD) ${main_args} "
-    "write_flash ${sub_args}")
+    "write-flash ${sub_args}")
 
 string(REPLACE ";" " " espsecurepy "${espsecure_py_cmd}")
 string(REPLACE ";" " " espefusepy "${espefuse_py_cmd}")
@@ -132,7 +132,7 @@ if(CONFIG_SECURE_BOOTLOADER_REFLASHABLE)
         ABSOLUTE BASE_DIR "${CMAKE_BINARY_DIR}")
 
     add_custom_command(OUTPUT "${secure_bootloader_key}"
-        COMMAND ${espsecure_py_cmd} digest_private_key
+        COMMAND ${espsecure_py_cmd} digest-private-key
             --keylen "${key_digest_len}"
             --keyfile "${SECURE_BOOT_SIGNING_KEY}"
             "${secure_bootloader_key}"
@@ -146,9 +146,9 @@ if(CONFIG_SECURE_BOOTLOADER_REFLASHABLE)
                 "No pre-generated key for a reflashable secure bootloader is available, "
                 "due to signing configuration."
                 "\nTo generate one, you can use this command:"
-                "\n\t${espsecurepy} generate_flash_encryption_key ${secure_bootloader_key}"
+                "\n\t${espsecurepy} generate-flash-encryption-key ${secure_bootloader_key}"
                 "\nIf a signing key is present, then instead use:"
-                "\n\t${espsecurepy} digest_private_key "
+                "\n\t${espsecurepy} digest-private-key "
                 "--keylen (192/256) --keyfile KEYFILE "
                 "${secure_bootloader_key}")
         endif()
@@ -157,7 +157,7 @@ if(CONFIG_SECURE_BOOTLOADER_REFLASHABLE)
 
     add_custom_command(OUTPUT "${bootloader_digest_bin}"
         COMMAND ${CMAKE_COMMAND} -E echo "DIGEST ${bootloader_digest_bin}"
-        COMMAND ${espsecure_py_cmd} digest_secure_bootloader --keyfile "${secure_bootloader_key}"
+        COMMAND ${espsecure_py_cmd} digest-secure-bootloader --keyfile "${secure_bootloader_key}"
         -o "${bootloader_digest_bin}" "${CMAKE_BINARY_DIR}/bootloader.bin"
         MAIN_DEPENDENCY "${CMAKE_BINARY_DIR}/.bin_timestamp"
         DEPENDS gen_secure_bootloader_key gen_project_binary
@@ -178,7 +178,7 @@ if(CONFIG_SECURE_BOOT_V2_ENABLED)
                 "Secure Boot Signing Key Not found."
                 "\nGenerate the Secure Boot V2 RSA-PSS 3072 Key."
                 "\nTo generate one, you can use this command:"
-                "\n\t${espsecurepy} generate_signing_key --version 2 your_key.pem"
+                "\n\t${espsecurepy} generate-signing-key --version 2 your_key.pem"
             )
         endif()
 
@@ -224,7 +224,7 @@ elseif(CONFIG_SECURE_BOOTLOADER_REFLASHABLE)
         COMMAND ${CMAKE_COMMAND} -E echo
             "Burn secure boot key to efuse using:"
         COMMAND ${CMAKE_COMMAND} -E echo
-            "\t${espefusepy} burn_key secure_boot_v1 ${secure_bootloader_key}"
+            "\t${espefusepy} burn-key secure_boot_v1 ${secure_bootloader_key}"
         COMMAND ${CMAKE_COMMAND} -E echo
             "First time flash command is:"
         COMMAND ${CMAKE_COMMAND} -E echo
@@ -255,8 +255,8 @@ elseif(
     COMMAND ${CMAKE_COMMAND} -E echo
         "To sign the bootloader with additional private keys."
     COMMAND ${CMAKE_COMMAND} -E echo
-        "\t${espsecurepy} sign_data -k secure_boot_signing_key2.pem -v 2 \
---append_signatures -o signed_bootloader.bin build/bootloader/bootloader.bin"
+        "\t${espsecurepy} sign-data -k secure_boot_signing_key2.pem -v 2 \
+--append-signatures -o signed_bootloader.bin build/bootloader/bootloader.bin"
     COMMAND ${CMAKE_COMMAND} -E echo
         "Secure boot enabled, so bootloader not flashed automatically."
     COMMAND ${CMAKE_COMMAND} -E echo

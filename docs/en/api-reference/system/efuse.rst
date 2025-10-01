@@ -20,7 +20,7 @@ The eFuse Manager component is a collection of tools and APIs that assist with d
 eFuse Manager vs ``idf.py``
 ---------------------------
 
-``idf.py`` provides a subset of the functionality of the eFuse Manager via the ``idf.py efuse-<subcommand>`` commands. In this documentation, mostly ``idf.py`` based commands will be used, although you can still see some ``espefuse.py`` based commands for advanced or rare cases. To see all available commands, run ``idf.py --help`` and search for those prefixed with ``efuse-``.
+``idf.py`` provides a subset of the functionality of the eFuse Manager via the ``idf.py efuse-<subcommand>`` commands. In this documentation, mostly ``idf.py`` based commands will be used, although you can still see some ``espefuse`` based commands for advanced or rare cases. To see all available commands, run ``idf.py --help`` and search for those prefixed with ``efuse-``.
 
 Hardware Description
 --------------------
@@ -488,7 +488,7 @@ Get eFuses During Build
 
 There is a way to get the state of eFuses at the build stage of the project. There are two CMake functions for this:
 
-* ``espefuse_get_json_summary()`` - It calls the ``espefuse.py summary --format json`` command and returns a JSON string (it is not stored in a file).
+* ``espefuse_get_json_summary()`` - It calls the ``espefuse summary --format json`` command and returns a JSON string (it is not stored in a file).
 * ``espefuse_get_efuse()`` - It finds a given eFuse name in the JSON string and returns its property.
 
 The JSON string has the following properties:
@@ -522,7 +522,7 @@ These functions can be used from a top-level project ``CMakeLists.txt`` (:exampl
     espefuse_get_efuse(ret_data ${efuse_json} "MAC" "value")
     message("MAC:" ${ret_data})
 
-The format of the ``value`` property is the same as shown in ``espefuse.py summary`` or ``idf.py efuse-summary``.
+The format of the ``value`` property is the same as shown in ``espefuse summary`` or ``idf.py efuse-summary``.
 
 .. code-block:: none
 
@@ -557,12 +557,12 @@ Flash encryption is a hardware feature that requires the physical burning of eFu
 
 The :cpp:func:`bootloader_flash_write` is adapted for this purpose. But if flash encryption is already enabled on the chip when the application is run, or if the bootloader is created with the :ref:`CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH` option, then the flash encryption/decryption operations will work properly. This means that data are encrypted as it is written into an encrypted flash partition and decrypted when they are read from an encrypted partition.
 
-``espefuse.py``
-^^^^^^^^^^^^^^^
+``espefuse``
+^^^^^^^^^^^^
 
-esptool includes a useful tool for reading/writing {IDF_TARGET_NAME} eFuse bits - `espefuse.py <https://docs.espressif.com/projects/esptool/en/latest/{IDF_TARGET_PATH_NAME}/espefuse/index.html>`_.
+esptool includes a useful tool for reading/writing {IDF_TARGET_NAME} eFuse bits - `espefuse <https://docs.espressif.com/projects/esptool/en/latest/{IDF_TARGET_PATH_NAME}/espefuse/index.html>`_.
 
-Part of the functionality of this tool is also provided directly by ``idf.py`` commands. For example, the ``idf.py efuse-summary`` command is equivalent to ``espefuse.py summary``.
+Part of the functionality of this tool is also provided directly by ``idf.py`` commands. For example, the ``idf.py efuse-summary`` command is equivalent to ``espefuse summary``.
 
 .. include:: inc/espefuse_summary_{IDF_TARGET_NAME}.rst
 

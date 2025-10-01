@@ -32,9 +32,9 @@ def test_xts_aes_encryption(negotiated_key: bytes, plaintext_data: bytes, encryp
         plaintext_file.write(plaintext_data)
 
     command = [
-        'espsecure.py',
-        'encrypt_flash_data',
-        '--aes_xts',
+        'espsecure',
+        'encrypt-flash-data',
+        '--aes-xts',
         '--keyfile',
         'test/negotiated_key.bin',
         '--address',

@@ -145,7 +145,7 @@ TJpgDec - Tiny JPEG 解压器 R0.01 (C) 2011 ChaN，是一个用于小型嵌入�
 .. _Newlib: https://sourceware.org/newlib/
 .. _Picolibc: https://keithp.com/picolibc/
 .. _FreeRTOS: https://freertos.org/
-.. _esptool.py: https://github.com/espressif/esptool
+.. _esptool: https://github.com/espressif/esptool
 .. _LWIP: https://savannah.nongnu.org/projects/lwip/
 .. _TinyBasic: https://github.com/BleuLlama/TinyBasicPlus
 .. _miniz: https://code.google.com/archive/p/miniz/

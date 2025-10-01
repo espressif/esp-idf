@@ -1,11 +1,11 @@
 cmake_minimum_required(VERSION 3.22)
 
-# Executes a espefuse.py command and returns a cleaned log
+# Executes a espefuse command and returns a cleaned log
 function(espefuse_cmd cmd output_log)
     # espefuse_cmd can be called from a project's CMakeLists.txt file, which
     # can invoke this function in CMake scripting mode (-P). If that is the case,
     # we do not have access to convenience functions like idf_component_get_property.
-    # In scripting mode, the path to espefuse.py must be passed in via the
+    # In scripting mode, the path to espefuse must be passed in via the
     # 'ESPEFUSEPY' variable using the -D flag.
     #
     # When called during the normal build configuration phase, 'ESPEFUSEPY' is not
@@ -36,7 +36,7 @@ function(espefuse_cmd cmd output_log)
     set(${output_log} "${final_log}" PARENT_SCOPE)
 endfunction()
 
-# Reads efuses "espefuse.py summary" and returns JSON string
+# Reads efuses "espefuse summary" and returns JSON string
 function(espefuse_get_json_summary json_str)
     espefuse_cmd("summary;--format;json" output_log)
     set(${json_str} "${output_log}" PARENT_SCOPE)

@@ -179,7 +179,7 @@ EFuse 块版本号与芯片版本号类似，但是它主要影响在 eFuse 中�
 
     在 ESP-IDF v4.2 中添加了对 {IDF_TARGET_NAME} 芯片的支持。 由于 ``Minimum Supported ESP32-S2 Revision`` Kconfig 选项未引入，{IDF_TARGET_NAME} 芯片在 :cpp:type:`esp_image_header_t` 头文件中将 ``rev_min`` 设置为 0。这表明旧版引导加载程序不会检查芯片版本。在 v0.0 至 v3.15 范围内，任何应用程序都可以通过此类引导加载程序加载。
 
-请使用 ``esptool chip_id`` 命令查看芯片版本。
+请使用 ``esptool chip-id`` 命令查看芯片版本。
 
 参考链接
 ----------

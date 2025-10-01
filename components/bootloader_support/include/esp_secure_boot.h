@@ -137,7 +137,7 @@ static inline bool esp_secure_boot_enabled(void)
  * If first boot gets interrupted after calling this function
  * but before esp_secure_boot_permanently_enable() is called, then
  * the key burned on EFUSE will not be regenerated, unless manually
- * done using espefuse.py tool
+ * done using espefuse tool
  *
  * @return ESP_OK if secure boot digest is generated
  * successfully or found to be already present

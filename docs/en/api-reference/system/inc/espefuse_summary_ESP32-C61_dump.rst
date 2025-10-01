@@ -2,7 +2,10 @@
 
     idf.py -p /dev/ttyUSB0  efuse-dump
 
-    espefuse.py v4.10.dev2
+    espefuse v5.0.2
+    Executing action: efuse-dump
+    Running espefuse in directory <project-directory>
+    Executing "espefuse dump --chip esp32c61"...
     Connecting....
 
     === Run "dump" command ===

@@ -130,7 +130,7 @@ And then starting the server by executing
 
 .. code-block:: bash
 
-    esp_rfc2217_server.py -v -p 4000 /dev/ttyUSB0
+    esp_rfc2217_server -v -p 4000 /dev/ttyUSB0
 
 Now the device attached to the host can be flashed from inside a Docker container by using:
 

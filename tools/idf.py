@@ -586,7 +586,7 @@ def init_cli(verbose_output: list | None = None) -> Any:
                 if args.port:
                     esptool_cmd += [f'-p {args.port}']
 
-                esptool_cmd += ['write_flash']
+                esptool_cmd += ['write-flash']
 
                 print('or')
                 print(' {}'.format(' '.join(esptool_cmd + [cmd.strip()])))

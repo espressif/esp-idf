@@ -1,7 +1,7 @@
 {
-    "write_flash_args" : [ "--flash_mode", "${ESPFLASHMODE}",
-                           "--flash_size", "${ESPFLASHSIZE}",
-                           "--flash_freq", "${ESPFLASHFREQ}" ],
+    "write_flash_args" : [ "--flash-mode", "${ESPFLASHMODE}",
+                           "--flash-size", "${ESPFLASHSIZE}",
+                           "--flash-freq", "${ESPFLASHFREQ}" ],
     "flash_settings" : {
         "flash_mode": "${ESPFLASHMODE}",
         "flash_size": "${ESPFLASHSIZE}",

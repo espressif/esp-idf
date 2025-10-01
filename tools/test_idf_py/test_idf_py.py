@@ -362,6 +362,7 @@ class TestWrapperCommands(TestCase):
             )
             return output
         except subprocess.CalledProcessError as e:
+            print(e.output.decode('utf-8', 'ignore'))
             self.fail(f'Process should have exited normally, but it exited with a return code of {e.returncode}')
 
     @classmethod
@@ -373,8 +374,8 @@ class TestWrapperCommands(TestCase):
 
 class TestEFuseCommands(TestWrapperCommands):
     """
-    Test if wrapper commands for espefuse.py are working as expected.
-    The goal is NOT to test the functionality of espefuse.py
+    Test if wrapper commands for espefuse are working as expected.
+    The goal is NOT to test the functionality of espefuse
     but to test if the wrapper commands are working as expected.
     """
 
@@ -437,8 +438,8 @@ class TestEFuseCommands(TestWrapperCommands):
 
 class TestSecureCommands(TestWrapperCommands):
     """
-    Test if wrapper commands for espsecure.py are working as expected.
-    The goal is NOT to test the functionality of espsecure.py
+    Test if wrapper commands for espsecure are working as expected.
+    The goal is NOT to test the functionality of espsecure
     but to test if the wrapper commands are working as expected.
     """
 
@@ -458,7 +459,7 @@ class TestSecureCommands(TestWrapperCommands):
             self.flash_encryption_key,
         ]
         output = self.call_command(generate_key_command)
-        self.assertRegex(output, f'Writing 256 random bits to key file "?{self.flash_encryption_key}"?')
+        self.assertIn(f'Writing 256 random bits to key file "{self.flash_encryption_key}".', output)
 
     def secure_encrypt_flash_data(self):
         self.secure_generate_flash_encryption_key()
@@ -542,7 +543,7 @@ class TestSecureCommands(TestWrapperCommands):
             self.signing_key,
         ]
         output = self.call_command(generate_key_command)
-        self.assertRegex(output, f'RSA 3072 private key in PEM format written to "?{self.signing_key}"?')
+        self.assertIn(f'RSA 3072 private key in PEM format written to "{self.signing_key}".', output)
 
     def test_secure_generate_key_digest(self):
         self.secure_generate_signing_key()
@@ -556,7 +557,7 @@ class TestSecureCommands(TestWrapperCommands):
             'key_digest.bin',
         ]
         output = self.call_command(digest_command)
-        self.assertRegex(output, f'Writing the public key digest of "?{self.signing_key}"? to "?key_digest.bin"?.')
+        self.assertIn(f'Writing the public key digest of "{self.signing_key}" to "key_digest.bin".', output)
 
     def test_secure_generate_nvs_partition_key(self):
         generate_key_command = [
@@ -577,7 +578,7 @@ class TestSecureCommands(TestWrapperCommands):
 class TestMergeBinCommands(TestWrapperCommands):
     """
     Test if merge-bin command is invoked as expected.
-    This test is not testing the functionality of esptool.py merge_bin command
+    This test is not testing the functionality of esptool merge-bin command,
     but the invocation of the command from idf.py.
     """
 
@@ -585,7 +586,7 @@ class TestMergeBinCommands(TestWrapperCommands):
         merge_bin_command = [sys.executable, idf_py_path, 'merge-bin']
         merged_binary_name = 'test-merge-binary.bin'
         output = self.call_command(merge_bin_command + ['--output', merged_binary_name])
-        self.assertRegex(output, f"file '?{merged_binary_name}'?, ready to flash to offset 0x0")
+        self.assertIn(f"file '{merged_binary_name}', ready to flash to offset 0x0", output)
         self.assertIn(f'Merged binary {merged_binary_name} will be created in the build directory...', output)
 
 

@@ -3,7 +3,7 @@
 # Demonstrates the use of otatool.py, a tool for performing ota partition level
 # operations.
 #
-# SPDX-FileCopyrightText: 2018-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2018-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import argparse
 import os
@@ -13,31 +13,22 @@ import sys
 from subprocess import CalledProcessError
 
 import serial
+from esptool.loader import ESPLoader
 
 
 def get_running_partition(port=None):
     # Monitor the serial output of target device. The firmware outputs the currently
     # running partition
 
-    IDF_PATH = os.path.expandvars('$IDF_PATH')
-    sys.path.append(os.path.join(IDF_PATH, 'components', 'esptool_py', 'esptool'))
-
-    try:
-        # esptool>=4.0
-        from esptool.loader import ESPLoader
-    except (AttributeError, ModuleNotFoundError):
-        # esptool<4.0
-        from esptool import ESPLoader
-
-    ESPTOOL_PY = os.path.join(IDF_PATH, 'components', 'esptool_py', 'esptool', 'esptool.py')
-
     baud = os.environ.get('ESPTOOL_BAUD', ESPLoader.ESP_ROM_BAUD)
 
     if not port:
         error_message = 'Unable to obtain default target device port.\nSerial log:\n\n'
         try:
-            # Check what esptool.py finds on what port the device is connected to
-            output = subprocess.check_output([sys.executable, ESPTOOL_PY, 'chip_id'])  # may raise CalledProcessError
+            # Check what esptool finds on what port the device is connected to
+            output = subprocess.check_output(
+                [sys.executable, '-m', 'esptool', 'chip-id']
+            )  # may raise CalledProcessError
             pattern = r'Serial port ([^:\s]+)'
             pattern = re.compile(pattern.encode())
 

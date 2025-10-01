@@ -173,7 +173,7 @@ static esp_err_t image_load(esp_image_load_mode_t mode, const esp_partition_pos_
 #else // Secure boot not enabled
     // For secure boot V1 on ESP32, we don't calculate SHA or verify signature on bootloaders.
     // (For non-secure boot, we don't verify any SHA-256 hash appended to the bootloader because
-    // esptool.py may have rewritten the header - rely on esptool.py having verified the bootloader at flashing time, instead.)
+    // esptool may have rewritten the header - rely on esptool having verified the bootloader at flashing time, instead.)
     verify_sha = !is_bootloader(part->offset) && do_verify;
 #endif
 

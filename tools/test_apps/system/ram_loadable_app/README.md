@@ -35,7 +35,7 @@ idf.py set-target {target name}
 
 idf.py build
 
-esptool.py -p PORT --no-stub load_ram build/ram_loadable_app.bin
+esptool -p PORT --no-stub load-ram build/ram_loadable_app.bin
 
 idf.py -p PORT monitor --no-reset
 ```

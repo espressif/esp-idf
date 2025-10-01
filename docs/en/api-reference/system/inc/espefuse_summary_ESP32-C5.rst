@@ -1,8 +1,9 @@
 .. code-block:: none
 
-    espefuse.py -p PORT summary
+    idf.py -p PORT efuse-summary
 
-    espefuse.py v4.8.dev4
+    Executing action: efuse-summary
+    (...)
 
     === Run "summary" command ===
     EFUSE_NAME (Block) Description  = [Meaningful Value] [Readable/Writeable] (Hex Value)

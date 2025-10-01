@@ -29,7 +29,7 @@ Configure the Secure Storage mode for determining how the NVS XTS encryption key
     openssl rand -out hmac_key_file.bin 32
     # Programming the HMAC key (256-bit) in eFuse
     # Here, BLOCK_KEYx is a free eFuse key-block between BLOCK_KEY0 and BLOCK_KEY5
-    espefuse.py -p PORT burn_key BLOCK_KEYx hmac_key_file.bin HMAC_UP
+    espefuse -p PORT burn-key BLOCK_KEYx hmac_key_file.bin HMAC_UP
     ```
 
 ### Build and Flash
