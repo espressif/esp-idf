@@ -6,6 +6,7 @@ Project Configuration Guide
 This guide is intended to describe three aspects of project configuration in ESP-IDF:
 
 - How the configuration can be edited (``idf.py menuconfig`` and configuration via plugins)
+- The difference between default values and user-set values
 - How to use configuration values in C code and CMake
 - How to define new configuration options for the project
 - What is configuration report and how to understand it
@@ -21,13 +22,22 @@ If the user wants to redefine the default values of the configuration options se
 
 There are several ways how to configure the project, depending on the IDE used. The most common way is to use the ``idf.py menuconfig`` command. This command opens a TUI (Text-based User Interface) where user can set the configuration options. The configuration is saved into the ``sdkconfig`` file. Alternatively, IDE plugins can be used as well.
 
-Independently on the tool used, configuration values are loaded in the following order, values from later steps **may override** those from previous ones. These steps are done automatically and are described here only in order to explain the behavior:
+Independently on the tool used, configuration values are loaded in the following order. By default, default values for the same config option are overridden by **both default and user-set values** from the later steps. User-set values can be overridden **only by other user-set** values in later steps. These steps are done automatically and are described here only in order to explain the behavior:
 
-1. Default configuration option values from  ``Kconfig`` files are loaded, together with the relationships between them.
-2. If ``sdkconfig.defaults`` file is found, default values from this file are loaded.
-3. If present, ``sdkconfig`` file is loaded.
+1. ``Kconfig`` default files are loaded, together with the relationships between them.
+2. If ``sdkconfig.defaults`` file is found, user-set values are loaded from this file (see the note below why ``sdkconfig.defaults`` stores user-set values).
+3. If present, ``sdkconfig`` file is loaded. What happens next depends on whether the ``sdkconfig`` value is default or not:
+    a. If the ``sdkconfig`` value is default and:
+        - ``sdkconfig.defaults`` has already set given configuration option, the ``sdkconfig.defaults`` value is used (values from ``sdkconfig.defaults`` are considered user-set). See the note below for more information.
+        - Otherwise, it is checked whether the ``sdkconfig`` default value is the same as the ``Kconfig`` default value. If not, an info statement is printed. In both cases, the ``sdkconfig`` default value is used by default. See the section :ref:`default-values-in-kconfig` for more information.
+    b. If the value is not default, it is used automatically.
 
 When the configuration is saved, the values in the ``sdkconfig`` file are updated, as well as those in ``sdkconfig.h``, ``sdkconfig.cmake`` and ``sdkconfig.json``.
+
+.. note::
+
+    Despite its name, the ``sdkconfig.defaults`` file does not contain the default values of the configuration options, but the values set by the user. The ``defaults`` in this context refers to the initial values for the given project rather than default values of the configuration options defined in ``Kconfig`` file.
+
 
 Configuration with ``idf.py menuconfig``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -49,6 +59,50 @@ We also provide `plugin for Eclipse IDE <https://github.com/espressif/idf-eclips
 .. note::
 
     If you are using another IDE/plugin, please refer to the documentation of the IDE/plugin or use command line command ``idf.py menuconfig``.
+
+.. _default-values-in-kconfig:
+
+Default Values Handling
+^^^^^^^^^^^^^^^^^^^^^^^
+
+Configuration options can have two types of values: **default values** and **user-set values**. Default values are defined in the ``Kconfig`` files and are automatically set by the configuration system (e.g. during the first build), while user-set values are those  manually set by the user via configuration tools like ``idf.py menuconfig`` (or by ``sdkconfig.defaults`` file).
+
+The user can change the value of any configuration option via e.g. the ``idf.py menuconfig`` tool. In that case, value is called **user-set**. If the user wants to remove their user-set value and let the configuration system determine the default value for given configuration option, they can use a shortcut **R** (restore) in the ``menuconfig`` window.
+
+.. warning::
+
+    Default values of config option are not "locked" on their current value. If the validity of the condition of current default value for given config option changes, the configuration system will automatically update the value for given config option.
+
+    Let's imagine following Kconfig file:
+
+    .. code-block:: kconfig
+
+        config DEPENDENT
+            int "Dependent option"
+            default 1 if CONDITION
+            default 0 if !CONDITION
+
+        config CONDITION
+            bool "Condition option"
+            default y
+
+    As long as the ``DEPENDENT`` config option has a default value (i.e. the user did not set it manually), if the user sets the ``CONDITION`` option to ``n`` in the configuration tool, the ``DEPENDENT`` option will automatically change its value to ``0``. If the user sets the ``CONDITION`` option back to ``y``, the ``DEPENDENT`` option will automatically change its value to ``1``.
+    Once the user manually sets the value of the ``DEPENDENT`` option, it will not change anymore, even if the ``CONDITION`` option is changed. The user can restore the default value of the ``DEPENDENT`` option by pressing **R** in the configuration tool.
+
+When the configuration is saved, the values in the ``sdkconfig`` file are updated, as well as those in ``sdkconfig.h``, ``sdkconfig.cmake`` and ``sdkconfig.json``.
+
+As mentioned in the beginning of this section, default values originate from ``Kconfig`` files. After successful configuration, they are subsequently written out to the ``sdkconfig`` file. This leads us to two "types" of default values:
+
+1. Default value from ``Kconfig`` file (**Kconfig default value**): This is the default value set in the config option definition. It is used when there is not ``sdkconfig`` file.
+2. Default value from ``sdkconfig`` file (**sdkconfig default value**): This is the default value set in the ``sdkconfig`` file. When the ``sdkconfig`` file is created, default values from ``Kconfig`` files are copied there. If the ``sdkconfig`` file is already present and is only loaded, configuration system checks whether the ``sdkconfig`` default value matches the ``Kconfig`` default value, but it is not automatically updated.
+
+When loading the ``sdkconfig`` file (e.g. when running ``idf.py menuconfig``), the configuration system checks whether the default value in the ``sdkconfig`` file matches the default value in the ``Kconfig`` files. Most of the time, ``Kconfig`` default values and ``sdkconfig`` default values are the same. However, there may be situations when those two differ; typically when switching between ESP-IDF or component versions where the ``Kconfig`` value was changed, or when somebody manually edited the ``sdkconfig`` file.
+
+If the ``Kconfig`` default value is different from the ``sdkconfig`` default value, an info statement will notify the user about this fact. For the sake of build reproducibility, the ``sdkconfig`` default value is used. If the user wants to use the ``Kconfig`` default value, they can run ``idf.py refresh-config --policy=<POLICY>`` command, where ``<POLICY>`` can be:
+
+* ``sdkconfig``: Use the ``sdkconfig`` default values. This is the default behavior.
+* ``interactive``: The user will be asked in every case whether they want to use the ``Kconfig`` default value or keep the ``sdkconfig`` default value.
+* ``kconfig``: Use the ``Kconfig`` default value.
 
 .. _configs-in-C-Cmake:
 

@@ -169,6 +169,10 @@ def action_extensions(base_actions: dict, project_path: str) -> Any:
             os.environ.pop('ESP_IDF_KCONFIG_MIN_LABELS', None)
         build_target(target_name, ctx, args)
 
+    def refresh_config(action: str, ctx: click.core.Context, args: PropertyDict, policy: str) -> None:
+        ensure_build_directory(args, ctx.info_name)
+        run_target('refresh-config', args=args, env={'KCONFIG_DEFAULTS_POLICY': policy}, interactive=True)
+
     def fallback_target(target_name: str, ctx: Context, args: PropertyDict) -> None:
         """
         Execute targets that are not explicitly known to idf.py
@@ -728,6 +732,21 @@ def action_extensions(base_actions: dict, project_path: str) -> Any:
                         'is_flag': True,
                         'help': 'Add menu labels to minimal config.',
                     }
+                ],
+            },
+            'refresh-config': {
+                'callback': refresh_config,
+                'help': 'Resolve conflicts in default values of config options in the configuration',
+                'options': [
+                    {
+                        'names': ['--policy'],
+                        'help': (
+                            'Policy for handling defaults in the configuration. '
+                            'If no policy specified, sdkconfig default values will be used.'
+                        ),
+                        'type': click.Choice(['kconfig', 'interactive', 'sdkconfig']),
+                        'default': 'sdkconfig',
+                    },
                 ],
             },
         }
