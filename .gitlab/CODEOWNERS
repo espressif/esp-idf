@@ -159,7 +159,6 @@
 /components/tcp_transport/            @esp-idf-codeowners/network
 /components/ulp/                      @esp-idf-codeowners/system
 /components/unity/                    @esp-idf-codeowners/peripherals @esp-idf-codeowners/system
-/components/usb/                      @esp-idf-codeowners/peripherals/usb
 /components/vfs/                      @esp-idf-codeowners/storage
 /components/wear_levelling/           @esp-idf-codeowners/storage
 /components/wpa_supplicant/           @esp-idf-codeowners/wifi @esp-idf-codeowners/app-utilities/mbedtls

@@ -37,8 +37,8 @@ USB 主机库（以下简称主机库）是 USB 主机栈的最底层，提供�
     - 支持多个 Class 驱动程序同时运行，即主机的多个客户端同时运行。
     - 单个设备可以由多个客户端同时使用，如复合设备。
     - 主机库及其底层主机栈不会在内部自动创建操作系统任务，任务数量完全由主机库接口的使用方式决定。一般来说，任务数量为 ``（运行中的主机 Class 驱动程序数量 + 1）``。
-    - 支持单个 Hub（启用选项 :ref:`CONFIG_USB_HOST_HUBS_SUPPORTED`）。
-    - 支持多个 Hub（启用选项 :ref:`CONFIG_USB_HOST_HUB_MULTI_LEVEL`）。
+    - 支持单个 Hub（启用选项 `CONFIG_USB_HOST_HUBS_SUPPORTED`）。
+    - 支持多个 Hub（启用选项 `CONFIG_USB_HOST_HUB_MULTI_LEVEL`）。
 
 目前，主机库及其底层主机栈存在以下限制：
 
@@ -104,7 +104,7 @@ USB 主机库（以下简称主机库）是 USB 主机栈的最底层，提供�
 设备
 ^^^^^^^
 
-主机库隔离了客户端与设备处理的细节，包括连接、内存分配和枚举等，客户端只需提供已连接且已枚举的设备列表供选择。默认情况下，在枚举过程中，每个设备都会自动配置为使用找到的第一个配置，即通过获取配置描述符请求返回的第一个配置描述符。对于大多数标准设备，通常将第一个配置的 ``bConfigurationValue`` 设置为 ``1``。启用选项 :ref:`CONFIG_USB_HOST_ENABLE_ENUM_FILTER_CALLBACK` 后，可以选择不同的 ``bConfigurationValue``。获取更多详细信息，请参阅 `多项配置支持`_。
+主机库隔离了客户端与设备处理的细节，包括连接、内存分配和枚举等，客户端只需提供已连接且已枚举的设备列表供选择。默认情况下，在枚举过程中，每个设备都会自动配置为使用找到的第一个配置，即通过获取配置描述符请求返回的第一个配置描述符。对于大多数标准设备，通常将第一个配置的 ``bConfigurationValue`` 设置为 ``1``。启用选项 `CONFIG_USB_HOST_ENABLE_ENUM_FILTER_CALLBACK` 后，可以选择不同的 ``bConfigurationValue``。获取更多详细信息，请参阅 `多项配置支持`_。
 
 只要不与相同接口通信，两个及以上的客户端可以同时与同一设备通信。然而，多个客户端同时与相同设备的默认端点（即 EP0）通信，将导致它们的控制传输序列化。
 
@@ -510,10 +510,10 @@ USB 设备可能是热插拔的，因此必须配置电源开关和设备连接�
 
 可通过 Menuconfig 选项设置 USB 主机栈的可配置参数。
 
-* :ref:`CONFIG_USB_HOST_DEBOUNCE_DELAY_MS` 用于配置防抖延迟。
-* :ref:`CONFIG_USB_HOST_RESET_HOLD_MS` 用于配置重置保持时间。
-* :ref:`CONFIG_USB_HOST_RESET_RECOVERY_MS` 用于配置重置恢复时间。
-* :ref:`CONFIG_USB_HOST_SET_ADDR_RECOVERY_MS` 用于配置 ``SetAddress()`` 恢复时间。
+* `CONFIG_USB_HOST_DEBOUNCE_DELAY_MS` 用于配置防抖延迟。
+* `CONFIG_USB_HOST_RESET_HOLD_MS` 用于配置重置保持时间。
+* `CONFIG_USB_HOST_RESET_RECOVERY_MS` 用于配置重置恢复时间。
+* `CONFIG_USB_HOST_SET_ADDR_RECOVERY_MS` 用于配置 ``SetAddress()`` 恢复时间。
 
 下游端口配置
 ^^^^^^^^^^^^
@@ -528,17 +528,17 @@ USB 设备可能是热插拔的，因此必须配置电源开关和设备连接�
 
 可以通过 Menuconfig 配置下游端口的可配置参数。
 
-* 对于在端口上电后稳定电源的自定义值（PwrOn2PwrGood 值），请参阅 :ref:`CONFIG_USB_HOST_EXT_PORT_CUSTOM_POWER_ON_DELAY_MS`。
-* 对于复位恢复间隔，请参阅 :ref:`CONFIG_USB_HOST_EXT_PORT_RESET_RECOVERY_DELAY_MS`。
+* 对于在端口上电后稳定电源的自定义值（PwrOn2PwrGood 值），请参阅 `CONFIG_USB_HOST_EXT_PORT_CUSTOM_POWER_ON_DELAY_MS`。
+* 对于复位恢复间隔，请参阅 `CONFIG_USB_HOST_EXT_PORT_RESET_RECOVERY_DELAY_MS`。
 
 .. note::
 
-    规范规定，对于没有电源开关的 Hub，PwrOn2PwrGood 必须设置为零。同时，对于某些设备，可以增加此值以提供额外的上电时间。如需启用此功能，请参考 :ref:`CONFIG_USB_HOST_EXT_PORT_CUSTOM_POWER_ON_DELAY_ENABLE`。
+    规范规定，对于没有电源开关的 Hub，PwrOn2PwrGood 必须设置为零。同时，对于某些设备，可以增加此值以提供额外的上电时间。如需启用此功能，请参考 `CONFIG_USB_HOST_EXT_PORT_CUSTOM_POWER_ON_DELAY_ENABLE`。
 
 主机通道
 """""""""""""
 
-当启用外部 Hub 支持功能（:ref:`CONFIG_USB_HOST_HUBS_SUPPORTED`）时，主机通道的数量非常重要，因为每个下游设备都需要空闲通道。
+当启用外部 Hub 支持功能（`CONFIG_USB_HOST_HUBS_SUPPORTED`）时，主机通道的数量非常重要，因为每个下游设备都需要空闲通道。
 
 每个连接的设备需要不同数量的通道，而所需通道数则取决于设备类别（EP 数量）。
 
@@ -566,28 +566,7 @@ USB 设备可能是热插拔的，因此必须配置电源开关和设备连接�
 * 选择 USB 设备的配置。
 * 过滤应该进行枚举的 USB 设备。
 
-在 menuconfig 中启用 :ref:`CONFIG_USB_HOST_ENABLE_ENUM_FILTER_CALLBACK` 选项即可启用枚举过滤器。可以通过设置 :cpp:member:`usb_host_config_t::enum_filter_cb` 来指定回调函数，该函数会在调用 :cpp:func:`usb_host_install` 时传递至主机库。
-
-.. -------------------------------------------------- API Reference ----------------------------------------------------
-
-API 参考
--------------
-
-USB 主机库的 API 包含以下头文件，但应用程序调用该 API 时只需 ``#include "usb/usb_host.h"``，该头文件包含了所有 USB 主机库的头文件。
-
-- :component_file:`usb/include/usb/usb_host.h` 包含 USB 主机库的函数和类型。
-- :component_file:`usb/include/usb/usb_helpers.h` 包含与 USB 协议相关的各种辅助函数，如描述符解析等。
-- :component_file:`usb/include/usb/usb_types_stack.h` 包含在 USB 主机栈的多个层次中使用的类型。
-- :component_file:`usb/include/usb/usb_types_ch9.h` 包含了与 USB 2.0 规范中第 9 章相关的类型和宏，即描述符和标准请求。
-
-
-.. include-build-file:: inc/usb_host.inc
-
-.. include-build-file:: inc/usb_helpers.inc
-
-.. include-build-file:: inc/usb_types_stack.inc
-
-.. include-build-file:: inc/usb_types_ch9.inc
+在 menuconfig 中启用 `CONFIG_USB_HOST_ENABLE_ENUM_FILTER_CALLBACK` 选项即可启用枚举过滤器。可以通过设置 :cpp:member:`usb_host_config_t::enum_filter_cb` 来指定回调函数，该函数会在调用 :cpp:func:`usb_host_install` 时传递至主机库。
 
 .. ------------------------------------------------ Maintainers Notes --------------------------------------------------
 

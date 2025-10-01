@@ -555,7 +555,6 @@ examples/peripherals/usb/device:
       temporary: true
       reason: lack of runners with usb_device tag
   depends_components:
-    - usb
     - fatfs
   depends_filepatterns:
     - examples/peripherals/usb/device/**/*
@@ -568,7 +567,6 @@ examples/peripherals/usb/device/tusb_ncm:
       temporary: true
       reason: lack of runners with usb_device tag
   depends_components:
-    - usb
     - esp_wifi
   depends_filepatterns:
     - examples/peripherals/usb/device/tusb_ncm/**/*
@@ -581,7 +579,6 @@ examples/peripherals/usb/host:
       temporary: true
       reason: lack of runners with usb_host_flash_disk tag
   depends_components:
-    - usb
     - fatfs
   depends_filepatterns:
     - components/hal/usb*.c
