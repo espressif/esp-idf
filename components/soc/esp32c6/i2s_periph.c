@@ -11,7 +11,7 @@
 /*
  Bunch of constants for every I2S peripheral: GPIO signals, irqs, hw addr of registers etc
 */
-const i2s_signal_conn_t i2s_periph_signal[SOC_I2S_NUM] = {
+const i2s_signal_conn_t i2s_periph_signal[SOC_I2S_ATTR(INST_NUM)] = {
     {
         .mck_out_sig  = I2S_MCLK_OUT_IDX,
         .mck_in_sig   = I2S_MCLK_IN_IDX,
@@ -64,7 +64,7 @@ static const uint32_t i2s_regs_map[4] = {0x12330f, 0x0, 0x0, 0x0};
 
 static const regdma_entries_config_t i2s0_regs_retention[] = I2S_SLEEP_RETENTION_ENTRIES(0);
 
-const i2s_reg_retention_info_t i2s_reg_retention_info[SOC_I2S_NUM] = {
+const i2s_reg_retention_info_t i2s_reg_retention_info[SOC_I2S_ATTR(INST_NUM)] = {
     [0] = {
         .retention_module = SLEEP_RETENTION_MODULE_I2S0,
         .entry_array = i2s0_regs_retention,

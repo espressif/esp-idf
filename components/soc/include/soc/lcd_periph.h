@@ -8,6 +8,7 @@
 
 #include "soc/soc_caps.h"
 #include "soc/periph_defs.h"
+#include "soc/soc_caps_full.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -50,7 +51,7 @@ typedef struct {
     struct {
         const periph_module_t module;
         const int irq_id;
-        const int data_sigs[SOC_I2S_MAX_DATA_WIDTH];
+        const int data_sigs[SOC_MODULE_ATTR(I2S, MAX_DATA_WIDTH)];
         const int wr_sig;
     } buses[SOC_LCD_I80_BUSES];
 } lcd_i2s_signal_conn_t;

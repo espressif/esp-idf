@@ -13,6 +13,7 @@
 #include "freertos/queue.h"
 #include "soc/lldesc.h"
 #include "soc/soc_caps.h"
+#include "soc/soc_caps_full.h"
 #include "hal/i2s_hal.h"
 #include "hal/lp_i2s_hal.h"
 #if SOC_LP_I2S_SUPPORTED
@@ -27,7 +28,7 @@
 #endif
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/esp_gpio_reserve.h"
-#if SOC_I2S_SUPPORT_SLEEP_RETENTION
+#if SOC_HAS(PAU)
 #include "esp_private/sleep_retention.h"
 #endif
 #include "esp_pm.h"
@@ -61,7 +62,7 @@ extern "C" {
 #define I2S_RCC_ATOMIC()
 #endif
 
-#define I2S_USE_RETENTION_LINK  (SOC_I2S_SUPPORT_SLEEP_RETENTION && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP)
+#define I2S_USE_RETENTION_LINK  (SOC_HAS(PAU) && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP)
 
 #define I2S_NULL_POINTER_CHECK(tag, p)          ESP_RETURN_ON_FALSE((p), ESP_ERR_INVALID_ARG, tag, "input parameter '"#p"' is NULL")
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
@@ -131,14 +132,14 @@ typedef struct {
  * @note  Both i2s rx and tx channel are under its control
  */
 typedef struct {
-    i2s_port_t              id;             /*!< i2s port id */
+    int                     id;             /*!< i2s port id */
     i2s_hal_context_t       hal;            /*!< hal context */
     uint32_t                chan_occupancy; /*!< channel occupancy (rx/tx) */
     bool                    full_duplex;    /*!< is full_duplex */
     i2s_chan_handle_t       tx_chan;        /*!< tx channel handler */
     i2s_chan_handle_t       rx_chan;        /*!< rx channel handler */
     _lock_t                 mutex;          /*!< mutex for controller */
-#if SOC_I2S_SUPPORT_SLEEP_RETENTION
+#if SOC_HAS(PAU)
     sleep_retention_module_t slp_retention_mod; /*!< Sleep retention module */
     bool                    retention_link_created;  /*!< Whether the retention link is created */
 #endif
@@ -223,11 +224,11 @@ struct lp_i2s_channel_obj_t {
  */
 typedef struct {
     portMUX_TYPE            spinlock;                          /*!< Platform level lock */
-    i2s_controller_t        *controller[SOC_I2S_NUM];          /*!< Controller object */
-    const char              *comp_name[SOC_I2S_NUM];           /*!< The component name that occupied i2s controller */
+    i2s_controller_t        *controller[SOC_I2S_ATTR(INST_NUM)];          /*!< Controller object */
+    const char              *comp_name[SOC_I2S_ATTR(INST_NUM)];           /*!< The component name that occupied i2s controller */
 #if SOC_LP_I2S_SUPPORTED
     lp_i2s_controller_t     *lp_controller[SOC_LP_I2S_NUM];    /*!< LP controller object*/
-    const char              *lp_comp_name[SOC_I2S_NUM];        /*!< The component name that occupied lp i2s controller */
+    const char              *lp_comp_name[SOC_I2S_ATTR(INST_NUM)];        /*!< The component name that occupied lp i2s controller */
 #endif
 } i2s_platform_t;
 
@@ -312,7 +313,7 @@ void i2s_gpio_check_and_set(i2s_chan_handle_t handle, int gpio, uint32_t signal_
  *      - ESP_OK                Set mclk output gpio success
  *      - ESP_ERR_INVALID_ARG   Invalid GPIO number
  */
-esp_err_t i2s_check_set_mclk(i2s_chan_handle_t handle, i2s_port_t id, int gpio_num, i2s_clock_src_t clk_src, bool is_invert);
+esp_err_t i2s_check_set_mclk(i2s_chan_handle_t handle, int id, int gpio_num, i2s_clock_src_t clk_src, bool is_invert);
 
 /**
  * @brief Attach data out signal and data in signal to a same gpio

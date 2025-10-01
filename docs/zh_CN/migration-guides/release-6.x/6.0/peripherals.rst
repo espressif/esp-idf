@@ -263,3 +263,8 @@ Touch Sensor
 ------------
 
 第三版触摸传感器的驱动配置项 ``touch_sensor_sample_config_t::bypass_shield_output`` 已被移除，因为第三版触摸传感器硬件已不支持该功能。
+
+I2S
+---
+
+- ``i2s_port_t`` 类型已被移除。请使用 ``int`` 类型代替。该类型原有的 enum 项 ``I2S_NUM_0``，``I2S_NUM_1``，``I2S_NUM_2`` 和 ``I2S_NUM_AUTO`` 已用宏定义代替，以保证兼容性。

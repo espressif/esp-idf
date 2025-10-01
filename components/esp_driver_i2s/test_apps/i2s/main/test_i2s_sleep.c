@@ -13,13 +13,14 @@
 #include "driver/i2s_std.h"
 #include "driver/uart.h"
 #include "soc/i2s_struct.h"
+#include "soc/soc_caps_full.h"
 #include "esp_sleep.h"
 #include "esp_private/sleep_cpu.h"
 #include "esp_private/esp_sleep_internal.h"
 #include "esp_private/esp_pmu.h"
 #include "../../test_inc/test_i2s.h"
 
-#define TEST_I2S_PD_SLEEP   (SOC_I2S_SUPPORT_SLEEP_RETENTION && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP)
+#define TEST_I2S_PD_SLEEP   (SOC_HAS(PAU) && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP)
 
 extern void i2s_read_write_test(i2s_chan_handle_t tx_chan, i2s_chan_handle_t rx_chan);
 
@@ -42,7 +43,7 @@ static void s_test_i2s_enter_light_sleep(int sec, bool allow_power_down)
     printf("Woke up from light sleep\n");
 
     TEST_ASSERT_EQUAL(0, sleep_ctx.sleep_request_result);
-#if SOC_I2S_SUPPORT_SLEEP_RETENTION && !SOC_PM_TOP_PD_NOT_ALLOWED
+#if SOC_HAS(PAU) && !SOC_PM_TOP_PD_NOT_ALLOWED
     // check if the power domain also is powered down
     TEST_ASSERT_EQUAL(allow_power_down ? PMU_SLEEP_PD_TOP : 0, (sleep_ctx.sleep_flags) & PMU_SLEEP_PD_TOP);
 #endif
