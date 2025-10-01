@@ -116,8 +116,6 @@ TEST_CASE("Test TEE-TEE violation: Reserved-X1", "[exception]")
     TEST_FAIL_MESSAGE("Exception should have been generated");
 }
 
-// TODO: [IDF-13827] Enable when TEE SRAM is partitioned as IRAM (RX) and DRAM (RW)
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C5)
 /* TEE IRAM: Reserved/Vector-table boundary */
 TEST_CASE("Test TEE-TEE violation: IRAM-W1", "[exception]")
 {
@@ -145,7 +143,6 @@ TEST_CASE("Test TEE-TEE violation: DRAM-X2", "[exception]")
     esp_tee_service_call(1, SS_ESP_TEE_TEST_DRAM_REG2_EXEC_VIOLATION);
     TEST_FAIL_MESSAGE("Exception should have been generated");
 }
-#endif
 
 /* Illegal Instruction */
 TEST_CASE("Test TEE-TEE violation: Illegal Instruction", "[exception]")
