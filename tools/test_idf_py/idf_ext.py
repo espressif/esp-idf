@@ -11,6 +11,7 @@ def action_extensions(base_actions, project_path=None):
 
     # Add global options
     extensions = {
+        'version': '1.0.0',
         'global_options': [
             {'names': ['--test-0'], 'help': 'Non-deprecated option.', 'deprecated': False},
             {'names': ['--test-1'], 'help': 'Deprecated option 1.', 'deprecated': True},

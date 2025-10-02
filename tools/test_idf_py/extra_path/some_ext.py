@@ -8,6 +8,7 @@ def action_extensions(base_actions, project_path):
         print(f'!!! From some global callback: {global_args.some_extension_option}')
 
     return {
+        'version': '1.0.0',
         'global_options': [
             {
                 'names': ['--some-extension-option'],
