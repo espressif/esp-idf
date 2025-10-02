@@ -297,6 +297,9 @@ typedef struct esp_tls_cfg_server {
     unsigned int cacert_pem_bytes;          /*!< Size of client CA certificate legacy name */
     };
 
+    bool cacert_authmode_optional;          /*!< Enable this option to set the authmode
+                                                 to OPTIONAL (only useful when cacert is set) */
+
     union {
     const unsigned char *servercert_buf;        /*!< Server certificate in a buffer
                                                      This buffer should be NULL terminated */

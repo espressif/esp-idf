@@ -91,6 +91,9 @@ struct httpd_ssl_config {
     /** CA certificate byte length */
     size_t cacert_len;
 
+    /** CA certificate verification optional */
+    bool cacert_authmode_optional;
+
     /** Private key */
     const uint8_t *prvtkey_pem;
 
