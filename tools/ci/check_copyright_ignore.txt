@@ -479,13 +479,6 @@ components/mbedtls/port/include/sha1_alt.h
 components/mbedtls/port/include/sha256_alt.h
 components/mbedtls/port/include/sha512_alt.h
 components/mbedtls/port/sha/parallel_engine/sha.c
-components/nvs_flash/include/nvs_handle.hpp
-components/nvs_flash/src/nvs_encrypted_partition.hpp
-components/nvs_flash/src/nvs_item_hash_list.cpp
-components/nvs_flash/src/nvs_pagemanager.hpp
-components/nvs_flash/src/nvs_partition_lookup.cpp
-components/nvs_flash/src/nvs_partition_lookup.hpp
-components/nvs_flash/src/nvs_test_api.h
 components/protocomm/include/transports/protocomm_console.h
 components/protocomm/include/transports/protocomm_httpd.h
 components/riscv/include/riscv/csr.h

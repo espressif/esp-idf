@@ -3,8 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef nvs_flash_h
-#define nvs_flash_h
+#pragma once
 
 #ifdef __cplusplus
 extern "C" {
@@ -325,6 +324,3 @@ esp_err_t nvs_flash_read_security_cfg_v2(nvs_sec_scheme_t *scheme_cfg, nvs_sec_c
 #ifdef __cplusplus
 }
 #endif
-
-
-#endif /* nvs_flash_h */

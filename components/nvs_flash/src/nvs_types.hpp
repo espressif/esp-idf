@@ -1,10 +1,9 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef nvs_types_h
-#define nvs_types_h
+#pragma once
 
 #include <cstdint>
 #include <cstring>
@@ -14,6 +13,7 @@
 #include "nvs_handle.hpp"
 #include "compressed_enum_table.hpp"
 #include "string.h"
+#include "nvs_constants.h"
 
 namespace nvs
 {
@@ -116,6 +116,7 @@ public:
     bool checkHeaderConsistency(const uint8_t entryIndex) const;
 };
 
-} // namespace nvs
+// Safeguard for Item size
+static_assert(sizeof(Item) == NVS_CONST_ENTRY_SIZE, "Item size must be 32 bytes");
 
-#endif /* nvs_types_h */
+} // namespace nvs

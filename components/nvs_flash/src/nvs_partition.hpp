@@ -1,11 +1,10 @@
 /*
- * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#pragma once
 
-#ifndef ESP_PARTITION_HPP_
-#define ESP_PARTITION_HPP_
 
 #include "esp_partition.h"
 #include "intrusive_list.h"
@@ -109,5 +108,3 @@ protected:
 };
 
 } // nvs
-
-#endif // ESP_PARTITION_HPP_

@@ -1,10 +1,9 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef ESP_NVS_H
-#define ESP_NVS_H
+#pragma once
 
 #include <stdint.h>
 #include <stddef.h>
@@ -802,5 +801,3 @@ void nvs_release_iterator(nvs_iterator_t iterator);
 #ifdef __cplusplus
 } // extern "C"
 #endif
-
-#endif //ESP_NVS_H
