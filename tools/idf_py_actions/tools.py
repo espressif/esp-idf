@@ -298,6 +298,7 @@ class RunTool:
         force_progression: bool = False,
         interactive: bool = False,
         convert_output: bool = False,
+        buffer_size: int | None = None,
     ) -> None:
         self.tool_name = tool_name
         self.args = args
@@ -310,6 +311,7 @@ class RunTool:
         self.force_progression = force_progression
         self.interactive = interactive
         self.convert_output = convert_output
+        self.buffer_size = buffer_size or 256
 
     def __call__(self) -> None:
         def quote_arg(arg: str) -> str:
@@ -368,7 +370,7 @@ class RunTool:
             p = await asyncio.create_subprocess_exec(
                 *cmd,
                 env=env_copy,
-                limit=1024 * 1024,
+                limit=1024 * self.buffer_size,
                 cwd=self.cwd,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
@@ -520,6 +522,7 @@ def run_target(
     custom_error_handler: FunctionType | None = None,
     force_progression: bool = False,
     interactive: bool = False,
+    buffer_size: int | None = None,
 ) -> None:
     """Run target in build directory."""
     if env is None:
@@ -546,6 +549,7 @@ def run_target(
         hints=not args.no_hints,
         force_progression=force_progression,
         interactive=interactive,
+        buffer_size=buffer_size,
     )()
 
 

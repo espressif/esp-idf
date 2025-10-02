@@ -46,6 +46,37 @@ def action_extensions(base_actions: dict, project_path: str) -> Any:
         ensure_build_directory(args, ctx.info_name)
         run_target(target_name, args, force_progression=GENERATORS[args.generator].get('force_progression', False))
 
+    def confserver_target(target_name: str, ctx: Context, args: PropertyDict, buffer_size: int) -> None:
+        """
+        Execute the idf.py confserver command with the specified buffer size.
+        """
+        ensure_build_directory(args, ctx.info_name)
+        if buffer_size < 2048:
+            yellow_print(
+                f'WARNING: The specified buffer size {buffer_size} KB is less than the '
+                'recommended minimum of 2048 KB for idf.py confserver. Consider increasing it to at least 2048 KB '
+                'by setting environment variable IDF_CONFSERVER_BUFFER_SIZE=<buffer size in KB> or by calling '
+                'idf.py confserver --buffer-size <buffer size in KB>.'
+            )
+        try:
+            run_target(
+                target_name,
+                args,
+                force_progression=GENERATORS[args.generator].get('force_progression', False),
+                buffer_size=buffer_size,
+            )
+        except ValueError as e:
+            if str(e) == 'Separator is not found, and chunk exceed the limit':
+                # Buffer size too small/one-line output of the command too long
+                raise FatalError(
+                    f'ERROR: Command failed with an error message "{e}". '
+                    'Try increasing the buffer size to 2048 (or higher) by setting environment variable '
+                    'IDF_CONFSERVER_BUFFER_SIZE=<buffer size in KB> or by calling '
+                    'idf.py confserver --buffer-size <buffer size in KB>.'
+                )
+            else:
+                raise
+
     def size_target(
         target_name: str, ctx: Context, args: PropertyDict, output_format: str, output_file: str, diff_map_file: str
     ) -> None:
@@ -481,9 +512,22 @@ def action_extensions(base_actions: dict, project_path: str) -> Any:
                 ],
             },
             'confserver': {
-                'callback': build_target,
+                'callback': confserver_target,
                 'help': 'Run JSON configuration server.',
-                'options': global_options,
+                'options': global_options
+                + [
+                    {
+                        'names': ['--buffer-size'],
+                        'help': (
+                            'Set the buffer size (in KB) in order to accommodate initial confserver response.'
+                            'Default value and recommended minimum is 2048 (KB), but it might need to be '
+                            'increased for very large projects.'
+                        ),
+                        'type': int,
+                        'default': 2048,
+                        'envvar': 'IDF_CONFSERVER_BUFFER_SIZE',
+                    }
+                ],
             },
             'size': {
                 'callback': size_target,
