@@ -4,7 +4,7 @@
 # Wifi itwt Example
 
 ## Introduction
-This example shows how to use itwt of wifi.
+This example shows how to use Individual Target Wake Time (ITWT) of wifi.
 
 Itwt only works in station mode. And AP needs to support the capability of itwt.
 

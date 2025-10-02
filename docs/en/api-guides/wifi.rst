@@ -118,7 +118,7 @@ This article is supplementary to the Wi-Fi APIs/Examples. It describes the princ
 
 .. only:: SOC_WIFI_HE_SUPPORT
 
-    - :example:`wifi/itwt` demonstrates how to use the iTWT feature, which only works in station mode and under different power save modes, with commands for setup, teardown, and suspend, and also shows the difference in current consumption when iTWT is enabled or disabled.
+    - :example:`wifi/itwt` demonstrates how to use the Individual Target Wake Time (ITWT) feature, which only works in station mode and under different power save modes, with commands for setup, teardown, and suspend, and also shows the difference in current consumption when ITWT is enabled or disabled.
 
 Setting Wi-Fi Compile-time Options
 ++++++++++++++++++++++++++++++++++++
