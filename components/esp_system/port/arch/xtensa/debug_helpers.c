@@ -250,3 +250,70 @@ ipc_err:
 malloc_err:
     return ret;
 }
+
+esp_err_t esp_backtrace_print_task(TaskHandle_t pxTask, int depth, bool panic)
+{
+    esp_err_t ret = ESP_OK;
+    TaskSnapshot_t task_snapshot;
+    cur_task_backtrace_ctrl_t ctrl = {0};
+
+    // Suspend the scheduler to prevent task switching
+    vTaskSuspend(pxTask);
+
+    /*
+    Initialize backtracing for this core:
+
+    - Flush current core's register windows back onto current task's stack using esp_backtrace_get_start()
+    - Get starting frame for backtracing (starting frame is the caller of this function) using esp_backtrace_get_start()
+    - Save the starting frame details into the control block
+    */
+    BaseType_t core_id = xPortGetCoreID();  // Get core ID now that task switching is disabled
+    ctrl.cur_tasks[core_id].task_hdl = xTaskGetCurrentTaskHandle();
+    esp_backtrace_get_start(&ctrl.cur_tasks[core_id].starting_pc,
+                            &ctrl.cur_tasks[core_id].starting_sp,
+                            &ctrl.cur_tasks[core_id].next_pc);
+
+    vTaskGetSnapshot(pxTask, &task_snapshot);
+
+    // Print the backtrace of the task
+    bool cur_running = false;
+    TaskHandle_t task_hdl = (TaskHandle_t) task_snapshot.pxTCB;
+    esp_backtrace_frame_t stk_frame = {0};
+
+    // Check if the task is one of the currently running tasks
+    for (BaseType_t core_id = 0; core_id < configNUMBER_OF_CORES; core_id++) {
+        if (task_hdl == ctrl.cur_tasks[core_id].task_hdl) {
+            cur_running = true;
+            break;
+        }
+    }
+    // Initialize the starting backtrace frame of the task
+    if (cur_running) {
+        /*
+        Setting the starting backtrace frame for currently running tasks is different. We cannot
+        use the current frame of each running task as the starting frame (due to the possibility
+        of the SP changing). Thus, each currently running task will have initialized their callers
+        as the starting frame for backtracing, which is saved inside the
+        cur_task_backtrace_ctrl_t block.
+        */
+        stk_frame.pc = ctrl.cur_tasks[core_id].starting_pc;
+        stk_frame.sp = ctrl.cur_tasks[core_id].starting_sp;
+        stk_frame.next_pc = ctrl.cur_tasks[core_id].next_pc;
+    } else {
+        // Set the starting backtrace frame using the task's saved stack pointer
+        XtExcFrame* exc_frame = (XtExcFrame*) task_snapshot.pxTopOfStack;
+        stk_frame.pc = exc_frame->pc;
+        stk_frame.sp = exc_frame->a1;
+        stk_frame.next_pc = exc_frame->a0;
+    }
+    // Print backtrace
+    esp_err_t bt_ret = esp_backtrace_print_from_frame(depth, &stk_frame, panic);
+    if (bt_ret != ESP_OK) {
+        ret = bt_ret;
+    }
+
+    // Resume the scheduler to allow task switching again
+    vTaskResume(pxTask);
+
+    return ret;
+}
