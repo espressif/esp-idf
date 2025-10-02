@@ -671,7 +671,7 @@ function(idf_build_generate_flasher_args)
 
     if(CONFIG_SECURE_BOOT OR CONFIG_SECURE_FLASH_ENC_ENABLED)
         # If security enabled then override post flash option
-        set(ESPTOOLPY_AFTER "no_reset")
+        set(ESPTOOLPY_AFTER "no-reset")
     endif()
 
     idf_component_get_property(ESPFLASHMODE esptool_py ESPFLASHMODE)

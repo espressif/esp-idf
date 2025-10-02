@@ -919,7 +919,7 @@ function(idf_sign_binary binary)
     get_filename_component(key_name "${keyfile}" NAME)
 
     add_custom_command(OUTPUT "${ARG_OUTPUT_FILE}"
-        COMMAND ${espsecure_py_cmd} sign_data
+        COMMAND ${espsecure_py_cmd} sign-data
         --version ${secure_boot_version} --keyfile "${keyfile}"
         -o "${ARG_OUTPUT_FILE}" "${binary_path}"
         COMMAND ${CMAKE_COMMAND} -E md5sum "${ARG_OUTPUT_FILE}" > "${ARG_OUTPUT_FILE}.md5sum"
@@ -1097,7 +1097,7 @@ function(idf_check_binary_signed binary)
         COMMAND ${CMAKE_COMMAND} -E echo
         "Binary '${binary_name}' not signed. Sign it before flashing with:"
         COMMAND ${CMAKE_COMMAND} -E echo
-        "${espsecure_py_cmd} sign_data --keyfile KEYFILE --version ${secure_boot_version}"
+        "${espsecure_py_cmd} sign-data --keyfile KEYFILE --version ${secure_boot_version}"
         "${binary_path}"
         VERBATIM)
 endfunction()
