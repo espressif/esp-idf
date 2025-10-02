@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
- * SPDX-FileContributor: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2015-2025 Espressif Systems (Shanghai) CO LTD
  */
 #ifndef LWIP_HDR_ESP_LWIPOPTS_H
 #define LWIP_HDR_ESP_LWIPOPTS_H
@@ -723,6 +723,16 @@ static inline uint32_t timeout_from_offered(uint32_t lease, uint32_t min)
 #define LWIP_NETIF_STATUS_CALLBACK      1
 #else
 #define LWIP_NETIF_STATUS_CALLBACK      0
+#endif
+
+/**
+ * LWIP_NETIF_LINK_CALLBACK==1: Support a callback function from an interface
+ * whenever the link changes its up/down status.
+ */
+#ifdef CONFIG_LWIP_NETIF_LINK_CALLBACK
+#define LWIP_NETIF_LINK_CALLBACK       1
+#else
+#define LWIP_NETIF_LINK_CALLBACK       0
 #endif
 
 /**

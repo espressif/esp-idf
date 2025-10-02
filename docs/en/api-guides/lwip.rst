@@ -507,6 +507,12 @@ This approach may not work for function-like macros, as there is no guarantee th
 
 Alternatively, you can define your function-like macro in a header file which will be pre-included as an lwIP hook file, see :ref:`lwip-custom-hooks`.
 
+Network Interface Callbacks
+---------------------------
+
+- Status Callback (:ref:`CONFIG_LWIP_NETIF_STATUS_CALLBACK`): Enables `netif_set_status_callback()` to notify when an interface comes up/down and when IPv4/IPv6 addresses change.
+- Link Callback (:ref:`CONFIG_LWIP_NETIF_LINK_CALLBACK`): Enables `netif_set_link_callback()` to notify when the physical link goes up/down. The callback is triggered by `netif_set_link_up()` / `netif_set_link_down()` calls in drivers or virtual interfaces. Can be used alongside `LWIP_NETIF_EXT_STATUS_CALLBACK` for richer eventing.
+
 .. _lwip-limitations:
 
 Limitations
