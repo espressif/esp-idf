@@ -3,13 +3,12 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#pragma once
 
 #include <cstdlib>
 #if !ESP_TEE_BUILD
 #include "esp_heap_caps.h"
 #endif
-
-#pragma once
 
 /**
  * @brief Type that is only usable with new (std::nothrow) to avoid exceptions.

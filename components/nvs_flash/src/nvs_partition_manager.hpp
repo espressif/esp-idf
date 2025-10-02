@@ -1,10 +1,9 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef NVS_PARTITION_MANAGER_HPP_
-#define NVS_PARTITION_MANAGER_HPP_
+#pragma once
 
 #include "nvs_handle_simple.hpp"
 #include "nvs_storage.hpp"
@@ -49,5 +48,3 @@ protected:
 };
 
 } // nvs
-
-#endif // NVS_PARTITION_MANAGER_HPP_

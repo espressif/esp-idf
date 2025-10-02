@@ -1,10 +1,9 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef nvs_types_h
-#define nvs_types_h
+#pragma once
 
 #include <cstdint>
 #include <cstring>
@@ -116,6 +115,5 @@ public:
     bool checkHeaderConsistency(const uint8_t entryIndex) const;
 };
 
-} // namespace nvs
 
-#endif /* nvs_types_h */
+} // namespace nvs

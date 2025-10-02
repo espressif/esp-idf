@@ -1,6 +1,11 @@
-#include "esp_partition.h"
-#include "nvs_partition_lookup.hpp"
+/*
+ * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include "nvs_partition_lookup.hpp"     // For partition_lookup namespace
 
+#include "esp_partition.h"          // For esp_partition_t
 #ifndef LINUX_TARGET
 #include "nvs_encrypted_partition.hpp"
 #endif // ! LINUX_TARGET

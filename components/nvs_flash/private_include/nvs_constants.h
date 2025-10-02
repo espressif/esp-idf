@@ -1,12 +1,10 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef NVS_CONSTANTS_H
-#define NVS_CONSTANTS_H
-
 #include "spi_flash_mmap.h" // for SPI_FLASH_SEC_SIZE
+#pragma once
 
 // constants for the NVS to be used in the regular as well as bootloader implementations
 
@@ -64,5 +62,3 @@
 #define NVS_CONST_PAGE_HEADER_OFFSET 0
 #define NVS_CONST_PAGE_ENTRY_TABLE_OFFSET (NVS_CONST_PAGE_HEADER_OFFSET + 32)
 #define NVS_CONST_PAGE_ENTRY_DATA_OFFSET (NVS_CONST_PAGE_ENTRY_TABLE_OFFSET + 32)
-
-#endif

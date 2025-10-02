@@ -1,11 +1,9 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
-#ifndef nvs_item_hash_list_h
-#define nvs_item_hash_list_h
+#pragma once
 
 #include "nvs.h"
 #include "nvs_types.hpp"
@@ -62,6 +60,3 @@ protected:
 }; // class HashList
 
 } // namespace nvs
-
-
-#endif /* nvs_item_hash_list_h */
