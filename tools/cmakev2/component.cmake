@@ -716,9 +716,17 @@ function(__set_component_cmakev1_properties component_name)
 
     # Set INCLUDE_DIRS and PRIV_INCLUDE_DIRS properties
     get_target_property(include_dirs "${component_real_target}" INCLUDE_DIRECTORIES)
+    if(NOT include_dirs)
+        # get_target_property may return include_dirs-NOTFOUND
+        set(include_dirs "")
+    endif()
     __remove_genex(include_dirs)
 
     get_target_property(interface_include_dirs "${component_real_target}" INTERFACE_INCLUDE_DIRECTORIES)
+    if(NOT interface_include_dirs)
+        # get_target_property may return interface_include_dirs-NOTFOUND
+        set(interface_include_dirs "")
+    endif()
     __remove_genex(interface_include_dirs)
 
     __list_intersection(interface_include_dirs include_dirs public_include_dirs_abs)
