@@ -36,6 +36,10 @@
 
 #include "esp_partition.h"
 
+#if SOC_ECDSA_P192_CURVE_DEFAULT_DISABLED
+#include "hal/ecdsa_ll.h"
+#endif
+
 /***********************************************/
 // Headers for other components init functions
 
@@ -387,8 +391,16 @@ static void do_core_init(void)
 #endif
     if (!esp_efuse_read_field_bit(ESP_EFUSE_ECC_FORCE_CONST_TIME) && force_constant_time) {
         ESP_EARLY_LOGD(TAG, "Forcefully enabling ECC constant time operations");
-        esp_err_t err = esp_efuse_write_field_bit(ESP_EFUSE_ECC_FORCE_CONST_TIME);
+        err = esp_efuse_write_field_bit(ESP_EFUSE_ECC_FORCE_CONST_TIME);
         assert(err == ESP_OK && "Failed to enable ECC constant time operations");
+    }
+#endif
+
+#if CONFIG_SECURE_BOOT_V2_ENABLED && SOC_ECDSA_P192_CURVE_DEFAULT_DISABLED
+    // Also write protect the ECDSA_CURVE_MODE efuse bit.
+    if (ecdsa_ll_is_configurable_curve_supported()) {
+        err = esp_efuse_write_field_bit(ESP_EFUSE_WR_DIS_ECDSA_CURVE_MODE);
+        assert(err == ESP_OK && "Failed to write protect the ECDSA_CURVE_MODE efuse bit");
     }
 #endif
 
