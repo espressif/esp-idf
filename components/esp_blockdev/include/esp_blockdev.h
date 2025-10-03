@@ -11,7 +11,6 @@
 #include <stdarg.h>
 #include <stdbool.h>
 #include "esp_err.h"
-#include "sdkconfig.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -28,33 +27,22 @@ extern "C" {
 
 /**
  * @brief Block device I/O control commands
+ *
+ * The commands are grouped into two categories: system and user.
+ * The system commands are used for internal device management and are not expected to be used by the user (values 0-127).
+ * The user commands are used for user-specific operations and are expected to be defined by the user (values 128-255).
  */
-typedef enum {
-    ESP_BLOCKDEV_CMD_ERASE,                         /*!< perform device specific ERASE operation */
-    ESP_BLOCKDEV_CMD_TRIM,                          /*!< perform device specific TRIM operation */
-    ESP_BLOCKDEV_CMD_DISCARD,                       /*!< perform device specific DISCARD operation */
-    ESP_BLOCKDEV_CMD_SANITIZE,                      /*!< perform device specific SANITIZE operation */
-    ESP_BLOCKDEV_CMD_SECTOR_SIZE,                   /*!< get device sector size (not necessarily equal to specific block size) */
-    ESP_BLOCKDEV_CMD_DBG_INFO,                      /*!< get device debug information */
-    ESP_BLOCKDEV_CMD_STATISTICS                     /*!< get device operation statistics */
-} esp_blockdev_ioctl_cmd_t;
+
+#define ESP_BLOCKDEV_CMD_SYSTEM_BASE        0x00                                /*!< System commands base value */
+#define ESP_BLOCKDEV_CMD_USER_BASE          0x80                                /*!< User commands base value */
+
+#define ESP_BLOCKDEV_CMD_MARK_DELETED       ESP_BLOCKDEV_CMD_SYSTEM_BASE        /*!< mark given range as invalid, data to be deleted/overwritten eventually */
+#define ESP_BLOCKDEV_CMD_ERASE_CONTENTS     ESP_BLOCKDEV_CMD_SYSTEM_BASE + 1    /*!< erase required range and set the contents to the device's default bit values */
 
 typedef struct esp_blockdev_cmd_arg_erase_t {
     uint64_t start_addr;                            /*!< IN  - starting address of the disk space to erase/trim/discard/sanitize (in bytes), must be a multiple of erase block size */
     size_t erase_len;                               /*!< IN  - size of the area to erase/trim/discard/sanitize (in bytes), must be a multiple of erase block size */
 } esp_blockdev_cmd_arg_erase_t;
-
-typedef struct esp_blockdev_cmd_arg_dbginfo_t esp_blockdev_cmd_arg_dbginfo_t;
-typedef struct esp_blockdev_cmd_arg_dbginfo_t {
-    uint32_t device_bdl_version;                    /*!< OUT - device BDL interface version */
-    bool get_device_chain;                          /*!< IN  - require debug info from the underlying device (true/false) */
-    esp_blockdev_cmd_arg_dbginfo_t* bottom_device;  /*!< OUT - optional parameter to retrieve the debug info of the underlying device.
-                                                               Used when 'get_device_chain' flag is True. To be freed by the topmost caller */
-} esp_blockdev_cmd_arg_dbginfo_t;
-
-typedef struct esp_blockdev_cmd_arg_stat_t {
-    uint64_t available_space;                       /*!< OUT - remaining disk space (in bytes) */
-} esp_blockdev_cmd_arg_stat_t;
 
 /**
  * @brief Block device property flags
@@ -119,6 +107,7 @@ typedef struct esp_blockdev_geometry_t {
 
     /** Minimum block size (in bytes) for erase operations on given device.
      *  Mandatory parameter for all R/W devices, 0 for R/O.
+     *  @note Typically used as a sector size in file system meaning.
      *  */
     size_t erase_size;
 
@@ -134,6 +123,7 @@ typedef struct esp_blockdev_geometry_t {
 
     /** Default erase block size (in bytes) of given device. Recommended for optimal performance.
      *  0 means not used.
+     *  @note Typically used as target hardware erase block size.
      *  */
     size_t recommended_erase_size;
 
@@ -143,19 +133,14 @@ typedef struct esp_blockdev_geometry_t {
  *  Allocated and initialized by the device's class factory, optionally closed by the device release handler.
  */
 typedef struct esp_blockdev_t* esp_blockdev_handle_t;
+#define ESP_BLOCKDEV_HANDLE_INVALID NULL
 
 /**
- * @brief IDF generic Block device interface structure
- *  This structure defines an interface for a generic block-device capable of common disk operations and providing properties important
- *  for the device's deployment into the target component stack.
+ * @brief Block device operations
+ *
+ * Various block operations needed for proper R/W/E processing on given device.
  */
-typedef struct esp_blockdev_t {
-
-    /* Device flags */
-    esp_blockdev_flags_t device_flags;
-
-    /* Block device geometry parameters */
-    esp_blockdev_geometry_t geometry;
+typedef struct esp_blockdev_ops_t {
 
     /** READ operation:
      *   Read required number of bytes from the device at given offset, store the data into the output buffer.
@@ -200,13 +185,41 @@ typedef struct esp_blockdev_t {
 
     /** IOCTL operation:
      *   I/O control commands. Each command has corresponding in/out parameters which are to be verified
-     *   within given ioctl handler.
+     *   within given ioctl handler. The commands can be extended by the device implementation within the following ranges:
+     *   - 0x00-0x7F: IDF device commands (system)
+     *   - 0x80-0xFF: user-defined commands
+     *   See ESP_BLOCKDEV_CMD* macros.
      *
      * @param dev_handle Target device handle
-     * @param cmd Command ID as given by esp_block_dev_ioctl_cmd enumeration
-     * @param args Command specific arguments, see esp_block_dev_ioctl_cmd details
+     * @param cmd Command ID
+     * @param args Command specific arguments
      * */
-    esp_err_t (*ioctl)(esp_blockdev_handle_t dev_handle, const esp_blockdev_ioctl_cmd_t cmd, void* args);
+    esp_err_t (*ioctl)(esp_blockdev_handle_t dev_handle, const uint8_t cmd, void* args);
+
+    /** Instance destructor:
+     *   Cleanup code for the specific device handle
+     * @param dev_handle Target device handle
+     * */
+    esp_err_t (*release)(esp_blockdev_handle_t dev_handle);
+
+} esp_blockdev_ops_t;
+
+/**
+ * @brief IDF generic Block device interface structure
+ *  This structure defines an interface for a generic block-device capable of common disk operations and providing properties important
+ *  for the device's deployment into the target component stack.
+ *
+ *  @note The device context pointer is used to store the device-specific context. It is not used by the BDL layer and is intended to be used by the device implementation.
+ *  @note The ops pointer holds the address of the device operations structure which can be shared by multiple device instances of the same type (driver).
+ */
+typedef struct esp_blockdev_t {
+
+    /* Device context pointer */
+    void* ctx;
+
+    const esp_blockdev_flags_t device_flags;
+    const esp_blockdev_geometry_t geometry;
+    const esp_blockdev_ops_t* ops;
 
 } esp_blockdev_t;
 
