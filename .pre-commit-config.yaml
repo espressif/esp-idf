@@ -227,7 +227,7 @@ repos:
         name: Lint rST files in docs folder using Sphinx Lint
         files: ^(docs/en|docs/zh_CN)/.*\.(rst|inc)$
   - repo: https://github.com/espressif/esp-idf-kconfig.git
-    rev: v2.5.0
+    rev: v3.2.0
     hooks:
       - id: check-kconfig-files
       - id: check-deprecated-kconfig-options
