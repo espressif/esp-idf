@@ -15,7 +15,10 @@
       artifacts: false
   variables:
     GIT_STRATEGY: fetch  # use brew local mirror first
-  before_script: []
+  before_script:
+    - if ($env:IDF_DONT_USE_MIRRORS) {
+        $env:IDF_MIRROR_PREFIX_MAP = ""
+      }
   after_script: []
 
 test_cli_installer_win:
