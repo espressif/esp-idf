@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import fnmatch
 import json
@@ -8,18 +8,33 @@ import re
 import shutil
 import subprocess
 import sys
-from typing import Any, Dict, List, Optional
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Optional
 from urllib.error import URLError
-from urllib.request import Request, urlopen
+from urllib.request import Request
+from urllib.request import urlopen
 from webbrowser import open_new_tab
 
 import click
 from click.core import Context
-from idf_py_actions.constants import GENERATORS, PREVIEW_TARGETS, SUPPORTED_TARGETS, URL_TO_DOC
+from idf_py_actions.constants import GENERATORS
+from idf_py_actions.constants import PREVIEW_TARGETS
+from idf_py_actions.constants import SUPPORTED_TARGETS
+from idf_py_actions.constants import URL_TO_DOC
 from idf_py_actions.errors import FatalError
 from idf_py_actions.global_options import global_options
-from idf_py_actions.tools import (PropertyDict, TargetChoice, ensure_build_directory, generate_hints, get_target,
-                                  idf_version, merge_action_lists, print_warning, run_target, yellow_print)
+from idf_py_actions.tools import ensure_build_directory
+from idf_py_actions.tools import generate_hints
+from idf_py_actions.tools import get_target
+from idf_py_actions.tools import idf_version
+from idf_py_actions.tools import merge_action_lists
+from idf_py_actions.tools import print_warning
+from idf_py_actions.tools import PropertyDict
+from idf_py_actions.tools import run_target
+from idf_py_actions.tools import TargetChoice
+from idf_py_actions.tools import yellow_print
 
 
 def action_extensions(base_actions: Dict, project_path: str) -> Any:
@@ -32,6 +47,37 @@ def action_extensions(base_actions: Dict, project_path: str) -> Any:
         """
         ensure_build_directory(args, ctx.info_name)
         run_target(target_name, args, force_progression=GENERATORS[args.generator].get('force_progression', False))
+
+    def confserver_target(target_name: str, ctx: Context, args: PropertyDict, buffer_size: int) -> None:
+        """
+        Execute the idf.py confserver command with the specified buffer size.
+        """
+        ensure_build_directory(args, ctx.info_name)
+        if buffer_size < 2048:
+            yellow_print(
+                f'WARNING: The specified buffer size {buffer_size} KB is less than the '
+                'recommended minimum of 2048 KB for idf.py confserver. Consider increasing it to at least 2048 KB '
+                'by setting environment variable IDF_CONFSERVER_BUFFER_SIZE=<buffer size in KB> or by calling '
+                'idf.py confserver --buffer-size <buffer size in KB>.'
+            )
+        try:
+            run_target(
+                target_name,
+                args,
+                force_progression=GENERATORS[args.generator].get('force_progression', False),
+                buffer_size=buffer_size,
+            )
+        except ValueError as e:
+            if str(e) == 'Separator is not found, and chunk exceed the limit':
+                # Buffer size too small/one-line output of the command too long
+                raise FatalError(
+                    f'ERROR: Command failed with an error message "{e}". '
+                    'Try increasing the buffer size to 2048 (or higher) by setting environment variable '
+                    'IDF_CONFSERVER_BUFFER_SIZE=<buffer size in KB> or by calling '
+                    'idf.py confserver --buffer-size <buffer size in KB>.'
+                )
+            else:
+                raise
 
     def size_target(target_name: str, ctx: Context, args: PropertyDict, output_format: str,
                     output_file: str, legacy: bool) -> None:
@@ -76,7 +122,7 @@ def action_extensions(base_actions: Dict, project_path: str) -> Any:
         run_target(target_name, args)
 
     def list_build_system_targets(target_name: str, ctx: Context, args: PropertyDict) -> None:
-        """Shows list of targets known to build sytem (make/ninja)"""
+        """Shows list of targets known to build system (make/ninja)"""
         build_target('help', ctx, args)
 
     def menuconfig(target_name: str, ctx: Context, args: PropertyDict, style: str) -> None:
@@ -431,9 +477,22 @@ def action_extensions(base_actions: Dict, project_path: str) -> Any:
                 ],
             },
             'confserver': {
-                'callback': build_target,
+                'callback': confserver_target,
                 'help': 'Run JSON configuration server.',
-                'options': global_options,
+                'options': global_options
+                + [
+                    {
+                        'names': ['--buffer-size'],
+                        'help': (
+                            'Set the buffer size (in KB) in order to accommodate initial confserver response.'
+                            'Default value and recommended minimum is 2048 (KB), but it might need to be '
+                            'increased for very large projects.'
+                        ),
+                        'type': int,
+                        'default': 2048,
+                        'envvar': 'IDF_CONFSERVER_BUFFER_SIZE',
+                    }
+                ],
             },
             'size': {
                 'callback': size_target,
