@@ -43,11 +43,11 @@ sys_mutex_new(sys_mutex_t *pxMutex)
 {
   *pxMutex = xSemaphoreCreateMutex();
   if (*pxMutex == NULL) {
-    LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("sys_mutex_new: out of mem\r\n"));
+    LWIP_DEBUGF(SYS_DEBUG, ("sys_mutex_new: out of mem\r\n"));
     return ERR_MEM;
   }
 
-  LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("sys_mutex_new: m=%p\n", *pxMutex));
+  LWIP_DEBUGF(SYS_DEBUG, ("sys_mutex_new: m=%p\n", *pxMutex));
 
   return ERR_OK;
 }
@@ -88,7 +88,7 @@ sys_mutex_unlock(sys_mutex_t *pxMutex)
 void
 sys_mutex_free(sys_mutex_t *pxMutex)
 {
-  LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("sys_mutex_free: m=%p\n", *pxMutex));
+  LWIP_DEBUGF(SYS_DEBUG, ("sys_mutex_free: m=%p\n", *pxMutex));
   vSemaphoreDelete(*pxMutex);
   *pxMutex = NULL;
 }
@@ -110,7 +110,7 @@ sys_sem_new(sys_sem_t *sem, u8_t count)
 
   *sem = xSemaphoreCreateBinary();
   if (*sem == NULL) {
-      LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("sys_sem_new: out of mem\r\n"));
+      LWIP_DEBUGF(SYS_DEBUG, ("sys_sem_new: out of mem\r\n"));
       return ERR_MEM;
   }
 
@@ -207,19 +207,19 @@ sys_mbox_new(sys_mbox_t *mbox, int size)
 {
   *mbox = mem_malloc(sizeof(struct sys_mbox_s));
   if (*mbox == NULL){
-    LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("fail to new *mbox\n"));
+    LWIP_DEBUGF(SYS_DEBUG, ("fail to new *mbox\n"));
     return ERR_MEM;
   }
 
   (*mbox)->os_mbox = xQueueCreate(size, sizeof(void *));
 
   if ((*mbox)->os_mbox == NULL) {
-    LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("fail to new (*mbox)->os_mbox\n"));
+    LWIP_DEBUGF(SYS_DEBUG, ("fail to new (*mbox)->os_mbox\n"));
     mem_free(*mbox);
     return ERR_MEM;
   }
 
-  LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("new *mbox ok mbox=%p os_mbox=%p\n", *mbox, (*mbox)->os_mbox));
+  LWIP_DEBUGF(SYS_DEBUG, ("new *mbox ok mbox=%p os_mbox=%p\n", *mbox, (*mbox)->os_mbox));
   return ERR_OK;
 }
 
@@ -252,7 +252,7 @@ sys_mbox_trypost(sys_mbox_t *mbox, void *msg)
   if (xQueueSend((*mbox)->os_mbox, &msg, 0) == pdTRUE) {
     xReturn = ERR_OK;
   } else {
-    LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("trypost mbox=%p fail\n", (*mbox)->os_mbox));
+    LWIP_DEBUGF(SYS_DEBUG, ("trypost mbox=%p fail\n", (*mbox)->os_mbox));
     xReturn = ERR_MEM;
   }
 
@@ -481,7 +481,7 @@ sys_thread_sem_get(void)
   if (!sem) {
       sem = sys_thread_sem_init();
   }
-  LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("sem_get s=%p\n", sem));
+  LWIP_DEBUGF(SYS_DEBUG, ("sem_get s=%p\n", sem));
   return sem;
 }
 
@@ -491,12 +491,12 @@ sys_thread_sem_free(void* data) // destructor for TLS semaphore
   sys_sem_t *sem = (sys_sem_t*)(data);
 
   if (sem && *sem){
-    LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("sem del, sem=%p\n", *sem));
+    LWIP_DEBUGF(SYS_DEBUG, ("sem del, sem=%p\n", *sem));
     vSemaphoreDelete(*sem);
   }
 
   if (sem) {
-    LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("sem pointer del, sem_p=%p\n", sem));
+    LWIP_DEBUGF(SYS_DEBUG, ("sem pointer del, sem_p=%p\n", sem));
     mem_free(sem);
   }
 }

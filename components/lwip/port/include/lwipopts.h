@@ -1669,11 +1669,10 @@ static inline uint32_t timeout_from_offered(uint32_t lease, uint32_t min)
 #define ESP_MLDV6_REPORT              0
 #endif
 
+#define SYS_DEBUG                       LWIP_DBG_OFF
+
 #define ESP_LWIP                        1
 #define ESP_LWIP_ARP                    1
-#define ESP_PER_SOC_TCP_WND             0
-#define ESP_THREAD_SAFE                 1       /* Not used (to be removed in v6.x) */
-#define ESP_THREAD_SAFE_DEBUG           LWIP_DBG_OFF
 #define ESP_DHCP                        1
 #define ESP_DNS                         1
 #define ESP_STATS_TCP                   0
