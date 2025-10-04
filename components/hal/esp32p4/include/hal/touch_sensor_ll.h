@@ -24,6 +24,7 @@
 #include "soc/touch_struct.h"
 #include "soc/pmu_struct.h"
 #include "soc/soc_caps.h"
+#include "soc/soc_caps_full.h"
 #include "hal/touch_sens_types.h"
 #include "hal/config.h"
 
@@ -46,7 +47,7 @@ extern "C" {
 #define TOUCH_LL_INTR_MASK_PROX_DONE        BIT(5)
 #define TOUCH_LL_INTR_MASK_ALL              (0x3F)
 
-#define TOUCH_LL_FULL_CHANNEL_MASK          ((uint16_t)((1U << (SOC_TOUCH_SENSOR_NUM)) - 1) << SOC_TOUCH_MIN_CHAN_ID)
+#define TOUCH_LL_FULL_CHANNEL_MASK          ((uint16_t)((1U << (SOC_MODULE_ATTR(TOUCH, CHAN_NUM))) - 1) << SOC_TOUCH_MIN_CHAN_ID)
 #define TOUCH_LL_NULL_CHANNEL               (15)  // Null Channel id. Used for disabling some functions like sleep/proximity/waterproof
 
 #define TOUCH_LL_PAD_MEASURE_WAIT_MAX      (0x7FFF)    // The timer frequency is 8Mhz, the max value is 0xff
@@ -54,6 +55,8 @@ extern "C" {
 #define TOUCH_LL_CLK_DIV_MAX               (0x08)      // Max clock divider value
 #define TOUCH_LL_TIMEOUT_MAX               (0xFFFF)    // Max timeout value
 #define TOUCH_LL_SLP_MEASURE_WAIT_MAX      (0x1FF)     // Max wait ticks to wait PMU entering HP SLEEP status during the sleep.
+
+#define TOUCH_LL_SUPPORT_PROX_DONE         (1)
 
 /**
  * Enable/disable clock gate of touch sensor.

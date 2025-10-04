@@ -1663,10 +1663,6 @@ config SOC_TOUCH_SENSOR_VERSION
     int
     default 3
 
-config SOC_TOUCH_SENSOR_NUM
-    int
-    default 14
-
 config SOC_TOUCH_MIN_CHAN_ID
     int
     default 1
@@ -1694,14 +1690,6 @@ config SOC_TOUCH_SUPPORT_PROX_SENSING
 config SOC_TOUCH_PROXIMITY_CHANNEL_NUM
     int
     default 3
-
-config SOC_TOUCH_PROXIMITY_MEAS_DONE_SUPPORTED
-    bool
-    default y
-
-config SOC_TOUCH_SUPPORT_FREQ_HOP
-    bool
-    default y
 
 config SOC_TOUCH_SAMPLE_CFG_NUM
     int

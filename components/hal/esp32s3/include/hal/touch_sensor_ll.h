@@ -24,6 +24,7 @@
 #include "soc/rtc_io_struct.h"
 #include "soc/sens_struct.h"
 #include "soc/soc_caps.h"
+#include "soc/soc_caps_full.h"
 #include "hal/touch_sens_types.h"
 
 #ifdef __cplusplus
@@ -49,12 +50,13 @@ extern "C" {
                                              TOUCH_LL_INTR_MASK_TIMEOUT | \
                                              TOUCH_LL_INTR_MASK_PROX_DONE)
 
-#define TOUCH_LL_FULL_CHANNEL_MASK          ((uint16_t)((1U << SOC_TOUCH_SENSOR_NUM) - 1))
+#define TOUCH_LL_FULL_CHANNEL_MASK          ((uint16_t)((1U << SOC_MODULE_ATTR(TOUCH, CHAN_NUM)) - 1))
 #define TOUCH_LL_NULL_CHANNEL               (0)  // Null Channel id. Used for disabling some functions like sleep/proximity/waterproof
 
 #define TOUCH_LL_PAD_MEASURE_WAIT_MAX      (0xFF)      // The timer frequency is 8Mhz, the max value is 0xff
 #define TOUCH_LL_ACTIVE_THRESH_MAX         (0x3FFFFF)  // Max channel active threshold
 #define TOUCH_LL_TIMEOUT_MAX               (0x3FFFFF)  // Max timeout value
+#define TOUCH_LL_SUPPORT_PROX_DONE         (1)
 
 /**
  * Enable/disable clock gate of touch sensor.

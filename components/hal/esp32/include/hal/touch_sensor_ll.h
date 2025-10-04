@@ -23,6 +23,7 @@
 #include "soc/rtc_io_struct.h"
 #include "soc/rtc_cntl_struct.h"
 #include "soc/soc_caps.h"
+#include "soc/soc_caps_full.h"
 #include "hal/touch_sens_types.h"
 
 #ifdef __cplusplus
@@ -33,7 +34,7 @@ extern "C" {
 #define TOUCH_LL_BIT_SWAP(data, n, m)   (((data >> n) &  0x1)  == ((data >> m) & 0x1) ? (data) : ((data) ^ ((0x1 <<n) | (0x1 << m))))
 #define TOUCH_LL_BITS_SWAP(v)  TOUCH_LL_BIT_SWAP(v, 8, 9)
 #define TOUCH_LL_CHAN_SWAP(chan)  ((chan) == 8 ? 9 : ((chan) == 9 ? 8 : (chan)))
-#define TOUCH_LL_FULL_CHANNEL_MASK          ((uint16_t)((1U << SOC_TOUCH_SENSOR_NUM) - 1))
+#define TOUCH_LL_FULL_CHANNEL_MASK          ((uint16_t)((1U << SOC_MODULE_ATTR(TOUCH, CHAN_NUM)) - 1))
 #define TOUCH_LL_READ_RAW                   0x0
 
 #define TOUCH_LL_CHARGE_DURATION_MAX       (0xFFFF)
@@ -429,7 +430,7 @@ __attribute__((always_inline))
 static inline void touch_ll_read_chan_data(uint32_t touch_num, uint8_t type, uint32_t *data)
 {
     HAL_ASSERT(type == TOUCH_LL_READ_RAW);
-    HAL_ASSERT(touch_num < SOC_TOUCH_SENSOR_NUM);
+    HAL_ASSERT(touch_num < SOC_MODULE_ATTR(TOUCH, CHAN_NUM));
     touch_num = TOUCH_LL_CHAN_SWAP(touch_num);
     if (touch_num & 0x1) {
         *data = HAL_FORCE_READ_U32_REG_FIELD(SENS.touch_meas[touch_num >> 1], l_val);

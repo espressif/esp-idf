@@ -81,14 +81,14 @@ static void s_touch_hal_apply_sleep_config(void)
     /* Apply the particular configuration for deep sleep */
     if (s_touch_slp_obj.apply_slp_cfg) {
         /* Save the current channel threshold first, because they will be reset by hardware after the recofniguration */
-        uint32_t chan_thresh[SOC_TOUCH_SENSOR_NUM] = {};
-        for (int i = 0; i < SOC_TOUCH_SENSOR_NUM; i++) {
+        uint32_t chan_thresh[SOC_MODULE_ATTR(TOUCH, CHAN_NUM)] = {};
+        for (int i = 0; i < SOC_MODULE_ATTR(TOUCH, CHAN_NUM); i++) {
             chan_thresh[i] = touch_ll_get_chan_active_threshold(i);
         }
         /* Reconfigure the touch sensor to use the sleep configuration */
         touch_hal_config_controller(&s_touch_slp_obj.slp_cfg);
         /* Restore the channel threshold */
-        for (int i = 0; i < SOC_TOUCH_SENSOR_NUM; i++) {
+        for (int i = 0; i < SOC_MODULE_ATTR(TOUCH, CHAN_NUM); i++) {
             touch_ll_set_chan_active_threshold(i, chan_thresh[i]);
         }
     }
