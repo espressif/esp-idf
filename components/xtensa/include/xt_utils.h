@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -80,6 +80,18 @@ static inline void xt_utils_set_cycle_count(uint32_t ccount)
 FORCE_INLINE_ATTR void xt_utils_wait_for_intr(void)
 {
     asm volatile ("waiti 0\n");
+}
+
+FORCE_INLINE_ATTR void xt_utils_set_threadptr(void *ptr)
+{
+    asm volatile ("wur.threadptr %0" :: "r"(ptr));
+}
+
+FORCE_INLINE_ATTR void *xt_utils_get_threadptr(void)
+{
+    void *thread_ptr;
+    asm volatile ("rur.threadptr %0" : "=r"(thread_ptr));
+    return thread_ptr;
 }
 
 /* ------------------------------------------------- CPU Interrupts ----------------------------------------------------

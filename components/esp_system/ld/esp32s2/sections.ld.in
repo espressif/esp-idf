@@ -397,12 +397,14 @@ SECTIONS
      * Excluding crtbegin.o/crtend.o since IDF doesn't use the toolchain crt.
      */
     ALIGNED_SYMBOL(4, __preinit_array_start)
+    ALIGNED_SYMBOL(4, __bothinit_array_start)
     KEEP (*(.preinit_array))
     __preinit_array_end = ABSOLUTE(.);
     ALIGNED_SYMBOL(4, __init_array_start)
     KEEP (*(SORT_BY_INIT_PRIORITY(EXCLUDE_FILE (*crtend.* *crtbegin.*) .ctors.*)))
     KEEP (*(EXCLUDE_FILE (*crtend.* *crtbegin.*) .ctors))
     __init_array_end = ABSOLUTE(.);
+    __bothinit_array_end = ABSOLUTE(.);
 
     /* Addresses of memory regions reserved via SOC_RESERVE_MEMORY_REGION() */
     ALIGNED_SYMBOL(4, soc_reserved_memory_region_start)
@@ -430,12 +432,24 @@ SECTIONS
 
     /* TLS data. */
     ALIGNED_SYMBOL(4, _thread_local_start)
+#if CONFIG_LIBC_PICOLIBC
+    _picolibc_reent_stub_start = ABSOLUTE(.);
+    KEEP(*(.tdata.errno))
+#if CONFIG_LIBC_PICOLIBC_NEWLIB_COMPATIBILITY
+    /* Reproduce the public fields from struct _reent. */
+    KEEP(*(.tdata.tls_stdin))
+    KEEP(*(.tdata.tls_stdout))
+    KEEP(*(.tdata.tls_stderr))
+#endif // CONFIG_LIBC_PICOLIBC_NEWLIB_COMPATIBILITY
+    _picolibc_reent_stub_end = ABSOLUTE(.);
+#endif // CONFIG_LIBC_PICOLIBC
     *(.tdata)
     *(.tdata.*)
     *(.tbss)
     *(.tbss.*)
     _thread_local_end = ABSOLUTE(.);
   } > default_rodata_seg
+  ASSERT_PICOLIBC_REENT_STUB()
 
   _flash_rodata_align = ALIGNOF(.flash.rodata);
 

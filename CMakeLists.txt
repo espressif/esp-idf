@@ -78,11 +78,22 @@ else()
     list(APPEND cxx_compile_options "-fno-exceptions")
 endif()
 
-if(CONFIG_COMPILER_CXX_RTTI)
-    list(APPEND cxx_compile_options "-frtti")
-else()
-    list(APPEND cxx_compile_options "-fno-rtti")
-    list(APPEND link_options "-fno-rtti")           # used to invoke correct multilib variant (no-rtti) during linking
+if(CONFIG_IDF_TOOLCHAIN_GCC)
+    if(CONFIG_COMPILER_CXX_RTTI)
+        idf_toolchain_remove_flags(CXX_COMPILE_OPTIONS "-fno-rtti"
+                                   LINK_OPTIONS "-fno-rtti")
+    else()
+        idf_toolchain_add_flags(CXX_COMPILE_OPTIONS "-fno-rtti"
+                                LINK_OPTIONS "-fno-rtti")
+    endif()
+    idf_toolchain_rerun_abi_detection()
+else() # TODO IDF-14338
+    if(CONFIG_COMPILER_CXX_RTTI)
+        list(APPEND cxx_compile_options "-frtti")
+    else()
+        list(APPEND cxx_compile_options "-fno-rtti")
+        list(APPEND link_options "-fno-rtti")        # used to invoke correct multilib variant (no-rtti) during linking
+    endif()
 endif()
 
 if(CONFIG_COMPILER_SAVE_RESTORE_LIBCALLS)

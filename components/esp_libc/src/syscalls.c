@@ -110,6 +110,10 @@ int fcntl(int fd, int cmd, ...)
     return _fcntl_r(__getreent(), fd, cmd, arg);
 }
 
+int getpid()
+{
+    return _getpid_r(__getreent());
+}
 #endif // CONFIG_LIBC_PICOLIBC
 
 void _exit(int __status)

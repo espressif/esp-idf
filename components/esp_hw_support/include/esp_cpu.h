@@ -224,6 +224,37 @@ FORCE_INLINE_ATTR __attribute__((pure)) void *esp_cpu_pc_to_addr(uint32_t pc)
 #endif
 }
 
+/**
+ * @brief Set the current CPU core's thread pointer
+ *
+ * Sets the thread pointer register to the given value.
+ *
+ * @param threadptr Pointer to the thread-local storage area
+ */
+FORCE_INLINE_ATTR void esp_cpu_set_threadptr(void * threadptr)
+{
+#ifdef __XTENSA__
+    xt_utils_set_threadptr(threadptr);
+#else
+    rv_utils_set_threadptr(threadptr);
+#endif
+}
+
+/**
+ * @brief Get the current CPU core's thread pointer
+ *
+ * @return thread pointer register value
+ */
+FORCE_INLINE_ATTR void *esp_cpu_get_threadptr(void)
+{
+#ifdef __XTENSA__
+    return xt_utils_get_threadptr();
+#else
+    return rv_utils_get_threadptr();
+#endif
+}
+
+
 /* ------------------------------------------------- CPU Interrupts ----------------------------------------------------
  *
  * ------------------------------------------------------------------------------------------------------------------ */

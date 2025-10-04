@@ -69,7 +69,9 @@
     * And so forth...
     */
    *(.rela.*)
+#if CONFIG_LIBC_NEWLIB
    *(.got .got.plt) /* TODO: GCC-382 */
+#endif
 #if !EH_FRAME_LINKING_ENABLED
    *(.eh_frame_hdr)
    *(.eh_frame)

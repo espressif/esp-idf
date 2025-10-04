@@ -346,6 +346,9 @@ SECTIONS
 
     mapping[flash_rodata]
 
+#if CONFIG_LIBC_PICOLIBC
+    *(.got .got.plt) /* TODO: GCC-439 */
+#endif
     *(.irom1.text) /* catch stray ICACHE_RODATA_ATTR */
     *(.gnu.linkonce.r.*)
     *(.rodata1)
@@ -357,12 +360,14 @@ SECTIONS
      * Excluding crtbegin.o/crtend.o since IDF doesn't use the toolchain crt.
      */
     ALIGNED_SYMBOL(4, __preinit_array_start)
+    ALIGNED_SYMBOL(4, __bothinit_array_start)
     KEEP (*(.preinit_array))
     __preinit_array_end = ABSOLUTE(.);
     ALIGNED_SYMBOL(4, __init_array_start)
     KEEP (*(SORT_BY_INIT_PRIORITY(EXCLUDE_FILE (*crtend.* *crtbegin.*) .init_array.*)))
     KEEP (*(EXCLUDE_FILE (*crtend.* *crtbegin.*) .init_array))
     __init_array_end = ABSOLUTE(.);
+    __bothinit_array_end = ABSOLUTE(.);
 
     /* Addresses of memory regions reserved via SOC_RESERVE_MEMORY_REGION() */
     ALIGNED_SYMBOL(4, soc_reserved_memory_region_start)
@@ -417,24 +422,42 @@ SECTIONS
 
   .flash.tdata :
   {
+    /* Keep tdata and tbss sections contiguous (no gaps between them).
+     * The TLS runtime code calculates offsets assuming these sections are
+     * adjacent. Gaps would cause incorrect address calculations, leading
+     * to accessing wrong memory.
+     *
+     * Storing all TLS structures in flash increases binary size, but avoids
+     * runtime issues and reduces TLS allocations on the stack.
+     */
+    /* tdata sections */
     _thread_local_data_start = ABSOLUTE(.);
-
+#if CONFIG_LIBC_PICOLIBC
+    _picolibc_reent_stub_start = ABSOLUTE(.);
+    KEEP(*(.tdata.errno))
+#if CONFIG_LIBC_PICOLIBC_NEWLIB_COMPATIBILITY
+    /* Reproduce the public fields from struct _reent. */
+    KEEP(*(.tdata.tls_stdin))
+    KEEP(*(.tdata.tls_stdout))
+    KEEP(*(.tdata.tls_stderr))
+#endif // CONFIG_LIBC_PICOLIBC_NEWLIB_COMPATIBILITY
+    _picolibc_reent_stub_end = ABSOLUTE(.);
+#endif // CONFIG_LIBC_PICOLIBC
     *(.tdata .tdata.* .gnu.linkonce.td.*)
-
-    . = ALIGN(ALIGNOF(.flash.tbss));
     _thread_local_data_end = ABSOLUTE(.);
-  } > default_rodata_seg
-  ASSERT_SECTIONS_GAP(.flash.tdata, .flash.tbss)
 
-  .flash.tbss (NOLOAD) :
-  {
+    /* tbss sections */
     _thread_local_bss_start = ABSOLUTE(.);
-
     *(.tbss .tbss.* .gnu.linkonce.tb.*)
     *(.tcommon .tcommon.*)
-
     _thread_local_bss_end = ABSOLUTE(.);
+
+    . = ALIGN(ALIGNOF(.flash.rodata_noload));
   } > default_rodata_seg
+  ASSERT_SECTIONS_GAP(.flash.tdata, .flash.rodata_noload)
+  ASSERT(_thread_local_data_end == _thread_local_bss_start,
+         "tdata and tbss must be contiguous.")
+  ASSERT_PICOLIBC_REENT_STUB()
 
   /**
    * This section contains all the rodata that is not used
@@ -447,7 +470,7 @@ SECTIONS
      * driver to maintain the virtual address.
      * NOLOAD rodata may not be included in this section.
      */
-    _rodata_reserved_end = ADDR(.flash.tbss);
+    _rodata_reserved_end = .;
 
     mapping[rodata_noload]
 
