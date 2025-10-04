@@ -204,6 +204,9 @@ SECTIONS
 
     mapping[flash_rodata]
 
+#if CONFIG_LIBC_PICOLIBC
+    *(.got .got.plt) /* TODO: GCC-439 */
+#endif
     *(.irom1.text) /* catch stray ICACHE_RODATA_ATTR */
     *(.gnu.linkonce.r.*)
     *(.rodata1)
@@ -278,32 +281,41 @@ SECTIONS
 
   .flash.tdata :
   {
-    _thread_local_data_start = ABSOLUTE(.);
-
-    *(.tdata .tdata.* .gnu.linkonce.td.*)
-
-    . = ALIGN(ALIGNOF(.flash.tbss));
-
-#if CONFIG_SPIRAM_RODATA && CONFIG_SPIRAM_PRE_CONFIGURE_MEMORY_PROTECTION
-    /* Align the end of flash rodata region as per PMP granularity to allow using the
-     * page alignment gap created while mapping the flash region into the PSRAM memory.
+    /* Keep tdata and tbss sections contiguous (no gaps between them).
+     * The TLS runtime code calculates offsets assuming these sections are
+     * adjacent. Gaps would cause incorrect address calculations, leading
+     * to accessing wrong memory.
      */
-    . = ALIGN(_esp_pmp_align_size);
-#endif // CONFIG_SPIRAM_RODATA && CONFIG_SPIRAM_PRE_CONFIGURE_MEMORY_PROTECTION
-
+    /* tdata sections */
+    _thread_local_data_start = ABSOLUTE(.);
+#if CONFIG_LIBC_PICOLIBC
+    _picolibc_reent_stub_start = ABSOLUTE(.);
+    KEEP(*(.tdata.errno))
+#if CONFIG_LIBC_PICOLIBC_NEWLIB_COMPATIBILITY
+    /* Reproduce the public fields from struct _reent. */
+    KEEP(*(.tdata.tls_stdin))
+    KEEP(*(.tdata.tls_stdout))
+    KEEP(*(.tdata.tls_stderr))
+#endif // CONFIG_LIBC_PICOLIBC_NEWLIB_COMPATIBILITY
+    _picolibc_reent_stub_end = ABSOLUTE(.);
+#endif // CONFIG_LIBC_PICOLIBC
+    *(.tdata .tdata.* .gnu.linkonce.td.*)
+    . = ALIGN(ALIGNOF(.flash.tbss));
     _thread_local_data_end = ABSOLUTE(.);
   } > default_rodata_seg
   ASSERT_SECTIONS_GAP(.flash.tdata, .flash.tbss)
+  ASSERT_PICOLIBC_REENT_STUB()
 
   .flash.tbss (NOLOAD) :
   {
+    /* tbss sections */
     _thread_local_bss_start = ABSOLUTE(.);
-
     *(.tbss .tbss.* .gnu.linkonce.tb.*)
     *(.tcommon .tcommon.*)
-
     _thread_local_bss_end = ABSOLUTE(.);
   } > default_rodata_seg
+  ASSERT(_thread_local_data_end == _thread_local_bss_start,
+         "tdata and tbss must be contiguous.")
 
   /**
    * This section contains all the rodata that is not used
@@ -311,12 +323,18 @@ SECTIONS
    */
   .flash.rodata_noload (NOLOAD) :
   {
+#if CONFIG_SPIRAM_RODATA && CONFIG_SPIRAM_PRE_CONFIGURE_MEMORY_PROTECTION
+    /* Align the end of flash rodata region as per PMP granularity to allow using the
+     * page alignment gap created while mapping the flash region into the PSRAM memory.
+     */
+    . = ALIGN(_esp_pmp_align_size);
+#endif // CONFIG_SPIRAM_RODATA && CONFIG_SPIRAM_PRE_CONFIGURE_MEMORY_PROTECTION
     /**
      * This symbol marks the end of flash.rodata. It can be utilized by the MMU
      * driver to maintain the virtual address.
      * NOLOAD rodata may not be included in this section.
      */
-    _rodata_reserved_end = ADDR(.flash.tbss);
+    _rodata_reserved_end = .;
 
     mapping[rodata_noload]
   } > default_rodata_seg

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -128,13 +128,21 @@ TEST_CASE("heap trace wrapped buffer check", "[heap-trace]")
     heap_trace_stop();
 }
 
-static void print_floats_task(void *ignore)
+static void trace_libc_allocs_task(void *ignore)
 {
     heap_trace_start(HEAP_TRACE_ALL);
+
+#if CONFIG_LIBC_NEWLIB
     char buf[16] = { };
     volatile float f = 12.3456;
     sprintf(buf, "%.4f", f);
     TEST_ASSERT_EQUAL_STRING("12.3456", buf);
+#endif
+#if CONFIG_LIBC_PICOLIBC
+    FILE* f = fdopen(100, "r");
+    fclose(f);
+#endif
+
     heap_trace_stop();
 
     vTaskDelete(NULL);
@@ -158,11 +166,10 @@ TEST_CASE("can trace allocations made by newlib", "[heap-trace]")
        - We also do the tracing in the task so we only capture things directly related to it.
     */
 
-    xTaskCreate(print_floats_task, "print_float", 4096, NULL, 5, NULL);
+    xTaskCreate(trace_libc_allocs_task, "trace_libc_allocs_task", 4096, NULL, 5, NULL);
     vTaskDelay(10);
 
-    /* has to be at least a few as newlib allocates via multiple different function calls */
-    TEST_ASSERT(heap_trace_get_count() > 3);
+    TEST_ASSERT(heap_trace_get_count() > 0);
 }
 
 TEST_CASE("can stop recording allocs but continue recording frees", "[heap-trace]")

@@ -155,3 +155,28 @@ endfunction()
 function(idf_toolchain_remove_flags)
     _process_toolchain_flag_options()
 endfunction()
+
+# Workaround: Re-run CMake compiler ABI detection after ABI flags are set.
+#
+# Problem: CMake performs compiler checks at an early stage during
+# toolchain.cmake processing. At this early stage, response files are not yet
+# ready, which causes CMake paths (e.g., CMAKE_<lang>_IMPLICIT_LINK_DIRECTORIES)
+# to be incorrectly determined.
+#
+# Solution: Re-run the ABI detection after ABI flags are present to correctly
+# determine these paths.
+#
+# Note: If the CMake API changes, this solution may need to be revised.
+macro(idf_toolchain_rerun_abi_detection)
+    set(lang_ext_pairs "C|c" "CXX|cpp")
+    include(${CMAKE_ROOT}/Modules/CMakeDetermineCompilerABI.cmake)
+    foreach(lang_ext ${lang_ext_pairs})
+        string(REPLACE "|" ";" lang_ext_parts ${lang_ext})
+        list(GET lang_ext_parts 0 lang)
+        list(GET lang_ext_parts 1 ext)
+        if(DEFINED CMAKE_${lang}_ABI_COMPILED)
+            unset(CMAKE_${lang}_ABI_COMPILED)
+            cmake_determine_compiler_abi(${lang} ${CMAKE_ROOT}/Modules/CMake${lang}CompilerABI.${ext})
+        endif()
+    endforeach()
+endmacro()

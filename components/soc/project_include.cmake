@@ -36,14 +36,15 @@ if(CONFIG_IDF_TOOLCHAIN_GCC)
         # Clean compile options that were added by previous configurations and may be outdated
         idf_toolchain_remove_flags(COMPILE_OPTIONS "-march=")
 
-        if(CONFIG_SOC_CPU_HAS_HWLOOP)
-            set(_march "${_march}_xesploop")
-        endif()
+        if(CONFIG_ESP32P4_SELECTS_REV_LESS_V3)
+            set(_march "${_march}_xesppie")
+        else()
+            if(CONFIG_SOC_CPU_HAS_HWLOOP)
+                set(_march "${_march}_xesploop")
+            endif()
 
-        if(CONFIG_SOC_CPU_HAS_PIE)
-            set(_march "${_march}_xespv")
-            if(CONFIG_ESP32P4_SELECTS_REV_LESS_V3)
-                set(_march "${_march}2p1")
+            if(CONFIG_SOC_CPU_HAS_PIE)
+                set(_march "${_march}_xespv")
             endif()
         endif()
 
@@ -60,30 +61,8 @@ if(CONFIG_IDF_TOOLCHAIN_GCC)
         if(NOT CONFIG_SOC_CPU_MISALIGNED_ACCESS_ON_PMP_MISMATCH_ISSUE)
             idf_toolchain_add_flags(COMPILE_OPTIONS "-mtune=esp-base")
         endif()
+        idf_toolchain_rerun_abi_detection()
     else()
         message(FATAL_ERROR "Unknown Espressif architecture: ${CONFIG_IDF_TARGET_ARCH}")
     endif()
-
-    # Workaround: Re-run CMake compiler ABI detection after ABI flags are set.
-    #
-    # Problem: CMake performs compiler checks at an early stage during
-    # toolchain.cmake processing. At this early stage, response files are not yet
-    # ready, which causes CMake paths (e.g., CMAKE_<lang>_IMPLICIT_LINK_DIRECTORIES)
-    # to be incorrectly determined.
-    #
-    # Solution: Re-run the ABI detection after ABI flags are present to correctly
-    # determine these paths.
-    #
-    # Note: If the CMake API changes, this solution may need to be revised.
-    set(lang_ext_pairs "C|c" "CXX|cpp")
-    include(${CMAKE_ROOT}/Modules/CMakeDetermineCompilerABI.cmake)
-    foreach(lang_ext ${lang_ext_pairs})
-        string(REPLACE "|" ";" lang_ext_parts ${lang_ext})
-        list(GET lang_ext_parts 0 lang)
-        list(GET lang_ext_parts 1 ext)
-        if(DEFINED CMAKE_${lang}_ABI_COMPILED)
-            unset(CMAKE_${lang}_ABI_COMPILED)
-            cmake_determine_compiler_abi(${lang} ${CMAKE_ROOT}/Modules/CMake${lang}CompilerABI.${ext})
-        endif()
-    endforeach()
 endif()

@@ -16,6 +16,8 @@ if(CONFIG_IDF_TOOLCHAIN_GCC)
     else()
         idf_toolchain_remove_flags(LINK_OPTIONS "--specs=nano.specs")
     endif()
+
+    idf_toolchain_rerun_abi_detection()
 else() # TODO IDF-14338
     if(CONFIG_STDATOMIC_S32C1I_SPIRAM_WORKAROUND)
         idf_build_set_property(COMPILE_OPTIONS "-mdisable-hardware-atomics" APPEND)

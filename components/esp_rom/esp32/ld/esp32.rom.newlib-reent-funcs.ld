@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -59,3 +59,16 @@ __sinit_lock_release = 0x40001e2c;
 __env_lock = 0x40001fd4;
 __env_unlock = 0x40001fe0;
 _getenv_r = 0x40001fbc;
+tolower = 0x40001868;
+toupper = 0x40001884;
+isalnum = 0x40000f04;
+isalpha = 0x40000f18;
+isdigit = 0x40000f64;
+islower = 0x40000f78;
+isspace = 0x40000fd4;
+isupper = 0x40000fe8;
+strcasecmp = 0x400011cc;
+strcoll = 0x40001398;
+strlwr = 0x40001524;
+strncasecmp = 0x40001550;
+strupr = 0x4000174c;
