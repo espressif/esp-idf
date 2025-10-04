@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -33,17 +33,8 @@ static void esp_cleanup_r(struct _reent *rptr)
 #endif
 
 #if ESP_ROM_HAS_RETARGETABLE_LOCKING
-static int __retarget_lock_try_acquire(struct __lock * p)
-{
-    __retarget_lock_acquire(p);
-    return 0;
-}
-
-static int __retarget_lock_try_acquire_recursive(struct __lock *p)
-{
-    __retarget_lock_acquire_recursive(p);
-    return 0;
-}
+int __retarget_lock_try_acquire(struct __lock * p);
+int __retarget_lock_try_acquire_recursive(struct __lock *p);
 #endif
 
 static struct syscall_stub_table s_stub_table = {
@@ -143,20 +134,10 @@ void esp_reent_cleanup(void)
     return;
 }
 
-#if CONFIG_VFS_SUPPORT_IO
-FILE *stdin;
-FILE *stdout;
-FILE *stderr;
-void esp_libc_init_global_stdio(const char *stdio_dev)
-{
-    stdin = fopen(stdio_dev, "r");
-    stdout = fopen(stdio_dev, "w");
-    assert(stdin);
-    assert(stdout);
-    setlinebuf(stdout);
-    stderr = stdout;
-}
-#else  /* CONFIG_VFS_SUPPORT_IO */
+/*
+ * Initialize stdin, stdout, and stderr using static memory allocation.
+ * Creating them with fopen() would call malloc() internally.
+ */
 static char write_buf[BUFSIZ];
 static char read_buf[BUFSIZ];
 
@@ -166,10 +147,28 @@ static struct __file_bufio __stdout = FDEV_SETUP_BUFIO(1, write_buf, BUFSIZ, rea
 FILE *stdin = &__stdin.xfile.cfile.file;
 FILE *stdout = &__stdout.xfile.cfile.file;
 FILE *stderr = &__stdout.xfile.cfile.file;
+
+#if CONFIG_LIBC_PICOLIBC_NEWLIB_COMPATIBILITY
+__thread FILE* tls_stdin = &__stdin.xfile.cfile.file;
+__thread FILE* tls_stdout = &__stdout.xfile.cfile.file;
+__thread FILE* tls_stderr = &__stdout.xfile.cfile.file;
+#endif
+
+#if CONFIG_VFS_SUPPORT_IO
+void esp_libc_init_global_stdio(const char *stdio_dev)
+{
+    int stdin_fd = open(stdio_dev, O_RDONLY);
+    assert(stdin_fd > 0);
+    __stdin.ptr = (void *)(intptr_t)(stdin_fd);
+
+    int stdout_fd = open(stdio_dev, O_WRONLY);
+    assert(stdout_fd > 0);
+    __stdout.ptr = (void *)(intptr_t)(stdout_fd);
+}
+#else  /* CONFIG_VFS_SUPPORT_IO */
 void esp_libc_init_global_stdio(void)
 {
-    __lock_init_recursive(stdin->lock);
-    __lock_init_recursive(stdout->lock);
+    /* Nothing to do. */
 }
 #endif  /* CONFIG_VFS_SUPPORT_IO */
 

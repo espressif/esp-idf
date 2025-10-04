@@ -8,6 +8,7 @@
 #include <unistd.h>
 #include <sys/fcntl.h>
 #include <sys/param.h>
+#include <sys/select.h>
 #include "unity.h"
 #include "freertos/FreeRTOS.h"
 #include "driver/uart.h"

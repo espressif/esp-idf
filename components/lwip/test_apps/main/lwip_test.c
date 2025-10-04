@@ -5,6 +5,7 @@
  */
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
 #include <esp_types.h>
 
 #include "freertos/FreeRTOS.h"

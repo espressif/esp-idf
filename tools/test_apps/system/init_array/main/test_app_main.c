@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
 #include <stdio.h>
+#include <stdint.h>
 
 __attribute__((constructor))
 void foo(void)
