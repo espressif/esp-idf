@@ -913,11 +913,13 @@ function(idf_component_include name)
         if(whole_archive)
             idf_build_get_property(linker_type LINKER_TYPE)
             if(linker_type STREQUAL "GNU")
-                target_link_libraries("${component_interface}" INTERFACE
-                    "-Wl,--whole-archive" "${component_real_target}"  "-Wl,--no-whole-archive")
+                target_link_options("${component_interface}" INTERFACE
+                    "SHELL:-Wl,--whole-archive $<TARGET_FILE:${component_real_target}> -Wl,--no-whole-archive")
+                target_link_libraries("${component_interface}" INTERFACE "${component_real_target}")
             elseif(linker_type STREQUAL "Darwin")
-                target_link_libraries("${component_interface}" INTERFACE
-                    "-Wl,-force_load" "${component_real_target}")
+                target_link_options("${component_interface}" INTERFACE
+                    "SHELL:-Wl,-force_load $<TARGET_FILE:${component_real_target}>")
+                target_link_libraries("${component_interface}" INTERFACE "${component_real_target}")
             endif()
         else()
             target_link_libraries("${component_interface}" INTERFACE "${component_real_target}")
