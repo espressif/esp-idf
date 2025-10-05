@@ -488,7 +488,7 @@ esp_err_t rmt_transmit(rmt_channel_handle_t channel, rmt_encoder_t *encoder, con
     ESP_RETURN_ON_FALSE(channel && encoder && payload && payload_bytes && config, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     ESP_RETURN_ON_FALSE(channel->direction == RMT_CHANNEL_DIRECTION_TX, ESP_ERR_INVALID_ARG, TAG, "invalid channel direction");
 #if !SOC_RMT_SUPPORT_TX_LOOP_COUNT
-    ESP_RETURN_ON_FALSE(config->loop_count <= 0, ESP_ERR_NOT_SUPPORTED, TAG, "loop count is not supported");
+    ESP_RETURN_ON_FALSE(config->loop_count <= 1, ESP_ERR_NOT_SUPPORTED, TAG, "loop count is not supported");
 #endif // !SOC_RMT_SUPPORT_TX_LOOP_COUNT
 #if CONFIG_RMT_ISR_IRAM_SAFE
     // payload is retrieved by the encoder, we should make sure it's still accessible even when the cache is disabled
@@ -513,7 +513,8 @@ esp_err_t rmt_transmit(rmt_channel_handle_t channel, rmt_encoder_t *encoder, con
     t->encoder = encoder;
     t->payload = payload;
     t->payload_bytes = payload_bytes;
-    t->loop_count = config->loop_count;
+    // treat loop_count == 1 as no loop
+    t->loop_count = config->loop_count == 1 ? 0 : config->loop_count;
     t->remain_loop_count = t->loop_count;
     t->flags.eot_level = config->flags.eot_level;
 
@@ -607,19 +608,21 @@ static size_t IRAM_ATTR rmt_encode_check_result(rmt_tx_channel_t *tx_chan, rmt_t
     rmt_encode_state_t encode_state = RMT_ENCODING_RESET;
     rmt_encoder_handle_t encoder = t->encoder;
     size_t encoded_symbols = encoder->encode(encoder, &tx_chan->base, t->payload, t->payload_bytes, &encode_state);
+    bool is_mem_full = encode_state & RMT_ENCODING_MEM_FULL;
 
     if (encode_state & RMT_ENCODING_COMPLETE) {
         t->flags.encoding_done = true;
         // inserting EOF symbol if there's extra space
-        if (!(encode_state & RMT_ENCODING_MEM_FULL)) {
+        if (!is_mem_full) {
             rmt_tx_mark_eof(tx_chan);
             encoded_symbols += 1;
         }
     }
 
-    // for loop transaction, the memory block should accommodate all encoded RMT symbols
+    // for loop transaction, the memory block should accommodate all encoded RMT symbols and an extra EOF symbol
     if (t->loop_count != 0) {
-        if (unlikely(encoded_symbols > tx_chan->base.mem_block_num * SOC_RMT_MEM_WORDS_PER_CHANNEL)) {
+        size_t limit_symbols = tx_chan->base.mem_block_num * SOC_RMT_MEM_WORDS_PER_CHANNEL;
+        if (unlikely(encoded_symbols > limit_symbols || (encoded_symbols == limit_symbols && is_mem_full))) {
             ESP_DRAM_LOGE(TAG, "encoding artifacts can't exceed hw memory block for loop transmission");
         }
     }
