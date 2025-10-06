@@ -16,9 +16,11 @@ struct roam_config {
     int8_t low_rssi_threshold;
     uint8_t rssi_threshold_reduction_offset;
     bool scan_monitor;
+#if CONFIG_ESP_WIFI_ROAMING_PERIODIC_SCAN_MONITOR
     uint8_t scan_interval;
     int8_t scan_rssi_threshold;
     uint8_t scan_rssi_diff;
+#endif
     bool legacy_roam_enabled;
     uint8_t btm_retry_cnt;
     bool btm_roaming_enabled;
