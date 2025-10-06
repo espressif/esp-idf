@@ -12,6 +12,7 @@ from test_build_system_helpers import EnvDict
 from test_build_system_helpers import IdfPyFunc
 from test_build_system_helpers import append_to_file
 from test_build_system_helpers import file_contains
+from test_build_system_helpers import replace_in_file
 from test_build_system_helpers import run_cmake
 from test_build_system_helpers import run_cmake_and_build
 
@@ -48,6 +49,7 @@ def test_build_custom_cmake_project_host() -> None:
     run_cmake_and_build(str(idf_path / 'examples' / 'build_system' / 'cmake' / 'idf_as_lib'), '-G', 'Ninja')
 
 
+@pytest.mark.buildv2_skip('import_lib example uses cmakev1, not yet updated for buildv2 (IDF-14185)')
 def test_build_cmake_library_psram_workaround(test_app_copy: Path) -> None:
     logging.info(
         'Building a project with CMake library imported and PSRAM workaround, all files compile with workaround'
@@ -73,6 +75,14 @@ def test_build_cmake_library_psram_workaround(test_app_copy: Path) -> None:
 
 
 def test_build_cmake_library_psram_strategies(idf_py: IdfPyFunc, test_app_copy: Path) -> None:
+    # Add explicit REQUIRES for cmakev2 compatibility
+    # Adding a public dependency on esp_psram should propagate the compile options publicly.
+    replace_in_file(
+        test_app_copy / 'main' / 'CMakeLists.txt',
+        '# placeholder_inside_idf_component_register',
+        'REQUIRES esp_psram',
+    )
+
     for strategy in ['DUPLDST', 'NOPS', 'MEMW']:
         logging.info(f'Test for external libraries in custom CMake projects with PSRAM strategy {strategy}')
         (test_app_copy / 'sdkconfig.defaults').write_text(

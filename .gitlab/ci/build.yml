@@ -283,6 +283,7 @@ pytest_buildv2_system:
       test_versions.py
       test_common.py
       test_components.py
+      test_cmake.py
 
 pytest_build_system_macos:
   extends:
