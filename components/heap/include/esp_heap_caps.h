@@ -26,7 +26,9 @@ extern "C" {
 /**
  * @brief Flags to indicate the capabilities of the various memory systems
  */
+#if CONFIG_HEAP_HAS_EXEC_HEAP
 #define MALLOC_CAP_EXEC             (1<<0)  ///< Memory must be able to run executable code
+#endif
 #define MALLOC_CAP_32BIT            (1<<1)  ///< Memory must allow for aligned 32-bit data accesses
 #define MALLOC_CAP_8BIT             (1<<2)  ///< Memory must allow for 8/16/...-bit data accesses
 #define MALLOC_CAP_DMA              (1<<3)  ///< Memory must be able to accessed by DMA

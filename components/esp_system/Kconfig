@@ -168,6 +168,8 @@ menu "ESP System Settings"
             (above the splitting address). The memory protection is effective on all access
             through the IRAM0 and DRAM0 buses.
 
+            Note: allocating memory with MALLOC_CAP_EXEC capability is not possible when this config is enabled.
+
     choice ESP_SYSTEM_MEMPROT_MODE
         prompt "Memory Protection configurations"
         depends on ESP_SYSTEM_MEMPROT
