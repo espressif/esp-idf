@@ -148,6 +148,11 @@ static inline void ecc_ll_set_mod_base(ecc_mod_base_t base)
     }
 }
 
+static inline bool ecc_ll_is_p384_curve_operations_supported(void)
+{
+    return true;
+}
+
 static inline void ecc_ll_enable_constant_time_point_mul(bool enable)
 {
     if (enable) {
