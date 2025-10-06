@@ -44,3 +44,10 @@ examples/storage/nvs/nvsgen:
   disable_test:
     - if: IDF_TARGET != "esp32"
       reason: only one target needed
+
+examples/storage/nvs/nvs_statistics:
+  depends_components:
+    - nvs_flash
+  disable_test:
+    - if: IDF_TARGET not in ["esp32", "esp32c3"]
+      reason: only one target per arch needed
