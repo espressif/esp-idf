@@ -13,6 +13,9 @@
 #include "esp_security_priv.h"
 #include "esp_err.h"
 #include "hal/efuse_hal.h"
+#if SOC_ECDSA_P192_CURVE_DEFAULT_DISABLED
+#include "hal/ecdsa_ll.h"
+#endif
 
 #if SOC_KEY_MANAGER_ECDSA_KEY_DEPLOY || SOC_KEY_MANAGER_FE_KEY_DEPLOY
 #include "hal/key_mgr_ll.h"
@@ -42,6 +45,8 @@ ESP_SYSTEM_INIT_FN(esp_security_init, SECONDARY, BIT(0), 103)
     esp_crypto_dpa_protection_startup();
 #endif
 
+    esp_err_t err = ESP_FAIL;
+
 #if CONFIG_ESP_CRYPTO_FORCE_ECC_CONSTANT_TIME_POINT_MUL
     bool force_constant_time = true;
 #if CONFIG_IDF_TARGET_ESP32H2
@@ -51,7 +56,7 @@ ESP_SYSTEM_INIT_FN(esp_security_init, SECONDARY, BIT(0), 103)
 #endif
     if (!esp_efuse_read_field_bit(ESP_EFUSE_ECC_FORCE_CONST_TIME) && force_constant_time) {
         ESP_EARLY_LOGD(TAG, "Forcefully enabling ECC constant time operations");
-        esp_err_t err = esp_efuse_write_field_bit(ESP_EFUSE_ECC_FORCE_CONST_TIME);
+        err = esp_efuse_write_field_bit(ESP_EFUSE_ECC_FORCE_CONST_TIME);
         if (err != ESP_OK) {
             ESP_EARLY_LOGE(TAG, "Enabling ECC constant time operations forcefully failed.");
             return err;
@@ -60,14 +65,25 @@ ESP_SYSTEM_INIT_FN(esp_security_init, SECONDARY, BIT(0), 103)
 #endif
 
 #if CONFIG_ESP_ECDSA_ENABLE_P192_CURVE
-    esp_err_t err;
     err = esp_efuse_enable_ecdsa_p192_curve_mode();
     if (err != ESP_OK) {
         return err;
     }
 #endif
 
-    return ESP_OK;
+#if CONFIG_SECURE_BOOT_V2_ENABLED && SOC_ECDSA_P192_CURVE_DEFAULT_DISABLED
+    // Also write protect the ECDSA_CURVE_MODE efuse bit.
+    if (ecdsa_ll_is_configurable_curve_supported()) {
+        err = esp_efuse_write_field_bit(ESP_EFUSE_WR_DIS_ECDSA_CURVE_MODE);
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to write protect the ECDSA_CURVE_MODE efuse bit.");
+            return err;
+        }
+    }
+#endif
+
+    err = ESP_OK;
+    return err;
 }
 
 void esp_security_init_include_impl(void)

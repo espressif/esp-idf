@@ -485,6 +485,7 @@ flash 加密指南
         :SOC_EFUSE_DIS_USB_JTAG: - ``DIS_USB_JTAG``：禁止从 USB 切换到 JTAG
         :SOC_EFUSE_DIS_PAD_JTAG: - ``DIS_PAD_JTAG``：永久禁用 JTAG。
         :SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS: - ``SECURE_BOOT_AGGRESSIVE_REVOKE``：主动吊销密钥摘要。详请请参阅 :ref:`secure-boot-v2-aggressive-key-revocation`。
+        :SOC_ECDSA_P192_CURVE_DEFAULT_DISABLED: - ``WR_DIS_ECDSA_CURVE_MODE``：禁止写入 ECDSA 曲线模式的 eFuse 位。由于此写保护位与 ``ECC_FORCE_CONST_TIME`` 共享，建议先配置好 ``ECC_FORCE_CONST_TIME`` eFuse 字段后，再设置此写保护位）。
 
     运行以下命令烧录相应的 eFuse：
 
