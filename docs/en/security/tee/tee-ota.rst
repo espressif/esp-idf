@@ -8,7 +8,7 @@ The OTA update mechanism allows a device to update itself based on data received
 
 TEE OTA requires configuring the partition table of the device with at least two TEE OTA app slot partitions (i.e., ``tee_0`` and ``tee_1``) and a TEE OTA Data Partition (type ``data`` and subtype ``tee_ota``).
 
-    .. figure:: ../../../_static/esp_tee/{IDF_TARGET_PATH_NAME}/esp_tee_ota_flash_partitions.png
+    .. figure:: ../../../_static/esp_tee/esp_tee_ota_flash_partitions.png
         :align: center
         :scale: 75%
         :alt: ESP TEE OTA Flash Partition
