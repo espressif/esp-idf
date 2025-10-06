@@ -625,9 +625,8 @@ static void periodic_rrm_request(struct timeval *now)
 
 static bool candidate_security_match(wifi_ap_record_t candidate)
 {
-    u8 transition_disable = wpa_supplicant_get_transition_disable();
-
 #if CONFIG_ESP_WIFI_ROAMING_PREVENT_DOWNGRADE
+    u8 transition_disable = wpa_supplicant_get_transition_disable();
     if (transition_disable & TRANSITION_DISABLE_WPA3_PERSONAL) {
         if (candidate.authmode == WIFI_AUTH_WPA2_PSK) {
             return false;
@@ -967,9 +966,11 @@ static esp_err_t init_config_params(void)
     g_roaming_app.config.rssi_threshold_reduction_offset = RSSI_THRESHOLD_REDUCTION_OFFSET;
 
     g_roaming_app.config.scan_monitor = PERIODIC_SCAN_MONITORING;
+#if PERIODIC_SCAN_MONITORING
     g_roaming_app.config.scan_interval = SCAN_MONITOR_INTERVAL;
     g_roaming_app.config.scan_rssi_threshold = SCAN_MONITOR_RSSI_THRESHOLD;
     g_roaming_app.config.scan_rssi_diff = SCAN_ROAM_RSSI_DIFF;
+#endif /* PERIODIC_SCAN_MONITORING */
 
     g_roaming_app.config.legacy_roam_enabled = LEGACY_ROAM_ENABLED;
     g_roaming_app.config.btm_retry_cnt = BSS_TM_RETRY_COUNT;
@@ -985,9 +986,11 @@ static esp_err_t init_config_params(void)
                             g_roaming_app.config.backoff_time, g_roaming_app.config.low_rssi_roam_trigger,
                             g_roaming_app.config.low_rssi_threshold, g_roaming_app.config.rssi_threshold_reduction_offset);
 
+#if PERIODIC_SCAN_MONITORING
     ESP_LOGD(ROAMING_TAG, "scan_monitor=%d scan_interval=%d scan_rssi_threshold=%d scan_rssi_diff=%d",
                         g_roaming_app.config.scan_monitor, g_roaming_app.config.scan_interval,
                         g_roaming_app.config.scan_rssi_threshold, g_roaming_app.config.scan_rssi_diff);
+#endif /* PERIODIC_SCAN_MONITORING */
 
     ESP_LOGD(ROAMING_TAG, "legacy_roam_enabled=%d, btm_retry_cnt=%d btm_roaming_enabled=%d",
                         g_roaming_app.config.legacy_roam_enabled,
@@ -1178,9 +1181,11 @@ static int update_config_params(void *data)
                             g_roaming_app.config.backoff_time, g_roaming_app.config.low_rssi_roam_trigger,
                             g_roaming_app.config.low_rssi_threshold, g_roaming_app.config.rssi_threshold_reduction_offset);
 
+#if PERIODIC_SCAN_MONITORING
     ESP_LOGI(ROAMING_TAG, "scan_monitor=%d scan_interval=%d scan_rssi_threshold=%d scan_rssi_diff=%d",
                         g_roaming_app.config.scan_monitor, g_roaming_app.config.scan_interval,
                         g_roaming_app.config.scan_rssi_threshold, g_roaming_app.config.scan_rssi_diff);
+#endif
 
     ESP_LOGI(ROAMING_TAG, "legacy_roam_enabled=%d, btm_retry_cnt=%d btm_roaming_enabled=%d",
                         g_roaming_app.config.legacy_roam_enabled,
