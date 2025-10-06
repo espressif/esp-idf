@@ -63,7 +63,7 @@ def test_build_cmake_library_psram_workaround(test_app_copy: Path) -> None:
         '-DSDKCONFIG_DEFAULTS={}'.format(test_app_copy / 'sdkconfig.defaults'),
         str(idf_path / 'examples' / 'build_system' / 'cmake' / 'import_lib'),
     )
-    with open((test_app_copy / 'build' / 'compile_commands.json'), 'r', encoding='utf-8') as f:
+    with open((test_app_copy / 'build' / 'compile_commands.json'), encoding='utf-8') as f:
         data = f.read()
         res = re.findall(r'.*\"command\".*', data)
         for r in res:
@@ -85,7 +85,7 @@ def test_build_cmake_library_psram_strategies(idf_py: IdfPyFunc, test_app_copy: 
             )
         )
         idf_py('reconfigure')
-        with open((test_app_copy / 'build' / 'compile_commands.json'), 'r', encoding='utf-8') as f:
+        with open((test_app_copy / 'build' / 'compile_commands.json'), encoding='utf-8') as f:
             data = f.read()
             res = re.findall(r'.*\"command\".*', data)
             for r in res:
@@ -110,7 +110,7 @@ def test_defaults_unspecified_build_args(idf_copy: Path) -> None:
         '-DTARGET=esp32',
         workdir=idf_as_lib_path,
     )
-    assert 'Project directory: {}'.format(str(idf_as_lib_path.as_posix())) in ret.stderr
+    assert f'Project directory: {str(idf_as_lib_path.as_posix())}' in ret.stderr
 
 
 def test_build_example_on_host(default_idf_env: EnvDict) -> None:
