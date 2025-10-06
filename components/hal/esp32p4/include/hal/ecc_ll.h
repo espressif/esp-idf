@@ -242,6 +242,15 @@ static inline void ecc_ll_read_param(ecc_ll_param_t param, uint8_t *buf, uint16_
     memcpy(buf, (void *)reg, len);
 }
 
+static inline bool ecc_ll_is_p384_curve_operations_supported(void)
+{
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+    return true;
+#else
+    return false;
+#endif
+}
+
 static inline void ecc_ll_enable_constant_time_point_mul(bool enable)
 {
     if (enable) {
