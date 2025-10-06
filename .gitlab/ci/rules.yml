@@ -147,7 +147,6 @@
   - "components/esp_phy/lib"
   - "components/esp_wifi/lib"
   - "components/esp_coex/lib"
-  - "components/json/cJSON"
   - "components/lwip/lwip"
   - "components/mbedtls/mbedtls"
   - "components/mqtt/esp-mqtt"

@@ -136,7 +136,6 @@
 /components/http_parser/              @esp-idf-codeowners/app-utilities
 /components/idf_test/                 @esp-idf-codeowners/peripherals @esp-idf-codeowners/system
 /components/ieee802154/               @esp-idf-codeowners/ieee802154
-/components/json/                     @esp-idf-codeowners/app-utilities
 /components/linux/                    @esp-idf-codeowners/system
 /components/log/                      @esp-idf-codeowners/system
 /components/lwip/                     @esp-idf-codeowners/lwip

@@ -3,6 +3,58 @@
 
 :link_to_translation:`en:[English]`
 
+JSON
+----
+
+移除内置 JSON 组件
+~~~~~~~~~~~~~~~~~~
+
+ESP-IDF 已移除内置的 ``json`` 组件。用户应迁移至使用 `IDF 组件管理器 <https://components.espressif.com/>`_ 中的 ``espressif/cjson`` 组件。
+
+迁移步骤
+^^^^^^^^
+
+1. **从 CMakeLists.txt 中移除 json**
+
+   在组件的 ``CMakeLists.txt`` 文件中，从 ``REQUIRES`` 或 ``PRIV_REQUIRES`` 列表中移除 ``json``：
+
+   .. code-block:: cmake
+
+       # 迁移前
+       idf_component_register(SRCS "main.c"
+                              PRIV_REQUIRES json esp_http_server)
+
+       # 迁移后
+       idf_component_register(SRCS "main.c"
+                              PRIV_REQUIRES esp_http_server)
+
+2. **将 espressif/cjson 添加到 idf_component.yml**
+
+   将 ``espressif/cjson`` 依赖项添加到组件的 ``idf_component.yml`` 文件中。如果该文件不存在，请在组件目录中创建它（例如 ``main/idf_component.yml``）：
+
+   .. code-block:: yaml
+
+       dependencies:
+         espressif/cjson: "^1.7.19"
+
+3. **无需更改代码**
+
+   API 保持不变。现有的使用 cJSON 函数的代码无需修改即可继续工作：
+
+   .. code-block:: c
+
+       #include "cJSON.h"
+
+       // 现有代码无需更改
+       cJSON *root = cJSON_Parse(json_string);
+       cJSON *item = cJSON_GetObjectItem(root, "key");
+       cJSON_Delete(root);
+
+更多信息：
+
+- `espressif/cjson 组件 <https://components.espressif.com/components/espressif/cjson>`_
+- `cJSON GitHub <https://github.com/espressif/idf-extra-components/tree/master/cjson>`_
+
 ESP-TLS
 -------
 

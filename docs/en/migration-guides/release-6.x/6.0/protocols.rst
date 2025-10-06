@@ -3,6 +3,58 @@ Protocols
 
 :link_to_translation:`zh_CN:[中文]`
 
+JSON
+----
+
+Removed Built-in JSON Component
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The built-in ``json`` component has been removed from ESP-IDF. Users should migrate to using the ``espressif/cjson`` component from the `IDF Component Manager <https://components.espressif.com/>`_.
+
+Migration Steps
+^^^^^^^^^^^^^^^
+
+1. **Remove json from CMakeLists.txt**
+
+   In your component's ``CMakeLists.txt``, remove ``json`` from the ``REQUIRES`` or ``PRIV_REQUIRES`` list:
+
+   .. code-block:: cmake
+
+       # Before
+       idf_component_register(SRCS "main.c"
+                              PRIV_REQUIRES json esp_http_server)
+
+       # After
+       idf_component_register(SRCS "main.c"
+                              PRIV_REQUIRES esp_http_server)
+
+2. **Add espressif/cjson to idf_component.yml**
+
+   Add the ``espressif/cjson`` dependency to your component's ``idf_component.yml`` file. If this file doesn't exist, create it in your component directory (e.g., ``main/idf_component.yml``):
+
+   .. code-block:: yaml
+
+       dependencies:
+         espressif/cjson: "^1.7.19"
+
+3. **No Code Changes Required**
+
+   The API remains the same. Your existing code using cJSON functions will continue to work without modifications:
+
+   .. code-block:: c
+
+       #include "cJSON.h"
+
+       // Existing code works unchanged
+       cJSON *root = cJSON_Parse(json_string);
+       cJSON *item = cJSON_GetObjectItem(root, "key");
+       cJSON_Delete(root);
+
+For more information:
+
+- `espressif/cjson component <https://components.espressif.com/components/espressif/cjson>`_
+- `cJSON on GitHub <https://github.com/espressif/idf-extra-components/tree/master/cjson>`_
+
 ESP-TLS
 -------
 
