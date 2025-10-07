@@ -95,7 +95,9 @@ ESP_SYSTEM_INIT_FN(nvs_sec_provider_register_flash_enc_scheme, SECONDARY, BIT(0)
 
     if (sec_scheme_cfg.nvs_keys_part == NULL) {
         ESP_EARLY_LOGE(TAG, "partition with subtype \"nvs_keys\" not found");
+#ifdef CONFIG_NVS_SEC_PROVIDER_ABORT_IF_NVS_KEYS_MISSING
         return ESP_FAIL;
+#endif  // CONFIG_NVS_SEC_PROVIDER_ABORT_IF_NVS_KEYS_MISSING
     }
 
     nvs_sec_scheme_t *sec_scheme_handle_out = NULL;
