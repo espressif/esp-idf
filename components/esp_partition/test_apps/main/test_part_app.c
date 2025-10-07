@@ -34,21 +34,21 @@ TEST(esp_partition, test_bdl_interface)
     memset((void*)data_buffer, 0, data_size);
 
     //erase the first sector data from the blockdev and check it's really wiped
-    TEST_ESP_OK(part_blockdev->erase(part_blockdev, target_addr, part_blockdev->geometry.erase_size));
+    TEST_ESP_OK(part_blockdev->ops->erase(part_blockdev, target_addr, part_blockdev->geometry.erase_size));
     memset((void*)test_data, 0xFF, data_size); //erased NOR flash sector contains only 1s
-    TEST_ESP_OK(part_blockdev->read(part_blockdev, data_buffer, sizeof(data_buffer), target_addr, data_size));
+    TEST_ESP_OK(part_blockdev->ops->read(part_blockdev, data_buffer, sizeof(data_buffer), target_addr, data_size));
     TEST_ASSERT_EQUAL(0, memcmp(test_data, data_buffer, data_size));
 
     //write to the blockdev
     memset((void*)test_data, 'A', data_size);
-    TEST_ESP_OK(part_blockdev->write(part_blockdev, test_data, target_addr, data_size));
+    TEST_ESP_OK(part_blockdev->ops->write(part_blockdev, test_data, target_addr, data_size));
 
     //read from the blockdev the data written before
-    TEST_ESP_OK(part_blockdev->read(part_blockdev, data_buffer, sizeof(data_buffer), target_addr, data_size));
+    TEST_ESP_OK(part_blockdev->ops->read(part_blockdev, data_buffer, sizeof(data_buffer), target_addr, data_size));
     TEST_ASSERT_EQUAL(0, memcmp(test_data, data_buffer, data_size));
 
     //release the BDL object - nothing to check here, the BDL memory is just freed
-    esp_partition_release_blockdev(part_blockdev);
+    TEST_ESP_OK(part_blockdev->ops->release(part_blockdev));
 }
 
 TEST(esp_partition, test_bdl_interface_external)
@@ -68,21 +68,21 @@ TEST(esp_partition, test_bdl_interface_external)
     memset((void*)data_buffer, 0, data_size);
 
     //erase the first sector data from the blockdev and check it's really wiped
-    TEST_ESP_OK(part_blockdev->erase(part_blockdev, target_addr, part_blockdev->geometry.erase_size));
+    TEST_ESP_OK(part_blockdev->ops->erase(part_blockdev, target_addr, part_blockdev->geometry.erase_size));
     memset((void*)test_data, 0xFF, data_size); //erased NOR flash sector contains only 1s
-    TEST_ESP_OK(part_blockdev->read(part_blockdev, data_buffer, sizeof(data_buffer), target_addr, data_size));
+    TEST_ESP_OK(part_blockdev->ops->read(part_blockdev, data_buffer, sizeof(data_buffer), target_addr, data_size));
     TEST_ASSERT_EQUAL(0, memcmp(test_data, data_buffer, data_size));
 
     //write to the blockdev
     memset((void*)test_data, 'A', data_size);
-    TEST_ESP_OK(part_blockdev->write(part_blockdev, test_data, target_addr, data_size));
+    TEST_ESP_OK(part_blockdev->ops->write(part_blockdev, test_data, target_addr, data_size));
 
     //read from the blockdev the data written before
-    TEST_ESP_OK(part_blockdev->read(part_blockdev, data_buffer, sizeof(data_buffer), target_addr, data_size));
+    TEST_ESP_OK(part_blockdev->ops->read(part_blockdev, data_buffer, sizeof(data_buffer), target_addr, data_size));
     TEST_ASSERT_EQUAL(0, memcmp(test_data, data_buffer, data_size));
 
     //release the BDL object - nothing to check here, the BDL memory is just freed
-    esp_partition_release_blockdev(part_blockdev);
+    TEST_ESP_OK(part_blockdev->ops->release(part_blockdev));
 
     //deregister the external partition
     TEST_ESP_OK(esp_partition_deregister_external(ext_partition));
@@ -114,34 +114,34 @@ TEST(esp_partition, test_bdl_two_partitions)
     memset((void*)data_buffer_2, 0, data_size);
 
     //erase the first sector data from the blockdev and check it's really wiped
-    TEST_ESP_OK(part_blockdev_1->erase(part_blockdev_1, target_addr, part_blockdev_1->geometry.erase_size));
-    TEST_ESP_OK(part_blockdev_2->erase(part_blockdev_2, target_addr, part_blockdev_2->geometry.erase_size));
+    TEST_ESP_OK(part_blockdev_1->ops->erase(part_blockdev_1, target_addr, part_blockdev_1->geometry.erase_size));
+    TEST_ESP_OK(part_blockdev_2->ops->erase(part_blockdev_2, target_addr, part_blockdev_2->geometry.erase_size));
     memset((void*)test_data, 0xFF, data_size); //erased NOR flash sector contains only 1s
 
-    TEST_ESP_OK(part_blockdev_1->read(part_blockdev_1, data_buffer_1, sizeof(data_buffer_1), target_addr, data_size));
-    TEST_ESP_OK(part_blockdev_2->read(part_blockdev_2, data_buffer_2, sizeof(data_buffer_2), target_addr, data_size));
+    TEST_ESP_OK(part_blockdev_1->ops->read(part_blockdev_1, data_buffer_1, sizeof(data_buffer_1), target_addr, data_size));
+    TEST_ESP_OK(part_blockdev_2->ops->read(part_blockdev_2, data_buffer_2, sizeof(data_buffer_2), target_addr, data_size));
     TEST_ASSERT_EQUAL(0, memcmp(test_data, data_buffer_1, data_size));
     TEST_ASSERT_EQUAL(0, memcmp(test_data, data_buffer_2, data_size));
 
     //write to the blockdev 1
     memset((void*)test_data, 'A', data_size);
-    TEST_ESP_OK(part_blockdev_1->write(part_blockdev_1, test_data, target_addr, data_size));
+    TEST_ESP_OK(part_blockdev_1->ops->write(part_blockdev_1, test_data, target_addr, data_size));
 
     //read the data written before from the blockdev 1
-    TEST_ESP_OK(part_blockdev_1->read(part_blockdev_1, data_buffer_1, sizeof(data_buffer_1), target_addr, data_size));
+    TEST_ESP_OK(part_blockdev_1->ops->read(part_blockdev_1, data_buffer_1, sizeof(data_buffer_1), target_addr, data_size));
     TEST_ASSERT_EQUAL(0, memcmp(test_data, data_buffer_1, data_size));
 
     //write to the blockdev 2
     memset((void*)test_data, 'B', data_size);
-    TEST_ESP_OK(part_blockdev_2->write(part_blockdev_2, test_data, target_addr, data_size));
+    TEST_ESP_OK(part_blockdev_2->ops->write(part_blockdev_2, test_data, target_addr, data_size));
 
     //read the data written before from the blockdev 2
-    TEST_ESP_OK(part_blockdev_2->read(part_blockdev_2, data_buffer_2, sizeof(data_buffer_2), target_addr, data_size));
+    TEST_ESP_OK(part_blockdev_2->ops->read(part_blockdev_2, data_buffer_2, sizeof(data_buffer_2), target_addr, data_size));
     TEST_ASSERT_EQUAL(0, memcmp(test_data, data_buffer_2, data_size));
 
-    //release the BDL object - nothing to check here, the BDL memory is just freed
-    esp_partition_release_blockdev(part_blockdev_1);
-    esp_partition_release_blockdev(part_blockdev_2);
+    //release the BDL objects
+    TEST_ESP_OK(part_blockdev_1->ops->release(part_blockdev_1));
+    TEST_ESP_OK(part_blockdev_2->ops->release(part_blockdev_2));
 }
 
 TEST_GROUP_RUNNER(esp_partition)

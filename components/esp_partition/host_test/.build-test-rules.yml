@@ -5,7 +5,6 @@ components/esp_partition/host_test/partition_api_test:
     - if: IDF_TARGET == "linux"
       reason: only test on linux
   depends_components:
-    - spi_flash
     - esp_partition
 
 components/esp_partition/host_test/partition_bdl_test:
@@ -13,5 +12,5 @@ components/esp_partition/host_test/partition_bdl_test:
     - if: IDF_TARGET == "linux"
       reason: only test on linux
   depends_components:
-    - spi_flash
+    - esp_blockdev
     - esp_partition

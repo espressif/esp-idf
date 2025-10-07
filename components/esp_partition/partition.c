@@ -67,12 +67,6 @@ typedef struct esp_partition_iterator_opaque_ {
     esp_partition_t *info;                          // pointer to info (it is redundant, but makes code more readable)
 } esp_partition_iterator_opaque_t;
 
-typedef struct {
-    esp_blockdev_t blockdev;
-    const esp_partition_t *partition;
-} esp_partition_bdl_t;
-
-
 static SLIST_HEAD(partition_list_head_, partition_list_item_) s_partition_list = SLIST_HEAD_INITIALIZER(s_partition_list);
 static _lock_t s_partition_list_lock;
 
@@ -650,7 +644,7 @@ static esp_err_t esp_partition_blockdev_read(esp_blockdev_handle_t dev_handle, u
         return ESP_ERR_INVALID_ARG;
     }
 
-    const esp_partition_t* partition = ((esp_partition_bdl_t*)dev_handle)->partition;
+    const esp_partition_t* partition = ((const esp_partition_t*)dev_handle->ctx);
     assert(partition != NULL);
 
     esp_err_t res = esp_partition_read(partition, src_addr, dst_buf, data_read_len);
@@ -666,7 +660,7 @@ static esp_err_t esp_partition_blockdev_write(esp_blockdev_handle_t dev_handle, 
         return ESP_ERR_INVALID_SIZE;
     }
 
-    const esp_partition_t* partition = ((esp_partition_bdl_t*)dev_handle)->partition;
+    const esp_partition_t* partition = ((const esp_partition_t*)dev_handle->ctx);
     assert(partition != NULL);
 
     esp_err_t res = esp_partition_write(partition, dst_addr, src_buf, data_write_len);
@@ -682,7 +676,7 @@ static esp_err_t esp_partition_blockdev_erase(esp_blockdev_handle_t dev_handle, 
         return ESP_ERR_INVALID_SIZE;
     }
 
-    const esp_partition_t* partition = ((esp_partition_bdl_t*)dev_handle)->partition;
+    const esp_partition_t* partition = ((const esp_partition_t*)dev_handle->ctx);
     assert(partition != NULL);
 
     esp_err_t res = esp_partition_erase_range(partition, start_addr, erase_len);
@@ -691,29 +685,42 @@ static esp_err_t esp_partition_blockdev_erase(esp_blockdev_handle_t dev_handle, 
     return res;
 }
 
+static esp_err_t esp_partition_blockdev_release(esp_blockdev_handle_t dev_handle)
+{
+    free(dev_handle);
+    return ESP_OK;
+}
+
+//BDL ops singleton
+static const esp_blockdev_ops_t s_bdl_ops = {
+    .read = esp_partition_blockdev_read,
+    .write = esp_partition_blockdev_write,
+    .erase = esp_partition_blockdev_erase,
+    .release = esp_partition_blockdev_release
+};
+
 esp_err_t esp_partition_ptr_get_blockdev(const esp_partition_t* partition, esp_blockdev_handle_t *out_bdl_handle_ptr)
 {
-    esp_partition_bdl_t *out = calloc(1, sizeof(esp_partition_bdl_t));
+    esp_blockdev_t *out = calloc(1, sizeof(esp_blockdev_t));
     if (out == NULL) {
         return ESP_ERR_NO_MEM;
     }
 
-    //! the flags should be read from the bottom device - TBD (required for NAND flash etc)
-    ESP_BLOCKDEV_FLAGS_INST_CONFIG_DEFAULT(out->blockdev.device_flags);
+    out->ctx = (void*)partition;
 
-    out->blockdev.read = &esp_partition_blockdev_read;
-    out->blockdev.write = &esp_partition_blockdev_write;
-    out->blockdev.erase = &esp_partition_blockdev_erase;
-    out->blockdev.geometry.disk_size = partition->size;
-    out->blockdev.geometry.write_size = 1;
-    out->blockdev.geometry.read_size = 1;
-    out->blockdev.geometry.erase_size = partition->erase_size;
-    out->blockdev.geometry.recommended_write_size = 1;
-    out->blockdev.geometry.recommended_read_size = 1;
-    out->blockdev.geometry.recommended_erase_size = partition->erase_size;
-    out->partition = partition;
+    ESP_BLOCKDEV_FLAGS_INST_CONFIG_DEFAULT(out->device_flags);
 
-    *out_bdl_handle_ptr = (esp_blockdev_handle_t)out;
+    out->geometry.disk_size = partition->size;
+    out->geometry.write_size = 1;
+    out->geometry.read_size = 1;
+    out->geometry.erase_size = partition->erase_size;
+    out->geometry.recommended_write_size = 1;
+    out->geometry.recommended_read_size = 1;
+    out->geometry.recommended_erase_size = partition->erase_size;
+
+    out->ops = &s_bdl_ops;
+
+    *out_bdl_handle_ptr = out;
 
     return ESP_OK;
 }
@@ -729,9 +736,4 @@ esp_err_t esp_partition_get_blockdev(const esp_partition_type_t type, const esp_
     esp_partition_iterator_release(it);
 
     return res;
-}
-
-void esp_partition_release_blockdev(esp_blockdev_handle_t dev_handle)
-{
-    free((esp_partition_bdl_t*)dev_handle);
 }

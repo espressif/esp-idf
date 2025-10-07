@@ -659,18 +659,6 @@ esp_err_t esp_partition_get_blockdev(const esp_partition_type_t type, const esp_
  */
 esp_err_t esp_partition_ptr_get_blockdev(const esp_partition_t *partition, esp_blockdev_handle_t *out_bdl_handle);
 
-/**
- * @brief Release BDL instance associated with specific partition
- *
- * Releases BDL structure instance and related internal data. It is strongly recommended to use this API for releasing the BDL handles
- * created through 'esp_partition_get_blockdev()' or 'esp_partition_ptr_get_blockdev()'calls, due to possible internal dependencies
- * and memory allocations not "visible" outside of the 'esp_partition' public BDL interface.
- *
- * @param[in] dev_handle Block device instance handle to close
- *
- */
-void esp_partition_release_blockdev(esp_blockdev_handle_t dev_handle);
-
 #ifdef __cplusplus
 }
 #endif
