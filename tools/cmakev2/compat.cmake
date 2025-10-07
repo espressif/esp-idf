@@ -137,7 +137,7 @@ function(__get_component_sources)
     set(${ARG_OUTPUT} "${sources}" PARENT_SCOPE)
 endfunction()
 
-#[[api
+#[[
 .. cmakev2:function:: target_linker_script
 
     .. code-block:: cmake
@@ -195,7 +195,7 @@ function(target_linker_script target deptype scriptfiles)
     endforeach()
 endfunction()
 
-#[[api
+#[[
 .. cmakev2:function:: idf_component_optional_requires
 
     .. code-block:: cmake
@@ -282,7 +282,7 @@ function(__init_common_components)
     idf_build_set_property(__COMMON_COMPONENTS_INITIALIZED YES)
 endfunction()
 
-#[[api
+#[[
 .. cmakev2:function:: idf_component_register
 
     .. code-block:: cmake
@@ -500,7 +500,7 @@ function(idf_component_register)
     idf_component_set_property("${COMPONENT_NAME}" COMPONENT_TYPE "${component_type}")
 endfunction()
 
-#[[api
+#[[
 .. cmakev2:function:: idf_build_component
 
     .. code-block:: cmake

@@ -146,7 +146,7 @@ function(__get_library_interface_or_die)
     set(${ARG_OUTPUT} ${library_interface} PARENT_SCOPE)
 endfunction()
 
-#[[api
+#[[
 .. cmakev2:function:: idf_library_set_property
 
     .. code-block:: cmake
@@ -192,7 +192,7 @@ function(idf_library_set_property library property value)
                    ${append})
 endfunction()
 
-#[[api
+#[[
 .. cmakev2:function:: idf_library_get_property
 
     .. code-block:: cmake
@@ -257,7 +257,7 @@ function(__dump_library_properties libraries)
     endforeach()
 endfunction()
 
-#[[api
+#[[
 .. cmakev2:function:: idf_build_library
 
     .. code-block:: cmake
@@ -474,7 +474,7 @@ function(idf_build_library library)
     endforeach()
 endfunction()
 
-#[[api
+#[[
 .. cmakev2:function:: idf_build_executable
 
     .. code-block:: cmake
@@ -640,7 +640,7 @@ function(__get_components_metadata)
     set(${ARG_OUTPUT} "${components_json}" PARENT_SCOPE)
 endfunction()
 
-#[[api
+#[[
 .. cmakev2:function:: idf_build_generate_metadata
 
     .. code-block:: cmake
@@ -740,7 +740,7 @@ function(idf_build_generate_metadata executable)
          CONTENT "${project_description_json_templ}")
 endfunction()
 
-#[[api
+#[[
 .. cmakev2:function:: idf_build_binary
 
     .. code-block:: cmake
@@ -835,7 +835,7 @@ function(idf_build_binary executable)
     set_target_properties(${ARG_TARGET} PROPERTIES BINARY_PATH ${ARG_OUTPUT_FILE})
 endfunction()
 
-#[[api
+#[[
 .. cmakev2:function:: idf_sign_binary
 
     .. code-block:: cmake
@@ -936,7 +936,7 @@ function(idf_sign_binary binary)
     set_target_properties(${ARG_TARGET} PROPERTIES BINARY_PATH ${ARG_OUTPUT_FILE})
 endfunction()
 
-#[[api
+#[[
 .. cmakev2:function:: idf_flash_binary
 
     .. code-block:: cmake
@@ -1017,7 +1017,7 @@ function(idf_flash_binary binary)
     endif()
 endfunction()
 
-#[[api
+#[[
 .. cmakev2:function:: idf_check_binary_size
 
     .. code-block:: cmake
@@ -1051,7 +1051,7 @@ function(idf_check_binary_size binary)
     add_dependencies("${binary}" "${binary}_check_size")
 endfunction()
 
-#[[api
+#[[
 .. cmakev2:function:: idf_check_binary_signed
 
     .. code-block:: cmake

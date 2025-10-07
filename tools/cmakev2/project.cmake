@@ -544,7 +544,7 @@ function(__init_project_flash_targets)
     endif()
 endfunction()
 
-#[[api
+#[[
 .. cmakev2:macro:: idf_project_init
 
     .. code-block:: cmake
@@ -644,7 +644,7 @@ macro(idf_project_init)
     unset(project_initialized)
 endmacro()
 
-#[[api
+#[[
 .. cmakev2:function:: idf_build_generate_flasher_args
 
     .. code-block:: cmake

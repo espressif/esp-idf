@@ -10,7 +10,7 @@
 # Using these functions has a side effect: the actual origin of the message
 # appears as the first line of the backtrace.
 
-#[[api
+#[[
 .. cmakev2:function:: idf_die
 
     .. code-block:: cmake
@@ -34,7 +34,7 @@ function(idf_die)
     message(FATAL_ERROR " IDF: ${joined}")
 endfunction()
 
-#[[api
+#[[
 .. cmakev2:function:: idf_warn
 
     .. code-block:: cmake
@@ -57,7 +57,7 @@ function(idf_warn)
     message(WARNING " IDF: ${joined}")
 endfunction()
 
-#[[api
+#[[
 .. cmakev2:function:: idf_msg
 
     .. code-block:: cmake
@@ -80,7 +80,7 @@ function(idf_msg)
     message(STATUS " IDF: ${joined}")
 endfunction()
 
-#[[api
+#[[
 .. cmakev2:function:: idf_dbg
 
     .. code-block:: cmake
