@@ -27,6 +27,7 @@ include(kconfig)
         Property value.
 
     *APPEND*
+
         Append the value to the property's current value instead of replacing
         it.
 
