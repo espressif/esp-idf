@@ -6,7 +6,7 @@ from pytest_embedded_idf.utils import idf_parametrize
 
 
 @pytest.mark.generic
-@idf_parametrize('target', ['esp32c6'], indirect=['target'])
+@idf_parametrize('target', ['supported_targets'], indirect=['target'])
 def test_example_tee_secure_storage(dut: Dut) -> None:
     # Start test
     dut.expect('TEE Secure Storage', timeout=30)
