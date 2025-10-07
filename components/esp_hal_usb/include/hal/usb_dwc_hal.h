@@ -67,6 +67,7 @@ typedef enum {
     USB_DWC_HAL_PORT_EVENT_DISABLED,        /**< The host port has been disabled (no more SOFs). Could be due to disable/reset request, or a port error (e.g. port babble condition. See 11.8.1 of USB2.0 spec) */
     USB_DWC_HAL_PORT_EVENT_OVRCUR,          /**< The host port has encountered an overcurrent condition */
     USB_DWC_HAL_PORT_EVENT_OVRCUR_CLR,      /**< The host port has been cleared of the overcurrent condition */
+    USB_DWC_HAL_PORT_EVENT_REMOTE_WAKEUP,   /**< The host port has detected remote wakeup sequence from a device */
 } usb_dwc_hal_port_event_t;
 
 /**
@@ -304,7 +305,7 @@ static inline void usb_dwc_hal_port_init(usb_dwc_hal_context_t *hal)
 {
     //Configure Host related interrupts
     usb_dwc_ll_haintmsk_dis_chan_intr(hal->dev, 0xFFFFFFFF);   //Disable interrupts for all channels
-    usb_dwc_ll_gintmsk_en_intrs(hal->dev, USB_DWC_LL_INTR_CORE_PRTINT | USB_DWC_LL_INTR_CORE_HCHINT);
+    usb_dwc_ll_gintmsk_en_intrs(hal->dev, USB_DWC_LL_INTR_CORE_PRTINT | USB_DWC_LL_INTR_CORE_HCHINT | USB_DWC_LL_INTR_CORE_WKUPINT);
 }
 
 /**
@@ -317,7 +318,7 @@ static inline void usb_dwc_hal_port_init(usb_dwc_hal_context_t *hal)
 static inline void usb_dwc_hal_port_deinit(usb_dwc_hal_context_t *hal)
 {
     //Disable Host port and channel interrupts
-    usb_dwc_ll_gintmsk_dis_intrs(hal->dev, USB_DWC_LL_INTR_CORE_PRTINT | USB_DWC_LL_INTR_CORE_HCHINT);
+    usb_dwc_ll_gintmsk_dis_intrs(hal->dev, USB_DWC_LL_INTR_CORE_PRTINT | USB_DWC_LL_INTR_CORE_HCHINT | USB_DWC_LL_INTR_CORE_WKUPINT);
 }
 
 /**
