@@ -635,12 +635,16 @@ esp_err_t esp_partition_copy(const esp_partition_t* dest_part, uint32_t dest_off
 
 static esp_err_t esp_partition_blockdev_read(esp_blockdev_handle_t dev_handle, uint8_t* dst_buf, size_t dst_buf_size, uint64_t src_addr, size_t data_read_len)
 {
+    if (dev_handle->geometry.read_size == 0) {
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+
     //the simplest boundary check. Should be replaced by auxiliary geometry mapping function
-    if (src_addr % dev_handle->geometry.read_size != 0 || data_read_len % dev_handle->geometry.read_size) {
+    if (src_addr % dev_handle->geometry.read_size != 0 || data_read_len % dev_handle->geometry.read_size != 0) {
         return ESP_ERR_INVALID_SIZE;
     }
 
-    if (dst_buf_size > data_read_len) {
+    if (dst_buf_size < data_read_len) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -655,8 +659,12 @@ static esp_err_t esp_partition_blockdev_read(esp_blockdev_handle_t dev_handle, u
 
 static esp_err_t esp_partition_blockdev_write(esp_blockdev_handle_t dev_handle, const uint8_t* src_buf, uint64_t dst_addr, size_t data_write_len)
 {
+    if (dev_handle->device_flags.read_only || dev_handle->geometry.write_size == 0) {
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+
     //the simplest boundary check. Should be replaced by auxiliary geometry mapping function
-    if (dst_addr % dev_handle->geometry.write_size != 0 || data_write_len % dev_handle->geometry.write_size) {
+    if (dst_addr % dev_handle->geometry.write_size != 0 || data_write_len % dev_handle->geometry.write_size != 0) {
         return ESP_ERR_INVALID_SIZE;
     }
 
@@ -671,8 +679,12 @@ static esp_err_t esp_partition_blockdev_write(esp_blockdev_handle_t dev_handle, 
 
 static esp_err_t esp_partition_blockdev_erase(esp_blockdev_handle_t dev_handle, uint64_t start_addr, size_t erase_len)
 {
+    if (dev_handle->device_flags.read_only || dev_handle->geometry.erase_size == 0) {
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+
     //the simplest boundary check. Should be replaced by auxiliary geometry mapping function
-    if (start_addr % dev_handle->geometry.erase_size != 0 || erase_len % dev_handle->geometry.erase_size) {
+    if (start_addr % dev_handle->geometry.erase_size != 0 || erase_len % dev_handle->geometry.erase_size != 0) {
         return ESP_ERR_INVALID_SIZE;
     }
 
@@ -710,16 +722,29 @@ esp_err_t esp_partition_ptr_get_blockdev(const esp_partition_t* partition, esp_b
 
     ESP_BLOCKDEV_FLAGS_INST_CONFIG_DEFAULT(out->device_flags);
 
-    out->geometry.disk_size = partition->size;
-    out->geometry.write_size = 1;
+    if(partition->readonly) {
+        out->device_flags.read_only = 1;
+        out->geometry.write_size = 0;
+        out->geometry.erase_size = 0;
+        out->geometry.recommended_write_size = 0;
+        out->geometry.recommended_erase_size = 0;
+    }
+    else {
+        if (partition->encrypted) {
+            out->geometry.write_size = 16;
+            out->geometry.recommended_write_size = 16;
+        } else {
+            out->geometry.write_size = 1;
+            out->geometry.recommended_write_size = 1;
+        }
+        out->geometry.erase_size = partition->erase_size;
+        out->geometry.recommended_erase_size = partition->erase_size;
+    }
     out->geometry.read_size = 1;
-    out->geometry.erase_size = partition->erase_size;
-    out->geometry.recommended_write_size = 1;
     out->geometry.recommended_read_size = 1;
-    out->geometry.recommended_erase_size = partition->erase_size;
+    out->geometry.disk_size = partition->size;
 
     out->ops = &s_bdl_ops;
-
     *out_bdl_handle_ptr = out;
 
     return ESP_OK;
