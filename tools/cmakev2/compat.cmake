@@ -533,6 +533,28 @@ function(idf_build_component component_dir)
         set(component_source ${ARGV1})
     endif()
 
+    # Get the component name and check if it's already initialized
+    get_filename_component(component_name "${component_dir}" NAME)
+    __get_component_interface(COMPONENT "${component_name}" OUTPUT existing_interface)
+
+    if(existing_interface)
+        # Component already exists, check if it's from the same directory and source
+        idf_component_get_property(existing_dir "${existing_interface}" COMPONENT_DIR)
+        idf_component_get_property(existing_source "${existing_interface}" COMPONENT_SOURCE)
+
+        # If same directory and same source, skip re-initialization
+        # This handles the case where component manager may output the same component
+        # multiple times due to path separator issues on Windows.
+        # TODO: Remove this workaround once idf-component-manager is fixed (IDF-14260)
+        if("${component_dir}" STREQUAL "${existing_dir}" AND
+           "${component_source}" STREQUAL "${existing_source}")
+            # Component already initialized from the same location, skip duplicate
+            return()
+        endif()
+
+        # Different directory or source, let __init_component handle the priority logic
+    endif()
+
     idf_build_get_property(component_prefix PREFIX)
     __init_component(DIRECTORY "${component_dir}"
                      PREFIX "${component_prefix}"
