@@ -87,7 +87,7 @@ TEST_CASE("test usleep basic functionality", "[newlib]")
     int64_t start = esp_timer_get_time();
     TEST_ASSERT_EQUAL(0, usleep(short_sleep_us));
     int64_t end = esp_timer_get_time();
-    printf("short sleep: %lld us\n", end - start);
+    printf("short sleep: %d us\n", (int)(end - start));
     TEST_ASSERT_GREATER_OR_EQUAL(short_sleep_us, end - start);
 
     // Test multi-tick sleep using vTaskDelay path
@@ -95,7 +95,7 @@ TEST_CASE("test usleep basic functionality", "[newlib]")
     start = esp_timer_get_time();
     TEST_ASSERT_EQUAL(0, usleep(long_sleep_us));
     end = esp_timer_get_time();
-    printf("long sleep: %lld us\n", end - start);
+    printf("long sleep: %d us\n", (int)(end - start));
     TEST_ASSERT_GREATER_OR_EQUAL(long_sleep_us, end - start);
 }
 
@@ -290,8 +290,8 @@ static int64_t calc_correction(const char* tag, int64_t* sys_time, int64_t* real
     int64_t calc_correction_us = dt_real_time_us >> ADJTIME_CORRECTION_FACTOR;
     int64_t real_correction_us = dt_sys_time_us - dt_real_time_us;
     int64_t error_us = calc_correction_us - real_correction_us;
-    printf("%s: dt_real_time = %lli us, dt_sys_time = %lli us, calc_correction = %lli us, error = %lli us\n",
-           tag, dt_real_time_us, dt_sys_time_us, calc_correction_us, error_us);
+    printf("%s: dt_real_time = %d us, dt_sys_time = %d us, calc_correction = %d us, error = %d us\n",
+           tag, (int)dt_real_time_us, (int)dt_sys_time_us, (int)calc_correction_us, (int)error_us);
 
     TEST_ASSERT_TRUE(dt_sys_time_us > 0 && dt_real_time_us > 0);
     TEST_ASSERT_INT_WITHIN(100, 0, error_us);
@@ -329,7 +329,7 @@ static void measure_time_task(void *pvParameters)
 
     result_adjtime_correction_us[0] = calc_correction("main", main_sys_time_us, main_real_time_us);
     int64_t delta_us = result_adjtime_correction_us[0] - result_adjtime_correction_us[1];
-    printf("\nresult of adjtime correction: %lli us, %lli us. delta = %lli us\n", result_adjtime_correction_us[0], result_adjtime_correction_us[1], delta_us);
+    printf("\nresult of adjtime correction: %d us, %d us. delta = %d us\n", (int)result_adjtime_correction_us[0], (int)result_adjtime_correction_us[1], (int)delta_us);
     TEST_ASSERT_INT_WITHIN(100, 0, delta_us);
 
     xSemaphoreGive(*sema);
@@ -583,11 +583,11 @@ static void print_counters(void)
     int64_t high_res_time = esp_system_get_time();
     int64_t rtc = esp_rtc_get_time_us();
     uint64_t boot_time = esp_time_impl_get_boot_time();
-    printf("\tHigh-res time %lld (us)\n", high_res_time);
-    printf("\tRTC %lld (us)\n", rtc);
-    printf("\tBOOT %lld (us)\n", boot_time);
-    printf("\ts_microseconds_offset %lld (us)\n", s_microseconds_offset);
-    printf("delta RTC - high-res time counters %lld (us)\n", rtc - high_res_time);
+    printf("\tHigh-res time %d (us)\n", (int)high_res_time);
+    printf("\tRTC %d (us)\n", (int)rtc);
+    printf("\tBOOT %u (us)\n", (unsigned)boot_time);
+    printf("\ts_microseconds_offset %d (us)\n", (int)s_microseconds_offset);
+    printf("delta RTC - high-res time counters %d (us)\n", (int)(rtc - high_res_time));
 }
 
 static void set_initial_condition(type_reboot_t type_reboot, int error_time)
@@ -599,7 +599,7 @@ static void set_initial_condition(type_reboot_t type_reboot, int error_time)
 
     struct timeval tv = { .tv_sec = s_start_timestamp, .tv_usec = 0, };
     settimeofday(&tv, NULL);
-    printf("set timestamp %lld (s)\n", s_start_timestamp);
+    printf("set timestamp %d (s)\n", (int)s_start_timestamp);
 
     print_counters();
 
@@ -616,7 +616,7 @@ static void set_initial_condition(type_reboot_t type_reboot, int error_time)
 
     gettimeofday(&tv, NULL);
     s_saved_time = tv.tv_sec;
-    printf("s_saved_time %lld (s)\n", s_saved_time);
+    printf("s_saved_time %d (s)\n", (int)s_saved_time);
     int dt = s_saved_time - s_start_timestamp;
     printf("delta timestamp = %d (s)\n", dt);
     TEST_ASSERT_GREATER_OR_EQUAL(error_time, dt);
@@ -661,7 +661,7 @@ static void check_time(void)
     int latency_before_run_ut = 1 + (esp_rtc_get_time_us() - s_time_in_reboot) / 1000000;
     struct timeval tv;
     gettimeofday(&tv, NULL);
-    printf("timestamp %jd (s)\n", (intmax_t)tv.tv_sec);
+    printf("timestamp %d (s)\n", (int)tv.tv_sec);
     int dt = tv.tv_sec - s_saved_time;
     printf("delta timestamp = %d (s)\n", dt);
     TEST_ASSERT_GREATER_OR_EQUAL(0, dt);
