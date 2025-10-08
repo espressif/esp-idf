@@ -388,12 +388,14 @@ function(idf_build_library library)
 
     foreach(component_interface IN LISTS component_interfaces_linked)
         set(scripts)
+        idf_component_get_property(component_dir "${component_interface}" COMPONENT_DIR)
         idf_component_get_property(component_build_dir "${component_interface}" COMPONENT_BUILD_DIR)
         idf_component_get_property(preprocessed "${component_interface}" __LINKER_SCRIPTS_PREPROCESSED)
 
         # Add linker scripts that do not require ldgen processing.
-        idf_component_get_property(scripts_static "${component_interface}" LINKER_SCRIPTS_STATIC)
-        foreach(script IN LISTS scripts_static)
+        idf_component_get_property(scripts_static "${component_interface}" LINKER_SCRIPTS)
+        __get_absolute_paths(PATHS "${scripts_static}" BASE_DIR "${component_dir}" OUTPUT scripts_static_abs)
+        foreach(script IN LISTS scripts_static_abs)
             if(script MATCHES "\\.in$")
                 # If the linker script file name ends with the ".in" extension,
                 # preprocess it with the C preprocessor.
