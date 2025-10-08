@@ -52,7 +52,10 @@ menu "ESP NETIF Adapter"
             Enable if esp_netif_transmit() and esp_netif_receive() should generate events. This can be useful
             to blink data traffic indication lights.
 
-
+    config ESP_NETIF_RECEIVE_REPORT_ERRORS
+        # Hidden option forcing esp_netif_receive to report errors with external components and backward compatibility
+        bool
+        default y
 
     config ESP_NETIF_L2_TAP
         bool "Enable netif L2 TAP support"
