@@ -364,6 +364,12 @@ typedef struct esp_tls_cfg_server {
                                                   Important note: the pointer must be valid for connection */
 #endif
 
+    esp_tls_proto_ver_t tls_version;            /*!< TLS protocol version for this server, e.g., TLS 1.2, TLS 1.3
+                                                     (default - no preference). Enables TLS version control per server instance. */
+
+    const int *ciphersuites_list;               /*!< Pointer to a zero-terminated array of IANA identifiers of TLS ciphersuites.
+                                                     Please check the list validity by esp_tls_get_ciphersuites_list() API.
+                                                     This allows per-server cipher suite configuration. */
 } esp_tls_cfg_server_t;
 
 /**
