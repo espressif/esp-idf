@@ -20,6 +20,11 @@ static const char *TAG = "jpeg.decoder";
 
 static uint8_t jpeg_get_char(jpeg_dec_header_info_t *header_info)
 {
+    // Check if there are bytes left to read before decrementing buffer_left
+    if (header_info->buffer_left == 0) {
+        ESP_LOGE(TAG, "Buffer underflow detected in jpeg_get_char: no more bytes left to read");
+        return 0;
+    }
     uint8_t c = header_info->buffer_offset[0];
     header_info->buffer_offset++;
     header_info->header_size++;
@@ -39,20 +44,26 @@ uint32_t jpeg_get_bytes(jpeg_dec_header_info_t *header_info, uint8_t num_bytes)
 
 esp_err_t jpeg_parse_appn_marker(jpeg_dec_header_info_t *header_info)
 {
-    uint32_t skip_num = jpeg_get_bytes(header_info, 2);
-    header_info->buffer_offset += (skip_num - 2);
-    header_info->header_size += (skip_num - 2);
-    header_info->buffer_left -= (skip_num - 2);
+    uint16_t skip_num = jpeg_get_bytes(header_info, 2);
+    ESP_RETURN_ON_FALSE(skip_num >= 2, ESP_ERR_INVALID_ARG, TAG, "Invalid APPn marker length: %d", skip_num);
+    uint16_t bytes_to_skip = skip_num - 2;
+    ESP_RETURN_ON_FALSE(header_info->buffer_left >= bytes_to_skip, ESP_ERR_INVALID_ARG, TAG, "APPn marker data underflow for buffer_left: %ld", header_info->buffer_left);
+    header_info->buffer_offset += bytes_to_skip;
+    header_info->header_size += bytes_to_skip;
+    header_info->buffer_left -= bytes_to_skip;
 
     return ESP_OK;
 }
 
 esp_err_t jpeg_parse_com_marker(jpeg_dec_header_info_t *header_info)
 {
-    uint32_t skip_num = jpeg_get_bytes(header_info, 2);
-    header_info->buffer_offset += (skip_num - 2);
-    header_info->header_size += (skip_num - 2);
-    header_info->buffer_left -= (skip_num - 2);
+    uint16_t skip_num = jpeg_get_bytes(header_info, 2);
+    ESP_RETURN_ON_FALSE(skip_num >= 2, ESP_ERR_INVALID_ARG, TAG, "Invalid COM marker length: %d", skip_num);
+    uint32_t bytes_to_skip = skip_num - 2;
+    ESP_RETURN_ON_FALSE(header_info->header_size >= bytes_to_skip, ESP_ERR_INVALID_ARG, TAG, "COM marker data underflow for header_size: %ld", header_info->header_size);
+    header_info->buffer_offset += bytes_to_skip;
+    header_info->header_size += bytes_to_skip;
+    header_info->buffer_left -= bytes_to_skip;
     return ESP_OK;
 }
 
@@ -61,21 +72,25 @@ esp_err_t jpeg_parse_dqt_marker(jpeg_dec_header_info_t *header_info)
     uint32_t n = 0, i = 0, prec = 0;
     uint32_t temp = 0;
 
-    uint32_t length_num = jpeg_get_bytes(header_info, 2);
+    uint16_t length_num = jpeg_get_bytes(header_info, 2);
+    ESP_RETURN_ON_FALSE(length_num >= 2, ESP_ERR_INVALID_ARG, TAG, "Invalid DQT marker length: %d", length_num);
     length_num -= 2;
 
     while (length_num) {
         n = jpeg_get_bytes(header_info, 1);
         prec = n >> 4;
         n &= 0x0F;
+        ESP_RETURN_ON_FALSE(length_num >= 1, ESP_ERR_INVALID_ARG, TAG, "DQT marker length error: %d", length_num);
         length_num -= 1;
 
         // read quantization entries, in zig-zag order
         for (i = 0; i < 64; i++) {
             temp = jpeg_get_bytes(header_info, 1);
+            ESP_RETURN_ON_FALSE(length_num >= 1, ESP_ERR_INVALID_ARG, TAG, "DQT marker length error: %d", length_num);
             length_num -= 1;
             if (prec) {
                 temp = (temp << 8) + jpeg_get_bytes(header_info, 1);
+                ESP_RETURN_ON_FALSE(length_num >= 1, ESP_ERR_INVALID_ARG, TAG, "DQT marker length error: %d", length_num);
                 length_num -= 1;
             }
             header_info->qt_tbl[n][zigzag_arr[i]] = temp;
@@ -142,7 +157,10 @@ esp_err_t jpeg_parse_sof_marker(jpeg_dec_header_info_t *header_info)
 esp_err_t jpeg_parse_dht_marker(jpeg_dec_header_info_t *header_info)
 {
     // Recording num_left in DHT sector, not including length bytes (2 bytes).
-    uint32_t num_left = jpeg_get_bytes(header_info, 2) - 2;
+    uint16_t raw_length = jpeg_get_bytes(header_info, 2);
+    // Check for integer underflow before subtraction
+    ESP_RETURN_ON_FALSE(raw_length >= 2, ESP_ERR_INVALID_ARG, TAG, "Invalid DHT marker length: %d", raw_length);
+    uint16_t num_left = raw_length - 2;
     while (num_left) {
         uint32_t np = 0;
 
@@ -159,6 +177,8 @@ esp_err_t jpeg_parse_dht_marker(jpeg_dec_header_info_t *header_info)
             header_info->huffcode[header_info->huffinfo.type][header_info->huffinfo.id][i] = jpeg_get_bytes(header_info, 1);
         }
 
+        // Check for integer underflow before subtraction
+        ESP_RETURN_ON_FALSE(num_left >= (JPEG_HUFFMAN_BITS_LEN_TABLE_LEN + np + 1), ESP_ERR_INVALID_ARG, TAG, "DHT marker data underflow after parsing huffcode: %d", num_left);
         num_left -= (1 + JPEG_HUFFMAN_BITS_LEN_TABLE_LEN + np);
     }
 
@@ -171,7 +191,7 @@ esp_err_t jpeg_parse_dri_marker(jpeg_dec_header_info_t *header_info)
 {
     uint16_t lr = jpeg_get_bytes(header_info, 2);
     if (lr != 4) {
-        ESP_LOGE(TAG, "DRI marker got but stream length is insufficient, the length you got is %" PRIu16, lr);
+        ESP_LOGE(TAG, "DRI marker got but stream length is insufficient, the length you got is %d", lr);
         return ESP_ERR_INVALID_SIZE;
     }
     header_info->ri = jpeg_get_bytes(header_info, 2);
@@ -181,6 +201,7 @@ esp_err_t jpeg_parse_dri_marker(jpeg_dec_header_info_t *header_info)
 esp_err_t jpeg_parse_sos_marker(jpeg_dec_header_info_t *header_info)
 {
     // Got the SOS marker, but need to recover this and feed to 2DDMA.
+    ESP_RETURN_ON_FALSE(header_info->header_size >= 2, ESP_ERR_INVALID_ARG, TAG, "SOS marker header_size underflow: %ld", header_info->header_size);
     header_info->buffer_offset -= 2;
     header_info->header_size -= 2;
     header_info->buffer_left += 2;
@@ -191,6 +212,7 @@ esp_err_t jpeg_parse_inv_marker(jpeg_dec_header_info_t *header_info)
 {
     // Got invalid 0xFFFF, (followed by a valid marker type)
     // Go one byte back, to skip the first 0xFF
+    ESP_RETURN_ON_FALSE(header_info->header_size >= 1, ESP_ERR_INVALID_ARG, TAG, "INV marker header_size underflow: %ld", header_info->header_size);
     header_info->buffer_offset--;
     header_info->header_size--;
     header_info->buffer_left++;
