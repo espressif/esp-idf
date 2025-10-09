@@ -99,7 +99,7 @@ phy> cmdstop
 I (130260) phy: rx_num: 0 rx_rssi: 0
 phy>
 phy> get_rx_result
-I (139550) cmd_phy: Desired: 0, Correct: 0, RSSI: 0, flag: 2
+I (139550) cmd_phy: Correct: 0, Desired: 0, RSSI: 0, flag: 2
 phy>
 phy> bt_tx_tone -e 1 -n 1 -p 0
 I (151900) phy: BT TX TONE START!
