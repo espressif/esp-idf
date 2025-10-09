@@ -97,6 +97,7 @@ variables:
   CCACHE_MAXSIZE: "50G"
 
   FF_USE_NEW_BASH_EVAL_STRATEGY: "true"
+  FORCE_COLOR: "1"  # rich print with color
 
 ################################################
 # `before_script` and `after_script` Templates #

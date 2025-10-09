@@ -124,14 +124,12 @@ def parse_existing_table(app_dir: str) -> tuple[str | None, list[str]]:
 def get_grouped_apps(
     paths: list[str],
     exclude_dirs: list[str] | None = None,
-    extra_targets: list[str] | None = None,
 ) -> dict[str, list[App]]:
     apps = sorted(
         find_apps(
             paths,
             'all',
             exclude_list=exclude_dirs or [],
-            default_build_targets=SUPPORTED_TARGETS + (extra_targets or []),
         )
     )
 
@@ -145,10 +143,8 @@ def get_grouped_apps(
 def check_readme(
     paths: list[str],
     exclude_dirs: list[str] | None = None,
-    *,
-    extra_targets: list[str] | None = None,
 ) -> None:
-    grouped_apps = get_grouped_apps(paths, exclude_dirs, extra_targets)
+    grouped_apps = get_grouped_apps(paths, exclude_dirs)
     exit_code = 0
 
     for app_dir, apps in grouped_apps.items():
@@ -243,11 +239,10 @@ def check_test_scripts(
     paths: list[str],
     exclude_dirs: list[str] | None = None,
     *,
-    extra_targets: list[str] | None = None,
     bypass_targets: list[str] | None = None,
 ) -> None:
     # takes long time, run only in CI
-    grouped_apps = get_grouped_apps(paths, exclude_dirs, extra_targets)
+    grouped_apps = get_grouped_apps(paths, exclude_dirs)
     grouped_cases = get_grouped_cases(paths)
     exit_code = 0
 
@@ -347,14 +342,12 @@ if __name__ == '__main__':
     else:
         _exclude_dirs = [os.path.join(IDF_PATH, 'tools', 'templates', 'sample_project')]
 
-    _extra_targets: list[str] = []
     _bypass_targets: list[str] = []
     if arg.config:
         with open(arg.config) as fr:
             configs = yaml.safe_load(fr)
 
         if configs:
-            _extra_targets = configs.get('extra_default_build_targets') or []
             _bypass_targets = configs.get('bypass_check_test_targets') or []
 
     os.environ.update(
@@ -369,12 +362,10 @@ if __name__ == '__main__':
         check_readme(
             list(check_dirs),
             _exclude_dirs,
-            extra_targets=_extra_targets,
         )
     elif arg.action == 'check-test-scripts':
         check_test_scripts(
             list(check_dirs),
             _exclude_dirs,
-            extra_targets=_extra_targets,
             bypass_targets=_bypass_targets,
         )

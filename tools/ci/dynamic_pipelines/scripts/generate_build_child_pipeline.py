@@ -7,8 +7,6 @@ import logging
 import os
 
 import __init__  # noqa: F401 # inject the system path
-import yaml
-from idf_build_apps.manifest import DEFAULT_BUILD_TARGETS
 from idf_build_apps.utils import semicolon_separated_str_to_list
 from idf_ci.idf_gitlab import build_child_pipeline
 from idf_ci.utils import setup_logging
@@ -35,18 +33,6 @@ def _separate_str_to_list(s: str) -> list[str]:
 
 
 def main(arguments: argparse.Namespace) -> None:
-    # load from default build test rules config file
-    extra_default_build_targets: list[str] = []
-    if arguments.default_build_test_rules:
-        with open(arguments.default_build_test_rules) as fr:
-            configs = yaml.safe_load(fr)
-
-        if configs:
-            extra_default_build_targets = configs.get('extra_default_build_targets') or []
-
-    if extra_default_build_targets:
-        DEFAULT_BUILD_TARGETS.set(list(set(DEFAULT_BUILD_TARGETS.get()).union(set(extra_default_build_targets))))
-
     setup_logging(logging.DEBUG)
     build_child_pipeline(
         paths=args.paths,
@@ -74,11 +60,6 @@ if __name__ == '__main__':
         nargs='+',
         default=TEST_PATHS,
         help='Paths to the apps to build.',
-    )
-    parser.add_argument(
-        '--default-build-test-rules',
-        default=os.path.join(IDF_PATH, '.gitlab', 'ci', 'default-build-test-rules.yml'),
-        help='default build test rules config file',
     )
     parser.add_argument(
         '--compare-manifest-sha-filepath',
