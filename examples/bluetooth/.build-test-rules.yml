@@ -67,10 +67,10 @@ examples/bluetooth/bluedroid/classic_bt:
     - esp_driver_gpio
     - esp_driver_i2s
     - esp_driver_uart
+    - esp_driver_dac
   depends_components-:
     - mbedtls
   depends_filepatterns:
-    - components/driver/dac/**/*
     - examples/bluetooth/bluedroid/esp_hid_host/**/*
     - examples/bluetooth/bluedroid/classic_bt/pytest_classic_bt_test.py
     - examples/bluetooth/bluedroid/classic_bt/bt_discovery/pytest_classic_bt_discovery_test.py
@@ -83,8 +83,7 @@ examples/bluetooth/bluedroid/coex/a2dp_gatts_coex:
       reason: the other targets are not tested yet
   depends_components+:
     - esp_driver_i2s
-  depends_filepatterns:
-    - components/driver/dac/**/*
+    - esp_driver_dac
 
 examples/bluetooth/blufi:
   <<: *bt_default_depends

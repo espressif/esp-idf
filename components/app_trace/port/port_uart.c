@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <string.h>
 #include "soc/soc.h"
 #include "esp_log.h"
 #include "esp_cpu.h"
@@ -11,8 +12,6 @@
 
 #include "driver/uart.h"
 #include "hal/uart_ll.h"
-#include "string.h"
-#include "driver/gpio.h"
 
 #define APP_TRACE_MAX_TX_BUFF_UART          CONFIG_APPTRACE_UART_TX_BUFF_SIZE
 #define APP_TRACE_MAX_TX_MSG_UART           CONFIG_APPTRACE_UART_TX_MSG_SIZE

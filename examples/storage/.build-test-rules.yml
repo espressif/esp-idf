@@ -3,7 +3,6 @@
 examples/storage/custom_flash_driver:
   depends_components:
     - spi_flash
-    - driver
 
 examples/storage/emmc:
   depends_components:

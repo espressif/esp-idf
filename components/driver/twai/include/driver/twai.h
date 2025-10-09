@@ -10,7 +10,7 @@
 #include "esp_types.h"
 #include "esp_intr_alloc.h"
 #include "esp_err.h"
-#include "driver/gpio.h"
+#include "hal/gpio_types.h"
 #include "hal/twai_types.h"
 
 #ifdef __cplusplus
