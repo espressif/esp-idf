@@ -89,7 +89,7 @@ static esp_err_t openthread_netif_input(void *h, void *buffer, size_t len, void 
     p = pbuf_alloc(PBUF_LINK, len, PBUF_POOL);
     if (p == NULL) {
         LWIP_DEBUGF(NETIF_DEBUG, ("Failed to allocate input pbuf for OpenThread netif\n"));
-        return ESP_FAIL;
+        return ESP_ERR_NO_MEM;
     }
 
     if (unlikely(otMessageRead(message, 0, p->payload, len) != otMessageGetLength(message))) {
