@@ -93,6 +93,10 @@ static esp_err_t esp_ds_start_sign(const void *message, const esp_ds_data_t *dat
 
 #if SOC_KEY_MANAGER_DS_KEY_DEPLOY
     if (key_id == HMAC_KEY_KM) {
+        if (!key_mgr_ll_is_supported()) {
+            HAL_ASSERT(false && "Key manager is not supported");
+        }
+
         ds_hal_set_key_source(DS_KEY_SOURCE_KEY_MGR);
     } else {
         ds_hal_set_key_source(DS_KEY_SOURCE_EFUSE);

@@ -19,6 +19,9 @@
 #include "esp_system.h"
 #include "unity_test_utils_memory.h"
 
+#if SOC_KEY_MANAGER_SUPPORTED
+#include "hal/key_mgr_ll.h"
+
 #if SOC_KEY_MANAGER_HMAC_KEY_DEPLOY
 #include "esp_hmac.h"
 #include "hmac_test_cases.h"
@@ -394,3 +397,4 @@ TEST_CASE("Key Manager random mode: DS key deployment", "[hw_crypto] [key_mgr]")
     free(key_recovery_info);
 }
 #endif /* SOC_KEY_MANAGER_DS_KEY_DEPLOY */
+#endif /* SOC_KEY_MANAGER_SUPPORTED */
