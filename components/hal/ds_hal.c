@@ -7,6 +7,7 @@
 #include "hal/systimer_hal.h"
 #include "hal/ds_hal.h"
 #include "hal/ds_ll.h"
+#include "hal/assert.h"
 #include "soc/soc_caps.h"
 
 void ds_hal_start(void)
@@ -29,7 +30,7 @@ void ds_hal_set_key_source(ds_key_source_t key_source)
 {
     ds_ll_set_key_source(key_source);
 }
-#endif
+#endif /* SOC_KEY_MANAGER_DS_KEY_DEPLOY */
 
 void ds_hal_write_message(const uint8_t *msg, size_t size)
 {

@@ -21,6 +21,7 @@
 #include "hal/huk_hal.h"
 #include "rom/key_mgr.h"
 
+#if SOC_KEY_MANAGER_SUPPORTED
 static const char *TAG = "esp_key_mgr";
 
 static _lock_t s_key_mgr_ecdsa_key_lock;
@@ -914,3 +915,4 @@ esp_err_t esp_key_mgr_deploy_key_in_random_mode(const esp_key_mgr_random_key_con
 
     return esp_ret;
 }
+#endif

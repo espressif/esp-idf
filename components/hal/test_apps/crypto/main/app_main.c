@@ -6,6 +6,7 @@
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "sdkconfig.h"
 #include "unity.h"
 #include "unity_fixture.h"
 #include "unity_fixture_extras.h"
@@ -30,7 +31,7 @@ static void run_all_tests(void)
 #endif /* !CONFIG_SOC_SHA_SUPPORT_PARALLEL_ENG*/
 #endif
 
-#if CONFIG_SOC_KEY_MANAGER_SUPPORTED
+#if CONFIG_CRYPTO_IS_KEY_MANAGER_SUPPORTED
     RUN_TEST_GROUP(key_manager);
 #endif
 

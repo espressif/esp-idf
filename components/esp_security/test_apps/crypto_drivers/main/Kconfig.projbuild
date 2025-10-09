@@ -6,4 +6,12 @@ menu "ESP Security Tests"
         help
             This includes the esp_security tests that actually require burning some efuses.
             It is better to run these tests on an FPGA to avoid mistakenly burning eFuses.
+
+    config ESP_SECURITY_IS_KEY_MANAGER_SUPPORTED
+        bool
+        default n if IDF_TARGET_ESP32P4 && ESP32P4_SELECTS_REV_LESS_V3
+        default y
+        depends on SOC_KEY_MANAGER_SUPPORTED
+        help
+            A hidden config to determine if the Key Manager tests should be included.
 endmenu
