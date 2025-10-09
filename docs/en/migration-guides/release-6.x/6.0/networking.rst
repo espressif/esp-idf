@@ -162,3 +162,9 @@ This allows developers to:
 - replicate the old behavior (advertising the SoftAP IP),
 - provide custom DNS servers (for example, public resolvers), or
 - suppress DNS information entirely by setting the DNS server to ``0.0.0.0``.
+
+
+LWIP
+****
+
+The lwIP TCP/IP thread name has changed from "tiT" to "tcpip".
