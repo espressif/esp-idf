@@ -411,10 +411,10 @@ int wpa_parse_wpa_ie_rsnxe(const u8 *rsnxe_ie, size_t rsnxe_ie_len,
 	uint8_t sae_pwe = esp_wifi_get_config_sae_pwe_h2e_internal(WIFI_IF_STA);
 	memset(data, 0, sizeof(*data));
 
-	if (rsnxe_ie_len < 1) {
+	if (rsnxe_ie_len < 3 || !rsnxe_ie) {
 		return -1;
 	}
-	if (rsnxe_ie && rsnxe_ie[0] == WLAN_EID_VENDOR_SPECIFIC &&
+	if (rsnxe_ie[0] == WLAN_EID_VENDOR_SPECIFIC &&
 		rsnxe_ie[1] >= 1 + 4) {
 		rsnxe_capa = rsnxe_ie[2 + 4];
 	} else {
