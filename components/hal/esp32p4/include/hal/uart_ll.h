@@ -10,6 +10,7 @@
 
 #pragma once
 
+#include <stdint.h>
 #include "esp_attr.h"
 #include "hal/misc.h"
 #include "hal/assert.h"

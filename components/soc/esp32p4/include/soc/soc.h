@@ -224,6 +224,7 @@
 #define SOC_CPU_SUBSYSTEM_HIGH 0x30000000
 
 // Start (highest address) of ROM boot stack, only relevant during early boot
+#define SOC_ROM_STACK_START_REV2    0x4ffbcfc0
 #define SOC_ROM_STACK_START         0x4ff3cfc0
 #define SOC_ROM_STACK_SIZE          0x2000
 
