@@ -62,10 +62,10 @@ static void test_mcpwm_timer_sleep_retention(bool allow_pd)
     TEST_ESP_OK(mcpwm_new_generator(oper, &gen_config, &gen));
 
     printf("set generator to output high on timer full\r\n");
-    TEST_ESP_OK(mcpwm_generator_set_actions_on_timer_event(gen,
-                                                           MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_FULL, MCPWM_GEN_ACTION_HIGH),
-                                                           MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_GEN_ACTION_KEEP),
-                                                           MCPWM_GEN_TIMER_EVENT_ACTION_END()));
+    TEST_ESP_OK(mcpwm_generator_set_action_on_timer_event(gen,
+                                                          MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_FULL, MCPWM_GEN_ACTION_HIGH)));
+    TEST_ESP_OK(mcpwm_generator_set_action_on_timer_event(gen,
+                                                          MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_GEN_ACTION_KEEP)));
 
     // go to sleep
     esp_sleep_context_t sleep_ctx;

@@ -85,6 +85,29 @@ RMT
 
         旧版的 MCPWM 驱动 ``driver/mcpwm.h`` 在 5.0 的版本中就已经被弃用（请参考 :ref:`deprecate_mcpwm_legacy_driver`）。从 6.0 版本开始，旧版驱动被完全移除。新驱动位于 :component:`esp_driver_mcpwm` 组件中，头文件引用路径为 ``driver/mcpwm_prelude``。
 
+    可变参数生成器 API 已被移除
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    本版本中已移除旧版的可变参数（"varg"）生成器 API。原先使用可变参数方式配置生成器动作的代码，需迁移到显式、类型化的 API。这些新 API 使用配置结构体和类型明确的设置函数（例如 :cpp:type:`mcpwm_generator_config_t`、:cpp:type:`mcpwm_gen_timer_event_action_t` 和 :cpp:type:`mcpwm_generator_set_action_on_timer_event`）。
+
+    迁移步骤（摘要）：
+
+    - 用辅助结构体/宏和专用设置函数替换 varg 风格的动作配置::
+
+        .. code-block:: c
+
+            /* 旧版（varg）*/
+            mcpwm_generator_set_actions_on_compare_event(my_generator,
+                MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, my_comparator, MCPWM_GEN_ACTION_LOW),
+                MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_DOWN, my_comparator, MCPWM_GEN_ACTION_HIGH),
+                MCPWM_GEN_COMPARE_EVENT_ACTION_END());
+
+            /* 新版 */
+            mcpwm_generator_set_action_on_compare_event(my_generator,
+                MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, my_comparator, MCPWM_GEN_ACTION_LOW));
+            mcpwm_generator_set_action_on_compare_event(my_generator,
+                MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_DOWN, my_comparator, MCPWM_GEN_ACTION_HIGH));
+
 GPIO
 ----
 
