@@ -23,6 +23,10 @@ def test_http_server_async_handler_multiple_long_requests(dut: Dut) -> None:
     got_ip = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=30)[1].decode()
     got_port = 80  # Assuming the server is running on port 80
     logging.info(f'Got IP   : {got_ip}')
+    dut.expect('starting async req task worker', timeout=30)
+    dut.expect('starting async req task worker', timeout=30)
+    dut.expect(f"Starting server on port: '{got_port}'", timeout=30)
+    dut.expect('Registering URI handlers', timeout=30)
     logging.info(f'Connecting to server at {got_ip}:{got_port}')
 
     # Create two HTTP connections for long requests
@@ -74,6 +78,10 @@ def test_http_server_async_handler(dut: Dut) -> None:
     got_ip = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=30)[1].decode()
     got_port = 80  # Assuming the server is running on port 80
     logging.info(f'Got IP   : {got_ip}')
+    dut.expect('starting async req task worker', timeout=30)
+    dut.expect('starting async req task worker', timeout=30)
+    dut.expect(f"Starting server on port: '{got_port}'", timeout=30)
+    dut.expect('Registering URI handlers', timeout=30)
     logging.info(f'Connecting to server at {got_ip}:{got_port}')
 
     # Create HTTP connection
@@ -124,6 +132,10 @@ def test_http_server_async_handler_same_session_sequential(dut: Dut) -> None:
     got_ip = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=30)[1].decode()
     got_port = 80  # Assuming the server is running on port 80
     logging.info(f'Got IP   : {got_ip}')
+    dut.expect('starting async req task worker', timeout=30)
+    dut.expect('starting async req task worker', timeout=30)
+    dut.expect(f"Starting server on port: '{got_port}'", timeout=30)
+    dut.expect('Registering URI handlers', timeout=30)
     logging.info(f'Connecting to server at {got_ip}:{got_port}')
 
     # Create HTTP connection for same session testing
