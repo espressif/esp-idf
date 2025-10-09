@@ -12,6 +12,10 @@
 #include "ble_log_lbm.h"
 #include "ble_log_rt.h"
 
+#if CONFIG_SOC_ESP_NIMBLE_CONTROLLER
+#include "os/os_mbuf.h"
+#endif /* CONFIG_SOC_ESP_NIMBLE_CONTROLLER */
+
 /* VARIABLE */
 BLE_LOG_STATIC volatile uint32_t lbm_ref_count = 0;
 BLE_LOG_STATIC bool lbm_inited = false;
@@ -25,7 +29,7 @@ BLE_LOG_STATIC void ble_log_lbm_release(ble_log_lbm_t *lbm);
 BLE_LOG_STATIC
 void ble_log_lbm_write_trans(ble_log_prph_trans_t **trans, ble_log_src_t src_code,
                              const uint8_t *addr, uint16_t len,
-                             const uint8_t *addr_append, uint16_t len_append);
+                             const uint8_t *addr_append, uint16_t len_append, bool omdata);
 #if CONFIG_BLE_LOG_ENH_STAT_ENABLED
 BLE_LOG_STATIC void ble_log_stat_mgr_update(ble_log_src_t src_code, uint32_t len, bool lost);
 #endif /* CONFIG_BLE_LOG_ENH_STAT_ENABLED */
@@ -84,7 +88,7 @@ void ble_log_lbm_release(ble_log_lbm_t *lbm)
 BLE_LOG_IRAM_ATTR BLE_LOG_STATIC
 void ble_log_lbm_write_trans(ble_log_prph_trans_t **trans, ble_log_src_t src_code,
                              const uint8_t *addr, uint16_t len,
-                             const uint8_t *addr_append, uint16_t len_append)
+                             const uint8_t *addr_append, uint16_t len_append, bool omdata)
 {
     /* Preparation before writing */
     uint8_t *buf = (*trans)->buf + (*trans)->pos;
@@ -102,7 +106,16 @@ void ble_log_lbm_write_trans(ble_log_prph_trans_t **trans, ble_log_src_t src_cod
         BLE_LOG_MEMCPY(buf + BLE_LOG_FRAME_HEAD_LEN, addr, len);
     }
     if (len_append) {
-        BLE_LOG_MEMCPY(buf + BLE_LOG_FRAME_HEAD_LEN + len, addr_append, len_append);
+#if CONFIG_SOC_ESP_NIMBLE_CONTROLLER
+        if (omdata) {
+            os_mbuf_copydata((struct os_mbuf *)addr_append, 0,
+                             len_append, buf + BLE_LOG_FRAME_HEAD_LEN + len);
+        }
+        else
+#endif /* CONFIG_SOC_ESP_NIMBLE_CONTROLLER */
+        {
+            BLE_LOG_MEMCPY(buf + BLE_LOG_FRAME_HEAD_LEN + len, addr_append, len_append);
+        }
     }
 
     /* Data integrity check */
@@ -429,7 +442,7 @@ bool ble_log_write_hex(ble_log_src_t src_code, const uint8_t *addr, size_t len)
                                    xTaskGetTickCountFromISR():
                                    xTaskGetTickCount());
     ble_log_lbm_write_trans(trans, src_code, (const uint8_t *)&os_ts,
-                            sizeof(uint32_t), addr, len);
+                            sizeof(uint32_t), addr, len, false);
 
     /* Release */
     ble_log_lbm_release(lbm);
@@ -467,6 +480,7 @@ void ble_log_write_hex_ll(uint32_t len, const uint8_t *addr,
         src_code = BLE_LOG_SRC_LL_TASK;
         use_ll_task = true;
     }
+    bool omdata = flag & BIT(BLE_LOG_LL_FLAG_OMDATA);
 
     if (!lbm_enabled) {
         goto exit;
@@ -489,7 +503,7 @@ void ble_log_write_hex_ll(uint32_t len, const uint8_t *addr,
     }
 
     /* Write transport */
-    ble_log_lbm_write_trans(trans, src_code, addr, len, addr_append, len_append);
+    ble_log_lbm_write_trans(trans, src_code, addr, len, addr_append, len_append, omdata);
 
     ble_log_lbm_release(lbm);
     BLE_LOG_REF_COUNT_RELEASE(&lbm_ref_count);
