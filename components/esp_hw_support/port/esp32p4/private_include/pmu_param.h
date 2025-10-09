@@ -351,6 +351,7 @@ typedef struct {
 #define PMU_SLEEP_ANALOG_LSLP_CONFIG_DEFAULT(sleep_flags) {       \
     .hp_sys = {                                                   \
         .analog = {                                               \
+            .dcm_mode        = 1,                                 \
             .drv_b           = PMU_HP_DRVB_LIGHTSLEEP,            \
             .pd_cur          = PMU_PD_CUR_SLEEP_DEFAULT,          \
             .bias_sleep      = PMU_BIASSLP_SLEEP_DEFAULT,         \
@@ -385,6 +386,7 @@ typedef struct {
 #define PMU_SLEEP_ANALOG_DSLP_CONFIG_DEFAULT(sleep_flags) {         \
     .hp_sys = {                                                     \
         .analog = {                                                 \
+            .dcm_mode        = 0,                                   \
             .pd_cur        = PMU_PD_CUR_SLEEP_DEFAULT,              \
             .bias_sleep    = PMU_BIASSLP_SLEEP_DEFAULT,             \
             .xpd           = PMU_HP_XPD_DEEPSLEEP,                  \
@@ -503,7 +505,7 @@ typedef struct pmu_sleep_machine_constant {
         .system_dfs_up_work_time_us     = 124,  \
         .analog_wait_time_us            = PMU_HP_ANA_WAIT_TIME_PD_TOP_US, \
         .power_supply_wait_time_us      = 2,    \
-        .power_up_wait_time_us          = 2,    \
+        .power_up_wait_time_us          = 26,   \
         .regdma_s2m_work_time_us        = 172,  \
         .regdma_s2a_work_time_us        = PMU_REGDMA_S2A_WORK_TIME_US, \
         .regdma_m2a_work_time_us        = 278,  \
