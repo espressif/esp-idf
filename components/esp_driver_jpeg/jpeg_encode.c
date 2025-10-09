@@ -183,7 +183,7 @@ esp_err_t jpeg_encoder_process(jpeg_encoder_handle_t encoder_engine, const jpeg_
         encoder_engine->color_space = JPEG_ENC_SRC_YUV422;
         best_hb_idx = JPEG_ENC_SRC_YUV422_HB;
         break;
-#if !(CONFIG_ESP_REV_MIN_FULL < 300 && SOC_IS(ESP32P4))
+#if !(CONFIG_ESP_REV_MIN_FULL < 300 && CONFIG_IDF_TARGET_ESP32P4)
     case JPEG_ENCODE_IN_FORMAT_YUV444:
         encoder_engine->color_space = JPEG_ENC_SRC_YUV444;
         best_hb_idx = JPEG_ENC_SRC_YUV444_HB;
