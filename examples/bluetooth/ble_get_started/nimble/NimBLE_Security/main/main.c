@@ -85,7 +85,7 @@ static void heart_rate_task(void *param) {
 
 void app_main(void) {
     /* Local variables */
-    int rc;
+    int rc = 0;
     uint32_t seed = esp_random();
     esp_err_t ret;
 
