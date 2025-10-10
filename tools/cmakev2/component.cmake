@@ -1012,6 +1012,9 @@ function(idf_component_include name)
         return()
     endif()
 
+    # Set the component archive file name.
+    set_target_properties(${component_real_target} PROPERTIES OUTPUT_NAME ${component_name} LINKER_LANGUAGE C)
+
     idf_build_get_property(include_directories INCLUDE_DIRECTORIES GENERATOR_EXPRESSION)
     target_include_directories("${component_real_target}" BEFORE PRIVATE "${include_directories}")
 
