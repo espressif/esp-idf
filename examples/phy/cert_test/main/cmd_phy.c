@@ -82,7 +82,7 @@ static int esp_phy_get_rx_result_func(int argc, char **argv)
 
     esp_phy_get_rx_result(&rx_result);
 
-    ESP_LOGI(TAG, "Desired: %lu, Correct: %lu, RSSI: %d, flag: %lu", rx_result.phy_rx_total_count,
+    ESP_LOGI(TAG, "Correct: %lu, Desired: %lu, RSSI: %d, flag: %lu", rx_result.phy_rx_total_count,
                 rx_result.phy_rx_correct_count, rx_result.phy_rx_rssi, rx_result.phy_rx_result_flag);
 
     return 0;
