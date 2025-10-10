@@ -706,7 +706,7 @@ function(__set_component_cmakev1_properties component_name)
     endif()
 
     # Set SRCS and COMPONENT_TYPE properties
-    get_target_property(component_sources "${component_real_target}" SRCS)
+    get_target_property(component_sources "${component_real_target}" SOURCES)
     if(component_sources)
         __get_absolute_paths(PATHS "${component_sources}" BASE_DIR "${component_dir}" OUTPUT sources)
         idf_component_set_property("${component_name}" SOURCES "${sources}")
