@@ -133,7 +133,5 @@ void esp_restart_noos(void)
     // Reset CPU
     esp_rom_software_reset_cpu(0);
 
-    while (true) {
-        ;
-    }
+    ESP_INFINITE_LOOP();
 }

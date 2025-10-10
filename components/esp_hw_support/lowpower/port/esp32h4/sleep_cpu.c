@@ -465,6 +465,7 @@ static IRAM_ATTR void smp_core_do_retention(void)
     // Wait another core start to do retention
     bool smp_skip_retention = false;
     smp_retention_state_t another_core_state;
+    ESP_COMPILER_DIAGNOSTIC_PUSH_IGNORE("-Wanalyzer-infinite-loop")
     while (1) {
         another_core_state = atomic_load(&s_smp_retention_state[!core_id]);
         if (another_core_state == SMP_SKIP_RETENTION) {
@@ -475,6 +476,7 @@ static IRAM_ATTR void smp_core_do_retention(void)
             break;
         }
     }
+    ESP_COMPILER_DIAGNOSTIC_POP("-Wanalyzer-infinite-loop")
 
     if (!smp_skip_retention) {
         atomic_store(&s_smp_retention_state[core_id], SMP_BACKUP_START);
@@ -540,9 +542,11 @@ void sleep_smp_cpu_wakeup_prepare(void)
 #if ESP_SLEEP_POWER_DOWN_CPU
     uint8_t core_id = esp_cpu_get_core_id();
     if (atomic_load(&s_smp_retention_state[core_id]) == SMP_RESTORE_DONE) {
+        ESP_COMPILER_DIAGNOSTIC_PUSH_IGNORE("-Wanalyzer-infinite-loop")
         while (atomic_load(&s_smp_retention_state[!core_id]) != SMP_RESTORE_DONE) {
             ;
         }
+        ESP_COMPILER_DIAGNOSTIC_POP("-Wanalyzer-infinite-loop")
     }
     atomic_store(&s_smp_retention_state[core_id], SMP_IDLE);
 #else
