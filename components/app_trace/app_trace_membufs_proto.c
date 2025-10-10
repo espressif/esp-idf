@@ -267,7 +267,7 @@ esp_err_t esp_apptrace_membufs_flush_nolock(esp_apptrace_membufs_proto_data_t *p
         res = esp_apptrace_membufs_swap_waitus(proto, tmo);
         if (res != ESP_OK) {
             if (res == ESP_ERR_TIMEOUT) {
-                ESP_APPTRACE_LOGW("Failed to switch to another block in %" PRIi32 " us!", (int32_t)tmo->elapsed);
+                ESP_APPTRACE_LOGW("Failed to switch to another block in %" PRId32 " us!", (int32_t)tmo->elapsed);
             } else {
                 ESP_APPTRACE_LOGE("Failed to switch to another block, res: %d", res);
             }
