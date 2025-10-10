@@ -2450,7 +2450,7 @@ UINT8 *BTM_CheckEirData( UINT8 *p_eir, UINT8 type, UINT8 *p_length )
 
         /* Break loop if eir data is in an incorrect format,
            as it may lead to memory overflow */
-        if ( p >= p_eir + HCI_EXT_INQ_RESPONSE_LEN ) {
+        if ( p >= p_eir + HCI_EXT_INQ_RESPONSE_LEN - 1 ) {
             break;
         }
 
