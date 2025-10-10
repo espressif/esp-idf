@@ -916,7 +916,7 @@ static void l2c_csm_open (tL2C_CCB *p_ccb, UINT16 event, void *p_data)
 
     case L2CEVT_LP_QOS_VIOLATION_IND:               /* QOS violation         */
         /* Tell upper layer. If service guaranteed, then clear the channel   */
-        if (p_ccb->p_rcb->api.pL2CA_QoSViolationInd_Cb) {
+        if (p_ccb->p_rcb && p_ccb->p_rcb->api.pL2CA_QoSViolationInd_Cb) {
             (*p_ccb->p_rcb->api.pL2CA_QoSViolationInd_Cb)(p_ccb->p_lcb->remote_bd_addr);
         }
         break;
