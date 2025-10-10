@@ -2348,7 +2348,7 @@ void bta_dm_search_result (tBTA_DM_MSG *p_data)
 
     /* call back if application wants name discovery or found services that application is searching */
     if (( !bta_dm_search_cb.services )
-            || (( bta_dm_search_cb.services ) && ( p_data->disc_result.result.disc_res.services ))) {
+            || ( p_data->disc_result.result.disc_res.services )) {
         bta_dm_search_cb.p_search_cback(BTA_DM_DISC_RES_EVT, &p_data->disc_result.result);
     }
 

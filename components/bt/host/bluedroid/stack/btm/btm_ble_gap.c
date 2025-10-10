@@ -3745,7 +3745,7 @@ static void btm_ble_process_adv_pkt_cont(BD_ADDR bda, UINT8 addr_type, UINT8 evt
     3. For same address and scan response, do nothing
     */
     int same_addr = memcmp(bda, p_le_inq_cb->adv_addr, BD_ADDR_LEN);
-    if (same_addr != 0 || (same_addr == 0 && evt_type != BTM_BLE_SCAN_RSP_EVT)) {
+    if (same_addr != 0 || (evt_type != BTM_BLE_SCAN_RSP_EVT)) {
         btm_ble_process_last_adv_pkt();
     }
 
@@ -3796,8 +3796,7 @@ static void btm_ble_process_adv_pkt_cont(BD_ADDR bda, UINT8 addr_type, UINT8 evt
         /* new device */
         if (p_i == NULL ||
                 /* assume a DUMO device, BR/EDR inquiry is always active */
-                (p_i &&
-                 (p_i->inq_info.results.device_type & BT_DEVICE_TYPE_BLE) == BT_DEVICE_TYPE_BLE &&
+                ((p_i->inq_info.results.device_type & BT_DEVICE_TYPE_BLE) == BT_DEVICE_TYPE_BLE &&
                  p_i->scan_rsp)) {
             BTM_TRACE_WARNING("INQ RES: Extra Response Received...cancelling inquiry..");
 

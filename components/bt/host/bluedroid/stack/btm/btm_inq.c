@@ -1860,7 +1860,7 @@ void btm_process_inq_results (UINT8 *p, UINT8 inq_res_mode)
                 /* new device response */
                 && ( p_i == NULL ||
                      /* existing device with BR/EDR info */
-                     (p_i && (p_i->inq_info.results.device_type & BT_DEVICE_TYPE_BREDR) != 0)
+                     ((p_i->inq_info.results.device_type & BT_DEVICE_TYPE_BREDR) != 0)
                    )
 #endif
 
