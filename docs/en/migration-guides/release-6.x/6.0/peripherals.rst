@@ -295,6 +295,6 @@ I2S
 USB
 ---
 
-The ``usb`` component is moved to ESP Component Registry
+The ``usb`` component has been moved to `ESP Component Registry <https://components.espressif.com/components/espressif/usb>`__.
 
 You can add this dependency to your project by running ``idf.py add-dependency "espressif/usb"``.

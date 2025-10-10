@@ -291,3 +291,10 @@ I2S
 ---
 
 - ``i2s_port_t`` 类型已被移除。请使用 ``int`` 类型代替。该类型原有的 enum 项 ``I2S_NUM_0``，``I2S_NUM_1``，``I2S_NUM_2`` 和 ``I2S_NUM_AUTO`` 已用宏定义代替，以保证兼容性。
+
+USB
+---
+
+``usb`` 组件已迁移至 `乐鑫组件注册表 <https://components.espressif.com/components/espressif/usb>`__。
+
+你可以通过运行 ``idf.py add-dependency "espressif/usb"``，将此依赖添加到项目中。
