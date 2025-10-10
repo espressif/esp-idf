@@ -1192,16 +1192,16 @@ void bta_av_conn_chg(tBTA_AV_DATA *p_data)
             }
         }
     } else {
-        if ((p_cb->conn_audio & mask) && bta_av_cb.audio_open_cnt) {
-            bta_sys_conn_close(TSEP_TO_SYS_ID(p_scb->seps[p_scb->sep_idx].tsep), bta_av_cb.audio_open_cnt, p_scb->peer_addr);
-            /* this channel is still marked as open. decrease the count */
-            bta_av_cb.audio_open_cnt--;
-        }
-
-        /* clear the conned mask for this channel */
-        p_cb->conn_audio &= ~mask;
-        p_cb->conn_video &= ~mask;
         if (p_scb) {
+            if ((p_cb->conn_audio & mask) && bta_av_cb.audio_open_cnt) {
+                bta_sys_conn_close(TSEP_TO_SYS_ID(p_scb->seps[p_scb->sep_idx].tsep), bta_av_cb.audio_open_cnt, p_scb->peer_addr);
+                /* this channel is still marked as open. decrease the count */
+                bta_av_cb.audio_open_cnt--;
+            }
+            /* clear the conned mask for this channel */
+            p_cb->conn_audio &= ~mask;
+            p_cb->conn_video &= ~mask;
+
             /* the stream is closed.
              * clear the peer address, so it would not mess up the AVRCP for the next round of operation */
             bdcpy(p_scb->peer_addr, bd_addr_null);
