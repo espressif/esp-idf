@@ -549,7 +549,7 @@ void smp_concatenate_peer( tSMP_CB *p_cb, UINT8 **p_data, UINT8 op_code)
 ** Function         smp_gen_p1_4_confirm
 **
 ** Description      Generate Confirm/Compare Step1:
-**                  p1 = pres || preq || rat' || iat'
+**                  p1 = press || preq || rat' || iat'
 **
 ** Returns          void
 **
@@ -574,22 +574,22 @@ void smp_gen_p1_4_confirm( tSMP_CB *p_cb, BT_OCTET16 p1)
         UINT8_TO_STREAM(p, p_cb->addr_type);
         /* LSB : iat': responder's address type */
         UINT8_TO_STREAM(p, addr_type);
-        /* concatinate preq */
+        /* concatenate preq */
         smp_concatenate_local(p_cb, &p, SMP_OPCODE_PAIRING_REQ);
-        /* concatinate pres */
+        /* concatenate press */
         smp_concatenate_peer(p_cb, &p, SMP_OPCODE_PAIRING_RSP);
     } else {
         /* LSB : iat': initiator's address type */
         UINT8_TO_STREAM(p, addr_type);
         /* LSB : rat': responder's(local) address type */
         UINT8_TO_STREAM(p, p_cb->addr_type);
-        /* concatinate preq */
+        /* concatenate preq */
         smp_concatenate_peer(p_cb, &p, SMP_OPCODE_PAIRING_REQ);
-        /* concatinate pres */
+        /* concatenate press */
         smp_concatenate_local(p_cb, &p, SMP_OPCODE_PAIRING_RSP);
     }
 #if SMP_DEBUG == TRUE
-    SMP_TRACE_DEBUG("p1 = pres || preq || rat' || iat'\n");
+    SMP_TRACE_DEBUG("p1 = press || preq || rat' || iat'\n");
     smp_debug_print_nbyte_little_endian ((UINT8 *)p1, (const UINT8 *)"P1", 16);
 #endif
 }
@@ -654,7 +654,7 @@ void smp_calculate_comfirm (tSMP_CB *p_cb, BT_OCTET16 rand, BD_ADDR bda)
     tSMP_STATUS     status = SMP_PAIR_FAIL_UNKNOWN;
 
     SMP_TRACE_DEBUG ("smp_calculate_comfirm \n");
-    /* generate p1 = pres || preq || rat' || iat' */
+    /* generate p1 = press || preq || rat' || iat' */
     smp_gen_p1_4_confirm(p_cb, p1);
 
     /* p1 = rand XOR p1 */
@@ -2229,7 +2229,7 @@ void smp_process_new_nonce(tSMP_CB *p_cb)
 static void smp_rand_back(tBTM_RAND_ENC *p)
 {
     tSMP_CB *p_cb = &smp_cb;
-    UINT8   *pp = p->param_buf;
+    UINT8   *pp = NULL;
     UINT8   failure = SMP_PAIR_FAIL_UNKNOWN;
     UINT8   state = p_cb->rand_enc_proc_state & ~0x80;
 
@@ -2247,11 +2247,13 @@ static void smp_rand_back(tBTM_RAND_ENC *p)
             break;
 
         case SMP_GEN_DIV_LTK:
+            pp = p->param_buf;
             STREAM_TO_UINT16(p_cb->div, pp);
             smp_generate_ltk_cont(p_cb, NULL);
             break;
 
         case SMP_GEN_DIV_CSRK:
+            pp = p->param_buf;
             STREAM_TO_UINT16(p_cb->div, pp);
             smp_compute_csrk(p_cb, NULL);
             break;

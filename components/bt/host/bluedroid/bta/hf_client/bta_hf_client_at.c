@@ -1836,7 +1836,7 @@ void bta_hf_client_send_at_bia(void)
     for (i = 0; i < BTA_HF_CLIENT_AT_INDICATOR_COUNT; i++) {
         int sup = bta_hf_client_cb.scb.at_cb.indicator_lookup[i] == -1 ? 0 : 1;
 
-        at_len += snprintf(buf + at_len, BTA_HF_CLIENT_AT_MAX_LEN - at_len, "%u,", sup);
+        at_len += snprintf(buf + at_len, BTA_HF_CLIENT_AT_MAX_LEN - at_len, "%d,", sup);
     }
 
     buf[at_len - 1] = '\r';
