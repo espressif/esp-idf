@@ -229,7 +229,7 @@ void bt_app_task_start_up(void)
 {
     s_local_param.mouse_mutex = xSemaphoreCreateMutex();
     memset(s_local_param.buffer, 0, REPORT_BUFFER_SIZE);
-    xTaskCreate(mouse_move_task, "mouse_move_task", 2 * 1024, NULL, configMAX_PRIORITIES - 3, &s_local_param.mouse_task_hdl);
+    xTaskCreate(mouse_move_task, "mouse_move_task", 4 * 1024, NULL, configMAX_PRIORITIES - 3, &s_local_param.mouse_task_hdl);
     return;
 }
 
