@@ -37,11 +37,13 @@ The layout of the component's directory is organized as follows:
 .. code-block:: bash
 
     esp_target_info
-    ├── CMakeLists.txt
     ├── include
     │   └── esp_target_info.h
-    └── srcs
-        └── esp_target_info.c
+    ├── srcs
+    │   └── esp_target_info.c
+    ├── CMakeLists.txt
+    ├── esp_target_info.ld
+    └── linker.lf
 
 The ``esp_target_info.h`` header file provides the ``print_esp_target_info`` function declaration as its sole public interface, intended for use by other components.
 
@@ -64,12 +66,14 @@ The ``esp_target_info.c`` file contains the definition for the ``print_esp_targe
     #include "esp_flash.h"
     #include "esp_system.h"
 
+    void esp_target_chip_info(esp_chip_info_t*);
+
     void print_esp_target_info(void)
     {
         esp_chip_info_t chip_info;
         uint32_t flash_size = 0;
 
-        esp_chip_info(&chip_info);
+        esp_target_chip_info(&chip_info);
         esp_flash_get_size(NULL, &flash_size);
 
         printf("target: %s\n", CONFIG_IDF_TARGET);
@@ -78,6 +82,22 @@ The ``esp_target_info.c`` file contains the definition for the ``print_esp_targe
         printf("flash size: %" PRIu32 "B\n", flash_size);
     }
 
+The ``esp_target_info.ld`` linker script defines an additional symbol, ``esp_target_chip_info``, which serves as an alias for the ``esp_chip_info`` function. This alias is used in ``esp_target_info.c`` to obtain chip information instead of directly calling the ``esp_chip_info`` function. This serves no real purpose and is merely an example of a working linker script used in the demonstration.
+
+.. code-block:: bash
+    :caption: esp_target_info.ld
+
+    esp_target_chip_info = esp_chip_info;
+
+The ``linker.lf`` is a linker fragment that determines the placement of ``print_esp_target_info`` in IRAM instead of flash. This is merely an example for demonstration purposes. For more details on linker fragments, please refer to :doc:`/api-guides/linker-script-generation`.
+
+.. code-block:: bash
+    :caption: linker.lf
+
+    [mapping:esp_target_info]
+    archive: libesp_target_info.a
+    entries:
+        print_esp_target_info (noflash)
 
 Now, let's describe how the aforementioned sources can be integrated as a component for the build system by defining the component's ``CMakeLists.txt`` file.
 
@@ -105,10 +125,17 @@ Create a static library target with the target name stored in the ``COMPONENT_TA
     idf_component_include(esp_system)
 
     target_link_libraries(${COMPONENT_TARGET} PRIVATE
-        idf::esp_hw_support_iface
-        idf::spi_flash_iface
-        idf::esp_system_iface
+        idf::esp_hw_support
+        idf::spi_flash
+        idf::esp_system
     )
+
+    idf_component_set_property(${COMPONENT_TARGET} WHOLE_ARCHIVE TRUE)
+    idf_component_set_property(${COMPONENT_TARGET} LDFRAGMENTS linker.lf APPEND)
+    idf_component_set_property(${COMPONENT_TARGET} LINKER_SCRIPTS esp_target_info.ld APPEND)
+
+    target_link_options(${COMPONENT_TARGET} INTERFACE "SHELL:-u esp_chip_info")
+
 
 When a component is evaluated by the build system, the ``COMPONENT_TARGET`` variable is assigned a target name that the component is responsible for creating. This target represents the component within the build and is linked to the component interface target managed by the build system. The component interface target is what other components use to declare dependencies on this component. Other components can obtain a component’s interface target using the :cmakev2:ref:`idf_component_include` function and link to it as needed.
 
@@ -132,10 +159,16 @@ Include all required components and link them to the component's target.
     idf_component_include(esp_system)
 
     target_link_libraries(${COMPONENT_TARGET} PRIVATE
-        idf::esp_hw_support_iface
-        idf::spi_flash_iface
-        idf::esp_system_iface
+        idf::esp_hw_support
+        idf::spi_flash
+        idf::esp_system
     )
+
+    idf_component_set_property(${COMPONENT_TARGET} WHOLE_ARCHIVE TRUE)
+    idf_component_set_property(${COMPONENT_TARGET} LDFRAGMENTS linker.lf APPEND)
+    idf_component_set_property(${COMPONENT_TARGET} LINKER_SCRIPTS esp_target_info.ld APPEND)
+
+    target_link_options(${COMPONENT_TARGET} INTERFACE "SHELL:-u esp_chip_info")
 
 The ``esp_target_info`` component uses functionality from other components, namely ``esp_hw_support``, ``esp_system``, and ``spi_flash``, to collect basic information about the target. Therefore, it must declare its dependencies on these components. The component acquires the required component interface targets using the :cmakev2:ref:`idf_component_include` function.
 
@@ -169,6 +202,48 @@ Component dependencies can be conditionally expressed based on the configuration
 .. important::
 
     Always ensure that the required component is included before using it. The presence of certain component configuration options does not guarantee that the component will be included in the project build.
+
+Set miscellaneous component properties. This primarily serves as an example to demonstrate other commonly used features that the component may configure.
+
+.. code-block:: cmake
+    :caption: CMakeLists.txt
+    :linenos:
+    :emphasize-lines: 19-23
+
+    add_library(${COMPONENT_TARGET} STATIC
+        "srcs/esp_target_info.c"
+    )
+
+    target_include_directories(${COMPONENT_TARGET} PUBLIC
+        ${CMAKE_CURRENT_LIST_DIR}/include
+    )
+
+    idf_component_include(esp_hw_support)
+    idf_component_include(spi_flash)
+    idf_component_include(esp_system)
+
+    target_link_libraries(${COMPONENT_TARGET} PRIVATE
+        idf::esp_hw_support
+        idf::spi_flash
+        idf::esp_system
+    )
+
+    idf_component_set_property(${COMPONENT_TARGET} WHOLE_ARCHIVE TRUE)
+    idf_component_set_property(${COMPONENT_TARGET} LDFRAGMENTS linker.lf APPEND)
+    idf_component_set_property(${COMPONENT_TARGET} LINKER_SCRIPTS esp_target_info.ld APPEND)
+
+    target_link_options(${COMPONENT_TARGET} INTERFACE "SHELL:-u esp_chip_info")
+
+WHOLE_ARCHIVE:
+    Include all object files from the component's static library when linked.
+
+LDFRAGMENTS:
+    Include files from this property to be processed with the :doc:`/api-guides/linker-script-generation`.
+
+LINKER_SCRIPTS:
+    Include files from this property in the link command line as linker scripts.
+
+Also ensure that the ``esp_chip_info`` function is retained in the final binary even when section garbage collection, ``--gc-sections``, is enabled. This is required because ``esp_target_info.ld`` defines ``esp_target_chip_info`` as an alias for ``esp_chip_info``, and without forcing the linker to include it, the underlying ``esp_chip_info`` function could be discarded as unused.
 
 Breaking Changes for V1 Components
 ==================================
