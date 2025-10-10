@@ -719,7 +719,7 @@ static void btc_l2cap_write(uint32_t handle)
         }
         l2cap_slot_t *slot = NULL;
         slot = l2cap_find_slot_by_handle(handle);
-        if (!slot || (slot && !slot->connected)) {
+        if (!slot || !slot->connected) {
             if (!slot) {
                 BTC_TRACE_ERROR("%s unable to find l2cap slot!", __func__);
             } else {
@@ -749,7 +749,7 @@ static void btc_l2cap_disconnect(uint32_t handle)
         }
         l2cap_slot_t *slot = NULL;
         slot = l2cap_find_slot_by_handle(handle);
-        if (!slot || (slot && !slot->connected)) {
+        if (!slot || !slot->connected) {
             if (!slot) {
                 BTC_TRACE_ERROR("%s unable to find L2CAP slot! disconnect fail!", __func__);
             } else {
