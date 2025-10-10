@@ -532,7 +532,9 @@ void btm_acl_device_down (void)
 void btm_acl_update_busy_level (tBTM_BLI_EVENT event)
 {
     UINT8 busy_level_flags = 0;
+#if (CLASSIC_BT_INCLUDED == TRUE)
     BOOLEAN old_inquiry_state = btm_cb.is_inquiry;
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
 
     BTM_TRACE_DEBUG ("btm_acl_update_busy_level\n");
 
@@ -543,6 +545,7 @@ void btm_acl_update_busy_level (tBTM_BLI_EVENT event)
     case BTM_BLI_ACL_DOWN_EVT:
         BTM_TRACE_DEBUG ("BTM_BLI_ACL_DOWN_EVT\n");
         break;
+#if (CLASSIC_BT_INCLUDED == TRUE)
     case BTM_BLI_PAGE_EVT:
         BTM_TRACE_DEBUG ("BTM_BLI_PAGE_EVT\n");
         btm_cb.is_paging = TRUE;
@@ -568,16 +571,24 @@ void btm_acl_update_busy_level (tBTM_BLI_EVENT event)
         btm_cb.is_inquiry = FALSE;
         busy_level_flags = BTM_BL_INQUIRY_COMPLETE;
         break;
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
     }
 
     UINT8 busy_level;
+#if (CLASSIC_BT_INCLUDED == TRUE)
     if (btm_cb.is_paging || btm_cb.is_inquiry) {
         busy_level = 10;
-    } else {
+    } else
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
+    {
         busy_level = BTM_GetNumAclLinks();
     }
 
-    if ((busy_level != btm_cb.busy_level) || (old_inquiry_state != btm_cb.is_inquiry)) {
+    if ((busy_level != btm_cb.busy_level)
+#if (CLASSIC_BT_INCLUDED == TRUE)
+    || (old_inquiry_state != btm_cb.is_inquiry)
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
+    ) {
         tBTM_BL_UPDATE_DATA evt = {
             .event = BTM_BL_UPDATE_EVT,
             .busy_level = busy_level,
@@ -2640,6 +2651,7 @@ void btm_cont_rswitch (tACL_CONN *p, tBTM_SEC_DEV_REC *p_dev_rec,
     }
 }
 
+#if (CLASSIC_BT_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         btm_acl_resubmit_page
@@ -2693,6 +2705,7 @@ void  btm_acl_reset_paging (void)
 
     btm_cb.paging = FALSE;
 }
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
 
 /*******************************************************************************
 **

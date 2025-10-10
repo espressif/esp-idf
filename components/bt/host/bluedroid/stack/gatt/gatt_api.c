@@ -1044,11 +1044,13 @@ tGATT_STATUS GATTC_Read (UINT16 conn_id, tGATT_READ_TYPE type, tGATT_READ_PARAM 
         default:
             break;
         }
+#if (SMP_INCLUDED == TRUE)
         /* start security check */
         if (gatt_security_check_start(p_clcb) == FALSE) {
             status = GATT_NO_RESOURCES;
             gatt_clcb_dealloc(p_clcb);
         }
+#endif // (SMP_INCLUDED == TRUE)
     } else {
         status = GATT_NO_RESOURCES;
     }
@@ -1108,10 +1110,11 @@ tGATT_STATUS GATTC_Write (UINT16 conn_id, tGATT_WRITE_TYPE type, tGATT_VALUE *p_
                 p_clcb->start_offset = p_write->offset;
                 p->offset = 0;
             }
-
+#if (SMP_INCLUDED == TRUE)
             if (gatt_security_check_start(p_clcb) == FALSE) {
                 status = GATT_NO_RESOURCES;
             }
+#endif // (SMP_INCLUDED == TRUE)
         } else {
             status = GATT_NO_RESOURCES;
         }
@@ -1584,6 +1587,7 @@ tGATT_STATUS GATT_Disconnect (UINT16 conn_id)
     return ret;
 }
 
+#if (GATTS_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         GATT_SendServiceChangeIndication
@@ -1630,6 +1634,7 @@ tGATT_STATUS GATT_SendServiceChangeIndication (BD_ADDR bd_addr)
 
     return status;
 }
+#endif // (GATTS_INCLUDED == TRUE)
 
 /*******************************************************************************
 **
@@ -1737,6 +1742,7 @@ BOOLEAN GATT_Listen (tGATT_IF gatt_if, BOOLEAN start, BD_ADDR_PTR bd_addr)
     return gatt_update_listen_mode();
 }
 
+#if (GATTS_INCLUDED == TRUE)
 tGATT_STATUS GATTS_SetServiceChangeMode(UINT8 mode)
 {
     if (mode > GATTS_SEND_SERVICE_CHANGE_MANUAL) {
@@ -1747,6 +1753,8 @@ tGATT_STATUS GATTS_SetServiceChangeMode(UINT8 mode)
     gatt_cb.srv_chg_mode = mode;
     return GATT_SUCCESS;
 }
+
+#endif // (GATTS_INCLUDED == TRUE)
 
 tGATT_STATUS GATTS_HandleMultiValueNotification (UINT16 conn_id, tGATT_HLV *tuples, UINT16 num_tuples)
 {
