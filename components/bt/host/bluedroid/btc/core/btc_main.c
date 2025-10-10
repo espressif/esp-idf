@@ -183,7 +183,6 @@ uint32_t btc_get_ble_status(void)
     }
 #endif // #if ((SMP_INCLUDED == TRUE) || (BLE_PRIVACY_SPT == TRUE))
 
-#if (SMP_INCLUDED == TRUE)
     // Number of recorded devices
     extern uint8_t btm_ble_sec_dev_record_count(void);
     uint8_t sec_dev_cnt = btm_ble_sec_dev_record_count();
@@ -191,14 +190,14 @@ uint32_t btc_get_ble_status(void)
         BTC_TRACE_WARNING("%s security device record count %d", __func__, sec_dev_cnt);
         status |= BIT(BTC_BLE_STATUS_DEVICE_REC);
     }
-
+#if SMP_INCLUDED == TRUE
     // Number of saved bonded devices
     int bond_cnt = btc_storage_get_num_ble_bond_devices();
     if (bond_cnt) {
         BTC_TRACE_WARNING("%s bonded devices count %d", __func__, bond_cnt);
         status |= BIT(BTC_BLE_STATUS_BOND);
     }
-#endif // SMP_INCLUDED
+#endif // SMP_INCLUDED == TRUE
 
 #if (BLE_PRIVACY_SPT == TRUE)
     // Privacy enabled
