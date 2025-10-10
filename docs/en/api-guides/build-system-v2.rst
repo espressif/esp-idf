@@ -26,6 +26,10 @@ Finally, the :cmakev2:ref:`idf_project_default` function creates the default pro
 Creating a New Component
 ========================
 
+.. important::
+
+    This section describes how to create a component for v2, which is not compatible or usable with v1. To create a component that works with both versions, it is recommended to start by creating the component for :doc:`v1 </api-guides/build-system>`. If modifications are required to make the v1 component compatible with v2, refer to the guidelines in `Breaking Changes for V1 Components`_.
+
 This section demonstrates how to create a new component using a simple component named ``esp_target_info`` as an example. This component provides the ``print_esp_target_info`` function, which, when invoked, displays basic information about the target.
 
 The layout of the component's directory is organized as follows:
