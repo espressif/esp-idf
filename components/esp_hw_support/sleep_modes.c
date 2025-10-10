@@ -327,8 +327,14 @@ static portMUX_TYPE __attribute__((unused)) spinlock_rtc_deep_sleep = portMUX_IN
 
 ESP_LOG_ATTR_TAG(TAG, "sleep");
 
-/* APP core of esp32 can't access to RTC FAST MEMORY, do not define it with RTC_IRAM_ATTR */
-RTC_SLOW_ATTR static int32_t s_sleep_sub_mode_ref_cnt[ESP_SLEEP_MODE_MAX] = { 0 };
+/* APP core of esp32 can't access to RTC FAST MEMORY, do not define it with RTC_IRAM_ATTR,
+   RTC_SLOW_ATTR is for ESP_SLEEP_USE_ADC_TSEN_MONITOR_MODE only, For other submodules, there is
+   no logical error if the ref_cnt is stored in DRAM. and ESP_SLEEP_USE_ADC_TSEN_MONITOR_MODE
+   will only be used on chips that support RTC_MEM */
+#if SOC_RTC_FAST_MEM_SUPPORTED || SOC_RTC_SLOW_MEM_SUPPORTED
+RTC_SLOW_ATTR
+#endif
+static int32_t s_sleep_sub_mode_ref_cnt[ESP_SLEEP_MODE_MAX] = { 0 };
 
 void esp_sleep_overhead_out_time_refresh(void)
 {
@@ -360,7 +366,6 @@ static void gpio_deep_sleep_wakeup_prepare(void);
 #if ESP_ROM_SUPPORT_DEEP_SLEEP_WAKEUP_STUB && SOC_DEEP_SLEEP_SUPPORTED
 #if SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY
 static RTC_FAST_ATTR esp_deep_sleep_wake_stub_fn_t wake_stub_fn_handler = NULL;
-
 static void RTC_IRAM_ATTR __attribute__((used, noinline)) esp_wake_stub_start(void)
 {
     if (wake_stub_fn_handler) {
@@ -391,7 +396,6 @@ static void __attribute__((section(".rtc.entry.text"))) esp_wake_stub_entry(void
     // which is sufficient for instruction addressing in RTC fast memory.
     __asm__ __volatile__ ("call4 " SYM2STR(esp_wake_stub_start) "\n");
 #endif
-
 }
 
 void RTC_IRAM_ATTR esp_set_deep_sleep_wake_stub_default_entry(void)
@@ -427,7 +431,7 @@ esp_deep_sleep_wake_stub_fn_t esp_get_deep_sleep_wake_stub(void)
 #if CONFIG_IDF_TARGET_ESP32
 /* APP core of esp32 can't access to RTC FAST MEMORY, link to RTC SLOW MEMORY instead*/
 RTC_SLOW_ATTR
-#else
+#elif (SOC_RTC_FAST_MEM_SUPPORTED || SOC_RTC_SLOW_MEM_SUPPORTED)
 RTC_IRAM_ATTR
 #endif
 void esp_set_deep_sleep_wake_stub(esp_deep_sleep_wake_stub_fn_t new_stub)
@@ -443,7 +447,7 @@ void esp_set_deep_sleep_wake_stub(esp_deep_sleep_wake_stub_fn_t new_stub)
 #if CONFIG_IDF_TARGET_ESP32
 /* APP core of esp32 can't access to RTC FAST MEMORY, link to RTC SLOW MEMORY instead*/
 RTC_SLOW_ATTR
-#else
+#elif (SOC_RTC_FAST_MEM_SUPPORTED || SOC_RTC_SLOW_MEM_SUPPORTED)
 RTC_IRAM_ATTR
 #endif
 void esp_default_wake_deep_sleep(void)
@@ -2863,7 +2867,7 @@ static SLEEP_FN_ATTR uint32_t get_sleep_clock_icg_flags(void)
 #if CONFIG_IDF_TARGET_ESP32
 /* APP core of esp32 can't access to RTC FAST MEMORY, do not define it with RTC_IRAM_ATTR */
 RTC_SLOW_ATTR
-#else
+#elif (SOC_RTC_FAST_MEM_SUPPORTED || SOC_RTC_SLOW_MEM_SUPPORTED)
 RTC_IRAM_ATTR
 #endif
 void esp_deep_sleep_disable_rom_logging(void)
