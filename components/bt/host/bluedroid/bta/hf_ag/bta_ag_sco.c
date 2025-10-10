@@ -1370,14 +1370,8 @@ BOOLEAN bta_ag_sco_is_open(tBTA_AG_SCB *p_scb)
 *******************************************************************************/
 BOOLEAN bta_ag_sco_is_opening(tBTA_AG_SCB *p_scb)
 {
-#if (BTM_WBS_INCLUDED == TRUE )
-    return (((bta_ag_cb.sco.state == BTA_AG_SCO_OPENING_ST) ||
-            (bta_ag_cb.sco.state == BTA_AG_SCO_OPENING_ST)) &&
-            (bta_ag_cb.sco.p_curr_scb == p_scb));
-#else
     return ((bta_ag_cb.sco.state == BTA_AG_SCO_OPENING_ST) &&
             (bta_ag_cb.sco.p_curr_scb == p_scb));
-#endif
 }
 
 /*******************************************************************************
@@ -1665,7 +1659,7 @@ void bta_ag_sco_conn_rsp(tBTA_AG_SCB *p_scb, tBTM_ESCO_CONN_REQ_EVT_DATA *p_data
         bta_ag_cb.sco.state == BTA_AG_SCO_CLOSE_XFER_ST ||
         bta_ag_cb.sco.state == BTA_AG_SCO_OPEN_XFER_ST)
     {
-        /* If script overrided sco parameter by BTA_CMD_SET_ESCO_PARAM */
+        /* If script overrode sco parameter by BTA_CMD_SET_ESCO_PARAM */
         if (bta_ag_cb.sco.param_updated)
         {
             resp = bta_ag_cb.sco.params;
@@ -1736,7 +1730,7 @@ void bta_ag_sco_conn_rsp(tBTA_AG_SCB *p_scb, tBTM_ESCO_CONN_REQ_EVT_DATA *p_data
 **
 ** Function         bta_ag_ci_sco_data
 **
-** Description      Process the SCO data ready callin event
+** Description      Process the SCO data ready call in event
 **
 **
 ** Returns          void
