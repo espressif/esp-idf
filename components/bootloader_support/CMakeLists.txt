@@ -72,7 +72,7 @@ endif()
 if(BOOTLOADER_BUILD OR CONFIG_APP_BUILD_TYPE_RAM)
     set(include_dirs "include" "bootloader_flash/include"
         "private_include")
-    set(priv_requires micro-ecc spi_flash efuse esp_bootloader_format esp_app_format esptool_py)
+    set(priv_requires micro-ecc spi_flash efuse esp_bootloader_format esp_app_format esptool_py esp_hal_wdt)
     list(APPEND srcs
     "src/bootloader_init.c"
     "src/bootloader_clock_loader.c"
@@ -84,12 +84,11 @@ if(BOOTLOADER_BUILD OR CONFIG_APP_BUILD_TYPE_RAM)
     if(CONFIG_SECURE_ENABLE_TEE)
         list(APPEND srcs "src/bootloader_utility_tee.c")
     endif()
-    list(APPEND priv_requires hal)
 else()
     set(include_dirs "include" "bootloader_flash/include")
     set(priv_include_dirs "private_include")
     # heap is required for `heap_memory_layout.h` header
-    set(priv_requires spi_flash mbedtls efuse heap esp_bootloader_format esp_app_format esptool_py)
+    set(priv_requires spi_flash mbedtls efuse heap esp_bootloader_format esp_app_format esptool_py esp_hal_wdt)
 endif()
 
 if(BOOTLOADER_BUILD)

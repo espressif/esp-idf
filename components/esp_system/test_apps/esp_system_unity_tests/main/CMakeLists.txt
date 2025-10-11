@@ -2,6 +2,7 @@ set(requires "unity"
              "test_utils"
              "esp_driver_uart"
              "esp_driver_gpio"
+             "esp_hal_wdt"
              "esp_timer"
              "nvs_flash"
              "esp_psram")

@@ -1,0 +1,7 @@
+[mapping:esp_hal_wdt]
+archive: libesp_hal_wdt.a
+entries:
+    if HAL_WDT_USE_ROM_IMPL = y:
+        rom_patch (noflash)
+    else:
+        wdt_hal_iram (noflash)
