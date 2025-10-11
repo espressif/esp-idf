@@ -33,12 +33,32 @@ if BLE_LOG_ENABLED
             try to use the LBM with spin lock protection. So the more LBMs with atomic
             lock protection are created, the more ISRs can nest.
 
+    config BLE_LOG_IS_ESP_CONTROLLER
+        bool "Current BLE Controller is ESP BLE Controller"
+        depends on BT_CONTROLLER_ENABLED
+        depends on SOC_ESP_NIMBLE_CONTROLLER
+        default y
+        select BT_LE_CONTROLLER_LOG_ENABLED
+        select BT_LE_CONTROLLER_LOG_MODE_BLE_LOG_V2
+        select BLE_LOG_LL_ENABLED
+        help
+            Current BLE Controller is ESP BLE Controller
+
+    config BLE_LOG_IS_ESP_LEGACY_CONTROLLER
+        bool "Current BLE Controller is ESP BLE Legacy Controller"
+        depends on BT_CONTROLLER_ENABLED
+        depends on !SOC_ESP_NIMBLE_CONTROLLER
+        depends on BT_CTRL_RUN_IN_FLASH_ONLY
+        default y
+        select BT_CTRL_LE_LOG_EN
+        select BLE_LOG_LL_ENABLED
+        help
+            Current BLE Controller is ESP BLE Legacy Controller
+
     config BLE_LOG_LL_ENABLED
         bool "Enable BLE Log for Link Layer"
         depends on BT_CONTROLLER_ENABLED
-        default y
-        select BT_LE_CONTROLLER_LOG_ENABLED
-        select BT_LE_CONTROLLER_LOG_MODE_BLE_LOG
+        default n
         help
             Enable BLE Log for Link Layer
 
@@ -96,11 +116,13 @@ if BLE_LOG_ENABLED
 
         config BLE_LOG_PRPH_SPI_MASTER_DMA
             bool "Utilize SPI master DMA driver as transport"
+            depends on SOC_GPSPI_SUPPORTED
             help
                 Utilize SPI master DMA driver as transport
 
         config BLE_LOG_PRPH_UART_DMA
             bool "Utilize UART DMA driver as transport"
+            depends on SOC_UHCI_SUPPORTED
             help
                 Utilize UART DMA driver as transport
     endchoice

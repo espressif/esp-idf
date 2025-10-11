@@ -61,6 +61,9 @@
 #include "soc/rtc.h"
 #include "modem/modem_syscon_struct.h"
 
+#if CONFIG_BT_LE_CONTROLLER_LOG_MODE_BLE_LOG_V2
+#include "ble_log.h"
+#else /* !CONFIG_BT_LE_CONTROLLER_LOG_MODE_BLE_LOG_V2 */
 #if CONFIG_BT_BLE_LOG_SPI_OUT_ENABLED
 #include "ble_log/ble_log_spi_out.h"
 #endif // CONFIG_BT_BLE_LOG_SPI_OUT_ENABLED
@@ -68,6 +71,7 @@
 #if CONFIG_BT_BLE_LOG_UHCI_OUT_ENABLED
 #include "ble_log/ble_log_uhci_out.h"
 #endif // CONFIG_BT_BLE_LOG_UHCI_OUT_ENABLED
+#endif /* CONFIG_BT_LE_CONTROLLER_LOG_MODE_BLE_LOG_V2 */
 
 /* Macro definition
  ************************************************************************
@@ -209,12 +213,14 @@ static int esp_ecc_gen_key_pair(uint8_t *pub, uint8_t *priv);
 static int esp_ecc_gen_dh_key(const uint8_t *peer_pub_key_x, const uint8_t *peer_pub_key_y,
                               const uint8_t *our_priv_key, uint8_t *out_dhkey);
 #if CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
+#if !CONFIG_BT_LE_CONTROLLER_LOG_MODE_BLE_LOG_V2
 #if !CONFIG_BT_LE_CONTROLLER_LOG_SPI_OUT_ENABLED && !CONFIG_BT_LE_CONTROLLER_LOG_UHCI_OUT_ENABLED
 static void esp_bt_controller_log_interface(uint32_t len, const uint8_t *addr, uint32_t len_append, const uint8_t *addr_append, uint32_t flag);
 #endif // !CONFIG_BT_LE_CONTROLLER_LOG_SPI_OUT_ENABLED && !CONFIG_BT_LE_CONTROLLER_LOG_UHCI_OUT_ENABLED
 #if CONFIG_BT_LE_CONTROLLER_LOG_STORAGE_ENABLE
 static void esp_bt_ctrl_log_partition_get_and_erase_first_block(void);
 #endif // CONFIG_BT_LE_CONTROLLER_LOG_STORAGE_ENABLE
+#endif /* !CONFIG_BT_LE_CONTROLLER_LOG_MODE_BLE_LOG_V2 */
 #endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
 /* Local variable definition
  ***************************************************************************
@@ -223,9 +229,47 @@ static void esp_bt_ctrl_log_partition_get_and_erase_first_block(void);
 static DRAM_ATTR esp_bt_controller_status_t ble_controller_status = ESP_BT_CONTROLLER_STATUS_IDLE;
 
 #if CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
-const static uint32_t log_bufs_size[] = {CONFIG_BT_LE_LOG_CTRL_BUF1_SIZE, CONFIG_BT_LE_LOG_HCI_BUF_SIZE, CONFIG_BT_LE_LOG_CTRL_BUF2_SIZE};
 static bool log_is_inited = false;
 
+#if CONFIG_BT_LE_CONTROLLER_LOG_MODE_BLE_LOG_V2
+/* TODO: Remove event handler dependency in lib */
+static void void_handler(void) {}
+
+/* TODO: Declare public interfaces in a public header */
+void esp_bt_controller_log_deinit(void)
+{
+    log_is_inited = false;
+    r_ble_log_deinit_simple();
+    ble_log_deinit();
+}
+
+esp_err_t esp_bt_controller_log_init(void)
+{
+    if (log_is_inited) {
+        return ESP_OK;
+    }
+
+    if (!ble_log_init()) {
+        goto exit;
+    }
+
+    if (r_ble_log_init_simple(ble_log_write_hex_ll, void_handler) != 0) {
+        goto exit;
+    }
+
+    if (r_ble_log_ctrl_level_and_mod(CONFIG_BT_LE_CONTROLLER_LOG_OUTPUT_LEVEL,
+                                     CONFIG_BT_LE_CONTROLLER_LOG_MOD_OUTPUT_SWITCH) != ESP_OK) {
+        goto exit;
+    }
+    log_is_inited = true;
+    return ESP_OK;
+
+exit:
+    esp_bt_controller_log_deinit();
+    return ESP_FAIL;
+}
+#else /* !CONFIG_BT_LE_CONTROLLER_LOG_MODE_BLE_LOG_V2 */
+const static uint32_t log_bufs_size[] = {CONFIG_BT_LE_LOG_CTRL_BUF1_SIZE, CONFIG_BT_LE_LOG_HCI_BUF_SIZE, CONFIG_BT_LE_LOG_CTRL_BUF2_SIZE};
 esp_err_t esp_bt_controller_log_init(void)
 {
     if (log_is_inited) {
@@ -319,6 +363,7 @@ void esp_bt_controller_log_deinit(void)
 
     log_is_inited = false;
 }
+#endif /* CONFIG_BT_LE_CONTROLLER_LOG_MODE_BLE_LOG_V2 */
 
 #if CONFIG_BT_LE_CONTROLLER_LOG_STORAGE_ENABLE
 #include "esp_partition.h"
@@ -1516,6 +1561,12 @@ esp_power_level_t esp_ble_tx_power_get_enhanced(esp_ble_enhanced_power_type_t po
 }
 
 #if CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
+#if CONFIG_BT_LE_CONTROLLER_LOG_MODE_BLE_LOG_V2
+void esp_ble_controller_log_dump_all(bool output)
+{
+    ble_log_dump_to_console();
+}
+#else /* !CONFIG_BT_LE_CONTROLLER_LOG_MODE_BLE_LOG_V2 */
 #if !CONFIG_BT_LE_CONTROLLER_LOG_SPI_OUT_ENABLED && !CONFIG_BT_LE_CONTROLLER_LOG_UHCI_OUT_ENABLED
 static void esp_bt_controller_log_interface(uint32_t len, const uint8_t *addr, uint32_t len_append, const uint8_t *addr_append, uint32_t flag)
 {
@@ -1562,6 +1613,7 @@ void esp_ble_controller_log_dump_all(bool output)
     portEXIT_CRITICAL_SAFE(&spinlock);
 #endif
 }
+#endif /* CONFIG_BT_LE_CONTROLLER_LOG_MODE_BLE_LOG_V2 */
 #endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
 
 #if (!CONFIG_BT_NIMBLE_ENABLED) && (CONFIG_BT_CONTROLLER_ENABLED)
