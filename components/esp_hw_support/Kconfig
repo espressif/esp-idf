@@ -129,12 +129,11 @@ menu "Hardware Settings"
 
         config ESP_SLEEP_GPIO_RESET_WORKAROUND
             bool "light sleep GPIO reset workaround"
-            default y if IDF_TARGET_ESP32C2 || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3 || \
-                IDF_TARGET_ESP32C6 || IDF_TARGET_ESP32H2 || IDF_TARGET_ESP32C5
+            default y if !(IDF_TARGET_ESP32 || IDF_TARGET_ESP32S2)
             select PM_SLP_DISABLE_GPIO if FREERTOS_USE_TICKLESS_IDLE
             help
-                esp32c2, esp32c3, esp32s3, esp32c5, esp32c6 and esp32h2 will reset at wake-up if GPIO is received
-                a small electrostatic pulse during light sleep, with specific condition
+                All existing chips except esp32 and esp32s2 will reset on wake-up if a GPIO receives
+                a small electrostatic pulse during light sleep, with specific conditions.
 
                 - GPIO needs to be configured as input-mode only
                 - The pin receives a small electrostatic pulse, and reset occurs when the pulse
