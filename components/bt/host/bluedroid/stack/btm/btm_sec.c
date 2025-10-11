@@ -4267,7 +4267,6 @@ static void btm_sec_connect_after_reject_timeout (TIMER_LIST_ENT *p_tle)
 #if (SMP_INCLUDED == TRUE)
 void btm_sec_connected (UINT8 *bda, UINT16 handle, UINT8 status, UINT8 enc_mode)
 {
-    tBTM_SEC_DEV_REC *p_dev_rec = btm_find_dev (bda);
     UINT8            res;
     UINT8            sec_dev_rec_status;
     BOOLEAN          is_pairing_device = FALSE;
@@ -4275,6 +4274,8 @@ void btm_sec_connected (UINT8 *bda, UINT16 handle, UINT8 status, UINT8 enc_mode)
     UINT8            bit_shift = 0;
 
     btm_acl_resubmit_page();
+
+    tBTM_SEC_DEV_REC *p_dev_rec = btm_find_dev (bda);
 
     /* Commenting out trace due to obf/compilation problems.
     */
@@ -4598,7 +4599,6 @@ tBTM_STATUS btm_sec_disconnect (UINT16 handle, UINT8 reason)
 *******************************************************************************/
 void btm_sec_disconnected (UINT16 handle, UINT8 reason)
 {
-    tBTM_SEC_DEV_REC  *p_dev_rec = btm_find_dev_by_handle (handle);
     UINT8             old_pairing_flags = btm_cb.pairing_flags;
     int               result = HCI_ERR_AUTH_FAILURE;
     tBTM_SEC_CALLBACK   *p_callback = NULL;
@@ -4610,6 +4610,8 @@ void btm_sec_disconnected (UINT16 handle, UINT8 reason)
 #if (CLASSIC_BT_INCLUDED == TRUE)
     btm_acl_resubmit_page();
 #endif
+
+    tBTM_SEC_DEV_REC  *p_dev_rec = btm_find_dev_by_handle (handle);
 
     if (!p_dev_rec) {
         return;
