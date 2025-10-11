@@ -1254,10 +1254,10 @@ tINQ_DB_ENT *btm_inq_db_new (BD_ADDR p_bda);
 
 #if BTM_OOB_INCLUDED == TRUE
 void  btm_rem_oob_req (UINT8 *p);
-void  btm_read_local_oob_complete (UINT8 *p);
+void  btm_read_local_oob_complete (UINT8 *p, UINT16 evt_len);
 #else
 #define btm_rem_oob_req(p)
-#define btm_read_local_oob_complete(p)
+#define btm_read_local_oob_complete(p, evt_len)
 #endif
 
 void  btm_acl_resubmit_page (void);
