@@ -275,6 +275,17 @@ void IRAM_ATTR modem_clock_module_mac_reset(periph_module_t module)
 #define I2C_ANA_MST_CLOCK_DEPS  (BIT(MODEM_CLOCK_I2C_MASTER))
 #define MODEM_ETM_CLOCK_DEPS    (BIT(MODEM_CLOCK_ETM))
 #define MODEM_ADC_COMMON_FE_CLOCK_DEPS  (BIT(MODEM_CLOCK_MODEM_ADC_COMMON_FE))
+#define PHY_CALIBRATION_WIFI_CLOCK_DEPS     (BIT(MODEM_CLOCK_WIFI_MAC) | BIT(MODEM_CLOCK_WIFI_BB))
+#define PHY_CALIBRATION_BT_I154_CLOCK_DEPS (BIT(MODEM_CLOCK_BT_I154_COMMON_BB))
+#ifndef SOC_WIFI_SUPPORTED
+#undef  PHY_CALIBRATION_WIFI_CLOCK_DEPS
+#define PHY_CALIBRATION_WIFI_CLOCK_DEPS     0
+#endif
+#if !defined(SOC_BT_SUPPORTED) && !defined(SOC_IEEE802154_SUPPORTED)
+#undef  PHY_CALIBRATION_BT_I154_CLOCK_DEPS
+#define PHY_CALIBRATION_BT_I154_CLOCK_DEPS 0
+#endif
+#define PHY_CALIBRATION_CLOCK_DEPS          (PHY_CALIBRATION_WIFI_CLOCK_DEPS | PHY_CALIBRATION_BT_I154_CLOCK_DEPS)
 
 static IRAM_ATTR uint32_t modem_clock_get_module_deps(periph_module_t module)
 {
@@ -292,6 +303,7 @@ static IRAM_ATTR uint32_t modem_clock_get_module_deps(periph_module_t module)
 #if SOC_BT_SUPPORTED
         case PERIPH_BT_MODULE:                  deps = BLE_CLOCK_DEPS;                  break;
 #endif
+        case PERIPH_PHY_CALIBRATION_MODULE:     deps = PHY_CALIBRATION_CLOCK_DEPS;      break;
 #if SOC_IEEE802154_SUPPORTED
         case PERIPH_IEEE802154_MODULE:          deps = IEEE802154_CLOCK_DEPS;           break;
 #endif

@@ -130,7 +130,10 @@ void wifi_module_enable(void)
     modem_clock_module_enable(PERIPH_WIFI_MODULE);
 #else
     portENTER_CRITICAL_SAFE(&periph_spinlock);
-    periph_ll_wifi_module_enable_clk_clear_rst();
+    if (ref_counts[PERIPH_WIFI_MODULE] == 0) {
+        periph_ll_wifi_module_enable_clk_clear_rst();
+    }
+    ref_counts[PERIPH_WIFI_MODULE]++;
     portEXIT_CRITICAL_SAFE(&periph_spinlock);
 #endif
 }
@@ -141,8 +144,70 @@ void wifi_module_disable(void)
     modem_clock_module_disable(PERIPH_WIFI_MODULE);
 #else
     portENTER_CRITICAL_SAFE(&periph_spinlock);
-    periph_ll_wifi_module_disable_clk_set_rst();
+    ref_counts[PERIPH_WIFI_MODULE]--;
+    if (ref_counts[PERIPH_WIFI_MODULE] == 0) {
+        periph_ll_wifi_module_disable_clk_set_rst();
+    }
     portEXIT_CRITICAL_SAFE(&periph_spinlock);
 #endif
 }
 #endif // CONFIG_ESP_WIFI_ENABLED
+
+#if SOC_BT_SUPPORTED || SOC_WIFI_SUPPORTED || SOC_IEEE802154_SUPPORTED
+// PERIPH_WIFI_BT_COMMON_MODULE is enabled outside
+IRAM_ATTR void phy_module_enable(void)
+{
+#if SOC_MODEM_CLOCK_IS_INDEPENDENT
+    modem_clock_module_enable(PERIPH_PHY_CALIBRATION_MODULE);
+#else
+    portENTER_CRITICAL_SAFE(&periph_spinlock);
+#if SOC_WIFI_SUPPORTED || SOC_BT_SUPPORTED
+    periph_ll_phy_calibration_module_enable_clk_clear_rst();
+    if (ref_counts[PERIPH_RNG_MODULE] == 0) {
+        periph_ll_enable_clk_clear_rst(PERIPH_RNG_MODULE);
+    }
+    ref_counts[PERIPH_RNG_MODULE]++;
+#endif
+#if SOC_WIFI_SUPPORTED
+    if (ref_counts[PERIPH_WIFI_MODULE] == 0) {
+        periph_ll_wifi_module_enable_clk_clear_rst();
+    }
+    ref_counts[PERIPH_WIFI_MODULE]++;
+#endif
+#if SOC_BT_SUPPORTED
+    if (ref_counts[PERIPH_BT_MODULE] == 0) {
+        periph_ll_enable_clk_clear_rst(PERIPH_BT_MODULE);
+    }
+    ref_counts[PERIPH_BT_MODULE]++;
+#endif
+    portEXIT_CRITICAL_SAFE(&periph_spinlock);
+#endif
+}
+
+// PERIPH_WIFI_BT_COMMON_MODULE is disabled outside
+IRAM_ATTR void phy_module_disable(void)
+{
+#if SOC_MODEM_CLOCK_IS_INDEPENDENT
+    modem_clock_module_disable(PERIPH_PHY_CALIBRATION_MODULE);
+#else
+    portENTER_CRITICAL_SAFE(&periph_spinlock);
+#if SOC_BT_SUPPORTED
+    ref_counts[PERIPH_BT_MODULE]--;
+    if (ref_counts[PERIPH_BT_MODULE] == 0) {
+        periph_ll_disable_clk_set_rst(PERIPH_BT_MODULE);
+    }
+#endif
+#if SOC_WIFI_SUPPORTED
+    ref_counts[PERIPH_WIFI_MODULE]--;
+    if (ref_counts[PERIPH_WIFI_MODULE] == 0) {
+        periph_ll_wifi_module_disable_clk_set_rst();
+    }
+#endif
+#if SOC_WIFI_SUPPORTED || SOC_BT_SUPPORTED
+    // Do not disable PHY clock and RNG clock
+    ref_counts[PERIPH_RNG_MODULE]--;
+#endif
+    portEXIT_CRITICAL_SAFE(&periph_spinlock);
+#endif
+}
+#endif  //#if SOC_BT_SUPPORTED || SOC_WIFI_SUPPORTED || SOC_IEEE802154_SUPPORTED
