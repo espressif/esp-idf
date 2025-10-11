@@ -5044,6 +5044,12 @@ void btm_sec_pin_code_request (UINT8 *p_bda)
                      btm_pair_state_descr(btm_cb.pairing_state),
                      (p_bda[0] << 8) + p_bda[1], (p_bda[2] << 24) + (p_bda[3] << 16) + (p_bda[4] << 8) + p_bda[5] );
 #endif  ///BT_USE_TRACES == TRUE && SMP_INCLUDED == TRUE
+    const bt_bdaddr_t *local_bd_addr = controller_get_interface()->get_address();
+    if (!memcmp(p_bda, local_bd_addr, BD_ADDR_LEN)) {
+        BTM_TRACE_WARNING("btm_sec_pin_code_request() rejected device with same address\n");
+        btsnd_hcic_pin_code_neg_reply(p_bda);
+        return;
+    }
     if (btm_cb.pairing_state != BTM_PAIR_STATE_IDLE) {
         if ( (memcmp (p_bda, btm_cb.pairing_bda, BD_ADDR_LEN) == 0)  &&
                 (btm_cb.pairing_state == BTM_PAIR_STATE_WAIT_AUTH_COMPLETE) ) {
