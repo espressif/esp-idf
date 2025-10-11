@@ -2753,11 +2753,16 @@ static void btm_sec_bond_cancel_complete (void)
 ** Returns          void
 **
 *******************************************************************************/
-void btm_create_conn_cancel_complete (UINT8 *p)
+void btm_create_conn_cancel_complete (UINT8 *p, UINT16 evt_len)
 {
     UINT8       status;
 
-    STREAM_TO_UINT8 (status, p);
+    if (evt_len >= 1) {
+        STREAM_TO_UINT8 (status, p);
+    } else {
+        BTM_TRACE_ERROR("%s malformatted event packet, too short", __func__);
+        status = BTM_ERR_PROCESSING;
+    }
     //BTM_TRACE_EVENT ("btm_create_conn_cancel_complete(): in State: %s  status:%d\n",
     //                 btm_pair_state_descr(btm_cb.pairing_state), status);
 
