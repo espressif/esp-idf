@@ -117,7 +117,9 @@ static void select_rtc_slow_clk(soc_rtc_slow_clk_src_t rtc_slow_clk_src)
      */
     int retry_32k_xtal = 3;
 
+    soc_rtc_slow_clk_src_t old_rtc_slow_clk_src = rtc_clk_slow_src_get();
     do {
+        bool revoke_32k_enable = false;
         if (rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_XTAL32K || rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_OSC_SLOW) {
             /* 32k XTAL oscillator needs to be enabled and running before it can
              * be used. Hardware doesn't have a direct way of checking if the
@@ -144,13 +146,16 @@ static void select_rtc_slow_clk(soc_rtc_slow_clk_src_t rtc_slow_clk_src)
                     }
                     ESP_EARLY_LOGW(TAG, "32 kHz clock not found, switching to internal 150 kHz oscillator");
                     rtc_slow_clk_src = SOC_RTC_SLOW_CLK_SRC_RC_SLOW;
+                    revoke_32k_enable = true;
                 }
             }
         }
         rtc_clk_slow_src_set(rtc_slow_clk_src);
         // Disable unused clock sources after clock source switching is complete.
         // Regardless of the clock source selection, the internal 136K clock source will always keep on.
-        if ((rtc_slow_clk_src != SOC_RTC_SLOW_CLK_SRC_XTAL32K) && (rtc_slow_clk_src != SOC_RTC_SLOW_CLK_SRC_OSC_SLOW)) {
+        if (revoke_32k_enable || \
+                (((old_rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_XTAL32K) || (old_rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_OSC_SLOW)) && \
+                 ((rtc_slow_clk_src != SOC_RTC_SLOW_CLK_SRC_XTAL32K) && (rtc_slow_clk_src != SOC_RTC_SLOW_CLK_SRC_OSC_SLOW)))) {
             rtc_clk_32k_enable(false);
             rtc_clk_32k_disable_external();
         }
