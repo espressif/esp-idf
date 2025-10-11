@@ -1693,12 +1693,23 @@ void bta_av_rc_disc_done(tBTA_AV_DATA *p_data)
                 p_lcb = bta_av_find_lcb(p_scb->peer_addr, BTA_AV_LCB_FIND);
                 if (p_lcb) {
                     rc_handle = bta_av_rc_create(p_cb, AVCT_INT, (UINT8)(p_scb->hdi + 1), p_lcb->lidx);
-                    p_cb->rcb[rc_handle].peer_features = peer_features;
-                    p_cb->rcb[rc_handle].peer_ct_features = peer_ct_features;
-                    p_cb->rcb[rc_handle].peer_tg_features = peer_tg_features;
+                    if (rc_handle < BTA_AV_NUM_RCB) {
+                        p_cb->rcb[rc_handle].peer_features = peer_features;
+                        p_cb->rcb[rc_handle].peer_ct_features = peer_ct_features;
+                        p_cb->rcb[rc_handle].peer_tg_features = peer_tg_features;
 #if BTA_AV_CA_INCLUDED
-                    p_cb->rcb[rc_handle].cover_art_l2cap_psm = obex_l2cap_psm;
+                        p_cb->rcb[rc_handle].cover_art_l2cap_psm = obex_l2cap_psm;
 #endif
+                    } else {
+                        /* cannot create valid rc_handle for current device. report failure */
+                        APPL_TRACE_ERROR("%s: no link resources available", __func__);
+                        p_scb->use_rc = FALSE;
+                        bdcpy(rc_open.peer_addr, p_scb->peer_addr);
+                        rc_open.peer_features = 0;
+                        rc_open.sdp_disc_done = FALSE;
+                        rc_open.status = BTA_AV_FAIL_SDP;
+                        (*p_cb->p_cback)(BTA_AV_RC_OPEN_EVT, (tBTA_AV *) &rc_open);
+                    }
                 }
 #if (BT_USE_TRACES == TRUE || BT_TRACE_APPL == TRUE)
                 else {
