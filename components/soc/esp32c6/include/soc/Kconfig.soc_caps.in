@@ -1399,10 +1399,6 @@ config SOC_PM_RETENTION_HAS_CLOCK_BUG
     bool
     default y
 
-config SOC_EXT_MEM_CACHE_TAG_IN_CPU_DOMAIN
-    bool
-    default y
-
 config SOC_PM_PAU_LINK_NUM
     int
     default 4
