@@ -362,6 +362,16 @@ menu "Controller debug features"
         help
             Output ble controller logs to SPI bus
 
+    config BT_LE_CONTROLLER_LOG_UHCI_OUT_ENABLED
+        bool "Output ble controller logs via UART DMA (Experimental)"
+        depends on BT_LE_CONTROLLER_LOG_ENABLED
+        depends on !BT_LE_CONTROLLER_LOG_DUMP_ONLY
+        depends on !BT_LE_CONTROLLER_LOG_SPI_OUT_ENABLED
+        select BT_BLE_LOG_UHCI_OUT_ENABLED
+        default y
+        help
+            Output ble controller logs via UART DMA
+
     config BT_LE_CONTROLLER_LOG_STORAGE_ENABLE
         bool "Store ble controller logs to flash(Experimental)"
         depends on !BT_LE_CONTROLLER_LOG_DUMP_ONLY
