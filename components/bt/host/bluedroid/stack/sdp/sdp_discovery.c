@@ -292,7 +292,7 @@ static void process_service_search_rsp (tCONN_CB *p_ccb, UINT8 *p_reply, UINT8 *
 
     orig = p_ccb->num_handles;
     p_ccb->num_handles += cur_handles;
-    if (p_ccb->num_handles == 0) {
+    if ((p_ccb->num_handles == 0) || (p_ccb->num_handles < orig)) {
         SDP_TRACE_WARNING ("SDP - Rcvd ServiceSearchRsp, no matches\n");
         sdp_disconnect (p_ccb, SDP_NO_RECS_MATCH);
         return;
