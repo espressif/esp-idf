@@ -1314,6 +1314,10 @@ BT_HDR *avdt_msg_asmbl(tAVDT_CCB *p_ccb, BT_HDR *p_buf)
          * not aware of possible packet size after reassembly, they
          * would have allocated smaller buffer.
          */
+        if (sizeof(BT_HDR) + p_buf->offset + p_buf->len > BT_DEFAULT_BUFFER_SIZE) {
+            osi_free(p_buf);
+            return NULL;
+        }
         p_ccb->p_rx_msg = (BT_HDR *)osi_malloc(BT_DEFAULT_BUFFER_SIZE);
         memcpy(p_ccb->p_rx_msg, p_buf,
                sizeof(BT_HDR) + p_buf->offset + p_buf->len);

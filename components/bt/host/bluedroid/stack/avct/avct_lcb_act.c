@@ -86,6 +86,11 @@ static BT_HDR *avct_lcb_msg_asmbl(tAVCT_LCB *p_lcb, BT_HDR *p_buf)
             AVCT_TRACE_WARNING("Got start during reassembly");
         }
         osi_free(p_lcb->p_rx_msg);
+        p_lcb->p_rx_msg = NULL;
+        if (sizeof(BT_HDR) + p_buf->offset + p_buf->len > BT_DEFAULT_BUFFER_SIZE) {
+            osi_free(p_buf);
+            return NULL;
+        }
         /* Allocate bigger buffer for reassembly. As lower layers are
          * not aware of possible packet size after reassembly they
          * would have allocated smaller buffer.
