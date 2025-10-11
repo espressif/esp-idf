@@ -3795,13 +3795,27 @@ void btm_rem_oob_req (UINT8 *p)
 ** Returns          void
 **
 *******************************************************************************/
-void btm_read_local_oob_complete (UINT8 *p)
+void btm_read_local_oob_complete (UINT8 *p, UINT16 evt_len)
 {
     tBTM_SP_LOC_OOB evt_data;
-    UINT8           status = *p++;
+    UINT8           status;
+
+    if (evt_len < 1) {
+        BTM_TRACE_ERROR("%s malformatted event packet, too short", __func__);
+        evt_data.status = BTM_ERR_PROCESSING;
+        goto err_out;
+    }
+
+    STREAM_TO_UINT8(status, p);
 
     BTM_TRACE_EVENT ("btm_read_local_oob_complete:%d\n", status);
     if (status == HCI_SUCCESS) {
+        if (evt_len < 1 + 32) {
+            BTM_TRACE_ERROR("%s malformatted event packet, too short", __func__);
+            evt_data.status = BTM_ERR_PROCESSING;
+            goto err_out;
+        }
+
         evt_data.status = BTM_SUCCESS;
         STREAM_TO_ARRAY16(evt_data.c, p);
         STREAM_TO_ARRAY16(evt_data.r, p);
@@ -3809,6 +3823,7 @@ void btm_read_local_oob_complete (UINT8 *p)
         evt_data.status = BTM_ERR_PROCESSING;
     }
 
+err_out:
     if (btm_cb.api.p_sp_callback) {
         (*btm_cb.api.p_sp_callback) (BTM_SP_LOC_OOB_EVT, (tBTM_SP_EVT_DATA *)&evt_data);
     }

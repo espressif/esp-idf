@@ -990,7 +990,7 @@ static void btu_hcif_hdl_command_complete (UINT16 opcode, UINT8 *p, UINT16 evt_l
 
     case HCI_READ_LOCAL_OOB_DATA:
 #if BTM_OOB_INCLUDED == TRUE && SMP_INCLUDED == TRUE
-        btm_read_local_oob_complete(p);
+        btm_read_local_oob_complete(p, evt_len);
 #endif
         break;
 
