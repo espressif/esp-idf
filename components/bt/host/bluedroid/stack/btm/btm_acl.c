@@ -792,6 +792,11 @@ void btm_acl_encrypt_change (UINT16 handle, UINT8 status, UINT8 encr_enable)
     if (p == NULL) {
         return;
     }
+    /* if we are trying to drop encryption on an encrypted connection, drop the connection */
+    if (!encr_enable && (p->encrypt_state == BTM_ACL_ENCRYPT_STATE_ENCRYPT_ON)) {
+        btm_sec_disconnect(handle, HCI_ERR_HOST_REJECT_SECURITY);
+        return;
+    }
     /* Process Role Switch if active */
     if (p->switch_role_state == BTM_ACL_SWKEY_STATE_ENCRYPTION_OFF) {
         /* if encryption turn off failed we still will try to switch role */
