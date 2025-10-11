@@ -526,7 +526,7 @@ static void avrc_msg_cback(UINT8 handle, UINT8 label, UINT8 cr,
     tAVRC_MSG_VENDOR *p_msg = &msg.vendor;
 
     if (cr == AVCT_CMD &&
-            (p_pkt->layer_specific & AVCT_DATA_CTRL && AVRC_PACKET_LEN < sizeof(p_pkt->len))) {
+            (p_pkt->layer_specific & AVCT_DATA_CTRL && AVRC_PACKET_LEN < p_pkt->len)) {
         /* Ignore the invalid AV/C command frame */
 #if (BT_USE_TRACES == TRUE)
         p_drop_msg = "dropped - too long AV/C cmd frame size";
