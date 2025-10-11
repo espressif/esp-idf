@@ -266,7 +266,7 @@ static void IRAM_ATTR modem_clock_device_disable(modem_clock_context_t *ctx, uin
     assert(refs >= 0);
 }
 
-void IRAM_ATTR modem_clock_module_mac_reset(periph_module_t module)
+void IRAM_ATTR modem_clock_module_mac_reset(shared_periph_module_t module)
 {
     __attribute__((unused)) modem_clock_context_t *ctx = MODEM_CLOCK_instance();
     esp_os_enter_critical_safe(&ctx->lock);
@@ -312,7 +312,7 @@ void IRAM_ATTR modem_clock_module_mac_reset(periph_module_t module)
 #define PHY_CALIBRATION_CLOCK_DEPS      (BIT(MODEM_CLOCK_WIFI_APB) | BIT(MODEM_CLOCK_WIFI_BB_44M))
 #endif
 
-static IRAM_ATTR uint32_t modem_clock_get_module_deps(periph_module_t module)
+static IRAM_ATTR uint32_t modem_clock_get_module_deps(shared_periph_module_t module)
 {
     uint32_t deps = 0;
     switch (module) {
@@ -376,7 +376,7 @@ static IRAM_ATTR void modem_clock_module_icg_map_init_all(void)
 }
 #endif
 
-void IRAM_ATTR modem_clock_module_enable(periph_module_t module)
+void IRAM_ATTR modem_clock_module_enable(shared_periph_module_t module)
 {
     assert(IS_MODEM_MODULE(module));
 #if SOC_PM_SUPPORT_PMU_MODEM_STATE
@@ -386,7 +386,7 @@ void IRAM_ATTR modem_clock_module_enable(periph_module_t module)
     modem_clock_device_enable(MODEM_CLOCK_instance(), deps);
 }
 
-void IRAM_ATTR modem_clock_module_disable(periph_module_t module)
+void IRAM_ATTR modem_clock_module_disable(shared_periph_module_t module)
 {
     assert(IS_MODEM_MODULE(module));
     uint32_t deps = modem_clock_get_module_deps(module);
@@ -404,7 +404,7 @@ void modem_clock_deselect_all_module_lp_clock_source(void)
     modem_clock_hal_deselect_all_coex_lpclk_source(MODEM_CLOCK_instance()->hal);
 }
 
-void modem_clock_select_lp_clock_source(periph_module_t module, modem_clock_lpclk_src_t src, uint32_t divider)
+void modem_clock_select_lp_clock_source(shared_periph_module_t module, modem_clock_lpclk_src_t src, uint32_t divider)
 {
     assert(IS_MODEM_MODULE(module));
     esp_os_enter_critical_safe(&MODEM_CLOCK_instance()->lock);
@@ -497,7 +497,7 @@ void modem_clock_select_lp_clock_source(periph_module_t module, modem_clock_lpcl
 #endif
 }
 
-void modem_clock_deselect_lp_clock_source(periph_module_t module)
+void modem_clock_deselect_lp_clock_source(shared_periph_module_t module)
 {
     assert(IS_MODEM_MODULE(module));
     esp_os_enter_critical_safe(&MODEM_CLOCK_instance()->lock);

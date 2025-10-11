@@ -28,7 +28,7 @@ extern "C" {
 
 typedef struct {
     const char *module_name;              // Module name
-    const periph_module_t parent_module;  // GPTimer is a submodule under the timer group
+    const shared_periph_module_t parent_module;  // GPTimer is a submodule under the timer group
     const int irq_id;                     // interrupt source ID
 } soc_timg_gptimer_signal_desc_t;
 

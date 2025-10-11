@@ -16,7 +16,7 @@ extern "C" {
 #if SOC_LCDCAM_CAM_SUPPORTED
 typedef struct {
     struct {
-        const periph_module_t module;
+        const shared_periph_module_t module;
         const int irq_id;
         const int data_sigs[SOC_LCDCAM_CAM_DATA_WIDTH_MAX];
         const int hsync_sig;
