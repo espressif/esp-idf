@@ -231,6 +231,18 @@ static inline void mspi_timing_ll_set_flash_extra_dummy(uint8_t mspi_id, uint8_t
 }
 
 /**
+ * Set MSPI Flash user dummy
+ *
+ * @param mspi_id      SPI0 / SPI1
+ * @param user_dummy   user dummy
+ */
+__attribute__((always_inline))
+static inline void mspi_timing_ll_set_flash_user_dummy(uint8_t mspi_id, uint8_t user_dummy)
+{
+    REG_SET_FIELD(SPI_MEM_USER1_REG(mspi_id), SPI_MEM_USR_DUMMY_CYCLELEN, user_dummy);
+}
+
+/**
  * Get MSPI flash dummy info
  *
  * @param mspi_id      SPI0 / SPI1

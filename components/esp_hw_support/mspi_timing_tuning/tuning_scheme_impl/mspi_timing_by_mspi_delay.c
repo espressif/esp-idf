@@ -87,6 +87,9 @@ void mspi_timing_config_flash_set_tuning_regs(const void *configs, uint8_t id)
 //-------------------------------------------FLASH Read/Write------------------------------------------//
 void mspi_timing_config_flash_read_data(uint8_t *buf, uint32_t addr, uint32_t len)
 {
+#if CONFIG_ESPTOOLPY_FLASHMODE_QIO && CONFIG_SPI_FLASH_HPM_ON
+    g_rom_spiflash_dummy_len_plus[1] = 4;
+#endif
     if (bootloader_flash_is_octal_mode_enabled()) {
         // note that in spi_flash_read API, there is a wait-idle stage, since flash can only be read in idle state.
         // but after we change the timing settings, we might not read correct idle status via RDSR.
@@ -353,6 +356,10 @@ void mspi_timing_flash_config_set_tuning_regs(bool control_both_mspi)
         //Won't touch SPI1 registers
     }
 
+#if MSPI_TIMING_FLASH_NEEDS_TUNING && CONFIG_ESPTOOLPY_FLASHMODE_QIO && CONFIG_SPI_FLASH_HPM_ON
+    mspi_timing_ll_set_flash_user_dummy(MSPI_TIMING_LL_MSPI_ID_0, 7);
+#endif
+
     int spi1_usr_dummy = 0;
     int spi1_extra_dummy = 0;
     int spi0_usr_dummy = 0;
@@ -382,7 +389,7 @@ void mspi_timing_psram_config_set_tuning_regs(bool control_both_mspi)
 }
 
 /*-------------------------------------------------------------------------------------------------
- * To let upper lay (spi_flash_timing_tuning.c) to know the necessary timing registers
+ * To let upper layer (spi_flash_timing_tuning.c) to know the necessary timing registers
  *-------------------------------------------------------------------------------------------------*/
 /**
  * Get the SPI1 Flash CS timing setting. The setup time and hold time are both realistic cycles.

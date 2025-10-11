@@ -73,7 +73,7 @@ void mspi_timing_config_flash_set_tuning_regs(const void *configs, uint8_t id)
 //-------------------------------------------FLASH Read/Write------------------------------------------//
 void mspi_timing_config_flash_read_data(uint8_t *buf, uint32_t addr, uint32_t len)
 {
-#if CONFIG_ESPTOOLPY_FLASHMODE_QIO
+#if CONFIG_ESPTOOLPY_FLASHMODE_QIO && CONFIG_SPI_FLASH_HPM_ON
     g_rom_spiflash_dummy_len_plus[1] = 4;
 #endif
     esp_rom_spiflash_read(addr, (uint32_t *)buf, len);
@@ -164,7 +164,7 @@ void mspi_timing_flash_config_set_tuning_regs(bool control_both_mspi)
         //Won't touch SPI1 registers
     }
 
-#if MSPI_TIMING_FLASH_NEEDS_TUNING && CONFIG_ESPTOOLPY_FLASHMODE_QIO
+#if MSPI_TIMING_FLASH_NEEDS_TUNING && CONFIG_ESPTOOLPY_FLASHMODE_QIO && CONFIG_SPI_FLASH_HPM_ON
     mspi_timing_ll_set_flash_user_dummy(MSPI_TIMING_LL_MSPI_ID_0, 7);
 #endif
 
