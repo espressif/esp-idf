@@ -252,10 +252,16 @@ void avdt_scb_hdl_pkt_no_frag(tAVDT_SCB *p_scb, tAVDT_SCB_EVT *p_data)
     UINT16  offset;
     UINT16  ex_len;
     UINT8   pad_len = 0;
+    uint16_t len = p_data->p_pkt->len;
 
     p = p_start = (UINT8 *)(p_data->p_pkt + 1) + p_data->p_pkt->offset;
 
     /* parse media packet header */
+    offset = 12; // AVDT_MSG_PRS_OCTET1(1) + AVDT_MSG_PRS_M_PT(1) + UINT16(2) + UINT32(4) + 4
+    if (len < offset) {
+        AVDT_TRACE_WARNING("hdl packet length %u too short: must be at least %u", len, offset);
+        goto length_error;
+    }
     AVDT_MSG_PRS_OCTET1(p, o_v, o_p, o_x, o_cc);
     AVDT_MSG_PRS_M_PT(p, m_pt, marker);
     BE_STREAM_TO_UINT16(seq, p);
@@ -265,10 +271,16 @@ void avdt_scb_hdl_pkt_no_frag(tAVDT_SCB *p_scb, tAVDT_SCB_EVT *p_data)
     UNUSED(o_v);
 
     /* skip over any csrc's in packet */
+    offset += o_cc * 4;
     p += o_cc * 4;
 
     /* check for and skip over extension header */
     if (o_x) {
+        offset += 4;
+        if (len < offset) {
+            AVDT_TRACE_WARNING("hdl packet length %u too short: must be at least %u", len, offset);
+            goto length_error;
+        }
         p += 2;
         BE_STREAM_TO_UINT16(ex_len, p);
         p += ex_len * 4;
@@ -276,18 +288,20 @@ void avdt_scb_hdl_pkt_no_frag(tAVDT_SCB *p_scb, tAVDT_SCB_EVT *p_data)
 
     /* save our new offset */
     offset = (UINT16) (p - p_start);
+    if (len <= offset) {
+        goto length_error;
+    }
 
     /* adjust length for any padding at end of packet */
     if (o_p) {
         /* padding length in last byte of packet */
-        pad_len =  *(p_start + p_data->p_pkt->len);
+        pad_len =  *(p_start + len - 1);
     }
 
     /* do sanity check */
-    if ((offset > p_data->p_pkt->len) || ((pad_len + offset) > p_data->p_pkt->len)) {
+    if (pad_len >= len - offset) {
         AVDT_TRACE_WARNING("Got bad media packet");
-        osi_free(p_data->p_pkt);
-        p_data->p_pkt = NULL;
+        goto length_error;
     }
     /* adjust offset and length and send it up */
     else {
@@ -303,18 +317,22 @@ void avdt_scb_hdl_pkt_no_frag(tAVDT_SCB *p_scb, tAVDT_SCB_EVT *p_data)
 #if AVDT_MULTIPLEXING == TRUE
             if ((p_scb->cs.p_media_cback != NULL)
                     && (p_scb->p_media_buf != NULL)
-                    && (p_scb->media_buf_len > p_data->p_pkt->len)) {
+                    && (p_scb->media_buf_len > len)) {
                 /* media buffer enough length is assigned by application. Lets use it*/
                 memcpy(p_scb->p_media_buf, (UINT8 *)(p_data->p_pkt + 1) + p_data->p_pkt->offset,
-                       p_data->p_pkt->len);
+                       len);
                 (*p_scb->cs.p_media_cback)(avdt_scb_to_hdl(p_scb), p_scb->p_media_buf,
                                            p_scb->media_buf_len, time_stamp, seq, m_pt, marker);
             }
 #endif
-            osi_free(p_data->p_pkt);
-            p_data->p_pkt = NULL;
+            goto length_error;
         }
     }
+    return;
+
+length_error:
+    osi_free(p_data->p_pkt);
+    p_data->p_pkt = NULL;
 }
 
 #if AVDT_REPORTING == TRUE
@@ -624,7 +642,7 @@ void avdt_scb_hdl_pkt(tAVDT_SCB *p_scb, tAVDT_SCB_EVT *p_data)
 #endif
 
 #if AVDT_MULTIPLEXING == TRUE
-    /* select right function in dependance of is fragmentation supported or not */
+    /* select right function in dependence of is fragmentation supported or not */
     if ( 0 != (p_scb->curr_cfg.psc_mask & AVDT_PSC_MUX)) {
         avdt_scb_hdl_pkt_frag(p_scb, p_data);
     } else
