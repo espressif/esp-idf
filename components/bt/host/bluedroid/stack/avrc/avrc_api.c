@@ -200,7 +200,7 @@ static void avrc_send_continue_frag(UINT8 handle, UINT8 label)
     if (p_pkt->len > AVRC_MAX_CTRL_DATA_LEN) {
         int offset_len = MAX(AVCT_MSG_OFFSET, p_pkt->offset);
         p_pkt_old = p_fcb->p_fmsg;
-        p_pkt = (BT_HDR *)osi_malloc((UINT16)(AVRC_PACKET_LEN + offset_len + BT_HDR_SIZE));
+        p_pkt = (BT_HDR *)osi_calloc((UINT16)(AVRC_PACKET_LEN + offset_len + BT_HDR_SIZE));
         if (p_pkt) {
             p_pkt->len          = AVRC_MAX_CTRL_DATA_LEN;
             p_pkt->offset       = AVCT_MSG_OFFSET;
