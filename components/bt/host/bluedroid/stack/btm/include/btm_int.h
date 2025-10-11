@@ -1252,7 +1252,7 @@ tBTM_STATUS  btm_sec_mx_access_request (BD_ADDR bd_addr, UINT16 psm, BOOLEAN is_
                                         UINT32 mx_proto_id, UINT32 mx_chan_id,
                                         tBTM_SEC_CALLBACK *p_callback, void *p_ref_data);
 void  btm_sec_conn_req (UINT8 *bda, UINT8 *dc);
-void btm_create_conn_cancel_complete (UINT8 *p);
+void btm_create_conn_cancel_complete (UINT8 *p, UINT16 evt_len);
 void btm_read_linq_tx_power_complete (UINT8 *p);
 
 void  btm_sec_init (UINT8 sec_mode);
