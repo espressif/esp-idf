@@ -5,8 +5,9 @@ components/app_trace/test_apps:
     - app_trace
     - esp_timer
     - soc
-    - driver
     - esp_hw_support
+    - esp_driver_uart
+    - esp_driver_gptimer
   disable:
     - if: IDF_TARGET in ["esp32c5", "esp32c61", "esp32h21", "esp32h4"]
       temporary: true

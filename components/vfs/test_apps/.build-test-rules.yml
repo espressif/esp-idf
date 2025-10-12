@@ -14,4 +14,3 @@ components/vfs/test_apps:
     - fatfs
     - spiffs
     - console
-    - driver
