@@ -2428,7 +2428,7 @@ void btm_read_channel_map_complete(UINT8 *p)
 ** Returns          void
 **
 *******************************************************************************/
-void btm_read_rssi_complete (UINT8 *p)
+void btm_read_rssi_complete (UINT8 *p, UINT16 evt_len)
 {
     tBTM_CMPL_CB            *p_cb = btm_cb.devcb.p_rssi_cmpl_cb;
     tBTM_RSSI_RESULTS        results;
@@ -2441,11 +2441,21 @@ void btm_read_rssi_complete (UINT8 *p)
     btm_cb.devcb.p_rssi_cmpl_cb = NULL;
 
     if (p_cb) {
+        if (evt_len < 1) {
+            BTM_TRACE_ERROR("Bogus event packet, too short");
+            results.status = BTM_ERR_PROCESSING;
+            goto err_out;
+        }
         STREAM_TO_UINT8  (results.hci_status, p);
 
         if (results.hci_status == HCI_SUCCESS) {
             results.status = BTM_SUCCESS;
 
+            if (evt_len < 1 + 3) {
+                BTM_TRACE_ERROR("Bogus event packet, too short");
+                results.status = BTM_ERR_PROCESSING;
+                goto err_out;
+            }
             STREAM_TO_UINT16 (handle, p);
 
             STREAM_TO_UINT8 (results.rssi, p);
@@ -2461,6 +2471,7 @@ void btm_read_rssi_complete (UINT8 *p)
             results.status = BTM_ERR_PROCESSING;
         }
 
+err_out:
         (*p_cb)(&results);
     }
 }
