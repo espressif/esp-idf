@@ -282,7 +282,7 @@ function(__init_common_components)
     idf_build_set_property(__COMMON_COMPONENTS_INITIALIZED YES)
 endfunction()
 
-#[[
+#[[api
 .. cmakev2:function:: idf_component_register
 
     .. code-block:: cmake
@@ -298,8 +298,6 @@ endfunction()
                                [REQUIRED_IDF_TARGETS <target>...]
                                [EMBED_FILES <file>...]
                                [EMBED_TXTFILES <file>...]
-                               [KCONFIG <file>]
-                               [KCONFIG_PROJBUILD <file>]
                                [WHOLE_ARCHIVE])
 
     *SRCS[in,opt]*
@@ -334,9 +332,7 @@ endfunction()
 
     *PRIV_REQUIRES[in,opt]*
 
-        List of privately required components based on usage requirements or
-        components needed solely for functions or values defined in
-        project_include.cmake.
+        List of privately required components based on usage requirements.
 
     *REQUIRED_IDF_TARGETS[in,opt]*
 
@@ -354,15 +350,9 @@ endfunction()
 
         Link the component as --whole-archive.
 
-    *KCONFIG[in,opt]*
-
-        Obsolete.
-
-    *KCONFIG_PROJBUILD[in,opt]*
-
-        Obsolete.
-
-    Register a component with the build system.
+    Register a new component with the build system using the provided options.
+    This function also automatically links all commonly required and managed
+    components to the component's target.
 #]]
 function(idf_component_register)
     set(options WHOLE_ARCHIVE)
