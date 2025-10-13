@@ -1142,7 +1142,7 @@ static void btu_hcif_hdl_command_complete (UINT16 opcode, UINT8 *p, UINT16 evt_l
         break;
 
     case HCI_DELETE_STORED_LINK_KEY:
-        btm_delete_stored_link_key_complete (p);
+        btm_delete_stored_link_key_complete (p, evt_len);
         break;
 
     case HCI_GET_LINK_QUALITY:
