@@ -299,7 +299,7 @@ ESP32C5_DOCS = [
     'api-guides/phy.rst',
     'api-reference/peripherals/sd_pullup_requirements.rst',
     'api-guides/RF_calibration.rst',
-]
+] + ESP_TEE_DOCS
 
 ESP32C61_DOCS = [
     'api-guides/phy.rst',
