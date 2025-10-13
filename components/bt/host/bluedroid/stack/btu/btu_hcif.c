@@ -981,7 +981,7 @@ static void btu_hcif_hdl_command_complete (UINT16 opcode, UINT8 *p, UINT16 evt_l
         break;
 
     case HCI_READ_TRANSMIT_POWER_LEVEL:
-        btm_read_tx_power_complete(p, FALSE);
+        btm_read_tx_power_complete(p, evt_len, FALSE);
         break;
 
     case HCI_CREATE_CONNECTION_CANCEL:
@@ -1049,7 +1049,7 @@ static void btu_hcif_hdl_command_complete (UINT16 opcode, UINT8 *p, UINT16 evt_l
         break;
 
     case HCI_BLE_READ_ADV_CHNL_TX_POWER:
-        btm_read_tx_power_complete(p, TRUE);
+        btm_read_tx_power_complete(p, evt_len, TRUE);
         break;
 
     case HCI_BLE_WRITE_ADV_ENABLE:
