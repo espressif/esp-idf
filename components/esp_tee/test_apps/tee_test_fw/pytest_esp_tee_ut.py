@@ -51,6 +51,7 @@ REE_ISOLATION_TEST_EXC_RSN: dict[str, str] = {
     ('IROM-W1'): 'Store access fault',
     ('DROM-R1'): 'Load access fault',
     ('DROM-W1'): 'Store access fault',
+    ('MMU-spillover'): 'Cache error',
 }
 
 TEE_APM_VIOLATION_EXC_CHK = ['eFuse', 'MMU', 'AES', 'HMAC', 'DS', 'SHA PCR', 'ECC PCR', 'SWDT/BOD']
