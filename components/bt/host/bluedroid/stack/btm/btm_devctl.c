@@ -1203,7 +1203,7 @@ tBTM_STATUS BTM_DeleteStoredLinkKey(BD_ADDR bd_addr, tBTM_CMPL_CB *p_cb)
 ** Returns          void
 **
 *******************************************************************************/
-void btm_delete_stored_link_key_complete (UINT8 *p)
+void btm_delete_stored_link_key_complete (UINT8 *p, UINT16 evt_len)
 {
     tBTM_CMPL_CB         *p_cb = btm_cb.devcb.p_stored_link_key_cmpl_cb;
     tBTM_DELETE_STORED_LINK_KEY_COMPLETE  result;
@@ -1215,10 +1215,16 @@ void btm_delete_stored_link_key_complete (UINT8 *p)
         /* Set the call back event to indicate command complete */
         result.event = BTM_CB_EVT_DELETE_STORED_LINK_KEYS;
 
+        if (evt_len < 3) {
+            BTM_TRACE_ERROR("Malformatted event packet, too short");
+            result.status = BTM_ERR_PROCESSING;
+            goto err_out;
+        }
         /* Extract the result fields from the HCI event */
         STREAM_TO_UINT8  (result.status, p);
         STREAM_TO_UINT16 (result.num_keys, p);
 
+err_out:
         /* Call the call back and pass the result */
         (*p_cb)(&result);
     }
