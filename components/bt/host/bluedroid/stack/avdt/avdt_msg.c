@@ -1279,7 +1279,7 @@ BT_HDR *avdt_msg_asmbl(tAVDT_CCB *p_ccb, BT_HDR *p_buf)
     UINT8   *p;
     UINT8   pkt_type;
     BT_HDR  *p_ret;
-    UINT16  buf_len;
+    size_t  buf_len;
 
     /* parse the message header */
     p = (UINT8 *)(p_buf + 1) + p_buf->offset;
@@ -1355,7 +1355,7 @@ BT_HDR *avdt_msg_asmbl(tAVDT_CCB *p_ccb, BT_HDR *p_buf)
             p_buf->len -= AVDT_LEN_TYPE_CONT;
 
             /* verify length */
-            if ((p_ccb->p_rx_msg->offset + p_buf->len) > buf_len) {
+            if (((size_t)p_ccb->p_rx_msg->offset + (size_t)p_buf->len) > buf_len) {
                 /* won't fit; free everything */
                 AVDT_TRACE_WARNING("%s: Fragmented message too big!", __func__);
                 osi_free(p_ccb->p_rx_msg);
