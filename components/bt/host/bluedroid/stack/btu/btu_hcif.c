@@ -1160,7 +1160,7 @@ static void btu_hcif_hdl_command_complete (UINT16 opcode, UINT8 *p, UINT16 evt_l
         break;
     case HCI_READ_TRANSMIT_POWER_LEVEL:
 #if (BLE_HOST_READ_TX_POWER_EN == TRUE)
-        btm_read_tx_power_complete(p, FALSE);
+        btm_read_tx_power_complete(p, evt_len, FALSE);
 #endif // #if (BLE_HOST_READ_TX_POWER_EN == TRUE)
         break;
 #if (CLASSIC_BT_INCLUDED == TRUE)
@@ -1232,7 +1232,7 @@ static void btu_hcif_hdl_command_complete (UINT16 opcode, UINT8 *p, UINT16 evt_l
 
     case HCI_BLE_READ_ADV_CHNL_TX_POWER:
 #if (BLE_HOST_READ_TX_POWER_EN == TRUE)
-        btm_read_tx_power_complete(p, TRUE);
+        btm_read_tx_power_complete(p, evt_len, TRUE);
 #endif // #if (BLE_HOST_READ_TX_POWER_EN == TRUE)
         break;
 #if (BLE_42_ADV_EN == TRUE)
