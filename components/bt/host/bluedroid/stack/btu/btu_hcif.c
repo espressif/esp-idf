@@ -977,7 +977,7 @@ static void btu_hcif_hdl_command_complete (UINT16 opcode, UINT8 *p, UINT16 evt_l
         break;
 
     case HCI_READ_RSSI:
-        btm_read_rssi_complete (p);
+        btm_read_rssi_complete (p, evt_len);
         break;
 
     case HCI_READ_TRANSMIT_POWER_LEVEL:
