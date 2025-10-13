@@ -1074,7 +1074,7 @@ void         btm_cont_rswitch (tACL_CONN *p,
 
 tACL_CONN    *btm_handle_to_acl (UINT16 hci_handle);
 void         btm_read_link_policy_complete (UINT8 *p);
-void         btm_read_rssi_complete (UINT8 *p);
+void         btm_read_rssi_complete (UINT8 *p, UINT16 evt_len);
 void         btm_read_channel_map_complete (UINT8 *p);
 void         btm_read_tx_power_complete (UINT8 *p, UINT16 evt_len, BOOLEAN is_ble);
 void         btm_acl_pkt_types_changed(UINT8 status, UINT16 handle, UINT16 pkt_types);
