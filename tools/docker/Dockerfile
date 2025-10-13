@@ -54,9 +54,11 @@ ARG IDF_CHECKOUT_REF=
 ARG IDF_CLONE_SHALLOW=
 ARG IDF_CLONE_SHALLOW_DEPTH=1
 ARG IDF_INSTALL_TARGETS=all
+ARG IDF_GITHUB_ASSETS=
 
 ENV IDF_PATH=/opt/esp/idf
 ENV IDF_TOOLS_PATH=/opt/esp
+ENV IDF_GITHUB_ASSETS=${IDF_GITHUB_ASSETS}
 
 # install build essential needed for linux target apps, which is a preview target so it is installed with "all" only
 RUN if [ "$IDF_INSTALL_TARGETS" = "all" ]; then \
