@@ -590,8 +590,15 @@ static void s_i2c_send_commands(i2c_master_bus_handle_t i2c_master, TickType_t t
             // For i2c nack detected, the i2c transaction not finish.
             // start->address->nack->stop
             // So wait the whole transaction finishes, then quit the function.
+            TickType_t start_tick = xTaskGetTickCount();
+            const TickType_t timeout_ticks = ticks_to_wait;
             while (i2c_ll_is_bus_busy(hal->dev)) {
-                __asm__ __volatile__("nop");
+                if ((xTaskGetTickCount() - start_tick) > timeout_ticks) {
+                    ESP_LOGE(TAG, "I2C bus is still busy but software timeout detected");
+                    atomic_store(&i2c_master->status, I2C_STATUS_TIMEOUT);
+                    s_i2c_hw_fsm_reset(i2c_master, true);
+                    break;
+                }
             }
         }
         s_i2c_err_log_print(event, i2c_master->bypass_nack_log);
