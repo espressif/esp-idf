@@ -45,8 +45,6 @@ These third party libraries can be included into the application (firmware) prod
 
 * `FatFS`_ library, Copyright (C) 2017 ChaN, is licensed under :component_file:`a BSD-style license <fatfs/src/ff.h#L1-L18>`.
 
-* `cJSON`_ library, Copyright (C) 2009-2017 Dave Gamble and cJSON contributors, is licensed under MIT License as described in :component_file:`LICENSE file <json/cJSON/LICENSE>`.
-
 * `micro-ecc`_ library, Copyright (C) 2014 Kenneth MacKay, is licensed under 2-clause BSD License.
 
 * `Mbed TLS`_ library, Copyright (C) 2006-2018 ARM Limited, is licensed under Apache License 2.0 as described in :component_file:`LICENSE file <mbedtls/mbedtls/LICENSE>`.
@@ -155,7 +153,6 @@ Copyright (C) 2011 ChaN, all right reserved.
 .. _argtable3: https://github.com/argtable/argtable3
 .. _linenoise: https://github.com/antirez/linenoise
 .. _fatfs: http://elm-chan.org/fsw/ff/00index_e.html
-.. _cJSON: https://github.com/DaveGamble/cJSON
 .. _micro-ecc: https://github.com/kmackay/micro-ecc
 .. _OpenBSD SD/MMC driver: https://github.com/openbsd/src/blob/f303646/sys/dev/sdmmc/sdmmc.c
 .. _Mbed TLS: https://github.com/Mbed-TLS/mbedtls

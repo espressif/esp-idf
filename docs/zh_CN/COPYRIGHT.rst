@@ -45,8 +45,6 @@
 
 * `FatFS`_ 库，版权归 2017 ChaN 所有，并根据 :component_file:`BSD 式条款 <fatfs/src/ff.h#L1-L18>` 进行许可。
 
-* `cJSON`_ 库，版权归 2009-2017 Dave Gamble 及 cJSON 库贡献者所有，根据 :component_file:`LICENSE 文件 <json/cJSON/LICENSE>` 中描述的 MIT 许可证进行许可。
-
 * `micro-ecc`_ 库，版权归 2014 Kenneth MacKay 所有，根据二条款 BSD 许可证进行许可。
 
 * `Mbed TLS`_ 库，版权归 2006-2018 安谋控股公司所有，根据 :component_file:`LICENSE 文件 <mbedtls/mbedtls/LICENSE>` 中描述的 Apache License 2.0 进行许可。
@@ -155,7 +153,6 @@ TJpgDec - Tiny JPEG 解压器 R0.01 (C) 2011 ChaN，是一个用于小型嵌入�
 .. _argtable3: https://github.com/argtable/argtable3
 .. _linenoise: https://github.com/antirez/linenoise
 .. _fatfs: http://elm-chan.org/fsw/ff/00index_e.html
-.. _cJSON: https://github.com/DaveGamble/cJSON
 .. _micro-ecc: https://github.com/kmackay/micro-ecc
 .. _OpenBSD SD/MMC 驱动程序: https://github.com/openbsd/src/blob/f303646/sys/dev/sdmmc/sdmmc.c
 .. _Mbed TLS: https://github.com/Mbed-TLS/mbedtls

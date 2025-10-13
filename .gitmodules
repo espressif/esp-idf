@@ -46,17 +46,6 @@
 	sbom-description = Wear-leveled SPI flash file system for embedded devices
 	sbom-hash = 0dbb3f71c5f6fae3747a9d935372773762baf852
 
-[submodule "components/json/cJSON"]
-	path = components/json/cJSON
-	url = ../../DaveGamble/cJSON.git
-	sbom-version = 1.7.19
-	sbom-cpe = cpe:2.3:a:cjson_project:cjson:{}:*:*:*:*:*:*:*
-	sbom-cpe = cpe:2.3:a:davegamble:cjson:{}:*:*:*:*:*:*:*
-	sbom-supplier = Person: Dave Gamble
-	sbom-url = https://github.com/DaveGamble/cJSON
-	sbom-description = Ultralightweight JSON parser in ANSI C
-	sbom-hash = c859b25da02955fef659d658b8f324b5cde87be3
-
 [submodule "components/mbedtls/mbedtls"]
 	path = components/mbedtls/mbedtls
 	url = ../../espressif/mbedtls.git
