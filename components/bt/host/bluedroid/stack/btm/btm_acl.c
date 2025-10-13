@@ -2300,7 +2300,7 @@ void BTM_BleGetPeriodicAdvListSize(uint8_t *size)
 ** Returns          void
 **
 *******************************************************************************/
-void btm_read_tx_power_complete (UINT8 *p, BOOLEAN is_ble)
+void btm_read_tx_power_complete (UINT8 *p, UINT16 evt_len, BOOLEAN is_ble)
 {
     tBTM_CMPL_CB            *p_cb = btm_cb.devcb.p_tx_power_cmpl_cb;
     tBTM_TX_POWER_RESULTS   results;
@@ -2313,12 +2313,23 @@ void btm_read_tx_power_complete (UINT8 *p, BOOLEAN is_ble)
     btm_cb.devcb.p_tx_power_cmpl_cb = NULL;
 
     if (p_cb) {
+        if (evt_len < 1) {
+            BTM_TRACE_ERROR("Bogus event packet, too short\n");
+            results.status = BTM_ERR_PROCESSING;
+            goto err_out;
+        }
+
         STREAM_TO_UINT8  (results.hci_status, p);
 
         if (results.hci_status == HCI_SUCCESS) {
             results.status = BTM_SUCCESS;
 
             if (!is_ble) {
+                if (evt_len < 1 + 3) {
+                    BTM_TRACE_ERROR("Bogus event packet, too short\n");
+                    results.status = BTM_ERR_PROCESSING;
+                    goto err_out;
+                }
                 STREAM_TO_UINT16 (handle, p);
                 STREAM_TO_UINT8 (results.tx_power, p);
 
@@ -2330,6 +2341,11 @@ void btm_read_tx_power_complete (UINT8 *p, BOOLEAN is_ble)
             }
 #if BLE_INCLUDED == TRUE
             else {
+                if (evt_len < 1 + 1) {
+                    BTM_TRACE_ERROR("Bogus event packet, too short\n");
+                    results.status = BTM_ERR_PROCESSING;
+                    goto err_out;
+                }
                 STREAM_TO_UINT8 (results.tx_power, p);
                 memcpy(results.rem_bda, btm_cb.devcb.read_tx_pwr_addr, BD_ADDR_LEN);
             }
@@ -2340,6 +2356,7 @@ void btm_read_tx_power_complete (UINT8 *p, BOOLEAN is_ble)
             results.status = BTM_ERR_PROCESSING;
         }
 
+err_out:
         (*p_cb)(&results);
     }
 }
