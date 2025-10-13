@@ -1147,7 +1147,7 @@ void btm_vsc_complete (UINT8 *p, UINT16 cc_opcode, UINT16 evt_len,
 void btm_inq_db_reset (void);
 void btm_vendor_specific_evt (UINT8 *p, UINT8 evt_len);
 #if (CLASSIC_BT_INCLUDED == TRUE)
-void btm_delete_stored_link_key_complete (UINT8 *p);
+void btm_delete_stored_link_key_complete (UINT8 *p, UINT16 evt_len);
 #endif // (CLASSIC_BT_INCLUDED == TRUE)
 void btm_report_device_status (tBTM_DEV_STATUS status);
 void btm_set_afh_channels_complete (UINT8 *p);
