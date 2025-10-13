@@ -605,6 +605,7 @@ To avoid duplication, every component automatically requires some "common" IDF c
 
 The list of common components is: cxx, esp_libc, freertos, esp_hw_support, heap, log, soc, hal, esp_rom, esp_common, esp_system, xtensa/riscv.
 
+.. _including-components-in-the-build:
 
 Including Components in the Build
 ---------------------------------

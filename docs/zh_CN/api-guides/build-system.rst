@@ -605,6 +605,7 @@ Spark Plug 组件
 
 通用组件包括：cxx、esp_libc、freertos、esp_hw_support、heap、log、soc、hal、esp_rom、esp_common、esp_system。
 
+.. _including-components-in-the-build:
 
 在构建中导入组件
 -----------------
