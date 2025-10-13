@@ -41,6 +41,86 @@ if BLE_MESH
         help
             This option to enable BLE Mesh using some BLE 5.0 APIs.
 
+    menuconfig BLE_MESH_EXT_ADV
+        bool "Enable extended advertising for BLE Mesh"
+        depends on BLE_MESH_USE_BLE_50
+        default n
+        help
+            Enable broadcasting of BLE Mesh messages using BLE 5.0 extended advertising.
+            This allows control of extended advertising parameters (e.g., PHY selection)
+            while maintaining standard BLE Mesh packet length.
+
+    config BLE_MESH_EXT_ADV_BUF_COUNT
+        int "Number of extended advertising buffers"
+        depends on BLE_MESH_EXT_ADV
+        range 6 256
+        default 60
+        help
+            Number of buffer slots allocated for extended advertising packets.
+
+    config BLE_MESH_EXT_RELAY_ADV_BUF_COUNT
+        int "Number of extended relay advertising buffers"
+        depends on BLE_MESH_EXT_ADV
+        depends on BLE_MESH_RELAY
+        range 0 256
+        default 60
+        help
+            Number of buffer slots allocated for extended advertising packets used in message relay.
+
+    menuconfig BLE_MESH_LONG_PACKET
+        bool "Enable non-standard long packet mode for BLE Mesh"
+        depends on BLE_MESH_EXT_ADV
+        default n
+        help
+            Enable extended-length advertising packets for BLE Mesh using BLE 5.0 extended advertising.
+            This overrides the standard BLE Mesh packet length limitations.
+
+    config BLE_MESH_LONG_PACKET_ADV_LEN
+        int "Maximum advertising payload length"
+        depends on BLE_MESH_LONG_PACKET
+        range 30 249
+        default 105
+        help
+            Maximum payload length for extended advertising packets (bytes).
+            Range: 30-249 bytes.
+            Default: 105.
+            Note: Maximum access payload = (LENGTH - 17) × SEGMENT_COUNT
+            - Transmission: Uses BLE_MESH_LONG_PACKET_TX_SEG_CNT
+            - Reception: Uses BLE_MESH_LONG_PACKET_RX_SEG_CNT
+
+    config BLE_MESH_LONG_PACKET_ADV_BUF_COUNT
+        int "Long packet advertising buffer count"
+        depends on BLE_MESH_LONG_PACKET
+        default 20
+        help
+            Number of advertising buffers allocated for long packet transmissions.
+
+    config BLE_MESH_LONG_PACKET_RELAY_ADV_BUF_COUNT
+        int "Long packet relay buffer count"
+        depends on BLE_MESH_LONG_PACKET
+        depends on BLE_MESH_RELAY
+        default 20
+        help
+            Number of advertising buffers allocated for relay long packets.
+
+    config BLE_MESH_LONG_PACKET_TX_SEG_CNT
+        int "Maximum transmission segments per message"
+        depends on BLE_MESH_LONG_PACKET
+        range 1 BLE_MESH_TX_SEG_MAX if BLE_MESH_TX_SEG_MAX < BLE_MESH_LONG_PACKET_ADV_BUF_COUNT
+        range 1 BLE_MESH_LONG_PACKET_ADV_BUF_COUNT if BLE_MESH_TX_SEG_MAX >= BLE_MESH_LONG_PACKET_ADV_BUF_COUNT
+        default 20
+        help
+            Maximum number of segments for outgoing long packet messages.
+            Upper bound: min(BLE_MESH_TX_SEG_MAX, BLE_MESH_LONG_PACKET_ADV_BUF_COUNT)
+
+    config BLE_MESH_LONG_PACKET_RX_SEG_CNT
+        int "Maximum reception segments per message"
+        depends on BLE_MESH_LONG_PACKET
+        range 1 BLE_MESH_LONG_PACKET_ADV_BUF_COUNT
+        default 20
+        help
+            Maximum number of segments supported for receiving long packet messages.
+
     config BLE_MESH_ADV_INST_ID
         depends on BLE_MESH_USE_BLE_50
         int "Extended adv instance for Mesh normal packets"

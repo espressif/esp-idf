@@ -201,7 +201,16 @@ static int32_t bt_mesh_client_calc_timeout(struct bt_mesh_msg_ctx *ctx,
          */
         seg_rtx_num = bt_mesh_get_seg_rtx_num();
         seg_rtx_to = bt_mesh_get_seg_rtx_timeout(ctx->addr, ctx->send_ttl);
-        seg_count = (msg->len + mic_size - 1) / 12U + 1U;
+
+#if CONFIG_BLE_MESH_LONG_PACKET
+        if (ctx->enh.long_pkt_cfg &&
+            msg->len > BLE_MESH_TX_SDU_MAX) {
+            seg_count = (msg->len + mic_size - 1) / BLE_MESH_EXT_APP_SEG_SDU_MAX + 1U;
+        } else
+#endif
+        {
+            seg_count = (msg->len + mic_size - 1) / 12U + 1U;
+        }
 
         duration = bt_mesh_get_adv_duration(ctx);
 

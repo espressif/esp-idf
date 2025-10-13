@@ -424,7 +424,11 @@ static void bt_mesh_scan_cb(struct bt_mesh_adv_report *adv_rpt)
 
     net_buf_simple_save(buf, &buf_state);
 
-    if (adv_rpt->adv_type != BLE_MESH_ADV_NONCONN_IND &&
+    if (
+#if CONFIG_BLE_MESH_LONG_PACKET
+        adv_rpt->adv_type != 0 &&
+#endif
+        adv_rpt->adv_type != BLE_MESH_ADV_NONCONN_IND &&
        adv_rpt->adv_type != BLE_MESH_ADV_IND
 #if CONFIG_BLE_MESH_RPR_SRV && CONFIG_BLE_MESH_RPR_SRV_ACTIVE_SCAN
        && adv_rpt->adv_type != BLE_MESH_ADV_SCAN_RSP
@@ -490,7 +494,11 @@ static void bt_mesh_scan_cb(struct bt_mesh_adv_report *adv_rpt)
         buf->len = len - 1;
 
         if ((type == BLE_MESH_DATA_MESH_PROV || type == BLE_MESH_DATA_MESH_MESSAGE ||
-            type == BLE_MESH_DATA_MESH_BEACON) && (adv_rpt->adv_type != BLE_MESH_ADV_NONCONN_IND)) {
+            type == BLE_MESH_DATA_MESH_BEACON) && (adv_rpt->adv_type != BLE_MESH_ADV_NONCONN_IND
+#if CONFIG_BLE_MESH_EXT_ADV
+                && adv_rpt->adv_type != BLE_MESH_EXT_ADV_NONCONN_IND
+#endif
+        )) {
             BT_DBG("Ignore mesh packet (type 0x%02x) with adv_type 0x%02x", type, adv_rpt->adv_type);
             return;
         }
@@ -500,6 +508,19 @@ static void bt_mesh_scan_cb(struct bt_mesh_adv_report *adv_rpt)
             struct bt_mesh_net_rx rx = {
                 .ctx.recv_rssi = adv_rpt->rssi,
             };
+#if CONFIG_BLE_MESH_EXT_ADV
+            if (adv_rpt->adv_type == BLE_MESH_EXT_ADV_NONCONN_IND) {
+                rx.ctx.enh.ext_adv_cfg_used = true;
+                rx.ctx.enh.ext_adv_cfg.primary_phy = adv_rpt->primary_phy;
+                rx.ctx.enh.ext_adv_cfg.secondary_phy = adv_rpt->secondary_phy;
+                if (adv_rpt->tx_power == 0x7f) {
+                    rx.ctx.enh.ext_adv_cfg.include_tx_power = false;
+                } else {
+                    rx.ctx.enh.ext_adv_cfg.include_tx_power = true;
+                }
+                rx.ctx.enh.ext_adv_cfg.tx_power = adv_rpt->tx_power;
+            }
+#endif  /* CONFIG_BLE_MESH_EXT_ADV */
             bt_mesh_generic_net_recv(buf, &rx, BLE_MESH_NET_IF_ADV);
             break;
 #if CONFIG_BLE_MESH_PB_ADV
