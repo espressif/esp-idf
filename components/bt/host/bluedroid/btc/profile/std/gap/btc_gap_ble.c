@@ -1452,6 +1452,10 @@ static void btc_ble_vendor_hci_cmd_complete_callback(tBTA_VSC_CMPL *p_param)
             msg.act = ESP_GAP_BLE_SET_SCH_LEN_CMPL_EVT;
             param.set_sch_len_cmpl.status = p_param->p_param_buf[0];
             break;
+        case 0xFD19:
+            msg.act = ESP_GAP_BLE_SET_SCAN_CHAN_MAP_CMPL_EVT;
+            param.set_scan_chan_map_cmpl.status = btc_hci_to_esp_status(p_param->p_param_buf[0]);
+            break;
         default:
             param.vendor_cmd_cmpl.opcode = p_param->opcode;
             param.vendor_cmd_cmpl.param_len = p_param->param_len;
