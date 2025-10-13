@@ -233,27 +233,26 @@ def test_create_project(idf_py: IdfPyFunc, idf_copy: Path) -> None:
 
 @pytest.mark.skipif(sys.platform == 'darwin', reason='macos runner is a shell executor, it would break the file system')
 def test_create_project_with_idf_readonly(idf_copy: Path) -> None:
-    def change_to_readonly(src: Path) -> None:
+    def change_file_permissions(src: Path, write_permission: bool) -> None:
+        dir_permission = 0o777 if write_permission else 0o555  # all or read & execute
+        file_permission = 0o777 if write_permission else 0o444  # all or readonly or all
         for root, dirs, files in os.walk(src):
             for name in dirs:
-                os.chmod(os.path.join(root, name), 0o555)  # read & execute
+                os.chmod(os.path.join(root, name), dir_permission)
             for name in files:
                 path = os.path.join(root, name)
                 if '/bin/' in path:
                     continue  # skip executables
-                os.chmod(os.path.join(root, name), 0o444)  # readonly
+                os.chmod(os.path.join(root, name), file_permission)
     logging.info('Check that command for creating new project will success if the IDF itself is readonly.')
-    change_to_readonly(idf_copy)
+    change_file_permissions(idf_copy, write_permission=False)
     try:
         run_idf_py('create-project', '--path', str(idf_copy / 'example_proj'), 'temp_test_project')
     except Exception:
         raise
     else:
-        def del_rw(function, path, excinfo):  # type: ignore
-            os.chmod(path, stat.S_IWRITE)
-            os.remove(path)
-
-        shutil.rmtree(idf_copy, onerror=del_rw)
+        change_file_permissions(idf_copy, write_permission=True)
+        shutil.rmtree(idf_copy)
 
 
 @pytest.mark.usefixtures('test_app_copy')
