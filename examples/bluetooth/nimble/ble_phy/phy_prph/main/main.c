@@ -342,8 +342,10 @@ app_main(void)
     ble_hs_cfg.sm_their_key_dist = 1;
 #endif
 
+#if MYNEWT_VAL(BLE_GATTS)
     rc = gatt_svr_init_le_phy();
     assert(rc == 0);
+#endif
 
     /* Set the default device name. */
     rc = ble_svc_gap_device_name_set("bleprph-phy");

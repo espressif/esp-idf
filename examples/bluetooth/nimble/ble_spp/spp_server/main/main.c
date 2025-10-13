@@ -63,7 +63,6 @@ ble_spp_server_advertise(void)
 {
     struct ble_gap_adv_params adv_params;
     struct ble_hs_adv_fields fields;
-    const char *name;
     int rc;
 
     /**
@@ -90,6 +89,7 @@ ble_spp_server_advertise(void)
     fields.tx_pwr_lvl_is_present = 1;
     fields.tx_pwr_lvl = BLE_HS_ADV_TX_PWR_LVL_AUTO;
 
+    const char *name;
     name = ble_svc_gap_device_name();
     fields.name = (uint8_t *)name;
     fields.name_len = strlen(name);
@@ -412,8 +412,6 @@ static void ble_spp_uart_init(void)
 void
 app_main(void)
 {
-    int rc;
-
     /* Initialize NVS — it is used to store PHY calibration data */
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
@@ -459,6 +457,8 @@ app_main(void)
     ble_hs_cfg.sm_their_key_dist = 1;
 #endif
 
+#if MYNEWT_VAL(BLE_GATTS)
+    int rc;
     /* Register custom service */
     rc = gatt_svr_init();
     assert(rc == 0);
@@ -466,6 +466,7 @@ app_main(void)
     /* Set the default device name. */
     rc = ble_svc_gap_device_name_set("nimble-ble-spp-svr");
     assert(rc == 0);
+#endif
 
     /* XXX Need to have template for store */
     ble_store_config_init();

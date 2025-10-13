@@ -461,12 +461,16 @@ app_main(void)
     rc = peer_init(BLE_PEER_MAX_NUM, BLE_PEER_MAX_NUM, BLE_PEER_MAX_NUM, BLE_PEER_MAX_NUM);
     assert(rc == 0);
 #endif
+
+
+#if MYNEWT_VAL(BLE_GATTS)
+    rc = gatt_svr_init();
+    assert(rc == 0);
+
     /* Set the default device name. We will act as both central and peripheral. */
     rc = ble_svc_gap_device_name_set("esp-ble-role-coex");
     assert(rc == 0);
-
-    rc = gatt_svr_init();
-    assert(rc == 0);
+#endif
 
     /* XXX Need to have template for store */
     ble_store_config_init();
