@@ -251,6 +251,7 @@ int gap_init(void) {
     /* Local variables */
     int rc = 0;
 
+
     /* Initialize GAP service */
     ble_svc_gap_init();
 
