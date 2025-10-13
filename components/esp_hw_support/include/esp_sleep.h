@@ -581,9 +581,20 @@ uint64_t esp_sleep_get_gpio_wakeup_status(void);
 #endif //SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
 
 /**
- * @brief Set power down mode for an RTC power domain in sleep mode
+ * @brief Configure power domain options for sleep mode
  *
- * If not set set using this API, all power domains default to ESP_PD_OPTION_AUTO.
+ * This function provides power domain management for sleep mode, allowing users
+ * to control which power domains remain active during sleep to maintain required
+ * functionality. The function supports:
+ *  - Automatic power management (ESP_PD_OPTION_AUTO): Power domains are controlled
+ *    automatically based on system requirements and other peripheral usage.
+ *  - Manual power control (ESP_PD_OPTION_ON/ESP_PD_OPTION_OFF): User can force
+ *    specific power domains to stay on or off during sleep.
+ *
+ * The management strategy uses reference counting when in manual mode, allowing
+ * multiple subsystems to request and release power domain resources safely without
+ * interfering with each other. Power domains will only change state when all
+ * users have released their requirements.
  *
  * @param domain  power domain to configure
  * @param option  power down option (ESP_PD_OPTION_OFF, ESP_PD_OPTION_ON, or ESP_PD_OPTION_AUTO)
