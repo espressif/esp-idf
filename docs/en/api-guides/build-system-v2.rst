@@ -1,7 +1,7 @@
 Build System v2
 ***************
 
-ESP-IDF CMake-based build system v2, referred to in this documentation simply as v2 or build system, is a successor to the original CMake-based :doc:`/api-guides/build-system`, referred to as v1. The v2 addresses limitations introduced in the previous version while trying to maintain backward compatibility for components written for v1. The most significant changes include the ability to use Kconfig variables to specify component dependencies, the removal of early component evaluation using CMake script mode, and support for writing components using the native CMake approach. While v2 aims to be as backward compatible with v1 as possible, meaning most components written for v1 should work without modification with v2, there are design differences between v1 and v2 that may require changes in v1 components to work with v2. The incompatibilities are described in `Breaking Changes for v1 Components`_.
+ESP-IDF CMake-based build system v2, referred to in this documentation simply as v2 or build system, is a successor to the original CMake-based :doc:`/api-guides/build-system`, referred to as v1. The v2 addresses limitations introduced in the previous version while trying to maintain backward compatibility for components written for v1. The most significant changes include the ability to use Kconfig variables to specify component dependencies, the removal of early component evaluation using CMake script mode, and support for writing components using the native CMake approach. While v2 aims to be as backward compatible with v1 as possible, meaning most components written for v1 should work without modification with v2, there are design differences between v1 and v2 that may require changes in v1 components to work with v2. The incompatibilities are described in :ref:`cmakev2-breaking-changes`.
 
 Creating a New Project
 ======================
@@ -26,9 +26,34 @@ Finally, the :cmakev2:ref:`idf_project_default` function creates the default pro
 Creating a New Component
 ========================
 
+This section explains how to create a new component. The preferred and generally sufficient method is described in :ref:`cmakev2-creating-compatible-component`. However, if you need more control or prefer a native CMake approach without concern for v1 compatibility, see :ref:`cmakev2-creating-v2-component`.
+
 .. important::
 
-    This section describes how to create a component for v2, which is not compatible or usable with v1. To create a component that works with both versions, it is recommended to start by creating the component for :doc:`v1 </api-guides/build-system>`. If modifications are required to make the v1 component compatible with v2, refer to the guidelines in `Breaking Changes for V1 Components`_.
+    Always ensure that all variables used within the component's ``CMakeLists.txt`` are initialized before use. The component might be evaluated in the context of other component where some variables may already be set. A common example is appending to CMake's list without explicitly initializing the list variable first.
+
+.. _cmakev2-creating-compatible-component:
+
+Creating a Component Compatible with v1 and v2
+----------------------------------------------
+
+The recommended method for creating a new component is to use the :cmakev2:ref:`idf_component_register` function. This function is provided in v2 to maintain backward compatibility with v1 and remains the preferred approach for creating components that work with both versions. The only difference between the v1 and v2 versions of this function is that the v2 version does not support the ``KCONFIG`` and ``KCONFIG_PROJBUILD`` options when using Kconfig filenames that do not follow the :ref:`cmakev2-standardized-kconfigs`. For components that require functionality beyond what :cmakev2:ref:`idf_component_register` provides, please refer to :ref:`cmakev2-breaking-changes`.
+
+.. code-block:: cmake
+    :caption: Minimal Component CMakeLists.txt
+
+    idf_component_register(SRCS "foo.c" "bar.c"
+                           INCLUDE_DIRS "include"
+                           REQUIRES mbedtls)
+
+.. _cmakev2-creating-v2-component:
+
+Creating a Component for v2 Only
+--------------------------------
+
+.. important::
+
+    This section describes how to create a component for v2, which is not compatible or usable with v1. To create a component that works with both versions, it is recommended to follow :ref:`cmakev2-creating-compatible-component`.
 
 This section demonstrates how to create a new component using a simple component named ``esp_target_info`` as an example. This component provides the ``print_esp_target_info`` function, which, when invoked, displays basic information about the target.
 
@@ -101,10 +126,6 @@ The ``linker.lf`` is a linker fragment that determines the placement of ``print_
 
 Now, let's describe how the aforementioned sources can be integrated as a component for the build system by defining the component's ``CMakeLists.txt`` file.
 
-.. important::
-
-    Always ensure that all variables used within the component's ``CMakeLists.txt`` are initialized before use. The component might be evaluated in the context of other component where some variables may already be set. A common example is appending to CMake's list without explicitly initializing the list variable first.
-
 Create a static library target with the target name stored in the ``COMPONENT_TARGET`` variable for the ``srcs/esp_target_info.c`` source file, and add the ``include`` directory as the component's directory with public header files.
 
 .. code-block:: cmake
@@ -169,6 +190,10 @@ Include all required components and link them to the component's target.
     idf_component_set_property(${COMPONENT_TARGET} LINKER_SCRIPTS esp_target_info.ld APPEND)
 
     target_link_options(${COMPONENT_TARGET} INTERFACE "SHELL:-u esp_chip_info")
+
+.. note::
+
+    The v1 automatically adds component dependencies in certain situations. For instance, if the ``main`` component does not specify its dependencies, all components identified by the build system are added as dependencies to the ``main`` component. Additionally, component dependencies specified in ``idf_component.yaml`` for the component manager are also added as dependencies to the component. In contrast, the v2 does not automatically add any dependencies, all component dependencies must be explicitly stated.
 
 The ``esp_target_info`` component uses functionality from other components, namely ``esp_hw_support``, ``esp_system``, and ``spi_flash``, to collect basic information about the target. Therefore, it must declare its dependencies on these components. The component acquires the required component interface targets using the :cmakev2:ref:`idf_component_include` function.
 
@@ -245,6 +270,8 @@ LINKER_SCRIPTS:
 
 Also ensure that the ``esp_chip_info`` function is retained in the final binary even when section garbage collection, ``--gc-sections``, is enabled. This is required because ``esp_target_info.ld`` defines ``esp_target_chip_info`` as an alias for ``esp_chip_info``, and without forcing the linker to include it, the underlying ``esp_chip_info`` function could be discarded as unused.
 
+.. _cmakev2-breaking-changes:
+
 Breaking Changes for V1 Components
 ==================================
 
@@ -298,7 +325,7 @@ The hello_world example ``CMakeLists_v2.txt`` for v2.
 The ``BUILD_COMPONENTS`` Build Property is Unavailable
 ------------------------------------------------------
 
-The v1, by design, collects components built by the project in the ``BUILD_COMPONENTS`` build property. This is achieved by evaluating components early using the CMake script mode and collecting components based on their dependencies as provided in ``idf_component_register``. Later, the ``BUILD_COMPONENTS`` are evaluated again using CMake's ``add_subdirectory``. This approach imposes several restrictions. First, components cannot express their dependencies based on Kconfig variables because Kconfig variables are not known during the early evaluation. Second, the CMake script mode does not allow CMake commands that define build targets or actions, which caused confusion about which commands can be used in a component and when they are actually evaluated. The v2 removes this two-stage component evaluation, and hence the ``BUILD_COMPONENTS`` build property doesn't exist in v2. Any attempt to obtain the ``BUILD_COMPONENTS`` build property with :cmakev2:ref:`idf_build_get_property` will result in an error. The ``BUILD_COMPONENTS`` build property was primarily used in v1 by components to discover which other components were being built by the project and to adjust their behavior, for example, by adding additional source files. In v2, the functionality of the ``BUILD_COMPONENTS`` build property can be replaced with the ``$<TARGET_EXISTS:tgt>`` generator expression.
+The v1, by design, collects components built by the project in the ``BUILD_COMPONENTS`` build property. This is achieved by evaluating components early using the CMake script mode and collecting components based on their dependencies as provided in :cmakev2:ref:`idf_component_register`. Later, the ``BUILD_COMPONENTS`` are evaluated again using CMake's ``add_subdirectory``. This approach imposes several restrictions. First, components cannot express their dependencies based on Kconfig variables because Kconfig variables are not known during the early evaluation. Second, the CMake script mode does not allow CMake commands that define build targets or actions, which caused confusion about which commands can be used in a component and when they are actually evaluated. The v2 removes this two-stage component evaluation, and hence the ``BUILD_COMPONENTS`` build property doesn't exist in v2. Any attempt to obtain the ``BUILD_COMPONENTS`` build property with :cmakev2:ref:`idf_build_get_property` will result in an error. The ``BUILD_COMPONENTS`` build property was primarily used in v1 by components to discover which other components were being built by the project and to adjust their behavior, for example, by adding additional source files. In v2, the functionality of the ``BUILD_COMPONENTS`` build property can be replaced with the ``$<TARGET_EXISTS:tgt>`` generator expression.
 
 For example, the ``esp_eth`` component is compiled with the additional ``esp_eth_netif_glue.c`` file if the ``esp_netif`` component is also being built in v1 with:
 
@@ -326,10 +353,12 @@ To use the ``esp_eth`` component with v2, the usage of ``BUILD_COMPONENTS`` has 
 
     The ``$<TARGET_EXISTS:tgt>`` generator expression should work for both v1 and v2. The ``IDF_BUILD_V2`` is used to demonstrate the different approaches in v1 and v2.
 
+.. _cmakev2-standardized-kconfigs:
+
 Standardized ``Kconfig`` and ``Kconfig.projbuild`` File Names
 -------------------------------------------------------------
 
-The v1 allows the use of ``Kconfig`` and ``Kconfig.projbuild`` with custom file names in ``idf_component_register``. This is possible because, in v1, the components participating in the project build are collected during early component evaluation, allowing for the specification of custom names for the Kconfig files. The v2 does not perform early evaluation, and the Kconfig files are collected based on the fixed ``Kconfig`` and ``Kconfig.projbuild`` file names, which must be present in the component's root directory. This can be resolved by renaming the Kconfig files that do not conform to this naming convention or by including them in Kconfig files that comply with this convention.
+The v1 allows the use of ``Kconfig`` and ``Kconfig.projbuild`` with custom file names in :cmakev2:ref:`idf_component_register`. This is possible because, in v1, the components participating in the project build are collected during early component evaluation, allowing for the specification of custom names for the Kconfig files. The v2 does not perform early evaluation, and the Kconfig files are collected based on the fixed ``Kconfig`` and ``Kconfig.projbuild`` file names, which must be present in the component's root directory. This can be resolved by renaming the Kconfig files that do not conform to this naming convention or by including them in Kconfig files that comply with this convention.
 
 
 Component Configuration Visibility
@@ -370,12 +399,6 @@ In contrast, in v2, configuration for all discovered components is available. Th
 .. important::
 
     This change applies not only to a component's ``CMakeLists.txt`` but also to its source files. The component's code can no longer assume that the functionality of other components is available simply because their Kconfig variables are set. For example, if the ``CONFIG_VFS_SUPPORT_IO`` configuration variable is set and the component's code depends on the functionality of the ``vfs`` component, it cannot merely check ``CONFIG_VFS_SUPPORT_IO`` in the source code. It must ensure that the ``vfs`` component is included in the project build and that the component has a declared dependency on the ``vfs`` component in its ``CMakeLists.txt``.
-
-Component Dependencies
-----------------------------------
-
-The v1 automatically adds component dependencies in certain situations. For instance, if the ``main`` component does not specify its dependencies, all components identified by the build system are added as dependencies to the ``main`` component. Additionally, component dependencies specified in ``idf_component.yaml`` for the component manager are also added as dependencies to the component. In contrast, the v2 does not automatically add any dependencies, all component dependencies must be explicitly stated.
-
 
 Recursive Evaluation of Components
 ----------------------------------
