@@ -1223,7 +1223,7 @@ static void btu_hcif_hdl_command_complete (UINT16 opcode, UINT8 *p, UINT16 evt_l
 #endif // (CLASSIC_BT_INCLUDED == TRUE)
         break;
     case HCI_READ_RSSI:
-        btm_read_rssi_complete (p);
+        btm_read_rssi_complete (p, evt_len);
         break;
     case HCI_BLE_READ_CHNL_MAP:
 #if BLE_INCLUDED == TRUE
