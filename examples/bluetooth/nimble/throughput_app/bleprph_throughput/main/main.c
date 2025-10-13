@@ -26,9 +26,9 @@ static uint8_t ext_adv_pattern[] = {
 };
 
 static uint8_t s_current_phy;
-#else
-static const char *device_name = "nimble_prph";
 #endif
+
+static const char *device_name = "nimble_prph";
 
 #define NOTIFY_THROUGHPUT_PAYLOAD 495
 #define MIN_REQUIRED_MBUF         2 /* Assuming payload of 500Bytes and each mbuf can take 292Bytes.  */
@@ -509,10 +509,10 @@ void app_main(void)
     /* Initialize Notify Task */
     xTaskCreate(notify_task, "notify_task", 4096, NULL, 10, NULL);
 
+#if MYNEWT_VAL(BLE_GATTS)
     rc = gatt_svr_init();
     assert(rc == 0);
 
-#if !(CONFIG_EXAMPLE_EXTENDED_ADV)
     /* Set the default device name */
     rc = ble_svc_gap_device_name_set(device_name);
     assert(rc == 0);

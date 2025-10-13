@@ -459,8 +459,6 @@ void ble_multi_adv_host_task(void *param)
 void
 app_main(void)
 {
-    int rc;
-
     /* Initialize NVS — it is used to store PHY calibration data */
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
@@ -495,6 +493,8 @@ app_main(void)
         ble_instance_cb[i].cb = NULL;
     }
 
+#if MYNEWT_VAL(BLE_GATTS)
+    int rc;
     rc = gatt_svr_init();
     assert(rc == 0);
 
@@ -502,6 +502,7 @@ app_main(void)
     /* Set the default device name. */
     rc = ble_svc_gap_device_name_set("nimble-multi-adv");
     assert(rc == 0);
+#endif
 #endif
 
     /* XXX Need to have template for store */

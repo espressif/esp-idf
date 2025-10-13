@@ -324,12 +324,14 @@ app_main(void)
     rc = ble_npl_callout_reset(&blecsc_measure_timer, portTICK_PERIOD_MS * 100);
     assert(rc == 0);
 
+#if MYNEWT_VAL(BLE_GATTS)
     rc = gatt_svr_init(&csc_measurement_state);
     assert(rc == 0);
 
     /* Set the default device name */
     rc = ble_svc_gap_device_name_set(device_name);
     assert(rc == 0);
+#endif
 
     nimble_port_freertos_init(blecsc_host_task);
 
