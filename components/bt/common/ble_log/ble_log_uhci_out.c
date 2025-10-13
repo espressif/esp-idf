@@ -39,6 +39,10 @@
 #define UHCI_OUT_LL_QUEUE_SIZE                  (3 * UHCI_OUT_PING_PONG_BUF_CNT)
 #define UHCI_OUT_QUEUE_SIZE                     (UHCI_OUT_USER_QUEUE_SIZE + UHCI_OUT_LL_QUEUE_SIZE)
 
+#if CONFIG_SOC_ESP_NIMBLE_CONTROLLER
+#include "os/os_mbuf.h"
+#endif /* CONFIG_SOC_ESP_NIMBLE_CONTROLLER */
+
 // Private typedefs
 typedef struct {
     // This flag is for multithreading, must be a word, do not modify
@@ -95,7 +99,8 @@ enum {
     LL_LOG_FLAG_ISR,
     LL_LOG_FLAG_HCI,
     LL_LOG_FLAG_RAW,
-    LL_LOG_FLAG_SYNC
+    LL_LOG_FLAG_OMDATA,
+    LL_LOG_FLAG_HCI_UPSTREAM,
 };
 
 enum {
@@ -136,7 +141,7 @@ static inline bool uhci_out_log_cb_check_trans(uhci_out_log_cb_t *log_cb, uint16
 static inline void uhci_out_log_cb_append_trans(uhci_out_log_cb_t *log_cb);
 static inline void uhci_out_log_cb_flush_trans(uhci_out_log_cb_t *log_cb);
 static bool uhci_out_log_cb_write(uhci_out_log_cb_t *log_cb, const uint8_t *addr, uint16_t len,
-                                 const uint8_t *addr_append, uint16_t len_append, uint8_t source);
+                                 const uint8_t *addr_append, uint16_t len_append, uint8_t source, bool omdata);
 static void uhci_out_log_cb_write_loss(uhci_out_log_cb_t *log_cb);
 static void uhci_out_log_cb_dump(uhci_out_log_cb_t *log_cb);
 
@@ -318,7 +323,7 @@ IRAM_ATTR static inline void uhci_out_log_cb_flush_trans(uhci_out_log_cb_t *log_
 
 // Return value: Need append
 IRAM_ATTR static bool uhci_out_log_cb_write(uhci_out_log_cb_t *log_cb, const uint8_t *addr, uint16_t len,
-                                           const uint8_t *addr_append, uint16_t len_append, uint8_t source)
+                                           const uint8_t *addr_append, uint16_t len_append, uint8_t source, bool omdata)
 {
     uhci_out_trans_cb_t *trans_cb = log_cb->trans_cb[log_cb->trans_cb_idx];
 
@@ -334,7 +339,16 @@ IRAM_ATTR static bool uhci_out_log_cb_write(uhci_out_log_cb_t *log_cb, const uin
     memcpy(buf, (const uint8_t *)&head, UHCI_OUT_FRAME_HEAD_LEN);
     memcpy(buf + UHCI_OUT_FRAME_HEAD_LEN, addr, len);
     if (len_append && addr_append) {
-        memcpy(buf + UHCI_OUT_FRAME_HEAD_LEN + len, addr_append, len_append);
+#if CONFIG_SOC_ESP_NIMBLE_CONTROLLER
+        if (omdata) {
+            os_mbuf_copydata((struct os_mbuf *)addr_append, 0,
+                             len_append, buf + UHCI_OUT_FRAME_HEAD_LEN + len);
+        }
+        else
+#endif /* CONFIG_SOC_ESP_NIMBLE_CONTROLLER */
+        {
+            memcpy(buf + UHCI_OUT_FRAME_HEAD_LEN + len, addr_append, len_append);
+        }
     }
 
     uint32_t checksum = 0;
@@ -365,7 +379,7 @@ IRAM_ATTR static void uhci_out_log_cb_write_loss(uhci_out_log_cb_t *log_cb)
             .lost_bytes_cnt = log_cb->lost_bytes_cnt,
         };
         uhci_out_log_cb_write(log_cb, (const uint8_t *)&payload, sizeof(loss_payload_t),
-                             NULL, 0, BLE_LOG_UHCI_OUT_SOURCE_LOSS);
+                             NULL, 0, BLE_LOG_UHCI_OUT_SOURCE_LOSS, false);
 
         log_cb->lost_frame_cnt = 0;
         log_cb->lost_bytes_cnt = 0;
@@ -676,12 +690,13 @@ IRAM_ATTR void ble_log_uhci_out_ll_write(uint32_t len, const uint8_t *addr, uint
         log_cb = ll_task_log_cb;
         source = BLE_LOG_UHCI_OUT_SOURCE_ESP;
     }
+    bool omdata = flag & BIT(LL_LOG_FLAG_OMDATA);
 
     bool need_append;
     uint16_t frame_len = len + len_append + UHCI_OUT_FRAME_OVERHEAD;
     if (uhci_out_log_cb_check_trans(log_cb, frame_len, &need_append)) {
         need_append |= uhci_out_log_cb_write(log_cb, addr, len, addr_append,
-                                            len_append, source);
+                                            len_append, source, omdata);
     }
 
     ll_last_write_ts = in_isr?\
