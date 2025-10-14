@@ -144,7 +144,9 @@ def generate_hint(output: str) -> Optional[str]:
             candidates = ', '.join(candidate_component_include_dirs)
             return (f'Missing "{missing_header}" file name found in the following component(s): {candidates}. '
                     f'Maybe one of the components needs to add the missing header directory to INCLUDE_DIRS '
-                    f'of idf_component_register call in CMakeLists.txt.')
+                    f'of idf_component_register call in CMakeLists.txt. Another possibility may be that the '
+                    f'component or its feature is not enabled in the configuration. Use "idf.py menuconfig" '
+                    f'to check if the required options are enabled.')
 
         # The missing header not found anywhere, nothing much we can do here.
         return None

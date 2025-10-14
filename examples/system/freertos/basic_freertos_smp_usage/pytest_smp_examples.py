@@ -1,15 +1,13 @@
-# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 import pytest
 from pytest_embedded_idf.dut import IdfDut
+from pytest_embedded_idf.utils import idf_parametrize
 
 
-@pytest.mark.esp32c3
-@pytest.mark.esp32s3
 @pytest.mark.generic
-def test_creating_task(
-    dut: IdfDut
-) -> None:
+@idf_parametrize('target', ['esp32c3', 'esp32s3'], indirect=['target'])
+def test_creating_task(dut: IdfDut) -> None:
     dut.expect(r'esp32(?:[a-zA-Z]\d)?>')
     # test creating_task
     dut.write('create_task')
@@ -22,12 +20,9 @@ def test_creating_task(
     dut.expect(expected_patterns, expect_all=True)
 
 
-@pytest.mark.esp32c3
-@pytest.mark.esp32s3
 @pytest.mark.generic
-def test_queue(
-    dut: IdfDut
-) -> None:
+@idf_parametrize('target', ['esp32c3', 'esp32s3'], indirect=['target'])
+def test_queue(dut: IdfDut) -> None:
     dut.expect(r'esp32(?:[a-zA-Z]\d)?>')
     # test queue tasks
     verify_amount = 5
@@ -40,12 +35,9 @@ def test_queue(
         dut.expect('queue example: received data = ' + str(data))
 
 
-@pytest.mark.esp32c3
-@pytest.mark.esp32s3
 @pytest.mark.generic
-def test_locks(
-    dut: IdfDut
-) -> None:
+@idf_parametrize('target', ['esp32c3', 'esp32s3'], indirect=['target'])
+def test_locks(dut: IdfDut) -> None:
     dut.expect(r'esp32(?:[a-zA-Z]\d)?>')
     # test locks
     dut.write('lock')
@@ -59,12 +51,9 @@ def test_locks(
     dut.expect(expected_patterns, expect_all=True)
 
 
-@pytest.mark.esp32c3
-@pytest.mark.esp32s3
 @pytest.mark.generic
-def test_task_notification(
-    dut: IdfDut
-) -> None:
+@idf_parametrize('target', ['esp32c3', 'esp32s3'], indirect=['target'])
+def test_task_notification(dut: IdfDut) -> None:
     dut.expect(r'esp32(?:[a-zA-Z]\d)?>')
     # test task notification
     dut.write('task_notification')
@@ -73,12 +62,9 @@ def test_task_notification(
     dut.expect('task notify example: rcv_task is processing this task notification')
 
 
-@pytest.mark.esp32c3
-@pytest.mark.esp32s3
 @pytest.mark.generic
-def test_batch_proc_example(
-    dut: IdfDut
-) -> None:
+@idf_parametrize('target', ['esp32c3', 'esp32s3'], indirect=['target'])
+def test_batch_proc_example(dut: IdfDut) -> None:
     dut.expect(r'esp32(?:[a-zA-Z]\d)?>')
     # test batch processing example
     dut.write('batch_processing')

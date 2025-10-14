@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -148,20 +148,45 @@ extern "C" {
 #define KEYMNG_USE_EFUSE_KEY_V  0x0000001FU
 #define KEYMNG_USE_EFUSE_KEY_S  0
 
-/* KEYMNG_USE_EFUSE_KEY_ECDSA : R/W ;bitpos:[0] ;default: 1'd0 ; */
-/*description: Set this bit to choose efuse key instead of key manager deployed key for ecdsa.*/
+/** KEYMNG_USE_EFUSE_KEY_ECDSA : R/W; bitpos:[0]; default: 0;
+ *  Set this bit to choose efuse key instead of key manager deployed key for ecdsa.
+ */
 #define KEYMNG_USE_EFUSE_KEY_ECDSA    (BIT(0))
-#define KEYMNG_USE_EFUSE_KEY_ECDSA_M  ((KEYMNG_USE_EFUSE_KEY_ECDSA_V)<<(KEYMNG_USE_EFUSE_KEY_ECDSA_S))
-#define KEYMNG_USE_EFUSE_KEY_ECDSA_V  0x1
+#define KEYMNG_USE_EFUSE_KEY_ECDSA_M  (KEYMNG_USE_EFUSE_KEY_ECDSA_V << KEYMNG_USE_EFUSE_KEY_ECDSA_S)
+#define KEYMNG_USE_EFUSE_KEY_ECDSA_V  0x00000001U
 #define KEYMNG_USE_EFUSE_KEY_ECDSA_S  0
 
-/* KEYMNG_USE_EFUSE_KEY_FLASH : R/W ;bitpos:[1] ;default: 1'd0 ; */
-/*description: Set this bit to choose efuse key instead of key manager deployed key for flash.*/
+/** KEYMNG_USE_EFUSE_KEY_FLASH : R/W; bitpos:[1]; default: 0;
+ *  Set this bit to choose efuse key instead of key manager deployed key for flash.
+ */
 #define KEYMNG_USE_EFUSE_KEY_FLASH    (BIT(1))
-#define KEYMNG_USE_EFUSE_KEY_FLASH_M  ((KEYMNG_USE_EFUSE_KEY_FLASH_V)<<(KEYMNG_USE_EFUSE_KEY_FLASH_S))
-#define KEYMNG_USE_EFUSE_KEY_FLASH_V  0x1
+#define KEYMNG_USE_EFUSE_KEY_FLASH_M  (KEYMNG_USE_EFUSE_KEY_FLASH_V << KEYMNG_USE_EFUSE_KEY_FLASH_S)
+#define KEYMNG_USE_EFUSE_KEY_FLASH_V  0x00000001U
 #define KEYMNG_USE_EFUSE_KEY_FLASH_S  1
 
+/** KEYMNG_USE_EFUSE_KEY_HMAC : R/W; bitpos:[0]; default: 0;
+ *  Set this bit to choose efuse key instead of key manager deployed key for hmac.
+ */
+#define KEYMNG_USE_EFUSE_KEY_HMAC    (BIT(2))
+#define KEYMNG_USE_EFUSE_KEY_HMAC_M  (KEYMNG_USE_EFUSE_KEY_HMAC_V << KEYMNG_USE_EFUSE_KEY_HMAC_S)
+#define KEYMNG_USE_EFUSE_KEY_HMAC_V  0x00000001U
+#define KEYMNG_USE_EFUSE_KEY_HMAC_S  2
+
+/** KEYMNG_USE_EFUSE_KEY_DS : R/W; bitpos:[1]; default: 0;
+ *  Set this bit to choose efuse key instead of key manager deployed key for ds.
+ */
+#define KEYMNG_USE_EFUSE_KEY_DS    (BIT(3))
+#define KEYMNG_USE_EFUSE_KEY_DS_M  (KEYMNG_USE_EFUSE_KEY_DS_V << KEYMNG_USE_EFUSE_KEY_DS_S)
+#define KEYMNG_USE_EFUSE_KEY_DS_V  0x00000001U
+#define KEYMNG_USE_EFUSE_KEY_DS_S  3
+
+/** KEYMNG_USE_EFUSE_KEY_PSRAM : R/W; bitpos:[1]; default: 0;
+ *  Set this bit to choose efuse key instead of key manager deployed key for psram.
+ */
+#define KEYMNG_USE_EFUSE_KEY_PSRAM    (BIT(4))
+#define KEYMNG_USE_EFUSE_KEY_PSRAM_M  (KEYMNG_USE_EFUSE_KEY_PSRAM_V << KEYMNG_USE_EFUSE_KEY_PSRAM_S)
+#define KEYMNG_USE_EFUSE_KEY_PSRAM_V  0x00000001U
+#define KEYMNG_USE_EFUSE_KEY_PSRAM_S  4
 
 /** KEYMNG_RND_SWITCH_CYCLE : R/W; bitpos: [9:5]; default: 15;
  *  The core clock cycle number to sample one rng input data. Please set it bigger than
@@ -208,21 +233,41 @@ extern "C" {
 #define KEYMNG_USE_EFUSE_KEY_LOCK_V  0x0000001FU
 #define KEYMNG_USE_EFUSE_KEY_LOCK_S  0
 
-/* KEYMNG_USE_EFUSE_KEY_LOCK_ECDSA : R/W1 ;bitpos:[0] ;default: 1'd0 ; */
-/*description: Write 1 to lock reg_use_efuse_key for esdsa*/
-
+/** KEYMNG_USE_EFUSE_KEY_LOCK_ECDSA : R/W1 ;bitpos:[0]; default: 0;
+ * Write 1 to lock reg_use_efuse_key for esdsa
+ */
 #define KEYMNG_USE_EFUSE_KEY_LOCK_ECDSA    (BIT(0))
-#define KEYMNG_USE_EFUSE_KEY_LOCK_ECDSA_M  ((KEYMNG_USE_EFUSE_KEY_LOCK_ECDSA_V)<<(KEYMNG_USE_EFUSE_KEY_LOCK_ECDSA_S))
-#define KEYMNG_USE_EFUSE_KEY_LOCK_ECDSA_V  0x1
+#define KEYMNG_USE_EFUSE_KEY_LOCK_ECDSA_M  (KEYMNG_USE_EFUSE_KEY_LOCK_ECDSA_V << KEYMNG_USE_EFUSE_KEY_LOCK_ECDSA_S)
+#define KEYMNG_USE_EFUSE_KEY_LOCK_ECDSA_V  0x00000001U
 #define KEYMNG_USE_EFUSE_KEY_LOCK_ECDSA_S  0
-
-/* KEYMNG_USE_EFUSE_KEY_LOCK_FLASH : R/W1 ;bitpos:[1] ;default: 1'd0 ; */
-/*description: Write 1 to lock reg_use_efuse_key for FLASH*/
-
+/** KEYMNG_USE_EFUSE_KEY_LOCK_FLASH : R/W1 ;bitpos:[1]; default: 0;
+ * Write 1 to lock reg_use_efuse_key for FLASH
+ */
 #define KEYMNG_USE_EFUSE_KEY_LOCK_FLASH    (BIT(1))
-#define KEYMNG_USE_EFUSE_KEY_LOCK_FLASH_M  ((KEYMNG_USE_EFUSE_KEY_LOCK_FLASH_V)<<(KEYMNG_USE_EFUSE_KEY_LOCK_FLASH_S))
-#define KEYMNG_USE_EFUSE_KEY_LOCK_FLASH_V  0x1
+#define KEYMNG_USE_EFUSE_KEY_LOCK_FLASH_M  (KEYMNG_USE_EFUSE_KEY_LOCK_FLASH_V << KEYMNG_USE_EFUSE_KEY_LOCK_FLASH_S)
+#define KEYMNG_USE_EFUSE_KEY_LOCK_FLASH_V  0x00000001U
 #define KEYMNG_USE_EFUSE_KEY_LOCK_FLASH_S  1
+/** KEYMNG_USE_EFUSE_KEY_LOCK_HMAC : R/W1 ;bitpos:[0]; default: 0;
+ * Write 1 to lock reg_use_efuse_key for hmac
+ */
+#define KEYMNG_USE_EFUSE_KEY_LOCK_HMAC    (BIT(2))
+#define KEYMNG_USE_EFUSE_KEY_LOCK_HMAC_M  (KEYMNG_USE_EFUSE_KEY_LOCK_HMAC_V << KEYMNG_USE_EFUSE_KEY_LOCK_HMAC_S)
+#define KEYMNG_USE_EFUSE_KEY_LOCK_HMAC_V  0x00000001U
+#define KEYMNG_USE_EFUSE_KEY_LOCK_HMAC_S  2
+/** KEYMNG_USE_EFUSE_KEY_LOCK_DS : R/W1 ;bitpos:[1]; default: 0;
+ * Write 1 to lock reg_use_efuse_key for ds
+ */
+#define KEYMNG_USE_EFUSE_KEY_LOCK_DS    (BIT(3))
+#define KEYMNG_USE_EFUSE_KEY_LOCK_DS_M  (KEYMNG_USE_EFUSE_KEY_LOCK_DS_V << KEYMNG_USE_EFUSE_KEY_LOCK_DS_S)
+#define KEYMNG_USE_EFUSE_KEY_LOCK_DS_V  0x00000001U
+#define KEYMNG_USE_EFUSE_KEY_LOCK_DS_S  3
+/** KEYMNG_USE_EFUSE_KEY_LOCK_PSRAM : R/W1 ;bitpos:[1]; default: 0;
+ * Write 1 to lock reg_use_efuse_key for PSRAM
+ */
+#define KEYMNG_USE_EFUSE_KEY_LOCK_PSRAM    (BIT(4))
+#define KEYMNG_USE_EFUSE_KEY_LOCK_PSRAM_M  (KEYMNG_USE_EFUSE_KEY_LOCK_PSRAM_V << KEYMNG_USE_EFUSE_KEY_LOCK_PSRAM_S)
+#define KEYMNG_USE_EFUSE_KEY_LOCK_PSRAM_V  0x00000001U
+#define KEYMNG_USE_EFUSE_KEY_LOCK_PSRAM_S  4
 
 /** KEYMNG_RND_SWITCH_CYCLE_LOCK : R/W1; bitpos: [5]; default: 0;
  *  Write 1 to lock reg_rnd_switch_cycle.
@@ -266,9 +311,10 @@ extern "C" {
 #define KEYMNG_KGEN_MODE_V  0x00000007U
 #define KEYMNG_KGEN_MODE_S  0
 /** KEYMNG_KEY_PURPOSE : R/W; bitpos: [6:3]; default: 0;
- *  Set this field to choose the key purpose. 1: ecdsa_key 2: flash_256_1_key. 3:
- *  flash_256_2_key. 4: flash_128_key. 6: hmac_key. 7: ds_key. 8: psram_256_1_key. 9:
- *  psram_256_2_key. 10: psram_128_key. Others: reserved.
+ *  Set this field to choose the key purpose. 1: ecdsa_key_192. 2: ecdsa_key_256. 3:
+ *  flash_256_1_key. 4: flash_256_2_key. 5: flash_128_key. 6: hmac_key. 7: ds_key. 8:
+ *  psram_256_1_key. 9: psram_256_2_key. 10: psram_128_key. 11: ecdsa_key_384_l. 12:
+ *  ecdsa_key_384_h. Others: reserved.
  */
 #define KEYMNG_KEY_PURPOSE    0x0000000FU
 #define KEYMNG_KEY_PURPOSE_M  (KEYMNG_KEY_PURPOSE_V << KEYMNG_KEY_PURPOSE_S)
@@ -323,46 +369,62 @@ extern "C" {
  *  Key Manager key status register
  */
 #define KEYMNG_KEY_VLD_REG (DR_REG_KEYMNG_BASE + 0x30)
-/** KEYMNG_KEY_ECDSA_VLD : RO; bitpos: [0]; default: 0;
- *  The status bit for key_ecdsa.   1: The key has been deployed correctly. 0: The key
- *  has not been deployed yet.
+/** KEYMNG_KEY_ECDSA_192_VLD : RO; bitpos: [0]; default: 0;
+ *  The status bit for key_ecdsa_192.   1: The key has been deployed correctly. 0: The
+ *  key has not been deployed yet.
  */
-#define KEYMNG_KEY_ECDSA_VLD    (BIT(0))
-#define KEYMNG_KEY_ECDSA_VLD_M  (KEYMNG_KEY_ECDSA_VLD_V << KEYMNG_KEY_ECDSA_VLD_S)
-#define KEYMNG_KEY_ECDSA_VLD_V  0x00000001U
-#define KEYMNG_KEY_ECDSA_VLD_S  0
-/** KEYMNG_KEY_FLASH_VLD : RO; bitpos: [1]; default: 0;
+#define KEYMNG_KEY_ECDSA_192_VLD    (BIT(0))
+#define KEYMNG_KEY_ECDSA_192_VLD_M  (KEYMNG_KEY_ECDSA_192_VLD_V << KEYMNG_KEY_ECDSA_192_VLD_S)
+#define KEYMNG_KEY_ECDSA_192_VLD_V  0x00000001U
+#define KEYMNG_KEY_ECDSA_192_VLD_S  0
+/** KEYMNG_KEY_ECDSA_256_VLD : RO; bitpos: [1]; default: 0;
+ *  The status bit for key_ecdsa_256.   1: The key has been deployed correctly. 0: The
+ *  key has not been deployed yet.
+ */
+#define KEYMNG_KEY_ECDSA_256_VLD    (BIT(1))
+#define KEYMNG_KEY_ECDSA_256_VLD_M  (KEYMNG_KEY_ECDSA_256_VLD_V << KEYMNG_KEY_ECDSA_256_VLD_S)
+#define KEYMNG_KEY_ECDSA_256_VLD_V  0x00000001U
+#define KEYMNG_KEY_ECDSA_256_VLD_S  1
+/** KEYMNG_KEY_FLASH_VLD : RO; bitpos: [2]; default: 0;
  *  The status bit for key_flash.     1: The key has been deployed correctly. 0: The
  *  key has not been deployed yet.
  */
-#define KEYMNG_KEY_FLASH_VLD    (BIT(1))
+#define KEYMNG_KEY_FLASH_VLD    (BIT(2))
 #define KEYMNG_KEY_FLASH_VLD_M  (KEYMNG_KEY_FLASH_VLD_V << KEYMNG_KEY_FLASH_VLD_S)
 #define KEYMNG_KEY_FLASH_VLD_V  0x00000001U
-#define KEYMNG_KEY_FLASH_VLD_S  1
-/** KEYMNG_KEY_HMAC_VLD : RO; bitpos: [2]; default: 0;
+#define KEYMNG_KEY_FLASH_VLD_S  2
+/** KEYMNG_KEY_HMAC_VLD : RO; bitpos: [3]; default: 0;
  *  The status bit for key_hmac.    1: The key has been deployed correctly. 0: The key
  *  has not been deployed yet.
  */
-#define KEYMNG_KEY_HMAC_VLD    (BIT(2))
+#define KEYMNG_KEY_HMAC_VLD    (BIT(3))
 #define KEYMNG_KEY_HMAC_VLD_M  (KEYMNG_KEY_HMAC_VLD_V << KEYMNG_KEY_HMAC_VLD_S)
 #define KEYMNG_KEY_HMAC_VLD_V  0x00000001U
-#define KEYMNG_KEY_HMAC_VLD_S  2
-/** KEYMNG_KEY_DS_VLD : RO; bitpos: [3]; default: 0;
+#define KEYMNG_KEY_HMAC_VLD_S  3
+/** KEYMNG_KEY_DS_VLD : RO; bitpos: [4]; default: 0;
  *  The status bit for key_ds.         1: The key has been deployed correctly. 0: The
  *  key has not been deployed yet.
  */
-#define KEYMNG_KEY_DS_VLD    (BIT(3))
+#define KEYMNG_KEY_DS_VLD    (BIT(4))
 #define KEYMNG_KEY_DS_VLD_M  (KEYMNG_KEY_DS_VLD_V << KEYMNG_KEY_DS_VLD_S)
 #define KEYMNG_KEY_DS_VLD_V  0x00000001U
-#define KEYMNG_KEY_DS_VLD_S  3
-/** KEYMNG_KEY_PSRAM_VLD : RO; bitpos: [4]; default: 0;
+#define KEYMNG_KEY_DS_VLD_S  4
+/** KEYMNG_KEY_PSRAM_VLD : RO; bitpos: [5]; default: 0;
  *  The status bit for key_psram.   1: The key has been deployed correctly. 0: The key
  *  has not been deployed yet.
  */
-#define KEYMNG_KEY_PSRAM_VLD    (BIT(4))
+#define KEYMNG_KEY_PSRAM_VLD    (BIT(5))
 #define KEYMNG_KEY_PSRAM_VLD_M  (KEYMNG_KEY_PSRAM_VLD_V << KEYMNG_KEY_PSRAM_VLD_S)
 #define KEYMNG_KEY_PSRAM_VLD_V  0x00000001U
-#define KEYMNG_KEY_PSRAM_VLD_S  4
+#define KEYMNG_KEY_PSRAM_VLD_S  5
+/** KEYMNG_KEY_ECDSA_384_VLD : RO; bitpos: [6]; default: 0;
+ *  The status bit for key_ecdsa_384.   1: The key has been deployed correctly. 0: The
+ *  key has not been deployed yet.
+ */
+#define KEYMNG_KEY_ECDSA_384_VLD    (BIT(6))
+#define KEYMNG_KEY_ECDSA_384_VLD_M  (KEYMNG_KEY_ECDSA_384_VLD_V << KEYMNG_KEY_ECDSA_384_VLD_S)
+#define KEYMNG_KEY_ECDSA_384_VLD_V  0x00000001U
+#define KEYMNG_KEY_ECDSA_384_VLD_S  6
 
 /** KEYMNG_HUK_VLD_REG register
  *  Key Manager HUK status register
@@ -380,7 +442,7 @@ extern "C" {
  *  Version control register
  */
 #define KEYMNG_DATE_REG (DR_REG_KEYMNG_BASE + 0xfc)
-/** KEYMNG_DATE : R/W; bitpos: [27:0]; default: 36774224;
+/** KEYMNG_DATE : R/W; bitpos: [27:0]; default: 37781824;
  *  Key Manager version control register.
  */
 #define KEYMNG_DATE    0x0FFFFFFFU

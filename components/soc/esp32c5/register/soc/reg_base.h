@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -26,12 +26,15 @@
 #define DR_REG_TWAI1_BASE                         0x6000D000
 #define DR_REG_APB_SARADC_BASE                    0x6000E000
 #define DR_REG_USB_SERIAL_JTAG_BASE               0x6000F000
-#define DR_REG_INTERRUPT_MATRIX_BASE              0x60010000
-#define DR_REG_INTERRUPT_CORE0_BASE               DR_REG_INTERRUPT_MATRIX_BASE
+#define DR_REG_INTMTX_BASE                        0x60010000
+#define DR_REG_INTERRUPT_CORE0_BASE               DR_REG_INTMTX_BASE
 #define DR_REG_PCNT_BASE                          0x60012000
 #define DR_REG_SOC_ETM_BASE                       0x60013000
 #define DR_REG_MCPWM_BASE                         0x60014000
 #define DR_REG_PARL_IO_BASE                       0x60015000
+#define DR_REG_HINF_BASE                          0x60016000
+#define DR_REG_SLC_BASE                           0x60017000
+#define DR_REG_SLCHOST_BASE                       0x60018000
 #define DR_REG_PVT_MONITOR_BASE                   0x60019000
 #define DR_REG_PSRAM_MEM_MONITOR_BASE             0x6001A000
 
@@ -65,6 +68,7 @@
 #define DR_REG_TEE_BASE                           0x60098000
 #define DR_REG_HP_APM_BASE                        0x60099000
 #define DR_REG_LP_APM0_BASE                       0x60099800
+#define DR_REG_CPU_APM_BASE                       0x6009A000
 #define DR_REG_MISC_BASE                          0x6009F000
 
 /**
@@ -107,7 +111,7 @@
  *
  */
 #define DR_REG_TRACE_BASE                         0x600C0000
-#define DR_REG_ASSIST_DEBUG_BASE                  0x600C2000
+#define DR_REG_BUS_MONITOR_BASE                   0x600C2000
 #define DR_REG_INTPRI_BASE                        0x600C5000
 #define DR_REG_CACHE_BASE                         0x600C8000  // CACHE_CONFIG/EXTMEM
 #define DR_REG_CLINT_M_BASE                       0x20000000

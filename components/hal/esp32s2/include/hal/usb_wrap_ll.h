@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -207,25 +207,31 @@ FORCE_INLINE_ATTR void usb_wrap_ll_phy_test_mode_set_signals(usb_wrap_dev_t *hw,
  * Enable the bus clock for USB Wrap module
  * @param clk_en True if enable the clock of USB Wrap module
  */
-FORCE_INLINE_ATTR void usb_wrap_ll_enable_bus_clock(bool clk_en)
+FORCE_INLINE_ATTR void _usb_wrap_ll_enable_bus_clock(bool clk_en)
 {
     REG_SET_FIELD(DPORT_PERIP_CLK_EN0_REG, DPORT_USB_CLK_EN, clk_en);
 }
 
 // SYSTEM.perip_clk_enx are shared registers, so this function must be used in an atomic way
-#define usb_wrap_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; usb_wrap_ll_enable_bus_clock(__VA_ARGS__)
+#define usb_wrap_ll_enable_bus_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _usb_wrap_ll_enable_bus_clock(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Reset the USB Wrap module
  */
-FORCE_INLINE_ATTR void usb_wrap_ll_reset_register(void)
+FORCE_INLINE_ATTR void _usb_wrap_ll_reset_register(void)
 {
     REG_SET_FIELD(DPORT_PERIP_RST_EN0_REG, DPORT_USB_RST, 1);
     REG_SET_FIELD(DPORT_PERIP_RST_EN0_REG, DPORT_USB_RST, 0);
 }
 
 // SYSTEM.perip_rst_enx are shared registers, so this function must be used in an atomic way
-#define usb_wrap_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; usb_wrap_ll_reset_register(__VA_ARGS__)
+#define usb_wrap_ll_reset_register(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _usb_wrap_ll_reset_register(__VA_ARGS__); \
+    } while(0)
 
 #ifdef __cplusplus
 }

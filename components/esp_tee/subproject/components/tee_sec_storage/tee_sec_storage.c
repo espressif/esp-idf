@@ -1,56 +1,50 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <string.h>
+
+#include "esp_log.h"
 #include "esp_cpu.h"
+#include "esp_fault.h"
+#include "esp_flash.h"
+#include "esp_efuse.h"
+#include "esp_efuse_chip.h"
+#include "esp_hmac.h"
+#include "esp_random.h"
+#include "spi_flash_mmap.h"
 
 #include "mbedtls/aes.h"
 #include "mbedtls/gcm.h"
 #include "mbedtls/sha256.h"
-
-#include "mbedtls/entropy.h"
-#include "mbedtls/ctr_drbg.h"
 #include "mbedtls/ecdsa.h"
 #include "mbedtls/error.h"
+#include "esp_hmac_pbkdf2.h"
 
-#include "esp_flash.h"
-#include "esp_efuse.h"
-#include "soc/efuse_reg.h"
+#include "esp_rom_sys.h"
+#include "nvs.h"
+#include "nvs_flash.h"
 
-#include "esp_random.h"
+#include "esp_tee.h"
 #include "esp_tee_flash.h"
 #include "esp_tee_sec_storage.h"
-
 #include "secure_service_num.h"
-#include "esp_rom_sys.h"
-#include "esp_log.h"
-#include "spi_flash_mmap.h"
 
-#define ALIGN_UP(num, align) (((num) + ((align) - 1)) & ~((align) - 1))
-
-#define SECURE_STORAGE_SIZE                 2048
-
-#define AES256_GCM_KEY_LEN                  32
-#define AES256_GCM_KEY_BITS                 (AES256_GCM_KEY_LEN * 8)
+#define AES256_KEY_LEN                      32
+#define AES256_KEY_BITS                     (AES256_KEY_LEN * 8)
+#define AES256_DEFAULT_IV_LEN               16
 #define AES256_GCM_IV_LEN                   12
-#define AES256_GCM_TAG_LEN                  16
-#define AES256_GCM_AAD_LEN                  16
-
 #define ECDSA_SECP256R1_KEY_LEN             32
+#define ECDSA_SECP192R1_KEY_LEN             24
 
-/* Structure to hold metadata for secure storage slots */
-typedef struct {
-    uint16_t owner_id;                /* Identifier for the owner of this slot */
-    uint16_t slot_id;                 /* Unique identifier for this storage slot */
-    uint8_t reserved;                 /* Reserved for future use */
-    uint8_t iv[AES256_GCM_IV_LEN];    /* Initialization vector for AES-GCM */
-    uint8_t tag[AES256_GCM_TAG_LEN];  /* Authentication tag for AES-GCM */
-    uint8_t data_type;                /* Type of data stored in this slot */
-    uint16_t data_len;                /* Length of the data stored in this slot */
-} __attribute__((aligned(4))) __attribute__((__packed__)) sec_stg_metadata_t;
+#define SHA256_DIGEST_SZ                    32
+
+#define EKEY_SEED 0xAEBE5A5A
+#define TKEY_SEED 0xCEDEA5A5
+
+#define PBKDF2_HMAC_ITER 2048
 
 /* Structure to hold ECDSA SECP256R1 key pair */
 typedef struct {
@@ -58,37 +52,43 @@ typedef struct {
     uint8_t pub_key[2 * ECDSA_SECP256R1_KEY_LEN];  /* Public key for ECDSA SECP256R1 (X and Y coordinates) */
 } __attribute__((aligned(4))) __attribute__((__packed__)) sec_stg_ecdsa_secp256r1_t;
 
-/* Structure to hold AES-256 GCM key and IV */
+/* Structure to hold ECDSA SECP192R1 key pair */
 typedef struct {
-    uint8_t key[AES256_GCM_KEY_LEN];  /* Key for AES-256 GCM */
-    uint8_t iv[AES256_GCM_IV_LEN];    /* Initialization vector for AES-256 GCM */
-} __attribute__((aligned(4))) __attribute__((__packed__)) sec_stg_aes256_gcm_t;
+    uint8_t priv_key[ECDSA_SECP192R1_KEY_LEN];     /* Private key for ECDSA SECP192R1 */
+    uint8_t pub_key[2 * ECDSA_SECP192R1_KEY_LEN];  /* Public key for ECDSA SECP192R1 (X and Y coordinates) */
+} __attribute__((aligned(4))) __attribute__((__packed__)) sec_stg_ecdsa_secp192r1_t;
 
-/* Union to hold different types of cryptographic keys */
-typedef union {
-    sec_stg_ecdsa_secp256r1_t ecdsa_secp256r1;  /* ECDSA SECP256R1 key pair */
-    sec_stg_aes256_gcm_t aes256_gcm;            /* AES-256 GCM key and IV */
+/* Structure to hold AES-256 key and IV */
+typedef struct {
+    uint8_t key[AES256_KEY_LEN];          /* Key for AES-256 */
+    uint8_t iv[AES256_DEFAULT_IV_LEN];    /* Initialization vector for AES-256 */
+} __attribute__((aligned(4))) __attribute__((__packed__)) sec_stg_aes256_t;
+
+/* Structure to hold the cryptographic keys in NVS */
+typedef struct {
+    const esp_tee_sec_storage_type_t type;          /* Type of the key */
+    uint32_t flags;                                 /* Flags associated with the key */
+    union {
+        sec_stg_ecdsa_secp256r1_t ecdsa_secp256r1;  /* ECDSA SECP256R1 key pair */
+        sec_stg_ecdsa_secp192r1_t ecdsa_secp192r1;  /* ECDSA SECP192R1 key pair */
+        sec_stg_aes256_t aes256;                    /* AES-256 key and IV */
+    };
+    uint32_t reserved[38];                          /* Reserved space for future use */
 } __attribute__((aligned(4))) __attribute__((__packed__)) sec_stg_key_t;
 
-_Static_assert(sizeof(sec_stg_metadata_t) == 36, "Incorrect sec_stg_metadata_t size");
-_Static_assert(sizeof(sec_stg_key_t) == 96, "Incorrect sec_stg_key_t size");
+_Static_assert(sizeof(sec_stg_key_t) == 256, "Incorrect sec_stg_key_t size");
 
-// Need this buffer to read the flash data and then modify and write it back
-// esp_rom_spiflash_write requires that we erase the region before writing to it
-// TODO: IDF-7586
-static uint8_t tmp_buf[SECURE_STORAGE_SIZE];
-
-// AAD buffer
-static uint8_t aad_buf[AES256_GCM_AAD_LEN];
-
-// Partition for the secure storage partition
-static esp_partition_pos_t part_pos;
+static nvs_handle_t tee_nvs_hdl;
 
 static const char *TAG = "secure_storage";
 
 /* ---------------------------------------------- Helper APIs ------------------------------------------------- */
-#if CONFIG_SECURE_TEE_SEC_STG_KEY_EFUSE_BLK > 9
-#error "TEE Secure Storage: Configured eFuse block for encryption key out of range! (see CONFIG_SECURE_TEE_SEC_STG_KEY_EFUSE_BLK)"
+#if CONFIG_SECURE_TEE_SEC_STG_EFUSE_HMAC_KEY_ID < 0
+#error "TEE Secure Storage: Configured eFuse block (CONFIG_SECURE_TEE_SEC_STG_EFUSE_HMAC_KEY_ID) out of range!"
+#endif
+
+#if CONFIG_SECURE_TEE_SEC_STG_EFUSE_HMAC_KEY_ID == CONFIG_SECURE_TEE_PBKDF2_EFUSE_HMAC_KEY_ID
+#error "TEE Secure Storage: Configured eFuse block for storage encryption keys (CONFIG_SECURE_TEE_SEC_STG_EFUSE_HMAC_KEY_ID) and PBKDF2 key derivation (CONFIG_SECURE_TEE_PBKDF2_EFUSE_HMAC_KEY_ID) cannot be the same!"
 #endif
 
 static int buffer_hexdump(const char *label, const void *buffer, size_t length)
@@ -130,302 +130,250 @@ static int buffer_hexdump(const char *label, const void *buffer, size_t length)
     return 0;
 }
 
-static esp_err_t get_sec_stg_encr_key(uint8_t *key_buf, size_t key_buf_len)
-{
-    // NOTE: Key should strictly be of 256-bits
-    if (!key_buf || key_buf_len != AES256_GCM_KEY_LEN) {
-        return ESP_ERR_INVALID_ARG;
-    }
-
-    esp_err_t err = ESP_OK;
-
-#if CONFIG_SECURE_TEE_SEC_STG_MODE_RELEASE
-    esp_efuse_block_t blk = (esp_efuse_block_t)(CONFIG_SECURE_TEE_SEC_STG_KEY_EFUSE_BLK);
-
-    if (blk < EFUSE_BLK_KEY0 || blk >= EFUSE_BLK_KEY_MAX) {
-        ESP_LOGE(TAG, "Invalid eFuse block - %d", blk);
-        return ESP_ERR_INVALID_ARG;
-    }
-
-    esp_efuse_purpose_t blk_purpose = esp_efuse_get_key_purpose(blk);
-    if (blk_purpose != ESP_EFUSE_KEY_PURPOSE_USER) {
-        ESP_LOGE(TAG, "Invalid eFuse block purpose - %d", blk_purpose);
-        return ESP_ERR_INVALID_STATE;
-    }
-
-    memset(key_buf, 0x00, key_buf_len);
-    err = esp_efuse_read_block(blk, key_buf, 0, AES256_GCM_KEY_BITS);
-    if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to read eFuse block (err - %d)", err);
-        return err;
-    }
-#else
-    memset(key_buf, 0xA5, key_buf_len);
-#endif
-
-    // Check if eFuse is empty
-    uint8_t empty_key_buf[AES256_GCM_KEY_LEN] = {0};
-    if (memcmp(empty_key_buf, key_buf, key_buf_len) == 0) {
-        ESP_LOGE(TAG, "All-zeroes key read from eFuse");
-        return ESP_FAIL;
-    }
-
-    return err;
-}
-
 static int rand_func(void *rng_state, unsigned char *output, size_t len)
 {
     esp_fill_random(output, len);
     return 0;
 }
 
-static int secure_storage_write(uint16_t slot_id, uint8_t *data, size_t len, uint8_t type)
+#if CONFIG_SECURE_TEE_SEC_STG_MODE_RELEASE
+static esp_err_t compute_nvs_keys_with_hmac(hmac_key_id_t hmac_key_id, nvs_sec_cfg_t *cfg)
 {
-    uint8_t iv[AES256_GCM_IV_LEN];
-    uint8_t tag[AES256_GCM_TAG_LEN];
-    uint8_t key[AES256_GCM_KEY_LEN];
-    uint8_t out_data[256] = {0};
+    uint32_t ekey_seed[8] = {[0 ... 7] = EKEY_SEED};
+    uint32_t tkey_seed[8] = {[0 ... 7] = TKEY_SEED};
 
-    buffer_hexdump("Plaintext data", data, len);
+    memset(cfg, 0x00, sizeof(nvs_sec_cfg_t));
 
-    mbedtls_gcm_context gcm;
-    mbedtls_gcm_init(&gcm);
-
-    esp_err_t err = get_sec_stg_encr_key(key, sizeof(key));
+    esp_err_t err = ESP_FAIL;
+    err = esp_hmac_calculate(hmac_key_id, ekey_seed, sizeof(ekey_seed), (uint8_t *)cfg->eky);
+    err |= esp_hmac_calculate(hmac_key_id, tkey_seed, sizeof(tkey_seed), (uint8_t *)cfg->tky);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to fetch key from eFuse!");
-        goto exit;
+        ESP_LOGE(TAG, "Failed to calculate seed HMAC");
+        return ESP_FAIL;
+    }
+    ESP_FAULT_ASSERT(err == ESP_OK);
+
+    /* NOTE: If the XTS E-key and T-key are the same, we have a hash collision */
+    ESP_FAULT_ASSERT(memcmp(cfg->eky, cfg->tky, NVS_KEY_SIZE) != 0);
+
+    return ESP_OK;
+}
+#endif
+
+static esp_err_t read_security_cfg_hmac(nvs_sec_cfg_t *cfg)
+{
+    if (cfg == NULL) {
+        return ESP_ERR_INVALID_ARG;
     }
 
-    int ret = mbedtls_gcm_setkey(&gcm, MBEDTLS_CIPHER_ID_AES, key, AES256_GCM_KEY_BITS);
-    if (ret != 0) {
-        ESP_LOGE(TAG, "Error in setting key: %d", ret);
-        err = ESP_FAIL;
-        goto exit;
+#if CONFIG_SECURE_TEE_SEC_STG_MODE_RELEASE
+    esp_efuse_block_t hmac_key_blk = (esp_efuse_block_t)(EFUSE_BLK_KEY0 + (esp_efuse_block_t)CONFIG_SECURE_TEE_SEC_STG_EFUSE_HMAC_KEY_ID);
+    esp_efuse_purpose_t hmac_efuse_blk_purpose = esp_efuse_get_key_purpose(hmac_key_blk);
+    if (hmac_efuse_blk_purpose != ESP_EFUSE_KEY_PURPOSE_HMAC_UP) {
+        ESP_LOGE(TAG, "HMAC key is not burnt in eFuse block");
+        return ESP_ERR_NOT_FOUND;
     }
 
-    // Generate different IV every time GCM encrypt is called
-    esp_fill_random(iv, AES256_GCM_IV_LEN);
+    esp_err_t err = compute_nvs_keys_with_hmac((hmac_key_id_t)CONFIG_SECURE_TEE_SEC_STG_EFUSE_HMAC_KEY_ID, cfg);
+    if (err != ESP_OK) {
+        return err;
+    }
+#else
+    memset(&cfg->eky, 0x33, sizeof(cfg->eky));
+    memset(&cfg->tky, 0xCC, sizeof(cfg->tky));
+#endif
 
-    ret = mbedtls_gcm_crypt_and_tag(&gcm, MBEDTLS_GCM_ENCRYPT, len, iv, AES256_GCM_IV_LEN,
-                                    aad_buf, AES256_GCM_AAD_LEN, data, out_data, AES256_GCM_TAG_LEN, tag);
-    if (ret != 0) {
-        ESP_LOGE(TAG, "Error in encrypting data: %d", ret);
-        err = ESP_FAIL;
-        goto exit;
+    return ESP_OK;
+}
+
+static esp_err_t secure_storage_find_key(const char *key_id)
+{
+    nvs_type_t out_type;
+    return nvs_find_key(tee_nvs_hdl, key_id, &out_type);
+}
+
+static esp_err_t secure_storage_write(const char *key_id, const void *data, size_t len)
+{
+    esp_err_t err = nvs_set_blob(tee_nvs_hdl, key_id, data, len);
+    if (err != ESP_OK) {
+        return err;
     }
 
-    buffer_hexdump("Encrypted data", out_data, len);
-    buffer_hexdump("TAG data", tag, sizeof(tag));
-
-    // Currently keeping the owner ID as 0
-    sec_stg_metadata_t metadata;
-    metadata.owner_id = 0;
-    metadata.slot_id = slot_id;
-    memcpy(metadata.iv, iv, AES256_GCM_IV_LEN);
-    memcpy(metadata.tag, tag, AES256_GCM_TAG_LEN);
-    metadata.data_type = type;
-    metadata.data_len = len;
-
-    uint32_t slot_offset = (sizeof(sec_stg_metadata_t) + sizeof(sec_stg_key_t)) * slot_id;
-
-    /* ROM flash APIs require the region to be erased before writing to it.
-     * For that, we read the entire sector, make changes in read buffer, and then write
-     * the entire data back in flash.
-     *
-     * This opens up a small window when the sector has been erased but the device resets before writing the
-     * data back in flash. This can lead to loss of data.
-     *
-     * TODO: IDF-7586
-     */
-    ret = esp_tee_flash_read(part_pos.offset, (uint32_t *)tmp_buf, SECURE_STORAGE_SIZE, false);
-    if (ret != 0) {
-        ESP_LOGE(TAG, "Error reading flash contents: %d", ret);
-        err = ESP_ERR_FLASH_OP_FAIL;
-        goto exit;
-    }
-
-    memcpy(&tmp_buf[slot_offset], &metadata, sizeof(sec_stg_metadata_t));
-    memcpy(&tmp_buf[slot_offset + sizeof(sec_stg_metadata_t)], out_data, len);
-
-    ret = esp_tee_flash_erase_range(part_pos.offset, ALIGN_UP(SECURE_STORAGE_SIZE, FLASH_SECTOR_SIZE));
-    ret |= esp_tee_flash_write(part_pos.offset, (uint32_t *)tmp_buf, SECURE_STORAGE_SIZE, false);
-    if (ret != 0) {
-        ESP_LOGE(TAG, "Error writing encrypted data: %d", ret);
-        err = ESP_ERR_FLASH_OP_FAIL;
-        goto exit;
-    }
-    err = ESP_OK;
-
-exit:
-    mbedtls_gcm_free(&gcm);
+    err = nvs_commit(tee_nvs_hdl);
     return err;
 }
 
-static esp_err_t secure_storage_read(uint16_t slot_id, uint8_t *data, size_t len, uint8_t type)
+static esp_err_t secure_storage_read(const char *key_id, void *data, size_t *len)
 {
-    esp_err_t err;
-
-    sec_stg_metadata_t metadata;
-    uint32_t slot_offset = (sizeof(sec_stg_metadata_t) + sizeof(sec_stg_key_t)) * slot_id;
-
-    uint8_t key[AES256_GCM_KEY_BITS / 8];
-    uint8_t flash_data[256] = {0};
-
-    int ret = esp_tee_flash_read(part_pos.offset + slot_offset, (uint32_t *)&metadata, sizeof(sec_stg_metadata_t), false);
-    if (ret != 0) {
-        ESP_LOGE(TAG, "Error reading metadata: %d", ret);
-        err = ESP_ERR_FLASH_OP_FAIL;
-        goto exit;
-    }
-
-    if (metadata.data_type != type || metadata.data_len != len) {
-        ESP_LOGE(TAG, "Data type/length mismatch");
-        err = ESP_ERR_NOT_FOUND;
-        goto exit;
-    }
-
-    ret = esp_tee_flash_read(part_pos.offset + slot_offset + sizeof(sec_stg_metadata_t), (uint32_t *)flash_data, metadata.data_len, false);
-    if (ret != 0) {
-        ESP_LOGE(TAG, "Error reading data: %d", ret);
-        err = ESP_ERR_FLASH_OP_FAIL;
-        goto exit;
-    }
-
-    buffer_hexdump("Encrypted data", flash_data, len);
-    buffer_hexdump("TAG data", metadata.tag, AES256_GCM_TAG_LEN);
-
-    mbedtls_gcm_context gcm;
-    mbedtls_gcm_init(&gcm);
-
-    err = get_sec_stg_encr_key(key, sizeof(key));
-    if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to fetch key from eFuse!");
-        goto cleanup;
-    }
-
-    ret = mbedtls_gcm_setkey(&gcm, MBEDTLS_CIPHER_ID_AES, key, AES256_GCM_KEY_BITS);
-    if (ret != 0) {
-        err = ESP_FAIL;
-        goto cleanup;
-    }
-
-    ret = mbedtls_gcm_auth_decrypt(&gcm, metadata.data_len, metadata.iv, AES256_GCM_IV_LEN,
-                                   aad_buf, AES256_GCM_AAD_LEN, metadata.tag, AES256_GCM_TAG_LEN, flash_data, data);
-    if (ret != 0) {
-        ESP_LOGE(TAG, "Error in decrypting data: %d", ret);
-        err = ESP_FAIL;
-        goto cleanup;
-    }
-
-    buffer_hexdump("Decrypted data", data, len);
-    err = ESP_OK;
-
-cleanup:
-    mbedtls_gcm_free(&gcm);
-exit:
-    return err;
+    return nvs_get_blob(tee_nvs_hdl, key_id, data, len);
 }
 
 /* ---------------------------------------------- Interface APIs ------------------------------------------------- */
 
 esp_err_t esp_tee_sec_storage_init(void)
 {
-    ESP_LOGI(TAG, "Initializing secure storage...");
-    esp_partition_info_t part_info = {};
-    esp_err_t err = esp_tee_flash_find_partition(PART_TYPE_DATA, PART_SUBTYPE_DATA_TEE_SEC_STORAGE, NULL, &part_info);
+    nvs_sec_cfg_t cfg = {};
+    esp_err_t err = read_security_cfg_hmac(&cfg);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "No secure storage partition found (0x%08x)", err);
         return err;
-    } else {
-#if CONFIG_SECURE_TEE_SEC_STG_MODE_DEVELOPMENT
-        ESP_LOGW(TAG, "TEE Secure Storage enabled in insecure DEVELOPMENT mode");
-#endif
-        // Take backup of the partition for future usage
-        part_pos = part_info.pos;
     }
+
+    err = nvs_flash_secure_init_partition(ESP_TEE_SEC_STG_PART_LABEL, &cfg);
+    if (err != ESP_OK) {
+        return err;
+    }
+
+    err = nvs_open_from_partition(ESP_TEE_SEC_STG_PART_LABEL, ESP_TEE_SEC_STG_NVS_NAMESPACE, NVS_READWRITE, &tee_nvs_hdl);
+    if (err != ESP_OK) {
+        return err;
+    }
+
+#if CONFIG_SECURE_TEE_SEC_STG_MODE_DEVELOPMENT
+    ESP_LOGW(TAG, "TEE Secure Storage enabled in insecure DEVELOPMENT mode");
+#endif
 
     return ESP_OK;
 }
 
-static int generate_ecdsa_secp256r1_key(sec_stg_key_t *keyctx)
+esp_err_t esp_tee_sec_storage_clear_key(const char *key_id)
+{
+    if (secure_storage_find_key(key_id) != ESP_OK) {
+        return ESP_ERR_NOT_FOUND;
+    }
+
+    sec_stg_key_t keyctx;
+    size_t keyctx_len = sizeof(keyctx);
+
+    esp_err_t err = secure_storage_read(key_id, (void *)&keyctx, &keyctx_len);
+    if (err != ESP_OK) {
+        return err;
+    }
+
+    if (keyctx.flags & SEC_STORAGE_FLAG_WRITE_ONCE) {
+        ESP_LOGE(TAG, "Key is write-once only and cannot be cleared!");
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    err = nvs_erase_key(tee_nvs_hdl, key_id);
+    if (err != ESP_OK) {
+        return err;
+    }
+
+    err = nvs_commit(tee_nvs_hdl);
+    return err;
+}
+
+static int generate_ecdsa_key(sec_stg_key_t *keyctx, esp_tee_sec_storage_type_t key_type)
 {
     if (keyctx == NULL) {
         return -1;
     }
 
-    ESP_LOGI(TAG, "Generating ECDSA-SECP256R1 private key...");
+    mbedtls_ecp_group_id curve_id = MBEDTLS_ECP_DP_SECP256R1;
+    size_t key_len = ECDSA_SECP256R1_KEY_LEN;
+
+    if (key_type == ESP_SEC_STG_KEY_ECDSA_SECP192R1) {
+#if CONFIG_SECURE_TEE_SEC_STG_SUPPORT_SECP192R1_SIGN
+        curve_id = MBEDTLS_ECP_DP_SECP192R1;
+        key_len = ECDSA_SECP192R1_KEY_LEN;
+#else
+        ESP_LOGE(TAG, "Unsupported key-type!");
+        return -1;
+#endif
+    }
+
+    ESP_LOGD(TAG, "Generating ECDSA key for curve %d...", curve_id);
 
     mbedtls_ecdsa_context ctxECDSA;
     mbedtls_ecdsa_init(&ctxECDSA);
 
-    int ret = mbedtls_ecdsa_genkey(&ctxECDSA, MBEDTLS_ECP_DP_SECP256R1, rand_func, NULL);
-    if (ret != 0) {
-        ESP_LOGE(TAG, "Failed to generate ECDSA key");
-        goto exit;
-    }
-
-    ret = mbedtls_mpi_write_binary(&ctxECDSA.MBEDTLS_PRIVATE(d), keyctx->ecdsa_secp256r1.priv_key, ECDSA_SECP256R1_KEY_LEN);
+    int ret = mbedtls_ecdsa_genkey(&ctxECDSA, curve_id, rand_func, NULL);
     if (ret != 0) {
         goto exit;
     }
 
-    ret = mbedtls_mpi_write_binary(&(ctxECDSA.MBEDTLS_PRIVATE(Q).MBEDTLS_PRIVATE(X)), &keyctx->ecdsa_secp256r1.pub_key[0], ECDSA_SECP256R1_KEY_LEN);
+    uint8_t *priv_key = (key_type == ESP_SEC_STG_KEY_ECDSA_SECP256R1) ?
+                        keyctx->ecdsa_secp256r1.priv_key :
+#if CONFIG_SECURE_TEE_SEC_STG_SUPPORT_SECP192R1_SIGN
+                        keyctx->ecdsa_secp192r1.priv_key;
+#else
+                        NULL;
+#endif
+
+    uint8_t *pub_key = (key_type == ESP_SEC_STG_KEY_ECDSA_SECP256R1) ?
+                       keyctx->ecdsa_secp256r1.pub_key :
+#if CONFIG_SECURE_TEE_SEC_STG_SUPPORT_SECP192R1_SIGN
+                       keyctx->ecdsa_secp192r1.pub_key;
+#else
+                       NULL;
+#endif
+
+    ret = mbedtls_mpi_write_binary(&(ctxECDSA.MBEDTLS_PRIVATE(Q).MBEDTLS_PRIVATE(X)), pub_key, key_len);
     if (ret != 0) {
         goto exit;
     }
 
-    ret = mbedtls_mpi_write_binary(&(ctxECDSA.MBEDTLS_PRIVATE(Q).MBEDTLS_PRIVATE(Y)), &keyctx->ecdsa_secp256r1.pub_key[ECDSA_SECP256R1_KEY_LEN], ECDSA_SECP256R1_KEY_LEN);
+    ret = mbedtls_mpi_write_binary(&(ctxECDSA.MBEDTLS_PRIVATE(Q).MBEDTLS_PRIVATE(Y)), pub_key + key_len, key_len);
     if (ret != 0) {
         goto exit;
     }
 
-    buffer_hexdump("Private key", keyctx->ecdsa_secp256r1.priv_key, sizeof(keyctx->ecdsa_secp256r1.priv_key));
+    ret = mbedtls_mpi_write_binary(&ctxECDSA.MBEDTLS_PRIVATE(d), priv_key, key_len);
+    if (ret != 0) {
+        goto exit;
+    }
+
+    buffer_hexdump("Private key", priv_key, key_len);
+    buffer_hexdump("Public key", pub_key, key_len * 2);
 
 exit:
     mbedtls_ecdsa_free(&ctxECDSA);
     return ret;
 }
 
-static int generate_aes256_gcm_key(sec_stg_key_t *keyctx)
+static int generate_aes256_key(sec_stg_key_t *keyctx)
 {
     if (keyctx == NULL) {
         return -1;
     }
 
-    ESP_LOGI(TAG, "Generating AES-256-GCM key...");
+    ESP_LOGD(TAG, "Generating AES-256 key...");
 
-    esp_fill_random(&keyctx->aes256_gcm.key, AES256_GCM_KEY_LEN);
-    esp_fill_random(&keyctx->aes256_gcm.iv, AES256_GCM_IV_LEN);
+    esp_fill_random(&keyctx->aes256.key, AES256_KEY_LEN);
+    esp_fill_random(&keyctx->aes256.iv, AES256_DEFAULT_IV_LEN);
 
     return 0;
 }
 
-esp_err_t esp_tee_sec_storage_gen_key(uint16_t slot_id, esp_tee_sec_storage_type_t key_type)
+esp_err_t esp_tee_sec_storage_gen_key(const esp_tee_sec_storage_key_cfg_t *cfg)
 {
-    if (slot_id > MAX_SEC_STG_SLOT_ID) {
-        ESP_LOGE(TAG, "Invalid slot ID");
+    if (cfg == NULL || cfg->id == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
 
-    if (!esp_tee_sec_storage_is_slot_empty(slot_id)) {
-        ESP_LOGE(TAG, "Slot already occupied - clear before reuse");
+    if (secure_storage_find_key(cfg->id) == ESP_OK) {
+        ESP_LOGE(TAG, "Key ID already exists");
         return ESP_ERR_INVALID_STATE;
     }
 
-    int ret = -1;
-    sec_stg_key_t keyctx;
+    sec_stg_key_t keyctx = {
+        .type = cfg->type,
+        .flags = cfg->flags,
+    };
 
-    switch (key_type) {
+    switch (cfg->type) {
     case ESP_SEC_STG_KEY_ECDSA_SECP256R1:
-        if (generate_ecdsa_secp256r1_key(&keyctx) != 0) {
-            ESP_LOGE(TAG, "Failed to generate ECDSA keypair (%d)", ret);
+#if CONFIG_SECURE_TEE_SEC_STG_SUPPORT_SECP192R1_SIGN
+    case ESP_SEC_STG_KEY_ECDSA_SECP192R1:
+#endif
+        if (generate_ecdsa_key(&keyctx, cfg->type) != 0) {
+            ESP_LOGE(TAG, "Failed to generate ECDSA keypair");
             return ESP_FAIL;
         }
         break;
     case ESP_SEC_STG_KEY_AES256:
-        if (generate_aes256_gcm_key(&keyctx) != 0) {
-            ESP_LOGE(TAG, "Failed to generate AES key (%d)", ret);
+        if (generate_aes256_key(&keyctx) != 0) {
+            ESP_LOGE(TAG, "Failed to generate AES key");
             return ESP_FAIL;
         }
         break;
@@ -434,25 +382,39 @@ esp_err_t esp_tee_sec_storage_gen_key(uint16_t slot_id, esp_tee_sec_storage_type
         return ESP_ERR_NOT_SUPPORTED;
     }
 
-    return secure_storage_write(slot_id, (uint8_t *)&keyctx, sizeof(keyctx), key_type);
+    return secure_storage_write(cfg->id, (void *)&keyctx, sizeof(keyctx));
 }
 
-esp_err_t esp_tee_sec_storage_get_signature(uint16_t slot_id, uint8_t *hash, size_t hlen, esp_tee_sec_storage_sign_t *out_sign)
+esp_err_t esp_tee_sec_storage_ecdsa_sign(const esp_tee_sec_storage_key_cfg_t *cfg, const uint8_t *hash, size_t hlen, esp_tee_sec_storage_ecdsa_sign_t *out_sign)
 {
-    if (slot_id > MAX_SEC_STG_SLOT_ID || hash == NULL || out_sign == NULL) {
+    if (cfg == NULL || cfg->id == NULL || hash == NULL || out_sign == NULL || hlen == 0) {
         return ESP_ERR_INVALID_ARG;
     }
 
-    if (hlen == 0) {
-        return ESP_ERR_INVALID_SIZE;
+#if !CONFIG_SECURE_TEE_SEC_STG_SUPPORT_SECP192R1_SIGN
+    if (cfg->type == ESP_SEC_STG_KEY_ECDSA_SECP192R1) {
+        ESP_LOGE(TAG, "Unsupported key-type!");
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+#endif
+
+    esp_err_t err = secure_storage_find_key(cfg->id);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Key ID not found");
+        return err;
     }
 
     sec_stg_key_t keyctx;
-
-    esp_err_t err = secure_storage_read(slot_id, (uint8_t *)&keyctx, sizeof(sec_stg_key_t), ESP_SEC_STG_KEY_ECDSA_SECP256R1);
+    size_t keyctx_len = sizeof(keyctx);
+    err = secure_storage_read(cfg->id, (void *)&keyctx, &keyctx_len);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to fetch key from slot");
+        ESP_LOGE(TAG, "Failed to fetch key from storage");
         return err;
+    }
+
+    if (keyctx.type != cfg->type) {
+        ESP_LOGE(TAG, "Key type mismatch");
+        return ESP_ERR_INVALID_STATE;
     }
 
     mbedtls_mpi r, s;
@@ -464,7 +426,19 @@ esp_err_t esp_tee_sec_storage_get_signature(uint16_t slot_id, uint8_t *hash, siz
     mbedtls_ecp_keypair_init(&priv_key);
     mbedtls_ecdsa_init(&sign_ctx);
 
-    int ret = mbedtls_ecp_read_key(MBEDTLS_ECP_DP_SECP256R1, &priv_key, keyctx.ecdsa_secp256r1.priv_key, sizeof(keyctx.ecdsa_secp256r1.priv_key));
+    size_t key_len = 0;
+    int ret = -1;
+
+    if (cfg->type == ESP_SEC_STG_KEY_ECDSA_SECP256R1) {
+        ret = mbedtls_ecp_read_key(MBEDTLS_ECP_DP_SECP256R1, &priv_key, keyctx.ecdsa_secp256r1.priv_key, sizeof(keyctx.ecdsa_secp256r1.priv_key));
+        key_len = ECDSA_SECP256R1_KEY_LEN;
+#if CONFIG_SECURE_TEE_SEC_STG_SUPPORT_SECP192R1_SIGN
+    } else if (cfg->type == ESP_SEC_STG_KEY_ECDSA_SECP192R1) {
+        ret = mbedtls_ecp_read_key(MBEDTLS_ECP_DP_SECP192R1, &priv_key, keyctx.ecdsa_secp192r1.priv_key, sizeof(keyctx.ecdsa_secp192r1.priv_key));
+        key_len = ECDSA_SECP192R1_KEY_LEN;
+#endif
+    }
+
     if (ret != 0) {
         err = ESP_FAIL;
         goto exit;
@@ -476,7 +450,7 @@ esp_err_t esp_tee_sec_storage_get_signature(uint16_t slot_id, uint8_t *hash, siz
         goto exit;
     }
 
-    ESP_LOGI(TAG, "Generating ECDSA-SECP256R1 signature...");
+    ESP_LOGD(TAG, "Generating ECDSA signature...");
 
     ret = mbedtls_ecdsa_sign(&sign_ctx.MBEDTLS_PRIVATE(grp), &r, &s, &sign_ctx.MBEDTLS_PRIVATE(d), hash, hlen,
                              rand_func, NULL);
@@ -486,17 +460,18 @@ esp_err_t esp_tee_sec_storage_get_signature(uint16_t slot_id, uint8_t *hash, siz
         goto exit;
     }
 
-    ret = mbedtls_mpi_write_binary(&r, out_sign->sign_r, ECDSA_SECP256R1_KEY_LEN);
+    memset(out_sign, 0x00, sizeof(esp_tee_sec_storage_ecdsa_sign_t));
+    ret = mbedtls_mpi_write_binary(&r, out_sign->sign_r, key_len);
+    if (ret == 0) {
+        ret = mbedtls_mpi_write_binary(&s, out_sign->sign_s, key_len);
+    }
+
     if (ret != 0) {
+        memset(out_sign, 0x00, sizeof(esp_tee_sec_storage_ecdsa_sign_t));
         err = ESP_FAIL;
         goto exit;
     }
 
-    ret = mbedtls_mpi_write_binary(&s, out_sign->sign_s, ECDSA_SECP256R1_KEY_LEN);
-    if (ret != 0) {
-        err = ESP_FAIL;
-        goto exit;
-    }
     err = ESP_OK;
 
 exit:
@@ -508,126 +483,93 @@ exit:
     return err;
 }
 
-esp_err_t esp_tee_sec_storage_get_pubkey(uint16_t slot_id, esp_tee_sec_storage_pubkey_t *pubkey)
+esp_err_t esp_tee_sec_storage_ecdsa_get_pubkey(const esp_tee_sec_storage_key_cfg_t *cfg, esp_tee_sec_storage_ecdsa_pubkey_t *out_pubkey)
 {
-    if (slot_id > MAX_SEC_STG_SLOT_ID || pubkey == NULL) {
+    if (cfg == NULL || cfg->id == NULL || out_pubkey == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
 
-    sec_stg_key_t keyctx;
-
-    esp_err_t err = secure_storage_read(slot_id, (uint8_t *)&keyctx, sizeof(sec_stg_key_t), ESP_SEC_STG_KEY_ECDSA_SECP256R1);
+    esp_err_t err = secure_storage_find_key(cfg->id);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to fetch key from slot");
+        ESP_LOGE(TAG, "Key ID not found");
         return err;
     }
 
-    memcpy(pubkey->pub_x, &keyctx.ecdsa_secp256r1.pub_key[0], ECDSA_SECP256R1_KEY_LEN);
-    memcpy(pubkey->pub_y, &keyctx.ecdsa_secp256r1.pub_key[ECDSA_SECP256R1_KEY_LEN], ECDSA_SECP256R1_KEY_LEN);
+    sec_stg_key_t keyctx;
+    size_t keyctx_len = sizeof(keyctx);
+    uint8_t *pub_key_src = NULL;
+    size_t pub_key_len = 0;
+
+    switch (cfg->type) {
+    case ESP_SEC_STG_KEY_ECDSA_SECP256R1:
+        pub_key_src = keyctx.ecdsa_secp256r1.pub_key;
+        pub_key_len = ECDSA_SECP256R1_KEY_LEN;
+        break;
+#if CONFIG_SECURE_TEE_SEC_STG_SUPPORT_SECP192R1_SIGN
+    case ESP_SEC_STG_KEY_ECDSA_SECP192R1:
+        pub_key_src = keyctx.ecdsa_secp192r1.pub_key;
+        pub_key_len = ECDSA_SECP192R1_KEY_LEN;
+        break;
+#endif
+    default:
+        ESP_LOGE(TAG, "Unsupported key-type");
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    err = secure_storage_read(cfg->id, (void *)&keyctx, &keyctx_len);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to read key from secure storage");
+        return err;
+    }
+
+    if (keyctx.type != cfg->type) {
+        ESP_LOGE(TAG, "Key type mismatch");
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    memcpy(out_pubkey->pub_x, pub_key_src, pub_key_len);
+    memcpy(out_pubkey->pub_y, pub_key_src + pub_key_len, pub_key_len);
 
     return ESP_OK;
 }
 
-bool esp_tee_sec_storage_is_slot_empty(uint16_t slot_id)
-{
-    if (slot_id > MAX_SEC_STG_SLOT_ID) {
-        ESP_LOGE(TAG, "Invalid slot ID");
-        return false;
-    }
-
-    sec_stg_metadata_t metadata, blank_metadata;
-    memset(&blank_metadata, 0xFF, sizeof(sec_stg_metadata_t));
-
-    uint32_t slot_offset = (sizeof(sec_stg_metadata_t) + sizeof(sec_stg_key_t)) * slot_id;
-    bool ret = false;
-
-    int err = esp_tee_flash_read(part_pos.offset + slot_offset, (uint32_t *)&metadata, sizeof(sec_stg_metadata_t), false);
-    if (err != 0) {
-        goto exit;
-    }
-
-    if (memcmp(&metadata, &blank_metadata, sizeof(sec_stg_metadata_t)) && metadata.slot_id == slot_id) {
-        goto exit;
-    }
-    ret = true;
-
-exit:
-    return ret;
-}
-
-esp_err_t esp_tee_sec_storage_clear_slot(uint16_t slot_id)
-{
-    if (slot_id > MAX_SEC_STG_SLOT_ID) {
-        ESP_LOGE(TAG, "Invalid slot ID");
-        return ESP_ERR_INVALID_ARG;
-    }
-
-    if (esp_tee_sec_storage_is_slot_empty(slot_id)) {
-        return ESP_OK;
-    }
-
-    sec_stg_key_t blank_data;
-    memset(&blank_data, 0xFF, sizeof(blank_data));
-
-    sec_stg_metadata_t blank_metadata;
-    memset(&blank_metadata, 0xFF, sizeof(sec_stg_metadata_t));
-
-    uint32_t slot_offset = (sizeof(sec_stg_metadata_t) + sizeof(sec_stg_key_t)) * slot_id;
-    esp_err_t err;
-
-    int ret = esp_tee_flash_read(part_pos.offset, (uint32_t *)tmp_buf, SECURE_STORAGE_SIZE, false);
-    if (ret != 0) {
-        ESP_LOGE(TAG, "Error reading flash contents: %d", ret);
-        err = ESP_ERR_FLASH_OP_FAIL;
-        goto exit;
-    }
-
-    memcpy(&tmp_buf[slot_offset], &blank_metadata, sizeof(sec_stg_metadata_t));
-    memcpy(&tmp_buf[slot_offset + sizeof(sec_stg_metadata_t)], &blank_data, sizeof(sec_stg_key_t));
-
-    ret = esp_tee_flash_erase_range(part_pos.offset, ALIGN_UP(SECURE_STORAGE_SIZE, FLASH_SECTOR_SIZE));
-    ret |= esp_tee_flash_write(part_pos.offset, (uint32_t *)tmp_buf, SECURE_STORAGE_SIZE, false);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Error clearing slot: %d", ret);
-        err = ESP_ERR_FLASH_OP_FAIL;
-        goto exit;
-    }
-    err = ESP_OK;
-
-exit:
-    return err;
-}
-
-static esp_err_t tee_sec_storage_crypt_common(uint16_t slot_id, uint8_t *input, uint8_t len, uint8_t *aad,
-                                              uint16_t aad_len, uint8_t *tag, uint16_t tag_len, uint8_t *output,
+static esp_err_t tee_sec_storage_crypt_common(const char *key_id, const uint8_t *input, size_t len, const uint8_t *aad,
+                                              size_t aad_len, uint8_t *tag, size_t tag_len, uint8_t *output,
                                               bool is_encrypt)
 {
-    if (slot_id > MAX_SEC_STG_SLOT_ID) {
-        ESP_LOGE(TAG, "Invalid slot ID");
-        return ESP_ERR_INVALID_ARG;
-    }
-
-    if (input == NULL || output == NULL || tag == NULL) {
-        ESP_LOGE(TAG, "Invalid input/output/tag buffer");
+    if (key_id == NULL || input == NULL || output == NULL || tag == NULL) {
+        ESP_LOGE(TAG, "Invalid arguments");
         return ESP_ERR_INVALID_ARG;
     }
 
     if (len == 0 || tag_len == 0) {
-        ESP_LOGE(TAG, "Invalid length/tag length");
+        ESP_LOGE(TAG, "Invalid input/tag length");
         return ESP_ERR_INVALID_SIZE;
     }
 
-    sec_stg_key_t keyctx;
-    esp_err_t err = secure_storage_read(slot_id, (uint8_t *)&keyctx, sizeof(keyctx), 1);
+    esp_err_t err = secure_storage_find_key(key_id);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to fetch key from slot");
+        ESP_LOGE(TAG, "Key ID not found");
         return err;
+    }
+
+    sec_stg_key_t keyctx;
+    size_t keyctx_len = sizeof(keyctx);
+    err = secure_storage_read(key_id, (void *)&keyctx, &keyctx_len);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to fetch key from storage");
+        return err;
+    }
+
+    if (keyctx.type != ESP_SEC_STG_KEY_AES256) {
+        ESP_LOGE(TAG, "Key type mismatch");
+        return ESP_ERR_INVALID_STATE;
     }
 
     mbedtls_gcm_context gcm;
     mbedtls_gcm_init(&gcm);
 
-    int ret = mbedtls_gcm_setkey(&gcm, MBEDTLS_CIPHER_ID_AES, keyctx.aes256_gcm.key, AES256_GCM_KEY_BITS);
+    int ret = mbedtls_gcm_setkey(&gcm, MBEDTLS_CIPHER_ID_AES, keyctx.aes256.key, AES256_KEY_BITS);
     if (ret != 0) {
         ESP_LOGE(TAG, "Error in setting key: %d", ret);
         err = ESP_FAIL;
@@ -635,18 +577,20 @@ static esp_err_t tee_sec_storage_crypt_common(uint16_t slot_id, uint8_t *input, 
     }
 
     if (is_encrypt) {
-        ret = mbedtls_gcm_crypt_and_tag(&gcm, MBEDTLS_GCM_ENCRYPT, len, keyctx.aes256_gcm.iv, AES256_GCM_IV_LEN,
+        ret = mbedtls_gcm_crypt_and_tag(&gcm, MBEDTLS_GCM_ENCRYPT, len, keyctx.aes256.iv, AES256_GCM_IV_LEN,
                                         aad, aad_len, input, output, tag_len, tag);
         if (ret != 0) {
             ESP_LOGE(TAG, "Error in encrypting data: %d", ret);
             err = ESP_FAIL;
+            goto exit;
         }
     } else {
-        ret = mbedtls_gcm_auth_decrypt(&gcm, len, keyctx.aes256_gcm.iv, AES256_GCM_IV_LEN,
+        ret = mbedtls_gcm_auth_decrypt(&gcm, len, keyctx.aes256.iv, AES256_GCM_IV_LEN,
                                        aad, aad_len, tag, tag_len, input, output);
         if (ret != 0) {
             ESP_LOGE(TAG, "Error in decrypting data: %d", ret);
             err = ESP_FAIL;
+            goto exit;
         }
     }
     err = ESP_OK;
@@ -656,14 +600,141 @@ exit:
     return err;
 }
 
-esp_err_t esp_tee_sec_storage_encrypt(uint16_t slot_id, uint8_t *input, uint8_t len, uint8_t *aad,
-                                      uint16_t aad_len, uint8_t *tag, uint16_t tag_len, uint8_t *output)
+esp_err_t esp_tee_sec_storage_aead_encrypt(const esp_tee_sec_storage_aead_ctx_t *ctx, uint8_t *tag, size_t tag_len, uint8_t *output)
 {
-    return tee_sec_storage_crypt_common(slot_id, input, len, aad, aad_len, tag, tag_len, output, true);
+    return tee_sec_storage_crypt_common(ctx->key_id, ctx->input, ctx->input_len, ctx->aad, ctx->aad_len, tag, tag_len, output, true);
 }
 
-esp_err_t esp_tee_sec_storage_decrypt(uint16_t slot_id, uint8_t *input, uint8_t len, uint8_t *aad,
-                                      uint16_t aad_len, uint8_t *tag, uint16_t tag_len, uint8_t *output)
+esp_err_t esp_tee_sec_storage_aead_decrypt(const esp_tee_sec_storage_aead_ctx_t *ctx, const uint8_t *tag, size_t tag_len, uint8_t *output)
 {
-    return tee_sec_storage_crypt_common(slot_id, input, len, aad, aad_len, tag, tag_len, output, false);
+    return tee_sec_storage_crypt_common(ctx->key_id, ctx->input, ctx->input_len, ctx->aad, ctx->aad_len, (uint8_t *)tag, tag_len, output, false);
+}
+
+esp_err_t esp_tee_sec_storage_ecdsa_sign_pbkdf2(const esp_tee_sec_storage_pbkdf2_ctx_t *ctx,
+                                                const uint8_t *hash, size_t hlen,
+                                                esp_tee_sec_storage_ecdsa_sign_t *out_sign,
+                                                esp_tee_sec_storage_ecdsa_pubkey_t *out_pubkey)
+{
+    if (!ctx || !hash || !out_sign || !out_pubkey || !ctx->salt || ctx->salt_len == 0) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (hlen != SHA256_DIGEST_SZ) {
+        return ESP_ERR_INVALID_SIZE;
+    }
+
+    esp_err_t err = ESP_FAIL;
+    size_t key_len;
+    mbedtls_ecp_group_id curve_id = MBEDTLS_ECP_DP_NONE;
+
+    switch (ctx->key_type) {
+    case ESP_SEC_STG_KEY_ECDSA_SECP256R1:
+        key_len = ECDSA_SECP256R1_KEY_LEN;
+        curve_id = MBEDTLS_ECP_DP_SECP256R1;
+        break;
+#if CONFIG_SECURE_TEE_SEC_STG_SUPPORT_SECP192R1_SIGN
+    case ESP_SEC_STG_KEY_ECDSA_SECP192R1:
+        key_len = ECDSA_SECP192R1_KEY_LEN;
+        curve_id = MBEDTLS_ECP_DP_SECP192R1;
+        break;
+#endif
+    default:
+        ESP_LOGE(TAG, "Unsupported key type");
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    hmac_key_id_t key_id = (hmac_key_id_t)(CONFIG_SECURE_TEE_PBKDF2_EFUSE_HMAC_KEY_ID);
+    esp_efuse_block_t blk = EFUSE_BLK_KEY0 + (esp_efuse_block_t)(key_id);
+    if (esp_efuse_get_key_purpose(blk) != ESP_EFUSE_KEY_PURPOSE_HMAC_UP) {
+        ESP_LOGE(TAG, "HMAC key is not burnt in the specified eFuse block ID");
+        return ESP_ERR_NOT_FOUND;
+    }
+
+    uint8_t *derived_key = calloc(1, key_len);
+    if (!derived_key) {
+        return ESP_ERR_NO_MEM;
+    }
+
+    err = esp_hmac_derive_pbkdf2_key(key_id, ctx->salt, ctx->salt_len, PBKDF2_HMAC_ITER, key_len, derived_key);
+    if (err != ESP_OK) {
+        goto exit;
+    }
+
+    mbedtls_ecp_keypair keypair;
+    mbedtls_mpi r, s;
+
+    mbedtls_ecp_keypair_init(&keypair);
+    mbedtls_mpi_init(&r);
+    mbedtls_mpi_init(&s);
+
+    int ret = -1;
+
+    ret = mbedtls_ecp_group_load(&keypair.MBEDTLS_PRIVATE(grp), curve_id);
+    if (ret != 0) {
+        err = ESP_FAIL;
+        goto exit;
+    }
+
+    ret = mbedtls_mpi_read_binary(&keypair.MBEDTLS_PRIVATE(d), derived_key, key_len);
+    if (ret != 0) {
+        err = ESP_FAIL;
+        goto exit;
+    }
+
+    ret = mbedtls_ecp_check_privkey(&keypair.MBEDTLS_PRIVATE(grp), &keypair.MBEDTLS_PRIVATE(d));
+    if (ret != 0) {
+        ESP_LOGE(TAG, "Invalid private key!");
+        err = ESP_FAIL;
+        goto exit;
+    }
+
+    ret = mbedtls_ecp_keypair_calc_public(&keypair, rand_func, NULL);
+    if (ret != 0) {
+        err = ESP_FAIL;
+        goto exit;
+    }
+
+    ret = mbedtls_ecdsa_sign(&keypair.MBEDTLS_PRIVATE(grp), &r, &s,
+                             &keypair.MBEDTLS_PRIVATE(d), hash, hlen,
+                             rand_func, NULL);
+    if (ret != 0) {
+        err = ESP_FAIL;
+        goto exit;
+    }
+
+    memset(out_sign, 0x00, sizeof(esp_tee_sec_storage_ecdsa_sign_t));
+    ret = mbedtls_mpi_write_binary(&r, out_sign->sign_r, key_len);
+    if (ret == 0) {
+        ret = mbedtls_mpi_write_binary(&s, out_sign->sign_s, key_len);
+    }
+
+    if (ret != 0) {
+        memset(out_sign, 0x00, sizeof(esp_tee_sec_storage_ecdsa_sign_t));
+        err = ESP_FAIL;
+        goto exit;
+    }
+
+    memset(out_pubkey, 0x00, sizeof(esp_tee_sec_storage_ecdsa_pubkey_t));
+    ret = mbedtls_mpi_write_binary(&keypair.MBEDTLS_PRIVATE(Q).MBEDTLS_PRIVATE(X), out_pubkey->pub_x, key_len);
+    if (ret == 0) {
+        ret = mbedtls_mpi_write_binary(&keypair.MBEDTLS_PRIVATE(Q).MBEDTLS_PRIVATE(Y), out_pubkey->pub_y, key_len);
+    }
+
+    if (ret != 0) {
+        memset(out_pubkey, 0x00, sizeof(esp_tee_sec_storage_ecdsa_pubkey_t));
+        err = ESP_FAIL;
+        goto exit;
+    }
+
+    err = ESP_OK;
+
+exit:
+    if (derived_key) {
+        memset(derived_key, 0x00, key_len);
+        free(derived_key);
+    }
+    mbedtls_ecp_keypair_free(&keypair);
+    mbedtls_mpi_free(&r);
+    mbedtls_mpi_free(&s);
+    return err;
 }

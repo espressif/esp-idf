@@ -100,6 +100,10 @@ struct wpa_state_machine {
 	size_t wpa_ie_len;
 	u8 *rsnxe;
 	size_t rsnxe_len;
+#ifdef CONFIG_WPA3_COMPAT
+	u8 *rsn_selection;
+	size_t rsn_selection_len;
+#endif
 
 	enum {
 		WPA_VERSION_NO_WPA = 0 /* WPA not used */,
@@ -109,6 +113,10 @@ struct wpa_state_machine {
 	int pairwise; /* Pairwise cipher suite, WPA_CIPHER_* */
 	int wpa_key_mgmt; /* the selected WPA_KEY_MGMT_* */
 	struct rsn_pmksa_cache_entry *pmksa;
+
+#ifdef CONFIG_WPA3_COMPAT
+	bool rsn_override;
+#endif
 
 #ifdef CONFIG_IEEE80211R_AP
 	u8 xxkey[PMK_LEN_MAX]; /* PSK or the second 256 bits of MSK, or the

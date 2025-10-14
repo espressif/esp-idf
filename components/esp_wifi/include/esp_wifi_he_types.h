@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -167,6 +167,7 @@ typedef enum {
     RX_BB_FORMAT_HE_MU    = 5,           /**< the reception frame is a HE MU MPDU */
     RX_BB_FORMAT_HE_ERSU  = 6,           /**< the reception frame is a HE ER SU MPDU */
     RX_BB_FORMAT_HE_TB    = 7,           /**< the reception frame is a HE TB MPDU */
+    RX_BB_FORMAT_VHT_MU    = 11,         /**< the reception frame is a VHT MU MPDU */
 } wifi_rx_bb_format_t;
 
 /**
@@ -192,7 +193,7 @@ typedef struct {
     unsigned : 15;                                /**< reserved */
     unsigned : 15;                                /**< reserved */
     unsigned : 2;                                 /**< reserved */
-    unsigned noise_floor: 8;                      /**< the noise floor of the reception frame */
+    signed noise_floor: 8;                        /**< the noise floor of the reception frame */
     signed : 8;                                   /**< reserved */
     signed : 8;                                   /**< reserved */
     unsigned : 8;                                 /**< reserved */
@@ -204,9 +205,9 @@ typedef struct {
     unsigned : 1;                                 /**< reserved */
     unsigned : 1;                                 /**< reserved */
     unsigned : 1;                                 /**< reserved */
-    unsigned channel: 4;                          /**< the primary channel */
-    unsigned second: 4;                           /**< the second channel if in HT40 */
-    unsigned : 12;                                /**< reserved */
+    unsigned channel: 8;                          /**< the primary channel */
+    unsigned second: 8;                           /**< the second channel if in HT40 */
+    unsigned : 4;                                 /**< reserved */
     unsigned : 4;                                 /**< reserved */
     unsigned : 1;                                 /**< reserved */
     unsigned : 7;                                 /**< reserved */

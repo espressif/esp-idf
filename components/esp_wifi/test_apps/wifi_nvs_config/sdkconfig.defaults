@@ -1,0 +1,5 @@
+# ignore task watchdog triggered by unity_run_menu
+CONFIG_ESP_TASK_WDT_EN=n
+CONFIG_PARTITION_TABLE_CUSTOM=y
+CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions_example.csv"
+CONFIG_PARTITION_TABLE_FILENAME="partitions_example.csv"

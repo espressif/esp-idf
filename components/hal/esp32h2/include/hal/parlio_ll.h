@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +13,8 @@
 #include "hal/assert.h"
 #include "hal/misc.h"
 #include "hal/hal_utils.h"
+#include "hal/efuse_hal.h"
+#include "soc/chip_revision.h"
 #include "soc/pcr_struct.h"
 #include "soc/parl_io_struct.h"
 #include "hal/parlio_types.h"
@@ -35,8 +37,6 @@
 #define PARLIO_LL_TX_DATA_LINE_AS_VALID_SIG 7 // TXD[7] can be used a valid signal
 #define PARLIO_LL_TX_DATA_LINE_AS_CLK_GATE  7 // TXD[7] can be used as clock gate signal
 
-#define PARLIO_LL_CLK_DIVIDER_MAX        (0)    // Not support fractional divider
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -45,6 +45,11 @@ typedef enum {
     PARLIO_LL_RX_EOF_COND_RX_FULL,     /*!< RX unit generates EOF event when it receives enough data */
     PARLIO_LL_RX_EOF_COND_EN_INACTIVE, /*!< RX unit generates EOF event when the external enable signal becomes inactive */
 } parlio_ll_rx_eof_cond_t;
+
+typedef enum {
+    PARLIO_LL_TX_EOF_COND_DATA_LEN,     /*!< TX unit generates EOF event when it transmits particular data bit length that specified in `tx_bitlen`. */
+    PARLIO_LL_TX_EOF_COND_DMA_EOF,      /*!< TX unit generates EOF event when the DMA EOF takes place */
+} parlio_ll_tx_eof_cond_t;
 
 /**
  * @brief Enable or disable the parlio peripheral APB clock
@@ -372,6 +377,22 @@ static inline void parlio_ll_rx_update_config(parl_io_dev_t *dev)
     while (dev->reg_update.rx_reg_update);
 }
 
+/**
+ * @brief Get the RX fifo cycle count
+ *
+ * @param dev Parallel IO register base address
+ * @return
+ *        - RX fifo cycle count
+ */
+static inline uint32_t parlio_ll_rx_get_fifo_cycle_cnt(parl_io_dev_t *dev)
+{
+    if (ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 102)) {
+        return dev->rx_st0.rx_cnt;
+    }
+    /* For the H2 chip revision that smaller than v1.2, only the highest 4-bit are effective,
+     *  need to right shift 1 bit to get the actual count */
+    return dev->rx_st0.rx_cnt >> 1;
+}
 ///////////////////////////////////TX Unit///////////////////////////////////////
 
 /**
@@ -380,6 +401,7 @@ static inline void parlio_ll_rx_update_config(parl_io_dev_t *dev)
  * @param dev Parallel IO register base address
  * @param src Clock source
  */
+__attribute__((always_inline))
 static inline void parlio_ll_tx_set_clock_source(parl_io_dev_t *dev, parlio_clock_source_t src)
 {
     (void)dev;
@@ -457,6 +479,29 @@ static inline void parlio_ll_tx_set_trans_bit_len(parl_io_dev_t *dev, uint32_t b
 }
 
 /**
+ * @brief Check if tx size can be determined by DMA
+ *
+ * @param dev Parallel IO register base address (not used)
+ */
+static inline bool parlio_ll_tx_support_dma_eof(parl_io_dev_t *dev)
+{
+    (void)dev;
+    return ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 102);
+}
+
+/**
+ * @brief Set the condition to generate the TX EOF event
+ *
+ * @param dev Parallel IO register base address
+ * @param cond TX EOF condition
+ */
+__attribute__((always_inline))
+static inline void parlio_ll_tx_set_eof_condition(parl_io_dev_t *dev, parlio_ll_tx_eof_cond_t cond)
+{
+    dev->tx_genrl_cfg.tx_eof_gen_sel = cond;
+}
+
+/**
  * @brief Whether to enable the TX clock gating
  *
  * @note The MSB of TXD will be taken as the gating enable signal
@@ -472,8 +517,11 @@ static inline void parlio_ll_tx_enable_clock_gating(parl_io_dev_t *dev, bool en)
 /**
  * @brief Start TX unit to transmit data
  *
+ * @note The hardware monitors the rising edge of tx_start as the trigger signal.
+ *       Once the transmission starts, it cannot be stopped by clearing tx_start.
+ *
  * @param dev Parallel IO register base address
- * @param en True to start, False to stop
+ * @param en True to start, False to reset the reg state (not meaning the TX unit will be stopped)
  */
 __attribute__((always_inline))
 static inline void parlio_ll_tx_start(parl_io_dev_t *dev, bool en)
@@ -484,7 +532,7 @@ static inline void parlio_ll_tx_start(parl_io_dev_t *dev, bool en)
 /**
  * @brief Whether to treat the MSB of TXD as the valid signal
  *
- * @note If enabled, TXD[15] will work as valid signal, which stay high during data transmission.
+ * @note If enabled, TXD[7] will work as valid signal, which stay high during data transmission.
  *
  * @param dev Parallel IO register base address
  * @param en True to enable, False to disable
@@ -492,6 +540,23 @@ static inline void parlio_ll_tx_start(parl_io_dev_t *dev, bool en)
 static inline void parlio_ll_tx_treat_msb_as_valid(parl_io_dev_t *dev, bool en)
 {
     dev->tx_genrl_cfg.tx_valid_output_en = en;
+}
+
+/**
+ * @brief Set TX valid signal delay
+ *
+ * @param dev Parallel IO register base address
+ * @param start_delay Number of clock cycles to delay
+ * @param stop_delay Number of clock cycles to delay
+ * @return true: success, false: valid delay is not supported
+ */
+static inline bool parlio_ll_tx_set_valid_delay(parl_io_dev_t *dev, uint32_t start_delay, uint32_t stop_delay)
+{
+    (void)dev;
+    if (start_delay == 0 && stop_delay == 0) {
+        return true;
+    }
+    return false;
 }
 
 /**

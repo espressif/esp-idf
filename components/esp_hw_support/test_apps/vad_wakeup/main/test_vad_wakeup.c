@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -28,7 +28,7 @@
 
 extern const uint8_t test_vad_pcm_start[]            asm("_binary_test_vad_8k_pcm_start");
 extern const uint8_t test_vad_pcm_end[]              asm("_binary_test_vad_8k_pcm_end");
-static const char *TAG = "TEST_VAD";
+ESP_LOG_ATTR_TAG(TAG, "TEST_VAD");
 
 static void s_hp_i2s_config(void)
 {
@@ -142,19 +142,7 @@ static void s_lp_vad_config(void)
     /* Enter sleep mode */
     esp_light_sleep_start();
 
-    /* Determine wake up reason */
-    const char* wakeup_reason;
-    switch (esp_sleep_get_wakeup_cause()) {
-        case ESP_SLEEP_WAKEUP_VAD:
-            wakeup_reason = "vad";
-            break;
-        default:
-            wakeup_reason = "other";
-            TEST_ASSERT(false);
-            break;
-    }
-
-    ESP_LOGI(TAG, "wakeup, reason: %s", wakeup_reason);
+    ESP_LOGI(TAG, "wakeup, reason: %s", (esp_sleep_get_wakeup_causes() & BIT(ESP_SLEEP_WAKEUP_VAD)) ? "vad" : "other");
 }
 
 TEST_CASE_MULTIPLE_DEVICES("test LP VAD wakeup", "[vad][ignore][manual]", s_hp_i2s_config, s_lp_vad_config);

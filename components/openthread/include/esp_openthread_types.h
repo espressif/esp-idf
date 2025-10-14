@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -150,6 +150,7 @@ typedef enum {
     HOST_CONNECTION_MODE_CLI_USB,        /*!< CLI USB connection to the host */
     HOST_CONNECTION_MODE_RCP_UART,       /*!< RCP UART connection to the host */
     HOST_CONNECTION_MODE_RCP_SPI,        /*!< RCP SPI connection to the host */
+    HOST_CONNECTION_MODE_RCP_USB,       /*!<  RCP USB Serial JTAG connection to the host */
     HOST_CONNECTION_MODE_MAX,            /*!< Using for parameter check */
 } esp_openthread_host_connection_mode_t;
 
@@ -198,9 +199,23 @@ typedef struct {
     esp_openthread_port_config_t            port_config;  /*!< The port configuration */
 } esp_openthread_platform_config_t;
 
+/**
+ * @brief The OpenThread rcp failure handler
+ *
+ */
 typedef void (*esp_openthread_rcp_failure_handler)(void);
 
+/**
+ * @brief The OpenThread compatibility error callback
+ *
+ */
 typedef void (*esp_openthread_compatibility_error_callback)(void);
+
+/**
+ * @brief The OpenThread co-processor reset failure callback
+ *
+ */
+typedef void (*esp_openthread_coprocessor_reset_failure_callback)(void);
 
 #ifdef __cplusplus
 }

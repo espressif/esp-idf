@@ -152,6 +152,8 @@ static int do_publish_setup(int argc, char **argv) {
     command_context.data = calloc(1, sizeof(publish_context_t));
     ((publish_context_t*)command_context.data)->pattern = strdup(*publish_setup_args.pattern->sval);
     ((publish_context_t*)command_context.data)->pattern_repetitions = *publish_setup_args.pattern_repetitions->ival;
+    ((publish_context_t*)command_context.data)->subscribe_to = strdup(*publish_setup_args.subscribe_to->sval);
+    ((publish_context_t*)command_context.data)->publish_to = strdup(*publish_setup_args.publish_to->sval);
     publish_setup(&command_context, *publish_setup_args.transport->sval);
     return 0;
 }
@@ -210,6 +212,8 @@ void register_common_commands(void) {
 }
 void register_publish_commands(void) {
     publish_setup_args.transport  = arg_str1(NULL,NULL,"<transport>", "Selected transport to test");
+    publish_setup_args.publish_to  = arg_str1(NULL,NULL,"<transport>", "Selected publish_to to publish");
+    publish_setup_args.subscribe_to  = arg_str1(NULL,NULL,"<transport>", "Selected subscribe_to to publish");
     publish_setup_args.pattern  = arg_str1(NULL,NULL,"<pattern>", "Message pattern repeated to build big messages");
     publish_setup_args.pattern_repetitions  = arg_int1(NULL,NULL,"<pattern repetitions>", "How many times the pattern is repeated");
     publish_setup_args.end = arg_end(1);
@@ -220,7 +224,7 @@ void register_publish_commands(void) {
     publish_args.end = arg_end(1);
     const esp_console_cmd_t publish_setup = {
         .command = "publish_setup",
-        .help = "Run publish test\n",
+        .help = "Set publish test parameters\n",
         .hint = NULL,
         .func = &do_publish_setup,
         .argtable = &publish_setup_args
@@ -312,7 +316,7 @@ void app_main(void)
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
 #ifdef CONFIG_EXAMPLE_RUN_LOCAL_BROKER
-    xTaskCreate(broker_task, "broker", 4096, NULL, 4, NULL);
+    xTaskCreate(broker_task, "broker", 8192, NULL, 4, NULL);
 #endif
     ESP_ERROR_CHECK(example_connect());
     esp_console_repl_t *repl = NULL;

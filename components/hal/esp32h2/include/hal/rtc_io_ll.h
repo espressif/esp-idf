@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -38,13 +38,16 @@ typedef enum {
  */
 static inline void _rtcio_ll_enable_io_clock(bool enable)
 {
-    LPPERI.clk_en.lp_io_ck_en = enable;
-    while (LPPERI.clk_en.lp_io_ck_en != enable) {
+    LPPERI_REG_SET(clk_en.lp_io_ck_en, enable);
+    while (LPPERI_REG_GET(clk_en.lp_io_ck_en) != enable) {
         ;
     }
 }
 
-#define rtcio_ll_enable_io_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _rtcio_ll_enable_io_clock(__VA_ARGS__)
+#define rtcio_ll_enable_io_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _rtcio_ll_enable_io_clock(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Select the rtcio function.

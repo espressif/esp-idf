@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +10,7 @@
 #include "driver/uart.h"
 #include "esp_log.h"
 #include "esp_rom_gpio.h"
+#include "esp_private/gpio.h"
 #if SOC_LP_GPIO_MATRIX_SUPPORTED
 #include "driver/lp_io.h"
 #include "driver/rtc_io.h"
@@ -450,7 +451,7 @@ TEST_CASE("uart int state restored after flush", "[uart]")
         .source_clk = port_param.default_src_clk,
     };
 
-    const int uart_tx_signal = uart_periph_signal[uart_num].pins[SOC_UART_TX_PIN_IDX].signal;
+    const int uart_tx_signal = uart_periph_signal[uart_num].pins[SOC_UART_PERIPH_SIGNAL_TX].signal;
     const int uart_tx = port_param.tx_pin_num;
     const int uart_rx = port_param.rx_pin_num;
     const int buf_size = 256;
@@ -463,6 +464,7 @@ TEST_CASE("uart int state restored after flush", "[uart]")
     /* Make sure UART's TX signal is connected to RX pin
      * This creates a loop that lets us receive anything we send on the UART */
     if (uart_num < SOC_UART_HP_NUM) {
+        gpio_func_sel(uart_rx, PIN_FUNC_GPIO);
         esp_rom_gpio_connect_out_signal(uart_rx, uart_tx_signal, false, false);
 #if SOC_UART_LP_NUM > 0
     } else {
@@ -473,7 +475,7 @@ TEST_CASE("uart int state restored after flush", "[uart]")
         // In case the selected RX IO is the LP UART IOMUX IO, and the IO has been configured to IOMUX function in the driver
         // Do the following:
         TEST_ESP_OK(rtc_gpio_iomux_func_sel(uart_rx, RTCIO_LL_PIN_FUNC));
-        const int uart_rx_signal = uart_periph_signal[uart_num].pins[SOC_UART_RX_PIN_IDX].signal;
+        const int uart_rx_signal = uart_periph_signal[uart_num].pins[SOC_UART_PERIPH_SIGNAL_RX].signal;
         TEST_ESP_OK(lp_gpio_connect_in_signal(uart_rx, uart_rx_signal, false));
         TEST_ESP_OK(lp_gpio_connect_out_signal(uart_rx, uart_tx_signal, false, false));
 #else
@@ -583,4 +585,63 @@ TEST_CASE("uart in one-wire mode", "[uart]")
     }
 
     TEST_ESP_OK(uart_driver_delete(uart_num));
+}
+
+static void uart_console_write_task(void *arg)
+{
+    while (1) {
+        printf("This is a sentence used to detect uart baud rate...\nThis is a sentence used to detect uart baud rate...\nThis is a sentence used to detect uart baud rate...\nThis is a sentence used to detect uart baud rate...\nThis is a sentence used to detect uart baud rate...\n");
+        vTaskDelay(pdMS_TO_TICKS(100));
+    }
+}
+
+TEST_CASE("uart auto baud rate detection", "[uart]")
+{
+    uart_port_param_t port_param = {};
+    TEST_ASSERT(port_select(&port_param));
+    // This is indeed a standalone feature, no need to specify the uart port, call port_select() to be compatible with pytest
+    // And this test case no need to be tested twice on HP/LP uart ports both exist targets (also, LP UART does not support auto baud rate detection functionality)
+    if (port_param.port_num < SOC_UART_HP_NUM) {
+        TaskHandle_t console_write_task = NULL;
+        xTaskCreate(uart_console_write_task, "uart_console_write_task", 2048, NULL, 5, &console_write_task);
+        vTaskDelay(20);
+
+        // Measure console uart baudrate
+        uint32_t actual_baudrate = 0;
+        uint32_t detected_baudrate = 0;
+        uart_bitrate_detect_config_t conf = {
+            .rx_io_num = uart_periph_signal[CONFIG_CONSOLE_UART_NUM].pins[SOC_UART_PERIPH_SIGNAL_TX].default_gpio,
+            .source_clk = UART_SCLK_DEFAULT,
+        };
+        uart_bitrate_res_t res = {};
+
+        uart_get_baudrate(CONFIG_CONSOLE_UART_NUM, &actual_baudrate);
+        TEST_ESP_OK(uart_detect_bitrate_start(UART_NUM_1, &conf)); // acquire a new uart port
+        vTaskDelay(pdMS_TO_TICKS(500));
+        TEST_ESP_OK(uart_detect_bitrate_stop(UART_NUM_1, false, &res)); // no releasing
+        detected_baudrate = res.clk_freq_hz * 2 / res.pos_period; // assume the wave has a slow falling slew rate
+        TEST_ASSERT_INT32_WITHIN(actual_baudrate * 0.03, actual_baudrate, detected_baudrate); // allow 3% error
+
+        // Temporarily change console baudrate
+        uart_set_baudrate(CONFIG_CONSOLE_UART_NUM, 38400);
+
+        uart_get_baudrate(CONFIG_CONSOLE_UART_NUM, &actual_baudrate);
+        TEST_ESP_OK(uart_detect_bitrate_start(UART_NUM_1, NULL)); // use the previously acquired uart port
+        vTaskDelay(pdMS_TO_TICKS(500));
+        TEST_ESP_OK(uart_detect_bitrate_stop(UART_NUM_1, true, &res)); // release the uart port
+        detected_baudrate = res.clk_freq_hz * 2 / res.pos_period;
+        TEST_ASSERT_INT32_WITHIN(actual_baudrate * 0.03, actual_baudrate, detected_baudrate);
+
+        // Set back to original console baudrate, test again
+        uart_set_baudrate(CONFIG_CONSOLE_UART_NUM, CONFIG_CONSOLE_UART_BAUDRATE);
+
+        uart_get_baudrate(CONFIG_CONSOLE_UART_NUM, &actual_baudrate);
+        TEST_ESP_OK(uart_detect_bitrate_start(UART_NUM_1, &conf)); // acquire a new uart port again
+        vTaskDelay(pdMS_TO_TICKS(500));
+        TEST_ESP_OK(uart_detect_bitrate_stop(UART_NUM_1, true, &res)); // release it
+        detected_baudrate = res.clk_freq_hz * 2 / res.pos_period;
+        TEST_ASSERT_INT32_WITHIN(actual_baudrate * 0.03, actual_baudrate, detected_baudrate);
+
+        vTaskDelete(console_write_task);
+    }
 }

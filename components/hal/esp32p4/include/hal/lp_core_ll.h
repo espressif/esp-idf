@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -46,7 +46,10 @@ static inline void lp_core_ll_enable_bus_clock(bool enable)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define lp_core_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; lp_core_ll_enable_bus_clock(__VA_ARGS__)
+#define lp_core_ll_enable_bus_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        lp_core_ll_enable_bus_clock(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Reset the lp_core module
@@ -60,7 +63,10 @@ static inline void lp_core_ll_reset_register(void)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define lp_core_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; lp_core_ll_reset_register(__VA_ARGS__)
+#define lp_core_ll_reset_register(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        lp_core_ll_reset_register(__VA_ARGS__); \
+    } while(0)
 
 
 /**
@@ -156,6 +162,14 @@ static inline void lp_core_ll_request_sleep(void)
 static inline void lp_core_ll_clear_etm_wakeup_status(void)
 {
     LP_SYS.sys_ctrl.lp_core_etm_wakeup_flag_clr = 1;
+}
+
+/**
+ * @brief Enable wakeup from LP UART.
+ */
+static inline void lp_core_ll_enable_lp_uart_wakeup(bool enable)
+{
+    LPPERI.mem_ctrl.lp_uart_wakeup_en = enable;
 }
 
 /**

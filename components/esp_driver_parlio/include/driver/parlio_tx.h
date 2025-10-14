@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -30,6 +30,8 @@ typedef struct {
     gpio_num_t clk_out_gpio_num; /*!< GPIO number of the output clock signal, the clock is synced with TX data */
     gpio_num_t valid_gpio_num;   /*!< GPIO number of the valid signal, which stays high when transferring data.
                                       Note that, the valid signal will always occupy the MSB data bit */
+    uint16_t valid_start_delay; /*!< The clock cycles that the valid signal becomes active before data start */
+    uint16_t valid_stop_delay;  /*!< The clock cycles that the valid signal keeps active after data end */
     size_t trans_queue_depth; /*!< Depth of internal transaction queue */
     size_t max_transfer_size; /*!< Maximum transfer size in one transaction, in bytes. This decides the number of DMA nodes will be used for each transaction */
     size_t dma_burst_size;    /*!< DMA burst size, in bytes */
@@ -39,7 +41,6 @@ typedef struct {
         uint32_t clk_gate_en: 1;  /*!< Enable TX clock gating,
                                        the output clock will be controlled by the MSB bit of the data bus,
                                        i.e. by data_gpio_nums[PARLIO_TX_UNIT_MAX_DATA_WIDTH-1]. High level to enable the clock output, low to disable */
-        uint32_t io_loop_back: 1; /*!< For debug/test, the signal output from the GPIO will be fed to the input path as well */
         uint32_t allow_pd: 1;      /*!< Set to allow power down. When this flag set, the driver will backup/restore the PARLIO registers before/after entering/exist sleep mode.
                                        By this approach, the system can power off PARLIO's power domain.
                                        This can save power, but at the expense of more RAM being consumed. */
@@ -107,37 +108,21 @@ esp_err_t parlio_tx_unit_enable(parlio_tx_unit_handle_t unit);
 esp_err_t parlio_tx_unit_disable(parlio_tx_unit_handle_t unit);
 
 /**
- * @brief Type of Parallel IO TX done event data
- */
-typedef struct {
-} parlio_tx_done_event_data_t;
-
-/**
- * @brief Prototype of parlio tx event callback
- * @param[in] tx_unit Parallel IO TX unit that created by `parlio_new_tx_unit`
- * @param[in] edata Point to Parallel IO TX event data. The lifecycle of this pointer memory is inside this function,
- *                  user should copy it into static memory if used outside this function.
- * @param[in] user_ctx User registered context, passed from `parlio_tx_unit_register_event_callbacks`
- *
- * @return Whether a high priority task has been waken up by this callback function
- */
-typedef bool (*parlio_tx_done_callback_t)(parlio_tx_unit_handle_t tx_unit, const parlio_tx_done_event_data_t *edata, void *user_ctx);
-
-/**
  * @brief Group of Parallel IO TX callbacks
  * @note The callbacks are all running under ISR environment
- * @note When CONFIG_PARLIO_ISR_IRAM_SAFE is enabled, the callback itself and functions called by it should be placed in IRAM.
+ * @note When CONFIG_PARLIO_TX_ISR_CACHE_SAFE is enabled, the callback itself and functions called by it should be placed in IRAM.
  *       The variables used in the function should be in the SRAM as well.
  */
 typedef struct {
     parlio_tx_done_callback_t on_trans_done; /*!< Event callback, invoked when one transmission is finished */
+    parlio_tx_buffer_switched_callback_t on_buffer_switched; /*!< Event callback, invoked when the buffer is switched in loop transmission */
 } parlio_tx_event_callbacks_t;
 
 /**
  * @brief Set event callbacks for Parallel IO TX unit
  *
  * @note User can deregister a previously registered callback by calling this function and setting the callback member in the `cbs` structure to NULL.
- * @note When CONFIG_PARLIO_ISR_IRAM_SAFE is enabled, the callback itself and functions called by it should be placed in IRAM.
+ * @note When CONFIG_PARLIO_TX_ISR_CACHE_SAFE is enabled, the callback itself and functions called by it should be placed in IRAM.
  *       The variables used in the function should be in the SRAM as well. The `user_data` should also reside in SRAM.
  *
  * @param[in] tx_unit Parallel IO TX unit that created by `parlio_new_tx_unit`
@@ -155,8 +140,10 @@ esp_err_t parlio_tx_unit_register_event_callbacks(parlio_tx_unit_handle_t tx_uni
  */
 typedef struct {
     uint32_t idle_value; /*!< The value on the data line when the parallel IO is in idle state */
+    const void *bitscrambler_program; /*!< BitScrambler program binary, NULL if not use BitScrambler */
     struct {
         uint32_t queue_nonblocking : 1; /*!< If set, when the transaction queue is full, driver will not block the thread but return directly */
+        uint32_t loop_transmission : 1; /*!< If set, the transmission will be repeated continuously, until the tx_unit is disabled by `parlio_tx_unit_disable` */
     } flags;                            /*!< Transmit specific config flags */
 } parlio_transmit_config_t;
 

@@ -20,7 +20,7 @@
 #define HEAP_IRAM_ATTR IRAM_ATTR
 #endif
 
-#define CAPS_NEEDING_ALIGNMENT (MALLOC_CAP_DMA|MALLOC_CAP_DMA_DESC_AHB|MALLOC_CAP_DMA_DESC_AXI|MALLOC_CAP_CACHE_ALIGNED)
+#define CAPS_NEEDING_ALIGNMENT (MALLOC_CAP_DMA|MALLOC_CAP_DMA_DESC_AHB|MALLOC_CAP_DMA_DESC_AXI|MALLOC_CAP_CACHE_ALIGNED|MALLOC_CAP_SIMD)
 
 HEAP_IRAM_ATTR void esp_heap_adjust_alignment_to_hw(size_t *p_alignment, size_t *p_size, uint32_t *p_caps)
 {
@@ -72,6 +72,14 @@ HEAP_IRAM_ATTR void esp_heap_adjust_alignment_to_hw(size_t *p_alignment, size_t 
     if (cache_alignment_bytes > alignment) {
         alignment = cache_alignment_bytes;
     }
+
+#if SOC_SIMD_INSTRUCTION_SUPPORTED
+    // SIMD instructions preferred data alignment, SOC_SIMD_PREFERRED_DATA_ALIGNMENT, which is also definitely a power of two
+    if (caps & MALLOC_CAP_SIMD) {
+        alignment = (alignment > SOC_SIMD_PREFERRED_DATA_ALIGNMENT) ? alignment : SOC_SIMD_PREFERRED_DATA_ALIGNMENT;
+    }
+#endif
+
     // Align up `size` to resulting alignment as well.
     size = (size + alignment - 1) & (~(alignment - 1));
 

@@ -6,6 +6,8 @@
 
 #include "sdkconfig.h"
 
+#define ALIGN_UP(SIZE, AL)   (((SIZE) + (AL - 1)) & ~(AL - 1))
+
 /* CPU instruction prefetch padding size for flash mmap scenario */
 #define _esp_flash_mmap_prefetch_pad_size 16
 
@@ -45,10 +47,14 @@
 
 #if CONFIG_SOC_RTC_MEM_SUPPORTED
     #if CONFIG_BOOTLOADER_RESERVE_RTC_MEM
+        /**
+         * The ESP_BOOTLOADER_RESERVE_RTC size must have the same alignment of RTC_TIMER_RESERVE_RTC, else
+         * the segment will overflow at link time because not enough bytes are allocated for the RTC segment.
+         */
         #ifdef CONFIG_BOOTLOADER_CUSTOM_RESERVE_RTC
-            #define ESP_BOOTLOADER_RESERVE_RTC (CONFIG_BOOTLOADER_RESERVE_RTC_SIZE + CONFIG_BOOTLOADER_CUSTOM_RESERVE_RTC_SIZE)
+            #define ESP_BOOTLOADER_RESERVE_RTC ALIGN_UP(CONFIG_BOOTLOADER_RESERVE_RTC_SIZE + CONFIG_BOOTLOADER_CUSTOM_RESERVE_RTC_SIZE, 8)
         #else
-            #define ESP_BOOTLOADER_RESERVE_RTC (CONFIG_BOOTLOADER_RESERVE_RTC_SIZE)
+            #define ESP_BOOTLOADER_RESERVE_RTC ALIGN_UP(CONFIG_BOOTLOADER_RESERVE_RTC_SIZE, 8)
         #endif // not CONFIG_BOOTLOADER_CUSTOM_RESERVE_RTC
     #else
         #define ESP_BOOTLOADER_RESERVE_RTC 0

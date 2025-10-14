@@ -22,35 +22,10 @@ menu "Core dump"
             bool "None"
     endchoice
 
-    choice ESP_COREDUMP_DATA_FORMAT
-        prompt "Core dump data format"
-        default ESP_COREDUMP_DATA_FORMAT_ELF
-        depends on !ESP_COREDUMP_ENABLE_TO_NONE
-        help
-            Select the data format for core dump.
-        config ESP_COREDUMP_DATA_FORMAT_BIN
-            bool "Binary format"
-        config ESP_COREDUMP_DATA_FORMAT_ELF
-            bool "ELF format"
-    endchoice
-
-    choice ESP_COREDUMP_CHECKSUM
-        prompt "Core dump data integrity check"
-        default ESP_COREDUMP_CHECKSUM_CRC32
-        depends on !ESP_COREDUMP_ENABLE_TO_NONE
-        help
-            Select the integrity check for the core dump.
-        config ESP_COREDUMP_CHECKSUM_CRC32
-            bool "Use CRC32 for integrity verification"
-        config ESP_COREDUMP_CHECKSUM_SHA256
-            bool "Use SHA256 for integrity verification"
-            depends on ESP_COREDUMP_DATA_FORMAT_ELF
-    endchoice
-
     config ESP_COREDUMP_CAPTURE_DRAM
         bool "Include whole .bss and .data sections and heap data into core dump file"
         default n
-        depends on ESP_COREDUMP_DATA_FORMAT_ELF
+        depends on ESP_COREDUMP_ENABLE
         help
             Storing these sections can help with easier debugging and troubleshooting.
             However, additional storage space will be required in the core dump partition.
@@ -69,6 +44,8 @@ menu "Core dump"
     config ESP_COREDUMP_ENABLE
         bool
         default F
+        select ESP_COREDUMP_DATA_FORMAT_ELF
+        select ESP_COREDUMP_CHECKSUM_SHA256
         help
             Enables/disable core dump module.
 
@@ -85,7 +62,9 @@ menu "Core dump"
         depends on ESP_COREDUMP_ENABLE
         default 64
         help
-            Maximum number of tasks snapshots in core dump.
+            Maximum number of tasks that will be included in the core dump.
+            Crashed task registers and stacks are always included.
+            Other tasks are included in order of their priority. (Highest priority ready task first)
 
     config ESP_COREDUMP_UART_DELAY
         int "Delay before print to UART"
@@ -129,7 +108,7 @@ menu "Core dump"
 
     config ESP_COREDUMP_SUMMARY_STACKDUMP_SIZE
         int "Size of the stack dump buffer"
-        depends on ESP_COREDUMP_DATA_FORMAT_ELF && ESP_COREDUMP_ENABLE_TO_FLASH && IDF_TARGET_ARCH_RISCV
+        depends on ESP_COREDUMP_ENABLE_TO_FLASH && IDF_TARGET_ARCH_RISCV
         range 512 4096
         default 1024
         help

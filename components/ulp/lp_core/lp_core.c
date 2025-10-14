@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,11 +13,13 @@
 #include "soc/pmu_reg.h"
 #include "hal/misc.h"
 #include "esp_private/periph_ctrl.h"
+#include "esp_private/pmu_share_hw.h"
 #include "ulp_common.h"
 #include "ulp_lp_core.h"
 #include "ulp_lp_core_memory_shared.h"
 #include "ulp_lp_core_lp_timer_shared.h"
 #include "hal/lp_core_ll.h"
+#include "hal/pmu_ll.h"
 
 #if CONFIG_IDF_TARGET_ESP32P4
 #include "esp32p4/rom/rtc.h"
@@ -37,7 +39,7 @@ const static char* TAG = "ulp-lp-core";
 
 #define WAKEUP_SOURCE_MAX_NUMBER 6
 
-#define RESET_HANDLER_ADDR (intptr_t)(&_rtc_ulp_memory_start + 0x80 / 4) // Placed after the 0x80 byte long vector table
+#define RESET_HANDLER_ADDR ((intptr_t)&_rtc_ulp_memory_start + 0x80) // Placed after the 0x80 byte long vector table
 
 /* Maps the flags defined in ulp_lp_core.h e.g. ULP_LP_CORE_WAKEUP_SOURCE_HP_CPU to their actual HW values */
 static uint32_t wakeup_src_sw_to_hw_flag_lookup[WAKEUP_SOURCE_MAX_NUMBER] = {
@@ -91,14 +93,21 @@ esp_err_t ulp_lp_core_run(ulp_lp_core_cfg_t* cfg)
 #endif //ESP_ROM_HAS_LP_ROM
 
     LP_CORE_RCC_ATOMIC() {
+#if CONFIG_ULP_NORESET_UNDER_DEBUG
+        /* lp_core module reset causes loss of configured HW breakpoints and dcsr.ebreak* */
+        if (!esp_cpu_dbgr_is_attached()) {
+            lp_core_ll_reset_register();
+        }
+#else
         lp_core_ll_reset_register();
+#endif
         lp_core_ll_enable_bus_clock(true);
     }
 
-#if CONFIG_IDF_TARGET_ESP32C6
+#if SOC_RTC_MEM_SUPPORT_SPEED_MODE_SWITCH
     /* Disable fast LP mem access to allow LP core to access LP memory during sleep */
     lp_core_ll_fast_lp_mem_enable(false);
-#endif //CONFIG_IDF_TARGET_ESP32C6
+#endif
 
     /* Enable stall at sleep request*/
     lp_core_ll_stall_at_sleep_request(true);
@@ -118,6 +127,12 @@ esp_err_t ulp_lp_core_run(ulp_lp_core_cfg_t* cfg)
         lp_core_ll_hp_wake_lp();
     }
 
+#if SOC_ULP_LP_UART_SUPPORTED
+    if (cfg->wakeup_source & ULP_LP_CORE_WAKEUP_SOURCE_LP_UART) {
+        lp_core_ll_enable_lp_uart_wakeup(true);
+    }
+#endif
+
 #if SOC_LP_TIMER_SUPPORTED
     ulp_lp_core_memory_shared_cfg_t* shared_mem = ulp_lp_core_memory_shared_cfg_get();
 
@@ -132,11 +147,6 @@ esp_err_t ulp_lp_core_run(ulp_lp_core_cfg_t* cfg)
         ulp_lp_core_lp_timer_set_wakeup_time(cfg->lp_timer_sleep_duration_us);
     }
 #endif
-
-    if (cfg->wakeup_source & (ULP_LP_CORE_WAKEUP_SOURCE_LP_UART)) {
-        ESP_LOGE(TAG, "Wake-up source not yet supported");
-        return ESP_ERR_INVALID_ARG;
-    }
 
     return ESP_OK;
 }
@@ -181,7 +191,28 @@ void ulp_lp_core_stop(void)
     lp_core_ll_request_sleep();
 }
 
-void ulp_lp_core_sw_intr_trigger(void)
+void ulp_lp_core_sw_intr_to_lp_trigger(void)
 {
+    /* Write-only register, no need to protect it */
     lp_core_ll_hp_wake_lp();
+}
+
+void ulp_lp_core_sw_intr_trigger_self(void)
+{
+    /* Write-only register, no need to protect it */
+    pmu_ll_lp_trigger_sw_intr(&PMU);
+}
+
+void ulp_lp_core_sw_intr_from_lp_enable(bool enable)
+{
+    /* Interrupt enable register must be protected since it is a R/W one */
+    pmu_lock_acquire();
+    pmu_ll_hp_enable_sw_intr(&PMU, enable);
+    pmu_lock_release();
+}
+
+void ulp_lp_core_sw_intr_from_lp_clear(void)
+{
+    /* Write-only register, no need to protect it */
+    pmu_ll_hp_clear_sw_intr_status(&PMU);
 }

@@ -18,14 +18,6 @@ menu "LWIP"
             The default name this device will report to other devices on the network.
             Could be updated at runtime with esp_netif_set_hostname()
 
-    config LWIP_NETIF_API
-        bool "Enable usage of standard POSIX APIs in LWIP"
-        default n
-        help
-            If this feature is enabled, standard POSIX APIs: if_indextoname(), if_nametoindex()
-            could be used to convert network interface index to name
-            instead of IDF specific esp-netif APIs (such as esp_netif_get_netif_impl_name())
-
     config LWIP_TCPIP_TASK_PRIO
         int "LWIP TCP/IP Task Priority"
         default 18
@@ -247,6 +239,14 @@ menu "LWIP"
         help
             Set the maximum amount of pbufs waiting to be reassembled.
 
+    config LWIP_IPV6_DUP_DETECT_ATTEMPTS
+        int "Number of duplicate address detection attempts"
+        range 0 7
+        default 1
+        depends on LWIP_IPV6
+        help
+            Set the number of duplicate address detection attempts.
+
     config LWIP_IP_FORWARD
         bool "Enable IP forwarding"
         default n
@@ -371,9 +371,9 @@ menu "LWIP"
 
     config LWIP_DHCP_OPTIONS_LEN
         int "DHCP total option length"
-        default 68 if LWIP_DHCP_DISABLE_VENDOR_CLASS_ID
-        default 108 if !LWIP_DHCP_DISABLE_VENDOR_CLASS_ID
-        range 68 255
+        default 69 if LWIP_DHCP_DISABLE_VENDOR_CLASS_ID
+        default 109 if !LWIP_DHCP_DISABLE_VENDOR_CLASS_ID
+        range 69 255
         depends on LWIP_IPV4
         help
             Set total length of outgoing DHCP option msg. Generally bigger value means it can carry more
@@ -405,6 +405,15 @@ menu "LWIP"
                 Enabling this option allows the device to run the DHCP server
                 (to dynamically assign IPv4 addresses to clients).
 
+        config LWIP_DHCPS_REPORT_CLIENT_HOSTNAME
+            bool "DHCPS: Report client hostname in assigned-IP event"
+            default y
+            depends on LWIP_DHCPS
+            help
+                When enabled, the DHCP server parses client hostname (DHCP option 12)
+                and makes it available via IP_EVENT_ASSIGNED_IP_TO_CLIENT. This adds
+                a small amount of RAM usage per lease to store the hostname.
+
         config LWIP_DHCPS_LEASE_UNIT
             int "Multiplier for lease time, in seconds"
             range 1 3600
@@ -425,6 +434,16 @@ menu "LWIP"
                 After this number is exceeded, DHCP server removes of the oldest device
                 from it's address pool, without notification.
 
+        config LWIP_DHCPS_MAX_HOSTNAME_LEN
+            int "Maximum client hostname length stored by DHCPS"
+            range 1 255
+            default 64
+            depends on LWIP_DHCPS_REPORT_CLIENT_HOSTNAME
+            help
+                Maximum number of bytes stored per-client for DHCP option 12 (hostname),
+                including the terminating null when used in esp-netif events. Longer hostnames
+                will be truncated.
+
         config LWIP_DHCPS_STATIC_ENTRIES
             bool "Enable ARP static entries"
             default y
@@ -432,20 +451,6 @@ menu "LWIP"
             help
                 Enabling this option allows DHCP server to support temporary static ARP entries
                 for DHCP Client. This will help the DHCP server to send the DHCP OFFER and DHCP ACK using IP unicast.
-
-        config LWIP_DHCPS_ADD_DNS
-            bool "Always add DNS option in DHCP responses"
-            default y
-            depends on LWIP_DHCPS
-            help
-                This allows the DNS option to be optional in the DHCP offers,
-                depending on the server's runtime configuration.
-                When enabled, the DHCP server will always add the DNS option to DHCP responses.
-                If a DNS server is not explicitly configured, the server's IP address will be used
-                as the fallback for the DNS option.
-                When disabled, the DHCP server will only include the DNS option in responses
-                if a DNS server has been explicitly configured.
-                This option will be removed in IDF v6.x
 
     endmenu # DHCPS
 
@@ -554,6 +559,12 @@ menu "LWIP"
         default n
         help
             Enable callbacks when the network interface is up/down and addresses are changed.
+
+    config LWIP_NETIF_LINK_CALLBACK
+        bool "Enable link callback for network interfaces"
+        default n
+        help
+            Enable callbacks when the physical network link is up/down.
 
     menuconfig LWIP_NETIF_LOOPBACK
         bool "Support per-interface loopback"
@@ -949,6 +960,20 @@ menu "LWIP"
         help
             Maximum number of entries in IPv6 destinations cache
 
+    config LWIP_IPV6_ND6_ROUTE_INFO_OPTION_SUPPORT
+        bool "Enable IPV6 ND6 route information option support"
+        depends on LWIP_ND6
+        default n
+        help
+            Enable route information option (RIO) support in IPV6 ND6
+
+    config LWIP_IPV6_ND6_NUM_ROUTE_INFO
+        int "Max number of entries in IPv6 route information options cache"
+        depends on LWIP_IPV6_ND6_ROUTE_INFO_OPTION_SUPPORT
+        default 10
+        help
+            Maximum number of entries in IPv6 route information options cache
+
     menuconfig LWIP_PPP_SUPPORT
         bool "Enable PPP support"
         default n
@@ -1329,6 +1354,25 @@ menu "LWIP"
             config LWIP_HOOK_IP6_SELECT_SRC_ADDR_DEFAULT
                 bool "Default (weak) implementation"
             config LWIP_HOOK_IP6_SELECT_SRC_ADDR_CUSTOM
+                bool "Custom implementation"
+
+        endchoice
+
+        choice LWIP_HOOK_DHCP_EXTRA_OPTION
+            prompt "DHCP extra option hook"
+            default LWIP_HOOK_DHCP_EXTRA_OPTION_NONE
+            help
+                Enables custom hook to receive and parse extra DHCP options.
+                Setting this to "default" provides weak implementation
+                stub that could be overwritten in application code.
+                Setting this to "custom" provides hook's declaration
+                only and expects the application to implement it.
+
+            config LWIP_HOOK_DHCP_EXTRA_OPTION_NONE
+                bool "No hook declared"
+            config LWIP_HOOK_DHCP_EXTRA_OPTION_DEFAULT
+                bool "Default (weak) implementation"
+            config LWIP_HOOK_DHCP_EXTRA_OPTION_CUSTOM
                 bool "Custom implementation"
 
         endchoice

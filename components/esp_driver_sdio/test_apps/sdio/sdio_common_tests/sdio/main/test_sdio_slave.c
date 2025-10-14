@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -105,14 +105,18 @@ TEST_CASE("SDIO_Slave: test register", "[sdio]")
 /*---------------------------------------------------------------
                 SDMMC_SDIO: test reset
 ---------------------------------------------------------------*/
-TEST_CASE("SDIO_Slave: test reset", "[sdio]")
+static void test_reset(bool reset_hw)
 {
     s_slave_init(SDIO_SLAVE_SEND_PACKET);
     TEST_ESP_OK(sdio_slave_start());
     ESP_LOGI(TAG, "slave ready");
 
     sdio_slave_stop();
-    TEST_ESP_OK(sdio_slave_reset());
+    if (!reset_hw) {
+        TEST_ESP_OK(sdio_slave_reset());
+    } else {
+        TEST_ESP_OK(sdio_slave_reset_hw());
+    }
     TEST_ESP_OK(sdio_slave_start());
 
     //tx
@@ -153,6 +157,16 @@ TEST_CASE("SDIO_Slave: test reset", "[sdio]")
 
     sdio_slave_stop();
     sdio_slave_deinit();
+}
+
+TEST_CASE("SDIO_Slave: test reset", "[sdio]")
+{
+    test_reset(false);
+}
+
+TEST_CASE("SDIO_Slave: test reset hw", "[sdio]")
+{
+    test_reset(true);
 }
 
 /*---------------------------------------------------------------
@@ -218,7 +232,11 @@ static void test_from_host(bool check_data)
             ESP_LOG_BUFFER_HEX_LEVEL(TAG, buf, TEST_RX_BUFFER_SIZE, TEST_HEX_LOG_LEVEL);
 
             if (check_data) {
-                test_get_buffer_from_pool(j, TEST_RX_BUFFER_SIZE, &tx_buf_ptr);
+                size_t alignment = 4;
+#if CONFIG_TEST_SDIO_HOST_TARGET_ESP32P4
+                alignment = 64;
+#endif
+                test_get_buffer_from_pool(j, TEST_RX_BUFFER_SIZE, alignment, &tx_buf_ptr);
                 ESP_LOG_BUFFER_HEX_LEVEL("Expect data", tx_buf_ptr, TEST_RX_BUFFER_SIZE, TEST_HEX_LOG_LEVEL);
                 TEST_ASSERT_EQUAL_HEX8_ARRAY(tx_buf_ptr, buf, rcv_len);
             }
@@ -279,7 +297,11 @@ static void test_to_host(void)
                 TEST_ASSERT_EQUAL(ESP_ERR_TIMEOUT, err);
             } while (QUEUE_FULL());
 
-            test_get_buffer_from_pool(offset, TEST_RX_BUFFER_SIZE, &tx_buf_ptr);
+            size_t alignment = 4;
+#if CONFIG_TEST_SDIO_HOST_TARGET_ESP32P4
+            alignment = 64;
+#endif
+            test_get_buffer_from_pool(offset, TEST_RX_BUFFER_SIZE, alignment, &tx_buf_ptr);
             TEST_ESP_OK(sdio_slave_send_queue((uint8_t *)tx_buf_ptr, TEST_RX_BUFFER_SIZE, NULL, portMAX_DELAY));
 
             s_test_slv_ctx.queued_cnt++;
@@ -305,7 +327,12 @@ TEST_CASE("SDIO_Slave: test to host", "[sdio]")
     test_to_host();
 }
 
-#if SOC_PAU_SUPPORTED
+TEST_CASE("SDIO_Slave: test to host (Performance)", "[sdio_speed]")
+{
+    test_to_host();
+}
+
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
 #include "esp_private/sleep_sys_periph.h"
 #include "esp_private/sleep_retention.h"
 
@@ -329,8 +356,3 @@ TEST_CASE("SDIO_Slave: test sleep retention", "[sdio_retention]")
     TEST_ASSERT_EQUAL_INT32(true, peripheral_domain_pd_allowed());
 }
 #endif
-
-TEST_CASE("SDIO_Slave: test to host (Performance)", "[sdio_speed]")
-{
-    test_to_host();
-}

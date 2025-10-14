@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2016-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2016-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +10,7 @@
 #include "esp_log.h"
 #include "sys/lock.h"
 #include "soc/soc_pins.h"
+#include "soc/soc_caps_full.h"
 #include "soc/rtc_cntl_reg.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
@@ -39,7 +40,7 @@
 static __attribute__((unused)) const char *TOUCH_TAG = "TOUCH_SENSOR";
 
 #define TOUCH_CHANNEL_CHECK(channel) do { \
-        ESP_RETURN_ON_FALSE(channel < SOC_TOUCH_SENSOR_NUM && channel >= 0, ESP_ERR_INVALID_ARG, TOUCH_TAG,  "Touch channel error"); \
+        ESP_RETURN_ON_FALSE(channel < SOC_MODULE_ATTR(TOUCH, CHAN_NUM) && channel >= 0, ESP_ERR_INVALID_ARG, TOUCH_TAG,  "Touch channel error"); \
         ESP_RETURN_ON_FALSE(channel != SOC_TOUCH_DENOISE_CHANNEL, ESP_ERR_INVALID_ARG, TOUCH_TAG,  "TOUCH0 is internal denoise channel"); \
     } while (0);
 #define TOUCH_CH_MASK_CHECK(mask) ESP_RETURN_ON_FALSE((mask <= TOUCH_PAD_BIT_MASK_ALL), ESP_ERR_INVALID_ARG, TOUCH_TAG,  "touch channel bitmask error");
@@ -101,7 +102,7 @@ esp_err_t touch_pad_isr_register(intr_handler_t fn, void *arg, touch_pad_intr_ma
     if (intr_mask & TOUCH_PAD_INTR_MASK_TIMEOUT) {
         en_msk |= RTC_CNTL_TOUCH_TIMEOUT_INT_ST_M;
     }
-#if SOC_TOUCH_PROXIMITY_MEAS_DONE_SUPPORTED
+#if TOUCH_LL_SUPPORT_PROX_DONE
     if (intr_mask & TOUCH_PAD_INTR_MASK_PROXI_MEAS_DONE) {
         en_msk |= RTC_CNTL_TOUCH_APPROACH_LOOP_DONE_INT_ST_M;
     }
@@ -472,7 +473,7 @@ esp_err_t touch_pad_denoise_read_data(uint32_t *data)
 esp_err_t touch_pad_waterproof_set_config(const touch_pad_waterproof_t *waterproof)
 {
     TOUCH_NULL_POINTER_CHECK(waterproof, "waterproof");
-    ESP_RETURN_ON_FALSE(waterproof->guard_ring_pad < SOC_TOUCH_SENSOR_NUM, ESP_ERR_INVALID_ARG, TOUCH_TAG,  TOUCH_PARAM_CHECK_STR("pad"));
+    ESP_RETURN_ON_FALSE(waterproof->guard_ring_pad < SOC_MODULE_ATTR(TOUCH, CHAN_NUM), ESP_ERR_INVALID_ARG, TOUCH_TAG,  TOUCH_PARAM_CHECK_STR("pad"));
     ESP_RETURN_ON_FALSE(waterproof->shield_driver < TOUCH_PAD_SHIELD_DRV_MAX, ESP_ERR_INVALID_ARG, TOUCH_TAG,  TOUCH_PARAM_CHECK_STR("shield_driver"));
 
     TOUCH_ENTER_CRITICAL();
@@ -608,7 +609,7 @@ esp_err_t touch_pad_sleep_get_channel_num(touch_pad_t *pad_num)
 {
     TOUCH_NULL_POINTER_CHECK(pad_num, "pad_num");
     TOUCH_ENTER_CRITICAL();
-    touch_hal_sleep_get_channel_num(pad_num);
+    touch_hal_sleep_get_channel_num((uint32_t *)pad_num);
     TOUCH_EXIT_CRITICAL();
     return ESP_OK;
 }
@@ -685,6 +686,7 @@ esp_err_t touch_pad_sleep_channel_set_work_time(uint16_t sleep_cycle, uint16_t m
     return ESP_OK;
 }
 
+#if !CONFIG_TOUCH_SKIP_LEGACY_CONFLICT_CHECK
 /**
  * @brief This function will be called during start up, to check that the new touch driver is not running along with the legacy touch driver
  */
@@ -698,3 +700,4 @@ static __attribute__((constructor)) void check_touch_driver_conflict(void)
     }
     ESP_EARLY_LOGW("legacy_touch_driver", "legacy touch driver is deprecated, please migrate to use driver/touch_sens.h");
 }
+#endif //CONFIG_TOUCH_SKIP_LEGACY_CONFLICT_CHECK

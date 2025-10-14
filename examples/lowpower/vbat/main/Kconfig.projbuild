@@ -1,0 +1,26 @@
+menu "Example Configuration"
+    choice EXAMPLE_STATE_WHILE_WAITING_BATTERY_CHARGE_DONE
+        bool "Configure the chip state while waiting for battery charging"
+        default EXAMPLE_WAITING_BATTERY_CHARGING_IN_ACTIVE
+        depends on ESP_VBAT_USE_RECHARGEABLE_BATTERY
+        help
+            Select chip state when waiting battery charging done
+
+        config EXAMPLE_WAITING_BATTERY_CHARGING_IN_ACTIVE
+            bool "Waiting for battery charging in active state"
+        config EXAMPLE_WAITING_BATTERY_CHARGING_IN_LIGHT_SLEEP
+            bool "Waiting for battery charging in light sleep state"
+            select PM_ENABLE
+            select FREERTOS_USE_TICKLESS_IDLE
+        config EXAMPLE_WAITING_BATTERY_CHARGING_IN_DEEP_SLEEP
+            bool "Waiting for battery charging in deep sleep state"
+    endchoice
+
+    config EXAMPLE_VBAT_CHARGING_DONE_CHECK_PERIOD
+        int "Battery charging done check period (in seconds)"
+        default 60
+        depends on ESP_VBAT_USE_RECHARGEABLE_BATTERY
+        help
+            Period in seconds to check whether the battery has been charged done
+
+endmenu

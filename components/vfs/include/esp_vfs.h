@@ -21,11 +21,7 @@
 #include <sys/time.h>
 #include <sys/termios.h>
 #include <sys/poll.h>
-#ifdef __clang__ // TODO LLVM-330
-#include <sys/dirent.h>
-#else
 #include <dirent.h>
-#endif
 #include <string.h>
 #include "sdkconfig.h"
 
@@ -352,7 +348,7 @@ esp_err_t esp_vfs_register_fd(esp_vfs_id_t vfs_id, int *fd);
  *
  * @param vfs_id VFS identificator returned by esp_vfs_register_with_id.
  * @param local_fd The fd in the local vfs. Passing -1 will set the local fd as the (*fd) value.
- * @param permanent Whether the fd should be treated as permannet (not removed after close())
+ * @param permanent Whether the fd should be treated as permanent (not removed after close())
  * @param fd The registered file descriptor will be written to this address.
  *
  * @return  ESP_OK if the registration is successful,
@@ -374,8 +370,8 @@ esp_err_t esp_vfs_register_fd_with_local_fd(esp_vfs_id_t vfs_id, int local_fd, b
 esp_err_t esp_vfs_unregister_fd(esp_vfs_id_t vfs_id, int fd);
 
 /**
- * These functions are to be used in newlib syscall table. They will be called by
- * newlib when it needs to use any of the syscalls.
+ * These functions are to be used in esp_libc syscall table. They will be called by
+ * esp_libc when it needs to use any of the syscalls.
  */
 /**@{*/
 ssize_t esp_vfs_write(struct _reent *r, int fd, const void * data, size_t size);

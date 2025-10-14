@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -57,6 +57,10 @@ static uint8_t own_addr_type;
 #endif
 
 void ble_store_config_init(void);
+
+#if MYNEWT_VAL(BLE_HCI_VS)
+static struct ble_gap_event_listener vs_event_listener;
+#endif
 
 #if MYNEWT_VAL(BLE_POWER_CONTROL)
 static struct ble_gap_event_listener power_control_event_listener;
@@ -119,7 +123,7 @@ ext_bleprph_advertise(void)
 
     params.primary_phy = BLE_HCI_LE_PHY_1M;
     params.secondary_phy = BLE_HCI_LE_PHY_2M;
-    //params.tx_power = 127;
+    params.tx_power = 127;
     params.sid = 1;
 
     params.itvl_min = BLE_GAP_ADV_FAST_INTERVAL1_MIN;
@@ -146,6 +150,13 @@ ext_bleprph_advertise(void)
     /* start advertising */
     rc = ble_gap_ext_adv_start(instance, 0, 0);
     assert (rc == 0);
+
+#if CONFIG_EXAMPLE_SLEEP_WAKEUP
+    rc = ble_hs_send_vs_event_mask(ESP_BLE_VENDOR_SLEEP_WAKEUP_EVT_MASK);
+
+    rc = ble_gap_event_listener_register(&vs_event_listener,
+		    bleprph_gap_event,NULL);
+#endif
 }
 #else
 /**
@@ -284,7 +295,7 @@ bleprph_gap_event(struct ble_gap_event *event, void *arg)
     int rc;
 
     switch (event->type) {
-    case BLE_GAP_EVENT_LINK_ESTAB:
+    case BLE_GAP_EVENT_CONNECT:
         /* A new connection was established or a connection attempt failed. */
         MODLOG_DFLT(INFO, "connection %s; status=%d ",
                     event->connect.status == 0 ? "established" : "failed",
@@ -445,6 +456,20 @@ bleprph_gap_event(struct ble_gap_event *event, void *arg)
         }
         return 0;
 
+#if CONFIG_EXAMPLE_SLEEP_WAKEUP
+    case BLE_GAP_EVENT_VS_HCI:
+	const struct ble_hci_ev_vs *ev = event->vs_hci.ev;
+
+	switch(ev->id) {
+            case BLE_HCI_VS_SUBEV_LE_SLEEP_WAKE_UP:
+	        MODLOG_DFLT(INFO, "Got Sleep wake up ");
+		break;
+
+	    default:
+		break;
+	}
+#endif
+
     }
 
     return 0;
@@ -600,9 +625,11 @@ app_main(void)
     rc = gatt_svr_init();
     assert(rc == 0);
 
+#if CONFIG_BT_NIMBLE_GAP_SERVICE
     /* Set the default device name. */
     rc = ble_svc_gap_device_name_set("nimble-bleprph");
     assert(rc == 0);
+#endif
 
     /* XXX Need to have template for store */
     ble_store_config_init();

@@ -1,18 +1,19 @@
 /*
- * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #include "sdkconfig.h"
 #include "bootloader_random.h"
-#include "esp_log.h"
-#include "soc/system_reg.h"
 #include "soc/syscon_reg.h"
-#include "soc/apb_saradc_reg.h"
-#include "soc/rtc_cntl_reg.h"
-#include "soc/sens_reg.h"
-#include "hal/regi2c_ctrl.h"
-#include "soc/regi2c_saradc.h"
+#include "esp_private/regi2c_ctrl.h"
+#include "hal/adc_ll.h"
+#include "hal/adc_types.h"
+#include "hal/regi2c_ctrl_ll.h"
+
+#define ADC_RNG_CLKM_DIV_NUM            3
+#define ADC_RNG_CLKM_DIV_B              0
+#define ADC_RNG_CLKM_DIV_A              0
 
 void bootloader_random_enable(void)
 {
@@ -22,81 +23,60 @@ void bootloader_random_enable(void)
     // but enabling the SAR ADC as well adds some insurance.)
     REG_SET_BIT(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_DIG_CLK8M_EN);
 
-    /// Enable SAR ADC to read a disconnected input for additional entropy
+    _adc_ll_reset_register();
+    _adc_ll_enable_bus_clock(true);
+    _adc_ll_enable_bus_clock(false);
 
-    // Reset ADC clock
-    SET_PERI_REG_MASK(SYSTEM_PERIP_CLK_EN0_REG, SYSTEM_APB_SARADC_CLK_EN);
-    CLEAR_PERI_REG_MASK(SYSTEM_PERIP_CLK_EN0_REG, SYSTEM_APB_SARADC_CLK_EN);
+    adc_ll_digi_clk_sel(ADC_DIGI_CLK_SRC_APB);
+    adc_ll_digi_controller_clk_div(ADC_RNG_CLKM_DIV_NUM, ADC_RNG_CLKM_DIV_B, ADC_RNG_CLKM_DIV_A);
 
-    // Enable clock and select clock source for ADC digital controller
-    REG_SET_FIELD(APB_SARADC_APB_ADC_CLKM_CONF_REG, APB_SARADC_CLK_SEL, 2); //APB clock
-    SET_PERI_REG_MASK(APB_SARADC_CTRL_REG, APB_SARADC_SAR_CLK_GATED);
-    SET_PERI_REG_MASK(APB_SARADC_APB_ADC_CLKM_CONF_REG, APB_SARADC_CLK_EN);
+#ifndef BOOTLOADER_BUILD
+    regi2c_saradc_enable();
+#else
+    regi2c_ctrl_ll_i2c_sar_periph_enable();
+#endif
+    // enable analog i2c master clock for RNG runtime
+    ANALOG_CLOCK_ENABLE();
 
-    // Read freq = apb_clk / (APB_SARADC_CLKM_DIV_NUM + 1) / TIMER_TARGET / 2
-    // Internal ADC sample freq = apb_clk / (APB_SARADC_CLKM_DIV_NUM + 1) / (APB_SARADC_SAR_CLK_DIV + 1)
-    // Read frequency has to be at least 35 times lower than the sampling frequency
+    adc_ll_regi2c_init();
 
-    REG_SET_FIELD(APB_SARADC_APB_ADC_CLKM_CONF_REG, APB_SARADC_CLKM_DIV_NUM, 3);
-    REG_SET_FIELD(APB_SARADC_CTRL_REG, APB_SARADC_SAR_CLK_DIV, 3); // SAR clock divider has to be at least 2
-    REG_SET_FIELD(APB_SARADC_CTRL2_REG, APB_SARADC_TIMER_TARGET, 70);
+    adc_digi_pattern_config_t pattern_config = {};
+    pattern_config.unit = ADC_UNIT_1;
+    pattern_config.atten = ADC_ATTEN_DB_12;
+    pattern_config.channel = ADC_CHANNEL_10;     //Use reserved channel to get internal voltage
+    adc_ll_digi_set_pattern_table(ADC_UNIT_1, 0, pattern_config);
+    pattern_config.unit = ADC_UNIT_2;
+    pattern_config.atten = ADC_ATTEN_DB_12;
+    pattern_config.channel = ADC_CHANNEL_10;     //Use reserved ADC2 and reserved channel to get internal voltage
+    adc_ll_digi_set_pattern_table(ADC_UNIT_2, 1, pattern_config);
+    adc_ll_digi_set_pattern_table_len(ADC_UNIT_1, 1);
+    adc_ll_digi_set_pattern_table_len(ADC_UNIT_2, 1);
 
-    CLEAR_PERI_REG_MASK(APB_SARADC_CTRL_REG, APB_SARADC_START_FORCE);
-    REG_SET_FIELD(SENS_SAR_POWER_XPD_SAR_REG, SENS_FORCE_XPD_SAR, 3);
-    CLEAR_PERI_REG_MASK(APB_SARADC_CTRL2_REG, APB_SARADC_MEAS_NUM_LIMIT);
-    REG_SET_FIELD(APB_SARADC_CTRL_REG, APB_SARADC_WORK_MODE, 1);
+    adc_ll_digi_set_convert_mode(ADC_LL_DIGI_CONV_BOTH_UNIT);
 
-    REG_SET_FIELD(APB_SARADC_CTRL_REG, APB_SARADC_SAR2_PATT_LEN, 0);
-    WRITE_PERI_REG(APB_SARADC_SAR2_PATT_TAB1_REG,0xafffff); // Test internal voltage if the channel info is 0xa.
-    REG_SET_FIELD(APB_SARADC_CTRL_REG, APB_SARADC_SAR1_PATT_LEN, 0);
-    WRITE_PERI_REG(APB_SARADC_SAR1_PATT_TAB1_REG,0xafffff); // Test internal voltage if the channel info is 0xa.
+    adc_ll_set_controller(ADC_UNIT_1, ADC_LL_CTRL_DIG);
+    adc_ll_disable_sleep_controller();
+    adc_ll_set_arbiter_work_mode(ADC_ARB_MODE_LOOP);
 
-    // Enable adc1 digital controller
-    SET_PERI_REG_MASK(SENS_SAR_MEAS1_MUX_REG, SENS_SAR1_DIG_FORCE);
-
-    // Set SARADC2 arbiter
-    CLEAR_PERI_REG_MASK(SENS_SAR_MEAS2_MUX_REG, SENS_SAR2_RTC_FORCE);
-    CLEAR_PERI_REG_MASK(APB_SARADC_APB_ADC_ARB_CTRL_REG, APB_SARADC_ADC_ARB_GRANT_FORCE);
-    CLEAR_PERI_REG_MASK(APB_SARADC_APB_ADC_ARB_CTRL_REG, APB_SARADC_ADC_ARB_FIX_PRIORITY);
-
-    // Disable ADC filter
-    REG_SET_FIELD(APB_SARADC_FILTER_CTRL0_REG, APB_SARADC_FILTER_CHANNEL0, 0xD);
-    REG_SET_FIELD(APB_SARADC_FILTER_CTRL0_REG, APB_SARADC_FILTER_CHANNEL1, 0xD);
-
-    // Start ADC sample
-    SET_PERI_REG_MASK(APB_SARADC_CTRL2_REG, APB_SARADC_TIMER_SEL);
-    SET_PERI_REG_MASK(APB_SARADC_CTRL2_REG, APB_SARADC_TIMER_EN);
-
-    /*Choose the appropriate internal voltage to measure*/
-    REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC_ENCAL_REF_ADDR, 1);
-    REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC_ENT_TSENS_ADDR, 1);
-    REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC_ENT_RTC_ADDR, 0);
-    REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC_DTEST_RTC_ADDR, 0);
+    adc_ll_digi_set_clk_div(3);
+    adc_ll_digi_set_trigger_interval(70);
+    adc_ll_digi_trigger_enable();
 }
 
-//TODO: IDF-4714
 void bootloader_random_disable(void)
 {
-    /* Restore internal I2C bus state */
-    REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC_ENCAL_REF_ADDR, 0);
-    REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC_ENT_TSENS_ADDR, 0);
-    REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC_ENT_RTC_ADDR, 0);
-    REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC_DTEST_RTC_ADDR, 0);
+   adc_ll_digi_trigger_disable();
+   adc_ll_digi_reset_pattern_table();
 
-    //Power off SAR ADC
-    REG_SET_FIELD(SENS_SAR_POWER_XPD_SAR_REG, SENS_FORCE_XPD_SAR, 0);
-    //return to ADC RTC controller
-    CLEAR_PERI_REG_MASK(SENS_SAR_MEAS1_MUX_REG, SENS_SAR1_DIG_FORCE);
-    //Invalidate ADC digital trigger timer
-    CLEAR_PERI_REG_MASK(APB_SARADC_CTRL2_REG, APB_SARADC_TIMER_EN);
+   adc_ll_regi2c_adc_deinit();
+#ifndef BOOTLOADER_BUILD
+   regi2c_saradc_disable();
+#endif
 
-    //Disable ADC digital part
-    CLEAR_PERI_REG_MASK(SYSTEM_PERIP_CLK_EN0_REG, SYSTEM_APB_SARADC_CLK_EN);
-    //Hold reset bit for ADC digital part
-    SET_PERI_REG_MASK(SYSTEM_PERIP_RST_EN0_REG, SYSTEM_APB_SARADC_RST);
+   // disable analog i2c master clock
+   ANALOG_CLOCK_DISABLE();
+   adc_ll_digi_controller_clk_div(4, 0, 0);
+   adc_ll_digi_clk_sel(ADC_DIGI_CLK_SRC_APB);
 
-    /* Note: the 8M CLK entropy source continues running even after this function is called,
-       but as mentioned above it's better to enable Wi-Fi or BT or call bootloader_random_enable()
-       in order to get a secondary entropy source.
-    */
+   adc_ll_set_controller(ADC_UNIT_1, ADC_LL_CTRL_ULP);
 }

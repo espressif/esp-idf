@@ -48,5 +48,5 @@ tools/test_apps/storage/std_filesystem:
       reason: Issue with C++ exceptions on Xtensa, issue with getrandom linking on RISC-V
   depends_components:
     - vfs
-    - newlib
+    - esp_libc
     - fatfs

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -41,6 +41,14 @@ typedef enum {
 typedef uint32_t esp_bt_l2cap_cntl_flags_t;
 
 /**
+ * @brief L2CAP status parameters
+ */
+typedef struct {
+    bool l2cap_inited;                   /*!< l2cap initialization */
+    uint8_t conn_num;                    /*!< Number of connections */
+} esp_bt_l2cap_protocol_status_t;
+
+/**
  * @brief L2CAP callback function events
  */
 typedef enum {
@@ -51,6 +59,8 @@ typedef enum {
     ESP_BT_L2CAP_START_EVT                = 18,     /*!< When L2CAP server started, the event comes */
     ESP_BT_L2CAP_CL_INIT_EVT              = 19,     /*!< When L2CAP client initiated a connection, the event comes */
     ESP_BT_L2CAP_SRV_STOP_EVT             = 36,     /*!< When L2CAP server stopped, the event comes */
+    ESP_BT_L2CAP_VFS_REGISTER_EVT         = 38,     /*!< When L2CAP VFS register, the event comes */
+    ESP_BT_L2CAP_VFS_UNREGISTER_EVT       = 39,     /*!< When L2CAP VFS unregister, the event comes */
 } esp_bt_l2cap_cb_event_t;
 
 /**
@@ -114,8 +124,22 @@ typedef union {
      */
     struct l2cap_srv_stop_evt_param {
         esp_bt_l2cap_status_t  status;         /*!< status */
-        uint8_t                psm;            /*!< local psm */
+        uint16_t               psm;            /*!< local psm */
     } srv_stop;                                /*!< L2CAP callback param of ESP_BT_L2CAP_SRV_STOP_EVT */
+
+    /**
+     * @brief ESP_BT_L2CAP_VFS_REGISTER_EVT
+     */
+    struct l2cap_vfs_register_evt_param {
+        esp_bt_l2cap_status_t    status;       /*!< status */
+    } vfs_register;                            /*!< L2CAP callback param of ESP_BT_L2CAP_VFS_REGISTER_EVT */
+
+    /**
+     * @brief ESP_BT_L2CAP_VFS_UNREGISTER_EVT
+     */
+    struct l2cap_vfs_unregister_evt_param {
+        esp_bt_l2cap_status_t    status;        /*!< status */
+    } vfs_unregister;                           /*!< L2CAP callback param of ESP_BT_L2CAP_VFS_UNREGISTER_EVT */
 
 } esp_bt_l2cap_cb_param_t;
 
@@ -226,6 +250,7 @@ esp_err_t esp_bt_l2cap_stop_srv(uint16_t local_psm);
 /**
  * @brief       This function is used to register VFS.
  *              Only supports write, read and close.
+ *              When the operation is completed, the callback function will be called with ESP_BT_L2CAP_VFS_REGISTER_EVT.
  *              This function must be called after esp_bt_l2cap_init() successful and before esp_bt_l2cap_deinit().
  *
  * @return
@@ -236,6 +261,7 @@ esp_err_t esp_bt_l2cap_vfs_register(void);
 
 /**
  * @brief       This function is used to unregister VFS.
+ *              When the operation is completed, the callback function will be called with ESP_BT_L2CAP_VFS_UNREGISTER_EVT.
  *              This function must be called after esp_bt_l2cap_init() successful and before esp_bt_l2cap_deinit().
  *
  * @return
@@ -243,6 +269,17 @@ esp_err_t esp_bt_l2cap_vfs_register(void);
  *              - other: failed
  */
 esp_err_t esp_bt_l2cap_vfs_unregister(void);
+
+/**
+ * @brief       This function is used to get the status of L2CAP
+ *
+ * @param[out]  status - l2cap status
+ *
+ * @return
+ *              - ESP_OK: success
+ *              - other: failed
+ */
+esp_err_t esp_bt_l2cap_get_protocol_status(esp_bt_l2cap_protocol_status_t *status);
 
 #ifdef __cplusplus
 }

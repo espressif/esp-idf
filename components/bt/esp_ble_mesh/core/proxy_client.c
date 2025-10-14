@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -31,7 +31,7 @@
 
 static struct bt_mesh_proxy_server {
     struct bt_mesh_conn *conn;
-
+    bt_mesh_addr_t addr;
     enum __attribute__((packed)) {
         CLI_NONE,
         CLI_PROV,
@@ -465,6 +465,7 @@ static void proxy_connected(bt_mesh_addr_t *addr, struct bt_mesh_conn *conn, int
 
     server->conn = bt_mesh_conn_ref(conn);
     server->conn_type = CLI_NONE;
+    memcpy(&server->addr, addr, sizeof(bt_mesh_addr_t));
     net_buf_simple_reset(&server->buf);
 
 #if CONFIG_BLE_MESH_RPR_SRV && CONFIG_BLE_MESH_PB_GATT
@@ -629,6 +630,12 @@ static ssize_t proxy_write_ccc(bt_mesh_addr_t *addr, struct bt_mesh_conn *conn)
         return 0;
     }
 
+#if CONFIG_BLE_MESH_BQB_TEST
+    /* notify maybe received first */
+    if (server->conn_type == CLI_PROXY) {
+        return 0;
+    }
+#endif
     return -EINVAL;
 }
 
@@ -640,6 +647,16 @@ static ssize_t proxy_recv_ntf(struct bt_mesh_conn *conn, uint8_t *data, uint16_t
         BT_ERR("No Proxy Server object found");
         return -ENOTCONN;
     }
+
+#if CONFIG_BLE_MESH_BQB_TEST
+    /* update conn type if notify received before write ccc */
+    if (server->conn_type == CLI_NONE) {
+        server->conn_type = CLI_PROXY;
+        if (proxy_client_connect_cb) {
+            proxy_client_connect_cb(&server->addr, server - servers, server->net_idx);
+        }
+    }
+#endif
 
     if (server->conn_type == CLI_PROXY) {
         return proxy_recv(conn, NULL, data, len, 0, 0);

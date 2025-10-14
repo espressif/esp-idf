@@ -167,7 +167,6 @@ TEST_CASE("mcpwm_operator_brake_on_gpio_fault", "[mcpwm]")
     mcpwm_gpio_fault_config_t gpio_fault_config = {
         .group_id = 0,
         .flags.active_level = 1,
-        .flags.pull_down = true,
     };
     mcpwm_fault_handle_t gpio_cbc_fault = NULL;
     mcpwm_fault_handle_t gpio_ost_fault = NULL;

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2016-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2016-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -376,7 +376,18 @@ esp_err_t esp_console_register_help_command(void)
         .argtable = &help_args
     };
     return esp_console_cmd_register(&command);
+    return ESP_OK;
 }
+
+esp_err_t esp_console_deregister_help_command(void)
+{
+    free(help_args.help_cmd);
+    free(help_args.verbose_level);
+    free(help_args.end);
+
+    return esp_console_cmd_deregister("help");
+}
+
 esp_err_t esp_console_set_help_verbose_level(esp_console_help_verbose_level_e verbose_level)
 {
     /* legal verbose level sanity check */

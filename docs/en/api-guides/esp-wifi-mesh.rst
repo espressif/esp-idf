@@ -277,7 +277,7 @@ The following diagram demonstrates how an ESP-WIFI-MESH network is built when th
 
 **2.** Over multiple iterations of transmission and scanning, the beacon frame with the strongest router RSSI is propagated throughout the network. Node C has the strongest router RSSI (-10 dB) hence its beacon frame is propagated throughout the network. All nodes participating in the election vote for node C thus giving node C a vote percentage of 100%. Therefore node C becomes a root node and connects with the router.
 
-**3.** Once Node C has connected with the router, nodes A/B/D/E connectwith node C as it is the preferred parent node (i.e., the shallowest node). Nodes A/B/D/E form the second layer of the network.
+**3.** Once Node C has connected with the router, nodes A/B/D/E connect with node C as it is the preferred parent node (i.e., the shallowest node). Nodes A/B/D/E form the second layer of the network.
 
 **4.** Node F and G connect with nodes D and E respectively and the network building process is complete.
 

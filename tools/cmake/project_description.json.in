@@ -29,7 +29,6 @@
     "build_component_paths" : ${build_component_paths_json},
     "build_component_info" : ${build_component_info_json},
     "all_component_info" : ${all_component_info_json},
-    "debug_prefix_map_gdbinit": "${debug_prefix_map_gdbinit}",
     "gdbinit_files": {
         "01_symbols": "${gdbinit_files_symbols}",
         "02_prefix_map": "${gdbinit_files_prefix_map}",

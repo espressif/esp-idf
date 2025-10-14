@@ -90,5 +90,6 @@ void btc_spp_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src);
 void btc_spp_arg_deep_free(btc_msg_t *msg);
 
 esp_err_t spp_send_data_to_btc(uint32_t handle, int len, uint8_t *p_data, esp_spp_mode_t spp_mode);
+void btc_spp_get_profile_status(esp_spp_profile_status_t *param);
 #endif ///defined BTC_SPP_INCLUDED && BTC_SPP_INCLUDED == TRUE
 #endif ///__BTC_SPP_H__

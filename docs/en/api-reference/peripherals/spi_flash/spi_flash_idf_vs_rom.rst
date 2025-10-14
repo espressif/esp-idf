@@ -15,7 +15,7 @@ Feature Supported by ESP-IDF but Not in Chip-ROM
 .. list::
 
     - Octal flash chip support. See :ref:`oct-flash-doc` for details.
-    - 32-bit-address support for GD25Q256. Note that this feature is an optional feature, please do read :ref:`32-bit-flash-doc` for details.
+    - 32-bit-address support on flash chips. Note that this feature is an optional feature, please do read :ref:`32-bit-flash-doc` for details.
     - TH flash chip support.
     - Kconfig option :ref:`CONFIG_SPI_FLASH_CHECK_ERASE_TIMEOUT_DISABLED`.
     - :ref:`CONFIG_SPI_FLASH_VERIFY_WRITE`, enabling this option helps you detect bad writing.
@@ -24,6 +24,8 @@ Feature Supported by ESP-IDF but Not in Chip-ROM
     - :ref:`CONFIG_SPI_FLASH_DANGEROUS_WRITE`, enabling this option checks for flash programming to certain protected regions like bootloader, partition table or application itself.
     - :ref:`CONFIG_SPI_FLASH_ENABLE_COUNTERS`, enabling this option to collect performance data for ESP-IDF SPI flash driver APIs.
     - :ref:`CONFIG_SPI_FLASH_AUTO_SUSPEND`, enabling this option to automatically suspend or resume a long flash operation when short flash operation happens. Note that this feature is an optional feature, please do read :ref:`auto-suspend-intro` for more limitations.
+    :ESP_ROM_HAS_SPI_FLASH_MMAP and SOC_SPIRAM_XIP_SUPPORTED and not esp32s3: - :ref:`CONFIG_SPIRAM_XIP_FROM_PSRAM`, enabling this option allows you to use external PSRAM as instruction cache and read-only data cache. Some functions in the ROM don't support this usage, and an ESP-IDF version of these functions is provided.
+    :esp32s3: - :ref:`CONFIG_SPIRAM_FETCH_INSTRUCTIONS` and :ref:`CONFIG_SPIRAM_RODATA`, enabling these options allows you to use external PSRAM as instruction cache and read-only data cache. Some functions in the ROM don't support this usage, and an ESP-IDF version of these functions is provided.
 
 Bugfixes Introduced in ESP-IDF but Not in Chip-ROM
 --------------------------------------------------
@@ -38,3 +40,4 @@ Bugfixes Introduced in ESP-IDF but Not in Chip-ROM
     :esp32s3: - Fixed issue that only 16 MB virtual address ranges can be mapped to read-only data on flash.
     :esp32c3: - Fixed issue that only 128 KB virtual address ranges can be mapped to instructions on flash.
     :esp32c2: - Fixed issue that only at most 128 KB virtual address ranges can be mapped to instructions on flash.
+    - Fixed issue that address range may escape from checking for erasing and writing function when their sum overflows 32-bit boundary.

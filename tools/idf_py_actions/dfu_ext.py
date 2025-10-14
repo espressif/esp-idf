@@ -1,15 +1,18 @@
-# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 from typing import Dict
 
 from click.core import Context
 from idf_py_actions.errors import FatalError
-from idf_py_actions.tools import PropertyDict, ensure_build_directory, is_target_supported, run_target
+from idf_py_actions.tools import ensure_build_directory
+from idf_py_actions.tools import is_target_supported
+from idf_py_actions.tools import PropertyDict
+from idf_py_actions.tools import run_target
 
 
 def action_extensions(base_actions: Dict, project_path: str) -> Dict:
 
-    SUPPORTED_TARGETS = ['esp32s2', 'esp32s3']
+    SUPPORTED_TARGETS = ['esp32s2', 'esp32s3', 'esp32p4']
 
     def dfu_target(target_name: str, ctx: Context, args: PropertyDict, part_size: str) -> None:
         ensure_build_directory(args, ctx.info_name)

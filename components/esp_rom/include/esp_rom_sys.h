@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,9 +7,11 @@
 #pragma once
 #include "sdkconfig.h"
 #include <stdint.h>
+#include <stdbool.h>
 #include <inttypes.h>
 #include <stdarg.h>
 #include "soc/reset_reasons.h"
+#include "soc/soc_caps.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -150,6 +152,17 @@ uint32_t esp_rom_get_cpu_ticks_per_us(void);
  * @param ticks_per_us CPU ticks per us
  */
 void esp_rom_set_cpu_ticks_per_us(uint32_t ticks_per_us);
+
+#if SOC_RECOVERY_BOOTLOADER_SUPPORTED || __DOXYGEN__
+/**
+ * @brief Returns the offset from which the bootloader image is used to load.
+ *
+ * The offset can point to either the PRIMARY or RECOVERY bootloader.
+ *
+ * @return The offset of the active bootloader.
+ */
+uint32_t esp_rom_get_bootloader_offset(void);
+#endif // SOC_RECOVERY_BOOTLOADER_SUPPORTED
 
 #ifdef __cplusplus
 }

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -46,12 +46,3 @@
 #define SPI2_IOMUX_PIN_NUM_IO7_OCT  13
 
 //SPI3 has no iomux pins
-
-//Following Macros are deprecated. Please use the Macros above
-#define FSPI_FUNC_NUM           SPI2_FUNC_NUM
-#define FSPI_IOMUX_PIN_NUM_HD   SPI2_IOMUX_PIN_NUM_HD
-#define FSPI_IOMUX_PIN_NUM_CS   SPI2_IOMUX_PIN_NUM_CS
-#define FSPI_IOMUX_PIN_NUM_MOSI SPI2_IOMUX_PIN_NUM_MOSI
-#define FSPI_IOMUX_PIN_NUM_CLK  SPI2_IOMUX_PIN_NUM_CLK
-#define FSPI_IOMUX_PIN_NUM_MISO SPI2_IOMUX_PIN_NUM_MISO
-#define FSPI_IOMUX_PIN_NUM_WP   SPI2_IOMUX_PIN_NUM_WP

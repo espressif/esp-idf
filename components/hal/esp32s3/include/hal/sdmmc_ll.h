@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -74,13 +74,24 @@ extern "C" {
     SDMMC_LL_EVENT_SBE | SDMMC_LL_EVENT_ACD |\
     SDMMC_LL_EVENT_EBE)
 
+// DMA interrupts (idsts register)
+#define SDMMC_LL_EVENT_DMA_TI      SDMMC_IDMAC_INTMASK_TI
+#define SDMMC_LL_EVENT_DMA_RI      SDMMC_IDMAC_INTMASK_RI
+#define SDMMC_LL_EVENT_DMA_NI      SDMMC_IDMAC_INTMASK_NI
+#define SDMMC_LL_EVENT_DMA_MASK    0x1f    //NI and AI will be indicated by TI/RI and FBE/DU respectively
+
 /**
  * SDMMC capabilities
  */
 #define SDMMC_LL_SLOT_SUPPORT_GPIO_MATRIX(SLOT_ID)    1
+#define SDMMC_LL_IOMUX_FUNC                           -1
+#define SDMMC_LL_HOST_CTLR_NUMS                       1U
+#define SDMMC_LL_DELAY_MAX_NUMS_LS                    4
+#define SDMMC_LL_DELAY_PHASE_SUPPORTED                1
 
-#define SDMMC_LL_IOMUX_FUNC    -1
-
+/**
+ * SDMMC delay phase
+ */
 typedef enum {
     SDMMC_LL_DELAY_PHASE_0,
     SDMMC_LL_DELAY_PHASE_1,
@@ -88,6 +99,13 @@ typedef enum {
     SDMMC_LL_DELAY_PHASE_3,
 } sdmmc_ll_delay_phase_t;
 
+/**
+ * SDMMC speed mode
+ */
+typedef enum {
+    SDMMC_LL_SPEED_MODE_LS,
+    SDMMC_LL_SPEED_MODE_HS,
+} sdmmc_ll_speed_mode_t;
 
 /*---------------------------------------------------------------
                     Clock & Reset
@@ -95,38 +113,46 @@ typedef enum {
 /**
  * @brief Enable the bus clock for SDMMC module
  *
- * @param hw    hardware instance address
- * @param en    enable / disable
+ * @param group_id Group ID
+ * @param en       enable / disable
  */
-static inline void sdmmc_ll_enable_bus_clock(sdmmc_dev_t *hw, bool en)
+static inline void sdmmc_ll_enable_bus_clock(int group_id, bool en)
 {
+    (void)group_id;
     SYSTEM.perip_clk_en1.sdio_host_clk_en = en;
 }
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define sdmmc_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; sdmmc_ll_enable_bus_clock(__VA_ARGS__)
+#define sdmmc_ll_enable_bus_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        sdmmc_ll_enable_bus_clock(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Reset the SDMMC module
  *
- * @param hw    hardware instance address
+ * @param group_id Group ID
  */
-static inline void sdmmc_ll_reset_register(sdmmc_dev_t *hw)
+static inline void sdmmc_ll_reset_register(int group_id)
 {
+    (void)group_id;
     SYSTEM.perip_rst_en1.sdio_host_rst = 1;
     SYSTEM.perip_rst_en1.sdio_host_rst = 0;
 }
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define sdmmc_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; sdmmc_ll_reset_register(__VA_ARGS__)
+#define sdmmc_ll_reset_register(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        sdmmc_ll_reset_register(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Select SDMMC clock source
  *
  * @param hw       hardware instance address
- * @param clk_src  clock source, see valid sources in type `soc_periph_psram_clk_src_t`
+ * @param clk_src  clock source, see valid sources in type `soc_periph_sdmmc_clk_src_t`
  */
 static inline void sdmmc_ll_select_clk_source(sdmmc_dev_t *hw, soc_periph_sdmmc_clk_src_t clk_src)
 {
@@ -212,13 +238,15 @@ static inline void sdmmc_ll_init_phase_delay(sdmmc_dev_t *hw)
 }
 
 /**
- * @brief Set SDMMC din delay
+ * @brief Set SDMMC din delay phase
  *
  * @param hw     hardware instance address
  * @param phase  delay phase
+ * @param mode   speed mode
  */
-static inline void sdmmc_ll_set_din_delay(sdmmc_dev_t *hw, sdmmc_ll_delay_phase_t phase)
+static inline void sdmmc_ll_set_din_delay_phase(sdmmc_dev_t *hw, sdmmc_ll_delay_phase_t phase, sdmmc_ll_speed_mode_t mode)
 {
+    (void)mode;
     switch (phase) {
         case SDMMC_LL_DELAY_PHASE_1:
             hw->clock.phase_din = 0x1;
@@ -233,6 +261,18 @@ static inline void sdmmc_ll_set_din_delay(sdmmc_dev_t *hw, sdmmc_ll_delay_phase_
             hw->clock.phase_din = 0x0;
             break;
     }
+}
+
+/**
+ * @brief Set SDMMC dout delay phase
+ *
+ * @param hw     hardware instance address
+ * @param phase  delay phase
+ * @param mode   speed mode
+ */
+static inline void sdmmc_ll_set_dout_delay_phase(sdmmc_dev_t *hw, sdmmc_ll_delay_phase_t phase, sdmmc_ll_speed_mode_t mode)
+{
+    //for compatibility
 }
 
 /**
@@ -286,10 +326,8 @@ static inline uint32_t sdmmc_ll_get_card_clock_div(sdmmc_dev_t *hw, uint32_t slo
     uint32_t card_div = 0;
 
     if (slot == 0) {
-        HAL_ASSERT(hw->clksrc.card0 == 0);
         card_div = HAL_FORCE_READ_U32_REG_FIELD(hw->clkdiv, div0);
     } else if (slot == 1) {
-        HAL_ASSERT(hw->clksrc.card1 == 1);
         card_div = HAL_FORCE_READ_U32_REG_FIELD(hw->clkdiv, div1);
     } else {
         HAL_ASSERT(false);

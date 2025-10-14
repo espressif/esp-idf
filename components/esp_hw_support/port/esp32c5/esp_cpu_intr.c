@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,7 +15,20 @@ void esp_cpu_intr_get_desc(int core_id, int intr_num, esp_cpu_intr_desc_t *intr_
      * Reserve interrupt line 1 for the Wifi controller.
      * Reserve interrupt line 6 since it is used for disabling interrupts in the interrupt allocator (INT_MUX_DISABLED_INTNO)
      */
-    const uint32_t rsvd_mask = BIT(1) | BIT(6);
+    const uint32_t base_rsvd_mask = BIT(1) | BIT(6);
+
+    /* On the ESP32-C5, interrupt 31 is reserved for ESP-TEE
+     * for operations related to secure peripherals under its control
+     * (e.g. AES, SHA, APM)
+     *
+     * Interrupt 30 is reserved for handling REE interrupts occurring in TEE.
+     */
+#if CONFIG_SECURE_ENABLE_TEE
+    const uint32_t rsvd_mask = base_rsvd_mask | BIT(30) | BIT(31);
+#else
+    const uint32_t rsvd_mask = base_rsvd_mask;
+#endif
+
     intr_desc_ret->priority = 1;
     intr_desc_ret->type = ESP_CPU_INTR_TYPE_NA;
     intr_desc_ret->flags = esp_riscv_intr_num_flags(intr_num, rsvd_mask);

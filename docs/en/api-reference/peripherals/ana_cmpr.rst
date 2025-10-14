@@ -3,8 +3,8 @@ Analog Comparator
 
 :link_to_translation:`zh_CN:[中文]`
 
-{IDF_TARGET_ANA_CMPR_SRC_CHAN0: default="NOT UPDATED", esp32h2="GPIO11", esp32p4="GPIO52"}
-{IDF_TARGET_ANA_CMPR_EXT_REF_CHAN0: default="NOT UPDATED", esp32h2="GPIO10", esp32p4="GPIO51"}
+{IDF_TARGET_ANA_CMPR_SRC_CHAN0: default="NOT UPDATED", esp32h2="GPIO11", esp32p4="GPIO52", esp32c5="GPIO9", esp32c61="GPIO9"}
+{IDF_TARGET_ANA_CMPR_EXT_REF_CHAN0: default="NOT UPDATED", esp32h2="GPIO10", esp32p4="GPIO51", esp32c5="GPIO8", esp32c61="GPIO8"}
 {IDF_TARGET_ANA_CMPR_SRC_CHAN1: default="NOT UPDATED", esp32p4="GPIO54"}
 {IDF_TARGET_ANA_CMPR_EXT_REF_CHAN1: default="NOT UPDATED", esp32p4="GPIO53"}
 
@@ -36,17 +36,16 @@ Functional Overview
 
 The following sections of this document cover the typical steps to install and operate an analog comparator unit:
 
-- :ref:`anacmpr-resource-allocation` - covers which parameters should be set up to get a unit handle and how to recycle the resources when it finishes working.
-- :ref:`anacmpr-further-configurations` - covers the other configurations that might need to specify and what they are used for.
-- :ref:`anacmpr-enable-and-disable-unit` - covers how to enable and disable the unit.
-- :ref:`anacmpr-power-management` - describes how different source clock selections can affect power consumption.
-- :ref:`anacmpr-iram-safe` - lists which functions are supposed to work even when the cache is disabled.
-- :ref:`anacmpr-thread-safety` - lists which APIs are guaranteed to be thread safe by the driver.
-- :ref:`anacmpr-kconfig-options` - lists the supported Kconfig options that can be used to make a different effect on driver behavior.
+.. list::
 
-.. only:: SOC_ANA_CMPR_SUPPORT_ETM
-
-    - :ref:`anacmpr-etm-events` - covers how to create an analog comparator cross event.
+    - :ref:`anacmpr-resource-allocation` - covers which parameters should be set up to get a unit handle and how to recycle the resources when it finishes working.
+    - :ref:`anacmpr-further-configurations` - covers the other configurations that might need to specify and what they are used for.
+    - :ref:`anacmpr-enable-and-disable-unit` - covers how to enable and disable the unit.
+    - :ref:`anacmpr-power-management` - describes how different source clock selections can affect power consumption.
+    - :ref:`anacmpr-iram-safe` - lists which functions are supposed to work even when the cache is disabled.
+    - :ref:`anacmpr-thread-safety` - lists which APIs are guaranteed to be thread safe by the driver.
+    - :ref:`anacmpr-kconfig-options` - lists the supported Kconfig options that can be used to make a different effect on driver behavior.
+    :SOC_ANA_CMPR_SUPPORT_ETM: - :ref:`anacmpr-etm-events` - covers how to create an analog comparator cross event.
 
 .. _anacmpr-resource-allocation:
 
@@ -142,7 +141,7 @@ Currently it supports :cpp:member:`ana_cmpr_event_callbacks_t::on_cross`, and it
 
 .. note::
 
-    When :ref:`CONFIG_ANA_CMPR_ISR_IRAM_SAFE` is enabled, you should guarantee that the callback context and involved data are in internal RAM by adding the attribute ``IRAM_ATTR`` (See more in :ref:`anacmpr-iram-safe`).
+    When :ref:`CONFIG_ANA_CMPR_ISR_CACHE_SAFE` is enabled, you should guarantee that the callback context and involved data are in internal RAM by adding the attribute ``IRAM_ATTR`` (See more in :ref:`anacmpr-iram-safe`).
 
 .. _anacmpr-enable-and-disable-unit:
 
@@ -172,7 +171,7 @@ IRAM Safe
 
 By default, the analog comparator interrupt will be deferred when the cache is disabled for reasons like programming or erasing the flash. Thus the alarm interrupt will not get executed in time, which is not expected in a real-time application.
 
-There is a Kconfig option :ref:`CONFIG_ANA_CMPR_ISR_IRAM_SAFE` that:
+There is a Kconfig option :ref:`CONFIG_ANA_CMPR_ISR_CACHE_SAFE` that:
 
 1. Enables the interrupt being serviced even when cache is disabled.
 2. Places all functions that used by the ISR into IRAM. [1]_
@@ -206,7 +205,7 @@ Other functions that take :cpp:type:`ana_cmpr_handle_t` as the first positional 
 Kconfig Options
 ^^^^^^^^^^^^^^^
 
-- :ref:`CONFIG_ANA_CMPR_ISR_IRAM_SAFE` controls whether the default ISR handler can work when cache is disabled. See :ref:`anacmpr-iram-safe` for more information.
+- :ref:`CONFIG_ANA_CMPR_ISR_CACHE_SAFE` controls whether the default ISR handler can work when cache is disabled. See :ref:`anacmpr-iram-safe` for more information.
 - :ref:`CONFIG_ANA_CMPR_CTRL_FUNC_IN_IRAM` controls where to place the analog comparator control functions (IRAM or flash). See :ref:`anacmpr-iram-safe` for more information.
 - :ref:`CONFIG_ANA_CMPR_ENABLE_DEBUG_LOG` is used to enable the debug log output. Enabling this option increases the firmware binary size.
 

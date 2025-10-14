@@ -1,5 +1,7 @@
 idf_build_get_property(idf_target IDF_TARGET)
 
+set(srcs "")
+
 if(${idf_target} STREQUAL "linux")
     return() # This component is not supported by the POSIX/Linux simulator
 endif()
@@ -43,7 +45,7 @@ if(CONFIG_ESP_COEX_ENABLED)
                                     REQUIRES ${COMPONENT_NAME})
             target_link_libraries(${COMPONENT_LIB} PUBLIC ${blob})
             if(CONFIG_IDF_TARGET_ESP32)
-                target_link_libraries(${COMPONENT_LIB} PRIVATE btdm_app)
+                target_link_libraries(${COMPONENT_LIB} PRIVATE bt_btdm_app)
             endif()
         endif()
 

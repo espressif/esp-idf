@@ -10,18 +10,42 @@
 extern "C" {
 #endif
 
+#include "soc/soc_caps.h"
 #include "sdkconfig.h"
 
 /* Declarations used inside TEE binary, only */
 
 #define portNUM_PROCESSORS (1)
 #define configNUM_CORES    (portNUM_PROCESSORS)
-#define TEE_SECURE_INUM    (14)
+#define TEE_SECURE_INUM    (31)
+#if SOC_INT_CLIC_SUPPORTED
+#define TEE_PASS_INUM      (30)
+#endif
 
 #define ESP_TEE_M2U_SWITCH_MAGIC  0xfedef
 
 #define ALIGN_UP_TO_MMU_PAGE_SIZE(addr)      (((addr) + (SOC_MMU_PAGE_SIZE) - 1) & ~((SOC_MMU_PAGE_SIZE) - 1))
 #define ALIGN_DOWN_TO_MMU_PAGE_SIZE(addr)    ((addr) & ~((SOC_MMU_PAGE_SIZE) - 1))
+
+#if ((CONFIG_SECURE_TEE_IRAM_SIZE) & (0xFF))
+#error "CONFIG_SECURE_TEE_IRAM_SIZE must be 256-byte (0x100) aligned"
+#endif
+
+#if ((CONFIG_SECURE_TEE_DRAM_SIZE) & (0xFF))
+#error "CONFIG_SECURE_TEE_DRAM_SIZE must be 256-byte (0x100) aligned"
+#endif
+
+#if ((CONFIG_SECURE_TEE_STACK_SIZE) & 0xF)
+#error "CONFIG_SECURE_TEE_STACK_SIZE must be 16-byte (0x10) aligned"
+#endif
+
+#if ((CONFIG_SECURE_TEE_INTR_STACK_SIZE) & 0xF)
+#error "CONFIG_SECURE_TEE_INTR_STACK_SIZE must be 16-byte (0x10) aligned"
+#endif
+
+/* TEE Secure Storage partition label and NVS namespace */
+#define ESP_TEE_SEC_STG_PART_LABEL    "secure_storage"
+#define ESP_TEE_SEC_STG_NVS_NAMESPACE "tee_sec_stg_ns"
 
 /* NOTE: ESP32-C6 - TEE/REE memory regions */
 /* TEE I/DRAM */
@@ -37,6 +61,9 @@ extern "C" {
 #define SOC_S_IROM_HIGH                    (SOC_IROM_LOW + SOC_S_IDROM_SIZE)
 #define SOC_S_DROM_LOW                     (SOC_DROM_LOW)
 #define SOC_S_DROM_HIGH                    (SOC_DROM_LOW + SOC_S_IDROM_SIZE)
+/* REE I/DRAM */
+#define SOC_NS_IDRAM_START    (SOC_S_DRAM_END)
+#define SOC_NS_IDRAM_END      (SOC_DIRAM_DRAM_HIGH)
 
 #define SOC_MMU_TOTAL_SIZE                 (SOC_DRAM0_CACHE_ADDRESS_HIGH - SOC_DRAM0_CACHE_ADDRESS_LOW)
 #define SOC_MMU_END_VADDR                  (SOC_DROM_LOW + SOC_MMU_TOTAL_SIZE)
@@ -44,10 +71,12 @@ extern "C" {
 #define SOC_S_MMU_MMAP_RESV_START_VADDR    (SOC_MMU_END_VADDR - SOC_S_MMU_MMAP_RESV_PAGE_NUM * SOC_MMU_PAGE_SIZE)
 
 #ifndef __ASSEMBLER__
-#include <stdbool.h>
 #include <stdint.h>
 #include <stdarg.h>
-#include "esp_rom_sys.h"
+
+/* Secure Service table */
+typedef void (*secure_service_t)(void);
+extern const secure_service_t tee_secure_service_table[];
 
 /**
  * @brief TEE initialization function called by the bootloader at boot time.

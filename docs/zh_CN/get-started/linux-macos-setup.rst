@@ -44,10 +44,10 @@ Linux 用户
 
 - Arch::
 
-    sudo pacman -S --needed gcc git make flex bison gperf python cmake ninja ccache dfu-util libusb
+    sudo pacman -S --needed gcc git make flex bison gperf python cmake ninja ccache dfu-util libusb python-pip
 
 .. note::
-    - 使用 ESP-IDF 需要 CMake 3.16 或以上版本。较早的 Linux 发行版可能需要升级自身的软件源仓库，或开启 backports 套件库，或安装 "cmake3" 软件包（不是安装 "cmake"）。
+    - 使用 ESP-IDF 需要 CMake 3.22 或以上版本。较早的 Linux 发行版可能需要升级自身的软件源仓库，或开启 backports 套件库，或安装 "cmake3" 软件包（不是安装 "cmake"）。
     - 如果上述列表中没有当前所用系统，请参考所用系统的相关文档，查看安装软件包所用的命令。
 
 macOS 用户
@@ -96,27 +96,25 @@ Apple M1 用户
 
 
 安装 Python 3
----------------------------------------------
+~~~~~~~~~~~~~~
 
-`Catalina 10.15 发布说明`_ 中表示不推荐使用 Python 2.7 版本，在未来的 macOS 版本中也不会默认包含 Python 2.7。执行以下命令来检查当前使用的 Python 版本::
+请确保已安装 Python 3.10 或更高版本。Python 3.10 为 ESP-IDF 支持的最低版本。
 
-  python --version
+请注意，大多数新版 macOS 默认仅包含 Python 3.9（或更低版本），这些版本已不再受支持，请安装 Python 3.10 或更高版本。
 
-如果输出结果是 ``Python 2.7.17``，则代表默认解析器是 Python 2.7。这时需要运行以下命令检查电脑上是否已经安装过 Python 3::
+请根据以下步骤在 macOS 中安装受支持的 Python 3：
 
-  python3 --version
+- 若使用 HomeBrew_，请运行::
 
-如果运行上述命令出现错误，则代表电脑上没有安装 Python 3。
+    brew install python3
 
-请根据以下步骤安装 Python 3：
+- 若使用 MacPorts_，请运行::
 
-  - 使用 HomeBrew_ 进行安装的方法如下::
+    sudo port install python313
 
-      brew install python3
+.. note::
 
-  - 使用 MacPorts_ 进行安装的方法如下::
-
-      sudo port install python38
+    安装过程中，安装脚本 (install.sh) 会检查系统中已安装的 Python 版本，并在所有符合最低要求的版本中，选择最早的版本使用。
 
 .. _get-started-get-esp-idf:
 
@@ -277,18 +275,29 @@ ESP-IDF 工具安装器会下载 Github 发布版本中附带的一些工具，�
 .. include:: linux-macos-start-project.rst
 .. include:: start-project.rst
 
-建议：更新 ESP-IDF
-======================
+.. _get-started-update-esp-idf:
+
+ESP-IDF 环境更新：升级 ESP-IDF 与 Python 软件包
+===================================================
 
 乐鑫会不时推出新版本的 ESP-IDF，修复 bug 或提供新的功能。请注意，ESP-IDF 的每个主要版本和次要版本都有相应的支持期限。支持期限满后，版本停止更新维护，用户可将项目升级到最新的 ESP-IDF 版本。更多关于支持期限的信息，请参考 :doc:`ESP-IDF 版本 <../versions>`。
 
 因此，在使用时，也应注意更新本地版本。最简单的方法是：直接删除本地的 ``esp-idf`` 文件夹，然后按照 :ref:`get-started-get-esp-idf` 中的指示，重新完成克隆。
 
-另一种方法是仅更新变更的部分，具体方式请前往 :ref:`更新 ESP-IDF <updating>` 章节查看。具体更新步骤会根据使用的 ESP-IDF 版本有所不同。
+另一种方法是仅更新变更的部分，具体方式请参阅 :ref:`更新 ESP-IDF <updating>` 章节。
 
-注意，更新完成后，请再次运行安装脚本，以防新版 ESP-IDF 所需的工具也有所更新。具体请参考 :ref:`get-started-set-up-tools`。
+为确保工具版本符合新 ESP-IDF 的要求，在更新 ESP-IDF 版本后，请在 ``$IDF_PATH`` 目录下重新运行 ``./install.sh`` 脚本。详细说明请参阅 :ref:`get-started-set-up-tools`。
 
-一旦重新安装好工具，请使用导出脚本更新环境，具体请参考 :ref:`get-started-set-up-env`。
+所有新工具安装完成后，请参考 :ref:`get-started-set-up-env`，运行导出脚本并进入 ESP-IDF 开发环境。
+
+ESP-IDF 环境更新：只升级 Python 软件包
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+ESP-IDF 的部分功能并非直接包含在主代码库中，而是由 ``esp-idf-monitor``、``esptool`` 等 Python 软件包提供。这些软件包由安装脚本自动部署在 ESP-IDF 环境中，无需升级 ESP-IDF 即可更新，只需重新运行安装脚本（在 ``$IDF_PATH`` 目录下执行 ``./install.sh``）。若 ESP-IDF 环境已存在，则该脚本会在保持 ESP-IDF 版本不变的前提下，将所有 Python 软件包更新至与当前 ESP-IDF 版本兼容的最新版本。
+
+.. note::
+
+    高级用户如需更灵活地控制更新流程，可参考 :ref:`idf-tools-py` 工具及 ``install-python-env`` 命令。此命令被安装脚本调用，专门用于创建或更新 ESP-IDF 环境。
 
 相关文档
 =================

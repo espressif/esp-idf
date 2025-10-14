@@ -1,10 +1,16 @@
 .. code-block:: none
 
-    espefuse.py --virt -c esp32c61 dump
+    idf.py -p /dev/ttyUSB0  efuse-dump
 
-    espefuse.py v4.7.0
-    BLOCK0          (                ) [0 ] dump: 00000000 00000000 00000000 00000000 00000000 00000000
-    MAC_SPI_8M_0    (BLOCK1          ) [1 ] dump: 00000000 00000000 00000000 00000000 00000000 00000000
+    espefuse v5.0.2
+    Executing action: efuse-dump
+    Running espefuse in directory <project-directory>
+    Executing "espefuse dump --chip esp32c61"...
+    Connecting....
+
+    === Run "dump" command ===
+    BLOCK0          (                ) [0 ] dump: 00000000 00000000 00000000 00000000 0000fc00 00000000
+    MAC_SPI_8M_0    (BLOCK1          ) [1 ] dump: a0e52520 000030ed 00000010 00000000 00000000 00000000
     BLOCK_SYS_DATA  (BLOCK2          ) [2 ] dump: 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
     BLOCK_USR_DATA  (BLOCK3          ) [3 ] dump: 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
     BLOCK_KEY0      (BLOCK4          ) [4 ] dump: 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
@@ -14,5 +20,3 @@
     BLOCK_KEY4      (BLOCK8          ) [8 ] dump: 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
     BLOCK_KEY5      (BLOCK9          ) [9 ] dump: 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
     BLOCK_SYS_DATA2 (BLOCK10         ) [10] dump: 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
-
-    === Run "dump" command ===

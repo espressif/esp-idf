@@ -16,7 +16,7 @@ void diagram_bind_io_to_evt(void) {
     coex_bind_io_to_evt(1, 16);
 #else
     coex_bind_io_to_evt(0, 0);
-    coex_bind_io_to_evt(1, 1);
+    coex_bind_io_to_evt(1, 4);
 #endif
     /* Bind IO to Wi-Fi evt */
     wifi_bind_io_to_evt(2, 9);
@@ -35,7 +35,7 @@ void diagram_bind_io_to_evt(void) {
     coex_bind_io_to_evt(1, 16);
 #else
     coex_bind_io_to_evt(0, 0);
-    coex_bind_io_to_evt(1, 1);
+    coex_bind_io_to_evt(1, 4);
 #endif
     /* Bind IO to Wi-Fi evt */
     wifi_bind_io_to_evt(2, 9);

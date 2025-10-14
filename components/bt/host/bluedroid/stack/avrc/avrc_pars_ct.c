@@ -113,6 +113,19 @@ static tAVRC_STS avrc_pars_vendor_rsp(tAVRC_MSG_VENDOR *p_msg, tAVRC_RESPONSE *p
             }
         }
         break;
+    case AVRC_PDU_GET_PLAY_STATUS:
+        if (p_msg->hdr.ctype == AVRC_RSP_IMPL_STBL) {
+            BE_STREAM_TO_UINT32(p_result->get_play_status.song_len, p);
+            BE_STREAM_TO_UINT32(p_result->get_play_status.song_pos, p);
+            BE_STREAM_TO_UINT8(p_result->get_play_status.play_status, p);
+        }
+        else {
+            /* got error response */
+            p_result->get_play_status.song_len = 0;
+            p_result->get_play_status.song_pos = 0;
+            p_result->get_play_status.play_status = AVRC_PLAYSTATE_ERROR;
+        }
+        break;
     default:
         status = AVRC_STS_BAD_CMD;
         break;

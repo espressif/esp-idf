@@ -16,7 +16,7 @@
 PROJECT_NAME = "IDF Programming Guide"
 
 ## The 'INPUT' statement below is used as input by script 'gen-df-input.py'
-## to automatically generate API reference list files heder_file.inc
+## to automatically generate API reference list files header_file.inc
 ## These files are placed in '_inc' directory
 ## and used to include in API reference documentation
 
@@ -74,11 +74,6 @@ INPUT = \
     $(PROJECT_PATH)/components/bt/host/bluedroid/api/include/api/esp_spp_api.h \
     $(PROJECT_PATH)/components/bt/host/nimble/esp-hci/include/esp_nimble_hci.h \
     $(PROJECT_PATH)/components/console/esp_console.h \
-    $(PROJECT_PATH)/components/driver/touch_sensor/include/driver/touch_sensor_common.h \
-    $(PROJECT_PATH)/components/driver/twai/include/driver/twai.h \
-    $(PROJECT_PATH)/components/driver/test_apps/components/esp_serial_slave_link/include/esp_serial_slave_link/essl_sdio.h \
-    $(PROJECT_PATH)/components/driver/test_apps/components/esp_serial_slave_link/include/esp_serial_slave_link/essl_spi.h \
-    $(PROJECT_PATH)/components/driver/test_apps/components/esp_serial_slave_link/include/esp_serial_slave_link/essl.h \
     $(PROJECT_PATH)/components/efuse/$(IDF_TARGET)/include/esp_efuse_chip.h \
     $(PROJECT_PATH)/components/efuse/include/esp_efuse.h \
     $(PROJECT_PATH)/components/esp_adc/include/esp_adc/adc_cali_scheme.h \
@@ -90,6 +85,9 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_common/include/esp_check.h \
     $(PROJECT_PATH)/components/esp_common/include/esp_err.h \
     $(PROJECT_PATH)/components/esp_common/include/esp_idf_version.h \
+    $(PROJECT_PATH)/components/esp_driver_twai/include/esp_twai.h \
+    $(PROJECT_PATH)/components/esp_driver_twai/include/esp_twai_types.h \
+    $(PROJECT_PATH)/components/esp_driver_twai/include/esp_twai_onchip.h \
     $(PROJECT_PATH)/components/esp_driver_ana_cmpr/include/driver/ana_cmpr.h \
     $(PROJECT_PATH)/components/esp_driver_ana_cmpr/include/driver/ana_cmpr_etm.h \
     $(PROJECT_PATH)/components/esp_driver_ana_cmpr/include/driver/ana_cmpr_types.h \
@@ -135,9 +133,12 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_driver_rmt/include/driver/rmt_types.h \
     $(PROJECT_PATH)/components/esp_driver_sdio/include/driver/sdio_slave.h \
     $(PROJECT_PATH)/components/esp_driver_sdm/include/driver/sdm.h \
-    $(PROJECT_PATH)/components/esp_driver_sdmmc/include/driver/sdmmc_default_configs.h \
-    $(PROJECT_PATH)/components/esp_driver_sdmmc/include/driver/sdmmc_host.h \
-    $(PROJECT_PATH)/components/esp_driver_sdmmc/include/driver/sdmmc_types.h \
+    $(PROJECT_PATH)/components/esp_driver_sdmmc/include/driver/sd_host_sdmmc.h \
+    $(PROJECT_PATH)/components/esp_driver_sdmmc/legacy/include/driver/sdmmc_default_configs.h \
+    $(PROJECT_PATH)/components/esp_driver_sdmmc/legacy/include/driver/sdmmc_host.h \
+    $(PROJECT_PATH)/components/esp_driver_sdmmc/legacy/include/driver/sdmmc_types.h \
+    $(PROJECT_PATH)/components/esp_driver_sd_intf/include/driver/sd_host.h \
+    $(PROJECT_PATH)/components/esp_driver_sd_intf/include/driver/sd_types.h \
     $(PROJECT_PATH)/components/esp_driver_sdspi/include/driver/sdspi_host.h \
     $(PROJECT_PATH)/components/esp_driver_spi/include/driver/spi_common.h \
     $(PROJECT_PATH)/components/esp_driver_spi/include/driver/spi_master.h \
@@ -147,6 +148,8 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_driver_tsens/include/driver/temperature_sensor_etm.h \
     $(PROJECT_PATH)/components/esp_driver_uart/include/driver/uart.h \
     $(PROJECT_PATH)/components/esp_driver_uart/include/driver/uart_vfs.h \
+    $(PROJECT_PATH)/components/esp_driver_uart/include/driver/uhci.h \
+    $(PROJECT_PATH)/components/esp_driver_uart/include/driver/uhci_types.h \
     $(PROJECT_PATH)/components/esp_eth/include/esp_eth_com.h \
     $(PROJECT_PATH)/components/esp_eth/include/esp_eth_driver.h \
     $(PROJECT_PATH)/components/esp_eth/include/esp_eth_mac.h \
@@ -158,18 +161,20 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_eth/include/esp_eth.h \
     $(PROJECT_PATH)/components/esp_event/include/esp_event_base.h \
     $(PROJECT_PATH)/components/esp_event/include/esp_event.h \
+    $(PROJECT_PATH)/components/esp_hal_timg/include/hal/timer_types.h \
+    $(PROJECT_PATH)/components/esp_hal_i2c/include/hal/i2c_types.h \
+    $(PROJECT_PATH)/components/esp_hal_mspi/include/hal/esp_flash_err.h \
+    $(PROJECT_PATH)/components/esp_hal_mspi/include/hal/spi_flash_types.h \
     $(PROJECT_PATH)/components/esp_http_client/include/esp_http_client.h \
     $(PROJECT_PATH)/components/esp_http_server/include/esp_http_server.h \
     $(PROJECT_PATH)/components/esp_https_ota/include/esp_https_ota.h \
     $(PROJECT_PATH)/components/esp_https_server/include/esp_https_server.h \
+    $(PROJECT_PATH)/components/esp_hw_support/etm/include/esp_etm.h \
     $(PROJECT_PATH)/components/esp_hw_support/include/esp_clk_tree.h \
     $(PROJECT_PATH)/components/esp_hw_support/include/esp_async_memcpy.h \
     $(PROJECT_PATH)/components/esp_hw_support/include/esp_chip_info.h \
     $(PROJECT_PATH)/components/esp_hw_support/include/esp_cpu.h \
     $(PROJECT_PATH)/components/esp_hw_support/include/esp_crc.h \
-    $(PROJECT_PATH)/components/esp_hw_support/include/esp_etm.h \
-    $(PROJECT_PATH)/components/esp_hw_support/include/esp_ds.h \
-    $(PROJECT_PATH)/components/esp_hw_support/include/esp_hmac.h \
     $(PROJECT_PATH)/components/esp_hw_support/include/esp_intr_alloc.h \
     $(PROJECT_PATH)/components/esp_hw_support/include/esp_intr_types.h \
     $(PROJECT_PATH)/components/esp_hw_support/include/esp_mac.h \
@@ -186,7 +191,6 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_lcd/include/esp_lcd_panel_dev.h \
     $(PROJECT_PATH)/components/esp_lcd/include/esp_lcd_panel_ssd1306.h \
     $(PROJECT_PATH)/components/esp_lcd/include/esp_lcd_panel_st7789.h \
-    $(PROJECT_PATH)/components/esp_lcd/include/esp_lcd_panel_nt35510.h \
     $(PROJECT_PATH)/components/esp_lcd/include/esp_lcd_types.h \
     $(PROJECT_PATH)/components/esp_local_ctrl/include/esp_local_ctrl.h \
     $(PROJECT_PATH)/components/esp_mm/include/esp_mmu_map.h \
@@ -201,6 +205,8 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_pm/include/esp_pm.h \
     $(PROJECT_PATH)/components/esp_ringbuf/include/freertos/ringbuf.h \
     $(PROJECT_PATH)/components/esp_rom/include/esp_rom_sys.h \
+    $(PROJECT_PATH)/components/esp_security/include/esp_ds.h \
+    $(PROJECT_PATH)/components/esp_security/include/esp_hmac.h \
     $(PROJECT_PATH)/components/esp_system/include/esp_expression_with_stack.h \
     $(PROJECT_PATH)/components/esp_system/include/esp_freertos_hooks.h \
     $(PROJECT_PATH)/components/esp_system/include/esp_ipc_isr.h \
@@ -246,9 +252,7 @@ INPUT = \
     $(PROJECT_PATH)/components/hal/include/hal/adc_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/color_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/dac_types.h \
-    $(PROJECT_PATH)/components/hal/include/hal/esp_flash_err.h \
     $(PROJECT_PATH)/components/hal/include/hal/gpio_types.h \
-    $(PROJECT_PATH)/components/hal/include/hal/i2c_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/i2s_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/lcd_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/ledc_types.h \
@@ -259,17 +263,17 @@ INPUT = \
     $(PROJECT_PATH)/components/hal/include/hal/rtc_io_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/sdio_slave_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/sdm_types.h \
-    $(PROJECT_PATH)/components/hal/include/hal/spi_flash_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/spi_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/temperature_sensor_types.h \
-    $(PROJECT_PATH)/components/hal/include/hal/timer_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/twai_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/uart_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/efuse_hal.h \
     $(PROJECT_PATH)/components/hal/include/hal/eth_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/lp_core_types.h \
+    $(PROJECT_PATH)/components/hal/include/hal/uhci_types.h \
     $(PROJECT_PATH)/components/heap/include/esp_heap_caps_init.h \
     $(PROJECT_PATH)/components/heap/include/esp_heap_caps.h \
+    $(PROJECT_PATH)/components/heap/include/esp_heap_task_info.h \
     $(PROJECT_PATH)/components/heap/include/esp_heap_trace.h \
     $(PROJECT_PATH)/components/heap/include/multi_heap.h \
     $(PROJECT_PATH)/components/ieee802154/include/esp_ieee802154_types.h \
@@ -285,6 +289,7 @@ INPUT = \
     $(PROJECT_PATH)/components/mbedtls/esp_crt_bundle/include/esp_crt_bundle.h \
     $(PROJECT_PATH)/components/mbedtls/port/include/ecdsa/ecdsa_alt.h \
     $(PROJECT_PATH)/components/mqtt/esp-mqtt/include/mqtt_client.h \
+    $(PROJECT_PATH)/components/mqtt/esp-mqtt/include/mqtt5_client.h \
     $(PROJECT_PATH)/components/nvs_flash/include/nvs_flash.h \
     $(PROJECT_PATH)/components/nvs_flash/include/nvs.h \
     $(PROJECT_PATH)/components/nvs_flash/include/nvs_bootloader.h \
@@ -305,7 +310,8 @@ INPUT = \
     $(PROJECT_PATH)/components/protocomm/include/crypto/srp6a/esp_srp.h \
     $(PROJECT_PATH)/components/pthread/include/esp_pthread.h \
     $(PROJECT_PATH)/components/sdmmc/include/sdmmc_cmd.h \
-	$(PROJECT_PATH)/components/soc/$(IDF_TARGET)/include/soc/adc_channel.h \
+    $(PROJECT_PATH)/components/soc/include/soc/soc_caps_eval.h \
+    $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/include/soc/adc_channel.h \
     $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/include/soc/clk_tree_defs.h \
     $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/include/soc/gpio_num.h \
     $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/include/soc/soc_caps.h \
@@ -322,14 +328,9 @@ INPUT = \
     $(PROJECT_PATH)/components/vfs/include/esp_vfs_ops.h \
     $(PROJECT_PATH)/components/vfs/include/esp_vfs.h \
     $(PROJECT_PATH)/components/wear_levelling/include/wear_levelling.h \
-    $(PROJECT_PATH)/components/wifi_provisioning/include/wifi_provisioning/manager.h \
-    $(PROJECT_PATH)/components/wifi_provisioning/include/wifi_provisioning/scheme_ble.h \
-    $(PROJECT_PATH)/components/wifi_provisioning/include/wifi_provisioning/scheme_console.h \
-    $(PROJECT_PATH)/components/wifi_provisioning/include/wifi_provisioning/scheme_softap.h \
-    $(PROJECT_PATH)/components/wifi_provisioning/include/wifi_provisioning/wifi_config.h \
-    $(PROJECT_PATH)/components/wifi_provisioning/include/wifi_provisioning/wifi_scan.h \
     $(PROJECT_PATH)/components/wpa_supplicant/esp_supplicant/include/esp_dpp.h \
     $(PROJECT_PATH)/components/wpa_supplicant/esp_supplicant/include/esp_supplicant_utils.h \
+    $(PROJECT_PATH)/components/esp_driver_uart/include/driver/uart_wakeup.h \
 
 ## Target specific headers are in separate Doxyfile files
 @INCLUDE = $(PROJECT_PATH)/docs/doxygen/Doxyfile_$(IDF_TARGET)
@@ -352,6 +353,7 @@ PREDEFINED             = \
     IDF_DEPRECATED(X)= \
     IRAM_ATTR= \
     FORCE_INLINE_ATTR= \
+    NONSTRING_ATTR= \
     configSUPPORT_DYNAMIC_ALLOCATION=1 \
     configSUPPORT_STATIC_ALLOCATION=1 \
     configQUEUE_REGISTRY_SIZE=1 \

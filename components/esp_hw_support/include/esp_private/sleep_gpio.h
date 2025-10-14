@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,8 +18,7 @@ extern "C" {
  * This file contains declarations of GPIO related functions in sleep modes.
  */
 
-#if CONFIG_GPIO_ESP32_SUPPORT_SWITCH_SLP_PULL
-
+#if CONFIG_IDF_TARGET_ESP32
 /**
  * @brief Save GPIO pull-up and pull-down configuration information in the wake-up state
  *
@@ -29,7 +28,7 @@ extern "C" {
  * of all GPIO pull-up and pull-down resistors and disable the pull-up and
  * pull-down resistors of GPIO before the system enters sleep.
  */
-void gpio_sleep_mode_config_apply(void);
+void esp_sleep_gpio_pupd_config_workaround_apply(void);
 
 /**
  * @brief Restore GPIO pull-up and pull-down configuration information in the wake-up state
@@ -37,9 +36,9 @@ void gpio_sleep_mode_config_apply(void);
  * In light sleep mode, after the system wakes up, it needs to restore all GPIO
  * pull-up and pull-down configurations before the last sleep.
  */
-void gpio_sleep_mode_config_unapply(void);
+void esp_sleep_gpio_pupd_config_workaround_unapply(void);
 
-#endif // CONFIG_GPIO_ESP32_SUPPORT_SWITCH_SLP_PULL
+#endif // CONFIG_IDF_TARGET_ESP32
 
 /**
  * @brief Call once in startup to disable the wakeup IO pins and release their holding state after waking up from Deep-sleep

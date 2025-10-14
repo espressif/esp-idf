@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -160,6 +160,11 @@ int esp_tls_conn_destroy(esp_tls_t *tls)
             ret = close(tls->sockfd);
         }
         esp_tls_internal_event_tracker_destroy(tls->error_handle);
+#if CONFIG_MBEDTLS_SSL_PROTO_TLS1_3 && CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS
+        if (tls->client_session) {
+            free(tls->client_session);
+        }
+#endif // CONFIG_MBEDTLS_SSL_PROTO_TLS1_3 && CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS
         free(tls);
         tls = NULL;
         return ret;
@@ -180,6 +185,10 @@ esp_tls_t *esp_tls_init(void)
     }
     _esp_tls_net_init(tls);
     tls->sockfd = -1;
+#if CONFIG_MBEDTLS_SSL_PROTO_TLS1_3 && CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS
+    tls->client_session = NULL;
+    tls->client_session_len = 0;
+#endif // CONFIG_MBEDTLS_SSL_PROTO_TLS1_3 && CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS
     return tls;
 }
 
@@ -378,7 +387,15 @@ static inline esp_err_t tcp_connect(const char *host, int hostlen, int port, con
 
     ret = ESP_ERR_ESP_TLS_FAILED_CONNECT_TO_HOST;
     ESP_LOGD(TAG, "[sock=%d] Connecting to server. HOST: %s, Port: %d", fd, host, port);
-    if (connect(fd, (struct sockaddr *)&address, sizeof(struct sockaddr)) < 0) {
+#if IPV4_ENABLED && IPV6_ENABLED
+    socklen_t addr_len = (address.ss_family == AF_INET) ? sizeof(struct sockaddr_in) : sizeof(struct sockaddr_in6);
+#elif IPV6_ENABLED
+    socklen_t addr_len = sizeof(struct sockaddr_in6);
+#else
+    /* IPv4 only */
+    socklen_t addr_len = sizeof(struct sockaddr_in);
+#endif
+    if (connect(fd, (struct sockaddr *)&address, addr_len) < 0) {
         if (errno == EINPROGRESS) {
             fd_set fdset;
             struct timeval tv = { .tv_usec = 0, .tv_sec = ESP_TLS_DEFAULT_CONN_TIMEOUT }; // Default connection timeout is 10 s
@@ -586,28 +603,6 @@ static int get_port(const char *url, struct http_parser_url *u)
     return 0;
 }
 
-esp_tls_t *esp_tls_conn_http_new(const char *url, const esp_tls_cfg_t *cfg)
-{
-    if (!url || !cfg) {
-        return NULL;
-    }
-
-    /* Parse URI */
-    struct http_parser_url u;
-    http_parser_url_init(&u);
-    http_parser_parse_url(url, strlen(url), 0, &u);
-    esp_tls_t *tls = esp_tls_init();
-    if (!tls) {
-        return NULL;
-    }
-    /* Connect to host */
-    if (esp_tls_conn_new_sync(&url[u.field_data[UF_HOST].off], u.field_data[UF_HOST].len,
-                              get_port(url, &u), cfg, tls) == 1) {
-        return tls;
-    }
-    esp_tls_conn_destroy(tls);
-    return NULL;
-}
 
 /**
  * @brief      Create a new TLS/SSL connection with a given "HTTP" url

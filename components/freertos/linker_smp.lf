@@ -3,235 +3,149 @@
 # Flash function placements are listed per source file, in the order that they appear in the source file.
 #
 # Placement Rules:
-#   - Default: Place all functions in internal RAM.
-#   - CONFIG_FREERTOS_PLACE_FUNCTIONS_INTO_FLASH:
-#       - Place functions in flash if they are never called from an ISR context (directly or indirectly).
-#       - Some functions that are called often (such as critical sections) are placed in internal RAM for speed.
+#   - Default behavior: All FreeRTOS functions are placed in Flash by default, except for:
+#       - FromISR() functions (placed in IRAM by default)
+#       - Performance-critical functions, such as critical section APIs and code related to context switching
+#   - CONFIG_FREERTOS_IN_IRAM:
+#       - This option is presented to users as a performance optimization feature, with the trade-off of reduced
+#         internal RAM availability. This option is disabled by default.
+#   - CONFIG_FREERTOS_PLACE_ISR_FUNCTIONS_INTO_FLASH
+#       - If SPI_FLASH_AUTO_SUSPEND is supported, this option allows placing FromISR() functions in Flash.
 # ----------------------------------------------------------------------------------------------------------------------
 
 [mapping:freertos_smp]
 archive: libfreertos.a
 entries:
-    * (noflash_text)        # Default all FreeRTOS functions to IRAM
-    if FREERTOS_PLACE_FUNCTIONS_INTO_FLASH = y:
+    if FREERTOS_IN_IRAM = y:
+        * (noflash_text)        # All FreeRTOS functions to IRAM
+    else:
+        * (default)             # All FreeRTOS functions to Flash
+
         # --------------------------------------------------------------------------------------------------------------
         # event_groups.c
-        # - Exclude all ...FromISR() functions and their dependents
         # --------------------------------------------------------------------------------------------------------------
-        event_groups:xEventGroupCreateStatic (default)
-        event_groups:xEventGroupCreate (default)
-        event_groups:xEventGroupSync (default)
-        event_groups:xEventGroupWaitBits (default)
-        event_groups:xEventGroupClearBits (default)
-        event_groups:xEventGroupSetBits (default)
-        event_groups:vEventGroupDelete (default)
-        event_groups:vEventGroupSetBitsCallback (default)
-        event_groups:vEventGroupClearBitsCallback (default)
-        event_groups:prvTestWaitCondition (default)
-        if FREERTOS_USE_TRACE_FACILITY = y:
-            event_groups: uxEventGroupGetNumber (default)
-            event_groups: vEventGroupSetNumber (default)
+        if FREERTOS_PLACE_ISR_FUNCTIONS_INTO_FLASH = n:
+            event_groups:xEventGroupClearBitsFromISR (noflash_text)
+            event_groups:xEventGroupGetBitsFromISR (noflash_text)
+            event_groups:xEventGroupSetBitsFromISR (noflash_text)
+
         # --------------------------------------------------------------------------------------------------------------
         # list.c
         # - List/List Item initialization functions are never called from ISR
+        # - vListInsert is never called from an ISR context
+        # - Remaining List insertion/removal functions can be called from an ISR context and hence place them in flash
+        #   only when CONFIG_FREERTOS_PLACE_ISR_FUNCTIONS_INTO_FLASH is enabled
         # --------------------------------------------------------------------------------------------------------------
-        list:vListInitialise (default)
-        list:vListInitialiseItem (default)
+        if FREERTOS_PLACE_ISR_FUNCTIONS_INTO_FLASH = n:
+            list:vListInsertEnd (noflash_text)
+            list:uxListRemove (noflash_text)
+
         # --------------------------------------------------------------------------------------------------------------
         # queue.c
-        # - Keep all ...FromISR() functions (and their prv... calls) in internal RAM
-        # - All other functions can be moved to flash
         # --------------------------------------------------------------------------------------------------------------
-        queue:xQueueGenericReset (default)
-        queue:xQueueGenericCreateStatic (default)
-        queue:xQueueGenericCreate (default)
-        queue:prvInitialiseNewQueue (default)
-        queue:prvInitialiseMutex (default)
-        queue:xQueueCreateMutex (default)
-        queue:xQueueCreateMutexStatic (default)
-        queue:xQueueGetMutexHolder (default)
-        queue:xQueueGiveMutexRecursive (default)
-        queue:xQueueTakeMutexRecursive (default)
-        queue:xQueueCreateCountingSemaphoreStatic (default)
-        queue:xQueueCreateCountingSemaphore (default)
-        queue:xQueueGenericSend (default)
-        queue:xQueueReceive (default)
-        queue:xQueueSemaphoreTake (default)
-        queue:xQueuePeek (default)
-        queue:uxQueueMessagesWaiting (default)
-        queue:uxQueueSpacesAvailable (default)
-        queue:vQueueDelete (default)
-        if FREERTOS_USE_TRACE_FACILITY = y:
-            queue:uxQueueGetQueueNumber (default)
-            queue:vQueueSetQueueNumber (default)
-            queue:ucQueueGetQueueType (default)
-        queue:prvGetDisinheritPriorityAfterTimeout (default)
-        queue:prvUnlockQueue (default)
-        queue:prvIsQueueEmpty (default)
-        queue:prvIsQueueFull (default)
-        if FREERTOS_QUEUE_REGISTRY_SIZE > 0:
-            queue:vQueueAddToRegistry (default)
-            queue:pcQueueGetName (default)
-            queue:vQueueUnregisterQueue (default)
-        queue:vQueueWaitForMessageRestricted (default)
-        queue:xQueueCreateSet (default)
-        queue:xQueueAddToSet (default)
-        queue:xQueueRemoveFromSet (default)
-        queue:xQueueSelectFromSet (default)
+        if FREERTOS_PLACE_ISR_FUNCTIONS_INTO_FLASH = n:
+            queue:xQueueGetMutexHolderFromISR (noflash_text)
+            queue:xQueueGenericSendFromISR (noflash_text)
+            queue:prvCopyDataToQueue (noflash_text)
+            queue:xQueueGiveFromISR (noflash_text)
+            queue:xQueueReceiveFromISR (noflash_text)
+            queue:prvCopyDataFromQueue (noflash_text)
+            queue:xQueuePeekFromISR (noflash_text)
+            queue:uxQueueMessagesWaitingFromISR (noflash_text)
+            queue:xQueueIsQueueEmptyFromISR (noflash_text)
+            queue:xQueueIsQueueFullFromISR (noflash_text)
+            queue:xQueueSelectFromSetFromISR (noflash_text)
+
         # --------------------------------------------------------------------------------------------------------------
         # stream_buffer.c
         # --------------------------------------------------------------------------------------------------------------
-        stream_buffer:xStreamBufferGenericCreate (default)
-        stream_buffer:xStreamBufferGenericCreateStatic (default)
-        stream_buffer:vStreamBufferDelete (default)
-        stream_buffer:xStreamBufferReset (default)
-        stream_buffer:xStreamBufferSetTriggerLevel (default)
-        stream_buffer:xStreamBufferBytesAvailable (default)
-        stream_buffer:xStreamBufferSend (default)
-        stream_buffer:xStreamBufferReceive (default)
-        stream_buffer:xStreamBufferNextMessageLengthBytes (default)
-        stream_buffer:xStreamBufferIsEmpty (default)
-        stream_buffer:xStreamBufferIsFull (default)
-        stream_buffer:prvWriteBytesToBuffer (default)
-        stream_buffer:prvReadBytesFromBuffer (default)
-        stream_buffer:prvInitialiseNewStreamBuffer (default)
-        if FREERTOS_USE_TRACE_FACILITY = y:
-            stream_buffer:uxStreamBufferGetStreamBufferNumber (default)
-            stream_buffer:vStreamBufferSetStreamBufferNumber (default)
-            stream_buffer:ucStreamBufferGetStreamBufferType (default)
+        if FREERTOS_PLACE_ISR_FUNCTIONS_INTO_FLASH = n:
+            stream_buffer:xStreamBufferSendFromISR (noflash_text)
+            stream_buffer:prvWriteMessageToBuffer (noflash_text)
+            stream_buffer:xStreamBufferReceiveFromISR (noflash_text)
+            stream_buffer:prvReadMessageFromBuffer (noflash_text)
+            stream_buffer:xStreamBufferSendCompletedFromISR (noflash_text)
+            stream_buffer:xStreamBufferReceiveCompletedFromISR (noflash_text)
+            stream_buffer:prvBytesInBuffer (noflash_text)
+
         # --------------------------------------------------------------------------------------------------------------
         # tasks.c
-        # - The following functions are called when the cache is disabled, thus they are excluded from the list below
-        #   (i.e., called after "spi_flash_disable_interrupts_caches_and_other_cpu()" is called).
-        #   - "xTaskGetSchedulerState"
-        #   - "xTaskGetTickCount"
+        # - The following functions are always kept in internal RAM as they are frequently called during context switches
+        #   or are called with cache disabled
+        #   - xTaskIncrementTick
+        #   - prvSelectHighestPriorityTaskSMP
+        #   - vTaskSwitchContext
+        #   - xTaskGetSchedulerState
+        #   - xTaskGetTickCount
+        # - Place all functions that are called from an ISR context into Flash if
+        #   CONFIG_FREERTOS_PLACE_ISR_FUNCTIONS_INTO_FLASH is enabled
         # --------------------------------------------------------------------------------------------------------------
-        tasks:xTaskCreateStatic (default)
-        tasks:xTaskCreate (default)
-        if FREERTOS_UNICORE = n:
-            tasks:xTaskCreateStaticAffinitySet (default)
-            tasks:xTaskCreateAffinitySet (default)
-            tasks:vTaskCoreAffinitySet (default)
-            tasks:vTaskCoreAffinityGet (default)
-            tasks:prvMinimalIdleTask (default)
-        tasks:prvInitialiseNewTask (default)
-        tasks:prvAddNewTaskToReadyList (default)
-        tasks:vTaskDelete (default)
-        tasks:xTaskDelayUntil (default)
-        tasks:vTaskDelay (default)
-        tasks:eTaskGetState (default)
-        tasks:uxTaskPriorityGet (default)
-        tasks:vTaskPrioritySet (default)
-        tasks:vTaskSuspend (default)
-        tasks:vTaskResume (default)
-        tasks:prvCreateIdleTasks (default)
-        tasks:vTaskStartScheduler (default)
-        tasks:vTaskEndScheduler (default)
-        tasks:vTaskSuspendAll (default)
-        #Todo:prvGetExpectedIdleTime
-        tasks:xTaskResumeAll (default)
-        tasks:uxTaskGetNumberOfTasks (default)
-        tasks:pcTaskGetName (default)
-        tasks:prvSearchForNameWithinSingleList (default)
-        tasks:xTaskGetHandle (default)
-        if FREERTOS_USE_TRACE_FACILITY = y:
-            tasks:uxTaskGetSystemState (default)
-            tasks:uxTaskGetTaskNumber (default)
-            tasks:vTaskSetTaskNumber (default)
-            tasks:vTaskGetInfo (default)
-            tasks:prvListTasksWithinSingleList (default)
-            tasks:prvTaskCheckFreeStackSpace (default)
-        tasks:xTaskGetIdleTaskHandle (default)
-        tasks:xTaskAbortDelay (default)
-        tasks:vTaskPlaceOnEventList (default)
-        tasks:vTaskRemoveFromUnorderedEventList (default)
-        tasks:vTaskPlaceOnEventListRestricted (default)
-        tasks:vTaskSetTimeOutState (default)
-        tasks:vTaskInternalSetTimeOutState (default)
-        tasks:xTaskCheckForTimeOut (default)
-        tasks:vTaskMissedYield (default)
-        tasks:prvIdleTask (default)
-        if FREERTOS_THREAD_LOCAL_STORAGE_POINTERS > 0:
-            tasks:vTaskSetThreadLocalStoragePointer (default)
-            tasks:pvTaskGetThreadLocalStoragePointer (default)
-        tasks:prvInitialiseTaskLists (default)
-        tasks:prvCheckTasksWaitingTermination (default)
-        tasks:uxTaskGetStackHighWaterMark2 (default)
-        tasks:uxTaskGetStackHighWaterMark (default)
-        tasks:prvDeleteTCB (default)
-        if FREERTOS_USE_STATS_FORMATTING_FUNCTIONS = y:
-            tasks:prvWriteNameToBuffer (default)
-            tasks:vTaskList (default)
-        if FREERTOS_GENERATE_RUN_TIME_STATS = y:
-            tasks:vTaskGetRunTimeStats (default)
-            tasks:ulTaskGetIdleRunTimeCounter (default)
-        tasks:uxTaskResetEventItemValue (default)
-        tasks:pvTaskIncrementMutexHeldCount (default)
-        tasks:ulTaskGenericNotifyTake (default)
-        tasks:xTaskGenericNotifyWait (default)
-        tasks:xTaskGenericNotify (default)
-        tasks:xTaskGenericNotifyStateClear (default)
-        tasks:ulTaskGenericNotifyValueClear (default)
+        tasks:xTaskIncrementTick (noflash_text)
+        tasks:prvSelectHighestPriorityTaskSMP (noflash_text)
+        tasks:vTaskSwitchContext (noflash_text)
+        tasks:xTaskGetSchedulerState (noflash_text)
+        tasks:xTaskGetTickCount (noflash_text)
+        if FREERTOS_PLACE_ISR_FUNCTIONS_INTO_FLASH = n:
+            tasks:uxTaskPriorityGetFromISR (noflash_text)
+            tasks:prvTaskIsTaskSuspended (noflash_text)
+            tasks:xTaskResumeFromISR (noflash_text)
+            tasks:xTaskGetTickCountFromISR (noflash_text)
+            tasks:xTaskGetApplicationTaskTagFromISR (noflash_text)
+            tasks:xTaskRemoveFromEventList (noflash_text)
+            tasks:prvResetNextTaskUnblockTime (noflash_text)
+            tasks:xTaskGenericNotifyFromISR (noflash_text)
+            tasks:vTaskGenericNotifyGiveFromISR (noflash_text)
+
         # --------------------------------------------------------------------------------------------------------------
         # timers.c
-        # - Only timer function called from ISR is xTimerGenericCommandFromISR() and its dependents
+        # - xTimerGenericCommand() is used for ISR calls as well. Thus leave it (and its dependents) in internal RAM
+        #   unless CONFIG_FREERTOS_PLACE_ISR_FUNCTIONS_INTO_FLASH is enabled
         # --------------------------------------------------------------------------------------------------------------
-        timers:xTimerCreateTimerTask (default)
-        timers:xTimerCreate (default)
-        timers:xTimerCreateStatic (default)
-        timers:prvInitialiseNewTimer (default)
-        timers:xTimerGenericCommandFromTask (default)
-        timers:xTimerGetTimerDaemonTaskHandle (default)
-        timers:xTimerGetPeriod (default)
-        timers:vTimerSetReloadMode (default)
-        timers:uxTimerGetReloadMode (default)
-        timers:xTimerGetExpiryTime (default)
-        timers:pcTimerGetName (default)
-        timers:prvProcessExpiredTimer (default)
-        timers:prvTimerTask (default)
-        timers:prvProcessTimerOrBlockTask (default)
-        timers:prvGetNextExpireTime (default)
-        timers:prvSampleTimeNow (default)
-        timers:prvInsertTimerInActiveList (default)
-        timers:prvProcessReceivedCommands (default)
-        timers:prvSwitchTimerLists (default)
-        timers:prvCheckForValidListAndQueue (default)
-        timers:xTimerIsTimerActive (default)
-        timers:pvTimerGetTimerID (default)
-        timers:vTimerSetTimerID (default)
-        timers:xTimerPendFunctionCall (default)
-        if FREERTOS_USE_TRACE_FACILITY = y:
-            timers:uxTimerGetTimerNumber (default)
-            timers:vTimerSetTimerNumber (default)
+        if FREERTOS_PLACE_ISR_FUNCTIONS_INTO_FLASH = n:
+            timers:xTimerGenericCommand (noflash_text)
+            timers:xTimerPendFunctionCallFromISR (noflash_text)
+
         # --------------------------------------------------------------------------------------------------------------
         # portable/xtensa/port.c
-        # - Most functions are called from an ISR context, except for scheduler/task init/deinit functions
+        # - Critical sections and interrupt context checking functions are always placed in internal RAM for better
+        #   performance and correctness.
+        # - vPortSetStackWatchpoint is placed in IRAM as it is called from vTaskSwitchContext.
+        # - The following functions directly call portasm functions which are always in IRAM
+        #   - xPortStartScheduler
         # --------------------------------------------------------------------------------------------------------------
         if IDF_TARGET_ARCH_XTENSA = y:
-            port:xPortStartScheduler (default)
-            port:vPortEndScheduler (default)
-            port:pvPortMalloc (default)
-            port:vPortFree (default)
-            port:vPortInitialiseBlocks (default)
-            port:xPortGetFreeHeapSize (default)
-            port:pxPortInitialiseStack (default)
-            if FREERTOS_UNICORE = n:
-                port:vPortCleanUpCoprocArea (default)
-            if FREERTOS_TLSP_DELETION_CALLBACKS = y:
-                port:vPortTLSPointersDelCb (default)
-            port:vPortTCBPreDeleteHook (default)
+            port:xPortStartScheduler (noflash_text)
+            port:vPortEnterCritical (noflash_text)
+            port:vPortExitCritical (noflash_text)
+            port:xPortEnterCriticalTimeout (noflash_text)
+            port:vPortExitCriticalIDF (noflash_text)
+            port:vPortSetStackWatchpoint (noflash_text)
+            port:xPortCheckIfInISR (noflash_text)
+            port:vPortAssertIfInISR (noflash_text)
+
         # --------------------------------------------------------------------------------------------------------------
         # portable/riscv/port.c
-        # - Most functions are called from an ISR context, except for scheduler/task init/deinit functions
+        # - Critical sections, interrupt masking, and yielding functions are always placed in internal RAM for better
+        #   performance and correctness.
+        # - vPortSetStackWatchpoint is placed in IRAM as it is called from vTaskSwitchContext.
         # --------------------------------------------------------------------------------------------------------------
         if IDF_TARGET_ARCH_RISCV = y:
-            port:xPortStartScheduler (default)
-            port:vPortEndScheduler (default)
-            port:pvPortMalloc (default)
-            port:vPortFree (default)
-            port:vPortInitialiseBlocks (default)
-            port:xPortGetFreeHeapSize (default)
-            port:pxPortInitialiseStack (default)
-            if FREERTOS_TLSP_DELETION_CALLBACKS = y:
-                port:vPortTLSPointersDelCb (default)
-            port:vPortTCBPreDeleteHook (default)
+            port:vPortEnterCritical (noflash_text)
+            port:vPortExitCritical (noflash_text)
+            port:ulPortSetInterruptMask (noflash_text)
+            port:vPortClearInterruptMask (noflash_text)
+            port:vPortYield (noflash_text)
+            port:vPortYieldFromISR (noflash_text)
+            port:vPortSetStackWatchpoint (noflash_text)
+            port:xPortSetInterruptMaskFromISR (noflash_text)
+            port:vPortClearInterruptMaskFromISR (noflash_text)
+            port:vPortCoprocUsedInISR (noflash_text)
+            port:xPortCheckIfInISR (noflash_text)
+            port:vPortAssertIfInISR (noflash_text)
+
+        # --------------------------------------------------------------------------------------------------------------
+        # portasm.S
+        # - Place the entire portasm object file in IRAM. It contains critical context switching and interrupt entry/exit
+        #   code that must always be in IRAM for better performance.
+        # --------------------------------------------------------------------------------------------------------------
+        portasm (noflash_text)

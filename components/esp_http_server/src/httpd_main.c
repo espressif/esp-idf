@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -126,21 +126,13 @@ static esp_err_t httpd_accept_conn(struct httpd_data *hd, int listen_fd)
         goto exit;
     }
     ESP_LOGD(TAG, LOG_FMT("complete"));
+    hd->http_server_state = HTTP_SERVER_EVENT_ON_CONNECTED;
     esp_http_server_dispatch_event(HTTP_SERVER_EVENT_ON_CONNECTED, &new_fd, sizeof(int));
     return ESP_OK;
 exit:
     close(new_fd);
     return ESP_FAIL;
 }
-
-struct httpd_ctrl_data {
-    enum httpd_ctrl_msg {
-        HTTPD_CTRL_SHUTDOWN,
-        HTTPD_CTRL_WORK,
-    } hc_msg;
-    httpd_work_fn_t hc_work;
-    void *hc_work_arg;
-};
 
 esp_err_t httpd_queue_work(httpd_handle_t handle, httpd_work_fn_t work, void *arg)
 {
@@ -539,6 +531,7 @@ esp_err_t httpd_start(httpd_handle_t *handle, const httpd_config_t *config)
     }
 
     *handle = (httpd_handle_t)hd;
+    hd->http_server_state = HTTP_SERVER_EVENT_START;
     esp_http_server_dispatch_event(HTTP_SERVER_EVENT_START, NULL, 0);
 
     return ESP_OK;
@@ -592,4 +585,13 @@ esp_err_t httpd_stop(httpd_handle_t handle)
     httpd_delete(hd);
     esp_http_server_dispatch_event(HTTP_SERVER_EVENT_STOP, NULL, 0);
     return ESP_OK;
+}
+
+esp_http_server_event_id_t httpd_get_server_state(httpd_handle_t handle)
+{
+    struct httpd_data *hd = (struct httpd_data *) handle;
+    if (hd == NULL) {
+        return HTTP_SERVER_EVENT_ERROR;
+    }
+    return hd->http_server_state;
 }

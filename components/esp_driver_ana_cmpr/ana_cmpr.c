@@ -1,65 +1,48 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <stdlib.h>
-#include <inttypes.h>
-#include "sdkconfig.h"
-#if CONFIG_ANA_CMPR_ENABLE_DEBUG_LOG
-// The local log level must be defined before including esp_log.h
-// Set the maximum log level for this source file
-#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
-#endif
 #include "freertos/FreeRTOS.h"
 #include "esp_clk_tree.h"
 #include "esp_types.h"
 #include "esp_attr.h"
-#include "esp_check.h"
 #include "esp_pm.h"
-#include "esp_heap_caps.h"
-#include "esp_intr_alloc.h"
 #include "esp_memory_utils.h"
-#include "soc/periph_defs.h"
-#include "soc/ana_cmpr_periph.h"
-#include "hal/ana_cmpr_ll.h"
 #include "driver/ana_cmpr.h"
-#include "driver/gpio.h"
+#include "esp_private/gpio.h"
 #include "esp_private/io_mux.h"
 #include "esp_private/esp_clk.h"
+#include "ana_cmpr_private.h"
 
 struct ana_cmpr_t {
     ana_cmpr_unit_t             unit;               /*!< Analog comparator unit id */
     analog_cmpr_dev_t           *dev;               /*!< Analog comparator unit device address */
     ana_cmpr_ref_source_t       ref_src;            /*!< Analog comparator reference source, internal or external */
-    bool                        is_enabled;         /*!< Whether the Analog comparator unit is enabled */
+    _Atomic ana_cmpr_fsm_t      fsm;                /*!< The state machine of the Analog Comparator unit */
     ana_cmpr_event_callbacks_t  cbs;                /*!< The callback group that set by user */
+    void                        *user_data;         /*!< User data that passed to the callbacks */
     intr_handle_t               intr_handle;        /*!< Interrupt handle */
     uint32_t                    intr_mask;          /*!< Interrupt mask */
     int                         intr_priority;      /*!< Interrupt priority */
-    void                        *user_data;         /*!< User data that passed to the callbacks */
     uint32_t                    src_clk_freq_hz;    /*!< Source clock frequency of the Analog Comparator unit */
+#if CONFIG_PM_ENABLE
     esp_pm_lock_handle_t        pm_lock;            /*!< The Power Management lock that used to avoid unexpected power down of the clock domain */
+#endif
 };
 
 /* Helper macros */
-#define ANA_CMPR_NULL_POINTER_CHECK(p)      ESP_RETURN_ON_FALSE((p), ESP_ERR_INVALID_ARG, TAG, "input parameter '"#p"' is NULL")
-#define ANA_CMPR_NULL_POINTER_CHECK_ISR(p)  ESP_RETURN_ON_FALSE_ISR((p), ESP_ERR_INVALID_ARG, TAG, "input parameter '"#p"' is NULL")
-#define ANA_CMPR_UNIT_CHECK(unit)           ESP_RETURN_ON_FALSE((unit) >= 0 && (unit) < SOC_ANA_CMPR_NUM, \
-                                                                ESP_ERR_INVALID_ARG, TAG, "invalid uint number");
+#define ANA_CMPR_NULL_POINTER_CHECK(p)      ESP_RETURN_ON_FALSE((p), ESP_ERR_INVALID_ARG, TAG, "input parameter '" #p "' is NULL")
+#define ANA_CMPR_NULL_POINTER_CHECK_SAFE(p) \
+do {                                        \
+    if (unlikely(!(p))) {                   \
+        ESP_EARLY_LOGE(TAG, "input parameter '" #p "' is NULL");  \
+        return ESP_ERR_INVALID_ARG;         \
+    }                                       \
+} while(0)
 
-/* Memory allocation caps which decide the section that memory supposed to allocate */
-#if CONFIG_ANA_CMPR_ISR_IRAM_SAFE
-#define ANA_CMPR_MEM_ALLOC_CAPS         (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
-#define ANA_CMPR_INTR_FLAG              (ESP_INTR_FLAG_IRAM)
-#else
-#define ANA_CMPR_MEM_ALLOC_CAPS         MALLOC_CAP_DEFAULT
-#define ANA_CMPR_INTR_FLAG              (0)
-#endif
-
-/* Driver tag */
-static const char *TAG = "ana_cmpr";
+#define ANA_CMPR_UNIT_CHECK(unit)           ESP_RETURN_ON_FALSE((unit) >= 0 && (unit) < SOC_ANA_CMPR_NUM, ESP_ERR_INVALID_ARG, TAG, "invalid unit number")
 
 /* Global static object of the Analog Comparator unit */
 static ana_cmpr_handle_t s_ana_cmpr[SOC_ANA_CMPR_NUM] = {
@@ -69,10 +52,10 @@ static ana_cmpr_handle_t s_ana_cmpr[SOC_ANA_CMPR_NUM] = {
 /* Global spin lock */
 static portMUX_TYPE s_spinlock = portMUX_INITIALIZER_UNLOCKED;
 
-static void IRAM_ATTR s_ana_cmpr_default_intr_handler(void *usr_data)
+void ana_cmpr_default_intr_handler(void *usr_data)
 {
-    ana_cmpr_handle_t cmpr_handle = (ana_cmpr_handle_t)usr_data;
     bool need_yield = false;
+    ana_cmpr_handle_t cmpr_handle = (ana_cmpr_handle_t)usr_data;
     ana_cmpr_cross_event_data_t evt_data = {.cross_type = ANA_CMPR_CROSS_ANY};
     /* Get and clear the interrupt status */
     uint32_t status = analog_cmpr_ll_get_intr_status(cmpr_handle->dev);
@@ -80,6 +63,7 @@ static void IRAM_ATTR s_ana_cmpr_default_intr_handler(void *usr_data)
 
     /* Call the user callback function if it is specified and the corresponding event triggers*/
     if (cmpr_handle->cbs.on_cross && (status & cmpr_handle->intr_mask)) {
+        // some chip can distinguish the edge of the cross event
 #if SOC_ANA_CMPR_CAN_DISTINGUISH_EDGE
         if (status & ANALOG_CMPR_LL_POS_CROSS_MASK(cmpr_handle->unit)) {
             evt_data.cross_type = ANA_CMPR_CROSS_POS;
@@ -96,75 +80,83 @@ static void IRAM_ATTR s_ana_cmpr_default_intr_handler(void *usr_data)
 
 static esp_err_t s_ana_cmpr_init_gpio(ana_cmpr_handle_t cmpr, bool is_external_ref)
 {
-    uint64_t pin_mask = BIT64(ana_cmpr_periph[cmpr->unit].src_gpio);
-    if (is_external_ref) {
-        pin_mask |= BIT64(ana_cmpr_periph[cmpr->unit].ext_ref_gpio);
+    esp_err_t err = gpio_config_as_analog(ana_cmpr_periph[cmpr->unit].src_gpio);
+    if (err == ESP_OK && is_external_ref) {
+        err = gpio_config_as_analog(ana_cmpr_periph[cmpr->unit].ext_ref_gpio);
     }
-    gpio_config_t ana_cmpr_gpio_cfg = {
-        .pin_bit_mask = pin_mask,
-        .mode = GPIO_MODE_DISABLE,
-        .pull_up_en = GPIO_PULLUP_DISABLE,
-        .pull_down_en = GPIO_PULLDOWN_DISABLE,
-        .intr_type = GPIO_INTR_DISABLE,
-    };
-    return gpio_config(&ana_cmpr_gpio_cfg);
+    return err;
+}
+
+static void ana_cmpr_destroy_unit(ana_cmpr_handle_t cmpr)
+{
+#if CONFIG_PM_ENABLE
+    if (cmpr->pm_lock) {
+        esp_pm_lock_delete(cmpr->pm_lock);
+    }
+#endif
+    if (cmpr->intr_handle) {
+        esp_intr_free(cmpr->intr_handle);
+    }
+    free(cmpr);
 }
 
 esp_err_t ana_cmpr_new_unit(const ana_cmpr_config_t *config, ana_cmpr_handle_t *ret_cmpr)
 {
-#if CONFIG_ANA_CMPR_ENABLE_DEBUG_LOG
-    esp_log_level_set(TAG, ESP_LOG_DEBUG);
-#endif
+    esp_err_t ret = ESP_OK;
+    ana_cmpr_handle_t ana_cmpr_hdl = NULL;
     ANA_CMPR_NULL_POINTER_CHECK(config);
     ANA_CMPR_NULL_POINTER_CHECK(ret_cmpr);
     ana_cmpr_unit_t unit = config->unit;
     ANA_CMPR_UNIT_CHECK(unit);
-    ESP_RETURN_ON_FALSE(config->intr_priority >= 0 && config->intr_priority <= 7, ESP_ERR_INVALID_ARG, TAG, "interrupt priority should be within 0~7");
-    ESP_RETURN_ON_FALSE(!s_ana_cmpr[unit], ESP_ERR_INVALID_STATE, TAG,
-                        "unit has been allocated already");
-    esp_err_t ret = ESP_OK;
-
-    /* Allocate analog comparator unit */
-    s_ana_cmpr[unit] = (ana_cmpr_handle_t)heap_caps_calloc(1, sizeof(struct ana_cmpr_t), ANA_CMPR_MEM_ALLOC_CAPS);
-    ESP_RETURN_ON_FALSE(s_ana_cmpr[unit], ESP_ERR_NO_MEM, TAG, "no memory for analog comparator struct");
-
-    /* Assign analog comparator unit */
-    s_ana_cmpr[unit]->dev = ANALOG_CMPR_LL_GET_HW(unit);
-    s_ana_cmpr[unit]->ref_src = config->ref_src;
-    s_ana_cmpr[unit]->intr_priority = config->intr_priority;
-    s_ana_cmpr[unit]->is_enabled = false;
-    s_ana_cmpr[unit]->pm_lock = NULL;
-
-#if CONFIG_PM_ENABLE
-    /* Create PM lock */
-    char lock_name[10] = "ana_cmpr\0";
-    lock_name[8] = '0' + unit;
-    ret  = esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, lock_name, &s_ana_cmpr[unit]->pm_lock);
-    ESP_GOTO_ON_ERROR(ret, err, TAG, "create NO_LIGHT_SLEEP, lock failed");
-#endif
-
-    if (!config->flags.io_loop_back) {
-        ESP_GOTO_ON_ERROR(s_ana_cmpr_init_gpio(s_ana_cmpr[unit], config->ref_src == ANA_CMPR_REF_SRC_EXTERNAL), err, TAG, "failed to initialize GPIO");
+    ESP_RETURN_ON_FALSE(!s_ana_cmpr[unit], ESP_ERR_INVALID_STATE, TAG, "unit has been allocated already");
+    if (config->intr_priority) {
+        ESP_RETURN_ON_FALSE(1 << (config->intr_priority) & ANA_CMPR_ALLOW_INTR_PRIORITY_MASK, ESP_ERR_INVALID_ARG,
+                            TAG, "invalid interrupt priority:%d", config->intr_priority);
     }
 
-    /* Analog clock comes from IO MUX, but IO MUX clock might be shared with other submodules as well */
-    ESP_GOTO_ON_ERROR(esp_clk_tree_src_get_freq_hz((soc_module_clk_t)config->clk_src,
-                                                   ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED,
-                                                   &s_ana_cmpr[unit]->src_clk_freq_hz),
+    // analog comparator unit must be allocated from internal memory because it contains atomic variable
+    ana_cmpr_hdl = heap_caps_calloc(1, sizeof(struct ana_cmpr_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    ESP_RETURN_ON_FALSE(ana_cmpr_hdl, ESP_ERR_NO_MEM, TAG, "no memory for analog comparator object");
+
+    /* Assign analog comparator unit */
+    ana_cmpr_hdl->dev = ANALOG_CMPR_LL_GET_HW(unit);
+    ana_cmpr_hdl->unit = unit;
+    ana_cmpr_hdl->intr_priority = config->intr_priority;
+    atomic_init(&ana_cmpr_hdl->fsm, ANA_CMPR_FSM_INIT);
+
+    ana_cmpr_clk_src_t clk_src = config->clk_src ? config->clk_src : ANA_CMPR_CLK_SRC_DEFAULT;
+    // Analog comparator located in the IO MUX, but IO MUX clock might be shared with other submodules as well, check if there's conflict
+    ESP_GOTO_ON_ERROR(io_mux_set_clock_source((soc_module_clk_t)clk_src), err, TAG, "clock source conflicts with other IOMUX consumers");
+    ESP_GOTO_ON_ERROR(esp_clk_tree_src_get_freq_hz((soc_module_clk_t)clk_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &ana_cmpr_hdl->src_clk_freq_hz),
                       err, TAG, "get source clock frequency failed");
-    ESP_GOTO_ON_ERROR(io_mux_set_clock_source((soc_module_clk_t)(config->clk_src)), err, TAG,
-                      "potential clock source conflicts from other IOMUX peripherals");
+
+#if CONFIG_PM_ENABLE
+    // Create PM lock, because the light sleep may disable the clock and power domain used by the analog comparator
+    // TODO: IDF-12818
+    ret  = esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, ana_cmpr_periph[unit].module_name, &ana_cmpr_hdl->pm_lock);
+    ESP_GOTO_ON_ERROR(ret, err, TAG, "create NO_LIGHT_SLEEP lock failed");
+#endif
 
     /* Configure the register */
-    portENTER_CRITICAL(&s_spinlock);
-    analog_cmpr_ll_set_ref_source(s_ana_cmpr[unit]->dev, config->ref_src);
+    analog_cmpr_ll_set_ref_source(ana_cmpr_hdl->dev, config->ref_src);
+    ana_cmpr_hdl->ref_src = config->ref_src;
 #if !SOC_ANA_CMPR_CAN_DISTINGUISH_EDGE
-    analog_cmpr_ll_set_cross_type(s_ana_cmpr[unit]->dev, config->cross_type);
+    // set which cross type can trigger the interrupt
+    analog_cmpr_ll_set_intr_cross_type(ana_cmpr_hdl->dev, config->cross_type);
 #endif  // SOC_ANA_CMPR_CAN_DISTINGUISH_EDGE
-    /* Record the interrupt mask, the interrupt will be lazy installed when register the callbacks */
-    s_ana_cmpr[unit]->intr_mask = analog_cmpr_ll_get_intr_mask_by_type(s_ana_cmpr[unit]->dev, config->cross_type);
+    // record the interrupt mask, the interrupt will be lazy installed when register user callbacks
+    // different cross type means different interrupt mask
+    ana_cmpr_hdl->intr_mask = analog_cmpr_ll_get_intr_mask_by_type(ana_cmpr_hdl->dev, config->cross_type);
+
+    // different unit share the same interrupt register, so using a spin lock to protect it
+    portENTER_CRITICAL(&s_spinlock);
+    // disable the interrupt by default, and clear pending status
+    analog_cmpr_ll_enable_intr(ana_cmpr_hdl->dev, ANALOG_CMPR_LL_ALL_INTR_MASK(unit), false);
+    analog_cmpr_ll_clear_intr(ana_cmpr_hdl->dev, ANALOG_CMPR_LL_ALL_INTR_MASK(unit));
     portEXIT_CRITICAL(&s_spinlock);
 
+    // GPIO configuration
+    ESP_GOTO_ON_ERROR(s_ana_cmpr_init_gpio(ana_cmpr_hdl, config->ref_src == ANA_CMPR_REF_SRC_EXTERNAL), err, TAG, "failed to initialize GPIO");
     if (config->ref_src == ANA_CMPR_REF_SRC_INTERNAL) {
         ESP_LOGD(TAG, "unit %d allocated, source signal: GPIO %d, reference signal: internal",
                  (int)unit, ana_cmpr_periph[unit].src_gpio);
@@ -173,12 +165,15 @@ esp_err_t ana_cmpr_new_unit(const ana_cmpr_config_t *config, ana_cmpr_handle_t *
                  (int)unit, ana_cmpr_periph[unit].src_gpio, ana_cmpr_periph[unit].ext_ref_gpio);
     }
 
-    *ret_cmpr = s_ana_cmpr[unit];
+    // register the analog comparator unit to the global object array
+    s_ana_cmpr[unit] = ana_cmpr_hdl;
+    *ret_cmpr = ana_cmpr_hdl;
     return ESP_OK;
 
 err:
-    /* Delete the unit if allocation failed */
-    ana_cmpr_del_unit(s_ana_cmpr[unit]);
+    if (ana_cmpr_hdl) {
+        ana_cmpr_destroy_unit(ana_cmpr_hdl);
+    }
     return ret;
 }
 
@@ -193,22 +188,12 @@ esp_err_t ana_cmpr_del_unit(ana_cmpr_handle_t cmpr)
             break;
         }
     }
-    ESP_RETURN_ON_FALSE(unit != -1, ESP_ERR_INVALID_ARG, TAG, "wrong analog comparator handle");
-    ESP_RETURN_ON_FALSE(!cmpr->is_enabled, ESP_ERR_INVALID_STATE, TAG, "this analog comparator unit not disabled yet");
+    ESP_RETURN_ON_FALSE(unit != -1, ESP_ERR_INVALID_ARG, TAG, "unregistered unit handle");
+    ESP_RETURN_ON_FALSE(atomic_load(&cmpr->fsm) == ANA_CMPR_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "not in init state");
 
-    /* Delete the pm lock if the unit has */
-    if (cmpr->pm_lock) {
-        ESP_RETURN_ON_ERROR(esp_pm_lock_delete(cmpr->pm_lock), TAG, "delete pm lock failed");
-    }
-
-    /* Free interrupt and other resources */
-    if (cmpr->intr_handle) {
-        esp_intr_free(cmpr->intr_handle);
-    }
-
-    free(s_ana_cmpr[unit]);
+    ana_cmpr_destroy_unit(cmpr);
+    // unregister it from the global object array
     s_ana_cmpr[unit] = NULL;
-
     ESP_LOGD(TAG, "unit %d deleted", (int)unit);
 
     return ESP_OK;
@@ -216,34 +201,32 @@ esp_err_t ana_cmpr_del_unit(ana_cmpr_handle_t cmpr)
 
 esp_err_t ana_cmpr_set_internal_reference(ana_cmpr_handle_t cmpr, const ana_cmpr_internal_ref_config_t *ref_cfg)
 {
-    ANA_CMPR_NULL_POINTER_CHECK_ISR(cmpr);
-    ANA_CMPR_NULL_POINTER_CHECK_ISR(ref_cfg);
-    ESP_RETURN_ON_FALSE_ISR(cmpr->ref_src == ANA_CMPR_REF_SRC_INTERNAL, ESP_ERR_INVALID_STATE,
-                            TAG, "the reference channel is not internal, no need to configure internal reference");
+    ANA_CMPR_NULL_POINTER_CHECK_SAFE(cmpr);
+    ANA_CMPR_NULL_POINTER_CHECK_SAFE(ref_cfg);
+    if (unlikely(cmpr->ref_src != ANA_CMPR_REF_SRC_INTERNAL)) {
+        ESP_EARLY_LOGE(TAG, "the reference voltage does not come from internal");
+        return ESP_ERR_INVALID_STATE;
+    }
 
-    /* Set internal reference voltage */
+    // the underlying register may be accessed by different threads at the same time, so use spin lock to protect it
     portENTER_CRITICAL_SAFE(&s_spinlock);
     analog_cmpr_ll_set_internal_ref_voltage(cmpr->dev, ref_cfg->ref_volt);
     portEXIT_CRITICAL_SAFE(&s_spinlock);
-
-    ESP_EARLY_LOGD(TAG, "unit %d internal voltage level %" PRIu32, (int)cmpr->unit, (uint32_t)ref_cfg->ref_volt);
 
     return ESP_OK;
 }
 
 esp_err_t ana_cmpr_set_debounce(ana_cmpr_handle_t cmpr, const ana_cmpr_debounce_config_t *dbc_cfg)
 {
-    ANA_CMPR_NULL_POINTER_CHECK_ISR(cmpr);
-    ANA_CMPR_NULL_POINTER_CHECK_ISR(dbc_cfg);
+    ANA_CMPR_NULL_POINTER_CHECK_SAFE(cmpr);
+    ANA_CMPR_NULL_POINTER_CHECK_SAFE(dbc_cfg);
 
     /* Transfer the time to clock cycles */
-    uint32_t wait_cycle = (uint32_t)(dbc_cfg->wait_us * (cmpr->src_clk_freq_hz / 1000000));
-    /* Set the waiting clock cycles */
+    uint32_t wait_cycle = dbc_cfg->wait_us * (cmpr->src_clk_freq_hz / 1000000);
+    // the underlying register may be accessed by different threads at the same time, so use spin lock to protect it
     portENTER_CRITICAL_SAFE(&s_spinlock);
     analog_cmpr_ll_set_debounce_cycle(cmpr->dev, wait_cycle);
     portEXIT_CRITICAL_SAFE(&s_spinlock);
-
-    ESP_EARLY_LOGD(TAG, "unit %d debounce wait cycle %"PRIu32, (int)cmpr->unit, wait_cycle);
 
     return ESP_OK;
 }
@@ -257,18 +240,16 @@ esp_err_t ana_cmpr_set_cross_type(ana_cmpr_handle_t cmpr, ana_cmpr_cross_type_t 
     (void)cross_type;
     return ESP_ERR_NOT_SUPPORTED;
 #else
-    ANA_CMPR_NULL_POINTER_CHECK_ISR(cmpr);
-    ESP_RETURN_ON_FALSE_ISR(cross_type >= ANA_CMPR_CROSS_DISABLE && cross_type <= ANA_CMPR_CROSS_ANY,
-                            ESP_ERR_INVALID_ARG, TAG, "invalid cross type");
+    ANA_CMPR_NULL_POINTER_CHECK_SAFE(cmpr);
+    if (unlikely(cross_type < ANA_CMPR_CROSS_DISABLE || cross_type > ANA_CMPR_CROSS_ANY)) {
+        ESP_EARLY_LOGE(TAG, "invalid cross type");
+        return ESP_ERR_INVALID_ARG;
+    }
 
     portENTER_CRITICAL_SAFE(&s_spinlock);
-#if !SOC_ANA_CMPR_CAN_DISTINGUISH_EDGE
-    analog_cmpr_ll_set_cross_type(cmpr->dev, cross_type);
-#endif
+    analog_cmpr_ll_set_intr_cross_type(cmpr->dev, cross_type);
     cmpr->intr_mask = analog_cmpr_ll_get_intr_mask_by_type(cmpr->dev, cross_type);
     portEXIT_CRITICAL_SAFE(&s_spinlock);
-
-    ESP_EARLY_LOGD(TAG, "unit %d cross type updated to %d", (int)cmpr->unit, cross_type);
 
     return ESP_OK;
 #endif
@@ -278,58 +259,54 @@ esp_err_t ana_cmpr_register_event_callbacks(ana_cmpr_handle_t cmpr, const ana_cm
 {
     ANA_CMPR_NULL_POINTER_CHECK(cmpr);
     ANA_CMPR_NULL_POINTER_CHECK(cbs);
-    ESP_RETURN_ON_FALSE(!cmpr->is_enabled, ESP_ERR_INVALID_STATE, TAG,
-                        "please disable the analog comparator before registering the callbacks");
-#if CONFIG_ANA_CMPR_ISR_IRAM_SAFE
+    ESP_RETURN_ON_FALSE(atomic_load(&cmpr->fsm) == ANA_CMPR_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "not in init state");
+#if CONFIG_ANA_CMPR_ISR_CACHE_SAFE
     if (cbs->on_cross) {
-        ESP_RETURN_ON_FALSE(esp_ptr_in_iram(cbs->on_cross), ESP_ERR_INVALID_ARG, TAG,
-                            "ANA_CMPR_ISR_IRAM_SAFE enabled but the callback function is not in IRAM");
+        ESP_RETURN_ON_FALSE(esp_ptr_in_iram(cbs->on_cross), ESP_ERR_INVALID_ARG, TAG, "on_cross is not in IRAM");
     }
     if (user_data) {
-        ESP_RETURN_ON_FALSE(esp_ptr_in_iram(user_data), ESP_ERR_INVALID_ARG, TAG,
-                            "ANA_CMPR_ISR_IRAM_SAFE enabled but the user_data is not in IRAM");
+        ESP_RETURN_ON_FALSE(esp_ptr_internal(user_data), ESP_ERR_INVALID_ARG, TAG, "user_data is not in internal RAM");
     }
 #endif
 
-    /* Allocate the interrupt, the interrupt source of Analog Comparator is shared with GPIO interrupt source on ESP32H2 */
     if (!cmpr->intr_handle) {
-        int intr_flags = ANA_CMPR_INTR_FLAG | (cmpr->intr_priority ?  BIT(cmpr->intr_priority) : ESP_INTR_FLAG_LOWMED);
-#if SOC_ANA_CMPR_INTR_SHARE_WITH_GPIO
-        intr_flags |= ESP_INTR_FLAG_SHARED;
-#endif  // SOC_ANA_CMPR_INTR_SHARE_WITH_GPIO
+        int intr_flags = ANA_CMPR_INTR_FLAG | ((cmpr->intr_priority > 0) ?  BIT(cmpr->intr_priority) : ESP_INTR_FLAG_LOWMED);
         ESP_RETURN_ON_ERROR(esp_intr_alloc_intrstatus(ana_cmpr_periph[cmpr->unit].intr_src, intr_flags, (uint32_t)analog_cmpr_ll_get_intr_status_reg(cmpr->dev),
-                                                      cmpr->intr_mask, s_ana_cmpr_default_intr_handler, cmpr, &cmpr->intr_handle), TAG, "allocate interrupt failed");
+                                                      cmpr->intr_mask, ana_cmpr_default_intr_handler, cmpr, &cmpr->intr_handle),
+                            TAG, "allocate interrupt failed");
     }
 
-    /* Save the callback group */
+    /* Save the callback functions */
     memcpy(&(cmpr->cbs), cbs, sizeof(ana_cmpr_event_callbacks_t));
     cmpr->user_data = user_data;
 
-    ESP_LOGD(TAG, "unit %d event callback registered", (int)cmpr->unit);
-
+    ESP_LOGV(TAG, "unit %d event callback registered", (int)cmpr->unit);
     return ESP_OK;
 }
 
 esp_err_t ana_cmpr_enable(ana_cmpr_handle_t cmpr)
 {
     ANA_CMPR_NULL_POINTER_CHECK(cmpr);
-    ESP_RETURN_ON_FALSE(!cmpr->is_enabled, ESP_ERR_INVALID_STATE, TAG,
-                        "the analog comparator has enabled already");
-    /* Update the driver status */
-    cmpr->is_enabled = true;
+    ana_cmpr_fsm_t expected_fsm = ANA_CMPR_FSM_INIT;
+    if (atomic_compare_exchange_strong(&cmpr->fsm, &expected_fsm, ANA_CMPR_FSM_WAIT)) {
+#if CONFIG_PM_ENABLE
+        if (cmpr->pm_lock) {
+            esp_pm_lock_acquire(cmpr->pm_lock);
+        }
+#endif
 
-    /* Acquire the pm lock if the unit has, to avoid the system start light sleep while Analog comparator still working */
-    if (cmpr->pm_lock) {
-        ESP_RETURN_ON_ERROR(esp_pm_lock_acquire(cmpr->pm_lock), TAG, "acquire pm_lock failed");
+        // the underlying register may be accessed by different threads at the same time, so use spin lock to protect it
+        portENTER_CRITICAL(&s_spinlock);
+        analog_cmpr_ll_enable_intr(cmpr->dev, cmpr->intr_mask, true);
+        analog_cmpr_ll_enable(cmpr->dev, true);
+        portEXIT_CRITICAL(&s_spinlock);
+
+        // switch the state machine to enable state
+        atomic_store(&cmpr->fsm, ANA_CMPR_FSM_ENABLE);
+        ESP_LOGD(TAG, "unit %d enabled", (int)cmpr->unit);
+    } else {
+        ESP_RETURN_ON_FALSE(false, ESP_ERR_INVALID_STATE, TAG, "not in init state");
     }
-
-    /* Enable the Analog Comparator */
-    portENTER_CRITICAL(&s_spinlock);
-    analog_cmpr_ll_enable_intr(cmpr->dev, cmpr->intr_mask, true);
-    analog_cmpr_ll_enable(cmpr->dev, true);
-    portEXIT_CRITICAL(&s_spinlock);
-
-    ESP_LOGD(TAG, "unit %d enabled", (int)cmpr->unit);
 
     return ESP_OK;
 }
@@ -337,23 +314,27 @@ esp_err_t ana_cmpr_enable(ana_cmpr_handle_t cmpr)
 esp_err_t ana_cmpr_disable(ana_cmpr_handle_t cmpr)
 {
     ANA_CMPR_NULL_POINTER_CHECK(cmpr);
-    ESP_RETURN_ON_FALSE(cmpr->is_enabled, ESP_ERR_INVALID_STATE, TAG,
-                        "the analog comparator not enabled yet");
-    /* Disable the Analog Comparator */
-    portENTER_CRITICAL(&s_spinlock);
-    analog_cmpr_ll_enable_intr(cmpr->dev, cmpr->intr_mask, false);
-    analog_cmpr_ll_enable(cmpr->dev, false);
-    portEXIT_CRITICAL(&s_spinlock);
+    ana_cmpr_fsm_t expected_fsm = ANA_CMPR_FSM_ENABLE;
+    if (atomic_compare_exchange_strong(&cmpr->fsm, &expected_fsm, ANA_CMPR_FSM_WAIT)) {
+        // the underlying register may be accessed by different threads at the same time, so use spin lock to protect it
+        portENTER_CRITICAL(&s_spinlock);
+        analog_cmpr_ll_enable_intr(cmpr->dev, cmpr->intr_mask, false);
+        analog_cmpr_ll_enable(cmpr->dev, false);
+        portEXIT_CRITICAL(&s_spinlock);
 
-    /* Release the pm lock, allow light sleep then */
-    if (cmpr->pm_lock) {
-        ESP_RETURN_ON_ERROR(esp_pm_lock_release(cmpr->pm_lock), TAG, "release pm_lock failed");
+#if CONFIG_PM_ENABLE
+        if (cmpr->pm_lock) {
+            esp_pm_lock_release(cmpr->pm_lock);
+        }
+#endif
+
+        // switch the state machine to init state
+        atomic_store(&cmpr->fsm, ANA_CMPR_FSM_INIT);
+        ESP_LOGD(TAG, "unit %d disabled", (int)cmpr->unit);
+    } else {
+        ESP_RETURN_ON_FALSE(false, ESP_ERR_INVALID_STATE, TAG, "not enabled yet");
     }
 
-    /* Update the driver status */
-    cmpr->is_enabled = false;
-
-    ESP_LOGD(TAG, "unit %d disabled", (int)cmpr->unit);
     return ESP_OK;
 }
 
@@ -378,10 +359,18 @@ esp_err_t ana_cmpr_get_gpio(ana_cmpr_unit_t unit, ana_cmpr_channel_type_t chan_t
     return ESP_OK;
 }
 
-ana_cmpr_unit_t ana_cmpr_priv_get_unit_by_handle(ana_cmpr_handle_t cmpr)
+ana_cmpr_unit_t ana_cmpr_get_unit_id(ana_cmpr_handle_t cmpr)
 {
     if (!cmpr) {
         return -1;
     }
     return cmpr->unit;
 }
+
+#if CONFIG_ANA_CMPR_ENABLE_DEBUG_LOG
+__attribute__((constructor))
+static void ana_cmpr_override_default_log_level(void)
+{
+    esp_log_level_set(TAG, ESP_LOG_DEBUG);
+}
+#endif

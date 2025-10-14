@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,6 +21,8 @@
 #include "hal/misc.h"
 #include "hal/assert.h"
 #include "hal/twai_types.h"
+#include "soc/twai_periph.h"
+#include "soc/twai_reg.h"
 #include "soc/twai_struct.h"
 #include "soc/pcr_struct.h"
 
@@ -31,6 +33,13 @@ extern "C" {
 #endif
 
 /* ------------------------- Defines and Typedefs --------------------------- */
+#define TWAI_LL_BRP_MIN         2
+#define TWAI_LL_BRP_MAX         32768
+#define TWAI_LL_TSEG1_MIN       1
+#define TWAI_LL_TSEG2_MIN       1
+#define TWAI_LL_TSEG1_MAX       (TWAI_TIME_SEGMENT1 + 1)
+#define TWAI_LL_TSEG2_MAX       (TWAI_TIME_SEGMENT2 + 1)
+#define TWAI_LL_SJW_MAX         (TWAI_SYNC_JUMP_WIDTH + 1)
 
 #define TWAI_LL_STATUS_RBS      (0x1 << 0)      //Receive Buffer Status
 #define TWAI_LL_STATUS_DOS      (0x1 << 1)      //Data Overrun Status
@@ -51,6 +60,51 @@ extern "C" {
 #define TWAI_LL_INTR_BEI        (0x1 << 7)      //Bus Error Interrupt
 #define TWAI_LL_INTR_BISI       (0x1 << 8)      //Bus Idle Status Interrupt
 
+#define TWAI_LL_DRIVER_INTERRUPTS   (TWAI_LL_INTR_RI | TWAI_LL_INTR_TI | TWAI_LL_INTR_EI | \
+                                    TWAI_LL_INTR_EPI | TWAI_LL_INTR_ALI | TWAI_LL_INTR_BEI)
+
+typedef enum {
+    TWAI_LL_ERR_BIT = 0,
+    TWAI_LL_ERR_FORM,
+    TWAI_LL_ERR_STUFF,
+    TWAI_LL_ERR_OTHER,
+    TWAI_LL_ERR_MAX,
+} twai_ll_err_type_t;
+
+typedef enum {
+    TWAI_LL_ERR_DIR_TX = 0,
+    TWAI_LL_ERR_DIR_RX,
+    TWAI_LL_ERR_DIR_MAX,
+} twai_ll_err_dir_t;
+
+typedef enum {
+    TWAI_LL_ERR_SEG_SOF = 3,
+    TWAI_LL_ERR_SEG_ID_28_21 = 2,
+    TWAI_LL_ERR_SEG_SRTR = 4,
+    TWAI_LL_ERR_SEG_IDE = 5,
+    TWAI_LL_ERR_SEG_ID_20_18 = 6,
+    TWAI_LL_ERR_SEG_ID_17_13 = 7,
+    TWAI_LL_ERR_SEG_CRC_SEQ = 8,
+    TWAI_LL_ERR_SEG_R0 = 9,
+    TWAI_LL_ERR_SEG_DATA = 10,
+    TWAI_LL_ERR_SEG_DLC = 11,
+    TWAI_LL_ERR_SEG_RTR = 12,
+    TWAI_LL_ERR_SEG_R1 = 13,
+    TWAI_LL_ERR_SEG_ID_4_0 = 14,
+    TWAI_LL_ERR_SEG_ID_12_5 = 15,
+    TWAI_LL_ERR_SEG_ACT_FLAG = 17,
+    TWAI_LL_ERR_SEG_INTER = 18,
+    TWAI_LL_ERR_SEG_SUPERPOS = 19,
+    TWAI_LL_ERR_SEG_PASS_FLAG = 22,
+    TWAI_LL_ERR_SEG_ERR_DELIM = 23,
+    TWAI_LL_ERR_SEG_CRC_DELIM = 24,
+    TWAI_LL_ERR_SEG_ACK_SLOT = 25,
+    TWAI_LL_ERR_SEG_EOF = 26,
+    TWAI_LL_ERR_SEG_ACK_DELIM = 27,
+    TWAI_LL_ERR_SEG_OVRLD_FLAG = 28,
+    TWAI_LL_ERR_SEG_MAX = 29,
+} twai_ll_err_seg_t;
+
 /*
  * The following frame structure has an NEARLY identical bit field layout to
  * each byte of the TX buffer. This allows for formatting and parsing frames to
@@ -59,7 +113,7 @@ extern "C" {
  * TX buffer are used in the frame structure to store the self_reception and
  * single_shot flags which in turn indicate the type of transmission to execute.
  */
-typedef union {
+typedef union twai_ll_frame_buffer_t {
     struct {
         struct {
             uint8_t dlc: 4;             //Data length code (0 to 8) of the frame
@@ -222,18 +276,10 @@ static inline bool twai_ll_is_in_reset_mode(twai_dev_t *hw)
  * @note Must be called in reset mode
  */
 __attribute__((always_inline))
-static inline void twai_ll_set_mode(twai_dev_t *hw, twai_mode_t mode)
+static inline void twai_ll_set_mode(twai_dev_t *hw, bool listen_only, bool no_ack, bool loopback)
 {
-    if (mode == TWAI_MODE_NORMAL) { //Normal Operating mode
-        hw->mode.listen_only_mode = 0;
-        hw->mode.self_test_mode = 0;
-    } else if (mode == TWAI_MODE_NO_ACK) { //Self Test Mode (No Ack)
-        hw->mode.listen_only_mode = 0;
-        hw->mode.self_test_mode = 1;
-    } else if (mode == TWAI_MODE_LISTEN_ONLY) { //Listen Only Mode
-        hw->mode.listen_only_mode = 1;
-        hw->mode.self_test_mode = 0;
-    }
+    hw->mode.listen_only_mode = listen_only;
+    hw->mode.self_test_mode = no_ack;
 }
 
 /* --------------------------- Command Register ----------------------------- */
@@ -374,30 +420,6 @@ static inline uint32_t twai_ll_get_status(twai_dev_t *hw)
     return hw->status.val;
 }
 
-/**
- * @brief   Check if RX FIFO overrun status bit is set
- *
- * @param hw Start address of the TWAI registers
- * @return Overrun status bit
- */
-__attribute__((always_inline))
-static inline bool twai_ll_is_fifo_overrun(twai_dev_t *hw)
-{
-    return hw->status.status_overrun;
-}
-
-/**
- * @brief   Check if previously TX was successful
- *
- * @param hw Start address of the TWAI registers
- * @return Whether previous TX was successful
- */
-__attribute__((always_inline))
-static inline bool twai_ll_is_last_tx_successful(twai_dev_t *hw)
-{
-    return hw->status.status_transmission_complete;
-}
-
 /* -------------------------- Interrupt Register ---------------------------- */
 
 /**
@@ -442,7 +464,7 @@ static inline void twai_ll_set_enabled_intrs(twai_dev_t *hw, uint32_t intr_mask)
 __attribute__((always_inline))
 static inline bool twai_ll_check_brp_validation(uint32_t brp)
 {
-    bool valid = (brp >= SOC_TWAI_BRP_MIN) && (brp <= SOC_TWAI_BRP_MAX);
+    bool valid = (brp >= TWAI_LL_BRP_MIN) && (brp <= TWAI_LL_BRP_MAX);
     // should be an even number
     valid = valid && !(brp & 0x01);
     return valid;
@@ -489,16 +511,19 @@ static inline void twai_ll_clear_arb_lost_cap(twai_dev_t *hw)
 /* ----------------------------- ECC Register ------------------------------- */
 
 /**
- * @brief   Clear Error Code Capture register
+ * @brief Parse Error Code Capture register
  *
  * Reading the ECC register rearms the Bus Error Interrupt
  *
  * @param hw Start address of the TWAI registers
  */
 __attribute__((always_inline))
-static inline void twai_ll_clear_err_code_cap(twai_dev_t *hw)
+static inline void twai_ll_parse_err_code_cap(twai_dev_t *hw, twai_ll_err_type_t *type, twai_ll_err_dir_t *dir, twai_ll_err_seg_t *seg)
 {
-    (void)hw->err_code_cap.val;
+    uint32_t ecc = hw->err_code_cap.val;
+    *type = (twai_ll_err_type_t) ((ecc >> 6) & 0x3);
+    *dir = (twai_ll_err_dir_t) ((ecc >> 5) & 0x1);
+    *seg = (twai_ll_err_seg_t) (ecc & 0x1F);
 }
 
 /* ----------------------------- EWL Register ------------------------------- */
@@ -638,7 +663,7 @@ static inline void twai_ll_set_tx_buffer(twai_dev_t *hw, twai_ll_frame_buffer_t 
  * @param hw Start address of the TWAI registers
  * @param rx_frame Pointer to store formatted frame
  *
- * @note Call twai_ll_parse_frame_buffer() to parse the formatted frame
+ * @note Call twai_hal_parse_frame() to parse the formatted frame
  */
 __attribute__((always_inline))
 static inline void twai_ll_get_rx_buffer(twai_dev_t *hw, twai_ll_frame_buffer_t *rx_frame)
@@ -700,52 +725,69 @@ static inline void twai_ll_format_frame_buffer(uint32_t id, uint8_t dlc, const u
 }
 
 /**
- * @brief   Parse formatted TWAI frame (RX Buffer Layout) into its constituent contents
+ * @brief Check if the message in twai_ll_frame_buffer is extend id format or not
  *
- * @param[in] rx_frame Pointer to formatted frame
- * @param[out] id 11 or 29bit ID
- * @param[out] dlc Data length code
- * @param[out] data Data. Left over bytes set to 0.
- * @param[out] format Type of TWAI frame
+ * @param rx_frame The rx_frame in twai_ll_frame_buffer_t type
+ * @return true if the message is extend id format, false if not
  */
 __attribute__((always_inline))
-static inline void twai_ll_parse_frame_buffer(twai_ll_frame_buffer_t *rx_frame, uint32_t *id, uint8_t *dlc,
-        uint8_t *data, uint32_t *flags)
+static inline bool twai_ll_frame_is_ext_format(twai_ll_frame_buffer_t *rx_frame)
 {
-    //Copy frame information
-    *dlc = rx_frame->dlc;
-    uint32_t flags_temp = 0;
-    flags_temp |= (rx_frame->frame_format) ? TWAI_MSG_FLAG_EXTD : 0;
-    flags_temp |= (rx_frame->rtr) ? TWAI_MSG_FLAG_RTR : 0;
-    flags_temp |= (rx_frame->dlc > TWAI_FRAME_MAX_DLC) ? TWAI_MSG_FLAG_DLC_NON_COMP : 0;
-    *flags = flags_temp;
+    return rx_frame->frame_format;
+}
 
-    //Copy ID. The ID registers are big endian and left aligned, therefore a bswap will be required
+/**
+ * @brief   Parse formatted TWAI frame header (RX Buffer Layout) into twai_frame_header_t
+ *
+ * @param[in] rx_frame Pointer to formatted frame
+ * @param[out] header Pointer to frame header structure
+ */
+__attribute__((always_inline))
+static inline void twai_ll_parse_frame_header(const twai_ll_frame_buffer_t *rx_frame, twai_frame_header_t *header)
+{
+    // Copy frame information
+    header->dlc = rx_frame->dlc;
+    header->ide = rx_frame->frame_format;
+    header->rtr = rx_frame->rtr;
+    header->fdf = 0;
+    header->brs = 0;
+    header->esi = 0;
+    header->timestamp = 0;
+
+    // Copy ID. The ID registers are big endian and left aligned, therefore a bswap will be required
     if (rx_frame->frame_format) {
         uint32_t id_temp = 0;
         for (int i = 0; i < 4; i++) {
             id_temp |= rx_frame->extended.id[i] << (8 * i);
         }
         id_temp = HAL_SWAP32(id_temp) >> 3;  //((byte[i] << 8*(3-i)) >> 3)
-        *id = id_temp & TWAI_EXTD_ID_MASK;
+        header->id = id_temp & TWAI_EXTD_ID_MASK;
     } else {
         uint32_t id_temp = 0;
         for (int i = 0; i < 2; i++) {
             id_temp |= rx_frame->standard.id[i] << (8 * i);
         }
         id_temp = HAL_SWAP16(id_temp) >> 5;  //((byte[i] << 8*(1-i)) >> 5)
-        *id = id_temp & TWAI_STD_ID_MASK;
+        header->id = id_temp & TWAI_STD_ID_MASK;
     }
+}
 
-    uint8_t *data_buffer = (rx_frame->frame_format) ? rx_frame->extended.data : rx_frame->standard.data;
-    //Only copy data if the frame is a data frame (i.e. not a remote frame)
+/**
+ * @brief   Parse formatted TWAI frame data (RX Buffer Layout) into data buffer
+ *
+ * @param[in] rx_frame Pointer to formatted frame
+ * @param[out] data Pointer to data buffer
+ * @param[in] data_len_limit The data length limit, if less than frame data length, over length data will be dropped
+ */
+__attribute__((always_inline))
+static inline void twai_ll_parse_frame_data(const twai_ll_frame_buffer_t *rx_frame, uint8_t *data, uint8_t data_len_limit)
+{
+    const uint8_t *data_buffer = (rx_frame->frame_format) ? rx_frame->extended.data : rx_frame->standard.data;
+    // Only copy data if the frame is a data frame (i.e. not a remote frame)
     int data_length = (rx_frame->rtr) ? 0 : ((rx_frame->dlc > TWAI_FRAME_MAX_DLC) ? TWAI_FRAME_MAX_DLC : rx_frame->dlc);
+    data_length = (data_length < data_len_limit) ? data_length : data_len_limit;
     for (int i = 0; i < data_length; i++) {
         data[i] = data_buffer[i];
-    }
-    //Set remaining bytes of data to 0
-    for (int i = data_length; i < TWAI_FRAME_MAX_DLC; i++) {
-        data[i] = 0;
     }
 }
 

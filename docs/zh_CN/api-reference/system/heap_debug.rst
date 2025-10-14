@@ -30,10 +30,10 @@ ESP-IDF 集成了用于请求 :ref:`堆内存信息 <heap-information>`、:ref:`
 堆内存分配与释放钩子函数
 ---------------------------------------
 
-通过堆内存分配及释放检测钩子，可获取每次堆内存分配及释放操作成功的提示：
+你可以使用堆内存分配和释放检测钩子，接收每次成功分配或释放堆内存操作的通知：
 
-- 定义 :cpp:func:`esp_heap_trace_alloc_hook` 获取堆内存分配操作成功的提示
-- 定义 :cpp:func:`esp_heap_trace_free_hook` 获取堆内存释放操作成功的提示
+- 定义 :cpp:func:`esp_heap_trace_alloc_hook` 获取堆内存分配操作成功的提示。
+- 定义 :cpp:func:`esp_heap_trace_free_hook` 获取堆内存释放操作成功的提示。
 
 要启用此功能，请设置 :ref:`CONFIG_HEAP_USE_HOOKS` 选项。:cpp:func:`esp_heap_trace_alloc_hook` 和 :cpp:func:`esp_heap_trace_free_hook` 具有弱声明（即 ``__attribute__((weak))``），因此无需为这两个钩子提供声明。鉴于从 ISR 中分配和释放堆内存在技术上是可行的（**但强烈不建议**），:cpp:func:`esp_heap_trace_alloc_hook` 和 :cpp:func:`esp_heap_trace_free_hook` 可能会从 ISR 中调用。
 
@@ -56,31 +56,14 @@ ESP-IDF 集成了用于请求 :ref:`堆内存信息 <heap-information>`、:ref:`
 
   void app_main()
   {
-      ...
+    ...
   }
 
-.. _heap-corruption:
 
-堆内存损坏检测
--------------------------
-
-堆内存损坏检测可检测到各类堆内存错误，包括：
-
-- 越界写入和缓冲区溢出
-- 写入已释放的内存
-- 从已释放或未初始化的内存读取
-
-断言
-^^^^^^^^^^
-
-如 :component_file:`heap/multi_heap.c` 等堆的实现方式包含许多断言，堆内存损坏则断言失败。为高效检测堆内存损坏，请确保在项目配置中通过 :ref:`CONFIG_COMPILER_OPTIMIZATION_ASSERTION_LEVEL` 选项启用断言。
-
-如果堆完整性断言失败，将打印一行类似 ``CORRUPT HEAP: multi_heap.c:225 detected at 0x3ffbb71c`` 的内容，打印的内存地址即内容损坏的堆结构地址。
-
-调用 :cpp:func:`heap_caps_check_integrity_all` 或相关函数可手动检测堆内存完整性，该函数可以检测所有请求的堆内存完整性，在禁用断言时仍可生效。若此完整性检测检测到错误，将打印相应错误及内容损坏的堆内存结构地址。
+.. _heap-allocation-failed:
 
 内存分配失败钩子
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+------------------
 
 用户可以使用 :cpp:func:`heap_caps_register_failed_alloc_callback` 注册回调函数，每次内存分配操作失败时都会调用该函数。
 
@@ -106,6 +89,34 @@ ESP-IDF 集成了用于请求 :ref:`堆内存信息 <heap-information>`、:ref:`
       ...
   }
 
+
+.. _heap-corruption:
+
+检测堆内存损坏
+------------------
+
+堆内存损坏检测可检测到各类堆内存错误，包括：
+
+- 越界写入和缓冲区溢出
+- 对已释放内存的写操作
+- 对已释放或未初始化内存的读操作
+
+堆内存损坏检测共有三个级别，在下方列表中，后一级别比前一级别提供更精细的检测：
+
+.. list::
+    - `基本模式（无 canary 标记）`_
+    - `轻量级模式`_
+    - `全面检测模式`_
+
+断言
+^^^^^^^^^^
+
+如 :component_file:`heap/multi_heap.c` 等堆的实现方式包含许多断言，堆内存损坏则断言失败。为高效检测堆内存损坏，请确保在项目配置中通过 :ref:`CONFIG_COMPILER_OPTIMIZATION_ASSERTION_LEVEL` 选项启用断言。
+
+如果堆完整性断言失败，将打印一行类似 ``CORRUPT HEAP: multi_heap.c:225 detected at 0x3ffbb71c`` 的内容，打印的内存地址即内容损坏的堆结构地址。
+
+调用 :cpp:func:`heap_caps_check_integrity_all` 或相关函数可手动检测堆的完整性。该函数可以检测所有指定的堆内存是否完整，在禁用断言时仍可生效。若此完整性检测发现错误，将打印相应错误及损坏的堆结构地址。
+
 定位堆内存损坏
 ^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -126,8 +137,9 @@ ESP-IDF 集成了用于请求 :ref:`堆内存信息 <heap-information>`、:ref:`
 
 在项目配置菜单中，可以在 ``Component config`` 下找到 ``Heap memory debugging`` 菜单，其中的 :ref:`CONFIG_HEAP_CORRUPTION_DETECTION` 选项可以设置为以下三种级别：
 
-基本模式（无污染）
-+++++++++++++++++++++++++
+
+基本模式（无 canary 标记）
+++++++++++++++++++++++++++++++++
 
 此为默认级别，默认情况下，不会启用任何特殊的堆内存损坏检测功能。但会启用提供的断言。如果堆的任何内部数据结构出现覆盖或损坏，就会打印出一个堆内存损坏错误。这通常表示缓冲区溢出或越界写入。
 
@@ -135,31 +147,35 @@ ESP-IDF 集成了用于请求 :ref:`堆内存信息 <heap-information>`、:ref:`
 
 在基本模式调用 :cpp:func:`heap_caps_check_integrity`，可以检查所有堆结构的完整性，并在出错时打印错误信息。
 
-轻微影响模式
+
+轻量级模式
 +++++++++++++++++
 
-在此级别下，每个分配的内存块都会在头尾加入“canary 字节”进行“污染”。如果应用程序在已分配缓冲区的边界外写入数据，则会破坏这些 canary 字节，导致完整性检查失败。
+此级别包含“基本模式”中的所有检测功能。此外，每个分配的内存块都会在头部和尾部添加 canary 字节进行“污染”标记。如果应用程序写入了这些 canary 字节，则会被视为已损坏，导致完整性检查失败。
 
 头 canary 字的值为 ``0xABBA1234`` （按字节顺序为 ``3412BAAB``），尾 canary 字的值为 ``0xBAAD5678`` （按字节顺序为 ``7856ADBA``）。
 
-基本模式下的堆内存损坏检测可以检测到大多数越界写入，在检测到错误前的越界字节数取决于堆属性。但轻微影响模式更精确，可以检测到单个字节的越界写入。
+基本模式下的堆内存损坏检测可以检测到大多数越界写入，在检测到错误前的越界字节数取决于堆属性。但轻量级模式更精确，可以检测到单个字节的越界写入。
 
-启用轻微影响模式检测会增加内存使用量，每次内存分配需要 9 至 12 个额外的字节，具体取决于对齐方式。
+启用轻量级模式检测会增加内存使用量，因为每次内存分配都会使用额外的元数据字节。
 
-在轻微影响模式下，每次调用 :cpp:func:`heap_caps_free` 时，都会检查要释放的缓冲区头尾 canary 字节是否匹配预期值。
+在轻量级模式下，每次调用 :cpp:func:`heap_caps_free` 时，都会检查要释放的缓冲区头尾 canary 字节是否匹配预期值。
 
-调用 :cpp:func:`heap_caps_check_integrity` 时，会检查所有已分配的堆内存块的 canary 字节是否匹配预期值。
+调用 :cpp:func:`heap_caps_check_integrity` 或 :cpp:func:`heap_caps_check_integrity_all` 时，会检查所有已分配的堆内存块的 canary 字节是否匹配预期值。
 
 以上两种情况检查的是，在缓冲区返回给用户之前，已分配块的前 4 个字节是否为 ``0xABBA1234``，以及在缓冲区返回给用户之后，最后 4 个字节是否为 ``0xBAAD5678``。
 
 如果检查到字节与上述值不同，通常表示缓冲区越界或下溢。其中越界表示在写入内存时，写入的数据超过了所分配内存的大小，导致写入到了未分配的内存区域；下溢表示在读取内存时，读取的数据超出了所分配内存的范围，读取了未分配的内存区域的数据。
 
+
 全面检测模式
 +++++++++++++++++++
 
-此级别包含了轻微影响模式的检测功能，此外还会检查未初始化访问和使用已释放内存产生的错误。此模式会将所有新分配的内存填充为 ``0xCE``，将所有已释放的内存填充为 ``0xFE``。
+此级别包含了轻量级模式的检测功能，此外还会检查未初始化访问和使用已释放内存产生的错误。此模式会将所有新分配的内存填充为 ``0xCE``，将所有已释放的内存填充为 ``0xFE``。
 
 启用全面检测模式会对运行性能产生实质影响，因为每次 :cpp:func:`heap_caps_malloc` 或 :cpp:func:`heap_caps_free` 操作完成时，都需要将所有内存设置为分配模式，并检查内存。但是，此模式更容易检测到其他方式难以发现的内存损坏错误。建议只在调试时启用此模式，请勿在生产环境中启用。
+
+在调用 :cpp:func:`heap_caps_check_integrity` 或 :cpp:func:`heap_caps_check_integrity_all` 时，还会对已分配和释放模式（分别为 ``0xCE`` 和 ``0xFE``）进行检查。
 
 全面检测模式下程序崩溃
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -173,19 +189,165 @@ ESP-IDF 集成了用于请求 :ref:`堆内存信息 <heap-information>`、:ref:`
 全面检测模式下手动堆内存检测
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-调用 :cpp:func:`heap_caps_check_integrity` 会打印与 ``0xFEFEFEFE``、``0xABBA1234``、或 ``0xBAAD5678`` 相关的错误。在不同情况下，检测器均会检测给定模式，若未找到，则输出相应错误：
+调用 :cpp:func:`heap_caps_check_integrity` 或 :cpp:func:`heap_caps_check_integrity_all` 会打印与 ``0xFEFEFEFE``、``0xABBA1234``、或 ``0xBAAD5678`` 相关的错误。在不同情况下，检测器均会检测给定模式，若未找到，则输出相应错误：
 
 - 对于已释放的堆内存块，检测器会检查是否所有字节都设置为 ``0xFE``，检测到任何其他值都表示错误写入了已释放内存。
-- 对于已分配的堆内存块，检测器的检查模式与轻微影响模式相同，即在每个分配的缓冲区头部和尾部检查 canary 字节 ``0xABBA1234`` 和 ``0xBAAD5678``，检测到任何其他字节都表示缓冲区越界或下溢。
+- 对于已分配的堆内存块，检测器的检查模式与轻量级模式相同，即在每个分配的缓冲区头部和尾部检查 canary 字节 ``0xABBA1234`` 和 ``0xBAAD5678``，检测到任何其他字节都表示缓冲区越界或下溢。
+
 
 .. _heap-task-tracking:
 
 堆任务跟踪
-------------------
+----------
 
-堆任务跟踪可获取堆内存分配的各任务信息，应用程序须指定计划跟踪堆分配的堆属性。
+可以通过 menuconfig 启用堆任务跟踪功能：``Component config`` > ``Heap memory debugging`` > ``Enable heap task tracking`` （参见 :ref:`CONFIG_HEAP_TASK_TRACKING`）。
 
-示例代码可参考 :example:`system/heap_task_tracking`。
+该功能允许用户跟踪自启动以来每个任务的堆内存使用情况，并提供一系列统计信息，这些信息可以通过 getter 函数获取，或直接输出到用户指定的流中。此功能有助于识别内存使用模式和潜在的内存泄漏。
+
+用户还可以通过 menuconfig 启用额外配置：``Component config`` > ``Heap memory debugging`` > ``Keep information about the memory usage of deleted tasks`` （参见 :ref:`CONFIG_HEAP_TRACK_DELETED_TASKS`），以便在任务被删除后仍然保留其统计信息。
+
+.. note::
+
+    请注意，堆任务跟踪无法检测静态分配的任务是否被删除。因此，在阅读下文时需注意，静态分配的任务在堆任务跟踪功能范围内始终被视为存活状态。
+
+需要特别说明的是，除调试目的外，强烈不建议将该功能用于其他用途，原因如下：
+
+.. list::
+
+    - 跟踪每个任务的分配并存储统计信息会占用较大 RAM。
+    - 每次内存分配和释放操作所需的额外数据处理会大幅降低堆分配器的整体性能。
+
+.. note::
+
+    在统计信息输出或访问时不会显示堆任务跟踪功能自身分配的内存。
+
+统计信息的结构
+^^^^^^^^^^^^^^
+
+堆任务跟踪功能将每个任务的统计信息分为三个层级：
+
+.. list::
+
+    - 任务级统计信息
+    - 堆级统计信息
+    - 分配级统计信息
+
+任务级统计信息包括以下内容：
+
+.. list::
+
+    - 任务名称
+    - 任务句柄
+    - 任务状态（运行中或已删除）
+    - 任务的峰值内存使用量（任务生命周期内使用的最大内存）
+    - 任务的当前内存使用量
+    - 该任务分配过内存的堆数量
+
+堆级统计信息针对每个被该任务使用的堆，包含以下内容：
+
+.. list::
+
+    - 堆名称
+    - 堆的内存分配能力（不含优先级）
+    - 堆的总大小
+    - 该任务在该堆上的当前使用量
+    - 该任务在该堆上的峰值使用量
+    - 该任务在该堆上的分配次数
+
+分配级统计信息针对该任务在该堆上的每次分配，包含以下内容：
+
+.. list::
+
+    - 分配的地址
+    - 分配的大小
+
+输出统计信息
+^^^^^^^^^^^^
+
+:cpp:func:`heap_caps_print_single_task_stat_overview` API 可将指定任务的堆使用情况概览输出到指定流。
+
+.. code-block:: text
+
+  ┌────────────────────┬─────────┬──────────────────────┬───────────────────┬─────────────────┐
+  │ TASK               │ STATUS  │ CURRENT MEMORY USAGE │ PEAK MEMORY USAGE │ TOTAL HEAP USED │
+  ├────────────────────┼─────────┼──────────────────────┼───────────────────┼─────────────────┤
+  │          task_name │ ALIVE   │                    0 │              7152 │               1 │
+  └────────────────────┴─────────┴──────────────────────┴───────────────────┴─────────────────┘
+
+:cpp:func:`heap_caps_print_all_task_stat_overview` 可输出所有任务（若启用 :ref:`CONFIG_HEAP_TRACK_DELETED_TASKS`，则包括已删除任务）的堆使用概览。
+
+.. code-block:: text
+
+  ┌────────────────────┬─────────┬──────────────────────┬───────────────────┬─────────────────┐
+  │ TASK               │ STATUS  │ CURRENT MEMORY USAGE │ PEAK MEMORY USAGE │ TOTAL HEAP USED │
+  ├────────────────────┼─────────┼──────────────────────┼───────────────────┼─────────────────┤
+  │          task_name │ DELETED │                11392 │             11616 │               1 │
+  │    other_task_name │ ALIVE   │                    0 │              9408 │               2 │
+  │               main │ ALIVE   │                 3860 │              7412 │               2 │
+  │               ipc1 │ ALIVE   │                   32 │                44 │               1 │
+  │               ipc0 │ ALIVE   │                10080 │             10092 │               1 │
+  │      Pre-scheduler │ ALIVE   │                 2236 │              2236 │               1 │
+  └────────────────────┴─────────┴──────────────────────┴───────────────────┴─────────────────┘
+
+.. note::
+
+    名为 "Pre-scheduler" 的任务表示调度器启动前发生的内存分配。这并非实际任务，因此 "status" 字段（显示为 "ALIVE"）没有实际意义，可忽略。
+
+使用 :cpp:func:`heap_caps_print_single_task_stat` 可输出指定任务的完整统计信息，或使用 :cpp:func:`heap_caps_print_all_task_stat` 输出所有任务的统计信息：
+
+.. code-block:: text
+
+  [...]
+  ├ ALIVE: main, CURRENT MEMORY USAGE 308, PEAK MEMORY USAGE 7412, TOTAL HEAP USED 2:
+  │    ├ HEAP: RAM, CAPS: 0x0010580e, SIZE: 344400, USAGE: CURRENT 220 (0%), PEAK 220 (0%), ALLOC COUNT: 2
+  │    │    ├ ALLOC 0x3fc99024, SIZE 88
+  │    │    ├ ALLOC 0x3fc99124, SIZE 132
+  │    └ HEAP: RAM, CAPS: 0x0010580e, SIZE: 22308, USAGE: CURRENT 88 (0%), PEAK 7192 (32%), ALLOC COUNT: 5
+  │         ├ ALLOC 0x3fce99f8, SIZE 20
+  │         ├ ALLOC 0x3fce9a10, SIZE 12
+  │         ├ ALLOC 0x3fce9a20, SIZE 16
+  │         ├ ALLOC 0x3fce9a34, SIZE 20
+  │         ├ ALLOC 0x3fce9a4c, SIZE 20
+  [...]
+  └ ALIVE: Pre-scheduler, CURRENT MEMORY USAGE 2236, PEAK MEMORY USAGE 2236, TOTAL HEAP USED 1:
+      └ HEAP: RAM, CAPS: 0x0010580e, SIZE: 344400, USAGE: CURRENT 2236 (0%), PEAK 2236 (0%), ALLOC COUNT: 11
+            ├ ALLOC 0x3fc95cb0, SIZE 164
+            ├ ALLOC 0x3fc95dd8, SIZE 12
+            ├ ALLOC 0x3fc95dfc, SIZE 12
+            ├ ALLOC 0x3fc95e20, SIZE 16
+            ├ ALLOC 0x3fc95e48, SIZE 24
+            ├ ALLOC 0x3fc95e78, SIZE 88
+            ├ ALLOC 0x3fc95ee8, SIZE 88
+            ├ ALLOC 0x3fc95f58, SIZE 88
+            ├ ALLOC 0x3fc95fc8, SIZE 88
+            ├ ALLOC 0x3fc96038, SIZE 1312
+            ├ ALLOC 0x3fc96570, SIZE 344
+
+.. note::
+
+    为了便于阅读，上述输出内容有删减（见 "[...]"），仅展示了 **main** 任务和 **Pre-scheduler** 任务的统计信息。此处演示了示调用 :cpp:func:`heap_caps_print_all_task_stat` （或 :cpp:func:`heap_caps_print_single_task_stat`）API 时的输出内容。
+
+.. note::
+
+    本节所述 API 的详细用法可参考 :example:`system/heap_task_tracking/basic`。
+
+获取统计信息
+^^^^^^^^^^^^
+
+用户可使用 :cpp:func:`heap_caps_get_single_task_stat` 获取指定任务的信息。通过该 API 获取的信息与 :cpp:func:`heap_caps_print_single_task_stat` 的输出内容一致。
+
+用户可使用 :cpp:func:`heap_caps_get_all_task_stat` 获取所有任务（若启用 :ref:`CONFIG_HEAP_TRACK_DELETED_TASKS`，则包括已删除任务）的统计信息概览。通过该 API 获取的信息与 :cpp:func:`heap_caps_print_all_task_stat` 的输出内容一致。
+
+每个 getter 函数都需要一个指向数据结构的指针，该结构用于堆任务跟踪收集指定任务（或所有任务）的统计信息。该数据结构包含指向数组的指针，用户可以选择静态或动态分配这些数组。
+
+由于难以预估用于存储信息的数组大小（如每个任务的分配次数、每个任务使用的堆数量、自启动以来创建的任务总数等），堆任务跟踪还提供了 :cpp:func:`heap_caps_alloc_single_task_stat_arrays` （或 :cpp:func:`heap_caps_alloc_all_task_stat_arrays`）来动态分配这些数组所需的内存。
+
+同时，堆任务跟踪还提供 :cpp:func:`heap_caps_free_single_task_stat_arrays` （或 :cpp:func:`heap_caps_free_all_task_stat_arrays`）用于释放通过上述 API 动态分配的内存。
+
+.. note::
+
+    本节所述 API 的详细用法可参考 :example:`system/heap_task_tracking/advanced`。
+
 
 .. _heap-tracing:
 
@@ -209,7 +371,7 @@ ESP-IDF 集成了用于请求 :ref:`堆内存信息 <heap-information>`、:ref:`
 
 
 独立模式
-+++++++++++++++
+^^^^^^^^^^^^^
 
 确定存在泄漏的代码后，请执行以下步骤：
 
@@ -249,43 +411,111 @@ ESP-IDF 集成了用于请求 :ref:`堆内存信息 <heap-information>`、:ref:`
       ...
   }
 
-堆内存跟踪堆输出将类似以下格式的内容：
-
-.. only:: CONFIG_IDF_TARGET_ARCH_XTENSA
-
-    .. code-block:: none
-
-        2 allocations trace (100 entry buffer)
-        32 bytes (@ 0x3ffaf214) allocated CPU 0 ccount 0x2e9b7384 caller 0x400d276d:0x400d27c1
-        0x400d276d: leak_some_memory at /path/to/idf/examples/get-started/blink/main/./blink.c:27
-
-        0x400d27c1: blink_task at /path/to/idf/examples/get-started/blink/main/./blink.c:52
-
-        8 bytes (@ 0x3ffaf804) allocated CPU 0 ccount 0x2e9b79c0 caller 0x400d2776:0x400d27c1
-        0x400d2776: leak_some_memory at /path/to/idf/examples/get-started/blink/main/./blink.c:29
-
-        0x400d27c1: blink_task at /path/to/idf/examples/get-started/blink/main/./blink.c:52
-
-        40 bytes 'leaked' in trace (2 allocations)
-        total allocations 2 total frees 0
+堆内存跟踪会输出类似以下格式的内容：
 
 .. only:: CONFIG_IDF_TARGET_ARCH_RISCV
 
-    .. code-block:: none
+  .. code-block:: none
 
-        2 allocations trace (100 entry buffer)
-        32 bytes (@ 0x3ffaf214) allocated CPU 0 ccount 0x2e9b7384 caller
-        8 bytes (@ 0x3ffaf804) allocated CPU 0 ccount 0x2e9b79c0 caller
-        40 bytes 'leaked' in trace (2 allocations)
-        total allocations 2 total frees 0
+    ====== Heap Trace: 8 records (8 capacity) ======
+        3 bytes (@ 0x3fcb26f8, Internal) allocated CPU 0 ccount 0x1e7af728 freed
+        6 bytes (@ 0x3fcb4ff0, Internal) allocated CPU 0 ccount 0x1e7afc38 freed
+        9 bytes (@ 0x3fcb5000, Internal) allocated CPU 0 ccount 0x1e7b01d4 freed
+        12 bytes (@ 0x3fcb5010, Internal) allocated CPU 0 ccount 0x1e7b0778 freed
+        15 bytes (@ 0x3fcb5020, Internal) allocated CPU 0 ccount 0x1e7b0d18 freed
+        18 bytes (@ 0x3fcb5034, Internal) allocated CPU 0 ccount 0x1e7b12b8 freed
+        21 bytes (@ 0x3fcb504c, Internal) allocated CPU 0 ccount 0x1e7b1858 freed
+        24 bytes (@ 0x3fcb5068, Internal) allocated CPU 0 ccount 0x1e7b1dfc freed
+    ====== Heap Trace Summary ======
+    Mode: Heap Trace All
+    0 bytes alive in trace (0/8 allocations)
+    records: 8 (8 capacity, 8 high water mark)
+    total allocations: 8
+    total frees: 8
+    ================================
+
+  或者，启用了 ``CONFIG_ESP_SYSTEM_USE_FRAME_POINTER`` 选项并且正确配置了栈深度，会输出以下内容：
+
+.. code-block:: none
+
+    ====== Heap Trace: 8 records (8 capacity) ======
+        6 bytes (@ 0x3fc9f620, Internal) allocated CPU 0 ccount 0x1a31ac84 caller 0x40376321:0x40376379
+    0x40376321: heap_caps_malloc at /path/to/idf/examples/components/heap/heap_caps.c:84
+    0x40376379: heap_caps_malloc_default at /path/to/idf/examples/components/heap/heap_caps.c:110
+
+    freed by 0x403839e4:0x42008096
+    0x403839e4: free at /path/to/idf/examples/components/newlib/heap.c:40
+    0x42008096: test_func_74 at /path/to/idf/examples/components/heap/test_apps/heap_tests/main/test_heap_trace.c:104 (discriminator 3)
+
+        9 bytes (@ 0x3fc9f630, Internal) allocated CPU 0 ccount 0x1a31b618 caller 0x40376321:0x40376379
+    0x40376321: heap_caps_malloc at /path/to/idf/examples/components/heap/heap_caps.c:84
+    0x40376379: heap_caps_malloc_default at /path/to/idf/examples/components/heap/heap_caps.c:110
+
+    freed by 0x403839e4:0x42008096
+    0x403839e4: free at /path/to/idf/examples/components/newlib/heap.c:40
+    0x42008096: test_func_74 at /path/to/idf/examples/components/heap/test_apps/heap_tests/main/test_heap_trace.c:104 (discriminator 3)
+
+        12 bytes (@ 0x3fc9f640, Internal) allocated CPU 0 ccount 0x1a31bfac caller 0x40376321:0x40376379
+    0x40376321: heap_caps_malloc at /path/to/idf/examples/components/heap/heap_caps.c:84
+    0x40376379: heap_caps_malloc_default at /path/to/idf/examples/components/heap/heap_caps.c:110
+
+    freed by 0x403839e4:0x42008096
+    0x403839e4: free at /path/to/idf/examples/components/newlib/heap.c:40
+    0x42008096: test_func_74 at /path/to/idf/examples/components/heap/test_apps/heap_tests/main/test_heap_trace.c:104 (discriminator 3)
+
+        15 bytes (@ 0x3fc9f650, Internal) allocated CPU 0 ccount 0x1a31c940 caller 0x40376321:0x40376379
+    0x40376321: heap_caps_malloc at /path/to/idf/examples/components/heap/heap_caps.c:84
+    0x40376379: heap_caps_malloc_default at /path/to/idf/examples/components/heap/heap_caps.c:110
+
+    freed by 0x403839e4:0x42008096
+    0x403839e4: free at /path/to/idf/examples/components/newlib/heap.c:40
+    0x42008096: test_func_74 at /path/to/idf/examples/components/heap/test_apps/heap_tests/main/test_heap_trace.c:104 (discriminator 3)
+
+        18 bytes (@ 0x3fc9f664, Internal) allocated CPU 0 ccount 0x1a31d2d4 caller 0x40376321:0x40376379
+    0x40376321: heap_caps_malloc at /path/to/idf/examples/components/heap/heap_caps.c:84
+    0x40376379: heap_caps_malloc_default at /path/to/idf/examples/components/heap/heap_caps.c:110
+
+    freed by 0x403839e4:0x42008096
+    0x403839e4: free at /path/to/idf/examples/components/newlib/heap.c:40
+    0x42008096: test_func_74 at /path/to/idf/examples/components/heap/test_apps/heap_tests/main/test_heap_trace.c:104 (discriminator 3)
+
+        21 bytes (@ 0x3fc9f67c, Internal) allocated CPU 0 ccount 0x1a31dc68 caller 0x40376321:0x40376379
+    0x40376321: heap_caps_malloc at /path/to/idf/examples/components/heap/heap_caps.c:84
+    0x40376379: heap_caps_malloc_default at /path/to/idf/examples/components/heap/heap_caps.c:110
+
+    freed by 0x403839e4:0x42008096
+    0x403839e4: free at /path/to/idf/examples/components/newlib/heap.c:40
+    0x42008096: test_func_74 at /path/to/idf/examples/components/heap/test_apps/heap_tests/main/test_heap_trace.c:104 (discriminator 3)
+
+        24 bytes (@ 0x3fc9f698, Internal) allocated CPU 0 ccount 0x1a31e600 caller 0x40376321:0x40376379
+    0x40376321: heap_caps_malloc at /path/to/idf/examples/components/heap/heap_caps.c:84
+    0x40376379: heap_caps_malloc_default at /path/to/idf/examples/components/heap/heap_caps.c:110
+
+    freed by 0x403839e4:0x42008096
+    0x403839e4: free at /path/to/idf/examples/components/newlib/heap.c:40
+    0x42008096: test_func_74 at /path/to/idf/examples/components/heap/test_apps/heap_tests/main/test_heap_trace.c:104 (discriminator 3)
+
+        6 bytes (@ 0x3fc9f6b4, Internal) allocated CPU 0 ccount 0x1a320698 caller 0x40376321:0x40376379
+    0x40376321: heap_caps_malloc at /path/to/idf/examples/components/heap/heap_caps.c:84
+    0x40376379: heap_caps_malloc_default at /path/to/idf/examples/components/heap/heap_caps.c:110
+
+    ====== Heap Trace Summary ======
+    Mode: Heap Trace All
+    6 bytes alive in trace (1/8 allocations)
+    records: 8 (8 capacity, 8 high water mark)
+    total allocations: 9
+    total frees: 8
+    ================================
 
 .. note::
 
     以上示例输出使用 :doc:`IDF 监视器 </api-guides/tools/idf-monitor>`，自动将 PC 地址解码为其源文件和行号。
 
-第一行表示与缓冲区的总大小相比，缓冲区内的分配条目数量。
+    如果记录列表溢出，将输出 ``(NB: Internal Buffer has overflowed, so trace data is incomplete.)``。如果看到此日志，请考虑缩短追踪周期或增加追踪缓冲区中的记录数量。
 
-在 ``HEAP_TRACE_LEAKS`` 模式下，对跟踪的每个未释放的已分配内存，打印的信息中都会包含以下内容：
+    如果在调用 :cpp:func:`heap_trace_dump` 或 :cpp:func:`heap_trace_dump_caps` 时有新条目被追踪，将输出 ``(NB: New entries were traced while dumping, so trace dump may have duplicate entries.)``。
+
+在 ``HEAP_TRACE_LEAKS`` 或 ``HEAP_TRACE_ALL`` 模式下，对跟踪的每个未释放的已分配内存，打印的信息中都会包含以下内容：
 
 .. list::
 
@@ -294,25 +524,55 @@ ESP-IDF 集成了用于请求 :ref:`堆内存信息 <heap-information>`、:ref:`
     - ``Internal`` 或 ``PSRAM``：分配内存的一般位置。
     - ``CPU x``：分配过程中运行的 CPU（CPU 0 或 CPU 1）。
     - ``ccount 0x...``：分配时的 CCOUNT（CPU 循环计数器）寄存器值，CPU 0 与 CPU 1 中的这一值不同。
-    :CONFIG_IDF_TARGET_ARCH_XTENSA: - ``caller 0x...`` 作为 PC 地址列表，给出 :cpp:func:`heap_caps_malloc` 或 :cpp:func:`heap_caps_free` 的调用栈，可解码到源文件和行号，如上文所示。
+    :CONFIG_IDF_TARGET_ARCH_XTENSA: - ``caller 0x...`` 以 PC 地址列表的形式，提供 :cpp:func:`heap_caps_malloc` 的调用栈信息。这些地址可以解码为源文件和行号，如上文所示。
 
-.. only:: not CONFIG_IDF_TARGET_ARCH_RISCV
+在 ``HEAP_TRACE_LEAKS`` 模式下，释放内存后，相关的记录会被丢弃。
+
+在 ``HEAP_TRACE_ALL`` 模式下：
+
+.. list::
+
+  :CONFIG_IDF_TARGET_ARCH_RISCV: - 释放内存后，相关记录会保留在列表中，其字段 ``freed`` 设置为 true。
+  :CONFIG_IDF_TARGET_ARCH_XTENSA: - 释放内存后，相关记录的字段 ``freed by`` 会填充为 :cpp:func:`heap_caps_free` 的调用栈（以 PC 地址列表的形式）。这些地址可以解码为源文件和行号，如上所示。
+  - 在达到最大记录数后，会丢弃旧记录，用新记录替换。
+
+.. only:: CONFIG_IDF_TARGET_ARCH_XTENSA
 
     每个跟踪条目记录的调用栈深度可以在项目配置菜单下进行配置，选择 ``Heap Memory Debugging`` > ``Enable heap tracing`` > :ref:`CONFIG_HEAP_TRACING_STACK_DEPTH`。每个内存分配最多可以记录 32 个栈帧（默认为 2），每增加一个栈帧，每个 ``heap_trace_record_t`` 记录的内存使用量将增加 8 个字节。
 
+.. only:: CONFIG_IDF_TARGET_ARCH_RISCV
+
+    默认情况下，每个跟踪条目记录的调用栈深度为 0，所以只能检索到内存分配函数的直接调用者。但是，启用 ``CONFIG_ESP_SYSTEM_USE_FRAME_POINTER`` 选项后，可以在项目配置菜单下配置此调用栈深度，选择 ``Heap Memory Debugging`` > ``Enable heap tracing`` > :ref:`CONFIG_HEAP_TRACING_STACK_DEPTH`。每个内存分配最多可以记录 32 个栈帧（默认为 2），每增加一个栈帧，每个 ``heap_trace_record_t`` 记录的内存使用量将增加 8 个字节。
+
 最后，将打印“泄漏”的总字节数（即在跟踪期间分配但未释放的总字节数），以及它所代表的总分配次数。
 
-如果跟踪缓冲区不足以容纳所有分配，则会打印警告。如果看到此警告，请考虑缩短跟踪时间，或增加跟踪缓冲区中记录的数量。
+使用哈希表提高性能
+++++++++++++++++++++
 
+默认情况下，堆追踪使用一个静态分配的双向链表来存储追踪记录。这种方式的缺点是，当链表中的记录条目数量增加时，查找特定记录的耗时也会随之增加，从而导致运行性能下降。因此，在需要存储大量记录时，双向链表的使用效率很低（甚至可能导致功能无法使用，因为从列表中检索条目所需的时间会阻碍应用程序的正常运行）。
+
+为了解决这个问题，可以前往 ``Component config`` > ``Heap Memory Debugging`` 配置菜单 > 启用 :ref:`CONFIG_HEAP_TRACE_HASH_MAP` 选项，使用哈希表机制来存储记录。这样就可以在不严重影响性能的情况下追踪大量记录。
+
+每个哈希表条目是一个单向链表，用于存储具有相同哈希 ID 的记录。
+
+每条记录的哈希 ID 是基于它们追踪的内存指针计算的。使用的哈希函数基于修改后的 Fowler-Noll-Vo 哈希函数，确保了所有记录在范围 [0, 哈希表大小) 内均匀分布。其中哈希表大小可以前往项目配置菜单 ``Component config`` > ``Heap Memory Debugging`` > 设置 :ref:`CONFIG_HEAP_TRACE_HASH_MAP_SIZE` 来定义。
+
+.. note::
+
+  .. list::
+
+    - 选项 :ref:`CONFIG_HEAP_TRACE_HASH_MAP_SIZE` 定义了哈希表中的条目数量。记录的总数量仍由用户在调用 :cpp:func:`heap_trace_init_standalone` 时定义。如果最大记录数为 ``N``，而哈希表的条目数为 ``H``，那么每个条目最多可包含 ``N / H`` 条记录。
+    - 哈希表是对双向链表的补充，而无法替代双向链表。因为使用哈希表可能会导致显著的内存开销。
+    :SOC_SPIRAM_SUPPORTED: - 存储哈希表所用的内存是动态分配的（默认分配在内部内存中），但用户可以通过前往 ``Component config`` > ``Heap Memory Debugging`` > 设置:ref:`CONFIG_HEAP_TRACE_HASH_MAP_IN_EXT_RAM` 选项，将哈希表强制存储在外部内存中（此选项仅在启用了 :ref:`CONFIG_SPIRAM` 的条件下可用）。
 
 主机模式
-+++++++++++++++
+^^^^^^^^^^^^^^^
 
 确定存在泄漏的代码后，请执行以下步骤：
 
-- 在项目配置菜单中，导航至 ``Component settings`` > ``Heap Memory Debugging`` > :ref:`CONFIG_HEAP_TRACING_DEST` 并选择 ``Host-Based``。
-- 在项目配置菜单中，导航至 ``Component settings`` > ``Application Level Tracing`` > :ref:`CONFIG_APPTRACE_DESTINATION1` 并选择 ``Trace memory``。
-- 在项目配置菜单中，导航至 ``Component settings`` > ``Application Level Tracing`` > ``FreeRTOS SystemView Tracing`` 并启用 :ref:`CONFIG_APPTRACE_SV_ENABLE`。
+- 在项目配置菜单中，前往 ``Component config`` > ``Heap Memory Debugging`` > :ref:`CONFIG_HEAP_TRACING_DEST` 并选择 ``Host-Based``。
+- 在项目配置菜单中，前往 ``Component config`` > ``Application Level Tracing`` > :ref:`CONFIG_APPTRACE_DESTINATION1` 并选择 ``Trace memory``。
+- 在项目配置菜单中，前往 ``Component config`` > ``Application Level Tracing`` > ``FreeRTOS SystemView Tracing`` 并启用 :ref:`CONFIG_APPTRACE_SV_ENABLE`。
 - 在程序早期，调用函数 :cpp:func:`heap_trace_init_tohost`，初始化 JTAG 堆内存跟踪模块。
 - 在有内存泄漏之嫌的代码块前，调用函数 :cpp:func:`heap_trace_start` 开始记录系统中的内存分配和释放操作。
 
@@ -513,9 +773,15 @@ ESP-IDF 集成了用于请求 :ref:`堆内存信息 <heap-information>`、:ref:`
 应用示例
 --------------------
 
-- :example:`system/heap_task_tracking` 演示了如何使用堆任务跟踪功能跟踪分配给每个任务的堆内存。
+- :example:`system/heap_task_tracking/basic` 演示了堆任务跟踪的概览功能，用于导出每个任务在堆内存使用方面的统计信息概要。
+- :example:`system/heap_task_tracking/advanced` 演示了堆任务跟踪中统计信息函数的用法，用于访问每个任务在堆内存使用方面的完整统计数据。
 
-API 参考 - 堆内存跟踪
+API 参考–堆任务跟踪
+----------------------------------
+
+.. include-build-file:: inc/esp_heap_task_info.inc
+
+API 参考–堆内存跟踪
 ----------------------------
 
 .. include-build-file:: inc/esp_heap_trace.inc

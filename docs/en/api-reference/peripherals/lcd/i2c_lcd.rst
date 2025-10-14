@@ -1,5 +1,5 @@
 I2C Interfaced LCD
-------------------
+==================
 
 :link_to_translation:`zh_CN:[中文]`
 

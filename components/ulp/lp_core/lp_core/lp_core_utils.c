@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -42,17 +42,20 @@ static uint32_t lp_wakeup_cause = 0;
 
 void ulp_lp_core_update_wakeup_cause(void)
 {
+    lp_wakeup_cause = 0;
     if ((lp_core_ll_get_wakeup_source() & LP_CORE_LL_WAKEUP_SOURCE_HP_CPU) \
             && (pmu_ll_lp_get_interrupt_raw(&PMU) & PMU_HP_SW_TRIGGER_INT_RAW)) {
         lp_wakeup_cause |= LP_CORE_LL_WAKEUP_SOURCE_HP_CPU;
         pmu_ll_lp_clear_intsts_mask(&PMU, PMU_HP_SW_TRIGGER_INT_CLR);
     }
 
+#if SOC_ULP_LP_UART_SUPPORTED
     if ((lp_core_ll_get_wakeup_source() & LP_CORE_LL_WAKEUP_SOURCE_LP_UART) \
             && (uart_ll_get_intraw_mask(&LP_UART) & LP_UART_WAKEUP_INT_RAW)) {
         lp_wakeup_cause |= LP_CORE_LL_WAKEUP_SOURCE_LP_UART;
         uart_ll_clr_intsts_mask(&LP_UART, LP_UART_WAKEUP_INT_CLR);
     }
+#endif
 
     if ((lp_core_ll_get_wakeup_source() & LP_CORE_LL_WAKEUP_SOURCE_LP_IO) \
             && rtcio_ll_get_interrupt_status()) {
@@ -137,6 +140,15 @@ void ulp_lp_core_delay_cycles(uint32_t cycles)
     }
 }
 
+#if SOC_ULP_LP_UART_SUPPORTED
+
+void ulp_lp_core_lp_uart_reset_wakeup_en(void)
+{
+    lp_core_ll_enable_lp_uart_wakeup(false);
+    lp_core_ll_enable_lp_uart_wakeup(true);
+}
+#endif
+
 void ulp_lp_core_halt(void)
 {
     lp_core_ll_request_sleep();
@@ -169,15 +181,32 @@ void __attribute__((noreturn)) ulp_lp_core_abort(void)
     while (1);
 }
 
-void ulp_lp_core_sw_intr_enable(bool enable)
+void ulp_lp_core_sw_intr_to_hp_trigger(void)
+{
+    pmu_ll_lp_trigger_sw_intr(&PMU);
+}
+
+void ulp_lp_core_sw_intr_from_hp_enable(bool enable)
 {
     pmu_ll_lp_enable_sw_intr(&PMU, enable);
 }
 
-void ulp_lp_core_sw_intr_clear(void)
+void ulp_lp_core_sw_intr_from_hp_clear(void)
 {
     pmu_ll_lp_clear_sw_intr_status(&PMU);
 }
+
+#if SOC_LP_TIMER_SUPPORTED
+void ulp_lp_core_lp_timer_intr_enable(bool enable)
+{
+    lp_timer_ll_lp_alarm_intr_enable(&LP_TIMER, enable);
+}
+
+void ulp_lp_core_lp_timer_intr_clear(void)
+{
+    lp_timer_ll_clear_lp_alarm_intr_status(&LP_TIMER);
+}
+#endif
 
 void ulp_lp_core_wait_for_intr(void)
 {

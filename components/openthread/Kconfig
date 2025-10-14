@@ -6,6 +6,28 @@ menu "OpenThread"
         help
             Select this option to enable OpenThread and show the submenu with OpenThread configuration choices.
 
+    menu "Thread Task Parameters"
+        depends on OPENTHREAD_ENABLED
+
+        config OPENTHREAD_TASK_NAME
+            string "OpenThread task name"
+            default "ot_main"
+            help
+                The OpenThread task name.
+
+        config OPENTHREAD_TASK_SIZE
+            int "Size of OpenThread task"
+            default 8192
+            help
+                The size in bytes of OpenThread task.
+
+        config OPENTHREAD_TASK_PRIORITY
+            int "Priority of OpenThread task"
+            default 5
+            help
+                The priority of OpenThread task.
+    endmenu
+
     menu "Thread Version Message"
         depends on OPENTHREAD_ENABLED
 
@@ -23,10 +45,18 @@ menu "OpenThread"
     endmenu
 
     menu "Thread Console"
-        depends on OPENTHREAD_ENABLED
+        config OPENTHREAD_CONSOLE_ENABLE
+            bool "Enable OpenThread console"
+            depends on OPENTHREAD_ENABLED
+            default y
+            help
+                Enable the OpenThread-specific console provided by the SDK. This only controls whether
+                the SDK sets up a dedicated console for OpenThread. Even if disabled, the default
+                ESP-IDF console (if initialized elsewhere) can still be used independently.
 
         choice OPENTHREAD_CONSOLE_TYPE
             prompt "OpenThread console type"
+            depends on OPENTHREAD_CONSOLE_ENABLE
             default OPENTHREAD_CONSOLE_TYPE_UART
             help
                 Select OpenThread console type
@@ -44,6 +74,13 @@ menu "OpenThread"
             default y
             help
                 Select this option to enable Command-Line Interface in OpenThread.
+
+        config OPENTHREAD_CONSOLE_COMMAND_PREFIX
+            string "The prefix of the openthread CLI command registered on the esp console"
+            default "ot"
+            help
+                A prefix string used before a Thread CLI command, allowing the ESP console to identify
+                it and delegate the remaining command to the OpenThread callback for processing.
     endmenu
 
     menu "Thread Core Features"
@@ -130,6 +167,14 @@ menu "OpenThread"
                 default 12390
                 help
                     Configure the port number of TREL service.
+
+            config OPENTHREAD_TREL_BUFFER_SIZE
+                int "The receive buffer size of openthread trel"
+                depends on OPENTHREAD_RADIO_TREL
+                range 10 255
+                default 50
+                help
+                    Configure the receive buffer size of TREL service.
         endmenu
 
         menu "Thread 15.4 Radio Link"
@@ -181,6 +226,12 @@ menu "OpenThread"
                     select GPIO_CTRL_FUNC_IN_IRAM
                     help
                         Select this to enable SPI connection to host.
+
+                config OPENTHREAD_RCP_USB_SERIAL_JTAG
+                    depends on ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG && !OPENTHREAD_CONSOLE_TYPE_USB_SERIAL_JTAG
+                    bool "USB RCP"
+                    help
+                        Select this to enable connection to host over USB JTAG serial.
             endchoice
 
             config OPENTHREAD_NCP_VENDOR_HOOK
@@ -259,8 +310,16 @@ menu "OpenThread"
         config OPENTHREAD_LINK_METRICS
             bool "Enable link metrics feature"
             default n
+            select IEEE802154_TIMING_OPTIMIZATION if IEEE802154_ENABLED
             help
                 Select this option to enable link metrics feature
+
+        config OPENTHREAD_BORDER_AGENT_ENABLE
+            bool "Enable border agent feature"
+            default y if OPENTHREAD_BORDER_ROUTER
+            default n if !OPENTHREAD_BORDER_ROUTER
+            help
+                Select this option to enable border agent feature
 
         config OPENTHREAD_MACFILTER_ENABLE
             bool "Enable mac filter feature"
@@ -271,20 +330,20 @@ menu "OpenThread"
         config OPENTHREAD_CSL_ENABLE
             bool "Enable CSL feature"
             default n
+            select IEEE802154_TIMING_OPTIMIZATION if IEEE802154_ENABLED
             help
                 Select this option to enable CSL feature
         menu "CSL Configurations"
-            depends on OPENTHREAD_CSL_ENABLE
             config OPENTHREAD_CSL_ACCURACY
                 int "The current CSL rx/tx scheduling drift, in units of ± ppm"
 
-                default 1
+                default 50
                 help
                     The current accuracy of the clock used for scheduling CSL operations
 
             config OPENTHREAD_CSL_UNCERTAIN
                 int "The CSL Uncertainty in units of 10 us."
-                default 1
+                default 0
                 help
                     The fixed uncertainty of the Device for scheduling CSL Transmissions in units of 10 microseconds.
 
@@ -312,8 +371,8 @@ menu "OpenThread"
 
         config OPENTHREAD_RX_ON_WHEN_IDLE
             bool "Enable OpenThread radio capability rx on when idle"
-            default y if !ESP_COEX_SW_COEXIST_ENABLE
-            default n if ESP_COEX_SW_COEXIST_ENABLE
+            default y if !ESP_COEX_SW_COEXIST_ENABLE && !ESP_COEX_EXTERNAL_COEXIST_ENABLE
+            default n if ESP_COEX_SW_COEXIST_ENABLE || ESP_COEX_EXTERNAL_COEXIST_ENABLE
             help
                 Select this option to enable OpenThread radio capability rx on when idle.
                 Do not support this feature when SW coexistence is enabled.
@@ -326,9 +385,36 @@ menu "OpenThread"
                 commands in the OpenThread command line. These commands allow users to manipulate low-level
                 features of the storage and 15.4 radio.
 
+        config OPENTHREAD_PARENT_SEARCH_MTD
+            bool "Enable Parent Search"
+            depends on OPENTHREAD_MTD
+            default y
+            help
+                Select this option to enable "Periodic Parent Search" function for MTD. This checks the average
+                RSS to its current parent every periodically and starts a parent search process if the average
+                RSS is below OPENTHREAD_PARENT_SEARCH_RSS_THRESHOLD. This feature is always enabled for FTDs.
+        menu "Parent Search Configurations"
+            depends on OPENTHREAD_PARENT_SEARCH_MTD || OPENTHREAD_FTD
+            config OPENTHREAD_PARENT_SEARCH_CHECK_INTERVAL_MINS
+                int "The interval in minutes for a child to check the trigger condition to perform a parent search"
+                default 9
+            config OPENTHREAD_PARENT_SEARCH_BACKOFF_INTERVAL_MINS
+                int "The backoff interval in minutes for a child to not perform a parent search after triggering one"
+                default 600
+            config OPENTHREAD_PARENT_SEARCH_RSS_THRESHOLD
+                int "The RSS threshold used to trigger a parent search"
+                default -65
+            config OPENTHREAD_PARENT_SEARCH_RESELECT_TIMEOUT_MINS
+                int "The parent reselect timeout duration in minutes used on FTD child devices"
+                default 90
+            config OPENTHREAD_PARENT_SEARCH_RSS_MARGIN
+                int "The RSS margin over the current parent RSS used on FTD child devices"
+                default 7
+        endmenu
+
         menu "Thread Memory Allocation"
             depends on (SPIRAM_USE_CAPS_ALLOC || SPIRAM_USE_MALLOC)
-            config OPENTHREAD_MEM_ALLOC_EXTERNAL
+            config OPENTHREAD_PLATFORM_MALLOC_CAP_SPIRAM
                 bool 'Allocate memory from PSRAM'
                 default y
                 help
@@ -360,15 +446,29 @@ menu "OpenThread"
                     default 120
             endmenu
 
+            config OPENTHREAD_PREFERRED_CHANNEL_MASK
+                hex "Preferred channel mask"
+                default 0x7fff800
+
+            config OPENTHREAD_SUPPORTED_CHANNEL_MASK
+                hex "Supported channel mask"
+                default 0x7fff800
+
             config OPENTHREAD_NUM_MESSAGE_BUFFERS
                 int "The number of openthread message buffers"
                 default 65
 
             config OPENTHREAD_XTAL_ACCURACY
                 int "The accuracy of the XTAL"
-                default 130
+                default 10
                 help
                     The device's XTAL accuracy, in ppm.
+
+            config OPENTHREAD_BUS_LATENCY
+                int "The bus latency between host and radio chip"
+                default 4000
+                help
+                    The device's bus latency, in us.
 
             config OPENTHREAD_MLE_MAX_CHILDREN
                 int "The size of max MLE children entries"
@@ -489,5 +589,23 @@ menu "OpenThread"
                 The maximum number of backoffs the CSMA-CA algorithm will attempt before declaring a channel access
                 failure.
     endmenu
+
+    menuconfig OPENTHREAD_DEBUG
+        bool "Enable ESP OpenThread Debug"
+        default n
+        help
+            Enable additional debugging support for ESP OpenThread integration.
+            This includes various diagnostic tools and logs to help track down
+            issues in OpenThread networking or system integration
+
+    config OPENTHREAD_DUMP_MAC_ON_ASSERT
+        bool "Dump 802.15.4 MAC debug info on OpenThread assert"
+        depends on OPENTHREAD_DEBUG && OPENTHREAD_RADIO_NATIVE && IEEE802154_DEBUG
+        default n
+        help
+            When enabled, this option triggers the printing of 802.15.4 MAC layer debug
+            information whenever an OpenThread assert occurs. This can help developers
+            analyze unexpected failures by providing additional MAC layer context.
+
 
 endmenu

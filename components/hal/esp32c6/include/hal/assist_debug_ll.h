@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,7 +9,8 @@
 #pragma once
 
 #include "soc/assist_debug_reg.h"
-#define ASSIST_DEBUG_SP_SPILL_BITS  (ASSIST_DEBUG_CORE_0_SP_SPILL_MIN_ENA | ASSIST_DEBUG_CORE_0_SP_SPILL_MAX_ENA)
+#define ASSIST_DEBUG_SP_SPILL_BITS      (ASSIST_DEBUG_CORE_0_SP_SPILL_MIN_ENA | ASSIST_DEBUG_CORE_0_SP_SPILL_MAX_ENA)
+#define ASSIST_DEBUG_CORE_0_MONITOR_REG  ASSIST_DEBUG_CORE_0_INTR_ENA_REG
 
 #ifndef __ASSEMBLER__
 
@@ -122,6 +123,11 @@ FORCE_INLINE_ATTR void assist_debug_ll_reset_register(void)
 {
     PCR.assist_conf.assist_rst_en = true;
     PCR.assist_conf.assist_rst_en = false;
+}
+
+FORCE_INLINE_ATTR bool assist_debug_ll_is_debugger_active(void)
+{
+   return REG_GET_BIT(ASSIST_DEBUG_CORE_0_DEBUG_MODE_REG, ASSIST_DEBUG_CORE_0_DEBUG_MODULE_ACTIVE);
 }
 
 #ifdef __cplusplus

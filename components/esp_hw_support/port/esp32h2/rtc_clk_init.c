@@ -10,7 +10,6 @@
 #include <stdlib.h>
 #include "esp32h2/rom/ets_sys.h"
 #include "esp32h2/rom/rtc.h"
-#include "esp32h2/rom/uart.h"
 #include "soc/rtc.h"
 #include "esp_cpu.h"
 #include "regi2c_ctrl.h"
@@ -18,12 +17,12 @@
 #include "soc/regi2c_pmu.h"
 #include "esp_hw_log.h"
 #include "sdkconfig.h"
-#include "esp_rom_uart.h"
+#include "esp_rom_serial_output.h"
 #include "hal/clk_tree_ll.h"
 #include "soc/pmu_reg.h"
 #include "pmu_param.h"
 
-static const char *TAG = "rtc_clk_init";
+ESP_HW_LOG_ATTR_TAG(TAG, "rtc_clk_init");
 
 void rtc_clk_init(rtc_clk_config_t cfg)
 {

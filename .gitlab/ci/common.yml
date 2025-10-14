@@ -6,9 +6,9 @@ stages:
   - pre_check
   - build
   - assign_test
+  - build_doc
   - target_test
   - host_test
-  - build_doc
   - test_deploy
   - deploy
   - post_deploy
@@ -30,17 +30,14 @@ variables:
   # - set GIT_STRATEGY: "clone" to shiny runners
   # - set GIT_STRATEGY: "fetch" to brew runners
   GIT_STRATEGY: clone
-  # we will download archive for each submodule instead of clone.
-  # we don't do "recursive" when fetch submodule as they're not used in CI now.
-  GIT_SUBMODULE_STRATEGY: none
-  # since we're using merged-result pipelines, the last commit should work for most cases
   GIT_DEPTH: 1
-  # --no-recurse-submodules: we use cache for submodules
+  GIT_SUBMODULE_STRATEGY: none  # here we use cache for submodules, so we don't need to fetch them every time
+  # since we're using merged-result pipelines, the last commit should work for most cases
   # --prune --prune-tags: in case remote branch or tag is force pushed
   GIT_FETCH_EXTRA_FLAGS: "--no-recurse-submodules --prune --prune-tags"
   # we're using .cache folder for caches
   GIT_CLEAN_FLAGS: -ffdx -e .cache/
-  LATEST_GIT_TAG: v5.5-dev
+  LATEST_GIT_TAG: v6.0-dev
 
   SUBMODULE_FETCH_TOOL: "tools/ci/ci_fetch_submodule.py"
   # by default we will fetch all submodules
@@ -55,11 +52,10 @@ variables:
   CHECKOUT_REF_SCRIPT: "$CI_PROJECT_DIR/tools/ci/checkout_project_ref.py"
 
   # Docker images
-  ESP_ENV_IMAGE: "${CI_DOCKER_REGISTRY}/esp-env-v5.5:2"
-  ESP_IDF_DOC_ENV_IMAGE: "${CI_DOCKER_REGISTRY}/esp-idf-doc-env-v5.5:2-1"
-  TARGET_TEST_ENV_IMAGE: "${CI_DOCKER_REGISTRY}/target-test-env-v5.5:2"
+  ESP_ENV_IMAGE: "${CI_DOCKER_REGISTRY}/esp-env-v6.0:3"
+  ESP_IDF_DOC_ENV_IMAGE: "${CI_DOCKER_REGISTRY}/esp-idf-doc-env-v6.0:2-1"
+  TARGET_TEST_ENV_IMAGE: "${CI_DOCKER_REGISTRY}/target-test-env-v6.0:2"
   SONARQUBE_SCANNER_IMAGE: "${CI_DOCKER_REGISTRY}/sonarqube-scanner:5"
-  PRE_COMMIT_IMAGE: "${CI_DOCKER_REGISTRY}/esp-idf-pre-commit:1"
 
   # cache python dependencies
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
@@ -70,7 +66,7 @@ variables:
   CI_PYTHON_CONSTRAINT_BRANCH: ""
 
   # Update the filename for a specific ESP-IDF release. It is used only with CI_PYTHON_CONSTRAINT_BRANCH.
-  CI_PYTHON_CONSTRAINT_FILE: "espidf.constraints.v5.5.txt"
+  CI_PYTHON_CONSTRAINT_FILE: "espidf.constraints.v6.0.txt"
 
   # Set this variable to repository name of a Python tool you wish to install and test in the context of ESP-IDF CI.
   # Keep the variable empty when not used.
@@ -123,7 +119,12 @@ variables:
   source tools/ci/configure_ci_environment.sh
 
   # add extra python packages
-  export PYTHONPATH="$IDF_PATH/tools:$IDF_PATH/tools/esp_app_trace:$IDF_PATH/components/partition_table:$IDF_PATH/tools/ci/python_packages:$PYTHONPATH"
+  export PYTHONPATH="$IDF_PATH/tools:$IDF_PATH/tools/ci:$IDF_PATH/tools/esp_app_trace:$IDF_PATH/components/partition_table:$IDF_PATH/tools/ci/python_packages:$PYTHONPATH"
+
+  # minio configuration
+  # added here since the precedence of variables in gitlab-ci.yml is lower than project settings
+  export IDF_S3_SERVER="$IDF_S3_NEW_SERVER"
+  export IDF_S3_ACCESS_KEY="$IDF_S3_NEW_ACCESS_KEY"
 
 .setup_tools_and_idf_python_venv: &setup_tools_and_idf_python_venv |
   # must use after setup_tools_except_target_test
@@ -140,24 +141,27 @@ variables:
   if [[ -n "$IDF_DONT_USE_MIRRORS" ]]; then
     export IDF_MIRROR_PREFIX_MAP=
   fi
+  # Optimize pip install
+  if echo "${CI_RUNNER_TAGS}" | grep "shiny"; then
+    export PIP_INDEX_URL="${PIP_INDEX_URL_SHINY}"
+  fi
+  if [[ "$(uname -m)" == "x86_64" ]] || [[ "$(uname -m)" == "aarch64" ]]; then
+    export IDF_PIP_WHEELS_URL=""
+  fi
 
+  # install.sh
   if [[ "${CI_JOB_STAGE}" != "target_test" ]]; then
     section_start "running_install_sh" "Running install.sh"
     if [[ "${CI_JOB_STAGE}" == "build_doc" ]]; then
       run_cmd bash install.sh --enable-ci --enable-docs
-    elif [[ "${CI_JOB_STAGE}" == "build" ]]; then
-      run_cmd bash install.sh --enable-ci
     else
-      if ! echo "${CI_JOB_NAME}" | egrep ".*pytest.*"; then
-        run_cmd bash install.sh --enable-ci
-      else
-        run_cmd bash install.sh --enable-ci --enable-pytest --enable-test-specific
-      fi
+      run_cmd bash install.sh --enable-ci
     fi
     section_end "running_install_sh"
   else
-    section_start "install_python_env" "Install Python environment"
-    run_cmd python tools/idf_tools.py install-python-env --features ci,pytest,test-specific
+    section_start "install_python_env" "Install Python environment, skip required tools check"
+    run_cmd python tools/idf_tools.py install-python-env --features ci,test-specific
+    export IDF_SKIP_TOOLS_CHECK=1
     section_end "install_python_env"
   fi
 
@@ -172,11 +176,6 @@ variables:
     $IDF_PATH/tools/idf_tools.py --non-interactive install esp-clang
   fi
 
-  if [[ "${CI_JOB_STAGE}" == "target_test" ]]; then
-    section_start "IDF_SKIP_TOOLS_CHECK" "Skip required tools check"
-    export IDF_SKIP_TOOLS_CHECK=1
-    section_end "IDF_SKIP_TOOLS_CHECK"
-  fi
   section_start "source_export" "Source export.sh"
   source ./export.sh
   section_end "source_export"
@@ -191,13 +190,21 @@ variables:
   fi
 
   # Custom OpenOCD
-  if [[ ! -z "$OOCD_DISTRO_URL" && "$CI_JOB_STAGE" == "target_test" ]]; then
-    echo "Using custom OpenOCD from ${OOCD_DISTRO_URL}"
-    wget $OOCD_DISTRO_URL
-    ARCH_NAME=$(basename $OOCD_DISTRO_URL)
-    tar -x -f $ARCH_NAME
-    export OPENOCD_SCRIPTS=$PWD/openocd-esp32/share/openocd/scripts
-    export PATH=$PWD/openocd-esp32/bin:$PATH
+  if [[ "$CI_JOB_STAGE" == "target_test" ]]; then
+    machine="$(uname -m)"
+    if [[ "$machine" == "armv7l" ]] ; then
+      OOCD_DISTRO_URL="$OOCD_DISTRO_URL_ARMHF"
+    elif [[ "$machine" == "aarch64" ]] ; then
+      OOCD_DISTRO_URL="$OOCD_DISTRO_URL_ARM64"
+    fi
+    if [[ ! -z "$OOCD_DISTRO_URL" ]]; then
+      echo "Using custom OpenOCD from ${OOCD_DISTRO_URL}"
+      wget $OOCD_DISTRO_URL
+      ARCH_NAME=$(basename $OOCD_DISTRO_URL)
+      tar -x -f $ARCH_NAME
+      export OPENOCD_SCRIPTS=$PWD/openocd-esp32/share/openocd/scripts
+      export PATH=$PWD/openocd-esp32/bin:$PATH
+    fi
   fi
 
   if [[ -n "$CI_PYTHON_TOOL_REPO" ]]; then
@@ -214,7 +221,7 @@ variables:
 
 .upload_failed_job_log_artifacts: &upload_failed_job_log_artifacts |
   if [ $CI_JOB_STATUS = "failed" ]; then
-    python tools/ci/artifacts_handler.py upload --type logs
+    run_cmd idf-ci gitlab upload-artifacts --type log
   fi
 
 .before_script:minimal:
@@ -228,8 +235,6 @@ variables:
     # Ensure pyenv and PYENV_VERSION installed
     - eval "$(pyenv init -)"
     - *common-before_scripts
-    # On macOS, these tools need to be installed
-    - export IDF_TOOLS_PATH="${HOME}/.espressif_runner_${CI_RUNNER_ID}_${CI_CONCURRENT_ID}"
     # remove idf-env.json, since it may contains enabled "features"
     - rm -f $IDF_TOOLS_PATH/idf-env.json
     # This adds tools (compilers) and the version-specific Python environment to PATH
@@ -258,11 +263,17 @@ variables:
 
 .after_script:build:ccache-show-stats:
   after_script:
+    - source tools/ci/utils.sh
+    - section_start "ccache_show_stats" "Show ccache statistics"
     - *show_ccache_statistics
+    - section_end "ccache_show_stats"
 
 .after_script:build:ccache-show-stats:upload-failed-job-logs:
   after_script:
+    - source tools/ci/utils.sh
+    - section_start "ccache_show_stats" "Show ccache statistics"
     - *show_ccache_statistics
+    - section_end "ccache_show_stats"
     - *upload_failed_job_log_artifacts
 
 ##############################
@@ -323,9 +334,10 @@ variables:
       TEMP_FILE=$(mktemp)
       # merged results pipelines, by default
       if [[ -n $CI_MERGE_REQUEST_SOURCE_BRANCH_SHA ]]; then
-        git fetch origin $CI_MERGE_REQUEST_DIFF_BASE_SHA --depth=1 ${GIT_FETCH_EXTRA_FLAGS}
-        git fetch origin $CI_MERGE_REQUEST_SOURCE_BRANCH_SHA --depth=1 ${GIT_FETCH_EXTRA_FLAGS}
-        git diff --name-only $CI_MERGE_REQUEST_DIFF_BASE_SHA $CI_MERGE_REQUEST_SOURCE_BRANCH_SHA > "$TEMP_FILE"
+        git fetch origin $CI_MERGE_REQUEST_TARGET_BRANCH_SHA
+        git fetch origin $CI_MERGE_REQUEST_SOURCE_BRANCH_SHA
+
+        git diff --name-only $CI_MERGE_REQUEST_TARGET_BRANCH_SHA...$CI_MERGE_REQUEST_SOURCE_BRANCH_SHA > "$TEMP_FILE"
         GIT_DIFF_OUTPUT=$(cat "$TEMP_FILE")
         git fetch origin $CI_COMMIT_SHA --depth=1 ${GIT_FETCH_EXTRA_FLAGS}
       # merge request pipelines, when the mr got conflicts

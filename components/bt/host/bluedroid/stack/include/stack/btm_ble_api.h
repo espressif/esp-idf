@@ -367,7 +367,6 @@ typedef  UINT32  tBTM_BLE_AD_MASK;
 #define BTM_BLE_AD_TYPE_MANU            HCI_EIR_MANUFACTURER_SPECIFIC_TYPE      /* 0xff */
 typedef UINT8   tBTM_BLE_AD_TYPE;
 
-#define BTM_BLE_LONG_ADV_MAX_LEN  249
 
 /*  Security settings used with L2CAP LE COC */
 #define BTM_SEC_LE_LINK_ENCRYPTED           0x01
@@ -395,7 +394,9 @@ typedef UINT8 tBTM_BLE_ADV_TX_POWER;
 
 /* adv tx power in dBm */
 typedef struct {
+#if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
     UINT8 adv_inst_max;         /* max adv instance supported in controller */
+#endif // #if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
     UINT8 rpa_offloading;
     UINT16 tot_scan_results_strg;
     UINT8 max_irk_list_sz;
@@ -499,6 +500,7 @@ typedef struct {
     tBTM_BLE_ADV_TX_POWER tx_power;
 } tBTM_BLE_ADV_PARAMS;
 
+#if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
 typedef struct {
     UINT8   *p_sub_code; /* dynamic array to store sub code */
     UINT8   *p_inst_id;  /* dynamic array to store instance id */
@@ -530,6 +532,7 @@ typedef struct {
     tBTM_BLE_MULTI_ADV_INST *p_adv_inst; /* dynamic array to store adv instance */
     tBTM_BLE_MULTI_ADV_OPQ  op_q;
 } tBTM_BLE_MULTI_ADV_CB;
+#endif // #if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
 
 typedef UINT8 tGATT_IF;
 
@@ -810,15 +813,16 @@ typedef struct {
 
 typedef struct {
     UINT8 filter_policy;
-    #if (CONFIG_BT_BLE_FEAT_CREATE_SYNC_ENH)
+#if (BLE_FEAT_CREATE_SYNC_ENH == TRUE)
     UINT8 reports_disabled;
     UINT8 filter_duplicates;
-    #endif
+#endif // (BLE_FEAT_CREATE_SYNC_ENH == TRUE)
     UINT8 sid;
     tBLE_ADDR_TYPE addr_type;
     BD_ADDR addr;
     UINT16 skip;
     UINT16 sync_timeout;
+    UINT8  sync_cte_type;
 } tBTM_BLE_Periodic_Sync_Params;
 
 typedef struct {
@@ -944,6 +948,7 @@ typedef UINT8   tBTM_BLE_CONN_TYPE;
 #define ADV_INFO_PRESENT        0x00
 #define NO_ADV_INFO_PRESENT     0x01
 
+#if (BLE_HOST_TRACK_ADVERTISER_EN == TRUE)
 typedef btgatt_track_adv_info_t tBTM_BLE_TRACK_ADV_DATA;
 
 typedef void (tBTM_BLE_TRACK_ADV_CBACK)(tBTM_BLE_TRACK_ADV_DATA *p_track_adv_data);
@@ -961,6 +966,7 @@ enum {
 };
 
 typedef UINT8 tBTM_BLE_TRACK_ADV_ACTION;
+#endif // #if (BLE_HOST_TRACK_ADVERTISER_EN == TRUE)
 
 #define BTM_BLE_MULTI_ADV_INVALID   0
 
@@ -1008,11 +1014,13 @@ typedef void (tBTM_UPDATE_DUPLICATE_EXCEPTIONAL_LIST_CMPL_CBACK) (tBTM_STATUS st
 typedef void (tBTM_CLEAR_ADV_CMPL_CBACK) (UINT8 status);
 typedef void (tBTM_SET_PRIVACY_MODE_CMPL_CBACK) (tBTM_STATUS status);
 typedef void (tBTM_SET_CSA_SUPPORT_CMPL_CBACK) (tBTM_STATUS status);
+typedef void (tBTM_SET_VENDOR_EVT_MASK_CBACK) (tBTM_STATUS status);
 
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
 #define    BTM_BLE_5_GAP_READ_PHY_COMPLETE_EVT                     1
 #define    BTM_BLE_5_GAP_SET_PREFERED_DEFAULT_PHY_COMPLETE_EVT     2
 #define    BTM_BLE_5_GAP_SET_PREFERED_PHY_COMPLETE_EVT             3
+#if (BLE_50_EXTEND_ADV_EN == TRUE)
 #define    BTM_BLE_5_GAP_EXT_ADV_SET_RAND_ADDR_COMPLETE_EVT        4
 #define    BTM_BLE_5_GAP_EXT_ADV_SET_PARAMS_COMPLETE_EVT           5
 #define    BTM_BLE_5_GAP_EXT_ADV_DATA_SET_COMPLETE_EVT             6
@@ -1021,29 +1029,42 @@ typedef void (tBTM_SET_CSA_SUPPORT_CMPL_CBACK) (tBTM_STATUS status);
 #define    BTM_BLE_5_GAP_EXT_ADV_STOP_COMPLETE_EVT                 9
 #define    BTM_BLE_5_GAP_EXT_ADV_SET_REMOVE_COMPLETE_EVT           10
 #define    BTM_BLE_5_GAP_EXT_ADV_SET_CLEAR_COMPLETE_EVT            11
+#endif // #if (BLE_50_EXTEND_ADV_EN == TRUE)
+#if (BLE_50_PERIODIC_ADV_EN == TRUE)
 #define    BTM_BLE_5_GAP_PERIODIC_ADV_SET_PARAMS_COMPLETE_EVT      12
 #define    BTM_BLE_5_GAP_PERIODIC_ADV_DATA_SET_COMPLETE_EVT        13
 #define    BTM_BLE_5_GAP_PERIODIC_ADV_START_COMPLETE_EVT           14
 #define    BTM_BLE_5_GAP_PERIODIC_ADV_STOP_COMPLETE_EVT            15
+#endif // #if (BLE_50_PERIODIC_ADV_EN == TRUE)
+#if (BLE_50_EXTEND_SYNC_EN == TRUE)
 #define    BTM_BLE_5_GAP_PERIODIC_ADV_CREATE_SYNC_COMPLETE_EVT     16
 #define    BTM_BLE_5_GAP_PERIODIC_ADV_SYNC_CANCEL_COMPLETE_EVT     17
 #define    BTM_BLE_5_GAP_PERIODIC_ADV_SYNC_TERMINATE_COMPLETE_EVT  18
 #define    BTM_BLE_5_GAP_PERIODIC_ADV_ADD_DEV_COMPLETE_EVT         19
 #define    BTM_BLE_5_GAP_PERIODIC_ADV_REMOVE_DEV_COMPLETE_EVT      20
 #define    BTM_BLE_5_GAP_PERIODIC_ADV_CLEAR_DEV_COMPLETE_EVT       21
+#endif // #if (BLE_50_EXTEND_SYNC_EN == TRUE)
+#if (BLE_50_EXTEND_SCAN_EN == TRUE)
 #define    BTM_BLE_5_GAP_SET_EXT_SCAN_PARAMS_COMPLETE_EVT          22
 #define    BTM_BLE_5_GAP_EXT_SCAN_START_COMPLETE_EVT               23
 #define    BTM_BLE_5_GAP_EXT_SCAN_STOP_COMPLETE_EVT                24
+#endif // #if (BLE_50_EXTEND_SCAN_EN == TRUE)
 #define    BTM_BLE_5_GAP_PREFER_EXT_CONN_PARAMS_SET_COMPLETE_EVT   25
 #define    BTM_BLE_5_GAP_PHY_UPDATE_COMPLETE_EVT                   26
+#if (BLE_50_EXTEND_SCAN_EN == TRUE)
 #define    BTM_BLE_5_GAP_EXT_ADV_REPORT_EVT                        27
 #define    BTM_BLE_5_GAP_SCAN_TIMEOUT_EVT                          28
+#endif // #if (BLE_50_EXTEND_SCAN_EN == TRUE)
+#if (BLE_50_EXTEND_ADV_EN == TRUE)
 #define    BTM_BLE_5_GAP_ADV_TERMINATED_EVT                        29
 #define    BTM_BLE_5_GAP_SCAN_REQ_RECEIVED_EVT                     30
+#endif // #if (BLE_50_EXTEND_ADV_EN == TRUE)
 #define    BTM_BLE_5_GAP_CHANNEL_SELETE_ALGORITHM_EVT              31
+#if (BLE_50_EXTEND_SYNC_EN == TRUE)
 #define    BTM_BLE_5_GAP_PERIODIC_ADV_REPORT_EVT                   32
 #define    BTM_BLE_5_GAP_PERIODIC_ADV_SYNC_LOST_EVT                33
 #define    BTM_BLE_5_GAP_PERIODIC_ADV_SYNC_ESTAB_EVT               34
+#endif // #if (BLE_50_EXTEND_SYNC_EN == TRUE)
 #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
 #define    BTM_BLE_GAP_PERIODIC_ADV_RECV_ENABLE_COMPLETE_EVT       35
 #define    BTM_BLE_GAP_PERIODIC_ADV_SYNC_TRANS_COMPLETE_EVT        36
@@ -1052,8 +1073,75 @@ typedef void (tBTM_SET_CSA_SUPPORT_CMPL_CBACK) (tBTM_STATUS status);
 #define    BTM_BLE_GAP_PERIODIC_ADV_SYNC_TRANS_RECV_EVT            39
 #endif // #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
 #define    BTM_BLE_GAP_SET_PRIVACY_MODE_COMPLETE_EVT               40
-#define    BTM_BLE_5_GAP_UNKNOWN_EVT                               41
+#if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+#define    BTM_BLE_GAP_ENH_READ_TRANS_POWER_LEVEL_EVT              41
+#define    BTM_BLE_GAP_READ_REMOTE_TRANS_POWER_LEVEL_EVT           42
+#define    BTM_BLE_GAP_SET_PATH_LOSS_REPORTING_PARAMS_EVT          43
+#define    BTM_BLE_GAP_SET_PATH_LOSS_REPORTING_ENABLE_EVT          44
+#define    BTM_BLE_GAP_SET_TRANS_POWER_REPORTING_ENABLE_EVT        45
+#define    BTM_BLE_GAP_PATH_LOSS_THRESHOLD_EVT                     46
+#define    BTM_BLE_GAP_TRANMIT_POWER_REPORTING_EVT                 47
+#endif // #if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+#if (BLE_FEAT_CONN_SUBRATING == TRUE)
+#define    BTM_BLE_GAP_SET_DEFAULT_SUBRATE_EVT                     48
+#define    BTM_BLE_GAP_SUBRATE_REQUEST_EVT                         49
+#define    BTM_BLE_GAP_SUBRATE_CHANGE_EVT                          50
+#endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)
+#if (BLE_50_FEATURE_SUPPORT == TRUE)
+#define    BTM_BLE_GAP_SET_HOST_FEATURE_EVT                        51
+#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
+#define    BTM_BLE_5_GAP_UNKNOWN_EVT                               52
 typedef UINT8 tBTM_BLE_5_GAP_EVENT;
+
+#if (BLE_FEAT_ISO_EN == TRUE)
+#if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#define    BTM_BLE_ISO_BIG_CREATE_COMPLETE_EVT                     1
+#define    BTM_BLE_ISO_BIG_TERMINATE_COMPLETE_EVT                  2
+#endif // #if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
+#define    BTM_BLE_ISO_BIG_SYNC_ESTABLISHED_EVT                    3
+#define    BTM_BLE_ISO_BIG_SYNC_LOST_EVT                           4
+#define    BTM_BLE_ISO_BIG_SYNC_TERMINATE_COMPLETE_EVT             5
+#define    BTM_BLE_ISO_BIGINFO_ADV_REPORT_EVT                      6
+#endif // #if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
+#define    BTM_BLE_ISO_DATA_PATH_UPFATE_EVT                        7
+#define    BTM_BLE_ISO_READ_TX_SYNC_EVT                            9
+#define    BTM_BLE_ISO_READ_LINK_QUALITY_EVT                       10
+#if (BLE_FEAT_ISO_CIG_CENTRAL_EN == TRUE)
+#define    BTM_BLE_ISO_SET_CIG_PARAMS_EVT                          11
+#define    BTM_BLE_ISO_CREATE_CIS_EVT                              12
+#define    BTM_BLE_ISO_REMOVE_CIG_EVT                              13
+#endif // #if (BLE_FEAT_ISO_CIG_CENTRAL_EN == TRUE)
+#if (BLE_FEAT_ISO_CIG_PERIPHERAL_EN == TRUE)
+#define    BTM_BLE_ISO_ACCEPT_CIS_REQ_EVT                          14
+#define    BTM_BLE_ISO_REJECT_CIS_REQ_EVT                          15
+#endif // #if (BLE_FEAT_ISO_CIG_PERIPHERAL_EN == TRUE)
+#define    BTM_BLE_ISO_CIS_ESTABLISHED_EVT                         16
+#define    BTM_BLE_ISO_CIS_REQUEST_EVT                             17
+#define    BTM_BLE_ISO_CIS_DISCONNECTED_EVT                        18
+#define    BTM_BLE_ISO_UNKNOWN_EVT                                 19
+typedef UINT8 tBTM_BLE_ISO_EVENT;
+#endif // #if (BLE_FEAT_ISO_EN == TRUE)
+
+#if (BLE_FEAT_CTE_EN == TRUE)
+#if (BLE_FEAT_CTE_CONNECTIONLESS_EN == TRUE)
+#define    BTM_BLE_CTE_SET_TRANS_PARAMS_EVT                        1
+#define    BTM_BLE_CTE_SET_TRANS_ENABLE_EVT                        2
+#define    BTM_BLE_CTE_SET_IQ_SAMP_ENABLE_EVT                      3
+#endif // #if (BLE_FEAT_CTE_CONNECTIONLESS_EN == TRUE)
+
+#if (BLE_FEAT_CTE_CONNECTION_EN == TRUE)
+#define    BTM_BLE_CTE_SET_CONN_RECV_PARAMS_EVT                    4
+#define    BTM_BLE_CTE_SET_CONN_TRANS_PARAMS_EVT                   5
+#define    BTM_BLE_CTE_SET_CONN_REQ_ENABLE_EVT                     6
+#define    BTM_BLE_CTE_SET_CONN_RSP_ENABLE_EVT                     7
+#endif // #if (BLE_FEAT_CTE_CONNECTION_EN == TRUE)
+#define    BTM_BLE_CTE_READ_ANT_INFOR_EVT                          8
+#define    BTM_BLE_CTE_CONNLESS_IQ_REPORT_EVT                      9
+#define    BTM_BLE_CTE_CONN_IQ_REPORT_EVT                          10
+#define    BTM_BLE_CTE_REQUEST_FAILED_EVT                          11
+typedef UINT8 tBTM_BLE_CTE_EVENT;
+#endif // #if (BLE_FEAT_CTE_EN == TRUE)
 
 #define BTM_BLE_EXT_ADV_DATA_COMPLETE          0x00
 #define BTM_BLE_EXT_ADV_DATA_INCOMPLETE        0x01
@@ -1243,6 +1331,7 @@ typedef struct {
     UINT16 sync_handle;
     UINT8 tx_power;
     INT8 rssi;
+    UINT8 cte_type;
     tBTM_BLE_EXT_ADV_DATA_STATUS data_status;
     UINT8 data_length;
     UINT8 *data;
@@ -1308,39 +1397,409 @@ typedef struct {
 } tBTM_BLE_PERIOD_ADV_SYNC_TRANS_RECV;
 #endif //#if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
 
+#if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+typedef struct {
+    UINT8 status;
+    UINT16 conn_handle;
+    UINT8 phy;
+    INT8 cur_tx_pwr_level;
+    INT8 max_tx_pwr_level;
+} __attribute__((packed)) tBTM_BLE_ENH_TRANS_PWR_LEVEL_CMPL;
+
+typedef struct {
+    UINT8 status;
+} __attribute__((packed)) tBTM_BLE_REMOTE_TRANS_PWR_LEVEL_CMPL;
+
+typedef struct {
+    UINT8 status;
+    UINT16 conn_handle;
+} __attribute__((packed)) tBTM_BLE_SET_PATH_LOSS_RPTING_PARAMS;
+
+typedef struct {
+    UINT8 status;
+    UINT16 conn_handle;
+} __attribute__((packed)) tBTM_BLE_SET_PATH_LOSS_RPTING_ENABLE;
+
+typedef struct {
+    UINT8 status;
+    UINT16 conn_handle;
+} __attribute__((packed)) tBTM_BLE_SET_TRANS_POWER_RPTING_ENABLE;
+
+typedef struct {
+    UINT16 conn_handle;
+    UINT8 cur_path_loss;
+    UINT8 zone_entered;
+} __attribute__((packed)) tBTM_BLE_PATH_LOSS_THRESHOLD_EVT;
+
+typedef struct {
+    UINT8 status;
+    UINT16 conn_handle;
+    UINT8 reason;
+    UINT8 phy;
+    INT8 tx_power_level;
+    UINT8 tx_power_level_flag;
+    INT8 delta;
+} __attribute__((packed)) tBTM_BLE_TRANS_POWER_REPORT_EVT;
+#endif // #if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+
+#if (BLE_FEAT_CONN_SUBRATING == TRUE)
+typedef struct {
+    UINT8 status;
+    UINT16 conn_handle;
+    UINT16 subrate_factor;
+    UINT16 peripheral_latency;
+    UINT16 continuation_number;
+    UINT16 supervision_timeout;
+} __attribute__((packed)) tBTM_BLE_SUBRATE_CHANGE_EVT;
+#endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)
+
+#if (BLE_FEAT_ISO_EN == TRUE)
+#if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+typedef struct {
+    UINT8 status;
+    UINT8 big_handle;
+    UINT32 big_sync_delay;
+    UINT32 transport_latency;
+    UINT8 phy;
+    UINT8 nse;
+    UINT8 bn;
+    UINT8 pto;
+    UINT8 irc;
+    UINT16 max_pdu;
+    UINT16 iso_interval;
+    UINT8 num_bis;
+    UINT16 bis_handle[BLE_ISO_BIS_MAX_COUNT];
+} tBTM_BLE_BIG_CREATE_CMPL;
+
+typedef struct {
+    UINT8 status;
+    UINT8 big_handle;
+    UINT8 reason;
+} tBTM_BLE_BIG_TERMINATE_CMPL;
+#endif // #if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+
+#if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
+typedef struct {
+    UINT8 status;
+    UINT8 big_handle;
+    UINT32 transport_latency_big;
+    UINT8 nse;
+    UINT8 bn;
+    UINT8 pto;
+    UINT8 irc;
+    UINT16 max_pdu;
+    UINT16 iso_interval;
+    uint8_t num_bis;
+    uint16_t bis_handle[BLE_ISO_BIS_MAX_COUNT];
+} tBTM_BLE_BIG_SYNC_ESTAB_CMPL;
+
+typedef struct {
+    UINT8 big_handle;
+    UINT8 reason;
+} tBTM_BLE_BIG_SYNC_LOST_EVT;
+
+typedef struct {
+    UINT16 sync_handle;
+    UINT8 num_bis;
+    UINT8 nse;
+    UINT16 iso_interval;
+    UINT8 bn;
+    UINT8 pto;
+    UINT8 irc;
+    UINT16 max_pdu;
+    UINT32 sdu_interval;
+    UINT32 max_sdu;
+    UINT8 phy;
+    UINT8 framing;
+    UINT8 encryption;
+} tBTM_BLE_BIGINFO_ADV_REPORT_EVT;
+
+typedef struct {
+    UINT8 status;
+    UINT16 big_hdl;
+} tBTM_BLE_BIG_SYNC_TERMINATE_EVT;
+
+#endif // #if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
+
+#if (BLE_FEAT_ISO_CIG_EN == TRUE)
+typedef struct {
+    UINT8 status;
+    UINT16 conn_handle;
+    UINT32 cig_sync_delay;
+    UINT32 cis_sync_delay;
+    UINT32 trans_lat_c_to_p;
+    UINT32 trans_lat_p_to_c;
+    UINT8 phy_c_to_p;
+    UINT8 phy_p_to_c;
+    UINT8 nse;
+    UINT8 bn_c_to_p;
+    UINT8 bn_p_to_c;
+    UINT8 ft_c_to_p;
+    UINT8 ft_p_to_c;
+    UINT16 max_pdu_c_to_p;
+    UINT16 max_pdu_p_to_c;
+    UINT16 iso_interval;
+#if (BLE_FEAT_ISO_60_EN == TRUE)
+    UINT32 sub_interval;
+    UINT16 max_sdu_c_to_p;
+    UINT16 max_sdu_p_to_c;
+    UINT32 sdu_int_c_to_p;
+    UINT32 sdu_int_p_to_c;
+    UINT8 framing;
+#endif // #if (BLE_FEAT_ISO_60_EN == TRUE)
+} tBTM_BLE_CIS_ESTABLISHED_CMPL;
+
+typedef struct {
+    UINT16 cis_handle;
+    UINT8 reason;
+} tBTM_BLE_CIS_DISCON_CMPL;
+
+#endif // #if (BLE_FEAT_ISO_CIG_EN == TRUE)
+
+#if (BLE_FEAT_ISO_CIG_PERIPHERAL_EN == TRUE)
+typedef struct {
+    UINT8 status;
+    UINT16 cis_handle;
+} tBTM_BLE_ISO_REJECT_CIS_REQ_EVT;
+
+
+typedef struct {
+    UINT16 acl_handle;
+    UINT16 cis_handle;
+    UINT8 cig_id;
+    UINT8 cis_id;
+} tBTM_BLE_CIS_REQUEST_CMPL;
+#endif // #if (BLE_FEAT_ISO_CIG_PERIPHERAL_EN == TRUE)
+
+typedef enum {
+    BTM_BLE_ISO_DATA_PATH_UNKNOWN = 0,
+    BTM_BLE_ISO_DATA_PATH_SETUP   = 1,
+    BTM_BLE_ISO_DATA_PATH_REMOVE  = 2,
+    BTM_BLE_ISO_DATA_PATH_MAX,
+} tBTM_BLE_ISO_DATA_PATH_UPDATE_TYPE;
+
+typedef struct {
+    UINT8 status;
+    tBTM_BLE_ISO_DATA_PATH_UPDATE_TYPE op_type;
+    UINT16 conn_hdl;
+} tBTM_BLE_ISO_DATA_PATH_UPDATE_EVT;
+
+typedef struct {
+    UINT8 status;
+    UINT16 conn_hdl;
+    UINT16 pkt_seq_num;
+    UINT32 tx_time_stamp;
+    UINT32 time_offset;
+} tBTM_BLE_ISO_READ_TX_SYNC_EVT;
+
+typedef struct {
+    UINT8 status;
+    UINT16 conn_hdl;
+    UINT32 tx_unacked_pkts;
+    UINT32 tx_flushed_pkts;
+    UINT32 tx_last_subevt_pkts;
+    UINT32 retransmitted_pkts;
+    UINT32 crc_error_pkts;
+    UINT32 rx_unreceived_pkts;
+    UINT32 duplicate_pkts;
+} tBTM_BLE_ISO_READ_LINK_QUALITY_EVT;
+
+#if (BLE_FEAT_ISO_CIG_CENTRAL_EN == TRUE)
+typedef struct {
+    UINT8 status;
+    UINT8 cig_id;
+    UINT8 cis_count;
+    UINT16 conn_hdl[BLE_ISO_CIS_MAX_COUNT];
+} tBTM_BLE_ISO_SET_CIG_PARAMS_EVT;
+
+typedef struct {
+    UINT8 status;
+    UINT8 cig_id;
+} tBTM_BLE_ISO_REMOVE_CIG_EVT;
+
+#endif // #if (BLE_FEAT_ISO_CIG_CENTRAL_EN == TRUE)
+
+typedef union {
+    UINT8 status;
+#if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+    tBTM_BLE_BIG_CREATE_CMPL           btm_big_cmpl;
+    tBTM_BLE_BIG_TERMINATE_CMPL        btm_big_term;
+#endif // #if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
+    tBTM_BLE_BIG_SYNC_ESTAB_CMPL       btm_big_sync_estab;
+    tBTM_BLE_BIG_SYNC_LOST_EVT         btm_big_sync_lost;
+    tBTM_BLE_BIGINFO_ADV_REPORT_EVT    btm_biginfo_report;
+    tBTM_BLE_BIG_SYNC_TERMINATE_EVT    btm_big_sync_ter;
+#endif // #if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
+    tBTM_BLE_ISO_DATA_PATH_UPDATE_EVT  btm_data_path_update;
+    tBTM_BLE_ISO_READ_TX_SYNC_EVT      btm_read_tx_sync;
+    tBTM_BLE_ISO_READ_LINK_QUALITY_EVT btm_read_link_quality;
+#if (BLE_FEAT_ISO_CIG_CENTRAL_EN == TRUE)
+    tBTM_BLE_ISO_SET_CIG_PARAMS_EVT    btm_set_cig_params;
+    tBTM_BLE_ISO_REMOVE_CIG_EVT        btm_remove_cig;
+#endif // #if (BLE_FEAT_ISO_CIG_CENTRAL_EN == TRUE)
+#if (BLE_FEAT_ISO_CIG_PERIPHERAL_EN == TRUE)
+    tBTM_BLE_ISO_REJECT_CIS_REQ_EVT    btm_reject_cis_req;
+    tBTM_BLE_CIS_REQUEST_CMPL          btm_cis_request_evt;
+#endif // #if (BLE_FEAT_ISO_CIG_PERIPHERAL_EN == TRUE)
+#if (BLE_FEAT_ISO_CIG_EN == TRUE)
+    tBTM_BLE_CIS_ESTABLISHED_CMPL      btm_cis_established_evt;
+    tBTM_BLE_CIS_DISCON_CMPL           btm_cis_disconnectd_evt;
+#endif // #if (BLE_FEAT_ISO_CIG_EN == TRUE)
+} tBTM_BLE_ISO_CB_PARAMS;
+
+typedef void (*tBTM_BLE_ISO_CBACK)(tBTM_BLE_ISO_EVENT event, tBTM_BLE_ISO_CB_PARAMS *params);
+#endif // #if (BLE_FEAT_ISO_EN == TRUE)
+
+#if (BLE_FEAT_CTE_EN == TRUE)
+typedef struct {
+    UINT8 status;
+} __attribute__((packed)) tBTM_BLE_CTE_SET_TRANS_PARAMS_CMPL;
+
+typedef struct {
+    UINT8 status;
+} __attribute__((packed)) tBTM_BLE_CTE_SET_TRANS_EN_CMPL;
+
+typedef struct {
+    UINT8 status;
+    UINT16 sync_handle;
+} __attribute__((packed)) tBTM_BLE_CTE_IQ_SAMP_EN_CMPL;
+
+typedef struct {
+    UINT8 status;
+    UINT16 conn_handle;
+} __attribute__((packed)) tBTM_BLE_CTE_CONN_RECV_PARAMS_CMPL;
+
+typedef struct {
+    UINT8 status;
+    UINT16 conn_handle;
+} __attribute__((packed)) tBTM_BLE_CTE_CONN_TRANS_PARAMS_CMPL;
+
+typedef struct {
+    UINT8 status;
+    UINT16 conn_handle;
+} __attribute__((packed)) tBTM_BLE_CTE_CONN_REQ_ENABLE_CMPL;
+
+typedef struct {
+    UINT8 status;
+    UINT16 conn_handle;
+} __attribute__((packed)) tBTM_BLE_CTE_CONN_RSP_ENABLE_CMPL;
+
+typedef struct {
+    UINT8 status;
+    UINT8 supported_switching_sampling_rates;
+    UINT8 num_ant;
+    UINT8 max_switching_pattern_len;
+    UINT8 max_cte_len;
+} __attribute__((packed)) tBTM_BLE_CTE_READ_ANT_INFOR_CMPL;
+
+typedef struct {
+    UINT16 sync_handle;
+    UINT8 channel_idx;
+    INT16 rssi;
+    UINT8 rssi_ant_id;
+    UINT8 cte_type;
+    UINT8 slot_dur;
+    UINT8 pkt_status;
+    UINT16 periodic_evt_counter;
+    UINT8 sample_count;
+    UINT8 i_sample[0x52];
+    UINT8 q_sample[0x52];
+} __attribute__((packed)) tBTM_BLE_CTE_CONNLESS_IQ_REPORT_EVT;
+
+typedef struct {
+    UINT16 conn_handle;
+    UINT8 rx_phy;
+    UINT8 data_channel_idx;
+    INT16 rssi;
+    UINT8 rssi_ant_id;
+    UINT8 cte_type;
+    UINT8 slot_dur;
+    UINT8 pkt_status;
+    UINT16 conn_evt_counter;
+    UINT8 sample_count;
+    UINT8 i_sample[0x52];
+    UINT8 q_sample[0x52];
+} __attribute__((packed)) tBTM_BLE_CTE_CONN_IQ_REPORT_EVT;
+
+typedef struct {
+    UINT8  status;
+    UINT16 conn_handle;
+} __attribute__((packed)) tBTM_BLE_CTE_REQ_FAILED_EVT;
+
+typedef union {
+    UINT8 status;
+#if (BLE_FEAT_CTE_CONNECTIONLESS_EN == TRUE)
+    tBTM_BLE_CTE_SET_TRANS_PARAMS_CMPL   cte_trans_params_cmpl;
+    tBTM_BLE_CTE_SET_TRANS_EN_CMPL       cte_trans_en_cmpl;
+    tBTM_BLE_CTE_IQ_SAMP_EN_CMPL         cte_iq_samp_en_cmpl;
+#endif // #if (BLE_FEAT_CTE_CONNECTIONLESS_EN == TRUE)
+#if (BLE_FEAT_CTE_CONNECTION_EN == TRUE)
+    tBTM_BLE_CTE_CONN_RECV_PARAMS_CMPL   cte_recv_params_cmpl;
+    tBTM_BLE_CTE_CONN_TRANS_PARAMS_CMPL  cte_conn_trans_params_cmpl;
+    tBTM_BLE_CTE_CONN_REQ_ENABLE_CMPL    cte_conn_req_en_cmpl;
+    tBTM_BLE_CTE_CONN_RSP_ENABLE_CMPL    cte_conn_rsp_en_cmpl;
+#endif // #if (BLE_FEAT_CTE_CONNECTION_EN == TRUE)
+    tBTM_BLE_CTE_READ_ANT_INFOR_CMPL     cte_read_ant_infor_cmpl;
+#if (BLE_FEAT_CTE_CONNECTIONLESS_EN == TRUE)
+    tBTM_BLE_CTE_CONNLESS_IQ_REPORT_EVT  cte_connless_iq_rpt;
+#endif // #if (BLE_FEAT_CTE_CONNECTIONLESS_EN == TRUE)
+#if (BLE_FEAT_CTE_CONNECTION_EN == TRUE)
+    tBTM_BLE_CTE_CONN_IQ_REPORT_EVT      cte_conn_iq_rpt;
+    tBTM_BLE_CTE_REQ_FAILED_EVT          cte_req_failed;
+#endif // #if (BLE_FEAT_CTE_CONNECTION_EN == TRUE)
+} tBTM_BLE_CTE_CB_PARAMS;
+
+typedef void (*tBTM_BLE_CTE_CBACK)(tBTM_BLE_CTE_EVENT event, tBTM_BLE_CTE_CB_PARAMS *params);
+#endif // #if (BLE_FEAT_CTE_EN == TRUE)
+
 typedef union {
     UINT8 status;
     tBTM_BLE_READ_PHY_CMPL read_phy;
     tBTM_BLE_SET_PREF_DEF_PHY_CMPL set_perf_def_phy;
     tBTM_BLE_SET_PERF_PHY_CMPL set_perf_phy;
+#if (BLE_50_EXTEND_ADV_EN == TRUE)
     tBTM_BLE_EXT_ADV_SET_RAND_ADDR_CMPL set_ext_rand_addr;
     tBTM_BLE_EXT_ADV_SET_PARAMS_CMPL set_params;
     tBTM_BLE_EXT_ADV_DATA_SET_CMPL adv_data_set;
     tBTM_BLE_EXT_ADV_SCAN_RSP_DATA_SET_CMPL scan_rsp_data_set;
     tBTM_BLE_EXT_ADV_START_CMPL adv_start;
     tBTM_BLE_EXT_ADV_STOP_CMPL adv_stop;
+#endif // #if (BLE_50_EXTEND_ADV_EN == TRUE)
+#if (BLE_50_PERIODIC_ADV_EN == TRUE)
     tBTM_BLE_PERIOD_ADV_SET_PARAMS_CMPL per_adv_set_params;
     tBTM_BLE_PERIOD_ADV_DATA_SET_CMPL per_adv_data_set;
     tBTM_BLE_PERIOD_ADV_START_CMPL per_adv_start;
     tBTM_BLE_PERIOD_ADV_STOP_CMPL per_adv_stop;
+#endif // #if (BLE_50_PERIODIC_ADV_EN == TRUE)
+#if (BLE_50_EXTEND_SYNC_EN == TRUE)
     tBTM_BLE_PERIOD_ADV_SYNC_CREATE_CMPL per_adv_sync_create;
     tBTM_BLE_PERIOD_ADV_SYNC_CANCEL_CMPL per_adv_sync_cancel;
     tBTM_BLE_PERIOD_ADV_SYNC_TEMINAT_CMPL per_adv_sync_term;
     tBTM_BLE_PERIOD_ADV_ADD_DEV_CMPL per_adv_add_dev;
     tBTM_BLE_PERIOD_ADV_REMOVE_DEV_CMPL per_adv_remove_dev;
     tBTM_BLE_PEROID_ADV_CLEAR_DEV_CMPL per_adv_clear_dev;
+#endif // #if (BLE_50_EXTEND_SYNC_EN == TRUE)
+#if (BLE_50_EXTEND_SCAN_EN == TRUE)
     tBTM_BLE_SET_EXT_SCAN_PARAMS_CMPL ext_scan;
     tBTM_BLE_EXT_SCAN_START_CMPL scan_start;
     tBTM_BLE_EXT_SCAN_STOP_CMPL scan_stop;
+#endif // #if (BLE_50_EXTEND_SCAN_EN == TRUE)
     tBTM_BLE_PREF_EXT_CONN_SET_PARAMS_CMPL ext_conn_set_params;
     tBTM_BLE_PHY_UPDATE_CMPL phy_update;
+#if (BLE_50_EXTEND_SCAN_EN == TRUE)
     tBTM_BLE_EXT_ADV_REPORT ext_adv_report;
+#endif // #if (BLE_50_EXTEND_SCAN_EN == TRUE)
+#if (BLE_50_EXTEND_ADV_EN == TRUE)
     tBTM_BLE_ADV_TERMINAT adv_term;
     tBTM_BLE_SCAN_REQ_RECEIVED scan_req;
+#endif // #if (BLE_50_EXTEND_ADV_EN == TRUE)
     tBTM_BLE_CHANNEL_SEL_ALG channel_sel;
+#if (BLE_50_EXTEND_SYNC_EN == TRUE)
     tBTM_PERIOD_ADV_REPORT period_adv_report;
     tBTM_BLE_PERIOD_ADV_SYNC_LOST sync_lost;
     tBTM_BLE_PERIOD_ADV_SYNC_ESTAB sync_estab;
+#endif // #if (BLE_50_EXTEND_SYNC_EN == TRUE)
 #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
     tBTM_BLE_PERIOD_ADV_RECV_ENABLE_CMPL per_adv_recv_enable;
     tBTM_BLE_PERIOD_ADV_SYNC_TRANS_CMPL per_adv_sync_trans;
@@ -1348,6 +1807,18 @@ typedef union {
     tBTM_BLE_SET_PERIOD_ADV_SYNC_TRANS_PARAMS_CMPL set_past_params;
     tBTM_BLE_PERIOD_ADV_SYNC_TRANS_RECV past_recv;
 #endif //#if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
+#if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+    tBTM_BLE_ENH_TRANS_PWR_LEVEL_CMPL enh_trans_pwr_level_cmpl;
+    tBTM_BLE_REMOTE_TRANS_PWR_LEVEL_CMPL remote_pwr_level_cmpl;
+    tBTM_BLE_SET_PATH_LOSS_RPTING_PARAMS path_loss_rpting_params;
+    tBTM_BLE_SET_PATH_LOSS_RPTING_ENABLE path_loss_rpting_enable;
+    tBTM_BLE_SET_TRANS_POWER_RPTING_ENABLE trans_pwr_rpting_enable;
+    tBTM_BLE_PATH_LOSS_THRESHOLD_EVT      path_loss_thres_evt;
+    tBTM_BLE_TRANS_POWER_REPORT_EVT       trans_pwr_report_evt;
+#endif // #if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+#if (BLE_FEAT_CONN_SUBRATING == TRUE)
+    tBTM_BLE_SUBRATE_CHANGE_EVT          subrate_change_evt;
+#endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)
 } tBTM_BLE_5_GAP_CB_PARAMS;
 
 typedef struct {
@@ -1383,6 +1854,7 @@ extern "C" {
 *******************************************************************************/
 void BTM_BleRegiseterConnParamCallback(tBTM_UPDATE_CONN_PARAM_CBACK *update_conn_param_cb);
 void BTM_BleRegiseterPktLengthChangeCallback(tBTM_SET_PKT_DATA_LENGTH_CBACK *ptk_len_chane_cb);
+void BTM_BleRegisterVendorHciEventCallback(tBTM_BLE_VENDOR_HCI_EVT_CBACK *vendor_hci_evt_cb);
 
 /*******************************************************************************
 **
@@ -1423,23 +1895,6 @@ BOOLEAN BTM_SecAddBleDevice (BD_ADDR bd_addr, BD_NAME bd_name,
 //extern
 BOOLEAN BTM_SecAddBleKey (BD_ADDR bd_addr, tBTM_LE_KEY_VALUE *p_le_key,
                           tBTM_LE_KEY_TYPE key_type);
-
-/*******************************************************************************
-**
-** Function         BTM_BleSetAdvParams
-**
-** Description      This function is called to set advertising parameters.
-**
-** Parameters:       None.
-**
-** Returns          void
-**
-*******************************************************************************/
-//extern
-tBTM_STATUS BTM_BleSetAdvParams(UINT16 adv_int_min, UINT16 adv_int_max,
-                                tBLE_BD_ADDR *p_dir_bda, tBTM_BLE_ADV_CHNL_MAP chnl_map);
-
-
 
 /*******************************************************************************
 **
@@ -1484,20 +1939,6 @@ tBTM_STATUS BTM_BleStartAdv(void);
 //extern
 tBTM_STATUS BTM_BleWriteAdvData(tBTM_BLE_AD_MASK  data_mask,
                                 tBTM_BLE_ADV_DATA *p_data);
-
-/*******************************************************************************
-**
-** Function         BTM_BleWriteLongAdvData
-**
-** Description      This function is called to write long advertising data.
-**
-** Parameters:      adv_data: long advertising data
-**                  adv_data_len: the length of long advertising data
-**
-** Returns          void
-**
-*******************************************************************************/
-tBTM_STATUS BTM_BleWriteLongAdvData(uint8_t *adv_data, uint8_t adv_data_len);
 
 /*******************************************************************************
 **
@@ -1552,6 +1993,7 @@ void BTM_BleReadAdvParams (UINT16 *adv_int_min, UINT16 *adv_int_max,
 //extern
 void BTM_BleObtainVendorCapabilities(tBTM_BLE_VSC_CB *p_cmn_vsc_cb);
 
+#if (BLE_HOST_BLE_SCAN_PARAM_UNUSED == TRUE)
 /*******************************************************************************
 **
 ** Function         BTM_BleSetScanParams
@@ -1572,7 +2014,7 @@ void BTM_BleSetScanParams(tGATT_IF client_if, UINT32 scan_interval,
                           UINT32 scan_window, tBLE_SCAN_MODE scan_type,
                           tBLE_SCAN_PARAM_SETUP_CBACK scan_setup_status_cback);
 
-
+#endif // #if (BLE_HOST_BLE_SCAN_PARAM_UNUSED == TRUE)
 
 /*******************************************************************************
 **
@@ -1671,6 +2113,7 @@ tBTM_STATUS BTM_BleEnableBatchScan(tBTM_BLE_BATCH_SCAN_MODE scan_mode,
 //extern
 tBTM_STATUS BTM_BleDisableBatchScan(tBTM_BLE_REF_VALUE ref_value);
 
+#if (BLE_HOST_READ_SCAN_REPORTS_EN == TRUE)
 /*******************************************************************************
 **
 ** Function         BTM_BleReadScanReports
@@ -1686,7 +2129,9 @@ tBTM_STATUS BTM_BleDisableBatchScan(tBTM_BLE_REF_VALUE ref_value);
 //extern
 tBTM_STATUS BTM_BleReadScanReports(tBLE_SCAN_MODE scan_mode,
                                    tBTM_BLE_REF_VALUE ref_value);
+#endif // #if (BLE_HOST_READ_SCAN_REPORTS_EN == TRUE)
 
+#if (BLE_HOST_TRACK_ADVERTISER_EN == TRUE)
 /*******************************************************************************
 **
 ** Function         BTM_BleTrackAdvertiser
@@ -1702,6 +2147,7 @@ tBTM_STATUS BTM_BleReadScanReports(tBLE_SCAN_MODE scan_mode,
 //extern
 tBTM_STATUS BTM_BleTrackAdvertiser(tBTM_BLE_TRACK_ADV_CBACK *p_track_cback,
                                    tBTM_BLE_REF_VALUE ref_value);
+#endif // #if (BLE_HOST_TRACK_ADVERTISER_EN == TRUE)
 
 /*******************************************************************************
 **
@@ -2272,6 +2718,7 @@ BOOLEAN BTM_BleLocalPrivacyEnabled(void);
 //extern
 void BTM_BleEnableMixedPrivacyMode(BOOLEAN mixed_on);
 
+#if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
 /*******************************************************************************
 **
 ** Function          BTM_BleMaxMultiAdvInstanceCount
@@ -2283,6 +2730,7 @@ void BTM_BleEnableMixedPrivacyMode(BOOLEAN mixed_on);
 *******************************************************************************/
 //extern
 UINT8  BTM_BleMaxMultiAdvInstanceCount(void);
+#endif // #if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
 
 /*******************************************************************************
 **
@@ -2463,6 +2911,7 @@ BOOLEAN BTM_BleSecurityProcedureIsRunning (BD_ADDR bd_addr);
 //extern
 UINT8 BTM_BleGetSupportedKeySize (BD_ADDR bd_addr);
 
+#if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
 /*******************************************************************************/
 /*                          Multi ADV API                                      */
 /*******************************************************************************
@@ -2534,6 +2983,8 @@ tBTM_STATUS BTM_BleCfgAdvInstData (UINT8 inst_id, BOOLEAN is_scan_rsp,
 *******************************************************************************/
 //extern
 tBTM_STATUS BTM_BleDisableAdvInstance (UINT8 inst_id);
+
+#endif // #if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
 
 /*******************************************************************************
 **
@@ -2739,6 +3190,19 @@ BOOLEAN BTM_BleSetPrivacyMode(UINT8 addr_type,
 *******************************************************************************/
 BOOLEAN BTM_BleSetCsaSupport (UINT8 csa_select, tBTM_SET_CSA_SUPPORT_CMPL_CBACK *p_callback);
 
+/*******************************************************************************
+**
+** Function         BTM_BleSetVendorEventMask
+**
+** Description      This function is called to set the vendor HCI event mask
+**
+** Parameters       evt_mask - vendor HCI event mask.
+**                  p_callback - Callback function to be called when the operation is completed.
+**
+** Returns          TRUE if the operation was successful, otherwise FALSE.
+**
+*******************************************************************************/
+BOOLEAN BTM_BleSetVendorEventMask(UINT32 evt_mask, tBTM_SET_VENDOR_EVT_MASK_CBACK *p_callback);
 /*
 #ifdef __cplusplus
 }
@@ -2789,12 +3253,13 @@ tBTM_STATUS BTM_BleSetExtendedScanParams(tBTM_BLE_EXT_SCAN_PARAMS *params);
 tBTM_STATUS BTM_BleExtendedScan(BOOLEAN enable, UINT16 duration, UINT16 period);
 
 void BTM_BleSetPreferExtenedConnParams(BD_ADDR bd_addr, tBTM_EXT_CONN_PARAMS *params);
+#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 
+#if (BLE_50_DTM_TEST_EN == TRUE)
 void BTM_BleEnhancedReceiverTest(UINT8 rx_freq, UINT8 phy, UINT8 modulation_index, tBTM_CMPL_CB *p_cmd_cmpl_cback);
 
 void BTM_BleEnhancedTransmitterTest(UINT8 tx_freq, UINT8 test_data_len, UINT8 packet_payload, UINT8 phy, tBTM_CMPL_CB *p_cmd_cmpl_cback);
-
-#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
+#endif // #if (BLE_50_DTM_TEST_EN == TRUE)
 
 #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
 void BTM_BlePeriodicAdvRecvEnable(UINT16 sync_handle, UINT8 enable);
@@ -2806,4 +3271,93 @@ void BTM_BlePeriodicAdvSetInfoTrans(BD_ADDR bd_addr, UINT16 service_data, UINT8 
 void BTM_BleSetPeriodicAdvSyncTransParams(BD_ADDR bd_addr, UINT8 mode, UINT16 skip, UINT16 sync_timeout, UINT8 cte_type);
 #endif // #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
 
+#if (BLE_FEAT_ISO_EN == TRUE)
+void BTM_BleIsoRegisterCallback(tBTM_BLE_ISO_CBACK cb);
+#if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+tBTM_STATUS BTM_BleBigCreate(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
+                            uint32_t sdu_interval, uint16_t max_sdu, uint16_t max_transport_latency,
+                            uint8_t rtn, uint8_t phy, uint8_t packing, uint8_t framing,
+                            uint8_t encryption, uint8_t *broadcast_code);
+
+tBTM_STATUS BTM_BleBigCreateTest(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
+                        uint32_t sdu_interval, uint16_t iso_interval, uint8_t nse,
+                        uint16_t max_sdu, uint16_t max_pdu, uint8_t phy,
+                        uint8_t packing, uint8_t framing, uint8_t bn, uint8_t irc,
+                        uint8_t pto, uint8_t encryption, uint8_t *broadcast_code);
+
+tBTM_STATUS BTM_BleBigTerminate(UINT8 big_handle, UINT8 reason);
+#endif // #if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
+tBTM_STATUS BTM_BleBigSyncCreate(uint8_t big_handle, uint16_t sync_handle,
+                                uint8_t encryption, uint8_t *bc_code,
+                                uint8_t mse, uint16_t big_sync_timeout,
+                                uint8_t num_bis, uint8_t *bis);
+
+tBTM_STATUS BTM_BleBigSyncTerminate(uint8_t big_handle);
+#endif // #if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
+tBTM_STATUS BTM_BleIsoSetDataPath(uint16_t conn_handle, uint8_t data_path_dir, uint8_t data_path_id, uint8_t coding_fmt,
+                                    uint16_t company_id, uint16_t vs_codec_id, uint32_t controller_delay, uint8_t codec_len,
+                                    uint8_t *codec_cfg);
+tBTM_STATUS BTM_BleIsoRemoveDataPath(uint16_t conn_handle, uint8_t data_path_dir);
+
+tBTM_STATUS BTM_BleIsoReadTxSync(uint16_t iso_hdl);
+tBTM_STATUS BTM_BleIsoReadLinkQuality(uint16_t iso_hdl);
+
+#if (BLE_FEAT_ISO_CIG_CENTRAL_EN == TRUE)
+tBTM_STATUS BTM_BleSetCigParams(uint8_t cig_id, uint32_t sdu_int_c_to_p, uint32_t sdu_int_p_to_c, uint8_t worse_case_SCA, uint8_t packing,
+                                uint8_t framing, uint16_t mtl_c_to_p, uint16_t mtl_p_to_c, uint8_t cis_cnt, uint8_t *cis_params);
+tBTM_STATUS BTM_BleSetCigParamsTest(uint8_t cig_id, uint32_t sdu_int_c_to_p, uint32_t sdu_int_p_to_c, uint8_t ft_c_to_p, uint8_t ft_p_to_c, uint16_t iso_interval,
+                                uint8_t worse_case_SCA, uint8_t packing, uint8_t framing, uint8_t cis_cnt, uint8_t *cis_params);
+tBTM_STATUS BTM_BleCreateCis(uint8_t cis_count, uint8_t *cis_hdls);
+tBTM_STATUS BTM_BleRemoveCig(uint8_t cig_id);
+#endif // #if (BLE_FEAT_ISO_CIG_CENTRAL_EN == TRUE)
+#if (BLE_FEAT_ISO_CIG_PERIPHERAL_EN == TRUE)
+tBTM_STATUS BTM_BleAcceptCisReq(uint16_t cis_handle);
+tBTM_STATUS BTM_BleRejectCisReq(uint16_t cis_handle, uint8_t reason);
+#endif // #if (BLE_FEAT_ISO_CIG_PERIPHERAL_EN == TRUE)
+#if (BLE_FEAT_ISO_CIG_EN == TRUE)
+tBTM_STATUS BTM_BleDisconCis(uint16_t cis_handle, uint8_t reason);
+#endif // #if (BLE_FEAT_ISO_CIG_EN == TRUE)
+#endif // #if (BLE_FEAT_ISO_EN == TRUE)
+#if (BLE_FEAT_CTE_EN == TRUE)
+void BTM_BleCteRegisterCallback(tBTM_BLE_CTE_CBACK cb);
+#if (BLE_FEAT_CTE_CONNECTIONLESS_EN == TRUE)
+tBTM_STATUS BTM_BleSetCteTransParams(uint8_t adv_handle, uint8_t cte_len, uint8_t cte_type, uint8_t cte_count, uint8_t switching_pattern_len, uint8_t *antenna_ids);
+tBTM_STATUS BTM_BleCteSetConnectionlessTransEnable(uint8_t adv_handle, uint8_t cte_en);
+tBTM_STATUS BTM_BleCteSetConnectionlessIqSamplingEnable(uint16_t sync_handle, uint8_t sampling_en, uint8_t slot_dur,
+                                                    uint8_t max_sampled_ctes, uint8_t switching_pattern_len, uint8_t *ant_ids);
+#endif // #if (BLE_FEAT_CTE_CONNECTIONLESS_EN == TRUE)
+
+#if (BLE_FEAT_CTE_CONNECTION_EN == TRUE)
+tBTM_STATUS BTM_BleCteSetConnectionReceiveParams(uint16_t conn_handle, uint8_t sampling_en, uint8_t slot_dur,
+                                            uint8_t switching_pattern_len, uint8_t *ant_ids);
+tBTM_STATUS BTM_BleCteSetConnectionTransParams(uint16_t conn_handle, uint8_t cte_types, uint8_t switching_pattern_len, uint8_t *ant_ids);
+tBTM_STATUS BTM_BleCteSetConnectionRequestEnable(uint16_t conn_handle, uint8_t enable, uint16_t cte_req_int,
+                                            uint8_t req_cte_len, uint8_t req_cte_type);
+tBTM_STATUS BTM_BleCteSetConnectionRspEnable(uint16_t conn_handle, uint8_t enable);
+#endif // #if (BLE_FEAT_CTE_CONNECTION_EN == TRUE)
+
+tBTM_STATUS BTM_BleCteReadAntInfor(void);
+
+#endif // #if (BLE_FEAT_CTE_EN == TRUE)
+
+#if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+void BTM_BleEnhReadTransPowerLevel(uint16_t conn_handle, uint8_t phy);
+void BTM_BleReadRemoteTransPwrLevel(uint16_t conn_handle, uint8_t phy);
+void BTM_BleSetPathLossRptParams(uint16_t conn_handle, uint8_t high_threshold, uint8_t high_hysteresis,
+                                        uint8_t low_threshold, uint8_t low_hysteresis, uint16_t min_time_spent);
+void BTM_BleSetPathLossRptEnable(uint16_t conn_handle, uint8_t enable);
+void BTM_BleSetTransPwrRptEnable(uint16_t conn_handle, uint8_t local_enable, uint8_t remote_enable);
+#endif // #if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+
+#if (BLE_FEAT_CONN_SUBRATING == TRUE)
+void BTM_BleSetDefaultSubrate(UINT16 subrate_min, UINT16 subrate_max, UINT16 max_latency,
+                                UINT16 continuation_number, UINT16 supervision_timeout);
+
+void BTM_BleSubrateRequest(UINT16 conn_handle, UINT16 subrate_min, UINT16 subrate_max,
+                            UINT16 max_latency, UINT16 continuation_number, UINT16 supervision_timeout);
+#endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)
+#if (BLE_50_FEATURE_SUPPORT == TRUE)
+tBTM_STATUS BTM_BleSetHostFeature(uint16_t bit_num, uint8_t bit_val);
+#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 #endif

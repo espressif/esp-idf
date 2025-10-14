@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -34,6 +34,9 @@ typedef struct gdma_hal_context_t gdma_hal_context_t;
  */
 typedef struct {
     int group_id;  /*!< GDMA group ID */
+    struct {
+        uint32_t enable_weighted_arbitration: 1; /*!< Enable weighted arbitration */
+    } flags; /*!< Extra configuration flags */
 } gdma_hal_config_t;
 
 typedef struct {
@@ -96,6 +99,9 @@ struct gdma_hal_context_t {
 #if SOC_GDMA_SUPPORT_ETM
     void (*enable_etm_task)(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir, bool en_or_dis); /// Enable the ETM task
 #endif // SOC_GDMA_SUPPORT_ETM
+#if SOC_GDMA_SUPPORT_WEIGHTED_ARBITRATION
+    void (*set_weight)(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir, uint32_t weight);  /// Set the channel weight
+#endif // SOC_GDMA_SUPPORT_WEIGHTED_ARBITRATION
 };
 
 void gdma_hal_deinit(gdma_hal_context_t *hal);
@@ -150,6 +156,10 @@ uint32_t gdma_hal_get_crc_result(gdma_hal_context_t *hal, int chan_id, gdma_chan
 #if SOC_GDMA_SUPPORT_ETM
 void gdma_hal_enable_etm_task(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir, bool en_or_dis);
 #endif
+
+#if SOC_GDMA_SUPPORT_WEIGHTED_ARBITRATION
+void gdma_hal_set_weight(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir, uint32_t weight);
+#endif //SOC_GDMA_SUPPORT_WEIGHTED_ARBITRATION
 
 #ifdef __cplusplus
 }

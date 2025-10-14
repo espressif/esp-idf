@@ -13,7 +13,7 @@ OpenThread 协议栈运行模式
 独立节点模式
 ++++++++++++
 
-在此模式下，完整的 OpenThread 协议栈及其应用层在同一芯片上运行，适用于支持 15.4 无线通信协议的芯片，如 ESP32-H2, ESP32-C6。
+在此模式下，完整的 OpenThread 协议栈及其应用层在同一芯片上运行，适用于支持 15.4 无线通信协议的芯片，如 ESP32-H2, ESP32-C5, ESP32-C6。
 
 无线协处理器 (RCP) 模式
 +++++++++++++++++++++++++
@@ -113,7 +113,7 @@ OpenThread 宏定义
 - 使用 ``openthread-core-esp32x-xxx-config.h`` 的配置：部分宏在 OpenThread private 头文件中已经设置默认值，暂不支持通过 menuconfig 修改，但可以通过用户自定义头文件修改。
 - 使用 OpenThread 协议栈默认配置：对于其他宏，OpenThread 协议栈在定义时已设置默认值。
 
-.. 注意::
+.. note::
 
     以上四种配置方式，优先级由高到低为：配置菜单 → 用户自定义头文件 → openthread-core-esp32x-xxx-config.h → OpenThread 协议栈默认配置
 

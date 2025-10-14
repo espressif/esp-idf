@@ -10,6 +10,9 @@ menu "ESP-Driver:USB Serial/JTAG Configuration"
             console or use the built-in JTAG for debugging, you can disable this option,
             then the clock of this module will be disabled at startup, which will save
             some power consumption.
+            Note: This will disable USB-Serial-JTAG only in the application; it will still be enabled during
+            the bootloader stage, so you can continue to use it to flash the chip in download mode.
+            To disable it completely, you must burn the EFUSE_DIS_USB_SERIAL_JTAG eFuse.
 
     config USJ_NO_AUTO_LS_ON_CONNECTION
         bool "Don't enter the automatic light sleep when USB Serial/JTAG port is connected"

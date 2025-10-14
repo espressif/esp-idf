@@ -1,9 +1,9 @@
-# SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 import pytest
 from common_test_methods import get_env_config_variable
 from pytest_embedded import Dut
+from pytest_embedded_idf.utils import idf_parametrize
 
 
 def _sniffer_packets_check(dut: Dut, channel: int, packet_num: int) -> None:
@@ -37,13 +37,19 @@ def _sniffer_packets_check(dut: Dut, channel: int, packet_num: int) -> None:
     dut.expect('cmd_pcap: .pcap file close done')
 
 
-@pytest.mark.esp32
-@pytest.mark.esp32c3
-@pytest.mark.esp32s3
 @pytest.mark.wifi_ap
-@pytest.mark.parametrize('config', [
-    'mem',
-], indirect=True)
+@pytest.mark.parametrize(
+    'config',
+    [
+        'mem',
+    ],
+    indirect=True,
+)
+@idf_parametrize(
+    'target',
+    ['esp32', 'esp32c2', 'esp32c3', 'esp32c5', 'esp32c6', 'esp32c61', 'esp32s2', 'esp32s3'],
+    indirect=['target'],
+)
 def test_examples_simple_sniffer(dut: Dut) -> None:
     dut.expect('sniffer>')
     channel = get_env_config_variable('wifi_ap', 'sniffer_channel', default=1)

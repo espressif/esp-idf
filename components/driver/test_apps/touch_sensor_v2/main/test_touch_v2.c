@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1935,32 +1935,29 @@ static void test_deep_sleep_init(void)
     gettimeofday(&now, NULL);
     int sleep_time_ms = (now.tv_sec - sleep_enter_time.tv_sec) * 1000 + (now.tv_usec - sleep_enter_time.tv_usec) / 1000;
     printf("RTC_CNTL_SLP_WAKEUP_CAUSE_REG %x\n", REG_READ(RTC_CNTL_SLP_WAKEUP_CAUSE_REG));
-    switch (esp_sleep_get_wakeup_cause()) {
-    case ESP_SLEEP_WAKEUP_EXT1: {
-        uint64_t wakeup_pin_mask = esp_sleep_get_ext1_wakeup_status();
-        if (wakeup_pin_mask != 0) {
-            int pin = __builtin_ffsll(wakeup_pin_mask) - 1;
-            printf("Wake up from GPIO %"PRIu32"\n", pin);
-        } else {
-            printf("Wake up from GPIO\n");
-        }
-        break;
-    }
-    case ESP_SLEEP_WAKEUP_TIMER: {
-        printf("Wake up from timer. Time spent in deep sleep: %"PRIu32"ms\n", sleep_time_ms);
-        break;
-    }
-    case ESP_SLEEP_WAKEUP_TOUCHPAD: {
-        printf("Wake up from touch on pad %"PRIu32"\n", esp_sleep_get_touchpad_wakeup_status());
-        break;
-    }
-    case ESP_SLEEP_WAKEUP_UNDEFINED:
-    default: {
+
+    uint32_t wakeup_causes = esp_sleep_get_wakeup_causes();
+    if (wakeup_causes & BIT(ESP_SLEEP_WAKEUP_UNDEFINED)) {
         printf("Not a deep sleep reset\n");
         ESP_LOGI(TAG, "*********** touch sleep pad wakeup test ********************");
         /* Sleep pad should be init once. */
         test_touch_sleep_pad_interrupt_wakeup_deep_sleep(touch_list[0]);
-    }
+    } else {
+        if (wakeup_causes & BIT(ESP_SLEEP_WAKEUP_EXT1)) {
+            uint64_t wakeup_pin_mask = esp_sleep_get_ext1_wakeup_status();
+            if (wakeup_pin_mask != 0) {
+                int pin = __builtin_ffsll(wakeup_pin_mask) - 1;
+                printf("Wake up from GPIO %"PRIu32"\n", pin);
+            } else {
+                printf("Wake up from GPIO\n");
+            }
+        }
+        if (wakeup_causes & BIT(ESP_SLEEP_WAKEUP_TIMER)) {
+            printf("Wake up from timer. Time spent in deep sleep: %"PRIu32"ms\n", sleep_time_ms);
+        }
+        if (wakeup_causes & BIT(ESP_SLEEP_WAKEUP_TOUCHPAD)) {
+            printf("Wake up from touch on pad %"PRIu32"\n", esp_sleep_get_touchpad_wakeup_status());
+        }
     }
 
     vTaskDelay(100 * SYS_DELAY_TIME_MOM / portTICK_PERIOD_MS);

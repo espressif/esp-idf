@@ -1,2 +1,3 @@
 dependencies:
   lvgl/lvgl: "9.2.2"
+  espressif/esp_lcd_nt35510: "^1.0.0"

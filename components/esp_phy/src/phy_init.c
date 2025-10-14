@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -49,9 +49,9 @@
 #include "esp_private/sleep_modem.h"
 #endif
 #include "hal/efuse_hal.h"
-
-#if SOC_PM_MODEM_RETENTION_BY_REGDMA
-#include "esp_private/sleep_retention.h"
+#if SOC_PHY_CALIBRATION_CLOCK_IS_INDEPENDENT
+#include "esp_private/esp_modem_clock.h"
+#include "soc/periph_defs.h"
 #endif
 
 #if CONFIG_IDF_TARGET_ESP32
@@ -272,6 +272,22 @@ IRAM_ATTR void esp_phy_common_clock_disable(void)
     wifi_bt_common_module_disable();
 }
 
+#if SOC_PHY_CALIBRATION_CLOCK_IS_INDEPENDENT
+IRAM_ATTR void esp_phy_calibration_clock_enable(esp_phy_modem_t modem)
+{
+    if (modem == PHY_MODEM_BT || modem == PHY_MODEM_IEEE802154) {
+        modem_clock_module_enable(PERIPH_PHY_CALIBRATION_MODULE);
+    }
+}
+
+IRAM_ATTR void esp_phy_calibration_clock_disable(esp_phy_modem_t modem)
+{
+    if (modem == PHY_MODEM_BT || modem == PHY_MODEM_IEEE802154) {
+        modem_clock_module_disable(PERIPH_PHY_CALIBRATION_MODULE);
+    }
+}
+#endif
+
 #if SOC_PM_MODEM_RETENTION_BY_BACKUPDMA
 static inline void phy_digital_regs_store(void)
 {
@@ -300,6 +316,9 @@ void esp_phy_enable(esp_phy_modem_t modem)
         phy_update_wifi_mac_time(false, s_phy_rf_en_ts);
 #endif
         esp_phy_common_clock_enable();
+#if SOC_PHY_CALIBRATION_CLOCK_IS_INDEPENDENT
+        esp_phy_calibration_clock_enable(modem);
+#endif
         if (s_is_phy_calibrated == false) {
             esp_phy_load_cal_and_init();
             s_is_phy_calibrated = true;
@@ -312,6 +331,8 @@ void esp_phy_enable(esp_phy_modem_t modem)
                 } else {
                     phy_wakeup_init();
                 }
+            } else {
+                phy_wakeup_from_modem_state_extra_init();
             }
 #else
             phy_wakeup_init();
@@ -331,18 +352,20 @@ void esp_phy_enable(esp_phy_modem_t modem)
 #endif
 
 // ESP32 will track pll in the wifi/BT modem interrupt handler.
-#if !CONFIG_IDF_TARGET_ESP32
+#if !CONFIG_IDF_TARGET_ESP32 && !CONFIG_ESP_PHY_DISABLE_PLL_TRACK
         phy_track_pll_init();
 #endif
 
-    if (phy_ant_need_update()) {
-        phy_ant_update();
-        phy_ant_clr_update_flag();
-    }
-
+        if (phy_ant_need_update()) {
+            phy_ant_update();
+            phy_ant_clr_update_flag();
+        }
+#if SOC_PHY_CALIBRATION_CLOCK_IS_INDEPENDENT
+        esp_phy_calibration_clock_disable(modem);
+#endif
     }
     phy_set_modem_flag(modem);
-#if !CONFIG_IDF_TARGET_ESP32
+#if !CONFIG_IDF_TARGET_ESP32 && !CONFIG_ESP_PHY_DISABLE_PLL_TRACK
     // Immediately track pll when phy enabled.
     phy_track_pll();
 #endif
@@ -359,10 +382,11 @@ void esp_phy_disable(esp_phy_modem_t modem)
 #if CONFIG_ESP_PHY_RECORD_USED_TIME
     phy_record_time(false, modem);
 #endif
+    esp_phy_modem_t saved_modem = phy_get_modem_flag();
     phy_clr_modem_flag(modem);
-    if (phy_get_modem_flag() == 0) {
+    if (saved_modem == modem) {
 // ESP32 will track pll in the wifi/BT modem interrupt handler.
-#if !CONFIG_IDF_TARGET_ESP32
+#if !CONFIG_IDF_TARGET_ESP32 && !CONFIG_ESP_PHY_DISABLE_PLL_TRACK
         phy_track_pll_deinit();
 #endif
 #if SOC_PM_MODEM_RETENTION_BY_BACKUPDMA
@@ -482,26 +506,6 @@ static uint32_t* s_mac_bb_pd_mem = NULL;
 static uint8_t s_macbb_backup_mem_ref = 0;
 /* Reference of powering down MAC and BB */
 static bool s_mac_bb_pu = true;
-#elif SOC_PM_MODEM_RETENTION_BY_REGDMA
-static esp_err_t sleep_retention_wifi_bb_init(void *arg)
-{
-    const static sleep_retention_entries_config_t bb_regs_retention[] = {
-        [0] = { .config = REGDMA_LINK_CONTINUOUS_INIT(0x0b00, 0x600a7000, 0x600a7000, 121, 0, 0), .owner = BIT(0) | BIT(1) }, /* AGC */
-        [1] = { .config = REGDMA_LINK_CONTINUOUS_INIT(0x0b01, 0x600a7400, 0x600a7400, 14,  0, 0), .owner = BIT(0) | BIT(1) }, /* TX */
-        [2] = { .config = REGDMA_LINK_CONTINUOUS_INIT(0x0b02, 0x600a7800, 0x600a7800, 136, 0, 0), .owner = BIT(0) | BIT(1) }, /* NRX */
-        [3] = { .config = REGDMA_LINK_CONTINUOUS_INIT(0x0b03, 0x600a7c00, 0x600a7c00, 53,  0, 0), .owner = BIT(0) | BIT(1) }, /* BB */
-        [4] = { .config = REGDMA_LINK_CONTINUOUS_INIT(0x0b05, 0x600a0000, 0x600a0000, 58,  0, 0), .owner = BIT(0) | BIT(1) }, /* FE COEX */
-#ifndef SOC_PM_RETENTION_HAS_CLOCK_BUG
-        [5] = { .config = REGDMA_LINK_CONTINUOUS_INIT(0x0b06, 0x600a8000, 0x000a8000, 39,  0, 0), .owner = BIT(0) | BIT(1) }, /* BRX */
-        [6] = { .config = REGDMA_LINK_CONTINUOUS_INIT(0x0b07, 0x600a0400, 0x600a0400, 41,  0, 0), .owner = BIT(0) | BIT(1) }, /* FE DATA */
-        [7] = { .config = REGDMA_LINK_CONTINUOUS_INIT(0x0b08, 0x600a0800, 0x600a0800, 87,  0, 0), .owner = BIT(0) | BIT(1) }  /* FE CTRL */
-#endif
-    };
-    esp_err_t err = sleep_retention_entries_create(bb_regs_retention, ARRAY_SIZE(bb_regs_retention), 3, SLEEP_RETENTION_MODULE_WIFI_BB);
-    ESP_RETURN_ON_ERROR(err, TAG, "failed to allocate memory for modem (%s) retention", "WiFi BB");
-    ESP_LOGD(TAG, "WiFi BB sleep retention initialization");
-    return ESP_OK;
-}
 #endif // SOC_PM_MODEM_RETENTION_BY_BACKUPDMA
 
 void esp_mac_bb_pd_mem_init(void)
@@ -514,19 +518,7 @@ void esp_mac_bb_pd_mem_init(void)
     }
     _lock_release(&s_phy_access_lock);
 #elif SOC_PM_MODEM_RETENTION_BY_REGDMA
-    sleep_retention_module_init_param_t init_param = {
-        .cbs     = { .create = { .handle = sleep_retention_wifi_bb_init, .arg = NULL } },
-        .depends = RETENTION_MODULE_BITMAP_INIT(CLOCK_MODEM)
-    };
-    esp_err_t err = sleep_retention_module_init(SLEEP_RETENTION_MODULE_WIFI_BB, &init_param);
-    if (err != ESP_OK) {
-        ESP_LOGW(TAG, "WiFi BB sleep retention init failed");
-        return;
-    }
-    err = sleep_retention_module_allocate(SLEEP_RETENTION_MODULE_WIFI_BB);
-    if (err != ESP_OK) {
-        ESP_LOGW(TAG, "failed to allocate sleep retention linked list for wifi bb retention");
-    }
+    esp_phy_sleep_data_init();
 #endif
 }
 
@@ -541,15 +533,7 @@ void esp_mac_bb_pd_mem_deinit(void)
     }
     _lock_release(&s_phy_access_lock);
 #elif SOC_PM_MODEM_RETENTION_BY_REGDMA
-    esp_err_t err = sleep_retention_module_free(SLEEP_RETENTION_MODULE_WIFI_BB);
-    if (err != ESP_OK) {
-        ESP_LOGW(TAG, "failed to free sleep retention linked list for wifi bb retention");
-        return;
-    }
-    err = sleep_retention_module_deinit(SLEEP_RETENTION_MODULE_WIFI_BB);
-    if (err != ESP_OK) {
-        ESP_LOGW(TAG, "WiFi BB sleep retention deinit failed");
-    }
+    esp_phy_sleep_data_deinit();
 #endif
 }
 
@@ -652,6 +636,13 @@ const esp_phy_init_data_t* esp_phy_get_init_data(void)
         assert(memcmp(init_data_store, PHY_INIT_MAGIC, PHY_INIT_MAGIC_LEN) == 0);
         assert(memcmp(init_data_store + init_data_store_length - PHY_INIT_MAGIC_LEN,
                       PHY_INIT_MAGIC, PHY_INIT_MAGIC_LEN) == 0);
+
+        err = esp_partition_erase_range(partition, 0, partition->size);
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "failed to erase partition (0x%x)!", err);
+            free(init_data_store);
+            return NULL;
+        }
 
         // write default data
         err = esp_partition_write(partition, 0, init_data_store, init_data_store_length);
@@ -929,7 +920,7 @@ void esp_phy_load_cal_and_init(void)
     memcpy(cal_data->mac, sta_mac, 6);
     esp_err_t ret = register_chipv7_phy(init_data, cal_data, calibration_mode);
     if (ret == ESP_CAL_DATA_CHECK_FAIL) {
-        ESP_LOGW(TAG, "saving new calibration data because of checksum failure, mode(%d)", calibration_mode);
+        ESP_LOGI(TAG, "Saving new calibration data due to checksum failure or outdated calibration data, mode(%d)", calibration_mode);
     }
 
     if ((calibration_mode != PHY_RF_CAL_NONE) && ((err != ESP_OK) || (ret == ESP_CAL_DATA_CHECK_FAIL))) {

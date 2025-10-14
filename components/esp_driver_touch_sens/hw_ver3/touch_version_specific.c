@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,6 +17,8 @@
 #include "soc/clk_tree_defs.h"
 #include "soc/touch_sensor_periph.h"
 #include "soc/rtc.h"
+#include "soc/chip_revision.h"
+#include "hal/efuse_hal.h"
 #include "hal/hal_utils.h"
 #include "driver/touch_sens.h"
 #include "esp_private/rtc_ctrl.h"
@@ -60,7 +62,8 @@ void IRAM_ATTR touch_priv_default_intr_handler(void *arg)
     touch_ll_interrupt_clear(status);
     touch_base_event_data_t data;
     touch_ll_get_active_channel_mask(&data.status_mask);
-    data.chan = g_touch->ch[touch_ll_get_current_meas_channel()];
+    int ch_offset = touch_ll_get_current_meas_channel() - TOUCH_MIN_CHAN_ID;
+    data.chan = g_touch->ch[ch_offset];
     /* If the channel is not registered, return directly */
     if (!data.chan) {
         return;
@@ -134,6 +137,12 @@ static esp_err_t s_touch_convert_to_hal_config(touch_sensor_handle_t sens_handle
                         "at least one sample configuration required");
     ESP_RETURN_ON_FALSE(sens_cfg->sample_cfg_num <= TOUCH_SAMPLE_CFG_NUM, ESP_ERR_INVALID_ARG, TAG,
                         "at most %d sample configurations supported", (int)(TOUCH_SAMPLE_CFG_NUM));
+    ESP_RETURN_ON_FALSE(sens_cfg->trigger_rise_cnt <= sens_cfg->sample_cfg_num, ESP_ERR_INVALID_ARG, TAG,
+                        "trigger_rise_cnt should within 0 ~ sample_cfg_num");
+#if CONFIG_IDF_TARGET_ESP32P4 && CONFIG_ESP_REV_MIN_FULL < 300
+    ESP_RETURN_ON_FALSE(sens_cfg->trigger_rise_cnt < 2, ESP_ERR_INVALID_ARG, TAG,
+                        "this target do not support trigger_rise_cnt > 1");
+#endif
 
     /* Get the source clock frequency for the first time */
     if (!sens_handle->src_freq_hz) {
@@ -143,15 +152,22 @@ static esp_err_t s_touch_convert_to_hal_config(touch_sensor_handle_t sens_handle
                             TAG, "get clock frequency failed");
         ESP_LOGD(TAG, "touch rtc clock source: RTC_FAST, frequency: %"PRIu32" Hz", sens_handle->src_freq_hz);
     }
+    if (!sens_handle->interval_freq_hz) {
+        ESP_RETURN_ON_ERROR(esp_clk_tree_src_get_freq_hz(SOC_MOD_CLK_RTC_SLOW, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &sens_handle->interval_freq_hz),
+                            TAG, "get interval clock frequency failed");
+    }
 
     uint32_t src_freq_hz = sens_handle->src_freq_hz;
     uint32_t src_freq_mhz = src_freq_hz / 1000000;
     hal_cfg->power_on_wait_ticks = (uint32_t)sens_cfg->power_on_wait_us * src_freq_mhz;
-    hal_cfg->meas_interval_ticks = (uint32_t)(sens_cfg->meas_interval_us * src_freq_mhz);
+    hal_cfg->power_on_wait_ticks = hal_cfg->power_on_wait_ticks > TOUCH_LL_PAD_MEASURE_WAIT_MAX ?
+                                   TOUCH_LL_PAD_MEASURE_WAIT_MAX : hal_cfg->power_on_wait_ticks;
+    hal_cfg->meas_interval_ticks = (uint32_t)(sens_cfg->meas_interval_us * sens_handle->interval_freq_hz / 1000000);
     hal_cfg->timeout_ticks = (uint32_t)sens_cfg->max_meas_time_us * src_freq_mhz;
     ESP_RETURN_ON_FALSE(hal_cfg->timeout_ticks <= TOUCH_LL_TIMEOUT_MAX, ESP_ERR_INVALID_ARG, TAG,
                         "max_meas_time_ms should within %"PRIu32, TOUCH_LL_TIMEOUT_MAX / src_freq_mhz);
     hal_cfg->sample_cfg_num = sens_cfg->sample_cfg_num;
+    hal_cfg->trigger_rise_cnt = sens_cfg->trigger_rise_cnt ? sens_cfg->trigger_rise_cnt : (sens_cfg->sample_cfg_num == 1 ? 1 : 2);
     hal_cfg->output_mode = sens_cfg->output_mode;
 
     for (uint32_t smp_cfg_id = 0; smp_cfg_id < sens_cfg->sample_cfg_num; smp_cfg_id++) {
@@ -205,6 +221,9 @@ esp_err_t touch_priv_config_channel(touch_channel_handle_t chan_handle, const to
         touch_ll_set_chan_active_threshold(chan_handle->id, smp_cfg_id, chan_cfg->active_thresh[smp_cfg_id]);
     }
     TOUCH_EXIT_CRITICAL(TOUCH_PERIPH_LOCK);
+    touch_chan_benchmark_config_t bm_cfg = {.do_reset = true};
+    /* Reset the benchmark to overwrite the legacy benchmark during the deep sleep */
+    touch_channel_config_benchmark(chan_handle, &bm_cfg);
     return ESP_OK;
 }
 
@@ -264,13 +283,6 @@ esp_err_t touch_priv_channel_read_data(touch_channel_handle_t chan_handle, touch
     return ESP_OK;
 }
 
-void touch_priv_config_benchmark(touch_channel_handle_t chan_handle, const touch_chan_benchmark_config_t *benchmark_cfg)
-{
-    if (benchmark_cfg->do_reset) {
-        touch_ll_reset_chan_benchmark(BIT(chan_handle->id));
-    }
-}
-
 /******************************************************************************
  *                              Scope: public APIs                            *
  ******************************************************************************/
@@ -308,6 +320,24 @@ esp_err_t touch_sensor_config_filter(touch_sensor_handle_t sens_handle, const to
     return ret;
 }
 
+esp_err_t touch_channel_config_benchmark(touch_channel_handle_t chan_handle, const touch_chan_benchmark_config_t *benchmark_cfg)
+{
+    TOUCH_NULL_POINTER_CHECK_ISR(chan_handle);
+    TOUCH_NULL_POINTER_CHECK_ISR(benchmark_cfg);
+#if CONFIG_IDF_TARGET_ESP32P4 && CONFIG_ESP_REV_MIN_FULL < 300
+    ESP_RETURN_ON_FALSE_ISR(!benchmark_cfg->do_force_update, ESP_ERR_INVALID_ARG, TAG, "this target do not support force update benchmark");
+#else
+    ESP_RETURN_ON_FALSE_ISR(benchmark_cfg->do_reset != benchmark_cfg->do_force_update, ESP_ERR_INVALID_ARG, TAG, "do_reset and do_force_update cannot be both true");
+#endif
+    if (benchmark_cfg->do_reset) {
+        touch_ll_reset_chan_benchmark(BIT(chan_handle->id));
+    }
+    if (benchmark_cfg->do_force_update) {
+        touch_ll_force_update_benchmark(chan_handle->id, benchmark_cfg->sample_cfg_id, benchmark_cfg->benchmark);
+    }
+    return ESP_OK;
+}
+
 esp_err_t touch_sensor_config_sleep_wakeup(touch_sensor_handle_t sens_handle, const touch_sleep_config_t *sleep_cfg)
 {
     TOUCH_NULL_POINTER_CHECK(sens_handle);
@@ -319,55 +349,85 @@ esp_err_t touch_sensor_config_sleep_wakeup(touch_sensor_handle_t sens_handle, co
         .sample_cfg = sample_cfg,
     };
     touch_hal_config_t *hal_cfg_ptr = NULL;
+    esp_sleep_pd_option_t slp_opt = ESP_PD_OPTION_AUTO;
 
     xSemaphoreTakeRecursive(sens_handle->mutex, portMAX_DELAY);
-    ESP_GOTO_ON_FALSE(!sens_handle->is_enabled, ESP_ERR_INVALID_STATE, err, TAG, "Please disable the touch sensor first");
+    TOUCH_GOTO_ON_FALSE_FSM(!sens_handle->is_enabled, ESP_ERR_INVALID_STATE, err, TAG, "Please disable the touch sensor first");
 
     if (sleep_cfg) {
         ESP_GOTO_ON_FALSE(sleep_cfg->slp_wakeup_lvl == TOUCH_LIGHT_SLEEP_WAKEUP || sleep_cfg->slp_wakeup_lvl == TOUCH_DEEP_SLEEP_WAKEUP,
                           ESP_ERR_INVALID_ARG, err, TAG, "Invalid sleep level");
         /* Enabled touch sensor as wake-up source */
         ESP_GOTO_ON_ERROR(esp_sleep_enable_touchpad_wakeup(), err, TAG, "Failed to enable touch sensor wakeup");
-#if SOC_PM_SUPPORT_RTC_PERIPH_PD
-        // Keep ESP_PD_DOMAIN_RTC_PERIPH power domain on during the light/deep sleep, so that to keep the touch sensor working
-        ESP_GOTO_ON_ERROR(esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_ON), err, TAG, "Failed to keep touch sensor module clock during the sleep");
-#endif
 
         /* If set the deep sleep channel (i.e., enable deep sleep wake-up),
            configure the deep sleep related settings. */
         if (sleep_cfg->slp_wakeup_lvl == TOUCH_DEEP_SLEEP_WAKEUP) {
-            ESP_GOTO_ON_FALSE(sleep_cfg->deep_slp_chan, ESP_ERR_INVALID_ARG, err, TAG, "deep sleep waken channel can't be NULL");
-            dp_slp_chan_id = sleep_cfg->deep_slp_chan->id;
+            if (sleep_cfg->deep_slp_allow_pd) {
+                ESP_GOTO_ON_FALSE(sleep_cfg->deep_slp_chan, ESP_ERR_INVALID_ARG, err, TAG,
+                                  "deep sleep waken channel can't be NULL when allow RTC power down");
+#if CONFIG_IDF_TARGET_ESP32P4
+                /* Due to esp32p4 eco0 hardware bug, if LP peripheral power domain is powerdowned in sleep, there will be a possibility of
+                 * triggering the EFUSE_CRC reset, so disable the power-down of this power domain on lightsleep for ECO0 version. */
+                if (!ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 1)) {
+                    slp_opt = ESP_PD_OPTION_ON;
+                    ESP_LOGW(TAG, "Keep the RTC_PERIPH power on");
+                }
+#endif
+            } else {
+                /* Keep the RTC_PERIPH power domain on in deep sleep */
+                slp_opt = ESP_PD_OPTION_ON;
+            }
+            sens_handle->allow_pd = sleep_cfg->deep_slp_allow_pd;
 
             /* Check and convert the configuration to hal configurations */
             if (sleep_cfg->deep_slp_sens_cfg) {
                 hal_cfg_ptr = &hal_cfg;
-                ESP_GOTO_ON_ERROR(s_touch_convert_to_hal_config(sens_handle, (const touch_sensor_config_t *)sleep_cfg->deep_slp_sens_cfg, hal_cfg_ptr),
+                ESP_GOTO_ON_ERROR(s_touch_convert_to_hal_config(sens_handle, sleep_cfg->deep_slp_sens_cfg, hal_cfg_ptr),
                                   err, TAG, "parse the configuration failed due to the invalid configuration");
             }
-            sens_handle->sleep_en = true;
             sens_handle->deep_slp_chan = sleep_cfg->deep_slp_chan;
+            if (sleep_cfg->deep_slp_chan) {
+                dp_slp_chan_id = sleep_cfg->deep_slp_chan->id;
+            }
             TOUCH_ENTER_CRITICAL(TOUCH_PERIPH_LOCK);
             /* Set sleep threshold */
             for (uint8_t smp_cfg_id = 0; smp_cfg_id < TOUCH_SAMPLE_CFG_NUM; smp_cfg_id++) {
                 touch_ll_sleep_set_threshold(smp_cfg_id, sleep_cfg->deep_slp_thresh[smp_cfg_id]);
             }
+            /* Set max wait ticks to ensure PMU is ready for touch measurement during the sleep.
+               Otherwise a small wait ticks will make the touch fail to work and can't wake-up the chip */
+            touch_ll_sleep_set_measure_wait_ticks(TOUCH_LL_SLP_MEASURE_WAIT_MAX);
             TOUCH_EXIT_CRITICAL(TOUCH_PERIPH_LOCK);
+        } else {
+            /* Keep the RTC_PERIPH power domain on in light sleep */
+            sens_handle->allow_pd = false;
+            slp_opt = ESP_PD_OPTION_ON;
         }
-
+        sens_handle->sleep_en = true;
     } else {
         /* Disable the touch sensor as wake-up source */
         esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_TOUCHPAD);
-#if SOC_PM_SUPPORT_RTC_PERIPH_PD
-        esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_AUTO);
-#endif
+        if (sens_handle->sleep_en && !sens_handle->allow_pd) {
+            /* No longer hold the RTC_PERIPH power by touch sensor */
+            slp_opt = ESP_PD_OPTION_OFF;
+        }
+        sens_handle->allow_pd = false;
         sens_handle->deep_slp_chan = NULL;
         sens_handle->sleep_en = false;
     }
 
+#if SOC_PM_SUPPORT_RTC_PERIPH_PD
+    esp_sleep_pd_domain_t pd_domain = ESP_PD_DOMAIN_RTC_PERIPH;
+#else
+#warning "RTC_PERIPH power domain is not supported"
+    esp_sleep_pd_domain_t pd_domain = ESP_PD_DOMAIN_MAX;
+#endif  // SOC_PM_SUPPORT_RTC_PERIPH_PD
+    ESP_GOTO_ON_ERROR(esp_sleep_pd_config(pd_domain, slp_opt), err, TAG, "Failed to set RTC_PERIPH power domain");
+
     /* Save or update the sleep config */
     TOUCH_ENTER_CRITICAL(TOUCH_PERIPH_LOCK);
-    touch_hal_save_sleep_config(dp_slp_chan_id, hal_cfg_ptr);
+    touch_hal_save_sleep_config(dp_slp_chan_id, hal_cfg_ptr, sens_handle->allow_pd);
     TOUCH_EXIT_CRITICAL(TOUCH_PERIPH_LOCK);
 
 err:
@@ -382,8 +442,7 @@ esp_err_t touch_sensor_config_waterproof(touch_sensor_handle_t sens_handle, cons
 
     esp_err_t ret = ESP_OK;
     xSemaphoreTakeRecursive(sens_handle->mutex, portMAX_DELAY);
-
-    ESP_GOTO_ON_FALSE(!sens_handle->is_enabled, ESP_ERR_INVALID_STATE, err, TAG, "Please disable the touch sensor first");
+    TOUCH_GOTO_ON_FALSE_FSM(!sens_handle->is_enabled, ESP_ERR_INVALID_STATE, err, TAG, "Please disable the touch sensor first");
 
     if (wp_cfg) {
         // Check the validation of the waterproof configuration
@@ -415,7 +474,7 @@ esp_err_t touch_sensor_config_waterproof(touch_sensor_handle_t sens_handle, cons
         sens_handle->waterproof_en = false;
         TOUCH_EXIT_CRITICAL(TOUCH_PERIPH_LOCK);
     }
-err:
+    TOUCH_FSM_ERR_TAG(err)
     xSemaphoreGiveRecursive(sens_handle->mutex);
     return ret;
 }
@@ -426,9 +485,7 @@ esp_err_t touch_sensor_config_proximity_sensing(touch_sensor_handle_t sens_handl
 
     esp_err_t ret = ESP_OK;
     xSemaphoreTakeRecursive(sens_handle->mutex, portMAX_DELAY);
-
-    ESP_GOTO_ON_FALSE(!sens_handle->is_enabled, ESP_ERR_INVALID_STATE, err, TAG, "Please disable the touch sensor first");
-
+    TOUCH_GOTO_ON_FALSE_FSM(!sens_handle->is_enabled, ESP_ERR_INVALID_STATE, err, TAG, "Please disable the touch sensor first");
     TOUCH_ENTER_CRITICAL(TOUCH_PERIPH_LOCK);
 
     /* Reset proximity sensing part of all channels */
@@ -465,7 +522,7 @@ esp_err_t touch_sensor_config_proximity_sensing(touch_sensor_handle_t sens_handl
     }
     TOUCH_EXIT_CRITICAL(TOUCH_PERIPH_LOCK);
 
-err:
+    TOUCH_FSM_ERR_TAG(err)
     xSemaphoreGiveRecursive(sens_handle->mutex);
     return ret;
 }

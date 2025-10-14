@@ -43,7 +43,6 @@ components_not_formatted_temporary:
   # 2. If no, move it to 'components_not_formatted_permanent' section below.
   check: false
   include:
-    - "/components/app_trace/"
     - "/components/app_update/"
     - "/components/bootloader_support/"
     - "/components/bootloader/"
@@ -87,11 +86,9 @@ components_not_formatted_temporary:
     - "/components/spi_flash/"
     - "/components/spiffs/"
     - "/components/tcp_transport/"
-    - "/components/touch_element/"
     - "/components/unity/"
     - "/components/vfs/"
     - "/components/wear_levelling/"
-    - "/components/wifi_provisioning/"
     - "/components/xtensa/"
     - "/examples/bluetooth/"
     - "/examples/build_system/"
@@ -113,7 +110,6 @@ components_not_formatted_temporary:
     - "/tools/esp_app_trace/test/"
     - "/tools/mocks/"
     - "/tools/test_apps/"
-    - "/tools/unit-test-app/"
 
 components_not_formatted_permanent:
   # Files which are not supposed to be formatted.
@@ -137,8 +133,6 @@ components_not_formatted_permanent:
     - "/components/console/argtable3/"
     # Linenoise (upstream source code)
     - "/components/console/linenoise/"
-    # Catch (upstream source code)
-    - "/tools/catch/catch.hpp"
     # FreeRTOS kernel files (upstream source code)
     - "/components/freertos/FreeRTOS-Kernel/"
     - "/components/freertos/FreeRTOS-Kernel-SMP/"
@@ -155,6 +149,7 @@ components_not_formatted_permanent:
     - "/components/rt/"
     # SoC header files (generated)
     - "/components/soc/*/register/soc/"
+    - "/components/soc/*/register/hw_ver*/soc/"
     # Example resource files (generated)
     - "/examples/peripherals/lcd/i80_controller/main/images/"
     - "/examples/peripherals/dac/dac_continuous/dac_audio/main/audio_example_file.h"

@@ -38,6 +38,7 @@ esp_err_t sd_pwr_ctrl_new_on_chip_ldo(const sd_pwr_ctrl_ldo_config_t *configs, s
     ESP_GOTO_ON_FALSE(ctx, ESP_ERR_NO_MEM, err, TAG, "no mem for on-chip ldo control driver context");
 
     esp_ldo_channel_config_t chan_cfg = {
+        .voltage_mv = 3300,
         .chan_id = configs->ldo_chan_id,
         .flags.adjustable = true, // the SDMMC power control driver will adjust the voltage later according to different speed mode
     };

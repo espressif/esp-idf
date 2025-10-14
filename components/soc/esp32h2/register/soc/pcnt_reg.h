@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -977,6 +977,24 @@ extern "C" {
 #define PCNT_CNT_THR_ZERO_LAT_U0_M  (PCNT_CNT_THR_ZERO_LAT_U0_V << PCNT_CNT_THR_ZERO_LAT_U0_S)
 #define PCNT_CNT_THR_ZERO_LAT_U0_V  0x00000001U
 #define PCNT_CNT_THR_ZERO_LAT_U0_S  6
+/** PCNT_CNT_THR_STEP_LIM_LAT_U0 : RO; bitpos: [7]; default: 0;
+ *  The latched value of step counter limit event of PCNT_U0 when step counter event
+ *  interrupt is valid. 1: the current pulse counter equals to reg_cnt_step_lim and
+ *  step counter event is valid. 0: others
+ */
+#define PCNT_CNT_THR_STEP_LIM_LAT_U0    (BIT(7))
+#define PCNT_CNT_THR_STEP_LIM_LAT_U0_M  (PCNT_CNT_THR_STEP_LIM_LAT_U0_V << PCNT_CNT_THR_STEP_LIM_LAT_U0_S)
+#define PCNT_CNT_THR_STEP_LIM_LAT_U0_V  0x00000001U
+#define PCNT_CNT_THR_STEP_LIM_LAT_U0_S  7
+/** PCNT_CNT_THR_STEP_LAT_U0 : RO; bitpos: [8]; default: 0;
+ *  The latched value of step counter event of PCNT_U0 when step counter event
+ *  interrupt is valid. 1: the current pulse counter increment equals to reg_cnt_step
+ *  and step counter event is valid. 0: others
+ */
+#define PCNT_CNT_THR_STEP_LAT_U0    (BIT(8))
+#define PCNT_CNT_THR_STEP_LAT_U0_M  (PCNT_CNT_THR_STEP_LAT_U0_V << PCNT_CNT_THR_STEP_LAT_U0_S)
+#define PCNT_CNT_THR_STEP_LAT_U0_V  0x00000001U
+#define PCNT_CNT_THR_STEP_LAT_U0_S  8
 
 /** PCNT_U1_STATUS_REG register
  *  PNCT UNIT1 status register
@@ -1215,6 +1233,34 @@ extern "C" {
 #define PCNT_CNT_PAUSE_U3_M  (PCNT_CNT_PAUSE_U3_V << PCNT_CNT_PAUSE_U3_S)
 #define PCNT_CNT_PAUSE_U3_V  0x00000001U
 #define PCNT_CNT_PAUSE_U3_S  7
+/** PCNT_DALTA_CHANGE_EN_U0 : R/W; bitpos: [8]; default: 0;
+ *  Configures this bit to enable unit 0's step comparator.
+ */
+#define PCNT_DALTA_CHANGE_EN_U0    (BIT(8))
+#define PCNT_DALTA_CHANGE_EN_U0_M  (PCNT_DALTA_CHANGE_EN_U0_V << PCNT_DALTA_CHANGE_EN_U0_S)
+#define PCNT_DALTA_CHANGE_EN_U0_V  0x00000001U
+#define PCNT_DALTA_CHANGE_EN_U0_S  8
+/** PCNT_DALTA_CHANGE_EN_U1 : R/W; bitpos: [9]; default: 0;
+ *  Configures this bit to enable unit 1's step comparator.
+ */
+#define PCNT_DALTA_CHANGE_EN_U1    (BIT(9))
+#define PCNT_DALTA_CHANGE_EN_U1_M  (PCNT_DALTA_CHANGE_EN_U1_V << PCNT_DALTA_CHANGE_EN_U1_S)
+#define PCNT_DALTA_CHANGE_EN_U1_V  0x00000001U
+#define PCNT_DALTA_CHANGE_EN_U1_S  9
+/** PCNT_DALTA_CHANGE_EN_U2 : R/W; bitpos: [10]; default: 0;
+ *  Configures this bit to enable unit 2's step comparator.
+ */
+#define PCNT_DALTA_CHANGE_EN_U2    (BIT(10))
+#define PCNT_DALTA_CHANGE_EN_U2_M  (PCNT_DALTA_CHANGE_EN_U2_V << PCNT_DALTA_CHANGE_EN_U2_S)
+#define PCNT_DALTA_CHANGE_EN_U2_V  0x00000001U
+#define PCNT_DALTA_CHANGE_EN_U2_S  10
+/** PCNT_DALTA_CHANGE_EN_U3 : R/W; bitpos: [11]; default: 0;
+ *  Configures this bit to enable unit 3's step comparator.
+ */
+#define PCNT_DALTA_CHANGE_EN_U3    (BIT(11))
+#define PCNT_DALTA_CHANGE_EN_U3_M  (PCNT_DALTA_CHANGE_EN_U3_V << PCNT_DALTA_CHANGE_EN_U3_S)
+#define PCNT_DALTA_CHANGE_EN_U3_V  0x00000001U
+#define PCNT_DALTA_CHANGE_EN_U3_S  11
 /** PCNT_CLK_EN : R/W; bitpos: [16]; default: 0;
  *  The registers clock gate enable signal of PCNT module. 1: the registers can be read
  *  and written by application. 0: the registers can not be read or written by
@@ -1224,6 +1270,82 @@ extern "C" {
 #define PCNT_CLK_EN_M  (PCNT_CLK_EN_V << PCNT_CLK_EN_S)
 #define PCNT_CLK_EN_V  0x00000001U
 #define PCNT_CLK_EN_S  16
+
+/** PCNT_U3_CHANGE_CONF_REG register
+ *  Configuration register for unit $n's step value.
+ */
+#define PCNT_U3_CHANGE_CONF_REG (DR_REG_PCNT_BASE + 0x64)
+/** PCNT_CNT_STEP_U3 : R/W; bitpos: [15:0]; default: 0;
+ *  Configures the step value for unit 3.
+ */
+#define PCNT_CNT_STEP_U3    0x0000FFFFU
+#define PCNT_CNT_STEP_U3_M  (PCNT_CNT_STEP_U3_V << PCNT_CNT_STEP_U3_S)
+#define PCNT_CNT_STEP_U3_V  0x0000FFFFU
+#define PCNT_CNT_STEP_U3_S  0
+/** PCNT_CNT_STEP_LIM_U3 : R/W; bitpos: [31:16]; default: 0;
+ *  Configures the step limit value for unit 3.
+ */
+#define PCNT_CNT_STEP_LIM_U3    0x0000FFFFU
+#define PCNT_CNT_STEP_LIM_U3_M  (PCNT_CNT_STEP_LIM_U3_V << PCNT_CNT_STEP_LIM_U3_S)
+#define PCNT_CNT_STEP_LIM_U3_V  0x0000FFFFU
+#define PCNT_CNT_STEP_LIM_U3_S  16
+
+/** PCNT_U2_CHANGE_CONF_REG register
+ *  Configuration register for unit $n's step value.
+ */
+#define PCNT_U2_CHANGE_CONF_REG (DR_REG_PCNT_BASE + 0x68)
+/** PCNT_CNT_STEP_U2 : R/W; bitpos: [15:0]; default: 0;
+ *  Configures the step value for unit 2.
+ */
+#define PCNT_CNT_STEP_U2    0x0000FFFFU
+#define PCNT_CNT_STEP_U2_M  (PCNT_CNT_STEP_U2_V << PCNT_CNT_STEP_U2_S)
+#define PCNT_CNT_STEP_U2_V  0x0000FFFFU
+#define PCNT_CNT_STEP_U2_S  0
+/** PCNT_CNT_STEP_LIM_U2 : R/W; bitpos: [31:16]; default: 0;
+ *  Configures the step limit value for unit 2.
+ */
+#define PCNT_CNT_STEP_LIM_U2    0x0000FFFFU
+#define PCNT_CNT_STEP_LIM_U2_M  (PCNT_CNT_STEP_LIM_U2_V << PCNT_CNT_STEP_LIM_U2_S)
+#define PCNT_CNT_STEP_LIM_U2_V  0x0000FFFFU
+#define PCNT_CNT_STEP_LIM_U2_S  16
+
+/** PCNT_U1_CHANGE_CONF_REG register
+ *  Configuration register for unit $n's step value.
+ */
+#define PCNT_U1_CHANGE_CONF_REG (DR_REG_PCNT_BASE + 0x6c)
+/** PCNT_CNT_STEP_U1 : R/W; bitpos: [15:0]; default: 0;
+ *  Configures the step value for unit 1.
+ */
+#define PCNT_CNT_STEP_U1    0x0000FFFFU
+#define PCNT_CNT_STEP_U1_M  (PCNT_CNT_STEP_U1_V << PCNT_CNT_STEP_U1_S)
+#define PCNT_CNT_STEP_U1_V  0x0000FFFFU
+#define PCNT_CNT_STEP_U1_S  0
+/** PCNT_CNT_STEP_LIM_U1 : R/W; bitpos: [31:16]; default: 0;
+ *  Configures the step limit value for unit 1.
+ */
+#define PCNT_CNT_STEP_LIM_U1    0x0000FFFFU
+#define PCNT_CNT_STEP_LIM_U1_M  (PCNT_CNT_STEP_LIM_U1_V << PCNT_CNT_STEP_LIM_U1_S)
+#define PCNT_CNT_STEP_LIM_U1_V  0x0000FFFFU
+#define PCNT_CNT_STEP_LIM_U1_S  16
+
+/** PCNT_U0_CHANGE_CONF_REG register
+ *  Configuration register for unit $n's step value.
+ */
+#define PCNT_U0_CHANGE_CONF_REG (DR_REG_PCNT_BASE + 0x70)
+/** PCNT_CNT_STEP_U0 : R/W; bitpos: [15:0]; default: 0;
+ *  Configures the step value for unit 0.
+ */
+#define PCNT_CNT_STEP_U0    0x0000FFFFU
+#define PCNT_CNT_STEP_U0_M  (PCNT_CNT_STEP_U0_V << PCNT_CNT_STEP_U0_S)
+#define PCNT_CNT_STEP_U0_V  0x0000FFFFU
+#define PCNT_CNT_STEP_U0_S  0
+/** PCNT_CNT_STEP_LIM_U0 : R/W; bitpos: [31:16]; default: 0;
+ *  Configures the step limit value for unit 0.
+ */
+#define PCNT_CNT_STEP_LIM_U0    0x0000FFFFU
+#define PCNT_CNT_STEP_LIM_U0_M  (PCNT_CNT_STEP_LIM_U0_V << PCNT_CNT_STEP_LIM_U0_S)
+#define PCNT_CNT_STEP_LIM_U0_V  0x0000FFFFU
+#define PCNT_CNT_STEP_LIM_U0_S  16
 
 /** PCNT_DATE_REG register
  *  PCNT version control register

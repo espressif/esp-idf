@@ -553,6 +553,7 @@ void BTM_BleSecureConnectionCreateOobData(void)
 #endif
 }
 
+#if (BLE_HOST_CONN_SCAN_PARAM_EN == TRUE)
 /******************************************************************************
 **
 ** Function         BTM_BleSetConnScanParams
@@ -582,15 +583,17 @@ void BTM_BleSetConnScanParams (UINT32 scan_interval, UINT32 scan_window)
             p_ble_cb->scan_win = scan_window;
             new_param = TRUE;
         }
-
+#if (tGATT_BG_CONN_DEV == TRUE)
         if (new_param && p_ble_cb->conn_state == BLE_BG_CONN) {
             btm_ble_suspend_bg_conn();
         }
+#endif // #if (tGATT_BG_CONN_DEV == TRUE)
     } else {
         BTM_TRACE_ERROR("Illegal Connection Scan Parameters");
     }
 #endif
 }
+#endif // #if (BLE_HOST_CONN_SCAN_PARAM_EN == TRUE)
 
 /********************************************************
 **
@@ -766,6 +769,7 @@ BOOLEAN BTM_ReadConnectedTransportAddress(BD_ADDR remote_bda, tBT_TRANSPORT tran
 }
 
 #if (BLE_INCLUDED == TRUE)
+#if (BLE_42_DTM_TEST_EN == TRUE)
 /*******************************************************************************
 **
 ** Function         BTM_BleReceiverTest
@@ -805,7 +809,8 @@ void BTM_BleTransmitterTest(UINT8 tx_freq, UINT8 test_data_len,
         BTM_TRACE_ERROR("%s: Unable to Trigger LE transmitter test", __FUNCTION__);
     }
 }
-
+#endif // #if (BLE_42_DTM_TEST_EN == TRUE)
+#if ((BLE_42_DTM_TEST_EN == TRUE) || (BLE_50_DTM_TEST_EN == TRUE))
 /*******************************************************************************
 **
 ** Function         BTM_BleTestEnd
@@ -837,9 +842,9 @@ void btm_ble_test_command_complete(UINT8 *p)
         (*p_cb)(p);
     }
 }
+#endif // #if ((BLE_42_DTM_TEST_EN == TRUE) || (BLE_50_DTM_TEST_EN == TRUE))
 
-
-#if (BLE_50_FEATURE_SUPPORT == TRUE)
+#if (BLE_50_DTM_TEST_EN == TRUE)
 /*******************************************************************************
 **
 ** Function         BTM_BleEnhancedReceiverTest
@@ -882,7 +887,7 @@ void BTM_BleEnhancedTransmitterTest(UINT8 tx_freq, UINT8 test_data_len,
         BTM_TRACE_ERROR("%s: Unable to Trigger LE enhanced transmitter test", __FUNCTION__);
     }
 }
-#endif // BLE_50_FEATURE_SUPPORT
+#endif // #if (BLE_50_DTM_TEST_EN == TRUE)
 
 /*******************************************************************************
 **
@@ -2289,17 +2294,16 @@ UINT8 btm_proc_smp_cback(tSMP_EVT event, BD_ADDR bd_addr, tSMP_EVT_DATA *p_data)
 
 
         }
-    } else {
-        if (event == SMP_SC_LOC_OOB_DATA_UP_EVT) {
-            tBTM_LE_EVT_DATA evt_data;
-            memcpy(&evt_data.local_oob_data, &p_data->loc_oob_data, sizeof(tSMP_LOC_OOB_DATA));
-            if (btm_cb.api.p_le_callback) {
-                (*btm_cb.api.p_le_callback)(event, bd_addr, &evt_data);
-            }
-        } else {
-            BTM_TRACE_ERROR("btm_proc_smp_cback received for unknown device");
+    }
+
+    if (event == SMP_SC_LOC_OOB_DATA_UP_EVT) {
+        tBTM_LE_EVT_DATA evt_data;
+        memcpy(&evt_data.local_oob_data, &p_data->loc_oob_data, sizeof(tSMP_LOC_OOB_DATA));
+        if (btm_cb.api.p_le_callback) {
+            (*btm_cb.api.p_le_callback)(event, bd_addr, &evt_data);
         }
     }
+
     return 0;
 }
 #endif   ///SMP_INCLUDED == TRUE
@@ -2942,7 +2946,7 @@ uint8_t btm_ble_scan_active_count(void)
 }
 
 #if (SMP_INCLUDED == TRUE)
-uint8_t btm_ble_sec_dev_active_count(void)
+uint8_t btm_ble_sec_dev_record_count(void)
 {
     tBTM_SEC_DEV_REC *p_dev_rec = NULL;
     list_node_t *p_node = NULL;
@@ -2952,11 +2956,26 @@ uint8_t btm_ble_sec_dev_active_count(void)
     for (p_node = list_begin(btm_cb.p_sec_dev_rec_list); p_node; p_node = list_next(p_node)) {
         p_dev_rec = list_node(p_node);
         if (p_dev_rec && (p_dev_rec->sec_flags & BTM_SEC_IN_USE) && (p_dev_rec->ble.key_type != BTM_LE_KEY_NONE)) {
+            BTM_TRACE_DEBUG("%s BLE security device #%d: bd_addr=%02X:%02X:%02X:%02X:%02X:%02X",
+                            __func__,
+                            count,
+                            p_dev_rec->bd_addr[0],
+                            p_dev_rec->bd_addr[1],
+                            p_dev_rec->bd_addr[2],
+                            p_dev_rec->bd_addr[3],
+                            p_dev_rec->bd_addr[4],
+                            p_dev_rec->bd_addr[5]);
             count++;
         }
     }
 
     return count;
+}
+
+void btm_ble_clear_sec_dev_record(void)
+{
+    /* only used when connection is closed */
+    if(btm_cb.p_sec_dev_rec_list) list_clear(btm_cb.p_sec_dev_rec_list);
 }
 #endif
 

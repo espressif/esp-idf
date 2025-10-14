@@ -29,8 +29,6 @@
   I (109) esp_image: segment 0: paddr=0x00020020 vaddr=0x3f000020 size=0x0618c ( 24972) map
   I (124) esp_image: segment 1: paddr=0x000261b4 vaddr=0x3ffbcae0 size=0x02624 (  9764) load
   I (129) esp_image: segment 2: paddr=0x000287e0 vaddr=0x40022000 size=0x00404 (  1028) load
-  0x40022000: _WindowOverflow4 at /home/marius/esp-idf/components/freertos/port/xtensa/xtensa_vectors.S:1730
-
   I (136) esp_image: segment 3: paddr=0x00028bec vaddr=0x40022404 size=0x0742c ( 29740) load
   0x40022404: _coredump_iram_end at ??:?
 
@@ -38,9 +36,6 @@
   0x40080020: _stext at ??:?
 
   I (171) esp_image: segment 5: paddr=0x000445a4 vaddr=0x40029830 size=0x032ac ( 12972) load
-  0x40029830: gpspi_flash_ll_set_miso_bitlen at /home/marius/esp-idf/examples/security/flash_encryption/build/../../../../components/hal/esp32s2/include/hal/gpspi_flash_ll.h:261
-  (inlined by) spi_flash_hal_gpspi_common_command at /home/marius/esp-idf/components/hal/spi_flash_hal_common.inc:161
-
   I (181) boot: Loaded app from partition at offset 0x20000
   I (181) boot: Checking flash encryption...
   I (181) efuse: Batch mode of writing fields is enabled
@@ -60,8 +55,6 @@
   I (766) esp_image: segment 0: paddr=0x00020020 vaddr=0x3f000020 size=0x0618c ( 24972) map
   I (773) esp_image: segment 1: paddr=0x000261b4 vaddr=0x3ffbcae0 size=0x02624 (  9764)
   I (778) esp_image: segment 2: paddr=0x000287e0 vaddr=0x40022000 size=0x00404 (  1028)
-  0x40022000: _WindowOverflow4 at /home/marius/esp-idf/components/freertos/port/xtensa/xtensa_vectors.S:1730
-
   I (785) esp_image: segment 3: paddr=0x00028bec vaddr=0x40022404 size=0x0742c ( 29740)
   0x40022404: _coredump_iram_end at ??:?
 
@@ -69,9 +62,6 @@
   0x40080020: _stext at ??:?
 
   I (820) esp_image: segment 5: paddr=0x000445a4 vaddr=0x40029830 size=0x032ac ( 12972)
-  0x40029830: gpspi_flash_ll_set_miso_bitlen at /home/marius/esp-idf/examples/security/flash_encryption/build/../../../../components/hal/esp32s2/include/hal/gpspi_flash_ll.h:261
-  (inlined by) spi_flash_hal_gpspi_common_command at /home/marius/esp-idf/components/hal/spi_flash_hal_common.inc:161
-
   I (823) flash_encrypt: Encrypting partition 2 at offset 0x20000 (length 0x100000)...
   I (13869) flash_encrypt: Done encrypting
   I (13870) flash_encrypt: Flash encryption completed
@@ -111,8 +101,6 @@
   I (117) esp_image: segment 0: paddr=0x00020020 vaddr=0x3f000020 size=0x0618c ( 24972) map
   I (132) esp_image: segment 1: paddr=0x000261b4 vaddr=0x3ffbcae0 size=0x02624 (  9764) load
   I (137) esp_image: segment 2: paddr=0x000287e0 vaddr=0x40022000 size=0x00404 (  1028) load
-  0x40022000: _WindowOverflow4 at /home/marius/esp-idf/components/freertos/port/xtensa/xtensa_vectors.S:1730
-
   I (144) esp_image: segment 3: paddr=0x00028bec vaddr=0x40022404 size=0x0742c ( 29740) load
   0x40022404: _coredump_iram_end at ??:?
 
@@ -120,9 +108,6 @@
   0x40080020: _stext at ??:?
 
   I (180) esp_image: segment 5: paddr=0x000445a4 vaddr=0x40029830 size=0x032ac ( 12972) load
-  0x40029830: gpspi_flash_ll_set_miso_bitlen at /home/marius/esp-idf/examples/security/flash_encryption/build/../../../../components/hal/esp32s2/include/hal/gpspi_flash_ll.h:261
-  (inlined by) spi_flash_hal_gpspi_common_command at /home/marius/esp-idf/components/hal/spi_flash_hal_common.inc:161
-
   I (190) boot: Loaded app from partition at offset 0x20000
   I (191) boot: Checking flash encryption...
   I (191) flash_encrypt: flash encryption is enabled (1 plaintext flashes left)

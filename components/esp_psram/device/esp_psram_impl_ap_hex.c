@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,9 +10,9 @@
 #include "esp_log.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/mspi_timing_tuning.h"
-#include "../esp_psram_impl.h"
+#include "esp_private/esp_psram_impl.h"
 #include "hal/psram_ctrlr_ll.h"
-#include "hal/mspi_timing_tuning_ll.h"
+#include "hal/mspi_ll.h"
 #include "clk_ctrl_os.h"
 
 // Reset and Clock Control registers are mixing with other peripherals, so we need to use a critical section
@@ -30,28 +30,38 @@
 
 #if CONFIG_SPIRAM_SPEED_250M
 #define AP_HEX_PSRAM_RD_DUMMY_BITLEN       (2*(18-1))
+#define AP_HEX_PSRAM_RD_REG_DUMMY_BITLEN   (2*(9-1))
 #define AP_HEX_PSRAM_WR_DUMMY_BITLEN       (2*(9-1))
 #define AP_HEX_PSRAM_RD_LATENCY            6
 #define AP_HEX_PSRAM_WR_LATENCY            3
 #elif CONFIG_SPIRAM_SPEED_200M
 #define AP_HEX_PSRAM_RD_DUMMY_BITLEN       (2*(14-1))
+#define AP_HEX_PSRAM_RD_REG_DUMMY_BITLEN   (2*(7-1))
 #define AP_HEX_PSRAM_WR_DUMMY_BITLEN       (2*(7-1))
 #define AP_HEX_PSRAM_RD_LATENCY            4
 #define AP_HEX_PSRAM_WR_LATENCY            1
 #else
 #define AP_HEX_PSRAM_RD_DUMMY_BITLEN       (2*(10-1))
+#define AP_HEX_PSRAM_RD_REG_DUMMY_BITLEN   (2*(5-1))
 #define AP_HEX_PSRAM_WR_DUMMY_BITLEN       (2*(5-1))
 #define AP_HEX_PSRAM_RD_LATENCY            2
 #define AP_HEX_PSRAM_WR_LATENCY            2
 #endif
 
-#define AP_HEX_PSRAM_VENDOR_ID             0xD
+#define AP_HEX_PSRAM_VENDOR_ID_AP          0xD
+#define AP_HEX_PSRAM_VENDOR_ID_UNILC       0x1A  //UnilC shares driver pattern with AP
 #define AP_HEX_PSRAM_CS_SETUP_TIME         4
 #define AP_HEX_PSRAM_CS_HOLD_TIME          4
 #define AP_HEX_PSRAM_CS_ECC_HOLD_TIME      4
 #define AP_HEX_PSRAM_CS_HOLD_DELAY         3
 
+#if CONFIG_SPIRAM_SPEED_80M
+#define AP_HEX_PSRAM_MPLL_DEFAULT_FREQ_MHZ 320
+#else
 #define AP_HEX_PSRAM_MPLL_DEFAULT_FREQ_MHZ 400
+#endif
+
+#define AP_HEX_PSRAM_REF_DATA              0x5a6b7c8d
 
 typedef struct {
     union {
@@ -137,7 +147,7 @@ static void s_init_psram_mode_reg(int spi_num, hex_psram_mode_reg_t *mode_reg_co
     int cmd_len = 16;
     uint32_t addr = 0x0;
     int addr_bit_len = 32;
-    int dummy = AP_HEX_PSRAM_RD_DUMMY_BITLEN;
+    int dummy = AP_HEX_PSRAM_RD_REG_DUMMY_BITLEN;
     hex_psram_mode_reg_t mode_reg = {0};
     int data_bit_len = 16;
 
@@ -216,7 +226,7 @@ static void s_get_psram_mode_reg(int spi_num, hex_psram_mode_reg_t *out_reg)
 {
     int cmd_len = 16;
     int addr_bit_len = 32;
-    int dummy = AP_HEX_PSRAM_RD_DUMMY_BITLEN;
+    int dummy = AP_HEX_PSRAM_RD_REG_DUMMY_BITLEN;
     int data_bit_len = 16;
 
     //Read MR0~1 register
@@ -252,6 +262,41 @@ static void s_get_psram_mode_reg(int spi_num, hex_psram_mode_reg_t *out_reg)
                                NULL, 0,
                                &out_reg->mr8.val, data_bit_len,
                                false);
+}
+
+/**
+ * Check if PSRAM is connected by write and read
+ */
+static esp_err_t s_check_psram_connected(int spi_num)
+{
+    uint32_t addr = 0x80;
+    uint32_t ref_data = AP_HEX_PSRAM_REF_DATA;
+    uint32_t exp_data = 0;
+    int data_bit_len = 32;
+
+    //write
+    addr = 0x0;
+    s_psram_common_transaction(spi_num,
+                               AP_HEX_PSRAM_SYNC_WRITE, AP_HEX_PSRAM_WR_CMD_BITLEN,
+                               addr, AP_HEX_PSRAM_ADDR_BITLEN,
+                               AP_HEX_PSRAM_WR_DUMMY_BITLEN,
+                               (uint8_t *)&ref_data, data_bit_len,
+                               NULL, 0,
+                               false);
+
+    //read MR4 and MR8
+    s_psram_common_transaction(spi_num,
+                               AP_HEX_PSRAM_SYNC_READ, AP_HEX_PSRAM_RD_CMD_BITLEN,
+                               addr, AP_HEX_PSRAM_ADDR_BITLEN,
+                               AP_HEX_PSRAM_RD_DUMMY_BITLEN,
+                               NULL, 0,
+                               (uint8_t *)&exp_data, data_bit_len,
+                               false);
+
+    ESP_EARLY_LOGD(TAG, "exp_data: 0x%08x", exp_data);
+    ESP_EARLY_LOGD(TAG, "ref_data: 0x%08x", ref_data);
+
+    return (exp_data == ref_data ? ESP_OK : ESP_FAIL);
 }
 
 static void s_print_psram_info(hex_psram_mode_reg_t *reg_val)
@@ -346,8 +391,6 @@ static void s_configure_psram_ecc(void)
 {
     psram_ctrlr_ll_enable_16to18_ecc(PSRAM_CTRLR_LL_MSPI_ID_2, true);
     psram_ctrlr_ll_enable_skip_page_corner(PSRAM_CTRLR_LL_MSPI_ID_2, true);
-    psram_ctrlr_ll_enable_split_trans(PSRAM_CTRLR_LL_MSPI_ID_2, true);
-    psram_ctrlr_ll_set_page_size(PSRAM_CTRLR_LL_MSPI_ID_2, 2048);
     psram_ctrlr_ll_enable_ecc_addr_conversion(PSRAM_CTRLR_LL_MSPI_ID_2, 2048);
 
     /**
@@ -366,7 +409,9 @@ esp_err_t esp_psram_impl_enable(void)
 {
 #if SOC_CLK_MPLL_SUPPORTED
     periph_rtc_mpll_acquire();
-    periph_rtc_mpll_freq_set(AP_HEX_PSRAM_MPLL_DEFAULT_FREQ_MHZ * 1000000, NULL);
+    uint32_t real_mpll_freq = 0;
+    periph_rtc_mpll_freq_set(AP_HEX_PSRAM_MPLL_DEFAULT_FREQ_MHZ * 1000000, &real_mpll_freq);
+    ESP_EARLY_LOGD(TAG, "real_mpll_freq: %d", real_mpll_freq);
 #endif
 
     PSRAM_RCC_ATOMIC() {
@@ -380,6 +425,8 @@ esp_err_t esp_psram_impl_enable(void)
     mspi_timing_ll_enable_dqs(true);
 
     s_set_psram_cs_timing();
+    psram_ctrlr_ll_enable_split_trans(PSRAM_CTRLR_LL_MSPI_ID_2, true);
+    psram_ctrlr_ll_set_page_size(PSRAM_CTRLR_LL_MSPI_ID_2, 2048);
 #if CONFIG_SPIRAM_ECC_ENABLE
     s_configure_psram_ecc();
 #endif
@@ -402,12 +449,17 @@ esp_err_t esp_psram_impl_enable(void)
     mode_reg.mr8.x16 = 0;
 #endif
     s_init_psram_mode_reg(PSRAM_CTRLR_LL_MSPI_ID_3, &mode_reg);
-    //Print PSRAM info
-    s_get_psram_mode_reg(PSRAM_CTRLR_LL_MSPI_ID_3, &mode_reg);
-    if (mode_reg.mr1.vendor_id != AP_HEX_PSRAM_VENDOR_ID) {
-        ESP_EARLY_LOGE(TAG, "PSRAM ID read error: 0x%08x, PSRAM chip not found or not supported, or wrong PSRAM line mode", mode_reg.mr1.vendor_id);
+
+    if (s_check_psram_connected(PSRAM_CTRLR_LL_MSPI_ID_3) != ESP_OK) {
+        ESP_EARLY_LOGE(TAG, "PSRAM chip is not connected");
         return ESP_ERR_NOT_SUPPORTED;
     }
+
+    s_get_psram_mode_reg(PSRAM_CTRLR_LL_MSPI_ID_3, &mode_reg);
+    if (mode_reg.mr1.vendor_id != AP_HEX_PSRAM_VENDOR_ID_AP && mode_reg.mr1.vendor_id != AP_HEX_PSRAM_VENDOR_ID_UNILC) {
+        ESP_EARLY_LOGW(TAG, "PSRAM ID read error: 0x%08x, fallback to use default driver pattern", mode_reg.mr1.vendor_id);
+    }
+
     s_print_psram_info(&mode_reg);
     s_psram_size = mode_reg.mr2.density == 0x1 ? PSRAM_SIZE_4MB  :
                    mode_reg.mr2.density == 0X3 ? PSRAM_SIZE_8MB  :

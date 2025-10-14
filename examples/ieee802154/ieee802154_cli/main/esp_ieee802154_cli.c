@@ -16,6 +16,7 @@
 #include "esp_ieee802154.h"
 #include "esp_phy_init.h"
 #include "cmd_system.h"
+#include "ieee802154_debug.h"
 
 #define PROMPT_STR "ieee802154"
 
@@ -31,6 +32,8 @@ static void initialize_nvs(void)
 
 void app_main(void)
 {
+    initialize_nvs();
+
     esp_ieee802154_enable();
     esp_console_repl_t *repl = NULL;
     esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
@@ -40,12 +43,13 @@ void app_main(void)
     repl_config.prompt = PROMPT_STR ">";
     repl_config.max_cmdline_length = 256;
 
-    initialize_nvs();
-
     /* Register commands */
     esp_console_register_help_command();
     register_ieee802154_cmd();
     register_system_common();
+#if CONFIG_IEEE802154_DEBUG
+    register_ieee802154_debug_cmd();
+#endif
 
     esp_console_dev_uart_config_t hw_config = ESP_CONSOLE_DEV_UART_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_console_new_repl_uart(&hw_config, &repl_config, &repl));

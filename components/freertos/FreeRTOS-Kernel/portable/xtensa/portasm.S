@@ -281,7 +281,7 @@ _frxt_int_exit:
 * Manages the tick timer and calls xPortSysTickHandler() every tick.
 * See the detailed description of the XT_RTOS_ENTER macro in xtensa_rtos.h.
 *
-* Callable from C (obeys ABI conventions). Implemented in assmebly code for performance.
+* Callable from C (obeys ABI conventions). Implemented in assembly code for performance.
 *
 **********************************************************************************************************
 */
@@ -352,7 +352,7 @@ _frxt_timer_int:
 
     /* Check if we need to process more ticks to catch up. */
     esync                               /* ensure comparator update complete  */
-    rsr     a4, CCOUNT                  /* a4 = cycle count                   */
+    rsr     a4, XT_REG_CCOUNT           /* a4 = cycle count                   */
     sub     a4, a4, a3                  /* diff = ccount - old comparator     */
     blt     a2, a4, .L_xt_timer_int_catchup  /* repeat while diff > divisor */
 
@@ -370,7 +370,7 @@ _frxt_timer_int:
 *                                           _frxt_tick_timer_init
 *                                      void _frxt_tick_timer_init(void)
 *
-* Initialize timer and timer interrrupt handler (_xt_tick_divisor_init() has already been been called).
+* Initialize timer and timer interrupt handler (_xt_tick_divisor_init() has already been been called).
 * Callable from C (obeys ABI conventions on entry).
 *
 **********************************************************************************************************
@@ -391,7 +391,7 @@ _frxt_tick_timer_init:
     movi    a2, _xt_tick_divisor
     l32i    a3, a2, 0
     #endif
-    rsr     a2, CCOUNT              /* current cycle count */
+    rsr     a2, XT_REG_CCOUNT       /* current cycle count */
     add     a2, a2, a3              /* time of first timer interrupt */
     wsr     a2, XT_CCOMPARE         /* set the comparator */
 
@@ -481,7 +481,7 @@ _frxt_dispatch:
     rsync
     #endif
     /* As soons as PS is restored, interrupts can happen. No need to sync PS. */
-    wsr     a3,  PS
+    wsr     a3,  XT_REG_PS
     #ifdef __XTENSA_CALL0_ABI__
     addi    sp,  sp, XT_SOL_FRMSZ
     ret
@@ -499,7 +499,7 @@ _frxt_dispatch:
     l32i    a2, a2, 0
     get_cpsa_from_tcb a2, a3            /* After this, pointer to CP save area is in a2, a3 is destroyed */
     l16ui   a3, a2, XT_CPENABLE         /* CPENABLE = cp_state->cpenable;   */
-    wsr     a3, CPENABLE
+    wsr     a3, XT_REG_CPENABLE
     #endif
 
     /* Interrupt stack frame. Restore full context and return to exit dispatcher. */
@@ -552,7 +552,7 @@ vPortYield:
     entry   sp,  XT_SOL_FRMSZ
     #endif
 
-    rsr     a2,  PS
+    rsr     a2,  XT_REG_PS
     s32i    a0,  sp, XT_SOL_PC
     s32i    a2,  sp, XT_SOL_PS
     #if XCHAL_HAVE_THREADPTR
@@ -571,11 +571,11 @@ vPortYield:
     movi    a6,  ~(PS_WOE_MASK|PS_INTLEVEL_MASK)  /* spills a4-a7 if needed */
     and     a2,  a2, a6                           /* clear WOE, INTLEVEL    */
     addi    a2,  a2, XCHAL_EXCM_LEVEL             /* set INTLEVEL           */
-    wsr     a2,  PS
+    wsr     a2,  XT_REG_PS
     rsync
     call0   xthal_window_spill_nw
     l32i    a2,  sp, XT_SOL_PS                    /* restore PS             */
-    wsr     a2,  PS
+    wsr     a2,  XT_REG_PS
     #endif
 
     rsil    a2,  XCHAL_EXCM_LEVEL       /* disable low/med interrupts       */
@@ -598,7 +598,7 @@ vPortYield:
     /* Clear CPENABLE, also in task's co-processor state save area. */
     get_cpsa_from_tcb a2, a3            /* After this, pointer to CP save area is in a2, a3 is destroyed */
     movi    a3,  0
-    wsr     a3,  CPENABLE
+    wsr     a3,  XT_REG_CPENABLE
     beqz    a2,  1f
     s16i    a3,  a2, XT_CPENABLE        /* clear saved cpenable             */
 1:
@@ -644,10 +644,10 @@ vPortYieldFromInt:
 
     get_cpsa_from_tcb a2, a3            /* After this, pointer to CP save area is in a2, a3 is destroyed */
 
-    rsr     a3, CPENABLE
+    rsr     a3, XT_REG_CPENABLE
     s16i    a3, a2, XT_CPENABLE         /* cp_state->cpenable = CPENABLE;   */
     movi    a3, 0
-    wsr     a3, CPENABLE                /* disable all co-processors        */
+    wsr     a3, XT_REG_CPENABLE         /* disable all co-processors        */
     #endif
 
     #ifdef __XTENSA_CALL0_ABI__

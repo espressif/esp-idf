@@ -1,0 +1,2 @@
+# ESP32C5 supports the Recovery bootloader feature in ROM starting from v1.0 (ECO2)
+CONFIG_IDF_TARGET="esp32c5"

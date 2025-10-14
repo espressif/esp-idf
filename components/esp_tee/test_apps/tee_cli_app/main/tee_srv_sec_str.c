@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -79,7 +79,7 @@ static esp_err_t hexbuf_to_hexstr(const void *hexbuf, size_t hexbuf_sz, char *he
     return ESP_OK;
 }
 
-static esp_err_t verify_ecdsa_secp256r1_sign(const uint8_t *digest, size_t len, const esp_tee_sec_storage_pubkey_t *pubkey, const esp_tee_sec_storage_sign_t *sign)
+static esp_err_t verify_ecdsa_secp256r1_sign(const uint8_t *digest, size_t len, const esp_tee_sec_storage_ecdsa_pubkey_t *pubkey, const esp_tee_sec_storage_ecdsa_sign_t *sign)
 {
     if (pubkey == NULL || digest == NULL || sign == NULL) {
         return ESP_ERR_INVALID_ARG;
@@ -197,7 +197,7 @@ void register_cmd_msg_sha256(void)
 }
 
 static struct {
-    struct arg_int *slot_id;
+    struct arg_str *key_str_id;
     struct arg_int *key_type;
     struct arg_end *end;
 } tee_sec_stg_gen_key_args;
@@ -211,29 +211,27 @@ static int tee_sec_stg_gen_key(int argc, char **argv)
     }
 
     esp_err_t err = ESP_FAIL;
-    uint16_t slot_id = (uint16_t)tee_sec_stg_gen_key_args.slot_id->ival[0];
-    esp_tee_sec_storage_type_t key_type = (esp_tee_sec_storage_type_t)tee_sec_stg_gen_key_args.key_type->ival[0];
 
-    err = esp_tee_sec_storage_init();
-    if (err != ESP_OK) {
+    esp_tee_sec_storage_key_cfg_t cfg = {
+        .id = (const char *)tee_sec_stg_gen_key_args.key_str_id->sval[0],
+        .type = (esp_tee_sec_storage_type_t)tee_sec_stg_gen_key_args.key_type->ival[0]
+    };
+
+    err = esp_tee_sec_storage_clear_key(cfg.id);
+    if (err != ESP_OK && err != ESP_ERR_NOT_FOUND) {
+        ESP_LOGE(TAG, "Failed to clear key %d!", cfg.id);
         goto exit;
     }
 
-    err = esp_tee_sec_storage_clear_slot(slot_id);
-    if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to clear slot %d!", slot_id);
-        goto exit;
-    }
-
-    err = esp_tee_sec_storage_gen_key(slot_id, key_type);
+    err = esp_tee_sec_storage_gen_key(&cfg);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to generate key!");
         goto exit;
     }
 
-    ESP_LOGI(TAG, "Generated %s key in slot %d",
-             (key_type == ESP_SEC_STG_KEY_ECDSA_SECP256R1) ? "ECDSA_SECP256R1" : "AES256",
-             slot_id);
+    ESP_LOGI(TAG, "Generated %s key with ID %s",
+             (cfg.type == ESP_SEC_STG_KEY_ECDSA_SECP256R1) ? "ECDSA_SECP256R1" : "AES256",
+             cfg.id);
 
 exit:
     return err;
@@ -241,13 +239,13 @@ exit:
 
 void register_srv_sec_stg_gen_key(void)
 {
-    tee_sec_stg_gen_key_args.slot_id = arg_int1(NULL, NULL, "<slot_id>", "TEE Secure storage slot for storing the key");
-    tee_sec_stg_gen_key_args.key_type = arg_int1(NULL, NULL, "<key_type>", "Key type (0: ECDSA_SECP256R1, 1: AES256)");
+    tee_sec_stg_gen_key_args.key_str_id = arg_str1(NULL, NULL, "<key_id>", "TEE Secure storage key ID");
+    tee_sec_stg_gen_key_args.key_type = arg_int1(NULL, NULL, "<key_type>", "Key type (0: AES256, 1: ECDSA_SECP256R1)");
     tee_sec_stg_gen_key_args.end = arg_end(2);
 
     const esp_console_cmd_t tee_sec_stg = {
         .command = "tee_sec_stg_gen_key",
-        .help = "Generate and store a new key of the specified type in the given TEE secure storage slot",
+        .help = "Generate and store a new key of the specified type with the given ID",
         .hint = NULL,
         .func = &tee_sec_stg_gen_key,
         .argtable = &tee_sec_stg_gen_key_args,
@@ -257,7 +255,7 @@ void register_srv_sec_stg_gen_key(void)
 }
 
 static struct {
-    struct arg_int *slot_id;
+    struct arg_str *key_str_id;
     struct arg_str *msg_sha256;
     struct arg_end *end;
 } tee_sec_stg_sign_args;
@@ -280,16 +278,13 @@ static int tee_sec_stg_sign(int argc, char **argv)
     uint8_t digest[SHA256_DIGEST_SZ] = {};
     hexstr_to_hexbuf(msg_sha256, msg_sha256_len, digest, sizeof(digest));
 
-    esp_err_t err = ESP_FAIL;
-    uint16_t slot_id = (uint16_t)tee_sec_stg_sign_args.slot_id->ival[0];
+    esp_tee_sec_storage_key_cfg_t cfg = {
+        .id = (const char *)tee_sec_stg_sign_args.key_str_id->sval[0],
+        .type = ESP_SEC_STG_KEY_ECDSA_SECP256R1
+    };
 
-    err = esp_tee_sec_storage_init();
-    if (err != ESP_OK) {
-        goto exit;
-    }
-
-    esp_tee_sec_storage_sign_t sign = {};
-    err = esp_tee_sec_storage_get_signature(slot_id, digest, sizeof(digest), &sign);
+    esp_tee_sec_storage_ecdsa_sign_t sign = {};
+    esp_err_t err = esp_tee_sec_storage_ecdsa_sign(&cfg, digest, sizeof(digest), &sign);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to generate signature!");
         goto exit;
@@ -306,8 +301,8 @@ static int tee_sec_stg_sign(int argc, char **argv)
     ESP_LOGI(TAG, "Generated signature -\n%s", sign_hexstr);
     free(sign_hexstr);
 
-    esp_tee_sec_storage_pubkey_t pubkey = {};
-    err = esp_tee_sec_storage_get_pubkey(slot_id, &pubkey);
+    esp_tee_sec_storage_ecdsa_pubkey_t pubkey = {};
+    err = esp_tee_sec_storage_ecdsa_get_pubkey(&cfg, &pubkey);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to fetch public-key!");
         goto exit;
@@ -338,13 +333,13 @@ exit:
 
 void register_srv_sec_stg_sign(void)
 {
-    tee_sec_stg_sign_args.slot_id = arg_int1(NULL, NULL, "<slot_id>", "TEE Secure storage slot storing the ecdsa-secp256r1 keypair");
+    tee_sec_stg_sign_args.key_str_id = arg_str1(NULL, NULL, "<key_id>", "TEE Secure storage key ID");
     tee_sec_stg_sign_args.msg_sha256 = arg_str1(NULL, NULL, "<msg_sha256>", "SHA256 digest of the message to be signed and verified");
     tee_sec_stg_sign_args.end = arg_end(2);
 
     const esp_console_cmd_t tee_sec_stg = {
         .command = "tee_sec_stg_sign",
-        .help = "Sign a message using the ECDSA keypair stored in the given slot ID and verify the signature",
+        .help = "Sign a message using the ECDSA keypair stored with the given key ID and verify the signature",
         .hint = NULL,
         .func = &tee_sec_stg_sign,
         .argtable = &tee_sec_stg_sign_args,
@@ -354,7 +349,7 @@ void register_srv_sec_stg_sign(void)
 }
 
 static struct {
-    struct arg_int *slot_id;
+    struct arg_str *key_str_id;
     struct arg_str *plaintext;
     struct arg_end *end;
 } tee_sec_stg_encrypt_args;
@@ -369,7 +364,7 @@ static int tee_sec_stg_encrypt(int argc, char **argv)
 
     esp_err_t err = ESP_FAIL;
     uint8_t tag[AES256_GCM_TAG_LEN];
-    uint16_t slot_id = (uint16_t)tee_sec_stg_encrypt_args.slot_id->ival[0];
+    const char *key_id = (const char *)tee_sec_stg_encrypt_args.key_str_id->sval[0];
 
     const char *plaintext = tee_sec_stg_encrypt_args.plaintext->sval[0];
     size_t plaintext_len = strnlen(plaintext, MAX_AES_PLAINTEXT_LEN);
@@ -399,13 +394,13 @@ static int tee_sec_stg_encrypt(int argc, char **argv)
         goto exit;
     }
 
-    err = esp_tee_sec_storage_init();
-    if (err != ESP_OK) {
-        goto exit;
-    }
+    esp_tee_sec_storage_aead_ctx_t ctx = {
+        .key_id = key_id,
+        .input = (uint8_t *)plaintext_buf,
+        .input_len = plaintext_buf_len
+    };
 
-    err = esp_tee_sec_storage_encrypt(slot_id, (uint8_t *)plaintext_buf, plaintext_buf_len,
-                                      NULL, 0, tag, sizeof(tag), ciphertext_buf);
+    err = esp_tee_sec_storage_aead_encrypt(&ctx, tag, sizeof(tag), ciphertext_buf);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to encrypt data: %s", esp_err_to_name(err));
         goto exit;
@@ -434,13 +429,13 @@ exit:
 
 void register_srv_sec_stg_encrypt(void)
 {
-    tee_sec_stg_encrypt_args.slot_id = arg_int1(NULL, NULL, "<slot_id>", "TEE Secure storage slot storing the AES key");
+    tee_sec_stg_encrypt_args.key_str_id = arg_str1(NULL, NULL, "<key_id>", "TEE Secure storage key ID");
     tee_sec_stg_encrypt_args.plaintext = arg_str1(NULL, NULL, "<plaintext>", "Plaintext to be encrypted");
     tee_sec_stg_encrypt_args.end = arg_end(2);
 
     const esp_console_cmd_t tee_sec_stg = {
         .command = "tee_sec_stg_encrypt",
-        .help = "Encrypt data using AES-GCM with a key from secure storage",
+        .help = "Encrypt data using AES-GCM key with the given ID from secure storage",
         .hint = NULL,
         .func = &tee_sec_stg_encrypt,
         .argtable = &tee_sec_stg_encrypt_args,
@@ -450,7 +445,7 @@ void register_srv_sec_stg_encrypt(void)
 }
 
 static struct {
-    struct arg_int *slot_id;
+    struct arg_str *key_str_id;
     struct arg_str *ciphertext;
     struct arg_str *tag;
     struct arg_end *end;
@@ -465,7 +460,7 @@ static int tee_sec_stg_decrypt(int argc, char **argv)
     }
 
     esp_err_t err = ESP_FAIL;
-    uint16_t slot_id = (uint16_t)tee_sec_stg_decrypt_args.slot_id->ival[0];
+    const char *key_id = (const char *)tee_sec_stg_decrypt_args.key_str_id->sval[0];
 
     const char *tag_hexstr = tee_sec_stg_decrypt_args.tag->sval[0];
     uint8_t tag[AES256_GCM_TAG_LEN];
@@ -499,13 +494,13 @@ static int tee_sec_stg_decrypt(int argc, char **argv)
         goto exit;
     }
 
-    err = esp_tee_sec_storage_init();
-    if (err != ESP_OK) {
-        goto exit;
-    }
+    esp_tee_sec_storage_aead_ctx_t ctx = {
+        .key_id = key_id,
+        .input = (uint8_t *)ciphertext_buf,
+        .input_len = ciphertext_buf_len
+    };
 
-    err = esp_tee_sec_storage_decrypt(slot_id, ciphertext_buf, ciphertext_buf_len,
-                                      NULL, 0, tag, sizeof(tag), plaintext_buf);
+    err = esp_tee_sec_storage_aead_decrypt(&ctx, tag, sizeof(tag), plaintext_buf);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to decrypt data: %s", esp_err_to_name(err));
         goto exit;
@@ -530,14 +525,14 @@ exit:
 
 void register_srv_sec_stg_decrypt(void)
 {
-    tee_sec_stg_decrypt_args.slot_id = arg_int1(NULL, NULL, "<slot_id>", "TEE Secure storage slot storing the AES key");
+    tee_sec_stg_decrypt_args.key_str_id = arg_str1(NULL, NULL, "<key_id>", "TEE Secure storage key ID");
     tee_sec_stg_decrypt_args.ciphertext = arg_str1(NULL, NULL, "<ciphertext>", "Ciphertext to be decrypted");
     tee_sec_stg_decrypt_args.tag = arg_str1(NULL, NULL, "<tag>", "AES-GCM authentication tag");
     tee_sec_stg_decrypt_args.end = arg_end(3);
 
     const esp_console_cmd_t tee_sec_stg = {
         .command = "tee_sec_stg_decrypt",
-        .help = "Decrypt data using AES-GCM with a key from secure storage",
+        .help = "Decrypt data using AES-GCM key with the given ID from secure storage",
         .hint = NULL,
         .func = &tee_sec_stg_decrypt,
         .argtable = &tee_sec_stg_decrypt_args,

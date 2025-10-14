@@ -17,6 +17,7 @@ if(CONFIG_OPENTHREAD_ENABLED)
         "openthread/examples/platforms"
         "openthread/src"
         "openthread/src/core"
+        "openthread/src/include"
         "openthread/src/lib"
         "openthread/src/lib/hdlc"
         "openthread/src/lib/spinel"
@@ -102,14 +103,17 @@ if(CONFIG_OPENTHREAD_ENABLED)
             "openthread/src/core/thread/announce_sender.cpp"
             "openthread/src/core/thread/address_resolver.cpp"
             "openthread/src/core/thread/child_supervision.cpp"
+            "openthread/src/core/thread/csl_tx_scheduler.cpp"
             "openthread/src/core/thread/discover_scanner.cpp"
             "openthread/src/core/thread/energy_scan_server.cpp"
+            "openthread/src/core/thread/indirect_sender.cpp"
             "openthread/src/core/thread/key_manager.cpp"
             "openthread/src/core/thread/link_metrics.cpp"
             "openthread/src/core/thread/lowpan.cpp"
             "openthread/src/core/thread/mesh_forwarder.cpp"
             "openthread/src/core/thread/mesh_forwarder_ftd.cpp"
             "openthread/src/core/thread/mesh_forwarder_mtd.cpp"
+            "openthread/src/core/thread/message_framer.cpp"
             "openthread/src/core/thread/mle.cpp"
             "openthread/src/core/thread/mle_router.cpp"
             "openthread/src/core/thread/mle_types.cpp"
@@ -168,7 +172,7 @@ if(CONFIG_OPENTHREAD_ENABLED)
     if(CONFIG_OPENTHREAD_NCP_VENDOR_HOOK)
         list(APPEND src_dirs
             "src/ncp")
-        if(CONFIG_OPENTHREAD_RCP_UART)
+        if(CONFIG_OPENTHREAD_RCP_UART OR CONFIG_OPENTHREAD_RCP_USB_SERIAL_JTAG)
             list(APPEND exclude_srcs
                 "src/ncp/esp_openthread_ncp_spi.cpp")
         elseif(CONFIG_OPENTHREAD_RCP_SPI)
@@ -215,6 +219,7 @@ elseif(CONFIG_OPENTHREAD_SPINEL_ONLY)
         "private_include"
         "openthread/src"
         "openthread/src/core"
+        "openthread/src/include"
         "openthread/src/lib"
         "openthread/src/lib/hdlc"
         "openthread/src/lib/spinel")
@@ -272,9 +277,9 @@ idf_component_register(SRC_DIRS "${src_dirs}"
                        EXCLUDE_SRCS "${exclude_srcs}"
                        INCLUDE_DIRS "${public_include_dirs}"
                        PRIV_INCLUDE_DIRS "${private_include_dirs}"
-                       REQUIRES esp_netif lwip esp_driver_uart driver
+                       REQUIRES esp_netif lwip esp_driver_uart esp_driver_gpio esp_driver_spi esp_driver_usb_serial_jtag
                        LDFRAGMENTS linker.lf
-                       PRIV_REQUIRES console esp_event esp_partition esp_timer
+                       PRIV_REQUIRES console esp_coex esp_event esp_partition esp_timer
                                      ieee802154 mbedtls nvs_flash)
 
 if(CONFIG_OPENTHREAD_RADIO_TREL)

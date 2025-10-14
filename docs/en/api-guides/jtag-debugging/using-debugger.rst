@@ -9,7 +9,7 @@ This section covers the steps to configure and run a debugger using various meth
 * :ref:`jtag-debugging-using-debugger-command-line`
 * :ref:`jtag-debugging-with-idf-py`
 
-For how to run a debugger from VS Code, see `Configuration for Visual Studio Code Debug <https://github.com/espressif/vscode-esp-idf-extension/blob/master/docs/DEBUGGING.md>`__.
+For how to run a debugger from VS Code, see `Configuration for Visual Studio Code Debug <https://docs.espressif.com/projects/vscode-esp-idf-extension/en/latest/debugproject.html>`__.
 
 
 .. _jtag-debugging-using-debugger-eclipse:
@@ -23,20 +23,20 @@ Eclipse
 
 Eclipse is an integrated development environment (IDE) that provides a powerful set of tools for developing and debugging software applications. For ESP-IDF applications, `IDF Eclipse plugin <https://github.com/espressif/idf-eclipse-plugin>`_ provides two ways of debugging:
 
-1.  `ESP-IDF GDB OpenOCD Debugging <https://github.com/espressif/idf-eclipse-plugin/blob/master/docs/OpenOCD%20Debugging.md#esp-idf-gdb-openocd-debugging>`_
+1.  `ESP-IDF GDB OpenOCD Debugging <https://docs.espressif.com/projects/espressif-ide/en/latest/openocddebugging.html>`_
 2.  GDB Hardware Debugging
 
 By default, Eclipse supports OpenOCD Debugging via the GDB Hardware Debugging plugin, which requires starting the OpenOCD server from the command line and configuring the GDB client from Eclipse to start with the debugging. This approach can be time-consuming and error-prone.
 
 To make the debugging process easier, the IDF Eclipse plugin has a customized ESP-IDF GDB OpenOCD Debugging functionality. This functionality supports configuring the OpenOCD server and GDB client from within Eclipse. All the required configuration parameters will be pre-filled by the plugin, and you can start debugging with just a click of a button.
 
-Therefore, it is recommended to use the `ESP-IDF GDB OpenOCD Debugging <https://github.com/espressif/idf-eclipse-plugin/blob/master/docs/OpenOCD%20Debugging.md#esp-idf-gdb-openocd-debugging>`_ via the IDF Eclipse plugin.
+Therefore, it is recommended to use the `ESP-IDF GDB OpenOCD Debugging <https://docs.espressif.com/projects/espressif-ide/en/latest/openocddebugging.html>`_ via the IDF Eclipse plugin.
 
 **GDB Hardware Debugging**
 
 .. note::
 
-    This approach is recommended only if you are unable to debug using `ESP-IDF GDB OpenOCD Debugging <https://github.com/espressif/idf-eclipse-plugin/blob/master/docs/OpenOCD%20Debugging.md#esp-idf-gdb-openocd-debugging>`_ for some reason.
+    This approach is recommended only if you are unable to debug using `ESP-IDF GDB OpenOCD Debugging <https://docs.espressif.com/projects/espressif-ide/en/latest/openocddebugging.html>`_ for some reason.
 
 To install the ``GDB Hardware Debugging`` plugin, open Eclipse and select ``Help`` > ``Install`` New Software.
 
@@ -232,7 +232,7 @@ It is also possible to execute the described debugging tools conveniently from `
 
 4.  ``idf.py gdbgui``
 
-    Starts `gdbgui <https://www.gdbgui.com>`_ debugger frontend enabling out-of-the-box debugging in a browser window. To enable this option, run the install script with the "--enable-gdbgui" argument, e.g., ``install.sh --enable-gdbgui``.
+    Starts `gdbgui <https://www.gdbgui.com>`_ debugger frontend, which enables out-of-the-box debugging in a browser window. To enable this option, follow the `installation instructions <https://www.gdbgui.com/installation/>`_ to set up the tool using the ``pipx`` method. For system dependencies, restrictions, and other limitations, please refer to the installation page and the `issue tracker <https://github.com/cs01/gdbgui/issues>`_.
 
 
     You can combine these debugging actions on a single command line, allowing for convenient setup of blocking and non-blocking actions in one step. ``idf.py`` implements a simple logic to move the background actions (such as openocd) to the beginning and the interactive ones (such as gdb, monitor) to the end of the action list.

@@ -1,0 +1,11 @@
+menu "Cache config"
+
+    config CACHE_L1_CACHE_SIZE
+        hex
+        default 0x4000
+
+    config CACHE_L1_CACHE_LINE_SIZE
+        int
+        default 32
+
+endmenu  # Cache config

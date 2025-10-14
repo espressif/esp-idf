@@ -2420,24 +2420,51 @@ tBTM_STATUS BTM_WriteEIR( BT_HDR *p_buff, BOOLEAN fec_required)
 UINT8 *BTM_CheckEirData( UINT8 *p_eir, UINT8 type, UINT8 *p_length )
 {
     UINT8 *p = p_eir;
+    UINT8 *p_data_length = p_length;
     UINT8 length;
     UINT8 eir_type;
     BTM_TRACE_API("BTM_CheckEirData type=0x%02X\n", type);
 
+    if (!p_length) {
+        if ((p_data_length = (UINT8 *)osi_malloc(sizeof(UINT8))) == NULL) {
+            BTM_TRACE_ERROR("%s: Memory allocation failed.", __func__);
+            return NULL;
+        }
+    }
+
     STREAM_TO_UINT8(length, p);
-    while ( length && (p - p_eir <= HCI_EXT_INQ_RESPONSE_LEN)) {
+    while ( length ) {
         STREAM_TO_UINT8(eir_type, p);
         if ( eir_type == type ) {
+            if ((p + length - 1) > (p_eir + HCI_EXT_INQ_RESPONSE_LEN)) {
+                /*avoid memory overflow*/
+                *p_data_length = 0;
+                p = NULL;
+                goto exit;
+            }
             /* length doesn't include itself */
-            *p_length = length - 1; /* minus the length of type */
-            return p;
+            *p_data_length = length - 1; /* minus the length of type */
+            goto exit;
         }
         p += length - 1; /* skip the length of data */
+
+        /* Break loop if eir data is in an incorrect format,
+           as it may lead to memory overflow */
+        if ( p >= p_eir + HCI_EXT_INQ_RESPONSE_LEN ) {
+            break;
+        }
+
         STREAM_TO_UINT8(length, p);
     }
 
-    *p_length = 0;
-    return NULL;
+    *p_data_length = 0;
+    p = NULL;
+
+exit:
+    if (!p_length) {
+        osi_free(p_data_length);
+    }
+    return p;
 }
 
 /*******************************************************************************

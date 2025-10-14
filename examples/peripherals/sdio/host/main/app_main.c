@@ -78,12 +78,12 @@
             - 0 is the register to hold tasks. Bits:
                 - 0: the slave should reset.
                 - 1: the slave should send interrupts.
-                - 2: the slave should write the shared registers acoording to the value in register 1.
+                - 2: the slave should write the shared registers according to the value in register 1.
             - 1 is the register to hold test value.
             - other registers will be written by the slave for testing.
 
         - FIFO:
-            The receving FIFO is size of 256 bytes.
+            The receiving FIFO is size of 256 bytes.
             When the host writes something to slave recv FIFO, the slave should return it as is to the sending FIFO.
 
     The example works as following process:
@@ -139,7 +139,7 @@ static void gpio_d2_set_high(void)
     gpio_config_t d2_config = {
         .pin_bit_mask = BIT64(PIN_D2),
         .mode = GPIO_MODE_OUTPUT,
-        .pull_up_en = true,
+        .pull_up_en = GPIO_PULLUP_ENABLE,
     };
     gpio_config(&d2_config);
     gpio_set_level(PIN_D2, 1);
@@ -190,6 +190,7 @@ esp_err_t slave_init(essl_handle_t* handle)
     ESP_LOGI(TAG, "Probe using SD 1-bit...");
     config.flags = SDMMC_HOST_FLAG_1BIT;
 #endif
+    config.input_delay_phase = CONFIG_EXAMPLE_SDIO_HOST_DELAY;
 
 #ifdef CONFIG_EXAMPLE_SDIO_HIGHSPEED
     config.max_freq_khz = SDMMC_FREQ_HIGHSPEED;
@@ -312,8 +313,8 @@ void slave_power_on(void)
     gpio_config_t cfg = {
         .pin_bit_mask = BIT64(GPIO_B1),
         .mode = GPIO_MODE_OUTPUT,
-        .pull_up_en = false,
-        .pull_down_en = false,
+        .pull_up_en = GPIO_PULLUP_DISABLE,
+        .pull_down_en = GPIO_PULLDOWN_DISABLE,
         .intr_type = GPIO_INTR_DISABLE,
     };
     gpio_config(&cfg);
@@ -440,7 +441,7 @@ void job_fifo(essl_handle_t handle)
     /* CAUTION: This example shows that we can send random length of packet to the slave.
      * However it takes time of two transactions if the length is not multiples of 4 bytes.
      * e.g. sending 6 bytes is done by sending 4 + 2 bytes each transaction.
-     * Try to avoid unaligned packets if possible to get higher effeciency.
+     * Try to avoid unaligned packets if possible to get higher efficiency.
      */
     for (int i = 0; i < sizeof(packet_len) / sizeof(int); i++) {
         //Prepare data to send. The length can be random, but data should start at the 32-bit boundary.

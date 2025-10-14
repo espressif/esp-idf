@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -18,11 +18,7 @@
 #include "nvs.h"
 #include "deep_sleep_example.h"
 
-#if SOC_RTC_FAST_MEM_SUPPORTED
-static RTC_DATA_ATTR struct timeval sleep_enter_time;
-#else
-static struct timeval sleep_enter_time;
-#endif
+RTC_SLOW_ATTR static struct timeval sleep_enter_time;
 
 static void deep_sleep_task(void *args)
 {
@@ -59,14 +55,15 @@ static void deep_sleep_task(void *args)
     gettimeofday(&now, NULL);
     int sleep_time_ms = (now.tv_sec - sleep_enter_time.tv_sec) * 1000 + (now.tv_usec - sleep_enter_time.tv_usec) / 1000;
 
-    switch (esp_sleep_get_wakeup_cause()) {
-        case ESP_SLEEP_WAKEUP_TIMER: {
+    uint32_t causes = esp_sleep_get_wakeup_causes();
+    if (causes & BIT(ESP_SLEEP_WAKEUP_UNDEFINED)) {
+        printf("Not a deep sleep reset\n");
+    } else {
+        if (causes & BIT(ESP_SLEEP_WAKEUP_TIMER)) {
             printf("Wake up from timer. Time spent in deep sleep: %dms\n", sleep_time_ms);
-            break;
         }
-
 #if CONFIG_EXAMPLE_GPIO_WAKEUP
-        case ESP_SLEEP_WAKEUP_GPIO: {
+        if (causes & BIT(ESP_SLEEP_WAKEUP_GPIO)) {
             uint64_t wakeup_pin_mask = esp_sleep_get_gpio_wakeup_status();
             if (wakeup_pin_mask != 0) {
                 int pin = __builtin_ffsll(wakeup_pin_mask) - 1;
@@ -74,19 +71,15 @@ static void deep_sleep_task(void *args)
             } else {
                 printf("Wake up from GPIO\n");
             }
-            break;
         }
 #endif //CONFIG_EXAMPLE_GPIO_WAKEUP
-
 #if CONFIG_EXAMPLE_EXT0_WAKEUP
-        case ESP_SLEEP_WAKEUP_EXT0: {
+        if (causes & BIT(ESP_SLEEP_WAKEUP_EXT0)) {
             printf("Wake up from ext0\n");
-            break;
         }
 #endif // CONFIG_EXAMPLE_EXT0_WAKEUP
-
 #ifdef CONFIG_EXAMPLE_EXT1_WAKEUP
-        case ESP_SLEEP_WAKEUP_EXT1: {
+        if (causes & BIT(ESP_SLEEP_WAKEUP_EXT1)) {
             uint64_t wakeup_pin_mask = esp_sleep_get_ext1_wakeup_status();
             if (wakeup_pin_mask != 0) {
                 int pin = __builtin_ffsll(wakeup_pin_mask) - 1;
@@ -94,20 +87,8 @@ static void deep_sleep_task(void *args)
             } else {
                 printf("Wake up from GPIO\n");
             }
-            break;
         }
 #endif // CONFIG_EXAMPLE_EXT1_WAKEUP
-
-#ifdef CONFIG_EXAMPLE_TOUCH_WAKEUP
-        case ESP_SLEEP_WAKEUP_TOUCHPAD: {
-            printf("Wake up from touch on pad %d\n", esp_sleep_get_touchpad_wakeup_status());
-            break;
-        }
-#endif // CONFIG_EXAMPLE_TOUCH_WAKEUP
-
-        case ESP_SLEEP_WAKEUP_UNDEFINED:
-        default:
-            printf("Not a deep sleep reset\n");
     }
 
     vTaskDelay(1000 / portTICK_PERIOD_MS);
@@ -161,11 +142,6 @@ void app_main(void)
 #if CONFIG_EXAMPLE_EXT1_WAKEUP
     /* Enable wakeup from deep sleep by ext1 */
     example_deep_sleep_register_ext1_wakeup();
-#endif
-
-#if CONFIG_EXAMPLE_TOUCH_WAKEUP
-    /* Enable wakeup from deep sleep by touch */
-    example_deep_sleep_register_touch_wakeup();
 #endif
 
     xTaskCreate(deep_sleep_task, "deep_sleep_task", 4096, NULL, 6, NULL);

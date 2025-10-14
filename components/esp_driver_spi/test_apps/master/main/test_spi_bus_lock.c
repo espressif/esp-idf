@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,13 +13,13 @@
 #include "unity.h"
 
 #if CONFIG_IDF_TARGET_ESP32
-// The VSPI pins on UT_T1_ESP_FLASH are connected to a external flash
-#define TEST_BUS_PIN_NUM_MISO   VSPI_IOMUX_PIN_NUM_MISO
-#define TEST_BUS_PIN_NUM_MOSI   VSPI_IOMUX_PIN_NUM_MOSI
-#define TEST_BUS_PIN_NUM_CLK    VSPI_IOMUX_PIN_NUM_CLK
-#define TEST_BUS_PIN_NUM_CS     VSPI_IOMUX_PIN_NUM_CS
-#define TEST_BUS_PIN_NUM_WP     VSPI_IOMUX_PIN_NUM_WP
-#define TEST_BUS_PIN_NUM_HD     VSPI_IOMUX_PIN_NUM_HD
+// The SPI3 pins on UT_T1_ESP_FLASH are connected to a external flash
+#define TEST_BUS_PIN_NUM_MISO   SPI3_IOMUX_PIN_NUM_MISO
+#define TEST_BUS_PIN_NUM_MOSI   SPI3_IOMUX_PIN_NUM_MOSI
+#define TEST_BUS_PIN_NUM_CLK    SPI3_IOMUX_PIN_NUM_CLK
+#define TEST_BUS_PIN_NUM_CS     SPI3_IOMUX_PIN_NUM_CS
+#define TEST_BUS_PIN_NUM_WP     SPI3_IOMUX_PIN_NUM_WP
+#define TEST_BUS_PIN_NUM_HD     SPI3_IOMUX_PIN_NUM_HD
 
 #else
 #define TEST_BUS_PIN_NUM_MISO   SPI2_IOMUX_PIN_NUM_MISO

@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP32-P4 | ESP32-S2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | --------- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP32-H2 | ESP32-P4 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | --------- | -------- | -------- | -------- | -------- |
 
 # Iperf Example
 
@@ -10,8 +10,8 @@ The iperf example doesn't support all features in standard iperf. It's compatibl
 
 ## Note about 80MHz flash frequency (ESP32)
 The iperf can get better throughput if the SPI flash frequency is set to 80MHz, but the system may crash in 80MHz mode for ESP-WROVER-KIT.
-Removing R140~R145 from the board can fix this issue. Currently the default SPI frequency is set to 40MHz, if you want to change the SPI flash
-frequency to 80MHz, please make sure R140~R145 are removed from ESP-WROVER-KIT or use ESP32 DevKitC.
+Removing R140\~R145 from the board can fix this issue. Currently the default SPI frequency is set to 40MHz, if you want to change the SPI flash
+frequency to 80MHz, please make sure R140\~R145 are removed from ESP-WROVER-KIT or use ESP32 DevKitC.
 
 ## Introduction
 This example implements the protocol used by the common performance measurement tool [iPerf](https://iperf.fr/).
@@ -76,3 +76,11 @@ The console output, which is printed by station TCP RX throughput test, looks li
 Steps to test station/soft-AP TCP/UDP RX/TX throughput are similar as test steps in station TCP TX.
 
 See the README.md file in the upper level 'examples' directory for more information about examples.
+
+## Running the example on ESP Chips without Wi-Fi
+
+This example can run on ESP Chips without Wi-Fi using ESP-Hosted. See the [Two-Chip Solution](../README.md#wi-fi-examples-with-two-chip-solution) section in the upper level `README.md` for information.
+
+## Troubleshooting
+
+For any technical queries, please open an [issue](https://github.com/espressif/esp-idf/issues) on GitHub. We will get back to you soon.

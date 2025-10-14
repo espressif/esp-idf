@@ -31,6 +31,7 @@ menu "Example Configuration"
     config EXAMPLE_ENABLE_PARTIAL_HTTP_DOWNLOAD
         bool "Enable partial HTTP download"
         default n
+        select ESP_HTTPS_OTA_ENABLE_PARTIAL_DOWNLOAD
         select ESP_TLS_CLIENT_SESSION_TICKETS
         help
             This enables use of Range header in esp_https_ota component.
@@ -44,4 +45,22 @@ menu "Example Configuration"
         help
             This options specifies HTTP request size. Number of bytes specified
             in this option will be downloaded in single HTTP request.
+
+    config EXAMPLE_ENABLE_OTA_RESUMPTION
+        bool "Enable OTA resumption"
+        default n
+        help
+            This enables the OTA resumption feature.
+            This option allows one to configure the OTA process to resume downloading the OTA image
+            from where it left off in case of an error or reboot.
+
+    config EXAMPLE_USE_CERT_BUNDLE
+        bool "Enable certificate bundle"
+        default y
+        depends on MBEDTLS_CERTIFICATE_BUNDLE
+        help
+            Enable trusted root certificate bundle. This approach allows to have
+            OTA updates functional with any public server without requirement
+            to explicitly add its server certificate.
+
 endmenu

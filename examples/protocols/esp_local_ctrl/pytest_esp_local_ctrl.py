@@ -1,6 +1,5 @@
-# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
-
 import logging
 import os
 import re
@@ -10,6 +9,7 @@ import pexpect
 import pytest
 from common_test_methods import get_env_config_variable
 from pytest_embedded import Dut
+from pytest_embedded_idf.utils import idf_parametrize
 
 
 def get_sdk_path() -> str:
@@ -20,27 +20,24 @@ def get_sdk_path() -> str:
 
 
 class CustomProcess(object):
-    def __init__(self, cmd: str, logfile: str, verbose:bool =True) -> None:
+    def __init__(self, cmd: str, logfile: str, verbose: bool = True) -> None:
         self.verbose = verbose
-        self.f = open(logfile, 'w')
+        self.f = open(logfile, 'w', encoding='utf-8')
         if self.verbose:
             logging.info('Starting {} > {}'.format(cmd, self.f.name))
         self.pexpect_proc = pexpect.spawn(cmd, timeout=60, logfile=self.f, encoding='utf-8', codec_errors='ignore')
 
-    def __enter__(self):    # type: ignore
+    def __enter__(self):  # type: ignore
         return self
 
     def close(self) -> None:
         self.pexpect_proc.terminate(force=True)
 
-    def __exit__(self, type, value, traceback):     # type: ignore
+    def __exit__(self, type, value, traceback):  # type: ignore
         self.close()
         self.f.close()
 
 
-@pytest.mark.esp32
-@pytest.mark.esp32c3
-@pytest.mark.esp32s3
 @pytest.mark.wifi_router
 @pytest.mark.parametrize(
     'config',
@@ -50,8 +47,8 @@ class CustomProcess(object):
     ],
     indirect=True,
 )
+@idf_parametrize('target', ['esp32', 'esp32c3', 'esp32s3'], indirect=['target'])
 def test_examples_esp_local_ctrl(config: str, dut: Dut) -> None:
-
     rel_project_path = os.path.join('examples', 'protocols', 'esp_local_ctrl')
     idf_path = get_sdk_path()
 
@@ -76,20 +73,28 @@ def test_examples_esp_local_ctrl(config: str, dut: Dut) -> None:
     # Running mDNS services in docker is not a trivial task. Therefore, the script won't connect to the host name but
     # to IP address. However, the certificates were generated for the host name and will be rejected.
     if config == 'default':
-        cmd = ' '.join([sys.executable, os.path.join(idf_path, rel_project_path, 'scripts/esp_local_ctrl.py'),
-                        '--sec_ver 2',
-                        '--sec2_username wifiprov',
-                        '--sec2_pwd abcd1234',
-                        '--name', dut_ip,
-                        '--dont-check-hostname'])  # don't reject the certificate because of the hostname
+        cmd = ' '.join([
+            sys.executable,
+            os.path.join(idf_path, rel_project_path, 'scripts/esp_local_ctrl.py'),
+            '--sec_ver 2',
+            '--sec2_username wifiprov',
+            '--sec2_pwd abcd1234',
+            '--name',
+            dut_ip,
+            '--dont-check-hostname',
+        ])  # don't reject the certificate because of the hostname
     elif config == 'http':
-        cmd = ' '.join([sys.executable, os.path.join(idf_path, rel_project_path, 'scripts/esp_local_ctrl.py'),
-                        '--sec_ver 2',
-                        '--transport http',
-                        '--sec2_username wifiprov',
-                        '--sec2_pwd abcd1234',
-                        '--name', dut_ip,
-                        '--dont-check-hostname'])
+        cmd = ' '.join([
+            sys.executable,
+            os.path.join(idf_path, rel_project_path, 'scripts/esp_local_ctrl.py'),
+            '--sec_ver 2',
+            '--transport http',
+            '--sec2_username wifiprov',
+            '--sec2_pwd abcd1234',
+            '--name',
+            dut_ip,
+            '--dont-check-hostname',
+        ])
     esp_local_ctrl_log = os.path.join(idf_path, rel_project_path, 'esp_local_ctrl.log')
     with CustomProcess(cmd, esp_local_ctrl_log) as ctrl_py:
 
@@ -101,7 +106,7 @@ def test_examples_esp_local_ctrl(config: str, dut: Dut) -> None:
             ctrl_py.pexpect_proc.expect(re.compile(r'\[ 2\] property1\s+INT32\s+{}'.format(prop1)))
             ctrl_py.pexpect_proc.expect(re.compile(r'\[ 3\] property2\s+BOOLEAN\s+Read-Only\s+(True)|(False)'))
             ctrl_py.pexpect_proc.expect(re.compile(r'\[ 4\] property3\s+STRING\s+{}'.format(prop3)))
-            ctrl_py.pexpect_proc.expect_exact('Select properties to set (0 to re-read, \'q\' to quit) :')
+            ctrl_py.pexpect_proc.expect_exact("Select properties to set (0 to re-read, 'q' to quit) :")
 
         property1 = 123456789
         property3 = ''

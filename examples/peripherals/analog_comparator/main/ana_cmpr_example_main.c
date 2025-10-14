@@ -14,8 +14,8 @@ void example_init_monitor_gpio(void)
         .intr_type = GPIO_INTR_DISABLE,
         .mode = GPIO_MODE_OUTPUT,
         .pin_bit_mask = (1ULL << EXAMPLE_MONITOR_GPIO_NUM),
-        .pull_down_en = false,
-        .pull_up_en = false,
+        .pull_down_en = GPIO_PULLDOWN_DISABLE,
+        .pull_up_en = GPIO_PULLUP_DISABLE,
     };
     gpio_config(&io_conf);
     gpio_set_level(EXAMPLE_MONITOR_GPIO_NUM, 0);
@@ -23,7 +23,7 @@ void example_init_monitor_gpio(void)
 
 void app_main(void)
 {
-#if CONFIG_EXAMPLE_USE_ETM
+#if CONFIG_EXAMPLE_MONITOR_IO_FROM_ETM
     example_analog_comparator_etm_app();
 #else
     example_analog_comparator_intr_app();

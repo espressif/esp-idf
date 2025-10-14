@@ -1,6 +1,6 @@
 idf_build_get_property(non_os_build NON_OS_BUILD)
 
-if(non_os_build)
+if(non_os_build OR NOT CONFIG_SOC_LIGHT_SLEEP_SUPPORTED)
     return()
 endif()
 
@@ -9,6 +9,11 @@ set(srcs)
 if(CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP OR
     (CONFIG_SOC_CPU_IN_TOP_DOMAIN AND CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP))
     list(APPEND srcs "port/${target}/sleep_cpu.c")
+    if(CONFIG_PM_CPU_RETENTION_DYNAMIC)
+        list(APPEND srcs "port/${target}/sleep_cpu_dynamic.c")
+    elseif(CONFIG_PM_CPU_RETENTION_STATIC)
+        list(APPEND srcs "port/${target}/sleep_cpu_static.c")
+    endif()
     if(CONFIG_SOC_PM_CPU_RETENTION_BY_SW)
         list(APPEND srcs "port/${target}/sleep_cpu_asm.S")
         set_property(TARGET ${COMPONENT_LIB}

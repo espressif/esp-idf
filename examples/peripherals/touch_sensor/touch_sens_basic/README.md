@@ -1,7 +1,7 @@
-| Supported Targets | ESP32-P4 | ESP32-S2 | ESP32-S3 |
-| ----------------- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-P4 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- |
 
-# Capacity Touch Sensor Example (for hardware version 3)
+# Capacity Touch Sensor Example
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
@@ -34,42 +34,44 @@ See the Getting Started Guide for full steps to configure and use ESP-IDF to bui
 
 ## Example Output
 
-You can see the following output in the monitor if the example runs successfully:
+You can see the following output in the monitor if the example runs successfully (take ESP32-P4 for example):
 
 ```
-W (461) touch: [sample_cfg_id 0] clock precision loss, expect 4000000 hz, got 4006725 hz
-W (461) touch: [sample_cfg_id 1] clock precision loss, expect 8000000 hz, got 8013450 hz
-W (461) touch: [sample_cfg_id 2] clock precision loss, expect 16000000 hz, got 16026900 hz
+Touch [CH 0] enabled on GPIO2
+Touch [CH 1] enabled on GPIO3
+Touch [CH 2] enabled on GPIO4
+Touch [CH 3] enabled on GPIO5
+=================================
 Initial benchmark and new threshold are:
-[CH 0] 0: 4114, 411      1: 2057, 205    2: 1028, 102
-[CH 1] 0: 4643, 464      1: 2322, 232    2: 1160, 116
-[CH 2] 0: 4848, 484      1: 2424, 242    2: 1211, 121
-[CH 3] 0: 4340, 434      1: 2170, 217    2: 1085, 108
+Touch [CH 0] 0: 5161, 77         1: 5121, 76     2: 2533, 37
+Touch [CH 1] 0: 5007, 75         1: 5036, 75     2: 2464, 36
+Touch [CH 2] 0: 5086, 76         1: 5056, 75     2: 2487, 37
+Touch [CH 3] 0: 4965, 74         1: 4989, 74     2: 2433, 36
 =================================
-benchmark [CH 0]: 4115 2056 1028
-chan_data [CH 0]: 4115 2056 1028
+benchmark [CH 0]: 5160 5121 2533
+smooth    [CH 0]: 5160 5122 2533
 
-benchmark [CH 1]: 4644 2322 1160
-chan_data [CH 1]: 4644 2322 1160
+benchmark [CH 1]: 5007 5036 2464
+smooth    [CH 1]: 5007 5036 2464
 
-benchmark [CH 2]: 4848 2423 1211
-chan_data [CH 2]: 4848 2423 1211
+benchmark [CH 2]: 5086 5056 2487
+smooth    [CH 2]: 5086 5056 2487
 
-benchmark [CH 3]: 4337 2168 1084
-chan_data [CH 3]: 4337 2168 1084
+benchmark [CH 3]: 4964 4989 2433
+smooth    [CH 3]: 4964 4990 2433
 
 =================================
-benchmark [CH 0]: 4109 2054 1027
-chan_data [CH 0]: 4109 2054 1027
+benchmark [CH 0]: 5159 5121 2533
+smooth    [CH 0]: 5160 5121 2533
 
-benchmark [CH 1]: 4638 2318 1158
-chan_data [CH 1]: 4638 2318 1158
+benchmark [CH 1]: 5005 5036 2464
+smooth    [CH 1]: 5006 5035 2464
 
-benchmark [CH 2]: 4843 2421 1210
-chan_data [CH 2]: 4845 2421 1210
+benchmark [CH 2]: 5085 5056 2487
+smooth    [CH 2]: 5086 5056 2488
 
-benchmark [CH 3]: 4334 2167 1084
-chan_data [CH 3]: 4334 2167 1083
+benchmark [CH 3]: 4964 4990 2433
+smooth    [CH 3]: 4964 4990 2433
 ...
 ```
 
@@ -77,46 +79,33 @@ And if you touch and release a button, you will see the following output:
 
 ```
 ...
-I (1321) touch_callback: [CH 1] active
+I (2861) touch_callback: [CH 0] active
 =================================
-benchmark [CH 0]: 4111 2055 1027
-chan_data [CH 0]: 4111 2055 1027
+benchmark [CH 0]: 5755 5425 2762
+smooth    [CH 0]: 5997 5666 2841
 
-benchmark [CH 1]: 4676 2339 1168
-chan_data [CH 1]: 17701 8798 4399
+benchmark [CH 1]: 5025 5049 2473
+smooth    [CH 1]: 5025 5050 2473
 
-benchmark [CH 2]: 4870 2434 1217
-chan_data [CH 2]: 4867 2433 1217
+benchmark [CH 2]: 5104 5066 2495
+smooth    [CH 2]: 5105 5066 2495
 
-benchmark [CH 3]: 4333 2165 1082
-chan_data [CH 3]: 4333 2165 1082
+benchmark [CH 3]: 4982 5002 2441
+smooth    [CH 3]: 4982 5001 2441
 
+I (3021) touch_callback: [CH 0] inactive
 =================================
-benchmark [CH 0]: 4109 2053 1027
-chan_data [CH 0]: 4108 2053 1027
+benchmark [CH 0]: 5756 5428 2763
+smooth    [CH 0]: 5756 5428 2764
 
-benchmark [CH 1]: 4676 2339 1168
-chan_data [CH 1]: 11256 8817 4363
+benchmark [CH 1]: 5025 5048 2473
+smooth    [CH 1]: 5026 5048 2474
 
-benchmark [CH 2]: 4868 2434 1217
-chan_data [CH 2]: 4862 2429 1214
+benchmark [CH 2]: 5104 5066 2495
+smooth    [CH 2]: 5104 5066 2495
 
-benchmark [CH 3]: 4332 2165 1082
-chan_data [CH 3]: 4330 2164 1081
-
-I (1931) touch_callback: [CH 1] inactive
-=================================
-benchmark [CH 0]: 4106 2052 1026
-chan_data [CH 0]: 4106 2052 1026
-
-benchmark [CH 1]: 4649 2323 1161
-chan_data [CH 1]: 4650 2323 1161
-
-benchmark [CH 2]: 4847 2422 1211
-chan_data [CH 2]: 4846 2422 1211
-
-benchmark [CH 3]: 4329 2163 1082
-chan_data [CH 3]: 4329 2164 1082
+benchmark [CH 3]: 4981 5002 2441
+smooth    [CH 3]: 4981 5002 2441
 ...
 ```
 

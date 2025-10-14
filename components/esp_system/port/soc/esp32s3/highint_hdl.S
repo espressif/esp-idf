@@ -39,7 +39,7 @@ xt_highint4:
 
 #ifndef CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     /* See if we're here for the IPC_ISR interrupt */
-    rsr     a0, INTERRUPT
+    rsr     a0, XT_REG_INTERRUPT
     extui   a0, a0, ETS_IPC_ISR_INUM, 1
     bnez    a0, jump_to_esp_ipc_isr_handler
 #endif // not CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
@@ -51,11 +51,11 @@ xt_highint4:
     #if XCHAL_HAVE_WINDOWED
     s32e    a0, sp, -12                     /* for debug backtrace */
     #endif
-    rsr     a0, PS                          /* save interruptee's PS */
+    rsr     a0, XT_REG_PS                   /* save interruptee's PS */
     s32i    a0, sp, XT_STK_PS
-    rsr     a0, EPC_4                       /* save interruptee's PC */
+    rsr     a0, XT_REG_EPC_4                /* save interruptee's PC */
     s32i    a0, sp, XT_STK_PC
-    rsr     a0, EXCSAVE_4                   /* save interruptee's a0 */
+    rsr     a0, XT_REG_EXCSAVE_4            /* save interruptee's a0 */
     s32i    a0, sp, XT_STK_A0
     #if XCHAL_HAVE_WINDOWED
     s32e    a0, sp, -16                     /* for debug backtrace */
@@ -65,19 +65,19 @@ xt_highint4:
     call0   _xt_context_save
 
     /* Save vaddr into exception frame */
-    rsr     a0, EXCVADDR
+    rsr     a0, XT_REG_EXCVADDR
     s32i    a0, sp, XT_STK_EXCVADDR
 
     /* Figure out reason, save into EXCCAUSE reg */
 
-    rsr     a0, INTERRUPT
+    rsr     a0, XT_REG_INTERRUPT
     extui   a0, a0, ETS_CACHEERR_INUM, 1 /* get cacheerr int bit */
     beqz    a0, 1f
     /* Kill this interrupt; we cannot reset it. */
-    rsr     a0, INTENABLE
+    rsr     a0, XT_REG_INTENABLE
     movi    a4, ~(1<<ETS_CACHEERR_INUM)
     and     a0, a4, a0
-    wsr     a0, INTENABLE
+    wsr     a0, XT_REG_INTENABLE
     movi    a0, PANIC_RSN_CACHEERR
     j 9f
 
@@ -101,7 +101,7 @@ xt_highint4:
 
     /* Set up PS for C, disable all interrupts except NMI and debug, and clear EXCM. */
     movi    a0, PS_INTLEVEL(5) | PS_UM | PS_WOE
-    wsr     a0, PS
+    wsr     a0, XT_REG_PS
 
     //Call panic handler
     mov     a6,sp
@@ -109,14 +109,14 @@ xt_highint4:
 
     call0   _xt_context_restore
     l32i    a0, sp, XT_STK_PS               /* retrieve interruptee's PS */
-    wsr     a0, PS
+    wsr     a0, XT_REG_PS
     l32i    a0, sp, XT_STK_PC               /* retrieve interruptee's PC */
-    wsr     a0, EPC_4
+    wsr     a0, XT_REG_EPC_4
     l32i    a0, sp, XT_STK_A0               /* retrieve interruptee's A0 */
     l32i    sp, sp, XT_STK_A1               /* remove exception frame */
     rsync                                   /* ensure PS and EPC written */
 
-    rsr     a0, EXCSAVE_4                   /* restore a0 */
+    rsr     a0, XT_REG_EXCSAVE_4            /* restore a0 */
     rfi     4
 
 #ifdef CONFIG_ESP_IPC_ISR_ENABLE

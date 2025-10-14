@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,6 +15,9 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+// Get SDM register base address with giving group number
+#define SDM_LL_GET_HW(group_id) ((group_id == 0) ? (&SDM) : NULL)
 
 #define SDM_LL_PRESCALE_MAX     (GPIO_EXT_SD0_PRESCALE_V + 1)
 

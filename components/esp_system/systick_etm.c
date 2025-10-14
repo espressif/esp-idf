@@ -15,7 +15,7 @@
 
 #define ETM_MEM_ALLOC_CAPS   MALLOC_CAP_DEFAULT
 
-static const char *TAG = "systick-etm";
+ESP_LOG_ATTR_TAG(TAG, "systick-etm");
 
 static esp_err_t systick_etm_event_del(esp_etm_event_t *event)
 {

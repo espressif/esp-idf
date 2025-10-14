@@ -63,7 +63,8 @@ The entry point to this example is the app_main() function:
         return;
     }
 
-    ret = esp_bluedroid_init();
+    esp_bluedroid_config_t cfg = BT_BLUEDROID_INIT_CONFIG_DEFAULT();
+    ret = esp_bluedroid_init_with_cfg(&cfg);
     if (ret) {
         ESP_LOGE(GATTS_TAG, "%s init bluetooth failed", __func__);
         return;
@@ -132,7 +133,7 @@ There are four Bluetooth modes supported:
 After the initialization of the BT controller, the Bluedroid stack, which includes the common definitions and APIs for both BT Classic and BLE, is initialized and enabled by using:
 
 ```c
-ret = esp_bluedroid_init();
+ret = esp_bluedroid_init_with_cfg(&cfg);
 ret = esp_bluedroid_enable();
 ```
 The Bluetooth stack is up and running at this point in the program flow, however the functionality of the application has not been defined yet. The functionality is defined by reacting to events such as what happens when another device tries to read or write parameters and establish a connection. The two main managers of events are the GAP and GATT event handlers. The application needs to register a callback function for each event handler in order to let the application know which functions are going to handle the GAP and GATT events:
@@ -673,24 +674,59 @@ bool need_rsp;             /*!< The read operation need to do response */
 
 In this example, a response is constructed with dummy data and sent back to the host using the same handle given by the event. In addition to the response, the GATT interface, the connection ID and the transfer ID are also included as parameters in the `esp_ble_gatts_send_response()` function. This function is necessary if the auto response byte is set to NULL when creating the characteristic or descriptor.
 
+This example also implements the Read Long Characteristic Values procedure, efficiently handling fragmented read requests while dynamically adapting to connection-specific MTU sizes.
+
 ```c
 case ESP_GATTS_READ_EVT: {
-     ESP_LOGI(GATTS_TAG, "GATT_READ_EVT, conn_id %d, trans_id %d, handle %d",
-              param->read.conn_id, param->read.trans_id, param->read.handle);
-              esp_gatt_rsp_t rsp;
-              memset(&rsp, 0, sizeof(esp_gatt_rsp_t));
-              rsp.attr_value.handle = param->read.handle;
-              rsp.attr_value.len = 4;
-              rsp.attr_value.value[0] = 0xde;
-              rsp.attr_value.value[1] = 0xed;
-              rsp.attr_value.value[2] = 0xbe;
-              rsp.attr_value.value[3] = 0xef;
-              esp_ble_gatts_send_response(gatts_if,
-                                          param->read.conn_id,
-                                          param->read.trans_id,
-                                          ESP_GATT_OK, &rsp);
-     break;
+    ESP_LOGI(GATTS_TAG,
+                "Characteristic read request: conn_id=%d, trans_id=%" PRIu32 ", handle=%d, is_long=%d, offset=%d, need_rsp=%d",
+                param->read.conn_id, param->read.trans_id, param->read.handle,
+                param->read.is_long, param->read.offset, param->read.need_rsp);
+
+    // If no response is needed, exit early (stack handles it automatically)
+    if (!param->read.need_rsp) {
+        return;
     }
+
+    esp_gatt_rsp_t rsp;
+    memset(&rsp, 0, sizeof(esp_gatt_rsp_t));
+    rsp.attr_value.handle = param->read.handle;
+
+    // Handle descriptor read request
+    if (param->read.handle == gl_profile_tab[PROFILE_A_APP_ID].descr_handle) {
+        memcpy(rsp.attr_value.value, &descr_value, 2);
+        rsp.attr_value.len = 2;
+        esp_ble_gatts_send_response(gatts_if, param->read.conn_id, param->read.trans_id, ESP_GATT_OK, &rsp);
+        return;
+    }
+
+    // Handle characteristic read request
+    if (param->read.handle == gl_profile_tab[PROFILE_A_APP_ID].char_handle) {
+        uint16_t offset = param->read.offset;
+
+        // Validate read offset
+        if (param->read.is_long && offset > CONFIG_EXAMPLE_CHAR_READ_DATA_LEN) {
+            ESP_LOGW(GATTS_TAG, "Read offset (%d) out of range (0-%d)", offset, CONFIG_EXAMPLE_CHAR_READ_DATA_LEN);
+            rsp.attr_value.len = 0;
+            esp_ble_gatts_send_response(gatts_if, param->read.conn_id, param->read.trans_id, ESP_GATT_INVALID_OFFSET, &rsp);
+            return;
+        }
+
+        // Determine response length based on MTU
+        uint16_t mtu_size = local_mtu - 1;  // ATT header (1 byte)
+        uint16_t send_len = (CONFIG_EXAMPLE_CHAR_READ_DATA_LEN - offset > mtu_size) ? mtu_size : (CONFIG_EXAMPLE_CHAR_READ_DATA_LEN - offset);
+
+        memcpy(rsp.attr_value.value, &char_value_read[offset], send_len);
+        rsp.attr_value.len = send_len;
+
+        // Send response to GATT client
+        esp_err_t err = esp_ble_gatts_send_response(gatts_if, param->read.conn_id, param->read.trans_id, ESP_GATT_OK, &rsp);
+        if (err != ESP_OK) {
+            ESP_LOGE(GATTS_TAG, "Failed to send response: %s", esp_err_to_name(err));
+        }
+    }
+    break;
+}
 ```
 
 ## Managing Write Events

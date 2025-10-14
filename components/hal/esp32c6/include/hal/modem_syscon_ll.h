@@ -78,13 +78,13 @@ static inline void modem_syscon_ll_enable_etm_force_clock(modem_syscon_dev_t *hw
 }
 
 __attribute__((always_inline))
-static inline void modem_syscon_ll_enable_ieee802154_apb_clock_force(modem_syscon_dev_t *hw)
+static inline void modem_syscon_ll_enable_ieee802154_apb_force_clock(modem_syscon_dev_t *hw)
 {
     hw->clk_conf_force_on.clk_zb_apb_fo = 1;
 }
 
 __attribute__((always_inline))
-static inline void modem_syscon_ll_enable_ieee802154_mac_clock_force(modem_syscon_dev_t *hw)
+static inline void modem_syscon_ll_enable_ieee802154_mac_force_clock(modem_syscon_dev_t *hw)
 {
     hw->clk_conf_force_on.clk_zb_mac_fo = 1;
 }

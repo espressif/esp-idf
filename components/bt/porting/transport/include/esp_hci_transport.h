@@ -38,7 +38,7 @@ typedef enum {
 } hci_trans_mode_t;
 
 typedef int hci_transport_host_recv_fn(hci_trans_pkt_ind_t type, uint8_t *data, uint16_t len);
-
+#define HCI_TRANSPORT_CMD_SZ                            (260)
 /**
  * @brief Initialize the HCI transport layer.
  *        It should be called before using any other functions in the transport layer.

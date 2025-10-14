@@ -17,7 +17,7 @@ ESP-IDF provides ``console`` component, which includes building blocks needed to
 
 .. note::
 
-  When using a console application on a chip that supports a hardware USB serial interface, we suggest to disable the secondary serial console output. The secondary output will be output-only and consequently does not make sense in an interactive application.
+  When using a console application on a chip that supports a hardware USB serial interface, we suggest disabling the secondary serial console output. The secondary output will be output-only and consequently does not make sense in an interactive application.
 
 Line Editing
 ------------
@@ -51,6 +51,13 @@ Linenoise library does not need explicit initialization. However, some configura
 
   Set maximum length of the line for linenoise library. Default length is 4096 bytes. The default value can be updated to optimize RAM memory usage.
 
+- :cpp:func:`linenoiseSetReadFunction`
+
+  Set the read function to be used by linenoise.
+
+- :cpp:func:`linenoiseSetReadCharacteristics`
+
+  Set the characteristics of the read file descriptor (e.g., blocking or non-blocking mode). The function has a weak definition in ``linenoise.c`` that can be overridden by providing a strong definition of the function.
 
 Main Loop
 ^^^^^^^^^

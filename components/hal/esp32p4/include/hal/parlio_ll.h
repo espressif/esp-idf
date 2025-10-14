@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -65,7 +65,10 @@ static inline void _parlio_ll_enable_bus_clock(int group_id, bool enable)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define parlio_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _parlio_ll_enable_bus_clock(__VA_ARGS__)
+#define parlio_ll_enable_bus_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _parlio_ll_enable_bus_clock(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Reset the parlio module
@@ -81,7 +84,10 @@ static inline void _parlio_ll_reset_register(int group_id)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define parlio_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; _parlio_ll_reset_register(__VA_ARGS__)
+#define parlio_ll_reset_register(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _parlio_ll_reset_register(__VA_ARGS__); \
+    } while(0)
 
 ///////////////////////////////////////RX Unit///////////////////////////////////////
 
@@ -118,7 +124,10 @@ static inline void _parlio_ll_rx_set_clock_source(parl_io_dev_t *dev, parlio_clo
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define parlio_ll_rx_set_clock_source(...) (void)__DECLARE_RCC_ATOMIC_ENV; _parlio_ll_rx_set_clock_source(__VA_ARGS__)
+#define parlio_ll_rx_set_clock_source(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _parlio_ll_rx_set_clock_source(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Set the clock divider for the RX unit
@@ -137,7 +146,10 @@ static inline void _parlio_ll_rx_set_clock_div(parl_io_dev_t *dev, const hal_uti
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define parlio_ll_rx_set_clock_div(...) (void)__DECLARE_RCC_ATOMIC_ENV; _parlio_ll_rx_set_clock_div(__VA_ARGS__)
+#define parlio_ll_rx_set_clock_div(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _parlio_ll_rx_set_clock_div(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Reset the RX unit Core clock domain
@@ -153,7 +165,10 @@ static inline void _parlio_ll_rx_reset_clock(parl_io_dev_t *dev)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define parlio_ll_rx_reset_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _parlio_ll_rx_reset_clock(__VA_ARGS__)
+#define parlio_ll_rx_reset_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _parlio_ll_rx_reset_clock(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Enable the RX unit Core clock domain
@@ -171,7 +186,10 @@ static inline void _parlio_ll_rx_enable_clock(parl_io_dev_t *dev, bool en)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define parlio_ll_rx_enable_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _parlio_ll_rx_enable_clock(__VA_ARGS__)
+#define parlio_ll_rx_enable_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _parlio_ll_rx_enable_clock(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Set the condition to generate the RX EOF event
@@ -407,6 +425,18 @@ static inline void parlio_ll_rx_update_config(parl_io_dev_t *dev)
     while (dev->reg_update.rx_reg_update);
 }
 
+/**
+ * @brief Get the RX fifo cycle count
+ *
+ * @param dev Parallel IO register base address
+ * @return
+ *        - RX fifo cycle count
+ */
+static inline uint32_t parlio_ll_rx_get_fifo_cycle_cnt(parl_io_dev_t *dev)
+{
+    return dev->rx_st0.rx_cnt;
+}
+
 ///////////////////////////////////TX Unit///////////////////////////////////////
 
 /**
@@ -415,6 +445,7 @@ static inline void parlio_ll_rx_update_config(parl_io_dev_t *dev)
  * @param dev Parallel IO register base address
  * @param src Clock source
  */
+__attribute__((always_inline))
 static inline void _parlio_ll_tx_set_clock_source(parl_io_dev_t *dev, parlio_clock_source_t src)
 {
     (void)dev;
@@ -442,7 +473,10 @@ static inline void _parlio_ll_tx_set_clock_source(parl_io_dev_t *dev, parlio_clo
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define parlio_ll_tx_set_clock_source(...) (void)__DECLARE_RCC_ATOMIC_ENV; _parlio_ll_tx_set_clock_source(__VA_ARGS__)
+#define parlio_ll_tx_set_clock_source(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _parlio_ll_tx_set_clock_source(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Set the clock divider for the TX unit
@@ -461,7 +495,10 @@ static inline void _parlio_ll_tx_set_clock_div(parl_io_dev_t *dev, const hal_uti
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define parlio_ll_tx_set_clock_div(...) (void)__DECLARE_RCC_ATOMIC_ENV; _parlio_ll_tx_set_clock_div(__VA_ARGS__)
+#define parlio_ll_tx_set_clock_div(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _parlio_ll_tx_set_clock_div(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Reset the TX unit Core clock domain
@@ -478,7 +515,10 @@ static inline void _parlio_ll_tx_reset_clock(parl_io_dev_t *dev)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define parlio_ll_tx_reset_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _parlio_ll_tx_reset_clock(__VA_ARGS__)
+#define parlio_ll_tx_reset_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _parlio_ll_tx_reset_clock(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Enable the TX unit Core clock domain
@@ -496,7 +536,10 @@ static inline void _parlio_ll_tx_enable_clock(parl_io_dev_t *dev, bool en)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define parlio_ll_tx_enable_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _parlio_ll_tx_enable_clock(__VA_ARGS__)
+#define parlio_ll_tx_enable_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _parlio_ll_tx_enable_clock(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Set the data length to be transmitted
@@ -511,11 +554,40 @@ static inline void parlio_ll_tx_set_trans_bit_len(parl_io_dev_t *dev, uint32_t b
 }
 
 /**
+ * @brief Set TX valid signal delay
+ *
+ * @param dev Parallel IO register base address
+ * @param start_delay Number of clock cycles to delay
+ * @param stop_delay Number of clock cycles to delay
+ * @return true: success, false: valid delay is not supported
+ */
+static inline bool parlio_ll_tx_set_valid_delay(parl_io_dev_t *dev, uint32_t start_delay, uint32_t stop_delay)
+{
+    (void)dev;
+    if (start_delay == 0 && stop_delay == 0) {
+        return true;
+    }
+    return false;
+}
+
+/**
+ * @brief Check if tx size can be determined by DMA
+ *
+ * @param dev Parallel IO register base address (not used)
+ */
+static inline bool parlio_ll_tx_support_dma_eof(parl_io_dev_t *dev)
+{
+    (void)dev;
+    return true;
+}
+
+/**
  * @brief Set the condition to generate the TX EOF event
  *
  * @param dev Parallel IO register base address
  * @param cond TX EOF condition
  */
+__attribute__((always_inline))
 static inline void parlio_ll_tx_set_eof_condition(parl_io_dev_t *dev, parlio_ll_tx_eof_cond_t cond)
 {
     dev->tx_genrl_cfg.tx_eof_gen_sel = cond;
@@ -537,8 +609,11 @@ static inline void parlio_ll_tx_enable_clock_gating(parl_io_dev_t *dev, bool en)
 /**
  * @brief Start TX unit to transmit data
  *
+ * @note The hardware monitors the rising edge of tx_start as the trigger signal.
+ *       Once the transmission starts, it cannot be stopped by clearing tx_start.
+ *
  * @param dev Parallel IO register base address
- * @param en True to start, False to stop
+ * @param en True to start, False to reset the reg state (not meaning the TX unit will be stopped)
  */
 __attribute__((always_inline))
 static inline void parlio_ll_tx_start(parl_io_dev_t *dev, bool en)

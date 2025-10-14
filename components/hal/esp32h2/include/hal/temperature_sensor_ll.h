@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -28,6 +28,7 @@
 #include "hal/temperature_sensor_types.h"
 #include "hal/assert.h"
 #include "hal/misc.h"
+#include "hal/efuse_ll.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -36,6 +37,10 @@ extern "C" {
 #define TEMPERATURE_SENSOR_LL_ADC_FACTOR     (0.4386)
 #define TEMPERATURE_SENSOR_LL_DAC_FACTOR     (27.88)
 #define TEMPERATURE_SENSOR_LL_OFFSET_FACTOR  (20.52)
+#define TEMPERATURE_SENSOR_LL_ADC_FACTOR_INT     (4386)
+#define TEMPERATURE_SENSOR_LL_DAC_FACTOR_INT     (278800)
+#define TEMPERATURE_SENSOR_LL_OFFSET_FACTOR_INT  (205200)
+#define TEMPERATURE_SENSOR_LL_DENOMINATOR    (10000)
 #define TEMPERATURE_SENSOR_LL_MEASURE_MAX    (125)
 #define TEMPERATURE_SENSOR_LL_MEASURE_MIN    (-40)
 
@@ -263,6 +268,55 @@ static inline void temperature_sensor_ll_sample_enable(bool en)
 static inline void temperature_sensor_ll_set_sample_rate(uint16_t rate)
 {
     HAL_FORCE_MODIFY_U32_REG_FIELD(APB_SARADC.tsens_sample, saradc_tsens_sample_rate, rate);
+}
+
+/**
+ * @brief Retrieve and calculate the temperature sensor calibration value.
+ *
+ * @return Temperature calibration value.
+ */
+static inline int temperature_sensor_ll_load_calib_param(void)
+{
+    uint32_t cal_temp = EFUSE.rd_sys_part1_data4.temp_calib;
+    // BIT(8) stands for sign: 1: negative, 0: positive
+    int tsens_cal = ((cal_temp & BIT(8)) != 0)? -(uint8_t)cal_temp: (uint8_t)cal_temp;
+    return tsens_cal;
+}
+
+/**
+ * @brief Structure for temperature sensor related register values
+ */
+typedef struct {
+    uint32_t tsens_ctrl;      // Temperature sensor control register (APB_SARADC_APB_TSENS_CTRL_REG)
+    uint32_t tsens_ctrl2;     // Temperature sensor control register 2 (APB_SARADC_TSENS_CTRL2_REG)
+    uint32_t tsens_wake;      // Temperature sensor wake register (APB_TSENS_WAKE_REG)
+    uint32_t tsens_sample;    // Temperature sensor sample register (APB_TSENS_SAMPLE_REG)
+} tsens_ll_reg_values_t;
+
+/**
+ * @brief Read temperature sensor related ADC register values for backup
+ *
+ * @param reg_values Output parameter, pointer to structure for storing register values
+ */
+static inline void tsens_ll_backup_registers(tsens_ll_reg_values_t *reg_values)
+{
+    reg_values->tsens_ctrl = APB_SARADC.saradc_apb_tsens_ctrl.val;
+    reg_values->tsens_ctrl2 = APB_SARADC.saradc_tsens_ctrl2.val;
+    reg_values->tsens_wake = APB_SARADC.tsens_wake.val;
+    reg_values->tsens_sample = APB_SARADC.tsens_sample.val;
+}
+
+/**
+ * @brief Restore temperature sensor related ADC register values from backup
+ *
+ * @param reg_values Input parameter, pointer to structure containing register values to restore
+ */
+static inline void tsens_ll_restore_registers(const tsens_ll_reg_values_t *reg_values)
+{
+    APB_SARADC.saradc_apb_tsens_ctrl.val = reg_values->tsens_ctrl;
+    APB_SARADC.saradc_tsens_ctrl2.val = reg_values->tsens_ctrl2;
+    APB_SARADC.tsens_wake.val = reg_values->tsens_wake;
+    APB_SARADC.tsens_sample.val = reg_values->tsens_sample;
 }
 
 #ifdef __cplusplus

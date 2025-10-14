@@ -348,8 +348,8 @@ config SOC_CPU_WATCHPOINTS_NUM
     default 2
 
 config SOC_CPU_WATCHPOINT_MAX_REGION_SIZE
-    int
-    default 64
+    hex
+    default 0x40
 
 config SOC_DAC_CHAN_NUM
     int
@@ -411,23 +411,7 @@ config SOC_GPIO_SUPPORT_HOLD_IO_IN_DSLP
     bool
     default y
 
-config SOC_DEDIC_GPIO_OUT_CHANNELS_NUM
-    int
-    default 8
-
-config SOC_DEDIC_GPIO_IN_CHANNELS_NUM
-    int
-    default 8
-
-config SOC_DEDIC_GPIO_ALLOW_REG_ACCESS
-    bool
-    default y
-
 config SOC_DEDIC_GPIO_HAS_INTERRUPT
-    bool
-    default y
-
-config SOC_DEDIC_GPIO_OUT_AUTO_ENABLE
     bool
     default y
 
@@ -467,10 +451,6 @@ config SOC_I2C_SUPPORT_APB
     bool
     default y
 
-config SOC_I2S_NUM
-    int
-    default 1
-
 config SOC_I2S_HW_VERSION_1
     bool
     default y
@@ -479,35 +459,7 @@ config SOC_I2S_SUPPORTS_APLL
     bool
     default y
 
-config SOC_I2S_SUPPORTS_PLL_F160M
-    bool
-    default y
-
-config SOC_I2S_SUPPORTS_DMA_EQUAL
-    bool
-    default y
-
 config SOC_I2S_SUPPORTS_LCD_CAMERA
-    bool
-    default y
-
-config SOC_I2S_MAX_DATA_WIDTH
-    int
-    default 24
-
-config SOC_I2S_APLL_MIN_FREQ
-    int
-    default 250000000
-
-config SOC_I2S_APLL_MAX_FREQ
-    int
-    default 500000000
-
-config SOC_I2S_APLL_MIN_RATE
-    int
-    default 10675
-
-config SOC_I2S_LCD_I80_VARIANT
     bool
     default y
 
@@ -583,22 +535,6 @@ config SOC_MPU_REGION_WO_SUPPORTED
     bool
     default n
 
-config SOC_PCNT_GROUPS
-    int
-    default 1
-
-config SOC_PCNT_UNITS_PER_GROUP
-    int
-    default 4
-
-config SOC_PCNT_CHANNELS_PER_UNIT
-    int
-    default 2
-
-config SOC_PCNT_THRES_POINT_PER_UNIT
-    int
-    default 2
-
 config SOC_RMT_GROUPS
     int
     default 1
@@ -623,7 +559,7 @@ config SOC_RMT_SUPPORT_RX_DEMODULATION
     bool
     default y
 
-config SOC_RMT_SUPPORT_TX_ASYNC_STOP
+config SOC_RMT_SUPPORT_ASYNC_STOP
     bool
     default y
 
@@ -667,15 +603,7 @@ config SOC_RTCIO_WAKE_SUPPORTED
     bool
     default y
 
-config SOC_SDM_GROUPS
-    int
-    default 1
-
-config SOC_SDM_CHANNELS_PER_GROUP
-    int
-    default 8
-
-config SOC_SDM_CLK_SUPPORT_APB
+config SOC_LP_IO_CLOCK_IS_INDEPENDENT
     bool
     default y
 
@@ -772,8 +700,8 @@ config SOC_MEMSPI_SRC_FREQ_20M_SUPPORTED
     default y
 
 config SOC_SYSTIMER_COUNTER_NUM
-    bool
-    default y
+    int
+    default 1
 
 config SOC_SYSTIMER_ALARM_NUM
     int
@@ -787,37 +715,29 @@ config SOC_SYSTIMER_BIT_WIDTH_HI
     int
     default 32
 
-config SOC_TIMER_GROUPS
+config SOC_LP_TIMER_BIT_WIDTH_LO
     int
-    default 2
+    default 32
 
-config SOC_TIMER_GROUP_TIMERS_PER_GROUP
+config SOC_LP_TIMER_BIT_WIDTH_HI
     int
-    default 2
-
-config SOC_TIMER_GROUP_COUNTER_BIT_WIDTH
-    int
-    default 64
-
-config SOC_TIMER_GROUP_SUPPORT_XTAL
-    bool
-    default y
-
-config SOC_TIMER_GROUP_SUPPORT_APB
-    bool
-    default y
-
-config SOC_TIMER_GROUP_TOTAL_TIMERS
-    int
-    default 4
+    default 16
 
 config SOC_TOUCH_SENSOR_VERSION
     int
     default 2
 
-config SOC_TOUCH_SENSOR_NUM
+config SOC_TOUCH_MIN_CHAN_ID
     int
-    default 15
+    default 1
+
+config SOC_TOUCH_MAX_CHAN_ID
+    int
+    default 14
+
+config SOC_TOUCH_SUPPORT_BENCHMARK
+    bool
+    default y
 
 config SOC_TOUCH_SUPPORT_SLEEP_WAKEUP
     bool
@@ -844,6 +764,10 @@ config SOC_TOUCH_SAMPLE_CFG_NUM
     default 1
 
 config SOC_TWAI_CONTROLLER_NUM
+    int
+    default 1
+
+config SOC_TWAI_MASK_FILTER_NUM
     int
     default 1
 
@@ -890,6 +814,10 @@ config SOC_UART_FIFO_LEN
 config SOC_UART_BITRATE_MAX
     int
     default 5000000
+
+config SOC_UART_WAKEUP_SUPPORT_ACTIVE_THRESH_MODE
+    bool
+    default y
 
 config SOC_SPIRAM_SUPPORTED
     bool

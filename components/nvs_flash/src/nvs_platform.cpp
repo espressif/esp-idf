@@ -7,7 +7,7 @@
 
 using namespace nvs;
 
-#ifdef LINUX_TARGET
+#if LINUX_TARGET || ESP_TEE_BUILD
 Lock::Lock() {}
 Lock::~Lock() {}
 esp_err_t nvs::Lock::init() {return ESP_OK;}

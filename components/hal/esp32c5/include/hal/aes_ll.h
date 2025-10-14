@@ -143,7 +143,7 @@ static inline esp_aes_state_t aes_ll_get_state(void)
  *
  * @note Only used for DMA transforms
  *
- * @param mode
+ * @param mode Mode of operation to set (e.g., ECB, CBC, CTR, etc.)
  */
 static inline void aes_ll_set_block_mode(esp_aes_mode_t mode)
 {
@@ -262,6 +262,14 @@ static inline void aes_ll_enable_pseudo_rounds(bool enable, uint8_t base, uint8_
         REG_SET_FIELD(AES_PSEUDO_REG, AES_PSEUDO_INC, 0);
         REG_SET_FIELD(AES_PSEUDO_REG, AES_PSEUDO_RNG_CNT, 0);
     }
+}
+
+/**
+ * @brief Check if the pseudo round function is supported
+ */
+static inline bool aes_ll_is_pseudo_rounds_function_supported(void)
+{
+    return true;
 }
 
 #ifdef __cplusplus

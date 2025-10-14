@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,10 +13,12 @@
 #include <esp_err.h>
 #include <mbedtls/sha1.h>
 #include <mbedtls/base64.h>
+#include <mbedtls/error.h>
 
 #include <esp_http_server.h>
 #include "esp_httpd_priv.h"
 #include "freertos/event_groups.h"
+#include "sdkconfig.h"
 
 #ifdef CONFIG_HTTPD_WS_SUPPORT
 
@@ -51,23 +53,23 @@ static const char *TAG="httpd_ws";
  */
 static const char ws_magic_uuid[] = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
 
-/* Checks if any subprotocols from the comma seperated list matches the supported one
+/* Checks if any subprotocols from the comma separated list matches the supported one
  *
  * Returns true if the response should contain a protocol field
 */
 
 /**
- * @brief Checks if any subprotocols from the comma seperated list matches the supported one
+ * @brief Checks if any subprotocols from the comma separated list matches the supported one
  *
  * @param supported_subprotocol[in] The subprotocol supported by the URI
- * @param subprotocol[in],  [in]: A comma seperate list of subprotocols requested
+ * @param subprotocol[in],  [in]: A comma separate list of subprotocols requested
  * @param buf_len Length of the buffer
  * @return true: found a matching subprotocol
  * @return false
  */
 static bool httpd_ws_get_response_subprotocol(const char *supported_subprotocol, char *subprotocol, size_t buf_len)
 {
-    /* Request didnt contain any subprotocols */
+    /* Request didn't contain any subprotocols */
     if (strnlen(subprotocol, buf_len) == 0) {
         return false;
     }
@@ -77,7 +79,7 @@ static bool httpd_ws_get_response_subprotocol(const char *supported_subprotocol,
         return false;
     }
 
-    /* Get first subprotocol from comma seperated list */
+    /* Get first subprotocol from comma separated list */
     char *rest = NULL;
     char *s = strtok_r(subprotocol, ", ", &rest);
     do {
@@ -143,7 +145,34 @@ esp_err_t httpd_ws_respond_server_handshake(httpd_req_t *req, const char *suppor
 
     /* Generate SHA-1 first and then encode to Base64 */
     size_t key_len = strlen(server_raw_text);
-    mbedtls_sha1((uint8_t *)server_raw_text, key_len, server_key_hash);
+
+#if CONFIG_MBEDTLS_SHA1_C || CONFIG_MBEDTLS_HARDWARE_SHA
+    int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
+    mbedtls_sha1_context ctx;
+    mbedtls_sha1_init(&ctx);
+
+    if ((ret = mbedtls_sha1_starts(&ctx)) != 0) {
+        goto sha_end;
+    }
+
+    if ((ret = mbedtls_sha1_update(&ctx, (uint8_t *)server_raw_text, key_len)) != 0) {
+        goto sha_end;
+    }
+
+    if ((ret = mbedtls_sha1_finish(&ctx, server_key_hash)) != 0) {
+        goto sha_end;
+    }
+
+sha_end:
+    mbedtls_sha1_free(&ctx);
+    if (ret != 0) {
+        ESP_LOGE(TAG, "Error in calculating SHA1 sum , returned 0x%02X", ret);
+        return ESP_FAIL;
+    }
+#else
+    ESP_LOGE(TAG, "Please enable CONFIG_MBEDTLS_SHA1_C or CONFIG_MBEDTLS_HARDWARE_SHA to support SHA1 operations");
+    return ESP_FAIL;
+#endif /* CONFIG_MBEDTLS_SHA1_C || CONFIG_MBEDTLS_HARDWARE_SHA */
 
     size_t encoded_len = 0;
     mbedtls_base64_encode((uint8_t *)server_key_encoded, sizeof(server_key_encoded), &encoded_len,
@@ -153,7 +182,7 @@ esp_err_t httpd_ws_respond_server_handshake(httpd_req_t *req, const char *suppor
 
     char subprotocol[50] = { '\0' };
     if (httpd_req_get_hdr_value_str(req, "Sec-WebSocket-Protocol", subprotocol, sizeof(subprotocol) - 1) == ESP_ERR_HTTPD_RESULT_TRUNC) {
-        ESP_LOGW(TAG, "Sec-WebSocket-Protocol length exceeded buffer size of %"NEWLIB_NANO_COMPAT_FORMAT", was trunctated", NEWLIB_NANO_COMPAT_CAST(sizeof(subprotocol)));
+        ESP_LOGW(TAG, "Sec-WebSocket-Protocol length exceeded buffer size of %"NEWLIB_NANO_COMPAT_FORMAT", was truncated", NEWLIB_NANO_COMPAT_CAST(sizeof(subprotocol)));
     }
 
 
@@ -267,7 +296,7 @@ esp_err_t httpd_ws_recv_frame(httpd_req_t *req, httpd_ws_frame_t *frame, size_t 
 
         /* Grab the second byte */
         uint8_t second_byte = 0;
-        if (httpd_recv_with_opt(req, (char *)&second_byte, sizeof(second_byte), false) <= 0) {
+        if (httpd_recv_with_opt(req, (char *)&second_byte, sizeof(second_byte), HTTPD_RECV_OPT_BLOCKING) < sizeof(second_byte)) {
             ESP_LOGW(TAG, LOG_FMT("Failed to receive the second byte"));
             return ESP_FAIL;
         }
@@ -284,7 +313,7 @@ esp_err_t httpd_ws_recv_frame(httpd_req_t *req, httpd_ws_frame_t *frame, size_t 
         } else if (init_len == 126) {
             /* Case 2: If length byte is 126, then this frame's length bit is 16 bits */
             uint8_t length_bytes[2] = { 0 };
-            if (httpd_recv_with_opt(req, (char *)length_bytes, sizeof(length_bytes), false) <= 0) {
+            if (httpd_recv_with_opt(req, (char *)length_bytes, sizeof(length_bytes), HTTPD_RECV_OPT_BLOCKING) < sizeof(length_bytes)) {
                 ESP_LOGW(TAG, LOG_FMT("Failed to receive 2 bytes length"));
                 return ESP_FAIL;
             }
@@ -293,8 +322,8 @@ esp_err_t httpd_ws_recv_frame(httpd_req_t *req, httpd_ws_frame_t *frame, size_t 
         } else if (init_len == 127) {
             /* Case 3: If length is byte 127, then this frame's length bit is 64 bits */
             uint8_t length_bytes[8] = { 0 };
-            if (httpd_recv_with_opt(req, (char *)length_bytes, sizeof(length_bytes), false) <= 0) {
-                ESP_LOGW(TAG, LOG_FMT("Failed to receive 2 bytes length"));
+            if (httpd_recv_with_opt(req, (char *)length_bytes, sizeof(length_bytes), HTTPD_RECV_OPT_BLOCKING) < sizeof(length_bytes)) {
+                ESP_LOGW(TAG, LOG_FMT("Failed to receive 8 bytes length"));
                 return ESP_FAIL;
             }
 
@@ -309,7 +338,7 @@ esp_err_t httpd_ws_recv_frame(httpd_req_t *req, httpd_ws_frame_t *frame, size_t 
         }
         /* If this frame is masked, dump the mask as well */
         if (masked) {
-            if (httpd_recv_with_opt(req, (char *)aux->mask_key, sizeof(aux->mask_key), false) <= 0) {
+            if (httpd_recv_with_opt(req, (char *)aux->mask_key, sizeof(aux->mask_key), HTTPD_RECV_OPT_BLOCKING) < sizeof(aux->mask_key)) {
                 ESP_LOGW(TAG, LOG_FMT("Failed to receive mask key"));
                 return ESP_FAIL;
             }
@@ -346,7 +375,7 @@ esp_err_t httpd_ws_recv_frame(httpd_req_t *req, httpd_ws_frame_t *frame, size_t 
     size_t offset = 0;
 
     while (left_len > 0) {
-        int read_len = httpd_recv_with_opt(req, (char *)frame->payload + offset, left_len, false);
+        int read_len = httpd_recv_with_opt(req, (char *)frame->payload + offset, left_len, HTTPD_RECV_OPT_NONE);
         if (read_len <= 0) {
             ESP_LOGW(TAG, LOG_FMT("Failed to receive payload"));
             return ESP_FAIL;
@@ -454,7 +483,7 @@ esp_err_t httpd_ws_get_frame_type(httpd_req_t *req)
     /* Read the first byte from the frame to get the FIN flag and Opcode */
     /* Please refer to RFC6455 Section 5.2 for more details */
     uint8_t first_byte = 0;
-    if (httpd_recv_with_opt(req, (char *)&first_byte, sizeof(first_byte), false) <= 0) {
+    if (httpd_recv_with_opt(req, (char *)&first_byte, sizeof(first_byte), HTTPD_RECV_OPT_BLOCKING) < sizeof(first_byte)) {
         /* If the recv() return code is <= 0, then this socket FD is invalid (i.e. a broken connection) */
         /* Here we mark it as a Close message and close it later. */
         ESP_LOGW(TAG, LOG_FMT("Failed to read header byte (socket FD invalid), closing socket now"));

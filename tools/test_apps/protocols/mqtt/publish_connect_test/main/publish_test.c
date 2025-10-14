@@ -14,6 +14,7 @@
 #include "freertos/FreeRTOS.h"
 #include <freertos/event_groups.h>
 #include "esp_system.h"
+#include "esp_random.h"
 
 #include "esp_log.h"
 #include "mqtt_client.h"
@@ -24,7 +25,7 @@ static const char *TAG = "publish_test";
 
 static EventGroupHandle_t mqtt_event_group;
 const static int CONNECTED_BIT = BIT0;
-
+#define CLIENT_ID_SUFFIX_SIZE 12
 #if CONFIG_EXAMPLE_BROKER_CERTIFICATE_OVERRIDDEN == 1
 static const uint8_t mqtt_eclipseprojects_io_pem_start[]  = "-----BEGIN CERTIFICATE-----\n" CONFIG_EXAMPLE_BROKER_CERTIFICATE_OVERRIDE "\n-----END CERTIFICATE-----";
 #else
@@ -45,8 +46,8 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
     case MQTT_EVENT_CONNECTED:
         ESP_LOGI(TAG, "MQTT_EVENT_CONNECTED");
         xEventGroupSetBits(mqtt_event_group, CONNECTED_BIT);
-        msg_id = esp_mqtt_client_subscribe(client, CONFIG_EXAMPLE_SUBSCRIBE_TOPIC, test_data->qos);
-        ESP_LOGI(TAG, "sent subscribe successful %s , msg_id=%d", CONFIG_EXAMPLE_SUBSCRIBE_TOPIC, msg_id);
+        msg_id = esp_mqtt_client_subscribe(client, test_data->subscribe_to, test_data->qos);
+        ESP_LOGI(TAG, "sent subscribe successful %s , msg_id=%d", test_data->subscribe_to, msg_id);
 
         break;
     case MQTT_EVENT_DISCONNECTED:
@@ -66,31 +67,44 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
         ESP_LOGI(TAG, "MQTT_EVENT_DATA");
         ESP_LOGI(TAG, "TOPIC=%.*s", event->topic_len, event->topic);
         ESP_LOGI(TAG, "ID=%d, total_len=%d, data_len=%d, current_data_offset=%d", event->msg_id, event->total_data_len, event->data_len, event->current_data_offset);
-        if (event->topic) {
-            actual_len = event->data_len;
-            msg_id = event->msg_id;
-        } else {
-            actual_len += event->data_len;
-            // check consistency with msg_id across multiple data events for single msg
-            if (msg_id != event->msg_id) {
-                ESP_LOGI(TAG, "Wrong msg_id in chunked message %d != %d", msg_id, event->msg_id);
-                abort();
-            }
-        }
-        memcpy(test_data->received_data + event->current_data_offset, event->data, event->data_len);
-        if (actual_len == event->total_data_len) {
-            if (0 == memcmp(test_data->received_data, test_data->expected, test_data->expected_size)) {
-                memset(test_data->received_data, 0, test_data->expected_size);
-                test_data->nr_of_msg_received ++;
-                if (test_data->nr_of_msg_received == test_data->nr_of_msg_expected) {
-                    ESP_LOGI(TAG, "Correct pattern received exactly x times");
-                    ESP_LOGI(TAG, "Test finished correctly!");
-                }
-            } else {
-                ESP_LOGE(TAG, "FAILED!");
-                abort();
-            }
-        }
+          if (event->current_data_offset == 0) {
+              actual_len = event->data_len;
+              msg_id = event->msg_id;
+              if (event->total_data_len != test_data->expected_size) {
+                  ESP_LOGE(TAG, "Incorrect message size: %d != %d", event->total_data_len, test_data->expected_size);
+                  abort();
+              }
+          } else {
+              actual_len += event->data_len;
+              // check consistency with msg_id across multiple data events for single msg
+              if (msg_id != event->msg_id) {
+                  ESP_LOGE(TAG, "Wrong msg_id in chunked message %d != %d", msg_id, event->msg_id);
+                  abort();
+              }
+          }
+          if (event->current_data_offset + event->data_len > test_data->expected_size) {
+              ESP_LOGE(TAG, "Buffer overflow detected: offset %d + data_len %d > buffer size %d", event->current_data_offset, event->data_len, test_data->expected_size);
+              abort();
+          }
+          if (memcmp(test_data->expected + event->current_data_offset, event->data, event->data_len) != 0) {
+            ESP_LOGE(TAG, "Data mismatch at offset %d: \n expected %.*s, \n got %.*s", event->current_data_offset, event->data_len, test_data->expected + event->current_data_offset, event->data_len, event->data);
+            abort();
+          }
+
+          memcpy(test_data->received_data + event->current_data_offset, event->data, event->data_len);
+          if (actual_len == event->total_data_len) {
+              if (0 == memcmp(test_data->received_data, test_data->expected, test_data->expected_size)) {
+                  memset(test_data->received_data, 0, test_data->expected_size);
+                  test_data->nr_of_msg_received++;
+                  if (test_data->nr_of_msg_received == test_data->nr_of_msg_expected) {
+                      ESP_LOGI(TAG, "Correct pattern received exactly x times");
+                      ESP_LOGI(TAG, "Test finished correctly!");
+                  }
+              } else {
+                  ESP_LOGE(TAG, "FAILED!");
+                  abort();
+              }
+          }
         break;
     case MQTT_EVENT_ERROR:
         ESP_LOGE(TAG, "MQTT_EVENT_ERROR");
@@ -100,8 +114,6 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
         break;
     }
 }
-
-
 
 void test_init(void)
 {
@@ -169,6 +181,10 @@ static void configure_client(command_context_t * ctx, const char *transport)
             ESP_LOGI(TAG, "Set certificate");
             config.broker.verification.certificate = (const char *)mqtt_eclipseprojects_io_pem_start;
         }
+        // Generate a random client id for each iteration
+        char client_id[CLIENT_ID_SUFFIX_SIZE] = {0};
+        snprintf(client_id, sizeof(client_id), "esp32-%08X", esp_random());
+        config.credentials.client_id = client_id;
         esp_mqtt_set_config(ctx->mqtt_client, &config);
     }
 }
@@ -200,9 +216,9 @@ void publish_test(command_context_t * ctx, int expect_to_publish, int qos, bool 
     for (int i = 0; i < data->nr_of_msg_expected; i++) {
         int msg_id;
         if (enqueue) {
-            msg_id = esp_mqtt_client_enqueue(ctx->mqtt_client, CONFIG_EXAMPLE_PUBLISH_TOPIC, data->expected, data->expected_size, qos, 0, true);
+            msg_id = esp_mqtt_client_enqueue(ctx->mqtt_client, data->publish_to, data->expected, data->expected_size, qos, 0, true);
         } else {
-            msg_id = esp_mqtt_client_publish(ctx->mqtt_client, CONFIG_EXAMPLE_PUBLISH_TOPIC, data->expected, data->expected_size, qos, 0);
+            msg_id = esp_mqtt_client_publish(ctx->mqtt_client, data->publish_to, data->expected, data->expected_size, qos, 0);
             if(msg_id < 0) {
                 ESP_LOGE(TAG, "Failed to publish");
                 break;

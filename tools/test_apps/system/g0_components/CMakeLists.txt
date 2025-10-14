@@ -2,7 +2,7 @@
 # https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/build-system.html
 # The following five lines of boilerplate have to be in your project's
 # CMakeLists in this exact order for cmake to work correctly
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.22)
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 
@@ -25,6 +25,10 @@ idf_build_set_property(__COMPONENT_REQUIRES_COMMON "${all_g0_components}")
 idf_build_set_property(__BUILD_COMPONENT_DEPGRAPH_ENABLED 1)
 
 project(g0_components)
+
+if(CONFIG_IDF_TARGET_ESP32P4)
+    idf_build_set_property(C_COMPILE_OPTIONS "-DCONFIG_ESP_REV_MIN_FULL=300" APPEND)
+endif()
 
 if(CONFIG_IDF_TARGET_ESP32C2)
     # clk_tree hal-driver needs CONFIG_XTAL_FREQ

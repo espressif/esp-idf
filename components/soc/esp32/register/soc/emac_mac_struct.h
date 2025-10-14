@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +10,20 @@ extern "C" {
 #endif
 
 #include <stdint.h>
+
+typedef struct {
+    volatile union {
+        struct {
+            uint32_t mac_address_hi : 16; /*This field contains the upper 16 bits  Bits[47:32] of the eighth 6-byte MAC Address.*/
+            uint32_t reserved16 : 8;
+            uint32_t mask_byte_control : 6; /*These bits are mask control bits for comparison of each of the EMACADDR7 bytes. When set high  the MAC does not compare the corresponding byte of received DA or SA with the contents of EMACADDR7 registers. Each bit controls the masking of the bytes as follows:  Bit[29]: EMACADDR7 High [15:8].  Bit[28]: EMACADDR7 High [7:0].  Bit[27]: EMACADDR7 Low [31:24].  Bit[24]: EMACADDR7 Low [7:0].You can filter a group of addresses (known as group address filtering) by masking one or more bytes of the address.*/
+            uint32_t source_address : 1;    /*When this bit is set  the EMACADDR7[47:0] is used to compare with the SA fields of the received frame. When this bit is reset  the EMACADDR7[47:0] is used to compare with the DA fields of the received frame.*/
+            uint32_t address_enable : 1;    /*When this bit is set  the address filter module uses the eighth MAC address for perfect filtering. When this bit is reset  the address filter module ignores the address for filtering.*/
+        };
+        uint32_t val;
+    } emacaddrhigh;
+    uint32_t emacaddrlow; /*This field contains the lower 32 bits of the eighth 6-byte MAC address.The content of this field is undefined  so the register needs to be configured after the initialization Process.*/
+} emac_mac_addr_t;
 
 typedef struct emac_mac_dev_s {
     volatile union {
@@ -207,101 +221,8 @@ typedef struct emac_mac_dev_s {
         uint32_t val;
     } emacaddr0high;
     uint32_t emacaddr0low; /*This field contains the lower 32 bits of the first 6-byte MAC address. This is used by the MAC for filtering the received frames and inserting the MAC address in the Transmit Flow Control (Pause) Frames.*/
-    volatile union {
-        struct {
-            uint32_t mac_address1_hi : 16; /*This field contains the upper 16 bits  Bits[47:32] of the second 6-byte MAC Address.*/
-            uint32_t reserved16 : 8;
-            uint32_t mask_byte_control : 6; /*These bits are mask control bits for comparison of each of the EMACADDR1 bytes. When set high  the MAC does not compare the corresponding byte of received DA or SA with the contents of EMACADDR1 registers. Each bit controls the masking of the bytes as follows:  Bit[29]: EMACADDR1 High [15:8].  Bit[28]: EMACADDR1 High [7:0].  Bit[27]: EMACADDR1 Low [31:24].  Bit[24]: EMACADDR1 Low [7:0].You can filter a group of addresses (known as group address filtering) by masking one or more bytes of the address.*/
-            uint32_t source_address : 1;    /*When this bit is set  the EMACADDR1[47:0] is used to compare with the SA fields of the received frame. When this bit is reset  the EMACADDR1[47:0] is used to compare with the DA fields of the received frame.*/
-            uint32_t address_enable1 : 1;   /*When this bit is set  the address filter module uses the second MAC address for perfect filtering. When this bit is reset  the address filter module ignores the address for filtering.*/
-        };
-        uint32_t val;
-    } emacaddr1high;
-    uint32_t emacaddr1low; /*This field contains the lower 32 bits of the second 6-byte MAC address.The content of this field is undefined  so the register needs to be configured after the initialization Process.*/
-    volatile union {
-        struct {
-            uint32_t mac_address2_hi : 16; /*This field contains the upper 16 bits  Bits[47:32] of the third 6-byte MAC address.*/
-            uint32_t reserved16 : 8;
-            uint32_t mask_byte_control2 : 6; /*These bits are mask control bits for comparison of each of the EMACADDR2 bytes. When set high  the MAC does not compare the corresponding byte of received DA or SA with the contents of EMACADDR2 registers. Each bit controls the masking of the bytes as follows:  Bit[29]: EMACADDR2 High [15:8].  Bit[28]: EMACADDR2 High [7:0].  Bit[27]: EMACADDR2 Low [31:24].  Bit[24]: EMACADDR2 Low [7:0].You can filter a group of addresses (known as group address filtering) by masking one or more bytes of the address.*/
-            uint32_t source_address2 : 1;    /*When this bit is set  the EMACADDR2[47:0] is used to compare with the SA fields of the received frame. When this bit is reset  the EMACADDR2[47:0] is used to compare with the DA fields of the received frame.*/
-            uint32_t address_enable2 : 1;    /*When this bit is set  the address filter module uses the third MAC address for perfect filtering. When this bit is reset  the address filter module ignores the address for filtering.*/
-        };
-        uint32_t val;
-    } emacaddr2high;
-    uint32_t emacaddr2low; /*This field contains the lower 32 bits of the third 6-byte MAC address. The content of this field is undefined  so the register needs to be configured after the initialization process.*/
-    volatile union {
-        struct {
-            uint32_t mac_address3_hi : 16; /*This field contains the upper 16 bits  Bits[47:32] of the fourth 6-byte MAC address.*/
-            uint32_t reserved16 : 8;
-            uint32_t mask_byte_control3 : 6; /*These bits are mask control bits for comparison of each of the EMACADDR3 bytes. When set high  the MAC does not compare the corresponding byte of received DA or SA with the contents of EMACADDR3 registers. Each bit controls the masking of the bytes as follows:  Bit[29]: EMACADDR3 High [15:8].  Bit[28]: EMACADDR3 High [7:0].  Bit[27]: EMACADDR3 Low [31:24].  Bit[24]: EMACADDR3 Low [7:0].You can filter a group of addresses (known as group address filtering) by masking one or more bytes of the address.*/
-            uint32_t source_address3 : 1;    /*When this bit is set  the EMACADDR3[47:0] is used to compare with the SA fields of the received frame. When this bit is reset  the EMACADDR3[47:0] is used to compare with the DA fields of the received frame.*/
-            uint32_t address_enable3 : 1;    /*When this bit is set  the address filter module uses the fourth MAC address for perfect filtering. When this bit is reset  the address filter module ignores the address for filtering.*/
-        };
-        uint32_t val;
-    } emacaddr3high;
-    uint32_t emacaddr3low; /*This field contains the lower 32 bits of the fourth 6-byte MAC address.The content of this field is undefined  so the register needs to be configured after the initialization Process.*/
-    volatile union {
-        struct {
-            uint32_t mac_address4_hi : 16; /*This field contains the upper 16 bits  Bits[47:32] of the fifth 6-byte MAC address.*/
-            uint32_t reserved16 : 8;
-            uint32_t mask_byte_control4 : 6; /*These bits are mask control bits for comparison of each of the EMACADDR4 bytes. When set high  the MAC does not compare the corresponding byte of received DA or SA with the contents of EMACADDR4 registers. Each bit controls the masking of the bytes as follows:  Bit[29]: EMACADDR4 High [15:8].  Bit[28]: EMACADDR4 High [7:0].  Bit[27]: EMACADDR4 Low [31:24].  Bit[24]: EMACADDR4 Low [7:0].You can filter a group of addresses (known as group address filtering) by masking one or more bytes of the address.*/
-            uint32_t source_address4 : 1;    /*When this bit is set  the EMACADDR4[47:0] is used to compare with the SA fields of the received frame. When this bit is reset  the EMACADDR4[47:0] is used to compare with the DA fields of the received frame.*/
-            uint32_t address_enable4 : 1;    /*When this bit is set  the address filter module uses the fifth MAC address for perfect filtering. When this bit is reset  the address filter module ignores the address for filtering.*/
-        };
-        uint32_t val;
-    } emacaddr4high;
-    uint32_t emacaddr4low; /*This field contains the lower 32 bits of the fifth 6-byte MAC address. The content of this field is undefined  so the register needs to be configured after the initialization process.*/
-    volatile union {
-        struct {
-            uint32_t mac_address5_hi : 16; /*This field contains the upper 16 bits  Bits[47:32] of the sixth 6-byte MAC address.*/
-            uint32_t reserved16 : 8;
-            uint32_t mask_byte_control5 : 6; /*These bits are mask control bits for comparison of each of the EMACADDR5 bytes. When set high  the MAC does not compare the corresponding byte of received DA or SA with the contents of EMACADDR5 registers. Each bit controls the masking of the bytes as follows:  Bit[29]: EMACADDR5 High [15:8].  Bit[28]: EMACADDR5 High [7:0].  Bit[27]: EMACADDR5 Low [31:24].  Bit[24]: EMACADDR5 Low [7:0].You can filter a group of addresses (known as group address filtering) by masking one or more bytes of the address.*/
-            uint32_t source_address5 : 1;    /*When this bit is set  the EMACADDR5[47:0] is used to compare with the SA fields of the received frame. When this bit is reset  the EMACADDR5[47:0] is used to compare with the DA fields of the received frame.*/
-            uint32_t address_enable5 : 1;    /*When this bit is set  the address filter module uses the sixth MAC address for perfect filtering. When this bit is reset  the address filter module ignores the address for filtering.*/
-        };
-        uint32_t val;
-    } emacaddr5high;
-    uint32_t emacaddr5low; /*This field contains the lower 32 bits of the sixth 6-byte MAC address. The content of this field is undefined  so the register needs to be configured after the initialization process.*/
-    volatile union {
-        struct {
-            uint32_t mac_address6_hi : 16; /*This field contains the upper 16 bits  Bits[47:32] of the seventh 6-byte MAC Address.*/
-            uint32_t reserved16 : 8;
-            uint32_t mask_byte_control6 : 6; /*These bits are mask control bits for comparison of each of the EMACADDR6 bytes. When set high  the MAC does not compare the corresponding byte of received DA or SA with the contents of EMACADDR6 registers. Each bit controls the masking of the bytes as follows:  Bit[29]: EMACADDR6 High [15:8].  Bit[28]: EMACADDR6 High [7:0].  Bit[27]: EMACADDR6 Low [31:24].  Bit[24]: EMACADDR6 Low [7:0].You can filter a group of addresses (known as group address filtering) by masking one or more bytes of the address.*/
-            uint32_t source_address6 : 1;    /*When this bit is set  the EMACADDR6[47:0] is used to compare with the SA fields of the received frame. When this bit is reset  the EMACADDR6[47:0] is used to compare with the DA fields of the received frame.*/
-            uint32_t address_enable6 : 1;    /*When this bit is set  the address filter module uses the seventh MAC address for perfect filtering. When this bit is reset  the address filter module ignores the address for filtering.*/
-        };
-        uint32_t val;
-    } emacaddr6high;
-    uint32_t emacaddr6low; /*This field contains the lower 32 bits of the seventh 6-byte MAC address.The content of this field is undefined  so the register needs to be configured after the initialization Process.*/
-    volatile union {
-        struct {
-            uint32_t mac_address7_hi : 16; /*This field contains the upper 16 bits  Bits[47:32] of the eighth 6-byte MAC Address.*/
-            uint32_t reserved16 : 8;
-            uint32_t mask_byte_control7 : 6; /*These bits are mask control bits for comparison of each of the EMACADDR7 bytes. When set high  the MAC does not compare the corresponding byte of received DA or SA with the contents of EMACADDR7 registers. Each bit controls the masking of the bytes as follows:  Bit[29]: EMACADDR7 High [15:8].  Bit[28]: EMACADDR7 High [7:0].  Bit[27]: EMACADDR7 Low [31:24].  Bit[24]: EMACADDR7 Low [7:0].You can filter a group of addresses (known as group address filtering) by masking one or more bytes of the address.*/
-            uint32_t source_address7 : 1;    /*When this bit is set  the EMACADDR7[47:0] is used to compare with the SA fields of the received frame. When this bit is reset  the EMACADDR7[47:0] is used to compare with the DA fields of the received frame.*/
-            uint32_t address_enable7 : 1;    /*When this bit is set  the address filter module uses the eighth MAC address for perfect filtering. When this bit is reset  the address filter module ignores the address for filtering.*/
-        };
-        uint32_t val;
-    } emacaddr7high;
-    uint32_t emacaddr7low; /*This field contains the lower 32 bits of the eighth 6-byte MAC address.The content of this field is undefined  so the register needs to be configured after the initialization Process.*/
-    uint32_t reserved_1080;
-    uint32_t reserved_1084;
-    uint32_t reserved_1088;
-    uint32_t reserved_108c;
-    uint32_t reserved_1090;
-    uint32_t reserved_1094;
-    uint32_t reserved_1098;
-    uint32_t reserved_109c;
-    uint32_t reserved_10a0;
-    uint32_t reserved_10a4;
-    uint32_t reserved_10a8;
-    uint32_t reserved_10ac;
-    uint32_t reserved_10b0;
-    uint32_t reserved_10b4;
-    uint32_t reserved_10b8;
-    uint32_t reserved_10bc;
-    uint32_t reserved_10c0;
-    uint32_t reserved_10c4;
+    emac_mac_addr_t emacaddr[15];    /*Offset: 0x40-0xC0. MAC Address1-15 registers. Each MAC address register contains the high and low 32-bit fields for MAC addresses 1-15.*/
+    uint32_t reserved_10c4; // AN control register
     uint32_t reserved_10c8;
     uint32_t reserved_10cc;
     uint32_t reserved_10d0;

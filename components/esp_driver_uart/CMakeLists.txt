@@ -3,13 +3,17 @@ idf_build_get_property(target IDF_TARGET)
 set(srcs)
 set(public_include "include")
 if(CONFIG_SOC_UART_SUPPORTED)
-    list(APPEND srcs "src/uart.c")
+    list(APPEND srcs "src/uart.c" "src/uart_wakeup.c")
+    if(CONFIG_SOC_UHCI_SUPPORTED)
+        list(APPEND srcs "src/uhci.c")
+    endif()
 endif()
+
 
 if(${target} STREQUAL "linux")
     set(priv_requires esp_ringbuf)
 else()
-    set(priv_requires esp_pm esp_driver_gpio esp_ringbuf)
+    set(priv_requires esp_pm esp_driver_gpio esp_ringbuf esp_mm)
 endif()
 
 idf_component_register(

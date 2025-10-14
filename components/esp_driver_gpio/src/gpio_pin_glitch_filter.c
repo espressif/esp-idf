@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,17 +20,19 @@ static const char *TAG = "gpio-filter";
  */
 typedef struct gpio_pin_glitch_filter_t {
     gpio_glitch_filter_t base;
-    esp_pm_lock_handle_t pm_lock;
 #if CONFIG_PM_ENABLE
+    esp_pm_lock_handle_t pm_lock;
     char pm_lock_name[GLITCH_FILTER_PM_LOCK_NAME_LEN_MAX]; // pm lock name
 #endif
 } gpio_pin_glitch_filter_t;
 
 static esp_err_t gpio_filter_destroy(gpio_pin_glitch_filter_t *filter)
 {
+#if CONFIG_PM_ENABLE
     if (filter->pm_lock) {
         esp_pm_lock_delete(filter->pm_lock);
     }
+#endif
 
     free(filter);
     return ESP_OK;
@@ -46,12 +48,14 @@ static esp_err_t gpio_pin_glitch_filter_del(gpio_glitch_filter_t *filter)
 static esp_err_t gpio_pin_glitch_filter_enable(gpio_glitch_filter_t *filter)
 {
     ESP_RETURN_ON_FALSE(filter->fsm == GLITCH_FILTER_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "filter not in init state");
-    gpio_pin_glitch_filter_t *pin_filter = __containerof(filter, gpio_pin_glitch_filter_t, base);
+    [[maybe_unused]] gpio_pin_glitch_filter_t *pin_filter = __containerof(filter, gpio_pin_glitch_filter_t, base);
 
+#if CONFIG_PM_ENABLE
     // acquire pm lock
     if (pin_filter->pm_lock) {
         esp_pm_lock_acquire(pin_filter->pm_lock);
     }
+#endif
 
     gpio_ll_pin_filter_enable(NULL, filter->gpio_num);
     filter->fsm = GLITCH_FILTER_FSM_ENABLE;
@@ -61,14 +65,16 @@ static esp_err_t gpio_pin_glitch_filter_enable(gpio_glitch_filter_t *filter)
 static esp_err_t gpio_pin_glitch_filter_disable(gpio_glitch_filter_t *filter)
 {
     ESP_RETURN_ON_FALSE(filter->fsm == GLITCH_FILTER_FSM_ENABLE, ESP_ERR_INVALID_STATE, TAG, "filter not in enable state");
-    gpio_pin_glitch_filter_t *pin_filter = __containerof(filter, gpio_pin_glitch_filter_t, base);
+    [[maybe_unused]] gpio_pin_glitch_filter_t *pin_filter = __containerof(filter, gpio_pin_glitch_filter_t, base);
 
     gpio_ll_pin_filter_disable(NULL, filter->gpio_num);
 
+#if CONFIG_PM_ENABLE
     // release pm lock
     if (pin_filter->pm_lock) {
         esp_pm_lock_release(pin_filter->pm_lock);
     }
+#endif
 
     filter->fsm = GLITCH_FILTER_FSM_INIT;
     return ESP_OK;

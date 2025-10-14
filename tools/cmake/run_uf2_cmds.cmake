@@ -3,7 +3,7 @@
 #
 # It is recommended to NOT USE this CMake script directly
 
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.22)
 
 set(UF2_CMD "${UF2_CMD}")
 set(UF2_ARGS "${UF2_ARGS}")

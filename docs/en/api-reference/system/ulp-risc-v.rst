@@ -40,6 +40,21 @@ Using ``ulp_embed_binary``
 
 The first argument to ``ulp_embed_binary`` specifies the ULP binary name. The name specified here is also used by other generated artifacts such as the ELF file, map file, header file, and linker export file. The second argument specifies the ULP source files. Finally, the third argument specifies the list of component source files which include the header file to be generated. This list is needed to build the dependencies correctly and ensure that the generated header file is created before any of these files are compiled. See the section below for the concept of generated header files for ULP applications.
 
+Variables in the ULP code will be prefixed with ``ulp_`` (default value) in this generated header file.
+
+If you need to embed multiple ULP programs, you may add a custom prefix in order to avoid conflicting variable names like this:
+
+.. code-block:: cmake
+
+    idf_component_register()
+
+    set(ulp_app_name ulp_${COMPONENT_NAME})
+    set(ulp_sources "ulp/ulp_c_source_file.c" "ulp/ulp_assembly_source_file.S")
+    set(ulp_exp_dep_srcs "ulp_c_source_file.c")
+
+    ulp_embed_binary(${ulp_app_name} "${ulp_sources}" "${ulp_exp_dep_srcs}" PREFIX "ULP::")
+
+The additional PREFIX argument can be a C style prefix (like ``ulp2_``) or a C++ style prefix (like ``ULP::``).
 
 Using a Custom CMake Project
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -56,7 +71,7 @@ Create a folder which contains your ULP project files and a ``CMakeLists.txt`` f
 
 .. code-block:: cmake
 
-    cmake_minimum_required(VERSION 3.16)
+    cmake_minimum_required(VERSION 3.22)
 
     # Project/target name is passed from the main project to allow IDF to have a dependency on this target
     # as well as embed the binary into the main app
@@ -143,11 +158,7 @@ The header file contains the declaration of the symbol:
 
     extern uint32_t ulp_measurement_count;
 
-Note that all symbols (variables, arrays, functions) are declared as ``uint32_t``. For functions and arrays, take the address of the symbol and cast it to the appropriate type.
-
-The generated linker script file defines the locations of symbols in RTC_SLOW_MEM::
-
-    PROVIDE ( ulp_measurement_count = 0x50000060 );
+Note that all symbols (variables, functions) are declared as ``uint32_t``. Arrays are declared as ``uint32_t [SIZE]``. For functions, take the address of the symbol and cast it to the appropriate type.
 
 To access the ULP RISC-V program variables from the main program, the generated header file should be included using an ``include`` statement. This will allow the ULP RISC-V program variables to be accessed as regular variables.
 
@@ -161,8 +172,9 @@ To access the ULP RISC-V program variables from the main program, the generated 
 
 .. note::
 
-    Variables declared in the global scope of the ULP RISC-V program reside in either the ``.bss`` or ``.data`` section of the binary. These sections are initialized when the ULP RISC-V binary is loaded and executed. Accessing these variables from the main program on the main CPU before the first ULP RISC-V run may result in undefined behavior.
+    - Variables declared in the global scope of the ULP RISC-V program reside in either the ``.bss`` or ``.data`` section of the binary. These sections are initialized when the ULP RISC-V binary is loaded and executed. Accessing these variables from the main program on the main CPU before the first ULP RISC-V run may result in undefined behavior.
 
+    - The ``ulp_`` prefix is the default value. You can specify the prefix to use with ``ulp_embed_binary`` to avoid name collisions for multiple ULP programs.
 
 Mutual Exclusion
 ^^^^^^^^^^^^^^^^
@@ -230,7 +242,17 @@ Once the RTC I2C controller is initialized, the I2C slave device address must be
 
 .. note::
 
-    The RTC I2C peripheral always expects a slave sub-register address to be programmed via the :cpp:func:`ulp_riscv_i2c_master_set_slave_reg_addr` API. If it is not, the I2C peripheral uses the ``SENS_SAR_I2C_CTRL_REG[18:11]`` as the sub-register address for the subsequent read or write operations. This could make the RTC I2C peripheral incompatible with certain I2C devices or sensors which do not need any sub-register to be programmed.
+    The RTC I2C peripheral issues two kinds of I2C transactions:
+
+    - **READ**: [start] → write device address → write device sub-register address → [repeated start] → write device address → read N bytes → [stop]
+    - **WRITE**: [start] → write device address → write device sub-register address → [repeated start] → write device address → write N bytes → [stop]
+
+    In both cases, sending the sub-register address is required and cannot be disabled. Therefore, the peripheral always expects a slave sub-register address to be set using the :cpp:func:`ulp_riscv_i2c_master_set_slave_reg_addr` API. If it is not set explicitly, the peripheral uses the value in ``SENS_SAR_I2C_CTRL_REG[18:11]`` as the sub-register address for subsequent transactions.
+
+    This behavior makes the RTC I2C peripheral incompatible with:
+
+    - Devices that do not expect a sub-register address write before initiating a read or write transaction.
+    - Devices requiring 16-bit or wider register addresses, since only 8-bit addressing is supported.
 
 .. note::
 

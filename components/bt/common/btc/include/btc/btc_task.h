@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -67,6 +67,9 @@ typedef enum {
 #if (BTC_HF_CLIENT_INCLUDED == TRUE)
     BTC_PID_HF_CLIENT,
 #endif /* BTC_HF_CLIENT_INCLUDED */
+#if (BTC_PBA_CLIENT_INCLUDED == TRUE)
+    BTC_PID_PBA_CLIENT,
+#endif /* BTC_PBA_CLIENT_INCLUDED */
 #endif  /* CLASSIC_BT_INCLUDED */
 #if CONFIG_BLE_MESH
     BTC_PID_PROV,
@@ -105,6 +108,12 @@ typedef enum {
     BTC_PID_MBT_SERVER,
     BTC_PID_BLE_MESH_BLE_COEX,
 #endif /* CONFIG_BLE_MESH */
+#if (BLE_FEAT_ISO_EN == TRUE)
+    BTC_PID_ISO_BLE,
+#endif // #if (BLE_FEAT_ISO_EN == TRUE)
+#if (BLE_FEAT_CTE_EN == TRUE)
+    BTC_PID_BLE_CTE,
+#endif // #if (BLE_FEAT_CTE_EN == TRUE)
     BTC_PID_NUM,
 } btc_pid_t; //btc profile id
 
@@ -123,8 +132,8 @@ extern "C" {
 /**
  * transfer an message to another module in the different task.
  * @param  msg       message
- * @param  arg       paramter
- * @param  arg_len   length of paramter
+ * @param  arg       parameter
+ * @param  arg_len   length of parameter
  * @param  copy_func deep copy function
  * @param  free_func deep free function
  * @return           BT_STATUS_SUCCESS: success
@@ -134,7 +143,7 @@ bt_status_t btc_transfer_context(btc_msg_t *msg, void *arg, int arg_len, btc_arg
                                     btc_arg_deep_free_t free_func);
 
 /**
- * transfer an message to another module in tha same task.
+ * transfer an message to another module in the same task.
  * @param  msg       message
  * @return           BT_STATUS_SUCCESS: success
  *                   others: fail
@@ -143,7 +152,6 @@ bt_status_t btc_inter_profile_call(btc_msg_t *msg);
 
 bt_status_t btc_init(void);
 void btc_deinit(void);
-bool btc_check_queue_is_congest(void);
 int get_btc_work_queue_size(void);
 
 /**

@@ -59,6 +59,15 @@ Introduction
     * Multiple peripherals
     * Intended for simple, high-volume IoT applications
 
+.. only:: esp32c5
+
+    * Wi-Fi 6 (2.4 and 5 GHz dual-band)
+    * Bluetooth Low Energy
+    * 802.15.4 Thread/Zigbee
+    * High performance 32-bit RISC-V single-core processor
+    * Multiple peripherals
+    * Built-in security hardware
+
 .. only:: esp32c6
 
     * Wi-Fi 6 (2.4 GHz band)
@@ -84,7 +93,16 @@ Introduction
     * Rich set of peripherals including MIPI, USB, SDIO, and Ethernet
     * Built-in security hardware
 
-Powered by 40 nm technology, {IDF_TARGET_NAME} provides a robust, highly integrated platform, which helps meet the continuous demands for efficient power usage, compact design, security, high performance, and reliability.
+
+.. only:: esp32p4
+
+    Powered by 40 nm technology, {IDF_TARGET_NAME} offers excellent power efficiency, security, and reliability, making it suitable for a wide range of application scenarios and power consumption requirements.
+
+
+.. only:: not esp32p4
+
+    Powered by 40 nm technology, {IDF_TARGET_NAME} offers excellent power efficiency, RF performance, security, and reliability, making it suitable for a wide range of application scenarios and power consumption requirements.
+
 
 Espressif provides basic hardware and software resources to help application developers realize their ideas using the {IDF_TARGET_NAME} series hardware. The software development framework by Espressif is intended for development of Internet-of-Things (IoT) applications with Wi-Fi, Bluetooth, power management and several other system features.
 
@@ -149,6 +167,13 @@ If you have one of {IDF_TARGET_NAME} official development boards listed below, y
 
         ESP8684-DevKitM-1 <https://docs.espressif.com/projects/espressif-esp-dev-kits/en/latest/esp8684/esp8684-devkitm-1/index.html>
 
+.. only:: esp32c5
+
+    .. toctree::
+        :maxdepth: 1
+
+        ESP32-C5-DevKitC-1 <https://docs.espressif.com/projects/esp-dev-kits/en/latest/esp32c5/esp32-c5-devkitc-1/index.html>
+
 .. only:: esp32c6
 
     .. toctree::
@@ -159,7 +184,11 @@ If you have one of {IDF_TARGET_NAME} official development boards listed below, y
 
 .. only:: esp32p4
 
-    To be announced.
+    .. toctree::
+        :maxdepth: 1
+
+        ESP32-P4-Function-EV-Board <https://docs.espressif.com/projects/esp-dev-kits/en/latest/esp32p4/esp32-p4-function-ev-board/index.html>
+        ESP32-P4-EYE <https://docs.espressif.com/projects/esp-dev-kits/en/latest/esp32p4/esp32-p4-eye/index.html>
 
 .. _get-started-get-prerequisites:
 

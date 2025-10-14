@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -38,7 +38,10 @@ static inline void aes_ll_enable_bus_clock(bool enable)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define aes_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; aes_ll_enable_bus_clock(__VA_ARGS__)
+#define aes_ll_enable_bus_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        aes_ll_enable_bus_clock(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Reset the AES peripheral module
@@ -54,7 +57,10 @@ static inline void aes_ll_reset_register(void)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define aes_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; aes_ll_reset_register(__VA_ARGS__)
+#define aes_ll_reset_register(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        aes_ll_reset_register(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Write the encryption/decryption key to hardware
@@ -151,7 +157,7 @@ static inline esp_aes_state_t aes_ll_get_state(void)
  *
  * @note Only used for DMA transforms
  *
- * @param mode
+ * @param mode Mode of operation to set (e.g., ECB, CBC, CTR, etc.)
  */
 static inline void aes_ll_set_block_mode(esp_aes_mode_t mode)
 {

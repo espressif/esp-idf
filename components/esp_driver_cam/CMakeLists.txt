@@ -34,3 +34,7 @@ idf_component_register(SRCS ${srcs}
                        REQUIRES ${requires}
                        PRIV_REQUIRES ${priv_requires}
                       )
+
+if(CONFIG_PM_ENABLE)
+    idf_component_optional_requires(PRIVATE esp_pm)
+endif()

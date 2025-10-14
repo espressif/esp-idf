@@ -19,6 +19,9 @@
 #include "argtable3/argtable3.h"
 #include "protocol_examples_common.h"
 #include "ping/ping_sock.h"
+#include "esp_check.h"
+
+const static char *TAG = "echo_example";
 
 static void cmd_ping_on_ping_success(esp_ping_handle_t hdl, void *args)
 {
@@ -170,9 +173,8 @@ static int do_ping_cmd(int argc, char **argv)
         .on_ping_end = cmd_ping_on_ping_end
     };
     esp_ping_handle_t ping;
-    esp_ping_new_session(&config, &cbs, &ping);
-    esp_ping_start(ping);
-
+    ESP_RETURN_ON_FALSE(esp_ping_new_session(&config, &cbs, &ping) == ESP_OK, -1, TAG, "esp_ping_new_session failed");
+    ESP_RETURN_ON_FALSE(esp_ping_start(ping) == ESP_OK, -1, TAG, "esp_ping_start() failed");
     return 0;
 }
 
@@ -198,24 +200,6 @@ static void register_ping(void)
 }
 
 static esp_console_repl_t *s_repl = NULL;
-
-/* handle 'quit' command */
-static int do_cmd_quit(int argc, char **argv)
-{
-    printf("ByeBye\r\n");
-    s_repl->del(s_repl);
-    return 0;
-}
-
-static esp_err_t register_quit(void)
-{
-    esp_console_cmd_t command = {
-        .command = "quit",
-        .help = "Quit REPL environment",
-        .func = &do_cmd_quit
-    };
-    return esp_console_cmd_register(&command);
-}
 
 void app_main(void)
 {
@@ -254,8 +238,6 @@ void app_main(void)
 
     /* register command `ping` */
     register_ping();
-    /* register command `quit` */
-    register_quit();
 
     // start console REPL
     ESP_ERROR_CHECK(esp_console_start_repl(s_repl));

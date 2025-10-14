@@ -1,0 +1,3 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+components/esp_libc/test_apps/newlib:

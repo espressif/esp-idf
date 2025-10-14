@@ -67,7 +67,7 @@ menu "Example Configuration"
 
     config EXAMPLE_FAST_SCAN_RSSI_5G_ADJUSTMENT
         int "fast scan rssi 5g adjustment"
-        depends on EXAMPLE_FAST_SCAN_THRESHOLD && SOC_WIFI_SUPPORT_5G
+        depends on EXAMPLE_FAST_SCAN_THRESHOLD && (SOC_WIFI_SUPPORT_5G || SLAVE_SOC_WIFI_SUPPORT_5G)
         range 0 128
         default 10
         help

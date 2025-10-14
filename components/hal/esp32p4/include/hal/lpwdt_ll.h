@@ -121,7 +121,8 @@ lpwdt_ll_config_stage(lp_wdt_dev_t *hw, wdt_stage_t stage, uint32_t timeout_tick
     switch (stage) {
         case WDT_STAGE0:
             hw->config0.wdt_stg0 = behavior;
-            hw->config1.wdt_stg0_hold = timeout_ticks;
+            //Account of implicty multiplier applied to stage 0 timeout tick config value
+            hw->config1.wdt_stg0_hold = timeout_ticks >> (1 + REG_GET_FIELD(EFUSE_RD_REPEAT_DATA1_REG, EFUSE_WDT_DELAY_SEL));
             break;
         case WDT_STAGE1:
             hw->config0.wdt_stg1 = behavior;

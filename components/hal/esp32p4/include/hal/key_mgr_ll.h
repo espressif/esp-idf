@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,10 +19,21 @@
 #include "hal/key_mgr_types.h"
 #include "soc/keymng_reg.h"
 #include "soc/hp_sys_clkrst_struct.h"
+#include "esp_private/esp_crypto_lock_internal.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+static inline void key_mgr_ll_power_up(void)
+{
+    // TODO: IDF-13524
+}
+
+static inline void key_mgr_ll_power_down(void)
+{
+    // TODO: IDF-13524
+}
 
 /**
  * @brief Enable the bus clock for Key Manager peripheral
@@ -37,7 +48,10 @@ static inline void _key_mgr_ll_enable_bus_clock(bool enable)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define key_mgr_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _key_mgr_ll_enable_bus_clock(__VA_ARGS__)
+#define key_mgr_ll_enable_bus_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _key_mgr_ll_enable_bus_clock(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Enable the peripheral clock for Key Manager
@@ -51,7 +65,10 @@ static inline void _key_mgr_ll_enable_peripheral_clock(bool enable)
     HP_SYS_CLKRST.peri_clk_ctrl25.reg_crypto_km_clk_en = enable;
 }
 
-#define key_mgr_ll_enable_peripheral_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _key_mgr_ll_enable_peripheral_clock(__VA_ARGS__)
+#define key_mgr_ll_enable_peripheral_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _key_mgr_ll_enable_peripheral_clock(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Read state of Key Manager
@@ -82,7 +99,10 @@ static inline void _key_mgr_ll_reset_register(void)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define key_mgr_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; _key_mgr_ll_reset_register(__VA_ARGS__)
+#define key_mgr_ll_reset_register(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _key_mgr_ll_reset_register(__VA_ARGS__); \
+    } while(0)
 
 /* @brief Start the key manager at IDLE state */
 static inline void key_mgr_ll_start(void)
@@ -149,7 +169,8 @@ static inline void key_mgr_ll_use_sw_init_key(void)
 static inline void key_mgr_ll_set_key_usage(const esp_key_mgr_key_type_t key_type, const esp_key_mgr_key_usage_t key_usage)
 {
     switch (key_type) {
-        case ESP_KEY_MGR_ECDSA_KEY:
+        case ESP_KEY_MGR_ECDSA_192_KEY:
+        case ESP_KEY_MGR_ECDSA_256_KEY:
             if (key_usage == ESP_KEY_MGR_USE_EFUSE_KEY) {
                 REG_SET_BIT(KEYMNG_STATIC_REG, KEYMNG_USE_EFUSE_KEY_ECDSA);
             } else {
@@ -173,7 +194,8 @@ static inline void key_mgr_ll_set_key_usage(const esp_key_mgr_key_type_t key_typ
 static inline esp_key_mgr_key_usage_t key_mgr_ll_get_key_usage(esp_key_mgr_key_type_t key_type)
 {
     switch (key_type) {
-        case ESP_KEY_MGR_ECDSA_KEY:
+        case ESP_KEY_MGR_ECDSA_192_KEY:
+        case ESP_KEY_MGR_ECDSA_256_KEY:
             return (esp_key_mgr_key_usage_t) (REG_GET_BIT(KEYMNG_STATIC_REG, KEYMNG_USE_EFUSE_KEY_ECDSA));
             break;
 
@@ -207,20 +229,38 @@ static inline void key_mgr_ll_lock_use_sw_init_key_reg(void)
 static inline void key_mgr_ll_lock_use_efuse_key_reg(esp_key_mgr_key_type_t key_type)
 {
     switch(key_type) {
-        case ESP_KEY_MGR_ECDSA_KEY:
+        case ESP_KEY_MGR_ECDSA_192_KEY:
+        case ESP_KEY_MGR_ECDSA_256_KEY:
             REG_SET_BIT(KEYMNG_LOCK_REG, KEYMNG_USE_EFUSE_KEY_LOCK_ECDSA);
             break;
         case ESP_KEY_MGR_XTS_AES_128_KEY:
         case ESP_KEY_MGR_XTS_AES_256_KEY:
             REG_SET_BIT(KEYMNG_LOCK_REG, KEYMNG_USE_EFUSE_KEY_LOCK_XTS);
             break;
+        default:
+            HAL_ASSERT(false && "Unsupported key type");
+            return;
     }
 }
 
 /* @brief Configure the key purpose to be used by the Key Manager for key generator operation */
 static inline void key_mgr_ll_set_key_purpose(const esp_key_mgr_key_purpose_t key_purpose)
 {
-    REG_SET_FIELD(KEYMNG_CONF_REG, KEYMNG_KEY_PURPOSE, key_purpose);
+    switch(key_purpose) {
+        case ESP_KEY_MGR_KEY_PURPOSE_ECDSA_192:
+        case ESP_KEY_MGR_KEY_PURPOSE_ECDSA_256:
+            REG_SET_FIELD(KEYMNG_CONF_REG, KEYMNG_KEY_PURPOSE, KEYMNG_KEY_PURPOSE_ECDSA);
+            break;
+        case ESP_KEY_MGR_KEY_PURPOSE_XTS_AES_256_1:
+            REG_SET_FIELD(KEYMNG_CONF_REG, KEYMNG_KEY_PURPOSE, KEYMNG_KEY_PURPOSE_XTS_AES_256_1);
+            break;
+        case ESP_KEY_MGR_KEY_PURPOSE_XTS_AES_256_2:
+            REG_SET_FIELD(KEYMNG_CONF_REG, KEYMNG_KEY_PURPOSE, KEYMNG_KEY_PURPOSE_XTS_AES_256_2);
+            break;
+        default:
+            HAL_ASSERT(false && "Unsupported mode");
+            return;
+    }
 }
 
 /**
@@ -250,7 +290,8 @@ static inline bool key_mgr_ll_is_key_deployment_valid(const esp_key_mgr_key_type
 {
     switch (key_type) {
 
-        case ESP_KEY_MGR_ECDSA_KEY:
+        case ESP_KEY_MGR_ECDSA_192_KEY:
+        case ESP_KEY_MGR_ECDSA_256_KEY:
             return REG_GET_FIELD(KEYMNG_KEY_VLD_REG, KEYMNG_KEY_ECDSA_VLD);
             break;
 

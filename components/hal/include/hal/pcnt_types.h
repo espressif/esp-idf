@@ -1,13 +1,29 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #pragma once
 
+#include "soc/clk_tree_defs.h"
+#include "soc/soc_caps.h"
+
 #ifdef __cplusplus
 extern "C" {
+#endif
+
+#if SOC_HAS(PCNT)
+/**
+ * @brief PCNT clock source
+ * @note User should select the clock source based on the power and resolution requirement
+ */
+typedef soc_periph_pcnt_clk_src_t pcnt_clock_source_t;
+#else
+/**
+ * @brief Default type
+ */
+typedef int                       pcnt_clock_source_t;
 #endif
 
 /**
@@ -38,6 +54,14 @@ typedef enum {
     PCNT_UNIT_ZERO_CROSS_POS_NEG,  /*!< start from positive value, end to negative value, i.e. +N->-M */
     PCNT_UNIT_ZERO_CROSS_INVALID,  /*!< invalid zero cross mode */
 } pcnt_unit_zero_cross_mode_t;
+
+/**
+ * @brief PCNT step direction
+ */
+typedef enum {
+    PCNT_STEP_FORWARD,  /*!< step forward, e.g., [N]->[N+1]->[N+2]->... */
+    PCNT_STEP_BACKWARD, /*!< step backward, e.g., [N]->[N-1]->[N-2]->... */
+} pcnt_step_direction_t;
 
 #ifdef __cplusplus
 }

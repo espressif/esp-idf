@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -425,4 +425,16 @@ esp_err_t protocomm_unset_version(protocomm_t *pc, const char *ep_name)
     }
 
     return protocomm_remove_endpoint(pc, ep_name);
+}
+
+esp_err_t protocomm_get_sec_version(protocomm_t *pc, int *sec_ver, uint8_t *sec_patch_ver)
+{
+    if (pc == NULL || sec_ver == NULL || sec_patch_ver == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    *sec_ver = pc->sec->ver;
+    *sec_patch_ver = pc->sec->patch_ver;
+
+    return ESP_OK;
 }

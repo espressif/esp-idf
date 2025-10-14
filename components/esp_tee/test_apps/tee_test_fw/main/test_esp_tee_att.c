@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -29,14 +29,14 @@
 #define ECDSA_SECP256R1_KEY_LEN  (32)
 
 #define ESP_ATT_TK_BUF_SIZE      (1792)
-#define ESP_ATT_TK_PSA_CERT_REF  ("0716053550477-10100")
+#define ESP_ATT_TK_PSA_CERT_REF  ("0632793520245-10010")
 
 #define ESP_ATT_TK_NONCE         (0xABCD1234)
 #define ESP_ATT_TK_CLIENT_ID     (0x0FACADE0)
 
 static const char *TAG = "test_esp_tee_att";
 
-extern int verify_ecdsa_secp256r1_sign(const uint8_t *digest, size_t len, const esp_tee_sec_storage_pubkey_t *pubkey, const esp_tee_sec_storage_sign_t *sign);
+extern int verify_ecdsa_sign(const uint8_t *digest, size_t len, const esp_tee_sec_storage_ecdsa_pubkey_t *pubkey, const esp_tee_sec_storage_ecdsa_sign_t *sign, bool is_crv_p192);
 
 static uint8_t hexchar_to_byte(char hex)
 {
@@ -72,7 +72,7 @@ static void hexstr_to_bytes(const char *hex_str, uint8_t **hex_buf, size_t *buf_
     }
 }
 
-static int decompress_ecdsa_pubkey(const mbedtls_ecp_group *grp, const unsigned char *input, size_t ilen, esp_tee_sec_storage_pubkey_t *pubkey)
+static int decompress_ecdsa_pubkey(const mbedtls_ecp_group *grp, const unsigned char *input, size_t ilen, esp_tee_sec_storage_ecdsa_pubkey_t *pubkey)
 {
     int ret = -1;
     mbedtls_mpi r, x, n;
@@ -186,7 +186,7 @@ static void prehash_token_data(const char *token_json, uint8_t *digest, size_t l
     cJSON_Delete(root);
 }
 
-static void fetch_pubkey(const char *token_json, esp_tee_sec_storage_pubkey_t *pubkey_ctx)
+static void fetch_pubkey(const char *token_json, esp_tee_sec_storage_ecdsa_pubkey_t *pubkey_ctx)
 {
     TEST_ASSERT_NOT_NULL(token_json);
     TEST_ASSERT_NOT_NULL(pubkey_ctx);
@@ -218,7 +218,7 @@ static void fetch_pubkey(const char *token_json, esp_tee_sec_storage_pubkey_t *p
     cJSON_Delete(root);
 }
 
-static void fetch_signature(const char *token_json, esp_tee_sec_storage_sign_t *sign_ctx)
+static void fetch_signature(const char *token_json, esp_tee_sec_storage_ecdsa_sign_t *sign_ctx)
 {
     TEST_ASSERT_NOT_NULL(token_json);
     TEST_ASSERT_NOT_NULL(sign_ctx);
@@ -256,7 +256,6 @@ TEST_CASE("Test TEE Attestation - Generate and verify the EAT", "[attestation]")
     uint8_t *token_buf = heap_caps_calloc(ESP_ATT_TK_BUF_SIZE, sizeof(uint8_t), MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
     TEST_ASSERT_NOT_NULL(token_buf);
 
-    ESP_LOGI(TAG, "Generating EAT for all active firmwares (Bootloader, TEE and non-secure app)...");
     // Generating the attestation token
     uint32_t token_len = 0;
     TEST_ESP_OK(esp_tee_att_generate_token(0xA1B2C3D4, 0x0FACADE0, (const char *)ESP_ATT_TK_PSA_CERT_REF,
@@ -268,16 +267,15 @@ TEST_CASE("Test TEE Attestation - Generate and verify the EAT", "[attestation]")
     prehash_token_data((const char *)token_buf, digest, sizeof(digest));
 
     // Fetching and decompressing the public key
-    esp_tee_sec_storage_pubkey_t pubkey_ctx = {};
+    esp_tee_sec_storage_ecdsa_pubkey_t pubkey_ctx = {};
     fetch_pubkey((const char *)token_buf, &pubkey_ctx);
 
     // Fetching the signature components
-    esp_tee_sec_storage_sign_t sign_ctx = {};
+    esp_tee_sec_storage_ecdsa_sign_t sign_ctx = {};
     fetch_signature((const char *)token_buf, &sign_ctx);
 
-    ESP_LOGI(TAG, "Verifying the generated EAT...");
     // Verifying the generated token
-    TEST_ASSERT_EQUAL(0, verify_ecdsa_secp256r1_sign(digest, sizeof(digest), &pubkey_ctx, &sign_ctx));
+    TEST_ASSERT_EQUAL(0, verify_ecdsa_sign(digest, sizeof(digest), &pubkey_ctx, &sign_ctx, false));
     free(token_buf);
 }
 

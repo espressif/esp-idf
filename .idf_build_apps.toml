@@ -1,0 +1,63 @@
+config_rules = [
+    'sdkconfig.ci=default',
+    'sdkconfig.ci.*=',
+    '=default',
+]
+
+extra_pythonpaths = [
+    '$IDF_PATH/tools/ci/python_packages',
+    '$IDF_PATH/tools/ci',
+    '$IDF_PATH/tools',
+]
+build_system = "idf_ci_local.app:IdfCMakeApp"
+
+recursive = true
+check_warnings = true
+keep_going = true
+copy_sdkconfig = true
+ignore_warning_files = [
+    '$IDF_PATH/tools/ci/ignore_build_warnings.txt',
+]
+
+build_dir = "build_@t_@w"
+build_log_filename = "build_log.txt"
+size_json_filename = "size_${CI_JOB_ID}.json"
+
+verbose = 1  # INFO
+
+# collect
+collect_app_info_filename = "app_info_${CI_JOB_NAME_SLUG}.txt"
+junitxml = "build_summary_${CI_JOB_NAME_SLUG}.xml"
+
+# manifest
+check_manifest_rules = true
+manifest_rootpath = "$IDF_PATH"
+manifest_filepatterns = [
+    '**/.build-test-rules.yml',
+]
+
+# dependency-driven build
+deactivate_dependency_driven_build_by_components = [
+    'cxx',
+    'esp_common',
+    'esp_hw_support',
+    'esp_rom',
+    'esp_system',
+    'esp_timer',
+    'freertos',
+    'hal',
+    'heap',
+    'log',
+    'esp_libc',
+    'riscv',
+    'soc',
+    'xtensa',
+]
+
+deactivate_dependency_driven_build_by_filepatterns = [
+    # tools
+    'tools/cmake/**/*',
+    'tools/tools.json',
+    # ci
+    'tools/ci/ignore_build_warnings.txt',
+]

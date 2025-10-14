@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -8,10 +8,11 @@
 #include "freertos/task.h"
 #include "unity.h"
 #include "driver/gpio.h"
+#include "esp_private/gpio.h"
 #include "esp_err.h"
 #include "esp_clock_output.h"
 #include "hal/gpio_hal.h"
-
+#include "soc/uart_pins.h"
 #include "soc/rtc.h"
 
 #define TEST_LOOPS 100
@@ -98,8 +99,8 @@ TEST_CASE("GPIO output internal clock", "[gpio_output_clock][ignore]")
 #if CONFIG_IDF_TARGET_ESP32
     /* ESP32 clock out channel pin reuses UART TX/RX pin, restore its default
        configuration at the end of the test */
-    gpio_hal_iomux_func_sel(PERIPHS_IO_MUX_U0RXD_U, FUNC_U0RXD_U0RXD);
-    gpio_hal_iomux_func_sel(PERIPHS_IO_MUX_U0TXD_U, FUNC_U0TXD_U0TXD);
+    gpio_iomux_output(U0RXD_GPIO_NUM, FUNC_U0RXD_U0RXD);
+    gpio_iomux_output(U0TXD_GPIO_NUM, FUNC_U0TXD_U0TXD);
 #endif
 }
 
@@ -153,9 +154,9 @@ TEST_CASE("GPIO output internal clock one-to-many", "[gpio_output_clock][ignore]
     TEST_ESP_OK(esp_clock_output_start(test_clk_out_sig[3], test_clk_out_io[0], &clkout_mapping_hdl_7));    // [0]:1  [1]:0 [2]:2
 
     // Stop all
-    esp_clock_output_stop(clkout_mapping_hdl_2);
-    esp_clock_output_stop(clkout_mapping_hdl_5);
-    esp_clock_output_stop(clkout_mapping_hdl_6);
-    esp_clock_output_stop(clkout_mapping_hdl_7);
+    TEST_ESP_OK(esp_clock_output_stop(clkout_mapping_hdl_2));
+    TEST_ESP_OK(esp_clock_output_stop(clkout_mapping_hdl_5));
+    // clkout_mapping_hdl_6 never been alloc succeed, not need to do stop.
+    TEST_ESP_OK(esp_clock_output_stop(clkout_mapping_hdl_7));
 }
 #endif

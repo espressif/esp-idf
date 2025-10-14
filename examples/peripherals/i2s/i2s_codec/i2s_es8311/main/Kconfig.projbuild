@@ -1,5 +1,54 @@
 menu "Example Configuration"
 
+    menu "Example IO Configuration"
+        config EXAMPLE_PA_CTRL_IO
+            int "Power Amplifier control IO"
+            default 53 if IDF_TARGET_ESP32P4
+            default -1
+            help
+                Set GPIO number for PA control. Set -1 to disable PA control.
+
+        config EXAMPLE_I2C_SDA_IO
+            int "I2C SDA IO"
+            default 17 if IDF_TARGET_ESP32 || IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
+            default 9 if IDF_TARGET_ESP32H2
+            default 7
+
+        config EXAMPLE_I2C_SCL_IO
+            int "I2C SCL IO"
+            default 16 if IDF_TARGET_ESP32 || IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
+            default 8 if IDF_TARGET_ESP32H2 || IDF_TARGET_ESP32P4
+            default 6
+
+        config EXAMPLE_I2S_MCLK_IO
+            int "I2S MCLK IO"
+            default 13 if IDF_TARGET_ESP32P4
+            default 0
+
+        config EXAMPLE_I2S_BCLK_IO
+            int "I2S BCLK IO"
+            default 12 if IDF_TARGET_ESP32P4
+            default 4
+
+        config EXAMPLE_I2S_WS_IO
+            int "I2S WS IO"
+            default 10 if IDF_TARGET_ESP32P4
+            default 5
+
+        config EXAMPLE_I2S_DIN_IO
+            int "I2S DIN IO"
+            default 19 if IDF_TARGET_ESP32 || IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
+            default 11 if IDF_TARGET_ESP32P4
+            default 3
+
+        config EXAMPLE_I2S_DOUT_IO
+            int "I2S DOUT IO"
+            default 18 if IDF_TARGET_ESP32 || IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
+            default 9 if IDF_TARGET_ESP32P4
+            default 2
+
+    endmenu
+
     choice EXAMPLE_MODE
         prompt "Example mode"
         default EXAMPLE_MODE_MUSIC
@@ -13,41 +62,12 @@ menu "Example Configuration"
             bool "echo"
     endchoice
 
-    choice EXAMPLE_SELECT_MIC_GAIN
-        prompt "Set MIC gain"
+    config EXAMPLE_MIC_GAIN
+        int "Set MIC gain (unit: dB)"
         depends on EXAMPLE_MODE_ECHO
-        default MIC_GAIN_18DB
+        default 18
         help
             Select mic gain for echo mode
-
-        config MIC_GAIN_0DB
-            bool "0dB"
-        config MIC_GAIN_6DB
-            bool "6dB"
-        config MIC_GAIN_12DB
-            bool "12dB"
-        config MIC_GAIN_18DB
-            bool "18dB"
-        config MIC_GAIN_24DB
-            bool "24dB"
-        config MIC_GAIN_30DB
-            bool "30dB"
-        config MIC_GAIN_36DB
-            bool "36dB"
-        config MIC_GAIN_42DB
-            bool "42dB"
-    endchoice
-
-    config EXAMPLE_MIC_GAIN
-        int
-        default 0 if MIC_GAIN_0DB
-        default 1 if MIC_GAIN_6DB
-        default 2 if MIC_GAIN_12DB
-        default 3 if MIC_GAIN_18DB
-        default 4 if MIC_GAIN_24DB
-        default 5 if MIC_GAIN_30DB
-        default 6 if MIC_GAIN_36DB
-        default 7 if MIC_GAIN_42DB
 
     config EXAMPLE_VOICE_VOLUME
         int "Voice volume"
@@ -55,10 +75,4 @@ menu "Example Configuration"
         default 60
         help
             Set voice volume
-
-    config EXAMPLE_BSP
-        bool "Enable Board Support Package (BSP) support"
-        default n
-        help
-            Use BSP to setup all hardware settings. Specific board must be selected in main/idf_component.yml file.
 endmenu

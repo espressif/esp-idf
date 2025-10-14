@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -52,4 +52,11 @@ const struct hci_h4_allocators s_hci_driver_mem_alloc = {
     .evt = hci_driver_mem_evt_alloc,
     .acl = hci_driver_mem_acl_alloc,
     .iso = hci_driver_mem_iso_alloc,
+};
+
+const struct hci_h4_frees s_hci_driver_mem_free = {
+    .cmd = r_ble_hci_trans_buf_free,
+    .evt = r_ble_hci_trans_buf_free,
+    .acl = os_mbuf_free_chain,
+    .iso = os_mbuf_free_chain,
 };

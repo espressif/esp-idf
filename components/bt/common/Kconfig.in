@@ -1,6 +1,257 @@
 config BT_ALARM_MAX_NUM
     int "Maximum number of Bluetooth alarms"
     default 50
+    depends on (BT_BLUEDROID_ENABLED || BT_NIMBLE_ENABLED)
     help
         This option decides the maximum number of alarms which
         could be used by Bluetooth host.
+
+menu "BLE Log"
+    source "$IDF_PATH/components/bt/common/ble_log/Kconfig.in"
+endmenu
+
+config BT_BLE_LOG_SPI_OUT_ENABLED
+    bool "Output ble logs to SPI bus (Experimental)"
+    default n
+    help
+        Output ble logs to SPI bus
+
+config BT_BLE_LOG_SPI_OUT_UL_TASK_BUF_SIZE
+    int "SPI transaction buffer size for upper layer task logs"
+    depends on BT_BLE_LOG_SPI_OUT_ENABLED
+    default 512
+    help
+        SPI transaction buffer size for upper layer task logs.
+        There will be 2 SPI DMA buffers with the same size.
+
+config BT_BLE_LOG_SPI_OUT_HCI_ENABLED
+    bool "Enable HCI log output to SPI"
+    depends on BT_BLE_LOG_SPI_OUT_ENABLED
+    default n
+    help
+        Enable logging of HCI packets to the SPI bus when BLE SPI log output is enabled.
+
+config BT_BLE_LOG_SPI_OUT_HCI_BUF_SIZE
+    int "SPI transaction buffer size for HCI logs"
+    depends on BT_BLE_LOG_SPI_OUT_HCI_ENABLED
+    default 1024
+    help
+        SPI transaction buffer size for HCI logs.
+        There will be 2 SPI DMA buffers with the same size.
+
+config BT_BLE_LOG_SPI_OUT_HCI_TASK_CNT
+    int "HCI task count"
+    depends on BT_BLE_LOG_SPI_OUT_HCI_ENABLED
+    default 1
+    help
+        HCI task count
+
+config BT_BLE_LOG_SPI_OUT_HOST_ENABLED
+    bool "Enable Host log output to SPI"
+    depends on BT_BLE_LOG_SPI_OUT_ENABLED
+    default n
+    help
+        This configuration applies to the logs of both Bluedroid Host and NimBLE Host.
+        When BLE SPI log output is enabled, this option allows host logs to be transmitted via SPI.
+
+config BT_BLE_LOG_SPI_OUT_HOST_BUF_SIZE
+    int "SPI transaction buffer size for host logs"
+    depends on BT_BLE_LOG_SPI_OUT_HOST_ENABLED
+    default 1024
+    help
+        SPI transaction buffer size for host logs.
+        There will be 2 SPI DMA buffers with the same size.
+
+config BT_BLE_LOG_SPI_OUT_HOST_TASK_CNT
+    int "Host task count"
+    depends on BT_BLE_LOG_SPI_OUT_HOST_ENABLED
+    default 2
+    help
+        Host task count.
+
+config BT_BLE_LOG_SPI_OUT_LL_ENABLED
+    bool "Enable Controller log output to SPI"
+    depends on BT_BLE_LOG_SPI_OUT_ENABLED
+    depends on BT_LE_CONTROLLER_LOG_SPI_OUT_ENABLED
+    default n
+    help
+        Enable controller log output to SPI bus.
+
+config BT_BLE_LOG_SPI_OUT_LL_TASK_BUF_SIZE
+    int "SPI transaction buffer size for lower layer task logs"
+    depends on BT_BLE_LOG_SPI_OUT_LL_ENABLED
+    default 1024
+    help
+        SPI transaction buffer size for lower layer task logs.
+        There will be 2 SPI DMA buffers with the same size.
+
+config BT_BLE_LOG_SPI_OUT_LL_ISR_BUF_SIZE
+    int "SPI transaction buffer size for lower layer ISR logs"
+    depends on BT_BLE_LOG_SPI_OUT_LL_ENABLED
+    default 512
+    help
+        SPI transaction buffer size for lower layer ISR logs.
+        There will be 2 SPI DMA buffers with the same size.
+
+config BT_BLE_LOG_SPI_OUT_LL_HCI_BUF_SIZE
+    int "SPI transaction buffer size for lower layer HCI logs"
+    depends on BT_BLE_LOG_SPI_OUT_LL_ENABLED
+    default 512
+    help
+        SPI transaction buffer size for upper layer HCI logs.
+        There will be 2 SPI DMA buffers with the same size
+
+config BT_BLE_LOG_SPI_OUT_MOSI_IO_NUM
+    int "GPIO number of SPI MOSI"
+    depends on BT_BLE_LOG_SPI_OUT_ENABLED
+    default 0
+    help
+        GPIO number of SPI MOSI
+
+config BT_BLE_LOG_SPI_OUT_SCLK_IO_NUM
+    int "GPIO number of SPI SCLK"
+    depends on BT_BLE_LOG_SPI_OUT_ENABLED
+    default 1
+    help
+        GPIO number of SPI SCLK
+
+config BT_BLE_LOG_SPI_OUT_CS_IO_NUM
+    int "GPIO number of SPI CS"
+    depends on BT_BLE_LOG_SPI_OUT_ENABLED
+    default 2
+    help
+        GPIO number of SPI CS
+
+config BT_BLE_LOG_SPI_OUT_TS_SYNC_ENABLED
+    bool "Enable ble log & logic analyzer log time sync"
+    depends on BT_BLE_LOG_SPI_OUT_ENABLED
+    default y
+    help
+        Enable ble log & logic analyzer log time sync
+
+config BT_BLE_LOG_SPI_OUT_SYNC_IO_NUM
+    int "GPIO number of SYNC IO"
+    depends on BT_BLE_LOG_SPI_OUT_TS_SYNC_ENABLED
+    default 3
+    help
+        GPIO number of SYNC IO
+
+config BT_BLE_LOG_SPI_OUT_FLUSH_TIMER_ENABLED
+    bool "Enable periodic buffer flush out"
+    depends on BT_BLE_LOG_SPI_OUT_ENABLED
+    default n
+    help
+        Enable periodic buffer flush out
+        Not recommended when SPI receiver is unavailable
+
+config BT_BLE_LOG_SPI_OUT_FLUSH_TIMEOUT
+    int "Buffer flush out period in unit of ms"
+    depends on BT_BLE_LOG_SPI_OUT_FLUSH_TIMER_ENABLED
+    default 1000
+    help
+        Buffer flush out period in unit of ms
+
+config BT_BLE_LOG_SPI_OUT_LE_AUDIO_ENABLED
+    bool "Enable LE Audio log output to SPI"
+    depends on BT_BLE_LOG_SPI_OUT_ENABLED
+    default n
+    help
+        Enable LE Audio log output to SPI
+
+config BT_BLE_LOG_SPI_OUT_LE_AUDIO_BUF_SIZE
+    int "SPI transaction buffer size for LE Audio logs"
+    depends on BT_BLE_LOG_SPI_OUT_LE_AUDIO_ENABLED
+    default 1024
+    help
+        SPI transaction buffer size for LE Audio logs.
+        There will be 2 SPI DMA buffers with the same size.
+
+config BT_BLE_LOG_SPI_OUT_LE_AUDIO_TASK_CNT
+    int "LE audio task count"
+    depends on BT_BLE_LOG_SPI_OUT_LE_AUDIO_ENABLED
+    default 1
+    help
+        LE audio task count
+
+config BT_BLE_LOG_SPI_OUT_MESH_ENABLED
+    bool "Enable BLE mesh log output to SPI"
+    depends on BT_BLE_LOG_SPI_OUT_ENABLED
+    default n
+    help
+        Enable BLE mesh log output to SPI
+
+config BT_BLE_LOG_SPI_OUT_MESH_BUF_SIZE
+    int "SPI transaction buffer size for BLE mesh logs"
+    depends on BT_BLE_LOG_SPI_OUT_MESH_ENABLED
+    default 1024
+    help
+        SPI transaction buffer size for BLE mesh logs.
+        There will be 2 SPI DMA buffers with the same size.
+
+config BT_BLE_LOG_SPI_OUT_MESH_TASK_CNT
+    int "Mesh task count"
+    depends on BT_BLE_LOG_SPI_OUT_MESH_ENABLED
+    default 3
+    help
+        Mesh task count
+
+config BT_BLE_LOG_UHCI_OUT_ENABLED
+    bool "Output ble logs via UHCI (UART DMA) driver (Experimental)"
+    default n
+    help
+        Output ble logs via UHCI (UART DMA) driver
+        On enable, BT_BLE_LOG_UHCI_OUT_UART_PORT would be reinited with
+        BT_BLE_LOG_UHCI_OUT_UART_BAUD_RATE as new baud rate and
+        BT_BLE_LOG_UHCI_OUT_UART_IO_NUM_TX as new UART Tx IO
+
+config BT_BLE_LOG_UHCI_OUT_UART_PORT
+    int "UART port connected to UHCI controller"
+    depends on BT_BLE_LOG_UHCI_OUT_ENABLED
+    default 0
+    help
+        UART port connected to UHCI controller
+        If UART port 0 is selected, UART VFS Driver, UART ROM Driver
+        and UART Driver output would be redirected to BLE Log UHCI Out
+        to solve UART Tx FIFO multi-task access issue
+
+config BT_BLE_LOG_UHCI_OUT_LL_TASK_BUF_SIZE
+    int "UHCI transaction buffer size for lower layer task logs"
+    depends on BT_BLE_LOG_UHCI_OUT_ENABLED
+    default 1024
+    help
+        UHCI transaction buffer size for lower layer task logs
+
+config BT_BLE_LOG_UHCI_OUT_LL_ISR_BUF_SIZE
+    int "UHCI transaction buffer size for lower layer ISR logs"
+    depends on BT_BLE_LOG_UHCI_OUT_ENABLED
+    default 1024
+    help
+        UHCI transaction buffer size for lower layer ISR logs
+
+config BT_BLE_LOG_UHCI_OUT_LL_HCI_BUF_SIZE
+    int "UHCI transaction buffer size for lower layer HCI logs"
+    depends on BT_BLE_LOG_UHCI_OUT_ENABLED
+    default 1024
+    help
+        UHCI transaction buffer size for lower layer HCI logs
+
+config BT_BLE_LOG_UHCI_OUT_UART_NEED_INIT
+    bool "Enable to init UART port"
+    depends on BT_BLE_LOG_UHCI_OUT_ENABLED
+    default y
+    help
+        Enable to init UART port
+
+config BT_BLE_LOG_UHCI_OUT_UART_BAUD_RATE
+    int "Baud rate for BT_BLE_LOG_UHCI_OUT_UART_PORT"
+    depends on BT_BLE_LOG_UHCI_OUT_UART_NEED_INIT
+    default 3000000
+    help
+        Baud rate for BT_BLE_LOG_UHCI_OUT_UART_PORT
+
+config BT_BLE_LOG_UHCI_OUT_UART_IO_NUM_TX
+    int "IO number for UART TX port"
+    depends on BT_BLE_LOG_UHCI_OUT_UART_NEED_INIT
+    default 0
+    help
+        IO number for UART TX port

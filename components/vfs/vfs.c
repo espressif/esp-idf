@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -144,7 +144,7 @@ static esp_vfs_fs_ops_t *esp_minify_vfs(const esp_vfs_t * const vfs, vfs_compone
 #ifdef CONFIG_VFS_SUPPORT_DIR
     // If the dir functions are not implemented, we don't need to convert them
     if (proxy.dir != NULL) {
-        *(proxy.dir) = (esp_vfs_dir_ops_t) {
+        esp_vfs_dir_ops_t tmp = {
             .stat = vfs->stat,
             .link = vfs->link,
             .unlink = vfs->unlink,
@@ -162,13 +162,15 @@ static esp_vfs_fs_ops_t *esp_minify_vfs(const esp_vfs_t * const vfs, vfs_compone
             .ftruncate = vfs->ftruncate,
             .utime = vfs->utime,
         };
+
+        memcpy(proxy.dir, &tmp, sizeof(esp_vfs_dir_ops_t));
     }
 #endif // CONFIG_VFS_SUPPORT_DIR
 
 #ifdef CONFIG_VFS_SUPPORT_TERMIOS
     // If the termios functions are not implemented, we don't need to convert them
     if (proxy.termios != NULL) {
-        *(proxy.termios) = (esp_vfs_termios_ops_t) {
+        esp_vfs_termios_ops_t tmp = {
             .tcsetattr = vfs->tcsetattr,
             .tcgetattr = vfs->tcgetattr,
             .tcdrain = vfs->tcdrain,
@@ -177,13 +179,15 @@ static esp_vfs_fs_ops_t *esp_minify_vfs(const esp_vfs_t * const vfs, vfs_compone
             .tcgetsid = vfs->tcgetsid,
             .tcsendbreak = vfs->tcsendbreak,
         };
+
+        memcpy(proxy.termios, &tmp, sizeof(esp_vfs_termios_ops_t));
     }
 #endif // CONFIG_VFS_SUPPORT_TERMIOS
 
 #ifdef CONFIG_VFS_SUPPORT_SELECT
     // If the select functions are not implemented, we don't need to convert them
     if (proxy.select != NULL) {
-        *(proxy.select) = (esp_vfs_select_ops_t) {
+        esp_vfs_select_ops_t tmp = {
             .start_select = vfs->start_select,
             .socket_select = vfs->socket_select,
             .stop_socket_select = vfs->stop_socket_select,
@@ -191,6 +195,8 @@ static esp_vfs_fs_ops_t *esp_minify_vfs(const esp_vfs_t * const vfs, vfs_compone
             .get_socket_select_semaphore = vfs->get_socket_select_semaphore,
             .end_select = vfs->end_select,
         };
+
+        memcpy(proxy.select, &tmp, sizeof(esp_vfs_select_ops_t));
     }
 #endif // CONFIG_VFS_SUPPORT_SELECT
 
@@ -389,20 +395,38 @@ fail:
     return ESP_ERR_NO_MEM;
 }
 
-static esp_err_t esp_vfs_register_fs_common(const char* base_path, size_t len, const esp_vfs_fs_ops_t* vfs, int flags, void* ctx, int *vfs_index)
+static bool is_path_prefix_valid(const char *path, size_t length) {
+    return (length >= 2)
+        && (length <= ESP_VFS_PATH_MAX)
+        && (path[0] == '/')
+        && (path[length - 1] != '/');
+}
+
+static esp_err_t esp_vfs_register_fs_common(
+    const char *base_path,
+    const esp_vfs_fs_ops_t *vfs,
+    int flags,
+    void *ctx,
+    int *vfs_index)
 {
+    if (s_vfs_count >= VFS_MAX_COUNT) {
+        return  ESP_ERR_NO_MEM;
+    }
+
     if (vfs == NULL) {
         ESP_LOGE(TAG, "VFS is NULL");
         return ESP_ERR_INVALID_ARG;
     }
 
-    if (len != LEN_PATH_PREFIX_IGNORED) {
-        /* empty prefix is allowed, "/" is not allowed */
-        if ((len == 1) || (len > ESP_VFS_PATH_MAX)) {
-            return ESP_ERR_INVALID_ARG;
-        }
-        /* prefix has to start with "/" and not end with "/" */
-        if (len >= 2 && ((base_path[0] != '/') || (base_path[len - 1] == '/'))) {
+    size_t base_path_len = 0;
+    const char *_base_path = "";
+
+    if (base_path != NULL) {
+        base_path_len = strlen(base_path);
+        _base_path = base_path;
+
+        if (base_path_len != 0 && !is_path_prefix_valid(base_path, base_path_len)) {
+            ESP_LOGE(TAG, "Invalid path prefix");
             return ESP_ERR_INVALID_ARG;
         }
     }
@@ -420,22 +444,20 @@ static esp_err_t esp_vfs_register_fs_common(const char* base_path, size_t len, c
         s_vfs_count++;
     }
 
-    vfs_entry_t *entry = (vfs_entry_t*) heap_caps_malloc(sizeof(vfs_entry_t), VFS_MALLOC_FLAGS);
+    vfs_entry_t *entry = heap_caps_malloc(sizeof(vfs_entry_t) + base_path_len + 1, VFS_MALLOC_FLAGS);
     if (entry == NULL) {
         return ESP_ERR_NO_MEM;
     }
 
     s_vfs[index] = entry;
-    if (len != LEN_PATH_PREFIX_IGNORED) {
-        strcpy(entry->path_prefix, base_path); // we have already verified argument length
-    } else {
-        bzero(entry->path_prefix, sizeof(entry->path_prefix));
-    }
-    entry->path_prefix_len = len;
+
+    entry->path_prefix_len = base_path == NULL ? LEN_PATH_PREFIX_IGNORED : base_path_len;
     entry->vfs = vfs;
     entry->ctx = ctx;
     entry->offset = index;
     entry->flags = flags;
+
+    memcpy((char *)(entry->path_prefix), _base_path, base_path_len + 1);
 
     if (vfs_index) {
         *vfs_index = index;
@@ -451,8 +473,13 @@ esp_err_t esp_vfs_register_fs(const char* base_path, const esp_vfs_fs_ops_t* vfs
         return ESP_ERR_INVALID_ARG;
     }
 
+    if (base_path == NULL) {
+        ESP_LOGE(TAG, "base_path cannot be null");
+        return ESP_ERR_INVALID_ARG;
+    }
+
     if ((flags & ESP_VFS_FLAG_STATIC)) {
-        return esp_vfs_register_fs_common(base_path, strlen(base_path), vfs, flags, ctx, NULL);
+        return esp_vfs_register_fs_common(base_path, vfs, flags, ctx, NULL);
     }
 
     esp_vfs_fs_ops_t *_vfs = esp_vfs_duplicate_fs_ops(vfs);
@@ -460,7 +487,7 @@ esp_err_t esp_vfs_register_fs(const char* base_path, const esp_vfs_fs_ops_t* vfs
         return ESP_ERR_NO_MEM;
     }
 
-    esp_err_t ret = esp_vfs_register_fs_common(base_path, strlen(base_path), _vfs, flags, ctx, NULL);
+    esp_err_t ret = esp_vfs_register_fs_common(base_path, _vfs, flags, ctx, NULL);
     if (ret != ESP_OK) {
         esp_vfs_free_fs_ops(_vfs);
         return ret;
@@ -481,13 +508,29 @@ esp_err_t esp_vfs_register_common(const char* base_path, size_t len, const esp_v
         return ESP_ERR_INVALID_ARG;
     }
 
+    if (len != LEN_PATH_PREFIX_IGNORED) {
+        if (base_path == NULL) {
+            ESP_LOGE(TAG, "Path prefix cannot be NULL");
+            return ESP_ERR_INVALID_ARG;
+        }
+
+        // This is for backwards compatibility
+        if (strlen(base_path) != len) {
+            ESP_LOGE(TAG, "Mismatch between real and given path prefix lengths.");
+            return ESP_ERR_INVALID_ARG;
+        }
+    } else {
+        // New API expects NULL in this case
+        base_path = NULL;
+    }
+
     esp_vfs_fs_ops_t *_vfs = NULL;
     esp_err_t ret = esp_vfs_make_fs_ops(vfs, &_vfs);
     if (ret != ESP_OK) {
         return ret;
     }
 
-    ret = esp_vfs_register_fs_common(base_path, len, _vfs, vfs->flags, ctx, vfs_index);
+    ret = esp_vfs_register_fs_common(base_path, _vfs, vfs->flags, ctx, vfs_index);
     if (ret != ESP_OK) {
         esp_vfs_free_fs_ops(_vfs);
         return ret;
@@ -523,7 +566,7 @@ esp_err_t esp_vfs_register_fd_range(const esp_vfs_t *vfs, void *ctx, int min_fd,
                     }
                 }
                 _lock_release(&s_fd_table_lock);
-                ESP_LOGD(TAG, "esp_vfs_register_fd_range cannot set fd %d (used by other VFS)", i);
+                ESP_LOGW(TAG, "esp_vfs_register_fd_range cannot set fd %d (used by other VFS)", i);
                 return ESP_ERR_INVALID_ARG;
             }
             s_fd_table[i].permanent = true;
@@ -532,7 +575,7 @@ esp_err_t esp_vfs_register_fd_range(const esp_vfs_t *vfs, void *ctx, int min_fd,
         }
         _lock_release(&s_fd_table_lock);
 
-        ESP_LOGW(TAG, "esp_vfs_register_fd_range is successful for range <%d; %d) and VFS ID %d", min_fd, max_fd, index);
+        ESP_LOGD(TAG, "esp_vfs_register_fd_range is successful for range <%d; %d) and VFS ID %d", min_fd, max_fd, index);
     }
 
     return ret;
@@ -545,7 +588,7 @@ esp_err_t esp_vfs_register_fs_with_id(const esp_vfs_fs_ops_t *vfs, int flags, vo
     }
 
     *vfs_id = -1;
-    return esp_vfs_register_fs_common("", LEN_PATH_PREFIX_IGNORED, vfs, flags, ctx, vfs_id);
+    return esp_vfs_register_fs_common(NULL, vfs, flags, ctx, vfs_id);
 }
 
 esp_err_t esp_vfs_register_with_id(const esp_vfs_t *vfs, void *ctx, esp_vfs_id_t *vfs_id)
@@ -1790,7 +1833,7 @@ int tcsendbreak(int fd, int duration)
 #endif // CONFIG_VFS_SUPPORT_TERMIOS
 
 
-/* Create aliases for newlib syscalls
+/* Create aliases for libc syscalls
 
    These functions are also available in ROM as stubs which use the syscall table, but linking them
    directly here saves an additional function call when a software function is linked to one, and

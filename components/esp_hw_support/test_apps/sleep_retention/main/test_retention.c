@@ -14,8 +14,9 @@
 #include "esp_sleep.h"
 #include "esp_private/sleep_cpu.h"
 
-const char TAG[] = "retention";
+ESP_LOG_ATTR_TAG(TAG, "retention");
 
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
 TEST_CASE("retention: can go to retention", "[retention]")
 {
     // Prepare a TOP PD sleep
@@ -35,3 +36,4 @@ TEST_CASE("retention: can go to retention", "[retention]")
 
     sleep_cpu_configure(false);
 }
+#endif

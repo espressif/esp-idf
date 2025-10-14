@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -328,7 +328,12 @@ typedef union {
          *  0: Enabled
          */
         uint32_t dis_usb_serial_jtag_rom_print:1;
-        uint32_t reserved_3:1;
+        /** flash_ldo_efuse_sel : RO; bitpos: [3]; default: 0;
+         *  Represents whether to select efuse control flash ldo default voltage.
+         *  1: efuse
+         *  0: strapping
+         */
+        uint32_t flash_ldo_efuse_sel:1;
         /** dis_usb_serial_jtag_download_mode : RO; bitpos: [4]; default: 0;
          *  Represents whether the USB-Serial-JTAG download function is disabled.
          *  1: Disabled
@@ -401,8 +406,8 @@ typedef union {
 
 
 /** Group: block1 registers */
-/** Type of rd_mac_sys0 register
- *  Represents rd_mac_sys
+/** Type of rd_mac_sys_0 register
+ *  Represents rd_mac_sys_
  */
 typedef union {
     struct {
@@ -414,8 +419,8 @@ typedef union {
     uint32_t val;
 } efuse_rd_mac_sys0_reg_t;
 
-/** Type of rd_mac_sys1 register
- *  Represents rd_mac_sys
+/** Type of rd_mac_sys_1 register
+ *  Represents rd_mac_sys_
  */
 typedef union {
     struct {
@@ -431,8 +436,8 @@ typedef union {
     uint32_t val;
 } efuse_rd_mac_sys1_reg_t;
 
-/** Type of rd_mac_sys2 register
- *  Represents rd_mac_sys
+/** Type of rd_mac_sys_2 register
+ *  Represents rd_mac_sys_
  */
 typedef union {
     struct {
@@ -448,8 +453,8 @@ typedef union {
     uint32_t val;
 } efuse_rd_mac_sys2_reg_t;
 
-/** Type of rd_mac_sys3 register
- *  Represents rd_mac_sys
+/** Type of rd_mac_sys_3 register
+ *  Represents rd_mac_sys_
  */
 typedef union {
     struct {
@@ -473,8 +478,8 @@ typedef union {
     uint32_t val;
 } efuse_rd_mac_sys3_reg_t;
 
-/** Type of rd_mac_sys4 register
- *  Represents rd_mac_sys
+/** Type of rd_mac_sys_4 register
+ *  Represents rd_mac_sys_
  */
 typedef union {
     struct {
@@ -501,8 +506,8 @@ typedef union {
     uint32_t val;
 } efuse_rd_mac_sys4_reg_t;
 
-/** Type of rd_mac_sys5 register
- *  Represents rd_mac_sys
+/** Type of rd_mac_sys_5 register
+ *  Represents rd_mac_sys_
  */
 typedef union {
     struct {
@@ -853,7 +858,10 @@ typedef union {
          *  Represents the programming error of EFUSE_DIS_USB_SERIAL_JTAG_ROM_PRINT
          */
         uint32_t dis_usb_serial_jtag_rom_print_err:1;
-        uint32_t reserved_3:1;
+        /** flash_ldo_efuse_sel_err : RO; bitpos: [3]; default: 0;
+         *  Represents the programming error of EFUSE_FLASH_LDO_EFUSE_SEL
+         */
+        uint32_t flash_ldo_efuse_sel_err:1;
         /** dis_usb_serial_jtag_download_mode_err : RO; bitpos: [4]; default: 0;
          *  Represents the programming error of EFUSE_DIS_USB_SERIAL_JTAG_DOWNLOAD_MODE
          */
@@ -911,17 +919,17 @@ typedef union {
  */
 typedef union {
     struct {
-        /** rd_mac_sys_err_num : RO; bitpos: [2:0]; default: 0;
+        /** rd_mac_sys__err_num : RO; bitpos: [2:0]; default: 0;
          *  Represents the error number of registers.
-         *  The value of this signal means the number of error bytes in rd_mac_sys
+         *  The value of this signal means the number of error bytes in rd_mac_sys_
          */
-        uint32_t rd_mac_sys_err_num:3;
-        /** rd_mac_sys_fail : RO; bitpos: [3]; default: 0;
+        uint32_t rd_mac_sys__err_num:3;
+        /** rd_mac_sys__fail : RO; bitpos: [3]; default: 0;
          *  Represents error status of register.
-         *  0: Means no failure and that the data of rd_mac_sys is reliable
-         *  1: Means that programming rd_mac_sys failed and the number of error bytes is over 6.
+         *  0: Means no failure and that the data of rd_mac_sys_ is reliable
+         *  1: Means that programming rd_mac_sys_ failed and the number of error bytes is over 6.
          */
-        uint32_t rd_mac_sys_fail:1;
+        uint32_t rd_mac_sys__fail:1;
         /** rd_sys_part1_data_err_num : RO; bitpos: [6:4]; default: 0;
          *  Represents the error number of registers.
          *  The value of this signal means the number of error bytes in rd_sys_part1_data
@@ -1051,9 +1059,8 @@ typedef union {
  */
 typedef union {
     struct {
-        /** date : R/W; bitpos: [27:0]; default: 37814560;
-         *  Represents eFuse version. Date:2024-10-12 12:09:57,
-         *  ScriptRev:892332a1019d3a17987b08c6835edce28f46e261
+        /** date : R/W; bitpos: [27:0]; default: 38806112;
+         *  Represents eFuse version.
          */
         uint32_t date:28;
         uint32_t reserved_28:4;
@@ -1400,12 +1407,12 @@ typedef struct {
     volatile efuse_rd_repeat_data2_reg_t rd_repeat_data2;
     volatile efuse_rd_repeat_data3_reg_t rd_repeat_data3;
     volatile efuse_rd_repeat_data4_reg_t rd_repeat_data4;
-    volatile efuse_rd_mac_sys0_reg_t rd_mac_sys0;
-    volatile efuse_rd_mac_sys1_reg_t rd_mac_sys1;
-    volatile efuse_rd_mac_sys2_reg_t rd_mac_sys2;
-    volatile efuse_rd_mac_sys3_reg_t rd_mac_sys3;
-    volatile efuse_rd_mac_sys4_reg_t rd_mac_sys4;
-    volatile efuse_rd_mac_sys5_reg_t rd_mac_sys5;
+    volatile efuse_rd_mac_sys0_reg_t rd_mac_sys_0;
+    volatile efuse_rd_mac_sys1_reg_t rd_mac_sys_1;
+    volatile efuse_rd_mac_sys2_reg_t rd_mac_sys_2;
+    volatile efuse_rd_mac_sys3_reg_t rd_mac_sys_3;
+    volatile efuse_rd_mac_sys4_reg_t rd_mac_sys_4;
+    volatile efuse_rd_mac_sys5_reg_t rd_mac_sys_5;
     volatile efuse_rd_sys_part1_datan_reg_t rd_sys_part1_datan[8];
     volatile efuse_rd_usr_datan_reg_t rd_usr_datan[8];
     volatile efuse_rd_key0_datan_reg_t rd_key0_datan[8];

@@ -50,7 +50,7 @@ def main(
                 for capture in captures:
                     error_usages = [f'.{capture}', f'->{capture}']
                     for error_usage in error_usages:
-                        word_bound_pattern = rf'{re.escape(error_usage)}\b'
+                        word_bound_pattern = rf'{re.escape(error_usage)}\s*[;|=](.*)\b'
                         # print the line number where the error_usage is found
                         for match in re.finditer(word_bound_pattern, content, re.MULTILINE):
                             no_violation_found = False

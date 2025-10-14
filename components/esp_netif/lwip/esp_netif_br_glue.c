@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -97,11 +97,14 @@ static void port_action_start(void *handler_args, esp_event_base_t base, int32_t
 {
     esp_netif_br_glue_t *netif_glue = handler_args;
 
+#if CONFIG_ESP_WIFI_ENABLED
     if (base == WIFI_EVENT) {
         ESP_LOGD(TAG, "wifi_action_start: %p, %p, %" PRId32 ", %p", netif_glue, base, event_id, event_data);
         start_br_if_stopped(netif_glue);
         esp_netif_bridge_add_port(netif_glue->base.netif, netif_glue->wifi_esp_netif);
-    } else if (base == ETH_EVENT) {
+    } else
+#endif /* CONFIG_ESP_WIFI_ENABLED */
+    if (base == ETH_EVENT) {
         esp_eth_handle_t eth_handle = *(esp_eth_handle_t *)event_data;
         ESP_LOGD(TAG, "eth_action_start: %p, %p, %" PRId32 ", %p, %p", netif_glue, base, event_id, event_data, *(esp_eth_handle_t *)event_data);
         for (int i = 0; i < netif_glue->port_cnt; i++) {
@@ -119,10 +122,13 @@ static void port_action_stop(void *handler_args, esp_event_base_t base, int32_t 
 
     // if one of the bridge's ports is stopped, we need to stop the bridge too, since port's lwip_netif is removed and so it would become
     // an invalid reference in the bridge's internal structure (there is no way how to remove single port from bridge in current LwIP)
+#if CONFIG_ESP_WIFI_ENABLED
     if (base == WIFI_EVENT) {
         ESP_LOGD(TAG, "wifi_action_stop: %p, %p, %" PRId32 ", %p", netif_glue, base, event_id, event_data);
         stop_br_if_started(netif_glue);
-    } else if (base == ETH_EVENT) {
+    } else
+#endif /* CONFIG_ESP_WIFI_ENABLED */
+    if (base == ETH_EVENT) {
         esp_eth_handle_t eth_handle = *(esp_eth_handle_t *)event_data;
         ESP_LOGD(TAG, "eth_action_stop: %p, %p, %" PRId32 ", %p, %p", netif_glue, base, event_id, event_data, *(esp_eth_handle_t *)event_data);
         for (int i = 0; i < netif_glue->port_cnt; i++) {
@@ -142,11 +148,13 @@ static void port_action_connected(void *handler_args, esp_event_base_t base, int
         ESP_LOGD(TAG, "action_connected, no action bridge is up");
         return;
     }
-
+#if CONFIG_ESP_WIFI_ENABLED
     if (base == WIFI_EVENT) {
         ESP_LOGD(TAG, "wifi_action_connected: %p, %p, %" PRId32 ", %p", netif_glue, base, event_id, event_data);
         esp_netif_action_connected(netif_glue->base.netif, 0, 0, NULL);
-    } else if (base == ETH_EVENT) {
+    } else
+#endif /* CONFIG_ESP_WIFI_ENABLED */
+    if (base == ETH_EVENT) {
         esp_eth_handle_t eth_handle = *(esp_eth_handle_t *)event_data;
         ESP_LOGD(TAG, "eth_action_connected: %p, %p, %" PRId32 ", %p, %p", netif_glue, base, event_id, event_data, *(esp_eth_handle_t *)event_data);
         for (int i = 0; i < netif_glue->port_cnt; i++) {
@@ -253,6 +261,7 @@ fail:
     return ret;
 }
 
+#if CONFIG_ESP_WIFI_ENABLED
 static esp_err_t esp_netif_br_glue_clear_instance_handlers_wifi(esp_netif_br_glue_handle_t esp_netif_br_glue)
 {
     ESP_RETURN_ON_FALSE(esp_netif_br_glue, ESP_ERR_INVALID_ARG, TAG, "esp_netif_br_glue handle can't be null");
@@ -313,17 +322,22 @@ fail:
     esp_netif_br_glue_clear_instance_handlers_wifi(esp_netif_br_glue);
     return ret;
 }
+#endif /* CONFIG_ESP_WIFI_ENABLED */
 
 esp_err_t esp_netif_br_glue_add_port(esp_netif_br_glue_handle_t netif_br_glue, esp_netif_t *esp_netif_port)
 {
     if (netif_br_glue->ports_esp_netifs == NULL) {
         netif_br_glue->ports_esp_netifs = malloc(sizeof(esp_netif_t *));
     } else {
-        netif_br_glue->ports_esp_netifs = realloc(netif_br_glue->ports_esp_netifs, (netif_br_glue->port_cnt + 1) * sizeof(esp_netif_t *));
-    }
-    if (!netif_br_glue->ports_esp_netifs) {
-        ESP_LOGE(TAG, "no memory to add br port");
-        return ESP_ERR_NO_MEM;
+        esp_netif_t **new_ports = realloc(netif_br_glue->ports_esp_netifs, (netif_br_glue->port_cnt + 1) * sizeof(esp_netif_t *));
+        if (new_ports == NULL) {
+            free(netif_br_glue->ports_esp_netifs);
+            netif_br_glue->ports_esp_netifs = NULL;
+            netif_br_glue->port_cnt = 0;
+            ESP_LOGE(TAG, "no memory to add br port");
+            return ESP_ERR_NO_MEM;
+        }
+        netif_br_glue->ports_esp_netifs = new_ports;
     }
 
     netif_br_glue->ports_esp_netifs[netif_br_glue->port_cnt] = esp_netif_port;
@@ -334,6 +348,7 @@ esp_err_t esp_netif_br_glue_add_port(esp_netif_br_glue_handle_t netif_br_glue, e
 
 esp_err_t esp_netif_br_glue_add_wifi_port(esp_netif_br_glue_handle_t netif_br_glue, esp_netif_t *esp_netif_port)
 {
+#if CONFIG_ESP_WIFI_ENABLED
     esp_err_t ret = ESP_OK;
     ESP_GOTO_ON_FALSE(netif_br_glue->wifi_esp_netif == NULL, ESP_ERR_INVALID_STATE, fail_ret, TAG, "WiFi interface already registered");
     const char *if_desc = esp_netif_get_desc(esp_netif_port);
@@ -348,6 +363,9 @@ fail:
     netif_br_glue->wifi_ctx_handlers = NULL;
 fail_ret:
     return ret;
+#else
+    return ESP_ERR_NOT_SUPPORTED;
+#endif /* CONFIG_ESP_WIFI_ENABLED */
 }
 
 esp_netif_br_glue_handle_t esp_netif_br_glue_new(void)
@@ -372,9 +390,11 @@ esp_err_t esp_netif_br_glue_del(esp_netif_br_glue_handle_t netif_br_glue)
 {
     stop_br_if_started(netif_br_glue);
     esp_netif_br_glue_clear_instance_handlers(netif_br_glue);
+#if CONFIG_ESP_WIFI_ENABLED
     if (netif_br_glue->wifi_esp_netif != NULL) {
         esp_netif_br_glue_clear_instance_handlers_wifi(netif_br_glue);
     }
+#endif /* CONFIG_ESP_WIFI_ENABLED */
     free(netif_br_glue->ports_esp_netifs);
     free(netif_br_glue);
     netif_br_glue = NULL;

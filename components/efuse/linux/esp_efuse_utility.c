@@ -16,7 +16,7 @@
     #error Linux target supports only VIRTUAL eFuses
 #endif // CONFIG_EFUSE_VIRTUAL
 
-static const char *TAG = "efuse";
+ESP_LOG_ATTR_TAG(TAG, "efuse");
 
 extern uint32_t virt_blocks[EFUSE_BLK_MAX][COUNT_EFUSE_REG_PER_BLOCK];
 

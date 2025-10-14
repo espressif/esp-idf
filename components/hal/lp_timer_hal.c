@@ -9,6 +9,7 @@
 #include <esp_types.h>
 #include "esp_attr.h"
 #include "soc/soc.h"
+#include "hal/lp_timer_types.h"
 #include "hal/lp_timer_ll.h"
 
 static DRAM_ATTR struct {

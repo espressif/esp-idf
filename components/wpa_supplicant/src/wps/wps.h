@@ -121,7 +121,7 @@ struct wps_config {
 	/**
 	 * pin - Enrollee Device Password (%NULL for Registrar or PBC)
 	 */
-	const u8 pin[9];
+	u8 pin[9];
 
 	/**
 	 * pin_len - Length on pin in octets

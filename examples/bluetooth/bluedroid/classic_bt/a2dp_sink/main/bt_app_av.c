@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -75,7 +75,7 @@ static void bt_av_hdl_avrc_tg_evt(uint16_t event, void *p_param);
  ******************************/
 
 static uint32_t s_pkt_cnt = 0;               /* count for audio packet */
-static esp_a2d_audio_state_t s_audio_state = ESP_A2D_AUDIO_STATE_STOPPED;
+static esp_a2d_audio_state_t s_audio_state = ESP_A2D_AUDIO_STATE_SUSPEND;
                                              /* audio stream datapath state */
 static const char *s_a2d_conn_state_str[] = {"Disconnected", "Connecting", "Connected", "Disconnecting"};
                                              /* connection state in string */
@@ -321,21 +321,21 @@ static void bt_av_hdl_a2d_evt(uint16_t event, void *p_param)
     /* when audio codec is configured, this event comes */
     case ESP_A2D_AUDIO_CFG_EVT: {
         a2d = (esp_a2d_cb_param_t *)(p_param);
-        ESP_LOGI(BT_AV_TAG, "A2DP audio stream configuration, codec type: %d", a2d->audio_cfg.mcc.type);
+        esp_a2d_mcc_t *p_mcc = &a2d->audio_cfg.mcc;
+        ESP_LOGI(BT_AV_TAG, "A2DP audio stream configuration, codec type: %d", p_mcc->type);
         /* for now only SBC stream is supported */
-        if (a2d->audio_cfg.mcc.type == ESP_A2D_MCT_SBC) {
+        if (p_mcc->type == ESP_A2D_MCT_SBC) {
             int sample_rate = 16000;
             int ch_count = 2;
-            char oct0 = a2d->audio_cfg.mcc.cie.sbc[0];
-            if (oct0 & (0x01 << 6)) {
+            if (p_mcc->cie.sbc_info.samp_freq & ESP_A2D_SBC_CIE_SF_32K) {
                 sample_rate = 32000;
-            } else if (oct0 & (0x01 << 5)) {
+            } else if (p_mcc->cie.sbc_info.samp_freq & ESP_A2D_SBC_CIE_SF_44K) {
                 sample_rate = 44100;
-            } else if (oct0 & (0x01 << 4)) {
+            } else if (p_mcc->cie.sbc_info.samp_freq & ESP_A2D_SBC_CIE_SF_48K) {
                 sample_rate = 48000;
             }
 
-            if (oct0 & (0x01 << 3)) {
+            if (p_mcc->cie.sbc_info.ch_mode & ESP_A2D_SBC_CIE_CH_MODE_MONO) {
                 ch_count = 1;
             }
         #ifdef CONFIG_EXAMPLE_A2DP_SINK_OUTPUT_INTERNAL_DAC
@@ -362,11 +362,14 @@ static void bt_av_hdl_a2d_evt(uint16_t event, void *p_param)
             i2s_channel_reconfig_std_slot(tx_chan, &slot_cfg);
             i2s_channel_enable(tx_chan);
         #endif
-            ESP_LOGI(BT_AV_TAG, "Configure audio player: %x-%x-%x-%x",
-                     a2d->audio_cfg.mcc.cie.sbc[0],
-                     a2d->audio_cfg.mcc.cie.sbc[1],
-                     a2d->audio_cfg.mcc.cie.sbc[2],
-                     a2d->audio_cfg.mcc.cie.sbc[3]);
+            ESP_LOGI(BT_AV_TAG, "Configure audio player: 0x%x-0x%x-0x%x-0x%x-0x%x-%d-%d",
+                     p_mcc->cie.sbc_info.samp_freq,
+                     p_mcc->cie.sbc_info.ch_mode,
+                     p_mcc->cie.sbc_info.block_len,
+                     p_mcc->cie.sbc_info.num_subbands,
+                     p_mcc->cie.sbc_info.alloc_mthd,
+                     p_mcc->cie.sbc_info.min_bitpool,
+                     p_mcc->cie.sbc_info.max_bitpool);
             ESP_LOGI(BT_AV_TAG, "Audio player configured, sample rate: %d", sample_rate);
         }
         break;
@@ -378,6 +381,17 @@ static void bt_av_hdl_a2d_evt(uint16_t event, void *p_param)
             ESP_LOGI(BT_AV_TAG, "A2DP PROF STATE: Init Complete");
         } else {
             ESP_LOGI(BT_AV_TAG, "A2DP PROF STATE: Deinit Complete");
+        }
+        break;
+    }
+    /* when using external codec, after sep registration done, this event comes */
+    case ESP_A2D_SEP_REG_STATE_EVT: {
+        a2d = (esp_a2d_cb_param_t *)(p_param);
+        if (a2d->a2d_sep_reg_stat.reg_state == ESP_A2D_SEP_REG_SUCCESS) {
+            ESP_LOGI(BT_AV_TAG, "A2DP register SEP success, seid: %d", a2d->a2d_sep_reg_stat.seid);
+        }
+        else {
+            ESP_LOGI(BT_AV_TAG, "A2DP register SEP fail, seid: %d, state: %d", a2d->a2d_sep_reg_stat.seid, a2d->a2d_sep_reg_stat.reg_state);
         }
         break;
     }
@@ -518,6 +532,17 @@ static void bt_av_hdl_avrc_ct_evt(uint16_t event, void *p_param)
 #endif
         break;
     }
+    /* when avrcp controller init or deinit completed, this event comes */
+    case ESP_AVRC_CT_PROF_STATE_EVT: {
+        if (ESP_AVRC_INIT_SUCCESS == rc->avrc_ct_init_stat.state) {
+            ESP_LOGI(BT_RC_CT_TAG, "AVRCP CT STATE: Init Complete");
+        } else if (ESP_AVRC_DEINIT_SUCCESS == rc->avrc_ct_init_stat.state) {
+            ESP_LOGI(BT_RC_CT_TAG, "AVRCP CT STATE: Deinit Complete");
+        } else {
+            ESP_LOGE(BT_RC_CT_TAG, "AVRCP CT STATE error: %d", rc->avrc_ct_init_stat.state);
+        }
+        break;
+    }
     /* others */
     default:
         ESP_LOGE(BT_RC_CT_TAG, "%s unhandled event: %d", __func__, event);
@@ -573,6 +598,17 @@ static void bt_av_hdl_avrc_tg_evt(uint16_t event, void *p_param)
         ESP_LOGI(BT_RC_TG_TAG, "AVRC remote features: %"PRIx32", CT features: %x", rc->rmt_feats.feat_mask, rc->rmt_feats.ct_feat_flag);
         break;
     }
+    /* when avrcp target init or deinit completed, this event comes */
+    case ESP_AVRC_TG_PROF_STATE_EVT: {
+        if (ESP_AVRC_INIT_SUCCESS == rc->avrc_tg_init_stat.state) {
+            ESP_LOGI(BT_RC_CT_TAG, "AVRCP TG STATE: Init Complete");
+        } else if (ESP_AVRC_DEINIT_SUCCESS == rc->avrc_tg_init_stat.state) {
+            ESP_LOGI(BT_RC_CT_TAG, "AVRCP TG STATE: Deinit Complete");
+        } else {
+            ESP_LOGE(BT_RC_CT_TAG, "AVRCP TG STATE error: %d", rc->avrc_tg_init_stat.state);
+        }
+        break;
+    }
     /* others */
     default:
         ESP_LOGE(BT_RC_TG_TAG, "%s unhandled event: %d", __func__, event);
@@ -591,6 +627,7 @@ void bt_app_a2d_cb(esp_a2d_cb_event_t event, esp_a2d_cb_param_t *param)
     case ESP_A2D_AUDIO_STATE_EVT:
     case ESP_A2D_AUDIO_CFG_EVT:
     case ESP_A2D_PROF_STATE_EVT:
+    case ESP_A2D_SEP_REG_STATE_EVT:
     case ESP_A2D_SNK_PSC_CFG_EVT:
     case ESP_A2D_SNK_SET_DELAY_VALUE_EVT:
     case ESP_A2D_SNK_GET_DELAY_VALUE_EVT: {
@@ -603,6 +640,8 @@ void bt_app_a2d_cb(esp_a2d_cb_event_t event, esp_a2d_cb_param_t *param)
     }
 }
 
+#if CONFIG_EXAMPLE_A2DP_SINK_USE_EXTERNAL_CODEC == FALSE
+
 void bt_app_a2d_data_cb(const uint8_t *data, uint32_t len)
 {
     write_ringbuf(data, len);
@@ -612,6 +651,21 @@ void bt_app_a2d_data_cb(const uint8_t *data, uint32_t len)
         ESP_LOGI(BT_AV_TAG, "Audio packet count: %"PRIu32, s_pkt_cnt);
     }
 }
+
+#else
+
+void bt_app_a2d_audio_data_cb(esp_a2d_conn_hdl_t conn_hdl, esp_a2d_audio_buff_t *audio_buf)
+{
+    ESP_LOGI(BT_AV_TAG, "data_len: %d, number_frame: %d, ts: %lu", audio_buf->data_len, audio_buf->number_frame, audio_buf->timestamp);
+
+    /*
+     * Normally, user should send the audio_buf to other task, decode and free audio buff,
+     * But the codec component is not merge into IDF now, so we just free audio data here
+     */
+    esp_a2d_audio_buff_free(audio_buf);
+}
+
+#endif
 
 void bt_app_rc_ct_cb(esp_avrc_ct_cb_event_t event, esp_avrc_ct_cb_param_t *param)
 {
@@ -633,7 +687,8 @@ void bt_app_rc_ct_cb(esp_avrc_ct_cb_event_t event, esp_avrc_ct_cb_param_t *param
     case ESP_AVRC_CT_REMOTE_FEATURES_EVT:
     case ESP_AVRC_CT_GET_RN_CAPABILITIES_RSP_EVT:
     case ESP_AVRC_CT_COVER_ART_STATE_EVT:
-    case ESP_AVRC_CT_COVER_ART_DATA_EVT: {
+    case ESP_AVRC_CT_COVER_ART_DATA_EVT:
+    case ESP_AVRC_CT_PROF_STATE_EVT: {
         bt_app_work_dispatch(bt_av_hdl_avrc_ct_evt, event, param, sizeof(esp_avrc_ct_cb_param_t), NULL);
         break;
     }
@@ -652,6 +707,7 @@ void bt_app_rc_tg_cb(esp_avrc_tg_cb_event_t event, esp_avrc_tg_cb_param_t *param
     case ESP_AVRC_TG_SET_ABSOLUTE_VOLUME_CMD_EVT:
     case ESP_AVRC_TG_REGISTER_NOTIFICATION_EVT:
     case ESP_AVRC_TG_SET_PLAYER_APP_VALUE_EVT:
+    case ESP_AVRC_TG_PROF_STATE_EVT:
         bt_app_work_dispatch(bt_av_hdl_avrc_tg_evt, event, param, sizeof(esp_avrc_tg_cb_param_t), NULL);
         break;
     default:

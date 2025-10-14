@@ -16,7 +16,7 @@
 #include "soc/rtc.h"
 #include "soc/soc_caps.h"
 
-#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_TIMER_SUPPORT_SLEEP_RETENTION
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_MWDT_SUPPORT_SLEEP_RETENTION
 #include "esp_sleep.h"
 #include "esp_private/esp_sleep_internal.h"
 #include "esp_private/sleep_cpu.h"
@@ -49,7 +49,7 @@ TEST_CASE("Task WDT task timeout", "[task_wdt]")
     TEST_ASSERT_EQUAL(ESP_OK, esp_task_wdt_deinit());
 }
 
-#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_TIMER_SUPPORT_SLEEP_RETENTION
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_MWDT_SUPPORT_SLEEP_RETENTION && SOC_LIGHT_SLEEP_SUPPORTED
 TEST_CASE("Task WDT task timeout after peripheral powerdown lightsleep", "[task_wdt]")
 {
     timeout_flag = false;
@@ -74,7 +74,9 @@ TEST_CASE("Task WDT task timeout after peripheral powerdown lightsleep", "[task_
 
     esp_light_sleep_start();
 
+#if !SOC_PM_TOP_PD_NOT_ALLOWED
     TEST_ASSERT_EQUAL(PMU_SLEEP_PD_TOP, sleep_ctx.sleep_flags & PMU_SLEEP_PD_TOP);
+#endif
     TEST_ASSERT_EQUAL(0, sleep_ctx.sleep_request_result);
     esp_sleep_set_sleep_context(NULL);
 
@@ -89,7 +91,7 @@ TEST_CASE("Task WDT task timeout after peripheral powerdown lightsleep", "[task_
 
 #if SOC_MWDT_SUPPORT_XTAL
 
-#if CONFIG_IDF_TARGET_ESP32H2
+#if CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32H21
 #define TEST_CPU_FREQUENCY_MHZ 48
 #else
 #define TEST_CPU_FREQUENCY_MHZ 40

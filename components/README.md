@@ -10,7 +10,7 @@ The core components are organized into two groups.
 
 The first group (referred to as `G0`) includes `hal`, `arch` (where `arch` is either `riscv` or `xtensa` depending on the chip), `esp_rom`, `esp_common`, and `soc`. This group contains information about and provides low-level access to the underlying hardware. In the case of `esp_common`, it contains hardware-agnostic code and utilities. These components may have dependencies on each other within the group, but outside dependencies should be minimized. The reason for this approach is that these components are fundamental, and many other components may require them. Ideally, the dependency relationship only goes one way, making it easier for this group to be usable in other projects.
 
-The second group (referred to as `G1`) operates at a higher level than the first group. `G1` includes the components `esp_hw_support`, `esp_system`, `newlib`, `spi_flash`, `freertos`, `log`, and `heap`. Like the first group, circular dependencies within this group are allowed, and these components can have dependencies on the first group. G1 components represent essential software mechanisms for building other components.
+The second group (referred to as `G1`) operates at a higher level than the first group. `G1` includes the components `esp_hw_support`, `esp_system`, `esp_libc`, `spi_flash`, `freertos`, `log`, and `heap`. Like the first group, circular dependencies within this group are allowed, and these components can have dependencies on the first group. G1 components represent essential software mechanisms for building other components.
 
 ## Descriptions
 
@@ -40,7 +40,7 @@ Example:
 
 #### `esp_common`
 
-Contains hardware-agnostic definitions, constants, macros, utilities, 'pure' and/or algorithmic functions that is useable by all other components (that is, barring there being a more appropriate component to put them in).
+Contains hardware-agnostic definitions, constants, macros, utilities, 'pure' and/or algorithmic functions that is usable by all other components (that is, barring there being a more appropriate component to put them in).
 
 Example:
 
@@ -85,7 +85,7 @@ Logging library.
 
 Heap implementation.
 
-#### `newlib`
+#### `esp_libc`
 
 Some functions n the standard library are implemented here, especially those needing other `G1` components.
 

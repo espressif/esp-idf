@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1273,7 +1273,8 @@ static void btc_sdp_remove_record(btc_sdp_args_t *arg)
     } while(0);
 
     if (ret != ESP_SDP_SUCCESS) {
-        param.create_record.status = ret;
+        param.remove_record.status = ret;
+        param.remove_record.record_handle = arg->remove_record.record_handle;
         btc_sdp_cb_to_app(ESP_SDP_REMOVE_RECORD_COMP_EVT, &param);
     }
 }
@@ -1422,6 +1423,7 @@ void btc_sdp_cb_handler(btc_msg_t *msg)
         }
 
         param.remove_record.status = p_data->sdp_remove_record.status;
+        param.remove_record.record_handle = p_data->sdp_remove_record.handle;
         btc_sdp_cb_to_app(ESP_SDP_REMOVE_RECORD_COMP_EVT, &param);
         break;
     default:
@@ -1430,6 +1432,22 @@ void btc_sdp_cb_handler(btc_msg_t *msg)
     }
 
     btc_sdp_cb_arg_deep_free(msg);
+}
+
+void btc_sdp_get_protocol_status(esp_sdp_protocol_status_t *param)
+{
+    if (is_sdp_init()) {
+        param->sdp_inited = true;
+        osi_mutex_lock(&sdp_local_param.sdp_slot_mutex, OSI_MUTEX_MAX_TIMEOUT);
+        for (size_t i = 0; i <= SDP_MAX_RECORDS; i++) {
+            if (sdp_local_param.sdp_slots[i] != NULL && sdp_local_param.sdp_slots[i]->state == SDP_RECORD_ALLOCED) {
+                param->records_num++;
+            }
+        }
+        osi_mutex_unlock(&sdp_local_param.sdp_slot_mutex);
+    } else {
+        param->sdp_inited = false;
+    }
 }
 
 #endif ///defined BTC_SDP_COMMON_INCLUDED && BTC_SDP_COMMON_INCLUDED == TRUE

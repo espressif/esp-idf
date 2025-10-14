@@ -26,6 +26,8 @@ typedef enum {
 typedef enum {
     ECC_CURVE_SECP192R1           = 0x0,
     ECC_CURVE_SECP256R1,
+    ECC_CURVE_SECP384R1,
+    ECC_CURVE_SM2,
 } ecc_curve_t;
 
 typedef enum {

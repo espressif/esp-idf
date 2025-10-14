@@ -53,6 +53,7 @@ typedef enum {
 ---------------------------------------------------------------*/
 typedef struct isp_processor_t {
     int                         proc_id;
+    isp_clk_src_t               clk_src;
     isp_hal_context_t           hal;
 #if SOC_ISP_SHARE_CSI_BRG
     int                         csi_brg_id;
@@ -65,6 +66,7 @@ typedef struct isp_processor_t {
     uint32_t                    h_res;
     uint32_t                    v_res;
     color_raw_element_order_t   bayer_order;
+    bool                        bypass_isp;
     /* sub module contexts */
     isp_af_ctlr_t               af_ctlr[SOC_ISP_AF_CTLR_NUMS];
     isp_awb_ctlr_t              awb_ctlr;
@@ -75,6 +77,7 @@ typedef struct isp_processor_t {
     isp_fsm_t                   sharpen_fsm;
     isp_fsm_t                   color_fsm;
     isp_fsm_t                   lsc_fsm;
+    isp_fsm_t                   blc_fsm;
     esp_isp_evt_cbs_t           cbs;
     void                        *user_data;
 

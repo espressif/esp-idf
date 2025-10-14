@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -146,6 +146,16 @@ typedef enum {
 } esp_hidd_status_t;
 
 /**
+ * @brief HID device profile status parameters
+ */
+typedef struct {
+    bool hidd_inited;                      /*!< HID device initialization */
+    uint8_t conn_num;                      /*!< Number of connections */
+    uint8_t plug_vc_dev_num;               /*!< Number of plugged virtual cable devices */
+    uint8_t reg_app_num;                   /*!< Number of HID device application registrations */
+} esp_hidd_profile_status_t;
+
+/**
  * @brief HID device callback parameters union
  */
 typedef union {
@@ -278,7 +288,7 @@ esp_err_t esp_bt_hid_device_register_callback(esp_hd_cb_t callback);
 
 /**
  * @brief           Initializes HIDD interface. This function should be called after
- *                  esp_bluedroid_init()/esp_bluedroid_init_with_cfg() and esp_bluedroid_enable() success, and should be
+ *                  esp_bluedroid_init_with_cfg() and esp_bluedroid_enable() success, and should be
  *                  called after esp_bt_hid_device_register_callback. When the operation is complete, the callback
  *                  function will be called with ESP_HIDD_INIT_EVT.
  *
@@ -290,7 +300,7 @@ esp_err_t esp_bt_hid_device_init(void);
 
 /**
  * @brief           De-initializes HIDD interface. This function should be called after
- *                  esp_bluedroid_init()/esp_bluedroid_init_with_cfg() and esp_bluedroid_enable() success, and should be
+ *                  esp_bluedroid_init_with_cfg() and esp_bluedroid_enable() success, and should be
  *                  called after esp_bt_hid_device_init(). When the operation is complete, the callback function will be
  *                  called with ESP_HIDD_DEINIT_EVT.
  *
@@ -302,7 +312,7 @@ esp_err_t esp_bt_hid_device_deinit(void);
 
 /**
  * @brief           Registers HIDD parameters with SDP and sets l2cap Quality of Service. This function should be
- *                  called after esp_bluedroid_init()/esp_bluedroid_init_with_cfg() and esp_bluedroid_enable() success,
+ *                  called after esp_bluedroid_init_with_cfg() and esp_bluedroid_enable() success,
  *                  and should be called after esp_bt_hid_device_init(). When the operation is complete, the callback
  *                  function will be called with ESP_HIDD_REGISTER_APP_EVT.
  *
@@ -319,7 +329,7 @@ esp_err_t esp_bt_hid_device_register_app(esp_hidd_app_param_t *app_param, esp_hi
 
 /**
  * @brief           Removes HIDD parameters from SDP and resets l2cap Quality of Service. This function should be
- *                  called after esp_bluedroid_init()/esp_bluedroid_init_with_cfg() and esp_bluedroid_enable() success,
+ *                  called after esp_bluedroid_init_with_cfg() and esp_bluedroid_enable() success,
  *                  and should be called after esp_bt_hid_device_init(). When the operation is complete, the callback
  *                  function will be called with ESP_HIDD_UNREGISTER_APP_EVT.
  *
@@ -331,9 +341,14 @@ esp_err_t esp_bt_hid_device_unregister_app(void);
 
 /**
  * @brief           Connects to the peer HID Host with virtual cable. This function should be called after
- *                  esp_bluedroid_init()/esp_bluedroid_init_with_cfg() and esp_bluedroid_enable() success, and should be
+ *                  esp_bluedroid_init_with_cfg() and esp_bluedroid_enable() success, and should be
  *                  called after esp_bt_hid_device_init(). When the operation is complete, the callback function will
  *                  be called with ESP_HIDD_OPEN_EVT.
+ *
+ * @note            The connection between the HID Host and the HID Device is established as a virtual cable by default.
+ *                  A new HID Host connection request will only be accepted after the previous HID Host has been
+ *                  explicitly unplugged. For details on disconnection and virtual cable unplugging, please refer to API
+ *                  `esp_bt_hid_device_disconnect` and `esp_bt_hid_device_virtual_cable_unplug`.
  *
  * @param[in]       bd_addr: Remote host bluetooth device address.
  *
@@ -345,7 +360,7 @@ esp_err_t esp_bt_hid_device_connect(esp_bd_addr_t bd_addr);
 
 /**
  * @brief           Disconnects from the currently connected HID Host. This function should be called after
- *                  esp_bluedroid_init()/esp_bluedroid_init_with_cfg() and esp_bluedroid_enable() success, and should be
+ *                  esp_bluedroid_init_with_cfg() and esp_bluedroid_enable() success, and should be
  *                  called after esp_bt_hid_device_init(). When the operation is complete, the callback function will
  *                  be called with ESP_HIDD_CLOSE_EVT.
  *
@@ -360,7 +375,7 @@ esp_err_t esp_bt_hid_device_disconnect(void);
 
 /**
  * @brief           Sends HID report to the currently connected HID Host. This function should be called after
- *                  esp_bluedroid_init()/esp_bluedroid_init_with_cfg() and esp_bluedroid_enable() success, and should be
+ *                  esp_bluedroid_init_with_cfg() and esp_bluedroid_enable() success, and should be
  *                  called after esp_bt_hid_device_init(). When the operation is complete, the callback function will
  *                  be called with ESP_HIDD_SEND_REPORT_EVT.
  *
@@ -377,7 +392,7 @@ esp_err_t esp_bt_hid_device_send_report(esp_hidd_report_type_t type, uint8_t id,
 
 /**
  * @brief           Sends HID Handshake with error info for invalid set_report to the currently connected HID Host.
- *                  This function should be called after esp_bluedroid_init()/esp_bluedroid_init_with_cfg() and
+ *                  This function should be called after esp_bluedroid_init_with_cfg() and
  *                  esp_bluedroid_enable() success, and should be called after esp_bt_hid_device_init(). When the
  *                  operation is complete, the callback function will be called with ESP_HIDD_REPORT_ERR_EVT.
  *
@@ -391,7 +406,7 @@ esp_err_t esp_bt_hid_device_report_error(esp_hidd_handshake_error_t error);
 
 /**
  * @brief           Remove the virtually cabled device. This function should be called after
- *                  esp_bluedroid_init()/esp_bluedroid_init_with_cfg() and esp_bluedroid_enable() success, and should be
+ *                  esp_bluedroid_init_with_cfg() and esp_bluedroid_enable() success, and should be
  *                  called after esp_bt_hid_device_init(). When the operation is complete, the callback function will be
  *                  called with ESP_HIDD_VC_UNPLUG_EVT.
  *
@@ -405,6 +420,17 @@ esp_err_t esp_bt_hid_device_report_error(esp_hidd_handshake_error_t error);
  *                  - other: failed
  */
 esp_err_t esp_bt_hid_device_virtual_cable_unplug(void);
+
+/**
+ * @brief       This function is used to get the status of hid device
+ *
+ * @param[out]  profile_status - HID device status
+ *
+ * @return
+ *              - ESP_OK: success
+ *              - other: failed
+ */
+esp_err_t esp_bt_hid_device_get_profile_status(esp_hidd_profile_status_t *profile_status);
 
 #ifdef __cplusplus
 }

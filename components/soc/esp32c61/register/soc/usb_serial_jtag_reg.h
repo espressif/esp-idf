@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -540,13 +540,6 @@ extern "C" {
  *  PHY hardware configuration.
  */
 #define USB_SERIAL_JTAG_CONF0_REG (DR_REG_USB_SERIAL_JTAG_BASE + 0x18)
-/** USB_SERIAL_JTAG_PHY_SEL : R/W; bitpos: [0]; default: 0;
- *  Select internal/external PHY
- */
-#define USB_SERIAL_JTAG_PHY_SEL    (BIT(0))
-#define USB_SERIAL_JTAG_PHY_SEL_M  (USB_SERIAL_JTAG_PHY_SEL_V << USB_SERIAL_JTAG_PHY_SEL_S)
-#define USB_SERIAL_JTAG_PHY_SEL_V  0x00000001U
-#define USB_SERIAL_JTAG_PHY_SEL_S  0
 /** USB_SERIAL_JTAG_EXCHG_PINS_OVERRIDE : R/W; bitpos: [1]; default: 0;
  *  Enable software control USB D+ D- exchange
  */
@@ -640,6 +633,14 @@ extern "C" {
 #define USB_SERIAL_JTAG_USB_JTAG_BRIDGE_EN_M  (USB_SERIAL_JTAG_USB_JTAG_BRIDGE_EN_V << USB_SERIAL_JTAG_USB_JTAG_BRIDGE_EN_S)
 #define USB_SERIAL_JTAG_USB_JTAG_BRIDGE_EN_V  0x00000001U
 #define USB_SERIAL_JTAG_USB_JTAG_BRIDGE_EN_S  15
+/** USB_SERIAL_JTAG_USB_PHY_TX_EDGE_SEL : R/W; bitpos: [16]; default: 0;
+ *  Control at which clock edge the dp and dm are sent to  USB PHY,  0: tx output at
+ *  clock negative edge. 1: tx output at clock positive edge.
+ */
+#define USB_SERIAL_JTAG_USB_PHY_TX_EDGE_SEL    (BIT(16))
+#define USB_SERIAL_JTAG_USB_PHY_TX_EDGE_SEL_M  (USB_SERIAL_JTAG_USB_PHY_TX_EDGE_SEL_V << USB_SERIAL_JTAG_USB_PHY_TX_EDGE_SEL_S)
+#define USB_SERIAL_JTAG_USB_PHY_TX_EDGE_SEL_V  0x00000001U
+#define USB_SERIAL_JTAG_USB_PHY_TX_EDGE_SEL_S  16
 
 /** USB_SERIAL_JTAG_TEST_REG register
  *  Registers used for debugging the PHY.
@@ -1215,7 +1216,7 @@ extern "C" {
  *  Date register
  */
 #define USB_SERIAL_JTAG_DATE_REG (DR_REG_USB_SERIAL_JTAG_BASE + 0x80)
-/** USB_SERIAL_JTAG_DATE : R/W; bitpos: [31:0]; default: 36770368;
+/** USB_SERIAL_JTAG_DATE : R/W; bitpos: [31:0]; default: 37822848;
  *  register version.
  */
 #define USB_SERIAL_JTAG_DATE    0xFFFFFFFFU

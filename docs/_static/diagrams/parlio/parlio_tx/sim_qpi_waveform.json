@@ -1,0 +1,31 @@
+{
+  "signal": [
+    {
+      "name": "CLK",
+      "wave": "P......|.."
+    },
+    {
+      "name": "CS",
+      "wave": "1.0....|.1"
+    },
+    {
+      "name": "IO0",
+      "wave": "0.2345x|.0", "data": "A0.0 A0.4 A1.0 A1.4"
+    },
+    {
+      "name": "IO1",
+      "wave": "0.2345x|.0", "data": "A0.1 A0.5 A1.1 A1.5"
+    },
+    {
+      "name": "IO2",
+      "wave": "0.2345x|.0", "data": "A0.2 A0.6 A1.2 A1.6"
+    },
+    {
+      "name": "IO3",
+      "wave": "0.2345x|.0", "data": "A0.3 A0.7 A1.3 A1.7"
+    }
+  ],
+  "head": {
+    "text": "QPI Waveform Simulator"
+  }
+}

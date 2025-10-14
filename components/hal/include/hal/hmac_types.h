@@ -1,13 +1,30 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #pragma once
+#include "soc/soc_caps.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+ * The possible efuse keys for the HMAC peripheral
+ */
+typedef enum {
+    HMAC_KEY0 = 0,
+    HMAC_KEY1,
+    HMAC_KEY2,
+    HMAC_KEY3,
+    HMAC_KEY4,
+    HMAC_KEY5,
+#if SOC_KEY_MANAGER_HMAC_KEY_DEPLOY
+    HMAC_KEY_KM = 7,
+#endif
+    HMAC_KEY_MAX = 8,
+} hmac_key_id_t;
 
 /**
  * The HMAC peripheral can be configured to deliver its output to the user directly, or to deliver

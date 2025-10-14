@@ -180,8 +180,10 @@ esp_err_t sdmmc_init_card_hs_mode(sdmmc_card_t* card)
     esp_err_t err = ESP_ERR_NOT_SUPPORTED;
     if (card->is_mem && !card->is_mmc) {
         err = sdmmc_enable_hs_mode_and_check(card);
+#if CONFIG_SD_ENABLE_SDIO_SUPPORT
     } else if (card->is_sdio) {
         err = sdmmc_io_enable_hs_mode(card);
+#endif
     } else if (card->is_mmc){
         err = sdmmc_mmc_enable_hs_mode(card);
     }
@@ -206,7 +208,12 @@ esp_err_t sdmmc_init_sd_current_limit(sdmmc_card_t *card)
 
 esp_err_t sdmmc_init_sd_timing_tuning(sdmmc_card_t *card)
 {
-    return sdmmc_do_timing_tuning(card);
+    ESP_RETURN_ON_ERROR(sdmmc_do_timing_tuning(card, SDMMC_DELAY_MODE_PHASE), TAG, "failed to do phase timing tuning");
+    if (card->host.max_freq_khz == SDMMC_FREQ_SDR104) {
+        ESP_RETURN_ON_ERROR(sdmmc_do_timing_tuning(card, SDMMC_DELAY_MODE_LINE), TAG, "failed to do delayline timing tuning");
+    }
+
+    return ESP_OK;
 }
 
 esp_err_t sdmmc_init_host_bus_width(sdmmc_card_t* card)
@@ -395,16 +402,27 @@ esp_err_t sdmmc_allocate_aligned_buf(sdmmc_card_t* card)
 {
     if (card->host.flags & SDMMC_HOST_FLAG_ALLOC_ALIGNED_BUF) {
         void* buf = NULL;
-        size_t actual_size = 0;
-        esp_dma_mem_info_t dma_mem_info;
-        card->host.get_dma_info(card->host.slot, &dma_mem_info);
-        esp_err_t ret = esp_dma_capable_malloc(SDMMC_IO_BLOCK_SIZE, &dma_mem_info, &buf, &actual_size);
 
-        if (ret != ESP_OK) {
-            return ret;
+        size_t actual_size = 0;
+        buf = heap_caps_malloc(SDMMC_IO_BLOCK_SIZE, MALLOC_CAP_DMA);
+        if (!buf) {
+            ESP_LOGE(TAG, "%s: not enough mem, err=0x%x", __func__, ESP_ERR_NO_MEM);
+            return ESP_ERR_NO_MEM;
         }
+        actual_size = heap_caps_get_allocated_size(buf);
+
         assert(actual_size == SDMMC_IO_BLOCK_SIZE);
+        (void)actual_size;
         card->host.dma_aligned_buffer = buf;
+    }
+    return ESP_OK;
+}
+
+esp_err_t sdmmc_check_host_function_ptr_integrity(sdmmc_card_t *card)
+{
+    if (!card->host.check_buffer_alignment) {
+        ESP_LOGE(TAG, "%s: host drv check_buffer_alignment not initialised, err=0x%x", __func__, ESP_ERR_INVALID_ARG);
+        return ESP_ERR_INVALID_ARG;
     }
     return ESP_OK;
 }

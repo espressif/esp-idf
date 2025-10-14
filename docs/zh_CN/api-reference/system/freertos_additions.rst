@@ -111,7 +111,7 @@ ESP-IDF 环形 buffer 是一个典型的 FIFO buffer，支持任意大小的数�
             .buf = item->buf,
         };
         //实际发送到环形 buffer 以供使用
-        res = xRingbufferSendComplete(buf_handle, &item);
+        res = xRingbufferSendComplete(buf_handle, (void *)item);
         if (res != pdTRUE) {
             printf("Failed to send item\n");
         }
@@ -295,6 +295,10 @@ ESP-IDF 环形 buffer 是一个典型的 FIFO buffer，支持任意大小的数�
 字节 buffer **不允许在返回之前进行多次检索** （每次检索必须在下一次检索之前返回结果）。使用 :cpp:func:`xRingbufferReceive` 或 :cpp:func:`xRingbufferReceiveFromISR` 时，会检索所有连续存储的数据。使用 :cpp:func:`xRingbufferReceiveUpTo` 或 :cpp:func:`xRingbufferReceiveUpToFromISR` 可限制检索的最大字节数。由于每次检索后都必须返回，因此数据一返回就会释放空间。
 
 参考上图， buffer 尾部 38 字节连续存储的数据被检索、返回和释放。然后，下一次调用 :cpp:func:`xRingbufferReceive` 或 :cpp:func:`xRingbufferReceiveFromISR` 时，buffer 将绕回并对头部的 30 字节连续存储数据进行同样的处理。
+
+.. note::
+
+    从可分割 buffer 中检索数据项必须使用 :cpp:func:`xRingbufferReceiveSplit` 或 :cpp:func:`xRingbufferReceiveSplitFromISR`，而不是 :cpp:func:`xRingbufferReceive` 或 :cpp:func:`xRingbufferReceiveFromISR`。
 
 使用队列集的环形 buffer
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^

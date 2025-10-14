@@ -56,6 +56,9 @@ typedef void (*eloop_event_handler)(void *eloop_ctx, void *user_ctx);
  */
 typedef void (*eloop_timeout_handler)(void *eloop_ctx, void *user_ctx);
 
+
+typedef int (*eloop_blocking_timeout_handler)(void *eloop_ctx, void *user_ctx);
+
 /**
  * eloop_signal_handler - eloop signal event callback type
  * @sig: Signal number
@@ -189,6 +192,19 @@ int eloop_register_timeout(unsigned int secs, unsigned int usecs,
 			   eloop_timeout_handler handler,
 			   void *eloop_data, void *user_data);
 #endif
+
+#ifdef ELOOP_DEBUG
+int eloop_register_timeout_blocking_debug(eloop_blocking_timeout_handler handler, void *eloop_data,
+			                  void *user_data, const char *func, int line);
+
+#define eloop_register_timeout_blocking(handler, eloop_data, user_data) \
+	eloop_register_timeout_blocking_debug(handler, eloop_data, user_data, __func__, __LINE__)
+#else
+int eloop_register_timeout_blocking(eloop_blocking_timeout_handler handler,
+		                    void *eloop_data, void *user_data);
+#endif
+
+
 
 /**
  * eloop_cancel_timeout - Cancel timeouts

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -83,19 +83,8 @@ void app_main(void)
     */
     vTaskDelay(pdMS_TO_TICKS(1000));
 
-    esp_sleep_wakeup_cause_t cause = esp_sleep_get_wakeup_cause();
-    /* not a wakeup from ULP, load the firmware */
-    if (cause != ESP_SLEEP_WAKEUP_ULP) {
-        printf("Not a ULP-RISC-V wakeup, initializing ...\n");
-        /* Initialize Touch peripheral */
-        init_touch_pad();
-
-        /* Initialize ULP core */
-        init_ulp_program();
-    }
-
-    /* ULP RISC-V detected a touch input */
-    if (cause == ESP_SLEEP_WAKEUP_ULP) {
+    if (esp_sleep_get_wakeup_causes() & BIT(ESP_SLEEP_WAKEUP_ULP)) {
+        /* ULP RISC-V detected a touch input */
         printf("ULP-RISC-V woke up the main CPU! \n");
         uint32_t touch_data = ulp_touch_data;
         for (int i = 0; i < TOUCH_BUTTON_NUM; i++) {
@@ -104,6 +93,14 @@ void app_main(void)
             }
         }
         printf("\n");
+    } else {
+        /* not a wakeup from ULP, load the firmware */
+        printf("Not a ULP-RISC-V wakeup, initializing ...\n");
+        /* Initialize Touch peripheral */
+        init_touch_pad();
+
+        /* Initialize ULP core */
+        init_ulp_program();
     }
 
     /* Go to sleep, only the ULP RISC-V will run */

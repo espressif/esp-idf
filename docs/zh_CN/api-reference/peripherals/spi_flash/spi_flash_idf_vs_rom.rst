@@ -15,7 +15,7 @@ ESP-IDF 支持但不包含在芯片 ROM 中的功能
 .. list::
 
     - 八线 flash 芯片。详情请参阅 :ref:`oct-flash-doc`。
-    - GD25Q256 32 位地址。请注意，此功能为可选功能，详情请参阅 :ref:`32-bit-flash-doc`。
+    - Flash 的 32 位地址。请注意，此功能为可选功能，详情请参阅 :ref:`32-bit-flash-doc`。
     - TH flash 芯片。
     - Kconfig 选项 :ref:`CONFIG_SPI_FLASH_CHECK_ERASE_TIMEOUT_DISABLED`。
     - :ref:`CONFIG_SPI_FLASH_VERIFY_WRITE`，启用此选项可检测错误写入。
@@ -24,6 +24,8 @@ ESP-IDF 支持但不包含在芯片 ROM 中的功能
     - :ref:`CONFIG_SPI_FLASH_DANGEROUS_WRITE`，启用此选项会检查是否对某些受保护的区域（如引导加载程序、分区表或应用程序本身）进行了 flash 编程。
     - :ref:`CONFIG_SPI_FLASH_ENABLE_COUNTERS`，启用此选项以收集 ESP-IDF SPI flash 驱动程序 API 的性能数据。
     - :ref:`CONFIG_SPI_FLASH_AUTO_SUSPEND`，启用此选项可在 flash 短时操作时自动挂起或恢复 flash 长时操作。请注意，此功能为可选功能，详情请参阅 :ref:`auto-suspend-intro`。
+    :ESP_ROM_HAS_SPI_FLASH_MMAP and SOC_SPIRAM_XIP_SUPPORTED and not esp32s3: - :ref:`CONFIG_SPIRAM_XIP_FROM_PSRAM`，启用该选项后，可将外部 PSRAM 用作指令 cache 和只读数据 cache。但请注意，ROM 中的某些函数不支持此用法，而 ESP-IDF 提供了这些 ROM 函数的替代版本。
+    :esp32s3: - 启用 :ref:`CONFIG_SPIRAM_FETCH_INSTRUCTIONS` 和 :ref:`CONFIG_SPIRAM_RODATA` 后，可将外部 PSRAM 用作指令 cache 和只读数据 cache。但请注意，ROM 中的某些函数不支持此用法，而 ESP-IDF 提供了这些 ROM 函数的替代版本。
 
 在 ESP-IDF 中引入，但不包含在芯片 ROM 中的错误修复
 --------------------------------------------------
@@ -38,3 +40,4 @@ ESP-IDF 支持但不包含在芯片 ROM 中的功能
     :esp32s3: - 修复了只能将 16 MB 虚拟地址范围映射到 flash 只读数据中的问题。
     :esp32c3: - 修复了只能将 128 KB 虚拟地址范围映射到 flash 指令中的问题。
     :esp32c2: - 修复了只能将最多 128 KB 虚拟地址范围映射到 flash 指令中的问题。
+    - 修复了擦除和写入函数在地址与长度相加超出 32 位边界时，可能绕过边界检查的问题。

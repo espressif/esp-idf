@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,18 +8,15 @@
 
 #include <stdint.h>
 
-#include "soc/soc_caps.h"
-
-#include "xt_instr_macros.h"
-#include "xtensa/config/specreg.h"
-#include "xtensa/config/extreg.h"
-#include "esp_bit_defs.h"
-#include "esp_attr.h"
-#include "xtensa/config/core.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+__attribute__((always_inline))
+static inline void dedic_gpio_cpu_ll_enable_output(uint32_t mask)
+{
+    // Dedicated GPIO output attribution is enabled automatically on the target
+}
 
 __attribute__((always_inline))
 static inline uint32_t dedic_gpio_cpu_ll_read_in(void)

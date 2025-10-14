@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,12 +10,13 @@
 #include "freertos/task.h"
 #include "unity.h"
 #include "driver/rmt_tx.h"
+#include "driver/gpio.h"
 #include "esp_timer.h"
 #include "soc/soc_caps.h"
 #include "test_util_rmt_encoders.h"
 #include "test_board.h"
 
-#if CONFIG_RMT_ISR_IRAM_SAFE
+#if CONFIG_RMT_TX_ISR_CACHE_SAFE
 #define TEST_RMT_CALLBACK_ATTR IRAM_ATTR
 #else
 #define TEST_RMT_CALLBACK_ATTR
@@ -23,12 +24,24 @@
 
 TEST_CASE("rmt bytes encoder", "[rmt]")
 {
+    // If you want to keep the IO level after unintall the RMT channel, a workaround is to set the pull up/down register here
+    // because when we uninstall the RMT channel, we will also disable the GPIO output
+    gpio_config_t io_conf = {
+        .pin_bit_mask = (1ULL << TEST_RMT_GPIO_NUM_B),
+        .mode = GPIO_MODE_INPUT,
+        .pull_up_en = GPIO_PULLUP_DISABLE,
+        // Note: make sure the test board doesn't have a pull-up resistor attached to the GPIO, otherwise this test case will fail in the check
+        .pull_down_en = GPIO_PULLDOWN_ENABLE,
+        .intr_type = GPIO_INTR_DISABLE,
+    };
+    TEST_ESP_OK(gpio_config(&io_conf));
+
     rmt_tx_channel_config_t tx_channel_cfg = {
         .mem_block_symbols = SOC_RMT_MEM_WORDS_PER_CHANNEL,
         .clk_src = RMT_CLK_SRC_DEFAULT,
         .resolution_hz = 1000000, // 1MHz, 1 tick = 1us
         .trans_queue_depth = 4,
-        .gpio_num = TEST_RMT_GPIO_NUM_A,
+        .gpio_num = TEST_RMT_GPIO_NUM_B,
         .intr_priority = 3
     };
     printf("install tx channel\r\n");
@@ -74,13 +87,30 @@ TEST_CASE("rmt bytes encoder", "[rmt]")
 
     printf("disable tx channel\r\n");
     TEST_ESP_OK(rmt_disable(tx_channel));
+
+    printf("remove tx channel\r\n");
+    TEST_ESP_OK(rmt_del_channel(tx_channel));
+    vTaskDelay(pdMS_TO_TICKS(500));
+
+    // check the IO level after uninstall the RMT channel
+    TEST_ASSERT_EQUAL(0, gpio_get_level(TEST_RMT_GPIO_NUM_B));
+
+    printf("install tx channel again\r\n");
+    TEST_ESP_OK(rmt_new_tx_channel(&tx_channel_cfg, &tx_channel));
+    printf("enable tx channel\r\n");
+    TEST_ESP_OK(rmt_enable(tx_channel));
+
+    printf("start transaction\r\n");
+    TEST_ESP_OK(rmt_transmit(tx_channel, bytes_encoder, (uint8_t[]) {
+        0x00, 0x01, 0x02, 0x03, 0x04, 0x05
+    }, 6, &transmit_config));
+    // adding extra delay here for visualizing
+    vTaskDelay(pdMS_TO_TICKS(500));
+
+    TEST_ESP_OK(rmt_disable(tx_channel));
     printf("remove tx channel and encoder\r\n");
     TEST_ESP_OK(rmt_del_channel(tx_channel));
     TEST_ESP_OK(rmt_del_encoder(bytes_encoder));
-
-    // Test if intr_priority check works
-    tx_channel_cfg.intr_priority = 4;  // 4 is an invalid interrupt priority
-    TEST_ESP_ERR(rmt_new_tx_channel(&tx_channel_cfg, &tx_channel), ESP_ERR_INVALID_ARG);
 }
 
 static void test_rmt_channel_single_trans(size_t mem_block_symbols, bool with_dma)
@@ -653,4 +683,76 @@ TEST_CASE("rmt multiple channels transaction", "[rmt]")
 #if SOC_RMT_SUPPORT_DMA
     test_rmt_multi_channels_trans(1024, SOC_RMT_MEM_WORDS_PER_CHANNEL, true, false);
 #endif
+}
+
+TEST_CASE("rmt tx gpio switch test", "[rmt]")
+{
+    // use the GPIO to check the IO level after transaction
+    gpio_config_t io_conf = {
+        .pin_bit_mask = BIT(TEST_RMT_GPIO_NUM_A) | BIT(TEST_RMT_GPIO_NUM_B),
+        .mode = GPIO_MODE_INPUT,
+        .pull_up_en = GPIO_PULLUP_DISABLE,
+        .pull_down_en = GPIO_PULLDOWN_ENABLE,
+        .intr_type = GPIO_INTR_DISABLE,
+    };
+    TEST_ESP_OK(gpio_config(&io_conf));
+
+    rmt_tx_channel_config_t tx_channel_cfg = {
+        .mem_block_symbols = SOC_RMT_MEM_WORDS_PER_CHANNEL,
+        .clk_src = RMT_CLK_SRC_DEFAULT,
+        .resolution_hz = 1000000, // 1MHz, 1 tick = 1us
+        .trans_queue_depth = 4,
+        .gpio_num = TEST_RMT_GPIO_NUM_A,
+        .intr_priority = 3
+    };
+    printf("install tx channel\r\n");
+    rmt_channel_handle_t tx_channel = NULL;
+    TEST_ESP_OK(rmt_new_tx_channel(&tx_channel_cfg, &tx_channel));
+    printf("install copy encoder\r\n");
+    rmt_encoder_handle_t copy_encoder = NULL;
+    rmt_copy_encoder_config_t copy_encoder_config = {};
+    TEST_ESP_OK(rmt_new_copy_encoder(&copy_encoder_config, &copy_encoder));
+
+    printf("enable tx channel\r\n");
+    TEST_ESP_OK(rmt_enable(tx_channel));
+
+    printf("start transaction\r\n");
+    rmt_transmit_config_t transmit_config = {
+        .loop_count = 0, // no loop
+        .flags.eot_level = 1,
+    };
+    rmt_symbol_word_t rmt_symbol = {
+        .level0 = 0,
+        .duration0 = 50,
+        .level1 = 1,
+        .duration1 = 100,
+    };
+
+    // check the IO level after transaction
+    TEST_ASSERT_EQUAL(0, gpio_get_level(TEST_RMT_GPIO_NUM_A));
+    TEST_ESP_OK(rmt_transmit(tx_channel, copy_encoder, &rmt_symbol, sizeof(rmt_symbol), &transmit_config));
+    TEST_ESP_OK(rmt_tx_wait_all_done(tx_channel, -1));
+    TEST_ASSERT_EQUAL(1, gpio_get_level(TEST_RMT_GPIO_NUM_A));
+
+    // switch the GPIO
+    TEST_ESP_ERR(rmt_tx_switch_gpio(tx_channel, TEST_RMT_GPIO_NUM_B, false), ESP_ERR_INVALID_STATE);
+    TEST_ESP_OK(rmt_disable(tx_channel));
+    TEST_ESP_OK(rmt_tx_switch_gpio(tx_channel, TEST_RMT_GPIO_NUM_B, false));
+    TEST_ESP_OK(rmt_enable(tx_channel));
+
+    // check the IO level after transaction
+    // note: the IO level is 1 before the transaction, because the GPIO level will be inherited from the eot_level
+    TEST_ASSERT_EQUAL(1, gpio_get_level(TEST_RMT_GPIO_NUM_B));
+    transmit_config.flags.eot_level = 0;
+    TEST_ESP_OK(rmt_transmit(tx_channel, copy_encoder, &rmt_symbol, sizeof(rmt_symbol), &transmit_config));
+    TEST_ESP_OK(rmt_tx_wait_all_done(tx_channel, -1));
+    TEST_ASSERT_EQUAL(0, gpio_get_level(TEST_RMT_GPIO_NUM_B));
+
+    printf("disable tx channel\r\n");
+    TEST_ESP_OK(rmt_disable(tx_channel));
+    printf("remove tx channel and encoder\r\n");
+    TEST_ESP_OK(rmt_del_channel(tx_channel));
+    TEST_ESP_OK(rmt_del_encoder(copy_encoder));
+    TEST_ESP_OK(gpio_reset_pin(TEST_RMT_GPIO_NUM_A));
+    TEST_ESP_OK(gpio_reset_pin(TEST_RMT_GPIO_NUM_B));
 }

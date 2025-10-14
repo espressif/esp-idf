@@ -1119,6 +1119,8 @@ static void btc_hh_call_arg_deep_free(btc_msg_t *msg)
 void btc_hh_call_handler(btc_msg_t *msg)
 {
     btc_hidh_args_t *arg = (btc_hidh_args_t *)(msg->arg);
+    BTC_TRACE_DEBUG("%s act %d", __func__, msg->act);
+
     switch (msg->act) {
     case BTC_HH_INIT_EVT:
         btc_hh_init();
@@ -1227,6 +1229,7 @@ void btc_hh_cb_handler(btc_msg_t *msg)
     btc_hh_device_t *p_dev = NULL;
     int len, i;
     BTC_TRACE_DEBUG("%s: event=%s dereg = %d", __func__, dump_hh_event(msg->act), btc_hh_cb.service_dereg_active);
+
     switch (msg->act) {
     case BTA_HH_ENABLE_EVT:
         if (p_data->status == BTA_HH_OK) {
@@ -1372,7 +1375,10 @@ void btc_hh_cb_handler(btc_msg_t *msg)
              */
             if (p_dev->local_vup) {
                 p_dev->local_vup = false;
+#if BTC_HID_REMOVE_DEVICE_BONDING
                 BTA_DmRemoveDevice(p_dev->bd_addr, BT_TRANSPORT_BR_EDR);
+#endif
+                btc_hh_remove_device(p_dev->bd_addr);
             }
 
             btc_hh_cb.status = (BTC_HH_STATUS)BTC_HH_DEV_DISCONNECTED;
@@ -1406,8 +1412,9 @@ void btc_hh_cb_handler(btc_msg_t *msg)
             // [boblane]
             if (p_dev->local_vup) {
                 p_dev->local_vup = false;
+#if BTC_HID_REMOVE_DEVICE_BONDING
                 BTA_DmRemoveDevice(p_dev->bd_addr, BT_TRANSPORT_BR_EDR);
-            } else {
+#endif
                 btc_hh_remove_device(p_dev->bd_addr);
             }
             param.unplug.status = p_data->dev_status.status;
@@ -1568,6 +1575,23 @@ void btc_hh_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
         break;
     default:
         break;
+    }
+}
+
+void btc_hh_get_profile_status(esp_hidh_profile_status_t *param)
+{
+    if (is_hidh_init()) {
+        param->hidh_inited = true;
+        if (btc_hh_cb.status == BTC_HH_DEV_CONNECTED) {
+            param->conn_num++;
+        }
+        for (int i = 0; i < BTC_HH_MAX_ADDED_DEV; i++) {
+            if (memcmp(btc_hh_cb.added_devices[i].bd_addr, bd_addr_null, BD_ADDR_LEN) != 0) {
+                param->plug_vc_dev_num++;
+            }
+        }
+    } else {
+        param->hidh_inited = false;
     }
 }
 

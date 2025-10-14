@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,7 +7,9 @@
 #pragma once
 
 #include <stdint.h>
+#include "sdkconfig.h"
 #include "esp_err.h"
+#include "esp_attr.h"
 #include "hal/rmt_types.h"
 #include "driver/rmt_types.h"
 
@@ -26,6 +28,7 @@ typedef enum {
     RMT_ENCODING_RESET = 0,           /*!< The encoding session is in reset state */
     RMT_ENCODING_COMPLETE = (1 << 0), /*!< The encoding session is finished, the caller can continue with subsequent encoding */
     RMT_ENCODING_MEM_FULL = (1 << 1), /*!< The encoding artifact memory is full, the caller should return from current encoding session */
+    RMT_ENCODING_WITH_EOF = (1 << 2), /*!< The encoding session has inserted the EOF marker to the symbol stream */
 } rmt_encode_state_t;
 
 /**
@@ -67,6 +70,12 @@ struct rmt_encoder_t {
      */
     esp_err_t (*del)(rmt_encoder_t *encoder);
 };
+
+#if CONFIG_RMT_ENCODER_FUNC_IN_IRAM
+#define RMT_ENCODER_FUNC_ATTR IRAM_ATTR
+#else
+#define RMT_ENCODER_FUNC_ATTR
+#endif
 
 /**
  * @brief Callback for simple callback encoder
@@ -127,6 +136,13 @@ typedef struct {
 } rmt_copy_encoder_config_t;
 
 /**
+ * @brief BitScrambler encoder configuration
+ */
+typedef struct {
+    const void *program_bin; /*!< BitScrambler program */
+} rmt_bs_encoder_config_t;
+
+/**
  * @brief Simple callback encoder configuration
  */
 typedef struct {
@@ -169,6 +185,8 @@ esp_err_t rmt_bytes_encoder_update_config(rmt_encoder_handle_t bytes_encoder, co
 /**
  * @brief Create RMT copy encoder, which copies the given RMT symbols into RMT memory
  *
+ * @note When transmitting using a copy encoder, ensure that the input data is already formatted as `rmt_symbol_word_t`.
+ *
  * @param[in] config Copy encoder configuration
  * @param[out] ret_encoder Returned encoder handle
  * @return
@@ -178,6 +196,22 @@ esp_err_t rmt_bytes_encoder_update_config(rmt_encoder_handle_t bytes_encoder, co
  *      - ESP_FAIL: Create RMT copy encoder failed because of other error
  */
 esp_err_t rmt_new_copy_encoder(const rmt_copy_encoder_config_t *config, rmt_encoder_handle_t *ret_encoder);
+
+/**
+ * @brief Create RMT BitScrambler encoder
+ *
+ * @note The BitScrambler encoder is used to encode the user data into RMT symbols by providing the BitScrambler assembly program.
+ *       The BitScrambler program is a binary blob, it should take control of the whole encoding stuffs, including inserting the EOF marker.
+ *
+ * @param[in] config BitScrambler encoder configuration
+ * @param[out] ret_encoder Returned encoder handle
+ * @return
+ *      - ESP_OK: Create RMT BitScrambler encoder successfully
+ *      - ESP_ERR_INVALID_ARG: Create RMT BitScrambler encoder failed because of invalid argument
+ *      - ESP_ERR_NO_MEM: Create RMT BitScrambler encoder failed because out of memory
+ *      - ESP_FAIL: Create RMT BitScrambler encoder failed because of other error
+ */
+esp_err_t rmt_new_bitscrambler_encoder(const rmt_bs_encoder_config_t *config, rmt_encoder_handle_t *ret_encoder);
 
 /**
  * @brief Create RMT simple callback encoder, which uses a callback to convert incoming

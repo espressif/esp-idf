@@ -1,4 +1,4 @@
-set(srcs "test_app_main.c" "test_dma_utils.c")
+set(srcs "test_app_main.c")
 
 if(CONFIG_SOC_ASYNC_MEMCPY_SUPPORTED)
     list(APPEND srcs "test_async_memcpy.c")

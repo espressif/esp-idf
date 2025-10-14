@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -67,9 +67,9 @@ void periph_rtc_apll_release(void);
  * @return
  *      - ESP_OK: APLL frequency set success
  *      - ESP_ERR_INVALID_ARG: The input expt_freq is out of APLL support range
- *      - ESP_ERR_INVALID_STATE: APLL is refered by more than one peripherals, not allowed to change its frequency now
+ *      - ESP_ERR_INVALID_STATE: APLL is referred by more than one peripherals, not allowed to change its frequency now
  */
-esp_err_t periph_rtc_apll_freq_set(uint32_t expt_freq, uint32_t *real_freq);
+esp_err_t periph_rtc_apll_freq_set(uint32_t expt_freq_hz, uint32_t *real_freq_hz);
 #endif // SOC_CLK_APLL_SUPPORTED
 
 #if SOC_CLK_MPLL_SUPPORTED
@@ -96,7 +96,7 @@ void periph_rtc_mpll_release(void);
  *      - ESP_OK: MPLL frequency set success
  *      - ESP_ERR_INVALID_STATE: MPLL is referred by more than one peripherals, not allowed to change its frequency now
  */
-esp_err_t periph_rtc_mpll_freq_set(uint32_t expt_freq, uint32_t *real_freq);
+esp_err_t periph_rtc_mpll_freq_set(uint32_t expt_freq_hz, uint32_t *real_freq_hz);
 #endif // SOC_CLK_MPLL_SUPPORTED
 
 #ifdef __cplusplus

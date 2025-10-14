@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -55,7 +55,7 @@ extern "C" {
 *
 * @note Please do not modify this value
 */
-#define ESP_BT_CONTROLLER_CONFIG_MAGIC_VAL  0x20241015
+#define ESP_BT_CONTROLLER_CONFIG_MAGIC_VAL  0x20250318
 
 /**
  * @brief Bluetooth Controller mode
@@ -199,6 +199,28 @@ the advertising packet will be discarded until the memory is restored. */
 #define BTDM_CTRL_CHECK_CONNECT_IND_ACCESS_ADDRESS_ENABLED 0
 #endif
 
+#if defined(CONFIG_BTDM_BLE_CHAN_ASS_EN)
+#define BTDM_BLE_CHAN_ASS_EN (CONFIG_BTDM_BLE_CHAN_ASS_EN)
+#else
+#define BTDM_BLE_CHAN_ASS_EN (0)
+#endif
+
+#if CONFIG_BTDM_CTRL_CONTROLLER_DEBUG_MODE_1
+#define BTDM_CTRL_CONTROLLER_DEBUG_MODE_1  (1 << 1)
+#else
+#define BTDM_CTRL_CONTROLLER_DEBUG_MODE_1  0
+#endif
+
+#ifndef BTDM_CTRL_CONTROLLER_DEBUG_FLAG
+#define BTDM_CTRL_CONTROLLER_DEBUG_FLAG    (BTDM_CTRL_CONTROLLER_DEBUG_MODE_1 | CONTROLLER_ADV_LOST_DEBUG_BIT)
+#endif
+
+#if defined(CONFIG_BTDM_BLE_PING_EN)
+#define BTDM_BLE_PING_EN (CONFIG_BTDM_BLE_PING_EN)
+#else
+#define BTDM_BLE_PING_EN (0)
+#endif
+
 /**
 * @brief  Default Bluetooth Controller configuration
 */
@@ -212,7 +234,7 @@ the advertising packet will be discarded until the memory is restored. */
     .normal_adv_size = NORMAL_SCAN_DUPLICATE_CACHE_SIZE,                   \
     .mesh_adv_size = MESH_DUPLICATE_SCAN_CACHE_SIZE,                       \
     .send_adv_reserved_size = SCAN_SEND_ADV_RESERVED_SIZE,                 \
-    .controller_debug_flag = CONTROLLER_ADV_LOST_DEBUG_BIT,                \
+    .controller_debug_flag = BTDM_CTRL_CONTROLLER_DEBUG_FLAG,              \
     .mode = BTDM_CONTROLLER_MODE_EFF,                                      \
     .ble_max_conn = CONFIG_BTDM_CTRL_BLE_MAX_CONN_EFF,                     \
     .bt_max_acl_conn = CONFIG_BTDM_CTRL_BR_EDR_MAX_ACL_CONN_EFF,           \
@@ -225,10 +247,13 @@ the advertising packet will be discarded until the memory is restored. */
     .pcm_polar = CONFIG_BTDM_CTRL_PCM_POLAR_EFF,                           \
     .pcm_fsyncshp = CONFIG_BTDM_CTRL_PCM_FSYNCSHP_EFF,                     \
     .hli = BTDM_CTRL_HLI,                                                  \
+    .enc_key_sz_min = CONFIG_BTDM_CTRL_BR_EDR_MIN_ENC_KEY_SZ_DFT_EFF,      \
     .dup_list_refresh_period = SCAN_DUPL_CACHE_REFRESH_PERIOD,             \
     .ble_scan_backoff = BTDM_CTRL_SCAN_BACKOFF_UPPERLIMITMAX,              \
     .ble_llcp_disc_flag = BTDM_BLE_LLCP_DISC_FLAG,                         \
     .ble_aa_check = BTDM_CTRL_CHECK_CONNECT_IND_ACCESS_ADDRESS_ENABLED,    \
+    .ble_chan_ass_en = BTDM_BLE_CHAN_ASS_EN,                               \
+    .ble_ping_en = BTDM_BLE_PING_EN,                                       \
     .magic = ESP_BT_CONTROLLER_CONFIG_MAGIC_VAL,                           \
 }
 
@@ -302,6 +327,9 @@ typedef struct {
                                                 - 1 - Mono Mode 1
                                                 - 2 - Mono Mode 2 */
     bool hli;                               /*!< True if using high-level (level 4) interrupt (default); false otherwise. Configurable in menuconfig */
+    uint8_t enc_key_sz_min;                 /*!< Minimum size of the encryption key
+                                                - Range: 7 - 16
+                                                - Default: 7 */
     uint16_t dup_list_refresh_period;       /*!< Scan duplicate filtering list refresh period in seconds. Configurable in menuconfig
                                                 - Range: 0 - 100 seconds
                                                 - Default: 0 second */
@@ -309,6 +337,8 @@ typedef struct {
     uint8_t ble_llcp_disc_flag;             /*!< Flag indicating whether the Controller disconnects after Instant Passed (0x28) error occurs. Configurable in menuconfig.
                                                 - The Controller does not disconnect after Instant Passed (0x28) by default. */
     bool ble_aa_check;                      /*!< True if adds a verification step for the Access Address within the `CONNECT_IND` PDU; false otherwise (default). Configurable in menuconfig */
+    uint8_t ble_chan_ass_en;                /*!< True if BLE channel assessment is enabled (default), false otherwise. Configurable in menuconfig */
+    uint8_t ble_ping_en;                    /*!< True if BLE ping procedure is enabled (default), false otherwise. Configurable in menuconfig */
     uint32_t magic;                         /*!< Magic number */
 } esp_bt_controller_config_t;
 
@@ -376,6 +406,15 @@ typedef enum {
     ESP_SCO_DATA_PATH_HCI = 0,            /*!< data over HCI transport */
     ESP_SCO_DATA_PATH_PCM = 1,            /*!< data over PCM interface */
 } esp_sco_data_path_t;
+
+/**
+ * @brief Bluetooth sleep clock
+ */
+typedef enum {
+    ESP_BT_SLEEP_CLOCK_NONE            = 0,   /*!< Sleep clock not configured */
+    ESP_BT_SLEEP_CLOCK_MAIN_XTAL       = 1,   /*!< SoC main crystal */
+    ESP_BT_SLEEP_CLOCK_EXT_32K_XTAL    = 2,   /*!< External 32.768kHz crystal/oscillator */
+} esp_bt_sleep_clock_t;
 
 /**
  * @brief       Initialize the Bluetooth Controller to allocate tasks and other resources
@@ -674,6 +713,30 @@ void esp_vhci_host_send_packet(uint8_t *data, uint16_t len);
  *      - ESP_FAIL: Failure
  */
 esp_err_t esp_vhci_host_register_callback(const esp_vhci_host_callback_t *callback);
+
+/**
+ * @brief Get the Bluetooth module sleep clock source.
+ *
+ * @note This function should be called after `esp_bt_controller_init()`
+ *
+ * @return
+ *      - Clock source used in Bluetooth low power mode
+ */
+esp_bt_sleep_clock_t esp_bt_get_lpclk_src(void);
+
+/**
+ * @brief Set the Bluetooth module sleep clock source.
+ *
+ * @note This function should be called before `esp_bt_controller_init()`
+ *
+ * @param[in] lpclk Bluetooth sleep clock source
+ *
+ * @return
+ *       - ESP_OK: Success
+ *       - ESP_ERR_INVALID_ARG: Invalid argument
+ */
+esp_err_t esp_bt_set_lpclk_src(esp_bt_sleep_clock_t lpclk);
+
 #ifdef __cplusplus
 }
 #endif

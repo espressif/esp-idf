@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -274,11 +274,9 @@ static inline void usb_dwc_ll_grstctl_reset_frame_counter(usb_dwc_dev_t *hw)
 static inline void usb_dwc_ll_grstctl_core_soft_reset(usb_dwc_dev_t *hw)
 {
     hw->grstctl_reg.csftrst = 1;
-}
-
-static inline bool usb_dwc_ll_grstctl_is_core_soft_reset_in_progress(usb_dwc_dev_t *hw)
-{
-    return hw->grstctl_reg.csftrst;
+    while (hw->grstctl_reg.csftrst) {
+        ;
+    }
 }
 
 // --------------------------- GINTSTS Register --------------------------------
@@ -361,7 +359,7 @@ static inline unsigned usb_dwc_ll_ghwcfg_get_hsphy_type(usb_dwc_dev_t *hw)
 
 static inline unsigned usb_dwc_ll_ghwcfg_get_channel_num(usb_dwc_dev_t *hw)
 {
-    return hw->ghwcfg2_reg.numhstchnl;
+    return hw->ghwcfg2_reg.numhstchnl + 1;
 }
 
 // --------------------------- HPTXFSIZ Register -------------------------------
@@ -763,6 +761,23 @@ static inline void usb_dwc_ll_hcintmsk_set_intr_mask(volatile usb_dwc_host_chan_
 
 // ---------------------------- HCTSIZi Register -------------------------------
 
+static inline void usb_dwc_ll_hctsiz_init(volatile usb_dwc_host_chan_regs_t *chan)
+{
+    usb_dwc_hctsiz_reg_t hctsiz;
+    hctsiz.val = chan->hctsiz_reg.val;
+    hctsiz.dopng = 0;         // Don't do ping
+    hctsiz.pid = 0;           // Set PID to DATA0
+    /*
+     * Set SCHED_INFO which occupies xfersize[7:0]
+     *
+     * Although the hardware documentation suggests that SCHED_INFO is only used for periodic channels,
+     * empirical evidence shows that omitting this configuration on non-periodic channels can cause them to freeze.
+     * Therefore, we set this field for all channels to ensure reliable operation.
+     */
+    hctsiz.xfersize |= 0xFF;
+    chan->hctsiz_reg.val = hctsiz.val;
+}
+
 static inline void usb_dwc_ll_hctsiz_set_pid(volatile usb_dwc_host_chan_regs_t *chan, uint32_t data_pid)
 {
     if (data_pid == 0) {
@@ -791,50 +806,33 @@ static inline void usb_dwc_ll_hctsiz_set_qtd_list_len(volatile usb_dwc_host_chan
     chan->hctsiz_reg.val = hctsiz.val;
 }
 
-static inline void usb_dwc_ll_hctsiz_init(volatile usb_dwc_host_chan_regs_t *chan)
+/**
+ * @brief Perform PING protocol
+ *
+ * @note This function is here only for compatibility reasons. PING is not relevant on FS only targets
+ * @param[in] chan   Channel registers
+ * @param[in] enable true: Enable PING, false: Disable PING
+ */
+static inline void usb_dwc_ll_hctsiz_set_dopng(volatile usb_dwc_host_chan_regs_t *chan, bool enable)
 {
-    usb_dwc_hctsiz_reg_t hctsiz;
-    hctsiz.val = chan->hctsiz_reg.val;
-    hctsiz.dopng = 0;         //Don't do ping
-    /*
-    Set SCHED_INFO which occupies xfersize[7:0]
-    It is always set to 0xFF for full speed and not used in Bulk/Ctrl channels
-    */
-    hctsiz.xfersize |= 0xFF;
-    chan->hctsiz_reg.val = hctsiz.val;
 }
 
+/**
+ * @brief Set scheduling info for Periodic channel
+ *
+ * @note ESP32-S3 is Full-Speed only, so SCHED_INFO is always set to 0xFF
+ * @attention This function must be called for each periodic channel!
+ * @see USB-OTG databook: Table 5-47
+ *
+ * @param[in] chan             Channel registers
+ * @param[in] tokens_per_frame Ignored
+ * @param[in] offset           Ignored
+ */
 static inline void usb_dwc_ll_hctsiz_set_sched_info(volatile usb_dwc_host_chan_regs_t *chan, int tokens_per_frame, int offset)
 {
-    // @see USB-OTG databook: Table 5-47
-    // This function is relevant only for HS
     usb_dwc_hctsiz_reg_t hctsiz;
     hctsiz.val = chan->hctsiz_reg.val;
-    uint8_t sched_info_val;
-    switch (tokens_per_frame) {
-        case 1:
-            offset %= 8; // If the required offset > 8, we must wrap around to SCHED_INFO size = 8
-            sched_info_val = 0b00000001;
-            break;
-        case 2:
-            offset %= 4;
-            sched_info_val = 0b00010001;
-            break;
-        case 4:
-            offset %= 2;
-            sched_info_val = 0b01010101;
-            break;
-        case 8:
-            offset = 0;
-            sched_info_val = 0b11111111;
-            break;
-        default:
-            abort();
-            break;
-    }
-    sched_info_val <<= offset;
-    hctsiz.xfersize &= ~(0xFF);
-    hctsiz.xfersize |= sched_info_val;
+    hctsiz.xfersize |= 0xFF;
     chan->hctsiz_reg.val = hctsiz.val;
 }
 

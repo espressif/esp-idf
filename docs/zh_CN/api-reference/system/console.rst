@@ -45,12 +45,19 @@ Linenoise 库不需要显式地初始化，但是在调用行编辑函数之前�
 
 - :cpp:func:`linenoiseAllowEmpty`
 
-    设置 linenoise 库收到空行的解析行为，设置为 ``true`` 时返回长度为零的字符串 (``""``) ，设置为 ``false`` 时返回 ``NULL``。默认情况下，将返回长度为零的字符串。
+  设置 linenoise 库收到空行的解析行为，设置为 ``true`` 时返回长度为零的字符串 (``""``) ，设置为 ``false`` 时返回 ``NULL``。默认情况下，将返回长度为零的字符串。
 
 - :cpp:func:`linenoiseSetMaxLineLen`
 
-    设置 linenoise 库中每行的最大长度，默认长度为 4096 字节，可以通过更新该默认值来优化 RAM 内存的使用。
+  设置 linenoise 库中每行的最大长度，默认长度为 4096 字节，可以通过更新该默认值来优化 RAM 内存的使用。
 
+- :cpp:func:`linenoiseSetReadFunction`
+
+  设置 linenoise 使用的读取函数。
+
+- :cpp:func:`linenoiseSetReadCharacteristics`
+
+  设置用于读取的文件描述符的特性（例如，阻塞模式或非阻塞模式）。该函数在 ``linenoise.c`` 中具有一个弱定义，可通过强定义进行覆盖。
 
 主循环
 ^^^^^^

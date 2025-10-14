@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,7 +7,7 @@
 #include <string.h>
 #include "esp_gdbstub_common.h"
 #include "soc/soc_memory_layout.h"
-#include "xtensa/config/specreg.h"
+#include "xtensa/config/xt_specreg.h"
 #include "sdkconfig.h"
 #include "esp_cpu.h"
 #include "esp_ipc_isr.h"
@@ -35,8 +35,8 @@ static void update_regfile_common(esp_gdbstub_gdb_regfile_t *dst)
     }
     dst->windowbase = 0;
     dst->windowstart = 0x1;
-    RSR(CONFIGID0, dst->configid0);
-    RSR(CONFIGID1, dst->configid1);
+    RSR(XT_REG_CONFIGID0, dst->configid0);
+    RSR(XT_REG_CONFIGID1, dst->configid1);
 }
 
 #if XCHAL_HAVE_FP
@@ -111,7 +111,7 @@ void esp_gdbstub_frame_to_regfile(const esp_gdbstub_frame_t *frame, esp_gdbstub_
     current_tcb_ptr = pxCurrentTCBs[esp_cpu_get_core_id()];
 #endif
     uint32_t cp_enabled;
-    RSR(CPENABLE, cp_enabled);
+    RSR(XT_REG_CPENABLE, cp_enabled);
 
     // Check if the co-processor is enabled
     if (cp_enabled) {
@@ -182,7 +182,7 @@ void esp_gdbstub_tcb_frame_to_regfile(dummy_tcb_t *tcb, esp_gdbstub_gdb_regfile_
 #endif
 
     uint32_t cp_enabled;
-    RSR(CPENABLE, cp_enabled);
+    RSR(XT_REG_CPENABLE, cp_enabled);
 
     void *current_tcb_ptr = tcb;
     uint32_t *current_fpu_ptr = NULL;
@@ -309,8 +309,8 @@ void esp_gdbstub_stall_other_cpus_end(void)
  * */
 void esp_gdbstub_clear_step(void)
 {
-    WSR(ICOUNT, 0);
-    WSR(ICOUNTLEVEL, 0);
+    WSR(XT_REG_ICOUNT, 0);
+    WSR(XT_REG_ICOUNTLEVEL, 0);
 }
 
 /** @brief GDB do step
@@ -326,8 +326,8 @@ void esp_gdbstub_do_step( esp_gdbstub_frame_t *frame)
     level &= 0x7;
     level += 1;
 
-    WSR(ICOUNTLEVEL, level);
-    WSR(ICOUNT, -2);
+    WSR(XT_REG_ICOUNTLEVEL, level);
+    WSR(XT_REG_ICOUNT, -2);
 }
 
 /** @brief GDB trigger other CPU
@@ -349,78 +349,73 @@ void esp_gdbstub_trigger_cpu(void)
  *
  * */
 
-void esp_gdbstub_set_register(esp_gdbstub_frame_t *frame, uint32_t reg_index, uint32_t value)
+void esp_gdbstub_set_register(esp_gdbstub_frame_t *frame, uint32_t reg_index, uint32_t *value_ptr)
 {
-    uint32_t temp_fpu_value = value;
-    float *ptr0;
-
-    asm volatile ("mov %0, %1" : "=a" (ptr0) : "a" (&temp_fpu_value));
+    uint32_t value = *value_ptr;
 
     if (reg_index == 0) {
         frame->pc = value;
     } else if (reg_index > 0 && (reg_index <= 27)) {
         (&frame->a0)[reg_index - 1] = value;
     }
+
 #if XCHAL_HAVE_FP
-    void  *ptr1;
     uint32_t cp_enabled;
-    RSR(CPENABLE, cp_enabled);
+    RSR(XT_REG_CPENABLE, cp_enabled);
     if (cp_enabled != 0) {
         if (reg_index == 87) {
-            asm volatile ("lsi f0, %0, 0" :: "a" (ptr0));
+            asm volatile ("lsi f0, %0, 0" :: "a" (value_ptr));
         }
         if (reg_index == 88) {
-            asm volatile ("lsi f1, %0, 0" :: "a" (ptr0));
+            asm volatile ("lsi f1, %0, 0" :: "a" (value_ptr));
         }
         if (reg_index == 89) {
-            asm volatile ("lsi f2, %0, 0" :: "a" (ptr0));
+            asm volatile ("lsi f2, %0, 0" :: "a" (value_ptr));
         }
         if (reg_index == 90) {
-            asm volatile ("lsi f3, %0, 0" :: "a" (ptr0));
+            asm volatile ("lsi f3, %0, 0" :: "a" (value_ptr));
         }
         if (reg_index == 91) {
-            asm volatile ("lsi f4, %0, 0" :: "a" (ptr0));
+            asm volatile ("lsi f4, %0, 0" :: "a" (value_ptr));
         }
         if (reg_index == 92) {
-            asm volatile ("lsi f5, %0, 0" :: "a" (ptr0));
+            asm volatile ("lsi f5, %0, 0" :: "a" (value_ptr));
         }
         if (reg_index == 93) {
-            asm volatile ("lsi f6, %0, 0" :: "a" (ptr0));
+            asm volatile ("lsi f6, %0, 0" :: "a" (value_ptr));
         }
         if (reg_index == 94) {
-            asm volatile ("lsi f7, %0, 0" :: "a" (ptr0));
+            asm volatile ("lsi f7, %0, 0" :: "a" (value_ptr));
         }
         if (reg_index == 95) {
-            asm volatile ("lsi f8, %0, 0" :: "a" (ptr0));
+            asm volatile ("lsi f8, %0, 0" :: "a" (value_ptr));
         }
         if (reg_index == 96) {
-            asm volatile ("lsi f9, %0, 0" :: "a" (ptr0));
+            asm volatile ("lsi f9, %0, 0" :: "a" (value_ptr));
         }
         if (reg_index == 97) {
-            asm volatile ("lsi f10, %0, 0" :: "a" (ptr0));
+            asm volatile ("lsi f10, %0, 0" :: "a" (value_ptr));
         }
         if (reg_index == 98) {
-            asm volatile ("lsi f11, %0, 0" :: "a" (ptr0));
+            asm volatile ("lsi f11, %0, 0" :: "a" (value_ptr));
         }
         if (reg_index == 99) {
-            asm volatile ("lsi f12, %0, 0" :: "a" (ptr0));
+            asm volatile ("lsi f12, %0, 0" :: "a" (value_ptr));
         }
         if (reg_index == 100) {
-            asm volatile ("lsi f13, %0, 0" :: "a" (ptr0));
+            asm volatile ("lsi f13, %0, 0" :: "a" (value_ptr));
         }
         if (reg_index == 101) {
-            asm volatile ("lsi f14, %0, 0" :: "a" (ptr0));
+            asm volatile ("lsi f14, %0, 0" :: "a" (value_ptr));
         }
         if (reg_index == 102) {
-            asm volatile ("lsi f15, %0, 0" :: "a" (ptr0));
+            asm volatile ("lsi f15, %0, 0" :: "a" (value_ptr));
         }
         if (reg_index == 103) {
-            asm volatile ("l32i %0, %1, 0" : "=a" (ptr1) : "a" (ptr0));
-            asm volatile ("wur.FCR %0" : "=a" (ptr1));
+            asm volatile ("wur.FCR %0" : "=a" (value));
         }
         if (reg_index == 104) {
-            asm volatile ("l32i %0, %1, 0" : "=a" (ptr1) : "a" (ptr0));
-            asm volatile ("wur.FSR %0" : "=a" (ptr1));
+            asm volatile ("wur.FSR %0" : "=a" (value));
         }
     }
 #endif // XCHAL_HAVE_FP

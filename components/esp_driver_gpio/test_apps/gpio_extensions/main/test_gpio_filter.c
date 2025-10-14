@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,7 +12,7 @@
 #include "unity.h"
 #include "driver/gpio_filter.h"
 #include "driver/dedic_gpio.h"
-#include "soc/soc_caps.h"
+#include "soc/soc_caps_full.h"
 
 #if CONFIG_IDF_TARGET_ESP32P4
 #define TEST_FILTER_GPIO 20
@@ -79,7 +79,7 @@ TEST_CASE("GPIO flex glitch filter life cycle", "[gpio_filter]")
  * @note Because the CPU instruction / CSR register is not compatible in all ESP chips,
  *       at the moment, this test only works for Espressif's RISC-V core (e.g. ESP32C6)
  */
-#if SOC_DEDICATED_GPIO_SUPPORTED
+#if SOC_HAS(DEDICATED_GPIO)
 
 #include "hal/dedic_gpio_cpu_ll.h"
 
@@ -182,5 +182,5 @@ TEST_CASE("GPIO flex glitch filter enable/disable", "[gpio_filter]")
     vSemaphoreDelete(sem);
 }
 
-#endif // SOC_DEDICATED_GPIO_SUPPORTED
+#endif // SOC_HAS(DEDICATED_GPIO)
 #endif // SOC_GPIO_FLEX_GLITCH_FILTER_NUM > 0

@@ -139,7 +139,7 @@ typedef UINT16 tGATT_DISCONN_REASON;
 /* max length of an attribute value
 */
 #ifndef GATT_MAX_ATTR_LEN
-#define GATT_MAX_ATTR_LEN                   512
+#define GATT_MAX_ATTR_LEN                   GATT_MAX_MTU_SIZE
 #endif
 
 /* default GATT MTU size over LE link
@@ -151,7 +151,11 @@ typedef UINT16 tGATT_DISCONN_REASON;
 #define GATT_INVALID_CONN_ID                0xFFFF
 
 #ifndef GATT_CL_MAX_LCB
-#define GATT_CL_MAX_LCB                     12 // 22
+#if (GATT_MAX_PHY_CHANNEL > 12)
+#define GATT_CL_MAX_LCB                     GATT_MAX_PHY_CHANNEL
+#else
+#define GATT_CL_MAX_LCB                     12
+#endif
 #endif
 
 #ifndef GATT_MAX_SCCB

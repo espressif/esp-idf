@@ -13,7 +13,7 @@
 extern "C" {
 #endif
 
-#if !defined(CONFIG_FREERTOS_UNICORE) || defined(CONFIG_APPTRACE_GCOV_ENABLE)
+#if defined(CONFIG_ESP_IPC_ENABLE)
 
 /**
  * @brief Execute a callback on a given CPU without any blocking operations for the caller
@@ -40,7 +40,7 @@ extern "C" {
  */
 esp_err_t esp_ipc_call_nonblocking(uint32_t cpu_id, esp_ipc_func_t func, void* arg);
 
-#endif // !defined(CONFIG_FREERTOS_UNICORE) || defined(CONFIG_APPTRACE_GCOV_ENABLE)
+#endif // defined(CONFIG_ESP_IPC_ENABLE)
 
 #ifdef __cplusplus
 }

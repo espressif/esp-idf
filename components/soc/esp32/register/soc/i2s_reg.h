@@ -1,15 +1,17 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef _SOC_I2S_REG_H_
-#define _SOC_I2S_REG_H_
+#pragma once
 
 #include "soc/soc.h"
 
-#define REG_I2S_BASE( i ) ( DR_REG_I2S_BASE + ((i)*0x1E000))
+#ifdef __cplusplus
+extern "C" {
+#endif
 
+#define REG_I2S_BASE( i ) ( DR_REG_I2S_BASE + ((i)*0x1E000))
 
 #define I2S_CONF_REG(i)          (REG_I2S_BASE(i) + 0x0008)
 /* I2S_SIG_LOOPBACK : R/W ;bitpos:[18] ;default: 1'b0 ; */
@@ -1511,7 +1513,6 @@
 #define I2S_I2SDATE_V  0xFFFFFFFF
 #define I2S_I2SDATE_S  0
 
-
-
-
-#endif /*_SOC_I2S_REG_H_ */
+#ifdef __cplusplus
+}
+#endif

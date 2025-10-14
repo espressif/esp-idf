@@ -29,4 +29,3 @@ r_cca_init = 0x40000000;
 r_lld_hw_cca_evt_handler = 0x40000000;
 r_lld_sw_cca_evt_handler = 0x40000000;
 r_ble_sw_cca_check_isr = 0x40000000;
-bt_bb_tx_cca_set = 0x40000000;

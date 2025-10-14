@@ -37,6 +37,10 @@ menu "SDMMC Test Board Configuration"
             bool "ESP32-P4 Function EV Board with SDSPI breakout"
             depends on IDF_TARGET_ESP32P4
 
+        config SDMMC_BOARD_ESP32P4_EMMC_TEST
+            bool "ESP32-P4 eMMC Test Board v1"
+            depends on IDF_TARGET_ESP32P4
+
         config SDMMC_BOARD_ESP32C5_BREAKOUT
             bool "ESP32-C5 breakout board"
             depends on IDF_TARGET_ESP32C5

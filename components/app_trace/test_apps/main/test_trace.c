@@ -67,9 +67,9 @@ const static char *TAG = "esp_apptrace_test";
 #define ESP_APPTRACE_TEST_LOGO( format, ... )  ESP_APPTRACE_TEST_LOG_LEVEL(E, ESP_LOG_NONE, format, ##__VA_ARGS__)
 
 #if CONFIG_APPTRACE_SV_ENABLE == 0
-#define ESP_APPTRACE_TEST_WRITE(_b_, _s_)            esp_apptrace_write(ESP_APPTRACE_DEST_TRAX, _b_, _s_, ESP_APPTRACE_TMO_INFINITE)
-#define ESP_APPTRACE_TEST_WRITE_FROM_ISR(_b_, _s_)   esp_apptrace_write(ESP_APPTRACE_DEST_TRAX, _b_, _s_, 0UL)
-#define ESP_APPTRACE_TEST_WRITE_NOWAIT(_b_, _s_)     esp_apptrace_write(ESP_APPTRACE_DEST_TRAX, _b_, _s_, 0)
+#define ESP_APPTRACE_TEST_WRITE(_b_, _s_)            esp_apptrace_write(ESP_APPTRACE_DEST_JTAG, _b_, _s_, ESP_APPTRACE_TMO_INFINITE)
+#define ESP_APPTRACE_TEST_WRITE_FROM_ISR(_b_, _s_)   esp_apptrace_write(ESP_APPTRACE_DEST_JTAG, _b_, _s_, 0UL)
+#define ESP_APPTRACE_TEST_WRITE_NOWAIT(_b_, _s_)     esp_apptrace_write(ESP_APPTRACE_DEST_JTAG, _b_, _s_, 0)
 
 typedef struct {
     uint8_t *buf;
@@ -625,7 +625,7 @@ static int esp_logtrace_printf(const char *fmt, ...)
 
     va_start(ap, fmt);
 
-    int ret = esp_apptrace_vprintf_to(ESP_APPTRACE_DEST_TRAX, ESP_APPTRACE_TMO_INFINITE, fmt, ap);
+    int ret = esp_apptrace_vprintf_to(ESP_APPTRACE_DEST_JTAG, ESP_APPTRACE_TMO_INFINITE, fmt, ap);
 
     va_end(ap);
 
@@ -657,7 +657,7 @@ static void esp_logtrace_task(void *p)
             break;
         }
     }
-    esp_err_t ret = esp_apptrace_flush(ESP_APPTRACE_DEST_TRAX, ESP_APPTRACE_TMO_INFINITE);
+    esp_err_t ret = esp_apptrace_flush(ESP_APPTRACE_DEST_JTAG, ESP_APPTRACE_TMO_INFINITE);
     if (ret != ESP_OK) {
         ESP_APPTRACE_TEST_LOGE("Failed to flush printf buf (%d)!", ret);
     }

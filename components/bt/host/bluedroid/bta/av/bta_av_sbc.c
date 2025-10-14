@@ -583,6 +583,64 @@ UINT8 bta_av_sbc_cfg_in_cap(UINT8 *p_cfg, tA2D_SBC_CIE *p_cap)
 
 /*******************************************************************************
 **
+** Function         bta_av_sbc_cfg_in_external_codec_cap
+**
+** Description      This function checks whether an SBC codec configuration
+**                  is allowable for the given external codec capabilities.
+**
+** Returns          0 if ok, nonzero if error.
+**
+*******************************************************************************/
+UINT8 bta_av_sbc_cfg_in_external_codec_cap(UINT8 *p_cfg, UINT8 *p_cap)
+{
+    UINT8           status = 0;
+    tA2D_SBC_CIE    cfg_cie;
+    tA2D_SBC_CIE    cap_cie;
+
+    /* parse configuration */
+    if ((status = A2D_ParsSbcInfo(&cfg_cie, p_cfg, FALSE)) != 0) {
+        return status;
+    }
+    /* parse capability */
+    if ((status = A2D_ParsSbcInfo(&cap_cie, p_cap, TRUE)) != 0) {
+        return status;
+    }
+
+    /* verify that each parameter is in range */
+
+    /* sampling frequency */
+    if ((cfg_cie.samp_freq & cap_cie.samp_freq) == 0) {
+        status = A2D_NS_SAMP_FREQ;
+    }
+    /* channel mode */
+    else if ((cfg_cie.ch_mode & cap_cie.ch_mode) == 0) {
+        status = A2D_NS_CH_MODE;
+    }
+    /* block length */
+    else if ((cfg_cie.block_len & cap_cie.block_len) == 0) {
+        status = A2D_BAD_BLOCK_LEN;
+    }
+    /* subbands */
+    else if ((cfg_cie.num_subbands & cap_cie.num_subbands) == 0) {
+        status = A2D_NS_SUBBANDS;
+    }
+    /* allocation method */
+    else if ((cfg_cie.alloc_mthd & cap_cie.alloc_mthd) == 0) {
+        status = A2D_NS_ALLOC_MTHD;
+    }
+    /* max bitpool */
+    else if (cfg_cie.max_bitpool > cap_cie.max_bitpool) {
+        status = A2D_NS_MAX_BITPOOL;
+    }
+    /* min bitpool */
+    else if (cfg_cie.min_bitpool < cap_cie.min_bitpool) {
+        status = A2D_NS_MIN_BITPOOL;
+    }
+    return status;
+}
+
+/*******************************************************************************
+**
 ** Function         bta_av_sbc_bld_hdr
 **
 ** Description      This function builds the packet header for MPF1.

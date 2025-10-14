@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,7 +8,6 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include "sdkconfig.h"
 #include "esp_attr.h"
 #include "esp_bit_defs.h"
 #include "soc/soc_caps.h"
@@ -29,7 +28,7 @@ typedef enum {
     TOUCH_PAD_NUM7,     /*!< Touch pad channel 7 is GPIO27(ESP32) / GPIO7(ESP32-S2) */
     TOUCH_PAD_NUM8,     /*!< Touch pad channel 8 is GPIO33(ESP32) / GPIO8(ESP32-S2) */
     TOUCH_PAD_NUM9,     /*!< Touch pad channel 9 is GPIO32(ESP32) / GPIO9(ESP32-S2) */
-#if SOC_TOUCH_SENSOR_NUM > 10
+#if !SOC_IS(ESP32)
     TOUCH_PAD_NUM10,    /*!< Touch channel 10 is GPIO10(ESP32-S2) */
     TOUCH_PAD_NUM11,    /*!< Touch channel 11 is GPIO11(ESP32-S2) */
     TOUCH_PAD_NUM12,    /*!< Touch channel 12 is GPIO12(ESP32-S2) */
@@ -86,7 +85,8 @@ typedef enum {
 typedef enum {
     TOUCH_PAD_TIE_OPT_LOW = 0,    /*!<Initial level of charging voltage, low level */
     TOUCH_PAD_TIE_OPT_HIGH = 1,   /*!<Initial level of charging voltage, high level */
-    TOUCH_PAD_TIE_OPT_MAX,
+    TOUCH_PAD_TIE_OPT_FLOAT = 2,  /*!<Initial level of charging voltage, float */
+    TOUCH_PAD_TIE_OPT_MAX,        /*!<The max tie options */
 } touch_tie_opt_t;
 
 /** Touch sensor FSM mode */
@@ -111,23 +111,25 @@ typedef enum {
 } touch_trigger_src_t;
 
 /********************************/
-#define TOUCH_PAD_BIT_MASK_ALL              ((1<<SOC_TOUCH_SENSOR_NUM)-1)
+#if SOC_TOUCH_SENSOR_VERSION == 1
+#define TOUCH_PAD_THRESHOLD_MAX             (0)         /*!< If set touch threshold max value, The touch sensor can't be in touched status */
+#define TOUCH_PAD_BIT_MASK_ALL              (0x03FF)
+#elif SOC_TOUCH_SENSOR_VERSION == 2
+#define TOUCH_PAD_THRESHOLD_MAX             (0x1FFFFF)  /*!< If set touch threshold max value, The touch sensor can't be in touched status */
+#define TOUCH_PAD_BIT_MASK_ALL              (0x7FFF)
+#elif SOC_TOUCH_SENSOR_VERSION == 3
+#define TOUCH_PAD_THRESHOLD_MAX             (0xFFFF)    /*!< If set touch threshold max value, The touch sensor can't be in touched status */
+#define TOUCH_PAD_BIT_MASK_ALL              (0x3FFF)
+#endif
 #define TOUCH_PAD_SLOPE_DEFAULT             (TOUCH_PAD_SLOPE_7)
-#define TOUCH_PAD_TIE_OPT_DEFAULT           (TOUCH_PAD_TIE_OPT_LOW)
+#define TOUCH_PAD_TIE_OPT_DEFAULT           (TOUCH_PAD_TIE_OPT_FLOAT)
 #define TOUCH_PAD_BIT_MASK_MAX              (TOUCH_PAD_BIT_MASK_ALL)
 #define TOUCH_PAD_HIGH_VOLTAGE_THRESHOLD    (TOUCH_HVOLT_2V7)
 #define TOUCH_PAD_LOW_VOLTAGE_THRESHOLD     (TOUCH_LVOLT_0V5)
 #define TOUCH_PAD_ATTEN_VOLTAGE_THRESHOLD   (TOUCH_HVOLT_ATTEN_0V5)
 #define TOUCH_PAD_IDLE_CH_CONNECT_DEFAULT   (TOUCH_PAD_CONN_GND)
-#if SOC_TOUCH_SENSOR_VERSION == 1
-#define TOUCH_PAD_THRESHOLD_MAX             (0)         /*!< If set touch threshold max value, The touch sensor can't be in touched status */
-#elif SOC_TOUCH_SENSOR_VERSION == 2
-#define TOUCH_PAD_THRESHOLD_MAX             (0x1FFFFF)  /*!< If set touch threshold max value, The touch sensor can't be in touched status */
-#elif SOC_TOUCH_SENSOR_VERSION == 3
-#define TOUCH_PAD_THRESHOLD_MAX             (0xFFFF)    /*!< If set touch threshold max value, The touch sensor can't be in touched status */
-#endif
 
-#ifdef CONFIG_IDF_TARGET_ESP32
+#if SOC_IS(ESP32)
 
 #define TOUCH_PAD_SLEEP_CYCLE_DEFAULT   (0x1000)  /*!<The timer frequency is RTC_SLOW_CLK (can be 150k or 32k depending on the options), max value is 0xffff */
 #define TOUCH_PAD_MEASURE_CYCLE_DEFAULT (0x7fff)  /*!<The timer frequency is 8Mhz, the max value is 0x7fff */
@@ -135,9 +137,9 @@ typedef enum {
 #define TOUCH_TRIGGER_MODE_DEFAULT      (TOUCH_TRIGGER_BELOW)   /*!<Interrupts can be triggered if sensor value gets below or above threshold */
 #define TOUCH_TRIGGER_SOURCE_DEFAULT    (TOUCH_TRIGGER_SOURCE_SET1)  /*!<The wakeup trigger source can be SET1 or both SET1 and SET2 */
 
-#endif // CONFIG_IDF_TARGET ESP32
+#endif // SOC_IS(ESP32)
 
-#if !CONFIG_IDF_TARGET_ESP32
+#if !SOC_IS(ESP32)
 /**
  * Excessive total time will slow down the touch response.
  * Too small measurement time will not be sampled enough, resulting in inaccurate measurements.
@@ -159,7 +161,7 @@ typedef enum {
     TOUCH_PAD_INTR_MASK_INACTIVE = BIT(2),  /*!<Inactive for one of the enabled channels. */
     TOUCH_PAD_INTR_MASK_SCAN_DONE = BIT(3), /*!<Measurement done for all the enabled channels. */
     TOUCH_PAD_INTR_MASK_TIMEOUT = BIT(4),   /*!<Timeout for one of the enabled channels. */
-#if SOC_TOUCH_PROXIMITY_MEAS_DONE_SUPPORTED
+#if SOC_TOUCH_SENSOR_VERSION > 1 && !SOC_IS(ESP32S2)
     TOUCH_PAD_INTR_MASK_PROXI_MEAS_DONE = BIT(5),   /*!<For proximity sensor, when the number of measurements reaches the set count of measurements, an interrupt will be generated. */
     TOUCH_PAD_INTR_MASK_MAX
 #define TOUCH_PAD_INTR_MASK_ALL (TOUCH_PAD_INTR_MASK_TIMEOUT    \
@@ -300,7 +302,7 @@ typedef struct {
     bool en_proximity;              /*!<enable proximity function for sleep pad */
 } touch_pad_sleep_channel_t;
 
-#endif // !CONFIG_IDF_TARGET_ESP32
+#endif // !SOC_IS(ESP32)
 
 #ifdef __cplusplus
 }

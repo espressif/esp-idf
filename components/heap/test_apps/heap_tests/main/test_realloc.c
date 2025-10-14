@@ -29,7 +29,7 @@ TEST_CASE("realloc shrink buffer in place", "[heap]")
 
 #endif
 
-#if !(CONFIG_ESP_SYSTEM_MEMPROT_FEATURE || CONFIG_ESP_SYSTEM_PMP_IDRAM_SPLIT)
+#if !CONFIG_ESP_SYSTEM_MEMPROT
 TEST_CASE("realloc shrink buffer with EXEC CAPS", "[heap]")
 {
     const size_t buffer_size = 64;
@@ -68,4 +68,4 @@ TEST_CASE("realloc move data to a new heap type", "[heap]")
 
     free(c);
 }
-#endif // !(CONFIG_ESP_SYSTEM_MEMPROT_FEATURE || CONFIG_ESP_SYSTEM_PMP_IDRAM_SPLIT)
+#endif // !CONFIG_ESP_SYSTEM_MEMPROT

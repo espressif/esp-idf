@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2016-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2016-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,18 +12,19 @@
 #include "esp_err.h"
 #include "esp_log.h"
 #include "esp_console.h"
-#include "esp_vfs_cdcacm.h"
-#include "driver/usb_serial_jtag_vfs.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "driver/uart.h"
 #include "driver/uart_vfs.h"
 #include "driver/usb_serial_jtag.h"
+#include "driver/usb_serial_jtag_vfs.h"
+#include "esp_private/usb_console.h"
+#include "esp_vfs_cdcacm.h"
 
 #include "console_private.h"
 
 #if !CONFIG_ESP_CONSOLE_NONE
-static const char *TAG = "console.repl";
+static const char *TAG = "console.repl.chip";
 #endif // !CONFIG_ESP_CONSOLE_NONE
 
 #if CONFIG_ESP_CONSOLE_UART_DEFAULT || CONFIG_ESP_CONSOLE_UART_CUSTOM
@@ -294,7 +295,12 @@ static esp_err_t esp_console_repl_uart_delete(esp_console_repl_t *repl)
         ret = ESP_ERR_INVALID_STATE;
         goto _exit;
     }
-    repl_com->state = CONSOLE_REPL_STATE_DEINIT;
+
+    ret = esp_console_common_deinit(&uart_repl->repl_com);
+    if (ret != ESP_OK) {
+        goto _exit;
+    }
+
     esp_console_deinit();
     uart_vfs_dev_use_nonblocking(uart_repl->uart_channel);
     uart_driver_delete(uart_repl->uart_channel);
@@ -316,7 +322,12 @@ static esp_err_t esp_console_repl_usb_cdc_delete(esp_console_repl_t *repl)
         ret = ESP_ERR_INVALID_STATE;
         goto _exit;
     }
-    repl_com->state = CONSOLE_REPL_STATE_DEINIT;
+
+    ret = esp_console_common_deinit(&cdc_repl->repl_com);
+    if (ret != ESP_OK) {
+        goto _exit;
+    }
+
     esp_console_deinit();
     free(cdc_repl);
 _exit:
@@ -336,7 +347,12 @@ static esp_err_t esp_console_repl_usb_serial_jtag_delete(esp_console_repl_t *rep
         ret = ESP_ERR_INVALID_STATE;
         goto _exit;
     }
-    repl_com->state = CONSOLE_REPL_STATE_DEINIT;
+
+    ret = esp_console_common_deinit(&usb_serial_jtag_repl->repl_com);
+    if (ret != ESP_OK) {
+        goto _exit;
+    }
+
     esp_console_deinit();
     usb_serial_jtag_vfs_use_nonblocking();
     usb_serial_jtag_driver_uninstall();

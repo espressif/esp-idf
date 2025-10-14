@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,9 +20,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#define SET_BIT(t, n)  (t |= (1UL << (n)))
-#define CLR_BIT(t, n)  (t &= ~(1UL << (n)))
 
 FORCE_INLINE_ATTR void rv_utils_tee_intr_global_enable(void)
 {
@@ -50,42 +47,33 @@ FORCE_INLINE_ATTR void rv_utils_tee_intr_global_enable(void)
     RV_SET_CSR(mstatus, MSTATUS_MIE);
 }
 
+FORCE_INLINE_ATTR void rv_utils_tee_intr_global_disable(void)
+{
+    RV_CLEAR_CSR(ustatus, USTATUS_UIE);
+    RV_CLEAR_CSR(mstatus, MSTATUS_UIE);
+    RV_CLEAR_CSR(mstatus, MSTATUS_MIE);
+}
+
 FORCE_INLINE_ATTR void rv_utils_tee_intr_enable(uint32_t intr_mask)
 {
-    unsigned old_xstatus;
-
-    // Machine mode
     // Disable all interrupts to make updating of the interrupt mask atomic.
-    old_xstatus = RV_CLEAR_CSR(mstatus, MSTATUS_MIE);
+    unsigned old_xstatus = RV_CLEAR_CSR(mstatus, MSTATUS_MIE);
     REG_SET_BIT(PLIC_MXINT_ENABLE_REG, intr_mask);
-    RV_SET_CSR(mie, intr_mask);
-    RV_SET_CSR(mstatus, old_xstatus & MSTATUS_MIE);
-
-    // User mode
-    // Disable all interrupts to make updating of the interrupt mask atomic.
-    old_xstatus = RV_CLEAR_CSR(ustatus, USTATUS_UIE);
     REG_SET_BIT(PLIC_UXINT_ENABLE_REG, intr_mask);
+    RV_SET_CSR(mie, intr_mask);
     RV_SET_CSR(uie, intr_mask);
-    RV_SET_CSR(ustatus, old_xstatus & USTATUS_UIE);
+    RV_SET_CSR(mstatus, old_xstatus & MSTATUS_MIE);
 }
 
 FORCE_INLINE_ATTR void rv_utils_tee_intr_disable(uint32_t intr_mask)
 {
-    unsigned old_xstatus;
-
-    // Machine mode
     // Disable all interrupts to make updating of the interrupt mask atomic.
-    old_xstatus = RV_CLEAR_CSR(mstatus, MSTATUS_MIE);
+    unsigned old_xstatus = RV_CLEAR_CSR(mstatus, MSTATUS_MIE);
     REG_CLR_BIT(PLIC_MXINT_ENABLE_REG, intr_mask);
-    RV_CLEAR_CSR(mie, intr_mask);
-    RV_SET_CSR(mstatus, old_xstatus & MSTATUS_MIE);
-
-    // User mode
-    // Disable all interrupts to make updating of the interrupt mask atomic.
-    old_xstatus = RV_CLEAR_CSR(ustatus, USTATUS_UIE);
     REG_CLR_BIT(PLIC_UXINT_ENABLE_REG, intr_mask);
+    RV_CLEAR_CSR(mie, intr_mask);
     RV_CLEAR_CSR(uie, intr_mask);
-    RV_SET_CSR(ustatus, old_xstatus & USTATUS_UIE);
+    RV_SET_CSR(mstatus, old_xstatus & MSTATUS_MIE);
 }
 
 FORCE_INLINE_ATTR void rv_utils_tee_intr_set_type(int intr_num, enum intr_type type)
@@ -119,8 +107,8 @@ FORCE_INLINE_ATTR void rv_utils_tee_intr_edge_ack(int intr_num)
 {
     assert(intr_num >= 0 && intr_num < SOC_CPU_INTR_NUM);
 
-    REG_SET_BIT(PLIC_MXINT_CLEAR_REG, intr_num);
-    REG_SET_BIT(PLIC_UXINT_CLEAR_REG, intr_num);
+    REG_SET_BIT(PLIC_MXINT_CLEAR_REG, BIT(intr_num));
+    REG_SET_BIT(PLIC_UXINT_CLEAR_REG, BIT(intr_num));
 }
 
 #ifdef __cplusplus

@@ -10,6 +10,7 @@ This example demonstrates how to use the ISP (image signal processor) to work wi
 
 - ISP AF (auto-focus) feature
 - ISP BF (bayer denoise) feature
+- ISP BLC (black level correction) feature
 - ISP Sharpen feature
 - ISP Demosaic feature
 - ISP GAMMA feature
@@ -29,7 +30,7 @@ This example requires:
 - EK79007 or ILI9881C LCD screen
 - ESP32P4 devkit
 
-**Note:** OV5647 has its own ISP functions, whereas SC2336 is a camera sensor without ISP functions. You can use the ESP on-chip ISP functions to tune the image together with the sensor ISP functions, if the image quality is not as expected.
+**Note:** OV5647 has its own ISP functions, whereas SC2336 is a camera sensor without ISP functions. You can use the ESP on-chip ISP functions to tune the image together with the sensor ISP functions, if the image quality is not as expected. The [esp-video](https://github.com/espressif/esp-video-components/tree/master/esp_video) component provides support for the ISP control algorithms, and some examples can be found in [esp_video/examples](https://github.com/espressif/esp-video-components/tree/master/esp_video/examples).
 
 **Note:** For EK79007 you will need to connect following pins:
 - 5V - 5V
@@ -116,6 +117,10 @@ Set CONFIG_CAMERA_OV5647 to y
 Set CONFIG_CAMERA_SC2336 to y
 ```
 
+Remember to select the LCD screen model and set corresponding correct horizontal/vertical resolution in ``menuconfig`` > ``Example DSI Configuration``.
+
+Available options for the camera sensor output horizontal/vertical resolution can be seen in ``menuconfig`` > ``Example Configuration``. Note that the horizontal resolution for the camera should be the same as the LCD screen horizontal resolution.
+
 
 ### Build and Flash
 
@@ -148,7 +153,12 @@ I (1315) cam_dsi: fmt[2].name:MIPI_2lane_24Minput_RAW8_800x800_50fps
 I (1355) cam_dsi: Format in use:MIPI_2lane_24Minput_RAW8_800x640_50fps
 ```
 
-You will also see the screen auto-focus when the screen image changes.
+Below picture is from the video stream of OV5647 and ILI9881C. The camera module is auto-focused and calibrated by ESP on-chip ISP hardware. The edge is over-sharpened as example code configured.
+
+This image is also used as a reference, you can check output image without ISP auto-focus and other pipelines in [Example MIPI Camera Display](../../camera/mipi_isp_dsi/).
+
+![ISP-MULTI-PIPELINE](image/isp2.jpg)
+
 
 ## Reference
 

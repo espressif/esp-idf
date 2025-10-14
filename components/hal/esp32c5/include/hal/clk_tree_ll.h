@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,16 +9,19 @@
 #include <stdint.h>
 #include "soc/soc.h"
 #include "soc/clk_tree_defs.h"
+#include "soc/pcr_reg.h"
 #include "soc/pcr_struct.h"
 #include "soc/lp_clkrst_struct.h"
 #include "soc/pmu_reg.h"
 #include "soc/pmu_struct.h"
+#include "soc/chip_revision.h"
 #include "hal/regi2c_ctrl.h"
 #include "soc/regi2c_bbpll.h"
 #include "hal/assert.h"
 #include "hal/log.h"
 #include "esp32c5/rom/rtc.h"
 #include "hal/misc.h"
+#include "hal/efuse_hal.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -218,6 +221,8 @@ static inline __attribute__((always_inline)) uint32_t clk_ll_xtal_get_freq_mhz(v
 {
     return PCR.sysclk_conf.clk_xtal_freq;
 }
+
+#define clk_ll_xtal_load_freq_mhz() clk_ll_xtal_get_freq_mhz()
 
 /**
  * @brief Get SPLL_CLK frequency
@@ -421,6 +426,71 @@ static inline __attribute__((always_inline)) uint32_t clk_ll_apb_get_divider(voi
 }
 
 /**
+ * @brief Enable or disable the soc root clock auto gating logic
+ *
+ * @param ena true to enable, false to disable
+ */
+static inline __attribute__((always_inline)) void clk_ll_soc_root_clk_auto_gating_bypass(bool ena)
+{
+    if (ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 1)) {
+        if (ena) {
+            REG_CLR_BIT(PCR_FPGA_DEBUG_REG, BIT(31));
+        } else {
+            REG_SET_BIT(PCR_FPGA_DEBUG_REG, BIT(31));
+        }
+    }
+}
+
+/**
+ * @brief Enable the RTC clock calibration reference XTAL source on timer group0.
+ * @param enable Enable or disable the XTAL source.
+ */
+static inline __attribute__((always_inline)) void clk_ll_enable_timergroup_rtc_calibration_clock(bool enable)
+{
+    PCR.timergroup_xtal_conf.tg0_xtal_clk_en = enable;
+}
+
+/**
+ * @brief Select the frequency calculation clock source for timergroup0
+ *
+ * @param clk_sel One of the clock sources in soc_clk_freq_calculation_src_t
+ */
+static inline __attribute__((always_inline)) void clk_ll_freq_calulation_set_target(soc_clk_freq_calculation_src_t clk_sel)
+{
+    int timg_cali_clk_sel = -1;
+
+    switch (clk_sel) {
+    case CLK_CAL_32K_XTAL:
+        timg_cali_clk_sel = 1;
+        break;
+    case CLK_CAL_32K_OSC_SLOW:
+        timg_cali_clk_sel = 2;
+        break;
+    case CLK_CAL_RC_SLOW:
+        timg_cali_clk_sel = 3;
+        break;
+    case CLK_CAL_RC_FAST:
+        timg_cali_clk_sel = 4;
+        break;
+    default:
+        // Unsupported CLK_CAL mux input
+        abort();
+    }
+
+    if (timg_cali_clk_sel >= 0) {
+        PCR.ctrl_32k_conf.clk_32k_sel = timg_cali_clk_sel;
+    }
+}
+
+/**
+ * @brief Set the frequency division factor of RC_FAST clock
+ */
+static inline __attribute__((always_inline)) void clk_ll_rc_fast_tick_conf(void)
+{
+    HAL_FORCE_MODIFY_U32_REG_FIELD(PCR.ctrl_32k_conf, fosc_tick_num, (1 << CLK_LL_RC_FAST_CALIB_TICK_DIV_BITS) - 1); // divider = 1 << CLK_LL_RC_FAST_CALIB_TICK_DIV_BITS
+}
+
+/**
  * @brief Select the clock source for RTC_SLOW_CLK
  *
  * @param in_sel One of the clock sources in soc_rtc_slow_clk_src_t
@@ -529,14 +599,6 @@ static inline __attribute__((always_inline)) uint32_t clk_ll_rc_fast_get_divider
 }
 
 /**
- * @brief Set the frequency division factor of RC_FAST clock
- */
-static inline void clk_ll_rc_fast_tick_conf(void)
-{
-    HAL_FORCE_MODIFY_U32_REG_FIELD(PCR.ctrl_32k_conf, fosc_tick_num, (1 << CLK_LL_RC_FAST_CALIB_TICK_DIV_BITS) - 1); // divider = 1 << CLK_LL_RC_FAST_CALIB_TICK_DIV_BITS
-}
-
-/**
  * @brief Set RC_SLOW_CLK divider
  *
  * @param divider Divider of RC_SLOW_CLK. Usually this divider is set to 1 (reg. value is 0) in bootloader stage.
@@ -571,6 +633,39 @@ static inline __attribute__((always_inline)) void clk_ll_rtc_slow_store_cal(uint
 static inline __attribute__((always_inline)) uint32_t clk_ll_rtc_slow_load_cal(void)
 {
     return REG_READ(RTC_SLOW_CLK_CAL_REG);
+}
+
+/*
+ * Enable/Disable the clock gate for clock output signal source
+*/
+static inline void clk_ll_enable_clkout_source(soc_clkout_sig_id_t clk_src, bool en)
+{
+    switch (clk_src)
+    {
+        case CLKOUT_SIG_PLL_F22M:
+            PCR.ctrl_clk_out_en.clk22_oen = en;
+            break;
+        case CLKOUT_SIG_PLL_F44M:
+            PCR.ctrl_clk_out_en.clk44_oen = en;
+            break;
+        case CLKOUT_SIG_PLL_F40M:
+            PCR.ctrl_clk_out_en.clk_bb_oen = en;
+            break;
+        case CLKOUT_SIG_PLL_F80M:
+            PCR.ctrl_clk_out_en.clk80_oen = en;
+            break;
+        case CLKOUT_SIG_PLL_F160M:
+            PCR.ctrl_clk_out_en.clk160_oen = en;
+            break;
+        case CLKOUT_SIG_PLL_F480M:
+            PCR.ctrl_clk_out_en.clk_480m_oen = en;
+            break;
+        case CLKOUT_SIG_XTAL:
+            PCR.ctrl_clk_out_en.clk_xtal_oen = en;
+            break;
+        default:
+            break;
+    }
 }
 
 #ifdef __cplusplus

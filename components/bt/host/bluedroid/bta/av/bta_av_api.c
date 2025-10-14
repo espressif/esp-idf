@@ -129,6 +129,23 @@ void BTA_AvRegister(tBTA_AV_CHNL chnl, const char *p_service_name, UINT8 app_id,
     }
 }
 
+void BTA_AvRegSEP(tBTA_AV_CHNL chnl, UINT8 seid, UINT8 tsep, tBTA_AV_CODEC codec_type, UINT8 *p_codec_info, tBTA_AV_DATA_CBACK *p_data_cback)
+{
+    tBTA_AV_API_REG_SEP  *p_buf;
+
+    if ((p_buf = (tBTA_AV_API_REG_SEP *) osi_malloc(sizeof(tBTA_AV_API_REG_SEP))) != NULL) {
+        p_buf->hdr.layer_specific   = chnl;
+        p_buf->hdr.event = BTA_AV_API_REG_SEP_EVT;
+
+        p_buf->seid = seid;
+        p_buf->tsep = tsep;
+        p_buf->codec_type = codec_type;
+        memcpy(p_buf->codec_info, p_codec_info, AVDT_CODEC_SIZE);
+        p_buf->p_data_cback = p_data_cback;
+        bta_sys_sendmsg(p_buf);
+    }
+}
+
 /*******************************************************************************
 **
 ** Function         BTA_AvDeregister

@@ -11,12 +11,12 @@
 
 #include "esp_assert.h"
 #include "rom/km.h"
+#include "rom/key_mgr.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define HUK_INFO_SIZE           384
 #define HUK_RISK_ALERT_LEVEL    4
 
 /**
@@ -35,7 +35,7 @@ ESP_STATIC_ASSERT(sizeof(esp_huk_mode_t) == sizeof(huk_mode_t), "Size of esp_huk
  */
 typedef enum {
     ESP_HUK_STATE_IDLE = 0, /* Key Manager is idle */
-    ESP_HUK_STATE_LOAD,     /* Key Manager is read to recieve input */
+    ESP_HUK_STATE_LOAD,     /* Key Manager is read to receive input */
     ESP_HUK_STATE_GAIN,     /* Key Manager is ready to provide output */
     ESP_HUK_STATE_BUSY      /* Key Manager is busy */
 } esp_huk_state_t;

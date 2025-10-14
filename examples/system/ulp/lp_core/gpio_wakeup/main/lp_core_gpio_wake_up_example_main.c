@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -34,7 +34,7 @@ static void wakeup_gpio_init(void)
     rtc_gpio_set_direction(WAKEUP_PIN, RTC_GPIO_MODE_INPUT_ONLY);
     rtc_gpio_pulldown_dis(WAKEUP_PIN);
     rtc_gpio_pullup_en(WAKEUP_PIN);
-    rtc_gpio_wakeup_enable(WAKEUP_PIN, GPIO_INTR_LOW_LEVEL);
+    rtc_gpio_wakeup_enable(WAKEUP_PIN, GPIO_INTR_NEGEDGE);
 }
 
 void app_main(void)
@@ -48,16 +48,13 @@ void app_main(void)
 
     wakeup_gpio_init();
 
-    esp_sleep_wakeup_cause_t cause = esp_sleep_get_wakeup_cause();
-    /* not a wakeup from ULP, load the firmware */
-    if (cause != ESP_SLEEP_WAKEUP_ULP) {
+    if (esp_sleep_get_wakeup_causes() & BIT(ESP_SLEEP_WAKEUP_ULP)) {
+        /* ULP read and detected a change in WAKEUP_PIN, prints */
+        printf("ULP woke up the main CPU! \n");
+    } else {
+        /* not a wakeup from ULP, load the firmware */
         printf("Not a ULP wakeup, initializing it! \n");
         init_ulp_program();
-    }
-
-    /* ULP read and detected a change in WAKEUP_PIN, prints */
-    if (cause == ESP_SLEEP_WAKEUP_ULP) {
-        printf("ULP woke up the main CPU! \n");
     }
 
     /* Go back to sleep, only the ULP will run */

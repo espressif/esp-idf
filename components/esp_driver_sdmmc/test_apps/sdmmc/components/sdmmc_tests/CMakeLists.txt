@@ -10,7 +10,8 @@ if(CONFIG_SOC_SDMMC_HOST_SUPPORTED)
                      "sdmmc_test_trim_sd.c"
                      "sdmmc_test_discard_sd.c"
                      "sdmmc_test_sanitize_sd.c"
-                     "sdmmc_test_various_cmds.c")
+                     "sdmmc_test_various_cmds.c"
+                     "sdmmc_test_card_init.c")
 endif()
 
 set(priv_requires "sdmmc"

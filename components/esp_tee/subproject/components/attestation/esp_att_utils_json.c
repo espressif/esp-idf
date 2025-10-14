@@ -126,7 +126,7 @@ esp_err_t esp_att_utils_header_to_json(const esp_att_token_hdr_t *tk_hdr, char *
     json_gen_obj_set_string(&json_gen, "encr_alg", NULL);
     json_gen_obj_set_string(&json_gen, "sign_alg", ESP_ATT_TK_SIGN_ALG);
 
-    json_gen_obj_set_int(&json_gen, "key_id", ESP_ATT_TK_KEY_ID);
+    json_gen_obj_set_string(&json_gen, "key_id", ESP_ATT_TK_KEY_ID);
 
     // End the top-level JSON object
     json_gen_end_object(&json_gen);

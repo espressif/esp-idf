@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -249,26 +249,26 @@ typedef union {
          *  Disable\\1: Enable
          */
         uint32_t evt_time_ovf_timer3_en:1;
-        /** evt_time0_cmp_en : R/W; bitpos: [20]; default: 0;
+        /** evt_timer0_cmp_en : R/W; bitpos: [20]; default: 0;
          *  Configures whether or not to enable the LEDC_EVT_TIMER0_CMP event.\\0: Disable\\1:
          *  Enable
          */
-        uint32_t evt_time0_cmp_en:1;
-        /** evt_time1_cmp_en : R/W; bitpos: [21]; default: 0;
+        uint32_t evt_timer0_cmp_en:1;
+        /** evt_timer1_cmp_en : R/W; bitpos: [21]; default: 0;
          *  Configures whether or not to enable the LEDC_EVT_TIMER1_CMP event.\\0: Disable\\1:
          *  Enable
          */
-        uint32_t evt_time1_cmp_en:1;
-        /** evt_time2_cmp_en : R/W; bitpos: [22]; default: 0;
+        uint32_t evt_timer1_cmp_en:1;
+        /** evt_timer2_cmp_en : R/W; bitpos: [22]; default: 0;
          *  Configures whether or not to enable the LEDC_EVT_TIMER2_CMP event.\\0: Disable\\1:
          *  Enable
          */
-        uint32_t evt_time2_cmp_en:1;
-        /** evt_time3_cmp_en : R/W; bitpos: [23]; default: 0;
+        uint32_t evt_timer2_cmp_en:1;
+        /** evt_timer3_cmp_en : R/W; bitpos: [23]; default: 0;
          *  Configures whether or not to enable the LEDC_EVT_TIMER3_CMP event.\\0: Disable\\1:
          *  Enable
          */
-        uint32_t evt_time3_cmp_en:1;
+        uint32_t evt_timer3_cmp_en:1;
         /** task_duty_scale_update_ch0_en : R/W; bitpos: [24]; default: 0;
          *  Configures whether or not to enable the LEDC_TASK_DUTY_SCALE_UPDATE_CH0 task.\\0:
          *  Disable\\1: Enable

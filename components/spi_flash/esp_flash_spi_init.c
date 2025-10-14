@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,7 +8,6 @@
 #include "esp_flash.h"
 #include "memspi_host_driver.h"
 #include "esp_flash_spi_init.h"
-#include "driver/gpio.h"
 #include "esp_rom_gpio.h"
 #include "esp_rom_efuse.h"
 #include "esp_log.h"
@@ -17,6 +16,7 @@
 #include "esp_private/spi_share_hw_ctrl.h"
 #include "esp_ldo_regulator.h"
 #include "hal/spi_flash_hal.h"
+#include "spi_flash_chip_driver.h"
 #include "hal/gpio_hal.h"
 #include "esp_flash_internal.h"
 #include "esp_rom_gpio.h"
@@ -26,8 +26,25 @@
 #include "esp_rom_spiflash.h"
 #include "bootloader_flash.h"
 #include "esp_check.h"
+#include "esp_private/esp_clk_tree_common.h"
+#include "clk_ctrl_os.h"
+#include "soc/soc_caps.h"
 
 __attribute__((unused)) static const char TAG[] = "spi_flash";
+
+#if !CONFIG_SPI_FLASH_AUTO_SUSPEND && !CONFIG_SPI_FLASH_PLACE_FUNCTIONS_IN_IRAM
+#error "CONFIG_SPI_FLASH_PLACE_FUNCTIONS_IN_IRAM cannot be disabled when CONFIG_SPI_FLASH_AUTO_SUSPEND is disabled."
+#endif
+
+#if CONFIG_SPI_FLASH_ROM_IMPL && (CONFIG_ESPTOOLPY_FLASHSIZE_32MB || CONFIG_ESPTOOLPY_FLASHSIZE_64MB || CONFIG_ESPTOOLPY_FLASHSIZE_128MB)
+#error "Flash chip size equal or over 32MB memory cannot use driver in ROM"
+#endif
+
+#if SOC_PERIPH_CLK_CTRL_SHARED
+#define GPSPI_FLASH_RCC_CLOCK_ATOMIC() PERIPH_RCC_ATOMIC()
+#else
+#define GPSPI_FLASH_RCC_CLOCK_ATOMIC()
+#endif
 
 /* This pointer is defined in ROM and extern-ed on targets where CONFIG_SPI_FLASH_ROM_IMPL = y*/
 #if !CONFIG_SPI_FLASH_ROM_IMPL
@@ -120,6 +137,11 @@ esp_flash_t *esp_flash_default_chip = NULL;
     .cs_setup = 1,\
 }
 #define TSUS_VAL_SUSPEND CONFIG_SPI_FLASH_SUSPEND_TSUS_VAL_US
+#if SOC_SPI_MEM_SUPPORT_TSUS_TRES_SEPERATE_CTR
+#if !CONFIG_ESP32P4_SELECTS_REV_LESS_V3
+#define TRS_VAL_SUSPEND CONFIG_SPI_FLASH_SUSPEND_TRS_VAL_US
+#endif
+#endif // SOC_SPI_MEM_SUPPORT_TSUS_TRES_SEPERATE_CTR
 #endif //!CONFIG_SPI_FLASH_AUTO_SUSPEND
 #endif // Other target
 
@@ -219,6 +241,120 @@ static esp_err_t acquire_spi_device(const esp_flash_spi_device_config_t *config,
     return ret;
 }
 
+#if GPSPI_FLASH_LL_SUPPORT_CLK_SRC_PRE_DIV
+static uint32_t s_spi_find_clock_src_pre_div(uint32_t src_freq, uint32_t target_freq)
+{
+    // pre division must be even and at least 2
+    uint32_t min_div = ((src_freq / GPSPI_FLASH_LL_PERIPHERAL_FREQUENCY_MHZ) + 1) & (~0x01UL);
+    min_div = min_div < 2 ? 2 : min_div;
+
+    uint32_t total_div = src_freq / target_freq;
+    // Loop the `div` to find a divisible value of `total_div`
+    for (uint32_t pre_div = min_div; pre_div <= total_div; pre_div += 2) {
+        if ((total_div % pre_div) || (total_div / pre_div) > GPSPI_FLASH_LL_PERIPH_CLK_DIV_MAX) {
+            continue;
+        }
+        return pre_div;
+    }
+    return min_div;
+}
+#endif //GPSPI_FLASH_LL_SUPPORT_CLK_SRC_PRE_DIV
+
+/**
+ * Configure GPSPI clock source and frequency for flash device
+ *
+ * @param config Flash device configuration
+ * @return Clock source frequency in MHz
+ */
+static uint32_t init_gpspi_clock(esp_flash_t *chip, const esp_flash_spi_device_config_t *config)
+{
+#if !CONFIG_IDF_TARGET_ESP32
+    // Get clock source frequency
+    uint32_t clk_src_freq = 0;
+    spi_clock_source_t clk_src = config->clock_source ? config->clock_source : SPI_CLK_SRC_DEFAULT;
+
+#if SOC_SPI_SUPPORT_CLK_RC_FAST
+    if (config->clock_source == SPI_CLK_SRC_RC_FAST) {
+        periph_rtc_dig_clk8m_enable();
+    }
+#endif
+
+    esp_clk_tree_enable_src(clk_src, true);
+    esp_clk_tree_src_get_freq_hz(clk_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clk_src_freq);
+
+    // Enable GPSPI clock
+    GPSPI_FLASH_RCC_CLOCK_ATOMIC() {
+        gpspi_flash_ll_enable_clock(spi_flash_ll_get_hw(config->host_id), true);
+        gpspi_flash_ll_set_clk_source(spi_flash_ll_get_hw(config->host_id), clk_src);
+    }
+
+    // Store clock source in chip for later cleanup
+    chip->clock_source = clk_src;
+
+    // Calculate final clock source frequency
+    uint32_t final_freq_mhz;
+#if GPSPI_FLASH_LL_SUPPORT_CLK_SRC_PRE_DIV
+    uint32_t pre_div = s_spi_find_clock_src_pre_div(clk_src_freq, GPSPI_FLASH_LL_PERIPHERAL_FREQUENCY_MHZ * 1000 * 1000);
+    gpspi_flash_ll_clk_source_pre_div(spi_flash_ll_get_hw(config->host_id), pre_div / 2, 2);
+    final_freq_mhz = clk_src_freq / (pre_div);
+#else
+    final_freq_mhz = clk_src_freq / (1 * 1000 * 1000);
+#endif
+
+    return final_freq_mhz;
+#else
+    // Do nothing for ESP32
+    return SPI_FLASH_LL_CLOCK_FREQUENCY_MHZ;
+#endif // !CONFIG_IDF_TARGET_ESP32
+}
+
+#if !CONFIG_IDF_TARGET_ESP32
+/**
+ * Get host_id from esp_flash_t chip pointer
+ *
+ * @param chip Flash chip pointer
+ * @return host_id or -1 if invalid
+ */
+static int get_host_id_from_chip(esp_flash_t *chip)
+{
+    if (!chip || !chip->host) {
+        return -1;
+    }
+
+    spi_flash_hal_context_t* ctx = (spi_flash_hal_context_t*)chip->host;
+    return spi_flash_ll_hw_get_id(ctx->spi);
+}
+#endif // !CONFIG_IDF_TARGET_ESP32
+
+static void deinit_gpspi_clock(esp_flash_t *chip)
+{
+#if !CONFIG_IDF_TARGET_ESP32
+    if (!chip) {
+        return;
+    }
+
+    int host_id = get_host_id_from_chip(chip);
+    if (host_id < 0) {
+        return;
+    }
+
+    // Disable GPSPI clock
+    GPSPI_FLASH_RCC_CLOCK_ATOMIC() {
+        gpspi_flash_ll_enable_clock(spi_flash_ll_get_hw(host_id), false);
+    }
+
+    // Disable the clock source
+    esp_clk_tree_enable_src(chip->clock_source, false);
+
+#if SOC_SPI_SUPPORT_CLK_RC_FAST
+    // Disable RC_FAST clock if it was used
+    if (chip->clock_source == SPI_CLK_SRC_RC_FAST) {
+        periph_rtc_dig_clk8m_disable();
+    }
+#endif
+#endif // !CONFIG_IDF_TARGET_ESP32
+}
+
 esp_err_t spi_bus_add_flash_device(esp_flash_t **out_chip, const esp_flash_spi_device_config_t *config)
 {
     if (out_chip == NULL) {
@@ -275,7 +411,8 @@ esp_err_t spi_bus_add_flash_device(esp_flash_t **out_chip, const esp_flash_spi_d
         .freq_mhz = config->freq_mhz,
     };
 
-    host_cfg.clock_src_freq = spi_flash_ll_get_source_clock_freq_mhz(host_cfg.host_id);
+    // Init the gpspi clock
+    host_cfg.clock_src_freq = init_gpspi_clock(chip, config);
 
     err = memspi_host_init_pointers(host, &host_cfg);
     if (err != ESP_OK) {
@@ -298,6 +435,9 @@ esp_err_t spi_bus_remove_flash_device(esp_flash_t *chip)
     if (chip == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
+
+    // Disable GPSPI clocks before cleanup
+    deinit_gpspi_clock(chip);
 
     spi_bus_lock_dev_handle_t dev_handle = NULL;
     esp_flash_deinit_os_functions(chip, &dev_handle);
@@ -366,6 +506,9 @@ esp_err_t esp_flash_init_default_chip(void)
     s_esp_flash_choose_correct_mode(&cfg);
     #endif
 
+    #if !CONFIG_SPI_FLASH_OVERRIDE_CHIP_DRIVER_LIST
+    spi_flash_chip_list_check(&default_chip, legacy_chip->device_id);
+    #endif
 
     // For chips need time tuning, get value directly from system here.
     #if SOC_SPI_MEM_SUPPORT_TIMING_TUNING
@@ -384,7 +527,27 @@ esp_err_t esp_flash_init_default_chip(void)
         return ESP_ERR_INVALID_ARG;
     }
     cfg.tsus_val = TSUS_VAL_SUSPEND;
+
+    #if SOC_SPI_MEM_SUPPORT_TSUS_TRES_SEPERATE_CTR
+    #if !CONFIG_ESP32P4_SELECTS_REV_LESS_V3
+    if (TRS_VAL_SUSPEND > 400 || TRS_VAL_SUSPEND < 20) {
+        // Assume that the TRS value cannot larger than 400 (because the performance might be really bad)
+        // And value cannot smaller than 20 (never see that small tsus value, might be wrong)
+        return ESP_ERR_INVALID_ARG;
+    }
+    cfg.trs_val = TRS_VAL_SUSPEND;
+    #endif
+    #endif // SOC_SPI_MEM_SUPPORT_TSUS_TRES_SEPERATE_CTR
+
     #endif // CONFIG_SPI_FLASH_AUTO_SUSPEND
+
+    #if CONFIG_SPI_FLASH_AUTO_CHECK_SUSPEND_STATUS
+    cfg.auto_waiti_pes = true;
+    #endif
+
+    #if CONFIG_SPI_FLASH_AUTO_RESUME
+    cfg.software_resume = true;
+    #endif
 
     //the host is already initialized, only do init for the data and load it to the host
     esp_err_t err = memspi_host_init_pointers(&esp_flash_default_host, &cfg);

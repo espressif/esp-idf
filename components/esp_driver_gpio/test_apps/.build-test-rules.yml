@@ -3,7 +3,6 @@
 components/esp_driver_gpio/test_apps:
   depends_components:
     - esp_driver_gpio
-
 components/esp_driver_gpio/test_apps/gpio_extensions:
   enable:
     - if: SOC_DEDICATED_GPIO_SUPPORTED == 1

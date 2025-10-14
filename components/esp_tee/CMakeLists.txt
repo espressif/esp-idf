@@ -1,19 +1,20 @@
 idf_build_get_property(esp_tee_build ESP_TEE_BUILD)
-idf_build_get_property(custom_secure_service_tbl CUSTOM_SECURE_SERVICE_TBL)
+idf_build_get_property(custom_secure_service_yaml CUSTOM_SECURE_SERVICE_YAML)
 idf_build_get_property(custom_secure_service_dir CUSTOM_SECURE_SERVICE_COMPONENT_DIR)
 idf_build_get_property(custom_secure_service_component CUSTOM_SECURE_SERVICE_COMPONENT)
 idf_build_get_property(target IDF_TARGET)
 # headers & sources here are compiled into the app, not the esp_tee binary
 # (see subproject/ for the esp_tee binary build files)
 
-# ESP-TEE is currently supported only on the ESP32-C6 SoC
-if(NOT ${target} STREQUAL "esp32c6")
+# ESP-TEE is currently supported only on the ESP32-C6, H2 and C5 SoCs
+set(SUPPORTED_TARGETS "esp32c6" "esp32h2" "esp32c5")
+if(NOT target IN_LIST SUPPORTED_TARGETS)
+    message(STATUS "ESP-TEE is currently supported only on the ${SUPPORTED_TARGETS} SoCs")
     return()
 endif()
 
 if(BOOTLOADER_BUILD)
     idf_component_register()
-    return()
 elseif(esp_tee_build)
     # TEE build currently only uses the shared headers.
     idf_component_register(INCLUDE_DIRS include)
@@ -50,7 +51,9 @@ else()
             add_custom_target(blank_tee_ota_data ALL DEPENDS ${blank_tee_otadata_file})
 
             add_dependencies(flash blank_tee_ota_data)
-            add_dependencies(encrypted-flash blank_tee_ota_data)
+            if(CONFIG_SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT)
+                add_dependencies(encrypted-flash blank_tee_ota_data)
+            endif()
 
             partition_table_get_partition_info(tee_otadata_part
                 "--partition-type data --partition-subtype tee_ota" "name")
@@ -73,7 +76,7 @@ else()
 
     idf_component_register(INCLUDE_DIRS include
                            SRCS ${srcs}
-                           PRIV_REQUIRES efuse esp_system spi_flash)
+                           PRIV_REQUIRES efuse esp_security esp_system spi_flash esptool_py)
 
     if(CONFIG_SECURE_ENABLE_TEE)
         set(EXTRA_LINK_FLAGS)
@@ -82,57 +85,56 @@ else()
     endif()
 endif()
 
-set(secure_service_hdr_py
-    ${COMPONENT_DIR}/scripts/secure_service_hdr.py ${CMAKE_CURRENT_BINARY_DIR}/secure_service.tbl
-    )
-
-set(secure_service_tbl_py
-    ${COMPONENT_DIR}/scripts/secure_service_tbl.py ${CMAKE_CURRENT_BINARY_DIR}/secure_service.tbl
-    )
-
-set(secure_service_wrap_py
-    ${COMPONENT_DIR}/scripts/secure_service_wrap.py ${CMAKE_CURRENT_BINARY_DIR}/secure_service.tbl
-    )
-
-set(secure_service_num_h
-    ${CONFIG_DIR}/secure_service_num.h
-    )
-set(secure_service_dec_h
-    ${CONFIG_DIR}/secure_service_dec.h)
-
-set(secure_service_h
-    ${CONFIG_DIR}/secure_service.h
-    )
-
-if(CONFIG_SECURE_ENABLE_TEE)
-    execute_process(COMMAND cat ${COMPONENT_DIR}/scripts/${target}/secure_service.tbl ${custom_secure_service_tbl}
-        OUTPUT_FILE secure_service.tbl
-        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-        )
-
-    execute_process(COMMAND python ${secure_service_hdr_py} ${secure_service_num_h} ${secure_service_dec_h}
-        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-        )
-
-    execute_process(COMMAND python ${secure_service_tbl_py} ${secure_service_h}
-        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-        )
-
-    set_property(DIRECTORY "${COMPONENT_DIR}" APPEND PROPERTY
-        ADDITIONAL_MAKE_CLEAN_FILES ${secure_service_num_h} ${secure_service_dec_h} ${secure_service_h})
-
-    # For TEE implementation, we don't wrap the APIs since the TEE would also internally use the same API and
-    # it shouldn't route to secure service API.
-    # Instead of wrapping, we append _ss_* to the API name and then it must be defined in esp_secure_services.c
-    if(NOT esp_tee_build)
-        execute_process(COMMAND python ${secure_service_wrap_py}
-            OUTPUT_VARIABLE wrap_list
-            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-            OUTPUT_STRIP_TRAILING_WHITESPACE
-            )
-
-        string(STRIP ${wrap_list} wrap_list)
-
-        target_link_libraries(${COMPONENT_LIB} INTERFACE "${wrap_list}")
+# TODO: IDF-14145
+if((CONFIG_SECURE_ENABLE_TEE OR esp_tee_build) AND CMAKE_C_COMPILER_ID MATCHES "GNU")
+    if(CONFIG_IDF_TARGET_ESP32C5 OR CONFIG_IDF_TARGET_ESP32C61)
+        # Disable zcmp extension to avoid hardware issue with interrupts (DIG-661)
+        set(march_option "-march=rv32imac_zicsr_zifencei_zaamo_zalrsc")
+        idf_build_set_property(COMPILE_OPTIONS "${march_option}" APPEND)
+        idf_build_set_property(LINK_OPTIONS "${march_option}" APPEND)
     endif()
+endif()
+
+if(BOOTLOADER_BUILD)
+    return()
+endif()
+
+set(secure_service_yml
+    ${COMPONENT_DIR}/scripts/${IDF_TARGET}/sec_srv_tbl_default.yml ${custom_secure_service_yaml}
+)
+
+set(secure_service_yml_parser_py
+    ${COMPONENT_DIR}/scripts/secure_service_yml_parser.py
+)
+
+if(CONFIG_SECURE_ENABLE_TEE AND NOT esp_tee_build)
+    # Default secure service API families: flash_protection_spi0, flash_protection_spi1,
+    # interrupt_handling, hal, crypto, efuse, secure_storage, ota, attestation
+    set(exclude_srv)
+    if(NOT CONFIG_SECURE_TEE_EXT_FLASH_MEMPROT_SPI1)
+        list(APPEND exclude_srv "flash_protection_spi1")
+    endif()
+
+    if(NOT CONFIG_SECURE_TEE_ATTESTATION)
+        list(APPEND exclude_srv "attestation")
+    endif()
+
+    execute_process(
+        COMMAND python ${secure_service_yml_parser_py}
+        "--sec_srv" ${secure_service_yml}
+        "--exclude" ${exclude_srv}
+        WORKING_DIRECTORY ${CONFIG_DIR}
+    )
+
+    execute_process(
+        COMMAND python ${secure_service_yml_parser_py}
+        "--sec_srv" ${secure_service_yml}
+        "--exclude" ${exclude_srv} "--wrap"
+        OUTPUT_VARIABLE wrap_list
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+
+    string(STRIP "${wrap_list}" wrap_list)
+    target_link_libraries(${COMPONENT_LIB} INTERFACE "${wrap_list}")
 endif()

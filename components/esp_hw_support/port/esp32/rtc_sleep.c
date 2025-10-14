@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -65,7 +65,7 @@ typedef struct {
  * Configure whether certain peripherals are powered down in deep sleep
  * @param cfg power down flags as rtc_sleep_pd_config_t structure
  */
-static void rtc_sleep_pd(rtc_sleep_pd_config_t cfg)
+void rtc_sleep_pd(rtc_sleep_pd_config_t cfg)
 {
     REG_SET_FIELD(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_LSLP_MEM_FORCE_PU, ~cfg.dig_pd);
     REG_SET_FIELD(RTC_CNTL_PWC_REG, RTC_CNTL_SLOWMEM_FORCE_LPU, ~cfg.rtc_pd);
@@ -115,6 +115,13 @@ void rtc_sleep_get_default_config(uint32_t sleep_flags, rtc_sleep_config_t *out_
         out_config->rtc_dbias_wak = RTC_CNTL_DBIAS_1V10;
         out_config->rtc_dbias_slp = !((sleep_flags) & RTC_SLEEP_PD_INT_8M) ? RTC_CNTL_DBIAS_1V10 : RTC_CNTL_DBIAS_0V90;
         out_config->dbg_atten_slp = RTC_CNTL_DBG_ATTEN_NODROP;
+    }
+
+    if (sleep_flags & RTC_SLEEP_WITH_LOWPOWER_ANALOG) {
+        out_config->dbias_follow_8m = 0;
+    } else {
+        // make sure voltage is raised when RTC 8MCLK is enabled
+        out_config->dbias_follow_8m = 1;
     }
 }
 
@@ -221,6 +228,16 @@ void rtc_sleep_init(rtc_sleep_config_t cfg)
         REG_CLR_BIT(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_CK8M_FORCE_PU);
     }
 
+    if (cfg.dbias_follow_8m) {
+        SET_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_BIAS_CORE_FOLW_8M);
+        SET_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_BIAS_I2C_FOLW_8M);
+        SET_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_BIAS_SLEEP_FOLW_8M);
+    } else {
+        CLEAR_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_BIAS_CORE_FOLW_8M);
+        CLEAR_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_BIAS_I2C_FOLW_8M);
+        CLEAR_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_BIAS_SLEEP_FOLW_8M);
+    }
+
     /* enable VDDSDIO control by state machine */
     REG_CLR_BIT(RTC_CNTL_SDIO_CONF_REG, RTC_CNTL_SDIO_FORCE);
     REG_SET_FIELD(RTC_CNTL_SDIO_CONF_REG, RTC_CNTL_SDIO_PD_EN, cfg.vddsdio_pd_en);
@@ -235,12 +252,12 @@ void rtc_sleep_init(rtc_sleep_config_t cfg)
     REG_SET_FIELD(RTC_CNTL_SLP_REJECT_CONF_REG, RTC_CNTL_LIGHT_SLP_REJECT_EN, cfg.light_slp_reject);
 }
 
-void rtc_sleep_low_init(uint32_t slowclk_period)
+void rtc_sleep_low_init(uint32_t slowclk_period, bool dslp)
 {
     // set 5 PWC state machine times to fit in main state machine time
-    REG_SET_FIELD(RTC_CNTL_TIMER1_REG, RTC_CNTL_PLL_BUF_WAIT, RTC_CNTL_PLL_BUF_WAIT_SLP_CYCLES);
-    REG_SET_FIELD(RTC_CNTL_TIMER1_REG, RTC_CNTL_XTL_BUF_WAIT, rtc_time_us_to_slowclk(RTC_CNTL_XTL_BUF_WAIT_SLP_US, slowclk_period));
-    REG_SET_FIELD(RTC_CNTL_TIMER1_REG, RTC_CNTL_CK8M_WAIT, RTC_CNTL_CK8M_WAIT_SLP_CYCLES);
+    REG_SET_FIELD(RTC_CNTL_TIMER1_REG, RTC_CNTL_PLL_BUF_WAIT, dslp ? RTC_CNTL_PLL_BUF_WAIT_DEFAULT : RTC_CNTL_PLL_BUF_WAIT_SLP_CYCLES);
+    REG_SET_FIELD(RTC_CNTL_TIMER1_REG, RTC_CNTL_XTL_BUF_WAIT, dslp ? RTC_CNTL_XTL_BUF_WAIT_DEFAULT : rtc_time_us_to_slowclk(RTC_CNTL_XTL_BUF_WAIT_SLP_US, slowclk_period));
+    REG_SET_FIELD(RTC_CNTL_TIMER1_REG, RTC_CNTL_CK8M_WAIT, dslp ? RTC_CNTL_CK8M_WAIT_DEFAULT : RTC_CNTL_CK8M_WAIT_SLP_CYCLES);
 }
 
 /* Read back 'reject' status when waking from light or deep sleep */
@@ -249,7 +266,13 @@ static uint32_t rtc_sleep_finish(void);
 uint32_t rtc_sleep_start(uint32_t wakeup_opt, uint32_t reject_opt)
 {
     REG_SET_FIELD(RTC_CNTL_WAKEUP_STATE_REG, RTC_CNTL_WAKEUP_ENA, wakeup_opt);
-    WRITE_PERI_REG(RTC_CNTL_SLP_REJECT_CONF_REG, reject_opt);
+    /* In ESP32, only GPIO and SDIO can be as reject source during light sleep. */
+    if (reject_opt & RTC_GPIO_TRIG_EN) {
+        REG_SET_BIT(RTC_CNTL_SLP_REJECT_CONF_REG, RTC_CNTL_GPIO_REJECT_EN);
+    };
+    if (reject_opt & RTC_SDIO_TRIG_EN) {
+        REG_SET_BIT(RTC_CNTL_SLP_REJECT_CONF_REG, RTC_CNTL_SDIO_REJECT_EN);
+    };
 
     SET_PERI_REG_MASK(RTC_CNTL_INT_CLR_REG,
             RTC_CNTL_SLP_REJECT_INT_CLR | RTC_CNTL_SLP_WAKEUP_INT_CLR);
@@ -271,7 +294,13 @@ uint32_t rtc_sleep_start(uint32_t wakeup_opt, uint32_t reject_opt)
 uint32_t rtc_deep_sleep_start(uint32_t wakeup_opt, uint32_t reject_opt)
 {
     REG_SET_FIELD(RTC_CNTL_WAKEUP_STATE_REG, RTC_CNTL_WAKEUP_ENA, wakeup_opt);
-    WRITE_PERI_REG(RTC_CNTL_SLP_REJECT_CONF_REG, reject_opt);
+    /* In ESP32, only GPIO and SDIO can be as reject source during deep sleep. */
+    if (reject_opt & RTC_GPIO_TRIG_EN) {
+        REG_SET_BIT(RTC_CNTL_SLP_REJECT_CONF_REG, RTC_CNTL_GPIO_REJECT_EN);
+    };
+    if (reject_opt & RTC_SDIO_TRIG_EN) {
+        REG_SET_BIT(RTC_CNTL_SLP_REJECT_CONF_REG, RTC_CNTL_SDIO_REJECT_EN);
+    };
 
     SET_PERI_REG_MASK(RTC_CNTL_INT_CLR_REG,
             RTC_CNTL_SLP_REJECT_INT_CLR | RTC_CNTL_SLP_WAKEUP_INT_CLR);
@@ -345,7 +374,7 @@ uint32_t rtc_deep_sleep_start(uint32_t wakeup_opt, uint32_t reject_opt)
     return rtc_sleep_finish();
 }
 
-static uint32_t rtc_sleep_finish(void)
+static IRAM_ATTR uint32_t rtc_sleep_finish(void)
 {
     /* In deep sleep mode, we never get here */
     uint32_t reject = REG_GET_FIELD(RTC_CNTL_INT_RAW_REG, RTC_CNTL_SLP_REJECT_INT_RAW);

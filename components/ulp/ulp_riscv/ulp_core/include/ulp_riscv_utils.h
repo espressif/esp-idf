@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -90,17 +90,31 @@ void ulp_riscv_timer_resume(void);
 #define ULP_RISCV_CYCLES_PER_MS ULP_RISCV_CYCLES_PER_US*1000
 
 /**
+ * @brief Retrieves the current number of CPU cycles.
+ *
+ * @return The current CPU cycle count.
+ */
+static inline uint32_t ulp_riscv_get_cpu_cycles(void)
+{
+    return ULP_RISCV_GET_CCOUNT();
+}
+
+/**
  * @brief Makes the co-processor busy wait for a certain number of cycles
+ *
+ * @note This function is not accurate for delays shorter than 20 cycles,
+ * as the function's own overhead may exceed the requested delay.
  *
  * @param cycles Number of cycles to busy wait
  */
 void static inline ulp_riscv_delay_cycles(uint32_t cycles)
 {
-    uint32_t start = ULP_RISCV_GET_CCOUNT();
-    /* Off with an estimate of cycles in this function to improve accuracy */
-    uint32_t end = start + cycles - 20;
-
-    while (ULP_RISCV_GET_CCOUNT()  < end) {
+    if (cycles <= 20) { // the estimate of cycles for this function
+        return;
+    }
+    /* Off with the estimate of cycles to improve accuracy */
+    uint32_t end = ULP_RISCV_GET_CCOUNT() + cycles - 20;
+    while (ULP_RISCV_GET_CCOUNT() < end) {
         /* Wait */
     }
 }

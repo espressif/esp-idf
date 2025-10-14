@@ -12,6 +12,7 @@
 #include "common/bt_target.h"
 #include "bta/bta_sdp_api.h"
 #include "bt_sdp.h"
+#include "esp_sdp_api.h"
 
 #if (defined BTC_SDP_COMMON_INCLUDED && BTC_SDP_COMMON_INCLUDED == TRUE)
 
@@ -48,6 +49,8 @@ void btc_sdp_arg_deep_free(btc_msg_t *msg);
 
 void btc_sdp_call_handler(btc_msg_t *msg);
 void btc_sdp_cb_handler(btc_msg_t *msg);
+
+void btc_sdp_get_protocol_status(esp_sdp_protocol_status_t *param);
 
 #endif ///defined BTC_SDP_COMMON_INCLUDED && BTC_SDP_COMMON_INCLUDED == TRUE
 #endif ///__BTC_SDP_H__

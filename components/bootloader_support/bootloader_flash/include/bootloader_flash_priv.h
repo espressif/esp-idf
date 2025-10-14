@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -128,7 +128,10 @@ esp_err_t bootloader_flash_read(size_t src_addr, void *dest, size_t size, bool a
  *
  * @note All of dest_addr, src and size have to be 4-byte aligned. If write_encrypted is set, dest_addr and size must be 32-byte aligned.
  *
- * Note: In bootloader, when write_encrypted == true, the src buffer is encrypted in place.
+ * @note In bootloader, when write_encrypted == true, the src buffer is encrypted in place.
+ *
+ * @note [ESP-TEE] Using this API from the TEE will return an error if the dest_addr lies
+ *       within the active TEE partition range.
  *
  * @param  dest_addr Destination address to write in Flash.
  * @param  src Pointer to the data to write to flash
@@ -151,6 +154,9 @@ esp_err_t bootloader_flash_erase_sector(size_t sector);
 
 /**
  * @brief  Erase the Flash range.
+ *
+ * @note   [ESP-TEE] Using this API from the TEE will return an error if the start_addr lies
+ *         within the active TEE partition range.
  *
  * @param  start_addr start address of flash offset
  * @param  size       sector aligned size to be erased

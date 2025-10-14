@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -2135,34 +2135,34 @@ extern "C" {
 #define LEDC_EVT_TIME_OVF_TIMER3_EN_M  (LEDC_EVT_TIME_OVF_TIMER3_EN_V << LEDC_EVT_TIME_OVF_TIMER3_EN_S)
 #define LEDC_EVT_TIME_OVF_TIMER3_EN_V  0x00000001U
 #define LEDC_EVT_TIME_OVF_TIMER3_EN_S  19
-/** LEDC_EVT_TIME0_CMP_EN : R/W; bitpos: [20]; default: 0;
+/** LEDC_EVT_TIMER0_CMP_EN : R/W; bitpos: [20]; default: 0;
  *  Ledc timer0 compare event enable register, write 1 to enable this event.
  */
-#define LEDC_EVT_TIME0_CMP_EN    (BIT(20))
-#define LEDC_EVT_TIME0_CMP_EN_M  (LEDC_EVT_TIME0_CMP_EN_V << LEDC_EVT_TIME0_CMP_EN_S)
-#define LEDC_EVT_TIME0_CMP_EN_V  0x00000001U
-#define LEDC_EVT_TIME0_CMP_EN_S  20
-/** LEDC_EVT_TIME1_CMP_EN : R/W; bitpos: [21]; default: 0;
+#define LEDC_EVT_TIMER0_CMP_EN    (BIT(20))
+#define LEDC_EVT_TIMER0_CMP_EN_M  (LEDC_EVT_TIMER0_CMP_EN_V << LEDC_EVT_TIMER0_CMP_EN_S)
+#define LEDC_EVT_TIMER0_CMP_EN_V  0x00000001U
+#define LEDC_EVT_TIMER0_CMP_EN_S  20
+/** LEDC_EVT_TIMER1_CMP_EN : R/W; bitpos: [21]; default: 0;
  *  Ledc timer1 compare event enable register, write 1 to enable this event.
  */
-#define LEDC_EVT_TIME1_CMP_EN    (BIT(21))
-#define LEDC_EVT_TIME1_CMP_EN_M  (LEDC_EVT_TIME1_CMP_EN_V << LEDC_EVT_TIME1_CMP_EN_S)
-#define LEDC_EVT_TIME1_CMP_EN_V  0x00000001U
-#define LEDC_EVT_TIME1_CMP_EN_S  21
-/** LEDC_EVT_TIME2_CMP_EN : R/W; bitpos: [22]; default: 0;
+#define LEDC_EVT_TIMER1_CMP_EN    (BIT(21))
+#define LEDC_EVT_TIMER1_CMP_EN_M  (LEDC_EVT_TIMER1_CMP_EN_V << LEDC_EVT_TIMER1_CMP_EN_S)
+#define LEDC_EVT_TIMER1_CMP_EN_V  0x00000001U
+#define LEDC_EVT_TIMER1_CMP_EN_S  21
+/** LEDC_EVT_TIMER2_CMP_EN : R/W; bitpos: [22]; default: 0;
  *  Ledc timer2 compare event enable register, write 1 to enable this event.
  */
-#define LEDC_EVT_TIME2_CMP_EN    (BIT(22))
-#define LEDC_EVT_TIME2_CMP_EN_M  (LEDC_EVT_TIME2_CMP_EN_V << LEDC_EVT_TIME2_CMP_EN_S)
-#define LEDC_EVT_TIME2_CMP_EN_V  0x00000001U
-#define LEDC_EVT_TIME2_CMP_EN_S  22
-/** LEDC_EVT_TIME3_CMP_EN : R/W; bitpos: [23]; default: 0;
+#define LEDC_EVT_TIMER2_CMP_EN    (BIT(22))
+#define LEDC_EVT_TIMER2_CMP_EN_M  (LEDC_EVT_TIMER2_CMP_EN_V << LEDC_EVT_TIMER2_CMP_EN_S)
+#define LEDC_EVT_TIMER2_CMP_EN_V  0x00000001U
+#define LEDC_EVT_TIMER2_CMP_EN_S  22
+/** LEDC_EVT_TIMER3_CMP_EN : R/W; bitpos: [23]; default: 0;
  *  Ledc timer3 compare event enable register, write 1 to enable this event.
  */
-#define LEDC_EVT_TIME3_CMP_EN    (BIT(23))
-#define LEDC_EVT_TIME3_CMP_EN_M  (LEDC_EVT_TIME3_CMP_EN_V << LEDC_EVT_TIME3_CMP_EN_S)
-#define LEDC_EVT_TIME3_CMP_EN_V  0x00000001U
-#define LEDC_EVT_TIME3_CMP_EN_S  23
+#define LEDC_EVT_TIMER3_CMP_EN    (BIT(23))
+#define LEDC_EVT_TIMER3_CMP_EN_M  (LEDC_EVT_TIMER3_CMP_EN_V << LEDC_EVT_TIMER3_CMP_EN_S)
+#define LEDC_EVT_TIMER3_CMP_EN_V  0x00000001U
+#define LEDC_EVT_TIMER3_CMP_EN_S  23
 /** LEDC_TASK_DUTY_SCALE_UPDATE_CH0_EN : R/W; bitpos: [24]; default: 0;
  *  Ledc ch0 duty scale update task enable register, write 1 to enable this task.
  */

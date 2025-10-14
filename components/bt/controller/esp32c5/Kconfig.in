@@ -90,7 +90,7 @@ menu "HCI Config"
     config BT_LE_HCI_TRANS_TASK_STACK_SIZE
         int "HCI transport task stack size"
         depends on !BT_LE_HCI_INTERFACE_USE_RAM
-        default 1024
+        default 2048
         help
             This configures stack size of hci transport task
 endmenu
@@ -196,6 +196,13 @@ config BT_LE_POWER_CONTROL_ENABLED
     help
         Set this option to enable the Power Control feature on controller
 
+config BT_LE_PERIODIC_ADV_WITH_RESPONSE_ENABLED
+    bool "Enable BLE periodic advertising with response"
+    depends on BT_LE_50_FEATURE_SUPPORT
+    default n
+    help
+        This enables BLE periodic advertising with response feature
+
 menu "Memory Settings"
     depends on !BT_NIMBLE_ENABLED
 
@@ -283,53 +290,155 @@ config BT_LE_CONTROLLER_TASK_STACK_SIZE
     help
         This configures stack size of NimBLE controller task
 
-menuconfig BT_LE_CONTROLLER_LOG_ENABLED
-    bool "Controller log enable"
-    default n
-    help
-        Enable controller log
+menu "Controller debug features"
+    menuconfig BT_LE_CONTROLLER_LOG_ENABLED
+        bool "Controller log enable"
+        default n
+        help
+            Enable controller log
 
-config BT_LE_CONTROLLER_LOG_CTRL_ENABLED
-    bool "enable controller log module"
-    depends on BT_LE_CONTROLLER_LOG_ENABLED
-    default y
-    help
-            Enable controller log module
+    config BT_LE_CONTROLLER_LOG_MODE_BLE_LOG_V2
+        bool "Utilize BLE Log v2 for controller log"
+        depends on BLE_LOG_ENABLED
+        default y
+        help
+            Utilize BLE Log v2 for controller log
 
-config BT_LE_CONTROLLER_LOG_HCI_ENABLED
-    bool "enable HCI log module"
-    depends on BT_LE_CONTROLLER_LOG_ENABLED
-    default y
-    help
-            Enable hci log module
+    if !BT_LE_CONTROLLER_LOG_MODE_BLE_LOG_V2
+        config BT_LE_CONTROLLER_LOG_CTRL_ENABLED
+            bool "enable controller log module"
+            depends on BT_LE_CONTROLLER_LOG_ENABLED
+            default y
+            help
+                Enable controller log module
 
-config BT_LE_CONTROLLER_LOG_DUMP_ONLY
-    bool "Controller log dump mode only"
-    depends on BT_LE_CONTROLLER_LOG_ENABLED
-    default y
-    help
-            Only operate in dump mode
+        config BT_LE_CONTROLLER_LOG_HCI_ENABLED
+            bool "enable HCI log module"
+            depends on BT_LE_CONTROLLER_LOG_ENABLED
+            default y
+            help
+                Enable hci log module
 
-config BT_LE_LOG_CTRL_BUF1_SIZE
-    int "size of the first BLE controller LOG buffer"
-    depends on BT_LE_CONTROLLER_LOG_ENABLED
-    default 4096
-    help
-            Configure the size of the first BLE controller LOG buffer.
+        config BT_LE_CONTROLLER_LOG_DUMP_ONLY
+            bool "Controller log dump mode only"
+            depends on BT_LE_CONTROLLER_LOG_ENABLED
+            default y
+            help
+                Only operate in dump mode
 
-config BT_LE_LOG_CTRL_BUF2_SIZE
-    int "size of the second BLE controller LOG buffer"
-    depends on BT_LE_CONTROLLER_LOG_ENABLED
-    default 1024
-    help
-            Configure the size of the second BLE controller LOG buffer.
+        config BT_LE_CONTROLLER_LOG_SPI_OUT_ENABLED
+            bool "Output ble controller logs to SPI bus (Experimental)"
+            depends on BT_LE_CONTROLLER_LOG_ENABLED
+            depends on !BT_LE_CONTROLLER_LOG_DUMP_ONLY
+            select BT_BLE_LOG_SPI_OUT_ENABLED
+            default n
+            help
+                Output ble controller logs to SPI bus
 
-config BT_LE_LOG_HCI_BUF_SIZE
-    int "size of the BLE HCI LOG buffer"
-    depends on BT_LE_CONTROLLER_LOG_ENABLED
-    default 4096
-    help
-            Configure the size of the BLE HCI LOG buffer.
+        config BT_LE_CONTROLLER_LOG_UHCI_OUT_ENABLED
+            bool "Output ble controller logs via UART DMA (Experimental)"
+            depends on BT_LE_CONTROLLER_LOG_ENABLED
+            depends on !BT_LE_CONTROLLER_LOG_DUMP_ONLY
+            depends on !BT_LE_CONTROLLER_LOG_SPI_OUT_ENABLED
+            select BT_BLE_LOG_UHCI_OUT_ENABLED
+            default y
+            help
+                Output ble controller logs via UART DMA
+
+        config BT_LE_CONTROLLER_LOG_STORAGE_ENABLE
+            bool "Store ble controller logs to flash(Experimental)"
+            depends on !BT_LE_CONTROLLER_LOG_DUMP_ONLY
+            depends on BT_LE_CONTROLLER_LOG_ENABLED
+            default n
+            help
+                Store ble controller logs to flash memory.
+
+        config BT_LE_CONTROLLER_LOG_PARTITION_SIZE
+            int "size of ble controller log partition(Multiples of 4K)"
+            depends on BT_LE_CONTROLLER_LOG_STORAGE_ENABLE
+            default 65536
+            help
+                The size of ble controller log partition shall be a multiples of 4K.
+                The name of log partition shall be "bt_ctrl_log".
+                The partition type shall be ESP_PARTITION_TYPE_DATA.
+                The partition sub_type shall be ESP_PARTITION_SUBTYPE_ANY.
+
+        config BT_LE_LOG_CTRL_BUF1_SIZE
+            int "size of the first BLE controller LOG buffer"
+            depends on BT_LE_CONTROLLER_LOG_ENABLED
+            default 4096
+            help
+                Configure the size of the first BLE controller LOG buffer.
+
+        config BT_LE_LOG_CTRL_BUF2_SIZE
+            int "size of the second BLE controller LOG buffer"
+            depends on BT_LE_CONTROLLER_LOG_ENABLED
+            default 1024
+            help
+                Configure the size of the second BLE controller LOG buffer.
+
+        config BT_LE_LOG_HCI_BUF_SIZE
+            int "size of the BLE HCI LOG buffer"
+            depends on BT_LE_CONTROLLER_LOG_ENABLED
+            default 4096
+            help
+                Configure the size of the BLE HCI LOG buffer.
+    endif
+
+    config BT_LE_CONTROLLER_LOG_WRAP_PANIC_HANDLER_ENABLE
+        bool "Enable wrap panic handler"
+        depends on BT_LE_CONTROLLER_LOG_ENABLED
+        default n
+        help
+            Wrap esp_panic_handler to get controller logs when PC pointer exception crashes.
+
+    config BT_LE_CONTROLLER_LOG_TASK_WDT_USER_HANDLER_ENABLE
+        bool "Enable esp_task_wdt_isr_user_handler implementation"
+        depends on BT_LE_CONTROLLER_LOG_ENABLED
+        default n
+        help
+            Implement esp_task_wdt_isr_user_handler to get controller logs when task wdt issue is triggered.
+
+    config BT_LE_CONTROLLER_LOG_OUTPUT_LEVEL
+        int "The output level of controller log"
+        depends on BT_LE_CONTROLLER_LOG_ENABLED
+        range 0 5
+        default 1
+        help
+            The output level of controller log.
+
+    config BT_LE_CONTROLLER_LOG_MOD_OUTPUT_SWITCH
+        hex "The switch of module log output"
+        depends on BT_LE_CONTROLLER_LOG_ENABLED
+        range 0 0xFFFFFFFF
+        default 0xFFFFFFFF
+        help
+            The switch of module log output, this is an unsigned 32-bit hexadecimal value.
+
+    config BT_LE_ERROR_SIM_ENABLED
+        bool "Enable controller features for internal testing"
+        default n
+
+    config BT_LE_ASSERT_WHEN_ABNORMAL_DISCONN_ENABLED
+        bool "When ACL disconnects abnormally, assertion processing is performed(Experimental)"
+        default n
+
+    config BT_LE_DEBUG_REMAIN_SCENE_ENABLED
+        bool "Remain scene with GDB to capture relevant status info(Experimental)"
+        default n
+        help
+            Retain scene with GDB to capture info, requires disabling WDT (CONFIG_ESP_INT_WDT, CONFIG_ESP_TASK_WDT_EN).
+
+    config BT_LE_PTR_CHECK_ENABLED
+        bool "Enable boundary check for internal memory"
+        default n
+
+    config BT_LE_MEM_CHECK_ENABLED
+        bool "Enable memory allocation check"
+        default n
+        help
+            Used in internal tests only. Enable the memory allocation check.
+endmenu
 
 config BT_LE_LL_RESOLV_LIST_SIZE
     int "BLE LL Resolving list size"
@@ -386,7 +495,7 @@ config BT_LE_CRYPTO_STACK_MBEDTLS
 
 config BT_LE_WHITELIST_SIZE
     int "BLE white list size"
-    range 1 15
+    range 1 31
     default 12
     depends on !BT_NIMBLE_ENABLED
 
@@ -406,6 +515,23 @@ config BT_LE_LL_SCA
     default 60
     help
         Sleep clock accuracy of our device (in ppm)
+
+config BT_LE_LL_PEER_SCA_SET_ENABLE
+    bool "Enable to set constant peer SCA"
+    default n
+    help
+        Enable setting of constant peer SCA, use this if peer device has SCA larger than 500 PPM.
+        Enable this option, the controller will always use BT_LE_LL_PEER_SCA as the peer SCA value
+        to calculate the window widening instead of the value received from peer device.
+
+
+config BT_LE_LL_PEER_SCA
+    int "Constant peer sleep clock accuracy value"
+    range 0 10000
+    depends on BT_LE_LL_PEER_SCA_SET_ENABLE
+    default 0
+    help
+        Set the sleep clock accuracy of peer device
 
 config BT_LE_MAX_CONNECTIONS
     int "Maximum number of concurrent connections"
@@ -477,6 +603,7 @@ config BT_LE_USE_ESP_TIMER
     help
         Set this option to use Esp Timer which has higher priority timer
         instead of FreeRTOS timer
+
 config BT_CTRL_BLE_ADV_REPORT_FLOW_CTRL_SUPP
     bool "BLE adv report flow control supported"
     default y
@@ -575,3 +702,180 @@ config BT_LE_SCAN_DUPL_CACHE_REFRESH_PERIOD
 config BT_LE_MSYS_INIT_IN_CONTROLLER
     bool "Msys Mbuf Init in Controller"
     default y
+
+config BT_LE_TX_CCA_ENABLED
+    bool "Enable TX CCA feature"
+    default n
+    help
+        Enable CCA feature to cancel sending the packet if the signal power is stronger than CCA threshold.
+
+config BT_LE_CCA_RSSI_THRESH
+    int "CCA RSSI threshold value"
+    depends on BT_LE_TX_CCA_ENABLED
+    range 20 100
+    default 65
+    help
+        Power threshold of CCA in unit of -1 dBm.
+
+choice BT_LE_DFT_TX_POWER_LEVEL_DBM
+    prompt "BLE default Tx power level(dBm)"
+    default BT_LE_DFT_TX_POWER_LEVEL_P9
+    help
+        Specify default Tx power level(dBm).
+    config BT_LE_DFT_TX_POWER_LEVEL_N24
+        bool "-24dBm"
+    config BT_LE_DFT_TX_POWER_LEVEL_N21
+        bool "-21dBm"
+    config BT_LE_DFT_TX_POWER_LEVEL_N18
+        bool "-18dBm"
+    config BT_LE_DFT_TX_POWER_LEVEL_N15
+        bool "-15dBm"
+    config BT_LE_DFT_TX_POWER_LEVEL_N12
+        bool "-12dBm"
+    config BT_LE_DFT_TX_POWER_LEVEL_N9
+        bool "-9dBm"
+    config BT_LE_DFT_TX_POWER_LEVEL_N6
+        bool "-6dBm"
+    config BT_LE_DFT_TX_POWER_LEVEL_N3
+        bool "-3dBm"
+    config BT_LE_DFT_TX_POWER_LEVEL_N0
+        bool "0dBm"
+    config BT_LE_DFT_TX_POWER_LEVEL_P3
+        bool "+3dBm"
+    config BT_LE_DFT_TX_POWER_LEVEL_P6
+        bool "+6dBm"
+    config BT_LE_DFT_TX_POWER_LEVEL_P9
+        bool "+9dBm"
+    config BT_LE_DFT_TX_POWER_LEVEL_P12
+        bool "+12dBm"
+    config BT_LE_DFT_TX_POWER_LEVEL_P15
+        bool "+15dBm"
+    config BT_LE_DFT_TX_POWER_LEVEL_P18
+        bool "+18dBm"
+    config BT_LE_DFT_TX_POWER_LEVEL_P20
+        bool "+20dBm"
+endchoice
+
+config BT_LE_DFT_TX_POWER_LEVEL_DBM_EFF
+    int
+    default -15 if BT_LE_DFT_TX_POWER_LEVEL_N15
+    default -12 if BT_LE_DFT_TX_POWER_LEVEL_N12
+    default -9 if BT_LE_DFT_TX_POWER_LEVEL_N9
+    default -6 if BT_LE_DFT_TX_POWER_LEVEL_N6
+    default -3 if BT_LE_DFT_TX_POWER_LEVEL_N3
+    default 0 if BT_LE_DFT_TX_POWER_LEVEL_N0
+    default 3 if BT_LE_DFT_TX_POWER_LEVEL_P3
+    default 6 if BT_LE_DFT_TX_POWER_LEVEL_P6
+    default 9 if BT_LE_DFT_TX_POWER_LEVEL_P9
+    default 12 if BT_LE_DFT_TX_POWER_LEVEL_P12
+    default 15 if BT_LE_DFT_TX_POWER_LEVEL_P15
+    default 18 if BT_LE_DFT_TX_POWER_LEVEL_P18
+    default 20 if BT_LE_DFT_TX_POWER_LEVEL_P20
+    default 0
+
+config BT_LE_CTRL_CHECK_CONNECT_IND_ACCESS_ADDRESS
+    bool "Enable enhanced Access Address check in CONNECT_IND"
+    default n
+    help
+        Enabling this option will add stricter verification of the Access Address in the CONNECT_IND PDU.
+        This improves security by ensuring that only connection requests with valid Access Addresses are accepted.
+        If disabled, only basic checks are applied, improving compatibility.
+
+config BT_CTRL_RUN_IN_FLASH_ONLY
+    bool "Reduce BLE IRAM usage (READ DOCS FIRST) (EXPERIMENTAL)"
+    default n
+    help
+        Move most IRAM into flash. This will increase the usage of flash and reduce ble performance.
+        Because the code is moved to the flash, the execution speed of the code is reduced.
+        To have a small impact on performance, you need to enable flash suspend (SPI_FLASH_AUTO_SUSPEND).
+
+menu "BLE disconnects when Instant Passed (0x28) occurs"
+    config BT_LE_CTRL_LLCP_CONN_UPDATE
+        bool "BLE ACL connection update procedure"
+        default n
+        help
+            If this option is enabled, Controller will terminate the connection
+            when Instant Passed (0x28) error occurs during connection update procedure.
+
+    config BT_LE_CTRL_LLCP_CHAN_MAP_UPDATE
+        bool "BLE ACL channel map update procedure"
+        default n
+        help
+            If this option is enabled, Controller will terminate the connection
+            when Instant Passed (0x28) error occurs in channel map update procedure.
+
+    config BT_LE_CTRL_LLCP_PHY_UPDATE
+        bool "BLE ACL PHY update procedure"
+        default n
+        help
+            If this option is enabled, Controller will terminate the connection
+            when Instant Passed (0x28) error occurs in PHY update procedure.
+endmenu
+
+config BT_CTRL_SCAN_BACKOFF_UPPERLIMITMAX
+    int "The value of upperlimitmax during scan backoff procedure"
+    range 1 256
+    default 32
+    help
+        The value of upperlimitmax needs to be a power of 2.
+
+config BT_LE_CTRL_CHAN_ASS_EN
+    bool "Enable channel assessment(Experimental)"
+    default n
+    help
+        If this option is enabled, The Controller will records the communication quality
+        for each channel and then start a timer to check and update the channel map every 4 seconds.
+
+config BT_LE_CTRL_ADV_DATA_LENGTH_ZERO_AUX
+    bool "Enable aux packet when ext adv data length is zero(Experimental)"
+    default y
+    help
+        When this option is enabled, auxiliary packets will be present in the events of
+        'Non-Connectable and Non-Scannable' regardless of whether the advertising length is 0.
+        If this option is not enabled, auxiliary packets will only be present when the advertising length is not 0.
+
+config BT_LE_RXBUF_OPT_ENABLED
+    bool "Enable rxbuf optimization feature"
+    default y
+
+config BT_LE_CTRL_FAST_CONN_DATA_TX_EN
+    bool "Enable fast sending of connection data"
+    default y
+    help
+        If this option is enabled, The Controller will continue to
+        Send an empty PDU after sending valid connection data within an interval.
+
+menu "Reserved Memory Config"
+    config BT_LE_EXT_ADV_RESERVED_MEMORY_COUNT
+        int "The value of reserved EXT ADV memory count at initialization"
+        range 0 4
+        default 2
+        help
+            This value sets the number the Controller will allocate for extended advertisement
+            instances at initialization process. If more extended advertisement instances are
+            enabled, those memory will be dynamically allocated.
+            Using reduced amount of reserved memory will save heap size at the cost of extra
+            time consumption at advertising start process and possible advertising start failure
+            due to memory shortage.
+            The actual reserved memory count will be the minimum value between the maximum
+            extended advertisement instances and the BT_LE_EXT_ADV_RESERVED_MEMORY_COUNT.
+
+
+    config BT_LE_CONN_RESERVED_MEMORY_COUNT
+        int "The value of reserved CONN memory count at initialization"
+        range 0 70
+        default 2
+        help
+            This value sets the number the Controller will allocate for connection instances
+            at the initialization process. If more connection instances are enabled, those
+            memory will be dynamically allocated.
+            Using reduced amount of reserved memory will save heap size at the cost of extra
+            time consumption at connection establishment process and possible connection
+            establishment failure due to memory shortage.
+            The actual reserved memory count will be the minimum value between the maximum
+            connection instances and the BT_LE_CONN_RESERVED_MEMORY_COUNT.
+endmenu
+
+config BT_LE_DTM_ENABLED
+    bool "Enable Direct Test Mode (DTM) feature"
+    default n

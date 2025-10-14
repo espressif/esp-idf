@@ -22,6 +22,7 @@
 #include "common/bt_target.h"
 
 #if (BLE_INCLUDED == TRUE)
+#if BLE_ANDROID_CONTROLLER_SCAN_FILTER == TRUE
 #include "stack/bt_types.h"
 #include "stack/hcimsgs.h"
 #include "stack/btu.h"
@@ -445,11 +446,11 @@ BOOLEAN btm_ble_dealloc_addr_filter_counter(tBLE_BD_ADDR *p_bd_addr, UINT8 filte
 **
 ** Function         btm_ble_update_pf_local_name
 **
-** Description      this function update(add,delete or clear) the adv lcoal name filtering condition.
+** Description      this function update(add,delete or clear) the adv local name filtering condition.
 **
 **
-** Returns          BTM_SUCCESS if sucessful,
-**                  BTM_ILLEGAL_VALUE if paramter is not valid.
+** Returns          BTM_SUCCESS if successful,
+**                  BTM_ILLEGAL_VALUE if parameter is not valid.
 **
 *******************************************************************************/
 tBTM_STATUS btm_ble_update_pf_local_name(tBTM_BLE_SCAN_COND_OP action,
@@ -506,8 +507,8 @@ tBTM_STATUS btm_ble_update_pf_local_name(tBTM_BLE_SCAN_COND_OP action,
 ** Description      this function update(add/remove) service data change filter.
 **
 **
-** Returns          BTM_SUCCESS if sucessful,
-**                  BTM_ILLEGAL_VALUE if paramter is not valid.
+** Returns          BTM_SUCCESS if successful,
+**                  BTM_ILLEGAL_VALUE if parameter is not valid.
 **
 *******************************************************************************/
 tBTM_STATUS btm_ble_update_srvc_data_change(tBTM_BLE_SCAN_COND_OP action,
@@ -534,8 +535,8 @@ tBTM_STATUS btm_ble_update_srvc_data_change(tBTM_BLE_SCAN_COND_OP action,
 **                  data filtering condition.
 **
 **
-** Returns          BTM_SUCCESS if sucessful,
-**                  BTM_ILLEGAL_VALUE if paramter is not valid.
+** Returns          BTM_SUCCESS if successful,
+**                  BTM_ILLEGAL_VALUE if parameter is not valid.
 **
 *******************************************************************************/
 tBTM_STATUS btm_ble_update_pf_manu_data(tBTM_BLE_SCAN_COND_OP action,
@@ -708,8 +709,8 @@ UINT8 btm_ble_cs_update_pf_counter(tBTM_BLE_SCAN_COND_OP action,
 ** Description      this function update(add,delete or clear) the address filter of adv.
 **
 **
-** Returns          BTM_SUCCESS if sucessful,
-**                  BTM_ILLEGAL_VALUE if paramter is not valid.
+** Returns          BTM_SUCCESS if successful,
+**                  BTM_ILLEGAL_VALUE if parameter is not valid.
 **
 *******************************************************************************/
 tBTM_STATUS btm_ble_update_addr_filter(tBTM_BLE_SCAN_COND_OP action,
@@ -757,8 +758,8 @@ tBTM_STATUS btm_ble_update_addr_filter(tBTM_BLE_SCAN_COND_OP action,
 ** Description      this function update(add,delete or clear) service UUID filter.
 **
 **
-** Returns          BTM_SUCCESS if sucessful,
-**                  BTM_ILLEGAL_VALUE if paramter is not valid.
+** Returns          BTM_SUCCESS if successful,
+**                  BTM_ILLEGAL_VALUE if parameter is not valid.
 **
 *******************************************************************************/
 tBTM_STATUS btm_ble_update_uuid_filter(tBTM_BLE_SCAN_COND_OP action,
@@ -872,7 +873,7 @@ tBTM_STATUS btm_ble_update_uuid_filter(tBTM_BLE_SCAN_COND_OP action,
             memset(&btm_ble_adv_filt_cb.cur_filter_target, 0, sizeof(tBLE_BD_ADDR));
         }
     } else {
-        BTM_TRACE_ERROR("UUID filter udpating failed");
+        BTM_TRACE_ERROR("UUID filter updating failed");
     }
 
     return st;
@@ -886,8 +887,8 @@ tBTM_STATUS btm_ble_update_uuid_filter(tBTM_BLE_SCAN_COND_OP action,
 ** Description      clear all adv payload filter by de-select all the adv pf feature bits
 **
 **
-** Returns          BTM_SUCCESS if sucessful,
-**                  BTM_ILLEGAL_VALUE if paramter is not valid.
+** Returns          BTM_SUCCESS if successful,
+**                  BTM_ILLEGAL_VALUE if parameter is not valid.
 **
 *******************************************************************************/
 tBTM_STATUS btm_ble_clear_scan_pf_filter(tBTM_BLE_SCAN_COND_OP action,
@@ -1303,4 +1304,5 @@ void btm_ble_adv_filter_cleanup(void)
 #endif
 }
 
+#endif // #if BLE_ANDROID_CONTROLLER_SCAN_FILTER == TRUE
 #endif

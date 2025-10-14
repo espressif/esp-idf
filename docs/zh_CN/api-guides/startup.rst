@@ -141,7 +141,7 @@ ESP-IDF 应用程序的入口是 :idf_file:`components/esp_system/port/cpu_start
 
    - 如果默认的日志级别允许，则记录该应用程序的相关信息（项目名称、:ref:`app-version` 等）。
    - 初始化堆分配器（在这之前，所有分配必须是静态的或在堆栈上）。
-   - 初始化 newlib 组件的系统调用和时间函数。
+   - 初始化 esp_libc 组件的系统调用和时间函数。
    - 配置断电检测器。
    - 根据 :ref:`串行控制台配置 <CONFIG_ESP_CONSOLE_UART>` 设置 libc stdin、stdout、和 stderr。
    :esp32: - 执行与安全有关的检查，包括为该配置烧录 efuse（包括 :ref:`禁用 ESP32 V3 的 ROM 下载模式 <CONFIG_SECURE_UART_ROM_DL_MODE>`、:ref:`CONFIG_ESP32_DISABLE_BASIC_ROM_CONSOLE`）。

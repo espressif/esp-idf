@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -71,7 +71,7 @@ static void timer_insert_inactive(esp_timer_handle_t timer);
 static void timer_remove_inactive(esp_timer_handle_t timer);
 #endif // WITH_PROFILING
 
-__attribute__((unused)) static const char* TAG = "esp_timer";
+ESP_LOG_ATTR_TAG(TAG, "esp_timer");
 
 // lists of currently armed timers for two dispatch methods: ISR and TASK
 static LIST_HEAD(esp_timer_list, esp_timer) s_timers[ESP_TIMER_MAX] = {
@@ -132,7 +132,7 @@ esp_err_t esp_timer_create(const esp_timer_create_args_t* args,
  * But actually in IDF esp_timer_restart is used only in one place, which requires keeping
  * in IRAM when PM_SLP_IRAM_OPT = y and ESP_TASK_WDT USE ESP_TIMER = y.
 */
-esp_err_t IRAM_ATTR esp_timer_restart(esp_timer_handle_t timer, uint64_t timeout_us)
+esp_err_t ESP_TIMER_IRAM_ATTR esp_timer_restart(esp_timer_handle_t timer, uint64_t timeout_us)
 {
     esp_err_t ret = ESP_OK;
 
@@ -177,7 +177,7 @@ esp_err_t IRAM_ATTR esp_timer_restart(esp_timer_handle_t timer, uint64_t timeout
     return ret;
 }
 
-esp_err_t IRAM_ATTR esp_timer_start_once(esp_timer_handle_t timer, uint64_t timeout_us)
+esp_err_t ESP_TIMER_IRAM_ATTR esp_timer_start_once(esp_timer_handle_t timer, uint64_t timeout_us)
 {
     if (timer == NULL) {
         return ESP_ERR_INVALID_ARG;
@@ -210,7 +210,7 @@ esp_err_t IRAM_ATTR esp_timer_start_once(esp_timer_handle_t timer, uint64_t time
     return err;
 }
 
-esp_err_t IRAM_ATTR esp_timer_start_periodic(esp_timer_handle_t timer, uint64_t period_us)
+esp_err_t ESP_TIMER_IRAM_ATTR esp_timer_start_periodic(esp_timer_handle_t timer, uint64_t period_us)
 {
     if (timer == NULL) {
         return ESP_ERR_INVALID_ARG;
@@ -240,7 +240,7 @@ esp_err_t IRAM_ATTR esp_timer_start_periodic(esp_timer_handle_t timer, uint64_t 
     return err;
 }
 
-esp_err_t IRAM_ATTR esp_timer_stop(esp_timer_handle_t timer)
+esp_err_t ESP_TIMER_IRAM_ATTR esp_timer_stop(esp_timer_handle_t timer)
 {
     if (timer == NULL) {
         return ESP_ERR_INVALID_ARG;
@@ -291,7 +291,7 @@ esp_err_t esp_timer_delete(esp_timer_handle_t timer)
     return err;
 }
 
-static IRAM_ATTR esp_err_t timer_insert(esp_timer_handle_t timer, bool without_update_alarm)
+static ESP_TIMER_IRAM_ATTR esp_err_t timer_insert(esp_timer_handle_t timer, bool without_update_alarm)
 {
 #if WITH_PROFILING
     timer_remove_inactive(timer);
@@ -319,7 +319,7 @@ static IRAM_ATTR esp_err_t timer_insert(esp_timer_handle_t timer, bool without_u
     return ESP_OK;
 }
 
-static IRAM_ATTR esp_err_t timer_remove(esp_timer_handle_t timer)
+static ESP_TIMER_IRAM_ATTR esp_err_t timer_remove(esp_timer_handle_t timer)
 {
     esp_timer_dispatch_t dispatch_method = timer->flags & FL_ISR_DISPATCH_METHOD;
     timer_list_lock(dispatch_method);
@@ -344,7 +344,7 @@ static IRAM_ATTR esp_err_t timer_remove(esp_timer_handle_t timer)
 
 #if WITH_PROFILING
 
-static IRAM_ATTR void timer_insert_inactive(esp_timer_handle_t timer)
+static ESP_TIMER_IRAM_ATTR void timer_insert_inactive(esp_timer_handle_t timer)
 {
     /* May be locked or not, depending on where this is called from.
      * Lock recursively.
@@ -361,30 +361,30 @@ static IRAM_ATTR void timer_insert_inactive(esp_timer_handle_t timer)
     }
 }
 
-static IRAM_ATTR void timer_remove_inactive(esp_timer_handle_t timer)
+static ESP_TIMER_IRAM_ATTR void timer_remove_inactive(esp_timer_handle_t timer)
 {
     LIST_REMOVE(timer, list_entry);
 }
 
 #endif // WITH_PROFILING
 
-static IRAM_ATTR bool timer_armed(esp_timer_handle_t timer)
+static ESP_TIMER_IRAM_ATTR bool timer_armed(esp_timer_handle_t timer)
 {
     return timer->alarm > 0;
 }
 
-static IRAM_ATTR void timer_list_lock(esp_timer_dispatch_t timer_type)
+static ESP_TIMER_IRAM_ATTR void timer_list_lock(esp_timer_dispatch_t timer_type)
 {
     portENTER_CRITICAL_SAFE(&s_timer_lock[timer_type]);
 }
 
-static IRAM_ATTR void timer_list_unlock(esp_timer_dispatch_t timer_type)
+static ESP_TIMER_IRAM_ATTR void timer_list_unlock(esp_timer_dispatch_t timer_type)
 {
     portEXIT_CRITICAL_SAFE(&s_timer_lock[timer_type]);
 }
 
 #ifdef CONFIG_ESP_TIMER_SUPPORTS_ISR_DISPATCH_METHOD
-static IRAM_ATTR bool timer_process_alarm(esp_timer_dispatch_t dispatch_method)
+static ESP_TIMER_IRAM_ATTR bool timer_process_alarm(esp_timer_dispatch_t dispatch_method)
 #else
 static bool timer_process_alarm(esp_timer_dispatch_t dispatch_method)
 #endif
@@ -463,14 +463,14 @@ static void timer_task(void* arg)
 }
 
 #ifdef CONFIG_ESP_TIMER_SUPPORTS_ISR_DISPATCH_METHOD
-IRAM_ATTR void esp_timer_isr_dispatch_need_yield(void)
+ESP_TIMER_IRAM_ATTR void esp_timer_isr_dispatch_need_yield(void)
 {
     assert(xPortInIsrContext());
     s_isr_dispatch_need_yield = pdTRUE;
 }
 #endif
 
-static void IRAM_ATTR timer_alarm_handler(void* arg)
+static void ESP_TIMER_IRAM_ATTR timer_alarm_handler(void* arg)
 {
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
     bool isr_timers_processed = false;
@@ -491,7 +491,7 @@ static void IRAM_ATTR timer_alarm_handler(void* arg)
     }
 }
 
-static IRAM_ATTR inline bool is_initialized(void)
+static ESP_TIMER_IRAM_ATTR inline bool is_initialized(void)
 {
     return s_timer_task != NULL;
 }
@@ -564,7 +564,13 @@ esp_err_t esp_timer_init(void)
 */
 ESP_SYSTEM_INIT_FN(esp_timer_init_os, SECONDARY, ESP_TIMER_INIT_MASK, 100)
 {
-    return esp_timer_init();
+    esp_err_t err = ESP_OK;
+    if (is_initialized()) {
+        err = ESP_OK;
+    } else {
+        err = esp_timer_init();
+    }
+    return err;
 }
 
 esp_err_t esp_timer_deinit(void)
@@ -606,14 +612,15 @@ static void print_timer_info(esp_timer_handle_t t, char** dst, size_t* dst_size)
     } else {
         cb = snprintf(*dst, *dst_size, "timer@%-10p  ", t);
     }
-    cb += snprintf(*dst + cb, *dst_size + cb, "%-10lld  %-12lld  %-12d  %-12d  %-12d  %-12lld\n",
+
+    cb += snprintf(*dst + cb, *dst_size - cb, "%-10lld  %-12lld  %-12d  %-12d  %-12d  %-12lld\n",
                    (uint64_t)t->period, t->alarm, t->times_armed,
                    t->times_triggered, t->times_skipped, t->total_callback_run_time);
     /* keep this in sync with the format string, used in esp_timer_dump */
-#define TIMER_INFO_LINE_LEN 90
+#define TIMER_INFO_LINE_LEN 103
 #else
     size_t cb = snprintf(*dst, *dst_size, "timer@%-14p  %-10lld  %-12lld\n", t, (uint64_t)t->period, t->alarm);
-#define TIMER_INFO_LINE_LEN 46
+#define TIMER_INFO_LINE_LEN 47
 #endif
     *dst += cb;
     *dst_size -= cb;
@@ -687,7 +694,7 @@ esp_err_t esp_timer_dump(FILE* stream)
     return ESP_OK;
 }
 
-int64_t IRAM_ATTR esp_timer_get_next_alarm(void)
+int64_t ESP_TIMER_IRAM_ATTR esp_timer_get_next_alarm(void)
 {
     int64_t next_alarm = INT64_MAX;
     for (esp_timer_dispatch_t dispatch_method = ESP_TIMER_TASK; dispatch_method < ESP_TIMER_MAX; ++dispatch_method) {
@@ -703,7 +710,7 @@ int64_t IRAM_ATTR esp_timer_get_next_alarm(void)
     return next_alarm;
 }
 
-int64_t IRAM_ATTR esp_timer_get_next_alarm_for_wake_up(void)
+int64_t ESP_TIMER_IRAM_ATTR esp_timer_get_next_alarm_for_wake_up(void)
 {
     int64_t next_alarm = INT64_MAX;
     for (esp_timer_dispatch_t dispatch_method = ESP_TIMER_TASK; dispatch_method < ESP_TIMER_MAX; ++dispatch_method) {
@@ -723,7 +730,7 @@ int64_t IRAM_ATTR esp_timer_get_next_alarm_for_wake_up(void)
     return next_alarm;
 }
 
-esp_err_t IRAM_ATTR esp_timer_get_period(esp_timer_handle_t timer, uint64_t *period)
+esp_err_t ESP_TIMER_IRAM_ATTR esp_timer_get_period(esp_timer_handle_t timer, uint64_t *period)
 {
     if (timer == NULL || period == NULL) {
         return ESP_ERR_INVALID_ARG;
@@ -738,7 +745,7 @@ esp_err_t IRAM_ATTR esp_timer_get_period(esp_timer_handle_t timer, uint64_t *per
     return ESP_OK;
 }
 
-esp_err_t IRAM_ATTR esp_timer_get_expiry_time(esp_timer_handle_t timer, uint64_t *expiry)
+esp_err_t ESP_TIMER_IRAM_ATTR esp_timer_get_expiry_time(esp_timer_handle_t timer, uint64_t *expiry)
 {
     if (timer == NULL || expiry == NULL) {
         return ESP_ERR_INVALID_ARG;
@@ -758,7 +765,7 @@ esp_err_t IRAM_ATTR esp_timer_get_expiry_time(esp_timer_handle_t timer, uint64_t
     return ESP_OK;
 }
 
-bool IRAM_ATTR esp_timer_is_active(esp_timer_handle_t timer)
+bool ESP_TIMER_IRAM_ATTR esp_timer_is_active(esp_timer_handle_t timer)
 {
     if (timer == NULL) {
         return false;

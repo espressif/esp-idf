@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -38,6 +38,7 @@
 #include "esp_wpas_glue.h"
 #include "esp_eap_client_i.h"
 #include "esp_eap_client.h"
+#include "eloop.h"
 
 #define WPA2_VERSION    "v2.0"
 
@@ -59,10 +60,12 @@ static struct eap_sm *gEapSm = NULL;
 
 static int eap_peer_sm_init(void);
 static void eap_peer_sm_deinit(void);
+static void eap_start_eapol(void *ctx, void *data);
 
 static int eap_sm_rx_eapol_internal(u8 *src_addr, u8 *buf, u32 len, uint8_t *bssid);
 static int wpa2_start_eapol_internal(void);
 int wpa2_post(uint32_t sig, uint32_t par);
+extern bool g_wpa_config_changed;
 
 #ifdef USE_WPA2_TASK
 #define WPA2_TASK_PRIORITY 7
@@ -72,6 +75,11 @@ static wpa2_state_t s_wpa2_state = WPA2_STATE_DISABLED;
 static void *s_wpa2_api_lock = NULL;
 static void *s_wifi_wpa2_sync_sem = NULL;
 static bool s_disable_time_check = true;
+
+static void config_changed_handler(void *ctx, void *data)
+{
+    g_wpa_config_changed = true;
+}
 
 static void wpa2_api_lock(void)
 {
@@ -196,7 +204,7 @@ static void wpa2_rxq_deinit(void)
 
 void wpa2_task(void *pvParameters)
 {
-    ETSEvent *e;
+    ETSEvent e;
     struct eap_sm *sm = gEapSm;
     bool task_del = false;
 
@@ -206,16 +214,16 @@ void wpa2_task(void *pvParameters)
 
     for (;;) {
         if (TRUE == os_queue_recv(s_wpa2_queue, &e, OS_BLOCK)) {
-            if (e->sig < SIG_WPA2_MAX) {
+            if (e.sig < SIG_WPA2_MAX) {
                 DATA_MUTEX_TAKE();
-                if (sm->wpa2_sig_cnt[e->sig]) {
-                    sm->wpa2_sig_cnt[e->sig]--;
+                if (sm->wpa2_sig_cnt[e.sig]) {
+                    sm->wpa2_sig_cnt[e.sig]--;
                 } else {
-                    wpa_printf(MSG_ERROR, "wpa2_task: invalid sig cnt, sig=%" PRId32 " cnt=%d", e->sig, sm->wpa2_sig_cnt[e->sig]);
+                    wpa_printf(MSG_ERROR, "wpa2_task: invalid sig cnt, sig=%" PRId32 " cnt=%d", e.sig, sm->wpa2_sig_cnt[e.sig]);
                 }
                 DATA_MUTEX_GIVE();
             }
-            switch (e->sig) {
+            switch (e.sig) {
             case SIG_WPA2_TASK_DEL:
                 task_del = true;
                 break;
@@ -235,12 +243,9 @@ void wpa2_task(void *pvParameters)
             default:
                 break;
             }
-            os_free(e);
-        }
-
-        if (task_del) {
-            break;
-        } else {
+            if (task_del) {
+                break;
+            }
             if (s_wifi_wpa2_sync_sem) {
                 wpa_printf(MSG_DEBUG, "EAP: wifi->EAP api completed");
                 os_semphr_give(s_wifi_wpa2_sync_sem);
@@ -268,6 +273,7 @@ void wpa2_task(void *pvParameters)
 int wpa2_post(uint32_t sig, uint32_t par)
 {
     struct eap_sm *sm = gEapSm;
+    ETSEvent evt;
 
     if (!sm) {
         return ESP_FAIL;
@@ -277,28 +283,20 @@ int wpa2_post(uint32_t sig, uint32_t par)
     if (sm->wpa2_sig_cnt[sig]) {
         DATA_MUTEX_GIVE();
         return ESP_OK;
+    }
+    sm->wpa2_sig_cnt[sig]++;
+    DATA_MUTEX_GIVE();
+    evt.sig = sig;
+    evt.par = par;
+    if (os_queue_send(s_wpa2_queue, &evt, os_task_ms_to_tick(10)) != TRUE) {
+        wpa_printf(MSG_ERROR, "EAP: Q S E");
+        return ESP_FAIL;
+    }
+    if (s_wifi_wpa2_sync_sem) {
+        os_semphr_take(s_wifi_wpa2_sync_sem, OS_BLOCK);
+        wpa_printf(MSG_DEBUG, "EAP: EAP api return, sm->state(%d)", sm->finish_state);
     } else {
-        ETSEvent *evt = (ETSEvent *)os_malloc(sizeof(ETSEvent));
-        if (evt == NULL) {
-            wpa_printf(MSG_ERROR, "EAP: E N M");
-            DATA_MUTEX_GIVE();
-            return ESP_FAIL;
-        }
-        sm->wpa2_sig_cnt[sig]++;
-        DATA_MUTEX_GIVE();
-        evt->sig = sig;
-        evt->par = par;
-        if (os_queue_send(s_wpa2_queue, &evt, os_task_ms_to_tick(10)) != TRUE) {
-            wpa_printf(MSG_ERROR, "EAP: Q S E");
-            return ESP_FAIL;
-        } else {
-            if (s_wifi_wpa2_sync_sem) {
-                os_semphr_take(s_wifi_wpa2_sync_sem, OS_BLOCK);
-                wpa_printf(MSG_DEBUG, "EAP: EAP api return, sm->state(%d)", sm->finish_state);
-            } else {
-                wpa_printf(MSG_ERROR, "EAP: null wifi->EAP sync sem");
-            }
-        }
+        wpa_printf(MSG_ERROR, "EAP: null wifi->EAP sync sem");
     }
     return ESP_OK;
 }
@@ -532,6 +530,10 @@ static int eap_sm_rx_eapol_internal(u8 *src_addr, u8 *buf, u32 len, uint8_t *bss
         return ESP_FAIL;
     }
 
+    if (!sm->eap_process_started) {
+        sm->eap_process_started = true;
+        eloop_cancel_timeout(eap_start_eapol, NULL, NULL);
+    }
     if (len < sizeof(*hdr) + sizeof(*ehdr)) {
         wpa_printf(MSG_DEBUG, "WPA: EAPOL frame too short to be a WPA "
                    "EAPOL-Key (len %lu, expecting at least %lu)",
@@ -615,13 +617,26 @@ _out:
     return ret;
 }
 
-static int wpa2_start_eapol(void)
+static void eap_start_eapol(void *ctx, void *data)
 {
 #ifdef USE_WPA2_TASK
-    return wpa2_post(SIG_WPA2_START, 0);
+    wpa2_post(SIG_WPA2_START, 0);
 #else
-    return wpa2_start_eapol_internal();
+    wpa2_start_eapol_internal();
 #endif
+}
+
+static int eap_start_eapol_timer(void)
+{
+    /*
+     * Do not send EAPOL-Start immediately since in most cases,
+     * Authenticator is going to start authentication immediately
+     * after association and an extra EAPOL-Start is just going to
+     * delay authentication. Use a short timeout to send the first
+     * EAPOL-Start if Authenticator does not start authentication.
+     */
+    eloop_register_timeout(2, 0, eap_start_eapol, NULL, NULL);
+    return 0;
 }
 
 static int wpa2_start_eapol_internal(void)
@@ -636,10 +651,10 @@ static int wpa2_start_eapol_internal(void)
         return ESP_FAIL;
     }
 
-    if (wpa_sta_cur_pmksa_matches_akm()) {
+    if (wpa_sta_cur_pmksa_matches_akm() && wpa_sta_is_cur_pmksa_set()) {
         wpa_printf(MSG_DEBUG,
                    "RSN: PMKSA caching - do not send EAPOL-Start");
-        return ESP_FAIL;
+        return ESP_OK;
     }
 
     ret = esp_wifi_get_assoc_bssid_internal(bssid);
@@ -741,6 +756,8 @@ static int eap_peer_sm_init(void)
 
     wpa_printf(MSG_INFO, "wifi_task prio:%d, stack:%d", WPA2_TASK_PRIORITY, WPA2_TASK_STACK_SIZE);
 #endif
+    sm->workaround = 1;
+    sm->eap_process_started = false;
     return ESP_OK;
 
 _err:
@@ -808,7 +825,7 @@ static esp_err_t esp_client_enable_fn(void *arg)
     }
 
     wpa2_cb->wpa2_sm_rx_eapol = wpa2_ent_rx_eapol;
-    wpa2_cb->wpa2_start = wpa2_start_eapol;
+    wpa2_cb->wpa2_start = eap_start_eapol_timer;
     wpa2_cb->wpa2_init = eap_peer_sm_init;
     wpa2_cb->wpa2_deinit = eap_peer_sm_deinit;
 
@@ -821,7 +838,21 @@ static esp_err_t esp_client_enable_fn(void *arg)
         wpa_printf(MSG_ERROR, "Register EAP Peer methods Failure");
     }
 #endif
+    g_wpa_config_changed = true;
+    /* Enable opportunistic key caching support */
+    esp_wifi_set_okc_support(true);
     return ESP_OK;
+}
+
+void esp_wifi_set_okc_support(bool enable)
+{
+    struct wpa_sm *sm = &gWpaSm;
+    if (enable) {
+        sm->okc = 1;
+    } else {
+        sm->okc = 0;
+    }
+    wpa_printf(MSG_DEBUG, "OKC set to %d", sm->okc);
 }
 
 esp_err_t esp_wifi_sta_enterprise_enable(void)
@@ -855,6 +886,58 @@ esp_err_t esp_wifi_sta_enterprise_enable(void)
     return ret;
 }
 
+static void eap_globals_reset(void)
+{
+    os_free(g_wpa_anonymous_identity);
+    g_wpa_anonymous_identity = NULL;
+    g_wpa_anonymous_identity_len = 0;
+
+    os_free(g_wpa_username);
+    g_wpa_username = NULL;
+    g_wpa_username_len = 0;
+
+    g_wpa_client_cert = NULL;
+    g_wpa_client_cert_len = 0;
+
+    g_wpa_private_key = NULL;
+    g_wpa_private_key_len = 0;
+
+    g_wpa_private_key_passwd = NULL;
+    g_wpa_private_key_passwd_len = 0;
+
+    g_wpa_ca_cert = NULL;
+    g_wpa_ca_cert_len = 0;
+
+    os_free(g_wpa_password);
+    g_wpa_password = NULL;
+    g_wpa_password_len = 0;
+
+    os_free(g_wpa_new_password);
+    g_wpa_new_password = NULL;
+    g_wpa_new_password_len = 0;
+
+    g_wpa_ttls_phase2_type = NULL;
+    os_free(g_wpa_phase1_options);
+    g_wpa_phase1_options = NULL;
+
+    os_free(g_wpa_pac_file);
+    g_wpa_pac_file = NULL;
+    g_wpa_pac_file_len = 0;
+
+    g_wpa_suiteb_certification = false;
+
+#ifdef CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
+    g_wpa_default_cert_bundle = false;
+    esp_crt_bundle_attach_fn = NULL;
+#endif
+
+#ifndef CONFIG_TLS_INTERNAL_CLIENT
+    os_free(g_wpa_domain_match);
+    g_wpa_domain_match = NULL;
+#endif
+    g_eap_method_mask = ESP_EAP_TYPE_ALL;
+}
+
 static esp_err_t eap_client_disable_fn(void *param)
 {
     struct wpa_sm *sm = &gWpaSm;
@@ -865,11 +948,13 @@ static esp_err_t eap_client_disable_fn(void *param)
         eap_peer_sm_deinit();
     }
 
+    eap_globals_reset();
 #ifdef EAP_PEER_METHOD
     eap_peer_unregister_methods();
 #endif
 
     sm->wpa_sm_eap_disable = NULL;
+    g_wpa_config_changed = true;
     return ESP_OK;
 }
 
@@ -882,6 +967,7 @@ esp_err_t esp_wifi_sta_enterprise_disable(void)
 
     if (wpa2_is_disabled()) {
         wpa_printf(MSG_INFO, "EAP: already disabled");
+        eap_globals_reset();
         wpa2_api_unlock();
         return ESP_OK;
     }
@@ -917,6 +1003,7 @@ esp_err_t esp_eap_client_set_certificate_and_key(const unsigned char *client_cer
         g_wpa_private_key_passwd = private_key_passwd;
         g_wpa_private_key_passwd_len = private_key_passwd_len;
     }
+    eloop_register_timeout(0, 0, config_changed_handler, NULL, NULL);
 
     return ESP_OK;
 }
@@ -932,6 +1019,7 @@ void esp_eap_client_clear_certificate_and_key(void)
     os_free(g_wpa_pac_file);
     g_wpa_pac_file = NULL;
     g_wpa_pac_file_len = 0;
+    eloop_register_timeout(0, 0, config_changed_handler, NULL, NULL);
 }
 
 esp_err_t esp_eap_client_set_ca_cert(const unsigned char *ca_cert, int ca_cert_len)
@@ -941,6 +1029,9 @@ esp_err_t esp_eap_client_set_ca_cert(const unsigned char *ca_cert, int ca_cert_l
         g_wpa_ca_cert_len = ca_cert_len;
     }
 
+    /* CA certs Set/updated, flushing current PMK cache */
+    eloop_register_timeout(0, 0, config_changed_handler, NULL, NULL);
+
     return ESP_OK;
 }
 
@@ -948,6 +1039,7 @@ void esp_eap_client_clear_ca_cert(void)
 {
     g_wpa_ca_cert = NULL;
     g_wpa_ca_cert_len = 0;
+    eloop_register_timeout(0, 0, config_changed_handler, NULL, NULL);
 }
 
 #define ANONYMOUS_ID_LEN_MAX 128
@@ -964,23 +1056,27 @@ esp_err_t esp_eap_client_set_identity(const unsigned char *identity, int len)
 
     g_wpa_anonymous_identity = (u8 *)os_zalloc(len);
     if (g_wpa_anonymous_identity == NULL) {
+        eloop_register_timeout(0, 0, config_changed_handler, NULL, NULL);
         return ESP_ERR_NO_MEM;
     }
 
     os_memcpy(g_wpa_anonymous_identity, identity, len);
     g_wpa_anonymous_identity_len = len;
+    eloop_register_timeout(0, 0, config_changed_handler, NULL, NULL);
 
     return ESP_OK;
 }
 
 void esp_eap_client_clear_identity(void)
 {
-    if (g_wpa_anonymous_identity) {
-        os_free(g_wpa_anonymous_identity);
+    if (!g_wpa_anonymous_identity) {
+        return;
     }
 
+    os_free(g_wpa_anonymous_identity);
     g_wpa_anonymous_identity = NULL;
     g_wpa_anonymous_identity_len = 0;
+    eloop_register_timeout(0, 0, config_changed_handler, NULL, NULL);
 }
 
 #define USERNAME_LEN_MAX 128
@@ -997,11 +1093,13 @@ esp_err_t esp_eap_client_set_username(const unsigned char *username, int len)
 
     g_wpa_username = (u8 *)os_zalloc(len);
     if (g_wpa_username == NULL) {
+        eloop_register_timeout(0, 0, config_changed_handler, NULL, NULL);
         return ESP_ERR_NO_MEM;
     }
 
     os_memcpy(g_wpa_username, username, len);
     g_wpa_username_len = len;
+    eloop_register_timeout(0, 0, config_changed_handler, NULL, NULL);
 
     return ESP_OK;
 }
@@ -1014,6 +1112,7 @@ void esp_eap_client_clear_username(void)
 
     g_wpa_username = NULL;
     g_wpa_username_len = 0;
+    eloop_register_timeout(0, 0, config_changed_handler, NULL, NULL);
 }
 
 esp_err_t esp_eap_client_set_password(const unsigned char *password, int len)
@@ -1029,11 +1128,13 @@ esp_err_t esp_eap_client_set_password(const unsigned char *password, int len)
 
     g_wpa_password = (u8 *)os_zalloc(len);
     if (g_wpa_password == NULL) {
+        eloop_register_timeout(0, 0, config_changed_handler, NULL, NULL);
         return ESP_ERR_NO_MEM;
     }
 
     os_memcpy(g_wpa_password, password, len);
     g_wpa_password_len = len;
+    eloop_register_timeout(0, 0, config_changed_handler, NULL, NULL);
 
     return ESP_OK;
 }
@@ -1045,6 +1146,7 @@ void esp_eap_client_clear_password(void)
     }
     g_wpa_password = NULL;
     g_wpa_password_len = 0;
+    eloop_register_timeout(0, 0, config_changed_handler, NULL, NULL);
 }
 
 esp_err_t esp_eap_client_set_new_password(const unsigned char *new_password, int len)
@@ -1060,11 +1162,13 @@ esp_err_t esp_eap_client_set_new_password(const unsigned char *new_password, int
 
     g_wpa_new_password = (u8 *)os_zalloc(len);
     if (g_wpa_new_password == NULL) {
+        eloop_register_timeout(0, 0, config_changed_handler, NULL, NULL);
         return ESP_ERR_NO_MEM;
     }
 
     os_memcpy(g_wpa_new_password, new_password, len);
     g_wpa_password_len = len;
+    eloop_register_timeout(0, 0, config_changed_handler, NULL, NULL);
 
     return ESP_OK;
 }
@@ -1076,11 +1180,13 @@ void esp_eap_client_clear_new_password(void)
     }
     g_wpa_new_password = NULL;
     g_wpa_new_password_len = 0;
+    eloop_register_timeout(0, 0, config_changed_handler, NULL, NULL);
 }
 
 esp_err_t esp_eap_client_set_disable_time_check(bool disable)
 {
     s_disable_time_check = disable;
+    eloop_register_timeout(0, 0, config_changed_handler, NULL, NULL);
     return ESP_OK;
 }
 
@@ -1117,6 +1223,7 @@ esp_err_t esp_eap_client_set_ttls_phase2_method(esp_eap_ttls_phase2_types type)
         g_wpa_ttls_phase2_type = "auth=MSCHAPV2";
         break;
     }
+    eloop_register_timeout(0, 0, config_changed_handler, NULL, NULL);
     return ESP_OK;
 }
 
@@ -1124,6 +1231,7 @@ esp_err_t esp_eap_client_set_suiteb_192bit_certification(bool enable)
 {
 #ifdef CONFIG_SUITEB192
     g_wpa_suiteb_certification = enable;
+    eloop_register_timeout(0, 0, config_changed_handler, NULL, NULL);
     return ESP_OK;
 #else
     return ESP_FAIL;
@@ -1142,6 +1250,7 @@ esp_err_t esp_eap_client_set_pac_file(const unsigned char *pac_file, int pac_fil
         } else { // The file contains pac data
             g_wpa_pac_file = (u8 *)os_zalloc(pac_file_len);
             if (g_wpa_pac_file == NULL) {
+                eloop_register_timeout(0, 0, config_changed_handler, NULL, NULL);
                 return ESP_ERR_NO_MEM;
             }
             os_memcpy(g_wpa_pac_file, pac_file, pac_file_len);
@@ -1150,6 +1259,7 @@ esp_err_t esp_eap_client_set_pac_file(const unsigned char *pac_file, int pac_fil
     } else {
         return ESP_FAIL;
     }
+    eloop_register_timeout(0, 0, config_changed_handler, NULL, NULL);
 
     return ESP_OK;
 }
@@ -1179,9 +1289,11 @@ esp_err_t esp_eap_client_set_fast_params(esp_eap_fast_config config)
     }
     g_wpa_phase1_options = (char *)os_zalloc(sizeof(config_for_supplicant));
     if (g_wpa_phase1_options == NULL) {
+        eloop_register_timeout(0, 0, config_changed_handler, NULL, NULL);
         return ESP_ERR_NO_MEM;
     }
     os_memcpy(g_wpa_phase1_options, &config_for_supplicant, sizeof(config_for_supplicant));
+    eloop_register_timeout(0, 0, config_changed_handler, NULL, NULL);
     return ESP_OK;
 
 }
@@ -1195,8 +1307,54 @@ esp_err_t esp_eap_client_use_default_cert_bundle(bool use_default_bundle)
     } else {
         esp_crt_bundle_attach_fn = NULL;
     }
+    eloop_register_timeout(0, 0, config_changed_handler, NULL, NULL);
     return ESP_OK;
 #else
     return ESP_FAIL;
 #endif
+}
+
+#define MAX_DOMAIN_MATCH_LEN 255 /* Maximum host name defined in RFC 1035 */
+esp_err_t esp_eap_client_set_domain_name(const char *domain_name)
+{
+#ifdef CONFIG_TLS_INTERNAL_CLIENT
+    return ESP_ERR_NOT_SUPPORTED;
+#else
+    int len = domain_name ? os_strnlen(domain_name, MAX_DOMAIN_MATCH_LEN + 1) : 0;
+    if (len > MAX_DOMAIN_MATCH_LEN) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (g_wpa_domain_match && domain_name && os_strcmp(g_wpa_domain_match, domain_name) == 0) {
+        return ESP_OK;
+    }
+    if (g_wpa_domain_match) {
+        os_free(g_wpa_domain_match);
+        g_wpa_domain_match = NULL;
+    }
+
+    if (!domain_name) {
+        eloop_register_timeout(0, 0, config_changed_handler, NULL, NULL);
+        return ESP_OK;
+    }
+    g_wpa_domain_match = os_strdup(domain_name);
+    if (!g_wpa_domain_match) {
+        eloop_register_timeout(0, 0, config_changed_handler, NULL, NULL);
+        return ESP_ERR_NO_MEM;
+    }
+
+    eloop_register_timeout(0, 0, config_changed_handler, NULL, NULL);
+
+    return ESP_OK;
+#endif
+}
+
+esp_err_t esp_eap_client_set_eap_methods(esp_eap_method_t methods)
+{
+
+    if ((methods & ~ESP_EAP_TYPE_ALL) != 0) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    g_eap_method_mask = methods;
+    return ESP_OK;
 }

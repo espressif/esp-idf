@@ -1,6 +1,8 @@
 Heap Memory Allocation
 ======================
 
+{IDF_TARGET_SIMD_PREFERRED_DATA_ALIGNMENT: default="16", esp32s3="16", esp32p4="16"}
+
 :link_to_translation:`zh_CN:[中文]`
 
 Stack and Heap
@@ -133,6 +135,13 @@ Memory allocated with ``MALLOC_CAP_32BIT`` can **only** be accessed via 32-bit r
     .. only:: esp32
 
         On ESP32 only external SPI RAM under 4 MiB in size can be allocated this way. To use the region above the 4 MiB limit, you can use the :doc:`himem API </api-reference/system/himem>`.
+
+.. only:: SOC_SIMD_INSTRUCTION_SUPPORTED
+
+    SIMD-Instruction-Capable Memory
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    ``MALLOC_CAP_SIMD`` flag can be used to allocate memory which is accessible by SIMD (Single Instruction Multiple Data) instructions. The use of this flag also aligns the memory to a SIMD preferred data alignment size ({IDF_TARGET_SIMD_PREFERRED_DATA_ALIGNMENT}-byte) for a better performance.
 
 Thread Safety
 -------------

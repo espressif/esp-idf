@@ -1,0 +1,174 @@
+menu "Power Supplier"
+
+    menu "Brownout Detector"
+
+        config ESP_BROWNOUT_DET
+            bool "Hardware brownout detect & reset"
+            depends on !IDF_ENV_FPGA
+            default y
+            help
+                The ESP32-P4 has a built-in brownout detector which can detect if the voltage is lower than
+                a specific value. If this happens, it will reset the chip in order to prevent unintended
+                behaviour.
+
+        choice ESP_BROWNOUT_DET_LVL_SEL
+            prompt "Brownout voltage level"
+            default ESP_BROWNOUT_DET_LVL_SEL_7
+            depends on ESP_BROWNOUT_DET
+            help
+                The brownout detector will reset the chip when the supply voltage is approximately
+                below this level. Note that there may be some variation of brownout voltage level
+                between each chip.
+
+                Please note that this config is only valid when P4 SOC version is above v1.0. When you are using a
+                earlier P4 SOC version (v0.x), the brownout value should be fixed around 2.52V and not configurable.
+
+                #The voltage levels here are estimates, more work needs to be done to figure out the exact voltages
+                #of the brownout threshold levels.
+
+            config ESP_BROWNOUT_DET_LVL_SEL_7
+                bool "2.6V"
+            config ESP_BROWNOUT_DET_LVL_SEL_6
+                bool "2.52V"
+            config ESP_BROWNOUT_DET_LVL_SEL_5
+                bool "2.42V"
+        endchoice
+
+        config ESP_BROWNOUT_DET_LVL
+            int
+            default 5 if ESP_BROWNOUT_DET_LVL_SEL_5
+            default 6 if ESP_BROWNOUT_DET_LVL_SEL_6
+            default 7 if ESP_BROWNOUT_DET_LVL_SEL_7
+
+        config ESP_BROWNOUT_USE_INTR
+            bool
+            default n
+            help
+                This config allows to trigger an interrupt when brownout detected. Software restart will be done
+                at the end of the default callback.
+                This is because for some special workflow, the chip needs do more things when brownout happens
+                before restart instead of restarting directly. This part needs to be done in callback function
+                of interrupt.
+
+    endmenu
+
+    menu "RTC Backup Battery"
+
+        config ESP_VBAT_INIT_AUTO
+            bool "Enable VBAT power supply for RTC battery"
+            default n
+            depends on SOC_VBAT_SUPPORTED
+            help
+                Enable this option to allow the use of a button cell battery to power the RTC (Real-Time Clock) domain.
+                When this option is enabled, the hardware will configure VBAT as the power supply source for the RTC.
+
+                - Ensure a compatible battery (2.5V ~ 3.6V) is connected to the VBAT pin.
+                - The VBAT battery provides power to retain RTC state and keep low-power peripherals active
+                    during deep sleep.
+                - When this option is disabled, the RTC battery input (VBAT) must not be left floating.
+
+        config ESP_VBAT_ISR_CACHE_SAFE
+            bool "VBAT ISR IRAM-Safe"
+            default y
+            depends on SOC_VBAT_SUPPORTED && ESP_VBAT_INIT_AUTO
+            help
+                Ensure the VBAT interrupt is IRAM-Safe by allowing the interrupt handler to be
+                executable when the cache is disabled (e.g. SPI Flash write).
+
+        config ESP_VBAT_USE_RECHARGEABLE_BATTERY
+            bool "The battery for RTC battery is a rechargeable battery"
+            default n
+            depends on ESP_VBAT_INIT_AUTO
+            help
+                Select this option if the RTC backup battery used in your design is a rechargeable battery.
+
+                When enabled, the system will configure the RTC battery management circuitry to operate
+                in a mode suitable for charging a rechargeable battery. This includes enabling
+                charging current regulation via resistor and voltage monitoring to ensure safe and efficient charging.
+
+                Use this option carefully to avoid damage to non-rechargeable batteries.
+
+        choice ESP_VBAT_DET_LVL_LOW_SEL
+            prompt "VBAT start charging voltage level"
+            default ESP_VBAT_DET_LVL_LOW_SEL_6
+            depends on ESP_VBAT_USE_RECHARGEABLE_BATTERY
+            help
+                The brownout detector will start charging when the supply voltage drops below the selected threshold.
+                This ensures that the power supply is maintained at a stable level.
+
+            config ESP_VBAT_DET_LVL_LOW_SEL_7
+                bool "2.6V"
+            config ESP_VBAT_DET_LVL_LOW_SEL_6
+                bool "2.52V"
+            config ESP_VBAT_DET_LVL_LOW_SEL_5
+                bool "2.42V"
+        endchoice
+
+        choice ESP_VBAT_DET_LVL_HIGH_SEL
+            prompt "VBAT stop charging voltage level"
+            default ESP_VBAT_DET_LVL_HIGH_SEL_7
+            depends on ESP_VBAT_USE_RECHARGEABLE_BATTERY
+            help
+                The brownout detector will stop charging when the supply voltage arrives the selected threshold.
+
+            config ESP_VBAT_DET_LVL_HIGH_SEL_7
+                bool "2.6V"
+            config ESP_VBAT_DET_LVL_HIGH_SEL_6
+                bool "2.52V"
+            config ESP_VBAT_DET_LVL_HIGH_SEL_5
+                bool "2.42V"
+        endchoice
+
+        choice ESP_VBAT_BROWNOUT_DET_LVL_SEL
+            prompt "VBAT brownout voltage level"
+            default ESP_VBAT_BROWNOUT_DET_LVL_SEL_5
+            depends on ESP_VBAT_INIT_AUTO
+            help
+                The brownout detector will git a brownout signal when vbat brownout detected.
+
+            config ESP_VBAT_BROWNOUT_DET_LVL_SEL_7
+                bool "2.6V"
+            config ESP_VBAT_BROWNOUT_DET_LVL_SEL_6
+                bool "2.52V"
+            config ESP_VBAT_BROWNOUT_DET_LVL_SEL_5
+                bool "2.42V"
+        endchoice
+
+        config ESP_VBAT_WAKEUP_CHIP_ON_VBAT_BROWNOUT
+            bool "Wake up chip in deepsleep if VBAT brownout"
+            depends on !ESP_VBAT_USE_RECHARGEABLE_BATTERY
+            default n
+            help
+                Wake up the chip if the vbat voltage drops below the brownout voltage during deepsleep.
+
+        config ESP_VBAT_DET_LVL_LOW
+            int
+            depends on ESP_VBAT_USE_RECHARGEABLE_BATTERY
+            default 5 if ESP_VBAT_DET_LVL_LOW_SEL_5
+            default 6 if ESP_VBAT_DET_LVL_LOW_SEL_6
+            default 7 if ESP_VBAT_DET_LVL_LOW_SEL_7
+
+        config ESP_VBAT_DET_LVL_HIGH
+            int
+            depends on ESP_VBAT_USE_RECHARGEABLE_BATTERY
+            default 5 if ESP_VBAT_DET_LVL_HIGH_SEL_5
+            default 6 if ESP_VBAT_DET_LVL_HIGH_SEL_6
+            default 7 if ESP_VBAT_DET_LVL_HIGH_SEL_7
+
+        config ESP_VBAT_BROWNOUT_DET_LVL
+            int
+            default 5 if ESP_VBAT_BROWNOUT_DET_LVL_SEL_5
+            default 6 if ESP_VBAT_BROWNOUT_DET_LVL_SEL_6
+            default 7 if ESP_VBAT_BROWNOUT_DET_LVL_SEL_7
+
+        config ESP_VBAT_CHARGER_CIRCUIT_RESISTOR_VAL
+            int "vbat charger circuit resistor value (ohms), should be multiple of 500"
+            depends on ESP_VBAT_USE_RECHARGEABLE_BATTERY
+            range 1000 8500
+            default 1000
+            help
+                The resistor value of charger circuit.
+
+    endmenu
+
+endmenu

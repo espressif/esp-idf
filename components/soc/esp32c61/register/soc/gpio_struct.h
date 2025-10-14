@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -10,20 +10,14 @@
 extern "C" {
 #endif
 
-/** Group: Configuration Registers */
+/** Group: configuration register */
 /** Type of strap register
- *  Strapping pin register
+ *  pad strapping register
  */
 typedef union {
     struct {
         /** strapping : RO; bitpos: [15:0]; default: 0;
-         *  Represents the values of GPIO strapping pins.
-         *
-         *  - bit0 ~ bit1: invalid
-         *  - bit2: GPIO8
-         *  - bit3: GPIO9
-         *  - bit4: GPIO7
-         *  - bit5 ~ bit15: invalid
+         *  pad strapping register
          */
         uint32_t strapping:16;
         uint32_t reserved_16:16;
@@ -32,297 +26,389 @@ typedef union {
 } gpio_strap_reg_t;
 
 /** Type of out register
- *  GPIO output register
+ *  GPIO output register for GPIO0-31
  */
 typedef union {
     struct {
-        /** out_data_orig : R/W/SC/WTC; bitpos: [28:0]; default: 0;
-         *  Configures the output value of GPIO0 ~ 24 output in simple GPIO output mode.\\
-         *  0: Low level\\
-         *  1: High level\\
-         *  The value of bit0 ~ bit24 correspond to the output value of GPIO0 ~ GPIO24
-         *  respectively. Bit25 ~ bit31 are invalid.\\
+        /** out_data_orig : R/W/SC/WTC; bitpos: [31:0]; default: 0;
+         *  GPIO output register for GPIO0-31
          */
-        uint32_t out_data_orig:29;
-        uint32_t reserved_29:3;
+        uint32_t out_data_orig:32;
     };
     uint32_t val;
 } gpio_out_reg_t;
 
 /** Type of out_w1ts register
- *  GPIO output set register
+ *  GPIO output set register for GPIO0-31
  */
 typedef union {
     struct {
-        /** out_w1ts : WT; bitpos: [28:0]; default: 0;
-         *  Configures whether or not to set the output register GPIO_OUT_REG of GPIO0 ~
-         *  GPIO24.\\
-         *  0: Not set\\
-         *  1: The corresponding bit in GPIO_OUT_REG will be set to 1\\
-         *  Bit0 ~ bit24 are corresponding to GPIO0 ~ GPIO24. Bit25 ~ bit31 are invalid. \\
-         *  Recommended operation: use this register to set GPIO_OUT_REG. \\
+        /** out_w1ts : WT; bitpos: [31:0]; default: 0;
+         *  GPIO output set register for GPIO0-31
          */
-        uint32_t out_w1ts:29;
-        uint32_t reserved_29:3;
+        uint32_t out_w1ts:32;
     };
     uint32_t val;
 } gpio_out_w1ts_reg_t;
 
 /** Type of out_w1tc register
- *  GPIO output clear register
+ *  GPIO output clear register for GPIO0-31
  */
 typedef union {
     struct {
-        /** out_w1tc : WT; bitpos: [28:0]; default: 0;
-         *  Configures whether or not to clear the output register GPIO_OUT_REG of GPIO0 ~
-         *  GPIO24 output.\\
-         *  0: Not clear\\
-         *  1: The corresponding bit in GPIO_OUT_REG will be cleared.\\
-         *  Bit0 ~ bit24 are corresponding to GPIO0 ~ GPIO24. Bit25 ~ bit31 are invalid. \\
-         *  Recommended operation: use this register to clear GPIO_OUT_REG. \\
+        /** out_w1tc : WT; bitpos: [31:0]; default: 0;
+         *  GPIO output clear register for GPIO0-31
          */
-        uint32_t out_w1tc:29;
-        uint32_t reserved_29:3;
+        uint32_t out_w1tc:32;
     };
     uint32_t val;
 } gpio_out_w1tc_reg_t;
 
-/** Type of enable register
- *  GPIO output enable register
+/** Type of out1 register
+ *  GPIO output register for GPIO32-33
  */
 typedef union {
     struct {
-        /** enable_data : R/W/WTC; bitpos: [28:0]; default: 0;
-         *  Configures whether or not to enable the output of GPIO0 ~ GPIO24.\\
-         *  0: Not enable\\
-         *  1: Enable\\
-         *  Bit0 ~ bit24 are corresponding to GPIO0 ~ GPIO24. Bit25 ~ bit31 are invalid.\\
+        /** out1_data_orig : R/W/SC/WTC; bitpos: [1:0]; default: 0;
+         *  GPIO output register for GPIO32-33
          */
-        uint32_t enable_data:29;
-        uint32_t reserved_29:3;
+        uint32_t out1_data_orig:2;
+        uint32_t reserved_2:30;
+    };
+    uint32_t val;
+} gpio_out1_reg_t;
+
+/** Type of out1_w1ts register
+ *  GPIO output set register for GPIO32-33
+ */
+typedef union {
+    struct {
+        /** out1_w1ts : WT; bitpos: [1:0]; default: 0;
+         *  GPIO output set register for GPIO32-33
+         */
+        uint32_t out1_w1ts:2;
+        uint32_t reserved_2:30;
+    };
+    uint32_t val;
+} gpio_out1_w1ts_reg_t;
+
+/** Type of out1_w1tc register
+ *  GPIO output clear register for GPIO32-33
+ */
+typedef union {
+    struct {
+        /** out1_w1tc : WT; bitpos: [1:0]; default: 0;
+         *  GPIO output clear register for GPIO32-33
+         */
+        uint32_t out1_w1tc:2;
+        uint32_t reserved_2:30;
+    };
+    uint32_t val;
+} gpio_out1_w1tc_reg_t;
+
+/** Type of enable register
+ *  GPIO output enable register for GPIO0-31
+ */
+typedef union {
+    struct {
+        /** enable_data : R/W/WTC; bitpos: [31:0]; default: 0;
+         *  GPIO output enable register for GPIO0-31
+         */
+        uint32_t enable_data:32;
     };
     uint32_t val;
 } gpio_enable_reg_t;
 
 /** Type of enable_w1ts register
- *  GPIO output enable set register
+ *  GPIO output enable set register for GPIO0-31
  */
 typedef union {
     struct {
-        /** enable_w1ts : WT; bitpos: [28:0]; default: 0;
-         *  Configures whether or not to set the output enable register GPIO_ENABLE_REG of
-         *  GPIO0 ~ GPIO24.\\
-         *  0: Not set\\
-         *  1: The corresponding bit in GPIO_ENABLE_REG will be set to 1\\
-         *  Bit0 ~ bit24 are corresponding to GPIO0 ~ GPIO24. Bit25 ~ bit31 are invalid. \\
-         *  Recommended operation: use this register to set GPIO_ENABLE_REG.\\
+        /** enable_w1ts : WT; bitpos: [31:0]; default: 0;
+         *  GPIO output enable set register for GPIO0-31
          */
-        uint32_t enable_w1ts:29;
-        uint32_t reserved_29:3;
+        uint32_t enable_w1ts:32;
     };
     uint32_t val;
 } gpio_enable_w1ts_reg_t;
 
 /** Type of enable_w1tc register
- *  GPIO output enable clear register
+ *  GPIO output enable clear register for GPIO0-31
  */
 typedef union {
     struct {
-        /** enable_w1tc : WT; bitpos: [28:0]; default: 0;
-         *  Configures whether or not to clear the output enable register GPIO_ENABLE_REG of
-         *  GPIO0 ~ GPIO24. \\
-         *  0: Not clear\\
-         *  1: The corresponding bit in GPIO_ENABLE_REG will be cleared\\
-         *  Bit0 ~ bit24 are corresponding to GPIO0 ~ GPIO24. Bit25 ~ bit31 are invalid. \\
-         *  Recommended operation: use this register to clear GPIO_ENABLE_REG.\\
+        /** enable_w1tc : WT; bitpos: [31:0]; default: 0;
+         *  GPIO output enable clear register for GPIO0-31
          */
-        uint32_t enable_w1tc:29;
-        uint32_t reserved_29:3;
+        uint32_t enable_w1tc:32;
     };
     uint32_t val;
 } gpio_enable_w1tc_reg_t;
 
-/** Type of in register
- *  GPIO input register
+/** Type of enable1 register
+ *  GPIO output enable register for GPIO32-33
  */
 typedef union {
     struct {
-        /** in_data_next : RO; bitpos: [28:0]; default: 0;
-         *  Represents the input value of GPIO0 ~ GPIO24. Each bit represents a pin input
-         *  value:\\
-         *  0: Low level\\
-         *  1: High level\\
-         *  Bit0 ~ bit24 are corresponding to GPIO0 ~ GPIO24. Bit25 ~ bit31 are invalid.\\
+        /** enable1_data : R/W/WTC; bitpos: [1:0]; default: 0;
+         *  GPIO output enable register for GPIO32-33
          */
-        uint32_t in_data_next:29;
-        uint32_t reserved_29:3;
+        uint32_t enable1_data:2;
+        uint32_t reserved_2:30;
+    };
+    uint32_t val;
+} gpio_enable1_reg_t;
+
+/** Type of enable1_w1ts register
+ *  GPIO output enable set register for GPIO32-33
+ */
+typedef union {
+    struct {
+        /** enable1_w1ts : WT; bitpos: [1:0]; default: 0;
+         *  GPIO output enable set register for GPIO32-33
+         */
+        uint32_t enable1_w1ts:2;
+        uint32_t reserved_2:30;
+    };
+    uint32_t val;
+} gpio_enable1_w1ts_reg_t;
+
+/** Type of enable1_w1tc register
+ *  GPIO output enable clear register for GPIO32-33
+ */
+typedef union {
+    struct {
+        /** enable1_w1tc : WT; bitpos: [1:0]; default: 0;
+         *  GPIO output enable clear register for GPIO32-33
+         */
+        uint32_t enable1_w1tc:2;
+        uint32_t reserved_2:30;
+    };
+    uint32_t val;
+} gpio_enable1_w1tc_reg_t;
+
+/** Type of in register
+ *  GPIO input register for GPIO0-31
+ */
+typedef union {
+    struct {
+        /** in_data_next : RO; bitpos: [31:0]; default: 0;
+         *  GPIO input register for GPIO0-31
+         */
+        uint32_t in_data_next:32;
     };
     uint32_t val;
 } gpio_in_reg_t;
 
-
-/** Group: Interrupt Status Registers */
-/** Type of status register
- *  GPIO interrupt status register
+/** Type of in1 register
+ *  GPIO input register for GPIO32-33
  */
 typedef union {
     struct {
-        /** status_interrupt : R/W/WTC; bitpos: [28:0]; default: 0;
-         *  The interrupt status of GPIO0 ~ GPIO24, can be configured by the software.
-         *
-         *  - Bit0 ~ bit24 are corresponding to GPIO0 ~ GPIO24. Bit25 ~ bit31 are invalid.
-         *  - Each bit represents the status of its corresponding GPIO:
-         *
-         *  - 0: Represents the GPIO does not generate the interrupt configured by
-         *  GPIO_PIN$n_INT_TYPE, or this bit is configured to 0 by the software.
-         *  - 1: Represents the GPIO generates the interrupt configured by GPIO_PIN$n_INT_TYPE,
-         *  or this bit is configured to 1 by the software.
-         *
+        /** in1_data_next : RO; bitpos: [1:0]; default: 0;
+         *  GPIO input register for GPIO32-33
          */
-        uint32_t status_interrupt:29;
-        uint32_t reserved_29:3;
+        uint32_t in1_data_next:2;
+        uint32_t reserved_2:30;
+    };
+    uint32_t val;
+} gpio_in1_reg_t;
+
+/** Type of status register
+ *  GPIO interrupt status register for GPIO0-31
+ */
+typedef union {
+    struct {
+        /** status_interrupt : R/W/WTC; bitpos: [31:0]; default: 0;
+         *  GPIO interrupt status register for GPIO0-31
+         */
+        uint32_t status_interrupt:32;
     };
     uint32_t val;
 } gpio_status_reg_t;
 
 /** Type of status_w1ts register
- *  GPIO interrupt status set register
+ *  GPIO interrupt status set register for GPIO0-31
  */
 typedef union {
     struct {
-        /** status_w1ts : WT; bitpos: [28:0]; default: 0;
-         *  Configures whether or not to set the interrupt status register
-         *  GPIO_STATUS_INTERRUPT of GPIO0 ~ GPIO24.
-         *
-         *  - Bit0 ~ bit24 are corresponding to GPIO0 ~ GPIO24. Bit25 ~ bit31 are invalid.
-         *  - If the value 1 is written to a bit here, the corresponding bit in
-         *  GPIO_STATUS_INTERRUPT will be set to 1. \item Recommended operation: use this
-         *  register to set GPIO_STATUS_INTERRUPT.
+        /** status_w1ts : WT; bitpos: [31:0]; default: 0;
+         *  GPIO interrupt status set register for GPIO0-31
          */
-        uint32_t status_w1ts:29;
-        uint32_t reserved_29:3;
+        uint32_t status_w1ts:32;
     };
     uint32_t val;
 } gpio_status_w1ts_reg_t;
 
 /** Type of status_w1tc register
- *  GPIO interrupt status clear register
+ *  GPIO interrupt status clear register for GPIO0-31
  */
 typedef union {
     struct {
-        /** status_w1tc : WT; bitpos: [28:0]; default: 0;
-         *  Configures whether or not to clear the interrupt status register
-         *  GPIO_STATUS_INTERRUPT of GPIO0 ~ GPIO24.
-         *
-         *  - Bit0 ~ bit24 are corresponding to GPIO0 ~ GPIO24. Bit25 ~ bit31 are invalid.
-         *  - If the value 1 is written to a bit here, the corresponding bit in
-         *  GPIO_STATUS_INTERRUPT will be cleared. \item Recommended operation: use this
-         *  register to clear GPIO_STATUS_INTERRUPT.
+        /** status_w1tc : WT; bitpos: [31:0]; default: 0;
+         *  GPIO interrupt status clear register for GPIO0-31
          */
-        uint32_t status_w1tc:29;
-        uint32_t reserved_29:3;
+        uint32_t status_w1tc:32;
     };
     uint32_t val;
 } gpio_status_w1tc_reg_t;
 
-/** Type of procpu_int register
- *  CPU interrupt status register
+/** Type of status1 register
+ *  GPIO interrupt status register for GPIO32-33
  */
 typedef union {
     struct {
-        /** procpu_int : RO; bitpos: [28:0]; default: 0;
-         *  Represents the CPU interrupt status of GPIO0 ~ GPIO24. Each bit represents:\\
-         *  0: Represents CPU interrupt is not enabled, or the GPIO does not generate the
-         *  interrupt configured by GPIO_PIN$n_INT_TYPE.\\
-         *  1: Represents the GPIO generates an interrupt configured by GPIO_PIN$n_INT_TYPE
-         *  after the CPU interrupt is enabled.\\
-         *  Bit0 ~ bit24 are corresponding to GPIO0 ~ GPIO24. Bit25 ~ bit31 are invalid. This
-         *  interrupt status is corresponding to the bit in GPIO_STATUS_REG when assert (high)
-         *  enable signal (bit13 of GPIO_PIN$n_REG). \\
+        /** status1_interrupt : R/W/WTC; bitpos: [1:0]; default: 0;
+         *  GPIO interrupt status register for GPIO32-33
          */
-        uint32_t procpu_int:29;
-        uint32_t reserved_29:3;
+        uint32_t status1_interrupt:2;
+        uint32_t reserved_2:30;
+    };
+    uint32_t val;
+} gpio_status1_reg_t;
+
+/** Type of status1_w1ts register
+ *  GPIO interrupt status set register for GPIO32-33
+ */
+typedef union {
+    struct {
+        /** status1_w1ts : WT; bitpos: [1:0]; default: 0;
+         *  GPIO interrupt status set register for GPIO32-33
+         */
+        uint32_t status1_w1ts:2;
+        uint32_t reserved_2:30;
+    };
+    uint32_t val;
+} gpio_status1_w1ts_reg_t;
+
+/** Type of status1_w1tc register
+ *  GPIO interrupt status clear register for GPIO32-33
+ */
+typedef union {
+    struct {
+        /** status1_w1tc : WT; bitpos: [1:0]; default: 0;
+         *  GPIO interrupt status clear register for GPIO32-33
+         */
+        uint32_t status1_w1tc:2;
+        uint32_t reserved_2:30;
+    };
+    uint32_t val;
+} gpio_status1_w1tc_reg_t;
+
+/** Type of procpu_int register
+ *  GPIO_PROCPU_INT interrupt status register for GPIO0-31
+ */
+typedef union {
+    struct {
+        /** procpu_int : RO; bitpos: [31:0]; default: 0;
+         *  GPIO_PROCPU_INT interrupt status register for GPIO0-31
+         */
+        uint32_t procpu_int:32;
     };
     uint32_t val;
 } gpio_procpu_int_reg_t;
 
-/** Type of status_next register
- *  GPIO interrupt source register
+/** Type of sdio_int register
+ *  GPIO_SDIO_INT interrupt status register for GPIO0-31
  */
 typedef union {
     struct {
-        /** status_interrupt_next : RO; bitpos: [28:0]; default: 0;
-         *  Represents the interrupt source signal of GPIO0 ~ GPIO24.\\
-         *  Bit0 ~ bit24 are corresponding to GPIO0 ~ GPIO24. Bit25 ~ bit31 are invalid. Each
-         *  bit represents:\\
-         *  0: The GPIO does not generate the interrupt configured by GPIO_PIN$n_INT_TYPE.\\
-         *  1: The GPIO generates an interrupt configured by GPIO_PIN$n_INT_TYPE.\\
-         *  The interrupt could be rising edge interrupt, falling edge interrupt, level
-         *  sensitive interrupt and any edge interrupt.\\
+        /** sdio_int : RO; bitpos: [31:0]; default: 0;
+         *  GPIO_SDIO_INT interrupt status register for GPIO0-31
          */
-        uint32_t status_interrupt_next:29;
-        uint32_t reserved_29:3;
+        uint32_t sdio_int:32;
+    };
+    uint32_t val;
+} gpio_sdio_int_reg_t;
+
+/** Type of procpu_int1 register
+ *  GPIO_PROCPU_INT interrupt status register for GPIO32-33
+ */
+typedef union {
+    struct {
+        /** procpu_int1 : RO; bitpos: [1:0]; default: 0;
+         *  GPIO_PROCPU_INT interrupt status register for GPIO32-33
+         */
+        uint32_t procpu_int1:2;
+        uint32_t reserved_2:30;
+    };
+    uint32_t val;
+} gpio_procpu_int1_reg_t;
+
+/** Type of sdio_int1 register
+ *  GPIO_SDIO_INT interrupt status register for GPIO32-33
+ */
+typedef union {
+    struct {
+        /** sdio_int1 : RO; bitpos: [1:0]; default: 0;
+         *  GPIO_SDIO_INT interrupt status register for GPIO32-33
+         */
+        uint32_t sdio_int1:2;
+        uint32_t reserved_2:30;
+    };
+    uint32_t val;
+} gpio_sdio_int1_reg_t;
+
+/** Type of status_next register
+ *  GPIO interrupt source register for GPIO0-31
+ */
+typedef union {
+    struct {
+        /** status_interrupt_next : RO; bitpos: [31:0]; default: 0;
+         *  GPIO interrupt source register for GPIO0-31
+         */
+        uint32_t status_interrupt_next:32;
     };
     uint32_t val;
 } gpio_status_next_reg_t;
 
+/** Type of status_next1 register
+ *  GPIO interrupt source register for GPIO32-33
+ */
+typedef union {
+    struct {
+        /** status_interrupt_next1 : RO; bitpos: [1:0]; default: 0;
+         *  GPIO interrupt source register for GPIO32-33
+         */
+        uint32_t status_interrupt_next1:2;
+        uint32_t reserved_2:30;
+    };
+    uint32_t val;
+} gpio_status_next1_reg_t;
 
-/** Group: Pin Configuration Registers */
 /** Type of pinn register
- *  GPIOn configuration register
+ *  GPIO pin configuration register
  */
 typedef union {
     struct {
         /** pinn_sync2_bypass : R/W; bitpos: [1:0]; default: 0;
-         *  Configures whether or not to synchronize GPIO input data on either edge of IO MUX
-         *  operating clock for the second-level synchronization.\\
-         *  0: Not synchronize\\
-         *  1: Synchronize on falling edge\\
-         *  2: Synchronize on rising edge\\
-         *  3: Synchronize on rising edge\\
+         *  set GPIO input_sync2 signal mode. 0:disable. 1:trigger at negedge. 2or3:trigger at
+         *  posedge.
          */
         uint32_t pinn_sync2_bypass:2;
         /** pinn_pad_driver : R/W; bitpos: [2]; default: 0;
-         *  Configures to select pin drive mode. \\
-         *  0: Normal output\\
-         *  1: Open drain output \\
+         *  set this bit to select pad driver. 1:open-drain. 0:normal.
          */
         uint32_t pinn_pad_driver:1;
         /** pinn_sync1_bypass : R/W; bitpos: [4:3]; default: 0;
-         *  Configures whether or not to synchronize GPIO input data on either edge of IO MUX
-         *  operating clock for the first-level synchronization.\\
-         *  0: Not synchronize\\
-         *  1: Synchronize on falling edge\\
-         *  2: Synchronize on rising edge\\
-         *  3: Synchronize on rising edge\\
+         *  set GPIO input_sync1 signal mode. 0:disable. 1:trigger at negedge. 2or3:trigger at
+         *  posedge.
          */
         uint32_t pinn_sync1_bypass:2;
         uint32_t reserved_5:2;
         /** pinn_int_type : R/W; bitpos: [9:7]; default: 0;
-         *  Configures GPIO interrupt type.\\
-         *  0: GPIO interrupt disabled\\
-         *  1: Rising edge trigger\\
-         *  2: Falling edge trigger\\
-         *  3: Any edge trigger\\
-         *  4: Low level trigger\\
-         *  5: High level trigger\\
+         *  set this value to choose interrupt mode. 0:disable GPIO interrupt. 1:trigger at
+         *  posedge. 2:trigger at negedge. 3:trigger at any edge. 4:valid at low level. 5:valid
+         *  at high level
          */
         uint32_t pinn_int_type:3;
         /** pinn_wakeup_enable : R/W; bitpos: [10]; default: 0;
-         *  Configures whether or not to enable GPIO wake-up function.\\
-         *  0: Disable\\
-         *  1: Enable\\
-         *  This function only wakes up the CPU from Light-sleep. \\
+         *  set this bit to enable GPIO wakeup.(can only wakeup CPU from Light-sleep Mode)
          */
         uint32_t pinn_wakeup_enable:1;
         uint32_t reserved_11:2;
         /** pinn_int_ena : R/W; bitpos: [17:13]; default: 0;
-         *  Configures whether or not to enable CPU interrupt.
-         *
-         *  - bit13: Configures whether or not to enable CPU interrupt:\\
-         *  0: Disable\\
-         *  1: Enable\\
-         *  - bit14 ~ bit17: invalid
+         *  set bit 13 to enable gpio_procpu_int. set bit 15 to enable gpio_sdio_int.
          */
         uint32_t pinn_int_ena:5;
         uint32_t reserved_18:14;
@@ -330,82 +416,51 @@ typedef union {
     uint32_t val;
 } gpio_pinn_reg_t;
 
-
-/** Group: Input Configuration Registers */
-/** Type of func0_in_sel_cfg register
- *  Configuration register for input signal 0
+/** Type of func_in_sel_cfg register
+ *  GPIO input function configuration register
  */
 typedef union {
     struct {
-        /** func_in_sel : R/W; bitpos: [5:0]; default: 48;
-         *  Configures to select a pin from the 25 GPIO pins to connect the input signal 0.\\
-         *  0: Select GPIO0\\
-         *  1: Select GPIO1\\
-         *  ......\\
-         *  23: Select GPIO23\\
-         *  24: Select GPIO24\\
-         *  Or\\
-         *  0x20: A constantly high input\\
-         *  0x30: A constantly low input\\
+        /** func_in_sel : R/W; bitpos: [6:0]; default: 96;
+         *  set this value: s=0-33: connect GPIO[s] to this port. s=0x40: set this port always
+         *  high level. s=0x60: set this port always low level.
          */
-        uint32_t func_in_sel:6;
-        /** func_in_inv_sel : R/W; bitpos: [6]; default: 0;
-         *  Configures whether or not to invert the input value.\\
-         *  0: Not invert\\
-         *  1: Invert\\
+        uint32_t func_in_sel:7;
+        /** func_in_inv_sel : R/W; bitpos: [7]; default: 0;
+         *  set this bit to invert input signal. 1:invert. 0:not invert.
          */
         uint32_t func_in_inv_sel:1;
-        /** sig_in_sel : R/W; bitpos: [7]; default: 0;
-         *  Configures whether or not to route signals via GPIO matrix.\\
-         *  0: Bypass GPIO matrix, i.e., connect signals directly to peripheral configured in
-         *  IO MUX.\\
-         *  1: Route signals via GPIO matrix.\\
+        /** sig0_in_sel : R/W; bitpos: [8]; default: 0;
+         *  set this bit to bypass GPIO. 1:do not bypass GPIO. 0:bypass GPIO.
          */
         uint32_t sig_in_sel:1;
-        uint32_t reserved_8:24;
+        uint32_t reserved_9:23;
     };
     uint32_t val;
 } gpio_func_in_sel_cfg_reg_t;
 
-/** Group: Output Configuration Registers */
 /** Type of funcn_out_sel_cfg register
- *  Configuration register for GPIOn output
+ *  GPIO output function select register
  */
 typedef union {
     struct {
         /** funcn_out_sel : R/W/SC; bitpos: [8:0]; default: 256;
-         *  Configures to select a signal $Y (0 <= $Y < 256) from 256 peripheral signals to be
-         *  output from GPIOn.\\
-         *  0: Select signal 0\\
-         *  1: Select signal 1\\
-         *  ......\\
-         *  254: Select signal 254\\
-         *  255: Select signal 255\\
-         *  Or\\
-         *  256: Bit n of GPIO_OUT_REG and GPIO_ENABLE_REG are selected as the output value and
-         *  output enable.
-         *
-         *  For the detailed signal list, see Table <a
-         *  href=tab:iomuxgpio-periph-signals-via-gpio-matrix">link</a>.
-         *  "
+         *  The value of the bits: 0<=s<=256. Set the value to select output signal. s=0-127:
+         *  output of GPIO[n] equals input of peripheral[s]. s=128: output of GPIO[n] equals
+         *  GPIO_OUT_REG[n].
          */
         uint32_t funcn_out_sel:9;
         /** funcn_out_inv_sel : R/W/SC; bitpos: [9]; default: 0;
-         *  Configures whether or not to invert the output value.\\
-         *  0: Not invert\\
-         *  1: Invert\\
+         *  set this bit to invert output signal.1:invert.0:not invert.
          */
         uint32_t funcn_out_inv_sel:1;
         /** funcn_oe_sel : R/W; bitpos: [10]; default: 0;
-         *  Configures to select the source of output enable signal.\\
-         *  0: Use output enable signal from peripheral.\\
-         *  1: Force the output enable signal to be sourced from bit n of GPIO_ENABLE_REG. \\
+         *  set this bit to select output enable signal.1:use GPIO_ENABLE_REG[n] as output
+         *  enable signal.0:use peripheral output enable signal.
          */
         uint32_t funcn_oe_sel:1;
         /** funcn_oe_inv_sel : R/W; bitpos: [11]; default: 0;
-         *  Configures whether or not to invert the output enable signal.\\
-         *  0: Not invert\\
-         *  1: Invert\\
+         *  set this bit to invert output enable signal.1:invert.0:not invert.
          */
         uint32_t funcn_oe_inv_sel:1;
         uint32_t reserved_12:20;
@@ -413,17 +468,13 @@ typedef union {
     uint32_t val;
 } gpio_funcn_out_sel_cfg_reg_t;
 
-
-/** Group: Clock Gate Register */
 /** Type of clock_gate register
  *  GPIO clock gate register
  */
 typedef union {
     struct {
         /** clk_en : R/W; bitpos: [0]; default: 1;
-         *  Configures whether or not to enable clock gate.\\
-         *  0: Not enable\\
-         *  1: Enable, the clock is free running. \\
+         *  set this bit to enable GPIO clock gate
          */
         uint32_t clk_en:1;
         uint32_t reserved_1:31;
@@ -431,15 +482,13 @@ typedef union {
     uint32_t val;
 } gpio_clock_gate_reg_t;
 
-
-/** Group: Version Register */
 /** Type of date register
  *  GPIO version register
  */
 typedef union {
     struct {
-        /** date : R/W; bitpos: [27:0]; default: 37753392;
-         *  Version control register. \\
+        /** date : R/W; bitpos: [27:0]; default: 37823120;
+         *  version register
          */
         uint32_t date:28;
         uint32_t reserved_28:4;
@@ -453,27 +502,41 @@ typedef struct {
     volatile gpio_out_reg_t out;
     volatile gpio_out_w1ts_reg_t out_w1ts;
     volatile gpio_out_w1tc_reg_t out_w1tc;
-    uint32_t reserved_010[9];
+    volatile gpio_out1_reg_t out1;
+    volatile gpio_out1_w1ts_reg_t out1_w1ts;
+    volatile gpio_out1_w1tc_reg_t out1_w1tc;
+    uint32_t reserved_01c[6];
     volatile gpio_enable_reg_t enable;
     volatile gpio_enable_w1ts_reg_t enable_w1ts;
     volatile gpio_enable_w1tc_reg_t enable_w1tc;
-    uint32_t reserved_040[9];
+    volatile gpio_enable1_reg_t enable1;
+    volatile gpio_enable1_w1ts_reg_t enable1_w1ts;
+    volatile gpio_enable1_w1tc_reg_t enable1_w1tc;
+    uint32_t reserved_04c[6];
     volatile gpio_in_reg_t in;
-    uint32_t reserved_068[3];
+    volatile gpio_in1_reg_t in1;
+    uint32_t reserved_06c[2];
     volatile gpio_status_reg_t status;
     volatile gpio_status_w1ts_reg_t status_w1ts;
     volatile gpio_status_w1tc_reg_t status_w1tc;
-    uint32_t reserved_080[9];
+    volatile gpio_status1_reg_t status1;
+    volatile gpio_status1_w1ts_reg_t status1_w1ts;
+    volatile gpio_status1_w1tc_reg_t status1_w1tc;
+    uint32_t reserved_08c[6];
     volatile gpio_procpu_int_reg_t procpu_int;
-    uint32_t reserved_0a8[3];
+    volatile gpio_sdio_int_reg_t sdio_int;
+    volatile gpio_procpu_int1_reg_t procpu_int1;
+    volatile gpio_sdio_int1_reg_t sdio_int1;
+    uint32_t reserved_0b4[4];
     volatile gpio_status_next_reg_t status_next;
-    uint32_t reserved_0b8[3];
-    volatile gpio_pinn_reg_t pinn[25];  // 0-24 are fanned out, 25-28 are not padded out. Only 0-24 are available.
-    uint32_t reserved_128[103];
-    volatile gpio_func_in_sel_cfg_reg_t func_in_sel_cfg[256];  //0-255. reserved: 1-5, 18-26, 36-40, 44-45, 48-63, 70-71, 75-81, 84-96, 101-117, 122-255;
-    uint32_t reserved_4ac[256];
-    volatile gpio_funcn_out_sel_cfg_reg_t funcn_out_sel_cfg[25];
-    uint32_t reserved_b28[180];
+    volatile gpio_status_next1_reg_t status_next1;
+    uint32_t reserved_0cc[2];
+    volatile gpio_pinn_reg_t pinn[34];  // 0~29 available, 30~34 not fan out, N/A
+    uint32_t reserved_15c[94];
+    volatile gpio_func_in_sel_cfg_reg_t func_in_sel_cfg[256];  // 0-255. reserved: 1-5, 18-26, 36-40, 44-45, 48-63, 70-71, 75-81, 84-96, 101-117, 122-255
+    uint32_t reserved_542[256];
+    volatile gpio_funcn_out_sel_cfg_reg_t funcn_out_sel_cfg[34]; // 0~29 available, 30~34 not fan out, N/A
+    uint32_t reserved_b5c[167];
     volatile gpio_clock_gate_reg_t clock_gate;
     volatile gpio_date_reg_t date;
 } gpio_dev_t;

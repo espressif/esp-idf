@@ -5,6 +5,8 @@
  */
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "nvs.h"
+#include "nvs_flash.h"
 #include "unity.h"
 #include "memory_checks.h"
 
@@ -42,5 +44,6 @@ static void test_task(void *pvParameters)
 
 void app_main(void)
 {
+    ESP_ERROR_CHECK(nvs_flash_init());
     xTaskCreatePinnedToCore(test_task, "testTask", CONFIG_UNITY_FREERTOS_STACK_SIZE, NULL, CONFIG_UNITY_FREERTOS_PRIORITY, NULL, CONFIG_UNITY_FREERTOS_CPU);
 }

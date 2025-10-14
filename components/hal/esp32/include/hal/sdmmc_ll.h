@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -74,13 +74,18 @@ extern "C" {
     SDMMC_LL_EVENT_SBE | SDMMC_LL_EVENT_ACD |\
     SDMMC_LL_EVENT_EBE)
 
+// DMA interrupts (idsts register)
+#define SDMMC_LL_EVENT_DMA_TI      SDMMC_IDMAC_INTMASK_TI
+#define SDMMC_LL_EVENT_DMA_RI      SDMMC_IDMAC_INTMASK_RI
+#define SDMMC_LL_EVENT_DMA_NI      SDMMC_IDMAC_INTMASK_NI
+#define SDMMC_LL_EVENT_DMA_MASK    0x1f    //NI and AI will be indicated by TI/RI and FBE/DU respectively
+
 /**
  * SDMMC capabilities
  */
 #define SDMMC_LL_SLOT_SUPPORT_GPIO_MATRIX(SLOT_ID)    0
-
-
-#define SDMMC_LL_IOMUX_FUNC    3
+#define SDMMC_LL_IOMUX_FUNC                           3
+#define SDMMC_LL_HOST_CTLR_NUMS                       1U
 
 typedef enum {
     SDMMC_LL_DELAY_PHASE_0,
@@ -96,11 +101,12 @@ typedef enum {
 /**
  * @brief Enable the bus clock for SDMMC module
  *
- * @param hw    hardware instance address
- * @param en    enable / disable
+ * @param group_id Group ID
+ * @param en       enable / disable
  */
-static inline void sdmmc_ll_enable_bus_clock(sdmmc_dev_t *hw, bool en)
+static inline void sdmmc_ll_enable_bus_clock(int group_id, bool en)
 {
+    (void)group_id;
     if (en) {
         DPORT_SET_PERI_REG_MASK(DPORT_WIFI_CLK_EN_REG, DPORT_WIFI_CLK_SDIO_HOST_EN);
     } else {
@@ -110,28 +116,35 @@ static inline void sdmmc_ll_enable_bus_clock(sdmmc_dev_t *hw, bool en)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define sdmmc_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; sdmmc_ll_enable_bus_clock(__VA_ARGS__)
+#define sdmmc_ll_enable_bus_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        sdmmc_ll_enable_bus_clock(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Reset the SDMMC module
  *
- * @param hw    hardware instance address
+ * @param group_id Group ID
  */
-static inline void sdmmc_ll_reset_register(sdmmc_dev_t *hw)
+static inline void sdmmc_ll_reset_register(int group_id)
 {
+    (void)group_id;
     DPORT_SET_PERI_REG_MASK(DPORT_CORE_RST_EN_REG, DPORT_SDIO_HOST_RST);
     DPORT_CLEAR_PERI_REG_MASK(DPORT_CORE_RST_EN_REG, DPORT_SDIO_HOST_RST);
 }
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define sdmmc_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; sdmmc_ll_reset_register(__VA_ARGS__)
+#define sdmmc_ll_reset_register(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        sdmmc_ll_reset_register(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Select SDMMC clock source
  *
  * @param hw       hardware instance address
- * @param clk_src  clock source, see valid sources in type `soc_periph_psram_clk_src_t`
+ * @param clk_src  clock source, see valid sources in type `soc_periph_sdmmc_clk_src_t`
  */
 static inline void sdmmc_ll_select_clk_source(sdmmc_dev_t *hw, soc_periph_sdmmc_clk_src_t clk_src)
 {
@@ -250,10 +263,8 @@ static inline uint32_t sdmmc_ll_get_card_clock_div(sdmmc_dev_t *hw, uint32_t slo
     uint32_t card_div = 0;
 
     if (slot == 0) {
-        HAL_ASSERT(hw->clksrc.card0 == 0);
         card_div = HAL_FORCE_READ_U32_REG_FIELD(hw->clkdiv, div0);
     } else if (slot == 1) {
-        HAL_ASSERT(hw->clksrc.card1 == 1);
         card_div = HAL_FORCE_READ_U32_REG_FIELD(hw->clkdiv, div1);
     } else {
         HAL_ASSERT(false);

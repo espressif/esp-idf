@@ -173,6 +173,12 @@ static inline void ecc_ll_read_param(ecc_ll_param_t param, uint8_t *buf, uint16_
     memcpy(buf, (void *)reg, len);
 }
 
+static inline void ecc_ll_enable_constant_time_point_mul(bool enable)
+{
+    // Not supported for ESP32-C6
+    (void) enable; //unused
+}
+
 #ifdef __cplusplus
 }
 #endif

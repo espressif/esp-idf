@@ -25,19 +25,19 @@ ESP-IDF makes these components explicit and configurable. To do that, when a pro
 Concepts
 --------
 
-- A "project" is a directory that contains all the files and configuration to build a single "app" (executable), as well as additional supporting elements such as a partition table, data/filesystem partitions, and a bootloader.
+- A ``project`` is a directory that contains all the files and configuration to build a single ``app`` (executable), as well as additional supporting elements such as a partition table, data partitions or filesystem partitions, and a bootloader.
 
-- "Project configuration" is held in a single file called ``sdkconfig`` in the root directory of the project. This configuration file is modified via ``idf.py menuconfig`` to customize the configuration of the project. A single project contains exactly one project configuration.
+- ``Project configuration`` is held in a single file called ``sdkconfig`` in the root directory of the project. This configuration file is modified via ``idf.py menuconfig`` to customize the configuration of the project. A single project contains exactly one project configuration.
 
-- An "app" is an executable that is built by ESP-IDF. A single project will usually build two apps - a "project app" (the main executable, ie your custom firmware) and a "bootloader app" (the initial bootloader program which launches the project app).
+- An ``app`` is an executable that is built by ESP-IDF. A single project will usually build two apps - a "project app" (the main executable, ie your custom firmware) and a "bootloader app" (the initial bootloader program which launches the project app).
 
-- "components" are modular pieces of standalone code that are compiled into static libraries (.a files) and linked to an app. Some are provided by ESP-IDF itself, others may be sourced from other places.
+- ``Components`` are modular pieces of standalone code that are compiled into static libraries (.a files) and linked to an app. Some are provided by ESP-IDF itself, others may be sourced from other places.
 
-- "Target" is the hardware for which an application is built. A full list of supported targets in your version of ESP-IDF can be seen by running `idf.py --list-targets`.
+- ``Target`` is the hardware for which an application is built. A full list of supported targets in your version of ESP-IDF can be seen by running `idf.py --list-targets`.
 
 Some things are not part of the project:
 
-- "ESP-IDF" is not part of the project. Instead, it is standalone, and linked to the project via the ``IDF_PATH`` environment variable which holds the path of the ``esp-idf`` directory. This allows the ESP-IDF framework to be decoupled from your project.
+- ``ESP-IDF`` is not part of the project. Instead, it is standalone, and linked to the project via the ``IDF_PATH`` environment variable which holds the path of the ``esp-idf`` directory. This allows the ESP-IDF framework to be decoupled from your project.
 
 - The toolchain for compilation is not part of the project. The toolchain should be installed in the system command line PATH.
 
@@ -47,22 +47,22 @@ Using the Build System
 
 .. _idf.py:
 
-``idf.py``
-----------
+idf.py
+------
 
 The ``idf.py`` command-line tool provides a front-end for easily managing your project builds. It manages the following tools:
 
 - CMake_, which configures the project to be built
 - Ninja_ which builds the project
-- `esptool.py`_ for flashing the target.
+- `esptool`_ for flashing the target.
 
-You can read more about configuring the build system using ``idf.py`` :doc:`here <tools/idf-py>`.
+For more details about configuring the build system using ``idf.py``, please refer to :doc:`IDF Frontend <tools/idf-py>`.
 
 
 Using CMake Directly
 --------------------
 
-:ref:`idf.py` is a wrapper around CMake_ for convenience. However, you can also invoke CMake directly if you prefer.
+:ref:`idf.py` is a wrapper around CMake_ for convenience. However, you can also invoke CMake directly.
 
 .. highlight:: bash
 
@@ -125,13 +125,12 @@ When adding custom non-build steps like "flash" to the IDE, it is recommended to
 
 For more detailed information about integrating ESP-IDF with CMake into an IDE, see `Build System Metadata`_.
 
-
 .. _setting-python-interpreter:
 
 Setting up the Python Interpreter
 ---------------------------------
 
-ESP-IDF works well with Python version 3.9+.
+ESP-IDF works well with Python version 3.10+.
 
 ``idf.py`` and other Python scripts will run with the default Python interpreter, i.e., ``python``. You can switch to a different one like ``python3 $IDF_PATH/tools/idf.py ...``, or you can set up a shell alias or another script to simplify the command.
 
@@ -215,7 +214,7 @@ Minimal Example CMakeLists
 
 Minimal project::
 
-      cmake_minimum_required(VERSION 3.16)
+      cmake_minimum_required(VERSION 3.22)
       include($ENV{IDF_PATH}/tools/cmake/project.cmake)
       project(myProject)
 
@@ -227,7 +226,7 @@ Mandatory Parts
 
 The inclusion of these three lines, in the order shown above, is necessary for every project:
 
-- ``cmake_minimum_required(VERSION 3.16)`` tells CMake the minimum version that is required to build the project. ESP-IDF is designed to work with CMake 3.16 or newer. This line must be the first line in the CMakeLists.txt file.
+- ``cmake_minimum_required(VERSION 3.22)`` tells CMake the minimum version that is required to build the project. ESP-IDF is designed to work with CMake 3.22 or newer. This line must be the first line in the CMakeLists.txt file.
 - ``include($ENV{IDF_PATH}/tools/cmake/project.cmake)`` pulls in the rest of the CMake functionality to configure the project, discover all the components, etc.
 - ``project(myProject)`` creates the project itself, and specifies the project name. The project name is used for the final binary output files of the app - ie ``myProject.elf``, ``myProject.bin``. Only one project can be defined per CMakeLists file.
 
@@ -277,7 +276,7 @@ For example, one of the default build specifications set is the compile option `
 it should be done after ``project()``::
 
 
-    cmake_minimum_required(VERSION 3.16)
+    cmake_minimum_required(VERSION 3.22)
     include($ENV{IDF_PATH}/tools/cmake/project.cmake)
     project(myProject)
 
@@ -384,7 +383,7 @@ The following are some project/build variables that are available as build prope
   * If :ref:`CONFIG_APP_PROJECT_VER_FROM_CONFIG` option is set, the value of :ref:`CONFIG_APP_PROJECT_VER` will be used.
   * Else, if ``PROJECT_VER`` variable is set in project CMakeLists.txt file, its value will be used.
   * Else, if the ``PROJECT_DIR/version.txt`` exists, its contents will be used as ``PROJECT_VER``.
-  * Else, if ``VERSION`` argument is passed to the ``project()`` call in the CMakeLists.txt file as ``project(... VERSION x.y.z.w )`` then it will be used as ``PROJECT_VER``. The ``VERSION`` argument must be compliant with the `cmake standard <https://cmake.org/cmake/help/v3.16/command/project.html>`_.
+  * Else, if ``VERSION`` argument is passed to the ``project()`` call in the CMakeLists.txt file as ``project(... VERSION x.y.z.w )`` then it will be used as ``PROJECT_VER``. The ``VERSION`` argument must be compliant with the `cmake standard <https://cmake.org/cmake/help/v3.22/command/project.html>`_.
   * Else, if the project is located inside a Git repository, the output of git description will be used.
   * Otherwise, ``PROJECT_VER`` will be "1".
 - ``EXTRA_PARTITION_SUBTYPES``: CMake list of extra partition subtypes. Each subtype description is a comma-separated string with ``type_name, subtype_name, numeric_value`` format. Components may add new subtypes by appending them to this list.
@@ -604,7 +603,7 @@ Common Component Requirements
 
 To avoid duplication, every component automatically requires some "common" IDF components even if they are not mentioned explicitly. Headers from these components can always be included.
 
-The list of common components is: cxx, newlib, freertos, esp_hw_support, heap, log, soc, hal, esp_rom, esp_common, esp_system, xtensa/riscv.
+The list of common components is: cxx, esp_libc, freertos, esp_hw_support, heap, log, soc, hal, esp_rom, esp_common, esp_system, xtensa/riscv.
 
 
 Including Components in the Build
@@ -615,15 +614,14 @@ Including Components in the Build
 
   - Components mentioned explicitly in ``COMPONENTS``.
   - Those components' requirements (evaluated recursively).
-  - The "common" components that every component depends on.
+  - The :ref:`common components <component-common-requirements>` that every component depends on.
 
 - Setting ``COMPONENTS`` to the minimal list of required components can significantly reduce compile times.
-- The ``MINIMAL_BUILD`` :ref:`build property <cmake-build-properties>` can be set to ``ON``, which acts as a shortcut to configure the ``COMPONENTS`` variable to include only the ``main`` component. If the ``COMPONENTS`` variable is defined while the ``MINIMAL_BUILD`` property is enabled, ``COMPONENTS`` will take precedence.
+- The ``MINIMAL_BUILD`` :ref:`build property <cmake-build-properties>` can be set to ``ON``, which acts as a shortcut to configure the ``COMPONENTS`` variable to include only the ``main`` component. This means that the build will include only the :ref:`common components <component-common-requirements>`, the ``main`` component, and all dependencies associated with it, both direct and indirect. If the ``COMPONENTS`` variable is defined while the ``MINIMAL_BUILD`` property is enabled, ``COMPONENTS`` will take precedence.
 
 .. note::
 
-   When using the ``COMPONENTS`` variable or the ``MINIMAL_BUILD`` build property to specify components, certain features and configurations, such as those provided by esp_psram or espcoredump components, may not be included by default. To include these features, you must add the relevant components to the ``COMPONENTS`` variable or list them in the ``REQUIRES`` or ``PRIV_REQUIRES`` argument during component registration.
-
+   Certain features and configurations, such as those provided by esp_psram or espcoredump components, may not be available to your project by default if the minimal list of components is used. When using the ``COMPONENTS`` variable, ensure that all necessary components are included. Similarly, when using the ``MINIMAL_BUILD`` build property, ensure that all required components are specified in the ``REQUIRES`` or ``PRIV_REQUIRES`` argument during component registration.
 
 .. _component-circular-dependencies:
 
@@ -720,7 +718,7 @@ Project_include.cmake
 
 For components that have build requirements that must be evaluated before any component CMakeLists files are evaluated, you can create a file called ``project_include.cmake`` in the component directory. This CMake file is included when ``project.cmake`` is evaluating the entire project.
 
-``project_include.cmake`` files are used inside ESP-IDF, for defining project-wide build features such as ``esptool.py`` command line arguments and the ``bootloader`` "special app".
+``project_include.cmake`` files are used inside ESP-IDF, for defining project-wide build features such as ``esptool`` command line arguments and the ``bootloader`` "special app".
 
 Unlike component ``CMakeLists.txt`` files, when including a ``project_include.cmake`` file the current source directory (``CMAKE_CURRENT_SOURCE_DIR`` and working directory) is the project directory. Use the variable ``COMPONENT_DIR`` for the absolute directory of the component.
 
@@ -810,7 +808,7 @@ Special components which contain no source files, only ``Kconfig.projbuild`` and
 Debugging CMake
 ===============
 
-For full details about CMake_ and CMake commands, see the `CMake v3.16 documentation`_.
+For full details about CMake_ and CMake commands, see the `CMake v3.22 documentation`_.
 
 Some tips for debugging the ESP-IDF CMake-based build system:
 
@@ -1111,7 +1109,7 @@ You can find more detailed information on how the project configuration works in
 Flash Arguments
 ===============
 
-There are some scenarios that we want to flash the target board without IDF. For this case we want to save the built binaries, esptool.py and esptool write_flash arguments. It's simple to write a script to save binaries and esptool.py.
+There are some scenarios that we want to flash the target board without IDF. For this case we want to save the built binaries, esptool and esptool write-flash arguments. It's simple to write a script to save binaries and esptool.
 
 After running a project build, the build directory contains binary output files (``.bin`` files) for the project and also the following flashing data files:
 
@@ -1121,9 +1119,9 @@ After running a project build, the build directory contains binary output files 
 
 .. highlight:: bash
 
-You can pass any of these flasher argument files to ``esptool.py`` as follows::
+You can pass any of these flasher argument files to ``esptool`` as follows::
 
-  python esptool.py --chip esp32 write_flash @build/flash_project_args
+  esptool --chip esp32 write-flash @build/flash_project_args
 
 Alternatively, it is possible to manually copy the parameters from the argument file and pass them on the command line.
 
@@ -1238,7 +1236,7 @@ It is possible to do so by using the :ref:`build system APIs provided <cmake_bui
 
 .. code-block:: cmake
 
-  cmake_minimum_required(VERSION 3.16)
+  cmake_minimum_required(VERSION 3.22)
   project(my_custom_app C)
 
   # Include CMake file that provides ESP-IDF CMake build system APIs.
@@ -1249,10 +1247,10 @@ It is possible to do so by using the :ref:`build system APIs provided <cmake_bui
   # specific build processes.
   idf_build_process(esp32)
 
-  # Create the project executable and plainly link the newlib component to it using
-  # its alias, idf::newlib.
+  # Create the project executable and plainly link the esp_libc component to it using
+  # its alias, idf::esp_libc.
   add_executable(${CMAKE_PROJECT_NAME}.elf main.c)
-  target_link_libraries(${CMAKE_PROJECT_NAME}.elf idf::newlib)
+  target_link_libraries(${CMAKE_PROJECT_NAME}.elf idf::esp_libc)
 
   # Let the build system know what the project executable is to attach more targets, dependencies, etc.
   idf_build_executable(${CMAKE_PROJECT_NAME}.elf)
@@ -1343,6 +1341,50 @@ Specify the executable *executable* for ESP-IDF build. This attaches additional 
   idf_build_get_config(var config [GENERATOR_EXPRESSION])
 
 Get the value of the specified config. Much like build properties, specifying *GENERATOR_EXPRESSION* will retrieve the generator expression string for that config, instead of the actual value, which can be used with CMake commands that support generator expressions. Actual config values are only known after call to ``idf_build_process``, however.
+
+.. code-block:: none
+
+  idf_build_add_post_elf_dependency(elf_filename dep_target)
+
+Register a dependency that must run after the ELF is linked (post-ELF) and before the binary image is generated. This is useful when a component needs to post‑process the ELF in place prior to ``elf2image`` execution (for example, inserting metadata, stripping sections, or generating additional symbol files). The dependency target ``dep_target`` must be a valid CMake target. If your rule reads or modifies the ELF, declare the ELF file as a ``DEPENDS`` of your custom command.
+
+.. important::
+
+   When creating post‑ELF steps, ensure the build graph remains acyclic:
+
+   - Do not make the ELF itself the output of your custom command. Produce a separate output (for example, ``app.elf.post``, ``app.elf.symbols``, or a simple marker file).
+   - If you must modify the ELF in place, also produce an additional output file and update its timestamp to be newer than the ELF after modification (for example, using ``cmake -E touch``). This ensures the output file has a newer timestamp than the modified ELF, so CMake considers the rule satisfied and won't re-run it on subsequent builds.
+
+   Following these rules ensures the post‑ELF hook runs in the intended order without triggering infinite rebuild loops.
+
+Example:
+
+.. code-block:: cmake
+
+    # Create a custom command to process the ELF file after linking
+    idf_build_get_property(elf_target EXECUTABLE GENERATOR_EXPRESSION)
+    add_custom_command(
+        OUTPUT "${CMAKE_BINARY_DIR}/${CMAKE_PROJECT_NAME}.stripped_marker"
+        COMMAND ${CMAKE_OBJCOPY} --strip-debug
+                "$<TARGET_FILE:$<GENEX_EVAL:${elf_target}>>"
+        COMMAND ${CMAKE_COMMAND} -E touch
+                "${CMAKE_BINARY_DIR}/${CMAKE_PROJECT_NAME}.stripped_marker"
+        DEPENDS "$<TARGET_FILE:$<GENEX_EVAL:${elf_target}>>"
+    )
+
+    # Wrap it in a custom target
+    add_custom_target(strip_elf DEPENDS
+        "${CMAKE_BINARY_DIR}/${CMAKE_PROJECT_NAME}.stripped_marker"
+    )
+
+    # Register it to run after the ELF is linked but before the BIN is generated
+    idf_build_add_post_elf_dependency("${CMAKE_PROJECT_NAME}.elf" strip_elf)
+
+.. code-block:: none
+
+  idf_build_get_post_elf_dependencies(elf_filename out_var)
+
+Retrieve the list of post-ELF dependencies registered for the given ELF file and store it in ``out_var``.
 
 
 .. _cmake-build-properties:
@@ -1525,7 +1567,7 @@ For integration into IDEs and other build systems, when CMake runs the build pro
 
 - ``compile_commands.json`` is a standard format JSON file which describes every source file which is compiled in the project. A CMake feature generates this file, and many IDEs know how to parse it.
 - ``project_description.json`` contains some general information about the ESP-IDF project, configured paths, etc.
-- ``flasher_args.json`` contains esptool.py arguments to flash the project's binary files. There are also ``flash_*_args`` files which can be used directly with esptool.py. See `Flash arguments`_.
+- ``flasher_args.json`` contains esptool arguments to flash the project's binary files. There are also ``flash_*_args`` files which can be used directly with esptool. See `Flash arguments`_.
 - ``CMakeCache.txt`` is the CMake cache file which contains other information about the CMake process, toolchain, etc.
 - ``config/sdkconfig.json`` is a JSON-formatted version of the project configuration values.
 - ``config/kconfig_menus.json`` is a JSON-formatted version of the menus shown in menuconfig, for use in external IDE UIs.
@@ -1538,7 +1580,7 @@ A tool called ``kconfserver`` is provided to allow IDEs to easily integrate with
 
 You can run ``kconfserver`` from a project via ``idf.py confserver`` or ``ninja kconfserver``, or a similar target triggered from a different build generator.
 
-For more information about ``kconfserver``, see the `esp-idf-kconfig documentation <https://github.com/espressif/esp-idf-kconfig/blob/master/docs/DOCUMENTATION.md>`_.
+For more information about ``kconfserver``, see the `esp-idf-kconfig documentation <https://docs.espressif.com/projects/esp-idf-kconfig/en/latest/kconfserver/index.html>`_.
 
 
 Build System Internals
@@ -1708,24 +1750,24 @@ Application Examples
 .. _esp-idf-template: https://github.com/espressif/esp-idf-template
 .. _cmake: https://cmake.org
 .. _ninja: https://ninja-build.org
-.. _esptool.py: https://github.com/espressif/esptool/#readme
-.. _CMake v3.16 documentation: https://cmake.org/cmake/help/v3.16/index.html
-.. _cmake command line documentation: https://cmake.org/cmake/help/v3.16/manual/cmake.1.html#options
-.. _cmake add_library: https://cmake.org/cmake/help/v3.16/command/add_library.html
-.. _cmake if: https://cmake.org/cmake/help/v3.16/command/if.html
-.. _cmake list: https://cmake.org/cmake/help/v3.16/command/list.html
-.. _cmake project: https://cmake.org/cmake/help/v3.16/command/project.html
-.. _cmake set: https://cmake.org/cmake/help/v3.16/command/set.html
-.. _cmake string: https://cmake.org/cmake/help/v3.16/command/string.html
+.. _esptool: https://github.com/espressif/esptool/#readme
+.. _CMake v3.22 documentation: https://cmake.org/cmake/help/v3.22/index.html
+.. _cmake command line documentation: https://cmake.org/cmake/help/v3.22/manual/cmake.1.html#options
+.. _cmake add_library: https://cmake.org/cmake/help/v3.22/command/add_library.html
+.. _cmake if: https://cmake.org/cmake/help/v3.22/command/if.html
+.. _cmake list: https://cmake.org/cmake/help/v3.22/command/list.html
+.. _cmake project: https://cmake.org/cmake/help/v3.22/command/project.html
+.. _cmake set: https://cmake.org/cmake/help/v3.22/command/set.html
+.. _cmake string: https://cmake.org/cmake/help/v3.22/command/string.html
 .. _cmake faq generated files: https://gitlab.kitware.com/cmake/community/-/wikis/FAQ#how-can-i-generate-a-source-file-during-the-build
-.. _ADDITIONAL_CLEAN_FILES: https://cmake.org/cmake/help/v3.16/prop_dir/ADDITIONAL_CLEAN_FILES.html
-.. _ExternalProject: https://cmake.org/cmake/help/v3.16/module/ExternalProject.html
-.. _cmake language variables: https://cmake.org/cmake/help/v3.16/manual/cmake-variables.7.html#variables-for-languages
-.. _set_source_files_properties: https://cmake.org/cmake/help/v3.16/command/set_source_files_properties.html
-.. _target_compile_options: https://cmake.org/cmake/help/v3.16/command/target_compile_options.html
-.. _target_link_libraries: https://cmake.org/cmake/help/v3.16/command/target_link_libraries.html#command:target_link_libraries
-.. _cmake_toolchain_file: https://cmake.org/cmake/help/v3.16/variable/CMAKE_TOOLCHAIN_FILE.html
-.. _LINK_INTERFACE_MULTIPLICITY: https://cmake.org/cmake/help/v3.16/prop_tgt/LINK_INTERFACE_MULTIPLICITY.html
+.. _ADDITIONAL_CLEAN_FILES: https://cmake.org/cmake/help/v3.22/prop_dir/ADDITIONAL_CLEAN_FILES.html
+.. _ExternalProject: https://cmake.org/cmake/help/v3.22/module/ExternalProject.html
+.. _cmake language variables: https://cmake.org/cmake/help/v3.22/manual/cmake-variables.7.html#variables-for-languages
+.. _set_source_files_properties: https://cmake.org/cmake/help/v3.22/command/set_source_files_properties.html
+.. _target_compile_options: https://cmake.org/cmake/help/v3.22/command/target_compile_options.html
+.. _target_link_libraries: https://cmake.org/cmake/help/v3.22/command/target_link_libraries.html#command:target_link_libraries
+.. _cmake_toolchain_file: https://cmake.org/cmake/help/v3.22/variable/CMAKE_TOOLCHAIN_FILE.html
+.. _LINK_INTERFACE_MULTIPLICITY: https://cmake.org/cmake/help/v3.22/prop_tgt/LINK_INTERFACE_MULTIPLICITY.html
 .. _quirc: https://github.com/dlbeer/quirc
 .. _pyenv: https://github.com/pyenv/pyenv#readme
 .. _virtualenv: https://virtualenv.pypa.io/en/stable/

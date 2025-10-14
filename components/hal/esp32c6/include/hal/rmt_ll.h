@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -38,10 +38,19 @@ extern "C" {
 #define RMT_LL_MAX_FILTER_VALUE           255
 #define RMT_LL_MAX_IDLE_VALUE             32767
 
+// Maximum values due to limited register bit width
+#define RMT_LL_CHANNEL_CLOCK_MAX_PRESCALE 256
+#define RMT_LL_GROUP_CLOCK_MAX_INTEGER_PRESCALE 256
+#define RMT_LL_GROUP_CLOCK_MAX_FRACTAL_PRESCALE 64
+
 typedef enum {
     RMT_LL_MEM_OWNER_SW = 0,
     RMT_LL_MEM_OWNER_HW = 1,
 } rmt_ll_mem_owner_t;
+
+typedef enum {
+    RMT_LL_MEM_LP_MODE_SHUT_DOWN,   // power down memory during low power stage
+} rmt_ll_mem_lp_mode_t;
 
 /**
  * @brief Enable the bus clock for RMT module
@@ -68,18 +77,6 @@ static inline void rmt_ll_reset_register(int group_id)
 }
 
 /**
- * @brief Enable clock gate for register and memory
- *
- * @param dev Peripheral instance address
- * @param enable True to enable, False to disable
- */
-static inline void rmt_ll_enable_periph_clock(rmt_dev_t *dev, bool enable)
-{
-    dev->sys_conf.clk_en = enable; // register clock gating
-    dev->sys_conf.mem_clk_force_on = enable; // memory clock gating
-}
-
-/**
  * @brief Force power on the RMT memory block, regardless of the outside PMU logic
  *
  * @param dev Peripheral instance address
@@ -91,11 +88,11 @@ static inline void rmt_ll_mem_force_power_on(rmt_dev_t *dev)
 }
 
 /**
- * @brief Force power off the RMT memory block, regardless of the outside PMU logic
+ * @brief Force the RMT memory block into low power mode, regardless of the outside PMU logic
  *
  * @param dev Peripheral instance address
  */
-static inline void rmt_ll_mem_force_power_off(rmt_dev_t *dev)
+static inline void rmt_ll_mem_force_low_power(rmt_dev_t *dev)
 {
     dev->sys_conf.mem_force_pd = 1;
     dev->sys_conf.mem_force_pu = 0;
@@ -110,6 +107,18 @@ static inline void rmt_ll_mem_power_by_pmu(rmt_dev_t *dev)
 {
     dev->sys_conf.mem_force_pd = 0;
     dev->sys_conf.mem_force_pu = 0;
+}
+
+/**
+ * @brief Set low power mode for RMT memory block
+ *
+ * @param dev Peripheral instance address
+ * @param mode RMT memory low power mode in low power stage
+ */
+static inline void rmt_ll_mem_set_low_power_mode(rmt_dev_t *dev, rmt_ll_mem_lp_mode_t mode)
+{
+    (void)dev;
+    HAL_ASSERT(mode == RMT_LL_MEM_LP_MODE_SHUT_DOWN);
 }
 
 /**
@@ -753,150 +762,6 @@ __attribute__((always_inline))
 static inline uint32_t rmt_ll_rx_get_interrupt_status(rmt_dev_t *dev, uint32_t channel)
 {
     return dev->int_st.val & RMT_LL_EVENT_RX_MASK(channel);
-}
-
-//////////////////////////////////////////Deprecated Functions//////////////////////////////////////////////////////////
-/////////////////////////////The following functions are only used by the legacy driver/////////////////////////////////
-/////////////////////////////They might be removed in the next major release (ESP-IDF 6.0)//////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-__attribute__((always_inline))
-static inline uint32_t rmt_ll_tx_get_status_word(rmt_dev_t *dev, uint32_t channel)
-{
-    return dev->chnstatus[channel].val;
-}
-
-__attribute__((always_inline))
-static inline uint32_t rmt_ll_rx_get_status_word(rmt_dev_t *dev, uint32_t channel)
-{
-    return dev->chmstatus[channel].val;
-}
-
-__attribute__((always_inline))
-static inline uint32_t rmt_ll_tx_get_channel_clock_div(rmt_dev_t *dev, uint32_t channel)
-{
-    uint32_t div = HAL_FORCE_READ_U32_REG_FIELD(dev->chnconf0[channel], div_cnt_chn);
-    return div == 0 ? 256 : div;
-}
-
-__attribute__((always_inline))
-static inline uint32_t rmt_ll_rx_get_channel_clock_div(rmt_dev_t *dev, uint32_t channel)
-{
-    uint32_t div = HAL_FORCE_READ_U32_REG_FIELD(dev->chmconf[channel].conf0, div_cnt_chm);
-    return div == 0 ? 256 : div;
-}
-
-__attribute__((always_inline))
-static inline uint32_t rmt_ll_rx_get_idle_thres(rmt_dev_t *dev, uint32_t channel)
-{
-    return dev->chmconf[channel].conf0.idle_thres_chm;
-}
-
-__attribute__((always_inline))
-static inline uint32_t rmt_ll_tx_get_mem_blocks(rmt_dev_t *dev, uint32_t channel)
-{
-    return dev->chnconf0[channel].mem_size_chn;
-}
-
-__attribute__((always_inline))
-static inline uint32_t rmt_ll_rx_get_mem_blocks(rmt_dev_t *dev, uint32_t channel)
-{
-    return dev->chmconf[channel].conf0.mem_size_chm;
-}
-
-__attribute__((always_inline))
-static inline bool rmt_ll_tx_is_loop_enabled(rmt_dev_t *dev, uint32_t channel)
-{
-    return dev->chnconf0[channel].tx_conti_mode_chn;
-}
-
-__attribute__((always_inline))
-static inline rmt_clock_source_t rmt_ll_get_group_clock_src(rmt_dev_t *dev, uint32_t channel)
-{
-    rmt_clock_source_t clk_src = RMT_CLK_SRC_PLL_F80M;
-    switch (PCR.rmt_sclk_conf.rmt_sclk_sel) {
-    case 1:
-        clk_src = RMT_CLK_SRC_PLL_F80M;
-        break;
-    case 2:
-        clk_src = RMT_CLK_SRC_RC_FAST;
-        break;
-    case 3:
-        clk_src = RMT_CLK_SRC_XTAL;
-        break;
-    }
-    return clk_src;
-}
-
-__attribute__((always_inline))
-static inline bool rmt_ll_tx_is_idle_enabled(rmt_dev_t *dev, uint32_t channel)
-{
-    return dev->chnconf0[channel].idle_out_en_chn;
-}
-
-__attribute__((always_inline))
-static inline uint32_t rmt_ll_tx_get_idle_level(rmt_dev_t *dev, uint32_t channel)
-{
-    return dev->chnconf0[channel].idle_out_lv_chn;
-}
-
-static inline bool rmt_ll_is_mem_force_powered_down(rmt_dev_t *dev)
-{
-    return dev->sys_conf.mem_force_pd;
-}
-
-__attribute__((always_inline))
-static inline uint32_t rmt_ll_rx_get_mem_owner(rmt_dev_t *dev, uint32_t channel)
-{
-    return dev->chmconf[channel].conf1.mem_owner_chm;
-}
-
-__attribute__((always_inline))
-static inline uint32_t rmt_ll_rx_get_limit(rmt_dev_t *dev, uint32_t channel)
-{
-    return dev->chm_rx_lim[channel].rmt_rx_lim_chm;
-}
-
-__attribute__((always_inline))
-static inline uint32_t rmt_ll_get_tx_end_interrupt_status(rmt_dev_t *dev)
-{
-    return dev->int_st.val & 0x03;
-}
-
-__attribute__((always_inline))
-static inline uint32_t rmt_ll_get_rx_end_interrupt_status(rmt_dev_t *dev)
-{
-    return (dev->int_st.val >> 2) & 0x03;
-}
-
-__attribute__((always_inline))
-static inline uint32_t rmt_ll_get_tx_err_interrupt_status(rmt_dev_t *dev)
-{
-    return (dev->int_st.val >> 4) & 0x03;
-}
-
-__attribute__((always_inline))
-static inline uint32_t rmt_ll_get_rx_err_interrupt_status(rmt_dev_t *dev)
-{
-    return (dev->int_st.val >> 6) & 0x03;
-}
-
-__attribute__((always_inline))
-static inline uint32_t rmt_ll_get_tx_thres_interrupt_status(rmt_dev_t *dev)
-{
-    return (dev->int_st.val >> 8) & 0x03;
-}
-
-__attribute__((always_inline))
-static inline uint32_t rmt_ll_get_rx_thres_interrupt_status(rmt_dev_t *dev)
-{
-    return (dev->int_st.val >> 10) & 0x03;
-}
-
-__attribute__((always_inline))
-static inline uint32_t rmt_ll_get_tx_loop_interrupt_status(rmt_dev_t *dev)
-{
-    return (dev->int_st.val >> 12) & 0x03;
 }
 
 #ifdef __cplusplus

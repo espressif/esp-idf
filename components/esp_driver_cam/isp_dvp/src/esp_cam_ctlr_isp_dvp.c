@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,10 +11,10 @@
 #include "esp_heap_caps.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/idf_additions.h"
+#include "esp_memory_utils.h"
 #include "driver/isp_types.h"
 #include "driver/gpio.h"
 #include "hal/isp_hal.h"
-#include "hal/gpio_hal.h"
 #include "hal/isp_ll.h"
 #include "hal/mipi_csi_brg_ll.h"
 #include "hal/mipi_csi_ll.h"
@@ -30,7 +30,11 @@
 #include "esp_cam_ctlr_isp_dvp.h"
 #include "../../dvp_share_ctrl.h"
 
-#if CONFIG_CAM_CTLR_ISP_DVP_ISR_IRAM_SAFE
+#if CONFIG_PM_ENABLE
+#include "esp_pm.h"
+#endif
+
+#if CONFIG_CAM_CTLR_ISP_DVP_ISR_CACHE_SAFE
 #define ISP_DVP_MEM_ALLOC_CAPS   (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
 #else
 #define ISP_DVP_MEM_ALLOC_CAPS   MALLOC_CAP_DEFAULT
@@ -54,6 +58,9 @@ typedef struct isp_dvp_controller_t {
     dw_gdma_channel_handle_t  dma_chan;           //dwgdma channel handle
     size_t                    dvp_transfer_size;  //csi transfer size for dwgdma
     bool                      isr_installed;      //is isr installed
+#if CONFIG_PM_ENABLE
+    esp_pm_lock_handle_t      pm_lock;            //Power management lock
+#endif
     esp_cam_ctlr_t base;
 } isp_dvp_controller_t;
 
@@ -78,6 +85,8 @@ static esp_err_t s_isp_dvp_start(esp_cam_ctlr_handle_t handle);
 static esp_err_t s_isp_dvp_stop(esp_cam_ctlr_handle_t handle);
 static esp_err_t s_isp_dvp_receive(esp_cam_ctlr_handle_t handle, esp_cam_ctlr_trans_t *trans, uint32_t timeout_ms);
 static bool s_dvp_dma_trans_done_callback(dw_gdma_channel_handle_t chan, const dw_gdma_trans_done_event_data_t *event_data, void *user_data);
+static void *s_isp_dvp_alloc_buffer(esp_cam_ctlr_t *handle, size_t size, uint32_t buf_caps);
+static esp_err_t s_isp_dvp_format_conversion(esp_cam_ctlr_t *handle, const cam_ctlr_format_conv_config_t *config);
 
 esp_err_t esp_cam_new_isp_dvp_ctlr(isp_proc_handle_t isp_proc, const esp_cam_ctlr_isp_dvp_cfg_t *ctlr_config, esp_cam_ctlr_handle_t *ret_handle)
 {
@@ -179,6 +188,11 @@ esp_err_t esp_cam_new_isp_dvp_ctlr(isp_proc_handle_t isp_proc, const esp_cam_ctl
     mipi_csi_brg_ll_set_burst_len(isp_proc->csi_brg_hw, 512);
 
     esp_cam_ctlr_t *cam_ctlr = &(dvp_ctlr->base);
+
+#if CONFIG_PM_ENABLE
+    ESP_GOTO_ON_ERROR(esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "isp_dvp_cam_ctlr", &dvp_ctlr->pm_lock), err, TAG, "failed to create pm lock");
+#endif //CONFIG_PM_ENABLE
+
     cam_ctlr->del = s_isp_del_dvp_controller;
     cam_ctlr->enable = s_isp_dvp_enable;
     cam_ctlr->start = s_isp_dvp_start;
@@ -188,6 +202,8 @@ esp_err_t esp_cam_new_isp_dvp_ctlr(isp_proc_handle_t isp_proc, const esp_cam_ctl
     cam_ctlr->register_event_callbacks = s_isp_dvp_register_event_callbacks;
     cam_ctlr->get_internal_buffer = s_isp_dvp_get_frame_buffer;
     cam_ctlr->get_buffer_len = s_isp_dvp_get_frame_buffer_length;
+    cam_ctlr->alloc_buffer = s_isp_dvp_alloc_buffer;
+    cam_ctlr->format_conversion = s_isp_dvp_format_conversion;
     *ret_handle = cam_ctlr;
 
     return ESP_OK;
@@ -220,6 +236,12 @@ esp_err_t s_isp_del_dvp_controller(esp_cam_ctlr_handle_t handle)
     if (dvp_ctlr->trans_que) {
         vQueueDeleteWithCaps(dvp_ctlr->trans_que);
     }
+#if CONFIG_PM_ENABLE
+    if (dvp_ctlr->pm_lock) {
+        ESP_RETURN_ON_ERROR(esp_pm_lock_delete(dvp_ctlr->pm_lock), TAG, "delete pm_lock failed");
+    }
+#endif // CONFIG_PM_ENABLE
+
     free(dvp_ctlr);
 
     return ESP_OK;
@@ -261,7 +283,7 @@ static esp_err_t s_isp_dvp_register_event_callbacks(esp_cam_ctlr_handle_t handle
     isp_dvp_controller_t *dvp_ctlr = __containerof(handle, isp_dvp_controller_t, base);
     ESP_RETURN_ON_FALSE(dvp_ctlr->fsm == ISP_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "controller isn't in init state");
 
-#if CONFIG_CAM_CTLR_MIPI_CSI_ISR_IRAM_SAFE
+#if CONFIG_CAM_CTLR_ISP_DVP_ISR_CACHE_SAFE
     if (cbs->on_get_new_trans) {
         ESP_RETURN_ON_FALSE(esp_ptr_in_iram(cbs->on_get_new_trans), ESP_ERR_INVALID_ARG, TAG, "on_get_new_trans callback not in IRAM");
     }
@@ -293,6 +315,11 @@ static esp_err_t s_isp_dvp_enable(esp_cam_ctlr_handle_t handle)
 
     portENTER_CRITICAL(&dvp_ctlr->spinlock);
     dvp_ctlr->fsm = ISP_FSM_ENABLE;
+#if CONFIG_PM_ENABLE
+    if (dvp_ctlr->pm_lock) {
+        ESP_RETURN_ON_ERROR(esp_pm_lock_acquire(dvp_ctlr->pm_lock), TAG, "acquire pm_lock failed");
+    }
+#endif // CONFIG_PM_ENABLE
     portEXIT_CRITICAL(&dvp_ctlr->spinlock);
 
     return ESP_OK;
@@ -306,6 +333,11 @@ static esp_err_t s_isp_dvp_disable(esp_cam_ctlr_handle_t handle)
 
     portENTER_CRITICAL(&dvp_ctlr->spinlock);
     dvp_ctlr->fsm = ISP_FSM_INIT;
+#if CONFIG_PM_ENABLE
+    if (dvp_ctlr->pm_lock) {
+        ESP_RETURN_ON_ERROR(esp_pm_lock_release(dvp_ctlr->pm_lock), TAG, "release pm_lock failed");
+    }
+#endif // CONFIG_PM_ENABLE
     portEXIT_CRITICAL(&dvp_ctlr->spinlock);
 
     return ESP_OK;
@@ -471,6 +503,7 @@ IRAM_ATTR static bool s_dvp_dma_trans_done_callback(dw_gdma_channel_handle_t cha
     if ((dvp_ctlr->trans.buffer != dvp_ctlr->backup_buffer) || dvp_ctlr->bk_buffer_exposed) {
         esp_err_t ret = esp_cache_msync((void *)(dvp_ctlr->trans.buffer), dvp_ctlr->trans.received_size, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
         assert(ret == ESP_OK);
+        (void)ret;
         assert(dvp_ctlr->cbs.on_trans_finished);
         if (dvp_ctlr->cbs.on_trans_finished) {
             dvp_ctlr->trans.received_size = dvp_ctlr->fb_size_in_bytes;
@@ -491,32 +524,32 @@ static esp_err_t s_isp_io_init(isp_dvp_controller_t *dvp_ctlr, const esp_cam_ctl
     gpio_config_t gpio_conf = {
         .intr_type = GPIO_INTR_DISABLE,
         .mode = GPIO_MODE_INPUT,
-        .pull_down_en = false,
-        .pull_up_en = true,
+        .pull_down_en = GPIO_PULLDOWN_DISABLE,
+        .pull_up_en = GPIO_PULLUP_ENABLE,
     };
 
-    if (ctlr_config->pclk_io) {
+    if (ctlr_config->pclk_io >= 0) {
         gpio_conf.pin_bit_mask = 1ULL << ctlr_config->pclk_io;
         ESP_RETURN_ON_ERROR(gpio_config(&gpio_conf), TAG, "failed to configure pclk gpio");
         ESP_LOGD(TAG, "pclk_io: %d, dvp_pclk_sig: %"PRId32, ctlr_config->pclk_io, isp_hw_info.dvp_ctlr[dvp_ctlr->id].dvp_pclk_sig);
         esp_rom_gpio_connect_in_signal(ctlr_config->pclk_io, isp_hw_info.dvp_ctlr[dvp_ctlr->id].dvp_pclk_sig, false);
     }
 
-    if (ctlr_config->hsync_io) {
+    if (ctlr_config->hsync_io >= 0) {
         gpio_conf.pin_bit_mask = 1ULL << ctlr_config->hsync_io;
         ESP_RETURN_ON_ERROR(gpio_config(&gpio_conf), TAG, "failed to configure hsync gpio");
         ESP_LOGD(TAG, "hsync_io: %d, dvp_hsync_sig: %"PRId32, ctlr_config->hsync_io, isp_hw_info.dvp_ctlr[dvp_ctlr->id].dvp_hsync_sig);
         esp_rom_gpio_connect_in_signal(ctlr_config->hsync_io, isp_hw_info.dvp_ctlr[dvp_ctlr->id].dvp_hsync_sig, false);
     }
 
-    if (ctlr_config->vsync_io) {
+    if (ctlr_config->vsync_io >= 0) {
         gpio_conf.pin_bit_mask = 1ULL << ctlr_config->vsync_io;
         ESP_RETURN_ON_ERROR(gpio_config(&gpio_conf), TAG, "failed to configure vsync gpio");
         ESP_LOGD(TAG, "vsync_io: %d, dvp_vsync_sig: %"PRId32, ctlr_config->vsync_io, isp_hw_info.dvp_ctlr[dvp_ctlr->id].dvp_vsync_sig);
         esp_rom_gpio_connect_in_signal(ctlr_config->vsync_io, isp_hw_info.dvp_ctlr[dvp_ctlr->id].dvp_vsync_sig, false);
     }
 
-    if (ctlr_config->de_io) {
+    if (ctlr_config->de_io >= 0) {
         gpio_conf.pin_bit_mask = 1ULL << ctlr_config->de_io;
         ESP_RETURN_ON_ERROR(gpio_config(&gpio_conf), TAG, "failed to configure de gpio");
         ESP_LOGD(TAG, "de_io: %d, dvp_de_sig: %"PRId32, ctlr_config->de_io, isp_hw_info.dvp_ctlr[dvp_ctlr->id].dvp_de_sig);
@@ -565,4 +598,31 @@ static esp_err_t s_isp_declaim_dvp_controller(isp_dvp_controller_t *dvp_ctlr)
     _lock_release(&s_ctx.mutex);
 
     return ESP_OK;
+}
+
+static void *s_isp_dvp_alloc_buffer(esp_cam_ctlr_t *handle, size_t size, uint32_t buf_caps)
+{
+    isp_dvp_controller_t *dvp_ctlr = __containerof(handle, isp_dvp_controller_t, base);
+
+    if (!dvp_ctlr) {
+        ESP_LOGE(TAG, "invalid argument: handle is null");
+        return NULL;
+    }
+
+    void *buffer = heap_caps_calloc(1, size, buf_caps);
+    if (!buffer) {
+        ESP_LOGE(TAG, "failed to allocate buffer");
+        return NULL;
+    }
+
+    ESP_LOGD(TAG, "Allocated camera buffer: %p, size: %zu", buffer, size);
+
+    return buffer;
+}
+
+static esp_err_t s_isp_dvp_format_conversion(esp_cam_ctlr_t *handle, const cam_ctlr_format_conv_config_t *config)
+{
+    ESP_RETURN_ON_FALSE(handle, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
+    // ISP DVP controller doesn't support format conversion yet
+    return ESP_ERR_NOT_SUPPORTED;
 }

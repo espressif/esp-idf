@@ -448,12 +448,12 @@ static void bt_gap_event_handler(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_para
 
 #if (CONFIG_EXAMPLE_SSP_ENABLED == true)
     case ESP_BT_GAP_CFM_REQ_EVT:
-        ESP_LOGI(TAG, "BT GAP CFM_REQ_EVT Please compare the numeric value: %" PRIu32,
+        ESP_LOGI(TAG, "BT GAP CFM_REQ_EVT Please compare the numeric value: %06" PRIu32,
                  param->cfm_req.num_val);
         esp_bt_gap_ssp_confirm_reply(param->cfm_req.bda, true);
         break;
     case ESP_BT_GAP_KEY_NOTIF_EVT:
-        ESP_LOGI(TAG, "BT GAP KEY_NOTIF_EVT passkey:%" PRIu32, param->key_notif.passkey);
+        ESP_LOGI(TAG, "BT GAP KEY_NOTIF_EVT passkey:%06" PRIu32, param->key_notif.passkey);
         break;
     case ESP_BT_GAP_KEY_REQ_EVT:
         ESP_LOGI(TAG, "BT GAP KEY_REQ_EVT Please enter passkey!");
@@ -765,6 +765,9 @@ esp_err_t esp_hid_ble_gap_adv_init(uint16_t appearance, const char *device_name)
      */
     fields.flags = BLE_HS_ADV_F_DISC_GEN |
                    BLE_HS_ADV_F_BREDR_UNSUP;
+
+    fields.appearance = ESP_HID_APPEARANCE_GENERIC;
+    fields.appearance_is_present = 1;
 
     /* Indicate that the TX power level field should be included; have the
      * stack fill this value automatically.  This is done by assigning the

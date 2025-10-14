@@ -289,27 +289,30 @@ extern "C" {
 #define EFUSE_VDD_SPI_AS_GPIO_M  (EFUSE_VDD_SPI_AS_GPIO_V << EFUSE_VDD_SPI_AS_GPIO_S)
 #define EFUSE_VDD_SPI_AS_GPIO_V  0x00000001U
 #define EFUSE_VDD_SPI_AS_GPIO_S  26
-/** EFUSE_RPT4_RESERVED0_2 : RO; bitpos: [28:27]; default: 0;
- *  Reserved.
+/** EFUSE_ECDSA_CURVE_MODE : R; bitpos: [28:27]; default: 0;
+ *  Configures the curve of ECDSA calculation: 0: only enable P256. 1: only enable
+ *  P192. 2: both enable P256 and P192. 3: only enable P256
  */
-#define EFUSE_RPT4_RESERVED0_2    0x00000003U
-#define EFUSE_RPT4_RESERVED0_2_M  (EFUSE_RPT4_RESERVED0_2_V << EFUSE_RPT4_RESERVED0_2_S)
-#define EFUSE_RPT4_RESERVED0_2_V  0x00000003U
-#define EFUSE_RPT4_RESERVED0_2_S  27
-/** EFUSE_RPT4_RESERVED0_1 : RO; bitpos: [29]; default: 0;
- *  Reserved.
+#define EFUSE_ECDSA_CURVE_MODE    0x00000003U
+#define EFUSE_ECDSA_CURVE_MODE_M  (EFUSE_ECDSA_CURVE_MODE_V << EFUSE_ECDSA_CURVE_MODE_S)
+#define EFUSE_ECDSA_CURVE_MODE_V  0x00000003U
+#define EFUSE_ECDSA_CURVE_MODE_S  27
+/** EFUSE_ECC_FORCE_CONST_TIME : R; bitpos: [29]; default: 0;
+ *  Set this bit to permanently turn on ECC const-time mode
  */
-#define EFUSE_RPT4_RESERVED0_1    (BIT(29))
-#define EFUSE_RPT4_RESERVED0_1_M  (EFUSE_RPT4_RESERVED0_1_V << EFUSE_RPT4_RESERVED0_1_S)
-#define EFUSE_RPT4_RESERVED0_1_V  0x00000001U
-#define EFUSE_RPT4_RESERVED0_1_S  29
-/** EFUSE_RPT4_RESERVED0_0 : RO; bitpos: [31:30]; default: 0;
- *  Reserved.
+#define EFUSE_ECC_FORCE_CONST_TIME    (BIT(29))
+#define EFUSE_ECC_FORCE_CONST_TIME_M  (EFUSE_ECC_FORCE_CONST_TIME_V << EFUSE_ECC_FORCE_CONST_TIME_S)
+#define EFUSE_ECC_FORCE_CONST_TIME_V  0x00000001U
+#define EFUSE_ECC_FORCE_CONST_TIME_S  29
+/** EFUSE_XTS_DPA_PSEUDO_LEVEL : R; bitpos: [31:30]; default: 0;
+ *  Set this bit to control the xts pseudo-round anti-dpa attack function: 0:
+ *  controlled by register. 1-3: the higher the value is, the more pseudo-rounds are
+ *  inserted to the xts-aes calculation
  */
-#define EFUSE_RPT4_RESERVED0_0    0x00000003U
-#define EFUSE_RPT4_RESERVED0_0_M  (EFUSE_RPT4_RESERVED0_0_V << EFUSE_RPT4_RESERVED0_0_S)
-#define EFUSE_RPT4_RESERVED0_0_V  0x00000003U
-#define EFUSE_RPT4_RESERVED0_0_S  30
+#define EFUSE_XTS_DPA_PSEUDO_LEVEL    0x00000003U
+#define EFUSE_XTS_DPA_PSEUDO_LEVEL_M  (EFUSE_XTS_DPA_PSEUDO_LEVEL_V << EFUSE_XTS_DPA_PSEUDO_LEVEL_S)
+#define EFUSE_XTS_DPA_PSEUDO_LEVEL_V  0x00000003U
+#define EFUSE_XTS_DPA_PSEUDO_LEVEL_S  30
 
 /** EFUSE_RD_REPEAT_DATA1_REG register
  *  BLOCK0 data register 2.
@@ -416,14 +419,13 @@ extern "C" {
 #define EFUSE_SEC_DPA_LEVEL_M  (EFUSE_SEC_DPA_LEVEL_V << EFUSE_SEC_DPA_LEVEL_S)
 #define EFUSE_SEC_DPA_LEVEL_V  0x00000003U
 #define EFUSE_SEC_DPA_LEVEL_S  16
-/** EFUSE_ECDSA_FORCE_USE_HARDWARE_K : RO; bitpos: [18]; default: 1;
- *  Represents whether hardware random number k is forced used in ESDCA. 1: force used.
- *  0: not force used.
+/** EFUSE_RESERVE_0_114 : RO; bitpos: [18]; default: 1;
+ *  Reserved
  */
-#define EFUSE_ECDSA_FORCE_USE_HARDWARE_K    (BIT(18))
-#define EFUSE_ECDSA_FORCE_USE_HARDWARE_K_M  (EFUSE_ECDSA_FORCE_USE_HARDWARE_K_V << EFUSE_ECDSA_FORCE_USE_HARDWARE_K_S)
-#define EFUSE_ECDSA_FORCE_USE_HARDWARE_K_V  0x00000001U
-#define EFUSE_ECDSA_FORCE_USE_HARDWARE_K_S  18
+#define EFUSE_RESERVE_0_114    (BIT(18))
+#define EFUSE_RESERVE_0_114_M  (EFUSE_RESERVE_0_114_V << EFUSE_RESERVE_0_114_S)
+#define EFUSE_RESERVE_0_114_V  0x00000001U
+#define EFUSE_RESERVE_0_114_S  18
 /** EFUSE_CRYPT_DPA_ENABLE : RO; bitpos: [19]; default: 1;
  *  Represents whether anti-dpa attack is enabled. 1:enabled. 0: disabled.
  */
@@ -446,13 +448,20 @@ extern "C" {
 #define EFUSE_SECURE_BOOT_AGGRESSIVE_REVOKE_M  (EFUSE_SECURE_BOOT_AGGRESSIVE_REVOKE_V << EFUSE_SECURE_BOOT_AGGRESSIVE_REVOKE_S)
 #define EFUSE_SECURE_BOOT_AGGRESSIVE_REVOKE_V  0x00000001U
 #define EFUSE_SECURE_BOOT_AGGRESSIVE_REVOKE_S  21
-/** EFUSE_RPT4_RESERVED2_0 : RO; bitpos: [27:22]; default: 0;
- *  Reserved.
+/** EFUSE_POWERGLITCH_EN1 : R; bitpos: [26:22]; default: 0;
+ *  Set these bits to enable power glitch function when chip power on
  */
-#define EFUSE_RPT4_RESERVED2_0    0x0000003FU
-#define EFUSE_RPT4_RESERVED2_0_M  (EFUSE_RPT4_RESERVED2_0_V << EFUSE_RPT4_RESERVED2_0_S)
-#define EFUSE_RPT4_RESERVED2_0_V  0x0000003FU
-#define EFUSE_RPT4_RESERVED2_0_S  22
+#define EFUSE_POWERGLITCH_EN1    0x0000001FU
+#define EFUSE_POWERGLITCH_EN1_M  (EFUSE_POWERGLITCH_EN1_V << EFUSE_POWERGLITCH_EN1_S)
+#define EFUSE_POWERGLITCH_EN1_V  0x0000001FU
+#define EFUSE_POWERGLITCH_EN1_S  22
+/** EFUSE_RESERVED_0_123 : R; bitpos: [27]; default: 0;
+ *  reserved
+ */
+#define EFUSE_RESERVED_0_123    (BIT(27))
+#define EFUSE_RESERVED_0_123_M  (EFUSE_RESERVED_0_123_V << EFUSE_RESERVED_0_123_S)
+#define EFUSE_RESERVED_0_123_V  0x00000001U
+#define EFUSE_RESERVED_0_123_S  27
 /** EFUSE_FLASH_TPUW : RO; bitpos: [31:28]; default: 0;
  *  Represents the flash waiting time after power-up, in unit of ms. When the value
  *  less than 15, the waiting time is the programmed value. Otherwise, the waiting time

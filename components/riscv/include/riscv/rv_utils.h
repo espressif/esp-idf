@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,13 +9,17 @@
 #include <stdint.h>
 
 #include "soc/soc_caps.h"
-#include "soc/assist_debug_reg.h"
 #include "soc/interrupt_reg.h"
 #include "esp_attr.h"
 #include "riscv/csr.h"
 #include "riscv/interrupt.h"
 #include "riscv/csr_pie.h"
+#include "riscv/csr_dsp.h"
 #include "sdkconfig.h"
+
+#if CONFIG_SECURE_ENABLE_TEE && !NON_OS_BUILD
+#include "secure_service_num.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -28,15 +32,7 @@ extern "C" {
 #define IS_PRV_M_MODE()  (1UL)
 #endif
 
-#if CONFIG_SECURE_ENABLE_TEE && !ESP_TEE_BUILD
-/* [ESP-TEE] Secure service call IDs for interrupt management */
-#define TEE_INTR_ENABLE_SRV_ID         (2)
-#define TEE_INTR_DISABLE_SRV_ID        (3)
-#define TEE_INTR_SET_PRIORITY_SRV_ID   (4)
-#define TEE_INTR_SET_TYPE_SRV_ID       (5)
-#define TEE_INTR_SET_THRESHOLD_SRV_ID  (6)
-#define TEE_INTR_EDGE_ACK_SRV_ID       (7)
-#define TEE_INTR_GLOBAL_EN_SRV_ID      (8)
+#if CONFIG_SECURE_ENABLE_TEE && !NON_OS_BUILD
 /* [ESP-TEE] Callback function for accessing interrupt management services through REE */
 extern esprv_int_mgmt_t esp_tee_intr_sec_srv_cb;
 #endif
@@ -109,7 +105,7 @@ FORCE_INLINE_ATTR void *rv_utils_get_sp(void)
 FORCE_INLINE_ATTR uint32_t __attribute__((always_inline)) rv_utils_get_cycle_count(void)
 {
 #if !SOC_CPU_HAS_CSR_PC
-    return RV_READ_CSR(mcycle);
+    return RV_READ_CSR(cycle);
 #else
     if (IS_PRV_M_MODE()) {
         return RV_READ_CSR(CSR_PCCR_MACHINE);
@@ -122,7 +118,11 @@ FORCE_INLINE_ATTR uint32_t __attribute__((always_inline)) rv_utils_get_cycle_cou
 FORCE_INLINE_ATTR void __attribute__((always_inline)) rv_utils_set_cycle_count(uint32_t ccount)
 {
 #if !SOC_CPU_HAS_CSR_PC
+#if CONFIG_SECURE_ENABLE_TEE && !NON_OS_BUILD
+    esp_tee_intr_sec_srv_cb(2, SS_RV_UTILS_SET_CYCLE_COUNT, ccount);
+#else
     RV_WRITE_CSR(mcycle, ccount);
+#endif
 #else
     if (IS_PRV_M_MODE()) {
         RV_WRITE_CSR(CSR_PCCR_MACHINE, ccount);
@@ -157,8 +157,8 @@ FORCE_INLINE_ATTR void rv_utils_set_xtvec(uint32_t xtvec_val)
 
 FORCE_INLINE_ATTR void rv_utils_intr_enable(uint32_t intr_mask)
 {
-#if CONFIG_SECURE_ENABLE_TEE && !ESP_TEE_BUILD
-    esp_tee_intr_sec_srv_cb(2, TEE_INTR_ENABLE_SRV_ID, intr_mask);
+#if CONFIG_SECURE_ENABLE_TEE && !NON_OS_BUILD
+    esp_tee_intr_sec_srv_cb(2, SS_RV_UTILS_INTR_ENABLE, intr_mask);
 #else
     // Disable all interrupts to make updating of the interrupt mask atomic.
     unsigned old_mstatus = RV_CLEAR_CSR(mstatus, MSTATUS_MIE);
@@ -169,8 +169,8 @@ FORCE_INLINE_ATTR void rv_utils_intr_enable(uint32_t intr_mask)
 
 FORCE_INLINE_ATTR void rv_utils_intr_disable(uint32_t intr_mask)
 {
-#if CONFIG_SECURE_ENABLE_TEE && !ESP_TEE_BUILD
-    esp_tee_intr_sec_srv_cb(2, TEE_INTR_DISABLE_SRV_ID, intr_mask);
+#if CONFIG_SECURE_ENABLE_TEE && !NON_OS_BUILD
+    esp_tee_intr_sec_srv_cb(2, SS_RV_UTILS_INTR_DISABLE, intr_mask);
 #else
     // Disable all interrupts to make updating of the interrupt mask atomic.
     unsigned old_mstatus = RV_CLEAR_CSR(mstatus, MSTATUS_MIE);
@@ -181,8 +181,8 @@ FORCE_INLINE_ATTR void rv_utils_intr_disable(uint32_t intr_mask)
 
 FORCE_INLINE_ATTR void rv_utils_intr_global_enable(void)
 {
-#if CONFIG_SECURE_ENABLE_TEE && !ESP_TEE_BUILD
-    esp_tee_intr_sec_srv_cb(1, TEE_INTR_GLOBAL_EN_SRV_ID);
+#if CONFIG_SECURE_ENABLE_TEE && !NON_OS_BUILD
+    esp_tee_intr_sec_srv_cb(1, SS_RV_UTILS_INTR_GLOBAL_ENABLE);
 #else
     RV_SET_CSR(mstatus, MSTATUS_MIE);
 #endif
@@ -203,8 +203,8 @@ FORCE_INLINE_ATTR void rv_utils_intr_global_disable(void)
 
 FORCE_INLINE_ATTR void rv_utils_intr_set_type(int intr_num, enum intr_type type)
 {
-#if CONFIG_SECURE_ENABLE_TEE && !ESP_TEE_BUILD
-    esp_tee_intr_sec_srv_cb(3, TEE_INTR_SET_TYPE_SRV_ID, intr_num, type);
+#if CONFIG_SECURE_ENABLE_TEE && !NON_OS_BUILD
+    esp_tee_intr_sec_srv_cb(3, SS_RV_UTILS_INTR_SET_TYPE, intr_num, type);
 #else
     esprv_int_set_type(intr_num, type);
 #endif
@@ -212,8 +212,8 @@ FORCE_INLINE_ATTR void rv_utils_intr_set_type(int intr_num, enum intr_type type)
 
 FORCE_INLINE_ATTR void rv_utils_intr_set_priority(int rv_int_num, int priority)
 {
-#if CONFIG_SECURE_ENABLE_TEE && !ESP_TEE_BUILD
-    esp_tee_intr_sec_srv_cb(3, TEE_INTR_SET_PRIORITY_SRV_ID, rv_int_num, priority);
+#if CONFIG_SECURE_ENABLE_TEE && !NON_OS_BUILD
+    esp_tee_intr_sec_srv_cb(3, SS_RV_UTILS_INTR_SET_PRIORITY, rv_int_num, priority);
 #else
     esprv_int_set_priority(rv_int_num, priority);
 #endif
@@ -221,8 +221,8 @@ FORCE_INLINE_ATTR void rv_utils_intr_set_priority(int rv_int_num, int priority)
 
 FORCE_INLINE_ATTR void rv_utils_intr_set_threshold(int priority_threshold)
 {
-#if CONFIG_SECURE_ENABLE_TEE && !ESP_TEE_BUILD
-    esp_tee_intr_sec_srv_cb(2, TEE_INTR_SET_THRESHOLD_SRV_ID, priority_threshold);
+#if CONFIG_SECURE_ENABLE_TEE && !NON_OS_BUILD
+    esp_tee_intr_sec_srv_cb(2, SS_RV_UTILS_INTR_SET_THRESHOLD, priority_threshold);
 #else
     esprv_int_set_threshold(priority_threshold);
 #endif
@@ -239,10 +239,13 @@ FORCE_INLINE_ATTR void rv_utils_intr_set_threshold(int priority_threshold)
 
 #if SOC_CPU_HAS_FPU
 
-FORCE_INLINE_ATTR bool rv_utils_enable_fpu(void)
+FORCE_INLINE_ATTR void rv_utils_enable_fpu(void)
 {
-    /* Set mstatus[14:13] to 0b01 to start the floating-point unit initialization */
+    /* Set mstatus[14:13] to 0b01 to enable the floating-point unit */
     RV_SET_CSR(mstatus, CSR_MSTATUS_FPU_ENA);
+}
+
+FORCE_INLINE_ATTR bool rv_utils_clear_fpu(void) {
     /* On the ESP32-P4, the FPU can be used directly after setting `mstatus` bit 13.
      * Since the interrupt handler expects the FPU states to be either 0b10 or 0b11,
      * let's write the FPU CSR and clear the dirty bit afterwards. */
@@ -280,7 +283,27 @@ FORCE_INLINE_ATTR void rv_utils_disable_pie(void)
     RV_WRITE_CSR(CSR_PIE_STATE_REG, 0);
 }
 
-#endif /* SOC_CPU_HAS_FPU */
+#endif /* SOC_CPU_HAS_PIE */
+
+
+/* ------------------------------------------------- DSP Related ----------------------------------------------------
+ *
+ * ------------------------------------------------------------------------------------------------------------------ */
+
+#if SOC_CPU_HAS_DSP
+
+FORCE_INLINE_ATTR void rv_utils_enable_dsp(void)
+{
+    RV_WRITE_CSR(CSR_DSP_STATE_REG, 1);
+}
+
+
+FORCE_INLINE_ATTR void rv_utils_disable_dsp(void)
+{
+    RV_WRITE_CSR(CSR_DSP_STATE_REG, 0);
+}
+
+#endif /* SOC_CPU_HAS_DSP */
 
 
 
@@ -388,8 +411,8 @@ FORCE_INLINE_ATTR void rv_utils_clear_breakpoint(int bp_num)
 {
     RV_WRITE_CSR(tselect, bp_num);
     /* tdata1 is a WARL(write any read legal) register
-     * We can just write 0 to it
-     */
+    * We can just write 0 to it
+    */
     RV_WRITE_CSR(tdata1, 0);
 }
 
@@ -407,10 +430,10 @@ FORCE_INLINE_ATTR bool rv_utils_is_trigger_fired(int id)
 
 // ---------------------- Debugger -------------------------
 
-FORCE_INLINE_ATTR bool rv_utils_dbgr_is_attached(void)
-{
-    return REG_GET_BIT(ASSIST_DEBUG_CORE_0_DEBUG_MODE_REG, ASSIST_DEBUG_CORE_0_DEBUG_MODULE_ACTIVE);
-}
+/** To use hal function for compatibility meanwhile keep hal dependency private,
+ *  this function is implemented in rv_utils.c
+ */
+bool rv_utils_dbgr_is_attached(void);
 
 FORCE_INLINE_ATTR void rv_utils_dbgr_break(void)
 {
@@ -465,12 +488,20 @@ FORCE_INLINE_ATTR bool rv_utils_compare_and_set(volatile uint32_t *addr, uint32_
 #if SOC_BRANCH_PREDICTOR_SUPPORTED
 FORCE_INLINE_ATTR void rv_utils_en_branch_predictor(void)
 {
+#if CONFIG_SECURE_ENABLE_TEE && !NON_OS_BUILD
+    esp_tee_intr_sec_srv_cb(1, SS_RV_UTILS_EN_BRANCH_PREDICTOR);
+#else
     RV_SET_CSR(MHCR, MHCR_RS|MHCR_BFE|MHCR_BTB);
+#endif
 }
 
 FORCE_INLINE_ATTR void rv_utils_dis_branch_predictor(void)
 {
+#if CONFIG_SECURE_ENABLE_TEE && !NON_OS_BUILD
+    esp_tee_intr_sec_srv_cb(1, SS_RV_UTILS_DIS_BRANCH_PREDICTOR);
+#else
     RV_CLEAR_CSR(MHCR, MHCR_RS|MHCR_BFE|MHCR_BTB);
+#endif
 }
 #endif
 

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -641,6 +641,7 @@ static esp_err_t register_select(l2tap_select_args_t *args)
         const int new_size = s_registered_select_cnt + 1;
         l2tap_select_args_t **registered_selects_new;
         if ((registered_selects_new = realloc(s_registered_selects, new_size * sizeof(l2tap_select_args_t *))) == NULL) {
+            s_registered_selects = NULL;
             ret = ESP_ERR_NO_MEM;
         } else {
             s_registered_selects = registered_selects_new;
@@ -663,13 +664,32 @@ static esp_err_t unregister_select(l2tap_select_args_t *args)
                 const int new_size = s_registered_select_cnt - 1;
                 // The item is removed by overwriting it with the last item. The subsequent rellocation will drop the
                 // last item.
-                s_registered_selects[i] = s_registered_selects[new_size];
-                s_registered_selects = realloc(s_registered_selects, new_size * sizeof(l2tap_select_args_t *));
-                if (s_registered_selects || new_size == 0) {
-                    s_registered_select_cnt = new_size;
+                // Move last element to fill gap (only if not removing the last element)
+                if (i < new_size) {
+                    s_registered_selects[i] = s_registered_selects[new_size];
+                }
+                // Handle reallocation
+                if (new_size == 0) {
+                    // Free the entire array
+                    free(s_registered_selects);
+                    s_registered_selects = NULL;
+                    s_registered_select_cnt = 0;
                     ret = ESP_OK;
                 } else {
-                    ret = ESP_ERR_NO_MEM;
+                    // Shrink the array
+                    l2tap_select_args_t **new_selects = realloc(s_registered_selects, new_size * sizeof(l2tap_select_args_t *));
+                    if (new_selects == NULL) {
+                        // Realloc failed - restore the moved element and return error
+                        if (i < new_size) {
+                            s_registered_selects[new_size] = s_registered_selects[i];
+                        }
+                        ret = ESP_ERR_NO_MEM;
+                    } else {
+                        // Success - update pointer and count atomically
+                        s_registered_selects = new_selects;
+                        s_registered_select_cnt = new_size;
+                        ret = ESP_OK;
+                    }
                 }
                 break;
             }

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -47,7 +47,7 @@
 
         /* Allocate memory for the task's stack using the provided memory caps
          * */
-        pxStack = heap_caps_malloc( usStackDepth, ( uint32_t ) uxMemoryCaps );
+        pxStack = heap_caps_malloc( ( ( size_t ) usStackDepth ) * sizeof( StackType_t ), ( uint32_t ) uxMemoryCaps );
 
         if( ( pxTaskBuffer == NULL ) || ( pxStack == NULL ) )
         {
@@ -100,15 +100,18 @@ err:
 
         configASSERT( eRunning != eTaskGetState( xTaskToDelete ) );
 
+        /* We can delete the task and free the memory buffers.
+         * First, we must call `vTaskDelete` so that the port task delete callback is called.
+         * On targets that have coprocessors, it may be possible that the stack pointer is modified (restored)
+         * during this phase, hence, it must be done before getting the statuc buffers out of the task. */
+        vTaskDelete( xTaskToDelete );
+
+        /* Free the memory buffers */
         xResult = xTaskGetStaticBuffers( xTaskToDelete, &puxStackBuffer, &pxTaskBuffer );
         configASSERT( xResult == pdTRUE );
         configASSERT( puxStackBuffer != NULL );
         configASSERT( pxTaskBuffer != NULL );
 
-        /* We can delete the task and free the memory buffers. */
-        vTaskDelete( xTaskToDelete );
-
-        /* Free the memory buffers */
         heap_caps_free( puxStackBuffer );
         vPortFree( pxTaskBuffer );
     }

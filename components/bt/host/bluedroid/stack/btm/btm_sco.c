@@ -117,8 +117,6 @@ void btm_sco_init (void)
     }
 #endif
     /* Initialize nonzero defaults */
-    btm_cb.sco_cb.sco_disc_reason  = BTM_INVALID_SCO_DISC_REASON;
-
     btm_cb.sco_cb.def_esco_parms = btm_esco_defaults; /* Initialize with defaults */
     btm_cb.sco_cb.desired_sco_mode = BTM_DEFAULT_SCO_MODE;
 }
@@ -614,12 +612,12 @@ static tBTM_STATUS btm_send_connect_request(UINT16 acl_handle,
             ** If so, we cannot use SCO-only packet types (HFP 1.7)
             */
             if (BTM_BothEndsSupportSecureConnections(p_acl->remote_addr)) {
-                temp_pkt_types &= ~(BTM_SCO_PKT_TYPE_MASK);
+                temp_pkt_types &= ~(BTM_SCO_LINK_ONLY_MASK);
                 BTM_TRACE_DEBUG("%s: SCO Conn: pkt_types after removing SCO (0x%04x)", __FUNCTION__,
                                 temp_pkt_types);
 
                 /* Return error if no packet types left */
-                if (temp_pkt_types == 0) {
+                if (temp_pkt_types == BTM_SCO_EXCEPTION_PKTS_MASK) {
                     BTM_TRACE_ERROR("%s: SCO Conn (BR/EDR SC): No packet types available",__FUNCTION__);
                     return (BTM_WRONG_MODE);
                 }
@@ -1048,7 +1046,6 @@ void btm_sco_connected (UINT8 hci_status, BD_ADDR bda, UINT16 hci_handle,
     tBTM_CHG_ESCO_PARAMS parms;
 #endif
 
-    btm_cb.sco_cb.sco_disc_reason = hci_status;
     BTM_TRACE_API("%s, handle %x", __FUNCTION__, hci_handle);
 #if (BTM_MAX_SCO_LINKS>0)
     for (xx = 0; xx < BTM_MAX_SCO_LINKS; xx++, p++) {
@@ -1219,21 +1216,16 @@ void btm_remove_sco_links (BD_ADDR bda)
 ** Returns          void
 **
 *******************************************************************************/
-void btm_sco_removed (UINT16 hci_handle, UINT8 reason)
+BOOLEAN btm_sco_removed (UINT16 hci_handle, UINT8 reason)
 {
 #if (BTM_MAX_SCO_LINKS>0)
     tSCO_CONN   *p = &btm_cb.sco_cb.sco_db[0];
     UINT16      xx;
-#endif
 
-    btm_cb.sco_cb.sco_disc_reason = reason;
-
-#if (BTM_MAX_SCO_LINKS>0)
     p = &btm_cb.sco_cb.sco_db[0];
     for (xx = 0; xx < BTM_MAX_SCO_LINKS; xx++, p++) {
         if ((p->state != SCO_ST_UNUSED) && (p->state != SCO_ST_LISTENING) && (p->hci_handle == hci_handle)) {
             btm_sco_flush_sco_data(xx);
-
             p->state = SCO_ST_UNUSED;
 #if BTM_SCO_HCI_INCLUDED == TRUE
             btm_cb.sco_cb.xmit_window_size += p->sent_not_acked;
@@ -1248,10 +1240,11 @@ void btm_sco_removed (UINT16 hci_handle, UINT8 reason)
             p->esco.p_esco_cback = NULL;    /* Deregister eSCO callback */
             (*p->p_disc_cb)(xx);
 
-            return;
+            return TRUE;
         }
     }
 #endif
+    return FALSE;
 }
 
 
@@ -1373,24 +1366,6 @@ UINT16 BTM_ReadScoPacketTypes (UINT16 sco_inx)
 #else
     return (0);
 #endif
-}
-
-/*******************************************************************************
-**
-** Function         BTM_ReadScoDiscReason
-**
-** Description      This function is returns the reason why an (e)SCO connection
-**                  has been removed. It contains the value until read, or until
-**                  another (e)SCO connection has disconnected.
-**
-** Returns          HCI reason or BTM_INVALID_SCO_DISC_REASON if not set.
-**
-*******************************************************************************/
-UINT16 BTM_ReadScoDiscReason (void)
-{
-    UINT16 res = btm_cb.sco_cb.sco_disc_reason;
-    btm_cb.sco_cb.sco_disc_reason = BTM_INVALID_SCO_DISC_REASON;
-    return (res);
 }
 
 /*******************************************************************************
@@ -1893,10 +1868,6 @@ UINT16 BTM_ReadScoHandle (UINT16 sco_inx)
 UINT8 *BTM_ReadScoBdAddr(UINT16 sco_inx)
 {
     return ((UINT8 *) NULL);
-}
-UINT16 BTM_ReadScoDiscReason (void)
-{
-    return (BTM_INVALID_SCO_DISC_REASON);
 }
 tBTM_STATUS BTM_SetEScoMode (tBTM_SCO_TYPE sco_mode, tBTM_ESCO_PARAMS *p_parms)
 {

@@ -168,14 +168,14 @@ xt_ints_on:
     or      a5, a3, a2           /* a5 = _xt_intenable | mask */
     s32i    a5, a4, 0            /* _xt_intenable |= mask     */
     and     a5, a5, a6           /* a5 = _xt_intenable & _xt_vpri_mask */
-    wsr     a5, INTENABLE        /* Reenable interrupts       */
+    wsr     a5, XT_REG_INTENABLE /* Re-enable interrupts       */
     mov     a2, a3               /* Previous mask             */
 #else
     movi    a3, 0
-    xsr     a3, INTENABLE        /* Disables all interrupts   */
+    xsr     a3, XT_REG_INTENABLE /* Disables all interrupts   */
     rsync
     or      a2, a3, a2           /* set bits in mask */
-    wsr     a2, INTENABLE        /* Re-enable ints */
+    wsr     a2, XT_REG_INTENABLE /* Re-enable ints */
     rsync
     mov     a2, a3               /* return prev mask */
 #endif
@@ -218,15 +218,15 @@ xt_ints_off:
     xor     a5, a5, a2           /* a5 = _xt_intenable & ~mask */
     s32i    a5, a4, 0            /* _xt_intenable &= ~mask     */
     and     a5, a5, a6           /* a5 = _xt_intenable & _xt_vpri_mask */
-    wsr     a5, INTENABLE        /* Reenable interrupts        */
+    wsr     a5, XT_REG_INTENABLE /* Re-enable interrupts        */
     mov     a2, a3               /* Previous mask              */
 #else
     movi    a4, 0
-    xsr     a4, INTENABLE        /* Disables all interrupts   */
+    xsr     a4, XT_REG_INTENABLE /* Disables all interrupts   */
     rsync
     or      a3, a4, a2           /* set bits in mask */
     xor     a3, a3, a2           /* invert bits in mask set in mask, essentially clearing them */
-    wsr     a3, INTENABLE        /* Re-enable ints */
+    wsr     a3, XT_REG_INTENABLE /* Re-enable ints */
     rsync
     mov     a2, a4               /* return prev mask */
 #endif

@@ -24,7 +24,13 @@
 #include "bluedroid_user_config.h"
 #include "stack/bt_types.h"
 #include "bt_common.h"
+#if CONFIG_BLE_HOST_COMPRESSED_LOG_ENABLE
+#include "host_log_index.h"
+#endif
 
+#if (BT_BLE_LOG_SPI_OUT_HOST_ENABLED && !CLASSIC_BT_INCLUDED)
+#include "ble_log/ble_log_spi_out.h"
+#endif // (BT_BLE_LOG_SPI_OUT_HOST_ENABLED && !CLASSIC_BT_INCLUDED)
 static inline void trc_dump_buffer(const char *prefix, uint8_t *data, uint16_t len)
 {
     uint16_t i;
@@ -217,19 +223,88 @@ static inline void trc_dump_buffer(const char *prefix, uint8_t *data, uint16_t l
 
 /* Define tracing for BTM
 */
+#if (BT_BLE_LOG_SPI_OUT_HOST_ENABLED && !CLASSIC_BT_INCLUDED)
+
+#define BTM_TRACE_ERROR(fmt, args...) { \
+    ble_log_spi_out_host_write(BLE_LOG_SPI_OUT_SOURCE_BLUEDROID, \
+                               BLE_LOG_SPI_OUT_BUILD_PREFIX(BLE_LOG_SPI_OUT_LEVEL_ERROR, "BT_BTM"), fmt, ## args); \
+    if (btm_cb.trace_level >= BT_TRACE_LEVEL_ERROR && BT_LOG_LEVEL_CHECK(BTM, ERROR)) BT_PRINT_E("BT_BTM", fmt, ## args); \
+}
+
+#define BTM_TRACE_WARNING(fmt, args...) { \
+    ble_log_spi_out_host_write(BLE_LOG_SPI_OUT_SOURCE_BLUEDROID, \
+                               BLE_LOG_SPI_OUT_BUILD_PREFIX(BLE_LOG_SPI_OUT_LEVEL_WARN, "BT_BTM"), fmt, ## args); \
+    if (btm_cb.trace_level >= BT_TRACE_LEVEL_WARNING && BT_LOG_LEVEL_CHECK(BTM, WARNING)) BT_PRINT_W("BT_BTM", fmt, ## args); \
+}
+
+#define BTM_TRACE_API(fmt, args...) { \
+    ble_log_spi_out_host_write(BLE_LOG_SPI_OUT_SOURCE_BLUEDROID, \
+                               BLE_LOG_SPI_OUT_BUILD_PREFIX(BLE_LOG_SPI_OUT_LEVEL_INFO, "BT_BTM"), fmt, ## args); \
+    if (btm_cb.trace_level >= BT_TRACE_LEVEL_API && BT_LOG_LEVEL_CHECK(BTM, API)) BT_PRINT_I("BT_BTM", fmt, ## args); \
+}
+
+#define BTM_TRACE_EVENT(fmt, args...) { \
+    ble_log_spi_out_host_write(BLE_LOG_SPI_OUT_SOURCE_BLUEDROID, \
+                               BLE_LOG_SPI_OUT_BUILD_PREFIX(BLE_LOG_SPI_OUT_LEVEL_DEBUG, "BT_BTM"), fmt, ## args); \
+    if (btm_cb.trace_level >= BT_TRACE_LEVEL_EVENT && BT_LOG_LEVEL_CHECK(BTM, EVENT)) BT_PRINT_D("BT_BTM", fmt, ## args); \
+}
+
+#define BTM_TRACE_DEBUG(fmt, args...) { \
+    if (btm_cb.trace_level >= BT_TRACE_LEVEL_DEBUG && BT_LOG_LEVEL_CHECK(BTM, DEBUG)) BT_PRINT_D("BT_BTM", fmt, ## args); \
+}
+
+#else
+
 #define BTM_TRACE_ERROR(fmt, args...)       {if (btm_cb.trace_level >= BT_TRACE_LEVEL_ERROR && BT_LOG_LEVEL_CHECK(BTM, ERROR)) BT_PRINT_E("BT_BTM", fmt, ## args);}
 #define BTM_TRACE_WARNING(fmt, args...)     {if (btm_cb.trace_level >= BT_TRACE_LEVEL_WARNING && BT_LOG_LEVEL_CHECK(BTM, WARNING)) BT_PRINT_W("BT_BTM", fmt, ## args);}
 #define BTM_TRACE_API(fmt, args...)         {if (btm_cb.trace_level >= BT_TRACE_LEVEL_API && BT_LOG_LEVEL_CHECK(BTM,API)) BT_PRINT_I("BT_BTM", fmt, ## args);}
 #define BTM_TRACE_EVENT(fmt, args...)       {if (btm_cb.trace_level >= BT_TRACE_LEVEL_EVENT && BT_LOG_LEVEL_CHECK(BTM,EVENT)) BT_PRINT_D("BT_BTM", fmt, ## args);}
 #define BTM_TRACE_DEBUG(fmt, args...)       {if (btm_cb.trace_level >= BT_TRACE_LEVEL_DEBUG && BT_LOG_LEVEL_CHECK(BTM,DEBUG)) BT_PRINT_D("BT_BTM", fmt, ## args);}
 
+#endif // (BT_BLE_LOG_SPI_OUT_HOST_ENABLED && !CLASSIC_BT_INCLUDED)
+
 /* Define tracing for the L2CAP unit
 */
+#if (BT_BLE_LOG_SPI_OUT_HOST_ENABLED && !CLASSIC_BT_INCLUDED)
+
+#define L2CAP_TRACE_ERROR(fmt, args...) { \
+    ble_log_spi_out_host_write(BLE_LOG_SPI_OUT_SOURCE_BLUEDROID, \
+                               BLE_LOG_SPI_OUT_BUILD_PREFIX(BLE_LOG_SPI_OUT_LEVEL_ERROR, "BT_L2CAP"), fmt, ## args); \
+    if (l2cb.l2cap_trace_level >= BT_TRACE_LEVEL_ERROR && BT_LOG_LEVEL_CHECK(L2CAP, ERROR)) BT_PRINT_E("BT_L2CAP", fmt, ## args); \
+}
+
+#define L2CAP_TRACE_WARNING(fmt, args...) { \
+    ble_log_spi_out_host_write(BLE_LOG_SPI_OUT_SOURCE_BLUEDROID, \
+                               BLE_LOG_SPI_OUT_BUILD_PREFIX(BLE_LOG_SPI_OUT_LEVEL_WARN, "BT_L2CAP"), fmt, ## args); \
+    if (l2cb.l2cap_trace_level >= BT_TRACE_LEVEL_WARNING && BT_LOG_LEVEL_CHECK(L2CAP, WARNING)) BT_PRINT_W("BT_L2CAP", fmt, ## args); \
+}
+
+#define L2CAP_TRACE_API(fmt, args...) { \
+    ble_log_spi_out_host_write(BLE_LOG_SPI_OUT_SOURCE_BLUEDROID, \
+                               BLE_LOG_SPI_OUT_BUILD_PREFIX(BLE_LOG_SPI_OUT_LEVEL_INFO, "BT_L2CAP"), fmt, ## args); \
+    if (l2cb.l2cap_trace_level >= BT_TRACE_LEVEL_API && BT_LOG_LEVEL_CHECK(L2CAP, API)) BT_PRINT_I("BT_L2CAP", fmt, ## args); \
+}
+
+#define L2CAP_TRACE_EVENT(fmt, args...) { \
+    ble_log_spi_out_host_write(BLE_LOG_SPI_OUT_SOURCE_BLUEDROID, \
+                               BLE_LOG_SPI_OUT_BUILD_PREFIX(BLE_LOG_SPI_OUT_LEVEL_DEBUG, "BT_L2CAP"), fmt, ## args); \
+    if (l2cb.l2cap_trace_level >= BT_TRACE_LEVEL_EVENT && BT_LOG_LEVEL_CHECK(L2CAP, EVENT)) BT_PRINT_D("BT_L2CAP", fmt, ## args); \
+}
+
+#define L2CAP_TRACE_DEBUG(fmt, args...) { \
+    if (l2cb.l2cap_trace_level >= BT_TRACE_LEVEL_DEBUG && BT_LOG_LEVEL_CHECK(L2CAP, DEBUG)) BT_PRINT_D("BT_L2CAP", fmt, ## args); \
+}
+
+#else
+
 #define L2CAP_TRACE_ERROR(fmt, args...)     {if (l2cb.l2cap_trace_level >= BT_TRACE_LEVEL_ERROR && BT_LOG_LEVEL_CHECK(L2CAP, ERROR)) BT_PRINT_E("BT_L2CAP", fmt, ## args);}
 #define L2CAP_TRACE_WARNING(fmt, args...)   {if (l2cb.l2cap_trace_level >= BT_TRACE_LEVEL_WARNING && BT_LOG_LEVEL_CHECK(L2CAP, WARNING)) BT_PRINT_W("BT_L2CAP", fmt, ## args);}
 #define L2CAP_TRACE_API(fmt, args...)       {if (l2cb.l2cap_trace_level >= BT_TRACE_LEVEL_API && BT_LOG_LEVEL_CHECK(L2CAP,API)) BT_PRINT_I("BT_L2CAP", fmt, ## args);}
 #define L2CAP_TRACE_EVENT(fmt, args...)     {if (l2cb.l2cap_trace_level >= BT_TRACE_LEVEL_EVENT && BT_LOG_LEVEL_CHECK(L2CAP,EVENT)) BT_PRINT_D("BT_L2CAP", fmt, ## args);}
 #define L2CAP_TRACE_DEBUG(fmt, args...)     {if (l2cb.l2cap_trace_level >= BT_TRACE_LEVEL_DEBUG && BT_LOG_LEVEL_CHECK(L2CAP,DEBUG)) BT_PRINT_D("BT_L2CAP", fmt, ## args);}
+
+#endif // (BT_BLE_LOG_SPI_OUT_HOST_ENABLED && !CLASSIC_BT_INCLUDED)
+
 
 /* Define tracing for the SDP unit
 */
@@ -248,10 +323,41 @@ static inline void trc_dump_buffer(const char *prefix, uint8_t *data, uint16_t l
 #define RFCOMM_TRACE_DEBUG(fmt, args...)    {if (rfc_cb.trace_level >= BT_TRACE_LEVEL_DEBUG && BT_LOG_LEVEL_CHECK(RFCOMM,DEBUG)) BT_PRINT_D("BT_RFCOMM", fmt, ## args);}
 
 /* Generic Access Profile traces */
+#if (BT_BLE_LOG_SPI_OUT_HOST_ENABLED && !CLASSIC_BT_INCLUDED)
+
+#define GAP_TRACE_ERROR(fmt, args...) { \
+    ble_log_spi_out_host_write(BLE_LOG_SPI_OUT_SOURCE_BLUEDROID, \
+                               BLE_LOG_SPI_OUT_BUILD_PREFIX(BLE_LOG_SPI_OUT_LEVEL_ERROR, "BT_GAP"), fmt, ## args); \
+    if (gap_cb.trace_level >= BT_TRACE_LEVEL_ERROR && BT_LOG_LEVEL_CHECK(GAP, ERROR)) BT_PRINT_E("BT_GAP", fmt, ## args); \
+}
+
+#define GAP_TRACE_WARNING(fmt, args...) { \
+    ble_log_spi_out_host_write(BLE_LOG_SPI_OUT_SOURCE_BLUEDROID, \
+                               BLE_LOG_SPI_OUT_BUILD_PREFIX(BLE_LOG_SPI_OUT_LEVEL_WARN, "BT_GAP"), fmt, ## args); \
+    if (gap_cb.trace_level >= BT_TRACE_LEVEL_WARNING && BT_LOG_LEVEL_CHECK(GAP, WARNING)) BT_PRINT_W("BT_GAP", fmt, ## args); \
+}
+
+#define GAP_TRACE_API(fmt, args...) { \
+    ble_log_spi_out_host_write(BLE_LOG_SPI_OUT_SOURCE_BLUEDROID, \
+                               BLE_LOG_SPI_OUT_BUILD_PREFIX(BLE_LOG_SPI_OUT_LEVEL_INFO, "BT_GAP"), fmt, ## args); \
+    if (gap_cb.trace_level >= BT_TRACE_LEVEL_API && BT_LOG_LEVEL_CHECK(GAP, API)) BT_PRINT_I("BT_GAP", fmt, ## args); \
+}
+
+#define GAP_TRACE_EVENT(fmt, args...) { \
+    ble_log_spi_out_host_write(BLE_LOG_SPI_OUT_SOURCE_BLUEDROID, \
+                               BLE_LOG_SPI_OUT_BUILD_PREFIX(BLE_LOG_SPI_OUT_LEVEL_DEBUG, "BT_GAP"), fmt, ## args); \
+    if (gap_cb.trace_level >= BT_TRACE_LEVEL_EVENT && BT_LOG_LEVEL_CHECK(GAP, EVENT)) BT_PRINT_D("BT_GAP", fmt, ## args); \
+}
+
+#else
+
 #define GAP_TRACE_ERROR(fmt, args...)       {if (gap_cb.trace_level >= BT_TRACE_LEVEL_ERROR && BT_LOG_LEVEL_CHECK(GAP, ERROR)) BT_PRINT_E("BT_GAP", fmt, ## args);}
 #define GAP_TRACE_API(fmt, args...)         {if (gap_cb.trace_level >= BT_TRACE_LEVEL_API && BT_LOG_LEVEL_CHECK(GAP,API)) BT_PRINT_I("BT_GAP", fmt, ## args);}
 #define GAP_TRACE_EVENT(fmt, args...)       {if (gap_cb.trace_level >= BT_TRACE_LEVEL_EVENT && BT_LOG_LEVEL_CHECK(GAP,EVENT)) BT_PRINT_D("BT_GAP", fmt, ## args);}
 #define GAP_TRACE_WARNING(fmt, args...)     {if (gap_cb.trace_level >= BT_TRACE_LEVEL_WARNING && BT_LOG_LEVEL_CHECK(GAP, WARNING)) BT_PRINT_W("BT_GAP", fmt, ## args);}
+
+#endif // (BT_BLE_LOG_SPI_OUT_HOST_ENABLED && !CLASSIC_BT_INCLUDED)
+
 
 /* define traces for HID Host */
 #define HIDH_TRACE_ERROR(fmt, args...)      {if (hh_cb.trace_level >= BT_TRACE_LEVEL_ERROR && BT_LOG_LEVEL_CHECK(HIDH, ERROR)) BT_PRINT_E("BT_HIDH", fmt, ## args);}
@@ -330,6 +436,13 @@ static inline void trc_dump_buffer(const char *prefix, uint8_t *data, uint16_t l
 #define OBEX_TL_L2CAP_TRACE_EVENT(fmt, args...)      {if (obex_tl_l2cap_cb.trace_level >= BT_TRACE_LEVEL_EVENT && BT_LOG_LEVEL_CHECK(AVRC,EVENT)) BT_PRINT_D("OBEX_TL_L2CAP", fmt, ## args);}
 #define OBEX_TL_L2CAP_TRACE_DEBUG(fmt, args...)      {if (obex_tl_l2cap_cb.trace_level >= BT_TRACE_LEVEL_DEBUG && BT_LOG_LEVEL_CHECK(AVRC,DEBUG)) BT_PRINT_D("OBEX_TL_L2CAP", fmt, ## args);}
 
+/* Define tracing for OBEX_TL_RFCOMM */
+#define OBEX_TL_RFCOMM_TRACE_ERROR(fmt, args...)      {if (obex_tl_rfcomm_cb.trace_level >= BT_TRACE_LEVEL_ERROR && BT_LOG_LEVEL_CHECK(AVRC, ERROR)) BT_PRINT_E("OBEX_TL_RFCOMM", fmt, ## args);}
+#define OBEX_TL_RFCOMM_TRACE_WARNING(fmt, args...)    {if (obex_tl_rfcomm_cb.trace_level >= BT_TRACE_LEVEL_WARNING && BT_LOG_LEVEL_CHECK(AVRC, WARNING)) BT_PRINT_W("OBEX_TL_RFCOMM", fmt, ## args);}
+#define OBEX_TL_RFCOMM_TRACE_API(fmt, args...)        {if (obex_tl_rfcomm_cb.trace_level >= BT_TRACE_LEVEL_API && BT_LOG_LEVEL_CHECK(AVRC,API)) BT_PRINT_I("OBEX_TL_RFCOMM", fmt, ## args);}
+#define OBEX_TL_RFCOMM_TRACE_EVENT(fmt, args...)      {if (obex_tl_rfcomm_cb.trace_level >= BT_TRACE_LEVEL_EVENT && BT_LOG_LEVEL_CHECK(AVRC,EVENT)) BT_PRINT_D("OBEX_TL_RFCOMM", fmt, ## args);}
+#define OBEX_TL_RFCOMM_TRACE_DEBUG(fmt, args...)      {if (obex_tl_rfcomm_cb.trace_level >= BT_TRACE_LEVEL_DEBUG && BT_LOG_LEVEL_CHECK(AVRC,DEBUG)) BT_PRINT_D("OBEX_TL_RFCOMM", fmt, ## args);}
+
 /* Define tracing for GOEPC */
 #define GOEPC_TRACE_ERROR(fmt, args...)      {if (goepc_cb.trace_level >= BT_TRACE_LEVEL_ERROR && BT_LOG_LEVEL_CHECK(AVRC, ERROR)) BT_PRINT_E("BT_GOEPC", fmt, ## args);}
 #define GOEPC_TRACE_WARNING(fmt, args...)    {if (goepc_cb.trace_level >= BT_TRACE_LEVEL_WARNING && BT_LOG_LEVEL_CHECK(AVRC, WARNING)) BT_PRINT_W("BT_GOEPC", fmt, ## args);}
@@ -347,20 +460,87 @@ static inline void trc_dump_buffer(const char *prefix, uint8_t *data, uint16_t l
 
 /* Define tracing for the ATT/GATT unit
 */
+#if (BT_BLE_LOG_SPI_OUT_HOST_ENABLED && !CLASSIC_BT_INCLUDED)
+
+#define GATT_TRACE_ERROR(fmt, args...) { \
+    ble_log_spi_out_host_write(BLE_LOG_SPI_OUT_SOURCE_BLUEDROID, \
+                               BLE_LOG_SPI_OUT_BUILD_PREFIX(BLE_LOG_SPI_OUT_LEVEL_ERROR, "BT_GATT"), fmt, ## args); \
+    if (gatt_cb.trace_level >= BT_TRACE_LEVEL_ERROR && BT_LOG_LEVEL_CHECK(GATT, ERROR)) BT_PRINT_E("BT_GATT", fmt, ## args); \
+}
+
+#define GATT_TRACE_WARNING(fmt, args...) { \
+    ble_log_spi_out_host_write(BLE_LOG_SPI_OUT_SOURCE_BLUEDROID, \
+                               BLE_LOG_SPI_OUT_BUILD_PREFIX(BLE_LOG_SPI_OUT_LEVEL_WARN, "BT_GATT"), fmt, ## args); \
+    if (gatt_cb.trace_level >= BT_TRACE_LEVEL_WARNING && BT_LOG_LEVEL_CHECK(GATT, WARNING)) BT_PRINT_W("BT_GATT", fmt, ## args); \
+}
+
+#define GATT_TRACE_API(fmt, args...) { \
+    ble_log_spi_out_host_write(BLE_LOG_SPI_OUT_SOURCE_BLUEDROID, \
+                               BLE_LOG_SPI_OUT_BUILD_PREFIX(BLE_LOG_SPI_OUT_LEVEL_INFO, "BT_GATT"), fmt, ## args); \
+    if (gatt_cb.trace_level >= BT_TRACE_LEVEL_API && BT_LOG_LEVEL_CHECK(GATT, API)) BT_PRINT_I("BT_GATT", fmt, ## args); \
+}
+
+#define GATT_TRACE_EVENT(fmt, args...) { \
+    ble_log_spi_out_host_write(BLE_LOG_SPI_OUT_SOURCE_BLUEDROID, \
+                               BLE_LOG_SPI_OUT_BUILD_PREFIX(BLE_LOG_SPI_OUT_LEVEL_DEBUG, "BT_GATT"), fmt, ## args); \
+    if (gatt_cb.trace_level >= BT_TRACE_LEVEL_EVENT && BT_LOG_LEVEL_CHECK(GATT, EVENT)) BT_PRINT_D("BT_GATT", fmt, ## args); \
+}
+
+#define GATT_TRACE_DEBUG(fmt, args...) { \
+    if (gatt_cb.trace_level >= BT_TRACE_LEVEL_DEBUG && BT_LOG_LEVEL_CHECK(GATT, DEBUG)) BT_PRINT_D("BT_GATT", fmt, ## args); \
+}
+
+#else
+
 #define GATT_TRACE_ERROR(fmt, args...)      {if (gatt_cb.trace_level >= BT_TRACE_LEVEL_ERROR && BT_LOG_LEVEL_CHECK(GATT, ERROR)) BT_PRINT_E("BT_GATT", fmt, ## args);}
 #define GATT_TRACE_WARNING(fmt, args...)    {if (gatt_cb.trace_level >= BT_TRACE_LEVEL_WARNING && BT_LOG_LEVEL_CHECK(GATT, WARNING)) BT_PRINT_W("BT_GATT", fmt, ## args);}
 #define GATT_TRACE_API(fmt, args...)        {if (gatt_cb.trace_level >= BT_TRACE_LEVEL_API && BT_LOG_LEVEL_CHECK(GATT,API)) BT_PRINT_I("BT_GATT", fmt, ## args);}
 #define GATT_TRACE_EVENT(fmt, args...)      {if (gatt_cb.trace_level >= BT_TRACE_LEVEL_EVENT && BT_LOG_LEVEL_CHECK(GATT,EVENT)) BT_PRINT_D("BT_GATT", fmt, ## args);}
 #define GATT_TRACE_DEBUG(fmt, args...)      {if (gatt_cb.trace_level >= BT_TRACE_LEVEL_DEBUG && BT_LOG_LEVEL_CHECK(GATT,DEBUG)) BT_PRINT_D("BT_GATT", fmt, ## args);}
 
+#endif // (BT_BLE_LOG_SPI_OUT_HOST_ENABLED && !CLASSIC_BT_INCLUDED)
+
 /* Define tracing for the SMP unit
 */
+#if (BT_BLE_LOG_SPI_OUT_HOST_ENABLED && !CLASSIC_BT_INCLUDED)
+
+#define SMP_TRACE_ERROR(fmt, args...) { \
+    ble_log_spi_out_host_write(BLE_LOG_SPI_OUT_SOURCE_BLUEDROID, \
+                               BLE_LOG_SPI_OUT_BUILD_PREFIX(BLE_LOG_SPI_OUT_LEVEL_ERROR, "BT_SMP"), fmt, ## args); \
+    if (smp_cb.trace_level >= BT_TRACE_LEVEL_ERROR && BT_LOG_LEVEL_CHECK(SMP, ERROR)) BT_PRINT_E("BT_SMP", fmt, ## args); \
+}
+
+#define SMP_TRACE_WARNING(fmt, args...) { \
+    ble_log_spi_out_host_write(BLE_LOG_SPI_OUT_SOURCE_BLUEDROID, \
+                               BLE_LOG_SPI_OUT_BUILD_PREFIX(BLE_LOG_SPI_OUT_LEVEL_WARN, "BT_SMP"), fmt, ## args); \
+    if (smp_cb.trace_level >= BT_TRACE_LEVEL_WARNING && BT_LOG_LEVEL_CHECK(SMP, WARNING)) BT_PRINT_W("BT_SMP", fmt, ## args); \
+}
+
+#define SMP_TRACE_API(fmt, args...) { \
+    ble_log_spi_out_host_write(BLE_LOG_SPI_OUT_SOURCE_BLUEDROID, \
+                               BLE_LOG_SPI_OUT_BUILD_PREFIX(BLE_LOG_SPI_OUT_LEVEL_INFO, "BT_SMP"), fmt, ## args); \
+    if (smp_cb.trace_level >= BT_TRACE_LEVEL_API && BT_LOG_LEVEL_CHECK(SMP, API)) BT_PRINT_I("BT_SMP", fmt, ## args); \
+}
+
+#define SMP_TRACE_EVENT(fmt, args...) { \
+    ble_log_spi_out_host_write(BLE_LOG_SPI_OUT_SOURCE_BLUEDROID, \
+                               BLE_LOG_SPI_OUT_BUILD_PREFIX(BLE_LOG_SPI_OUT_LEVEL_DEBUG, "BT_SMP"), fmt, ## args); \
+    if (smp_cb.trace_level >= BT_TRACE_LEVEL_EVENT && BT_LOG_LEVEL_CHECK(SMP, EVENT)) BT_PRINT_D("BT_SMP", fmt, ## args); \
+}
+
+#define SMP_TRACE_DEBUG(fmt, args...) { \
+    if (smp_cb.trace_level >= BT_TRACE_LEVEL_DEBUG && BT_LOG_LEVEL_CHECK(SMP, DEBUG)) BT_PRINT_D("BT_SMP", fmt, ## args); \
+}
+
+#else
+
 #define SMP_TRACE_ERROR(fmt, args...)       {if (smp_cb.trace_level >= BT_TRACE_LEVEL_ERROR && BT_LOG_LEVEL_CHECK(SMP, ERROR)) BT_PRINT_E("BT_SMP", fmt, ## args);}
 #define SMP_TRACE_WARNING(fmt, args...)     {if (smp_cb.trace_level >= BT_TRACE_LEVEL_WARNING && BT_LOG_LEVEL_CHECK(SMP, WARNING)) BT_PRINT_W("BT_SMP", fmt, ## args);}
 #define SMP_TRACE_API(fmt, args...)         {if (smp_cb.trace_level >= BT_TRACE_LEVEL_API && BT_LOG_LEVEL_CHECK(SMP,API)) BT_PRINT_I("BT_SMP", fmt, ## args);}
 #define SMP_TRACE_EVENT(fmt, args...)       {if (smp_cb.trace_level >= BT_TRACE_LEVEL_EVENT && BT_LOG_LEVEL_CHECK(SMP,EVENT)) BT_PRINT_D("BT_SMP", fmt, ## args);}
 #define SMP_TRACE_DEBUG(fmt, args...)       {if (smp_cb.trace_level >= BT_TRACE_LEVEL_DEBUG && BT_LOG_LEVEL_CHECK(SMP,DEBUG)) BT_PRINT_D("BT_SMP", fmt, ## args);}
 
+#endif // (BT_BLE_LOG_SPI_OUT_HOST_ENABLED && !CLASSIC_BT_INCLUDED)
 
 extern UINT8 btif_trace_level;
 
@@ -512,11 +692,19 @@ extern UINT8 btif_trace_level;
 #define OBEX_TRACE_EVENT(fmt, args...)
 #define OBEX_TRACE_DEBUG(fmt, args...)
 
+/* Define tracing for OBEX L2CAP transport layer */
 #define OBEX_TL_L2CAP_TRACE_ERROR(fmt, args...)
 #define OBEX_TL_L2CAP_TRACE_WARNING(fmt, args...)
 #define OBEX_TL_L2CAP_TRACE_API(fmt, args...)
 #define OBEX_TL_L2CAP_TRACE_EVENT(fmt, args...)
 #define OBEX_TL_L2CAP_TRACE_DEBUG(fmt, args...)
+
+/* Define tracing for OBEX RFCOMM transport layer */
+#define OBEX_TL_RFCOMM_TRACE_ERROR(fmt, args...)
+#define OBEX_TL_RFCOMM_TRACE_WARNING(fmt, args...)
+#define OBEX_TL_RFCOMM_TRACE_API(fmt, args...)
+#define OBEX_TL_RFCOMM_TRACE_EVENT(fmt, args...)
+#define OBEX_TL_RFCOMM_TRACE_DEBUG(fmt, args...)
 
 /* Define tracing for GOEPC */
 #define GOEPC_TRACE_ERROR(fmt, args...)

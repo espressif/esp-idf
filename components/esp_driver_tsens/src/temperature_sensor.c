@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,11 +22,11 @@
 #include "clk_ctrl_os.h"
 #include "freertos/FreeRTOS.h"
 #include "driver/temperature_sensor.h"
-#include "esp_efuse_rtc_calib.h"
 #include "esp_private/periph_ctrl.h"
 #include "temperature_sensor_private.h"
 #include "hal/temperature_sensor_ll.h"
 #include "soc/temperature_sensor_periph.h"
+#include "hal/temperature_sensor_hal.h"
 #include "esp_memory_utils.h"
 #include "esp_private/sar_periph_ctrl.h"
 #include "esp_sleep.h"
@@ -36,7 +36,7 @@
 
 static const char *TAG = "temperature_sensor";
 
-static float s_deltaT = NAN; // unused number
+static int s_deltaT = INT_MIN; // unused number
 
 #if SOC_TEMPERATURE_SENSOR_INTR_SUPPORT
 static int8_t s_temperature_regval_2_celsius(temperature_sensor_handle_t tsens, uint8_t regval);
@@ -66,9 +66,18 @@ static esp_err_t temperature_sensor_choose_best_range(temperature_sensor_handle_
     for (int i = 0 ; i < TEMPERATURE_SENSOR_ATTR_RANGE_NUM; i++) {
         if ((tsens_config->range_min >= s_tsens_attribute_copy[i].range_min) && (tsens_config->range_max <= s_tsens_attribute_copy[i].range_max)) {
             tsens->tsens_attribute = &s_tsens_attribute_copy[i];
+            int original_idx = -1;
+            for (int j = 0; j < TEMPERATURE_SENSOR_ATTR_RANGE_NUM; j++) {
+                if (temperature_sensor_attributes[j].reg_val == s_tsens_attribute_copy[i].reg_val) {
+                    original_idx = j;
+                    break;
+                }
+            }
+            if (original_idx != -1) {
+                temperature_sensor_hal_sync_tsens_idx(original_idx);
+            }
             break;
         }
-        temp_sensor_sync_tsens_idx(i);
     }
     ESP_RETURN_ON_FALSE(tsens->tsens_attribute != NULL, ESP_ERR_INVALID_ARG, TAG, "Out of testing range");
     return ESP_OK;
@@ -274,19 +283,20 @@ esp_err_t temperature_sensor_disable(temperature_sensor_handle_t tsens)
 
 static esp_err_t read_delta_t_from_efuse(void)
 {
-    if (esp_efuse_rtc_calib_get_tsens_val(&s_deltaT) != ESP_OK) {
-        ESP_LOGW(TAG, "Calibration failed");
+    s_deltaT = temperature_sensor_ll_load_calib_param();
+    if (s_deltaT == 0) {
+        ESP_LOGW(TAG, "No calibration param in eFuse");
     }
-    ESP_LOGD(TAG, "s_deltaT = %f", s_deltaT);
+    ESP_LOGD(TAG, "s_deltaT = %d", s_deltaT);
     return ESP_OK;
 }
 
 static float parse_temp_sensor_raw_value(int16_t tsens_raw)
 {
-    if (isnan(s_deltaT)) { //suggests that the value is not initialized
+    if (s_deltaT == INT_MIN) { //suggests that the value is not initialized
         read_delta_t_from_efuse();
     }
-    float result = tsens_raw - s_deltaT / 10.0;
+    float result = tsens_raw - (float)s_deltaT / 10.0;
     return result;
 }
 
@@ -301,7 +311,7 @@ esp_err_t temperature_sensor_get_celsius(temperature_sensor_handle_t tsens, floa
 
     if (*out_celsius < TEMPERATURE_SENSOR_LL_MEASURE_MIN || *out_celsius > TEMPERATURE_SENSOR_LL_MEASURE_MAX) {
         ESP_LOGE(TAG, "Exceeding temperature measure range.");
-        return ESP_ERR_INVALID_STATE;
+        return ESP_FAIL;
     }
     if (range_changed) {
         s_update_tsens_attribute(tsens);

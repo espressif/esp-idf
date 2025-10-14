@@ -63,7 +63,7 @@ static void merge_two_pixels(lv_color16_t *upper_half, lv_color16_t *lower_half,
 {
     s_frame_buffer[index]  = (upper_half->red >> 4) << EXAMPLE_HUB75_R1_IDX | (upper_half->green >> 5) << EXAMPLE_HUB75_G1_IDX | (upper_half->blue >> 4) << EXAMPLE_HUB75_B1_IDX;
     s_frame_buffer[index] |= (lower_half->red >> 4) << EXAMPLE_HUB75_R2_IDX | (lower_half->green >> 5) << EXAMPLE_HUB75_G2_IDX | (lower_half->blue >> 4) << EXAMPLE_HUB75_B2_IDX;
-    // OE=1: enable the output
+    // OE=1: disable the output
     s_frame_buffer[index] |= 1 << EXAMPLE_HUB75_OE_IDX;
 }
 
@@ -90,7 +90,7 @@ static IRAM_ATTR bool parlio_tx_line_done_cb(parlio_tx_unit_handle_t tx_unit, co
 {
     static uint32_t line_number = 0;
     dedic_gpio_bundle_handle_t gpio_bundle = (dedic_gpio_bundle_handle_t)user_ctx;
-    dedic_gpio_bundle_write(gpio_bundle, 0x0F, line_number++);
+    dedic_gpio_bundle_write(gpio_bundle, 0x0F, ++line_number);
     return false;
 }
 

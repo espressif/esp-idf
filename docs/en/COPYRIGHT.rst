@@ -19,7 +19,9 @@ Firmware Components
 
 These third party libraries can be included into the application (firmware) produced by ESP-IDF.
 
-* :component:`Newlib <newlib>` is licensed under the BSD License and is Copyright of various parties, as described in :component_file:`COPYING.NEWLIB <newlib/COPYING.NEWLIB>`. If :ref:`CONFIG_LIBC_PICOLIBC<CONFIG_LIBC_PICOLIBC>` is enabled, see also :component_file:`COPYING.picolibc <newlib/COPYING.picolibc>`.
+* :component:`Newlib <esp_libc>` is licensed under the BSD License, with copyright held by the respective parties, as described in :component_file:`COPYING.NEWLIB <esp_libc/COPYING.NEWLIB>`. If :ref:`CONFIG_LIBC_PICOLIBC<CONFIG_LIBC_PICOLIBC>` is enabled, see also :component_file:`COPYING.picolibc <esp_libc/COPYING.picolibc>`.
+
+:component:`Picolibc <esp_libc>` is licensed under the BSD License, with copyright held by the respective parties, as described in :component_file:`COPYING.picolibc <esp_libc/COPYING.NEWLIB>`.
 
 * :component:`Xtensa header files <xtensa/include/xtensa>` are Copyright (C) 2013 Tensilica Inc and are licensed under the MIT License as reproduced in the individual header files.
 
@@ -85,7 +87,7 @@ ROM Source Code Copyrights
 
 Espressif SoCs mask ROM hardware includes binaries compiled from portions of the following third party software:
 
-* :component:`Newlib <newlib>`, licensed under the BSD License and is Copyright of various parties, as described in :component_file:`COPYING.NEWLIB <newlib/COPYING.NEWLIB>`.
+* :component:`Newlib <esp_libc>`, licensed under the BSD License and is Copyright of various parties, as described in :component_file:`COPYING.NEWLIB <esp_libc/COPYING.NEWLIB>`.
 
 * Xtensa libhal, Copyright (C) Tensilica Inc and licensed under the MIT License (see below).
 
@@ -143,7 +145,7 @@ Copyright (C) 2011 ChaN, all right reserved.
 .. _Newlib: https://sourceware.org/newlib/
 .. _Picolibc: https://keithp.com/picolibc/
 .. _FreeRTOS: https://freertos.org/
-.. _esptool.py: https://github.com/espressif/esptool
+.. _esptool: https://github.com/espressif/esptool
 .. _LWIP: https://savannah.nongnu.org/projects/lwip/
 .. _TinyBasic: https://github.com/BleuLlama/TinyBasicPlus
 .. _miniz: https://code.google.com/archive/p/miniz/

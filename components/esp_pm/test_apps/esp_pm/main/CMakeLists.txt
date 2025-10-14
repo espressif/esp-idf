@@ -5,5 +5,5 @@ set(sources "test_app_main.c"
 # the component must be registered as a WHOLE_ARCHIVE
 idf_component_register(SRCS ${sources}
                        INCLUDE_DIRS "."
-                       PRIV_REQUIRES unity esp_pm ulp driver esp_timer esp_psram
+                       PRIV_REQUIRES unity esp_pm ulp esp_timer esp_psram esp_driver_gptimer
                        WHOLE_ARCHIVE)

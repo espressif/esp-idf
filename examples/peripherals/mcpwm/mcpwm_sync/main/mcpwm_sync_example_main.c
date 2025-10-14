@@ -39,10 +39,11 @@ static void example_setup_sync_strategy(mcpwm_timer_handle_t timers[])
     mcpwm_gpio_sync_src_config_t gpio_sync_config = {
         .group_id = 0,  // GPIO fault should be in the same group of the above timers
         .gpio_num = EXAMPLE_SYNC_GPIO,
-        .flags.pull_down = true,
         .flags.active_neg = false,  // by default, a posedge pulse can trigger a sync event
     };
     ESP_ERROR_CHECK(mcpwm_new_gpio_sync_src(&gpio_sync_config, &gpio_sync_source));
+    // pull-down the GPIO to ensure a stable posedge pulse
+    ESP_ERROR_CHECK(gpio_set_pull_mode(EXAMPLE_SYNC_GPIO, GPIO_PULLDOWN_ONLY));
 
     ESP_LOGI(TAG, "Set timers to sync on the GPIO");
     mcpwm_timer_sync_phase_config_t sync_phase_config = {

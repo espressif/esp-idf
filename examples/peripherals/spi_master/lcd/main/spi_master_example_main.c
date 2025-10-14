@@ -244,7 +244,7 @@ void lcd_init(spi_device_handle_t spi)
     gpio_config_t io_conf = {};
     io_conf.pin_bit_mask = ((1ULL << PIN_NUM_DC) | (1ULL << PIN_NUM_RST) | (1ULL << PIN_NUM_BCKL));
     io_conf.mode = GPIO_MODE_OUTPUT;
-    io_conf.pull_up_en = true;
+    io_conf.pull_up_en = GPIO_PULLUP_ENABLE;
     gpio_config(&io_conf);
 
     //Reset the display

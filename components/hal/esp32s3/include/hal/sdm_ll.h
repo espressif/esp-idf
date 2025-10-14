@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,7 +16,13 @@
 extern "C" {
 #endif
 
+// Get SDM register base address with giving group number
+#define SDM_LL_GET_HW(group_id) ((group_id == 0) ? (&SDM) : NULL)
+
 #define SDM_LL_PRESCALE_MAX    (GPIO_SD0_PRESCALE_V + 1)
+
+// Support APB as function clock
+#define SDM_LL_FUNC_CLOCK_SUPPORT_APB 1
 
 /**
  * @brief Set Sigma-delta enable

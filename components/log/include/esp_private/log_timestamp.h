@@ -18,18 +18,18 @@ extern "C" {
  *
  * This function retrieves the timestamp in milliseconds for logging purposes.
  *
- * @param[in] critical Flag indicating whether the timestamp is needed for a critical log.
+ * @param[in] constrained_env Flag indicating whether the timestamp is needed for a log from a constrained environment.
  * If this flag is true, it means the function is called in one of the following states:
  * - early stage, when the Freertos scheduler is not running,
  * - ISR,
  * - CACHE is disabled.
  *
- * If the critical flag is set then uint32 timestamp is returned due to cpu ticks being used for this case.
+ * If the constrained_env flag is set then uint32 timestamp is returned due to cpu ticks being used for this case.
  * For some applications this uint32 timestamp may overflow after 4294967295/1000/86400 = 49 days of operation.
  *
  * @return The uint64 timestamp in milliseconds.
  */
-uint64_t esp_log_timestamp64(bool critical);
+uint64_t esp_log_timestamp64(bool constrained_env);
 
 /**
  * @brief Convert the uint64 timestamp to a string representation.
@@ -40,8 +40,8 @@ uint64_t esp_log_timestamp64(bool critical);
  * - Date and time,
  * - Time.
  *
- * @param[in] critical Flag indicating whether the timestamp is critical. If this flag is true,
- * it means the function is called in one of the following states:
+ * @param[in] constrained_env Flag indicating whether the timestamp is needed for a log from a constrained environment.
+ * If this flag is true, it means the function is called in one of the following states:
  * - early stage, when the Freertos scheduler is not running,
  * - ISR,
  * - CACHE is disabled.
@@ -50,7 +50,7 @@ uint64_t esp_log_timestamp64(bool critical);
  *
  * @return Pointer to the buffer containing the string representation of the timestamp.
  */
-char* esp_log_timestamp_str(bool critical, uint64_t timestamp_ms, char* buffer);
+char* esp_log_timestamp_str(bool constrained_env, uint64_t timestamp_ms, char* buffer);
 
 #ifdef __cplusplus
 }

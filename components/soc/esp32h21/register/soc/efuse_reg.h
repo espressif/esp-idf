@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -7,6 +7,7 @@
 
 #include <stdint.h>
 #include "soc/soc.h"
+#include "soc/efuse_defs.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -539,6 +540,15 @@ extern "C" {
 #define EFUSE_DIS_USB_SERIAL_JTAG_ROM_PRINT_M  (EFUSE_DIS_USB_SERIAL_JTAG_ROM_PRINT_V << EFUSE_DIS_USB_SERIAL_JTAG_ROM_PRINT_S)
 #define EFUSE_DIS_USB_SERIAL_JTAG_ROM_PRINT_V  0x00000001U
 #define EFUSE_DIS_USB_SERIAL_JTAG_ROM_PRINT_S  2
+/** EFUSE_FLASH_LDO_EFUSE_SEL : RO; bitpos: [3]; default: 0;
+ *  Represents whether to select efuse control flash ldo default voltage.
+ *  1: efuse
+ *  0: strapping
+ */
+#define EFUSE_FLASH_LDO_EFUSE_SEL    (BIT(3))
+#define EFUSE_FLASH_LDO_EFUSE_SEL_M  (EFUSE_FLASH_LDO_EFUSE_SEL_V << EFUSE_FLASH_LDO_EFUSE_SEL_S)
+#define EFUSE_FLASH_LDO_EFUSE_SEL_V  0x00000001U
+#define EFUSE_FLASH_LDO_EFUSE_SEL_S  3
 /** EFUSE_DIS_USB_SERIAL_JTAG_DOWNLOAD_MODE : RO; bitpos: [4]; default: 0;
  *  Represents whether the USB-Serial-JTAG download function is disabled.
  *  1: Disabled
@@ -1935,6 +1945,13 @@ extern "C" {
 #define EFUSE_DIS_USB_SERIAL_JTAG_ROM_PRINT_ERR_M  (EFUSE_DIS_USB_SERIAL_JTAG_ROM_PRINT_ERR_V << EFUSE_DIS_USB_SERIAL_JTAG_ROM_PRINT_ERR_S)
 #define EFUSE_DIS_USB_SERIAL_JTAG_ROM_PRINT_ERR_V  0x00000001U
 #define EFUSE_DIS_USB_SERIAL_JTAG_ROM_PRINT_ERR_S  2
+/** EFUSE_FLASH_LDO_EFUSE_SEL_ERR : RO; bitpos: [3]; default: 0;
+ *  Represents the programming error of EFUSE_FLASH_LDO_EFUSE_SEL
+ */
+#define EFUSE_FLASH_LDO_EFUSE_SEL_ERR    (BIT(3))
+#define EFUSE_FLASH_LDO_EFUSE_SEL_ERR_M  (EFUSE_FLASH_LDO_EFUSE_SEL_ERR_V << EFUSE_FLASH_LDO_EFUSE_SEL_ERR_S)
+#define EFUSE_FLASH_LDO_EFUSE_SEL_ERR_V  0x00000001U
+#define EFUSE_FLASH_LDO_EFUSE_SEL_ERR_S  3
 /** EFUSE_DIS_USB_SERIAL_JTAG_DOWNLOAD_MODE_ERR : RO; bitpos: [4]; default: 0;
  *  Represents the programming error of EFUSE_DIS_USB_SERIAL_JTAG_DOWNLOAD_MODE
  */
@@ -2197,9 +2214,8 @@ extern "C" {
  *  eFuse version register.
  */
 #define EFUSE_DATE_REG (DR_REG_EFUSE_BASE + 0x198)
-/** EFUSE_DATE : R/W; bitpos: [27:0]; default: 37814560;
- *  Represents eFuse version. Date:2024-10-12 12:09:57,
- *  ScriptRev:892332a1019d3a17987b08c6835edce28f46e261
+/** EFUSE_DATE : R/W; bitpos: [27:0]; default: 38806112;
+ *  Represents eFuse version.
  */
 #define EFUSE_DATE    0x0FFFFFFFU
 #define EFUSE_DATE_M  (EFUSE_DATE_V << EFUSE_DATE_S)

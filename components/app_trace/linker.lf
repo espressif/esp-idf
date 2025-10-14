@@ -2,12 +2,13 @@
 archive: libapp_trace.a
 entries:
     app_trace (noflash)
-    port_uart (noflash)
     app_trace_util (noflash)
     if APPTRACE_MEMBUFS_APPTRACE_PROTO_ENABLE:
       app_trace_membufs_proto (noflash)
     if APPTRACE_DEST_JTAG = y:
-      port (noflash)
+      port_jtag (noflash)
+    if APPTRACE_DEST_UART = y:
+      port_uart (noflash)
     if APPTRACE_SV_ENABLE = y:
       SEGGER_SYSVIEW (noflash)
       SEGGER_RTT_esp (noflash)
@@ -18,6 +19,6 @@ entries:
 archive: libesp_driver_gptimer.a
 entries:
     if APPTRACE_SV_TS_SOURCE_GPTIMER = y:
-      gptimer (noflash)
+      gptimer: gptimer_get_raw_count (noflash)
     else:
       * (default)

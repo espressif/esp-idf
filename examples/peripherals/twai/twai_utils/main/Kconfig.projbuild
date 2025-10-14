@@ -1,0 +1,60 @@
+menu "TWAI Configuration"
+    depends on SOC_TWAI_SUPPORTED
+
+    orsource "$IDF_PATH/examples/common_components/env_caps/$IDF_TARGET/Kconfig.env_caps"
+
+    config EXAMPLE_ENABLE_TWAI_FD
+        bool "Enable TWAI-FD Support"
+        depends on SOC_TWAI_SUPPORT_FD
+        default false
+        help
+            Enable TWAI-FD (Flexible Data-rate) support.
+            Allows up to 64 bytes of data per frame and dual bit rates.
+            Only available on chips that support TWAI-FD.
+
+    config EXAMPLE_DEFAULT_BITRATE
+        int "Default Arbitration Bitrate"
+        default 500000
+        help
+            Default arbitration bitrate in bits per second (bps).
+
+    config EXAMPLE_DEFAULT_FD_BITRATE
+        int "Default FD Data Bitrate"
+        depends on EXAMPLE_ENABLE_TWAI_FD
+        default 1000000
+        help
+            Default data bitrate for TWAI-FD in bits per second (bps).
+
+    config EXAMPLE_TX_QUEUE_LEN
+        int "TX Queue Length"
+        range 1 100
+        default 10
+        help
+            Length of the transmission queue for TWAI messages.
+
+    config EXAMPLE_DUMP_QUEUE_SIZE
+        int "TWAI Dump Queue Size"
+        default 32
+        help
+            Size of the queue used to store received TWAI frames for dump task.
+
+    config EXAMPLE_DUMP_TASK_STACK_SIZE
+        int "TWAI Dump Task Stack Size"
+        default 4096
+        help
+            Stack size of the TWAI dump task.
+
+    config EXAMPLE_DUMP_TASK_PRIORITY
+        int "TWAI Dump Task Priority"
+        default 10
+        range 0 24
+        help
+            Priority of the TWAI dump task.
+
+    config EXAMPLE_DUMP_TASK_TIMEOUT_MS
+        int "TWAI Dump Task Timeout"
+        default 300
+        help
+            Timeout for the TWAI dump task.
+
+endmenu

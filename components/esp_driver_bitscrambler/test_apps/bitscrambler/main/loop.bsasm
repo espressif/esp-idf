@@ -1,0 +1,38 @@
+# SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Unlicense OR CC0-1.0
+
+cfg prefetch false
+cfg eof_on downstream
+cfg trailing_bytes 32
+cfg lut_width_bits 32
+
+# WS2812 symbol definition in RMT data format
+lut 0x80030009 # Zero
+lut 0x80090003 # One
+lut 0x00F000F0 # Reset
+
+# Output the WS2812 reset symbol first
+# The reset code is saved in LUT index 2 (0b10)
+set 17 H, set 16 L
+set 31..0 L31..L0, write 32
+
+byteloop:
+	# Load one byte into counter B
+	# the read byte will be save to the MSB of the input FIFO, i.e. [63:56]
+	read 8, set 16..23 56..63, ldctibl
+
+bitloop:
+	# Output MSB of byte as LUT index (0 or 1)
+	set 16 B7
+
+	# Write LUT output
+	set 31..0 L31..L0, write 32
+
+	# Shift BL up by one bit
+	set 16 L, set 17..23 B0..B6, ldctibl
+
+	# Do this for all 8 bits
+	loopa 7 1 bitloop
+
+	# All bits are done, handle next byte
+	jmp byteloop

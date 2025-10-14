@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  */
@@ -10,9 +10,13 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "driver/i2s_std.h"
+#include "driver/i2c_master.h"
+#include "driver/gpio.h"
 #include "esp_system.h"
+#include "esp_codec_dev_defaults.h"
+#include "esp_codec_dev.h"
+#include "esp_codec_dev_vol.h"
 #include "esp_check.h"
-#include "es8311.h"
 #include "example_config.h"
 
 static const char *TAG = "i2s_es8311";
@@ -31,45 +35,94 @@ extern const uint8_t music_pcm_end[]   asm("_binary_canon_pcm_end");
 static esp_err_t es8311_codec_init(void)
 {
     /* Initialize I2C peripheral */
-#if !defined(CONFIG_EXAMPLE_BSP)
-    const i2c_config_t es_i2c_cfg = {
+    i2c_master_bus_handle_t i2c_bus_handle = NULL;
+    i2c_master_bus_config_t i2c_mst_cfg = {
+        .i2c_port = I2C_NUM,
         .sda_io_num = I2C_SDA_IO,
         .scl_io_num = I2C_SCL_IO,
-        .mode = I2C_MODE_MASTER,
-        .sda_pullup_en = GPIO_PULLUP_ENABLE,
-        .scl_pullup_en = GPIO_PULLUP_ENABLE,
-        .master.clk_speed = 100000,
+        .clk_source = I2C_CLK_SRC_DEFAULT,
+        .glitch_ignore_cnt = 7,
+        /* Pull-up internally for no external pull-up case.
+        Suggest to use external pull-up to ensure a strong enough pull-up. */
+        .flags.enable_internal_pullup = true,
     };
-    ESP_RETURN_ON_ERROR(i2c_param_config(I2C_NUM, &es_i2c_cfg), TAG, "config i2c failed");
-    ESP_RETURN_ON_ERROR(i2c_driver_install(I2C_NUM, I2C_MODE_MASTER,  0, 0, 0), TAG, "install i2c driver failed");
-#else
-    ESP_ERROR_CHECK(bsp_i2c_init());
-#endif
+    ESP_ERROR_CHECK(i2c_new_master_bus(&i2c_mst_cfg, &i2c_bus_handle));
 
-    /* Initialize es8311 codec */
-    es8311_handle_t es_handle = es8311_create(I2C_NUM, ES8311_ADDRRES_0);
-    ESP_RETURN_ON_FALSE(es_handle, ESP_FAIL, TAG, "es8311 create failed");
-    const es8311_clock_config_t es_clk = {
-        .mclk_inverted = false,
-        .sclk_inverted = false,
-        .mclk_from_mclk_pin = true,
-        .mclk_frequency = EXAMPLE_MCLK_FREQ_HZ,
-        .sample_frequency = EXAMPLE_SAMPLE_RATE
+    /* Create control interface with I2C bus handle */
+    audio_codec_i2c_cfg_t i2c_cfg = {
+        .port = I2C_NUM,
+        .addr = ES8311_CODEC_DEFAULT_ADDR,
+        .bus_handle = i2c_bus_handle,
     };
+    const audio_codec_ctrl_if_t *ctrl_if = audio_codec_new_i2c_ctrl(&i2c_cfg);
+    assert(ctrl_if);
 
-    ESP_ERROR_CHECK(es8311_init(es_handle, &es_clk, ES8311_RESOLUTION_16, ES8311_RESOLUTION_16));
-    ESP_RETURN_ON_ERROR(es8311_sample_frequency_config(es_handle, EXAMPLE_SAMPLE_RATE * EXAMPLE_MCLK_MULTIPLE, EXAMPLE_SAMPLE_RATE), TAG, "set es8311 sample frequency failed");
-    ESP_RETURN_ON_ERROR(es8311_voice_volume_set(es_handle, EXAMPLE_VOICE_VOLUME, NULL), TAG, "set es8311 volume failed");
-    ESP_RETURN_ON_ERROR(es8311_microphone_config(es_handle, false), TAG, "set es8311 microphone failed");
+    /* Create data interface with I2S bus handle */
+    audio_codec_i2s_cfg_t i2s_cfg = {
+        .port = I2S_NUM,
+        .rx_handle = rx_handle,
+        .tx_handle = tx_handle,
+    };
+    const audio_codec_data_if_t *data_if = audio_codec_new_i2s_data(&i2s_cfg);
+    assert(data_if);
+
+    /* Create ES8311 interface handle */
+    const audio_codec_gpio_if_t *gpio_if = audio_codec_new_gpio();
+    assert(gpio_if);
+    es8311_codec_cfg_t es8311_cfg = {
+        .ctrl_if = ctrl_if,
+        .gpio_if = gpio_if,
+        .codec_mode = ESP_CODEC_DEV_WORK_MODE_BOTH,
+        .master_mode = false,
+        .use_mclk = I2S_MCK_IO >= 0,
+        .pa_pin = EXAMPLE_PA_CTRL_IO,
+        .pa_reverted = false,
+        .hw_gain = {
+            .pa_voltage = 5.0,
+            .codec_dac_voltage = 3.3,
+        },
+        .mclk_div = EXAMPLE_MCLK_MULTIPLE,
+    };
+    const audio_codec_if_t *es8311_if = es8311_codec_new(&es8311_cfg);
+    assert(es8311_if);
+
+    /* Create the top codec handle with ES8311 interface handle and data interface */
+    esp_codec_dev_cfg_t dev_cfg = {
+        .dev_type = ESP_CODEC_DEV_TYPE_IN_OUT,
+        .codec_if = es8311_if,
+        .data_if = data_if,
+    };
+    esp_codec_dev_handle_t codec_handle = esp_codec_dev_new(&dev_cfg);
+    assert(codec_handle);
+
+    /* Specify the sample configurations and open the device */
+    esp_codec_dev_sample_info_t sample_cfg = {
+        .bits_per_sample = I2S_DATA_BIT_WIDTH_16BIT,
+        .channel = 2,
+        .channel_mask = 0x03,
+        .sample_rate = EXAMPLE_SAMPLE_RATE,
+    };
+    if (esp_codec_dev_open(codec_handle, &sample_cfg) != ESP_CODEC_DEV_OK) {
+        ESP_LOGE(TAG, "Open codec device failed");
+        return ESP_FAIL;
+    }
+
+    /* Set the initial volume and gain */
+    if (esp_codec_dev_set_out_vol(codec_handle, EXAMPLE_VOICE_VOLUME) != ESP_CODEC_DEV_OK) {
+        ESP_LOGE(TAG, "set output volume failed");
+        return ESP_FAIL;
+    }
 #if CONFIG_EXAMPLE_MODE_ECHO
-    ESP_RETURN_ON_ERROR(es8311_microphone_gain_set(es_handle, EXAMPLE_MIC_GAIN), TAG, "set es8311 microphone gain failed");
+    if (esp_codec_dev_set_in_gain(codec_handle, EXAMPLE_MIC_GAIN) != ESP_CODEC_DEV_OK) {
+        ESP_LOGE(TAG, "set input gain failed");
+        return ESP_FAIL;
+    }
 #endif
     return ESP_OK;
 }
 
 static esp_err_t i2s_driver_init(void)
 {
-#if !defined(CONFIG_EXAMPLE_BSP)
     i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM, I2S_ROLE_MASTER);
     chan_cfg.auto_clear = true; // Auto clear the legacy data in the DMA buffer
     ESP_ERROR_CHECK(i2s_new_channel(&chan_cfg, &tx_handle, &rx_handle));
@@ -95,17 +148,6 @@ static esp_err_t i2s_driver_init(void)
     ESP_ERROR_CHECK(i2s_channel_init_std_mode(rx_handle, &std_cfg));
     ESP_ERROR_CHECK(i2s_channel_enable(tx_handle));
     ESP_ERROR_CHECK(i2s_channel_enable(rx_handle));
-#else
-    ESP_LOGI(TAG, "Using BSP for HW configuration");
-    i2s_std_config_t std_cfg = {
-        .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(EXAMPLE_SAMPLE_RATE),
-        .slot_cfg = I2S_STD_PHILIPS_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_STEREO),
-        .gpio_cfg = BSP_I2S_GPIO_CFG,
-    };
-    std_cfg.clk_cfg.mclk_multiple = EXAMPLE_MCLK_MULTIPLE;
-    ESP_ERROR_CHECK(bsp_audio_init(&std_cfg, &tx_handle, &rx_handle));
-    ESP_ERROR_CHECK(bsp_audio_poweramp_enable(true));
-#endif
     return ESP_OK;
 }
 
@@ -198,6 +240,7 @@ void app_main(void)
     } else {
         ESP_LOGI(TAG, "es8311 codec init success");
     }
+
 #if CONFIG_EXAMPLE_MODE_MUSIC
     /* Play a piece of music in music mode */
     xTaskCreate(i2s_music, "i2s_music", 4096, NULL, 5, NULL);

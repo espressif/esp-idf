@@ -25,6 +25,7 @@
 #define DMA_CACHE_WB(addr, size) do {                                                           \
     esp_err_t msync_ret = esp_cache_msync((void *)addr, size, ESP_CACHE_MSYNC_FLAG_DIR_C2M);    \
     assert(msync_ret == ESP_OK);                                                                \
+    (void)msync_ret;                                                                            \
     } while(0)
 #else
 #define DMA_CACHE_WB(addr, size)
@@ -34,6 +35,7 @@
 #define DMA_CACHE_INVALIDATE(addr, size) do {                                                   \
     esp_err_t msync_ret = esp_cache_msync((void *)addr, size, ESP_CACHE_MSYNC_FLAG_DIR_M2C);    \
     assert(msync_ret == ESP_OK);                                                                \
+    (void)msync_ret;                                                                            \
     } while(0)
 #else
 #define DMA_CACHE_INVALIDATE(addr, size)

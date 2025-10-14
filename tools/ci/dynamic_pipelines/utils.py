@@ -1,14 +1,14 @@
-# SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import glob
 import os
 import re
-import typing as t
 import xml.etree.ElementTree as ET
+from urllib.parse import quote
+from urllib.parse import urlencode
 from urllib.parse import urlparse
 
 import requests
-import yaml
 
 from .constants import CI_DASHBOARD_API
 from .constants import CI_JOB_TOKEN
@@ -16,47 +16,14 @@ from .constants import CI_MERGE_REQUEST_SOURCE_BRANCH_SHA
 from .constants import CI_PAGES_URL
 from .constants import CI_PROJECT_URL
 from .models import GitlabJob
-from .models import Job
 from .models import TestCase
 
 
-def dump_jobs_to_yaml(
-    jobs: t.List[Job],
-    output_filepath: str,
-    pipeline_name: str,
-    extra_include_yml: t.Optional[t.List[str]] = None,
-) -> None:
-    yaml_dict = {}
-    for job in jobs:
-        yaml_dict.update(job.to_dict())
-
-    # global stuffs
-    yaml_dict.update(
-        {
-            'include': [
-                'tools/ci/dynamic_pipelines/templates/.dynamic_jobs.yml',
-                '.gitlab/ci/common.yml',
-            ],
-            'workflow': {
-                'name': pipeline_name,
-                'rules': [
-                    # always run the child pipeline, if they are created
-                    {'when': 'always'},
-                ],
-            },
-        }
-    )
-    yaml_dict['include'].extend(extra_include_yml or [])
-
-    with open(output_filepath, 'w') as fw:
-        yaml.dump(yaml_dict, fw, indent=2)
-
-
-def parse_testcases_from_filepattern(junit_report_filepattern: str) -> t.List[TestCase]:
+def parse_testcases_from_filepattern(junit_report_filepattern: str) -> list[TestCase]:
     """
     Parses test cases from XML files matching the provided file pattern.
 
-    >>> test_cases = parse_testcases_from_filepattern("path/to/your/junit/reports/*.xml")
+    >>> test_cases = parse_testcases_from_filepattern('path/to/your/junit/reports/*.xml')
 
     :param junit_report_filepattern: The file pattern to match XML files containing JUnit test reports.
     :return: List[TestCase]: A list of TestCase objects parsed from the XML files.
@@ -70,12 +37,12 @@ def parse_testcases_from_filepattern(junit_report_filepattern: str) -> t.List[Te
     return test_cases
 
 
-def load_known_failure_cases() -> t.Optional[t.Set[str]]:
+def load_known_failure_cases() -> set[str] | None:
     known_failures_file = os.getenv('KNOWN_FAILURE_CASES_FILE_NAME', '')
     if not known_failures_file:
         return None
     try:
-        with open(known_failures_file, 'r') as f:
+        with open(known_failures_file) as f:
             file_content = f.read()
 
         pattern = re.compile(r'^(.*?)\s+#\s+([A-Z]+)-\d+', re.MULTILINE)
@@ -98,7 +65,7 @@ def is_url(string: str) -> bool:
     return bool(parsed.scheme) and bool(parsed.netloc)
 
 
-def fetch_failed_jobs(commit_id: str) -> t.List[GitlabJob]:
+def fetch_failed_jobs(commit_id: str) -> list[GitlabJob]:
     """
     Fetches a list of jobs from the specified commit_id using an API request to ci-dashboard-api.
     :param commit_id: The commit ID for which to fetch jobs.
@@ -122,7 +89,10 @@ def fetch_failed_jobs(commit_id: str) -> t.List[GitlabJob]:
     response = requests.post(
         f'{CI_DASHBOARD_API}/jobs/failure_ratio',
         headers={'CI-Job-Token': CI_JOB_TOKEN},
-        json={'job_names': failed_job_names, 'exclude_branches': [os.getenv('CI_MERGE_REQUEST_SOURCE_BRANCH_NAME', '')]},
+        json={
+            'job_names': failed_job_names,
+            'exclude_branches': [os.getenv('CI_MERGE_REQUEST_SOURCE_BRANCH_NAME', '')],
+        },
     )
     if response.status_code != 200:
         print(f'Failed to fetch jobs failure rate data: {response.status_code} with error: {response.text}')
@@ -139,7 +109,7 @@ def fetch_failed_jobs(commit_id: str) -> t.List[GitlabJob]:
     return combined_jobs
 
 
-def fetch_failed_testcases_failure_ratio(failed_testcases: t.List[TestCase], branches_filter: dict) -> t.List[TestCase]:
+def fetch_failed_testcases_failure_ratio(failed_testcases: list[TestCase], branches_filter: dict) -> list[TestCase]:
     """
     Fetches info about failure rates of testcases using an API request to ci-dashboard-api.
     :param failed_testcases: The list of failed testcases models.
@@ -166,6 +136,37 @@ def fetch_failed_testcases_failure_ratio(failed_testcases: t.List[TestCase], bra
     return failed_testcases
 
 
+def fetch_app_metrics(
+    source_commit_sha: str,
+    target_commit_sha: str,
+) -> dict:
+    """
+    Fetches the app metrics for the given source commit SHA and target branch SHA.
+    :param source_commit_sha: The source commit SHA.
+    :param target_branch_sha: The commit SHA of the branch to compare app sizes against.
+    :return: A dict of sizes of built binaries.
+    """
+    print(f'Fetching bin size info: {source_commit_sha=} {target_commit_sha=}')
+    build_info_map = dict()
+    response = requests.post(
+        f'{CI_DASHBOARD_API}/apps/metrics',
+        headers={'CI-Job-Token': CI_JOB_TOKEN},
+        json={
+            'source_commit_sha': source_commit_sha,
+            'target_commit_sha': target_commit_sha,
+        },
+    )
+    if response.status_code != 200:
+        print(f'Failed to fetch build info: {response.status_code} - {response.text}')
+    else:
+        response_data = response.json()
+        build_info_map = {
+            f'{info["app_path"]}_{info["config_name"]}_{info["target"]}': info for info in response_data.get('data', [])
+        }
+
+    return build_info_map
+
+
 def load_file(file_path: str) -> str:
     """
     Loads the content of a file.
@@ -173,7 +174,7 @@ def load_file(file_path: str) -> str:
     :param file_path: The path to the file needs to be loaded.
     :return: The content of the file as a string.
     """
-    with open(file_path, 'r') as file:
+    with open(file_path) as file:
         return file.read()
 
 
@@ -216,3 +217,34 @@ def get_repository_file_url(file_path: str) -> str:
     :return: The modified URL pointing to the file's path in the repository.
     """
     return f'{CI_PROJECT_URL}/-/raw/{CI_MERGE_REQUEST_SOURCE_BRANCH_SHA}/{file_path}'
+
+
+def known_failure_issue_jira_fast_link(_item: TestCase) -> str:
+    """
+    Generate a JIRA fast link for known issues with relevant test case details.
+    """
+    jira_url = os.getenv('JIRA_SERVER')
+    jira_pid = os.getenv('JIRA_KNOWN_FAILURE_PID', '10514')
+    jira_issuetype = os.getenv('JIRA_KNOWN_FAILURE_ISSUETYPE', '10004')
+    jira_component = os.getenv('JIRA_KNOWN_FAILURE_COMPONENT', '11909')
+    jira_assignee = os.getenv('JIRA_KNOWN_FAILURE_ASSIGNEE', 'zhangjianwen')
+    jira_affected_versions = os.getenv('JIRA_KNOWN_FAILURE_VERSIONS', '17602')
+    jira_priority = os.getenv('JIRA_KNOWN_FAILURE_PRIORITY', '3')
+
+    base_url = f'{jira_url}/secure/CreateIssueDetails!init.jspa?'
+    params = {
+        'pid': jira_pid,
+        'issuetype': jira_issuetype,
+        'summary': f'[Test Case]{_item.name}',
+        'description': (
+            f'job_url: {quote(_item.ci_job_url, safe=":/")}\n\n'
+            f'dut_log_url: {quote(_item.dut_log_url, safe=":/")}\n\n'
+            f'ci_dashboard_url: {_item.ci_dashboard_url}\n\n'
+        ),
+        'components': jira_component,
+        'priority': jira_priority,
+        'assignee': jira_assignee,
+        'versions': jira_affected_versions,
+    }
+    query_string = urlencode(params)
+    return f'<a href="{base_url}{query_string}">Create</a>'

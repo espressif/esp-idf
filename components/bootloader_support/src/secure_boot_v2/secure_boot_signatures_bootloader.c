@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,12 +20,13 @@
 
 #if CONFIG_SECURE_BOOT_V2_ENABLED
 
-static const char* TAG = "secure_boot_v2";
+ESP_LOG_ATTR_TAG(TAG, "secure_boot_v2");
 
 #define ALIGN_UP(num, align) (((num) + ((align) - 1)) & ~((align) - 1))
 
 esp_err_t esp_secure_boot_verify_signature(uint32_t src_addr, uint32_t length)
 {
+    esp_err_t err = ESP_FAIL;
     uint8_t digest[ESP_SECURE_BOOT_DIGEST_LEN] = {0};
     uint8_t verified_digest[ESP_SECURE_BOOT_DIGEST_LEN] = { 0 }; /* Note: this function doesn't do any anti-FI checks on this buffer */
 
@@ -34,7 +35,12 @@ esp_err_t esp_secure_boot_verify_signature(uint32_t src_addr, uint32_t length)
     ESP_LOGD(TAG, "verifying signature src_addr 0x%" PRIx32 " length 0x%" PRIx32, src_addr, length);
 
     /* Calculate digest of main image */
-    esp_err_t err = bootloader_sha256_flash_contents(src_addr, padded_length, digest);
+#if CONFIG_SECURE_BOOT_ECDSA_KEY_LEN_384_BITS
+    err = bootloader_sha384_flash_contents(src_addr, padded_length, digest);
+#else
+    err = bootloader_sha256_flash_contents(src_addr, padded_length, digest);
+#endif
+
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Digest calculation failed 0x%" PRIx32 ", 0x%" PRIx32, src_addr, padded_length);
         return err;
@@ -65,6 +71,18 @@ static esp_err_t validate_signature_block(const ets_secure_boot_sig_block_t *blo
         ESP_LOGE(TAG, "%s signing scheme selected but signature block generated for %s scheme", esp_secure_boot_get_scheme_name(ESP_SECURE_BOOT_SCHEME), esp_secure_boot_get_scheme_name(block->version));
         return ESP_FAIL;
     }
+
+#if SOC_ECDSA_P192_CURVE_DEFAULT_DISABLED && CONFIG_SECURE_SIGNED_APPS_ECDSA_V2_SCHEME
+    if (block->ecdsa.key.curve_id == ECDSA_CURVE_P192) {
+        // Enabling ECDSA-192 Curve mode
+        esp_err_t err = esp_efuse_enable_ecdsa_p192_curve_mode();
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to enable ECDSA-192 curve mode: %d", err);
+            return err;
+        }
+    }
+#endif
+
     return ESP_OK;
 }
 
@@ -154,13 +172,12 @@ esp_err_t esp_secure_boot_verify_sbv2_signature_block(const ets_secure_boot_sign
     ets_secure_boot_key_digests_t trusted_key_digests = {0};
     bool valid_sig_blk = false;
     for (unsigned i = 0; i < SECURE_BOOT_NUM_BLOCKS; i++) {
+        trusted_key_digests.key_digests[i] = &trusted.key_digests[i];
         if (sig_block->block[i].version != ESP_SECURE_BOOT_SCHEME) {
             ESP_LOGD(TAG, "%s signing scheme selected but signature block %d generated for %s scheme", esp_secure_boot_get_scheme_name(ESP_SECURE_BOOT_SCHEME), i, esp_secure_boot_get_scheme_name(sig_block->block[i].version));
-            continue;
         } else {
             valid_sig_blk = true;
         }
-        trusted_key_digests.key_digests[i] = &trusted.key_digests[i];
     }
     if (valid_sig_blk != true) {
         ESP_LOGE(TAG, "No signature block generated for valid scheme");

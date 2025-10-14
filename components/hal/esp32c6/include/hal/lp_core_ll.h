@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -134,6 +134,14 @@ static inline void lp_core_ll_request_sleep(void)
 static inline uint8_t lp_core_ll_get_triggered_interrupt_srcs(void)
 {
     return LPPERI.interrupt_source.lp_interrupt_source;
+}
+
+/**
+ * @brief Enable wakeup from LP UART.
+ */
+static inline void lp_core_ll_enable_lp_uart_wakeup(bool enable)
+{
+    LPPERI.mem_ctrl.uart_wakeup_en = enable;
 }
 
 /**

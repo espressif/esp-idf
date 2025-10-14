@@ -4,8 +4,8 @@
 
 本文展示了一系列乐鑫官方发布的库和框架。
 
-ESP-ADF
--------
+乐鑫高级开发框架 (ESP-ADF)
+-----------------------------------
 
 ESP-ADF 是一个全方位的音频应用程序框架，该框架支持：
 
@@ -97,6 +97,8 @@ ESP-Protocols 组件：
 * `asio <https://components.espressif.com/component/espressif/asio>`_ 是一个跨平台的 C++ 库，请参阅 `<https://think-async.com/Asio/>`_。该库基于现代 C++ 提供一致的异步模型，请参阅 `asio 文档 <https://docs.espressif.com/projects/esp-protocols/asio/docs/latest/index.html>`_。
 
 * `esp_wifi_remote <https://components.espressif.com/component/espressif/esp_wifi_remote>`_ 是一个 Wi-Fi 通信库，提供标准的 Wi-Fi API，并且能够借助指定的传输接口，帮助目标设备通过外部 ESP32 芯片实现 Wi-Fi 通信。详情请参阅 :doc:`../api-guides/wifi-expansion`。
+
+* `esp-extconn <https://components.espressif.com/component/espressif/esp-extconn>`_ 是一个 Wi-Fi 通信库，为不具备内置无线功能的 ESP 芯片提供外部无线连接（Wi-Fi 和蓝牙）。详情请参阅 :doc:`../api-guides/wifi-expansion`。
 
 ESP-BSP
 -------

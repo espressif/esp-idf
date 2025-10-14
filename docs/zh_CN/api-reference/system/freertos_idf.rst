@@ -47,7 +47,7 @@ IDF FreeRTOS 源代码基于 Vanilla FreeRTOS v10.5.1，但内核行为和 API �
 ESP 芯片上的 SMP
 ^^^^^^^^^^^^^^^^
 
-ESP32、ESP32-S3、ESP32-P4 等 ESP 芯片是双核 SMP SoC，具有以下硬件特性以支持 SMP：
+ESP32、ESP32-S3、ESP32-P4 和 ESP32-H4 等 ESP 芯片是双核 SMP SoC，具有以下硬件特性以支持 SMP：
 
 - 具有两个完全相同的核，分别称为核 0 和核 1。代码段无论在哪个核上运行，都有相同的执行效果。
 - 具有对称内存（除了少数例外情况）。

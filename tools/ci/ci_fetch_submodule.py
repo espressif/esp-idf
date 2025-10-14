@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
 # internal use only for CI
@@ -11,11 +11,12 @@ import re
 import shutil
 import subprocess
 import time
-from typing import Any, List
+from typing import Any
+from typing import List
 
 import gitlab_api
 
-SUBMODULE_PATTERN = re.compile(r"\[submodule \"([^\"]+)\"]")
+SUBMODULE_PATTERN = re.compile(r'\[submodule \"([^\"]+)\"]')
 PATH_PATTERN = re.compile(r'path\s+=\s+(\S+)')
 URL_PATTERN = re.compile(r'url\s+=\s+(\S+)')
 
@@ -44,14 +45,17 @@ class SubModule(object):
 
     def _get_project_id(self, url: str) -> Any:
         base_name = os.path.basename(url)
-        project_id = self.gitlab_inst.get_project_id(os.path.splitext(base_name)[0],  # remove .git
-                                                     namespace='espressif')
+        project_id = self.gitlab_inst.get_project_id(
+            os.path.splitext(base_name)[0],  # remove .git
+            namespace='espressif',
+        )
         return project_id
 
     def download_archive(self) -> None:
         print('Update submodule: {}: {}'.format(self.path, self.commit_id))
-        path_name = self.gitlab_inst.download_archive(self.commit_id, SUBMODULE_ARCHIVE_TEMP_FOLDER,
-                                                      self.project_id, SUBMODULE_ARCHIVE_CACHE_DIR)
+        path_name = self.gitlab_inst.download_archive(
+            self.commit_id, SUBMODULE_ARCHIVE_TEMP_FOLDER, self.project_id, SUBMODULE_ARCHIVE_CACHE_DIR
+        )
         renamed_path = os.path.join(os.path.dirname(path_name), os.path.basename(self.path))
         os.rename(path_name, renamed_path)
         shutil.rmtree(self.path, ignore_errors=True)
@@ -97,10 +101,14 @@ if __name__ == '__main__':
     start_time = time.time()
     parser = argparse.ArgumentParser()
     parser.add_argument('--repo_path', '-p', default='.', help='repo path')
-    parser.add_argument('--submodule', '-s', default='all',
-                        help='Submodules to update. By default update all submodules. '
-                             'For multiple submodules, separate them with `;`. '
-                             '`all` and `none` are special values that indicates we fetch all / none submodules')
+    parser.add_argument(
+        '--submodule',
+        '-s',
+        default='all',
+        help='Submodules to update. By default update all submodules. '
+        'For multiple submodules, separate them with `;`. '
+        '`all` and `none` are special values that indicates we fetch all / none submodules',
+    )
     args = parser.parse_args()
     if args.submodule == 'none':
         print("don't need to update submodules")

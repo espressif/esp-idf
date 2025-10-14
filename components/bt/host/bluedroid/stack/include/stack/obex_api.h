@@ -19,8 +19,6 @@
 #define OBEX_NOT_OPEN               6       /* Connection not open */
 #define OBEX_PACKET_TOO_LARGE       7       /* Packet size large than MTU */
 #define OBEX_ERROR_TL               8       /* Operation failed in transport layer */
-#define OBEX_TRY_AGAIN              9       /* Operation failed, connection congestion, try again */
-
 
 /*
 * OBEX profile definitions
@@ -164,10 +162,19 @@ typedef struct
 
 typedef struct
 {
+    UINT8   scn;                        /* service channel number */
+    UINT16  sec_mask;                   /* security mask */
+    UINT16  pref_mtu;                   /* preferred mtu, limited by rfcomm mtu */
+    BD_ADDR addr;                       /* peer bluetooth device address */
+} tOBEX_OVER_RFCOMM_SVR;
+
+typedef struct
+{
     UINT8 tl;                           /* transport type, OBEX_OVER_L2CAP or OBEX_OVER_RFCOMM */
     union
     {
         tOBEX_OVER_L2CAP_SVR l2cap;
+        tOBEX_OVER_RFCOMM_SVR rfcomm;
     };
 } tOBEX_SVR_INFO;
 

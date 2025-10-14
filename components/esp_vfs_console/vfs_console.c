@@ -247,14 +247,6 @@ esp_err_t esp_vfs_console_register(void)
     primary_vfs = esp_vfs_usb_serial_jtag_get_vfs();
 #elif CONFIG_ESP_CONSOLE_USB_CDC
     primary_vfs = esp_vfs_cdcacm_get_vfs();
-    err = esp_usb_console_init();
-    if (err != ESP_OK) {
-        return err;
-    }
-    err = esp_vfs_dev_cdcacm_register();
-    if (err != ESP_OK) {
-        return err;
-    }
 #else
     primary_vfs = esp_vfs_null_get_vfs();
 #endif
@@ -267,7 +259,7 @@ esp_err_t esp_vfs_console_register(void)
     return err;
 }
 
-ESP_SYSTEM_INIT_FN(init_vfs_console, CORE, BIT(0), 114)
+ESP_SYSTEM_INIT_FN(init_vfs_console, CORE, BIT(0), 119)
 {
     return esp_vfs_console_register();
 }

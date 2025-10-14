@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -165,6 +165,19 @@ esp_err_t esp_bt_hid_device_virtual_cable_unplug(void)
 
     bt_status_t stat = btc_transfer_context(&msg, NULL, 0, NULL, NULL);
     return (stat == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
+}
+
+esp_err_t esp_bt_hid_device_get_profile_status(esp_hidd_profile_status_t *profile_status)
+{
+    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+    if (profile_status == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    memset(profile_status, 0, sizeof(esp_hidd_profile_status_t));
+    btc_hd_get_profile_status(profile_status);
+
+    return ESP_OK;
 }
 
 #endif /* defined BTC_HD_INCLUDED && BTC_HD_INCLUDED == TRUE */

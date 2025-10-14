@@ -7,10 +7,13 @@
     - esp_coex
     - esp_netif
     - esp_phy
+    - esp_system
     - ieee802154
     - lwip
     - openthread
   depends_filepatterns:
+    - examples/common_components/protocol_examples_common/*
+    - examples/common_components/protocol_examples_common/**/*
     - examples/openthread/*
     - examples/openthread/**/*
 
@@ -20,7 +23,8 @@
 
 examples/openthread/ot_br:
   enable:
-    - if: SOC_WIFI_SUPPORTED == 1 and IDF_TARGET != "esp32c61"
+    - if: ((SOC_WIFI_SUPPORTED == 1 and IDF_TARGET != "esp32c61") or IDF_TARGET == "esp32p4") and CONFIG_NAME != "native_radio"
+    - if: SOC_WIFI_SUPPORTED == 1 and (SOC_IEEE802154_SUPPORTED == 1 and CONFIG_NAME == "native_radio")
   disable_test:
     - if: IDF_TARGET not in ["esp32s3"]
       reason: only test on esp32s3

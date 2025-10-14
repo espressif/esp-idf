@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -544,6 +544,15 @@ void regdma_link_set_write_wait_content(void *link, uint32_t value, uint32_t mas
     }
 }
 
+void regdma_link_set_skip_flag(void *link, bool skip_backup, bool skip_restore)
+{
+    if (link) {
+        regdma_link_head_t *head = &REGDMA_LINK_HEAD(link);
+        head->skip_b = skip_backup;
+        head->skip_r = skip_restore;
+    }
+}
+
 static void regdma_link_update_continuous_next_wrapper(void *link, void *next)
 {
     regdma_link_continuous_t *continuous = __containerof(link, regdma_link_continuous_t, head);
@@ -717,7 +726,7 @@ void * regdma_find_prev_module_link_tail(void *link, void *tail, int entry, int 
     return NULL;
 }
 
-static __attribute__((unused)) const char *TAG = "regdma_link";
+ESP_LOG_ATTR_TAG(TAG, "regdma_link");
 static const char* s_link_mode_str[] = { "CONTINUOUS", "ADDR_MAP", "WRITE", "WAIT" };
 static const char* s_boolean_str[] = { "false", "true" };
 

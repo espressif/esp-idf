@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,6 +24,7 @@
 #include "soc/rtc_io_struct.h"
 #include "soc/sens_struct.h"
 #include "soc/soc_caps.h"
+#include "soc/soc_caps_full.h"
 #include "hal/touch_sens_types.h"
 
 #ifdef __cplusplus
@@ -49,12 +50,13 @@ extern "C" {
                                              TOUCH_LL_INTR_MASK_TIMEOUT | \
                                              TOUCH_LL_INTR_MASK_PROX_DONE)
 
-#define TOUCH_LL_FULL_CHANNEL_MASK          ((uint16_t)((1U << SOC_TOUCH_SENSOR_NUM) - 1))
+#define TOUCH_LL_FULL_CHANNEL_MASK          ((uint16_t)((1U << SOC_MODULE_ATTR(TOUCH, CHAN_NUM)) - 1))
 #define TOUCH_LL_NULL_CHANNEL               (0)  // Null Channel id. Used for disabling some functions like sleep/proximity/waterproof
 
 #define TOUCH_LL_PAD_MEASURE_WAIT_MAX      (0xFF)      // The timer frequency is 8Mhz, the max value is 0xff
 #define TOUCH_LL_ACTIVE_THRESH_MAX         (0x3FFFFF)  // Max channel active threshold
 #define TOUCH_LL_TIMEOUT_MAX               (0x3FFFFF)  // Max timeout value
+#define TOUCH_LL_SUPPORT_PROX_DONE         (1)
 
 /**
  * Enable/disable clock gate of touch sensor.
@@ -196,6 +198,22 @@ static inline void touch_ll_set_chan_active_threshold(uint32_t touch_num, uint32
 }
 
 /**
+ * Get touch sensor threshold of charge cycles that triggers pad active state.
+ * The threshold determines the sensitivity of the touch sensor.
+ * The threshold is the original value of the trigger state minus the benchmark value.
+ *
+ * @note  If set "TOUCH_PAD_THRESHOLD_MAX", the touch is never be triggered.
+ * @param touch_num The touch pad id
+ * @return
+ *      - The threshold of charge cycles
+ */
+static inline uint32_t touch_ll_get_chan_active_threshold(uint32_t touch_num)
+{
+    HAL_ASSERT(touch_num > 0);
+    return SENS.touch_thresh[touch_num - 1].thresh;
+}
+
+/**
  * Set the power on wait cycle
  *
  * @param wait_cycles
@@ -283,7 +301,12 @@ static inline void touch_ll_set_charge_voltage_low_limit(touch_volt_lim_l_t low_
  */
 static inline void touch_ll_set_init_charge_voltage(uint32_t touch_num, touch_init_charge_volt_t init_charge_volt)
 {
-    RTCIO.touch_pad[touch_num].tie_opt = init_charge_volt;
+    if (init_charge_volt == TOUCH_INIT_CHARGE_VOLT_FLOAT) {
+        RTCIO.touch_pad[touch_num].xpd = 0;
+    } else {
+        RTCIO.touch_pad[touch_num].xpd = 1;
+        RTCIO.touch_pad[touch_num].tie_opt = init_charge_volt;
+    }
 }
 
 /**
@@ -607,6 +630,17 @@ static inline void touch_ll_sleep_set_threshold(uint32_t touch_thres)
 static inline void touch_ll_sleep_set_channel_num(uint32_t touch_num)
 {
     RTCCNTL.touch_slp_thres.touch_slp_pad = touch_num;
+}
+
+/**
+ * Get touch channel number for sleep pad.
+ *
+ * @note Only one touch sensor channel is supported in deep sleep mode.
+ * @param touch_num Touch sensor channel number.
+ */
+static inline void touch_ll_sleep_get_channel_num(uint32_t *touch_num)
+{
+    *touch_num = RTCCNTL.touch_slp_thres.touch_slp_pad;
 }
 
 /**
@@ -947,7 +981,12 @@ static inline void touch_ll_get_slope(touch_pad_t touch_num, touch_cnt_slope_t *
  */
 static inline void touch_ll_set_tie_option(touch_pad_t touch_num, touch_tie_opt_t opt)
 {
-    RTCIO.touch_pad[touch_num].tie_opt = opt;
+    if (opt == TOUCH_PAD_TIE_OPT_FLOAT) {
+        RTCIO.touch_pad[touch_num].xpd = 0;
+    } else {
+        RTCIO.touch_pad[touch_num].xpd = 1;
+        RTCIO.touch_pad[touch_num].tie_opt = opt;
+    }
 }
 
 /**
@@ -958,7 +997,11 @@ static inline void touch_ll_set_tie_option(touch_pad_t touch_num, touch_tie_opt_
  */
 static inline void touch_ll_get_tie_option(touch_pad_t touch_num, touch_tie_opt_t *opt)
 {
-    *opt = (touch_tie_opt_t)RTCIO.touch_pad[touch_num].tie_opt;
+    if (RTCIO.touch_pad[touch_num].xpd) {
+        *opt = (touch_tie_opt_t)RTCIO.touch_pad[touch_num].tie_opt;
+    } else {
+        *opt = TOUCH_PAD_TIE_OPT_FLOAT;
+    }
 }
 
 /**
@@ -1059,8 +1102,8 @@ static inline bool touch_ll_get_fsm_state(void)
  */
 static inline void touch_ll_start_sw_meas(void)
 {
-    RTCCNTL.touch_ctrl2.touch_start_en = 0;
     RTCCNTL.touch_ctrl2.touch_start_en = 1;
+    RTCCNTL.touch_ctrl2.touch_start_en = 0;
 }
 
 /**
@@ -1400,7 +1443,7 @@ static inline void IRAM_ATTR touch_ll_read_benchmark(touch_pad_t touch_num, uint
  *
  * @note If call this API, make sure enable clock gate(`touch_ll_clkgate`) first.
  * @param touch_num touch pad index
- *                  - TOUCH_PAD_MAX Reset basaline of all channels.
+ *                  - TOUCH_PAD_MAX Reset baseline of all channels.
  */
 static inline void touch_ll_reset_benchmark(touch_pad_t touch_num)
 {
@@ -1647,17 +1690,6 @@ static inline bool touch_ll_proximity_pad_check(touch_pad_t touch_num)
 
 /************** sleep pad setting ***********************/
 /**
- * Get touch channel number for sleep pad.
- *
- * @note Only one touch sensor channel is supported in deep sleep mode.
- * @param touch_num Touch sensor channel number.
- */
-static inline void touch_ll_sleep_get_channel_num(touch_pad_t *touch_num)
-{
-    *touch_num = (touch_pad_t)(RTCCNTL.touch_slp_thres.touch_slp_pad);
-}
-
-/**
  * Get the trigger threshold of touch sensor in deep sleep.
  * The threshold determines the sensitivity of the touch sensor.
  * The threshold is the original value of the trigger state minus the benchmark value.
@@ -1700,6 +1732,29 @@ static inline void touch_ll_sleep_read_data(uint32_t *raw_data)
     uint32_t touch_num = RTCCNTL.touch_slp_thres.touch_slp_pad;
     SENS.sar_touch_conf.touch_data_sel = TOUCH_LL_READ_RAW;
     *raw_data = SENS.sar_touch_status[touch_num - 1].touch_pad_data;
+}
+
+/**
+ * Get the data of the touch channel according to the types
+ *
+ * @param sample_cfg_id The sample configuration index
+ * @param type  data type
+ *              0/1: TOUCH_LL_READ_RAW, the raw data of the touch channel
+ *              2:   TOUCH_LL_READ_BENCHMARK, benchmark value of touch channel,
+ *                   the benchmark value is the maximum during the first measurement period
+ *              3:   TOUCH_LL_READ_SMOOTH, the smoothed data that obtained by filtering the raw data.
+ * @param smooth_data pointer to smoothed data
+ */
+__attribute__((always_inline))
+static inline void touch_ll_sleep_read_chan_data(uint8_t type, uint32_t *data)
+{
+    SENS.sar_touch_conf.touch_data_sel = type;
+    if (type == TOUCH_LL_READ_RAW) {
+        uint32_t touch_num = RTCCNTL.touch_slp_thres.touch_slp_pad;
+        *data = SENS.sar_touch_status[touch_num - 1].touch_pad_data;
+    } else {
+        *data = SENS.sar_touch_slp_status.touch_slp_data;
+    }
 }
 
 

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -26,7 +26,9 @@ extern "C" {
 /**
  * @brief Flags to indicate the capabilities of the various memory systems
  */
+#if CONFIG_HEAP_HAS_EXEC_HEAP
 #define MALLOC_CAP_EXEC             (1<<0)  ///< Memory must be able to run executable code
+#endif
 #define MALLOC_CAP_32BIT            (1<<1)  ///< Memory must allow for aligned 32-bit data accesses
 #define MALLOC_CAP_8BIT             (1<<2)  ///< Memory must allow for 8/16/...-bit data accesses
 #define MALLOC_CAP_DMA              (1<<3)  ///< Memory must be able to accessed by DMA
@@ -46,6 +48,7 @@ extern "C" {
 #define MALLOC_CAP_DMA_DESC_AHB     (1<<17) ///< Memory must be capable of containing AHB DMA descriptors
 #define MALLOC_CAP_DMA_DESC_AXI     (1<<18) ///< Memory must be capable of containing AXI DMA descriptors
 #define MALLOC_CAP_CACHE_ALIGNED    (1<<19) ///< Memory must be aligned to the cache line size of any intermediate caches
+#define MALLOC_CAP_SIMD             (1<<20) ///< Memory must be capable of being used for SIMD instructions (i.e. allow for SIMD-specific-bit data accesses)
 
 #define MALLOC_CAP_INVALID          (1<<31) ///< Memory can't be used / list end marker
 
@@ -445,7 +448,20 @@ void heap_caps_dump_all(void);
  * @return Size of the memory allocated at this block.
  *
  */
-size_t heap_caps_get_allocated_size( void *ptr );
+size_t heap_caps_get_allocated_size(void *ptr);
+
+/**
+ * @brief Return the size of the block containing the pointer passed as parameter.
+ *
+ * @param ptr Pointer to currently allocated heap memory. The pointer value
+ * must be within the allocated memory and the memory must not be freed.
+ *
+ * @note The app will crash with an assertion failure if the pointer is invalid.
+ *
+ * @return Size of the containing block allocated.
+ *
+ */
+size_t heap_caps_get_containing_block_size(void *ptr);
 
 /**
  * @brief Structure used to store heap related data passed to

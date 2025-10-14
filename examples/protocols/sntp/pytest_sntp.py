@@ -1,17 +1,18 @@
-# SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 import datetime
 import logging
-from typing import Any, Tuple
+from typing import Any
+from typing import Tuple
 
 import pytest
 from common_test_methods import get_env_config_variable
 from pytest_embedded import Dut
+from pytest_embedded_idf.utils import idf_parametrize
 
 
-@pytest.mark.esp32
 @pytest.mark.wifi_ap
+@idf_parametrize('target', ['esp32'], indirect=['target'])
 def test_get_time_from_sntp_server(dut: Dut) -> None:
     dut.expect('Time is not set yet. Connecting to WiFi and getting time over NTP.')
     if dut.app.sdkconfig.get('EXAMPLE_WIFI_SSID_PWD_FROM_STDIN') is True:

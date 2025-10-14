@@ -3,6 +3,8 @@ USB 主机
 
 :link_to_translation:`en:[English]`
 
+{IDF_TARGET_OTG_NUM_HOST_CHAN: default="8", esp32p4="16"}
+
 本文档提供了 USB 主机库的相关信息，按以下章节展开：
 
 .. contents:: 章节
@@ -31,11 +33,12 @@ USB 主机库（以下简称主机库）是 USB 主机栈的最底层，提供�
     :esp32p4: - 支持高速 (HS)、全速 (FS) 和低速 (LS) 设备。
     - 支持四种传输类型，即控制传输、块传输、中断传输和同步传输。
     :esp32p4: - 支持高带宽等时性端点。
+    :esp32p4: - {IDF_TARGET_NAME} 包含两个 USB 2.0 OTG 外设：USB 2.0 OTG 高速和 USB 2.0 OTG 全速，二者均支持 USB 主机功能。但由于当前软件的限制，同一时间仅能有一个作为 USB 主机工作。未来版本计划支持两个 USB 主机同时运行。
     - 支持多个 Class 驱动程序同时运行，即主机的多个客户端同时运行。
     - 单个设备可以由多个客户端同时使用，如复合设备。
     - 主机库及其底层主机栈不会在内部自动创建操作系统任务，任务数量完全由主机库接口的使用方式决定。一般来说，任务数量为 ``（运行中的主机 Class 驱动程序数量 + 1）``。
-    - 支持单个 Hub（启用选项 :ref:`CONFIG_USB_HOST_HUBS_SUPPORTED`）。
-    - 支持多个 Hub（启用选项 :ref:`CONFIG_USB_HOST_HUB_MULTI_LEVEL`）。
+    - 支持单个 Hub（启用选项 `CONFIG_USB_HOST_HUBS_SUPPORTED`）。
+    - 支持多个 Hub（启用选项 `CONFIG_USB_HOST_HUB_MULTI_LEVEL`）。
 
 目前，主机库及其底层主机栈存在以下限制：
 
@@ -44,8 +47,6 @@ USB 主机库（以下简称主机库）是 USB 主机栈的最底层，提供�
     - 仅支持异步传输。
     - 仅支持使用发现的首个配置，尚不支持变更为其他配置。
     - 尚不支持传输超时。
-    :esp32p4: - {IDF_TARGET_NAME} 包含两个 USB-OTG 外设：USB 2.0 OTG 高速和 USB 2.0 OTG 全速。目前仅支持高速实例。
-    - 外部 Hub 驱动：仅支持与上游端口速率相同的设备。（例如，低速设备无法通过全速外部 Hub 工作。）
     - 外部 Hub 驱动：不支持远程唤醒功能（即使没有设备插入，外部 Hub 也处于工作状态）。
     - 外部 Hub 驱动：不处理错误用例（尚未实现过流处理、初始化错误等功能）。
     - 外部 Hub 驱动：不支持接口选择。驱动程序使用具有 Hub 类代码 (09h) 的第一个可用接口。
@@ -103,7 +104,7 @@ USB 主机库（以下简称主机库）是 USB 主机栈的最底层，提供�
 设备
 ^^^^^^^
 
-主机库隔离了客户端与设备处理的细节，包括连接、内存分配和枚举等，客户端只需提供已连接且已枚举的设备列表供选择。默认情况下，在枚举过程中，每个设备都会自动配置为使用找到的第一个配置，即通过获取配置描述符请求返回的第一个配置描述符。对于大多数标准设备，通常将第一个配置的 ``bConfigurationValue`` 设置为 ``1``。启用选项 :ref:`CONFIG_USB_HOST_ENABLE_ENUM_FILTER_CALLBACK` 后，可以选择不同的 ``bConfigurationValue``。获取更多详细信息，请参阅 `多项配置支持`_。
+主机库隔离了客户端与设备处理的细节，包括连接、内存分配和枚举等，客户端只需提供已连接且已枚举的设备列表供选择。默认情况下，在枚举过程中，每个设备都会自动配置为使用找到的第一个配置，即通过获取配置描述符请求返回的第一个配置描述符。对于大多数标准设备，通常将第一个配置的 ``bConfigurationValue`` 设置为 ``1``。启用选项 `CONFIG_USB_HOST_ENABLE_ENUM_FILTER_CALLBACK` 后，可以选择不同的 ``bConfigurationValue``。获取更多详细信息，请参阅 `多项配置支持`_。
 
 只要不与相同接口通信，两个及以上的客户端可以同时与同一设备通信。然而，多个客户端同时与相同设备的默认端点（即 EP0）通信，将导致它们的控制传输序列化。
 
@@ -402,9 +403,79 @@ UVC
 """
 
 * USB 视频设备 Class 的主机 Class 驱动程序作为托管组件通过 `乐鑫组件注册表 <https://components.espressif.com/component/espressif/usb_host_uvc>`__ 分发。
-* 示例 :example:`peripherals/usb/host/uvc` 演示了如何使用 `libuvc` 库从 USB 摄像头捕获视频，并通过托管 TCP 服务器将视频流通过 Wi-Fi 传输，同时提供了使用 ``player.py`` 脚本在 PC 上查看捕获视频的选项。
+* 示例 :example:`peripherals/usb/host/uvc` 演示了如何使用 UVC 驱动程序从 USB 摄像头捕获视频帧。
 
 .. ---------------------------------------------- USB Host Menuconfig --------------------------------------------------
+
+.. only:: esp32s3
+
+    外部 PHY 配置
+    -------------
+
+    {IDF_TARGET_NAME} 内部集成了两个 USB 控制器 —— USB-OTG 和 USB-Serial-JTAG。这两个控制器 **共用同一个 PHY**，因此同一时间只能有一个控制器工作。如果在 USB-Serial-JTAG 工作时（如调试或烧录）时仍需使用 USB 主机功能，必须使用 **外部 PHY**，因为此时内部 PHY 已被 USB-Serial-JTAG 占用。
+
+    .. note::
+        使用外部 PHY 并不是在 USB 主机或设备功能开启时同时实现调试的唯一办法。也可以通过烧录对应的 eFuse，将调试接口从 USB-Serial-JTAG 切换为传统的 JTAG 接口。具体步骤请参考 ESP-IDF 编程指南中针对你的芯片的 `JTAG 调试 <https://docs.espressif.com/projects/esp-idf/zh_CN/latest/esp32s3/api-guides/jtag-debugging/index.html>`_ 章节。
+
+    {IDF_TARGET_NAME} 支持连接外部 PHY 芯片，从而实现 USB-OTG 和 USB-Serial-JTAG 控制器的独立工作。不同的外部 PHY 芯片可能需要不同的硬件配置，具体请参阅各芯片的规格书。乐鑫官方文档提供了通用的连接示意图用于参考：`使用外部 PHY <https://docs.espressif.com/projects/esp-iot-solution/en/latest/usb/usb_overview/usb_phy.html#use-an-external-phy>`__。
+
+    **已测试的外部 PHY 芯片如下：**
+
+    - **SP5301** — {IDF_TARGET_NAME} 原生支持此芯片。原理图与布线方法请参考上文链接。
+    - **TUSB1106** — {IDF_TARGET_NAME} 原生支持。可通过 GPIO 映射与外部 PHY 驱动配合使用。请遵循 TUSB1106 数据手册中的参考连接（供电方案以及在 D+/D– 上建议的串联电阻）。
+    - **STUSB03E** — 需要通过模拟开关进行信号路由。请参考下方示例。
+
+    .. figure:: ../../../_static/usb_host/ext_phy_schematic_stusb03e.png
+       :align: center
+       :alt: 使用模拟开关的外部 PHY 原理图（主机模式）
+
+       使用 STUSB03E 与模拟开关的连接示例（主机模式）
+
+    .. note::
+        此原理图为简化示例，用于演示外部 PHY 连接方式，未包含完整 {IDF_TARGET_NAME} 设计所需的所有元器件和信号（如 VCC、GND、RESET 等）。
+        图中包含 +5 V 电源轨（用于为 USB 设备供电）和 VCC 电源轨（通常为 3.3 V）。VCC 电压应与芯片供电电压保持一致。确保为 USB 总线提供的 +5 V 电源可靠，并具备必要的保护措施（如电源开关和限流设计）在支持 USB 总线供电设备时，务必遵守 USB 主机的供电规范。
+
+    硬件配置通过将 GPIO 映射到 PHY 引脚实现。任何未使用的引脚（如 :cpp:member:`usb_phy_ext_io_conf_t::suspend_n_io_num`） **必须设置为 -1**。
+
+    .. note::
+        :cpp:member:`usb_phy_ext_io_conf_t::suspend_n_io_num` 引脚 **当前不支持**，无需连接。
+
+    **示例代码：**
+
+    .. code-block:: c
+
+        // 外部 PHY 的 GPIO 配置
+        const usb_phy_ext_io_conf_t ext_io_conf = {
+            .vp_io_num  = 8,
+            .vm_io_num  = 5,
+            .rcv_io_num = 11,
+            .oen_io_num = 17,
+            .vpo_io_num = 4,
+            .vmo_io_num = 46,
+            .fs_edge_sel_io_num = 38,
+            .suspend_n_io_num = -1,
+        };
+
+        // 针对 OTG 控制器（Host 模式）的外部 PHY 配置与初始化
+        const usb_phy_config_t phy_config = {
+            .controller = USB_PHY_CTRL_OTG,
+            .target = USB_PHY_TARGET_EXT,
+            .otg_mode = USB_OTG_MODE_HOST,
+            .otg_speed = USB_PHY_SPEED_FULL,
+            .ext_io_conf = &ext_io_conf
+        };
+
+        usb_phy_handle_t phy_hdl;
+        ESP_ERROR_CHECK(usb_new_phy(&phy_config, &phy_hdl));
+
+        // 配置 USB 主机使用外部初始化的 PHY
+        usb_host_config_t host_config = {
+            .skip_phy_setup = true,
+            // 根据需求添加其他 host 配置字段
+        };
+        ESP_ERROR_CHECK(usb_host_install(&host_config));
+
+    该配置确保 USB 主机协议栈使用 **外部 PHY**，并跳过 PHY 初始化步骤。
 
 主机栈配置
 ----------
@@ -439,10 +510,10 @@ USB 设备可能是热插拔的，因此必须配置电源开关和设备连接�
 
 可通过 Menuconfig 选项设置 USB 主机栈的可配置参数。
 
-* :ref:`CONFIG_USB_HOST_DEBOUNCE_DELAY_MS` 用于配置防抖延迟。
-* :ref:`CONFIG_USB_HOST_RESET_HOLD_MS` 用于配置重置保持时间。
-* :ref:`CONFIG_USB_HOST_RESET_RECOVERY_MS` 用于配置重置恢复时间。
-* :ref:`CONFIG_USB_HOST_SET_ADDR_RECOVERY_MS` 用于配置 ``SetAddress()`` 恢复时间。
+* `CONFIG_USB_HOST_DEBOUNCE_DELAY_MS` 用于配置防抖延迟。
+* `CONFIG_USB_HOST_RESET_HOLD_MS` 用于配置重置保持时间。
+* `CONFIG_USB_HOST_RESET_RECOVERY_MS` 用于配置重置恢复时间。
+* `CONFIG_USB_HOST_SET_ADDR_RECOVERY_MS` 用于配置 ``SetAddress()`` 恢复时间。
 
 下游端口配置
 ^^^^^^^^^^^^
@@ -457,21 +528,21 @@ USB 设备可能是热插拔的，因此必须配置电源开关和设备连接�
 
 可以通过 Menuconfig 配置下游端口的可配置参数。
 
-* 对于在端口上电后稳定电源的自定义值（PwrOn2PwrGood 值），请参阅 :ref:`CONFIG_USB_HOST_EXT_PORT_CUSTOM_POWER_ON_DELAY_MS`。
-* 对于复位恢复间隔，请参阅 :ref:`CONFIG_USB_HOST_EXT_PORT_RESET_RECOVERY_DELAY_MS`。
+* 对于在端口上电后稳定电源的自定义值（PwrOn2PwrGood 值），请参阅 `CONFIG_USB_HOST_EXT_PORT_CUSTOM_POWER_ON_DELAY_MS`。
+* 对于复位恢复间隔，请参阅 `CONFIG_USB_HOST_EXT_PORT_RESET_RECOVERY_DELAY_MS`。
 
 .. note::
 
-    规范规定，对于没有电源开关的 Hub，PwrOn2PwrGood 必须设置为零。同时，对于某些设备，可以增加此值以提供额外的上电时间。如需启用此功能，请参考 :ref:`CONFIG_USB_HOST_EXT_PORT_CUSTOM_POWER_ON_DELAY_ENABLE`。
+    规范规定，对于没有电源开关的 Hub，PwrOn2PwrGood 必须设置为零。同时，对于某些设备，可以增加此值以提供额外的上电时间。如需启用此功能，请参考 `CONFIG_USB_HOST_EXT_PORT_CUSTOM_POWER_ON_DELAY_ENABLE`。
 
 主机通道
 """""""""""""
 
-当启用外部 Hub 支持功能（:ref:`CONFIG_USB_HOST_HUBS_SUPPORTED`）时，主机通道的数量非常重要，因为每个下游设备都需要空闲通道。
+当启用外部 Hub 支持功能（`CONFIG_USB_HOST_HUBS_SUPPORTED`）时，主机通道的数量非常重要，因为每个下游设备都需要空闲通道。
 
 每个连接的设备需要不同数量的通道，而所需通道数则取决于设备类别（EP 数量）。
 
-对于 {IDF_TARGET_NAME}，支持的通道数量为 {OTG_NUM_HOST_CHAN}。
+对于 {IDF_TARGET_NAME}，支持的通道数量为 {IDF_TARGET_OTG_NUM_HOST_CHAN}。
 
 .. note::
 
@@ -495,28 +566,7 @@ USB 设备可能是热插拔的，因此必须配置电源开关和设备连接�
 * 选择 USB 设备的配置。
 * 过滤应该进行枚举的 USB 设备。
 
-在 menuconfig 中启用 :ref:`CONFIG_USB_HOST_ENABLE_ENUM_FILTER_CALLBACK` 选项即可启用枚举过滤器。可以通过设置 :cpp:member:`usb_host_config_t::enum_filter_cb` 来指定回调函数，该函数会在调用 :cpp:func:`usb_host_install` 时传递至主机库。
-
-.. -------------------------------------------------- API Reference ----------------------------------------------------
-
-API 参考
--------------
-
-USB 主机库的 API 包含以下头文件，但应用程序调用该 API 时只需 ``#include "usb/usb_host.h"``，该头文件包含了所有 USB 主机库的头文件。
-
-- :component_file:`usb/include/usb/usb_host.h` 包含 USB 主机库的函数和类型。
-- :component_file:`usb/include/usb/usb_helpers.h` 包含与 USB 协议相关的各种辅助函数，如描述符解析等。
-- :component_file:`usb/include/usb/usb_types_stack.h` 包含在 USB 主机栈的多个层次中使用的类型。
-- :component_file:`usb/include/usb/usb_types_ch9.h` 包含了与 USB 2.0 规范中第 9 章相关的类型和宏，即描述符和标准请求。
-
-
-.. include-build-file:: inc/usb_host.inc
-
-.. include-build-file:: inc/usb_helpers.inc
-
-.. include-build-file:: inc/usb_types_stack.inc
-
-.. include-build-file:: inc/usb_types_ch9.inc
+在 menuconfig 中启用 `CONFIG_USB_HOST_ENABLE_ENUM_FILTER_CALLBACK` 选项即可启用枚举过滤器。可以通过设置 :cpp:member:`usb_host_config_t::enum_filter_cb` 来指定回调函数，该函数会在调用 :cpp:func:`usb_host_install` 时传递至主机库。
 
 .. ------------------------------------------------ Maintainers Notes --------------------------------------------------
 

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -100,9 +100,11 @@ static IRAM_ATTR void esp_aes_complete_isr(void *arg)
         portYIELD_FROM_ISR();
     }
 }
+#endif
 
 void esp_aes_intr_alloc(void)
 {
+#if !ESP_TEE_BUILD
     if (op_complete_sem == NULL) {
         const int isr_flags = esp_intr_level_to_flags(CONFIG_MBEDTLS_AES_INTERRUPT_LEVEL);
 
@@ -120,8 +122,14 @@ void esp_aes_intr_alloc(void)
         // Static semaphore creation is unlikely to fail but still basic sanity
         assert(op_complete_sem != NULL);
     }
-}
+#else
+    // NOTE: Need to extern since the mbedtls component does not depend on
+    // the esp_tee (main) component
+    extern void esp_tee_aes_intr_alloc(void);
+    esp_tee_aes_intr_alloc();
 #endif
+}
+
 
 static esp_err_t esp_aes_isr_initialise( void )
 {

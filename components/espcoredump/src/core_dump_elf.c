@@ -1,13 +1,14 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include "sdkconfig.h"
+
 #include <string.h>
 #include "esp_attr.h"
 #include "esp_partition.h"
 #include "esp_flash_encrypt.h"
-#include "sdkconfig.h"
 #include "core_dump_checksum.h"
 #include "esp_core_dump_port.h"
 #include "esp_core_dump_port_impl.h"
@@ -15,11 +16,9 @@
 #include "hal/efuse_hal.h"
 #include "esp_task_wdt.h"
 
-#ifdef CONFIG_ESP_COREDUMP_DATA_FORMAT_ELF
 #include <sys/param.h>      // for the MIN macro
 #include "esp_app_desc.h"
 #include "esp_memory_utils.h"
-#endif
 
 #define ELF_CLASS ELFCLASS32
 
@@ -81,11 +80,6 @@ typedef struct _core_dump_elf_t {
     uint16_t                        segs_count;
     core_dump_write_data_t          write_data;
     uint32_t                        note_data_size; /* can be used where static storage needed */
-#if CONFIG_ESP_COREDUMP_CAPTURE_DRAM
-    /* To avoid checksum failure, coredump stack region will be excluded while storing the sections. */
-    uint32_t                        coredump_stack_start;
-    uint32_t                        coredump_stack_size;
-#endif
 } core_dump_elf_t;
 
 typedef struct {
@@ -96,14 +90,10 @@ typedef struct {
 
 // Represents lightweight implementation to save core dump data into ELF formatted binary
 
-#if CONFIG_ESP_COREDUMP_DATA_FORMAT_ELF
-
 #ifdef ALIGN_UP
 #undef ALIGN_UP
 #endif
 #define ALIGN_UP(x, a) (((x) + (a) - 1) & ~((a) - 1))
-
-esp_err_t esp_core_dump_store(void) __attribute__((alias("esp_core_dump_write_elf")));
 
 // Builds elf header and check all data offsets
 static int elf_write_file_header(core_dump_elf_t *self, uint32_t seg_count)
@@ -201,15 +191,28 @@ static int elf_add_segment(core_dump_elf_t *self,
     return data_len;
 }
 
-static int elf_write_note_header(core_dump_elf_t *self,
-                                 const char* name, uint32_t name_len, uint32_t data_sz, uint32_t type)
+/*
+ *   Example Note Segment
+ *   +================================================================+
+ *   | Offset |  +0   |  +1   |  +2   |  +3   | Description           |
+ *   +----------------------------------------------------------------+
+ *   |   0    | 0x05  | 0x00  | 0x00  | 0x00  | namesz = 5            |
+ *   |   4    | 0x06  | 0x00  | 0x00  | 0x00  | descsz = 6            |
+ *   |   8    | 0x01  | 0x00  | 0x00  | 0x00  | type = 1              |
+ *   |  12    | 'C'   | 'O'   | 'R'   | 'E'   | name ("CORE")         |
+ *   |  16    | 0x00  | pad   | pad   | pad   | NULL + padding        |
+ *   |  20    | 0x1   | 0x2   | 0x3   | 0x4   | desc (6 bytes)        |
+ *   |  24    | 0x5   | 0x6   | pad   | pad   | desc + padding        |
+ *   +================================================================+
+*/
+static int elf_write_note_header(core_dump_elf_t *self, const char* name, uint32_t data_sz, uint32_t type)
 {
     // temporary aligned buffer for note name
     static char name_buffer[ELF_NOTE_NAME_MAX_SIZE] = { 0 };
     elf_note note_hdr = { 0 };
 
-    memcpy(name_buffer, name, name_len);
-    note_hdr.n_namesz = ALIGN_UP(name_len, 4);
+    size_t name_len = strlcpy(name_buffer, name, sizeof(name_buffer));
+    note_hdr.n_namesz = name_len + 1; /* name_buffer must be null terminated */
     note_hdr.n_descsz = data_sz;
     note_hdr.n_type = type;
     // write note header
@@ -217,7 +220,7 @@ static int elf_write_note_header(core_dump_elf_t *self,
     ELF_CHECK_ERR((err == ESP_OK), ELF_PROC_ERR_WRITE_FAIL,
                   "Write ELF note header failure (%d)", err);
     // write note name
-    err = esp_core_dump_write_data(&self->write_data, name_buffer, note_hdr.n_namesz);
+    err = esp_core_dump_write_data(&self->write_data, name_buffer, ALIGN_UP(note_hdr.n_namesz, 4));
     ELF_CHECK_ERR((err == ESP_OK), ELF_PROC_ERR_WRITE_FAIL,
                   "Write ELF note name failure (%d)", err);
 
@@ -231,18 +234,17 @@ static int elf_write_note(core_dump_elf_t *self,
                           uint32_t data_sz)
 {
     esp_err_t err = ESP_FAIL;
-    uint32_t name_len = ALIGN_UP(strlen(name) + 1, 4); // get name length including terminator
-    uint32_t data_len = ALIGN_UP(data_sz, 4);
+    uint32_t name_len = strlen(name) + 1; // get name length including terminator
 
     ELF_CHECK_ERR((name_len <= ELF_NOTE_NAME_MAX_SIZE), 0,
                   "Segment note name is too long %d.", name_len);
 
-    uint32_t note_size = ALIGN_UP(name_len + data_len + sizeof(elf_note), 4);
+    uint32_t note_size = ALIGN_UP(name_len, 4) + ALIGN_UP(data_sz, 4) + sizeof(elf_note);
 
     // write segment data during second pass
     if (self->elf_stage == ELF_STAGE_PLACE_DATA) {
         ELF_CHECK_ERR(data, ELF_PROC_ERR_OTHER, "Invalid data pointer %x.", (uint32_t)data);
-        err = elf_write_note_header(self, name, name_len, data_sz, type);
+        err = elf_write_note_header(self, name, data_sz, type);
         if (err != ESP_OK) {
             return err;
         }
@@ -251,8 +253,8 @@ static int elf_write_note(core_dump_elf_t *self,
         // which might not be aligned by default. Therefore, we need to verify alignment and add padding if necessary.
         err = esp_core_dump_write_data(&self->write_data, data, data_sz);
         if (err == ESP_OK) {
-            int pad_size = data_len - data_sz;
-            if (pad_size != 0) {
+            const int pad_size = ALIGN_UP(data_sz, 4) - data_sz;
+            if (pad_size > 0) {
                 uint8_t pad_bytes[3] = {0};
                 ESP_COREDUMP_LOG_PROCESS("Core dump note data needs %d bytes padding", pad_size);
                 err = esp_core_dump_write_data(&self->write_data, pad_bytes, pad_size);
@@ -405,6 +407,7 @@ static int elf_process_tasks_regs(core_dump_elf_t *self)
     void *task = NULL;
     int len = 0;
     int ret = 0;
+    uint16_t tasks_num = 0;
 
     esp_core_dump_reset_tasks_snapshots_iter();
     task = esp_core_dump_get_current_task_handle();
@@ -418,6 +421,7 @@ static int elf_process_tasks_regs(core_dump_elf_t *self)
             ELF_CHECK_ERR((ret > 0), ret, "Task %x, PR_STATUS write failed, return (%d).", task, ret);
         }
         len += ret;
+        tasks_num++;
     }
     // processes PR_STATUS and register dump for each task
     // each call to the processing function appends PR_STATUS note into note segment
@@ -428,6 +432,11 @@ static int elf_process_tasks_regs(core_dump_elf_t *self)
         if (!task || task == esp_core_dump_get_current_task_handle()) { // skip current task (already processed)
             continue;
         }
+        if (tasks_num > CONFIG_ESP_COREDUMP_MAX_TASKS_NUM) {
+            ESP_COREDUMP_LOG_PROCESS("Reached maximum number of tasks (%d), stopping task register processing",
+                                     CONFIG_ESP_COREDUMP_MAX_TASKS_NUM);
+            break;
+        }
         if (esp_core_dump_get_task_snapshot(task, &task_hdr, NULL)) {
             ret = elf_add_regs(self,  &task_hdr);
             if (self->elf_stage == ELF_STAGE_PLACE_HEADERS) {
@@ -437,6 +446,7 @@ static int elf_process_tasks_regs(core_dump_elf_t *self)
                 ELF_CHECK_ERR((ret > 0), ret, "Task %x, PR_STATUS write failed, return (%d).", task, ret);
             }
             len += ret;
+            tasks_num++;
         }
     }
     ret = elf_process_note_segment(self, len); // tasks regs note
@@ -460,6 +470,28 @@ static int elf_save_task(core_dump_elf_t *self, core_dump_task_header_t *task)
     return elf_len;
 }
 
+static int elf_save_interrupted_stack(core_dump_elf_t *self, core_dump_mem_seg_header_t *interrupted_stack)
+{
+    int ret = 0;
+#if !CONFIG_ESP_COREDUMP_CAPTURE_DRAM
+    /*  interrupt stacks:
+        - 'port_IntStack' is in the data section for xtensa
+        - 'xIsrStack' is in the bss section for risc-v
+        When DRAM capture is enabled, interrupt stack saving can be done during the full section store
+    */
+    if (interrupted_stack->size > 0) {
+        ESP_COREDUMP_LOG_PROCESS("Add interrupted task stack %lu bytes @ %x",
+                                 interrupted_stack->size, interrupted_stack->start);
+        ret = elf_add_segment(self, PT_LOAD,
+                              (uint32_t)interrupted_stack->start,
+                              (void*)interrupted_stack->start,
+                              (uint32_t)interrupted_stack->size);
+        ELF_CHECK_ERR((ret > 0), ret, "Interrupted task stack write failed, return (%d).", ret);
+    }
+#endif
+    return ret;
+}
+
 static int elf_process_task_data(core_dump_elf_t *self)
 {
     int elf_len = 0;
@@ -470,13 +502,37 @@ static int elf_process_task_data(core_dump_elf_t *self)
     uint16_t bad_tasks_num = 0;
 
     ESP_COREDUMP_LOG_PROCESS("================   Processing task data   ================");
-    // processes all task's stack data and writes segment data into partition
-    // if flash configuration is set
+
+    // first write crashed task data
     esp_core_dump_reset_tasks_snapshots_iter();
+    void *current_task = esp_core_dump_get_current_task_handle();
+    if (esp_core_dump_get_task_snapshot(current_task, &task_hdr, &interrupted_stack)) {
+        int ret = elf_save_task(self, &task_hdr);
+        ELF_CHECK_ERR((ret > 0), ret,
+                      "Task %x, TCB write failed, return (%d).", current_task, ret);
+        elf_len += ret;
+
+        // Handle interrupted stack (only relevant for current task)
+        ret = elf_save_interrupted_stack(self, &interrupted_stack);
+        if (ret > 0) {
+            elf_len += ret;
+        }
+        tasks_num++;
+    }
+
     esp_core_dump_task_iterator_init(&task_iter);
     while (esp_core_dump_task_iterator_next(&task_iter) != -1) {
+        // Skip the current task (already processed above)
+        if (!task_iter.pxTaskHandle || task_iter.pxTaskHandle == current_task) {
+            continue;
+        }
+        if (tasks_num > CONFIG_ESP_COREDUMP_MAX_TASKS_NUM) {
+            ESP_COREDUMP_LOG_PROCESS("Reached maximum number of tasks (%d), stopping task data processing",
+                                     CONFIG_ESP_COREDUMP_MAX_TASKS_NUM);
+            break;
+        }
         tasks_num++;
-        if (!esp_core_dump_get_task_snapshot(task_iter.pxTaskHandle, &task_hdr, &interrupted_stack)) {
+        if (!esp_core_dump_get_task_snapshot(task_iter.pxTaskHandle, &task_hdr, NULL)) {
             bad_tasks_num++;
             continue;
         }
@@ -484,23 +540,6 @@ static int elf_process_task_data(core_dump_elf_t *self)
         ELF_CHECK_ERR((ret > 0), ret,
                       "Task %x, TCB write failed, return (%d).", task_iter.pxTaskHandle, ret);
         elf_len += ret;
-        /*  interrupt stacks:
-            - 'port_IntStack' is in the data section for xtensa
-            - 'xIsrStack' is in the bss section for risc-v
-            When DRAM capture is enabled, interrupt stack saving can be done during the full section store
-        */
-#if !CONFIG_ESP_COREDUMP_CAPTURE_DRAM
-        if (interrupted_stack.size > 0) {
-            ESP_COREDUMP_LOG_PROCESS("Add interrupted task stack %lu bytes @ %x",
-                                     interrupted_stack.size, interrupted_stack.start);
-            ret = elf_add_segment(self, PT_LOAD,
-                                  (uint32_t)interrupted_stack.start,
-                                  (void*)interrupted_stack.start,
-                                  (uint32_t)interrupted_stack.size);
-            ELF_CHECK_ERR((ret > 0), ret, "Interrupted task stack write failed, return (%d).", ret);
-            elf_len += ret;
-        }
-#endif
     }
     ESP_COREDUMP_LOG_PROCESS("Found %d bad task out of %d", bad_tasks_num, tasks_num);
 
@@ -523,61 +562,6 @@ static int elf_write_tasks_data(core_dump_elf_t *self)
 }
 
 #if CONFIG_ESP_COREDUMP_CAPTURE_DRAM
-
-/* Coredump stack will also be used by the checksum functions while saving sections.
- * There is a potential for inconsistency when writing coredump stack to the flash and calculating checksum simultaneously.
- * This is because, coredump stack will be modified during the process, leading to incorrect checksum calculations.
- * To mitigate this issue, it's important to ensure that the coredump stack excluded from checksum calculation by
- * filter out from the written regions.
- * Typically, the coredump stack can be located in two different sections.
- * 1. In the bss section;
- *    1.a if `CONFIG_ESP_COREDUMP_STACK_SIZE` set to a nonzero value
- *    1.b if the crashed task is created with a static task buffer using the xTaskCreateStatic() api
- * 2. In the heap section, if custom stack is not defined and the crashed task buffer is allocated in the heap
- * with the xTaskCreate() api
- *
- * esp_core_dump_store_section() will check if the coredump stack is located inside the section.
- * If it is, this part will be skipped.
- * |+++++++++| xxxxxxxxxxxxxx |++++++++|
- * |+++++++++| coredump stack |++++++++|
-*/
-static int esp_core_dump_store_section(core_dump_elf_t *self, uint32_t start, uint32_t data_len)
-{
-    uint32_t end = start + data_len;
-    int total_sz = 0;
-    int ret;
-
-    if (self->coredump_stack_start > start && self->coredump_stack_start < end) {
-        /* write until the coredump stack. */
-        data_len = self->coredump_stack_start - start;
-        ret = elf_add_segment(self, PT_LOAD,
-                              start,
-                              (void*)start,
-                              data_len);
-
-        if (ret <= 0) {
-            return ret;
-        }
-        total_sz += ret;
-
-        /* Skip coredump stack and set offset for the rest of the section */
-        start = self->coredump_stack_start + self->coredump_stack_size;
-        data_len = end - start;
-    }
-
-    if (data_len > 0) {
-        ret = elf_add_segment(self, PT_LOAD,
-                              (uint32_t)start,
-                              (void*)start,
-                              (uint32_t)data_len);
-        if (ret <= 0) {
-            return ret;
-        }
-        total_sz += ret;
-    }
-
-    return total_sz;
-}
 
 typedef struct {
     core_dump_elf_t *self;
@@ -611,11 +595,6 @@ bool esp_core_dump_write_heap_blocks(walker_heap_into_t heap_info, walker_block_
             return false;
         }
 
-        if (self->coredump_stack_start == (uint32_t)block_info.ptr) {
-            /* skip writing coredump stack block */
-            return true;
-        }
-
         *ret = elf_add_segment(self, PT_LOAD,
                                (uint32_t)block_info.ptr,
                                (void*)block_info.ptr,
@@ -629,7 +608,7 @@ bool esp_core_dump_write_heap_blocks(walker_heap_into_t heap_info, walker_block_
     return true;
 }
 
-#else
+#endif
 
 static int esp_core_dump_store_section(core_dump_elf_t *self, uint32_t start, uint32_t data_len)
 {
@@ -638,8 +617,6 @@ static int esp_core_dump_store_section(core_dump_elf_t *self, uint32_t start, ui
                            (void*)start,
                            data_len);
 }
-
-#endif
 
 static int elf_write_core_dump_user_data(core_dump_elf_t *self)
 {
@@ -688,7 +665,7 @@ static void elf_write_core_dump_note_cb(void *opaque, const char *data)
 
 static int elf_add_wdt_panic_details(core_dump_elf_t *self)
 {
-    uint32_t name_len = sizeof(ELF_ESP_CORE_DUMP_PANIC_DETAILS_NOTE_NAME);
+    uint32_t name_len = sizeof(ELF_ESP_CORE_DUMP_PANIC_DETAILS_NOTE_NAME); /* len includes the null terminator */
     core_dump_elf_opaque_t param = {
         .self = self,
         .total_size = 0,
@@ -703,7 +680,6 @@ static int elf_add_wdt_panic_details(core_dump_elf_t *self)
     } else if (self->elf_stage == ELF_STAGE_PLACE_DATA) {
         esp_err_t err = elf_write_note_header(self,
                                               ELF_ESP_CORE_DUMP_PANIC_DETAILS_NOTE_NAME,
-                                              name_len,
                                               self->note_data_size,
                                               ELF_ESP_CORE_DUMP_PANIC_DETAILS_TYPE);
         if (err != ESP_OK) {
@@ -712,17 +688,16 @@ static int elf_add_wdt_panic_details(core_dump_elf_t *self)
 
         esp_task_wdt_print_triggered_tasks(elf_write_core_dump_note_cb, &param, NULL);
         ELF_CHECK_ERR((param.total_size > 0), ELF_PROC_ERR_WRITE_FAIL, "Write ELF note data failure (%d)", err);
-        const uint32_t mod = self->note_data_size & 3;
-        if (mod != 0) {
+        const int pad_size = ALIGN_UP(self->note_data_size, 4) - self->note_data_size;
+        if (pad_size > 0) {
             uint8_t pad_bytes[3] = {0};
-            uint32_t pad_size = 4 - mod;
             ESP_COREDUMP_LOG_PROCESS("Core dump note needs %d bytes padding", pad_size);
             err = esp_core_dump_write_data(&self->write_data, pad_bytes, pad_size);
             ELF_CHECK_ERR((err == ESP_OK), ELF_PROC_ERR_WRITE_FAIL, "Write ELF note padding failure (%d)", err);
         }
     }
 
-    return ALIGN_UP(ALIGN_UP(name_len, 4) + ALIGN_UP(self->note_data_size, 4) + sizeof(elf_note), 4);
+    return ALIGN_UP(name_len, 4) + ALIGN_UP(self->note_data_size, 4) + sizeof(elf_note);
 }
 #endif //CONFIG_ESP_TASK_WDT_EN
 
@@ -818,18 +793,12 @@ static int esp_core_dump_do_write_elf_pass(core_dump_elf_t *self)
     return tot_len;
 }
 
-static esp_err_t esp_core_dump_write_elf(void)
+esp_err_t esp_core_dump_write_elf(void)
 {
     core_dump_elf_t self = { 0 };
     core_dump_header_t dump_hdr = { 0 };
     int tot_len = sizeof(dump_hdr);
     int write_len = sizeof(dump_hdr);
-
-#if CONFIG_ESP_COREDUMP_CAPTURE_DRAM
-    esp_core_dump_get_own_stack_info(&self.coredump_stack_start, &self.coredump_stack_size);
-    ESP_COREDUMP_LOG_PROCESS("Core dump stack start=%p size = %d",
-                             (void *)self.coredump_stack_start, self.coredump_stack_size);
-#endif
 
     esp_err_t err = esp_core_dump_write_init();
     if (err != ESP_OK) {
@@ -865,9 +834,6 @@ static esp_err_t esp_core_dump_write_elf(void)
     // Write core dump header
     dump_hdr.data_len = tot_len;
     dump_hdr.version = esp_core_dump_elf_version();
-    dump_hdr.tasks_num = 0; // unused in ELF format
-    dump_hdr.tcb_sz = 0; // unused in ELF format
-    dump_hdr.mem_segs_num = 0; // unused in ELF format
     dump_hdr.chip_rev = efuse_hal_chip_revision();
     err = esp_core_dump_write_data(&self.write_data, &dump_hdr, sizeof(core_dump_header_t));
     if (err != ESP_OK) {
@@ -1001,14 +967,14 @@ static void esp_core_dump_parse_note_section(uint8_t *coredump_data, elf_note_co
                 for (size_t idx = 0; idx < size; ++idx) {
                     if (target_notes[idx].n_type == note->n_type) {
                         char *nm = (char *)&note[1];
-                        target_notes[idx].n_ptr = nm + note->n_namesz;
+                        target_notes[idx].n_ptr = nm + ALIGN_UP(note->n_namesz, 4);
                         target_notes[idx].n_descsz = note->n_descsz;
                         ESP_COREDUMP_LOGD("%d bytes target note (%X) found in the note section",
                                           note->n_descsz, note->n_type);
                         break;
                     }
                 }
-                consumed_note_sz += ALIGN_UP(note->n_namesz + note->n_descsz + sizeof(elf_note), 4);
+                consumed_note_sz += ALIGN_UP(note->n_namesz, 4) + ALIGN_UP(note->n_descsz, 4) + sizeof(elf_note);
             }
         }
     }
@@ -1093,5 +1059,3 @@ esp_err_t esp_core_dump_get_summary(esp_core_dump_summary_t *summary)
 }
 
 #endif // CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH
-
-#endif //CONFIG_ESP_COREDUMP_DATA_FORMAT_ELF

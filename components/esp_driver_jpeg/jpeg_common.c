@@ -95,9 +95,11 @@ esp_err_t jpeg_release_codec_handle(jpeg_codec_handle_t jpeg_codec)
                 vSemaphoreDeleteWithCaps(jpeg_codec->codec_mutex);
                 jpeg_codec->codec_mutex = NULL;
             }
+#if CONFIG_PM_ENABLE
             if (jpeg_codec->pm_lock) {
                 esp_pm_lock_delete(jpeg_codec->pm_lock);
             }
+#endif
             PERIPH_RCC_ATOMIC() {
                 jpeg_ll_enable_bus_clock(false);
             }

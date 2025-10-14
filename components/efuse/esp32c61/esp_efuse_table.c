@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,7 +9,7 @@
 #include <assert.h>
 #include "esp_efuse_table.h"
 
-// md5_digest_table af9aaa79feb0970d90f35360a5113f03
+// md5_digest_table 0edc6a5b20a41c88fdc0cf51a810c53e
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -231,6 +231,34 @@ static const esp_efuse_desc_t WR_DIS_SYS_DATA_PART1[] = {
     {EFUSE_BLK0, 21, 1}, 	 // [] wr_dis of BLOCK2,
 };
 
+static const esp_efuse_desc_t WR_DIS_ACTIVE_HP_DBIAS[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of ACTIVE_HP_DBIAS,
+};
+
+static const esp_efuse_desc_t WR_DIS_ACTIVE_LP_DBIAS[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of ACTIVE_LP_DBIAS,
+};
+
+static const esp_efuse_desc_t WR_DIS_LSLP_HP_DBG[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of LSLP_HP_DBG,
+};
+
+static const esp_efuse_desc_t WR_DIS_LSLP_HP_DBIAS[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of LSLP_HP_DBIAS,
+};
+
+static const esp_efuse_desc_t WR_DIS_DSLP_LP_DBG[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of DSLP_LP_DBG,
+};
+
+static const esp_efuse_desc_t WR_DIS_DSLP_LP_DBIAS[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of DSLP_LP_DBIAS,
+};
+
+static const esp_efuse_desc_t WR_DIS_LP_HP_DBIAS_VOL_GAP[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of LP_HP_DBIAS_VOL_GAP,
+};
+
 static const esp_efuse_desc_t WR_DIS_OPTIONAL_UNIQUE_ID[] = {
     {EFUSE_BLK0, 21, 1}, 	 // [] wr_dis of OPTIONAL_UNIQUE_ID,
 };
@@ -368,43 +396,43 @@ static const esp_efuse_desc_t RD_DIS_BLOCK_SYS_DATA2[] = {
 };
 
 static const esp_efuse_desc_t DIS_ICACHE[] = {
-    {EFUSE_BLK0, 39, 1}, 	 // [] Represents whether icache is disabled or enabled.\\ 1: disabled\\ 0: enabled,
+    {EFUSE_BLK0, 39, 1}, 	 // [] Represents whether cache is disabled. 1: Disabled 0: Enabled.,
 };
 
 static const esp_efuse_desc_t DIS_USB_JTAG[] = {
-    {EFUSE_BLK0, 40, 1}, 	 // [] Represents whether the function of usb switch to jtag is disabled or enabled.\\ 1: disabled\\ 0: enabled,
+    {EFUSE_BLK0, 40, 1}, 	 // [] Represents whether the function of usb switch to jtag is disabled or enabled. 1: disabled 0: enabled,
 };
 
 static const esp_efuse_desc_t DIS_FORCE_DOWNLOAD[] = {
-    {EFUSE_BLK0, 42, 1}, 	 // [] Represents whether the function that forces chip into download mode is disabled or enabled.\\ 1: disabled\\ 0: enabled,
+    {EFUSE_BLK0, 42, 1}, 	 // [] Represents whether the function that forces chip into download mode is disabled or enabled. 1: disabled 0: enabled,
 };
 
 static const esp_efuse_desc_t SPI_DOWNLOAD_MSPI_DIS[] = {
-    {EFUSE_BLK0, 43, 1}, 	 // [] Represents whether SPI0 controller during boot_mode_download is disabled or enabled.\\ 1: disabled\\ 0: enabled,
+    {EFUSE_BLK0, 43, 1}, 	 // [] Represents whether SPI0 controller during boot_mode_download is disabled or enabled. 1: disabled 0: enabled,
 };
 
 static const esp_efuse_desc_t JTAG_SEL_ENABLE[] = {
-    {EFUSE_BLK0, 44, 1}, 	 // [] Represents whether the selection between usb_to_jtag and pad_to_jtag through strapping gpio15 when both EFUSE_DIS_PAD_JTAG and EFUSE_DIS_USB_JTAG are equal to 0 is enabled or disabled.\\ 1: enabled\\ 0: disabled,
+    {EFUSE_BLK0, 44, 1}, 	 // [] Represents whether the selection between usb_to_jtag and pad_to_jtag through strapping gpio15 when both EFUSE_DIS_PAD_JTAG and EFUSE_DIS_USB_JTAG are equal to 0 is enabled or disabled. 1: enabled 0: disabled,
 };
 
 static const esp_efuse_desc_t DIS_PAD_JTAG[] = {
-    {EFUSE_BLK0, 45, 1}, 	 // [] Represents whether JTAG is disabled in the hard way(permanently).\\ 1: disabled\\ 0: enabled,
+    {EFUSE_BLK0, 45, 1}, 	 // [] Represents whether JTAG is disabled in the hard way(permanently). 1: disabled 0: enabled,
 };
 
 static const esp_efuse_desc_t DIS_DOWNLOAD_MANUAL_ENCRYPT[] = {
-    {EFUSE_BLK0, 46, 1}, 	 // [] Represents whether flash encrypt function is disabled or enabled(except in SPI boot mode).\\ 1: disabled\\ 0: enabled,
+    {EFUSE_BLK0, 46, 1}, 	 // [] Represents whether flash encrypt function is disabled or enabled(except in SPI boot mode). 1: disabled 0: enabled,
 };
 
 static const esp_efuse_desc_t USB_EXCHG_PINS[] = {
-    {EFUSE_BLK0, 51, 1}, 	 // [] Represents whether the D+ and D- pins is exchanged.\\ 1: exchanged\\ 0: not exchanged,
+    {EFUSE_BLK0, 51, 1}, 	 // [] Represents whether the D+ and D- pins of USB_SERIAL_JTAG PHY is exchanged. 1: exchanged 0: not exchanged,
 };
 
 static const esp_efuse_desc_t VDD_SPI_AS_GPIO[] = {
-    {EFUSE_BLK0, 52, 1}, 	 // [] Represents whether vdd spi pin is functioned as gpio.\\ 1: functioned\\ 0: not functioned,
+    {EFUSE_BLK0, 52, 1}, 	 // [] Represents whether vdd spi pin is functioned as gpio. 1: functioned 0: not functioned,
 };
 
 static const esp_efuse_desc_t WDT_DELAY_SEL[] = {
-    {EFUSE_BLK0, 53, 2}, 	 // [] Represents the threshold level of the RTC watchdog STG0 timeout.\\ 0: Original threshold configuration value of STG0 *2 \\1: Original threshold configuration value of STG0 *4 \\2: Original threshold configuration value of STG0 *8 \\3: Original threshold configuration value of STG0 *16,
+    {EFUSE_BLK0, 53, 2}, 	 // [] lp wdt timeout threshold at startup = initial timeout value * (2 ^ (EFUSE_WDT_DELAY_SEL + 1)),
 };
 
 static const esp_efuse_desc_t SPI_BOOT_CRYPT_CNT[] = {
@@ -452,11 +480,11 @@ static const esp_efuse_desc_t SEC_DPA_LEVEL[] = {
 };
 
 static const esp_efuse_desc_t SECURE_BOOT_EN[] = {
-    {EFUSE_BLK0, 90, 1}, 	 // [] Represents whether secure boot is enabled or disabled.\\ 1: enabled\\ 0: disabled,
+    {EFUSE_BLK0, 90, 1}, 	 // [] Represents whether secure boot is enabled or disabled. 1. Enable 0: Disable,
 };
 
 static const esp_efuse_desc_t SECURE_BOOT_AGGRESSIVE_REVOKE[] = {
-    {EFUSE_BLK0, 91, 1}, 	 // [] Represents whether revoking aggressive secure boot is enabled or disabled.\\ 1: enabled.\\ 0: disabled,
+    {EFUSE_BLK0, 91, 1}, 	 // [] Represents whether revoking aggressive secure boot is enabled or disabled. 1. Enable 0: Disable,
 };
 
 static const esp_efuse_desc_t FLASH_TPUW[] = {
@@ -464,23 +492,23 @@ static const esp_efuse_desc_t FLASH_TPUW[] = {
 };
 
 static const esp_efuse_desc_t DIS_DOWNLOAD_MODE[] = {
-    {EFUSE_BLK0, 96, 1}, 	 // [] Represents whether Download mode is disable or enable.\\ 1. Disable\\ 0: Enable,
+    {EFUSE_BLK0, 96, 1}, 	 // [] Represents whether Download mode is disable or enable. 1. Disable 0: Enable,
 };
 
 static const esp_efuse_desc_t DIS_DIRECT_BOOT[] = {
-    {EFUSE_BLK0, 97, 1}, 	 // [] Represents whether direct boot mode is disabled or enabled.\\ 1. Disable\\ 0: Enable,
+    {EFUSE_BLK0, 97, 1}, 	 // [] Represents whether direct boot mode is disabled or enabled. 1. Disable 0: Enable,
 };
 
 static const esp_efuse_desc_t DIS_USB_SERIAL_JTAG_ROM_PRINT[] = {
-    {EFUSE_BLK0, 98, 1}, 	 // [] Represents whether print from USB-Serial-JTAG is disabled or enabled.\\ 1. Disable\\ 0: Enable,
+    {EFUSE_BLK0, 98, 1}, 	 // [] Represents whether print from USB-Serial-JTAG is disabled or enabled. 1. Disable 0: Enable,
 };
 
 static const esp_efuse_desc_t DIS_USB_SERIAL_JTAG_DOWNLOAD_MODE[] = {
-    {EFUSE_BLK0, 99, 1}, 	 // [] Represents whether the USB-Serial-JTAG download function is disabled or enabled.\\ 1: Disable\\ 0: Enable,
+    {EFUSE_BLK0, 99, 1}, 	 // [] Represents whether the USB-Serial-JTAG download function is disabled or enabled. 1: Disable 0: Enable,
 };
 
 static const esp_efuse_desc_t ENABLE_SECURITY_DOWNLOAD[] = {
-    {EFUSE_BLK0, 100, 1}, 	 // [] Represents whether security download is enabled or disabled.\\ 1: Enable\\ 0: Disable,
+    {EFUSE_BLK0, 100, 1}, 	 // [] Represents whether security download is enabled or disabled. 1: Enable 0: Disable,
 };
 
 static const esp_efuse_desc_t UART_PRINT_CONTROL[] = {
@@ -500,27 +528,47 @@ static const esp_efuse_desc_t SECURE_BOOT_DISABLE_FAST_WAKE[] = {
 };
 
 static const esp_efuse_desc_t HYS_EN_PAD[] = {
-    {EFUSE_BLK0, 121, 1}, 	 // [] Represents whether the hysteresis function of corresponding PAD is enabled.\\ 1: enabled\\ 0:disabled,
+    {EFUSE_BLK0, 121, 1}, 	 // [] Set bits to enable hysteresis function of PAD0~27,
 };
 
 static const esp_efuse_desc_t XTS_DPA_CLK_ENABLE[] = {
-    {EFUSE_BLK0, 122, 1}, 	 // [] Represents whether anti-dpa attack clock function is enabled.\\ 1. Enable\\ 0: Disable,
+    {EFUSE_BLK0, 122, 1}, 	 // [] Represents whether xts-aes anti-dpa attack clock is enabled. 1. Enable. 0: Disable.,
 };
 
 static const esp_efuse_desc_t XTS_DPA_PSEUDO_LEVEL[] = {
-    {EFUSE_BLK0, 123, 2}, 	 // [] Represents the anti-dpa attack pseudo function level.\\ 3:High\\ 2: Moderate\\ 1: Low\\ 0: Decided by register configuration,
+    {EFUSE_BLK0, 123, 2}, 	 // [] Represents the pseudo round level of xts-aes anti-dpa attack. 3: High. 2: Moderate 1. Low 0: Disabled,
 };
 
 static const esp_efuse_desc_t DIS_WIFI6[] = {
-    {EFUSE_BLK0, 125, 1}, 	 // [] Represents whether the WiFi 6 feature is enable or disable.\\ 1: WiFi 6 is disable\\ 0: WiFi 6 is enabled.,
+    {EFUSE_BLK0, 125, 1}, 	 // [] Represents whether the WIFI6 feature is enable or disabled. 1: WIFI6 is disable; 0: WIFI6 is enabled,
 };
 
 static const esp_efuse_desc_t ECDSA_DISABLE_P192[] = {
-    {EFUSE_BLK0, 126, 1}, 	 // [] Represents whether to disable P192 curve in ECDSA.\\ 1: Disabled.\\ 0: Not disable,
+    {EFUSE_BLK0, 126, 1}, 	 // [] Represents whether to disable P192 curve in ECDSA. 1: Disabled. 0: Not disabled,
 };
 
 static const esp_efuse_desc_t ECC_FORCE_CONST_TIME[] = {
-    {EFUSE_BLK0, 127, 1}, 	 // [] Represents whether to force ecc to use const-time calculation mode. \\ 1: Enable. \\ 0: Disable,
+    {EFUSE_BLK0, 127, 1}, 	 // [] Represents whether to force ecc to use const-time calculation mode. 1: Enable. 0: Disable,
+};
+
+static const esp_efuse_desc_t BOOTLOADER_ANTI_ROLLBACK_SECURE_VERSION[] = {
+    {EFUSE_BLK0, 128, 4}, 	 // [] Represents the anti-rollback secure version of the 2nd stage bootloader used by the ROM bootloader,
+};
+
+static const esp_efuse_desc_t BOOTLOADER_ANTI_ROLLBACK_EN[] = {
+    {EFUSE_BLK0, 132, 1}, 	 // [] Represents whether the ani-rollback check for the 2nd stage bootloader is enabled.1: Enabled0: Disabled,
+};
+
+static const esp_efuse_desc_t BOOTLOADER_ANTI_ROLLBACK_UPDATE_IN_ROM[] = {
+    {EFUSE_BLK0, 133, 1}, 	 // [] Represents whether the ani-rollback SECURE_VERSION will be updated from the ROM bootloader.1: Enable0: Disable,
+};
+
+static const esp_efuse_desc_t RECOVERY_BOOTLOADER_FLASH_SECTOR[] = {
+    {EFUSE_BLK0, 134, 12}, 	 // [] Represents the starting flash sector (flash sector size is 0x1000) of the recovery bootloader used by the ROM bootloader If the primary bootloader fails. 0 and 0xFFF - this feature is disabled,
+};
+
+static const esp_efuse_desc_t REPEAT_DATA4[] = {
+    {EFUSE_BLK0, 160, 24}, 	 // [] Reserved,
 };
 
 static const esp_efuse_desc_t MAC[] = {
@@ -578,6 +626,34 @@ static const esp_efuse_desc_t TEMP[] = {
 
 static const esp_efuse_desc_t PKG_VERSION[] = {
     {EFUSE_BLK1, 90, 3}, 	 // [] Package version,
+};
+
+static const esp_efuse_desc_t ACTIVE_HP_DBIAS[] = {
+    {EFUSE_BLK1, 93, 4}, 	 // [] Active HP DBIAS of fixed voltage,
+};
+
+static const esp_efuse_desc_t ACTIVE_LP_DBIAS[] = {
+    {EFUSE_BLK1, 97, 4}, 	 // [] Active LP DBIAS of fixed voltage,
+};
+
+static const esp_efuse_desc_t LSLP_HP_DBG[] = {
+    {EFUSE_BLK1, 101, 2}, 	 // [] LSLP HP DBG of fixed voltage,
+};
+
+static const esp_efuse_desc_t LSLP_HP_DBIAS[] = {
+    {EFUSE_BLK1, 103, 4}, 	 // [] LSLP HP DBIAS of fixed voltage,
+};
+
+static const esp_efuse_desc_t DSLP_LP_DBG[] = {
+    {EFUSE_BLK1, 107, 4}, 	 // [] DSLP LP DBG of fixed voltage,
+};
+
+static const esp_efuse_desc_t DSLP_LP_DBIAS[] = {
+    {EFUSE_BLK1, 111, 5}, 	 // [] DSLP LP DBIAS of fixed voltage,
+};
+
+static const esp_efuse_desc_t LP_HP_DBIAS_VOL_GAP[] = {
+    {EFUSE_BLK1, 116, 5}, 	 // [] DBIAS gap between LP and HP,
 };
 
 static const esp_efuse_desc_t OPTIONAL_UNIQUE_ID[] = {
@@ -950,6 +1026,41 @@ const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_SYS_DATA_PART1[] = {
     NULL
 };
 
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ACTIVE_HP_DBIAS[] = {
+    &WR_DIS_ACTIVE_HP_DBIAS[0],    		// [] wr_dis of ACTIVE_HP_DBIAS
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ACTIVE_LP_DBIAS[] = {
+    &WR_DIS_ACTIVE_LP_DBIAS[0],    		// [] wr_dis of ACTIVE_LP_DBIAS
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_LSLP_HP_DBG[] = {
+    &WR_DIS_LSLP_HP_DBG[0],    		// [] wr_dis of LSLP_HP_DBG
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_LSLP_HP_DBIAS[] = {
+    &WR_DIS_LSLP_HP_DBIAS[0],    		// [] wr_dis of LSLP_HP_DBIAS
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_DSLP_LP_DBG[] = {
+    &WR_DIS_DSLP_LP_DBG[0],    		// [] wr_dis of DSLP_LP_DBG
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_DSLP_LP_DBIAS[] = {
+    &WR_DIS_DSLP_LP_DBIAS[0],    		// [] wr_dis of DSLP_LP_DBIAS
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_LP_HP_DBIAS_VOL_GAP[] = {
+    &WR_DIS_LP_HP_DBIAS_VOL_GAP[0],    		// [] wr_dis of LP_HP_DBIAS_VOL_GAP
+    NULL
+};
+
 const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_OPTIONAL_UNIQUE_ID[] = {
     &WR_DIS_OPTIONAL_UNIQUE_ID[0],    		// [] wr_dis of OPTIONAL_UNIQUE_ID
     NULL
@@ -1121,52 +1232,52 @@ const esp_efuse_desc_t* ESP_EFUSE_RD_DIS_BLOCK_SYS_DATA2[] = {
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_DIS_ICACHE[] = {
-    &DIS_ICACHE[0],    		// [] Represents whether icache is disabled or enabled.\\ 1: disabled\\ 0: enabled
+    &DIS_ICACHE[0],    		// [] Represents whether cache is disabled. 1: Disabled 0: Enabled.
     NULL
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_DIS_USB_JTAG[] = {
-    &DIS_USB_JTAG[0],    		// [] Represents whether the function of usb switch to jtag is disabled or enabled.\\ 1: disabled\\ 0: enabled
+    &DIS_USB_JTAG[0],    		// [] Represents whether the function of usb switch to jtag is disabled or enabled. 1: disabled 0: enabled
     NULL
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_DIS_FORCE_DOWNLOAD[] = {
-    &DIS_FORCE_DOWNLOAD[0],    		// [] Represents whether the function that forces chip into download mode is disabled or enabled.\\ 1: disabled\\ 0: enabled
+    &DIS_FORCE_DOWNLOAD[0],    		// [] Represents whether the function that forces chip into download mode is disabled or enabled. 1: disabled 0: enabled
     NULL
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_SPI_DOWNLOAD_MSPI_DIS[] = {
-    &SPI_DOWNLOAD_MSPI_DIS[0],    		// [] Represents whether SPI0 controller during boot_mode_download is disabled or enabled.\\ 1: disabled\\ 0: enabled
+    &SPI_DOWNLOAD_MSPI_DIS[0],    		// [] Represents whether SPI0 controller during boot_mode_download is disabled or enabled. 1: disabled 0: enabled
     NULL
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_JTAG_SEL_ENABLE[] = {
-    &JTAG_SEL_ENABLE[0],    		// [] Represents whether the selection between usb_to_jtag and pad_to_jtag through strapping gpio15 when both EFUSE_DIS_PAD_JTAG and EFUSE_DIS_USB_JTAG are equal to 0 is enabled or disabled.\\ 1: enabled\\ 0: disabled
+    &JTAG_SEL_ENABLE[0],    		// [] Represents whether the selection between usb_to_jtag and pad_to_jtag through strapping gpio15 when both EFUSE_DIS_PAD_JTAG and EFUSE_DIS_USB_JTAG are equal to 0 is enabled or disabled. 1: enabled 0: disabled
     NULL
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_DIS_PAD_JTAG[] = {
-    &DIS_PAD_JTAG[0],    		// [] Represents whether JTAG is disabled in the hard way(permanently).\\ 1: disabled\\ 0: enabled
+    &DIS_PAD_JTAG[0],    		// [] Represents whether JTAG is disabled in the hard way(permanently). 1: disabled 0: enabled
     NULL
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_DIS_DOWNLOAD_MANUAL_ENCRYPT[] = {
-    &DIS_DOWNLOAD_MANUAL_ENCRYPT[0],    		// [] Represents whether flash encrypt function is disabled or enabled(except in SPI boot mode).\\ 1: disabled\\ 0: enabled
+    &DIS_DOWNLOAD_MANUAL_ENCRYPT[0],    		// [] Represents whether flash encrypt function is disabled or enabled(except in SPI boot mode). 1: disabled 0: enabled
     NULL
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_USB_EXCHG_PINS[] = {
-    &USB_EXCHG_PINS[0],    		// [] Represents whether the D+ and D- pins is exchanged.\\ 1: exchanged\\ 0: not exchanged
+    &USB_EXCHG_PINS[0],    		// [] Represents whether the D+ and D- pins of USB_SERIAL_JTAG PHY is exchanged. 1: exchanged 0: not exchanged
     NULL
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_VDD_SPI_AS_GPIO[] = {
-    &VDD_SPI_AS_GPIO[0],    		// [] Represents whether vdd spi pin is functioned as gpio.\\ 1: functioned\\ 0: not functioned
+    &VDD_SPI_AS_GPIO[0],    		// [] Represents whether vdd spi pin is functioned as gpio. 1: functioned 0: not functioned
     NULL
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_WDT_DELAY_SEL[] = {
-    &WDT_DELAY_SEL[0],    		// [] Represents the threshold level of the RTC watchdog STG0 timeout.\\ 0: Original threshold configuration value of STG0 *2 \\1: Original threshold configuration value of STG0 *4 \\2: Original threshold configuration value of STG0 *8 \\3: Original threshold configuration value of STG0 *16
+    &WDT_DELAY_SEL[0],    		// [] lp wdt timeout threshold at startup = initial timeout value * (2 ^ (EFUSE_WDT_DELAY_SEL + 1))
     NULL
 };
 
@@ -1226,12 +1337,12 @@ const esp_efuse_desc_t* ESP_EFUSE_SEC_DPA_LEVEL[] = {
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_SECURE_BOOT_EN[] = {
-    &SECURE_BOOT_EN[0],    		// [] Represents whether secure boot is enabled or disabled.\\ 1: enabled\\ 0: disabled
+    &SECURE_BOOT_EN[0],    		// [] Represents whether secure boot is enabled or disabled. 1. Enable 0: Disable
     NULL
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_SECURE_BOOT_AGGRESSIVE_REVOKE[] = {
-    &SECURE_BOOT_AGGRESSIVE_REVOKE[0],    		// [] Represents whether revoking aggressive secure boot is enabled or disabled.\\ 1: enabled.\\ 0: disabled
+    &SECURE_BOOT_AGGRESSIVE_REVOKE[0],    		// [] Represents whether revoking aggressive secure boot is enabled or disabled. 1. Enable 0: Disable
     NULL
 };
 
@@ -1241,27 +1352,27 @@ const esp_efuse_desc_t* ESP_EFUSE_FLASH_TPUW[] = {
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_DIS_DOWNLOAD_MODE[] = {
-    &DIS_DOWNLOAD_MODE[0],    		// [] Represents whether Download mode is disable or enable.\\ 1. Disable\\ 0: Enable
+    &DIS_DOWNLOAD_MODE[0],    		// [] Represents whether Download mode is disable or enable. 1. Disable 0: Enable
     NULL
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_DIS_DIRECT_BOOT[] = {
-    &DIS_DIRECT_BOOT[0],    		// [] Represents whether direct boot mode is disabled or enabled.\\ 1. Disable\\ 0: Enable
+    &DIS_DIRECT_BOOT[0],    		// [] Represents whether direct boot mode is disabled or enabled. 1. Disable 0: Enable
     NULL
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_DIS_USB_SERIAL_JTAG_ROM_PRINT[] = {
-    &DIS_USB_SERIAL_JTAG_ROM_PRINT[0],    		// [] Represents whether print from USB-Serial-JTAG is disabled or enabled.\\ 1. Disable\\ 0: Enable
+    &DIS_USB_SERIAL_JTAG_ROM_PRINT[0],    		// [] Represents whether print from USB-Serial-JTAG is disabled or enabled. 1. Disable 0: Enable
     NULL
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_DIS_USB_SERIAL_JTAG_DOWNLOAD_MODE[] = {
-    &DIS_USB_SERIAL_JTAG_DOWNLOAD_MODE[0],    		// [] Represents whether the USB-Serial-JTAG download function is disabled or enabled.\\ 1: Disable\\ 0: Enable
+    &DIS_USB_SERIAL_JTAG_DOWNLOAD_MODE[0],    		// [] Represents whether the USB-Serial-JTAG download function is disabled or enabled. 1: Disable 0: Enable
     NULL
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_ENABLE_SECURITY_DOWNLOAD[] = {
-    &ENABLE_SECURITY_DOWNLOAD[0],    		// [] Represents whether security download is enabled or disabled.\\ 1: Enable\\ 0: Disable
+    &ENABLE_SECURITY_DOWNLOAD[0],    		// [] Represents whether security download is enabled or disabled. 1: Enable 0: Disable
     NULL
 };
 
@@ -1286,32 +1397,57 @@ const esp_efuse_desc_t* ESP_EFUSE_SECURE_BOOT_DISABLE_FAST_WAKE[] = {
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_HYS_EN_PAD[] = {
-    &HYS_EN_PAD[0],    		// [] Represents whether the hysteresis function of corresponding PAD is enabled.\\ 1: enabled\\ 0:disabled
+    &HYS_EN_PAD[0],    		// [] Set bits to enable hysteresis function of PAD0~27
     NULL
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_XTS_DPA_CLK_ENABLE[] = {
-    &XTS_DPA_CLK_ENABLE[0],    		// [] Represents whether anti-dpa attack clock function is enabled.\\ 1. Enable\\ 0: Disable
+    &XTS_DPA_CLK_ENABLE[0],    		// [] Represents whether xts-aes anti-dpa attack clock is enabled. 1. Enable. 0: Disable.
     NULL
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_XTS_DPA_PSEUDO_LEVEL[] = {
-    &XTS_DPA_PSEUDO_LEVEL[0],    		// [] Represents the anti-dpa attack pseudo function level.\\ 3:High\\ 2: Moderate\\ 1: Low\\ 0: Decided by register configuration
+    &XTS_DPA_PSEUDO_LEVEL[0],    		// [] Represents the pseudo round level of xts-aes anti-dpa attack. 3: High. 2: Moderate 1. Low 0: Disabled
     NULL
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_DIS_WIFI6[] = {
-    &DIS_WIFI6[0],    		// [] Represents whether the WiFi 6 feature is enable or disable.\\ 1: WiFi 6 is disable\\ 0: WiFi 6 is enabled.
+    &DIS_WIFI6[0],    		// [] Represents whether the WIFI6 feature is enable or disabled. 1: WIFI6 is disable; 0: WIFI6 is enabled
     NULL
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_ECDSA_DISABLE_P192[] = {
-    &ECDSA_DISABLE_P192[0],    		// [] Represents whether to disable P192 curve in ECDSA.\\ 1: Disabled.\\ 0: Not disable
+    &ECDSA_DISABLE_P192[0],    		// [] Represents whether to disable P192 curve in ECDSA. 1: Disabled. 0: Not disabled
     NULL
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_ECC_FORCE_CONST_TIME[] = {
-    &ECC_FORCE_CONST_TIME[0],    		// [] Represents whether to force ecc to use const-time calculation mode. \\ 1: Enable. \\ 0: Disable
+    &ECC_FORCE_CONST_TIME[0],    		// [] Represents whether to force ecc to use const-time calculation mode. 1: Enable. 0: Disable
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_BOOTLOADER_ANTI_ROLLBACK_SECURE_VERSION[] = {
+    &BOOTLOADER_ANTI_ROLLBACK_SECURE_VERSION[0],    		// [] Represents the anti-rollback secure version of the 2nd stage bootloader used by the ROM bootloader
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_BOOTLOADER_ANTI_ROLLBACK_EN[] = {
+    &BOOTLOADER_ANTI_ROLLBACK_EN[0],    		// [] Represents whether the ani-rollback check for the 2nd stage bootloader is enabled.1: Enabled0: Disabled
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_BOOTLOADER_ANTI_ROLLBACK_UPDATE_IN_ROM[] = {
+    &BOOTLOADER_ANTI_ROLLBACK_UPDATE_IN_ROM[0],    		// [] Represents whether the ani-rollback SECURE_VERSION will be updated from the ROM bootloader.1: Enable0: Disable
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_RECOVERY_BOOTLOADER_FLASH_SECTOR[] = {
+    &RECOVERY_BOOTLOADER_FLASH_SECTOR[0],    		// [] Represents the starting flash sector (flash sector size is 0x1000) of the recovery bootloader used by the ROM bootloader If the primary bootloader fails. 0 and 0xFFF - this feature is disabled
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_REPEAT_DATA4[] = {
+    &REPEAT_DATA4[0],    		// [] Reserved
     NULL
 };
 
@@ -1382,6 +1518,41 @@ const esp_efuse_desc_t* ESP_EFUSE_TEMP[] = {
 
 const esp_efuse_desc_t* ESP_EFUSE_PKG_VERSION[] = {
     &PKG_VERSION[0],    		// [] Package version
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ACTIVE_HP_DBIAS[] = {
+    &ACTIVE_HP_DBIAS[0],    		// [] Active HP DBIAS of fixed voltage
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ACTIVE_LP_DBIAS[] = {
+    &ACTIVE_LP_DBIAS[0],    		// [] Active LP DBIAS of fixed voltage
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_LSLP_HP_DBG[] = {
+    &LSLP_HP_DBG[0],    		// [] LSLP HP DBG of fixed voltage
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_LSLP_HP_DBIAS[] = {
+    &LSLP_HP_DBIAS[0],    		// [] LSLP HP DBIAS of fixed voltage
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_DSLP_LP_DBG[] = {
+    &DSLP_LP_DBG[0],    		// [] DSLP LP DBG of fixed voltage
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_DSLP_LP_DBIAS[] = {
+    &DSLP_LP_DBIAS[0],    		// [] DSLP LP DBIAS of fixed voltage
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_LP_HP_DBIAS_VOL_GAP[] = {
+    &LP_HP_DBIAS_VOL_GAP[0],    		// [] DBIAS gap between LP and HP
     NULL
 };
 

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -34,7 +34,10 @@ static inline void sha_ll_enable_bus_clock(bool enable)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define sha_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; sha_ll_enable_bus_clock(__VA_ARGS__)
+#define sha_ll_enable_bus_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        sha_ll_enable_bus_clock(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Reset the SHA peripheral module
@@ -50,7 +53,10 @@ static inline void sha_ll_reset_register(void)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define sha_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; sha_ll_reset_register(__VA_ARGS__)
+#define sha_ll_reset_register(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        sha_ll_reset_register(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Returns the LOAD_REG register address for the given sha type
@@ -124,6 +130,16 @@ static inline void sha_ll_continue_block(esp_sha_type sha_type)
 static inline void sha_ll_load(esp_sha_type sha_type)
 {
     DPORT_REG_WRITE(SHA_LOAD_REG(sha_type), 1);
+}
+
+/**
+ * @brief Load the mode for the SHA engine
+ *
+ * @param sha_type The SHA algorithm type
+ */
+static inline void sha_ll_set_mode(esp_sha_type sha_type)
+{
+    (void) sha_type;
 }
 
 /**

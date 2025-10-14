@@ -26,7 +26,7 @@
 #include "esp_pau.h"
 #endif
 
-static __attribute__((unused)) const char *TAG = "sleep_modem";
+ESP_LOG_ATTR_TAG(TAG, "sleep_modem");
 
 #if CONFIG_PM_SLP_DEFAULT_PARAMS_OPT
 static void esp_pm_light_sleep_default_params_config(int min_freq_mhz, int max_freq_mhz);
@@ -77,7 +77,7 @@ esp_err_t esp_unregister_mac_bb_pd_callback(mac_bb_power_down_cb_t cb)
     return ESP_ERR_INVALID_STATE;
 }
 
-void IRAM_ATTR mac_bb_power_down_cb_execute(void)
+void mac_bb_power_down_cb_execute(void)
 {
     for (int i = 0; i < MAC_BB_POWER_DOWN_CB_NO; i++) {
         if (s_mac_bb_power_down_cb[i]) {
@@ -118,7 +118,7 @@ esp_err_t esp_unregister_mac_bb_pu_callback(mac_bb_power_up_cb_t cb)
     return ESP_ERR_INVALID_STATE;
 }
 
-void IRAM_ATTR mac_bb_power_up_cb_execute(void)
+void mac_bb_power_up_cb_execute(void)
 {
     for (int i = 0; i < MAC_BB_POWER_UP_CB_NO; i++) {
         if (s_mac_bb_power_up_cb[i]) {
@@ -195,7 +195,7 @@ inline __attribute__((always_inline)) bool sleep_modem_wifi_modem_link_done(void
 
 bool modem_domain_pd_allowed(void)
 {
-#if SOC_PM_MODEM_RETENTION_BY_REGDMA
+#if SOC_PM_MODEM_RETENTION_BY_REGDMA && SOC_PAU_SUPPORTED
     const sleep_retention_module_bitmap_t inited_modules = sleep_retention_get_inited_modules();
     const sleep_retention_module_bitmap_t created_modules = sleep_retention_get_created_modules();
 
@@ -221,7 +221,7 @@ bool modem_domain_pd_allowed(void)
 #endif
 }
 
-uint32_t IRAM_ATTR sleep_modem_reject_triggers(void)
+uint32_t sleep_modem_reject_triggers(void)
 {
     uint32_t reject_triggers = 0;
 #if SOC_PM_SUPPORT_PMU_MODEM_STATE

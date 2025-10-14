@@ -84,7 +84,7 @@ void dpp_debug_print_point(const char *title, struct crypto_ec *e,
 
 static void dpp_auth_fail(struct dpp_authentication *auth, const char *txt)
 {
-	wpa_msg(auth->msg_ctx, MSG_INFO, DPP_EVENT_FAIL "%s", txt);
+	wpa_printf(MSG_INFO, "%s", txt);
 }
 
 struct wpabuf * dpp_alloc_msg(enum dpp_public_action_frame_type type,

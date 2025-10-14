@@ -1,7 +1,7 @@
-安全
-====
+安全概述
+========
 
-{IDF_TARGET_CIPHER_SCHEME:default="RSA", esp32h2="RSA 或 ECDSA", esp32p4="RSA 或 ECDSA", esp32c5="RSA 或 ECDSA"}
+{IDF_TARGET_CIPHER_SCHEME:default="RSA", esp32h2="RSA 或 ECDSA", esp32p4="RSA 或 ECDSA", esp32c5="RSA 或 ECDSA", esp32c61="ECDSA", esp32h21="RSA 或 ECDSA"}
 
 {IDF_TARGET_SIG_PERI:default="DS", esp32h2="DS 或 ECDSA", esp32p4="DS 或 ECDSA", esp32c5="DS 或 ECDSA", esp32c61="ECDSA"}
 
@@ -11,7 +11,7 @@
 
 .. note::
 
-    在本指南中，最常用的命令形式为 ``idf.py secure-<command>``，这是对应 ``espsecure.py <command>`` 的封装。基于 ``idf.py`` 的命令能提供更好的用户体验，但与基于 ``espsecure.py`` 的命令相比，可能会损失一部分高级功能。
+    在本指南中，最常用的命令形式为 ``idf.py secure-<command>``，这是对应 ``espsecure <command>`` 的封装。基于 ``idf.py`` 的命令能提供更好的用户体验，但与基于 ``espsecure`` 的命令相比，可能会损失一部分高级功能。
 
 .. only:: TARGET_SUPPORT_QEMU
 
@@ -55,7 +55,7 @@
 
 * 在具备高质量熵源的系统上生成签名密钥。
 * 签名密钥始终保密；签名密钥泄露会危及安全启动系统。
-* 不允许第三方使用 ``idf.py secure-`` 或 ``espsecure.py`` 命令来观察密钥生成或是签名过程的任何细节，这两个过程都容易受到定时攻击或其他侧信道攻击的威胁。
+* 不允许第三方使用 ``idf.py secure-`` 或 ``espsecure`` 命令来观察密钥生成或是签名过程的任何细节，这两个过程都容易受到定时攻击或其他侧信道攻击的威胁。
 * 确保正确烧录所有安全性 eFuse，包括禁用调试接口以及非必需的启动介质（例如 UART 下载模式）等。
 
 
@@ -75,7 +75,7 @@ flash 加密功能可以加密外部 flash 中的内容，从而保护存储在 
 flash 加密最佳实践
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-* 建议在生产环境中使用 flash 加密的发布模式。
+* 建议在生产环境中使用 flash 加密的量产模式。
 * 建议为每个设备生成唯一的 flash 加密密钥。
 * 启用 :ref:`secure_boot-guide` 作为额外保护层，防止 flash 在启动前遭受恶意攻击。
 
@@ -108,7 +108,7 @@ flash 加密最佳实践
 
     {IDF_TARGET_NAME} 可以通过架构或 PMS 等特定外设实现 **内存保护**，强制执行和监控内存以及某些外设的权限属性。使用相应外设，ESP-IDF 应用程序启动代码可以配置数据内存的读取/写入权限以及指令内存的读取/执行权限。如有任何操作尝试违反这些权限属性，如写入指令内存区域，将触发违规中断，导致系统 panic。
 
-    使用该功能需启用配置选项 :ref:`CONFIG_ESP_SYSTEM_MEMPROT_FEATURE`，该选项默认启用。请注意，该功能的 API 是 **私有** 的，仅供 ESP-IDF 代码使用。
+    使用该功能需启用配置选项 :ref:`CONFIG_ESP_SYSTEM_MEMPROT`，该选项默认启用。请注意，该功能的 API 是 **私有** 的，仅供 ESP-IDF 代码使用。
 
     .. note::
 
@@ -183,7 +183,7 @@ UART 下载模式
 
     .. important::
 
-        如果禁用了 UART 下载模式，则无法在设备上使用 ``esptool.py``。
+        如果禁用了 UART 下载模式，则无法在设备上使用 ``esptool``。
 
 .. only:: SOC_SUPPORTS_SECURE_DL_MODE
 
@@ -191,12 +191,12 @@ UART 下载模式
 
     * 要启用安全 UART 下载模式，也可以调用 :cpp:func:`esp_efuse_enable_rom_secure_download_mode`。
     * 该模式下，禁止执行通过 UART 下载模式下载的任意代码。
-    * 该模式将限制部分涉及更新 SPI 配置的命令，如更改波特率、基本的 flash 写入以及通过 ``get_security_info`` 返回当前启用的安全功能摘要。
+    * 该模式将限制部分涉及更新 SPI 配置的命令，如更改波特率、基本的 flash 写入以及通过 ``get-security-info`` 返回当前启用的安全功能摘要。
     * 要完全禁用安全 UART 下载模式，可以将 :ref:`CONFIG_SECURE_UART_ROM_DL_MODE` 设置为建议选项 ``Permanently disable ROM Download Mode``，或者在运行时调用 :cpp:func:`esp_efuse_disable_rom_download_mode`。
 
     .. important::
 
-        安全 UART 下载模式下，仅支持使用 ``--no-stub`` 参数调用 ``esptool.py``。
+        安全 UART 下载模式下，仅支持使用 ``--no-stub`` 参数调用 ``esptool``。
 
 .. only:: SOC_WIFI_SUPPORTED
 
@@ -265,7 +265,7 @@ UART 下载模式
 
     ESP-IDF 提供了多种安全方案，可以在 ESP 设备和配网实体之间建立安全会话，具体方案请参阅 :ref:`provisioning_security_schemes`。
 
-    关于该功能的更多详情和代码示例，请参阅 :doc:`../api-reference/provisioning/wifi_provisioning`。
+    关于该功能的更多详情和代码示例，请参阅 `network_provisioning <https://github.com/espressif/idf-extra-components/tree/master/network_provisioning>`_。
 
     .. note::
 

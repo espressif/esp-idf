@@ -2,7 +2,7 @@
 #
 # Create ULP binary and embed into the application.
 
-function(__setup_ulp_project app_name project_path s_sources exp_dep_srcs)
+function(__setup_ulp_project app_name project_path prefix s_sources exp_dep_srcs)
 
     if(NOT CMAKE_BUILD_EARLY_EXPANSION)
         spaces2list(s_sources)
@@ -61,6 +61,7 @@ function(__setup_ulp_project app_name project_path s_sources exp_dep_srcs)
                             -DULP_S_SOURCES=$<TARGET_PROPERTY:${app_name},ULP_SOURCES>
                             -DULP_APP_NAME=${app_name}
                             -DADD_PICOLIBC_SPECS=${CONFIG_LIBC_PICOLIBC}
+                            -DULP_VAR_PREFIX=${prefix}
                             -DCOMPONENT_DIR=${COMPONENT_DIR}
                             -DCOMPONENT_INCLUDES=$<TARGET_PROPERTY:${COMPONENT_TARGET},INTERFACE_INCLUDE_DIRECTORIES>
                             -DIDF_TARGET=${idf_target}
@@ -93,9 +94,14 @@ function(__setup_ulp_project app_name project_path s_sources exp_dep_srcs)
 endfunction()
 
 function(ulp_embed_binary app_name s_sources exp_dep_srcs)
-    __setup_ulp_project("${app_name}" "${idf_path}/components/ulp/cmake" "${s_sources}" "${exp_dep_srcs}")
+    cmake_parse_arguments(ULP "" "PREFIX" "" ${ARGN})
+    if(NOT ULP_PREFIX)
+        set(ULP_PREFIX "ulp_")
+    endif()
+    __setup_ulp_project("${app_name}" "${idf_path}/components/ulp/cmake"
+                        "${ULP_PREFIX}" "${s_sources}" "${exp_dep_srcs}")
 endfunction()
 
 function(ulp_add_project app_name project_path)
-    __setup_ulp_project("${app_name}" "${project_path}" "" "")
+    __setup_ulp_project("${app_name}" "${project_path}" "ulp_"  "" "")
 endfunction()

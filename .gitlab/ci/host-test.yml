@@ -2,8 +2,7 @@
   extends: .rules:test:host_test
   stage: host_test
   image: $ESP_ENV_IMAGE
-  tags:
-    - host_test
+  tags: [build, shiny]
   dependencies: # set dependencies to null to avoid missing artifacts issue
   # run host_test jobs immediately, only after upload cache
   needs:
@@ -33,6 +32,8 @@ check_public_headers:
     - IDF_TARGET=esp32h2 python tools/ci/check_public_headers.py --jobs 4 --prefix riscv32-esp-elf-
     - IDF_TARGET=esp32p4 python tools/ci/check_public_headers.py --jobs 4 --prefix riscv32-esp-elf-
     - IDF_TARGET=esp32c61 python tools/ci/check_public_headers.py --jobs 4 --prefix riscv32-esp-elf-
+    - IDF_TARGET=esp32h21 python tools/ci/check_public_headers.py --jobs 4 --prefix riscv32-esp-elf-
+    - IDF_TARGET=esp32h4 python tools/ci/check_public_headers.py --jobs 4 --prefix riscv32-esp-elf-
 
 test_nvs_coverage:
   extends:
@@ -76,23 +77,11 @@ test_fatfsgen_on_host:
     - ./test_wl_fatfsgen.py
     - ./test_fatfsparse.py
 
-test_multi_heap_on_host:
-  extends: .host_test_template
-  script:
-    - cd components/heap/test_multi_heap_host
-    - ./test_all_configs.sh
-
 test_certificate_bundle_on_host:
   extends: .host_test_template
   script:
     - cd components/mbedtls/esp_crt_bundle/test_gen_crt_bundle/
     - ./test_gen_crt_bundle.py
-
-test_gdbstub_on_host:
-  extends: .host_test_template
-  script:
-    - cd components/esp_gdbstub/test_gdbstub_host
-    - make test
 
 # Test for create virtualenv. It must be invoked from Python, not from virtualenv.
 # Use docker image system python without any extra dependencies
@@ -111,7 +100,8 @@ test_cli_installer:
   script:
     # Tools must be downloaded for testing
     # We could use "idf_tools.py download all", but we don't want to install clang because of its huge size
-    - python3 ${IDF_PATH}/tools/idf_tools.py download required qemu-riscv32 qemu-xtensa cmake
+    #                                                                      cmake@version that is supported
+    - python3 ${IDF_PATH}/tools/idf_tools.py download required qemu-riscv32 qemu-xtensa cmake cmake@3.22.1
     - cd ${IDF_PATH}/tools/test_idf_tools
     - python3 -m pip install jsonschema
     - python3 ./test_idf_tools.py -v
@@ -198,16 +188,21 @@ test_tools:
     INSTALL_EXTRA_TOOLS: "qemu-xtensa qemu-riscv32"  # for test_idf_qemu.py
   script:
     - stat=0
+    - run_cmd idf-ci gitlab download-known-failure-cases-file ${KNOWN_FAILURE_CASES_FILE_NAME}
     - cd ${IDF_PATH}/tools/ci/test_autocomplete
-    - pytest --noconftest test_autocomplete.py --junitxml=${IDF_PATH}/XUNIT_AUTOCOMP.xml                  || stat=1
+    - run_cmd pytest --noconftest test_autocomplete.py --junitxml=${IDF_PATH}/XUNIT_AUTOCOMP.xml     --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}             || stat=1
     - cd ${IDF_PATH}/tools/test_idf_py
-    - pytest --noconftest test_idf_py.py       --junitxml=${IDF_PATH}/XUNIT_IDF_PY.xml                    || stat=1
-    - pytest --noconftest test_hints.py        --junitxml=${IDF_PATH}/XUNIT_HINTS.xml                     || stat=1
-    - pytest --noconftest test_idf_qemu.py     --junitxml=${IDF_PATH}/XUNIT_IDF_PY_QEMU.xml               || stat=1
+    - run_cmd pytest --noconftest test_idf_py.py       --junitxml=${IDF_PATH}/XUNIT_IDF_PY.xml       --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}             || stat=1
+    - run_cmd pytest --noconftest test_hints.py        --junitxml=${IDF_PATH}/XUNIT_HINTS.xml        --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}             || stat=1
+    - run_cmd pytest --noconftest test_idf_qemu.py     --junitxml=${IDF_PATH}/XUNIT_IDF_PY_QEMU.xml  --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}             || stat=1
+    - cd ${IDF_PATH}/tools/test_bsasm
+    - run_cmd pytest --noconftest test_bsasm.py        --junitxml=${IDF_PATH}/XUNIT_BSASM.xml        --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}             || stat=1
     - cd ${IDF_PATH}/tools/test_mkdfu
-    - pytest --noconftest test_mkdfu.py        --junitxml=${IDF_PATH}/XUNIT_MKDFU.xml                     || stat=1
+    - run_cmd pytest --noconftest test_mkdfu.py        --junitxml=${IDF_PATH}/XUNIT_MKDFU.xml        --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}             || stat=1
     - cd ${IDF_PATH}/tools/test_idf_size
-    - pytest --noconftest test_idf_size.py     --junitxml=${IDF_PATH}/XUNIT_IDF_SIZE.xml                  || stat=1
+    - run_cmd pytest --noconftest test_idf_size.py     --junitxml=${IDF_PATH}/XUNIT_IDF_SIZE.xml     --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}             || stat=1
+    - cd ${IDF_PATH}/tools/test_idf_diag
+    - run_cmd pytest --noconftest test_idf_diag.py     --junitxml=${IDF_PATH}/XUNIT_IDF_DIAG.xml     --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}             || stat=1
     - cd ${IDF_PATH}
     - shellcheck -s sh tools/detect_python.sh                                                             || stat=1
     - shellcheck -s bash tools/detect_python.sh                                                           || stat=1
@@ -224,15 +219,9 @@ test_split_path_by_spaces:
     - cd ${IDF_PATH}/tools
     - python -m unittest split_paths_by_spaces.py
 
-test_mqtt_on_host:
-  extends: .host_test_template
-  script:
-    - cd ${IDF_PATH}/components/mqtt/esp-mqtt/host_test
-    - idf.py build
-    - LSAN_OPTIONS=verbosity=1:log_threads=1 build/host_mqtt_client_test.elf
-
 test_transport_on_host:
   extends: .host_test_template
+  allow_failure: true # IDFCI-2781 [v5.5, v5.4] test_transport_on_host fails on ubuntu 24.04
   script:
     - cd ${IDF_PATH}/components/tcp_transport/host_test
     - idf.py build
@@ -290,22 +279,18 @@ test_pytest_qemu:
         INSTALL_EXTRA_TOOLS: "qemu-riscv32"
         IDF_TOOLCHAIN: [gcc, clang]
   script:
-    - run_cmd python tools/ci/ci_build_apps.py . -v
+    - run_cmd idf-ci build run
+      --build-system cmake
       --target $IDF_TARGET
-      --pytest-apps
       -m qemu
-      --collect-app-info "list_job_${CI_JOB_NAME_SLUG}.txt"
-      --modified-components ${MR_MODIFIED_COMPONENTS}
       --modified-files ${MR_MODIFIED_FILES}
-    - python tools/ci/get_known_failure_cases_file.py
+    - run_cmd idf-ci gitlab download-known-failure-cases-file ${KNOWN_FAILURE_CASES_FILE_NAME}
     - run_cmd pytest
       --target $IDF_TARGET
-      --log-cli-level DEBUG
       -m qemu
       --embedded-services idf,qemu
       --junitxml=XUNIT_RESULT.xml
       --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}
-      --app-info-filepattern \"list_job_*.txt\"
       --qemu-extra-args \"-global driver=timer.$IDF_TARGET.timg,property=wdt_disable,value=true\"
 
 test_pytest_linux:
@@ -320,28 +305,25 @@ test_pytest_linux:
     reports:
       junit: XUNIT_RESULT.xml
   script:
-    - run_cmd python tools/ci/ci_build_apps.py components examples tools/test_apps -v
+    - run_cmd idf-ci build run
+      --build-system cmake
+      -p components -p examples -p tools/test_apps
       --target linux
-      --pytest-apps
-      -m host_test
-      --collect-app-info "list_job_${CI_JOB_NAME_SLUG}.txt"
-      --modified-components ${MR_MODIFIED_COMPONENTS}
+      --only-test-related
       --modified-files ${MR_MODIFIED_FILES}
-    - python tools/ci/get_known_failure_cases_file.py
+    - run_cmd idf-ci gitlab download-known-failure-cases-file ${KNOWN_FAILURE_CASES_FILE_NAME}
     - run_cmd pytest
       --target linux
-      -m host_test
       --embedded-services idf
       --junitxml=XUNIT_RESULT.xml
       --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}
-      --app-info-filepattern \"list_job_*.txt\"
 
 test_pytest_macos:
   extends:
     - .host_test_template
     - .before_script:build:macos
   tags:
-    - macos_shell
+    - macos
   artifacts:
     paths:
       - XUNIT_RESULT.xml
@@ -350,38 +332,25 @@ test_pytest_macos:
     reports:
       junit: XUNIT_RESULT.xml
   variables:
-    PYENV_VERSION: "3.9"
-    PYTEST_IGNORE_COLLECT_IMPORT_ERROR: "1"
+    PYENV_VERSION: "3.10"
+    # Workaround for a bug in Parallels executor where CI_PROJECT_DIR is not an absolute path,
+    # but a relative path to the build directory (builds/espressif/esp-idf instead of ~/builds/espressif/esp-idf.
+    # GitLab sets the project dir to this template `<builds_dir>/<namespace>/<project_name>`
+    IDF_PATH: "/Users/espressif/builds/espressif/esp-idf"
   script:
-    - run_cmd python tools/ci/ci_build_apps.py components examples tools/test_apps -v
+    - run_cmd idf-ci build run
+      -p components -p examples -p tools/test_apps
+      --build-system cmake
       --target linux
-      --pytest-apps
-      -m \"host_test and macos_shell\"
-      --collect-app-info "list_job_${CI_JOB_NAME_SLUG}.txt"
-      --modified-components ${MR_MODIFIED_COMPONENTS}
+      --only-test-related
+      -m macos
       --modified-files ${MR_MODIFIED_FILES}
-    - python tools/ci/get_known_failure_cases_file.py
+    - run_cmd idf-ci gitlab download-known-failure-cases-file ${KNOWN_FAILURE_CASES_FILE_NAME}
     - run_cmd pytest
       --target linux
-      -m \"host_test and macos_shell\"
+      -m macos
       --junitxml=XUNIT_RESULT.xml
       --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}
-      --app-info-filepattern \"list_job_*.txt\"
-
-test_idf_pytest_plugin:
-  extends:
-    - .host_test_template
-    - .rules:patterns:idf-pytest-plugin
-  variables:
-    SUBMODULES_TO_FETCH: "none"
-  artifacts:
-    reports:
-      junit: XUNIT_RESULT.xml
-  script:
-    - cd ${IDF_PATH}/tools/ci/dynamic_pipelines/tests/test_report_generator
-    - python -m unittest test_report_generator.py
-    - cd ${IDF_PATH}/tools/ci/idf_pytest
-    - pytest --junitxml=${CI_PROJECT_DIR}/XUNIT_RESULT.xml
 
 test_idf_build_apps_load_soc_caps:
   extends: .host_test_template

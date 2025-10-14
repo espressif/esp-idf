@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -28,8 +28,8 @@ struct gpio_flex_glitch_filter_t {
     gpio_glitch_filter_t base;
     gpio_flex_glitch_filter_group_t *group;
     uint32_t filter_id;
-    esp_pm_lock_handle_t pm_lock;
 #if CONFIG_PM_ENABLE
+    esp_pm_lock_handle_t pm_lock;
     char pm_lock_name[GLITCH_FILTER_PM_LOCK_NAME_LEN_MAX]; // pm lock name
 #endif
 };
@@ -72,9 +72,11 @@ static esp_err_t gpio_filter_destroy(gpio_flex_glitch_filter_t *filter)
         portEXIT_CRITICAL(&group->spinlock);
     }
 
+#if CONFIG_PM_ENABLE
     if (filter->pm_lock) {
         esp_pm_lock_delete(filter->pm_lock);
     }
+#endif
 
     free(filter);
     return ESP_OK;
@@ -92,10 +94,12 @@ static esp_err_t gpio_flex_glitch_filter_enable(gpio_glitch_filter_t *filter)
     ESP_RETURN_ON_FALSE(filter->fsm == GLITCH_FILTER_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "filter not in init state");
     gpio_flex_glitch_filter_t *flex_filter = __containerof(filter, gpio_flex_glitch_filter_t, base);
 
+#if CONFIG_PM_ENABLE
     // acquire pm lock
     if (flex_filter->pm_lock) {
         esp_pm_lock_acquire(flex_filter->pm_lock);
     }
+#endif
 
     int filter_id = flex_filter->filter_id;
     gpio_ll_glitch_filter_enable(s_gpio_glitch_filter_group.hw, filter_id, true);
@@ -111,10 +115,12 @@ static esp_err_t gpio_flex_glitch_filter_disable(gpio_glitch_filter_t *filter)
     int filter_id = flex_filter->filter_id;
     gpio_ll_glitch_filter_enable(s_gpio_glitch_filter_group.hw, filter_id, false);
 
+#if CONFIG_PM_ENABLE
     // release pm lock
     if (flex_filter->pm_lock) {
         esp_pm_lock_release(flex_filter->pm_lock);
     }
+#endif
 
     filter->fsm = GLITCH_FILTER_FSM_INIT;
     return ESP_OK;

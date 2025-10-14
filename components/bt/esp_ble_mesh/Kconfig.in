@@ -15,16 +15,24 @@ if BLE_MESH
     config BLE_MESH_RANDOM_ADV_INTERVAL
         bool "Support using random adv interval for mesh packets"
         select BT_BLE_HIGH_DUTY_ADV_INTERVAL if BT_BLUEDROID_ENABLED
+        select BT_NIMBLE_HIGH_DUTY_ADV_ITVL if BT_NIMBLE_ENABLED
         default n
         help
             Enable this option to allow using random advertising interval
             for mesh packets. And this could help avoid collision of
             advertising packets.
 
+    config BLE_MESH_USE_UNIFIED_CRYPTO
+        bool "Use the unified BLE tinycrypt implementation"
+        depends on !BT_LE_CRYPTO_STACK_MBEDTLS && !BT_NIMBLE_CRYPTO_STACK_MBEDTLS
+        default n
+        help
+            Enable this option to use the unified BLE tinycrypt solution
+            instead of the default one in BLE Mesh stack.
+
     menuconfig BLE_MESH_USE_BLE_50
         bool "Support using BLE 5.0 APIs for BLE Mesh"
         depends on BLE_MESH_EXPERIMENTAL
-        depends on IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3
         select BT_NIMBLE_50_FEATURE_SUPPORT if BT_NIMBLE_ENABLED
         select BT_NIMBLE_EXT_ADV if BT_NIMBLE_ENABLED
         select BT_BLE_50_FEATURES_SUPPORTED if BT_BLUEDROID_ENABLED
@@ -32,6 +40,63 @@ if BLE_MESH
         default n
         help
             This option to enable BLE Mesh using some BLE 5.0 APIs.
+
+    config BLE_MESH_ADV_INST_ID
+        depends on BLE_MESH_USE_BLE_50
+        int "Extended adv instance for Mesh normal packets"
+        default 0
+        range 0 3
+        help
+            Extended ADV instance used by Mesh normal advertising packets.
+
+    menuconfig BLE_MESH_SUPPORT_MULTI_ADV
+        bool "Support using multiple adv instance for BLE Mesh"
+        depends on BLE_MESH_USE_BLE_50
+        default n
+        help
+            Enable this option to support using multiple adv instance while running BLE Mesh.
+
+    config BLE_MESH_PROXY_ADV_INST_ID
+        int "Extended adv instance for Mesh proxy packets"
+        depends on BLE_MESH_PROXY
+        depends on (BLE_MESH_PB_GATT || BLE_MESH_GATT_PROXY_SERVER)
+        depends on BLE_MESH_SUPPORT_MULTI_ADV
+        default 1
+        range 0 3
+        help
+            Extended ADV instance used by Mesh proxy advertising packets.
+
+    menuconfig BLE_MESH_SEPARATE_RELAY_ADV_INSTANCE
+        bool "Use separate extended adv instance for Mesh relay packets"
+        depends on BLE_MESH_SUPPORT_MULTI_ADV
+        depends on BLE_MESH_RELAY_ADV_BUF
+        default n
+        help
+            Enable this option to support using a separate extended ADV instance for Mesh relay packets.
+
+    config BLE_MESH_RELAY_ADV_INST_ID
+        int "Extended adv instance for Mesh relay packets"
+        depends on BLE_MESH_SEPARATE_RELAY_ADV_INSTANCE
+        default 2
+        range 0 3
+        help
+            Extended ADV instance used by Mesh relay advertising packets.
+
+    menuconfig BLE_MESH_SEPARATE_BLE_ADV_INSTANCE
+        bool "Use separate extended adv instance for BLE normal packets"
+        depends on BLE_MESH_SUPPORT_MULTI_ADV
+        depends on BLE_MESH_SUPPORT_BLE_ADV
+        default n
+        help
+            Enable this option to support using a separate extended ADV instance for normal BLE advertising packets.
+
+    config BLE_MESH_BLE_ADV_INST_ID
+        int "Extended adv instance for normal BLE packets"
+        depends on BLE_MESH_SEPARATE_BLE_ADV_INSTANCE
+        default 3
+        range 0 3
+        help
+            Extended ADV instance used by normal BLE advertising packets.
 
     config BLE_MESH_USE_DUPLICATE_SCAN
         bool "Support Duplicate Scan in BLE Mesh"
@@ -419,7 +484,7 @@ if BLE_MESH
         int "Maximum capacity of solicitation replay protection list"
         depends on BLE_MESH_PROXY_SOLIC_PDU_RX
         default 2
-        range 1 255
+        range 1 65536
         help
             This option specifies the maximum capacity of the solicitation replay
             protection list. The solicitation replay protection list is used to

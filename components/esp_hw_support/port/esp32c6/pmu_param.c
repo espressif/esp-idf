@@ -17,7 +17,7 @@
 #include "esp_hw_log.h"
 #include "soc/clk_tree_defs.h"
 
-static __attribute__((unused)) const char *TAG = "pmu_param";
+ESP_HW_LOG_ATTR_TAG(TAG, "pmu_param");
 
 #ifndef ARRAY_SIZE
 #define ARRAY_SIZE(a)   (sizeof(a) / sizeof((a)[0]))
@@ -116,8 +116,8 @@ const pmu_hp_system_power_param_t * pmu_hp_system_power_param_default(pmu_hp_mod
 }
 
 #define PMU_HP_MODEM_CLOCK_CONFIG_DEFAULT() {   \
-    .icg_func   = 0,                            \
-    .icg_apb    = 0,                            \
+    .icg_func   = BIT(PMU_ICG_FUNC_ENA_SARADC), \
+    .icg_apb    = BIT(PMU_ICG_APB_ENA_SARADC),  \
     .icg_modem  = {                             \
         .code = PMU_HP_ICG_MODEM_CODE_MODEM     \
     }, \

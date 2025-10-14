@@ -10,7 +10,7 @@
 
 有关乐鑫芯片版本的编码方式，请参考 [关于芯片版本 (Chip Revision) 编码方式的兼容性公告](https://www.espressif.com/sites/default/files/advisory_downloads/AR2022-005%20%E5%85%B3%E4%BA%8E%E8%8A%AF%E7%89%87%E7%89%88%E6%9C%AC%E7%BC%96%E7%A0%81%E6%96%B9%E5%BC%8F%20%28Chip%20Revision%29%20%E7%9A%84%E5%85%BC%E5%AE%B9%E6%80%A7%E5%85%AC%E5%91%8A.pdf)。
 
-运行 `esptool chip_id` 可查看芯片系列及其版本。有关区分芯片版本及版本改进内容的更多信息，请参考 [芯片勘误表](https://www.espressif.com.cn/zh-hans/support/documents/technical-documents?keys=%E5%8B%98%E8%AF%AF%E8%A1%A8)。运行 `idf.py --version` 可查看当前的 ESP-IDF 版本。
+运行 `esptool chip-id` 可查看芯片系列及其版本。有关区分芯片版本及版本改进内容的更多信息，请参考 [芯片勘误表](https://www.espressif.com.cn/zh-hans/support/documents/technical-documents?keys=%E5%8B%98%E8%AF%AF%E8%A1%A8)。运行 `idf.py --version` 可查看当前的 ESP-IDF 版本。
 
 ## ESP-IDF 对各芯片版本的支持
 
@@ -97,17 +97,48 @@
 | release/v5.2           | v5.2.2+     | v5.1     |
 | release/v5.3 及以上     | v5.3+       | v5.3     |
 
+#### v2.0
+
+| 发布分支                | 推荐版本      | 需求版本  |
+|------------------------|-------------|----------|
+| release/v5.0           | v5.0.8+     | v5.0.8   |
+| release/v5.1           | v5.1.5+     | v5.1.5*  |
+| release/v5.2           | v5.2.4+     | v5.2.4   |
+| release/v5.3           | v5.3.2+     | v5.3.2*  |
+| release/v5.4 及以上     | v5.4+       | v5.4     |
+
+提示: IDF v5.1.5 及 v5.3.2 与 C2 v2.0 兼容，但芯片版本检查尚未在这些发布版本更新。使能 `ESP32C2_REV2_DEVELOPMENT` 选项来跳过这些过时的检查。
+
 ### ESP32-C6
 
 #### v0.0, v0.1
 
 从 ESP-IDF v5.1 开始支持。
 
+#### v0.2
+
+| 发布分支                | 推荐版本      | 需求版本  |
+|------------------------|-------------|----------|
+| release/v5.1           | v5.1.5+     | v5.1     |
+| release/v5.2           | v5.2.4+     | v5.2     |
+| release/v5.3           | v5.3.2+     | v5.3     |
+| release/v5.4 及以上     | v5.4+       | v5.4     |
+
 ### ESP32-H2
 
 #### v0.1, v0.2
 
 从 ESP-IDF v5.1 开始支持。
+
+#### v1.2
+
+| 发布分支                | 推荐版本      | 需求版本  |
+|------------------------|-------------|----------|
+| release/v5.1           | v5.1.6+     | v5.1.6   |
+| release/v5.2           | v5.2.5+     | v5.2.5   |
+| release/v5.3           | v5.3.3+     | v5.3.3   |
+| release/v5.4           | v5.4.1+     | v5.4.1   |
+| release/v5.5 及以上     | v5.5+       | v5.5     |
 
 
 ## 如果 ESP-IDF 版本低于 `需求版本` 会出现什么情况？

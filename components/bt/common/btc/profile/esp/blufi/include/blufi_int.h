@@ -36,7 +36,9 @@ typedef struct {
     UINT32                  trans_id;
     UINT8                   congest;
     UINT16                  frag_size;
+// Deprecated: This macro will be removed in the future
 #define BLUFI_PREPAIR_BUF_MAX_SIZE 1024
+#define BLUFI_PREPARE_BUF_MAX_SIZE 1024
     uint8_t                 *prepare_buf;
     int                     prepare_len;
     /* Control reference */

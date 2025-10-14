@@ -37,6 +37,7 @@ typedef enum {
     BTC_AVRC_STATUS_API_SND_META_EVT,
     BTC_AVRC_STATUS_API_SND_PLAY_STATUS_EVT,
     BTC_AVRC_STATUS_API_SND_GET_RN_CAPS_EVT,
+    BTC_AVRC_STATUS_API_SND_GET_PLAY_STATUS_EVT,
     BTC_AVRC_NOTIFY_API_SND_REG_NOTIFY_EVT,
     BTC_AVRC_CTRL_API_SND_SET_PLAYER_SETTING_EVT,
     BTC_AVRC_CTRL_API_SND_SET_ABSOLUTE_VOLUME_EVT,
@@ -76,6 +77,10 @@ typedef struct {
     uint8_t tl;
 } get_caps_cmd_t;
 
+typedef struct {
+    uint8_t tl;
+} get_play_status_cmd_t;
+
 #define BTC_AVRC_MIN_VOLUME 0x00
 #define BTC_AVRC_MAX_VOLUME 0x7f
 
@@ -113,6 +118,7 @@ typedef union {
     rn_cmd_t rn_cmd;
     ps_cmd_t ps_cmd;
     get_caps_cmd_t get_caps_cmd;
+    get_play_status_cmd_t get_play_status_cmd;
     set_abs_vol_cmd_t set_abs_vol_cmd;
 #if BTC_AV_CA_INCLUDED
     ca_conn_t ca_conn;
@@ -220,6 +226,7 @@ bool btc_avrc_tg_check_rn_supported_evt(uint16_t evt_set);
 bool btc_avrc_tg_rn_evt_supported(uint8_t event_id);
 bool btc_avrc_ct_rn_evt_supported(uint8_t event_id);
 bool btc_avrc_ct_check_cover_art_support(void);
+void btc_avrc_get_profile_status(esp_avrc_profile_status_t *param);
 
 #endif  ///BTC_AV_INCLUDED == TRUE
 

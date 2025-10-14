@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,14 +9,16 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include "soc/soc.h"
-#include "soc/regi2c_defs.h"
 #include "modem/modem_lpcon_struct.h"
 #include "modem/modem_syscon_struct.h"
 #include "soc/i2c_ana_mst_reg.h"
+#include "soc/pmu_reg.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#define ANA_I2C_MST_CLK_HAS_ROOT_GATING 1   /*!< Any regi2c operation needs enable the analog i2c master clock first */
 
 /**
  * @brief Enable analog I2C master clock
@@ -28,7 +30,10 @@ static inline __attribute__((always_inline)) void _regi2c_ctrl_ll_master_enable_
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_RC_ATOMIC_ENV variable in advance
-#define regi2c_ctrl_ll_master_enable_clock(...) (void)__DECLARE_RCC_RC_ATOMIC_ENV; _regi2c_ctrl_ll_master_enable_clock(__VA_ARGS__)
+#define regi2c_ctrl_ll_master_enable_clock(...) do { \
+        (void)__DECLARE_RCC_RC_ATOMIC_ENV; \
+        _regi2c_ctrl_ll_master_enable_clock(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Check whether analog I2C master clock is enabled
@@ -49,7 +54,10 @@ static inline __attribute__((always_inline)) void _regi2c_ctrl_ll_master_reset(v
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_RC_ATOMIC_ENV variable in advance
-#define regi2c_ctrl_ll_master_reset(...) (void)__DECLARE_RCC_RC_ATOMIC_ENV; _regi2c_ctrl_ll_master_reset(__VA_ARGS__)
+#define regi2c_ctrl_ll_master_reset(...) do { \
+        (void)__DECLARE_RCC_RC_ATOMIC_ENV; \
+        _regi2c_ctrl_ll_master_reset(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Force enable analog I2C master clock
@@ -96,19 +104,24 @@ static inline __attribute__((always_inline)) bool regi2c_ctrl_ll_bbpll_calibrati
 }
 
 /**
- * @brief Enable the I2C internal bus to do I2C read/write operation to the SAR_ADC register
+ * @brief Enable the I2C internal bus to do I2C read/write operation to the SAR_ADC and TSENS registers
  */
-static inline void regi2c_ctrl_ll_i2c_saradc_enable(void)
+static inline void regi2c_ctrl_ll_i2c_sar_periph_enable(void)
 {
-    // TODO: IDF-8727
+    //Enter regi2c reset mode
+    CLEAR_PERI_REG_MASK(PMU_RF_PWC_REG, PMU_PERIF_I2C_RSTB);
+    //Enable REGI2C for SAR_ADC and TSENS
+    SET_PERI_REG_MASK(PMU_RF_PWC_REG, PMU_XPD_PERIF_I2C);
+    //Release regi2c reset mode, enter work mode
+    SET_PERI_REG_MASK(PMU_RF_PWC_REG, PMU_PERIF_I2C_RSTB);
 }
 
 /**
- * @brief Disable the I2C internal bus to do I2C read/write operation to the SAR_ADC register
+ * @brief Disable the I2C internal bus to do I2C read/write operation to the SAR_ADC and TSENS registers
  */
-static inline void regi2c_ctrl_ll_i2c_saradc_disable(void)
+static inline void regi2c_ctrl_ll_i2c_sar_periph_disable(void)
 {
-    // TODO: IDF-8727
+    CLEAR_PERI_REG_MASK(PMU_RF_PWC_REG, PMU_XPD_PERIF_I2C);
 }
 
 #ifdef __cplusplus

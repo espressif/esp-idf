@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -51,6 +51,9 @@ extern "C" {
  * 6) LP_PLL (8MHz), used for RTC_FAST_CLK clock source and LP peripherals' clock sources
  */
 
+/* The pin number to connect the external slow clock (OSC_SLOW_CLK), XTAL_32K_N */
+#define SOC_EXT_OSC_SLOW_GPIO_NUM           0
+
 /* With the default value of FOSC_DFREQ = 100, RC_FAST clock frequency is 17.5 MHz +/- 7% */
 #define SOC_CLK_RC_FAST_FREQ_APPROX         17500000                            /*!< Approximate RC_FAST_CLK frequency in Hz */
 #define SOC_CLK_RC_SLOW_FREQ_APPROX         136000                              /*!< Approximate RC_SLOW_CLK frequency in Hz */
@@ -74,6 +77,15 @@ typedef enum {
 } soc_root_clk_t;
 
 /**
+ * @brief ROOT clock circuit, which requires explicitly enabling the targeting circuit to use
+ */
+typedef enum {
+    SOC_ROOT_CIRCUIT_CLK_CPLL,          /*!< CPLL_CLK is the output of the CPLL generator circuit */
+    SOC_ROOT_CIRCUIT_CLK_APLL,          /*!< APLL_CLK is the output of the APLL generator circuit */
+    SOC_ROOT_CIRCUIT_CLK_MPLL,          /*!< MPLL_CLK is the output of the MPLL generator circuit */
+} soc_root_clk_circuit_t;
+
+/**
  * @brief CPU_CLK mux inputs, which are the supported clock sources for the CPU_CLK
  * @note Enum values are matched with the register field values on purpose
  */
@@ -94,6 +106,8 @@ typedef enum {
     SOC_RTC_SLOW_CLK_SRC_XTAL32K = 1,                 /*!< Select XTAL32K_CLK as RTC_SLOW_CLK source */
     SOC_RTC_SLOW_CLK_SRC_RC32K = 2,                   /*!< Select RC32K_CLK as RTC_SLOW_CLK source */
     SOC_RTC_SLOW_CLK_SRC_INVALID,                     /*!< Invalid RTC_SLOW_CLK source */
+
+    SOC_RTC_SLOW_CLK_SRC_DEFAULT = SOC_RTC_SLOW_CLK_SRC_RC_SLOW, /*!< RC_SLOW_CLK is the default clock source for RTC_SLOW_CLK */
 } soc_rtc_slow_clk_src_t;
 
 /**
@@ -146,10 +160,13 @@ typedef enum {
     SOC_MOD_CLK_RTC_FAST,                      /*!< RTC_FAST_CLK can be sourced from XTAL, RC_FAST, or LP_PLL by configuring soc_rtc_fast_clk_src_t */
     SOC_MOD_CLK_RTC_SLOW,                      /*!< RTC_SLOW_CLK can be sourced from RC_SLOW, XTAL32K, or RC32K by configuring soc_rtc_slow_clk_src_t */
     // For digital domain: peripherals
+    SOC_MOD_CLK_APB,                           /*!< APB_CLK is highly dependent on the CPU_CLK source */
     SOC_MOD_CLK_PLL_F20M,                      /*!< PLL_F20M_CLK is derived from SPLL (clock gating + default divider 24), its default frequency is 20MHz */
     SOC_MOD_CLK_PLL_F25M,                      /*!< PLL_F25M_CLK is derived from MPLL (clock gating + configurable divider), it will have a frequency of 25MHz */
+    SOC_MOD_CLK_PLL_F50M,                      /*!< PLL_F50M_CLK is derived from MPLL (clock gating + configurable divider 10), it will have a frequency of 50MHz */
     SOC_MOD_CLK_PLL_F80M,                      /*!< PLL_F80M_CLK is derived from SPLL (clock gating + default divider 6), its default frequency is 80MHz */
     SOC_MOD_CLK_PLL_F160M,                     /*!< PLL_F160M_CLK is derived from SPLL (clock gating + default divider 3), its default frequency is 160MHz */
+    SOC_MOD_CLK_PLL_F120M,                     /*!< PLL_F120M_CLK is derived from SPLL (clock gating + default divider 4), its default frequency is 120MHz */
     SOC_MOD_CLK_PLL_F240M,                     /*!< PLL_F240M_CLK is derived from SPLL (clock gating + default divider 2), its default frequency is 240MHz */
     SOC_MOD_CLK_CPLL,                          /*!< CPLL is from 40MHz XTAL oscillator frequency multipliers */
     SOC_MOD_CLK_SPLL,                          /*!< SPLL is from 40MHz XTAL oscillator frequency multipliers, its default frequency is 480MHz */
@@ -214,19 +231,6 @@ typedef enum {
 #endif // SOC_CLK_TREE_SUPPORTED
 } soc_periph_gptimer_clk_src_t;
 
-/**
- * @brief Type of Timer Group clock source, reserved for the legacy timer group driver
- */
-typedef enum {
-    TIMER_SRC_CLK_PLL_F80M = SOC_MOD_CLK_PLL_F80M,     /*!< Timer group clock source is PLL_F80M */
-    TIMER_SRC_CLK_XTAL = SOC_MOD_CLK_XTAL,             /*!< Timer group clock source is XTAL */
-#if SOC_CLK_TREE_SUPPORTED
-    TIMER_SRC_CLK_DEFAULT = SOC_MOD_CLK_PLL_F80M,      /*!< Timer group clock source default choice is PLL_F80M */
-#else
-    TIMER_SRC_CLK_DEFAULT = SOC_MOD_CLK_XTAL,          /*!< Timer group clock source default choice is XTAL */
-#endif // SOC_CLK_TREE_SUPPORTED
-} soc_periph_tg_clk_src_legacy_t;
-
 //////////////////////////////////////////////////RMT///////////////////////////////////////////////////////////////////
 
 /**
@@ -244,14 +248,20 @@ typedef enum {
     RMT_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F80M,  /*!< Select PLL_F80M as the default choice */
 } soc_periph_rmt_clk_src_t;
 
+//////////////////////////////////////////////////PCNT//////////////////////////////////////////////////////////////////
+
 /**
- * @brief Type of RMT clock source, reserved for the legacy RMT driver
+ * @brief Array initializer for all supported clock sources of PCNT
+ */
+#define SOC_PCNT_CLKS {SOC_MOD_CLK_APB}
+
+/**
+ * @brief Type of PCNT clock source
  */
 typedef enum {
-    RMT_BASECLK_PLL_F80M = SOC_MOD_CLK_PLL_F80M, /*!< RMT source clock is PLL_F80M */
-    RMT_BASECLK_XTAL = SOC_MOD_CLK_XTAL,         /*!< RMT source clock is XTAL */
-    RMT_BASECLK_DEFAULT = SOC_MOD_CLK_PLL_F80M,  /*!< RMT source clock default choice is PLL_F80M */
-} soc_periph_rmt_clk_src_legacy_t;
+    PCNT_CLK_SRC_APB = SOC_MOD_CLK_APB,           /*!< Select APB as the source clock */
+    PCNT_CLK_SRC_DEFAULT = SOC_MOD_CLK_APB,       /*!< Select APB as the default choice */
+} soc_periph_pcnt_clk_src_t;
 
 ///////////////////////////////////////////////////UART/////////////////////////////////////////////////////////////////
 
@@ -281,7 +291,7 @@ typedef enum {
 typedef enum {
     LP_UART_SCLK_LP_FAST = SOC_MOD_CLK_RTC_FAST,        /*!< LP_UART source clock is LP(RTC)_FAST */
     LP_UART_SCLK_XTAL_D2 = SOC_MOD_CLK_XTAL_D2,         /*!< LP_UART source clock is XTAL_D2 */
-    // LP_UART_SCLK_LP_PLL  = SOC_MOD_CLK_LP_PLL,          /*!< LP_UART source clock is LP_PLL (8M PLL) */ TODO: LP_PLL clock requires extra support
+    // LP_UART_SCLK_LP_PLL  = SOC_MOD_CLK_LP_PLL,       /*!< LP_UART source clock is LP_PLL (8M PLL) */ TODO: IDF-9581
     LP_UART_SCLK_DEFAULT = SOC_MOD_CLK_RTC_FAST,        /*!< LP_UART source clock default choice is LP(RTC)_FAST */
 } soc_periph_lp_uart_clk_src_t;
 
@@ -334,13 +344,14 @@ typedef enum {
 /**
  * @brief Array initializer for all supported clock sources of I2S
  */
-#define SOC_I2S_CLKS {SOC_MOD_CLK_XTAL, SOC_MOD_CLK_APLL, I2S_CLK_SRC_EXTERNAL}
+#define SOC_I2S_CLKS {SOC_MOD_CLK_XTAL, SOC_MOD_CLK_PLL_F160M, SOC_MOD_CLK_APLL, I2S_CLK_SRC_EXTERNAL}
 
 /**
  * @brief I2S clock source enum
  */
 typedef enum {
-    I2S_CLK_SRC_DEFAULT = SOC_MOD_CLK_XTAL,             /*!< Select XTAL as the default source clock  */
+    I2S_CLK_SRC_DEFAULT = 0,                            /*!< Auto select maximum clock source asdefault source clock  */
+    I2S_CLK_SRC_PLL_160M = SOC_MOD_CLK_PLL_F160M,       /*!< Select PLL_F160M as the source clock (only supported on P4 hw_ver3) */
     I2S_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,                /*!< Select XTAL as the source clock */
     I2S_CLK_SRC_APLL = SOC_MOD_CLK_APLL,                /*!< Select APLL as the source clock */
     I2S_CLK_SRC_EXTERNAL = -1,                          /*!< Select external clock as source clock */
@@ -377,7 +388,7 @@ typedef enum {
     LCD_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F160M, /*!< Select PLL_F160M as the default choice */
 } soc_periph_lcd_clk_src_t;
 
-//////////////////////////////////////////////////LCD///////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////CAM///////////////////////////////////////////////////////////////////
 
 /**
  * @brief Array initializer for all supported clock sources of CAM
@@ -394,7 +405,7 @@ typedef enum {
     CAM_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F160M, /*!< Select PLL_F160M as the default choice */
 } soc_periph_cam_clk_src_t;
 
-/////////////////////////////////////////////////MIPI///////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////MIPI CSI///////////////////////////////////////////////////////////////
 
 /**
  * @brief Array initializer for all supported clock sources of MIPI CSI PHY interface
@@ -411,10 +422,12 @@ typedef enum {
     MIPI_CSI_PHY_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F20M,   /*!< Select PLL_F20M as default clock */
 } soc_periph_mipi_csi_phy_clk_src_t;
 
+/////////////////////////////////////////////////MIPI DSI///////////////////////////////////////////////////////////////
+
 /**
  * @brief Array initializer for all supported clock sources of MIPI DSI DPI interface
  */
-#define SOC_MIPI_DSI_DPI_CLKS {SOC_MOD_CLK_XTAL, SOC_MOD_CLK_PLL_F160M, SOC_MOD_CLK_PLL_F240M}
+#define SOC_MIPI_DSI_DPI_CLKS {SOC_MOD_CLK_XTAL, SOC_MOD_CLK_PLL_F160M, SOC_MOD_CLK_PLL_F240M, SOC_MOD_CLK_APLL}
 
 /**
  * @brief Type of MIPI DSI DPI clock source
@@ -423,23 +436,46 @@ typedef enum {
     MIPI_DSI_DPI_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,            /*!< Select XTAL as MIPI DSI DPI source clock */
     MIPI_DSI_DPI_CLK_SRC_PLL_F160M = SOC_MOD_CLK_PLL_F160M,  /*!< Select PLL_F160M as MIPI DSI DPI source clock */
     MIPI_DSI_DPI_CLK_SRC_PLL_F240M = SOC_MOD_CLK_PLL_F240M,  /*!< Select PLL_F240M as MIPI DSI DPI source clock */
+    MIPI_DSI_DPI_CLK_SRC_APLL = SOC_MOD_CLK_APLL,            /*!< Select APLL as MIPI DSI DPI source clock */
     MIPI_DSI_DPI_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F240M,    /*!< Select PLL_F240M as default clock */
 } soc_periph_mipi_dsi_dpi_clk_src_t;
 
 /**
- * @brief Array initializer for all supported clock sources of MIPI DSI PHY interface
- */
-#define SOC_MIPI_DSI_PHY_CLKS {SOC_MOD_CLK_RC_FAST, SOC_MOD_CLK_PLL_F25M, SOC_MOD_CLK_PLL_F20M}
-
-/**
- * @brief Type of MIPI DSI PHY clock source
+ * @brief Type of MIPI DSI PHY configuration clock source
  */
 typedef enum {
-    MIPI_DSI_PHY_CLK_SRC_RC_FAST = SOC_MOD_CLK_RC_FAST,    /*!< Select RC_FAST as MIPI DSI PHY source clock */
-    MIPI_DSI_PHY_CLK_SRC_PLL_F25M = SOC_MOD_CLK_PLL_F25M,  /*!< Select PLL_F25M as MIPI DSI PHY source clock */
-    MIPI_DSI_PHY_CLK_SRC_PLL_F20M = SOC_MOD_CLK_PLL_F20M,  /*!< Select PLL_F20M as MIPI DSI PHY source clock */
-    MIPI_DSI_PHY_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F20M,   /*!< Select PLL_F20M as default clock */
-} soc_periph_mipi_dsi_phy_clk_src_t;
+    MIPI_DSI_PHY_CFG_CLK_SRC_RC_FAST = SOC_MOD_CLK_RC_FAST,   /*!< Select RC_FAST as MIPI DSI PHY configuration source clock */
+    MIPI_DSI_PHY_CFG_CLK_SRC_PLL_F25M = SOC_MOD_CLK_PLL_F25M, /*!< Select PLL_F25M as MIPI DSI PHY configuration source clock */
+    MIPI_DSI_PHY_CFG_CLK_SRC_PLL_F20M = SOC_MOD_CLK_PLL_F20M, /*!< Select PLL_F20M as MIPI DSI PHY configuration source clock */
+    MIPI_DSI_PHY_CFG_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F20M,  /*!< Select PLL_F20M as default clock */
+} soc_periph_mipi_dsi_phy_cfg_clk_src_t;
+
+/**
+ * @brief Type of MIPI DSI PHY PLL reference clock source
+ */
+typedef enum {
+    // only available on esp32p4 version < 3.0
+    MIPI_DSI_PHY_PLLREF_CLK_SRC_RC_FAST = SOC_MOD_CLK_RC_FAST,   /*!< Select RC_FAST as MIPI DSI PHY PLL reference clock */
+    MIPI_DSI_PHY_PLLREF_CLK_SRC_PLL_F25M = SOC_MOD_CLK_PLL_F25M, /*!< Select PLL_F25M as MIPI DSI PHY PLL reference clock */
+    MIPI_DSI_PHY_PLLREF_CLK_SRC_PLL_F20M = SOC_MOD_CLK_PLL_F20M, /*!< Select PLL_F20M as MIPI DSI PHY PLL reference clock */
+    MIPI_DSI_PHY_PLLREF_CLK_SRC_DEFAULT_LEGACY = SOC_MOD_CLK_PLL_F20M,  /*!< Select PLL_F20M as default clock */
+
+    // only available on esp32p4 version >= 3.0
+    MIPI_DSI_PHY_PLLREF_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,    /*!< Select XTAL as MIPI DSI PHY PLL reference clock */
+    MIPI_DSI_PHY_PLLREF_CLK_SRC_APLL = SOC_MOD_CLK_APLL,    /*!< Select APLL as MIPI DSI PHY PLL reference clock */
+    MIPI_DSI_PHY_PLLREF_CLK_SRC_CPLL = SOC_MOD_CLK_CPLL,    /*!< Select CPLL as MIPI DSI PHY PLL reference clock */
+    MIPI_DSI_PHY_PLLREF_CLK_SRC_SPLL = SOC_MOD_CLK_SPLL,    /*!< Select SPLL as MIPI DSI PHY PLL reference clock */
+    MIPI_DSI_PHY_PLLREF_CLK_SRC_MPLL = SOC_MOD_CLK_MPLL,    /*!< Select MPLL as MIPI DSI PHY PLL reference clock */
+    MIPI_DSI_PHY_PLLREF_CLK_SRC_DEFAULT = SOC_MOD_CLK_XTAL, /*!< Select XTAL as default clock */
+} soc_periph_mipi_dsi_phy_pllref_clk_src_t;
+
+/**
+ * @brief For backward compatibility, old macro definitions are kept. Remove it in the next major release (esp-idf v7.0)
+ */
+#define MIPI_DSI_PHY_CLK_SRC_RC_FAST SOC_MOD_CLK_RC_FAST
+#define MIPI_DSI_PHY_CLK_SRC_PLL_F25M SOC_MOD_CLK_PLL_F25M
+#define MIPI_DSI_PHY_CLK_SRC_PLL_F20M SOC_MOD_CLK_PLL_F20M
+#define MIPI_DSI_PHY_CLK_SRC_DEFAULT SOC_MOD_CLK_PLL_F20M
 
 /////////////////////////////////////////////////I2C////////////////////////////////////////////////////////////////////
 
@@ -487,8 +523,7 @@ typedef enum {
     SPI_CLK_SRC_XTAL     = SOC_MOD_CLK_XTAL,        /*!< Select XTAL as SPI source clock */
     SPI_CLK_SRC_RC_FAST  = SOC_MOD_CLK_RC_FAST,     /*!< Select RC_FAST_20M as SPI source clock */
     SPI_CLK_SRC_SPLL     = SOC_MOD_CLK_SPLL,        /*!< Select SPLL as SPI source clock */
-    // TODO: IDF-8313, use PLL as default
-    SPI_CLK_SRC_DEFAULT  = SOC_MOD_CLK_XTAL,        /*!< Select XTAL as default source clock */
+    SPI_CLK_SRC_DEFAULT  = SOC_MOD_CLK_SPLL,        /*!< Select SPLL as default source clock */
 } soc_periph_spi_clk_src_t;
 
 /////////////////////////////////////////////////PSRAM////////////////////////////////////////////////////////////////////
@@ -596,16 +631,13 @@ typedef enum {
 /**
  * @brief Array initializer for all supported clock sources of TWAI
  */
-#define SOC_TWAI_CLKS {SOC_MOD_CLK_XTAL, SOC_MOD_CLK_RC_FAST}
+#define SOC_TWAI_CLKS {(soc_periph_twai_clk_src_t)SOC_MOD_CLK_XTAL}
 
 /**
  * @brief TWAI clock source
  */
 typedef enum {
     TWAI_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,           /*!< Select XTAL as the source clock */
-#if SOC_CLK_TREE_SUPPORTED
-    TWAI_CLK_SRC_RC_FAST = SOC_MOD_CLK_RC_FAST,     /*!< Select RC_FAST as the source clock */
-#endif
     TWAI_CLK_SRC_DEFAULT = SOC_MOD_CLK_XTAL,        /*!< Select XTAL as the default clock choice */
 } soc_periph_twai_clk_src_t;
 
@@ -736,6 +768,20 @@ typedef enum {
     TEMPERATURE_SENSOR_CLK_SRC_DEFAULT = SOC_MOD_CLK_LP_PERI,    /*!< Select LP_PERI as the default choice */
 } soc_periph_temperature_sensor_clk_src_t;
 
+//////////////////////////////////////////////////I3C Master///////////////////////////////////////////////////////////
+
+/**
+ * @brief Array initializer for all supported clock sources of I3C master
+ */
+#define SOC_I3C_MASTER_CLKS {SOC_MOD_CLK_XTAL, SOC_MOD_CLK_PLL_F160M}
+
+typedef enum {
+    I3C_MASTER_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,
+    I3C_MASTER_CLK_SRC_PLL_F160M = SOC_MOD_CLK_PLL_F160M,
+    I3C_MASTER_CLK_SRC_PLL_F120M = SOC_MOD_CLK_PLL_F120M,
+    I3C_MASTER_CLK_SRC_DEFAULT = SOC_MOD_CLK_XTAL,
+} soc_periph_i3c_master_clk_src_t;
+
 //////////////////////////////////////////////////EMAC PTP///////////////////////////////////////////////////////////////
 
 /**
@@ -769,6 +815,27 @@ typedef enum {
     CLKOUT_SIG_PLL_F80M = 105,  /*!< From PLL, usually be 80MHz */
     CLKOUT_SIG_INVALID  = 0xFF,
 } soc_clkout_sig_id_t;
+
+//////////////////////////////////////CLOCK FREQUENCY CALCULATION////////////////////////////////////////////////////
+/**
+ * @brief Clock frequency calculation source selection
+ */
+typedef enum {
+    CLK_CAL_RTC_SLOW = -1,                           /*!< Select to calculate frequency of RTC_SLOW_CLK */
+    CLK_CAL_MPLL,                                    /*!< Select to calculate frequency of MPLL_CLK */
+    CLK_CAL_SPLL,                                    /*!< Select to calculate frequency of SPLL_CLK */
+    CLK_CAL_CPLL,                                    /*!< Select to calculate frequency of CPLL_CLK */
+    CLK_CAL_APLL,                                    /*!< Select to calculate frequency of APLL_CLK */
+    CLK_CAL_SDIO_PLL0,                               /*!< Select to calculate frequency of SDIO_PLL0_CLK */
+    CLK_CAL_SDIO_PLL1,                               /*!< Select to calculate frequency of SDIO_PLL1_CLK */
+    CLK_CAL_SDIO_PLL2,                               /*!< Select to calculate frequency of SDIO_PLL2_CLK */
+    CLK_CAL_RC_FAST,                                 /*!< Select to calculate frequency of RC_FAST_CLK */
+    CLK_CAL_RC_SLOW,                                 /*!< Select to calculate frequency of RC_SLOW_CLK */
+    CLK_CAL_RC32K,                                   /*!< Select to calculate frequency of RC32K_CLK */
+    CLK_CAL_32K_XTAL,                                /*!< Select to calculate frequency of XTAL32K_CLK */
+    CLK_CAL_LP_PLL,                                  /*!< Select to calculate frequency of LP_PLL_CLK */
+    CLK_CAL_DSI_DPHY,                                /*!< Select to calculate frequency of DSI_DPHY_lanebyteclk */
+} soc_clk_freq_calculation_src_t;
 
 #ifdef __cplusplus
 }

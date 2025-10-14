@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,7 @@
 #include <stdint.h>
 #include "esp_err.h"        // esp_err_t
 #include "nvs.h"            // nvs entry data types
+#include "nvs_flash.h"      // nvs_sec_cfg_t
 
 #ifdef __cplusplus
 extern "C" {
@@ -103,6 +104,37 @@ typedef struct {
 esp_err_t nvs_bootloader_read(const char* partition_name,
                               const size_t read_list_count,
                               nvs_bootloader_read_list_t read_list[]);
+
+/**
+ * @brief Initialize internal NVS security context, thus, enabling the NVS bootloader read API to decrypt encrypted NVS partitions
+ *
+ * @note Once `nvs_bootloader_secure_init()` is performed, `nvs_bootloader_read()` can correctly read only those NVS partitions
+ * that are encrypted using the given `nvs_sec_cfg_t` security config, until `nvs_bootloader_secure_deinit()` clears the internal
+ * NVS security context.
+ *
+ * @param sec_cfg NVS security key that would be used for decrypting the NVS partition
+ * @return ESP_OK if security initialization is successful
+ */
+esp_err_t nvs_bootloader_secure_init(const nvs_sec_cfg_t *sec_cfg);
+
+/**
+ * @brief Clear the internal NVS security context
+ */
+void nvs_bootloader_secure_deinit(void);
+
+/**
+ * @brief Reads NVS bootloader security configuration set by the specified security scheme
+ *
+ * @param[in] scheme_cfg   Security scheme specific configuration
+ *
+ * @param[out] cfg         Security configuration (encryption keys)
+ *
+ * @return
+ *      - ESP_OK, if cfg was read successfully;
+ *      - ESP_ERR_INVALID_ARG, if scheme_cfg or cfg is NULL;
+ *      - ESP_FAIL, if the key reading process fails
+ */
+esp_err_t nvs_bootloader_read_security_cfg(nvs_sec_scheme_t *scheme_cfg, nvs_sec_cfg_t* cfg);
 
 #ifdef __cplusplus
 }

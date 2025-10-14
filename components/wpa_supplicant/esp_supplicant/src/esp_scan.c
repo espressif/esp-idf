@@ -35,16 +35,10 @@ static void scan_done_event_handler(void *arg, ETS_STATUS status)
         wpa_s->type &= ~(1 << WLAN_FC_STYPE_BEACON) & ~(1 << WLAN_FC_STYPE_PROBE_RESP);
         esp_wifi_register_mgmt_frame_internal(wpa_s->type, wpa_s->subtype);
     }
-#ifdef CONFIG_SUPPLICANT_TASK
-    if (esp_supplicant_post_evt(SIG_SUPPLICANT_SCAN_DONE, 0) != 0) {
-        wpa_printf(MSG_ERROR, "Posting of scan done failed!");
-    }
-#else
     esp_supplicant_handle_scan_done_evt();
-#endif /*CONFIG_SUPPLICANT_TASK*/
 }
 
-#if defined(CONFIG_IEEE80211KV)
+#if defined(CONFIG_WNM)
 static void handle_wnm_scan_done(struct wpa_supplicant *wpa_s)
 {
     struct wpa_bss *bss = wpa_bss_get_next_bss(wpa_s, wpa_s->current_bss);
@@ -77,11 +71,14 @@ void esp_supplicant_handle_scan_done_evt(void)
     struct wpa_supplicant *wpa_s = &g_wpa_supp;
 
     wpa_printf(MSG_INFO, "scan done received");
-#if defined(CONFIG_IEEE80211KV)
+#if defined(CONFIG_RRM)
     /* Check which module started this, call the respective function */
     if (wpa_s->scan_reason == REASON_RRM_BEACON_REPORT) {
         wpas_beacon_rep_scan_process(wpa_s, wpa_s->scan_start_tsf);
-    } else if (wpa_s->scan_reason == REASON_WNM_BSS_TRANS_REQ) {
+    }
+#endif
+#if defined(CONFIG_WNM)
+    if (wpa_s->scan_reason == REASON_WNM_BSS_TRANS_REQ) {
         handle_wnm_scan_done(wpa_s);
     }
 #endif

@@ -141,8 +141,15 @@ mainmenu "Espressif IoT Development Framework Configuration"
         default "y" if IDF_TARGET="esp32h21"
         select FREERTOS_UNICORE
         select IDF_TARGET_ARCH_RISCV
-        select IDF_ENV_FPGA
         select IDF_ENV_BRINGUP
+        select IDF_ENV_FPGA if ESP32H21_SELECTS_REV_MP
+
+    config IDF_TARGET_ESP32H4
+        bool
+        default "y" if IDF_TARGET="esp32h4"
+        select IDF_TARGET_ARCH_RISCV
+        select IDF_ENV_BRINGUP
+        select IDF_ENV_FPGA if ESP32H4_SELECTS_REV_MP
 
     config IDF_TARGET_LINUX
         bool
@@ -161,6 +168,7 @@ mainmenu "Espressif IoT Development Framework Configuration"
         default 0x0017 if IDF_TARGET_ESP32C5
         default 0x0014 if IDF_TARGET_ESP32C61
         default 0x0019 if IDF_TARGET_ESP32H21
+        default 0x001C if IDF_TARGET_ESP32H4
         default 0xFFFF
 
 
@@ -211,10 +219,10 @@ mainmenu "Espressif IoT Development Framework Configuration"
 
                 When loading the BIN with UART, the ROM will jump to ram and run the app after finishing the ROM
                 startup code, so there's no additional startup initialization required. You can use the
-                `load_ram` in esptool.py to load the generated .bin file into ram and execute.
+                `load-ram` in esptool to load the generated .bin file into ram and execute.
 
                 Example:
-                    esptool.py --chip {chip} -p {port} -b {baud} --no-stub load_ram {app.bin}
+                    esptool --chip {chip} -p {port} -b {baud} --no-stub load-ram {app.bin}
 
                 Recommended sdkconfig.defaults for building loadable ELF files is as follows.
                 CONFIG_APP_BUILD_TYPE_RAM is required, other options help reduce application
@@ -222,7 +230,7 @@ mainmenu "Espressif IoT Development Framework Configuration"
 
                     CONFIG_APP_BUILD_TYPE_RAM=y
                     CONFIG_VFS_SUPPORT_TERMIOS=
-                    CONFIG_NEWLIB_NANO_FORMAT=y
+                    CONFIG_LIBC_NEWLIB_NANO_FORMAT=y
                     CONFIG_ESP_SYSTEM_PANIC_PRINT_HALT=y
                     CONFIG_ESP_DEBUG_STUBS_ENABLE=
                     CONFIG_ESP_ERR_TO_NAME_LOOKUP=
@@ -399,7 +407,7 @@ mainmenu "Espressif IoT Development Framework Configuration"
 
         config COMPILER_ASSERT_NDEBUG_EVALUATE
             bool "Enable the evaluation of the expression inside assert(X) when NDEBUG is set"
-            default y
+            default n
             help
                 When NDEBUG is set, assert(X) will not cause code to trigger an assertion.
                 With this option set, assert(X) will still evaluate the expression X, though
@@ -408,9 +416,6 @@ mainmenu "Espressif IoT Development Framework Configuration"
 
                 This is not according to the standard, which states that the assert(X) should
                 be replaced with ((void)0) if NDEBUG is defined.
-
-                In ESP-IDF v6.0 the default behavior will change to "no" to be in line with the
-                standard.
 
         choice COMPILER_FLOAT_LIB_FROM
             prompt "Compiler float lib source"
@@ -570,7 +575,7 @@ mainmenu "Espressif IoT Development Framework Configuration"
 
         config COMPILER_DISABLE_DEFAULT_ERRORS
             bool "Disable errors for default warnings"
-            default "y"
+            default "n"
             help
                 Enable this option if you do not want default warnings to be considered as errors,
                 especially when updating IDF.
@@ -602,6 +607,13 @@ mainmenu "Espressif IoT Development Framework Configuration"
             help
                 Enable this option if use GCC 14 or newer, and want to disable warnings which don't appear with
                 GCC 13.
+
+        config COMPILER_DISABLE_GCC15_WARNINGS
+            bool "Disable new warnings introduced in GCC 15"
+            default "n"
+            help
+                Enable this option if use GCC 15 or newer, and want to disable warnings which don't appear with
+                GCC 14.
 
         config COMPILER_DUMP_RTL_FILES
             bool "Dump RTL files during compilation"
@@ -639,13 +651,18 @@ mainmenu "Espressif IoT Development Framework Configuration"
 
         choice COMPILER_ORPHAN_SECTIONS
             prompt "Orphan sections handling"
-            default COMPILER_ORPHAN_SECTIONS_WARNING
+            default COMPILER_ORPHAN_SECTIONS_ERROR
             depends on !IDF_TARGET_LINUX
             help
                 If the linker finds orphan sections, it attempts to place orphan sections after sections of the same
                 attribute such as code vs data, loadable vs non-loadable, etc.
                 That means that orphan sections could placed between sections defined in IDF linker scripts.
                 This could lead to corruption of the binary image. Configure the linker action here.
+
+            config COMPILER_ORPHAN_SECTIONS_ERROR
+                bool "Fail if orphan sections found"
+                help
+                    Fails the link step with an error if orphan sections are detected.
 
             config COMPILER_ORPHAN_SECTIONS_WARNING
                 bool "Place with warning"
@@ -664,6 +681,34 @@ mainmenu "Espressif IoT Development Framework Configuration"
             depends on IDF_TOOLCHAIN_GCC
             help
                 Enable compiler static analyzer. This may produce false-positive results and increases compile time.
+
+        choice COMPILER_CXX_GLIBCXX_CONSTEXPR
+            prompt "Define _GLIBCXX_CONSTEXPR"
+            default COMPILER_CXX_GLIBCXX_CONSTEXPR_NO_CHANGE
+            depends on IDF_TOOLCHAIN_GCC && !IDF_TARGET_LINUX
+            help
+                Modify libstdc++ _GLIBCXX20_CONSTEXPR and _GLIBCXX23_CONSTEXPR definitions to provide size
+                optimizations. The total size optimization depends on the application's structure.
+                There is no robust way to determine which option would be better in a particular case.
+                Please try all available options to find the best size optimization.
+
+            config COMPILER_CXX_GLIBCXX_CONSTEXPR_NO_CHANGE
+                bool "No change"
+                help
+                    Use default _GLIBCXX20_CONSTEXPR and _GLIBCXX23_CONSTEXPR defined in libstdc++
+
+            config COMPILER_CXX_GLIBCXX_CONSTEXPR_COLD_CONSTEXPR
+                bool "_GLIBCXX2X_CONSTEXPR=__attribute__((cold)) constexpr"
+                help
+                    Define _GLIBCXX20_CONSTEXPR=__attribute__((cold)) constexpr
+                    Define _GLIBCXX23_CONSTEXPR=__attribute__((cold)) constexpr
+
+            config COMPILER_CXX_GLIBCXX_CONSTEXPR_COLD
+                bool "_GLIBCXX2X_CONSTEXPR=__attribute__((cold))"
+                help
+                    Define _GLIBCXX20_CONSTEXPR=__attribute__((cold)).
+                    Define _GLIBCXX23_CONSTEXPR=__attribute__((cold)).
+        endchoice
 
     endmenu # Compiler Options
 
@@ -694,6 +739,7 @@ mainmenu "Espressif IoT Development Framework Configuration"
             - CONFIG_BOOTLOADER_CACHE_32BIT_ADDR_QUAD_FLASH
             - CONFIG_ESP_WIFI_EAP_TLS1_3
             - CONFIG_ESP_WIFI_ENABLE_ROAMING_APP
-            - CONFIG_USB_HOST_EXT_PORT_SUPPORT_LS
             - CONFIG_USB_HOST_EXT_PORT_RESET_ATTEMPTS
             - CONFIG_LIBC_PICOLIBC
+            - CONFIG_GDMA_ENABLE_WEIGHTED_ARBITRATION
+            - CONFIG_I3C_MASTER_ENABLED

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -33,17 +33,13 @@ void app_main(void)
     */
     vTaskDelay(pdMS_TO_TICKS(1000));
 
-    esp_sleep_wakeup_cause_t cause = esp_sleep_get_wakeup_cause();
-    /* not a wakeup from ULP, load the firmware */
-    if (cause != ESP_SLEEP_WAKEUP_ULP) {
+    if (esp_sleep_get_wakeup_causes() & BIT(ESP_SLEEP_WAKEUP_ULP)) {
+        /* ULP Risc-V read and detected a change in GPIO_0, prints */
+        printf("ULP-RISC-V woke up the main CPU! \n");
+    } else {
+        /* not a wakeup from ULP, load the firmware */
         printf("Not a ULP-RISC-V wakeup, initializing it! \n");
         init_ulp_program();
-    }
-
-    /* ULP Risc-V read and detected a change in GPIO_0, prints */
-    if (cause == ESP_SLEEP_WAKEUP_ULP) {
-        printf("ULP-RISC-V woke up the main CPU! \n");
-
     }
 
     /* Go back to sleep, only the ULP Risc-V will run */

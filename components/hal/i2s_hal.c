@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -68,68 +68,72 @@ void i2s_hal_init(i2s_hal_context_t *hal, int port_id)
 }
 
 #if SOC_PERIPH_CLK_CTRL_SHARED
-void _i2s_hal_set_tx_clock(i2s_hal_context_t *hal, const i2s_hal_clock_info_t *clk_info, i2s_clock_src_t clk_src)
+void _i2s_hal_set_tx_clock(i2s_hal_context_t *hal, const i2s_hal_clock_info_t *clk_info, i2s_clock_src_t clk_src, hal_utils_clk_div_t *ret_mclk_div)
 {
     if (clk_info) {
         hal_utils_clk_div_t mclk_div = {};
+        hal_utils_clk_div_t *mclk_div_ptr = ret_mclk_div ? ret_mclk_div : &mclk_div;
 #if SOC_I2S_HW_VERSION_2
         _i2s_ll_tx_enable_clock(hal->dev);
         _i2s_ll_mclk_bind_to_tx_clk(hal->dev);
 #endif
         _i2s_ll_tx_clk_set_src(hal->dev, clk_src);
-        i2s_hal_calc_mclk_precise_division(clk_info->sclk, clk_info->mclk, &mclk_div);
-        _i2s_ll_tx_set_mclk(hal->dev, &mclk_div);
+        i2s_hal_calc_mclk_precise_division(clk_info->sclk, clk_info->mclk, mclk_div_ptr);
+        _i2s_ll_tx_set_mclk(hal->dev, mclk_div_ptr);
         i2s_ll_tx_set_bck_div_num(hal->dev, clk_info->bclk_div);
     } else {
         _i2s_ll_tx_clk_set_src(hal->dev, clk_src);
     }
 }
 
-void _i2s_hal_set_rx_clock(i2s_hal_context_t *hal, const i2s_hal_clock_info_t *clk_info, i2s_clock_src_t clk_src)
+void _i2s_hal_set_rx_clock(i2s_hal_context_t *hal, const i2s_hal_clock_info_t *clk_info, i2s_clock_src_t clk_src, hal_utils_clk_div_t *ret_mclk_div)
 {
     if (clk_info) {
         hal_utils_clk_div_t mclk_div = {};
+        hal_utils_clk_div_t *mclk_div_ptr = ret_mclk_div ? ret_mclk_div : &mclk_div;
 #if SOC_I2S_HW_VERSION_2
         _i2s_ll_rx_enable_clock(hal->dev);
         _i2s_ll_mclk_bind_to_rx_clk(hal->dev);
 #endif
         _i2s_ll_rx_clk_set_src(hal->dev, clk_src);
-        i2s_hal_calc_mclk_precise_division(clk_info->sclk, clk_info->mclk, &mclk_div);
-        _i2s_ll_rx_set_mclk(hal->dev, &mclk_div);
+        i2s_hal_calc_mclk_precise_division(clk_info->sclk, clk_info->mclk, mclk_div_ptr);
+        _i2s_ll_rx_set_mclk(hal->dev, mclk_div_ptr);
         i2s_ll_rx_set_bck_div_num(hal->dev, clk_info->bclk_div);
     } else {
         _i2s_ll_rx_clk_set_src(hal->dev, clk_src);
     }
 }
 #else
-void i2s_hal_set_tx_clock(i2s_hal_context_t *hal, const i2s_hal_clock_info_t *clk_info, i2s_clock_src_t clk_src)
+void i2s_hal_set_tx_clock(i2s_hal_context_t *hal, const i2s_hal_clock_info_t *clk_info, i2s_clock_src_t clk_src, hal_utils_clk_div_t *ret_mclk_div)
 {
     if (clk_info) {
         hal_utils_clk_div_t mclk_div = {};
+        hal_utils_clk_div_t *mclk_div_ptr = ret_mclk_div ? ret_mclk_div : &mclk_div;
 #if SOC_I2S_HW_VERSION_2
         i2s_ll_tx_enable_clock(hal->dev);
         i2s_ll_mclk_bind_to_tx_clk(hal->dev);
 #endif
         i2s_ll_tx_clk_set_src(hal->dev, clk_src);
-        i2s_hal_calc_mclk_precise_division(clk_info->sclk, clk_info->mclk, &mclk_div);
-        i2s_ll_tx_set_mclk(hal->dev, &mclk_div);
+        i2s_hal_calc_mclk_precise_division(clk_info->sclk, clk_info->mclk, mclk_div_ptr);
+        i2s_ll_tx_set_mclk(hal->dev, mclk_div_ptr);
         i2s_ll_tx_set_bck_div_num(hal->dev, clk_info->bclk_div);
     } else {
         i2s_ll_tx_clk_set_src(hal->dev, clk_src);
     }
 }
 
-void i2s_hal_set_rx_clock(i2s_hal_context_t *hal, const i2s_hal_clock_info_t *clk_info, i2s_clock_src_t clk_src)
+void i2s_hal_set_rx_clock(i2s_hal_context_t *hal, const i2s_hal_clock_info_t *clk_info, i2s_clock_src_t clk_src, hal_utils_clk_div_t *ret_mclk_div)
 {
     if (clk_info) {
         hal_utils_clk_div_t mclk_div = {};
+        hal_utils_clk_div_t *mclk_div_ptr = ret_mclk_div ? ret_mclk_div : &mclk_div;
 #if SOC_I2S_HW_VERSION_2
         i2s_ll_rx_enable_clock(hal->dev);
         i2s_ll_mclk_bind_to_rx_clk(hal->dev);
 #endif
         i2s_ll_rx_clk_set_src(hal->dev, clk_src);
-        i2s_hal_calc_mclk_precise_division(clk_info->sclk, clk_info->mclk, &mclk_div);
-        i2s_ll_rx_set_mclk(hal->dev, &mclk_div);
+        i2s_hal_calc_mclk_precise_division(clk_info->sclk, clk_info->mclk, mclk_div_ptr);
+        i2s_ll_rx_set_mclk(hal->dev, mclk_div_ptr);
         i2s_ll_rx_set_bck_div_num(hal->dev, clk_info->bclk_div);
     } else {
         i2s_ll_rx_clk_set_src(hal->dev, clk_src);
@@ -331,8 +335,8 @@ void i2s_hal_tdm_set_tx_slot(i2s_hal_context_t *hal, bool is_slave, const i2s_ha
     uint32_t msk = slot_cfg->tdm.slot_mask;
     /* Get the maximum slot number */
     cnt = 32 - __builtin_clz(msk);
-    /* There should be at least 2 slots in total even for mono mode */
-    cnt = cnt < 2 ? 2 : cnt;
+    /* Except PCM short format (ws_width = 1), there should be at least 2 slots in total even for mono mode */
+    cnt = ((cnt < 2) && (slot_cfg->tdm.ws_width != 1)) ? 2 : cnt;
     uint32_t total_slot = slot_cfg->tdm.total_slot > cnt ? slot_cfg->tdm.total_slot : cnt;
     i2s_ll_tx_reset(hal->dev);
     i2s_ll_tx_set_slave_mod(hal->dev, is_slave); //TX Slave
@@ -365,8 +369,8 @@ void i2s_hal_tdm_set_rx_slot(i2s_hal_context_t *hal, bool is_slave, const i2s_ha
     uint32_t msk = slot_cfg->tdm.slot_mask;
     /* Get the maximum slot number */
     cnt = 32 - __builtin_clz(msk);
-    /* There should be at least 2 slots in total even for mono mode */
-    cnt = cnt < 2 ? 2 : cnt;
+    /* Except PCM short format (ws_width = 1), there should be at least 2 slots in total even for mono mode */
+    cnt = ((cnt < 2) && (slot_cfg->tdm.ws_width != 1)) ? 2 : cnt;
     uint32_t total_slot = slot_cfg->tdm.total_slot > cnt ? slot_cfg->tdm.total_slot : cnt;
     i2s_ll_rx_reset(hal->dev);
     i2s_ll_rx_set_slave_mod(hal->dev, is_slave); //RX Slave

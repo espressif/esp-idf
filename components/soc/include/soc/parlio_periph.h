@@ -29,6 +29,7 @@ typedef struct {
             const int data_sigs[SOC_PARLIO_TX_UNIT_MAX_DATA_WIDTH];
             const int clk_out_sig;
             const int clk_in_sig;
+            const int cs_sig;
         } tx_units[SOC_PARLIO_TX_UNITS_PER_GROUP];
         struct {
             const int data_sigs[SOC_PARLIO_RX_UNIT_MAX_DATA_WIDTH];
@@ -38,6 +39,7 @@ typedef struct {
         const int tx_irq_id;
         const int rx_irq_id;
         const periph_module_t module;
+        const char *module_name;
     } groups[SOC_PARLIO_GROUPS];
 } parlio_signal_conn_t;
 

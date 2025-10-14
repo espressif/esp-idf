@@ -132,7 +132,7 @@ void app_main(void)
     // Initialize Ethernet driver
     uint8_t eth_port_cnt = 0;
     esp_eth_handle_t *eth_handle;
-    ESP_ERROR_CHECK(example_eth_init(&eth_handle, &eth_port_cnt));
+    ESP_ERROR_CHECK(ethernet_init_all(&eth_handle, &eth_port_cnt));
 
     // Check or multiple ethernet interface
     if (1 < eth_port_cnt) {
@@ -145,7 +145,7 @@ void app_main(void)
     // Create default event loop that running in background
     ESP_ERROR_CHECK(esp_event_loop_create_default());
 
-    // Register user defined event handers
+    // Register user defined event handlers
     ESP_ERROR_CHECK(esp_event_handler_register(ETH_EVENT, ESP_EVENT_ANY_ID, &eth_event_handler, NULL));
     ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_ETH_GOT_IP, &got_ip_event_handler, NULL));
 

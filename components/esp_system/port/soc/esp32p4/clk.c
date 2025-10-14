@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -32,10 +32,12 @@
 #include "soc/usb_serial_jtag_reg.h"
 #include "soc/trace_struct.h"
 
+#include "hal/adc_ll.h"
 #include "hal/aes_ll.h"
 #include "hal/assist_debug_ll.h"
 #include "hal/ds_ll.h"
 #include "hal/ecc_ll.h"
+#include "hal/emac_ll.h"
 #include "hal/etm_ll.h"
 #include "hal/gdma_ll.h"
 #include "hal/hmac_ll.h"
@@ -61,7 +63,7 @@
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/esp_clk.h"
 #include "esp_private/esp_pmu.h"
-#include "esp_rom_uart.h"
+#include "esp_rom_serial_output.h"
 #include "esp_rom_sys.h"
 
 /* Number of cycles to wait from the 32k XTAL oscillator to consider it running.
@@ -74,8 +76,9 @@
 
 static void select_rtc_slow_clk(soc_rtc_slow_clk_src_t rtc_slow_clk_src);
 
-static const char *TAG = "clk";
+ESP_LOG_ATTR_TAG(TAG, "clk");
 
+// This function must be allocated in IRAM.
 void IRAM_ATTR esp_rtc_init(void)
 {
 #if SOC_PMU_SUPPORTED
@@ -92,7 +95,9 @@ __attribute__((weak)) void esp_clk_init(void)
     rtc_clk_fast_src_set(SOC_RTC_FAST_CLK_SRC_RC_FAST);
 #elif CONFIG_RTC_FAST_CLK_SRC_XTAL
     rtc_clk_fast_src_set(SOC_RTC_FAST_CLK_SRC_XTAL);
-    esp_sleep_sub_mode_config(ESP_SLEEP_RTC_FAST_USE_XTAL_MODE, true);
+    if (esp_sleep_sub_mode_dump_config(NULL)[ESP_SLEEP_RTC_FAST_USE_XTAL_MODE] == 0) {
+        esp_sleep_sub_mode_config(ESP_SLEEP_RTC_FAST_USE_XTAL_MODE, true);
+    }
 #else
 #error "No RTC fast clock source configured"
 #endif
@@ -167,10 +172,10 @@ static void select_rtc_slow_clk(soc_rtc_slow_clk_src_t rtc_slow_clk_src)
              * will time out, returning 0.
              */
             ESP_EARLY_LOGD(TAG, "waiting for 32k oscillator to start up");
-            rtc_cal_sel_t cal_sel = 0;
+            soc_clk_freq_calculation_src_t cal_sel = -1;
             if (rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_XTAL32K) {
                 rtc_clk_32k_enable(true);
-                cal_sel = RTC_CAL_32K_XTAL;
+                cal_sel = CLK_CAL_32K_XTAL;
             }
             // When SLOW_CLK_CAL_CYCLES is set to 0, clock calibration will not be performed at startup.
             if (SLOW_CLK_CAL_CYCLES > 0) {
@@ -201,7 +206,7 @@ static void select_rtc_slow_clk(soc_rtc_slow_clk_src_t rtc_slow_clk_src)
             /* TODO: 32k XTAL oscillator has some frequency drift at startup.
              * Improve calibration routine to wait until the frequency is stable.
              */
-            cal_val = rtc_clk_cal(RTC_CAL_RTC_MUX, SLOW_CLK_CAL_CYCLES);
+            cal_val = rtc_clk_cal(CLK_CAL_RTC_SLOW, SLOW_CLK_CAL_CYCLES);
         } else {
             const uint64_t cal_dividend = (1ULL << RTC_CLK_CAL_FRACT) * 1000000ULL;
             cal_val = (uint32_t)(cal_dividend / rtc_clk_slow_freq_get_hz());
@@ -244,9 +249,23 @@ __attribute__((weak)) void esp_perip_clk_init(void)
     }
 
     soc_reset_reason_t rst_reason = esp_rom_get_reset_reason(0);
-    // HP related clock control
-    if ((rst_reason == RESET_REASON_CHIP_POWER_ON) || (rst_reason == RESET_REASON_CORE_PMU_PWR_DOWN)) {
+    // HP modules related clock control
+    if ((rst_reason == RESET_REASON_CHIP_POWER_ON) || (rst_reason == RESET_REASON_CORE_PMU_PWR_DOWN)
+            || (rst_reason == RESET_REASON_SYS_BROWN_OUT) || (rst_reason == RESET_REASON_SYS_RWDT) || (rst_reason == RESET_REASON_SYS_SUPER_WDT)
+            || (rst_reason == RESET_REASON_CORE_SW) || (rst_reason == RESET_REASON_CORE_MWDT) || (rst_reason == RESET_REASON_CORE_RWDT) || (rst_reason == RESET_REASON_CORE_PWR_GLITCH) || (rst_reason == RESET_REASON_CORE_EFUSE_CRC) || (rst_reason == RESET_REASON_CORE_USB_JTAG) || (rst_reason == RESET_REASON_CORE_USB_UART)
+       ) {
+        // Not gate HP_SYS_CLKRST_REG_L2MEM_MEM_CLK_FORCE_ON since the hardware will not automatically ungate when DMA accesses L2 MEM.
+        REG_CLR_BIT(HP_SYS_CLKRST_CLK_FORCE_ON_CTRL0_REG,   HP_SYS_CLKRST_REG_CPUICM_GATED_CLK_FORCE_ON
+                    | HP_SYS_CLKRST_REG_TCM_CPU_CLK_FORCE_ON
+                    | HP_SYS_CLKRST_REG_BUSMON_CPU_CLK_FORCE_ON
+                    | HP_SYS_CLKRST_REG_TRACE_CPU_CLK_FORCE_ON
+                    | HP_SYS_CLKRST_REG_TRACE_SYS_CLK_FORCE_ON);
+        _adc_ll_sar1_clock_force_en(false);
+        _adc_ll_sar2_clock_force_en(false);
+        _emac_ll_clock_force_en(false);
+
         // hp_sys_clkrst register gets reset only if chip reset or pmu powers down hp
+        // but at core reset and above, we will also disable HP modules' clock gating to save power consumption
         _gdma_ll_enable_bus_clock(0, false);
         _gdma_ll_enable_bus_clock(1, false);
         _pau_ll_enable_bus_clock(false);
@@ -271,13 +290,13 @@ __attribute__((weak)) void esp_perip_clk_init(void)
         _uart_ll_enable_bus_clock(UART_NUM_4, false);
         _uart_ll_sclk_disable(&UART4);
 
-        _timer_ll_enable_bus_clock(0, false);
-        _timer_ll_enable_clock(&TIMERG0, 0, false);
-        _timer_ll_enable_clock(&TIMERG0, 1, false);
+        _timg_ll_enable_bus_clock(0, false);
+        _timer_ll_enable_clock(0, 0, false);
+        _timer_ll_enable_clock(0, 1, false);
 
-        _timer_ll_enable_bus_clock(1, false);
-        _timer_ll_enable_clock(&TIMERG1, 0, false);
-        _timer_ll_enable_clock(&TIMERG1, 1, false);
+        _timg_ll_enable_bus_clock(1, false);
+        _timer_ll_enable_clock(1, 0, false);
+        _timer_ll_enable_clock(1, 1, false);
 
         mipi_dsi_brg_ll_enable_ref_clock(&MIPI_DSI_BRIDGE, false);
         _mipi_csi_ll_enable_host_bus_clock(0, false);
@@ -302,14 +321,6 @@ __attribute__((weak)) void esp_perip_clk_init(void)
         _psram_ctrlr_ll_enable_core_clock(PSRAM_CTRLR_LL_MSPI_ID_2, false);
         _psram_ctrlr_ll_enable_module_clock(PSRAM_CTRLR_LL_MSPI_ID_2, false);
 #endif
-
-        REG_CLR_BIT(HP_SYS_CLKRST_REF_CLK_CTRL1_REG, HP_SYS_CLKRST_REG_REF_50M_CLK_EN);
-        REG_CLR_BIT(HP_SYS_CLKRST_REF_CLK_CTRL1_REG, HP_SYS_CLKRST_REG_REF_25M_CLK_EN);
-        // 240M CLK is for Key Management use, should not be gated
-        REG_CLR_BIT(HP_SYS_CLKRST_REF_CLK_CTRL2_REG, HP_SYS_CLKRST_REG_REF_160M_CLK_EN);
-        REG_CLR_BIT(HP_SYS_CLKRST_REF_CLK_CTRL2_REG, HP_SYS_CLKRST_REG_REF_120M_CLK_EN);
-        REG_CLR_BIT(HP_SYS_CLKRST_REF_CLK_CTRL2_REG, HP_SYS_CLKRST_REG_REF_80M_CLK_EN);
-        REG_CLR_BIT(HP_SYS_CLKRST_REF_CLK_CTRL2_REG, HP_SYS_CLKRST_REG_REF_20M_CLK_EN);
 
         _spi_ll_enable_bus_clock(SPI2_HOST, false);
         _spi_ll_enable_bus_clock(SPI3_HOST, false);
@@ -357,6 +368,21 @@ __attribute__((weak)) void esp_perip_clk_init(void)
 #endif
     }
 
+    // HP modules' clock source gating control
+    if ((rst_reason == RESET_REASON_CHIP_POWER_ON) || (rst_reason == RESET_REASON_CORE_PMU_PWR_DOWN)) {
+        // Only safe to disable these clock source gatings if all HP modules clock configurations has been reset
+        REG_CLR_BIT(HP_SYS_CLKRST_REF_CLK_CTRL1_REG, HP_SYS_CLKRST_REG_REF_50M_CLK_EN);
+        REG_CLR_BIT(HP_SYS_CLKRST_REF_CLK_CTRL1_REG, HP_SYS_CLKRST_REG_REF_25M_CLK_EN);
+        // 240M CLK is for Key Management use, should not be gated
+#if !CONFIG_ESP_ENABLE_PVT
+        REG_CLR_BIT(HP_SYS_CLKRST_REF_CLK_CTRL2_REG, HP_SYS_CLKRST_REG_REF_160M_CLK_EN);
+#endif
+        // 160M CLK is for PVT use, should not be gated
+        REG_CLR_BIT(HP_SYS_CLKRST_REF_CLK_CTRL2_REG, HP_SYS_CLKRST_REG_REF_120M_CLK_EN);
+        REG_CLR_BIT(HP_SYS_CLKRST_REF_CLK_CTRL2_REG, HP_SYS_CLKRST_REG_REF_80M_CLK_EN);
+        REG_CLR_BIT(HP_SYS_CLKRST_REF_CLK_CTRL2_REG, HP_SYS_CLKRST_REG_REF_20M_CLK_EN);
+    }
+
     // LP related clock control
     if ((rst_reason == RESET_REASON_CHIP_POWER_ON) || (rst_reason == RESET_REASON_SYS_SUPER_WDT) \
             || (rst_reason == RESET_REASON_SYS_RWDT) || (rst_reason == RESET_REASON_SYS_BROWN_OUT)) {
@@ -385,7 +411,7 @@ __attribute__((weak)) void esp_perip_clk_init(void)
             REG_CLR_BIT(LP_CLKRST_HP_CLK_CTRL_REG, LP_CLKRST_HP_SDIO_PLL2_CLK_EN);
             REG_CLR_BIT(LP_CLKRST_HP_CLK_CTRL_REG, LP_CLKRST_HP_SDIO_PLL1_CLK_EN);
             REG_CLR_BIT(LP_CLKRST_HP_CLK_CTRL_REG, LP_CLKRST_HP_SDIO_PLL0_CLK_EN);
-#if !CONFIG_SPIRAM_BOOT_INIT
+#if !CONFIG_SPIRAM_BOOT_HW_INIT
             REG_CLR_BIT(LP_CLKRST_HP_CLK_CTRL_REG, LP_CLKRST_HP_MPLL_500M_CLK_EN);
 #endif
             REG_CLR_BIT(LP_SYSTEM_REG_HP_ROOT_CLK_CTRL_REG, LP_SYSTEM_REG_CPU_CLK_EN);

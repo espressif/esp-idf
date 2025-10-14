@@ -59,6 +59,15 @@
     * 多种外设
     * 适用于较简单、大批量生产的物联网应用
 
+.. only:: esp32c5
+
+    * 2.4 & 5 GHz 双频 Wi-Fi 6
+    * 低功耗蓝牙
+    * 802.15.4，支持 Thread 和 Zigbee 协议
+    * 高性能 32 位 RISC-V 单核处理器
+    * 多种外设
+    * 内置安全硬件
+
 .. only:: esp32c6
 
     * 2.4 GHz Wi-Fi 6
@@ -84,7 +93,16 @@
     * 外设丰富包括 MIPI、USB、SDIO、以太网等
     * 内置安全硬件
 
-{IDF_TARGET_NAME} 采用 40 nm 工艺制成，具有最佳的功耗性能、射频性能、稳定性、通用性和可靠性，适用于各种应用场景和不同功耗需求。
+
+.. only:: esp32p4
+
+    {IDF_TARGET_NAME} 采用 40 nm 工艺制成，具有最佳的功耗性能、安全性和可靠性，适用于各种应用场景和不同功耗需求。
+
+
+.. only:: not esp32p4
+
+    {IDF_TARGET_NAME} 采用 40 nm 工艺制成，具有最佳的功耗性能、射频性能、安全性和可靠性，适用于各种应用场景和不同功耗需求。
+
 
 乐鑫为用户提供完整的软、硬件资源，进行 {IDF_TARGET_NAME} 硬件设备的开发。其中，乐鑫的软件开发环境 ESP-IDF 旨在协助用户快速开发物联网 (IoT) 应用，可满足用户对 Wi-Fi、蓝牙、低功耗等方面的要求。
 
@@ -149,6 +167,13 @@
 
         ESP8684-DevKitM-1 <https://docs.espressif.com/projects/espressif-esp-dev-kits/zh_CN/latest/esp8684/esp8684-devkitm-1/index.html>
 
+.. only:: esp32c5
+
+    .. toctree::
+        :maxdepth: 1
+
+        ESP32-C5-DevKitC-1 <https://docs.espressif.com/projects/esp-dev-kits/zh_CN/latest/esp32c5/esp32-c5-devkitc-1/index.html>
+
 .. only:: esp32c6
 
     .. toctree::
@@ -159,7 +184,11 @@
 
 .. only:: esp32p4
 
-    即将发布
+    .. toctree::
+        :maxdepth: 1
+
+        ESP32-P4-Function-EV-Board <https://docs.espressif.com/projects/esp-dev-kits/zh_CN/latest/esp32p4/esp32-p4-function-ev-board/index.html>
+        ESP32-P4-EYE <https://docs.espressif.com/projects/esp-dev-kits/zh_CN/latest/esp32p4/esp32-p4-eye/index.html>
 
 .. _get-started-get-prerequisites:
 

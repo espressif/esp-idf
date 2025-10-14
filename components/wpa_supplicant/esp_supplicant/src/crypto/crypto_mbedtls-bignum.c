@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,6 +7,7 @@
 #ifdef ESP_PLATFORM
 #include "esp_system.h"
 #include "mbedtls/bignum.h"
+#include "mbedtls/esp_mbedtls_random.h"
 #endif
 
 #include "utils/includes.h"
@@ -15,11 +16,6 @@
 #include "random.h"
 #include "sha256.h"
 #include "mbedtls/pk.h"
-
-static int crypto_rng_wrapper(void *ctx, unsigned char *buf, size_t len)
-{
-    return random_get_bytes(buf, len);
-}
 
 struct crypto_bignum *crypto_bignum_init(void)
 {
@@ -51,15 +47,20 @@ cleanup:
 
 struct crypto_bignum * crypto_bignum_init_uint(unsigned int val)
 {
+    int ret;
 
     mbedtls_mpi *bn = os_zalloc(sizeof(mbedtls_mpi));
-    if (bn == NULL) {
+    if (!bn) {
         return NULL;
     }
 
     mbedtls_mpi_init(bn);
-    mbedtls_mpi_lset(bn, val);
+    ret = mbedtls_mpi_lset(bn, val);
 
+    if (ret) {
+        crypto_bignum_deinit((struct crypto_bignum *)bn, 0);
+        bn = NULL;
+    }
     return (struct crypto_bignum *)bn;
 }
 
@@ -215,7 +216,7 @@ int crypto_bignum_is_odd(const struct crypto_bignum *a)
 int crypto_bignum_rand(struct crypto_bignum *r, const struct crypto_bignum *m)
 {
     return ((mbedtls_mpi_random((mbedtls_mpi *) r, 0, (const mbedtls_mpi *) m,
-                                crypto_rng_wrapper, NULL) != 0) ? -1 : 0);
+                                mbedtls_esp_random, NULL) != 0) ? -1 : 0);
 }
 
 int crypto_bignum_legendre(const struct crypto_bignum *a,

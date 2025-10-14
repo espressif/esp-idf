@@ -15,6 +15,8 @@ RTC 子系统控制
 
 RTC 控制 API 已经从 ``driver/rtc_cntl.h`` 移动到了 ``esp_private/rtc_ctrl.h``。
 
+.. _deprecate_adc_driver:
+
 ADC
 -----------------
 
@@ -30,7 +32,7 @@ ADC 单次模式的驱动已更新。
 
 - 头文件引用路径由 ``driver/adc.h`` 更新为 ``esp_adc/adc_continuous.h``。
 
-但是，引用两种模式的旧版路径 ``driver/adc.h`` 会默认触发如下编译警告，可通过配置 Kconfig 选项 :ref:`CONFIG_ADC_SUPPRESS_DEPRECATE_WARN` 关闭该警告。
+但是，引用两种模式的旧版路径 ``driver/adc.h`` 会默认触发如下编译警告。
 
 .. code-block:: text
 
@@ -45,7 +47,7 @@ ADC 校准驱动已更新。
 
 旧版驱动仍然可用，其头文件引用路径为 ``esp_adc_cal.h``。如果用户要使用旧版路径，需要将组件 ``esp_adc`` 添加到文件 CMakeLists.txt 的组件需求表中。
 
-默认情况下，引用路径 ``esp_adc_cal.h`` 会默认触发如下编译警告，可通过配置 Kconfig 选项 :ref:`CONFIG_ADC_CALI_SUPPRESS_DEPRECATE_WARN` 关闭该警告。
+默认情况下，引用路径 ``esp_adc_cal.h`` 会默认触发如下编译警告。
 
 .. code-block:: text
 
@@ -88,15 +90,17 @@ GPIO
 
 .. only:: SOC_SDM_SUPPORTED
 
-    Sigma-Delta 调制器
-    ---------------------------------
+    .. _deprecate_sdm_legacy_driver:
+
+    旧版 Sigma-Delta 调制器驱动已被弃用
+    --------------------------------------------------
 
     Sigma-Delta 调制器的驱动现已更新为 :doc:`SDM <../../../api-reference/peripherals/sdm>`。
 
     - 新驱动中实现了工厂模式，SDM 通道都位于内部通道池中，因此用户无需手动将 SDM 通道配置到 GPIO 管脚。
     - SDM 通道会被自动分配。
 
-    尽管我们推荐用户使用新的驱动 API，旧版驱动仍然可用，位于头文件引用路径 ``driver/sigmadelta.h`` 中。但是，引用 ``driver/sigmadelta.h`` 会默认触发如下编译警告，可通过配置 Kconfig 选项 :ref:`CONFIG_SDM_SUPPRESS_DEPRECATE_WARN` 关闭该警告。
+    尽管我们推荐用户使用新的驱动 API，旧版驱动仍然可用，位于头文件引用路径 ``driver/sigmadelta.h`` 中。但是，引用 ``driver/sigmadelta.h`` 会默认触发如下编译警告，可通过配置 Kconfig 选项 ``CONFIG_SDM_SUPPRESS_DEPRECATE_WARN`` 关闭该警告。
 
     .. code-block:: text
 
@@ -119,37 +123,41 @@ GPIO
     - 更新前，通道配置由通道分配在 :cpp:func:`sdm_new_channel` 完成。在新驱动中，只有 ``density`` 可在运行时由 :cpp:func:`sdm_channel_set_pulse_density` 更新。其他参数如 ``gpio number``、 ``prescale`` 只能在通道分配时进行设置。
     - 在进行下一步通道操作前，用户应通过调用 :cpp:func:`sdm_channel_enable` 提前 **使能** 该通道。该函数有助于管理一些系统级服务，如 **电源管理**。
 
-定时器组驱动
------------------------------------------
+.. only:: SOC_GPTIMER_SUPPORTED
 
-为统一和简化通用定时器的使用，定时器组驱动已更新为 :doc:`GPTimer <../../../api-reference/peripherals/gptimer>`。
+    .. _deprecate_gptimer_legacy_driver:
 
-尽管我们推荐使用新的驱动 API， 旧版驱动仍然可用，其头文件引用路径为 ``driver/timer.h``。但是，引用 ``driver/timer.h`` 会默认触发如下编译警告，可通过配置 Kconfig 选项 :ref:`CONFIG_GPTIMER_SUPPRESS_DEPRECATE_WARN` 关闭该警告。
+    旧版定时器组驱动被弃用
+    ----------------------
 
-.. code-block:: text
+    为统一和简化通用定时器的使用，定时器组驱动已更新为 :doc:`GPTimer <../../../api-reference/peripherals/gptimer>`。
 
-    legacy timer group driver is deprecated, please migrate to driver/gptimer.h
+    尽管我们推荐使用新的驱动 API， 旧版驱动仍然可用，其头文件引用路径为 ``driver/timer.h``。但是，引用 ``driver/timer.h`` 会默认触发如下编译警告，可通过配置 Kconfig 选项 ``CONFIG_GPTIMER_SUPPRESS_DEPRECATE_WARN`` 关闭该警告。
 
-概念和使用方法上的主要更新如下所示：
+    .. code-block:: text
 
-主要概念更新
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        legacy timer group driver is deprecated, please migrate to driver/gptimer.h
 
--  用于识别定时器的 ``timer_group_t`` 和 ``timer_idx_t`` 已被删除。在新驱动中，定时器用参数 :cpp:type:`gptimer_handle_t` 表示。
--  更新后，定时器的时钟源由 :cpp:type:`gptimer_clock_source_t` 定义，之前的时钟源参数 ``timer_src_clk_t`` 不再使用。
--  更新后，定时器计数方向由 :cpp:type:`gptimer_count_direction_t` 定义，之前的计数方向参数 ``timer_count_dir_t`` 不再使用。
--  更新后，仅支持电平触发的中断， ``timer_intr_t`` 和 ``timer_intr_mode_t`` 不再使用。
--  更新后，通过设置标志位 :cpp:member:`gptimer_alarm_config_t::auto_reload_on_alarm`， 可以使能自动加载。 ``timer_autoreload_t`` 不再使用。
+    概念和使用方法上的主要更新如下所示：
 
-主要使用方法更新
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    主要概念更新
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
--  更新后，通过从 :cpp:func:`gptimer_new_timer` 创建定时器示例可以初始化定时器。用户可以在 :cpp:type:`gptimer_config_t` 进行一些基本设置，如时钟源，分辨率和计数方向。请注意，无需在驱动安装阶段进行报警事件的特殊设置。
--  更新后，报警事件在 :cpp:func:`gptimer_set_alarm_action` 中进行设置，参数在 :cpp:type:`gptimer_alarm_config_t` 中进行设置。
--  更新后，通过 :cpp:func:`gptimer_set_raw_count` 设置计数数值，通过 :cpp:func:`gptimer_get_raw_count` 获取计数数值。驱动不会自动将原始数据同步到 UTC 时间戳。由于定时器的分辨率已知，用户可以自行转换数据。
--  更新后，如果 :cpp:member:`gptimer_event_callbacks_t::on_alarm` 被设置为有效的回调函数，驱动程序也会安装中断服务。在回调函数中，用户无需配置底层寄存器，如用于“清除中断状态”，“重新使能事件”的寄存器等。因此， ``timer_group_get_intr_status_in_isr`` 与 ``timer_group_get_auto_reload_in_isr`` 这些函数不再使用。
--  更新后，当报警事件发生时，为更新报警配置，用户可以在中断回调中调用 :cpp:func:`gptimer_set_alarm_action`，这样报警事件会被重新使能。
--  更新后，如果用户将 :cpp:member:`gptimer_alarm_config_t::auto_reload_on_alarm` 设置为 true，报警事件将会一直被驱动程序使能。
+    -  用于识别定时器的 ``timer_group_t`` 和 ``timer_idx_t`` 已被删除。在新驱动中，定时器用参数 :cpp:type:`gptimer_handle_t` 表示。
+    -  更新后，定时器的时钟源由 :cpp:type:`gptimer_clock_source_t` 定义，之前的时钟源参数 ``timer_src_clk_t`` 不再使用。
+    -  更新后，定时器计数方向由 :cpp:type:`gptimer_count_direction_t` 定义，之前的计数方向参数 ``timer_count_dir_t`` 不再使用。
+    -  更新后，仅支持电平触发的中断， ``timer_intr_t`` 和 ``timer_intr_mode_t`` 不再使用。
+    -  更新后，通过设置标志位 :cpp:member:`gptimer_alarm_config_t::auto_reload_on_alarm`， 可以使能自动加载。 ``timer_autoreload_t`` 不再使用。
+
+    主要使用方法更新
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    -  更新后，通过从 :cpp:func:`gptimer_new_timer` 创建定时器示例可以初始化定时器。用户可以在 :cpp:type:`gptimer_config_t` 进行一些基本设置，如时钟源，分辨率和计数方向。请注意，无需在驱动安装阶段进行报警事件的特殊设置。
+    -  更新后，报警事件在 :cpp:func:`gptimer_set_alarm_action` 中进行设置，参数在 :cpp:type:`gptimer_alarm_config_t` 中进行设置。
+    -  更新后，通过 :cpp:func:`gptimer_set_raw_count` 设置计数数值，通过 :cpp:func:`gptimer_get_raw_count` 获取计数数值。驱动不会自动将原始数据同步到 UTC 时间戳。由于定时器的分辨率已知，用户可以自行转换数据。
+    -  更新后，如果 :cpp:member:`gptimer_event_callbacks_t::on_alarm` 被设置为有效的回调函数，驱动程序也会安装中断服务。在回调函数中，用户无需配置底层寄存器，如用于“清除中断状态”，“重新使能事件”的寄存器等。因此， ``timer_group_get_intr_status_in_isr`` 与 ``timer_group_get_auto_reload_in_isr`` 这些函数不再使用。
+    -  更新后，当报警事件发生时，为更新报警配置，用户可以在中断回调中调用 :cpp:func:`gptimer_set_alarm_action`，这样报警事件会被重新使能。
+    -  更新后，如果用户将 :cpp:member:`gptimer_alarm_config_t::auto_reload_on_alarm` 设置为 true，报警事件将会一直被驱动程序使能。
 
 UART
 ------------
@@ -242,12 +250,14 @@ LEDC
 
 .. only:: SOC_PCNT_SUPPORTED
 
-    脉冲计数器 (PCNT) 驱动
+    .. _deprecate_pcnt_legacy_driver:
+
+    旧版 PCNT 驱动被弃用
     ----------------------------------
 
     为统一和简化 PCNT 外设，PCNT 驱动已更新，详见 :doc:`PCNT <../../../api-reference/peripherals/pcnt>`。
 
-    尽管我们推荐使用新的驱动 API，旧版驱动仍然可用，保留在头文件引用路径 ``driver/pcnt.h`` 中。但是，引用路径 ``driver/pcnt.h`` 会默认触发如下编译警告，可通过配置 Kconfig 选项 :ref:`CONFIG_PCNT_SUPPRESS_DEPRECATE_WARN` 来关闭该警告。
+    尽管我们推荐使用新的驱动 API，旧版驱动仍然可用，保留在头文件引用路径 ``driver/pcnt.h`` 中。但是，引用路径 ``driver/pcnt.h`` 会默认触发如下编译警告，可通过配置 Kconfig 选项 ``CONFIG_PCNT_SUPPRESS_DEPRECATE_WARN`` 来关闭该警告。
 
     .. code-block:: text
 
@@ -286,12 +296,14 @@ LEDC
 
 .. only:: SOC_TEMP_SENSOR_SUPPORTED
 
-    温度传感器驱动
+    .. _deprecate_tsens_legacy_driver:
+
+    旧版温度传感器驱动已被弃用
     ------------------------------------------------------------
 
     温度传感器的驱动已更新，推荐用户使用新驱动。旧版驱动仍然可用，但是无法与新驱动同时使用。
 
-    新驱动的头文件引用路径为 ``driver/temperature_sensor.h``。旧版驱动仍然可用，保留在引用路径 ``driver/temp_sensor.h`` 中。但是，引用路径 ``driver/temp_sensor.h`` 会默认触发如下编译警告，可通过设置 Kconfig 选项 :ref:`CONFIG_TEMP_SENSOR_SUPPRESS_DEPRECATE_WARN` 来关闭该警告。
+    新驱动的头文件引用路径为 ``driver/temperature_sensor.h``。旧版驱动仍然可用，保留在引用路径 ``driver/temp_sensor.h`` 中。但是，引用路径 ``driver/temp_sensor.h`` 会默认触发如下编译警告，可通过设置 Kconfig 选项 ``CONFIG_TEMP_SENSOR_SUPPRESS_DEPRECATE_WARN`` 来关闭该警告。
 
     .. code-block:: text
 
@@ -303,12 +315,14 @@ LEDC
 
 .. only:: SOC_RMT_SUPPORTED
 
-    RMT 驱动
-    ----------------------
+    .. _deprecate_rmt_legacy_driver:
+
+    旧版 RMT 驱动已被弃用
+    -----------------------------------
 
     为统一和扩展 RMT 外设的使用，RMT 驱动已更新，详见 :doc:`RMT transceiver <../../../api-reference/peripherals/rmt>`。
 
-    尽管我们建议使用新的驱动 API，旧版驱动仍然可用，保留在头文件引用路径 ``driver/rmt.h``中。但是，引用路径 ``driver/rmt.h`` 会默认触发如下编译警告，可通过配置 Kconfig 选项 :ref:`CONFIG_RMT_SUPPRESS_DEPRECATE_WARN` 来关闭该警告。
+    尽管我们建议使用新的驱动 API，旧版驱动仍然可用，保留在头文件引用路径 ``driver/rmt.h``中。但是，引用路径 ``driver/rmt.h`` 会默认触发如下编译警告，可通过配置 Kconfig 选项 ``CONFIG_RMT_SUPPRESS_DEPRECATE_WARN`` 来关闭该警告。
 
     .. code-block:: text
 
@@ -378,14 +392,16 @@ LCD
 
 .. only:: SOC_MCPWM_SUPPORTED
 
-    MCPWM
-    -----
+    .. _deprecate_mcpwm_legacy_driver:
+
+    旧版 MCPWM 驱动已弃用
+    -----------------------------------
 
     MCPWM 驱动已更新（详见 :doc:`MCPWM <../../../api-reference/peripherals/mcpwm>`）。同时，旧版驱动已被弃用。
 
     新驱动中，每个 MCPWM 子模块相互独立，用户可以自由进行资源连接。
 
-    尽管我们推荐使用新的驱动 API，旧版驱动仍然可用，其引用路径为 ``driver/mcpwm.h``。但是，使用旧版驱动会默认触发如下编译警告，可以通过配置 Kconfig 选项 :ref:`CONFIG_MCPWM_SUPPRESS_DEPRECATE_WARN` 来关闭该警告。
+    尽管我们推荐使用新的驱动 API，旧版驱动仍然可用，其引用路径为 ``driver/mcpwm.h``。但是，使用旧版驱动会默认触发如下编译警告，可以通过配置 Kconfig 选项 ``CONFIG_MCPWM_SUPPRESS_DEPRECATE_WARN`` 来关闭该警告。
 
     .. code-block:: text
 
@@ -456,12 +472,14 @@ LCD
 
 .. only:: SOC_I2S_SUPPORTED
 
+    .. _deprecate_i2s_legacy_driver:
+
     I2S 驱动
     -----------------------
 
     旧版 I2S 驱动在支持 ESP32-C3 和 ESP32-S3 新功能时暴露了很多缺点，为解决这些缺点，I2S 驱动已更新（请参考:doc:`I2S Driver <../../../api-reference/peripherals/i2s>`）。用户可以通过引用不同 I2S 模式对应的头文件来使用新版驱动的 API，如 :component_file:`esp_driver_i2s/include/driver/i2s_std.h`， :component_file:`esp_driver_i2s/include/driver/i2s_pdm.h` 以及 :component_file:`esp_driver_i2s/include/driver/i2s_tdm.h`。
 
-    为保证前向兼容，旧版驱动的 API 仍然在 :component_file:`driver/deprecated/driver/i2s.h` 中可用。但使用旧版 API 会触发编译警告，该警告可通过配置 Kconfig 选项 :ref:`CONFIG_I2S_SUPPRESS_DEPRECATE_WARN` 来关闭。
+    为保证前向兼容，旧版驱动的 API 仍然在 ``driver/i2s.h`` 可用。但使用旧版 API 会触发编译警告，该警告可通过配置 Kconfig 选项 ``CONFIG_I2S_SUPPRESS_DEPRECATE_WARN`` 来关闭。
 
     以下是更新后的 I2S 文件概况。
 
@@ -481,7 +499,7 @@ LCD
     - :cpp:type:`i2s_chan_handle_t` 句柄类型用于唯一地识别 I2S 通道。所有的 API 都需要该通道句柄，用户需要对这些通道句柄进行维护。
     - 对于 ESP32-C3 和 ESP32-S3，同一个控制器中的发送通道和接收通道可以配置为不同的时钟或不同的模式。
     - 但是对于 ESP32 和 ESP32-S2， 同一个控制器中的发送通道和接收通道共享某些硬件资源。因此，配置可能会造成一个通道影响同一个控制器中的另一个通道。
-    - 通过将 :cpp:enumerator:`i2s_port_t::I2S_NUM_AUTO` 设置为 I2S 端口 ID，驱动会搜索可用的发送/接收通道，之后通道会被自动注册到可用的 I2S 控制器上。但是，驱动仍然支持将通道注册到一个特定的端口上。
+    - 通过将 ``I2S_NUM_AUTO`` 设置为 I2S 端口 ID，驱动会搜索可用的发送/接收通道，之后通道会被自动注册到可用的 I2S 控制器上。但是，驱动仍然支持将通道注册到一个特定的端口上。
     - 为区分发送/接收通道和声音通道，在更新后的驱动中，“通道 (channel)”一词仅代表发送/接收通道，用“声道 (slot)”来表示声音通道。
 
     I2S 模式分类

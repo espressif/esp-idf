@@ -49,7 +49,12 @@ void btc_a2dp_on_idle(void)
     }
 #endif // BTC_AV_SRC_INCLUDED
 
-    bta_av_co_init();
+#if (BTC_AV_EXT_CODEC == TRUE)
+    tBTC_AV_CODEC_INFO *codec_caps = btc_av_codec_cap_get();
+#else
+    tBTC_AV_CODEC_INFO *codec_caps = NULL;
+#endif
+    bta_av_co_init(codec_caps);
 
 #if BTC_AV_SINK_INCLUDED
     if (btc_av_get_peer_sep() == AVDT_TSEP_SRC && btc_av_get_service_id() == BTA_A2DP_SINK_SERVICE_ID) {
@@ -88,9 +93,11 @@ BOOLEAN btc_a2dp_on_started(tBTA_AV_START *p_av, BOOLEAN pending_start)
                     ack = TRUE;
                 }
             } else {
+#if (BTC_AV_EXT_CODEC == FALSE)
                 /* we were remotely started,  make sure codec
                    is setup before datapath is started */
                 btc_a2dp_source_setup_codec();
+#endif
             }
 
             /* media task is autostarted upon a2dp audiopath connection */

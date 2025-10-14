@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,7 @@
 
 #include "sdkconfig.h"
 #include <stdbool.h>
+#include <stddef.h>
 #include "lwip/ip_addr.h"
 #include "lwip/err.h"
 
@@ -47,6 +48,13 @@ enum dhcps_offer_option{
 	OFFER_END
 };
 
+typedef enum
+{
+    DNS_TYPE_MAIN = 0, /**< DNS main server address*/
+    DNS_TYPE_BACKUP,   /**< DNS backup server address (Wi-Fi STA and Ethernet only) */
+    DNS_TYPE_MAX
+} dns_type_t;
+
 /** @brief DHCP server's description of compile time configuration values in dhcpserver.c
  *
  * - DHCPS_DEBUG: Prints very detailed debug messages if set to 1, hardcoded to 0
@@ -68,9 +76,15 @@ enum dhcps_offer_option{
 #define DHCPS_LEASE_UNIT CONFIG_LWIP_DHCPS_LEASE_UNIT
 
 struct dhcps_pool{
-	ip4_addr_t ip;
-	u8_t mac[6];
-	u32_t lease_timer;
+    ip4_addr_t ip;
+    u8_t mac[6];
+    u32_t lease_timer;
+    /* Optional: client's hostname from DHCP option 12, if provided */
+#if CONFIG_LWIP_DHCPS
+#if CONFIG_LWIP_DHCPS_REPORT_CLIENT_HOSTNAME
+    char hostname[CONFIG_LWIP_DHCPS_MAX_HOSTNAME_LEN];
+#endif
+#endif
 };
 
 typedef u32_t dhcps_time_t;
@@ -161,20 +175,48 @@ err_t dhcps_set_option_info(dhcps_t *dhcps, u8_t op_id, void *opt_info, u32_t op
 bool dhcp_search_ip_on_mac(dhcps_t *dhcps, u8_t *mac, ip4_addr_t *ip);
 
 /**
- * @brief Sets DNS server address for the DHCP server
+ * @brief Tries to find client hostname corresponding to the supplied MAC
+ * @param dhcps Pointer to the DHCP handle
+ * @param mac Supplied MAC address
+ * @param out Output buffer to receive the hostname (null-terminated)
+ * @param out_len Size of the output buffer
+ * @return True if the hostname has been found and copied (may be empty string if not provided by client)
+ */
+bool dhcps_get_hostname_on_mac(dhcps_t *dhcps, const u8_t *mac, char *out, size_t out_len);
+
+/**
+ * @brief Sets the DNS server address for the DHCP server
  * @param dhcps Pointer to the DHCP handle
  * @param dnsserver Address of the DNS server
- * @return ERR_ARG if invalid handle, ERR_OK on success
+ * @return ERR_ARG if invalid handle, ERR_VAL if invalid type, ERR_OK on success
  */
 err_t dhcps_dns_setserver(dhcps_t *dhcps, const ip_addr_t *dnsserver);
 
 /**
- * @brief Gets DNS server associated with this DHCP server
+ * @brief Sets the DNS server address for the DHCP server with a specific type
  * @param dhcps Pointer to the DHCP handle
  * @param dnsserver Address of the DNS server
- * @return ERR_ARG if invalid handle, ERR_OK on success
+ * @param type Type of the DNS server
+ * @return ERR_ARG if invalid handle, ERR_VAL if invalid type, ERR_OK on success
+ */
+err_t dhcps_dns_setserver_by_type(dhcps_t *dhcps, const ip_addr_t *dnsserver, dns_type_t type);
+
+/**
+ * @brief Gets the DNS server associated with this DHCP server
+ * @param dhcps Pointer to the DHCP handle
+ * @param dnsserver Address of the DNS server
+ * @return ERR_ARG if invalid handle, ERR_VAL if invalid type, ERR_OK on success
  */
 err_t dhcps_dns_getserver(dhcps_t *dhcps, ip4_addr_t *dnsserver);
+
+/**
+ * @brief Gets the DNS server associated with this DHCP server with a specific type
+ * @param dhcps Pointer to the DHCP handle
+ * @param dnsserver Address of the DNS server
+ * @param type Type of the DNS server
+ * @return ERR_ARG if invalid handle, ERR_VAL if invalid type, ERR_OK on success
+ */
+err_t dhcps_dns_getserver_by_type(dhcps_t *dhcps, ip4_addr_t *dnsserver, dns_type_t type);
 
 /**
  * @brief Sets callback on assigning an IP to the connected client

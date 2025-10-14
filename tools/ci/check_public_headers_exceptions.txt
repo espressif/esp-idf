@@ -14,7 +14,6 @@ components/freertos/FreeRTOS-Kernel-SMP/include/freertos/
 components/freertos/FreeRTOS-Kernel-SMP/portable/xtensa/include/freertos/
 
 
-components/log/include/esp_log_internal.h
 
 
 
@@ -40,7 +39,6 @@ components/spi_flash/include/spi_flash_chip_generic.h
 
 components/wpa_supplicant/include/
 components/wpa_supplicant/port/
-components/wpa_supplicant/esp_supplicant/include/
 
 components/mbedtls/mbedtls/
 components/mbedtls/port/include/
@@ -99,8 +97,6 @@ components/protocomm/include/transports/protocomm_httpd.h
 components/fatfs/src/diskio.h
 components/fatfs/diskio/diskio_sdmmc.h
 components/mbedtls/esp_crt_bundle/include/esp_crt_bundle.h
-components/usb/include/esp_private/usb_phy.h
-components/usb/include/usb/usb_types_stack.h
 
 ### Headers that don't compile with C++
 #

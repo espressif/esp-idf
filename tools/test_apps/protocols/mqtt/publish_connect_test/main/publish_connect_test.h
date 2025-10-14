@@ -17,6 +17,8 @@ typedef struct {
 typedef struct {
     transport_t selected_transport;
     char *pattern;
+    char *subscribe_to;
+    char *publish_to;
     int pattern_repetitions;
     int qos;
     char *expected;
@@ -41,6 +43,8 @@ typedef struct {
 
 typedef struct {
     struct arg_str *transport;
+    struct arg_str *subscribe_to;
+    struct arg_str *publish_to;
     struct arg_str *pattern;
     struct arg_int *pattern_repetitions;
     struct arg_end *end;

@@ -10,6 +10,7 @@
 const parlio_signal_conn_t parlio_periph_signals = {
     .groups = {
         [0] = {
+            .module_name = "PARLIO0",
             .module = PERIPH_PARLIO_MODULE,
             .tx_irq_id = ETS_HP_PARLIO_TX_INTR_SOURCE,
             .rx_irq_id = ETS_HP_PARLIO_RX_INTR_SOURCE,
@@ -35,6 +36,7 @@ const parlio_signal_conn_t parlio_periph_signals = {
                     },
                     .clk_out_sig = PARLIO_TX_CLK_PAD_OUT_IDX,
                     .clk_in_sig = PARLIO_TX_CLK_PAD_IN_IDX,
+                    .cs_sig = -1,
                 }
             },
             .rx_units = {

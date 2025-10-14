@@ -80,7 +80,7 @@ Application Example
 .. list::
 
     * :example:`peripherals/lcd/tjpgd` shows how to decode a JPEG image and display it on an SPI-interfaced LCD, and rotate the image periodically.
-    :SOC_GPSPI_SUPPORTED: * :example:`peripherals/lcd/spi_lcd_touch` demonstrates how to use the `esp_lcd` component to add custom panel drivers, specifically GC9A01 or ILI9341, in an ESP-IDF project, and how to enable the STMPE610 touch controller.
+    :SOC_GPSPI_SUPPORTED: * :example:`peripherals/lcd/spi_lcd_touch` demonstrates how to drive the LCD and touch panel on the same SPI bus, and display a simple GUI using the LVGL library.
     :SOC_LCD_I80_SUPPORTED: * :example:`peripherals/lcd/i80_controller` demonstrates how to port the LVGL library onto the `esp_lcd` driver layer to create GUIs.
     :SOC_LCD_RGB_SUPPORTED: * :example:`peripherals/lcd/rgb_panel` demonstrates how to install an RGB panel driver, display a scatter chart on the screen based on the LVGL library.
     :SOC_I2C_SUPPORTED: * :example:`peripherals/lcd/i2c_oled` demonstrates how to use the SSD1306 panel driver from the `esp_lcd` component to facilitate the porting of LVGL library and display a scrolling text on the OLED screen.

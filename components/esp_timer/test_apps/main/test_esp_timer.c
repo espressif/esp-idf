@@ -492,9 +492,36 @@ TEST_CASE("esp_timer_get_time returns monotonic values", "[esp_timer]")
     }
 }
 
+static void empty_cb(void* varg)
+{
+}
+
 TEST_CASE("Can dump esp_timer stats", "[esp_timer]")
 {
+    /* Stress test the dump
+       Spawn enough timers that we are sure to
+       overflow the internal string buffer if the
+       length calculation is not correct.
+    */
+    const int NUM_TIMERS = 200;
+    esp_timer_handle_t timers[NUM_TIMERS];
+
+    for (int i = 0; i < NUM_TIMERS; ++i) {
+        char name[30];
+        snprintf(name, sizeof(name), "test_timer_number_%d", i);
+        esp_timer_create_args_t timer_args = {
+            .callback = &empty_cb,
+            .arg = NULL,
+            .name = name
+        };
+        TEST_ESP_OK(esp_timer_create(&timer_args, &timers[i]));
+    }
+
     esp_timer_dump(stdout);
+
+    for (int i = 0; i < NUM_TIMERS; ++i) {
+        TEST_ESP_OK(esp_timer_delete(timers[i]));
+    }
 }
 
 typedef struct {

@@ -30,7 +30,6 @@ typedef struct {
         uint32_t intr_shared: 1;         /*!< Set true, the timer interrupt number can be shared with other peripherals */
         uint32_t allow_pd: 1;            /*!< If set, driver allows the power domain to be powered off when system enters sleep mode.
                                               This can save power, but at the expense of more RAM being consumed to save register context. */
-        uint32_t backup_before_sleep: 1; /*!< @deprecated, same meaning as allow_pd */
     } flags;                             /*!< GPTimer config flags*/
 } gptimer_config_t;
 
@@ -135,7 +134,7 @@ esp_err_t gptimer_get_captured_count(gptimer_handle_t timer, uint64_t *value);
 /**
  * @brief Group of supported GPTimer callbacks
  * @note The callbacks are all running under ISR environment
- * @note When CONFIG_GPTIMER_ISR_IRAM_SAFE is enabled, the callback itself and functions called by it should be placed in IRAM.
+ * @note When CONFIG_GPTIMER_ISR_CACHE_SAFE is enabled, the callback itself and functions called by it should be placed in IRAM.
  */
 typedef struct {
     gptimer_alarm_cb_t on_alarm; /*!< Timer alarm callback */

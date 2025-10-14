@@ -1,0 +1,22 @@
+menu "Example 'EDDYSTONE SENDER' Config"
+
+    choice EXMAPLE_EDDYSTONE_SEND
+        prompt "Eddystone frame type"
+        default EXMAPLE_EDDYSTONE_SEND_UID
+        help
+            The type of Eddystone frame to be sent
+        config EXMAPLE_EDDYSTONE_SEND_UID
+            bool "Frame type UID"
+        config EXMAPLE_EDDYSTONE_SEND_URL
+            bool "Frame type URL"
+        config EXMAPLE_EDDYSTONE_SEND_TLM
+            bool "Frame type TLM"
+    endchoice
+
+    config EXMAPLE_EDDYSTONE_SEND
+        int
+        default 0 if EXMAPLE_EDDYSTONE_SEND_UID
+        default 1 if EXMAPLE_EDDYSTONE_SEND_URL
+        default 2 if EXMAPLE_EDDYSTONE_SEND_TLM
+
+endmenu

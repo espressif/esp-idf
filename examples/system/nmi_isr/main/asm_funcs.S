@@ -17,7 +17,7 @@ nmi_triggered:
 
 /**
  * @brief This current ISR was called via `call0` instruction, so `a0` (return address)
- * was altered. Fortunately, `a0` was saved in EXCSAVE registers, restore it before
+ * was altered. Fortunately, `a0` was saved in XT_REG_EXCSAVE registers, restore it before
  * returning
  */
     .section    .iram1, "ax"
@@ -41,7 +41,7 @@ xt_nmi:
     /* Restore a3 and a0 before leaving*/
     l32i    a3, sp, 0
     addi    sp, sp, 16
-    rsr     a0, EXCSAVE + XCHAL_NMILEVEL
+    rsr     a0, XT_REG_EXCSAVE + XCHAL_NMILEVEL
 
     /* Return from NMI, we need to specify the level */
     rfi     XCHAL_NMILEVEL

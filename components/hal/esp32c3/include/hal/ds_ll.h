@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -36,7 +36,10 @@ static inline void ds_ll_enable_bus_clock(bool enable)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define ds_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; ds_ll_enable_bus_clock(__VA_ARGS__)
+#define ds_ll_enable_bus_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        ds_ll_enable_bus_clock(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Reset the Digital Signature peripheral module
@@ -49,7 +52,10 @@ static inline void ds_ll_reset_register(void)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define ds_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; ds_ll_reset_register(__VA_ARGS__)
+#define ds_ll_reset_register(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        ds_ll_reset_register(__VA_ARGS__); \
+    } while(0)
 
 static inline void ds_ll_start(void)
 {
@@ -104,6 +110,7 @@ static inline void ds_ll_configure_iv(const uint32_t *iv)
 static inline void ds_ll_write_message(const uint8_t *msg, size_t size)
 {
     memcpy((uint8_t*) DS_X_BASE, msg, size);
+    // Fence ensures all memory operations are completed before proceeding further
     asm volatile ("fence");
 }
 
@@ -131,6 +138,7 @@ static inline void ds_ll_write_private_key_params(const uint8_t *encrypted_key_p
     for (int i = 0; i < NUM_FRAGS; i++) {
         memcpy((uint8_t *)frags[i].addr, from, frags[i].len);
         asm volatile ("fence");
+        // Fence ensures all memory operations are completed before proceeding further
         from += frags[i].len;
     }
 }
@@ -177,6 +185,7 @@ static inline ds_signature_check_t ds_ll_check_signature(void)
 static inline void ds_ll_read_result(uint8_t *result, size_t size)
 {
     memcpy(result, (uint8_t*) DS_Z_BASE, size);
+    // Fence ensures all memory operations are completed before proceeding further
     asm volatile ("fence");
 }
 

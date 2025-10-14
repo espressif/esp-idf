@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -20,6 +20,9 @@
 
 extern const uint8_t image_esp1080_jpg_start[] asm("_binary_esp1080_jpg_start");
 extern const uint8_t image_esp1080_jpg_end[]   asm("_binary_esp1080_jpg_end");
+
+extern const uint8_t image_no_huff_jpg_start[] asm("_binary_no_huff_jpg_start");
+extern const uint8_t image_no_huff_jpg_end[]   asm("_binary_no_huff_jpg_end");
 
 TEST_CASE("JPEG decode driver memory leaking check", "[jpeg]")
 {
@@ -85,5 +88,48 @@ TEST_CASE("JPEG decode performance test for 1080*1920 YUV->RGB picture", "[jpeg]
 
     free(rx_buf_1080p);
     free(tx_buf_1080p);
+    TEST_ESP_OK(jpeg_del_decoder_engine(jpgd_handle));
+}
+
+TEST_CASE("JPEG decode image without Huffman table JPEG->RGB picture", "[jpeg]")
+{
+    jpeg_decoder_handle_t jpgd_handle;
+
+    jpeg_decode_engine_cfg_t decode_eng_cfg = {
+        .intr_priority = 0,
+        .timeout_ms = 40,
+    };
+
+    jpeg_decode_cfg_t decode_cfg = {
+        .output_format = JPEG_DECODE_OUT_FORMAT_RGB565,
+    };
+
+    jpeg_decode_memory_alloc_cfg_t rx_mem_cfg = {
+        .buffer_direction = JPEG_DEC_ALLOC_OUTPUT_BUFFER,
+    };
+
+    jpeg_decode_memory_alloc_cfg_t tx_mem_cfg = {
+        .buffer_direction = JPEG_DEC_ALLOC_INPUT_BUFFER,
+    };
+
+    size_t rx_buffer_size;
+    uint8_t *rx_buf_no_huff = (uint8_t*)jpeg_alloc_decoder_mem(120 * 160 * 3, &rx_mem_cfg, &rx_buffer_size);
+    uint32_t out_size_no_huff = 0;
+
+    size_t bit_stream_length = (size_t)image_no_huff_jpg_end - (size_t)image_no_huff_jpg_start;
+
+    size_t tx_buffer_size;
+    uint8_t *tx_buf_no_huff = (uint8_t*)jpeg_alloc_decoder_mem(bit_stream_length, &tx_mem_cfg, &tx_buffer_size);
+    // Copy bit stream to psram
+    memcpy(tx_buf_no_huff, image_no_huff_jpg_start, bit_stream_length);
+    TEST_ESP_OK(jpeg_new_decoder_engine(&decode_eng_cfg, &jpgd_handle));
+
+    // Decode a picture without Huffman table only once, to ensure that the default Huffman table is defined correctly
+    TEST_ESP_OK(jpeg_decoder_process(jpgd_handle, &decode_cfg, tx_buf_no_huff, bit_stream_length, rx_buf_no_huff, rx_buffer_size, &out_size_no_huff));
+    // JPEG image resolution is 120 x 160, output format is RGB565: expected decoded size is 120 * 160 * 2
+    TEST_ASSERT_EQUAL(out_size_no_huff, 120 * 160 * 2);
+
+    free(rx_buf_no_huff);
+    free(tx_buf_no_huff);
     TEST_ESP_OK(jpeg_del_decoder_engine(jpgd_handle));
 }

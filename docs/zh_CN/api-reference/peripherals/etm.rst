@@ -68,7 +68,7 @@ GPIO **边沿** 事件是最常见的事件类型，任何 GPIO 管脚均可触�
 
     :SOC_SYSTIMER_SUPPORT_ETM: - 调用 :cpp:func:`esp_systick_new_etm_alarm_event` 可以从 RTOS Systick 获取 ETM 事件句柄，每个 CPU 核心可以获取一个事件句柄。
     :SOC_SYSTIMER_SUPPORT_ETM: - 要了解如何从 esp_timer 获取 ETM 事件句柄，请参阅 :doc:`/api-reference/system/esp_timer`。
-    :SOC_TIMER_SUPPORT_ETM: - 要了解如何从 GPTimer 获取 ETM 事件句柄，请参阅 :doc:`/api-reference/peripherals/gptimer`。
+    :SOC_TIMER_SUPPORT_ETM: - 要了解如何从 GPTimer 获取 ETM 事件句柄，请参阅 :ref:`gptimer-etm-event-and-task`。
     :SOC_GDMA_SUPPORT_ETM: - 要了解如何从 async memcpy 获取 ETM 事件句柄，请参阅 :doc:`/api-reference/system/async_memcpy`。
     :SOC_MCPWM_SUPPORT_ETM: - 要了解如何从 MCPWM 中获取 ETM 事件句柄，请参阅 :doc:`/api-reference/peripherals/mcpwm`。
     :SOC_ANA_CMPR_SUPPORT_ETM: - 要了解如何从模拟比较器获取 ETM 事件句柄，请参阅 :doc:`/api-reference/peripherals/ana_cmpr`。
@@ -98,7 +98,7 @@ GPIO 任务是最常见的任务类型。一个 GPIO 可以采取一个或多个
 
 .. list::
 
-    :SOC_TIMER_SUPPORT_ETM: - 要了解如何从 GPTimer 获取 ETM 任务句柄，请参阅 :doc:`/api-reference/peripherals/gptimer`。
+    :SOC_TIMER_SUPPORT_ETM: - 要了解如何从 GPTimer 获取 ETM 任务句柄，请参阅 :ref:`gptimer-etm-event-and-task`。
     :SOC_TEMPERATURE_SENSOR_SUPPORT_ETM: - 要了解如何从温度传感器获取 ETM 任务句柄，请参阅 :doc:`/api-reference/peripherals/temp_sensor`。
     :SOC_I2S_SUPPORTS_ETM:  - 要了解如何从 I2S 获取 ETM 任务句柄，请参阅 :doc:`/api-reference/peripherals/i2s`。
 
@@ -148,11 +148,11 @@ ETM 通道分析
 线程安全
 ^^^^^^^^^^^^^
 
-ETM 驱动程序会确保工厂函数 :cpp:func:`esp_etm_new_channel` 和 :cpp:func:`gpio_new_etm_task` 的线程安全。使用时，可以直接从不同的 RTOS 任务中调用此类函数，无需额外锁保护。
+ETM 核心驱动程序具备线程安全性。
 
-在 ISR 环境中，不支持运行任何函数。
-
-其他以 :cpp:type:`esp_etm_channel_handle_t`、:cpp:type:`esp_etm_task_handle_t` 和 :cpp:type:`esp_etm_event_handle_t` 作为首个位置参数的函数，则非线程安全，应避免从不同任务中调用此类函数。
+- 工厂函数（如 :cpp:func:`esp_etm_new_channel` :cpp:func:`gpio_new_etm_task` 以及其他 ``*_new_etm_*`` 创建函数）均为线程安全，可在不同 RTOS 任务中并发调用，无需担心资源冲突。
+- 通道控制相关 API（如 :cpp:func:`esp_etm_channel_connect`， :cpp:func:`esp_etm_channel_enable`， :cpp:func:`esp_etm_channel_disable`， :cpp:func:`esp_etm_del_channel`）同样支持线程安全。针对不同通道的并发操作是安全的；若对同一通道进行并发操作，驱动会自动进行内部序列化。如果操作与当前通道状态不兼容，则会返回 :c:macro:`ESP_ERR_INVALID_STATE` 错误。
+- 所有 ETM API 均不允许在中断服务程序（ISR）环境下调用。
 
 .. _etm-kconfig-options:
 

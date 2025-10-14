@@ -26,11 +26,13 @@ endif()
 if(BOOTLOADER_BUILD OR esp_tee_build)
         # "_esp_error_check_failed()" requires spi_flash module
         # Bootloader relies on some Kconfig options defined in esp_system.
-        idf_component_register(SRCS "${srcs}" REQUIRES spi_flash)
+        idf_component_register(SRCS "${srcs}" REQUIRES spi_flash
+                               INCLUDE_DIRS include)
 else()
     list(APPEND srcs "crosscore_int.c"
             "esp_ipc.c"
             "esp_err.c"
+            "esp_system_console.c"
             "freertos_hooks.c"
             "int_wdt.c"
             "panic.c"
@@ -56,6 +58,10 @@ else()
         list(APPEND srcs "eh_frame_parser.c")
     endif()
 
+    if(CONFIG_ESP_SYSTEM_USE_FRAME_POINTER)
+        list(APPEND srcs "fp_unwind.c")
+    endif()
+
     if(CONFIG_SOC_SYSTIMER_SUPPORT_ETM)
         list(APPEND srcs "systick_etm.c")
     endif()
@@ -66,11 +72,15 @@ else()
 
     idf_component_register(SRCS "${srcs}"
                         INCLUDE_DIRS include
-                        PRIV_REQUIRES spi_flash esp_timer esp_mm
+                        PRIV_REQUIRES spi_flash esp_timer esp_mm esp_hal_mspi
                                     # [refactor-todo] requirements due to init code,
                                     # should be removable once using component init functions
                                     # link-time registration is used.
-                                    bootloader_support esp_pm
+                                    bootloader_support esp_pm esp_usb_cdc_rom_console
+                                    # [REFACTOR-TODO] Provide system hook to release dependency reversion.
+                                    # IDF-13980
+                                    esp_hal_i2c
+                                    esp_hal_timg # task_wdt_impl_timergroup.c relies on it
                         LDFRAGMENTS "linker.lf" "app.lf")
     add_subdirectory(port)
 
@@ -90,7 +100,15 @@ else()
         PROPERTIES COMPILE_FLAGS
         -fno-stack-protector)
 
-    include(${CMAKE_CURRENT_LIST_DIR}/ld/ld.cmake)
+    target_linker_script(${COMPONENT_LIB} INTERFACE "ld/${target}/memory.ld.in")
+
+    # Generate sections.ld.in and pass it through linker script generator
+    set(sections_name "ld/${target}/sections.ld.in")
+    if(CONFIG_ESP32P4_REV_MIN_300)
+        set(sections_name "ld/${target}/sections.rev3.ld.in")
+    endif()
+    target_linker_script(${COMPONENT_LIB} INTERFACE "${sections_name}"
+                        PROCESS "${CMAKE_CURRENT_BINARY_DIR}/ld/sections.ld")
 endif()
 
 if(CONFIG_IDF_ENV_FPGA OR CONFIG_ESP_BRINGUP_BYPASS_CPU_CLK_SETTING)
@@ -145,7 +163,8 @@ if(NOT BOOTLOADER_BUILD)
     endif()
 endif()
 
-if(CONFIG_SOC_MEM_NON_CONTIGUOUS_SRAM)
+# For P4, since P4 REV2, the SRAM is contiguous
+if(CONFIG_ESP32P4_SELECTS_REV_LESS_V3)
     target_link_options(${COMPONENT_LIB} INTERFACE "-Wl,--enable-non-contiguous-regions")
 endif()
 

@@ -618,8 +618,7 @@ int sae_check_confirm_pk(struct sae_data *sae, const u8 *ies, size_t ies_len)
 	u8 hash[SAE_MAX_HASH_LEN];
 	size_t hash_len;
 	int group;
-	struct wpa_supplicant *wpa_s = &g_wpa_supp;
-	struct sae_pk_elems elems;
+	struct ieee802_11_elems elems;
 
 	if (!tmp) {
 		return -1;
@@ -643,9 +642,11 @@ int sae_check_confirm_pk(struct sae_data *sae, const u8 *ies, size_t ies_len)
 	}
 
 	wpa_hexdump(MSG_DEBUG, "SAE-PK: Received confirm IEs", ies, ies_len);
-	ieee802_11_parse_elems(wpa_s, ies, ies_len);
 
-	elems = wpa_s->sae_pk_elems;
+	if (ieee802_11_parse_elems(ies, ies_len, &elems, 1) == ParseFailed) {
+		wpa_printf(MSG_INFO, "SAE-PK: Failed to parse confirm IEs");
+		return -1;
+	}
 
 	if (!elems.fils_pk || !elems.fils_key_confirm || !elems.sae_pk) {
 		wpa_printf(MSG_INFO,

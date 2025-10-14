@@ -1,6 +1,6 @@
 
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,17 +19,26 @@ extern "C" {
 //and all variables in shared RAM. These macros can be used to redirect
 //particular functions/variables to other memory regions.
 
-// Forces code into IRAM instead of flash
+// Places code into IRAM instead of flash
 #define IRAM_ATTR _SECTION_ATTR_IMPL(".iram1", __COUNTER__)
+
+// Forces code into IRAM instead of flash
+#define FORCE_IRAM_ATTR _SECTION_FORCE_ATTR_IMPL(".iram1", __COUNTER__)
 
 // Forces data into DRAM instead of flash
 #define DRAM_ATTR _SECTION_ATTR_IMPL(".dram1", __COUNTER__)
 
-// Forces code into TCM instead of flash
+// Places code into TCM instead of flash
 #define TCM_IRAM_ATTR _SECTION_ATTR_IMPL(".tcm.text", __COUNTER__)
+
+// Forces code into TCM instead of flash
+#define FORCE_TCM_IRAM_ATTR _SECTION_FORCE_ATTR_IMPL(".tcm.text", __COUNTER__)
 
 // Forces data into TCM instead of L2MEM
 #define TCM_DRAM_ATTR _SECTION_ATTR_IMPL(".tcm.data", __COUNTER__)
+
+// Forces data to be removed from the final binary but keeps it in the ELF file
+#define NOLOAD_ATTR _SECTION_ATTR_IMPL(".noload_keep_in_elf", __COUNTER__)
 
 // IRAM can only be accessed as an 8-bit memory on ESP32, when CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY is set
 #define IRAM_8BIT_ACCESSIBLE (CONFIG_IDF_TARGET_ESP32 && CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY)
@@ -61,7 +70,7 @@ extern "C" {
 #define DMA_ATTR WORD_ALIGNED_ATTR DRAM_ATTR
 
 //Force data to be placed in DRAM and aligned according to DMA and cache's requirement
-#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+#if CONFIG_SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
 #define DRAM_DMA_ALIGNED_ATTR __attribute__((aligned(CONFIG_CACHE_L1_CACHE_LINE_SIZE))) DRAM_ATTR
 #else
 #define DRAM_DMA_ALIGNED_ATTR WORD_ALIGNED_ATTR DRAM_ATTR
@@ -152,6 +161,13 @@ extern "C" {
 // Forces to not inline function
 #define NOINLINE_ATTR __attribute__((noinline))
 
+#if !defined(__clang__) && __GNUC__ >= 15
+// Marks a character array as not null-terminated to avoid string-related optimizations or warnings
+#define NONSTRING_ATTR __attribute__ ((nonstring))
+#else
+#define NONSTRING_ATTR
+#endif
+
 // This allows using enum as flags in C++
 // Format: FLAG_ATTR(flag_enum_t)
 #ifdef __cplusplus
@@ -186,11 +202,13 @@ FORCE_INLINE_ATTR TYPE& operator<<=(TYPE& a, int b) { a = a << b; return a; }
 // data with a custom section type set
 #ifndef CONFIG_IDF_TARGET_LINUX
 #define _SECTION_ATTR_IMPL(SECTION, COUNTER) __attribute__((section(SECTION "." _COUNTER_STRINGIFY(COUNTER))))
+#define _SECTION_FORCE_ATTR_IMPL(SECTION, COUNTER) __attribute__((noinline, section(SECTION "." _COUNTER_STRINGIFY(COUNTER))))
 #define _COUNTER_STRINGIFY(COUNTER) #COUNTER
 #else
 // Custom section attributes are generally not used in the port files for Linux target, but may be found
 // in the common header files. Don't declare custom sections in that case.
 #define _SECTION_ATTR_IMPL(SECTION, COUNTER)
+#define _SECTION_FORCE_ATTR_IMPL(SECTION, COUNTER)
 #endif
 
 /* Use IDF_DEPRECATED attribute to mark anything deprecated from use in

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,7 +10,7 @@
 #include "esp_cpu.h"
 #include "esp_fault.h"
 
-#if CONFIG_ESP_SYSTEM_PMP_IDRAM_SPLIT && !BOOTLOADER_BUILD
+#if CONFIG_ESP_SYSTEM_MEMPROT && CONFIG_ESP_SYSTEM_MEMPROT_PMP && !BOOTLOADER_BUILD
 extern int _iram_end;
 extern int _data_start;
 #define IRAM_END        (int)&_iram_end
@@ -64,12 +64,12 @@ void esp_cpu_configure_region_protection(void)
      *    - We cannot set the lock bit as we need to reconfigure it again for the application.
      *      We configure PMPADDR 0-1 to cover entire valid IRAM range and PMPADDR 2-3 to cover entire valid DRAM range.
      *
-     * 2. Application build with CONFIG_ESP_SYSTEM_PMP_IDRAM_SPLIT enabled
+     * 2. Application build with CONFIG_ESP_SYSTEM_MEMPROT enabled
      *    - We split the SRAM into IRAM and DRAM such that IRAM region cannot be accessed via DBUS
      *      and DRAM region cannot be accessed via IBUS. We use _iram_end and _data_start markers to set the boundaries.
      *      We also lock these entries so the R/W/X permissions are enforced even for machine mode
      *
-     * 3. Application build with CONFIG_ESP_SYSTEM_PMP_IDRAM_SPLIT disabled
+     * 3. Application build with CONFIG_ESP_SYSTEM_MEMPROT disabled
      *    - The IRAM-DRAM split is not enabled so we just need to ensure that access to only valid address ranges are successful
      *      so for that we set PMPADDR 0-1 to cover entire valid IRAM range and PMPADDR 2-3 to cover entire DRAM region.
      *      We also lock these entries so the R/W/X permissions are enforced even for machine mode
@@ -79,7 +79,7 @@ void esp_cpu_configure_region_protection(void)
      *      We set PMPADDR 0-1 to cover entire valid IRAM range and PMPADDR 2-3 to cover entire DRAM region.
      *      We also lock these entries so the R/W/X permissions are enforced even for machine mode
      *
-     *  PMPADDR 3-15 are hard-coded and are appicable to both, bootloader and application. So we configure and lock
+     *  PMPADDR 3-15 are hard-coded and are applicable to both, bootloader and application. So we configure and lock
      *  these during BOOTLOADER build itself. During application build, reconfiguration of these PMPADDR entries
      *  are silently ignored by the CPU
      */
@@ -99,7 +99,7 @@ void esp_cpu_configure_region_protection(void)
         // 1. IRAM
         PMP_ENTRY_SET(0, SOC_DIRAM_IRAM_LOW, CONDITIONAL_NONE);
 
-#if CONFIG_ESP_SYSTEM_PMP_IDRAM_SPLIT
+#if CONFIG_ESP_SYSTEM_MEMPROT && CONFIG_ESP_SYSTEM_MEMPROT_PMP
         PMP_ENTRY_SET(1, IRAM_END, PMP_TOR | CONDITIONAL_RX);
 #else
         PMP_ENTRY_SET(1, IRAM_END, PMP_TOR | CONDITIONAL_RWX);

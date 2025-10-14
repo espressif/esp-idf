@@ -26,7 +26,7 @@ static const regdma_entries_config_t tg1_wdt_regs_retention[] = {
     [5] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_TG1_WDT_LINK(0x05), TIMG_WDTWPROTECT_REG(1),   0,                       TIMG_WDT_WKEY_M,           1, 0), .owner = ENTRY(0)},
 };
 
-const tg_reg_ctx_link_t tg_wdt_regs_retention[SOC_TIMER_GROUPS] = {
+const tg_reg_ctx_link_t tg_wdt_regs_retention[2] = {
     [0] = {tg0_wdt_regs_retention, ARRAY_SIZE(tg0_wdt_regs_retention)},
     [1] = {tg1_wdt_regs_retention, ARRAY_SIZE(tg1_wdt_regs_retention)},
 };

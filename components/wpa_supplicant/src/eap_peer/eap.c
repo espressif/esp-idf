@@ -41,6 +41,7 @@
 #endif
 
 #include "supplicant_opt.h"
+#include "esp_eap_client.h"
 
 u8 *g_wpa_anonymous_identity;
 int g_wpa_anonymous_identity_len;
@@ -67,6 +68,10 @@ bool g_wpa_suiteb_certification;
 bool g_wpa_default_cert_bundle;
 int (*esp_crt_bundle_attach_fn)(void *conf);
 #endif
+#ifndef CONFIG_TLS_INTERNAL_CLIENT
+char *g_wpa_domain_match;
+#endif
+uint32_t g_eap_method_mask = ESP_EAP_TYPE_ALL;
 
 void eap_peer_config_deinit(struct eap_sm *sm);
 void eap_peer_blob_deinit(struct eap_sm *sm);
@@ -529,7 +534,9 @@ int eap_peer_config_init(
 	sm->config.identity = NULL;
 	sm->config.password = NULL;
 	sm->config.new_password = NULL;
-
+#ifndef CONFIG_TLS_INTERNAL_CLIENT
+	sm->config.domain_match = g_wpa_domain_match;
+#endif
 	sm->config.private_key_passwd = private_key_passwd;
 	sm->config.client_cert = (u8 *)sm->blob[0].name;
 	sm->config.private_key = (u8 *)sm->blob[1].name;
@@ -618,22 +625,30 @@ int eap_peer_config_init(
 
 		if (g_wpa_username) {
 			//set EAP-PEAP
-			config_methods[allowed_method_count].vendor = EAP_VENDOR_IETF;
-			config_methods[allowed_method_count++].method = EAP_TYPE_PEAP;
+			if (g_eap_method_mask & ESP_EAP_TYPE_PEAP) {
+				config_methods[allowed_method_count].vendor = EAP_VENDOR_IETF;
+				config_methods[allowed_method_count++].method = EAP_TYPE_PEAP;
+			}
 			//set EAP-TTLS
-			config_methods[allowed_method_count].vendor = EAP_VENDOR_IETF;
-			config_methods[allowed_method_count++].method = EAP_TYPE_TTLS;
+			if (g_eap_method_mask & ESP_EAP_TYPE_TTLS) {
+				config_methods[allowed_method_count].vendor = EAP_VENDOR_IETF;
+				config_methods[allowed_method_count++].method = EAP_TYPE_TTLS;
+			}
 		}
 		if (g_wpa_private_key) {
 			//set EAP-TLS
-			config_methods[allowed_method_count].vendor = EAP_VENDOR_IETF;
-			config_methods[allowed_method_count++].method = EAP_TYPE_TLS;
+			if (g_eap_method_mask & ESP_EAP_TYPE_TLS) {
+				config_methods[allowed_method_count].vendor = EAP_VENDOR_IETF;
+				config_methods[allowed_method_count++].method = EAP_TYPE_TLS;
+			}
 		}
 #ifdef EAP_FAST
 		if (g_wpa_pac_file) {
 			//set EAP-FAST
-			config_methods[allowed_method_count].vendor = EAP_VENDOR_IETF;
-			config_methods[allowed_method_count++].method = EAP_TYPE_FAST;
+			if (g_eap_method_mask & ESP_EAP_TYPE_FAST) {
+				config_methods[allowed_method_count].vendor = EAP_VENDOR_IETF;
+				config_methods[allowed_method_count++].method = EAP_TYPE_FAST;
+			}
 		}
 #endif
 		// Terminate the allowed method list

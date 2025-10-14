@@ -256,7 +256,8 @@ esp_err_t simple_ble_start(simple_ble_cfg_t *cfg)
     }
 #endif
 
-    ret = esp_bluedroid_init();
+    esp_bluedroid_config_t bluedroid_cfg = BT_BLUEDROID_INIT_CONFIG_DEFAULT();
+    ret = esp_bluedroid_init_with_cfg(&bluedroid_cfg);
     if (ret) {
         ESP_LOGE(TAG, "%s init bluetooth failed %d", __func__, ret);
         return ret;

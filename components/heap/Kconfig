@@ -1,5 +1,10 @@
 menu "Heap memory debugging"
 
+    config HEAP_HAS_EXEC_HEAP
+        bool
+        default n if ESP_SYSTEM_MEMPROT
+        default y if !ESP_SYSTEM_MEMPROT
+
     choice HEAP_CORRUPTION_DETECTION
         prompt "Heap corruption detection"
         default HEAP_POISONING_DISABLED
@@ -31,15 +36,14 @@ menu "Heap memory debugging"
             bool "Disabled"
         config HEAP_TRACING_STANDALONE
             bool "Standalone"
-            select HEAP_TRACING
         config HEAP_TRACING_TOHOST
             bool "Host-based"
-            select HEAP_TRACING
     endchoice
 
     config HEAP_TRACING
         bool
-        default F
+        default n if HEAP_TRACING_OFF
+        default y if !HEAP_TRACING_OFF
         help
             Enables/disables heap tracing API.
 
@@ -76,8 +80,8 @@ menu "Heap memory debugging"
 
     config HEAP_TRACING_STACK_DEPTH
         int "Heap tracing stack depth"
-        range 0 0 if IDF_TARGET_ARCH_RISCV # Disabled for RISC-V due to `__builtin_return_address` limitation
-        default 0 if IDF_TARGET_ARCH_RISCV
+        range 0 0 if IDF_TARGET_ARCH_RISCV && !ESP_SYSTEM_USE_FRAME_POINTER
+        default 0 if IDF_TARGET_ARCH_RISCV && !ESP_SYSTEM_USE_FRAME_POINTER
         range 0 32
         default 2
         depends on HEAP_TRACING
@@ -97,8 +101,21 @@ menu "Heap memory debugging"
         help
             Enables tracking the task responsible for each heap allocation.
 
-            This function depends on heap poisoning being enabled and adds four more bytes of overhead for each block
-            allocated.
+            Note: Allocating or freeing memory or using the task tracking API will lead to a crash when the
+            scheduler is not working (e.g, after calling vTaskSuspendAll).
+
+    config HEAP_TRACK_DELETED_TASKS
+        bool "Keep information about the memory usage of deleted tasks"
+        depends on HEAP_TASK_TRACKING
+        default n
+        help
+            When enabled, this configuration allows the user to keep trace of the memory usage
+            of a task that has been deleted.
+
+            This allows the user to verify that no memory allocated within a task remains unfreed
+            before terminating the task
+
+            Note that this feature cannot keep track of a task deletion if the task is allocated statically
 
     config HEAP_ABORT_WHEN_ALLOCATION_FAILS
         bool "Abort if memory allocation fails"
@@ -121,12 +138,11 @@ menu "Heap memory debugging"
 
     config HEAP_PLACE_FUNCTION_INTO_FLASH
         bool "Force the entire heap component to be placed in flash memory"
-        depends on !HEAP_TLSF_USE_ROM_IMPL
         default n
         help
             Enable this flag to save up RAM space by placing the heap component in the flash memory
 
             Note that it is only safe to enable this configuration if no functions from esp_heap_caps.h
-            or esp_heap_trace.h are called from ISR.
+            or esp_heap_trace.h are called from IRAM ISR which runs when cache is disabled.
 
 endmenu

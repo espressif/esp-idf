@@ -1,24 +1,42 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "esp_netif.h"
+#include "esp_netif_types.h"
+#include "esp_openthread_lock.h"
 #include <esp_check.h>
 #include <esp_event.h>
 #include <esp_log.h>
+#include <esp_openthread_border_router.h>
 #include <esp_openthread_dns64.h>
+#include <esp_openthread_meshcop_mdns.h>
 #include <esp_openthread_netif_glue_priv.h>
+#include <esp_openthread_radio.h>
 #include <esp_openthread_state.h>
-#include <lwip/dns.h>
 
 #include <openthread/thread.h>
 
 #define TAG "OT_STATE"
 
+#if CONFIG_OPENTHREAD_BORDER_ROUTER
+static void handle_ot_border_router_state_changed(otInstance* instance)
+{
+    otDeviceRole role = otThreadGetDeviceRole(esp_openthread_get_instance());
+
+    if (role == OT_DEVICE_ROLE_CHILD || role == OT_DEVICE_ROLE_ROUTER || role == OT_DEVICE_ROLE_LEADER) {
+        esp_openthread_publish_meshcop_mdns(esp_openthread_get_meshcop_instance_name());
+    } else {
+        esp_openthread_remove_meshcop_mdns();
+    }
+}
+#endif
+
 static void handle_ot_netif_state_change(otInstance* instance)
 {
-    if (otLinkIsEnabled(instance)) {
+    if (otIp6IsEnabled(instance)) {
         ESP_LOGI(TAG, "netif up");
         if (esp_event_post(OPENTHREAD_EVENT, OPENTHREAD_EVENT_IF_UP, NULL, 0, 0) != ESP_OK) {
             ESP_LOGE(TAG, "Failed to post OpenThread if up event");
@@ -29,19 +47,31 @@ static void handle_ot_netif_state_change(otInstance* instance)
             ESP_LOGE(TAG, "Failed to post OpenThread if down event");
         }
     }
+
+#if (CONFIG_OPENTHREAD_RADIO_SPINEL_UART || CONFIG_OPENTHREAD_RADIO_SPINEL_SPI)
+    esp_openthread_handle_netif_state_change(otIp6IsEnabled(instance));
+#endif
 }
 
 static void handle_ot_netdata_change(void)
 {
 #if CONFIG_OPENTHREAD_DNS64_CLIENT
-    ip_addr_t dns_server_addr = *IP_ADDR_ANY;
-    if (esp_openthread_get_nat64_prefix(&dns_server_addr.u_addr.ip6) == ESP_OK) {
-        dns_server_addr.type = IPADDR_TYPE_V6;
-        dns_server_addr.u_addr.ip6.addr[3] = ipaddr_addr(CONFIG_OPENTHREAD_DNS_SERVER_ADDR);
-        const ip_addr_t* dnsserver = dns_getserver(OPENTHREAD_DNS_SERVER_INDEX);
-        if (memcmp(dnsserver, &dns_server_addr, sizeof(ip_addr_t)) != 0) {
-            ESP_LOGI(TAG, "Set dns server address: %s", ipaddr_ntoa(&dns_server_addr));
-            dns_setserver(OPENTHREAD_DNS_SERVER_INDEX, &dns_server_addr);
+    ip6_addr_t dns_server_addr = *IP6_ADDR_ANY6;
+    if (esp_openthread_get_nat64_prefix(&dns_server_addr) == ESP_OK) {
+        dns_server_addr.addr[3] = ipaddr_addr(CONFIG_OPENTHREAD_DNS_SERVER_ADDR);
+        ip6_addr_t current_dns_server_addr = *IP6_ADDR_ANY6;
+        esp_openthread_task_switching_lock_release();
+        esp_openthread_get_dnsserver_addr(&current_dns_server_addr);
+        esp_openthread_task_switching_lock_acquire(portMAX_DELAY);
+        if (memcmp(&current_dns_server_addr, &dns_server_addr, sizeof(ip6_addr_t)) != 0) {
+            ESP_LOGI(TAG, "Set dns server address: %s", ip6addr_ntoa(&dns_server_addr));
+            esp_openthread_task_switching_lock_release();
+            if (esp_openthread_set_dnsserver_addr(dns_server_addr) != ESP_OK) {
+                ESP_LOGE(TAG, "Failed to set dns info for openthread netif");
+                esp_openthread_task_switching_lock_acquire(portMAX_DELAY);
+                return;
+            }
+            esp_openthread_task_switching_lock_acquire(portMAX_DELAY);
             if (esp_event_post(OPENTHREAD_EVENT, OPENTHREAD_EVENT_SET_DNS_SERVER, NULL, 0, 0) != ESP_OK) {
                 ESP_LOGE(TAG, "Failed to post OpenThread set DNS server event");
             }
@@ -52,6 +82,12 @@ static void handle_ot_netdata_change(void)
 
 static void handle_ot_role_change(otInstance* instance)
 {
+#if ((CONFIG_ESP_COEX_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE) && OPENTHREAD_RADIO_NATIVE)
+        otLinkModeConfig linkmode = otThreadGetLinkMode(instance);
+        esp_ieee802154_coex_config_t config = esp_openthread_get_coex_config();
+        config.txrx = (linkmode.mRxOnWhenIdle) ? IEEE802154_LOW : IEEE802154_MIDDLE;
+        esp_openthread_set_coex_config(config);
+#endif
     static otDeviceRole s_previous_role = OT_DEVICE_ROLE_DISABLED;
     otDeviceRole role = otThreadGetDeviceRole(instance);
     esp_err_t ret = ESP_OK;
@@ -66,14 +102,13 @@ static void handle_ot_role_change(otInstance* instance)
             otOperationalDataset dataset;
             ESP_GOTO_ON_FALSE(otDatasetGetActive(instance, &dataset) == OT_ERROR_NONE, ESP_FAIL, exit, TAG,
                 "Failed to get the active dataset");
-            ESP_GOTO_ON_ERROR(esp_event_post(OPENTHREAD_EVENT, OPENTHREAD_EVENT_ATTACHED, &dataset, sizeof(dataset), 0),
-                exit, TAG, "Failed to post OPENTHREAD_EVENT_ATTACHED. Err: %s", esp_err_to_name(ret));
+            ret = esp_event_post(OPENTHREAD_EVENT, OPENTHREAD_EVENT_ATTACHED, &dataset, sizeof(dataset), 0);
+            ESP_GOTO_ON_ERROR(ret, exit, TAG, "Failed to post OPENTHREAD_EVENT_ATTACHED. Err: %s", esp_err_to_name(ret));
         }
     } else if (role == OT_DEVICE_ROLE_DETACHED) {
         if (s_previous_role != OT_DEVICE_ROLE_DISABLED) {
-            ESP_GOTO_ON_ERROR(
-                esp_event_post(OPENTHREAD_EVENT, OPENTHREAD_EVENT_DETACHED, &s_previous_role, sizeof(s_previous_role), 0),
-                exit, TAG, "Failed to post OPENTHREAD_EVENT_DETACHED. Err: %s", esp_err_to_name(ret));
+            ret = esp_event_post(OPENTHREAD_EVENT, OPENTHREAD_EVENT_DETACHED, &s_previous_role, sizeof(s_previous_role), 0);
+            ESP_GOTO_ON_ERROR(ret, exit, TAG, "Failed to post OPENTHREAD_EVENT_DETACHED. Err: %s", esp_err_to_name(ret));
         }
     }
 exit:
@@ -102,6 +137,12 @@ static void ot_state_change_callback(otChangedFlags changed_flags, void* ctx)
     if (!instance) {
         return;
     }
+
+#if CONFIG_OPENTHREAD_BORDER_ROUTER
+    if (changed_flags & ESP_OPENTHREAD_BORDER_ROUTER_FLAG_OF_INTEREST) {
+        handle_ot_border_router_state_changed(instance);
+    }
+#endif
 
     if (changed_flags & OT_CHANGED_THREAD_ROLE) {
         handle_ot_role_change(instance);

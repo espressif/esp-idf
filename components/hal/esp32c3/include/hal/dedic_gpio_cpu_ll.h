@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,14 +9,17 @@
 #include <stdint.h>
 #include "riscv/csr.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*fast gpio*/
 #define CSR_GPIO_OEN_USER   0x803
 #define CSR_GPIO_IN_USER    0x804
 #define CSR_GPIO_OUT_USER   0x805
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+/*!< The dedicated GPIO (a.k.a. fast GPIO) is featured by some customized CPU instructions, which is always enabled */
+#define DEDIC_GPIO_CPU_LL_PERIPH_ALWAYS_ENABLE  1
 
 __attribute__((always_inline))
 static inline void dedic_gpio_cpu_ll_enable_output(uint32_t mask)

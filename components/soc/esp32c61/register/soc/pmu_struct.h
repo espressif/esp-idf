@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -155,6 +155,23 @@ typedef union {
         uint32_t slp_mem_dbias  : 4;
         uint32_t slp_logic_dbias: 4;
         uint32_t dbias          : 5;
+    };
+    struct {
+        uint32_t reserved2            : 3;
+        uint32_t slp_connect_en_active: 1;
+        uint32_t reserved3            : 11;
+        uint32_t dbias_init_active    : 1;
+        uint32_t reserved4            : 16;
+    };
+    struct {
+        uint32_t reserved5            : 15;
+        uint32_t slp_connect_en_modem : 1;
+        uint32_t reserved6            : 16;
+    };
+    struct {
+        uint32_t reserved7            : 15;
+        uint32_t slp_connect_en_sleep : 1;
+        uint32_t reserved8            : 16;
     };
     uint32_t val;
 } pmu_hp_regulator0_reg_t;

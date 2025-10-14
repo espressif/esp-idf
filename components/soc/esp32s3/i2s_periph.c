@@ -10,7 +10,7 @@
 /*
  Bunch of constants for every I2S peripheral: GPIO signals, irqs, hw addr of registers etc
 */
-const i2s_signal_conn_t i2s_periph_signal[SOC_I2S_NUM] = {
+const i2s_signal_conn_t i2s_periph_signal[SOC_I2S_ATTR(INST_NUM)] = {
     {
         .mck_out_sig  = I2S0_MCLK_OUT_IDX,
         .mck_in_sig   = I2S0_MCLK_IN_IDX,

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -483,6 +483,11 @@ esp_err_t esp_eth_ioctl(esp_eth_handle_t hdl, esp_eth_io_cmd_t cmd, void *data)
         ESP_GOTO_ON_FALSE(data, ESP_ERR_INVALID_ARG, err, TAG, "can't set promiscuous to null");
         ESP_GOTO_ON_ERROR(mac->set_promiscuous(mac, *(bool *)data), err, TAG, "set promiscuous mode failed");
         break;
+    case ETH_CMD_S_ALL_MULTICAST:
+        ESP_GOTO_ON_FALSE(data, ESP_ERR_INVALID_ARG, err, TAG, "can't set all multicast to null");
+        ESP_GOTO_ON_FALSE(mac->set_all_multicast != NULL, ESP_ERR_NOT_SUPPORTED, err, TAG, "set receive all multicast not supported");
+        ESP_GOTO_ON_ERROR(mac->set_all_multicast(mac, *(bool *)data), err, TAG, "set all multicast mode failed");
+        break;
     case ETH_CMD_S_FLOW_CTRL:
         ESP_GOTO_ON_FALSE(data, ESP_ERR_INVALID_ARG, err, TAG, "can't set flow ctrl to null");
         ESP_GOTO_ON_ERROR(mac->enable_flow_ctrl(mac, *(bool *)data), err, TAG, "enable mac flow control failed");
@@ -521,6 +526,18 @@ esp_err_t esp_eth_ioctl(esp_eth_handle_t hdl, esp_eth_io_cmd_t cmd, void *data)
         ESP_GOTO_ON_ERROR(phy->get_addr(phy, &phy_addr), err, TAG, "get phy address failed");
         ESP_GOTO_ON_ERROR(eth_driver->mediator.phy_reg_write(&eth_driver->mediator,
                           phy_addr, phy_w_data->reg_addr, *(phy_w_data->reg_value_p)), err, TAG, "failed to write PHY register");
+        }
+        break;
+    case ETH_CMD_ADD_MAC_FILTER: {
+        ESP_GOTO_ON_FALSE(data, ESP_ERR_INVALID_ARG, err, TAG, "can't set mac addr to null");
+        ESP_GOTO_ON_FALSE(mac->add_mac_filter != NULL, ESP_ERR_NOT_SUPPORTED, err, TAG, "add mac address to filter not supported");
+        ESP_GOTO_ON_ERROR(mac->add_mac_filter(mac, (uint8_t *)data), err, TAG, "add mac address to filter failed");
+        }
+        break;
+    case ETH_CMD_DEL_MAC_FILTER: {
+        ESP_GOTO_ON_FALSE(data, ESP_ERR_INVALID_ARG, err, TAG, "can't set mac addr to null");
+        ESP_GOTO_ON_FALSE(mac->rm_mac_filter != NULL, ESP_ERR_NOT_SUPPORTED, err, TAG, "remove mac address from filter not supported");
+        ESP_GOTO_ON_ERROR(mac->rm_mac_filter(mac, (uint8_t *)data), err, TAG, "remove mac address from filter failed");
         }
         break;
     default:

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,10 +9,13 @@
 #include <stdbool.h>
 #include "hal/misc.h"
 #include "hal/assert.h"
+#include "hal/ana_cmpr_types.h"
 #include "soc/ana_cmpr_struct.h"
 
 #define ANALOG_CMPR_LL_GET_HW(unit)     (&ANALOG_CMPR[unit])
 #define ANALOG_CMPR_LL_EVENT_CROSS      (1 << 0)
+
+#define ANALOG_CMPR_LL_ALL_INTR_MASK(unit) (ANALOG_CMPR_LL_EVENT_CROSS)
 
 #ifdef __cplusplus
 extern "C" {
@@ -60,7 +63,7 @@ static inline uint32_t analog_cmpr_ll_get_internal_ref_voltage(analog_cmpr_dev_t
  * @param hw Analog comparator register base address
  * @param ref_src reference source, 0 for internal, 1 for external GPIO pad (GPIO10)
  */
-static inline void analog_cmpr_ll_set_ref_source(analog_cmpr_dev_t *hw, uint32_t ref_src)
+static inline void analog_cmpr_ll_set_ref_source(analog_cmpr_dev_t *hw, ana_cmpr_ref_voltage_t ref_src)
 {
     hw->pad_comp_config->mode_comp = ref_src;
 }
@@ -76,7 +79,7 @@ static inline void analog_cmpr_ll_set_ref_source(analog_cmpr_dev_t *hw, uint32_t
  *              - 3: enable any positive or negative cross interrupt
  */
 __attribute__((always_inline))
-static inline void analog_cmpr_ll_set_cross_type(analog_cmpr_dev_t *hw, uint8_t type)
+static inline void analog_cmpr_ll_set_intr_cross_type(analog_cmpr_dev_t *hw, ana_cmpr_cross_type_t type)
 {
     hw->pad_comp_config->zero_det_mode = type;
 }
@@ -91,7 +94,7 @@ static inline void analog_cmpr_ll_set_cross_type(analog_cmpr_dev_t *hw, uint8_t 
  * @return interrupt mask
  */
 __attribute__((always_inline))
-static inline uint32_t analog_cmpr_ll_get_intr_mask_by_type(analog_cmpr_dev_t *hw, uint8_t type)
+static inline uint32_t analog_cmpr_ll_get_intr_mask_by_type(analog_cmpr_dev_t *hw, ana_cmpr_cross_type_t type)
 {
     (void)type;
     return ANALOG_CMPR_LL_EVENT_CROSS;

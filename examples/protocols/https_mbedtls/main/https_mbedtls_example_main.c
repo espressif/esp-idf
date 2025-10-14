@@ -243,7 +243,7 @@ static void https_get_task(void *pvParameters)
 
         static int request_count;
         ESP_LOGI(TAG, "Completed %d requests", ++request_count);
-        printf("Minimum free heap size: %" PRIu32 " bytes\n", esp_get_minimum_free_heap_size());
+        ESP_LOGI(TAG, "Minimum free heap size: %" PRIu32 " bytes\n", esp_get_minimum_free_heap_size());
 
         for (int countdown = 10; countdown >= 0; countdown--) {
             ESP_LOGI(TAG, "%d...", countdown);

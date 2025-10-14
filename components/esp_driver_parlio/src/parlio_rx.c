@@ -1,43 +1,31 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <stdlib.h>
-#include <string.h>
-#include <sys/cdefs.h>
-#include <sys/param.h>
-#include "sdkconfig.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/idf_additions.h"
-#if CONFIG_PARLIO_ENABLE_DEBUG_LOG
-// The local log level must be defined before including esp_log.h
-// Set the maximum log level for this source file
-#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
-#endif
-#include "esp_log.h"
-#include "esp_check.h"
-#include "esp_attr.h"
-#include "esp_err.h"
 #include "esp_rom_gpio.h"
-#include "esp_pm.h"
-#include "soc/parlio_periph.h"
-#include "soc/soc_caps.h"
-#include "hal/parlio_ll.h"
 #include "hal/dma_types.h"
 #include "hal/hal_utils.h"
 #include "driver/gpio.h"
 #include "driver/parlio_rx.h"
-#include "parlio_private.h"
-#include "esp_memory_utils.h"
-#include "esp_clk_tree.h"
-#include "esp_attr.h"
-#include "esp_private/esp_clk_tree_common.h"
-#include "esp_private/gdma.h"
-#include "esp_cache.h"
+#include "parlio_priv.h"
 
-static const char *TAG = "parlio-rx";
+#define ALIGN_UP(num, align)    (((num) + ((align) - 1)) & ~((align) - 1))
+
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+#define PARLIO_MAX_ALIGNED_DMA_BUF_SIZE     DMA_DESCRIPTOR_BUFFER_MAX_SIZE_64B_ALIGNED
+#else
+#define PARLIO_MAX_ALIGNED_DMA_BUF_SIZE     DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED
+#endif
+
+#if defined(SOC_GDMA_BUS_AHB) && (SOC_GDMA_TRIG_PERIPH_PARLIO0_BUS == SOC_GDMA_BUS_AHB)
+typedef dma_descriptor_align4_t     parlio_dma_desc_t;
+#elif defined(SOC_GDMA_BUS_AXI) && (SOC_GDMA_TRIG_PERIPH_PARLIO0_BUS == SOC_GDMA_BUS_AXI)
+typedef dma_descriptor_align8_t     parlio_dma_desc_t;
+#endif
+
+#define PARLIO_DMA_MEM_ALLOC_CAPS    (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT | MALLOC_CAP_DMA)
 
 /**
  * @brief Parlio RX transaction
@@ -67,10 +55,9 @@ typedef struct parlio_rx_unit_t {
     SemaphoreHandle_t               mutex;                  /*!< Mutex lock for concurrence safety,
                                                              *   which should be acquired and released in a same function */
 
+#if CONFIG_PM_ENABLE
     /* Power Management */
     esp_pm_lock_handle_t            pm_lock;                /*!< power management lock */
-#if CONFIG_PM_ENABLE
-    char                            pm_lock_name[PARLIO_PM_LOCK_NAME_LEN_MAX]; /*!< pm lock name */
 #endif
 
     /* Transaction Resources */
@@ -86,7 +73,7 @@ typedef struct parlio_rx_unit_t {
     size_t                          desc_size;              /*!< DMA descriptors total size */
     parlio_dma_desc_t               **dma_descs;            /*!< DMA descriptor array pointer */
     parlio_dma_desc_t               *curr_desc;             /*!< The pointer of the current descriptor */
-    void                            *usr_recv_buf;          /*!< The pointe to the user's receiving buffer */
+    void                            *usr_recv_buf;          /*!< The point to the user's receiving buffer */
     /* Infinite transaction specific */
     void                            *dma_buf;               /*!< Additional internal DMA buffer only for infinite transactions */
 
@@ -128,11 +115,12 @@ typedef struct parlio_rx_delimiter_t {
     } flags;
 } parlio_rx_delimiter_t;
 
-#define PRALIO_RX_MOUNT_SIZE_CALC(total_size, div, align)    ((((total_size) / (align)) / (div)) * (align))
+#define PARLIO_RX_MOUNT_SIZE_CALC(total_size, div, align)    ((((total_size) / (align)) / (div)) * (align))
+#define PARLIO_RX_CHECK_ISR(condition, err)                  if (!(condition)) { return err; }
 
 static portMUX_TYPE s_rx_spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
 
-static IRAM_ATTR size_t s_parlio_mount_transaction_buffer(parlio_rx_unit_handle_t rx_unit, parlio_rx_transaction_t *trans)
+size_t parlio_rx_mount_transaction_buffer(parlio_rx_unit_handle_t rx_unit, parlio_rx_transaction_t *trans)
 {
     parlio_dma_desc_t **p_desc = rx_unit->dma_descs;
     /* Update the current transaction to the next one, and declare the delimiter is under using of the rx unit */
@@ -163,11 +151,11 @@ static IRAM_ATTR size_t s_parlio_mount_transaction_buffer(parlio_rx_unit_handle_
         size_t rest_size = trans->size - offset;
 
         if (rest_size >= 2 * PARLIO_MAX_ALIGNED_DMA_BUF_SIZE) {
-            mount_size = PRALIO_RX_MOUNT_SIZE_CALC(trans->size, desc_num, alignment);
+            mount_size = PARLIO_RX_MOUNT_SIZE_CALC(trans->size, desc_num, alignment);
         } else if (rest_size <= PARLIO_MAX_ALIGNED_DMA_BUF_SIZE) {
-            mount_size = (desc_num == 2) && (i == 0) ? PRALIO_RX_MOUNT_SIZE_CALC(rest_size, 2, alignment) : rest_size;
+            mount_size = (desc_num == 2) && (i == 0) ? PARLIO_RX_MOUNT_SIZE_CALC(rest_size, 2, alignment) : rest_size;
         } else {
-            mount_size = PRALIO_RX_MOUNT_SIZE_CALC(rest_size, 2, alignment);
+            mount_size = PARLIO_RX_MOUNT_SIZE_CALC(rest_size, 2, alignment);
         }
         p_desc[i]->buffer = (void *)((uint8_t *)trans->payload + offset);
         p_desc[i]->dw0.size = mount_size;
@@ -191,7 +179,7 @@ static IRAM_ATTR size_t s_parlio_mount_transaction_buffer(parlio_rx_unit_handle_
     return offset;
 }
 
-static IRAM_ATTR void s_parlio_set_delimiter_config(parlio_rx_unit_handle_t rx_unit, parlio_rx_delimiter_handle_t deli)
+static void parlio_rx_set_delimiter_config(parlio_rx_unit_handle_t rx_unit, parlio_rx_delimiter_handle_t deli)
 {
     parlio_hal_context_t *hal = &(rx_unit->base.group->hal);
 
@@ -249,7 +237,7 @@ static IRAM_ATTR void s_parlio_set_delimiter_config(parlio_rx_unit_handle_t rx_u
     parlio_ll_rx_update_config(hal->regs);
 }
 
-static esp_err_t s_parlio_rx_unit_set_gpio(parlio_rx_unit_handle_t rx_unit, const parlio_rx_unit_config_t *config)
+static esp_err_t parlio_rx_unit_set_gpio(parlio_rx_unit_handle_t rx_unit, const parlio_rx_unit_config_t *config)
 {
     int group_id = rx_unit->base.group->group_id;
     int unit_id = rx_unit->base.unit_id;
@@ -258,14 +246,7 @@ static esp_err_t s_parlio_rx_unit_set_gpio(parlio_rx_unit_handle_t rx_unit, cons
     if (config->clk_src == PARLIO_CLK_SRC_EXTERNAL) {
         ESP_RETURN_ON_FALSE(config->clk_in_gpio_num >= 0, ESP_ERR_INVALID_ARG, TAG, "clk_in_gpio_num must be set while the clock input from external");
         /* Connect the clock in signal to the GPIO matrix if it is set */
-        gpio_func_sel(config->clk_in_gpio_num, PIN_FUNC_GPIO);
         gpio_input_enable(config->clk_in_gpio_num);
-
-        // deprecated, to be removed in in esp-idf v6.0
-        if (config->flags.io_loop_back) {
-            gpio_output_enable(config->clk_in_gpio_num);
-        }
-
         esp_rom_gpio_connect_in_signal(config->clk_in_gpio_num,
                                        parlio_periph_signals.groups[group_id].rx_units[unit_id].clk_in_sig, false);
     }
@@ -274,12 +255,6 @@ static esp_err_t s_parlio_rx_unit_set_gpio(parlio_rx_unit_handle_t rx_unit, cons
     if (config->clk_out_gpio_num >= 0) {
 #if SOC_PARLIO_RX_CLK_SUPPORT_OUTPUT
         gpio_func_sel(config->clk_out_gpio_num, PIN_FUNC_GPIO);
-
-        // deprecated, to be removed in in esp-idf v6.0
-        if (config->flags.io_loop_back) {
-            gpio_input_enable(config->clk_out_gpio_num);
-        }
-
         // connect the signal to the GPIO by matrix, it will also enable the output path properly
         esp_rom_gpio_connect_out_signal(config->clk_out_gpio_num,
                                         parlio_periph_signals.groups[group_id].rx_units[unit_id].clk_out_sig, false, false);
@@ -290,14 +265,7 @@ static esp_err_t s_parlio_rx_unit_set_gpio(parlio_rx_unit_handle_t rx_unit, cons
 
     /* Initialize the valid GPIO as input */
     if (config->valid_gpio_num >= 0) {
-        gpio_func_sel(config->valid_gpio_num, PIN_FUNC_GPIO);
         gpio_input_enable(config->valid_gpio_num);
-
-        // deprecated, to be removed in in esp-idf v6.0
-        if (config->flags.io_loop_back) {
-            gpio_output_enable(config->valid_gpio_num);
-        }
-
         /* Not connect the signal here, the signal is lazy connected until the delimiter takes effect */
     }
 
@@ -305,14 +273,7 @@ static esp_err_t s_parlio_rx_unit_set_gpio(parlio_rx_unit_handle_t rx_unit, cons
     for (int i = 0; i < config->data_width; i++) {
         /* Loop the data_gpio_nums to connect data and valid signals via GPIO matrix */
         if (config->data_gpio_nums[i] >= 0) {
-            gpio_func_sel(config->data_gpio_nums[i], PIN_FUNC_GPIO);
             gpio_input_enable(config->data_gpio_nums[i]);
-
-            // deprecated, to be removed in in esp-idf v6.0
-            if (config->flags.io_loop_back) {
-                gpio_output_enable(config->data_gpio_nums[i]);
-            }
-
             esp_rom_gpio_connect_in_signal(config->data_gpio_nums[i],
                                            parlio_periph_signals.groups[group_id].rx_units[unit_id].data_sigs[i], false);
         } else {
@@ -323,7 +284,7 @@ static esp_err_t s_parlio_rx_unit_set_gpio(parlio_rx_unit_handle_t rx_unit, cons
     return ESP_OK;
 }
 
-static IRAM_ATTR bool s_parlio_rx_default_eof_callback(gdma_channel_handle_t dma_chan, gdma_event_data_t *event_data, void *user_data)
+static bool parlio_rx_default_eof_callback(gdma_channel_handle_t dma_chan, gdma_event_data_t *event_data, void *user_data)
 {
     parlio_rx_unit_handle_t rx_unit = (parlio_rx_unit_handle_t)user_data;
     BaseType_t high_task_woken = pdFALSE;
@@ -361,10 +322,10 @@ static IRAM_ATTR bool s_parlio_rx_default_eof_callback(gdma_channel_handle_t dma
             }
             /* If the delimiter of the next transaction is not same as the current one, need to re-config the hardware */
             if ((next_trans.delimiter != NULL) && (next_trans.delimiter != rx_unit->curr_trans.delimiter)) {
-                s_parlio_set_delimiter_config(rx_unit, next_trans.delimiter);
+                parlio_rx_set_delimiter_config(rx_unit, next_trans.delimiter);
             }
             /* Mount the new transaction buffer and start the new transaction */
-            s_parlio_mount_transaction_buffer(rx_unit, &next_trans);
+            parlio_rx_mount_transaction_buffer(rx_unit, &next_trans);
             gdma_start(rx_unit->dma_chan, (intptr_t)rx_unit->dma_descs[0]);
             if (rx_unit->cfg.flags.free_clk) {
                 parlio_ll_rx_start(rx_unit->base.group->hal.regs, true);
@@ -387,7 +348,7 @@ static IRAM_ATTR bool s_parlio_rx_default_eof_callback(gdma_channel_handle_t dma
     return need_yield;
 }
 
-static IRAM_ATTR bool s_parlio_rx_default_desc_done_callback(gdma_channel_handle_t dma_chan, gdma_event_data_t *event_data, void *user_data)
+static bool parlio_rx_default_desc_done_callback(gdma_channel_handle_t dma_chan, gdma_event_data_t *event_data, void *user_data)
 {
     parlio_rx_unit_handle_t rx_unit = (parlio_rx_unit_handle_t)user_data;
     bool need_yield = false;
@@ -433,7 +394,7 @@ static IRAM_ATTR bool s_parlio_rx_default_desc_done_callback(gdma_channel_handle
     return need_yield;
 }
 
-static esp_err_t s_parlio_rx_create_dma_descriptors(parlio_rx_unit_handle_t rx_unit, uint32_t max_recv_size)
+static esp_err_t parlio_rx_create_dma_descriptors(parlio_rx_unit_handle_t rx_unit, uint32_t max_recv_size)
 {
     ESP_RETURN_ON_FALSE(rx_unit, ESP_ERR_INVALID_ARG, TAG, "invalid param");
     esp_err_t ret = ESP_OK;
@@ -473,11 +434,14 @@ err:
     return ret;
 }
 
-static esp_err_t s_parlio_rx_unit_init_dma(parlio_rx_unit_handle_t rx_unit)
+static esp_err_t parlio_rx_unit_init_dma(parlio_rx_unit_handle_t rx_unit)
 {
     /* Allocate and connect the GDMA channel */
     gdma_channel_alloc_config_t dma_chan_config = {
         .direction = GDMA_CHANNEL_DIRECTION_RX,
+#if CONFIG_PARLIO_RX_ISR_CACHE_SAFE
+        .flags.isr_cache_safe = true,
+#endif
     };
     ESP_RETURN_ON_ERROR(PARLIO_GDMA_NEW_CHANNEL(&dma_chan_config, &rx_unit->dma_chan), TAG, "allocate RX DMA channel failed");
     gdma_connect(rx_unit->dma_chan, GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_PARLIO, 0));
@@ -491,18 +455,19 @@ static esp_err_t s_parlio_rx_unit_init_dma(parlio_rx_unit_handle_t rx_unit)
 
     /* Register callbacks */
     gdma_rx_event_callbacks_t cbs = {
-        .on_recv_eof = s_parlio_rx_default_eof_callback,
-        .on_recv_done = s_parlio_rx_default_desc_done_callback,
+        .on_recv_eof = parlio_rx_default_eof_callback,
+        .on_recv_done = parlio_rx_default_desc_done_callback,
     };
     gdma_register_rx_event_callbacks(rx_unit->dma_chan, &cbs, rx_unit);
 
     return ESP_OK;
 }
 
-static esp_err_t s_parlio_select_periph_clock(parlio_rx_unit_handle_t rx_unit, const parlio_rx_unit_config_t *config)
+static esp_err_t parlio_select_periph_clock(parlio_rx_unit_handle_t rx_unit, const parlio_rx_unit_config_t *config)
 {
     parlio_hal_context_t *hal = &rx_unit->base.group->hal;
     parlio_clock_source_t clk_src = config->clk_src;
+    rx_unit->clk_src = clk_src;
     uint32_t src_freq_hz = 0;
     uint32_t exp_freq_hz = 0;
     hal_utils_clk_div_t clk_div = {
@@ -536,21 +501,23 @@ static esp_err_t s_parlio_select_periph_clock(parlio_rx_unit_handle_t rx_unit, c
 
 #if CONFIG_PM_ENABLE
     if (clk_src != PARLIO_CLK_SRC_EXTERNAL) {
-        /* XTAL and PLL clock source will be turned off in light sleep, so we need to create a NO_LIGHT_SLEEP lock */
-        sprintf(rx_unit->pm_lock_name, "parlio_rx_%d_%d", rx_unit->base.group->group_id, rx_unit->base.unit_id); // e.g. parlio_rx_0_0
-        esp_err_t ret  = esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, rx_unit->pm_lock_name, &rx_unit->pm_lock);
-        ESP_RETURN_ON_ERROR(ret, TAG, "create NO_LIGHT_SLEEP lock failed");
+        // XTAL and PLL clock source will be turned off in light sleep, so basically a NO_LIGHT_SLEEP lock is sufficient
+        esp_pm_lock_type_t lock_type = ESP_PM_NO_LIGHT_SLEEP;
+#if CONFIG_IDF_TARGET_ESP32P4
+        // use CPU_MAX lock to ensure PSRAM bandwidth and usability during DFS
+        lock_type = ESP_PM_CPU_FREQ_MAX;
+#endif
+        esp_err_t ret  = esp_pm_lock_create(lock_type, 0, parlio_periph_signals.groups[rx_unit->base.group->group_id].module_name, &rx_unit->pm_lock);
+        ESP_RETURN_ON_ERROR(ret, TAG, "create pm lock failed");
     }
 #endif
 
-    esp_clk_tree_enable_src((soc_module_clk_t)clk_src, true);
     /* Set clock configuration */
     PARLIO_CLOCK_SRC_ATOMIC() {
         parlio_ll_rx_set_clock_source(hal->regs, clk_src);
         parlio_ll_rx_set_clock_div(hal->regs, &clk_div);
     }
 
-    rx_unit->clk_src = clk_src;
     /* warning if precision lost due to division */
     if ((clk_src != PARLIO_CLK_SRC_EXTERNAL) &&
             (config->exp_clk_freq_hz != rx_unit->cfg.exp_clk_freq_hz)) {
@@ -560,7 +527,7 @@ static esp_err_t s_parlio_select_periph_clock(parlio_rx_unit_handle_t rx_unit, c
     return ESP_OK;
 }
 
-static esp_err_t s_parlio_destroy_rx_unit(parlio_rx_unit_handle_t rx_unit)
+static esp_err_t parlio_destroy_rx_unit(parlio_rx_unit_handle_t rx_unit)
 {
     /* Free the transaction queue */
     if (rx_unit->trans_que) {
@@ -574,10 +541,12 @@ static esp_err_t s_parlio_destroy_rx_unit(parlio_rx_unit_handle_t rx_unit)
     if (rx_unit->trans_sem) {
         vSemaphoreDeleteWithCaps(rx_unit->trans_sem);
     }
+#if CONFIG_PM_ENABLE
     /* Free the power management lock */
     if (rx_unit->pm_lock) {
         ESP_RETURN_ON_ERROR(esp_pm_lock_delete(rx_unit->pm_lock), TAG, "delete pm lock failed");
     }
+#endif
     /* Delete the GDMA channel */
     if (rx_unit->dma_chan) {
         ESP_RETURN_ON_ERROR(gdma_disconnect(rx_unit->dma_chan), TAG, "disconnect dma channel failed");
@@ -602,6 +571,9 @@ static esp_err_t s_parlio_destroy_rx_unit(parlio_rx_unit_handle_t rx_unit)
     if (rx_unit->base.group) {
         parlio_unregister_unit_from_group(&rx_unit->base);
     }
+    if (rx_unit->clk_src) {
+        ESP_RETURN_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)rx_unit->clk_src, false), TAG, "clock source disable failed");
+    }
     /* Free the RX unit */
     free(rx_unit);
     return ESP_OK;
@@ -609,9 +581,6 @@ static esp_err_t s_parlio_destroy_rx_unit(parlio_rx_unit_handle_t rx_unit)
 
 esp_err_t parlio_new_rx_unit(const parlio_rx_unit_config_t *config, parlio_rx_unit_handle_t *ret_unit)
 {
-#if CONFIG_PARLIO_ENABLE_DEBUG_LOG
-    esp_log_level_set(TAG, ESP_LOG_DEBUG);
-#endif
     ESP_RETURN_ON_FALSE(config && ret_unit, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     /* Check the data width to be the the power of 2 */
     ESP_RETURN_ON_FALSE(__builtin_popcount(config->data_width) == 1, ESP_ERR_INVALID_ARG, TAG,
@@ -646,7 +615,7 @@ esp_err_t parlio_new_rx_unit(const parlio_rx_unit_config_t *config, parlio_rx_un
     unit->trans_que = xQueueCreateWithCaps(config->trans_queue_depth, sizeof(parlio_rx_transaction_t), PARLIO_MEM_ALLOC_CAPS);
     ESP_GOTO_ON_FALSE(unit->trans_que, ESP_ERR_NO_MEM, err, TAG, "no memory for transaction queue");
 
-    ESP_GOTO_ON_ERROR(s_parlio_rx_create_dma_descriptors(unit, config->max_recv_size), err, TAG, "create dma descriptor failed");
+    ESP_GOTO_ON_ERROR(parlio_rx_create_dma_descriptors(unit, config->max_recv_size), err, TAG, "create dma descriptor failed");
     /* Register and attach the rx unit to the group */
     ESP_GOTO_ON_ERROR(parlio_register_unit_to_group(&unit->base), err, TAG, "failed to register the rx unit to the group");
     memcpy(&unit->cfg, config, sizeof(parlio_rx_unit_config_t));
@@ -658,9 +627,9 @@ esp_err_t parlio_new_rx_unit(const parlio_rx_unit_config_t *config, parlio_rx_un
     parlio_group_t *group = unit->base.group;
     parlio_hal_context_t *hal = &group->hal;
     /* Initialize GPIO */
-    ESP_GOTO_ON_ERROR(s_parlio_rx_unit_set_gpio(unit, config), err, TAG, "failed to set GPIO");
+    ESP_GOTO_ON_ERROR(parlio_rx_unit_set_gpio(unit, config), err, TAG, "failed to set GPIO");
     /* Install DMA service */
-    ESP_GOTO_ON_ERROR(s_parlio_rx_unit_init_dma(unit), err, TAG, "install rx DMA failed");
+    ESP_GOTO_ON_ERROR(parlio_rx_unit_init_dma(unit), err, TAG, "install rx DMA failed");
     /* Reset RX module */
     PARLIO_RCC_ATOMIC() {
         parlio_ll_rx_reset_clock(hal->regs);
@@ -671,7 +640,8 @@ esp_err_t parlio_new_rx_unit(const parlio_rx_unit_config_t *config, parlio_rx_un
     }
     parlio_ll_rx_start(hal->regs, false);
     /* parlio_ll_clock_source_t and parlio_clock_source_t are binary compatible if the clock source is from internal */
-    ESP_GOTO_ON_ERROR(s_parlio_select_periph_clock(unit, config), err, TAG, "set clock source failed");
+    ESP_GOTO_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)(config->clk_src), true), err, TAG, "clock source enable failed");
+    ESP_GOTO_ON_ERROR(parlio_select_periph_clock(unit, config), err, TAG, "set clock source failed");
     /* Set the data width */
     parlio_ll_rx_set_bus_width(hal->regs, config->data_width);
 #if SOC_PARLIO_RX_CLK_SUPPORT_GATING
@@ -697,7 +667,7 @@ esp_err_t parlio_new_rx_unit(const parlio_rx_unit_config_t *config, parlio_rx_un
 
 err:
     if (unit) {
-        s_parlio_destroy_rx_unit(unit);
+        parlio_destroy_rx_unit(unit);
     }
     return ret;
 }
@@ -709,7 +679,7 @@ esp_err_t parlio_del_rx_unit(parlio_rx_unit_handle_t rx_unit)
     ESP_RETURN_ON_FALSE(!rx_unit->is_enabled, ESP_ERR_INVALID_STATE, TAG, "the unit has not disabled");
 
     ESP_LOGD(TAG, "del rx unit (%d, %d)", rx_unit->base.group->group_id, rx_unit->base.unit_id);
-    return s_parlio_destroy_rx_unit(rx_unit);
+    return parlio_destroy_rx_unit(rx_unit);
 }
 
 esp_err_t parlio_rx_unit_enable(parlio_rx_unit_handle_t rx_unit, bool reset_queue)
@@ -723,10 +693,12 @@ esp_err_t parlio_rx_unit_enable(parlio_rx_unit_handle_t rx_unit, bool reset_queu
     ESP_GOTO_ON_FALSE(!rx_unit->is_enabled, ESP_ERR_INVALID_STATE, err, TAG, "the unit has enabled or running");
     rx_unit->is_enabled = true;
 
+#if CONFIG_PM_ENABLE
     /* Acquire the power management lock in case */
     if (rx_unit->pm_lock) {
         esp_pm_lock_acquire(rx_unit->pm_lock);
     }
+#endif
 
     /* For non-free running clock, the unit can't stop once enabled, otherwise the data alignment will go wrong */
     if (!rx_unit->cfg.flags.free_clk) {
@@ -744,14 +716,22 @@ esp_err_t parlio_rx_unit_enable(parlio_rx_unit_handle_t rx_unit, bool reset_queu
         xSemaphoreGive(rx_unit->trans_sem);
     } else if (xQueueReceive(rx_unit->trans_que, &trans, 0) == pdTRUE) {
         // The semaphore always supposed to be taken successfully
-        assert(xSemaphoreTake(rx_unit->trans_sem, 0) == pdTRUE);
+        BaseType_t res = xSemaphoreTake(rx_unit->trans_sem, 0);
+        (void)res;
+        assert(res == pdTRUE);
+
+        if (trans.flags.indirect_mount && trans.flags.infinite && rx_unit->dma_buf == NULL) {
+            rx_unit->dma_buf = heap_caps_aligned_calloc(rx_unit->base.group->dma_align, 1, trans.size, PARLIO_DMA_MEM_ALLOC_CAPS);
+            ESP_GOTO_ON_FALSE(rx_unit->dma_buf, ESP_ERR_NO_MEM, err, TAG, "No memory for the internal DMA buffer");
+        }
         if (rx_unit->cfg.flags.free_clk) {
             PARLIO_CLOCK_SRC_ATOMIC() {
                 parlio_ll_rx_enable_clock(hal->regs, false);
             }
         }
-        s_parlio_set_delimiter_config(rx_unit, trans.delimiter);
-        s_parlio_mount_transaction_buffer(rx_unit, &trans);
+        assert(trans.delimiter);
+        parlio_rx_set_delimiter_config(rx_unit, trans.delimiter);
+        parlio_rx_mount_transaction_buffer(rx_unit, &trans);
         gdma_start(rx_unit->dma_chan, (intptr_t)rx_unit->curr_desc);
         if (rx_unit->cfg.flags.free_clk) {
             parlio_ll_rx_start(hal->regs, true);
@@ -794,10 +774,12 @@ esp_err_t parlio_rx_unit_disable(parlio_rx_unit_handle_t rx_unit)
         free(rx_unit->dma_buf);
         rx_unit->dma_buf = NULL;
     }
+#if CONFIG_PM_ENABLE
     /* release power management lock */
     if (rx_unit->pm_lock) {
         esp_pm_lock_release(rx_unit->pm_lock);
     }
+#endif
     /* Erase the current transaction */
     memset(&rx_unit->curr_trans, 0, sizeof(parlio_rx_transaction_t));
 err:
@@ -922,7 +904,7 @@ esp_err_t parlio_del_rx_delimiter(parlio_rx_delimiter_handle_t delimiter)
     return ESP_OK;
 }
 
-static esp_err_t s_parlio_rx_unit_do_transaction(parlio_rx_unit_handle_t rx_unit, parlio_rx_transaction_t *trans)
+static esp_err_t parlio_rx_unit_do_transaction(parlio_rx_unit_handle_t rx_unit, parlio_rx_transaction_t *trans)
 {
     bool is_stopped = false;
     /* Get whether DMA stopped atomically */
@@ -936,9 +918,9 @@ static esp_err_t s_parlio_rx_unit_do_transaction(parlio_rx_unit_handle_t rx_unit
             }
         }
         if (trans->delimiter != rx_unit->curr_trans.delimiter) {
-            s_parlio_set_delimiter_config(rx_unit, trans->delimiter);
+            parlio_rx_set_delimiter_config(rx_unit, trans->delimiter);
         }
-        s_parlio_mount_transaction_buffer(rx_unit, trans);
+        parlio_rx_mount_transaction_buffer(rx_unit, trans);
         // Take semaphore without block time here, only indicate there are transactions on receiving
         xSemaphoreTake(rx_unit->trans_sem, 0);
         gdma_start(rx_unit->dma_chan, (intptr_t)rx_unit->curr_desc);
@@ -971,7 +953,7 @@ esp_err_t parlio_rx_unit_receive(parlio_rx_unit_handle_t rx_unit,
         ESP_RETURN_ON_FALSE(payload_size >= 2 * alignment, ESP_ERR_INVALID_ARG, TAG, "The payload size should greater than %"PRIu32, 2 * alignment);
     }
 #endif
-#if CONFIG_GDMA_ISR_IRAM_SAFE
+#if CONFIG_PARLIO_RX_ISR_CACHE_SAFE
     ESP_RETURN_ON_FALSE(esp_ptr_internal(payload), ESP_ERR_INVALID_ARG, TAG, "payload not in internal RAM");
 #else
     ESP_RETURN_ON_FALSE(recv_cfg->flags.indirect_mount || esp_ptr_internal(payload), ESP_ERR_INVALID_ARG, TAG, "payload not in internal RAM");
@@ -1015,9 +997,74 @@ esp_err_t parlio_rx_unit_receive(parlio_rx_unit_handle_t rx_unit,
     rx_unit->usr_recv_buf = payload;
 
     xSemaphoreTake(rx_unit->mutex, portMAX_DELAY);
-    esp_err_t ret = s_parlio_rx_unit_do_transaction(rx_unit, &transaction);
+    esp_err_t ret = parlio_rx_unit_do_transaction(rx_unit, &transaction);
     xSemaphoreGive(rx_unit->mutex);
     return ret;
+}
+
+esp_err_t parlio_rx_unit_receive_from_isr(parlio_rx_unit_handle_t rx_unit,
+                                          void *payload,
+                                          size_t payload_size,
+                                          const parlio_receive_config_t* recv_cfg,
+                                          bool *hp_task_woken)
+{
+    PARLIO_RX_CHECK_ISR(rx_unit && payload && recv_cfg, ESP_ERR_INVALID_ARG);
+    PARLIO_RX_CHECK_ISR(recv_cfg->delimiter, ESP_ERR_INVALID_ARG);
+    PARLIO_RX_CHECK_ISR(payload_size <= rx_unit->max_recv_size, ESP_ERR_INVALID_ARG);
+    // Can only be called from ISR
+    PARLIO_RX_CHECK_ISR(xPortInIsrContext() == pdTRUE, ESP_ERR_INVALID_STATE);
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+    uint32_t alignment = rx_unit->base.group->dma_align;
+    PARLIO_RX_CHECK_ISR(payload_size % alignment == 0, ESP_ERR_INVALID_ARG);
+    if (recv_cfg->flags.partial_rx_en) {
+        PARLIO_RX_CHECK_ISR(payload_size >= 2 * alignment, ESP_ERR_INVALID_ARG);
+    }
+#endif
+#if CONFIG_PARLIO_RX_ISR_CACHE_SAFE
+    PARLIO_RX_CHECK_ISR(esp_ptr_internal(payload), ESP_ERR_INVALID_ARG);
+#else
+    PARLIO_RX_CHECK_ISR(recv_cfg->flags.indirect_mount || esp_ptr_internal(payload), ESP_ERR_INVALID_ARG);
+#endif
+    if (recv_cfg->delimiter->eof_data_len) {
+        PARLIO_RX_CHECK_ISR(payload_size >= recv_cfg->delimiter->eof_data_len, ESP_ERR_INVALID_ARG);
+    }
+    if (recv_cfg->delimiter->mode != PARLIO_RX_SOFT_MODE) {
+        PARLIO_RX_CHECK_ISR(rx_unit->cfg.valid_gpio_num >= 0, ESP_ERR_INVALID_ARG);
+        /* Check if the valid_sig_line_id is equal or greater than data width, otherwise valid_sig_line_id is conflict with data signal.
+         * Specifically, level or pulse delimiter requires one data line as valid signal, so these two delimiters can't support PARLIO_RX_UNIT_MAX_DATA_WIDTH */
+        PARLIO_RX_CHECK_ISR(recv_cfg->delimiter->valid_sig_line_id >= rx_unit->cfg.data_width, ESP_ERR_INVALID_ARG);
+        /* Assign the signal here to ensure iram safe */
+        recv_cfg->delimiter->valid_sig = parlio_periph_signals.groups[rx_unit->base.group->group_id].
+                                         rx_units[rx_unit->base.unit_id].
+                                         data_sigs[recv_cfg->delimiter->valid_sig_line_id];
+    }
+    void *p_buffer = payload;
+
+    if (recv_cfg->flags.partial_rx_en && recv_cfg->flags.indirect_mount) {
+        /* The internal DMA buffer should be allocated before calling this function */
+        PARLIO_RX_CHECK_ISR(rx_unit->dma_buf, ESP_ERR_INVALID_STATE);
+        p_buffer = rx_unit->dma_buf;
+    }
+
+    /* Create the transaction */
+    parlio_rx_transaction_t transaction = {
+        .delimiter = recv_cfg->delimiter,
+        .payload = p_buffer,
+        .size = payload_size,
+        .recv_bytes = 0,
+        .flags.infinite = recv_cfg->flags.partial_rx_en,
+        .flags.indirect_mount = recv_cfg->flags.indirect_mount,
+    };
+    rx_unit->usr_recv_buf = payload;
+
+    /* Send the transaction to the queue */
+    BaseType_t _hp_task_woken = 0;
+    BaseType_t ret = xQueueSendFromISR(rx_unit->trans_que, &transaction, &_hp_task_woken);
+    if (hp_task_woken) {
+        *hp_task_woken = _hp_task_woken != 0;
+    }
+
+    return ret == pdTRUE ? ESP_OK : ESP_FAIL;
 }
 
 esp_err_t parlio_rx_unit_wait_all_done(parlio_rx_unit_handle_t rx_unit, int timeout_ms)
@@ -1040,7 +1087,7 @@ esp_err_t parlio_rx_unit_register_event_callbacks(parlio_rx_unit_handle_t rx_uni
     ESP_RETURN_ON_FALSE(rx_unit, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     ESP_RETURN_ON_FALSE(cbs, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
 
-#if CONFIG_PARLIO_ISR_IRAM_SAFE
+#if CONFIG_PARLIO_RX_ISR_CACHE_SAFE
     ESP_RETURN_ON_FALSE(!cbs->on_partial_receive || esp_ptr_in_iram(cbs->on_partial_receive), ESP_ERR_INVALID_ARG,
                         TAG, "on_partial_receive not in IRAM");
     ESP_RETURN_ON_FALSE(!cbs->on_receive_done || esp_ptr_in_iram(cbs->on_receive_done), ESP_ERR_INVALID_ARG,

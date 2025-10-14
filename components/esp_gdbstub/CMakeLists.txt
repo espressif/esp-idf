@@ -18,7 +18,8 @@ if(CONFIG_IDF_TARGET_ARCH_XTENSA)
     list(APPEND priv_includes "src/port/xtensa/include")
 elseif(CONFIG_IDF_TARGET_ARCH_RISCV)
     list(APPEND srcs "src/port/riscv/gdbstub_riscv.c"
-                     "src/port/riscv/rv_decode.c")
+                     "src/port/riscv/rv_decode.c"
+                     "src/port/riscv/target_xml.c")
     list(APPEND priv_includes "src/port/riscv/include")
 endif()
 

@@ -484,6 +484,10 @@ void obex_tl_l2cap_disconnect_ind(UINT16 lcid, BOOLEAN is_conf_needed)
         return;
     }
 
+    if (p_ccb->initiator && find_scb_by_psm(p_ccb->vpsm) == NULL) {
+        L2CA_Deregister(p_ccb->vpsm);
+    }
+
     tOBEX_TL_MSG msg = {0};
     msg.any.hdl = p_ccb->allocated;
     obex_tl_l2cap_cb.callback(OBEX_TL_DIS_CONN_EVT, &msg);

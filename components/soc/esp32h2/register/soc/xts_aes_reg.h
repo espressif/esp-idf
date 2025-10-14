@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -123,6 +123,42 @@ formance of cryption will decrease together with this number increasing).*/
 #define XTS_AES_CRYPT_SECURITY_LEVEL_M  ((XTS_AES_CRYPT_SECURITY_LEVEL_V)<<(XTS_AES_CRYPT_SECURITY_LEVEL_S))
 #define XTS_AES_CRYPT_SECURITY_LEVEL_V  0x7
 #define XTS_AES_CRYPT_SECURITY_LEVEL_S  0
+
+/** XTS_AES_PSEUDO_ROUND_CONF_REG register
+ *  SPI memory encryption PSEUDO register
+ */
+#define XTS_AES_PSEUDO_ROUND_CONF_REG(i) (REG_SPI_MEM_BASE(i) + 0x38c)
+/** XTS_AES_MODE_PSEUDO : R/W; bitpos: [1:0]; default: 0;
+ *  Set the mode of pseudo. 2'b00: crypto without pseudo. 2'b01: state T with pseudo
+ *  and state D without pseudo. 2'b10: state T with pseudo and state D with few pseudo.
+ *  2'b11: crypto with pseudo.
+ */
+#define XTS_AES_MODE_PSEUDO    0x00000003U
+#define XTS_AES_MODE_PSEUDO_M  (XTS_AES_MODE_PSEUDO_V << XTS_AES_MODE_PSEUDO_S)
+#define XTS_AES_MODE_PSEUDO_V  0x00000003U
+#define XTS_AES_MODE_PSEUDO_S  0
+/** XTS_AES_PSEUDO_RNG_CNT : R/W; bitpos: [4:2]; default: 7;
+ *  xts aes peseudo function base round that must be performed.
+ */
+#define XTS_AES_PSEUDO_RNG_CNT    0x00000007U
+#define XTS_AES_PSEUDO_RNG_CNT_M  (XTS_AES_PSEUDO_RNG_CNT_V << XTS_AES_PSEUDO_RNG_CNT_S)
+#define XTS_AES_PSEUDO_RNG_CNT_V  0x00000007U
+#define XTS_AES_PSEUDO_RNG_CNT_S  2
+/** XTS_AES_PSEUDO_BASE : R/W; bitpos: [8:5]; default: 2;
+ *  xts aes peseudo function base round that must be performed.
+ */
+#define XTS_AES_PSEUDO_BASE    0x0000000FU
+#define XTS_AES_PSEUDO_BASE_M  (XTS_AES_PSEUDO_BASE_V << XTS_AES_PSEUDO_BASE_S)
+#define XTS_AES_PSEUDO_BASE_V  0x0000000FU
+#define XTS_AES_PSEUDO_BASE_S  5
+/** XTS_AES_PSEUDO_INC : R/W; bitpos: [10:9]; default: 2;
+ *  xts aes peseudo function increment round that will be performed randomly between 0 &
+ *  2**(inc+1).
+ */
+#define XTS_AES_PSEUDO_INC    0x00000003U
+#define XTS_AES_PSEUDO_INC_M  (XTS_AES_PSEUDO_INC_V << XTS_AES_PSEUDO_INC_S)
+#define XTS_AES_PSEUDO_INC_V  0x00000003U
+#define XTS_AES_PSEUDO_INC_S  9
 
 #ifdef __cplusplus
 }

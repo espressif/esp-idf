@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -18,6 +18,8 @@
 #include "memory_checks.h"
 #include "lwip/netif.h"
 #include "esp_netif_test.h"
+#include "esp_event.h"
+#include "freertos/semphr.h"
 
 TEST_GROUP(esp_netif);
 
@@ -145,6 +147,87 @@ TEST(esp_netif, find_netifs)
         found_netif = esp_netif_find_if(desc_matches_with, (void*)if_keys[i]);
         TEST_ASSERT_EQUAL(found_netif, NULL);
     }
+}
+
+static esp_err_t dummy_transmit(void* hd, void *buf, size_t length)
+{
+    return ESP_OK;
+}
+
+static SemaphoreHandle_t s_netif_up_sem;
+static SemaphoreHandle_t s_netif_down_sem;
+static volatile int s_netif_up_count;
+static volatile int s_netif_down_count;
+
+static void netif_status_evt_handler(void *arg, esp_event_base_t base, int32_t id, void *data)
+{
+    (void)arg; (void)base; (void)data;
+    if (id == IP_EVENT_NETIF_UP) {
+        s_netif_up_count++;
+        if (s_netif_up_sem) {
+            xSemaphoreGive(s_netif_up_sem);
+        }
+    } else if (id == IP_EVENT_NETIF_DOWN) {
+        s_netif_down_count++;
+        if (s_netif_down_sem) {
+            xSemaphoreGive(s_netif_down_sem);
+        }
+    }
+}
+
+TEST(esp_netif, unified_netif_status_event)
+{
+    test_case_uses_tcpip();
+    TEST_ESP_OK(esp_event_loop_create_default());
+
+    s_netif_up_sem = xSemaphoreCreateBinary();
+    s_netif_down_sem = xSemaphoreCreateBinary();
+    TEST_ASSERT_NOT_NULL(s_netif_up_sem);
+    TEST_ASSERT_NOT_NULL(s_netif_down_sem);
+    s_netif_up_count = 0;
+    s_netif_down_count = 0;
+
+    TEST_ESP_OK(esp_event_handler_register(IP_EVENT, IP_EVENT_NETIF_UP, &netif_status_evt_handler, NULL));
+    TEST_ESP_OK(esp_event_handler_register(IP_EVENT, IP_EVENT_NETIF_DOWN, &netif_status_evt_handler, NULL));
+
+    // Create a simple netif (no real driver needed)
+    esp_netif_driver_ifconfig_t driver_config = { .handle = (void*)1, .transmit = dummy_transmit };
+    esp_netif_inherent_config_t base_netif_config = { .if_key = "if_status", .if_desc = "if_status" };
+    esp_netif_config_t cfg = { .base = &base_netif_config, .stack = ESP_NETIF_NETSTACK_DEFAULT_WIFI_STA, .driver = &driver_config };
+    esp_netif_t *netif = esp_netif_new(&cfg);
+    TEST_ASSERT_NOT_NULL(netif);
+
+    // Bring interface up (should emit exactly one NETIF_UP)
+    esp_netif_action_start(netif, NULL, 0, NULL);
+    esp_netif_action_connected(netif, NULL, 0, NULL);
+    TEST_ASSERT_EQUAL(pdTRUE, xQueueSemaphoreTake(s_netif_up_sem, pdMS_TO_TICKS(1000)));
+    vTaskDelay(pdMS_TO_TICKS(50));
+    TEST_ASSERT_EQUAL(1, s_netif_up_count);
+    TEST_ASSERT_EQUAL(0, s_netif_down_count);
+
+    // Bring interface down (should emit exactly one NETIF_DOWN)
+    esp_netif_action_disconnected(netif, NULL, 0, NULL);
+    TEST_ASSERT_EQUAL(pdTRUE, xQueueSemaphoreTake(s_netif_down_sem, pdMS_TO_TICKS(1000)));
+    vTaskDelay(pdMS_TO_TICKS(50));
+    TEST_ASSERT_EQUAL(1, s_netif_down_count);
+    TEST_ASSERT_EQUAL(1, s_netif_up_count);
+
+    // Bring up again (should increment up count to 2)
+    esp_netif_action_connected(netif, NULL, 0, NULL);
+    TEST_ASSERT_EQUAL(pdTRUE, xQueueSemaphoreTake(s_netif_up_sem, pdMS_TO_TICKS(1000)));
+    vTaskDelay(pdMS_TO_TICKS(50));
+    TEST_ASSERT_EQUAL(2, s_netif_up_count);
+    TEST_ASSERT_EQUAL(1, s_netif_down_count);
+
+    // Cleanup
+    TEST_ESP_OK(esp_event_handler_unregister(IP_EVENT, IP_EVENT_NETIF_UP, &netif_status_evt_handler));
+    TEST_ESP_OK(esp_event_handler_unregister(IP_EVENT, IP_EVENT_NETIF_DOWN, &netif_status_evt_handler));
+    vSemaphoreDelete(s_netif_up_sem);
+    vSemaphoreDelete(s_netif_down_sem);
+    s_netif_up_sem = s_netif_down_sem = NULL;
+
+    esp_netif_destroy(netif);
+    TEST_ESP_OK(esp_event_loop_delete_default());
 }
 
 #ifdef CONFIG_ESP_WIFI_ENABLED
@@ -438,11 +521,6 @@ TEST(esp_netif, get_set_hostname)
 }
 #endif // CONFIG_ESP_WIFI_ENABLED
 
-static esp_err_t dummy_transmit(void* hd, void *buf, size_t length)
-{
-    return ESP_OK;
-}
-
 /*
  * This test validates the route priority of multiple netifs. It checks that the default route (default netif)
  * is set correctly for the netifs according to their `route_prio` value and `link_up` state.
@@ -610,6 +688,7 @@ TEST_GROUP_RUNNER(esp_netif)
 #endif
     RUN_TEST_CASE(esp_netif, route_priority)
     RUN_TEST_CASE(esp_netif, set_get_dnsserver)
+    RUN_TEST_CASE(esp_netif, unified_netif_status_event)
 }
 
 void app_main(void)

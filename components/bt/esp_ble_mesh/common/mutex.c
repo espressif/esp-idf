@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -122,6 +122,57 @@ void bt_mesh_r_mutex_unlock(bt_mesh_mutex_t *mutex)
 
     if (mutex->mutex) {
         xSemaphoreGiveRecursive(mutex->mutex);
+    }
+}
+
+void bt_mesh_c_semaphore_free(bt_mesh_mutex_t *mutex)
+{
+    bt_mesh_mutex_free(mutex);
+}
+
+void bt_mesh_c_semaphore_create(bt_mesh_mutex_t *mutex, int max, int init)
+{
+    if (!mutex) {
+        BT_ERR("Create, invalid mutex");
+        return;
+    }
+
+#if CONFIG_BLE_MESH_FREERTOS_STATIC_ALLOC
+#if CONFIG_BLE_MESH_FREERTOS_STATIC_ALLOC_EXTERNAL
+    mutex->buffer = heap_caps_calloc_prefer(1, sizeof(StaticQueue_t), 2, MALLOC_CAP_SPIRAM|MALLOC_CAP_8BIT, MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);
+#elif CONFIG_BLE_MESH_FREERTOS_STATIC_ALLOC_IRAM_8BIT
+    mutex->buffer = heap_caps_calloc_prefer(1, sizeof(StaticQueue_t), 2, MALLOC_CAP_INTERNAL|MALLOC_CAP_IRAM_8BIT, MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);
+#endif
+    __ASSERT(mutex->buffer, "Failed to create counting semaphore buffer");
+    mutex->mutex = xSemaphoreCreateCountingStatic(max, init, mutex->buffer);
+    __ASSERT(mutex->mutex, "Failed to create static counting semaphore");
+#else /* CONFIG_BLE_MESH_FREERTOS_STATIC_ALLOC */
+    mutex->mutex = xSemaphoreCreateCounting(max, init);
+    __ASSERT(mutex->mutex, "Failed to create counting semaphore");
+#endif /* CONFIG_BLE_MESH_FREERTOS_STATIC_ALLOC */
+}
+
+void bt_mesh_c_semaphore_take(bt_mesh_mutex_t *mutex, uint32_t timeout)
+{
+    if (!mutex) {
+        BT_ERR("Lock, invalid counting semaphore");
+        return;
+    }
+
+    if (mutex->mutex) {
+        xSemaphoreTake(mutex->mutex, timeout / portTICK_PERIOD_MS);
+    }
+}
+
+void bt_mesh_c_semaphore_give(bt_mesh_mutex_t *mutex)
+{
+    if (!mutex) {
+        BT_ERR("Unlock, invalid counting semaphore");
+        return;
+    }
+
+    if (mutex->mutex) {
+        xSemaphoreGive(mutex->mutex);
     }
 }
 

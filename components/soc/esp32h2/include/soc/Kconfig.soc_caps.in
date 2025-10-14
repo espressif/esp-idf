@@ -3,6 +3,10 @@
 # using gen_soc_caps_kconfig.py, do not edit manually
 #####################################################
 
+config SOC_CAPS_ECO_VER_MAX
+    int
+    default 102
+
 config SOC_ADC_SUPPORTED
     bool
     default y
@@ -16,6 +20,10 @@ config SOC_DEDICATED_GPIO_SUPPORTED
     default y
 
 config SOC_UART_SUPPORTED
+    bool
+    default y
+
+config SOC_UHCI_SUPPORTED
     bool
     default y
 
@@ -175,6 +183,10 @@ config SOC_BOD_SUPPORTED
     bool
     default y
 
+config SOC_VBAT_SUPPORTED
+    bool
+    default y
+
 config SOC_APM_SUPPORTED
     bool
     default y
@@ -235,6 +247,10 @@ config SOC_XTAL_SUPPORT_32M
     bool
     default y
 
+config SOC_XTAL_CLOCK_PATH_DEPENDS_ON_TOP_DOMAIN
+    bool
+    default y
+
 config SOC_AES_SUPPORT_DMA
     bool
     default y
@@ -248,6 +264,10 @@ config SOC_AES_SUPPORT_AES_128
     default y
 
 config SOC_AES_SUPPORT_AES_256
+    bool
+    default y
+
+config SOC_AES_SUPPORT_PSEUDO_ROUND_FUNCTION
     bool
     default y
 
@@ -407,6 +427,10 @@ config SOC_CPU_PMP_REGION_GRANULARITY
     int
     default 4
 
+config SOC_CPU_MISALIGNED_ACCESS_ON_PMP_MISMATCH_ISSUE
+    bool
+    default y
+
 config SOC_MMU_PAGE_SIZE_CONFIGURABLE
     bool
     default y
@@ -456,18 +480,6 @@ config SOC_GDMA_SUPPORT_ETM
     default y
 
 config SOC_GDMA_SUPPORT_SLEEP_RETENTION
-    bool
-    default y
-
-config SOC_ETM_GROUPS
-    int
-    default 1
-
-config SOC_ETM_CHANNELS_PER_GROUP
-    int
-    default 50
-
-config SOC_ETM_SUPPORT_SLEEP_RETENTION
     bool
     default y
 
@@ -551,15 +563,11 @@ config SOC_RTCIO_HOLD_SUPPORTED
     bool
     default y
 
-config SOC_DEDIC_GPIO_OUT_CHANNELS_NUM
-    int
-    default 8
+config SOC_SDM_SUPPORT_SLEEP_RETENTION
+    bool
+    default y
 
-config SOC_DEDIC_GPIO_IN_CHANNELS_NUM
-    int
-    default 8
-
-config SOC_DEDIC_PERIPH_ALWAYS_ENABLE
+config SOC_ETM_SUPPORT_SLEEP_RETENTION
     bool
     default y
 
@@ -631,27 +639,11 @@ config SOC_I2C_SUPPORT_SLEEP_RETENTION
     bool
     default y
 
-config SOC_I2S_NUM
-    int
-    default 1
-
 config SOC_I2S_HW_VERSION_2
     bool
     default y
 
 config SOC_I2S_SUPPORTS_ETM
-    bool
-    default y
-
-config SOC_I2S_SUPPORTS_XTAL
-    bool
-    default y
-
-config SOC_I2S_SUPPORTS_PLL_F96M
-    bool
-    default y
-
-config SOC_I2S_SUPPORTS_PLL_F64M
     bool
     default y
 
@@ -684,14 +676,6 @@ config SOC_I2S_PDM_MAX_RX_LINES
     default 1
 
 config SOC_I2S_SUPPORTS_TDM
-    bool
-    default y
-
-config SOC_I2S_TDM_FULL_DATA_WIDTH
-    bool
-    default y
-
-config SOC_I2S_SUPPORT_SLEEP_RETENTION
     bool
     default y
 
@@ -755,27 +739,11 @@ config SOC_MPU_REGION_WO_SUPPORTED
     bool
     default n
 
-config SOC_PCNT_GROUPS
-    int
-    default 1
-
-config SOC_PCNT_UNITS_PER_GROUP
-    int
-    default 4
-
-config SOC_PCNT_CHANNELS_PER_UNIT
-    int
-    default 2
-
-config SOC_PCNT_THRES_POINT_PER_UNIT
-    int
-    default 2
-
 config SOC_PCNT_SUPPORT_RUNTIME_THRES_UPDATE
     bool
     default y
 
-config SOC_PCNT_SUPPORT_SLEEP_RETENTION
+config SOC_PCNT_SUPPORT_STEP_NOTIFY
     bool
     default y
 
@@ -807,7 +775,7 @@ config SOC_RMT_SUPPORT_RX_DEMODULATION
     bool
     default y
 
-config SOC_RMT_SUPPORT_TX_ASYNC_STOP
+config SOC_RMT_SUPPORT_ASYNC_STOP
     bool
     default y
 
@@ -931,6 +899,10 @@ config SOC_PARLIO_TRANS_BIT_ALIGN
     bool
     default y
 
+config SOC_PARLIO_TX_SUPPORT_LOOP_TRANSMISSION
+    bool
+    default y
+
 config SOC_PARLIO_SUPPORT_SLEEP_RETENTION
     bool
     default y
@@ -976,22 +948,6 @@ config SOC_SHA_SUPPORT_SHA224
     default y
 
 config SOC_SHA_SUPPORT_SHA256
-    bool
-    default y
-
-config SOC_SDM_GROUPS
-    int
-    default 1
-
-config SOC_SDM_CHANNELS_PER_GROUP
-    int
-    default 4
-
-config SOC_SDM_CLK_SUPPORT_PLL_F48M
-    bool
-    default y
-
-config SOC_SDM_CLK_SUPPORT_XTAL
     bool
     default y
 
@@ -1107,10 +1063,6 @@ config SOC_MEMSPI_SRC_FREQ_16M_SUPPORTED
     bool
     default y
 
-config SOC_MEMSPI_FLASH_CLK_SRC_IS_INDEPENDENT
-    bool
-    default y
-
 config SOC_SYSTIMER_COUNTER_NUM
     int
     default 2
@@ -1155,30 +1107,6 @@ config SOC_LP_TIMER_BIT_WIDTH_HI
     int
     default 16
 
-config SOC_TIMER_GROUPS
-    int
-    default 2
-
-config SOC_TIMER_GROUP_TIMERS_PER_GROUP
-    int
-    default 1
-
-config SOC_TIMER_GROUP_COUNTER_BIT_WIDTH
-    int
-    default 54
-
-config SOC_TIMER_GROUP_SUPPORT_XTAL
-    bool
-    default y
-
-config SOC_TIMER_GROUP_SUPPORT_RC_FAST
-    bool
-    default y
-
-config SOC_TIMER_GROUP_TOTAL_TIMERS
-    int
-    default 2
-
 config SOC_TIMER_SUPPORT_ETM
     bool
     default y
@@ -1196,6 +1124,10 @@ config SOC_MWDT_SUPPORT_SLEEP_RETENTION
     default y
 
 config SOC_TWAI_CONTROLLER_NUM
+    int
+    default 1
+
+config SOC_TWAI_MASK_FILTER_NUM
     int
     default 1
 
@@ -1283,6 +1215,10 @@ config SOC_FLASH_ENCRYPTION_XTS_AES_128
     bool
     default y
 
+config SOC_FLASH_ENCRYPTION_XTS_AES_SUPPORT_PSEUDO_ROUND
+    bool
+    default y
+
 config SOC_APM_CTRL_FILTER_SUPPORTED
     bool
     default y
@@ -1291,7 +1227,23 @@ config SOC_CRYPTO_DPA_PROTECTION_SUPPORTED
     bool
     default y
 
+config SOC_ECC_CONSTANT_TIME_POINT_MUL
+    bool
+    default y
+
 config SOC_ECDSA_USES_MPI
+    bool
+    default y
+
+config SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE
+    bool
+    default y
+
+config SOC_ECDSA_SUPPORT_HW_DETERMINISTIC_LOOP
+    bool
+    default y
+
+config SOC_ECDSA_P192_CURVE_DEFAULT_DISABLED
     bool
     default y
 
@@ -1330,6 +1282,30 @@ config SOC_UART_SUPPORT_FSM_TX_WAIT_SEND
 config SOC_UART_SUPPORT_SLEEP_RETENTION
     bool
     default y
+
+config SOC_UART_WAKEUP_CHARS_SEQ_MAX_LEN
+    int
+    default 5
+
+config SOC_UART_WAKEUP_SUPPORT_ACTIVE_THRESH_MODE
+    bool
+    default y
+
+config SOC_UART_WAKEUP_SUPPORT_FIFO_THRESH_MODE
+    bool
+    default y
+
+config SOC_UART_WAKEUP_SUPPORT_START_BIT_MODE
+    bool
+    default y
+
+config SOC_UART_WAKEUP_SUPPORT_CHAR_SEQ_MODE
+    bool
+    default y
+
+config SOC_UHCI_NUM
+    int
+    default 1
 
 config SOC_COEX_HW_PTI
     bool
@@ -1427,6 +1403,10 @@ config SOC_PM_RETENTION_SW_TRIGGER_REGDMA
     bool
     default y
 
+config SOC_PM_SUPPORT_PMU_CLK_ICG
+    bool
+    default y
+
 config SOC_CLK_RC_FAST_SUPPORT_CALIBRATION
     bool
     default y
@@ -1456,10 +1436,6 @@ config SOC_MODEM_CLOCK_IS_INDEPENDENT
     default y
 
 config SOC_RCC_IS_INDEPENDENT
-    bool
-    default y
-
-config SOC_CLK_ANA_I2C_MST_HAS_ROOT_GATE
     bool
     default y
 
@@ -1520,6 +1496,10 @@ config SOC_BLE_MULTI_CONN_OPTIMIZATION
     default y
 
 config SOC_BLE_PERIODIC_ADV_ENH_SUPPORTED
+    bool
+    default y
+
+config SOC_BLE_CTE_SUPPORTED
     bool
     default y
 

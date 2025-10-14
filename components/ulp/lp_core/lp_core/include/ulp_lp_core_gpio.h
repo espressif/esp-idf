@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -38,14 +38,16 @@ typedef enum {
 #endif
 } lp_io_num_t;
 
-typedef enum {
-    LP_IO_INTR_DISABLE = 0,     /*!< Disable GPIO interrupt                             */
-    LP_IO_INTR_POSEDGE = 1,     /*!< GPIO interrupt type : rising edge                  */
-    LP_IO_INTR_NEGEDGE = 2,     /*!< GPIO interrupt type : falling edge                 */
-    LP_IO_INTR_ANYEDGE = 3,     /*!< GPIO interrupt type : both rising and falling edge */
-    LP_IO_INTR_LOW_LEVEL = 4,   /*!< GPIO interrupt type : input low level trigger      */
-    LP_IO_INTR_HIGH_LEVEL = 5,  /*!< GPIO interrupt type : input high level trigger     */
-} lp_io_intr_type_t;
+/** @cond */
+/// for backward compatible
+typedef gpio_int_type_t lp_io_intr_type_t;
+#define LP_IO_INTR_DISABLE GPIO_INTR_DISABLE
+#define LP_IO_INTR_POSEDGE GPIO_INTR_POSEDGE
+#define LP_IO_INTR_NEGEDGE GPIO_INTR_NEGEDGE
+#define LP_IO_INTR_ANYEDGE GPIO_INTR_ANYEDGE
+#define LP_IO_INTR_LOW_LEVEL GPIO_INTR_LOW_LEVEL
+#define LP_IO_INTR_HIGH_LEVEL GPIO_INTR_HIGH_LEVEL
+/** @endcond */
 
 /**
  * @brief Initialize a rtcio pin
@@ -184,7 +186,7 @@ static inline void ulp_lp_core_gpio_pulldown_disable(lp_io_num_t lp_io_num)
  * @param lp_io_num The lp io pin to enable interrupt for
  * @param intr_type The interrupt type to enable
  */
-static inline void ulp_lp_core_gpio_intr_enable(lp_io_num_t lp_io_num, lp_io_intr_type_t intr_type)
+static inline void ulp_lp_core_gpio_intr_enable(lp_io_num_t lp_io_num, gpio_int_type_t intr_type)
 {
     rtcio_ll_intr_enable(lp_io_num, intr_type);
 }
@@ -196,6 +198,27 @@ static inline void ulp_lp_core_gpio_intr_enable(lp_io_num_t lp_io_num, lp_io_int
 static inline void ulp_lp_core_gpio_clear_intr_status(void)
 {
     rtcio_ll_clear_interrupt_status();
+}
+
+/**
+ * @brief Enable wake up for lp io pin
+ *
+ * @param lp_io_num The lp io pin to enable the wake up for
+ * @param intr_type The interrupt type to enable wake up for
+ */
+static inline void ulp_lp_core_gpio_wakeup_enable(lp_io_num_t lp_io_num, gpio_int_type_t intr_type)
+{
+    rtcio_ll_wakeup_enable(lp_io_num, intr_type);
+}
+
+/**
+ * @brief Disable wake up for lp io pin
+ *
+ * @param lp_io_num The lp io pin to disable the wake up for
+ */
+static inline void ulp_lp_core_gpio_wakeup_disable(lp_io_num_t lp_io_num)
+{
+    rtcio_ll_wakeup_disable(lp_io_num);
 }
 
 #ifdef __cplusplus

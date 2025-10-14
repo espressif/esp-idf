@@ -31,6 +31,7 @@ menu "Example Configuration"
 
     if !EXAMPLE_WPA2_ENTERPRISE
         config EXAMPLE_VALIDATE_SERVER_CERT
+            bool
             default y
     endif
 
@@ -98,4 +99,19 @@ menu "Example Configuration"
         default n
         help
             Use default CA certificate bundle for WiFi enterprise connection
+
+    config EXAMPLE_VALIDATE_SERVER_CERT_DOMAIN
+        bool "Enable server certificate domain validation"
+        depends on EXAMPLE_VALIDATE_SERVER_CERT
+        default n
+        help
+            Enable validation of the server certificate's domain name.
+
+    config EXAMPLE_SERVER_CERT_DOMAIN
+        string "Expected server certificate domain"
+        depends on EXAMPLE_VALIDATE_SERVER_CERT_DOMAIN
+        default "espressif.com"
+        help
+            Specify the expected domain name for the server certificate.
+            The connection will be accepted only if the server certificate matches this domain.
 endmenu

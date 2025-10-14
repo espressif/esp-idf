@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,7 +15,7 @@
 #include "esp_private/esp_clk_tree_common.h"
 #include "esp_private/periph_ctrl.h"
 
-static const char *TAG = "esp_clk_tree";
+ESP_LOG_ATTR_TAG(TAG, "esp_clk_tree");
 
 esp_err_t esp_clk_tree_src_get_freq_hz(soc_module_clk_t clk_src, esp_clk_tree_src_freq_precision_t precision,
                                        uint32_t *freq_value)
@@ -37,6 +37,9 @@ esp_err_t esp_clk_tree_src_get_freq_hz(soc_module_clk_t clk_src, esp_clk_tree_sr
         break;
     case SOC_MOD_CLK_PLL_F80M:
         clk_src_freq = CLK_LL_PLL_80M_FREQ_MHZ * MHZ;
+        break;
+    case SOC_MOD_CLK_PLL_F120M:
+        clk_src_freq = CLK_LL_PLL_120M_FREQ_MHZ * MHZ;
         break;
     case SOC_MOD_CLK_PLL_F160M:
         clk_src_freq = CLK_LL_PLL_160M_FREQ_MHZ * MHZ;
@@ -89,8 +92,29 @@ esp_err_t esp_clk_tree_src_get_freq_hz(soc_module_clk_t clk_src, esp_clk_tree_sr
     return ESP_OK;
 }
 
+void esp_clk_tree_initialize(void)
+{
+}
+
+bool esp_clk_tree_is_power_on(soc_root_clk_circuit_t clk_circuit)
+{
+    (void)clk_circuit;
+    return false;
+}
+
+esp_err_t esp_clk_tree_enable_power(soc_root_clk_circuit_t clk_circuit, bool enable)
+{
+    (void)clk_circuit; (void)enable;
+    return ESP_OK; // TODO: PM-354
+}
+
 esp_err_t esp_clk_tree_enable_src(soc_module_clk_t clk_src, bool enable)
 {
+    if(!enable) {
+        // TODO: remove it after reference counter supported
+        return ESP_OK;
+    }
+
     PERIPH_RCC_ATOMIC() {
         switch (clk_src) {
         case SOC_MOD_CLK_PLL_F20M:
@@ -99,8 +123,14 @@ esp_err_t esp_clk_tree_enable_src(soc_module_clk_t clk_src, bool enable)
         case SOC_MOD_CLK_PLL_F25M:
             clk_gate_ll_ref_25m_clk_en(enable);
             break;
+        case SOC_MOD_CLK_PLL_F50M:
+            clk_gate_ll_ref_50m_clk_en(enable);
+            break;
         case SOC_MOD_CLK_PLL_F80M:
             clk_gate_ll_ref_80m_clk_en(enable);
+            break;
+        case SOC_MOD_CLK_PLL_F120M:
+            clk_gate_ll_ref_120m_clk_en(enable);
             break;
         case SOC_MOD_CLK_PLL_F160M:
             clk_gate_ll_ref_160m_clk_en(enable);

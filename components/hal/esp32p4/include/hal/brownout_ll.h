@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,6 +20,7 @@
 #include "hal/efuse_hal.h"
 #include "soc/chip_revision.h"
 
+#define BROWNOUT_DETECTOR_LL_INTERRUPT_MASK   (BIT(31))
 #define BROWNOUT_DETECTOR_LL_FIB_ENABLE       (BIT(1))
 
 #ifdef __cplusplus
@@ -101,6 +102,8 @@ static inline void brownout_ll_set_intr_wait_cycles(uint8_t cycle)
  * @brief Enable brown out interrupt
  *
  * @param enable true: enable, false: disable
+ *
+ * @note Avoid concurrency risky with vbat_ll_enable_intr_mask
  */
 static inline void brownout_ll_intr_enable(bool enable)
 {
@@ -126,7 +129,7 @@ static inline void brownout_ll_ana_reset_enable(bool enable)
 __attribute__((always_inline))
 static inline void brownout_ll_intr_clear(void)
 {
-    LP_ANA_PERI.int_clr.bod_mode0_int_clr = 1;
+    LP_ANA_PERI.int_clr.val = BROWNOUT_DETECTOR_LL_INTERRUPT_MASK;
 }
 
 /**
@@ -136,6 +139,16 @@ static inline void brownout_ll_clear_count(void)
 {
     LP_ANA_PERI.bod_mode0_cntl.bod_mode0_cnt_clr = 1;
     LP_ANA_PERI.bod_mode0_cntl.bod_mode0_cnt_clr = 0;
+}
+
+/**
+ * @brief Get interrupt status register address
+ *
+ * @return Register address
+ */
+static inline volatile void *brownout_ll_intr_get_status_reg(void)
+{
+    return &LP_ANA_PERI.int_st;
 }
 
 #ifdef __cplusplus

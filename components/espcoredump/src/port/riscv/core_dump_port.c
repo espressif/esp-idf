@@ -9,6 +9,8 @@
  * @brief Core dump port implementation for RISC-V based boards.
  */
 
+#include "sdkconfig.h"
+
 #include <string.h>
 #include <stdbool.h>
 #include "soc/soc_memory_layout.h"
@@ -28,8 +30,6 @@ const static char TAG[] __attribute__((unused)) = "esp_core_dump_port";
 #define COREDUMP_INVALID_CAUSE_VALUE        0xFFFF
 #define COREDUMP_FAKE_STACK_START           0x20000000U
 #define COREDUMP_FAKE_STACK_LIMIT           0x30000000U
-
-#if CONFIG_ESP_COREDUMP_ENABLE
 
 #define min(a,b) ((a) < (b) ? (a) : (b))
 #define max(a,b) ((a) < (b) ? (b) : (a))
@@ -377,7 +377,7 @@ uint32_t esp_core_dump_get_extra_info(void **info)
     return size;
 }
 
-#if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH && CONFIG_ESP_COREDUMP_DATA_FORMAT_ELF
+#if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH
 
 void esp_core_dump_summary_parse_extra_info(esp_core_dump_summary_t *summary, void *ei_data)
 {
@@ -445,6 +445,4 @@ void esp_core_dump_summary_parse_backtrace_info(esp_core_dump_bt_info_t *bt_info
     bt_info->dump_size = dump_size;
 }
 
-#endif /* #if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH && CONFIG_ESP_COREDUMP_DATA_FORMAT_ELF */
-
-#endif
+#endif /* #if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH */

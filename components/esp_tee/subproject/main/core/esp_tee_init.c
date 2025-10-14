@@ -1,9 +1,10 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #include "esp_macros.h"
+#include "esp_fault.h"
 #include "esp_log.h"
 #include "esp_rom_sys.h"
 #include "riscv/rv_utils.h"
@@ -13,6 +14,7 @@
 
 #include "esp_tee_brownout.h"
 #include "esp_tee_flash.h"
+#include "esp_tee_sec_storage.h"
 #include "bootloader_utility_tee.h"
 
 #if __has_include("esp_app_desc.h")
@@ -22,16 +24,13 @@
 
 /* TEE symbols */
 extern uint32_t _tee_stack;
-extern uint32_t _tee_intr_stack_bottom;
-extern uint32_t _tee_heap_start;
-extern uint32_t _tee_heap_end;
 extern uint32_t _tee_bss_start;
 extern uint32_t _tee_bss_end;
-
-extern uint32_t _sec_world_entry;
 extern uint32_t _tee_s_intr_handler;
 
-#define TEE_HEAP_SIZE (((uint32_t)&_tee_heap_end - (uint32_t)&_tee_heap_start))
+extern uint8_t _tee_heap_start[];
+extern uint8_t _tee_heap_end[];
+#define TEE_HEAP_SIZE ((size_t)(_tee_heap_end - _tee_heap_start))
 
 static const char *TAG = "esp_tee_init";
 
@@ -58,7 +57,6 @@ static void tee_init_app_config(void)
     esp_tee_app_config.api_minor_version = ESP_TEE_API_MINOR_VER;
 
     /* Set the TEE-related fields (from the TEE binary) that the REE will use to interface with TEE */
-    esp_tee_app_config.s_entry_addr = &_sec_world_entry;
     esp_tee_app_config.s_int_handler = &_tee_s_intr_handler;
 }
 
@@ -100,16 +98,16 @@ static void tee_mark_app_and_valid_cancel_rollback(void)
             return;
         }
         ESP_LOGE(TAG, "Failed to cancel rollback (0x%08x)", err);
-        esp_rom_software_reset_system();
+        abort();
     }
 
-    ESP_LOGW(TAG, "Rollback succeeded, erasing the passive TEE partition...");
+    ESP_LOGD(TAG, "Rollback succeeded, erasing the passive TEE partition...");
     uint8_t tee_next_part = bootloader_utility_tee_get_next_update_partition(&tee_ota_pos);
     esp_partition_info_t tee_next_part_info;
 
-    int ret = esp_tee_flash_find_partition(PART_TYPE_APP, tee_next_part, NULL, &tee_next_part_info);
-    ret |= esp_tee_flash_erase_range(tee_next_part_info.pos.offset, tee_next_part_info.pos.size);
-    if (ret != 0) {
+    err = esp_tee_flash_find_partition(PART_TYPE_APP, tee_next_part, NULL, &tee_next_part_info);
+    err |= esp_tee_flash_erase_range(tee_next_part_info.pos.offset, tee_next_part_info.pos.size);
+    if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to find/erase the passive TEE partition!");
         return;
     }
@@ -131,8 +129,12 @@ void __attribute__((noreturn)) esp_tee_init(uint32_t ree_entry_addr, uint32_t re
     /* TEE compatibility check and App config data initialization. */
     tee_init_app_config();
 
-    /* TEE Secure World heap initialization. */
-    assert(tee_heap_register(((void *)&_tee_heap_start), TEE_HEAP_SIZE) == 0);
+    /* TEE heap initialization. */
+    esp_err_t err = esp_tee_heap_init((void *)_tee_heap_start, TEE_HEAP_SIZE);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to setup the TEE heap!");
+        abort();
+    }
 
     /* SoC specific secure initialization. */
     esp_tee_soc_secure_sys_init();
@@ -140,18 +142,32 @@ void __attribute__((noreturn)) esp_tee_init(uint32_t ree_entry_addr, uint32_t re
     /* Brownout detection initialization */
     esp_tee_brownout_init();
 
-    /* Switch back to bootloader stack. */
-    asm volatile("mv sp, %0" :: "r"(btld_sp));
-
     ESP_LOGI(TAG, "Initializing. RAM available for dynamic allocation:");
     ESP_LOGI(TAG, "At %08X len %08X (%d KiB): %s",
              ((void *)&_tee_heap_start), TEE_HEAP_SIZE, TEE_HEAP_SIZE / 1024, "RAM");
 
     /* Setting up the permissible flash operation address range */
-    assert(esp_tee_flash_setup_prot_ctx(tee_boot_part) == ESP_OK);
+    err = esp_tee_flash_setup_prot_ctx(tee_boot_part);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to setup the TEE flash memory protection!");
+        abort();
+    }
+    ESP_FAULT_ASSERT(err == ESP_OK);
+
+    /* Initializing the secure storage */
+    err = esp_tee_sec_storage_init();
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to initialize the secure storage! (0x%08x)", err);
+        abort();
+    }
+    ESP_FAULT_ASSERT(err == ESP_OK);
 
     /* Setting up the running non-secure app partition as per the address provided by the bootloader */
-    assert(esp_tee_flash_set_running_ree_partition(ree_drom_addr) == ESP_OK);
+    err = esp_tee_flash_set_running_ree_partition(ree_drom_addr);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to setup the active REE partition!");
+        abort();
+    }
 
     tee_print_app_info();
 
@@ -162,25 +178,12 @@ void __attribute__((noreturn)) esp_tee_init(uint32_t ree_entry_addr, uint32_t re
      */
     tee_mark_app_and_valid_cancel_rollback();
 
+    /* Switch back to bootloader stack. */
+    asm volatile("mv sp, %0" :: "r"(btld_sp));
+
     /* Switch to the REE and launch app */
     esp_tee_switch_to_ree(ree_entry_addr);
 
     /* App entry function should not return here. */
     ESP_INFINITE_LOOP(); /* WDT will reset us */
 }
-
-// NOTE: Remove compile-time warnings for the below newlib-provided functions
-struct _reent *__getreent(void)
-{
-    return _GLOBAL_REENT;
-}
-
-void _fstat_r(void) {}
-
-void _close_r(void) {}
-
-void _lseek_r(void) {}
-
-void _read_r(void) {}
-
-void _write_r(void) {}

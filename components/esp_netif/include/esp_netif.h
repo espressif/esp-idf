@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,16 +17,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/**
- * @defgroup ESP_NETIF_INIT_API ESP-NETIF Initialization API
- * @brief Initialization and deinitialization of underlying TCP/IP stack and esp-netif instances
- *
- */
-
-/** @addtogroup ESP_NETIF_INIT_API
- * @{
- */
 
 /**
  * @brief  Initialize the underlying TCP/IP stack
@@ -97,30 +87,6 @@ esp_err_t esp_netif_set_driver_config(esp_netif_t *esp_netif,
  */
 esp_err_t esp_netif_attach(esp_netif_t *esp_netif, esp_netif_iodriver_handle driver_handle);
 
-/**
- * @}
- */
-
-/**
- * @defgroup ESP_NETIF_DATA_IO_API ESP-NETIF Input Output API
- * @brief Input and Output functions to pass data packets from communication media (IO driver)
- * to TCP/IP stack.
- *
- * These functions are usually not directly called from user code, but installed, or registered
- * as callbacks in either IO driver on one hand or TCP/IP stack on the other. More specifically
- * esp_netif_receive is typically called from io driver on reception callback to input the packets
- * to TCP/IP stack. Similarly esp_netif_transmit is called from the TCP/IP stack whenever
- * a packet ought to output to the communication media.
- *
- * @note These IO functions are registered (installed) automatically for default interfaces
- * (interfaces with the keys such as WIFI_STA_DEF, WIFI_AP_DEF, ETH_DEF). Custom interface
- * has to register these IO functions when creating interface using @ref esp_netif_new
- *
- */
-
-/** @addtogroup ESP_NETIF_DATA_IO_API
- * @{
- */
 
 /**
  * @brief  Passes the raw packets from communication media to the appropriate TCP/IP stack
@@ -165,20 +131,7 @@ esp_err_t esp_netif_tx_rx_event_enable(esp_netif_t *esp_netif);
  */
 esp_err_t esp_netif_tx_rx_event_disable(esp_netif_t *esp_netif);
 
-/**
- * @}
- */
 
-/**
- * @defgroup ESP_NETIF_LIFECYCLE ESP-NETIF Lifecycle control
- * @brief These APIS define basic building blocks to control network interface lifecycle, i.e.
- * start, stop, set_up or set_down. These functions can be directly used as event handlers
- * registered to follow the events from communication media.
- */
-
-/** @addtogroup ESP_NETIF_LIFECYCLE
- * @{
- */
 
 /**
  * @brief Default building block for network interface action upon IO driver start event
@@ -368,19 +321,6 @@ esp_err_t esp_netif_join_ip6_multicast_group(esp_netif_t *esp_netif, const esp_i
  *         - ESP_ERR_NO_MEM
  */
 esp_err_t esp_netif_leave_ip6_multicast_group(esp_netif_t *esp_netif, const esp_ip6_addr_t *addr);
-
-/**
- * @}
- */
-
-/**
- * @defgroup ESP_NETIF_GET_SET ESP-NETIF Runtime configuration
- * @brief Getters and setters for various TCP/IP related parameters
- */
-
-/** @addtogroup ESP_NETIF_GET_SET
- * @{
- */
 
 /**
  * @brief Set the mac address for the interface instance
@@ -578,18 +518,6 @@ esp_err_t esp_netif_napt_enable(esp_netif_t *esp_netif);
 */
 esp_err_t esp_netif_napt_disable(esp_netif_t *esp_netif);
 
-/**
- * @}
- */
-
-/**
- * @defgroup ESP_NETIF_NET_DHCP ESP-NETIF DHCP Settings
- * @brief Network stack related interface to DHCP client and server
- */
-
-/** @addtogroup ESP_NETIF_NET_DHCP
- * @{
- */
 
 /**
  * @brief  Set or Get DHCP server option
@@ -754,18 +682,7 @@ esp_err_t esp_netif_dhcps_stop(esp_netif_t *esp_netif);
  */
 esp_err_t esp_netif_dhcps_get_clients_by_mac(esp_netif_t *esp_netif, int num, esp_netif_pair_mac_ip_t *mac_ip_pair);
 
-/**
- * @}
- */
 
-/**
- * @defgroup ESP_NETIF_NET_DNS ESP-NETIF DNS Settings
- * @brief Network stack related interface to NDS
- */
-
-/** @addtogroup ESP_NETIF_NET_DNS
- * @{
- */
 
 /**
  * @brief  Set DNS Server information
@@ -822,18 +739,9 @@ esp_err_t esp_netif_set_dns_info(esp_netif_t *esp_netif, esp_netif_dns_type_t ty
  */
 esp_err_t esp_netif_get_dns_info(esp_netif_t *esp_netif, esp_netif_dns_type_t type, esp_netif_dns_info_t *dns);
 
-/**
- * @}
- */
 
-/**
- * @defgroup ESP_NETIF_NET_IP ESP-NETIF IP address related interface
- * @brief Network stack related interface to IP
- */
 
-/** @addtogroup ESP_NETIF_NET_IP
- * @{
- */
+
 #if CONFIG_LWIP_IPV6
 /**
  * @brief  Create interface link-local IPv6 address
@@ -992,18 +900,9 @@ esp_err_t esp_netif_str_to_ip4(const char *src, esp_ip4_addr_t *dst);
  */
 esp_err_t esp_netif_str_to_ip6(const char *src, esp_ip6_addr_t *dst);
 
-/**
- * @}
- */
 
-/**
- * @defgroup ESP_NETIF_CONVERT ESP-NETIF Conversion utilities
- * @brief  ESP-NETIF conversion utilities to related keys, flags, implementation handle
- */
 
-/** @addtogroup ESP_NETIF_CONVERT
- * @{
- */
+
 
 /**
  * @brief Gets media driver handle for this esp-netif instance
@@ -1081,37 +980,6 @@ int esp_netif_set_route_prio(esp_netif_t *esp_netif, int route_prio);
  */
 int32_t esp_netif_get_event_id(esp_netif_t *esp_netif, esp_netif_ip_event_type_t event_type);
 
-/**
- * @}
- */
-
-/**
- * @defgroup ESP_NETIF_LIST ESP-NETIF List of interfaces
- * @brief  APIs to enumerate all registered interfaces
- */
-
-/** @addtogroup ESP_NETIF_LIST
- * @{
- */
-
-/**
- * @brief Iterates over list of interfaces. Returns first netif if NULL given as parameter
- *
- * @note This API doesn't lock the list, nor the TCPIP context, as this it's usually required
- * to get atomic access between iteration steps rather that within a single iteration.
- * Therefore it is recommended to iterate over the interfaces inside esp_netif_tcpip_exec()
- *
- * @note This API is deprecated. Please use esp_netif_next_unsafe() directly if all the system
- * interfaces are under your control and you can safely iterate over them.
- * Otherwise, iterate over interfaces using esp_netif_tcpip_exec(), or use esp_netif_find_if()
- * to search in the list of netifs with defined predicate.
- *
- * @param[in]  esp_netif Handle to esp-netif instance
- *
- * @return First netif from the list if supplied parameter is NULL, next one otherwise
- */
-esp_netif_t *esp_netif_next(esp_netif_t *esp_netif)
-__attribute__((deprecated("use esp_netif_next_unsafe() either directly or via esp_netif_tcpip_exec")));
 
 /**
  * @brief Iterates over list of interfaces without list locking. Returns first netif if NULL given as parameter
@@ -1164,13 +1032,6 @@ void esp_netif_netstack_buf_ref(void *netstack_buf);
  */
 void esp_netif_netstack_buf_free(void *netstack_buf);
 
-/**
- * @}
- */
-
-/** @addtogroup ESP_NETIF_TCPIP_EXEC
- * @{
- */
 
 /**
  * @brief  TCPIP thread safe callback used with esp_netif_tcpip_exec()
@@ -1184,10 +1045,6 @@ typedef esp_err_t (*esp_netif_callback_fn)(void *ctx);
  * @return The error code (esp_err_t) returned by the callback
  */
 esp_err_t esp_netif_tcpip_exec(esp_netif_callback_fn fn, void *ctx);
-
-/**
- * @}
- */
 
 #ifdef __cplusplus
 }

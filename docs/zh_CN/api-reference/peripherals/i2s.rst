@@ -3,7 +3,8 @@ I2S
 
 :link_to_translation:`en:[English]`
 
-{IDF_TARGET_I2S_NUM:default="1", esp32="2", esp32s3="2"}
+{IDF_TARGET_I2S_NUM:default="1", esp32="2", esp32s3="2", esp32p4="3"}
+{IDF_TARGET_I2S_STD_TDM:default="标准和 TDM", esp32="标准", esp32s2="标准"}
 
 简介
 ----
@@ -18,7 +19,7 @@ I2S（Inter-IC Sound，集成电路内置音频总线）是一种同步串行通
 
 {IDF_TARGET_NAME} 包含 {IDF_TARGET_I2S_NUM} 个 I2S 外设。通过配置这些外设，可以借助 I2S 驱动来输入和输出采样数据。
 
-标准或 TDM 通信模式下的 I2S 总线包含以下几条线路：
+{IDF_TARGET_I2S_STD_TDM} 模式下的 I2S 总线包含以下几条线路：
 
 - **MCLK**：主时钟线。该信号线可选，具体取决于从机，主要用于向 I2S 从机提供参考时钟。
 - **BCLK**：位时钟线。用于数据线的位时钟。
@@ -57,10 +58,12 @@ I2S 文件结构
 
 **需要包含在 I2S 应用中的公共头文件如下所示：**
 
-- ``i2s.h``：提供原有 I2S API（用于使用原有驱动的应用）。
-- ``i2s_std.h``：提供标准通信模式的 API（用于使用标准模式的新驱动程序的应用）。
-- ``i2s_pdm.h``：提供 PDM 通信模式的 API（用于使用 PDM 模式的新驱动程序的应用）。
-- ``i2s_tdm.h``：提供 TDM 通信模式的 API（用于使用 TDM 模式的新驱动的应用）。
+.. list::
+
+    - ``i2s.h``：提供原有 I2S API（用于使用原有驱动的应用）。
+    - ``i2s_std.h``：提供标准通信模式的 API（用于使用标准模式的新驱动程序的应用）。
+    :SOC_I2S_SUPPORTS_PDM: - ``i2s_pdm.h``：提供 PDM 通信模式的 API（用于使用 PDM 模式的新驱动程序的应用）。
+    :SOC_I2S_SUPPORTS_TDM: - ``i2s_tdm.h``：提供 TDM 通信模式的 API（用于使用 TDM 模式的新驱动的应用）。
 
 .. note::
 
@@ -78,27 +81,14 @@ I2S 时钟
 时钟源
 ^^^^^^
 
-- :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_DEFAULT`：默认 PLL 时钟。
+.. list::
 
-.. only:: SOC_I2S_SUPPORTS_PLL_F160M
-
-    - :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_PLL_160M`：160 MHz PLL 时钟。
-
-.. only:: SOC_I2S_SUPPORTS_PLL_F120M
-
-    - :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_PLL_120M`：120 MHz PLL 时钟。
-
-.. only:: SOC_I2S_SUPPORTS_PLL_F96M
-
-    - :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_PLL_96M`：96 MHz PLL 时钟。
-
-.. only:: SOC_I2S_SUPPORTS_PLL_F240M
-
-    - :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_PLL_240M`：240 MHz PLL 时钟。
-
-.. only:: SOC_I2S_SUPPORTS_APLL
-
-    - :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_APLL`：音频 PLL 时钟，在高采样率应用中比 ``I2S_CLK_SRC_PLL_160M`` 更精确。其频率可根据采样率进行配置，但如果 APLL 已经被 EMAC 或其他通道占用，则无法更改 APLL 频率，驱动程序将尝试在原有 APLL 频率下工作。如果原有 APLL 频率无法满足 I2S 的需求，时钟配置将失败。
+    - :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_DEFAULT`：默认 PLL 时钟。
+    :SOC_I2S_SUPPORTS_PLL_F160M: - :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_PLL_160M`：160 MHz PLL 时钟。
+    :SOC_I2S_SUPPORTS_PLL_F120M: - :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_PLL_120M`：120 MHz PLL 时钟。
+    :SOC_I2S_SUPPORTS_PLL_F96M: - :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_PLL_96M`：96 MHz PLL 时钟。
+    :SOC_I2S_SUPPORTS_PLL_F240M: - :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_PLL_240M`：240 MHz PLL 时钟。
+    :SOC_I2S_SUPPORTS_APLL: - :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_APLL`：音频 PLL 时钟，在高采样率应用中比 ``I2S_CLK_SRC_PLL_160M`` 更精确。其频率可根据采样率进行配置，但如果 APLL 已经被 EMAC 或其他通道占用，则无法更改 APLL 频率，驱动程序将尝试在原有 APLL 频率下工作。如果原有 APLL 频率无法满足 I2S 的需求，时钟配置将失败。
 
 时钟术语
 ^^^^^^^^
@@ -131,8 +121,8 @@ ESP32-C6    I2S 0      I2S 0        无          I2S 0        I2S 0       无   
 ESP32-S3   I2S 0/1     I2S 0       I2S 0       I2S 0/1      I2S 0/1      无         无
 ESP32-H2    I2S 0      I2S 0        无          I2S 0        I2S 0       无         无
 ESP32-P4   I2S 0~2     I2S 0       I2S 0       I2S 0~2      I2S 0~2      无         无
-ESP32-C5    I2S 0      I2S 0       I2S 0        I2S 0        I2S 0       无         无
-ESP32-C61   I2S 0      I2S 0       I2S 0        I2S 0        I2S 0       无         无
+ESP32-C5    I2S 0      I2S 0        无          I2S 0        I2S 0       无         无
+ESP32-C61   I2S 0      I2S 0        无          I2S 0        I2S 0       无         无
 =========  ========  ==========  ==========  ===========  ==========  ========  ===========
 
 .. note::
@@ -155,7 +145,6 @@ ESP32-C61   I2S 0      I2S 0       I2S 0        I2S 0        I2S 0       无    
 - **PCM 帧同步**：数据有一个位的位移，同时 WS 信号变成脉冲，持续一个 BCLK 周期。
 
 .. wavedrom:: /../_static/diagrams/i2s/std_pcm.json
-
 
 
 .. only:: SOC_I2S_SUPPORTS_PDM
@@ -295,7 +284,7 @@ I2S 驱动中的资源可分为三个级别：
 
 电源管理启用（即开启 :ref:`CONFIG_PM_ENABLE`）时，系统将在进入 Light-sleep 前调整或停止 I2S 时钟源，这可能会影响 I2S 信号，从而导致传输或接收的数据无效。
 
-I2S 驱动可以获取电源管理锁，从而防止系统设置更改或时钟源被禁用。电源锁的类型将被设置为 :cpp:enumerator:`esp_pm_lock_type_t::ESP_PM_APB_FREQ_MAX`。用户通过 I2S 读写时（即调用 :cpp:func:`i2s_channel_read` 或 :cpp:func:`i2s_channel_write`），驱动程序将获取电源管理锁，并在读写完成后释放锁。
+I2S 驱动可以获取电源管理锁，从而防止系统设置更改或时钟源被禁用。时钟源为 APB 时，锁的类型将被设置为 :cpp:enumerator:`esp_pm_lock_type_t::ESP_PM_APB_FREQ_MAX`。时钟源为 APLL（若支持）时，锁的类型将被设置为 :cpp:enumerator:`esp_pm_lock_type_t::ESP_PM_NO_LIGHT_SLEEP`。用户通过 I2S 读写时（即调用 :cpp:func:`i2s_channel_read` 或 :cpp:func:`i2s_channel_write`），驱动程序将获取电源管理锁，并在读写完成后释放锁。
 
 .. only:: SOC_I2S_SUPPORT_SLEEP_RETENTION
 
@@ -331,6 +320,14 @@ I2S 的数据传输（包括数据发送和接收）由 DMA 实现。在传输�
 
 用户可以通过调用相应函数（即 :func:`i2s_channel_init_std_mode`、 :func:`i2s_channel_init_pdm_rx_mode`、 :func:`i2s_channel_init_pdm_tx_mode` 或 :func:`i2s_channel_init_tdm_mode`）将通道初始化为特定模式。如果初始化后需要更新配置，必须先调用 :cpp:func:`i2s_channel_disable` 以确保通道已经停止运行，然后再调用相应的 'reconfig' 函数，例如 :cpp:func:`i2s_channel_reconfig_std_slot`、 :cpp:func:`i2s_channel_reconfig_std_clock` 和 :cpp:func:`i2s_channel_reconfig_std_gpio`。
 
+进阶 API
+^^^^^^^^^^^^^^
+
+为满足高质量音频需求，驱动提供了以下进阶 API：
+
+- :cpp:func:`i2s_channel_preload_data`: 用于预加载音频数据到 I2S 内部缓存，使得 TX 通道使能后能够立即发送数据，以此降低音频初始输出延迟。
+- :cpp:func:`i2s_channel_tune_rate`: 用于在运行时动态微调音频速率，以匹配音频数据生产者和消费者的速度，从而防止因速率不匹配导致的中间缓存数据累积或不足。
+
 IRAM 安全
 ^^^^^^^^^
 
@@ -353,7 +350,6 @@ Kconfig 选项
 ^^^^^^^^^^^^
 
 - :ref:`CONFIG_I2S_ISR_IRAM_SAFE` 控制默认 ISR 处理程序能否在禁用 cache 的情况下工作。更多信息可参考 `IRAM 安全 <#iram-safe>`__。
-- :ref:`CONFIG_I2S_SUPPRESS_DEPRECATE_WARN` 控制是否在使用原有 I2S 驱动时关闭警告信息。
 - :ref:`CONFIG_I2S_ENABLE_DEBUG_LOG` 用于启用调试日志输出。启用该选项将增加固件的二进制文件大小。
 
 应用实例
@@ -905,11 +901,13 @@ STD RX 模式
 全双工
 ^^^^^^
 
-全双工模式可以在 I2S 端口中同时注册 TX 和 RX 通道，同时通道共享 BCLK 和 WS 信号。目前，STD 和 TDM 通信模式支持以下方式的全双工通信，但不支持 PDM 全双工模式，因为 PDM 模式下 TX 和 RX 通道的时钟不同。
+全双工模式可以在 I2S 端口中同时注册 TX 和 RX 通道，同时通道共享 BCLK 和 WS 信号。目前，{IDF_TARGET_I2S_STD_TDM} 通信模式支持以下方式的全双工通信，但不支持 PDM 全双工模式，因为 PDM 模式下 TX 和 RX 通道的时钟不同。
 
 请注意，一个句柄只能代表一个通道，因此仍然需要对 TX 和 RX 通道逐个进行声道和时钟配置。
 
-以下示例展示了如何分配两个全双工通道：
+驱动支持两种分配全双工通道的方法：
+
+1. 在调用 :cpp:func:`i2s_new_channel` 函数时，同时分配 TX 和 RX 通道两个通道。
 
 .. code-block:: c
 
@@ -949,6 +947,48 @@ STD RX 模式
 
     ...
 
+2. 调用两次 :cpp:func:`i2s_new_channel` 函数分别分配 TX 和 RX 通道，但使用相同配置初始化 TX 和 RX 通道。
+
+.. code-block:: c
+
+    #include "driver/i2s_std.h"
+    #include "driver/gpio.h"
+
+    i2s_chan_handle_t tx_handle;
+    i2s_chan_handle_t rx_handle;
+
+    /* 分配两个 I2S 通道 */
+    i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_0, I2S_ROLE_MASTER);
+    /* 分别分配给 TX 和 RX 通道 */
+    ESP_ERROR_CHECK(i2s_new_channel(&chan_cfg, &tx_handle, NULL));
+
+    /* 为两个通道设置完全相同的配置，TX 和 RX 将自动组成全双工模式 */
+    i2s_std_config_t std_cfg = {
+        .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(32000),
+        .slot_cfg = I2S_STD_PHILIPS_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_STEREO),
+        .gpio_cfg = {
+            .mclk = I2S_GPIO_UNUSED,
+            .bclk = GPIO_NUM_4,
+            .ws = GPIO_NUM_5,
+            .dout = GPIO_NUM_18,
+            .din = GPIO_NUM_19,
+            .invert_flags = {
+                .mclk_inv = false,
+                .bclk_inv = false,
+                .ws_inv = false,
+            },
+        },
+    };
+    ESP_ERROR_CHECK(i2s_channel_init_std_mode(tx_handle, &std_cfg));
+    ESP_ERROR_CHECK(i2s_channel_enable(tx_handle));
+    // ...
+    ESP_ERROR_CHECK(i2s_new_channel(&chan_cfg, NULL, &rx_handle));
+    ESP_ERROR_CHECK(i2s_channel_init_std_mode(rx_handle, &std_cfg));
+    ESP_ERROR_CHECK(i2s_channel_enable(rx_handle));
+
+    ...
+
+
 .. only:: SOC_I2S_HW_VERSION_1
 
     单工模式
@@ -965,7 +1005,7 @@ STD RX 模式
         i2s_chan_handle_t rx_handle;
 
         i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_AUTO, I2S_ROLE_MASTER);
-        i2s_new_channel(&chan_cfg, &tx_handle, NULL);
+        ESP_ERROR_CHECK(i2s_new_channel(&chan_cfg, &tx_handle, NULL));
         i2s_std_config_t std_tx_cfg = {
             .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(48000),
             .slot_cfg = I2S_STD_PHILIPS_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_STEREO),
@@ -983,12 +1023,12 @@ STD RX 模式
             },
         };
         /* 初始化通道 */
-        i2s_channel_init_std_mode(tx_handle, &std_tx_cfg);
-        i2s_channel_enable(tx_handle);
+        ESP_ERROR_CHECK(i2s_channel_init_std_mode(tx_handle, &std_tx_cfg));
+        ESP_ERROR_CHECK(i2s_channel_enable(tx_handle));
 
         /* 如果没有找到其他可用的 I2S 设备，RX 通道将被注册在另一个 I2S 上
          * 并返回 ESP_ERR_NOT_FOUND */
-        i2s_new_channel(&chan_cfg, NULL, &rx_handle);
+        ESP_ERROR_CHECK(i2s_new_channel(&chan_cfg, NULL, &rx_handle));
         i2s_std_config_t std_rx_cfg = {
             .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(16000),
             .slot_cfg = I2S_STD_MSB_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_32BIT, I2S_SLOT_MODE_STEREO),
@@ -1005,8 +1045,9 @@ STD RX 模式
                 },
             },
         };
-        i2s_channel_init_std_mode(rx_handle, &std_rx_cfg);
-        i2s_channel_enable(rx_handle);
+        ESP_ERROR_CHECK(i2s_channel_init_std_mode(rx_handle, &std_rx_cfg));
+        ESP_ERROR_CHECK(i2s_channel_enable(rx_handle));
+
 
 .. only:: SOC_I2S_HW_VERSION_2
 
@@ -1025,7 +1066,7 @@ STD RX 模式
         i2s_chan_handle_t tx_handle;
         i2s_chan_handle_t rx_handle;
         i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_0, I2S_ROLE_MASTER);
-        i2s_new_channel(&chan_cfg, &tx_handle, NULL);
+        ESP_ERROR_CHECK(i2s_new_channel(&chan_cfg, &tx_handle, NULL));
         i2s_std_config_t std_tx_cfg = {
             .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(48000),
             .slot_cfg = I2S_STD_PHILIPS_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_STEREO),
@@ -1043,12 +1084,12 @@ STD RX 模式
             },
         };
         /* 初始化通道 */
-        i2s_channel_init_std_mode(tx_handle, &std_tx_cfg);
-        i2s_channel_enable(tx_handle);
+        ESP_ERROR_CHECK(i2s_channel_init_std_mode(tx_handle, &std_tx_cfg));
+        ESP_ERROR_CHECK(i2s_channel_enable(tx_handle));
 
         /* 如果没有找到其他可用的 I2S 设备，RX 通道将被注册在另一个 I2S 上
          * 并返回 ESP_ERR_NOT_FOUND */
-        i2s_new_channel(&chan_cfg, NULL, &rx_handle); // RX 和 TX 通道都将注册在 I2S0 上，但配置可以不同
+        ESP_ERROR_CHECK(i2s_new_channel(&chan_cfg, NULL, &rx_handle)); // RX 和 TX 通道都将注册在 I2S0 上，但配置可以不同
         i2s_std_config_t std_rx_cfg = {
             .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(16000),
             .slot_cfg = I2S_STD_MSB_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_32BIT, I2S_SLOT_MODE_STEREO),
@@ -1065,8 +1106,8 @@ STD RX 模式
                 },
             },
         };
-        i2s_channel_init_std_mode(rx_handle, &std_rx_cfg);
-        i2s_channel_enable(rx_handle);
+        ESP_ERROR_CHECK(i2s_channel_init_std_mode(rx_handle, &std_rx_cfg));
+        ESP_ERROR_CHECK(i2s_channel_enable(rx_handle));
 
 .. only:: SOC_I2S_SUPPORTS_ETM
 

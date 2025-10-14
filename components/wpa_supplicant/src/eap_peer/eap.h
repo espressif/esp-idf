@@ -49,6 +49,11 @@ extern bool g_wpa_suiteb_certification;
 extern bool g_wpa_default_cert_bundle;
 extern int (*esp_crt_bundle_attach_fn)(void *conf);
 
+#ifndef CONFIG_TLS_INTERNAL_CLIENT
+extern char *g_wpa_domain_match;
+#endif
+extern uint32_t g_eap_method_mask;
+
 const u8 * eap_get_eapKeyData(struct eap_sm *sm, size_t *len);
 void eap_deinit_prev_method(struct eap_sm *sm, const char *txt);
 struct wpabuf * eap_sm_build_nak(struct eap_sm *sm, EapType type, u8 id);

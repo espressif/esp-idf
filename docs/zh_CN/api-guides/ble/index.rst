@@ -1,6 +1,6 @@
-################
-低功耗蓝牙®
-################
+#####################
+低功耗蓝牙\ :sup:`®`
+#####################
 
 :link_to_translation:`en:[English]`
 
@@ -12,6 +12,7 @@
 
    overview
    ble-feature-support-status
+   ble-qualification
 
 **********
 快速入门
@@ -24,6 +25,15 @@
    get-started/ble-device-discovery
    get-started/ble-connection
    get-started/ble-data-exchange
+
+***************
+安全
+***************
+
+.. toctree::
+   :maxdepth: 2
+
+   smp
 
 **********
 蓝牙规范

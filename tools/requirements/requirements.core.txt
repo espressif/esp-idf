@@ -6,25 +6,28 @@
 
 setuptools
 packaging
-# importlib_metadata: is part of python3.8 and newer as importlib.metadata
-importlib_metadata; python_version < "3.8"
 click
 pyserial
 cryptography
 pyparsing
 pyelftools
-idf-component-manager
+idf-component-manager>=2.2
 esp-coredump
 esptool
 esp-idf-kconfig
 esp-idf-monitor
 esp-idf-nvs-partition-gen
 esp-idf-size
+esp-idf-diag
 esp-idf-panic-decoder
 pyclang
 construct
 rich
 psutil
+
+# ble's compressed log testing tool
+tree_sitter
+tree_sitter_c
 
 # gdb extensions dependencies
 freertos_gdb

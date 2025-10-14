@@ -32,7 +32,7 @@ extern "C" {
 #define ESP_ERR_ESP_TLS_CONNECTION_TIMEOUT                (ESP_ERR_ESP_TLS_BASE + 0x06)  /*!< new connection in esp_tls_low_level_conn connection timeouted */
 #define ESP_ERR_ESP_TLS_SE_FAILED                         (ESP_ERR_ESP_TLS_BASE + 0x07)  /*< esp-tls use Secure Element returned failed */
 #define ESP_ERR_ESP_TLS_TCP_CLOSED_FIN                    (ESP_ERR_ESP_TLS_BASE + 0x08)  /*< esp-tls's TPC transport connection has benn closed (in a clean way) */
-
+#define ESP_ERR_ESP_TLS_SERVER_HANDSHAKE_TIMEOUT          (ESP_ERR_ESP_TLS_BASE + 0x09)  /*!< TLS handshake timeout */
 /* mbedtls specific error codes */
 #define ESP_ERR_MBEDTLS_CERT_PARTLY_OK                    (ESP_ERR_ESP_TLS_BASE + 0x10)  /*!< mbedtls parse certificates was partly successful */
 #define ESP_ERR_MBEDTLS_CTR_DRBG_SEED_FAILED              (ESP_ERR_ESP_TLS_BASE + 0x11)  /*!< mbedtls api returned error */
@@ -47,6 +47,7 @@ extern "C" {
 #define ESP_ERR_MBEDTLS_SSL_HANDSHAKE_FAILED              (ESP_ERR_ESP_TLS_BASE + 0x1A)  /*!< mbedtls api returned failed  */
 #define ESP_ERR_MBEDTLS_SSL_CONF_PSK_FAILED               (ESP_ERR_ESP_TLS_BASE + 0x1B)  /*!< mbedtls api returned failed  */
 #define ESP_ERR_MBEDTLS_SSL_TICKET_SETUP_FAILED           (ESP_ERR_ESP_TLS_BASE + 0x1C)  /*!< mbedtls api returned failed  */
+#define ESP_ERR_MBEDTLS_SSL_READ_FAILED                   (ESP_ERR_ESP_TLS_BASE + 0x1D)  /*!< mbedtls api returned failed  */
 
 /* wolfssl specific error codes */
 #define ESP_ERR_WOLFSSL_SSL_SET_HOSTNAME_FAILED           (ESP_ERR_ESP_TLS_BASE + 0x31)  /*!< wolfSSL api returned error */

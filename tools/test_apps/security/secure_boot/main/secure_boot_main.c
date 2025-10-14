@@ -76,4 +76,13 @@ static void example_secure_boot_status(void)
     } else {
         ESP_LOGI(TAG, "Secure Boot not enabled. Enable Secure Boot in menuconfig, build & flash again.");
     }
+
+#if CONFIG_EXAMPLE_TARGET_QEMU
+    for (int i = 5; i >= 0; i--) {
+        ESP_LOGI(TAG, "Restarting in %d seconds...", i);
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
+    }
+    ESP_LOGI(TAG, "Restarting now.");
+    esp_restart();
+#endif /* CONFIG_EXAMPLE_TARGET_QEMU */
 }

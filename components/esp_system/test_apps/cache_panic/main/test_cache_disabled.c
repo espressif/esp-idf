@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,6 +15,7 @@
 #include "esp_attr.h"
 #include "esp_memory_utils.h"
 #include "esp_private/cache_utils.h"
+#include "hal/mspi_ll.h"
 
 static QueueHandle_t result_queue;
 
@@ -103,7 +104,7 @@ static void invalid_access_to_cache_pro_cpu(void)
     vTaskDelay(1000 / portTICK_PERIOD_MS);
 }
 
-TEST_CASE_MULTIPLE_STAGES("invalid access to cache raises panic (PRO CPU)", "[spi_flash][reset="CACHE_ERROR_REASON"]", invalid_access_to_cache_pro_cpu, reset_after_invalid_cache);
+TEST_CASE_MULTIPLE_STAGES("invalid access to cache raises panic (PRO CPU)", "[mspi][reset="CACHE_ERROR_REASON"]", invalid_access_to_cache_pro_cpu, reset_after_invalid_cache);
 
 #ifndef CONFIG_FREERTOS_UNICORE
 
@@ -113,7 +114,33 @@ static void invalid_access_to_cache_app_cpu(void)
     vTaskDelay(1000 / portTICK_PERIOD_MS);
 }
 
-TEST_CASE_MULTIPLE_STAGES("invalid access to cache raises panic (APP CPU)", "[spi_flash][reset="CACHE_ERROR_REASON"]", invalid_access_to_cache_app_cpu, reset_after_invalid_cache);
+TEST_CASE_MULTIPLE_STAGES("invalid access to cache raises panic (APP CPU)", "[mspi][reset="CACHE_ERROR_REASON"]", invalid_access_to_cache_app_cpu, reset_after_invalid_cache);
 
 #endif // !CONFIG_FREERTOS_UNICORE
 #endif // !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
+
+#if MSPI_LL_AXI_DISABLE_SUPPORTED
+static void reset_after_disable_axi(void)
+{
+    //For now we only support AXI disabling LL APIs, so the reset reason will be `ESP_RST_WDT`
+    //This will be updated when AXI disabling methods are fully supported
+    TEST_ASSERT_EQUAL(ESP_RST_WDT, esp_reset_reason());
+}
+
+static void NOINLINE_ATTR IRAM_ATTR s_invalid_axi_access(void)
+{
+    mspi_ll_flash_enable_axi_access(0, false);
+    mspi_ll_psram_enable_axi_access(2, false);
+
+    volatile uint32_t* src = (volatile uint32_t*) s_in_rodata;
+    uint32_t v1 = src[0];
+    uint32_t v2 = src[1];
+
+    mspi_ll_flash_enable_axi_access(0, true);
+    mspi_ll_psram_enable_axi_access(2, true);
+
+    printf("v1: %lx, v2: %lx\n", v1, v2);
+}
+
+TEST_CASE_MULTIPLE_STAGES("invalid access to axi bus", "[mspi][reset="CACHE_ERROR_REASON"]", s_invalid_axi_access, reset_after_disable_axi);
+#endif // MSPI_LL_AXI_DISABLE_SUPPORTED

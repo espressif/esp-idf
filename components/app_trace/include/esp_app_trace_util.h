@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -32,12 +32,12 @@ typedef struct {
  * @brief Initializes timeout structure.
  *
  * @param tmo       Pointer to timeout structure to be initialized.
- * @param user_tmo  Timeout value (in us). Use ESP_APPTRACE_TMO_INFINITE to wait indefinetly.
+ * @param user_tmo  Timeout value (in us). Use ESP_APPTRACE_TMO_INFINITE to wait indefinitely.
 */
 static inline void esp_apptrace_tmo_init(esp_apptrace_tmo_t *tmo, uint32_t user_tmo)
 {
     tmo->start = esp_timer_get_time();
-    tmo->tmo = user_tmo == ESP_APPTRACE_TMO_INFINITE ? (int64_t)-1 : (int64_t)user_tmo;
+    tmo->tmo = user_tmo == ESP_APPTRACE_TMO_INFINITE ? (int64_t) -1 : (int64_t)user_tmo;
     tmo->elapsed = 0;
 }
 
@@ -52,7 +52,7 @@ esp_err_t esp_apptrace_tmo_check(esp_apptrace_tmo_t *tmo);
 
 static inline uint32_t esp_apptrace_tmo_remaining_us(esp_apptrace_tmo_t *tmo)
 {
-    return tmo->tmo != (int64_t)-1 ? (tmo->elapsed - tmo->tmo) : ESP_APPTRACE_TMO_INFINITE;
+    return tmo->tmo != (int64_t) -1 ? (tmo->elapsed - tmo->tmo) : ESP_APPTRACE_TMO_INFINITE;
 }
 
 /** Tracing module synchronization lock */
@@ -94,7 +94,7 @@ esp_err_t esp_apptrace_lock_give(esp_apptrace_lock_t *lock);
 /** Ring buffer control structure.
  *
  * @note For purposes of application tracing module if there is no enough space for user data and write pointer can be wrapped
- *       current ring buffer size can be temporarily shrinked in order to provide buffer with requested size.
+ *       current ring buffer size can be temporarily shrunk in order to provide buffer with requested size.
  */
 typedef struct {
     uint8_t *data;      ///< pointer to data storage

@@ -1,19 +1,18 @@
-# SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 import logging
 
 import pytest
 from pytest_embedded import Dut
+from pytest_embedded_idf.utils import idf_parametrize
 
 
-@pytest.mark.esp32c6
-@pytest.mark.esp32p4
 @pytest.mark.generic
+@idf_parametrize('target', ['esp32c6', 'esp32p4'], indirect=['target'])
 def test_lp_core_pcnt(dut: Dut) -> None:
-
     res = dut.expect(r'ULP will wake up processor after every (\d+) pulses')
     wakeup_limit = res.group(1).decode('utf-8')
-    assert (int(wakeup_limit) > 0)
+    assert int(wakeup_limit) > 0
     logging.info(f'Wake-up limit: {wakeup_limit} pulses')
 
     dut.expect_exact('Not a ULP wakeup, initializing it!')
@@ -27,4 +26,4 @@ def test_lp_core_pcnt(dut: Dut) -> None:
 
     # Check that pulse count is correct, we could have gotten pulses between triggering
     # the wakeup signal and printing the count, but it should at be equal to or greater
-    assert (int(pulse_count) >= int(wakeup_limit))
+    assert int(pulse_count) >= int(wakeup_limit)

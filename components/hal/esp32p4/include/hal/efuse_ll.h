@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -57,7 +57,7 @@ __attribute__((always_inline)) static inline bool efuse_ll_get_secure_boot_v2_en
 // use efuse_hal_get_major_chip_version() to get major chip version
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_chip_wafer_version_major(void)
 {
-    return EFUSE.rd_mac_sys_2.wafer_version_major;
+    return (EFUSE.rd_mac_sys_2.wafer_version_major_hi << 2) | EFUSE.rd_mac_sys_2.wafer_version_major_lo;
 }
 
 // use efuse_hal_get_minor_chip_version() to get minor chip version
@@ -91,10 +91,6 @@ __attribute__((always_inline)) static inline uint32_t efuse_ll_get_chip_ver_pkg(
     return EFUSE.rd_mac_sys_2.pkg_version;
 }
 
-__attribute__((always_inline)) static inline void efuse_ll_set_ecdsa_key_blk(int efuse_blk)
-{
-    EFUSE.conf.cfg_ecdsa_blk = efuse_blk;
-}
 
 /******************* eFuse control functions *************************/
 
@@ -142,6 +138,21 @@ __attribute__((always_inline)) static inline void efuse_ll_rs_bypass_update(void
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_controller_state(void)
 {
     return EFUSE.status.state;
+}
+
+__attribute__((always_inline)) static inline uint32_t efuse_ll_get_active_hp_dbias(void)
+{
+    return EFUSE.rd_mac_sys_4.active_hp_dbias;
+}
+
+__attribute__((always_inline)) static inline uint32_t efuse_ll_get_active_lp_dbias(void)
+{
+    return EFUSE.rd_mac_sys_4.active_lp_dbias;
+}
+
+__attribute__((always_inline)) static inline int32_t efuse_ll_get_dbias_vol_gap(void)
+{
+    return EFUSE.rd_mac_sys_5.lp_dcdc_dbias_vol_gap;
 }
 
 /******************* eFuse control functions *************************/

@@ -96,7 +96,6 @@ endif()
 
 # Add ESP-additions source files
 list(APPEND srcs
-    "esp_additions/freertos_compatibility.c"
     "esp_additions/idf_additions_event_groups.c"
     "esp_additions/idf_additions.c")
 

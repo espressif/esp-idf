@@ -12,7 +12,7 @@
 #include "hal/spi_ll.h"
 #include "esp_log.h"
 
-static const char* SPI_TAG = "spi_share_hw_ctrl";
+ESP_LOG_ATTR_TAG(SPI_TAG, "spi_share_hw_ctrl");
 
 //Periph 1 is 'claimed' by SPI flash code.
 static atomic_bool spi_periph_claimed[SOC_SPI_PERIPH_NUM] = { ATOMIC_VAR_INIT(true), ATOMIC_VAR_INIT(false),

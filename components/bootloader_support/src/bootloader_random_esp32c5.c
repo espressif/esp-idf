@@ -1,108 +1,90 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #include "sdkconfig.h"
 #include "bootloader_random.h"
-#include "soc/soc.h"
-#include "soc/pcr_reg.h"
-#include "soc/apb_saradc_reg.h"
-#include "soc/pmu_reg.h"
-#include "hal/regi2c_ctrl.h"
+#include "hal/regi2c_ctrl_ll.h"
+#include "hal/adc_ll.h"
+#include "hal/adc_types.h"
+#include "esp_private/regi2c_ctrl.h"
 #include "soc/lpperi_reg.h"
-#include "soc/regi2c_saradc.h"
-#include "esp_log.h"
+#include "hal/temperature_sensor_ll.h"
+#include "esp_private/sar_periph_ctrl.h"
 
-static const uint32_t SAR2_CHANNEL = 9;
-static const uint32_t SAR1_CHANNEL = 7;
-static const uint32_t PATTERN_BIT_WIDTH = 6;
-static const uint32_t SAR1_ATTEN = 3;
-static const uint32_t SAR2_ATTEN = 3;
+#define I2C_SAR_ADC_INIT_CODE_VAL       2150
+#define ADC_RNG_CLKM_DIV_NUM            0
+#define ADC_RNG_CLKM_DIV_B              0
+#define ADC_RNG_CLKM_DIV_A              0
 
 void bootloader_random_enable(void)
 {
-    // pull SAR ADC out of reset
-    REG_SET_BIT(PCR_SARADC_CONF_REG, PCR_SARADC_RST_EN);
-    REG_CLR_BIT(PCR_SARADC_CONF_REG, PCR_SARADC_RST_EN);
+#ifndef BOOTLOADER_BUILD
+    sar_periph_ctrl_adc_reset();
+#else
+    // Save temperature sensor related register values before ADC reset
+    tsens_ll_reg_values_t saved_tsens_regs = {};
+    tsens_ll_backup_registers(&saved_tsens_regs);
+    adc_ll_reset_register();
+    // Restore temperature sensor related register values after ADC reset
+    temperature_sensor_ll_reset_module();
+    tsens_ll_restore_registers(&saved_tsens_regs);
+#endif
 
-    // enable SAR ADC APB clock
-    REG_SET_BIT(PCR_SARADC_CONF_REG, PCR_SARADC_REG_CLK_EN);
+    adc_ll_enable_bus_clock(true);
+    adc_ll_enable_func_clock(true);
+    adc_ll_digi_clk_sel(ADC_DIGI_CLK_SRC_XTAL);
+    adc_ll_digi_controller_clk_div(ADC_RNG_CLKM_DIV_NUM, ADC_RNG_CLKM_DIV_B, ADC_RNG_CLKM_DIV_A);
 
-    // pull APB register out of reset
-    REG_SET_BIT(PCR_SARADC_CONF_REG, PCR_SARADC_REG_RST_EN);
-    REG_CLR_BIT(PCR_SARADC_CONF_REG, PCR_SARADC_REG_RST_EN);
-
-    // enable ADC_CTRL_CLK (SAR ADC function clock)
-    REG_SET_BIT(PCR_SARADC_CLKM_CONF_REG, PCR_SARADC_CLKM_EN);
-
-    // select XTAL clock (40 MHz) source for ADC_CTRL_CLK
-    REG_SET_FIELD(PCR_SARADC_CLKM_CONF_REG, PCR_SARADC_CLKM_SEL, 0); // 0: XTAL; 1: 80M(from bbpll); 2. FOSC
-
-    // set the clock divider for ADC_CTRL_CLK to default value (in case it has been changed)
-    REG_SET_FIELD(PCR_SARADC_CLKM_CONF_REG, PCR_SARADC_CLKM_DIV_NUM, 0);
-
-    // some magic register poke from the digital team
-    SET_PERI_REG_MASK(PMU_RF_PWC_REG, PMU_PERIF_I2C_RSTB);
-    SET_PERI_REG_MASK(PMU_RF_PWC_REG, PMU_XPD_PERIF_I2C);
+    // some ADC sensor registers are in power group PERIF_I2C and need to be enabled via PMU
+#ifndef BOOTLOADER_BUILD
+    regi2c_saradc_enable();
+#else
+    regi2c_ctrl_ll_i2c_sar_periph_enable();
+#endif
 
     // enable analog i2c master clock for RNG runtime
     ANALOG_CLOCK_ENABLE();
 
-    // Config ADC circuit (Analog part) with I2C (HOST ID 0X69) and choose internal voltage as sampling source
-    REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC_DTEST_RTC_ADDR, 0);
-    REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC_ENT_PERIF_ADDR, 1);
-    REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC1_EN_TOUT_ADDR, 1);
-    REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC2_EN_TOUT_ADDR, 1);
+    adc_ll_regi2c_init();
+    adc_ll_set_calibration_param(ADC_UNIT_1, I2C_SAR_ADC_INIT_CODE_VAL);
+    adc_ll_set_calibration_param(ADC_UNIT_2, I2C_SAR_ADC_INIT_CODE_VAL);
 
-    REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR2_INITIAL_CODE_HIGH_ADDR, 0x08);
-    REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR2_INITIAL_CODE_LOW_ADDR, 0x66);
-    REGI2C_WRITE_MASK(I2C_SAR_ADC, I2C_SAR_ADC_SAR1_INIT_CODE_MSB, 0x08);
-    REGI2C_WRITE_MASK(I2C_SAR_ADC, I2C_SAR_ADC_SAR1_INIT_CODE_LSB, 0x66);
+    adc_digi_pattern_config_t pattern_config = {};
+    pattern_config.unit = ADC_UNIT_1;
+    pattern_config.atten = ADC_ATTEN_DB_12;
+    pattern_config.channel = ADC_CHANNEL_7;     //Use reserved channel to get internal voltage
+    adc_ll_digi_set_pattern_table(ADC_UNIT_1, 0, pattern_config);
+    pattern_config.unit = ADC_UNIT_2;
+    pattern_config.atten = ADC_ATTEN_DB_12;
+    pattern_config.channel = ADC_CHANNEL_1;     //Use reserved ADC2 and reserved channel to get internal voltage
+    adc_ll_digi_set_pattern_table(ADC_UNIT_2, 1, pattern_config);
 
-    // create patterns and set them in pattern table
-    uint32_t pattern_one = (SAR2_CHANNEL << 2) | SAR2_ATTEN; // we want channel 9 with max attenuation
-    uint32_t pattern_two = (SAR1_CHANNEL << 2) | SAR1_ATTEN; // we want channel 7 with max attenuation
-    uint32_t pattern_table = 0 | (pattern_two << 3 * PATTERN_BIT_WIDTH) | pattern_one << 2 * PATTERN_BIT_WIDTH;
-    REG_WRITE(APB_SARADC_SAR_PATT_TAB1_REG, pattern_table);
+    adc_ll_digi_set_pattern_table_len(ADC_UNIT_1, 2);
 
-    // set pattern length  (APB_SARADC_SARADC_SAR_PATT_LEN counts from 0)
-    REG_SET_FIELD(APB_SARADC_CTRL_REG, APB_SARADC_SARADC_SAR_PATT_LEN, 1);
+    adc_ll_digi_set_clk_div(15);
+    adc_ll_digi_set_trigger_interval(200);
+    adc_ll_digi_trigger_enable();
 
-    REG_SET_FIELD(APB_SARADC_CTRL_REG, APB_SARADC_SARADC_SAR_CLK_DIV, 15);
-
-    // set timer expiry (timer is ADC_CTRL_CLK)
-    REG_SET_FIELD(APB_SARADC_CTRL2_REG, APB_SARADC_SARADC_TIMER_TARGET, 200);
-
-    // enable timer
-    REG_SET_BIT(APB_SARADC_CTRL2_REG, APB_SARADC_SARADC_TIMER_EN);
-    CLEAR_PERI_REG_MASK(LPPERI_RNG_CFG_REG, LPPERI_RNG_TIMER_EN);
+    SET_PERI_REG_MASK(LPPERI_RNG_CFG_REG, LPPERI_RNG_SAMPLE_ENABLE);
+    REG_SET_FIELD(LPPERI_RNG_CFG_REG, LPPERI_RTC_TIMER_EN, 0x3);
+    SET_PERI_REG_MASK(LPPERI_RNG_CFG_REG, LPPERI_RNG_TIMER_EN);
 }
 
 void bootloader_random_disable(void)
 {
-    // disable timer
-    REG_CLR_BIT(APB_SARADC_CTRL2_REG, APB_SARADC_SARADC_TIMER_EN);
-
-    // Write reset value of this register
-    REG_WRITE(APB_SARADC_SAR_PATT_TAB1_REG, 0xFFFFFF);
-
-    // Revert ADC I2C configuration and initial voltage source setting
-    REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR2_INITIAL_CODE_HIGH_ADDR, 0x60);
-    REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR2_INITIAL_CODE_LOW_ADDR, 0x0);
-    REGI2C_WRITE_MASK(I2C_SAR_ADC, I2C_SAR_ADC_SAR1_INIT_CODE_MSB, 0x60);
-    REGI2C_WRITE_MASK(I2C_SAR_ADC, I2C_SAR_ADC_SAR1_INIT_CODE_LSB, 0x0);
-    REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC_DTEST_RTC_ADDR, 0);
-    REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC_ENT_PERIF_ADDR, 0);
-    REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC1_EN_TOUT_ADDR, 0);
-    REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC2_EN_TOUT_ADDR, 0);
+    adc_ll_digi_trigger_disable();
+    adc_ll_digi_reset_pattern_table();
+    adc_ll_set_calibration_param(ADC_UNIT_1, 0x0);
+    adc_ll_set_calibration_param(ADC_UNIT_2, 0x0);
+    adc_ll_regi2c_adc_deinit();
+#ifndef BOOTLOADER_BUILD
+    regi2c_saradc_disable();
+#endif
 
     // disable analog i2c master clock
     ANALOG_CLOCK_DISABLE();
-
-    // disable ADC_CTRL_CLK (SAR ADC function clock)
-    REG_WRITE(PCR_SARADC_CLKM_CONF_REG, 0x00404000);
-
-    // Set PCR_SARADC_CONF_REG to initial state
-    REG_WRITE(PCR_SARADC_CONF_REG, 0x5);
+    adc_ll_digi_controller_clk_div(4, 0, 0);
+    adc_ll_digi_clk_sel(ADC_DIGI_CLK_SRC_XTAL);
 }

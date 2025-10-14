@@ -13,8 +13,6 @@
 #include "esp_async_memcpy.h"
 #include "soc/soc_caps.h"
 
-#define ALIGN_DOWN(val, align)  ((val) & ~((align) - 1))
-
 #define DEFAULT_TRANSACTION_QUEUE_LENGTH 4
 
 #ifdef __cplusplus

@@ -1,0 +1,12 @@
+menu "ESP-Driver:SD Host SDMMC Controller Configurations"
+
+    depends on SOC_SDMMC_HOST_SUPPORTED
+
+    config SD_HOST_SDMMC_ISR_CACHE_SAFE
+        bool "SD Host ISR Cache-Safe"
+        default n
+        help
+            Ensure the SD Host SDMMC driver ISR is Cache-Safe. When enabled,
+            the ISR handler will be available when the cache is disabled.
+
+endmenu # SD Host Controller Configurations

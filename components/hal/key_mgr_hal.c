@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -79,14 +79,14 @@ bool key_mgr_hal_is_huk_valid(void)
     return key_mgr_ll_is_huk_valid();
 }
 
-void key_mgr_hal_set_xts_aes_key_len(const esp_key_mgr_xts_aes_key_len_t key_len)
+void key_mgr_hal_set_xts_aes_key_len(const esp_key_mgr_key_type_t key_type, const esp_key_mgr_xts_aes_key_len_t key_len)
 {
-    key_mgr_ll_set_xts_aes_key_len(key_len);
+    key_mgr_ll_set_xts_aes_key_len(key_type, key_len);
 }
 
-esp_key_mgr_xts_aes_key_len_t key_mgr_hal_get_xts_aes_key_len(void)
+esp_key_mgr_xts_aes_key_len_t key_mgr_hal_get_xts_aes_key_len(const esp_key_mgr_key_type_t key_type)
 {
-    return key_mgr_ll_get_xts_aes_key_len();
+    return key_mgr_ll_get_xts_aes_key_len(key_type);
 }
 
 void key_mgr_hal_continue(void)

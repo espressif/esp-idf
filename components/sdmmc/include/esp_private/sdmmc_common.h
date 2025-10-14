@@ -28,7 +28,6 @@
 #include "sys/param.h"
 #include "soc/soc_memory_layout.h"
 #include "soc/soc_caps.h"
-#include "esp_dma_utils.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -63,7 +62,13 @@ extern "C" {
 #define SDMMC_MMC_TRIM_ARG      1
 #define SDMMC_MMC_DISCARD_ARG   3
 
-#define SDMMC_FREQ_SDR104       208000      /*!< MMC 208MHz speed */
+/**
+ * Delay mode
+ */
+typedef enum {
+    SDMMC_DELAY_MODE_PHASE,
+    SDMMC_DELAY_MODE_LINE,
+} sdmmc_delay_mode_t;
 
 /* Functions to send individual commands */
 esp_err_t sdmmc_send_cmd(sdmmc_card_t* card, sdmmc_command_t* cmd);
@@ -98,7 +103,7 @@ esp_err_t sdmmc_read_sectors_dma(sdmmc_card_t* card, void* dst,
 uint32_t sdmmc_get_erase_timeout_ms(const sdmmc_card_t* card, int arg, size_t erase_size_kb);
 esp_err_t sdmmc_select_driver_strength(sdmmc_card_t *card, sdmmc_driver_strength_t driver_strength);
 esp_err_t sdmmc_select_current_limit(sdmmc_card_t *card, sdmmc_current_limit_t current_limit);
-esp_err_t sdmmc_do_timing_tuning(sdmmc_card_t *card);
+esp_err_t sdmmc_do_timing_tuning(sdmmc_card_t *card, sdmmc_delay_mode_t delay_mode);
 
 /* SD specific */
 esp_err_t sdmmc_check_scr(sdmmc_card_t* card);
@@ -108,6 +113,7 @@ esp_err_t sdmmc_decode_scr(uint32_t *raw_scr, sdmmc_scr_t* out_scr);
 esp_err_t sdmmc_decode_ssr(uint32_t *raw_ssr, sdmmc_ssr_t* out_ssr);
 uint32_t sdmmc_sd_get_erase_timeout_ms(const sdmmc_card_t* card, int arg, size_t erase_size_kb);
 
+#if CONFIG_SD_ENABLE_SDIO_SUPPORT
 /* SDIO specific */
 esp_err_t sdmmc_io_reset(sdmmc_card_t* card);
 esp_err_t sdmmc_io_enable_hs_mode(sdmmc_card_t* card);
@@ -118,6 +124,7 @@ esp_err_t sdmmc_io_rw_direct(sdmmc_card_t* card, int function, uint32_t reg, uin
 // cache, unless `SDMMC_HOST_FLAG_ALLOC_ALIGNED_BUF` flag is set when calling `sdmmc_card_init`. This flag is mandory
 // when the buffer is behind the cache in byte mode.
 esp_err_t sdmmc_io_rw_extended(sdmmc_card_t* card, int function, uint32_t reg, int arg, void *data, size_t size);
+#endif
 
 /* MMC specific */
 esp_err_t sdmmc_mmc_send_ext_csd_data(sdmmc_card_t* card, void *out_data, size_t datalen, size_t buffer_len);
@@ -136,9 +143,6 @@ esp_err_t sdmmc_init_rca(sdmmc_card_t* card);
 esp_err_t sdmmc_init_mmc_decode_cid(sdmmc_card_t* card);
 esp_err_t sdmmc_init_ocr(sdmmc_card_t* card);
 esp_err_t sdmmc_init_spi_crc(sdmmc_card_t* card);
-esp_err_t sdmmc_init_io(sdmmc_card_t* card);
-esp_err_t sdmmc_io_init_read_card_cap(sdmmc_card_t* card, uint8_t* card_cap);
-esp_err_t sdmmc_io_init_check_card_cap(sdmmc_card_t* card, uint8_t* card_cap);
 esp_err_t sdmmc_init_sd_blocklen(sdmmc_card_t* card);
 esp_err_t sdmmc_init_sd_scr(sdmmc_card_t* card);
 esp_err_t sdmmc_init_sd_ssr(sdmmc_card_t* card);
@@ -147,7 +151,12 @@ esp_err_t sdmmc_init_mmc_read_ext_csd(sdmmc_card_t* card);
 esp_err_t sdmmc_init_mmc_read_cid(sdmmc_card_t* card);
 esp_err_t sdmmc_init_host_bus_width(sdmmc_card_t* card);
 esp_err_t sdmmc_init_sd_bus_width(sdmmc_card_t* card);
+#if CONFIG_SD_ENABLE_SDIO_SUPPORT
+esp_err_t sdmmc_init_io(sdmmc_card_t* card);
 esp_err_t sdmmc_init_io_bus_width(sdmmc_card_t* card);
+esp_err_t sdmmc_io_init_read_card_cap(sdmmc_card_t* card, uint8_t* card_cap);
+esp_err_t sdmmc_io_init_check_card_cap(sdmmc_card_t* card, uint8_t* card_cap);
+#endif
 esp_err_t sdmmc_init_mmc_bus_width(sdmmc_card_t* card);
 esp_err_t sdmmc_init_card_hs_mode(sdmmc_card_t* card);
 esp_err_t sdmmc_init_host_frequency(sdmmc_card_t* card);
@@ -186,6 +195,12 @@ esp_err_t sdmmc_wait_for_idle(sdmmc_card_t* card, uint32_t status);
 //Currently only SDIO support using this buffer. And only 512 block size is supported.
 #define SDMMC_IO_BLOCK_SIZE     512
 esp_err_t sdmmc_allocate_aligned_buf(sdmmc_card_t* card);
+
+/**
+ * For newly added host driver function pointers,
+ * use this function to check if they are correctly initialised.
+ */
+esp_err_t sdmmc_check_host_function_ptr_integrity(sdmmc_card_t *card);
 
 #ifdef __cplusplus
 }

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -114,7 +114,7 @@ static inline void lp_i2s_ll_enable_mem(int id, bool en)
 
 static inline void lp_i2s_ll_set_rx_mem_threshold(lp_i2s_dev_t *hw, uint32_t words)
 {
-    LP_I2S.rx_mem_conf.rx_mem_threshold = words;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->rx_mem_conf, rx_mem_threshold, words);
 }
 
 /*---------------------------------------------------------------
@@ -133,7 +133,10 @@ static inline void lp_i2s_ll_enable_module_clock(int id, bool en)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define lp_i2s_ll_enable_module_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; lp_i2s_ll_enable_module_clock(__VA_ARGS__)
+#define lp_i2s_ll_enable_module_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        lp_i2s_ll_enable_module_clock(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Reset the LP I2S module
@@ -148,7 +151,10 @@ static inline void lp_i2s_ll_reset_module_clock(int id)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define lp_i2s_ll_reset_module_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; lp_i2s_ll_reset_module_clock(__VA_ARGS__)
+#define lp_i2s_ll_reset_module_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        lp_i2s_ll_reset_module_clock(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Enable the bus clock for LP I2S RX module
@@ -163,7 +169,10 @@ static inline void lp_i2s_ll_enable_rx_module_clock(int id, bool en)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define lp_i2s_ll_enable_rx_module_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; lp_i2s_ll_enable_rx_module_clock(__VA_ARGS__)
+#define lp_i2s_ll_enable_rx_module_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        lp_i2s_ll_enable_rx_module_clock(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Select ISP clock source
@@ -190,7 +199,10 @@ static inline void lp_i2s_ll_select_rx_clk_source(int id, soc_periph_lp_i2s_clk_
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define lp_i2s_ll_select_rx_clk_source(...) (void)__DECLARE_RCC_ATOMIC_ENV; lp_i2s_ll_select_rx_clk_source(__VA_ARGS__)
+#define lp_i2s_ll_select_rx_clk_source(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        lp_i2s_ll_select_rx_clk_source(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Set LP I2S clock source div num
@@ -785,7 +797,7 @@ static inline void lp_vad_ll_set_speak_activity_thresh(lp_i2s_dev_t *hw, int thr
  */
 static inline void lp_vad_ll_set_non_speak_activity_thresh(lp_i2s_dev_t *hw, int thresh)
 {
-    hw->vad_param1.param_hangover_silent = thresh;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->vad_param1, param_hangover_silent, thresh);
 }
 
 /**

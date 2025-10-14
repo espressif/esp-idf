@@ -11,7 +11,7 @@
 
 void dw_gdma_hal_init(dw_gdma_hal_context_t *hal, const dw_gdma_hal_config_t *config)
 {
-    hal->dev = DW_GDMA_LL_GET_HW();
+    hal->dev = DW_GDMA_LL_GET_HW(0);
     dw_gdma_ll_reset(hal->dev);
     dw_gdma_ll_enable_controller(hal->dev, true);
     dw_gdma_ll_enable_intr_global(hal->dev, true);

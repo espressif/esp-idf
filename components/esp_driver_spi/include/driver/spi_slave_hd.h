@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -87,7 +87,7 @@ typedef struct {
 } spi_slave_hd_slot_config_t;
 
 /**
- * @brief Initialize the SPI Slave HD driver.
+ * @brief Initialize the SPI Slave HD driver and enable it by default.
  *
  * @param host_id       The host to use
  * @param bus_config    Bus configuration for the bus used
@@ -112,6 +112,30 @@ esp_err_t spi_slave_hd_init(spi_host_device_t host_id, const spi_bus_config_t *b
  *  - ESP_ERR_INVALID_ARG: if the host_id is not correct
  */
 esp_err_t spi_slave_hd_deinit(spi_host_device_t host_id);
+
+/**
+ * @brief Enable the spi slave HD function for an initialized spi host
+ * @note No need to call this function additionally after `spi_slave_hd_init`,
+ *       because it has been enabled already during the initialization.
+ *
+ * @param host_id SPI peripheral to be enabled
+ * @return
+ *         - ESP_OK                 On success
+ *         - ESP_ERR_INVALID_ARG    Unsupported host_id
+ *         - ESP_ERR_INVALID_STATE  Peripheral already enabled
+ */
+esp_err_t spi_slave_hd_enable(spi_host_device_t host_id);
+
+/**
+ * @brief Disable the spi slave HD function for an initialized spi host
+ *
+ * @param host_id SPI peripheral to be disabled
+ * @return
+ *         - ESP_OK                 On success
+ *         - ESP_ERR_INVALID_ARG    Unsupported host_id
+ *         - ESP_ERR_INVALID_STATE  Peripheral already disabled
+ */
+esp_err_t spi_slave_hd_disable(spi_host_device_t host_id);
 
 /**
  * @brief Queue transactions (segment mode)

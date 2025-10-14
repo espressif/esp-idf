@@ -137,7 +137,6 @@ TEST_CASE("mcpwm_gpio_sync_timer_phase_lock", "[mcpwm]")
     mcpwm_gpio_sync_src_config_t gpio_sync_config = {
         .group_id = 0,
         .gpio_num = gpio_num,
-        .flags.pull_down = true, // internally pull down
     };
     TEST_ESP_OK(mcpwm_new_gpio_sync_src(&gpio_sync_config, &gpio_sync_src));
     // put the GPIO into initial state

@@ -1,0 +1,56 @@
+{
+    "binary_ver": 1,
+    "hw_rev": 0,
+    "hdr_len": 3,
+    "inst_ct": 8,
+    "inst": [
+        {
+            "opcode": {
+                "op": "LOOPA",
+                "ctr_add": 0
+            }
+        },
+        {
+            "opcode": {
+                "op": "LOOPA",
+                "ctr_add": 31
+            }
+        },
+        {
+            "opcode": {
+                "op": "LOOPA",
+                "ctr_add": 15
+            }
+        },
+        {
+            "opcode": {
+                "op": "LOOPA",
+                "ctr_add": 16
+            }
+        },
+        {
+            "opcode": {
+                "op": "ADDA",
+                "ctr_add": 65535
+            }
+        },
+        {
+            "opcode": {
+                "op": "ADDA",
+                "ctr_add": 32768
+            }
+        },
+        {
+            "opcode": {
+                "op": "ADDA",
+                "ctr_add": 65535
+            }
+        },
+        {
+            "opcode": {
+                "op": "ADDA",
+                "ctr_add": 0
+            }
+        }
+    ]
+}

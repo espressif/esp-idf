@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,12 +11,13 @@
 #include "soc/soc_caps.h"
 #include "hal/wdt_hal.h"
 #include "hal/mwdt_ll.h"
-#include "hal/timer_ll.h"
+#include "hal/timg_ll.h"
+#include "soc/system_intr.h"
 #include "freertos/FreeRTOS.h"
 #include "esp_cpu.h"
 #include "esp_check.h"
 #include "esp_err.h"
-#include "esp_attr.h"
+#include "esp_private/esp_system_attr.h"
 #include "esp_log.h"
 #include "esp_intr_alloc.h"
 #include "esp_chip_info.h"
@@ -28,10 +29,10 @@
 #include "esp_private/sleep_retention.h"
 #endif
 
-#if SOC_TIMER_GROUPS > 1
+#if SOC_MODULE_ATTR(TIMG, INST_NUM) > 1
 
 /* If we have two hardware timer groups, use the second one for interrupt watchdog. */
-#define WDT_LEVEL_INTR_SOURCE   ETS_TG1_WDT_LEVEL_INTR_SOURCE
+#define WDT_LEVEL_INTR_SOURCE   SYS_TG1_WDT_INTR_SOURCE
 #define IWDT_PRESCALER          MWDT_LL_DEFAULT_CLK_PRESCALER   // Tick period of 500us if WDT source clock is 80MHz
 #define IWDT_TICKS_PER_US       500
 #define IWDT_INSTANCE           WDT_MWDT1
@@ -41,7 +42,7 @@
 
 #else
 
-#define WDT_LEVEL_INTR_SOURCE   ETS_TG0_WDT_LEVEL_INTR_SOURCE
+#define WDT_LEVEL_INTR_SOURCE   SYS_TG0_WDT_INTR_SOURCE
 #define IWDT_PRESCALER          MWDT_LL_DEFAULT_CLK_PRESCALER   // Tick period of 500us if WDT source clock is 80MHz
 #define IWDT_TICKS_PER_US       500
 #define IWDT_INSTANCE           WDT_MWDT0
@@ -49,11 +50,11 @@
 #define IWDT_PERIPH             PERIPH_TIMG0_MODULE
 #define IWDT_TIMER_GROUP        0
 
-#endif // SOC_TIMER_GROUPS > 1
+#endif // SOC_MODULE_ATTR(TIMG, INST_NUM) > 1
 
 #if CONFIG_ESP_INT_WDT
-#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_TIMER_SUPPORT_SLEEP_RETENTION
-static const char* TAG = "int_wdt";
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_MWDT_SUPPORT_SLEEP_RETENTION
+ESP_LOG_ATTR_TAG(TAG, "int_wdt");
 static esp_err_t sleep_int_wdt_retention_init(void *arg)
 {
     uint32_t group_id = *(uint32_t *)arg;
@@ -100,7 +101,7 @@ extern uint32_t _lx_intr_livelock_counter, _lx_intr_livelock_max;
 volatile bool int_wdt_cpu1_ticked = false;
 #endif
 
-static void IRAM_ATTR tick_hook(void)
+static void ESP_SYSTEM_IRAM_ATTR tick_hook(void)
 {
 #if CONFIG_ESP_INT_WDT_CHECK_CPU1
     if (esp_cpu_get_core_id() != 0) {
@@ -143,8 +144,8 @@ void esp_int_wdt_init(void)
 {
     PERIPH_RCC_ACQUIRE_ATOMIC(IWDT_PERIPH, ref_count) {
         if (ref_count == 0) {
-            timer_ll_enable_bus_clock(IWDT_TIMER_GROUP, true);
-            timer_ll_reset_register(IWDT_TIMER_GROUP);
+            timg_ll_enable_bus_clock(IWDT_TIMER_GROUP, true);
+            timg_ll_reset_register(IWDT_TIMER_GROUP);
         }
     }
     /*
@@ -159,7 +160,7 @@ void esp_int_wdt_init(void)
     wdt_hal_enable(&iwdt_context);
     wdt_hal_write_protect_enable(&iwdt_context);
 
-#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_TIMER_SUPPORT_SLEEP_RETENTION
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_MWDT_SUPPORT_SLEEP_RETENTION
     esp_int_wdt_retention_enable(IWDT_TIMER_GROUP);
 #endif
 

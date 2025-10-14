@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -41,26 +41,23 @@ static esp_err_t gen_ecdsa_keypair_secp256r1(esp_att_ecdsa_keypair_t *keypair)
     if (keypair == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
-
     memset(keypair, 0x00, sizeof(esp_att_ecdsa_keypair_t));
 
-    uint16_t slot_id = ESP_ATT_TK_KEY_ID;
-    esp_tee_sec_storage_pubkey_t pubkey = {0};
+    esp_tee_sec_storage_key_cfg_t key_cfg = {
+        .id = (const char *)(ESP_ATT_TK_KEY_ID),
+        .type = ESP_SEC_STG_KEY_ECDSA_SECP256R1,
+    };
 
-    esp_err_t err = esp_tee_sec_storage_init();
-    if (err != ESP_OK) {
+    esp_err_t err = esp_tee_sec_storage_gen_key(&key_cfg);
+    if (err == ESP_ERR_INVALID_STATE) {
+        ESP_LOGW(TAG, "Using pre-existing key...");
+    } else if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to generate ECDSA keypair (%d)", err);
         return err;
     }
 
-    if (esp_tee_sec_storage_is_slot_empty(slot_id)) {
-        err = esp_tee_sec_storage_gen_key(slot_id, ESP_SEC_STG_KEY_ECDSA_SECP256R1);
-        if (err != ESP_OK) {
-            ESP_LOGE(TAG, "Failed to generate ECDSA keypair (%d)", err);
-            return err;
-        }
-    }
-
-    err = esp_tee_sec_storage_get_pubkey(slot_id, &pubkey);
+    esp_tee_sec_storage_ecdsa_pubkey_t pubkey = {};
+    err = esp_tee_sec_storage_ecdsa_get_pubkey(&key_cfg, &pubkey);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to fetch ECDSA pubkey (%d)", err);
         return err;
@@ -83,8 +80,13 @@ static esp_err_t get_ecdsa_sign_secp256r1(const esp_att_ecdsa_keypair_t *keypair
         return ESP_ERR_INVALID_SIZE;
     }
 
-    esp_tee_sec_storage_sign_t sign = {};
-    esp_err_t err = esp_tee_sec_storage_get_signature(ESP_ATT_TK_KEY_ID, (uint8_t *)digest, len, &sign);
+    esp_tee_sec_storage_key_cfg_t key_cfg = {
+        .id = (const char *)(ESP_ATT_TK_KEY_ID),
+        .type = ESP_SEC_STG_KEY_ECDSA_SECP256R1,
+    };
+
+    esp_tee_sec_storage_ecdsa_sign_t sign = {};
+    esp_err_t err = esp_tee_sec_storage_ecdsa_sign(&key_cfg, (uint8_t *)digest, len, &sign);
     if (err != ESP_OK) {
         return err;
     }
@@ -261,9 +263,10 @@ esp_err_t esp_att_utils_ecdsa_get_pubkey(const esp_att_ecdsa_keypair_t *keypair,
     }
 
     *pubkey_hexstr = hexstr;
-    err = ESP_OK;
+    return ESP_OK;
 
 exit:
+    free(hexstr);
     return err;
 }
 

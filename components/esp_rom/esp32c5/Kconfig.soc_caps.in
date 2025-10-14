@@ -43,6 +43,10 @@ config ESP_ROM_HAS_HAL_SYSTIMER
     bool
     default y
 
+config ESP_ROM_SYSTIMER_INIT_PATCH
+    bool
+    default y
+
 config ESP_ROM_HAS_HEAP_TLSF
     bool
     default y
@@ -63,6 +67,10 @@ config ESP_ROM_HAS_SPI_FLASH
     bool
     default y
 
+config ESP_ROM_HAS_SPI_FLASH_MMAP
+    bool
+    default y
+
 config ESP_ROM_WITHOUT_REGI2C
     bool
     default y
@@ -71,7 +79,7 @@ config ESP_ROM_HAS_NEWLIB
     bool
     default y
 
-config ESP_ROM_HAS_NEWLIB_NORMAL_FORMAT
+config ESP_ROM_HAS_NEWLIB_NANO_FORMAT
     bool
     default y
 
@@ -104,5 +112,13 @@ config ESP_ROM_HAS_OUTPUT_PUTC_FUNC
     default y
 
 config ESP_ROM_CLIC_INT_THRESH_PATCH
+    bool
+    default y
+
+config ESP_ROM_HAS_SUBOPTIMAL_NEWLIB_ON_MISALIGNED_MEMORY
+    bool
+    default y
+
+config ESP_ROM_DELAY_US_PATCH
     bool
     default y

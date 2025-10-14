@@ -6,7 +6,7 @@ menu "FreeRTOS"
 
         config FREERTOS_SMP
             bool "Run the Amazon SMP FreeRTOS kernel instead (FEATURE UNDER DEVELOPMENT)"
-            depends on !IDF_TARGET_ESP32P4 #TODO: IDF-8113: Enable P4 support on AMZ SMP
+            depends on !IDF_TARGET_ESP32P4 && !IDF_TARGET_ESP32H4  #TODO: IDF-8113: Enable P4/H4 support on AMZ SMP
             default  "n"
             help
                 Amazon has released an SMP version of the FreeRTOS Kernel which can be found via the following link:
@@ -299,7 +299,7 @@ menu "FreeRTOS"
 
         choice FREERTOS_RUN_TIME_COUNTER_TYPE
             prompt "configRUN_TIME_COUNTER_TYPE"
-            depends on FREERTOS_GENERATE_RUN_TIME_STATS && !FREERTOS_SMP
+            depends on FREERTOS_GENERATE_RUN_TIME_STATS
             default FREERTOS_RUN_TIME_COUNTER_TYPE_U32
             help
                 Sets the data type used for the FreeRTOS run time stats. A larger data type can be used to reduce the
@@ -405,10 +405,7 @@ menu "FreeRTOS"
                 off to save space in the TCB memory.
 
         config FREERTOS_TASK_PRE_DELETION_HOOK
-            # This option is a replacement for FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP (which is now deprecated). If the
-            # deprecated option is defined, we hide this option to avoid multiple pre-deletion hooks from running.
             bool "Enable task pre-deletion hook"
-            depends on !FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP
             default n
             help
                 Enable this option to make FreeRTOS call a user provided hook function right before it deletes a task
@@ -417,18 +414,6 @@ menu "FreeRTOS"
 
                 If this config option is enabled, users must define a ``void vTaskPreDeletionHook( void * pxTCB )``
                 hook function in their application.
-
-        config FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP
-            # This option is deprecated (replaced by FREERTOS_TASK_PRE_DELETION_HOOK) but still exists to maintain
-            # compatibility. Todo: Remove by v6.0 (see IDF-8097).
-            bool "Enable static task clean up hook (DEPRECATED)"
-            default n
-            help
-                THIS OPTION IS DEPRECATED. Use FREERTOS_TASK_PRE_DELETION_HOOK instead.
-
-                Enable this option to make FreeRTOS call the static task clean up hook when a task is deleted.
-
-                Note: Users will need to provide a ``void vPortCleanUpTCB ( void *pxTCB )`` callback
 
         config FREERTOS_CHECK_MUTEX_GIVEN_BY_OWNER
             # This feature is innately supported in FreeRTOS SMP, and hence not available as a config option when
@@ -442,8 +427,8 @@ menu "FreeRTOS"
 
         config FREERTOS_ISR_STACKSIZE
             int "ISR stack size"
-            range 2096 32768 if ESP_COREDUMP_DATA_FORMAT_ELF
-            default 2096 if ESP_COREDUMP_DATA_FORMAT_ELF
+            range 2096 32768 if ESP_COREDUMP_ENABLE
+            default 2096 if ESP_COREDUMP_ENABLE
             range 1536 32768
             default 1536
             help
@@ -556,12 +541,24 @@ menu "FreeRTOS"
                     the maximum frequency of 240MHz, it will overflow in approximately 17 seconds.
         endchoice # FREERTOS_RUN_TIME_STATS_CLK
 
-        config FREERTOS_PLACE_FUNCTIONS_INTO_FLASH
-            bool "Place FreeRTOS functions into Flash"
+        config FREERTOS_IN_IRAM
+            bool "Place FreeRTOS functions in IRAM"
             default n
             help
-                When enabled the selected Non-ISR FreeRTOS functions will be placed into Flash memory instead of IRAM.
-                This saves up to 8KB of IRAM depending on which functions are used.
+                Place FreeRTOS functions in IRAM for better performance.
+                By default, FreeRTOS functions are placed in Flash to save IRAM.
+                Enable this option if you need maximum performance for FreeRTOS operations.
+
+                Note: This option increases IRAM usage.
+
+        config FREERTOS_PLACE_ISR_FUNCTIONS_INTO_FLASH
+            bool "Place FreeRTOS functions called from ISR context into Flash"
+            depends on SPI_FLASH_AUTO_SUSPEND
+            default n
+            help
+                When enabled additional FreeRTOS functions which maybe called from an ISR context are
+                also placed in Flash, thus freeing up more IRAM.
+                This option is only applicable when the SPI_FLASH_AUTO_SUSPEND feature is supported.
 
         config FREERTOS_CHECK_PORT_CRITICAL_COMPLIANCE
             # Todo: Check if we still need this (IDF-4986)
@@ -626,21 +623,6 @@ menu "FreeRTOS"
         bool
         help
             Hidden option, gets selected by CONFIG_ESP_DEBUG_OCDAWARE
-
-    config FREERTOS_ENABLE_TASK_SNAPSHOT
-        # Invisible option that is always enabled. Task Snapshot APIs are now private thus are always enabled. This
-        # option is kept here in case any user code conditionally depends on this option.
-        # Todo: Remove in v6.0 (IDF-8143)
-        bool
-        default y
-
-    config FREERTOS_PLACE_SNAPSHOT_FUNS_INTO_FLASH
-        # Invisible option that is always enabled. Task Snapshot APIs are now private API thus are always placed into
-        # flash by default. This option is kept here in case any user code conditionally depends on this option.
-        # Todo: Remove in v6.0 (IDF-8143)
-        bool
-        default y
-        depends on !ESP_PANIC_HANDLER_IRAM
 
     config FREERTOS_NUMBER_OF_CORES
         # Invisible option to configure the number of cores on which FreeRTOS runs

@@ -1,6 +1,5 @@
-# SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 import logging
 import os
 import typing as t
@@ -63,5 +62,30 @@ def merge_junit_files(junit_files: t.List[str], target_path: str) -> None:
         fw.write(ET.tostring(merged_testsuite))
 
 
-def comma_sep_str_to_list(s: str) -> t.List[str]:
-    return [s.strip() for s in s.split(',') if s.strip()]
+def normalize_testcase_file_path(file: str, app_path: t.Union[str, tuple]) -> str:
+    """
+    Normalize file paths to a consistent format, resolving relative paths based on the `app_path`.
+
+    This function ensures that file paths are correctly resolved and normalized:
+    - If `app_path` is a tuple, the function will try each app path in the tuple in order and join the results with ':'.
+    - If `app_path` is a string, the file will be resolved using that base path.
+
+    :param file: The original file path, which can be relative, absolute.
+    :param app_path: The base app path used to resolve relative paths, which can be a string or tuple.
+    :return: A normalized file path with the IDF_PATH prefix removed if applicable.
+    """
+
+    def normalize_path(file_path: str, app_path: str) -> str:
+        """Helper function to normalize a single path."""
+        if not os.path.isabs(file_path):
+            resolved_path = os.path.normpath(os.path.join(app_path, file_path.removeprefix('./').removeprefix('../')))
+        else:
+            resolved_path = os.path.normpath(file_path)
+
+        return resolved_path.replace(f'{os.environ.get("IDF_PATH", "")}', '').replace('/IDF/', '').lstrip('/')
+
+    if isinstance(app_path, tuple):
+        normalized_paths = [normalize_path(file, base_path) for base_path in app_path]
+        return '|'.join(normalized_paths)
+
+    return normalize_path(file, app_path)

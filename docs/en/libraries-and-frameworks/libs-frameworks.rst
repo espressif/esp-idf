@@ -4,8 +4,8 @@ Espressif's Frameworks
 
 Here you will find a collection of the official Espressif libraries and frameworks.
 
-Espressif Audio Development Framework
--------------------------------------
+Espressif Advanced Development Framework
+----------------------------------------
 
 The ESP-ADF is a comprehensive framework for audio applications including:
 
@@ -15,7 +15,7 @@ The ESP-ADF is a comprehensive framework for audio applications including:
 * Bluetooth speakers
 * Internet radios
 * Hands-free devices
-* Speech decognition
+* Speech recognition
 
 This framework is available on GitHub: `ESP-ADF <https://github.com/espressif/esp-adf>`_.
 
@@ -92,11 +92,13 @@ ESP-Protocols components:
 
 * `mdns <https://components.espressif.com/component/espressif/mdns>`_ (mDNS) is a multicast UDP service that is used to provide local network service and host discovery. See the `mdns documentation <https://docs.espressif.com/projects/esp-protocols/mdns/docs/latest/en/index.html>`_.
 
-* `esp_websocket_client <https://components.espressif.com/component/espressif/esp_websocket_client>`_ is a managed component for ESP-IDF that contains implementation of WebSocket protocol client for ESP32. See the `esp_websocket_client documentation <https://docs.espressif.com/projects/esp-protocols/esp_websocket_client/docs/latest/index.html>`_. For detailes of WebSocket protocol client, see `WebSocket_protocol_client <https://datatracker.ietf.org/doc/html/rfc6455>`_.
+* `esp_websocket_client <https://components.espressif.com/component/espressif/esp_websocket_client>`_ is a managed component for ESP-IDF that contains implementation of WebSocket protocol client for ESP32. See the `esp_websocket_client documentation <https://docs.espressif.com/projects/esp-protocols/esp_websocket_client/docs/latest/index.html>`_. For details of WebSocket protocol client, see `WebSocket_protocol_client <https://datatracker.ietf.org/doc/html/rfc6455>`_.
 
 * `asio <https://components.espressif.com/component/espressif/asio>`_ is a cross-platform C++ library, see https://think-async.com/Asio/. It provides a consistent asynchronous model using a modern C++ approach. See the `asio documentation <https://docs.espressif.com/projects/esp-protocols/asio/docs/latest/index.html>`_.
 
 * `esp_wifi_remote <https://components.espressif.com/component/espressif/esp_wifi_remote>`_ is a Wi-Fi communication library that provides standard Wi-Fi API and networking of an external, Wi-Fi capable ESP32 chipset connected to the target device via a specified transport interface. See the :doc:`../api-guides/wifi-expansion`.
+
+* `esp-extconn <https://components.espressif.com/component/espressif/esp-extconn>`_ is a Wi-Fi communication library that provides external wireless connectivity (Wi-Fi and Bluetooth) for ESP chips that do not have built-in wireless capabilities. See the :doc:`../api-guides/wifi-expansion`.
 
 ESP-BSP
 -------

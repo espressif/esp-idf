@@ -144,10 +144,24 @@ TEST(lwip, dhcp_server_init_deinit)
     dhcps_delete(dhcps);
 }
 
+typedef enum
+{
+    DNS_CALLBACK_TYPE_GET = 0, /**< DNS main server address*/
+    DNS_CALLBACK_TYPE_SET,   /**< DNS backup server address (Wi-Fi STA and Ethernet only) */
+} dns_callback_type_t;
+
+typedef struct dhcps_dns_options_ {
+    dns_callback_type_t cb_type;
+    ip_addr_t *dnsserver;
+    dns_type_t type;
+} dhcps_dns_options_t;
+
 struct dhcps_api {
     EventGroupHandle_t event;
+    dhcps_t *dhcps;
     ip4_addr_t netmask;
     ip4_addr_t ip;
+    dhcps_dns_options_t dns_options;
     err_t ret_start;
     err_t ret_stop;
 };
@@ -220,6 +234,75 @@ TEST(lwip, dhcp_server_start_stop_localhost)
     dhcps_test_net_classes(0xC0A8C808, 0xFFFFFFF8, false);
 }
 
+static void dhcps_test_dns_options_api(void* ctx)
+{
+    struct netif *netif;
+    struct dhcps_api *api = ctx;
+
+    NETIF_FOREACH(netif) {
+        if (netif->name[0] == 'l' && netif->name[1] == 'o') {
+            break;
+        }
+    }
+    TEST_ASSERT_NOT_NULL(netif);
+
+    if (api->dns_options.cb_type == DNS_CALLBACK_TYPE_GET) {
+        api->ret_start = dhcps_dns_getserver_by_type(api->dhcps,
+                                                    ip_2_ip4(api->dns_options.dnsserver),
+                                                    api->dns_options.type);
+    } else {
+        api->ret_start = dhcps_dns_setserver_by_type(api->dhcps,
+                                                    api->dns_options.dnsserver,
+                                                    api->dns_options.type);
+    }
+    xEventGroupSetBits(api->event, 1);
+}
+
+static void dhcps_test_dns_options(dns_callback_type_t cb_type,
+                                    dhcps_t *dhcps, ip_addr_t *dnsserver,
+                                    dns_type_t type, bool pass)
+{
+    struct dhcps_api api = {
+            .dhcps = dhcps,
+            .dns_options.cb_type = cb_type,
+            .dns_options.dnsserver = dnsserver,
+            .dns_options.type = type,
+            .ret_start = ERR_IF,
+            .event = xEventGroupCreate()
+    };
+
+    tcpip_callback(dhcps_test_dns_options_api, &api);
+    xEventGroupWaitBits(api.event, 1, true, true, pdMS_TO_TICKS(5000));
+    vEventGroupDelete(api.event);
+
+    TEST_ASSERT((api.ret_start == ERR_OK) == pass);
+}
+
+TEST(lwip, dhcp_server_dns_options)
+{
+    test_case_uses_tcpip();
+
+    // Class C: IP: 192.168.4.1
+    ip_addr_t ip = IPADDR4_INIT_BYTES(192, 168, 4, 1);
+
+    dhcps_test_dns_options(DNS_CALLBACK_TYPE_SET, NULL, &ip, DNS_TYPE_MAIN, false);
+    dhcps_test_dns_options(DNS_CALLBACK_TYPE_GET, NULL, &ip, DNS_TYPE_MAIN, false);
+
+    dhcps_t *dhcps = dhcps_new();
+    dhcps_test_dns_options(DNS_CALLBACK_TYPE_SET, dhcps, NULL, DNS_TYPE_MAIN, true);
+    dhcps_test_dns_options(DNS_CALLBACK_TYPE_GET, dhcps, NULL, DNS_TYPE_MAIN, false);
+
+    dhcps_test_dns_options(DNS_CALLBACK_TYPE_SET, dhcps, &ip, DNS_TYPE_MAX, false);
+    dhcps_test_dns_options(DNS_CALLBACK_TYPE_GET, dhcps, &ip, DNS_TYPE_MAX, false);
+
+    dhcps_test_dns_options(DNS_CALLBACK_TYPE_SET, dhcps, &ip, DNS_TYPE_MAIN, true);
+    dhcps_test_dns_options(DNS_CALLBACK_TYPE_GET, dhcps, &ip, DNS_TYPE_MAIN, true);
+
+    dhcps_test_dns_options(DNS_CALLBACK_TYPE_SET, dhcps, &ip, DNS_TYPE_BACKUP, true);
+    dhcps_test_dns_options(DNS_CALLBACK_TYPE_GET, dhcps, &ip, DNS_TYPE_BACKUP, true);
+
+    dhcps_delete(dhcps);
+}
 
 int test_sntp_server_create(void)
 {
@@ -324,6 +407,7 @@ TEST_GROUP_RUNNER(lwip)
     RUN_TEST_CASE(lwip, localhost_ping_test)
     RUN_TEST_CASE(lwip, dhcp_server_init_deinit)
     RUN_TEST_CASE(lwip, dhcp_server_start_stop_localhost)
+    RUN_TEST_CASE(lwip, dhcp_server_dns_options)
     RUN_TEST_CASE(lwip, sntp_client_time_2015)
     RUN_TEST_CASE(lwip, sntp_client_time_2048)
 }

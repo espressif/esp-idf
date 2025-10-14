@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -40,13 +40,23 @@ static inline void sha_ll_reset_register(void)
 }
 
 /**
+ * @brief Load the mode for the SHA engine
+ *
+ * @param sha_type The SHA algorithm type
+ */
+static inline void sha_ll_set_mode(esp_sha_type sha_type)
+{
+    REG_WRITE(SHA_MODE_REG, sha_type);
+}
+
+/**
  * @brief Start a new SHA block conversions (no initial hash in HW)
  *
  * @param sha_type The SHA algorithm type
  */
 static inline void sha_ll_start_block(esp_sha_type sha_type)
 {
-    REG_WRITE(SHA_MODE_REG, sha_type);
+    (void) sha_type;
     REG_WRITE(SHA_START_REG, 1);
 }
 
@@ -57,29 +67,23 @@ static inline void sha_ll_start_block(esp_sha_type sha_type)
  */
 static inline void sha_ll_continue_block(esp_sha_type sha_type)
 {
-    REG_WRITE(SHA_MODE_REG, sha_type);
+    (void) sha_type;
     REG_WRITE(SHA_CONTINUE_REG, 1);
 }
 
 /**
  * @brief Start a new SHA message conversion using DMA (no initial hash in HW)
- *
- * @param sha_type The SHA algorithm type
  */
-static inline void sha_ll_start_dma(esp_sha_type sha_type)
+static inline void sha_ll_start_dma(void)
 {
-    REG_WRITE(SHA_MODE_REG, sha_type);
     REG_WRITE(SHA_DMA_START_REG, 1);
 }
 
 /**
  * @brief Continue a SHA message conversion using DMA (initial hash in HW)
- *
- * @param sha_type The SHA algorithm type
  */
-static inline void sha_ll_continue_dma(esp_sha_type sha_type)
+static inline void sha_ll_continue_dma(void)
 {
-    REG_WRITE(SHA_MODE_REG, sha_type);
     REG_WRITE(SHA_DMA_CONTINUE_REG, 1);
 }
 
@@ -168,6 +172,25 @@ static inline void sha_ll_write_digest(esp_sha_type sha_type, void *digest_state
     }
 }
 
+/**
+ * @brief Sets SHA512_t T_string parameter
+ *
+ * @param t_string T_string parameter
+ */
+static inline void sha_ll_t_string_set(uint32_t t_string)
+{
+    REG_WRITE(SHA_T_STRING_REG, t_string);
+}
+
+/**
+ * @brief Sets SHA512_t T_string parameter's length
+ *
+ * @param t_len T_string parameter length
+ */
+static inline void sha_ll_t_len_set(uint8_t t_len)
+{
+    REG_WRITE(SHA_T_LENGTH_REG, t_len);
+}
 
 #ifdef __cplusplus
 }

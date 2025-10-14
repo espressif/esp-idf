@@ -44,6 +44,10 @@ void test_rtc_slow_reg2_execute_violation(void);
 
 void test_irom_reg_write_violation(void);
 
+void test_spiram_xip_irom_alignment_reg_execute_violation(void);
+
+void test_spiram_xip_drom_alignment_reg_execute_violation(void);
+
 void test_drom_reg_write_violation(void);
 
 void test_drom_reg_execute_violation(void);

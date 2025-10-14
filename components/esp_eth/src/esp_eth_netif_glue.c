@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -46,9 +46,23 @@ static void eth_l2_free(void *h, void* buffer)
     free(buffer);
 }
 
+static esp_err_t eth_set_mac_filter(void *h, const uint8_t *eth_mac, size_t mac_len, bool add)
+{
+    esp_eth_handle_t *eth_handle = (esp_eth_handle_t *)h;
+    ESP_RETURN_ON_FALSE(mac_len == ETH_ADDR_LEN, ESP_ERR_INVALID_ARG, TAG, "invalid MAC length");
+    ESP_LOGD(TAG, "%s filter MAC: %02x:%02x:%02x:%02x:%02x:%02x", add ? "Add" : "Del", eth_mac[0], eth_mac[1],
+             eth_mac[2], eth_mac[3], eth_mac[4], eth_mac[5]);
+    if (add) {
+        ESP_RETURN_ON_ERROR(esp_eth_ioctl(eth_handle, ETH_CMD_ADD_MAC_FILTER, (void *)eth_mac), TAG, "failed to add mac filter");
+    } else {
+        ESP_RETURN_ON_ERROR(esp_eth_ioctl(eth_handle, ETH_CMD_DEL_MAC_FILTER, (void *)eth_mac), TAG, "failed to delete mac filter");
+    }
+    return ESP_OK;
+}
+
 static esp_err_t esp_eth_post_attach(esp_netif_t *esp_netif, void *args)
 {
-    uint8_t eth_mac[6];
+    uint8_t eth_mac[ETH_ADDR_LEN];
     esp_eth_netif_glue_t *netif_glue = (esp_eth_netif_glue_t *)args;
     netif_glue->base.netif = esp_netif;
 
@@ -58,7 +72,8 @@ static esp_err_t esp_eth_post_attach(esp_netif_t *esp_netif, void *args)
     esp_netif_driver_ifconfig_t driver_ifconfig = {
         .handle =  netif_glue->eth_driver,
         .transmit = esp_eth_transmit,
-        .driver_free_rx_buffer = eth_l2_free
+        .driver_free_rx_buffer = eth_l2_free,
+        .driver_set_mac_filter = eth_set_mac_filter
     };
 
     ESP_ERROR_CHECK(esp_netif_set_driver_config(esp_netif, &driver_ifconfig));

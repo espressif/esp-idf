@@ -18,6 +18,7 @@ extern "C" {
 #define PMU_UART1_WAKEUP_EN         BIT(7)
 #define PMU_BLE_SOC_WAKEUP_EN       BIT(10)
 #define PMU_USB_WAKEUP_EN           BIT(14)
+#define PMU_VBAT_UNDERVOLT_WAKEUP_EN  BIT(15)
 
 #ifdef __cplusplus
 }

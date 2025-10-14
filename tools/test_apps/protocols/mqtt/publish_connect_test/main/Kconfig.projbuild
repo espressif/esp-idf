@@ -24,18 +24,6 @@ menu "Example Configuration"
         help
             URL of an mqtt broker for wss transport
 
-    config EXAMPLE_PUBLISH_TOPIC
-        string "publish topic"
-        default "/topic/publish/esp2py"
-        help
-            topic to which esp32 client publishes
-
-    config EXAMPLE_SUBSCRIBE_TOPIC
-        string "subscribe topic"
-        default "/topic/subscribe/py2esp"
-        help
-            topic to which esp32 client subscribes (and expects data)
-
     config EXAMPLE_BROKER_CERTIFICATE_OVERRIDE
         string "Broker certificate override"
         default ""

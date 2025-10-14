@@ -31,6 +31,7 @@ typedef enum {
     CHIP_ESP32C61= 20, //!< ESP32-C61
     CHIP_ESP32C5 = 23, //!< ESP32-C5
     CHIP_ESP32H21 = 25, //!< ESP32-H21
+    CHIP_ESP32H4 = 28, //!< ESP32-H4
     CHIP_POSIX_LINUX = 999, //!< The code is running on POSIX/Linux simulator
 } esp_chip_model_t;
 

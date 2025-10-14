@@ -5,12 +5,25 @@ idf_build_get_property(esp_tee_build ESP_TEE_BUILD)
 if(esp_tee_build)
     include(${COMPONENT_DIR}/esp_tee/esp_tee_mbedtls.cmake)
     return()
+
+elseif(BOOTLOADER_BUILD)   # TODO: IDF-11673
+    if(CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL_BOOTLOADER)
+        set(include_dirs "${COMPONENT_DIR}/mbedtls/include"
+                         "port/mbedtls_rom")
+        set(srcs "port/mbedtls_rom/mbedtls_rom_osi_bootloader.c")
+    endif()
+
+    idf_component_register(SRCS "${srcs}"
+                           INCLUDE_DIRS "${include_dirs}"
+                           PRIV_REQUIRES hal)
+    return()
 endif()
 
 if(NOT ${IDF_TARGET} STREQUAL "linux")
     set(priv_requires soc esp_hw_support)
     if(NOT BOOTLOADER_BUILD)
         list(APPEND priv_requires esp_pm)
+        set(requires esp_security)
     endif()
 endif()
 
@@ -29,6 +42,7 @@ endif()
 idf_component_register(SRCS "${mbedtls_srcs}"
     INCLUDE_DIRS "${mbedtls_include_dirs}"
     PRIV_REQUIRES "${priv_requires}"
+    REQUIRES "${requires}"
     )
 
 # Determine the type of mbedtls component library
@@ -48,10 +62,20 @@ if(CONFIG_MBEDTLS_CERTIFICATE_BUNDLE)
     set(GENERATE_CERT_BUNDLEPY ${python} ${COMPONENT_DIR}/esp_crt_bundle/gen_crt_bundle.py)
 
     if(CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_DEFAULT_FULL)
-        list(APPEND crt_paths ${DEFAULT_CRT_DIR}/cacrt_all.pem ${DEFAULT_CRT_DIR}/cacrt_local.pem)
+        list(APPEND crt_paths ${DEFAULT_CRT_DIR}/cacrt_all.pem)
     elseif(CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_DEFAULT_CMN)
-        list(APPEND crt_paths ${DEFAULT_CRT_DIR}/cacrt_all.pem ${DEFAULT_CRT_DIR}/cacrt_local.pem)
+        list(APPEND crt_paths ${DEFAULT_CRT_DIR}/cacrt_all.pem)
         list(APPEND args --filter ${DEFAULT_CRT_DIR}/cmn_crt_authorities.csv)
+    endif()
+
+    # Currently cacrt_local.pem contains deprecated certificates that are still required for certain certificate chains.
+    # These chains may include cross-signed certificates, but the final certificate in the chain is deprecated.
+    # When cross-signed verification is enabled (CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_CROSS_SIGNED_VERIFY),
+    # the cross-signed certificate should be sufficient for verification, and the deprecated root is not needed.
+    # Therefore, cacrt_local.pem is only appended if cross-signed verification is not enabled.
+    if((CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_DEFAULT_FULL OR CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_DEFAULT_CMN)
+        AND NOT CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_CROSS_SIGNED_VERIFY)
+        list(APPEND crt_paths ${DEFAULT_CRT_DIR}/cacrt_local.pem)
     endif()
 
     # Add deprecated root certs if enabled. This config is not visible if the default cert
@@ -87,7 +111,6 @@ if(CONFIG_MBEDTLS_CERTIFICATE_BUNDLE)
         APPEND PROPERTY ADDITIONAL_CLEAN_FILES
         "${crt_bundle}")
 endif()
-
 
 # Only build mbedtls libraries
 set(ENABLE_TESTING CACHE BOOL OFF)
@@ -180,35 +203,25 @@ endif()
 # Choose peripheral type
 
 if(CONFIG_SOC_SHA_SUPPORTED)
-    if(CONFIG_SOC_SHA_SUPPORT_DMA)
-        set(SHA_PERIPHERAL_TYPE "dma")
-    elseif(CONFIG_SOC_SHA_SUPPORT_PARALLEL_ENG)
+    if(CONFIG_SOC_SHA_SUPPORT_PARALLEL_ENG)
         set(SHA_PERIPHERAL_TYPE "parallel_engine")
     else()
-        set(SHA_PERIPHERAL_TYPE "block")
+        set(SHA_PERIPHERAL_TYPE "core")
     endif()
 endif()
 
-if(CONFIG_SOC_AES_SUPPORTED)
-    if(CONFIG_SOC_AES_SUPPORT_DMA)
-        set(AES_PERIPHERAL_TYPE "dma")
-    else()
-        set(AES_PERIPHERAL_TYPE "block")
+if(SHA_PERIPHERAL_TYPE STREQUAL "core")
+    target_include_directories(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/sha/core/include")
+
+    if(CONFIG_SOC_SHA_GDMA)
+        set(SHA_CORE_SRCS "${COMPONENT_DIR}/port/sha/core/esp_sha_gdma_impl.c")
+    elseif(CONFIG_SOC_SHA_CRYPTO_DMA)
+        set(SHA_CORE_SRCS "${COMPONENT_DIR}/port/sha/core/esp_sha_crypto_dma_impl.c")
     endif()
+    target_sources(mbedcrypto PRIVATE  "${SHA_CORE_SRCS}")
 endif()
 
-if(SHA_PERIPHERAL_TYPE STREQUAL "dma")
-    target_include_directories(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/sha/dma/include")
-
-    if(NOT CONFIG_SOC_SHA_GDMA)
-        set(SHA_DMA_SRCS "${COMPONENT_DIR}/port/sha/dma/esp_sha_crypto_dma_impl.c")
-    else()
-        set(SHA_DMA_SRCS "${COMPONENT_DIR}/port/sha/dma/esp_sha_gdma_impl.c")
-    endif()
-    target_sources(mbedcrypto PRIVATE  "${SHA_DMA_SRCS}")
-endif()
-
-if(AES_PERIPHERAL_TYPE STREQUAL "dma")
+if(CONFIG_SOC_AES_SUPPORT_DMA)
     if(NOT CONFIG_SOC_AES_GDMA)
         set(AES_DMA_SRCS "${COMPONENT_DIR}/port/aes/dma/esp_aes_crypto_dma_impl.c")
     else()
@@ -221,7 +234,7 @@ if(AES_PERIPHERAL_TYPE STREQUAL "dma")
     target_sources(mbedcrypto PRIVATE  "${AES_DMA_SRCS}")
 endif()
 
-if(SHA_PERIPHERAL_TYPE STREQUAL "dma" OR AES_PERIPHERAL_TYPE STREQUAL "dma")
+if((SHA_PERIPHERAL_TYPE STREQUAL "core" AND CONFIG_SOC_SHA_SUPPORT_DMA) OR CONFIG_SOC_AES_SUPPORT_DMA)
     target_link_libraries(mbedcrypto PRIVATE idf::esp_mm)
     if(CONFIG_SOC_SHA_GDMA OR CONFIG_SOC_AES_GDMA)
         if(CONFIG_SOC_AXI_DMA_EXT_MEM_ENC_ALIGNMENT)
@@ -242,7 +255,7 @@ if(CONFIG_SOC_AES_SUPPORTED)
     target_include_directories(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/aes/include")
     target_sources(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/aes/esp_aes_xts.c"
                                   "${COMPONENT_DIR}/port/aes/esp_aes_common.c"
-                                  "${COMPONENT_DIR}/port/aes/${AES_PERIPHERAL_TYPE}/esp_aes.c"
+                                  "${COMPONENT_DIR}/port/aes/esp_aes.c"
     )
 endif()
 
@@ -252,9 +265,15 @@ if(CONFIG_SOC_SHA_SUPPORTED)
     )
 endif()
 
-# CONFIG_ESP_TLS_USE_DS_PERIPHERAL can be enabled only for the supported targets.
-if(CONFIG_ESP_TLS_USE_DS_PERIPHERAL)
-    target_sources(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/esp_ds/esp_rsa_sign_alt.c")
+if(CONFIG_SOC_DIG_SIGN_SUPPORTED)
+target_sources(mbedcrypto PRIVATE
+                "${COMPONENT_DIR}/port/esp_ds/esp_rsa_sign_alt.c"
+                "${COMPONENT_DIR}/port/esp_ds/esp_rsa_dec_alt.c"
+                "${COMPONENT_DIR}/port/esp_ds/esp_ds_common.c")
+endif()
+
+if(CONFIG_SOC_HMAC_SUPPORTED)
+    target_sources(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/esp_hmac_pbkdf2.c")
 endif()
 
 # Note: some mbedTLS hardware acceleration can be enabled/disabled by config.
@@ -285,27 +304,40 @@ if(CONFIG_MBEDTLS_HARDWARE_ECC)
                                        "${COMPONENT_DIR}/port/ecc/ecc_alt.c")
 endif()
 
-if(CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN OR CONFIG_MBEDTLS_HARDWARE_ECDSA_VERIFY)
-    target_sources(mbedcrypto PRIVATE  "${COMPONENT_DIR}/port/ecdsa/ecdsa_alt.c")
+if(CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN OR CONFIG_MBEDTLS_HARDWARE_ECDSA_VERIFY OR CONFIG_MBEDTLS_TEE_SEC_STG_ECDSA_SIGN)
+    target_sources(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/ecdsa/ecdsa_alt.c")
 
-    if(CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN)
-        target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=mbedtls_ecdsa_sign")
-        target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=mbedtls_ecdsa_sign_restartable")
-        target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=mbedtls_ecdsa_write_signature")
-        target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=mbedtls_ecdsa_write_signature_restartable")
+    set(WRAP_FUNCTIONS_SIGN
+        mbedtls_ecdsa_sign
+        mbedtls_ecdsa_sign_restartable
+        mbedtls_ecdsa_write_signature
+        mbedtls_ecdsa_write_signature_restartable)
+
+    set(WRAP_FUNCTIONS_VERIFY
+        mbedtls_ecdsa_verify
+        mbedtls_ecdsa_verify_restartable
+        mbedtls_ecdsa_read_signature
+        mbedtls_ecdsa_read_signature_restartable)
+
+    if(CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN OR CONFIG_MBEDTLS_TEE_SEC_STG_ECDSA_SIGN)
+        foreach(wrap ${WRAP_FUNCTIONS_SIGN})
+            target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=${wrap}")
+        endforeach()
 
         if(CONFIG_SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE)
             target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=mbedtls_ecdsa_sign_det_ext")
             target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=mbedtls_ecdsa_sign_det_restartable")
         endif()
-
     endif()
 
     if(CONFIG_MBEDTLS_HARDWARE_ECDSA_VERIFY)
-        target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=mbedtls_ecdsa_verify")
-        target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=mbedtls_ecdsa_verify_restartable")
-        target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=mbedtls_ecdsa_read_signature")
-        target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=mbedtls_ecdsa_read_signature_restartable")
+        foreach(wrap ${WRAP_FUNCTIONS_VERIFY})
+            target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=${wrap}")
+        endforeach()
+    endif()
+
+    if(CONFIG_MBEDTLS_TEE_SEC_STG_ECDSA_SIGN)
+        target_link_libraries(mbedcrypto PRIVATE idf::tee_sec_storage)
     endif()
 endif()
 
@@ -323,16 +355,27 @@ foreach(target ${mbedtls_targets})
     if(CONFIG_COMPILER_STATIC_ANALYZER AND CMAKE_C_COMPILER_ID STREQUAL "GNU") # TODO IDF-10087
         target_compile_options(${target} PRIVATE "-fno-analyzer")
     endif()
+    if(CONFIG_MBEDTLS_COMPILER_OPTIMIZATION_SIZE)
+        target_compile_options(${target} PRIVATE "-Os")
+    elseif(CONFIG_MBEDTLS_COMPILER_OPTIMIZATION_SPEED)
+        target_compile_options(${target} PRIVATE "-O2")
+    endif()
 endforeach()
+
+if(CONFIG_MBEDTLS_COMPILER_OPTIMIZATION_SIZE)
+    target_compile_options(${COMPONENT_LIB} PRIVATE "-Os")
+elseif(CONFIG_MBEDTLS_COMPILER_OPTIMIZATION_SPEED)
+    target_compile_options(${COMPONENT_LIB} PRIVATE "-O2")
+endif()
 
 if(CONFIG_MBEDTLS_DYNAMIC_BUFFER)
     set(WRAP_FUNCTIONS
         mbedtls_ssl_write_client_hello
         mbedtls_ssl_handshake_client_step
+        mbedtls_ssl_tls13_handshake_client_step
         mbedtls_ssl_handshake_server_step
         mbedtls_ssl_read
         mbedtls_ssl_write
-        mbedtls_ssl_session_reset
         mbedtls_ssl_free
         mbedtls_ssl_setup
         mbedtls_ssl_send_alert_message

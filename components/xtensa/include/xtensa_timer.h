@@ -100,7 +100,7 @@ Otherwise select the first low or medium priority interrupt timer available.
   #error "There is no suitable timer in this Xtensa configuration."
 #endif
 
-#define XT_CCOMPARE             (CCOMPARE + XT_TIMER_INDEX)
+#define XT_CCOMPARE             (XT_REG_CCOMPARE + XT_TIMER_INDEX)
 #define XT_TIMER_INTNUM         XCHAL_TIMER_INTERRUPT(XT_TIMER_INDEX)
 #define XT_TIMER_INTPRI         XCHAL_INT_LEVEL(XT_TIMER_INTNUM)
 #define XT_TIMER_INTEN          (1 << XT_TIMER_INTNUM)

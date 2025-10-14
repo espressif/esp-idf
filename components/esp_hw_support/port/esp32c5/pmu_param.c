@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +13,17 @@
 #include "soc/pmu_icg_mapping.h"
 #include "esp_private/esp_pmu.h"
 #include "soc/clk_tree_defs.h"
+#include "hal/efuse_ll.h"
+#include "hal/efuse_hal.h"
+#include "esp_hw_log.h"
+
+#define PMU_CLK_SRC_VAL(src) \
+        (((uint32_t)src == (uint32_t)SOC_MOD_CLK_XTAL)       ? 0 :  \
+        ((uint32_t)src == (uint32_t)SOC_MOD_CLK_RC_FAST)     ? 1 :  \
+        ((uint32_t)src == (uint32_t)SOC_MOD_CLK_PLL_F160M)   ? 2 :  \
+        ((uint32_t)src == (uint32_t)SOC_MOD_CLK_PLL_F240M)   ? 3 : 0)
+
+ESP_HW_LOG_ATTR_TAG(TAG, "pmu_param");
 
 #ifndef ARRAY_SIZE
 #define ARRAY_SIZE(a)   (sizeof(a) / sizeof((a)[0]))
@@ -106,14 +117,14 @@ const pmu_hp_system_power_param_t * pmu_hp_system_power_param_default(pmu_hp_mod
         .icg_sysclk_en    = 1,                    \
         .sysclk_slp_sel   = 0,                    \
         .icg_slp_sel      = 0,                    \
-        .dig_sysclk_sel   = SOC_CPU_CLK_SRC_XTAL  \
+        .dig_sysclk_sel   = PMU_CLK_SRC_VAL(SOC_MOD_CLK_XTAL) \
     } \
 }
 
 // TODO： PM-208
 #define PMU_HP_MODEM_CLOCK_CONFIG_DEFAULT() {          \
-    .icg_func   = 0,                                   \
-    .icg_apb    = 0,                                   \
+    .icg_func   = BIT(PMU_ICG_FUNC_ENA_SARADC),        \
+    .icg_apb    = BIT(PMU_ICG_APB_ENA_SARADC),         \
     .icg_modem  = {                                    \
         .code = PMU_HP_ICG_MODEM_CODE_MODEM            \
     }, \
@@ -122,7 +133,7 @@ const pmu_hp_system_power_param_t * pmu_hp_system_power_param_default(pmu_hp_mod
         .icg_sysclk_en    = 1,                         \
         .sysclk_slp_sel   = 1,                         \
         .icg_slp_sel      = 1,                         \
-        .dig_sysclk_sel   = SOC_CPU_CLK_SRC_PLL_F160M  \
+        .dig_sysclk_sel   = PMU_CLK_SRC_VAL(SOC_MOD_CLK_PLL_F160M) \
     } \
 }
 
@@ -137,7 +148,7 @@ const pmu_hp_system_power_param_t * pmu_hp_system_power_param_default(pmu_hp_mod
         .icg_sysclk_en    = 0,                    \
         .sysclk_slp_sel   = 1,                    \
         .icg_slp_sel      = 1,                    \
-        .dig_sysclk_sel   = SOC_CPU_CLK_SRC_XTAL  \
+        .dig_sysclk_sel   = PMU_CLK_SRC_VAL(SOC_MOD_CLK_XTAL) \
     } \
 }
 
@@ -284,8 +295,8 @@ const pmu_hp_system_analog_param_t * pmu_hp_system_analog_param_default(pmu_hp_m
         .hp_active_retention_mode       = 0, \
         .hp_sleep2active_retention_en   = 0, \
         .hp_modem2active_retention_en   = 0, \
-        .hp_sleep2active_backup_clk_sel = SOC_CPU_CLK_SRC_XTAL,      \
-        .hp_modem2active_backup_clk_sel = SOC_CPU_CLK_SRC_PLL_F160M, \
+        .hp_sleep2active_backup_clk_sel = PMU_CLK_SRC_VAL(SOC_MOD_CLK_XTAL),            \
+        .hp_modem2active_backup_clk_sel = PMU_CLK_SRC_VAL(SOC_CPU_CLK_SRC_PLL_F160M),   \
         .hp_sleep2active_backup_mode    = PMU_HP_RETENTION_REGDMA_CONFIG(0, 0), \
         .hp_modem2active_backup_mode    = PMU_HP_RETENTION_REGDMA_CONFIG(0, 2), \
         .hp_sleep2active_backup_en      = 0, \
@@ -299,7 +310,7 @@ const pmu_hp_system_analog_param_t * pmu_hp_system_analog_param_default(pmu_hp_m
         .hp_sleep2modem_backup_modem_clk_code  = 1, \
         .hp_modem_retention_mode        = 0, \
         .hp_sleep2modem_retention_en    = 0, \
-        .hp_sleep2modem_backup_clk_sel  = SOC_CPU_CLK_SRC_XTAL, \
+        .hp_sleep2modem_backup_clk_sel  = PMU_CLK_SRC_VAL(SOC_MOD_CLK_XTAL),    \
         .hp_sleep2modem_backup_mode     = PMU_HP_RETENTION_REGDMA_CONFIG(0, 1), \
         .hp_sleep2modem_backup_en       = 0, \
     }, \
@@ -313,8 +324,8 @@ const pmu_hp_system_analog_param_t * pmu_hp_system_analog_param_default(pmu_hp_m
         .hp_sleep_retention_mode        = 0, \
         .hp_modem2sleep_retention_en    = 0, \
         .hp_active2sleep_retention_en   = 0, \
-        .hp_modem2sleep_backup_clk_sel  = SOC_CPU_CLK_SRC_XTAL, \
-        .hp_active2sleep_backup_clk_sel = SOC_CPU_CLK_SRC_XTAL, \
+        .hp_modem2sleep_backup_clk_sel  = PMU_CLK_SRC_VAL(SOC_MOD_CLK_XTAL),    \
+        .hp_active2sleep_backup_clk_sel = PMU_CLK_SRC_VAL(SOC_MOD_CLK_XTAL),    \
         .hp_modem2sleep_backup_mode     = PMU_HP_RETENTION_REGDMA_CONFIG(1, 1), \
         .hp_active2sleep_backup_mode    = PMU_HP_RETENTION_REGDMA_CONFIG(1, 0), \
         .hp_modem2sleep_backup_en       = 0, \
@@ -419,23 +430,23 @@ uint32_t get_act_hp_dbias(void)
 {
     /* hp_cali_dbias is read from efuse to ensure that the hp_active_voltage is close to 1.15V
     */
+    uint32_t chip_version = efuse_hal_chip_revision();
     uint32_t hp_cali_dbias = HP_CALI_DBIAS_DEFAULT;
-    // uint32_t blk_version = efuse_hal_blk_version();
-    // if (blk_version >= 3) {
-    //     hp_cali_dbias = efuse_ll_get_active_hp_dbias();
-    //     if (hp_cali_dbias != 0) {
-    //         //efuse dbias need to add 2 to meet the CPU frequency switching
-    //         if (hp_cali_dbias + 2 > 31) {
-    //             hp_cali_dbias = 31;
-    //         } else {
-    //             hp_cali_dbias += 2;
-    //         }
-    //     } else {
-    //         hp_cali_dbias = HP_CALI_DBIAS_DEFAULT;
-    //         ESP_HW_LOGD(TAG, "hp_cali_dbias not burnt in efuse or wrong value was burnt in blk version: %" PRIu32 "\n", blk_version);
-    //     }
-    // }
+    uint32_t blk_version = efuse_hal_blk_version();
+    uint32_t hp_cali_dbias_efuse = 0;
+    if ((chip_version == 1 && blk_version >= 1) || (chip_version >= 100 && blk_version >= 2)) {
+        hp_cali_dbias_efuse = efuse_ll_get_active_hp_dbias();
+    }
 
+    if (hp_cali_dbias_efuse > 0) {
+        //efuse dbias need to add 3 to meet the CPU frequency switching
+        hp_cali_dbias = hp_cali_dbias_efuse + 16 + 3;
+        if (hp_cali_dbias > 31) {
+            hp_cali_dbias = 31;
+        }
+    } else {
+        ESP_HW_LOGD(TAG, "hp_cali_dbias not burnt in efuse, use default.");
+    }
     return hp_cali_dbias;
 }
 
@@ -443,24 +454,23 @@ uint32_t get_act_lp_dbias(void)
 {
     /* lp_cali_dbias is read from efuse to ensure that the lp_active_voltage is close to 1.15V
     */
+    uint32_t chip_version = efuse_hal_chip_revision();
+    uint32_t blk_version = efuse_hal_blk_version();
     uint32_t lp_cali_dbias = LP_CALI_DBIAS_DEFAULT;
-    // uint32_t blk_version = efuse_hal_blk_version();
-    // if (blk_version >= 3) {
-    //     lp_cali_dbias = efuse_ll_get_active_lp_dbias();
-    //     if (lp_cali_dbias != 0) {
-    //         //efuse dbias need to add 2 to meet the CPU frequency switching
-    //         if (lp_cali_dbias + 2 > 31) {
-    //             lp_cali_dbias = 31;
-    //         } else {
-    //             lp_cali_dbias += 2;
-    //         }
-    //     } else {
-    //         lp_cali_dbias = LP_CALI_DBIAS_DEFAULT;
-    //         ESP_HW_LOGD(TAG, "lp_cali_dbias not burnt in efuse or wrong value was burnt in blk version: %" PRIu32 "\n", blk_version);
-    //     }
-    // } else {
-    //     ESP_HW_LOGD(TAG, "blk_version is less than 3, act dbias not burnt in efuse\n");
-    // }
+    uint32_t lp_cali_dbias_efuse = 0;
+    if ((chip_version == 1 && blk_version >= 1) || (chip_version >= 100 && blk_version >= 2)) {
+        lp_cali_dbias_efuse = efuse_ll_get_active_lp_dbias();
+    }
+
+    if (lp_cali_dbias_efuse > 0) {
+        //efuse dbias need to add 3 to meet the CPU frequency switching
+        lp_cali_dbias = lp_cali_dbias_efuse + 16 + 3;
+        if (lp_cali_dbias > 31) {
+            lp_cali_dbias = 31;
+        }
+    } else {
+        ESP_HW_LOGD(TAG, "lp_cali_dbias not burnt in efuse, use default.");
+    }
 
     return lp_cali_dbias;
 }

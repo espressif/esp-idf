@@ -1,6 +1,0 @@
-# Default sdkconfig parameters to use the OTA
-# partition table layout, with a 4MB flash size
-CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y
-CONFIG_PARTITION_TABLE_TWO_OTA=y
-# Enable ESP HTTPS OTA decryption callback
-CONFIG_ESP_HTTPS_OTA_DECRYPT_CB=y

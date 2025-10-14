@@ -12,7 +12,7 @@
 #include <stddef.h>
 #include "sdkconfig.h"
 #include "bootloader_console.h"
-#include "esp_rom_uart.h"
+#include "esp_rom_serial_output.h"
 #include "esp_rom_sys.h"
 #if CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/rom/usb/chip_usb_dw_wrapper.h"

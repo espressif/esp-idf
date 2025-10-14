@@ -11,7 +11,7 @@
 extern "C" {
 #endif
 
-#if CONFIG_PARLIO_ISR_IRAM_SAFE
+#if CONFIG_PARLIO_TX_ISR_CACHE_SAFE || CONFIG_PARLIO_RX_ISR_CACHE_SAFE
 #define TEST_PARLIO_CALLBACK_ATTR   IRAM_ATTR
 #define TEST_PARLIO_MEM_ALLOC_CAPS  (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
 #else
@@ -22,6 +22,7 @@ extern "C" {
 
 #if CONFIG_IDF_TARGET_ESP32C6
 #define TEST_CLK_GPIO       10
+#define TEST_EXT_CLK_GPIO   12
 #define TEST_VALID_GPIO     11
 #define TEST_DATA0_GPIO     0
 #define TEST_DATA1_GPIO     1
@@ -33,6 +34,7 @@ extern "C" {
 #define TEST_DATA7_GPIO     7
 #elif CONFIG_IDF_TARGET_ESP32C5
 #define TEST_CLK_GPIO       25
+#define TEST_EXT_CLK_GPIO   10
 #define TEST_VALID_GPIO     26
 #define TEST_DATA0_GPIO     0
 #define TEST_DATA1_GPIO     1
@@ -44,6 +46,7 @@ extern "C" {
 #define TEST_DATA7_GPIO     7
 #elif CONFIG_IDF_TARGET_ESP32H2
 #define TEST_VALID_GPIO     2
+#define TEST_EXT_CLK_GPIO   4
 #define TEST_CLK_GPIO       3
 #define TEST_DATA0_GPIO     8
 #define TEST_DATA1_GPIO     5
@@ -55,6 +58,7 @@ extern "C" {
 #define TEST_DATA7_GPIO     12
 #elif CONFIG_IDF_TARGET_ESP32P4
 #define TEST_CLK_GPIO       33
+#define TEST_EXT_CLK_GPIO   34
 #define TEST_VALID_GPIO     32
 #define TEST_DATA0_GPIO     24
 #define TEST_DATA1_GPIO     25

@@ -21,7 +21,7 @@
 #define LX_INTR_A2_OFFSET   4
 #define LX_INTR_A3_OFFSET   8
 #define LX_INTR_A4_OFFSET   12
-#define EXCSAVE_X           EXCSAVE_5
+#define XT_REG_EXCSAVE_X    XT_REG_EXCSAVE_5
 #define RFI_X               5
 
 #elif CONFIG_ESP_SYSTEM_CHECK_INT_LEVEL_4
@@ -31,7 +31,7 @@
 #define LX_INTR_A2_OFFSET   4
 #define LX_INTR_A3_OFFSET   8
 #define LX_INTR_A4_OFFSET   12
-#define EXCSAVE_X           EXCSAVE_4
+#define XT_REG_EXCSAVE_X    XT_REG_EXCSAVE_4
 #define RFI_X               4
 
 #endif /* CONFIG_ESP_SYSTEM_CHECK_INT_LEVEL_5 */
@@ -55,14 +55,14 @@ esp_ipc_isr_handler:
     s32i    a2, a0, LX_INTR_A2_OFFSET
     s32i    a3, a0, LX_INTR_A3_OFFSET
     s32i    a4, a0, LX_INTR_A4_OFFSET
-    rsr     a2, EXCSAVE_X
+    rsr     a2, XT_REG_EXCSAVE_X
     s32i    a2, a0, LX_INTR_A0_OFFSET
 
-    /* disable nested iterrupts */
+    /* disable nested interrupts */
     /* PS.EXCM is changed from 1 to 0 . It allows using usually exception handler instead of the Double exception handler. */
     /* PS_UM = 1 */
     movi    a0, PS_INTLEVEL(5) | PS_UM
-    wsr     a0, PS
+    wsr     a0, XT_REG_PS
     rsync
     /* restore PS will be done by rfi the end */
 
@@ -75,7 +75,7 @@ esp_ipc_isr_handler:
 #elif CONFIG_ESP_SYSTEM_CHECK_INT_LEVEL_4
     /* This int is edge-triggered and needs clearing. */
     movi    a3, (1 << ETS_IPC_ISR_INUM)
-    wsr     a3, INTCLEAR
+    wsr     a3, XT_REG_INTCLEAR
 #endif /* CONFIG_ESP_SYSTEM_CHECK_INT_LEVEL_5 */
 
     /* get CORE_ID */
@@ -118,6 +118,6 @@ esp_ipc_isr_handler:
     s32i    a0, a0, 0
 
     /* restore a0 */
-    rsr     a0, EXCSAVE_X
+    rsr     a0, XT_REG_EXCSAVE_X
     /* restores PS from EPS[X] and jumps to the address in EPC[X] */
     rfi     RFI_X

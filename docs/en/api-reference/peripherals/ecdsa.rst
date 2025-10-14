@@ -12,15 +12,44 @@ ECDSA peripheral can help to establish **Secure Device Identity** for TLS mutual
 Supported Features
 ------------------
 
-- ECDSA digital signature generation and verification
-- Two different elliptic curves, namely P-192 and P-256 (FIPS 186-3 specification)
-- Two hash algorithms for message hash in the ECDSA operation, namely SHA-224 and SHA-256 (FIPS PUB 180-4 specification)
+.. list::
+
+    - ECDSA digital signature generation and verification
+    :SOC_ECDSA_SUPPORT_CURVE_P384: - Three different elliptic curves, namely P-192, P-256 and P-384 (FIPS 186-3 specification)
+    :not SOC_ECDSA_SUPPORT_CURVE_P384: - Two different elliptic curves, namely P-192 and P-256 (FIPS 186-3 specification)
+    :SOC_ECDSA_SUPPORT_CURVE_P384: - Three hash algorithms for message hash in the ECDSA operation, namely SHA-224, SHA-256 and SHA-384 (FIPS PUB 180-4 specification)
+    :not SOC_ECDSA_SUPPORT_CURVE_P384: - Two hash algorithms for message hash in the ECDSA operation, namely SHA-224 and SHA-256 (FIPS PUB 180-4 specification)
 
 
 ECDSA on {IDF_TARGET_NAME}
 --------------------------
 
 On {IDF_TARGET_NAME}, the ECDSA module works with a secret key burnt into an eFuse block. This eFuse key is made completely inaccessible (default mode) for any resources outside the cryptographic modules, thus avoiding key leakage.
+
+ECDSA Key Storage
+^^^^^^^^^^^^^^^^^
+
+.. only:: SOC_ECDSA_SUPPORT_CURVE_P384
+
+    ECDSA private keys are stored in eFuse key blocks. The number of key blocks required depends on the curve size:
+
+    - **P-256 curve**: Require one eFuse key block (256 bits)
+    - **P-384 curve**: Requires two eFuse key blocks (512 bits total)
+
+    For curves requiring two key blocks (like P-384), configure the following fields:
+
+    - Set :cpp:member:`esp_tls_cfg_t::ecdsa_key_efuse_blk` to the low block number
+    - Set :cpp:member:`esp_tls_cfg_t::ecdsa_key_efuse_blk_high` to the high block number
+
+    For single-block curves (like P-256), only set :cpp:member:`esp_tls_cfg_t::ecdsa_key_efuse_blk` and leave :cpp:member:`esp_tls_cfg_t::ecdsa_key_efuse_blk_high` as 0 or unassigned.
+
+.. only:: not SOC_ECDSA_SUPPORT_CURVE_P384
+
+    ECDSA private keys are stored in eFuse key blocks. One eFuse key block (256 bits) is required for P-256 curve.
+
+    Configure the following field:
+
+    - Set :cpp:member:`esp_tls_cfg_t::ecdsa_key_efuse_blk` to the block number and leave :cpp:member:`esp_tls_cfg_t::ecdsa_key_efuse_blk_high` as 0 or unassigned.
 
 ECDSA key can be programmed externally through ``idf.py`` script. Here is an example of how to program the ECDSA key:
 
@@ -61,13 +90,30 @@ Following code snippet uses :cpp:func:`esp_efuse_write_key` to set physical key 
         // writing key failed, maybe written already
     }
 
+
+.. only:: SOC_ECDSA_P192_CURVE_DEFAULT_DISABLED
+
+    ECDSA Curve Configuration
+    -------------------------
+
+    .. only:: esp32h2
+
+        The ECDSA peripheral of the ESP32-H2 supports both ECDSA-P192 and ECDSA-P256 operations. However, starting with ESP32-H2 revision 1.2, only ECDSA-P256 operations are enabled by default. You can enable ECDSA-P192 operations using the following configuration options:
+
+    .. only:: not esp32h2
+
+        The ECDSA peripheral of {IDF_TARGET_NAME} supports both ECDSA-P192 and ECDSA-P256 operations, but only ECDSA-P256 operations are enabled by default. You can enable ECDSA-P192 operations through the following configuration options:
+
+    - :ref:`CONFIG_ESP_ECDSA_ENABLE_P192_CURVE` enables support for ECDSA-P192 curve operations, allowing the device to perform ECDSA operations with both 192-bit and 256-bit curves. However, if ECDSA-P192 operations have already been permanently disabled during eFuse write protection, enabling this option can not re-enable ECDSA-P192 curve operations.
+
+    - :cpp:func:`esp_efuse_enable_ecdsa_p192_curve_mode()` enables ECDSA-P192 curve operations programmatically by writing the appropriate value to the eFuse, allowing both P-192 and P-256 curve operations. Note that this API will fail if the eFuse is already write-protected.
+
 .. only:: SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE
 
     Deterministic Signature Generation
     -----------------------------------
 
     The ECDSA peripheral of {IDF_TARGET_NAME} also supports generation of deterministic signatures using deterministic derivation of the parameter K as specified in the `RFC 6979 <https://tools.ietf.org/html/rfc6979>`_ section 3.2.
-
 
 Non-Determinisitic Signature Generation
 ---------------------------------------

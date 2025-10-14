@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -110,7 +110,10 @@ static inline void mcpwm_ll_enable_bus_clock(int group_id, bool enable)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define mcpwm_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; mcpwm_ll_enable_bus_clock(__VA_ARGS__)
+#define mcpwm_ll_enable_bus_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        mcpwm_ll_enable_bus_clock(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Reset the MCPWM module
@@ -130,7 +133,10 @@ static inline void mcpwm_ll_reset_register(int group_id)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define mcpwm_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; mcpwm_ll_reset_register(__VA_ARGS__)
+#define mcpwm_ll_reset_register(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        mcpwm_ll_reset_register(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Enable MCPWM function clock
@@ -149,7 +155,10 @@ static inline void mcpwm_ll_group_enable_clock(int group_id, bool en)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define mcpwm_ll_group_enable_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; mcpwm_ll_group_enable_clock(__VA_ARGS__)
+#define mcpwm_ll_group_enable_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        mcpwm_ll_group_enable_clock(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Set the clock source for MCPWM
@@ -183,7 +192,10 @@ static inline void mcpwm_ll_group_set_clock_source(int group_id, soc_module_clk_
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define mcpwm_ll_group_set_clock_source(...) (void)__DECLARE_RCC_ATOMIC_ENV; mcpwm_ll_group_set_clock_source(__VA_ARGS__)
+#define mcpwm_ll_group_set_clock_source(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        mcpwm_ll_group_set_clock_source(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Set the MCPWM group clock prescale
@@ -204,7 +216,10 @@ static inline void mcpwm_ll_group_set_clock_prescale(int group_id, int prescale)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define mcpwm_ll_group_set_clock_prescale(...) (void)__DECLARE_RCC_ATOMIC_ENV; mcpwm_ll_group_set_clock_prescale(__VA_ARGS__)
+#define mcpwm_ll_group_set_clock_prescale(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        mcpwm_ll_group_set_clock_prescale(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Enable update MCPWM active registers from shadow registers
@@ -1731,48 +1746,6 @@ static inline void mcpwm_ll_etm_enable_evt_comparator_event(mcpwm_dev_t *mcpwm, 
     } else {
         mcpwm->evt_en2.val &= ~(1 << (operator_id + 3 * evt_cmpr_id));
     }
-}
-
-//////////////////////////////////////////Deprecated Functions//////////////////////////////////////////////////////////
-/////////////////////////////The following functions are only used by the legacy driver/////////////////////////////////
-/////////////////////////////They might be removed in the next major release (ESP-IDF 6.0)//////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-static inline uint32_t mcpwm_ll_timer_get_peak(mcpwm_dev_t *mcpwm, int timer_id, bool symmetric)
-{
-    return HAL_FORCE_READ_U32_REG_FIELD(mcpwm->timer[timer_id].timer_cfg0, timer_period) + (symmetric ? 0 : 1);
-}
-
-static inline mcpwm_timer_count_mode_t mcpwm_ll_timer_get_count_mode(mcpwm_dev_t *mcpwm, int timer_id)
-{
-    switch (mcpwm->timer[timer_id].timer_cfg1.timer_mod) {
-    case 1:
-        return MCPWM_TIMER_COUNT_MODE_UP;
-    case 2:
-        return MCPWM_TIMER_COUNT_MODE_DOWN;
-    case 3:
-        return MCPWM_TIMER_COUNT_MODE_UP_DOWN;
-    case 0:
-    default:
-        return MCPWM_TIMER_COUNT_MODE_PAUSE;
-    }
-}
-
-static inline uint32_t mcpwm_ll_operator_get_compare_value(mcpwm_dev_t *mcpwm, int operator_id, int compare_id)
-{
-    return HAL_FORCE_READ_U32_REG_FIELD(mcpwm->operators[operator_id].timestamp[compare_id], cmpr);
-}
-
-__attribute__((always_inline))
-static inline uint32_t mcpwm_ll_intr_get_capture_status(mcpwm_dev_t *mcpwm)
-{
-    return (mcpwm->int_st.val >> 27) & 0x07;
-}
-
-__attribute__((always_inline))
-static inline void mcpwm_ll_intr_clear_capture_status(mcpwm_dev_t *mcpwm, uint32_t capture_mask)
-{
-    mcpwm->int_clr.val = (capture_mask & 0x07) << 27;
 }
 
 #ifdef __cplusplus

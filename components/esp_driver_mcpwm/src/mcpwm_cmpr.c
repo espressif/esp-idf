@@ -1,31 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <stdlib.h>
-#include <stdarg.h>
-#include <sys/cdefs.h>
-#include "sdkconfig.h"
-#if CONFIG_MCPWM_ENABLE_DEBUG_LOG
-// The local log level must be defined before including esp_log.h
-// Set the maximum log level for this source file
-#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
-#endif
-#include "freertos/FreeRTOS.h"
-#include "esp_attr.h"
-#include "esp_check.h"
-#include "esp_err.h"
-#include "esp_log.h"
-#include "esp_memory_utils.h"
-#include "soc/soc_caps.h"
-#include "soc/mcpwm_periph.h"
-#include "hal/mcpwm_ll.h"
-#include "driver/mcpwm_cmpr.h"
 #include "mcpwm_private.h"
-
-static const char *TAG = "mcpwm";
+#include "esp_memory_utils.h"
+#include "driver/mcpwm_cmpr.h"
 
 static void mcpwm_comparator_default_isr(void *args);
 
@@ -239,7 +220,7 @@ esp_err_t mcpwm_comparator_register_event_callbacks(mcpwm_cmpr_handle_t cmpr, co
     int oper_id = oper->oper_id;
     int cmpr_id = cmpr->cmpr_id;
 
-#if CONFIG_MCPWM_ISR_IRAM_SAFE
+#if CONFIG_MCPWM_ISR_CACHE_SAFE
     if (cbs->on_reach) {
         ESP_RETURN_ON_FALSE(esp_ptr_in_iram(cbs->on_reach), ESP_ERR_INVALID_ARG, TAG, "on_reach callback not in IRAM");
     }
@@ -269,7 +250,7 @@ esp_err_t mcpwm_comparator_register_event_callbacks(mcpwm_cmpr_handle_t cmpr, co
     return ESP_OK;
 }
 
-static void IRAM_ATTR mcpwm_comparator_default_isr(void *args)
+static void mcpwm_comparator_default_isr(void *args)
 {
     mcpwm_oper_cmpr_t *cmpr = (mcpwm_oper_cmpr_t *)args;
     mcpwm_oper_t *oper = cmpr->base.oper;

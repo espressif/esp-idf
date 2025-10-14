@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -348,6 +348,17 @@ FORCE_INLINE_ATTR void pmu_ll_imm_set_lp_rootclk_sel(pmu_dev_t *hw, bool rootclk
     }
 }
 
+FORCE_INLINE_ATTR void pmu_ll_imm_set_pad_slp_sel(pmu_dev_t *hw, bool sleep_sel)
+{
+    if (sleep_sel) {
+        // Switch the pad configuration from active state to sleep state
+        hw->imm.pad_hold_all.tie_high_pad_slp_sel = 1;
+    } else {
+        // Switch the pad configuration from sleep state to active state
+        hw->imm.pad_hold_all.tie_low_pad_slp_sel = 1;
+    }
+}
+
 FORCE_INLINE_ATTR void pmu_ll_imm_set_hp_pad_hold_all(pmu_dev_t *hw, bool hold_all)
 {
     if (hold_all) {
@@ -482,6 +493,11 @@ FORCE_INLINE_ATTR void pmu_ll_hp_clear_reject_cause(pmu_dev_t *hw)
     hw->wakeup.cntl4.slp_reject_cause_clr = 1;
 }
 
+FORCE_INLINE_ATTR void pmu_ll_hp_enable_sw_intr(pmu_dev_t *hw, bool enable)
+{
+    hw->hp_ext.int_ena.sw = enable;
+}
+
 FORCE_INLINE_ATTR bool pmu_ll_hp_is_sleep_wakeup(pmu_dev_t *hw)
 {
     return (hw->hp_ext.int_raw.wakeup == 1);
@@ -490,6 +506,16 @@ FORCE_INLINE_ATTR bool pmu_ll_hp_is_sleep_wakeup(pmu_dev_t *hw)
 FORCE_INLINE_ATTR bool pmu_ll_hp_is_sleep_reject(pmu_dev_t *hw)
 {
     return (hw->hp_ext.int_raw.reject == 1);
+}
+
+FORCE_INLINE_ATTR void pmu_ll_lp_trigger_sw_intr(pmu_dev_t *hw)
+{
+    hw->hp_lp_cpu_comm.lp_trigger_hp = 1;
+}
+
+FORCE_INLINE_ATTR void pmu_ll_hp_trigger_sw_intr(pmu_dev_t *hw)
+{
+    hw->hp_lp_cpu_comm.hp_trigger_lp = 1;
 }
 
 FORCE_INLINE_ATTR void pmu_ll_hp_clear_sw_intr_status(pmu_dev_t *hw)
@@ -627,9 +653,9 @@ FORCE_INLINE_ATTR uint32_t pmu_ll_hp_get_analog_wait_target_cycle(pmu_dev_t *hw)
     return HAL_FORCE_READ_U32_REG_FIELD(hw->wakeup.cntl7, ana_wait_target);
 }
 
-FORCE_INLINE_ATTR uint32_t pmu_ll_hp_set_lite_wakeup_enable(pmu_dev_t *hw, bool wakeup_en)
+FORCE_INLINE_ATTR void pmu_ll_hp_set_lite_wakeup_enable(pmu_dev_t *hw, bool wakeup_en)
 {
-    return hw->wakeup.cntl8.lp_lite_wakeup_ena = wakeup_en;
+    hw->wakeup.cntl8.lp_lite_wakeup_ena = wakeup_en;
 }
 
 FORCE_INLINE_ATTR void pmu_ll_hp_set_digital_power_supply_wait_cycle(pmu_dev_t *hw, uint32_t cycle)
@@ -652,14 +678,27 @@ FORCE_INLINE_ATTR uint32_t pmu_ll_hp_get_digital_power_up_wait_cycle(pmu_dev_t *
     return hw->power.wait_timer0.powerup_timer;
 }
 
-FORCE_INLINE_ATTR void pmu_ll_set_dcdc_force_power_up(pmu_dev_t *hw, bool fpu)
+FORCE_INLINE_ATTR void pmu_ll_set_dcdc_switch_force_power_up(pmu_dev_t *hw, bool fpu)
 {
+    hw->power.dcdc_switch.force_pd = 0;
     hw->power.dcdc_switch.force_pu = fpu;
 }
 
-FORCE_INLINE_ATTR void pmu_ll_set_dcdc_force_power_down(pmu_dev_t *hw, bool fpd)
+FORCE_INLINE_ATTR void pmu_ll_set_dcdc_switch_force_power_down(pmu_dev_t *hw, bool fpd)
 {
+    hw->power.dcdc_switch.force_pu = 0;
     hw->power.dcdc_switch.force_pd = fpd;
+}
+
+FORCE_INLINE_ATTR void pmu_ll_set_dcdc_en(pmu_dev_t *hw, bool en)
+{
+    if (en) {
+        hw->dcm_ctrl.done_force = 0;
+        hw->dcm_ctrl.on_req = 1;
+    } else {
+        hw->dcm_ctrl.off_req = 1;
+        hw->dcm_ctrl.done_force = 1;
+    }
 }
 
 /**
@@ -678,6 +717,7 @@ static inline  uint32_t pmu_ll_ext1_get_wakeup_status(void)
 static inline void pmu_ll_ext1_clear_wakeup_status(void)
 {
     REG_SET_BIT(PMU_EXT_WAKEUP_CNTL_REG, PMU_EXT_WAKEUP_STATUS_CLR);
+    REG_CLR_BIT(PMU_EXT_WAKEUP_CNTL_REG, PMU_EXT_WAKEUP_STATUS_CLR);
 }
 
 /**

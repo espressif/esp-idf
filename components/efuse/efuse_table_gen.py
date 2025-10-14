@@ -126,13 +126,13 @@ class FuseTable(list):
                 field_name = p.field_name + p.group
                 if field_name != '' and len(duplicates.intersection([field_name])) != 0:
                     fl_error = True
-                    print('Field at %s, %s, %s, %s have dublicate field_name' %
+                    print('Field at %s, %s, %s, %s have duplicate field_name' %
                           (p.field_name, p.efuse_block, p.bit_start, p.bit_count))
             if fl_error is True:
                 raise InputError('Field names must be unique')
 
     def check_struct_field_name(self):
-        # check that stuctured fields have a root field
+        # check that structured fields have a root field
         for p in self:
             if '.' in p.field_name:
                 name = ''
@@ -454,7 +454,7 @@ def process_input_file(file, type_table):
 
 def ckeck_md5_in_file(md5, filename):
     if os.path.exists(filename):
-        with open(filename, 'r') as f:
+        with open(filename, 'r', encoding='utf-8') as f:
             for line in f:
                 if md5 in line:
                     return True
@@ -478,12 +478,12 @@ def create_output_files(name, output_table, debug):
     if ckeck_md5_in_file(output_table.md5_digest_table, file_c_path) is False:
         status('Creating efuse *.h file ' + file_h_path + ' ...')
         output = output_table.to_header(file_name)
-        with open(file_h_path, 'w') as f:
+        with open(file_h_path, 'w', encoding='utf-8') as f:
             f.write(output)
 
         status('Creating efuse *.c file ' + file_c_path + ' ...')
         output = output_table.to_c_file(file_name, debug)
-        with open(file_c_path, 'w') as f:
+        with open(file_c_path, 'w', encoding='utf-8') as f:
             f.write(output)
     else:
         print('Source files do not require updating correspond to csv file.')
@@ -495,8 +495,7 @@ def main():
     global idf_target
 
     parser = argparse.ArgumentParser(description='ESP32 eFuse Manager')
-    parser.add_argument('--idf_target', '-t', help='Target chip type', choices=['esp32', 'esp32s2', 'esp32s3', 'esp32c3',
-                        'esp32c2', 'esp32c6', 'esp32h2', 'esp32p4', 'esp32c5', 'esp32c61'], default='esp32')
+    parser.add_argument('--idf_target', '-t', help='Target chip type', default='esp32')
     parser.add_argument('--quiet', '-q', help="Don't print non-critical status messages to stderr", action='store_true')
     parser.add_argument('--debug', help='Create header file with debug info', default=False, action='store_false')
     parser.add_argument('--info', help='Print info about range of used bits', default=False, action='store_true')

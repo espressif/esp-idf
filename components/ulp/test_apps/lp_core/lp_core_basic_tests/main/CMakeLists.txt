@@ -6,6 +6,7 @@ endif()
 
 if(CONFIG_SOC_ULP_LP_UART_SUPPORTED)
     list(APPEND app_sources "test_lp_core_uart.c")
+    list(APPEND app_sources "test_lp_core_uart_wakeup.c")
 endif()
 
 if(CONFIG_SOC_LP_SPI_SUPPORTED)
@@ -24,6 +25,8 @@ if(CONFIG_SOC_LP_VAD_SUPPORTED)
     list(APPEND app_sources "test_lp_core_vad.c")
 endif()
 
+list(APPEND app_sources "test_lp_core_prefix.c")
+
 set(lp_core_sources         "lp_core/test_main.c")
 set(lp_core_sources_counter "lp_core/test_main_counter.c")
 
@@ -39,6 +42,7 @@ endif()
 
 if(CONFIG_SOC_ULP_LP_UART_SUPPORTED)
     set(lp_core_sources_uart "lp_core/test_main_uart.c")
+    set(lp_core_sources_uart_wakeup "lp_core/test_main_uart_wakeup.c")
 endif()
 
 if(CONFIG_SOC_LP_SPI_SUPPORTED)
@@ -57,6 +61,7 @@ endif()
 idf_component_register(SRCS ${app_sources}
                        INCLUDE_DIRS "lp_core"
                        REQUIRES ulp unity esp_timer test_utils
+                       PRIV_REQUIRES driver esp_driver_gptimer esp_driver_tsens
                        WHOLE_ARCHIVE
                        EMBED_FILES "test_vad_8k.pcm")
 
@@ -78,6 +83,7 @@ endif()
 
 if(CONFIG_SOC_ULP_LP_UART_SUPPORTED)
     ulp_embed_binary(lp_core_test_app_uart "${lp_core_sources_uart}" "${lp_core_exp_dep_srcs}")
+    ulp_embed_binary(lp_core_test_app_uart_wakeup "${lp_core_sources_uart_wakeup}" "${lp_core_exp_dep_srcs}")
 endif()
 
 if(CONFIG_SOC_LP_SPI_SUPPORTED)
@@ -92,3 +98,8 @@ endif()
 if(CONFIG_SOC_LP_VAD_SUPPORTED)
     ulp_embed_binary(lp_core_test_app_vad "${lp_core_sources_vad}" "${lp_core_exp_dep_srcs}")
 endif()
+
+ulp_embed_binary(lp_core_test_app_prefix1 "lp_core/test_main_prefix1.c"  "${lp_core_exp_dep_srcs}" PREFIX "ulp1_")
+ulp_embed_binary(lp_core_test_app_prefix2 "lp_core/test_main_prefix2.c"  "${lp_core_exp_dep_srcs}" PREFIX "ulp2_")
+
+ulp_embed_binary(lp_core_test_app_exception "lp_core/test_main_exception.c" "${lp_core_exp_dep_srcs}")

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,13 +9,11 @@
 #include <stdint.h>
 #include "soc/soc_caps.h"
 #include "hal/gpio_types.h"
-#include "sdkconfig.h"
 
-#if !CONFIG_IDF_TARGET_ESP32P4 && !CONFIG_IDF_TARGET_ESP32C5 && !CONFIG_IDF_TARGET_ESP32C61 //TODO: IDF-7532, [ESP32C5] IDF-8636, [ESP32C61] IDF-9244
-#if !SOC_LP_TIMER_SUPPORTED
+#if SOC_IS(ESP32) || SOC_IS(ESP32C2) || SOC_IS(ESP32C3) || SOC_IS(ESP32S2) || SOC_IS(ESP32S3)
 #include "hal/rtc_cntl_ll.h"
 #endif
-#endif  //#if !CONFIG_IDF_TARGET_ESP32P4 && !CONFIG_IDF_TARGET_ESP32C5 && !CONFIG_IDF_TARGET_ESP32C61
+
 #if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
 #include "hal/rtc_io_ll.h"
 #endif

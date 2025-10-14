@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -37,6 +37,9 @@
 #define PROFILE_NUM      1
 #define PROFILE_A_APP_ID 0
 #define INVALID_HANDLE   0
+#if CONFIG_EXAMPLE_INIT_DEINIT_LOOP
+#define EXAMPLE_TEST_COUNT 50
+#endif
 
 static char remote_device_name[ESP_BLE_ADV_NAME_LEN_MAX] = "ESP_GATTS_DEMO";
 static bool connect    = false;
@@ -325,7 +328,9 @@ static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
     uint8_t adv_name_len = 0;
     switch (event) {
     case ESP_GAP_BLE_SCAN_PARAM_SET_COMPLETE_EVT: {
-        //the unit of the duration is second
+        // The unit of duration is seconds.
+        // If duration is set to 0, scanning will continue indefinitely
+        // until esp_ble_gap_stop_scanning is explicitly called.
         uint32_t duration = 30;
         esp_ble_gap_start_scanning(duration);
         break;
@@ -482,7 +487,8 @@ void app_main(void)
         return;
     }
 
-    ret = esp_bluedroid_init();
+    esp_bluedroid_config_t cfg = BT_BLUEDROID_INIT_CONFIG_DEFAULT();
+    ret = esp_bluedroid_init_with_cfg(&cfg);;
     if (ret) {
         ESP_LOGE(GATTC_TAG, "%s init bluetooth failed: %s", __func__, esp_err_to_name(ret));
         return;
@@ -494,14 +500,29 @@ void app_main(void)
         return;
     }
 
-    //register the  callback function to the gap module
+#if CONFIG_EXAMPLE_INIT_DEINIT_LOOP
+    for(int i = 0; i < EXAMPLE_TEST_COUNT; i++) {
+        ESP_ERROR_CHECK( esp_bluedroid_disable() );
+        ESP_ERROR_CHECK( esp_bluedroid_deinit() );
+        vTaskDelay(10/portTICK_PERIOD_MS);
+        ESP_LOGI(GATTC_TAG, "Free memory: %" PRIu32 " bytes", esp_get_free_heap_size());
+        esp_bluedroid_config_t cfg = BT_BLUEDROID_INIT_CONFIG_DEFAULT();
+        ESP_ERROR_CHECK( esp_bluedroid_init_with_cfg(&cfg) );
+        ESP_ERROR_CHECK( esp_bluedroid_enable() );
+        vTaskDelay(10/portTICK_PERIOD_MS);
+    }
+    return;
+#endif
+
+    // Note: Avoid performing time-consuming operations within callback functions.
+    // Register the callback function to the gap module
     ret = esp_ble_gap_register_callback(esp_gap_cb);
     if (ret){
         ESP_LOGE(GATTC_TAG, "%s gap register failed, error code = %x", __func__, ret);
         return;
     }
 
-    //register the callback function to the gattc module
+    // Register the callback function to the gattc module
     ret = esp_ble_gattc_register_callback(esp_gattc_cb);
     if(ret){
         ESP_LOGE(GATTC_TAG, "%s gattc register failed, error code = %x", __func__, ret);
@@ -522,8 +543,8 @@ void app_main(void)
     * This code is intended for debugging and prints all HCI data.
     * To enable it, turn on the "BT_HCI_LOG_DEBUG_EN" configuration option.
     * The output HCI data can be parsed using the script:
-    * esp-idf/tools/bt/bt_hci_to_btsnoop.py.
-    * For detailed instructions, refer to esp-idf/tools/bt/README.md.
+    * esp-idf/tools/bt/bt_hci_to_btsnoop/bt_hci_to_btsnoop.py.
+    * For detailed instructions, refer to esp-idf/tools/bt/bt_hci_to_btsnoop/README.md.
     */
 
     /*
@@ -532,7 +553,7 @@ void app_main(void)
         extern void bt_hci_log_hci_adv_show(void);
         bt_hci_log_hci_data_show();
         bt_hci_log_hci_adv_show();
-        vTaskDelay(1000 / portNUM_PROCESSORS);
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
     */
 

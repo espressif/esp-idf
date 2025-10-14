@@ -49,4 +49,6 @@ void btc_config_lock(void);
 void btc_config_unlock(void);
 
 int btc_config_file_path_update(const char *file_path);
+
+int btc_config_file_path_get(char *file_path);
 #endif

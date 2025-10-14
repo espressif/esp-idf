@@ -201,6 +201,8 @@ typedef void (tBTM_SET_LOCAL_PRIVACY_CBACK) (UINT8 status);
 typedef void (tBTM_SET_RPA_TIMEOUT_CMPL_CBACK) (UINT8 status);
 
 typedef void (tBTM_ADD_DEV_TO_RESOLVING_LIST_CMPL_CBACK) (UINT8 status);
+
+typedef void (tBTM_BLE_VENDOR_HCI_EVT_CBACK) (UINT8 subevt_code, UINT8 param_len, UINT8 *params);
 /*******************************
 **  Device Coexist status
 ********************************/
@@ -809,6 +811,16 @@ typedef struct {
     BD_ADDR     rem_bda;
 } tBTM_RSSI_RESULTS;
 
+/* Structure returned with read channel map event (in tBTM_CMPL_CB callback function)
+** in response to BTM_ReadChannelMap call.
+*/
+typedef struct {
+    tBTM_STATUS status;                 /* BTM operation status */
+    UINT8       hci_status;              /* HCI command complete status */
+    UINT8       channel_map[5]; /* Channel map (5 bytes) */
+    BD_ADDR     rem_bda;                 /* Remote device Bluetooth address */
+} tBTM_BLE_CH_MAP_RESULTS;
+
 /* Structure returned with read current TX power event (in tBTM_CMPL_CB callback function)
 ** in response to BTM_ReadTxPower call.
 */
@@ -1027,9 +1039,6 @@ typedef void (tBTM_ACL_DB_CHANGE_CB) (BD_ADDR p_bda, DEV_CLASS p_dc,
 /* Define an invalid SCO index and an invalid HCI handle */
 #define BTM_INVALID_SCO_INDEX       0xFFFF
 #define BTM_INVALID_HCI_HANDLE      0xFFFF
-
-/* Define an invalid SCO disconnect reason */
-#define BTM_INVALID_SCO_DISC_REASON 0xFFFF
 
 /* Define first active SCO index */
 #define BTM_FIRST_ACTIVE_SCO_INDEX  BTM_MAX_SCO_LINKS
@@ -3025,7 +3034,19 @@ tBTM_STATUS BTM_SwitchRole (BD_ADDR remote_bd_addr,
 //extern
 tBTM_STATUS BTM_ReadRSSI (BD_ADDR remote_bda, tBT_TRANSPORT transport, tBTM_CMPL_CB *p_cb);
 
-
+/*******************************************************************************
+**
+** Function         BTM_ReadChannelMap
+**
+** Description      This function is called to read the current channel map
+**                  for the given connection. The results are returned via
+**                  the callback (tBTM_BLE_CH_MAP_RESULTS).
+**
+** Returns          BTM_CMD_STARTED if successfully initiated or error code
+**
+*******************************************************************************/
+tBTM_STATUS BTM_ReadChannelMap(BD_ADDR remote_bda, tBTM_CMPL_CB *p_cb);
+#if (BLE_HOST_READ_TX_POWER_EN == TRUE)
 /*******************************************************************************
 **
 ** Function         BTM_ReadTxPower
@@ -3046,10 +3067,13 @@ tBTM_STATUS BTM_ReadTxPower (BD_ADDR remote_bda,
                              tBT_TRANSPORT transport, tBTM_CMPL_CB *p_cb);
 
 tBTM_STATUS BTM_BleReadAdvTxPower(tBTM_CMPL_CB *p_cb);
+#endif // #if (BLE_HOST_READ_TX_POWER_EN == TRUE)
 
 void BTM_BleGetWhiteListSize(uint16_t *length);
 
-
+#if (BLE_50_EXTEND_SYNC_EN == TRUE)
+void BTM_BleGetPeriodicAdvListSize(uint8_t *size);
+#endif //#if (BLE_50_EXTEND_SYNC_EN == TRUE)
 /*******************************************************************************
 **
 ** Function         BTM_ReadLinkQuality
@@ -3259,21 +3283,6 @@ UINT16 BTM_ReadScoHandle (UINT16 sco_inx);
 *******************************************************************************/
 //extern
 UINT8 *BTM_ReadScoBdAddr (UINT16 sco_inx);
-
-
-/*******************************************************************************
-**
-** Function         BTM_ReadScoDiscReason
-**
-** Description      This function is returns the reason why an (e)SCO connection
-**                  has been removed. It contains the value until read, or until
-**                  another (e)SCO connection has disconnected.
-**
-** Returns          HCI reason or BTM_INVALID_SCO_DISC_REASON if not set.
-**
-*******************************************************************************/
-//extern
-UINT16 BTM_ReadScoDiscReason (void);
 
 
 /*******************************************************************************

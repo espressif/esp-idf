@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -30,7 +30,7 @@
 #define PARLIO_LL_EVENT_TX_FIFO_EMPTY    (1 << 0)
 #define PARLIO_LL_EVENT_RX_FIFO_FULL     (1 << 1)
 #define PARLIO_LL_EVENT_TX_EOF           (1 << 2)
-#define PARLIO_LL_EVENT_TX_MASK          (PARLIO_LL_EVENT_TX_FIFO_EMPTY | PARLIO_LL_EVENT_TX_EOF)
+#define PARLIO_LL_EVENT_TX_MASK          (PARLIO_LL_EVENT_TX_EOF)  // On C6, TX FIFO EMPTY event always comes with TX EOF event. We don't enable it
 #define PARLIO_LL_EVENT_RX_MASK          (PARLIO_LL_EVENT_RX_FIFO_FULL)
 
 #define PARLIO_LL_TX_DATA_LINE_AS_VALID_SIG 15 // TXD[15] can be used a valid signal
@@ -43,6 +43,11 @@ typedef enum {
     PARLIO_LL_RX_EOF_COND_RX_FULL,     /*!< RX unit generates EOF event when it receives enough data */
     PARLIO_LL_RX_EOF_COND_EN_INACTIVE, /*!< RX unit generates EOF event when the external enable signal becomes inactive */
 } parlio_ll_rx_eof_cond_t;
+
+typedef enum {
+    PARLIO_LL_TX_EOF_COND_DATA_LEN,     /*!< TX unit generates EOF event when it transmits particular data bit length that specified in `tx_bitlen`. */
+    PARLIO_LL_TX_EOF_COND_DMA_EOF,      /*!< TX unit generates EOF event when the DMA EOF takes place */
+} parlio_ll_tx_eof_cond_t;
 
 /**
  * @brief Enable or disable the parlio peripheral APB clock
@@ -373,6 +378,7 @@ static inline void parlio_ll_rx_update_config(parl_io_dev_t *dev)
  * @param dev Parallel IO register base address
  * @param src Clock source
  */
+__attribute__((always_inline))
 static inline void parlio_ll_tx_set_clock_source(parl_io_dev_t *dev, parlio_clock_source_t src)
 {
     (void)dev;
@@ -450,7 +456,20 @@ static inline void parlio_ll_tx_set_trans_bit_len(parl_io_dev_t *dev, uint32_t b
 }
 
 /**
- * @brief Wether to enable the TX clock gating
+ * @brief Set the condition to generate the TX EOF event (this chip does not support)
+ *
+ * @param dev Parallel IO register base address (not used)
+ * @param cond TX EOF condition (not used)
+ */
+__attribute__((always_inline))
+static inline void parlio_ll_tx_set_eof_condition(parl_io_dev_t *dev, parlio_ll_tx_eof_cond_t cond)
+{
+    (void) dev;
+    HAL_ASSERT(cond == PARLIO_LL_TX_EOF_COND_DATA_LEN);
+}
+
+/**
+ * @brief Whether to enable the TX clock gating
  *
  * @note The TXD[7] will be taken as the gating enable signal
  *
@@ -465,8 +484,11 @@ static inline void parlio_ll_tx_enable_clock_gating(parl_io_dev_t *dev, bool en)
 /**
  * @brief Start TX unit to transmit data
  *
+ * @note The hardware monitors the rising edge of tx_start as the trigger signal.
+ *       Once the transmission starts, it cannot be stopped by clearing tx_start.
+ *
  * @param dev Parallel IO register base address
- * @param en True to start, False to stop
+ * @param en True to start, False to reset the reg state (not meaning the TX unit will be stopped)
  */
 __attribute__((always_inline))
 static inline void parlio_ll_tx_start(parl_io_dev_t *dev, bool en)
@@ -485,6 +507,23 @@ static inline void parlio_ll_tx_start(parl_io_dev_t *dev, bool en)
 static inline void parlio_ll_tx_treat_msb_as_valid(parl_io_dev_t *dev, bool en)
 {
     dev->tx_cfg0.tx_hw_valid_en = en;
+}
+
+/**
+ * @brief Set TX valid signal delay
+ *
+ * @param dev Parallel IO register base address
+ * @param start_delay Number of clock cycles to delay
+ * @param stop_delay Number of clock cycles to delay
+ * @return true: success, false: valid delay is not supported
+ */
+static inline bool parlio_ll_tx_set_valid_delay(parl_io_dev_t *dev, uint32_t start_delay, uint32_t stop_delay)
+{
+    (void)dev;
+    if (start_delay == 0 && stop_delay == 0) {
+        return true;
+    }
+    return false;
 }
 
 /**

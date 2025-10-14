@@ -64,6 +64,18 @@ PCM Signal supports three configurations in menuconfig: PCM Role, PCM Polar and 
 - The default configuration is `Stereo Mode`, you can change the PCM Channel mode in `menuconfig` path:
     `Component config --> Bluetooth --> Controller Options --> PCM Signal Configurations --> PCM Signal Configurations: Role, Polar and Channel Mode(Stereo/Mono) --> Channel Mode(Stereo/Mono)`
 
+### Special Configurations for PBA Client
+
+To use PBA Client function, we need to enable PBA Client in `menuconfig` path: `Component config --> Bluetooth --> Bluedroid Options --> Classic Bluetooth --> Classic BT PBA Client`, this example already enable PBA Client by `sdkconfig.defaults`.
+
+Step to initialize PBA Client connection:
+
+- Register user callback: `esp_pbac_register_callback(bt_app_pbac_cb)`
+- Initialize PBA Client API: `esp_pbac_init()`
+- Connect to peer device ...
+- Call `esp_pbac_connect(peer_addr, supported_features, 0)`, this will initiate service discover and try to connect to PBA Server.
+- After the operation done, whether success or not, we will receive a `ESP_PBAC_CONNECTION_STATE_EVT` event in user callback.
+
 ### Codec Choice
 
 ESP32 supports two types of codec for HFP audio data: `CVSD` and `mSBC`.

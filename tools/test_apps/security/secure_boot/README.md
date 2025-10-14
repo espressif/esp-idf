@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-H2 | ESP32-P4 | ESP32-S2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP32-H2 | ESP32-H21 | ESP32-H4 | ESP32-P4 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | --------- | -------- | --------- | -------- | -------- | -------- | -------- |
 
 # Secure Boot
 
@@ -8,16 +8,6 @@ The example checks if the secure boot feature is enabled/disabled and if enabled
 ## How to use example
 
 ### Hardware Required
-
-Any of the following ESP module:
-* ESP32 (supports Secure Boot V1)
-* ESP32-ECO3 (supports  Secure Boot V2 & Secure Boot V1)
-* ESP32S2 (supports Secure Boot V2)
-* ESP32C3-ECO3 (supports Secure Boot V2)
-* ESP32S3 (supports Secure Boot V2)
-* ESP32P4 (supports Secure Boot V2)
-* ESP32C5 (supports Secure Boot V2)
-* ESP32C61 (supports Secure Boot V2)
 
 It is recommended to use Secure Boot V2 from ESP32-ECO3 onwards.
 
@@ -33,7 +23,7 @@ idf.py menuconfig
 
 * To change the chip revision, set "Component Config" -> "ESP32- Specific"->"Minimum Supported ESP32 Revision" to Rev 3. Now, set Secure Boot V2 option can now be enabled under "Enable hardware Secure Boot in bootloader" -> "Secure Boot Version".
 
-* Specify the apt secure boot signing key path. If not present generate one using `python $IDF_PATH/components/esptool_py/esptool/espsecure.py generate_signing_key --version {VERSION} secure_boot_signing_key.pem`
+* Specify the apt secure boot signing key path. If not present generate one using `espsecure generate-signing-key --version {VERSION} secure_boot_signing_key.pem`
 
 * Ensure Bootloader log verbosity is Info under Bootloader config.
 
@@ -41,7 +31,7 @@ idf.py menuconfig
 
 ### Build and Flash
 
--  The below steps can be used in any application to enable secure boot. 
+-  The below steps can be used in any application to enable secure boot.
 
 - Secure Boot is an irreversible operation, please read the Secure Boot section in ESP-IDF Programming Manual.
 
@@ -72,7 +62,7 @@ Purpose of the test case (`pytest_secure_boot.py`) is to test the secure boot im
 
 ### Hardware required
 
-* FPGA setup with ESP32C3/ESP32S3/ESP32P4/ESP32C5/ESP32C61 image
+* FPGA setup with the target image
 
 * COM port for programming and export it as ESPPORT
     e.g `export ESPPORT=/dev/ttyUSB0`
@@ -85,7 +75,7 @@ Purpose of the test case (`pytest_secure_boot.py`) is to test the secure boot im
 ```
 export IDF_ENV_FPGA=1
 
-idf.py set-target esp32c3   #(or esp32s3 / esp32p4 / esp32c5 / esp32c61)
+idf.py set-target {target}
 
 idf.py menuconfig
 ```
@@ -94,14 +84,14 @@ Under `Security features`
 
 - Enable the `Enable hardware Secure Boot`
 
-- Set the secure boot signing key ("test_rsa_3072_key.pem")
+- Set the secure boot signing key
 
 - Set UART ROM download mode to ENABLED (Required for the script to read the EFUSE)
 
 - Install pytest requirements
 
     ```
-    bash $IDF_PATH/install.sh --enable-pytest
+    bash $IDF_PATH/install.sh --enable-ci
     ```
 
 ### Build and test
@@ -115,5 +105,5 @@ Under `Security features`
 - Run the example test
 
     ```
-    pytest --target esp32c3
+    pytest --target {target}
     ```

@@ -1,32 +1,14 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <stdlib.h>
-#include <stdarg.h>
-#include <sys/cdefs.h>
-#include "sdkconfig.h"
-#if CONFIG_MCPWM_ENABLE_DEBUG_LOG
-// The local log level must be defined before including esp_log.h
-// Set the maximum log level for this source file
-#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
-#endif
-#include "freertos/FreeRTOS.h"
-#include "esp_attr.h"
-#include "esp_check.h"
-#include "esp_err.h"
-#include "esp_log.h"
+#include "mcpwm_private.h"
 #include "esp_memory_utils.h"
-#include "soc/soc_caps.h"
-#include "soc/mcpwm_periph.h"
 #include "hal/mcpwm_ll.h"
 #include "driver/mcpwm_timer.h"
 #include "esp_private/mcpwm.h"
-#include "mcpwm_private.h"
-
-static const char *TAG = "mcpwm";
 
 static void mcpwm_timer_default_isr(void *args);
 
@@ -83,9 +65,6 @@ static esp_err_t mcpwm_timer_destroy(mcpwm_timer_t *timer)
 
 esp_err_t mcpwm_new_timer(const mcpwm_timer_config_t *config, mcpwm_timer_handle_t *ret_timer)
 {
-#if CONFIG_MCPWM_ENABLE_DEBUG_LOG
-    esp_log_level_set(TAG, ESP_LOG_DEBUG);
-#endif
     esp_err_t ret = ESP_OK;
     mcpwm_timer_t *timer = NULL;
     ESP_GOTO_ON_FALSE(config && ret_timer, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
@@ -211,7 +190,7 @@ esp_err_t mcpwm_timer_register_event_callbacks(mcpwm_timer_handle_t timer, const
     int timer_id = timer->timer_id;
     mcpwm_hal_context_t *hal = &group->hal;
 
-#if CONFIG_MCPWM_ISR_IRAM_SAFE
+#if CONFIG_MCPWM_ISR_CACHE_SAFE
     if (cbs->on_empty) {
         ESP_RETURN_ON_FALSE(esp_ptr_in_iram(cbs->on_empty), ESP_ERR_INVALID_ARG, TAG, "on_empty callback not in IRAM");
     }
@@ -268,13 +247,15 @@ esp_err_t mcpwm_timer_enable(mcpwm_timer_handle_t timer)
 {
     ESP_RETURN_ON_FALSE(timer, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     ESP_RETURN_ON_FALSE(timer->fsm == MCPWM_TIMER_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "timer not in init state");
-    mcpwm_group_t *group = timer->group;
+    [[maybe_unused]] mcpwm_group_t *group = timer->group;
     if (timer->intr) {
         ESP_RETURN_ON_ERROR(esp_intr_enable(timer->intr), TAG, "enable interrupt failed");
     }
+#if CONFIG_PM_ENABLE
     if (group->pm_lock) {
         ESP_RETURN_ON_ERROR(esp_pm_lock_acquire(group->pm_lock), TAG, "acquire pm lock failed");
     }
+#endif
     timer->fsm = MCPWM_TIMER_FSM_ENABLE;
     return ESP_OK;
 }
@@ -283,13 +264,15 @@ esp_err_t mcpwm_timer_disable(mcpwm_timer_handle_t timer)
 {
     ESP_RETURN_ON_FALSE(timer, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     ESP_RETURN_ON_FALSE(timer->fsm == MCPWM_TIMER_FSM_ENABLE, ESP_ERR_INVALID_STATE, TAG, "timer not in enable state");
-    mcpwm_group_t *group = timer->group;
+    [[maybe_unused]] mcpwm_group_t *group = timer->group;
     if (timer->intr) {
         ESP_RETURN_ON_ERROR(esp_intr_disable(timer->intr), TAG, "disable interrupt failed");
     }
+#if CONFIG_PM_ENABLE
     if (group->pm_lock) {
         ESP_RETURN_ON_ERROR(esp_pm_lock_release(group->pm_lock), TAG, "acquire pm lock failed");
     }
+#endif
     timer->fsm = MCPWM_TIMER_FSM_INIT;
     return ESP_OK;
 }
@@ -369,7 +352,7 @@ esp_err_t mcpwm_timer_set_phase_on_sync(mcpwm_timer_handle_t timer, const mcpwm_
     return ESP_OK;
 }
 
-static void IRAM_ATTR mcpwm_timer_default_isr(void *args)
+static void mcpwm_timer_default_isr(void *args)
 {
     mcpwm_timer_t *timer = (mcpwm_timer_t *)args;
     mcpwm_group_t *group = timer->group;

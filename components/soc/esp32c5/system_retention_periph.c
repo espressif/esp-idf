@@ -1,12 +1,11 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include "soc/regdma.h"
 #include "soc/system_periph_retention.h"
-#include "soc/timer_periph.h"
 #include "soc/uart_reg.h"
 #include "soc/systimer_reg.h"
 #include "soc/timer_group_reg.h"
@@ -19,9 +18,9 @@
 #include "soc/interrupt_matrix_reg.h"
 
 /* Interrupt Matrix Registers Context */
-#define N_REGS_INTR_MATRIX()    (((INTERRUPT_CORE0_CLOCK_GATE_REG - DR_REG_INTERRUPT_MATRIX_BASE) / 4) + 1)
+#define N_REGS_INTR_MATRIX()    (((INTERRUPT_CORE0_CLOCK_GATE_REG - DR_REG_INTMTX_BASE) / 4) + 1)
 const regdma_entries_config_t intr_matrix_regs_retention[] = {
-    [0] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_INTMTX_LINK(0), DR_REG_INTERRUPT_MATRIX_BASE, DR_REG_INTERRUPT_MATRIX_BASE, N_REGS_INTR_MATRIX(), 0, 0), .owner = ENTRY(0) | ENTRY(2) }  /* intr matrix */
+    [0] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_INTMTX_LINK(0), DR_REG_INTMTX_BASE, DR_REG_INTMTX_BASE, N_REGS_INTR_MATRIX(), 0, 0), .owner = ENTRY(0) | ENTRY(2) }  /* intr matrix */
 };
 _Static_assert(ARRAY_SIZE(intr_matrix_regs_retention) == INT_MTX_RETENTION_LINK_LEN, "Inconsistent INT_MTX retention link length definitions");
 
@@ -49,17 +48,17 @@ const regdma_entries_config_t tee_apm_highpri_regs_retention[] = {
 _Static_assert((ARRAY_SIZE(tee_apm_regs_retention) == TEE_APM_RETENTION_LINK_LEN) && (ARRAY_SIZE(tee_apm_highpri_regs_retention) == TEE_APM_HIGH_PRI_RETENTION_LINK_LEN), "Inconsistent TEE_APM retention link length definitions");
 
 /* IO MUX Registers Context */
-#define N_REGS_IOMUX_0()    (((PERIPHS_IO_MUX_U_PAD_GPIO28 - REG_IO_MUX_BASE) / 4) + 1)
-#define N_REGS_IOMUX_1()    (((GPIO_FUNC32_OUT_SEL_CFG_REG - GPIO_FUNC0_OUT_SEL_CFG_REG) / 4) + 1)
+#define N_REGS_IOMUX_0()    (SOC_GPIO_PIN_COUNT)
+#define N_REGS_IOMUX_1()    (SOC_GPIO_PIN_COUNT)
 #define N_REGS_IOMUX_2()    (((GPIO_FUNC116_IN_SEL_CFG_REG - GPIO_FUNC0_IN_SEL_CFG_REG) / 4) + 1)
-#define N_REGS_IOMUX_3()    (((GPIO_PIN32_REG - GPIO_PIN0_REG) / 4) + 1)
+#define N_REGS_IOMUX_3()    (SOC_GPIO_PIN_COUNT)
 
 #define GPIO_RETENTION_REGS_CNT  6
 #define GPIO_RETENTION_MAP_BASE  GPIO_OUT_REG
 static const uint32_t gpio_regs_map[4] = {0x90009009, 0, 0, 0};
 
 const regdma_entries_config_t iomux_regs_retention[] = {
-    [0] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_IOMUX_LINK(0x00), REG_IO_MUX_BASE,            REG_IO_MUX_BASE,            N_REGS_IOMUX_0(), 0, 0), .owner = ENTRY(0) | ENTRY(2) }, /* io_mux */
+    [0] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_IOMUX_LINK(0x00), IO_MUX_GPIO0_REG,           IO_MUX_GPIO0_REG,           N_REGS_IOMUX_0(), 0, 0), .owner = ENTRY(0) | ENTRY(2) }, /* io_mux */
     [1] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_IOMUX_LINK(0x01), GPIO_FUNC0_OUT_SEL_CFG_REG, GPIO_FUNC0_OUT_SEL_CFG_REG, N_REGS_IOMUX_1(), 0, 0), .owner = ENTRY(0) | ENTRY(2) },
     [2] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_IOMUX_LINK(0x02), GPIO_FUNC0_IN_SEL_CFG_REG,  GPIO_FUNC0_IN_SEL_CFG_REG,  N_REGS_IOMUX_2(), 0, 0), .owner = ENTRY(0) | ENTRY(2) },
     [3] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_IOMUX_LINK(0x03), GPIO_PIN0_REG,              GPIO_PIN0_REG,              N_REGS_IOMUX_3(), 0, 0), .owner = ENTRY(0) | ENTRY(2) },

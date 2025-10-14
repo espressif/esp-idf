@@ -60,6 +60,9 @@ esp_err_t _http_event_handler(esp_http_client_event_t *evt)
     case HTTP_EVENT_ON_HEADER:
         ESP_LOGD(TAG, "HTTP_EVENT_ON_HEADER, key=%s, value=%s", evt->header_key, evt->header_value);
         break;
+    case HTTP_EVENT_ON_HEADERS_COMPLETE:
+        ESP_LOGD(TAG, "HTTP_EVENT_ON_HEADERS_COMPLETE");
+        break;
     case HTTP_EVENT_ON_DATA:
         ESP_LOGD(TAG, "HTTP_EVENT_ON_DATA, len=%d", evt->data_len);
         break;
@@ -71,6 +74,8 @@ esp_err_t _http_event_handler(esp_http_client_event_t *evt)
         break;
     case HTTP_EVENT_REDIRECT:
         ESP_LOGD(TAG, "HTTP_EVENT_REDIRECT");
+        break;
+    default:
         break;
     }
     return ESP_OK;
@@ -101,6 +106,12 @@ void simple_ota_example_task(void *pvParameter)
 #ifdef CONFIG_EXAMPLE_FIRMWARE_UPGRADE_BIND_IF
         .if_name = &ifr,
 #endif
+#if CONFIG_EXAMPLE_TLS_DYN_BUF_RX_STATIC
+        /* This part applies static buffer strategy for rx dynamic buffer.
+         * This is to avoid frequent allocation and deallocation of dynamic buffer.
+         */
+        .tls_dyn_buf_strategy = HTTP_TLS_DYN_BUF_RX_STATIC,
+#endif /* CONFIG_EXAMPLE_TLS_DYN_BUF_RX_STATIC */
     };
 
 #ifdef CONFIG_EXAMPLE_FIRMWARE_UPGRADE_URL_FROM_STDIN

@@ -8,7 +8,6 @@
 
 #include <stdint.h>
 #include "soc/soc_caps.h"
-#include "sdkconfig.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -36,7 +35,7 @@ typedef enum {
 /**
  * @brief PMU power domain of HP system
  */
-#if CONFIG_IDF_TARGET_ESP32P4
+#if SOC_IS(ESP32P4)
 typedef enum {
     PMU_HP_PD_TOP = 0,      /*!< Power domain of digital top */
     PMU_HP_PD_CNNT = 1,     /*!< Power domain of high-speed IO peripherals such as USB/SDIO/Ethernet etc.*/

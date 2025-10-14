@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2016-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2016-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,13 +11,14 @@
 #include "esp_log.h"
 #include "sys/lock.h"
 #include "soc/rtc.h"
+#include "soc/soc_caps_full.h"
 #include "soc/periph_defs.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "esp_timer.h"
 #include "esp_intr_alloc.h"
 #include "driver/rtc_io.h"
-#include "driver/touch_pad.h"
+#include "driver/touch_sensor_legacy.h"
 #include "esp_private/rtc_ctrl.h"
 #include "driver/gpio.h"
 #include "esp_check.h"
@@ -51,13 +52,18 @@ static SemaphoreHandle_t rtc_touch_mux = NULL;
 
 static __attribute__((unused)) const char *TOUCH_TAG = "TOUCH_SENSOR";
 
-#define TOUCH_CHANNEL_CHECK(channel) ESP_RETURN_ON_FALSE(channel < SOC_TOUCH_SENSOR_NUM, ESP_ERR_INVALID_ARG, TOUCH_TAG,  "Touch channel error");
+#define TOUCH_CHANNEL_CHECK(channel) ESP_RETURN_ON_FALSE(channel < SOC_MODULE_ATTR(TOUCH, CHAN_NUM), ESP_ERR_INVALID_ARG, TOUCH_TAG,  "Touch channel error");
+#define TOUCH_CHANNEL_CHECK_ISR(channel) ESP_RETURN_ON_FALSE_ISR(channel < SOC_MODULE_ATTR(TOUCH, CHAN_NUM), ESP_ERR_INVALID_ARG, TOUCH_TAG,  "Touch channel error");
 #define TOUCH_NULL_POINTER_CHECK(p, name) ESP_RETURN_ON_FALSE((p), ESP_ERR_INVALID_ARG, TOUCH_TAG, "input param '"name"' is NULL")
+#define TOUCH_NULL_POINTER_CHECK_ISR(p, name) ESP_RETURN_ON_FALSE_ISR((p), ESP_ERR_INVALID_ARG, TOUCH_TAG, "input param '"name"' is NULL")
 #define TOUCH_PARAM_CHECK_STR(s)     ""s" parameter error"
 
+static portMUX_TYPE s_filter_spinlock = portMUX_INITIALIZER_UNLOCKED;
 extern portMUX_TYPE rtc_spinlock; //TODO: Will be placed in the appropriate position after the rtc module is finished.
-#define TOUCH_ENTER_CRITICAL()  portENTER_CRITICAL(&rtc_spinlock)
-#define TOUCH_EXIT_CRITICAL()  portEXIT_CRITICAL(&rtc_spinlock)
+#define TOUCH_ENTER_CRITICAL(spinlock)  portENTER_CRITICAL(spinlock)
+#define TOUCH_EXIT_CRITICAL(spinlock)  portEXIT_CRITICAL(spinlock)
+#define TOUCH_ENTER_CRITICAL_SAFE(spinlock)  portENTER_CRITICAL_SAFE(spinlock)
+#define TOUCH_EXIT_CRITICAL_SAFE(spinlock)  portEXIT_CRITICAL_SAFE(spinlock)
 
 /*---------------------------------------------------------------
                     Touch Pad
@@ -66,6 +72,7 @@ extern portMUX_TYPE rtc_spinlock; //TODO: Will be placed in the appropriate posi
 #define BITSWAP(data, n, m)   (((data >> n) &  0x1)  == ((data >> m) & 0x1) ? (data) : ((data) ^ ((0x1 <<n) | (0x1 << m))))
 #define TOUCH_BITS_SWAP(v)  BITSWAP(v, TOUCH_PAD_NUM8, TOUCH_PAD_NUM9)
 static esp_err_t _touch_pad_read(touch_pad_t touch_num, uint16_t *touch_value, touch_fsm_mode_t mode);
+static esp_err_t s_touch_pad_filter_create(void);
 
 esp_err_t touch_pad_isr_handler_register(void (*fn)(void *), void *arg, int no_use, intr_handle_t *handle_no_use)
 {
@@ -97,52 +104,64 @@ esp_err_t touch_pad_set_filter_read_cb(filter_cb_t read_cb)
 
 static void touch_pad_filter_cb(void *arg)
 {
-    if (s_touch_pad_filter == NULL) {
-        return;
-    }
-    uint16_t val = 0;
+    uint16_t val[TOUCH_PAD_MAX] = {0};
+    uint16_t filtered_val[TOUCH_PAD_MAX] = {0};
+    bool filter_exist = true;
     touch_fsm_mode_t mode;
     touch_pad_get_fsm_mode(&mode);
     for (int i = 0; i < TOUCH_PAD_MAX; i++) {
         if ((s_touch_pad_init_bit >> i) & 0x1) {
-            _touch_pad_read(i, &val, mode);
-            s_touch_pad_filter->raw_val[i] = val;
-            s_touch_pad_filter->filter_last_val[i] = s_touch_pad_filter->filter_last_val[i] == 0 ?
-                                                     ((uint32_t)val << TOUCH_PAD_SHIFT_DEFAULT) : s_touch_pad_filter->filter_last_val[i];
-            s_touch_pad_filter->filter_last_val[i] = _touch_filter_iir((val << TOUCH_PAD_SHIFT_DEFAULT),
-                                                                       s_touch_pad_filter->filter_last_val[i], TOUCH_PAD_FILTER_FACTOR_DEFAULT);
-            s_touch_pad_filter->filtered_val[i] =
-                (s_touch_pad_filter->filter_last_val[i] + TOUCH_PAD_SHIFT_ROUND_DEFAULT) >> TOUCH_PAD_SHIFT_DEFAULT;
+            _touch_pad_read(i, &val[i], mode);
         }
     }
-    if (s_filter_cb) {
+
+    TOUCH_ENTER_CRITICAL(&s_filter_spinlock);
+    if (s_touch_pad_filter) {
+        for (int i = 0; i < TOUCH_PAD_MAX; i++) {
+            if ((s_touch_pad_init_bit >> i) & 0x1) {
+                s_touch_pad_filter->raw_val[i] = val[i];
+                s_touch_pad_filter->filter_last_val[i] = s_touch_pad_filter->filter_last_val[i] == 0 ?
+                                                         ((uint32_t)val[i] << TOUCH_PAD_SHIFT_DEFAULT) : s_touch_pad_filter->filter_last_val[i];
+                s_touch_pad_filter->filter_last_val[i] = _touch_filter_iir((val[i] << TOUCH_PAD_SHIFT_DEFAULT),
+                                                                           s_touch_pad_filter->filter_last_val[i], TOUCH_PAD_FILTER_FACTOR_DEFAULT);
+                s_touch_pad_filter->filtered_val[i] =
+                    (s_touch_pad_filter->filter_last_val[i] + TOUCH_PAD_SHIFT_ROUND_DEFAULT) >> TOUCH_PAD_SHIFT_DEFAULT;
+            }
+            val[i] = s_touch_pad_filter->raw_val[i];
+            filtered_val[i] = s_touch_pad_filter->filtered_val[i];
+        }
+    } else {
+        filter_exist = false;
+    }
+    TOUCH_EXIT_CRITICAL(&s_filter_spinlock);
+    if (s_filter_cb && filter_exist) {
         //return the raw data and filtered data.
-        s_filter_cb(s_touch_pad_filter->raw_val, s_touch_pad_filter->filtered_val);
+        s_filter_cb(val, filtered_val);
     }
 }
 
 esp_err_t touch_pad_set_measurement_interval(uint16_t interval_cycle)
 {
-    TOUCH_ENTER_CRITICAL();
+    TOUCH_ENTER_CRITICAL(&rtc_spinlock);
     touch_hal_set_sleep_time(interval_cycle);
-    TOUCH_EXIT_CRITICAL();
+    TOUCH_EXIT_CRITICAL(&rtc_spinlock);
     return ESP_OK;
 }
 
 esp_err_t touch_pad_get_measurement_interval(uint16_t *interval_cycle)
 {
     TOUCH_NULL_POINTER_CHECK(interval_cycle, "interval_cycle");
-    TOUCH_ENTER_CRITICAL();
+    TOUCH_ENTER_CRITICAL(&rtc_spinlock);
     touch_hal_get_sleep_time(interval_cycle);
-    TOUCH_EXIT_CRITICAL();
+    TOUCH_EXIT_CRITICAL(&rtc_spinlock);
     return ESP_OK;
 }
 
 esp_err_t touch_pad_set_measurement_clock_cycles(uint16_t clock_cycle)
 {
-    TOUCH_ENTER_CRITICAL();
+    TOUCH_ENTER_CRITICAL(&rtc_spinlock);
     touch_hal_set_meas_time(clock_cycle);
-    TOUCH_EXIT_CRITICAL();
+    TOUCH_EXIT_CRITICAL(&rtc_spinlock);
 
     return ESP_OK;
 }
@@ -150,9 +169,9 @@ esp_err_t touch_pad_set_measurement_clock_cycles(uint16_t clock_cycle)
 esp_err_t touch_pad_get_measurement_clock_cycles(uint16_t *clock_cycle)
 {
     TOUCH_NULL_POINTER_CHECK(clock_cycle, "clock_cycle");
-    TOUCH_ENTER_CRITICAL();
+    TOUCH_ENTER_CRITICAL(&rtc_spinlock);
     touch_hal_get_meas_time(clock_cycle);
-    TOUCH_EXIT_CRITICAL();
+    TOUCH_EXIT_CRITICAL(&rtc_spinlock);
 
     return ESP_OK;
 }
@@ -176,9 +195,9 @@ esp_err_t touch_pad_get_meas_time(uint16_t *sleep_cycle, uint16_t *meas_cycle)
 esp_err_t touch_pad_set_trigger_mode(touch_trigger_mode_t mode)
 {
     ESP_RETURN_ON_FALSE((mode < TOUCH_TRIGGER_MAX), ESP_ERR_INVALID_ARG, TOUCH_TAG,  TOUCH_PARAM_CHECK_STR("mode"));
-    TOUCH_ENTER_CRITICAL();
+    TOUCH_ENTER_CRITICAL(&rtc_spinlock);
     touch_hal_set_trigger_mode(mode);
-    TOUCH_EXIT_CRITICAL();
+    TOUCH_EXIT_CRITICAL(&rtc_spinlock);
     return ESP_OK;
 }
 
@@ -192,9 +211,9 @@ esp_err_t touch_pad_get_trigger_mode(touch_trigger_mode_t *mode)
 esp_err_t touch_pad_set_trigger_source(touch_trigger_src_t src)
 {
     ESP_RETURN_ON_FALSE((src < TOUCH_TRIGGER_SOURCE_MAX), ESP_ERR_INVALID_ARG, TOUCH_TAG,  TOUCH_PARAM_CHECK_STR("src"));
-    TOUCH_ENTER_CRITICAL();
+    TOUCH_ENTER_CRITICAL(&rtc_spinlock);
     touch_hal_set_trigger_source(src);
-    TOUCH_EXIT_CRITICAL();
+    TOUCH_EXIT_CRITICAL(&rtc_spinlock);
     return ESP_OK;
 }
 
@@ -211,10 +230,10 @@ esp_err_t touch_pad_set_group_mask(uint16_t set1_mask, uint16_t set2_mask, uint1
     ESP_RETURN_ON_FALSE((set2_mask <= TOUCH_PAD_BIT_MASK_ALL), ESP_ERR_INVALID_ARG, TOUCH_TAG,  "touch set2 bitmask error");
     ESP_RETURN_ON_FALSE((en_mask <= TOUCH_PAD_BIT_MASK_ALL), ESP_ERR_INVALID_ARG, TOUCH_TAG,  "touch work_en bitmask error");
 
-    TOUCH_ENTER_CRITICAL();
+    TOUCH_ENTER_CRITICAL(&rtc_spinlock);
     touch_hal_set_group_mask(set1_mask, set2_mask);
     touch_hal_set_channel_mask(en_mask);
-    TOUCH_EXIT_CRITICAL();
+    TOUCH_EXIT_CRITICAL(&rtc_spinlock);
 
     return ESP_OK;
 }
@@ -224,10 +243,10 @@ esp_err_t touch_pad_get_group_mask(uint16_t *set1_mask, uint16_t *set2_mask, uin
     TOUCH_NULL_POINTER_CHECK(set1_mask, "set1_mask");
     TOUCH_NULL_POINTER_CHECK(set2_mask, "set2_mask");
     TOUCH_NULL_POINTER_CHECK(en_mask, "en_mask");
-    TOUCH_ENTER_CRITICAL();
+    TOUCH_ENTER_CRITICAL(&rtc_spinlock);
     touch_hal_get_channel_mask(en_mask);
     touch_hal_get_group_mask(set1_mask, set2_mask);
-    TOUCH_EXIT_CRITICAL();
+    TOUCH_EXIT_CRITICAL(&rtc_spinlock);
 
     return ESP_OK;
 }
@@ -238,34 +257,34 @@ esp_err_t touch_pad_clear_group_mask(uint16_t set1_mask, uint16_t set2_mask, uin
     ESP_RETURN_ON_FALSE((set2_mask <= TOUCH_PAD_BIT_MASK_ALL), ESP_ERR_INVALID_ARG, TOUCH_TAG,  "touch set2 bitmask error");
     ESP_RETURN_ON_FALSE((en_mask <= TOUCH_PAD_BIT_MASK_ALL), ESP_ERR_INVALID_ARG, TOUCH_TAG,  "touch work_en bitmask error");
 
-    TOUCH_ENTER_CRITICAL();
+    TOUCH_ENTER_CRITICAL(&rtc_spinlock);
     touch_hal_clear_channel_mask(en_mask);
     touch_hal_clear_group_mask(set1_mask, set2_mask);
-    TOUCH_EXIT_CRITICAL();
+    TOUCH_EXIT_CRITICAL(&rtc_spinlock);
     return ESP_OK;
 }
 
 esp_err_t touch_pad_intr_enable(void)
 {
-    TOUCH_ENTER_CRITICAL();
+    TOUCH_ENTER_CRITICAL(&rtc_spinlock);
     touch_hal_intr_enable();
-    TOUCH_EXIT_CRITICAL();
+    TOUCH_EXIT_CRITICAL(&rtc_spinlock);
     return ESP_OK;
 }
 
 esp_err_t touch_pad_intr_disable(void)
 {
-    TOUCH_ENTER_CRITICAL();
+    TOUCH_ENTER_CRITICAL(&rtc_spinlock);
     touch_hal_intr_disable();
-    TOUCH_EXIT_CRITICAL();
+    TOUCH_EXIT_CRITICAL(&rtc_spinlock);
     return ESP_OK;
 }
 
 esp_err_t touch_pad_intr_clear(void)
 {
-    TOUCH_ENTER_CRITICAL();
+    TOUCH_ENTER_CRITICAL(&rtc_spinlock);
     touch_hal_intr_clear();
-    TOUCH_EXIT_CRITICAL();
+    TOUCH_EXIT_CRITICAL(&rtc_spinlock);
     return ESP_OK;
 }
 
@@ -280,10 +299,10 @@ esp_err_t touch_pad_config(touch_pad_t touch_num, uint16_t threshold)
     TOUCH_CHANNEL_CHECK(touch_num);
     touch_fsm_mode_t mode;
     touch_pad_io_init(touch_num);
-    TOUCH_ENTER_CRITICAL();
+    TOUCH_ENTER_CRITICAL(&rtc_spinlock);
     touch_hal_config(touch_num);
     touch_hal_set_threshold(touch_num, threshold);
-    TOUCH_EXIT_CRITICAL();
+    TOUCH_EXIT_CRITICAL(&rtc_spinlock);
     touch_pad_get_fsm_mode(&mode);
     if (TOUCH_FSM_MODE_SW == mode) {
         touch_pad_clear_group_mask((1 << touch_num), (1 << touch_num), (1 << touch_num));
@@ -301,7 +320,7 @@ esp_err_t touch_pad_config(touch_pad_t touch_num, uint16_t threshold)
 
         //If the FSM mode is 'TOUCH_FSM_MODE_TIMER', The data will be ready after one measurement cycle
         //after this function is executed, otherwise, the "touch_value" by "touch_pad_read" is 0.
-        wait_time_ms = sleep_time / (rtc_clk_freq / 1000) + meas_cycle / (SOC_CLK_RC_FAST_FREQ_APPROX / 1000);
+        wait_time_ms = (uint32_t)(sleep_time / ((float)rtc_clk_freq / 1000.0)) + meas_cycle / (SOC_CLK_RC_FAST_FREQ_APPROX / 1000);
         wait_tick = wait_time_ms / portTICK_PERIOD_MS;
         vTaskDelay(wait_tick ? wait_tick : 1);
         s_touch_pad_init_bit |= (1 << touch_num);
@@ -323,37 +342,26 @@ esp_err_t touch_pad_init(void)
     if (rtc_touch_mux == NULL) {
         return ESP_FAIL;
     }
-    TOUCH_ENTER_CRITICAL();
+    TOUCH_ENTER_CRITICAL(&rtc_spinlock);
     touch_hal_init();
-    TOUCH_EXIT_CRITICAL();
+    TOUCH_EXIT_CRITICAL(&rtc_spinlock);
+    ESP_RETURN_ON_ERROR(s_touch_pad_filter_create(), TOUCH_TAG, "failed to create the filter");
     return ESP_OK;
 }
 
 esp_err_t touch_pad_deinit(void)
 {
     ESP_RETURN_ON_FALSE(rtc_touch_mux, ESP_FAIL, TOUCH_TAG,  "Touch pad not initialized");
-    esp_err_t ret = ESP_OK;
+    ESP_RETURN_ON_ERROR(touch_pad_filter_delete(), TOUCH_TAG, "failed to delete the filter");
     xSemaphoreTake(rtc_touch_mux, portMAX_DELAY);
-    if (s_touch_pad_filter) {
-        if (s_touch_pad_filter->timer) {
-            ESP_GOTO_ON_ERROR(esp_timer_stop(s_touch_pad_filter->timer), err, TOUCH_TAG, "failed to stop the timer");
-            ESP_GOTO_ON_ERROR(esp_timer_delete(s_touch_pad_filter->timer), err, TOUCH_TAG, "failed to delete the timer");
-            s_touch_pad_filter->timer = NULL;
-        }
-        free(s_touch_pad_filter);
-        s_touch_pad_filter = NULL;
-    }
     s_touch_pad_init_bit = 0x0000;
-    TOUCH_ENTER_CRITICAL();
+    TOUCH_ENTER_CRITICAL(&rtc_spinlock);
     touch_hal_deinit();
-    TOUCH_EXIT_CRITICAL();
+    TOUCH_EXIT_CRITICAL(&rtc_spinlock);
     xSemaphoreGive(rtc_touch_mux);
     vSemaphoreDelete(rtc_touch_mux);
     rtc_touch_mux = NULL;
     return ESP_OK;
-err:
-    xSemaphoreGive(rtc_touch_mux);
-    return ret;
 }
 
 static esp_err_t _touch_pad_read(touch_pad_t touch_num, uint16_t *touch_value, touch_fsm_mode_t mode)
@@ -362,11 +370,15 @@ static esp_err_t _touch_pad_read(touch_pad_t touch_num, uint16_t *touch_value, t
     if (TOUCH_FSM_MODE_SW == mode) {
         touch_pad_set_group_mask((1 << touch_num), (1 << touch_num), (1 << touch_num));
         touch_pad_sw_start();
-        while (!touch_hal_meas_is_done()) {};
+        while (!touch_hal_meas_is_done()) {
+            vTaskDelay(1);
+        }
         *touch_value = touch_hal_read_raw_data(touch_num);
         touch_pad_clear_group_mask((1 << touch_num), (1 << touch_num), (1 << touch_num));
     } else if (TOUCH_FSM_MODE_TIMER == mode) {
-        while (!touch_hal_meas_is_done()) {};
+        while (!touch_hal_meas_is_done()) {
+            vTaskDelay(1);
+        }
         *touch_value = touch_hal_read_raw_data(touch_num);
     } else {
         res = ESP_FAIL;
@@ -394,28 +406,36 @@ esp_err_t touch_pad_read(touch_pad_t touch_num, uint16_t *touch_value)
 
 IRAM_ATTR esp_err_t touch_pad_read_raw_data(touch_pad_t touch_num, uint16_t *touch_value)
 {
-    ESP_RETURN_ON_FALSE(rtc_touch_mux, ESP_FAIL, TOUCH_TAG,  "Touch pad not initialized");
-    TOUCH_CHANNEL_CHECK(touch_num);
-    TOUCH_NULL_POINTER_CHECK(touch_value, "touch_value");
-    ESP_RETURN_ON_FALSE(s_touch_pad_filter, ESP_FAIL, TOUCH_TAG,  "Touch pad filter not initialized");
+    esp_err_t ret = ESP_OK;
+    ESP_RETURN_ON_FALSE_ISR(rtc_touch_mux, ESP_FAIL, TOUCH_TAG,  "Touch pad not initialized");
+    TOUCH_CHANNEL_CHECK_ISR(touch_num);
+    TOUCH_NULL_POINTER_CHECK_ISR(touch_value, "touch_value");
+    ESP_GOTO_ON_FALSE_ISR(s_touch_pad_filter, ESP_FAIL, err, TOUCH_TAG,  "Touch pad filter not initialized");
+    TOUCH_ENTER_CRITICAL_SAFE(&s_filter_spinlock);
     *touch_value = s_touch_pad_filter->raw_val[touch_num];
+    TOUCH_EXIT_CRITICAL_SAFE(&s_filter_spinlock);
     if (*touch_value == 0) {
-        return ESP_ERR_INVALID_STATE;
+        ret = ESP_ERR_INVALID_STATE;
     }
-    return ESP_OK;
+err:
+    return ret;
 }
 
 IRAM_ATTR esp_err_t touch_pad_read_filtered(touch_pad_t touch_num, uint16_t *touch_value)
 {
-    ESP_RETURN_ON_FALSE(rtc_touch_mux, ESP_FAIL, TOUCH_TAG,  "Touch pad not initialized");
-    TOUCH_CHANNEL_CHECK(touch_num);
-    TOUCH_NULL_POINTER_CHECK(touch_value, "touch_value");
-    ESP_RETURN_ON_FALSE(s_touch_pad_filter, ESP_FAIL, TOUCH_TAG,  "Touch pad filter not initialized");
+    esp_err_t ret = ESP_OK;
+    ESP_RETURN_ON_FALSE_ISR(rtc_touch_mux, ESP_FAIL, TOUCH_TAG,  "Touch pad not initialized");
+    TOUCH_CHANNEL_CHECK_ISR(touch_num);
+    TOUCH_NULL_POINTER_CHECK_ISR(touch_value, "touch_value");
+    ESP_GOTO_ON_FALSE_ISR(s_touch_pad_filter, ESP_FAIL, err, TOUCH_TAG,  "Touch pad filter not initialized");
+    TOUCH_ENTER_CRITICAL_SAFE(&s_filter_spinlock);
     *touch_value = (s_touch_pad_filter->filtered_val[touch_num]);
+    TOUCH_EXIT_CRITICAL_SAFE(&s_filter_spinlock);
     if (*touch_value == 0) {
-        return ESP_ERR_INVALID_STATE;
+        ret = ESP_ERR_INVALID_STATE;
     }
-    return ESP_OK;
+err:
+    return ret;
 }
 
 esp_err_t touch_pad_set_filter_period(uint32_t new_period_ms)
@@ -459,35 +479,12 @@ esp_err_t touch_pad_filter_start(uint32_t filter_period_ms)
 
     esp_err_t ret = ESP_OK;
     xSemaphoreTake(rtc_touch_mux, portMAX_DELAY);
-    if (s_touch_pad_filter == NULL) {
-        s_touch_pad_filter = (touch_pad_filter_t *) calloc(1, sizeof(touch_pad_filter_t));
-        ESP_GOTO_ON_FALSE(s_touch_pad_filter, ESP_ERR_NO_MEM, err_no_mem, TOUCH_TAG, "no memory for filter");
-    }
-    if (s_touch_pad_filter->timer == NULL) {
-        esp_timer_create_args_t timer_cfg = {
-            .callback = touch_pad_filter_cb,
-            .arg = NULL,
-            .dispatch_method = ESP_TIMER_TASK,
-            .name = "touch filter timer",
-            .skip_unhandled_events = true,
-        };
-        ESP_GOTO_ON_ERROR(esp_timer_create(&timer_cfg, &(s_touch_pad_filter->timer)),
-                          err_timer_create, TOUCH_TAG, "failed to create the filter timer");
-        s_touch_pad_filter->period = filter_period_ms;
-        touch_pad_filter_cb(NULL); // Trigger once immediately to get the initial raw value
-        ESP_GOTO_ON_ERROR(esp_timer_start_periodic(s_touch_pad_filter->timer, filter_period_ms * 1000),
-                          err_timer_start, TOUCH_TAG, "failed to start the filter timer");
-    }
-
-    xSemaphoreGive(rtc_touch_mux);
-    return ret;
-
-err_timer_start:
-    esp_timer_delete(s_touch_pad_filter->timer);
-err_timer_create:
-    free(s_touch_pad_filter);
-    s_touch_pad_filter = NULL;
-err_no_mem:
+    ESP_GOTO_ON_FALSE(s_touch_pad_filter && s_touch_pad_filter->timer, ESP_ERR_INVALID_STATE, err, TOUCH_TAG,  "Touch pad filter not initialized");
+    s_touch_pad_filter->period = filter_period_ms;
+    touch_pad_filter_cb(NULL); // Trigger once immediately to get the initial raw value
+    ESP_GOTO_ON_ERROR(esp_timer_start_periodic(s_touch_pad_filter->timer, filter_period_ms * 1000),
+                      err, TOUCH_TAG, "failed to start the filter timer");
+err:
     xSemaphoreGive(rtc_touch_mux);
     return ret;
 }
@@ -505,6 +502,31 @@ esp_err_t touch_pad_filter_stop(void)
     return ret;
 }
 
+static esp_err_t s_touch_pad_filter_create(void)
+{
+    esp_err_t ret = ESP_OK;
+    xSemaphoreTake(rtc_touch_mux, portMAX_DELAY);
+    if (s_touch_pad_filter == NULL) {
+        s_touch_pad_filter = (touch_pad_filter_t *) calloc(1, sizeof(touch_pad_filter_t));
+        ESP_GOTO_ON_FALSE(s_touch_pad_filter, ESP_ERR_NO_MEM, err, TOUCH_TAG, "no memory for filter");
+    }
+    if (s_touch_pad_filter->timer == NULL) {
+        esp_timer_create_args_t timer_cfg = {
+            .callback = touch_pad_filter_cb,
+            .arg = NULL,
+            .dispatch_method = ESP_TIMER_TASK,
+            .name = "touch filter timer",
+            .skip_unhandled_events = true,
+        };
+        ESP_GOTO_ON_ERROR(esp_timer_create(&timer_cfg, &(s_touch_pad_filter->timer)),
+                          err, TOUCH_TAG, "failed to create the filter timer");
+    }
+
+err:
+    xSemaphoreGive(rtc_touch_mux);
+    return ret;
+}
+
 esp_err_t touch_pad_filter_delete(void)
 {
     ESP_RETURN_ON_FALSE(s_touch_pad_filter, ESP_ERR_INVALID_STATE, TOUCH_TAG,  "Touch pad filter not initialized");
@@ -512,13 +534,33 @@ esp_err_t touch_pad_filter_delete(void)
     esp_err_t ret = ESP_OK;
     xSemaphoreTake(rtc_touch_mux, portMAX_DELAY);
     if (s_touch_pad_filter->timer) {
-        ESP_GOTO_ON_ERROR(esp_timer_stop(s_touch_pad_filter->timer), err, TOUCH_TAG, "failed to stop the timer");
+        if (esp_timer_is_active(s_touch_pad_filter->timer)) {
+            ESP_GOTO_ON_ERROR(esp_timer_stop(s_touch_pad_filter->timer), err, TOUCH_TAG, "failed to stop the timer");
+        }
         ESP_GOTO_ON_ERROR(esp_timer_delete(s_touch_pad_filter->timer), err, TOUCH_TAG, "failed to delete the timer");
         s_touch_pad_filter->timer = NULL;
     }
     free(s_touch_pad_filter);
+    TOUCH_ENTER_CRITICAL(&s_filter_spinlock);
     s_touch_pad_filter = NULL;
+    TOUCH_EXIT_CRITICAL(&s_filter_spinlock);
 err:
     xSemaphoreGive(rtc_touch_mux);
     return ret;
 }
+
+#if !CONFIG_TOUCH_SKIP_LEGACY_CONFLICT_CHECK
+/**
+ * @brief This function will be called during start up, to check that the new touch driver is not running along with the legacy touch driver
+ */
+static __attribute__((constructor)) void check_touch_driver_conflict(void)
+{
+    extern __attribute__((weak)) esp_err_t touch_sensor_new_controller(const void*, void *);
+    /* If the new Touch driver is linked, the weak function will point to the actual function in the new driver, otherwise it is NULL*/
+    if ((void *)touch_sensor_new_controller != NULL) {
+        ESP_EARLY_LOGE("legacy_touch_driver", "CONFLICT! The new touch driver can't work along with the legacy touch driver");
+        abort();
+    }
+    ESP_EARLY_LOGW("legacy_touch_driver", "legacy touch driver is deprecated, please migrate to use driver/touch_sens.h");
+}
+#endif //CONFIG_TOUCH_SKIP_LEGACY_CONFLICT_CHECK

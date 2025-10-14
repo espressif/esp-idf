@@ -209,7 +209,7 @@ extern "C" {
 #define AES_MODE_REG (DR_REG_AES_BASE + 0x40)
 /** AES_MODE : R/W; bitpos: [2:0]; default: 0;
  *  This bits decides which one operation mode will be used. 3'd0: AES-EN-128, 3'd1:
- *  AES-EN-192, 3'd2: AES-EN-256, 3'd4: AES-DE-128, 3'd5: AES-DE-192, 3'd6: AES-DE-256.
+ *  Reserved, 3'd2: AES-EN-256, 3'd4: AES-DE-128, 3'd5: Reserved, 3'd6: AES-DE-256.
  */
 #define AES_MODE    0x00000007U
 #define AES_MODE_M  (AES_MODE_V << AES_MODE_S)

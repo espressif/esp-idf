@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,7 +18,7 @@
 #include <sys/param.h>
 #include <string.h>
 
-static const char *TAG = "secure_boot";
+ESP_LOG_ATTR_TAG(TAG, "secure_boot");
 
 #ifdef CONFIG_SECURE_SIGNED_APPS_ECDSA_SCHEME
 extern const uint8_t signature_verification_key_start[] asm("_binary_signature_verification_key_bin_start");
@@ -53,11 +53,6 @@ esp_err_t esp_secure_boot_verify_signature(uint32_t src_addr, uint32_t length)
     return err;
 }
 
-esp_err_t esp_secure_boot_verify_signature_block(const esp_secure_boot_sig_block_t *sig_block, const uint8_t *image_digest)
-{
-    uint8_t verified_digest[ESP_SECURE_BOOT_DIGEST_LEN] = { 0 };
-    return esp_secure_boot_verify_ecdsa_signature_block(sig_block, image_digest, verified_digest);
-}
 
 esp_err_t esp_secure_boot_verify_ecdsa_signature_block(const esp_secure_boot_sig_block_t *sig_block, const uint8_t *image_digest, uint8_t *verified_digest)
 {

@@ -8,9 +8,9 @@ This document describes the compatibility between ESP-IDF releases and Espressif
 
 NOTE: This document on release branches may be out-of-date. Check the [Compatibility file on master](https://github.com/espressif/esp-idf/blob/master/COMPATIBILITY.md) for the most accurate information.
 
-See [Compatibility Advisory for Chip Revision Numbering Scheme](https://www.espressif.com.cn/sites/default/files/advisory_downloads/AR2022-005%20Compatibility%20Advisory%20for%20Chip%20Revision%20Numbering%20%20Scheme.pdf) on the versioning of Espressif SoC revisions.
+See [Compatibility Advisory for Chip Revision Numbering Scheme](https://www.espressif.com/sites/default/files/advisory_downloads/AR2022-005%20Compatibility%20Advisory%20for%20Chip%20Revision%20Numbering%20%20Scheme.pdf) on the versioning of Espressif SoC revisions.
 
-You can run `esptool chip_id` to detect the series and revision of an SoC. See [SoC Errata](https://www.espressif.com.cn/en/support/documents/technical-documents?keys=errata) for more on how to distinguish between chip revisions, and the improvements provided by chip revisions. And run `idf.py --version` to know the version of current ESP-IDF.
+You can run `esptool chip-id` to detect the series and revision of an SoC. See [SoC Errata](https://www.espressif.com/en/support/documents/technical-documents?keys=errata) for more on how to distinguish between chip revisions, and the improvements provided by chip revisions. And run `idf.py --version` to know the version of current ESP-IDF.
 
 ## ESP-IDF Support for Different Chip Revisions
 
@@ -97,17 +97,48 @@ Supported since ESP-IDF v5.0.
 | release/v5.2           | v5.2.2+     | v5.2     |
 | release/v5.3 and above | v5.3+       | v5.3     |
 
+#### v2.0
+
+| Release branch         | Recommended | Required |
+|------------------------|-------------|----------|
+| release/v5.0           | v5.0.8+     | v5.0.8   |
+| release/v5.1           | v5.1.5+     | v5.1.5*  |
+| release/v5.2           | v5.2.4+     | v5.2.4   |
+| release/v5.3           | v5.3.2+     | v5.3.2*  |
+| release/v5.4 and above | v5.4+       | v5.4     |
+
+Note: IDF v5.1.5 and v5.3.2 are compatible with C2 v2.0. However the chip revision check hasn't been updated on these releases. Enable `ESP32C2_REV2_DEVELOPMENT` config to bypass the outdated check.
+
 ### ESP32-C6
 
 #### v0.0, v0.1
 
 Supported since ESP-IDF v5.1.
 
+#### v0.2
+
+| Release branch         | Recommended | Required |
+|------------------------|-------------|----------|
+| release/v5.1           | v5.1.5+     | v5.1     |
+| release/v5.2           | v5.2.4+     | v5.2     |
+| release/v5.3           | v5.3.2+     | v5.3     |
+| release/v5.4 and above | v5.4+       | v5.4     |
+
 ### ESP32-H2
 
 #### v0.1, v0.2
 
 Supported since ESP-IDF v5.1.
+
+#### v1.2
+
+| Release branch         | Recommended | Required |
+|------------------------|-------------|----------|
+| release/v5.1           | v5.1.6+     | v5.1.6   |
+| release/v5.2           | v5.2.5+     | v5.2.5   |
+| release/v5.3           | v5.3.3+     | v5.3.3   |
+| release/v5.4           | v5.4.1+     | v5.4.1   |
+| release/v5.5 and above | v5.5+       | v5.5     |
 
 ## What If the ESP-IDF Version Is Lower than the `Required` Version?
 

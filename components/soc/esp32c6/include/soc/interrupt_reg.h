@@ -42,4 +42,4 @@
 #define INTC_INT_PRIO_REG(n)                    (PLIC_MXINT0_PRI_REG + (n)*4)
 #endif
 
-#define DR_REG_INTERRUPT_BASE                   DR_REG_INTERRUPT_MATRIX_BASE
+#define DR_REG_INTERRUPT_BASE                   DR_REG_INTMTX_BASE

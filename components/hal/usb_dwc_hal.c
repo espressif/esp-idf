@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,9 +8,9 @@
 #include <stdint.h>
 #include <string.h> // For memset()
 #include <stdlib.h> // For abort()
-#include "sdkconfig.h"
+#include "soc/soc_caps_full.h"
 #include "soc/chip_revision.h"
-#include "soc/usb_dwc_periph.h"
+#include "soc/usb_periph.h"
 #include "hal/usb_dwc_hal.h"
 #include "hal/usb_dwc_ll.h"
 #include "hal/efuse_hal.h"
@@ -23,7 +23,9 @@
 #define BENDPOINTADDRESS_NUM_MSK     0x0F   //Endpoint number mask of the bEndpointAddress field of an endpoint descriptor
 #define BENDPOINTADDRESS_DIR_MSK     0x80   //Endpoint direction mask of the bEndpointAddress field of an endpoint descriptor
 
-#define CORE_REG_GSNPSID    0x4F54400A      //Release number of USB_DWC used in Espressif's SoCs
+// Core register IDs supported by this driver: v4.00a and v4.30a
+#define CORE_REG_GSNPSID_4_00a    0x4F54400A
+#define CORE_REG_GSNPSID_4_30a    0x4F54430A
 
 // -------------------- Configurable -----------------------
 
@@ -87,7 +89,7 @@ static void set_defaults(usb_dwc_hal_context_t *hal)
     //GAHBCFG register
     usb_dwc_ll_gahbcfg_en_dma_mode(hal->dev);
     int hbstlen = 0;    //Use AHB burst SINGLE by default
-#if CONFIG_IDF_TARGET_ESP32S2 && CONFIG_ESP32S2_REV_MIN_FULL < 100
+#if SOC_IS(ESP32S2)
     /*
     Hardware errata workaround for the ESP32-S2 ECO0 (see ESP32-S2 Errata Document section 4.0 for full details).
 
@@ -105,7 +107,7 @@ static void set_defaults(usb_dwc_hal_context_t *hal)
     if (!ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 100)) {
         hbstlen = 1;    //Set AHB burst to INCR to workaround hardware errata
     }
-#endif //CONFIG_IDF_TARGET_ESP32S2 && CONFIG_ESP32S2_REV_MIN_FULL < 100
+#endif // SOC_IS(ESP32S2)
     usb_dwc_ll_gahbcfg_set_hbstlen(hal->dev, hbstlen);  //Set AHB burst mode
     //GUSBCFG register
     usb_dwc_ll_gusbcfg_dis_hnp_cap(hal->dev);       //Disable HNP
@@ -131,7 +133,7 @@ void usb_dwc_hal_init(usb_dwc_hal_context_t *hal, int port_id)
     HAL_ASSERT(port_id < SOC_USB_OTG_PERIPH_NUM);
     usb_dwc_dev_t *dev = USB_DWC_LL_GET_HW(port_id);
     uint32_t core_id = usb_dwc_ll_gsnpsid_get_id(dev);
-    HAL_ASSERT(core_id == CORE_REG_GSNPSID);
+    HAL_ASSERT(core_id == CORE_REG_GSNPSID_4_00a || core_id == CORE_REG_GSNPSID_4_30a);
     (void) core_id;     //Suppress unused variable warning if asserts are disabled
 
     // Initialize HAL context
@@ -163,9 +165,6 @@ void usb_dwc_hal_deinit(usb_dwc_hal_context_t *hal)
 void usb_dwc_hal_core_soft_reset(usb_dwc_hal_context_t *hal)
 {
     usb_dwc_ll_grstctl_core_soft_reset(hal->dev);
-    while (usb_dwc_ll_grstctl_is_core_soft_reset_in_progress(hal->dev)) {
-        ;   // Wait until core reset is done
-    }
     while (!usb_dwc_ll_grstctl_is_ahb_idle(hal->dev)) {
         ;   // Wait until AHB Master bus is idle before doing any other operations
     }
@@ -185,64 +184,53 @@ void usb_dwc_hal_core_soft_reset(usb_dwc_hal_context_t *hal)
     }
 }
 
-void usb_dwc_hal_set_fifo_bias(usb_dwc_hal_context_t *hal, const usb_hal_fifo_bias_t fifo_bias)
+bool usb_dwc_hal_fifo_config_is_valid(const usb_dwc_hal_context_t *hal, const usb_dwc_hal_fifo_config_t *config)
 {
-    HAL_ASSERT(hal->channels.hdls);
-    const uint16_t fifo_size_lines = hal->constant_config.fifo_size;
-    /*
-    * Recommended FIFO sizes (see 2.1.2.4 for programming guide)
-    *
-    * RXFIFO:   ((LPS/4) * 2) + 2
-    * NPTXFIFO: (LPS/4) * 2
-    * PTXFIFO:  (LPS/4) * 2
-    *
-    * Recommended sizes fit 2 packets of each type. For S2 and S3 we can't fit even one MPS ISOC packet (1023 FS and 1024 HS).
-    * So the calculations below are compromises between the available FIFO size and optimal performance.
-    */
-
-    // Information for maintainers: this calculation is here for backward compatibility
-    // It should be removed when we allow HAL users to configure the FIFO sizes IDF-9042
-    const int otg_dfifo_depth = hal->constant_config.hsphy_type ? 1024 : 256;
-
-    usb_dwc_hal_fifo_config_t fifo_config;
-    switch (fifo_bias) {
-        // Define minimum viable (fits at least 1 MPS) FIFO sizes for non-biased FIFO types
-        // Allocate the remaining size to the biased FIFO type
-        case USB_HAL_FIFO_BIAS_DEFAULT:
-            fifo_config.nptx_fifo_lines = otg_dfifo_depth / 4;
-            fifo_config.ptx_fifo_lines  = otg_dfifo_depth / 8;
-            fifo_config.rx_fifo_lines   = fifo_size_lines - fifo_config.ptx_fifo_lines - fifo_config.nptx_fifo_lines;
-            break;
-        case USB_HAL_FIFO_BIAS_RX:
-            fifo_config.nptx_fifo_lines = otg_dfifo_depth / 16;
-            fifo_config.ptx_fifo_lines  = otg_dfifo_depth / 8;
-            fifo_config.rx_fifo_lines   = fifo_size_lines - fifo_config.ptx_fifo_lines - fifo_config.nptx_fifo_lines;
-            break;
-        case USB_HAL_FIFO_BIAS_PTX:
-            fifo_config.rx_fifo_lines   = otg_dfifo_depth / 8 + 2; // 2 extra lines are allocated for status information. See USB-OTG Programming Guide, chapter 2.1.2.1
-            fifo_config.nptx_fifo_lines = otg_dfifo_depth / 16;
-            fifo_config.ptx_fifo_lines  = fifo_size_lines - fifo_config.nptx_fifo_lines - fifo_config.rx_fifo_lines;
-            break;
-        default:
-            abort();
+    if (!hal || !config) {
+        return false;
     }
+    uint32_t used_lines = config->rx_fifo_lines + config->nptx_fifo_lines + config->ptx_fifo_lines;
+    return (used_lines <= hal->constant_config.fifo_size);
+}
 
-    HAL_ASSERT((fifo_config.rx_fifo_lines + fifo_config.nptx_fifo_lines + fifo_config.ptx_fifo_lines) <= fifo_size_lines);
-    //Check that none of the channels are active
+
+void usb_dwc_hal_set_fifo_config(usb_dwc_hal_context_t *hal, const usb_dwc_hal_fifo_config_t *config)
+{
+    // Check internal HAL state
+    HAL_ASSERT(hal != NULL);
+    HAL_ASSERT(hal->channels.hdls != NULL);
+
+    // Validate provided config
+    HAL_ASSERT(config != NULL);
+
+    // Check if configuration exceeds available FIFO memory
+    HAL_ASSERT(usb_dwc_hal_fifo_config_is_valid(hal, config));
+
+    // Ensure no active channels (must only be called before USB install completes)
     for (int i = 0; i < hal->constant_config.chan_num_total; i++) {
         if (hal->channels.hdls[i] != NULL) {
             HAL_ASSERT(!hal->channels.hdls[i]->flags.active);
         }
     }
-    //Set the new FIFO lengths
-    usb_dwc_ll_grxfsiz_set_fifo_size(hal->dev, fifo_config.rx_fifo_lines);
-    usb_dwc_ll_gnptxfsiz_set_fifo_size(hal->dev, fifo_config.rx_fifo_lines, fifo_config.nptx_fifo_lines);
-    usb_dwc_ll_hptxfsiz_set_ptx_fifo_size(hal->dev, fifo_config.rx_fifo_lines + fifo_config.nptx_fifo_lines, fifo_config.ptx_fifo_lines);
-    //Flush the FIFOs
+
+    // Program FIFO size registers
+    usb_dwc_ll_grxfsiz_set_fifo_size(hal->dev, config->rx_fifo_lines);// Set RX FIFO size (GRXFSIZ)
+    // Set Non-Periodic TX FIFO (GNPTXFSIZ)
+    // Offset = RX FIFO lines
+    usb_dwc_ll_gnptxfsiz_set_fifo_size(hal->dev, config->rx_fifo_lines, config->nptx_fifo_lines);
+    // Set Periodic TX FIFO (HPTXFSIZ)
+    // Offset = RX + NPTX
+    usb_dwc_ll_hptxfsiz_set_ptx_fifo_size(hal->dev,
+                                          config->rx_fifo_lines + config->nptx_fifo_lines,
+                                          config->ptx_fifo_lines);
+
+    // Flush all FIFOs
     usb_dwc_ll_grstctl_flush_nptx_fifo(hal->dev);
     usb_dwc_ll_grstctl_flush_ptx_fifo(hal->dev);
     usb_dwc_ll_grstctl_flush_rx_fifo(hal->dev);
-    hal->fifo_config = fifo_config; // Implicit struct copy
+
+    // Save configuration to HAL context
+    hal->fifo_config = *config;
     hal->flags.fifo_sizes_set = 1;
 }
 
@@ -311,8 +299,7 @@ bool usb_dwc_hal_chan_alloc(usb_dwc_hal_context_t *hal, usb_dwc_hal_chan_t *chan
     usb_dwc_ll_hcint_read_and_clear_intrs(chan_obj->regs);            //Clear the interrupt bits for that channel
     usb_dwc_ll_haintmsk_en_chan_intr(hal->dev, 1 << chan_obj->flags.chan_idx);
     usb_dwc_ll_hcintmsk_set_intr_mask(chan_obj->regs, CHAN_INTRS_EN_MSK);  //Unmask interrupts for this channel
-    usb_dwc_ll_hctsiz_set_pid(chan_obj->regs, 0);        //Set the initial PID to zero
-    usb_dwc_ll_hctsiz_init(chan_obj->regs);       //Set the non changing parts of the HCTSIZ registers (e.g., do_ping and sched info)
+    usb_dwc_ll_hctsiz_init(chan_obj->regs);
     return true;
 }
 
@@ -383,8 +370,10 @@ void usb_dwc_hal_chan_set_ep_char(usb_dwc_hal_context_t *hal, usb_dwc_hal_chan_t
             hal->periodic_frame_list[index] |= 1 << chan_obj->flags.chan_idx;
         }
         // For HS endpoints we must write to sched_info field of HCTSIZ register to schedule microframes
+        // For FS endpoints sched_info is always 0xFF
+        // LS endpoints do not support periodic transfers
+        unsigned int tokens_per_frame = 0;
         if (ep_char->periodic.is_hs) {
-            unsigned int tokens_per_frame;
             if (ep_char->periodic.interval >= 8) {
                 tokens_per_frame = 1; // 1 token every 8 microframes
             } else if (ep_char->periodic.interval >= 4) {
@@ -394,8 +383,10 @@ void usb_dwc_hal_chan_set_ep_char(usb_dwc_hal_context_t *hal, usb_dwc_hal_chan_t
             } else {
                 tokens_per_frame = 8; // 1 token every microframe
             }
-            usb_dwc_ll_hctsiz_set_sched_info(chan_obj->regs, tokens_per_frame, ep_char->periodic.offset);
+        } else {
+            tokens_per_frame = 8;
         }
+        usb_dwc_ll_hctsiz_set_sched_info(chan_obj->regs, tokens_per_frame, ep_char->periodic.offset);
     }
 }
 
@@ -403,12 +394,14 @@ void usb_dwc_hal_chan_set_ep_char(usb_dwc_hal_context_t *hal, usb_dwc_hal_chan_t
 
 void usb_dwc_hal_chan_activate(usb_dwc_hal_chan_t *chan_obj, void *xfer_desc_list, int desc_list_len, int start_idx)
 {
-    //Cannot activate a channel that has already been enabled or is pending error handling
+    // Cannot activate a channel that has already been enabled or is pending error handling
     HAL_ASSERT(!chan_obj->flags.active);
-    //Set start address of the QTD list and starting QTD index
+    // Make sure that PING is not enabled from previous transaction
+    usb_dwc_ll_hctsiz_set_dopng(chan_obj->regs, false);
+    // Set start address of the QTD list and starting QTD index
     usb_dwc_ll_hcdma_set_qtd_list_addr(chan_obj->regs, xfer_desc_list, start_idx);
     usb_dwc_ll_hctsiz_set_qtd_list_len(chan_obj->regs, desc_list_len);
-    usb_dwc_ll_hcchar_enable_chan(chan_obj->regs); //Start the channel
+    usb_dwc_ll_hcchar_enable_chan(chan_obj->regs); // Start the channel
     chan_obj->flags.active = 1;
 }
 

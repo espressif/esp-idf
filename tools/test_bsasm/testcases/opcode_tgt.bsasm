@@ -1,0 +1,14 @@
+#Test TGT field of opcodes
+#(Also the end_val of the loop features)
+
+main:
+	LOOPA 10 1 main
+	IF 0 end
+	IFN 0 mid
+mid:
+	JMP end
+	JMP main
+	LOOPB 0 1 mid
+	LOOPA 65535 1 main
+end:
+	LOOPA -32768 1 end

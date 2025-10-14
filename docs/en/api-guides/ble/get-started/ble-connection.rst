@@ -21,7 +21,7 @@ Basic Concepts
 Initiating a Connection
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-*With the introduction of extended advertising features in Bluetooth LE 5.0, there are slight differences in the connection establishment process between Legacy ADV and Extended ADV. Below, we take the Legacy ADV connection establishment process as an example.*
+*With the introduction of extended advertising features in Bluetooth Core Specification 5.0, there are slight differences in the connection establishment process between Legacy ADV and Extended ADV. Below, we take the Legacy ADV connection establishment process as an example.*
 
 When a scanner receives an advertising packet on a specific advertising channel, if the advertiser is connectable, the scanner can send a connection request on the same advertising channel. The advertiser can set a *Filter Accept List* to filter out untrusted devices or accept connection requests from any scanner. Afterward, the advertiser becomes the peripheral device, and the scanner becomes the central device, allowing for bidirectional communication over the data channel.
 
@@ -101,7 +101,7 @@ The structure of the Data Channel Packet is similar to that of the :ref:`Adverti
     *   -   2
         -   Payload
         -   0-27 / 0-251
-        -   Before Bluetooth LE 4.2, the maximum payload was 27 bytes; Bluetooth LE 4.2 introduced Data Length Extension (DLE), allowing a maximum payload of 251 bytes.
+        -   Before Bluetooth Core Specification 4.2, the maximum payload was 27 bytes; Bluetooth Core Specification 4.2 introduced Data Length Extension (DLE), allowing a maximum payload of 251 bytes.
     *   -   3
         -   Message Integrity Check, MIC
         -   4
@@ -124,9 +124,9 @@ The payload of the data PDU can be further divided into:
         -   ATT Header + ATT Data
         -   0-23 / 0-247
 
-The default MTU value is 23 bytes, which matches the maximum ATT data byte size that can be carried in a single data PDU before Bluetooth LE 4.2.
+The default MTU value is 23 bytes, which matches the maximum ATT data byte size that can be carried in a single data PDU before Bluetooth Core Specification 4.2.
 
-MTU can be set to larger values, such as 140 bytes. Before Bluetooth LE 4.2, with a maximum of 23 bytes carrying ATT data in the payload, a complete ATT data packet would need to be split across multiple data PDUs. After Bluetooth LE 4.2, a single data PDU can carry up to 247 bytes of ATT data, so an MTU of 140 bytes can still be accommodated in a single data PDU.
+MTU can be set to larger values, such as 140 bytes. Before Bluetooth Core Specification 4.2, with a maximum of 23 bytes carrying ATT data in the payload, a complete ATT data packet would need to be split across multiple data PDUs. After Bluetooth Core Specification 4.2, a single data PDU can carry up to 247 bytes of ATT data, so an MTU of 140 bytes can still be accommodated in a single data PDU.
 
 
 Hands-On Practice

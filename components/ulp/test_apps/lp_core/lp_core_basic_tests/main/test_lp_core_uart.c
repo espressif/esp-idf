@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,6 +18,10 @@
 #include "esp_log.h"
 
 #include "driver/uart.h"
+#include "soc/soc_caps.h"
+#if SOC_LIGHT_SLEEP_SUPPORTED
+#include "esp_sleep.h"
+#endif /* SOC_LIGHT_SLEEP_SUPPORTED */
 
 extern const uint8_t lp_core_main_uart_bin_start[] asm("_binary_lp_core_test_app_uart_bin_start");
 extern const uint8_t lp_core_main_uart_bin_end[]   asm("_binary_lp_core_test_app_uart_bin_end");
@@ -136,6 +140,9 @@ static void setup_test_print_data(void)
 
 static void hp_uart_read(void)
 {
+    /* Wait for LP UART to be initialized first */
+    unity_wait_for_signal("LP UART init done");
+
     /* Configure HP UART driver */
     uart_config_t hp_uart_cfg = {
         .baud_rate = lp_uart_cfg.uart_proto_cfg.baud_rate,
@@ -203,6 +210,9 @@ static void test_lp_uart_write(void)
     /* Setup LP UART with default configuration */
     TEST_ASSERT(ESP_OK == lp_core_uart_init(&lp_uart_cfg));
 
+    /* Notify HP UART once LP UART is initialized */
+    unity_send_signal("LP UART init done");
+
     /* Wait for the HP UART device to be initialized */
     unity_wait_for_signal("HP UART init done");
 
@@ -216,9 +226,22 @@ static void test_lp_uart_write(void)
     setup_test_data((uint8_t *)&ulp_tx_data, NULL);
     ulp_tx_len = TEST_DATA_LEN + sizeof(start_pattern);
 
+    /* Configure ULP wakeup source */
+#if SOC_LIGHT_SLEEP_SUPPORTED
+    esp_sleep_enable_ulp_wakeup();
+#endif /* SOC_LIGHT_SLEEP_SUPPORTED */
+
     /* Start the test */
     ESP_LOGI(TAG, "Write test start");
     ulp_test_cmd = LP_CORE_LP_UART_WRITE_TEST;
+
+#if SOC_LIGHT_SLEEP_SUPPORTED
+    /* Enter light sleep */
+    esp_light_sleep_start();
+#endif /* SOC_LIGHT_SLEEP_SUPPORTED */
+
+    vTaskDelay(10);
+    TEST_ASSERT_EQUAL(ulp_test_cmd_reply, LP_CORE_COMMAND_OK);
 }
 
 static void hp_uart_read_options(void)
@@ -310,13 +333,29 @@ static void test_lp_uart_write_options(void)
     setup_test_data((uint8_t *)&ulp_tx_data, NULL);
     ulp_tx_len = TEST_DATA_LEN + sizeof(start_pattern);
 
+    /* Configure ULP wakeup source */
+#if SOC_LIGHT_SLEEP_SUPPORTED
+    esp_sleep_enable_ulp_wakeup();
+#endif /* SOC_LIGHT_SLEEP_SUPPORTED */
+
     /* Start the test */
     ESP_LOGI(TAG, "Write test start");
     ulp_test_cmd = LP_CORE_LP_UART_WRITE_TEST;
+
+#if SOC_LIGHT_SLEEP_SUPPORTED
+    /* Enter light sleep */
+    esp_light_sleep_start();
+#endif /* SOC_LIGHT_SLEEP_SUPPORTED */
+
+    vTaskDelay(10);
+    TEST_ASSERT_EQUAL(ulp_test_cmd_reply, LP_CORE_COMMAND_OK);
 }
 
 static void hp_uart_write(void)
 {
+    /* Wait for LP UART to be initialized first */
+    unity_wait_for_signal("LP UART init done");
+
     /* Configure HP UART driver */
     uart_config_t hp_uart_cfg = {
         .baud_rate = lp_uart_cfg.uart_proto_cfg.baud_rate,
@@ -365,6 +404,9 @@ static void test_lp_uart_read(void)
     /* Setup LP UART with updated configuration */
     TEST_ASSERT(ESP_OK == lp_core_uart_init(&lp_uart_cfg));
 
+    /* Notify HP UART once LP UART is initialized */
+    unity_send_signal("LP UART init done");
+
     /* Wait for the HP UART device to be initialized */
     unity_wait_for_signal("HP UART init done");
 
@@ -409,6 +451,9 @@ static void test_lp_uart_read(void)
 
 static void hp_uart_write_options(void)
 {
+    /* Wait for LP UART to be initialized first */
+    unity_wait_for_signal("LP UART init done");
+
     /* Configure HP UART driver */
     uart_config_t hp_uart_cfg = {
         .baud_rate = lp_uart_cfg1.uart_proto_cfg.baud_rate,
@@ -457,6 +502,9 @@ static void test_lp_uart_read_options(void)
     /* Setup LP UART with updated configuration */
     TEST_ASSERT(ESP_OK == lp_core_uart_init(&lp_uart_cfg1));
 
+    /* Notify HP UART once LP UART is initialized */
+    unity_send_signal("LP UART init done");
+
     /* Wait for the HP UART device to be initialized */
     unity_wait_for_signal("HP UART init done");
 
@@ -504,6 +552,9 @@ static void test_lp_uart_read_multi_byte(void)
     /* Setup LP UART with updated configuration */
     TEST_ASSERT(ESP_OK == lp_core_uart_init(&lp_uart_cfg));
 
+    /* Notify HP UART once LP UART is initialized */
+    unity_send_signal("LP UART init done");
+
     /* Wait for the HP UART device to be initialized */
     unity_wait_for_signal("HP UART init done");
 
@@ -550,6 +601,9 @@ static void test_lp_uart_read_multi_byte(void)
 
 static void hp_uart_read_print(void)
 {
+    /* Wait for LP UART to be initialized first */
+    unity_wait_for_signal("LP UART init done");
+
     /* Configure HP UART driver */
     uart_config_t hp_uart_cfg = {
         .baud_rate = lp_uart_cfg.uart_proto_cfg.baud_rate,
@@ -629,6 +683,9 @@ static void test_lp_uart_print(void)
     /* Setup LP UART with default configuration */
     TEST_ASSERT(ESP_OK == lp_core_uart_init(&lp_uart_cfg));
 
+    /* Notify HP UART once LP UART is initialized */
+    unity_send_signal("LP UART init done");
+
     /* Wait for the HP UART device to be initialized */
     unity_wait_for_signal("HP UART init done");
 
@@ -647,9 +704,22 @@ static void test_lp_uart_print(void)
     ulp_test_hex = test_hex;
     ulp_test_character = test_character;
 
+    /* Configure ULP wakeup source */
+#if SOC_LIGHT_SLEEP_SUPPORTED
+    esp_sleep_enable_ulp_wakeup();
+#endif /* SOC_LIGHT_SLEEP_SUPPORTED */
+
     /* Start the test */
     ESP_LOGI(TAG, "LP Core print test start");
     ulp_test_cmd = LP_CORE_LP_UART_PRINT_TEST;
+
+#if SOC_LIGHT_SLEEP_SUPPORTED
+    /* Enter light sleep */
+    esp_light_sleep_start();
+#endif /* SOC_LIGHT_SLEEP_SUPPORTED */
+
+    vTaskDelay(10);
+    TEST_ASSERT_EQUAL(ulp_test_cmd_reply, LP_CORE_COMMAND_OK);
 }
 
 /* Test LP UART write operation with default LP UART initialization configuration */

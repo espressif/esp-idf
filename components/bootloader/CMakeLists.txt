@@ -32,4 +32,7 @@ if(NOT CONFIG_SECURE_BOOT OR CONFIG_SECURE_BOOT_FLASH_BOOTLOADER_DEFAULT)
     esptool_py_flash_target_image(flash bootloader
         ${CONFIG_BOOTLOADER_OFFSET_IN_FLASH}
         "${BOOTLOADER_BUILD_DIR}/bootloader.bin")
+
+    # Add bootloader as a dependency to the flash target
+    add_dependencies(flash bootloader)
 endif()

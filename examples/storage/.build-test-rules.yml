@@ -13,37 +13,8 @@ examples/storage/emmc:
     - esp_driver_sdmmc
     - esp_driver_sdspi
   enable:
-    - if: IDF_TARGET == "esp32s3"
-      reason: only support on esp32s3
-
-examples/storage/nvs_rw_blob:
-  depends_components:
-    - nvs_flash
-    - driver
-  disable_test:
-    - if: IDF_TARGET not in ["esp32", "esp32c3"]
-      reason: only one target per arch needed
-
-examples/storage/nvs_rw_value:
-  depends_components:
-    - nvs_flash
-  disable_test:
-    - if: IDF_TARGET not in ["esp32", "esp32c3"]
-      reason: only one target per arch needed
-
-examples/storage/nvs_rw_value_cxx:
-  depends_components:
-    - nvs_flash
-  disable_test:
-    - if: IDF_TARGET not in ["esp32", "esp32c3"]
-      reason: only one target per arch needed
-
-examples/storage/nvsgen:
-  depends_components:
-    - nvs_flash
-  disable_test:
-    - if: IDF_TARGET != "esp32"
-      reason: only one target needed
+    - if: IDF_TARGET in ["esp32s3", "esp32p4"]
+      reason: only support on esp32s3 and esp32p4
 
 examples/storage/partition_api/partition_find:
   depends_components:
@@ -84,9 +55,12 @@ examples/storage/perf_benchmark:
     - wear_levelling
     - esp_partition
     - esp_driver_sdmmc
+  disable:
+    - if: IDF_TARGET in ["esp32h21", "esp32h4"]
+      temporary: true
+      reason: not supported yet # TODO: [esp32h21] IDF-11609 [ESP32H4] IDF-12388
   disable_test:
     - if: IDF_TARGET == "esp32p4" and CONFIG_NAME in ["sdmmc_1line", "sdmmc_4line", "sdspi_1line"]
-    - if: IDF_TARGET in ["esp32c61"]
       temporary: true
       reason: lack of runners, build only # TODO: IDF-8970
 

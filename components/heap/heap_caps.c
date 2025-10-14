@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -171,22 +171,27 @@ HEAP_IRAM_ATTR void *heap_caps_realloc_default( void *ptr, size_t size )
  */
 HEAP_IRAM_ATTR void *heap_caps_malloc_prefer( size_t size, size_t num, ... )
 {
-    va_list argp;
-    va_start( argp, num );
     void *r = NULL;
     uint32_t caps = MALLOC_CAP_DEFAULT;
-    while (num--) {
-        caps = va_arg( argp, uint32_t );
-        r = heap_caps_malloc_base( size, caps );
-        if (r != NULL || size == 0) {
-            break;
+
+    if (num > 0) {
+        va_list argp = {0};
+        va_start(argp, num);
+
+        for ( ; num > 0; --num) {
+            caps = va_arg(argp, uint32_t);
+            r = heap_caps_malloc_base(size, caps);
+            if (r != NULL || size == 0) {
+                break;
+            }
         }
+
+        va_end( argp );
     }
 
-    if (r == NULL && size > 0){
+    if (r == NULL && size > 0) {
         heap_caps_alloc_failed(size, caps, __func__);
     }
-    va_end( argp );
     return r;
 }
 
@@ -195,46 +200,58 @@ HEAP_IRAM_ATTR void *heap_caps_malloc_prefer( size_t size, size_t num, ... )
  */
 HEAP_IRAM_ATTR void *heap_caps_realloc_prefer( void *ptr, size_t size, size_t num, ... )
 {
-    va_list argp;
-    va_start( argp, num );
     void *r = NULL;
     uint32_t caps = MALLOC_CAP_DEFAULT;
-    while (num--) {
-        caps = va_arg( argp, uint32_t );
-        r = heap_caps_realloc_base( ptr, size, caps );
-        if (r != NULL || size == 0) {
-            break;
+
+    if (num > 0) {
+        va_list argp = {0};
+        va_start(argp, num);
+
+        for ( ; num > 0; --num) {
+            caps = va_arg(argp, uint32_t);
+            r = heap_caps_realloc_base(ptr, size, caps);
+            if (r != NULL || size == 0) {
+                break;
+            }
         }
+
+        va_end( argp );
     }
 
-    if (r == NULL && size > 0){
+    if (r == NULL && size > 0) {
         heap_caps_alloc_failed(size, caps, __func__);
     }
-    va_end( argp );
     return r;
 }
+
 
 /*
  Memory callocation as preference in decreasing order.
  */
-HEAP_IRAM_ATTR void *heap_caps_calloc_prefer( size_t n, size_t size, size_t num, ... )
+HEAP_IRAM_ATTR void *heap_caps_calloc_prefer(size_t n, size_t size, size_t num, ...)
 {
-    va_list argp;
-    va_start( argp, num );
     void *r = NULL;
     uint32_t caps = MALLOC_CAP_DEFAULT;
-    while (num--) {
-        caps = va_arg( argp, uint32_t );
-        r = heap_caps_calloc_base( n, size, caps );
-        if (r != NULL || size == 0){
-            break;
+
+    if (num > 0) {
+        va_list argp = {0};
+        va_start(argp, num);
+
+        for (; num > 0; --num) {
+            caps = va_arg(argp, uint32_t);
+            r = heap_caps_calloc_base(n, size, caps);
+            if (r != NULL || size == 0) {
+                break;
+            }
         }
+
+        va_end(argp);
     }
 
-    if (r == NULL && size > 0){
+    if (r == NULL && size > 0) {
         heap_caps_alloc_failed(size, caps, __func__);
     }
-    va_end( argp );
+
     return r;
 }
 
@@ -468,6 +485,15 @@ size_t heap_caps_get_allocated_size( void *ptr )
     return MULTI_HEAP_REMOVE_BLOCK_OWNER_SIZE(size);
 }
 
+size_t heap_caps_get_containing_block_size(void *ptr)
+{
+    heap_t *heap = find_containing_heap(ptr);
+    assert(heap);
+
+    void *block_ptr = multi_heap_find_containing_block(heap->heap, ptr);
+    return multi_heap_get_allocated_size(heap->heap, block_ptr);
+}
+
 static HEAP_IRAM_ATTR esp_err_t heap_caps_aligned_check_args(size_t alignment, size_t size, uint32_t caps, const char *funcname)
 {
     if (!alignment) {
@@ -567,7 +593,7 @@ typedef struct walker_data {
         heap_t *heap;
 } walker_data_t;
 
-__attribute__((noinline)) static bool heap_caps_walker(void* block_ptr, size_t block_size, int block_used, void *user_data)
+__attribute__((noinline)) static bool heap_caps_walker(void *block_ptr, size_t block_size, int block_used, void *user_data)
 {
     walker_data_t *walker_data = (walker_data_t*)user_data;
 

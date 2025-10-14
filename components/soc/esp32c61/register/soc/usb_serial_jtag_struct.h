@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -23,7 +23,8 @@ typedef union {
          *  can check USB_SERIAL_JTAG_OUT_EP1_WR_ADDR USB_SERIAL_JTAG_OUT_EP0_RD_ADDR to know
          *  how many data is received, then read data from UART Rx FIFO.
          */
-        uint32_t rdwr_byte:32;
+        uint32_t rdwr_byte:8;
+        uint32_t reserved_8:24;
     };
     uint32_t val;
 } usb_serial_jtag_ep1_reg_t;
@@ -59,6 +60,7 @@ typedef union {
     struct {
         /** phy_sel : R/W; bitpos: [0]; default: 0;
          *  Select internal/external PHY
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t phy_sel:1;
         /** exchg_pins_override : R/W; bitpos: [1]; default: 0;
@@ -115,7 +117,12 @@ typedef union {
          *  through GPIO Matrix.
          */
         uint32_t usb_jtag_bridge_en:1;
-        uint32_t reserved_16:16;
+        /** usb_phy_tx_edge_sel : R/W; bitpos: [16]; default: 0;
+         *  Control at which clock edge the dp and dm are sent to  USB PHY,  0: tx output at
+         *  clock negative edge. 1: tx output at clock positive edge.
+         */
+        uint32_t usb_phy_tx_edge_sel:1;
+        uint32_t reserved_17:15;
     };
     uint32_t val;
 } usb_serial_jtag_conf0_reg_t;
@@ -130,7 +137,7 @@ typedef union {
          */
         uint32_t test_enable:1;
         /** test_usb_oe : R/W; bitpos: [1]; default: 0;
-         *  USB pad output enable in test
+         *  USB pad oen in test
          */
         uint32_t test_usb_oe:1;
         /** test_tx_dp : R/W; bitpos: [2]; default: 0;
@@ -925,7 +932,7 @@ typedef union {
  */
 typedef union {
     struct {
-        /** date : R/W; bitpos: [31:0]; default: 36770368;
+        /** date : R/W; bitpos: [31:0]; default: 37822848;
          *  register version.
          */
         uint32_t date:32;

@@ -18,7 +18,7 @@
 
 /******************************************************************************
  *
- *  contains code for encoder flow and initalization of encoder
+ *  contains code for encoder flow and initialization of encoder
  *
  ******************************************************************************/
 
@@ -62,7 +62,7 @@ void SBC_Encoder(SBC_ENC_PARAMS *pstrEncParams)
     pstrEncParams->ps16NextPcmBuffer  = pstrEncParams->as16PcmBuffer;
 #endif
     do {
-        /* SBC ananlysis filter*/
+        /* SBC analysis filter*/
         if (s32NumOfSubBands == 4) {
             SbcAnalysisFilter4(pstrEncParams);
         } else {
@@ -73,7 +73,7 @@ void SBC_Encoder(SBC_ENC_PARAMS *pstrEncParams)
         ps16ScfL = pstrEncParams->as16ScaleFactor;
         s32Ch = pstrEncParams->s16NumOfChannels * s32NumOfSubBands;
 
-        pstrEncParams->ps16NextPcmBuffer += s32Ch * s32NumOfBlocks; /* in case of multible sbc frame to encode update the pcm pointer */
+        pstrEncParams->ps16NextPcmBuffer += s32Ch * s32NumOfBlocks; /* in case of multiple sbc frame to encode update the pcm pointer */
 
         for (s32Sb = 0; s32Sb < s32Ch; s32Sb++) {
             SbBuffer = pstrEncParams->s32SbBuffer + s32Sb;
@@ -101,7 +101,7 @@ void SBC_Encoder(SBC_ENC_PARAMS *pstrEncParams)
         /* In case of JS processing,check whether to use JS */
 #if (SBC_JOINT_STE_INCLUDED == TRUE)
         if (pstrEncParams->s16ChannelMode == SBC_JOINT_STEREO) {
-            /* Calculate sum and differance  scale factors for making JS decision   */
+            /* Calculate sum and difference  scale factors for making JS decision   */
             ps16ScfL = pstrEncParams->as16ScaleFactor ;
             /* calculate the scale factor of Joint stereo max sum and diff */
             for (s32Sb = 0; s32Sb < s32NumOfSubBands - 1; s32Sb++) {
@@ -191,7 +191,7 @@ void SBC_Encoder(SBC_ENC_PARAMS *pstrEncParams)
 }
 
 /****************************************************************************
-* InitSbcAnalysisFilt - Initalizes the input data to 0
+* InitSbcAnalysisFilt - Initializes the input data to 0
 *
 * RETURNS : N/A
 */
@@ -306,7 +306,7 @@ void SBC_Encoder_Init(SBC_ENC_PARAMS *pstrEncParams)
         /* allocation method: loudness */
         pstrEncParams->s16AllocationMethod = SBC_LOUDNESS;
 
-        /* set the header paramers, unused for mSBC */
+        /* set the header parameters, unused for mSBC */
         pstrEncParams->FrameHeader = 0;
     }
 

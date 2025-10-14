@@ -15,6 +15,7 @@ typedef struct {
     uint32_t resolution;
 } rmt_musical_score_encoder_t;
 
+RMT_ENCODER_FUNC_ATTR
 static size_t rmt_encode_musical_score(rmt_encoder_t *encoder, rmt_channel_handle_t channel, const void *primary_data, size_t data_size, rmt_encode_state_t *ret_state)
 {
     rmt_musical_score_encoder_t *score_encoder = __containerof(encoder, rmt_musical_score_encoder_t, base);
@@ -41,6 +42,7 @@ static esp_err_t rmt_del_musical_score_encoder(rmt_encoder_t *encoder)
     return ESP_OK;
 }
 
+RMT_ENCODER_FUNC_ATTR
 static esp_err_t rmt_musical_score_encoder_reset(rmt_encoder_t *encoder)
 {
     rmt_musical_score_encoder_t *score_encoder = __containerof(encoder, rmt_musical_score_encoder_t, base);

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -39,6 +39,7 @@ static const char *TAG = "jpeg.decoder";
 static void s_decoder_error_log_print(uint32_t status);
 static esp_err_t jpeg_dec_config_dma_descriptor(jpeg_decoder_handle_t decoder_engine);
 static esp_err_t jpeg_parse_marker(jpeg_decoder_handle_t decoder_engine, const uint8_t *in_buf, uint32_t inbuf_len);
+static esp_err_t jpeg_check_marker(jpeg_decoder_handle_t decoder_engine);
 static esp_err_t jpeg_parse_header_info_to_hw(jpeg_decoder_handle_t decoder_engine);
 static bool jpeg_dec_transaction_on_picked(uint32_t channel_num, const dma2d_trans_channel_info_t *dma2d_chans, void *users_config);
 
@@ -198,22 +199,38 @@ esp_err_t jpeg_decoder_get_info(const uint8_t *in_buf, uint32_t inbuf_len, jpeg_
     return ESP_OK;
 }
 
+static bool _check_buffer_alignment(void *buffer, uint32_t buffer_size, uint32_t alignment)
+{
+    if (alignment == 0) {
+        alignment = 4; // basic align requirement from DMA
+    }
+    if ((uintptr_t)buffer & (alignment - 1)) {
+        return false;
+    }
+    if (buffer_size & (alignment - 1)) {
+        return false;
+    }
+    return true;
+}
+
 esp_err_t jpeg_decoder_process(jpeg_decoder_handle_t decoder_engine, const jpeg_decode_cfg_t *decode_cfg, const uint8_t *bit_stream, uint32_t stream_size, uint8_t *decode_outbuf, uint32_t outbuf_size, uint32_t *out_size)
 {
     ESP_RETURN_ON_FALSE(decoder_engine, ESP_ERR_INVALID_ARG, TAG, "jpeg decode handle is null");
     ESP_RETURN_ON_FALSE(decode_cfg, ESP_ERR_INVALID_ARG, TAG, "jpeg decode config is null");
-    ESP_RETURN_ON_FALSE(decode_outbuf, ESP_ERR_INVALID_ARG, TAG, "jpeg decode picture buffer is null");
-    esp_dma_mem_info_t dma_mem_info = {
-        .dma_alignment_bytes = 4,
-    };
-    //TODO: IDF-9637
-    ESP_RETURN_ON_FALSE(esp_dma_is_buffer_alignment_satisfied(decode_outbuf, outbuf_size, dma_mem_info), ESP_ERR_INVALID_ARG, TAG, "jpeg decode decode_outbuf or out_buffer size is not aligned, please use jpeg_alloc_decoder_mem to malloc your buffer");
+    ESP_RETURN_ON_FALSE(decode_outbuf && outbuf_size, ESP_ERR_INVALID_ARG, TAG, "jpeg decode picture buffer is null");
+
+    uint32_t outbuf_cache_line_size = esp_cache_get_line_size_by_addr(decode_outbuf);
+    // check alignment of the output buffer
+    ESP_RETURN_ON_FALSE(_check_buffer_alignment(decode_outbuf, outbuf_size, outbuf_cache_line_size), ESP_ERR_INVALID_ARG, TAG,
+                        "jpeg decode decode_outbuf or out_buffer size is not aligned, please use jpeg_alloc_decoder_mem to malloc your buffer");
 
     esp_err_t ret = ESP_OK;
 
+#if CONFIG_PM_ENABLE
     if (decoder_engine->codec_base->pm_lock) {
         ESP_RETURN_ON_ERROR(esp_pm_lock_acquire(decoder_engine->codec_base->pm_lock), TAG, "acquire pm_lock failed");
     }
+#endif
 
     xSemaphoreTake(decoder_engine->codec_base->codec_mutex, portMAX_DELAY);
     /* Reset queue */
@@ -225,11 +242,14 @@ esp_err_t jpeg_decoder_process(jpeg_decoder_handle_t decoder_engine, const jpeg_
     decoder_engine->decoded_buf = decode_outbuf;
 
     ESP_GOTO_ON_ERROR(jpeg_parse_marker(decoder_engine, bit_stream, stream_size), err2, TAG, "jpeg parse marker failed");
+    ESP_GOTO_ON_ERROR(jpeg_check_marker(decoder_engine), err2, TAG, "jpeg check marker failed");
     ESP_GOTO_ON_ERROR(jpeg_parse_header_info_to_hw(decoder_engine), err2, TAG, "write header info to hw failed");
     ESP_GOTO_ON_ERROR(jpeg_dec_config_dma_descriptor(decoder_engine), err2, TAG, "config dma descriptor failed");
 
-    *out_size = decoder_engine->header_info->process_h * decoder_engine->header_info->process_v * decoder_engine->bit_per_pixel / 8;
-    ESP_GOTO_ON_FALSE((*out_size <= outbuf_size), ESP_ERR_INVALID_ARG, err2, TAG, "Given buffer size % " PRId32 " is smaller than actual jpeg decode output size % " PRId32 "the height and width of output picture size will be adjusted to 16 bytes aligned automatically", outbuf_size, *out_size);
+    if (out_size) {
+        *out_size = decoder_engine->header_info->process_h * decoder_engine->header_info->process_v * decoder_engine->bit_per_pixel / 8;
+        ESP_GOTO_ON_FALSE((*out_size <= outbuf_size), ESP_ERR_INVALID_ARG, err2, TAG, "Given buffer size % " PRId32 " is smaller than actual jpeg decode output size % " PRId32 "the height and width of output picture size will be adjusted to 16 bytes aligned automatically", outbuf_size, *out_size);
+    }
 
     dma2d_trans_config_t trans_desc = {
         .tx_channel_num = 1,
@@ -241,6 +261,10 @@ esp_err_t jpeg_decoder_process(jpeg_decoder_handle_t decoder_engine, const jpeg_
 
     // Before 2DDMA starts. sync buffer from cache to psram
     ret = esp_cache_msync((void*)decoder_engine->header_info->buffer_offset, decoder_engine->header_info->buffer_left, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
+    assert(ret == ESP_OK);
+
+    // Before 2DDMA starts, invalidate cache ahead of time.
+    ret = esp_cache_msync((void*)decoder_engine->decoded_buf, outbuf_size, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
     assert(ret == ESP_OK);
 
     ESP_GOTO_ON_ERROR(dma2d_enqueue(decoder_engine->dma2d_group_handle, &trans_desc, decoder_engine->trans_desc), err2, TAG, "enqueue dma2d failed");
@@ -260,25 +284,31 @@ esp_err_t jpeg_decoder_process(jpeg_decoder_handle_t decoder_engine, const jpeg_
         }
 
         if (jpeg_dma2d_event.dma_evt & JPEG_DMA2D_RX_EOF) {
-            ret = esp_cache_msync((void*)decoder_engine->decoded_buf, outbuf_size, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
-            assert(ret == ESP_OK);
+            if (outbuf_cache_line_size > 0) {
+                ret = esp_cache_msync((void*)decoder_engine->decoded_buf, outbuf_size, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
+                assert(ret == ESP_OK);
+            }
             break;
         }
     }
 
     xSemaphoreGive(decoder_engine->codec_base->codec_mutex);
+#if CONFIG_PM_ENABLE
     if (decoder_engine->codec_base->pm_lock) {
         ESP_RETURN_ON_ERROR(esp_pm_lock_release(decoder_engine->codec_base->pm_lock), TAG, "release pm_lock failed");
     }
+#endif
     return ESP_OK;
 
 err1:
     dma2d_force_end(decoder_engine->trans_desc, &need_yield);
 err2:
     xSemaphoreGive(decoder_engine->codec_base->codec_mutex);
+#if CONFIG_PM_ENABLE
     if (decoder_engine->codec_base->pm_lock) {
         esp_pm_lock_release(decoder_engine->codec_base->pm_lock);
     }
+#endif
     return ret;
 }
 
@@ -352,6 +382,7 @@ static void cfg_desc(jpeg_decoder_handle_t decoder_engine, dma2d_descriptor_t *d
     dsc->next       = next_dsc;
     esp_err_t ret = esp_cache_msync((void*)dsc, decoder_engine->dma_desc_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_INVALIDATE);
     assert(ret == ESP_OK);
+    (void)ret;
 }
 
 static esp_err_t jpeg_dec_config_dma_descriptor(jpeg_decoder_handle_t decoder_engine)
@@ -631,9 +662,7 @@ static esp_err_t jpeg_parse_header_info_to_hw(jpeg_decoder_handle_t decoder_engi
     dht_func[1][0](hal, header_info->huffbits[1][0], header_info->huffcode[1][0], header_info->tmp_huff);
     dht_func[1][1](hal, header_info->huffbits[1][1], header_info->huffcode[1][1], header_info->tmp_huff);
 
-    if (header_info->dri_marker) {
-        jpeg_ll_set_restart_interval(hal->dev, header_info->ri);
-    }
+    jpeg_ll_set_restart_interval(hal->dev, header_info->ri);
 
     return ESP_OK;
 }
@@ -716,6 +745,9 @@ static esp_err_t jpeg_parse_marker(jpeg_decoder_handle_t decoder_engine, const u
         case JPEG_M_SOS:
             ESP_RETURN_ON_ERROR(jpeg_parse_sos_marker(header_info), TAG, "deal sos marker failed");
             break;
+        case JPEG_M_INV:
+            ESP_RETURN_ON_ERROR(jpeg_parse_inv_marker(header_info), TAG, "deal invalid marker failed");
+            break;
         }
         if (marker == JPEG_M_SOS) {
             break;
@@ -724,6 +756,38 @@ static esp_err_t jpeg_parse_marker(jpeg_decoder_handle_t decoder_engine, const u
 
     // Update information after parse marker finishes
     decoder_engine->header_info->buffer_left = decoder_engine->total_size - decoder_engine->header_info->header_size;
+
+    return ESP_OK;
+}
+
+static esp_err_t jpeg_default_huff_table(jpeg_dec_header_info_t *header_info)
+{
+    // Copy default Huffman table parameters to JPEG header
+    // DC Coefficients
+    memcpy(header_info->huffbits[0][0], luminance_dc_coefficients, JPEG_HUFFMAN_BITS_LEN_TABLE_LEN);
+    memcpy(header_info->huffbits[0][1], chrominance_dc_coefficients, JPEG_HUFFMAN_BITS_LEN_TABLE_LEN);
+    // AC Coefficients
+    memcpy(header_info->huffbits[1][0],  luminance_ac_coefficients, JPEG_HUFFMAN_BITS_LEN_TABLE_LEN);
+    memcpy(header_info->huffbits[1][1],  chrominance_ac_coefficients, JPEG_HUFFMAN_BITS_LEN_TABLE_LEN);
+    // DC Values
+    memcpy(header_info->huffcode[0][0], luminance_dc_values, JPEG_HUFFMAN_DC_VALUE_TABLE_LEN);
+    memcpy(header_info->huffcode[0][1], chrominance_dc_values, JPEG_HUFFMAN_DC_VALUE_TABLE_LEN);
+    // AC Values
+    memcpy(header_info->huffcode[1][0], luminance_ac_values, JPEG_HUFFMAN_AC_VALUE_TABLE_LEN);
+    memcpy(header_info->huffcode[1][1], chrominance_ac_values, JPEG_HUFFMAN_AC_VALUE_TABLE_LEN);
+
+    return ESP_OK;
+}
+
+static esp_err_t jpeg_check_marker(jpeg_decoder_handle_t decoder_engine)
+{
+    // Check if Huffman table is present in JPEG image
+    if (!decoder_engine->header_info->dht_marker) {
+
+        // Huffman table not present, define a default one
+        // This is common for USB Cameras, not to include the table into the JPEG image to save a bandwidth on a USB bus
+        jpeg_default_huff_table(decoder_engine->header_info);
+    }
 
     return ESP_OK;
 }

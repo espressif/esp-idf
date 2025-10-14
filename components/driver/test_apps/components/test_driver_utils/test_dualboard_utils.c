@@ -43,10 +43,10 @@ void test_prepare_buffer_pool(size_t pool_size, uint32_t flags)
     test_fill_random_to_buffer(199, s_pool, pool_size);
 }
 
-void test_get_buffer_from_pool(uint32_t offset, size_t size, void **out_buffer)
+void test_get_buffer_from_pool(uint32_t offset, size_t size, size_t alignment, void **out_buffer)
 {
     //to make sure the out_buffer is within the pool
-    offset = ((offset % (s_pool_size - size)) + 3) & ~3;
+    offset = ((offset % (s_pool_size - size)) + (alignment - 1)) & ~(alignment - 1);
     // TEST_ASSERT(offset + size < (uint32_t)s_pool + s_pool_size)
 
     *out_buffer = (void *)(s_pool + offset);

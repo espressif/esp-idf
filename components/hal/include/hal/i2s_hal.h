@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,7 +16,7 @@
 #pragma once
 
 #include "soc/soc_caps.h"
-#if SOC_I2S_SUPPORTED
+#if SOC_HAS(I2S)
 #include "hal/i2s_types.h"
 #include "hal/i2s_ll.h"
 #endif
@@ -25,7 +25,7 @@
 extern "C" {
 #endif
 
-#if SOC_I2S_SUPPORTED
+#if SOC_HAS(I2S)
 /**
  * @brief General slot configuration information
  * @note It is a general purpose struct, not supposed to be used directly by user
@@ -138,7 +138,7 @@ typedef struct {
  * @brief Init I2S hal context
  *
  * @param hal Context of the HAL layer
- * @param port_id The I2S port number, the max port number is (SOC_I2S_NUM -1)
+ * @param port_id The I2S port number, the max port number is (SOC_I2S_ATTR(INST_NUM) -1)
  */
 void i2s_hal_init(i2s_hal_context_t *hal, int port_id);
 
@@ -159,10 +159,13 @@ void i2s_hal_calc_mclk_precise_division(uint32_t sclk, uint32_t mclk, hal_utils_
  * @param clk_info clock information, if it is NULL, only set the clock source
  * @param clk_src clock source
  */
-void _i2s_hal_set_tx_clock(i2s_hal_context_t *hal, const i2s_hal_clock_info_t *clk_info, i2s_clock_src_t clk_src);
+void _i2s_hal_set_tx_clock(i2s_hal_context_t *hal, const i2s_hal_clock_info_t *clk_info, i2s_clock_src_t clk_src, hal_utils_clk_div_t *ret_mclk_div);
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define i2s_hal_set_tx_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _i2s_hal_set_tx_clock(__VA_ARGS__)
+#define i2s_hal_set_tx_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _i2s_hal_set_tx_clock(__VA_ARGS__); \
+    } while(0)
 #else
 /**
  * @brief Set tx channel clock
@@ -170,8 +173,9 @@ void _i2s_hal_set_tx_clock(i2s_hal_context_t *hal, const i2s_hal_clock_info_t *c
  * @param hal Context of the HAL layer
  * @param clk_info clock information, if it is NULL, only set the clock source
  * @param clk_src clock source
+ * @param ret_mclk_div return mclk division coefficients, including integer part and decimal part
  */
-void i2s_hal_set_tx_clock(i2s_hal_context_t *hal, const i2s_hal_clock_info_t *clk_info, i2s_clock_src_t clk_src);
+void i2s_hal_set_tx_clock(i2s_hal_context_t *hal, const i2s_hal_clock_info_t *clk_info, i2s_clock_src_t clk_src, hal_utils_clk_div_t *ret_mclk_div);
 #endif  // SOC_PERIPH_CLK_CTRL_SHARED
 
 /**
@@ -180,13 +184,17 @@ void i2s_hal_set_tx_clock(i2s_hal_context_t *hal, const i2s_hal_clock_info_t *cl
  * @param hal Context of the HAL layer
  * @param clk_info clock information, if it is NULL, only set the clock source
  * @param clk_src clock source
+ * @param ret_mclk_div return mclk division coefficients, including integer part and decimal part
  */
-void _i2s_hal_set_rx_clock(i2s_hal_context_t *hal, const i2s_hal_clock_info_t *clk_info, i2s_clock_src_t clk_src);
+void _i2s_hal_set_rx_clock(i2s_hal_context_t *hal, const i2s_hal_clock_info_t *clk_info, i2s_clock_src_t clk_src, hal_utils_clk_div_t *ret_mclk_div);
 
 #if SOC_PERIPH_CLK_CTRL_SHARED
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define i2s_hal_set_rx_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _i2s_hal_set_rx_clock(__VA_ARGS__)
+#define i2s_hal_set_rx_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _i2s_hal_set_rx_clock(__VA_ARGS__); \
+    } while(0)
 #else
 #define i2s_hal_set_rx_clock(...)   _i2s_hal_set_rx_clock(__VA_ARGS__)
 #endif

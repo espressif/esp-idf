@@ -41,12 +41,29 @@ Please refer to :ref:`ESP-TLS: TLS Server Verification <esp_tls_server_verificat
 Partial Image Download over HTTPS
 ---------------------------------
 
-To use the partial image download feature, enable ``partial_http_download`` configuration in ``esp_https_ota_config_t``. When this configuration is enabled, firmware image will be downloaded in multiple HTTP requests of specified sizes. Maximum content length of each request can be specified by setting ``max_http_request_size`` to the required value.
+To use the partial image download feature, you need to:
+
+* **Enable the component-level configuration**: Enable :ref:`CONFIG_ESP_HTTPS_OTA_ENABLE_PARTIAL_DOWNLOAD` in menuconfig (``Component config`` → ``ESP HTTPS OTA`` → ``Enable partial HTTP download for OTA``)
+
+* **Enable the feature in your application**: Set the ``partial_http_download`` field in :cpp:struct:`esp_https_ota_config_t` configuration structure
+
+When this configuration is enabled, firmware image will be downloaded in multiple HTTP requests of specified sizes. Maximum content length of each request can be specified by setting ``max_http_request_size`` to the required value.
 
 This option is useful while fetching image from a service like AWS S3, where mbedTLS Rx buffer size (:ref:`CONFIG_MBEDTLS_SSL_IN_CONTENT_LEN`) can be set to a lower value which is not possible without enabling this configuration.
 
 Default value of mbedTLS Rx buffer size is set to 16 KB. By using ``partial_http_download`` with ``max_http_request_size`` of 4 KB, size of mbedTLS Rx buffer can be reduced to 4 KB. With this configuration, memory saving of around 12 KB is expected.
 
+.. note::
+    If the server uses chunked transfer encoding, partial downloads are not feasible because the total content length is not known in advance.
+
+OTA Resumption
+--------------
+
+To use the OTA resumption feature, enable the ``ota_resumption`` configuration in the :cpp:struct:`esp_https_ota_config_t`. When OTA resumption is enabled, an OTA image download which has failed previously can be resumed from its intermediate state instead of restarting the whole OTA process from the beginning. This is implemented using the HTTP partial range request feature.
+
+To specify the point from where the image download should resume, you need to set the ``ota_image_bytes_written`` field in :cpp:struct:`esp_https_ota_config_t`. This value indicates the number of bytes already written to the OTA partition in the previous OTA attempt.
+
+For reference, you can check the :example:`system/ota/advanced_https_ota`, which demonstrates OTA resumption. In this example, the intermediate OTA state is saved in NVS, allowing the OTA process to resume seamlessly from the last saved state and continue the download.
 
 Signature Verification
 ----------------------
@@ -71,17 +88,17 @@ Pre-encrypted firmware distribution ensures that the firmware image stays encryp
 Design
 ^^^^^^
 
-* This scheme requires a unique RSA-3072 public-private key pair to be generated first. The public key stays on the OTA update server for encryption purpose and the private key is part of the device (e.g., embedded in firmware) for decryption purpose.
-* Pre-encrypted firmware is encrypted using AES-GCM key which is then appended to the image as header (along with config parameters).
-* Further the AES-GCM key gets encrypted using RSA public key and the resultant image gets hosted on the OTA update server.
-* On the device side, first the AES-GCM key is retrieved by decrypting the image header using RSA private key available to the device.
-* Finally, the contents of the image are decrypted using AES-GCM key (and config parameters) and written to the flash storage.
+Pre-encrypted firmware is a **transport security scheme** that ensures firmware images remain encrypted **in transit** from the OTA server to the device (irrespective of the underlying transport security). This approach differs from :doc:`../../security/flash-encryption` in several key ways:
 
-This whole workflow is managed by an external component `esp_encrypted_image <https://github.com/espressif/idf-extra-components/blob/master/esp_encrypted_img>`_ and it gets plugged into the OTA update framework through decryption callback (:cpp:member:`esp_https_ota_config_t::decrypt_cb`) mechanism.
+* **Key Management**: Uses externally managed encryption keys rather than per-device unique keys generated internally
+* **Flash Offset Independence**: Generates consistent ciphertext regardless of flash partition location (``ota_0``, ``ota_1``, etc.)
+* **Transport Protection**: Provides encryption protection during firmware distribution, not device-level storage security
 
-.. note::
+**Important Security Note**: Pre-encrypted firmware does not provide device-level security on its own. Once received, the firmware is decrypted on the device and stored according to the device's flash encryption configuration. For device-level security, flash encryption must be separately enabled.
 
-    The supported scheme is based on RSA-3072 and the private key on device side must be protected using platform security features.
+This process is managed by the `esp_encrypted_img <https://github.com/espressif/idf-extra-components/tree/master/esp_encrypted_img>`_ component, which integrates with the OTA update framework via the decryption callback (:cpp:member:`esp_https_ota_config_t::decrypt_cb`).
+
+For detailed information on the image format, key generation, and implementation details, refer to the `esp_encrypted_img component documentation <https://github.com/espressif/idf-extra-components/tree/master/esp_encrypted_img>`_.
 
 OTA System Events
 -----------------
@@ -113,6 +130,9 @@ Event Handler Example
                     case ESP_HTTPS_OTA_VERIFY_CHIP_ID:
                         ESP_LOGI(TAG, "Verifying chip id of new image: %d", *(esp_chip_id_t *)event_data);
                         break;
+                    case ESP_HTTPS_OTA_VERIFY_CHIP_REVISION:
+                        ESP_LOGI(TAG, "Verifying chip revision of new image: %d", *(uint16_t *)event_data);
+                        break;
                     case ESP_HTTPS_OTA_DECRYPT_CB:
                         ESP_LOGI(TAG, "Callback to decrypt function");
                         break;
@@ -138,6 +158,7 @@ Expected data type for different ESP HTTPS OTA events in the system event loop:
     - ESP_HTTPS_OTA_CONNECTED                 : ``NULL``
     - ESP_HTTPS_OTA_GET_IMG_DESC              : ``NULL``
     - ESP_HTTPS_OTA_VERIFY_CHIP_ID            : ``esp_chip_id_t``
+    - ESP_HTTPS_OTA_VERIFY_CHIP_REVISION      : ``uint16_t``
     - ESP_HTTPS_OTA_DECRYPT_CB                : ``NULL``
     - ESP_HTTPS_OTA_WRITE_FLASH               : ``int``
     - ESP_HTTPS_OTA_UPDATE_BOOT_PARTITION     : ``esp_partition_subtype_t``
@@ -146,8 +167,6 @@ Expected data type for different ESP HTTPS OTA events in the system event loop:
 
 Application Examples
 --------------------
-
-- :example:`system/ota/pre_encrypted_ota` demonstrates how to perform OTA updates with pre-encrypted binary using the `esp_encrypted_img` component's APIs and tool, ensuring the confidentiality of the firmware on the network channel, but not its authenticity. To perform OTA upgrades with pre-encrypted firmware, please enable :ref:`CONFIG_ESP_HTTPS_OTA_DECRYPT_CB` in component `menuconfig`.
 
 - :example:`system/ota/advanced_https_ota` demonstrates how to use the Advanced HTTPS OTA update functionality on {IDF_TARGET_NAME} using the `esp_https_ota` component's APIs. For the applicable SoCs, please refer to :example_file:`system/ota/advanced_https_ota/README.md`.
 

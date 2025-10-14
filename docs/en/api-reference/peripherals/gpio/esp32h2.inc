@@ -138,7 +138,7 @@ The table below provides more information on pin usage, and please note the comm
     - Strapping pin: GPIO2, GPIO3, GPIO8, GPIO9, and GPIO25 are strapping pins. For more information, please refer to `ESP32H2 datasheet <{IDF_TARGET_DATASHEET_EN_URL}>`_.
 	  - SPI0/1: GPIO15-21 are usually used for SPI flash and not recommended for other uses.
 	  - USB-Serial-JTAG: GPIO 26 and 27 are used by USB-Serial-JTAG by default. In order to use them as GPIOs, USB-Serial-JTAG will be disabled by the drivers.
-    - For chip variants with an SiP flash built in, GPIO15 ~ GPIO21 are dedicated to connecting the SiP flash and are not fan-out to the external pins. In addition, GPIO6 ~ GPIO7 are also not fan-out to the external pins. In conclusion, only GPIO0~ GPIO5, GPIO8~ GPIO14, GPIO22~ GPIO27 are available to users.
-    - RTC: GPIO7-14 can be used to wake up the chip from Deep-sleep mode. Other GPIOs can only wake up the chip from Light-sleep mode. For more information, please refer to Section :ref:`Wakeup Sources<api-reference-wakeup-source>`.
+    - For chip variants with an SiP flash built in, GPIO15–GPIO21 are dedicated to connecting the SiP flash and are not fan-out to the external pins. In addition, GPIO6–GPIO7 are also not fan-out to the external pins. In conclusion, only GPIO0–GPIO5, GPIO8–GPIO14, GPIO22–GPIO27 are available to users.
+    - RTC: GPIO7–GPIO14 can be used to wake up the chip from Deep-sleep mode. Note that although GPIO7 is an RTC GPIO, it cannot be used for external wake-up since it is not led out. Other GPIOs can only wake up the chip from Light-sleep mode. For more information, please refer to Section :ref:`Wakeup Sources <api-reference-wakeup-source>`.
 
 ---

@@ -6,7 +6,9 @@
 
 #pragma once
 #include <sys/lock.h>
+#include "sdkconfig.h"
 #include "esp_phy_init.h"
+#include "soc/soc_caps.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -37,7 +39,7 @@ void phy_get_romfunc_addr(void);
  * @param[in] init_data Initialization parameters to be used by the PHY
  * @param[inout] cal_data As input, calibration data previously obtained. As output, will contain new calibration data.
  * @param[in] cal_mode  RF calibration mode
- * @return ESP_CAL_DATA_CHECK_FAIL if calibration data checksum fails, other values are reserved for future use
+ * @return ESP_CAL_DATA_CHECK_FAIL if the calibration data checksum fails or if the calibration data is outdated, other values are reserved for future use
  */
 int register_chipv7_phy(const esp_phy_init_data_t* init_data, esp_phy_calibration_data_t *cal_data, esp_phy_calibration_mode_t cal_mode);
 
@@ -230,6 +232,28 @@ uint32_t phy_ana_i2c_master_burst_bbpll_config(void);
  * @return  the RF on or off configure value of i2c master burst mode
  */
 uint32_t phy_ana_i2c_master_burst_rf_onoff(bool on);
+#endif
+
+#if CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP
+/**
+ * @brief On sleep->modem->active wakeup process, since RF has been turned on by hardware in
+ *        modem state, `sleep_modem_wifi_do_phy_retention` and `phy_wakeup_init` will be skipped
+ *        in `esp_phy_enable`, but there are still some configurations that need to be restored
+ *        by software, which are packed in this function.
+ */
+void phy_wakeup_from_modem_state_extra_init(void);
+#endif
+
+#if SOC_PM_MODEM_RETENTION_BY_REGDMA && CONFIG_MAC_BB_PD
+/**
+ * @brief PHY module sleep data (includes AGC, TX, NRX, BB, FE, etc..) initialize.
+ */
+void esp_phy_sleep_data_init(void);
+
+/**
+ * @brief PHY module sleep data de-initialize.
+ */
+void esp_phy_sleep_data_deinit(void);
 #endif
 
 #ifdef __cplusplus

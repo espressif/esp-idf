@@ -15,6 +15,8 @@ RTC Subsystem Control
 
 RTC control APIs have been moved from ``driver/rtc_cntl.h`` to ``esp_private/rtc_ctrl.h``.
 
+.. _deprecate_adc_driver:
+
 ADC
 ---
 
@@ -30,7 +32,7 @@ The ADC continuous mode driver has been moved from ``driver`` component to ``esp
 
 - The include path has been changed from ``driver/adc.h`` to ``esp_adc/adc_continuous.h``.
 
-Attempting to use the legacy include path ``driver/adc.h`` of either driver triggers the build warning below by default. However, the warning can be suppressed by enabling the :ref:`CONFIG_ADC_SUPPRESS_DEPRECATE_WARN` Kconfig option.
+Attempting to use the legacy include path ``driver/adc.h`` of either driver triggers the build warning below by default.
 
 .. code-block:: text
 
@@ -45,7 +47,7 @@ The ADC calibration driver has been redesigned.
 
 Legacy driver is still available by including ``esp_adc_cal.h``. However, if users still would like to use the include path of the legacy driver, users should add ``esp_adc`` component to the list of component requirements in CMakeLists.txt.
 
-Attempting to use the legacy include path ``esp_adc_cal.h`` triggers the build warning below by default. However, the warning can be suppressed by enabling the :ref:`CONFIG_ADC_CALI_SUPPRESS_DEPRECATE_WARN` Kconfig option.
+Attempting to use the legacy include path ``esp_adc_cal.h`` triggers the build warning below by default.
 
 .. code-block:: text
 
@@ -88,15 +90,17 @@ GPIO
 
 .. only:: SOC_SDM_SUPPORTED
 
-    Sigma-Delta Modulator
-    ---------------------
+    .. _deprecate_sdm_legacy_driver:
+
+    Legacy Sigma-Delta Modulator Driver is Deprecated
+    -------------------------------------------------
 
     The Sigma-Delta Modulator driver has been redesigned into :doc:`SDM <../../../api-reference/peripherals/sdm>`.
 
     - The new driver implements a factory pattern, where the SDM channels are managed in a pool internally, thus users do not have to fix a SDM channel to a GPIO manually.
     - All SDM channels can be allocated dynamically.
 
-    Although it is recommended to use the new driver APIs, the legacy driver is still available in the previous include path ``driver/sigmadelta.h``. However, by default, including ``driver/sigmadelta.h`` triggers the build warning below. The warning can be suppressed by Kconfig option :ref:`CONFIG_SDM_SUPPRESS_DEPRECATE_WARN`.
+    Although it is recommended to use the new driver APIs, the legacy driver is still available in the previous include path ``driver/sigmadelta.h``. However, by default, including ``driver/sigmadelta.h`` triggers the build warning below. The warning can be suppressed by Kconfig option ``CONFIG_SDM_SUPPRESS_DEPRECATE_WARN``.
 
     .. code-block:: text
 
@@ -119,37 +123,41 @@ GPIO
     - Channel configuration was done by channel allocation, in :cpp:func:`sdm_new_channel`. In the new driver, only the ``density`` can be changed at runtime, by :cpp:func:`sdm_channel_set_pulse_density`. Other parameters like ``gpio number`` and ``prescale`` are only allowed to set during channel allocation.
     - Before further channel operations, users should **enable** the channel in advance, by calling :cpp:func:`sdm_channel_enable`. This function helps to manage some system level services, like **Power Management**.
 
-Timer Group Driver
-------------------
+.. only:: SOC_GPTIMER_SUPPORTED
 
-Timer Group driver has been redesigned into :doc:`GPTimer <../../../api-reference/peripherals/gptimer>`, which aims to unify and simplify the usage of general purpose timer.
+    .. _deprecate_gptimer_legacy_driver:
 
-Although it is recommended to use the new driver APIs, the legacy driver is still available in the previous include path ``driver/timer.h``. However, by default, including ``driver/timer.h`` triggers the build warning below. The warning can be suppressed by the Kconfig option :ref:`CONFIG_GPTIMER_SUPPRESS_DEPRECATE_WARN`.
+    Legacy Timer Group Driver is Deprecated
+    ---------------------------------------
 
-.. code-block:: text
+    Timer Group driver has been redesigned into :doc:`GPTimer <../../../api-reference/peripherals/gptimer>`, which aims to unify and simplify the usage of general purpose timer.
 
-    legacy timer group driver is deprecated, please migrate to driver/gptimer.h
+    Although it is recommended to use the new driver APIs, the legacy driver is still available in the previous include path ``driver/timer.h``. However, by default, including ``driver/timer.h`` triggers the build warning below. The warning can be suppressed by the Kconfig option ``CONFIG_GPTIMER_SUPPRESS_DEPRECATE_WARN``.
 
-The major breaking changes in concept and usage are listed as follows:
+    .. code-block:: text
 
-Breaking Changes in Concepts
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        legacy timer group driver is deprecated, please migrate to driver/gptimer.h
 
--  ``timer_group_t`` and ``timer_idx_t`` which used to identify the hardware timer are removed from user's code. In the new driver, a timer is represented by :cpp:type:`gptimer_handle_t`.
--  Definition of timer clock source is moved to :cpp:type:`gptimer_clock_source_t`, the previous ``timer_src_clk_t`` is not used.
--  Definition of timer count direction is moved to :cpp:type:`gptimer_count_direction_t`, the previous ``timer_count_dir_t`` is not used.
--  Only level interrupt is supported, ``timer_intr_t`` and ``timer_intr_mode_t`` are not used.
--  Auto-reload is enabled by set the :cpp:member:`gptimer_alarm_config_t::auto_reload_on_alarm` flag. ``timer_autoreload_t`` is not used.
+    The major breaking changes in concept and usage are listed as follows:
 
-Breaking Changes in Usage
-^^^^^^^^^^^^^^^^^^^^^^^^^
+    Breaking Changes in Concepts
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
--  Timer initialization is done by creating a timer instance from :cpp:func:`gptimer_new_timer`. Basic configurations like clock source, resolution and direction should be set in :cpp:type:`gptimer_config_t`. Note that, specific configurations of alarm events are not needed during the installation stage of the driver.
--  Alarm event is configured by :cpp:func:`gptimer_set_alarm_action`, with parameters set in the :cpp:type:`gptimer_alarm_config_t`.
--  Setting and getting count value are done by :cpp:func:`gptimer_set_raw_count` and :cpp:func:`gptimer_get_raw_count`. The driver does not help convert the raw value into UTC time-stamp. Instead, the conversion should be done from user's side as the timer resolution is also known to the user.
--  The driver will install the interrupt service as well if :cpp:member:`gptimer_event_callbacks_t::on_alarm` is set to a valid callback function. In the callback, users do not have to deal with the low level registers (like "clear interrupt status", "re-enable alarm event" and so on). So functions like ``timer_group_get_intr_status_in_isr`` and ``timer_group_get_auto_reload_in_isr`` are not used anymore.
--  To update the alarm configurations when alarm event happens, one can call :cpp:func:`gptimer_set_alarm_action` in the interrupt callback, then the alarm will be re-enabled again.
--  Alarm will always be re-enabled by the driver if :cpp:member:`gptimer_alarm_config_t::auto_reload_on_alarm` is set to true.
+    -  ``timer_group_t`` and ``timer_idx_t`` which used to identify the hardware timer are removed from user's code. In the new driver, a timer is represented by :cpp:type:`gptimer_handle_t`.
+    -  Definition of timer clock source is moved to :cpp:type:`gptimer_clock_source_t`, the previous ``timer_src_clk_t`` is not used.
+    -  Definition of timer count direction is moved to :cpp:type:`gptimer_count_direction_t`, the previous ``timer_count_dir_t`` is not used.
+    -  Only level interrupt is supported, ``timer_intr_t`` and ``timer_intr_mode_t`` are not used.
+    -  Auto-reload is enabled by set the :cpp:member:`gptimer_alarm_config_t::auto_reload_on_alarm` flag. ``timer_autoreload_t`` is not used.
+
+    Breaking Changes in Usage
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    -  Timer initialization is done by creating a timer instance from :cpp:func:`gptimer_new_timer`. Basic configurations like clock source, resolution and direction should be set in :cpp:type:`gptimer_config_t`. Note that, specific configurations of alarm events are not needed during the installation stage of the driver.
+    -  Alarm event is configured by :cpp:func:`gptimer_set_alarm_action`, with parameters set in the :cpp:type:`gptimer_alarm_config_t`.
+    -  Setting and getting count value are done by :cpp:func:`gptimer_set_raw_count` and :cpp:func:`gptimer_get_raw_count`. The driver does not help convert the raw value into UTC time-stamp. Instead, the conversion should be done from user's side as the timer resolution is also known to the user.
+    -  The driver will install the interrupt service as well if :cpp:member:`gptimer_event_callbacks_t::on_alarm` is set to a valid callback function. In the callback, users do not have to deal with the low level registers (like "clear interrupt status", "re-enable alarm event" and so on). So functions like ``timer_group_get_intr_status_in_isr`` and ``timer_group_get_auto_reload_in_isr`` are not used anymore.
+    -  To update the alarm configurations when alarm event happens, one can call :cpp:func:`gptimer_set_alarm_action` in the interrupt callback, then the alarm will be re-enabled again.
+    -  Alarm will always be re-enabled by the driver if :cpp:member:`gptimer_alarm_config_t::auto_reload_on_alarm` is set to true.
 
 UART
 ----
@@ -242,12 +250,14 @@ LEDC
 
 .. only:: SOC_PCNT_SUPPORTED
 
-    Pulse Counter Driver
-    --------------------
+    .. _deprecate_pcnt_legacy_driver:
+
+    Legacy PCNT Driver is Deprecated
+    --------------------------------
 
     Pulse counter driver has been redesigned (see :doc:`PCNT <../../../api-reference/peripherals/pcnt>`), which aims to unify and simplify the usage of PCNT peripheral.
 
-    Although it is recommended to use the new driver APIs, the legacy driver is still available in the previous include path ``driver/pcnt.h``. However, including ``driver/pcnt.h`` triggers the build warning below by default. The warning can be suppressed by the Kconfig option :ref:`CONFIG_PCNT_SUPPRESS_DEPRECATE_WARN`.
+    Although it is recommended to use the new driver APIs, the legacy driver is still available in the previous include path ``driver/pcnt.h``. However, including ``driver/pcnt.h`` triggers the build warning below by default. The warning can be suppressed by the Kconfig option ``CONFIG_PCNT_SUPPRESS_DEPRECATE_WARN``.
 
     .. code-block:: text
 
@@ -286,12 +296,14 @@ LEDC
 
 .. only:: SOC_TEMP_SENSOR_SUPPORTED
 
-    Temperature Sensor Driver
-    -------------------------
+    .. _deprecate_tsens_legacy_driver:
+
+    Legacy Temperature Sensor Driver is Deprecated
+    ----------------------------------------------
 
     The temperature sensor driver has been redesigned and it is recommended to use the new driver. However, the old driver is still available but cannot be used with the new driver simultaneously.
 
-    The new driver can be included via ``driver/temperature_sensor.h``. The old driver is still available in the previous include path ``driver/temp_sensor.h``. However, including ``driver/temp_sensor.h`` triggers the build warning below by default. The warning can be suppressed by enabling the menuconfig option :ref:`CONFIG_TEMP_SENSOR_SUPPRESS_DEPRECATE_WARN`.
+    The new driver can be included via ``driver/temperature_sensor.h``. The old driver is still available in the previous include path ``driver/temp_sensor.h``. However, including ``driver/temp_sensor.h`` triggers the build warning below by default. The warning can be suppressed by enabling the menuconfig option ``CONFIG_TEMP_SENSOR_SUPPRESS_DEPRECATE_WARN``.
 
     .. code-block:: text
 
@@ -303,12 +315,14 @@ LEDC
 
 .. only:: SOC_RMT_SUPPORTED
 
-    RMT Driver
-    ----------
+    .. _deprecate_rmt_legacy_driver:
+
+    Legacy RMT Driver is Deprecated
+    -------------------------------
 
     RMT driver has been redesigned (see :doc:`RMT transceiver <../../../api-reference/peripherals/rmt>`), which aims to unify and extend the usage of RMT peripheral.
 
-    Although it is recommended to use the new driver APIs, the legacy driver is still available in the previous include path ``driver/rmt.h``. However, including ``driver/rmt.h`` triggers the build warning below by default. The warning can be suppressed by the Kconfig option :ref:`CONFIG_RMT_SUPPRESS_DEPRECATE_WARN`.
+    Although it is recommended to use the new driver APIs, the legacy driver is still available in the previous include path ``driver/rmt.h``. However, including ``driver/rmt.h`` triggers the build warning below by default. The warning can be suppressed by the Kconfig option ``CONFIG_RMT_SUPPRESS_DEPRECATE_WARN``.
 
     .. code-block:: text
 
@@ -378,14 +392,16 @@ LCD
 
 .. only:: SOC_MCPWM_SUPPORTED
 
-    MCPWM
-    -----
+    .. _deprecate_mcpwm_legacy_driver:
+
+    Legacy MCPWM Driver is Deprecated
+    ---------------------------------
 
     MCPWM driver was redesigned (see :doc:`MCPWM <../../../api-reference/peripherals/mcpwm>`), meanwhile, the legacy driver is deprecated.
 
     The new driver's aim is to make each MCPWM submodule independent to each other, and give the freedom of resource connection back to users.
 
-    Although it is recommended to use the new driver APIs, the legacy driver is still available in the previous include path ``driver/mcpwm.h``. However, using legacy driver triggers the build warning below by default. This warning can be suppressed by the Kconfig option :ref:`CONFIG_MCPWM_SUPPRESS_DEPRECATE_WARN`.
+    Although it is recommended to use the new driver APIs, the legacy driver is still available in the previous include path ``driver/mcpwm.h``. However, using legacy driver triggers the build warning below by default. This warning can be suppressed by the Kconfig option ``CONFIG_MCPWM_SUPPRESS_DEPRECATE_WARN``.
 
     .. code-block:: text
 
@@ -456,12 +472,14 @@ LCD
 
 .. only:: SOC_I2S_SUPPORTED
 
+    .. _deprecate_i2s_legacy_driver:
+
     I2S Driver
     ----------
 
     The I2S driver has been redesigned (see :doc:`I2S Driver <../../../api-reference/peripherals/i2s>`), which aims to rectify the shortcomings of the driver that were exposed when supporting all the new features of ESP32-C3 & ESP32-S3. The new driver's APIs are available by including corresponding I2S mode's header files :component_file:`esp_driver_i2s/include/driver/i2s_std.h`, :component_file:`esp_driver_i2s/include/driver/i2s_pdm.h`, or :component_file:`esp_driver_i2s/include/driver/i2s_tdm.h`.
 
-    Meanwhile, the old driver's APIs in :component_file:`driver/deprecated/driver/i2s.h` are still supported for backward compatibility. But there will be warnings if users keep using the old APIs in their projects, these warnings can be suppressed by the Kconfig option :ref:`CONFIG_I2S_SUPPRESS_DEPRECATE_WARN`.
+    Meanwhile, the old driver's APIs in ``driver/i2s.h`` are still supported for backward compatibility. But there will be warnings if users keep using the old APIs in their projects, these warnings can be suppressed by the Kconfig option ``CONFIG_I2S_SUPPRESS_DEPRECATE_WARN``.
 
     Here is the general overview of the current I2S files:
 
@@ -481,7 +499,7 @@ LCD
     - The :cpp:type:`i2s_chan_handle_t` handle type is used to uniquely identify I2S channels. All the APIs require the channel handle and users need to maintain the channel handles by themselves.
     - On the ESP32-C3 and ESP32-S3, TX and RX channels in the same controller can be configured to different clocks or modes.
     - However, on the ESP32 and ESP32-S2, the TX and RX channels of the same controller still share some hardware resources. Thus, configurations may cause one channel to affect another channel in the same controller.
-    - The channels can be registered to an available I2S controller automatically by setting :cpp:enumerator:`i2s_port_t::I2S_NUM_AUTO` as I2S port ID which causes the driver to search for the available TX/RX channels. However, the driver also supports registering channels to a specific port.
+    - The channels can be registered to an available I2S controller automatically by setting ``I2S_NUM_AUTO`` as I2S port ID which causes the driver to search for the available TX/RX channels. However, the driver also supports registering channels to a specific port.
     - In order to distinguish between TX/RX channels and sound channels, the term "channel" in the context of the I2S driver only refers to TX/RX channels. Meanwhile, sound channels are referred to as "slots".
 
     I2S Mode Categorization
@@ -520,7 +538,7 @@ LCD
     2. Call :func:`i2s_channel_init_std_mode`, :func:`i2s_channel_init_pdm_rx_mode`, :func:`i2s_channel_init_pdm_tx_mode` or :func:`i2s_channel_init_tdm_mode` to initialize the channel to the specified mode. Corresponding slot, clock and GPIO configurations are needed in this step.
     3. (Optional) Call :cpp:func:`i2s_channel_register_event_callback` to register the ISR event callback functions. I2S events now can be received by the callback function synchronously, instead of from the event queue asynchronously.
     4. Call :cpp:func:`i2s_channel_enable` to start the hardware of I2S channel. In the new driver, I2S does not start automatically after installed, and users are supposed to know clearly whether the channel has started or not.
-    5. Read or write data by :cpp:func:`i2s_channel_read` or :cpp:func:`i2s_channel_write`. Certainly, only the RX channel handle is suppoesd to be inputted in :cpp:func:`i2s_channel_read` and the TX channel handle in :cpp:func:`i2s_channel_write`.
+    5. Read or write data by :cpp:func:`i2s_channel_read` or :cpp:func:`i2s_channel_write`. Certainly, only the RX channel handle is supposed to be inputted in :cpp:func:`i2s_channel_read` and the TX channel handle in :cpp:func:`i2s_channel_write`.
     6. (Optional) The slot, clock and GPIO configurations can be changed by corresponding 'reconfig' functions, but :cpp:func:`i2s_channel_disable` must be called before updating the configurations.
     7. Call :cpp:func:`i2s_channel_disable` to stop the hardware of I2S channel.
     8. Call :cpp:func:`i2s_del_channel` to delete and release the resources of the channel if it is not needed any more, but the channel must be disabled before deleting it.

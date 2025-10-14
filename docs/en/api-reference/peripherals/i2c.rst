@@ -36,15 +36,6 @@ Typically, an I2C slave device has a 7-bit address or 10-bit address. {IDF_TARGE
 
     Keep in mind that the higher the frequency, the smaller the pull-up resistor should be (but not less than 1 kΩ). Indeed, large resistors will decline the current, which will increase the clock switching time and reduce the frequency. A range of 2 kΩ to 5 kΩ is recommended, but adjustments may also be necessary depending on their current draw requirements.
 
-.. toctree::
-    :hidden:
-
-    i2c_slave_v1
-
-.. note::
-
-    We realized that our first version of the I2C slave driver had some problems and was not easy to use, so we have prepared a second version of the I2C slave driver, which solves many of the problems with our current I2C slave and which will be the focus of our maintenance. We encourage and recommend that you use the second version of the I2C slave driver, which you can do by enabling :ref:`CONFIG_I2C_ENABLE_SLAVE_DRIVER_VERSION_2`. This document focuses on the content of I2C slave v2.0. If you still want to read programming guide of I2C slave v1.0, please refer to :ref:`i2c-slave-v1`. The I2C slave v1.0 driver will be removed with the IDF v6.0 update.
-
 I2C Clock Configuration
 -----------------------
 
@@ -214,6 +205,8 @@ Uninstall I2C master bus and device
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If a previously installed I2C bus or device is no longer needed, it's recommended to recycle the resource by calling :cpp:func:`i2c_master_bus_rm_device` or :cpp:func:`i2c_del_master_bus`, so as to release the underlying hardware.
+
+Please note that removing all devices attached to bus before delete the master bus.
 
 Install I2C slave device
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -439,19 +432,89 @@ Simple example for probing an I2C device:
     ESP_ERROR_CHECK(i2c_del_master_bus(bus_handle));
 
 
+I2C Master Execute Customized Transactions
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Not all I2C devices strictly adhere to the standard I2C protocol, as different manufacturers may implement custom variations. For example, some devices require the address to be shifted, while others do not. Similarly, certain devices mandate acknowledgment (ACK) checks for specific operations, whereas others might not. To accommodate these variations, :cpp:func:`i2c_master_execute_defined_operations` function allow developers to define and execute fully customized I2C transactions. This flexibility ensures seamless communication with non-standard devices by tailoring the transaction sequence, addressing, and acknowledgment behavior to the device's specific requirements.
+
+.. note::
+
+    If you want to define your address in :cpp:type:`i2c_operation_job_t`, please set :cpp:member:`i2c_device_config_t::device_address` as ``I2C_DEVICE_ADDRESS_NOT_USED`` to skip internal address configuration in driver.
+
+For address configuration of user defined transactions, given that the device address is ``0x20``, there are two situations. See following example:
+
+.. code:: c
+
+    i2c_device_config_t i2c_device = {
+        .device_address = I2C_DEVICE_ADDRESS_NOT_USED,
+        .scl_speed_hz = 100 * 1000,
+        .scl_wait_us = 20000,
+    };
+
+    i2c_master_dev_handle_t dev_handle;
+
+    i2c_master_bus_add_device(bus_handle, &i2c_device, &dev_handle);
+
+    // Situation one: The device does not allow device address shift
+    uint8_t address1 = 0x20;
+    i2c_operation_job_t i2c_ops1[] = {
+        { .command = I2C_MASTER_CMD_START },
+        { .command = I2C_MASTER_CMD_WRITE, .write = { .ack_check = false, .data = (uint8_t *) &address1, .total_bytes = 1 } },
+        { .command = I2C_MASTER_CMD_STOP },
+    };
+
+    // Situation one: The device address should be left shifted by one byte to include a write bit or a read bit (official protocol)
+    uint8_t address2 = (0x20 << 1 | 0); // (0x20 << 1 | 1)
+    i2c_operation_job_t i2c_ops2[] = {
+        { .command = I2C_MASTER_CMD_START },
+        { .command = I2C_MASTER_CMD_WRITE, .write = { .ack_check = false, .data = (uint8_t *) &address2, .total_bytes = 1 } },
+        { .command = I2C_MASTER_CMD_STOP },
+    };
+
+Some devices do not require an address, and allow direct transaction with data:
+
+.. code:: c
+
+    uint8_t data[8] = {0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88};
+
+    i2c_operation_job_t i2c_ops[] = {
+        { .command = I2C_MASTER_CMD_START },
+        { .command = I2C_MASTER_CMD_WRITE, .write = { .ack_check = false, .data = (uint8_t *)data, .total_bytes = 8 } },
+        { .command = I2C_MASTER_CMD_STOP },
+    };
+
+    i2c_master_execute_defined_operations(dev_handle, i2c_ops, sizeof(i2c_ops) / sizeof(i2c_operation_job_t), -1);
+
+The principle of read operations is the same as that of write operations. Note to always ensure the last byte read before the stop condition is a ``NACK``. An example is as follows:
+
+.. code:: c
+
+    uint8_t address = (0x20 << 1 | 1);
+    uint8_t rcv_data[10] = {};
+
+    i2c_operation_job_t i2c_ops[] = {
+        { .command = I2C_MASTER_CMD_START },
+        { .command = I2C_MASTER_CMD_WRITE, .write = { .ack_check = false, .data = (uint8_t *) &address, .total_bytes = 1 } },
+        { .command = I2C_MASTER_CMD_READ, .read = { .ack_value = I2C_ACK_VAL, .data = (uint8_t *)rcv_data, .total_bytes = 9 } },
+        { .command = I2C_MASTER_CMD_READ, .read = { .ack_value = I2C_NACK_VAL, .data = (uint8_t *)(rcv_data + 9), .total_bytes = 1 } }, // This must be NACK
+        { .command = I2C_MASTER_CMD_STOP },
+    };
+
+    i2c_master_execute_defined_operations(dev_handle, i2c_ops, sizeof(i2c_ops) / sizeof(i2c_operation_job_t), -1);
+
 I2C Slave Controller
 ^^^^^^^^^^^^^^^^^^^^
 
 After installing the I2C slave driver by :cpp:func:`i2c_new_slave_device`, {IDF_TARGET_NAME} is ready to communicate with other I2C masters as a slave.
 
-The I2C slave is not as subjective as the I2C master which knows when it should send data and when it should receive data. The I2C slave is very passive in most cases, that means the I2C slave's ability to send and receive data is largely dependent on the master's actions. Therefore, we throw two callback functions in the driver that represent read requests and write requests from the I2C master.
+The I2C slave is not as active as the I2C master, which knows when to send data and when to receive it. The I2C slave is very passive in most cases, meaning the I2C slave's ability to send and receive data is largely dependent on the master's actions. Therefore, we implement two callback functions in the driver to handle read and write requests from the I2C master.
 
 I2C Slave Write
 ~~~~~~~~~~~~~~~
 
-You can get I2C slave write event be register :cpp:member:`i2c_slave_event_callbacks_t::on_request` callback, and in a task when get the request event, you can call `i2c_slave_write` to send data.
+You can get I2C slave write event by registering :cpp:member:`i2c_slave_event_callbacks_t::on_request` callback. Then, in a task where the request event is triggered, you can call ``i2c_slave_write`` to send data.
 
-Simple example for transmitting data:
+A simple example for transmitting data:
 
 .. code:: c
 
@@ -470,7 +533,7 @@ Simple example for transmitting data:
     };
     ESP_ERROR_CHECK(i2c_slave_register_event_callbacks(context.handle, &cbs, &context));
 
-    // Waiting for request event and send data in a task
+    // Wait for request event and send data in a task
     static void i2c_slave_task(void *arg)
     {
         uint8_t buffer_size = 64;
@@ -489,9 +552,9 @@ Simple example for transmitting data:
 I2C Slave Read
 ~~~~~~~~~~~~~~
 
-Same as write, you can get I2C slave read event be register :cpp:member:`i2c_slave_event_callbacks_t::on_receive` callback, and in a task when get the request event, you can save the data and do what you want.
+Same as write event, you can get I2C slave read event by registering :cpp:member:`i2c_slave_event_callbacks_t::on_receive` callback. Then, in a task where the request event is triggered, you can save the data and do what you want.
 
-Simple example for receiving data:
+A simple example for receiving data:
 
 .. code:: c
 
@@ -595,7 +658,6 @@ Kconfig Options
 
 - :ref:`CONFIG_I2C_ISR_IRAM_SAFE` controls whether the default ISR handler can work when cache is disabled, see also `IRAM Safe <#iram-safe>`__ for more information.
 - :ref:`CONFIG_I2C_ENABLE_DEBUG_LOG` is used to enable the debug log at the cost of increased firmware binary size.
-- :ref:`CONFIG_I2C_ENABLE_SLAVE_DRIVER_VERSION_2` is used to enable the I2C slave driver v2.0.
 
 Application Examples
 --------------------
@@ -608,6 +670,8 @@ Application Examples
 
 - :example:`peripherals/i2c/i2c_slave_network_sensor` demonstrates how to use the I2C slave for developing I2C related applications, providing how I2C slave can behave as a network sensor, and use event callbacks to receive and send data.
 
+- :example:`peripherals/i2c/i2c_u8g2` demonstrates how to use the I2C master mode to interface with U8G2 library for controlling OLED displays.
+
 API Reference
 -------------
 
@@ -618,4 +682,4 @@ API Reference
     .. include-build-file:: inc/i2c_slave.inc
 
 .. include-build-file:: inc/components/esp_driver_i2c/include/driver/i2c_types.inc
-.. include-build-file:: inc/components/hal/include/hal/i2c_types.inc
+.. include-build-file:: inc/components/esp_hal_i2c/include/hal/i2c_types.inc

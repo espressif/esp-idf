@@ -40,7 +40,7 @@ typedef union {
 typedef union {
     struct {
         /** rst : WO; bitpos: [0]; default: 0;
-         *  Soft reset. Writing logic 1 resets CTU CAN FD. After writing logic 1, logic 0 does
+         *  Soft reset. Writing logic 1 resets CAN FD. After writing logic 1, logic 0 does
          *  not need to be written, this bit
          *  is automatically cleared.
          *  0: invalid
@@ -48,11 +48,11 @@ typedef union {
          */
         uint32_t rst:1;
         /** bmm : R/W; bitpos: [1]; default: 0;
-         *  Bus monitoring mode. In this mode CTU CAN FD only receives frames and sends only
+         *  Bus monitoring mode. In this mode CAN FD only receives frames and sends only
          *  recessive bits on CAN
          *  bus. When a dominant bit is sent, it is re-routed internally so that bus value is
          *  not changed. When this mode is
-         *  enabled, CTU CAN FD will not transmit any frame from TXT Buffers,
+         *  enabled, CAN FD will not transmit any frame from TXT Buffers,
          *  0b0 - BMM_DISABLED - Bus monitoring mode disabled.
          *  0b1 - BMM_ENABLED - Bus monitoring mode enabled.
          */
@@ -75,7 +75,7 @@ typedef union {
          */
         uint32_t afm:1;
         /** fde : R/W; bitpos: [4]; default: 1;
-         *  Flexible data rate enable. When flexible data rate is enabled CTU CAN FD recognizes
+         *  Flexible data rate enable. When flexible data rate is enabled CAN FD recognizes
          *  CAN FD frames (FDF bit
          *  = 1).
          *  0b0 - FDE_DISABLE - Flexible data-rate support disabled.
@@ -120,16 +120,9 @@ typedef union {
          *  0b1 - TXBBM_ENABLED - TXT Buffer Backup mode enabled\\
          */
         uint32_t txbbm:1;
-        /** sam : R/W; bitpos: [11]; default: 0;
-         *  Self-acknowledge mode.\\
-         *  0b0 - SAM_DISABLE - Do not send dominant ACK bit when CTU CAN FD sends Acknowledge
-         *  bit.\\
-         *  0b1 - SAM_ENABLE - Send dominant ACK bit when CTU CAN FD transmits CAN frame.\\
-         */
-        uint32_t sam:1;
-        uint32_t reserved_12:4;
+        uint32_t reserved_11:5;
         /** rtrle : R/W; bitpos: [16]; default: 0;
-         *  Retransmitt Limit Enable. If enabled, CTU CAN FD only attempts to retransmitt each
+         *  Retransmitt Limit Enable. If enabled, CAN FD only attempts to retransmitt each
          *  frame up to RTR_TH
          *  times.
          *  0b0 - RTRLE_DISABLED - Retransmitt limit is disabled.
@@ -143,21 +136,21 @@ typedef union {
          */
         uint32_t rtrth:4;
         /** ilbp : R/W; bitpos: [21]; default: 0;
-         *  Internal Loop Back mode. When enabled, CTU CAN FD receives any frame it transmits.
+         *  Internal Loop Back mode. When enabled, CAN FD receives any frame it transmits.
          *  0b0 - INT_LOOP_DISABLED - Internal loop-back is disabled.
          *  0b1 - INT_LOOP_ENABLED - Internal loop-back is enabled.
          */
         uint32_t ilbp:1;
         /** ena : R/W; bitpos: [22]; default: 0;
-         *  Main enable bit of CTU CAN FD. When enabled, CTU CAN FD communicates on CAN bus.
+         *  Main enable bit of CAN FD. When enabled, CAN FD communicates on CAN bus.
          *  When disabled, it
          *  is bus-off and does not take part of CAN bus communication.
-         *  0b0 - CTU_CAN_DISABLED - The CAN Core is disabled.
-         *  0b1 - CTU_CAN_ENABLED - The CAN Core is enabled.
+         *  0b0 - CAN_DISABLED - The CAN Core is disabled.
+         *  0b1 - CAN_ENABLED - The CAN Core is enabled.
          */
         uint32_t ena:1;
         /** nisofd : R/W; bitpos: [23]; default: 0;
-         *  Non ISO FD. When this bit is set, CTU CAN FD is compliant to NON-ISO CAN FD
+         *  Non ISO FD. When this bit is set, CAN FD is compliant to NON-ISO CAN FD
          *  specification (no stuff
          *  count field). This bit should be modified only when SETTINGS[ENA]=0.
          *  0b0 - ISO_FD - The CAN Controller conforms to ISO CAN FD specification.
@@ -166,7 +159,7 @@ typedef union {
          */
         uint32_t nisofd:1;
         /** pex : R/W; bitpos: [24]; default: 0;
-         *  Protocol exception handling. When this bit is set, CTU CAN FD will start
+         *  Protocol exception handling. When this bit is set, CAN FD will start
          *  integration upon detection of protocol
          *  exception. This should be modified only when SETTINGS[ENA] = ’0’.
          *  0b0 - PROTOCOL_EXCEPTION_DISABLED - Protocol exception handling is disabled.
@@ -174,11 +167,11 @@ typedef union {
          */
         uint32_t pex:1;
         /** tbfbo : R/W; bitpos: [25]; default: 1;
-         *  All TXT buffers shall go to "TX failed" state when CTU CAN FD becomes bus-off.
+         *  All TXT buffers shall go to "TX failed" state when CAN FD becomes bus-off.
          *  0b0 - TXTBUF_FAILED_BUS_OFF_DISABLED - TXT Buffers dont go to "TX failed" state
-         *  when CTU CAN
+         *  when CAN
          *  FD becomes bus-off.
-         *  0b1 - TXTBUF_FAILED_BUS_OFF_ENABLED - TXT Buffers go to "TX failed" state when CTU
+         *  0b1 - TXTBUF_FAILED_BUS_OFF_ENABLED - TXT Buffers go to "TX failed" state when
          *  CAN FD
          *  becomes bus-off.
          */
@@ -645,13 +638,13 @@ typedef union {
          */
         uint32_t eft:1;
         /** rxs : RO; bitpos: [4]; default: 0;
-         *  CTU CAN FD is receiver of CAN Frame.
+         *  CAN FD is receiver of CAN Frame.
          *  0: not receiving
          *  1: receiving
          */
         uint32_t rxs:1;
         /** txs : RO; bitpos: [5]; default: 0;
-         *  CTU CAN FD is transmitter of CAN Frame.
+         *  CAN FD is transmitter of CAN Frame.
          *  0: not transmitting
          *  1: transmitting
          */
@@ -664,7 +657,7 @@ typedef union {
          */
         uint32_t ewl:1;
         /** idle : RO; bitpos: [7]; default: 1;
-         *  Bus is idle (no frame is being transmitted/received) or CTU CAN FD is bus-off.
+         *  Bus is idle (no frame is being transmitted/received) or CAN FD is bus-off.
          *  0: active
          *  1: not active
          */
@@ -803,11 +796,11 @@ typedef union {
         /** txtb0_state : RO; bitpos: [3:0]; default: 8;
          *  Status of TXT buffer 1.
          *  0b0000 - TXT_NOT_EXIST - TXT buffer does not exist in the core (applies only to TXT
-         *  buffers 3-8, when CTU
+         *  buffers 3-8, when
          *  CAN FD was synthesized with less than 8 TXT buffers).
-         *  0b0001 - TXT_RDY - TXT buffer is in "Ready" state, it is waiting for CTU CAN FD to
+         *  0b0001 - TXT_RDY - TXT buffer is in "Ready" state, it is waiting for CAN FD to
          *  start transmission from it.
-         *  0b0010 - TXT_TRAN - TXT buffer is in "TX in progress" state. CTU CAN FD is
+         *  0b0010 - TXT_TRAN - TXT buffer is in "TX in progress" state. CAN FD is
          *  transmitting frame.
          *  0b0011 - TXT_ABTP - TXT buffer is in "Abort in progress" state.
          *  0b0100 - TXT_TOK - TXT buffer is in "TX OK" state.
@@ -904,7 +897,7 @@ typedef union {
          */
         uint32_t alc_id_field:3;
         /** ts_bits : RO; bitpos: [29:24]; default: 0;
-         *  Number of active bits of CTU CAN FD time-base minus 1 (0x3F = 64 bit time-base).
+         *  Number of active bits of CAN FD time-base minus 1 (0x3F = 64 bit time-base).
          */
         uint32_t ts_bits:6;
         uint32_t reserved_30:2;
@@ -1299,107 +1292,39 @@ typedef union {
 
 
 /** Group: filter register */
-/** Type of filter_a_mask register
- *  TWAI FD filter A mask value register
+/** Type of filter_mask register
+ *  TWAI FD filter mask value register
  */
 typedef union {
     struct {
-        /** bit_mask_a_val : R/W; bitpos: [28:0]; default: 0;
-         *  Filter A mask. The identifier format is the same as in IDENTIFIER_W of TXT buffer
+        /** bit_mask_val : R/W; bitpos: [28:0]; default: 0;
+         *  Filter mask. The identifier format is the same as in IDENTIFIER_W of TXT buffer
          *  or RX
-         *  buffer. If filter A is not present, writes to this register have no effect and read
+         *  buffer. If filter is not present, writes to this register have no effect and read
          *  will return all zeroes.
          */
-        uint32_t bit_mask_a_val:29;
+        uint32_t bit_mask_val:29;
         uint32_t reserved_29:3;
     };
     uint32_t val;
-} twaifd_filter_a_mask_reg_t;
+} twaifd_filter_mask_reg_t;
 
-/** Type of filter_a_val register
- *  TWAI FD filter A bit value register
+/** Type of filter_val register
+ *  TWAI FD filter bit value register
  */
 typedef union {
     struct {
-        /** bit_val_a_val : R/W; bitpos: [28:0]; default: 0;
-         *  Filter A value. The identifier format is the same as in IDENTIFIER_W of TXT buffer
+        /** bit_val : R/W; bitpos: [28:0]; default: 0;
+         *  Filter value. The identifier format is the same as in IDENTIFIER_W of TXT buffer
          *  or RX buffer.
-         *  If filter A is not present, writes to this register have no effect and read will
+         *  If filter is not present, writes to this register have no effect and read will
          *  return all zeroes.
          */
-        uint32_t bit_val_a_val:29;
+        uint32_t bit_val:29;
         uint32_t reserved_29:3;
     };
     uint32_t val;
-} twaifd_filter_a_val_reg_t;
-
-/** Type of filter_b_mask register
- *  TWAI FD filter B mask value register
- */
-typedef union {
-    struct {
-        /** bit_mask_b_val : R/W; bitpos: [28:0]; default: 0;
-         *  Filter B mask. The identifier format is the same as in IDENTIFIER_W of TXT buffer
-         *  or RX
-         *  buffer. If filter A is not present, writes to this register have no effect and read
-         *  will return all zeroes.
-         */
-        uint32_t bit_mask_b_val:29;
-        uint32_t reserved_29:3;
-    };
-    uint32_t val;
-} twaifd_filter_b_mask_reg_t;
-
-/** Type of filter_b_val register
- *  TWAI FD filter B bit value register
- */
-typedef union {
-    struct {
-        /** bit_val_b_val : R/W; bitpos: [28:0]; default: 0;
-         *  Filter B value. The identifier format is the same as in IDENTIFIER_W of TXT buffer
-         *  or RX buffer.
-         *  If filter A is not present, writes to this register have no effect and read will
-         *  return all zeroes.
-         */
-        uint32_t bit_val_b_val:29;
-        uint32_t reserved_29:3;
-    };
-    uint32_t val;
-} twaifd_filter_b_val_reg_t;
-
-/** Type of filter_c_mask register
- *  TWAI FD filter C mask value register
- */
-typedef union {
-    struct {
-        /** bit_mask_c_val : R/W; bitpos: [28:0]; default: 0;
-         *  Filter C mask. The identifier format is the same as in IDENTIFIER_W of TXT buffer
-         *  or RX
-         *  buffer. If filter A is not present, writes to this register have no effect and read
-         *  will return all zeroes.
-         */
-        uint32_t bit_mask_c_val:29;
-        uint32_t reserved_29:3;
-    };
-    uint32_t val;
-} twaifd_filter_c_mask_reg_t;
-
-/** Type of filter_c_val register
- *  TWAI FD filter C bit value register
- */
-typedef union {
-    struct {
-        /** bit_val_c_val : R/W; bitpos: [28:0]; default: 0;
-         *  Filter C value. The identifier format is the same as in IDENTIFIER_W of TXT buffer
-         *  or RX buffer.
-         *  If filter A is not present, writes to this register have no effect and read will
-         *  return all zeroes.
-         */
-        uint32_t bit_val_c_val:29;
-        uint32_t reserved_29:3;
-    };
-    uint32_t val;
-} twaifd_filter_c_val_reg_t;
+} twaifd_filter_val_reg_t;
 
 /** Type of filter_ran_low register
  *  TWAI FD filter range low value register
@@ -1611,7 +1536,7 @@ typedef union {
          */
         uint32_t txb8:1;
         /** txt_buffer_count : RO; bitpos: [19:16]; default: 4;
-         *  Number of TXT buffers present in CTU CAN FD. Lowest buffer is always 1. Highest
+         *  Number of TXT buffers present in CAN FD. Lowest buffer is always 1. Highest
          *  buffer
          *  is at index equal to number of present buffers.
          */
@@ -1684,7 +1609,7 @@ typedef union {
 typedef union {
     struct {
         /** rx_fr_ctr_val : RO; bitpos: [31:0]; default: 0;
-         *  Number of received frames by CTU CAN FD.
+         *  Number of received frames by CAN FD.
          */
         uint32_t rx_fr_ctr_val:32;
     };
@@ -1697,7 +1622,7 @@ typedef union {
 typedef union {
     struct {
         /** tx_ctr_val : RO; bitpos: [31:0]; default: 0;
-         *  Number of transmitted frames by CTU CAN FD.
+         *  Number of transmitted frames by CAN FD.
          */
         uint32_t tx_ctr_val:32;
     };
@@ -1806,8 +1731,65 @@ typedef union {
     uint32_t val;
 } twaifd_date_ver_reg_t;
 
-
+/** TWAI bits filter register
+ */
 typedef struct {
+    volatile twaifd_filter_mask_reg_t filter_mask;
+    volatile twaifd_filter_val_reg_t  filter_val;
+} twaifd_mask_filter_reg_t;
+
+/** TWAI range filter register
+ */
+typedef struct {
+    volatile twaifd_filter_ran_low_reg_t ran_low;
+    volatile twaifd_filter_ran_high_reg_t ran_high;
+} twaifd_range_filter_reg_t;
+
+/**
+ * @brief TWAI frame buffer register types
+ */
+typedef union twaifd_frame_buffer_t {
+    struct {
+        union {
+            struct {
+                uint32_t dlc: 4;            // Data length code (0-15)
+                uint32_t reserved4: 1;      // Reserved bit
+                uint32_t rtr: 1;            // Remote transmission request
+                uint32_t ide: 1;            // Identifier extension bit
+                uint32_t fdf: 1;            // Flexible data-rate format bit
+                uint32_t reserved8: 1;      // Reserved bit
+                uint32_t brs: 1;            // Bit rate switch flag
+                uint32_t esi: 1;            // Error state indicator
+                uint32_t rwcnt: 5;          // Re-transmission counter
+                uint32_t reserved16: 16;    // Reserved bits
+            };
+            uint32_t val;                   // Complete 32-bit register value for format
+        } format;
+
+        union {
+            struct {
+                uint32_t identifier_ext: 18;  // Extended identifier (18 bits)
+                uint32_t identifier_base: 11; // Base identifier (11 bits)
+                uint32_t reserved29: 3;       // Reserved bits
+            };
+            uint32_t val;                     // Complete 32-bit register value for identifier
+        } identifier;
+
+        uint32_t timestamp_low;               // Lower 32 bits of timestamp
+        uint32_t timestamp_high;              // Upper 32 bits of timestamp
+        uint32_t data[16];                    // Data payload (16 words)
+    };
+    uint32_t words[20];                       // Raw 32-bit words for direct access
+} twaifd_frame_buffer_t;
+
+/** TWAI frame txt buffer registers
+ */
+typedef struct {
+    volatile twaifd_frame_buffer_t txt_buffer;
+    uint32_t reserved_50[44];
+} twaifd_frame_mem_t;
+
+typedef struct twaifd_dev_t {
     volatile twaifd_device_id_version_reg_t device_id_version;
     volatile twaifd_mode_settings_reg_t mode_settings;
     volatile twaifd_status_reg_t status;
@@ -1823,14 +1805,8 @@ typedef struct {
     volatile twaifd_rec_tec_reg_t rec_tec;
     volatile twaifd_err_norm_err_fd_reg_t err_norm_err_fd;
     volatile twaifd_ctr_pres_reg_t ctr_pres;
-    volatile twaifd_filter_a_mask_reg_t filter_a_mask;
-    volatile twaifd_filter_a_val_reg_t filter_a_val;
-    volatile twaifd_filter_b_mask_reg_t filter_b_mask;
-    volatile twaifd_filter_b_val_reg_t filter_b_val;
-    volatile twaifd_filter_c_mask_reg_t filter_c_mask;
-    volatile twaifd_filter_c_val_reg_t filter_c_val;
-    volatile twaifd_filter_ran_low_reg_t filter_ran_low;
-    volatile twaifd_filter_ran_high_reg_t filter_ran_high;
+    volatile twaifd_mask_filter_reg_t mask_filters[3];
+    volatile twaifd_range_filter_reg_t range_filters[1];
     volatile twaifd_filter_control_filter_status_reg_t filter_control_filter_status;
     volatile twaifd_rx_mem_info_reg_t rx_mem_info;
     volatile twaifd_rx_pointers_reg_t rx_pointers;
@@ -1847,7 +1823,9 @@ typedef struct {
     volatile twaifd_yolo_reg_t yolo;
     volatile twaifd_timestamp_low_reg_t timestamp_low;
     volatile twaifd_timestamp_high_reg_t timestamp_high;
-    uint32_t reserved_09c[974];
+    uint32_t reserved_09c[25];
+    volatile twaifd_frame_mem_t txt_mem_cell[8];
+    uint32_t reserved_900[437];
     volatile twaifd_timer_clk_en_reg_t timer_clk_en;
     volatile twaifd_timer_int_raw_reg_t timer_int_raw;
     volatile twaifd_timer_int_st_reg_t timer_int_st;

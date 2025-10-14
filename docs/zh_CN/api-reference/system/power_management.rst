@@ -55,7 +55,7 @@ ESP-IDF 中集成的电源管理算法可以根据应用程序组件的需求，
 
 电源管理锁
 ----------------------
-{IDF_TARGET_MAX_CPU_FREQ: default="Not updated yet", esp32="80 MHz, 160 MHz, or 240 MHz", esp32s2="80 MHz, 160 MHz, 或 240 MHz", esp32s3="80 MHz, 160 MHz, 或 240 MHz", esp32c2="80 MHz 或 120 MHz", esp32c3="80 MHz 或 160 MHz", esp32c6="80 MHz 或 160 MHz", esp32p4="360 MHz"}
+{IDF_TARGET_MAX_CPU_FREQ: default="Not updated yet", esp32="80 MHz, 160 MHz, or 240 MHz", esp32s2="80 MHz, 160 MHz, 或 240 MHz", esp32s3="80 MHz, 160 MHz, 或 240 MHz", esp32c2="80 MHz 或 120 MHz", esp32c3="80 MHz 或 160 MHz", esp32c6="80 MHz 或 160 MHz", esp32p4="360 MHz", esp32c5="80 MHz, 160 MHz, 或 240 MHz"}
 
 应用程序可以通过获取或释放管理锁来控制电源管理算法。应用程序获取电源管理锁后，电源管理算法的操作将受到下面的限制。释放电源管理锁后，限制解除。
 
@@ -122,16 +122,6 @@ ESP-IDF 中集成的电源管理算法可以根据应用程序组件的需求，
     :SOC_SDM_SUPPORTED: - **Sigma-delta**：从调用 :cpp:func:`sdm_channel_enable` 至 :cpp:func:`sdm_channel_disable` 期间。
     :SOC_MCPWM_SUPPORTED: - **MCPWM**: 从调用 :cpp:func:`mcpwm_timer_enable` 至 :cpp:func:`mcpwm_timer_disable` 期间，以及调用 :cpp:func:`mcpwm_capture_timer_enable` 至 :cpp:func:`mcpwm_capture_timer_disable` 期间。
 
-以下外设驱动程序无法感知动态调频，应用程序需自己获取/释放管理锁：
-
-.. list::
-
-    :SOC_PCNT_SUPPORTED: - 旧版 PCNT 驱动
-    :SOC_SDM_SUPPORTED: - 旧版 Sigma-delta 驱动
-    - 旧版定时器驱动 (Timer Group)
-    :SOC_MCPWM_SUPPORTED: - 旧版 MCPWM 驱动
-
-
 .. only:: SOC_PM_SUPPORT_TOP_PD
 
     Light-sleep 外设下电
@@ -162,12 +152,14 @@ ESP-IDF 中集成的电源管理算法可以根据应用程序组件的需求，
             :SOC_TWAI_SUPPORT_SLEEP_RETENTION: - All TWAIs
             :SOC_PARLIO_SUPPORT_SLEEP_RETENTION: - PARL_IO
             :SOC_SPI_SUPPORT_SLEEP_RETENTION: - All GPSPIs
+            :SOC_EMAC_SUPPORT_SLEEP_RETENTION: - EMAC
 
         一些外设尚未支持睡眠上下文恢复，或者寄存器丢失后根本无法恢复。即使外设下电功能被启用，它们也会阻止外设下电的发生：
 
         .. list::
 
             :SOC_SDIO_SLAVE_SUPPORTED: - SDIO Slave
+            :SOC_PCNT_SUPPORTED: - PCNT
 
         以下外设（以及一些未在本章节任意一组中列出的外设）尚未支持外设下电功能。如果您的应用使用了这些外设，它们可能无法在从睡眠中醒来后仍然正常工作：
 
@@ -176,7 +168,6 @@ ESP-IDF 中集成的电源管理算法可以根据应用程序组件的需求，
             - ASSIST_DEBUG
             - Trace
             - Crypto: AES/ECC/HMAC/RSA/SHA/DS/XTA_AES/ECDSA
-            - PCNT
             - USB-Serial-JTAG
             - SARADC
 

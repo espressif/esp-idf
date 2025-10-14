@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,7 +10,7 @@ extern "C" {
 
 #include "esp_efuse.h"
 
-// md5_digest_table af9aaa79feb0970d90f35360a5113f03
+// md5_digest_table 0edc6a5b20a41c88fdc0cf51a810c53e
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -78,6 +78,13 @@ extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_PSRAM_VENDOR[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_TEMP[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_PKG_VERSION[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_SYS_DATA_PART1[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ACTIVE_HP_DBIAS[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ACTIVE_LP_DBIAS[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_LSLP_HP_DBG[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_LSLP_HP_DBIAS[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_DSLP_LP_DBG[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_DSLP_LP_DBIAS[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_LP_HP_DBIAS_VOL_GAP[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_OPTIONAL_UNIQUE_ID[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_TEMPERATURE_SENSOR[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_OCODE[];
@@ -174,6 +181,11 @@ extern const esp_efuse_desc_t* ESP_EFUSE_XTS_DPA_PSEUDO_LEVEL[];
 extern const esp_efuse_desc_t* ESP_EFUSE_DIS_WIFI6[];
 extern const esp_efuse_desc_t* ESP_EFUSE_ECDSA_DISABLE_P192[];
 extern const esp_efuse_desc_t* ESP_EFUSE_ECC_FORCE_CONST_TIME[];
+extern const esp_efuse_desc_t* ESP_EFUSE_BOOTLOADER_ANTI_ROLLBACK_SECURE_VERSION[];
+extern const esp_efuse_desc_t* ESP_EFUSE_BOOTLOADER_ANTI_ROLLBACK_EN[];
+extern const esp_efuse_desc_t* ESP_EFUSE_BOOTLOADER_ANTI_ROLLBACK_UPDATE_IN_ROM[];
+extern const esp_efuse_desc_t* ESP_EFUSE_RECOVERY_BOOTLOADER_FLASH_SECTOR[];
+extern const esp_efuse_desc_t* ESP_EFUSE_REPEAT_DATA4[];
 extern const esp_efuse_desc_t* ESP_EFUSE_MAC[];
 #define ESP_EFUSE_MAC_FACTORY ESP_EFUSE_MAC
 extern const esp_efuse_desc_t* ESP_EFUSE_WAFER_VERSION_MINOR[];
@@ -188,6 +200,13 @@ extern const esp_efuse_desc_t* ESP_EFUSE_PSRAM_CAP[];
 extern const esp_efuse_desc_t* ESP_EFUSE_PSRAM_VENDOR[];
 extern const esp_efuse_desc_t* ESP_EFUSE_TEMP[];
 extern const esp_efuse_desc_t* ESP_EFUSE_PKG_VERSION[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ACTIVE_HP_DBIAS[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ACTIVE_LP_DBIAS[];
+extern const esp_efuse_desc_t* ESP_EFUSE_LSLP_HP_DBG[];
+extern const esp_efuse_desc_t* ESP_EFUSE_LSLP_HP_DBIAS[];
+extern const esp_efuse_desc_t* ESP_EFUSE_DSLP_LP_DBG[];
+extern const esp_efuse_desc_t* ESP_EFUSE_DSLP_LP_DBIAS[];
+extern const esp_efuse_desc_t* ESP_EFUSE_LP_HP_DBIAS_VOL_GAP[];
 extern const esp_efuse_desc_t* ESP_EFUSE_OPTIONAL_UNIQUE_ID[];
 extern const esp_efuse_desc_t* ESP_EFUSE_TEMPERATURE_SENSOR[];
 extern const esp_efuse_desc_t* ESP_EFUSE_OCODE[];

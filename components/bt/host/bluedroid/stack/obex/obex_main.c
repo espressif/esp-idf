@@ -208,4 +208,9 @@ void obex_tl_l2cap_callback(tOBEX_TL_EVT evt, tOBEX_TL_MSG *msg)
     obex_tl_evt_handler(OBEX_OVER_L2CAP, evt, msg);
 }
 
+void obex_tl_rfcomm_callback(tOBEX_TL_EVT evt, tOBEX_TL_MSG *msg)
+{
+    obex_tl_evt_handler(OBEX_OVER_RFCOMM, evt, msg);
+}
+
 #endif /* #if (OBEX_INCLUDED == TRUE) */

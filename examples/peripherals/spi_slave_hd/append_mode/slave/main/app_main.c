@@ -25,7 +25,7 @@
 
 #define HOST_ID             SPI2_HOST
 #define QUEUE_SIZE          6
-#define TRANSACTION_LEN     16
+#define TRANSACTION_LEN     64
 #define SYNC_REG_FROM_HOST  (14 * 4)
 #define SYNC_REG_TO_HOST    (15 * 4)
 
@@ -72,7 +72,7 @@ static esp_err_t create_transaction_pool(uint8_t **data_buf, trans_link_t *trans
 {
     for (int i = 0; i < times; i++) {
         //malloc data buffers for transaction
-        data_buf[i] = heap_caps_calloc(1, TRANSACTION_LEN, MALLOC_CAP_DMA);
+        data_buf[i] = spi_bus_dma_memory_alloc(HOST_ID, TRANSACTION_LEN, 0);
         if (!data_buf[i]) {
             ESP_LOGI("Create pool:", "No enough memory");
             return ESP_ERR_NO_MEM;

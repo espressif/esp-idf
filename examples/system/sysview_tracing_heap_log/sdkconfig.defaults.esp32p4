@@ -1,0 +1,2 @@
+# Increase size of bootloader due to frame pointer. Only overflowed on P4.
+CONFIG_PARTITION_TABLE_OFFSET=0x10000

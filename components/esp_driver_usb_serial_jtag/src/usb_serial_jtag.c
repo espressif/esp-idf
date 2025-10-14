@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -264,9 +264,8 @@ int usb_serial_jtag_read_bytes(void* buf, uint32_t length, TickType_t ticks_to_w
 
 int usb_serial_jtag_write_bytes(const void* src, size_t size, TickType_t ticks_to_wait)
 {
-    ESP_RETURN_ON_FALSE(size != 0, ESP_ERR_INVALID_ARG, USB_SERIAL_JTAG_TAG, "size should be larger than 0");
-    ESP_RETURN_ON_FALSE(src != NULL, ESP_ERR_INVALID_ARG, USB_SERIAL_JTAG_TAG, "Invalid buffer pointer.");
-    ESP_RETURN_ON_FALSE(p_usb_serial_jtag_obj != NULL, ESP_ERR_INVALID_ARG, USB_SERIAL_JTAG_TAG, "The driver hasn't been initialized");
+    ESP_RETURN_ON_FALSE(src && size, 0, USB_SERIAL_JTAG_TAG, "invalid buffer or size");
+    ESP_RETURN_ON_FALSE(p_usb_serial_jtag_obj != NULL, 0, USB_SERIAL_JTAG_TAG, "driver is not initialized yet");
 
     //This will block when something else is waiting in wait_tx_done, making sure we don't add data to the ringbuffer.
     //Note that the ringbuffer itself is thread-safe, so this is only needed to handle wait_tx_done.
@@ -367,12 +366,23 @@ void usb_serial_jtag_set_select_notif_callback(usj_select_notif_callback_t usj_s
     }
 }
 
-bool usb_serial_jtag_read_ready(void)
+size_t usb_serial_jtag_get_read_bytes_available(void)
 {
     // sign the the driver is read ready is that data is waiting in the RX ringbuffer
-    UBaseType_t items_waiting = 0;
-    vRingbufferGetInfo(p_usb_serial_jtag_obj->rx_ring_buf, NULL, NULL, NULL, NULL, &items_waiting);
-    return items_waiting != 0;
+    UBaseType_t bytes_available = 0;
+    if (usb_serial_jtag_is_driver_installed()) {
+        vRingbufferGetInfo(p_usb_serial_jtag_obj->rx_ring_buf, NULL, NULL, NULL, NULL, &bytes_available);
+        if (bytes_available <= 0) {
+            return 0;
+        }
+    }
+
+    return (size_t)bytes_available;
+}
+
+bool usb_serial_jtag_read_ready(void)
+{
+    return usb_serial_jtag_get_read_bytes_available() != 0;
 }
 
 bool usb_serial_jtag_write_ready(void)

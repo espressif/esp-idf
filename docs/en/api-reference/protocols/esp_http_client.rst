@@ -32,18 +32,33 @@ Persistent connection means that the HTTP client can reuse the same connection f
 
 To allow ESP HTTP client to take full advantage of persistent connections, one should make as many requests as possible using the same handle instance. Check out the example functions ``http_rest_with_url`` and ``http_rest_with_hostname_path`` in the application example. Here, once the connection is created, multiple requests (``GET``, ``POST``, ``PUT``, etc.) are made before the connection is closed.
 
-.. only:: esp32
+Use Secure Element (ATECC608) for TLS
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    Use Secure Element (ATECC608) for TLS
-    _____________________________________
+A secure element (ATECC608) can be also used for the underlying TLS connection in the HTTP client connection. Please refer to the **ATECC608A (Secure Element) with ESP-TLS** section in the :doc:`ESP-TLS documentation </api-reference/protocols/esp_tls>` for more details. The secure element support has to be first enabled in menuconfig through :ref:`CONFIG_ESP_TLS_USE_SECURE_ELEMENT`. Then the HTTP client can be configured to use secure element as follows:
 
-    A secure element (ATECC608) can be also used for the underlying TLS connection in the HTTP client connection. Please refer to the **ATECC608A (Secure Element) with ESP-TLS** section in the :doc:`ESP-TLS documentation </api-reference/protocols/esp_tls>` for more details. The secure element support has to be first enabled in menuconfig through :ref:`CONFIG_ESP_TLS_USE_SECURE_ELEMENT`. Then the HTTP client can be configured to use secure element as follows:
+.. code-block:: c
+
+    esp_http_client_config_t cfg = {
+        /* other configurations options */
+        .use_secure_element = true,
+    };
+
+.. only:: SOC_ECDSA_SUPPORTED
+
+    Use ECDSA Peripheral for TLS
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    The ECDSA peripheral can be used for the underlying TLS connection in the HTTP client connection. Please refer to the **ECDSA Peripheral with ESP-TLS** section in the :doc:`ESP-TLS documentation </api-reference/protocols/esp_tls>` for more details. The HTTP client can be configured to use ECDSA peripheral as follows:
 
     .. code-block:: c
 
         esp_http_client_config_t cfg = {
             /* other configurations options */
-            .use_secure_element = true,
+            .use_ecdsa_peripheral = true,
+            .ecdsa_key_efuse_blk = 4,    // Low eFuse block for ECDSA key
+            .ecdsa_key_efuse_blk_high = 5,   // High eFuse block for ECDSA key (SECP384R1 only)
+            .ecdsa_curve = ESP_TLS_ECDSA_CURVE_SECP384R1, // set this to ESP_TLS_ECDSA_CURVE_SECP256R1 for SECP256R1 curve
         };
 
 
@@ -128,14 +143,16 @@ Diagnostic information could be helpful to gain insights into a problem. In the 
 
 Expected data types for different HTTP Client events in the event loop are as follows:
 
-    - HTTP_EVENT_ERROR            :   ``esp_http_client_handle_t``
-    - HTTP_EVENT_ON_CONNECTED     :   ``esp_http_client_handle_t``
-    - HTTP_EVENT_HEADERS_SENT     :   ``esp_http_client_handle_t``
-    - HTTP_EVENT_ON_HEADER        :   ``esp_http_client_handle_t``
-    - HTTP_EVENT_ON_DATA          :   ``esp_http_client_on_data_t``
-    - HTTP_EVENT_ON_FINISH        :   ``esp_http_client_handle_t``
-    - HTTP_EVENT_DISCONNECTED     :   ``esp_http_client_handle_t``
-    - HTTP_EVENT_REDIRECT         :   ``esp_http_client_redirect_event_data_t``
+    - HTTP_EVENT_ERROR              : ``esp_http_client_handle_t``
+    - HTTP_EVENT_ON_CONNECTED       : ``esp_http_client_handle_t``
+    - HTTP_EVENT_HEADERS_SENT       : ``esp_http_client_handle_t``
+    - HTTP_EVENT_ON_HEADER          : ``esp_http_client_handle_t``
+    - HTTP_EVENT_ON_HEADERS_COMPLETE: ``esp_http_client_handle_t``
+    - HTTP_EVENT_ON_STATUS_CODE     : ``esp_http_client_handle_t``
+    - HTTP_EVENT_ON_DATA            : ``esp_http_client_on_data_t``
+    - HTTP_EVENT_ON_FINISH          : ``esp_http_client_handle_t``
+    - HTTP_EVENT_DISCONNECTED       : ``esp_http_client_handle_t``
+    - HTTP_EVENT_REDIRECT           : ``esp_http_client_redirect_event_data_t``
 
 The :cpp:type:`esp_http_client_handle_t` received along with the event data will be valid until :cpp:enumerator:`HTTP_EVENT_DISCONNECTED <esp_http_client_event_id_t::HTTP_EVENT_DISCONNECTED>` is not received. This handle has been sent primarily to differentiate between different client connections and must not be used for any other purpose, as it may change based on client connection state.
 

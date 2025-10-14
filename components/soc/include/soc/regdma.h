@@ -34,7 +34,9 @@ extern "C" {
 #define REGDMA_MODEMSYSCON_LINK(_pri)       ((0x02 << 8) | _pri)
 #define REGDMA_MODEMLPCON_LINK(_pri)        ((0x03 << 8) | _pri)
 #define REGDMA_PAU_LINK(_pri)               ((0x04 << 8) | _pri)
+#define REGDMA_PVT_LINK(_pri)               ((0x05 << 8) | _pri)
 
+#define REGDMA_CACHE_LINK(_pri)             ((0x0c << 8) | _pri)
 #define REGDMA_INTMTX_LINK(_pri)            ((0x0d << 8) | _pri)
 #define REGDMA_HPSYS_LINK(_pri)             ((0x0e << 8) | _pri)
 #define REGDMA_TEEAPM_LINK(_pri)            ((0x0f << 8) | _pri)
@@ -47,6 +49,7 @@ extern "C" {
 #define REGDMA_MODEM_BT_BB_LINK(_pri)       ((0x15 << 8) | _pri)
 #define REGDMA_MODEM_IEEE802154_LINK(_pri)  ((0x16 << 8) | _pri)
 #define REGDMA_GDMA_LINK(_pri)              ((0x17 << 8) | _pri)
+#define REGDMA_AHB_DMA_LINK(_pri)           ((0x17 << 8) | _pri)
 #define REGDMA_I2C_LINK(_pri)               ((0x18 << 8) | _pri)
 #define REGDMA_RMT_LINK(_pri)               ((0x19 << 8) | _pri)
 #define REGDMA_TG0_WDT_LINK(_pri)           ((0x1A << 8) | _pri)
@@ -60,8 +63,10 @@ extern "C" {
 #define REGDMA_PARLIO_LINK(_pri)            ((0x22 << 8) | _pri)
 #define REGDMA_GPSPI_LINK(_pri)             ((0x23 << 8) | _pri)
 #define REGDMA_LEDC_LINK(_pri)              ((0x24 << 8) | _pri)
-#define REGDMA_PCNT_LINK(_pri)              ((0x25 << 8) | _pri)
-#define REGDMA_MCPWM_LINK(_pri)             ((0x26 << 8) | _pri)
+#define REGDMA_MCPWM_LINK(_pri)             ((0x25 << 8) | _pri)
+#define REGDMA_SDM_LINK(_pri)               ((0x26 << 8) | _pri)
+#define REGDMA_EMAC_LINK(_pri)              ((0x27 << 8) | _pri)
+
 #define REGDMA_MODEM_FE_LINK(_pri)          ((0xFF << 8) | _pri)
 
 #define REGDMA_LINK_PRI_SYS_CLK                 REGDMA_LINK_PRI_0
@@ -81,13 +86,14 @@ extern "C" {
 #define REGDMA_LINK_PRI_I2C                     REGDMA_LINK_PRI_GENERAL_PERIPH
 #define REGDMA_LINK_PRI_I2S                     REGDMA_LINK_PRI_GENERAL_PERIPH
 #define REGDMA_LINK_PRI_PARLIO                  REGDMA_LINK_PRI_GENERAL_PERIPH
-#define REGDMA_LINK_PRI_PCNT                    REGDMA_LINK_PRI_GENERAL_PERIPH
 #define REGDMA_LINK_PRI_UART                    REGDMA_LINK_PRI_GENERAL_PERIPH
 #define REGDMA_LINK_PRI_TEMPERATURE_SENSOR      REGDMA_LINK_PRI_GENERAL_PERIPH
 #define REGDMA_LINK_PRI_TWAI                    REGDMA_LINK_PRI_GENERAL_PERIPH
 #define REGDMA_LINK_PRI_GPSPI                   REGDMA_LINK_PRI_GENERAL_PERIPH
 #define REGDMA_LINK_PRI_LEDC                    REGDMA_LINK_PRI_GENERAL_PERIPH
 #define REGDMA_LINK_PRI_MCPWM                   REGDMA_LINK_PRI_GENERAL_PERIPH
+#define REGDMA_LINK_PRI_SDM                     REGDMA_LINK_PRI_GENERAL_PERIPH
+#define REGDMA_LINK_PRI_EMAC                    REGDMA_LINK_PRI_GENERAL_PERIPH
 
 typedef enum {
     REGDMA_LINK_PRI_0 = 0,

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +9,8 @@
 #include "nvs_constants.h"  // NVS_CONST_ENTRY_SIZE and all size related constants shared with cpp implementation of NVS
 #include "nvs_bootloader.h" // nvs_bootloader_read_list_t and function prototypes
 #include "esp_partition.h"  // esp_partition_t
+#include "nvs_flash.h"      // nvs_sec_cfg_t
+#include "nvs_bootloader_xts_aes.h" // nvs_bootloader_xts_aes_context
 
 #ifdef __cplusplus
 extern "C" {

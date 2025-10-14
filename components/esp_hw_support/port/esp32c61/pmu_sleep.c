@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,12 +19,67 @@
 #include "hal/efuse_hal.h"
 #include "esp_private/esp_pmu.h"
 #include "pmu_param.h"
+#include "esp_hw_log.h"
+
+ESP_HW_LOG_ATTR_TAG(TAG, "pmu_sleep");
 
 #define HP(state)   (PMU_MODE_HP_ ## state)
 #define LP(state)   (PMU_MODE_LP_ ## state)
 
 
 static bool s_pmu_sleep_regdma_backup_enabled;
+
+static uint32_t get_lslp_dbg(void)
+{
+    uint32_t pmu_dbg_atten_lightsleep = PMU_DBG_ATTEN_LIGHTSLEEP_DEFAULT;
+    uint32_t blk_version = efuse_hal_blk_version();
+    if (blk_version >= 1) {
+        pmu_dbg_atten_lightsleep = efuse_ll_get_lslp_dbg();
+    } else {
+        ESP_HW_LOGD(TAG, "lslp dbg not burnt in efuse, use default\n");
+    }
+
+    return pmu_dbg_atten_lightsleep;
+}
+
+static uint32_t get_lslp_hp_dbias(void)
+{
+    uint32_t pmu_hp_dbias_lightsleep_0v6 = PMU_HP_DBIAS_LIGHTSLEEP_0V6_DEFAULT;
+    uint32_t blk_version = efuse_hal_blk_version();
+    if (blk_version >= 1) {
+        pmu_hp_dbias_lightsleep_0v6 = efuse_ll_get_lslp_hp_dbias();
+    } else {
+        ESP_HW_LOGD(TAG, "lslp hp dbias not burnt in efuse, use default\n");
+    }
+
+    return pmu_hp_dbias_lightsleep_0v6;
+}
+
+static uint32_t get_dslp_dbg(void)
+{
+    uint32_t pmu_dbg_atten_deepsleep = PMU_DBG_ATTEN_DEEPSLEEP_DEFAULT;
+    uint32_t blk_version = efuse_hal_blk_version();
+    if (blk_version >= 1) {
+        pmu_dbg_atten_deepsleep = efuse_ll_get_dslp_dbg();
+    } else {
+        ESP_HW_LOGD(TAG, "dslp dbg not burnt in efuse, use default\n");
+    }
+
+    return pmu_dbg_atten_deepsleep;
+}
+
+static uint32_t get_dslp_lp_dbias(void)
+{
+    uint32_t pmu_lp_dbias_deepsleep_0v7 = PMU_LP_DBIAS_DEEPSLEEP_0V7_DEFAULT;
+    uint32_t blk_version = efuse_hal_blk_version();
+    if (blk_version >= 1) {
+        pmu_lp_dbias_deepsleep_0v7 = efuse_ll_get_dslp_lp_dbias();
+    } else {
+        ESP_HW_LOGD(TAG, "dslp lp dbias not burnt in efuse\n");
+    }
+
+    return pmu_lp_dbias_deepsleep_0v7;
+}
 
 void pmu_sleep_enable_regdma_backup(void)
 {
@@ -51,17 +106,18 @@ void pmu_sleep_disable_regdma_backup(void)
     }
 }
 
-uint32_t pmu_sleep_calculate_hw_wait_time(uint32_t pd_flags, uint32_t slowclk_period, uint32_t fastclk_period)
+uint32_t pmu_sleep_calculate_hw_wait_time(uint32_t sleep_flags, soc_rtc_slow_clk_src_t slowclk_src, uint32_t slowclk_period, uint32_t fastclk_period)
 {
     const pmu_sleep_machine_constant_t *mc = (pmu_sleep_machine_constant_t *)PMU_instance()->mc;
 
     /* LP core hardware wait time, microsecond */
     const int lp_wakeup_wait_time_us        = rtc_time_slowclk_to_us(mc->lp.wakeup_wait_cycle, slowclk_period);
     const int lp_clk_switch_time_us         = rtc_time_slowclk_to_us(mc->lp.clk_switch_cycle, slowclk_period);
-    const int lp_clk_power_on_wait_time_us  = (pd_flags & PMU_SLEEP_PD_XTAL) ? mc->lp.xtal_wait_stable_time_us \
-                            : rtc_time_slowclk_to_us(mc->lp.clk_power_on_wait_cycle, slowclk_period);
+    /* If XTAL is used as RTC_FAST clock source, it is started in LP_SLEEP -> LP_ACTIVE stage and the clock waiting time is counted into lp_hw_wait_time */
+    const int lp_clk_power_on_wait_time_us  = ((sleep_flags & PMU_SLEEP_PD_XTAL) && (sleep_flags & RTC_SLEEP_XTAL_AS_RTC_FAST)) \
+                                            ? mc->lp.xtal_wait_stable_time_us \
+                                            : rtc_time_slowclk_to_us(mc->lp.clk_power_on_wait_cycle, slowclk_period);
     const int lp_control_wait_time_us       = mc->lp.isolate_wait_time_us + mc->lp.reset_wait_time_us;
-
     const int lp_hw_wait_time_us = mc->lp.min_slp_time_us + mc->lp.analog_wait_time_us + lp_clk_power_on_wait_time_us \
                             + lp_wakeup_wait_time_us + lp_clk_switch_time_us + mc->lp.power_supply_wait_time_us \
                                 + mc->lp.power_up_wait_time_us + lp_control_wait_time_us;
@@ -69,11 +125,15 @@ uint32_t pmu_sleep_calculate_hw_wait_time(uint32_t pd_flags, uint32_t slowclk_pe
     /* HP core hardware wait time, microsecond */
     const int hp_digital_power_up_wait_time_us = mc->hp.power_supply_wait_time_us + mc->hp.power_up_wait_time_us;
     const int hp_control_wait_time_us = mc->hp.isolate_wait_time_us + mc->hp.reset_wait_time_us;
-    const int hp_regdma_wait_time_us = MAX(mc->hp.regdma_s2m_work_time_us + mc->hp.regdma_m2a_work_time_us, mc->hp.regdma_s2a_work_time_us);
-    const int hp_clock_wait_time_us = mc->hp.xtal_wait_stable_time_us + mc->hp.pll_wait_stable_time_us;
-
-    const int hp_hw_wait_time_us = mc->hp.analog_wait_time_us + MAX(hp_clock_wait_time_us, \
-                            hp_digital_power_up_wait_time_us + hp_control_wait_time_us + hp_regdma_wait_time_us);
+    const int hp_regdma_wait_time_us = s_pmu_sleep_regdma_backup_enabled \
+                                ? MAX(mc->hp.regdma_s2m_work_time_us + mc->hp.regdma_m2a_work_time_us, mc->hp.regdma_s2a_work_time_us) \
+                                : 0;
+    /* If XTAL is not used as RTC_FAST clock source, it is started in HP_SLEEP -> HP_ACTIVE stage and the clock waiting time is counted into hp_hw_wait_time */
+    const int hp_clock_wait_time_us = ((sleep_flags & PMU_SLEEP_PD_XTAL) && !(sleep_flags & RTC_SLEEP_XTAL_AS_RTC_FAST)) \
+                                    ? mc->hp.xtal_wait_stable_time_us + mc->hp.pll_wait_stable_time_us \
+                                    : mc->hp.pll_wait_stable_time_us;
+    const int hp_hw_wait_time_us = mc->hp.analog_wait_time_us + hp_digital_power_up_wait_time_us + hp_clock_wait_time_us \
+                                     + hp_regdma_wait_time_us + hp_control_wait_time_us;
 
     /* When the SOC wakeup (lp timer or GPIO wakeup) and Modem wakeup (Beacon wakeup) complete, the soc
      * wakeup will be delayed until the RF is turned on in Modem state.
@@ -93,8 +153,20 @@ uint32_t pmu_sleep_calculate_hw_wait_time(uint32_t pd_flags, uint32_t slowclk_pe
      *                     |                           wake-up delay                          |
      */
 #if SOC_PM_SUPPORT_PMU_MODEM_STATE && CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP
+    int min_slp_time_adjustment_us = 0;
+#if SOC_PM_PMU_MIN_SLP_SLOW_CLK_CYCLE_FIXED
+    if (slowclk_src == SOC_RTC_SLOW_CLK_SRC_RC_SLOW) {
+        const uint32_t slowclk_period_fixed = rtc_clk_freq_to_period(SOC_CLK_RC_SLOW_FREQ_APPROX);
+        const int min_slp_cycle_fixed = rtc_time_us_to_slowclk(mc->hp.min_slp_time_us, slowclk_period_fixed);
+        const int min_slp_cycle_calib = rtc_time_us_to_slowclk(mc->hp.min_slp_time_us, slowclk_period);
+        const int min_slp_cycle_diff = (min_slp_cycle_calib > min_slp_cycle_fixed) ? \
+                       (min_slp_cycle_calib - min_slp_cycle_fixed) : (min_slp_cycle_fixed - min_slp_cycle_calib);
+        const int min_slp_time_diff = rtc_time_slowclk_to_us(min_slp_cycle_diff, slowclk_period_fixed);
+        min_slp_time_adjustment_us = (min_slp_cycle_calib > min_slp_cycle_fixed) ? min_slp_time_diff : -min_slp_time_diff;
+    }
+#endif
     const int rf_on_protect_time_us = mc->hp.regdma_rf_on_work_time_us;
-    const int total_hw_wait_time_us = lp_hw_wait_time_us + hp_hw_wait_time_us + mc->hp.clock_domain_sync_time_us;
+    const int total_hw_wait_time_us = lp_hw_wait_time_us + hp_hw_wait_time_us + mc->hp.clock_domain_sync_time_us + min_slp_time_adjustment_us;
 #else
     const int rf_on_protect_time_us = 0;
     const int total_hw_wait_time_us = lp_hw_wait_time_us + hp_hw_wait_time_us;
@@ -107,15 +179,22 @@ uint32_t pmu_sleep_calculate_hw_wait_time(uint32_t pd_flags, uint32_t slowclk_pe
 static inline pmu_sleep_param_config_t * pmu_sleep_param_config_default(
         pmu_sleep_param_config_t *param,
         pmu_sleep_power_config_t *power, /* We'll use the runtime power parameter to determine some hardware parameters */
-        const uint32_t pd_flags,
+        const uint32_t sleep_flags,
         const uint32_t adjustment,
+        soc_rtc_slow_clk_src_t slowclk_src,
         const uint32_t slowclk_period,
         const uint32_t fastclk_period
     )
 {
     const pmu_sleep_machine_constant_t *mc = (pmu_sleep_machine_constant_t *)PMU_instance()->mc;
 
-    param->hp_sys.min_slp_slow_clk_cycle          = rtc_time_us_to_slowclk(mc->hp.min_slp_time_us, slowclk_period);
+#if (SOC_PM_PMU_MIN_SLP_SLOW_CLK_CYCLE_FIXED && SOC_PM_SUPPORT_PMU_MODEM_STATE && CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP)
+    const uint32_t slowclk_period_fixed = (slowclk_src == SOC_RTC_SLOW_CLK_SRC_RC_SLOW) ? rtc_clk_freq_to_period(SOC_CLK_RC_SLOW_FREQ_APPROX) : slowclk_period;
+#else
+    const uint32_t slowclk_period_fixed = slowclk_period;
+#endif
+
+    param->hp_sys.min_slp_slow_clk_cycle          = rtc_time_us_to_slowclk(mc->hp.min_slp_time_us, slowclk_period_fixed);
     param->hp_sys.analog_wait_target_cycle        = rtc_time_us_to_fastclk(mc->hp.analog_wait_time_us, fastclk_period);
     param->hp_sys.digital_power_supply_wait_cycle = rtc_time_us_to_fastclk(mc->hp.power_supply_wait_time_us, fastclk_period);
     param->hp_sys.digital_power_up_wait_cycle     = rtc_time_us_to_fastclk(mc->hp.power_up_wait_time_us, fastclk_period);
@@ -123,12 +202,12 @@ static inline pmu_sleep_param_config_t * pmu_sleep_param_config_default(
     param->hp_sys.isolate_wait_cycle              = rtc_time_us_to_fastclk(mc->hp.isolate_wait_time_us, fastclk_period);
     param->hp_sys.reset_wait_cycle                = rtc_time_us_to_fastclk(mc->hp.reset_wait_time_us, fastclk_period);
 
-    const int hw_wait_time_us = pmu_sleep_calculate_hw_wait_time(pd_flags, slowclk_period, fastclk_period);
+    const int hw_wait_time_us = pmu_sleep_calculate_hw_wait_time(sleep_flags, slowclk_src, slowclk_period, fastclk_period);
     const int modem_state_skip_time_us = mc->hp.regdma_m2a_work_time_us + mc->hp.system_dfs_up_work_time_us + mc->lp.min_slp_time_us;
     const int modem_wakeup_wait_time_us = adjustment - hw_wait_time_us + modem_state_skip_time_us + mc->hp.regdma_rf_on_work_time_us;
     param->hp_sys.modem_wakeup_wait_cycle         = rtc_time_us_to_fastclk(modem_wakeup_wait_time_us, fastclk_period);
 
-    param->lp_sys.min_slp_slow_clk_cycle          = rtc_time_us_to_slowclk(mc->lp.min_slp_time_us, slowclk_period);
+    param->lp_sys.min_slp_slow_clk_cycle          = rtc_time_us_to_slowclk(mc->lp.min_slp_time_us, slowclk_period_fixed);
     param->lp_sys.analog_wait_target_cycle        = rtc_time_us_to_slowclk(mc->lp.analog_wait_time_us, slowclk_period);
     param->lp_sys.digital_power_supply_wait_cycle = rtc_time_us_to_fastclk(mc->lp.power_supply_wait_time_us, fastclk_period);
     param->lp_sys.digital_power_up_wait_cycle     = rtc_time_us_to_fastclk(mc->lp.power_up_wait_time_us, fastclk_period);
@@ -145,44 +224,49 @@ static inline pmu_sleep_param_config_t * pmu_sleep_param_config_default(
 
 const pmu_sleep_config_t* pmu_sleep_config_default(
         pmu_sleep_config_t *config,
-        uint32_t pd_flags,
+        uint32_t sleep_flags,
+        uint32_t clk_flags,
         uint32_t adjustment,
+        soc_rtc_slow_clk_src_t slowclk_src,
         uint32_t slowclk_period,
         uint32_t fastclk_period,
         bool dslp
     )
 {
-    pmu_sleep_power_config_t power_default = PMU_SLEEP_POWER_CONFIG_DEFAULT(pd_flags);
-
-    uint32_t iram_pd_flags = 0;
-    iram_pd_flags |= (pd_flags & PMU_SLEEP_PD_MEM_G0) ? BIT(0) : 0;
-    iram_pd_flags |= (pd_flags & PMU_SLEEP_PD_MEM_G1) ? BIT(1) : 0;
-    iram_pd_flags |= (pd_flags & PMU_SLEEP_PD_MEM_G2) ? BIT(2) : 0;
-    iram_pd_flags |= (pd_flags & PMU_SLEEP_PD_MEM_G3) ? BIT(3) : 0;
+    pmu_sleep_power_config_t power_default = PMU_SLEEP_POWER_CONFIG_DEFAULT(sleep_flags);
     config->power = power_default;
 
-    pmu_sleep_param_config_t param_default = PMU_SLEEP_PARAM_CONFIG_DEFAULT(pd_flags);
-    config->param = *pmu_sleep_param_config_default(&param_default, &power_default, pd_flags, adjustment, slowclk_period, fastclk_period);
+    pmu_sleep_param_config_t param_default = PMU_SLEEP_PARAM_CONFIG_DEFAULT(sleep_flags);
+    config->param = *pmu_sleep_param_config_default(&param_default, &power_default, sleep_flags, adjustment, slowclk_src, slowclk_period, fastclk_period);
 
     if (dslp) {
         config->param.lp_sys.analog_wait_target_cycle  = rtc_time_us_to_slowclk(PMU_LP_ANALOG_WAIT_TARGET_TIME_DSLP_US, slowclk_period);
-        pmu_sleep_analog_config_t analog_default = PMU_SLEEP_ANALOG_DSLP_CONFIG_DEFAULT(pd_flags);
-        config->analog = analog_default;
-    } else {
-        pmu_sleep_digital_config_t digital_default = PMU_SLEEP_DIGITAL_LSLP_CONFIG_DEFAULT(pd_flags);
+
+        pmu_sleep_digital_config_t digital_default = PMU_SLEEP_DIGITAL_DSLP_CONFIG_DEFAULT(sleep_flags, clk_flags);
         config->digital = digital_default;
 
-        pmu_sleep_analog_config_t analog_default = PMU_SLEEP_ANALOG_LSLP_CONFIG_DEFAULT(pd_flags);
+        pmu_sleep_analog_config_t analog_default = PMU_SLEEP_ANALOG_DSLP_CONFIG_DEFAULT(sleep_flags);
+        analog_default.lp_sys[LP(SLEEP)].analog.dbg_atten = get_dslp_dbg();
+        analog_default.lp_sys[LP(SLEEP)].analog.dbias = get_dslp_lp_dbias();
+        config->analog = analog_default;
+    } else {
+        pmu_sleep_digital_config_t digital_default = PMU_SLEEP_DIGITAL_LSLP_CONFIG_DEFAULT(sleep_flags, clk_flags);
+        config->digital = digital_default;
 
-        if (!(pd_flags & PMU_SLEEP_PD_XTAL) || !(pd_flags & PMU_SLEEP_PD_RC_FAST)){
+        pmu_sleep_analog_config_t analog_default = PMU_SLEEP_ANALOG_LSLP_CONFIG_DEFAULT(sleep_flags);
+        analog_default.hp_sys.analog.dbg_atten = get_lslp_dbg();
+        analog_default.hp_sys.analog.dbias = get_lslp_hp_dbias();
+        analog_default.lp_sys[LP(SLEEP)].analog.dbias = PMU_LP_DBIAS_LIGHTSLEEP_0V7_DEFAULT;
+
+        if (!(sleep_flags & PMU_SLEEP_PD_XTAL) || !(sleep_flags & PMU_SLEEP_PD_RC_FAST)){
             analog_default.hp_sys.analog.pd_cur = PMU_PD_CUR_SLEEP_ON;
             analog_default.hp_sys.analog.bias_sleep = PMU_BIASSLP_SLEEP_ON;
-            analog_default.hp_sys.analog.dbias = HP_CALI_DBIAS_SLP_1V1;
+            analog_default.hp_sys.analog.dbias =  get_act_hp_dbias();
             analog_default.hp_sys.analog.dbg_atten = 0;
 
             analog_default.lp_sys[LP(SLEEP)].analog.pd_cur = PMU_PD_CUR_SLEEP_ON;
             analog_default.lp_sys[LP(SLEEP)].analog.bias_sleep = PMU_BIASSLP_SLEEP_ON;
-            analog_default.lp_sys[LP(SLEEP)].analog.dbias = LP_CALI_DBIAS_SLP_1V1;
+            analog_default.lp_sys[LP(SLEEP)].analog.dbias = get_act_lp_dbias();
             analog_default.lp_sys[LP(SLEEP)].analog.dbg_atten = 0;
         }
 
@@ -205,9 +289,13 @@ static void pmu_sleep_power_init(pmu_context_t *ctx, const pmu_sleep_power_confi
     pmu_ll_lp_set_xtal_xpd (ctx->hal->dev, LP(SLEEP), power->lp_sys[LP(SLEEP)].xtal.xpd_xtal);
 }
 
-static void pmu_sleep_digital_init(pmu_context_t *ctx, const pmu_sleep_digital_config_t *dig)
+static void pmu_sleep_digital_init(pmu_context_t *ctx, const pmu_sleep_digital_config_t *dig, bool dslp)
 {
-    pmu_ll_hp_set_dig_pad_slp_sel   (ctx->hal->dev, HP(SLEEP), dig->syscntl.dig_pad_slp_sel);
+    pmu_ll_hp_set_icg_sysclk_enable(ctx->hal->dev, HP(SLEEP), (dig->icg_func != 0));
+    pmu_ll_hp_set_icg_func(ctx->hal->dev, HP(SLEEP), dig->icg_func);
+    if (!dslp) {
+        pmu_ll_hp_set_dig_pad_slp_sel(ctx->hal->dev, HP(SLEEP), dig->syscntl.dig_pad_slp_sel);
+    }
 }
 
 static void pmu_sleep_analog_init(pmu_context_t *ctx, const pmu_sleep_analog_config_t *analog, bool dslp)
@@ -259,9 +347,7 @@ void pmu_sleep_init(const pmu_sleep_config_t *config, bool dslp)
 {
     assert(PMU_instance());
     pmu_sleep_power_init(PMU_instance(), &config->power, dslp);
-    if(!dslp){
-        pmu_sleep_digital_init(PMU_instance(), &config->digital);
-    }
+    pmu_sleep_digital_init(PMU_instance(), &config->digital, dslp);
     pmu_sleep_analog_init(PMU_instance(), &config->analog, dslp);
     pmu_sleep_param_init(PMU_instance(), &config->param, dslp);
 }
@@ -299,11 +385,6 @@ bool pmu_sleep_finish(bool dslp)
     while(efuse_ll_get_controller_state() != EFUSE_CONTROLLER_STATE_IDLE);
 
     return pmu_ll_hp_is_sleep_reject(PMU_instance()->hal->dev);
-}
-
-void pmu_sleep_enable_hp_sleep_sysclk(bool enable)
-{
-    pmu_ll_hp_set_icg_sysclk_enable(PMU_instance()->hal->dev, HP(SLEEP), enable);
 }
 
 uint32_t pmu_sleep_get_wakup_retention_cost(void)

@@ -301,7 +301,7 @@ typedef union {
          *  set this value: s=0-53: connect GPIO[s] to this port. s=0x38: set this port always
          *  high level. s=0x3C: set this port always low level.
          */
-        uint32_t func_sel:5;
+        uint32_t in_sel:5;
         /** in_inv_sel : R/W; bitpos: [5]; default: 0;
          *  set this bit to invert input signal. 1:invert. 0:not invert.
          */
@@ -325,7 +325,7 @@ typedef union {
          *  output of GPIO[n] equals input of peripheral[s]. s=256: output of GPIO[n] equals
          *  GPIO_OUT_REG[n].
          */
-        uint32_t func_sel:8;
+        uint32_t out_sel:8;
         /** out_inv_sel : R/W; bitpos: [8]; default: 0;
          *  set this bit to invert output signal.1:invert.0:not invert.
          */

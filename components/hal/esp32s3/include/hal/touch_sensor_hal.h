@@ -186,7 +186,7 @@ void touch_hal_filter_get_config(touch_filter_config_t *filter_info);
  * Force reset benchmark to raw data of touch sensor.
  *
  * @param touch_num touch pad index
- *                  - TOUCH_PAD_MAX Reset basaline of all channels.
+ *                  - TOUCH_PAD_MAX Reset baseline of all channels.
  */
 #define touch_hal_reset_benchmark(touch_num) touch_ll_reset_benchmark(touch_num)
 

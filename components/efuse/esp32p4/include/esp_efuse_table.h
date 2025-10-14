@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,7 +10,7 @@ extern "C" {
 
 #include "esp_efuse.h"
 
-// md5_digest_table c56ed98dde7a08c8f70d57a01faba96a
+// md5_digest_table 665d4d3a1354653f8e46869d49df1a2f
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -82,7 +82,7 @@ extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_BLK1[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_MAC[];
 #define ESP_EFUSE_WR_DIS_MAC_FACTORY ESP_EFUSE_WR_DIS_MAC
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_WAFER_VERSION_MINOR[];
-extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_WAFER_VERSION_MAJOR[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_WAFER_VERSION_MAJOR_LO[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_DISABLE_WAFER_VERSION_MAJOR[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_DISABLE_BLK_VERSION_MAJOR[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_BLK_VERSION_MINOR[];
@@ -92,6 +92,7 @@ extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_TEMP[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_PSRAM_VENDOR[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_PKG_VERSION[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_SYS_DATA_PART1[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_WAFER_VERSION_MAJOR_HI[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_LDO_VO1_DREF[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_LDO_VO2_DREF[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_LDO_VO1_MUL[];
@@ -266,7 +267,7 @@ extern const esp_efuse_desc_t* ESP_EFUSE_DIS_SWD[];
 extern const esp_efuse_desc_t* ESP_EFUSE_MAC[];
 #define ESP_EFUSE_MAC_FACTORY ESP_EFUSE_MAC
 extern const esp_efuse_desc_t* ESP_EFUSE_WAFER_VERSION_MINOR[];
-extern const esp_efuse_desc_t* ESP_EFUSE_WAFER_VERSION_MAJOR[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WAFER_VERSION_MAJOR_LO[];
 extern const esp_efuse_desc_t* ESP_EFUSE_DISABLE_WAFER_VERSION_MAJOR[];
 extern const esp_efuse_desc_t* ESP_EFUSE_DISABLE_BLK_VERSION_MAJOR[];
 extern const esp_efuse_desc_t* ESP_EFUSE_BLK_VERSION_MINOR[];
@@ -275,6 +276,7 @@ extern const esp_efuse_desc_t* ESP_EFUSE_PSRAM_CAP[];
 extern const esp_efuse_desc_t* ESP_EFUSE_TEMP[];
 extern const esp_efuse_desc_t* ESP_EFUSE_PSRAM_VENDOR[];
 extern const esp_efuse_desc_t* ESP_EFUSE_PKG_VERSION[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WAFER_VERSION_MAJOR_HI[];
 extern const esp_efuse_desc_t* ESP_EFUSE_LDO_VO1_DREF[];
 extern const esp_efuse_desc_t* ESP_EFUSE_LDO_VO2_DREF[];
 extern const esp_efuse_desc_t* ESP_EFUSE_LDO_VO1_MUL[];

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -48,6 +48,17 @@ struct hci_h4_allocators {
 extern const struct hci_h4_allocators hci_h4_allocs_from_ll;
 extern const struct hci_h4_allocators hci_h4_allocs_from_hs;
 
+typedef void (hci_h4_free_cmd)(uint8_t *buf);
+typedef void (hci_h4_free_evt)(uint8_t *buf);
+typedef int  (hci_h4_free_acl)(struct os_mbuf *om);
+typedef int  (hci_h4_free_iso)(struct os_mbuf *om);
+struct hci_h4_frees {
+    hci_h4_free_cmd *cmd;
+    hci_h4_free_acl *acl;
+    hci_h4_free_evt *evt;
+    hci_h4_free_iso *iso;
+};
+
 typedef int (hci_h4_frame_cb)(uint8_t pkt_type, void *data);
 
 struct hci_h4_sm {
@@ -63,11 +74,13 @@ struct hci_h4_sm {
     };
 
     const struct hci_h4_allocators *allocs;
+    const struct hci_h4_frees *frees;
     hci_h4_frame_cb *frame_cb;
 };
 
 void hci_h4_sm_init(struct hci_h4_sm *h4sm,
                     const struct hci_h4_allocators *allocs,
+                    const struct hci_h4_frees *frees,
                     hci_h4_frame_cb *frame_cb);
 
 int hci_h4_sm_rx(struct hci_h4_sm *h4sm, const uint8_t *buf, uint16_t len);

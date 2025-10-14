@@ -335,7 +335,7 @@ void btm_acl_created (BD_ADDR bda, DEV_CLASS dc, UINT8 bdn[BTM_MAX_REM_BD_NAME_L
 #if (CLASSIC_BT_INCLUDED == TRUE)
                         const UINT8 req_pend = (p_dev_rec->sm4 & BTM_SM4_REQ_PEND);
 #endif  ///CLASSIC_BT_INCLUDED == TRUE
-                        /* Store the Peer Security Capabilites (in SM4 and rmt_sec_caps) */
+                        /* Store the Peer Security Capabilities (in SM4 and rmt_sec_caps) */
 #if (SMP_INCLUDED == TRUE)
                         btm_sec_set_peer_sec_caps(p, p_dev_rec);
 #endif  ///SMP_INCLUDED == TRUE
@@ -350,7 +350,7 @@ void btm_acl_created (BD_ADDR bda, DEV_CLASS dc, UINT8 bdn[BTM_MAX_REM_BD_NAME_L
                         return;
                     }
                 } else {
-                    /* If remote features indicated secure connection (SC) mode, check the remote feautres again*/
+                    /* If remote features indicated secure connection (SC) mode, check the remote features again*/
                     /* this is to prevent from BIAS attack where attacker can downgrade SC mode*/
                     btm_read_remote_features (p->hci_handle);
                 }
@@ -474,7 +474,7 @@ void btm_acl_removed (BD_ADDR bda, tBT_TRANSPORT transport)
                     BTM_TRACE_DEBUG("Bonded\n");
                 }
             } else {
-                BTM_TRACE_DEBUG("Bletooth link down\n");
+                BTM_TRACE_DEBUG("Bluetooth link down\n");
                 p_dev_rec->sec_flags &= ~(BTM_SEC_AUTHORIZED | BTM_SEC_AUTHENTICATED
                                           | BTM_SEC_ENCRYPTED | BTM_SEC_ROLE_SWITCHED);
             }
@@ -531,10 +531,11 @@ void btm_acl_device_down (void)
 *******************************************************************************/
 void btm_acl_update_busy_level (tBTM_BLI_EVENT event)
 {
-    tBTM_BL_UPDATE_DATA  evt;
-    UINT8 busy_level;
-    BTM_TRACE_DEBUG ("btm_acl_update_busy_level\n");
+    UINT8 busy_level_flags = 0;
     BOOLEAN old_inquiry_state = btm_cb.is_inquiry;
+
+    BTM_TRACE_DEBUG ("btm_acl_update_busy_level\n");
+
     switch (event) {
     case BTM_BLI_ACL_UP_EVT:
         BTM_TRACE_DEBUG ("BTM_BLI_ACL_UP_EVT\n");
@@ -545,30 +546,31 @@ void btm_acl_update_busy_level (tBTM_BLI_EVENT event)
     case BTM_BLI_PAGE_EVT:
         BTM_TRACE_DEBUG ("BTM_BLI_PAGE_EVT\n");
         btm_cb.is_paging = TRUE;
-        evt.busy_level_flags = BTM_BL_PAGING_STARTED;
+        busy_level_flags = BTM_BL_PAGING_STARTED;
         break;
     case BTM_BLI_PAGE_DONE_EVT:
         BTM_TRACE_DEBUG ("BTM_BLI_PAGE_DONE_EVT\n");
         btm_cb.is_paging = FALSE;
-        evt.busy_level_flags = BTM_BL_PAGING_COMPLETE;
+        busy_level_flags = BTM_BL_PAGING_COMPLETE;
         break;
     case BTM_BLI_INQ_EVT:
         BTM_TRACE_DEBUG ("BTM_BLI_INQ_EVT\n");
         btm_cb.is_inquiry = TRUE;
-        evt.busy_level_flags = BTM_BL_INQUIRY_STARTED;
+        busy_level_flags = BTM_BL_INQUIRY_STARTED;
         break;
     case BTM_BLI_INQ_CANCEL_EVT:
         BTM_TRACE_DEBUG ("BTM_BLI_INQ_CANCEL_EVT\n");
         btm_cb.is_inquiry = FALSE;
-        evt.busy_level_flags = BTM_BL_INQUIRY_CANCELLED;
+        busy_level_flags = BTM_BL_INQUIRY_CANCELLED;
         break;
     case BTM_BLI_INQ_DONE_EVT:
         BTM_TRACE_DEBUG ("BTM_BLI_INQ_DONE_EVT\n");
         btm_cb.is_inquiry = FALSE;
-        evt.busy_level_flags = BTM_BL_INQUIRY_COMPLETE;
+        busy_level_flags = BTM_BL_INQUIRY_COMPLETE;
         break;
     }
 
+    UINT8 busy_level;
     if (btm_cb.is_paging || btm_cb.is_inquiry) {
         busy_level = 10;
     } else {
@@ -576,8 +578,11 @@ void btm_acl_update_busy_level (tBTM_BLI_EVENT event)
     }
 
     if ((busy_level != btm_cb.busy_level) || (old_inquiry_state != btm_cb.is_inquiry)) {
-        evt.event         = BTM_BL_UPDATE_EVT;
-        evt.busy_level    = busy_level;
+        tBTM_BL_UPDATE_DATA evt = {
+            .event = BTM_BL_UPDATE_EVT,
+            .busy_level = busy_level,
+            .busy_level_flags = busy_level_flags,
+        };
         btm_cb.busy_level = busy_level;
         if (btm_cb.p_bl_changed_cb && (btm_cb.bl_evt_mask & BTM_BL_UPDATE_MASK)) {
             (*btm_cb.p_bl_changed_cb)((tBTM_BL_EVENT_DATA *)&evt);
@@ -1016,7 +1021,7 @@ void btm_process_remote_ext_features (tACL_CONN *p_acl_cb, UINT8 num_read_pages)
 
     const UINT8 req_pend = (p_dev_rec->sm4 & BTM_SM4_REQ_PEND);
 #if (SMP_INCLUDED == TRUE)
-    /* Store the Peer Security Capabilites (in SM4 and rmt_sec_caps) */
+    /* Store the Peer Security Capabilities (in SM4 and rmt_sec_caps) */
     btm_sec_set_peer_sec_caps(p_acl_cb, p_dev_rec);
 #endif  ///SMP_INCLUDED == TRUE
     BTM_TRACE_API("%s: pend:%d\n", __FUNCTION__, req_pend);
@@ -1455,7 +1460,7 @@ void btm_process_clk_off_comp_evt (UINT16 hci_handle, UINT16 clock_offset)
 **
 ** Function         btm_acl_role_changed
 **
-** Description      This function is called whan a link's master/slave role change
+** Description      This function is called when a link's master/slave role change
 **                  event or command status event (with error) is received.
 **                  It updates the link control block, and calls
 **                  the registered callback with status and role (if registered).
@@ -2060,6 +2065,7 @@ tBTM_STATUS BTM_ReadLinkQuality (BD_ADDR remote_bda, tBTM_CMPL_CB *p_cb)
     return (BTM_UNKNOWN_ADDR);
 }
 
+#if (BLE_HOST_READ_TX_POWER_EN == TRUE)
 /*******************************************************************************
 **
 ** Function         BTM_ReadTxPower
@@ -2116,6 +2122,7 @@ tBTM_STATUS BTM_ReadTxPower (BD_ADDR remote_bda, tBT_TRANSPORT transport, tBTM_C
     /* If here, no BD Addr found */
     return (BTM_UNKNOWN_ADDR);
 }
+#endif // #if (BLE_HOST_READ_TX_POWER_EN == TRUE)
 
 tBTM_STATUS BTM_SetAclPktTypes(BD_ADDR remote_bda, UINT16 pkt_types, tBTM_CMPL_CB *p_cb)
 {
@@ -2182,6 +2189,55 @@ void btm_acl_pkt_types_changed(UINT8 status, UINT16 handle, UINT16 pkt_types)
 }
 
 #if (BLE_INCLUDED == TRUE)
+
+/*******************************************************************************
+**
+** Function         BTM_ReadChannelMap
+**
+** Description      This function is called to read the current channel map
+**                  for the given connection. The results are returned via
+**                  the callback (tBTM_BLE_CH_MAP_RESULTS).
+**
+** Returns          BTM_CMD_STARTED if successfully initiated or error code
+**
+*******************************************************************************/
+tBTM_STATUS BTM_ReadChannelMap(BD_ADDR remote_bda, tBTM_CMPL_CB *p_cb)
+{
+    tACL_CONN *p;
+    tBTM_BLE_CH_MAP_RESULTS result;
+
+    BTM_TRACE_DEBUG("BTM_ReadChannelMap: RemBdAddr: %02x%02x%02x%02x%02x%02x\n",
+                  remote_bda[0], remote_bda[1], remote_bda[2],
+                  remote_bda[3], remote_bda[4], remote_bda[5]);
+
+    memset(result.channel_map, 0, sizeof(result.channel_map));  // Clear channel map data
+    /* If someone already waiting for the channel map, do not allow another */
+    if (btm_cb.devcb.p_ble_ch_map_cmpl_cb) {
+        result.status = BTM_BUSY;
+        (*p_cb)(&result);
+        return BTM_BUSY;
+    }
+    p = btm_bda_to_acl(remote_bda, BT_TRANSPORT_LE);
+    if (p != NULL) {
+        btm_cb.devcb.p_ble_ch_map_cmpl_cb = p_cb;
+
+        if (!btsnd_hcic_ble_read_chnl_map(p->hci_handle)) {
+            btm_cb.devcb.p_ble_ch_map_cmpl_cb = NULL;
+            result.status = BTM_NO_RESOURCES;
+            (*p_cb)(&result);
+            return BTM_NO_RESOURCES;
+        } else {
+            return BTM_CMD_STARTED;
+        }
+    }
+
+    /* If here, no BD Addr found */
+    result.status = BTM_UNKNOWN_ADDR;
+    (*p_cb)(&result);
+    return BTM_UNKNOWN_ADDR;
+}
+
+#if (BLE_HOST_READ_TX_POWER_EN == TRUE)
 tBTM_STATUS BTM_BleReadAdvTxPower(tBTM_CMPL_CB *p_cb)
 {
     BOOLEAN ret;
@@ -2208,6 +2264,7 @@ tBTM_STATUS BTM_BleReadAdvTxPower(tBTM_CMPL_CB *p_cb)
         return BTM_CMD_STARTED;
     }
 }
+#endif // #if (BLE_HOST_READ_TX_POWER_EN == TRUE)
 
 void BTM_BleGetWhiteListSize(uint16_t *length)
 {
@@ -2218,8 +2275,21 @@ void BTM_BleGetWhiteListSize(uint16_t *length)
     *length = p_cb->white_list_avail_size;
     return;
 }
+
+#if (BLE_50_EXTEND_SYNC_EN == TRUE)
+void BTM_BleGetPeriodicAdvListSize(uint8_t *size)
+{
+    tBTM_BLE_CB *p_cb = &btm_cb.ble_ctr_cb;
+    if (p_cb->periodic_adv_list_size == 0) {
+        BTM_TRACE_WARNING("%s Periodic Adv list is full.", __func__);
+    }
+    *size = p_cb->periodic_adv_list_size;
+}
+#endif  //#if (BLE_50_EXTEND_SYNC_EN == TRUE)
+
 #endif  ///BLE_INCLUDED == TRUE
 
+#if (BLE_HOST_READ_TX_POWER_EN == TRUE)
 /*******************************************************************************
 **
 ** Function         btm_read_tx_power_complete
@@ -2273,6 +2343,63 @@ void btm_read_tx_power_complete (UINT8 *p, BOOLEAN is_ble)
         (*p_cb)(&results);
     }
 }
+#endif // #if (BLE_HOST_READ_TX_POWER_EN == TRUE)
+
+/*******************************************************************************
+**
+** Function         btm_read_channel_map_complete
+**
+** Description      This function is called when the command complete message
+**                  is received from the HCI for the read channel map request.
+**                  It processes the received channel map data and invokes the
+**                  registered callback function with the results.
+**
+** Returns          void
+**
+*******************************************************************************/
+void btm_read_channel_map_complete(UINT8 *p)
+{
+    tBTM_CMPL_CB *p_cb = btm_cb.devcb.p_ble_ch_map_cmpl_cb;
+    tBTM_BLE_CH_MAP_RESULTS results;
+    UINT16 handle;
+    tACL_CONN *p_acl_cb = NULL;
+
+    BTM_TRACE_DEBUG("btm_read_channel_map_complete\n");
+
+    /* Reset the callback pointer to prevent duplicate calls */
+    btm_cb.devcb.p_ble_ch_map_cmpl_cb = NULL;
+
+    if (p_cb) {
+        /* Extract HCI status from the response */
+        STREAM_TO_UINT8(results.hci_status, p);
+
+        if (results.hci_status == HCI_SUCCESS) {
+            results.status = BTM_SUCCESS;
+
+            /* Extract the connection handle and channel map */
+            STREAM_TO_UINT16(handle, p);
+            STREAM_TO_ARRAY(results.channel_map, p, 5);
+
+            BTM_TRACE_DEBUG("BTM Channel Map Complete: handle 0x%04x, hci status 0x%02x", handle, results.hci_status);
+            BTM_TRACE_DEBUG("Channel Map: %02x %02x %02x %02x %02x",
+                            results.channel_map[0], results.channel_map[1], results.channel_map[2],
+                            results.channel_map[3], results.channel_map[4]);
+
+            /* Retrieve the remote BD address using the connection handle */
+            p_acl_cb = btm_handle_to_acl(handle);
+            if (p_acl_cb) {
+                memcpy(results.rem_bda, p_acl_cb->remote_addr, BD_ADDR_LEN);
+            }
+        } else {
+            results.status = BTM_ERR_PROCESSING;
+            BTM_TRACE_ERROR("BTM Channel Map Read Failed: hci status 0x%02x", results.hci_status);
+        }
+
+        /* Invoke the registered callback with the results */
+        (*p_cb)(&results);
+    }
+}
+
 
 /*******************************************************************************
 **
@@ -2392,8 +2519,7 @@ tBTM_STATUS btm_remove_acl (BD_ADDR bd_addr, tBT_TRANSPORT transport)
     } else  /* otherwise can disconnect right away */
 #endif
     {
-        if (hci_handle != 0xFFFF && p_dev_rec &&
-                p_dev_rec->sec_state != BTM_SEC_STATE_DISCONNECTING) {
+        if (hci_handle != 0xFFFF && (( p_dev_rec && p_dev_rec->sec_state != BTM_SEC_STATE_DISCONNECTING) || (!p_dev_rec))) {
             if (!btsnd_hcic_disconnect (hci_handle, HCI_ERR_PEER_USER)) {
                 status = BTM_NO_RESOURCES;
             }
@@ -2705,7 +2831,7 @@ void btm_acl_connected(BD_ADDR bda, UINT16 handle, UINT8 link_type, UINT8 enc_mo
         l2c_link_hci_conn_comp(status, handle, bda);
     }
 #if BTM_SCO_INCLUDED == TRUE
-    else {
+    else if (link_type == HCI_LINK_TYPE_SCO) {
         memset(&esco_data, 0, sizeof(tBTM_ESCO_DATA));
         esco_data.link_type = HCI_LINK_TYPE_SCO;
         memcpy (esco_data.bd_addr, bda, BD_ADDR_LEN);
@@ -2721,9 +2847,10 @@ void btm_acl_connected(BD_ADDR bda, UINT16 handle, UINT8 link_type, UINT8 enc_mo
 ** Description      Handle ACL disconnection complete event
 **
 *******************************************************************************/
-void btm_acl_disconnected(UINT16 handle, UINT8 reason)
+BOOLEAN btm_acl_disconnected(UINT16 handle, UINT8 reason)
 {
-
+    BOOLEAN status = FALSE;
+    BOOLEAN dis_status;
     /* Report BR/EDR ACL disconnection result to upper layer */
     tACL_CONN *conn = btm_handle_to_acl(handle);
     if (conn) {
@@ -2731,6 +2858,7 @@ void btm_acl_disconnected(UINT16 handle, UINT8 reason)
         if (conn->transport == BT_TRANSPORT_BR_EDR)
 #endif
         {
+            status = TRUE;
             tBTM_ACL_LINK_STAT_EVENT_DATA evt_data = {
                 .event = BTM_ACL_DISCONN_CMPL_EVT,
                 .link_act.disconn_cmpl.reason = reason,
@@ -2742,16 +2870,29 @@ void btm_acl_disconnected(UINT16 handle, UINT8 reason)
     }
 
 #if BTM_SCO_INCLUDED == TRUE
+    dis_status = l2c_link_hci_disc_comp (handle, reason);
     /* If L2CAP doesn't know about it, send it to SCO */
-    if (!l2c_link_hci_disc_comp (handle, reason)) {
-        btm_sco_removed (handle, reason);
+    if (!dis_status) {
+        dis_status = btm_sco_removed (handle, reason);
+    } else {
+        status = TRUE;
     }
 #else
-    l2c_link_hci_disc_comp(handle, reason);
+    dis_status = l2c_link_hci_disc_comp(handle, reason);
 #endif /* BTM_SCO_INCLUDED */
+    if (dis_status) {
+        // find tL2C_LCB
+        status = TRUE;
+    }
 
 #if (SMP_INCLUDED == TRUE)
     /* Notify security manager */
-    btm_sec_disconnected(handle, reason);
+    if (btm_sec_disconnected(handle, reason)) {
+        // find tBTM_SEC_DEV_REC
+        status = TRUE;
+    }
+
 #endif  /* SMP_INCLUDED == TRUE */
+
+    return status;
 }

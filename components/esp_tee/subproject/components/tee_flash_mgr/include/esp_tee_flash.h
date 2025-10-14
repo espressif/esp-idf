@@ -76,3 +76,30 @@ esp_err_t esp_tee_flash_set_running_ree_partition(uint32_t paddr);
  * @return esp_partition_info_t*  Partition table entry for the running REE (user) app partition
  */
 esp_partition_info_t *esp_tee_flash_get_running_ree_partition(void);
+
+/**
+ * @brief Check if the given virtual address falls within the TEE flash protected region
+ *
+ * @param addr Virtual address to check
+ *
+ * @return bool true if address is within protected region, false otherwise
+ */
+bool esp_tee_flash_check_vaddr_in_tee_region(const size_t vaddr);
+
+/**
+ * @brief Check if the given physical address falls within the TEE flash protected region
+ *
+ * @param addr Physical address to check
+ *
+ * @return bool true if address is within protected region, false otherwise
+ */
+bool esp_tee_flash_check_paddr_in_tee_region(const size_t paddr);
+
+/**
+ * @brief Check if the given physical address falls within the active TEE partition
+ *
+ * @param dest_addr Physical address to check
+ *
+ * @return bool true if address is within active TEE partition, false otherwise
+ */
+bool esp_tee_flash_check_paddr_in_active_tee_part(const size_t paddr);

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -42,7 +42,7 @@ static uint8_t s_down_buf[SYSVIEW_DOWN_BUF_SIZE];
 #endif // CONFIG_APPTRACE_SV_DEST_CPU_0
 
 #elif CONFIG_APPTRACE_SV_DEST_JTAG || (CONFIG_APPTRACE_ENABLE && CONFIG_APPTRACE_DEST_UART_NONE)
-#define ESP_APPTRACE_DEST_SYSVIEW ESP_APPTRACE_DEST_TRAX
+#define ESP_APPTRACE_DEST_SYSVIEW ESP_APPTRACE_DEST_JTAG
 #endif
 
 /*********************************************************************
@@ -60,8 +60,8 @@ static uint8_t s_down_buf[SYSVIEW_DOWN_BUF_SIZE];
 *    Flushes buffered events.
 *
 *  Parameters
-*    min_sz  Threshold for flushing data. If current filling level is above this value, data will be flushed. TRAX destinations only.
-*    tmo     Timeout for operation (in us). Use ESP_APPTRACE_TMO_INFINITE to wait indefinetly.
+*    min_sz  Threshold for flushing data. If current filling level is above this value, data will be flushed. JTAG destinations only.
+*    tmo     Timeout for operation (in us). Use ESP_APPTRACE_TMO_INFINITE to wait indefinitely.
 *
 *  Return value
 *    None.
@@ -70,15 +70,15 @@ void SEGGER_RTT_ESP_FlushNoLock(unsigned long min_sz, unsigned long tmo)
 {
     esp_err_t res;
     if (s_events_buf_filled > 0) {
-      res = esp_apptrace_write(ESP_APPTRACE_DEST_SYSVIEW, s_events_buf, s_events_buf_filled, tmo);
-      if (res != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to flush buffered events (%d)!", res);
-      }
+        res = esp_apptrace_write(ESP_APPTRACE_DEST_SYSVIEW, s_events_buf, s_events_buf_filled, tmo);
+        if (res != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to flush buffered events (%d)!", res);
+        }
     }
     // flush even if we failed to write buffered events, because no new events will be sent after STOP
     res = esp_apptrace_flush_nolock(ESP_APPTRACE_DEST_SYSVIEW, min_sz, tmo);
     if (res != ESP_OK) {
-      ESP_LOGE(TAG, "Failed to flush apptrace data (%d)!", res);
+        ESP_LOGE(TAG, "Failed to flush apptrace data (%d)!", res);
     }
     s_events_buf_filled = 0;
 }
@@ -91,8 +91,8 @@ void SEGGER_RTT_ESP_FlushNoLock(unsigned long min_sz, unsigned long tmo)
 *    Flushes buffered events.
 *
 *  Parameters
-*    min_sz  Threshold for flushing data. If current filling level is above this value, data will be flushed. TRAX destinations only.
-*    tmo     Timeout for operation (in us). Use ESP_APPTRACE_TMO_INFINITE to wait indefinetly.
+*    min_sz  Threshold for flushing data. If current filling level is above this value, data will be flushed. JTAG destinations only.
+*    tmo     Timeout for operation (in us). Use ESP_APPTRACE_TMO_INFINITE to wait indefinitely.
 *
 *  Return value
 *    None.
@@ -121,13 +121,14 @@ void SEGGER_RTT_ESP_Flush(unsigned long min_sz, unsigned long tmo)
 *  Return value
 *    Number of bytes that have been read.
 */
-unsigned SEGGER_RTT_ReadNoLock(unsigned BufferIndex, void* pData, unsigned BufferSize) {
-  uint32_t size = BufferSize;
-  esp_err_t res = esp_apptrace_read(ESP_APPTRACE_DEST_SYSVIEW, pData, &size, 0);
-  if (res != ESP_OK) {
-    return 0;
-  }
-  return size;
+unsigned SEGGER_RTT_ReadNoLock(unsigned BufferIndex, void* pData, unsigned BufferSize)
+{
+    uint32_t size = BufferSize;
+    esp_err_t res = esp_apptrace_read(ESP_APPTRACE_DEST_SYSVIEW, pData, &size, 0);
+    if (res != ESP_OK) {
+        return 0;
+    }
+    return size;
 }
 
 /*********************************************************************
@@ -154,80 +155,79 @@ unsigned SEGGER_RTT_ReadNoLock(unsigned BufferIndex, void* pData, unsigned Buffe
 *        and may only be called after RTT has been initialized.
 *        Either by calling SEGGER_RTT_Init() or calling another RTT API function first.
 */
-unsigned SEGGER_RTT_WriteSkipNoLock(unsigned BufferIndex, const void* pBuffer, unsigned NumBytes) {
-  uint8_t *pbuf = (uint8_t *)pBuffer;
-  uint8_t event_id = *pbuf;
+unsigned SEGGER_RTT_WriteSkipNoLock(unsigned BufferIndex, const void* pBuffer, unsigned NumBytes)
+{
+    uint8_t *pbuf = (uint8_t *)pBuffer;
+    uint8_t event_id = *pbuf;
 #if CONFIG_APPTRACE_SV_DEST_UART
-  if (
-    (APPTRACE_SV_DEST_CPU != esp_cpu_get_core_id()) &&
-    (
-      (event_id == SYSVIEW_EVTID_ISR_ENTER) ||
-      (event_id == SYSVIEW_EVTID_ISR_EXIT) ||
-      (event_id == SYSVIEW_EVTID_TASK_START_EXEC) ||
-      (event_id == SYSVIEW_EVTID_TASK_STOP_EXEC) ||
-      (event_id == SYSVIEW_EVTID_TASK_START_READY) ||
-      (event_id == SYSVIEW_EVTID_TASK_STOP_READY) ||
-      (event_id == SYSVIEW_EVTID_MARK_START) ||
-      (event_id == SYSVIEW_EVTID_MARK_STOP) ||
-      (event_id == SYSVIEW_EVTID_TIMER_ENTER) ||
-      (event_id == SYSVIEW_EVTID_TIMER_EXIT) ||
-      (event_id == SYSVIEW_EVTID_STACK_INFO) ||
-      (event_id == SYSVIEW_EVTID_MODULEDESC)
-    )
-  ){
-    return NumBytes;
-  }
+    if (
+        (APPTRACE_SV_DEST_CPU != esp_cpu_get_core_id()) &&
+        (
+            (event_id == SYSVIEW_EVTID_ISR_ENTER) ||
+            (event_id == SYSVIEW_EVTID_ISR_EXIT) ||
+            (event_id == SYSVIEW_EVTID_TASK_START_EXEC) ||
+            (event_id == SYSVIEW_EVTID_TASK_STOP_EXEC) ||
+            (event_id == SYSVIEW_EVTID_TASK_START_READY) ||
+            (event_id == SYSVIEW_EVTID_TASK_STOP_READY) ||
+            (event_id == SYSVIEW_EVTID_MARK_START) ||
+            (event_id == SYSVIEW_EVTID_MARK_STOP) ||
+            (event_id == SYSVIEW_EVTID_TIMER_ENTER) ||
+            (event_id == SYSVIEW_EVTID_TIMER_EXIT) ||
+            (event_id == SYSVIEW_EVTID_STACK_INFO) ||
+            (event_id == SYSVIEW_EVTID_MODULEDESC)
+        )
+    ) {
+        return NumBytes;
+    }
 
 // This is workaround for SystemView!
 // Without this line SystemView will hangs on when heap tracing enabled.
-  if(event_id == SYSVIEW_EVTID_MODULEDESC){
-    return NumBytes;
-  }
+    if (event_id == SYSVIEW_EVTID_MODULEDESC) {
+        return NumBytes;
+    }
 #endif // CONFIG_APPTRACE_SV_DEST_UART
 
-  if (NumBytes > SYSVIEW_EVENTS_BUF_SZ) {
-      ESP_LOGE(TAG, "Too large event %u bytes!", NumBytes);
-      return 0;
-  }
-#if CONFIG_APPTRACE_SV_DEST_JTAG
-  if (esp_cpu_get_core_id()) { // dual core specific code
-    // use the highest - 1 bit of event ID to indicate core ID
-    // the highest bit can not be used due to event ID encoding method
-    // this reduces supported ID range to [0..63] (for 1 byte IDs) plus [128..16383] (for 2 bytes IDs)
-    if (*pbuf & 0x80) { // 2 bytes ID
-      *(pbuf + 1) |= (1 << 6);
-    } else if (NumBytes != 10 || *pbuf != 0) { // ignore sync sequence
-      *pbuf |= (1 << 6);
+    if (NumBytes > SYSVIEW_EVENTS_BUF_SZ) {
+        ESP_LOGE(TAG, "Too large event %u bytes!", NumBytes);
+        return 0;
     }
-  }
+#if CONFIG_APPTRACE_SV_DEST_JTAG
+    if (esp_cpu_get_core_id()) { // dual core specific code
+        // use the highest - 1 bit of event ID to indicate core ID
+        // the highest bit can not be used due to event ID encoding method
+        // this reduces supported ID range to [0..63] (for 1 byte IDs) plus [128..16383] (for 2 bytes IDs)
+        if (*pbuf & 0x80) { // 2 bytes ID
+            *(pbuf + 1) |= (1 << 6);
+        } else if (NumBytes != 10 || *pbuf != 0) { // ignore sync sequence
+            *pbuf |= (1 << 6);
+        }
+    }
 #endif // CONFIG_APPTRACE_SV_DEST_JTAG
 #if CONFIG_APPTRACE_SV_DEST_JTAG
-  if (s_events_buf_filled + NumBytes > SYSVIEW_EVENTS_BUF_SZ) {
+    if (s_events_buf_filled + NumBytes > SYSVIEW_EVENTS_BUF_SZ) {
 
-    esp_err_t res = esp_apptrace_write(ESP_APPTRACE_DEST_SYSVIEW, s_events_buf, s_events_buf_filled, SEGGER_HOST_WAIT_TMO);
-    if (res != ESP_OK) {
-      return 0; // skip current data buffer only, accumulated events are kept
+        esp_err_t res = esp_apptrace_write(ESP_APPTRACE_DEST_SYSVIEW, s_events_buf, s_events_buf_filled, SEGGER_HOST_WAIT_TMO);
+        if (res != ESP_OK) {
+            return 0; // skip current data buffer only, accumulated events are kept
+        }
+        s_events_buf_filled = 0;
     }
-    s_events_buf_filled = 0;
-  }
 #endif
-  memcpy(&s_events_buf[s_events_buf_filled], pBuffer, NumBytes);
-  s_events_buf_filled += NumBytes;
+    memcpy(&s_events_buf[s_events_buf_filled], pBuffer, NumBytes);
+    s_events_buf_filled += NumBytes;
 
 #if CONFIG_APPTRACE_SV_DEST_UART
-  esp_err_t res = esp_apptrace_write(ESP_APPTRACE_DEST_SYSVIEW, pBuffer, NumBytes, SEGGER_HOST_WAIT_TMO);
-  if (res != ESP_OK)
-  {
-    return 0; // skip current data buffer only, accumulated events are kept
-  }
-  s_events_buf_filled = 0;
+    esp_err_t res = esp_apptrace_write(ESP_APPTRACE_DEST_SYSVIEW, pBuffer, NumBytes, SEGGER_HOST_WAIT_TMO);
+    if (res != ESP_OK) {
+        return 0; // skip current data buffer only, accumulated events are kept
+    }
+    s_events_buf_filled = 0;
 #endif
 
-  if (event_id == SYSVIEW_EVTID_TRACE_STOP)
-  {
-    SEGGER_RTT_ESP_FlushNoLock(0, SEGGER_STOP_WAIT_TMO);
-  }
-  return NumBytes;
+    if (event_id == SYSVIEW_EVTID_TRACE_STOP) {
+        SEGGER_RTT_ESP_FlushNoLock(0, SEGGER_STOP_WAIT_TMO);
+    }
+    return NumBytes;
 }
 
 /*********************************************************************
@@ -255,9 +255,10 @@ unsigned SEGGER_RTT_WriteSkipNoLock(unsigned BufferIndex, const void* pBuffer, u
 *    May only be called once per buffer.
 *    Buffer name and flags can be reconfigured using the appropriate functions.
 */
-int SEGGER_RTT_ConfigUpBuffer(unsigned BufferIndex, const char* sName, void* pBuffer, unsigned BufferSize, unsigned Flags) {
-  s_events_buf_filled = 0;
-  return 0;
+int SEGGER_RTT_ConfigUpBuffer(unsigned BufferIndex, const char* sName, void* pBuffer, unsigned BufferSize, unsigned Flags)
+{
+    s_events_buf_filled = 0;
+    return 0;
 }
 
 /*********************************************************************
@@ -285,9 +286,9 @@ int SEGGER_RTT_ConfigUpBuffer(unsigned BufferIndex, const char* sName, void* pBu
 *    May only be called once per buffer.
 *    Buffer name and flags can be reconfigured using the appropriate functions.
 */
-int SEGGER_RTT_ConfigDownBuffer(unsigned BufferIndex, const char* sName, void* pBuffer, unsigned BufferSize, unsigned Flags) {
-  esp_apptrace_down_buffer_config(s_down_buf, sizeof(s_down_buf));
-  return 0;
+int SEGGER_RTT_ConfigDownBuffer(unsigned BufferIndex, const char* sName, void* pBuffer, unsigned BufferSize, unsigned Flags)
+{
+    return esp_apptrace_down_buffer_config(ESP_APPTRACE_DEST_SYSVIEW, s_down_buf, sizeof(s_down_buf));
 }
 
 /*************************** Init hook ****************************
@@ -301,6 +302,5 @@ ESP_SYSTEM_INIT_FN(sysview_init, SECONDARY, BIT(0), 120)
     SEGGER_SYSVIEW_Conf();
     return ESP_OK;
 }
-
 
 /*************************** End of file ****************************/

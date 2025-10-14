@@ -104,7 +104,7 @@ void connect_test_fixture_setup(void)
     eth_esp32_emac_config_t esp32_emac_config = ETH_ESP32_EMAC_DEFAULT_CONFIG();
     s_mac = esp_eth_mac_new_esp32(&esp32_emac_config, &mac_config);
     eth_phy_config_t phy_config = ETH_PHY_DEFAULT_CONFIG();
-    s_phy = esp_eth_phy_new_ip101(&phy_config);
+    s_phy = esp_eth_phy_new_generic(&phy_config);
     esp_eth_config_t eth_config = ETH_DEFAULT_CONFIG(s_mac, s_phy);
 
     // install Ethernet driver
@@ -112,7 +112,7 @@ void connect_test_fixture_setup(void)
     // combine driver with netif
     s_eth_glue = esp_eth_new_netif_glue(s_eth_handle);
     TEST_ESP_OK(esp_netif_attach(s_eth_netif, s_eth_glue));
-    // register user defined event handers
+    // register user defined event handlers
     TEST_ESP_OK(esp_event_handler_register(ETH_EVENT, ESP_EVENT_ANY_ID, &eth_event_handler, s_eth_event_group));
     TEST_ESP_OK(esp_event_handler_register(IP_EVENT, IP_EVENT_ETH_GOT_IP, &got_ip_event_handler, s_eth_event_group));
     // start Ethernet driver

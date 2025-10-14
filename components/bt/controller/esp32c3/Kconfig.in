@@ -66,7 +66,7 @@ endchoice
 config BT_CTRL_HCI_TL
     int
     default 0 if BT_CTRL_HCI_MODE_UART_H4
-    default 1 if BT_CTRL_HCI_M0DE_VHCI
+    default 1 if BT_CTRL_HCI_MODE_VHCI
     default 1
     help
         HCI mode as VHCI or UART(H4)
@@ -83,13 +83,16 @@ choice BT_BLE_CCA_MODE
     default BT_BLE_CCA_MODE_NONE
     help
         Define BT BLE CCA mode
+        Note that if CCA feature is enabled, the hardware may not transmit packets due to channel busy.
+        Therefore, it may potentially lead to an increase in the time taken for scanning advertising packet
+        and establishing connections, or a decrease in the throughput rate of the connection.
 
     config BT_BLE_CCA_MODE_NONE
         bool "NONE"
     config BT_BLE_CCA_MODE_HW
         bool "Hardware"
     config BT_BLE_CCA_MODE_SW
-        bool "Software"
+        bool "Software (experimental)"
 endchoice
 
 config BT_BLE_CCA_MODE
@@ -228,7 +231,7 @@ config BT_CTRL_DFT_TX_POWER_LEVEL_EFF
 
 config BT_CTRL_BLE_ADV_REPORT_FLOW_CTRL_SUPP
     bool "BLE adv report flow control supported"
-    depends on (!BT_CTRL_RUN_IN_FLASH_ONLY) || (BT_CTRL_RUN_IN_FLASH_ONLY && BT_CTRL_BLE_SCAN)
+    depends on BT_CTRL_BLE_SCAN
     default y
     help
         The function is mainly used to enable flow control for advertising reports. When it is enabled,
@@ -413,10 +416,10 @@ menu "MODEM SLEEP Options"
                 modem sleep to be used with both DFS and light sleep.
 
         config BT_CTRL_LPCLK_SEL_RTC_SLOW
-            bool "Internal 150kHz RC oscillator"
+            bool "Internal 136kHz RC oscillator"
             depends on RTC_CLK_SRC_INT_RC
             help
-                Internal 150kHz RC oscillator. The accuracy of this clock is a lot larger than 500ppm which is required
+                Internal 136kHz RC oscillator. The accuracy of this clock is a lot larger than 500ppm which is required
                 in Bluetooth communication, so don't select this option in scenarios such as BLE connection state.
     endchoice
 
@@ -447,7 +450,7 @@ config BT_CTRL_SLEEP_CLOCK_EFF
 config BT_CTRL_HCI_TL_EFF
     int
     default 0 if BT_CTRL_HCI_MODE_UART_H4
-    default 1 if BT_CTRL_HCI_M0DE_VHCI
+    default 1 if BT_CTRL_HCI_MODE_VHCI
     default 1
 
 config BT_CTRL_AGC_RECORRECT_EN
@@ -468,7 +471,7 @@ config BT_CTRL_SCAN_BACKOFF_UPPERLIMITMAX
     default n
     help
         Disable active scan backoff. The bluetooth spec requires that scanners should run a backoff procedure to
-        minimize collision of scan request PDUs from nultiple scanners. If scan backoff is disabled, in active
+        minimize collision of scan request PDUs from multiple scanners. If scan backoff is disabled, in active
         scanning, scan request PDU will be sent every time when HW receives scannable ADV PDU.
 
 config BT_BLE_ADV_DATA_LENGTH_ZERO_AUX
@@ -527,26 +530,114 @@ config BT_CTRL_RUN_IN_FLASH_ONLY
         impact on Bluetooth performance.
 
 config BT_CTRL_DTM_ENABLE
-    depends on BT_CTRL_RUN_IN_FLASH_ONLY
     bool "Enable direct test mode feature"
-    default n
-
-config BT_CTRL_BLE_MASTER
-    depends on BT_CTRL_RUN_IN_FLASH_ONLY
-    bool "Enable BLE master role feature"
     default y
 
+config BT_CTRL_BLE_MASTER
+    bool "Enable BLE connection feature"
+    default y
+    help
+        If this option is disabled, it is not recommended to use connectable ADV.
+
 config BT_CTRL_BLE_TEST
-    depends on BT_CTRL_RUN_IN_FLASH_ONLY
-    bool "Enable BLE QA test feature"
+    bool "Enable BLE QA test feature (Not Used)"
     default n
 
 config BT_CTRL_BLE_SCAN
-    depends on BT_CTRL_RUN_IN_FLASH_ONLY
     bool "Enable BLE scan feature"
     default y
 
 config BT_CTRL_BLE_SECURITY_ENABLE
-    depends on BT_CTRL_RUN_IN_FLASH_ONLY && BT_CONTROLLER_ONLY
     bool "Enable BLE security feature"
     default y
+
+config BT_CTRL_BLE_ADV
+    bool "Enable BLE ADV feature"
+    default y
+
+config BT_CTRL_CHECK_CONNECT_IND_ACCESS_ADDRESS
+    bool "Enable enhanced Access Address check in CONNECT_IND"
+    default n
+    help
+        Enabling this option will add stricter verification of the Access Address in the CONNECT_IND PDU.
+        This improves security by ensuring that only connection requests with valid Access Addresses are accepted.
+        If disabled, only basic checks are applied, improving compatibility.
+
+menu "Controller debug log Options (Experimental)"
+    config BT_CTRL_LE_LOG_EN
+        depends on BT_CTRL_RUN_IN_FLASH_ONLY
+        bool "Enable BLE debug log"
+        default n
+
+    config BT_CTRL_LE_LOG_MODE_BLE_LOG_V2
+        bool "Utilize BLE Log v2 for controller log"
+        depends on BT_CTRL_LE_LOG_EN
+        depends on BLE_LOG_ENABLED
+        default y
+        help
+            Utilize BLE Log v2 for controller log
+
+    if !BT_CTRL_LE_LOG_MODE_BLE_LOG_V2
+        config BT_CTRL_LE_LOG_DUMP_ONLY
+            depends on BT_CTRL_LE_LOG_EN
+            bool "Enable BLE log dump only"
+            default n
+
+        config BT_CTRL_LE_LOG_STORAGE_EN
+            depends on BT_CTRL_LE_LOG_EN
+            bool "Enable BLE log storage to flash"
+            default n
+
+        config BT_CTRL_LE_LOG_PARTITION_SIZE
+            int "The size of ble controller log partition(Multiples of 4K)"
+            depends on BT_CTRL_LE_LOG_STORAGE_EN
+            default 65536
+            help
+                The size of ble controller log partition shall be a multiples of 4K.
+                The name of log partition shall be "bt_ctrl_log".
+                The partition type shall be ESP_PARTITION_TYPE_DATA.
+                The partition sub_type shall be ESP_PARTITION_SUBTYPE_ANY.
+
+        config BT_CTRL_LE_LOG_SPI_OUT_EN
+            bool "Output ble controller logs to SPI bus"
+            depends on BT_CTRL_LE_LOG_EN
+            depends on !BT_CTRL_LE_LOG_DUMP_ONLY
+            select BT_BLE_LOG_SPI_OUT_ENABLED
+            select BT_BLE_LOG_SPI_OUT_LL_ENABLED
+            default n
+            help
+                Output ble controller logs to SPI bus
+    endif
+
+    config BT_CTRL_LE_HCI_LOG_EN
+        depends on BT_CTRL_LE_LOG_EN
+        bool "Enable BLE HCI log"
+        default n
+
+    config BT_CTRL_LE_LOG_MODE_EN
+        depends on BT_CTRL_LE_LOG_EN
+        int "Enable log for specified BLE mode"
+        range 0 4095
+        default 4093
+
+    config BT_CTRL_LE_LOG_LEVEL
+        depends on BT_CTRL_LE_LOG_EN
+        int "The level of BLE log"
+        range 0 5
+        default 2
+
+    config BT_CTRL_LE_LOG_BUF1_SIZE
+        depends on BT_CTRL_LE_LOG_EN
+        int "The size of BLE log buffer1"
+        default 1024
+
+    config BT_CTRL_LE_LOG_HCI_BUF_SIZE
+        depends on BT_CTRL_LE_LOG_EN
+        int "The size of BLE log HCI buffer"
+        default 1024
+
+    config BT_CTRL_LE_LOG_BUF2_SIZE
+        depends on BT_CTRL_LE_LOG_EN
+        int "The size of BLE log buffer2"
+        default 1024
+endmenu

@@ -15,12 +15,37 @@ endfunction()
 #
 function(__kconfig_component_init component_target)
     __component_get_property(component_dir ${component_target} COMPONENT_DIR)
-    file(GLOB kconfig "${component_dir}/Kconfig")
+    file(GLOB all_files "${component_dir}/*")
+
+    set(kconfig "")
+    set(kconfig_projbuild "")
+
+    foreach(_file IN LISTS all_files)
+        get_filename_component(_fname ${_file} NAME)
+        string(TOLOWER "${_fname}" _fname_lowercase)
+        if(_fname_lowercase STREQUAL "kconfig")
+            list(APPEND kconfig "${_file}")
+            if(NOT _fname STREQUAL "Kconfig")
+                message(WARNING
+                    "${_fname} file should be named 'Kconfig' (uppercase K, the rest lowercase)."
+                    " Full path to the file: ${_file}")
+            endif()
+        elseif(_fname_lowercase STREQUAL "kconfig.projbuild")
+            list(APPEND kconfig_projbuild "${_file}")
+            if(NOT _fname STREQUAL "Kconfig.projbuild")
+                message(WARNING
+                    "${_fname} file should be named 'Kconfig.projbuild' (uppercase K, the rest lowercase)."
+                    " Full path to the file: ${_file}")
+            endif()
+        endif()
+    endforeach()
+
     list(SORT kconfig)
     __component_set_property(${component_target} KCONFIG "${kconfig}")
-    file(GLOB kconfig "${component_dir}/Kconfig.projbuild")
-    list(SORT kconfig)
-    __component_set_property(${component_target} KCONFIG_PROJBUILD "${kconfig}")
+
+    list(SORT kconfig_projbuild)
+    __component_set_property(${component_target} KCONFIG_PROJBUILD "${kconfig_projbuild}")
+
     file(GLOB sdkconfig_rename "${component_dir}/sdkconfig.rename")
     file(GLOB sdkconfig_rename_target "${component_dir}/sdkconfig.rename.${IDF_TARGET}")
 
@@ -79,12 +104,14 @@ function(__get_init_config_version config version_out)
     endforeach()
 endfunction()
 
-
 #
 # Generate the config files and create config related targets and configure
 # dependencies.
 #
 function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
+    set(options OPTIONAL CREATE_MENUCONFIG_TARGET)
+    cmake_parse_arguments(PARSE_ARGV 2 "ARG" "${options}" "" "")
+
     # List all Kconfig and Kconfig.projbuild in known components
     idf_build_get_property(component_targets __COMPONENT_TARGETS)
     idf_build_get_property(build_component_targets __BUILD_COMPONENT_TARGETS)
@@ -189,29 +216,22 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
     set(sdkconfig_json ${config_dir}/sdkconfig.json)
     set(sdkconfig_json_menus ${config_dir}/kconfig_menus.json)
 
+    set(kconfgen_output_options
+    --output header ${sdkconfig_header}
+    --output cmake ${sdkconfig_cmake}
+    --output json ${sdkconfig_json}
+    --output json_menus ${sdkconfig_json_menus})
     idf_build_get_property(output_sdkconfig __OUTPUT_SDKCONFIG)
     if(output_sdkconfig)
-        execute_process(
-            COMMAND ${prepare_kconfig_files_command})
-        execute_process(
-            COMMAND ${kconfgen_basecommand}
-            --output header ${sdkconfig_header}
-            --output cmake ${sdkconfig_cmake}
-            --output json ${sdkconfig_json}
-            --output json_menus ${sdkconfig_json_menus}
-            --output config ${sdkconfig}
-            RESULT_VARIABLE config_result)
-    else()
-        execute_process(
-            COMMAND ${prepare_kconfig_files_command})
-        execute_process(
-            COMMAND ${kconfgen_basecommand}
-            --output header ${sdkconfig_header}
-            --output cmake ${sdkconfig_cmake}
-            --output json ${sdkconfig_json}
-            --output json_menus ${sdkconfig_json_menus}
-            RESULT_VARIABLE config_result)
+        list(APPEND kconfgen_output_options --output config ${sdkconfig})
     endif()
+
+    execute_process(
+        COMMAND ${prepare_kconfig_files_command})
+    execute_process(
+        COMMAND ${kconfgen_basecommand}
+        ${kconfgen_output_options}
+        RESULT_VARIABLE config_result)
 
     if(config_result)
         message(FATAL_ERROR "Failed to run kconfgen (${kconfgen_basecommand}). Error ${config_result}")
@@ -240,10 +260,30 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
     idf_build_set_property(SDKCONFIG_JSON_MENUS ${sdkconfig_json_menus})
     idf_build_set_property(CONFIG_DIR ${config_dir})
 
-    set(MENUCONFIG_CMD ${python} -m menuconfig)
+    # newer versions of esp-idf-kconfig renamed menuconfig to esp_menuconfig
+    # Order matters here, we want to use esp_menuconfig if it is available
+    execute_process(
+        COMMAND ${python} -c "import esp_menuconfig"
+        RESULT_VARIABLE ESP_MENUCONFIG_AVAILABLE
+        OUTPUT_QUIET ERROR_QUIET
+    )
+    if(ESP_MENUCONFIG_AVAILABLE EQUAL 0)
+        set(MENUCONFIG_CMD ${python} -m esp_menuconfig)
+    else()
+        set(MENUCONFIG_CMD ${python} -m menuconfig)
+    endif()
+
+
     set(TERM_CHECK_CMD ${python} ${idf_path}/tools/check_term.py)
 
+    if(NOT ${ARG_CREATE_MENUCONFIG_TARGET})
+        return()
+    endif()
+
     # Generate the menuconfig target
+    # WARNING: If you change anything here, please ensure that only the necessary files are touched!
+    # If unnecessary files (those not affected by the change from menuconfig) are touched
+    # (their timestamp changed), it will cause unnecessary rebuilds of the whole project!
     add_custom_target(menuconfig
         ${menuconfig_depends}
         # create any missing config file, with defaults if necessary
@@ -254,7 +294,7 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
         --env "IDF_ENV_FPGA=${idf_env_fpga}"
         --env "IDF_INIT_VERSION=${idf_init_version}"
         --dont-write-deprecated
-        --output config ${sdkconfig}
+        --output config ${sdkconfig} # Do NOT regenerate the rest of the config files!
         COMMAND ${TERM_CHECK_CMD}
         COMMAND ${CMAKE_COMMAND} -E env
         "COMPONENT_KCONFIGS_SOURCE_FILE=${kconfigs_path}"
@@ -267,14 +307,14 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
         "IDF_MINIMAL_BUILD=${idf_minimal_build}"
         ${MENUCONFIG_CMD} ${root_kconfig}
         USES_TERMINAL
-        # additional run of kconfgen esures that the deprecated options will be inserted into sdkconfig (for backward
-        # compatibility)
+        # additional run of kconfgen ensures that the deprecated options will be inserted into config files
+        # (for backward compatibility)
         COMMAND ${kconfgen_basecommand}
         --env "IDF_TARGET=${idf_target}"
         --env "IDF_TOOLCHAIN=${idf_toolchain}"
         --env "IDF_ENV_FPGA=${idf_env_fpga}"
         --env "IDF_INIT_VERSION=${idf_init_version}"
-        --output config ${sdkconfig}
+        ${kconfgen_output_options}
         )
 
     # Custom target to run kconfserver from the build tool

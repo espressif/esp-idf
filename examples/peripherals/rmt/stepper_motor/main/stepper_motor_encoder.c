@@ -27,6 +27,7 @@ typedef struct {
     rmt_symbol_word_t curve_table[];
 } rmt_stepper_curve_encoder_t;
 
+RMT_ENCODER_FUNC_ATTR
 static size_t rmt_encode_stepper_motor_curve(rmt_encoder_t *encoder, rmt_channel_handle_t channel, const void *primary_data, size_t data_size, rmt_encode_state_t *ret_state)
 {
     rmt_stepper_curve_encoder_t *motor_encoder = __containerof(encoder, rmt_stepper_curve_encoder_t, base);
@@ -53,6 +54,7 @@ static esp_err_t rmt_del_stepper_motor_curve_encoder(rmt_encoder_t *encoder)
     return ESP_OK;
 }
 
+RMT_ENCODER_FUNC_ATTR
 static esp_err_t rmt_reset_stepper_motor_curve_encoder(rmt_encoder_t *encoder)
 {
     rmt_stepper_curve_encoder_t *motor_encoder = __containerof(encoder, rmt_stepper_curve_encoder_t, base);

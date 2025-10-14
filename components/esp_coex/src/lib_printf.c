@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2016-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2016-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -44,7 +44,7 @@ static int lib_printf(const char* tag, const char* format, va_list arg)
 
 int coexist_printf(const char* format, ...)
 {
-    va_list arg;
+    va_list arg = {};
     va_start(arg, format);
     int res = lib_printf("coexist", format, arg);
     va_end(arg);

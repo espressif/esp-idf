@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2016-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2016-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -78,7 +78,7 @@ uint32_t IRAM_ATTR esp_random(void)
             result ^= REG_READ(WDEV_RND_REG);
         } while (ccount - last_ccount < cpu_to_apb_freq_ratio * APB_CYCLE_WAIT_NUM);
         uint32_t current_rtc_timer_counter = (lp_timer_hal_get_cycle_count() & 0xFF);
-        result ^= ((result ^ current_rtc_timer_counter) & 0xFF) << (i * 8);
+        result ^= (current_rtc_timer_counter << (i * 8));
     }
 #else
     do {
@@ -104,9 +104,18 @@ void esp_fill_random(void *buf, size_t len)
 }
 
 #if SOC_RNG_CLOCK_IS_INDEPENDENT && !ESP_TEE_BUILD
-ESP_SYSTEM_INIT_FN(init_rng_clock, SECONDARY, BIT(0), 102)
+ESP_SYSTEM_INIT_FN(init_rng, SECONDARY, BIT(0), 102)
 {
     _lp_clkrst_ll_enable_rng_clock(true);
+#if SOC_RNG_BUF_CHAIN_ENTROPY_SOURCE
+    SET_PERI_REG_MASK(LPPERI_RNG_CFG_REG, LPPERI_RNG_SAMPLE_ENABLE);
+#endif
+
+#if SOC_RNG_RTC_TIMER_ENTROPY_SOURCE
+    // This would only be effective if the RTC clock is enabled
+    REG_SET_FIELD(LPPERI_RNG_CFG_REG, LPPERI_RTC_TIMER_EN, 0x3);
+    SET_PERI_REG_MASK(LPPERI_RNG_CFG_REG, LPPERI_RNG_TIMER_EN);
+#endif
     return ESP_OK;
 }
 #endif

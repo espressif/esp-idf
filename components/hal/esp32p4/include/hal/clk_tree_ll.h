@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -26,7 +26,7 @@
 #include "esp32p4/rom/rtc.h"
 #include "hal/misc.h"
 #include "hal/efuse_hal.h"
-
+#include "esp_private/regi2c_ctrl.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -37,6 +37,7 @@ extern "C" {
 #define CLK_LL_PLL_8M_FREQ_MHZ     (8)
 
 #define CLK_LL_PLL_80M_FREQ_MHZ    (80)
+#define CLK_LL_PLL_120M_FREQ_MHZ   (120)
 #define CLK_LL_PLL_160M_FREQ_MHZ   (160)
 #define CLK_LL_PLL_240M_FREQ_MHZ   (240)
 #define CLK_LL_PLL_SDIO_FREQ_MHZ   (200)
@@ -414,9 +415,12 @@ static inline __attribute__((always_inline)) void clk_ll_cpll_set_config(uint32_
     uint8_t i2c_cpll_lref  = (oc_enb_fcal << I2C_CPLL_OC_ENB_FCAL_LSB) | (dchgp << I2C_CPLL_OC_DCHGP_LSB) | (div_ref);
     uint8_t i2c_cpll_div_7_0 = div7_0;
     uint8_t i2c_cpll_dcur = (1 << I2C_CPLL_OC_DLREF_SEL_LSB ) | (3 << I2C_CPLL_OC_DHREF_SEL_LSB) | dcur;
-    REGI2C_WRITE(I2C_CPLL, I2C_CPLL_OC_REF_DIV, i2c_cpll_lref);
-    REGI2C_WRITE(I2C_CPLL, I2C_CPLL_OC_DIV_7_0, i2c_cpll_div_7_0);
-    REGI2C_WRITE(I2C_CPLL, I2C_CPLL_OC_DCUR, i2c_cpll_dcur);
+    // There are sequential regi2c operations in `clk_ll_cpll_set_config`, use the raw regi2c API with one lock wrapper to save time.
+    REGI2C_ENTER_CRITICAL();
+    esp_rom_regi2c_write(I2C_CPLL, I2C_CPLL_HOSTID, I2C_CPLL_OC_REF_DIV, i2c_cpll_lref);
+    esp_rom_regi2c_write(I2C_CPLL, I2C_CPLL_HOSTID, I2C_CPLL_OC_DIV_7_0, i2c_cpll_div_7_0);
+    esp_rom_regi2c_write(I2C_CPLL, I2C_CPLL_HOSTID, I2C_CPLL_OC_DCUR, i2c_cpll_dcur);
+    REGI2C_EXIT_CRITICAL();
 }
 
 /**
@@ -443,17 +447,20 @@ static inline __attribute__((always_inline)) void clk_ll_mpll_set_config(uint32_
 {
     HAL_ASSERT(xtal_freq_mhz == SOC_XTAL_FREQ_40M);
 
-    uint8_t mpll_dhref_val = REGI2C_READ(I2C_MPLL, I2C_MPLL_DHREF);
-    REGI2C_WRITE(I2C_MPLL, I2C_MPLL_DHREF,  mpll_dhref_val | (3 << I2C_MPLL_DHREF_LSB));
-    uint8_t mpll_rstb_val = REGI2C_READ(I2C_MPLL, I2C_MPLL_IR_CAL_RSTB);
-    REGI2C_WRITE(I2C_MPLL, I2C_MPLL_IR_CAL_RSTB, mpll_rstb_val & 0xdf);
-    REGI2C_WRITE(I2C_MPLL, I2C_MPLL_IR_CAL_RSTB, mpll_rstb_val | (1 << I2C_MPLL_IR_CAL_RSTB_lSB));
+    // There are sequential regi2c operations in `clk_ll_mpll_set_config`, use the raw regi2c API with one lock wrapper to save time.
+    REGI2C_ENTER_CRITICAL();
+    uint8_t mpll_dhref_val = esp_rom_regi2c_read(I2C_MPLL, I2C_MPLL_HOSTID, I2C_MPLL_DHREF);
+    esp_rom_regi2c_write(I2C_MPLL, I2C_MPLL_HOSTID, I2C_MPLL_DHREF,  mpll_dhref_val | (3 << I2C_MPLL_DHREF_LSB));
+    uint8_t mpll_rstb_val = esp_rom_regi2c_read(I2C_MPLL, I2C_MPLL_HOSTID, I2C_MPLL_IR_CAL_RSTB);
+    esp_rom_regi2c_write(I2C_MPLL, I2C_MPLL_HOSTID, I2C_MPLL_IR_CAL_RSTB, mpll_rstb_val & 0xdf);
+    esp_rom_regi2c_write(I2C_MPLL, I2C_MPLL_HOSTID, I2C_MPLL_IR_CAL_RSTB, mpll_rstb_val | (1 << I2C_MPLL_IR_CAL_RSTB_lSB));
 
     // MPLL_Freq = XTAL_Freq * (div + 1) / (ref_div + 1)
     uint8_t ref_div = 1;
     uint8_t div = mpll_freq_mhz / 20 - 1;
     uint8_t val = ((div << 3) | ref_div);
-    REGI2C_WRITE(I2C_MPLL, I2C_MPLL_DIV_REG_ADDR, val);
+    esp_rom_regi2c_write(I2C_MPLL, I2C_MPLL_HOSTID, I2C_MPLL_DIV_REG_ADDR, val);
+    REGI2C_EXIT_CRITICAL();
 }
 
 /**
@@ -716,6 +723,76 @@ static inline __attribute__((always_inline)) void clk_ll_pll_f20m_set_divider(ui
 static inline __attribute__((always_inline)) uint32_t clk_ll_pll_f20m_get_divider(void)
 {
     return HAL_FORCE_READ_U32_REG_FIELD(HP_SYS_CLKRST.ref_clk_ctrl1, reg_ref_20m_clk_div_num) + 1;
+}
+
+/**
+ * @brief Select the frequency calculation clock source for timergroup0
+ *
+ * @param clk_sel One of the clock sources in soc_clk_freq_calculation_src_t
+ */
+static inline __attribute__((always_inline)) void clk_ll_freq_calulation_set_target(soc_clk_freq_calculation_src_t clk_sel)
+{
+    int timg_cali_clk_sel = -1;
+
+    switch (clk_sel) {
+    case CLK_CAL_MPLL:
+        timg_cali_clk_sel = 0;
+        break;
+    case CLK_CAL_SPLL:
+        timg_cali_clk_sel = 1;
+        break;
+    case CLK_CAL_CPLL:
+        timg_cali_clk_sel = 2;
+        break;
+    case CLK_CAL_APLL:
+        timg_cali_clk_sel = 3;
+        break;
+    case CLK_CAL_SDIO_PLL0:
+        timg_cali_clk_sel = 4;
+        break;
+    case CLK_CAL_SDIO_PLL1:
+        timg_cali_clk_sel = 5;
+        break;
+    case CLK_CAL_SDIO_PLL2:
+        timg_cali_clk_sel = 6;
+        break;
+    case CLK_CAL_RC_FAST:
+        timg_cali_clk_sel = 7;
+        break;
+    case CLK_CAL_RC_SLOW:
+        timg_cali_clk_sel = 8;
+        break;
+    case CLK_CAL_RC32K:
+        timg_cali_clk_sel = 9;
+        break;
+    case CLK_CAL_32K_XTAL:
+        timg_cali_clk_sel = 10;
+        break;
+    case CLK_CAL_LP_PLL:
+        timg_cali_clk_sel = 11;
+        break;
+    case CLK_CAL_DSI_DPHY:
+        timg_cali_clk_sel = 12;
+        break;
+    default:
+        // Unsupported CLK_CAL mux input
+        abort();
+    }
+
+    if (timg_cali_clk_sel >= 0) {
+        HP_SYS_CLKRST.peri_clk_ctrl21.reg_timergrp0_tgrt_clk_src_sel = timg_cali_clk_sel;
+    }
+}
+
+/**
+ * @brief Set a divider for the clock to be frequency calculated by timergroup0
+ *
+ * @param divider Divider. PRE_DIV_CNT = divider - 1.
+ */
+static inline __attribute__((always_inline)) void clk_ll_freq_calculation_set_divider(uint32_t divider)
+{
+    HAL_ASSERT(divider >= 1);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl21, reg_timergrp0_tgrt_clk_div_num, divider - 1);
 }
 
 /**

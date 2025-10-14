@@ -72,6 +72,10 @@
           "description": "If given, this will be used as substitute expression for the regex defined in version_regex, to obtain the version string. Not specifying this is equivalent to setting it to '\\1' (i.e. return the first capture group).",
           "type": "string"
         },
+        "tool_info_file": {
+          "description": "Tools info file path. Relative to tool install folder. If present tool version will be read from it instead of invoking the binary.",
+          "type": "string"
+        },
         "strip_container_dirs": {
           "type": "integer",
           "description": "If specified, this number of top directory levels will removed when extracting. E.g. if strip_container_dirs=2, archive path a/b/c/d.txt will be extracted as c/d.txt"
@@ -282,6 +286,27 @@
                 }
               }
             }
+          }
+        }
+      }
+    }
+  },
+  "$comment": "Condition verifying that version <=2 of tools.json must not contain 'tool_info_file' keyword in any of #/definitions/toolInfo properties.",
+  "if": {
+    "properties": {
+      "version": {
+        "maximum": 2
+      }
+    }
+  },
+  "then": {
+    "properties": {
+      "tools": {
+        "items": {
+          "not": {
+            "required": [
+              "tool_info_file"
+            ]
           }
         }
       }

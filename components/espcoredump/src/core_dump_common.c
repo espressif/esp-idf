@@ -1,14 +1,15 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include "sdkconfig.h"
+
 #include <string.h>
 #include <stdbool.h>
-#include "sdkconfig.h"
 #include "soc/soc_memory_layout.h"
 #include "freertos/FreeRTOS.h"
-#include "esp_private/freertos_debug.h"
+#include "freertos/freertos_debug.h"
 #include "esp_rom_sys.h"
 #include "esp_core_dump_port.h"
 #include "esp_core_dump_common.h"
@@ -17,8 +18,6 @@
 #endif // CONFIG_ESP_SYSTEM_HW_STACK_GUARD
 
 const static char TAG[] __attribute__((unused)) = "esp_core_dump_common";
-
-#if CONFIG_ESP_COREDUMP_ENABLE
 
 #define COREDUMP_GET_MEMORY_SIZE(end, start) (end - start)
 
@@ -192,7 +191,7 @@ inline static void esp_core_dump_write_internal(panic_info_t *info)
 
     esp_core_dump_setup_stack();
     esp_core_dump_port_init(info, isr_context);
-    esp_err_t err = esp_core_dump_store();
+    esp_err_t err = esp_core_dump_write_elf();
     if (err != ESP_OK) {
         ESP_COREDUMP_LOGE("Core dump write failed with error=%d", err);
     }
@@ -312,26 +311,6 @@ int esp_core_dump_get_user_ram_info(coredump_region_t region, uint32_t *start)
     return total_sz;
 }
 
-#if CONFIG_ESP_COREDUMP_CAPTURE_DRAM
-void esp_core_dump_get_own_stack_info(uint32_t *addr, uint32_t *size)
-{
-#if CONFIG_ESP_COREDUMP_STACK_SIZE > 0
-    /* Custom stack reserved for the coredump */
-    *addr = (uint32_t)s_coredump_stack;
-    *size = sizeof(s_coredump_stack);
-#else
-    /* Shared stack with the crashed task */
-    core_dump_task_handle_t handle =  esp_core_dump_get_current_task_handle();
-    TaskSnapshot_t rtos_snapshot = { 0 };
-    vTaskGetSnapshot(handle, &rtos_snapshot);
-    StaticTask_t *current = (StaticTask_t *)handle;
-    *addr = (uint32_t)current->pxDummy6; //pxStack
-    *size = (uint32_t)rtos_snapshot.pxTopOfStack - (uint32_t)current->pxDummy6; /* free */
-#endif
-}
-
-#endif /* CONFIG_ESP_COREDUMP_CAPTURE_DRAM */
-
 inline bool esp_core_dump_tcb_addr_is_sane(uint32_t addr)
 {
     return esp_core_dump_mem_seg_is_sane(addr, esp_core_dump_get_tcb_len());
@@ -364,5 +343,3 @@ void esp_core_dump_write(panic_info_t *info)
     esp_core_dump_write_internal(info);
     esp_core_dump_print_write_end();
 }
-
-#endif

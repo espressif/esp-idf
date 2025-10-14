@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -42,30 +42,6 @@ extern "C"
  */
 typedef uint32_t esp_ota_handle_t;
 
-/**
- * @brief   Return esp_app_desc structure. This structure includes app version.
- *
- * @note This API is present for backward compatibility reasons. Alternative function
- * with the same functionality is `esp_app_get_description`
- *
- * Return description for running app.
- * @return Pointer to esp_app_desc structure.
- */
-const esp_app_desc_t *esp_ota_get_app_description(void) __attribute__((deprecated("Please use esp_app_get_description instead")));
-
-/**
- * @brief   Fill the provided buffer with SHA256 of the ELF file, formatted as hexadecimal, null-terminated.
- * If the buffer size is not sufficient to fit the entire SHA256 in hex plus a null terminator,
- * the largest possible number of bytes will be written followed by a null.
- *
-* @note This API is present for backward compatibility reasons. Alternative function
- * with the same functionality is `esp_app_get_elf_sha256`
- *
- * @param dst   Destination buffer
- * @param size  Size of the buffer
- * @return      Number of bytes written to dst (including null terminator)
- */
-int esp_ota_get_app_elf_sha256(char* dst, size_t size) __attribute__((deprecated("Please use esp_app_get_elf_sha256 instead")));
 
 /**
  * @brief   Commence an OTA update writing to the specified partition.
@@ -83,6 +59,7 @@ int esp_ota_get_app_elf_sha256(char* dst, size_t size) __attribute__((deprecated
  * use esp_ota_mark_app_valid_cancel_rollback() function for it (this should be done as early as possible when you first download a new application).
  *
  * Note: Rollback is applicable only for app type partitions.
+ * Note: For Rollback - The OTA data slot corresponding to the last boot application partition will be invalidated.
  *
  * @param partition  Pointer to info for partition which will receive the OTA update. Required.
  *                   This is considered as the staging partition (where OTA is downloaded), be default this also considered as the final partition which supposed to be updated.
@@ -102,6 +79,32 @@ int esp_ota_get_app_elf_sha256(char* dst, size_t size) __attribute__((deprecated
  *    - ESP_ERR_OTA_ROLLBACK_INVALID_STATE: If the running app has not confirmed state. Before performing an update, the application must be valid.
  */
 esp_err_t esp_ota_begin(const esp_partition_t* partition, size_t image_size, esp_ota_handle_t* out_handle);
+
+/**
+ * @brief   Resume an interrupted OTA update by continuing to write to the specified partition.
+ *
+ * This function is used when an OTA update was previously started and needs to be resumed after an interruption.
+ * It continues the OTA process from the specified offset within the partition.
+ *
+ * Unlike esp_ota_begin(), this function does not erase the partition which receives the OTA update, but rather expects that part of the image
+ * has already been written correctly, and it resumes writing from the given offset.
+ *
+ * @param partition Pointer to info for the partition which is receiving the OTA update. Required.
+ * @param erase_size Specifies how much flash memory to erase before resuming OTA, depending on whether a sequential write or a bulk erase is being used.
+ * @param image_offset Offset from where to resume the OTA process. Should be set to the number of bytes already written.
+ * @param out_handle On success, returns a handle that should be used for subsequent esp_ota_write() and esp_ota_end() calls.
+ *
+ * @return
+ *    - ESP_OK: OTA operation resumed successfully.
+ *    - ESP_ERR_INVALID_ARG: partition, out_handle were NULL or image_offset arguments is negative, or partition doesn't point to an OTA app partition.
+ *    - ESP_ERR_NO_MEM: Cannot allocate memory for OTA operation.
+ *    - ESP_ERR_OTA_PARTITION_CONFLICT: Partition holds the currently running firmware, cannot update in place.
+ *    - ESP_ERR_NOT_FOUND: Partition argument not found in partition table.
+ *    - ESP_ERR_OTA_SELECT_INFO_INVALID: The OTA data partition contains invalid data.
+ *    - ESP_ERR_INVALID_SIZE: Partition doesn't fit in configured flash size.
+ *    - ESP_ERR_FLASH_OP_TIMEOUT or ESP_ERR_FLASH_OP_FAIL: Flash write failed.
+ */
+esp_err_t esp_ota_resume(const esp_partition_t *partition, const size_t erase_size, const size_t image_offset, esp_ota_handle_t *out_handle);
 
 /**
  * @brief Set the final destination partition for OTA update
@@ -303,6 +306,20 @@ esp_err_t esp_ota_get_partition_description(const esp_partition_t *partition, es
 esp_err_t esp_ota_get_bootloader_description(const esp_partition_t *bootloader_partition, esp_bootloader_desc_t *desc);
 
 /**
+ * @brief Invalidate the OTA data slot associated with the last boot application partition.
+ *
+ * This function erases the OTA data slot corresponding to the last boot application partition,
+ * making the partition invalid for booting in future. The application partition itself
+ * is not erased, preserving its contents.
+ *
+ * @return
+ *      - ESP_OK: Successfully invalidated the OTA data slot.
+ *      - ESP_FAIL: Failed to invalidate the OTA data slot (e.g., invalid parameters, no OTA data partition, or other errors).
+ *      - Other error codes from `esp_partition_erase_range`.
+ */
+esp_err_t esp_ota_invalidate_inactive_ota_data_slot(void);
+
+/**
  * @brief Returns number of ota partitions provided in partition table.
  *
  * @return
@@ -319,11 +336,23 @@ uint8_t esp_ota_get_app_partition_count(void);
 esp_err_t esp_ota_mark_app_valid_cancel_rollback(void);
 
 /**
- * @brief This function is called to roll back to the previously workable app with reboot.
+ * @brief This function is called to roll back to the previously workable app without reboot.
  *
- * If rollback is successful then device will reset else API will return with error code.
  * Checks applications on a flash drive that can be booted in case of rollback.
  * If the flash does not have at least one app (except the running app) then rollback is not possible.
+ * @return
+ *  - ESP_OK: if successful.
+ *  - ESP_FAIL: if not successful.
+ *  - ESP_ERR_OTA_ROLLBACK_FAILED: The rollback is not possible because the available OTA partitions
+ *    on the flash do not contain a valid application.
+ */
+esp_err_t esp_ota_mark_app_invalid_rollback(void);
+
+/**
+ * @brief This function is called to roll back to the previously workable app with reboot.
+ *
+ * Equivalent to calling esp_ota_mark_app_invalid_rollback(), and, if successful, followed by esp_restart().
+ *
  * @return
  *  - ESP_FAIL: if not successful.
  *  - ESP_ERR_OTA_ROLLBACK_FAILED: The rollback is not possible due to flash does not have any apps.

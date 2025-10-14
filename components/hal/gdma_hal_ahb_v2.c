@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -232,6 +232,17 @@ void gdma_ahb_hal_enable_etm_task(gdma_hal_context_t *hal, int chan_id, gdma_cha
 }
 #endif // SOC_GDMA_SUPPORT_ETM
 
+#if SOC_GDMA_SUPPORT_WEIGHTED_ARBITRATION
+void gdma_ahb_hal_set_weight(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir, uint32_t weight)
+{
+    if (dir == GDMA_CHANNEL_DIRECTION_RX) {
+        ahb_dma_ll_rx_set_weight(hal->ahb_dma_dev, chan_id, weight);
+    } else {
+        ahb_dma_ll_tx_set_weight(hal->ahb_dma_dev, chan_id, weight);
+    }
+}
+#endif // SOC_GDMA_SUPPORT_WEIGHTED_ARBITRATION
+
 void gdma_ahb_hal_init(gdma_hal_context_t *hal, const gdma_hal_config_t *config)
 {
     hal->ahb_dma_dev = AHB_DMA_LL_GET_HW(config->group_id - GDMA_LL_AHB_GROUP_START_ID);
@@ -261,5 +272,20 @@ void gdma_ahb_hal_init(gdma_hal_context_t *hal, const gdma_hal_config_t *config)
 #if GDMA_LL_AHB_BURST_SIZE_ADJUSTABLE
     hal->set_burst_size = gdma_ahb_hal_set_burst_size;
 #endif // GDMA_LL_AHB_BURST_SIZE_ADJUSTABLE
+#if SOC_GDMA_SUPPORT_WEIGHTED_ARBITRATION
+    hal->set_weight = gdma_ahb_hal_set_weight;
+    if (config->flags.enable_weighted_arbitration) {
+        ahb_dma_ll_enable_weighted_arb(hal->ahb_dma_dev, true);
+        // always enable weighted arbitration optimize
+        for (int i = 0; i < SOC_GDMA_PAIRS_PER_GROUP_MAX; i++) {
+            ahb_dma_ll_tx_enable_weighted_arb_opt(hal->ahb_dma_dev, i, true);
+            ahb_dma_ll_rx_enable_weighted_arb_opt(hal->ahb_dma_dev, i, true);
+        }
+        // set timeout to 2000 AHB bus cycles, to ensure that all channels within each time period can almost consume all the tokens
+        ahb_dma_ll_set_weighted_arb_timeout(hal->ahb_dma_dev, 2000);
+    } else {
+        ahb_dma_ll_enable_weighted_arb(hal->ahb_dma_dev, false);
+    }
+#endif // SOC_GDMA_SUPPORT_WEIGHTED_ARBITRATION
     ahb_dma_ll_set_default_memory_range(hal->ahb_dma_dev);
 }

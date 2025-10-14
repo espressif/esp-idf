@@ -89,6 +89,7 @@ struct esp_netif_obj {
     esp_err_t (*driver_transmit)(void *h, void *buffer, size_t len);
     esp_err_t (*driver_transmit_wrap)(void *h, void *buffer, size_t len, void *pbuf);
     void (*driver_free_rx_buffer)(void *h, void* buffer);
+    esp_err_t (*driver_set_mac_filter)(void *h, const uint8_t *mac, size_t mac_len, bool add);
 
     // dhcp related
     esp_netif_dhcp_status_t dhcpc_status;
@@ -98,6 +99,7 @@ struct esp_netif_obj {
     // event translation
     ip_event_t get_ip_event;
     ip_event_t lost_ip_event;
+    bool last_status_up;   // last effective up/down state for unified status event
 #ifdef CONFIG_ESP_NETIF_REPORT_DATA_TRAFFIC
     bool tx_rx_events_enabled;
 #endif

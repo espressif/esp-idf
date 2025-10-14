@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,7 +10,7 @@
 
 #include "esp_log.h"
 #include "esp_check.h"
-#include "esp_attr.h"
+#include "esp_private/esp_system_attr.h"
 #include "esp_intr_alloc.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
@@ -33,7 +33,7 @@ static void *s_callback_arg;
 
 static portMUX_TYPE s_xt_wdt_lock = portMUX_INITIALIZER_UNLOCKED;
 
-static IRAM_ATTR void rtc_xt_wdt_default_isr_handler(void *arg)
+static ESP_SYSTEM_IRAM_ATTR void rtc_xt_wdt_default_isr_handler(void *arg)
 {
     ESP_EARLY_LOGE(TAG, "XTAL32K watchdog timer got triggered");
 
@@ -56,7 +56,7 @@ esp_err_t esp_xt_wdt_init(const esp_xt_wdt_config_t *cfg)
 
     if (cfg->auto_backup_clk_enable) {
         /* Estimate frequency of internal RTC oscillator */
-        uint32_t rtc_clk_frequency_khz = rtc_clk_freq_cal(rtc_clk_cal(RTC_CAL_INTERNAL_OSC, RTC_CLK_CAL_CYCLES)) / 1000;
+        uint32_t rtc_clk_frequency_khz = rtc_clk_freq_cal(rtc_clk_cal(CLK_CAL_RC_SLOW, RTC_CLK_CAL_CYCLES)) / 1000;
         ESP_LOGD(TAG, "Calibrating backup clock from rtc clock with frequency %"PRIu32, rtc_clk_frequency_khz);
 
         xt_wdt_hal_enable_backup_clk(&s_hal_ctx, rtc_clk_frequency_khz);

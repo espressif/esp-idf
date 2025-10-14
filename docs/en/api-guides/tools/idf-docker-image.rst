@@ -1,3 +1,5 @@
+.. _idf-docker-image:
+
 ****************
 IDF Docker Image
 ****************
@@ -14,7 +16,7 @@ IDF Docker image (``espressif/idf``) is intended for building applications and l
 The image contains:
 
 - Common utilities such as ``git``, ``wget``, ``curl``, and ``zip``.
-- Python 3.9 or newer.
+- Python 3.10 or newer.
 - A copy of a specific version of ESP-IDF. See below for information about versions. ``IDF_PATH`` environment variable is set and points to the ESP-IDF location in the container.
 - All the build tools required for the specific version of ESP-IDF: CMake, Ninja, cross-compiler toolchains, etc.
 - All Python packages required by ESP-IDF are installed in a virtual environment.
@@ -128,7 +130,7 @@ And then starting the server by executing
 
 .. code-block:: bash
 
-    esp_rfc2217_server.py -v -p 4000 /dev/ttyUSB0
+    esp_rfc2217_server -v -p 4000 /dev/ttyUSB0
 
 Now the device attached to the host can be flashed from inside a Docker container by using:
 
@@ -165,3 +167,9 @@ To use these arguments, pass them via the ``--build-arg`` command line option. F
 .. _RFC2217: http://www.ietf.org/rfc/rfc2217.txt
 .. _esptool releases: https://github.com/espressif/esptool/releases
 .. _device option: https://docs.docker.com/engine/reference/run/#runtime-privilege-and-linux-capabilities
+
+
+Related Documents
+======================
+
+- `Using Docker Container <https://docs.espressif.com/projects/vscode-esp-idf-extension/en/latest/additionalfeatures/docker-container.html>`_

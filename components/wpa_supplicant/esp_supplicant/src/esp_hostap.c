@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,6 +22,7 @@
 #include "esp_wps.h"
 #include "esp_wps_i.h"
 
+#include "rsn_supp/wpa.h"
 #include "ap/sta_info.h"
 #include "common/sae.h"
 #include "ap/ieee802_11.h"
@@ -37,6 +38,18 @@ struct hostapd_data *hostapd_get_hapd_data(void)
 {
     return global_hapd;
 }
+static bool authmode_has_wpa(uint8_t authmode)
+{
+    return (authmode == WIFI_AUTH_WPA_PSK || authmode == WIFI_AUTH_WPA_WPA2_PSK);
+}
+
+static bool authmode_has_rsn(uint8_t authmode)
+{
+    return (authmode == WIFI_AUTH_WPA2_PSK ||
+            authmode == WIFI_AUTH_WPA_WPA2_PSK ||
+            authmode == WIFI_AUTH_WPA3_PSK ||
+            authmode == WIFI_AUTH_WPA2_WPA3_PSK);
+}
 
 void *hostap_init(void)
 {
@@ -44,9 +57,12 @@ void *hostap_init(void)
     struct hostapd_data *hapd = NULL;
     struct wpa_auth_config *auth_conf;
     u16 spp_attrubute = 0;
-    u8 pairwise_cipher;
+    u16 pairwise_cipher;
     wifi_pmf_config_t pmf_cfg = {0};
     uint8_t authmode;
+    uint8_t sae_ext = 0;
+
+    sae_ext = esp_wifi_ap_get_sae_ext_config_internal();
 
     hapd = (struct hostapd_data *)os_zalloc(sizeof(struct hostapd_data));
 
@@ -68,33 +84,45 @@ void *hostap_init(void)
     }
 
     hapd->conf->sae_pwe = esp_wifi_get_config_sae_pwe_h2e_internal(WIFI_IF_AP);
-    auth_conf->sae_pwe = hapd->conf->sae_pwe;
+    auth_conf->wpa_group_rekey = esp_wifi_ap_get_gtk_rekeying_config_internal();
+#define MIN_GTK_REKEYING_INTERVAL 60
+    if (auth_conf->wpa_group_rekey && auth_conf->wpa_group_rekey < MIN_GTK_REKEYING_INTERVAL) {
+        auth_conf->wpa_group_rekey = MIN_GTK_REKEYING_INTERVAL;
+    }
+#undef MIN_GTK_REKEYING_INTERVAL
 
     authmode = esp_wifi_ap_get_prof_authmode_internal();
-    if (authmode == WIFI_AUTH_WPA_PSK) {
-        auth_conf->wpa = WPA_PROTO_WPA;
+    if (authmode_has_wpa(authmode)) {
+        auth_conf->wpa |= WPA_PROTO_WPA;
     }
-    if (authmode == WIFI_AUTH_WPA2_PSK) {
-        auth_conf->wpa = WPA_PROTO_RSN;
+    if (authmode_has_rsn(authmode)) {
+        auth_conf->wpa |= WPA_PROTO_RSN;
     }
-    if (authmode == WIFI_AUTH_WPA_WPA2_PSK) {
-        auth_conf->wpa = WPA_PROTO_RSN | WPA_PROTO_WPA;
-    }
-    if (authmode == WIFI_AUTH_WPA3_PSK || authmode == WIFI_AUTH_WPA2_WPA3_PSK) {
-        auth_conf->wpa = WPA_PROTO_RSN;
-    }
-
     pairwise_cipher = esp_wifi_ap_get_prof_pairwise_cipher_internal();
 
 #ifdef CONFIG_IEEE80211W
     if ((auth_conf->wpa & WPA_PROTO_RSN) == WPA_PROTO_RSN) {
         esp_wifi_get_pmf_config_internal(&pmf_cfg, WIFI_IF_AP);
-        if (pmf_cfg.required) {
+        /* Use cipher as CCMP if pmf is enabled and TKIP is set */
+        if (pmf_cfg.required && pairwise_cipher == WIFI_CIPHER_TYPE_TKIP) {
             pairwise_cipher = WIFI_CIPHER_TYPE_CCMP;
         }
     }
 #endif /* CONFIG_IEEE80211W */
-
+    if (esp_wifi_is_wpa3_compatible_mode_enabled(WIFI_IF_AP)) {
+#ifdef CONFIG_WPA3_COMPAT
+        auth_conf->rsn_override_omit_rsnxe = 1;
+        hapd->conf->rsn_override_omit_rsnxe = 1;
+        hapd->conf->rsn_override_key_mgmt = WPA_KEY_MGMT_SAE;
+        hapd->conf->rsn_override_pairwise = WPA_CIPHER_CCMP;
+        hapd->conf->rsn_override_mfp = MGMT_FRAME_PROTECTION_REQUIRED;
+        auth_conf->rsn_override_key_mgmt = WPA_KEY_MGMT_SAE;
+        auth_conf->rsn_override_pairwise = WPA_CIPHER_CCMP;
+        auth_conf->rsn_override_mfp = MGMT_FRAME_PROTECTION_REQUIRED;
+#else
+        wpa_printf(MSG_ERROR, "ESP_WIFI_WPA3_COMPATIBLE_SUPPORT disabled, ignoring wpa3_compatible configuration");
+#endif
+    }
     /* TKIP is compulsory in WPA Mode */
     if (auth_conf->wpa == WPA_PROTO_WPA && pairwise_cipher == WIFI_CIPHER_TYPE_CCMP) {
         pairwise_cipher = WIFI_CIPHER_TYPE_TKIP_CCMP;
@@ -107,12 +135,21 @@ void *hostap_init(void)
         auth_conf->wpa_group = WPA_CIPHER_CCMP;
         auth_conf->wpa_pairwise = WPA_CIPHER_CCMP;
         auth_conf->rsn_pairwise = WPA_CIPHER_CCMP;
+    } else if (pairwise_cipher == WIFI_CIPHER_TYPE_GCMP256) {
+        auth_conf->wpa_group = WPA_CIPHER_GCMP_256;
+        auth_conf->wpa_pairwise = WPA_CIPHER_GCMP_256;
+        auth_conf->rsn_pairwise = WPA_CIPHER_GCMP_256;
+    } else if (pairwise_cipher == WIFI_CIPHER_TYPE_GCMP) {
+        auth_conf->wpa_group = WPA_CIPHER_GCMP;
+        auth_conf->wpa_pairwise = WPA_CIPHER_GCMP;
+        auth_conf->rsn_pairwise = WPA_CIPHER_GCMP;
     } else {
         auth_conf->wpa_group = WPA_CIPHER_TKIP;
         auth_conf->wpa_pairwise = WPA_CIPHER_CCMP | WPA_CIPHER_TKIP;
         auth_conf->rsn_pairwise = WPA_CIPHER_CCMP | WPA_CIPHER_TKIP;
     }
 
+    auth_conf->sae_pwe = hapd->conf->sae_pwe;
     auth_conf->wpa_key_mgmt = WPA_KEY_MGMT_PSK;
     auth_conf->eapol_version = EAPOL_VERSION;
 
@@ -127,7 +164,21 @@ void *hostap_init(void)
         auth_conf->wpa_key_mgmt = WPA_KEY_MGMT_PSK;
         wpa_printf(MSG_DEBUG, "%s : pmf optional", __func__);
     }
-
+    if (auth_conf->ieee80211w != NO_MGMT_FRAME_PROTECTION) {
+        switch (pairwise_cipher) {
+        case WIFI_CIPHER_TYPE_CCMP:
+            auth_conf->group_mgmt_cipher = WPA_CIPHER_AES_128_CMAC;
+            break;
+        case WIFI_CIPHER_TYPE_GCMP:
+            auth_conf->group_mgmt_cipher = WPA_CIPHER_BIP_GMAC_128;
+            break;
+        case WIFI_CIPHER_TYPE_GCMP256:
+            auth_conf->group_mgmt_cipher = WPA_CIPHER_BIP_GMAC_256;
+            break;
+        default:
+            auth_conf->group_mgmt_cipher = WPA_CIPHER_AES_128_CMAC;
+        }
+    }
     if (authmode == WIFI_AUTH_WPA2_WPA3_PSK) {
         auth_conf->wpa_key_mgmt |= WPA_KEY_MGMT_SAE;
     }
@@ -135,8 +186,12 @@ void *hostap_init(void)
     if (authmode == WIFI_AUTH_WPA3_PSK) {
         auth_conf->wpa_key_mgmt = WPA_KEY_MGMT_SAE;
     }
-#endif /* CONFIG_IEEE80211W */
+    if (authmode == WIFI_AUTH_WPA3_PSK && pairwise_cipher == WIFI_CIPHER_TYPE_GCMP256 && sae_ext) {
+        auth_conf->wpa_key_mgmt = WPA_KEY_MGMT_SAE_EXT_KEY;
+    }
 
+#endif /* CONFIG_IEEE80211W */
+    esp_wifi_ap_set_group_mgmt_cipher_internal(cipher_type_map_supp_to_public(auth_conf->group_mgmt_cipher));
     spp_attrubute = esp_wifi_get_spp_attrubute_internal(WIFI_IF_AP);
     auth_conf->spp_sup.capable = ((spp_attrubute & WPA_CAPABILITY_SPP_CAPABLE) ? SPP_AMSDU_CAP_ENABLE : SPP_AMSDU_CAP_DISABLE);
     auth_conf->spp_sup.require = ((spp_attrubute & WPA_CAPABILITY_SPP_REQUIRED) ? SPP_AMSDU_REQ_ENABLE : SPP_AMSDU_REQ_DISABLE);
@@ -151,7 +206,8 @@ void *hostap_init(void)
 
 #ifdef CONFIG_SAE
     if (authmode == WIFI_AUTH_WPA3_PSK ||
-            authmode == WIFI_AUTH_WPA2_WPA3_PSK) {
+            authmode == WIFI_AUTH_WPA2_WPA3_PSK ||
+            esp_wifi_is_wpa3_compatible_mode_enabled(WIFI_IF_AP)) {
         if (wpa3_hostap_auth_init(hapd) != 0) {
             goto fail;
         }
@@ -161,6 +217,19 @@ void *hostap_init(void)
     os_memcpy(hapd->conf->ssid.wpa_passphrase, esp_wifi_ap_get_prof_password_internal(), strlen((char *)esp_wifi_ap_get_prof_password_internal()));
     hapd->conf->ssid.wpa_passphrase[WIFI_PASSWORD_LEN_MAX - 1] = '\0';
     hapd->conf->max_num_sta = esp_wifi_ap_get_max_sta_conn();
+    auth_conf->transition_disable = esp_wifi_ap_get_transition_disable_internal();
+
+    if (authmode != WIFI_AUTH_WPA3_PSK &&
+            authmode != WIFI_AUTH_WPA2_WPA3_PSK &&
+            !esp_wifi_is_wpa3_compatible_mode_enabled(WIFI_IF_AP) &&
+            auth_conf->transition_disable) {
+        auth_conf->transition_disable = 0;
+        wpa_printf(MSG_DEBUG, "overriding transition_disable config with 0 as authmode is not WPA3/WPA2-WPA3/compatible");
+    }
+
+#ifdef CONFIG_SAE
+    auth_conf->sae_require_mfp = 1;
+#endif /* CONFIG_SAE */
 
     hapd->conf->ap_max_inactivity = 5 * 60;
     hostapd_setup_wpa_psk(hapd->conf);
@@ -306,8 +375,7 @@ u16 esp_send_assoc_resp(struct hostapd_data *hapd, const u8 *addr,
     reply = os_zalloc(sizeof(wifi_mgmt_frm_req_t) + sizeof(uint16_t));
     if (!reply) {
         wpa_printf(MSG_ERROR, "failed to allocate memory for assoc response");
-        res = WLAN_STATUS_UNSPECIFIED_FAILURE;
-        goto done;
+        return WLAN_STATUS_UNSPECIFIED_FAILURE;
     }
     reply->ifx = WIFI_IF_AP;
     reply->subtype = subtype;
@@ -320,7 +388,6 @@ u16 esp_send_assoc_resp(struct hostapd_data *hapd, const u8 *addr,
         wpa_printf(MSG_INFO, "esp_send_assoc_resp_failed: send failed");
     }
 #undef ASSOC_RESP_LENGTH
-done:
     os_free(reply);
     return res;
 }
@@ -347,19 +414,23 @@ uint8_t wpa_status_to_reason_code(int status)
     }
 }
 
-bool hostap_new_assoc_sta(struct sta_info *sta, uint8_t *bssid, uint8_t *wpa_ie,
-                          uint8_t wpa_ie_len, uint8_t *rsnxe, uint8_t rsnxe_len,
-                          bool *pmf_enable, int subtype, uint8_t *pairwise_cipher, uint8_t *reason)
+bool hostap_new_assoc_sta(struct sta_info *sta, uint8_t *bssid, u8 *wpa_ie,
+                          u8 wpa_ie_len, u8 *rsnxe, uint16_t rsnxe_len,
+                          bool *pmf_enable, int subtype, uint8_t *pairwise_cipher, uint8_t *reason, uint8_t *rsn_selection_ie)
 {
     struct hostapd_data *hapd = (struct hostapd_data*)esp_wifi_get_hostap_private_internal();
     enum wpa_validate_result res = WPA_IE_OK;
     int status = WLAN_STATUS_SUCCESS;
     bool omit_rsnxe = false;
 
+#ifdef CONFIG_WPA3_COMPAT
+    uint8_t rsn_selection_variant_len = 0;
+    uint8_t *rsn_selection_variant_ie = NULL;
+#endif
+
     if (!sta || !bssid || !wpa_ie) {
         return false;
     }
-
     if (hapd) {
         if (hapd->wpa_auth->conf.wpa) {
             if (sta->wpa_sm) {
@@ -374,11 +445,21 @@ bool hostap_new_assoc_sta(struct sta_info *sta, uint8_t *bssid, uint8_t *wpa_ie,
                 goto send_resp;
             }
 
-            res = wpa_validate_wpa_ie(hapd->wpa_auth, sta->wpa_sm, wpa_ie, wpa_ie_len, rsnxe, rsnxe_len);
+#ifdef CONFIG_WPA3_COMPAT
+#define RSN_SELECTION_IE_OUI_LEN 4
+            if (rsn_selection_ie) {
+                rsn_selection_variant_len = rsn_selection_ie[1] - RSN_SELECTION_IE_OUI_LEN;
+                rsn_selection_variant_ie = &rsn_selection_ie[RSN_SELECTION_IE_OUI_LEN + 2];
+            }
 
+            wpa_auth_set_rsn_selection(sta->wpa_sm, rsn_selection_variant_ie, rsn_selection_variant_len);
+#endif
+
+            res = wpa_validate_wpa_ie(hapd->wpa_auth, sta->wpa_sm, wpa_ie, wpa_ie_len, rsnxe, rsnxe_len);
 #ifdef CONFIG_SAE
             if (wpa_auth_uses_sae(sta->wpa_sm) && sta->sae &&
                     sta->sae->state == SAE_ACCEPTED) {
+                sta->wpa_sm->pmk_len = sta->sae->pmk_len;
                 wpa_auth_add_sae_pmkid(sta->wpa_sm, sta->sae->pmkid);
             }
 #endif /* CONFIG_SAE */
@@ -389,6 +470,12 @@ send_resp:
             if (!rsnxe) {
                 omit_rsnxe = true;
             }
+
+#ifdef CONFIG_WPA3_COMPAT
+            if (hapd->conf->rsn_override_omit_rsnxe) {
+                omit_rsnxe = false;
+            }
+#endif
 
             if (esp_send_assoc_resp(hapd, bssid, status, omit_rsnxe, subtype) != WLAN_STATUS_SUCCESS) {
                 status = WLAN_STATUS_AP_UNABLE_TO_HANDLE_NEW_STA;

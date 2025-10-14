@@ -21,6 +21,10 @@
 #include "esp_private/esp_modem_clock.h"
 #endif
 
+#if CONFIG_ESP_COEX_SW_COEXIST_ENABLE && CONFIG_SOC_IEEE802154_SUPPORTED
+#include "esp_coex_i154.h"
+#endif
+
 #if SOC_EXTERNAL_COEX_ADVANCE
 #define EXTERNAL_COEX_SIGNAL_I0_IDX           EXTERN_ACTIVE_I_IDX
 #define EXTERNAL_COEX_SIGNAL_I1_IDX           EXTERN_PRIORITY_I_IDX
@@ -275,7 +279,7 @@ esp_err_t esp_enable_extern_coex_gpio_pin(external_coex_wire_t wire_type, esp_ex
     return ESP_OK;
 }
 
-esp_err_t esp_disable_extern_coex_gpio_pin()
+esp_err_t esp_disable_extern_coex_gpio_pin(void)
 {
     esp_coex_external_stop();
 
@@ -289,7 +293,7 @@ esp_err_t esp_coex_wifi_i154_enable(void)
     // TODO: Add a scheme for wifi and 154 coex.
     // Remove this function if FCC-50 closes.
     coex_enable();
-    coex_schm_status_bit_set(1, 1);
+    esp_coex_ieee802154_status_enable();
     return ESP_OK;
 }
 #endif

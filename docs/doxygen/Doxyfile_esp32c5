@@ -1,4 +1,7 @@
 INPUT += \
+        $(PROJECT_PATH)/components/esp_driver_bitscrambler/include/driver/bitscrambler.h \
+        $(PROJECT_PATH)/components/esp_driver_bitscrambler/include/driver/bitscrambler_loopback.h \
+        $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/include/soc/bitscrambler_peri_select.h \
         $(PROJECT_PATH)/components/ulp/lp_core/include/lp_core_i2c.h \
         $(PROJECT_PATH)/components/ulp/lp_core/include/lp_core_uart.h \
         $(PROJECT_PATH)/components/ulp/lp_core/include/lp_core_etm.h \
@@ -9,5 +12,10 @@ INPUT += \
         $(PROJECT_PATH)/components/ulp/lp_core/lp_core/include/ulp_lp_core_uart.h \
         $(PROJECT_PATH)/components/ulp/lp_core/lp_core/include/ulp_lp_core_utils.h \
         $(PROJECT_PATH)/components/ulp/lp_core/lp_core/include/ulp_lp_core_interrupts.h \
+		$(PROJECT_PATH)/components/ulp/lp_core/lp_core/include/ulp_lp_core_mailbox.h \
         $(PROJECT_PATH)/components/ulp/ulp_common/include/ulp_common.h \
+        $(PROJECT_PATH)/components/ulp/lp_core/shared/include/ulp_lp_core_lp_uart_shared.h \
         $(PROJECT_PATH)/components/bt/include/esp32c5/include/esp_bt.h \
+        $(PROJECT_PATH)/components/bt/include/$(IDF_TARGET)/include/esp_bt_vs.h \
+        $(PROJECT_PATH)/components/esp_phy/include/esp_phy_init.h \
+        $(PROJECT_PATH)/components/esp_phy/include/esp_phy_cert_test.h \

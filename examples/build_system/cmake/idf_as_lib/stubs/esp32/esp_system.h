@@ -9,6 +9,10 @@
 extern "C" {
 #endif
 
+#define ESP_OK          0       /*!< esp_err_t value indicating success (no error) */
+
+typedef int esp_err_t;
+
 void esp_restart(void);
 
 #ifdef __cplusplus

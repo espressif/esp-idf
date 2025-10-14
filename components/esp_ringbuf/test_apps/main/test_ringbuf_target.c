@@ -133,7 +133,7 @@ TEST_CASE("Test ring buffer ISR", "[esp_ringbuf][qemu-ignore]")
  * tested.
  */
 
-#if !CONFIG_RINGBUF_PLACE_FUNCTIONS_INTO_FLASH && !CONFIG_RINGBUF_PLACE_ISR_FUNCTIONS_INTO_FLASH
+#if CONFIG_RINGBUF_IN_IRAM && !CONFIG_RINGBUF_PLACE_ISR_FUNCTIONS_INTO_FLASH
 /* -------------------------- Test ring buffer IRAM ------------------------- */
 
 static IRAM_ATTR __attribute__((noinline)) bool iram_ringbuf_test(void)
@@ -159,7 +159,7 @@ TEST_CASE("Test ringbuffer functions work with flash cache disabled", "[esp_ring
 {
     TEST_ASSERT(iram_ringbuf_test());
 }
-#endif /* !CONFIG_RINGBUF_PLACE_FUNCTIONS_INTO_FLASH && !CONFIG_RINGBUF_PLACE_ISR_FUNCTIONS_INTO_FLASH */
+#endif /* CONFIG_RINGBUF_IN_IRAM && !CONFIG_RINGBUF_PLACE_ISR_FUNCTIONS_INTO_FLASH */
 
 /* ------------------------ Test ring buffer 0 Item Size -----------------------
  * The following test case tests that sending/acquiring an item/bytes of 0 size

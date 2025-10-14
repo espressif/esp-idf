@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-P4 | ESP32-S2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-H21 | ESP32-H4 | ESP32-P4 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | --------- | -------- | -------- | -------- | -------- |
 
 # SDMMC Test Application
 
@@ -92,7 +92,7 @@ As most other IDF console applications, the app supports line editing, commands 
 
 ### Running test cases
 
-When running the tests, keep in mind that once an SD card has been initialized in SPI mode, it cannot be re-initalized in SD mode without first powering it off. This means that on boards without an SD card power control circuit, it is not possible to run all the tests in one go with `test *` command. Run SDMMC tests first, then SDSPI tests: `test [sdmmc]` and then `test [sdspi]`. If you need to run SDMMC test again, power cycle the card first.
+When running the tests, keep in mind that once an SD card has been initialized in SPI mode, it cannot be re-initialized in SD mode without first powering it off. This means that on boards without an SD card power control circuit, it is not possible to run all the tests in one go with `test *` command. Run SDMMC tests first, then SDSPI tests: `test [sdmmc]` and then `test [sdspi]`. If you need to run SDMMC test again, power cycle the card first.
 
 On chips without an SDMMC host controller only SDSPI tests are compiled. In this case, `test *` can be used to run all tests.
 

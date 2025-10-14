@@ -63,7 +63,6 @@ TEST_CASE("mcpwm_capture_iram_safe", "[mcpwm]")
         .prescale = 1,
         .flags.pos_edge = true,
         .flags.neg_edge = true,
-        .flags.pull_up = true,
     };
     TEST_ESP_OK(mcpwm_new_capture_channel(cap_timer, &cap_chan_config, &pps_channel));
 

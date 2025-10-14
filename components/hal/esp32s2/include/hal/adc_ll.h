@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -36,13 +36,16 @@ extern "C" {
 #define ADC_LL_GET_HIGH_THRES_MASK(monitor_id)    ((monitor_id == 0) ? APB_SARADC_ADC1_THRES_INT_ST_M : APB_SARADC_ADC2_THRES_INT_ST_M)
 #define ADC_LL_GET_LOW_THRES_MASK(monitor_id)     ((monitor_id == 0) ? APB_SARADC_ADC1_THRES_INT_ST_M : APB_SARADC_ADC2_THRES_INT_ST_M)
 
+#define ADC_LL_NEED_APB_PERIPH_CLAIM(ADC_UNIT)      (0)
+
+#define ADC_LL_UNIT2_CHANNEL_SUBSTRATION 0
+
 /*---------------------------------------------------------------
                     Oneshot
 ---------------------------------------------------------------*/
 #define ADC_LL_DATA_INVERT_DEFAULT(PERIPH_NUM)         (0)
 #define ADC_LL_SAR_CLK_DIV_DEFAULT(PERIPH_NUM)         (1)
 #define ADC_LL_DELAY_CYCLE_AFTER_DONE_SIGNAL           (0)
-#define ADC_LL_RTC_GPIO_SUPPORTED                      (1)
 
 /*---------------------------------------------------------------
                     DMA
@@ -241,6 +244,17 @@ static inline void adc_ll_digi_set_pattern_table_len(adc_unit_t adc_n, uint32_t 
         APB_SARADC.ctrl.sar1_patt_len = patt_len - 1;
     } else { // adc_n == ADC_UNIT_2
         APB_SARADC.ctrl.sar2_patt_len = patt_len - 1;
+    }
+}
+
+/**
+ * Rest pattern table to default value
+ */
+static inline void adc_ll_digi_reset_pattern_table(void)
+{
+    for(int i = 0; i < 4; i++) {
+        APB_SARADC.sar1_patt_tab[i] = 0xffffff;
+        APB_SARADC.sar2_patt_tab[i] = 0xffffff;
     }
 }
 
@@ -925,7 +939,7 @@ static inline void adc_oneshot_ll_disable_all_unit(void)
  * @brief Enable the ADC clock
  * @param enable true to enable, false to disable
  */
-static inline void adc_ll_enable_bus_clock(bool enable)
+static inline void _adc_ll_enable_bus_clock(bool enable)
 {
     uint32_t reg_val = READ_PERI_REG(DPORT_PERIP_CLK_EN0_REG);
     reg_val = reg_val & (~DPORT_APB_SARADC_CLK_EN);
@@ -933,18 +947,24 @@ static inline void adc_ll_enable_bus_clock(bool enable)
     WRITE_PERI_REG(DPORT_PERIP_CLK_EN0_REG, reg_val);
 }
 // SYSTEM.perip_clk_en0 is a shared register, so this function must be used in an atomic way
-#define adc_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; adc_ll_enable_bus_clock(__VA_ARGS__)
+#define adc_ll_enable_bus_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _adc_ll_enable_bus_clock(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Reset ADC module
  */
-static inline void adc_ll_reset_register(void)
+static inline void _adc_ll_reset_register(void)
 {
     SET_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_APB_SARADC_RST);
     CLEAR_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_APB_SARADC_RST);
 }
 //  SYSTEM.perip_rst_en0 is a shared register, so this function must be used in an atomic way
-#define adc_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; adc_ll_reset_register(__VA_ARGS__)
+#define adc_ll_reset_register(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _adc_ll_reset_register(__VA_ARGS__); \
+    } while(0)
 
 /**
  * Set ADC module power management.
@@ -1162,6 +1182,19 @@ static inline void adc_ll_calibration_prepare(adc_unit_t adc_n, bool internal_gn
 }
 
 /**
+ * Clear calibration prepare settings
+ * This function reverses the operations done by adc_ll_calibration_prepare
+ */
+static inline void adc_ll_calibration_clear(void)
+{
+    /* Reverse the operations done in adc_ll_calibration_prepare */
+    SET_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_SAR_I2C_FORCE_PD_M);
+    CLEAR_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_SAR_I2C_FORCE_PU_M);
+    SET_PERI_REG_MASK(ANA_CONFIG_REG, I2C_SAR_M);
+    CLEAR_PERI_REG_MASK(ANA_CONFIG2_REG, ANA_SAR_CFG2_M);
+}
+
+/**
  * Resume register status after calibration.
  *
  * @param adc_n ADC index number.
@@ -1200,6 +1233,68 @@ static inline void adc_ll_set_calibration_param(adc_unit_t adc_n, uint32_t param
         REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR2_INITIAL_CODE_LOW_ADDR, lsb);
     }
 }
+
+/**
+ * Set the SAR DTEST param
+ *
+ * @param param DTEST value
+ */
+__attribute__((always_inline))
+static inline void adc_ll_set_dtest_param(uint32_t param)
+{
+    REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC_DTEST_RTC_ADDR, param);
+}
+
+/**
+ * Set the SAR ENT param
+ *
+ * @param param ENT value
+ */
+__attribute__((always_inline))
+static inline void adc_ll_set_ent_param(uint32_t param)
+{
+    REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC_ENT_TSENS_ADDR, param);
+}
+
+/**
+ * Enable/disable the calibration voltage reference for ADC unit.
+ *
+ * @param adc_n ADC index number.
+ * @param en true to enable, false to disable
+ */
+__attribute__((always_inline))
+static inline void adc_ll_enable_calibration_ref(adc_unit_t adc_n, bool en)
+{
+    (void)adc_n;
+    REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC_ENCAL_REF_ADDR, en);
+}
+
+/**
+ * Init regi2c SARADC registers
+ */
+__attribute__((always_inline))
+static inline void adc_ll_regi2c_init(void)
+{
+    adc_ll_set_dtest_param(0);
+    adc_ll_set_ent_param(1);
+    // Config ADC circuit (Analog part) with I2C(HOST ID 0x69) and chose internal voltage as sampling source
+    adc_ll_enable_calibration_ref(ADC_UNIT_1, true);
+    adc_ll_enable_calibration_ref(ADC_UNIT_2, true);
+}
+
+/**
+ * Deinit regi2c SARADC registers
+ */
+__attribute__((always_inline))
+static inline void adc_ll_regi2c_adc_deinit(void)
+{
+    adc_ll_set_dtest_param(0);
+    adc_ll_set_ent_param(0);
+    adc_ll_enable_calibration_ref(ADC_UNIT_1, false);
+    adc_ll_enable_calibration_ref(ADC_UNIT_2, false);
+}
+
+
 /* Temp code end. */
 
 /**

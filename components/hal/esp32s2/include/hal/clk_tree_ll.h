@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,6 +15,7 @@
 #include "hal/regi2c_ctrl.h"
 #include "soc/regi2c_bbpll.h"
 #include "soc/regi2c_apll.h"
+#include "soc/timer_group_struct.h"
 #include "hal/assert.h"
 #include "esp32s2/rom/rtc.h"
 
@@ -614,6 +615,29 @@ static inline __attribute__((always_inline)) void clk_ll_ref_tick_set_divider(so
         break;
     default:
         // Unsupported CPU_CLK mux input sel
+        abort();
+    }
+}
+
+/**
+ * @brief Select the frequency calculation clock source for timergroup0
+ *
+ * @param clk_sel One of the clock sources in soc_clk_freq_calculation_src_t
+ */
+static inline __attribute__((always_inline)) void clk_ll_freq_calulation_set_target(soc_clk_freq_calculation_src_t clk_sel)
+{
+    switch (clk_sel) {
+    case CLK_CAL_RC_SLOW:
+        TIMERG0.rtccalicfg.rtc_cali_clk_sel = 0;
+        break;
+    case CLK_CAL_RC_FAST_D256:
+        TIMERG0.rtccalicfg.rtc_cali_clk_sel = 1;
+        break;
+    case CLK_CAL_32K_XTAL:
+        TIMERG0.rtccalicfg.rtc_cali_clk_sel = 2;
+        break;
+    default:
+        // Unsupported CLK_CAL mux input
         abort();
     }
 }

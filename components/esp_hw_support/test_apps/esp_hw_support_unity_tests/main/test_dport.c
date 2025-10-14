@@ -22,7 +22,7 @@
 #include "driver/uart.h"
 #include "unity.h"
 #include "test_utils.h"
-#include "esp_rom_uart.h"
+#include "esp_rom_serial_output.h"
 #include "hal/uart_types.h"
 #include "hal/uart_ll.h"
 #include "soc/dport_reg.h"
@@ -307,11 +307,11 @@ TEST_CASE("test for DPORT access performance", "[esp32]")
 static uint32_t start, end;
 
 #define BENCHMARK_START() do {                                      \
-        RSR(CCOUNT, start);                                         \
+        RSR(XT_REG_CCOUNT, start);                                         \
     } while(0)
 
 #define BENCHMARK_END(OPERATION) do {                               \
-        RSR(CCOUNT, end);                                           \
+        RSR(XT_REG_CCOUNT, end);                                           \
         printf("%s took %"PRIu32" cycles/op (%"PRIu32" cycles for %d ops)\n",     \
                OPERATION, (end - start)/REPEAT_OPS,                 \
                (end - start), REPEAT_OPS);                          \

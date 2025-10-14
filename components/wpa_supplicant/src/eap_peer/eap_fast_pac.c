@@ -426,11 +426,9 @@ int eap_fast_load_pac(struct eap_sm *sm, struct eap_fast_pac **pac_root,
 
 	if (eap_fast_read_line(&rc, &pos) < 0) {
 		/* empty file - assume it is fine to overwrite */
-        printf("\n\nassuming it is fine to overwrite... \n\n");
 		eap_fast_deinit_pac_data(&rc);
 		return 0;
 	}
-    printf("\n\nPAC FILE =\n%s", rc.pos);
 	if (os_strcmp(pac_file_hdr, rc.buf) != 0)
 		err = "Unrecognized header line";
 
@@ -546,11 +544,13 @@ static int eap_fast_write_pac(struct eap_sm *sm, const char *pac_file,
 		blob->data = (u8 *) buf;
 		blob->len = len;
 		buf = NULL;
+#ifndef ESP_SUPPLICANT
 		blob->name = os_strdup(pac_file + 7);
 		if (blob->name == NULL) {
 			os_free(blob);
 			return -1;
 		}
+#endif
 		eap_set_config_blob(sm, blob);
 		os_free(blob);
 	} else {
@@ -657,7 +657,6 @@ int eap_fast_save_pac(struct eap_sm *sm, struct eap_fast_pac *pac_root,
 		return -1;
 	}
 
-    wpa_printf(MSG_DEBUG, "PAC file: %s", (sm->blob[3].data));
 	wpa_printf(MSG_DEBUG, "EAP-FAST: Wrote %d PAC entries into '%s'",
 		   count, pac_file);
 
@@ -755,8 +754,7 @@ int eap_fast_load_pac_bin(struct eap_sm *sm, struct eap_fast_pac **pac_root,
 {
 	const struct wpa_config_blob *blob = NULL;
 	u8 *buf, *end, *pos;
-	size_t len = 0;
-    size_t count = 0;
+	size_t len, count = 0;
 	struct eap_fast_pac *pac, *prev;
 
 	*pac_root = NULL;
@@ -776,6 +774,7 @@ int eap_fast_load_pac_bin(struct eap_sm *sm, struct eap_fast_pac **pac_root,
 		len = blob->len;
 	} else {
 		buf = (u8 *) sm->blob[3].data; //(u8 *) os_readfile(pac_file, &len);
+		len = sm->blob[3].len;
 		if (buf == NULL) {
 			wpa_printf(MSG_INFO, "EAP-FAST: No PAC file '%s' - "
 				   "assume no PAC entries have been "

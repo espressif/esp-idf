@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -263,11 +263,10 @@ void ledc_hal_ls_channel_update(ledc_hal_context_t *hal, ledc_channel_t channel_
  *
  * @param hal Context of the HAL layer
  * @param channel_num LEDC channel index (0-7), select from ledc_channel_t
- * @param duty_start The duty start
  *
  * @return None
  */
-void ledc_hal_set_duty_start(ledc_hal_context_t *hal, ledc_channel_t channel_num, bool duty_start);
+void ledc_hal_set_duty_start(ledc_hal_context_t *hal, ledc_channel_t channel_num);
 
 /**
  * @brief Set LEDC the integer part of duty value
@@ -365,6 +364,15 @@ void ledc_hal_get_range_number(ledc_hal_context_t *hal, ledc_channel_t channel_n
  * @return None
  */
 void ledc_hal_get_fade_param(ledc_hal_context_t *hal, ledc_channel_t channel_num, uint32_t range, uint32_t *dir, uint32_t *cycle, uint32_t *scale, uint32_t *step);
+
+/**
+ * @brief Clear left-off range fade parameters in LEDC gamma ram
+ *
+ * @param hal Context of the HAL layer
+ * @param channel_num LEDC channel index, select from ledc_channel_t
+ * @param start_range Start of the range to clear
+ */
+void ledc_hal_clear_left_off_fade_param(ledc_hal_context_t *hal, ledc_channel_t channel_num, uint32_t start_range);
 #endif //SOC_LEDC_GAMMA_CURVE_FADE_SUPPORTED
 
 /**

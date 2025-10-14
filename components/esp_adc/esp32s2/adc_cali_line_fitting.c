@@ -107,6 +107,7 @@ esp_err_t adc_cali_create_scheme_line_fitting(const adc_cali_line_fitting_config
     adc_calib_parsed_info_t efuse_parsed_data = {0};
     bool success = prepare_calib_data_for(config->unit_id, config->atten, &efuse_parsed_data);
     assert(success);
+    (void)success;
     success = calculate_characterization_coefficients(&efuse_parsed_data, chars);
     assert(success);
     ESP_LOGD(TAG, "adc%d (atten leven %d) calibration done: A:%" PRId32" B:%" PRId32, config->unit_id, config->atten, chars->coeff_a, chars->coeff_b);
@@ -143,7 +144,7 @@ static esp_err_t cali_raw_to_voltage(void *arg, int raw, int *voltage)
     //pointers are checked in the upper layer
 
     cali_chars_line_fitting_t *ctx = arg;
-    *voltage = raw * ctx->coeff_a / coeff_a_scaling + ctx->coeff_b / coeff_b_scaling;
+    *voltage = (raw * ctx->coeff_a / (coeff_a_scaling / coeff_b_scaling) + ctx->coeff_b) / coeff_b_scaling;
 
     return ESP_OK;
 }

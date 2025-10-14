@@ -23,8 +23,14 @@
 #define CONSOLE_UART_CHANNEL    (1 - DEFAULT_UART_CHANNEL)
 #define DEFAULT_UART_RX_PIN     (3)
 #define DEFAULT_UART_TX_PIN     (2)
+
+#if CONFIG_IDF_TARGET_ESP32H4
+#define CONSOLE_UART_RX_PIN     (15)
+#define CONSOLE_UART_TX_PIN     (16)
+#else
 #define CONSOLE_UART_RX_PIN     (4)
 #define CONSOLE_UART_TX_PIN     (5)
+#endif
 
 #define UARTS_BAUD_RATE         (115200)
 #define TASK_STACK_SIZE         (2048)
@@ -43,11 +49,11 @@ const char test_message[] = "This is an example string, if you can read this, th
  */
 static void connect_uarts(void)
 {
-    esp_rom_gpio_connect_out_signal(DEFAULT_UART_RX_PIN, UART_PERIPH_SIGNAL(1, SOC_UART_TX_PIN_IDX), false, false);
-    esp_rom_gpio_connect_in_signal(DEFAULT_UART_RX_PIN, UART_PERIPH_SIGNAL(0, SOC_UART_RX_PIN_IDX), false);
+    esp_rom_gpio_connect_out_signal(DEFAULT_UART_RX_PIN, UART_PERIPH_SIGNAL(1, SOC_UART_PERIPH_SIGNAL_TX), false, false);
+    esp_rom_gpio_connect_in_signal(DEFAULT_UART_RX_PIN, UART_PERIPH_SIGNAL(0, SOC_UART_PERIPH_SIGNAL_RX), false);
 
-    esp_rom_gpio_connect_out_signal(DEFAULT_UART_TX_PIN, UART_PERIPH_SIGNAL(0, SOC_UART_TX_PIN_IDX), false, false);
-    esp_rom_gpio_connect_in_signal(DEFAULT_UART_TX_PIN, UART_PERIPH_SIGNAL(1, SOC_UART_RX_PIN_IDX), false);
+    esp_rom_gpio_connect_out_signal(DEFAULT_UART_TX_PIN, UART_PERIPH_SIGNAL(0, SOC_UART_PERIPH_SIGNAL_TX), false, false);
+    esp_rom_gpio_connect_in_signal(DEFAULT_UART_TX_PIN, UART_PERIPH_SIGNAL(1, SOC_UART_PERIPH_SIGNAL_RX), false);
 }
 
 /**
@@ -58,8 +64,8 @@ static void connect_uarts(void)
  */
 static void disconnect_uarts(void)
 {
-    esp_rom_gpio_connect_out_signal(CONSOLE_UART_TX_PIN, UART_PERIPH_SIGNAL(1, SOC_UART_TX_PIN_IDX), false, false);
-    esp_rom_gpio_connect_in_signal(CONSOLE_UART_RX_PIN, UART_PERIPH_SIGNAL(1, SOC_UART_RX_PIN_IDX), false);
+    esp_rom_gpio_connect_out_signal(CONSOLE_UART_TX_PIN, UART_PERIPH_SIGNAL(1, SOC_UART_PERIPH_SIGNAL_TX), false, false);
+    esp_rom_gpio_connect_in_signal(CONSOLE_UART_RX_PIN, UART_PERIPH_SIGNAL(1, SOC_UART_PERIPH_SIGNAL_RX), false);
 }
 
 /**

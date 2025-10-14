@@ -1,18 +1,10 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include <string.h>
-#include <sdkconfig.h>
+#include "sdkconfig.h"
 #include "soc/soc_memory_layout.h"
 #include "esp_attr.h"
 #include "esp_cpu.h"
@@ -31,11 +23,8 @@ inline static uint32_t get_ccount(void)
 /* Architecture-specific return value of __builtin_return_address which
  * should be interpreted as an invalid address.
  */
-#ifdef __XTENSA__
+#if CONFIG_IDF_TARGET_ARCH_XTENSA
 #define HEAP_ARCH_INVALID_PC  0x40000000
-#else
-#define HEAP_ARCH_INVALID_PC  0x00000000
-#endif
 
 // Caller is 2 stack frames deeper than we care about
 #define STACK_OFFSET  2
@@ -93,6 +82,27 @@ static HEAP_IRAM_ATTR __attribute__((noinline)) void get_call_stack(void **calle
     TEST_STACK(30);
     TEST_STACK(31);
 }
+
+#else // !CONFIG_IDF_TARGET_ARCH_XTENSA
+
+extern uint32_t esp_fp_get_callers(uint32_t frame, void** callers, void** stacks, uint32_t depth);
+
+static HEAP_IRAM_ATTR __attribute__((noinline)) void get_call_stack(void **callers)
+{
+    uint32_t fp = (uint32_t) __builtin_frame_address(0);
+    memset(callers, 0, sizeof(void *) * STACK_DEPTH);
+
+#if CONFIG_ESP_SYSTEM_USE_FRAME_POINTER
+    /* We can skip the current return address since this function won't be inlined */
+    esp_fp_get_callers(fp, callers, NULL, STACK_DEPTH);
+#else
+    /* RISC-V compiler doesn't support `__builtin_frame_address` with a parameter bigger than 0 */
+    callers[0] = (void*) fp;
+#endif
+}
+
+#endif
+
 
 ESP_STATIC_ASSERT(STACK_DEPTH >= 0 && STACK_DEPTH <= 32, "CONFIG_HEAP_TRACING_STACK_DEPTH must be in range 0-32");
 

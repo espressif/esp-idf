@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -193,6 +193,7 @@ extern "C" {
         I2S_STD_PHILIPS_SLOT_DEFAULT_CONFIG(bits_per_sample, mono_or_stereo)  // Alias
 /** @endcond */
 
+#if SOC_I2S_HW_VERSION_1
 /**
  * @brief I2S default standard clock configuration
  * @note Please set the mclk_multiple to I2S_MCLK_MULTIPLE_384 while using 24 bits data width
@@ -203,7 +204,23 @@ extern "C" {
     .sample_rate_hz = rate, \
     .clk_src = I2S_CLK_SRC_DEFAULT, \
     .mclk_multiple = I2S_MCLK_MULTIPLE_256, \
+    .bclk_div = 8, \
 }
+#else
+/**
+ * @brief I2S default standard clock configuration
+ * @note Please set the mclk_multiple to I2S_MCLK_MULTIPLE_384 while using 24 bits data width
+ *       Otherwise the sample rate might be imprecise since the BCLK division is not a integer
+ * @param rate sample rate
+ */
+#define I2S_STD_CLK_DEFAULT_CONFIG(rate) { \
+    .sample_rate_hz = rate, \
+    .clk_src = I2S_CLK_SRC_DEFAULT, \
+    .ext_clk_freq_hz = 0, \
+    .mclk_multiple = I2S_MCLK_MULTIPLE_256, \
+    .bclk_div = 8, \
+}
+#endif
 
 /**
  * @brief I2S slot configuration for standard mode
@@ -250,6 +267,7 @@ typedef struct {
                                                  *   but please set this field a multiple of `3` (like 384) when using 24-bit data width,
                                                  *   otherwise the sample rate might be inaccurate
                                                  */
+    uint32_t                bclk_div;           /*!< The division from MCLK to BCLK, only take effect for slave role, it shouldn't be smaller than 8. Increase this field when data sent by slave lag behind */
 } i2s_std_clk_config_t;
 
 /**
@@ -281,6 +299,8 @@ typedef struct {
  * @brief Initialize I2S channel to standard mode
  * @note  Only allowed to be called when the channel state is REGISTERED, (i.e., channel has been allocated, but not initialized)
  *        and the state will be updated to READY if initialization success, otherwise the state will return to REGISTERED.
+ * @note  When initialize the STD mode with a same configuration as another channel on a same port,
+ *        these two channels can constitude as full-duplex mode automatically
  *
  * @param[in]   handle      I2S channel handler
  * @param[in]   std_cfg     Configurations for standard mode, including clock, slot and GPIO

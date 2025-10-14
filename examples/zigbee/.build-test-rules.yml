@@ -3,6 +3,7 @@
 .zigbee_dependencies: &zigbee_dependencies
   depends_components:
     - ieee802154
+    - openthread
   depends_filepatterns:
     - examples/zigbee/light_sample/**/*
 

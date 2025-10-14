@@ -24,10 +24,12 @@ menu "esp_eth TEST_APPS Configuration"
     if TARGET_USE_INTERNAL_ETHERNET
         choice TARGET_ETH_PHY_DEVICE
             prompt "Ethernet PHY"
-            default TARGET_ETH_PHY_DEVICE_IP101
+            default TARGET_ETH_PHY_DEVICE_GENERIC
             help
                 Select one of the devices listed here
 
+            config TARGET_ETH_PHY_DEVICE_GENERIC
+                bool "Generic IEEE802.3"
             config TARGET_ETH_PHY_DEVICE_IP101
                 bool "IP101"
             config TARGET_ETH_PHY_DEVICE_LAN8720
@@ -52,6 +54,20 @@ menu "esp_eth TEST_APPS Configuration"
                 int "SMI MDIO GPIO number"
                 default 18
         endif
+
+        config TARGET_RMII_CLK_OUT
+            bool "REF RMII CLK output"
+            default n
+
+        if TARGET_RMII_CLK_OUT
+            config TARGET_RMII_CLK_OUT_GPIO
+                int "REF RMII CLK Output GPIO"
+                default 23
+
+            config TARGET_RMII_CLK_IN_GPIO
+                int "REF RMII CLK Input GPIO"
+                default 32
+        endif # TARGET_RMII_CLK_OUT
 
     endif # TARGET_USE_INTERNAL_ETHERNET
 
@@ -88,4 +104,9 @@ menu "esp_eth TEST_APPS Configuration"
 
     endif # TARGET_USE_SPI_ETHERNET
 
+    config TARGET_ETH_PHY_RESET_GPIO
+        int "PHY Reset GPIO number"
+        default 5 if IDF_TARGET_ESP32
+        default 51 if IDF_TARGET_ESP32P4
+        default -1
 endmenu

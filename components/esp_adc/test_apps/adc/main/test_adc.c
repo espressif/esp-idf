@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -41,12 +41,16 @@ static const char *TAG_CH[2][10] = {{"ADC1_CH2", "ADC1_CH3"}, {"ADC2_CH0"}};
 //ESP32C3 ADC2 oneshot mode is not supported anymore
 #define ADC_TEST_ONESHOT_HIGH_LOW_TEST_ADC2    ((SOC_ADC_PERIPH_NUM >= 2) && !CONFIG_IDF_TARGET_ESP32C3)
 
-TEST_CASE("ADC oneshot high/low test", "[adc_oneshot]")
-{
-    static int adc_raw[2][10];
+static int adc_raw[2][10];
+static adc_oneshot_unit_handle_t adc1_handle;
+#if ADC_TEST_ONESHOT_HIGH_LOW_TEST_ADC2
+static adc_oneshot_unit_handle_t adc2_handle;
+#endif
 
+static void adc_oneshot_init_test(void)
+{
     //-------------ADC1 Init---------------//
-    adc_oneshot_unit_handle_t adc1_handle;
+
     adc_oneshot_unit_init_cfg_t init_config1 = {
         .unit_id = ADC_UNIT_1,
         .ulp_mode = ADC_ULP_MODE_DISABLE,
@@ -55,7 +59,6 @@ TEST_CASE("ADC oneshot high/low test", "[adc_oneshot]")
 
 #if ADC_TEST_ONESHOT_HIGH_LOW_TEST_ADC2
     //-------------ADC2 Init---------------//
-    adc_oneshot_unit_handle_t adc2_handle;
     adc_oneshot_unit_init_cfg_t init_config2 = {
         .unit_id = ADC_UNIT_2,
         .ulp_mode = ADC_ULP_MODE_DISABLE,
@@ -77,45 +80,65 @@ TEST_CASE("ADC oneshot high/low test", "[adc_oneshot]")
     //-------------ADC2 TEST Channel 0 Config---------------//
     TEST_ESP_OK(adc_oneshot_config_channel(adc2_handle, ADC2_TEST_CHAN0, &config));
 #endif //#if ADC_TEST_ONESHOT_HIGH_LOW_TEST_ADC2
+}
 
+static void adc_oneshot_read_test(void)
+{
     test_adc_set_io_level(ADC_UNIT_1, ADC1_TEST_CHAN0, 0);
     TEST_ESP_OK(adc_oneshot_read(adc1_handle, ADC1_TEST_CHAN0, &adc_raw[0][0]));
-    ESP_LOGI(TAG_CH[0][0], "raw  data: %d", adc_raw[0][0]);
+    ESP_LOGI(TAG_CH[0][0], "low  raw  data: %d", adc_raw[0][0]);
     TEST_ASSERT_INT_WITHIN(ADC_TEST_LOW_THRESH, ADC_TEST_LOW_VAL, adc_raw[0][0]);
 
-    test_adc_set_io_level(ADC_UNIT_1, ADC1_TEST_CHAN1, 1);
+    test_adc_set_io_level(ADC_UNIT_1, ADC1_TEST_CHAN1, 0);
     TEST_ESP_OK(adc_oneshot_read(adc1_handle, ADC1_TEST_CHAN1, &adc_raw[0][1]));
-    ESP_LOGI(TAG_CH[0][1], "raw  data: %d", adc_raw[0][1]);
-    TEST_ASSERT_INT_WITHIN(ADC_TEST_HIGH_THRESH, ADC_TEST_HIGH_VAL, adc_raw[0][1]);
+    ESP_LOGI(TAG_CH[0][1], "low  raw  data: %d", adc_raw[0][1]);
+    TEST_ASSERT_INT_WITHIN(ADC_TEST_LOW_THRESH, ADC_TEST_LOW_VAL, adc_raw[0][1]);
 
 #if ADC_TEST_ONESHOT_HIGH_LOW_TEST_ADC2
     test_adc_set_io_level(ADC_UNIT_2, ADC2_TEST_CHAN0, 0);
     TEST_ESP_OK(adc_oneshot_read(adc2_handle, ADC2_TEST_CHAN0, &adc_raw[1][0]));
-    ESP_LOGI(TAG_CH[1][0], "raw  data: %d", adc_raw[1][0]);
+    ESP_LOGI(TAG_CH[1][0], "low  raw  data: %d", adc_raw[1][0]);
     TEST_ASSERT_INT_WITHIN(ADC_TEST_LOW_THRESH, ADC_TEST_LOW_VAL, adc_raw[1][0]);
 #endif //#if ADC_TEST_ONESHOT_HIGH_LOW_TEST_ADC2
 
     test_adc_set_io_level(ADC_UNIT_1, ADC1_TEST_CHAN0, 1);
     TEST_ESP_OK(adc_oneshot_read(adc1_handle, ADC1_TEST_CHAN0, &adc_raw[0][0]));
-    ESP_LOGI(TAG_CH[0][0], "raw  data: %d", adc_raw[0][0]);
+    ESP_LOGI(TAG_CH[0][0], "high raw  data: %d", adc_raw[0][0]);
     TEST_ASSERT_INT_WITHIN(ADC_TEST_HIGH_THRESH, ADC_TEST_HIGH_VAL, adc_raw[0][0]);
 
-    test_adc_set_io_level(ADC_UNIT_1, ADC1_TEST_CHAN1, 0);
+    test_adc_set_io_level(ADC_UNIT_1, ADC1_TEST_CHAN1, 1);
     TEST_ESP_OK(adc_oneshot_read(adc1_handle, ADC1_TEST_CHAN1, &adc_raw[0][1]));
-    ESP_LOGI(TAG_CH[0][1], "raw  data: %d", adc_raw[0][1]);
-    TEST_ASSERT_INT_WITHIN(ADC_TEST_LOW_THRESH, ADC_TEST_LOW_VAL, adc_raw[0][1]);
+    ESP_LOGI(TAG_CH[0][1], "high raw  data: %d", adc_raw[0][1]);
+    TEST_ASSERT_INT_WITHIN(ADC_TEST_HIGH_THRESH, ADC_TEST_HIGH_VAL, adc_raw[0][1]);
 
 #if ADC_TEST_ONESHOT_HIGH_LOW_TEST_ADC2
     test_adc_set_io_level(ADC_UNIT_2, ADC2_TEST_CHAN0, 1);
     TEST_ESP_OK(adc_oneshot_read(adc2_handle, ADC2_TEST_CHAN0, &adc_raw[1][0]));
-    ESP_LOGI(TAG_CH[1][0], "raw  data: %d", adc_raw[1][0]);
+    ESP_LOGI(TAG_CH[1][0], "high raw  data: %d", adc_raw[1][0]);
     TEST_ASSERT_INT_WITHIN(ADC_TEST_HIGH_THRESH, ADC_TEST_HIGH_VAL, adc_raw[1][0]);
 #endif //#if ADC_TEST_ONESHOT_HIGH_LOW_TEST_ADC2
+}
 
+static void adc_oneshot_deinit_test(void)
+{
     TEST_ESP_OK(adc_oneshot_del_unit(adc1_handle));
 #if ADC_TEST_ONESHOT_HIGH_LOW_TEST_ADC2
     TEST_ESP_OK(adc_oneshot_del_unit(adc2_handle));
 #endif //#if ADC_TEST_ONESHOT_HIGH_LOW_TEST_ADC2
+}
+
+TEST_CASE("ADC oneshot basic test", "[adc_oneshot]")
+{
+    adc_oneshot_init_test();
+    adc_oneshot_read_test();
+    printf("ADC onshot re-read: \n");
+    adc_oneshot_read_test();
+    adc_oneshot_deinit_test();
+
+    printf("ADC onshot re-start: \n");
+    adc_oneshot_init_test();
+    adc_oneshot_read_test();
+    adc_oneshot_deinit_test();
 }
 
 TEST_CASE("ADC oneshot stress test that get zero even if convent done", "[adc_oneshot]")
@@ -397,6 +420,7 @@ TEST_CASE("ADC continuous monitor init_deinit", "[adc]")
     TEST_ESP_OK(adc_continuous_deinit(handle));
 }
 
+#if SOC_ADC_CALIBRATION_V1_SUPPORTED
 #define TEST_ADC_CHANNEL    ADC_CHANNEL_0
 static uint32_t m1h_cnt, m1l_cnt;
 
@@ -443,9 +467,9 @@ TEST_CASE("ADC continuous monitor functionary", "[adc]")
 #if CONFIG_IDF_TARGET_ESP32S2
         .h_threshold = -1,      //S2 support only one threshold for one monitor
 #else
-        .h_threshold = 3000,
+        .h_threshold = ADC_TEST_HIGH_VAL_DMA - (ADC_TEST_HIGH_VAL_DMA - ADC_TEST_LOW_VAL) / 4,
 #endif
-        .l_threshold = 1000,
+        .l_threshold = ADC_TEST_LOW_VAL + (ADC_TEST_HIGH_VAL_DMA - ADC_TEST_LOW_VAL) / 4,
     };
     adc_monitor_evt_cbs_t monitor_cb = {
 #if !CONFIG_IDF_TARGET_ESP32S2
@@ -496,5 +520,5 @@ TEST_CASE("ADC continuous monitor functionary", "[adc]")
     TEST_ESP_OK(adc_del_continuous_monitor(monitor_handle));
     TEST_ESP_OK(adc_continuous_deinit(handle));
 }
-
+#endif  //SOC_ADC_CALIBRATION_V1_SUPPORTED
 #endif  //SOC_ADC_MONITOR_SUPPORTED && CONFIG_SOC_ADC_DMA_SUPPORTED

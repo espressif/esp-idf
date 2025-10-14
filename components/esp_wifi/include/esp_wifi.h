@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -278,6 +278,12 @@ extern wifi_osi_funcs_t g_wifi_osi_funcs;
 #define WIFI_TX_HETB_QUEUE_NUM 1
 #endif
 
+#if CONFIG_ESP_WIFI_BSS_MAX_IDLE_SUPPORT
+#define WIFI_ENABLE_BSS_MAX_IDLE (1<<8)
+#else
+#define WIFI_ENABLE_BSS_MAX_IDLE 0
+#endif
+
 #define CONFIG_FEATURE_WPA3_SAE_BIT     (1<<0)
 #define CONFIG_FEATURE_CACHE_TX_BUF_BIT (1<<1)
 #define CONFIG_FEATURE_FTM_INITIATOR_BIT (1<<2)
@@ -286,6 +292,7 @@ extern wifi_osi_funcs_t g_wifi_osi_funcs;
 #define CONFIG_FEATURE_GMAC_BIT (1<<5)
 #define CONFIG_FEATURE_11R_BIT (1<<6)
 #define CONFIG_FEATURE_WIFI_ENT_BIT (1<<7)
+#define CONFIG_FEATURE_BSS_MAX_IDLE_BIT (1<<8)
 
 /* Set additional WiFi features and capabilities */
 #define WIFI_FEATURE_CAPS (WIFI_ENABLE_WPA3_SAE | \
@@ -295,7 +302,8 @@ extern wifi_osi_funcs_t g_wifi_osi_funcs;
                            WIFI_ENABLE_GCMP | \
                            WIFI_ENABLE_GMAC | \
                            WIFI_ENABLE_11R  | \
-                           WIFI_ENABLE_ENTERPRISE)
+                           WIFI_ENABLE_ENTERPRISE | \
+                           WIFI_ENABLE_BSS_MAX_IDLE)
 
 #define WIFI_INIT_CONFIG_DEFAULT() { \
     .osi_funcs = &g_wifi_osi_funcs, \
@@ -564,6 +572,7 @@ esp_err_t esp_wifi_get_scan_parameters(wifi_scan_default_params_t *config);
   *    - ESP_OK: succeed
   *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
   *    - ESP_ERR_WIFI_NOT_STARTED: WiFi is not started by esp_wifi_start
+  *    - ESP_ERR_WIFI_STATE: WiFi is still connecting when esp_wifi_scan_stop() is invoked.
   */
 esp_err_t esp_wifi_scan_stop(void);
 
@@ -583,7 +592,7 @@ esp_err_t esp_wifi_scan_stop(void);
 esp_err_t esp_wifi_scan_get_ap_num(uint16_t *number);
 
 /**
-  * @brief     Get AP list found in last scan.
+  * @brief     Retrieve the list of APs found during the last scan. The returned AP list is sorted in descending order based on RSSI.
   *
   * @attention  This API will free all memory occupied by scanned AP list.
   *
@@ -605,7 +614,7 @@ esp_err_t esp_wifi_scan_get_ap_records(uint16_t *number, wifi_ap_record_t *ap_re
  *
  * @attention  Different from esp_wifi_scan_get_ap_records(), this API only gets one AP record
  *             from the scanned AP list each time. This API will free the memory of one AP record,
- *             if the user doesn't get all records in the scannned AP list, then needs to call esp_wifi_clear_ap_list()
+ *             if the user doesn't get all records in the scanned AP list, then needs to call esp_wifi_clear_ap_list()
  *             to free the remaining memory.
  *
  * @param[out] ap_record  pointer to one AP record
@@ -766,6 +775,8 @@ esp_err_t esp_wifi_get_bandwidth(wifi_interface_t ifx, wifi_bandwidth_t *bw);
   * @attention 4. When device is in STA+softAP mode, this API should not be called when in the scenarios described above
   * @attention 5. The channel info set by this API will not be stored in NVS. So If you want to remember the channel used before WiFi stop,
   *               you need to call this API again after WiFi start, or you can call `esp_wifi_set_config()` to store the channel info in NVS.
+  * @attention 6. When operating in 5 GHz band, the second channel is automatically determined by the primary channel according to the 802.11 standard.
+  *               Any manually configured second channel will be ignored.
   *
   * @param     primary  for HT20, primary is the channel number, for HT40, primary is the primary channel
   * @param     second   for HT20, second is ignored, for HT40, second is the second channel
@@ -988,6 +999,7 @@ esp_err_t esp_wifi_get_promiscuous_ctrl_filter(wifi_promiscuous_filter_t *filter
   *    - ESP_ERR_WIFI_MODE: invalid mode
   *    - ESP_ERR_WIFI_PASSWORD: invalid password
   *    - ESP_ERR_WIFI_NVS: WiFi internal NVS error
+  *    - ESP_ERR_WIFI_STATE: WiFi still connecting when invoke esp_wifi_set_config
   *    - others: refer to the error code in esp_err.h
   */
 esp_err_t esp_wifi_set_config(wifi_interface_t interface, wifi_config_t *conf);
@@ -1191,6 +1203,27 @@ esp_err_t esp_wifi_get_event_mask(uint32_t *mask);
 esp_err_t esp_wifi_80211_tx(wifi_interface_t ifx, const void *buffer, int len, bool en_sys_seq);
 
 /**
+  * @brief Callback function of 80211 tx data
+  *
+  * @param tx_info TX information of 80211 tx. The information can only be used in the callback context.
+  */
+typedef void (*esp_wifi_80211_tx_done_cb_t)(const esp_80211_tx_info_t *tx_info);
+
+/**
+  * @brief Register the TX callback function of 80211 tx data.
+  *
+  * @attention This callback will be executed in WiFi task, so avoid doing any time consuming activity in the callback.
+  *            Doing heavy work here can affect the WiFi performance.
+  *
+  * @param cb callback function. If the cb is NULL, then unregister the tx cb.
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
+  */
+esp_err_t esp_wifi_register_80211_tx_cb(esp_wifi_80211_tx_done_cb_t cb);
+
+/**
   * @brief The RX callback function of Channel State Information(CSI)  data.
   *
   *        Each time a CSI data is received, the callback function will be called.
@@ -1254,54 +1287,6 @@ esp_err_t esp_wifi_get_csi_config(wifi_csi_config_t *config);
   *    - ESP_ERR_INVALID_ARG: invalid argument
   */
 esp_err_t esp_wifi_set_csi(bool en);
-
-/**
-  * @brief     Set antenna GPIO configuration
-  *
-  * @param     config  Antenna GPIO configuration.
-  *
-  * @return
-  *    - ESP_OK: succeed
-  *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
-  *    - ESP_ERR_INVALID_ARG: Invalid argument, e.g. parameter is NULL, invalid GPIO number etc
-  */
-esp_err_t esp_wifi_set_ant_gpio(const wifi_ant_gpio_config_t *config) __attribute__((deprecated("Please use esp_phy_set_ant_gpio instead")));
-
-/**
-  * @brief     Get current antenna GPIO configuration
-  *
-  * @param     config  Antenna GPIO configuration.
-  *
-  * @return
-  *    - ESP_OK: succeed
-  *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
-  *    - ESP_ERR_INVALID_ARG: invalid argument, e.g. parameter is NULL
-  */
-esp_err_t esp_wifi_get_ant_gpio(wifi_ant_gpio_config_t *config) __attribute__((deprecated("Please use esp_phy_get_ant_gpio instead")));
-
-/**
-  * @brief     Set antenna configuration
-  *
-  * @param     config  Antenna configuration.
-  *
-  * @return
-  *    - ESP_OK: succeed
-  *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
-  *    - ESP_ERR_INVALID_ARG: Invalid argument, e.g. parameter is NULL, invalid antenna mode or invalid GPIO number
-  */
-esp_err_t esp_wifi_set_ant(const wifi_ant_config_t *config) __attribute__((deprecated("Please use esp_phy_set_ant instead")));
-
-/**
-  * @brief     Get current antenna configuration
-  *
-  * @param     config  Antenna configuration.
-  *
-  * @return
-  *    - ESP_OK: succeed
-  *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
-  *    - ESP_ERR_INVALID_ARG: invalid argument, e.g. parameter is NULL
-  */
-esp_err_t esp_wifi_get_ant(wifi_ant_config_t *config) __attribute__((deprecated("Please use esp_phy_get_ant instead")));
 
 /**
  * @brief      Get the TSF time
@@ -1425,8 +1410,7 @@ esp_err_t esp_wifi_ftm_resp_set_offset(int16_t offset_cm);
   *                (sizeof(wifi_ftm_report_entry_t) * num_entries) where the API will fill up to num_entries
   *                valid FTM measurements in the buffer. Total number of entries can be found in the event
   *                WIFI_EVENT_FTM_REPORT as ftm_report_num_entries
-  * @attention  2. The internal FTM report is freed upon use of this API which means the API can only be used
-  *                once after every FTM session initiated
+  * @attention  2. The internal FTM report is freed upon use of this API OR after initiating a fresh FTM session
   * @attention  3. Passing the buffer as NULL merely frees the FTM report
   *
   * @param      report  Pointer to the buffer for receiving the FTM report
@@ -1497,7 +1481,7 @@ esp_err_t esp_wifi_force_wakeup_release(void);
 /**
   * @brief     configure country
   *
-  * @attention 1. When ieee80211d_enabled, the country info of the AP to which
+  * @attention 1. When ieee80211d_enabled is enabled, the country info of the AP to which
   *               the station is connected is used. E.g. if the configured country is US
   *               and the country info of the AP to which the station is connected is JP
   *               then the country info that will be used is JP. If the station disconnected
@@ -1647,6 +1631,7 @@ esp_err_t esp_wifi_sta_get_rssi(int *rssi);
     * @return
   *    - ESP_OK: succeed
   *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
+  *    - ESP_ERR_WIFI_NOT_STARTED: WiFi is not started by esp_wifi_start
   *    - ESP_ERR_INVALID_ARG: invalid argument
   */
 esp_err_t esp_wifi_set_band(wifi_band_t band);
@@ -1786,6 +1771,46 @@ esp_err_t esp_wifi_set_bandwidths(wifi_interface_t ifx, wifi_bandwidths_t* bw);
   *    - ESP_ERR_INVALID_ARG: invalid argument
   */
 esp_err_t esp_wifi_get_bandwidths(wifi_interface_t ifx, wifi_bandwidths_t *bw);
+
+/**
+  * @brief      Send action frame on target channel
+  *
+  * @param    req   action tx request structure containing relevant fields
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - ESP_ERR_NO_MEM: failed to allocate memory
+  *    - ESP_ERR_INVALID_ARG: the <channel, sec_channel> pair is invalid
+  *    - ESP_FAIL: failed to send frame
+  */
+esp_err_t esp_wifi_action_tx_req(wifi_action_tx_req_t *req);
+
+/**
+  * @brief      Remain on the target channel for required duration
+  *
+  * @param    req  roc request structure containing relevant fields
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - ESP_ERR_NO_MEM: failed to allocate memory
+  *    - ESP_ERR_INVALID_ARG: the <channel, sec_channel> pair is invalid
+  *    - ESP_FAIL: failed to perform roc operation
+  */
+esp_err_t esp_wifi_remain_on_channel(wifi_roc_req_t * req);
+
+#if CONFIG_ESP_WIFI_SLP_SAMPLE_BEACON_FEATURE
+/**
+  * @brief      Sample numbers of beacons to calculate beacon parameters
+  *
+  * @attention  This API should be called after station connected to AP.
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
+  *    - ESP_ERR_WIFI_NOT_STARTED: WiFi is not started by esp_wifi_start
+  */
+esp_err_t esp_wifi_beacon_offset_sample_beacon(void);
+#endif
 
 #ifdef __cplusplus
 }

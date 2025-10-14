@@ -45,7 +45,7 @@ int esp_wnm_send_bss_transition_mgmt_query(enum btm_query_reason query_reason,
                                            int cand_list);
 
 /**
-  * @brief  Check bss trasition capability of connected AP
+  * @brief  Check bss transition capability of connected AP
   *
   * @return
   *    - true: AP supports BTM

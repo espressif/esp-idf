@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -46,15 +46,15 @@ const spi_signal_conn_t spi_periph_signal[3] = {
         .spihd_in = HSPIHD_IN_IDX,
         .spics_out = {HSPICS0_OUT_IDX, HSPICS1_OUT_IDX, HSPICS2_OUT_IDX},
         .spics_in = HSPICS0_IN_IDX,
-        .spiclk_iomux_pin = HSPI_IOMUX_PIN_NUM_CLK,
-        .spid_iomux_pin = HSPI_IOMUX_PIN_NUM_MOSI,
-        .spiq_iomux_pin = HSPI_IOMUX_PIN_NUM_MISO,
-        .spiwp_iomux_pin = HSPI_IOMUX_PIN_NUM_WP,
-        .spihd_iomux_pin = HSPI_IOMUX_PIN_NUM_HD,
-        .spics0_iomux_pin = HSPI_IOMUX_PIN_NUM_CS,
+        .spiclk_iomux_pin = SPI2_IOMUX_PIN_NUM_CLK,
+        .spid_iomux_pin = SPI2_IOMUX_PIN_NUM_MOSI,
+        .spiq_iomux_pin = SPI2_IOMUX_PIN_NUM_MISO,
+        .spiwp_iomux_pin = SPI2_IOMUX_PIN_NUM_WP,
+        .spihd_iomux_pin = SPI2_IOMUX_PIN_NUM_HD,
+        .spics0_iomux_pin = SPI2_IOMUX_PIN_NUM_CS,
         .irq = ETS_SPI2_INTR_SOURCE,
         .irq_dma = ETS_SPI2_DMA_INTR_SOURCE,
-        .func = HSPI_FUNC_NUM,
+        .func = SPI2_FUNC_NUM,
         .hw = &SPI2
     }, {
         .spiclk_out = VSPICLK_OUT_IDX,
@@ -69,15 +69,15 @@ const spi_signal_conn_t spi_periph_signal[3] = {
         .spihd_in = VSPIHD_IN_IDX,
         .spics_out = {VSPICS0_OUT_IDX, VSPICS1_OUT_IDX, VSPICS2_OUT_IDX},
         .spics_in = VSPICS0_IN_IDX,
-        .spiclk_iomux_pin = VSPI_IOMUX_PIN_NUM_CLK,
-        .spid_iomux_pin = VSPI_IOMUX_PIN_NUM_MOSI,
-        .spiq_iomux_pin = VSPI_IOMUX_PIN_NUM_MISO,
-        .spiwp_iomux_pin = VSPI_IOMUX_PIN_NUM_WP,
-        .spihd_iomux_pin = VSPI_IOMUX_PIN_NUM_HD,
-        .spics0_iomux_pin = VSPI_IOMUX_PIN_NUM_CS,
+        .spiclk_iomux_pin = SPI3_IOMUX_PIN_NUM_CLK,
+        .spid_iomux_pin = SPI3_IOMUX_PIN_NUM_MOSI,
+        .spiq_iomux_pin = SPI3_IOMUX_PIN_NUM_MISO,
+        .spiwp_iomux_pin = SPI3_IOMUX_PIN_NUM_WP,
+        .spihd_iomux_pin = SPI3_IOMUX_PIN_NUM_HD,
+        .spics0_iomux_pin = SPI3_IOMUX_PIN_NUM_CS,
         .irq = ETS_SPI3_INTR_SOURCE,
         .irq_dma = ETS_SPI3_DMA_INTR_SOURCE,
-        .func = VSPI_FUNC_NUM,
+        .func = SPI3_FUNC_NUM,
         .hw = &SPI3
     }
 };

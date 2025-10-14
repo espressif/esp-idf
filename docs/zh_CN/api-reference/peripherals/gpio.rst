@@ -81,7 +81,7 @@ GPIO 驱动提供了一个函数 :cpp:func:`gpio_dump_io_configuration` 用来�
 
 ::
 
-    gpio_dump_all_io_configuration(stdout, SOC_GPIO_VALID_GPIO_MASK);
+    gpio_dump_io_configuration(stdout, SOC_GPIO_VALID_GPIO_MASK);
 
 如果 IO 管脚通过 GPIO 交换矩阵连接到内部外设信号，输出信息打印中的外设信号 ID 定义可以在 :component_file:`soc/{IDF_TARGET_PATH_NAME}/include/soc/gpio_sig_map.h` 头文件中查看。``**RESERVED**`` 字样则表示此 IO 用于连接 SPI flash 或 PSRAM，强烈建议不要重新配置这些管脚用于其他功能。
 
@@ -99,8 +99,8 @@ GPIO 驱动提供了一个函数 :cpp:func:`gpio_dump_io_configuration` 用来�
         gpio_config_t usb_phy_conf = {
             .pin_bit_mask = (1ULL << USB_PHY_DP_PIN) | (1ULL << USB_PHY_DM_PIN),
             .mode = GPIO_MODE_INPUT_OUTPUT,
-            .pull_up_en = 0,
-            .pull_down_en = 0,
+            .pull_up_en = GPIO_PULLUP_DISABLE,
+            .pull_down_en = GPIO_PULLDOWN_DISABLE,
             .intr_type = GPIO_INTR_DISABLE,
         };
         gpio_config(&usb_phy_conf);

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -36,7 +36,7 @@ typedef struct esp_ds_data_ctx {
  *
  * @in          ds_data     ds_data context containing encrypted private key parameters
  * @return
- *              - ESP_OK  In case of succees
+ *              - ESP_OK  In case of success
  *              - ESP_ERR_NO_MEM In case internal context could not be allocated.
  *              - ESP_ERR_INVALID_ARG in case input parametrers are NULL
  *
@@ -55,10 +55,10 @@ void esp_ds_release_ds_lock(void);
  * @brief       Alternate implementation for mbedtls_rsa_rsassa_pkcs1_v15_sign, Internally makes use
  *              of DS module to perform hardware accelerated RSA sign operation
  */
-int esp_ds_rsa_sign( void *ctx,
-                     int (*f_rng)(void *, unsigned char *, size_t), void *p_rng,
-                     mbedtls_md_type_t md_alg, unsigned int hashlen,
-                     const unsigned char *hash, unsigned char *sig );
+int esp_ds_rsa_sign(void *ctx,
+                    int (*f_rng)(void *, unsigned char *, size_t), void *p_rng,
+                    mbedtls_md_type_t md_alg, unsigned int hashlen,
+                    const unsigned char *hash, unsigned char *sig);
 
 /*
  * @brief       Get RSA key length in bytes from internal DS context

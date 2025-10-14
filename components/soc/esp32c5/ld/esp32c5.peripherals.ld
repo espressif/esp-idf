@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,6 +27,9 @@ PROVIDE ( PCNT                = 0x60012000 );
 PROVIDE ( SOC_ETM             = 0x60013000 );
 PROVIDE ( MCPWM0              = 0x60014000 );
 PROVIDE ( PARL_IO             = 0x60015000 );
+PROVIDE ( HINF                = 0x60016000 );
+PROVIDE ( SLC                 = 0x60017000 );
+PROVIDE ( HOST                = 0x60018000 );
 PROVIDE ( PVT_MONITOR         = 0x60019000 );
 PROVIDE ( PSRAM_MEM_MONITOR   = 0x6001A000 );
 PROVIDE ( AHB_DMA             = 0x60080000 );
@@ -53,6 +56,7 @@ PROVIDE ( PCR                 = 0x60096000 );
 PROVIDE ( TEE                 = 0x60098000 );
 PROVIDE ( HP_APM              = 0x60099000 );
 PROVIDE ( LP_APM0             = 0x60099800 );
+PROVIDE ( CPU_APM             = 0x6009A000 );
 PROVIDE ( MISC                = 0x6009F000 );
 
 PROVIDE ( IEEE802154          = 0x600A3000 ); /* TODO: [ESP32C5] IDF-9140 Check the address */
@@ -82,6 +86,6 @@ PROVIDE ( LP_GPIO             = 0x600B4400 );
 PROVIDE ( EFUSE               = 0x600B4800 );
 PROVIDE ( OTP_DEBUG           = 0x600B4D00 );
 PROVIDE ( TRACE               = 0x600C0000 );
-PROVIDE ( ASSIST_DEBUG        = 0x600C2000 );
+PROVIDE ( BUS_MONITOR         = 0x600C2000 );
 PROVIDE ( INTPRI              = 0x600C5000 );
 PROVIDE ( CACHE               = 0x600C8000 );

@@ -23,8 +23,7 @@ enum AES_TYPE {
 
 enum AES_BITS {
     AES128,
-    AES192,
-    AES256
+    AES256 = 2, /* skipping enum value 1 to keep compatibility with chips that support AES-192 */
 };
 
 void ets_aes_enable(void);

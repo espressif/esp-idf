@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,7 +24,6 @@ typedef struct gdma_link_list_t *gdma_link_list_handle_t;
 typedef struct {
     uint32_t num_items;              //!< Number of nodes in the link list
     size_t item_alignment;           //!< Alignment of each list item required by the DMA. By default, it's 4 bytes alignment.
-    size_t buffer_alignment;         //!< Alignment of each buffer required by the DMA. By default, it's 1 byte alignment.
     struct gdma_link_list_flags {
         uint32_t items_in_ext_mem: 1; //!< Whether the link list items are allocated from external memory
         uint32_t check_owner: 1;      //!< Whether the link list is responsible for checking the ownership when mount data buffers
@@ -62,6 +61,7 @@ esp_err_t gdma_del_link_list(gdma_link_list_handle_t list);
  */
 typedef struct {
     void *buffer;   //!< Buffer to be mounted to the DMA link list
+    size_t buffer_alignment; //!< Alignment of the buffer. By default, it's 1 byte alignment.
     size_t length;  //!< Number of bytes that are expected to be transferred
     struct gdma_buffer_mount_flags {
         uint32_t mark_eof: 1;   /*!< Whether to mark the list item as the "EOF" item.
@@ -72,6 +72,8 @@ typedef struct {
                                      Note, DMA engine will stop at this item and trigger an interrupt.
                                      If `mark_final` is not set, this list item will point to the next item, and
                                      wrap around to the head item if it's the last one in the list. */
+        uint32_t bypass_buffer_align_check: 1; /*!< Whether to bypass the buffer alignment check.
+                                                    Only enable it when you know what you are doing. */
     } flags; //!< Flags for buffer mount configurations
 } gdma_buffer_mount_config_t;
 
@@ -91,7 +93,7 @@ typedef struct {
  *      - ESP_ERR_INVALID_ARG: Mount the buffer failed because of invalid argument
  *      - ESP_FAIL: Mount the buffer failed because of other error
  */
-esp_err_t gdma_link_mount_buffers(gdma_link_list_handle_t list, uint32_t start_item_index, const gdma_buffer_mount_config_t *buf_config_array, size_t num_buf, uint32_t *end_item_index);
+esp_err_t gdma_link_mount_buffers(gdma_link_list_handle_t list, int start_item_index, const gdma_buffer_mount_config_t *buf_config_array, size_t num_buf, int *end_item_index);
 
 /**
  * @brief Get the address of the head item in the link list
@@ -118,6 +120,8 @@ uintptr_t gdma_link_get_head_addr(gdma_link_list_handle_t list);
  *      After concatenation:
  *       Link A: A1 --> B3 --> B4
  *       Link B: B1 --> B2 --> B3 --> B4
+ *
+ * @note If the second link is NULL, the next item of the first_link_item will be set to NULL. And the second_link_item_index is meaningless.
  *
  * @param[in] first_link First link list handle, allocated by `gdma_new_link_list`
  * @param[in] first_link_item_index Index of the item in the first link list (-1 means the last item)
@@ -163,6 +167,56 @@ esp_err_t gdma_link_set_owner(gdma_link_list_handle_t list, int item_index, gdma
  *      - ESP_FAIL: Get the ownership failed because of other error
  */
 esp_err_t gdma_link_get_owner(gdma_link_list_handle_t list, int item_index, gdma_lli_owner_t *owner);
+
+/**
+ * @brief Get the size of the buffer that is mounted to the link list until the eof item (inclusive)
+ *
+ * @param[in] list Link list handle, allocated by `gdma_new_link_list`
+ * @param[in] start_item_index Index of the first item in the link list to be calculated
+ * @return Size of the buffer that is mounted to the link list until the eof item (inclusive).
+ *         If the link list is empty or invalid, return 0.
+ */
+size_t gdma_link_count_buffer_size_till_eof(gdma_link_list_handle_t list, int start_item_index);
+
+/**
+ * @brief Get the buffer of a DMA link list item
+ *
+ * @param[in] list Link list handle, allocated by `gdma_new_link_list`
+ * @param[in] item_index Index of the link list item
+ * @return Buffer of the link list item
+ */
+void* gdma_link_get_buffer(gdma_link_list_handle_t list, int item_index);
+
+/**
+ * @brief Get the length of the buffer of a DMA link list item
+ *
+ * @param[in] list Link list handle, allocated by `gdma_new_link_list`
+ * @param[in] item_index Index of the link list item
+ * @return Length of the buffer of the link list item
+ */
+size_t gdma_link_get_length(gdma_link_list_handle_t list, int item_index);
+
+/**
+ * @brief Set the length of the buffer of a DMA link list item
+ *
+ * @param[in] list Link list handle, allocated by `gdma_new_link_list`
+ * @param[in] item_index Index of the link list item
+ * @param[in] length Length of the buffer of the link list item
+ * @return
+ *      - ESP_OK: Set the length successfully
+ *      - ESP_ERR_INVALID_ARG: Set the length failed because of invalid argument
+ *      - ESP_FAIL: Set the length failed because of other error
+ */
+esp_err_t gdma_link_set_length(gdma_link_list_handle_t list, int item_index, size_t length);
+
+/**
+ * @brief Check if a DMA link list item is the last item (has no next item)
+ *
+ * @param[in] list Link list handle, allocated by `gdma_new_link_list`
+ * @param[in] item_index Index of the link list item
+ * @return True if the link list item is the last item, false otherwise
+ */
+bool gdma_link_check_end(gdma_link_list_handle_t list, int item_index);
 
 #ifdef __cplusplus
 }

@@ -1,0 +1,8 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+components/unity/test_apps:
+  enable:
+    - if: IDF_TARGET in["esp32", "linux"]
+      reason: need to test on a chip and linux targets
+  depends_components:
+    - unity

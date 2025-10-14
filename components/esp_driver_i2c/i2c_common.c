@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,7 +18,6 @@
 #include "esp_pm.h"
 #include "freertos/FreeRTOS.h"
 #include "hal/i2c_hal.h"
-#include "hal/gpio_hal.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_rom_gpio.h"
 #include "i2c_private.h"
@@ -28,11 +27,15 @@
 #include "esp_clk_tree.h"
 #include "clk_ctrl_os.h"
 #include "esp_private/gpio.h"
+#include "esp_private/esp_gpio_reserve.h"
 #if SOC_LP_I2C_SUPPORTED
 #include "hal/rtc_io_ll.h"
 #include "driver/rtc_io.h"
 #include "soc/rtc_io_channel.h"
 #include "driver/lp_io.h"
+#if SOC_LP_GPIO_MATRIX_SUPPORTED
+#include "soc/lp_gpio_pins.h"
+#endif
 #endif
 #if I2C_USE_RETENTION_LINK
 #include "esp_private/sleep_retention.h"
@@ -207,9 +210,11 @@ esp_err_t i2c_release_bus_handle(i2c_bus_handle_t i2c_bus)
             if (i2c_bus->intr_handle) {
                 ESP_RETURN_ON_ERROR(esp_intr_free(i2c_bus->intr_handle), TAG, "delete interrupt service failed");
             }
+#if CONFIG_PM_ENABLE
             if (i2c_bus->pm_lock) {
                 ESP_RETURN_ON_ERROR(esp_pm_lock_delete(i2c_bus->pm_lock), TAG, "delete pm_lock failed");
             }
+#endif
             // Disable I2C module
             if (!i2c_bus->is_lp_i2c) {
                 I2C_RCC_ATOMIC() {
@@ -302,8 +307,7 @@ esp_err_t i2c_select_periph_clock(i2c_bus_handle_t handle, soc_module_clk_t clk_
     }
 
     if (need_pm_lock) {
-        sprintf(handle->pm_lock_name, "I2C_%d", handle->port_num); // e.g. PORT_0
-        ret  = esp_pm_lock_create(pm_lock_type, 0, handle->pm_lock_name, &handle->pm_lock);
+        ret  = esp_pm_lock_create(pm_lock_type, 0, i2c_periph_signal[handle->port_num].module_name, &handle->pm_lock);
         ESP_RETURN_ON_ERROR(ret, TAG, "create pm lock failed");
     }
 #endif // CONFIG_PM_ENABLE
@@ -316,6 +320,17 @@ static esp_err_t s_hp_i2c_pins_config(i2c_bus_handle_t handle)
 {
     int port_id = handle->port_num;
 
+    // reserve the GPIO output path, because we don't expect another peripheral to signal to the same GPIO
+    uint64_t old_gpio_rsv_mask = esp_gpio_reserve(BIT64(handle->sda_num) | BIT64(handle->scl_num));
+    // check if the GPIO is already used by others
+    if (old_gpio_rsv_mask & BIT64(handle->sda_num)) {
+        ESP_LOGW(TAG, "GPIO %d is not usable, maybe conflict with others", handle->sda_num);
+    }
+    // check if the GPIO is already used by others
+    if (old_gpio_rsv_mask & BIT64(handle->scl_num)) {
+        ESP_LOGW(TAG, "GPIO %d is not usable, maybe conflict with others", handle->scl_num);
+    }
+
     // SDA pin configurations
     ESP_RETURN_ON_ERROR(gpio_set_level(handle->sda_num, 1), TAG, "i2c sda pin set level failed");
     gpio_input_enable(handle->sda_num);
@@ -325,6 +340,7 @@ static esp_err_t s_hp_i2c_pins_config(i2c_bus_handle_t handle)
     } else {
         gpio_pullup_dis(handle->sda_num);
     }
+    gpio_pulldown_dis(handle->sda_num);
     gpio_func_sel(handle->sda_num, PIN_FUNC_GPIO);
     esp_rom_gpio_connect_out_signal(handle->sda_num, i2c_periph_signal[port_id].sda_out_sig, 0, 0);
     esp_rom_gpio_connect_in_signal(handle->sda_num, i2c_periph_signal[port_id].sda_in_sig, 0);
@@ -338,6 +354,7 @@ static esp_err_t s_hp_i2c_pins_config(i2c_bus_handle_t handle)
     } else {
         gpio_pullup_dis(handle->scl_num);
     }
+    gpio_pulldown_dis(handle->scl_num);
     gpio_func_sel(handle->scl_num, PIN_FUNC_GPIO);
     esp_rom_gpio_connect_out_signal(handle->scl_num, i2c_periph_signal[port_id].scl_out_sig, 0, 0);
     esp_rom_gpio_connect_in_signal(handle->scl_num, i2c_periph_signal[port_id].scl_in_sig, 0);
@@ -351,6 +368,17 @@ static esp_err_t s_lp_i2c_pins_config(i2c_bus_handle_t handle)
 {
     ESP_RETURN_ON_ERROR(!rtc_gpio_is_valid_gpio(handle->sda_num), TAG, "LP I2C SDA GPIO invalid");
     ESP_RETURN_ON_ERROR(!rtc_gpio_is_valid_gpio(handle->scl_num), TAG, "LP I2C SCL GPIO invalid");
+
+    // reserve the GPIO output path, because we don't expect another peripheral to signal to the same GPIO
+    uint64_t old_gpio_rsv_mask = esp_gpio_reserve(BIT64(handle->sda_num) | BIT64(handle->scl_num));
+    // check if the GPIO is already used by others
+    if (old_gpio_rsv_mask & BIT64(handle->sda_num)) {
+        ESP_LOGW(TAG, "GPIO %d is not usable, maybe conflict with others", handle->sda_num);
+    }
+    // check if the GPIO is already used by others
+    if (old_gpio_rsv_mask & BIT64(handle->scl_num)) {
+        ESP_LOGW(TAG, "GPIO %d is not usable, maybe conflict with others", handle->scl_num);
+    }
 
 #if !SOC_LP_GPIO_MATRIX_SUPPORTED
     /* Verify that the SDA and SCL line belong to the LP IO Mux I2C function group */
@@ -414,6 +442,9 @@ esp_err_t i2c_common_deinit_pins(i2c_bus_handle_t handle)
 {
     int port_id = handle->port_num;
 
+    esp_gpio_revoke(BIT64(handle->sda_num));
+    esp_gpio_revoke(BIT64(handle->scl_num));
+
     if (handle->is_lp_i2c == false) {
         ESP_RETURN_ON_ERROR(gpio_output_disable(handle->sda_num), TAG, "disable i2c pins failed");
         esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ZERO_INPUT, i2c_periph_signal[port_id].sda_in_sig, 0);
@@ -426,8 +457,8 @@ esp_err_t i2c_common_deinit_pins(i2c_bus_handle_t handle)
         ESP_RETURN_ON_ERROR(rtc_gpio_deinit(handle->sda_num), TAG, "deinit rtc gpio failed");
         ESP_RETURN_ON_ERROR(rtc_gpio_deinit(handle->scl_num), TAG, "deinit rtc gpio failed");
 #if SOC_LP_GPIO_MATRIX_SUPPORTED
-        lp_gpio_connect_in_signal(GPIO_MATRIX_CONST_ZERO_INPUT, i2c_periph_signal[port_id].scl_in_sig, 0);
-        lp_gpio_connect_in_signal(GPIO_MATRIX_CONST_ZERO_INPUT, i2c_periph_signal[port_id].sda_in_sig, 0);
+        lp_gpio_connect_in_signal(LP_GPIO_MATRIX_CONST_ZERO_INPUT, i2c_periph_signal[port_id].scl_in_sig, 0);
+        lp_gpio_connect_in_signal(LP_GPIO_MATRIX_CONST_ZERO_INPUT, i2c_periph_signal[port_id].sda_in_sig, 0);
 #endif
     }
 #endif

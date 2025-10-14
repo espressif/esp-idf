@@ -1,23 +1,18 @@
-# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import os.path
 import time
+import typing
 
 import pytest
 from pytest_embedded_idf import IdfDut
-from pytest_embedded_jtag import OpenOcd
+from pytest_embedded_idf.utils import idf_parametrize
+
+if typing.TYPE_CHECKING:
+    from conftest import OpenOCD
 
 
-@pytest.mark.esp32
-@pytest.mark.jtag
-@pytest.mark.parametrize(
-    'embedded_services, no_gdb',
-    [
-        ('esp,idf,jtag', 'y'),
-    ],
-    indirect=True,
-)
-def test_gcov(dut: IdfDut, openocd: OpenOcd) -> None:
+def _test_gcov(openocd_dut: 'OpenOCD', dut: IdfDut) -> None:
     # create the generated .gcda folder, otherwise would have error: failed to open file.
     # normally this folder would be created via `idf.py build`. but in CI the non-related files would not be preserved
     os.makedirs(os.path.join(dut.app.binary_path, 'esp-idf', 'main', 'CMakeFiles', '__idf_main.dir'), exist_ok=True)
@@ -29,9 +24,6 @@ def test_gcov(dut: IdfDut, openocd: OpenOcd) -> None:
             expect_all=True,
             timeout=timeout,
         )
-
-    expect_counter_output(0)
-    dut.expect('Ready to dump GCOV data...', timeout=5)
 
     def dump_coverage(cmd: str) -> None:
         response = openocd.write(cmd)
@@ -55,18 +47,40 @@ def test_gcov(dut: IdfDut, openocd: OpenOcd) -> None:
 
         assert len(expect_lines) == 0
 
-    # Test two hard-coded dumps
-    dump_coverage('esp gcov dump')
-    dut.expect('GCOV data have been dumped.', timeout=5)
-    expect_counter_output(1)
-    dut.expect('Ready to dump GCOV data...', timeout=5)
-    dump_coverage('esp gcov dump')
-    dut.expect('GCOV data have been dumped.', timeout=5)
+    dut.expect_exact('example: Ready for OpenOCD connection', timeout=5)
+    with openocd_dut.run() as openocd:
+        openocd.write('reset run')
+        dut.expect_exact('example: Ready for OpenOCD connection', timeout=5)
 
-    for i in range(2, 6):
-        expect_counter_output(i)
+        expect_counter_output(0)
+        dut.expect('Ready to dump GCOV data...', timeout=5)
 
-    for _ in range(3):
-        time.sleep(1)
-        # Test instant run-time dump
-        dump_coverage('esp gcov')
+        # Test two hard-coded dumps
+        dump_coverage('esp gcov dump')
+        dut.expect('GCOV data have been dumped.', timeout=5)
+        expect_counter_output(1)
+        dut.expect('Ready to dump GCOV data...', timeout=5)
+        dump_coverage('esp gcov dump')
+        dut.expect('GCOV data have been dumped.', timeout=5)
+
+        for i in range(2, 6):
+            expect_counter_output(i)
+
+        for _ in range(3):
+            time.sleep(1)
+            # Test instant run-time dump
+            dump_coverage('esp gcov')
+
+
+@pytest.mark.jtag
+@idf_parametrize('target', ['esp32', 'esp32c2', 'esp32s2'], indirect=['target'])
+def test_gcov(openocd_dut: 'OpenOCD', dut: IdfDut) -> None:
+    _test_gcov(openocd_dut, dut)
+
+
+@pytest.mark.usb_serial_jtag
+@idf_parametrize(
+    'target', ['esp32s3', 'esp32c3', 'esp32c5', 'esp32c6', 'esp32c61', 'esp32h2', 'esp32p4'], indirect=['target']
+)
+def test_gcov_usj(openocd_dut: 'OpenOCD', dut: IdfDut) -> None:
+    _test_gcov(openocd_dut, dut)

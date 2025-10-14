@@ -4,7 +4,7 @@ This component implements the most common connection methods for ESP32 boards. I
 
 ## How to use this component
 
-Choose the preferred interface (WiFi, Ethernet, PPPoS) to connect to the network and configure the interface.
+Choose the preferred interface (WiFi, Ethernet, Thread, PPPoS) to connect to the network and configure the interface.
 
 It is possible to enable multiple interfaces simultaneously making the connection phase to block until all the chosen interfaces acquire IP addresses.
 It is also possible to disable all interfaces, skipping the connection phase altogether.
@@ -22,6 +22,14 @@ Choose WiFi connection method (for chipsets that support it) and configure basic
 ### Ethernet
 
 Choose Ethernet connection if your board supports it. The most common settings is using Espressif Ethernet Kit, which is also the recommended HW for this selection. You can also select an SPI ethernet device (if your chipset doesn't support internal EMAC or if you prefer). It is also possible to use OpenCores Ethernet MAC if you're running the example under QEMU.
+
+### Thread
+
+Choose Thread connection if your board supports IEEE802.15.4 native radio or works with [OpenThread RCP](../../openthread/ot_rcp/README.md). You can configure the Thread network at menuconfig '->Components->OpenThread->Thread Core Features->Thread Operational Dataset'.
+
+If the Thread end-device joins a Thread network with a Thread Border Router that has the NAT64 feature enabled, the end-device can access the Internet with the standard DNS APIs after configuring the following properties:
+* Enable DNS64 client ('->Components->OpenThread->Thread Core Features->Enable DNS64 client')
+* Enable custom DNS external resolve Hook ('->Components->LWIP->Hooks->DNS external resolve Hook->Custom implementation')
 
 ### PPP
 

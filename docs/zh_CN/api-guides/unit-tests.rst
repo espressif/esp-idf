@@ -168,19 +168,9 @@ DUT2 (slave) 终端::
 切换到 ``tools/unit-test-app`` 目录下进行配置和编译：
 
 * ``idf.py menuconfig`` - 配置单元测试程序。
-* ``idf.py -T all build`` - 编译单元测试程序，测试每个组件 ``test`` 子目录下的用例。
-* ``idf.py -T "xxx yyy" build`` - 编译单元测试程序，对以空格分隔的特定组件进行测试（如 ``idf.py -T heap build`` - 仅对 ``heap`` 组件目录下的单元测试程序进行编译）。
-* ``idf.py -T all -E "xxx yyy" build`` - 编译单元测试程序，测试除指定组件之外的所有组件（例如 ``idf.py -T all -E "ulp mbedtls" build`` - 编译所有的单元测试，不包括 ``ulp`` 和 ``mbedtls`` 组件。）。
+* ``idf.py build`` - 构建单元测试应用程序。
 
-.. note::
-
-    由于 Windows 命令提示符固有限制，需使用以下语法来编译多个组件的单元测试程序：``idf.py -T xxx -T yyy build`` 或者在 PowerShell 中使用 ``idf.py -T \`"xxx yyy\`" build``，在 Windows 命令提示符中使用 ``idf.py -T \^"ssd1306 hts221\^" build``。
-
-当编译完成时，它会打印出烧写芯片的指令。你只需要运行 ``idf.py flash`` 即可烧写所有编译输出的文件。
-
-你还可以运行 ``idf.py -T all flash`` 或者 ``idf.py -T xxx flash`` 来编译并烧写，所有需要的文件都会在烧写之前自动重新编译。
-
-使用 ``menuconfig`` 可以设置烧写测试程序所使用的串口。更多信息，见 :idf_file:`tools/unit-test-app/README.md`。
+构建完成后，终端会显示烧录芯片的操作说明。你可以直接运行 ``idf.py flash``，烧录所有构建输出。
 
 运行单元测试
 --------------
@@ -248,6 +238,13 @@ DUT2 (slave) 终端::
             (2)     "check_deepsleep_reset_reason"
 
 第一次执行此用例时，输入 ``1`` 来运行第一阶段（触发深度睡眠）。在重启 DUT 并再次选择运行此用例后，输入 ``2`` 来运行第二阶段。只有在最后一个阶段通过并且之前所有的阶段都成功触发了复位的情况下，该测试才算通过。
+
+项目构建与自动化流程
+--------------------
+
+`Github ESP Test Template <https://github.com/espressif/gh-esp-test-template>`_ 提供了应用程序的构建和测试示例，介绍了如何使用 GitHub CI 在仿真环境和现实硬件上运行测试。
+
+对于更复杂的项目，可将测试拆分为多个独立的测试应用 (test-apps)，分别验证各组件。此时，可使用 `IDF Build Apps <https://github.com/espressif/idf-build-apps>`_ 自动查找并构建所有测试应用，提高测试效率。
 
 
 .. _cache-compensated-timer:

@@ -10,3 +10,32 @@ menu "ESP-Driver:UART Configurations"
             may cause data lost when doing spi flash operation.
 
 endmenu
+
+menu "ESP-Driver:UHCI Configurations"
+
+    config UHCI_ISR_HANDLER_IN_IRAM
+        bool "Place UHCI ISR function into IRAM"
+        default n
+        select GDMA_CTRL_FUNC_IN_IRAM if SOC_GDMA_SUPPORTED
+        help
+            If this option is not selected, UHCI interrupt will be disabled for a long time and
+            may cause data lost when doing spi flash operation.
+
+    config UHCI_ISR_CACHE_SAFE
+        bool "Allow UHCI ISR to execute when cache is disabled" if !SPI_FLASH_AUTO_SUSPEND
+        select UHCI_ISR_HANDLER_IN_IRAM
+        select GDMA_ISR_HANDLER_IN_IRAM if SOC_GDMA_SUPPORTED
+        default n
+        help
+            Enable this option to allow the ISR for UHCI to execute even when the cache is disabled.
+            This can be useful in scenarios where the cache might be turned off, but the UHCI
+            functionality is still required to operate correctly.
+
+    config UHCI_ENABLE_DEBUG_LOG
+        bool "Enable debug log"
+        default n
+        help
+            whether to enable the debug log message for UHCI driver.
+            Note that, this option only controls the UHCI driver log, won't affect other drivers.
+
+endmenu

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -139,6 +139,24 @@ typedef struct {
     uint8_t xon_thrd;      /*!< If the software flow control is enabled and the data amount in rxfifo is less than xon_thrd, an xon_char will be sent*/
     uint8_t xoff_thrd;       /*!< If the software flow control is enabled and the data amount in rxfifo is more than xoff_thrd, an xoff_char will be sent*/
 } uart_sw_flowctrl_t;
+
+/**
+ * @brief Enumeration of UART wake-up modes.
+ */
+typedef enum {
+#if SOC_UART_WAKEUP_SUPPORT_ACTIVE_THRESH_MODE
+    UART_WK_MODE_ACTIVE_THRESH = 0,  /*!< Wake-up triggered by active edge threshold */
+#endif
+#if SOC_UART_WAKEUP_SUPPORT_FIFO_THRESH_MODE
+    UART_WK_MODE_FIFO_THRESH = 1,    /*!< Wake-up triggered by the number of bytes received in the RX FIFO */
+#endif
+#if SOC_UART_WAKEUP_SUPPORT_START_BIT_MODE
+    UART_WK_MODE_START_BIT = 2,      /*!< Wake-up triggered by the detection of a start bit */
+#endif
+#if SOC_UART_WAKEUP_SUPPORT_CHAR_SEQ_MODE
+    UART_WK_MODE_CHAR_SEQ = 3        /*!< Wake-up triggered by detecting a specific character sequence */
+#endif
+} uart_wakeup_mode_t;
 
 #ifdef __cplusplus
 }

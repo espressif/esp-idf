@@ -11,6 +11,8 @@
 #include <string.h>
 #include "esp_partition.h"
 
+using namespace std;
+
 TEST_CASE("nvs_flash_init_partition_ptr fails due to nullptr arg", "[nvs_custom_part]")
 {
     uint8_t *p_part_desc_addr_start;

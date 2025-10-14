@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -294,43 +294,6 @@ typedef union {
     };
     uint32_t val;
 } i2s_rx_recomb_dma_chn_reg_t;
-
-/** Type of rx_pdm2pcm_conf register
- *  I2S RX configure register
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:19;
-        /** rx_pdm2pcm_en : R/W; bitpos: [19]; default: 0;
-         *  1: Enable PDM2PCM RX mode. 0: DIsable.
-         */
-        uint32_t rx_pdm2pcm_en:1;
-        /** rx_pdm_sinc_dsr_16_en : R/W; bitpos: [20]; default: 0;
-         *  Configure the down sampling rate of PDM RX filter group1 module. 1: The  down
-         *  sampling rate is 128. 0: down sampling rate is 64.
-         */
-        uint32_t rx_pdm_sinc_dsr_16_en:1;
-        /** rx_pdm2pcm_amplify_num : R/W; bitpos: [24:21]; default: 1;
-         *  Configure PDM RX amplify number.
-         */
-        uint32_t rx_pdm2pcm_amplify_num:4;
-        /** rx_pdm_hp_bypass : R/W; bitpos: [25]; default: 0;
-         *  I2S PDM RX bypass hp filter or not.
-         */
-        uint32_t rx_pdm_hp_bypass:1;
-        /** rx_iir_hp_mult12_5 : R/W; bitpos: [28:26]; default: 6;
-         *  The fourth parameter of PDM RX IIR_HP filter stage 2 is (504 +
-         *  LP_I2S_RX_IIR_HP_MULT12_5[2:0])
-         */
-        uint32_t rx_iir_hp_mult12_5:3;
-        /** rx_iir_hp_mult12_0 : R/W; bitpos: [31:29]; default: 7;
-         *  The fourth parameter of PDM RX IIR_HP filter stage 1 is (504 +
-         *  LP_I2S_RX_IIR_HP_MULT12_0[2:0])
-         */
-        uint32_t rx_iir_hp_mult12_0:3;
-    };
-    uint32_t val;
-} i2s_rx_pdm2pcm_conf_reg_t;
 
 /** Type of rx_tdm_ctrl register
  *  I2S TX TDM mode control register
@@ -1038,7 +1001,7 @@ typedef struct {
     volatile i2s_rx_recomb_dma_chn_reg_t rx_recomb_dma_ch[4];
     volatile i2s_tx_pcm2pdm_conf_reg_t tx_pcm2pdm_conf;
     volatile i2s_tx_pcm2pdm_conf1_reg_t tx_pcm2pdm_conf1;
-    volatile i2s_rx_pdm2pcm_conf_reg_t rx_pdm2pcm_conf;
+    uint32_t reserved_048;
     volatile i2s_rx_tdm_ctrl_reg_t rx_tdm_ctrl;
     volatile i2s_tx_tdm_ctrl_reg_t tx_tdm_ctrl;
     volatile i2s_rx_timing_reg_t rx_timing;

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,7 +9,7 @@
 
 #include "soc/soc_caps.h"
 
-#if SOC_KEY_MANAGER_SUPPORTED
+#if SOC_HUK_SUPPORTED
 #include "hal/huk_types.h"
 #include <stdint.h>
 #include "esp_err.h"
@@ -50,6 +50,13 @@ uint8_t huk_hal_get_risk_level(void);
  * @brief Read the HUK date information
  */
 uint32_t huk_hal_get_date_info(void);
+
+#if SOC_HUK_MEM_NEEDS_RECHARGE
+/**
+ * @brief Recharge HUK memory
+ */
+void huk_hal_recharge_huk_memory(void);
+#endif
 
 #ifdef __cplusplus
 }

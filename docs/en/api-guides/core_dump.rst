@@ -17,7 +17,8 @@ Configurations
 --------------
 
 .. note::
-    The ``Core dump`` configuration options are available only if the ``espcoredump`` component is included in the build.
+
+    The ``Core dump`` configuration options are available only if the ``espcoredump`` component is included in the build. To include ``Core dump`` into your project, add the ``espcoredump`` component as a dependency in either ``REQUIRES`` or ``PRIV_REQUIRES`` when registering your component with ``idf_component_register``.
 
 Destination
 ^^^^^^^^^^^
@@ -28,27 +29,14 @@ The :ref:`CONFIG_ESP_COREDUMP_TO_FLASH_OR_UART` option enables or disables core 
 Format & Size
 ^^^^^^^^^^^^^
 
-The :ref:`CONFIG_ESP_COREDUMP_DATA_FORMAT` option controls the format of the core dump file, namely ELF format or Binary format.
+Core dump files are generated in ELF format, which contains extended features and allows comprehensive information regarding erroneous tasks and crashed software to be saved. The ELF format is flexible and can be extended in future revisions to save additional information.
 
-The ELF format contains extended features and allows more information regarding erroneous tasks and crashed software to be saved. However, using the ELF format causes the core dump file to be larger. This format is recommended for new software designs and is flexible enough to be extended in future revisions to save more information.
+The :ref:`CONFIG_ESP_COREDUMP_MAX_TASKS_NUM` option configures the number of task snapshots saved by the core dump. Crashed task registers and the stack are always saved, regardless of this configuration option. Other tasks are included in order of their priority (starting with the highest-priority ready task).
 
-The Binary format is kept for compatibility reasons. Binary format core dump files are smaller while provide better performance.
+Data Integrity Check
+^^^^^^^^^^^^^^^^^^^^
 
-The :ref:`CONFIG_ESP_COREDUMP_MAX_TASKS_NUM` option configures the number of task snapshots saved by the core dump.
-
-Core dump data integrity checking is supported via the ``Components`` > ``Core dump`` > ``Core dump data integrity check`` option.
-
-.. only:: esp32
-
-    Data Integrity Check
-    ^^^^^^^^^^^^^^^^^^^^
-
-    Core dump files include a checksum, which can be used to verify the integrity of the core dump file, i.e., the file has not been corrupted. The :ref:`CONFIG_ESP_COREDUMP_CHECKSUM` option controls the type of checksum, namely CRC32 or SHA256 (only supported in the ELF format).
-
-    The CRC32 option provides better calculation performance and consumes less memory for storage.
-
-    The SHA256 hash algorithm provides a greater probability of detecting corruption than a CRC32 with multiple-bit errors.
-
+Core dump files include a SHA256 checksum that verifies the integrity of the file and ensure it has not been corrupted. The SHA256 hash algorithm provides a high probability of detecting corruption, including multiple-bit errors.
 
 Reserved Stack Size
 ^^^^^^^^^^^^^^^^^^^
@@ -76,10 +64,6 @@ Setting this option to 0 bytes will cause the core dump routines to run from the
         .. note::
 
             Apart from the crashed task's TCB and stack, data located in the external RAM will not be stored in the core dump file, this include variables defined with ``EXT_RAM_BSS_ATTR`` or ``EXT_RAM_NOINIT_ATTR`` attributes, as well as any data stored in the ``extram_bss`` section.
-
-    .. note::
-
-        This feature is only enabled when using the ELF file format.
 
 Core Dump to Flash
 ------------------
@@ -137,8 +121,6 @@ Automatic Decoding
 
 If :ref:`CONFIG_ESP_COREDUMP_DECODE` is set to automatically decode the UART core dump, ESP-IDF monitor will automatically decode the data, translate any function addresses to source code lines, and display it in the monitor. The output to ESP-IDF monitor would resemble the following output:
 
-The :ref:`CONFIG_ESP_COREDUMP_UART_DELAY` allows for an optional delay to be added before the core dump file is output to UART.
-
 .. code-block:: none
 
     ===============================================================
@@ -187,6 +169,7 @@ The :ref:`CONFIG_ESP_COREDUMP_UART_DELAY` allows for an optional delay to be add
     ===================== ESP32 CORE DUMP END =====================
     ===============================================================
 
+The :ref:`CONFIG_ESP_COREDUMP_UART_DELAY` allows for an optional delay to be added before the core dump file is output to UART.
 
 Manual Decoding
 ^^^^^^^^^^^^^^^
@@ -217,10 +200,12 @@ or
 Core Dump Commands
 ------------------
 
-ESP-IDF provides special commands to help to retrieve and analyze core dumps:
+ESP-IDF provides special commands to retrieve and analyze core dumps:
 
-* ``idf.py coredump-info`` - prints crashed task's registers, call stack, list of available tasks in the system, memory regions, and contents of memory stored in core dump (TCBs and stacks).
-* ``idf.py coredump-debug`` - creates core dump ELF file and runs GDB debug session with this file. You can examine memory, variables, and task states manually. Note that since not all memory is saved in the core dump, only the values of variables allocated on the stack are meaningful.
+* ``idf.py coredump-info`` - reads coredump from flash and prints crashed task's registers, call stack, list of available tasks in the system, memory regions, and contents of memory stored in core dump (TCBs and stacks).
+* ``idf.py coredump-debug`` - reads coredump from flash, saves it as ELF file and runs a GDB debug session with this file. You can examine memory, variables, and task states manually. Note that since not all memory is saved in the core dump, only the values of variables allocated on the stack are meaningful.
+
+``idf.py coredump-info --help`` and ``idf.py coredump-debug --help`` commands can be used to get more details on usage. For example, they can save the coredump into a file and avoid the need to read it from flash every time these commands are run.
 
 For advanced users who want to pass additional arguments or use custom ELF files, it is possible to use the `esp-coredump <https://github.com/espressif/esp-coredump>`_ tool directly. For more information, use in ESP-IDF environment:
 
@@ -286,13 +271,6 @@ Example
 
    (gdb) p global_var
    $1 = 25 '\031'
-
-
-Running ``idf.py coredump-info`` and ``idf.py coredump-debug``
---------------------------------------------------------------
-
-``idf.py coredump-info --help`` and ``idf.py coredump-debug --help`` commands can be used to get more details on usage.
-
 
 Related Documents
 ^^^^^^^^^^^^^^^^^

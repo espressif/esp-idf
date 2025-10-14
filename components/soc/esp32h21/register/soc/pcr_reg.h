@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -493,8 +493,8 @@ extern "C" {
  */
 #define PCR_LEDC_SCLK_CONF_REG (DR_REG_PCR_BASE + 0x40)
 /** PCR_LEDC_SCLK_SEL : R/W; bitpos: [21:20]; default: 0;
- *  set this field to select clock-source. 0(default): do not select anyone clock, 1:
- *  80MHz, 2: FOSC, 3: XTAL.
+ *  set this field to select clock-source. 0(default): XTAL, 1:
+         *  FOSC, 2: 96MHz.
  */
 #define PCR_LEDC_SCLK_SEL    0x00000003U
 #define PCR_LEDC_SCLK_SEL_M  (PCR_LEDC_SCLK_SEL_V << PCR_LEDC_SCLK_SEL_S)
@@ -1835,21 +1835,6 @@ extern "C" {
  *  SYSCLK configuration register
  */
 #define PCR_SYSCLK_CONF_REG (DR_REG_PCR_BASE + 0x10c)
-/** PCR_LS_DIV_NUM : HRO; bitpos: [7:0]; default: 0;
- *  clk_hproot is div1 of low-speed clock-source if clck-source is a low-speed
- *  clock-source such as XTAL/FOSC.
- */
-#define PCR_LS_DIV_NUM    0x000000FFU
-#define PCR_LS_DIV_NUM_M  (PCR_LS_DIV_NUM_V << PCR_LS_DIV_NUM_S)
-#define PCR_LS_DIV_NUM_V  0x000000FFU
-#define PCR_LS_DIV_NUM_S  0
-/** PCR_HS_DIV_NUM : HRO; bitpos: [15:8]; default: 2;
- *  clk_hproot is div3 of SPLL if the clock-source is high-speed clock SPLL.
- */
-#define PCR_HS_DIV_NUM    0x000000FFU
-#define PCR_HS_DIV_NUM_M  (PCR_HS_DIV_NUM_V << PCR_HS_DIV_NUM_S)
-#define PCR_HS_DIV_NUM_V  0x000000FFU
-#define PCR_HS_DIV_NUM_S  8
 /** PCR_SOC_CLK_SEL : R/W; bitpos: [17:16]; default: 0;
  *  This field is used to select clock source. 0: XTAL, 1: SPLL, 2: FOSC, 3: reserved.
  */

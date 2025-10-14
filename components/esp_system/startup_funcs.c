@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,12 +12,11 @@
 #include "esp_err.h"
 #include "esp_check.h"
 #include "esp_system.h"
+#include "esp_private/log_util.h"
 #include "esp_log.h"
+#include "esp_private/cache_utils.h"
 #include "spi_flash_mmap.h"
 #include "esp_flash_internal.h"
-#if CONFIG_NEWLIB_ENABLED
-#include "esp_newlib.h"
-#endif
 #include "esp_newlib.h"
 #include "esp_xt_wdt.h"
 #include "esp_cpu.h"
@@ -39,6 +38,7 @@
 #include "esp_private/esp_clk.h"
 #include "esp_private/spi_flash_os.h"
 #include "esp_private/brownout.h"
+#include "esp_private/vbat.h"
 
 #include "esp_rom_caps.h"
 #include "esp_rom_sys.h"
@@ -48,7 +48,7 @@
 #endif
 
 // Using the same tag as in startup.c to keep the logs unchanged
-static const char* TAG = "cpu_start";
+ESP_LOG_ATTR_TAG(TAG, "cpu_start");
 
 // Hook to force the linker to include this file
 void esp_system_include_startup_funcs(void)
@@ -71,11 +71,16 @@ ESP_SYSTEM_INIT_FN(init_show_cpu_freq, CORE, BIT(0), 10)
  * It is protected from all REE accesses through memory protection mechanisms,
  * as it is a critical module for device functioning.
  */
-#if !CONFIG_SECURE_ENABLE_TEE
+#if SOC_BOD_SUPPORTED && !CONFIG_SECURE_ENABLE_TEE
 ESP_SYSTEM_INIT_FN(init_brownout, CORE, BIT(0), 104)
 {
     // [refactor-todo] leads to call chain rtc_is_register (driver) -> esp_intr_alloc (esp32/esp32s2) ->
-    // malloc (newlib) -> heap_caps_malloc (heap), so heap must be at least initialized
+    // malloc (esp_libc) -> heap_caps_malloc (heap), so heap must be at least initialized
+    esp_err_t ret = ESP_OK;
+    // BOD and VBAT share the same interrupt number. To avoid blocking the system in an intermediate state
+    // where an interrupt occurs and the interrupt number is enabled, but the ISR is not configured, enable
+    // the interrupt after configuring both ISRs.
+    portDISABLE_INTERRUPTS();
 #if CONFIG_ESP_BROWNOUT_DET
     esp_brownout_init();
 #else
@@ -83,7 +88,12 @@ ESP_SYSTEM_INIT_FN(init_brownout, CORE, BIT(0), 104)
     brownout_ll_ana_reset_enable(false);
 #endif // SOC_CAPS_NO_RESET_BY_ANA_BOD
 #endif // CONFIG_ESP_BROWNOUT_DET
-    return ESP_OK;
+
+#if CONFIG_ESP_VBAT_INIT_AUTO
+    ret = esp_vbat_init();
+#endif
+    portENABLE_INTERRUPTS();
+    return ret;
 }
 #endif
 
@@ -107,6 +117,8 @@ ESP_SYSTEM_INIT_FN(init_flash, CORE, BIT(0), 130)
 #if CONFIG_SPI_FLASH_BROWNOUT_RESET
     spi_flash_needs_reset_check();
 #endif // CONFIG_SPI_FLASH_BROWNOUT_RESET
+    // The log library will call the registered callback function to check if the cache is disabled.
+    esp_log_util_set_cache_enabled_cb(spi_flash_cache_enabled);
     return ESP_OK;
 }
 #endif // !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
@@ -147,6 +159,17 @@ ESP_SYSTEM_INIT_FN(init_coexist, SECONDARY, BIT(0), 204)
     return ESP_OK;
 }
 #endif // CONFIG_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE
+
+#if SOC_RECOVERY_BOOTLOADER_SUPPORTED
+ESP_SYSTEM_INIT_FN(init_bootloader_offset, SECONDARY, BIT(0), 205)
+{
+    // The bootloader offset variable in ROM is stored in a memory that will be reclaimed by heap component.
+    // Reading it before the heap is initialized helps to preserve the value.
+    volatile int bootloader_offset = esp_rom_get_bootloader_offset();
+    (void)bootloader_offset;
+    return ESP_OK;
+}
+#endif // SOC_RECOVERY_BOOTLOADER_SUPPORTED
 
 #ifndef CONFIG_BOOTLOADER_WDT_DISABLE_IN_USER_CODE
 ESP_SYSTEM_INIT_FN(init_disable_rtc_wdt, SECONDARY, BIT(0), 999)

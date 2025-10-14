@@ -114,6 +114,10 @@ extern "C" {
 #define I2C_MST_ANA_STATUS0_M  (I2C_MST_ANA_STATUS0_V << I2C_MST_ANA_STATUS0_S)
 #define I2C_MST_ANA_STATUS0_V  0x000000FFU
 #define I2C_MST_ANA_STATUS0_S  24
+/* specifically */
+#define I2C_MST_BBPLL_STOP_FORCE_HIGH  (BIT(2))
+#define I2C_MST_BBPLL_STOP_FORCE_LOW   (BIT(3))
+#define I2C_MST_BBPLL_CAL_DONE         (BIT(24))
 
 #define I2C_MST_ANA_CONF1_REG (DR_REG_I2C_ANA_MST_BASE + 0x1c)
 /* I2C_MST_ANA_CONF1 : R/W; bitpos: [23:0]; default: 0;*/

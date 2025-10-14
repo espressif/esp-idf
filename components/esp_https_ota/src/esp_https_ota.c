@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +13,8 @@
 #include <errno.h>
 #include <sys/param.h>
 #include <inttypes.h>
+#include "esp_check.h"
+#include "hal/efuse_hal.h"
 
 ESP_EVENT_DEFINE_BASE(ESP_HTTPS_OTA_EVENT);
 
@@ -35,6 +37,7 @@ typedef enum {
     ESP_HTTPS_OTA_BEGIN,
     ESP_HTTPS_OTA_IN_PROGRESS,
     ESP_HTTPS_OTA_SUCCESS,
+    ESP_HTTPS_OTA_RESUME,
 } esp_https_ota_state;
 
 struct esp_https_ota_handle {
@@ -49,10 +52,12 @@ struct esp_https_ota_handle {
     size_t ota_upgrade_buf_size;
     int binary_file_len;
     int image_length;
+#if CONFIG_ESP_HTTPS_OTA_ENABLE_PARTIAL_DOWNLOAD
     int max_http_request_size;
+    bool partial_http_download;
+#endif
     esp_https_ota_state state;
     bool bulk_flash_erase;
-    bool partial_http_download;
     int max_authorization_retries;
 #if CONFIG_ESP_HTTPS_OTA_DECRYPT_CB
     decrypt_cb_t decrypt_cb;
@@ -96,8 +101,7 @@ static bool process_again(int status_code)
 
 static esp_err_t _http_handle_response_code(esp_https_ota_t *https_ota_handle, int status_code)
 {
-    esp_err_t err;
-
+    esp_err_t err = ESP_FAIL;
     if (redirection_required(status_code)) {
         err = esp_http_client_set_redirection(https_ota_handle->http_client);
         if (err != ESP_OK) {
@@ -107,13 +111,20 @@ static esp_err_t _http_handle_response_code(esp_https_ota_t *https_ota_handle, i
     } else if (status_code == HttpStatus_NotModified) {
         ESP_LOGI(TAG, "OTA image not modified since last request (status code: %d)", status_code);
         return ESP_ERR_HTTP_NOT_MODIFIED;
+    } else if (status_code == HttpStatus_RangeNotSatisfiable) {
+        ESP_LOGI(TAG, "Requested range is incorrect (status code: %d)", status_code);
+        return ESP_ERR_HTTP_RANGE_NOT_SATISFIABLE;
     } else if (status_code == HttpStatus_Unauthorized) {
         if (https_ota_handle->max_authorization_retries == 0) {
             ESP_LOGE(TAG, "Reached max_authorization_retries (%d)", status_code);
             return ESP_FAIL;
         }
         https_ota_handle->max_authorization_retries--;
-        esp_http_client_add_auth(https_ota_handle->http_client);
+        err = esp_http_client_add_auth(https_ota_handle->http_client);
+        if (err!= ESP_OK) {
+            ESP_LOGE(TAG, "Authorization Failed");
+            return err;
+        }
     } else if(status_code == HttpStatus_NotFound || status_code == HttpStatus_Forbidden) {
         ESP_LOGE(TAG, "File not found(%d)", status_code);
         return ESP_FAIL;
@@ -195,6 +206,7 @@ static const char* ota_event_name_table[] = {
     "ESP_HTTPS_OTA_CONNECTED",
     "ESP_HTTPS_OTA_GET_IMG_DESC",
     "ESP_HTTPS_OTA_VERIFY_CHIP_ID",
+    "ESP_HTTPS_OTA_VERIFY_CHIP_REVISION",
     "ESP_HTTPS_OTA_DECRYPT_CB",
     "ESP_HTTPS_OTA_WRITE_FLASH",
     "ESP_HTTPS_OTA_UPDATE_BOOT_PARTITION",
@@ -289,6 +301,16 @@ esp_err_t esp_https_ota_begin(const esp_https_ota_config_t *ota_config, esp_http
 #endif
     }
 
+#if CONFIG_ESP_HTTPS_OTA_DECRYPT_CB
+    if (ota_config->decrypt_cb == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (ota_config->ota_resumption) {
+        // OTA resumption is not supported for pre-encrypted firmware case
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+#endif
+
     esp_https_ota_t *https_ota_handle = calloc(1, sizeof(esp_https_ota_t));
     if (!https_ota_handle) {
         ESP_LOGE(TAG, "Couldn't allocate memory to upgrade data buffer");
@@ -296,14 +318,24 @@ esp_err_t esp_https_ota_begin(const esp_https_ota_config_t *ota_config, esp_http
         return ESP_ERR_NO_MEM;
     }
 
+#if CONFIG_ESP_HTTPS_OTA_ENABLE_PARTIAL_DOWNLOAD
     https_ota_handle->partial_http_download = ota_config->partial_http_download;
     https_ota_handle->max_http_request_size = (ota_config->max_http_request_size == 0) ? DEFAULT_REQUEST_SIZE : ota_config->max_http_request_size;
+#endif
     https_ota_handle->max_authorization_retries = ota_config->http_config->max_authorization_retries;
 
     if (https_ota_handle->max_authorization_retries == 0) {
         https_ota_handle->max_authorization_retries = DEFAULT_MAX_AUTH_RETRIES;
     } else if (https_ota_handle->max_authorization_retries == -1) {
         https_ota_handle->max_authorization_retries = 0;
+    }
+
+    if (ota_config->ota_resumption) {
+        // We allow resumption only if we have minimum buffer size already written to flash
+        if (ota_config->ota_image_bytes_written >= DEFAULT_OTA_BUF_SIZE) {
+            ESP_LOGI(TAG, "Valid OTA resumption case, offset %d", ota_config->ota_image_bytes_written);
+            https_ota_handle->binary_file_len = ota_config->ota_image_bytes_written;
+        }
     }
 
     /* Initiate HTTP Connection */
@@ -322,32 +354,91 @@ esp_err_t esp_https_ota_begin(const esp_https_ota_config_t *ota_config, esp_http
         }
     }
 
+    /*
+     * If OTA resumption is enabled, set the "Range" header to resume downloading the OTA image
+     * from the last written byte. For non-partial cases, the range pattern is 'from-'.
+     * Partial cases ('from-to') are handled separately below based on the remaining data to
+     * be downloaded and the max_http_request_size.
+     */
+    if (https_ota_handle->binary_file_len > 0
+#if CONFIG_ESP_HTTPS_OTA_ENABLE_PARTIAL_DOWNLOAD
+        && !https_ota_handle->partial_http_download
+#endif
+    ) {
+        char *header_val = NULL;
+        asprintf(&header_val, "bytes=%d-", https_ota_handle->binary_file_len);
+        if (header_val == NULL) {
+            ESP_LOGE(TAG, "Failed to allocate memory for HTTP header");
+            err = ESP_ERR_NO_MEM;
+            goto http_cleanup;
+        }
+        esp_http_client_set_header(https_ota_handle->http_client, "Range", header_val);
+        free(header_val);
+    }
+
+#if CONFIG_ESP_HTTPS_OTA_ENABLE_PARTIAL_DOWNLOAD
     if (https_ota_handle->partial_http_download) {
         esp_http_client_set_method(https_ota_handle->http_client, HTTP_METHOD_HEAD);
+
         err = esp_http_client_perform(https_ota_handle->http_client);
         if (err == ESP_OK) {
             int status = esp_http_client_get_status_code(https_ota_handle->http_client);
             if (status != HttpStatus_Ok) {
-                ESP_LOGE(TAG, "Received incorrect http status %d", status);
-                err = ESP_FAIL;
-                goto http_cleanup;
+                // If server doesn't support HEAD request, we need to get image length from GET request
+                // using Range header
+                esp_http_client_set_header(https_ota_handle->http_client, "Range", "bytes=0-0");
+                esp_http_client_set_method(https_ota_handle->http_client, HTTP_METHOD_GET);
+
+                err = esp_http_client_perform(https_ota_handle->http_client);
+                if (err == ESP_OK) {
+                    status = esp_http_client_get_status_code(https_ota_handle->http_client);
+                    if (status != HttpStatus_Ok && status != HttpStatus_PartialContent) {
+                        ESP_LOGE(TAG, "Received incorrect http status %d", status);
+                        err = ESP_FAIL;
+                        goto http_cleanup;
+                    }
+                } else {
+                    ESP_LOGE(TAG, "ESP HTTP client perform failed: %d", err);
+                    goto http_cleanup;
+                }
+                esp_http_client_set_header(https_ota_handle->http_client, "Range", NULL);
+
+                if (status == HttpStatus_Ok) {
+                    // If server responds with 200 OK, we can get image length from content-length header
+                    https_ota_handle->image_length = esp_http_client_get_content_length(https_ota_handle->http_client);
+                } else {
+                    // If server responds with 206 Partial Content, we can get image length from content-range header
+                    https_ota_handle->image_length = esp_http_client_get_content_range(https_ota_handle->http_client);
+                }
+            } else {
+                https_ota_handle->image_length = esp_http_client_get_content_length(https_ota_handle->http_client);
             }
         } else {
             ESP_LOGE(TAG, "ESP HTTP client perform failed: %d", err);
             goto http_cleanup;
         }
 
-        https_ota_handle->image_length = esp_http_client_get_content_length(https_ota_handle->http_client);
+        if (https_ota_handle->image_length == -1) {
+            ESP_LOGE(TAG, "Failed to get image length from http response");
+            err = ESP_FAIL;
+            goto http_cleanup;
+        }
 #if CONFIG_ESP_HTTPS_OTA_DECRYPT_CB
         /* In case of pre ecnrypted OTA, actual image size of OTA binary includes header size
-        which stored in variable enc_img_header_size*/
+         * which stored in variable enc_img_header_size */
         https_ota_handle->image_length -= ota_config->enc_img_header_size;
 #endif
         esp_http_client_close(https_ota_handle->http_client);
 
-        if (https_ota_handle->image_length > https_ota_handle->max_http_request_size) {
+        const int range_start = https_ota_handle->binary_file_len;
+        const int range_end = (https_ota_handle->image_length > https_ota_handle->max_http_request_size + range_start) ?
+            (range_start + https_ota_handle->max_http_request_size - 1) :
+            https_ota_handle->image_length;
+
+        // Additional sanity to not set Range header if it covers whole image range
+        if ((range_end - range_start) < https_ota_handle->image_length) {
             char *header_val = NULL;
-            asprintf(&header_val, "bytes=0-%d", https_ota_handle->max_http_request_size - 1);
+            asprintf(&header_val, "bytes=%d-%d", range_start, range_end);
             if (header_val == NULL) {
                 ESP_LOGE(TAG, "Failed to allocate memory for HTTP header");
                 err = ESP_ERR_NO_MEM;
@@ -358,8 +449,33 @@ esp_err_t esp_https_ota_begin(const esp_https_ota_config_t *ota_config, esp_http
         }
         esp_http_client_set_method(https_ota_handle->http_client, HTTP_METHOD_GET);
     }
+#endif
 
     err = _http_connect(https_ota_handle);
+    if (err == ESP_ERR_HTTP_RANGE_NOT_SATISFIABLE && https_ota_handle->binary_file_len > 0) {
+        ESP_LOGE(TAG, "OTA resumption failed with err: %d", err);
+        ESP_LOGI(TAG, "Restarting download from beginning");
+        https_ota_handle->binary_file_len = 0;
+
+        // If range in request header is not satisfiable, restart download from beginning
+        esp_http_client_delete_header(https_ota_handle->http_client, "Range");
+
+#if CONFIG_ESP_HTTPS_OTA_ENABLE_PARTIAL_DOWNLOAD
+        if (https_ota_handle->partial_http_download && https_ota_handle->image_length > https_ota_handle->max_http_request_size) {
+            char *header_val = NULL;
+            asprintf(&header_val, "bytes=0-%d", https_ota_handle->max_http_request_size - 1);
+            if (header_val == NULL) {
+                ESP_LOGE(TAG, "Failed to allocate memory for HTTP header");
+                err = ESP_ERR_NO_MEM;
+                goto http_cleanup;
+            }
+            esp_http_client_set_header(https_ota_handle->http_client, "Range", header_val);
+            free(header_val);
+        }
+#endif
+        err = _http_connect(https_ota_handle);
+    }
+
     if (err != ESP_OK) {
         if (err != ESP_ERR_HTTP_NOT_MODIFIED) {
             ESP_LOGE(TAG, "Failed to establish HTTP connection");
@@ -369,7 +485,10 @@ esp_err_t esp_https_ota_begin(const esp_https_ota_config_t *ota_config, esp_http
         esp_https_ota_dispatch_event(ESP_HTTPS_OTA_CONNECTED, NULL, 0);
     }
 
-    if (!https_ota_handle->partial_http_download) {
+#if CONFIG_ESP_HTTPS_OTA_ENABLE_PARTIAL_DOWNLOAD
+    if (!https_ota_handle->partial_http_download)
+#endif
+    {
         https_ota_handle->image_length = esp_http_client_get_content_length(https_ota_handle->http_client);
 #if CONFIG_ESP_HTTPS_OTA_DECRYPT_CB
         /* In case of pre ecnrypted OTA, actual image size of OTA binary includes header size
@@ -420,19 +539,14 @@ esp_err_t esp_https_ota_begin(const esp_https_ota_config_t *ota_config, esp_http
         goto http_cleanup;
     }
 #if CONFIG_ESP_HTTPS_OTA_DECRYPT_CB
-    if (ota_config->decrypt_cb == NULL) {
-        err = ESP_ERR_INVALID_ARG;
-        goto http_cleanup;
-    }
     https_ota_handle->decrypt_cb = ota_config->decrypt_cb;
     https_ota_handle->decrypt_user_ctx = ota_config->decrypt_user_ctx;
     https_ota_handle->enc_img_header_size = ota_config->enc_img_header_size;
 #endif
     https_ota_handle->ota_upgrade_buf_size = alloc_size;
     https_ota_handle->bulk_flash_erase = ota_config->bulk_flash_erase;
-    https_ota_handle->binary_file_len = 0;
     *handle = (esp_https_ota_handle_t)https_ota_handle;
-    https_ota_handle->state = ESP_HTTPS_OTA_BEGIN;
+    https_ota_handle->state = https_ota_handle->binary_file_len ? ESP_HTTPS_OTA_RESUME : ESP_HTTPS_OTA_BEGIN;
     return ESP_OK;
 
 http_cleanup:
@@ -497,29 +611,43 @@ static esp_err_t get_description_from_image(esp_https_ota_handle_t https_ota_han
         ESP_LOGE(TAG, "esp_https_ota_get_img_desc: Invalid state");
         return ESP_ERR_INVALID_STATE;
     }
-    if (read_header(handle) != ESP_OK) {
+
+    unsigned img_info_len = 0;
+    if (handle->partition.final->type == ESP_PARTITION_TYPE_APP) {
+        img_info_len = sizeof(esp_app_desc_t);
+    } else if (handle->partition.final->type == ESP_PARTITION_TYPE_BOOTLOADER) {
+        img_info_len = sizeof(esp_bootloader_desc_t);
+    } else {
+        ESP_LOGE(TAG, "This partition type (%d) is not supported", handle->partition.final->type);
         return ESP_FAIL;
     }
 
-    void *img_info = (void *)&handle->ota_upgrade_buf[sizeof(esp_image_header_t) + sizeof(esp_image_segment_header_t)];
-    unsigned img_info_len;
+    const int offset = sizeof(esp_image_header_t) + sizeof(esp_image_segment_header_t);
+    void *img_info = NULL;
+
+    if (handle->binary_file_len >= offset + img_info_len) {
+        esp_err_t ret = esp_partition_read(handle->partition.staging, offset, handle->ota_upgrade_buf, img_info_len);
+        ESP_RETURN_ON_ERROR(ret, TAG, "partition read failed %d", ret);
+        img_info = (void *) handle->ota_upgrade_buf;
+    } else {
+        if (read_header(handle) != ESP_OK) {
+            return ESP_FAIL;
+        }
+        img_info = (void *)&handle->ota_upgrade_buf[offset];
+    }
+
     if (handle->partition.final->type == ESP_PARTITION_TYPE_APP) {
-        img_info_len = sizeof(esp_app_desc_t);
         esp_app_desc_t *app_info = (esp_app_desc_t *)img_info;
         if (app_info->magic_word != ESP_APP_DESC_MAGIC_WORD) {
             ESP_LOGE(TAG, "Incorrect app descriptor magic");
             return ESP_FAIL;
         }
     } else if (handle->partition.final->type == ESP_PARTITION_TYPE_BOOTLOADER) {
-        img_info_len = sizeof(esp_bootloader_desc_t);
         esp_bootloader_desc_t *bootloader_info = (esp_bootloader_desc_t *)img_info;
         if (bootloader_info->magic_byte != ESP_BOOTLOADER_DESC_MAGIC_BYTE) {
             ESP_LOGE(TAG, "Incorrect bootloader descriptor magic");
             return ESP_FAIL;
         }
-    } else {
-        ESP_LOGE(TAG, "This partition type (%d) is not supported", handle->partition.final->type);
-        return ESP_FAIL;
     }
 
     memcpy(new_img_info, img_info, img_info_len);
@@ -548,6 +676,17 @@ static esp_err_t esp_ota_verify_chip_id(const void *arg)
     return ESP_OK;
 }
 
+static esp_err_t esp_ota_verify_chip_revision(const void *arg)
+{
+    esp_image_header_t *data = (esp_image_header_t *)(arg);
+    esp_https_ota_dispatch_event(ESP_HTTPS_OTA_VERIFY_CHIP_REVISION, (void *)(&data->min_chip_rev_full), sizeof(uint16_t));
+
+    if (!bootloader_common_check_chip_revision_validity(data, true)) {
+        return ESP_ERR_INVALID_VERSION;
+    }
+    return ESP_OK;
+}
+
 esp_err_t esp_https_ota_perform(esp_https_ota_handle_t https_ota_handle)
 {
     esp_https_ota_t *handle = (esp_https_ota_t *)https_ota_handle;
@@ -562,7 +701,7 @@ esp_err_t esp_https_ota_perform(esp_https_ota_handle_t https_ota_handle)
 
     esp_err_t err;
     int data_read;
-    const int erase_size = handle->bulk_flash_erase ? (handle->image_length > 0 ? handle->image_length : OTA_SIZE_UNKNOWN) : OTA_WITH_SEQUENTIAL_WRITES;
+    const size_t erase_size = handle->bulk_flash_erase ? (handle->image_length > 0 ? handle->image_length : OTA_SIZE_UNKNOWN) : OTA_WITH_SEQUENTIAL_WRITES;
     switch (handle->state) {
         case ESP_HTTPS_OTA_BEGIN:
             err = esp_ota_begin(handle->partition.staging, erase_size, &handle->update_handle);
@@ -609,8 +748,23 @@ esp_err_t esp_https_ota_perform(esp_https_ota_handle_t https_ota_handle)
                 if (err != ESP_OK) {
                     return err;
                 }
+
+                err = esp_ota_verify_chip_revision(data_buf);
+                if (err != ESP_OK) {
+                    return err;
+                }
             }
             return _ota_write(handle, data_buf, binary_file_len);
+        case ESP_HTTPS_OTA_RESUME:
+            ESP_LOGD(TAG, "OTA resumption case");
+            err = esp_ota_resume(handle->partition.staging, erase_size, handle->binary_file_len, &handle->update_handle);
+            if (err != ESP_OK) {
+                ESP_LOGE(TAG, "esp_ota_resume failed (%s)", esp_err_to_name(err));
+                return err;
+            }
+            esp_ota_set_final_partition(handle->update_handle, handle->partition.final, handle->partition.finalize_with_copy);
+            handle->state = ESP_HTTPS_OTA_IN_PROGRESS;
+            /* falls through */
         case ESP_HTTPS_OTA_IN_PROGRESS:
             data_read = esp_http_client_read(handle->http_client,
                                              handle->ota_upgrade_buf,
@@ -649,7 +803,10 @@ esp_err_t esp_https_ota_perform(esp_https_ota_handle_t https_ota_handle)
                 ESP_LOGE(TAG, "data read %d, errno %d", data_read, errno);
                 return ESP_FAIL;
             }
-            if (!handle->partial_http_download || (handle->partial_http_download && handle->image_length == handle->binary_file_len)) {
+#if CONFIG_ESP_HTTPS_OTA_ENABLE_PARTIAL_DOWNLOAD
+            if (!handle->partial_http_download || (handle->partial_http_download && handle->image_length == handle->binary_file_len))
+#endif
+            {
                 handle->state = ESP_HTTPS_OTA_SUCCESS;
             }
             break;
@@ -658,6 +815,7 @@ esp_err_t esp_https_ota_perform(esp_https_ota_handle_t https_ota_handle)
             return ESP_FAIL;
             break;
     }
+#if CONFIG_ESP_HTTPS_OTA_ENABLE_PARTIAL_DOWNLOAD
     if (handle->partial_http_download) {
         if (handle->state == ESP_HTTPS_OTA_IN_PROGRESS && handle->image_length > handle->binary_file_len) {
             esp_http_client_close(handle->http_client);
@@ -686,6 +844,7 @@ esp_err_t esp_https_ota_perform(esp_https_ota_handle_t https_ota_handle)
             return ESP_ERR_HTTPS_OTA_IN_PROGRESS;
         }
     }
+#endif
     return ESP_OK;
 }
 
@@ -693,9 +852,12 @@ bool esp_https_ota_is_complete_data_received(esp_https_ota_handle_t https_ota_ha
 {
     bool ret = false;
     esp_https_ota_t *handle = (esp_https_ota_t *)https_ota_handle;
+#if CONFIG_ESP_HTTPS_OTA_ENABLE_PARTIAL_DOWNLOAD
     if (handle->partial_http_download) {
         ret = (handle->image_length == handle->binary_file_len);
-    } else {
+    } else
+#endif
+    {
         ret = esp_http_client_is_complete_data_received(handle->http_client);
     }
     return ret;
@@ -718,6 +880,7 @@ esp_err_t esp_https_ota_finish(esp_https_ota_handle_t https_ota_handle)
             err = esp_ota_end(handle->update_handle);
             /* falls through */
         case ESP_HTTPS_OTA_BEGIN:
+        case ESP_HTTPS_OTA_RESUME:
             if (handle->ota_upgrade_buf) {
                 free(handle->ota_upgrade_buf);
             }
@@ -768,6 +931,7 @@ esp_err_t esp_https_ota_abort(esp_https_ota_handle_t https_ota_handle)
             err = esp_ota_abort(handle->update_handle);
             /* falls through */
         case ESP_HTTPS_OTA_BEGIN:
+        case ESP_HTTPS_OTA_RESUME:
             if (handle->ota_upgrade_buf) {
                 free(handle->ota_upgrade_buf);
             }
@@ -822,6 +986,11 @@ esp_err_t esp_https_ota(const esp_https_ota_config_t *ota_config)
     if (ota_config == NULL || ota_config->http_config == NULL) {
         ESP_LOGE(TAG, "esp_https_ota: Invalid argument");
         return ESP_ERR_INVALID_ARG;
+    }
+
+    if (ota_config->ota_resumption) {
+        ESP_LOGE(TAG, "OTA resumption is not supported in esp_https_ota API");
+        return ESP_ERR_NOT_SUPPORTED;
     }
 
     esp_https_ota_handle_t https_ota_handle = NULL;

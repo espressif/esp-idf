@@ -1209,7 +1209,9 @@ void wps_registrar_probe_req_rx(struct wps_registrar *reg, const u8 *addr,
 		struct os_reltime now, dur;
 		os_get_reltime(&now);
 		os_reltime_sub(&now, &reg->pbc_ignore_start, &dur);
-		if (dur.sec >= 0 && dur.sec < 5) {
+#ifdef ESP_SUPPLICANT
+		if (dur.sec < 5) {
+#endif /* ESP_SUPPLICANT */
 			wpa_printf(MSG_DEBUG, "WPS: Ignore PBC activation "
 				   "based on Probe Request from the Enrollee "
 				   "that just completed PBC provisioning");

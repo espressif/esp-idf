@@ -1,13 +1,15 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #pragma once
 
+#include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include "esp_attr.h"
 #include "soc/usb_dwc_struct.h"
 #include "hal/usb_dwc_types.h"
 #include "hal/misc.h"
@@ -26,7 +28,8 @@ extern "C" {
 ----------------------------------------------------------------------------- */
 
 #define USB_DWC_QTD_LIST_MEM_ALIGN              512
-#define USB_DWC_FRAME_LIST_MEM_ALIGN            512     // The frame list needs to be 512 bytes aligned (contrary to the databook)
+#define USB_DWC_FRAME_LIST_MEM_ALIGN            512        // The frame list needs to be 512 bytes aligned (contrary to the databook)
+#define USB_DWC_CORE_REG_GSNPSID_4_20a          0x4F54420A // From 4.20a upward, the reset sequence is changed
 
 /* -----------------------------------------------------------------------------
 ------------------------------- Global Registers -------------------------------
@@ -202,6 +205,11 @@ static inline void usb_dwc_ll_gusbcfg_force_host_mode(usb_dwc_dev_t *hw)
     hw->gusbcfg_reg.forcehstmode = 1;
 }
 
+static inline void usb_dwc_ll_gusbcfg_en_hnp_cap(usb_dwc_dev_t *hw)
+{
+    hw->gusbcfg_reg.hnpcap = 1;
+}
+
 static inline void usb_dwc_ll_gusbcfg_dis_hnp_cap(usb_dwc_dev_t *hw)
 {
     hw->gusbcfg_reg.hnpcap = 0;
@@ -272,12 +280,28 @@ static inline void usb_dwc_ll_grstctl_reset_frame_counter(usb_dwc_dev_t *hw)
 
 static inline void usb_dwc_ll_grstctl_core_soft_reset(usb_dwc_dev_t *hw)
 {
-    hw->grstctl_reg.csftrst = 1;
-}
+    const uint32_t gnspsid = hw->gsnpsid_reg.val;
 
-static inline bool usb_dwc_ll_grstctl_is_core_soft_reset_in_progress(usb_dwc_dev_t *hw)
-{
-    return hw->grstctl_reg.csftrst;
+    // Start core soft reset
+    hw->grstctl_reg.csftrst = 1;
+
+    // Wait for the reset to complete
+    if (gnspsid < USB_DWC_CORE_REG_GSNPSID_4_20a) {
+        // Version < 4.20a
+        while (hw->grstctl_reg.csftrst) {
+            ;
+        }
+    } else {
+        // Version >= 4.20a
+        while (!(hw->grstctl_reg.csftrstdone)) {
+            ;
+        }
+        usb_dwc_grstctl_reg_t grstctl;
+        grstctl.val = hw->grstctl_reg.val;
+        grstctl.csftrst     = 0; // Clear RESET bit once reset is done
+        grstctl.csftrstdone = 1; // Write 1 to clear RESET_DONE bit
+        hw->grstctl_reg.val = grstctl.val;
+    }
 }
 
 // --------------------------- GINTSTS Register --------------------------------
@@ -360,7 +384,7 @@ static inline unsigned usb_dwc_ll_ghwcfg_get_hsphy_type(usb_dwc_dev_t *hw)
 
 static inline unsigned usb_dwc_ll_ghwcfg_get_channel_num(usb_dwc_dev_t *hw)
 {
-    return hw->ghwcfg2_reg.numhstchnl;
+    return hw->ghwcfg2_reg.numhstchnl + 1;
 }
 
 // --------------------------- HPTXFSIZ Register -------------------------------
@@ -762,6 +786,23 @@ static inline void usb_dwc_ll_hcintmsk_set_intr_mask(volatile usb_dwc_host_chan_
 
 // ---------------------------- HCTSIZi Register -------------------------------
 
+static inline void usb_dwc_ll_hctsiz_init(volatile usb_dwc_host_chan_regs_t *chan)
+{
+    usb_dwc_hctsiz_reg_t hctsiz;
+    hctsiz.val = chan->hctsiz_reg.val;
+    hctsiz.dopng = 0;         // Don't do ping
+    hctsiz.pid = 0;           // Set PID to DATA0
+    /*
+     * Set SCHED_INFO which occupies xfersize[7:0]
+     *
+     * Although the hardware documentation suggests that SCHED_INFO is only used for periodic channels,
+     * empirical evidence shows that omitting this configuration on non-periodic channels can cause them to freeze.
+     * Therefore, we set this field for all channels to ensure reliable operation.
+     */
+    hctsiz.xfersize |= 0xFF;
+    chan->hctsiz_reg.val = hctsiz.val;
+}
+
 static inline void usb_dwc_ll_hctsiz_set_pid(volatile usb_dwc_host_chan_regs_t *chan, uint32_t data_pid)
 {
     if (data_pid == 0) {
@@ -790,23 +831,33 @@ static inline void usb_dwc_ll_hctsiz_set_qtd_list_len(volatile usb_dwc_host_chan
     chan->hctsiz_reg.val = hctsiz.val;
 }
 
-static inline void usb_dwc_ll_hctsiz_init(volatile usb_dwc_host_chan_regs_t *chan)
+/**
+ * @brief Perform PING protocol
+ *
+ * PING protocol is automatically enabled if High-Speed device responds with NYET in Scatter-Gather DMA mode.
+ * The application must disable PING for next transfer.
+ * Relevant only for OUT transfers.
+ *
+ * @param[in] chan   Channel registers
+ * @param[in] enable true: Enable PING, false: Disable PING
+ */
+static inline void usb_dwc_ll_hctsiz_set_dopng(volatile usb_dwc_host_chan_regs_t *chan, bool enable)
 {
-    usb_dwc_hctsiz_reg_t hctsiz;
-    hctsiz.val = chan->hctsiz_reg.val;
-    hctsiz.dopng = 0;         //Don't do ping
-    /*
-    Set SCHED_INFO which occupies xfersize[7:0]
-    It is always set to 0xFF for full speed and not used in Bulk/Ctrl channels
-    */
-    hctsiz.xfersize |= 0xFF;
-    chan->hctsiz_reg.val = hctsiz.val;
+    chan->hctsiz_reg.dopng = (uint32_t)(enable && !chan->hcchar_reg.epdir);
 }
 
+/**
+ * @brief Set scheduling info for Periodic channel
+ *
+ * @attention This function must be called for each periodic channel!
+ * @see USB-OTG databook: Table 5-47
+ *
+ * @param[in] chan             Channel registers
+ * @param[in] tokens_per_frame HS: Number of tokens per frame FS: Must be set 8
+ * @param[in] offset           Offset of the channel
+ */
 static inline void usb_dwc_ll_hctsiz_set_sched_info(volatile usb_dwc_host_chan_regs_t *chan, int tokens_per_frame, int offset)
 {
-    // @see USB-OTG databook: Table 5-47
-    // This function is relevant only for HS
     usb_dwc_hctsiz_reg_t hctsiz;
     hctsiz.val = chan->hctsiz_reg.val;
     uint8_t sched_info_val;
@@ -975,6 +1026,17 @@ static inline void usb_dwc_ll_qtd_get_status(usb_dwc_ll_dma_qtd_t *qtd, int *rem
     *rem_len = qtd->in_non_iso.xfer_size;
     //Clear the QTD just for safety
     qtd->buffer_status_val = 0;
+}
+
+// ---------------------------- Power and Clock Gating Register --------------------------------
+FORCE_INLINE_ATTR void usb_dwc_ll_set_stoppclk(usb_dwc_dev_t *hw, bool stop)
+{
+    hw->pcgcctl_reg.stoppclk = stop;
+}
+
+FORCE_INLINE_ATTR bool usb_dwc_ll_get_stoppclk_st(usb_dwc_dev_t *hw)
+{
+    return hw->pcgcctl_reg.stoppclk;
 }
 
 #ifdef __cplusplus

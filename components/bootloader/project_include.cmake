@@ -70,6 +70,8 @@ if(CONFIG_SECURE_SIGNED_APPS)
                     set(scheme "ecdsa192")
                 elseif(CONFIG_SECURE_BOOT_ECDSA_KEY_LEN_256_BITS)
                     set(scheme "ecdsa256")
+                elseif(CONFIG_SECURE_BOOT_ECDSA_KEY_LEN_384_BITS)
+                    set(scheme "ecdsa384")
                 endif()
                 fail_at_build_time(gen_secure_boot_signing_key
                     "Secure Boot Signing Key ${CONFIG_SECURE_BOOT_SIGNING_KEY} does not exist. Generate using:"

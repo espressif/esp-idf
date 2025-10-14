@@ -1,0 +1,4 @@
+# The size of bootloader has been increased, so the partition table offset needs adjustment
+CONFIG_PARTITION_TABLE_OFFSET=0xB000
+CONFIG_BOOTLOADER_LOG_LEVEL_WARN=y
+CONFIG_BOOTLOADER_LOG_LEVEL=2

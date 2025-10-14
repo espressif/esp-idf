@@ -37,6 +37,21 @@ ULP LP 内核代码会与 ESP-IDF 项目共同编译，生成一个单独的二�
 
 ``ulp_embed_binary`` 的第一个参数指定生成的 ULP 二进制文件名。该文件名也用于其他生成的文件，如 ELF 文件、映射文件、头文件和链接器导出文件。第二个参数指定 ULP 源文件。第三个参数指定组件源文件列表，其中包括生成的头文件。此列表用以正确构建依赖，并确保在编译这些文件前创建要生成的头文件。有关 ULP 应用程序生成头文件的概念，请参阅本文档后续章节。
 
+在这个生成的头文件中，ULP 代码中的变量默认以 ``ulp_`` 作为前缀。
+
+如果需要嵌入多个 ULP 程序，可以添加自定义前缀，以避免变量名冲突，如下所示：
+
+.. code-block:: cmake
+
+    idf_component_register()
+
+    set(ulp_app_name ulp_${COMPONENT_NAME})
+    set(ulp_sources "ulp/ulp_c_source_file.c" "ulp/ulp_assembly_source_file.S")
+    set(ulp_exp_dep_srcs "ulp_c_source_file.c")
+
+    ulp_embed_binary(${ulp_app_name} "${ulp_sources}" "${ulp_exp_dep_srcs}" PREFIX "ULP::")
+
+最后的 PREFIX 参数可以是 C 语言风格命名的前缀（如 ``ulp2_``）或 C++ 风格命名的前缀（如 ``ULP::``）。
 
 使用自定义的 CMake 项目
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -53,7 +68,7 @@ ULP LP 内核代码会与 ESP-IDF 项目共同编译，生成一个单独的二�
 
 .. code-block:: cmake
 
-    cmake_minimum_required(VERSION 3.16)
+    cmake_minimum_required(VERSION 3.22)
 
     # 项目/目标名称由主项目传递，允许 IDF 依赖此目标
     # 将二进制文件嵌入到主应用程序中
@@ -140,13 +155,7 @@ ULP LP 内核代码会与 ESP-IDF 项目共同编译，生成一个单独的二�
 
     extern uint32_t ulp_measurement_count;
 
-注意，所有的符号（变量、数组、函数）都被声明为 ``uint32_t`` 类型。对于函数和数组，获取符号的地址并将其转换为合适的类型。
-
-生成的链接器脚本文件定义了 LP_MEM 中符号的位置：
-
-.. code-block:: none
-
-    PROVIDE ( ulp_measurement_count = 0x50000060 );
+注意，所有的符号（变量、函数）都被声明为 ``uint32_t`` 类型。数组被声明为 ``uint32_t [SIZE]`` 类型。函数需要先获取符号地址，再转换为适当的类型。
 
 要从主程序访问 ULP LP 内核程序变量，应使用 ``include`` 语句将生成的头文件包含在主程序中，这样就可以像访问常规变量一样访问 ULP LP 内核程序变量。
 
@@ -160,7 +169,9 @@ ULP LP 内核代码会与 ESP-IDF 项目共同编译，生成一个单独的二�
 
 .. note::
 
-    LP 内核程序全局变量存储在二进制文件的 ``.bss`` 或者 ``.data`` 部分。这些部分在加载和执行 LP 内核二进制文件时被初始化。在首次运行 LP 内核之前，从 HP-Core 主程序访问这些变量可能会导致未定义行为。
+    - LP 内核程序全局变量存储在二进制文件的 ``.bss`` 或者 ``.data`` 部分。这些部分在加载和执行 LP 内核二进制文件时被初始化。在首次运行 LP 内核之前，从 HP-Core 主程序访问这些变量可能会导致未定义行为。
+
+    - 默认以 ``ulp_`` 作为前缀。你可以在使用 ``ulp_embed_binary`` 时指定前缀，以避免多个 ULP 程序之间的命名冲突。
 
 
 启动 ULP LP 内核程序
@@ -199,9 +210,9 @@ ULP LP 内核协处理器如何启动取决于 :cpp:type:`ulp_lp_core_cfg_t` 中
 ULP 有以下唤醒源：
     * :c:macro:`ULP_LP_CORE_WAKEUP_SOURCE_HP_CPU` - LP 内核可以被 HP CPU 唤醒。
     * :c:macro:`ULP_LP_CORE_WAKEUP_SOURCE_LP_TIMER` - LP 内核可以被 LP 定时器唤醒。
-    * :c:macro:`ULP_LP_CORE_WAKEUP_SOURCE_ETM` - LP 内核可以被 ETM 事件唤醒。（暂不支持）
-    * :c:macro:`ULP_LP_CORE_WAKEUP_SOURCE_LP_IO` - 当 LP IO 电平变化时，LP 内核会被唤醒。（暂不支持）
-    * :c:macro:`ULP_LP_CORE_WAKEUP_SOURCE_LP_UART` - LP 内核在接收到一定数量的 UART RX 脉冲后会被唤醒。（暂不支持）
+    * :c:macro:`ULP_LP_CORE_WAKEUP_SOURCE_ETM` - LP 内核可以被 ETM 事件唤醒。
+    * :c:macro:`ULP_LP_CORE_WAKEUP_SOURCE_LP_IO` - 当 LP IO 电平变化时，LP 内核会被唤醒。
+    * :c:macro:`ULP_LP_CORE_WAKEUP_SOURCE_LP_UART` - 当 LP UART 在不同模式下接收到唤醒数据时，LP 内核会被唤醒。
 
 ULP 被唤醒时会经历以下步骤：
 
@@ -281,13 +292,13 @@ ULP LP 内核的时钟源来自系统时钟 ``LP_FAST_CLK``，详情请参见 `�
 
 在编程 LP 内核时，有时很难弄清楚程序未按预期运行的原因。请参考以下策略，调试 LP 内核程序：
 
-* 使用 LP-UART 打印：LP 内核可以访问 LP-UART 外设，在主 CPU 处于睡眠状态时独立打印信息。有关使用此驱动程序的示例，请参阅 :example:`system/ulp/lp_core/lp_uart/lp_uart_print`。
+* 使用 LP UART 打印：LP 内核可以访问 LP UART 外设，在主 CPU 处于睡眠状态时独立打印信息。有关使用此驱动程序的示例，请参阅 :example:`system/ulp/lp_core/lp_uart/lp_uart_print`。
 
 * 通过 :ref:`CONFIG_ULP_HP_UART_CONSOLE_PRINT`，将 :cpp:func:`lp_core_printf` 路由到 HP-Core 控制台 UART，可以轻松地将 LP 内核信息打印到已经连接的 HP-Core 控制台 UART。此方法的缺点是需要主 CPU 处于唤醒状态，并且由于 LP 内核与 HP 内未同步，输出可能会交错。
 
 * 通过共享变量共享程序状态：如 :ref:`ulp-lp-core-access-variables` 所述，主 CPU 和 ULP 内核都可以轻松访问 RTC 内存中的全局变量。若想了解 ULP 内核的运行状态，可以将状态信息从 ULP 写入变量中，并通过主 CPU 读取信息。这种方法的缺点在于它需要主 CPU 一直处于唤醒状态，而这通常很难实现。另外，若主 CPU 一直处于唤醒状态，可能会掩盖某些问题，因为部分问题只会在特定电源域断电时发生。
 
-* 紧急处理程序：当检测到异常时，LP 内核的紧急处理程序会把 LP 内核寄存器的状态通过 LP-UART 发送出去。将 :ref:`CONFIG_ULP_PANIC_OUTPUT_ENABLE` 选项设置为 ``y``，可以启用紧急处理程序。禁用此选项将减少 LP 内核应用程序的 LP-RAM 使用量。若想从紧急转储中解析栈回溯，可以使用 ``idf.py monitor``。
+* 紧急处理程序：当检测到异常时，LP 内核的紧急处理程序会把 LP 内核寄存器的状态通过 LP UART 发送出去。将 :ref:`CONFIG_ULP_PANIC_OUTPUT_ENABLE` 选项设置为 ``y``，可以启用紧急处理程序。禁用此选项将减少 LP 内核应用程序的 LP-RAM 使用量。若想从紧急转储中解析栈回溯，可以使用 ``idf.py monitor``。
 
 .. warning::
 
@@ -295,7 +306,7 @@ ULP LP 内核的时钟源来自系统时钟 ``LP_FAST_CLK``，详情请参见 `�
 
     .. code-block:: bash
 
-        python -m esp_idf_monitor --toolchain-prefix riscv32-esp-elf- --target {IDF_TARGET_NAME} --decode-panic backtrace PATH_TO_ULP_ELF_FILE
+        python -m esp_idf_monitor --toolchain-prefix riscv32-esp-elf- --target {IDF_TARGET_PATH_NAME} --decode-panic backtrace PATH_TO_ULP_ELF_FILE
 
 
 调试 ULP LP 内核应用程序：使用 GDB 和 OpenOCD
@@ -354,8 +365,8 @@ LP 内核调试特性
 限制
 ~~~~
 
-#. 调试场景有限制：目前，当 HP 内核或 LP 内核进入睡眠模式时，将无法调适。
-#. 调试 内核时，OpenOCD 不支持 FreeRTOS，因此无法看到系统中正在运行的任务，但会有几个线程代表 HP 和 LP 内核：
+#. 调试场景有限制：目前，当 HP 内核或 LP 内核进入睡眠模式时，将无法调试。
+#. 调试内核时，OpenOCD 不支持 FreeRTOS，因此无法看到系统中正在运行的任务，但会有几个线程代表 HP 和 LP 内核：
 
 .. code-block:: bash
 
@@ -379,6 +390,7 @@ LP 内核调试特性
     :esp32c6: - :example:`system/ulp/lp_core/lp_i2c` 展示了 ULP LP 内核协处理器在主 CPU 深度睡眠时读取外部 I2C 环境光传感器 (BH1750)，并在达到阈值时唤醒主 CPU。
     - :example:`system/ulp/lp_core/lp_uart/lp_uart_echo` 展示了低功耗内核上运行的 LP UART 驱动程序如何读取并回显写入串行控制台的数据。
     - :example:`system/ulp/lp_core/lp_uart/lp_uart_print` 展示了如何在低功耗内核上使用串口打印功能。
+    - :example:`system/ulp/lp_core/lp_uart/lp_uart_char_seq_wakeup` 展示了如何使用 LP UART 特定字符序列唤醒模式触发唤醒。
     - :example:`system/ulp/lp_core/interrupt` 展示了如何在 LP 内核上注册中断处理程序，接收由主 CPU 触发的中断。
     - :example:`system/ulp/lp_core/gpio_intr_pulse_counter` 展示了如何在主 CPU 处于 Deep-sleep 模式时，使用 GPIO 中断为脉冲计数。
     - :example:`system/ulp/lp_core/build_system/` 演示了如何为 ULP 应用程序添加自定义的 ``CMakeLists.txt`` 文件。
@@ -419,3 +431,7 @@ LP 内核 API 参考
     .. include-build-file:: inc/ulp_lp_core_spi.inc
 
 .. _esp-idf-monitor: https://github.com/espressif/esp-idf-monitor
+
+.. only:: SOC_UART_HAS_LP_UART
+
+    .. include-build-file:: inc/ulp_lp_core_lp_uart_shared.inc

@@ -84,7 +84,7 @@ void periph_rcc_exit(void);
 #ifdef __PERIPH_CTRL_ALLOW_LEGACY_API
 #define __PERIPH_CTRL_DEPRECATE_ATTR
 #else
-#define __PERIPH_CTRL_DEPRECATE_ATTR __attribute__((deprecated("This function is not functional on "CONFIG_IDF_TARGET)))
+#define __PERIPH_CTRL_DEPRECATE_ATTR __attribute__((deprecated("This function is not functional on " CONFIG_IDF_TARGET)))
 #endif
 
 /**

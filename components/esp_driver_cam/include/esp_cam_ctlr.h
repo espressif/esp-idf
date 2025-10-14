@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,7 +9,9 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "esp_err.h"
+#include "esp_heap_caps.h"
 #include "esp_cam_ctlr_types.h"
+#include "hal/cam_ctlr_types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -131,6 +133,37 @@ esp_err_t esp_cam_ctlr_get_frame_buffer(esp_cam_ctlr_handle_t handle, uint32_t f
  *        - ESP_ERR_INVALID_STATE: Invalid driver state
  */
 esp_err_t esp_cam_ctlr_get_frame_buffer_len(esp_cam_ctlr_handle_t handle, size_t *ret_fb_len);
+
+/**
+ * @brief Allocate camera buffer for ESP CAM controller
+ *
+ * @note This function must be called after esp_cam_new_*_ctlr
+ *
+ * @param[in] handle            ESP CAM controller handle
+ * @param[in] size              Buffer size in bytes
+ * @param[in] buf_caps          Buffer allocation capabilities:
+ *                              - MALLOC_CAP_SPIRAM || MALLOC_CAP_DMA: Memory in external SPI RAM
+ *                              - MALLOC_CAP_INTERNAL || MALLOC_CAP_DMA: Memory in internal SRAM
+ *
+ * @return
+ *        - Buffer pointer on success
+ *        - NULL on failure
+ */
+void *esp_cam_ctlr_alloc_buffer(esp_cam_ctlr_handle_t handle, size_t size, uint32_t buf_caps);
+
+/**
+ * @brief Configure format conversion
+ *
+ * @param[in] handle      ESP CAM controller handle
+ * @param[in] conv_cfg    Color conversion configuration, contains source and destination formats
+ *
+ * @return
+ *        - ESP_OK on success
+ *        - ESP_ERR_INVALID_ARG:   Invalid argument
+ *        - ESP_ERR_NOT_SUPPORTED: Format conversion not supported by this controller
+ */
+esp_err_t esp_cam_ctlr_format_conversion(esp_cam_ctlr_handle_t handle,
+                                         const cam_ctlr_format_conv_config_t *conv_cfg);
 
 #ifdef __cplusplus
 }

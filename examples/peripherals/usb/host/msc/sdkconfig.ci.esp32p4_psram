@@ -1,0 +1,11 @@
+CONFIG_IDF_TARGET="esp32p4"
+
+# Enable experimental features, to set PSRAM frequency to 200 MHz
+CONFIG_IDF_EXPERIMENTAL_FEATURES=y
+
+# Enable PSRAM and set PSRAM frequency
+CONFIG_SPIRAM=y
+CONFIG_SPIRAM_SPEED_200M=y
+
+# Allocate USB_DWC DMA capable memory in PSRAM
+CONFIG_USB_HOST_DWC_DMA_CAP_MEMORY_IN_PSRAM=y

@@ -75,7 +75,7 @@ UINT8 GATT_SetTraceLevel (UINT8 new_level)
 **
 ** Function         GATTS_AddHandleRange
 **
-** Description      This function add the allocated handles range for the specifed
+** Description      This function add the allocated handles range for the specified
 **                  application UUID, service UUID and service instance
 **
 ** Parameter        p_hndl_range:   pointer to allocated handles information
@@ -105,7 +105,7 @@ BOOLEAN GATTS_AddHandleRange(tGATTS_HNDL_RANGE *p_hndl_range)
 **                  NV save callback function.  There can be one and only one
 **                  NV save callback function.
 **
-** Parameter        p_cb_info : callback informaiton
+** Parameter        p_cb_info : callback information
 **
 ** Returns          TRUE if registered OK, else FALSE
 **
@@ -151,7 +151,7 @@ static void gatt_update_for_database_change(void)
 **                  num_handles   : number of handles needed by the service.
 **                  is_pri        : is a primary service or not.
 **
-** Returns          service handle if sucessful, otherwise 0.
+** Returns          service handle if successful, otherwise 0.
 **
 *******************************************************************************/
 UINT16 GATTS_CreateService (tGATT_IF gatt_if, tBT_UUID *p_svc_uuid,
@@ -170,7 +170,7 @@ UINT16 GATTS_CreateService (tGATT_IF gatt_if, tBT_UUID *p_svc_uuid,
     GATT_TRACE_API ("GATTS_CreateService\n" );
 
     if (p_reg == NULL) {
-        GATT_TRACE_ERROR ("Inavlid gatt_if=%d\n", gatt_if);
+        GATT_TRACE_ERROR ("Invalid gatt_if=%d\n", gatt_if);
         return (0);
     }
 
@@ -491,7 +491,7 @@ tGATT_STATUS GATTS_StartService (tGATT_IF gatt_if, UINT16 service_handle,
         return GATT_SERVICE_STARTED;
     }
 
-    /*this is a new application servoce start */
+    /*this is a new application service start */
     if ((i_sreg = gatt_sr_alloc_rcb(p_list)) ==  GATT_MAX_SR_PROFILES) {
         GATT_TRACE_ERROR ("GATTS_StartService: no free server registration block");
         return GATT_NO_RESOURCES;
@@ -1388,8 +1388,9 @@ void GATT_Deregister (tGATT_IF gatt_if)
             }
         }
     }
-
+#if (tGATT_BG_CONN_DEV == TRUE)
     gatt_deregister_bgdev_list(gatt_if);
+#endif // #if (tGATT_BG_CONN_DEV == TRUE)
     /* update the listen mode */
 #if (defined(BLE_PERIPHERAL_MODE_SUPPORT) && (BLE_PERIPHERAL_MODE_SUPPORT == TRUE))
     GATT_Listen(gatt_if, FALSE, NULL);
@@ -1468,9 +1469,12 @@ BOOLEAN GATT_Connect (tGATT_IF gatt_if, BD_ADDR bd_addr, tBLE_ADDR_TYPE bd_addr_
     if (is_direct) {
         status = gatt_act_connect (p_reg, bd_addr, bd_addr_type, transport, is_aux);
     } else {
+#if (tGATT_BG_CONN_DEV == TRUE)
         if (transport == BT_TRANSPORT_LE) {
             status = gatt_update_auto_connect_dev(gatt_if, TRUE, bd_addr, TRUE);
-        } else {
+        } else
+#endif // #if (tGATT_BG_CONN_DEV == TRUE)
+        {
             GATT_TRACE_ERROR("Unsupported transport for background connection");
         }
     }
@@ -1483,7 +1487,7 @@ BOOLEAN GATT_Connect (tGATT_IF gatt_if, BD_ADDR bd_addr, tBLE_ADDR_TYPE bd_addr_
 **
 ** Function         GATT_CancelConnect
 **
-** Description      This function terminate the connection initaition to a remote
+** Description      This function terminate the connection initiation to a remote
 **                  device on GATT channel.
 **
 ** Parameters       gatt_if: client interface. If 0 used as unconditionally disconnect,
@@ -1527,6 +1531,7 @@ BOOLEAN GATT_CancelConnect (tGATT_IF gatt_if, BD_ADDR bd_addr, BOOLEAN is_direct
             status = gatt_cancel_open(gatt_if, bd_addr);
         }
     } else {
+#if (tGATT_BG_CONN_DEV == TRUE)
         if (!gatt_if) {
             if (gatt_get_num_apps_for_bg_dev(bd_addr)) {
                 while (gatt_find_app_for_bg_dev(bd_addr, &temp_gatt_if)) {
@@ -1539,6 +1544,7 @@ BOOLEAN GATT_CancelConnect (tGATT_IF gatt_if, BD_ADDR bd_addr, BOOLEAN is_direct
         } else {
             status = gatt_remove_bg_dev_for_app(gatt_if, bd_addr);
         }
+#endif // #if (tGATT_BG_CONN_DEV == TRUE)
     }
 
     return status;
@@ -1628,7 +1634,7 @@ tGATT_STATUS GATT_SendServiceChangeIndication (BD_ADDR bd_addr)
 **
 ** Function         GATT_GetConnectionInfor
 **
-** Description      This function use conn_id to find its associated BD address and applciation
+** Description      This function use conn_id to find its associated BD address and application
 **                  interface
 **
 ** Parameters        conn_id: connection id  (input)
@@ -1665,7 +1671,7 @@ BOOLEAN GATT_GetConnectionInfor(UINT16 conn_id, tGATT_IF *p_gatt_if, BD_ADDR bd_
 ** Function         GATT_GetConnIdIfConnected
 **
 ** Description      This function find the conn_id if the logical link for BD address
-**                  and applciation interface is connected
+**                  and application interface is connected
 **
 ** Parameters        gatt_if: application interface (input)
 **                   bd_addr: peer device address. (input)
@@ -1720,7 +1726,9 @@ BOOLEAN GATT_Listen (tGATT_IF gatt_if, BOOLEAN start, BD_ADDR_PTR bd_addr)
     }
 
     if (bd_addr != NULL) {
+#if (tGATT_BG_CONN_DEV == TRUE)
         gatt_update_auto_connect_dev(gatt_if, start, bd_addr, FALSE);
+#endif // #if (tGATT_BG_CONN_DEV == TRUE)
     } else {
         p_reg->listening = start ? GATT_LISTEN_TO_ALL : GATT_LISTEN_TO_NONE;
     }

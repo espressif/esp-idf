@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -43,6 +43,14 @@ hci_driver_vhci_controller_tx(hci_driver_data_type_t data_type, uint8_t *data, u
         buf[0] = HCI_DRIVER_TYPE_EVT;
         memcpy(&buf[1], data, length);
         r_ble_hci_trans_buf_free(data);
+    } else if (data_type == HCI_DRIVER_TYPE_ISO) {
+        buf_len = length + 1;
+        buf = malloc(buf_len);
+        /* TODO: If there is no memory, should handle it in the controller. */
+        assert(buf);
+        buf[0] = HCI_DRIVER_TYPE_ISO;
+        memcpy(&buf[1], data, length);
+        free(data);
     }
 
     rc = s_hci_driver_vhci_env.forward_cb(data_type, buf, buf_len, HCI_DRIVER_DIR_C2H);

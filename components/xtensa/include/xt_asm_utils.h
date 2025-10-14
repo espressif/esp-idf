@@ -77,7 +77,7 @@
   Macro spinlock_take
 
   This macro will repeatedley attempt to atomically set a spinlock variable
-  using the s32c1i instruciton. A spinlock is considered free if its value is 0.
+  using the s32c1i instruction. A spinlock is considered free if its value is 0.
 
   Entry:
   - "reg_A/B" as scratch registers
@@ -96,9 +96,9 @@
     movi    \reg_A, \lock_var               /* reg_A = &lock_var */
 .L_spinlock_loop:
     movi    \reg_B, 0                       /* Load spinlock free value (0) into SCOMPARE1 */
-    wsr     \reg_B, SCOMPARE1
+    wsr     \reg_B, XT_REG_SCOMPARE1
     rsync                                   /* Ensure that SCOMPARE1 is set before s32c1i executes */
-    rsr     \reg_B, PRID                    /* Load the current core's ID into reg_B */
+    rsr     \reg_B, XT_REG_PRID             /* Load the current core's ID into reg_B */
     s32c1i  \reg_B, \reg_A, 0               /* Attempt *lock_var = reg_B */
     bnez    \reg_B, .L_spinlock_loop        /* If the write was successful (i.e., lock was free), 0 will have been written back to reg_B */
 

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -54,22 +54,22 @@ typedef struct {
 #define touch_hal_get_sleep_time(sleep_time) touch_ll_get_sleep_time(sleep_time)
 
 /**
- * Set touch sensor high / low voltage threshold of chanrge.
+ * Set touch sensor high / low voltage threshold of charge.
  * The touch sensor measures the channel capacitance value by charging and discharging the channel.
  * So charge threshold should be less than the supply voltage.
  * The actual charge threshold is high voltage threshold minus attenuation value.
  *
- * @param refh The high voltage threshold of chanrge.
+ * @param refh The high voltage threshold of charge.
  */
 void touch_hal_set_voltage(const touch_hal_volt_t *volt);
 
 /**
- * Get touch sensor high / low voltage threshold of chanrge.
+ * Get touch sensor high / low voltage threshold of charge.
  * The touch sensor measures the channel capacitance value by charging and discharging the channel.
  * So charge threshold should be less than the supply voltage.
  * The actual charge threshold is high voltage threshold minus attenuation value.
  *
- * @param refh The voltage threshold of chanrge / discharge.
+ * @param refh The voltage threshold of charge / discharge.
  */
 void touch_hal_get_voltage(touch_hal_volt_t *volt);
 

@@ -1,0 +1,48 @@
+{
+    "binary_ver": 1,
+    "hw_rev": 0,
+    "hdr_len": 3,
+    "inst_ct": 8,
+    "inst": [
+        {
+            "opcode": {
+                "op": "LOOPA"
+            }
+        },
+        {
+            "opcode": {
+                "op": "ADDA"
+            }
+        },
+        {
+            "opcode": {
+                "op": "IF"
+            }
+        },
+        {
+            "opcode": {
+                "op": "IFN"
+            }
+        },
+        {
+            "opcode": {
+                "op": "LDCTDA"
+            }
+        },
+        {
+            "opcode": {
+                "op": "LDCTIA"
+            }
+        },
+        {
+            "opcode": {
+                "op": "IF"
+            }
+        },
+        {
+            "opcode": {
+                "op": "ADDA"
+            }
+        }
+    ]
+}

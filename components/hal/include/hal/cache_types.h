@@ -23,7 +23,7 @@ typedef enum {
  *
  * @note
  * These enumurations are abstract concepts. Virtual address reside in one of these buses.
- * Therefore, use `cache_ll_l1_get_bus(cache_id, vaddr_start, len)` to convert your vaddr into buses first
+ * Therefore, use `cache_ll_l1_get_bus(bus_id, vaddr_start, len)` to convert your vaddr into buses first
  */
 typedef enum {
     CACHE_BUS_IBUS0 = BIT(0),

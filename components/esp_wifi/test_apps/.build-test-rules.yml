@@ -1,9 +1,9 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
-components/esp_wifi/test_apps/wifi_connect:
+components/esp_wifi/test_apps/:
   disable:
     - if: SOC_WIFI_SUPPORTED != 1
 
-components/esp_wifi/test_apps/wifi_function:
+components/esp_wifi/test_apps/wifi_nvs_config:
   disable:
     - if: SOC_WIFI_SUPPORTED != 1

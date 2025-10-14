@@ -14,7 +14,6 @@ extern "C" {
 
 #include "hal/lpwdt_ll.h"
 
-//TODO: IDF-7539
 typedef lp_wdt_dev_t rwdt_dev_t;
 
 #define RWDT_DEV_GET() &LP_WDT

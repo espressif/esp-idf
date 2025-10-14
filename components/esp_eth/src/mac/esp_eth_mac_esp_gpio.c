@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -32,13 +32,13 @@ static esp_err_t emac_esp_gpio_matrix_init(gpio_num_t gpio_num, uint32_t signal_
         ESP_LOGD(TAG, "%s skipping signal in_idx %" PRIu32 ", out_idx %" PRIu32, __func__, signal_in_idx, signal_out_idx);
         return ESP_OK;
     }
-    ESP_RETURN_ON_ERROR(gpio_set_direction(gpio_num, mode), TAG, "failed to set direction %i at GPIO #%i", mode, gpio_num);
     switch(mode) {
         case GPIO_MODE_INPUT:
             ESP_RETURN_ON_FALSE(signal_in_idx != SIG_GPIO_OUT_IDX, ESP_ERR_NOT_SUPPORTED,
                                 TAG, "requested periph signal cannot be connect via GPIO Matrix");
             ESP_RETURN_ON_FALSE(esp_gpio_is_reserved(BIT64(gpio_num)) == false, ESP_ERR_INVALID_STATE,
                                 TAG, "GPIO %i is reserved", gpio_num);
+            gpio_input_enable(gpio_num);
             esp_rom_gpio_connect_in_signal(gpio_num, signal_in_idx, false);
             break;
         case GPIO_MODE_OUTPUT:
@@ -55,6 +55,7 @@ static esp_err_t emac_esp_gpio_matrix_init(gpio_num_t gpio_num, uint32_t signal_
                                 TAG, "requested periph signal cannot be connect via GPIO Matrix");
             ESP_RETURN_ON_FALSE((esp_gpio_reserve(BIT64(gpio_num)) & BIT64(gpio_num)) == 0, ESP_ERR_INVALID_STATE,
                                 TAG, "GPIO %i is already reserved", gpio_num);
+            gpio_input_enable(gpio_num);
             esp_rom_gpio_connect_out_signal(gpio_num, signal_out_idx, false, false);
             esp_rom_gpio_connect_in_signal(gpio_num, signal_in_idx, false);
             break;
@@ -67,7 +68,7 @@ static esp_err_t emac_esp_gpio_matrix_init(gpio_num_t gpio_num, uint32_t signal_
     return ESP_OK;
 }
 
-static esp_err_t emac_esp_iomux_init(gpio_num_t gpio_num, const emac_iomux_info_t *iomux_info, bool is_input)
+static esp_err_t emac_esp_iomux_init(gpio_num_t gpio_num, const emac_iomux_info_t *iomux_info, uint32_t signal_idx, bool is_input)
 {
     // silently skip undefined iomux functions (for example, ESP32 does not use MII COL_IN/CRS_IN)
     if (iomux_info == NULL) {
@@ -81,16 +82,15 @@ static esp_err_t emac_esp_iomux_init(gpio_num_t gpio_num, const emac_iomux_info_
     }
     // loop over target iomux_info until reached end of list indicated by invalid GPIO num
     while (iomux_info->gpio_num != GPIO_NUM_MAX) {
-        // if requested GPIO number can be IO muxed or select single pad that can be muxed on the target
+        // if requested GPIO number can be IO muxed or select the only pad that can be muxed on the target
         if(gpio_num == iomux_info->gpio_num || gpio_num == GPIO_NUM_MAX) {
             ESP_RETURN_ON_FALSE((esp_gpio_reserve(BIT64(iomux_info->gpio_num)) & BIT64(iomux_info->gpio_num)) == 0, ESP_ERR_INVALID_STATE,
                                 TAG, "GPIO %i is already reserved", iomux_info->gpio_num);
             s_emac_esp_used_gpio_mask |= BIT64(iomux_info->gpio_num);
-            ESP_RETURN_ON_ERROR(gpio_func_sel(iomux_info->gpio_num, iomux_info->func), TAG, "failed to set GPIO function at GPIO %i", iomux_info->gpio_num);
             if (is_input) {
-                PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[iomux_info->gpio_num]);
+                ESP_RETURN_ON_ERROR(gpio_iomux_input(iomux_info->gpio_num, iomux_info->func, signal_idx), TAG, "failed to set perip. input via IOMUX");
             } else {
-                PIN_INPUT_DISABLE(GPIO_PIN_MUX_REG[iomux_info->gpio_num]);
+                ESP_RETURN_ON_ERROR(gpio_iomux_output(iomux_info->gpio_num, iomux_info->func), TAG, "failed to set perip. output via IOMUX");
             }
             ESP_RETURN_ON_ERROR(gpio_set_pull_mode(iomux_info->gpio_num, GPIO_FLOATING),
                                 TAG, "failed to set pull mode at GPIO %i", iomux_info->gpio_num);
@@ -158,34 +158,34 @@ esp_err_t emac_esp_iomux_init_mii(const eth_mac_mii_gpio_config_t *mii_gpio)
 {
     ESP_RETURN_ON_FALSE(emac_mii_iomux_pins.clk_tx != NULL, ESP_ERR_NOT_SUPPORTED, TAG, "target does not support MII IOMUX");
 
-    ESP_RETURN_ON_ERROR(emac_esp_iomux_init(GET_GPIO_OR_SINGLE(mii_gpio, tx_clk_num), emac_mii_iomux_pins.clk_tx, true),
-                        TAG, "invalid TX_CLK GPIO number");
-    ESP_RETURN_ON_ERROR(emac_esp_iomux_init(GET_GPIO_OR_SINGLE(mii_gpio, tx_en_num), emac_mii_iomux_pins.tx_en, false),
-                        TAG, "invalid TX_EN GPIO number");
-    ESP_RETURN_ON_ERROR(emac_esp_iomux_init(GET_GPIO_OR_SINGLE(mii_gpio, txd0_num), emac_mii_iomux_pins.txd0, false),
-                        TAG, "invalid TXD0 GPIO number");
-    ESP_RETURN_ON_ERROR(emac_esp_iomux_init(GET_GPIO_OR_SINGLE(mii_gpio, txd1_num), emac_mii_iomux_pins.txd1, false),
-                        TAG, "invalid TXD1 GPIO number");
-    ESP_RETURN_ON_ERROR(emac_esp_iomux_init(GET_GPIO_OR_SINGLE(mii_gpio, txd2_num), emac_mii_iomux_pins.txd2, false),
-                        TAG, "invalid TXD2 GPIO number");
-    ESP_RETURN_ON_ERROR(emac_esp_iomux_init(GET_GPIO_OR_SINGLE(mii_gpio, txd3_num), emac_mii_iomux_pins.txd3, false),
-                        TAG, "invalid TXD3 GPIO number");
-    ESP_RETURN_ON_ERROR(emac_esp_iomux_init(GET_GPIO_OR_SINGLE(mii_gpio, rx_clk_num), emac_mii_iomux_pins.clk_rx, true),
-                        TAG, "invalid RX_CLK GPIO number");
-    ESP_RETURN_ON_ERROR(emac_esp_iomux_init(GET_GPIO_OR_SINGLE(mii_gpio, rx_dv_num), emac_mii_iomux_pins.rx_dv, true),
-                        TAG, "invalid RX_DV GPIO number");
-    ESP_RETURN_ON_ERROR(emac_esp_iomux_init(GET_GPIO_OR_SINGLE(mii_gpio, rxd0_num), emac_mii_iomux_pins.rxd0, true),
-                        TAG, "invalid RXD0 GPIO number");
-    ESP_RETURN_ON_ERROR(emac_esp_iomux_init(GET_GPIO_OR_SINGLE(mii_gpio, rxd1_num), emac_mii_iomux_pins.rxd1, true),
-                        TAG, "invalid RXD1 GPIO number");
-    ESP_RETURN_ON_ERROR(emac_esp_iomux_init(GET_GPIO_OR_SINGLE(mii_gpio, rxd2_num), emac_mii_iomux_pins.rxd2, true),
-                        TAG, "invalid RXD2 GPIO number");
-    ESP_RETURN_ON_ERROR(emac_esp_iomux_init(GET_GPIO_OR_SINGLE(mii_gpio, rxd3_num), emac_mii_iomux_pins.rxd3, true),
-                        TAG, "invalid RXD3 GPIO number");
-    ESP_RETURN_ON_ERROR(emac_esp_iomux_init(GET_GPIO_OR_SINGLE(mii_gpio, col_in_num), emac_mii_iomux_pins.col_in, true),
-                        TAG, "invalid COL_IN GPIO number");
-    ESP_RETURN_ON_ERROR(emac_esp_iomux_init(GET_GPIO_OR_SINGLE(mii_gpio, crs_in_num), emac_mii_iomux_pins.crs_in, true),
-                        TAG, "invalid CRS_IN GPIO number");
+    ESP_RETURN_ON_ERROR(emac_esp_iomux_init(GET_GPIO_OR_SINGLE(mii_gpio, tx_clk_num), emac_mii_iomux_pins.clk_tx,
+                        emac_io_idx.mii_tx_clk_i_idx, true), TAG, "invalid TX_CLK GPIO number");
+    ESP_RETURN_ON_ERROR(emac_esp_iomux_init(GET_GPIO_OR_SINGLE(mii_gpio, tx_en_num), emac_mii_iomux_pins.tx_en,
+                        emac_io_idx.mii_tx_en_o_idx, false), TAG, "invalid TX_EN GPIO number");
+    ESP_RETURN_ON_ERROR(emac_esp_iomux_init(GET_GPIO_OR_SINGLE(mii_gpio, txd0_num), emac_mii_iomux_pins.txd0,
+                        emac_io_idx.mii_txd0_o_idx, false), TAG, "invalid TXD0 GPIO number");
+    ESP_RETURN_ON_ERROR(emac_esp_iomux_init(GET_GPIO_OR_SINGLE(mii_gpio, txd1_num), emac_mii_iomux_pins.txd1,
+                        emac_io_idx.mii_txd1_o_idx, false), TAG, "invalid TXD1 GPIO number");
+    ESP_RETURN_ON_ERROR(emac_esp_iomux_init(GET_GPIO_OR_SINGLE(mii_gpio, txd2_num), emac_mii_iomux_pins.txd2,
+                        emac_io_idx.mii_txd2_o_idx, false), TAG, "invalid TXD2 GPIO number");
+    ESP_RETURN_ON_ERROR(emac_esp_iomux_init(GET_GPIO_OR_SINGLE(mii_gpio, txd3_num), emac_mii_iomux_pins.txd3,
+                        emac_io_idx.mii_txd3_o_idx, false), TAG, "invalid TXD3 GPIO number");
+    ESP_RETURN_ON_ERROR(emac_esp_iomux_init(GET_GPIO_OR_SINGLE(mii_gpio, rx_clk_num), emac_mii_iomux_pins.clk_rx,
+                        emac_io_idx.mii_rx_clk_i_idx, true), TAG, "invalid RX_CLK GPIO number");
+    ESP_RETURN_ON_ERROR(emac_esp_iomux_init(GET_GPIO_OR_SINGLE(mii_gpio, rx_dv_num), emac_mii_iomux_pins.rx_dv,
+                        emac_io_idx.mii_rx_dv_i_idx, true), TAG, "invalid RX_DV GPIO number");
+    ESP_RETURN_ON_ERROR(emac_esp_iomux_init(GET_GPIO_OR_SINGLE(mii_gpio, rxd0_num), emac_mii_iomux_pins.rxd0,
+                        emac_io_idx.mii_rxd0_i_idx, true), TAG, "invalid RXD0 GPIO number");
+    ESP_RETURN_ON_ERROR(emac_esp_iomux_init(GET_GPIO_OR_SINGLE(mii_gpio, rxd1_num), emac_mii_iomux_pins.rxd1,
+                        emac_io_idx.mii_rxd1_i_idx, true), TAG, "invalid RXD1 GPIO number");
+    ESP_RETURN_ON_ERROR(emac_esp_iomux_init(GET_GPIO_OR_SINGLE(mii_gpio, rxd2_num), emac_mii_iomux_pins.rxd2,
+                        emac_io_idx.mii_rxd2_i_idx, true), TAG, "invalid RXD2 GPIO number");
+    ESP_RETURN_ON_ERROR(emac_esp_iomux_init(GET_GPIO_OR_SINGLE(mii_gpio, rxd3_num), emac_mii_iomux_pins.rxd3,
+                        emac_io_idx.mii_rxd3_i_idx, true), TAG, "invalid RXD3 GPIO number");
+    ESP_RETURN_ON_ERROR(emac_esp_iomux_init(GET_GPIO_OR_SINGLE(mii_gpio, col_in_num), emac_mii_iomux_pins.col_in,
+                        emac_io_idx.mii_col_i_idx, true), TAG, "invalid COL_IN GPIO number");
+    ESP_RETURN_ON_ERROR(emac_esp_iomux_init(GET_GPIO_OR_SINGLE(mii_gpio, crs_in_num), emac_mii_iomux_pins.crs_in,
+                        emac_io_idx.mii_crs_i_idx, true), TAG, "invalid CRS_IN GPIO number");
     return ESP_OK;
 }
 
@@ -193,7 +193,8 @@ esp_err_t emac_esp_iomux_rmii_clk_input(int num)
 {
     ESP_RETURN_ON_FALSE(emac_rmii_iomux_pins.clki != NULL, ESP_ERR_NOT_SUPPORTED, TAG, "target does not support RMII CLKI IOMUX");
 
-    ESP_RETURN_ON_ERROR(emac_esp_iomux_init(num, emac_rmii_iomux_pins.clki, true), TAG, "invalid RMII CLK input GPIO number");
+    ESP_RETURN_ON_ERROR(emac_esp_iomux_init(num, emac_rmii_iomux_pins.clki, emac_io_idx.rmii_refclk_i_idx, true),
+                        TAG, "invalid RMII CLK input GPIO number");
     return ESP_OK;
 }
 
@@ -201,7 +202,8 @@ esp_err_t emac_esp_iomux_rmii_clk_ouput(int num)
 {
     ESP_RETURN_ON_FALSE(emac_rmii_iomux_pins.clko != NULL, ESP_ERR_NOT_SUPPORTED, TAG, "target does not support RMII CLKO IOMUX");
 
-    ESP_RETURN_ON_ERROR(emac_esp_iomux_init(num, emac_rmii_iomux_pins.clko, false), TAG, "invalid RMII CLK output GPIO number");
+    ESP_RETURN_ON_ERROR(emac_esp_iomux_init(num, emac_rmii_iomux_pins.clko, emac_io_idx.rmii_refclk_o_idx, false),
+                        TAG, "invalid RMII CLK output GPIO number");
     return ESP_OK;
 }
 
@@ -209,18 +211,18 @@ esp_err_t emac_esp_iomux_init_rmii(const eth_mac_rmii_gpio_config_t *rmii_gpio)
 {
     ESP_RETURN_ON_FALSE(emac_rmii_iomux_pins.clki != NULL, ESP_ERR_NOT_SUPPORTED, TAG, "target does not support RMII IOMUX");
 
-    ESP_RETURN_ON_ERROR(emac_esp_iomux_init(GET_GPIO_OR_SINGLE(rmii_gpio, tx_en_num), emac_rmii_iomux_pins.tx_en, false),
-                        TAG, "invalid TX_EN GPIO number");
-    ESP_RETURN_ON_ERROR(emac_esp_iomux_init(GET_GPIO_OR_SINGLE(rmii_gpio, txd0_num), emac_rmii_iomux_pins.txd0, false),
-                        TAG, "invalid TXD0 GPIO number");
-    ESP_RETURN_ON_ERROR(emac_esp_iomux_init(GET_GPIO_OR_SINGLE(rmii_gpio, txd1_num), emac_rmii_iomux_pins.txd1, false),
-                        TAG, "invalid TXD1 GPIO number");
-    ESP_RETURN_ON_ERROR(emac_esp_iomux_init(GET_GPIO_OR_SINGLE(rmii_gpio, crs_dv_num), emac_rmii_iomux_pins.crs_dv, true),
-                        TAG,"invalid CRS_DV GPIO number");
-    ESP_RETURN_ON_ERROR(emac_esp_iomux_init(GET_GPIO_OR_SINGLE(rmii_gpio, rxd0_num), emac_rmii_iomux_pins.rxd0, true),
-                        TAG,"invalid RXD0 GPIO number");
-    ESP_RETURN_ON_ERROR(emac_esp_iomux_init(GET_GPIO_OR_SINGLE(rmii_gpio, rxd1_num), emac_rmii_iomux_pins.rxd1, true),
-                        TAG,"invalid RXD1 GPIO number");
+    ESP_RETURN_ON_ERROR(emac_esp_iomux_init(GET_GPIO_OR_SINGLE(rmii_gpio, tx_en_num), emac_rmii_iomux_pins.tx_en,
+                        emac_io_idx.mii_tx_en_o_idx, false), TAG, "invalid TX_EN GPIO number");
+    ESP_RETURN_ON_ERROR(emac_esp_iomux_init(GET_GPIO_OR_SINGLE(rmii_gpio, txd0_num), emac_rmii_iomux_pins.txd0,
+                        emac_io_idx.mii_txd0_o_idx, false), TAG, "invalid TXD0 GPIO number");
+    ESP_RETURN_ON_ERROR(emac_esp_iomux_init(GET_GPIO_OR_SINGLE(rmii_gpio, txd1_num), emac_rmii_iomux_pins.txd1,
+                        emac_io_idx.mii_txd1_o_idx, false), TAG, "invalid TXD1 GPIO number");
+    ESP_RETURN_ON_ERROR(emac_esp_iomux_init(GET_GPIO_OR_SINGLE(rmii_gpio, crs_dv_num), emac_rmii_iomux_pins.crs_dv,
+                        emac_io_idx.mii_crs_i_idx, true), TAG,"invalid CRS_DV GPIO number");
+    ESP_RETURN_ON_ERROR(emac_esp_iomux_init(GET_GPIO_OR_SINGLE(rmii_gpio, rxd0_num), emac_rmii_iomux_pins.rxd0,
+                        emac_io_idx.mii_rxd0_i_idx, true), TAG,"invalid RXD0 GPIO number");
+    ESP_RETURN_ON_ERROR(emac_esp_iomux_init(GET_GPIO_OR_SINGLE(rmii_gpio, rxd1_num), emac_rmii_iomux_pins.rxd1,
+                        emac_io_idx.mii_rxd1_i_idx, true), TAG,"invalid RXD1 GPIO number");
 
     return ESP_OK;
 }
@@ -229,7 +231,8 @@ esp_err_t emac_esp_iomux_rmii_init_tx_er(int num)
 {
     ESP_RETURN_ON_FALSE(emac_rmii_iomux_pins.tx_er != NULL, ESP_ERR_NOT_SUPPORTED, TAG, "target does not support RMII TX_ER IOMUX");
 
-    ESP_RETURN_ON_ERROR(emac_esp_iomux_init(num, emac_rmii_iomux_pins.tx_er, false), TAG, "invalid TX_ER GPIO number");
+    ESP_RETURN_ON_ERROR(emac_esp_iomux_init(num, emac_rmii_iomux_pins.tx_er, emac_io_idx.mii_tx_er_o_idx, false),
+                        TAG, "invalid TX_ER GPIO number");
     return ESP_OK;
 }
 
@@ -237,7 +240,8 @@ esp_err_t emac_esp_iomux_rmii_init_rx_er(int num)
 {
     ESP_RETURN_ON_FALSE(emac_rmii_iomux_pins.rx_er != NULL, ESP_ERR_NOT_SUPPORTED, TAG, "target does not support RMII RX_ER IOMUX");
 
-    ESP_RETURN_ON_ERROR(emac_esp_iomux_init(num, emac_rmii_iomux_pins.rx_er, true), TAG, "invalid RX_ER GPIO number");
+    ESP_RETURN_ON_ERROR(emac_esp_iomux_init(num, emac_rmii_iomux_pins.rx_er, emac_io_idx.mii_rx_er_i_idx, true),
+                        TAG, "invalid RX_ER GPIO number");
     return ESP_OK;
 }
 
@@ -245,7 +249,8 @@ esp_err_t emac_esp_iomux_mii_init_tx_er(int num)
 {
     ESP_RETURN_ON_FALSE(emac_mii_iomux_pins.tx_er != NULL, ESP_ERR_NOT_SUPPORTED, TAG, "target does not support MII TX_ER IOMUX");
 
-    ESP_RETURN_ON_ERROR(emac_esp_iomux_init(num, emac_mii_iomux_pins.tx_er, false), TAG, "invalid TX_ER GPIO number");
+    ESP_RETURN_ON_ERROR(emac_esp_iomux_init(num, emac_mii_iomux_pins.tx_er, emac_io_idx.mii_tx_er_o_idx, false),
+                        TAG, "invalid TX_ER GPIO number");
     return ESP_OK;
 }
 
@@ -253,7 +258,8 @@ esp_err_t emac_esp_iomux_mii_init_rx_er(int num)
 {
     ESP_RETURN_ON_FALSE(emac_mii_iomux_pins.rx_er != NULL, ESP_ERR_NOT_SUPPORTED, TAG, "target does not support RMII RX_ER IOMUX");
 
-    ESP_RETURN_ON_ERROR(emac_esp_iomux_init(num, emac_mii_iomux_pins.rx_er, true), TAG, "invalid RX_ER GPIO number");
+    ESP_RETURN_ON_ERROR(emac_esp_iomux_init(num, emac_mii_iomux_pins.rx_er, emac_io_idx.mii_rx_er_i_idx, true),
+                        TAG, "invalid RX_ER GPIO number");
     return ESP_OK;
 }
 

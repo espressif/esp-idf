@@ -151,6 +151,7 @@ static const tBTA_AV_ST_TBL bta_av_st_tbl[] = {
 typedef void (*tBTA_AV_NSM_ACT)(tBTA_AV_DATA *p_data);
 static void bta_av_api_enable(tBTA_AV_DATA *p_data);
 static void bta_av_api_register(tBTA_AV_DATA *p_data);
+static void bta_av_api_reg_sep(tBTA_AV_DATA *p_data);
 #if (BTA_AV_SINK_INCLUDED == TRUE)
 static void bta_av_api_sink_enable(tBTA_AV_DATA *p_data);
 static void bta_av_api_get_delay_value(tBTA_AV_DATA *p_data);
@@ -170,6 +171,7 @@ static void bta_av_sys_rs_cback (tBTA_SYS_CONN_STATUS status, UINT8 id, UINT8 ap
 const tBTA_AV_NSM_ACT bta_av_nsm_act[] = {
     bta_av_api_enable,      /* BTA_AV_API_ENABLE_EVT */
     bta_av_api_register,    /* BTA_AV_API_REGISTER_EVT */
+    bta_av_api_reg_sep,     /* BTA_AV_API_REG_SEP_EVT */
     bta_av_api_deregister,  /* BTA_AV_API_DEREGISTER_EVT */
     bta_av_api_disconnect,  /* BTA_AV_API_DISCONNECT_EVT */
     bta_av_ci_data,         /* BTA_AV_CI_SRC_DATA_READY_EVT */
@@ -533,9 +535,11 @@ static void bta_av_api_register(tBTA_AV_DATA *p_data)
     tAVDT_REG       reg;
     tAVDT_CS        cs;
     char            *p_service_name;
-    tBTA_AV_CODEC   codec_type;
     tBTA_UTL_COD    cod;
+#if (BTA_AV_EXT_CODEC == FALSE)
+    tBTA_AV_CODEC   codec_type;
     UINT8           index = 0;
+#endif
     char p_avk_service_name[BTA_SERVICE_NAME_LEN + 1];
     BCM_STRNCPY_S(p_avk_service_name, BTIF_AVK_SERVICE_NAME, BTA_SERVICE_NAME_LEN);
     p_avk_service_name[BTA_SERVICE_NAME_LEN] = '\0';
@@ -658,6 +662,7 @@ static void bta_av_api_register(tBTA_AV_DATA *p_data)
 
             /* keep the configuration in the stream control block */
             memcpy(&p_scb->cfg, &cs.cfg, sizeof(tAVDT_CFG));
+#if (BTA_AV_EXT_CODEC == FALSE)
             while (index < BTA_AV_MAX_SEPS &&
                     (p_scb->p_cos->init)(&codec_type, cs.cfg.codec_info,
                                          &cs.cfg.num_protect, cs.cfg.protect_info, p_data->api_reg.tsep) == TRUE) {
@@ -673,12 +678,13 @@ static void bta_av_api_register(tBTA_AV_DATA *p_data)
 
 #if (BTA_AV_SINK_INCLUDED == TRUE)
                     p_scb->seps[index].tsep = cs.tsep;
-                    if (cs.tsep == AVDT_TSEP_SNK) {
-                        p_scb->seps[index].p_app_data_cback = p_data->api_reg.p_app_data_cback;
-                    } else {
-                        p_scb->seps[index].p_app_data_cback = NULL;    /* In case of A2DP SOURCE we don't need a callback to handle media packets */
-                    }
+                    // if (cs.tsep == AVDT_TSEP_SNK) {
+                    //     p_scb->seps[index].p_app_data_cback = p_data->api_reg.p_app_data_cback;
+                    // } else {
+                    //     p_scb->seps[index].p_app_data_cback = NULL;    /* In case of A2DP SOURCE we don't need a callback to handle media packets */
+                    // }
 #endif
+                    p_scb->seps[index].p_app_data_cback = p_data->api_reg.p_app_data_cback;
 
                     APPL_TRACE_DEBUG("audio[%d] av_handle: %d codec_type: %d\n",
                                      index, p_scb->seps[index].av_handle, p_scb->seps[index].codec_type);
@@ -687,6 +693,7 @@ static void bta_av_api_register(tBTA_AV_DATA *p_data)
                     break;
                 }
             }
+#endif
 
             if (!bta_av_cb.reg_audio) {
                 if (p_data->api_reg.tsep == AVDT_TSEP_SRC) {
@@ -742,6 +749,86 @@ static void bta_av_api_register(tBTA_AV_DATA *p_data)
 
     /* call callback with register event */
     (*bta_av_cb.p_cback)(BTA_AV_REGISTER_EVT, (tBTA_AV *)&registr);
+}
+
+static void bta_av_api_reg_sep(tBTA_AV_DATA *p_data)
+{
+    UNUSED(p_data);
+#if (BTA_AV_EXT_CODEC == TRUE)
+    tAVDT_CS        cs;
+    tBTA_AV_CODEC   codec_type;
+    UINT8           index = p_data->api_reg_sep.seid;
+    tBTA_AV_SEP_REG sep_reg;
+
+    sep_reg.seid = p_data->api_reg_sep.seid;
+    sep_reg.reg_state = BTA_AV_FAIL;
+
+    if (index > BTA_AV_MAX_SEPS || p_data->hdr.layer_specific != BTA_AV_CHNL_AUDIO) {
+        (*bta_av_cb.p_cback)(BTA_AV_SEP_REG_EVT, (tBTA_AV *)&sep_reg);
+        APPL_TRACE_WARNING("%s invalid parameter: seid %d, ch %d", __FUNCTION__, index, p_data->hdr.layer_specific);
+        return;
+    }
+
+    memset(&cs, 0, sizeof(tAVDT_CS));
+    cs.cfg.num_codec = 1;
+    cs.tsep = p_data->api_reg_sep.tsep;
+    cs.nsc_mask = AVDT_NSC_RECONFIG | ((bta_av_cb.features & BTA_AV_FEAT_PROTECT) ? 0 : AVDT_NSC_SECURITY);
+
+    for (int xx = 0; xx < BTA_AV_NUM_STRS; xx++) {
+        if (bta_av_cb.p_scb[xx] != NULL && bta_av_cb.p_scb[xx]->chnl == BTA_AV_CHNL_AUDIO) {
+            tBTA_AV_SCB *p_scb = bta_av_cb.p_scb[xx];
+            cs.p_ctrl_cback  = bta_av_dt_cback[p_scb->hdi];
+            cs.cfg.psc_mask  = AVDT_PSC_TRANS;
+            cs.media_type    = AVDT_MEDIA_AUDIO;
+            cs.mtu           = p_bta_av_cfg->audio_mtu;
+            cs.flush_to      = L2CAP_DEFAULT_FLUSH_TO;
+
+#if AVDT_REPORTING == TRUE
+            if (bta_av_cb.features & BTA_AV_FEAT_REPORT) {
+                cs.cfg.psc_mask |= AVDT_PSC_REPORT;
+                cs.p_report_cback = bta_av_a2dp_report_cback;
+#if AVDT_MULTIPLEXING == TRUE
+                cs.cfg.mux_tsid_report = 2;
+#endif
+            }
+#endif
+            if (bta_av_cb.features & BTA_AV_FEAT_DELAY_RPT) {
+                cs.cfg.psc_mask |= AVDT_PSC_DELAY_RPT;
+            }
+            /* todo: check whether this memcpy is necessary */
+            memcpy(&p_scb->cfg, &cs.cfg, sizeof(tAVDT_CFG));
+
+            codec_type = p_data->api_reg_sep.codec_type;
+            memcpy(cs.cfg.codec_info, p_data->api_reg_sep.codec_info, AVDT_CODEC_SIZE);
+            if ((p_scb->p_cos->init)(&codec_type, cs.cfg.codec_info,
+                                     &cs.cfg.num_protect, cs.cfg.protect_info, p_data->api_reg_sep.tsep) == TRUE) {
+
+#if (BTA_AV_SINK_INCLUDED == TRUE)
+                if (p_data->api_reg_sep.tsep == AVDT_TSEP_SNK) {
+                    cs.p_data_cback = bta_av_stream_data_cback;
+                }
+#endif
+                if ((p_scb->seps[index].av_handle != 0) && (AVDT_RemoveStream(p_scb->seps[index].av_handle) != AVDT_SUCCESS)) {
+                    APPL_TRACE_WARNING("%s fail to remove exist sep", __FUNCTION__);
+                }
+                if (AVDT_CreateStream(&p_scb->seps[index].av_handle, &cs) == AVDT_SUCCESS) {
+                    p_scb->seps[index].codec_type = codec_type;
+                    p_scb->seps[index].tsep = cs.tsep;
+                    p_scb->seps[index].p_app_data_cback = p_data->api_reg_sep.p_data_cback;
+                } else {
+                    APPL_TRACE_WARNING("%s fail to create sep", __FUNCTION__);
+                    break;
+                }
+            }
+            else {
+                APPL_TRACE_WARNING("%s invalid codec capability", __FUNCTION__);
+            }
+        }
+    }
+
+    sep_reg.reg_state = BTA_AV_SUCCESS;
+    (*bta_av_cb.p_cback)(BTA_AV_SEP_REG_EVT, (tBTA_AV *)&sep_reg);
+#endif
 }
 
 /*******************************************************************************
@@ -1415,7 +1502,8 @@ char *bta_av_action_code(UINT16 action_code)
     case 46: return "BTA_AV_DELAY_CO";
     case 47: return "BTA_AV_OPEN_AT_INC";
     case 48: return "BTA_AV_OPEN_FAIL_SDP";
-    case 49: return "NULL";
+    case 49: return "BTA_AV_SET_DELAY_VALUE";
+    case 50: return "NULL";
     default: return "unknown";
     }
 }

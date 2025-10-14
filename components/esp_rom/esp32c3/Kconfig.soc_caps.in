@@ -55,6 +55,10 @@ config ESP_ROM_HAS_SPI_FLASH
     bool
     default y
 
+config ESP_ROM_HAS_SPI_FLASH_MMAP
+    bool
+    default y
+
 config ESP_ROM_HAS_ETS_PRINTF_BUG
     bool
     default y
@@ -92,5 +96,13 @@ config ESP_ROM_HAS_VERSION
     default y
 
 config ESP_ROM_SUPPORT_DEEP_SLEEP_WAKEUP_STUB
+    bool
+    default y
+
+config ESP_ROM_CONSOLE_OUTPUT_SECONDARY
+    bool
+    default y
+
+config ESP_ROM_HAS_SUBOPTIMAL_NEWLIB_ON_MISALIGNED_MEMORY
     bool
     default y

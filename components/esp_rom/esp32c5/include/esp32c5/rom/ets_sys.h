@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -64,9 +64,9 @@ struct ETSEventTag {
 typedef void (*ETSTask)(ETSEvent *e);       /**< Type of the Task processor*/
 typedef void (* ets_idle_cb_t)(void *arg);  /**< Type of the system idle callback*/
 
-
-
-
+typedef struct ets_ops {
+  void (*ets_delay_us)(uint32_t us);
+} ets_ops;
 
 /**
   * @}
@@ -410,16 +410,29 @@ void intr_matrix_set(int cpu_no, uint32_t model_num, uint32_t intr_num);
 
 #define ETS_MEM_BAR() asm volatile ( "" : : : "memory" )
 
-#ifdef ESP_PLATFORM
-// Remove in IDF v6.0 (IDF-7044)
-typedef enum {
-    OK = 0,
-    FAIL,
-    PENDING,
-    BUSY,
-    CANCEL,
-} STATUS __attribute__((deprecated("Use ETS_STATUS instead")));
-#endif
+/**
+ * @brief Returns the offset from which the bootloader image is used to load.
+ *
+ * The offset can point to either the PRIMARY or RECOVERY bootloader.
+ *
+ * @note The bootloader offset variable in ROM is stored in a memory that will be reclaimed by heap component.
+ *       Read it before the heap is initialized, otherwise it may return an invalid value.
+ *
+ * @return The offset of the active bootloader.
+ */
+uint32_t ets_get_bootloader_offset(void);
+
+/**
+ * @brief Sets the offset from which the bootloader image is used to load.
+ *
+ * The offset can point to either the PRIMARY or RECOVERY bootloader.
+ *
+ * @note The bootloader offset variable in ROM is stored in a memory that will be reclaimed by heap component.
+ *       Setting it after the heap is initialized, may corrupt the heap memory.
+ *
+ * @param offset The offset value to set for the active bootloader.
+ */
+void ets_set_bootloader_offset(uint32_t offset);
 
 /**
   * @}

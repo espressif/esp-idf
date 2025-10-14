@@ -5,8 +5,7 @@
  */
 #include "hal/mpi_hal.h"
 #include "hal/mpi_ll.h"
-#include "sdkconfig.h"
-
+#include "soc/soc_caps_full.h"
 
 size_t mpi_hal_calc_hardware_words(size_t words)
 {
@@ -15,19 +14,18 @@ size_t mpi_hal_calc_hardware_words(size_t words)
 
 void mpi_hal_enable_hardware_hw_op(void)
 {
-    mpi_ll_power_up();
     while (mpi_ll_check_memory_init_complete()) {
     }
     // Note: from enabling RSA clock to here takes about 1.3us
 
-#if !CONFIG_IDF_TARGET_ESP32
+#if !SOC_IS(ESP32)
     mpi_ll_disable_interrupt();
 #endif
 }
 
 void mpi_hal_disable_hardware_hw_op(void)
 {
-    mpi_ll_power_down();
+
 }
 
 void mpi_hal_interrupt_enable(bool enable)
@@ -71,7 +69,7 @@ void mpi_hal_write_rinv(uint32_t rinv)
 }
 
 // Acceleration options
-#if !CONFIG_IDF_TARGET_ESP32
+#if !SOC_IS(ESP32)
 void mpi_hal_enable_constant_time(bool enable)
 {
     if (enable){
@@ -96,7 +94,7 @@ void mpi_hal_set_search_position(size_t position)
 {
     mpi_ll_set_search_position(position);
 }
-#endif /* !CONFIG_IDF_TARGET_ESP32 */
+#endif // !SOC_IS(ESP32)
 
 /* Begin an RSA operation.
 */

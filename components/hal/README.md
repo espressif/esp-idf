@@ -19,11 +19,17 @@ One compromise is to **highlight** the LL function which needs the caller to use
 ```c
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_RC_ATOMIC_ENV variable in advance
-#define timer_ll_reset_register(...) (void)__DECLARE_RCC_RC_ATOMIC_ENV; timer_ll_reset_register(__VA_ARGS__)
+#define timer_ll_reset_register(...) do { \
+        (void)__DECLARE_RCC_RC_ATOMIC_ENV; \
+        timer_ll_reset_register(__VA_ARGS__); \
+    } while(0)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define timer_ll_set_clock_source(...) (void)__DECLARE_RCC_ATOMIC_ENV; timer_ll_set_clock_source(__VA_ARGS__)
+#define timer_ll_set_clock_source(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        timer_ll_set_clock_source(__VA_ARGS__); \
+    } while(0)
 ```
 
 By referencing a variable which is only declared in the critical section, the compiler will report an error if the caller forgets to use the critical section. The following macros are provided by `esp_private/periph_ctrl.h`, which contain the above *magic* variables.

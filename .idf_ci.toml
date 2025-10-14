@@ -1,0 +1,106 @@
+preserve_non_test_related_apps = false
+exclude_dirs = [
+    'tools/test_mkdfu',
+    'tools/test_idf_size',
+    'tools/test_idf_py',
+    'tools/test_idf_diag',
+    'tools/test_bsasm',
+    'tools/ci/test_autocomplete',
+    'tools/test_build_system',
+]
+
+[local_runtime_envs]
+EXTRA_CFLAGS = "-Werror -Werror=deprecated-declarations -Werror=unused-variable -Werror=unused-but-set-variable -Werror=unused-function -Wstrict-prototypes"
+EXTRA_CXXFLAGS = "-Werror -Werror=deprecated-declarations -Werror=unused-variable -Werror=unused-but-set-variable -Werror=unused-function"
+LDGEN_CHECK_MAPPING = "1"
+IDF_CI_BUILD = "1"
+
+[gitlab]
+
+[gitlab.build_pipeline]
+workflow_name = "build_child_pipeline"
+presigned_json_job_name = 'generate_pytest_build_report'
+
+job_tags = ['build', 'shiny']
+job_template_name = '.dynamic_build_template'
+job_template_jinja = ''  # write in tools/ci/dynamic_pipelines/templates/.dynamic_jobs.yml
+pre_yaml_jinja = """
+include:
+  - .gitlab/ci/common.yml
+  - tools/ci/dynamic_pipelines/templates/.dynamic_jobs.yml
+  - tools/ci/dynamic_pipelines/templates/test_child_pipeline.yml
+"""
+yaml_jinja = """
+{{ settings.gitlab.build_pipeline.pre_yaml_jinja }}
+
+workflow:
+  name: {{ settings.gitlab.build_pipeline.workflow_name }}
+  rules:
+    - when: always
+
+{{ jobs }}
+"""  # simplified since we included the tools/ci/dynamic_pipelines/templates/test_child_pipeline.yml
+
+[gitlab.test_pipeline]
+job_template_name = '.dynamic_target_test_template'
+job_template_jinja = ''  # write in tools/ci/dynamic_pipelines/templates/.dynamic_jobs.yml
+pre_yaml_jinja = """
+include:
+  - .gitlab/ci/common.yml
+  - tools/ci/dynamic_pipelines/templates/.dynamic_jobs.yml
+  - tools/ci/dynamic_pipelines/templates/generate_target_test_report.yml
+"""
+
+[gitlab.artifacts.s3.debug]
+bucket = "idf-artifacts"
+patterns = [
+    '**/build*/bootloader/*.map',
+    '**/build*/bootloader/*.elf',
+    '**/build*/*.map',
+    '**/build*/*.elf',
+    # customized
+    '**/build*/esp_tee/*.map',
+    '**/build*/esp_tee/*.elf',
+    '**/build*/gdbinit/*',
+]
+
+[gitlab.artifacts.s3.flash]
+bucket = "idf-artifacts"
+patterns = [
+    '**/build*/bootloader/*.bin',
+    '**/build*/*.bin',
+    '**/build*/partition_table/*.bin',
+    '**/build*/flasher_args.json',
+    '**/build*/flash_project_args',
+    '**/build*/config/sdkconfig.json',
+    '**/build*/sdkconfig',
+    '**/build*/project_description.json',
+    # customized
+    '**/build*/esp_tee/*.bin',
+]
+
+[gitlab.artifacts.s3.log]
+bucket = "idf-artifacts"
+patterns = [
+    '**/build*/build_log.txt',
+    '**/build*/size*.json',
+]
+
+[gitlab.artifacts.s3.junit]
+bucket = "idf-artifacts"
+patterns = [
+    'XUNIT_RESULT_*.xml',
+]
+
+[gitlab.artifacts.s3.env]
+bucket = "idf-artifacts"
+patterns = [
+    'pipeline.env',
+]
+
+[gitlab.artifacts.s3.longterm]
+bucket = "longterm"
+if_clause = '"$CI_COMMIT_REF_NAME" == "master"'
+patterns = [
+    '**/build*/size.json',
+]

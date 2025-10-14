@@ -32,7 +32,7 @@
  */
 
 #define ASYNC_WORKER_TASK_PRIORITY      5
-#define ASYNC_WORKER_TASK_STACK_SIZE    2048
+#define ASYNC_WORKER_TASK_STACK_SIZE    CONFIG_EXAMPLE_ASYNC_WORKER_TASK_STACK_SIZE
 
 static const char *TAG = "example";
 
@@ -95,7 +95,42 @@ static esp_err_t queue_request(httpd_req_t *req, httpd_req_handler_t handler)
 /* handle long request (on async thread) */
 static esp_err_t long_async(httpd_req_t *req)
 {
-    ESP_LOGI(TAG, "running: /long");
+    char*  buf;
+    size_t buf_len;
+
+    /* Get URI */
+    ESP_LOGI(TAG, "Request URI: %s", req->uri);
+
+    /* Get header value string length and allocate memory for length + 1,
+     * extra byte for null termination */
+    buf_len = httpd_req_get_hdr_value_len(req, "Host") + 1;
+    if (buf_len > 1) {
+        buf = malloc(buf_len);
+        if (buf == NULL) {
+            ESP_LOGE(TAG, "Failed to allocate memory for headers");
+            return ESP_FAIL;
+        }
+        /* Copy null terminated value string into buffer */
+        if (httpd_req_get_hdr_value_str(req, "Host", buf, buf_len) == ESP_OK) {
+            ESP_LOGI(TAG, "Found header => Host: %s", buf);
+        }
+        free(buf);
+    }
+    /* Get query string length and allocate memory for length + 1,
+     * extra byte for null termination */
+    buf_len = httpd_req_get_url_query_len(req) + 1;
+    if (buf_len > 1) {
+        buf = malloc(buf_len);
+        if (buf == NULL) {
+            ESP_LOGE(TAG, "Failed to allocate memory for query string");
+            return ESP_FAIL;
+        }
+        /* Copy null terminated query string into buffer */
+        if (httpd_req_get_url_query_str(req, buf, buf_len) == ESP_OK) {
+            ESP_LOGI(TAG, "Found query string => %s", buf);
+        }
+        free(buf);
+    }
 
     // track the number of long requests
     static uint8_t req_count = 0;
@@ -104,7 +139,11 @@ static esp_err_t long_async(httpd_req_t *req)
     // send a request count
     char s[100];
     snprintf(s, sizeof(s), "<div>req: %u</div>\n", req_count);
-    httpd_resp_sendstr_chunk(req, s);
+    esp_err_t err = httpd_resp_sendstr_chunk(req, s);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to send string chunk: %s", esp_err_to_name(err));
+        return err;
+    }
 
     // then every second, send a "tick"
     for (int i = 0; i < 60; i++) {
@@ -116,11 +155,19 @@ static esp_err_t long_async(httpd_req_t *req)
 
         // send a tick
         snprintf(s, sizeof(s), "<div>%u</div>\n", i);
-        httpd_resp_sendstr_chunk(req, s);
+        err = httpd_resp_sendstr_chunk(req, s);
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to send string chunk: %s", esp_err_to_name(err));
+            return err;
+        }
     }
 
     // send "complete"
-    httpd_resp_sendstr_chunk(req, NULL);
+    err = httpd_resp_sendstr_chunk(req, NULL);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to send string chunk: %s", esp_err_to_name(err));
+        return err;
+    }
 
     return ESP_OK;
 }

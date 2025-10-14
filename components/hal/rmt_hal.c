@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,6 +11,7 @@ void rmt_hal_init(rmt_hal_context_t *hal)
 {
     hal->regs = &RMT;
     rmt_ll_mem_power_by_pmu(hal->regs);
+    rmt_ll_mem_set_low_power_mode(hal->regs, RMT_LL_MEM_LP_MODE_SHUT_DOWN); // power down memory during low power stage
     rmt_ll_enable_mem_access_nonfifo(hal->regs, true);     // APB access the RMTMEM in nonfifo mode
     rmt_ll_enable_interrupt(hal->regs, UINT32_MAX, false); // disable all interrupt events
     rmt_ll_clear_interrupt_status(hal->regs, UINT32_MAX);  // clear all pending events
@@ -23,7 +24,7 @@ void rmt_hal_deinit(rmt_hal_context_t *hal)
 {
     rmt_ll_enable_interrupt(hal->regs, UINT32_MAX, false); // disable all interrupt events
     rmt_ll_clear_interrupt_status(hal->regs, UINT32_MAX);  // clear all pending events
-    rmt_ll_mem_force_power_off(hal->regs);                 // power off RMTMEM power domain forcefully
+    rmt_ll_mem_force_low_power(hal->regs);                 // power off RMTMEM power domain forcefully
     hal->regs = NULL;
 }
 

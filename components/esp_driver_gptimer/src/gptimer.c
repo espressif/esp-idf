@@ -1,27 +1,14 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <stdlib.h>
 #include <sys/lock.h>
-#include "sdkconfig.h"
-#if CONFIG_GPTIMER_ENABLE_DEBUG_LOG
-// The local log level must be defined before including esp_log.h
-// Set the maximum log level for this source file
-#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
-#endif
-#include "freertos/FreeRTOS.h"
-#include "esp_attr.h"
-#include "esp_err.h"
-#include "esp_log.h"
-#include "esp_check.h"
 #include "driver/gptimer.h"
-#include "esp_memory_utils.h"
 #include "gptimer_priv.h"
-
-static const char *TAG = "gptimer";
+#include "esp_memory_utils.h"
 
 static void gptimer_default_isr(void *args);
 
@@ -30,9 +17,9 @@ static esp_err_t gptimer_create_sleep_retention_link_cb(void *timer)
 {
     int group_id = ((gptimer_t *)timer)->group->group_id;
     int timer_id = ((gptimer_t *)timer)->timer_id;
-    esp_err_t err = sleep_retention_entries_create(tg_timer_reg_retention_info[group_id][timer_id].regdma_entry_array,
-                                                   tg_timer_reg_retention_info[group_id][timer_id].array_size,
-                                                   REGDMA_LINK_PRI_GPTIMER, tg_timer_reg_retention_info[group_id][timer_id].module);
+    esp_err_t err = sleep_retention_entries_create(soc_timg_gptimer_retention_infos[group_id][timer_id].regdma_entry_array,
+                                                   soc_timg_gptimer_retention_infos[group_id][timer_id].array_size,
+                                                   REGDMA_LINK_PRI_GPTIMER, soc_timg_gptimer_retention_infos[group_id][timer_id].module);
     return err;
 }
 
@@ -40,7 +27,7 @@ static void gptimer_create_retention_module(gptimer_t *timer)
 {
     int group_id = timer->group->group_id;
     int timer_id = timer->timer_id;
-    sleep_retention_module_t module = tg_timer_reg_retention_info[group_id][timer_id].module;
+    sleep_retention_module_t module = soc_timg_gptimer_retention_infos[group_id][timer_id].module;
     if (sleep_retention_is_module_inited(module) && !sleep_retention_is_module_created(module)) {
         if (sleep_retention_module_allocate(module) != ESP_OK) {
             // even though the sleep retention module create failed, GPTimer driver should still work, so just warning here
@@ -54,12 +41,12 @@ static esp_err_t gptimer_register_to_group(gptimer_t *timer)
 {
     gptimer_group_t *group = NULL;
     int timer_id = -1;
-    for (int i = 0; i < SOC_TIMER_GROUPS; i++) {
+    for (int i = 0; i < SOC_TIMG_ATTR(INST_NUM); i++) {
         group = gptimer_acquire_group_handle(i);
         ESP_RETURN_ON_FALSE(group, ESP_ERR_NO_MEM, TAG, "no mem for group (%d)", i);
         // loop to search free timer in the group
         portENTER_CRITICAL(&group->spinlock);
-        for (int j = 0; j < SOC_TIMER_GROUP_TIMERS_PER_GROUP; j++) {
+        for (int j = 0; j < SOC_GPTIMER_ATTR(TIMERS_PER_TIMG); j++) {
             if (!group->timers[j]) {
                 timer_id = j;
                 group->timers[j] = timer;
@@ -78,7 +65,7 @@ static esp_err_t gptimer_register_to_group(gptimer_t *timer)
     ESP_RETURN_ON_FALSE(timer_id != -1, ESP_ERR_NOT_FOUND, TAG, "no free timer");
 
 #if GPTIMER_USE_RETENTION_LINK
-    sleep_retention_module_t module = tg_timer_reg_retention_info[group->group_id][timer_id].module;
+    sleep_retention_module_t module = soc_timg_gptimer_retention_infos[group->group_id][timer_id].module;
     sleep_retention_module_init_param_t init_param = {
         .cbs = {
             .create = {
@@ -89,7 +76,7 @@ static esp_err_t gptimer_register_to_group(gptimer_t *timer)
         .depends = RETENTION_MODULE_BITMAP_INIT(CLOCK_SYSTEM)
     };
     if (sleep_retention_module_init(module, &init_param) != ESP_OK) {
-        // even though the sleep retention module init failed, RMT driver should still work, so just warning here
+        // even though the sleep retention module init failed, gptimer driver should still work, so just warning here
         ESP_LOGW(TAG, "init sleep retention failed on TimerGroup%d Timer%d, power domain may be turned off during sleep", group->group_id, timer_id);
     }
 #endif // GPTIMER_USE_RETENTION_LINK
@@ -106,7 +93,7 @@ static void gptimer_unregister_from_group(gptimer_t *timer)
     portEXIT_CRITICAL(&group->spinlock);
 
 #if GPTIMER_USE_RETENTION_LINK
-    sleep_retention_module_t module = tg_timer_reg_retention_info[group->group_id][timer_id].module;
+    sleep_retention_module_t module = soc_timg_gptimer_retention_infos[group->group_id][timer_id].module;
     if (sleep_retention_is_module_created(module)) {
         sleep_retention_module_free(module);
     }
@@ -121,9 +108,14 @@ static void gptimer_unregister_from_group(gptimer_t *timer)
 
 static esp_err_t gptimer_destroy(gptimer_t *timer)
 {
+    if (timer->clk_src) {
+        ESP_RETURN_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)(timer->clk_src), false), TAG, "clock source disable failed");
+    }
+#if CONFIG_PM_ENABLE
     if (timer->pm_lock) {
         ESP_RETURN_ON_ERROR(esp_pm_lock_delete(timer->pm_lock), TAG, "delete pm_lock failed");
     }
+#endif
     if (timer->intr) {
         ESP_RETURN_ON_ERROR(esp_intr_free(timer->intr), TAG, "delete interrupt service failed");
     }
@@ -136,9 +128,6 @@ static esp_err_t gptimer_destroy(gptimer_t *timer)
 
 esp_err_t gptimer_new_timer(const gptimer_config_t *config, gptimer_handle_t *ret_timer)
 {
-#if CONFIG_GPTIMER_ENABLE_DEBUG_LOG
-    esp_log_level_set(TAG, ESP_LOG_DEBUG);
-#endif
     esp_err_t ret = ESP_OK;
     gptimer_t *timer = NULL;
     ESP_RETURN_ON_FALSE(config && ret_timer, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
@@ -148,12 +137,13 @@ esp_err_t gptimer_new_timer(const gptimer_config_t *config, gptimer_handle_t *re
                             TAG, "invalid interrupt priority:%d", config->intr_priority);
     }
 
-    bool allow_pd = (config->flags.allow_pd == 1) || (config->flags.backup_before_sleep == 1);
+    bool allow_pd = config->flags.allow_pd == 1;
 #if !SOC_TIMER_SUPPORT_SLEEP_RETENTION
     ESP_RETURN_ON_FALSE(allow_pd == false, ESP_ERR_NOT_SUPPORTED, TAG, "not able to power down in light sleep");
 #endif // SOC_TIMER_SUPPORT_SLEEP_RETENTION
 
-    timer = heap_caps_calloc(1, sizeof(gptimer_t), GPTIMER_MEM_ALLOC_CAPS);
+    // always allocate memory from internal memory because the driver object contains atomic variable
+    timer = heap_caps_calloc(1, sizeof(gptimer_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     ESP_GOTO_ON_FALSE(timer, ESP_ERR_NO_MEM, err, TAG, "no mem for gptimer");
     // register timer to the group (because one group can have several timers)
     ESP_GOTO_ON_ERROR(gptimer_register_to_group(timer), err, TAG, "register timer failed");
@@ -170,6 +160,7 @@ esp_err_t gptimer_new_timer(const gptimer_config_t *config, gptimer_handle_t *re
     // initialize HAL layer
     timer_hal_init(&timer->hal, group_id, timer_id);
     // select clock source, set clock resolution
+    ESP_GOTO_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)config->clk_src, true), err, TAG, "clock source enable failed");
     ESP_GOTO_ON_ERROR(gptimer_select_periph_clock(timer, config->clk_src, config->resolution_hz), err, TAG, "set periph clock failed");
     // initialize counter value to zero
     timer_hal_set_counter_value(&timer->hal, 0);
@@ -188,7 +179,7 @@ esp_err_t gptimer_new_timer(const gptimer_config_t *config, gptimer_handle_t *re
     timer->direction = config->direction;
     timer->intr_priority = config->intr_priority;
     timer->flags.intr_shared = config->flags.intr_shared;
-    ESP_LOGD(TAG, "new gptimer (%d,%d) at %p, resolution=%"PRIu32"Hz", group_id, timer_id, timer, timer->resolution_hz);
+    ESP_LOGD(TAG, "new gptimer (%d,%d) at %p, %zu bytes used", group_id, timer_id, timer, heap_caps_get_allocated_size(timer));
     *ret_timer = timer;
     return ESP_OK;
 
@@ -211,18 +202,18 @@ esp_err_t gptimer_del_timer(gptimer_handle_t timer)
     ESP_LOGD(TAG, "del timer (%d,%d)", group_id, timer_id);
     // disable the source clock
     GPTIMER_CLOCK_SRC_ATOMIC() {
-        timer_ll_enable_clock(hal->dev, hal->timer_id, false);
+        timer_ll_enable_clock(group_id, hal->timer_id, false);
     }
     timer_hal_deinit(hal);
     // recycle memory resource
     ESP_RETURN_ON_ERROR(gptimer_destroy(timer), TAG, "destroy gptimer failed");
 
     switch (clk_src) {
-#if SOC_TIMER_GROUP_SUPPORT_RC_FAST
+#if TIMER_LL_FUNC_CLOCK_SUPPORT_RC_FAST
     case GPTIMER_CLK_SRC_RC_FAST:
         periph_rtc_dig_clk8m_disable();
         break;
-#endif // SOC_TIMER_GROUP_SUPPORT_RC_FAST
+#endif // TIMER_LL_FUNC_CLOCK_SUPPORT_RC_FAST
     default:
         break;
     }
@@ -231,7 +222,9 @@ esp_err_t gptimer_del_timer(gptimer_handle_t timer)
 
 esp_err_t gptimer_set_raw_count(gptimer_handle_t timer, unsigned long long value)
 {
-    ESP_RETURN_ON_FALSE_ISR(timer, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    if (timer == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
 
     portENTER_CRITICAL_SAFE(&timer->spinlock);
     timer_hal_set_counter_value(&timer->hal, value);
@@ -241,7 +234,9 @@ esp_err_t gptimer_set_raw_count(gptimer_handle_t timer, unsigned long long value
 
 esp_err_t gptimer_get_raw_count(gptimer_handle_t timer, unsigned long long *value)
 {
-    ESP_RETURN_ON_FALSE_ISR(timer && value, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    if (timer == NULL || value == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
 
     portENTER_CRITICAL_SAFE(&timer->spinlock);
     *value = timer_hal_capture_and_get_counter_value(&timer->hal);
@@ -258,7 +253,9 @@ esp_err_t gptimer_get_resolution(gptimer_handle_t timer, uint32_t *out_resolutio
 
 esp_err_t gptimer_get_captured_count(gptimer_handle_t timer, uint64_t *value)
 {
-    ESP_RETURN_ON_FALSE_ISR(timer && value, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    if (timer == NULL || value == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
 
     portENTER_CRITICAL_SAFE(&timer->spinlock);
     *value = timer_ll_get_counter_value(timer->hal.dev, timer->timer_id);
@@ -274,7 +271,7 @@ esp_err_t gptimer_register_event_callbacks(gptimer_handle_t timer, const gptimer
     int group_id = group->group_id;
     int timer_id = timer->timer_id;
 
-#if CONFIG_GPTIMER_ISR_IRAM_SAFE
+#if CONFIG_GPTIMER_ISR_CACHE_SAFE
     if (cbs->on_alarm) {
         ESP_RETURN_ON_FALSE(esp_ptr_in_iram(cbs->on_alarm), ESP_ERR_INVALID_ARG, TAG, "on_alarm callback not in IRAM");
     }
@@ -291,7 +288,7 @@ esp_err_t gptimer_register_event_callbacks(gptimer_handle_t timer, const gptimer
         if (timer->intr_priority) {
             isr_flags |= 1 << (timer->intr_priority);
         }
-        ESP_RETURN_ON_ERROR(esp_intr_alloc_intrstatus(timer_group_periph_signals.groups[group_id].timer_irq_id[timer_id], isr_flags,
+        ESP_RETURN_ON_ERROR(esp_intr_alloc_intrstatus(soc_timg_gptimer_signals[group_id][timer_id].irq_id, isr_flags,
                                                       (uint32_t)timer_ll_get_intr_status_reg(timer->hal.dev), TIMER_LL_EVENT_ALARM(timer_id),
                                                       gptimer_default_isr, timer, &timer->intr), TAG, "install interrupt service failed");
     }
@@ -308,14 +305,22 @@ esp_err_t gptimer_register_event_callbacks(gptimer_handle_t timer, const gptimer
 
 esp_err_t gptimer_set_alarm_action(gptimer_handle_t timer, const gptimer_alarm_config_t *config)
 {
-    ESP_RETURN_ON_FALSE_ISR(timer, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    if (timer == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
     if (config) {
 #if CONFIG_GPTIMER_CTRL_FUNC_IN_IRAM
-        ESP_RETURN_ON_FALSE_ISR(esp_ptr_internal(config), ESP_ERR_INVALID_ARG, TAG, "alarm config struct not in internal RAM");
+        // when the function is placed in IRAM, we expect the config struct is also placed in internal RAM
+        // if the cache is disabled, the function can still access the config struct
+        if (esp_ptr_internal(config) == false) {
+            return ESP_ERR_INVALID_ARG;
+        }
 #endif
         // When auto_reload is enabled, alarm_count should not be equal to reload_count
         bool valid_auto_reload = !config->flags.auto_reload_on_alarm || config->alarm_count != config->reload_count;
-        ESP_RETURN_ON_FALSE_ISR(valid_auto_reload, ESP_ERR_INVALID_ARG, TAG, "reload count can't equal to alarm count");
+        if (valid_auto_reload == false) {
+            return ESP_ERR_INVALID_ARG;
+        }
 
         portENTER_CRITICAL_SAFE(&timer->spinlock);
         timer->reload_count = config->reload_count;
@@ -343,14 +348,17 @@ esp_err_t gptimer_set_alarm_action(gptimer_handle_t timer, const gptimer_alarm_c
 esp_err_t gptimer_enable(gptimer_handle_t timer)
 {
     ESP_RETURN_ON_FALSE(timer, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    // the only acceptable FSM change: init->enable
     gptimer_fsm_t expected_fsm = GPTIMER_FSM_INIT;
     ESP_RETURN_ON_FALSE(atomic_compare_exchange_strong(&timer->fsm, &expected_fsm, GPTIMER_FSM_ENABLE),
                         ESP_ERR_INVALID_STATE, TAG, "timer not in init state");
 
+#if CONFIG_PM_ENABLE
     // acquire power manager lock
     if (timer->pm_lock) {
         ESP_RETURN_ON_ERROR(esp_pm_lock_acquire(timer->pm_lock), TAG, "acquire pm_lock failed");
     }
+#endif
 
     // enable interrupt service
     if (timer->intr) {
@@ -363,6 +371,7 @@ esp_err_t gptimer_enable(gptimer_handle_t timer)
 esp_err_t gptimer_disable(gptimer_handle_t timer)
 {
     ESP_RETURN_ON_FALSE(timer, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    // the only acceptable FSM change: enable->init
     gptimer_fsm_t expected_fsm = GPTIMER_FSM_ENABLE;
     ESP_RETURN_ON_FALSE(atomic_compare_exchange_strong(&timer->fsm, &expected_fsm, GPTIMER_FSM_INIT),
                         ESP_ERR_INVALID_STATE, TAG, "timer not in enable state");
@@ -372,20 +381,29 @@ esp_err_t gptimer_disable(gptimer_handle_t timer)
         ESP_RETURN_ON_ERROR(esp_intr_disable(timer->intr), TAG, "disable interrupt service failed");
     }
 
+#if CONFIG_PM_ENABLE
     // release power manager lock
     if (timer->pm_lock) {
         ESP_RETURN_ON_ERROR(esp_pm_lock_release(timer->pm_lock), TAG, "release pm_lock failed");
     }
+#endif
 
     return ESP_OK;
 }
 
 esp_err_t gptimer_start(gptimer_handle_t timer)
 {
-    ESP_RETURN_ON_FALSE_ISR(timer, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    if (timer == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    // if the timer is already started, do nothing
+    if (atomic_load(&timer->fsm) == GPTIMER_FSM_RUN) {
+        return ESP_OK;
+    }
 
     gptimer_fsm_t expected_fsm = GPTIMER_FSM_ENABLE;
-    if (atomic_compare_exchange_strong(&timer->fsm, &expected_fsm, GPTIMER_FSM_RUN_WAIT)) {
+    if (atomic_compare_exchange_strong(&timer->fsm, &expected_fsm, GPTIMER_FSM_WAIT)) {
         // the register used by the following LL functions are shared with other API,
         // which is possible to run along with this function, so we need to protect
         portENTER_CRITICAL_SAFE(&timer->spinlock);
@@ -396,7 +414,8 @@ esp_err_t gptimer_start(gptimer_handle_t timer)
         atomic_store(&timer->fsm, GPTIMER_FSM_RUN);
         portEXIT_CRITICAL_SAFE(&timer->spinlock);
     } else {
-        ESP_RETURN_ON_FALSE_ISR(false, ESP_ERR_INVALID_STATE, TAG, "timer is not ready for a new start");
+        // return error if the timer is not in the expected state
+        return ESP_ERR_INVALID_STATE;
     }
 
     return ESP_OK;
@@ -404,10 +423,18 @@ esp_err_t gptimer_start(gptimer_handle_t timer)
 
 esp_err_t gptimer_stop(gptimer_handle_t timer)
 {
-    ESP_RETURN_ON_FALSE_ISR(timer, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    if (timer == NULL) {
+        // not printing error message here because the return value already indicates the error well
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    // if the timer is not started, do nothing
+    if (atomic_load(&timer->fsm) == GPTIMER_FSM_ENABLE) {
+        return ESP_OK;
+    }
 
     gptimer_fsm_t expected_fsm = GPTIMER_FSM_RUN;
-    if (atomic_compare_exchange_strong(&timer->fsm, &expected_fsm, GPTIMER_FSM_ENABLE_WAIT)) {
+    if (atomic_compare_exchange_strong(&timer->fsm, &expected_fsm, GPTIMER_FSM_WAIT)) {
         // disable counter, alarm, auto-reload
         portENTER_CRITICAL_SAFE(&timer->spinlock);
         timer_ll_enable_counter(timer->hal.dev, timer->timer_id, false);
@@ -415,7 +442,8 @@ esp_err_t gptimer_stop(gptimer_handle_t timer)
         atomic_store(&timer->fsm, GPTIMER_FSM_ENABLE);
         portEXIT_CRITICAL_SAFE(&timer->spinlock);
     } else {
-        ESP_RETURN_ON_FALSE_ISR(false, ESP_ERR_INVALID_STATE, TAG, "timer is not running");
+        // return error if the timer is not in the expected state
+        return ESP_ERR_INVALID_STATE;
     }
 
     return ESP_OK;

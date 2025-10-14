@@ -18,7 +18,7 @@
 
 /******************************************************************************
  *
- *  This is the public interface file for the simulatenous advanced
+ *  This is the public interface file for the simultaneous advanced
  *  audio/video streaming (AV) source and sink of BTA, Broadcom's Bluetooth
  *  application layer for mobile phones.
  *
@@ -34,6 +34,10 @@
 #include "bta/bta_sys.h"
 
 #if (BTA_AR_INCLUDED == TRUE)
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /*****************************************************************************
 **  Constants and data types

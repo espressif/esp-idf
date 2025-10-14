@@ -1,0 +1,41 @@
+/*
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#pragma once
+
+#include "soc/soc_caps.h"
+#include "soc/soc_caps_eval.h"
+
+/*--------------------------- Timer Group -------------------------------------------*/
+#define _SOC_CAPS_TIMG_INST_NUM                   2 // Number of Timer Group instances
+
+/*--------------------------- GPTIMER ---------------------------------------*/
+#define _SOC_CAPS_GPTIMER_COUNTER_BIT_WIDTH       64 // Bit width of GPTIMER counter
+#define _SOC_CAPS_GPTIMER_TIMERS_PER_TIMG         2  // Number of general purpose timers in each Timer Group
+#define _SOC_CAPS_GPTIMER_TIMERS_TOTAL            (_SOC_CAPS_TIMG_INST_NUM * _SOC_CAPS_GPTIMER_TIMERS_PER_TIMG)
+
+/*--------------------------- Watch Dog ------------------------------------------*/
+#define _SOC_CAPS_WDT_MWDTS_PER_TIMG              1  // Number of main watchdog timers in each Timer Group
+
+/*--------------------------- SDM (Sigma-Delta Modulator) ------------------------*/
+#define _SOC_CAPS_SDM_INST_NUM                    1  // Number of SDM instances
+#define _SOC_CAPS_SDM_CHANS_PER_INST              8  // Number of channels in each SDM instance
+
+/*--------------------------- PCNT (Pulse Counter) ------------------------*/
+#define _SOC_CAPS_PCNT_INST_NUM                   1  // Number of PCNT instances
+#define _SOC_CAPS_PCNT_UNITS_PER_INST             8  // Number of units in each PCNT instance
+#define _SOC_CAPS_PCNT_CHANS_PER_UNIT             2  // Number of channels in each PCNT unit
+#define _SOC_CAPS_PCNT_THRES_POINT_PER_UNIT       2  // Number of threshold points in each PCNT unit
+
+/*------------------------------- I2S ---------------------------------------*/
+// helper macros to access module attributes
+#define _SOC_CAPS_I2S_INST_NUM                    2  // Number of I2S instances
+#define _SOC_CAPS_I2S_MAX_DATA_WIDTH              24 // Maximum data line width of I2S
+#define _SOC_CAPS_I2S_TRANS_SIZE_ALIGN_WORD       1  // I2S DMA transfer size must be aligned to word
+#define _SOC_CAPS_I2S_SUPPORT_ADC_DAC             1  // I2S supports to connect to ADC / DAC converters
+
+/*------------------------------- Touch Sensor ------------------------------------*/
+#define _SOC_CAPS_TOUCH_CHAN_NUM                  10 // Number of touch sensor channels

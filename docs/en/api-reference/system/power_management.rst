@@ -55,7 +55,7 @@ Dynamic frequency scaling (DFS) and automatic Light-sleep can be enabled in an a
 
 Power Management Locks
 ----------------------
-{IDF_TARGET_MAX_CPU_FREQ: default="Not updated yet", esp32="80 MHz, 160 MHz, or 240 MHz", esp32s2="80 MHz, 160 MHz, or 240 MHz", esp32s3="80 MHz, 160 MHz, or 240 MHz", esp32c2="80 MHz or 120 MHz", esp32c3="80 MHz or 160 MHz", esp32c6="80 MHz or 160 MHz", esp32p4="360 MHz"}
+{IDF_TARGET_MAX_CPU_FREQ: default="Not updated yet", esp32="80 MHz, 160 MHz, or 240 MHz", esp32s2="80 MHz, 160 MHz, or 240 MHz", esp32s3="80 MHz, 160 MHz, or 240 MHz", esp32c2="80 MHz or 120 MHz", esp32c3="80 MHz or 160 MHz", esp32c6="80 MHz or 160 MHz", esp32p4="360 MHz", esp32c5="80 MHz, 160 MHz or 240 MHz"}
 
 Applications have the ability to acquire/release locks in order to control the power management algorithm. When an application acquires a lock, the power management algorithm operation is restricted in a way described below. When the lock is released, such restrictions are removed.
 
@@ -122,16 +122,6 @@ The following drivers hold the ``ESP_PM_APB_FREQ_MAX`` lock while the driver is 
     :SOC_SDM_SUPPORTED: - **Sigma-delta**: between calls to :cpp:func:`sdm_channel_enable` and :cpp:func:`sdm_channel_disable`.
     :SOC_MCPWM_SUPPORTED: - **MCPWM**: between calls to :cpp:func:`mcpwm_timer_enable` and :cpp:func:`mcpwm_timer_disable`, as well as :cpp:func:`mcpwm_capture_timer_enable` and :cpp:func:`mcpwm_capture_timer_disable`.
 
-The following peripheral drivers are not aware of DFS yet. Applications need to acquire/release locks themselves, when necessary:
-
-.. list::
-
-    :SOC_PCNT_SUPPORTED: - The legacy PCNT driver
-    :SOC_SDM_SUPPORTED: - The legacy Sigma-delta driver
-    - The legacy timer group driver
-    :SOC_MCPWM_SUPPORTED: - The legacy MCPWM driver
-
-
 .. only:: SOC_PM_SUPPORT_TOP_PD
 
     Light-sleep Peripheral Power Down
@@ -162,12 +152,14 @@ The following peripheral drivers are not aware of DFS yet. Applications need to 
             :SOC_TWAI_SUPPORT_SLEEP_RETENTION: - All TWAIs
             :SOC_PARLIO_SUPPORT_SLEEP_RETENTION: - PARL_IO
             :SOC_SPI_SUPPORT_SLEEP_RETENTION: - All GPSPIs
+            :SOC_EMAC_SUPPORT_SLEEP_RETENTION: - EMAC
 
         Some peripherals haven't support Light-sleep context retention, or it cannot survive from the register lose. They will prevent the power-down of peripherals even when the feature is enabled.
 
         .. list::
 
             :SOC_SDIO_SLAVE_SUPPORTED: - SDIO Slave
+            :SOC_PCNT_SUPPORTED: - PCNT
 
         The following peripherals (and those not listed in any group of this section) are not yet supported. If your application uses these peripherals, they may not work well after waking up from sleep.
 
@@ -176,7 +168,6 @@ The following peripheral drivers are not aware of DFS yet. Applications need to 
             - ASSIST_DEBUG
             - Trace
             - Crypto: AES/ECC/HMAC/RSA/SHA/DS/XTA_AES/ECDSA
-            - PCNT
             - USB-Serial-JTAG
             - SARADC
 

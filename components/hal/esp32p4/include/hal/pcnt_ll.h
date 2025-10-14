@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,9 +18,10 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include "soc/pcnt_struct.h"
+#include "soc/hp_sys_clkrst_struct.h"
 #include "hal/pcnt_types.h"
 #include "hal/misc.h"
-#include "soc/hp_sys_clkrst_struct.h"
+#include "hal/assert.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -29,7 +30,7 @@ extern "C" {
 #define PCNT_LL_GET_HW(num)      (((num) == 0) ? (&PCNT) : NULL)
 #define PCNT_LL_MAX_GLITCH_WIDTH 1023
 #define PCNT_LL_MAX_LIM          SHRT_MAX
-#define PCNT_LL_MIN_LIN          SHRT_MIN
+#define PCNT_LL_MIN_LIM          SHRT_MIN
 
 typedef enum {
     PCNT_LL_WATCH_EVENT_INVALID = -1,
@@ -43,6 +44,26 @@ typedef enum {
 
 #define PCNT_LL_WATCH_EVENT_MASK          ((1 << PCNT_LL_WATCH_EVENT_MAX) - 1)
 #define PCNT_LL_UNIT_WATCH_EVENT(unit_id) (1 << (unit_id))
+#define PCNT_LL_CLOCK_SUPPORT_APB         1
+
+/**
+ * @brief Set clock source for pcnt group
+ *
+ * @param hw Peripheral PCNT hardware instance address.
+ * @param clk_src Clock source
+ */
+static inline void _pcnt_ll_set_clock_source(pcnt_dev_t *hw, pcnt_clock_source_t clk_src)
+{
+    (void)hw;
+    HAL_ASSERT(clk_src == PCNT_CLK_SRC_APB && "unsupported clock source");
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define pcnt_ll_set_clock_source(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _pcnt_ll_set_clock_source(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Set PCNT channel edge action
@@ -159,10 +180,12 @@ static inline void pcnt_ll_enable_step_notify(pcnt_dev_t *hw, uint32_t unit, boo
  *
  * @param hw Peripheral PCNT hardware instance address.
  * @param unit PCNT unit number
+ * @param direction PCNT step direction
  * @param value PCNT step value
  */
-static inline void pcnt_ll_set_step_value(pcnt_dev_t *hw, uint32_t unit, int value)
+static inline void pcnt_ll_set_step_value(pcnt_dev_t *hw, uint32_t unit, pcnt_step_direction_t direction, int value)
 {
+    (void)direction;
     HAL_FORCE_MODIFY_U32_REG_FIELD(hw->change_conf_unit[3 - unit], cnt_step, value);
 }
 
@@ -491,7 +514,10 @@ static inline void pcnt_ll_enable_bus_clock(int group_id, bool enable)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define pcnt_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; pcnt_ll_enable_bus_clock(__VA_ARGS__)
+#define pcnt_ll_enable_bus_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        pcnt_ll_enable_bus_clock(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Reset the PCNT module
@@ -505,7 +531,10 @@ static inline void pcnt_ll_reset_register(int group_id)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define pcnt_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; pcnt_ll_reset_register(__VA_ARGS__)
+#define pcnt_ll_reset_register(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        pcnt_ll_reset_register(__VA_ARGS__); \
+    } while(0)
 
 #ifdef __cplusplus
 }

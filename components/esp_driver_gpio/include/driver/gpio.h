@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,17 +19,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#define GPIO_PIN_COUNT                      (SOC_GPIO_PIN_COUNT)
-/// Check whether it is a valid GPIO number
-#define GPIO_IS_VALID_GPIO(gpio_num)        ((gpio_num >= 0) && \
-                                              (((1ULL << (gpio_num)) & SOC_GPIO_VALID_GPIO_MASK) != 0))
-/// Check whether it can be a valid GPIO number of output mode
-#define GPIO_IS_VALID_OUTPUT_GPIO(gpio_num) ((gpio_num >= 0) && \
-                                              (((1ULL << (gpio_num)) & SOC_GPIO_VALID_OUTPUT_GPIO_MASK) != 0))
-/// Check whether it can be a valid digital I/O pad
-#define GPIO_IS_VALID_DIGITAL_IO_PAD(gpio_num) ((gpio_num >= 0) && \
-                                                 (((1ULL << (gpio_num)) & SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK) != 0))
 
 typedef intr_handle_t gpio_isr_handle_t;
 
@@ -71,15 +60,13 @@ typedef struct {
 esp_err_t gpio_config(const gpio_config_t *pGPIOConfig);
 
 /**
- * @brief Reset an gpio to default state (select gpio function, enable pullup and disable input and output).
+ * @brief Reset a GPIO to a certain state (select gpio function, enable pullup and disable input and output).
  *
  * @param gpio_num GPIO number.
  *
- * @note This function also configures the IOMUX for this pin to the GPIO
- *       function, and disconnects any other peripheral output configured via GPIO
- *       Matrix.
- *
- * @return Always return ESP_OK.
+ * @return
+ *     - ESP_OK  Success
+ *     - ESP_ERR_INVALID_ARG Parameter error
  */
 esp_err_t gpio_reset_pin(gpio_num_t gpio_num);
 
@@ -295,6 +282,50 @@ esp_err_t gpio_pulldown_en(gpio_num_t gpio_num);
 esp_err_t gpio_pulldown_dis(gpio_num_t gpio_num);
 
 /**
+ * @brief Enable output for an IO (as a simple GPIO output)
+ *
+ * @param gpio_num GPIO number
+ *
+ * @return
+ *      - ESP_OK Success
+ *      - ESP_ERR_INVALID_ARG GPIO number error
+ */
+esp_err_t gpio_output_enable(gpio_num_t gpio_num);
+
+/**
+ * @brief Disable output for an IO
+ *
+ * @param gpio_num GPIO number
+ *
+ * @return
+ *      - ESP_OK Success
+ *      - ESP_ERR_INVALID_ARG GPIO number error
+ */
+esp_err_t gpio_output_disable(gpio_num_t gpio_num);
+
+/**
+ * @brief Enable open-drain for an IO
+ *
+ * @param gpio_num GPIO number
+ *
+ * @return
+ *      - ESP_OK Success
+ *      - ESP_ERR_INVALID_ARG GPIO number error
+ */
+esp_err_t gpio_od_enable(gpio_num_t gpio_num);
+
+/**
+ * @brief Disable open-drain for an IO
+ *
+ * @param gpio_num GPIO number
+ *
+ * @return
+ *      - ESP_OK Success
+ *      - ESP_ERR_INVALID_ARG GPIO number error
+ */
+esp_err_t gpio_od_disable(gpio_num_t gpio_num);
+
+/**
   * @brief Install the GPIO driver's ETS_GPIO_INTR_SOURCE ISR handler service, which allows per-pin GPIO interrupt handlers.
   *
   * This function is incompatible with gpio_isr_register() - if that function is used, a single global ISR is registered for all GPIO interrupts. If this function is used, the ISR service provides a global GPIO ISR and individual pin handlers are registered via the gpio_isr_handler_add() function.
@@ -455,22 +486,6 @@ void gpio_deep_sleep_hold_en(void);
 void gpio_deep_sleep_hold_dis(void);
 #endif //SOC_GPIO_SUPPORT_HOLD_IO_IN_DSLP && !SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP
 
-/**
-  * @brief Set pad input to a peripheral signal through the IOMUX.
-  * @param gpio_num GPIO number of the pad.
-  * @param signal_idx Peripheral signal id to input. One of the ``*_IN_IDX`` signals in ``soc/gpio_sig_map.h``.
-  */
-void gpio_iomux_in(uint32_t gpio_num, uint32_t signal_idx);
-
-/**
-  * @brief Set peripheral output to an GPIO pad through the IOMUX.
-  * @param gpio_num gpio_num GPIO number of the pad.
-  * @param func The function number of the peripheral pin to output pin.
-  *        One of the ``FUNC_X_*`` of specified pin (X) in ``soc/io_mux_reg.h``.
-  * @param out_en_inv True if the output enable needs to be inverted, otherwise False.
-  */
-void gpio_iomux_out(uint8_t gpio_num, int func, bool out_en_inv);
-
 #if SOC_GPIO_SUPPORT_FORCE_HOLD
 /**
   * @brief Force hold all digital and rtc gpio pads.
@@ -589,6 +604,18 @@ esp_err_t gpio_deep_sleep_wakeup_disable(gpio_num_t gpio_num);
  *    - ESP_ERR_INVALID_ARG Parameter error
  */
 esp_err_t gpio_dump_io_configuration(FILE *out_stream, uint64_t io_bit_mask);
+
+/**
+ * @brief Get the configuration for an IO
+ *
+ * @param gpio_num GPIO number
+ * @param[out] out_io_config Pointer to the structure that saves the specific IO configuration
+ *
+ * @return
+ *    - ESP_OK Success
+ *    - ESP_ERR_INVALID_ARG Parameter error
+ */
+esp_err_t gpio_get_io_config(gpio_num_t gpio_num, gpio_io_config_t *out_io_config);
 
 #ifdef __cplusplus
 }

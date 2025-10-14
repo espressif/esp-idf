@@ -94,7 +94,7 @@
       - Board configuration file for ESP32-C2 debug through an ESP-Prog compatible FTDI, includes target and adapter configuration.
     * - ``target/esp32c2.cfg``
       - ESP32-C2 target configuration file. Can be used together with one of the ``interface/`` configuration files.
-    * - ``interface/ftdi/esp32_devkitj_v1.cfg``
+    * - ``interface/ftdi/esp_ftdi.cfg``
       - JTAG adapter configuration file for ESP-Prog boards.
 
 ---

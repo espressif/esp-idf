@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,7 +20,7 @@
 
 #if !CONFIG_IDF_TARGET_ESP32
 #include "soc/rtc_cntl_reg.h"
-#if CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
+#if CONFIG_ESP_SYSTEM_MEMPROT && CONFIG_ESP_SYSTEM_MEMPROT_PMS
 #ifdef CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/memprot.h"
 #else
@@ -165,7 +165,7 @@ static void print_debug_exception_details(const void *f)
     }
 }
 
-#if CONFIG_IDF_TARGET_ESP32S2 && CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
+#if CONFIG_IDF_TARGET_ESP32S2 && CONFIG_ESP_SYSTEM_MEMPROT && CONFIG_ESP_SYSTEM_MEMPROT_PMS
 #define MEMPROT_OP_INVALID 0xFFFFFFFF
 static inline void print_memprot_err_details(const void *f)
 {
@@ -198,7 +198,7 @@ static inline void print_memprot_err_details(const void *f)
     panic_print_str(esp_memprot_type_to_str(mem_type));
     panic_print_str(")\r\n");
 }
-#endif
+#endif //CONFIG_IDF_TARGET_ESP32S2 && CONFIG_ESP_SYSTEM_MEMPROT && CONFIG_ESP_SYSTEM_MEMPROT_PMS
 
 static inline void print_cache_err_details(const void *f)
 {
@@ -213,7 +213,7 @@ static inline void print_cache_err_details(const void *f)
         }
         if (err.size) {
             panic_print_str(", error size: 0x");
-            panic_print_hex(err.vaddr);
+            panic_print_hex(err.size);
         }
     } else {
         // Default to cache disabled message if no specific error is found
@@ -304,7 +304,7 @@ void panic_soc_fill_info(void *f, panic_info_t *info)
 
     //MV note: ESP32S3 PMS handling?
     if (frame->exccause == PANIC_RSN_CACHEERR) {
-#if CONFIG_ESP_SYSTEM_MEMPROT_FEATURE && CONFIG_IDF_TARGET_ESP32S2
+#if CONFIG_ESP_SYSTEM_MEMPROT && CONFIG_ESP_SYSTEM_MEMPROT_PMS && CONFIG_IDF_TARGET_ESP32S2
         if (esp_memprot_is_intr_ena_any()) {
             info->details = print_memprot_err_details;
             info->reason = "Memory protection fault";
@@ -339,6 +339,12 @@ void panic_print_backtrace(const void *f, int core)
 }
 
 void panic_prepare_frame_from_ctx(void* frame)
+{
+    /* Nothing to cleanup on xtensa */
+    (void)frame;
+}
+
+void panic_clear_active_interrupts(const void *frame)
 {
     /* Nothing to cleanup on xtensa */
     (void)frame;

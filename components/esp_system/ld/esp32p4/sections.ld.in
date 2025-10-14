@@ -293,6 +293,13 @@ SECTIONS
      */
     . += _esp_flash_mmap_prefetch_pad_size;
 
+#if CONFIG_SPIRAM_FETCH_INSTRUCTIONS && CONFIG_SPIRAM_PRE_CONFIGURE_MEMORY_PROTECTION
+    /* Align the end of flash text region as per PMP granularity to allow using the
+     * page alignment gap created while mapping the flash region into the PSRAM memory.
+     */
+    . = ALIGN(_esp_pmp_align_size);
+#endif // CONFIG_SPIRAM_FETCH_INSTRUCTIONS && CONFIG_SPIRAM_PRE_CONFIGURE_MEMORY_PROTECTION
+
     _text_end = ABSOLUTE(.);
     /**
      * Mark the flash.text end.
@@ -370,20 +377,12 @@ SECTIONS
      * C++ constructor tables.
      *
      * Excluding crtbegin.o/crtend.o since IDF doesn't use the toolchain crt.
-     *
-     * RISC-V gcc is configured with --enable-initfini-array so it emits
-     * .init_array section instead. But the init_priority sections will be
-     * sorted for iteration in ascending order during startup.
-     * The rest of the init_array sections is sorted for iteration in descending
-     * order during startup, however. Hence a different section is generated for
-     * the init_priority functions which is iterated in ascending order during
-     * startup. The corresponding code can be found in startup.c.
      */
-    ALIGNED_SYMBOL(4, __init_priority_array_start)
-    KEEP (*(EXCLUDE_FILE (*crtend.* *crtbegin.*) .init_array.*))
-    __init_priority_array_end = ABSOLUTE(.);
-
+    ALIGNED_SYMBOL(4, __preinit_array_start)
+    KEEP (*(.preinit_array))
+    __preinit_array_end = ABSOLUTE(.);
     ALIGNED_SYMBOL(4, __init_array_start)
+    KEEP (*(SORT_BY_INIT_PRIORITY(EXCLUDE_FILE (*crtend.* *crtbegin.*) .init_array.*)))
     KEEP (*(EXCLUDE_FILE (*crtend.* *crtbegin.*) .init_array))
     __init_array_end = ABSOLUTE(.);
 
@@ -440,6 +439,14 @@ SECTIONS
     *(.tdata .tdata.* .gnu.linkonce.td.*)
 
     . = ALIGN(ALIGNOF(.flash.tbss));
+
+#if CONFIG_SPIRAM_RODATA && CONFIG_SPIRAM_PRE_CONFIGURE_MEMORY_PROTECTION
+    /* Align the end of flash rodata region as per PMP granularity to allow using the
+     * page alignment gap created while mapping the flash region into the PSRAM memory.
+     */
+    . = ALIGN(_esp_pmp_align_size);
+#endif // CONFIG_SPIRAM_RODATA && CONFIG_SPIRAM_PRE_CONFIGURE_MEMORY_PROTECTION
+
     _thread_local_data_end = ABSOLUTE(.);
   } > rodata_seg_low
   ASSERT_SECTIONS_GAP(.flash.tdata, .flash.tbss)
@@ -488,6 +495,7 @@ SECTIONS
   .ext_ram.bss (NOLOAD) :
   {
     _ext_ram_bss_start = ABSOLUTE(.);
+    arrays[extern_ram]
     mapping[extern_ram]
     ALIGNED_SYMBOL(4, _ext_ram_bss_end)
   } > ext_ram_seg

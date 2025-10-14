@@ -22,7 +22,7 @@ Overview
 
     The {IDF_TARGET_NAME} has one core, with 28 external asynchronous interrupts. Each interrupt's priority is independently programmable. In addition, there are also 4 core local interrupt sources (CLINT). See **{IDF_TARGET_NAME} Technical Reference Manual** [`PDF <{IDF_TARGET_TRM_EN_URL}#riscvcpu>`__] for more details.
 
-.. only:: esp32p4
+.. only:: esp32p4 or esp32h4
 
     The {IDF_TARGET_NAME} has two cores, with 32 external asynchronous interrupts each. Each interrupt's priority is independently programmable. In addition, there are also 3 core local interrupt sources (CLINT) on each core. See **{IDF_TARGET_NAME} Technical Reference Manual** [`PDF <{IDF_TARGET_TRM_EN_URL}#riscvcpu>`__] for more details.
 
@@ -32,7 +32,7 @@ Overview
 
 Because there are more interrupt sources than interrupts, sometimes it makes sense to share an interrupt in multiple drivers. The :cpp:func:`esp_intr_alloc` abstraction exists to hide all these implementation details.
 
-A driver can allocate an interrupt for a certain peripheral by calling :cpp:func:`esp_intr_alloc` (or :cpp:func:`esp_intr_alloc_intrstatus`). It can use the flags passed to this function to specify the type, priority, and trigger method of the interrupt to allocate. The interrupt allocation code will then find an applicable interrupt, use the interrupt matrix to hook it up to the peripheral, and install the given interrupt handler and ISR to it.
+A driver can allocate an interrupt for a certain peripheral by calling :cpp:func:`esp_intr_alloc`, :cpp:func:`esp_intr_alloc_bind`, :cpp:func:`esp_intr_alloc_intrstatus`, or :cpp:func:`esp_intr_alloc_intrstatus_bind`. It can use the flags passed to this function to specify the type, priority, and trigger method of the interrupt to allocate. The interrupt allocation code will then find an applicable interrupt, use the interrupt matrix to hook it up to the peripheral, and install the given interrupt handler and ISR to it.
 
 The interrupt allocator presents two different types of interrupts, namely shared interrupts and non-shared interrupts, both of which require different handling. Non-shared interrupts will allocate a separate interrupt for every :cpp:func:`esp_intr_alloc` call, and this interrupt is use solely for the peripheral attached to it, with only one ISR that will get called. Shared interrupts can have multiple peripherals triggering them, with multiple ISRs being called when one of the peripherals attached signals an interrupt. Thus, ISRs that are intended for shared interrupts should check the interrupt status of the peripheral they service in order to check if any action is required.
 
@@ -41,7 +41,7 @@ Non-shared interrupts can be either level- or edge-triggered. Shared interrupts 
 To illustrate why shared interrupts can only be level-triggered, take the scenario where peripheral A and peripheral B share the same edge-triggered interrupt. Peripheral B triggers an interrupt and sets its interrupt signal high, causing a low-to-high edge, which in turn latches the CPU's interrupt bit and triggers the ISR. The ISR executes, checks that peripheral A did not trigger an interrupt, and proceeds to handle and clear peripheral B's interrupt signal. Before the ISR returns, the CPU clears its interrupt bit latch. Thus, during the entire interrupt handling process, if peripheral A triggers an interrupt, it will be missed due the CPU clearing the interrupt bit latch.
 
 
-.. only:: esp32 or esp32s3
+.. only:: SOC_HP_CPU_HAS_MULTIPLE_CORES and CONFIG_IDF_TARGET_ARCH_XTENSA
 
     Multicore Issues
     ----------------
@@ -71,7 +71,7 @@ To illustrate why shared interrupts can only be level-triggered, take the scenar
 
     The remaining interrupt sources are from external peripherals.
 
-.. only:: esp32p4
+.. only:: SOC_HP_CPU_HAS_MULTIPLE_CORES and CONFIG_IDF_TARGET_ARCH_RISCV
 
     Multicore Considerations
     ------------------------
@@ -138,9 +138,7 @@ Several handlers can be assigned to a same source, given that all handlers are a
 
 Sources attached to non-shared interrupt do not support this feature.
 
-.. only:: not SOC_CPU_HAS_FLEXIBLE_INTC
-
-    By default, when ``ESP_INTR_FLAG_SHARED`` flag is specified, the interrupt allocator will allocate only priority level 1 interrupts. Use ``ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_LOWMED`` to also allow allocating shared interrupts at priority levels 2 and 3.
+By default, when ``ESP_INTR_FLAG_SHARED`` flag is specified, the interrupt allocator will allocate only priority level 1 interrupts. Use ``ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_LOWMED`` to also allow allocating shared interrupts at priority levels 2 and 3.
 
 Though the framework supports this feature, you have to use it **very carefully**. There usually exist two ways to stop an interrupt from being triggered: **disable the source** or **mask peripheral interrupt status**. ESP-IDF only handles enabling and disabling of the source itself, leaving status and mask bits to be handled by users.
 
@@ -149,6 +147,8 @@ Though the framework supports this feature, you have to use it **very carefully*
 .. note::
 
     Leaving some status bits unhandled without masking them, while disabling the handlers for them, will cause the interrupt(s) to be triggered indefinitely, resulting therefore in a system crash.
+
+When calling :cpp:func:`esp_intr_alloc` or :cpp:func:`esp_intr_alloc_intrstatus`, the interrupt allocator selects the first interrupt that meets the level requirements for mapping the specified source, without considering other sources already mapped to the shared interrupt line. However, by using the functions :cpp:func:`esp_intr_alloc_bind` or :cpp:func:`esp_intr_alloc_intrstatus_bind`, you can explicitly specify the interrupt handler to be shared with the given interrupt source.
 
 
 Troubleshooting Interrupt Allocation

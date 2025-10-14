@@ -67,14 +67,14 @@ Overview
         Pins used by Slot 0 (``HS1_*``) are also used to connect the SPI flash chip in ESP32-WROOM and ESP32-WROVER modules. These pins cannot be concurrently shared between an SD card and an SPI flash. If you need to use Slot 0, establish an alternative connection for the SPI flash using different pins and configure the necessary eFuses accordingly.
 
 
-.. only:: SOC_SDMMC_USE_GPIO_MATRIX
+.. only:: esp32s3
 
     Both slots :c:macro:`SDMMC_HOST_SLOT_0` and :c:macro:`SDMMC_HOST_SLOT_1` support 1-, 4- and 8-line SD interfaces. The slots are connected to {IDF_TARGET_NAME} GPIOs using the GPIO matrix. This means that any GPIO may be used for each of the SD card signals.
 
 .. only:: esp32p4
 
     - :c:macro:`SDMMC_HOST_SLOT_1` is routed via GPIO Matrix. This means that any GPIO may be used for each of the SD card signals. It is for non UHS-I usage.
-    - :c:macro:`SDMMC_HOST_SLOT_0` is dedicated to UHS-I mode, which is not yet supported in the driver.
+    - :c:macro:`SDMMC_HOST_SLOT_0` is dedicated to UHS-I mode.
 
     On {IDF_TARGET_NAME}, SDMMC host requires an external power supply for the IO voltage. Please refer to :ref:`pwr-ctrl` for details.
 
@@ -87,6 +87,7 @@ SDMMC Host driver supports the following speed modes:
 
   - Default Speed (20 MHz): 1-line or 4-line with SD cards, and 1-line, 4-line, or 8-line with 3.3 V eMMC
   - High Speed (40 MHz): 1-line or 4-line with SD cards, and 1-line, 4-line, or 8-line with 3.3 V eMMC
+  :SOC_SDMMC_UHS_I_SUPPORTED: - UHS-I 1.8 V, SDR104 (200 MHz): 4-line with SD cards
   :SOC_SDMMC_UHS_I_SUPPORTED: - UHS-I 1.8 V, SDR50 (100 MHz): 4-line with SD cards
   :SOC_SDMMC_UHS_I_SUPPORTED: - UHS-I 1.8 V, DDR50 (50 MHz): 4-line with SD cards
   - High Speed DDR (40 MHz): 4-line with 3.3 V eMMC
@@ -202,7 +203,7 @@ See also
 
 - :doc:`../storage/sdmmc`: introduces the higher-level driver which implements the protocol layer.
 - :doc:`sdspi_host`: introduces a similar driver that uses the SPI controller and is limited to SD protocol's SPI mode.
-- :doc:`sd_pullup_requirements`: introduces pull-up support and compatibilities of modules and development kits.
+- :doc:`sd_pullup_requirements`: introduces pull-up support and compatibility of modules and development kits.
 
 
 API Reference

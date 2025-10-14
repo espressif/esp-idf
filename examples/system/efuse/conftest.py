@@ -99,7 +99,7 @@ class EfuseFlashEncSerial(IdfSerial):
         with tempfile.NamedTemporaryFile(suffix='.json') as temp_file:
             temp_file_path = temp_file.name
             espefuse.main(f'--virt -c {self.target} summary --format json --file {temp_file_path}'.split())
-            with open(temp_file_path, 'r') as file:
+            with open(temp_file_path, 'r', encoding='utf-8') as file:
                 efuse_summary = json.load(file)
                 if efuse_name in efuse_summary:
                     data = efuse_summary[efuse_name]

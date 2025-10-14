@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -11,9 +11,9 @@
 #include "host/ble_hs.h"
 #include "host/util/util.h"
 
-#define TAG                     "NimBLE_BLE_PAwR"
-#define TARGET_NAME             "Nimble_PAwR"
-#define BLE_PAWR_RSP_DATA_LEN   (20)
+#define TAG                     "NimBLE_BLE_PAwR_CONN"
+#define TARGET_NAME             "Nimble_PAwR_CONN"
+#define BLE_PAWR_RSP_DATA_LEN   (10)
 static uint8_t sub_data_pattern[BLE_PAWR_RSP_DATA_LEN] = {0};
 
 static int create_periodic_sync(struct ble_gap_ext_disc_desc *disc);
@@ -66,15 +66,24 @@ gap_event_cb(struct ble_gap_event *event, void *arg)
 
     switch (event->type) {
     case BLE_GAP_EVENT_CONNECT:
-         ESP_LOGI(TAG, "Connection established, conn_handle = 0x%0x, sync handle= 0x%02x, status = 0x%0x\n",event->connect.conn_handle, event->connect.sync_handle, event->connect.status);
-         rc = ble_gap_conn_find(event->connect.conn_handle, &desc);
-         if(rc == 0){
+        if (event->connect.status == 0) {
+        ESP_LOGI(TAG, "Connection established, conn_handle = 0x%0x, sync handle= 0x%02x, status = 0x%0x\n",event->connect.conn_handle, event->connect.sync_handle, event->connect.status);
+        rc = ble_gap_conn_find(event->connect.conn_handle, &desc);
+        if (rc == 0) {
             print_conn_desc(&desc);
-         }
-         else{
+        }
+        else{
             ESP_LOGE(TAG,"Failed to find Conn Information");
-         }
-         return 0;
+        }
+        } else{
+            ESP_LOGW(TAG, "[Connection Failed], conn_handle = 0x%02x, sync handle = 0x%0x, status = 0x%0x\n",event->connect.conn_handle, event->connect.sync_handle, event->connect.status);
+        }
+        return 0;
+
+    case BLE_GAP_EVENT_DISCONNECT:
+        ESP_LOGW(TAG, "[Disconnected], conn_handle = 0x%02x, status = 0x%0x\n",event->disconnect.conn.conn_handle,event->disconnect.reason);
+        return 0;
+
     case BLE_GAP_EVENT_EXT_DISC:
         disc = &event->ext_disc;
         addr = disc->addr.val;
@@ -90,26 +99,22 @@ gap_event_cb(struct ble_gap_event *event, void *arg)
             return 0;
         }
 
-        if (disc->periodic_adv_itvl && fields.name_len && !memcmp(fields.name, TARGET_NAME, strlen(TARGET_NAME))) {
+        if (fields.name_len && !memcmp(fields.name, TARGET_NAME, strlen(TARGET_NAME))) {
             create_periodic_sync(disc);
         }
         return 0;
 
     case BLE_GAP_EVENT_PERIODIC_REPORT:
-        if (event->periodic_report.event_counter % 10 == 0) {
-            // print every 10th event
-            ESP_LOGI(TAG, "[Periodic Adv Report] handle:%d, rssi:%d, data status:0x%x",
-                     event->periodic_report.sync_handle, event->periodic_report.rssi,
-                     event->periodic_report.data_status);
-            ESP_LOGI(TAG, "[Periodic Adv Report] event_counter(%d), subevent(%d)",
-                     event->periodic_report.event_counter, event->periodic_report.subevent);
-        }
+        ESP_LOGI(TAG, "[Periodic Adv Report] handle:%d, event_counter(%d), subevent(%d)",
+            event->periodic_report.sync_handle,
+            event->periodic_report.event_counter,
+            event->periodic_report.subevent);
 
         struct ble_gap_periodic_adv_response_params param = {
             .request_event = event->periodic_report.event_counter,
             .request_subevent = event->periodic_report.subevent,
             .response_subevent = event->periodic_report.subevent,
-            .response_slot = 0
+            .response_slot = 2,
         };
 
         struct os_mbuf *data = os_msys_get_pkthdr(BLE_PAWR_RSP_DATA_LEN, 0);
@@ -118,16 +123,22 @@ gap_event_cb(struct ble_gap_event *event, void *arg)
             return 0;
         }
         // create a special data for checking manually in ADV side
-        sub_data_pattern[0] = event->periodic_report.data[0];
+
+        sub_data_pattern[0] = event->periodic_report.subevent;
         rc = ble_hs_id_copy_addr(BLE_ADDR_PUBLIC, device_addr, NULL);
-        memset(sub_data_pattern + 1, event->periodic_report.subevent, BLE_PAWR_RSP_DATA_LEN - 1);
-        memcpy(sub_data_pattern + 1,device_addr,BLE_DEV_ADDR_LEN);
+        sub_data_pattern[1] = param.response_slot;
+        memcpy(&sub_data_pattern[2],device_addr,BLE_DEV_ADDR_LEN);
+
         os_mbuf_append(data, sub_data_pattern, BLE_PAWR_RSP_DATA_LEN);
 
         rc = ble_gap_periodic_adv_set_response_data(event->periodic_report.sync_handle, &param, data);
         if (rc) {
-            ESP_LOGE(TAG, "Set response data failed, subev(%x), rsp_slot(%d), rc(0x%x)",
-                     sub_data_pattern[0], event->periodic_report.subevent, rc);
+            ESP_LOGE(TAG, "Set response data failed, sync handle: %d, subev(%x), rsp_slot(%d), rc(0x%x)",
+                     event->periodic_report.sync_handle, param.response_subevent, param.response_slot, rc);
+        } else {
+            ESP_LOGW(TAG, "[RSP Data Set] sync handle: %d, subev(%x), rsp_slot(%d), rc(0x%x)",
+                     event->periodic_report.sync_handle, param.response_subevent, param.response_slot, rc);
+
         }
         os_mbuf_free_chain(data);
 
@@ -151,7 +162,7 @@ gap_event_cb(struct ble_gap_event *event, void *arg)
             ble_gap_disc_cancel();
 
             // choose subevents in range 0 to (num_subevents - 1)
-            uint8_t subevents[] = {0, 1, 2, 3, 4};
+            uint8_t subevents[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
             int result = ble_gap_periodic_adv_sync_subev(event->periodic_sync.sync_handle, 0, sizeof(subevents), subevents);
             if (result == ESP_OK) {
                 ESP_LOGI(TAG, "[Subevent Sync OK] sync handle:%d, sync_subevents:%d\n", event->periodic_sync.sync_handle, sizeof(subevents));
@@ -174,8 +185,8 @@ static int
 create_periodic_sync(struct ble_gap_ext_disc_desc *disc)
 {
     int rc;
-    struct ble_gap_periodic_sync_params params;
-
+    struct ble_gap_periodic_sync_params params = {0};
+    memset(&params, 0, sizeof(params));
     params.skip = 0;
     params.sync_timeout = 4000;
     params.reports_disabled = 0;
@@ -207,6 +218,7 @@ start_scan(void)
     /* Perform a passive scan.  I.e., don't send follow-up scan requests to
      * each advertiser.
      */
+    memset(&disc_params, 0, sizeof(disc_params));
     disc_params.itvl = BLE_GAP_SCAN_ITVL_MS(600);
     disc_params.window = BLE_GAP_SCAN_ITVL_MS(300);
     disc_params.passive = 1;
@@ -226,23 +238,6 @@ on_reset(int reason)
 {
     ESP_LOGE(TAG, "Resetting state; reason=%d\n", reason);
 }
-
-/* Cnnot find `ble_single_xxxx()`, workaround */
-// static void
-// on_sync(void)
-// {
-//     int ble_single_env_init(void);
-//     int ble_single_init(void);
-
-//     int rc;
-
-//     rc = ble_single_env_init();
-//     assert(!rc);
-//     rc = ble_single_init();
-//     assert(!rc);
-
-//     start_scan();
-// }
 
 static void
 on_sync(void)

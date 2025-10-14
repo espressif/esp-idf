@@ -14,10 +14,11 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Sync GitHub issues to Jira project
-        uses: espressif/github-actions/sync_issues_to_jira@master
+        uses: espressif/sync-jira-actions@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           JIRA_PASS: ${{ secrets.JIRA_PASS }}
           JIRA_PROJECT: IDFGH
           JIRA_URL: ${{ secrets.JIRA_URL }}
           JIRA_USER: ${{ secrets.JIRA_USER }}
+          WEBHOOK_URL: ${{ secrets.JIRA_ISSUE_COMMENT_WEBHOOK_URL }}

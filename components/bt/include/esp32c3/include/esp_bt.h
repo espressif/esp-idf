@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -30,7 +30,7 @@ extern "C" {
 *
 * @note Please do not modify this value
 */
-#define ESP_BT_CTRL_CONFIG_VERSION      0x02410230
+#define ESP_BT_CTRL_CONFIG_VERSION      0x02505080
 
 /**
 * @brief Internal use only
@@ -268,7 +268,7 @@ typedef void (* esp_bt_hci_tl_callback_t) (void *arg, uint8_t status);
 #define BT_CTRL_RUN_IN_FLASH_ONLY  (0)
 #endif
 
-#if (BT_CTRL_RUN_IN_FLASH_ONLY == 1)
+
 
 #if defined(CONFIG_BT_CTRL_DTM_ENABLE)
 #define BT_CTRL_DTM_ENABLE  CONFIG_BT_CTRL_DTM_ENABLE
@@ -288,20 +288,11 @@ typedef void (* esp_bt_hci_tl_callback_t) (void *arg, uint8_t status);
 #define BT_CTRL_BLE_TEST  (0)
 #endif
 
-#if defined (CONFIG_BT_NIMBLE_SECURITY_ENABLE) || defined (CONFIG_BT_BLE_SMP_ENABLE)
-#ifdef CONFIG_BT_NIMBLE_SECURITY_ENABLE
-#define BLE_SECURITY_ENABLE  (CONFIG_BT_NIMBLE_SECURITY_ENABLE)
-#endif //CONFIG_BT_NIMBLE_SECURITY_ENABLE
-#ifdef CONFIG_BT_BLE_SMP_ENABLE
-#define BLE_SECURITY_ENABLE  (CONFIG_BT_BLE_SMP_ENABLE)
-#endif //CONFIG_BT_BLE_SMP_ENABLE
-#else
 #if defined (CONFIG_BT_CTRL_BLE_SECURITY_ENABLE)
 #define BLE_SECURITY_ENABLE  (CONFIG_BT_CTRL_BLE_SECURITY_ENABLE)
 #else
 #define BLE_SECURITY_ENABLE  (0)
 #endif
-#endif // (CONFIG_BT_NIMBLE_SECURITY_ENABLE) || (CONFIG_BT_BLE_SMP_ENABLE)
 
 #if defined (CONFIG_BT_CTRL_BLE_SCAN)
 #define BT_CTRL_BLE_SCAN    CONFIG_BT_CTRL_BLE_SCAN
@@ -309,13 +300,35 @@ typedef void (* esp_bt_hci_tl_callback_t) (void *arg, uint8_t status);
 #define BT_CTRL_BLE_SCAN    (0)
 #endif
 
+#if defined (CONFIG_BT_CTRL_BLE_ADV)
+#define BT_CTRL_BLE_ADV    CONFIG_BT_CTRL_BLE_ADV
 #else
-#define BT_CTRL_BLE_MASTER   (1)
-#define BT_CTRL_DTM_ENABLE   (1)
-#define BT_CTRL_BLE_TEST     (1)
-#define BLE_SECURITY_ENABLE  (1)
-#define BT_CTRL_BLE_SCAN     (1)
-#endif // (BT_CTRL_RUN_IN_FLASH_ONLY == 1)
+#define BT_CTRL_BLE_ADV    (0)
+#endif
+
+#ifdef CONFIG_BT_CTRL_CHECK_CONNECT_IND_ACCESS_ADDRESS
+#define BLE_CTRL_CHECK_CONNECT_IND_ACCESS_ADDRESS_ENABLED CONFIG_BT_CTRL_CHECK_CONNECT_IND_ACCESS_ADDRESS
+#else
+#define BLE_CTRL_CHECK_CONNECT_IND_ACCESS_ADDRESS_ENABLED 0
+#endif
+
+#if defined(CONFIG_BT_CTRL_LE_LOG_EN)
+#define BT_BLE_LOG_EN CONFIG_BT_CTRL_LE_LOG_EN
+#else
+#define BT_BLE_LOG_EN (0)
+#endif
+
+#if defined(CONFIG_BT_CTRL_LE_LOG_MODE_EN)
+#define BLE_LOG_MODE_EN CONFIG_BT_CTRL_LE_LOG_MODE_EN
+#else
+#define BLE_LOG_MODE_EN (0)
+#endif
+
+#if defined(CONFIG_BT_CTRL_LE_LOG_LEVEL)
+#define BLE_LOG_LEVEL CONFIG_BT_CTRL_LE_LOG_LEVEL
+#else
+#define BLE_LOG_LEVEL (0)
+#endif
 
 #define BT_CONTROLLER_INIT_CONFIG_DEFAULT() {                              \
     .magic = ESP_BT_CTRL_CONFIG_MAGIC_VAL,                                 \
@@ -360,8 +373,12 @@ typedef void (* esp_bt_hci_tl_callback_t) (void *arg, uint8_t status);
     .dtm_en = BT_CTRL_DTM_ENABLE,                                          \
     .enc_en = BLE_SECURITY_ENABLE,                                         \
     .qa_test = BT_CTRL_BLE_TEST,                                           \
-    .master_en = BT_CTRL_BLE_MASTER,                                       \
+    .connect_en = BT_CTRL_BLE_MASTER,                                      \
     .scan_en = BT_CTRL_BLE_SCAN,                                           \
+    .ble_aa_check = BLE_CTRL_CHECK_CONNECT_IND_ACCESS_ADDRESS_ENABLED,     \
+    .ble_log_mode_en = BLE_LOG_MODE_EN,                                    \
+    .ble_log_level = BLE_LOG_LEVEL,                                        \
+    .adv_en = BT_CTRL_BLE_ADV,                                             \
 }
 
 #else
@@ -468,7 +485,7 @@ typedef struct {
     uint8_t ble_cca_mode;                   /*!< BLE CCA mode. Configurable in menuconfig
                                                 - 0 - Disable (default)
                                                 - 1 - Hardware-triggered CCA
-                                                - 2 - Software-based CCA */
+                                                - 2 - Software-based CCA (experimental) */
     uint8_t ble_data_lenth_zero_aux;        /*!< Enable / disable auxiliary packets when the extended ADV data length is zero. Configurable in menuconfig.
                                                 - 0 - Disable (default)
                                                 - 1 - Enable */
@@ -481,11 +498,15 @@ typedef struct {
     uint8_t ble_llcp_disc_flag;             /*!< Flag indicating whether the Controller disconnects after Instant Passed (0x28) error occurs. Configurable in menuconfig.
                                                 - The Controller does not disconnect after Instant Passed (0x28) by default. */
     bool run_in_flash;                      /*!< True if the Controller code is in flash (flash model); false otherwise (default). Configurable in menuconfig. */
-    bool dtm_en;                            /*!< In the flash mode, True if the DTM feature is enabled; false otherwise (default). Configurable in menuconfig. */
-    bool enc_en;                            /*!< In the flash mode, True if the encryption feature is enabled (default); false otherwise. Configurable in menuconfig. */
-    bool qa_test;                           /*!< In the flash mode, True if the QA test feature is enabled; false otherwise (default). Configurable in menuconfig.*/
-    bool master_en;                         /*!< In the flash mode, True if the master feature is enabled (default); false otherwise. Configurable in menuconfig.*/
-    bool scan_en;                           /*!< In the flash mode, True if the scan feature is enabled (default); false otherwise. Configurable in menuconfig.*/
+    bool dtm_en;                            /*!< True if the DTM feature is enabled; false otherwise (default). Configurable in menuconfig. */
+    bool enc_en;                            /*!< True if the encryption feature is enabled (default); false otherwise. Configurable in menuconfig. */
+    bool qa_test;                           /*!< True if the QA test feature is enabled; false otherwise (default). Configurable in menuconfig.*/
+    bool connect_en;                        /*!< True if the connection feature is enabled (default); false otherwise. Configurable in menuconfig.*/
+    bool scan_en;                           /*!< True if the scan feature is enabled (default); false otherwise. Configurable in menuconfig.*/
+    bool ble_aa_check;                      /*!< True if adds a verification step for the Access Address within the CONNECT_IND PDU; false otherwise. Configurable in menuconfig */
+    uint32_t ble_log_mode_en;               /*!< BLE log mode enable */
+    uint8_t ble_log_level;                  /*!< BLE log level */
+    bool adv_en;                            /*!< True if the ADV feature is enabled (default); false otherwise. Configurable in menuconfig.*/
 } esp_bt_controller_config_t;
 
 /**
@@ -895,6 +916,16 @@ void esp_vhci_host_send_packet(uint8_t *data, uint16_t len);
  *      - ESP_FAIL: Failure
  */
 esp_err_t esp_vhci_host_register_callback(const esp_vhci_host_callback_t *callback);
+
+/**
+ * @brief Select buffers
+*/
+typedef enum {
+    ESP_BLE_LOG_BUF_HCI         = 0x02,
+    ESP_BLE_LOG_BUF_CONTROLLER  = 0x05,
+} esp_ble_log_buf_t;
+
+void esp_ble_controller_log_dump_all(bool output);
 
 #ifdef __cplusplus
 }

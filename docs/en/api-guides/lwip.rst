@@ -173,7 +173,7 @@ Example:
 Socket Error Reason Code
 ++++++++++++++++++++++++
 
-Below is a list of common error codes. For a more detailed list of standard POSIX/C error codes, please see `newlib errno.h <https://github.com/espressif/newlib-esp32/blob/master/newlib/libc/include/sys/errno.h>`_ and the platform-specific extensions :component_file:`newlib/platform_include/sys/errno.h`.
+Below is a list of common error codes. For a more detailed list of standard POSIX/C error codes, please see `newlib errno.h <https://github.com/espressif/newlib-esp32/blob/master/newlib/libc/include/sys/errno.h>`_ and the platform-specific extensions :component_file:`esp_libc/platform_include/sys/errno.h`.
 
 .. list-table::
     :header-rows: 1
@@ -434,6 +434,52 @@ IPV4 network address port translation (NAPT) and port forwarding are supported. 
 - To use NAPT for forwarding packets between two interfaces, it needs to be enabled on the interface connecting to the target network. For example, to enable internet access for Ethernet traffic through the Wi-Fi interface, NAPT must be enabled on the Ethernet interface.
 - Usage of NAPT is demonstrated in :example:`network/vlan_support`.
 
+Default lwIP Hooks
+++++++++++++++++++
+
+ESP-IDF port layer provides a default hook file, which is included in the lwIP build process. This file is located at :component_file:`lwip/port/include/lwip_default_hooks.h` and defines several hooks that implement default ESP-IDF behavior of lwIP stack. These hooks could be further modified by choosing one of these options:
+
+- *None*: No hook is declared.
+- *Default*: Default IDF implementation is provided (declared as ``weak`` in most cases and can be overridden).
+- *Custom*: Only the hook declaration is provided, and the application must implement it.
+
+**DHCP Extra Option Hook**
+
+ESP-IDF allows applications to define a hook for handling extra DHCP options. This can be useful for implementing custom DHCP-based behaviors, such as retrieving specific vendor options. To enable this feature, configure :ref:`CONFIG_LWIP_HOOK_DHCP_EXTRA_OPTION` either to **Default** (``weak`` implementation is provided which could be replaced by custom implementation) or **Custom** (you will have to implement the hook and define its link dependency to lwip)
+
+**Example Usage**
+
+An application can define the following function to handle a specific DHCP option (e.g., captive portal URI):
+
+.. code-block::
+
+    #include "esp_netif.h"
+    #include "lwip/dhcp.h"
+
+    void lwip_dhcp_on_extra_option(struct dhcp *dhcp, uint8_t state,
+                                   uint8_t option, uint8_t len,
+                                   struct pbuf* p, uint16_t offset)
+    {
+        if (option == ESP_NETIF_CAPTIVEPORTAL_URI) {
+            char *uri = (char *)p->payload + offset;
+            ESP_LOGI(TAG, "Captive Portal URI: %s", uri);
+        }
+    }
+
+**Other Default Hooks**
+
+ESP-IDF provides additional lwIP hooks that can be overridden. These include:
+
+- TCP ISN Hook (:ref:`CONFIG_LWIP_HOOK_TCP_ISN`): Allows custom randomization of TCP Initial Sequence Numbers (ESP-IDF provided implementation is the default option, set to *Custom* to provide custom implementation or *None* to use lwIP implementation).
+- IPv6 Route Hook (:ref:`CONFIG_LWIP_HOOK_IP6_ROUTE`): Enables custom route selection for IPv6 packets (No hook by default, use *Default* or *Custom* to override).
+- IPv6 Get Gateway Hook (:ref:`CONFIG_LWIP_HOOK_ND6_GET_GW`): Enables defining a custom gateway selection logic (No hook by default, use *Default* or *Custom* to override).
+- IPv6 Source Address Selection Hook (:ref:`CONFIG_LWIP_HOOK_IP6_SELECT_SRC_ADDR`): Allows customization of source address selection (No hook by default, use *Default* or *Custom* to override).
+- Netconn External Resolve Hook (:ref:`CONFIG_LWIP_HOOK_NETCONN_EXTERNAL_RESOLVE`): Allows overriding the DNS resolution logic for network connections (No hook by default, use *Default* or *Custom* to override).
+- DNS External Resolve Hook (:ref:`CONFIG_LWIP_HOOK_DNS_EXTERNAL_RESOLVE`): Provides a hook for custom DNS resolution logic with callbacks (No hook by default, but could be selected by an external component to prefer the custom option; use *Default* or *Custom* to override).
+- IPv6 Packet Input Hook (:ref:`CONFIG_LWIP_HOOK_IP6_INPUT`): Provides filtering or modification of incoming IPv6 packets (ESP-IDF provided ``weak`` implementation is the default option; use *Custom* or provide a strong definition to override the *Default* option; choose *None* to disable IPv6 packet input filtering)
+
+Each of these hooks can be configured in menuconfig, allowing selection of default, custom, or no implementation.
+
 .. _lwip-custom-hooks:
 
 Customized lwIP Hooks
@@ -461,6 +507,12 @@ This approach may not work for function-like macros, as there is no guarantee th
 
 Alternatively, you can define your function-like macro in a header file which will be pre-included as an lwIP hook file, see :ref:`lwip-custom-hooks`.
 
+Network Interface Callbacks
+---------------------------
+
+- Status Callback (:ref:`CONFIG_LWIP_NETIF_STATUS_CALLBACK`): Enables `netif_set_status_callback()` to notify when an interface comes up/down and when IPv4/IPv6 addresses change.
+- Link Callback (:ref:`CONFIG_LWIP_NETIF_LINK_CALLBACK`): Enables `netif_set_link_callback()` to notify when the physical link goes up/down. The callback is triggered by `netif_set_link_up()` / `netif_set_link_down()` calls in drivers or virtual interfaces. Can be used alongside `LWIP_NETIF_EXT_STATUS_CALLBACK` for richer eventing.
+
 .. _lwip-limitations:
 
 Limitations
@@ -474,7 +526,7 @@ The number of IP addresses returned by network database APIs such as ``getaddrin
 
 In the implementation of ``getaddrinfo()``, the canonical name is not available. Therefore, the ``ai_canonname`` field of the first returned ``addrinfo`` structure will always refer to the ``nodename`` argument or a string with the same contents.
 
-The ``getaddrinfo()`` system call in lwIP within ESP-IDF has a limitation when using ``AF_UNSPEC``, as it defaults to returning only an IPv4 address in dual stack mode. This can cause issues in IPv6-only networks. To handle this, a workaround involves making two sequential calls to ``getaddrinfo()``: the first with AF_INET to query for IPv4 addresses, and the second with AF_INET6 to retrieve IPv6 addresses. To address this, the custom ``esp_getaddrinfo()`` function has been added to the lwIP port layer to handle both IPv4 and IPv6 addresses when AF_UNSPEC is used. The :ref:`CONFIG_LWIP_USE_ESP_GETADDRINFO` option, available when both IPv4 and IPv6 are enabled, controls whether ``esp_getaddrinfo()`` or the default lwIP implementation is used. It is disabled by default.
+The ``getaddrinfo()`` system call in lwIP within ESP-IDF has a limitation when using ``AF_UNSPEC``, as it defaults to returning only an IPv4 address in dual stack mode. This can cause issues in IPv6-only networks. To handle this, a workaround involves making two sequential calls to ``getaddrinfo()``: the first with ``AF_INET`` to query for IPv4 addresses, and the second with ``AF_INET6`` to retrieve IPv6 addresses. To provide a more robust solution, the custom ``esp_getaddrinfo()`` function has been added to the lwIP port layer to handle both IPv4 and IPv6 addresses when ``AF_UNSPEC`` is used. The :ref:`CONFIG_LWIP_USE_ESP_GETADDRINFO` option, available when both IPv4 and IPv6 are enabled, controls whether ``esp_getaddrinfo()`` or ``getaddrinfo()`` is used. It is disabled by default.
 
 Calling ``send()`` or ``sendto()`` repeatedly on a UDP socket may eventually fail with ``errno`` equal to ``ENOMEM``. This failure occurs due to the limitations of buffer sizes in the lower-layer network interface drivers. If all driver transmit buffers are full, the UDP transmission will fail. For applications that transmit a high volume of UDP datagrams and aim to avoid any dropped datagrams by the sender, it is advisable to implement error code checking and employ a retransmission mechanism with a short delay.
 

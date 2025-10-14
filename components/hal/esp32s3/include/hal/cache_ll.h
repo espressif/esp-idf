@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -361,6 +361,32 @@ static inline void cache_ll_invalidate_addr(uint32_t cache_level, cache_type_t t
 }
 
 /**
+ * @brief Invalidate all
+ *
+ * @param cache_level       level of the cache
+ * @param type              see `cache_type_t`
+ * @param cache_id          id of the cache in this type and level
+ */
+__attribute__((always_inline))
+static inline void cache_ll_invalidate_all(uint32_t cache_level, cache_type_t type, uint32_t cache_id)
+{
+    switch (type)
+    {
+    case CACHE_TYPE_DATA:
+        Cache_Invalidate_DCache_All();
+        break;
+    case CACHE_TYPE_INSTRUCTION:
+        Cache_Invalidate_ICache_All();
+        break;
+    default: //CACHE_TYPE_ALL
+        Cache_Invalidate_ICache_All();
+        Cache_Invalidate_DCache_All();
+        break;
+    }
+}
+
+
+/**
  * @brief Writeback cache supported addr
  *
  * Writeback a cache item
@@ -532,8 +558,6 @@ __attribute__((always_inline))
 #endif
 static inline cache_bus_mask_t cache_ll_l1_get_bus(uint32_t cache_id, uint32_t vaddr_start, uint32_t len)
 {
-    HAL_ASSERT(cache_id <= CACHE_LL_ID_ALL);
-
     cache_bus_mask_t mask = (cache_bus_mask_t)0;
     uint32_t vaddr_end = vaddr_start + len - 1;
     if (vaddr_start >= SOC_IRAM0_CACHE_ADDRESS_LOW && vaddr_end < SOC_IRAM0_CACHE_ADDRESS_HIGH) {
@@ -556,14 +580,13 @@ static inline cache_bus_mask_t cache_ll_l1_get_bus(uint32_t cache_id, uint32_t v
 #if !BOOTLOADER_BUILD
 __attribute__((always_inline))
 #endif
-static inline void cache_ll_l1_enable_bus(uint32_t cache_id, cache_bus_mask_t mask)
+static inline void cache_ll_l1_enable_bus(uint32_t bus_id, cache_bus_mask_t mask)
 {
-    HAL_ASSERT(cache_id <= CACHE_LL_ID_ALL);
     //On esp32s3, only `CACHE_BUS_IBUS0` and `CACHE_BUS_DBUS0` are supported. Use `cache_ll_l1_get_bus()` to get your bus first
     HAL_ASSERT((mask & (CACHE_BUS_IBUS1 | CACHE_BUS_IBUS2| CACHE_BUS_DBUS1 | CACHE_BUS_DBUS2)) == 0);
 
     uint32_t ibus_mask = 0;
-    if (cache_id == 0) {
+    if (bus_id == 0) {
         ibus_mask = ibus_mask | ((mask & CACHE_BUS_IBUS0) ? EXTMEM_ICACHE_SHUT_CORE0_BUS : 0);
     } else {
         ibus_mask = ibus_mask | ((mask & CACHE_BUS_IBUS0) ? EXTMEM_ICACHE_SHUT_CORE1_BUS : 0);
@@ -571,7 +594,7 @@ static inline void cache_ll_l1_enable_bus(uint32_t cache_id, cache_bus_mask_t ma
     REG_CLR_BIT(EXTMEM_ICACHE_CTRL1_REG, ibus_mask);
 
     uint32_t dbus_mask = 0;
-    if (cache_id == 1) {
+    if (bus_id == 1) {
         dbus_mask = dbus_mask | ((mask & CACHE_BUS_DBUS0) ? EXTMEM_DCACHE_SHUT_CORE0_BUS : 0);
     } else {
         dbus_mask = dbus_mask | ((mask & CACHE_BUS_DBUS0) ? EXTMEM_DCACHE_SHUT_CORE1_BUS : 0);
@@ -617,14 +640,13 @@ static inline cache_bus_mask_t cache_ll_l1_get_enabled_bus(uint32_t cache_id)
  * @param mask        To know which buses should be disabled
  */
 __attribute__((always_inline))
-static inline void cache_ll_l1_disable_bus(uint32_t cache_id, cache_bus_mask_t mask)
+static inline void cache_ll_l1_disable_bus(uint32_t bus_id, cache_bus_mask_t mask)
 {
-    HAL_ASSERT(cache_id <= CACHE_LL_ID_ALL);
     //On esp32s3, only `CACHE_BUS_IBUS0` and `CACHE_BUS_DBUS0` are supported. Use `cache_ll_l1_get_bus()` to get your bus first
     HAL_ASSERT((mask & (CACHE_BUS_IBUS1 | CACHE_BUS_IBUS2| CACHE_BUS_DBUS1 | CACHE_BUS_DBUS2)) == 0);
 
     uint32_t ibus_mask = 0;
-    if (cache_id == 0) {
+    if (bus_id == 0) {
         ibus_mask = ibus_mask | ((mask & CACHE_BUS_IBUS0) ? EXTMEM_ICACHE_SHUT_CORE0_BUS : 0);
     } else {
         ibus_mask = ibus_mask | ((mask & CACHE_BUS_IBUS0) ? EXTMEM_ICACHE_SHUT_CORE1_BUS : 0);
@@ -632,7 +654,7 @@ static inline void cache_ll_l1_disable_bus(uint32_t cache_id, cache_bus_mask_t m
     REG_SET_BIT(EXTMEM_ICACHE_CTRL1_REG, ibus_mask);
 
     uint32_t dbus_mask = 0;
-    if (cache_id == 1) {
+    if (bus_id == 1) {
         dbus_mask = dbus_mask | ((mask & CACHE_BUS_DBUS0) ? EXTMEM_DCACHE_SHUT_CORE0_BUS : 0);
     } else {
         dbus_mask = dbus_mask | ((mask & CACHE_BUS_DBUS0) ? EXTMEM_DCACHE_SHUT_CORE1_BUS : 0);
@@ -750,6 +772,23 @@ static inline void cache_ll_l1_clear_illegal_error_intr(uint32_t cache_id, uint3
 static inline uint32_t cache_ll_l1_get_illegal_error_intr_status(uint32_t cache_id, uint32_t mask)
 {
     return GET_PERI_REG_MASK(EXTMEM_CACHE_ILG_INT_ST_REG, mask);
+}
+
+/**
+ * @brief Read vaddr that caused acs dbus reject error
+ *
+ * @param cache_id cache id to get vaddr from
+ *
+ * @return vaddr that cause the acs dbus reject error
+ */
+__attribute__((always_inline))
+static inline uint32_t cache_ll_get_acs_dbus_reject_vaddr(uint32_t cache_id)
+{
+    if (cache_id == 0) {
+        return REG_READ(EXTMEM_CORE0_DBUS_REJECT_VADDR_REG);
+    } else {
+        return REG_READ(EXTMEM_CORE1_DBUS_REJECT_VADDR_REG);
+    }
 }
 
 #ifdef __cplusplus

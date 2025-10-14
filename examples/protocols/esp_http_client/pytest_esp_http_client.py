@@ -1,14 +1,15 @@
-# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import logging
 import os
 
 import pytest
 from pytest_embedded import Dut
+from pytest_embedded_idf.utils import idf_parametrize
 
 
-@pytest.mark.esp32
 @pytest.mark.httpbin
+@idf_parametrize('target', ['esp32'], indirect=['target'])
 def test_examples_protocol_esp_http_client(dut: Dut) -> None:
     """
     steps: |
@@ -56,11 +57,15 @@ def test_examples_protocol_esp_http_client(dut: Dut) -> None:
     dut.expect('Finish http example')
 
 
-@pytest.mark.esp32
 @pytest.mark.httpbin
-@pytest.mark.parametrize('config', [
-    'ssldyn',
-], indirect=True)
+@pytest.mark.parametrize(
+    'config',
+    [
+        'ssldyn',
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', ['esp32'], indirect=['target'])
 def test_examples_protocol_esp_http_client_dynamic_buffer(dut: Dut) -> None:
     # test mbedtls dynamic resource
     # check and log bin size
@@ -103,13 +108,21 @@ def test_examples_protocol_esp_http_client_dynamic_buffer(dut: Dut) -> None:
     dut.expect('Finish http example')
 
 
-@pytest.mark.linux
 @pytest.mark.host_test
-# Currently we are just testing the build for esp_http_client on Linux target. So skipping the test run.
-# Later we will enable the test run for Linux target as well.
-@pytest.mark.skipif('config.getvalue("target") == "linux"', reason='Do not run on Linux')
-@pytest.mark.parametrize('config', [
-    'default', 'ssldyn',
-], indirect=True)
-def test_examples_protocol_esp_http_client_linux(dut: Dut) -> None:
+@pytest.mark.parametrize(
+    'config',
+    [
+        'default',
+        'ssldyn',
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', ['linux'], indirect=['target'])
+def test_examples_protocol_esp_http_client_linux(target: str, dut: Dut) -> None:
+    if target == 'linux':
+        pytest.skip(
+            'Currently we are just testing the build for esp_http_client on Linux target. '
+            'So skipping the test run. Later we will enable the test run for Linux target as well.'
+        )
+
     dut.expect('Finish http example', timeout=60)

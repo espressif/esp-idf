@@ -8,6 +8,7 @@ menu "ESP-TLS"
             usage. Consult the ESP-TLS documentation in ESP-IDF Programming guide for more details.
         config ESP_TLS_USING_MBEDTLS
             bool "mbedTLS"
+            select MBEDTLS_TLS_ENABLED
         config ESP_TLS_USING_WOLFSSL
             depends on TLS_STACK_WOLFSSL
             bool "wolfSSL (License info in wolfSSL directory README)"
@@ -15,7 +16,7 @@ menu "ESP-TLS"
 
     config ESP_TLS_USE_SECURE_ELEMENT
         bool "Use Secure Element (ATECC608A) with ESP-TLS"
-        depends on IDF_TARGET_ESP32 && ESP_TLS_USING_MBEDTLS
+        depends on ESP_TLS_USING_MBEDTLS
         select ATCA_MBEDTLS_ECDSA
         select ATCA_MBEDTLS_ECDSA_SIGN
         select ATCA_MBEDTLS_ECDSA_VERIFY
@@ -84,7 +85,7 @@ menu "ESP-TLS"
     config ESP_TLS_INSECURE
         bool "Allow potentially insecure options"
         help
-            You can enable some potentially insecure options. These options should only be used for testing pusposes.
+            You can enable some potentially insecure options. These options should only be used for testing purposes.
             Only enable these options if you are very sure.
 
     config ESP_TLS_SKIP_SERVER_CERT_VERIFY
@@ -113,5 +114,13 @@ menu "ESP-TLS"
         help
             Enable a fuller set of OCSP checks: checking revocation status of intermediate certificates,
             optional fallbacks to CRLs, etc.
+
+    config ESP_TLS_DYN_BUF_STRATEGY_SUPPORTED
+        bool
+        default y
+        help
+            Enable support for dynamic buffer strategy for ESP-TLS. This is the hidden config option kept
+            for external components like OTA, to find out whether the dynamic buffer strategy is supported
+            for particular ESP-IDF version.
 
 endmenu

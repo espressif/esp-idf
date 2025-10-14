@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -303,10 +303,6 @@ static bool btc_avrc_tg_set_rn_supported_evt(uint16_t evt_set)
 
 static inline void btc_avrc_ct_cb_to_app(esp_avrc_ct_cb_event_t event, esp_avrc_ct_cb_param_t *param)
 {
-    if (s_rc_ct_init != BTC_RC_CT_INIT_MAGIC) {
-        return;
-    }
-
     esp_avrc_ct_cb_t btc_avrc_ct_cb = (esp_avrc_ct_cb_t)btc_profile_cb_get(BTC_PID_AVRC_CT);
     if (btc_avrc_ct_cb) {
         btc_avrc_ct_cb(event, param);
@@ -315,10 +311,6 @@ static inline void btc_avrc_ct_cb_to_app(esp_avrc_ct_cb_event_t event, esp_avrc_
 
 static inline void btc_avrc_tg_cb_to_app(esp_avrc_tg_cb_event_t event, esp_avrc_tg_cb_param_t *param)
 {
-    if (s_rc_tg_init != BTC_RC_TG_INIT_MAGIC) {
-        return;
-    }
-
     esp_avrc_tg_cb_t btc_avrc_tg_cb = (esp_avrc_tg_cb_t)btc_profile_cb_get(BTC_PID_AVRC_TG);
     if (btc_avrc_tg_cb) {
         btc_avrc_tg_cb(event, param);
@@ -590,13 +582,18 @@ static void handle_rc_disconnect (tBTA_AV_RC_CLOSE *p_rc_close)
 
 static void handle_rc_attributes_rsp (tAVRC_MSG_VENDOR *vendor_msg)
 {
-    uint8_t attr_count = vendor_msg->p_vendor_data[4];
+    uint8_t attr_count = 0;
     int attr_index = 5;
     int attr_length = 0;
     uint32_t attr_id = 0;
 
+    if (!vendor_msg || !vendor_msg->p_vendor_data ||
+        (vendor_msg->vendor_len < AVRC_GET_ELEMENT_ATTR_RSP_SIZE_MIN)) {
+        return;
+    }
+
     //Check if there are any attributes
-    if (attr_count < 1) {
+    if ((attr_count = vendor_msg->p_vendor_data[AVRC_RSP_PARAM_VALUE_OFFSET]) < 1) {
         return;
     }
 
@@ -604,7 +601,15 @@ static void handle_rc_attributes_rsp (tAVRC_MSG_VENDOR *vendor_msg)
     memset(&param[0], 0, sizeof(esp_avrc_ct_cb_param_t) * attr_count);
 
     for (int i = 0; i < attr_count; i++) {
+        if (vendor_msg->vendor_len < attr_index + 8) {
+            return;
+        }
+
         attr_length = (int) vendor_msg->p_vendor_data[7 + attr_index] | vendor_msg->p_vendor_data[6 + attr_index] << 8;
+
+        if (vendor_msg->vendor_len < attr_index + attr_length + 8) {
+            return;
+        }
 
         //Received attribute text is not null terminated, so it's useful to know it's length
         param[i].meta_rsp.attr_length = attr_length;
@@ -628,30 +633,52 @@ static void handle_rc_notification_rsp (tAVRC_MSG_VENDOR *vendor_msg)
     esp_avrc_ct_cb_param_t param;
     memset(&param, 0, sizeof(esp_avrc_ct_cb_param_t));
 
-    param.change_ntf.event_id = vendor_msg->p_vendor_data[4];
+    if (!vendor_msg || !vendor_msg->p_vendor_data ||
+        (vendor_msg->vendor_len < AVRC_REGISTER_NOTIFICATION_RSP_SIZE_MIN)) {
+        return;
+    }
 
-    uint8_t *data = &vendor_msg->p_vendor_data[5];
+    param.change_ntf.event_id = vendor_msg->p_vendor_data[AVRC_RSP_PARAM_VALUE_OFFSET];
+
+    uint8_t *data = &vendor_msg->p_vendor_data[AVRC_RSP_PARAM_VALUE_OFFSET + 1];
     if (!btc_avrc_ct_rn_evt_supported(param.change_ntf.event_id)) {
         BTC_TRACE_WARNING("%s unsupported notification on CT, event id 0x%x", __FUNCTION__,
                           param.change_ntf.event_id);
         return;
     }
 
+
+    bool notif = false;
     switch (param.change_ntf.event_id) {
     case ESP_AVRC_RN_PLAY_STATUS_CHANGE:
-        BE_STREAM_TO_UINT8(param.change_ntf.event_parameter.playback, data);
+        if (vendor_msg->vendor_len >= AVRC_RN_PLAY_STATUS_CHANGE_EVT_SIZE) {
+            BE_STREAM_TO_UINT8(param.change_ntf.event_parameter.playback, data);
+            notif = true;
+        }
         break;
     case ESP_AVRC_RN_TRACK_CHANGE:
-        memcpy(param.change_ntf.event_parameter.elm_id, data, 8);
+        if (vendor_msg->vendor_len >= AVRC_RN_TRACK_CHANGE_EVT_SIZE) {
+            memcpy(param.change_ntf.event_parameter.elm_id, data, 8);
+            notif = true;
+        }
         break;
     case ESP_AVRC_RN_PLAY_POS_CHANGED:
-        BE_STREAM_TO_UINT32(param.change_ntf.event_parameter.play_pos, data);
+        if (vendor_msg->vendor_len >= AVRC_RN_PLAY_POS_CHANGED_EVT_SIZE) {
+            BE_STREAM_TO_UINT32(param.change_ntf.event_parameter.play_pos, data);
+            notif = true;
+        }
         break;
     case ESP_AVRC_RN_BATTERY_STATUS_CHANGE:
-        BE_STREAM_TO_UINT8(param.change_ntf.event_parameter.batt, data);
+        if (vendor_msg->vendor_len >= AVRC_RN_BATTERY_STATUS_CHANGE_EVT_SIZE) {
+            BE_STREAM_TO_UINT8(param.change_ntf.event_parameter.batt, data);
+            notif = true;
+        }
         break;
     case ESP_AVRC_RN_VOLUME_CHANGE:
-        BE_STREAM_TO_UINT8(param.change_ntf.event_parameter.volume, data);
+        if (vendor_msg->vendor_len >= AVRC_RN_VOLUME_CHANGE_EVT_SIZE) {
+            BE_STREAM_TO_UINT8(param.change_ntf.event_parameter.volume, data);
+            notif = true;
+        }
         break;
     // for non-parameter event response
     case ESP_AVRC_RN_TRACK_REACHED_END:
@@ -669,7 +696,10 @@ static void handle_rc_notification_rsp (tAVRC_MSG_VENDOR *vendor_msg)
                           param.change_ntf.event_id);
         break;
     }
-    btc_avrc_ct_cb_to_app(ESP_AVRC_CT_CHANGE_NOTIFY_EVT, &param);
+
+    if (notif) {
+        btc_avrc_ct_cb_to_app(ESP_AVRC_CT_CHANGE_NOTIFY_EVT, &param);
+    }
 }
 
 static void handle_rc_get_caps_rsp (tAVRC_GET_CAPS_RSP *rsp)
@@ -698,6 +728,18 @@ static void handle_rc_set_absolute_volume_rsp(tAVRC_SET_VOLUME_RSP *rsp)
     param.set_volume_rsp.volume = rsp->volume;
 
     btc_avrc_ct_cb_to_app(ESP_AVRC_CT_SET_ABSOLUTE_VOLUME_RSP_EVT, &param);
+}
+
+static void handle_rc_get_play_status_rsp(tAVRC_GET_PLAY_STATUS_RSP *rsp)
+{
+    esp_avrc_ct_cb_param_t param;
+    memset(&param, 0, sizeof(esp_avrc_ct_cb_param_t));
+
+    param.play_status_rsp.song_length = rsp->song_len;
+    param.play_status_rsp.song_position = rsp->song_pos;
+    param.play_status_rsp.play_status = rsp->play_status;
+
+    btc_avrc_ct_cb_to_app(ESP_AVRC_CT_PLAY_STATUS_RSP_EVT, &param);
 }
 
 /***************************************************************************
@@ -848,7 +890,7 @@ static void handle_rc_metamsg_rsp (tBTA_AV_META_MSG *p_meta_msg)
     tAVRC_RESPONSE avrc_response = {0};
     tAVRC_STS status;
     tAVRC_MSG_VENDOR *vendor_msg = &p_meta_msg->p_msg->vendor;
-    BTC_TRACE_DEBUG("%s: opcode %d, pdu 0x%x, code %d", __FUNCTION__, p_meta_msg->p_msg->hdr.opcode, vendor_msg->p_vendor_data[0],
+    BTC_TRACE_DEBUG("%s: opcode %d, pdu 0x%x, code %d", __FUNCTION__, p_meta_msg->p_msg->hdr.opcode, vendor_msg->p_vendor_data[AVRC_RSP_OPCODE_OFFSET],
                     p_meta_msg->code);
     if ( p_meta_msg->p_msg->hdr.opcode != AVRC_OP_VENDOR) {
         return;
@@ -864,7 +906,7 @@ static void handle_rc_metamsg_rsp (tBTA_AV_META_MSG *p_meta_msg)
 
     // handle GET_ELEMENT_ATTR response
     if (p_meta_msg->code == AVRC_RSP_IMPL_STBL &&
-            vendor_msg->p_vendor_data[0] == AVRC_PDU_GET_ELEMENT_ATTR) {
+            vendor_msg->p_vendor_data[AVRC_RSP_OPCODE_OFFSET] == AVRC_PDU_GET_ELEMENT_ATTR) {
         handle_rc_attributes_rsp(vendor_msg);
         return;
     }
@@ -897,6 +939,9 @@ static void handle_rc_metamsg_rsp (tBTA_AV_META_MSG *p_meta_msg)
         if (vendor_msg->hdr.ctype == AVRC_RSP_ACCEPT) {
             handle_rc_set_absolute_volume_rsp(&avrc_response.volume);
         }
+        break;
+    case AVRC_PDU_GET_PLAY_STATUS:
+        handle_rc_get_play_status_rsp(&avrc_response.get_play_status);
         break;
     default:
         BTC_TRACE_WARNING("%s: unhandled meta rsp: pdu 0x%x", __FUNCTION__, avrc_response.rsp.pdu);
@@ -1093,27 +1138,39 @@ BOOLEAN btc_rc_get_connected_peer(BD_ADDR peer_addr)
 *******************************************************************************/
 static void btc_avrc_ct_init(void)
 {
+    esp_avrc_init_state_t state = ESP_AVRC_INIT_SUCCESS;
+
     BTC_TRACE_DEBUG("## %s ##", __FUNCTION__);
-    if (s_rc_ct_init == BTC_RC_CT_INIT_MAGIC) {
-        BTC_TRACE_WARNING("%s already initialized", __FUNCTION__);
-        return;
-    }
 
-    /// initialize CT-specific resources
-    s_rc_ct_init = BTC_RC_CT_INIT_MAGIC;
+    do {
 
-    /// initialize CT-TG shared resources
-    if (s_rc_tg_init != BTC_RC_TG_INIT_MAGIC) {
-        memset (&btc_rc_cb, 0, sizeof(btc_rc_cb_t));
-
-        if (!g_av_with_rc) {
-            g_av_with_rc = true;
+        if (s_rc_ct_init == BTC_RC_CT_INIT_MAGIC) {
+            BTC_TRACE_WARNING("%s already initialized", __FUNCTION__);
+            state = ESP_AVRC_INIT_ALREADY;
+            break;
         }
 
-        if (g_a2dp_on_init) {
-            BTC_TRACE_WARNING("AVRC Controller is expected to be initialized in advance of A2DP !!!");
+        /// initialize CT-TG shared resources
+        if (s_rc_tg_init != BTC_RC_TG_INIT_MAGIC) {
+            if (g_a2dp_on_init) {
+                BTC_TRACE_WARNING("AVRC Controller is expected to be initialized in advance of A2DP !!!");
+                state = ESP_AVRC_INIT_FAIL;
+                break;
+            }
+            memset (&btc_rc_cb, 0, sizeof(btc_rc_cb_t));
+
+            if (!g_av_with_rc) {
+                g_av_with_rc = true;
+            }
         }
-    }
+
+        /// initialize CT-specific resources
+        s_rc_ct_init = BTC_RC_CT_INIT_MAGIC;
+    } while (0);
+
+    esp_avrc_ct_cb_param_t param = {0};
+    param.avrc_ct_init_stat.state = state;
+    btc_avrc_ct_cb_to_app(ESP_AVRC_CT_PROF_STATE_EVT, &param);
 }
 
 
@@ -1128,29 +1185,37 @@ static void btc_avrc_ct_init(void)
 ***************************************************************************/
 static void btc_avrc_ct_deinit(void)
 {
+    esp_avrc_init_state_t state = ESP_AVRC_DEINIT_SUCCESS;
+
     BTC_TRACE_API("## %s ##", __FUNCTION__);
 
-    if (g_a2dp_on_deinit) {
-        BTC_TRACE_WARNING("A2DP already deinit, AVRC CT should deinit in advance of A2DP !!!");
-    }
-
-    if (s_rc_ct_init != BTC_RC_CT_INIT_MAGIC) {
-        BTC_TRACE_WARNING("%s not initialized", __FUNCTION__);
-        return;
-    }
-
-    /// deinit CT-specific resources
-    s_rc_ct_init = 0;
-
-    /// deinit CT-TG shared resources
-    if (s_rc_tg_init != BTC_RC_TG_INIT_MAGIC) {
-        memset (&btc_rc_cb, 0, sizeof(btc_rc_cb_t));
-        if (g_av_with_rc) {
-            g_av_with_rc = false;
+    do {
+        if (g_a2dp_on_deinit) {
+            BTC_TRACE_WARNING("A2DP already deinit, AVRC CT should deinit in advance of A2DP !!!");
         }
-    }
 
-    BTC_TRACE_API("## %s ## completed", __FUNCTION__);
+        if (s_rc_ct_init != BTC_RC_CT_INIT_MAGIC) {
+            BTC_TRACE_WARNING("%s not initialized", __FUNCTION__);
+            state = ESP_AVRC_DEINIT_ALREADY;
+            break;
+        }
+
+        /// deinit CT-specific resources
+        s_rc_ct_init = 0;
+
+        /// deinit CT-TG shared resources
+        if (s_rc_tg_init != BTC_RC_TG_INIT_MAGIC) {
+            memset (&btc_rc_cb, 0, sizeof(btc_rc_cb_t));
+            if (g_av_with_rc) {
+                g_av_with_rc = false;
+            }
+        }
+        BTC_TRACE_API("## %s ## completed", __FUNCTION__);
+    } while (0);
+
+    esp_avrc_ct_cb_param_t param = {0};
+    param.avrc_ct_init_stat.state = state;
+    btc_avrc_ct_cb_to_app(ESP_AVRC_CT_PROF_STATE_EVT, &param);
 }
 
 static bt_status_t btc_avrc_ct_send_set_player_value_cmd(uint8_t tl, uint8_t attr_id, uint8_t value_id)
@@ -1333,6 +1398,38 @@ static bt_status_t btc_avrc_ct_send_metadata_cmd (uint8_t tl, uint8_t attr_mask)
     return status;
 }
 
+static bt_status_t btc_avrc_ct_send_get_play_status_cmd(uint8_t tl)
+{
+    tAVRC_STS status = BT_STATUS_UNSUPPORTED;
+
+#if (AVRC_METADATA_INCLUDED == TRUE)
+    CHECK_ESP_RC_CONNECTED;
+
+    tAVRC_COMMAND avrc_cmd = {0};
+    BT_HDR *p_msg = NULL;
+
+    avrc_cmd.get_play_status.opcode = AVRC_OP_VENDOR;
+    avrc_cmd.get_play_status.status = AVRC_STS_NO_ERROR;
+    avrc_cmd.get_play_status.pdu = AVRC_PDU_GET_PLAY_STATUS;
+
+    if (btc_rc_cb.rc_features & BTA_AV_FEAT_METADATA) {
+        status = AVRC_BldCommand(&avrc_cmd, &p_msg);
+        if (status == AVRC_STS_NO_ERROR) {
+            BTA_AvMetaCmd(btc_rc_cb.rc_handle, tl, AVRC_CMD_STATUS, p_msg);
+            status = BT_STATUS_SUCCESS;
+        }
+    } else {
+        status = BT_STATUS_FAIL;
+        BTC_TRACE_DEBUG("%s: feature not supported", __FUNCTION__);
+    }
+
+#else
+    BTC_TRACE_DEBUG("%s: feature not enabled", __FUNCTION__);
+#endif
+
+    return status;
+}
+
 static bt_status_t btc_avrc_ct_send_passthrough_cmd(uint8_t tl, uint8_t key_code, uint8_t key_state)
 {
     tAVRC_STS status = BT_STATUS_UNSUPPORTED;
@@ -1427,30 +1524,42 @@ static void btc_avrc_ct_cover_art_get_linked_thumbnail(UINT8 *image_handle)
 *******************************************************************************/
 static void btc_avrc_tg_init(void)
 {
+    esp_avrc_init_state_t state = ESP_AVRC_INIT_SUCCESS;
+
     BTC_TRACE_DEBUG("## %s ##", __FUNCTION__);
-    if (s_rc_tg_init == BTC_RC_TG_INIT_MAGIC) {
-        BTC_TRACE_WARNING("%s already initialized", __FUNCTION__);
-        return;
-    }
 
-    /// initialize TG-specific resources
-    memcpy(s_psth_supported_cmd, cs_psth_dft_supported_cmd, sizeof(s_psth_supported_cmd));
-    s_rn_supported_evt = cs_rn_dft_supported_evt;
-
-    /// initialize CT-TG shared resources
-    if (s_rc_ct_init != BTC_RC_CT_INIT_MAGIC) {
-        memset (&btc_rc_cb, 0, sizeof(btc_rc_cb));
-
-        if (!g_av_with_rc) {
-            g_av_with_rc = true;
+    do {
+        if (s_rc_tg_init == BTC_RC_TG_INIT_MAGIC) {
+            BTC_TRACE_WARNING("%s already initialized", __FUNCTION__);
+            state = ESP_AVRC_INIT_ALREADY;
+            break;
         }
 
-        if (g_a2dp_on_init) {
-            BTC_TRACE_WARNING("AVRC Target is expected to be initialized in advance of A2DP !!!");
-        }
-    }
+        /// initialize CT-TG shared resources
+        if (s_rc_ct_init != BTC_RC_CT_INIT_MAGIC) {
+            if (g_a2dp_on_init) {
+                BTC_TRACE_WARNING("AVRC Target is expected to be initialized in advance of A2DP !!!");
+                state = ESP_AVRC_INIT_FAIL;
+                break;
+            }
 
-    s_rc_tg_init = BTC_RC_TG_INIT_MAGIC;
+            memset (&btc_rc_cb, 0, sizeof(btc_rc_cb));
+
+            if (!g_av_with_rc) {
+                g_av_with_rc = true;
+            }
+        }
+
+        /// initialize TG-specific resources
+        memcpy(s_psth_supported_cmd, cs_psth_dft_supported_cmd, sizeof(s_psth_supported_cmd));
+        s_rn_supported_evt = cs_rn_dft_supported_evt;
+
+        s_rc_tg_init = BTC_RC_TG_INIT_MAGIC;
+    } while (0);
+
+    esp_avrc_tg_cb_param_t param = {0};
+    param.avrc_tg_init_stat.state = state;
+    btc_avrc_tg_cb_to_app(ESP_AVRC_TG_PROF_STATE_EVT, &param);
 }
 
 
@@ -1465,31 +1574,40 @@ static void btc_avrc_tg_init(void)
 ***************************************************************************/
 static void btc_avrc_tg_deinit(void)
 {
+    esp_avrc_init_state_t state = ESP_AVRC_DEINIT_SUCCESS;
+
     BTC_TRACE_API("## %s ##", __FUNCTION__);
 
-    if (g_a2dp_on_deinit) {
-        BTC_TRACE_WARNING("A2DP already deinit, AVRC TG should deinit in advance of A2DP !!!");
-    }
-
-    if (s_rc_tg_init != BTC_RC_TG_INIT_MAGIC) {
-        BTC_TRACE_WARNING("%s not initialized", __FUNCTION__);
-        return;
-    }
-
-    /// deinit TG-specific resources
-    memset(s_psth_supported_cmd, 0, sizeof(s_psth_supported_cmd));
-    s_rn_supported_evt = 0;
-    s_rc_tg_init = 0;
-
-    /// deinit CT-TG shared resources
-    if (s_rc_ct_init != BTC_RC_CT_INIT_MAGIC) {
-        memset (&btc_rc_cb, 0, sizeof(btc_rc_cb));
-        if (g_av_with_rc) {
-            g_av_with_rc = false;
+    do {
+        if (g_a2dp_on_deinit) {
+            BTC_TRACE_WARNING("A2DP already deinit, AVRC TG should deinit in advance of A2DP !!!");
         }
-    }
 
-    BTC_TRACE_API("## %s ## completed", __FUNCTION__);
+        if (s_rc_tg_init != BTC_RC_TG_INIT_MAGIC) {
+            BTC_TRACE_WARNING("%s not initialized", __FUNCTION__);
+            state = ESP_AVRC_DEINIT_ALREADY;
+            break;
+        }
+
+        /// deinit TG-specific resources
+        memset(s_psth_supported_cmd, 0, sizeof(s_psth_supported_cmd));
+        s_rn_supported_evt = 0;
+        s_rc_tg_init = 0;
+
+        /// deinit CT-TG shared resources
+        if (s_rc_ct_init != BTC_RC_CT_INIT_MAGIC) {
+            memset (&btc_rc_cb, 0, sizeof(btc_rc_cb));
+            if (g_av_with_rc) {
+                g_av_with_rc = false;
+            }
+        }
+
+        BTC_TRACE_API("## %s ## completed", __FUNCTION__);
+    } while (0);
+
+    esp_avrc_tg_cb_param_t param = {0};
+    param.avrc_tg_init_stat.state = state;
+    btc_avrc_tg_cb_to_app(ESP_AVRC_TG_PROF_STATE_EVT, &param);
 }
 
 static void btc_avrc_tg_send_rn_rsp(esp_avrc_rn_event_ids_t event_id, esp_avrc_rn_rsp_t rsp, const esp_avrc_rn_param_t *param)
@@ -1548,6 +1666,10 @@ void btc_avrc_ct_call_handler(btc_msg_t *msg)
     }
     case BTC_AVRC_STATUS_API_SND_META_EVT: {
         btc_avrc_ct_send_metadata_cmd(arg->md_cmd.tl, arg->md_cmd.attr_mask);
+        break;
+    }
+    case BTC_AVRC_STATUS_API_SND_GET_PLAY_STATUS_EVT: {
+        btc_avrc_ct_send_get_play_status_cmd(arg->get_play_status_cmd.tl);
         break;
     }
     case BTC_AVRC_STATUS_API_SND_GET_RN_CAPS_EVT: {
@@ -1623,6 +1745,29 @@ void btc_avrc_tg_call_handler(btc_msg_t *msg)
     }
 
     btc_avrc_tg_arg_deep_free(msg);
+}
+
+void btc_avrc_get_profile_status(esp_avrc_profile_status_t *param)
+{
+    param->avrc_ct_inited = false;
+    param->avrc_tg_inited = false;
+
+#if AVRC_DYNAMIC_MEMORY == TRUE
+    if (btc_rc_cb_ptr)
+#endif
+    {
+        if (btc_avrc_tg_init_p()) {
+            param->avrc_tg_inited = true;
+        }
+        if (btc_avrc_ct_init_p()) {
+            param->avrc_ct_inited = true;
+        }
+#if BTC_AV_CA_INCLUDED
+        if (btc_rc_cb.rc_cover_art_connected) {
+            param->ct_cover_art_conn_num++;
+        }
+#endif
+    }
 }
 
 #endif /* #if BTC_AV_INCLUDED */

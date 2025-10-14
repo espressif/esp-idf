@@ -108,7 +108,7 @@ static void _cbSendTaskList(void) {
 *    Called from SystemView when asked by the host, returns the
 *    current system time in micro seconds.
 */
-static U64 _cbGetTime(void) {
+__attribute__((unused)) static U64 _cbGetTime(void) {
   U64 Time;
 
   Time = xTaskGetTickCountFromISR();
@@ -260,7 +260,10 @@ void SYSVIEW_SendTaskInfo(U32 TaskID, const char* sName, unsigned Prio, U32 Stac
 */
 // Callbacks provided to SYSTEMVIEW by FreeRTOS
 const SEGGER_SYSVIEW_OS_API SYSVIEW_X_OS_TraceAPI = {
-  _cbGetTime,
+  /* Callback _cbGetTime locks xKernelLock inside xTaskGetTickCountFromISR, this can cause deadlock on multi-core.
+     To prevent deadlock, always lock xKernelLock before s_sys_view_lock. Omitting the callback here results in sending
+     SYSVIEW_EVTID_SYSTIME_CYCLES events instead of SYSVIEW_EVTID_SYSTIME_US */
+  NULL,
   _cbSendTaskList,
 };
 

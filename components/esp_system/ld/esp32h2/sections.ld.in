@@ -173,8 +173,21 @@ SECTIONS
 
     /* Vectors go to start of IRAM */
     ASSERT(ABSOLUTE(.) % 0x100 == 0, "vector address must be 256 byte aligned");
+    _vector_table_start = ABSOLUTE(.);
     KEEP(*(.exception_vectors_table.text));
     KEEP(*(.exception_vectors.text));
+
+    ALIGNED_SYMBOL(4, _invalid_pc_placeholder)
+
+    /* esp_tee_config_t structure: used to share information between the TEE and REE
+     * (e.g. interrupt handler addresses, REE flash text-rodata boundaries, etc.)
+     * This symbol is expected by the TEE at an offset of 0x300 from the vector table start.
+     */
+#if CONFIG_SECURE_ENABLE_TEE
+    ALIGNED_SYMBOL(0x10, _esp_tee_app_cfg)
+    ASSERT(ABSOLUTE(.) == _vector_table_start + 0x2e0, "esp_tee_app_cfg must be at an offset 0x2e0 from the vector table start");
+    *libesp_tee.a:(.esp_tee_app_cfg);
+#endif
 
     /* Code marked as running out of IRAM */
     _iram_text_start = ABSOLUTE(.);
@@ -353,20 +366,12 @@ SECTIONS
      * C++ constructor tables.
      *
      * Excluding crtbegin.o/crtend.o since IDF doesn't use the toolchain crt.
-     *
-     * RISC-V gcc is configured with --enable-initfini-array so it emits
-     * .init_array section instead. But the init_priority sections will be
-     * sorted for iteration in ascending order during startup.
-     * The rest of the init_array sections is sorted for iteration in descending
-     * order during startup, however. Hence a different section is generated for
-     * the init_priority functions which is iterated in ascending order during
-     * startup. The corresponding code can be found in startup.c.
      */
-    ALIGNED_SYMBOL(4, __init_priority_array_start)
-    KEEP (*(EXCLUDE_FILE (*crtend.* *crtbegin.*) .init_array.*))
-    __init_priority_array_end = ABSOLUTE(.);
-
+    ALIGNED_SYMBOL(4, __preinit_array_start)
+    KEEP (*(.preinit_array))
+    __preinit_array_end = ABSOLUTE(.);
     ALIGNED_SYMBOL(4, __init_array_start)
+    KEEP (*(SORT_BY_INIT_PRIORITY(EXCLUDE_FILE (*crtend.* *crtbegin.*) .init_array.*)))
     KEEP (*(EXCLUDE_FILE (*crtend.* *crtbegin.*) .init_array))
     __init_array_end = ABSOLUTE(.);
 

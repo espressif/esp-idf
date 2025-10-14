@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -235,16 +235,43 @@ typedef struct {
      */
     uint32_t mu_bw[3];
     uint32_t mu_sigb_dump;
+#if CONFIG_IDF_TARGET_ESP32C5
     uint32_t vht;
     uint32_t vht_noeb;
     uint32_t vht_stbc;
     uint32_t vht_txbf;
     uint32_t vht_retry;
+#endif
     uint32_t rx_isr;
     uint32_t rx_nblks;
     uint32_t rx_ndpa;
     uint32_t rx_reset_rxbase_cnt;
     uint32_t rx_base_null_cnt;
+#if CONFIG_IDF_TARGET_ESP32C5
+    uint32_t vht_mu[64][4];
+    uint32_t vht_mu_noeb;
+    uint32_t vht_mu_stbc;
+    uint32_t vht_mu_retry[64][4];
+    uint16_t vht_mu_mcs[64][4][12];
+#endif
+
+#if CONFIG_IDF_TARGET_ESP32C61
+    int8_t min_legacy_rssi;
+    int8_t max_legacy_rssi;
+    float avg_legacy_rssi;
+
+    int8_t min_data_rssi;
+    int8_t max_data_rssi;
+    float avg_data_rssi;
+
+    int8_t min_mu_legacy_rssi;
+    int8_t max_mu_legacy_rssi;
+    float avg_mu_legacy_rssi;
+
+    int8_t min_mu_data_rssi;
+    int8_t max_mu_data_rssi;
+    float avg_mu_data_rssi;
+#endif
 } esp_test_rx_statistics_t; //140 bytes
 
 #else
@@ -345,7 +372,8 @@ typedef struct {
     uint32_t tx_muedca_enable; /* count TX times within mu-timer working */
     uint32_t collision;
     uint32_t timeout;
-} esp_test_tx_statistics_t; //136 bytes
+    uint32_t tx_error_a0;
+} esp_test_tx_statistics_t; //140 bytes
 
 typedef struct {
     uint32_t complete_suc_tb;
@@ -366,6 +394,8 @@ typedef struct {
     uint16_t tb_cca_cancel;
     uint16_t tb_sifs_abort;
     uint16_t tb_pwr_outof_range;
+    uint16_t vht_bfrpt;
+    uint16_t polled_vht_bfrpt;
 } esp_test_hw_tb_statistics_t; //14 bytes
 
 typedef struct {
@@ -400,6 +430,7 @@ typedef struct {
     uint16_t nrx_err_serv;
     uint16_t nrx_err_txover;
     uint16_t nrx_err_unsupport;
+    uint16_t nrx_err_heformat;
     uint16_t nrx_htsig_err;
     uint16_t nrx_heunsupport;
     uint16_t nrx_hesiga_crc;
@@ -410,6 +441,8 @@ typedef struct {
     uint32_t rxtxpanic;
     uint8_t bf_ndp_timeout;
     uint8_t bf_report_err;
+    uint16_t nrx_vhtunsupport;
+    uint16_t nrx_vhtsiga_crc;
 #endif
 } esp_test_hw_rx_statistics_t; //76->80 bytes
 
@@ -431,6 +464,12 @@ typedef struct {
     int bfrp;
     int nfrp;
     int bar;
+    int trigger_basic_cnt;
+    int trigger_basic_id_0_cnt;
+    int trigger_basic_id_2045_cnt;
+    int trigger_basic_id_2046_cnt;
+    int trigger_basic_id_other_cnt;
+    int bfpoll;
 } esp_test_rx_ctrl_t;
 
 typedef enum {

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <sys/time.h>
+#include <net/if.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "lwip/opt.h"
@@ -267,7 +268,7 @@ esp_err_t esp_ping_new_session(const esp_ping_config_t *config, const esp_ping_c
     /* set if index */
     if(config->interface) {
         struct ifreq iface;
-        if(netif_index_to_name(config->interface, iface.ifr_name) == NULL) {
+        if (if_indextoname(config->interface, iface.ifr_name) == NULL) {
             ESP_LOGE(TAG, "fail to find interface name with netif index %" PRIu32, config->interface);
             goto err;
         }

@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP32-H2 | ESP32-P4 | ESP32-S2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | --------- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP32-H2 | ESP32-H21 | ESP32-H4 | ESP32-P4 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | --------- | -------- | --------- | -------- | -------- | -------- | -------- |
 
 # Link Time Plugins Registration
 
@@ -51,6 +51,14 @@ This approach relies on plugin description structures being collected into an ar
 For each plugin, a structure describing the plugin (or a pointer to it) is placed into some special input section using `__attribute((section(".plugins_desc")))`. Using the linker script generator features in ESP-IDF, all entries from this input section can be gathered into a continuous array, surrounded by some symbols (e.g. `_plugins_array_start`, `_plugins_array_end`). At run time, the application casts the `&_plugins_array_start` pointer to the plugin description structure pointer and then iterates over structures collected from all plugins.
 
 ## Example code overview
+
+This example uses the optional `COMPONENTS` project variable to streamline the build process. By specifying components in this variable, only those components and their dependencies are linked to the application, reducing build time. Additionally, listing plugin components in the `COMPONENTS` variable ensures that only the specified plugins are linked. This approach provides a convenient way to quickly select the plugins to include in the application. The `COMPONENTS` variable is set in the project's CMakeLists.txt file:
+
+```cmake
+set(COMPONENTS main plugin_hello plugin_nihao)
+```
+
+For details about the `COMPONENTS` project variable, please refer to the Build System documentation.
 
 This example contains 4 components:
 

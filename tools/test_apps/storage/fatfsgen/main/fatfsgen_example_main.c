@@ -68,6 +68,7 @@ void app_main(void)
         ESP_LOGI(TAG, "Opening file");
         FILE *f;
         for(int i = 0; i < CONFIG_EXAMPLE_FATFS_WRITE_COUNT; i++){
+            ESP_LOGI(TAG, "Write number: %d", i);
             f = fopen(device_filename, "wb");
             if (f == NULL) {
                 ESP_LOGE(TAG, "Failed to open file for writing");

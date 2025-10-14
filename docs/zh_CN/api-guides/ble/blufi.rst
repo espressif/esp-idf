@@ -1,10 +1,10 @@
 BluFi
-^^^^^^
+=====
 
 :link_to_translation:`en:[English]`
 
 概览
---------
+----
 
 BluFi 是一项基于蓝牙通道的 Wi-Fi 网络配置功能，适用于 {IDF_TARGET_NAME}。它通过安全协议将 Wi-Fi 的 SSID、密码等配置信息传输到 {IDF_TARGET_NAME}。基于这些信息，{IDF_TARGET_NAME} 可进而连接到 AP 或建立 SoftAP。
 
@@ -12,8 +12,220 @@ BluFi 流程的关键部分包括数据的分片、加密以及校验和验证�
 
 用户可按需自定义用于对称加密、非对称加密以及校验的算法。此处，我们采用 DH 算法进行密钥协商，128-AES 算法用于数据加密，CRC16 算法用于校验和验证。
 
+
+快速入门
+--------
+
+本节将指导您使用 EspBlufi 应用程序在 {IDF_TARGET_NAME} 设备上配置 Wi-Fi。
+
+
+硬件及软件准备
+^^^^^^^^^^^^^^
+
+硬件：
+
+* {IDF_TARGET_NAME} 模组一个
+* 电脑一台，并与模组连接，为模组供电并提供串口打印
+* 运行 Android 或 iOS 的手机一台
+
+
+软件：
+
+* BluFi 示例: :example:`bluetooth/blufi` （需烧录至 {IDF_TARGET_NAME}）
+* 手机应用程序：EspBlufi
+
+    - Android 版本: `EspBlufi For Android <https://github.com/EspressifApp/EspBlufiForAndroid>`_
+    - iOS 版本: `EspBlufi For iOS <https://github.com/EspressifApp/EspBlufiForiOS>`_
+
+关于 BluFi 示例烧录的详细说明，请参考 ESP-IDF :doc:`../../get-started/index` 文档。
+
+
+通过 EspBlufi 应用配置 Wi-Fi
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Station 模式配置示例
+####################
+
+
+1. **给 {IDF_TARGET_NAME} 上电**
+
+   将 {IDF_TARGET_NAME} 连接至电脑，可通过串口工具看到如下打印：
+
+   .. figure:: ../../../_static/blufi-init-finish.png
+        :align: center
+        :width: 70%
+
+
+2. **通过 EspBlufi 建立连接**
+
+   - 在手机上开启 Wi-Fi、蓝牙和位置权限。
+   - 打开 EspBlufi 应用程序，下拉刷新界面，扫描附近的蓝牙设备。
+
+     .. figure:: ../../../_static/espblufi-interface.jpg
+         :align: center
+         :scale: 20%
+         :alt: EspBlufi 界面
+
+         EspBlufi 界面
+
+
+   - 点击目标 {IDF_TARGET_NAME} 设备，选择 **连接** 建立蓝牙连接。连接成功后界面显示如下：
+
+     .. figure:: ../../../_static/interface-success-connection.jpg
+         :align: center
+         :scale: 20%
+         :alt: 蓝牙连接成功界面
+
+         蓝牙连接成功界面
+
+
+     同时，串口工具中会出现如下图中的打印：
+
+     .. figure:: ../../../_static/blufi-ble-connect.png
+         :align: center
+         :width: 80%
+
+     .. note::
+
+        若界面未显示 **配网** 按钮，或按钮无法点击，请重启 {IDF_TARGET_NAME} 并确认已开启蓝牙权限。
+
+
+3. **配置 Wi-Fi 网络**
+
+   - 点击 **配网** 按钮进入网络配置界面：
+
+     .. figure:: ../../../_static/network-config-interface.jpg
+         :align: center
+         :scale: 20%
+         :alt: 网络配置界面
+
+         网络配置界面
+
+   - 从下拉列表中选择设备模式。BluFi 支持以下三种模式：
+
+     - **Station:** 连接至现有 Wi-Fi 网络。
+     - **SoftAP:** 创建 Wi-Fi 热点。
+     - **SoftAP/Station:** 同时启用 SoftAP 和 Station 模式。
+
+     .. figure:: ../../../_static/select-device-mode.jpg
+         :align: center
+         :scale: 20%
+         :alt: 选择设备模式
+
+         选择设备模式
+
+   - 选择 **Station** 模式，点击刷新按钮，选择目标 Wi-Fi 名称，并输入密码。
+
+     .. figure:: ../../../_static/config-station-mode.jpg
+         :align: center
+         :scale: 20%
+         :alt: 配置 Station 模式
+
+         配置 Station 模式
+
+     .. only:: esp32
+
+        .. note::
+
+           {IDF_TARGET_NAME} 仅支持 2.4 GHz Wi-Fi，请确保选择兼容的网络。
+
+
+   - 点击 **确定** 按钮完成配置。成功连接后界面显示如下。标红部分显示当前 Wi-Fi 模式（本例为 Station 模式）及连接信息（如 AP 的 BSSID、SSID 和连接状态）。
+
+     .. figure:: ../../../_static/station-connection-info.jpg
+         :align: center
+         :scale: 20%
+         :alt: Station 连接信息
+
+         Station 连接信息
+
+     同时，串口工具会打印如下信息：
+
+     .. figure:: ../../../_static/station-connection-log.png
+         :align: center
+         :width: 80%
+
+
+SoftAP 模式配置示例
+###################
+
+
+1. **通过 EspBlufi 建立连接**
+
+   - 将模组上电。使用 EspBlufi 应用程序通过蓝牙连接 {IDF_TARGET_NAME}。
+   - 在配网界面选择 **SoftAP** 模式：
+
+     .. figure:: ../../../_static/select-softap-mode.jpg
+         :align: center
+         :scale: 20%
+         :alt: 选择 SoftAP 模式
+
+         选择 SoftAP 模式
+
+
+2. **配置 SoftAP 参数**
+
+   - 选择加密方式、信道和最大连接数。
+   - 输入 SoftAP 的 SSID 和密码。
+   - 点击 **确定** 按钮完成配置。
+
+     .. figure:: ../../../_static/config-softap-mode.jpg
+         :align: center
+         :scale: 20%
+         :alt: 配置 SoftAP 模式
+
+         配置 SoftAP 模式
+
+
+3. **验证 SoftAP 配置**
+
+   成功配置 SoftAP 后，界面显示当前 Wi-Fi 模式和连接状态：
+
+   .. figure:: ../../../_static/softap-connection-info.jpg
+       :align: center
+       :scale: 20%
+       :alt: SoftAP 连接信息
+
+       SoftAP 连接信息
+
+   同时，串口工具会打印如下信息：
+
+   .. figure:: ../../../_static/softap-connection-log.png
+       :align: center
+       :width: 70%
+
+
+4. **连接 SoftAP 热点**
+
+   - 打开手机 Wi-Fi，可以搜索到已配置的 SoftAP：
+
+     .. figure:: ../../../_static/configured-softap.png
+         :align: center
+         :height: 370
+         :alt: 已配置的 SoftAP
+
+         已配置的 SoftAP
+
+   - 连接该热点，成功连接后界面如下：
+
+     .. figure:: ../../../_static/wifi-connection-prompt.png
+         :align: center
+         :height: 370
+         :alt: Wi-Fi 连接提示
+
+         Wi-Fi 连接提示
+
+     同时，串口工具打印如下信息：
+
+     .. figure:: ../../../_static/wifi-connection-log.png
+         :align: center
+         :width: 80%
+
+    至此，{IDF_TARGET_NAME} 已通过蓝牙配网成功连接 Wi-Fi 网络。
+
+
 BluFi 流程
------------
+----------
 
 BluFi 配网流程包含配置 SoftAP 和配置 Station 两部分。
 
@@ -75,7 +287,7 @@ BluFi 流程图
 .. _frame_formats:
 
 BluFi 中定义的帧格式
----------------------
+--------------------
 
 手机应用程序与 {IDF_TARGET_NAME} 之间的 BluFi 通信格式定义如下：
 
@@ -431,7 +643,7 @@ ACK 帧格式 (8 bit)：
    此字段占两个字节，用来校验序列、数据长度以及明文。
 
 {IDF_TARGET_NAME} 端的安全实现
------------------------------
+------------------------------
 
 1. 数据安全
 
@@ -481,11 +693,22 @@ BluFi 会在调用完 Negotiate_data_handler 后，发送 Negotiate_data_handler
 
 该函数用来进行校验，返回值为校验的值。BluFi 会使用该函数返回值与帧的校验值进行比较。
 
+5. 实现更强的安全性
+
+本示例中默认的加密/解密逻辑仅用于演示目的。
+
+如果需要更高等级的安全性，建议通过自定义 BluFi 框架中的安全回调函数，实现您自己的加密、解密、认证以及校验算法。
+
+.. code-block:: c
+
+   esp_err_t esp_blufi_register_callbacks(esp_blufi_callbacks_t *callbacks)
+
+
 GATT 相关说明
 -------------
 
 UUID
->>>>>
+^^^^
 
 BluFi Service UUID： 0xFFFF，16 bit
 

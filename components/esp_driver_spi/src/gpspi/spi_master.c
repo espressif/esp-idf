@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -115,8 +115,8 @@ We have two bits to control the interrupt:
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/spi_common_internal.h"
 #include "esp_private/spi_master_internal.h"
+#include "esp_private/esp_clk_tree_common.h"
 #include "driver/spi_master.h"
-#include "esp_clk_tree.h"
 #include "clk_ctrl_os.h"
 #include "esp_log.h"
 #include "esp_check.h"
@@ -145,11 +145,19 @@ We have two bits to control the interrupt:
 #define SPI_MASTER_ATTR
 #endif
 
+#if CONFIG_SPI_MASTER_IN_IRAM || CONFIG_SPI_MASTER_ISR_IN_IRAM
+#define SPI_MASTER_MALLOC_CAPS    (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
+#else
+#define SPI_MASTER_MALLOC_CAPS    (MALLOC_CAP_DEFAULT)
+#endif
+
 #if SOC_PERIPH_CLK_CTRL_SHARED
 #define SPI_MASTER_PERI_CLOCK_ATOMIC() PERIPH_RCC_ATOMIC()
 #else
 #define SPI_MASTER_PERI_CLOCK_ATOMIC()
 #endif
+
+#define SPI_PERIPH_SRC_FREQ_MAX     (80*1000*1000)    //peripheral hardware limitation for clock source into peripheral
 
 static const char *SPI_TAG = "spi_master";
 #define SPI_CHECK(a, str, ret_val, ...)  ESP_RETURN_ON_FALSE_ISR(a, ret_val, SPI_TAG, str, ##__VA_ARGS__)
@@ -310,9 +318,6 @@ static esp_err_t spi_master_init_driver(spi_host_device_t host_id)
         }
     }
 
-    SPI_MASTER_PERI_CLOCK_ATOMIC() {
-        spi_ll_enable_clock(host_id, true);
-    }
     spi_hal_init(&host->hal, host_id);
     spi_hal_config_io_default_level(&host->hal, bus_attr->bus_cfg.data_io_default_level);
 
@@ -389,6 +394,25 @@ int spi_get_freq_limit(bool gpio_is_used, int input_delay_ns)
 #endif
 }
 
+#if SPI_LL_SUPPORT_CLK_SRC_PRE_DIV
+static uint32_t s_spi_find_clock_src_pre_div(uint32_t src_freq, uint32_t target_freq)
+{
+    // pre division must be even and at least 2
+    uint32_t min_div = ((src_freq / SPI_PERIPH_SRC_FREQ_MAX) + 1) & (~0x01UL);
+    min_div = min_div < 2 ? 2 : min_div;
+
+    uint32_t total_div = src_freq / target_freq;
+    // Loop the `div` to find a divisible value of `total_div`
+    for (uint32_t pre_div = min_div; pre_div <= MIN(total_div, SPI_LL_SRC_PRE_DIV_MAX); pre_div += 2) {
+        if ((total_div % pre_div) || (total_div / pre_div) > SPI_LL_PERIPH_CLK_DIV_MAX) {
+            continue;
+        }
+        return pre_div;
+    }
+    return min_div;
+}
+#endif //SPI_LL_SUPPORT_CLK_SRC_PRE_DIV
+
 /*
  Add a device. This allocates a CS line for the device, allocates memory for the device structure and hooks
  up the CS pin to whatever is specified.
@@ -410,36 +434,22 @@ esp_err_t spi_bus_add_device(spi_host_device_t host_id, const spi_device_interfa
     spi_host_t *host = bus_driver_ctx[host_id];
     const spi_bus_attr_t* bus_attr = host->bus_attr;
     SPI_CHECK(dev_config->spics_io_num < 0 || GPIO_IS_VALID_OUTPUT_GPIO(dev_config->spics_io_num), "spics pin invalid", ESP_ERR_INVALID_ARG);
+    SPI_CHECK(dev_config->clock_speed_hz > 0, "invalid sclk speed", ESP_ERR_INVALID_ARG);
 #if SOC_SPI_SUPPORT_CLK_RC_FAST
     if (dev_config->clock_source == SPI_CLK_SRC_RC_FAST) {
         SPI_CHECK(periph_rtc_dig_clk8m_enable(), "the selected clock not available", ESP_ERR_INVALID_STATE);
     }
 #endif
-    spi_clock_source_t clk_src = SPI_CLK_SRC_DEFAULT;
     uint32_t clock_source_hz = 0;
     uint32_t clock_source_div = 1;
-    if (dev_config->clock_source) {
-        clk_src = dev_config->clock_source;
-    }
+    spi_clock_source_t clk_src = dev_config->clock_source ? dev_config->clock_source : SPI_CLK_SRC_DEFAULT;
+    SPI_CHECK(esp_clk_tree_enable_src(clk_src, true) == ESP_OK, "clock source enable failed", ESP_ERR_INVALID_STATE);
     esp_clk_tree_src_get_freq_hz(clk_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clock_source_hz);
 #if SPI_LL_SUPPORT_CLK_SRC_PRE_DIV
-    SPI_CHECK((dev_config->clock_speed_hz > 0) && (dev_config->clock_speed_hz <= MIN(clock_source_hz / 2, (80 * 1000000))), "invalid sclk speed", ESP_ERR_INVALID_ARG);
-
-    if (clock_source_hz / 2 > (80 * 1000000)) {    //clock_source_hz beyond peripheral HW limitation, calc pre-divider
-        hal_utils_clk_info_t clk_cfg = {
-            .src_freq_hz = clock_source_hz,
-            .exp_freq_hz = dev_config->clock_speed_hz * 2,  //we have (hs_clk = 2*mst_clk), calc hs_clk first
-            .round_opt = HAL_DIV_ROUND,
-            .min_integ = 1,
-            .max_integ = SPI_LL_CLK_SRC_PRE_DIV_MAX / 2,
-        };
-        hal_utils_calc_clk_div_integer(&clk_cfg, &clock_source_div);
-    }
-    clock_source_div *= 2; //convert to mst_clk function divider
-    clock_source_hz /= clock_source_div;    //actual freq enter to SPI peripheral
-#else
-    SPI_CHECK((dev_config->clock_speed_hz > 0) && (dev_config->clock_speed_hz <= clock_source_hz), "invalid sclk speed", ESP_ERR_INVALID_ARG);
+    clock_source_div = s_spi_find_clock_src_pre_div(clock_source_hz, dev_config->clock_speed_hz);
+    clock_source_hz /= clock_source_div; //actual freq enter to SPI peripheral
 #endif
+    SPI_CHECK(dev_config->clock_speed_hz <= clock_source_hz, "invalid sclk speed", ESP_ERR_INVALID_ARG);
 #ifdef CONFIG_IDF_TARGET_ESP32
     //The hardware looks like it would support this, but actually setting cs_ena_pretrans when transferring in full
     //duplex mode does absolutely nothing on the ESP32.
@@ -487,9 +497,14 @@ esp_err_t spi_bus_add_device(spi_host_device_t host_id, const spi_device_interfa
     SPI_CHECK(ret == ESP_OK, "assigned clock speed not supported", ret);
     temp_timing_conf.clock_source = clk_src;
     temp_timing_conf.source_pre_div = clock_source_div;
+    temp_timing_conf.source_real_freq = clock_source_hz;
+    temp_timing_conf.rx_sample_point = dev_config->sample_point;
+    if (temp_timing_conf.rx_sample_point == SPI_SAMPLING_POINT_PHASE_1) {
+        SPI_CHECK(spi_ll_master_is_rx_std_sample_supported(), "SPI_SAMPLING_POINT_PHASE_1 is not supported on this chip", ESP_ERR_NOT_SUPPORTED);
+    }
 
     //Allocate memory for device
-    dev = malloc(sizeof(spi_device_t));
+    dev = heap_caps_malloc(sizeof(spi_device_t), SPI_MASTER_MALLOC_CAPS);
     if (dev == NULL) {
         goto nomem;
     }
@@ -518,7 +533,7 @@ esp_err_t spi_bus_add_device(spi_host_device_t host_id, const spi_device_interfa
 
     //Set CS pin, CS options
     if (dev_config->spics_io_num >= 0) {
-        spicommon_cs_initialize(host_id, dev_config->spics_io_num, freecs, use_gpio);
+        spicommon_cs_initialize(host_id, dev_config->spics_io_num, freecs, use_gpio, (uint64_t *)&bus_attr->gpio_reserve);
     }
 
     //save a pointer to device in spi_host_t
@@ -579,15 +594,26 @@ esp_err_t spi_bus_remove_device(spi_device_handle_t handle)
     }
 
 #if SOC_SPI_SUPPORT_CLK_RC_FAST
-    if (handle->cfg.clock_source == SPI_CLK_SRC_RC_FAST) {
+    if (handle->hal_dev.timing_conf.clock_source == SPI_CLK_SRC_RC_FAST) {
+        // If no transactions from other device, acquire the bus to switch module clock to `SPI_CLK_SRC_DEFAULT`
+        // because `SPI_CLK_SRC_RC_FAST` will be disabled then, which block following transactions
+        if (handle->host->cur_cs == DEV_NUM_MAX) {
+            spi_device_acquire_bus(handle, portMAX_DELAY);
+            SPI_MASTER_PERI_CLOCK_ATOMIC() {
+                spi_ll_set_clk_source(handle->host->hal.hw, SPI_CLK_SRC_DEFAULT);
+            }
+            spi_device_release_bus(handle);
+        }
         periph_rtc_dig_clk8m_disable();
     }
 #endif
+    SPI_CHECK(esp_clk_tree_enable_src(handle->hal_dev.timing_conf.clock_source, false) == ESP_OK, "clock source disable failed", ESP_ERR_INVALID_STATE);
 
     //return
     int spics_io_num = handle->cfg.spics_io_num;
+    const spi_bus_attr_t* bus_attr = handle->host->bus_attr;
     if (spics_io_num >= 0) {
-        spicommon_cs_free_io(spics_io_num);
+        spicommon_cs_free_io(spics_io_num, (uint64_t *)&bus_attr->gpio_reserve);
     }
 
     //Kill queues
@@ -607,9 +633,7 @@ esp_err_t spi_bus_remove_device(spi_device_handle_t handle)
 
 esp_err_t spi_device_get_actual_freq(spi_device_handle_t handle, int* freq_khz)
 {
-    if ((spi_device_t *)handle == NULL || freq_khz == NULL) {
-        return ESP_ERR_INVALID_ARG;
-    }
+    SPI_CHECK(handle && freq_khz, "invalid arg", ESP_ERR_INVALID_ARG);
 
     *freq_khz = handle->hal_dev.timing_conf.real_freq / 1000;
     return ESP_OK;
@@ -622,14 +646,33 @@ int spi_get_actual_clock(int fapb, int hz, int duty_cycle)
 
 // Setup the device-specified configuration registers. Called every time a new
 // transaction is to be sent, but only apply new configurations when the device
-// changes.
-static SPI_MASTER_ISR_ATTR void spi_setup_device(spi_device_t *dev)
+// changes or timing change is required.
+static SPI_MASTER_ISR_ATTR void spi_setup_device(spi_device_t *dev, spi_trans_priv_t *trans_buf)
 {
     spi_bus_lock_dev_handle_t dev_lock = dev->dev_lock;
     spi_hal_context_t *hal = &dev->host->hal;
     spi_hal_dev_config_t *hal_dev = &(dev->hal_dev);
 
-    if (spi_bus_lock_touch(dev_lock)) {
+    bool clock_changed = false;
+    // check if timing config update is required
+    if (trans_buf && (trans_buf->trans->override_freq_hz > 0) && (hal_dev->timing_conf.expect_freq != trans_buf->trans->override_freq_hz)) {
+        spi_hal_timing_param_t timing_param = {
+            .expected_freq = trans_buf->trans->override_freq_hz,
+            .clk_src_hz = dev->hal_dev.timing_conf.source_real_freq,
+            .duty_cycle = dev->cfg.duty_cycle_pos,
+            .input_delay_ns = dev->cfg.input_delay_ns,
+            .half_duplex = dev->hal_dev.half_duplex,
+            .use_gpio = !(dev->host->bus_attr->flags & SPICOMMON_BUSFLAG_IOMUX_PINS),
+        };
+
+        if (ESP_OK == spi_hal_cal_clock_conf(&timing_param, &dev->hal_dev.timing_conf)) {
+            clock_changed = true;
+        } else {
+            ESP_EARLY_LOGW(SPI_TAG, "assigned clock speed %d not supported", trans_buf->trans->override_freq_hz);
+        }
+    }
+
+    if (spi_bus_lock_touch(dev_lock) || clock_changed) {
         /* Configuration has not been applied yet. */
         spi_hal_setup_device(hal, hal_dev);
         SPI_MASTER_PERI_CLOCK_ATOMIC() {
@@ -777,7 +820,7 @@ static void SPI_MASTER_ISR_ATTR spi_new_trans(spi_device_t *dev, spi_trans_priv_
     dev->host->cur_cs = dev->id;
 
     //Reconfigure according to device settings, the function only has effect when the dev_id is changed.
-    spi_setup_device(dev);
+    spi_setup_device(dev, trans_buf);
 
     //set the transaction specific configuration each time before a transaction setup
     spi_hal_trans_config_t hal_trans = {};
@@ -852,7 +895,7 @@ static void SPI_MASTER_ISR_ATTR spi_new_sct_trans(spi_device_t *dev, spi_sct_tra
     dev->host->cur_cs = dev->id;
 
     //Reconfigure according to device settings, the function only has effect when the dev_id is changed.
-    spi_setup_device(dev);
+    spi_setup_device(dev, NULL);
 
 #if !CONFIG_IDF_TARGET_ESP32S2
     // s2 update this seg_gap_clock_len by dma from conf_buffer
@@ -932,6 +975,7 @@ static void SPI_MASTER_ISR_ATTR spi_intr(void *arg)
                 // invalidate priv_trans.buffer_to_rcv anyway, only user provide aligned buffer can rcv correct data in post_cb
                 esp_err_t ret = esp_cache_msync((void *)host->cur_trans_buf.buffer_to_rcv, buffer_byte_len, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
                 assert(ret == ESP_OK);
+                (void)ret;
             }
 #endif
         }
@@ -1143,7 +1187,7 @@ static SPI_MASTER_ISR_ATTR esp_err_t setup_priv_desc(spi_host_t *host, spi_trans
 
     if (send_ptr && bus_attr->dma_enabled) {
         if ((!esp_ptr_dma_capable(send_ptr) || tx_unaligned)) {
-            ESP_RETURN_ON_FALSE(!(trans_desc->flags & SPI_TRANS_DMA_BUFFER_ALIGN_MANUAL), ESP_ERR_INVALID_ARG, SPI_TAG, "Set flag SPI_TRANS_DMA_BUFFER_ALIGN_MANUAL but TX buffer addr&len not align to %d, or not dma_capable", alignment);
+            ESP_RETURN_ON_FALSE(!(trans_desc->flags & SPI_TRANS_DMA_BUFFER_ALIGN_MANUAL), ESP_ERR_INVALID_ARG, SPI_TAG, "Set flag SPI_TRANS_DMA_BUFFER_ALIGN_MANUAL but TX buffer addr&len not align to %d byte, or not dma_capable", alignment);
             //if txbuf in the desc not DMA-capable, or not bytes aligned to alignment, malloc a new one
             ESP_EARLY_LOGD(SPI_TAG, "Allocate TX buffer for DMA");
             tx_byte_len = (tx_byte_len + alignment - 1) & (~(alignment - 1));   // up align alignment
@@ -1158,12 +1202,13 @@ static SPI_MASTER_ISR_ATTR esp_err_t setup_priv_desc(spi_host_t *host, spi_trans
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
         esp_err_t ret = esp_cache_msync((void *)send_ptr, tx_byte_len, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
         assert(ret == ESP_OK);
+        (void)ret;
 #endif
     }
 
     if (rcv_ptr && bus_attr->dma_enabled) {
         if ((!esp_ptr_dma_capable(rcv_ptr) || rx_unaligned)) {
-            ESP_RETURN_ON_FALSE(!(trans_desc->flags & SPI_TRANS_DMA_BUFFER_ALIGN_MANUAL), ESP_ERR_INVALID_ARG, SPI_TAG, "Set flag SPI_TRANS_DMA_BUFFER_ALIGN_MANUAL but RX buffer addr&len not align to %d, or not dma_capable", alignment);
+            ESP_RETURN_ON_FALSE(!(trans_desc->flags & SPI_TRANS_DMA_BUFFER_ALIGN_MANUAL), ESP_ERR_INVALID_ARG, SPI_TAG, "Set flag SPI_TRANS_DMA_BUFFER_ALIGN_MANUAL but RX buffer addr&len not align to %d byte, or not dma_capable", alignment);
             //if rxbuf in the desc not DMA-capable, or not aligned to alignment, malloc a new one
             ESP_EARLY_LOGD(SPI_TAG, "Allocate RX buffer for DMA");
             rx_byte_len = (rx_byte_len + alignment - 1) & (~(alignment - 1));   // up align alignment
@@ -1176,6 +1221,7 @@ static SPI_MASTER_ISR_ATTR esp_err_t setup_priv_desc(spi_host_t *host, spi_trans
         // do invalid here to hold on cache status to avoid hardware auto write back during dma transaction
         esp_err_t ret = esp_cache_msync((void *)rcv_ptr, rx_byte_len, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
         assert(ret == ESP_OK);
+        (void)ret;
 #endif
     }
     priv_desc->buffer_to_send = send_ptr;
@@ -1306,7 +1352,7 @@ esp_err_t SPI_MASTER_ISR_ATTR spi_device_acquire_bus(spi_device_t *device, TickT
     esp_pm_lock_acquire(host->bus_attr->pm_lock);
 #endif
     //configure the device ahead so that we don't need to do it again in the following transactions
-    spi_setup_device(host->device[device->id]);
+    spi_setup_device(host->device[device->id], NULL);
     //the DMA is also occupied by the device, all the slave devices that using DMA should wait until bus released.
 
 #if CONFIG_IDF_TARGET_ESP32
@@ -1481,8 +1527,8 @@ static SPI_MASTER_ISR_ATTR spi_dma_desc_t *s_sct_setup_desc_anywhere(spi_dma_des
 {
     while (len) {
         int dmachunklen = len;
-        if (dmachunklen > LLDESC_MAX_NUM_PER_DESC) {
-            dmachunklen = LLDESC_MAX_NUM_PER_DESC;
+        if (dmachunklen > DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED) {
+            dmachunklen = DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED;
         }
         if (is_rx) {
             //Receive needs DMA length rounded to next 32-bit boundary
@@ -1509,7 +1555,7 @@ static SPI_MASTER_ISR_ATTR spi_dma_desc_t *s_sct_setup_desc_anywhere(spi_dma_des
 
 static SPI_MASTER_ISR_ATTR int s_sct_desc_get_required_num(uint32_t bytes_len)
 {
-    return (bytes_len + LLDESC_MAX_NUM_PER_DESC - 1) / LLDESC_MAX_NUM_PER_DESC;
+    return (bytes_len + DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED - 1) / DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED;
 }
 /*-------------------------
  *            TX

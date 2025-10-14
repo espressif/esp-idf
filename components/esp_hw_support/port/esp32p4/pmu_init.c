@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,8 +18,11 @@
 #include "esp_private/esp_pmu.h"
 #include "soc/regi2c_dig_reg.h"
 #include "regi2c_ctrl.h"
+#include "esp_rom_sys.h"
+#include "soc/rtc.h"
+#include "esp_hw_log.h"
 
-static __attribute__((unused)) const char *TAG = "pmu_init";
+ESP_HW_LOG_ATTR_TAG(TAG, "pmu_init");
 
 typedef struct {
     const pmu_hp_system_power_param_t     *power;
@@ -149,8 +152,8 @@ static inline void pmu_power_domain_force_default(pmu_context_t *ctx)
     pmu_ll_lp_set_power_force_power_down(ctx->hal->dev, false);
     pmu_ll_lp_set_power_force_isolate   (ctx->hal->dev, false);
     pmu_ll_lp_set_power_force_reset     (ctx->hal->dev, false);
-    pmu_ll_set_dcdc_force_power_up(ctx->hal->dev, false);
-    pmu_ll_set_dcdc_force_power_down(ctx->hal->dev, false);
+    pmu_ll_set_dcdc_switch_force_power_up(ctx->hal->dev, false);
+    pmu_ll_set_dcdc_switch_force_power_down(ctx->hal->dev, false);
 }
 
 static inline void pmu_hp_system_param_default(pmu_hp_mode_t mode, pmu_hp_system_param_t *param)
@@ -194,4 +197,10 @@ void pmu_init(void)
     pmu_hp_system_init_default(PMU_instance());
     pmu_lp_system_init_default(PMU_instance());
     pmu_power_domain_force_default(PMU_instance());
+#if CONFIG_ESP_ENABLE_PVT
+    pvt_auto_dbias_init();
+    pvt_func_enable(true);
+    // For PVT func taking effect, need delay.
+    esp_rom_delay_us(1000);
+#endif
 }

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,10 +13,14 @@ extern "C" {
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include "riscv/csr.h"
+#include "soc/soc_caps.h"
 
 /**
  * @brief Traverse all possible wake-up sources and update the wake-up cause so that
  *        ulp_lp_core_get_wakeup_cause can obtain the bitmap of the wake-up reasons.
+ * @note Do not call it from user ULP programs because it will clear the wake-up cause bits
+ *       which were set at ULP startup in lp_core_startup().
  */
 void ulp_lp_core_update_wakeup_cause(void);
 
@@ -39,6 +43,16 @@ uint32_t ulp_lp_core_get_wakeup_cause(void);
 void ulp_lp_core_wakeup_main_processor(void);
 
 /**
+ * @brief Retrieves the current number of CPU cycles.
+ *
+ * @return The current CPU cycle count.
+ */
+static inline uint32_t ulp_lp_core_get_cpu_cycles(void)
+{
+    return RV_READ_CSR(mcycle);
+}
+
+/**
  * @brief Makes the co-processor busy wait for a certain number of microseconds
  *
  * @param us Number of microseconds to busy-wait for
@@ -51,6 +65,13 @@ void ulp_lp_core_delay_us(uint32_t us);
  * @param cycles Number of cycles to busy-wait for
  */
 void ulp_lp_core_delay_cycles(uint32_t cycles);
+
+#if SOC_ULP_LP_UART_SUPPORTED
+/**
+ * @brief Reset LP CORE uart wakeup enable.
+ */
+void ulp_lp_core_lp_uart_reset_wakeup_en(void);
+#endif
 
 /**
  * @brief Finishes the ULP program and powers down the ULP
@@ -79,6 +100,11 @@ __attribute__((__noreturn__))  void ulp_lp_core_stop_lp_core(void);
 void __attribute__((noreturn)) ulp_lp_core_abort(void);
 
 /**
+ * @brief Trigger a software interrupt on the HP core
+ */
+void ulp_lp_core_sw_intr_to_hp_trigger(void);
+
+/**
  * @brief Enable the SW triggered interrupt from the PMU
  *
  * @note This is the same SW trigger interrupt that is used to wake up the LP CPU
@@ -86,13 +112,48 @@ void __attribute__((noreturn)) ulp_lp_core_abort(void);
  * @param enable true to enable, false to disable
  *
  */
-void ulp_lp_core_sw_intr_enable(bool enable);
+void ulp_lp_core_sw_intr_from_hp_enable(bool enable);
+
+/**
+ * @brief Enable the SW triggered interrupt from the PMU
+ *
+ * @note Alias for the `ulp_lp_core_sw_intr_from_hp_enable` function, for backward compatibility.
+ *
+ * @param enable true to enable, false to disable
+ */
+static inline void ulp_lp_core_sw_intr_enable(bool enable)
+{
+    return ulp_lp_core_sw_intr_from_hp_enable(enable);
+}
+
+/**
+ * @brief Clear the interrupt status for the SW triggered interrupt from the PMU
+ */
+void ulp_lp_core_sw_intr_from_hp_clear(void);
 
 /**
  * @brief Clear the interrupt status for the SW triggered interrupt from the PMU
  *
+ * @note Alias for the `ulp_lp_core_sw_intr_from_hp_clear` function, for backward compatibility.
  */
-void ulp_lp_core_sw_intr_clear(void);
+static inline void ulp_lp_core_sw_intr_clear(void)
+{
+    return ulp_lp_core_sw_intr_from_hp_clear();
+}
+
+#if SOC_LP_TIMER_SUPPORTED
+/**
+ * @brief Enable the LP Timer interrupt
+ *
+ */
+void ulp_lp_core_lp_timer_intr_enable(bool enable);
+
+/**
+ * @brief Clear the interrupt status for the LP Timer interrupt
+ *
+ */
+void ulp_lp_core_lp_timer_intr_clear(void);
+#endif
 
 /**
  * @brief Puts the CPU into a wait state until an interrupt is triggered

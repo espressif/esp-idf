@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -50,7 +50,7 @@ TEST_CASE("Alloc APIs", "[heap]")
 
 TEST_CASE("Size APIs", "[heap]")
 {
-    /* These functions doesnt provide any useful information on linux
+    /* These functions doesn't provide any useful information on linux
        These "tests" are simply included to check that all the functions in the header
        are actually mocked
     */
@@ -71,21 +71,22 @@ TEST_CASE("Size APIs", "[heap]")
     TEST_ASSERT_TRUE(heap_caps_get_allocated_size(&info) == 0);
 }
 
-#define TEST_ALIGNMENT 0x1F
+#define TEST_ALIGNMENT 0x20
 
 TEST_CASE("Aligned alloc APIs", "[heap]")
 {
-    uint8_t * p = heap_caps_aligned_alloc(TEST_ALIGNMENT, MALLOC_LEN, MALLOC_CAP_DEFAULT);
+    const int aligned_len = MALLOC_LEN - (MALLOC_LEN % TEST_ALIGNMENT);
+    uint8_t * p = heap_caps_aligned_alloc(TEST_ALIGNMENT, aligned_len, MALLOC_CAP_DEFAULT);
     TEST_ASSERT_NOT_NULL(p);
     TEST_ASSERT_TRUE(((intptr_t)p & (0x1F -1)) == 0);
-    memset(p, TEST_VAL, MALLOC_LEN);
-    TEST_ASSERT_EACH_EQUAL_HEX8(TEST_VAL, p, MALLOC_LEN);
+    memset(p, TEST_VAL, aligned_len);
+    TEST_ASSERT_EACH_EQUAL_HEX8(TEST_VAL, p, aligned_len);
     heap_caps_free(p);
 
-    p = heap_caps_aligned_calloc(TEST_ALIGNMENT, MALLOC_LEN, sizeof(uint8_t), MALLOC_CAP_DEFAULT);
+    p = heap_caps_aligned_calloc(TEST_ALIGNMENT, aligned_len, sizeof(uint8_t), MALLOC_CAP_DEFAULT);
     TEST_ASSERT_NOT_NULL(p);
     TEST_ASSERT_TRUE(((intptr_t)p & (0x1F -1)) == 0);
-    TEST_ASSERT_EACH_EQUAL_HEX8(0, p, MALLOC_LEN);
+    TEST_ASSERT_EACH_EQUAL_HEX8(0, p, aligned_len);
     heap_caps_free(p);
 }
 

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,6 +14,7 @@
 #include "soc/pmu_reg.h"
 #include "hal/regi2c_ctrl.h"
 #include "soc/regi2c_bbpll.h"
+#include "soc/timer_group_struct.h"
 #include "hal/assert.h"
 #include "hal/log.h"
 #include "esp32c6/rom/rtc.h"
@@ -577,46 +578,53 @@ static inline __attribute__((always_inline)) void clk_ll_mspi_fast_set_ls_divide
 }
 
 /**
- * @brief Select the calibration 32kHz clock source for timergroup0
+ * @brief Select the frequency calculation clock source for timergroup0
  *
- * @param in_sel One of the 32kHz clock sources (RC32K_CLK, XTAL32K_CLK, OSC_SLOW_CLK)
+ * @param clk_sel One of the clock sources in soc_clk_freq_calculation_src_t
  */
-static inline __attribute__((always_inline)) void clk_ll_32k_calibration_set_target(soc_rtc_slow_clk_src_t in_sel)
+static inline __attribute__((always_inline)) void clk_ll_freq_calulation_set_target(soc_clk_freq_calculation_src_t clk_sel)
 {
-    switch (in_sel) {
-    case SOC_RTC_SLOW_CLK_SRC_RC32K:
-        PCR.ctrl_32k_conf.clk_32k_sel = 0;
+    int timg_cali_clk_sel = -1;
+    int clk_32k_sel = -1;
+
+    switch (clk_sel) {
+    case CLK_CAL_RC32K:
+        timg_cali_clk_sel = 2;
+        clk_32k_sel = 0;
         break;
-    case SOC_RTC_SLOW_CLK_SRC_XTAL32K:
-        PCR.ctrl_32k_conf.clk_32k_sel = 1;
+    case CLK_CAL_32K_XTAL:
+        timg_cali_clk_sel = 2;
+        clk_32k_sel = 1;
         break;
-    case SOC_RTC_SLOW_CLK_SRC_OSC_SLOW:
-        PCR.ctrl_32k_conf.clk_32k_sel = 2;
+    case CLK_CAL_32K_OSC_SLOW:
+        timg_cali_clk_sel = 2;
+        clk_32k_sel = 2;
+        break;
+    case CLK_CAL_RC_SLOW:
+        timg_cali_clk_sel = 0;
+        break;
+    case CLK_CAL_RC_FAST:
+        timg_cali_clk_sel = 1;
         break;
     default:
-        // Unsupported 32K_SEL mux input
+        // Unsupported CLK_CAL mux input
         abort();
+    }
+
+    if (timg_cali_clk_sel >= 0) {
+        TIMERG0.rtccalicfg.rtc_cali_clk_sel = timg_cali_clk_sel;
+    }
+    if (clk_32k_sel >= 0) {
+        PCR.ctrl_32k_conf.clk_32k_sel = clk_32k_sel;
     }
 }
 
 /**
- * @brief Get the calibration 32kHz clock source for timergroup0
- *
- * @return soc_rtc_slow_clk_src_t Currently selected calibration 32kHz clock (one of the 32kHz clocks)
+ * @brief Set the frequency division factor of RC_FAST clock
  */
-static inline __attribute__((always_inline)) soc_rtc_slow_clk_src_t clk_ll_32k_calibration_get_target(void)
+static inline __attribute__((always_inline)) void clk_ll_rc_fast_tick_conf(void)
 {
-    uint32_t clk_sel = PCR.ctrl_32k_conf.clk_32k_sel;
-    switch (clk_sel) {
-    case 0:
-        return SOC_RTC_SLOW_CLK_SRC_RC32K;
-    case 1:
-        return SOC_RTC_SLOW_CLK_SRC_XTAL32K;
-    case 2:
-        return SOC_RTC_SLOW_CLK_SRC_OSC_SLOW;
-    default:
-        return SOC_RTC_SLOW_CLK_SRC_INVALID;
-    }
+    HAL_FORCE_MODIFY_U32_REG_FIELD(PCR.ctrl_tick_conf, fosc_tick_num, REG_FOSC_TICK_NUM); // enable a division of 32 to the fosc clock
 }
 
 /**
@@ -803,15 +811,6 @@ static inline __attribute__((always_inline)) void clk_ll_rtc_slow_store_cal(uint
 static inline __attribute__((always_inline)) uint32_t clk_ll_rtc_slow_load_cal(void)
 {
     return REG_READ(RTC_SLOW_CLK_CAL_REG);
-}
-
-
-/*
-Set the frequency division factor of ref_tick
-*/
-static inline void clk_ll_rc_fast_tick_conf(void)
-{
-    HAL_FORCE_MODIFY_U32_REG_FIELD(PCR.ctrl_tick_conf, fosc_tick_num, REG_FOSC_TICK_NUM); // enable a division of 32 to the fosc clock
 }
 
 

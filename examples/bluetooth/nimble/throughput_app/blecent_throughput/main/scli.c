@@ -22,7 +22,7 @@
 #define YES_NO_PARAM   (5000 / portTICK_PERIOD_MS)
 
 static QueueHandle_t cli_handle;
-static int key[2];
+static int key[3];
 static int conn_param[10];
 static int mtu;
 
@@ -71,7 +71,7 @@ static int throughput_demo_handler(int argc, char *argv[])
 {
     char pkey[8];
 
-    if (argc != 3) {
+    if (argc != 4) {
         return -1;
     }
 
@@ -88,8 +88,8 @@ static int throughput_demo_handler(int argc, char *argv[])
     }
 
     sscanf(argv[2], "%d", &key[1]);
-
-    ESP_LOGI("Throughput demo handler", "%s %s %d", argv[0], argv[1], key[1]);
+    sscanf(argv[3], "%d", &key[2]);
+    ESP_LOGI("Throughput demo handler", "%s %s %d %d", argv[0], argv[1], key[1], key[2]);
     xQueueSend(cli_handle, &key[0], 500 / portTICK_PERIOD_MS);
 
     return 0;

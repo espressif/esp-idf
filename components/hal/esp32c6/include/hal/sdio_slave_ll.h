@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,14 +16,15 @@
 
 #pragma once
 
+#include <sys/queue.h>
+#include <stdbool.h>
 #include "hal/sdio_slave_types.h"
 #include "hal/misc.h"
-#include "soc/slc_struct.h"
-#include "soc/slc_reg.h"
-#include "soc/host_struct.h"
-#include "soc/host_reg.h"
-#include "soc/hinf_struct.h"
-#include "soc/lldesc.h"
+#include "soc/sdio_slc_struct.h"
+#include "soc/sdio_slc_reg.h"
+#include "soc/sdio_slc_host_struct.h"
+#include "soc/sdio_slc_host_reg.h"
+#include "soc/sdio_hinf_struct.h"
 #include "soc/pcr_struct.h"
 
 #ifdef __cplusplus

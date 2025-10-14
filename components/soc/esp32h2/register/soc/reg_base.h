@@ -20,7 +20,7 @@
 #define DR_REG_I2S_BASE                         0x6000D000
 #define DR_REG_APB_SARADC_BASE                  0x6000E000
 #define DR_REG_USB_SERIAL_JTAG_BASE             0x6000F000
-#define DR_REG_INTERRUPT_MATRIX_BASE            0x60010000
+#define DR_REG_INTMTX_BASE                      0x60010000
 #define DR_REG_PCNT_BASE                        0x60012000
 #define DR_REG_SOC_ETM_BASE                     0x60013000
 #define DR_REG_MCPWM_BASE                       0x60014000

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,8 +18,12 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include "soc/pcnt_struct.h"
-#include "hal/pcnt_types.h"
+#include "soc/chip_revision.h"
 #include "soc/pcr_struct.h"
+#include "hal/pcnt_types.h"
+#include "hal/misc.h"
+#include "hal/assert.h"
+#include "hal/efuse_hal.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -28,7 +32,7 @@ extern "C" {
 #define PCNT_LL_GET_HW(num)      (((num) == 0) ? (&PCNT) : NULL)
 #define PCNT_LL_MAX_GLITCH_WIDTH 1023
 #define PCNT_LL_MAX_LIM          SHRT_MAX
-#define PCNT_LL_MIN_LIN          SHRT_MIN
+#define PCNT_LL_MIN_LIM          SHRT_MIN
 
 typedef enum {
     PCNT_LL_WATCH_EVENT_INVALID = -1,
@@ -40,8 +44,27 @@ typedef enum {
     PCNT_LL_WATCH_EVENT_MAX
 } pcnt_ll_watch_event_id_t;
 
+typedef enum {
+    PCNT_LL_STEP_EVENT_REACH_LIMIT = PCNT_LL_WATCH_EVENT_MAX,
+    PCNT_LL_STEP_EVENT_REACH_INTERVAL
+} pcnt_ll_step_event_id_t;
+
 #define PCNT_LL_WATCH_EVENT_MASK          ((1 << PCNT_LL_WATCH_EVENT_MAX) - 1)
 #define PCNT_LL_UNIT_WATCH_EVENT(unit_id) (1 << (unit_id))
+#define PCNT_LL_STEP_NOTIFY_DIR_LIMIT     1
+#define PCNT_LL_CLOCK_SUPPORT_APB         1
+
+/**
+ * @brief Set clock source for pcnt group
+ *
+ * @param hw Peripheral PCNT hardware instance address.
+ * @param clk_src Clock source
+ */
+static inline void pcnt_ll_set_clock_source(pcnt_dev_t *hw, pcnt_clock_source_t clk_src)
+{
+    (void)hw;
+    HAL_ASSERT(clk_src == PCNT_CLK_SRC_APB && "unsupported clock source");
+}
 
 /**
  * @brief Set PCNT channel edge action
@@ -135,6 +158,48 @@ static inline void pcnt_ll_clear_count(pcnt_dev_t *hw, uint32_t unit)
 {
     hw->ctrl.val |= 1 << (2 * unit);
     hw->ctrl.val &= ~(1 << (2 * unit));
+}
+
+/**
+ * @brief Enable PCNT step comparator event
+ *
+ * @param hw Peripheral PCNT hardware instance address.
+ * @param unit PCNT unit number
+ * @param enable true to enable, false to disable
+ */
+static inline void pcnt_ll_enable_step_notify(pcnt_dev_t *hw, uint32_t unit, bool enable)
+{
+    if (enable) {
+        hw->ctrl.val |= 1 << (8 + unit);
+    } else {
+        hw->ctrl.val &= ~(1 << (8 + unit));
+    }
+}
+
+/**
+ * @brief Set PCNT step value
+ *
+ * @param hw Peripheral PCNT hardware instance address.
+ * @param unit PCNT unit number
+ * @param direction PCNT step direction
+ * @param value PCNT step value
+ */
+static inline void pcnt_ll_set_step_value(pcnt_dev_t *hw, uint32_t unit, pcnt_step_direction_t direction, int value)
+{
+    (void)direction;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->change_conf_unit[3 - unit], cnt_step, value);
+}
+
+/**
+ * @brief Set PCNT step limit value
+ *
+ * @param hw Peripheral PCNT hardware instance address.
+ * @param unit PCNT unit number
+ * @param value PCNT step limit value
+ */
+static inline void pcnt_ll_set_step_limit_value(pcnt_dev_t *hw, uint32_t unit, int value)
+{
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->change_conf_unit[3 - unit], cnt_step_lim, value);
 }
 
 /**
@@ -457,6 +522,16 @@ static inline void pcnt_ll_reset_register(int group_id)
     PCR.pcnt_conf.pcnt_rst_en = 1;
     PCR.pcnt_conf.pcnt_rst_en = 0;
 }
+
+/**
+ * @brief Check if the step notify is supported
+ */
+static inline bool pcnt_ll_is_step_notify_supported(int group_id)
+{
+    (void)group_id;
+    return ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 102);
+}
+
 
 #ifdef __cplusplus
 }

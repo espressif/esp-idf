@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +12,7 @@
 #include <esp_http_server.h>
 #include "esp_httpd_priv.h"
 #include <netinet/tcp.h>
+#include "ctrl_sock.h"
 
 static const char *TAG = "httpd_txrx";
 
@@ -95,7 +96,7 @@ static size_t httpd_recv_pending(httpd_req_t *r, char *buf, size_t buf_len)
     return buf_len;
 }
 
-int httpd_recv_with_opt(httpd_req_t *r, char *buf, size_t buf_len, bool halt_after_pending)
+int httpd_recv_with_opt(httpd_req_t *r, char *buf, size_t buf_len, httpd_recv_opt_t opt)
 {
     ESP_LOGD(TAG, LOG_FMT("requested length = %"NEWLIB_NANO_COMPAT_FORMAT), NEWLIB_NANO_COMPAT_CAST(buf_len));
 
@@ -112,34 +113,41 @@ int httpd_recv_with_opt(httpd_req_t *r, char *buf, size_t buf_len, bool halt_aft
         /* If buffer filled then no need to recv.
          * If asked to halt after receiving pending data then
          * return with received length */
-        if (!buf_len || halt_after_pending) {
+        if (!buf_len || opt == HTTPD_RECV_OPT_HALT_AFTER_PENDING) {
             return pending_len;
         }
     }
 
     /* Receive data of remaining length */
-    int ret = ra->sd->recv_fn(ra->sd->handle, ra->sd->fd, buf, buf_len, 0);
-    if (ret < 0) {
-        ESP_LOGD(TAG, LOG_FMT("error in recv_fn"));
-        if ((ret == HTTPD_SOCK_ERR_TIMEOUT) && (pending_len != 0)) {
-            /* If recv() timeout occurred, but pending data is
-             * present, return length of pending data.
-             * This behavior is similar to that of socket recv()
-             * function, which, in case has only partially read the
-             * requested length, due to timeout, returns with read
-             * length, rather than error */
-            return pending_len;
+    size_t recv_len = pending_len;
+    do {
+        int ret = ra->sd->recv_fn(ra->sd->handle, ra->sd->fd, buf, buf_len, 0);
+        if (ret < 0) {
+            ESP_LOGD(TAG, LOG_FMT("error in recv_fn"));
+            if ((ret == HTTPD_SOCK_ERR_TIMEOUT) && (pending_len != 0)) {
+                /* If recv() timeout occurred, but pending data is
+                * present, return length of pending data.
+                * This behavior is similar to that of socket recv()
+                * function, which, in case has only partially read the
+                * requested length, due to timeout, returns with read
+                * length, rather than error */
+                return pending_len;
+            }
+            return ret;
         }
-        return ret;
-    }
 
-    ESP_LOGD(TAG, LOG_FMT("received length = %"NEWLIB_NANO_COMPAT_FORMAT), NEWLIB_NANO_COMPAT_CAST((ret + pending_len)));
-    return ret + pending_len;
+        recv_len += ret;
+        buf      += ret;
+        buf_len  -= ret;
+    } while (buf_len > 0 && opt == HTTPD_RECV_OPT_BLOCKING);
+
+    ESP_LOGD(TAG, LOG_FMT("received length = %"NEWLIB_NANO_COMPAT_FORMAT), NEWLIB_NANO_COMPAT_CAST(recv_len));
+    return recv_len;
 }
 
 int httpd_recv(httpd_req_t *r, char *buf, size_t buf_len)
 {
-    return httpd_recv_with_opt(r, buf, buf_len, false);
+    return httpd_recv_with_opt(r, buf, buf_len, HTTPD_RECV_OPT_NONE);
 }
 
 size_t httpd_unrecv(struct httpd_req *r, const char *buf, size_t buf_len)
@@ -247,14 +255,26 @@ esp_err_t httpd_resp_send(httpd_req_t *r, const char *buf, ssize_t buf_len)
     /* Request headers are no longer available */
     ra->req_hdrs_count = 0;
 
-    /* Size of essential headers is limited by scratch buffer size */
-    if (snprintf(ra->scratch, sizeof(ra->scratch), httpd_hdr_str,
-                 ra->status, ra->content_type, buf_len) >= sizeof(ra->scratch)) {
+    /* Calculate the size of the headers. +1 for the null terminator */
+    size_t required_size = snprintf(NULL, 0, httpd_hdr_str, ra->status, ra->content_type, buf_len) + 1;
+    if (required_size > ra->max_req_hdr_len) {
         return ESP_ERR_HTTPD_RESP_HDR;
     }
+    char *res_buf = malloc(required_size); /* Temporary buffer to store the headers */
+    if (res_buf == NULL) {
+        ESP_LOGE(TAG, "Unable to allocate httpd send buffer");
+        return ESP_ERR_HTTPD_ALLOC_MEM;
+    }
 
-    /* Sending essential headers */
-    if (httpd_send_all(r, ra->scratch, strlen(ra->scratch)) != ESP_OK) {
+    esp_err_t ret = snprintf(res_buf, required_size, httpd_hdr_str, ra->status, ra->content_type, buf_len);
+    if (ret < 0 || ret >= required_size) {
+        free(res_buf);
+        return ESP_ERR_HTTPD_RESP_HDR;
+    }
+    ESP_LOGD(TAG, "httpd send buffer size = %d", strlen(res_buf));
+    ret = httpd_send_all(r, res_buf, strlen(res_buf));
+    free(res_buf);
+    if (ret != ESP_OK) {
         return ESP_ERR_HTTPD_RESP_SEND;
     }
 
@@ -282,6 +302,8 @@ esp_err_t httpd_resp_send(httpd_req_t *r, const char *buf, ssize_t buf_len)
     if (httpd_send_all(r, cr_lf_seperator, strlen(cr_lf_seperator)) != ESP_OK) {
         return ESP_ERR_HTTPD_RESP_SEND;
     }
+    struct httpd_data *hd = (struct httpd_data *) r->handle;
+    hd->http_server_state = HTTP_SERVER_EVENT_HEADERS_SENT;
     esp_http_server_dispatch_event(HTTP_SERVER_EVENT_HEADERS_SENT, &(ra->sd->fd), sizeof(int));
 
     /* Sending content */
@@ -294,6 +316,7 @@ esp_err_t httpd_resp_send(httpd_req_t *r, const char *buf, ssize_t buf_len)
         .fd = ra->sd->fd,
         .data_len = buf_len,
     };
+    hd->http_server_state = HTTP_SERVER_EVENT_SENT_DATA;
     esp_http_server_dispatch_event(HTTP_SERVER_EVENT_SENT_DATA, &evt_data, sizeof(esp_http_server_event_data));
     return ESP_OK;
 }
@@ -313,6 +336,7 @@ esp_err_t httpd_resp_send_chunk(httpd_req_t *r, const char *buf, ssize_t buf_len
     }
 
     struct httpd_req_aux *ra = r->aux;
+    struct httpd_data *hd = (struct httpd_data *) r->handle;
     const char *httpd_chunked_hdr_str = "HTTP/1.1 %s\r\nContent-Type: %s\r\nTransfer-Encoding: chunked\r\n";
     const char *colon_separator = ": ";
     const char *cr_lf_seperator = "\r\n";
@@ -321,14 +345,26 @@ esp_err_t httpd_resp_send_chunk(httpd_req_t *r, const char *buf, ssize_t buf_len
     ra->req_hdrs_count = 0;
 
     if (!ra->first_chunk_sent) {
-        /* Size of essential headers is limited by scratch buffer size */
-        if (snprintf(ra->scratch, sizeof(ra->scratch), httpd_chunked_hdr_str,
-                     ra->status, ra->content_type) >= sizeof(ra->scratch)) {
+        /* Calculate the size of the headers. +1 for the null terminator */
+        size_t required_size = snprintf(NULL, 0, httpd_chunked_hdr_str, ra->status, ra->content_type) + 1;
+        if (required_size > ra->max_req_hdr_len) {
             return ESP_ERR_HTTPD_RESP_HDR;
         }
-
-        /* Sending essential headers */
-        if (httpd_send_all(r, ra->scratch, strlen(ra->scratch)) != ESP_OK) {
+        char *res_buf = malloc(required_size); /* Temporary buffer to store the headers */
+        if (res_buf == NULL) {
+            ESP_LOGE(TAG, "Unable to allocate httpd send chunk buffer");
+            return ESP_ERR_HTTPD_ALLOC_MEM;
+        }
+        esp_err_t ret = snprintf(res_buf, required_size, httpd_chunked_hdr_str, ra->status, ra->content_type);
+        if (ret < 0 || ret >= required_size) {
+            free(res_buf);
+            return ESP_ERR_HTTPD_RESP_HDR;
+        }
+        ESP_LOGD(TAG, "httpd send chunk buffer size = %d", strlen(res_buf));
+        /* Size of essential headers is limited by scratch buffer size */
+        ret = httpd_send_all(r, res_buf, strlen(res_buf));
+        free(res_buf);
+        if (ret != ESP_OK) {
             return ESP_ERR_HTTPD_RESP_SEND;
         }
 
@@ -380,6 +416,7 @@ esp_err_t httpd_resp_send_chunk(httpd_req_t *r, const char *buf, ssize_t buf_len
         .fd = ra->sd->fd,
         .data_len = buf_len,
     };
+    hd->http_server_state = HTTP_SERVER_EVENT_SENT_DATA;
     esp_http_server_dispatch_event(HTTP_SERVER_EVENT_SENT_DATA, &evt_data, sizeof(esp_http_server_event_data));
 
     return ESP_OK;
@@ -589,6 +626,8 @@ int httpd_req_recv(httpd_req_t *r, char *buf, size_t buf_len)
     }
     ra->remaining_len -= ret;
     ESP_LOGD(TAG, LOG_FMT("received length = %d"), ret);
+    struct httpd_data *hd = (struct httpd_data *) r->handle;
+    hd->http_server_state = HTTP_SERVER_EVENT_ON_DATA;
     esp_http_server_event_data evt_data = {
         .fd = ra->sd->fd,
         .data_len = ret,
@@ -623,8 +662,21 @@ esp_err_t httpd_req_async_handler_begin(httpd_req_t *r, httpd_req_t **out)
     struct httpd_req_aux *async_aux = (struct httpd_req_aux *) async->aux;
     struct httpd_req_aux *r_aux = (struct httpd_req_aux *) r->aux;
 
+    if (r_aux->scratch) {
+        async_aux->scratch = malloc(r_aux->scratch_cur_size);
+        if (async_aux->scratch == NULL) {
+            free(async_aux);
+            free(async);
+            return ESP_ERR_NO_MEM;
+        }
+        memcpy(async_aux->scratch, r_aux->scratch, r_aux->scratch_cur_size);
+    } else {
+        async_aux->scratch = NULL;
+    }
+
     async_aux->resp_hdrs = calloc(hd->config.max_resp_headers, sizeof(struct resp_hdr));
     if (async_aux->resp_hdrs == NULL) {
+        free(async_aux->scratch);
         free(async_aux);
         free(async);
         return ESP_ERR_NO_MEM;
@@ -648,13 +700,33 @@ esp_err_t httpd_req_async_handler_complete(httpd_req_t *r)
         return ESP_ERR_INVALID_ARG;
     }
 
+    // Get server handle and control socket info before freeing the request
+    struct httpd_data *hd = (struct httpd_data *) r->handle;
+    int msg_fd = hd->msg_fd;
+    int port = hd->config.ctrl_port;
+
     struct httpd_req_aux *ra = r->aux;
     ra->sd->for_async_req = false;
-
+    free(ra->scratch);
+    ra->scratch = NULL;
+    ra->scratch_cur_size = 0;
+    ra->scratch_size_limit = 0;
     free(ra->resp_hdrs);
     free(r->aux);
     free(r);
 
+    // Send a dummy control message(httpd_ctrl_data) to unblock the main HTTP server task from the select() call.
+    // Since the current connection FD was marked as inactive for async requests, the main task
+    // will now re-add this FD to its select() descriptor list. This ensures that subsequent requests
+    // on the same FD are processed correctly
+    struct httpd_ctrl_data msg = {.hc_msg = HTTPD_CTRL_MAX};
+    int ret = cs_send_to_ctrl_sock(msg_fd, port, &msg, sizeof(msg));
+    if (ret < 0) {
+        ESP_LOGW(TAG, LOG_FMT("failed to send socket notification"));
+        return ESP_FAIL;
+    }
+
+    ESP_LOGD(TAG, LOG_FMT("socket notification sent"));
     return ESP_OK;
 }
 

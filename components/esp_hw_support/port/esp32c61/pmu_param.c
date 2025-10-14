@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,6 +17,8 @@
 #include "hal/efuse_hal.h"
 #include "esp_hw_log.h"
 #include "soc/clk_tree_defs.h"
+
+ESP_HW_LOG_ATTR_TAG(TAG, "pmu_param");
 
 #ifndef ARRAY_SIZE
 #define ARRAY_SIZE(a)   (sizeof(a) / sizeof((a)[0]))
@@ -115,8 +117,8 @@ const pmu_hp_system_power_param_t * pmu_hp_system_power_param_default(pmu_hp_mod
 }
 
 #define PMU_HP_MODEM_CLOCK_CONFIG_DEFAULT() {           \
-    .icg_func   = 0,                                    \
-    .icg_apb    = 0,                                    \
+    .icg_func   = BIT(PMU_ICG_FUNC_ENA_SARADC),         \
+    .icg_apb    = BIT(PMU_ICG_APB_ENA_SARADC),          \
     .icg_modem  = {                                     \
         .code = PMU_HP_ICG_MODEM_CODE_MODEM             \
     }, \
@@ -200,66 +202,69 @@ const pmu_hp_system_digital_param_t * pmu_hp_system_digital_param_default(pmu_hp
 }
 
 #define PMU_HP_ACTIVE_ANALOG_CONFIG_DEFAULT() { \
-    .bias = {                   \
-        .xpd_bias        = 1,   \
-        .dbg_atten       = 0x0, \
-        .pd_cur          = 0,   \
-        .bias_sleep      = 0    \
+    .bias = {                         \
+        .xpd_bias              = 1,   \
+        .dbg_atten             = 0x0, \
+        .pd_cur                = 0,   \
+        .bias_sleep            = 0    \
     }, \
-    .regulator0 = {             \
-        .lp_dbias_vol    = 0xd, \
-        .hp_dbias_vol    = 0x1c,\
-        .dbias_sel       = 1,   \
-        .dbias_init      = 1,   \
-        .slp_mem_xpd     = 0,   \
-        .slp_logic_xpd   = 0,   \
-        .xpd             = 1,   \
-        .slp_mem_dbias   = 0, \
-        .slp_logic_dbias = 0, \
-        .dbias           = HP_CALI_DBIAS_DEFAULT \
+    .regulator0 = {                   \
+        .slp_connect_en_active = 1,   \
+        .lp_dbias_vol          = 0xd, \
+        .hp_dbias_vol          = 0x1c,\
+        .dbias_sel             = 1,   \
+        .dbias_init_active     = 1,   \
+        .slp_mem_xpd           = 0,   \
+        .slp_logic_xpd         = 0,   \
+        .xpd                   = 1,   \
+        .slp_mem_dbias         = 0,   \
+        .slp_logic_dbias       = 0,   \
+        .dbias                 = HP_CALI_DBIAS_DEFAULT \
     }, \
-    .regulator1 = {             \
-        .drv_b           = 0x0 \
+    .regulator1 = {                   \
+        .drv_b                 = 0x0  \
     } \
 }
 
 #define PMU_HP_MODEM_ANALOG_CONFIG_DEFAULT() { \
-    .bias = {                   \
-        .xpd_bias        = 0,   \
-        .dbg_atten       = 0x0, \
-        .pd_cur          = 0,   \
-        .bias_sleep      = 0    \
+    .bias = {                       \
+        .xpd_bias             = 0,  \
+        .dbg_atten            = 0x0,\
+        .pd_cur               = 0,  \
+        .bias_sleep           = 0   \
     }, \
-    .regulator0 = {             \
-        .slp_mem_xpd     = 0,   \
-        .slp_logic_xpd   = 0,   \
-        .xpd             = 1,   \
-        .slp_mem_dbias   = 0, \
-        .slp_logic_dbias = 0, \
-        .dbias           = HP_CALI_DBIAS_DEFAULT \
+    .regulator0 = {                 \
+        .slp_connect_en_modem = 1,  \
+        .slp_mem_xpd          = 0,  \
+        .slp_logic_xpd        = 0,  \
+        .xpd                  = 1,  \
+        .slp_mem_dbias        = 0,  \
+        .slp_logic_dbias      = 0,  \
+        .dbias                = HP_CALI_DBIAS_DEFAULT \
     }, \
-    .regulator1 = {             \
-        .drv_b           = 0x0 \
+    .regulator1 = {                 \
+        .drv_b                = 0x0 \
     } \
 }
 
 #define PMU_HP_SLEEP_ANALOG_CONFIG_DEFAULT() { \
-    .bias = {                   \
-        .xpd_bias        = 0,   \
-        .dbg_atten       = 0x0, \
-        .pd_cur          = 0,   \
-        .bias_sleep      = 0    \
+    .bias = {                       \
+        .xpd_bias             = 0,  \
+        .dbg_atten            = 0x0,\
+        .pd_cur               = 0,  \
+        .bias_sleep           = 0   \
     }, \
-    .regulator0 = {             \
-        .slp_mem_xpd     = 0,   \
-        .slp_logic_xpd   = 0,   \
-        .xpd             = 1,   \
-        .slp_mem_dbias   = 0, \
-        .slp_logic_dbias = 0, \
-        .dbias           = 1 \
+    .regulator0 = {                 \
+        .slp_connect_en_sleep = 1,  \
+        .slp_mem_xpd          = 0,  \
+        .slp_logic_xpd        = 0,  \
+        .xpd                  = 1,  \
+        .slp_mem_dbias        = 0,  \
+        .slp_logic_dbias      = 0,  \
+        .dbias                = 1   \
     }, \
-    .regulator1 = {             \
-        .drv_b           = 0x0 \
+    .regulator1 = {                 \
+        .drv_b                = 0x0 \
     } \
 }
 
@@ -416,52 +421,46 @@ const pmu_lp_system_analog_param_t * pmu_lp_system_analog_param_default(pmu_lp_m
 
 uint32_t get_act_hp_dbias(void)
 {
-    // TODO: IDF-9274
     /* hp_cali_dbias is read from efuse to ensure that the hp_active_voltage is close to 1.15V
     */
     uint32_t hp_cali_dbias = HP_CALI_DBIAS_DEFAULT;
-    // uint32_t blk_version = efuse_hal_blk_version();
-    // if (blk_version >= 3) {
-    //     hp_cali_dbias = efuse_ll_get_active_hp_dbias();
-    //     if (hp_cali_dbias != 0) {
-    //         //efuse dbias need to add 2 to meet the CPU frequency switching
-    //         if (hp_cali_dbias + 2 > 31) {
-    //             hp_cali_dbias = 31;
-    //         } else {
-    //             hp_cali_dbias += 2;
-    //         }
-    //     } else {
-    //         hp_cali_dbias = HP_CALI_DBIAS_DEFAULT;
-    //         ESP_HW_LOGD(TAG, "hp_cali_dbias not burnt in efuse or wrong value was burnt in blk version: %" PRIu32 "\n", blk_version);
-    //     }
-    // }
+    uint32_t blk_version = efuse_hal_blk_version();
+    uint32_t hp_cali_dbias_efuse = 0;
+    if (blk_version >= 1) {
+        hp_cali_dbias_efuse = efuse_ll_get_active_hp_dbias();
+    }
 
+    if (hp_cali_dbias_efuse > 0) {
+        //efuse dbias need to add 3 to meet the CPU frequency switching
+        hp_cali_dbias = hp_cali_dbias_efuse + 16 + 3;
+        if (hp_cali_dbias > 31) {
+            hp_cali_dbias = 31;
+        }
+    } else {
+        ESP_HW_LOGD(TAG, "hp_cali_dbias not burnt in efuse, use default.");
+    }
     return hp_cali_dbias;
 }
 
 uint32_t get_act_lp_dbias(void)
 {
-    // TODO: IDF-9274
     /* lp_cali_dbias is read from efuse to ensure that the lp_active_voltage is close to 1.15V
     */
     uint32_t lp_cali_dbias = LP_CALI_DBIAS_DEFAULT;
-    // uint32_t blk_version = efuse_hal_blk_version();
-    // if (blk_version >= 3) {
-    //     lp_cali_dbias = efuse_ll_get_active_lp_dbias();
-    //     if (lp_cali_dbias != 0) {
-    //         //efuse dbias need to add 2 to meet the CPU frequency switching
-    //         if (lp_cali_dbias + 2 > 31) {
-    //             lp_cali_dbias = 31;
-    //         } else {
-    //             lp_cali_dbias += 2;
-    //         }
-    //     } else {
-    //         lp_cali_dbias = LP_CALI_DBIAS_DEFAULT;
-    //         ESP_HW_LOGD(TAG, "lp_cali_dbias not burnt in efuse or wrong value was burnt in blk version: %" PRIu32 "\n", blk_version);
-    //     }
-    // } else {
-    //     ESP_HW_LOGD(TAG, "blk_version is less than 3, act dbias not burnt in efuse\n");
-    // }
+    uint32_t blk_version = efuse_hal_blk_version();
+    uint32_t lp_cali_dbias_efuse = 0;
+    if (blk_version >= 1) {
+        lp_cali_dbias_efuse = efuse_ll_get_active_lp_dbias();
+    }
 
+    if (lp_cali_dbias_efuse > 0) {
+        //efuse dbias need to add 3 to meet the CPU frequency switching
+        lp_cali_dbias = lp_cali_dbias_efuse + 16 + 3;
+        if (lp_cali_dbias > 31) {
+            lp_cali_dbias = 31;
+        }
+    } else {
+        ESP_HW_LOGD(TAG, "lp_cali_dbias not burnt in efuse, use default.");
+    }
     return lp_cali_dbias;
 }

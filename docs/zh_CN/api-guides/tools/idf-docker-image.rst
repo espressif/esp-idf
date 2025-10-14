@@ -1,3 +1,5 @@
+.. _idf-docker-image:
+
 ********************
 IDF Docker 镜像
 ********************
@@ -14,7 +16,7 @@ IDF Docker 镜像 (``espressif/idf``) 为使用特定版本的 ESP-IDF 自动化
 该镜像包含以下内容：
 
 - 常见的实用工具，如 ``git``、``wget``、``curl`` 和 ``zip``。
-- Python 3.9 或更高版本。
+- Python 3.10 或更高版本。
 - 特定版本 ESP-IDF 的副本。有关版本信息，请参阅下文。该副本中设置了 ``IDF_PATH`` 环境变量，并指向容器中 ESP-IDF 的位置。
 - 构建特定版本 ESP-IDF 所需工具：CMake、Ninja、交叉编译器工具链等。
 - ESP-IDF 需要的所有 Python 软件包。这些软件包均已安装在虚拟环境中。
@@ -128,7 +130,7 @@ Docker 也支持以交互方式进行构建，以调试构建问题或测试自�
 
 .. code-block:: bash
 
-    esp_rfc2217_server.py -v -p 4000 /dev/ttyUSB0
+    esp_rfc2217_server -v -p 4000 /dev/ttyUSB0
 
 此时，便可使用以下命令，从 Docker 容器内部烧写连接到主机的设备：
 
@@ -165,3 +167,9 @@ ESP-IDF 库中的 Docker 文件提供了以下构建参数，可用于构建自�
 .. _RFC2217: http://www.ietf.org/rfc/rfc2217.txt
 .. _ESP 工具版本: https://github.com/espressif/esptool/releases
 .. _设备选项: https://docs.docker.com/engine/reference/run/#runtime-privilege-and-linux-capabilities
+
+
+相关文档
+======================
+
+- `使用 Docker 容器 <https://docs.espressif.com/projects/vscode-esp-idf-extension/zh_CN/latest/additionalfeatures/docker-container.html>`_

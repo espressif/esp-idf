@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -446,10 +446,10 @@ extern "C" {
 /** TEE_DATE_REG : R/W; bitpos: [27:0]; default: 35672706;
  *  reg_tee_date
  */
-#define TEE_DATE_REG    0x0FFFFFFFU
-#define TEE_DATE_REG_M  (TEE_DATE_REG_V << TEE_DATE_REG_S)
-#define TEE_DATE_REG_V  0x0FFFFFFFU
-#define TEE_DATE_REG_S  0
+#define TEE_DATE    0x0FFFFFFFU
+#define TEE_DATE_M  (TEE_DATE_V << TEE_DATE_S)
+#define TEE_DATE_V  0x0FFFFFFFU
+#define TEE_DATE_S  0
 
 #ifdef __cplusplus
 }

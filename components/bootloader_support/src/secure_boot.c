@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,8 +12,12 @@
 #include "esp_secure_boot.h"
 #include "hal/efuse_hal.h"
 
+#ifdef SOC_ECDSA_SUPPORTED
+#include "hal/ecdsa_ll.h"
+#endif
+
 #ifndef BOOTLOADER_BUILD
-static __attribute__((unused)) const char *TAG = "secure_boot";
+ESP_LOG_ATTR_TAG(TAG, "secure_boot");
 
 #ifdef CONFIG_SECURE_BOOT
 static void efuse_batch_write_begin(bool *need_fix)
@@ -340,6 +344,23 @@ bool esp_secure_boot_cfg_verify_release_mode(void)
 #endif
     }
 
+#ifdef SOC_ECDSA_P192_CURVE_DEFAULT_DISABLED
+    if (ecdsa_ll_is_configurable_curve_supported()) {
+        secure = esp_efuse_read_field_bit(ESP_EFUSE_WR_DIS_ECDSA_CURVE_MODE);
+        if (!secure) {
+            uint8_t current_curve;
+            esp_err_t err = esp_efuse_read_field_blob(ESP_EFUSE_ECDSA_CURVE_MODE, &current_curve, ESP_EFUSE_ECDSA_CURVE_MODE[0]->bit_count);
+            if (err == ESP_OK) {
+                if (current_curve != ESP_EFUSE_ECDSA_CURVE_MODE_ALLOW_ONLY_P256_BIT_LOCKED) {
+                    // If not P256 mode
+                    result &= secure;
+                    ESP_LOGW(TAG, "Not write disabled ECDSA curve mode (set WR_DIS_ECDSA_CURVE_MODE->1)");
+                }
+            }
+        }
+    }
+#endif
+
 #ifdef CONFIG_SECURE_BOOT_ENABLE_AGGRESSIVE_KEY_REVOKE
     secure = esp_efuse_read_field_bit(ESP_EFUSE_SECURE_BOOT_AGGRESSIVE_REVOKE);
     result &= secure;
@@ -406,7 +427,27 @@ bool esp_secure_boot_cfg_verify_release_mode(void)
 #endif
         }
     }
+
+#if SOC_ECDSA_SUPPORT_CURVE_P384
+#if CONFIG_SECURE_BOOT_ECDSA_KEY_LEN_384_BITS
+    secure = esp_efuse_read_field_bit(ESP_EFUSE_SECURE_BOOT_SHA384_EN);
     result &= secure;
+    if (!secure) {
+        ESP_LOGW(TAG, "Not enabled Secure Boot using SHA-384 mode (set SECURE_BOOT_SHA384_EN->1)");
+    }
+#else
+    /* When using Secure Boot with SHA-384, the efuse bit representing Secure Boot with SHA-384 would already be programmed.
+     * But in the case of the existing Secure Boot V2 schemes using SHA-256, the efuse bit representing
+     * Secure Boot with SHA-384 needs to be write-protected, so that an attacker cannot perform a denial-of-service
+     * attack by changing the existing secure boot mode using SHA-256 to SHA-384.
+     */
+    secure = esp_efuse_read_field_bit(ESP_EFUSE_WR_DIS_SECURE_BOOT_SHA384_EN);
+    result &= secure;
+    if (!secure) {
+        ESP_LOGW(TAG, "Not write-protected secure boot using SHA-384 mode (set WR_DIS_SECURE_BOOT_SHA384_EN->1)");
+    }
+#endif
+#endif
 
     secure = (num_keys != 0);
     result &= secure;

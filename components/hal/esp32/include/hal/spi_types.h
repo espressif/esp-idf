@@ -12,9 +12,9 @@
 extern "C" {
 #endif
 
-#define SPI_HOST    _Pragma ("GCC warning \"SPI_HOST is deprecated in favor of SPI1_HOST\"")  SPI1_HOST
-#define HSPI_HOST   _Pragma ("GCC warning \"HSPI_HOST is deprecated in favor of SPI2_HOST\"") SPI2_HOST
-#define VSPI_HOST   _Pragma ("GCC warning \"VSPI_HOST is deprecated in favor of SPI3_HOST\"") SPI3_HOST
+#define SPI_HOST  SPI1_HOST
+#define HSPI_HOST SPI2_HOST
+#define VSPI_HOST SPI3_HOST
 
 #ifdef __cplusplus
 }

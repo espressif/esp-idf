@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +9,7 @@
 #include <sys/param.h>
 #include <sys/queue.h>
 #include <inttypes.h>
+#include <sys/lock.h>
 #include "sdkconfig.h"
 #include "esp_attr.h"
 #include "esp_log.h"
@@ -26,6 +27,7 @@
 
 #include "esp_private/cache_utils.h"
 #include "esp_private/esp_cache_esp32_private.h"
+#include "esp_private/esp_cache_private.h"
 #include "esp_private/esp_mmu_map_private.h"
 #include "ext_mem_layout.h"
 #include "esp_mmu_map.h"
@@ -106,6 +108,10 @@ typedef struct {
      * Only the first `num_regions` items are valid
      */
     mem_region_t mem_regions[SOC_MMU_LINEAR_ADDRESS_REGION_NUM];
+    /**
+     * driver layer mutex lock
+     */
+    _lock_t mutex;
 } mmu_ctx_t;
 
 static mmu_ctx_t s_mmu_ctx;
@@ -185,13 +191,6 @@ static void s_reserve_drom_region(mem_region_t *hw_mem_regions, int region_nums)
     }
 }
 #endif  //#if CONFIG_APP_BUILD_USE_FLASH_SECTIONS
-
-#if SOC_MMU_PER_EXT_MEM_TARGET
-FORCE_INLINE_ATTR uint32_t s_get_mmu_id_from_target(mmu_target_t target)
-{
-    return (target == MMU_TARGET_FLASH0) ? MMU_LL_FLASH_MMU_ID : MMU_LL_PSRAM_MMU_ID;
-}
-#endif
 
 void esp_mmu_map_init(void)
 {
@@ -359,7 +358,7 @@ IRAM_ATTR esp_err_t esp_mmu_paddr_find_caps(const esp_paddr_t paddr, mmu_mem_cap
             }
 
             //now we are only traversing the actual dynamically allocated blocks, dummy_head and dummy_tail are excluded already
-            if (mem_block->paddr_start == paddr) {
+            if (paddr >= mem_block->paddr_start && paddr < mem_block->paddr_end) {
                 found = true;
                 found_block = mem_block;
                 break;
@@ -373,6 +372,26 @@ IRAM_ATTR esp_err_t esp_mmu_paddr_find_caps(const esp_paddr_t paddr, mmu_mem_cap
 
     *out_caps = found_block->caps;
     return ESP_OK;
+}
+
+static void IRAM_ATTR NOINLINE_ATTR s_stop_cache(void)
+{
+#if SOC_CACHE_FREEZE_SUPPORTED && !CONFIG_IDF_TARGET_ESP32P4
+    // On P4, due to limitations on stalling another core, we temporarily use cache disable/enable
+    esp_cache_freeze_caches_disable_interrupts();
+#else
+    spi_flash_disable_interrupts_caches_and_other_cpu();
+#endif
+}
+
+static void IRAM_ATTR NOINLINE_ATTR s_start_cache(void)
+{
+#if SOC_CACHE_FREEZE_SUPPORTED && !CONFIG_IDF_TARGET_ESP32P4
+    // On P4, due to limitations on stalling another core, we temporarily use cache disable/enable
+    esp_cache_unfreeze_caches_enable_interrupts();
+#else
+    spi_flash_enable_interrupts_caches_and_other_cpu();
+#endif
 }
 
 static void IRAM_ATTR NOINLINE_ATTR s_do_cache_invalidate(uint32_t vaddr_start, uint32_t size)
@@ -393,7 +412,7 @@ static void IRAM_ATTR NOINLINE_ATTR s_do_cache_invalidate(uint32_t vaddr_start, 
 FORCE_INLINE_ATTR uint32_t s_mapping_operation(mmu_target_t target, uint32_t vaddr_start, esp_paddr_t paddr_start, uint32_t size)
 {
     uint32_t actual_mapped_len = 0;
-    uint32_t mmu_id = s_get_mmu_id_from_target(target);
+    uint32_t mmu_id = mmu_hal_get_id_from_target(target);
     mmu_hal_map_region(mmu_id, target, vaddr_start, paddr_start, size, &actual_mapped_len);
 
     return actual_mapped_len;
@@ -418,10 +437,8 @@ static void IRAM_ATTR NOINLINE_ATTR s_do_mapping(mmu_target_t target, uint32_t v
 {
     /**
      * Disable Cache, after this function, involved code and data should be placed in internal RAM.
-     *
-     * @note we call this for now, but this will be refactored to move out of `spi_flash`
      */
-    spi_flash_disable_interrupts_caches_and_other_cpu();
+    s_stop_cache();
 
     uint32_t actual_mapped_len = s_mapping_operation(target, vaddr_start, paddr_start, size);
 
@@ -435,7 +452,7 @@ static void IRAM_ATTR NOINLINE_ATTR s_do_mapping(mmu_target_t target, uint32_t v
     s_do_cache_invalidate(vaddr_start, size);
 
     //enable Cache, after this function, internal RAM access is no longer mandatory
-    spi_flash_enable_interrupts_caches_and_other_cpu();
+    s_start_cache();
 
     ESP_EARLY_LOGV(TAG, "actual_mapped_len is 0x%"PRIx32, actual_mapped_len);
 }
@@ -450,17 +467,15 @@ esp_err_t esp_mmu_map(esp_paddr_t paddr_start, size_t size, mmu_target_t target,
     ESP_RETURN_ON_FALSE((paddr_start % CONFIG_MMU_PAGE_SIZE == 0), ESP_ERR_INVALID_ARG, TAG, "paddr must be rounded up to the nearest multiple of CONFIG_MMU_PAGE_SIZE");
     ESP_RETURN_ON_ERROR(s_mem_caps_check(caps), TAG, "invalid caps");
 
+    _lock_acquire(&s_mmu_ctx.mutex);
+    mem_block_t *dummy_head = NULL;
+    mem_block_t *dummy_tail = NULL;
     size_t aligned_size = ALIGN_UP_BY(size, CONFIG_MMU_PAGE_SIZE);
     int32_t found_region_id = s_find_available_region(s_mmu_ctx.mem_regions, s_mmu_ctx.num_regions, aligned_size, caps, target);
-    if (found_region_id == -1) {
-        ESP_EARLY_LOGE(TAG, "no such vaddr range");
-        return ESP_ERR_NOT_FOUND;
-    }
+    ESP_GOTO_ON_FALSE(found_region_id != -1, ESP_ERR_NOT_FOUND, err, TAG, "no such vaddr range");
 
     //Now we're sure we can find an available block inside a certain region
     mem_region_t *found_region = &s_mmu_ctx.mem_regions[found_region_id];
-    mem_block_t *dummy_head = NULL;
-    mem_block_t *dummy_tail = NULL;
     mem_block_t *new_block = NULL;
 
     if (TAILQ_EMPTY(&found_region->mem_block_head)) {
@@ -509,7 +524,6 @@ esp_err_t esp_mmu_map(esp_paddr_t paddr_start, size_t size, mmu_target_t target,
     }
 
     if (is_enclosed) {
-        ESP_LOGW(TAG, "paddr block is mapped already, vaddr_start: %p, size: 0x%x", (void *)mem_block->vaddr_start, mem_block->size);
         /*
          * This condition is triggered when `s_is_enclosed` is true and hence
          * we are sure that `paddr_start` >= `mem_block->paddr_start`.
@@ -519,12 +533,13 @@ esp_err_t esp_mmu_map(esp_paddr_t paddr_start, size_t size, mmu_target_t target,
          */
         const uint32_t new_paddr_offset = paddr_start - mem_block->paddr_start;
         *out_ptr = (void *)mem_block->vaddr_start + new_paddr_offset;
-        return ESP_ERR_INVALID_STATE;
+        ESP_LOGD(TAG, "paddr block is mapped already, vaddr_start: %p, size: 0x%x", (void *)mem_block->vaddr_start, mem_block->size);
+        ret = ESP_ERR_INVALID_STATE;
+        goto err;
     }
 
     if (!allow_overlap && is_overlapped) {
-        ESP_LOGE(TAG, "paddr block is overlapped with an already mapped paddr block");
-        return ESP_ERR_INVALID_ARG;
+        ESP_GOTO_ON_FALSE(false, ESP_ERR_INVALID_ARG, err, TAG, "paddr block is overlapped with an already mapped paddr block");
     }
 #endif //#if ENABLE_PADDR_CHECK
 
@@ -559,7 +574,6 @@ esp_err_t esp_mmu_map(esp_paddr_t paddr_start, size_t size, mmu_target_t target,
     assert(found);
     //insert the to-be-mapped new block to the list
     TAILQ_INSERT_BEFORE(found_block, new_block, entries);
-
     //Finally, we update the max_slot_size
     found_region->max_slot_size = max_slot_len;
 
@@ -581,6 +595,7 @@ esp_err_t esp_mmu_map(esp_paddr_t paddr_start, size_t size, mmu_target_t target,
     //do mapping
     s_do_mapping(target, new_block->vaddr_start, paddr_start, aligned_size);
     *out_ptr = (void *)new_block->vaddr_start;
+    _lock_release(&s_mmu_ctx.mutex);
 
     return ESP_OK;
 
@@ -591,6 +606,7 @@ err:
     if (dummy_head) {
         free(dummy_head);
     }
+    _lock_release(&s_mmu_ctx.mutex);
 
     return ret;
 }
@@ -599,7 +615,7 @@ err:
 FORCE_INLINE_ATTR void s_unmapping_operation(uint32_t vaddr_start, uint32_t size)
 {
     mmu_target_t target = mmu_ll_vaddr_to_target(vaddr_start);
-    uint32_t mmu_id = s_get_mmu_id_from_target(target);
+    uint32_t mmu_id = mmu_hal_get_id_from_target(target);
     mmu_hal_unmap_region(mmu_id, vaddr_start, size);
 }
 #else
@@ -618,26 +634,26 @@ static void IRAM_ATTR NOINLINE_ATTR s_do_unmapping(uint32_t vaddr_start, uint32_
 {
     /**
      * Disable Cache, after this function, involved code and data should be placed in internal RAM.
-     *
-     * @note we call this for now, but this will be refactored to move out of `spi_flash`
      */
-    spi_flash_disable_interrupts_caches_and_other_cpu();
+    s_stop_cache();
 
     s_unmapping_operation(vaddr_start, size);
 
     //enable Cache, after this function, internal RAM access is no longer mandatory
-    spi_flash_enable_interrupts_caches_and_other_cpu();
+    s_start_cache();
 }
 
 esp_err_t esp_mmu_unmap(void *ptr)
 {
     ESP_RETURN_ON_FALSE(ptr, ESP_ERR_INVALID_ARG, TAG, "null pointer");
 
+    esp_err_t ret = ESP_FAIL;
     mem_region_t *region = NULL;
     mem_block_t *mem_block = NULL;
     uint32_t ptr_laddr = mmu_ll_vaddr_to_laddr((uint32_t)ptr);
     size_t slot_len = 0;
 
+    _lock_acquire(&s_mmu_ctx.mutex);
     for (int i = 0; i < s_mmu_ctx.num_regions; i++) {
         ESP_COMPILER_DIAGNOSTIC_PUSH_IGNORE("-Wanalyzer-out-of-bounds")
         if (ptr_laddr >= s_mmu_ctx.mem_regions[i].free_head && ptr_laddr < s_mmu_ctx.mem_regions[i].end) {
@@ -645,7 +661,7 @@ esp_err_t esp_mmu_unmap(void *ptr)
         }
         ESP_COMPILER_DIAGNOSTIC_POP("-Wanalyzer-out-of-bounds")
     }
-    ESP_RETURN_ON_FALSE(region, ESP_ERR_NOT_FOUND, TAG, "munmap target pointer is outside external memory regions");
+    ESP_GOTO_ON_FALSE(region, ESP_ERR_NOT_FOUND, err, TAG, "munmap target pointer is outside external memory regions");
 
     bool found = false;
     mem_block_t *found_block = NULL;
@@ -666,15 +682,23 @@ esp_err_t esp_mmu_unmap(void *ptr)
         }
     }
 
-    ESP_RETURN_ON_FALSE(found, ESP_ERR_NOT_FOUND, TAG, "munmap target pointer isn't mapped yet");
+    if (found) {
+        TAILQ_REMOVE(&region->mem_block_head, found_block, entries);
+    }
+    ESP_GOTO_ON_FALSE(found, ESP_ERR_NOT_FOUND, err, TAG, "munmap target pointer isn't mapped yet");
 
     //do unmap
     s_do_unmapping(mem_block->vaddr_start, mem_block->size);
-    //remove the already unmapped block from the list
-    TAILQ_REMOVE(&region->mem_block_head, found_block, entries);
     free(found_block);
 
+    _lock_release(&s_mmu_ctx.mutex);
+
     return ESP_OK;
+
+err:
+
+    _lock_release(&s_mmu_ctx.mutex);
+    return ret;
 }
 
 esp_err_t esp_mmu_map_dump_mapped_blocks(FILE* stream)
@@ -753,15 +777,24 @@ esp_err_t IRAM_ATTR esp_mmu_map_dump_mapped_blocks_private(void)
 ---------------------------------------------------------------*/
 static bool NOINLINE_ATTR IRAM_ATTR s_vaddr_to_paddr(uint32_t vaddr, esp_paddr_t *out_paddr, mmu_target_t *out_target)
 {
-    //we call this for now, but this will be refactored to move out of `spi_flash`
-    spi_flash_disable_interrupts_caches_and_other_cpu();
-    bool is_mapped = mmu_hal_vaddr_to_paddr(0, vaddr, out_paddr, out_target);
+    uint32_t mmu_id = 0;
+    /**
+     * Disable Cache, after this function, involved code and data should be placed in internal RAM.
+     */
+    s_stop_cache();
+
 #if SOC_MMU_PER_EXT_MEM_TARGET
+    mmu_id = mmu_hal_get_id_from_vaddr(vaddr);
+#endif
+    bool is_mapped = mmu_hal_vaddr_to_paddr(mmu_id, vaddr, out_paddr, out_target);
+#if SPIRAM_FLASH_LOAD_TO_PSRAM
     if (!is_mapped) {
         is_mapped = mmu_hal_vaddr_to_paddr(1, vaddr, out_paddr, out_target);
     }
 #endif
-    spi_flash_enable_interrupts_caches_and_other_cpu();
+
+    //enable Cache, after this function, internal RAM access is no longer mandatory
+    s_start_cache();
 
     return is_mapped;
 }
@@ -785,14 +818,19 @@ esp_err_t esp_mmu_vaddr_to_paddr(void *vaddr, esp_paddr_t *out_paddr, mmu_target
 
 static bool NOINLINE_ATTR IRAM_ATTR s_paddr_to_vaddr(esp_paddr_t paddr, mmu_target_t target, mmu_vaddr_t type, uint32_t *out_vaddr)
 {
-    //we call this for now, but this will be refactored to move out of `spi_flash`
-    spi_flash_disable_interrupts_caches_and_other_cpu();
+    /**
+     * Disable Cache, after this function, involved code and data should be placed in internal RAM.
+     */
+    s_stop_cache();
+
     uint32_t mmu_id = 0;
 #if SOC_MMU_PER_EXT_MEM_TARGET
-    mmu_id = s_get_mmu_id_from_target(target);
+    mmu_id = mmu_hal_get_id_from_target(target);
 #endif
     bool found = mmu_hal_paddr_to_vaddr(mmu_id, paddr, target, type, out_vaddr);
-    spi_flash_enable_interrupts_caches_and_other_cpu();
+
+    //enable Cache, after this function, internal RAM access is no longer mandatory
+    s_start_cache();
 
     return found;
 }

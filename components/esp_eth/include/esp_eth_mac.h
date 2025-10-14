@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -232,6 +232,30 @@ struct esp_eth_mac_s {
     esp_err_t (*get_addr)(esp_eth_mac_t *mac, uint8_t *addr);
 
     /**
+     * @brief Add Destination address MAC filter
+     *
+     * @param[in] mac: Ethernet MAC instance
+     * @param[in] addr: MAC address
+     *
+     * @return
+     *      - ESP_OK: add MAC filter successfully
+     *      - ESP_FAIL: add MAC filter failed because some error occurred
+     */
+    esp_err_t (*add_mac_filter)(esp_eth_mac_t *mac, uint8_t *addr);
+
+    /**
+     * @brief Remove Destination address MAC filter
+     *
+     * @param[in] mac: Ethernet MAC instance
+     * @param[in] addr: MAC address
+     *
+     * @return
+     *      - ESP_OK: remove MAC filter successfully
+     *      - ESP_FAIL: remove MAC filter failed because some error occurred
+     */
+    esp_err_t (*rm_mac_filter)(esp_eth_mac_t *mac, uint8_t *addr);
+
+    /**
     * @brief Set speed of MAC
     *
     * @param[in] ma:c Ethernet MAC instance
@@ -285,6 +309,18 @@ struct esp_eth_mac_s {
     *
     */
     esp_err_t (*set_promiscuous)(esp_eth_mac_t *mac, bool enable);
+
+    /**
+     * @brief Set receive all multicast
+     *
+     * @param[in] mac: Ethernet MAC instance
+     * @param[in] enable: set true to enable receive all multicast; set false to disable receive all multicast
+     *
+     * @return
+     *      - ESP_OK: set receive all multicast successfully
+     *      - ESP_FAIL: set receive all multicast failed because some error occurred
+     */
+    esp_err_t (*set_all_multicast)(esp_eth_mac_t *mac, bool enable);
 
     /**
     * @brief Enable flow control on MAC layer or not

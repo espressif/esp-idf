@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -34,9 +34,10 @@ extern "C" {
 
 #define I2S_LL_CLK_FRAC_DIV_N_MAX  256 // I2S_MCLK = I2S_SRC_CLK / (N + b/a), the N register is 8 bit-width
 #define I2S_LL_CLK_FRAC_DIV_AB_MAX 512 // I2S_MCLK = I2S_SRC_CLK / (N + b/a), the a/b register is 9 bit-width
+#define I2S_LL_SLOT_FRAME_BIT_MAX  128 // Up-to 128 bits in one frame, determined by MAX(half_sample_bits) * 2
 
-#define I2S_LL_PLL_F160M_CLK_FREQ      (160 * 1000000) // PLL_F160M_CLK: 160MHz
-#define I2S_LL_DEFAULT_CLK_FREQ     I2S_LL_PLL_F160M_CLK_FREQ    // The default PLL clock frequency while using I2S_CLK_SRC_DEFAULT
+#define I2S_LL_DEFAULT_CLK_FREQ     (160 * 1000000) // PLL_F160M_CLK: 160MHz
+#define I2S_LL_SUPPORT_XTAL        1    // Support XTAL as I2S clock source
 
 
 /**
@@ -56,7 +57,10 @@ static inline void i2s_ll_enable_bus_clock(int i2s_id, bool enable)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define i2s_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; i2s_ll_enable_bus_clock(__VA_ARGS__)
+#define i2s_ll_enable_bus_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        i2s_ll_enable_bus_clock(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Reset the I2S module
@@ -76,7 +80,10 @@ static inline void i2s_ll_reset_register(int i2s_id)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define i2s_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; i2s_ll_reset_register(__VA_ARGS__)
+#define i2s_ll_reset_register(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        i2s_ll_reset_register(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief I2S module general init, enable I2S clock.
@@ -91,7 +98,10 @@ static inline void i2s_ll_enable_core_clock(i2s_dev_t *hw, bool enable)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define i2s_ll_enable_core_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; i2s_ll_enable_core_clock(__VA_ARGS__)
+#define i2s_ll_enable_core_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        i2s_ll_enable_core_clock(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Enable I2S tx module clock
@@ -232,6 +242,9 @@ static inline void i2s_ll_tx_clk_set_src(i2s_dev_t *hw, i2s_clock_src_t src)
     case I2S_CLK_SRC_XTAL:
         hw->tx_clkm_conf.tx_clk_sel = 0;
         break;
+    case I2S_CLK_SRC_PLL_240M:
+        hw->tx_clkm_conf.tx_clk_sel = 1;
+        break;
     case I2S_CLK_SRC_PLL_160M:
         hw->tx_clkm_conf.tx_clk_sel = 2;
         break;
@@ -256,6 +269,9 @@ static inline void i2s_ll_rx_clk_set_src(i2s_dev_t *hw, i2s_clock_src_t src)
     {
     case I2S_CLK_SRC_XTAL:
         hw->rx_clkm_conf.rx_clk_sel = 0;
+        break;
+    case I2S_CLK_SRC_PLL_240M:
+        hw->rx_clkm_conf.rx_clk_sel = 1;
         break;
     case I2S_CLK_SRC_PLL_160M:
         hw->rx_clkm_conf.rx_clk_sel = 2;
@@ -393,6 +409,27 @@ static inline void i2s_ll_rx_set_mclk(i2s_dev_t *hw, const hal_utils_clk_div_t *
     i2s_ll_rx_set_raw_clk_div(hw, mclk_div->integer, div_x, div_y, div_z, div_yn1);
 }
 
+/**
+ * @brief Update the TX configuration
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ */
+static inline void i2s_ll_tx_update(i2s_dev_t *hw)
+{
+    hw->tx_conf.tx_update = 1;
+    while (hw->tx_conf.tx_update);
+}
+
+/**
+ * @brief Update the RX configuration
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ */
+static inline void i2s_ll_rx_update(i2s_dev_t *hw)
+{
+    hw->rx_conf.rx_update = 1;
+    while (hw->rx_conf.rx_update);
+}
 
 /**
  * @brief Start I2S TX
@@ -402,8 +439,7 @@ static inline void i2s_ll_rx_set_mclk(i2s_dev_t *hw, const hal_utils_clk_div_t *
 static inline void i2s_ll_tx_start(i2s_dev_t *hw)
 {
     // Have to update registers before start
-    hw->tx_conf.tx_update = 1;
-    while (hw->tx_conf.tx_update);
+    i2s_ll_tx_update(hw);
     hw->tx_conf.tx_start = 1;
 }
 
@@ -415,8 +451,7 @@ static inline void i2s_ll_tx_start(i2s_dev_t *hw)
 static inline void i2s_ll_rx_start(i2s_dev_t *hw)
 {
     // Have to update registers before start
-    hw->rx_conf.rx_update = 1;
-    while (hw->rx_conf.rx_update);
+    i2s_ll_rx_update(hw);
     hw->rx_conf.rx_start = 1;
 }
 

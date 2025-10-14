@@ -2,7 +2,7 @@
 
 /*
  * SPDX-FileCopyrightText: 2017 Intel Corporation
- * SPDX-FileContributor: 2018-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2018-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -135,6 +135,9 @@ bool bt_mesh_prov_pdu_check(uint8_t type, uint16_t length, uint8_t *reason)
 #define CLOSE_XMIT      BLE_MESH_TRANSMIT(2, 20)
 
 #define CLOSE_TIMEOUT   K_MSEC(100)
+#define CLOSE_RETRANS_CNT 3
+#define CLOSE_RETRANS_WITH_REASON(cnt, rsn) (((cnt) << 4) | ((rsn) & 0x0f))
+#define CLOSE_RETRANS_GET(rsn) ((rsn) >> 4)
 
 #define BUF_TIMEOUT     K_MSEC(400)
 
@@ -457,12 +460,19 @@ static void prov_retransmit(struct k_work *work)
             if (link->pb_remote_close) {
                 link->pb_remote_close(link, link->reason);
             }
+            return;
         } else {
-            if (link->reset_adv_link) {
-                link->reset_adv_link(link, link->reason);
+            uint8_t retrans_cnt = CLOSE_RETRANS_GET(link->reason);
+            if (!retrans_cnt) {
+                if (link->reset_adv_link) {
+                    link->reset_adv_link(link, link->reason);
+                }
+                return;
+            } else {
+                retrans_cnt--;
+                link->reason = CLOSE_RETRANS_WITH_REASON(retrans_cnt, link->reason);
             }
         }
-        return;
     }
 
     bt_mesh_mutex_lock(&link->buf_lock);
@@ -547,7 +557,14 @@ int bt_mesh_prov_bearer_ctl_send(struct bt_mesh_prov_link *link, uint8_t op,
     if (op == LINK_CLOSE) {
         bt_mesh_atomic_clear_bit(link->flags, LINK_ACTIVE);
         bt_mesh_atomic_set_bit(link->flags, LINK_CLOSING);
-        link->reason = *((uint8_t *)data);
+        /** We can also use buf->ref and a flag to decide that
+         *  link close has been sent 3 times.
+         *  Here we use another way: use retransmit timer and need
+         *  to make sure the timer is not cancelled during sending
+         *  link close pdu, Therefore, use the higher four bits
+         *  of reason as a retransmit count.
+         */
+        link->reason = CLOSE_RETRANS_WITH_REASON(CLOSE_RETRANS_CNT, (*((uint8_t *)data)));
     }
 
     return 0;

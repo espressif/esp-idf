@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP32-H2 | ESP32-P4 | ESP32-S2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | --------- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP32-H2 | ESP32-H4 | ESP32-P4 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | --------- | -------- | -------- | -------- | -------- | -------- |
 
 # I2S ES8311 Example
 
@@ -59,11 +59,11 @@ Note: Since ESP32-C3 & ESP32-H2 board does not have GPIO 16/17, you can use othe
 
 ### Dependency
 
-This example is based on [es8311 component](https://components.espressif.com/component/espressif/es8311)
+This example is based on [esp_codec_dev component](https://components.espressif.com/components/espressif/esp_codec_dev)
 
-The component can be installed by [IDF Component Manager](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/tools/idf-component-manager.html). This example already includes it. If you want to install [es8311 component](https://components.espressif.com/components/espressif/es8311) separately in your project, you can input the following command:
+The component can be installed by [IDF Component Manager](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/tools/idf-component-manager.html). This example already includes it. If you want to install [esp_codec_dev component](https://components.espressif.com/components/espressif/esp_codec_dev) separately in your project, you can input the following command:
 ```
-idf.py add-dependency "espressif/es8311^1.0.0"
+idf.py add-dependency "espressif/esp_codec_dev^1.3.4"
 ```
 
 If the dependency is added, you can check `idf_component.yml` for more detail. When building this example or other projects with managed components, the component manager will search for the required components online and download them into the `managed_components` folder.
@@ -129,6 +129,11 @@ If you have a logic analyzer, you can use a logic analyzer to grab GPIO signal d
 | SDOUT |serial data out| GPIO_NUM_18/2 |
 | SDIN  |serial data in | GPIO_NUM_19/3 |
 
+Other pins like I2C please refer to `example_config.h`.
+
+Please note that the power amplifier on some development boards (like P4 EV board) are disabled by default, you might need to set the PA_CTRL pin to high to play the music via a speaker.
+The PA_CTRL pin can be configured by `idf.py menuconfig`, please check if the PA_CTRL pin is correct on your board if the audio can only be played from the earphones but not the speaker.
+
 ### Customize your own music
 
 The example have contained a piece of music in canon.pcm, if you want to play your own music, you can follow these steps:
@@ -137,7 +142,7 @@ The example have contained a piece of music in canon.pcm, if you want to play yo
 2. Install 'ffmpeg' tool
 3. Check your music format using ```ffprobe a.mp3```, you can get the stream format (e.g. Stream #0.0: Audio: mp3, 44100Hz, stereo, s16p, 64kb/s)
 4. Cut your music since there is no enough space for the whole piece of music. ```ffmpeg -i  a.mp3 -ss 00:00:00  -t  00:00:20  a_cut.mp3```
-5. Transfer the music format into .pcm. ```ffmpeg -i a_cut.mp3 -f s16ls -ar 16000 -ac -1 -acodec pcm_s16le a.pcm```
+5. Transfer the music format into .pcm. ```ffmpeg -i a_cut.mp3 -f s16le -ar 16000 -ac 2 -acodec pcm_s16le a.pcm```
 6. Move 'a.pcm' under 'main' directory
 7. Replace 'canon.pcm' with 'a.pcm' in 'CMakeLists.txt' under 'main' directory
 8. Replace '_binary_canon_pcm_start' and '_binary_canon_pcm_end' with '_binary_a_pcm_start' and '_binary_a_pcm_end' in `i2s_es8311_example.c`
@@ -149,5 +154,10 @@ The example have contained a piece of music in canon.pcm, if you want to play yo
 
     * Hardware connection is not correct: run `idf.py -p PORT monitor`, and reboot your board to see if there are any output logs.
     * The baud rate for downloading is too high: lower your baud rate in the `menuconfig` menu, and try again.
+
+* Failed to get audio from specker
+
+    * The PA (Power Amplifier) on some dev-kits might be disabled by default, please check the schematic to see if PA_CTRL is connected to any GPIO or something.
+    * Pull-up the PA_CTRL pin either by setting that GPIO to high or by connecting it to 3.3V with a jump wire should help.
 
 For any technical queries, please open an [issue](https://github.com/espressif/esp-idf/issues) on GitHub. We will get back to you soon.

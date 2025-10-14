@@ -23,7 +23,7 @@ void wdt_hal_init(wdt_hal_context_t *hal, wdt_inst_t wdt_inst, uint32_t prescale
     if (wdt_inst == WDT_MWDT0) {
         hal->mwdt_dev = &TIMERG0;
     }
-#if SOC_TIMER_GROUPS >= 2
+#if SOC_MODULE_ATTR(TIMG, INST_NUM) >= 2
     else if (wdt_inst == WDT_MWDT1) {
         hal->mwdt_dev = &TIMERG1;
     }

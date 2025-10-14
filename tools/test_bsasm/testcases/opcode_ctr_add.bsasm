@@ -1,0 +1,11 @@
+#Test ctr_add field of opcodes
+
+main:
+	loopa 100 0 main
+	loopa 100 -1 main
+	loopa 100 15 main
+	loopa 100 -16 main
+	adda 65535
+	adda -32768
+	adda -1
+	adda 0

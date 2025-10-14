@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -60,37 +60,27 @@ typedef struct hci_driver_uart_params_config
  */
 int hci_driver_uart_config(hci_driver_uart_params_config_t *uart_config);
 
-#if CONFIG_BT_LE_UART_HCI_DMA_MODE
 /**
- * @brief Reconfigure the UART pins for the HCI driver.
+ * @brief Update the UART pin configuration for the HCI driver.
  *
- * This function changes the UART pin configuration for the HCI driver.
+ * This function updates the TX, RX, CTS, and RTS pin assignments for the HCI driver operating over UART.
+ * It allows dynamic reconfiguration of UART pins as needed.
  *
- * @param tx_pin   The pin number for the UART TX (transmit) line.
- * @param rx_pin   The pin number for the UART RX (receive) line.
- * @param cts_pin  The pin number for the UART CTS (clear to send) line.
- * @param rts_pin  The pin number for the UART RTS (request to send) line.
+ * @param tx_pin  The GPIO number assigned to the UART TX pin.
+ * @param rx_pin  The GPIO number assigned to the UART RX pin.
+ * @param cts_pin The GPIO number assigned to the UART CTS pin.
+ * @param rts_pin The GPIO number assigned to the UART RTS pin.
  *
- * @return int     Returns 0 on success, or a negative error code on failure.
+ * @return 0 on success, or a negative error code on failure.
  */
-int hci_driver_uart_dma_reconfig_pin(int tx_pin, int rx_pin, int cts_pin, int rts_pin);
-#define hci_uart_reconfig_pin               hci_driver_uart_dma_reconfig_pin
-#else
+int hci_driver_uart_pin_update(int tx_pin, int rx_pin, int cts_pin, int rts_pin);
+
 /**
- * @brief Reconfigure the UART pins for the HCI driver.
+ * @brief Retrieves the current UART configuration parameters for the HCI driver.
  *
- * This function changes the UART pin configuration for the HCI driver.
- *
- * @param tx_pin   The pin number for the UART TX (transmit) line.
- * @param rx_pin   The pin number for the UART RX (receive) line.
- * @param cts_pin  The pin number for the UART CTS (clear to send) line.
- * @param rts_pin  The pin number for the UART RTS (request to send) line.
- *
- * @return int     Returns 0 on success, or a negative error code on failure.
+ * @return hci_driver_uart_params_config_t* Pointer to the structure with UART configuration parameters.
  */
-int hci_driver_uart_reconfig_pin(int tx_pin, int rx_pin, int cts_pin, int rts_pin);
-#define hci_uart_reconfig_pin               hci_driver_uart_reconfig_pin
-#endif // CONFIG_BT_LE_UART_HCI_DMA_MODE
+hci_driver_uart_params_config_t * hci_driver_uart_config_param_get(void);
 
 #ifdef __cplusplus
 }

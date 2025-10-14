@@ -39,6 +39,10 @@ DEFAULT:
     # SPDX-FileCopyrightText: {years} Espressif Systems (Shanghai) CO LTD
     # SPDX-License-Identifier: {license}
 
+  new_notice_bsasm: |  # notice for new bsasm files
+    # SPDX-FileCopyrightText: {years} Espressif Systems (Shanghai) CO LTD
+    # SPDX-License-Identifier: {license}
+
   # comment lines matching:
   # SPDX-FileCopyrightText: year[-year] Espressif Systems
   # or
@@ -70,13 +74,12 @@ lwip_component:
     - BSD-3-Clause
   license_for_new_files: Apache-2.0
 
-newlib_component:
+esp_libc_component:
   include:
-    - 'components/newlib/platform_include/**'
-    - 'components/newlib/port/**'
-    - 'components/newlib/priv_include/**'
-    - 'components/newlib/*.c'
-    - 'components/newlib/*.h'
+    - 'components/esp_libc/platform_include/**'
+    - 'components/esp_libc/port/**'
+    - 'components/esp_libc/priv_include/**'
+    - 'components/esp_libc/src/**'
   allowed_licenses:
     - Apache-2.0
     - BSD-2-Clause-FreeBSD AND Apache-2.0
@@ -172,8 +175,8 @@ app_trace:
     - components/app_trace/app_trace.c
     - components/app_trace/app_trace_membufs_proto.c
     - components/app_trace/app_trace_util.c
-    - components/app_trace/port/riscv/port.c
-    - components/app_trace/port/xtensa/port.c
+    - components/app_trace/port/riscv/port_jtag.c
+    - components/app_trace/port/xtensa/port_jtag.c
   allowed_licenses:
     - Apache-2.0
     - MIT
@@ -236,10 +239,11 @@ ignore:
     - components/bt/host/bluedroid/
     - '!components/bt/host/bluedroid/api/'
     - '!components/bt/host/bluedroid/btc/'
+    - '!components/bt/host/bluedroid/bta/pba/'
+    - '!components/bt/host/bluedroid/stack/goep/'
+    - '!components/bt/host/bluedroid/stack/obex/'
     - components/esp_local_ctrl/proto-c/
     - components/esp_local_ctrl/python/
     - components/protocomm/proto-c/
     - components/protocomm/python/
-    - components/wifi_provisioning/proto-c/
-    - components/wifi_provisioning/python/
     - tools/templates/

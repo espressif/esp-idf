@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,7 +24,7 @@
 #include "soc/chip_revision.h"
 #include "esp_private/regi2c_ctrl.h"
 
-static const char *TAG = "rtc_clk";
+ESP_HW_LOG_ATTR_TAG(TAG, "rtc_clk");
 
 // Current PLL frequency, in 480MHz. Zero if PLL is not enabled.
 static int s_cur_pll_freq;
@@ -52,10 +52,16 @@ void rtc_clk_32k_enable(bool enable)
 
 void rtc_clk_32k_enable_external(void)
 {
-    // EXT_OSC_SLOW_GPIO_NUM == GPIO_NUM_0
-    gpio_ll_input_enable(&GPIO, EXT_OSC_SLOW_GPIO_NUM);
-    REG_SET_BIT(LP_AON_GPIO_HOLD0_REG, BIT(EXT_OSC_SLOW_GPIO_NUM));
+    gpio_ll_input_enable(&GPIO, SOC_EXT_OSC_SLOW_GPIO_NUM);
+    REG_SET_BIT(LP_AON_GPIO_HOLD0_REG, BIT(SOC_EXT_OSC_SLOW_GPIO_NUM));
     clk_ll_xtal32k_enable(CLK_LL_XTAL32K_ENABLE_MODE_EXTERNAL);
+}
+
+void rtc_clk_32k_disable_external(void)
+{
+    gpio_ll_input_disable(&GPIO, SOC_EXT_OSC_SLOW_GPIO_NUM);
+    REG_CLR_BIT(LP_AON_GPIO_HOLD0_REG, BIT(SOC_EXT_OSC_SLOW_GPIO_NUM));
+    clk_ll_xtal32k_disable();
 }
 
 void rtc_clk_32k_bootstrap(uint32_t cycle)
@@ -165,7 +171,7 @@ static void rtc_clk_cpu_freq_to_xtal(int cpu_freq, int div)
     esp_rom_set_cpu_ticks_per_us(cpu_freq);
 }
 
-static void rtc_clk_cpu_freq_to_8m(void)
+static void rtc_clk_cpu_freq_to_rc_fast(void)
 {
     clk_ll_cpu_set_divider(1);
     clk_ll_ahb_set_divider(1);
@@ -226,9 +232,21 @@ bool rtc_clk_cpu_freq_mhz_to_config(uint32_t freq_mhz, rtc_cpu_freq_config_t *ou
     // 40MHz with PLL_F160M or PLL_F240M clock source. This is a special case, has to handle separately.
     if (xtal_freq == SOC_XTAL_FREQ_48M && freq_mhz == 40) {
         real_freq_mhz = freq_mhz;
-        source = SOC_CPU_CLK_SRC_PLL_F160M;
-        source_freq_mhz = CLK_LL_PLL_160M_FREQ_MHZ;
-        divider = 4;
+        if (!ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 101)) {
+#if CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ_240
+            source = SOC_CPU_CLK_SRC_PLL_F240M;
+            source_freq_mhz = CLK_LL_PLL_240M_FREQ_MHZ;
+            divider = 6;
+#else
+            source = SOC_CPU_CLK_SRC_PLL_F160M;
+            source_freq_mhz = CLK_LL_PLL_160M_FREQ_MHZ;
+            divider = 4;
+#endif
+        } else {
+            source = SOC_CPU_CLK_SRC_PLL_F160M;
+            source_freq_mhz = CLK_LL_PLL_160M_FREQ_MHZ;
+            divider = 4;
+        }
     } else if (freq_mhz <= xtal_freq && freq_mhz != 0) {
         divider = xtal_freq / freq_mhz;
         real_freq_mhz = (xtal_freq + divider / 2) / divider; /* round */
@@ -251,12 +269,18 @@ bool rtc_clk_cpu_freq_mhz_to_config(uint32_t freq_mhz, rtc_cpu_freq_config_t *ou
         divider = 1;
     } else if (freq_mhz == 80) {
         real_freq_mhz = freq_mhz;
-        if (!ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 1)) {
+        if (!ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 101)) {
             /* ESP32C5 has a root clock ICG issue when switching SOC_CPU_CLK_SRC from PLL_F160M to PLL_F240M
              * For detailed information, refer to IDF-11064 */
+#if CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ_240
             source = SOC_CPU_CLK_SRC_PLL_F240M;
             source_freq_mhz = CLK_LL_PLL_240M_FREQ_MHZ;
             divider = 3;
+#else
+            source = SOC_CPU_CLK_SRC_PLL_F160M;
+            source_freq_mhz = CLK_LL_PLL_160M_FREQ_MHZ;
+            divider = 2;
+#endif
         } else {
             source = SOC_CPU_CLK_SRC_PLL_F160M;
             source_freq_mhz = CLK_LL_PLL_160M_FREQ_MHZ;
@@ -279,37 +303,53 @@ __attribute__((weak)) void rtc_clk_set_cpu_switch_to_pll(int event_id)
 {
 }
 
+static void rtc_clk_update_pll_state_on_cpu_src_switching_start(soc_cpu_clk_src_t old_src, soc_cpu_clk_src_t new_src, bool fast_switching)
+{
+    if ((new_src == SOC_CPU_CLK_SRC_PLL_F160M) || (new_src == SOC_CPU_CLK_SRC_PLL_F240M)) {
+        if ((s_cur_pll_freq != CLK_LL_PLL_480M_FREQ_MHZ) && !fast_switching) {
+            rtc_clk_bbpll_enable();
+            rtc_clk_bbpll_configure(rtc_clk_xtal_freq_get(), CLK_LL_PLL_480M_FREQ_MHZ);
+        }
+#ifndef BOOTLOADER_BUILD
+        esp_clk_tree_enable_src((new_src == SOC_CPU_CLK_SRC_PLL_F240M) ? SOC_MOD_CLK_PLL_F240M : SOC_MOD_CLK_PLL_F160M, true);
+#endif
+    }
+}
+
+static void rtc_clk_update_pll_state_on_cpu_src_switching_end(soc_cpu_clk_src_t old_src, soc_cpu_clk_src_t new_src, bool fast_switching)
+{
+    if ((old_src == SOC_CPU_CLK_SRC_PLL_F160M) || (old_src == SOC_CPU_CLK_SRC_PLL_F240M)) {
+#ifndef BOOTLOADER_BUILD
+        esp_clk_tree_enable_src((old_src == SOC_CPU_CLK_SRC_PLL_F240M) ? SOC_MOD_CLK_PLL_F240M : SOC_MOD_CLK_PLL_F160M, false);
+#endif
+        if ((new_src != SOC_CPU_CLK_SRC_PLL_F160M) && (new_src != SOC_CPU_CLK_SRC_PLL_F240M) && !s_bbpll_digi_consumers_ref_count && !fast_switching) {
+            // We don't turn off the bbpll if some consumers depend on bbpll
+            rtc_clk_bbpll_disable();
+        }
+    }
+}
+
 void rtc_clk_cpu_freq_set_config(const rtc_cpu_freq_config_t *config)
 {
     soc_cpu_clk_src_t old_cpu_clk_src = clk_ll_cpu_get_src();
+    if (old_cpu_clk_src != config->source) {
+        rtc_clk_update_pll_state_on_cpu_src_switching_start(old_cpu_clk_src, config->source, false);
+    }
     if (config->source == SOC_CPU_CLK_SRC_XTAL) {
         rtc_clk_cpu_freq_to_xtal(config->freq_mhz, config->div);
-        if (((old_cpu_clk_src == SOC_CPU_CLK_SRC_PLL_F160M) || (old_cpu_clk_src == SOC_CPU_CLK_SRC_PLL_F240M)) && !s_bbpll_digi_consumers_ref_count) {
-            // We don't turn off the bbpll if some consumers depend on bbpll
-            rtc_clk_bbpll_disable();
-        }
     } else if (config->source == SOC_CPU_CLK_SRC_PLL_F240M) {
-        if (old_cpu_clk_src != SOC_CPU_CLK_SRC_PLL_F240M && old_cpu_clk_src != SOC_CPU_CLK_SRC_PLL_F160M) {
-            rtc_clk_set_cpu_switch_to_pll(SLEEP_EVENT_HW_PLL_EN_START);
-            rtc_clk_bbpll_enable();
-            rtc_clk_bbpll_configure(rtc_clk_xtal_freq_get(), CLK_LL_PLL_480M_FREQ_MHZ);
-        }
+        rtc_clk_set_cpu_switch_to_pll(SLEEP_EVENT_HW_PLL_EN_START);
         rtc_clk_cpu_freq_to_pll_240_mhz(config->freq_mhz);
         rtc_clk_set_cpu_switch_to_pll(SLEEP_EVENT_HW_PLL_EN_STOP);
     } else if (config->source == SOC_CPU_CLK_SRC_PLL_F160M) {
-        if (old_cpu_clk_src != SOC_CPU_CLK_SRC_PLL_F240M && old_cpu_clk_src != SOC_CPU_CLK_SRC_PLL_F160M) {
-            rtc_clk_set_cpu_switch_to_pll(SLEEP_EVENT_HW_PLL_EN_START);
-            rtc_clk_bbpll_enable();
-            rtc_clk_bbpll_configure(rtc_clk_xtal_freq_get(), CLK_LL_PLL_480M_FREQ_MHZ);
-        }
+        rtc_clk_set_cpu_switch_to_pll(SLEEP_EVENT_HW_PLL_EN_START);
         rtc_clk_cpu_freq_to_pll_160_mhz(config->freq_mhz);
         rtc_clk_set_cpu_switch_to_pll(SLEEP_EVENT_HW_PLL_EN_STOP);
     } else if (config->source == SOC_CPU_CLK_SRC_RC_FAST) {
-        rtc_clk_cpu_freq_to_8m();
-        if (((old_cpu_clk_src == SOC_CPU_CLK_SRC_PLL_F160M) || (old_cpu_clk_src == SOC_CPU_CLK_SRC_PLL_F240M)) && !s_bbpll_digi_consumers_ref_count) {
-            // We don't turn off the bbpll if some consumers depend on bbpll
-            rtc_clk_bbpll_disable();
-        }
+        rtc_clk_cpu_freq_to_rc_fast();
+    }
+    if (old_cpu_clk_src != config->source) {
+        rtc_clk_update_pll_state_on_cpu_src_switching_end(old_cpu_clk_src, config->source, false);
     }
 }
 
@@ -349,16 +389,25 @@ void rtc_clk_cpu_freq_get_config(rtc_cpu_freq_config_t *out_config)
 
 void rtc_clk_cpu_freq_set_config_fast(const rtc_cpu_freq_config_t *config)
 {
+    soc_cpu_clk_src_t old_cpu_clk_src = clk_ll_cpu_get_src();
     if (config->source == SOC_CPU_CLK_SRC_XTAL) {
+        rtc_clk_update_pll_state_on_cpu_src_switching_start(old_cpu_clk_src, config->source, true);
         rtc_clk_cpu_freq_to_xtal(config->freq_mhz, config->div);
+        rtc_clk_update_pll_state_on_cpu_src_switching_end(old_cpu_clk_src, config->source, true);
     } else if (config->source == SOC_CPU_CLK_SRC_PLL_F160M &&
                s_cur_pll_freq == CLK_LL_PLL_480M_FREQ_MHZ) {
+        rtc_clk_update_pll_state_on_cpu_src_switching_start(old_cpu_clk_src, config->source, true);
         rtc_clk_cpu_freq_to_pll_160_mhz(config->freq_mhz);
+        rtc_clk_update_pll_state_on_cpu_src_switching_end(old_cpu_clk_src, config->source, true);
     } else if (config->source == SOC_CPU_CLK_SRC_PLL_F240M &&
                s_cur_pll_freq == CLK_LL_PLL_480M_FREQ_MHZ) {
+        rtc_clk_update_pll_state_on_cpu_src_switching_start(old_cpu_clk_src, config->source, true);
         rtc_clk_cpu_freq_to_pll_240_mhz(config->freq_mhz);
+        rtc_clk_update_pll_state_on_cpu_src_switching_end(old_cpu_clk_src, config->source, true);
     } else if (config->source == SOC_CPU_CLK_SRC_RC_FAST) {
-        rtc_clk_cpu_freq_to_8m();
+        rtc_clk_update_pll_state_on_cpu_src_switching_start(old_cpu_clk_src, config->source, true);
+        rtc_clk_cpu_freq_to_rc_fast();
+        rtc_clk_update_pll_state_on_cpu_src_switching_end(old_cpu_clk_src, config->source, true);
     } else {
         /* fallback */
         rtc_clk_cpu_freq_set_config(config);
@@ -374,17 +423,48 @@ void rtc_clk_cpu_freq_set_xtal(void)
 void rtc_clk_cpu_set_to_default_config(void)
 {
     int freq_mhz = (int)rtc_clk_xtal_freq_get();
-
+#ifndef BOOTLOADER_BUILD
+    soc_module_clk_t old_cpu_clk_src = (soc_module_clk_t)clk_ll_cpu_get_src();
+#endif
     rtc_clk_cpu_freq_to_xtal(freq_mhz, 1);
+#ifndef BOOTLOADER_BUILD
+    esp_clk_tree_enable_src(old_cpu_clk_src, false);
+#endif
     s_cur_pll_freq = 0; // no disable PLL, but set freq to 0 to trigger a PLL calibration after wake-up from sleep
 }
 
+void rtc_clk_cpu_freq_set_xtal_for_sleep(void)
+{
+    rtc_clk_cpu_set_to_default_config();
+}
+
+#ifndef BOOTLOADER_BUILD
 void rtc_clk_cpu_freq_to_pll_and_pll_lock_release(int cpu_freq_mhz)
 {
-    // TODO: IDF-8641 CPU_MAX_FREQ don't know what to do... pll_240 or pll_160...
-    rtc_clk_cpu_freq_to_pll_240_mhz(cpu_freq_mhz);
+    //                          IDF-11064
+    if (cpu_freq_mhz == 240) {
+        esp_clk_tree_enable_src(SOC_MOD_CLK_PLL_F240M, true);
+        rtc_clk_cpu_freq_to_pll_240_mhz(cpu_freq_mhz);
+    } else if (cpu_freq_mhz == 160) {
+        esp_clk_tree_enable_src(SOC_MOD_CLK_PLL_F160M, true);
+        rtc_clk_cpu_freq_to_pll_160_mhz(cpu_freq_mhz);
+    } else {// cpu_freq_mhz is 80
+        if (!ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 101)) {// (use 240mhz pll if max cpu freq is 240MHz)
+#if CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ_240
+            esp_clk_tree_enable_src(SOC_MOD_CLK_PLL_F240M, true);
+            rtc_clk_cpu_freq_to_pll_240_mhz(cpu_freq_mhz);
+#else
+            esp_clk_tree_enable_src(SOC_MOD_CLK_PLL_F160M, true);
+            rtc_clk_cpu_freq_to_pll_160_mhz(cpu_freq_mhz);
+#endif
+        } else {// (fixed for chip rev. >= ECO3)
+            esp_clk_tree_enable_src(SOC_MOD_CLK_PLL_F160M, true);
+            rtc_clk_cpu_freq_to_pll_160_mhz(cpu_freq_mhz);
+        }
+    }
     clk_ll_cpu_clk_src_lock_release();
 }
+#endif
 
 soc_xtal_freq_t rtc_clk_xtal_freq_get(void)
 {

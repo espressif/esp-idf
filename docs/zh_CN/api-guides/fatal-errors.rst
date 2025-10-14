@@ -25,14 +25,16 @@
         - 堆完整性检查
         - 未定义行为清理器 (UBSAN) 检查
 
-- 使用 ``assert``、``configASSERT`` 等类似的宏断言失败。
+- 使用 ``assert``、``configASSERT`` 等 :doc:`类似的宏 </api-guides/error-handling>` 断言失败。
 
 本指南会介绍 ESP-IDF 中这类错误的处理流程，并给出对应的解决建议。
+
+.. _Panic-Handler:
 
 紧急处理程序
 ------------
 
-:ref:`Overview` 中列举的所有错误都会由 *紧急处理程序 (Panic Handler)* 负责处理。
+:ref:`Overview` 中列举的所有出错原因都会由 *紧急处理程序 (Panic Handler)* 处理。
 
 紧急处理程序首先会将出错原因打印到控制台，例如 CPU 异常的错误信息通常会类似于
 
@@ -46,7 +48,7 @@
 
     Guru Meditation Error: Core 0 panic'ed (|CACHE_ERR_MSG|). Exception was unhandled.
 
-不管哪种情况，错误原因都会被打印在括号中。请参阅 :ref:`Guru-Meditation-Errors` 以查看所有可能的出错原因。
+不管哪种情况，出错原因都会以括号形式打印出来。请参阅 :ref:`Guru-Meditation-Errors` 以查看所有可能的出错原因。
 
 紧急处理程序接下来的行为将取决于 :ref:`CONFIG_ESP_SYSTEM_PANIC` 的设置，支持的选项包括：
 
@@ -130,7 +132,7 @@
 寄存器转储与回溯
 ----------------
 
-除非启用了 ``CONFIG_ESP_SYSTEM_PANIC_SILENT_REBOOT`` 否则紧急处理程序会将 CPU 寄存器和回溯打印到控制台
+除非启用了 ``CONFIG_ESP_SYSTEM_PANIC_SILENT_REBOOT`` 否则紧急处理程序会将 CPU 寄存器和回溯打印到控制台。
 
 .. only:: CONFIG_IDF_TARGET_ARCH_XTENSA
 
@@ -234,7 +236,7 @@
         #5  0x00000000 in ?? ()
         Backtrace stopped: frame did not save the PC
 
-    虽然以上的回溯信息非常方便，但要求用户使用 :doc:`IDF 监视器 <tools/idf-monitor>`。因此，如果用户希望使用其它的串口监控软件也能显示堆栈回溯信息，则需要在 menuconfig 中启用 :ref:`CONFIG_ESP_SYSTEM_USE_EH_FRAME` 选项。
+    虽然以上的回溯信息非常方便，但要求用户使用 :doc:`IDF 监视器 <tools/idf-monitor>`。因此，如果用户希望使用其它的串口监控软件也能显示堆栈回溯信息，则需要在 menuconfig 中的 “Backtracing method” 菜单下启用 ``CONFIG_ESP_SYSTEM_USE_EH_FRAME`` 选项。
 
     该选项会让编译器为项目的每个函数生成 DWARF 信息。然后，当 CPU 异常发生时，紧急处理程序将解析这些数据并生成出错任务的堆栈回溯信息。输出结果如下：
 
@@ -245,7 +247,13 @@
     这些 ``PC:SP`` 对代表当前任务每一个栈帧的程序计数器值 (Program Counter) 和栈顶地址 (Stack Pointer)。
 
 
-    :ref:`CONFIG_ESP_SYSTEM_USE_EH_FRAME` 选项的主要优点是，回溯信息可以由程序自己解析生成并打印（而不依靠 :doc:`tools/idf-monitor`）。但是该选项会导致编译后的二进制文件更大（增幅可达 20% 甚至 100%）。此外，该选项会将调试信息也保存在二进制文件里。因此，强烈不建议用户在量产/生产版本中启用该选项。
+    ``CONFIG_ESP_SYSTEM_USE_EH_FRAME`` 选项的主要优点是，回溯信息可以由程序自己解析生成并打印（而不依靠 :doc:`tools/idf-monitor`）。但是该选项会导致编译后的二进制文件更大（增幅可达 20% 甚至 100%）。此外，该选项会将调试信息也保存在二进制文件里。因此，强烈建议不要在量产版本中启用该选项。
+
+    另一种在设备上生成此类回溯信息的是，在 menuconfig 中的 “Backtracing method” 菜单下启用 ``CONFIG_ESP_SYSTEM_USE_FRAME_POINTER`` 选项。
+
+    启用该选项后，编译器会保留一个 CPU 寄存器，用于跟踪程序中每个函数的栈帧。这样，异常处理程序能够在任何给定时间（尤其是在发生 CPU 异常时）展开调用栈。
+
+    启用 ``CONFIG_ESP_SYSTEM_USE_FRAME_POINTER`` 选项会导致编译后的二进制文件大小增加约 5-6%，性能下降约 1%。与 ``CONFIG_ESP_SYSTEM_USE_EH_FRAME`` 选项不同，编译器不会在生成的二进制文件中生成调试信息，因此可以在量产版本中使用此功能。
 
 若要查找发生严重错误的代码位置，请查看 "Backtrace" 的后面几行，发生严重错误的代码显示在顶行，后续几行显示的是调用堆栈。
 
@@ -299,6 +307,8 @@ RTC 看门狗在启动代码中用于跟踪执行时间，也有助于防止由�
 
 
 RTC 看门狗涵盖了从一级 (ROM) 引导加载程序到应用程序启动的执行时间，最初在一级 (ROM) 引导加载程序中设置，而后在引导加载程序中使用 :ref:`CONFIG_BOOTLOADER_WDT_TIME_MS` 选项进行配置（默认 9000 ms）。在应用初始化阶段，由于慢速时钟源可能已更改，RTC 看门狗将被重新配置，最后在调用 ``app_main()`` 之前被禁用。可以使用选项 :ref:`CONFIG_BOOTLOADER_WDT_DISABLE_IN_USER_CODE` 以保证 RTC 看门狗在调用 ``app_main`` 之前不被禁用，而是保持运行状态，用户需要在应用代码中定期“喂狗”。
+
+:ref:`紧急处理程序 <Panic-Handler>` 通过 RTC 看门狗保护机制，确保系统在遇到严重错误时不会陷入死循环。紧急处理程序会重新配置 RTC 看门狗的超时时间为 10 秒。如果 10 秒内紧急处理程序没有完成，RTC 看门狗将会强制复位系统。
 
 .. _Guru-Meditation-Errors:
 
@@ -391,7 +401,7 @@ Guru Meditation 错误
 
     应用程序尝试读取/写入的内存位置不符合加载/存储指令对字节对齐大小的要求，例如，32 位加载指令只能访问 4 字节对齐的内存地址，而 16 位加载指令只能访问 2 字节对齐的内存地址。
 
-Interrupt wdt timeout on CPU0 / CPU1
+Interrupt wdt timeout on CPU0/CPU1
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 这表示发生了中断看门狗超时，详细信息请查阅 :doc:`看门狗 <../api-reference/system/wdts>` 文档。
@@ -413,7 +423,7 @@ Interrupt wdt timeout on CPU0 / CPU1
     * 程序加载后向指令 RAM 写入代码
     * 从数据 RAM（用于堆、静态 .data 和 .bss 区域）执行代码
 
-    该类操作对于大多数程序来说并不必要，禁止此类操作往往使软件漏洞更难被利用。依赖动态加载或自修改代码的应用程序可以使用 :ref:`CONFIG_ESP_SYSTEM_MEMPROT_FEATURE` 选项来禁用此项保护。
+    该类操作对于大多数程序来说并不必要，禁止此类操作往往使软件漏洞更难被利用。依赖动态加载或自修改代码的应用程序可以使用 :ref:`CONFIG_ESP_SYSTEM_MEMPROT` 选项来禁用此项保护。
 
     发生故障时，紧急处理程序会报告故障的地址和引起故障的内存访问的类型。
 

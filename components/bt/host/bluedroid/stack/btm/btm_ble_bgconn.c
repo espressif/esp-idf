@@ -201,7 +201,12 @@ BOOLEAN btm_add_dev_to_controller (BOOLEAN to_add, BD_ADDR bd_addr, tBLE_ADDR_TY
 
     /* Controller do not support resolvable address now, only support public address and static random address */
     BOOLEAN  started = FALSE;
-    if(wl_addr_type > BLE_ADDR_RANDOM) {
+#if (BLE_50_FEATURE_SUPPORT == TRUE)
+    if (wl_addr_type > BLE_ADDR_RANDOM && wl_addr_type != BLE_ADDR_ANONYMOUS)
+#else
+    if (wl_addr_type > BLE_ADDR_RANDOM)
+#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
+    {
         BTM_TRACE_ERROR("wl_addr_type is error\n");
         return started;
     }
@@ -278,7 +283,12 @@ void btm_enq_wl_dev_operation(BOOLEAN to_add, BD_ADDR bd_addr, tBLE_ADDR_TYPE ad
 *******************************************************************************/
 BOOLEAN btm_update_dev_to_white_list(BOOLEAN to_add, BD_ADDR bd_addr, tBLE_ADDR_TYPE addr_type, tBTM_UPDATE_WHITELIST_CBACK *update_wl_cb)
 {
-    if(addr_type > BLE_ADDR_RANDOM) {
+#if (BLE_50_FEATURE_SUPPORT == TRUE)
+    if (addr_type > BLE_ADDR_RANDOM && addr_type != BLE_ADDR_ANONYMOUS)
+#else
+    if (addr_type > BLE_ADDR_RANDOM)
+#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
+    {
         BTM_TRACE_ERROR("%s address type is error, unable to add device", __func__);
         if (update_wl_cb){
             update_wl_cb(HCI_ERR_ILLEGAL_PARAMETER_FMT,to_add);
@@ -422,6 +432,23 @@ void btm_ble_white_list_init(UINT8 white_list_size)
     BTM_TRACE_DEBUG("%s white_list_size = %d", __func__, white_list_size);
     btm_cb.ble_ctr_cb.white_list_avail_size = white_list_size;
 }
+
+#if (BLE_50_EXTEND_SYNC_EN == TRUE)
+/*******************************************************************************
+**
+** Function         btm_ble_periodic_adv_list_init
+**
+** Description      Initialize the periodic advertiser list size.
+**
+** Parameters       periodic_adv_size: The size of the periodic advertiser list to be initialized.
+**
+*******************************************************************************/
+void btm_ble_periodic_adv_list_init(UINT8 periodic_adv_size)
+{
+    BTM_TRACE_DEBUG("%s white_list_size = %d", __func__, periodic_adv_size);
+    btm_cb.ble_ctr_cb.periodic_adv_list_size = periodic_adv_size;
+}
+#endif //#if (BLE_50_EXTEND_SYNC_EN == TRUE)
 
 /*******************************************************************************
 **
@@ -648,6 +675,7 @@ void btm_ble_initiate_select_conn(BD_ADDR bda)
         BTM_TRACE_ERROR("btm_ble_initiate_select_conn failed");
     }
 }
+#if (tGATT_BG_CONN_DEV == TRUE)
 /*******************************************************************************
 **
 ** Function         btm_ble_suspend_bg_conn
@@ -672,6 +700,8 @@ BOOLEAN btm_ble_suspend_bg_conn(void)
 
     return FALSE;
 }
+#endif // #if (tGATT_BG_CONN_DEV == TRUE)
+
 /*******************************************************************************
 **
 ** Function         btm_suspend_wl_activity
@@ -689,10 +719,11 @@ static void btm_suspend_wl_activity(tBTM_BLE_WL_STATE wl_state)
     if (wl_state & BTM_BLE_WL_SCAN) {
         btm_ble_start_select_conn(FALSE, NULL);
     }
+#if (BLE_42_ADV_EN == TRUE)
     if (wl_state & BTM_BLE_WL_ADV) {
         btm_ble_stop_adv();
     }
-
+#endif // #if (BLE_42_ADV_EN == TRUE)
 }
 /*******************************************************************************
 **
@@ -705,9 +736,13 @@ static void btm_suspend_wl_activity(tBTM_BLE_WL_STATE wl_state)
 *******************************************************************************/
 void btm_resume_wl_activity(tBTM_BLE_WL_STATE wl_state)
 {
+#if (tGATT_BG_CONN_DEV == TRUE)
     btm_ble_resume_bg_conn();
+#endif // #if (tGATT_BG_CONN_DEV == TRUE)
     if (wl_state & BTM_BLE_WL_ADV) {
+#if (BLE_42_ADV_EN == TRUE)
         btm_ble_start_adv();
+#endif // #if (BLE_42_ADV_EN == TRUE)
     }
 
 }
@@ -724,12 +759,13 @@ void btm_resume_wl_activity(tBTM_BLE_WL_STATE wl_state)
 static void btm_wl_update_to_controller(void)
 {
     /* whitelist will be added in the btm_ble_resume_bg_conn(), we do not
-       support background connection now, so we nedd to use btm_execute_wl_dev_operation
+       support background connection now, so we need to use btm_execute_wl_dev_operation
        to add whitelist directly ,if we support background connection in the future,
        please delete btm_execute_wl_dev_operation(). */
     btm_execute_wl_dev_operation();
 
 }
+#if (tGATT_BG_CONN_DEV == TRUE)
 /*******************************************************************************
 **
 ** Function         btm_ble_resume_bg_conn
@@ -759,6 +795,8 @@ BOOLEAN btm_ble_resume_bg_conn(void)
 
     return ret;
 }
+#endif // #if (tGATT_BG_CONN_DEV == TRUE)
+
 /*******************************************************************************
 **
 ** Function         btm_ble_get_conn_st

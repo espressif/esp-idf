@@ -285,6 +285,28 @@ Light-sleep 模式配置
 
           由于 flash 和 PSRAM 共用供电管脚，PSRAM 关闭供电将会导致数据丢失，因此，为保证 light sleep 不破坏程序运行状态，启用该选项的前提是系统没有使用 PSRAM。
 
+.. only:: esp32c2
+
+    - 减少 Power Managemet 模块片内 RAM 内存资源使用量 (:ref:`CONFIG_PM_SLEEP_FUNC_IN_IRAM`)，当 :ref:`CONFIG_PM_SLEEP_FUNC_IN_IRAM` 禁止时，下面表格中选项分别用于控制 Power Management 模块各部分组件启用或禁止片内 RAM 优化
+
+    .. list-table::
+      :header-rows: 1
+      :widths: 60 30
+
+      * - 配置项
+        - 描述
+
+      * - :ref:`CONFIG_PM_SLP_IRAM_OPT`
+        - 使能该选项后执行 light / deep sleep 软件流程上下文被链接到片内 RAM 空间，这意味着系统进出睡眠时间变短，消耗更多的片内 RAM 资源；禁止该选项，light / deep sleep 软件流程上下文将被编译到 Flash 空间，这意味着系统进出睡眠时间变长，但会节约片内 RAM 资源。
+
+      * - :ref:`CONFIG_PM_RTOS_IDLE_OPT`
+        - auto light sleep 模式下，使能该选项后，FreeRTOS 系统滴答，IDLE 任务回调函数及 FreeRTOS Tickless idle 软件上下文被链接到片内 RAM 空间，反之将被链接到 Flash 空间。
+
+      * - :ref:`CONFIG_ESP_PERIPH_CTRL_FUNC_IN_IRAM`
+        - 使能该选项后外设时钟及复位控制相关的软件实现将被链接到片内 RAM 空间，反之将被链接到 Flash 空间。
+
+      * - :ref:`CONFIG_ESP_REGI2C_CTRL_FUNC_IN_IRAM`
+        - 使能该选项后 Analog I2C 读写访问相关的软件实现将被链接到片内 RAM 空间，反之被链接到 Flash 空间。
 
 配置方法：
 

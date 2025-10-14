@@ -18,10 +18,8 @@
 
 #define REG_UHCI_BASE(i)                        (DR_REG_UHCI_BASE)                       // only one UHCI on C5
 #define REG_UART_BASE(i)                        (DR_REG_UART0_BASE + (i) * 0x1000)       // UART0 and UART1
-#define REG_I2S_BASE(i)                         (DR_REG_I2S_BASE)                        // only one I2S on C5
 #define REG_TIMG_BASE(i)                        (DR_REG_TIMERG0_BASE + (i) * 0x1000)     // TIMERG0 and TIMERG1
 #define REG_SPI_MEM_BASE(i)                     (DR_REG_SPIMEM0_BASE + (i) * 0x1000)     // SPIMEM0 and SPIMEM1
-#define REG_SPI_BASE(i)                         (DR_REG_SPI2_BASE)                       // only one GPSPI on C5
 #define REG_I2C_BASE(i)                         (DR_REG_I2C_BASE)                        // only one I2C on C5
 #define REG_MCPWM_BASE(i)                       (DR_REG_MCPWM_BASE)                      // only one MCPWM on C5
 #define REG_TWAI_BASE(i)                        (DR_REG_TWAI0_BASE + (i) * 0x2000)       // TWAI0 and TWAI1
@@ -134,7 +132,6 @@
 //}}
 
 //Periheral Clock {{
-#define  CPU_CLK_FREQ_MHZ_BTLD                       (80)               // The cpu clock frequency (in MHz) to set at 2nd stage bootloader system clock configuration
 #define  APB_CLK_FREQ                                ( 40*1000000 )
 #define  MODEM_REQUIRED_MIN_APB_CLK_FREQ             ( 80*1000000 )
 #define  REF_CLK_FREQ                                ( 1000000 )
@@ -202,7 +199,7 @@
 #define SOC_CPU_SUBSYSTEM_HIGH 0x30000000
 
 // Start (highest address) of ROM boot stack, only relevant during early boot
-#define SOC_ROM_STACK_START         0x4085e9a0
+#define SOC_ROM_STACK_START         0x4085e5a0
 #define SOC_ROM_STACK_SIZE          0x2000
 
 //On RISC-V CPUs, the interrupt sources are all external interrupts, whose type, source and priority are configured by SW.

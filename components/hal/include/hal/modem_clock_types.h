@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -34,6 +34,12 @@ typedef enum {
     MODEM_CLOCK_LPCLK_SRC_EXT32K,
     MODEM_CLOCK_LPCLK_SRC_MAX
 } modem_clock_lpclk_src_t;
+
+typedef enum {
+    MODEM_CLOCK_32K_SRC_XTAL32K = 0,
+    MODEM_CLOCK_32K_SRC_RC32K   = 1,
+    MODEM_CLOCK_32K_SRC_EXT32K  = 2
+} modem_clock_32k_clk_src_t;
 
 #ifdef __cplusplus
 }

@@ -1,16 +1,17 @@
 # This is the project CMakeLists.txt file for the test subproject
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.22)
 
 # "Trim" the build. Include the minimal set of components, main, and anything it depends on.
 set(COMPONENTS main)
 
-set(EXTRA_COMPONENT_DIRS "$ENV{IDF_PATH}/tools/unit-test-app/components")
+set(EXTRA_COMPONENT_DIRS "$ENV{IDF_PATH}/tools/test_apps/components")
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 project(jpeg_test)
 
 target_add_binary_data(jpeg_test.elf "${IDF_PATH}/examples/peripherals/jpeg/jpeg_decode/resources/esp720.jpg" BINARY)
 target_add_binary_data(jpeg_test.elf "${IDF_PATH}/examples/peripherals/jpeg/jpeg_decode/resources/esp1080.jpg" BINARY)
+target_add_binary_data(jpeg_test.elf "resources/no_huff.jpg" BINARY)
 target_add_binary_data(jpeg_test.elf "resources/esp480.rgb" BINARY)
 
 message(STATUS "Checking jpeg registers are not read-write by half-word")

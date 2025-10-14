@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,12 +12,22 @@
 #include "esp_types.h"
 #include "assert.h"
 #include "esp_err.h"
+#include "esp_check.h"
 #include "esp_fault.h"
 #include "esp_log.h"
+#include "hal/efuse_ll.h"
+#include "hal/efuse_hal.h"
 #include "soc/efuse_periph.h"
 #include "sys/param.h"
+#include "soc/soc_caps.h"
+#include "hal/efuse_ll.h"
+#include "hal/efuse_hal.h"
 
-static __attribute__((unused)) const char *TAG = "efuse";
+#ifdef SOC_ECDSA_SUPPORTED
+#include "hal/ecdsa_ll.h"
+#endif /* SOC_ECDSA_SUPPORTED */
+
+ESP_LOG_ATTR_TAG(TAG, "efuse");
 
 #ifdef CONFIG_BOOTLOADER_APP_SEC_VER_SIZE_EFUSE_FIELD
 #define APP_SEC_VER_SIZE_EFUSE_FIELD CONFIG_BOOTLOADER_APP_SEC_VER_SIZE_EFUSE_FIELD
@@ -81,3 +91,97 @@ esp_err_t esp_efuse_update_secure_version(uint32_t secure_version)
     }
     return ESP_OK;
 }
+
+#if SOC_ECDSA_SUPPORTED
+bool esp_efuse_is_ecdsa_p192_curve_supported(void)
+{
+#if SOC_ECDSA_P192_CURVE_DEFAULT_DISABLED
+    if (ecdsa_ll_is_configurable_curve_supported()) {
+        uint32_t current_curve = efuse_hal_get_ecdsa_curve_mode();
+        return (current_curve == ESP_EFUSE_ECDSA_CURVE_MODE_ALLOW_BOTH_P192_P256_BIT || current_curve == ESP_EFUSE_ECDSA_CURVE_MODE_ALLOW_ONLY_P192_BIT);
+    } else {
+        return true;
+    }
+#else
+    return true;
+#endif /* SOC_ECDSA_P192_CURVE_DEFAULT_DISABLED */
+}
+
+bool esp_efuse_is_ecdsa_p256_curve_supported(void)
+{
+#if SOC_ECDSA_P192_CURVE_DEFAULT_DISABLED
+    if (ecdsa_ll_is_configurable_curve_supported()) {
+        uint32_t current_curve = efuse_hal_get_ecdsa_curve_mode();
+        return (current_curve != ESP_EFUSE_ECDSA_CURVE_MODE_ALLOW_ONLY_P192_BIT);
+    } else {
+        return true;
+    }
+#else
+    return true;
+#endif /* SOC_ECDSA_P192_CURVE_DEFAULT_DISABLED */
+}
+#endif /* SOC_ECDSA_SUPPORTED */
+
+#if SOC_ECDSA_P192_CURVE_DEFAULT_DISABLED
+esp_err_t esp_efuse_enable_ecdsa_p192_curve_mode(void)
+{
+
+    if (ecdsa_ll_is_configurable_curve_supported()) {
+        esp_err_t err;
+        uint8_t current_curve, next_curve;
+
+        current_curve = efuse_hal_get_ecdsa_curve_mode();
+        // Check if already in desired state
+        if (current_curve == ESP_EFUSE_ECDSA_CURVE_MODE_ALLOW_BOTH_P192_P256_BIT || current_curve == ESP_EFUSE_ECDSA_CURVE_MODE_ALLOW_ONLY_P192_BIT) {
+            ESP_EARLY_LOGD(TAG, "ECDSA P-192 curve mode is already enabled");
+            return ESP_OK;
+        }
+
+        // Check if write is disabled or already locked to P256
+        if (esp_efuse_read_field_bit(ESP_EFUSE_WR_DIS_ECDSA_CURVE_MODE) || current_curve == ESP_EFUSE_ECDSA_CURVE_MODE_ALLOW_ONLY_P256_BIT_LOCKED) {
+            ESP_EARLY_LOGE(TAG, "ECDSA curve mode is locked, cannot enable P-192 curve");
+            return ESP_FAIL;
+        }
+
+        // Attempt to write new curve mode
+        next_curve = ESP_EFUSE_ECDSA_CURVE_MODE_ALLOW_BOTH_P192_P256_BIT;
+        err = esp_efuse_write_field_blob(ESP_EFUSE_ECDSA_CURVE_MODE, &next_curve, ESP_EFUSE_ECDSA_CURVE_MODE[0]->bit_count);
+        if (err != ESP_OK) {
+            ESP_EARLY_LOGE(TAG, "Failed to enable ECDSA P-192 curve %d", err);
+            return err;
+        }
+    }
+    return ESP_OK;
+}
+#endif /* SOC_ECDSA_P192_CURVE_DEFAULT_DISABLED */
+
+#if SOC_RECOVERY_BOOTLOADER_SUPPORTED
+esp_err_t esp_efuse_set_recovery_bootloader_offset(const uint32_t offset)
+{
+    // The eFuse field stores the sector number instead of the full address to conserve eFuse bits.
+    if (efuse_ll_get_recovery_bootloader_sector() == 0) {
+        ESP_LOGI(TAG, "Recovery bootloader offset has not been set yet.");
+        uint32_t recovery_flash_sector = efuse_hal_convert_recovery_bootloader_address_to_flash_sectors(offset);
+        ESP_RETURN_ON_FALSE((recovery_flash_sector & ((1U << EFUSE_RECOVERY_BOOTLOADER_FLASH_SECTOR_LEN) - 1)) == recovery_flash_sector, ESP_ERR_INVALID_ARG, TAG,
+            "Given address exceeds the allowed range of the efuse field");
+
+        size_t recovery_flash_sector_len = esp_efuse_get_field_size(ESP_EFUSE_RECOVERY_BOOTLOADER_FLASH_SECTOR);
+        assert(recovery_flash_sector_len == EFUSE_RECOVERY_BOOTLOADER_FLASH_SECTOR_LEN);
+        ESP_RETURN_ON_ERROR(esp_efuse_write_field_blob(ESP_EFUSE_RECOVERY_BOOTLOADER_FLASH_SECTOR, &recovery_flash_sector, recovery_flash_sector_len), TAG,
+            "Failed to burn recovery bootloader offset to eFuse");
+
+    } else if (!efuse_hal_recovery_bootloader_enabled()) {
+        ESP_LOGE(TAG, "Recovery bootloader offset is disabled");
+        return ESP_ERR_NOT_ALLOWED;
+    }
+
+    uint32_t programmed_offset = efuse_hal_get_recovery_bootloader_address();
+    if (programmed_offset != offset) {
+        ESP_LOGE(TAG, "Verification failed. eFuse recovery bootloader offset=0x%" PRIx32 ", expected=0x%" PRIx32, programmed_offset, offset);
+        return ESP_FAIL;
+    }
+
+    ESP_LOGI(TAG, "Recovery bootloader offset in eFuse = 0x%" PRIx32, programmed_offset);
+    return ESP_OK;
+}
+#endif // SOC_RECOVERY_BOOTLOADER_SUPPORTED

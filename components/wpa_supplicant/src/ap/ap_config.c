@@ -147,10 +147,14 @@ static int hostapd_derive_psk(struct hostapd_ssid *ssid)
 
 int hostapd_setup_sae_pt(struct hostapd_bss_config *conf)
 {
-#ifdef CONFIG_SAE
+#ifdef CONFIG_SAE_H2E
     struct hostapd_ssid *ssid = &conf->ssid;
-    if ((conf->sae_pwe == SAE_PWE_HUNT_AND_PECK ||
-        !wpa_key_mgmt_sae(conf->wpa_key_mgmt)))
+    if (conf->sae_pwe == SAE_PWE_HUNT_AND_PECK ||
+        !wpa_key_mgmt_sae(conf->wpa_key_mgmt
+#ifdef CONFIG_WPA3_COMPAT
+         | conf->rsn_override_key_mgmt
+#endif
+        ))
         return 0; /* PT not needed */
 
     sae_deinit_pt(ssid->pt);
@@ -165,7 +169,7 @@ int hostapd_setup_sae_pt(struct hostapd_bss_config *conf)
             return -1;
     }
 
-#endif /* CONFIG_SAE */
+#endif /* CONFIG_SAE_H2E */
 
     return 0;
 }

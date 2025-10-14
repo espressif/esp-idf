@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,18 +13,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/**
- * @brief RMT carrier wave configuration (for either modulation or demodulation)
- */
-typedef struct {
-    uint32_t frequency_hz; /*!< Carrier wave frequency, in Hz, 0 means disabling the carrier */
-    float duty_cycle;      /*!< Carrier wave duty cycle (0~100%) */
-    struct {
-        uint32_t polarity_active_low: 1; /*!< Specify the polarity of carrier, by default it's modulated to base signal's high level */
-        uint32_t always_on: 1;           /*!< If set, the carrier can always exist even there's not transfer undergoing */
-    } flags;                             /*!< Carrier config flags */
-} rmt_carrier_config_t;
 
 /**
  * @brief Delete an RMT channel

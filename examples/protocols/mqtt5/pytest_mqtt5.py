@@ -1,23 +1,23 @@
 #!/usr/bin/env python
 #
-# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 import logging
 import os
 
 import pytest
 from pytest_embedded import Dut
+from pytest_embedded_idf.utils import idf_parametrize
 
 
-@pytest.mark.esp32
 @pytest.mark.ethernet
+@idf_parametrize('target', ['esp32'], indirect=['target'])
 def test_examples_protocol_mqtt5(dut: Dut) -> None:
     """
     steps: |
       1. join AP
       2. connect to mqtt://mqtt.eclipseprojects.io
-      3. check conneciton success
+      3. check connection success
     """
     # check and log bin size
     binary_file = os.path.join(dut.app.binary_path, 'mqtt5.bin')

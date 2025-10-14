@@ -9,7 +9,7 @@
 #include <assert.h>
 #include "esp_efuse_table.h"
 
-// md5_digest_table 1b79da735c5daed71ed7a91a0c55c5b6
+// md5_digest_table 1dc5045e8a74c32825696ca314128499
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -59,6 +59,10 @@ static const esp_efuse_desc_t WR_DIS_DIS_DOWNLOAD_MANUAL_ENCRYPT[] = {
     {EFUSE_BLK0, 2, 1}, 	 // [] wr_dis of DIS_DOWNLOAD_MANUAL_ENCRYPT,
 };
 
+static const esp_efuse_desc_t WR_DIS_POWERGLITCH_EN1[] = {
+    {EFUSE_BLK0, 2, 1}, 	 // [] wr_dis of POWERGLITCH_EN1,
+};
+
 static const esp_efuse_desc_t WR_DIS_WDT_DELAY_SEL[] = {
     {EFUSE_BLK0, 3, 1}, 	 // [] wr_dis of WDT_DELAY_SEL,
 };
@@ -103,6 +107,10 @@ static const esp_efuse_desc_t WR_DIS_KEY_PURPOSE_5[] = {
     {EFUSE_BLK0, 13, 1}, 	 // [WR_DIS.KEY5_PURPOSE] wr_dis of KEY_PURPOSE_5,
 };
 
+static const esp_efuse_desc_t WR_DIS_XTS_DPA_PSEUDO_LEVEL[] = {
+    {EFUSE_BLK0, 14, 1}, 	 // [] wr_dis of XTS_DPA_PSEUDO_LEVEL,
+};
+
 static const esp_efuse_desc_t WR_DIS_SEC_DPA_LEVEL[] = {
     {EFUSE_BLK0, 14, 1}, 	 // [] wr_dis of SEC_DPA_LEVEL,
 };
@@ -119,8 +127,12 @@ static const esp_efuse_desc_t WR_DIS_SECURE_BOOT_AGGRESSIVE_REVOKE[] = {
     {EFUSE_BLK0, 16, 1}, 	 // [] wr_dis of SECURE_BOOT_AGGRESSIVE_REVOKE,
 };
 
-static const esp_efuse_desc_t WR_DIS_ECDSA_FORCE_USE_HARDWARE_K[] = {
-    {EFUSE_BLK0, 17, 1}, 	 // [] wr_dis of ECDSA_FORCE_USE_HARDWARE_K,
+static const esp_efuse_desc_t WR_DIS_ECDSA_CURVE_MODE[] = {
+    {EFUSE_BLK0, 17, 1}, 	 // [] wr_dis of ECDSA_CURVE_MODE,
+};
+
+static const esp_efuse_desc_t WR_DIS_ECC_FORCE_CONST_TIME[] = {
+    {EFUSE_BLK0, 17, 1}, 	 // [] wr_dis of ECC_FORCE_CONST_TIME,
 };
 
 static const esp_efuse_desc_t WR_DIS_FLASH_TPUW[] = {
@@ -443,6 +455,18 @@ static const esp_efuse_desc_t VDD_SPI_AS_GPIO[] = {
     {EFUSE_BLK0, 58, 1}, 	 // [] Represents whether vdd spi pin is functioned as gpio. 1: functioned. 0: not functioned,
 };
 
+static const esp_efuse_desc_t ECDSA_CURVE_MODE[] = {
+    {EFUSE_BLK0, 59, 2}, 	 // [] Configures the curve of ECDSA calculation: 0: only enable P256. 1: only enable P192. 2: both enable P256 and P192. 3: only enable P256,
+};
+
+static const esp_efuse_desc_t ECC_FORCE_CONST_TIME[] = {
+    {EFUSE_BLK0, 61, 1}, 	 // [] Set this bit to permanently turn on ECC const-time mode,
+};
+
+static const esp_efuse_desc_t XTS_DPA_PSEUDO_LEVEL[] = {
+    {EFUSE_BLK0, 62, 2}, 	 // [] Set this bit to control the xts pseudo-round anti-dpa attack function: 0: controlled by register. 1-3: the higher the value is; the more pseudo-rounds are inserted to the xts-aes calculation,
+};
+
 static const esp_efuse_desc_t WDT_DELAY_SEL[] = {
     {EFUSE_BLK0, 80, 2}, 	 // [] Represents whether RTC watchdog timeout threshold is selected at startup. 1: selected. 0: not selected,
 };
@@ -491,10 +515,6 @@ static const esp_efuse_desc_t SEC_DPA_LEVEL[] = {
     {EFUSE_BLK0, 112, 2}, 	 // [] Represents the spa secure level by configuring the clock random divide mode,
 };
 
-static const esp_efuse_desc_t ECDSA_FORCE_USE_HARDWARE_K[] = {
-    {EFUSE_BLK0, 114, 1}, 	 // [] Represents whether hardware random number k is forced used in ESDCA. 1: force used. 0: not force used,
-};
-
 static const esp_efuse_desc_t CRYPT_DPA_ENABLE[] = {
     {EFUSE_BLK0, 115, 1}, 	 // [] Represents whether anti-dpa attack is enabled. 1:enabled. 0: disabled,
 };
@@ -505,6 +525,10 @@ static const esp_efuse_desc_t SECURE_BOOT_EN[] = {
 
 static const esp_efuse_desc_t SECURE_BOOT_AGGRESSIVE_REVOKE[] = {
     {EFUSE_BLK0, 117, 1}, 	 // [] Represents whether revoking aggressive secure boot is enabled or disabled. 1: enabled. 0: disabled,
+};
+
+static const esp_efuse_desc_t POWERGLITCH_EN1[] = {
+    {EFUSE_BLK0, 118, 5}, 	 // [] Set these bits to enable power glitch function when chip power on,
 };
 
 static const esp_efuse_desc_t FLASH_TPUW[] = {
@@ -792,6 +816,11 @@ const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_DIS_DOWNLOAD_MANUAL_ENCRYPT[] = {
     NULL
 };
 
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_POWERGLITCH_EN1[] = {
+    &WR_DIS_POWERGLITCH_EN1[0],    		// [] wr_dis of POWERGLITCH_EN1
+    NULL
+};
+
 const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_WDT_DELAY_SEL[] = {
     &WR_DIS_WDT_DELAY_SEL[0],    		// [] wr_dis of WDT_DELAY_SEL
     NULL
@@ -847,6 +876,11 @@ const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_KEY_PURPOSE_5[] = {
     NULL
 };
 
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_XTS_DPA_PSEUDO_LEVEL[] = {
+    &WR_DIS_XTS_DPA_PSEUDO_LEVEL[0],    		// [] wr_dis of XTS_DPA_PSEUDO_LEVEL
+    NULL
+};
+
 const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_SEC_DPA_LEVEL[] = {
     &WR_DIS_SEC_DPA_LEVEL[0],    		// [] wr_dis of SEC_DPA_LEVEL
     NULL
@@ -867,8 +901,13 @@ const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_SECURE_BOOT_AGGRESSIVE_REVOKE[] = {
     NULL
 };
 
-const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ECDSA_FORCE_USE_HARDWARE_K[] = {
-    &WR_DIS_ECDSA_FORCE_USE_HARDWARE_K[0],    		// [] wr_dis of ECDSA_FORCE_USE_HARDWARE_K
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ECDSA_CURVE_MODE[] = {
+    &WR_DIS_ECDSA_CURVE_MODE[0],    		// [] wr_dis of ECDSA_CURVE_MODE
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ECC_FORCE_CONST_TIME[] = {
+    &WR_DIS_ECC_FORCE_CONST_TIME[0],    		// [] wr_dis of ECC_FORCE_CONST_TIME
     NULL
 };
 
@@ -1272,6 +1311,21 @@ const esp_efuse_desc_t* ESP_EFUSE_VDD_SPI_AS_GPIO[] = {
     NULL
 };
 
+const esp_efuse_desc_t* ESP_EFUSE_ECDSA_CURVE_MODE[] = {
+    &ECDSA_CURVE_MODE[0],    		// [] Configures the curve of ECDSA calculation: 0: only enable P256. 1: only enable P192. 2: both enable P256 and P192. 3: only enable P256
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ECC_FORCE_CONST_TIME[] = {
+    &ECC_FORCE_CONST_TIME[0],    		// [] Set this bit to permanently turn on ECC const-time mode
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_XTS_DPA_PSEUDO_LEVEL[] = {
+    &XTS_DPA_PSEUDO_LEVEL[0],    		// [] Set this bit to control the xts pseudo-round anti-dpa attack function: 0: controlled by register. 1-3: the higher the value is; the more pseudo-rounds are inserted to the xts-aes calculation
+    NULL
+};
+
 const esp_efuse_desc_t* ESP_EFUSE_WDT_DELAY_SEL[] = {
     &WDT_DELAY_SEL[0],    		// [] Represents whether RTC watchdog timeout threshold is selected at startup. 1: selected. 0: not selected
     NULL
@@ -1332,11 +1386,6 @@ const esp_efuse_desc_t* ESP_EFUSE_SEC_DPA_LEVEL[] = {
     NULL
 };
 
-const esp_efuse_desc_t* ESP_EFUSE_ECDSA_FORCE_USE_HARDWARE_K[] = {
-    &ECDSA_FORCE_USE_HARDWARE_K[0],    		// [] Represents whether hardware random number k is forced used in ESDCA. 1: force used. 0: not force used
-    NULL
-};
-
 const esp_efuse_desc_t* ESP_EFUSE_CRYPT_DPA_ENABLE[] = {
     &CRYPT_DPA_ENABLE[0],    		// [] Represents whether anti-dpa attack is enabled. 1:enabled. 0: disabled
     NULL
@@ -1349,6 +1398,11 @@ const esp_efuse_desc_t* ESP_EFUSE_SECURE_BOOT_EN[] = {
 
 const esp_efuse_desc_t* ESP_EFUSE_SECURE_BOOT_AGGRESSIVE_REVOKE[] = {
     &SECURE_BOOT_AGGRESSIVE_REVOKE[0],    		// [] Represents whether revoking aggressive secure boot is enabled or disabled. 1: enabled. 0: disabled
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_POWERGLITCH_EN1[] = {
+    &POWERGLITCH_EN1[0],    		// [] Set these bits to enable power glitch function when chip power on
     NULL
 };
 

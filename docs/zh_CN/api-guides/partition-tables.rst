@@ -69,9 +69,9 @@ CSV 文件的格式与上面摘要中打印的格式相同，但是在 CSV 文�
     ota_1,    app,  ota_1,    ,         1M
     nvs_key,  data, nvs_keys, ,        0x1000
 
-*  字段之间的空格会被忽略，任何以 ``#`` 开头的行（注释）也会被忽略。
-*  CSV 文件中的每个非注释行均为一个分区定义。
-*  每个分区的 ``Offset`` 字段可以为空，``gen_esp32part.py`` 工具会从分区表位置的后面开始自动计算并填充该分区的偏移地址，同时确保每个分区的偏移地址正确对齐。
+* 字段之间的空格会被忽略，任何以 ``#`` 开头的行（注释）也会被忽略。
+* CSV 文件中的每个非注释行均为一个分区定义。
+* 如需调整 :ref:`CONFIG_PARTITION_TABLE_OFFSET` 参数值，请同步更新 CSV 文件中所有固定 ``Offset`` 值，防止与新分区表位置产生冲突。也可将 ``Offset`` 字段留空，此时 ``gen_esp32part.py`` 工具将基于当前分区表偏移量和对齐要求，自动计算出正确的偏移地址。
 
 下面是一个包含引导加载程序和分区表分区的 CSV 分区表示例：
 
@@ -84,6 +84,7 @@ CSV 文件的格式与上面摘要中打印的格式相同，但是在 CSV 文�
     nvs,              data,            nvs,      ,        0x6000,
     phy_init,         data,            phy,      ,        0x1000,
     factory,          app,             factory,  ,        1M,
+    recoveryBloader,  bootloader,      recovery, N/A,     N/A,
 
 ``gen_esp32part.py`` 工具将根据所选的 Kconfig 选项将每个 ``N/A`` 替换为适当的值：引导加载程序的偏移地址为 {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH}，分区表的偏移地址见 :ref:`CONFIG_PARTITION_TABLE_OFFSET`。
 
@@ -122,7 +123,13 @@ SubType 字段长度为 8 bit，内容与具体分区 Type 有关。目前，ESP
 
 参考 :cpp:type:`esp_partition_subtype_t`，以了解 ESP-IDF 定义的全部子类型列表，包括：
 
-* 当 Type 定义为 ``app`` 时，SubType 字段可以指定为 ``factory`` (0x00)、 ``ota_0`` (0x10) … ``ota_15`` (0x1F) 或者 ``test`` (0x20)。
+.. only:: not esp32c6
+
+    * 当 Type 定义为 ``app`` 时，SubType 字段可以指定为 ``factory`` (0x00)、``ota_0`` (0x10) … ``ota_15`` (0x1F) 或 ``test`` (0x20)。
+
+.. only:: esp32c6
+
+    * 当 Type 定义为 ``app`` 时，SubType 字段可以指定为 ``factory`` (0x00)、 ``ota_0`` (0x10) … ``ota_15`` (0x1F) 或 ``test`` (0x20)。此外，如果启用了 :doc:`ESP-TEE <../security/tee/tee>` 功能，则可以使用两个 TEE 特定子类型：``tee_0`` (0x30) 和 ``tee_1`` (0x31)。
 
     -  ``factory`` (0x00) 是默认的 app 分区。引导加载程序将默认加载该应用程序。但如果存在类型为 data/ota 的分区，则引导加载程序将加载 data/ota 分区中的数据，进而判断启动哪个 OTA 镜像文件。
 
@@ -132,12 +139,17 @@ SubType 字段长度为 8 bit，内容与具体分区 Type 有关。目前，ESP
     -  ``ota_0`` (0x10) … ``ota_15`` (0x1F) 为 OTA 应用程序分区，引导加载程序将根据 OTA 数据分区中的数据来决定加载哪个 OTA 应用程序分区中的程序。在使用 OTA 功能时，应用程序应至少拥有 2 个 OTA 应用程序分区（``ota_0`` 和 ``ota_1``）。更多详细信息，请参考 :doc:`OTA 文档 </api-reference/system/ota>`。
     -  ``test`` (0x20) 为预留的子类型，用于工厂测试流程。如果没有其他有效 app 分区，test 将作为备选启动分区使用。也可以配置引导加载程序在每次启动时读取 GPIO，如果 GPIO 被拉低则启动该分区。详细信息请查阅 :ref:`bootloader_boot_from_test_firmware`。
 
+    .. only:: esp32c6
+
+        - ``tee_0`` (0x30) 和 ``tee_1`` (0x31) 是 TEE 应用分区。使用 :doc:`TEE OTA <../security/tee/tee-ota>` 时，分区表应包含 ``tee_0`` 和 ``tee_1``，通过 TEE OTA 数据分区，可以配置引导加载程序应启动的 TEE 应用分区。详情请参阅 :doc:`TEE OTA <../security/tee/tee-ota>`。
+
 * 当 Type 定义为 ``bootloader`` 时，可以将 SubType 字段指定为：
 
     - ``primary`` (0x00)，即二级引导加载程序，位于 flash 的 {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH} 地址处。工具会自动确定此子类型的适当大小和偏移量，因此为此子类型指定的任何大小或偏移量将被忽略。你可以将这些字段留空或使用 ``N/A`` 作为占位符。
     - ``ota`` (0x01)，是一个临时的引导加载程序分区，在 OTA 更新期间可用于下载新的引导加载程序镜像。工具会忽略此子类型的大小，你可以将其留空或使用 ``N/A``。你只能指定一个偏移量，或者将其留空，工具将根据先前使用的分区的偏移量进行计算。
+    - ``recovery`` (0x02)，这是用于安全执行引导加载程序 OTA 更新的恢复引导加载程序分区。``gen_esp32part.py`` 工具会自动确定该分区的地址和大小，因此可以将这些字段留空或使用 ``N/A`` 作为占位符。该分区地址必须与 Kconfig 选项定义的 eFuse 字段相匹配。如果正常的引导加载程序加载路径失败，则一级 (ROM) 引导加载程序会尝试加载 eFuse 字段指定地址的恢复分区。
 
-    引导加载程序的大小由 ``gen_esp32part.py`` 工具根据指定的 ``--offset`` (分区表偏移量) 和 ``--primary-partition-offset`` 参数计算。具体而言，引导加载程序的大小定义为 (:ref:`CONFIG_PARTITION_TABLE_OFFSET` - {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH})。此计算的大小适用于引导加载程序的所有子类型。
+    引导加载程序类型的大小由 ``gen_esp32part.py`` 工具根据指定的 ``--offset`` （分区表偏移量）和 ``--primary-partition-offset`` 参数计算得出。具体来说，引导加载程序的大小定义为 (:ref:`CONFIG_PARTITION_TABLE_OFFSET` - {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH})。此计算得出的大小适用于引导加载程序的所有子类型。
 
 * 当 Type 定义为 ``partition_table`` 时，可以将 SubType 字段指定为：
 
@@ -164,10 +176,15 @@ SubType 字段长度为 8 bit，内容与具体分区 Type 有关。目前，ESP
         -  NVS API 还可以用于其他应用程序数据。
         -  强烈建议为 NVS 分区分配至少 0x3000 字节空间。
         -  如果使用 NVS API 存储大量数据，请增加 NVS 分区的大小（默认是 0x6000 字节）。
+        - 当 NVS 用于存储出厂设置时，建议将这些设置保存在单独的只读 NVS 分区中。只读 NVS 分区最小为 0x1000 字节。有关更多详情，请参阅 :ref:`read-only-nvs` 了解详情。ESP-IDF 提供了 :doc:`NVS 分区生成工具 </api-reference/storage/nvs_partition_gen>`，能够生成包含出厂设置的 NVS 分区，并与应用程序一起烧录。
     - ``nvs_keys`` (4) 是 NVS 秘钥分区。详细信息，请参考 :doc:`非易失性存储 (NVS) API <../api-reference/storage/nvs_flash>` 文档。
 
         -  用于存储加密密钥（如果启用了 `NVS 加密` 功能）。
         -  此分区应至少设定为 4096 字节。
+
+.. only:: esp32c6
+
+    - ``tee-ota`` (0x90) 是 :ref:`TEE OTA 数据分区 <tee-ota-data-partition>`，用于存储所选 TEE OTA 应用分区的信息。此分区大小应为 0x2000 字节。详情请参阅 :doc:`TEE OTA <../security/tee/tee-ota>`。
 
     - ESP-IDF 还支持其他用于数据存储的预定义子类型，包括：
 
@@ -207,7 +224,9 @@ SubType 字段长度为 8 bit，内容与具体分区 Type 有关。目前，ESP
     - ``app`` 分区的大小和偏移地址可以采用十进制数或是以 0x 为前缀的十六进制数，且支持 K 或 M 的倍数单位（K 和 M 分别代表 1024 和 1024*1024 字节）。
     - 对于 ``bootloader`` 和 ``partition_table``，在 CSV 文件中将大小和偏移量指定为 ``N/A`` 意味着这些值将由工具自动确定，无法手动定义。这需要设置 ``gen_esp32part.py`` 工具的 ``--offset`` 和 ``--primary-partition-offset`` 参数。
 
-如果你希望允许分区表中的分区采用任意起始偏移量 (:ref:`CONFIG_PARTITION_TABLE_OFFSET`)，请将分区表（CSV 文件）中所有分区的偏移字段都留空。注意，此时，如果你更改了分区表中任意分区的偏移地址，则其他分区的偏移地址也会跟着改变。这种情况下，如果你之前还曾设定某个分区采用固定偏移地址，则可能造成分区表冲突，从而导致报错。
+.. note::
+
+    如果你希望分区表中各个分区的偏移地址是相对于分区表本身的位置 (由 :ref:`CONFIG_PARTITION_TABLE_OFFSET` 指定)，请将分区表（CSV 文件）中所有分区的偏移字段都留空。这样，在更改分区表的偏移地址时，留空的分区偏移地址会自动做出相应的改变。而如果你在某个分区采用了固定的偏移值，就可能与分区表发生冲突，导致报错。
 
 Flags 字段
 ~~~~~~~~~~
@@ -292,14 +311,14 @@ MD5 校验和
 烧写分区表
 ----------
 
-* ``idf.py partition-table-flash`` ：使用 esptool.py 工具烧写分区表。
+* ``idf.py partition-table-flash`` ：使用 esptool 工具烧写分区表。
 * ``idf.py flash`` ：会烧写所有内容，包括分区表。
 
 在执行 ``idf.py partition-table`` 命令时，手动烧写分区表的命令也将打印在终端上。
 
 .. note::
 
-    分区表的更新并不会擦除根据旧分区表存储的数据。此时，可以使用 ``idf.py erase-flash`` 命令或者 ``esptool.py erase_flash`` 命令来擦除 flash 中的所有内容。
+    分区表的更新并不会擦除根据旧分区表存储的数据。此时，可以使用 ``idf.py erase-flash`` 命令或者 ``esptool erase-flash`` 命令来擦除 flash 中的所有内容。
 
 
 分区工具 (``parttool.py``)
@@ -387,13 +406,13 @@ Python API
 
 .. note::
 
-    如果设备启用了 ``Flash Encryption`` 或 ``Secure Boot``，尝试使用修改 flash 内容的命令（如 ``erase_partition`` 或 ``write_partition``）会导致错误。这是因为 ``esptool.py`` 的擦除命令会在写入之前先被调用。这个“错误”实际上是一个用来防止设备变砖的安全措施。
+    如果设备启用了 ``Flash Encryption`` 或 ``Secure Boot``，尝试使用修改 flash 内容的命令（如 ``erase_partition`` 或 ``write_partition``）会导致错误。这是因为 ``esptool`` 的擦除命令会在写入之前先被调用。这个“错误”实际上是一个用来防止设备变砖的安全措施。
 
     .. code-block:: none
 
         A fatal error occurred: Active security features detected, erasing flash is disabled as a safety measure. Use --force to override, please use with caution, otherwise it may brick your device!
 
-    要解决此问题，需在运行 ``esptool.py`` 时使用 ``--force`` 参数。具体而言，``parttool.py`` 提供了 ``--esptool-erase-args`` 参数，用来将 ``--force`` 参数传递给 ``esptool.py``。
+    要解决此问题，需在运行 ``esptool`` 时使用 ``--force`` 参数。具体而言，``parttool.py`` 提供了 ``--esptool-erase-args`` 参数，用来将 ``--force`` 参数传递给 ``esptool``。
 
     .. code-block:: bash
 

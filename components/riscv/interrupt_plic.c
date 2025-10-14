@@ -59,7 +59,7 @@ bool esprv_int_is_vectored(int rv_int_num)
 }
 
 
-#if CONFIG_SECURE_ENABLE_TEE && !ESP_TEE_BUILD
+#if CONFIG_SECURE_ENABLE_TEE && !NON_OS_BUILD
 DRAM_ATTR esprv_int_mgmt_t esp_tee_intr_sec_srv_cb = NULL;
 
 void esprv_int_setup_mgmt_cb(void *fptr)

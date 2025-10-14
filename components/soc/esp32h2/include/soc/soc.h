@@ -20,7 +20,6 @@
 #define REG_UART_BASE(i)                        (DR_REG_UART_BASE + (i) * 0x1000)
 #define REG_UART_AHB_BASE(i)                    (0x60000000 + (i) * 0x10000)
 #define UART_FIFO_AHB_REG(i)                    (REG_UART_AHB_BASE(i) + 0x0)
-#define REG_I2S_BASE(i)                         (DR_REG_I2S_BASE)                       // only one I2S on H2
 #define REG_TIMG_BASE(i)                        (DR_REG_TIMERGROUP0_BASE + (i)*0x1000)
 #define REG_SPI_MEM_BASE(i)                     (DR_REG_SPI0_BASE + (i) * 0x1000)
 #define REG_SPI_BASE(i)                         (((i)==2) ? (DR_REG_SPI2_BASE) : (0))    // only one GPSPI
@@ -134,13 +133,9 @@
 //}}
 
 //Periheral Clock {{
-#define  APB_CLK_FREQ_ROM                            ( 32*1000000 )
-#define  CPU_CLK_FREQ_ROM                            APB_CLK_FREQ_ROM
-#define  CPU_CLK_FREQ_MHZ_BTLD                       (64)               // The cpu clock frequency (in MHz) to set at 2nd stage bootloader system clock configuration
 #define  APB_CLK_FREQ                                ( 32*1000000 )
 #define  MODEM_REQUIRED_MIN_APB_CLK_FREQ             ( 32*1000000 )
 #define  REF_CLK_FREQ                                ( 1000000 )
-#define  XTAL_CLK_FREQ                               (32*1000000)
 //}}
 
 /* Overall memory map */
@@ -161,7 +156,7 @@
 #define SOC_IRAM_HIGH   0x40850000
 #define SOC_DRAM_LOW    0x40800000
 #define SOC_DRAM_HIGH   0x40850000
-#define SOC_RTC_IRAM_LOW  0x50000000 // ESP32-H2 only has 16k LP memory
+#define SOC_RTC_IRAM_LOW  0x50000000 // ESP32-H2 only has 4k LP memory
 #define SOC_RTC_IRAM_HIGH 0x50001000
 #define SOC_RTC_DRAM_LOW  0x50000000
 #define SOC_RTC_DRAM_HIGH 0x50001000

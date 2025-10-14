@@ -13,12 +13,15 @@ choice ESP32C6_REV_MIN
         bool "Rev v0.0"
     config ESP32C6_REV_MIN_1
         bool "Rev v0.1 (ECO1)"
+    config ESP32C6_REV_MIN_2
+        bool "Rev v0.2"
 endchoice
 
 config ESP32C6_REV_MIN_FULL
     int
     default 0 if ESP32C6_REV_MIN_0
     default 1 if ESP32C6_REV_MIN_1
+    default 2 if ESP32C6_REV_MIN_2
 
 config ESP_REV_MIN_FULL
     int

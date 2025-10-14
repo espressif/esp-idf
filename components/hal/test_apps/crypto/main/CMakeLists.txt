@@ -30,14 +30,13 @@ endif()
 if(CONFIG_SOC_AES_SUPPORTED)
    list(APPEND srcs "aes/test_aes.c"
                      "$ENV{IDF_PATH}/components/mbedtls/port/aes/esp_aes_common.c"
-                     "aes/aes_block.c")
+                     "$ENV{IDF_PATH}/components/mbedtls/port/aes/esp_aes.c")
+
    list(APPEND priv_include_dirs "$ENV{IDF_PATH}/components/mbedtls/port/include"
                                  "$ENV{IDF_PATH}/components/mbedtls/port/aes/include")
 
    if(CONFIG_SOC_AES_SUPPORT_DMA)
       list(APPEND priv_include_dirs "$ENV{IDF_PATH}/components/mbedtls/port/aes/dma/include")
-      list(APPEND srcs "$ENV{IDF_PATH}/components/mbedtls/port/aes/dma/esp_aes.c")
-
       if(NOT CONFIG_SOC_AES_GDMA)
          list(APPEND srcs "$ENV{IDF_PATH}/components/mbedtls/port/aes/dma/esp_aes_crypto_dma_impl.c")
       else()
@@ -60,13 +59,13 @@ if(CONFIG_SOC_SHA_SUPPORTED)
 
       if(CONFIG_SOC_SHA_SUPPORT_DMA)
          list(APPEND srcs "sha/sha_dma.c"
-                           "$ENV{IDF_PATH}/components/mbedtls/port/sha/dma/sha.c")
-         list(APPEND priv_include_dirs "$ENV{IDF_PATH}/components/mbedtls/port/sha/dma/include")
+                           "$ENV{IDF_PATH}/components/mbedtls/port/sha/core/sha.c")
+         list(APPEND priv_include_dirs "$ENV{IDF_PATH}/components/mbedtls/port/sha/core/include")
 
          if(NOT CONFIG_SOC_SHA_GDMA)
-            list(APPEND srcs "$ENV{IDF_PATH}/components/mbedtls/port/sha/dma/esp_sha_crypto_dma_impl.c")
+            list(APPEND srcs "$ENV{IDF_PATH}/components/mbedtls/port/sha/core/esp_sha_crypto_dma_impl.c")
          else()
-            list(APPEND srcs "$ENV{IDF_PATH}/components/mbedtls/port/sha/dma/esp_sha_gdma_impl.c"
+            list(APPEND srcs "$ENV{IDF_PATH}/components/mbedtls/port/sha/core/esp_sha_gdma_impl.c"
                               "$ENV{IDF_PATH}/components/mbedtls/port/crypto_shared_gdma/esp_crypto_shared_gdma.c")
          endif()
       endif()

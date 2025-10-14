@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,7 +7,6 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include "sdkconfig.h"
 #include "soc/soc_caps.h"
 #include "soc/clk_tree_defs.h"
 #include "esp_attr.h"
@@ -38,6 +37,7 @@ typedef enum {
     ADC_CHANNEL_7,     ///< ADC channel
     ADC_CHANNEL_8,     ///< ADC channel
     ADC_CHANNEL_9,     ///< ADC channel
+    ADC_CHANNEL_10,    ///< ADC channel
 } adc_channel_t;
 
 /**
@@ -48,9 +48,11 @@ typedef enum {
     ADC_ATTEN_DB_2_5 = 1,  ///<The input voltage of ADC will be attenuated extending the range of measurement by about 2.5 dB
     ADC_ATTEN_DB_6   = 2,  ///<The input voltage of ADC will be attenuated extending the range of measurement by about 6 dB
     ADC_ATTEN_DB_12  = 3,  ///<The input voltage of ADC will be attenuated extending the range of measurement by about 12 dB
-    ADC_ATTEN_DB_11 __attribute__((deprecated)) = ADC_ATTEN_DB_12,  ///<This is deprecated, it behaves the same as `ADC_ATTEN_DB_12`
 } adc_atten_t;
 
+/**
+ * @brief ADC bitwidth
+ */
 typedef enum {
     ADC_BITWIDTH_DEFAULT = 0, ///< Default ADC output bits, max supported width will be selected
     ADC_BITWIDTH_9  = 9,      ///< ADC output width is 9Bit
@@ -60,6 +62,12 @@ typedef enum {
     ADC_BITWIDTH_13 = 13,     ///< ADC output width is 13Bit
 } adc_bitwidth_t;
 
+/**
+ * @brief ADC ULP working mode
+ *
+ * This decides the controller that controls ADC when in low power mode.
+ * Set `ADC_ULP_MODE_DISABLE` for normal mode.
+ */
 typedef enum {
     ADC_ULP_MODE_DISABLE = 0, ///< ADC ULP mode is disabled
     ADC_ULP_MODE_FSM     = 1, ///< ADC is controlled by ULP FSM
@@ -124,6 +132,7 @@ typedef enum {
     ADC_DIGI_IIR_FILTER_COEFF_4,     ///< The filter coefficient is 4
     ADC_DIGI_IIR_FILTER_COEFF_8,     ///< The filter coefficient is 8
     ADC_DIGI_IIR_FILTER_COEFF_16,    ///< The filter coefficient is 16
+    ADC_DIGI_IIR_FILTER_COEFF_32,    ///< The filter coefficient is 32
     ADC_DIGI_IIR_FILTER_COEFF_64,    ///< The filter coefficient is 64
 } adc_digi_iir_filter_coeff_t;
 
@@ -149,7 +158,7 @@ typedef enum {
 /*---------------------------------------------------------------
                     Output Format
 ---------------------------------------------------------------*/
-#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2
+#if SOC_IS(ESP32) || SOC_IS(ESP32S2)
 /**
  * @brief ADC digital controller (DMA mode) output data format.
  *        Used to analyze the acquired ADC (DMA) data.
@@ -174,7 +183,7 @@ typedef struct {
     };
 } adc_digi_output_data_t;
 
-#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C2
+#elif SOC_IS(ESP32C3) || SOC_IS(ESP32C2)
 /**
  * @brief ADC digital controller (DMA mode) output data format.
  *        Used to analyze the acquired ADC (DMA) data.
@@ -194,7 +203,7 @@ typedef struct {
     };
 } adc_digi_output_data_t;
 
-#elif CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32P4
+#elif SOC_IS(ESP32S3) || SOC_IS(ESP32P4)
 /**
  * @brief ADC digital controller (DMA mode) output data format.
  *        Used to analyze the acquired ADC (DMA) data.
@@ -214,7 +223,7 @@ typedef struct {
     };
 } adc_digi_output_data_t;
 
-#elif CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32C5 || CONFIG_IDF_TARGET_ESP32C61
+#elif SOC_IS(ESP32C6) || SOC_IS(ESP32H2) || SOC_IS(ESP32C5) || SOC_IS(ESP32C61)
 /**
  * @brief ADC digital controller (DMA mode) output data format.
  *        Used to analyze the acquired ADC (DMA) data.
@@ -232,25 +241,6 @@ typedef struct {
         uint32_t val;                   /*!<Raw data value */
     };
 } adc_digi_output_data_t;
-
-#endif
-
-
-#if CONFIG_IDF_TARGET_ESP32S2
-/**
- * @brief ADC digital controller (DMA mode) clock system setting.
- *        Calculation formula: controller_clk = (`APLL` or `APB`) / (div_num + div_a / div_b + 1).
- *
- * @note: The clocks of the DAC digital controller use the ADC digital controller clock divider.
- */
-typedef struct {
-    bool use_apll;      /*!<true: use APLL clock; false: use APB clock. */
-    uint32_t div_num;   /*!<Division factor. Range: 0 ~ 255.
-                            Note: When a higher frequency clock is used (the division factor is less than 9),
-                            the ADC reading value will be slightly offset. */
-    uint32_t div_b;     /*!<Division factor. Range: 1 ~ 63. */
-    uint32_t div_a;     /*!<Division factor. Range: 0 ~ 63. */
-} adc_digi_clk_t;
 #endif
 
 #ifdef __cplusplus

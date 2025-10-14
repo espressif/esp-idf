@@ -1,15 +1,83 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #pragma once
 #include <stddef.h>
 #include <stdbool.h>
+#include "sdkconfig.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/* tlsf_t: a TLSF structure. Can contain 1 to N pools. */
+/* pool_t: a block of memory that TLSF can manage. */
+typedef void* tlsf_t;
+typedef void* pool_t;
+
+/* Create/destroy a memory pool. */
+#if CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2
+tlsf_t tlsf_create(void* mem);
+tlsf_t tlsf_create_with_pool(void* mem, size_t bytes);
+size_t tlsf_size(void);
+#else
+tlsf_t tlsf_create(void* mem, size_t max_bytes);
+tlsf_t tlsf_create_with_pool(void* mem, size_t pool_bytes, size_t max_bytes);
+size_t tlsf_size(tlsf_t tlsf);
+#endif
+
+void tlsf_destroy(tlsf_t tlsf);
+pool_t tlsf_get_pool(tlsf_t tlsf);
+
+/* Add/remove memory pools. */
+pool_t tlsf_add_pool(tlsf_t tlsf, void* mem, size_t bytes);
+void tlsf_remove_pool(tlsf_t tlsf, pool_t pool);
+
+/* malloc/memalign/realloc/free replacements. */
+void* tlsf_malloc(tlsf_t tlsf, size_t size);
+void* tlsf_memalign(tlsf_t tlsf, size_t align, size_t size);
+void* tlsf_memalign_offs(tlsf_t tlsf, size_t align, size_t size, size_t offset);
+void* tlsf_realloc(tlsf_t tlsf, void* ptr, size_t size);
+void tlsf_free(tlsf_t tlsf, void* ptr);
+
+/* Returns internal block size, not original request size */
+size_t tlsf_block_size(void* ptr);
+
+/* Overheads/limits of internal structures. */
+size_t tlsf_pool_overhead(void);
+size_t tlsf_alloc_overhead(void);
+
+#if ESP_TEE_BUILD
+/* NOTE: These declarations are only needed for the TEE build, since these
+ * functions are (static inline) defined in tlsf_control_functions.h for
+ * IDF builds.
+ */
+size_t tlsf_align_size(void);
+size_t tlsf_block_size_min(void);
+#if CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2
+size_t tlsf_block_size_max(void);
+#else
+size_t tlsf_block_size_max(tlsf_t tlsf);
+#endif
+size_t tlsf_fit_size(tlsf_t tlsf, size_t size);
+
+/* NOTE: The consumer of this callback function (tlsf_walk_pool) is patched
+ * in IDF builds to address issues in the ROM implementation. For TEE build,
+ * the ROM declarations can be used directly, as heap integrity checking is not
+ * supported.
+ */
+typedef void (*tlsf_walker)(void* ptr, size_t size, int used, void* user);
+#else
+typedef bool (*tlsf_walker)(void* ptr, size_t size, int used, void* user);
+#endif
+
+/* Debugging. */
+void tlsf_walk_pool(pool_t pool, tlsf_walker walker, void* user);
+/* Returns nonzero if any internal consistency check fails. */
+int tlsf_check(tlsf_t tlsf);
+int tlsf_check_pool(pool_t pool);
 
 /*!
  * Defines the function prototypes for multi_heap_internal_poison_fill_region

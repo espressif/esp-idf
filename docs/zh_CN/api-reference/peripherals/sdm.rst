@@ -102,13 +102,13 @@ Kconfig 选项 :ref:`CONFIG_SDM_CTRL_FUNC_IN_IRAM` 支持将常用的 IO 控制�
 线程安全
 ^^^^^^^^
 
-驱动程序会确保工厂函数 :cpp:func:`sdm_new_channel` 的线程安全，使用时，可以直接从不同的 RTOS 任务中调用此类函数，无需额外锁保护。
+驱动使用了临界区保证了对寄存器的原子操作。句柄内部的关键成员也受临界区保护。驱动内部的状态机使用了原子指令保证了线程安全，通过状态检查还能进一步防止一些不合法的并发操作（例如 `enable` 和 `delete` 冲突）。因此， SDM 驱动的 API 可以在多线程环境下使用，无需自行加锁。
 
-驱动程序设置了临界区，以防函数同时在任务和 ISR 中调用。因此，以下函数支持在 ISR 上下文运行：
+同时，以下这些函数还允许在中断上下文中使用：
 
-- :cpp:func:`sdm_channel_set_pulse_density`
+.. list::
 
-其他以 :cpp:type:`sdm_channel_handle_t` 作为第一个位置参数的函数均非线程安全，因此应避免从多个任务中调用这类函数。
+    - :cpp:func:`sdm_channel_set_pulse_density`
 
 .. _sdm-kconfig-options:
 

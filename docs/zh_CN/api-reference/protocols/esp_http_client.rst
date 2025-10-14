@@ -32,18 +32,33 @@ HTTP 基本请求
 
 为了使 ESP HTTP 客户端充分利用持久连接的优势，建议尽可能多地使用同一个句柄实例来发起请求，可参考应用示例中的函数 ``http_rest_with_url`` 和 ``http_rest_with_hostname_path``。示例中，一旦创建连接，即会在连接关闭前发出多个请求（如 ``GET``、 ``POST``、 ``PUT`` 等）。
 
-.. only:: esp32
+为 TLS 使用安全元件 (ATECC608)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    为 TLS 使用安全元件 (ATECC608)
-    __________________________________
+安全元件 (ATECC608) 也可用于 HTTP 客户端连接中的底层 TLS 连接。详细内容请参考 :doc:`ESP-TLS 文档 </api-reference/protocols/esp_tls>` 中的 **ESP-TLS 中的 ATECC608A（安全元件）支持** 小节。如需支持安全元素，必须首先在 menuconfig 中通过 :ref:`CONFIG_ESP_TLS_USE_SECURE_ELEMENT` 对其进行启用，此后，可配置 HTTP 客户端使用安全元素，如下所示：
 
-    安全元件 (ATECC608) 也可用于 HTTP 客户端连接中的底层 TLS 连接。请参考 :doc:`ESP-TLS 文档 </api-reference/protocols/esp_tls>` 中的 *ESP-TLS 中的 ATECC608A（安全元件）支持* 小节，了解更多细节。如需支持安全元素，必须首先在 menuconfig 中通过 :ref:`CONFIG_ESP_TLS_USE_SECURE_ELEMENT` 对其进行启用，此后，可配置 HTTP 客户端使用安全元素，如下所示：
+.. code-block:: c
+
+    esp_http_client_config_t cfg = {
+        /* other configurations options */
+        .use_secure_element = true,
+    };
+
+.. only:: SOC_ECDSA_SUPPORTED
+
+    为 TLS 使用 ECDSA 外设
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    ECDSA 外设可用于 HTTP 客户端连接中的底层 TLS 连接。详细内容请参考 :doc:`ESP-TLS 文档 </api-reference/protocols/esp_tls>` 中的 **在 ESP-TLS 中使用 ECDSA 外设** 小节。可以按如下方式配置 HTTP 客户端以使用 ECDSA 外设：
 
     .. code-block:: c
 
         esp_http_client_config_t cfg = {
             /* other configurations options */
-            .use_secure_element = true,
+            .use_ecdsa_peripheral = true,
+            .ecdsa_key_efuse_blk = 4,    // ECDSA 密钥的低 eFuse 块
+            .ecdsa_key_efuse_blk_high = 5,   // ECDSA 密钥的高 eFuse 块（仅 SECP384R1）
+            .ecdsa_curve = ESP_TLS_ECDSA_CURVE_SECP384R1, // 设置为 ESP_TLS_ECDSA_CURVE_SECP256R1 以使用 SECP256R1 曲线
         };
 
 
@@ -128,14 +143,16 @@ ESP HTTP 客户端诊断信息
 
 事件循环中不同 HTTP 客户端事件的预期数据类型如下所示：
 
-    - HTTP_EVENT_ERROR            :   ``esp_http_client_handle_t``
-    - HTTP_EVENT_ON_CONNECTED     :   ``esp_http_client_handle_t``
-    - HTTP_EVENT_HEADERS_SENT     :   ``esp_http_client_handle_t``
-    - HTTP_EVENT_ON_HEADER        :   ``esp_http_client_handle_t``
-    - HTTP_EVENT_ON_DATA          :   ``esp_http_client_on_data_t``
-    - HTTP_EVENT_ON_FINISH        :   ``esp_http_client_handle_t``
-    - HTTP_EVENT_DISCONNECTED     :   ``esp_http_client_handle_t``
-    - HTTP_EVENT_REDIRECT         :   ``esp_http_client_redirect_event_data_t``
+    - HTTP_EVENT_ERROR              :   ``esp_http_client_handle_t``
+    - HTTP_EVENT_ON_CONNECTED       :   ``esp_http_client_handle_t``
+    - HTTP_EVENT_HEADERS_SENT       :   ``esp_http_client_handle_t``
+    - HTTP_EVENT_ON_HEADER          :   ``esp_http_client_handle_t``
+    - HTTP_EVENT_ON_HEADERS_COMPLETE:   ``esp_http_client_handle_t``
+    - HTTP_EVENT_ON_STATUS_CODE     :   ``esp_http_client_handle_t``
+    - HTTP_EVENT_ON_DATA            :   ``esp_http_client_on_data_t``
+    - HTTP_EVENT_ON_FINISH          :   ``esp_http_client_handle_t``
+    - HTTP_EVENT_DISCONNECTED       :   ``esp_http_client_handle_t``
+    - HTTP_EVENT_REDIRECT           :   ``esp_http_client_redirect_event_data_t``
 
 在无法接收到 :cpp:enumerator:`HTTP_EVENT_DISCONNECTED <esp_http_client_event_id_t::HTTP_EVENT_DISCONNECTED>` 之前，与事件数据一起接收到的 :cpp:type:`esp_http_client_handle_t` 将始终有效。这个句柄主要是为了区分不同的客户端连接，无法用于其他目的，因为它可能会随着客户端连接状态的变化而改变。
 

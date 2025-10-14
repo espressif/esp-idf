@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -188,5 +188,10 @@ int  wpa_sm_get_beacon_ie(struct wpa_sm *sm)
 void  wpa_sm_disassociate(struct wpa_sm *sm, int reason_code)
 {
     /*check if need clear internal state and data value*/
+}
+
+u8 wpa_supplicant_get_transition_disable(void)
+{
+    return wpa_sm_get_transition_disable(&gWpaSm);
 }
 #endif

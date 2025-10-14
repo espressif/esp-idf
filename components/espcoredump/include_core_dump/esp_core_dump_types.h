@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -66,14 +66,9 @@ extern "C" {
                                                 (((_maj_)&0xFF) << 8) | \
                                                 (((_min_)&0xFF) << 0) \
                                             )
-#define COREDUMP_VERSION_BIN                0
 #define COREDUMP_VERSION_ELF                1
 
-/* legacy bin coredumps (before IDF v4.1) has version set to 1 */
-#define COREDUMP_VERSION_BIN_LEGACY         COREDUMP_VERSION_MAKE(COREDUMP_VERSION_BIN, 1) // -> 0x0001
-#define COREDUMP_VERSION_BIN_CURRENT        COREDUMP_VERSION_MAKE(COREDUMP_VERSION_BIN, 3) // -> 0x0003
-#define COREDUMP_VERSION_ELF_CRC32          COREDUMP_VERSION_MAKE(COREDUMP_VERSION_ELF, 2) // -> 0x0102
-#define COREDUMP_VERSION_ELF_SHA256         COREDUMP_VERSION_MAKE(COREDUMP_VERSION_ELF, 3) // -> 0x0103
+#define COREDUMP_VERSION_ELF_SHA256         COREDUMP_VERSION_MAKE(COREDUMP_VERSION_ELF, 4) // -> 0x0104
 #define COREDUMP_CURR_TASK_MARKER           0xDEADBEEF
 #define COREDUMP_CURR_TASK_NOT_FOUND        -1
 
@@ -93,17 +88,6 @@ extern "C" {
 
 typedef uint32_t core_dump_crc_t;
 
-#if CONFIG_ESP_COREDUMP_CHECKSUM_CRC32
-
-typedef struct {
-    core_dump_crc_t crc;
-    uint32_t total_bytes_checksum;  /* Number of bytes used to calculate the checksum */
-} core_dump_crc_ctx_t;
-
-typedef core_dump_crc_ctx_t checksum_ctx_t;
-
-#else
-
 #if CONFIG_IDF_TARGET_ESP32
 #include "mbedtls/sha256.h" /* mbedtls_sha256_context */
 typedef mbedtls_sha256_context sha256_ctx_t;
@@ -122,8 +106,6 @@ typedef struct {
 
 typedef core_dump_sha_ctx_t checksum_ctx_t;
 
-#endif
-
 /**
  * @brief Chip ID associated to this implementation.
  */
@@ -138,13 +120,10 @@ typedef struct _core_dump_write_data_t {
 
 /**
  * @brief Core dump data header
- * This header predecesses the actual core dump data (ELF or binary). */
+ * This header predecesses the actual core dump data (ELF). */
 typedef struct _core_dump_header_t {
     uint32_t data_len;  /*!< Data length */
     uint32_t version;   /*!< Core dump version */
-    uint32_t tasks_num; /*!< Number of tasks */
-    uint32_t tcb_sz;    /*!< Size of a TCB, in bytes */
-    uint32_t mem_segs_num; /*!< Number of memory segments */
     uint32_t chip_rev; /*!< Chip revision */
 } core_dump_header_t;
 

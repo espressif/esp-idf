@@ -1,12 +1,11 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <sys/param.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include "sdkconfig.h"
 #include "esp_err.h"
 #include "esp_attr.h"
 #include "hal/assert.h"
@@ -14,14 +13,27 @@
 #include "hal/mmu_ll.h"
 #include "soc/soc_caps.h"
 #include "rom/cache.h"
+#include "esp_rom_caps.h"
 
-void mmu_hal_init(void)
+typedef struct {
+    uint8_t core_nums;
+} mmu_hal_context_t;
+
+static mmu_hal_context_t s_ctx;
+
+void mmu_hal_ctx_init(const mmu_hal_config_t *config)
 {
-#if CONFIG_ESP_ROM_RAM_APP_NEEDS_MMU_INIT
+    s_ctx.core_nums = config->core_nums;
+}
+
+void mmu_hal_init(const mmu_hal_config_t *config)
+{
+    mmu_hal_ctx_init(config);
+
+#if ESP_ROM_RAM_APP_NEEDS_MMU_INIT
     ROM_Boot_Cache_Init();
 #endif
-
-    mmu_ll_set_page_size(0, CONFIG_MMU_PAGE_SIZE);
+    mmu_ll_set_page_size(0, config->mmu_page_size);
     mmu_hal_unmap_all();
 }
 
@@ -31,10 +43,9 @@ void mmu_hal_unmap_all(void)
     mmu_ll_unmap_all(MMU_LL_FLASH_MMU_ID);
     mmu_ll_unmap_all(MMU_LL_PSRAM_MMU_ID);
 #else
-    mmu_ll_unmap_all(0);
-#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
-    mmu_ll_unmap_all(1);
-#endif
+    for (int i = 0; i < s_ctx.core_nums; i++) {
+        mmu_ll_unmap_all(i);
+    }
 #endif
 }
 
@@ -161,3 +172,15 @@ bool mmu_hal_check_valid_ext_vaddr_region(uint32_t mmu_id, uint32_t vaddr_start,
 {
     return mmu_ll_check_valid_ext_vaddr_region(mmu_id, vaddr_start, len, type);
 }
+
+#if SOC_MMU_PER_EXT_MEM_TARGET
+uint32_t mmu_hal_get_id_from_target(mmu_target_t target)
+{
+    return (target == MMU_TARGET_FLASH0) ? MMU_LL_FLASH_MMU_ID : MMU_LL_PSRAM_MMU_ID;
+}
+
+uint32_t mmu_hal_get_id_from_vaddr(uint32_t vaddr)
+{
+    return mmu_ll_vaddr_to_id(vaddr);
+}
+#endif

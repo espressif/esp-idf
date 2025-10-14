@@ -1,7 +1,10 @@
-# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
+import base64
+import io
 import ipaddress
 import logging
+import os
 import re
 import socket
 import subprocess
@@ -9,6 +12,7 @@ import time
 from concurrent.futures import Future
 from concurrent.futures import ThreadPoolExecutor
 from typing import List
+from typing import Optional
 from typing import Union
 
 import netifaces
@@ -17,8 +21,12 @@ import pytest
 from common_test_methods import get_host_ip_by_interface
 from netmiko import ConnectHandler
 from pytest_embedded import Dut
+from pytest_embedded_idf.utils import idf_parametrize
 
 # Testbed configuration
+
+ETHVM_ENDNODE_USER = 'ci.ethvm'
+
 BR_PORTS_NUM = 2
 IPERF_BW_LIM = 6
 MIN_UDP_THROUGHPUT = 5
@@ -26,13 +34,17 @@ MIN_TCP_THROUGHPUT = 4
 
 
 class EndnodeSsh:
-    def __init__(self, host_ip: str, usr: str, passwd: str):
+    def __init__(self, host_ip: str, usr: str, passwd: Optional[str] = None):
+        key_string = os.getenv('CI_ETHVM_KEY')
+        key = None
+        if key_string:
+            decoded_key_string = base64.b64decode(key_string)
+            key = paramiko.Ed25519Key.from_private_key(io.StringIO(decoded_key_string.decode('utf-8')))
+
         self.host_ip = host_ip
         self.ssh_client = paramiko.SSHClient()
         self.ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        self.ssh_client.connect(hostname=self.host_ip,
-                                username=usr,
-                                password=passwd)
+        self.ssh_client.connect(hostname=self.host_ip, username=usr, pkey=key, password=passwd)
         self.executor: ThreadPoolExecutor
         self.async_result: Future
 
@@ -69,9 +81,7 @@ class SwitchSsh:
         if self.type == self.EDGE_SWITCH_5XP:
             self.ssh_client = paramiko.SSHClient()
             self.ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-            self.ssh_client.connect(hostname=self.host_ip,
-                                    username=usr,
-                                    password=passwd)
+            self.ssh_client.connect(hostname=self.host_ip, username=usr, password=passwd)
         else:
             edgeSwitch = {
                 'device_type': 'ubiquiti_edgeswitch',
@@ -119,7 +129,10 @@ class SwitchSsh:
 
 def get_endnode_mac_by_interface(endnode: EndnodeSsh, if_name: str) -> str:
     ip_info = endnode.exec_cmd(f'ip addr show {if_name}')
-    regex = if_name + r':.*?link/ether ([0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2})'
+    regex = (
+        if_name
+        + r':.*?link/ether ([0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2})'
+    )
     mac_addr = re.search(regex, ip_info, re.DOTALL)
     if mac_addr is None:
         return ''
@@ -160,7 +173,15 @@ def get_host_brcast_ip_by_interface(interface_name: str, ip_type: int = netiface
     return ''
 
 
-def run_iperf(proto: str, endnode: EndnodeSsh, server_ip: str, bandwidth_lim:int=10, interval:int=5, server_if:str='', client_if:str='') -> float:
+def run_iperf(
+    proto: str,
+    endnode: EndnodeSsh,
+    server_ip: str,
+    bandwidth_lim: int = 10,
+    interval: int = 5,
+    server_if: str = '',
+    client_if: str = '',
+) -> float:
     if proto == 'tcp':
         proto = ''
     else:
@@ -168,19 +189,29 @@ def run_iperf(proto: str, endnode: EndnodeSsh, server_ip: str, bandwidth_lim:int
 
     if ipaddress.ip_address(server_ip).is_multicast:
         # Configure Multicast Server
-        server_proc = subprocess.Popen(['iperf', '-u', '-s', '-i', '1', '-t', '%i' % interval, '-B', '%s%%%s'
-                                        % (server_ip, server_if)], text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        server_proc = subprocess.Popen(
+            ['iperf', '-u', '-s', '-i', '1', '-t', '%i' % interval, '-B', '%s%%%s' % (server_ip, server_if)],
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
         # Configure Multicast Client
         endnode_ip = get_endnode_ip_by_interface(endnode, client_if)
         if endnode_ip == '':
             raise RuntimeError('End node IP address not found')
-        client_res = endnode.exec_cmd('iperf -u -c %s -t %i -i 1 -b %iM --ttl 5 -B %s' % (server_ip, interval, bandwidth_lim, endnode_ip))
+        client_res = endnode.exec_cmd(
+            'iperf -u -c %s -t %i -i 1 -b %iM --ttl 5 -B %s' % (server_ip, interval, bandwidth_lim, endnode_ip)
+        )
         if server_proc.wait(10) is None:  # Process did not finish.
             server_proc.terminate()
     else:
         # Configure Server
-        server_proc = subprocess.Popen(['iperf', '%s' % proto, '-s', '-i', '1', '-t', '%i' % interval], text=True,
-                                       stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        server_proc = subprocess.Popen(
+            ['iperf', '%s' % proto, '-s', '-i', '1', '-t', '%i' % interval],
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
         # Configure Client
         client_res = endnode.exec_cmd('iperf %s -c %s -t %i -i 1 -b %iM' % (proto, server_ip, interval, bandwidth_lim))
         if server_proc.wait(10) is None:  # Process did not finish.
@@ -239,16 +270,16 @@ def send_brcast_msg_endnode_to_host(endnode: EndnodeSsh, host_brcast_ip: str, te
     return nc_host_out
 
 
-@pytest.mark.esp32
 @pytest.mark.eth_w5500
-@pytest.mark.parametrize('config', [
-    'w5500',
-], indirect=True)
-def test_esp_eth_bridge(
-    dut: Dut,
-    dev_user: str,
-    dev_password: str
-) -> None:
+@pytest.mark.parametrize(
+    'config',
+    [
+        'w5500',
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', ['esp32'], indirect=['target'])
+def test_esp_eth_bridge(dut: Dut, dev_user: str, dev_password: str) -> None:
     # ------------------------------ #
     # Pre-test testbed configuration #
     # ------------------------------ #
@@ -263,18 +294,17 @@ def test_esp_eth_bridge(
     port_num = int(sw_info.group(2))
     port_num_endnode = int(port_num) + 1  # endnode address is always + 1 to the host
 
-    endnode = EndnodeSsh(f'10.10.{sw_num}.{port_num_endnode}',
-                         dev_user,
-                         dev_password)
-    switch1 = SwitchSsh(f'10.10.{sw_num}.100',
-                        dev_user,
-                        dev_password,
-                        SwitchSsh.EDGE_SWITCH_10XP)
+    endnode = EndnodeSsh(f'10.10.{sw_num}.{port_num_endnode}', ETHVM_ENDNODE_USER)
+    switch1 = SwitchSsh(f'10.10.{sw_num}.100', dev_user, dev_password, SwitchSsh.EDGE_SWITCH_10XP)
 
     # Collect all addresses in our network
     # ------------------------------------
     # Bridge (DUT) MAC
-    br_mac = dut.expect(r'esp_netif_br_glue: ([0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2})')
+    br_mac = dut.expect(
+        r'esp_netif_br_glue: '
+        r'([0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:'
+        r'[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2})'
+    )
     br_mac = br_mac.group(1).decode('utf-8')
     logging.info('ESP Bridge MAC %s', br_mac)
     # Get unique identification of each Ethernet port
@@ -350,7 +380,9 @@ def test_esp_eth_bridge(
 
     logging.info('link up the port #2')
     switch1.switch_port_up(port_num_endnode)
-    dut.expect_exact(f'Ethernet ({p2_id}) Link Up')  # Note: No "Ethernet Got IP Address" since DHCP Server is connected to port #1
+    dut.expect_exact(
+        f'Ethernet ({p2_id}) Link Up'
+    )  # Note: No "Ethernet Got IP Address" since DHCP Server is connected to port #1
 
     logging.info('link down both ports')
     switch1.switch_port_down(port_num_endnode)
@@ -369,30 +401,46 @@ def test_esp_eth_bridge(
     # unicast UDP
     bandwidth_udp = run_iperf('udp', endnode, host_ip, IPERF_BW_LIM, 5)
     if bandwidth_udp < MIN_UDP_THROUGHPUT:
-        logging.warning('Unicast UDP bandwidth was less than expected. Trying again over longer period to compensate transient drops.')
+        logging.warning(
+            'Unicast UDP bandwidth was less than expected. '
+            'Trying again over longer period to compensate transient drops.'
+        )
         bandwidth_udp = run_iperf('udp', endnode, host_ip, IPERF_BW_LIM, 60)
     logging.info('Unicast UDP average bandwidth: %s Mbits/s', bandwidth_udp)
 
     # unicast TCP
     bandwidth_tcp = run_iperf('tcp', endnode, host_ip, IPERF_BW_LIM, 5)
     if bandwidth_tcp < MIN_TCP_THROUGHPUT:
-        logging.warning('Unicast TCP bandwidth was less than expected. Trying again over longer period to compensate transient drops.')
+        logging.warning(
+            'Unicast TCP bandwidth was less than expected. '
+            'Trying again over longer period to compensate transient drops.'
+        )
         bandwidth_tcp = run_iperf('tcp', endnode, host_ip, IPERF_BW_LIM, 60)
     logging.info('Unicast TCP average bandwidth: %s Mbits/s', bandwidth_tcp)
 
     # multicast UDP
     bandwidth_mcast_udp = run_iperf('udp', endnode, '224.0.1.4', IPERF_BW_LIM, 5, host_if, endnode_if)
     if bandwidth_mcast_udp < MIN_UDP_THROUGHPUT:
-        logging.warning('Multicast UDP bandwidth was less than expected. Trying again over longer period to compensate transient drops.')
+        logging.warning(
+            'Multicast UDP bandwidth was less than expected. '
+            'Trying again over longer period to compensate transient drops.'
+        )
         bandwidth_mcast_udp = run_iperf('udp', endnode, '224.0.1.4', IPERF_BW_LIM, 60, host_if, endnode_if)
     logging.info('Multicast UDP average bandwidth: %s Mbits/s', bandwidth_mcast_udp)
 
     if bandwidth_udp < MIN_UDP_THROUGHPUT:
-        raise RuntimeError('Unicast UDP throughput expected %.2f, actual %.2f' % (MIN_UDP_THROUGHPUT, bandwidth_udp) + ' Mbits/s')
+        raise RuntimeError(
+            'Unicast UDP throughput expected %.2f, actual %.2f' % (MIN_UDP_THROUGHPUT, bandwidth_udp) + ' Mbits/s'
+        )
     if bandwidth_tcp < MIN_TCP_THROUGHPUT:
-        raise RuntimeError('Unicast TCP throughput expected %.2f, actual %.2f' % (MIN_TCP_THROUGHPUT, bandwidth_tcp) + ' Mbits/s')
+        raise RuntimeError(
+            'Unicast TCP throughput expected %.2f, actual %.2f' % (MIN_TCP_THROUGHPUT, bandwidth_tcp) + ' Mbits/s'
+        )
     if bandwidth_mcast_udp < MIN_UDP_THROUGHPUT:
-        raise RuntimeError('Multicast UDP throughput expected %.2f, actual %.2f' % (MIN_UDP_THROUGHPUT, bandwidth_mcast_udp) + ' Mbits/s')
+        raise RuntimeError(
+            'Multicast UDP throughput expected %.2f, actual %.2f' % (MIN_UDP_THROUGHPUT, bandwidth_mcast_udp)
+            + ' Mbits/s'
+        )
 
     # ------------------------------------------------
     # TEST Objective 4: adding/deleting entries in FDB

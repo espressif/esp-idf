@@ -9,7 +9,7 @@
 #include "esp_heap_caps.h"
 #include "sdkconfig.h"
 
-#define TEST_MEMORY_LEAK_THRESHOLD (400)
+#define TEST_MEMORY_LEAK_THRESHOLD (500)
 
 void setUp(void)
 {

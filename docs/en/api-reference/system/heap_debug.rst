@@ -32,8 +32,8 @@ Heap Allocation and Free Function Hooks
 
 Users can use allocation and free detection hooks to be notified of every successful allocation and free operation:
 
-- Providing a definition of :cpp:func:`esp_heap_trace_alloc_hook` allows you to be notified of every successful memory allocation operation
-- Providing a definition of :cpp:func:`esp_heap_trace_free_hook` allows you to be notified of every successful memory-free operations
+- Providing a definition of :cpp:func:`esp_heap_trace_alloc_hook` allows you to be notified of every successful memory allocation operation.
+- Providing a definition of :cpp:func:`esp_heap_trace_free_hook` allows you to be notified of every successful memory-free operations.
 
 This feature can be enabled by setting the :ref:`CONFIG_HEAP_USE_HOOKS` option. :cpp:func:`esp_heap_trace_alloc_hook` and :cpp:func:`esp_heap_trace_free_hook` have weak declarations (e.g., ``__attribute__((weak))``), thus it is not necessary to provide declarations for both hooks. Given that it is technically possible to allocate and free memory from an ISR (**though strongly discouraged from doing so**), the :cpp:func:`esp_heap_trace_alloc_hook` and :cpp:func:`esp_heap_trace_free_hook` can potentially be called from an ISR.
 
@@ -137,6 +137,7 @@ Temporarily increasing the heap corruption detection level can give more detaile
 
 In the project configuration menu, under ``Component config``, there is a menu ``Heap memory debugging``. The option :ref:`CONFIG_HEAP_CORRUPTION_DETECTION` can be set to one of the following three levels:
 
+
 Basic (No Poisoning)
 ++++++++++++++++++++
 
@@ -145,6 +146,7 @@ This is the default level. By default, no special heap corruption features are e
 If assertions are enabled, an assertion will also trigger if a double-free occurs (the same memory is freed twice).
 
 Calling :cpp:func:`heap_caps_check_integrity` in Basic mode checks the integrity of all heap structures, and print errors if any appear to be corrupted.
+
 
 Light Impact
 ++++++++++++
@@ -165,6 +167,7 @@ In both cases, the functions involve checking that the first 4 bytes of an alloc
 
 Different values usually indicate buffer underrun or overrun. Overrun indicates that when writing to memory, the data written exceeds the size of the allocated memory, resulting in writing to an unallocated memory area; underrun indicates that when reading memory, the data read exceeds the allocated memory and reads data from an unallocated memory area.
 
+
 Comprehensive
 +++++++++++++
 
@@ -172,7 +175,7 @@ This level incorporates the "Light Impact" detection features. Additionally, it 
 
 Enabling Comprehensive mode has a substantial impact on runtime performance, as all memory needs to be set to the allocation patterns each time a :cpp:func:`heap_caps_malloc` or :cpp:func:`heap_caps_free` completes, and the memory also needs to be checked each time. However, this mode allows easier detection of memory corruptions which are much more subtle to find otherwise. It is recommended to only enable this mode when debugging, not in production.
 
-The checks for allocated and free patterns (``0xCE`` and respectively ``0xFE``) are also done when calling :cpp:func:`heap_caps_check_integrity` or :cpp:func:`heap_caps_check_integrity_all`.
+The checks for allocated and free patterns (``0xCE`` and ``0xFE``, respectively) are also done when calling :cpp:func:`heap_caps_check_integrity` or :cpp:func:`heap_caps_check_integrity_all`.
 
 Crashes in Comprehensive Mode
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -197,9 +200,153 @@ Calls to :cpp:func:`heap_caps_check_integrity` or :cpp:func:`heap_caps_check_int
 Heap Task Tracking
 ------------------
 
-Heap Task Tracking can be used to get per-task info for heap memory allocation. The application has to specify the heap capabilities for which the heap allocation is to be tracked.
+The Heap Task Tracking can be enabled via the menuconfig: ``Component config`` > ``Heap memory debugging`` > ``Enable heap task tracking`` (see :ref:`CONFIG_HEAP_TASK_TRACKING`).
 
-Example code is provided in :example:`system/heap_task_tracking`.
+The feature allows users to track the heap memory usage of each task created since startup and provides a series of statistics that can be accessed via getter functions or simply dumped into the stream of the user's choosing. This feature is useful for identifying memory usage patterns and potential memory leaks.
+
+An additional configuration can be enabled by the user via the menuconfig: ``Component config`` > ``Heap memory debugging`` > ``Keep information about the memory usage of deleted tasks`` (see :ref:`CONFIG_HEAP_TRACK_DELETED_TASKS`) to keep the statistics collected for a given task even after it is deleted.
+
+.. note::
+
+    Note that the Heap Task Tracking cannot detect the deletion of statically allocated tasks. Therefore, users will have to keep in mind while reading the following section that statically allocated tasks will always be considered alive in the scope of the Heap Task Tracking feature.
+
+It is important to mention that its usage is strongly discouraged for other purposes than debugging for the following reasons:
+
+.. list::
+
+    - Tracking the allocations and storing the resulting statistics for each task requires a non-negligible RAM usage overhead.
+    - The overall performance of the heap allocator is severely impacted due to the additional processing required for each allocation and free operation.
+
+.. note::
+
+    Note that the memory allocated by the heap task tracking feature will not be visible when dumping or accessing the statistics.
+
+Structure of the Statistics And Information
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+For a given task, the heap task tracking feature categorizes statistics on three different levels:
+
+.. list::
+
+    - The task level statistics
+    - The heap level statistics
+    - The allocation level statistics
+
+The task level statistics provides the following information:
+
+.. list::
+
+    - Name of the given task
+    - Task handle of the given task
+    - Status of the given task (if the task is running or deleted)
+    - Peak memory usage of the given task (the maximum amount of memory used by the given task during the task lifetime)
+    - Current memory usage of the given task
+    - Number of heaps in which the task has allocated memory
+
+The heap level statistics provides the following information for each heap used by the given task:
+
+.. list::
+
+    - Name of the given heap
+    - Capabilities of the given heap (without priority)
+    - Total size of the given heap
+    - Current usage of the given task on the given heap
+    - Peak usage of the given task on the given heap
+    - Number of allocations done by the given task for on the given heap
+
+The allocation level statistics provides the following information for each allocation done by the given task on the given heap:
+
+.. list::
+
+    - Address of the given allocation
+    - Size of the given allocation
+
+Dumping the Statistics And Information
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The :cpp:func:`heap_caps_print_single_task_stat_overview` API prints an overview of heap usage for a specific task to the provided output stream.
+
+.. code-block:: text
+
+  ┌────────────────────┬─────────┬──────────────────────┬───────────────────┬─────────────────┐
+  │ TASK               │ STATUS  │ CURRENT MEMORY USAGE │ PEAK MEMORY USAGE │ TOTAL HEAP USED │
+  ├────────────────────┼─────────┼──────────────────────┼───────────────────┼─────────────────┤
+  │          task_name │ ALIVE   │                    0 │              7152 │               1 │
+  └────────────────────┴─────────┴──────────────────────┴───────────────────┴─────────────────┘
+
+:cpp:func:`heap_caps_print_all_task_stat_overview` prints an overview of heap usage for all tasks (including the deleted tasks if :ref:`CONFIG_HEAP_TRACK_DELETED_TASKS` is enabled).
+
+.. code-block:: text
+
+  ┌────────────────────┬─────────┬──────────────────────┬───────────────────┬─────────────────┐
+  │ TASK               │ STATUS  │ CURRENT MEMORY USAGE │ PEAK MEMORY USAGE │ TOTAL HEAP USED │
+  ├────────────────────┼─────────┼──────────────────────┼───────────────────┼─────────────────┤
+  │          task_name │ DELETED │                11392 │             11616 │               1 │
+  │    other_task_name │ ALIVE   │                    0 │              9408 │               2 │
+  │               main │ ALIVE   │                 3860 │              7412 │               2 │
+  │               ipc1 │ ALIVE   │                   32 │                44 │               1 │
+  │               ipc0 │ ALIVE   │                10080 │             10092 │               1 │
+  │      Pre-scheduler │ ALIVE   │                 2236 │              2236 │               1 │
+  └────────────────────┴─────────┴──────────────────────┴───────────────────┴─────────────────┘
+
+.. note::
+
+    Note that the task named "Pre-scheduler" represents allocations that occurred before the scheduler was started. It is not an actual task, so the "status" field (which is shown as "ALIVE") is not meaningful and should be ignored.
+
+Use :cpp:func:`heap_caps_print_single_task_stat` to dump the complete set of statistics for a specific task, or :cpp:func:`heap_caps_print_all_task_stat` to dump statistics for all tasks:
+
+.. code-block:: text
+
+  [...]
+  ├ ALIVE: main, CURRENT MEMORY USAGE 308, PEAK MEMORY USAGE 7412, TOTAL HEAP USED 2:
+  │    ├ HEAP: RAM, CAPS: 0x0010580e, SIZE: 344400, USAGE: CURRENT 220 (0%), PEAK 220 (0%), ALLOC COUNT: 2
+  │    │    ├ ALLOC 0x3fc99024, SIZE 88
+  │    │    ├ ALLOC 0x3fc99124, SIZE 132
+  │    └ HEAP: RAM, CAPS: 0x0010580e, SIZE: 22308, USAGE: CURRENT 88 (0%), PEAK 7192 (32%), ALLOC COUNT: 5
+  │         ├ ALLOC 0x3fce99f8, SIZE 20
+  │         ├ ALLOC 0x3fce9a10, SIZE 12
+  │         ├ ALLOC 0x3fce9a20, SIZE 16
+  │         ├ ALLOC 0x3fce9a34, SIZE 20
+  │         ├ ALLOC 0x3fce9a4c, SIZE 20
+  [...]
+  └ ALIVE: Pre-scheduler, CURRENT MEMORY USAGE 2236, PEAK MEMORY USAGE 2236, TOTAL HEAP USED 1:
+      └ HEAP: RAM, CAPS: 0x0010580e, SIZE: 344400, USAGE: CURRENT 2236 (0%), PEAK 2236 (0%), ALLOC COUNT: 11
+            ├ ALLOC 0x3fc95cb0, SIZE 164
+            ├ ALLOC 0x3fc95dd8, SIZE 12
+            ├ ALLOC 0x3fc95dfc, SIZE 12
+            ├ ALLOC 0x3fc95e20, SIZE 16
+            ├ ALLOC 0x3fc95e48, SIZE 24
+            ├ ALLOC 0x3fc95e78, SIZE 88
+            ├ ALLOC 0x3fc95ee8, SIZE 88
+            ├ ALLOC 0x3fc95f58, SIZE 88
+            ├ ALLOC 0x3fc95fc8, SIZE 88
+            ├ ALLOC 0x3fc96038, SIZE 1312
+            ├ ALLOC 0x3fc96570, SIZE 344
+
+.. note::
+
+    The dump shown above has been truncated (see "[...]") for readability reasons and only displays the statistics and information of the **main** task and the **Pre-scheduler**. The goal here is only to demonstrate the information displayed when calling the :cpp:func:`heap_caps_print_all_task_stat` (resp. :cpp:func:`heap_caps_print_single_task_stat`) API functions.
+
+.. note::
+
+    Detailed use of the API functions described in this section can be found in :example:`system/heap_task_tracking/basic`.
+
+Getting the Statistics And Information
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+:cpp:func:`heap_caps_get_single_task_stat` allows the user to access information of a specific task. The information retrieved by calling this API is identical to the one dumped using :cpp:func:`heap_caps_print_single_task_stat`.
+
+:cpp:func:`heap_caps_get_all_task_stat` allows the user to access an overview of the information of all tasks (including the deleted tasks if :ref:`CONFIG_HEAP_TRACK_DELETED_TASKS` is enabled). The information retrieved by calling this API is identical to the one dumped using :cpp:func:`heap_caps_print_all_task_stat`.
+
+Each getter function requires a pointer to the data structure that will be used by the heap task tracking to gather the statistics and information of a given task (or all tasks). This data structure contains pointers to arrays that the user can allocate statically or dynamically.
+
+The size of the arrays used to store information is difficult to estimate. Examples include the number of allocations per task, the number of heaps used by each task, and the number of tasks created since startup. Therefore, the heap task tracking also provides :cpp:func:`heap_caps_alloc_single_task_stat_arrays` (resp. :cpp:func:`heap_caps_alloc_all_task_stat_arrays`) to dynamically allocate the required amount of memory for those arrays.
+
+Similarly, the heap task tracking also provides :cpp:func:`heap_caps_free_single_task_stat_arrays` (resp. :cpp:func:`heap_caps_free_all_task_stat_arrays`) to free the memory dynamically allocated when calling :cpp:func:`heap_caps_alloc_single_task_stat_arrays` (resp. :cpp:func:`heap_caps_alloc_all_task_stat_arrays`).
+
+.. note::
+
+    Detailed use of the API functions described in this section can be found in :example:`system/heap_task_tracking/advanced`.
 
 
 .. _heap-tracing:
@@ -266,79 +413,6 @@ The following code snippet demonstrates how application code would typically ini
 
 The output from the heap trace has a similar format to the following example:
 
-.. only:: CONFIG_IDF_TARGET_ARCH_XTENSA
-
-  .. code-block:: none
-
-    ====== Heap Trace: 8 records (8 capacity) ======
-        6 bytes (@ 0x3fc9f620, Internal) allocated CPU 0 ccount 0x1a31ac84 caller 0x40376321:0x40376379
-    0x40376321: heap_caps_malloc at /path/to/idf/examples/components/heap/heap_caps.c:84
-    0x40376379: heap_caps_malloc_default at /path/to/idf/examples/components/heap/heap_caps.c:110
-
-    freed by 0x403839e4:0x42008096
-    0x403839e4: free at /path/to/idf/examples/components/newlib/heap.c:40
-    0x42008096: test_func_74 at /path/to/idf/examples/components/heap/test_apps/heap_tests/main/test_heap_trace.c:104 (discriminator 3)
-
-        9 bytes (@ 0x3fc9f630, Internal) allocated CPU 0 ccount 0x1a31b618 caller 0x40376321:0x40376379
-    0x40376321: heap_caps_malloc at /path/to/idf/examples/components/heap/heap_caps.c:84
-    0x40376379: heap_caps_malloc_default at /path/to/idf/examples/components/heap/heap_caps.c:110
-
-    freed by 0x403839e4:0x42008096
-    0x403839e4: free at /path/to/idf/examples/components/newlib/heap.c:40
-    0x42008096: test_func_74 at /path/to/idf/examples/components/heap/test_apps/heap_tests/main/test_heap_trace.c:104 (discriminator 3)
-
-        12 bytes (@ 0x3fc9f640, Internal) allocated CPU 0 ccount 0x1a31bfac caller 0x40376321:0x40376379
-    0x40376321: heap_caps_malloc at /path/to/idf/examples/components/heap/heap_caps.c:84
-    0x40376379: heap_caps_malloc_default at /path/to/idf/examples/components/heap/heap_caps.c:110
-
-    freed by 0x403839e4:0x42008096
-    0x403839e4: free at /path/to/idf/examples/components/newlib/heap.c:40
-    0x42008096: test_func_74 at /path/to/idf/examples/components/heap/test_apps/heap_tests/main/test_heap_trace.c:104 (discriminator 3)
-
-        15 bytes (@ 0x3fc9f650, Internal) allocated CPU 0 ccount 0x1a31c940 caller 0x40376321:0x40376379
-    0x40376321: heap_caps_malloc at /path/to/idf/examples/components/heap/heap_caps.c:84
-    0x40376379: heap_caps_malloc_default at /path/to/idf/examples/components/heap/heap_caps.c:110
-
-    freed by 0x403839e4:0x42008096
-    0x403839e4: free at /path/to/idf/examples/components/newlib/heap.c:40
-    0x42008096: test_func_74 at /path/to/idf/examples/components/heap/test_apps/heap_tests/main/test_heap_trace.c:104 (discriminator 3)
-
-        18 bytes (@ 0x3fc9f664, Internal) allocated CPU 0 ccount 0x1a31d2d4 caller 0x40376321:0x40376379
-    0x40376321: heap_caps_malloc at /path/to/idf/examples/components/heap/heap_caps.c:84
-    0x40376379: heap_caps_malloc_default at /path/to/idf/examples/components/heap/heap_caps.c:110
-
-    freed by 0x403839e4:0x42008096
-    0x403839e4: free at /path/to/idf/examples/components/newlib/heap.c:40
-    0x42008096: test_func_74 at /path/to/idf/examples/components/heap/test_apps/heap_tests/main/test_heap_trace.c:104 (discriminator 3)
-
-        21 bytes (@ 0x3fc9f67c, Internal) allocated CPU 0 ccount 0x1a31dc68 caller 0x40376321:0x40376379
-    0x40376321: heap_caps_malloc at /path/to/idf/examples/components/heap/heap_caps.c:84
-    0x40376379: heap_caps_malloc_default at /path/to/idf/examples/components/heap/heap_caps.c:110
-
-    freed by 0x403839e4:0x42008096
-    0x403839e4: free at /path/to/idf/examples/components/newlib/heap.c:40
-    0x42008096: test_func_74 at /path/to/idf/examples/components/heap/test_apps/heap_tests/main/test_heap_trace.c:104 (discriminator 3)
-
-        24 bytes (@ 0x3fc9f698, Internal) allocated CPU 0 ccount 0x1a31e600 caller 0x40376321:0x40376379
-    0x40376321: heap_caps_malloc at /path/to/idf/examples/components/heap/heap_caps.c:84
-    0x40376379: heap_caps_malloc_default at /path/to/idf/examples/components/heap/heap_caps.c:110
-
-    freed by 0x403839e4:0x42008096
-    0x403839e4: free at /path/to/idf/examples/components/newlib/heap.c:40
-    0x42008096: test_func_74 at /path/to/idf/examples/components/heap/test_apps/heap_tests/main/test_heap_trace.c:104 (discriminator 3)
-
-        6 bytes (@ 0x3fc9f6b4, Internal) allocated CPU 0 ccount 0x1a320698 caller 0x40376321:0x40376379
-    0x40376321: heap_caps_malloc at /path/to/idf/examples/components/heap/heap_caps.c:84
-    0x40376379: heap_caps_malloc_default at /path/to/idf/examples/components/heap/heap_caps.c:110
-
-    ====== Heap Trace Summary ======
-    Mode: Heap Trace All
-    6 bytes alive in trace (1/8 allocations)
-    records: 8 (8 capacity, 8 high water mark)
-    total allocations: 9
-    total frees: 8
-    ================================
-
 .. only:: CONFIG_IDF_TARGET_ARCH_RISCV
 
   .. code-block:: none
@@ -359,6 +433,79 @@ The output from the heap trace has a similar format to the following example:
     total allocations: 8
     total frees: 8
     ================================
+
+  Or the following example, when the ``CONFIG_ESP_SYSTEM_USE_FRAME_POINTER`` option is enabled and the stack depth is configured properly:
+
+.. code-block:: none
+
+  ====== Heap Trace: 8 records (8 capacity) ======
+      6 bytes (@ 0x3fc9f620, Internal) allocated CPU 0 ccount 0x1a31ac84 caller 0x40376321:0x40376379
+  0x40376321: heap_caps_malloc at /path/to/idf/examples/components/heap/heap_caps.c:84
+  0x40376379: heap_caps_malloc_default at /path/to/idf/examples/components/heap/heap_caps.c:110
+
+  freed by 0x403839e4:0x42008096
+  0x403839e4: free at /path/to/idf/examples/components/newlib/heap.c:40
+  0x42008096: test_func_74 at /path/to/idf/examples/components/heap/test_apps/heap_tests/main/test_heap_trace.c:104 (discriminator 3)
+
+      9 bytes (@ 0x3fc9f630, Internal) allocated CPU 0 ccount 0x1a31b618 caller 0x40376321:0x40376379
+  0x40376321: heap_caps_malloc at /path/to/idf/examples/components/heap/heap_caps.c:84
+  0x40376379: heap_caps_malloc_default at /path/to/idf/examples/components/heap/heap_caps.c:110
+
+  freed by 0x403839e4:0x42008096
+  0x403839e4: free at /path/to/idf/examples/components/newlib/heap.c:40
+  0x42008096: test_func_74 at /path/to/idf/examples/components/heap/test_apps/heap_tests/main/test_heap_trace.c:104 (discriminator 3)
+
+      12 bytes (@ 0x3fc9f640, Internal) allocated CPU 0 ccount 0x1a31bfac caller 0x40376321:0x40376379
+  0x40376321: heap_caps_malloc at /path/to/idf/examples/components/heap/heap_caps.c:84
+  0x40376379: heap_caps_malloc_default at /path/to/idf/examples/components/heap/heap_caps.c:110
+
+  freed by 0x403839e4:0x42008096
+  0x403839e4: free at /path/to/idf/examples/components/newlib/heap.c:40
+  0x42008096: test_func_74 at /path/to/idf/examples/components/heap/test_apps/heap_tests/main/test_heap_trace.c:104 (discriminator 3)
+
+      15 bytes (@ 0x3fc9f650, Internal) allocated CPU 0 ccount 0x1a31c940 caller 0x40376321:0x40376379
+  0x40376321: heap_caps_malloc at /path/to/idf/examples/components/heap/heap_caps.c:84
+  0x40376379: heap_caps_malloc_default at /path/to/idf/examples/components/heap/heap_caps.c:110
+
+  freed by 0x403839e4:0x42008096
+  0x403839e4: free at /path/to/idf/examples/components/newlib/heap.c:40
+  0x42008096: test_func_74 at /path/to/idf/examples/components/heap/test_apps/heap_tests/main/test_heap_trace.c:104 (discriminator 3)
+
+      18 bytes (@ 0x3fc9f664, Internal) allocated CPU 0 ccount 0x1a31d2d4 caller 0x40376321:0x40376379
+  0x40376321: heap_caps_malloc at /path/to/idf/examples/components/heap/heap_caps.c:84
+  0x40376379: heap_caps_malloc_default at /path/to/idf/examples/components/heap/heap_caps.c:110
+
+  freed by 0x403839e4:0x42008096
+  0x403839e4: free at /path/to/idf/examples/components/newlib/heap.c:40
+  0x42008096: test_func_74 at /path/to/idf/examples/components/heap/test_apps/heap_tests/main/test_heap_trace.c:104 (discriminator 3)
+
+      21 bytes (@ 0x3fc9f67c, Internal) allocated CPU 0 ccount 0x1a31dc68 caller 0x40376321:0x40376379
+  0x40376321: heap_caps_malloc at /path/to/idf/examples/components/heap/heap_caps.c:84
+  0x40376379: heap_caps_malloc_default at /path/to/idf/examples/components/heap/heap_caps.c:110
+
+  freed by 0x403839e4:0x42008096
+  0x403839e4: free at /path/to/idf/examples/components/newlib/heap.c:40
+  0x42008096: test_func_74 at /path/to/idf/examples/components/heap/test_apps/heap_tests/main/test_heap_trace.c:104 (discriminator 3)
+
+      24 bytes (@ 0x3fc9f698, Internal) allocated CPU 0 ccount 0x1a31e600 caller 0x40376321:0x40376379
+  0x40376321: heap_caps_malloc at /path/to/idf/examples/components/heap/heap_caps.c:84
+  0x40376379: heap_caps_malloc_default at /path/to/idf/examples/components/heap/heap_caps.c:110
+
+  freed by 0x403839e4:0x42008096
+  0x403839e4: free at /path/to/idf/examples/components/newlib/heap.c:40
+  0x42008096: test_func_74 at /path/to/idf/examples/components/heap/test_apps/heap_tests/main/test_heap_trace.c:104 (discriminator 3)
+
+      6 bytes (@ 0x3fc9f6b4, Internal) allocated CPU 0 ccount 0x1a320698 caller 0x40376321:0x40376379
+  0x40376321: heap_caps_malloc at /path/to/idf/examples/components/heap/heap_caps.c:84
+  0x40376379: heap_caps_malloc_default at /path/to/idf/examples/components/heap/heap_caps.c:110
+
+  ====== Heap Trace Summary ======
+  Mode: Heap Trace All
+  6 bytes alive in trace (1/8 allocations)
+  records: 8 (8 capacity, 8 high water mark)
+  total allocations: 9
+  total frees: 8
+  ================================
 
 .. note::
 
@@ -393,6 +540,10 @@ In ``HEAP_TRACE_ALL``:
 
     The depth of the call stack recorded for each trace entry can be configured in the project configuration menu, under ``Heap Memory Debugging`` > ``Enable heap tracing`` > :ref:`CONFIG_HEAP_TRACING_STACK_DEPTH`. Up to 32 stack frames can be recorded for each allocation (the default is 2). Each additional stack frame increases the memory usage of each ``heap_trace_record_t`` record by eight bytes.
 
+.. only:: CONFIG_IDF_TARGET_ARCH_RISCV
+
+    By default, the depth of the call stack recorded for each trace entry is 0, which means that only the direct caller of the memory allocation function can be retrieve. However, when the ``CONFIG_ESP_SYSTEM_USE_FRAME_POINTER`` option is enabled, this call stack depth can be configured in the project configuration menu, under ``Heap Memory Debugging`` > ``Enable heap tracing`` > :ref:`CONFIG_HEAP_TRACING_STACK_DEPTH`. Up to 32 stack frames can be recorded for each allocation (the default is 2). Each additional stack frame increases the memory usage of each ``heap_trace_record_t`` record by eight bytes.
+
 Finally, the total number of the 'leaked' bytes (bytes allocated but not freed while the trace is running) is printed together with the total number of allocations it represents.
 
 Using hashmap for increased performance
@@ -404,7 +555,7 @@ For this reason, the option to use a hashmap mechanism to store records is avail
 
 Each hashmap entry is a singly linked list of records sharing the same hash ID.
 
-Each record hash ID is calculated based on the pointer to the memory they track. The hash function used is based on the Fowler-Noll-Vo hash function modified to ensure an even spread of all records in the range [0 ; hashmap size[ where hashmap size can be defined by setting ``Component config`` > ``Heap Memory Debugging`` > :ref:`CONFIG_HEAP_TRACE_HASH_MAP_SIZE` in the project configuration menu.
+Each record hash ID is calculated based on the pointer to the memory they track. The hash function used is based on the Fowler-Noll-Vo hash function modified to ensure an even spread of all records in the range [0, hashmap size[ where hashmap size can be defined by setting ``Component config`` > ``Heap Memory Debugging`` > :ref:`CONFIG_HEAP_TRACE_HASH_MAP_SIZE` in the project configuration menu.
 
 .. note::
 
@@ -622,9 +773,15 @@ One way to differentiate between "real" and "false positive" memory leaks is to 
 Application Examples
 --------------------
 
-- :example:`system/heap_task_tracking` demonstrates the use of the heap task tracking feature to track heap memory allocated on a per-task basis.
+- :example:`system/heap_task_tracking/basic` demonstrates the use of the overview feature of the heap task tracking, dumping per-task summary statistics on heap memory usage.
+- :example:`system/heap_task_tracking/advanced` demonstrates the use of the statistics getter functions of the heap task tracking, accessing per-task complete statistic on the heap memory usage.
 
-API Reference - Heap Tracing
+API Reference–Heap Task Tracking
+----------------------------------
+
+.. include-build-file:: inc/esp_heap_task_info.inc
+
+API Reference–Heap Tracing
 ----------------------------
 
 .. include-build-file:: inc/esp_heap_trace.inc

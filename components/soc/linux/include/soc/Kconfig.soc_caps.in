@@ -11,6 +11,10 @@ config SOC_EFUSE_KEY_PURPOSE_FIELD
     bool
     default y
 
+config SOC_CPU_CORES_NUM
+    int
+    default 1
+
 config SOC_GPIO_IN_RANGE_MAX
     int
     default 65535

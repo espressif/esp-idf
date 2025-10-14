@@ -32,6 +32,8 @@ typedef enum {
     COEX_SCHM_ST_TYPE_WIFI = 0,
     COEX_SCHM_ST_TYPE_BLE,
     COEX_SCHM_ST_TYPE_BT,
+    COEX_SCHM_ST_TYPE_EXTERNAL_COEX,
+    COEX_SCHM_ST_TYPE_I154,
 } coex_schm_st_type_t;
 
 #define COEX_STATUS_GET_WIFI_BITMAP     (1 << COEX_SCHM_ST_TYPE_WIFI)
@@ -395,6 +397,15 @@ int coex_schm_flexible_period_set(uint8_t period);
   */
 uint8_t coex_schm_flexible_period_get(void);
 #endif
+
+/**
+ * @brief     Get coexistence scheme phase by phase index.
+ *
+ * @param     phase_idx    Coexistence phase index
+ *
+ * @return    Coexistence scheme phase
+ */
+void * coex_schm_get_phase_by_idx(int phase_idx);
 
 /**
   * @brief     Check the MD5 values of the coexistence adapter header files in IDF and WiFi library

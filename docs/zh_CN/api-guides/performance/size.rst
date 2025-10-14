@@ -67,7 +67,7 @@ ESP-IDF 构建系统会编译项目和 ESP-IDF 中所有源文件，但只有程
 
 .. note::
 
-   链接器映射文件由 GNU binutils 的链接器 ``ld`` 而非由 ESP-IDF 生成。本快速概览专从 ESP-IDF 构建系统的角度编写而成，建议自行搜索更多关于链接器映射文件格式的信息。
+    链接器映射文件由 GNU binutils 的链接器 ``ld`` 而非由 ESP-IDF 生成。本快速概览专从 ESP-IDF 构建系统的角度编写而成，建议自行搜索更多关于链接器映射文件格式的信息。
 
 .. _reducing-overall-size:
 
@@ -82,7 +82,7 @@ ESP-IDF 构建系统会编译项目和 ESP-IDF 中所有源文件，但只有程
     - 通过降低应用程序的 :ref:`CONFIG_LOG_DEFAULT_LEVEL` ，可以减少编译时的日志输出。如果改变 :ref:`CONFIG_LOG_MAXIMUM_LEVEL` 的默认选项，则可以控制二进制文件的大小。减少编译时的日志输出可以减少二进制文件中的字符串数量，并减小调用日志函数的代码大小。
     - 如果应用程序不需要动态更改日志级别，并且不需要使用标签来控制每个模块的日志，建议禁用 :ref:`CONFIG_LOG_DYNAMIC_LEVEL_CONTROL` 并更改 :ref:`CONFIG_LOG_TAG_LEVEL_IMPL`。与默认选项相比，这可以节约大概 260 字节的 IRAM、264 字节的 DRAM、以及 1 KB 的 flash，同时还可以加快日志记录的速度。
     - 将 :ref:`CONFIG_COMPILER_OPTIMIZATION_ASSERTION_LEVEL` 设置为 ``Silent``，可以避免为所有可能失败的断言编译专门的断言字符串和源文件名。尽管如此，仍可以通过查看断言失败时的内存地址以在代码中找到失败断言。
-    - 除 :ref:`CONFIG_COMPILER_OPTIMIZATION_ASSERTION_LEVEL` 外，还可以通过设置 :ref:`CONFIG_HAL_DEFAULT_ASSERTION_LEVEL` 单独禁用或静默 HAL 组件的断言。请注意，即使将 :ref:`CONFIG_HAL_DEFAULT_ASSERTION_LEVEL` 设置为 full-assertion 级别，ESP-IDF 在引导加载程序中也会把 HAL 断言级别降为 silent，以减小引导加载程序的大小。
+    - 除 :ref:`CONFIG_COMPILER_OPTIMIZATION_ASSERTION_LEVEL` 外，还可以通过设置 :ref:`CONFIG_HAL_DEFAULT_ASSERTION_LEVEL` 单独禁用或静默 HAL 组件的断言。即使将 :ref:`CONFIG_HAL_DEFAULT_ASSERTION_LEVEL` 设置为 full-assertion 级别，ESP-IDF 在引导加载程序中也会把 HAL 断言级别降为 silent，以减小引导加载程序的大小。
     - 设置 :ref:`CONFIG_COMPILER_OPTIMIZATION_CHECKS_SILENT` 会移除针对 ESP-IDF 内部错误检查宏的特定错误消息。错误消息移除后，通过阅读日志输出来调试某些错误条件可能变得更加困难。
     :esp32: - 如果二进制文件只需要在某些特定的 ESP32 版本上运行，将 :ref:`CONFIG_ESP32_REV_MIN` 增加到相应版本的匹配值可以减小二进制文件的大小。如果设置 ESP32 最低版本为 3，并且启用 PSRAM，将大幅减小二进制文件的大小。
     :esp32c3: - 如果二进制文件只需要在某些特定的 ESP32-C3 版本上运行，将 :ref:`CONFIG_ESP32C3_REV_MIN` 增加到相应版本的匹配值可以减小二进制文件的大小。由于某些功能已经移至 ROM 代码中，如果设置 ESP32-C3 最低版本为 3 并且使用 Wi-Fi 功能，将明显减小二进制文件的大小。
@@ -94,7 +94,7 @@ ESP-IDF 构建系统会编译项目和 ESP-IDF 中所有源文件，但只有程
 
 .. note::
 
-   除了上述众多配置项之外，还有一些配置选项在更改为非默认设置时会增加二进制文件的大小，这些选项未在此列出。配置项的帮助文本中通常会阐明显著增加二进制文件大小的设置。
+    除了上述众多配置项之外，还有一些配置选项在更改为非默认设置时会增加二进制文件的大小，这些选项未在此列出。配置项的帮助文本中通常会阐明显著增加二进制文件大小的设置。
 
 .. _size-targeted-optimizations:
 
@@ -111,13 +111,14 @@ ESP-IDF 构建系统会编译项目和 ESP-IDF 中所有源文件，但只有程
     - 如果不需要启用 WPA3 支持，禁用 :ref:`CONFIG_ESP_WIFI_ENABLE_WPA3_SAE` 可以减小 Wi-Fi 二进制文件的大小。请注意，WPA3 支持是目前认证新 Wi-Fi 设备的必要标准。
     - 如果不需要启用 soft-AP 支持，禁用 :ref:`CONFIG_ESP_WIFI_SOFTAP_SUPPORT` 可以减小 Wi-Fi 二进制文件的大小。
     - 如不需要启用企业支持，禁用 :ref:`CONFIG_ESP_WIFI_ENTERPRISE_SUPPORT` 可以减小 Wi-Fi 二进制文件的大小。
+    - 如果不需要启用 WPA3-SAE 的哈希到元素（hash-to-element）认证方法，禁用 :ref:`CONFIG_ESP_WIFI_ENABLE_SAE_H2E` 可以减少 Wi-Fi 二进制文件的大小。请注意，与默认的 “hunting-and-pecking” 认证方法相比，哈希到元素方法更快、更安全，并且对侧信道攻击更具有免疫能力。
 
 .. only:: esp32
 
     ADC
     @@@
 
-    - 如果使用 ADC 驱动程序，禁用 :ref:`CONFIG_ADC_CAL_EFUSE_TP_ENABLE`、:ref:`CONFIG_ADC_CAL_EFUSE_VREF_ENABLE` 和 :ref:`CONFIG_ADC_CAL_LUT_ENABLE` 可以减小一小部分二进制文件的大小，但准确性会降低。
+    - 如果使用 ADC 驱动程序，禁用 :ref:`CONFIG_ADC_CALI_EFUSE_TP_ENABLE`、:ref:`CONFIG_ADC_CALI_EFUSE_VREF_ENABLE` 和 :ref:`CONFIG_ADC_CALI_LUT_ENABLE` 可以减小一小部分二进制文件的大小，但准确性会降低。
 
 .. only:: SOC_BT_SUPPORTED
 
@@ -147,9 +148,9 @@ lwIP IPv4
 
 - 如果不需要 IPv4 连接功能，将 :ref:`CONFIG_LWIP_IPV4` 设置为 ``false`` 可以减小 lwIP 的大小，使其成为仅支持 IPv6 的 TCP/IP 堆栈。
 
-  .. note::
+    .. note::
 
-      在禁用 IPv4 支持之前，请注意，仅支持 IPv6 的网络环境尚未普及，必须在本地网络中提供支持，例如，由互联网服务供应商提供支持，或使用受限制的本地网络设置。
+        在禁用 IPv4 支持之前，请注意，仅支持 IPv6 的网络环境尚未普及，必须在本地网络中提供支持，例如，由互联网服务供应商提供支持，或使用受限制的本地网络设置。
 
 .. _picolibc-instead-of-newlib:
 
@@ -158,9 +159,9 @@ lwIP IPv4
 
 默认情况下，ESP-IDF 使用 Newlib C 库，同时也对 Picolibc C 库提供实验性支持。
 
-Picolibc C 库提供了更小的 ``printf`` 系列函数，并且根据您的应用程序，可以将二进制文件大小最多减少 30 KB。
+Picolibc C 库提供了更精简的 ``printf`` 系列函数，并且根据应用程序，可以将二进制文件大小减少最多 30 KB。
 
-要切换为链接到 Picolibc C 库，请启用以下配置选项：:ref:CONFIG_IDF_EXPERIMENTAL_FEATURES 和 :ref:`CONFIG_LIBC_PICOLIBC<CONFIG_LIBC_PICOLIBC>`。
+如需切换链接到 Picolibc C 库，请启用配置选项 :ref:`CONFIG_IDF_EXPERIMENTAL_FEATURES` 和 :ref:`CONFIG_LIBC_PICOLIBC<CONFIG_LIBC_PICOLIBC>`。
 
 .. _newlib-nano-formatting:
 
@@ -171,13 +172,13 @@ ESP-IDF 的 I/O 函数（ ``printf()`` 和 ``scanf()`` 等）默认使用 Newlib
 
 .. only:: CONFIG_ESP_ROM_HAS_NEWLIB_NANO_FORMAT
 
-    启用配置选项 :ref:`CONFIG_LIBC_NEWLIB_NANO_FORMAT` 将使 Newlib 切换到 Nano 格式化模式。这种模式的代码量更小，并且大部分内容被编译到了 {IDF_TARGET_NAME} 的 ROM 中，因此不需要将其添加至二进制文件中。
+    启用配置选项 :ref:`CONFIG_LIBC_NEWLIB_NANO_FORMAT` 将 Newlib 切换到 Nano 格式化模式。从而减小了代码体积，同时大部分内容被编译到 {IDF_TARGET_NAME} 的 ROM 中，因此不需要将其添加至二进制文件中。
 
     具体的二进制文件大小差异取决于固件使用的功能，但通常为 25 KB 到 50 KB。
 
 .. only:: CONFIG_ESP_ROM_HAS_NEWLIB_NORMAL_FORMAT
 
-    禁用配置选项 :ref:`CONFIG_LIBC_NEWLIB_NANO_FORMAT` 将切换 Newlib 到“完整”格式化模式。这将减小二进制文件的大小，因为 {IDF_TARGET_NAME} 的 ROM 中已存有完整格式化版本的函数，因此不需要将其添加至二进制文件中。
+    禁用配置选项 :ref:`CONFIG_LIBC_NEWLIB_NANO_FORMAT` 将 Newlib 切换到完整格式化模式。从而减小二进制文件的大小，因为 {IDF_TARGET_NAME} 的 ROM 中已存有完整格式化版本的函数，因此无需将其添加至二进制文件中。
 
 启用 Nano 格式化会减少调用 ``printf()`` 或其他字符串格式化函数的堆栈使用量，参阅 :ref:`optimize-stack-sizes`。
 
@@ -193,6 +194,11 @@ ESP-IDF 的 I/O 函数（ ``printf()`` 和 ``scanf()`` 等）默认使用 Newlib
 
 .. _Newlib README 文件: https://sourceware.org/newlib/README
 
+libstdc++
+@@@@@@@@@
+
+- 启用 :ref:`CONFIG_COMPILER_CXX_GLIBCXX_CONSTEXPR_COLD_CONSTEXPR<CONFIG_COMPILER_CXX_GLIBCXX_CONSTEXPR_COLD_CONSTEXPR>` 或 :ref:`CONFIG_COMPILER_CXX_GLIBCXX_CONSTEXPR_COLD<CONFIG_COMPILER_CXX_GLIBCXX_CONSTEXPR_COLD>` 观察对应用程序二进制大小的影响。
+
 .. _minimizing_binary_mbedtls:
 
 MbedTLS 功能
@@ -202,43 +208,48 @@ MbedTLS 功能
 
 这些功能包括：
 
-- :ref:`CONFIG_MBEDTLS_HAVE_TIME`
-- :ref:`CONFIG_MBEDTLS_ECDSA_DETERMINISTIC`
-- :ref:`CONFIG_MBEDTLS_SHA512_C`
-- :ref:`CONFIG_MBEDTLS_SHA3_C`
-- :ref:`CONFIG_MBEDTLS_CLIENT_SSL_SESSION_TICKETS`
-- :ref:`CONFIG_MBEDTLS_SERVER_SSL_SESSION_TICKETS`
-- :ref:`CONFIG_MBEDTLS_SSL_CONTEXT_SERIALIZATION`
-- :ref:`CONFIG_MBEDTLS_SSL_ALPN`
-- :ref:`CONFIG_MBEDTLS_SSL_RENEGOTIATION`
-- :ref:`CONFIG_MBEDTLS_CCM_C`
-- :ref:`CONFIG_MBEDTLS_GCM_C`
-- :ref:`CONFIG_MBEDTLS_ECP_C` （或者：启用此选项，但在子菜单中禁用部分椭圆曲线）
-- :ref:`CONFIG_MBEDTLS_ECP_NIST_OPTIM`
-- :ref:`CONFIG_MBEDTLS_ECP_FIXED_POINT_OPTIM`
-- 如果不需要 mbedTLS 的服务器和客户端功能，可以修改 :ref:`CONFIG_MBEDTLS_TLS_MODE`。
-- 可以考虑禁用在 ``TLS Key Exchange Methods`` 子菜单中列出的一些密码套件（例如 :ref:`CONFIG_MBEDTLS_KEY_EXCHANGE_RSA`），以减小代码大小。
-- 如果应用程序已经通过使用 :cpp:func:`mbedtls_strerror` 拉取 mbedTLS 错误字符串，则可以考虑禁用 :ref:`CONFIG_MBEDTLS_ERROR_STRINGS`。
+.. list::
+
+    - :ref:`CONFIG_MBEDTLS_HAVE_TIME`
+    - :ref:`CONFIG_MBEDTLS_ECDSA_DETERMINISTIC`
+    - :ref:`CONFIG_MBEDTLS_SHA512_C`
+    - :ref:`CONFIG_MBEDTLS_SHA3_C`
+    - :ref:`CONFIG_MBEDTLS_CLIENT_SSL_SESSION_TICKETS`
+    - :ref:`CONFIG_MBEDTLS_SERVER_SSL_SESSION_TICKETS`
+    - :ref:`CONFIG_MBEDTLS_SSL_CONTEXT_SERIALIZATION`
+    - :ref:`CONFIG_MBEDTLS_SSL_ALPN`
+    - :ref:`CONFIG_MBEDTLS_SSL_RENEGOTIATION`
+    - :ref:`CONFIG_MBEDTLS_CCM_C`
+    - :ref:`CONFIG_MBEDTLS_GCM_C`
+    - :ref:`CONFIG_MBEDTLS_ECP_C` （或者：启用此选项，但在子菜单中禁用部分椭圆曲线）
+    - :ref:`CONFIG_MBEDTLS_ECP_NIST_OPTIM`
+    - :ref:`CONFIG_MBEDTLS_ECP_FIXED_POINT_OPTIM`
+    - 如果不需要 mbedTLS 的服务器和客户端功能，可以修改 :ref:`CONFIG_MBEDTLS_TLS_MODE`。
+    - 可以考虑禁用在 ``TLS Key Exchange Methods`` 子菜单中列出的一些密码套件（例如 :ref:`CONFIG_MBEDTLS_KEY_EXCHANGE_RSA`），以减小代码大小。
+    - 如果应用程序已经通过使用 :cpp:func:`mbedtls_strerror` 拉取 mbedTLS 错误字符串，则可以考虑禁用 :ref:`CONFIG_MBEDTLS_ERROR_STRINGS`。
+    :esp32h2: - 对于 {IDF_TARGET_NAME} v1.2 及以上版本，可以考虑禁用 :ref:`CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN_MASKING_CM` 和 :ref:`CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN_CONSTANT_TIME_CM`，因为无需再使用 ECDSA 签名的软件防护措施。
+    :SOC_AES_SUPPORT_DMA: - 如果应用程序不涉及或不需要针对小数据长度操作进行性能优化，例如在处理小数据段时进行的 NVS 加密/解密操作、TLS 通信等，可以考虑禁用 :ref:`CONFIG_MBEDTLS_AES_HW_SMALL_DATA_LEN_OPTIM`。
 
 每个选项的帮助文本中都有更多信息可供参考。
 
 .. important::
 
-   **强烈建议不要禁用所有 mbedTLS 选项。** 仅在理解功能用途，并确定在应用程序中不需要此功能时，方可禁用相应选项。请特别注意以下两点：
+    **强烈建议不要禁用所有 mbedTLS 选项。** 仅在理解功能用途，并确定在应用程序中不需要此功能时，方可禁用相应选项。请特别注意以下两点：
 
-   - 确保设备连接的任何 TLS 服务器仍然可用。如果服务器由第三方或云服务控制，建议确保固件至少支持两种 TLS 密码套件，以防未来某次更新禁用了其中一种。
-   - 确保连接设备的任何 TLS 客户端仍然可以使用支持/推荐的密码套件进行连接。请注意，未来版本的客户端操作系统可能会移除对某些功能的支持，因此建议启用多个支持的密码套件或算法以实现冗余。
+    - 确保设备连接的任何 TLS 服务器仍然可用。如果服务器由第三方或云服务控制，建议确保固件至少支持两种 TLS 密码套件，以防未来某次更新禁用了其中一种。
+    - 确保连接设备的任何 TLS 客户端仍然可以使用支持/推荐的密码套件进行连接。请注意，未来版本的客户端操作系统可能会移除对某些功能的支持，因此建议启用多个支持的密码套件或算法以实现冗余。
 
-   如果依赖于第三方客户端或服务器，请密切关注其有关支持的 TLS 功能的公告和变更。否则，当所支持功能变更时，{IDF_TARGET_NAME} 设备可能无法访问。
+    如果依赖于第三方客户端或服务器，请密切关注其有关支持的 TLS 功能的公告和变更。否则，当所支持功能变更时，{IDF_TARGET_NAME} 设备可能无法访问。
 
 .. only:: CONFIG_ESP_ROM_HAS_MBEDTLS_CRYPTO_LIB
 
-   启用配置选项 :ref:`CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL` 时 mbedtls 使用由 ROM 提供的加密算法。
-   禁用配置选项 :ref:`CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL` 时mbedtls 完全使用由 ESP-IDF 中提供的加密算法。这会导致二进制文件大小增加。
+    启用配置选项 :ref:`CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL` 时 mbedtls 使用由 ROM 提供的加密算法。
+
+    禁用配置选项 :ref:`CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL` 时mbedtls 完全使用由 ESP-IDF 中提供的加密算法。这会导致二进制文件大小增加。
 
 .. note::
 
-   ESP-IDF 并未测试所有 mbedTLS 编译配置组合。如果发现某个组合无法编译或无法按预期执行，请在 `GitHub <https://github.com/espressif/esp-idf>`_ 上报告详细信息。
+    ESP-IDF 并未测试所有 mbedTLS 编译配置组合。如果发现某个组合无法编译或无法按预期执行，请在 `GitHub <https://github.com/espressif/esp-idf>`_ 上报告详细信息。
 
 虚拟文件系统 (VFS)
 @@@@@@@@@@@@@@@@@@@@@
@@ -264,8 +275,26 @@ MbedTLS 功能
     @@@@@@
 
     .. list::
+
         * 启用 :ref:`CONFIG_HEAP_TLSF_USE_ROM_IMPL` 可以将整个堆功能放置在 flash 中，从而减少 IRAM 使用和二进制文件大小。
         :CONFIG_ESP_ROM_HAS_HEAP_TLSF: * 启用 :ref:`CONFIG_HEAP_TLSF_USE_ROM_IMPL` 可以通过链接 ROM 实现的 TLSF 库来减少 IRAM 使用和二进制文件大小。
+
+
+.. only:: SOC_USB_SERIAL_JTAG_SUPPORTED
+
+    控制台
+    @@@@@@
+
+    对于支持 USB-Serial-JTAG 的目标芯片，默认情况下会同时启用 USB-Serial-JTAG 和 UART 控制台输出。如果只需要使用单个控制台，可以通过以下操作减少二进制文件大小和 RAM 使用量：
+
+    1. 禁用次要控制台：将 :ref:`CONFIG_ESP_CONSOLE_SECONDARY` 设置为 ``CONFIG_ESP_CONSOLE_SECONDARY_NONE``。
+    2. 将 :ref:`CONFIG_ESP_CONSOLE_UART` 设置为以下选项之一：
+
+        * ``UART``：可减少约 2.5 KB 的二进制文件大小。
+        * ``USB-Serial-JTAG``：可减少约 10 KB 的二进制文件大小和约 1.5 KB 的 DRAM 使用量。
+
+    请注意，以上空间节省的前提条件是 UART/USB-Serial-JTAG 驱动代码未被应用程序引用。如果因为其他用途使用了这些驱动程序，则节省效果会有所降低。
+
 
 引导加载程序大小
 ------------------------------

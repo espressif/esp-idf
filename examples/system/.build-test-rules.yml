@@ -2,9 +2,12 @@
 
 examples/system/app_trace_basic:
   disable_test:
-    - if: IDF_TARGET in ["esp32c6", "esp32h2", "esp32p4", "esp32c5", "esp32c61"]
+    - if: IDF_TARGET == "esp32h21"
       temporary: true
-      reason: usb-serial-jtag tests are not stable yet. TODO[C61] IDF-10992
+      reason: not supported yet #TODO: OCD-1081
+    - if: IDF_TARGET == "esp32h4"
+      temporary: true
+      reason: not supported yet #TODO: OCD-1137
 
 examples/system/base_mac_address:
   depends_components:
@@ -40,12 +43,15 @@ examples/system/efuse:
   enable:
     - if: INCLUDE_DEFAULT == 1 or IDF_TARGET == "linux"
   disable:
-    - if: IDF_TARGET not in ["esp32", "linux"] and NIGHTLY_RUN != "1"
     - if: IDF_TARGET == "linux" and CONFIG_NAME == "virt_flash_enc"
     - if: IDF_TARGET == "linux" and CONFIG_NAME == "virt_flash_enc_release"
     - if: IDF_TARGET == "linux" and CONFIG_NAME == "virt_sb_v2_and_fe"
     - if: IDF_TARGET == "linux" and CONFIG_NAME == "virt_secure_boot_v2"
+    - if: IDF_TARGET == "linux" and CONFIG_NAME == "virt_secure_boot_v2_ecdsa_p384"
+    - if: IDF_TARGET == "linux" and CONFIG_NAME == "virt_sb_v2_ecdsa_p384_and_fe"
       reason: Security features are not yet supported for Linux.
+    - if: SOC_ECDSA_SUPPORT_CURVE_P384 != 1 and (CONFIG_NAME == "virt_secure_boot_v2_ecdsa_p384" or CONFIG_NAME == "virt_sb_v2_ecdsa_p384_and_fe")
+      reason: Secure Boot V2 with ECDSA P384 is not supported.
   depends_components:
     - efuse
     - bootloader_support
@@ -86,15 +92,12 @@ examples/system/freertos/real_time_stats:
 
 examples/system/gcov:
   disable_test:
-    - if: IDF_TARGET != "esp32"
+    - if: IDF_TARGET == "esp32h21"
       temporary: true
-      reason: lack of runners
-
-examples/system/gdbstub:
-  disable:
-    - if: IDF_TARGET == "esp32p4"
+      reason: not supported yet #TODO: OCD-1079
+    - if: IDF_TARGET == "esp32h4"
       temporary: true
-      reason: not supported yet #TODO: IDF-7510
+      reason: not supported yet #TODO: OCD-1138
 
 examples/system/heap_task_tracking:
   disable:
@@ -133,9 +136,9 @@ examples/system/nmi_isr:
 
 examples/system/ota/advanced_https_ota:
   disable:
-    - if: IDF_TARGET in ["esp32h2"]
+    - if: IDF_TARGET in ["esp32h2", "esp32h21", "esp32h4"]
       temporary: true
-      reason: target esp32h2 is not supported yet
+      reason: not supported yet
   disable_test:
     - if: IDF_TARGET not in ["esp32", "esp32c3", "esp32s3"]
       temporary: true
@@ -153,9 +156,9 @@ examples/system/ota/advanced_https_ota:
 
 examples/system/ota/native_ota_example:
   disable:
-    - if: IDF_TARGET in ["esp32h2"]
+    - if: IDF_TARGET in ["esp32h2", "esp32h21", "esp32h4"]
       temporary: true
-      reason: target esp32h2 is not supported yet
+      reason: not supported yet
   disable_test:
     - if: IDF_TARGET != "esp32"
       reason: Only esp32 has ethernet runners
@@ -174,13 +177,19 @@ examples/system/ota/otatool:
 
 examples/system/ota/partitions_ota:
   disable:
-    - if: IDF_TARGET in ["esp32h2"]
+    - if: IDF_TARGET in ["esp32h2", "esp32h21", "esp32h4"]
       temporary: true
-      reason: target esp32h2 is not supported yet
+      reason: not supported yet
+    - if: CONFIG_NAME == "recovery_bootloader" and SOC_RECOVERY_BOOTLOADER_SUPPORTED != 1
+      temporary: true
+      reason: disabled for targets that do not support recovery bootloader
   disable_test:
     - if: IDF_TARGET not in ["esp32", "esp32c3", "esp32s3"]
       temporary: true
       reason: lack of runners
+    - if: CONFIG_NAME == "recovery_bootloader" and SOC_RECOVERY_BOOTLOADER_SUPPORTED == 1
+      temporary: true
+      reason: lack of runners with recovery_bootloader lablel
   depends_components:
     - app_update
     - esp_https_ota
@@ -191,29 +200,11 @@ examples/system/ota/partitions_ota:
     - esp_phy
     - mbedtls
 
-examples/system/ota/pre_encrypted_ota:
-  disable:
-    - if: IDF_TARGET in ["esp32h2"]
-      temporary: true
-      reason: target esp32h2 is not supported yet
-  disable_test:
-    - if: IDF_TARGET != "esp32"
-      temporary: true
-      reason: Only esp32 has ethernet runners
-  depends_components:
-    - app_update
-    - esp_https_ota
-    - esp_http_client
-    - esp_eth
-    - mbedtls
-    - bootloader_support
-    - protocol_examples_common
-
 examples/system/ota/simple_ota_example:
   disable:
-    - if: IDF_TARGET in ["esp32h2"]
+    - if: IDF_TARGET in ["esp32h2", "esp32h21", "esp32h4"]
       temporary: true
-      reason: target esp32h2 is not supported yet
+      reason: not supported yet
     - if: CONFIG_NAME == "spiram" and SOC_SPIRAM_SUPPORTED != 1
   disable_test:
     - if: IDF_TARGET not in ["esp32", "esp32c3", "esp32s3"]
@@ -263,17 +254,23 @@ examples/system/sysview_tracing:
   disable:
     - if: SOC_GPTIMER_SUPPORTED != 1
   disable_test:
-    - if: IDF_TARGET != "esp32"
+    - if: IDF_TARGET == "esp32h21"
       temporary: true
-      reason: lack of runners
+      reason: not supported yet #TODO: OCD-1082
+    - if: IDF_TARGET == "esp32h4"
+      temporary: true
+      reason: not supported yet #TODO: OCD-1136
 
 examples/system/sysview_tracing_heap_log:
   disable:
     - if: SOC_GPTIMER_SUPPORTED != 1
   disable_test:
-    - if: IDF_TARGET != "esp32"
+    - if: IDF_TARGET == "esp32h21"
       temporary: true
-      reason: lack of runners
+      reason: not supported yet #TODO: OCD-1082
+    - if: IDF_TARGET == "esp32h4"
+      temporary: true
+      reason: not supported yet #TODO: OCD-1136
 
 examples/system/task_watchdog:
   disable:
@@ -303,10 +300,6 @@ examples/system/ulp/lp_core/gpio:
     - ulp
 
 examples/system/ulp/lp_core/gpio_intr_pulse_counter:
-  disable:
-    - if: IDF_TARGET == "esp32c5" # TODO: IDF-10918
-      temporary: true
-      reason: unknown error
   enable:
     - if: (SOC_LP_CORE_SUPPORTED == 1) and (SOC_ULP_LP_UART_SUPPORTED == 1 and SOC_DEEP_SLEEP_SUPPORTED == 1)
   depends_components:
@@ -339,16 +332,36 @@ examples/system/ulp/lp_core/lp_adc:
 examples/system/ulp/lp_core/lp_i2c:
   enable:
     - if: SOC_LP_I2C_SUPPORTED == 1 and SOC_DEEP_SLEEP_SUPPORTED == 1
-  disable:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: target esp32p4 is not supported yet, TODO IDF-9407
+  depends_components:
+    - ulp
+
+examples/system/ulp/lp_core/lp_mailbox:
+  enable:
+    - if: SOC_LP_CORE_SUPPORTED == 1
   depends_components:
     - ulp
 
 examples/system/ulp/lp_core/lp_spi:
   enable:
     - if: SOC_LP_SPI_SUPPORTED == 1 and SOC_DEEP_SLEEP_SUPPORTED == 1
+  depends_components:
+    - ulp
+
+examples/system/ulp/lp_core/lp_timer_interrupt:
+  disable:
+    - if: (SOC_LP_CORE_SUPPORTED != 1) or (SOC_LP_TIMER_SUPPORTED != 1)
+  depends_components:
+    - ulp
+
+examples/system/ulp/lp_core/lp_touch:
+  enable:
+    - if: SOC_TOUCH_SENSOR_SUPPORTED == 1 and (SOC_DEEP_SLEEP_SUPPORTED == 1 and SOC_LP_CORE_SUPPORTED == 1)
+  depends_components:
+    - ulp
+
+examples/system/ulp/lp_core/lp_uart/lp_uart_char_seq_wakeup:
+  disable:
+    - if: (SOC_ULP_LP_UART_SUPPORTED != 1)
   depends_components:
     - ulp
 
@@ -399,6 +412,12 @@ examples/system/ulp/ulp_riscv/gpio:
     - ulp
 
 examples/system/ulp/ulp_riscv/gpio_interrupt:
+  enable:
+    - if: SOC_RISCV_COPROC_SUPPORTED == 1
+  depends_components:
+    - ulp
+
+examples/system/ulp/ulp_riscv/gpio_pulse_counter:
   enable:
     - if: SOC_RISCV_COPROC_SUPPORTED == 1
   depends_components:

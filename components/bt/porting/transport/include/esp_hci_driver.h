@@ -43,9 +43,38 @@ extern hci_driver_ops_t hci_driver_vhci_ops;
 #endif // CONFIG_BT_LE_HCI_INTERFACE_USE_RAM
 
 #if CONFIG_BT_LE_HCI_INTERFACE_USE_UART
-extern hci_driver_ops_t hci_driver_uart_ops;
 #if CONFIG_BT_LE_UART_HCI_DMA_MODE
 extern hci_driver_ops_t hci_driver_uart_dma_ops;
+/**
+ * @brief Reconfigure the UART pins for the HCI driver.
+ *
+ * This function changes the UART pin configuration for the HCI driver.
+ *
+ * @param tx_pin   The pin number for the UART TX (transmit) line.
+ * @param rx_pin   The pin number for the UART RX (receive) line.
+ * @param cts_pin  The pin number for the UART CTS (clear to send) line.
+ * @param rts_pin  The pin number for the UART RTS (request to send) line.
+ *
+ * @return int     Returns 0 on success, or a negative error code on failure.
+ */
+int hci_driver_uart_dma_reconfig_pin(int tx_pin, int rx_pin, int cts_pin, int rts_pin);
+#define hci_uart_reconfig_pin               hci_driver_uart_dma_reconfig_pin
+#else
+extern hci_driver_ops_t hci_driver_uart_ops;
+/**
+ * @brief Reconfigure the UART pins for the HCI driver.
+ *
+ * This function changes the UART pin configuration for the HCI driver.
+ *
+ * @param tx_pin   The pin number for the UART TX (transmit) line.
+ * @param rx_pin   The pin number for the UART RX (receive) line.
+ * @param cts_pin  The pin number for the UART CTS (clear to send) line.
+ * @param rts_pin  The pin number for the UART RTS (request to send) line.
+ *
+ * @return int     Returns 0 on success, or a negative error code on failure.
+ */
+int hci_driver_uart_reconfig_pin(int tx_pin, int rx_pin, int cts_pin, int rts_pin);
+#define hci_uart_reconfig_pin               hci_driver_uart_reconfig_pin
 #endif // CONFIG_BT_LE_UART_HCI_DMA_MODE
 #endif // CONFIG_BT_LE_HCI_INTERFACE_USE_UART
 

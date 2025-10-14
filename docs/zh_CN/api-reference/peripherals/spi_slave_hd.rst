@@ -13,7 +13,7 @@ SPI 从机半双工模式
 协议
 ^^^^^^^^
 
-有关主设备与 SPI 从机通信的详细信息，请参阅 :doc:`/api-reference/protocols/esp_spi_slave_protocol`。
+有关主设备与 SPI 从机通信的详细信息，请参阅 `ESP SPI 从机半双工协议 <https://espressif.github.io/idf-extra-components/latest/esp_serial_slave_link/spi_slave_hd_protocol.html#spi-slave-hd-half-duplex-protocol>`_ 。
 
 通过不同类型的事务，从设备为主设备提供以下服务：
 
@@ -47,6 +47,11 @@ SPI 从机半双工模式
 调用 :cpp:func:`spi_slave_hd_init` 初始化 SPI 总线、外设和驱动程序。在初始化之后，SPI 从机将独占使用 SPI 外设和总线上的管脚。这意味着在反初始化前，其他设备无法使用这些资源。因此，为了确保其他设备可以正确利用 SPI 资源并进行正常通信，从机的大部分配置应在其初始化过程中完成。
 
 结构体 :cpp:type:`spi_bus_config_t` 指定了总线的初始化方式，结构体 :cpp:type:`spi_slave_hd_slot_config_t` 指定了 SPI 从机驱动程序的运行方式。
+
+启用/禁用从机驱动（可选）
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+从机驱动程序支持在程序初始化后通过调用 :cpp:func:`spi_slave_hd_disable` / :cpp:func:`spi_slave_hd_enable` 来禁用/启用驱动程序，以便能够更改时钟或电源配置或休眠以节省电量。默认情况下，驱动程序在初始化后为“启用”状态。
 
 从机反初始化（可选）
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^

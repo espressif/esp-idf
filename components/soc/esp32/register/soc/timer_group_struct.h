@@ -347,7 +347,7 @@ typedef union {
          */
         uint32_t rtc_cali_start_cycling: 1;
         /** rtc_cali_clk_sel : R/W; bitpos: [14:13]; default: 1;
-         *  0:rtcslowclock. 1:clk_80m.  2:xtal_32k.
+         *  0:rtc_slow_clock. 1:rc_fast_div_clk.  2:xtal_32k.
          */
         uint32_t rtc_cali_clk_sel: 2;
         /** rtc_cali_rdy : RO; bitpos: [15]; default: 0;

@@ -7,7 +7,7 @@ menu "Example Connection Configuration"
         depends on !IDF_TARGET_LINUX && (SOC_WIFI_SUPPORTED || ESP_WIFI_REMOTE_ENABLED || ESP_HOST_WIFI_ENABLED)
         default y if SOC_WIFI_SUPPORTED
         help
-            Protocol examples can use Wi-Fi and/or Ethernet to connect to the network.
+            Protocol examples can use Wi-Fi, Ethernet and/or Thread to connect to the network.
             Choose this option to connect with WiFi
 
     if EXAMPLE_CONNECT_WIFI
@@ -119,9 +119,9 @@ menu "Example Connection Configuration"
     config EXAMPLE_CONNECT_ETHERNET
         bool "connect using Ethernet interface"
         depends on !IDF_TARGET_LINUX
-        default y if !EXAMPLE_CONNECT_WIFI
+        default y if !EXAMPLE_CONNECT_WIFI && !EXAMPLE_CONNECT_THREAD
         help
-            Protocol examples can use Wi-Fi and/or Ethernet to connect to the network.
+            Protocol examples can use Wi-Fi, Ethernet and/or Thread to connect to the network.
             Choose this option to connect with Ethernet
 
     if EXAMPLE_CONNECT_ETHERNET
@@ -137,7 +137,7 @@ menu "Example Connection Configuration"
         choice EXAMPLE_ETHERNET_TYPE
             prompt "Ethernet Type"
             default EXAMPLE_USE_INTERNAL_ETHERNET if SOC_EMAC_SUPPORTED
-            default EXAMPLE_USE_W5500
+            default EXAMPLE_USE_DUMMY
             help
                 Select which kind of Ethernet will be used in the example.
 
@@ -148,21 +148,11 @@ menu "Example Connection Configuration"
                 help
                     Select internal Ethernet MAC controller.
 
-            config EXAMPLE_USE_DM9051
-                bool "DM9051 Module"
-                select EXAMPLE_USE_SPI_ETHERNET
+            config EXAMPLE_USE_DUMMY
+                bool "DUMMY Module"
                 select ETH_USE_SPI_ETHERNET
-                select ETH_SPI_ETHERNET_DM9051
                 help
-                    Select external SPI-Ethernet module.
-
-            config EXAMPLE_USE_W5500
-                bool "W5500 Module"
-                select EXAMPLE_USE_SPI_ETHERNET
-                select ETH_USE_SPI_ETHERNET
-                select ETH_SPI_ETHERNET_W5500
-                help
-                    Select external SPI-Ethernet module (W5500).
+                    Dummy option to just to pass builds, will be fixed by IDF-14059
 
             config EXAMPLE_USE_OPENETH
                 bool "OpenCores Ethernet MAC (EXPERIMENTAL)"
@@ -179,7 +169,7 @@ menu "Example Connection Configuration"
         if EXAMPLE_USE_INTERNAL_ETHERNET
             choice EXAMPLE_ETH_PHY_MODEL
                 prompt "Ethernet PHY Device"
-                default EXAMPLE_ETH_PHY_IP101
+                default EXAMPLE_ETH_PHY_GENERIC
                 help
                     Select the Ethernet PHY device to use in the example.
 
@@ -191,46 +181,6 @@ menu "Example Connection Configuration"
                         even if the PHY meets IEEE 802.3 standard. A typical example is loopback
                         functionality, where certain PHYs may require setting a specific speed mode to
                         operate correctly.
-
-                config EXAMPLE_ETH_PHY_IP101
-                    bool "IP101"
-                    help
-                        IP101 is a single port 10/100 MII/RMII/TP/Fiber Fast Ethernet Transceiver.
-                        Goto http://www.icplus.com.tw/pp-IP101G.html for more information about it.
-
-                config EXAMPLE_ETH_PHY_RTL8201
-                    bool "RTL8201/SR8201"
-                    help
-                        RTL8201F/SR8201F is a single port 10/100Mb Ethernet Transceiver with auto MDIX.
-                        Goto http://www.corechip-sz.com/productsview.asp?id=22 for more information about it.
-
-                config EXAMPLE_ETH_PHY_LAN87XX
-                    bool "LAN87xx"
-                    help
-                        Below chips are supported:
-                        LAN8710A is a small footprint MII/RMII 10/100 Ethernet Transceiver with HP Auto-MDIX and
-                            flexPWR® Technology.
-                        LAN8720A is a small footprint RMII 10/100 Ethernet Transceiver with HP Auto-MDIX Support.
-                        LAN8740A/LAN8741A is a small footprint MII/RMII 10/100 Energy Efficient Ethernet Transceiver
-                            with HP Auto-MDIX and flexPWR® Technology.
-                        LAN8742A is a small footprint RMII 10/100 Ethernet Transceiver with HP Auto-MDIX and
-                            flexPWR® Technology.
-                        Goto https://www.microchip.com for more information about them.
-
-                config EXAMPLE_ETH_PHY_DP83848
-                    bool "DP83848"
-                    help
-                        DP83848 is a single port 10/100Mb/s Ethernet Physical Layer Transceiver.
-                        Goto http://www.ti.com/product/DP83848J for more information about it.
-
-                config EXAMPLE_ETH_PHY_KSZ80XX
-                    bool "KSZ80xx"
-                    help
-                        With the KSZ80xx series, Microchip offers single-chip 10BASE-T/100BASE-TX
-                        Ethernet Physical Layer Transceivers (PHY).
-                        The following chips are supported: KSZ8001, KSZ8021, KSZ8031, KSZ8041,
-                            KSZ8051, KSZ8061, KSZ8081, KSZ8091
-                        Goto https://www.microchip.com for more information about them.
             endchoice
 
             config EXAMPLE_ETH_MDC_GPIO
@@ -249,57 +199,6 @@ menu "Example Connection Configuration"
                 help
                     Set the GPIO number used by SMI MDIO.
         endif
-
-        if EXAMPLE_USE_SPI_ETHERNET
-            config EXAMPLE_ETH_SPI_HOST
-                int "SPI Host Number"
-                range 0 2
-                default 1
-                help
-                    Set the SPI host used to communicate with the SPI Ethernet Controller.
-
-            config EXAMPLE_ETH_SPI_SCLK_GPIO
-                int "SPI SCLK GPIO number"
-                range ENV_GPIO_RANGE_MIN ENV_GPIO_OUT_RANGE_MAX
-                default 14
-                help
-                    Set the GPIO number used by SPI SCLK.
-
-            config EXAMPLE_ETH_SPI_MOSI_GPIO
-                int "SPI MOSI GPIO number"
-                range ENV_GPIO_RANGE_MIN ENV_GPIO_OUT_RANGE_MAX
-                default 13
-                help
-                    Set the GPIO number used by SPI MOSI.
-
-            config EXAMPLE_ETH_SPI_MISO_GPIO
-                int "SPI MISO GPIO number"
-                range ENV_GPIO_RANGE_MIN ENV_GPIO_IN_RANGE_MAX
-                default 12
-                help
-                    Set the GPIO number used by SPI MISO.
-
-            config EXAMPLE_ETH_SPI_CS_GPIO
-                int "SPI CS GPIO number"
-                range ENV_GPIO_RANGE_MIN ENV_GPIO_OUT_RANGE_MAX
-                default 15
-                help
-                    Set the GPIO number used by SPI CS.
-
-            config EXAMPLE_ETH_SPI_CLOCK_MHZ
-                int "SPI clock speed (MHz)"
-                range 5 80
-                default 36
-                help
-                    Set the clock speed (MHz) of SPI interface.
-
-            config EXAMPLE_ETH_SPI_INT_GPIO
-                int "Interrupt GPIO number"
-                range ENV_GPIO_RANGE_MIN ENV_GPIO_IN_RANGE_MAX
-                default 4
-                help
-                    Set the GPIO number used by the SPI Ethernet module interrupt line.
-        endif # EXAMPLE_USE_SPI_ETHERNET
 
         config EXAMPLE_ETH_PHY_RST_GPIO
             int "PHY Reset GPIO number"
@@ -381,13 +280,83 @@ menu "Example Connection Configuration"
 
     endif # EXAMPLE_CONNECT_PPP
 
+    config EXAMPLE_CONNECT_THREAD
+        bool "Connect using Thread interface"
+        depends on !IDF_TARGET_LINUX && OPENTHREAD_ENABLED
+        default y if SOC_IEEE802154_SUPPORTED
+        select EXAMPLE_CONNECT_IPV6
+        help
+            Protocol examples can use Wi-Fi, Ethernet and/or Thread to connect to the network.
+            Choose this option to connect with Thread.
+            The operational active dataset of the Thread network can be configured in openthread
+            component at '->Components->OpenThread->Thread Core Features->Thread Operational Dataset'
+
+    if EXAMPLE_CONNECT_THREAD
+        config EXAMPLE_THREAD_TASK_STACK_SIZE
+            int "Example Thread task stack size"
+            default 8192
+            help
+                Thread task stack size
+
+        menu "Radio Spinel Options"
+            depends on OPENTHREAD_RADIO_SPINEL_UART || OPENTHREAD_RADIO_SPINEL_SPI
+
+            config EXAMPLE_THREAD_UART_RX_PIN
+                depends on OPENTHREAD_RADIO_SPINEL_UART
+                int "Uart Rx Pin"
+                default 17
+
+            config EXAMPLE_THREAD_UART_TX_PIN
+                depends on OPENTHREAD_RADIO_SPINEL_UART
+                int "Uart Tx pin"
+                default 18
+
+            config EXAMPLE_THREAD_UART_BAUD
+                depends on OPENTHREAD_RADIO_SPINEL_UART
+                int "Uart baud rate"
+                default 460800
+
+            config EXAMPLE_THREAD_UART_PORT
+                depends on OPENTHREAD_RADIO_SPINEL_UART
+                int "Uart port"
+                default 1
+
+            config EXAMPLE_THREAD_SPI_CS_PIN
+                depends on OPENTHREAD_RADIO_SPINEL_SPI
+                int "SPI CS Pin"
+                default 10
+
+            config EXAMPLE_THREAD_SPI_SCLK_PIN
+                depends on OPENTHREAD_RADIO_SPINEL_SPI
+                int "SPI SCLK Pin"
+                default 12
+
+            config EXAMPLE_THREAD_SPI_MISO_PIN
+                depends on OPENTHREAD_RADIO_SPINEL_SPI
+                int "SPI MISO Pin"
+                default 13
+
+            config EXAMPLE_THREAD_SPI_MOSI_PIN
+                depends on OPENTHREAD_RADIO_SPINEL_SPI
+                int "SPI MOSI Pin"
+                default 11
+
+            config EXAMPLE_THREAD_SPI_INTR_PIN
+                depends on OPENTHREAD_RADIO_SPINEL_SPI
+                int "SPI Interrupt Pin"
+                default 8
+        endmenu
+
+    endif
+
     config EXAMPLE_CONNECT_IPV4
         bool
         depends on LWIP_IPV4
+        default n if EXAMPLE_CONNECT_THREAD
         default y
 
     config EXAMPLE_CONNECT_IPV6
-        depends on EXAMPLE_CONNECT_WIFI || EXAMPLE_CONNECT_ETHERNET || EXAMPLE_CONNECT_PPP
+        depends on EXAMPLE_CONNECT_WIFI || EXAMPLE_CONNECT_ETHERNET || EXAMPLE_CONNECT_PPP || EXAMPLE_CONNECT_THREAD
         bool "Obtain IPv6 address"
         default y
         select LWIP_IPV6

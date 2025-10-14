@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,6 +21,7 @@
 #include "soc/lp_gpio_struct.h"
 #include "soc/lpperi_struct.h"
 #include "soc/pmu_struct.h"
+#include "hal/gpio_types.h"
 #include "hal/misc.h"
 #include "hal/assert.h"
 
@@ -34,21 +35,6 @@ typedef enum {
     RTCIO_LL_FUNC_RTC = 0x0,         /*!< The pin controlled by RTC module. */
     RTCIO_LL_FUNC_DIGITAL = 0x1,     /*!< The pin controlled by DIGITAL module. */
 } rtcio_ll_func_t;
-
-typedef enum {
-    RTCIO_LL_WAKEUP_DISABLE    = 0,    /*!< Disable GPIO interrupt                             */
-    RTCIO_LL_WAKEUP_LOW_LEVEL  = 0x4,  /*!< GPIO interrupt type : input low level trigger      */
-    RTCIO_LL_WAKEUP_HIGH_LEVEL = 0x5,  /*!< GPIO interrupt type : input high level trigger     */
-} rtcio_ll_wake_type_t;
-
-typedef enum {
-    RTCIO_INTR_DISABLE = 0,     /*!< Disable GPIO interrupt                             */
-    RTCIO_INTR_POSEDGE = 1,     /*!< GPIO interrupt type : rising edge                  */
-    RTCIO_INTR_NEGEDGE = 2,     /*!< GPIO interrupt type : falling edge                 */
-    RTCIO_INTR_ANYEDGE = 3,     /*!< GPIO interrupt type : both rising and falling edge */
-    RTCIO_INTR_LOW_LEVEL = 4,   /*!< GPIO interrupt type : input low level trigger      */
-    RTCIO_INTR_HIGH_LEVEL = 5,  /*!< GPIO interrupt type : input high level trigger     */
-} rtcio_ll_intr_type_t;
 
 typedef enum {
     RTCIO_LL_OUTPUT_NORMAL = 0,    /*!< RTCIO output mode is normal. */
@@ -74,12 +60,16 @@ static inline void rtcio_ll_iomux_func_sel(int rtcio_num, int func)
 static inline void _rtcio_ll_enable_io_clock(bool enable)
 {
     LPPERI.clk_en.lp_io_ck_en = enable;
-    while (LPPERI.clk_en.lp_io_ck_en != enable) {
+    LP_GPIO.clock_gate.clk_en = enable;
+    while ((LPPERI.clk_en.lp_io_ck_en != enable) || (LP_GPIO.clock_gate.clk_en != enable)) {
         ;
     }
 }
 
-#define rtcio_ll_enable_io_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _rtcio_ll_enable_io_clock(__VA_ARGS__)
+#define rtcio_ll_enable_io_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _rtcio_ll_enable_io_clock(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Select the rtcio function.
@@ -115,7 +105,7 @@ static inline void rtcio_ll_function_select(int rtcio_num, rtcio_ll_func_t func)
  */
 static inline void rtcio_ll_output_enable(int rtcio_num)
 {
-    HAL_FORCE_MODIFY_U32_REG_FIELD(LP_GPIO.enable_w1ts, enable_w1ts, BIT(rtcio_num));
+    LP_GPIO.enable_w1ts.val = BIT(rtcio_num);
 }
 
 /**
@@ -125,7 +115,7 @@ static inline void rtcio_ll_output_enable(int rtcio_num)
  */
 static inline void rtcio_ll_output_disable(int rtcio_num)
 {
-    HAL_FORCE_MODIFY_U32_REG_FIELD(LP_GPIO.enable_w1tc, enable_w1tc, BIT(rtcio_num));
+    LP_GPIO.enable_w1tc.val = BIT(rtcio_num);
 }
 
 /**
@@ -137,9 +127,9 @@ static inline void rtcio_ll_output_disable(int rtcio_num)
 static inline void rtcio_ll_set_level(int rtcio_num, uint32_t level)
 {
     if (level) {
-        HAL_FORCE_MODIFY_U32_REG_FIELD(LP_GPIO.out_w1ts, out_w1ts, BIT(rtcio_num));
+        LP_GPIO.out_w1ts.val = BIT(rtcio_num);
     } else {
-        HAL_FORCE_MODIFY_U32_REG_FIELD(LP_GPIO.out_w1tc, out_w1tc, BIT(rtcio_num));
+        LP_GPIO.out_w1tc.val = BIT(rtcio_num);
     }
 }
 
@@ -171,7 +161,7 @@ static inline void rtcio_ll_input_disable(int rtcio_num)
  */
 static inline uint32_t rtcio_ll_get_level(int rtcio_num)
 {
-    return (uint32_t)(HAL_FORCE_READ_U32_REG_FIELD(LP_GPIO.in, in_data_next) >> rtcio_num) & 0x1;
+    return (LP_GPIO.in.in_data_next >> rtcio_num) & 0x1;
 }
 
 /**
@@ -230,6 +220,17 @@ static inline void rtcio_ll_pullup_disable(int rtcio_num)
 }
 
 /**
+ * @brief Get RTC GPIO pad pullup status.
+ *
+ * @param rtcio_num The index of rtcio. 0 ~ MAX(rtcio).
+ * @return Whether the pullup of the pad is enabled or not.
+ */
+static inline bool rtcio_ll_is_pullup_enabled(int rtcio_num)
+{
+    return LP_IO_MUX.gpion[rtcio_num].gpion_fun_wpu;
+}
+
+/**
  * RTC GPIO pulldown enable.
  *
  * @param rtcio_num The index of rtcio. 0 ~ MAX(rtcio).
@@ -249,6 +250,17 @@ static inline void rtcio_ll_pulldown_disable(int rtcio_num)
 {
     /* Enable internal weak pull-down */
     LP_IO_MUX.gpion[rtcio_num].gpion_fun_wpd = 0;
+}
+
+/**
+ * @brief Get RTC GPIO pad pulldown status.
+ *
+ * @param rtcio_num The index of rtcio. 0 ~ MAX(rtcio).
+ * @return Whether the pulldown of the pad is enabled or not.
+ */
+static inline bool rtcio_ll_is_pulldown_enabled(int rtcio_num)
+{
+    return LP_IO_MUX.gpion[rtcio_num].gpion_fun_wpd;
 }
 
 /**
@@ -306,7 +318,7 @@ static inline void rtcio_ll_force_unhold_all(void)
  * @param rtcio_num The index of rtcio. 0 ~ MAX(rtcio).
  * @param type  Wakeup on high level or low level.
  */
-static inline void rtcio_ll_wakeup_enable(int rtcio_num, rtcio_ll_wake_type_t type)
+static inline void rtcio_ll_wakeup_enable(int rtcio_num, gpio_int_type_t type)
 {
     LP_GPIO.pinn[rtcio_num].pinn_wakeup_enable = 1;
     LP_GPIO.pinn[rtcio_num].pinn_int_type = type;
@@ -320,7 +332,7 @@ static inline void rtcio_ll_wakeup_enable(int rtcio_num, rtcio_ll_wake_type_t ty
 static inline void rtcio_ll_wakeup_disable(int rtcio_num)
 {
     LP_GPIO.pinn[rtcio_num].pinn_wakeup_enable = 0;
-    LP_GPIO.pinn[rtcio_num].pinn_int_type = RTCIO_LL_WAKEUP_DISABLE;
+    LP_GPIO.pinn[rtcio_num].pinn_int_type = 0;
 }
 
 /**
@@ -330,12 +342,12 @@ static inline void rtcio_ll_wakeup_disable(int rtcio_num)
  * @param type  Interrupt type on high level or low level.
  */
 
-static inline void rtcio_ll_intr_enable(int rtcio_num, rtcio_ll_intr_type_t type)
+static inline void rtcio_ll_intr_enable(int rtcio_num, gpio_int_type_t type)
 {
     LP_GPIO.pinn[rtcio_num].pinn_int_type = type;
 
     /* Work around for HW issue,
-       need to also enable this clk, so that LP_GPIO.status.status_interrupt can get updated,
+       need to also enable this clk, so that (LP_GPIO.status, status_interrupt) can get updated,
        and trigger the interrupt on the LP Core
     */
     LP_GPIO.clock_gate.clk_en = 1;
@@ -416,11 +428,11 @@ static inline bool rtcio_ll_wakeup_is_enabled(int rtcio_num)
 /**
  * @brief Get the rtc io interrupt status
  *
- * @return  bit 0~7 corresponding to 0 ~ SOC_RTCIO_PIN_COUNT.
+ * @return  bit 0~6 corresponding to 0 ~ SOC_RTCIO_PIN_COUNT.
  */
 static inline  uint32_t rtcio_ll_get_interrupt_status(void)
 {
-    return (uint32_t)HAL_FORCE_READ_U32_REG_FIELD(LP_GPIO.status, status_interrupt);
+    return LP_GPIO.status.status_interrupt;
 }
 
 /**
@@ -428,7 +440,7 @@ static inline  uint32_t rtcio_ll_get_interrupt_status(void)
  */
 static inline  void rtcio_ll_clear_interrupt_status(void)
 {
-    HAL_FORCE_MODIFY_U32_REG_FIELD(LP_GPIO.status_w1tc, status_w1tc, 0xff);
+    LP_GPIO.status_w1tc.val = 0x7F;
 }
 
 #ifdef __cplusplus

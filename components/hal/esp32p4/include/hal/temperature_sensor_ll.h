@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -28,6 +28,7 @@
 #include "hal/temperature_sensor_types.h"
 #include "hal/assert.h"
 #include "hal/misc.h"
+#include "hal/efuse_ll.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -36,6 +37,10 @@ extern "C" {
 #define TEMPERATURE_SENSOR_LL_ADC_FACTOR     (0.4386)
 #define TEMPERATURE_SENSOR_LL_DAC_FACTOR     (27.88)
 #define TEMPERATURE_SENSOR_LL_OFFSET_FACTOR  (20.52)
+#define TEMPERATURE_SENSOR_LL_ADC_FACTOR_INT     (4386)
+#define TEMPERATURE_SENSOR_LL_DAC_FACTOR_INT     (278800)
+#define TEMPERATURE_SENSOR_LL_OFFSET_FACTOR_INT  (205200)
+#define TEMPERATURE_SENSOR_LL_DENOMINATOR    (10000)
 #define TEMPERATURE_SENSOR_LL_MEASURE_MAX    (125)
 #define TEMPERATURE_SENSOR_LL_MEASURE_MIN    (-40)
 
@@ -256,6 +261,19 @@ static inline void temperature_sensor_ll_sample_enable(bool en)
 static inline void temperature_sensor_ll_set_sample_rate(uint16_t rate)
 {
     HAL_FORCE_MODIFY_U32_REG_FIELD(LP_TSENS.sample_rate, sample_rate, rate);
+}
+
+/**
+ * @brief Retrieve and calculate the temperature sensor calibration value.
+ *
+ * @return Temperature calibration value.
+ */
+static inline int temperature_sensor_ll_load_calib_param(void)
+{
+    uint32_t cal_temp = EFUSE.rd_sys_part2_data3.temperature_sensor;
+    // BIT(8) stands for sign: 1: negative, 0: positive
+    int tsens_cal = ((cal_temp & BIT(8)) != 0)? -(uint8_t)cal_temp: (uint8_t)cal_temp;
+    return tsens_cal;
 }
 
 #ifdef __cplusplus

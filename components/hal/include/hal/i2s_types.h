@@ -64,7 +64,7 @@ typedef enum {
     I2S_SLOT_BIT_WIDTH_32BIT          = (32),     /*!< I2S channel slot bit-width: 32 */
 } i2s_slot_bit_width_t;
 
-#if SOC_I2S_SUPPORTED
+#if SOC_HAS(I2S)
 typedef soc_periph_i2s_clk_src_t    i2s_clock_src_t; /*!< I2S clock source */
 #else
 typedef int                         i2s_clock_src_t; /*!< Define a default type to avoid compiling warnings */
@@ -233,6 +233,9 @@ typedef enum {
 typedef enum {
     I2S_ETM_TASK_START,     /*!< Start the I2S channel */
     I2S_ETM_TASK_STOP,      /*!< Stop the I2S channel */
+#if SOC_I2S_SUPPORTS_TX_FIFO_SYNC
+    I2S_ETM_TASK_SYNC_FIFO, /*!< Check the I2S TX channel sync status */
+#endif
     I2S_ETM_TASK_MAX,       /*!< Maximum number of tasks */
 } i2s_etm_task_type_t;
 

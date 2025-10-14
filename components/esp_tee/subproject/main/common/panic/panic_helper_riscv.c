@@ -1,16 +1,21 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include "esp_tee.h"
+#include "soc/soc.h"
 #include "esp_attr.h"
+#include "esp_rom_sys.h"
 #include "esp_private/panic_reason.h"
+#include "esp_private/vectors_const.h"
+
 #include "riscv/csr.h"
 #include "riscv/encoding.h"
 #include "riscv/rvruntime-frames.h"
-
-#define tee_panic_print(format, ...) esp_rom_printf(DRAM_STR(format), ##__VA_ARGS__)
+#include "soc/tee_reg.h"
+#include "esp_tee.h"
+#include "panic_helper.h"
+#include "sdkconfig.h"
 
 void panic_print_backtrace(const void *f, int depth)
 {
@@ -19,7 +24,7 @@ void panic_print_backtrace(const void *f, int depth)
     uint32_t sp = (uint32_t)((RvExcFrame *)f)->sp;
     const int per_line = 8;
     for (int x = 0; x < depth; x += per_line * sizeof(uint32_t)) {
-        uint32_t *spp = (uint32_t *)(sp + x);
+        __attribute__((unused)) uint32_t *spp = (uint32_t *)(sp + x);
         tee_panic_print("0x%08x: ", sp + x);
         for (int y = 0; y < per_line; y++) {
             tee_panic_print("0x%08x%s", spp[y], y == per_line - 1 ? "\r\n" : " ");
@@ -29,7 +34,7 @@ void panic_print_backtrace(const void *f, int depth)
 
 void panic_print_registers(const void *f, int core)
 {
-    uint32_t *regs = (uint32_t *)f;
+    __attribute__((unused)) uint32_t *regs = (uint32_t *)f;
 
     // only print ABI name
     const char *desc[] = {
@@ -51,23 +56,57 @@ void panic_print_registers(const void *f, int core)
         }
     }
 
-    tee_panic_print("MIE     : 0x%08x  ", RV_READ_CSR(mie));
-    tee_panic_print("MIP     : 0x%08x  ", RV_READ_CSR(mip));
-    tee_panic_print("MSCRATCH: 0x%08x\n", RV_READ_CSR(mscratch));
-    tee_panic_print("UEPC    : 0x%08x  ", RV_READ_CSR(uepc));
-    tee_panic_print("USTATUS : 0x%08x  ", RV_READ_CSR(ustatus));
-    tee_panic_print("UTVEC   : 0x%08x  ", RV_READ_CSR(utvec));
-    tee_panic_print("UCAUSE  : 0x%08x\n", RV_READ_CSR(ucause));
-    tee_panic_print("UTVAL   : 0x%08x  ", RV_READ_CSR(utval));
-    tee_panic_print("UIE     : 0x%08x  ", RV_READ_CSR(uie));
-    tee_panic_print("UIP     : 0x%08x\n", RV_READ_CSR(uip));
+#if CONFIG_SECURE_TEE_TEST_MODE
+    struct {
+        const char *name;
+        uint32_t value;
+    } csr_regs[] = {
+        { "MSCRATCH  ", RV_READ_CSR(mscratch) },
+        { "UEPC      ", RV_READ_CSR(uepc)     },
+        { "USTATUS   ", RV_READ_CSR(ustatus)  },
+        { "UTVEC     ", RV_READ_CSR(utvec)    },
+        { "UCAUSE    ", RV_READ_CSR(ucause)   },
+#if SOC_INT_PLIC_SUPPORTED
+        { "MIE       ", RV_READ_CSR(mie)      },
+        { "MIP       ", RV_READ_CSR(mip)      },
+        { "UTVAL     ", RV_READ_CSR(utval)    },
+        { "UIE       ", RV_READ_CSR(uie)      },
+        { "UIP       ", RV_READ_CSR(uip)      },
+#endif
+#if SOC_INT_CLIC_SUPPORTED
+        { "USCRATCH  ", RV_READ_CSR(0x040)  },
+        { "MEXSTATUS ", RV_READ_CSR(0x7E1)  },
+        { "MINTSTATUS", RV_READ_CSR(0xFB1)  },
+        { "MINTTHRESH", RV_READ_CSR(0x347)  },
+        { "UINTSTATUS", RV_READ_CSR(0xCB1)  },
+        { "UINTTHRESH", RV_READ_CSR(0x047)  },
+#endif
+    };
+
+    tee_panic_print("\n\n");
+
+    for (int i = 0; i < sizeof(csr_regs) / sizeof(csr_regs[0]); i++) {
+        tee_panic_print("%s: 0x%08x  ", csr_regs[i].name, csr_regs[i].value);
+        if ((i + 1) % 4 == 0 || i == sizeof(csr_regs) / sizeof(csr_regs[0]) - 1) {
+            tee_panic_print("\n");
+        }
+    }
+#endif
+}
+
+void panic_print_rsn(const void *f, int core, const char *rsn)
+{
+    const RvExcFrame *regs = (const RvExcFrame *)f;
+    __attribute__((unused)) const void *addr = (const void *)regs->mepc;
+
+    tee_panic_print("Guru Meditation Error: Core %d panic'ed (%s). Exception was unhandled.\n", core, rsn);
+    tee_panic_print("Fault addr: %p | Origin: %s\n", addr, (regs->mstatus & MSTATUS_MPP) ? "M-mode" : "U-mode");
 }
 
 void panic_print_exccause(const void *f, int core)
 {
-    RvExcFrame *regs = (RvExcFrame *) f;
+    const RvExcFrame *regs = (const RvExcFrame *)f;
 
-    //Please keep in sync with PANIC_RSN_* defines
     static const char *reason[] = {
         "Instruction address misaligned",
         "Instruction access fault",
@@ -88,65 +127,34 @@ void panic_print_exccause(const void *f, int core)
     };
 
     const char *rsn = NULL;
-    if (regs->mcause < (sizeof(reason) / sizeof(reason[0]))) {
-        if (reason[regs->mcause] != NULL) {
-            rsn = (reason[regs->mcause]);
+    uint32_t mcause = regs->mcause & VECTORS_MCAUSE_REASON_MASK;
+    if (mcause < (sizeof(reason) / sizeof(reason[0]))) {
+        if (reason[mcause] != NULL) {
+            rsn = (reason[mcause]);
         }
     }
 
-    const char *desc = "Exception was unhandled.";
-    const void *addr = (void *) regs->mepc;
-    tee_panic_print("Guru Meditation Error: Core %d panic'ed (%s). %s\n", core, rsn, desc);
-
-    const char *exc_origin = "U-mode";
-    if (regs->mstatus & MSTATUS_MPP) {
-        exc_origin = "M-mode";
-    }
-    tee_panic_print("Fault addr: %p | Exception origin: %s\n", addr, exc_origin);
+    panic_print_rsn(f, core, rsn);
 }
 
 void panic_print_isrcause(const void *f, int core)
 {
-    RvExcFrame *regs = (RvExcFrame *) f;
+    const RvExcFrame *regs = (const RvExcFrame *)f;
+    const char *rsn = "Unknown reason";
 
-    /* Please keep in sync with PANIC_RSN_* defines */
-    static const char *pseudo_reason[] = {
-        "Unknown reason",
-        "Interrupt wdt timeout on CPU0",
-#if SOC_CPU_NUM > 1
-        "Interrupt wdt timeout on CPU1",
+    switch (regs->mcause) {
+    case ETS_CACHEERR_INUM:
+        rsn = "Cache error";
+        break;
+    case PANIC_RSN_INTWDT_CPU0:
+        rsn = "Interrupt wdt timeout on CPU0";
+        break;
+#if SOC_CPU_CORES_NUM > 1
+    case PANIC_RSN_INTWDT_CPU1:
+        rsn = "Interrupt wdt timeout on CPU1";
+        break;
 #endif
-        "Cache error",
-    };
-
-    const void *addr = (void *) regs->mepc;
-    const char *rsn = pseudo_reason[0];
-
-    /* The mcause has been set by the CPU when the panic occurred.
-     * All SoC-level panic will call this function, thus, this register
-     * lets us know which error was triggered. */
-    if (regs->mcause == ETS_CACHEERR_INUM) {
-        /* Panic due to a cache error, multiple cache error are possible,
-         * assign function print_cache_err_details to our structure's
-         * details field. As its name states, it will give more details
-         * about why the error happened. */
-        rsn = pseudo_reason[PANIC_RSN_CACHEERR];
-    } else if (regs->mcause == ETS_INT_WDT_INUM) {
-        /* Watchdog interrupt occurred, get the core on which it happened
-         * and update the reason/message accordingly. */
-#if SOC_CPU_NUM > 1
-        _Static_assert(PANIC_RSN_INTWDT_CPU0 + 1 == PANIC_RSN_INTWDT_CPU1,
-                       "PANIC_RSN_INTWDT_CPU1 must be equal to PANIC_RSN_INTWDT_CPU0 + 1");
-#endif
-        rsn = pseudo_reason[PANIC_RSN_INTWDT_CPU0 + core];
     }
 
-    const char *desc = "Exception was unhandled.";
-    tee_panic_print("Guru Meditation Error: Core %d panic'ed (%s). %s\n", core, rsn, desc);
-
-    const char *exc_origin = "U-mode";
-    if (regs->mstatus & MSTATUS_MPP) {
-        exc_origin = "M-mode";
-    }
-    tee_panic_print("Fault addr: %p | Exception origin: %s\n", addr, exc_origin);
+    panic_print_rsn(f, core, rsn);
 }

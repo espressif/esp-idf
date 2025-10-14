@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,420 +7,650 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include "esp_err.h"
-#include "soc/pcr_reg.h"
+
+#include "soc/apm_defs.h"
 #include "soc/tee_reg.h"
 #include "soc/lp_tee_reg.h"
-#include "soc/lp_apm0_reg.h"
 #include "soc/hp_apm_reg.h"
+#include "soc/hp_apm_struct.h"
+#include "soc/lp_apm0_reg.h"
+#include "soc/lp_apm0_struct.h"
 #include "soc/lp_apm_reg.h"
+#include "soc/lp_apm_struct.h"
+
+#include "soc/pcr_reg.h"
 #include "soc/interrupts.h"
+#include "hal/apm_types.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define APM_LL_CTRL_EXCEPTION_ID        0x0000001FU
-#define APM_LL_CTRL_EXCEPTION_ID_S      18
-#define APM_LL_CTRL_EXCEPTION_ID_V      0x0000001FU
-#define APM_LL_CTRL_EXCEPTION_MODE      0x00000003U
-#define APM_LL_CTRL_EXCEPTION_MODE_S    16
-#define APM_LL_CTRL_EXCEPTION_MODE_V    0x00000003U
-#define APM_LL_CTRL_EXCEPTION_REGION    0x0000FFFFU
-#define APM_LL_CTRL_EXCEPTION_REGION_S  0
-#define APM_LL_CTRL_EXCEPTION_REGION_V  0x0000FFFFU
-
-#define APM_LL_HP_MAX_REGION_NUM 15
-#define APM_LL_LP_MAX_REGION_NUM 3
-#define APM_LL_MASTER_MAX        32
-
-#define  LP_APM0_MAX_ACCESS_PATH 0x1
-#define  HP_APM_MAX_ACCESS_PATH  0x4
-#define  LP_APM_MAX_ACCESS_PATH  0x2
-
-#define APM_CTRL_REGION_FILTER_EN_REG(apm_ctrl) \
-    ({\
-        (LP_APM0_CTRL == apm_ctrl) ? (LP_APM0_REGION_FILTER_EN_REG) : \
-        ((HP_APM_CTRL == apm_ctrl) ? (HP_APM_REGION_FILTER_EN_REG) :  \
-                                     (LP_APM_REGION_FILTER_EN_REG));  \
-    })
-
-#define TEE_LL_MODE_CTRL_REG(master_id) (TEE_M0_MODE_CTRL_REG + 4 * (master_id))
-
-#define APM_LL_REGION_ADDR_START_REG(apm_ctrl, regn_num) \
-    ({\
-        (LP_APM0_CTRL == apm_ctrl) ? (LP_APM0_REGION0_ADDR_START_REG + 0xC * (regn_num)) : \
-        ((HP_APM_CTRL == apm_ctrl) ? (HP_APM_REGION0_ADDR_START_REG + 0xC * (regn_num)) :  \
-                                     (LP_APM_REGION0_ADDR_START_REG + 0xC * (regn_num)));  \
-    })
-
-#define APM_LL_REGION_ADDR_END_REG(apm_ctrl, regn_num) \
-    ({\
-        (LP_APM0_CTRL == apm_ctrl) ? (LP_APM0_REGION0_ADDR_END_REG + 0xC * (regn_num)) :  \
-        ((HP_APM_CTRL == apm_ctrl) ? (HP_APM_REGION0_ADDR_END_REG + 0xC * (regn_num)) :   \
-                                     (LP_APM_REGION0_ADDR_END_REG + 0xC * (regn_num)));   \
-    })
-
-#define APM_LL_REGION_ADDR_ATTR_REG(apm_ctrl, regn_num) \
-    ({\
-        (LP_APM0_CTRL == apm_ctrl) ? (LP_APM0_REGION0_PMS_ATTR_REG + 0xC * (regn_num)) : \
-        ((HP_APM_CTRL == apm_ctrl) ? (HP_APM_REGION0_PMS_ATTR_REG + 0xC * (regn_num)) :  \
-                                     (LP_APM_REGION0_PMS_ATTR_REG + 0xC * (regn_num)));  \
-    })
-
-#define APM_LL_APM_CTRL_EXCP_STATUS_REG(apm_ctrl, apm_m_path) \
-    ({\
-        (LP_APM0_CTRL == apm_ctrl) ? (LP_APM0_M0_STATUS_REG + 0x10 * (apm_m_path)) : \
-        ((HP_APM_CTRL == apm_ctrl) ? (HP_APM_M0_STATUS_REG + 0x10 * (apm_m_path)) :  \
-                                     (LP_APM_M0_STATUS_REG + 0x10 * (apm_m_path)));  \
-    })
-
-#define APM_CTRL_M_REGION_STATUS_CLR    (BIT(0))
-#define APM_LL_APM_CTRL_EXCP_CLR_REG(apm_ctrl, apm_m_path) \
-    ({\
-        (LP_APM0_CTRL == apm_ctrl) ? (LP_APM0_M0_STATUS_CLR_REG + 0x10 * (apm_m_path)) : \
-        ((HP_APM_CTRL == apm_ctrl) ? (HP_APM_M0_STATUS_CLR_REG + 0x10 * (apm_m_path)) :  \
-                                     (LP_APM_M0_STATUS_CLR_REG + 0x10 * (apm_m_path)));  \
-    })
-
-#define APM_LL_TEE_EXCP_INFO0_REG(apm_ctrl, apm_m_path) \
-    ({\
-        (LP_APM0_CTRL == apm_ctrl) ? (LP_APM0_M0_EXCEPTION_INFO0_REG + 0x10 * (apm_m_path)) : \
-        ((HP_APM_CTRL == apm_ctrl) ? (HP_APM_M0_EXCEPTION_INFO0_REG + 0x10 * (apm_m_path)) :  \
-                                     (LP_APM_M0_EXCEPTION_INFO0_REG + 0x10 * (apm_m_path)));  \
-    })
-
-#define APM_LL_APM_CTRL_EXCP_STATUS_REG(apm_ctrl, apm_m_path) \
-    ({\
-        (LP_APM0_CTRL == apm_ctrl) ? (LP_APM0_M0_STATUS_REG + 0x10 * (apm_m_path)) : \
-        ((HP_APM_CTRL == apm_ctrl) ? (HP_APM_M0_STATUS_REG + 0x10 * (apm_m_path)) :  \
-                                     (LP_APM_M0_STATUS_REG + 0x10 * (apm_m_path)));  \
-    })
-
-#define APM_LL_TEE_EXCP_INFO1_REG(apm_ctrl, apm_m_path) \
-    ({\
-        (LP_APM0_CTRL == apm_ctrl) ? (LP_APM0_M0_EXCEPTION_INFO1_REG + 0x10 * (apm_m_path)) : \
-        ((HP_APM_CTRL == apm_ctrl) ? (HP_APM_M0_EXCEPTION_INFO1_REG + 0x10 * (apm_m_path)) :  \
-                                     (LP_APM_M0_EXCEPTION_INFO1_REG + 0x10 * (apm_m_path)));  \
-    })
-
-#define APM_LL_SEC_MODE_REGION_ATTR(sec_mode, regn_pms) ((regn_pms) << (4 * (sec_mode - 1)))
-#define APM_LL_SEC_MODE_REGION_ATTR_V  0x00000003U
-#define APM_LL_SEC_MODE_REGION_ATTR_M(sec_mode) (APM_LL_SEC_MODE_REGION_ATTR_V << (4 * (sec_mode - 1)))
-
-#define APM_LL_APM_CTRL_INT_EN_REG(apm_ctrl) \
-    ({\
-        (LP_APM0_CTRL == apm_ctrl) ? (LP_APM0_INT_EN_REG) : \
-        ((HP_APM_CTRL == apm_ctrl) ? (HP_APM_INT_EN_REG) :  \
-                                     (LP_APM_INT_EN_REG));  \
-    })
-
-#define APM_CTRL_CLK_EN    (BIT(0))
-#define APM_LL_APM_CTRL_CLOCK_GATE_REG(apm_ctrl) \
-    ({\
-        (LP_APM0_CTRL == apm_ctrl) ? (LP_APM0_CLOCK_GATE_REG) : \
-        ((HP_APM_CTRL == apm_ctrl) ? (HP_APM_CLOCK_GATE_REG) :  \
-                                     (LP_APM_CLOCK_GATE_REG));  \
-    })
-
-#define APM_LL_APM_CTRL_FUNC_CTRL_REG(apm_ctrl) \
-    ({\
-        (LP_APM0_CTRL == apm_ctrl) ? (LP_APM0_FUNC_CTRL_REG) :     \
-        ((HP_APM_CTRL == apm_ctrl) ? (HP_APM_FUNC_CTRL_REG) :      \
-                                     (LP_APM_FUNC_CTRL_REG)); \
-    })
+/* Helper macros for calculating pms attr field position for given security mode */
+#define APM_REGION_PMS_SHIFT(mode)      (4U * ((mode) - 1))
+#define APM_REGION_PMS_MASK(mode)       (0x07U << APM_REGION_PMS_SHIFT(mode))
+#define APM_REGION_PMS_FIELD(mode, pms) ((pms) << APM_REGION_PMS_SHIFT(mode))
 
 /**
- * @brief APM Master ID
- */
-typedef enum {
-    APM_LL_MASTER_HPCORE       = 0,
-    APM_LL_MASTER_LPCORE       = 1,
-    APM_LL_MASTER_REGDMA       = 2,
-    APM_LL_MASTER_SDIOSLV      = 3,
-    APM_LL_MASTER_MODEM        = 4,
-    APM_LL_MASTER_MEM_MONITOR  = 5,
-    APM_LL_MASTER_TRACE        = 6,
-    APM_LL_MASTER_GDMA         = 16, // The beginning of GDMA master ID
-    APM_LL_MASTER_GDMA_SPI2    = 16,
-    APM_LL_MASTER_GDMA_UHCI0   = 18,
-    APM_LL_MASTER_GDMA_I2S0    = 19,
-    APM_LL_MASTER_GDMA_AES     = 22,
-    APM_LL_MASTER_GDMA_SHA     = 23,
-    APM_LL_MASTER_GDMA_ADC     = 24,
-    APM_LL_MASTER_GDMA_PARLIO  = 25,
-} apm_ll_master_id_t;
-
-/**
- * @brief APM Controller
- */
-typedef enum {
-    LP_APM0_CTRL = 0,
-    HP_APM_CTRL  = 1,
-    LP_APM_CTRL  = 2,
-} apm_ll_apm_ctrl_t;
-
-/**
- * @brief APM Secure Mode
- */
-typedef enum {
-    APM_LL_SECURE_MODE_TEE  = 0, /* Trusted execution environment mode */
-    APM_LL_SECURE_MODE_REE0 = 1, /* Rich execution environment mode0 */
-    APM_LL_SECURE_MODE_REE1 = 2, /* Rich execution environment mode1 */
-    APM_LL_SECURE_MODE_REE2 = 3, /* Rich execution environment mode2 */
-} apm_ll_secure_mode_t;
-
-/**
- * @brief APM Ctrl access path
- */
-typedef enum {
-    APM_CTRL_ACCESS_PATH_M0 = 0x0,
-    APM_CTRL_ACCESS_PATH_M1 = 0x1,
-    APM_CTRL_ACCESS_PATH_M2 = 0x2,
-    APM_CTRL_ACCESS_PATH_M3 = 0x3,
-} apm_ll_ctrl_access_path_t;
-
-/**
- * @brief APM Ctrl path.
- */
-typedef struct {
-    apm_ll_apm_ctrl_t apm_ctrl;           /* APM Ctrl: LP APM0/HP APM/LP APM. */
-    apm_ll_ctrl_access_path_t apm_m_path; /* APM Ctrl access path M[0:n]. */
-} apm_ctrl_path_t;
-
-/**
- * @brief APM exception information
- */
-typedef struct {
-    apm_ctrl_path_t apm_path;
-    uint8_t  excp_regn;
-    uint8_t  excp_mode;
-    uint8_t  excp_id;
-    uint8_t  excp_type;
-    uint32_t excp_addr;
-} apm_ctrl_exception_info_t;
-
-/**
- * @brief Set secure mode
+ * @brief Set security mode for a specific master in HP-TEE
  *
- * @param apm_ctrl APM Ctrl (LP_APM0/HP_APM/LP_APM)
- * @param master_id APM master ID
- * @param sec_mode Secure mode
+ * @param id Master ID
+ * @param mode Security mode to set
  */
-static inline void apm_tee_ll_set_master_secure_mode(apm_ll_apm_ctrl_t apm_ctrl, apm_ll_master_id_t master_id,
-                                                     apm_ll_secure_mode_t sec_mode)
+static inline void apm_ll_hp_tee_set_master_sec_mode(apm_master_id_t id, apm_security_mode_t mode)
 {
-    if (apm_ctrl == HP_APM_CTRL) {
-        REG_WRITE(TEE_LL_MODE_CTRL_REG(master_id), sec_mode);
-    } else if ((apm_ctrl == LP_APM0_CTRL) || (apm_ctrl == LP_APM_CTRL)) {
-        REG_WRITE(LP_TEE_M0_MODE_CTRL_REG, sec_mode);
-    }
+    REG_WRITE(TEE_M0_MODE_CTRL_REG + APM_TEE_MODE_CTRL_OFFSET * id, mode);
 }
 
 /**
- * @brief TEE controller clock auto gating enable
+ * @brief Enable/disable clock gating for HP-TEE
  *
- * @param enable Flag for HP clock auto gating enable/disable
+ * @param enable True to enable, false to disable
  */
-static inline void apm_tee_ll_clk_gating_enable(bool enable)
+static inline void apm_ll_hp_tee_enable_clk_gating(bool enable)
 {
     if (enable) {
-        REG_SET_BIT(TEE_CLOCK_GATE_REG, TEE_CLK_EN);
-    } else {
         REG_CLR_BIT(TEE_CLOCK_GATE_REG, TEE_CLK_EN);
+    } else {
+        REG_SET_BIT(TEE_CLOCK_GATE_REG, TEE_CLK_EN);
     }
 }
 
 /**
- * @brief enable/disable APM Ctrl Region access permission filter
+ * @brief Set security mode for a specific master in LP-TEE
  *
- * @param apm_ctrl APM Ctrl (LP_APM0/HP_APM/LP_APM)
- * @param regn_num Memory Region number
- * @param enable Flag for Region access filter enable/disable
+ * @param id Master ID (unused)
+ * @param mode Security mode to set
  */
-static inline void apm_ll_apm_ctrl_region_filter_enable(apm_ll_apm_ctrl_t apm_ctrl,
-                                                        uint32_t regn_num, bool enable)
+static inline void apm_ll_lp_tee_set_master_sec_mode(apm_master_id_t id, apm_security_mode_t mode)
+{
+    (void)id;
+    REG_WRITE(LP_TEE_M0_MODE_CTRL_REG, mode);
+}
+
+/**
+ * @brief Enable/disable clock gating for LP-TEE
+ *
+ * @param enable True to enable, false to disable
+ */
+static inline void apm_ll_lp_tee_enable_clk_gating(bool enable)
 {
     if (enable) {
-        REG_SET_BIT(APM_CTRL_REGION_FILTER_EN_REG(apm_ctrl), BIT(regn_num));
+        REG_CLR_BIT(LP_TEE_CLOCK_GATE_REG, LP_TEE_CLK_EN);
     } else {
-        REG_CLR_BIT(APM_CTRL_REGION_FILTER_EN_REG(apm_ctrl), BIT(regn_num));
+        REG_SET_BIT(LP_TEE_CLOCK_GATE_REG, LP_TEE_CLK_EN);
     }
 }
 
 /**
- * @brief enable/disable APM Ctrl access path(M[0:n])
+ * @brief Enable/disable forced HP memory access for LP-TEE
  *
- * @param apm_ctrl   APM Ctrl (LP_APM0/HP_APM/LP_APM)
- * @param apm_m_path APM Ctrl access path
- * @param enable     Flag for LP APM0 M path filter enable/disable
+ * @param enable True to enable, false to disable
  */
-static inline void apm_ll_apm_ctrl_filter_enable(apm_ll_apm_ctrl_t apm_ctrl,
-                                                 apm_ll_ctrl_access_path_t apm_m_path, bool enable)
+static inline void apm_ll_lp_tee_enable_force_hp_mem_access(bool enable)
 {
     if (enable) {
-        REG_SET_BIT(APM_LL_APM_CTRL_FUNC_CTRL_REG(apm_ctrl), BIT(apm_m_path));
+        REG_SET_BIT(LP_TEE_FORCE_ACC_HP_REG, LP_TEE_FORCE_ACC_HPMEM_EN);
     } else {
-        REG_CLR_BIT(APM_LL_APM_CTRL_FUNC_CTRL_REG(apm_ctrl), BIT(apm_m_path));
+        REG_CLR_BIT(LP_TEE_FORCE_ACC_HP_REG, LP_TEE_FORCE_ACC_HPMEM_EN);
     }
 }
 
 /**
- * @brief APM Ctrl Region start address configuration
+ * @brief Enable/disable all controller filters in HP-APM
  *
- * @param apm_ctrl APM Ctrl (LP_APM0/HP_APM/LP_APM)
- * @param regn_num Region number to be configured
- * @param addr     Region start address
+ * @param enable True to enable, false to disable
  */
-static inline void apm_ll_apm_ctrl_set_region_start_address(apm_ll_apm_ctrl_t apm_ctrl,
-                                                            uint32_t regn_num, uint32_t addr)
+static inline void apm_ll_hp_apm_enable_ctrl_filter_all(bool enable)
 {
-    REG_WRITE(APM_LL_REGION_ADDR_START_REG(apm_ctrl, regn_num), addr);
+    REG_WRITE(HP_APM_FUNC_CTRL_REG, enable ? UINT32_MAX : 0);
 }
 
 /**
- * @brief APM Ctrl Region end address configuration
+ * @brief Enable/disable region filter in HP-APM
  *
- * @param apm_ctrl APM Ctrl (LP_APM0/HP_APM/LP_APM)
- * @param regn_num Region number to be configured
- * @param addr     Region end address
+ * @param regn_num Region number
+ * @param enable True to enable, false to disable
  */
-static inline void apm_ll_apm_ctrl_set_region_end_address(apm_ll_apm_ctrl_t apm_ctrl,
-                                                          uint32_t regn_num, uint32_t addr)
-{
-    REG_WRITE(APM_LL_REGION_ADDR_END_REG(apm_ctrl, regn_num), addr);
-}
-
-/**
- * @brief HP Region pms attributes configuration
- *
- * @param apm_ctrl APM Ctrl (LP_APM0/HP_APM/LP_APM)
- * @param regn_num Region number to be configured
- * @param sec_mode Secure mode of the Master
- * @param regn_pms XWR permissions for the given secure mode and Region number
- */
-static inline void apm_ll_apm_ctrl_sec_mode_region_attr_config(apm_ll_apm_ctrl_t apm_ctrl,
-                                                               uint32_t regn_num, apm_ll_secure_mode_t sec_mode, uint32_t regn_pms)
-{
-    uint32_t val = 0;
-    val = REG_READ(APM_LL_REGION_ADDR_ATTR_REG(apm_ctrl, regn_num));
-    val &= ~APM_LL_SEC_MODE_REGION_ATTR_M(sec_mode);
-    val |= APM_LL_SEC_MODE_REGION_ATTR(sec_mode, regn_pms);
-    REG_WRITE(APM_LL_REGION_ADDR_ATTR_REG(apm_ctrl, regn_num), val);
-}
-
-/**
- * @brief Get APM Ctrl access path(M[0:n]) exception status
- *
- * @param apm_ctrl   APM Ctrl (LP_APM0/HP_APM/LP_APM)
- * @param apm_m_path APM Ctrl access path
- */
-static inline uint8_t apm_ll_apm_ctrl_exception_status(apm_ll_apm_ctrl_t apm_ctrl,
-                                                       apm_ll_ctrl_access_path_t apm_m_path)
-{
-    return REG_READ(APM_LL_APM_CTRL_EXCP_STATUS_REG(apm_ctrl, apm_m_path));
-}
-
-/**
- * @brief Clear APM Ctrl access path(M[0:n]) exception
- *
- * @param apm_ctrl   APM Ctrl (LP_APM0/HP_APM/LP_APM)
- * @param amp_m_path APM Ctrl access path
- */
-static inline void apm_ll_apm_ctrl_exception_clear(apm_ll_apm_ctrl_t apm_ctrl,
-                                                   apm_ll_ctrl_access_path_t apm_m_path)
-{
-    REG_SET_BIT(APM_LL_APM_CTRL_EXCP_CLR_REG(apm_ctrl, apm_m_path),
-                APM_CTRL_M_REGION_STATUS_CLR);
-}
-
-/**
- * @brief Get APM Ctrl access path(M[0:n]) exception information
- *
- * @param excp_info  Exception related information like addr,
- * region, apm_ctrl, apm_m_path, sec_mode and master id
- */
-static inline void apm_ll_apm_ctrl_get_exception_info(apm_ctrl_exception_info_t *excp_info)
-{
-    excp_info->excp_id = REG_GET_FIELD(APM_LL_TEE_EXCP_INFO0_REG(excp_info->apm_path.apm_ctrl, excp_info->apm_path.apm_m_path),
-                                       APM_LL_CTRL_EXCEPTION_ID);
-    excp_info->excp_mode = REG_GET_FIELD(APM_LL_TEE_EXCP_INFO0_REG(excp_info->apm_path.apm_ctrl, excp_info->apm_path.apm_m_path),
-                                         APM_LL_CTRL_EXCEPTION_MODE);
-    excp_info->excp_regn = REG_GET_FIELD(APM_LL_TEE_EXCP_INFO0_REG(excp_info->apm_path.apm_ctrl, excp_info->apm_path.apm_m_path),
-                                         APM_LL_CTRL_EXCEPTION_REGION);
-    excp_info->excp_type = apm_ll_apm_ctrl_exception_status(excp_info->apm_path.apm_ctrl, excp_info->apm_path.apm_m_path);
-    excp_info->excp_addr = REG_READ(APM_LL_TEE_EXCP_INFO1_REG(excp_info->apm_path.apm_ctrl, excp_info->apm_path.apm_m_path));
-}
-
-/**
- * @brief Interrupt enable for APM Ctrl at access path(M[0:n])
- *
- * @param apm_ctrl   APM Ctrl (LP_APM0/HP_APM/LP_APM)
- * @param apm_m_path APM Ctrl access patch(M[0:n])
- * @param enable     Flag for access path interrupt enable/disable
- */
-static inline void apm_ll_apm_ctrl_interrupt_enable(apm_ll_apm_ctrl_t apm_ctrl,
-                                                    apm_ll_ctrl_access_path_t apm_m_path, bool enable)
+static inline void apm_ll_hp_apm_enable_region_filter(uint32_t regn_num, bool enable)
 {
     if (enable) {
-        REG_SET_BIT(APM_LL_APM_CTRL_INT_EN_REG(apm_ctrl), BIT(apm_m_path));
+        REG_SET_BIT(HP_APM_REGION_FILTER_EN_REG, BIT(regn_num));
     } else {
-        REG_CLR_BIT(APM_LL_APM_CTRL_INT_EN_REG(apm_ctrl), BIT(apm_m_path));
+        REG_CLR_BIT(HP_APM_REGION_FILTER_EN_REG, BIT(regn_num));
     }
 }
 
 /**
- * @brief APM Ctrl clock auto gating enable
+ * @brief Set region start address in HP-APM
  *
- * @param apm_ctrl  APM Ctrl (LP_APM0/HP_APM/LP_APM)
- * @param enable    Flag for HP clock auto gating enable/disable
+ * @param regn_num Region number
+ * @param addr Start address
  */
-static inline void apm_ll_apm_ctrl_clk_gating_enable(apm_ll_apm_ctrl_t apm_ctrl, bool enable)
+static inline void apm_ll_hp_apm_set_region_start_addr(uint32_t regn_num, uint32_t addr)
+{
+    REG_WRITE(HP_APM_REGION0_ADDR_START_REG + APM_REGION_ADDR_OFFSET * regn_num, addr);
+}
+
+/**
+ * @brief Set region end address in HP-APM
+ *
+ * @param regn_num Region number
+ * @param addr End address
+ */
+static inline void apm_ll_hp_apm_set_region_end_addr(uint32_t regn_num, uint32_t addr)
+{
+    REG_WRITE(HP_APM_REGION0_ADDR_END_REG + APM_REGION_ADDR_OFFSET * regn_num, addr);
+}
+
+/**
+ * @brief Set security mode region attributes in HP-APM
+ *
+ * @param regn_num Region number
+ * @param mode Security mode
+ * @param regn_pms Region PMS attributes
+ */
+static inline void apm_ll_hp_apm_set_sec_mode_region_attr(uint32_t regn_num, apm_security_mode_t mode, uint32_t regn_pms)
+{
+    uint32_t reg = HP_APM_REGION0_PMS_ATTR_REG + APM_REGION_PMS_ATTR_OFFSET * regn_num;
+    uint32_t val = REG_READ(reg);
+    val &= ~APM_REGION_PMS_MASK(mode);
+    val |= APM_REGION_PMS_FIELD(mode, regn_pms);
+    REG_WRITE(reg, val);
+}
+
+/**
+ * @brief Get exception data (regn, master, security mode) from HP-APM
+ *
+ * @param path Access path
+ * @return Exception data
+ */
+static inline uint32_t apm_ll_hp_apm_get_excp_data(apm_ctrl_access_path_t path)
+{
+    return REG_READ(HP_APM_M0_EXCEPTION_INFO0_REG + APM_EXCP_INFO_OFFSET * path);
+}
+
+/**
+ * @brief Get exception status from HP-APM
+ *
+ * @param path Access path
+ * @return Exception type
+ */
+static inline uint32_t apm_ll_hp_apm_get_excp_type(apm_ctrl_access_path_t path)
+{
+    return REG_READ(HP_APM_M0_STATUS_REG + APM_EXCP_INFO_OFFSET * path);
+}
+
+/**
+ * @brief Get exception address from HP-APM
+ *
+ * @param path Access path
+ * @return Exception address
+ */
+static inline uint32_t apm_ll_hp_apm_get_excp_addr(apm_ctrl_access_path_t path)
+{
+    return REG_READ(HP_APM_M0_EXCEPTION_INFO1_REG + APM_EXCP_INFO_OFFSET * path);
+}
+
+/**
+ * @brief Get exception information from HP-APM
+ *
+ * @param path Access path
+ * @param info Pointer to store exception information
+ */
+static inline void apm_ll_hp_apm_get_excp_info(apm_ctrl_access_path_t path, apm_ctrl_exception_info_t *info)
+{
+    hp_apm_m0_exception_info0_reg_t reg;
+    reg.val = apm_ll_hp_apm_get_excp_data(path);
+    info->regn = reg.m0_exception_region;
+    info->mode = reg.m0_exception_mode;
+    info->id   = reg.m0_exception_id;
+
+    info->type = apm_ll_hp_apm_get_excp_type(path);
+    info->addr = apm_ll_hp_apm_get_excp_addr(path);
+}
+
+/**
+ * @brief Clear controller exception status in HP-APM
+ *
+ * @param path Access path
+ */
+static inline void apm_ll_hp_apm_clear_ctrl_excp_status(apm_ctrl_access_path_t path)
+{
+    REG_SET_BIT(HP_APM_M0_STATUS_CLR_REG + APM_EXCP_INFO_OFFSET * path, APM_EXCP_STATUS_CLR_BIT);
+}
+
+/**
+ * @brief Enable/disable controller interrupt in HP-APM
+ *
+ * @param path Access path
+ * @param enable True to enable, false to disable
+ */
+static inline void apm_ll_hp_apm_enable_ctrl_intr(apm_ctrl_access_path_t path, bool enable)
 {
     if (enable) {
-        REG_SET_BIT(APM_LL_APM_CTRL_CLOCK_GATE_REG(apm_ctrl), APM_CTRL_CLK_EN);
+        REG_SET_BIT(HP_APM_INT_EN_REG, BIT(path));
     } else {
-        REG_CLR_BIT(APM_LL_APM_CTRL_CLOCK_GATE_REG(apm_ctrl), APM_CTRL_CLK_EN);
+        REG_CLR_BIT(HP_APM_INT_EN_REG, BIT(path));
     }
 }
 
 /**
- * @brief APM/TEE/HP System Reg reset event bypass enable
+ * @brief Get controller interrupt source number from HP-APM
  *
- * Disable: tee_reg/apm_reg/hp_system_reg will not only be reset by power-reset,
- * but also some reset events.
- * Enable: tee_reg/apm_reg/hp_system_reg will only be reset by power-reset.
- * Some reset events will be bypassed.
- *
- * @param enable   Flag for event bypass enable/disable
+ * @param path Access path
+ * @return Interrupt source number
  */
-static inline void apm_ll_apm_ctrl_reset_event_enable(bool enable)
+static inline int apm_ll_hp_apm_get_ctrl_intr_src(apm_ctrl_access_path_t path)
+{
+    return ETS_HP_APM_M0_INTR_SOURCE + path;
+}
+
+/**
+ * @brief Enable/disable controller clock gating in HP-APM
+ *
+ * @param enable True to enable, false to disable
+ */
+static inline void apm_ll_hp_apm_enable_ctrl_clk_gating(bool enable)
+{
+    if (enable) {
+        REG_CLR_BIT(HP_APM_CLOCK_GATE_REG, HP_APM_CLK_EN);
+    } else {
+        REG_SET_BIT(HP_APM_CLOCK_GATE_REG, HP_APM_CLK_EN);
+    }
+}
+
+/**
+ * @brief Enable/disable controller filter for specific path in LP-APM0
+ *
+ * @param path Access path
+ * @param enable True to enable, false to disable
+ */
+static inline void apm_ll_lp_apm0_enable_ctrl_filter(apm_ctrl_access_path_t path, bool enable)
+{
+    if (enable) {
+        REG_SET_BIT(LP_APM0_FUNC_CTRL_REG, BIT(path));
+    } else {
+        REG_CLR_BIT(LP_APM0_FUNC_CTRL_REG, BIT(path));
+    }
+}
+
+/**
+ * @brief Enable/disable all controller filters in LP-APM0
+ *
+ * @param enable True to enable, false to disable
+ */
+static inline void apm_ll_lp_apm0_enable_ctrl_filter_all(bool enable)
+{
+    REG_WRITE(LP_APM0_FUNC_CTRL_REG, enable ? UINT32_MAX : 0);
+}
+
+/**
+ * @brief Enable/disable region filter in LP-APM0
+ *
+ * @param regn_num Region number
+ * @param enable True to enable, false to disable
+ */
+static inline void apm_ll_lp_apm0_enable_region_filter(uint32_t regn_num, bool enable)
+{
+    if (enable) {
+        REG_SET_BIT(LP_APM0_REGION_FILTER_EN_REG, BIT(regn_num));
+    } else {
+        REG_CLR_BIT(LP_APM0_REGION_FILTER_EN_REG, BIT(regn_num));
+    }
+}
+
+/**
+ * @brief Set region start address in LP-APM0
+ *
+ * @param regn_num Region number
+ * @param addr Start address
+ */
+static inline void apm_ll_lp_apm0_set_region_start_addr(uint32_t regn_num, uint32_t addr)
+{
+    REG_WRITE(LP_APM0_REGION0_ADDR_START_REG + APM_REGION_ADDR_OFFSET * regn_num, addr);
+}
+
+/**
+ * @brief Set region end address in LP-APM0
+ *
+ * @param regn_num Region number
+ * @param addr End address
+ */
+static inline void apm_ll_lp_apm0_set_region_end_addr(uint32_t regn_num, uint32_t addr)
+{
+    REG_WRITE(LP_APM0_REGION0_ADDR_END_REG + APM_REGION_ADDR_OFFSET * regn_num, addr);
+}
+
+/**
+ * @brief Set security mode region attributes in LP-APM0
+ *
+ * @param regn_num Region number
+ * @param mode Security mode
+ * @param regn_pms Region PMS attributes
+ */
+static inline void apm_ll_lp_apm0_set_sec_mode_region_attr(uint32_t regn_num, apm_security_mode_t mode, uint32_t regn_pms)
+{
+    uint32_t reg = LP_APM0_REGION0_PMS_ATTR_REG + APM_REGION_PMS_ATTR_OFFSET * regn_num;
+    uint32_t val = REG_READ(reg);
+    val &= ~APM_REGION_PMS_MASK(mode);
+    val |= APM_REGION_PMS_FIELD(mode, regn_pms);
+    REG_WRITE(reg, val);
+}
+
+/**
+ * @brief Get exception data (regn, master, security mode) from LP-APM0
+ *
+ * @param path Access path
+ * @return Exception data
+ */
+static inline uint32_t apm_ll_lp_apm0_get_excp_data(apm_ctrl_access_path_t path)
+{
+    (void)path;
+    return REG_READ(LP_APM0_M0_EXCEPTION_INFO0_REG);
+}
+
+/**
+ * @brief Get exception status from LP-APM0
+ *
+ * @param path Access path
+ * @return Exception type
+ */
+static inline uint32_t apm_ll_lp_apm0_get_excp_type(apm_ctrl_access_path_t path)
+{
+    (void)path;
+    return REG_READ(LP_APM0_M0_STATUS_REG);
+}
+
+/**
+ * @brief Get exception address from LP-APM0
+ *
+ * @param path Access path
+ * @return Exception address
+ */
+static inline uint32_t apm_ll_lp_apm0_get_excp_addr(apm_ctrl_access_path_t path)
+{
+    (void)path;
+    return REG_READ(LP_APM0_M0_EXCEPTION_INFO1_REG);
+}
+
+/**
+ * @brief Get exception information from LP-APM0
+ *
+ * @param path Access path
+ * @param info Pointer to store exception information
+ */
+static inline void apm_ll_lp_apm0_get_excp_info(apm_ctrl_access_path_t path, apm_ctrl_exception_info_t *info)
+{
+    lp_apm0_m0_exception_info0_reg_t reg;
+    reg.val = apm_ll_lp_apm0_get_excp_data(path);
+    info->regn = reg.m0_exception_region;
+    info->mode = reg.m0_exception_mode;
+    info->id   = reg.m0_exception_id;
+
+    info->type = apm_ll_lp_apm0_get_excp_type(path);
+    info->addr = apm_ll_lp_apm0_get_excp_addr(path);
+}
+
+/**
+ * @brief Clear controller exception status in LP-APM0
+ *
+ * @param path Access path
+ */
+static inline void apm_ll_lp_apm0_clear_ctrl_excp_status(apm_ctrl_access_path_t path)
+{
+    (void)path;
+    REG_SET_BIT(LP_APM0_M0_STATUS_CLR_REG, APM_EXCP_STATUS_CLR_BIT);
+}
+
+/**
+ * @brief Enable/disable controller interrupt in LP-APM0
+ *
+ * @param path Access path
+ * @param enable True to enable, false to disable
+ */
+static inline void apm_ll_lp_apm0_enable_ctrl_intr(apm_ctrl_access_path_t path, bool enable)
+{
+    if (enable) {
+        REG_SET_BIT(LP_APM0_INT_EN_REG, BIT(path));
+    } else {
+        REG_CLR_BIT(LP_APM0_INT_EN_REG, BIT(path));
+    }
+}
+
+/**
+ * @brief Get controller interrupt source number from LP-APM0
+ *
+ * @param path Access path
+ * @return Interrupt source number
+ */
+static inline int apm_ll_lp_apm0_get_ctrl_intr_src(apm_ctrl_access_path_t path)
+{
+    (void)path;
+    return ETS_LP_APM0_INTR_SOURCE;
+}
+
+/**
+ * @brief Enable/disable controller clock gating in LP-APM0
+ *
+ * @param enable True to enable, false to disable
+ */
+static inline void apm_ll_lp_apm0_enable_ctrl_clk_gating(bool enable)
+{
+    if (enable) {
+        REG_CLR_BIT(LP_APM0_CLOCK_GATE_REG, LP_APM0_CLK_EN);
+    } else {
+        REG_SET_BIT(LP_APM0_CLOCK_GATE_REG, LP_APM0_CLK_EN);
+    }
+
+}
+
+/**
+ * @brief Enable/disable controller filter for specific path in HP-APM
+ *
+ * @param path Access path
+ * @param enable True to enable, false to disable
+ */
+static inline void apm_ll_hp_apm_enable_ctrl_filter(apm_ctrl_access_path_t path, bool enable)
+{
+    if (enable) {
+        REG_SET_BIT(HP_APM_FUNC_CTRL_REG, BIT(path));
+    } else {
+        REG_CLR_BIT(HP_APM_FUNC_CTRL_REG, BIT(path));
+    }
+}
+
+/**
+ * @brief Enable/disable controller filter for specific path in LP-APM
+ *
+ * @param path Access path
+ * @param enable True to enable, false to disable
+ */
+static inline void apm_ll_lp_apm_enable_ctrl_filter(apm_ctrl_access_path_t path, bool enable)
+{
+    if (enable) {
+        REG_SET_BIT(LP_APM_FUNC_CTRL_REG, BIT(path));
+    } else {
+        REG_CLR_BIT(LP_APM_FUNC_CTRL_REG, BIT(path));
+    }
+}
+
+/**
+ * @brief Enable/disable all controller filters in LP-APM
+ *
+ * @param enable True to enable, false to disable
+ */
+static inline void apm_ll_lp_apm_enable_ctrl_filter_all(bool enable)
+{
+    REG_WRITE(LP_APM_FUNC_CTRL_REG, enable ? UINT32_MAX : 0);
+}
+
+/**
+ * @brief Enable/disable region filter in LP-APM
+ *
+ * @param regn_num Region number
+ * @param enable True to enable, false to disable
+ */
+static inline void apm_ll_lp_apm_enable_region_filter(uint32_t regn_num, bool enable)
+{
+    if (enable) {
+        REG_SET_BIT(LP_APM_REGION_FILTER_EN_REG, BIT(regn_num));
+    } else {
+        REG_CLR_BIT(LP_APM_REGION_FILTER_EN_REG, BIT(regn_num));
+    }
+}
+
+/**
+ * @brief Set region start address in LP-APM
+ *
+ * @param regn_num Region number
+ * @param addr Start address
+ */
+static inline void apm_ll_lp_apm_set_region_start_addr(uint32_t regn_num, uint32_t addr)
+{
+    REG_WRITE(LP_APM_REGION0_ADDR_START_REG + APM_REGION_ADDR_OFFSET * regn_num, addr);
+}
+
+/**
+ * @brief Set region end address in LP-APM
+ *
+ * @param regn_num Region number
+ * @param addr End address
+ */
+static inline void apm_ll_lp_apm_set_region_end_addr(uint32_t regn_num, uint32_t addr)
+{
+    REG_WRITE(LP_APM_REGION0_ADDR_END_REG + APM_REGION_ADDR_OFFSET * regn_num, addr);
+}
+
+/**
+ * @brief Set security mode region attributes in LP-APM
+ *
+ * @param regn_num Region number
+ * @param mode Security mode
+ * @param regn_pms Region PMS attributes
+ */
+static inline void apm_ll_lp_apm_set_sec_mode_region_attr(uint32_t regn_num, apm_security_mode_t mode, uint32_t regn_pms)
+{
+    uint32_t reg = LP_APM_REGION0_PMS_ATTR_REG + APM_REGION_PMS_ATTR_OFFSET * regn_num;
+    uint32_t val = REG_READ(reg);
+    val &= ~APM_REGION_PMS_MASK(mode);
+    val |= APM_REGION_PMS_FIELD(mode, regn_pms);
+    REG_WRITE(reg, val);
+}
+
+/**
+ * @brief Get exception data (regn, master, security mode) from LP-APM
+ *
+ * @param path Access path
+ * @return Exception data
+ */
+static inline uint32_t apm_ll_lp_apm_get_excp_data(apm_ctrl_access_path_t path)
+{
+    return REG_READ(LP_APM_M0_EXCEPTION_INFO0_REG + APM_EXCP_INFO_OFFSET * path);
+}
+
+/**
+ * @brief Get exception status from LP-APM
+ *
+ * @param path Access path
+ * @return Exception type
+ */
+static inline uint32_t apm_ll_lp_apm_get_excp_type(apm_ctrl_access_path_t path)
+{
+    return REG_READ(LP_APM_M0_STATUS_REG + APM_EXCP_INFO_OFFSET * path);
+}
+
+/**
+ * @brief Get exception address from LP-APM
+ *
+ * @param path Access path
+ * @return Exception address
+ */
+static inline uint32_t apm_ll_lp_apm_get_excp_addr(apm_ctrl_access_path_t path)
+{
+    return REG_READ(LP_APM_M0_EXCEPTION_INFO1_REG + APM_EXCP_INFO_OFFSET * path);
+}
+
+/**
+ * @brief Get exception information from LP-APM
+ *
+ * @param path Access path
+ * @param info Pointer to store exception information
+ */
+static inline void apm_ll_lp_apm_get_excp_info(apm_ctrl_access_path_t path, apm_ctrl_exception_info_t *info)
+{
+    lp_apm_m0_exception_info0_reg_t reg;
+    reg.val = apm_ll_lp_apm_get_excp_data(path);
+    info->regn = reg.m0_exception_region;
+    info->mode = reg.m0_exception_mode;
+    info->id   = reg.m0_exception_id;
+
+    info->type = apm_ll_lp_apm_get_excp_type(path);
+    info->addr = apm_ll_lp_apm_get_excp_addr(path);
+}
+
+/**
+ * @brief Clear controller exception status in LP-APM
+ *
+ * @param path Access path
+ */
+static inline void apm_ll_lp_apm_clear_ctrl_excp_status(apm_ctrl_access_path_t path)
+{
+    REG_SET_BIT(LP_APM_M0_STATUS_CLR_REG + APM_EXCP_INFO_OFFSET * path, APM_EXCP_STATUS_CLR_BIT);
+}
+
+/**
+ * @brief Enable/disable controller interrupt in LP-APM
+ *
+ * @param path Access path
+ * @param enable True to enable, false to disable
+ */
+static inline void apm_ll_lp_apm_enable_ctrl_intr(apm_ctrl_access_path_t path, bool enable)
+{
+    if (enable) {
+        REG_SET_BIT(LP_APM_INT_EN_REG, BIT(path));
+    } else {
+        REG_CLR_BIT(LP_APM_INT_EN_REG, BIT(path));
+    }
+}
+
+/**
+ * @brief Enable/disable controller clock gating in LP-APM
+ *
+ * @param enable True to enable, false to disable
+ */
+static inline void apm_ll_lp_apm_enable_ctrl_clk_gating(bool enable)
+{
+    if (enable) {
+        REG_CLR_BIT(LP_APM_CLOCK_GATE_REG, LP_APM_CLK_EN);
+    } else {
+        REG_SET_BIT(LP_APM_CLOCK_GATE_REG, LP_APM_CLK_EN);
+    }
+}
+
+/**
+ * @brief Get controller interrupt source number from LP-APM
+ *
+ * @param path Access path
+ * @return Interrupt source number
+ */
+static inline int apm_ll_lp_apm_get_ctrl_intr_src(apm_ctrl_access_path_t path)
+{
+    return ETS_LP_APM_M0_INTR_SOURCE + path;
+}
+
+/**
+ * @brief Enable/disable APM reset event bypass
+ *
+ * @param enable True to enable, false to disable
+ */
+static inline void apm_ll_enable_reset_event_bypass(bool enable)
 {
     if (enable) {
         REG_SET_BIT(PCR_RESET_EVENT_BYPASS_REG, PCR_RESET_EVENT_BYPASS_APM);
     } else {
         REG_CLR_BIT(PCR_RESET_EVENT_BYPASS_REG, PCR_RESET_EVENT_BYPASS_APM);
     }
-}
-
-/**
- * @brief Fetch the APM Ctrl interrupt source number.
- *
- * @param apm_ctrl   APM Ctrl (LP_APM0/HP_APM/LP_APM)
- * @param apm_m_path APM Ctrl access patch(M[0:n])
- */
-static inline int apm_ll_apm_ctrl_get_int_src_num(apm_ll_apm_ctrl_t apm_ctrl, apm_ll_ctrl_access_path_t apm_m_path)
-{
-    switch (apm_ctrl) {
-        case LP_APM0_CTRL :
-            return (ETS_LP_APM0_INTR_SOURCE);
-        case HP_APM_CTRL :
-            return (ETS_HP_APM_M0_INTR_SOURCE + apm_m_path);
-        case LP_APM_CTRL :
-            return (ETS_LP_APM_M0_INTR_SOURCE + apm_m_path);
-    }
-
-    return -1;
 }
 
 #ifdef __cplusplus

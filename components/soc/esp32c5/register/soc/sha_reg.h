@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -15,23 +15,26 @@ extern "C" {
  *  Configures SHA algorithm
  */
 #define SHA_MODE_REG (DR_REG_SHA_BASE + 0x0)
-/** SHA_MODE : R/W; bitpos: [2:0]; default: 0;
- *  Configures the SHA algorithm. \\
- *  0: SHA-1\\
- *  1: SHA-224\\
- *  2: SHA-256\\
+/** SHA_MODE : R/W; bitpos: [3:0]; default: 2;
+ *  Configures the SHA algorithm.
+ *  0: SHA-1
+ *  1: SHA2-224
+ *  2: SHA2-256
  */
-#define SHA_MODE    0x00000007U
+#define SHA_MODE    0x0000000FU
 #define SHA_MODE_M  (SHA_MODE_V << SHA_MODE_S)
-#define SHA_MODE_V  0x00000007U
+#define SHA_MODE_V  0x0000000FU
 #define SHA_MODE_S  0
 
 /** SHA_T_STRING_REG register
  *  SHA 512/t configuration register 0.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
  */
 #define SHA_T_STRING_REG (DR_REG_SHA_BASE + 0x4)
 /** SHA_T_STRING : R/W; bitpos: [31:0]; default: 0;
  *  Sha t_string (used if and only if mode == SHA_512/t).
+ *  This field is only for internal debugging purposes. Do not use it in applications.
  */
 #define SHA_T_STRING    0xFFFFFFFFU
 #define SHA_T_STRING_M  (SHA_T_STRING_V << SHA_T_STRING_S)
@@ -40,60 +43,63 @@ extern "C" {
 
 /** SHA_T_LENGTH_REG register
  *  SHA 512/t configuration register 1.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
  */
 #define SHA_T_LENGTH_REG (DR_REG_SHA_BASE + 0x8)
-/** SHA_T_LENGTH : R/W; bitpos: [5:0]; default: 0;
+/** SHA_T_LENGTH : R/W; bitpos: [6:0]; default: 0;
  *  Sha t_length (used if and only if mode == SHA_512/t).
+ *  This field is only for internal debugging purposes. Do not use it in applications.
  */
-#define SHA_T_LENGTH    0x0000003FU
+#define SHA_T_LENGTH    0x0000007FU
 #define SHA_T_LENGTH_M  (SHA_T_LENGTH_V << SHA_T_LENGTH_S)
-#define SHA_T_LENGTH_V  0x0000003FU
+#define SHA_T_LENGTH_V  0x0000007FU
 #define SHA_T_LENGTH_S  0
 
 /** SHA_DMA_BLOCK_NUM_REG register
  *  Block number register (only effective for DMA-SHA)
  */
 #define SHA_DMA_BLOCK_NUM_REG (DR_REG_SHA_BASE + 0xc)
-/** SHA_DMA_BLOCK_NUM : R/W; bitpos: [5:0]; default: 0;
+/** SHA_DMA_BLOCK_NUM : R/W; bitpos: [15:0]; default: 0;
  *  Configures the DMA-SHA block number.
  */
-#define SHA_DMA_BLOCK_NUM    0x0000003FU
+#define SHA_DMA_BLOCK_NUM    0x0000FFFFU
 #define SHA_DMA_BLOCK_NUM_M  (SHA_DMA_BLOCK_NUM_V << SHA_DMA_BLOCK_NUM_S)
-#define SHA_DMA_BLOCK_NUM_V  0x0000003FU
+#define SHA_DMA_BLOCK_NUM_V  0x0000FFFFU
 #define SHA_DMA_BLOCK_NUM_S  0
 
 /** SHA_START_REG register
  *  Starts the SHA accelerator for Typical SHA operation
  */
 #define SHA_START_REG (DR_REG_SHA_BASE + 0x10)
-/** SHA_START : RO; bitpos: [31:1]; default: 0;
- *  Write 1 to start Typical SHA calculation.
+/** SHA_START : WO; bitpos: [0]; default: 0;
+ *  Start typical sha.
  */
-#define SHA_START    0x7FFFFFFFU
+#define SHA_START    (BIT(0))
 #define SHA_START_M  (SHA_START_V << SHA_START_S)
-#define SHA_START_V  0x7FFFFFFFU
-#define SHA_START_S  1
+#define SHA_START_V  0x00000001U
+#define SHA_START_S  0
 
 /** SHA_CONTINUE_REG register
  *  Continues SHA operation (only effective in Typical SHA mode)
  */
 #define SHA_CONTINUE_REG (DR_REG_SHA_BASE + 0x14)
-/** SHA_CONTINUE : RO; bitpos: [31:1]; default: 0;
- *  Write 1 to continue Typical SHA calculation.
+/** SHA_CONTINUE : WO; bitpos: [0]; default: 0;
+ *  Continue typical sha.
  */
-#define SHA_CONTINUE    0x7FFFFFFFU
+#define SHA_CONTINUE    (BIT(0))
 #define SHA_CONTINUE_M  (SHA_CONTINUE_V << SHA_CONTINUE_S)
-#define SHA_CONTINUE_V  0x7FFFFFFFU
-#define SHA_CONTINUE_S  1
+#define SHA_CONTINUE_V  0x00000001U
+#define SHA_CONTINUE_S  0
 
 /** SHA_BUSY_REG register
  *  Represents if SHA Accelerator is busy or not
  */
 #define SHA_BUSY_REG (DR_REG_SHA_BASE + 0x18)
 /** SHA_BUSY_STATE : RO; bitpos: [0]; default: 0;
- *  Represents the states of SHA accelerator. \\
- *  0: idle\\
- *  1: busy\\
+ *  Represents the states of SHA accelerator.
+ *  0: idle
+ *  1: busy
  */
 #define SHA_BUSY_STATE    (BIT(0))
 #define SHA_BUSY_STATE_M  (SHA_BUSY_STATE_V << SHA_BUSY_STATE_S)
@@ -152,7 +158,7 @@ extern "C" {
  *  Version control register
  */
 #define SHA_DATE_REG (DR_REG_SHA_BASE + 0x2c)
-/** SHA_DATE : R/W; bitpos: [29:0]; default: 538972713;
+/** SHA_DATE : R/W; bitpos: [29:0]; default: 539232291;
  *  Version control register.
  */
 #define SHA_DATE    0x3FFFFFFFU
@@ -160,17 +166,33 @@ extern "C" {
 #define SHA_DATE_V  0x3FFFFFFFU
 #define SHA_DATE_S  0
 
+/** SHA_DMA_RX_RESET_REG register
+ *  DMA RX FIFO Reset Signal
+ */
+#define SHA_DMA_RX_RESET_REG (DR_REG_SHA_BASE + 0x30)
+/** SHA_DMA_RX_RESET : WO; bitpos: [0]; default: 0;
+ *  Write 1 to reset DMA RX FIFO
+ */
+#define SHA_DMA_RX_RESET    (BIT(0))
+#define SHA_DMA_RX_RESET_M  (SHA_DMA_RX_RESET_V << SHA_DMA_RX_RESET_S)
+#define SHA_DMA_RX_RESET_V  0x00000001U
+#define SHA_DMA_RX_RESET_S  0
+
 /** SHA_H_MEM register
- *  Sha H memory which contains intermediate hash or final hash.
+ *  SHA1, SHA2-256, SM3 H memory which contains intermediate hash or final hash.
+ *  SHA1, SHA2-256, SM3 : 0x00~0x20 (R/W)
+ *  SHA2-512 : 0x00~0x40 (R/W)
  */
 #define SHA_H_MEM (DR_REG_SHA_BASE + 0x40)
 #define SHA_H_MEM_SIZE_BYTES 64
 
 /** SHA_M_MEM register
- *  Sha M memory which contains message.
+ *  SHA1, SHA2-256, SM3 M memory which contains message.
+ *  SHA1, SHA2-256, SM3 : 0x00~0x40
+ *  SHA2-512 : 0x00~0x80
  */
 #define SHA_M_MEM (DR_REG_SHA_BASE + 0x80)
-#define SHA_M_MEM_SIZE_BYTES 64
+#define SHA_M_MEM_SIZE_BYTES 128
 
 #ifdef __cplusplus
 }

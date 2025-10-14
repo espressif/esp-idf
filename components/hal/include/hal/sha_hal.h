@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,6 +21,13 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+ * @brief Load the mode for the SHA engine
+ *
+ * @param sha_type The SHA algorithm type
+ */
+void sha_hal_set_mode(esp_sha_type sha_type);
 
 /**
  * @brief Hashes a single message block
@@ -60,11 +67,10 @@ void sha_hal_write_digest(esp_sha_type sha_type, void *digest_state);
 /**
  * @brief Hashes a number of message blocks using DMA
  *
- * @param sha_type      SHA algorithm to hash with
  * @param num_blocks    Number of blocks to hash
  * @param first_block   Is this the first block in a message or a continuation?
  */
-void sha_hal_hash_dma(esp_sha_type sha_type, size_t num_blocks, bool first_block);
+void sha_hal_hash_dma(size_t num_blocks, bool first_block);
 #endif
 
 #if SOC_SHA_SUPPORT_SHA512_T

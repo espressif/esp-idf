@@ -4,13 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <string.h>
-#include <sdkconfig.h>
+#include "sdkconfig.h"
 #include <inttypes.h>
 #include "esp_log.h"
 
-#define HEAP_TRACE_SRCFILE /* don't warn on inclusion here */
 #include "esp_heap_trace.h"
-#undef HEAP_TRACE_SRCFILE
 #include "esp_heap_caps.h"
 #include "esp_attr.h"
 #include "freertos/FreeRTOS.h"
@@ -21,8 +19,6 @@
 static __attribute__((unused)) const char* TAG = "heaptrace";
 
 #define STACK_DEPTH CONFIG_HEAP_TRACING_STACK_DEPTH
-
-#if CONFIG_HEAP_TRACING_STANDALONE
 
 typedef enum {
     TRACING_STARTED, // start recording allocs and free
@@ -672,5 +668,3 @@ static HEAP_IRAM_ATTR void list_find_and_remove(void* p)
 }
 
 #include "heap_trace.inc"
-
-#endif // CONFIG_HEAP_TRACING_STANDALONE

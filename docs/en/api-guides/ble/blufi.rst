@@ -1,10 +1,10 @@
 BluFi
-^^^^^^
+=====
 
-:link_to_translation:`en:[English]`
+:link_to_translation:`zh_CN:[中文]`
 
 Overview
-----------
+--------
 
 The BluFi for {IDF_TARGET_NAME} is a Wi-Fi network configuration function via Bluetooth channel. It provides a secure protocol to pass Wi-Fi configuration and credentials to {IDF_TARGET_NAME}. Using this information, {IDF_TARGET_NAME} can then connect to an AP or establish a SoftAP.
 
@@ -12,8 +12,220 @@ Fragmenting, data encryption, and checksum verification in the BluFi layer are t
 
 You can customize symmetric encryption, asymmetric encryption, and checksum support customization. Here we use the DH algorithm for key negotiation, 128-AES algorithm for data encryption, and CRC16 algorithm for checksum verification.
 
+
+Getting Started
+---------------
+
+This section provides a step-by-step guide to configuring Wi-Fi on an {IDF_TARGET_NAME} device using the EspBlufi app.
+
+
+Prerequisites
+^^^^^^^^^^^^^
+
+Hardware:
+
+* An {IDF_TARGET_NAME} module
+* A computer, connected to the module for power supply and serial logging
+* A mobile phone running Android or iOS
+
+
+Software:
+
+* BluFi example: :example:`bluetooth/blufi` (to be flashed into {IDF_TARGET_NAME})
+* Mobile App: EspBlufi
+
+    - Android: `EspBlufi For Android <https://github.com/EspressifApp/EspBlufiForAndroid>`_
+    - iOS: `EspBlufi For iOS <https://github.com/EspressifApp/EspBlufiForiOS>`_
+
+For detailed instructions on flashing BluFi example, please refer to ESP-IDF :doc:`../../get-started/index` documentation.
+
+
+Configuring Wi-Fi via the EspBlufi App
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Setting {IDF_TARGET_NAME} to Station Mode
+#########################################
+
+
+1. **Power on {IDF_TARGET_NAME}**
+
+   Connect {IDF_TARGET_NAME} to your computer. The following log will be output to the serial port tool:
+
+   .. figure:: ../../../_static/blufi-init-finish.png
+        :align: center
+        :width: 70%
+
+
+2. **Connect via EspBlufi**
+
+   - Grant Wi-Fi, Bluetooth, and location permissions on your mobile phone.
+   - Open the EspBlufi app, and refresh the interface by swiping down. The nearby Bluetooth-enabled devices will be displayed.
+
+     .. figure:: ../../../_static/espblufi-interface.jpg
+         :align: center
+         :scale: 20%
+         :alt: EspBlufi Interface
+
+         EspBlufi Interface
+
+
+   - Click on the {IDF_TARGET_NAME} device, and click **Connect** to establish a Bluetooth connection. A successful connection will display the following interface:
+
+     .. figure:: ../../../_static/interface-success-connection.jpg
+         :align: center
+         :scale: 20%
+         :alt: Successful Connection
+
+         Successful Connection
+
+
+     Meanwhile, the following log will be output to the serial port tool:
+
+     .. figure:: ../../../_static/blufi-ble-connect.png
+         :align: center
+         :width: 80%
+
+     .. note::
+
+        If the **Networking** button is missing or unresponsive, restart {IDF_TARGET_NAME} and ensure Bluetooth permissions are granted.
+
+
+3. **Configure Wi-Fi**
+
+   - Click on the **Networking** button to open the network configuration menu:
+
+     .. figure:: ../../../_static/network-config-interface.jpg
+         :align: center
+         :scale: 20%
+         :alt: Network Configuration Interface
+
+         Network Configuration Interface
+
+   - Select a device mode from the dropdown list. BluFi supports the following three modes:
+
+     - **Station:** Connects to an existing Wi-Fi network.
+     - **SoftAP:** Creates a Wi-Fi access point.
+     - **SoftAP/Station:** Enables both modes simultaneously.
+
+     .. figure:: ../../../_static/select-device-mode.jpg
+         :align: center
+         :scale: 20%
+         :alt: Selecting Device Mode
+
+         Selecting Device Mode
+
+   - Select **Station** mode, click on the refresh button, and choose a Wi-FI SSID. Then, enter the password.
+
+     .. figure:: ../../../_static/config-station-mode.jpg
+         :align: center
+         :scale: 20%
+         :alt: Configuring Station Mode
+
+         Configuring Station Mode
+
+     .. only:: esp32
+
+        .. note::
+
+           {IDF_TARGET_NAME} only supports 2.4 GHz Wi-Fi. Ensure you select a compatible network.
+
+
+   - Click on the **Confirm** button to complete the configuration. A successful connection will display the following interface. The information marked in red in shows the Wi-Fi mode (which is Station mode in this example) and the connection information (such as the AP’s BSSID and SSID, as well as the connection status).
+
+     .. figure:: ../../../_static/station-connection-info.jpg
+         :align: center
+         :scale: 20%
+         :alt: Station Connection Information
+
+         Station Connection Information
+
+     Meanwhile, the following log will be output to the serial port tool:
+
+     .. figure:: ../../../_static/station-connection-log.png
+         :align: center
+         :width: 80%
+
+
+Setting {IDF_TARGET_NAME} as a SoftAP
+#####################################
+
+
+1. **Connect via EspBlufi**
+
+   - Power on the module. Connect the EspBlufi app to {IDF_TARGET_NAME} via Bluetooth.
+   - In the network configuration menu, select **SoftAP** mode:
+
+     .. figure:: ../../../_static/select-softap-mode.jpg
+         :align: center
+         :scale: 20%
+         :alt: Selecting SoftAP Mode
+
+         Selecting SoftAP Mode
+
+
+2. **Configure SoftAP**
+
+   - Select the security encryption mode, channel, and maximum number of Stations to be connected.
+   - Enter the SoftAP’s SSID and password.
+   - Click on the **Confirm** button to complete the configuration.
+
+     .. figure:: ../../../_static/config-softap-mode.jpg
+         :align: center
+         :scale: 20%
+         :alt: Configuring SoftAP Mode
+
+         Configuring SoftAP Mode
+
+
+3. **Verify SoftAP**
+
+   A successful SoftAP configuration will display the following interface, showing the current Wi-Fi mode and connection status:
+
+   .. figure:: ../../../_static/softap-connection-info.jpg
+       :align: center
+       :scale: 20%
+       :alt: SoftAP Connection Information
+
+       SoftAP Connection Information
+
+   Meanwhile, the following log will be output to the serial port tool:
+
+   .. figure:: ../../../_static/softap-connection-log.png
+       :align: center
+       :width: 70%
+
+
+4. **Connect to SoftAP**
+
+   - Enable Wi-Fi on your mobile phone. The configured SoftAP will appear in the network list:
+
+     .. figure:: ../../../_static/configured-softap.png
+         :align: center
+         :height: 370
+         :alt: The Configured SoftAP
+
+         The Configured SoftAP
+
+   - Connect to the SoftAP. A successful connection will be indicated as follows:
+
+     .. figure:: ../../../_static/wifi-connection-prompt.png
+         :align: center
+         :height: 370
+         :alt: Wi-Fi Connection Prompt
+
+         Wi-Fi Connection Prompt
+
+     Meanwhile, the following log will be output to the serial port tool:
+
+     .. figure:: ../../../_static/wifi-connection-log.png
+         :align: center
+         :width: 80%
+
+    The {IDF_TARGET_NAME} device is now successfully connected to Wi-Fi using Bluetooth networking.
+
+
 The BluFi Flow
-----------------
+--------------
 
 The BluFi networking flow includes the configuration of the SoftAP and Station.
 
@@ -46,7 +258,7 @@ The following uses Station as an example to illustrate the core parts of the pro
     2. The data lengths before and after symmetric encryption/decryption must stay the same. It also supports in-place encryption and decryption.
 
 The Flow Chart of BluFi
--------------------------
+-----------------------
 
 .. seqdiag::
     :caption: BluFi Flow Chart
@@ -75,7 +287,7 @@ The Flow Chart of BluFi
 .. _frame_formats:
 
 The Frame Formats Defined in BluFi
-------------------------------------
+----------------------------------
 
 The frame formats for the communication between the mobile phone App and {IDF_TARGET_NAME} are defined as follows:
 
@@ -481,11 +693,22 @@ The data to be encrypted and decrypted must be in the same length. The IV8 is an
 
 This function is used to compute CheckSum and return a value of CheckSum. BluFi uses the returned value to compare the CheckSum of the frame.
 
+5. Implementing Stronger Security
+
+The default encryption/decryption logic in this example is intended for demonstration purposes only.
+
+If you require a higher level of security, it is recommended to implement your own encryption, decryption, authentication, and checksum algorithms by customizing the security callbacks in the BluFi framework.
+
+.. code-block:: c
+
+   esp_err_t esp_blufi_register_callbacks(esp_blufi_callbacks_t *callbacks)
+
+
 GATT Related Instructions
-----------------------------
+-------------------------
 
 UUID
->>>>>
+^^^^
 
 BluFi Service UUID: 0xFFFF, 16 bit
 

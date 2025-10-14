@@ -1,34 +1,16 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <stdlib.h>
-#include <string.h>
-#include <sys/cdefs.h>
-#include <sys/param.h>
-#include "sdkconfig.h"
-#if CONFIG_RMT_ENABLE_DEBUG_LOG
-// The local log level must be defined before including esp_log.h
-// Set the maximum log level for this source file
-#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
-#endif
-#include "esp_log.h"
-#include "esp_check.h"
 #include "esp_memory_utils.h"
 #include "esp_cache.h"
 #include "esp_rom_gpio.h"
 #include "soc/rmt_periph.h"
-#include "soc/rtc.h"
-#include "hal/rmt_ll.h"
-#include "hal/cache_hal.h"
-#include "hal/gpio_hal.h"
 #include "driver/gpio.h"
 #include "driver/rmt_rx.h"
 #include "rmt_private.h"
-
-static const char *TAG = "rmt";
 
 static esp_err_t rmt_del_rx_channel(rmt_channel_handle_t channel);
 static esp_err_t rmt_rx_demodulate_carrier(rmt_channel_handle_t channel, const rmt_carrier_config_t *config);
@@ -39,33 +21,42 @@ static void rmt_rx_default_isr(void *args);
 #if SOC_RMT_SUPPORT_DMA
 static bool rmt_dma_rx_one_block_cb(gdma_channel_handle_t dma_chan, gdma_event_data_t *event_data, void *user_data);
 
-static void rmt_rx_mount_dma_buffer(rmt_rx_channel_t *rx_chan, const void *buffer, size_t buffer_size, size_t per_block_size, size_t last_block_size)
+__attribute__((always_inline))
+static inline void rmt_rx_mount_dma_buffer(rmt_rx_channel_t *rx_chan, const void *buffer, size_t buffer_size, size_t mem_alignment, size_t per_block_size, size_t last_block_size)
 {
     uint8_t *data = (uint8_t *)buffer;
+    gdma_buffer_mount_config_t mount_configs[rx_chan->num_dma_nodes];
+    memset(mount_configs, 0, sizeof(mount_configs));
     for (int i = 0; i < rx_chan->num_dma_nodes; i++) {
-        rmt_dma_descriptor_t *desc_nc = &rx_chan->dma_nodes_nc[i];
-        desc_nc->buffer = data + i * per_block_size;
-        desc_nc->dw0.owner = DMA_DESCRIPTOR_BUFFER_OWNER_DMA;
-        desc_nc->dw0.suc_eof = 0;
-        desc_nc->dw0.length = 0;
-        desc_nc->dw0.size = per_block_size;
+        mount_configs[i] = (gdma_buffer_mount_config_t) {
+            .buffer = data + i * per_block_size,
+            .length = per_block_size,
+            .buffer_alignment = mem_alignment,
+            .flags = {
+                .mark_final = false,
+            }
+        };
     }
-    rx_chan->dma_nodes_nc[rx_chan->num_dma_nodes - 1].dw0.size = last_block_size;
+    mount_configs[rx_chan->num_dma_nodes - 1].length = last_block_size;
+    gdma_link_mount_buffers(rx_chan->dma_link, 0, mount_configs, rx_chan->num_dma_nodes, NULL);
 }
 
 static esp_err_t rmt_rx_init_dma_link(rmt_rx_channel_t *rx_channel, const rmt_rx_channel_config_t *config)
 {
     gdma_channel_alloc_config_t dma_chan_config = {
         .direction = GDMA_CHANNEL_DIRECTION_RX,
+#if CONFIG_RMT_RX_ISR_CACHE_SAFE
+        .flags.isr_cache_safe = true,
+#endif
     };
     ESP_RETURN_ON_ERROR(gdma_new_ahb_channel(&dma_chan_config, &rx_channel->base.dma_chan), TAG, "allocate RX DMA channel failed");
     gdma_transfer_config_t transfer_cfg = {
-        .access_ext_mem = false, // [IDF-8997]: PSRAM is not supported yet
+        .access_ext_mem = true, // support receive buffer to PSRAM
         .max_data_burst_size = 32,
     };
     ESP_RETURN_ON_ERROR(gdma_config_transfer(rx_channel->base.dma_chan, &transfer_cfg), TAG, "config DMA transfer failed");
     // get the alignment requirement from DMA
-    gdma_get_alignment_constraints(rx_channel->base.dma_chan, &rx_channel->dma_int_mem_alignment, NULL);
+    gdma_get_alignment_constraints(rx_channel->base.dma_chan, &rx_channel->dma_int_mem_alignment, &rx_channel->dma_ext_mem_alignment);
 
     // register event callbacks
     gdma_rx_event_callbacks_t cbs = {
@@ -74,11 +65,21 @@ static esp_err_t rmt_rx_init_dma_link(rmt_rx_channel_t *rx_channel, const rmt_rx
     // register the DMA callbacks may fail if the interrupt service can not be installed successfully
     ESP_RETURN_ON_ERROR(gdma_register_rx_event_callbacks(rx_channel->base.dma_chan, &cbs, rx_channel), TAG, "register DMA callbacks failed");
 
-    // circular DMA descriptor
-    for (int i = 0; i < rx_channel->num_dma_nodes - 1; i++) {
-        rx_channel->dma_nodes_nc[i].next = &rx_channel->dma_nodes[i + 1];
-    }
-    rx_channel->dma_nodes_nc[rx_channel->num_dma_nodes - 1].next = &rx_channel->dma_nodes[0];
+    size_t buffer_alignment = MAX(rx_channel->dma_int_mem_alignment, rx_channel->dma_ext_mem_alignment);
+    rx_channel->num_dma_nodes = esp_dma_calculate_node_count(config->mem_block_symbols * sizeof(rmt_symbol_word_t),
+                                                             buffer_alignment, DMA_DESCRIPTOR_BUFFER_MAX_SIZE);
+    rx_channel->num_dma_nodes = MAX(2, rx_channel->num_dma_nodes); // at least 2 DMA nodes for ping-pong
+
+    //  create DMA link list
+    gdma_link_list_config_t dma_link_config = {
+        .item_alignment = RMT_DMA_DESC_ALIGN,
+        .num_items = rx_channel->num_dma_nodes,
+        .flags = {
+            // the reception may be interrupted by rmt_rx_disable(), DMA may not have accessed the descriptor yet
+            .check_owner = false,
+        },
+    };
+    ESP_RETURN_ON_ERROR(gdma_new_link_list(&dma_link_config, &rx_channel->dma_link), TAG, "create DMA link list failed");
     return ESP_OK;
 }
 #endif // SOC_RMT_SUPPORT_DMA
@@ -161,20 +162,22 @@ static esp_err_t rmt_rx_destroy(rmt_rx_channel_t *rx_channel)
     if (rx_channel->base.intr) {
         ESP_RETURN_ON_ERROR(esp_intr_free(rx_channel->base.intr), TAG, "delete interrupt service failed");
     }
+#if CONFIG_PM_ENABLE
     if (rx_channel->base.pm_lock) {
         ESP_RETURN_ON_ERROR(esp_pm_lock_delete(rx_channel->base.pm_lock), TAG, "delete pm_lock failed");
     }
+#endif
 #if SOC_RMT_SUPPORT_DMA
     if (rx_channel->base.dma_chan) {
         ESP_RETURN_ON_ERROR(gdma_del_channel(rx_channel->base.dma_chan), TAG, "delete dma channel failed");
+    }
+    if (rx_channel->dma_link) {
+        ESP_RETURN_ON_ERROR(gdma_del_link_list(rx_channel->dma_link), TAG, "delete dma link list failed");
     }
 #endif // SOC_RMT_SUPPORT_DMA
     if (rx_channel->base.group) {
         // de-register channel from RMT group
         rmt_rx_unregister_from_group(&rx_channel->base, rx_channel->base.group);
-    }
-    if (rx_channel->dma_nodes) {
-        free(rx_channel->dma_nodes);
     }
     free(rx_channel);
     return ESP_OK;
@@ -182,9 +185,6 @@ static esp_err_t rmt_rx_destroy(rmt_rx_channel_t *rx_channel)
 
 esp_err_t rmt_new_rx_channel(const rmt_rx_channel_config_t *config, rmt_channel_handle_t *ret_chan)
 {
-#if CONFIG_RMT_ENABLE_DEBUG_LOG
-    esp_log_level_set(TAG, ESP_LOG_DEBUG);
-#endif
     esp_err_t ret = ESP_OK;
     rmt_rx_channel_t *rx_channel = NULL;
     // Check if priority is valid
@@ -196,7 +196,13 @@ esp_err_t rmt_new_rx_channel(const rmt_rx_channel_config_t *config, rmt_channel_
     ESP_RETURN_ON_FALSE(GPIO_IS_VALID_GPIO(config->gpio_num), ESP_ERR_INVALID_ARG, TAG, "invalid GPIO number %d", config->gpio_num);
     ESP_RETURN_ON_FALSE((config->mem_block_symbols & 0x01) == 0 && config->mem_block_symbols >= SOC_RMT_MEM_WORDS_PER_CHANNEL,
                         ESP_ERR_INVALID_ARG, TAG, "mem_block_symbols must be even and at least %d", SOC_RMT_MEM_WORDS_PER_CHANNEL);
-#if !SOC_RMT_SUPPORT_DMA
+#if SOC_RMT_SUPPORT_DMA
+    if (config->flags.with_dma) {
+#if CONFIG_RMT_RX_ISR_CACHE_SAFE && (!CONFIG_GDMA_ISR_HANDLER_IN_IRAM || !CONFIG_GDMA_CTRL_FUNC_IN_IRAM)
+        ESP_RETURN_ON_FALSE(false, ESP_ERR_INVALID_STATE, TAG, "CONFIG_GDMA_ISR_HANDLER_IN_IRAM and CONFIG_GDMA_CTRL_FUNC_IN_IRAM must be enabled");
+#endif
+    }
+#else
     ESP_RETURN_ON_FALSE(config->flags.with_dma == 0, ESP_ERR_NOT_SUPPORTED, TAG, "DMA not supported");
 #endif // SOC_RMT_SUPPORT_DMA
 
@@ -204,37 +210,11 @@ esp_err_t rmt_new_rx_channel(const rmt_rx_channel_config_t *config, rmt_channel_
     ESP_RETURN_ON_FALSE(config->flags.allow_pd == 0, ESP_ERR_NOT_SUPPORTED, TAG, "not able to power down in light sleep");
 #endif // SOC_RMT_SUPPORT_SLEEP_RETENTION
 
-    // malloc channel memory
-    uint32_t mem_caps = RMT_MEM_ALLOC_CAPS;
-    rx_channel = heap_caps_calloc(1, sizeof(rmt_rx_channel_t), mem_caps);
+    // allocate channel memory from internal memory because it contains atomic variable
+    rx_channel = heap_caps_calloc(1, sizeof(rmt_rx_channel_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     ESP_GOTO_ON_FALSE(rx_channel, ESP_ERR_NO_MEM, err, TAG, "no mem for rx channel");
     // gpio is not configured yet
     rx_channel->base.gpio_num = -1;
-
-#if SOC_RMT_SUPPORT_DMA
-    // create DMA descriptor
-    size_t num_dma_nodes = 0;
-    if (config->flags.with_dma) {
-        // DMA descriptors must be placed in internal SRAM
-        mem_caps |= MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA;
-        num_dma_nodes = config->mem_block_symbols * sizeof(rmt_symbol_word_t) / DMA_DESCRIPTOR_BUFFER_MAX_SIZE + 1;
-        num_dma_nodes = MAX(2, num_dma_nodes); // at least 2 DMA nodes for ping-pong
-        rmt_dma_descriptor_t *dma_nodes =  heap_caps_aligned_calloc(RMT_DMA_DESC_ALIGN, num_dma_nodes, sizeof(rmt_dma_descriptor_t), mem_caps);
-        ESP_GOTO_ON_FALSE(dma_nodes, ESP_ERR_NO_MEM, err, TAG, "no mem for rx channel DMA nodes");
-        rx_channel->dma_nodes = dma_nodes;
-        // do memory sync only when the data cache exists
-        uint32_t data_cache_line_size = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA);
-        if (data_cache_line_size) {
-            // write back and then invalidate the cached dma_nodes, because later the DMA nodes are accessed by non-cacheable address
-            ESP_GOTO_ON_ERROR(esp_cache_msync(dma_nodes, num_dma_nodes * sizeof(rmt_dma_descriptor_t),
-                                              ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_INVALIDATE | ESP_CACHE_MSYNC_FLAG_UNALIGNED),
-                              err, TAG, "cache sync failed");
-        }
-        // we will use the non-cached address to manipulate the DMA descriptor, for simplicity
-        rx_channel->dma_nodes_nc = (rmt_dma_descriptor_t *)RMT_GET_NON_CACHE_ADDR(dma_nodes);
-    }
-    rx_channel->num_dma_nodes = num_dma_nodes;
-#endif // SOC_RMT_SUPPORT_DMA
 
     // register the channel to group
     ESP_GOTO_ON_ERROR(rmt_rx_register_to_group(rx_channel, config), err, TAG, "register channel failed");
@@ -268,7 +248,7 @@ esp_err_t rmt_new_rx_channel(const rmt_rx_channel_config_t *config, rmt_channel_
         bool priority_conflict = rmt_set_intr_priority_to_group(group, config->intr_priority);
         ESP_GOTO_ON_FALSE(!priority_conflict, ESP_ERR_INVALID_ARG, err, TAG, "intr_priority conflict");
         // 2-- Get interrupt allocation flag
-        int isr_flags = rmt_get_isr_flags(group);
+        int isr_flags = rmt_isr_priority_to_flags(group) | RMT_RX_INTR_ALLOC_FLAG;
         // 3-- Allocate interrupt using isr_flag
         ret = esp_intr_alloc_intrstatus(rmt_periph_signals.groups[group_id].irq, isr_flags,
                                         (uint32_t)rmt_ll_get_interrupt_status_reg(hal->regs),
@@ -276,16 +256,9 @@ esp_err_t rmt_new_rx_channel(const rmt_rx_channel_config_t *config, rmt_channel_
         ESP_GOTO_ON_ERROR(ret, err, TAG, "install rx interrupt failed");
     }
 
-    // select the clock source
-    ESP_GOTO_ON_ERROR(rmt_select_periph_clock(&rx_channel->base, config->clk_src), err, TAG, "set group clock failed");
-    // set channel clock resolution
-    uint32_t real_div = group->resolution_hz / config->resolution_hz;
-    rmt_ll_rx_set_channel_clock_div(hal->regs, channel_id, real_div);
-    // resolution loss due to division, calculate the real resolution
-    rx_channel->base.resolution_hz = group->resolution_hz / real_div;
-    if (rx_channel->base.resolution_hz != config->resolution_hz) {
-        ESP_LOGW(TAG, "channel resolution loss, real=%"PRIu32, rx_channel->base.resolution_hz);
-    }
+    rx_channel->base.direction = RMT_CHANNEL_DIRECTION_RX;
+    // select the clock source and set clock resolution
+    ESP_GOTO_ON_ERROR(rmt_select_periph_clock(&rx_channel->base, config->clk_src, config->resolution_hz), err, TAG, "set clock resolution failed");
 
     rx_channel->filter_clock_resolution_hz = group->resolution_hz;
     // On esp32 and esp32s2, the counting clock used by the RX filter always comes from APB clock
@@ -309,21 +282,14 @@ esp_err_t rmt_new_rx_channel(const rmt_rx_channel_config_t *config, rmt_channel_
     // GPIO Matrix/MUX configuration
     gpio_func_sel(config->gpio_num, PIN_FUNC_GPIO);
     gpio_input_enable(config->gpio_num);
-    gpio_pullup_en(config->gpio_num);
     esp_rom_gpio_connect_in_signal(config->gpio_num,
                                    rmt_periph_signals.groups[group_id].channels[channel_id + RMT_RX_CHANNEL_OFFSET_IN_GROUP].rx_sig,
                                    config->flags.invert_in);
     rx_channel->base.gpio_num = config->gpio_num;
 
-    // deprecated, to be removed in in esp-idf v6.0
-    if (config->flags.io_loop_back) {
-        gpio_ll_output_enable(&GPIO, config->gpio_num);
-    }
-
     // initialize other members of rx channel
     portMUX_INITIALIZE(&rx_channel->base.spinlock);
     atomic_init(&rx_channel->base.fsm, RMT_FSM_INIT);
-    rx_channel->base.direction = RMT_CHANNEL_DIRECTION_RX;
     rx_channel->base.hw_mem_base = &RMTMEM.channels[channel_id + RMT_RX_CHANNEL_OFFSET_IN_GROUP].symbols[0];
     // polymorphic methods
     rx_channel->base.del = rmt_del_rx_channel;
@@ -364,7 +330,7 @@ esp_err_t rmt_rx_register_event_callbacks(rmt_channel_handle_t channel, const rm
     ESP_RETURN_ON_FALSE(channel->direction == RMT_CHANNEL_DIRECTION_RX, ESP_ERR_INVALID_ARG, TAG, "invalid channel direction");
     rmt_rx_channel_t *rx_chan = __containerof(channel, rmt_rx_channel_t, base);
 
-#if CONFIG_RMT_ISR_IRAM_SAFE
+#if CONFIG_RMT_RX_ISR_CACHE_SAFE
     if (cbs->on_recv_done) {
         ESP_RETURN_ON_FALSE(esp_ptr_in_iram(cbs->on_recv_done), ESP_ERR_INVALID_ARG, TAG, "on_recv_done callback not in IRAM");
     }
@@ -389,21 +355,37 @@ esp_err_t rmt_receive(rmt_channel_handle_t channel, void *buffer, size_t buffer_
     size_t mem_alignment = sizeof(rmt_symbol_word_t);
 
 #if SOC_RMT_SUPPORT_DMA
+    uint32_t int_mem_cache_line_size = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA);
+    uint32_t ext_mem_cache_line_size = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_DATA);
     if (channel->dma_chan) {
-        // append the alignment requirement from the DMA
-        mem_alignment = MAX(mem_alignment, rx_chan->dma_int_mem_alignment);
-        // [IDF-8997]: Currently we assume the user buffer is allocated from internal RAM, PSRAM is not supported yet.
-        ESP_RETURN_ON_FALSE_ISR(esp_ptr_internal(buffer), ESP_ERR_INVALID_ARG, TAG, "user buffer not in the internal RAM");
-        size_t max_buf_sz_per_dma_node = ALIGN_DOWN(DMA_DESCRIPTOR_BUFFER_MAX_SIZE, mem_alignment);
-        ESP_RETURN_ON_FALSE_ISR(buffer_size <= rx_chan->num_dma_nodes * max_buf_sz_per_dma_node,
-                                ESP_ERR_INVALID_ARG, TAG, "buffer size exceeds DMA capacity: %zu", rx_chan->num_dma_nodes * max_buf_sz_per_dma_node);
+        if (esp_ptr_external_ram(buffer)) {
+            mem_alignment = MAX(MAX(mem_alignment, rx_chan->dma_ext_mem_alignment), ext_mem_cache_line_size);
+        } else {
+            mem_alignment = MAX(MAX(mem_alignment, rx_chan->dma_int_mem_alignment), int_mem_cache_line_size);
+        }
     }
 #endif // SOC_RMT_SUPPORT_DMA
 
-    // check buffer alignment
-    uint32_t align_check_mask = mem_alignment - 1;
-    ESP_RETURN_ON_FALSE_ISR(((((uintptr_t)buffer) & align_check_mask) == 0) && (((buffer_size) & align_check_mask) == 0), ESP_ERR_INVALID_ARG,
-                            TAG, "buffer address or size are not %zu bytes aligned", mem_alignment);
+    // Align the buffer address to mem_alignment
+    if ((((uintptr_t)buffer) & (mem_alignment - 1)) != 0) {
+        uintptr_t aligned_address = ALIGN_UP((uintptr_t)buffer, mem_alignment);
+        size_t offset = aligned_address - (uintptr_t)buffer;
+        ESP_RETURN_ON_FALSE_ISR(buffer_size > offset, ESP_ERR_INVALID_ARG, TAG, "buffer size is not aligned and is too small, please increase the buffer size");
+        ESP_EARLY_LOGD(TAG, "origin buffer %p not satisfy alignment %d, align buffer to %p", buffer, mem_alignment, aligned_address);
+        buffer = (uint8_t *)aligned_address;
+        buffer_size -= offset;
+    }
+    // Align the buffer size to mem_alignment
+    buffer_size = ALIGN_DOWN(buffer_size, mem_alignment);
+    ESP_RETURN_ON_FALSE_ISR(buffer_size > 0, ESP_ERR_INVALID_ARG, TAG, "buffer size is less than alignment: %"PRIu32", please increase the buffer size", mem_alignment);
+
+#if SOC_RMT_SUPPORT_DMA
+    if (channel->dma_chan) {
+        size_t max_buf_sz_per_dma_node = ALIGN_DOWN(DMA_DESCRIPTOR_BUFFER_MAX_SIZE, mem_alignment);
+        ESP_RETURN_ON_FALSE_ISR(buffer_size <= rx_chan->num_dma_nodes * max_buf_sz_per_dma_node,
+                                ESP_ERR_INVALID_ARG, TAG, "buffer size exceeds DMA capacity: %"PRIu32", please increase the mem_block_symbols", rx_chan->num_dma_nodes * max_buf_sz_per_dma_node);
+    }
+#endif // SOC_RMT_SUPPORT_DMA
 
     rmt_group_t *group = channel->group;
     rmt_hal_context_t *hal = &group->hal;
@@ -411,12 +393,12 @@ esp_err_t rmt_receive(rmt_channel_handle_t channel, void *buffer, size_t buffer_
 
     uint32_t filter_reg_value = ((uint64_t)rx_chan->filter_clock_resolution_hz * config->signal_range_min_ns) / 1000000000UL;
     uint32_t idle_reg_value = ((uint64_t)channel->resolution_hz * config->signal_range_max_ns) / 1000000000UL;
-    ESP_RETURN_ON_FALSE_ISR(filter_reg_value <= RMT_LL_MAX_FILTER_VALUE, ESP_ERR_INVALID_ARG, TAG, "signal_range_min_ns too big");
-    ESP_RETURN_ON_FALSE_ISR(idle_reg_value <= RMT_LL_MAX_IDLE_VALUE, ESP_ERR_INVALID_ARG, TAG, "signal_range_max_ns too big");
+    ESP_RETURN_ON_FALSE_ISR(filter_reg_value <= RMT_LL_MAX_FILTER_VALUE, ESP_ERR_INVALID_ARG, TAG, "signal_range_min_ns too big, should be less than %"PRIu32" ns", (uint32_t)((uint64_t)RMT_LL_MAX_FILTER_VALUE * 1000000000UL / rx_chan->filter_clock_resolution_hz));
+    ESP_RETURN_ON_FALSE_ISR(idle_reg_value <= RMT_LL_MAX_IDLE_VALUE, ESP_ERR_INVALID_ARG, TAG, "signal_range_max_ns too big, should be less than %"PRIu32" ns", (uint32_t)((uint64_t)RMT_LL_MAX_IDLE_VALUE * 1000000000UL / channel->resolution_hz));
 
     // check if we're in a proper state to start the receiver
     rmt_fsm_t expected_fsm = RMT_FSM_ENABLE;
-    ESP_RETURN_ON_FALSE_ISR(atomic_compare_exchange_strong(&channel->fsm, &expected_fsm, RMT_FSM_RUN_WAIT),
+    ESP_RETURN_ON_FALSE_ISR(atomic_compare_exchange_strong(&channel->fsm, &expected_fsm, RMT_FSM_WAIT),
                             ESP_ERR_INVALID_STATE, TAG, "channel not in enable state");
 
     // fill in the transaction descriptor
@@ -432,18 +414,18 @@ esp_err_t rmt_receive(rmt_channel_handle_t channel, void *buffer, size_t buffer_
 #if SOC_RMT_SUPPORT_DMA
     if (channel->dma_chan) {
         // invalidate the user buffer, in case cache auto-write back happens and breaks the data just written by the DMA
-        uint32_t int_mem_cache_line_size = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA);
-        if (int_mem_cache_line_size) {
-            // this function will also check the alignment of the buffer and size, against the cache line size
+        uint32_t data_cache_line_size = esp_cache_get_line_size_by_addr(buffer);
+        if (data_cache_line_size) {
+            // invalidate the user buffer, so that the DMA modified data can be seen by CPU
             ESP_RETURN_ON_ERROR_ISR(esp_cache_msync(buffer, buffer_size, ESP_CACHE_MSYNC_FLAG_DIR_M2C), TAG, "cache sync failed");
         }
         // we will mount the buffer to multiple DMA nodes, in a balanced way
         size_t per_dma_block_size = buffer_size / rx_chan->num_dma_nodes;
         per_dma_block_size = ALIGN_DOWN(per_dma_block_size, mem_alignment);
         size_t last_dma_block_size = buffer_size - per_dma_block_size * (rx_chan->num_dma_nodes - 1);
-        rmt_rx_mount_dma_buffer(rx_chan, buffer, buffer_size, per_dma_block_size, last_dma_block_size);
+        rmt_rx_mount_dma_buffer(rx_chan, buffer, buffer_size, mem_alignment, per_dma_block_size, last_dma_block_size);
         gdma_reset(channel->dma_chan);
-        gdma_start(channel->dma_chan, (intptr_t)rx_chan->dma_nodes); // note, we must use the cached descriptor address to start the DMA
+        gdma_start(channel->dma_chan, gdma_link_get_head_addr(rx_chan->dma_link)); // note, we must use the cached descriptor address to start the DMA
     }
 #endif
 
@@ -458,11 +440,11 @@ esp_err_t rmt_receive(rmt_channel_handle_t channel, void *buffer, size_t buffer_
     rmt_ll_rx_set_idle_thres(hal->regs, channel_id, idle_reg_value);
     // turn on RMT RX machine
     rmt_ll_rx_enable(hal->regs, channel_id, true);
-    portEXIT_CRITICAL_SAFE(&channel->spinlock);
 
     // saying we're in running state, this state will last until the receiving is done
     // i.e., we will switch back to the enable state in the receive done interrupt handler
     atomic_store(&channel->fsm, RMT_FSM_RUN);
+    portEXIT_CRITICAL_SAFE(&channel->spinlock);
 
     return ESP_OK;
 }
@@ -510,17 +492,20 @@ static esp_err_t rmt_rx_enable(rmt_channel_handle_t channel)
 {
     // can only enable the channel when it's in "init" state
     rmt_fsm_t expected_fsm = RMT_FSM_INIT;
-    ESP_RETURN_ON_FALSE(atomic_compare_exchange_strong(&channel->fsm, &expected_fsm, RMT_FSM_ENABLE_WAIT),
+    ESP_RETURN_ON_FALSE(atomic_compare_exchange_strong(&channel->fsm, &expected_fsm, RMT_FSM_WAIT),
                         ESP_ERR_INVALID_STATE, TAG, "channel not in init state");
 
     rmt_group_t *group = channel->group;
     rmt_hal_context_t *hal = &group->hal;
     int channel_id = channel->channel_id;
 
+#if CONFIG_PM_ENABLE
     // acquire power manager lock
     if (channel->pm_lock) {
         esp_pm_lock_acquire(channel->pm_lock);
     }
+#endif
+
     if (channel->dma_chan) {
 #if SOC_RMT_SUPPORT_DMA
         // enable the DMA access mode
@@ -546,11 +531,11 @@ static esp_err_t rmt_rx_disable(rmt_channel_handle_t channel)
     // can disable the channel when it's in `enable` or `run` state
     bool valid_state = false;
     rmt_fsm_t expected_fsm = RMT_FSM_ENABLE;
-    if (atomic_compare_exchange_strong(&channel->fsm, &expected_fsm, RMT_FSM_INIT_WAIT)) {
+    if (atomic_compare_exchange_strong(&channel->fsm, &expected_fsm, RMT_FSM_WAIT)) {
         valid_state = true;
     }
     expected_fsm = RMT_FSM_RUN;
-    if (atomic_compare_exchange_strong(&channel->fsm, &expected_fsm, RMT_FSM_INIT_WAIT)) {
+    if (atomic_compare_exchange_strong(&channel->fsm, &expected_fsm, RMT_FSM_WAIT)) {
         valid_state = true;
     }
     ESP_RETURN_ON_FALSE(valid_state, ESP_ERR_INVALID_STATE, TAG, "channel not in enable or run state");
@@ -578,17 +563,19 @@ static esp_err_t rmt_rx_disable(rmt_channel_handle_t channel)
         portEXIT_CRITICAL(&group->spinlock);
     }
 
+#if CONFIG_PM_ENABLE
     // release power manager lock
     if (channel->pm_lock) {
         esp_pm_lock_release(channel->pm_lock);
     }
+#endif
 
     // now we can switch the state to init
     atomic_store(&channel->fsm, RMT_FSM_INIT);
     return ESP_OK;
 }
 
-static bool IRAM_ATTR rmt_isr_handle_rx_done(rmt_rx_channel_t *rx_chan)
+bool rmt_isr_handle_rx_done(rmt_rx_channel_t *rx_chan)
 {
     rmt_channel_t *channel = &rx_chan->base;
     rmt_group_t *group = channel->group;
@@ -604,10 +591,31 @@ static bool IRAM_ATTR rmt_isr_handle_rx_done(rmt_rx_channel_t *rx_chan)
     rmt_ll_rx_enable(hal->regs, channel_id, false);
     portEXIT_CRITICAL_ISR(&channel->spinlock);
 
+#if !SOC_RMT_SUPPORT_ASYNC_STOP
+    // This is a workaround for ESP32.
+    // The RX engine can not be disabled once it is enabled in ESP32
+    // If the state isn't RMT_FSM_RUN, it means the RX engine was disabled
+    // and we shouldn't process the data.
+    if (atomic_load(&channel->fsm) != RMT_FSM_RUN) {
+        return false;
+    }
+#endif
+
     uint32_t offset = rmt_ll_rx_get_memory_writer_offset(hal->regs, channel_id);
-    // sanity check
-    assert(offset >= rx_chan->mem_off);
-    size_t mem_want = (offset - rx_chan->mem_off) * sizeof(rmt_symbol_word_t);
+
+    // Start from C6, the actual pulse count is the number of input pulses N - 1.
+    // Resulting in the last threshold interrupts may not be triggered correctly when the number of received symbols is a multiple of the memory block size.
+    // As shown in the figure below, So we special handle the offset
+
+    //  mem_off (should be updated here in the last threshold interrupt, but interrupt lost)
+    //     |
+    //     V
+    //     |________|________|
+    //     |        |
+    //   offset   mem_off(actually here now)
+
+    size_t mem_want = (offset >= rx_chan->mem_off ? offset - rx_chan->mem_off : rx_chan->mem_off - offset);
+    mem_want *= sizeof(rmt_symbol_word_t);
     size_t mem_have = trans_desc->buffer_size - trans_desc->copy_dest_off;
     size_t copy_size = mem_want;
     if (mem_want > mem_have) {
@@ -630,12 +638,12 @@ static bool IRAM_ATTR rmt_isr_handle_rx_done(rmt_rx_channel_t *rx_chan)
 
                 // even user process the partial received data, the remain buffer may still be insufficient
                 if (mem_want > mem_have) {
-                    ESP_DRAM_LOGE(TAG, "user buffer too small, received symbols truncated");
+                    ESP_DRAM_LOGD(TAG, "user buffer too small, received symbols truncated");
                     copy_size = mem_have;
                 }
             }
         } else {
-            ESP_DRAM_LOGE(TAG, "user buffer too small, received symbols truncated");
+            ESP_DRAM_LOGD(TAG, "user buffer too small, received symbols truncated");
             copy_size = mem_have;
         }
     }
@@ -656,7 +664,7 @@ static bool IRAM_ATTR rmt_isr_handle_rx_done(rmt_rx_channel_t *rx_chan)
         portEXIT_CRITICAL_ISR(&channel->spinlock);
         // this clear operation can only take effect after we copy out the received data and reset the pointer
         rmt_ll_clear_interrupt_status(hal->regs, RMT_LL_EVENT_RX_ERROR(channel_id));
-        ESP_DRAM_LOGE(TAG, "hw buffer too small, received symbols truncated");
+        ESP_DRAM_LOGD(TAG, "hw buffer too small, received symbols truncated");
     }
 #endif // !SOC_RMT_SUPPORT_RX_PINGPONG
 
@@ -680,7 +688,7 @@ static bool IRAM_ATTR rmt_isr_handle_rx_done(rmt_rx_channel_t *rx_chan)
 }
 
 #if SOC_RMT_SUPPORT_RX_PINGPONG
-static bool IRAM_ATTR rmt_isr_handle_rx_threshold(rmt_rx_channel_t *rx_chan)
+bool rmt_isr_handle_rx_threshold(rmt_rx_channel_t *rx_chan)
 {
     bool need_yield = false;
     rmt_channel_t *channel = &rx_chan->base;
@@ -715,12 +723,12 @@ static bool IRAM_ATTR rmt_isr_handle_rx_threshold(rmt_rx_channel_t *rx_chan)
 
                 // even user process the partial received data, the remain buffer size still insufficient
                 if (mem_want > mem_have) {
-                    ESP_DRAM_LOGE(TAG, "user buffer too small, received symbols truncated");
+                    ESP_DRAM_LOGD(TAG, "user buffer too small, received symbols truncated");
                     copy_size = mem_have;
                 }
             }
         } else {
-            ESP_DRAM_LOGE(TAG, "user buffer too small, received symbols truncated");
+            ESP_DRAM_LOGD(TAG, "user buffer too small, received symbols truncated");
             copy_size = mem_have;
         }
     }
@@ -742,7 +750,7 @@ static bool IRAM_ATTR rmt_isr_handle_rx_threshold(rmt_rx_channel_t *rx_chan)
 }
 #endif // SOC_RMT_SUPPORT_RX_PINGPONG
 
-static void IRAM_ATTR rmt_rx_default_isr(void *args)
+static void rmt_rx_default_isr(void *args)
 {
     rmt_rx_channel_t *rx_chan = (rmt_rx_channel_t *)args;
     rmt_channel_t *channel = &rx_chan->base;
@@ -775,29 +783,23 @@ static void IRAM_ATTR rmt_rx_default_isr(void *args)
 }
 
 #if SOC_RMT_SUPPORT_DMA
-static size_t IRAM_ATTR rmt_rx_count_symbols_until_eof(rmt_rx_channel_t *rx_chan, int start_index)
+__attribute__((always_inline))
+static inline size_t rmt_rx_count_symbols_until_eof(rmt_rx_channel_t *rx_chan, int start_index)
 {
-    size_t received_bytes = 0;
-    for (int i = 0; i < rx_chan->num_dma_nodes; i++) {
-        received_bytes += rx_chan->dma_nodes_nc[start_index].dw0.length;
-        if (rx_chan->dma_nodes_nc[start_index].dw0.suc_eof) {
-            break;
-        }
-        start_index++;
-        start_index %= rx_chan->num_dma_nodes;
-    }
+    size_t received_bytes = gdma_link_count_buffer_size_till_eof(rx_chan->dma_link, start_index);
     received_bytes = ALIGN_UP(received_bytes, sizeof(rmt_symbol_word_t));
     return received_bytes / sizeof(rmt_symbol_word_t);
 }
 
-static size_t IRAM_ATTR rmt_rx_count_symbols_for_single_block(rmt_rx_channel_t *rx_chan, int desc_index)
+__attribute__((always_inline))
+static inline size_t rmt_rx_count_symbols_for_single_block(rmt_rx_channel_t *rx_chan, int desc_index)
 {
-    size_t received_bytes = rx_chan->dma_nodes_nc[desc_index].dw0.length;
+    size_t received_bytes = gdma_link_get_length(rx_chan->dma_link, desc_index);
     received_bytes = ALIGN_UP(received_bytes, sizeof(rmt_symbol_word_t));
     return received_bytes / sizeof(rmt_symbol_word_t);
 }
 
-static bool IRAM_ATTR rmt_dma_rx_one_block_cb(gdma_channel_handle_t dma_chan, gdma_event_data_t *event_data, void *user_data)
+static bool rmt_dma_rx_one_block_cb(gdma_channel_handle_t dma_chan, gdma_event_data_t *event_data, void *user_data)
 {
     bool need_yield = false;
     rmt_rx_channel_t *rx_chan = (rmt_rx_channel_t *)user_data;
@@ -807,7 +809,7 @@ static bool IRAM_ATTR rmt_dma_rx_one_block_cb(gdma_channel_handle_t dma_chan, gd
     rmt_rx_trans_desc_t *trans_desc = &rx_chan->trans_desc;
     uint32_t channel_id = channel->channel_id;
 
-    uint32_t data_cache_line_size = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA);
+    uint32_t data_cache_line_size = esp_cache_get_line_size_by_addr(trans_desc->buffer);
     if (data_cache_line_size) {
         // invalidate the user buffer, so that the DMA modified data can be seen by CPU
         esp_cache_msync(trans_desc->buffer, trans_desc->buffer_size, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
@@ -826,7 +828,7 @@ static bool IRAM_ATTR rmt_dma_rx_one_block_cb(gdma_channel_handle_t dma_chan, gd
         if (rx_chan->on_recv_done) {
             int recycle_start_index = trans_desc->dma_desc_index;
             rmt_rx_done_event_data_t edata = {
-                .received_symbols = rx_chan->dma_nodes_nc[recycle_start_index].buffer,
+                .received_symbols = gdma_link_get_buffer(rx_chan->dma_link, recycle_start_index),
                 .num_symbols = rmt_rx_count_symbols_until_eof(rx_chan, recycle_start_index),
                 .flags.is_last = true,
             };
@@ -840,7 +842,7 @@ static bool IRAM_ATTR rmt_dma_rx_one_block_cb(gdma_channel_handle_t dma_chan, gd
             if (rx_chan->on_recv_done) {
                 size_t dma_desc_index = trans_desc->dma_desc_index;
                 rmt_rx_done_event_data_t edata = {
-                    .received_symbols = rx_chan->dma_nodes_nc[dma_desc_index].buffer,
+                    .received_symbols = gdma_link_get_buffer(rx_chan->dma_link, dma_desc_index),
                     .num_symbols = rmt_rx_count_symbols_for_single_block(rx_chan, dma_desc_index),
                     .flags.is_last = false,
                 };

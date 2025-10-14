@@ -1,18 +1,16 @@
-# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
-
 import time
 
 import pexpect
 import pytest
 from pytest_embedded import Dut
+from pytest_embedded_idf.utils import idf_parametrize
 
 
-@pytest.mark.esp32s2
-@pytest.mark.esp32s3
 @pytest.mark.generic
+@idf_parametrize('target', ['esp32s2', 'esp32s3'], indirect=['target'])
 def test_ulp_riscv_gpio(dut: Dut) -> None:
-
     dut.expect_exact('Not a ULP-RISC-V wakeup, initializing it!')
     dut.expect_exact('Entering in deep sleep')
 

@@ -3,11 +3,11 @@
 
 :link_to_translation:`en:[English]`
 
-{IDF_TARGET_STATIC_MEANS_HEAP:default="Wi-Fi 库和蓝牙控制器", esp32s2="Wi-Fi 库", esp32c6="Wi-Fi 库、蓝牙控制器和 IEEE 802.15.4 库", esp32h2="蓝牙控制器，IEEE 802.15.4 库"}
+{IDF_TARGET_STATIC_MEANS_HEAP:default="Wi-Fi 库和蓝牙控制器", esp32s2="Wi-Fi 库", esp32c6="Wi-Fi 库、蓝牙控制器和 IEEE 802.15.4 库", esp32c61="Wi-Fi 库和蓝牙控制器", esp32h2="蓝牙控制器和 IEEE 802.15.4 库", esp32h21="蓝牙控制器和 IEEE 802.15.4 库", esp32h4="蓝牙控制器和 IEEE 802.15.4 库"}
 
 固件应用程序的可用 RAM 在某些情况下可能处于低水平，甚至完全耗尽。为此，应调整这些情况下固件应用程序的内存使用情况。
 
-固件应用程序通常需要为内部 RAM 保留备用空间，用于应对非常规情况，或在后续版本的更新中，适应 RAM 使用需求的变化。
+固件通常需要为内部 RAM 保留备用空间，用于应对非常规情况，或在后续版本的更新中，适应 RAM 使用需求的变化。
 
 背景
 ----------
@@ -57,33 +57,33 @@ ESP-IDF 包含一系列堆 API，可以在运行时测量空闲堆内存，请�
 
 .. only:: SOC_ASSIST_DEBUG_SUPPORTED
 
-    硬件栈保护
-    ~~~~~~~~~~~~
+   硬件栈保护
+   ~~~~~~~~~~~~
 
-    硬件栈保护是一种检测栈溢出的可靠方法，通过硬件的辅助调试模块来监视 CPU 的栈指针寄存器。如果栈指针寄存器超出了当前栈的边界，则立即触发紧急情况提示（更多详细信息，请参阅 :ref:`Hardware-Stack-Guard`）。可以通过 :ref:`CONFIG_ESP_SYSTEM_HW_STACK_GUARD` 选项启用硬件栈保护。
+   硬件栈保护是一种检测栈溢出的可靠方法，通过硬件的辅助调试模块来监视 CPU 的栈指针寄存器。如果栈指针寄存器超出了当前栈的边界，则立即触发紧急情况提示（更多详细信息，请参阅 :ref:`Hardware-Stack-Guard`）。可以通过 :ref:`CONFIG_ESP_SYSTEM_HW_STACK_GUARD` 选项启用硬件栈保护。
 
 栈末尾监视点
 ~~~~~~~~~~~~~~
 
 栈末尾监视点将 CPU 监视点放置在当前栈的末尾。如果该字被覆盖（例如栈溢出），则会立即触发紧急情况提示。在未使用调试器的监视点时，可以设置 :ref:`CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK` 选项，启用栈末尾监视点功能。
 
-栈金丝雀字节
-~~~~~~~~~~~~~~
+栈 canary 字节
+~~~~~~~~~~~~~~~~~
 
-栈金丝雀字节功能在每个任务的栈末尾添加一组魔术字节，并在每次上下文切换时检查这些字节是否已更改。如果这些魔术字节被覆盖，则会触发紧急情况提示。可以通过 :ref:`CONFIG_FREERTOS_CHECK_STACKOVERFLOW` 选项启用栈金丝雀字节功能。
+栈 canary 字节功能在每个任务的栈末尾添加一组魔术字节，并在每次上下文切换时检查这些字节是否已更改。如果这些魔术字节被覆盖，则会触发紧急情况提示。可以通过 :ref:`CONFIG_FREERTOS_CHECK_STACKOVERFLOW` 选项启用栈 canary 字节功能。
 
 .. note::
 
-    使用栈末尾监视点或栈金丝雀字节时，栈指针可能在栈溢出时跳过监视点或金丝雀字节，损坏 RAM 的其他区域。因此，上述方法并不能检测所有的栈溢出。
+   使用栈末尾监视点或栈 canary 字节时，栈指针可能在栈溢出时跳过监视点或 canary 字节，损坏 RAM 的其他区域。因此，上述方法并不能检测所有的栈溢出。
 
-    .. only:: SOC_ASSIST_DEBUG_SUPPORTED
+   .. only:: SOC_ASSIST_DEBUG_SUPPORTED
 
-        推荐启用默认选项 :ref:`CONFIG_ESP_SYSTEM_HW_STACK_GUARD`，避免这个缺点。
+      推荐启用默认选项 :ref:`CONFIG_ESP_SYSTEM_HW_STACK_GUARD`，避免这个缺点。
 
 任务运行时确定栈内存大小的方法
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-- 调用 :cpp:func:`uxTaskGetStackHighWaterMark` 会返回任务整个生命周期中空闲栈内存的最小值，从而较好地显示出任务未使用的栈内存量。
+- 调用 :cpp:func:`uxTaskGetStackHighWaterMark` 会返回任务整个生命周期中空闲栈内存的最小值（以字节为单位），从而较好地显示出任务未使用的栈内存量。注意：在 {IDF_TARGET_NAME} 上，该函数返回字节数（而不是标准 FreeRTOS 文档中所述的字数）。
 
   - 从任务本身内部调用 :cpp:func:`uxTaskGetStackHighWaterMark` 是调用该函数最容易的方式：在任务达到其栈内存使用峰值后，调用 ``uxTaskGetStackHighWaterMark(NULL)`` 获取当前任务的高水位标记，换言之，如果有主循环，请多次执行主循环来覆盖各种状态，随后调用 :cpp:func:`uxTaskGetStackHighWaterMark`。
   - 通常可以用任务的栈内存总大小减去调用 :cpp:func:`uxTaskGetStackHighWaterMark` 的返回值，计算任务实际使用的栈内存大小，但应留出一定的安全余量，应对运行时栈内存使用量的小幅意外增长。
@@ -96,7 +96,7 @@ ESP-IDF 包含一系列堆 API，可以在运行时测量空闲堆内存，请�
 
 - 避免占用过多栈内存的函数。字符串格式化函数（如 ``printf()``）会使用大量栈内存，如果任务不调用这类函数，通常可以减小其占用的栈内存。
 
-  - :ref:`picolibc-instead-of-newlib` 可以显著减少 ``printf()`` 调用的堆栈使用量。
+  - 使用实验性的选项 :ref:`picolibc-instead-of-newlib` 可以显著减少 ``printf()`` 调用的堆栈使用量。
   - 启用 :ref:`newlib-nano-formatting`，可以在任务调用 ``printf()`` 或其他 C 语言字符串格式化函数时，减少这类任务的栈内存使用量。
 
 - 避免在栈上分配大型变量。在 C 语言声明的默认作用域中，任何分配为自动变量的大型结构体或数组都会占用栈内存。要优化这些变量占用的栈内存大小，可以使用静态分配，或仅在需要时从堆中动态分配。
@@ -179,8 +179,8 @@ IRAM 优化
 
 .. list::
 
-    - 启用 :ref:`CONFIG_FREERTOS_PLACE_FUNCTIONS_INTO_FLASH`。只要没有从 ISR 中错误地调用这些函数，就可以在所有配置中安全启用此选项。
-    - 启用 :ref:`CONFIG_RINGBUF_PLACE_FUNCTIONS_INTO_FLASH`。只要没有从 ISR 中错误地调用这些函数，就可以在所有配置中安全启用此选项。
+    - 如果已启用 :ref:`CONFIG_FREERTOS_IN_IRAM`，请将其禁用，以便将 FreeRTOS 函数放置在 flash 中而不是 IRAM 中。默认情况下，FreeRTOS 函数已经被放置在 flash 中以节省 IRAM。
+    - 如果已启用 :ref:`CONFIG_RINGBUF_IN_IRAM`，请将其禁用，以便将环形缓冲区函数放置在 flash 中而不是 IRAM 中。默认情况下，环形缓冲区函数已经被放置在 flash 中以节省 IRAM。
     - 启用 :ref:`CONFIG_RINGBUF_PLACE_ISR_FUNCTIONS_INTO_FLASH`。如果从 IRAM 中的中断上下文中使用 ISR ringbuf 函数，例如启用了 :ref:`CONFIG_UART_ISR_IN_IRAM`，则无法安全使用此选项。在此情况下，安装 ESP-IDF 相关驱动程序时，将在运行时报错。
     :SOC_WIFI_SUPPORTED: - 禁用 Wi-Fi 选项 :ref:`CONFIG_ESP_WIFI_IRAM_OPT` 和/或 :ref:`CONFIG_ESP_WIFI_RX_IRAM_OPT` 会释放可用 IRAM，但会牺牲部分 Wi-Fi 性能。
     :CONFIG_ESP_ROM_HAS_SPI_FLASH: - 启用 :ref:`CONFIG_SPI_FLASH_ROM_IMPL` 选项可以释放一些 IRAM，但此时 esp_flash 错误修复程序及新的 flash 芯片支持将失效，详情请参阅 :doc:`/api-reference/peripherals/spi_flash/spi_flash_idf_vs_rom`。
@@ -193,6 +193,8 @@ IRAM 优化
     - 要禁用不需要的 flash 驱动程序，节省 IRAM 空间，请参阅 sdkconfig 菜单中的 ``Auto-detect Flash chips`` 选项。
     :SOC_GPSPI_SUPPORTED: - 启用 :ref:`CONFIG_HEAP_PLACE_FUNCTION_INTO_FLASH`。只要未启用 :ref:`CONFIG_SPI_MASTER_ISR_IN_IRAM` 选项，且没有从 ISR 中错误地调用堆函数，就可以在所有配置中安全启用此选项。
     :esp32c2: - 启用 :ref:`CONFIG_BT_RELEASE_IRAM`。 蓝牙所使用的 data，bss 和 text 段已经被分配在连续的RAM区间。当调用 ``esp_bt_mem_release`` 时，这些段都会被添加到 Heap 中。 这将节省约 22 KB 的 RAM。但要再次使用蓝牙功能，需要重启程序。
+    - 禁用 :ref:`CONFIG_LIBC_LOCKS_PLACE_IN_IRAM`。若在缓存禁用的情况下，运行中的中断服务程序（即 IRAM ISR）没有使用 libc 锁 API，那么禁用该配置可以节省 IRAM 空间。
+    :CONFIG_ESP_ROM_HAS_SUBOPTIMAL_NEWLIB_ON_MISALIGNED_MEMORY: - 禁用 :ref:`CONFIG_LIBC_OPTIMIZED_MISALIGNED_ACCESS` 可以节省大约 1000 字节的 IRAM，但会降低性能。
 
 .. only:: esp32
 
@@ -216,7 +218,7 @@ IRAM 优化
    任何最终未用于静态 IRAM 的内存都将添加到堆内存中。
 
 
-.. only:: esp32c3
+.. only:: SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND
 
     flash 暂停特性
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -231,6 +233,8 @@ IRAM 优化
     在中断上下文中使用用户 ISR 回调及其相关变量时，也必须将其放置在内部 RAM 中。
 
     将额外代码放置到 IRAM 中，将增加 IRAM 使用量，ESP-IDF 提供了 :ref:`CONFIG_SPI_FLASH_AUTO_SUSPEND` 选项，可以缓解 IRAM 的使用。通过启用此功能，使用 SPI flash API 和基于 SPI flash API 的 API 时，不会导致缓存禁用，因此 flash 中的代码和数据仍可正常执行或访问，但会有些延迟。有关此功能的详细信息，请参阅 :ref:`auto-suspend`。
+
+    启用 :ref:`CONFIG_SPI_FLASH_AUTO_SUSPEND` 后，可以减少 flash 驱动的 IRAM 使用。更多详细信息请参阅 :ref:`internal_memory_saving_for_flash_driver`。
 
     有关 flash 暂停特性的使用及其相应的响应时间延迟，请参阅 :example:`system/flash_suspend`。
 

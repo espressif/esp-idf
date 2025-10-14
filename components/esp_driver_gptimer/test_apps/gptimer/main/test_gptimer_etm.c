@@ -13,11 +13,11 @@
 #include "driver/gpio_etm.h"
 #include "driver/gpio.h"
 
-#if CONFIG_GPTIMER_ISR_IRAM_SAFE
+#if CONFIG_GPTIMER_ISR_CACHE_SAFE
 #define TEST_ALARM_CALLBACK_ATTR IRAM_ATTR
 #else
 #define TEST_ALARM_CALLBACK_ATTR
-#endif // CONFIG_GPTIMER_ISR_IRAM_SAFE
+#endif // CONFIG_GPTIMER_ISR_CACHE_SAFE
 
 TEST_ALARM_CALLBACK_ATTR
 static bool on_gptimer_alarm_cb(gptimer_handle_t timer, const gptimer_alarm_event_data_t *edata, void *user_ctx)

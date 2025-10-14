@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -252,7 +252,8 @@ esp_err_t ppa_do_scale_rotate_mirror(ppa_client_handle_t ppa_client, const ppa_s
 
     esp_err_t ret = ESP_OK;
     ppa_trans_t *trans_elm = NULL;
-    if (xQueueReceive(ppa_client->trans_elm_ptr_queue, (void *)&trans_elm, 0)) {
+    if (xQueueReceive(ppa_client->trans_elm_ptr_queue, (void *)&trans_elm, 0) == pdTRUE) {
+        assert(trans_elm);
         dma2d_trans_config_t *dma_trans_desc = trans_elm->trans_desc;
 
         ppa_dma2d_trans_on_picked_config_t *trans_on_picked_desc = dma_trans_desc->user_config;
@@ -263,6 +264,13 @@ esp_err_t ppa_do_scale_rotate_mirror(ppa_client_handle_t ppa_client, const ppa_s
         srm_trans_desc->scale_x_frag = (uint32_t)(srm_trans_desc->scale_x * PPA_LL_SRM_SCALING_FRAG_MAX) & (PPA_LL_SRM_SCALING_FRAG_MAX - 1);
         srm_trans_desc->scale_y_int = (uint32_t)srm_trans_desc->scale_y;
         srm_trans_desc->scale_y_frag = (uint32_t)(srm_trans_desc->scale_y * PPA_LL_SRM_SCALING_FRAG_MAX) & (PPA_LL_SRM_SCALING_FRAG_MAX - 1);
+        // SRM processes in blocks. Block x/(y) cannot be scaled to odd number when YUV422/YUV420 is the output color mode
+        // When block size is 16x16, odd number is possible, so needs to make them even
+        // When block size is 32x32, calculated frag values are always even
+        if (config->out.srm_cm == PPA_SRM_COLOR_MODE_YUV420) {
+            srm_trans_desc->scale_x_frag = srm_trans_desc->scale_x_frag & ~1;
+            srm_trans_desc->scale_y_frag = srm_trans_desc->scale_y_frag & ~1;
+        }
         srm_trans_desc->alpha_value = new_alpha_value;
         srm_trans_desc->data_burst_length = ppa_client->data_burst_length;
 

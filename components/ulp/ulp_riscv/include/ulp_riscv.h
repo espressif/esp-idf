@@ -133,7 +133,7 @@ void ulp_riscv_halt(void);
  *
  * @note This will reset the ULP core from the main CPU. It is intended to be used when the
  *       ULP is in a bad state and cannot run as intended due to a corrupt firmware or any other reason.
- *       The main core can reset the ULP core with this API and then re-initilialize the ULP.
+ *       The main core can reset the ULP core with this API and then re-initialize the ULP.
  */
 void ulp_riscv_reset(void);
 

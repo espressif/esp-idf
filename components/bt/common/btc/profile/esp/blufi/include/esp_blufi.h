@@ -44,6 +44,7 @@ void esp_blufi_gatt_svr_register_cb(struct ble_gatt_register_ctxt *ctxt, void *a
 
 /* Initialise gatt server */
 int esp_blufi_gatt_svr_init(void);
+int esp_blufi_gatt_svr_deinit(void);
 void esp_blufi_btc_init(void);
 void esp_blufi_btc_deinit(void);
 #endif
@@ -83,6 +84,9 @@ void esp_blufi_adv_stop(void);
 
 /* Start advertisement */
 void esp_blufi_adv_start(void);
+
+/* Start advertisement with specified name. if the name is NULL just start advertisement */
+void esp_blufi_adv_start_with_name(const char *name);
 
 void esp_blufi_send_encap(void *arg);
 

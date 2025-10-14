@@ -9,7 +9,7 @@ This directory contains tests for the build system and build-related tools. Thes
 
 ## Running the tests locally
 
-1. Install pytest using `install.{sh,bat,ps1,fish} --enable-pytest`.
+1. Install pytest using `install.{sh,bat,ps1,fish} --enable-ci`.
 1. Activate the IDF shell environment using `export.{sh,bat,ps1,fish}`.
 1. To run all the tests, go to `$IDF_PATH/tools/test_build_system` directory, then run:
     ```
@@ -56,7 +56,8 @@ def test_something(test_app_copy):
     # the current working directory now contains the copy of the test app
 ```
 
-If the test case doesn't use the `test_app_copy` argument, pylint will typically warn about an unused argument, even if the fixture is actually used. To avoid the warning, use the following pattern:
+If the test case doesn't use the `test_app_copy` argument, ruff will typically warn about an unused argument, even if the fixture is actually used. To avoid the warning, use the following pattern:
+
 ```python
 @pytest.mark.usefixtures('test_app_copy')
 def test_something(idf_py):
@@ -138,7 +139,7 @@ def test_idf_copy(idf_copy):
 @pytest.mark.usefixtures('test_app_copy')
 def test_build_jsons_updated_by_reconfigure(idf_py):
     globs = ['build/*.json']
-    
+
     idf_py('reconfigure')
     snapshot_1 = get_snapshot(globs)
     snapshot_2 = get_snapshot(globs)

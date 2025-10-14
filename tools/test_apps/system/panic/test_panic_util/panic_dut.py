@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import logging
 import os
@@ -28,8 +28,11 @@ class PanicTestDut(IdfDut):
     BOOT_CMD_ADDR = 0x9000
     BOOT_CMD_SIZE = 0x1000
     DEFAULT_EXPECT_TIMEOUT = 10
-    COREDUMP_UART_START = '================= CORE DUMP START ================='
-    COREDUMP_UART_END = '================= CORE DUMP END ================='
+    COREDUMP_UART_START = r'================= CORE DUMP START ================='
+    COREDUMP_UART_END = r'================= CORE DUMP END ================='
+    COREDUMP_CHECKSUM = r"Coredump checksum='([a-fA-F0-9]+)'"
+    REBOOT = r'.*Rebooting\.\.\.'
+    CPU_RESET = r'.*rst:.*(RTC_SW_CPU_RST|SW_CPU_RESET|SW_CPU|RTCWDT_RTC_RESET|LP_WDT_SYS|RTCWDT_RTC_RST|CHIP_LP_WDT_RESET|RTC_WDT_SYS)\b'
 
     app: IdfApp
     serial: IdfSerial
@@ -81,7 +84,6 @@ class PanicTestDut(IdfDut):
             pass
 
     def expect_backtrace(self, corrupted: bool = False) -> None:
-        assert self.is_xtensa, 'Backtrace can be printed only on Xtensa'
         match = self.expect(r'Backtrace:( 0x[0-9a-fA-F]{8}:0x[0-9a-fA-F]{8})+(?P<corrupted> \|<-CORRUPTED)?')
         if corrupted:
             assert match.group('corrupted')
@@ -96,13 +98,17 @@ class PanicTestDut(IdfDut):
         """Expect method for Guru Meditation Errors"""
         self.expect_exact(f"Guru Meditation Error: Core  0 panic'ed ({reason})")
 
-    def expect_reg_dump(self, core: int = 0) -> None:
-        """Expect method for the register dump"""
-        self.expect(r'Core\s+%d register dump:' % core)
+    def expect_reg_dump(self, core: Optional[int] = None) -> None:
+        if core is None:
+            # Match any core num
+            self.expect(r'Core\s+\d+\s+register dump:')
+        else:
+            # Match the exact core num provided
+            self.expect(r'Core\s+%d\s+register dump:' % core)
 
     def expect_cpu_reset(self) -> None:
         # no digital system reset for panic handling restarts (see IDF-7255)
-        self.expect(r'.*rst:.*(RTC_SW_CPU_RST|SW_CPU_RESET|SW_CPU)')
+        self.expect(self.CPU_RESET)
 
     def expect_elf_sha256(self, caption: str = 'ELF file SHA256: ') -> None:
         """Expect method for ELF SHA256 line"""
@@ -158,25 +164,20 @@ class PanicTestDut(IdfDut):
             self.coredump_output.seek(0)
 
     def process_coredump_uart(
-        self, expected: Optional[List[Union[str, re.Pattern]]] = None, wait_reboot: bool = True
-    ) -> None:
-        """Extract the core dump from UART output of the test, run espcoredump on it"""
-        self.expect(self.COREDUMP_UART_START)
-        uart_data = self.expect('(.+)' + self.COREDUMP_UART_END)
-        self.expect(re.compile(r"Coredump checksum='([a-fA-F0-9]+)'"))
-        if wait_reboot:
-            self.expect('Rebooting...')
-        coredump_base64 = uart_data.group(1).decode('utf8')
+        self, coredump_base64: Any, expected: Optional[List[Union[str, re.Pattern]]] = None,
+    ) -> Any:
         with open(os.path.join(self.logdir, 'coredump_data.b64'), 'w') as coredump_file:
             logging.info('Writing UART base64 core dump to %s', coredump_file.name)
             coredump_file.write(coredump_base64)
 
         output_file_name = os.path.join(self.logdir, 'coredump_uart_result.txt')
+        coredump_elf_file = os.path.join(self.logdir, 'coredump_data.elf')
         self._call_espcoredump(
-            ['--core-format', 'b64', '--core', coredump_file.name], output_file_name
+            ['--core-format', 'b64', '--core', coredump_file.name, '--save-core', coredump_elf_file], output_file_name
         )
         if expected:
             self.expect_coredump(output_file_name, expected)
+        return coredump_elf_file
 
     def process_coredump_flash(self, expected: Optional[List[Union[str, re.Pattern]]] = None) -> Any:
         coredump_file_name = os.path.join(self.logdir, 'coredump_data.bin')

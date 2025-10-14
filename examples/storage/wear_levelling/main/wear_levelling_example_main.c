@@ -106,7 +106,7 @@ void app_main(void)
         ESP_LOGI(TAG, "file still exists");
         return;
     } else {
-        ESP_LOGI(TAG, "file doesnt exist, format done");
+        ESP_LOGI(TAG, "file does not exist, format done");
     }
 
     //Create file and write

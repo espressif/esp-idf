@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,14 +27,13 @@ static SEGGER_SYSVIEW_MODULE s_esp_sysview_heap_module = {
 
 static bool s_mod_registered;
 
-
 esp_err_t esp_sysview_heap_trace_start(uint32_t tmo)
 {
-    uint32_t tmo_ticks = tmo/(1000*portTICK_PERIOD_MS);
+    uint32_t tmo_ticks = tmo / (1000 * portTICK_PERIOD_MS);
 
     ESP_EARLY_LOGV(TAG, "%s", __func__);
     do {
-        if (tmo != (uint32_t)-1) {
+        if (tmo != (uint32_t) -1) {
             // Currently timeout implementation is simple and has granularity of 1 OS tick,
             // so just count down the number of times to call vTaskDelay
             if (tmo_ticks-- == 0) {
@@ -42,7 +41,7 @@ esp_err_t esp_sysview_heap_trace_start(uint32_t tmo)
             }
         }
         vTaskDelay(1);
-    } while(!SEGGER_SYSVIEW_Started());
+    } while (!SEGGER_SYSVIEW_Started());
 
     SEGGER_SYSVIEW_RegisterModule(&s_esp_sysview_heap_module);
     s_mod_registered = true;
@@ -58,7 +57,7 @@ esp_err_t esp_sysview_heap_trace_stop(void)
 
 void esp_sysview_heap_trace_alloc(const void *addr, uint32_t size, const void *callers)
 {
-    U8  aPacket[SEGGER_SYSVIEW_INFO_SIZE + (2+CALLSTACK_SIZE)*SEGGER_SYSVIEW_QUANTA_U32];
+    U8  aPacket[SEGGER_SYSVIEW_INFO_SIZE + (2 + CALLSTACK_SIZE)*SEGGER_SYSVIEW_QUANTA_U32];
     U8* pPayload = SEGGER_SYSVIEW_PREPARE_PACKET(aPacket);
     U32 *calls = (U32 *)callers;
 
@@ -76,7 +75,7 @@ void esp_sysview_heap_trace_alloc(const void *addr, uint32_t size, const void *c
 
 void esp_sysview_heap_trace_free(const void *addr, const void *callers)
 {
-    U8  aPacket[SEGGER_SYSVIEW_INFO_SIZE + (1+CALLSTACK_SIZE)*SEGGER_SYSVIEW_QUANTA_U32];
+    U8  aPacket[SEGGER_SYSVIEW_INFO_SIZE + (1 + CALLSTACK_SIZE)*SEGGER_SYSVIEW_QUANTA_U32];
     U8* pPayload = SEGGER_SYSVIEW_PREPARE_PACKET(aPacket);
     U32 *calls = (U32 *)callers;
 

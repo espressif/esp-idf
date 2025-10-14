@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -52,7 +52,9 @@ struct jpeg_codec_t {
     intr_handle_t intr_handle;        // jpeg codec interrupt handler
     int intr_priority;                // jpeg codec interrupt priority
     SLIST_HEAD(jpeg_isr_handler_list_, jpeg_isr_handler_) jpeg_isr_handler_list; // List for jpeg interrupt.
+#if CONFIG_PM_ENABLE
     esp_pm_lock_handle_t pm_lock; // power manage lock
+#endif
 };
 
 typedef enum {
@@ -86,7 +88,7 @@ typedef struct {
     uint8_t huffbits[2][2][JPEG_HUFFMAN_BITS_LEN_TABLE_LEN];    // Huffman bit distribution tables [id][dcac]
     uint8_t huffcode[2][2][JPEG_HUFFMAN_AC_VALUE_TABLE_LEN];    // Huffman decoded data tables [id][dcac]
     uint32_t tmp_huff[JPEG_HUFFMAN_AC_VALUE_TABLE_LEN];         // temp buffer to store huffman code
-    bool dri_marker;                                            // If we have dri marker in table
+    bool dht_marker;                                            // If we have Huffman table present in header
     uint16_t ri;                                                // Restart interval
 } jpeg_dec_header_info_t;
 
@@ -118,6 +120,7 @@ typedef enum {
     JPEG_DMA2D_RX_EOF = BIT(0),     // DMA2D rx eof event
     JPEG_DMA2D_RX_DONE = BIT(1),    // DMA2D rx done event
     JPEG_DMA2D_TX_DONE = BIT(2),    // DMA2D tx done event
+    JPEG_DMA2D_RX_DESC_EMPTY = BIT(3),    // DMA2D rx empty event
 } jpeg_dma2d_evt_enum_t;
 
 typedef struct {
@@ -130,6 +133,8 @@ typedef enum {
     JPEG_ENC_SRC_YUV422_HB = 1,       // Input YUV422 format
     JPEG_ENC_SRC_RGB565_HB = 2,      // Input RGB565 format
     JPEG_ENC_SRC_GRAY_HB = 3,        // Input GRAY format
+    JPEG_ENC_SRC_YUV444_HB = 4,      // Input YUV444 format
+    JPEG_ENC_SRC_YUV420_HB = 5,      // Input YUV420 format
     JPEG_ENC_BEST_HB_MAX,
 } jpeg_enc_format_hb_t;
 

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,6 +17,9 @@
 
 #include "test_panic.h"
 #include "test_memprot.h"
+
+#include "sdkconfig.h"
+#include "soc/soc_caps.h"
 
 /* Test Utility Functions */
 
@@ -106,6 +109,8 @@ void app_main(void)
 #endif
 #if !CONFIG_FREERTOS_UNICORE
     HANDLE_TEST(test_name, test_task_wdt_cpu1);
+    HANDLE_TEST(test_name, test_panic_handler_stuck1);
+    HANDLE_TEST(test_name, test_panic_handler_crash1);
 #endif
     HANDLE_TEST(test_name, test_loadprohibited);
     HANDLE_TEST(test_name, test_storeprohibited);
@@ -118,9 +123,16 @@ void app_main(void)
     HANDLE_TEST(test_name, test_assert);
     HANDLE_TEST(test_name, test_assert_cache_disabled);
     HANDLE_TEST(test_name, test_assert_cache_write_back_error_can_print_backtrace);
-    HANDLE_TEST(test_name, test_assert_cache_write_back_error_can_print_backtrace2);
     HANDLE_TEST(test_name, test_tcb_corrupted);
-#if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH && CONFIG_ESP_COREDUMP_DATA_FORMAT_ELF
+    HANDLE_TEST(test_name, test_panic_handler_stuck0);
+    HANDLE_TEST(test_name, test_panic_handler_crash0);
+#if CONFIG_ESP_SYSTEM_PANIC_PRINT_HALT
+    HANDLE_TEST(test_name, test_panic_halt);
+#endif /* CONFIG_ESP_SYSTEM_PANIC_PRINT_HALT */
+#if CONFIG_ESP_SYSTEM_USE_FRAME_POINTER
+    HANDLE_TEST(test_name, test_panic_print_backtrace);
+#endif
+#if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH
     HANDLE_TEST(test_name, test_setup_coredump_summary);
     HANDLE_TEST(test_name, test_coredump_summary);
 #endif
@@ -162,10 +174,17 @@ void app_main(void)
     HANDLE_TEST(test_name, test_rtc_slow_reg2_execute_violation);
 #endif
 
-#if CONFIG_ESP_SYSTEM_PMP_IDRAM_SPLIT
+#if CONFIG_ESP_SYSTEM_MEMPROT
     HANDLE_TEST(test_name, test_irom_reg_write_violation);
     HANDLE_TEST(test_name, test_drom_reg_write_violation);
     HANDLE_TEST(test_name, test_drom_reg_execute_violation);
+#if CONFIG_SPIRAM_FETCH_INSTRUCTIONS && SOC_MMU_DI_VADDR_SHARED
+    HANDLE_TEST(test_name, test_spiram_xip_irom_alignment_reg_execute_violation);
+#endif
+#endif
+
+#if CONFIG_SPIRAM_RODATA && !CONFIG_IDF_TARGET_ESP32S2
+    HANDLE_TEST(test_name, test_spiram_xip_drom_alignment_reg_execute_violation);
 #endif
 
 #ifdef CONFIG_SOC_CPU_HAS_PMA

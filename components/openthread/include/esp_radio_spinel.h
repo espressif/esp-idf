@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -47,6 +47,7 @@ typedef void (*esp_radio_spinel_rcp_failure_handler)(void);                     
 typedef esp_err_t (*esp_radio_spinel_uart_init_handler)(const esp_radio_spinel_uart_config_t *uart_config_t, int *uart_fd);     /* The handler for UART initialization.*/
 typedef esp_err_t (*esp_radio_spinel_uart_deinit_handler)(const esp_radio_spinel_uart_config_t *uart_config_t, int *uart_fd);   /* The handler for UART deinitialization.*/
 typedef void (*esp_radio_spinel_compatibility_error_callback)(void);
+typedef void (*esp_radio_spinel_coprocessor_reset_failure_callback)(void);
 
 typedef struct
 {
@@ -56,12 +57,6 @@ typedef struct
     void (*energy_scan_done)(int8_t max_rssi);                                                                      /* Callback for Energy Scan Done.*/
     void (*transmit_started)(const uint8_t *frame);                                                                 /* Callback for Transmit Started.*/
     void (*switchover_done)(bool success);                                                                          /* Callback for Switchover Done.*/
-
-#if CONFIG_OPENTHREAD_DIAG
-    void (*diag_receive_done)(const uint8_t *frame, esp_ieee802154_frame_info_t *frame_info);                       /* Callback for Receive Done (diag).*/
-    void (*diag_transmit_done)(const uint8_t *frame, esp_ieee802154_frame_info_t *frame_info);                      /* Callback for Transmit Done (diag).*/
-    void (*diag_transmit_failed)(esp_ieee802154_tx_error_t error);                                                  /* Callback for Transmit Failed (diag).*/
-#endif // CONFIG_OPENTHREAD_DIAG
 } esp_radio_spinel_callbacks_t;                                                                                     /* ESP Radio Spinel Callbacks.*/
 
 /**
@@ -401,6 +396,16 @@ esp_err_t esp_radio_spinel_rcp_version_get(char *running_rcp_version, esp_radio_
  *
  */
 void esp_radio_spinel_set_compatibility_error_callback(esp_radio_spinel_compatibility_error_callback callback);
+
+/**
+ * @brief   Registers the callback for co-processor reset failure.
+ *
+ * @note This function should be called before esp_radio_spinel_init.
+ *
+ * @param[in]  callback   The callback.
+ *
+ */
+void esp_radio_spinel_set_coprocessor_reset_failure_callback(esp_radio_spinel_coprocessor_reset_failure_callback callback);
 
 #ifdef __cplusplus
 }

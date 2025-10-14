@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -16,14 +16,14 @@ extern "C" {
  */
 typedef union {
     struct {
-        /** mode : R/W; bitpos: [2:0]; default: 0;
-         *  Configures the SHA algorithm. \\
-         *  0: SHA-1\\
-         *  1: SHA-224\\
-         *  2: SHA-256\\
+        /** mode : R/W; bitpos: [3:0]; default: 2;
+         *  Configures the SHA algorithm.
+         *  0: SHA-1
+         *  1: SHA2-224
+         *  2: SHA2-256
          */
-        uint32_t mode:3;
-        uint32_t reserved_3:29;
+        uint32_t mode:4;
+        uint32_t reserved_4:28;
     };
     uint32_t val;
 } sha_mode_reg_t;
@@ -33,11 +33,11 @@ typedef union {
  */
 typedef union {
     struct {
-        /** dma_block_num : R/W; bitpos: [5:0]; default: 0;
+        /** dma_block_num : R/W; bitpos: [15:0]; default: 0;
          *  Configures the DMA-SHA block number.
          */
-        uint32_t dma_block_num:6;
-        uint32_t reserved_6:26;
+        uint32_t dma_block_num:16;
+        uint32_t reserved_16:16;
     };
     uint32_t val;
 } sha_dma_block_num_reg_t;
@@ -47,11 +47,11 @@ typedef union {
  */
 typedef union {
     struct {
-        uint32_t reserved_0:1;
-        /** start : RO; bitpos: [31:1]; default: 0;
-         *  Write 1 to start Typical SHA calculation.
+        /** start : WO; bitpos: [0]; default: 0;
+         *  Start typical sha.
          */
-        uint32_t start:31;
+        uint32_t start:1;
+        uint32_t reserved_1:31;
     };
     uint32_t val;
 } sha_start_reg_t;
@@ -61,11 +61,11 @@ typedef union {
  */
 typedef union {
     struct {
-        uint32_t reserved_0:1;
-        /** conti : RO; bitpos: [31:1]; default: 0;
-         *  Write 1 to continue Typical SHA calculation.
+        /** conti : WO; bitpos: [0]; default: 0;
+         *  Continue typical sha.
          */
-        uint32_t conti:31;
+        uint32_t conti:1;
+        uint32_t reserved_1:31;
     };
     uint32_t val;
 } sha_continue_reg_t;
@@ -98,6 +98,20 @@ typedef union {
     uint32_t val;
 } sha_dma_continue_reg_t;
 
+/** Type of dma_rx_reset register
+ *  DMA RX FIFO Reset Signal
+ */
+typedef union {
+    struct {
+        /** dma_rx_reset : WO; bitpos: [0]; default: 0;
+         *  Write 1 to reset DMA RX FIFO
+         */
+        uint32_t dma_rx_reset:1;
+        uint32_t reserved_1:31;
+    };
+    uint32_t val;
+} sha_dma_rx_reset_reg_t;
+
 
 /** Group: Configuration Register */
 /** Type of t_string register
@@ -107,6 +121,7 @@ typedef union {
     struct {
         /** t_string : R/W; bitpos: [31:0]; default: 0;
          *  Sha t_string (used if and only if mode == SHA_512/t).
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t t_string:32;
     };
@@ -118,11 +133,12 @@ typedef union {
  */
 typedef union {
     struct {
-        /** t_length : R/W; bitpos: [5:0]; default: 0;
+        /** t_length : R/W; bitpos: [6:0]; default: 0;
          *  Sha t_length (used if and only if mode == SHA_512/t).
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
-        uint32_t t_length:6;
-        uint32_t reserved_6:26;
+        uint32_t t_length:7;
+        uint32_t reserved_7:25;
     };
     uint32_t val;
 } sha_t_length_reg_t;
@@ -135,9 +151,9 @@ typedef union {
 typedef union {
     struct {
         /** busy_state : RO; bitpos: [0]; default: 0;
-         *  Represents the states of SHA accelerator. \\
-         *  0: idle\\
-         *  1: busy\\
+         *  Represents the states of SHA accelerator.
+         *  0: idle
+         *  1: busy
          */
         uint32_t busy_state:1;
         uint32_t reserved_1:31;
@@ -182,7 +198,7 @@ typedef union {
  */
 typedef union {
     struct {
-        /** date : R/W; bitpos: [29:0]; default: 538972713;
+        /** date : R/W; bitpos: [29:0]; default: 539232291;
          *  Version control register.
          */
         uint32_t date:30;
@@ -207,15 +223,16 @@ typedef struct {
     volatile sha_clear_irq_reg_t clear_irq;
     volatile sha_irq_ena_reg_t irq_ena;
     volatile sha_date_reg_t date;
-    uint32_t reserved_030[4];
+    volatile sha_dma_rx_reset_reg_t dma_rx_reset;
+    uint32_t reserved_034[3];
     volatile uint32_t h[16];
-    volatile uint32_t m[16];
+    volatile uint32_t m[32];
 } sha_dev_t;
 
 extern sha_dev_t SHA;
 
 #ifndef __cplusplus
-_Static_assert(sizeof(sha_dev_t) == 0xc0, "Invalid size of sha_dev_t structure");
+_Static_assert(sizeof(sha_dev_t) == 0x100, "Invalid size of sha_dev_t structure");
 #endif
 
 #ifdef __cplusplus

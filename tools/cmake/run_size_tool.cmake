@@ -4,7 +4,7 @@
 #
 # It is recommended to NOT USE this CMake script if you have the option of
 # running the tool directly. This script exists only for use inside CMake builds.
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.22)
 
 # Main purpose of this script: we can't expand these environment variables in the main IDF CMake build,
 # because we want to expand them at CMake target build time not at CMake configuration time
@@ -16,8 +16,8 @@ if(NOT DEFINED ENV{SIZE_OUTPUT_FORMAT} OR "$ENV{SIZE_OUTPUT_FORMAT}" STREQUAL "d
     # Format not passed to "idf.py size" explicitly, or this target was invoked
     # from make/ninja directly (without idf.py)
     if(DEFINED OUTPUT_JSON AND OUTPUT_JSON)
-        # honor the legacy OUTPUT_JSON variable, if set
-        list(APPEND IDF_SIZE_CMD "--format=json")
+        # honor the legacy OUTPUT_JSON variable, if set (use json2 format as json is no longer supported)
+        list(APPEND IDF_SIZE_CMD "--format=json2")
     endif()
 elseif(DEFINED ENV{SIZE_OUTPUT_FORMAT})
     # specific format was requested

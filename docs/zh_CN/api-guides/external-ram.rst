@@ -24,9 +24,13 @@
 
 .. note::
 
-    .. only:: esp32 or esp32s2 or esp32s3
+    .. only:: esp32
 
         PSRAM 芯片的工作电压分为 1.8 V 和 3.3 V。其工作电压必须与 flash 的工作电压匹配。请查询相应 PSRAM 芯片以及 {IDF_TARGET_NAME} 的技术规格书获取准确的工作电压。对于 1.8 V 的 PSRAM 芯片，请确保在启动时将 MTDI 管脚设置为高电平，或者将 {IDF_TARGET_NAME} 中的 eFuses 设置为始终使用 1.8 V 的 VDD_SIO 电平，否则有可能会损坏 PSRAM 和/或 flash 芯片。
+
+    .. only:: esp32s2 or esp32s3
+
+        PSRAM 芯片的工作电压分为 1.8 V 和 3.3 V。其工作电压必须与 flash 的工作电压匹配。请查询相应 PSRAM 芯片以及 {IDF_TARGET_NAME} 的技术规格书获取准确的工作电压。对于 1.8 V 的 PSRAM 芯片，请确保在启动时将 GPIO45 管脚设置为高电平，或者将 {IDF_TARGET_NAME} 中的 eFuses 设置为始终使用 1.8 V 的 VDD_SPI 电平，否则有可能会损坏 PSRAM 和/或 flash 芯片。
 
     .. only:: esp32p4
 
@@ -47,7 +51,8 @@
 ========================
 
 .. note::
-    只有在构建中包含 ``esp_psram`` 组件时，``SPI RAM`` 配置选项才可用。
+
+    只有在构建中包含 ``esp_psram`` 组件时，``SPI RAM`` 配置选项才可用。要在项目中包含 ``SPI RAM`` 功能，使用 ``idf_component_register`` 注册组件时，将 ``esp_psram`` 组件添加为 ``REQUIRES`` 或 ``PRIV_REQUIRES`` 的依赖项。
 
 ESP-IDF 完全支持将片外 RAM 集成到你的应用程序中。在启动并完成片外 RAM 初始化后，可以将 ESP-IDF 配置为用多种方式处理片外 RAM：
 
@@ -55,7 +60,7 @@ ESP-IDF 完全支持将片外 RAM 集成到你的应用程序中。在启动并�
 
     * :ref:`external_ram_config_memory_map`
     * :ref:`external_ram_config_capability_allocator`
-    * :ref:`external_ram_config_malloc` (default)
+    * :ref:`external_ram_config_malloc` （默认方式）
     * :ref:`external_ram_config_bss`
     * :ref:`external_ram_config_noinit`
     :SOC_SPIRAM_XIP_SUPPORTED: * :ref:`external_ram_config_xip`

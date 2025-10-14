@@ -13,7 +13,7 @@ OpenThread can run under the following modes on Espressif chips:
 Standalone Node
 +++++++++++++++
 
-The full OpenThread stack and the application layer run on the same chip. This mode is available on chips with 15.4 radio such as ESP32-H2 and ESP32-C6.
+The full OpenThread stack and the application layer run on the same chip. This mode is available on chips with 15.4 radio such as ESP32-H2, ESP32-C6 and ESP32-C5.
 
 Radio Co-Processor (RCP)
 ++++++++++++++++++++++++
@@ -115,8 +115,7 @@ In the OpenThread protocol stack, defining macros to enable features and configu
 
 .. note::
 
-    The priority of the above configuration methods, from highest to lowest, is as follows:
-    Configuration Menu → User-defined Header File → openthread-core-esp32x-xxx-config.h → OpenThread Stack Default Configuration
+    The priority of the above configuration methods, from highest to lowest, is as follows: Configuration Menu → User-defined Header File → openthread-core-esp32x-xxx-config.h → OpenThread Stack Default Configuration
 
 The OpenThread Border Router
 ----------------------------

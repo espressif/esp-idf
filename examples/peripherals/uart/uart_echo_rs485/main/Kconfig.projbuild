@@ -17,33 +17,34 @@ menu "Echo RS485 Example Configuration"
         range 1200 115200
         default 115200
         help
-            UART communication speed for Modbus example.
+            UART communication speed.
 
-    config ECHO_UART_RXD
-        int "UART RXD pin number"
+    config ECHO_RS485_RX_IO
+        int "RS485 RXD pin number"
         range ENV_GPIO_RANGE_MIN ENV_GPIO_IN_RANGE_MAX
         default 22 if IDF_TARGET_ESP32
         default 8 if !IDF_TARGET_ESP32
         help
-            GPIO number for UART RX pin. See UART documentation for more information
+            GPIO number for RS485 RO pin. See UART documentation for more information
             about available pin numbers for UART.
 
-    config ECHO_UART_TXD
-        int "UART TXD pin number"
+    config ECHO_RS485_TX_IO
+        int "RS485 TXD pin number"
         range ENV_GPIO_RANGE_MIN ENV_GPIO_OUT_RANGE_MAX
         default 23 if IDF_TARGET_ESP32
         default 9 if !IDF_TARGET_ESP32
         help
-            GPIO number for UART TX pin. See UART documentation for more information
+            GPIO number for RS485 DI pin. See UART documentation for more information
             about available pin numbers for UART.
 
-    config ECHO_UART_RTS
-        int "UART RTS pin number"
+    config ECHO_RS485_DIRECTION_IO
+        int "RS485 ~RE/DE pin number"
         range ENV_GPIO_RANGE_MIN ENV_GPIO_OUT_RANGE_MAX
         default 18 if IDF_TARGET_ESP32
-        default 10 if !IDF_TARGET_ESP32
+        default 13 if IDF_TARGET_ESP32C6 || IDF_TARGET_ESP32C61 || IDF_TARGET_ESP32H4
+        default 10
         help
-            GPIO number for UART RTS pin. This pin is connected to
+            GPIO number for the pin to connected to
             ~RE/DE pin of RS485 transceiver to switch direction.
             See UART documentation for more information about available pin
             numbers for UART.

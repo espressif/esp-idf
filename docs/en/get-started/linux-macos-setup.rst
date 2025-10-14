@@ -44,10 +44,10 @@ CentOS 7 is still supported but CentOS version 8 is recommended for a better use
 
 - Arch::
 
-    sudo pacman -S --needed gcc git make flex bison gperf python cmake ninja ccache dfu-util libusb
+    sudo pacman -S --needed gcc git make flex bison gperf python cmake ninja ccache dfu-util libusb python-pip
 
 .. note::
-    - CMake version 3.16 or newer is required for use with ESP-IDF. Run "tools/idf_tools.py install cmake" to install a suitable version if your OS versions does not have one.
+    - CMake version 3.22 or newer is required for use with ESP-IDF. Run "tools/idf_tools.py install cmake" to install a suitable version if your OS versions does not have one.
     - If you do not see your Linux distribution in the above list then please check its documentation to find out which command to use for package installation.
 
 For macOS Users
@@ -98,25 +98,23 @@ Then you need to install Apple Rosetta 2 by running
 Installing Python 3
 ~~~~~~~~~~~~~~~~~~~
 
-Based on macOS `Catalina 10.15 release notes`_, use of Python 2.7 is not recommended and Python 2.7 is not included by default in future versions of macOS. Check what Python you currently have::
+Ensure that you have Python 3.10 or newer installed, as this is the minimum version supported by ESP-IDF.
 
-  python --version
+Note that most of the recent versions of macOS include Python 3.9 (or older) by default, which is no longer supported. You will need to install Python 3.10 or later.
 
-If the output is like ``Python 2.7.17``, your default interpreter is Python 2.7. If so, also check if Python 3 is not already installed on your computer::
+To install supported Python 3 on macOS:
 
-  python3 --version
+- With HomeBrew_, run::
 
-If the above command returns an error, it means Python 3 is not installed.
+    brew install python3
 
-Below is an overview of the steps to install Python 3.
+- With MacPorts_, run::
 
-  - Installing with HomeBrew_ can be done as follows::
+    sudo port install python313
 
-      brew install python3
+.. note::
 
-  - If you have MacPorts_, you can run::
-
-      sudo port install python38
+    During installation, the install script will check for supported Python versions on your system and select the oldest version that meets the minimum requirement.
 
 .. _get-started-get-esp-idf:
 
@@ -277,18 +275,29 @@ Step 5. First Steps on ESP-IDF
 .. include:: linux-macos-start-project.rst
 .. include:: start-project.rst
 
-Tip: Updating ESP-IDF
-======================
+.. _get-started-update-esp-idf:
+
+Updating ESP-IDF and Python Packages in the ESP-IDF Environment
+===============================================================
 
 It is recommended to update ESP-IDF from time to time, as newer versions fix bugs and/or provide new features. Please note that each ESP-IDF major and minor release version has an associated support period, and when one release branch is approaching end of life (EOL), all users are encouraged to upgrade their projects to more recent ESP-IDF releases, to find out more about support periods, see :doc:`ESP-IDF Versions <../versions>`.
 
 The simplest way to do the update is to delete the existing ``esp-idf`` folder and clone it again, as if performing the initial installation described in :ref:`get-started-get-esp-idf`.
 
-Another solution is to update only what has changed. :ref:`The update procedure depends on the version of ESP-IDF you are using <updating>`.
+Another solution is to update only what has changed. For specific instructions, please visit :ref:`Updating ESP-IDF <updating-master>` page.
 
-After updating ESP-IDF, execute the Install script again, in case the new ESP-IDF version requires different versions of tools. See instructions at :ref:`get-started-set-up-tools`.
+After updating ESP-IDF, execute the install script again (``./install.sh`` in your ``$IDF_PATH``), in case the new ESP-IDF version requires different versions of tools. See instructions at :ref:`get-started-set-up-tools`.
 
-Once the new tools are installed, update the environment using the Export script. See instructions at :ref:`get-started-set-up-env`.
+Once all the new tools are installed, enter the ESP-IDF environment using the export script as described in :ref:`get-started-set-up-env`.
+
+Updating Python Packages in the ESP-IDF Environment Without Updating ESP-IDF
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Some features in ESP-IDF are not included directly in the ESP-IDF repository. Instead, they are provided by Python packages such as ``esp-idf-monitor`` or ``esptool``, which are installed in the ESP-IDF environment by the install script. These packages can be updated independently of ESP-IDF. To update them, simply re-run the install script (``./install.sh`` in your ``$IDF_PATH``). If the ESP-IDF environment already exists, the script will update all Python packages in it to the latest versions compatible with the current ESP-IDF version — without updating the ESP-IDF itself.
+
+.. note::
+
+    If you are an advanced user and want more control over the update process, you can also check :ref:`idf-tools-py` and its ``install-python-env`` command, which is used by the install script and handles the creation or update of the ESP-IDF environment.
 
 Related Documents
 =================

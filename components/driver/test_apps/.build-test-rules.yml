@@ -1,82 +1,34 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
-components/driver/test_apps/dac_test_apps/legacy_dac_driver:
-  disable:
-    - if: SOC_DAC_SUPPORTED != 1
-  depends_components:
-    - esp_adc
-
-components/driver/test_apps/i2s_test_apps/legacy_i2s_adc_dac:
-  disable:
-    - if: SOC_I2S_SUPPORTS_ADC_DAC != 1
-
-components/driver/test_apps/i2s_test_apps/legacy_i2s_driver:
-  disable:
-    - if: SOC_I2S_SUPPORTED != 1
-
-components/driver/test_apps/legacy_adc_driver:
-  disable:
-    - if: SOC_ADC_SUPPORTED != 1
-  disable_test:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: lack of runners, TODO IDF-9573
-    - if: IDF_TARGET == "esp32c61"
-      temporary: true
-      reason: lack of runners
-  depends_components:
-    - efuse
-    - esp_driver_i2s
-    - esp_driver_spi
-  depends_filepatterns:
-    - components/driver/deprecated/**/*adc*
-
 components/driver/test_apps/legacy_i2c_driver:
   disable:
     - if: SOC_I2C_SUPPORTED != 1
-  depends_filepatterns:
-    - components/driver/i2c/**
-    # Following dependency is needed because they might increase lazy installed memory
-    # that can cause sleep retention memory leak check failed.
-    - components/ieee802154/**
-    - components/esp_coex/**
-    - components/esp_phy/**
+  disable_test:
+    - if: IDF_TARGET != "none"
+      temporary: false
+      reason: disable target test for legacy i2c driver.
 
-components/driver/test_apps/legacy_mcpwm_driver:
+components/driver/test_apps/legacy_twai:
   disable:
-    - if: SOC_MCPWM_SUPPORTED != 1
+    - if: SOC_TWAI_SUPPORTED != 1 or SOC_TWAI_SUPPORT_FD == 1
+      reason: legacy driver doesn't support FD
   depends_filepatterns:
-    - components/driver/deprecated/**/*mcpwm*
-
-components/driver/test_apps/legacy_pcnt_driver:
-  disable:
-    - if: SOC_PCNT_SUPPORTED != 1
-  depends_filepatterns:
-    - components/driver/deprecated/**/*pcnt*
-
-components/driver/test_apps/legacy_rmt_driver:
-  disable:
-    - if: SOC_RMT_SUPPORTED != 1
-  depends_filepatterns:
-    - components/driver/deprecated/**/*rmt*
-
-components/driver/test_apps/legacy_rtc_temp_driver:
-  disable:
-    - if: SOC_TEMP_SENSOR_SUPPORTED != 1
-
-components/driver/test_apps/legacy_sigma_delta_driver:
-  disable:
-    - if: SOC_SDM_SUPPORTED != 1
-  depends_filepatterns:
-    - components/driver/deprecated/**/*sigma*
+    - components/driver/twai/**/*
   depends_components:
     - esp_driver_gpio
 
-components/driver/test_apps/legacy_timer_driver:
+components/driver/test_apps/touch_element:
   disable:
-    - if: SOC_GPTIMER_SUPPORTED != 1
+    - if: IDF_TARGET not in ["esp32s2", "esp32s3"]
+      reason: only supports esp32s2 and esp32s3
   depends_filepatterns:
-    - components/driver/deprecated/**/*timer*
+    - components/soc/**/touch_sensor_periph.h
+    - components/soc/esp32s2/**/rtc_cntl_*
+    - components/soc/esp32s3/**/rtc_cntl_*
+    - components/soc/esp32s2/**/rtc_io_struct.h
+    - components/soc/esp32s3/**/rtc_io_struct.h
+    - components/soc/esp32s2/**/sens_struct.h
+    - components/soc/esp32s3/**/sens_struct.h
 
 components/driver/test_apps/touch_sensor_v1:
   disable:
@@ -85,11 +37,3 @@ components/driver/test_apps/touch_sensor_v1:
 components/driver/test_apps/touch_sensor_v2:
   disable:
     - if: SOC_TOUCH_SENSOR_VERSION != 2
-
-components/driver/test_apps/twai:
-  disable:
-    - if: SOC_TWAI_SUPPORTED != 1
-  depends_filepatterns:
-    - components/driver/twai/**/*
-  depends_components:
-    - esp_driver_gpio

@@ -277,6 +277,7 @@ static esp_err_t create_secure_context(const struct httpd_ssl_config *config, ht
 
     cfg->userdata = config->ssl_userdata;
     cfg->alpn_protos = config->alpn_protos;
+    cfg->tls_handshake_timeout_ms = config->tls_handshake_timeout_ms;
 
 #if defined(CONFIG_ESP_HTTPS_SERVER_CERT_SELECT_HOOK)
     cfg->cert_select_cb = config->cert_select_cb;
@@ -332,6 +333,10 @@ static esp_err_t create_secure_context(const struct httpd_ssl_config *config, ht
 #ifdef CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN
             (*ssl_ctx)->tls_cfg->use_ecdsa_peripheral = config->use_ecdsa_peripheral;
             (*ssl_ctx)->tls_cfg->ecdsa_key_efuse_blk = config->ecdsa_key_efuse_blk;
+#if SOC_ECDSA_SUPPORT_CURVE_P384
+            (*ssl_ctx)->tls_cfg->ecdsa_key_efuse_blk_high = config->ecdsa_key_efuse_blk_high;
+#endif
+            (*ssl_ctx)->tls_cfg->ecdsa_curve = config->ecdsa_curve;
 #else
             ESP_LOGE(TAG, "Please enable the support for signing using ECDSA peripheral in menuconfig.");
             ret = ESP_ERR_NOT_SUPPORTED;

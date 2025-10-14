@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,6 +7,7 @@
 #ifdef ESP_PLATFORM
 #include "esp_system.h"
 #include "mbedtls/bignum.h"
+#include "mbedtls/esp_mbedtls_random.h"
 #endif
 
 #include "utils/includes.h"
@@ -16,8 +17,6 @@
 #include "random.h"
 
 #include "mbedtls/ecp.h"
-#include "mbedtls/entropy.h"
-#include "mbedtls/ctr_drbg.h"
 
 #include "mbedtls/pk.h"
 #include "mbedtls/ecdh.h"
@@ -36,10 +35,6 @@
 #endif
 
 #ifdef CONFIG_ECC
-static int crypto_rng_wrapper(void *ctx, unsigned char *buf, size_t len)
-{
-    return random_get_bytes(buf, len);
-}
 
 struct crypto_ec *crypto_ec_init(int group)
 {
@@ -147,6 +142,42 @@ const struct crypto_bignum *crypto_ec_get_prime(struct crypto_ec *e)
 const struct crypto_bignum *crypto_ec_get_order(struct crypto_ec *e)
 {
     return (const struct crypto_bignum *) & ((mbedtls_ecp_group *)e)->N;
+}
+
+struct crypto_bignum * crypto_ec_get_a(struct crypto_ec *e)
+{
+    int ret = -1;
+    struct crypto_bignum *a;
+    mbedtls_mpi *m_a;
+    mbedtls_ecp_group *grp = (mbedtls_ecp_group *)e;
+    if (mbedtls_ecp_get_type(grp) != MBEDTLS_ECP_TYPE_SHORT_WEIERSTRASS) {
+        return NULL;
+    }
+    a = crypto_bignum_init();
+    if (!a) {
+        return NULL;
+    }
+    m_a = (mbedtls_mpi *)a;
+    /* Handle Mbed TLS quirk.
+     *
+     * Mbed TLS default ECP implementation is using grp->A = NULL to represent A = -3 for
+     * Short Weierstrass curves(e.g. P-256) thus accessing A needs some tweaking.
+     *
+     * See mbedtls/ecp.h for details. */
+#ifdef MBEDTLS_ECP_SHORT_WEIERSTRASS_ENABLED
+    if (mbedtls_ecp_group_a_is_minus_3(grp)) {
+        MBEDTLS_MPI_CHK(mbedtls_mpi_sub_int(m_a, &grp->P, 3));
+    } else {
+        MBEDTLS_MPI_CHK(mbedtls_mpi_copy(m_a, &grp->A));
+    }
+#else
+    goto cleanup;
+#endif
+    return a;
+
+cleanup:
+    crypto_bignum_deinit(a, 0);
+    return NULL;
 }
 
 const struct crypto_bignum * crypto_ec_get_b(struct crypto_ec *e)
@@ -258,24 +289,14 @@ int crypto_ec_point_mul(struct crypto_ec *e, const struct crypto_ec_point *p,
                         struct crypto_ec_point *res)
 {
     int ret;
-    mbedtls_entropy_context entropy;
-    mbedtls_ctr_drbg_context ctr_drbg;
-
-    mbedtls_entropy_init(&entropy);
-    mbedtls_ctr_drbg_init(&ctr_drbg);
-
-    MBEDTLS_MPI_CHK(mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy,
-                                          NULL, 0));
-
     MBEDTLS_MPI_CHK(mbedtls_ecp_mul((mbedtls_ecp_group *)e,
                                     (mbedtls_ecp_point *) res,
                                     (const mbedtls_mpi *)b,
                                     (const mbedtls_ecp_point *)p,
-                                    mbedtls_ctr_drbg_random,
-                                    &ctr_drbg));
+                                    mbedtls_esp_random,
+                                    NULL));
+
 cleanup:
-    mbedtls_ctr_drbg_free(&ctr_drbg);
-    mbedtls_entropy_free(&entropy);
     return ret ? -1 : 0;
 }
 
@@ -455,23 +476,10 @@ int crypto_ec_point_cmp(const struct crypto_ec *e,
 
 int crypto_ec_key_compare(struct crypto_ec_key *key1, struct crypto_ec_key *key2)
 {
-    int ret = 0;
-    mbedtls_entropy_context entropy;
-    mbedtls_ctr_drbg_context ctr_drbg;
-
-    mbedtls_entropy_init(&entropy);
-    mbedtls_ctr_drbg_init(&ctr_drbg);
-
-    MBEDTLS_MPI_CHK(mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy, NULL, 0));
-    if (mbedtls_pk_check_pair((mbedtls_pk_context *)key1, (mbedtls_pk_context *)key2, mbedtls_ctr_drbg_random, &ctr_drbg) < 0) {
-        goto cleanup;
+    if (mbedtls_pk_check_pair((mbedtls_pk_context *)key1, (mbedtls_pk_context *)key2, mbedtls_esp_random, NULL) < 0) {
+        return 0;
     }
-
-    ret = 1;
-cleanup:
-    mbedtls_ctr_drbg_free(&ctr_drbg);
-    mbedtls_entropy_free(&entropy);
-    return ret;
+    return 1;
 }
 
 void crypto_debug_print_point(const char *title, struct crypto_ec *e,
@@ -671,7 +679,7 @@ struct crypto_ec_key *crypto_ec_key_parse_priv(const u8 *privkey, size_t privkey
         wpa_printf(MSG_ERROR, "memory allocation failed");
         return NULL;
     }
-    ret = mbedtls_pk_parse_key(kctx, privkey, privkey_len, NULL, 0, crypto_rng_wrapper, NULL);
+    ret = mbedtls_pk_parse_key(kctx, privkey, privkey_len, NULL, 0, mbedtls_esp_random, NULL);
 
     if (ret < 0) {
         //crypto_print_error_string(ret);
@@ -727,16 +735,7 @@ int crypto_ecdh(struct crypto_ec_key *key_own, struct crypto_ec_key *key_peer,
     mbedtls_ecdh_context *ctx = NULL;
     mbedtls_pk_context *own = (mbedtls_pk_context *)key_own;
     mbedtls_pk_context *peer = (mbedtls_pk_context *)key_peer;
-    mbedtls_entropy_context entropy;
-    mbedtls_ctr_drbg_context ctr_drbg;
     int ret = -1;
-
-    mbedtls_entropy_init(&entropy);
-    mbedtls_ctr_drbg_init(&ctr_drbg);
-
-    if (mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy, NULL, 0) < 0) {
-        goto fail;
-    }
 
     *secret_len = 0;
     ctx = os_malloc(sizeof(*ctx));
@@ -765,7 +764,7 @@ int crypto_ecdh(struct crypto_ec_key *key_own, struct crypto_ec_key *key_peer,
     }
 
     if (mbedtls_ecdh_calc_secret(ctx, secret_len, secret, DPP_MAX_SHARED_SECRET_LEN,
-                                 mbedtls_ctr_drbg_random, &ctr_drbg) < 0) {
+                                 mbedtls_esp_random, NULL) < 0) {
         wpa_printf(MSG_ERROR, "failed to calculate secret");
         goto fail;
     }
@@ -778,8 +777,6 @@ int crypto_ecdh(struct crypto_ec_key *key_own, struct crypto_ec_key *key_peer,
     ret = 0;
 
 fail:
-    mbedtls_ctr_drbg_free(&ctr_drbg);
-    mbedtls_entropy_free(&entropy);
     if (ctx) {
         mbedtls_ecdh_free(ctx);
         os_free(ctx);
@@ -804,7 +801,7 @@ int crypto_ecdsa_get_sign(unsigned char *hash,
         goto fail;
     }
     ret = mbedtls_ecdsa_sign(&ctx->MBEDTLS_PRIVATE(grp), (mbedtls_mpi *)r, (mbedtls_mpi *)s,
-                             &ctx->MBEDTLS_PRIVATE(d), hash, SHA256_MAC_LEN, crypto_rng_wrapper, NULL);
+                             &ctx->MBEDTLS_PRIVATE(d), hash, SHA256_MAC_LEN, mbedtls_esp_random, NULL);
 
 fail:
     mbedtls_ecdsa_free(ctx);
@@ -844,21 +841,23 @@ int crypto_ec_key_verify_signature_r_s(struct crypto_ec_key *csign,
 
 void crypto_ec_key_debug_print(struct crypto_ec_key *key, const char *title)
 {
-#ifdef DEBUG_PRINT
+#if defined(CONFIG_LOG_DEFAULT_LEVEL_DEBUG) || defined(CONFIG_LOG_DEFAULT_LEVEL_VERBOSE)
+#if defined(DEBUG_PRINT)
     mbedtls_pk_context *pkey = (mbedtls_pk_context *)key;
     mbedtls_ecp_keypair *ecp = mbedtls_pk_ec(*pkey);
     u8 x[32], y[32], d[32];
-    wpa_printf(MSG_INFO, "curve: %s",
+    wpa_printf(MSG_EXCESSIVE, "curve: %s",
                mbedtls_ecp_curve_info_from_grp_id(ecp->MBEDTLS_PRIVATE(grp).id)->name);
     int len = mbedtls_mpi_size((mbedtls_mpi *)crypto_ec_get_prime((struct crypto_ec *)crypto_ec_get_group_from_key(key)));
 
-    wpa_printf(MSG_INFO, "prime len is %d", len);
+    wpa_printf(MSG_EXCESSIVE, "prime len is %d", len);
     crypto_ec_point_to_bin((struct crypto_ec *)crypto_ec_get_group_from_key(key), crypto_ec_key_get_public_key(key), x, y);
     crypto_bignum_to_bin(crypto_ec_key_get_private_key(key),
                          d, len, len);
-    wpa_hexdump(MSG_INFO, "Q_x:", x, 32);
-    wpa_hexdump(MSG_INFO, "Q_y:", y, 32);
-    wpa_hexdump(MSG_INFO, "d:     ",  d, 32);
+    wpa_hexdump(MSG_EXCESSIVE, "Q_x:", x, 32);
+    wpa_hexdump(MSG_EXCESSIVE, "Q_y:", y, 32);
+    wpa_hexdump(MSG_EXCESSIVE, "d:     ",  d, 32);
+#endif
 #endif
 }
 
@@ -901,7 +900,7 @@ struct crypto_ec_key * crypto_ec_key_gen(u16 ike_group)
     }
 
     mbedtls_ecp_gen_key(MBEDTLS_ECP_DP_SECP256R1, mbedtls_pk_ec(*kctx), //get this from argument
-                        crypto_rng_wrapper, NULL);
+                        mbedtls_esp_random, NULL);
 
     return (struct crypto_ec_key *)kctx;
 fail:
@@ -983,7 +982,12 @@ int crypto_pk_write_formatted_pubkey_der(mbedtls_pk_context *key, unsigned char 
 
     c = buf + size;
 
-    MBEDTLS_ASN1_CHK_ADD(len, mbedtls_pk_write_pubkey_formatted(&c, buf, key, format));
+    ret = mbedtls_pk_write_pubkey_formatted(&c, buf, key, format);
+
+    if (ret < 0) {
+        return ret;
+    }
+    MBEDTLS_ASN1_CHK_ADD(len, ret);
 
     if (c - buf < 1) {
         return (MBEDTLS_ERR_ASN1_BUF_TOO_SMALL);
@@ -1081,8 +1085,6 @@ void crypto_ecdh_deinit(struct crypto_ecdh *ecdh)
 
 struct crypto_ecdh * crypto_ecdh_init(int group)
 {
-    mbedtls_ctr_drbg_context ctr_drbg;
-    mbedtls_entropy_context entropy;
     mbedtls_ecdh_context *ctx;
 
     ctx = os_zalloc(sizeof(*ctx));
@@ -1100,24 +1102,12 @@ struct crypto_ecdh * crypto_ecdh_init(int group)
         goto fail;
     }
 
-    /* Initialize CTR_DRBG context */
-    mbedtls_ctr_drbg_init(&ctr_drbg);
-    mbedtls_entropy_init(&entropy);
-
-    /* Seed and setup CTR_DRBG entropy source for future reseeds */
-    if (mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy, NULL, 0) != 0) {
-        wpa_printf(MSG_ERROR, "Seeding entropy source failed");
-        goto fail;
-    }
-
     /* Generates ECDH keypair on elliptic curve */
-    if (mbedtls_ecdh_gen_public(ACCESS_ECDH(&ctx, grp), ACCESS_ECDH(&ctx, d), ACCESS_ECDH(&ctx, Q), mbedtls_ctr_drbg_random, &ctr_drbg) != 0) {
+    if (mbedtls_ecdh_gen_public(ACCESS_ECDH(&ctx, grp), ACCESS_ECDH(&ctx, d), ACCESS_ECDH(&ctx, Q), mbedtls_esp_random, NULL) != 0) {
         wpa_printf(MSG_ERROR, "ECDH keypair on curve failed");
         goto fail;
     }
 
-    mbedtls_ctr_drbg_free(&ctr_drbg);
-    mbedtls_entropy_free(&entropy);
     return (struct crypto_ecdh *)ctx;
 fail:
     if (ctx) {
@@ -1125,8 +1115,6 @@ fail:
         os_free(ctx);
         ctx = NULL;
     }
-    mbedtls_ctr_drbg_free(&ctr_drbg);
-    mbedtls_entropy_free(&entropy);
     return NULL;
 }
 
@@ -1134,6 +1122,7 @@ struct wpabuf * crypto_ecdh_get_pubkey(struct crypto_ecdh *ecdh, int y)
 {
     struct wpabuf *public_key = NULL;
     uint8_t *buf = NULL;
+    int ret;
     mbedtls_ecdh_context *ctx = (mbedtls_ecdh_context *)ecdh;
     size_t prime_len = ACCESS_ECDH(ctx, grp).pbits / 8;
 
@@ -1144,8 +1133,13 @@ struct wpabuf * crypto_ecdh_get_pubkey(struct crypto_ecdh *ecdh, int y)
     }
 
     /* Export an MPI into unsigned big endian binary data of fixed size */
-    mbedtls_mpi_write_binary(ACCESS_ECDH(&ctx, Q).MBEDTLS_PRIVATE(X), buf, prime_len);
+    ret = mbedtls_mpi_write_binary(ACCESS_ECDH(&ctx, Q).MBEDTLS_PRIVATE(X), buf, prime_len);
+    if (ret) {
+        goto cleanup;
+    }
     public_key = wpabuf_alloc_copy(buf, 32);
+
+cleanup:
     os_free(buf);
     return public_key;
 }
@@ -1163,19 +1157,11 @@ struct wpabuf * crypto_ecdh_set_peerkey(struct crypto_ecdh *ecdh, int inc_y,
     int secret_key = 0;
 
     mbedtls_ecdh_context *ctx = (mbedtls_ecdh_context *)ecdh;
-
-    mbedtls_ctr_drbg_context ctr_drbg;
-    mbedtls_entropy_context entropy;
-
-    /* Initialize CTR_DRBG context */
-    mbedtls_ctr_drbg_init(&ctr_drbg);
-    mbedtls_entropy_init(&entropy);
-
-    /* Seed and setup CTR_DRBG entropy source for future reseeds */
-    if (mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy, NULL, 0) != 0) {
-        wpa_printf(MSG_ERROR, "Seeding entropy source failed");
-        goto cleanup;
+    if (!ctx) {
+        wpa_printf(MSG_ERROR, "ECDH Context is NULL");
+        return 0;
     }
+
     len_prime = ACCESS_ECDH(ctx, grp).pbits / 8;
     bn_x = crypto_bignum_init_set(key, len);
 
@@ -1216,7 +1202,7 @@ struct wpabuf * crypto_ecdh_set_peerkey(struct crypto_ecdh *ecdh, int inc_y,
 
     /* Setup ECDH context from EC key */
     /* Call to mbedtls_ecdh_get_params() will initialize the context when not LEGACY context */
-    if (ctx != NULL && peer != NULL) {
+    if (peer != NULL) {
         mbedtls_ecp_copy(ACCESS_ECDH(&ctx, Qp), &(mbedtls_pk_ec(*peer))->MBEDTLS_PRIVATE(Q));
 #ifndef CONFIG_MBEDTLS_ECDH_LEGACY_CONTEXT
         ctx->MBEDTLS_PRIVATE(var) = MBEDTLS_ECDH_VARIANT_MBEDTLS_2_0;
@@ -1234,7 +1220,7 @@ struct wpabuf * crypto_ecdh_set_peerkey(struct crypto_ecdh *ecdh, int inc_y,
 
     /* Calculate secret
     z = F(DH(x,Y)) */
-    secret_key = mbedtls_ecdh_calc_secret(ctx, &olen, secret, len_prime, mbedtls_ctr_drbg_random, &ctr_drbg);
+    secret_key = mbedtls_ecdh_calc_secret(ctx, &olen, secret, len_prime, mbedtls_esp_random, NULL);
     if (secret_key != 0) {
         wpa_printf(MSG_ERROR, "Calculation of secret failed");
         goto cleanup;
@@ -1249,8 +1235,6 @@ cleanup:
     crypto_ec_key_deinit(pkey);
     crypto_bignum_deinit(bn_x, 1);
     crypto_ec_point_deinit(ec_pt, 1);
-    mbedtls_ctr_drbg_free(&ctr_drbg);
-    mbedtls_entropy_free(&entropy);
     return sh_secret;
 }
 

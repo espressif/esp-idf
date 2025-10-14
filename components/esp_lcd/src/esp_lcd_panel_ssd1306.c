@@ -56,7 +56,7 @@ typedef struct {
     esp_lcd_panel_t base;
     esp_lcd_panel_io_handle_t io;
     uint8_t height;
-    int reset_gpio_num;
+    gpio_num_t reset_gpio_num;
     int x_gap;
     int y_gap;
     unsigned int bits_per_pixel;

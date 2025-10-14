@@ -36,6 +36,10 @@
 #include "esp32c5/rom/digital_signature.h"
 #include "esp32c5/rom/aes.h"
 #include "esp32c5/rom/sha.h"
+#elif CONFIG_IDF_TARGET_ESP32H21
+#include "esp32h21/rom/digital_signature.h"
+#include "esp32h21/rom/aes.h"
+#include "esp32h21/rom/sha.h"
 #endif
 
 #include "esp_ds.h"
@@ -180,7 +184,7 @@ TEST_CASE("Digital Signature start HMAC key out of range", "[hw_crypto] [ds]")
     esp_ds_context_t *ctx;
     const char *message = "test";
 
-    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_ds_start_sign(message, &ds_data, HMAC_KEY5 + 1, &ctx));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_ds_start_sign(message, &ds_data, HMAC_KEY_MAX, &ctx));
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_ds_start_sign(message, &ds_data, HMAC_KEY0 - 1, &ctx));
 }
 
@@ -251,7 +255,7 @@ TEST_CASE("Digital Signature Blocking HMAC key out of range", "[hw_crypto] [ds]"
     const char *message = "test";
     uint8_t signature_data [128 * 4];
 
-    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_ds_sign(message, &ds_data, HMAC_KEY5 + 1, signature_data));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_ds_sign(message, &ds_data, HMAC_KEY_MAX, signature_data));
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_ds_sign(message, &ds_data, HMAC_KEY0 - 1, signature_data));
 }
 

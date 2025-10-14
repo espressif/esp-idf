@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +12,7 @@
 #include "esp_heap_caps.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/idf_additions.h"
+#include "esp_memory_utils.h"
 #include "esp_clk_tree.h"
 #include "esp_cam_ctlr.h"
 #include "esp_cam_ctlr_csi.h"
@@ -25,7 +26,7 @@
 #include "esp_private/esp_clk_tree_common.h"
 #include "esp_cache.h"
 
-#if CONFIG_CAM_CTLR_MIPI_CSI_ISR_IRAM_SAFE
+#if CONFIG_CAM_CTLR_MIPI_CSI_ISR_CACHE_SAFE
 #define CSI_MEM_ALLOC_CAPS   (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
 #else
 #define CSI_MEM_ALLOC_CAPS   MALLOC_CAP_DEFAULT
@@ -50,6 +51,8 @@ static esp_err_t s_ctlr_csi_start(esp_cam_ctlr_handle_t handle);
 static esp_err_t s_ctlr_csi_stop(esp_cam_ctlr_handle_t handle);
 static esp_err_t s_csi_ctlr_disable(esp_cam_ctlr_handle_t ctlr);
 static esp_err_t s_ctlr_csi_receive(esp_cam_ctlr_handle_t handle, esp_cam_ctlr_trans_t *trans, uint32_t timeout_ms);
+static void *s_csi_ctlr_alloc_buffer(esp_cam_ctlr_t *handle, size_t size, uint32_t buf_caps);
+static esp_err_t s_csi_ctlr_format_conversion(esp_cam_ctlr_t *handle, const cam_ctlr_format_conv_config_t *config);
 
 static esp_err_t s_csi_claim_controller(csi_controller_t *controller)
 {
@@ -118,7 +121,7 @@ esp_err_t esp_cam_new_csi_ctlr(const esp_cam_ctlr_csi_config_t *config, esp_cam_
 #endif
 
     mipi_csi_phy_clock_source_t clk_src = !config->clk_src ? MIPI_CSI_PHY_CLK_SRC_DEFAULT : config->clk_src;
-    esp_clk_tree_enable_src((soc_module_clk_t)clk_src, true);
+    ESP_GOTO_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)clk_src, true), err, TAG, "clock source enable failed");
     PERIPH_RCC_ATOMIC() {
         // phy clock source setting
         mipi_csi_ll_set_phy_clock_source(ctlr->csi_id, clk_src);
@@ -209,6 +212,10 @@ esp_err_t esp_cam_new_csi_ctlr(const esp_cam_ctlr_csi_config_t *config, esp_cam_
     };
     ESP_GOTO_ON_ERROR(dw_gdma_channel_register_event_callbacks(csi_dma_chan, &csi_dma_cbs, ctlr), err, TAG, "failed to register dwgdma callback");
 
+#if CONFIG_PM_ENABLE
+    ESP_GOTO_ON_ERROR(esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "cam_csi_ctlr", &ctlr->pm_lock), err, TAG, "failed to create pm lock");
+#endif //CONFIG_PM_ENABLE
+
     ctlr->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
     ctlr->csi_fsm = CSI_FSM_INIT;
     ctlr->base.del = s_ctlr_del;
@@ -220,6 +227,8 @@ esp_err_t esp_cam_new_csi_ctlr(const esp_cam_ctlr_csi_config_t *config, esp_cam_
     ctlr->base.register_event_callbacks = s_register_event_callbacks;
     ctlr->base.get_internal_buffer = s_csi_ctlr_get_internal_buffer;
     ctlr->base.get_buffer_len = s_csi_ctlr_get_buffer_length;
+    ctlr->base.alloc_buffer = s_csi_ctlr_alloc_buffer;
+    ctlr->base.format_conversion = s_csi_ctlr_format_conversion;
 
     *ret_handle = &(ctlr->base);
 
@@ -235,6 +244,12 @@ esp_err_t s_del_csi_ctlr(csi_controller_t *ctlr)
 {
     ESP_RETURN_ON_FALSE(ctlr, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
     ESP_RETURN_ON_FALSE(ctlr->csi_fsm == CSI_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "processor isn't in init state");
+
+#if CONFIG_PM_ENABLE
+    if (ctlr->pm_lock) {
+        ESP_RETURN_ON_ERROR(esp_pm_lock_delete(ctlr->pm_lock), TAG, "delete pm_lock failed");
+    }
+#endif // CONFIG_PM_ENABLE
 
     if (ctlr->dma_chan) {
         ESP_RETURN_ON_ERROR(dw_gdma_del_channel(ctlr->dma_chan), TAG, "failed to delete dwgdma channel");
@@ -354,6 +369,7 @@ IRAM_ATTR static bool csi_dma_trans_done_callback(dw_gdma_channel_handle_t chan,
     if ((ctlr->trans.buffer != ctlr->backup_buffer) || ctlr->bk_buffer_exposed) {
         esp_err_t ret = esp_cache_msync((void *)(ctlr->trans.buffer), ctlr->trans.received_size, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
         assert(ret == ESP_OK);
+        (void)ret;
         assert(ctlr->cbs.on_trans_finished);
         if (ctlr->cbs.on_trans_finished) {
             ctlr->trans.received_size = ctlr->fb_size_in_bytes;
@@ -375,7 +391,7 @@ esp_err_t s_register_event_callbacks(esp_cam_ctlr_handle_t handle, const esp_cam
     csi_controller_t *ctlr = __containerof(handle, csi_controller_t, base);
     ESP_RETURN_ON_FALSE(ctlr->csi_fsm == CSI_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "driver starts already, not allow cbs register");
 
-#if CONFIG_CAM_CTLR_MIPI_CSI_ISR_IRAM_SAFE
+#if CONFIG_CAM_CTLR_MIPI_CSI_ISR_CACHE_SAFE
     if (cbs->on_get_new_trans) {
         ESP_RETURN_ON_FALSE(esp_ptr_in_iram(cbs->on_get_new_trans), ESP_ERR_INVALID_ARG, TAG, "on_get_new_trans callback not in IRAM");
     }
@@ -399,6 +415,11 @@ esp_err_t s_csi_ctlr_enable(esp_cam_ctlr_handle_t handle)
 
     portENTER_CRITICAL(&ctlr->spinlock);
     ctlr->csi_fsm = CSI_FSM_ENABLED;
+#if CONFIG_PM_ENABLE
+    if (ctlr->pm_lock) {
+        ESP_RETURN_ON_ERROR(esp_pm_lock_acquire(ctlr->pm_lock), TAG, "acquire pm_lock failed");
+    }
+#endif // CONFIG_PM_ENABLE
     portEXIT_CRITICAL(&ctlr->spinlock);
 
     return ESP_OK;
@@ -412,6 +433,11 @@ esp_err_t s_csi_ctlr_disable(esp_cam_ctlr_handle_t handle)
 
     portENTER_CRITICAL(&ctlr->spinlock);
     ctlr->csi_fsm = CSI_FSM_INIT;
+#if CONFIG_PM_ENABLE
+    if (ctlr->pm_lock) {
+        ESP_RETURN_ON_ERROR(esp_pm_lock_release(ctlr->pm_lock), TAG, "release pm_lock failed");
+    }
+#endif // CONFIG_PM_ENABLE
     portEXIT_CRITICAL(&ctlr->spinlock);
 
     return ESP_OK;
@@ -516,4 +542,31 @@ esp_err_t s_ctlr_csi_receive(esp_cam_ctlr_handle_t handle, esp_cam_ctlr_trans_t 
     }
 
     return ESP_OK;
+}
+
+static void *s_csi_ctlr_alloc_buffer(esp_cam_ctlr_t *handle, size_t size, uint32_t buf_caps)
+{
+    csi_controller_t *ctlr = __containerof(handle, csi_controller_t, base);
+
+    if (!ctlr) {
+        ESP_LOGE(TAG, "invalid argument: handle is null");
+        return NULL;
+    }
+
+    void *buffer = heap_caps_calloc(1, size, buf_caps);
+    if (!buffer) {
+        ESP_LOGE(TAG, "failed to allocate buffer");
+        return NULL;
+    }
+
+    ESP_LOGD(TAG, "Allocated camera buffer: %p, size: %zu", buffer, size);
+
+    return buffer;
+}
+
+static esp_err_t s_csi_ctlr_format_conversion(esp_cam_ctlr_t *handle, const cam_ctlr_format_conv_config_t *config)
+{
+    ESP_RETURN_ON_FALSE(handle, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
+    // CSI controller doesn't support format conversion yet
+    return ESP_ERR_NOT_SUPPORTED;
 }

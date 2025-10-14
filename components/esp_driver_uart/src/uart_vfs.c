@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,7 +16,7 @@
 #include "driver/uart_vfs.h"
 #include "driver/uart.h"
 #include "driver/uart_select.h"
-#include "esp_rom_uart.h"
+#include "esp_rom_serial_output.h"
 #include "hal/uart_ll.h"
 #include "soc/soc_caps.h"
 #include "esp_vfs_dev.h" // Old headers for the aliasing functions
@@ -229,7 +229,7 @@ static ssize_t uart_write(int fd, const void * data, size_t size)
     tx_func_t tx_func = s_ctx[fd]->tx_func;
     esp_line_endings_t tx_mode = s_ctx[fd]->tx_mode;
     const char *data_c = (const char *)data;
-    /*  Even though newlib does stream locking on each individual stream, we need
+    /*  Even though libc does stream locking on each individual stream, we need
      *  a dedicated UART lock if two streams (stdout and stderr) point to the
      *  same UART.
      */
@@ -446,7 +446,12 @@ static esp_err_t unregister_select(uart_select_args_t *args)
                 // The item is removed by overwriting it with the last item. The subsequent rellocation will drop the
                 // last item.
                 s_registered_selects[i] = s_registered_selects[new_size];
-                s_registered_selects = heap_caps_realloc(s_registered_selects, new_size * sizeof(uart_select_args_t *), UART_VFS_MALLOC_FLAGS);
+                uart_select_args_t **new_selects = heap_caps_realloc(s_registered_selects, new_size * sizeof(uart_select_args_t *), UART_VFS_MALLOC_FLAGS);
+                if (new_selects == NULL && new_size > 0) {
+                    ret = ESP_ERR_NO_MEM;
+                } else {
+                    s_registered_selects = new_selects;
+                }
                 // Shrinking a buffer with realloc is guaranteed to succeed.
                 s_registered_select_num = new_size;
                 ret = ESP_OK;
@@ -882,7 +887,7 @@ static int uart_tcgetattr(int fd, struct termios *p)
     }
 
     {
-        uint32_t baudrate;
+        uint32_t baudrate = 0;
         if (uart_get_baudrate(fd, &baudrate) != ESP_OK) {
             errno = EINVAL;
             return -1;
@@ -1155,19 +1160,3 @@ void uart_vfs_include_dev_init(void)
 {
     // Linker hook function, exists to make the linker examine this file
 }
-
-// -------------------------- esp_vfs_dev_uart_xxx ALIAS (deprecated) ----------------------------
-
-void esp_vfs_dev_uart_register(void) __attribute__((alias("uart_vfs_dev_register")));
-
-void esp_vfs_dev_uart_set_rx_line_endings(esp_line_endings_t mode) __attribute__((alias("uart_vfs_dev_set_rx_line_endings")));
-
-void esp_vfs_dev_uart_set_tx_line_endings(esp_line_endings_t mode) __attribute__((alias("uart_vfs_dev_set_tx_line_endings")));
-
-int esp_vfs_dev_uart_port_set_rx_line_endings(int uart_num, esp_line_endings_t mode) __attribute__((alias("uart_vfs_dev_port_set_rx_line_endings")));
-
-int esp_vfs_dev_uart_port_set_tx_line_endings(int uart_num, esp_line_endings_t mode) __attribute__((alias("uart_vfs_dev_port_set_tx_line_endings")));
-
-void esp_vfs_dev_uart_use_nonblocking(int uart_num) __attribute__((alias("uart_vfs_dev_use_nonblocking")));
-
-void esp_vfs_dev_uart_use_driver(int uart_num) __attribute__((alias("uart_vfs_dev_use_driver")));

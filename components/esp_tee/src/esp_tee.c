@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +10,7 @@
 #include "esp_private/cache_utils.h"
 
 #include "freertos/FreeRTOS.h"
+#include "freertos/portmacro.h"
 #include "freertos/semphr.h"
 #include "freertos/task.h"
 
@@ -19,10 +20,10 @@
 /* See esp_tee_u2m_switch.S */
 extern uint32_t _u2m_switch(int argc, va_list ap);
 
-static SemaphoreHandle_t s_tee_mutex;
-static StaticSemaphore_t s_tee_mutex_buf;
+static DRAM_ATTR SemaphoreHandle_t s_tee_mutex;
+static DRAM_ATTR StaticSemaphore_t s_tee_mutex_buf;
 
-static void init_mutex(void)
+static IRAM_ATTR void init_mutex(void)
 {
     static bool is_first_call = true;
     if (is_first_call) {
@@ -35,15 +36,17 @@ static void init_mutex(void)
  * TEE interface API used by untrusted side application
  * to call secure service in trusted side
  */
-uint32_t esp_tee_service_call(int argc, ...)
+uint32_t IRAM_ATTR esp_tee_service_call(int argc, ...)
 {
     init_mutex();
 
     uint32_t val = UINT32_MAX;
-    va_list ap;
+    va_list ap = {0};
     va_start(ap, argc);
 
-    if (xTaskGetSchedulerState() == taskSCHEDULER_RUNNING) {
+    /* NOTE: Cannot take the mutex if the scheduler is suspended or
+     * service call is requested from a critical section */
+    if (xTaskGetSchedulerState() == taskSCHEDULER_RUNNING && xPortCanYield()) {
         if (xSemaphoreTake(s_tee_mutex, portMAX_DELAY) == pdTRUE) {
             val = _u2m_switch(argc, ap);
             xSemaphoreGive(s_tee_mutex);
@@ -56,10 +59,10 @@ uint32_t esp_tee_service_call(int argc, ...)
     return val;
 }
 
-IRAM_ATTR uint32_t esp_tee_service_call_with_noniram_intr_disabled(int argc, ...)
+uint32_t IRAM_ATTR esp_tee_service_call_with_noniram_intr_disabled(int argc, ...)
 {
     uint32_t val = UINT32_MAX;
-    va_list ap;
+    va_list ap = {0};
     va_start(ap, argc);
 
     /* NOTE: Disabling the scheduler and non-IRAM residing interrupts */

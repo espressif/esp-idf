@@ -154,15 +154,20 @@ menu "Partition Table"
         hex "Offset of partition table"
         default 0x8000
         help
-            The address of partition table (by default 0x8000).
-            Allows you to move the partition table, it gives more space for the bootloader.
-            Note that the bootloader and app will both need to be compiled with the same PARTITION_TABLE_OFFSET value.
+            The offset address of the partition table is, by default, 0x8000, and it starts right after
+            the bootloader. This offset can be changed if more space is required for the bootloader.
+            If you change this offset, both the bootloader and the app must be compiled with the same
+            PARTITION_TABLE_OFFSET value.
 
-            This number should be a multiple of 0x1000.
+            This value must be a multiple of 0x1000.
 
-            Note that partition offsets in the partition table CSV file may need to be changed if this value is set to
-            a higher value. To have each partition offset adapt to the configured partition table offset, leave all
-            partition offsets blank in the CSV file.
+            If you change the partition table offset, make sure to update the partition offsets in
+            the partition table CSV file. To let the build system automatically adjust partition offsets based on
+            the configured partition table offset, leave the offset fields blank in the CSV file.
+
+            Note: If you specify fixed offsets in the partition table CSV (i.e., the offset column is not blank),
+            the first partition must start at PARTITION_TABLE_OFFSET + 0x1000, since the partition table occupies
+            0x1000 bytes of flash space.
 
     config PARTITION_TABLE_MD5
         bool "Generate an MD5 checksum for the partition table"

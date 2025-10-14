@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,6 +24,22 @@ extern "C" {
 
 #define INTERRUPT_CORE0_CPU_INT_THRESH_REG      (rv_utils_get_core_id() == 0 ? INTERRUPT_CURRENT_CORE_INT_THRESH_REG : INTERRUPT_OTHER_CORE_INT_THRESH_REG)
 #define INTERRUPT_CORE1_CPU_INT_THRESH_REG      (rv_utils_get_core_id() == 1 ? INTERRUPT_CURRENT_CORE_INT_THRESH_REG : INTERRUPT_OTHER_CORE_INT_THRESH_REG)
+
+#if CONFIG_ESP32P4_SELECTS_REV_LESS_V3
+
+/**
+ * The ESP32-P4 implements a non-standard version of the CLIC:
+ *  - The interrupt threshold is configured via a memory-mapped register instead of a CSR
+ *  - The mintstatus CSR is at 0x346 instead of 0xFB1 as per the official specification
+ */
+#define INTTHRESH_STANDARD  0
+#define MINTSTATUS_CSR      0x346
+
+#else /* CONFIG_ESP32P4_SELECTS_REV_LESS_V3 */
+
+#define INTTHRESH_STANDARD  1
+
+#endif /* CONFIG_ESP32P4_SELECTS_REV_LESS_V3 */
 
 #ifdef __cplusplus
 }

@@ -80,6 +80,7 @@ function(ulp_apply_default_sources ulp_app_name)
 
     # To avoid warning "Manually-specified variables were not used by the project"
     set(bypassWarning "${IDF_TARGET}")
+    set(bypassWarning "${ULP_VAR_PREFIX}")
 
     if(CONFIG_ULP_COPROC_TYPE_RISCV)
         #risc-v ulp uses extra files for building:
@@ -112,6 +113,8 @@ function(ulp_apply_default_sources ulp_app_name)
         "${IDF_PATH}/components/ulp/lp_core/lp_core/vector.S"
         "${IDF_PATH}/components/ulp/lp_core/lp_core/port/${IDF_TARGET}/vector_table.S"
         "${IDF_PATH}/components/ulp/lp_core/shared/ulp_lp_core_memory_shared.c"
+        "${IDF_PATH}/components/ulp/lp_core/shared/ulp_lp_core_lp_uart_shared.c"
+        "${IDF_PATH}/components/esp_driver_uart/src/uart_wakeup.c"
         "${IDF_PATH}/components/ulp/lp_core/shared/ulp_lp_core_lp_timer_shared.c"
         "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_startup.c"
         "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_utils.c"
@@ -125,9 +128,23 @@ function(ulp_apply_default_sources ulp_app_name)
         "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_i2c.c"
         "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_spi.c"
         "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_ubsan.c"
+        "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_mailbox.c"
         "${IDF_PATH}/components/ulp/lp_core/shared/ulp_lp_core_lp_adc_shared.c"
         "${IDF_PATH}/components/ulp/lp_core/shared/ulp_lp_core_lp_vad_shared.c"
         "${IDF_PATH}/components/ulp/lp_core/shared/ulp_lp_core_critical_section_shared.c")
+
+        if(CONFIG_SOC_LP_MAILBOX_SUPPORTED)
+            list(APPEND ULP_S_SOURCES
+                "${IDF_PATH}/components/ulp/lp_core/lp_core/port/lp_core_mailbox_impl_hw.c")
+        else()
+            list(APPEND ULP_S_SOURCES
+                "${IDF_PATH}/components/ulp/lp_core/lp_core/port/lp_core_mailbox_impl_sw.c")
+        endif()
+
+        if(CONFIG_SOC_TOUCH_SENSOR_SUPPORTED)
+            list(APPEND ULP_S_SOURCES
+                "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_touch.c")
+        endif()
 
         set(target_folder ${IDF_TARGET})
 
@@ -179,6 +196,10 @@ function(ulp_apply_default_sources ulp_app_name)
 endfunction()
 
 function(ulp_add_build_binary_targets ulp_app_name)
+    cmake_parse_arguments(ULP "" "PREFIX" "" ${ARGN})
+    if(NOT ULP_PREFIX)
+        set(ULP_PREFIX "ulp_")
+    endif()
 
     if(ADD_PICOLIBC_SPECS)
         target_compile_options(${ulp_app_name} PRIVATE $<$<COMPILE_LANG_AND_ID:C,GNU>:-specs=picolibc.specs>)
@@ -195,7 +216,7 @@ function(ulp_add_build_binary_targets ulp_app_name)
 
     # Dump the list of global symbols in a convenient format
     add_custom_command(OUTPUT ${ULP_APP_NAME}.sym
-                    COMMAND ${CMAKE_NM} -f posix -g $<TARGET_FILE:${ulp_app_name}> > ${ulp_app_name}.sym
+                    COMMAND ${CMAKE_READELF} -sW $<TARGET_FILE:${ulp_app_name}> > ${ulp_app_name}.sym
                     DEPENDS ${ulp_app_name}
                     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
@@ -206,7 +227,8 @@ function(ulp_add_build_binary_targets ulp_app_name)
                     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
     add_custom_command(OUTPUT ${ulp_app_name}.ld ${ulp_app_name}.h
-                    COMMAND ${ULP_MAP_GEN} -s ${ulp_app_name}.sym -o ${ulp_app_name} --base ${ULP_BASE_ADDR}
+                    COMMAND ${ULP_MAP_GEN} -s ${ulp_app_name}.sym -o ${ulp_app_name}
+                            --base ${ULP_BASE_ADDR} --prefix ${ULP_PREFIX}
                     DEPENDS ${ulp_app_name}.sym
                     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 

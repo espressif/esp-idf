@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.22)
 
 include(${esptool_py_dir}/espefuse.cmake)
 espefuse_get_json_summary(efuse_json)

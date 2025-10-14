@@ -33,7 +33,7 @@ extern "C" {
                                                                     .clkout_io = TWAI_IO_UNUSED, .bus_off_io = TWAI_IO_UNUSED,      \
                                                                     .tx_queue_len = 5, .rx_queue_len = 5,                           \
                                                                     .alerts_enabled = TWAI_ALERT_NONE,  .clkout_divider = 0,        \
-                                                                    .intr_flags = ESP_INTR_FLAG_LEVEL1}
+                                                                    .intr_flags = ESP_INTR_FLAG_LEVEL1, .general_flags = {0}}
 
 /**
  * @brief Initializer macro for general configuration structure.
@@ -73,7 +73,7 @@ extern "C" {
 #define TWAI_ALERT_PERIPH_RESET             0x00010000  /**< Alert(65536): The TWAI controller was reset */
 #define TWAI_ALERT_ALL                      0x0001FFFF  /**< Bit mask to enable all alerts during configuration */
 #define TWAI_ALERT_NONE                     0x00000000  /**< Bit mask to disable all alerts during configuration */
-#define TWAI_ALERT_AND_LOG                  0x00020000  /**< Bit mask to enable alerts to also be logged when they occur. Note that logging from the ISR is disabled if CONFIG_TWAI_ISR_IN_IRAM is enabled (see docs). */
+#define TWAI_ALERT_AND_LOG                  0x00020000  /**< Bit mask to enable alerts to also be logged when they occur */
 
 /** @endcond */
 
@@ -119,6 +119,7 @@ typedef struct {
                                          By this approach, the system can power off TWAI's power domain.
                                          This can save power, but at the expense of more RAM being consumed. */
     } general_flags;                /**< General flags */
+    // Ensure TWAI_GENERAL_CONFIG_DEFAULT_V2 is updated and in order if new fields are added
 } twai_general_config_t;
 
 /**

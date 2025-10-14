@@ -278,6 +278,7 @@ void bta_av_ca_api_get(tBTA_AV_RCB *p_rcb, tBTA_AV_DATA *p_data)
     GOEPC_RequestAddHeader(p_rcb->cover_art_goep_hdl, COVER_ART_HEADER_ID_IMG_HANDLE, (UINT8 *)image_handle_utf16, BTA_AV_CA_IMG_HDL_UTF16_LEN);
     if (p_data->api_ca_get.type == BTA_AV_CA_GET_IMAGE) {
         GOEPC_RequestAddHeader(p_rcb->cover_art_goep_hdl, COVER_ART_HEADER_ID_IMG_DESCRIPTOR, (UINT8 *)p_data->api_ca_get.image_descriptor, p_data->api_ca_get.image_descriptor_len);
+        osi_free(p_data->api_ca_get.image_descriptor);
     }
     /* always request to enable srm */
     GOEPC_RequestSetSRM(p_rcb->cover_art_goep_hdl, TRUE, FALSE);

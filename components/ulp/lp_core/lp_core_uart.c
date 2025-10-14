@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -62,7 +62,10 @@ static esp_err_t lp_core_uart_param_config(const lp_core_uart_cfg_t *cfg)
     uart_hal_init(&hal, LP_UART_PORT_NUM);
 
     /* Override protocol parameters from the configuration */
-    lp_uart_ll_set_baudrate(hal.dev, cfg->uart_proto_cfg.baud_rate, sclk_freq);
+    if (!lp_uart_ll_set_baudrate(hal.dev, cfg->uart_proto_cfg.baud_rate, sclk_freq)) {
+        /* Unachievable baud rate */
+        return ESP_FAIL;
+    }
     uart_hal_set_parity(&hal, cfg->uart_proto_cfg.parity);
     uart_hal_set_data_bit_num(&hal, cfg->uart_proto_cfg.data_bits);
     uart_hal_set_stop_bits(&hal, cfg->uart_proto_cfg.stop_bits);
@@ -127,10 +130,10 @@ static esp_err_t lp_core_uart_set_pin(const lp_core_uart_cfg_t *cfg)
 #if !SOC_LP_GPIO_MATRIX_SUPPORTED
     const uart_periph_sig_t *pins = uart_periph_signal[LP_UART_PORT_NUM].pins;
     // LP_UART has its fixed IOs
-    ESP_RETURN_ON_FALSE((cfg->uart_pin_cfg.tx_io_num < 0 || (cfg->uart_pin_cfg.tx_io_num == pins[SOC_UART_TX_PIN_IDX].default_gpio)), ESP_FAIL, LP_UART_TAG, "tx_io_num error");
-    ESP_RETURN_ON_FALSE((cfg->uart_pin_cfg.rx_io_num < 0 || (cfg->uart_pin_cfg.rx_io_num == pins[SOC_UART_RX_PIN_IDX].default_gpio)), ESP_FAIL, LP_UART_TAG, "rx_io_num error");
-    ESP_RETURN_ON_FALSE((cfg->uart_pin_cfg.rts_io_num < 0 || (cfg->uart_pin_cfg.rts_io_num == pins[SOC_UART_RTS_PIN_IDX].default_gpio)), ESP_FAIL, LP_UART_TAG, "rts_io_num error");
-    ESP_RETURN_ON_FALSE((cfg->uart_pin_cfg.cts_io_num < 0 || (cfg->uart_pin_cfg.cts_io_num == pins[SOC_UART_CTS_PIN_IDX].default_gpio)), ESP_FAIL, LP_UART_TAG, "cts_io_num error");
+    ESP_RETURN_ON_FALSE((cfg->uart_pin_cfg.tx_io_num < 0 || (cfg->uart_pin_cfg.tx_io_num == pins[SOC_UART_PERIPH_SIGNAL_TX].default_gpio)), ESP_FAIL, LP_UART_TAG, "tx_io_num error");
+    ESP_RETURN_ON_FALSE((cfg->uart_pin_cfg.rx_io_num < 0 || (cfg->uart_pin_cfg.rx_io_num == pins[SOC_UART_PERIPH_SIGNAL_RX].default_gpio)), ESP_FAIL, LP_UART_TAG, "rx_io_num error");
+    ESP_RETURN_ON_FALSE((cfg->uart_pin_cfg.rts_io_num < 0 || (cfg->uart_pin_cfg.rts_io_num == pins[SOC_UART_PERIPH_SIGNAL_RTS].default_gpio)), ESP_FAIL, LP_UART_TAG, "rts_io_num error");
+    ESP_RETURN_ON_FALSE((cfg->uart_pin_cfg.cts_io_num < 0 || (cfg->uart_pin_cfg.cts_io_num == pins[SOC_UART_PERIPH_SIGNAL_CTS].default_gpio)), ESP_FAIL, LP_UART_TAG, "cts_io_num error");
 #else
     // LP_UART signals can be routed to any LP_IOs
     ESP_RETURN_ON_FALSE((cfg->uart_pin_cfg.tx_io_num < 0 || rtc_gpio_is_valid_gpio(cfg->uart_pin_cfg.tx_io_num)), ESP_FAIL, LP_UART_TAG, "tx_io_num error");
@@ -140,13 +143,13 @@ static esp_err_t lp_core_uart_set_pin(const lp_core_uart_cfg_t *cfg)
 #endif  /* SOC_LP_GPIO_MATRIX_SUPPORTED */
 
     /* Configure Tx Pin */
-    ret = lp_uart_config_io(cfg->uart_pin_cfg.tx_io_num, RTC_GPIO_MODE_OUTPUT_ONLY, SOC_UART_TX_PIN_IDX);
+    ret = lp_uart_config_io(cfg->uart_pin_cfg.tx_io_num, RTC_GPIO_MODE_OUTPUT_ONLY, SOC_UART_PERIPH_SIGNAL_TX);
     /* Configure Rx Pin */
-    ret = lp_uart_config_io(cfg->uart_pin_cfg.rx_io_num, RTC_GPIO_MODE_INPUT_ONLY, SOC_UART_RX_PIN_IDX);
+    ret = lp_uart_config_io(cfg->uart_pin_cfg.rx_io_num, RTC_GPIO_MODE_INPUT_ONLY, SOC_UART_PERIPH_SIGNAL_RX);
     /* Configure RTS Pin */
-    ret = lp_uart_config_io(cfg->uart_pin_cfg.rts_io_num, RTC_GPIO_MODE_OUTPUT_ONLY, SOC_UART_RTS_PIN_IDX);
+    ret = lp_uart_config_io(cfg->uart_pin_cfg.rts_io_num, RTC_GPIO_MODE_OUTPUT_ONLY, SOC_UART_PERIPH_SIGNAL_RTS);
     /* Configure CTS Pin */
-    ret = lp_uart_config_io(cfg->uart_pin_cfg.cts_io_num, RTC_GPIO_MODE_INPUT_ONLY, SOC_UART_CTS_PIN_IDX);
+    ret = lp_uart_config_io(cfg->uart_pin_cfg.cts_io_num, RTC_GPIO_MODE_INPUT_ONLY, SOC_UART_PERIPH_SIGNAL_CTS);
 
     return ret;
 }

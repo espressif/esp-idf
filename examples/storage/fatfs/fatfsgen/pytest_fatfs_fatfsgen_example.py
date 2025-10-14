@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import os
 import re
@@ -7,16 +7,22 @@ from typing import List
 
 import pytest
 from pytest_embedded import Dut
+from pytest_embedded_idf.utils import idf_parametrize
 
 idf_path = os.environ['IDF_PATH']  # get value of IDF_PATH from environment
 parttool_dir = os.path.join(idf_path, 'components', 'partition_table')
 
 
-@pytest.mark.esp32
 @pytest.mark.generic
-@pytest.mark.parametrize('config', ['test_read_only_partition_gen_ln',
-                                    'test_read_write_partition_gen_ln',
-                                    ], indirect=True)
+@pytest.mark.parametrize(
+    'config',
+    [
+        'test_read_only_partition_gen_ln',
+        'test_read_write_partition_gen_ln',
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', ['esp32'], indirect=['target'])
 def test_examples_fatfs_fatfsgen(config: str, dut: Dut) -> None:
     # Expects list of strings sequentially
     def expect_all(msg_list: List[str], to: int) -> None:
@@ -37,7 +43,9 @@ def test_examples_fatfs_fatfsgen(config: str, dut: Dut) -> None:
     def evaluate_dates(date_reference: datetime, date_actual: datetime, days_tolerance: int) -> None:
         td = date_actual - date_reference
         if abs(td.days) > days_tolerance:
-            raise Exception(f'Too big date difference. Actual: {date_actual}, reference: {date_reference}, tolerance: {days_tolerance} day(s)')
+            raise Exception(
+                f'Too big date difference. Actual: {date_actual}, reference: {date_reference}, tolerance: {days_tolerance} day(s)'
+            )
 
     # Expect timeout
     timeout = 20
@@ -49,24 +57,33 @@ def test_examples_fatfs_fatfsgen(config: str, dut: Dut) -> None:
 
     if config in ['test_read_write_partition_gen']:
         filename_expected = f'/spiflash/{filename}'
-        expect_all(['example: Mounting FAT filesystem',
-                    'example: Opening file',
-                    'example: File written',
-                    'example: Reading file',
-                    'example: Read from file: \'This is written by the device\'',
-                    'example: Reading file'], timeout)
-        date_act = expect_date(f'The file \'{filename_expected}\' was modified at date: ', timeout)
+        expect_all(
+            [
+                'example: Mounting FAT filesystem',
+                'example: Opening file',
+                'example: File written',
+                'example: Reading file',
+                "example: Read from file: 'This is written by the device'",
+                'example: Reading file',
+            ],
+            timeout,
+        )
+        date_act = expect_date(f"The file '{filename_expected}' was modified at date: ", timeout)
         evaluate_dates(date_ref, date_act, tolerance)
-        expect_all(['example: Read from file: \'This is generated on the host\'',
-                    'example: Unmounting FAT filesystem',
-                    'example: Done'], timeout)
+        expect_all(
+            [
+                "example: Read from file: 'This is generated on the host'",
+                'example: Unmounting FAT filesystem',
+                'example: Done',
+            ],
+            timeout,
+        )
 
     elif config in ['test_read_only_partition_gen']:
         filename_expected = f'/spiflash/{filename}'
-        expect_all(['example: Mounting FAT filesystem',
-                    'example: Reading file'], timeout)
-        date_act = expect_date(f'The file \'{filename_expected}\' was modified at date: ', timeout)
+        expect_all(['example: Mounting FAT filesystem', 'example: Reading file'], timeout)
+        date_act = expect_date(f"The file '{filename_expected}' was modified at date: ", timeout)
         evaluate_dates(date_ref, date_act, tolerance)
-        expect_all(['example: Read from file: \'this is test\'',
-                    'example: Unmounting FAT filesystem',
-                    'example: Done'], timeout)
+        expect_all(
+            ["example: Read from file: 'this is test'", 'example: Unmounting FAT filesystem', 'example: Done'], timeout
+        )

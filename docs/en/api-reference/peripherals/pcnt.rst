@@ -60,7 +60,7 @@ To install a PCNT unit, there is a configuration structure that needs to be give
 
     Since all PCNT units share the same interrupt source, when installing multiple PCNT units make sure that the interrupt priority :cpp:member:`pcnt_unit_config_t::intr_priority` is the same for each unit.
 
-Unit allocation and initialization is done by calling a function :cpp:func:`pcnt_new_unit` with :cpp:type:`pcnt_unit_config_t` as an input parameter. The function will return a PCNT unit handle only when it runs correctly. Specifically, when there are no more free PCNT units in the pool (i.e., unit resources have been used up), then this function will return :c:macro:`ESP_ERR_NOT_FOUND` error. The total number of available PCNT units is recorded by :c:macro:`SOC_PCNT_UNITS_PER_GROUP` for reference.
+Unit allocation and initialization is done by calling a function :cpp:func:`pcnt_new_unit` with :cpp:type:`pcnt_unit_config_t` as an input parameter. The function will return a PCNT unit handle only when it runs correctly. Specifically, when there are no more free PCNT units in the pool (i.e., unit resources have been used up), then this function will return :c:macro:`ESP_ERR_NOT_FOUND` error.
 
 If a previously created PCNT unit is no longer needed, it is recommended to recycle the resource by calling :cpp:func:`pcnt_del_unit`. Which in return allows the underlying unit hardware to be used for other purposes. Before deleting a PCNT unit, one should ensure the following prerequisites:
 
@@ -88,7 +88,7 @@ To install a PCNT channel, you must initialize a :cpp:type:`pcnt_chan_config_t` 
 - :cpp:member:`pcnt_chan_config_t::virt_edge_io_level` and :cpp:member:`pcnt_chan_config_t::virt_level_io_level` specify the virtual IO level for **edge** and **level** input signal, to ensure a deterministic state for such control signal. Please note, they are only valid when either :cpp:member:`pcnt_chan_config_t::edge_gpio_num` or :cpp:member:`pcnt_chan_config_t::level_gpio_num` is assigned to ``-1``.
 - :cpp:member:`pcnt_chan_config_t::invert_edge_input` and :cpp:member:`pcnt_chan_config_t::invert_level_input` are used to decide whether to invert the input signals before they going into PCNT hardware. The invert is done by GPIO matrix instead of PCNT hardware.
 
-Channel allocating and initialization is done by calling a function :cpp:func:`pcnt_new_channel` with the above :cpp:type:`pcnt_chan_config_t` as an input parameter plus a PCNT unit handle returned from :cpp:func:`pcnt_new_unit`. This function will return a PCNT channel handle if it runs correctly. Specifically, when there are no more free PCNT channel within the unit (i.e., channel resources have been used up), then this function will return :c:macro:`ESP_ERR_NOT_FOUND` error. The total number of available PCNT channels within the unit is recorded by :c:macro:`SOC_PCNT_CHANNELS_PER_UNIT` for reference. Note that, when install a PCNT channel for a specific unit, one should ensure the unit is in the init state, otherwise this function will return :c:macro:`ESP_ERR_INVALID_STATE` error.
+Channel allocating and initialization is done by calling a function :cpp:func:`pcnt_new_channel` with the above :cpp:type:`pcnt_chan_config_t` as an input parameter plus a PCNT unit handle returned from :cpp:func:`pcnt_new_unit`. This function will return a PCNT channel handle if it runs correctly. Specifically, when there are no more free PCNT channel within the unit (i.e., channel resources have been used up), then this function will return :c:macro:`ESP_ERR_NOT_FOUND` error. Note that, when install a PCNT channel for a specific unit, one should ensure the unit is in the init state, otherwise this function will return :c:macro:`ESP_ERR_INVALID_STATE` error.
 
 If a previously created PCNT channel is no longer needed, it is recommended to recycle the resources by calling :cpp:func:`pcnt_del_channel`. Which in return allows the underlying channel hardware to be used for other purposes.
 
@@ -103,6 +103,10 @@ If a previously created PCNT channel is no longer needed, it is recommended to r
     };
     pcnt_channel_handle_t pcnt_chan = NULL;
     ESP_ERROR_CHECK(pcnt_new_channel(pcnt_unit, &chan_config, &pcnt_chan));
+
+.. note::
+
+    In PCNT, the GPIOs involved can be reconfigured for pull-up or pull-down after initializing PCNT using functions such as :cpp:func:`gpio_pullup_en` and :cpp:func:`gpio_pullup_dis`.
 
 .. _pcnt-setup-channel-actions:
 
@@ -154,7 +158,11 @@ It is recommended to remove the unused watch point by :cpp:func:`pcnt_unit_remov
 
     PCNT unit can be configured to watch a specific value increment (can be positive or negative) that you are interested in. The function of watching value increment is also called **Watch Step**. To install watch step requires enabling :cpp:member:`pcnt_unit_config_t::en_step_notify_up` or :cpp:member:`pcnt_unit_config_t::en_step_notify_down`. The step interval itself can not exceed the range set in :cpp:type:`pcnt_unit_config_t` by :cpp:member:`pcnt_unit_config_t::low_limit` and :cpp:member:`pcnt_unit_config_t::high_limit`.When the counter increment reaches step interval, a watch event will be triggered and notify you by interrupt if any watch event callback has ever registered in :cpp:func:`pcnt_unit_register_event_callbacks`. See :ref:`pcnt-register-event-callbacks` for how to register event callbacks.
 
-    The watch step can be added and removed by :cpp:func:`pcnt_unit_add_watch_step` and :cpp:func:`pcnt_unit_remove_watch_step`. You can not add multiple watch step, otherwise it will return error :c:macro:`ESP_ERR_INVALID_STATE`。
+    The watch step can be added and removed by :cpp:func:`pcnt_unit_add_watch_step` and :cpp:func:`pcnt_unit_remove_watch_step`. The parameter ``step_interval`` can be positive(step forward, e.g., [N]->[N+1]->[N+2]->...) or negative(step backward, e.g., [N]->[N-1]->[N-2]->...). The same direction can only add one watch step, otherwise it will return error :c:macro:`ESP_ERR_INVALID_STATE`.
+
+    .. note::
+
+        Due to hardware limitations, some chips may only support adding one direction of watch step. Please check the return value of :cpp:func:`pcnt_unit_add_watch_step` for more details.
 
     It is recommended to remove the unused watch step by :cpp:func:`pcnt_unit_remove_watch_step` to recycle the watch step resources.
 
@@ -314,13 +322,16 @@ The internal hardware counter will be cleared to zero automatically when it reac
 .. list::
 
     1. Enable :cpp:member:`pcnt_unit_config_t::accum_count` when installing the PCNT unit.
-    :SOC_PCNT_SUPPORT_STEP_NOTIFY: 2. Add the high/low limit as the :ref:`pcnt-watch-points` or add watch step as the :ref:`pcnt-step-notify`.
-    :not SOC_PCNT_SUPPORT_STEP_NOTIFY: 2. Add the high/low limit as the :ref:`pcnt-watch-points`.
+    2. Add the high/low limit as the :ref:`pcnt-watch-points`.
     3. Now, the returned count value from the :cpp:func:`pcnt_unit_get_count` function not only reflects the hardware's count value, but also accumulates the high/low overflow loss to it.
 
 .. note::
 
     :cpp:func:`pcnt_unit_clear_count` resets the accumulated count value as well.
+
+.. note::
+
+    When enabling the count overflow compensation, it is recommended to use as large a high/low count limit as possible, as it can avoid frequent interrupt triggering, improve system performance, and avoid compensation failure due to multiple overflows.
 
 .. _pcnt-power-management:
 

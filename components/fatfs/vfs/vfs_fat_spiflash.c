@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -81,46 +81,66 @@ vfs_fat_spiflash_ctx_t* get_vfs_fat_spiflash_ctx(wl_handle_t wlhandle)
 static esp_err_t s_f_mount_rw(FATFS *fs, const char *drv, const esp_vfs_fat_mount_config_t *mount_config, vfs_fat_x_ctx_flags_t *out_flags, size_t sec_num)
 {
     FRESULT fresult = f_mount(fs, drv, 1);
-    if (fresult != FR_OK) {
-        ESP_LOGW(TAG, "f_mount failed (%d)", fresult);
-
-        bool need_mount_again = (fresult == FR_NO_FILESYSTEM || fresult == FR_INT_ERR) && mount_config->format_if_mount_failed;
-        if (!need_mount_again) {
-            return ESP_FAIL;
-        }
-
-        const size_t workbuf_size = 4096;
-        void *workbuf = ff_memalloc(workbuf_size);
-        if (workbuf == NULL) {
-            return ESP_ERR_NO_MEM;
-        }
-
-        size_t alloc_unit_size = esp_vfs_fat_get_allocation_unit_size(CONFIG_WL_SECTOR_SIZE, mount_config->allocation_unit_size);
-        ESP_LOGI(TAG, "Formatting FATFS partition, allocation unit size=%d", alloc_unit_size);
-        UINT root_dir_entries;
-        if (CONFIG_WL_SECTOR_SIZE == 512) {
-            root_dir_entries = 16;
-        } else {
-            root_dir_entries = 128;
-        }
-        const MKFS_PARM opt = {(BYTE)(FM_ANY | FM_SFD), (mount_config->use_one_fat ? 1 : 2), 0, (sec_num <= MIN_REQ_SEC ? root_dir_entries : 0), alloc_unit_size};
-        fresult = f_mkfs(drv, &opt, workbuf, workbuf_size);
-        free(workbuf);
-        workbuf = NULL;
-        ESP_RETURN_ON_FALSE(fresult == FR_OK, ESP_FAIL, TAG, "f_mkfs failed (%d)", fresult);
-
-        if (out_flags) {
-            *out_flags |= FORMATTED_DURING_LAST_MOUNT; // set flag
-        }
-
-        ESP_LOGI(TAG, "Mounting again");
-        fresult = f_mount(fs, drv, 1);
-        ESP_RETURN_ON_FALSE(fresult == FR_OK, ESP_FAIL, TAG, "f_mount failed after formatting (%d)", fresult);
-    } else {
+    if (fresult == FR_OK) {
         if (out_flags) {
             *out_flags  &= ~FORMATTED_DURING_LAST_MOUNT; // reset flag
         }
+        return ESP_OK;
     }
+
+    const char *msg = "Unknown";
+    const char *note = "";
+    bool recoverable = false;
+
+    switch (fresult) {
+        case FR_NO_FILESYSTEM:
+            msg = "No filesystem detected";
+            note = "(This may indicate corrupt FS, or attempt to mount read-only fatfsgen image for write)";
+            recoverable = true;
+            break;
+        case FR_INT_ERR:
+            msg = "Assertion failed";
+            recoverable = true;
+            break;
+        default:
+            break;
+    }
+
+    if (!recoverable || !mount_config->format_if_mount_failed) {
+        ESP_LOGE(TAG, "f_mount failed with error: \"%s\" [%d]. %s", msg, fresult, note);
+        return ESP_FAIL;
+    }
+
+    ESP_LOGW(TAG, "FatFS mount (f_mount) failed with error: \"%s\" [%d]. Retrying after format...", msg, fresult);
+
+    const size_t workbuf_size = 4096;
+    void *workbuf = ff_memalloc(workbuf_size);
+    if (workbuf == NULL) {
+        return ESP_ERR_NO_MEM;
+    }
+
+    size_t alloc_unit_size = esp_vfs_fat_get_allocation_unit_size(CONFIG_WL_SECTOR_SIZE, mount_config->allocation_unit_size);
+    ESP_LOGI(TAG, "Formatting FATFS partition, allocation unit size=%d", alloc_unit_size);
+    UINT root_dir_entries;
+    if (CONFIG_WL_SECTOR_SIZE == 512) {
+        root_dir_entries = 16;
+    } else {
+        root_dir_entries = 128;
+    }
+    const MKFS_PARM opt = {(BYTE)(FM_ANY | FM_SFD), (mount_config->use_one_fat ? 1 : 2), 0, (sec_num <= MIN_REQ_SEC ? root_dir_entries : 0), alloc_unit_size};
+    fresult = f_mkfs(drv, &opt, workbuf, workbuf_size);
+    free(workbuf);
+    workbuf = NULL;
+    ESP_RETURN_ON_FALSE(fresult == FR_OK, ESP_FAIL, TAG, "f_mkfs failed (%d)", fresult);
+
+    if (out_flags) {
+        *out_flags |= FORMATTED_DURING_LAST_MOUNT; // set flag
+    }
+
+    ESP_LOGI(TAG, "Mounting again");
+    fresult = f_mount(fs, drv, 1);
+    ESP_RETURN_ON_FALSE(fresult == FR_OK, ESP_FAIL, TAG, "f_mount failed after formatting (%d)", fresult);
+
     return ESP_OK;
 }
 

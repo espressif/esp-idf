@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -17,9 +17,9 @@ extern "C" {
 typedef union {
     struct {
         /** enable_spi_manual_encrypt : R/W; bitpos: [0]; default: 0;
-         *  Configures whether or not to enable MSPI XTS manual encryption in SPI boot mode.\\
-         *  0: Disable\\
-         *  1: Enable\\
+         *  Configures whether or not to enable MSPI XTS manual encryption in SPI boot mode.
+         *  0: Disable
+         *  1: Enable
          */
         uint32_t enable_spi_manual_encrypt:1;
         /** enable_download_db_encrypt : R/W; bitpos: [1]; default: 0;
@@ -27,17 +27,16 @@ typedef union {
          */
         uint32_t enable_download_db_encrypt:1;
         /** enable_download_g0cb_decrypt : R/W; bitpos: [2]; default: 0;
-         *  Configures whether or not to enable MSPI XTS auto decryption in download boot
-         *  mode.\\
-         *  0: Disable\\
-         *  1: Enable\\
+         *  Configures whether or not to enable MSPI XTS auto decryption in download boot mode.
+         *  0: Disable
+         *  1: Enable
          */
         uint32_t enable_download_g0cb_decrypt:1;
         /** enable_download_manual_encrypt : R/W; bitpos: [3]; default: 0;
          *  Configures whether or not to enable MSPI XTS manual encryption in download boot
-         *  mode. \\
-         *  0: Disable\\
-         *  1: Enable\\
+         *  mode.
+         *  0: Disable
+         *  1: Enable
          */
         uint32_t enable_download_manual_encrypt:1;
         uint32_t reserved_4:28;
@@ -52,6 +51,7 @@ typedef union {
     struct {
         /** cache_usage : HRO; bitpos: [0]; default: 0;
          *  reserved
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t cache_usage:1;
         uint32_t reserved_1:7;
@@ -76,18 +76,18 @@ typedef union {
     struct {
         /** sec_dpa_level : R/W; bitpos: [1:0]; default: 0;
          *  Configures whether or not to enable anti-DPA attack. Valid only when
-         *  HP_SYSTEM_SEC_DPA_CFG_SEL is 0. \\
-         *  0: Disable\\
+         *  HP_SYSTEM_SEC_DPA_CFG_SEL is 0.
+         *  0: Disable
          *  1-3: Enable. The larger the number, the higher the security level, which represents
          *  the ability to resist DPA attacks, with increased computational overhead of the
-         *  hardware crypto-accelerators at the same time. \\
+         *  hardware crypto-accelerators at the same time.
          */
         uint32_t sec_dpa_level:2;
         /** sec_dpa_cfg_sel : R/W; bitpos: [2]; default: 0;
          *  Configures whether to select HP_SYSTEM_SEC_DPA_LEVEL or EFUSE_SEC_DPA_LEVEL (from
-         *  eFuse) to control DPA level. \\
-         *  0: Select EFUSE_SEC_DPA_LEVEL\\
-         *  1: Select HP_SYSTEM_SEC_DPA_LEVEL\\
+         *  eFuse) to control DPA level.
+         *  0: Select EFUSE_SEC_DPA_LEVEL
+         *  1: Select HP_SYSTEM_SEC_DPA_LEVEL
          */
         uint32_t sec_dpa_cfg_sel:1;
         uint32_t reserved_3:29;
@@ -119,9 +119,9 @@ typedef union {
 typedef union {
     struct {
         /** rom_table_lock : R/W; bitpos: [0]; default: 0;
-         *  Configures whether or not to lock the value contained in HP_SYSTEM_ROM_TABLE. \\
-         *  0: Unlock \\
-         *  1: Lock \\
+         *  Configures whether or not to lock the value contained in HP_SYSTEM_ROM_TABLE.
+         *  0: Unlock
+         *  1: Lock
          */
         uint32_t rom_table_lock:1;
         uint32_t reserved_1:31;
@@ -150,9 +150,9 @@ typedef union {
     struct {
         /** core_debug_runstall_enable : R/W; bitpos: [0]; default: 0;
          *  Configures whether or not to enable debug RunStall functionality between HP CPU and
-         *  LP CPU.\\
-         *  0: Disable\\
-         *  1: Enable\\
+         *  LP CPU.
+         *  0: Disable
+         *  1: Enable
          */
         uint32_t core_debug_runstall_enable:1;
         /** core_runstalled : RO; bitpos: [1]; default: 0;
@@ -172,20 +172,36 @@ typedef union {
     struct {
         /** hp_mem_wpulse : R/W; bitpos: [2:0]; default: 0;
          *  This field controls hp system memory WPULSE parameter.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t hp_mem_wpulse:3;
         /** hp_mem_wa : R/W; bitpos: [5:3]; default: 4;
          *  This field controls hp system memory WA parameter.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t hp_mem_wa:3;
         /** hp_mem_ra : R/W; bitpos: [7:6]; default: 0;
          *  This field controls hp system memory RA parameter.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t hp_mem_ra:2;
         uint32_t reserved_8:24;
     };
     uint32_t val;
 } hp_system_mem_test_conf_reg_t;
+
+/** Type of sdio_sprf_ctrl register
+ *  reserved
+ */
+typedef union {
+    struct {
+        /** sdio_sprf_mem_aux_ctrl : R/W; bitpos: [31:0]; default: 12816;
+         *  sdio mem separate control signal.
+         */
+        uint32_t sdio_sprf_mem_aux_ctrl:32;
+    };
+    uint32_t val;
+} hp_system_sdio_sprf_ctrl_reg_t;
 
 /** Type of sprom_ctrl register
  *  reserved
@@ -257,6 +273,26 @@ typedef union {
     uint32_t val;
 } hp_system_bitscrambler_peri_sel_reg_t;
 
+/** Type of axi_mst_pri register
+ *  AXI mst priority configuration register
+ */
+typedef union {
+    struct {
+        /** dma_priority : R/W; bitpos: [0]; default: 0;
+         *  AHB-DMA arbitration priority for command channels between masters connected to
+         *  ext_mem_DW_axi
+         */
+        uint32_t dma_priority:1;
+        /** cache_priority : R/W; bitpos: [1]; default: 0;
+         *  CACHE arbitration priority for command channels between masters connected to
+         *  ext_mem_DW_axi
+         */
+        uint32_t cache_priority:1;
+        uint32_t reserved_2:30;
+    };
+    uint32_t val;
+} hp_system_axi_mst_pri_reg_t;
+
 /** Type of clock_gate register
  *  HP-SYSTEM clock gating configure register
  */
@@ -264,6 +300,7 @@ typedef union {
     struct {
         /** clk_en : R/W; bitpos: [0]; default: 0;
          *  Set this bit as 1 to force on clock gating.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t clk_en:1;
         uint32_t reserved_1:31;
@@ -289,9 +326,9 @@ typedef union {
         uint32_t cpu_peri_timeout_int_clear:1;
         /** cpu_peri_timeout_protect_en : R/W; bitpos: [17]; default: 1;
          *  Configures whether or not to enable timeout protection for accessing CPU peripheral
-         *  registers.\\
-         *  0: Disable\\
-         *  1: Enable\\
+         *  registers.
+         *  0: Disable
+         *  1: Enable
          */
         uint32_t cpu_peri_timeout_protect_en:1;
         uint32_t reserved_18:14;
@@ -338,16 +375,16 @@ typedef union {
          */
         uint32_t hp_peri_timeout_thres:16;
         /** hp_peri_timeout_int_clear : WT; bitpos: [16]; default: 0;
-         *  Configures whether or not to clear timeout interrupt.\\
-         *  0: No effect\\
-         *  1: Clear timeout interrupt\\
+         *  Configures whether or not to clear timeout interrupt.
+         *  0: No effect
+         *  1: Clear timeout interrupt
          */
         uint32_t hp_peri_timeout_int_clear:1;
         /** hp_peri_timeout_protect_en : R/W; bitpos: [17]; default: 1;
          *  Configures whether or not to enable timeout protection for accessing HP peripheral
-         *  registers.\\
-         *  0: Disable\\
-         *  1: Enable\\
+         *  registers.
+         *  0: Disable
+         *  1: Enable
          */
         uint32_t hp_peri_timeout_protect_en:1;
         uint32_t reserved_18:14;
@@ -391,14 +428,17 @@ typedef union {
         /** modem_peri_timeout_thres : R/W; bitpos: [15:0]; default: 65535;
          *  Set the timeout threshold for bus access, corresponding to the number of clock
          *  cycles of the clock domain.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t modem_peri_timeout_thres:16;
         /** modem_peri_timeout_int_clear : WT; bitpos: [16]; default: 0;
          *  Set this bit as 1 to clear timeout interrupt
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t modem_peri_timeout_int_clear:1;
         /** modem_peri_timeout_protect_en : R/W; bitpos: [17]; default: 1;
          *  Set this bit as 1 to enable timeout protection for accessing modem registers
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t modem_peri_timeout_protect_en:1;
         uint32_t reserved_18:14;
@@ -413,6 +453,7 @@ typedef union {
     struct {
         /** modem_peri_timeout_addr : RO; bitpos: [31:0]; default: 0;
          *  Record the address information of abnormal access
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t modem_peri_timeout_addr:32;
     };
@@ -427,6 +468,7 @@ typedef union {
         /** modem_peri_timeout_uid : RO; bitpos: [6:0]; default: 0;
          *  Record master id[4:0] & master permission[6:5] when trigger timeout. This register
          *  will be cleared after the interrupt is cleared.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t modem_peri_timeout_uid:7;
         uint32_t reserved_7:25;
@@ -443,10 +485,12 @@ typedef union {
     struct {
         /** redcy_ena : W/R; bitpos: [0]; default: 0;
          *  Only reserved for ECO.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t redcy_ena:1;
         /** redcy_result : RO; bitpos: [1]; default: 0;
          *  Only reserved for ECO.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t redcy_result:1;
         uint32_t reserved_2:30;
@@ -461,6 +505,7 @@ typedef union {
     struct {
         /** redcy_low : W/R; bitpos: [31:0]; default: 0;
          *  Only reserved for ECO.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t redcy_low:32;
     };
@@ -474,6 +519,7 @@ typedef union {
     struct {
         /** redcy_high : W/R; bitpos: [31:0]; default: 4294967295;
          *  Only reserved for ECO.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t redcy_high:32;
     };
@@ -489,6 +535,7 @@ typedef union {
     struct {
         /** fpga_debug : R/W; bitpos: [0]; default: 1;
          *  Reserved
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t fpga_debug:1;
         uint32_t reserved_1:31;
@@ -532,13 +579,16 @@ typedef struct {
     volatile hp_system_rom_table_reg_t rom_table;
     volatile hp_system_core_debug_runstall_conf_reg_t core_debug_runstall_conf;
     volatile hp_system_mem_test_conf_reg_t mem_test_conf;
-    uint32_t reserved_048[10];
+    uint32_t reserved_048[9];
+    volatile hp_system_sdio_sprf_ctrl_reg_t sdio_sprf_ctrl;
     volatile hp_system_sprom_ctrl_reg_t sprom_ctrl;
     volatile hp_system_spram_ctrl_reg_t spram_ctrl;
     volatile hp_system_sprf_ctrl_reg_t sprf_ctrl;
     volatile hp_system_sdprf_ctrl_reg_t sdprf_ctrl;
     volatile hp_system_bitscrambler_peri_sel_reg_t bitscrambler_peri_sel;
-    uint32_t reserved_084[215];
+    uint32_t reserved_084;
+    volatile hp_system_axi_mst_pri_reg_t axi_mst_pri;
+    uint32_t reserved_08c[213];
     volatile hp_system_rnd_eco_reg_t rnd_eco;
     volatile hp_system_rnd_eco_low_reg_t rnd_eco_low;
     volatile hp_system_rnd_eco_high_reg_t rnd_eco_high;

@@ -1,0 +1,259 @@
+/*
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <string.h>
+#include "unity.h"
+#include "mbedtls/rsa.h"
+#include "esp_random.h"
+#include "sdkconfig.h"
+
+#ifdef CONFIG_HEAP_TRACING
+#include <esp_heap_trace.h>
+#define NUM_RECORDS 100
+static heap_trace_record_t trace_record[NUM_RECORDS]; // This buffer must be in internal RAM
+#endif
+
+#ifdef SOC_DIG_SIGN_SUPPORTED
+#include "soc/soc_caps.h"
+#include "esp_ds.h"
+#include "esp_ds/esp_ds_rsa.h"
+
+static int mbedtls_esp_random(void *ctx, unsigned char *output, size_t len)
+{
+    if (len == 0 || output == NULL) {
+        return -1;
+    }
+    esp_fill_random(output, len);
+    return 0;
+}
+
+TEST_CASE("ds sign test pkcs1_v15", "[ds_rsa]")
+{
+    mbedtls_rsa_context rsa_ctx;
+    rsa_ctx.MBEDTLS_PRIVATE(padding) = MBEDTLS_RSA_PKCS_V15;
+    unsigned char hash[32] = {0};
+    mbedtls_esp_random(NULL, hash, sizeof(hash)); // Fill hash with random data
+    unsigned int hashlen = sizeof(hash);
+    unsigned char signature[256] = {0};
+
+    // esp_ds is not initialized, so we expect an error
+    int err = esp_ds_rsa_sign(&rsa_ctx, mbedtls_esp_random, NULL, MBEDTLS_MD_SHA256, hashlen, hash, signature);
+    TEST_ASSERT_EQUAL(-1, err);
+
+    // Initialize the esp_ds context
+    esp_ds_data_ctx_t ctx;
+    esp_ds_data_t ds_data;
+    ds_data.rsa_length = ESP_DS_RSA_2048; // Example length
+    ctx.esp_ds_data = &ds_data;
+    ctx.efuse_key_id = 1; // Example efuse key ID
+    ctx.rsa_length_bits = 2048; // Example RSA length in bits
+
+    err = esp_ds_init_data_ctx(&ctx);
+    TEST_ASSERT_EQUAL(ESP_OK, err);
+
+    // Now we can call esp_ds_rsa_sign again
+    err = esp_ds_rsa_sign(&rsa_ctx, mbedtls_esp_random, NULL, MBEDTLS_MD_SHA256, hashlen, hash, signature);
+    TEST_ASSERT_EQUAL(0, err);
+    TEST_ASSERT_NOT_NULL(signature);
+
+    err = esp_ds_deinit_data_ctx();
+    TEST_ASSERT_EQUAL(ESP_OK, err);
+
+    // Because we have wrapped around the ds_start_sign and ds_finish_sign functions,
+    // we are not actually performing the real signing operation. That test is done in the
+    // crypto test_apps, so here we just check that the surrounding code works as expected.
+    // In this test, we have used v15 padding, so we expect the signature to be non-null
+    // and the hash to be part of the signature.
+    TEST_ASSERT_EQUAL(0, memcmp(hash, signature + (256 - hashlen), hashlen));
+
+    // Let's also ensure that signature has correct encoding
+    // Just before the hash start, it should have size of hash
+    TEST_ASSERT_EQUAL(hashlen, signature[256 - hashlen - 1]);
+
+    // One byte before should be MBEDTLS_ASN1_OCTET_STRING
+    TEST_ASSERT_EQUAL(0x04, signature[256 - hashlen - 2]);
+
+    // And the first byte should be 0x00, indicating that this is a valid PKCS#1 v1.5 signature
+    TEST_ASSERT_EQUAL(0x00, signature[0]);
+}
+
+#ifdef CONFIG_MBEDTLS_SSL_PROTO_TLS1_3
+TEST_CASE("ds sign test pkcs1_v21", "[ds_rsa]")
+{
+    mbedtls_rsa_context rsa_ctx;
+    rsa_ctx.MBEDTLS_PRIVATE(padding) = MBEDTLS_RSA_PKCS_V21;
+    unsigned char hash[32] = {0};
+    mbedtls_esp_random(NULL, hash, sizeof(hash)); // Fill hash with random data
+    unsigned int hashlen = sizeof(hash);
+    unsigned char signature[256] = {0};
+
+    // esp_ds is not initialized, so we expect an error
+    int err = esp_ds_rsa_sign(&rsa_ctx, mbedtls_esp_random, NULL, MBEDTLS_MD_SHA256, hashlen, hash, signature);
+    TEST_ASSERT_EQUAL(-1, err);
+
+    // Initialize the esp_ds context
+    esp_ds_data_ctx_t ctx;
+    esp_ds_data_t ds_data;
+    ds_data.rsa_length = ESP_DS_RSA_2048; // Example length
+    ctx.esp_ds_data = &ds_data;
+    ctx.efuse_key_id = 1; // Example efuse key ID
+    ctx.rsa_length_bits = 2048; // Example RSA length in bits
+
+    err = esp_ds_init_data_ctx(&ctx);
+    TEST_ASSERT_EQUAL(ESP_OK, err);
+
+    // Now we can call esp_ds_rsa_sign again
+    err = esp_ds_rsa_sign(&rsa_ctx, mbedtls_esp_random, NULL, MBEDTLS_MD_SHA256, hashlen, hash, signature);
+    TEST_ASSERT_EQUAL(0, err);
+    TEST_ASSERT_NOT_NULL(signature);
+
+    err = esp_ds_deinit_data_ctx();
+    TEST_ASSERT_EQUAL(ESP_OK, err);
+}
+#endif // CONFIG_MBEDTLS_SSL_PROTO_TLS1_3
+
+/* Generated external data for OAEP padding */
+const unsigned char oaep_padded_v21[] = {
+    0x00, 0xb6, 0xd9, 0xe6, 0x62, 0xa5, 0xa0, 0xf7, 0xc7, 0xfe, 0xb9, 0x33, 0xdd, 0xdd, 0x67, 0xd7,
+    0x35, 0xa5, 0x9d, 0xf7, 0x21, 0x55, 0xf9, 0x60, 0xa8, 0x38, 0x86, 0xb2, 0x73, 0x90, 0xf5, 0x40,
+    0x06, 0x85, 0x51, 0x60, 0x10, 0x01, 0x91, 0x24, 0x47, 0x2e, 0x86, 0x16, 0xa6, 0xbc, 0x35, 0x5b,
+    0xe4, 0xca, 0x74, 0x9c, 0xe2, 0xe0, 0x2b, 0x2d, 0x63, 0x56, 0x0f, 0x71, 0xe0, 0x8e, 0x1c, 0xa5,
+    0x58, 0x72, 0x30, 0x2f, 0x93, 0xf7, 0xd9, 0x0f, 0x16, 0xed, 0x86, 0xd3, 0xbf, 0x42, 0x12, 0x0a,
+    0xaa, 0x3b, 0x16, 0x43, 0x84, 0x0d, 0x6d, 0xc8, 0xf9, 0x22, 0xc7, 0x25, 0xf6, 0x61, 0xb4, 0xb8,
+    0xd7, 0x07, 0x76, 0x1a, 0xfb, 0x01, 0x01, 0xd7, 0xd2, 0x9b, 0xc1, 0xec, 0x34, 0x53, 0x14, 0x78,
+    0xc4, 0x10, 0xf5, 0xf1, 0x28, 0xf6, 0x30, 0x32, 0xe7, 0x8c, 0x27, 0x62, 0x17, 0xf0, 0x47, 0x10,
+    0x87, 0xfa, 0xe6, 0x02, 0x90, 0x45, 0xf9, 0x20, 0x79, 0x42, 0xf9, 0x2a, 0x42, 0x06, 0xae, 0x37,
+    0xf4, 0xae, 0x12, 0x6b, 0x9c, 0x7b, 0x7e, 0xed, 0x85, 0xdf, 0xdd, 0x27, 0x27, 0xf5, 0xac, 0xb6,
+    0x9c, 0x7a, 0xd9, 0x1f, 0x45, 0xd8, 0xb3, 0xed, 0x73, 0xd7, 0x9e, 0xab, 0x68, 0xb8, 0x25, 0xeb,
+    0xc5, 0xcc, 0x8a, 0x04, 0x03, 0xd3, 0xd8, 0x60, 0xcc, 0xab, 0xe9, 0xd1, 0xb1, 0x18, 0x28, 0x84,
+    0xf9, 0x52, 0xd6, 0xe2, 0x3c, 0x2a, 0x19, 0x5c, 0xd8, 0x73, 0xff, 0x71, 0x94, 0xd6, 0x8b, 0x5f,
+    0x69, 0x09, 0x2f, 0xd2, 0xb0, 0x23, 0xda, 0x1a, 0xe4, 0x47, 0x2d, 0xb6, 0xbf, 0x08, 0xbd, 0x5d,
+    0x37, 0x9c, 0x81, 0xdd, 0x54, 0x42, 0xad, 0xf7, 0x65, 0xb2, 0x8e, 0xf7, 0x70, 0x7d, 0x62, 0x0a,
+    0x3a, 0x1c, 0xf5, 0xe8, 0x9f, 0x17, 0x22, 0x66, 0x3d, 0xc5, 0xab, 0xf6, 0x51, 0xe9, 0x84, 0x73,
+};
+
+const unsigned char message[] = {
+    0x62, 0x1c, 0xaa, 0x4a, 0xae, 0xf8, 0x1f, 0x4b, 0x59, 0x70, 0xee, 0xcb, 0x0c, 0x91, 0x35, 0xc9,
+    0x4a, 0xe2, 0x85, 0xf4, 0xfc, 0x21, 0x18, 0x3e, 0xa6, 0xed, 0xa6, 0x71, 0xdb, 0xfe, 0x2b, 0x95,
+    0x67, 0x45, 0xb7,
+};
+const size_t message_len = 35;
+
+TEST_CASE("ds decrypt test pkcs1_v21", "[ds_rsa]")
+{
+#ifdef CONFIG_HEAP_TRACING
+    heap_trace_init_standalone(trace_record, NUM_RECORDS);
+    heap_trace_start(HEAP_TRACE_LEAKS);
+#endif
+    mbedtls_rsa_context rsa_ctx;
+    rsa_ctx.MBEDTLS_PRIVATE(padding) = MBEDTLS_RSA_PKCS_V21;
+    // Initialize the esp_ds context
+    esp_ds_data_ctx_t ctx;
+    esp_ds_data_t ds_data;
+    ds_data.rsa_length = ESP_DS_RSA_2048; // Example length
+    ctx.esp_ds_data = &ds_data;
+    ctx.efuse_key_id = 1; // Example efuse key ID
+    ctx.rsa_length_bits = 2048; // Example RSA length in bits
+
+    unsigned char decrypted[256] = {0};
+    size_t decrypted_len = 0;
+
+    // esp_ds is not initialized, so we expect an error
+    int err = esp_ds_rsa_decrypt(&rsa_ctx, &decrypted_len, oaep_padded_v21, decrypted, sizeof(decrypted));
+    TEST_ASSERT_EQUAL(-1, err);
+
+    err = esp_ds_init_data_ctx(&ctx);
+    TEST_ASSERT_EQUAL(ESP_OK, err);
+
+    err = esp_ds_rsa_decrypt(&rsa_ctx, &decrypted_len, oaep_padded_v21, decrypted, sizeof(decrypted));
+    TEST_ASSERT_EQUAL(0, err);
+    TEST_ASSERT_NOT_NULL(decrypted);
+
+    err = esp_ds_deinit_data_ctx();
+    TEST_ASSERT_EQUAL(ESP_OK, err);
+
+    TEST_ASSERT_EQUAL(decrypted_len, message_len);
+    TEST_ASSERT_EQUAL_MEMORY(decrypted, message, message_len);
+#ifdef CONFIG_HEAP_TRACING
+    heap_trace_stop();
+    heap_trace_dump();
+#endif
+}
+
+const unsigned char v15_padded[] = {
+    0x00, 0x02, 0xdf, 0x36, 0xfc, 0x41, 0x57, 0x40, 0x87, 0x3f, 0x88, 0xa7, 0x7f, 0x7a, 0x33, 0xbe,
+    0x2f, 0xf7, 0xdd, 0x8a, 0xb6, 0x6a, 0xb4, 0x6a, 0x96, 0xdb, 0x63, 0xbf, 0x50, 0xd8, 0x08, 0x5b,
+    0x07, 0x9e, 0xdf, 0x4c, 0x1e, 0xb2, 0x6c, 0x83, 0x22, 0xff, 0x21, 0xc8, 0x99, 0xe1, 0x6c, 0x3d,
+    0x31, 0x82, 0x8e, 0xb6, 0xb3, 0x3f, 0x77, 0xc6, 0x7d, 0xb1, 0x05, 0x97, 0xd0, 0x96, 0x49, 0x78,
+    0x62, 0xd5, 0x7b, 0x5b, 0x49, 0x8c, 0xb0, 0x4e, 0x5f, 0xf2, 0x92, 0xc2, 0x9f, 0xd4, 0x77, 0x0a,
+    0x77, 0x94, 0x9f, 0x80, 0xff, 0xde, 0x6a, 0xe7, 0x62, 0x36, 0x9f, 0x73, 0x78, 0xb3, 0xc0, 0x2f,
+    0xd8, 0xf9, 0x06, 0x60, 0x78, 0xbc, 0x50, 0x06, 0x0d, 0x33, 0x6c, 0x5f, 0xcc, 0x4d, 0x40, 0x4e,
+    0x12, 0x53, 0x39, 0x3b, 0x24, 0x4f, 0x9c, 0x14, 0x20, 0xbd, 0x71, 0x1d, 0xdc, 0xc5, 0xbc, 0x88,
+    0xd1, 0x87, 0x4a, 0xac, 0x21, 0xb6, 0x06, 0x9d, 0x56, 0xe5, 0xb7, 0x05, 0x61, 0x32, 0x30, 0x97,
+    0x7d, 0x72, 0x2f, 0x45, 0xf0, 0xc6, 0x55, 0x01, 0x87, 0x78, 0xbc, 0xa4, 0x9b, 0x4f, 0xe1, 0xc5,
+    0x59, 0x8a, 0xaa, 0x3c, 0xd1, 0x0a, 0xe3, 0xbe, 0x0b, 0xde, 0x21, 0xa8, 0x3b, 0x89, 0x9f, 0x0a,
+    0x30, 0x22, 0x64, 0x4e, 0x90, 0x71, 0x52, 0x27, 0x23, 0x7b, 0xe7, 0x0b, 0x07, 0xa9, 0x7e, 0x15,
+    0xb1, 0xfe, 0x0e, 0x0e, 0x1b, 0x8e, 0xc3, 0xf0, 0x26, 0x66, 0xfb, 0xdf, 0x78, 0xf8, 0x03, 0xd5,
+    0xf5, 0x90, 0x08, 0x04, 0x7c, 0x9f, 0x11, 0xa5, 0x5e, 0x5b, 0x2b, 0x01, 0x00, 0x62, 0x1c, 0xaa,
+    0x4a, 0xae, 0xf8, 0x1f, 0x4b, 0x59, 0x70, 0xee, 0xcb, 0x0c, 0x91, 0x35, 0xc9, 0x4a, 0xe2, 0x85,
+    0xf4, 0xfc, 0x21, 0x18, 0x3e, 0xa6, 0xed, 0xa6, 0x71, 0xdb, 0xfe, 0x2b, 0x95, 0x67, 0x45, 0xb7,
+};
+
+TEST_CASE("ds decrypt test pkcs1_v15", "[ds_rsa]")
+{
+    mbedtls_rsa_context rsa_ctx;
+    rsa_ctx.MBEDTLS_PRIVATE(padding) = MBEDTLS_RSA_PKCS_V15;
+    // Initialize the esp_ds context
+    esp_ds_data_ctx_t ctx;
+    esp_ds_data_t ds_data;
+    ds_data.rsa_length = ESP_DS_RSA_2048; // Example length
+    ctx.esp_ds_data = &ds_data;
+    ctx.efuse_key_id = 1; // Example efuse key ID
+    ctx.rsa_length_bits = 2048; // Example RSA length in bits
+
+    int err = esp_ds_init_data_ctx(&ctx);
+    TEST_ASSERT_EQUAL(ESP_OK, err);
+
+    unsigned char decrypted[256] = {0};
+    size_t decrypted_len = 0;
+    err = esp_ds_rsa_decrypt(&rsa_ctx, &decrypted_len, v15_padded, decrypted, sizeof(decrypted));
+    TEST_ASSERT_EQUAL(0, err);
+    TEST_ASSERT_NOT_NULL(decrypted);
+
+    err = esp_ds_deinit_data_ctx();
+    TEST_ASSERT_EQUAL(ESP_OK, err);
+
+    TEST_ASSERT_EQUAL(decrypted_len, message_len);
+    TEST_ASSERT_EQUAL_MEMORY(decrypted, message, message_len);
+}
+
+int __wrap_esp_ds_start_sign(const void *message, const esp_ds_data_t *data, hmac_key_id_t key_id, esp_ds_context_t **esp_ds_ctx)
+{
+    // This function will be called instead of the original esp_ds_start_sign
+    if (message == NULL || data == NULL || esp_ds_ctx == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    *esp_ds_ctx = malloc(sizeof(esp_ds_context_t));
+    if (*esp_ds_ctx == NULL) {
+        return ESP_ERR_NO_MEM;
+    }
+
+    // Simulate successful start sign
+    return ESP_OK;
+}
+
+// Test implementation using linker wrap
+int __wrap_esp_ds_finish_sign(void *sig, esp_ds_context_t *ctx)
+{
+    // This function will be called instead of the original esp_ds_finish_sign
+    free(ctx);
+    return 0;
+
+    // Or we can call the real implementation if needed:
+    // return __real_esp_ds_finish_sign(sig, ctx);
+}
+#endif /* SOC_DIG_SIGN_SUPPORTED */

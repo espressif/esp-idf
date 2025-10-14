@@ -12,15 +12,44 @@ ECDSA 外设可以为 TLS 双向身份验证等用例建立 **安全设备身份
 支持的特性
 ----------
 
-- ECDSA 数字签名生成和验证
-- 两种不同的椭圆曲线，P-192 和 P-256（FIPS 186-3 规范）
-- ECDSA 操作中哈希消息的两种哈希算法，SHA-224 和 SHA-256（FIPS PUB 180-4 规范）
+.. list::
+
+    - ECDSA 数字签名生成和验证
+    :SOC_ECDSA_SUPPORT_CURVE_P384: - 三种不同的椭圆曲线，P-192，P-256 和 P-384（FIPS 186-3 规范）
+    :not SOC_ECDSA_SUPPORT_CURVE_P384: - 两种不同的椭圆曲线，P-192 和 P-256（FIPS 186-3 规范）
+    :SOC_ECDSA_SUPPORT_CURVE_P384: - ECDSA 操作中用于散列消息的三种哈希算法，SHA-224, SHA-256 和 SHA-384（FIPS PUB 180-4 规范）
+    :not SOC_ECDSA_SUPPORT_CURVE_P384: - ECDSA 操作中哈希消息的两种哈希算法，SHA-224 和 SHA-256（FIPS PUB 180-4 规范）
 
 
 {IDF_TARGET_NAME} 上的 ECDSA
 ----------------------------
 
 在 {IDF_TARGET_NAME} 上，ECDSA 模块使用烧录到 eFuse 块中的密钥。密码模块外的任何资源都不可访问此密钥（默认模式），从而避免密钥泄露。
+
+ECDSA 密钥存储
+^^^^^^^^^^^^^^
+
+.. only:: SOC_ECDSA_SUPPORT_CURVE_P384
+
+    ECDSA 私钥存储在 eFuse 密钥块中。所需的密钥块数量取决于曲线大小：
+
+    - **P-256 曲线**：需要一个 eFuse 密钥块（256 位）
+    - **P-384 曲线**：需要两个 eFuse 密钥块（总共 512 位）
+
+    对于需要两个密钥块的曲线（如 P-384），配置以下字段：
+
+    - 将 :cpp:member:`esp_tls_cfg_t::ecdsa_key_efuse_blk` 设置为低块号
+    - 将 :cpp:member:`esp_tls_cfg_t::ecdsa_key_efuse_blk_high` 设置为高块号
+
+    对于单块曲线（如 P-256），只需设置 :cpp:member:`esp_tls_cfg_t::ecdsa_key_efuse_blk`，将 :cpp:member:`esp_tls_cfg_t::ecdsa_key_efuse_blk_high` 保持为 0 或不赋值。
+
+.. only:: not SOC_ECDSA_SUPPORT_CURVE_P384
+
+    ECDSA 私钥存储在 eFuse 密钥块中。一个 eFuse 密钥块（256 位）是 P-256 曲线所需的。
+
+    配置以下字段：
+
+    - 将 :cpp:member:`esp_tls_cfg_t::ecdsa_key_efuse_blk` 设置为块号，将 :cpp:member:`esp_tls_cfg_t::ecdsa_key_efuse_blk_high` 保持为 0 或不赋值。
 
 ECDSA 密钥可以通过 ``idf.py`` 脚本在外部编程。以下是关于编程 ECDSA 密钥的示例：
 
@@ -61,13 +90,30 @@ ECDSA 密钥可以通过 ``idf.py`` 脚本在外部编程。以下是关于编�
         // writing key failed, maybe written already
     }
 
+
+.. only:: SOC_ECDSA_P192_CURVE_DEFAULT_DISABLED
+
+    ECDSA 曲线配置
+    -----------------
+
+    .. only:: esp32h2
+
+        ESP32-H2 的 ECDSA 外设支持 ECDSA-P192 和 ECDSA-P256 两种曲线操作。但从 ESP32-H2 版本 1.2 开始，默认仅启用 ECDSA-P256 操作。可以通过以下配置项启用 ECDSA-P192 操作：
+
+    .. only:: not esp32h2
+
+        {IDF_TARGET_NAME} 的 ECDSA 外设支持 ECDSA-P192 和 ECDSA-P256 两种曲线操作，但默认仅启用 ECDSA-P256 操作。可以通过以下配置项启用 ECDSA-P192 操作：
+
+    - :ref:`CONFIG_ESP_ECDSA_ENABLE_P192_CURVE` 启用对 ECDSA-P192 曲线操作的支持，使设备可以同时执行 192 位和 256 位的 ECDSA 曲线操作。但请注意，如果 eFuse 写保护期间已永久禁用 ECDSA-P192 操作，则启用该配置项也无法重新启用该功能。
+
+    - :cpp:func:`esp_efuse_enable_ecdsa_p192_curve_mode()` 可用于以编程方式启用 ECDSA-P192 曲线操作。它会向 eFuse 写入相应值，从而使设备支持 P-192 和 P-256 曲线操作。但请注意，若对应的 eFuse 区域已被写保护，则此 API 将调用失败。
+
 .. only:: SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE
 
     生成确定性签名
     --------------
 
     {IDF_TARGET_NAME} 的 ECDSA 外设还支持使用确定性推导参数 K 来生成确定性签名，详见 `RFC 6979 <https://tools.ietf.org/html/rfc6979>`_ 第 3.2 节。
-
 
 生成非确定性签名
 ----------------

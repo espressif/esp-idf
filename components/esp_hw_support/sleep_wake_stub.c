@@ -31,7 +31,7 @@
 #endif
 
 #include "sdkconfig.h"
-#include "esp_rom_uart.h"
+#include "esp_rom_serial_output.h"
 #include "esp_rom_sys.h"
 
 #ifdef CONFIG_IDF_TARGET_ESP32

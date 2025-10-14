@@ -1,0 +1,45 @@
+<svg width="480" height="180" viewBox="40 40 480 140" xmlns="http://www.w3.org/2000/svg">
+
+  <!-- ESP32 芯片框 -->
+  <rect x="40" y="40" width="120" height="140" fill="#e0f7fa" stroke="#000"/>
+  <text x="100" y="110" text-anchor="middle" dominant-baseline="middle" font-weight="bold" font-size="14">ESP32 Series</text>
+
+  <!-- CAN收发器 芯片框 -->
+  <rect x="340" y="40" width="120" height="140" fill="#ffe0b2" stroke="#000"/>
+  <text x="400" y="110" text-anchor="middle" dominant-baseline="middle" font-weight="bold" font-size="14">Transceiver</text>
+
+  <!-- TX -->
+  <line x1="160" y1="70" x2="340" y2="70" stroke="black" marker-end="url(#arrow)"/>
+  <text x="250" y="65" text-anchor="middle" font-size="12" font-weight="bold">TX</text>
+
+  <!-- RX -->
+  <line x1="340" y1="100" x2="160" y2="100" stroke="black" marker-end="url(#arrow)"/>
+  <text x="250" y="95" text-anchor="middle" font-size="12" font-weight="bold">RX</text>
+
+  <!-- BUSOFF (可选) -->
+  <line x1="160" y1="130" x2="340" y2="130" stroke="gray" marker-end="url(#arrow)" stroke-dasharray="5,3"/>
+  <text x="250" y="125" text-anchor="middle" font-size="12">BUS_OFF (Optional)</text>
+
+  <!-- CLOCK_OUT (可选) -->
+  <line x1="160" y1="160" x2="340" y2="160" stroke="gray" marker-end="url(#arrow)" stroke-dasharray="5,3"/>
+  <text x="250" y="155" text-anchor="middle" font-size="12">CLK_OUT (Optional)</text>
+
+  <!-- CANH -->
+  <line x1="460" y1="80" x2="500" y2="80" stroke="#00695c" stroke-width="2"/>
+  <text x="505" y="80" font-size="12" fill="#00695c" dominant-baseline="middle">H</text>
+
+  <!-- CANL -->
+  <line x1="460" y1="120" x2="500" y2="120" stroke="#00695c" stroke-width="2"/>
+  <text x="505" y="120" font-size="12" fill="#00695c" dominant-baseline="middle">L</text>
+
+  <!-- “to bus” 注释 -->
+  <text x="475" y="150" font-size="12" fill="#555">To BUS</text>
+
+  <!-- 箭头定义 -->
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="black"/>
+    </marker>
+  </defs>
+
+</svg>

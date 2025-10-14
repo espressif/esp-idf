@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,7 +12,7 @@
 #include "esp_log.h"
 
 #include "esp_rom_sys.h"
-#include "esp_rom_uart.h"
+#include "esp_rom_serial_output.h"
 #include "sdkconfig.h"
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/cache.h"
@@ -24,12 +24,12 @@
 #include "soc/rtc.h"
 #include "soc/efuse_periph.h"
 #include "soc/rtc_periph.h"
-#include "soc/timer_periph.h"
 #include "hal/mmu_hal.h"
 #include "hal/mmu_ll.h"
 #include "hal/cache_types.h"
 #include "hal/cache_ll.h"
 #include "hal/cache_hal.h"
+#include "hal/sha_types.h"
 
 #include "esp_cpu.h"
 #include "esp_image_format.h"
@@ -56,7 +56,7 @@
 #include "bootloader_utility_tee.h"
 #endif
 
-static const char *TAG = "boot";
+ESP_LOG_ATTR_TAG(TAG, "boot");
 
 /* Reduce literal size for some generic string literals */
 #define MAP_ERR_MSG "Image contains multiple %s segments. Only the last one will be mapped."
@@ -167,7 +167,7 @@ bool bootloader_utility_load_partition_table(bootloader_state_t *bs)
         const esp_partition_info_t *partition = &partitions[i];
         ESP_LOGD(TAG, "load partition table entry 0x%x", (intptr_t)partition);
         ESP_LOGD(TAG, "type=%x subtype=%x", partition->type, partition->subtype);
-        partition_usage = "unknown";
+        partition_usage = ESP_LOG_ATTR_STR("unknown");
 
         /* valid partition table */
         switch (partition->type) {
@@ -175,17 +175,17 @@ bool bootloader_utility_load_partition_table(bootloader_state_t *bs)
             switch (partition->subtype) {
             case PART_SUBTYPE_FACTORY: /* factory binary */
                 bs->factory = partition->pos;
-                partition_usage = "factory app";
+                partition_usage = ESP_LOG_ATTR_STR("factory app");
                 break;
             case PART_SUBTYPE_TEST: /* test binary */
                 bs->test = partition->pos;
-                partition_usage = "test app";
+                partition_usage = ESP_LOG_ATTR_STR("test app");
                 break;
 #if CONFIG_SECURE_ENABLE_TEE
             case PART_SUBTYPE_TEE_0: /* TEE binary */
             case PART_SUBTYPE_TEE_1:
                 bs->tee[partition->subtype & 0x01] = partition->pos;
-                partition_usage = "TEE app";
+                partition_usage = ESP_LOG_ATTR_STR("TEE app");
                 break;
 #endif
             default:
@@ -193,9 +193,9 @@ bool bootloader_utility_load_partition_table(bootloader_state_t *bs)
                 if ((partition->subtype & ~PART_SUBTYPE_OTA_MASK) == PART_SUBTYPE_OTA_FLAG) {
                     bs->ota[partition->subtype & PART_SUBTYPE_OTA_MASK] = partition->pos;
                     ++bs->app_count;
-                    partition_usage = "OTA app";
+                    partition_usage = ESP_LOG_ATTR_STR("OTA app");
                 } else {
-                    partition_usage = "Unknown app";
+                    partition_usage = ESP_LOG_ATTR_STR("Unknown app");
                 }
                 break;
             }
@@ -204,19 +204,19 @@ bool bootloader_utility_load_partition_table(bootloader_state_t *bs)
             switch (partition->subtype) {
             case PART_SUBTYPE_DATA_OTA: /* ota data */
                 bs->ota_info = partition->pos;
-                partition_usage = "OTA data";
+                partition_usage = ESP_LOG_ATTR_STR("OTA data");
                 break;
             case PART_SUBTYPE_DATA_RF:
-                partition_usage = "RF data";
+                partition_usage = ESP_LOG_ATTR_STR("RF data");
                 break;
             case PART_SUBTYPE_DATA_WIFI:
-                partition_usage = "WiFi data";
+                partition_usage = ESP_LOG_ATTR_STR("WiFi data");
                 break;
             case PART_SUBTYPE_DATA_NVS_KEYS:
-                partition_usage = "NVS keys";
+                partition_usage = ESP_LOG_ATTR_STR("NVS keys");
                 break;
             case PART_SUBTYPE_DATA_EFUSE_EM:
-                partition_usage = "efuse";
+                partition_usage = ESP_LOG_ATTR_STR("efuse");
 #ifdef CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH
                 esp_efuse_init_virtual_mode_in_flash(partition->pos.offset, partition->pos.size);
 #endif
@@ -224,37 +224,34 @@ bool bootloader_utility_load_partition_table(bootloader_state_t *bs)
 #if CONFIG_SECURE_ENABLE_TEE
             case PART_SUBTYPE_DATA_TEE_OTA: /* TEE ota data */
                 bs->tee_ota_info = partition->pos;
-                partition_usage = "TEE OTA data";
-                break;
-            case PART_SUBTYPE_DATA_TEE_SEC_STORAGE: /* TEE secure storage */
-                partition_usage = "TEE secure storage";
+                partition_usage = ESP_LOG_ATTR_STR("TEE OTA data");
                 break;
 #endif
             default:
-                partition_usage = "Unknown data";
+                partition_usage = ESP_LOG_ATTR_STR("Unknown data");
                 break;
             }
             break; /* PARTITION_USAGE_DATA */
         case PART_TYPE_BOOTLOADER: /* Bootloader partition */
             switch (partition->subtype) {
             case PART_SUBTYPE_BOOTLOADER_PRIMARY:
-                partition_usage = "primary bootloader";
+                partition_usage = ESP_LOG_ATTR_STR("primary bootloader");
                 break;
             case PART_SUBTYPE_BOOTLOADER_OTA:
-                partition_usage = "ota bootloader";
+                partition_usage = ESP_LOG_ATTR_STR("ota bootloader");
                 break;
             case PART_SUBTYPE_BOOTLOADER_RECOVERY:
-                partition_usage = "recovery bootloader";
+                partition_usage = ESP_LOG_ATTR_STR("recovery bootloader");
                 break;
             }
             break; /* PART_TYPE_BOOTLOADER */
         case PART_TYPE_PARTITION_TABLE: /* Partition table partition */
             switch (partition->subtype) {
             case PART_SUBTYPE_PARTITION_TABLE_PRIMARY:
-                partition_usage = "primary partition_table";
+                partition_usage = ESP_LOG_ATTR_STR("primary partition_table");
                 break;
             case PART_SUBTYPE_PARTITION_TABLE_OTA:
-                partition_usage = "ota partition_table";
+                partition_usage = ESP_LOG_ATTR_STR("ota partition_table");
                 break;
             }
             break; /* PART_TYPE_PARTITION_TABLE */
@@ -295,7 +292,7 @@ static esp_partition_pos_t index_to_partition(const bootloader_state_t *bs, int 
 
 static void log_invalid_app_partition(int index)
 {
-    const char *not_bootable = " is not bootable"; /* save a few string literal bytes */
+    const char *not_bootable = ESP_LOG_ATTR_STR(" is not bootable"); /* save a few string literal bytes */
     switch (index) {
     case FACTORY_INDEX:
         ESP_LOGE(TAG, "Factory app partition%s", not_bootable);
@@ -570,7 +567,7 @@ void bootloader_utility_load_tee_image(const bootloader_state_t *bs)
         ESP_LOGE(TAG, "Failed to load TEE app");
         bootloader_reset();
     }
-    tee_boot_part = tee_part_idx;
+    tee_boot_part = tee_active_part;
 
     ESP_LOGI(TAG, "Loaded TEE app from partition at offset 0x%"PRIx32, tee_active_part_pos->offset);
 }
@@ -869,9 +866,9 @@ static void unpack_load_app(const esp_image_metadata_t *data)
         const esp_image_segment_header_t *header = &data->segments[i];
         if (header->load_addr >= SOC_DROM_LOW && header->load_addr < SOC_DROM_HIGH) {
             if (drom_addr != 0) {
-                ESP_EARLY_LOGE(TAG, MAP_ERR_MSG, "DROM");
+                ESP_EARLY_LOGE(TAG, MAP_ERR_MSG, ESP_LOG_ATTR_STR("DROM"));
             } else {
-                ESP_EARLY_LOGD(TAG, "Mapping segment %d as %s", i, "DROM");
+                ESP_EARLY_LOGD(TAG, "Mapping segment %d as %s", i, ESP_LOG_ATTR_STR("DROM"));
             }
             drom_addr = data->segment_data[i];
             drom_load_addr = header->load_addr;
@@ -879,9 +876,9 @@ static void unpack_load_app(const esp_image_metadata_t *data)
         }
         if (header->load_addr >= SOC_IROM_LOW && header->load_addr < SOC_IROM_HIGH) {
             if (irom_addr != 0) {
-                ESP_EARLY_LOGE(TAG, MAP_ERR_MSG, "IROM");
+                ESP_EARLY_LOGE(TAG, MAP_ERR_MSG, ESP_LOG_ATTR_STR("IROM"));
             } else {
-                ESP_EARLY_LOGD(TAG, "Mapping segment %d as %s", i, "IROM");
+                ESP_EARLY_LOGD(TAG, "Mapping segment %d as %s", i, ESP_LOG_ATTR_STR("IROM"));
             }
             irom_addr = data->segment_data[i];
             irom_load_addr = header->load_addr;
@@ -1216,37 +1213,101 @@ void bootloader_debug_buffer(const void *buffer, size_t length, const char *labe
 #endif
 }
 
-esp_err_t bootloader_sha256_flash_contents(uint32_t flash_offset, uint32_t len, uint8_t *digest)
+static esp_err_t bootloader_sha_flash_contents(esp_sha_type type, uint32_t flash_offset, uint32_t len, uint8_t *digest)
 {
-
     if (digest == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
 
     /* Handling firmware images larger than MMU capacity */
     uint32_t mmu_free_pages_count = bootloader_mmap_get_free_pages();
-    bootloader_sha256_handle_t sha_handle = NULL;
+    bootloader_sha_handle_t sha_handle = NULL;
 
-    sha_handle = bootloader_sha256_start();
+    if (type == SHA2_256) {
+        sha_handle = bootloader_sha256_start();
+    } else
+    // Using SOC_ECDSA_SUPPORT_CURVE_P384 here so that there is no flash size impact in the case of existing targets like ESP32.
+#if SOC_SHA_SUPPORT_SHA384 && SOC_ECDSA_SUPPORT_CURVE_P384
+    if (type == SHA2_384) {
+        sha_handle = bootloader_sha512_start(true);
+    } else
+#endif /* SOC_SHA_SUPPORT_SHA384 && SOC_ECDSA_SUPPORT_CURVE_P384 */
+    {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     if (sha_handle == NULL) {
         return ESP_ERR_NO_MEM;
     }
 
     while (len > 0) {
         uint32_t mmu_page_offset = ((flash_offset & MMAP_ALIGNED_MASK) != 0) ? 1 : 0; /* Skip 1st MMU Page if it is already populated */
-        uint32_t partial_image_len = MIN(len, ((mmu_free_pages_count - mmu_page_offset) * SPI_FLASH_MMU_PAGE_SIZE)); /* Read the image that fits in the free MMU pages */
+        uint32_t max_pages = (mmu_free_pages_count > mmu_page_offset) ? (mmu_free_pages_count - mmu_page_offset) : 0;
+        if (max_pages == 0) {
+            ESP_LOGE(TAG, "No free MMU pages are available");
+            if (type == SHA2_256) {
+                bootloader_sha256_finish(sha_handle, NULL);
+            }
+#if SOC_SHA_SUPPORT_SHA384 && SOC_ECDSA_SUPPORT_CURVE_P384
+            else if (type == SHA2_384) {
+                bootloader_sha512_finish(sha_handle, NULL);
+            }
+#endif /* SOC_SHA_SUPPORT_SHA384 && SOC_ECDSA_SUPPORT_CURVE_P384 */
+            return ESP_ERR_NO_MEM;
+        }
+        uint32_t max_image_len;
+        if (__builtin_mul_overflow(max_pages, SPI_FLASH_MMU_PAGE_SIZE, &max_image_len)) {
+            max_image_len = UINT32_MAX;
+        }
+        uint32_t partial_image_len = MIN(len, max_image_len); /* Read the image that fits in the free MMU pages */
 
         const void * image = bootloader_mmap(flash_offset, partial_image_len);
         if (image == NULL) {
-            bootloader_sha256_finish(sha_handle, NULL);
+            if (type == SHA2_256) {
+                bootloader_sha256_finish(sha_handle, NULL);
+            }
+#if SOC_SHA_SUPPORT_SHA384 && SOC_ECDSA_SUPPORT_CURVE_P384
+            else if (type == SHA2_384) {
+                bootloader_sha512_finish(sha_handle, NULL);
+            }
+#endif /* SOC_SHA_SUPPORT_SHA384 && SOC_ECDSA_SUPPORT_CURVE_P384 */
             return ESP_FAIL;
         }
-        bootloader_sha256_data(sha_handle, image, partial_image_len);
+
+        if (type == SHA2_256) {
+            bootloader_sha256_data(sha_handle, image, partial_image_len);
+        }
+#if SOC_SHA_SUPPORT_SHA384 && SOC_ECDSA_SUPPORT_CURVE_P384
+        else if (type == SHA2_384) {
+            bootloader_sha512_data(sha_handle, image, partial_image_len);
+        }
+#endif /* SOC_SHA_SUPPORT_SHA384 && SOC_ECDSA_SUPPORT_CURVE_P384 */
+
         bootloader_munmap(image);
 
         flash_offset += partial_image_len;
         len -= partial_image_len;
     }
-    bootloader_sha256_finish(sha_handle, digest);
+
+    if (type == SHA2_256) {
+        bootloader_sha256_finish(sha_handle, digest);
+    }
+#if SOC_SHA_SUPPORT_SHA384 && SOC_ECDSA_SUPPORT_CURVE_P384
+    else if (type == SHA2_384) {
+        bootloader_sha512_finish(sha_handle, digest);
+    }
+#endif /* SOC_SHA_SUPPORT_SHA384 && SOC_ECDSA_SUPPORT_CURVE_P384 */
     return ESP_OK;
 }
+
+esp_err_t bootloader_sha256_flash_contents(uint32_t flash_offset, uint32_t len, uint8_t *digest)
+{
+    return bootloader_sha_flash_contents(SHA2_256, flash_offset, len, digest);
+}
+
+#if SOC_SHA_SUPPORT_SHA384 && SOC_ECDSA_SUPPORT_CURVE_P384
+esp_err_t bootloader_sha384_flash_contents(uint32_t flash_offset, uint32_t len, uint8_t *digest)
+{
+    return bootloader_sha_flash_contents(SHA2_384, flash_offset, len, digest);
+}
+#endif /* SOC_SHA_SUPPORT_SHA384 && SOC_ECDSA_SUPPORT_CURVE_P384 */

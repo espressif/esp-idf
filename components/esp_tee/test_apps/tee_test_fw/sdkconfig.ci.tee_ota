@@ -1,0 +1,17 @@
+# Custom partition table
+CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y
+CONFIG_PARTITION_TABLE_CUSTOM=y
+CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions_tee_ota.csv"
+CONFIG_PARTITION_TABLE_FILENAME="partitions_tee_ota.csv"
+
+# Increasing Bootloader and TEE log verbosity
+CONFIG_BOOTLOADER_LOG_LEVEL_DEBUG=y
+CONFIG_SECURE_TEE_LOG_LEVEL_DEBUG=y
+
+CONFIG_SECURE_TEE_SEC_STG_SUPPORT_SECP192R1_SIGN=y
+
+# secure storage key slot for attestation
+CONFIG_SECURE_TEE_ATT_KEY_STR_ID="tee_att_keyN"
+
+# Enabling flash protection over SPI1
+CONFIG_SECURE_TEE_EXT_FLASH_MEMPROT_SPI1=y

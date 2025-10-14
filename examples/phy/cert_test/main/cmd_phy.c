@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -13,6 +13,8 @@
 #include "esp_phy_cert_test.h"
 #include "cmd_phy.h"
 
+#include "driver/gpio.h"
+
 #define TAG "cmd_phy"
 
 #define CERT_TASK_PRIO 2
@@ -24,12 +26,16 @@ static phy_args_t       phy_args;
 static phy_wifi_tx_t    phy_wifi_tx_args;
 static phy_wifi_rx_t    phy_wifi_rx_args;
 static phy_wifiscwout_t phy_wifiscwout_args;
+#if CONFIG_SOC_WIFI_HE_SUPPORT
+static phy_wifi_11ax_tx_set_t phy_wifi_11ax_tx_set_args;
+#endif//CONFIG_SOC_WIFI_HE_SUPPORT
 #endif
 #if SOC_BT_SUPPORTED
 static phy_ble_tx_t     phy_ble_tx_args;
 static phy_ble_rx_t     phy_ble_rx_args;
 static phy_bt_tx_tone_t phy_bt_tx_tone_args;
 #endif
+static phy_gpio_output_set_t phy_gpio_output_set_args;
 
 #if CONFIG_ESP_PHY_LEGACY_COMMANDS
 #define arg_int0(_a, _b, _c, _d) arg_int0(NULL, NULL, _c, _d)
@@ -237,6 +243,60 @@ static int esp_phy_wifiscwout_func(int argc, char **argv)
 
     return 0;
 }
+
+#if CONFIG_SOC_WIFI_HE_SUPPORT
+static int esp_phy_wifi_11ax_tx_set_func(int argc, char **argv)
+{
+    uint32_t he_format;
+    uint32_t pe;
+    uint32_t giltf_num;
+    uint32_t ru_index = 0;
+    int nerrors = arg_parse(argc, argv, (void **) &phy_wifi_11ax_tx_set_args);
+    if (nerrors != 0) {
+        arg_print_errors(stderr, phy_wifi_11ax_tx_set_args.end, argv[0]);
+        return 1;
+    }
+
+    if (phy_wifi_11ax_tx_set_args.he_format->count == 1) {
+        he_format = phy_wifi_11ax_tx_set_args.he_format->ival[0];
+    } else {
+        ESP_LOGE(TAG, "Please enter the HE format 1:HESU, 2:HEER, 3:HETB, 0:exit 11ax mode");
+        return 1;
+    }
+
+    if (phy_wifi_11ax_tx_set_args.pe->count == 1) {
+        pe = phy_wifi_11ax_tx_set_args.pe->ival[0];
+    } else {
+        pe = 16;
+        ESP_LOGW(TAG, "Default pe is 16");
+    }
+
+    if (phy_wifi_11ax_tx_set_args.giltf_num->count == 1) {
+        giltf_num = phy_wifi_11ax_tx_set_args.giltf_num->ival[0];
+    } else {
+        giltf_num = 1;
+        ESP_LOGW(TAG, "Default giltf_num is 1");
+    }
+
+    if (he_format > 3) {
+        ESP_LOGE(TAG, "HE format 1:HESU, 2:HEER, 3:HETB, 0:exit 11ax mode");
+        return 1;
+    }
+
+    if (he_format == 3) {
+        if (phy_wifi_11ax_tx_set_args.ru_index->count == 1) {
+            ru_index = phy_wifi_11ax_tx_set_args.ru_index->ival[0];
+        } else {
+            ru_index = 0;
+            ESP_LOGW(TAG, "Default ru_index is 0");
+        }
+    }
+
+    esp_phy_11ax_tx_set(he_format, pe, giltf_num, ru_index);
+    return 0;
+}
+#endif//CONFIG_SOC_WIFI_HE_SUPPORT
+
 #endif
 
 #if SOC_BT_SUPPORTED
@@ -396,6 +456,63 @@ static int esp_phy_bt_tx_tone_func(int argc, char **argv)
 }
 #endif
 
+void esp_phy_gpio_output_set(int number, int level) {
+    if (!GPIO_IS_VALID_OUTPUT_GPIO(number)) {
+        ESP_LOGE(TAG, "gpio number %d is invalid out gpio", number);
+        return;
+    }
+    if (level != 0 && level != 1) {
+        ESP_LOGE(TAG, "gpio level %d is invalid, should be 0 or 1", level);
+        return;
+    }
+
+    gpio_config_t io_conf = {};
+    //disable interrupt
+    io_conf.intr_type = GPIO_INTR_DISABLE;
+    //set as output mode
+    io_conf.mode = GPIO_MODE_OUTPUT;
+    //bit mask of the pin that you want to set,e.g.GPIO18/19
+    io_conf.pin_bit_mask = (1ULL<<number);
+    //disable pull-down mode
+    io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
+    //disable pull-up mode
+    io_conf.pull_up_en = GPIO_PULLUP_DISABLE;
+    //configure GPIO with the given settings
+    gpio_config(&io_conf);
+
+    ESP_LOGI(TAG, "Set output gpio number %d level to %d", number, level);
+    gpio_set_level(number, level);
+}
+
+static int esp_phy_gpio_output_set_func(int argc, char **argv)
+{
+    uint8_t number;
+    uint8_t level;
+    int nerrors = arg_parse(argc, argv, (void **) &phy_gpio_output_set_args);
+    if (nerrors != 0) {
+        arg_print_errors(stderr, phy_gpio_output_set_args.end, argv[0]);
+        return 1;
+    }
+
+    if (phy_gpio_output_set_args.gpio_number->count == 1) {
+        number = phy_gpio_output_set_args.gpio_number->ival[0];
+    } else {
+        ESP_LOGE(TAG, "please input gpio number");
+        return 1;
+    }
+
+    if (phy_gpio_output_set_args.gpio_level->count == 1) {
+        level = phy_gpio_output_set_args.gpio_level->ival[0];
+    } else {
+        ESP_LOGE(TAG, "please input gpio level");
+        return 1;
+    }
+
+    esp_phy_gpio_output_set(number, level);
+
+    return 0;
+}
+
 void register_phy_cmd(void)
 {
     phy_args.enable  = arg_int0(NULL, NULL, "<enable>", "enable");
@@ -481,6 +598,24 @@ void register_phy_cmd(void)
         .argtable = &phy_wifiscwout_args
     };
     ESP_ERROR_CHECK( esp_console_cmd_register(&wifiscwout_cmd) );
+
+#if CONFIG_SOC_WIFI_HE_SUPPORT
+    phy_wifi_11ax_tx_set_args.he_format     = arg_int0("f", "he_format"     , "<he_format>"     , "1:HESU, 2:HEER, 3:HETB, 0:exit 11ax mode");
+    phy_wifi_11ax_tx_set_args.pe     = arg_int0("p", "pe"     , "<pe>"     , "pe=0/8/16, default 16");
+    phy_wifi_11ax_tx_set_args.giltf_num     = arg_int0("g", "giltf_num"     , "<giltf_num>"     , "giltf_num=1/2/3, default 1");
+    phy_wifi_11ax_tx_set_args.ru_index        = arg_int0("i", "ru_index"        , "<ru_index>"        , "0~8, 37~40, 53~54, 61,\
+        ru_index is only effective in HETB mode. In other modes, this parameter can be omitted or set to 0, with the default value being 0");
+    phy_wifi_11ax_tx_set_args.end         = arg_end(1);
+
+    const esp_console_cmd_t esp_11ax_tx_set_cmd = {
+        .command = "phy_11ax_tx_set",
+        .help = "WiFi 11ax TX set command",
+        .hint = NULL,
+        .func = &esp_phy_wifi_11ax_tx_set_func,
+        .argtable = &phy_wifi_11ax_tx_set_args
+    };
+    ESP_ERROR_CHECK( esp_console_cmd_register(&esp_11ax_tx_set_cmd) );
+#endif//CONFIG_SOC_WIFI_HE_SUPPORT
 #endif
 
 #if SOC_BT_SUPPORTED
@@ -538,5 +673,17 @@ void register_phy_cmd(void)
     };
     ESP_ERROR_CHECK( esp_console_cmd_register(&bt_tx_tone_cmd) );
 #endif
+    phy_gpio_output_set_args.gpio_number       = arg_int0("n", "number"  , "<gpio_number>"  , "output gpio number");
+    phy_gpio_output_set_args.gpio_level     = arg_int0("l", "level", "<gpio_level>", "output gpio level");
+    phy_gpio_output_set_args.end         = arg_end(1);
+
+    const esp_console_cmd_t gpio_output_set_cmd = {
+        .command = "gpio_output_set",
+        .help = "gpio output set command",
+        .hint = NULL,
+        .func = &esp_phy_gpio_output_set_func,
+        .argtable = &phy_gpio_output_set_args
+    };
+    ESP_ERROR_CHECK( esp_console_cmd_register(&gpio_output_set_cmd) );
 }
 #endif

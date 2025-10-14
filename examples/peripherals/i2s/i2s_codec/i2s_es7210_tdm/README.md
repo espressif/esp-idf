@@ -1,11 +1,11 @@
-| Supported Targets | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP32-H2 | ESP32-P4 | ESP32-S3 |
-| ----------------- | -------- | -------- | -------- | --------- | -------- | -------- | -------- |
+| Supported Targets | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP32-H2 | ESP32-H4 | ESP32-P4 | ESP32-S3 |
+| ----------------- | -------- | -------- | -------- | --------- | -------- | -------- | -------- | -------- |
 
 # I2S TDM Example -- ES7210 4-Ch ADC Codec
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
-I2S on `ESP32S3` and `ESP32C3` supports [TDM mode](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/api-reference/peripherals/i2s.html#tdm-mode), in which multiple slots can be transmitted by standard I2S connection.
+The targets that listed on the top support [TDM mode](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/api-reference/peripherals/i2s.html#tdm-mode), in which multiple slots can be transmitted by standard I2S connection.
 
 This example demonstrates how to use I2S TDM mode to record 4 MICs connected to [ES7210](http://www.everest-semi.com/pdf/ES7210%20PB.pdf) codec. ES7210 has 4 TDM modes, which are `ES7210_I2S_FMT_I2S` `ES7210_I2S_FMT_LJ` `ES7210_I2S_FMT_DSP_A` and `ES7210_I2S_FMT_DSP_B`, and they are all supported by I2S TDM driver. Relation between ES7210 TDM modes and I2S Driver TDM modes is shown in the following table.
 
@@ -15,6 +15,8 @@ This example demonstrates how to use I2S TDM mode to record 4 MICs connected to 
 |  ES7210_I2S_FMT_LJ   |       MSB format       |
 | ES7210_I2S_FMT_DSP_A |    PCM short format    |
 | ES7210_I2S_FMT_DSP_B |    PCM long format     |
+
+In this example, we use `esp_codec_dev` dependency which contains the `es7210` driver. This driver uses `ES7210_I2S_FMT_I2S` format by default.
 
 Recorded voice will be saved to SD card in `wav` format, and can be played or processed on PC.
 
@@ -31,11 +33,11 @@ All the GPIO used in this example can be changed according to your board, by mac
 
 ### Dependency
 
-This example is based on [es7210 component](https://components.espressif.com/component/espressif/es7210)
+This example is based on [esp_codec_dev component](https://components.espressif.com/components/espressif/esp_codec_dev)
 
-The component can be installed by esp component manager. Since this example already installed it, no need to re-installed it again, but if you want to install this component in your own project, you can input the following command:
+The component can be installed by [IDF Component Manager](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/tools/idf-component-manager.html). This example already includes it. If you want to install [esp_codec_dev component](https://components.espressif.com/components/espressif/esp_codec_dev) separately in your project, you can input the following command:
 ```
-idf.py add-dependency espressif/es7210^1.0.0
+idf.py add-dependency "espressif/esp_codec_dev^1.3.4"
 ```
 
 If the dependency is added, you can check `idf_component.yml` for more detail. When building this example or other projects with managed components, the component manager will search for the required components online and download them into the `managed_components` folder.
@@ -46,11 +48,8 @@ If the dependency is added, you can check `idf_component.yml` for more detail. W
 ```
 idf.py set-target TARGET
 ```
-* Change value of `EXAMPLE_I2S_FORMAT` to check I2S driver's functionality on different I2S formats.
-* Change `EXAMPLE_ES7210_MIC_GAIN` and `EXAMPLE_ES7210_MIC_BIAS` according your MIC's specs if needed.
-* Change `EXAMPLE_ES7210_ADC_VOLUME` if recorded voice is too loud or too quite.
 
-Note: it's better to adjust `EXAMPLE_ES7210_MIC_GAIN` first. If adjusting MIC gain doesn't meet your demand, you can then adjust `EXAMPLE_ES7210_ADC_VOLUME`. That is to say, it's better to adjust analog gain than digital gain.
+The configuration macros are defined at the beginning of `main/i2s_es7210_record_example.c`, you can change the configuration macros according to your needs.
 
 ### Build and Flash
 
@@ -90,6 +89,63 @@ I (10401) example: Recording done! Flushing file buffer
 I (10431) gpio: GPIO[4]| InputEn: 1| OutputEn: 0| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0
 I (10431) example: You can now safely remove the card, recorded file is /RECORD.WAV
 ```
+
+## Application Notes
+
+TDM mode is widely used in multi-channel scenario. Some ADC/DAC (e.g., ES7210 and ES7243) that supports TDM can be cascaded to sample more channels synchronously.
+
+Take ES7210 for example, it is a 4-channel audio ADC that supports TDM. And we can chain upto four ES7210 to form a 16-channel recorder, meanwhile it only needs one I2S port.
+
+You can refer to the connection as follow:
+
+```
+┌───────────────┐
+│      ESP      │
+│               │
+│          MCLK ├───────────┬──────────────────────────────┬──────────────────────────────┬──────────────────────────────┐
+│               │           │                              │                              │                              │
+│          BCLK ├────────┬──┼───────────────────────────┬──┼───────────────────────────┬──┼───────────────────────────┐  │
+│               │        │  │                           │  │                           │  │                           │  │
+│            WS ├─────┬──┼──┼────────────────────────┬──┼──┼────────────────────────┬──┼──┼────────────────────────┐  │  │
+│               │     │  │  │                        │  │  │                        │  │  │                        │  │  │
+│          DOUT │     │  │  │    ┌───────────────┐   │  │  │    ┌───────────────┐   │  │  │    ┌───────────────┐   │  │  │    ┌───────────────┐
+│               │     │  │  │    │   ES7210_0    │   │  │  │    │   ES7210_1    │   │  │  │    │   ES7210_2    │   │  │  │    │   ES7210_3    │
+│           DIN │◄─┐  │  │  │    │               │   │  │  │    │               │   │  │  │    │               │   │  │  │    │               │
+└───────────────┘  │  │  │  └───►│ MCLK          │   │  │  └───►│ MCLK          │   │  │  └───►│ MCLK          │   │  │  └───►│ MCLK          │
+                   │  │  │       │               │   │  │       │               │   │  │       │               │   │  │       │               │
+                   │  │  └──────►│ SCLK          │   │  └──────►│ SCLK          │   │  └──────►│ SCLK          │   │  └──────►│ SCLK          │
+                   │  │          │               │   │          │               │   │          │               │   │          │               │
+                   │  └─────────►│ LRCK          │   └─────────►│ LRCK          │   └─────────►│ LRCK          │   └─────────►│ LRCK          │
+                   │             │               │              │               │              │               │              │               │
+                   └─────────────┤ TDMOUT        │   ┌──────────┤ TDMOUT        │   ┌──────────┤ TDMOUT        │   ┌──────────┤ TDMOUT        │
+                                 │               │   │          │               │   │          │               │   │          │               │
+                            ┌───►│ TDMIN         │   │     ┌───►│ TDMIN         │   │     ┌───►│ TDMIN         │   │          │ TDMIN         │
+                            │    │               │   │     │    │               │   │     │    │               │   │          │               │
+                            │    └───────────────┘   │     │    └───────────────┘   │     │    └───────────────┘   │          └───────────────┘
+                            │                        │     │                        │     │                        │
+                            └────────────────────────┘     └────────────────────────┘     └────────────────────────┘
+```
+
+### How A Frame Formed in This Cascaded Case
+
+Generally, all the ES7210 will send the data that sampled by itself at the beginning of a frame, and then catenate the backward ES7210 data behind. In another word, ES7210_0 will send the data in the order ES7210_0 -> ES7210_1 -> ES7210_2 -> ES7210_3.
+
+See the detailed steps as follows:
+
+1. First 4 channels of the 16 channels:
+    - ES7210_3 send data that sampled by itself to ES7210_2;
+    - ES7210_2 send data that sampled by itself to ES7210_1, store the data sent from ES7210_3;
+    - ES7210_1 send data that sampled by itself to ES7210_0, store the data sent from ES7210_2;
+    - ES7210_0 send data that sampled by itself to ESP, store the data sent from ES7210_1;
+2. Second 4 channels of the 16 channels:
+    - ES7210_2 send the stored data (i.e., sampled by ES7210_3) to ES7210_1;
+    - ES7210_1 send the stored data (i.e., sampled by ES7210_2) to ES7210_0, and store the data from ES7210_2 (i.e., sampled by ES7210_3);
+    - ES7210_0 send the stored data (i.e., sampled by ES7210_1) to ESP, and store the data sent from ES7210_1 (i.e., sampled by ES7210_2);
+3. Third 4 channels of the 16 channels:
+    - ES7210_1 send the stored data (i.e., sampled by ES7210_3) to ES7210_0;
+    - ES7210_0 send the stored data (i.e., sampled by ES7210_2) to ESP, and store the data from ES7210_1 (i.e., sampled by ES7210_3);
+4. Last 4 channels of the 16 channels:
+    - ES7210_0 send the stored data (i.e., sampled by ES7210_3) to ESP;
 
 ## Troubleshooting
 

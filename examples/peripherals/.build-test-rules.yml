@@ -10,25 +10,11 @@
 examples/peripherals/adc/continuous_read:
   disable:
     - if: SOC_ADC_DMA_SUPPORTED != 1
-  disable_test:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: lack of runners, TODO IDF-9573
-    - if: IDF_TARGET == "esp32c61"
-      temporary: true
-      reason: lack of runner
   <<: *adc_dependencies
 
 examples/peripherals/adc/oneshot_read:
   disable:
     - if: SOC_ADC_SUPPORTED != 1
-  disable_test:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: lack of runner, TODO IDF-9573
-    - if: IDF_TARGET == "esp32c61"
-      temporary: true
-      reason: lack of runner
   <<: *adc_dependencies
 
 examples/peripherals/analog_comparator:
@@ -38,7 +24,38 @@ examples/peripherals/analog_comparator:
     - esp_driver_gpio
     - esp_driver_ana_cmpr
 
-examples/peripherals/camera/camera_dsi:
+examples/peripherals/bitscrambler:
+  disable:
+    - if: SOC_BITSCRAMBLER_SUPPORTED != 1
+  depends_components:
+    - esp_driver_bitscrambler
+
+examples/peripherals/camera/dvp_dsi:
+  disable:
+    - if: SOC_LCDCAM_CAM_SUPPORTED != 1 or SOC_MIPI_DSI_SUPPORTED != 1
+  depends_components:
+    - esp_lcd
+    - esp_driver_cam
+
+examples/peripherals/camera/dvp_isp_dsi:
+  disable:
+    - if: SOC_ISP_DVP_SUPPORTED != 1 or SOC_MIPI_DSI_SUPPORTED != 1
+  depends_components:
+    - esp_lcd
+    - esp_driver_cam
+
+examples/peripherals/camera/dvp_spi_lcd:
+  disable:
+    - if: SOC_LCDCAM_CAM_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET == "esp32s3"
+      temporary: true
+      reason: lack of runners
+  depends_components:
+    - esp_lcd
+    - esp_driver_cam
+
+examples/peripherals/camera/mipi_isp_dsi:
   disable:
     - if: SOC_MIPI_CSI_SUPPORTED != 1 or SOC_MIPI_DSI_SUPPORTED != 1
   depends_components:
@@ -66,6 +83,13 @@ examples/peripherals/gpio:
 examples/peripherals/gpio/matrix_keyboard:
   enable:
     - if: IDF_TARGET == "esp32s2"
+
+examples/peripherals/h264:
+  enable:
+    - if: IDF_TARGET in ["esp32p4", "esp32s3"]
+      reason: only supports esp32p4 and esp32s3
+  depends_components:
+    - esp_h264
 
 examples/peripherals/i2c/i2c_basic:
   disable:
@@ -96,6 +120,25 @@ examples/peripherals/i2c/i2c_tools:
     - esp_driver_i2c
   depends_filepatterns:
     - examples/system/console/advanced/components/**/*
+
+examples/peripherals/i2c/i2c_u8g2:
+  disable:
+    - if: SOC_I2C_SUPPORTED != 1
+  depends_components:
+    - esp_driver_i2c
+  disable_test:
+    - if: IDF_TARGET not in ["esp32c3"]
+      temporary: true
+      reason: lack of runners
+
+examples/peripherals/i2s/i2s_advance/i2s_usb:
+  disable:
+    - if: SOC_I2S_SUPPORTED != 1
+    - if: SOC_I2C_SUPPORTED != 1
+    - if: SOC_USB_OTG_SUPPORTED != 1
+  depends_components:
+    - esp_driver_i2s
+    - esp_driver_i2c
 
 examples/peripherals/i2s/i2s_basic/i2s_pdm:
   disable:
@@ -144,6 +187,12 @@ examples/peripherals/i2s/i2s_recorder:
   depends_components:
     - esp_driver_spi
     - esp_driver_i2s
+
+examples/peripherals/i3c/i3c_i2c_basic:
+  disable:
+    - if: SOC_I3C_MASTER_SUPPORTED != 1
+  depends_components:
+    - esp_driver_i3c
 
 examples/peripherals/isp/multi_pipelines:
   disable:
@@ -234,9 +283,10 @@ examples/peripherals/mcpwm:
 
 examples/peripherals/mcpwm/mcpwm_bdc_speed_control:
   disable:
-    - if: SOC_MCPWM_SUPPORTED != 1
+    - if: SOC_MCPWM_SUPPORTED != 1 or SOC_PCNT_SUPPORTED != 1
   depends_components:
     - esp_driver_mcpwm
+    - esp_driver_pcnt
   disable_test:
     - if: IDF_TARGET != "esp32s3"
       temporary: true
@@ -289,6 +339,12 @@ examples/peripherals/parlio:
 examples/peripherals/parlio/parlio_rx:
   disable:
     - if: SOC_PARLIO_SUPPORTED != 1
+  depends_components:
+    - esp_driver_parlio
+
+examples/peripherals/parlio/parlio_tx/advanced_rgb_led_matrix:
+  disable:
+    - if: (SOC_PARLIO_SUPPORTED != 1 or SOC_PARLIO_TX_SUPPORT_LOOP_TRANSMISSION != 1) or SOC_PARLIO_TX_UNIT_MAX_DATA_WIDTH < 16
   depends_components:
     - esp_driver_parlio
 
@@ -423,64 +479,69 @@ examples/peripherals/timer_group/gptimer:
     - if: SOC_GPTIMER_SUPPORTED != 1
   depends_components:
     - esp_driver_gptimer
+    - esp_hal_timg
 
 examples/peripherals/timer_group/gptimer_capture_hc_sr04:
   disable:
-    - if: SOC_GPTIMER_SUPPORTED != 1 or SOC_TIMER_SUPPORT_ETM != 1
+    - if: SOC_ETM_SUPPORTED != 1 or SOC_TIMER_SUPPORT_ETM != 1
   depends_components:
     - esp_driver_gptimer
+    - esp_hal_timg
 
 examples/peripherals/timer_group/wiegand_interface:
   disable:
-    - if: SOC_GPTIMER_SUPPORTED != 1 or SOC_TIMER_GROUP_TOTAL_TIMERS < 2
+    - if: SOC_GPTIMER_SUPPORTED != 1 or IDF_TARGET in ["esp32c2"]
   depends_components:
     - esp_driver_gptimer
+    - esp_hal_timg
 
 examples/peripherals/touch_sensor:
   disable:
     - if: SOC_TOUCH_SENSOR_SUPPORTED != 1
 
-examples/peripherals/touch_sensor/touch_element:
-  enable:
-    - if: IDF_TARGET in ["esp32s2", "esp32s3"]
-      reason: only supports esp32s2 and esp32s3
-
 examples/peripherals/touch_sensor/touch_sens_basic:
   disable:
     - if: SOC_TOUCH_SENSOR_SUPPORTED != 1
-    - if: SOC_TOUCH_SENSOR_VERSION == 1
-      temporary: true
-      reason: not supported yet
   depends_components:
     - esp_driver_touch_sens
 
-examples/peripherals/touch_sensor/touch_sensor_v1:
+examples/peripherals/touch_sensor/touch_sens_sleep:
   disable:
-    - if: SOC_TOUCH_SENSOR_VERSION != 1
+    - if: SOC_TOUCH_SENSOR_SUPPORTED != 1 or SOC_PM_SUPPORT_TOUCH_SENSOR_WAKEUP != 1
+  depends_components:
+    - esp_driver_touch_sens
 
-examples/peripherals/twai/twai_alert_and_recovery:
+examples/peripherals/twai/cybergear:
   disable:
     - if: SOC_TWAI_SUPPORTED != 1
-  disable_test:
-    - if: IDF_TARGET not in ["esp32"]
-      temporary: true
-      reason: lack of runners
+  depends_components:
+    - esp_driver_twai
+
+examples/peripherals/twai/twai_error_recovery:
+  disable:
+    - if: SOC_TWAI_SUPPORTED != 1
+  depends_components:
+    - esp_driver_twai
 
 examples/peripherals/twai/twai_network:
   disable:
     - if: SOC_TWAI_SUPPORTED != 1
-  disable_test:
-    - if: 1 == 1
-      temporary: true
-      reason: Test is flakey, TODO IDF-2939
+  depends_components:
+    - esp_driver_twai
 
-examples/peripherals/twai/twai_self_test:
+examples/peripherals/twai/twai_utils:
   disable:
     - if: SOC_TWAI_SUPPORTED != 1
+  depends_components:
+    - esp_driver_twai
+
+examples/peripherals/uart/uart_dma_ota:
+  disable:
+    - if: SOC_UHCI_SUPPORTED != 1
   disable_test:
-    - if: IDF_TARGET not in ["esp32"]
+    - if: IDF_TARGET in ["esp32p4", "esp32c5"]
       temporary: true
-      reason: lack of runners
+      reason: Lack runners
 
 examples/peripherals/uart/uart_echo_rs485:
   enable:
@@ -494,7 +555,6 @@ examples/peripherals/usb/device:
       temporary: true
       reason: lack of runners with usb_device tag
   depends_components:
-    - usb
     - fatfs
   depends_filepatterns:
     - examples/peripherals/usb/device/**/*
@@ -507,7 +567,6 @@ examples/peripherals/usb/device/tusb_ncm:
       temporary: true
       reason: lack of runners with usb_device tag
   depends_components:
-    - usb
     - esp_wifi
   depends_filepatterns:
     - examples/peripherals/usb/device/tusb_ncm/**/*
@@ -520,7 +579,6 @@ examples/peripherals/usb/host:
       temporary: true
       reason: lack of runners with usb_host_flash_disk tag
   depends_components:
-    - usb
     - fatfs
   depends_filepatterns:
     - components/hal/usb*.c
@@ -530,6 +588,8 @@ examples/peripherals/usb/host:
     - components/soc/include/soc/usb*.h
     - components/soc/esp32*/include/soc/usb_dwc_*.h
     - components/soc/esp32*/include/soc/usb_wrap_*.h
+    - components/esp_hw_support/usb_phy/usb_phy.c
+    - components/esp_hw_support/include/esp_private/usb_phy.h
     - examples/peripherals/usb/host/**/*
 
 examples/peripherals/usb_serial_jtag/usb_serial_jtag_echo:

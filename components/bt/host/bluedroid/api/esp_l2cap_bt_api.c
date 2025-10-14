@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -116,16 +116,39 @@ esp_err_t esp_bt_l2cap_stop_srv(uint16_t local_psm)
 
 esp_err_t esp_bt_l2cap_vfs_register(void)
 {
+    btc_msg_t msg;
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
-    return btc_l2cap_vfs_register();
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_L2CAP;
+    msg.act = BTC_L2CAP_ACT_VFS_REGISTER;
+
+    return (btc_transfer_context(&msg, NULL, 0, NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 esp_err_t esp_bt_l2cap_vfs_unregister(void)
 {
+    btc_msg_t msg;
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
-    return btc_l2cap_vfs_unregister();
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_L2CAP;
+    msg.act = BTC_L2CAP_ACT_VFS_UNREGISTER;
+
+    return (btc_transfer_context(&msg, NULL, 0, NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+
+esp_err_t esp_bt_l2cap_get_protocol_status(esp_bt_l2cap_protocol_status_t *status)
+{
+    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+    if (status == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    memset(status, 0, sizeof(esp_bt_l2cap_protocol_status_t));
+    btc_l2cap_get_protocol_status(status);
+
+    return ESP_OK;
 }
 
 #endif ///defined BTC_L2CAP_INCLUDED && BTC_L2CAP_INCLUDED == TRUE

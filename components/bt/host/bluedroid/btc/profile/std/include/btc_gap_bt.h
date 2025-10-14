@@ -13,6 +13,7 @@
 #include "esp_gap_bt_api.h"
 #include "btc/btc_task.h"
 #include "bta/utl.h"
+#include "bta/bta_api.h"
 
 #if (BTC_GAP_BT_INCLUDED == TRUE)
 typedef enum {
@@ -192,8 +193,12 @@ void btc_gap_bt_cb_handler(btc_msg_t *msg);
 void btc_gap_bt_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src);
 void btc_gap_bt_arg_deep_free(btc_msg_t *msg);
 void btc_gap_bt_busy_level_updated(uint8_t bl_flags);
+void btc_gap_bt_init(void);
+void btc_gap_bt_deinit(void);
+void btc_gap_bt_acl_link_num_update(tBTA_DM_ACL_LINK_STAT *p_acl_link_stat);
 
 esp_err_t btc_gap_bt_get_cod(esp_bt_cod_t *cod);
+void btc_gap_bt_status_get(esp_bt_gap_profile_status_t *param);
 #endif /* #if BTC_GAP_BT_INCLUDED */
 
 #endif /* __BTC_GAP_BT_H__ */

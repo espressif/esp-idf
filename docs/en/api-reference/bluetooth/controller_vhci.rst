@@ -1,5 +1,7 @@
-Controller && VHCI
-==================
+Controller & HCI
+==================================================
+
+:link_to_translation:`zh_CN:[中文]`
 
 .. only:: esp32 or esp32c3 or esp32s3
 
@@ -22,3 +24,9 @@ API Reference
 -------------
 
 .. include-build-file:: inc/esp_bt.inc
+
+
+HCI Vendor-specific (VS) Commands
+--------------------------------------
+
+Espressif's HCI VS commands are exclusively designed for use with Espressif's Bluetooth Host stack or internal debugging purposes. Application developers **should not** initialize or invoke these VS commands in their applications. Please refer to :doc:`bt_vhci` for detailed information.

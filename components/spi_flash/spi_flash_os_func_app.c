@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -90,13 +90,13 @@ static IRAM_ATTR esp_err_t release_spi_bus_lock(void *arg)
     return spi_bus_lock_acquire_end(((app_func_arg_t *)arg)->dev_lock);
 }
 
-static IRAM_ATTR esp_err_t spi23_start(void *arg){
+static esp_err_t spi23_start(void *arg){
     esp_err_t ret = acquire_spi_bus_lock(arg);
     on_spi_acquired((app_func_arg_t*)arg);
     return ret;
 }
 
-static IRAM_ATTR esp_err_t spi23_end(void *arg){
+static esp_err_t spi23_end(void *arg){
     esp_err_t ret = release_spi_bus_lock(arg);
     on_spi_released((app_func_arg_t*)arg);
     return ret;
@@ -170,7 +170,7 @@ static IRAM_ATTR esp_err_t spi1_end(void *arg)
     return ret;
 }
 
-static IRAM_ATTR esp_err_t spi_flash_os_check_yield(void *arg, uint32_t chip_status, uint32_t* out_request)
+static esp_err_t spi_flash_os_check_yield(void *arg, uint32_t chip_status, uint32_t* out_request)
 {
     assert (chip_status == 0);  //TODO: support suspend
     esp_err_t ret = ESP_ERR_TIMEOUT;    //Nothing happened
@@ -186,7 +186,7 @@ static IRAM_ATTR esp_err_t spi_flash_os_check_yield(void *arg, uint32_t chip_sta
     return ret;
 }
 
-static IRAM_ATTR esp_err_t spi_flash_os_yield(void *arg, uint32_t* out_status)
+static esp_err_t spi_flash_os_yield(void *arg, uint32_t* out_status)
 {
     if (likely(xTaskGetSchedulerState() == taskSCHEDULER_RUNNING)) {
 #ifdef CONFIG_SPI_FLASH_ERASE_YIELD_TICKS
@@ -199,13 +199,13 @@ static IRAM_ATTR esp_err_t spi_flash_os_yield(void *arg, uint32_t* out_status)
     return ESP_OK;
 }
 
-static IRAM_ATTR esp_err_t delay_us(void *arg, uint32_t us)
+static esp_err_t delay_us(void *arg, uint32_t us)
 {
     esp_rom_delay_us(us);
     return ESP_OK;
 }
 
-static IRAM_ATTR void* get_buffer_malloc(void* arg, size_t reqest_size, size_t* out_size)
+static void* get_buffer_malloc(void* arg, size_t reqest_size, size_t* out_size)
 {
     /* Allocate temporary internal buffer to use for the actual read. If the preferred size
         doesn't fit in free internal memory, allocate the largest available free block.
@@ -226,12 +226,12 @@ static IRAM_ATTR void* get_buffer_malloc(void* arg, size_t reqest_size, size_t* 
     return ret;
 }
 
-static IRAM_ATTR void release_buffer_malloc(void* arg, void *temp_buf)
+static void release_buffer_malloc(void* arg, void *temp_buf)
 {
     free(temp_buf);
 }
 
-static IRAM_ATTR esp_err_t main_flash_region_protected(void* arg, size_t start_addr, size_t size)
+static esp_err_t main_flash_region_protected(void* arg, size_t start_addr, size_t size)
 {
     if (!esp_partition_is_flash_region_writable(start_addr, size)) {
         return ESP_ERR_NOT_ALLOWED;
@@ -247,7 +247,7 @@ static IRAM_ATTR esp_err_t main_flash_region_protected(void* arg, size_t start_a
     return ESP_OK;
 }
 
-static IRAM_ATTR void main_flash_op_status(uint32_t op_status)
+static void main_flash_op_status(uint32_t op_status)
 {
     bool is_erasing = op_status & SPI_FLASH_OS_IS_ERASING_STATUS_FLAG;
     spi_flash_set_erasing_flag(is_erasing);

@@ -1,10 +1,9 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef nvs_flash_h
-#define nvs_flash_h
+#pragma once
 
 #ifdef __cplusplus
 extern "C" {
@@ -279,6 +278,13 @@ esp_err_t nvs_flash_read_security_cfg(const esp_partition_t* partition, nvs_sec_
 esp_err_t nvs_flash_register_security_scheme(nvs_sec_scheme_t *scheme_cfg);
 
 /**
+ * @brief Deregister the security scheme previously registered using
+ *        nvs_flash_register_security_scheme
+ *
+ */
+void nvs_flash_deregister_security_scheme(void);
+
+/**
  * @brief   Fetch the configuration structure for the default active
  *          security scheme for NVS encryption
  *
@@ -318,6 +324,3 @@ esp_err_t nvs_flash_read_security_cfg_v2(nvs_sec_scheme_t *scheme_cfg, nvs_sec_c
 #ifdef __cplusplus
 }
 #endif
-
-
-#endif /* nvs_flash_h */

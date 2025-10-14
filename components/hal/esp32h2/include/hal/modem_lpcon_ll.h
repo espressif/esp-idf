@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -97,12 +97,6 @@ static inline void modem_lpcon_ll_reset_all(modem_lpcon_dev_t *hw)
 {
     hw->rst_conf.val = 0xf;
     hw->rst_conf.val = 0;
-}
-
-__attribute__((always_inline))
-static inline uint32_t modem_lpcon_ll_get_date(modem_lpcon_dev_t *hw)
-{
-    return hw->date.val;
 }
 
 #ifdef __cplusplus

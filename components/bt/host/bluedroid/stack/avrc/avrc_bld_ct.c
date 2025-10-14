@@ -50,7 +50,7 @@ static tAVRC_STS avrc_bld_next_cmd (tAVRC_NEXT_CMD *p_cmd, BT_HDR *p_pkt)
     p_start = (UINT8 *)(p_pkt + 1) + p_pkt->offset;
     p_data = p_start + 2; /* pdu + rsvd */
 
-    /* add fixed lenth 1 - pdu_id (1) */
+    /* add fixed length 1 - pdu_id (1) */
     UINT16_TO_BE_STREAM(p_data, 1);
     UINT8_TO_BE_STREAM(p_data, p_cmd->target_pdu);
     p_pkt->len = (p_data - p_start);
@@ -81,7 +81,7 @@ static tAVRC_STS avrc_bld_set_abs_volume_cmd (tAVRC_SET_VOLUME_CMD *p_cmd, BT_HD
     /* get the existing length, if any, and also the num attributes */
     p_start = (UINT8 *)(p_pkt + 1) + p_pkt->offset;
     p_data = p_start + 2; /* pdu + rsvd */
-    /* add fixed lenth 1 - volume (1) */
+    /* add fixed length 1 - volume (1) */
     UINT16_TO_BE_STREAM(p_data, 1);
     UINT8_TO_BE_STREAM(p_data, (AVRC_MAX_VOLUME & p_cmd->volume));
     p_pkt->len = (p_data - p_start);
@@ -163,7 +163,7 @@ static BT_HDR *avrc_bld_init_cmd_buffer(tAVRC_COMMAND *p_cmd)
             /* reserved 0, packet_type 0 */
             UINT8_TO_BE_STREAM(p_data, 0);
             /* continue to the next "case to add length */
-            /* add fixed lenth - 0 */
+            /* add fixed length - 0 */
             UINT16_TO_BE_STREAM(p_data, 0);
             break;
         }
@@ -233,6 +233,20 @@ static tAVRC_STS avrc_bld_get_element_attr_cmd (tAVRC_GET_ELEM_ATTRS_CMD *p_cmd,
         UINT32_TO_BE_STREAM(p_data, p_cmd->attrs[i]);
     }
 
+    p_pkt->len = (p_data - p_start);
+    return AVRC_STS_NO_ERROR;
+}
+
+static tAVRC_STS avrc_bld_get_play_status_cmd(tAVRC_CMD *p_cmd, BT_HDR *p_pkt)
+{
+    UINT8   *p_data, *p_start;
+
+    AVRC_TRACE_API("avrc_bld_get_play_status");
+    /* get the existing length */
+    p_start = (UINT8 *)(p_pkt + 1) + p_pkt->offset;
+    p_data = p_start + 2; /* pdu + rsvd */
+    /* add parameter length 0 */
+    UINT16_TO_BE_STREAM(p_data, 0);
     p_pkt->len = (p_data - p_start);
     return AVRC_STS_NO_ERROR;
 }
@@ -307,6 +321,10 @@ tAVRC_STS AVRC_BldCommand( tAVRC_COMMAND *p_cmd, BT_HDR **pp_pkt)
 
     case AVRC_PDU_GET_ELEMENT_ATTR:         /* 0x20 */
         status = avrc_bld_get_element_attr_cmd(&p_cmd->get_elem_attrs, p_pkt);
+        break;
+
+    case AVRC_PDU_GET_PLAY_STATUS:          /* 0x30 */
+        status = avrc_bld_get_play_status_cmd(&p_cmd->get_play_status, p_pkt);
         break;
 
     case AVRC_PDU_REGISTER_NOTIFICATION:      /* 0x31 */

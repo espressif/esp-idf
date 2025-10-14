@@ -5,6 +5,10 @@ components/mbedtls/test_apps:
     - if: CONFIG_NAME == "psram" and SOC_SPIRAM_SUPPORTED != 1
     - if: CONFIG_NAME == "psram_all_ext" and SOC_SPIRAM_SUPPORTED != 1
     - if: CONFIG_NAME == "ecdsa_sign" and SOC_ECDSA_SUPPORTED != 1
+    - if: CONFIG_NAME == "psram_all_ext_flash_enc" and SOC_SPIRAM_SUPPORTED != 1
+  disable_test:
+    - if: CONFIG_NAME == "psram_all_ext_flash_enc" and IDF_TARGET not in ["esp32"]
+      reason: lack of runners
   depends_components:
     - efuse
     - mbedtls

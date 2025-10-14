@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -193,8 +193,8 @@ TEST_CASE("ULP FSM light-sleep wakeup test", "[ulp]")
     TEST_ASSERT(esp_light_sleep_start() == ESP_OK);
 
     /* Wait for wakeup from ULP FSM Coprocessor */
-    printf("cause %d\r\n", esp_sleep_get_wakeup_cause());
-    TEST_ASSERT(esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_ULP);
+    printf("causes %lx\r\n", esp_sleep_get_wakeup_causes());
+    TEST_ASSERT(esp_sleep_get_wakeup_causes() & BIT(ESP_SLEEP_WAKEUP_ULP));
 }
 
 static void ulp_fsm_deepsleep_wakeup_test(void)
@@ -239,8 +239,8 @@ static void ulp_fsm_deepsleep_wakeup_test(void)
 static void check_sleep_reset(void)
 {
     TEST_ASSERT_EQUAL(ESP_RST_DEEPSLEEP, esp_reset_reason());
-    esp_sleep_wakeup_cause_t cause = esp_sleep_get_wakeup_cause();
-    TEST_ASSERT_EQUAL(ESP_SLEEP_WAKEUP_ULP, cause);
+    uint32_t causes = esp_sleep_get_wakeup_causes();
+    TEST_ASSERT_EQUAL(BIT(ESP_SLEEP_WAKEUP_ULP), causes & BIT(ESP_SLEEP_WAKEUP_ULP));
 }
 
 TEST_CASE_MULTIPLE_STAGES("ULP FSM deep-sleep wakeup test", "[deepsleep][reset=DEEPSLEEP_RESET]",

@@ -64,6 +64,7 @@ const lcd_rgb_signal_conn_t lcd_periph_rgb_signals = {
             .vsync_sig = LCD_V_SYNC_IDX,
             .pclk_sig = LCD_PCLK_IDX,
             .de_sig = LCD_H_ENABLE_IDX,
+            .disp_sig = SIG_GPIO_OUT_IDX,
         }
     }
 };

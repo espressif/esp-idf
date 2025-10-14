@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -367,6 +367,83 @@
 #endif
 #define OPENTHREAD_CONFIG_MAC_MAX_CSMA_BACKOFFS_DIRECT CONFIG_OPENTHREAD_MAC_MAX_CSMA_BACKOFFS_DIRECT
 
+/**
+ * @def OPENTHREAD_CONFIG_BORDER_AGENT_ENABLE
+ *
+ * Define to 1 to enable Border Agent support.
+ *
+ */
+#ifdef OPENTHREAD_CONFIG_BORDER_AGENT_ENABLE
+#error `OPENTHREAD_CONFIG_BORDER_AGENT_ENABLE` is redefined.
+#endif
+#if CONFIG_OPENTHREAD_BORDER_AGENT_ENABLE
+#define OPENTHREAD_CONFIG_BORDER_AGENT_ENABLE 1
+#else
+#define OPENTHREAD_CONFIG_BORDER_AGENT_ENABLE 0
+#endif
+
+/**
+ * @def OPENTHREAD_CONFIG_PARENT_SEARCH_CHECK_INTERVAL
+ *
+ * Specifies the interval in seconds for a child to check the trigger condition to perform a parent search.
+ *
+ * Applicable only if periodic parent search feature is enabled (see `OPENTHREAD_CONFIG_PARENT_SEARCH_ENABLE`).
+ */
+#ifdef OPENTHREAD_CONFIG_PARENT_SEARCH_CHECK_INTERVAL
+#error `OPENTHREAD_CONFIG_PARENT_SEARCH_CHECK_INTERVAL` is redefined.
+#endif
+#define OPENTHREAD_CONFIG_PARENT_SEARCH_CHECK_INTERVAL CONFIG_OPENTHREAD_PARENT_SEARCH_CHECK_INTERVAL_MINS * 60
+
+/**
+ * @def OPENTHREAD_CONFIG_PARENT_SEARCH_BACKOFF_INTERVAL
+ *
+ * Specifies the backoff interval in seconds for a child to not perform a parent search after triggering one. This is
+ * used when device is an MTD child.
+ *
+ * Applicable only if periodic parent search feature is enabled (see `OPENTHREAD_CONFIG_PARENT_SEARCH_ENABLE`).
+ */
+#ifdef OPENTHREAD_CONFIG_PARENT_SEARCH_BACKOFF_INTERVAL
+#error `OPENTHREAD_CONFIG_PARENT_SEARCH_BACKOFF_INTERVAL` is redefined.
+#endif
+#define OPENTHREAD_CONFIG_PARENT_SEARCH_BACKOFF_INTERVAL CONFIG_OPENTHREAD_PARENT_SEARCH_BACKOFF_INTERVAL_MINS * 60
+
+/**
+ * @def OPENTHREAD_CONFIG_PARENT_SEARCH_RSS_THRESHOLD
+ *
+ * Specifies the RSS threshold used to trigger a parent search.
+ *
+ * Applicable only if periodic parent search feature is enabled (see `OPENTHREAD_CONFIG_PARENT_SEARCH_ENABLE`).
+ */
+#ifdef OPENTHREAD_CONFIG_PARENT_SEARCH_RSS_THRESHOLD
+#error `OPENTHREAD_CONFIG_PARENT_SEARCH_RSS_THRESHOLD` is redefined.
+#endif
+#define OPENTHREAD_CONFIG_PARENT_SEARCH_RSS_THRESHOLD CONFIG_OPENTHREAD_PARENT_SEARCH_RSS_THRESHOLD
+
+/**
+ * @def OPENTHREAD_CONFIG_PARENT_SEARCH_RESELECT_TIMEOUT
+ *
+ * Specifies parent reselect timeout duration in seconds used on FTD child devices. When an attach attempt to a
+ * neighboring router selected as a potential new parent fails, the same router cannot be selected again until this
+ * timeout expires.
+ *
+ * Applicable only if periodic parent search feature is enabled (see `OPENTHREAD_CONFIG_PARENT_SEARCH_ENABLE`).
+ */
+#ifdef OPENTHREAD_CONFIG_PARENT_SEARCH_RESELECT_TIMEOUT
+#error `OPENTHREAD_CONFIG_PARENT_SEARCH_RESELECT_TIMEOUT` is redefined.
+#endif
+#define OPENTHREAD_CONFIG_PARENT_SEARCH_RESELECT_TIMEOUT CONFIG_OPENTHREAD_PARENT_SEARCH_RESELECT_TIMEOUT_MINS * 60
+
+/**
+ * @def OPENTHREAD_CONFIG_PARENT_SEARCH_RSS_MARGIN
+ *
+ * Specifies the RSS margin over the current parent RSS for allowing selection of a neighboring router as a potential
+ * new parent to attach to. Used on FTD child devices.
+ */
+#ifdef OPENTHREAD_CONFIG_PARENT_SEARCH_RSS_MARGIN
+#error `OPENTHREAD_CONFIG_PARENT_SEARCH_RSS_MARGIN` is redefined.
+#endif
+#define OPENTHREAD_CONFIG_PARENT_SEARCH_RSS_MARGIN CONFIG_OPENTHREAD_PARENT_SEARCH_RSS_MARGIN
+
 /*----The following options set fixed default values but can be overridden by the user header file.----*/
 
 #if CONFIG_OPENTHREAD_BORDER_ROUTER
@@ -431,6 +508,25 @@
 #endif
 
 /**
+ * @def OPENTHREAD_CONFIG_DNSSD_SERVER_BIND_UNSPECIFIED_NETIF
+ *
+ * Define to 1 to bind DNS-SD server to unspecified interface, 0 to bind to Thread interface.
+ */
+#ifndef OPENTHREAD_CONFIG_DNSSD_SERVER_BIND_UNSPECIFIED_NETIF
+#define OPENTHREAD_CONFIG_DNSSD_SERVER_BIND_UNSPECIFIED_NETIF 1
+#endif
+
+/**
+ * @def OPENTHREAD_CONFIG_DNS_UPSTREAM_QUERY_ENABLE
+ *
+ * Define to 1 to enable upstream forwarding support.
+ *
+ */
+#ifndef OPENTHREAD_CONFIG_DNS_UPSTREAM_QUERY_ENABLE
+#define OPENTHREAD_CONFIG_DNS_UPSTREAM_QUERY_ENABLE 1
+#endif
+
+/**
  * @def OPENTHREAD_CONFIG_BACKBONE_ROUTER_ENABLE
  *
  * Define to 1 to enable Backbone Router support.
@@ -451,17 +547,7 @@
 #define OPENTHREAD_CONFIG_BORDER_ROUTER_ENABLE 1
 #endif
 
-/**
- * @def OPENTHREAD_CONFIG_BORDER_AGENT_ENABLE
- *
- * Define to 1 to enable Border Agent support.
- *
- */
-#ifndef OPENTHREAD_CONFIG_BORDER_AGENT_ENABLE
-#define OPENTHREAD_CONFIG_BORDER_AGENT_ENABLE 1
-#endif
-
-#if !CONFIG_OPENTHREAD_RADIO_NATIVE
+#if (CONFIG_OPENTHREAD_RADIO_SPINEL_UART || CONFIG_OPENTHREAD_RADIO_SPINEL_SPI)
 /**
  * @def OPENTHREAD_SPINEL_CONFIG_COMPATIBILITY_ERROR_CALLBACK_ENABLE
  *
@@ -493,7 +579,17 @@
 #ifndef OPENTHREAD_POSIX_CONFIG_RCP_TIME_SYNC_INTERVAL
 #define OPENTHREAD_POSIX_CONFIG_RCP_TIME_SYNC_INTERVAL (60 * 1000 * 1000)
 #endif
-#endif // !CONFIG_OPENTHREAD_RADIO_NATIVE
+
+/**
+ * @def OPENTHREAD_SPINEL_CONFIG_COPROCESSOR_RESET_FAILURE_CALLBACK_ENABLE
+ *
+ * Enables co-processor reset failure callback in Spinel driver
+ */
+#ifndef OPENTHREAD_SPINEL_CONFIG_COPROCESSOR_RESET_FAILURE_CALLBACK_ENABLE
+#define OPENTHREAD_SPINEL_CONFIG_COPROCESSOR_RESET_FAILURE_CALLBACK_ENABLE 1
+#endif
+
+#endif // CONFIG_OPENTHREAD_RADIO_SPINEL_UART || CONFIG_OPENTHREAD_RADIO_SPINEL_SPI
 
 #if CONFIG_OPENTHREAD_LINK_METRICS
 /**
@@ -725,11 +821,21 @@
 /**
  * @def OPENTHREAD_CONFIG_MAC_CSL_REQUEST_AHEAD_US
  *
- * Define as 1 to set the ahead time for CSL transmit timing.
+ * Define how many microseconds ahead should MAC deliver CSL frame to SubMac.
  *
  */
 #ifndef OPENTHREAD_CONFIG_MAC_CSL_REQUEST_AHEAD_US
-#define OPENTHREAD_CONFIG_MAC_CSL_REQUEST_AHEAD_US 20000
+#define OPENTHREAD_CONFIG_MAC_CSL_REQUEST_AHEAD_US (2 * 1000000 / CONFIG_FREERTOS_HZ)
+#endif
+
+/**
+ * @def OPENTHREAD_CONFIG_CSL_RECEIVE_TIME_AHEAD
+ *
+ * Reception scheduling and ramp up time needed for the CSL receiver to be ready, in units of microseconds.
+ *
+ */
+#ifndef OPENTHREAD_CONFIG_CSL_RECEIVE_TIME_AHEAD
+#define OPENTHREAD_CONFIG_CSL_RECEIVE_TIME_AHEAD (OPENTHREAD_CONFIG_MAC_CSL_REQUEST_AHEAD_US + 320)
 #endif
 
 /**

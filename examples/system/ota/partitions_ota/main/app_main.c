@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -14,6 +14,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_system.h"
+#include "esp_check.h"
 #include "esp_event.h"
 #include "esp_log.h"
 #include "esp_ota_ops.h"
@@ -27,7 +28,10 @@
 #include "esp_flash.h"
 #include "esp_flash_partitions.h"
 #include "esp_partition.h"
-
+#include "soc/soc_caps.h"
+#if SOC_RECOVERY_BOOTLOADER_SUPPORTED
+#include "esp_efuse.h"
+#endif
 #include "nvs.h"
 #include "nvs_flash.h"
 #include "protocol_examples_common.h"
@@ -68,6 +72,9 @@ esp_err_t _http_event_handler(esp_http_client_event_t *evt)
     case HTTP_EVENT_ON_HEADER:
         ESP_LOGD(TAG, "HTTP_EVENT_ON_HEADER, key=%s, value=%s", evt->header_key, evt->header_value);
         break;
+    case HTTP_EVENT_ON_HEADERS_COMPLETE:
+        ESP_LOGD(TAG, "HTTP_EVENT_ON_HEADERS_COMPLETE");
+        break;
     case HTTP_EVENT_ON_DATA:
         ESP_LOGD(TAG, "HTTP_EVENT_ON_DATA, len=%d", evt->data_len);
         break;
@@ -79,6 +86,8 @@ esp_err_t _http_event_handler(esp_http_client_event_t *evt)
         break;
     case HTTP_EVENT_REDIRECT:
         ESP_LOGD(TAG, "HTTP_EVENT_REDIRECT");
+        break;
+    default:
         break;
     }
     return ESP_OK;
@@ -99,6 +108,67 @@ static esp_err_t register_partition(size_t offset, size_t size, const char *labe
     return ESP_OK;
 }
 
+#if CONFIG_BOOTLOADER_RECOVERY_ENABLE
+static esp_err_t safe_bootloader_ota_update(esp_https_ota_config_t *ota_config)
+{
+    const esp_partition_t *primary_bootloader;
+    const esp_partition_t *recovery_bootloader;
+    ESP_ERROR_CHECK(register_partition(ESP_PRIMARY_BOOTLOADER_OFFSET, ESP_BOOTLOADER_SIZE, "PrimaryBTLDR", ESP_PARTITION_TYPE_BOOTLOADER, ESP_PARTITION_SUBTYPE_BOOTLOADER_PRIMARY, &primary_bootloader));
+    ESP_ERROR_CHECK(register_partition(CONFIG_BOOTLOADER_RECOVERY_OFFSET, ESP_BOOTLOADER_SIZE, "RecoveryBTLDR", ESP_PARTITION_TYPE_BOOTLOADER, ESP_PARTITION_SUBTYPE_BOOTLOADER_RECOVERY, &recovery_bootloader));
+    ESP_RETURN_ON_FALSE(recovery_bootloader->address == CONFIG_BOOTLOADER_RECOVERY_OFFSET, ESP_FAIL, TAG,
+        "The partition table contains <%s> (0x%08" PRIx32 "), which does not match the efuse recovery address (0x%08" PRIx32 ")", recovery_bootloader->label, recovery_bootloader->address, CONFIG_BOOTLOADER_RECOVERY_OFFSET);
+    // Since the recovery boot partition is registered successfully, we are sure that the flash memory size is enough to store it.
+    ESP_ERROR_CHECK(esp_efuse_set_recovery_bootloader_offset(CONFIG_BOOTLOADER_RECOVERY_OFFSET));
+
+    ESP_LOGI(TAG, "Backup, copy <%s> -> <%s>", primary_bootloader->label, recovery_bootloader->label);
+    ESP_ERROR_CHECK(esp_partition_copy(recovery_bootloader, 0, primary_bootloader, 0, primary_bootloader->size));
+
+    ota_config->partition.staging = primary_bootloader;
+    esp_err_t ret = esp_https_ota(ota_config);
+    if (ret == ESP_OK) {
+        // If the recovery_bootloader or primary_bootloader already exists in the partition table on flash, it will not be deregistered, and the function will return an error.
+        esp_partition_deregister_external(recovery_bootloader);
+        esp_partition_deregister_external(primary_bootloader);
+    }
+    return ret;
+}
+#else // !CONFIG_BOOTLOADER_RECOVERY_ENABLE
+
+static esp_err_t unsafe_bootloader_ota_update(esp_https_ota_config_t *ota_config)
+{
+    const esp_partition_t *primary_bootloader;
+    ESP_ERROR_CHECK(register_partition(ESP_PRIMARY_BOOTLOADER_OFFSET, ESP_BOOTLOADER_SIZE, "PrimaryBTLDR", ESP_PARTITION_TYPE_BOOTLOADER, ESP_PARTITION_SUBTYPE_BOOTLOADER_PRIMARY, &primary_bootloader));
+    const esp_partition_t *ota_partition = esp_ota_get_next_update_partition(NULL); // free app ota partition will be used for downloading a new image
+#if CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE
+    // Check if the passive OTA app partition is not needed for rollback before using it for other partitions.
+    // The same can be done for partition table and storage updates.
+    esp_ota_img_states_t ota_state;
+    ESP_ERROR_CHECK(esp_ota_get_state_partition(ota_partition, &ota_state));
+    if (ota_state == ESP_OTA_IMG_VALID) {
+        ESP_LOGW(TAG, "Passive OTA app partition <%s> contains a valid app image eligible for rollback.", ota_partition->label);
+        uint32_t ota_bootloader_offset;
+        ESP_ERROR_CHECK(partition_utils_find_unallocated(NULL, ESP_BOOTLOADER_SIZE, ESP_PARTITION_TABLE_OFFSET + ESP_PARTITION_TABLE_SIZE, &ota_bootloader_offset, NULL));
+        ESP_ERROR_CHECK(register_partition(ota_bootloader_offset, ESP_BOOTLOADER_SIZE, "OtaBTLDR", ESP_PARTITION_TYPE_BOOTLOADER, ESP_PARTITION_SUBTYPE_BOOTLOADER_OTA, &ota_partition));
+        ESP_LOGW(TAG, "To avoid overwriting the passive app partition, using the unallocated space on the flash to create a temporary OTA bootloader partition <%s>", ota_partition->label);
+    }
+#endif
+    ota_config->partition.staging = ota_partition;
+    ota_config->partition.final = primary_bootloader;
+    esp_err_t ret = esp_https_ota(ota_config);
+    if (ret == ESP_OK) {
+        ESP_LOGW(TAG, "Ensure stable power supply! Loss of power at this stage leads to a chip bricking");
+        ESP_LOGI(TAG, "Copy from <%s> staging partition to <%s>...", ota_partition->label, primary_bootloader->label);
+        ret = esp_partition_copy(primary_bootloader, 0, ota_partition, 0, primary_bootloader->size);
+        if (ret != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to copy partition to Primary bootloader (err=0x%x). Bootloader likely corrupted. Device will not be able to boot again!", ret);
+        }
+        // If the primary_bootloader already exists in the partition table on flash, it will not be deregistered, and the function will return an error.
+        esp_partition_deregister_external(primary_bootloader);
+    }
+    return ret;
+}
+#endif // !CONFIG_BOOTLOADER_RECOVERY_ENABLE
+
 static esp_err_t ota_update_partitions(esp_https_ota_config_t *ota_config)
 {
     esp_err_t ret = ESP_ERR_NOT_SUPPORTED;
@@ -106,35 +176,16 @@ static esp_err_t ota_update_partitions(esp_https_ota_config_t *ota_config)
         ret = esp_https_ota(ota_config);
 
     } else if (strstr(ota_config->http_config->url, "bootloader.bin") != NULL) {
-        const esp_partition_t *primary_bootloader;
-        ESP_ERROR_CHECK(register_partition(ESP_PRIMARY_BOOTLOADER_OFFSET, ESP_BOOTLOADER_SIZE, "PrimaryBTLDR", ESP_PARTITION_TYPE_BOOTLOADER, ESP_PARTITION_SUBTYPE_BOOTLOADER_PRIMARY, &primary_bootloader));
-        const esp_partition_t *ota_partition = esp_ota_get_next_update_partition(NULL); // free app ota partition will be used for downloading a new image
-#if CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE
-        // Check if the passive OTA app partition is not needed for rollback before using it for other partitions.
-        // The same can be done for partition table and storage updates.
-        esp_ota_img_states_t ota_state;
-        ESP_ERROR_CHECK(esp_ota_get_state_partition(ota_partition, &ota_state));
-        if (ota_state == ESP_OTA_IMG_VALID) {
-            ESP_LOGW(TAG, "Passive OTA app partition <%s> contains a valid app image eligible for rollback.", ota_partition->label);
-            uint32_t ota_bootloader_offset;
-            ESP_ERROR_CHECK(partition_utils_find_unallocated(NULL, ESP_BOOTLOADER_SIZE, ESP_PARTITION_TABLE_OFFSET + ESP_PARTITION_TABLE_SIZE, &ota_bootloader_offset, NULL));
-            ESP_ERROR_CHECK(register_partition(ota_bootloader_offset, ESP_BOOTLOADER_SIZE, "OtaBTLDR", ESP_PARTITION_TYPE_BOOTLOADER, ESP_PARTITION_SUBTYPE_BOOTLOADER_OTA, &ota_partition));
-            ESP_LOGW(TAG, "To avoid overwriting the passive app partition, using the unallocated space on the flash to create a temporary OTA bootloader partition <%s>", ota_partition->label);
-        }
+#if CONFIG_BOOTLOADER_RECOVERY_ENABLE
+        ESP_LOGI(TAG, "Safe OTA bootloader update: This chip version supports the recovery bootloader feature.");
+        ESP_LOGI(TAG, "If a failure or power loss occurs during the update, the recovery bootloader will be used.");
+        ESP_LOGI(TAG, "The recovery bootloader contains a backup of the original bootloader created before the OTA update.");
+        ret = safe_bootloader_ota_update(ota_config);
+#else
+        ESP_LOGW(TAG, "Unsafe OTA bootloader update: This chip version does not support the recovery bootloader feature.");
+        ESP_LOGW(TAG, "If a failure or power loss occurs during the final copy, the chip may become unbootable.");
+        ret = unsafe_bootloader_ota_update(ota_config);
 #endif
-        ota_config->partition.staging = ota_partition;
-        ota_config->partition.final = primary_bootloader;
-        ret = esp_https_ota(ota_config);
-        if (ret == ESP_OK) {
-            ESP_LOGW(TAG, "Ensure stable power supply! Loss of power at this stage leads to a chip bricking");
-            ESP_LOGI(TAG, "Copy from <%s> staging partition to <%s>...", ota_partition->label, primary_bootloader->label);
-            ret = esp_partition_copy(primary_bootloader, 0, ota_partition, 0, primary_bootloader->size);
-            if (ret != ESP_OK) {
-                ESP_LOGE(TAG, "Failed to copy partition to Primary bootloader (err=0x%x). Bootloader likely corrupted. Device will not be able to boot again!", ret);
-            }
-            // If the primary_bootloader already exists in the partition table on flash, it will not be deregistered, and the function will return an error.
-            esp_partition_deregister_external(primary_bootloader);
-        }
 
     } else if (strstr(ota_config->http_config->url, "partition-table.bin") != NULL) {
         const esp_partition_t *primary_partition_table;

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.22)
 
 if(NOT SDKCONFIG)
     message(FATAL_ERROR "Bootloader subproject expects the SDKCONFIG variable to be passed "
@@ -31,8 +31,7 @@ set(COMPONENTS
     micro-ecc
     main
     efuse
-    esp_system
-    newlib
+    esp_libc
     esp_tee)
 
 # EXTRA_COMPONENT_DIRS can be populated with directories containing one or several components.
@@ -61,26 +60,58 @@ endforeach()
 set(BOOTLOADER_BUILD 1)
 set(NON_OS_BUILD 1)
 include("${IDF_PATH}/tools/cmake/project.cmake")
-set(common_req log esp_rom esp_common esp_hw_support newlib)
+set(common_req log esp_rom esp_common esp_hw_support esp_libc)
 idf_build_set_property(EXTRA_COMPONENT_EXCLUDE_DIRS "${EXTRA_COMPONENT_EXCLUDE_DIRS}")
 idf_build_set_property(__COMPONENT_REQUIRES_COMMON "${common_req}")
 idf_build_set_property(__OUTPUT_SDKCONFIG 0)
+# Define a property for the default linker script
+set(LD_DEFAULT_PATH "${CMAKE_CURRENT_SOURCE_DIR}/main/ld/${IDF_TARGET}")
+idf_build_set_property(BOOTLOADER_LINKER_SCRIPT "${LD_DEFAULT_PATH}/bootloader.rom.ld" APPEND)
 project(bootloader)
+if(CONFIG_ESP32P4_REV_MIN_300)
+    target_linker_script("__idf_main" INTERFACE "${LD_DEFAULT_PATH}/bootloader.rev3.ld.in")
+else()
+    target_linker_script("__idf_main" INTERFACE "${LD_DEFAULT_PATH}/bootloader.ld.in")
+endif()
 
 idf_build_set_property(COMPILE_DEFINITIONS "BOOTLOADER_BUILD=1" APPEND)
 idf_build_set_property(COMPILE_DEFINITIONS "NON_OS_BUILD=1" APPEND)
 idf_build_set_property(COMPILE_OPTIONS "-fno-stack-protector" APPEND)
 
+# Set up the bootloader binary generation targets
+set(PROJECT_BIN "bootloader.bin")
+if(CONFIG_SECURE_BOOT_V2_ENABLED AND CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES)
+    set(bootloader_unsigned_bin "bootloader-unsigned.bin")
+else()
+    set(bootloader_unsigned_bin "${PROJECT_BIN}")
+endif()
+
+# Set the final binary name as a project property
+idf_build_set_property(PROJECT_BIN "${PROJECT_BIN}")
+
+# Generate the unsigned binary from the ELF file.
+if(CONFIG_APP_BUILD_GENERATE_BINARIES)
+    set(binary_target_name "gen_bootloader_binary")
+    __idf_build_binary("${bootloader_unsigned_bin}" "${binary_target_name}")
+else()
+    # If we are not building binaries, we don't need to create targets that depend on the
+    # bootloader binary.
+    return()
+endif()
+
 idf_component_get_property(main_args esptool_py FLASH_ARGS)
 idf_component_get_property(sub_args esptool_py FLASH_SUB_ARGS)
+idf_component_get_property(esptool_py_cmd esptool_py ESPTOOLPY_CMD)
+idf_component_get_property(espsecure_py_cmd esptool_py ESPSECUREPY_CMD)
+idf_component_get_property(espefuse_py_cmd esptool_py ESPEFUSEPY_CMD)
 
 # String for printing flash command
 string(REPLACE ";" " " esptoolpy_write_flash
-    "${ESPTOOLPY} --port=(PORT) --baud=(BAUD) ${main_args} "
-    "write_flash ${sub_args}")
+    "${esptool_py_cmd} --port=(PORT) --baud=(BAUD) ${main_args} "
+    "write-flash ${sub_args}")
 
-string(REPLACE ";" " " espsecurepy "${ESPSECUREPY}")
-string(REPLACE ";" " " espefusepy "${ESPEFUSEPY}")
+string(REPLACE ";" " " espsecurepy "${espsecure_py_cmd}")
+string(REPLACE ";" " " espefusepy "${espefuse_py_cmd}")
 
 # Suppress warning: "Manually-specified variables were not used by the project: SECURE_BOOT_SIGNING_KEY"
 set(ignore_signing_key "${SECURE_BOOT_SIGNING_KEY}")
@@ -101,7 +132,7 @@ if(CONFIG_SECURE_BOOTLOADER_REFLASHABLE)
         ABSOLUTE BASE_DIR "${CMAKE_BINARY_DIR}")
 
     add_custom_command(OUTPUT "${secure_bootloader_key}"
-        COMMAND ${ESPSECUREPY} digest_private_key
+        COMMAND ${espsecure_py_cmd} digest-private-key
             --keylen "${key_digest_len}"
             --keyfile "${SECURE_BOOT_SIGNING_KEY}"
             "${secure_bootloader_key}"
@@ -115,9 +146,9 @@ if(CONFIG_SECURE_BOOTLOADER_REFLASHABLE)
                 "No pre-generated key for a reflashable secure bootloader is available, "
                 "due to signing configuration."
                 "\nTo generate one, you can use this command:"
-                "\n\t${espsecurepy} generate_flash_encryption_key ${secure_bootloader_key}"
+                "\n\t${espsecurepy} generate-flash-encryption-key ${secure_bootloader_key}"
                 "\nIf a signing key is present, then instead use:"
-                "\n\t${espsecurepy} digest_private_key "
+                "\n\t${espsecurepy} digest-private-key "
                 "--keylen (192/256) --keyfile KEYFILE "
                 "${secure_bootloader_key}")
         endif()
@@ -126,7 +157,7 @@ if(CONFIG_SECURE_BOOTLOADER_REFLASHABLE)
 
     add_custom_command(OUTPUT "${bootloader_digest_bin}"
         COMMAND ${CMAKE_COMMAND} -E echo "DIGEST ${bootloader_digest_bin}"
-        COMMAND ${ESPSECUREPY} digest_secure_bootloader --keyfile "${secure_bootloader_key}"
+        COMMAND ${espsecure_py_cmd} digest-secure-bootloader --keyfile "${secure_bootloader_key}"
         -o "${bootloader_digest_bin}" "${CMAKE_BINARY_DIR}/bootloader.bin"
         MAIN_DEPENDENCY "${CMAKE_BINARY_DIR}/.bin_timestamp"
         DEPENDS gen_secure_bootloader_key gen_project_binary
@@ -135,43 +166,42 @@ if(CONFIG_SECURE_BOOTLOADER_REFLASHABLE)
     add_custom_target(gen_bootloader_digest_bin ALL DEPENDS "${bootloader_digest_bin}")
 endif()
 
+# If secure boot is enabled, generate the signed binary from the unsigned one.
 if(CONFIG_SECURE_BOOT_V2_ENABLED)
-    if(CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES)
-        get_filename_component(secure_boot_signing_key
-            "${SECURE_BOOT_SIGNING_KEY}" ABSOLUTE BASE_DIR "${project_dir}")
+    set(signed_target_name "gen_signed_bootloader")
 
-        if(NOT EXISTS "${secure_boot_signing_key}")
-        message(FATAL_ERROR
-            "Secure Boot Signing Key Not found."
-            "\nGenerate the Secure Boot V2 RSA-PSS 3072 Key."
-            "\nTo generate one, you can use this command:"
-            "\n\t${espsecurepy} generate_signing_key --version 2 ${SECURE_BOOT_SIGNING_KEY}")
+    if(CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES)
+        # The SECURE_BOOT_SIGNING_KEY is passed in from the parent build and
+        # is already an absolute path.
+        if(NOT EXISTS "${SECURE_BOOT_SIGNING_KEY}")
+            message(FATAL_ERROR
+                "Secure Boot Signing Key Not found."
+                "\nGenerate the Secure Boot V2 RSA-PSS 3072 Key."
+                "\nTo generate one, you can use this command:"
+                "\n\t${espsecurepy} generate-signing-key --version 2 your_key.pem"
+            )
         endif()
 
-        set(bootloader_unsigned_bin "bootloader-unsigned.bin")
-        add_custom_command(OUTPUT ".signed_bin_timestamp"
-            COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_BINARY_DIR}/${PROJECT_BIN}"
-            "${CMAKE_BINARY_DIR}/${bootloader_unsigned_bin}"
-            COMMAND ${ESPSECUREPY} sign_data --version 2 --keyfile "${secure_boot_signing_key}"
-            -o "${CMAKE_BINARY_DIR}/${PROJECT_BIN}" "${CMAKE_BINARY_DIR}/${bootloader_unsigned_bin}"
-            COMMAND ${CMAKE_COMMAND} -E echo "Generated signed binary image ${build_dir}/${PROJECT_BIN}"
-            "from ${CMAKE_BINARY_DIR}/${bootloader_unsigned_bin}"
-            COMMAND ${CMAKE_COMMAND} -E md5sum "${CMAKE_BINARY_DIR}/${PROJECT_BIN}"
-            > "${CMAKE_BINARY_DIR}/.signed_bin_timestamp"
-            DEPENDS "${build_dir}/.bin_timestamp"
-            VERBATIM
-            COMMENT "Generated the signed Bootloader")
+        set(comment "Generated the signed Bootloader")
+        set(key_arg KEYFILE "${SECURE_BOOT_SIGNING_KEY}")
+        # Post-build commands should be attached to the signed binary target.
+        set(post_build_target ${signed_target_name})
     else()
-        add_custom_command(OUTPUT ".signed_bin_timestamp"
-        VERBATIM
-        COMMENT "Bootloader generated but not signed")
+        # If we are not building signed binaries, we don't pass a key.
+        set(comment "Bootloader generated but not signed")
+        set(key_arg "")
+        # Post-build commands should be attached to the unsigned binary target.
+        set(post_build_target ${binary_target_name})
     endif()
 
-    add_custom_target(gen_signed_bootloader ALL DEPENDS "${build_dir}/.signed_bin_timestamp")
+    __idf_build_secure_binary("${bootloader_unsigned_bin}" "${PROJECT_BIN}" "${signed_target_name}"
+        COMMENT "${comment}"
+        ${key_arg}
+    )
 endif()
 
 if(CONFIG_SECURE_BOOTLOADER_ONE_TIME_FLASH)
-    add_custom_command(TARGET bootloader.elf POST_BUILD
+    add_custom_command(TARGET gen_project_binary POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E echo
             "=============================================================================="
         COMMAND ${CMAKE_COMMAND} -E echo
@@ -184,7 +214,7 @@ if(CONFIG_SECURE_BOOTLOADER_ONE_TIME_FLASH)
             "* IMPORTANT: After first boot, BOOTLOADER CANNOT BE RE-FLASHED on same device"
         VERBATIM)
 elseif(CONFIG_SECURE_BOOTLOADER_REFLASHABLE)
-    add_custom_command(TARGET bootloader.elf POST_BUILD
+    add_custom_command(TARGET gen_bootloader_digest_bin POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E echo
             "=============================================================================="
         COMMAND ${CMAKE_COMMAND} -E echo
@@ -194,7 +224,7 @@ elseif(CONFIG_SECURE_BOOTLOADER_REFLASHABLE)
         COMMAND ${CMAKE_COMMAND} -E echo
             "Burn secure boot key to efuse using:"
         COMMAND ${CMAKE_COMMAND} -E echo
-            "\t${espefusepy} burn_key secure_boot_v1 ${secure_bootloader_key}"
+            "\t${espefusepy} burn-key secure_boot_v1 ${secure_bootloader_key}"
         COMMAND ${CMAKE_COMMAND} -E echo
             "First time flash command is:"
         COMMAND ${CMAKE_COMMAND} -E echo
@@ -211,14 +241,13 @@ elseif(CONFIG_SECURE_BOOTLOADER_REFLASHABLE)
             "* After first boot, only re-flashes of this kind (with same key) will be accepted."
         COMMAND ${CMAKE_COMMAND} -E echo
             "* Not recommended to reuse the same secure boot keyfile on multiple production devices."
-        DEPENDS gen_secure_bootloader_key gen_bootloader_digest_bin
         VERBATIM)
 elseif(
         CONFIG_SECURE_BOOT_V2_ENABLED AND
         (CONFIG_SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS GREATER 1) AND
         NOT CONFIG_SECURE_BOOT_FLASH_BOOTLOADER_DEFAULT
     )
-    add_custom_command(TARGET bootloader.elf POST_BUILD
+    add_custom_command(TARGET ${post_build_target} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E echo
         "=============================================================================="
     COMMAND ${CMAKE_COMMAND} -E echo
@@ -226,28 +255,40 @@ elseif(
     COMMAND ${CMAKE_COMMAND} -E echo
         "To sign the bootloader with additional private keys."
     COMMAND ${CMAKE_COMMAND} -E echo
-        "\t${espsecurepy} sign_data -k secure_boot_signing_key2.pem -v 2 \
---append_signatures -o signed_bootloader.bin build/bootloader/bootloader.bin"
+        "\t${espsecurepy} sign-data -k secure_boot_signing_key2.pem -v 2 \
+--append-signatures -o signed_bootloader.bin build/bootloader/bootloader.bin"
     COMMAND ${CMAKE_COMMAND} -E echo
         "Secure boot enabled, so bootloader not flashed automatically."
     COMMAND ${CMAKE_COMMAND} -E echo
         "\t${esptoolpy_write_flash} ${BOOTLOADER_OFFSET} ${CMAKE_BINARY_DIR}/bootloader.bin"
     COMMAND ${CMAKE_COMMAND} -E echo
         "=============================================================================="
-    DEPENDS gen_signed_bootloader
     VERBATIM)
 elseif(CONFIG_SECURE_BOOT_V2_ENABLED AND NOT CONFIG_SECURE_BOOT_FLASH_BOOTLOADER_DEFAULT)
-    add_custom_command(TARGET bootloader.elf POST_BUILD
+    add_custom_command(TARGET ${post_build_target} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E echo
         "=============================================================================="
     COMMAND ${CMAKE_COMMAND} -E echo
         "Bootloader built. Secure boot enabled, so bootloader not flashed automatically."
     COMMAND ${CMAKE_COMMAND} -E echo
-        "Secure boot enabled, so bootloader not flashed automatically."
-    COMMAND ${CMAKE_COMMAND} -E echo
         "\t${esptoolpy_write_flash} ${BOOTLOADER_OFFSET} ${CMAKE_BINARY_DIR}/bootloader.bin"
     COMMAND ${CMAKE_COMMAND} -E echo
         "=============================================================================="
-    DEPENDS gen_signed_bootloader
     VERBATIM)
+endif()
+
+# Generate bootloader post-build check of the bootloader size against the offset
+partition_table_add_check_bootloader_size_target(bootloader_check_size
+    DEPENDS gen_project_binary
+    BOOTLOADER_BINARY_PATH "${CMAKE_BINARY_DIR}/${PROJECT_BIN}"
+    RESULT bootloader_check_size_command)
+add_dependencies(app bootloader_check_size)
+
+if(CONFIG_SECURE_BOOT_V2_ENABLED AND CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES)
+    # Check the size of the bootloader + signature block.
+    partition_table_add_check_bootloader_size_target(bootloader_check_size_signed
+        DEPENDS gen_signed_bootloader
+        BOOTLOADER_BINARY_PATH "${CMAKE_BINARY_DIR}/${PROJECT_BIN}"
+        RESULT bootloader_check_size_signed_command)
+    add_dependencies(app bootloader_check_size_signed)
 endif()

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -46,7 +46,7 @@ extern "C" {
   *     LP_AON_STORE1_REG       RTC_SLOW_CLK calibration value
   *     LP_AON_STORE2_REG       Boot time, low word
   *     LP_AON_STORE3_REG       Boot time, high word
-  *     LP_AON_STORE4_REG       External XTAL frequency
+  *     LP_AON_STORE4_REG       Status of whether to disable LOG from ROM at bit[0]
   *     LP_AON_STORE5_REG       FAST_RTC_MEMORY_LENGTH
   *     LP_AON_STORE6_REG       FAST_RTC_MEMORY_ENTRY
   *     LP_AON_STORE7_REG       FAST_RTC_MEMORY_CRC
@@ -58,7 +58,6 @@ extern "C" {
 #define RTC_SLOW_CLK_CAL_REG                LP_AON_STORE1_REG
 #define RTC_BOOT_TIME_LOW_REG               LP_AON_STORE2_REG
 #define RTC_BOOT_TIME_HIGH_REG              LP_AON_STORE3_REG
-#define RTC_XTAL_FREQ_REG                   LP_AON_STORE4_REG
 #define RTC_ENTRY_LENGTH_REG                LP_AON_STORE5_REG
 #define RTC_ENTRY_ADDR_REG                  LP_AON_STORE6_REG
 #define RTC_RESET_CAUSE_REG                 LP_AON_STORE6_REG
@@ -127,8 +126,8 @@ typedef enum {
     SAR_TRIG        = BIT9,
     BT_TRIG         = BIT10,
     RISCV_TRIG      = BIT11,
-    XTAL_DEAD_TRIG  = BIT12,
-    RISCV_TRAP_TRIG = BIT13,
+    RISCV_TRAP_TRIG = BIT12,
+    XTAL_DEAD_TRIG  = BIT13,
     USB_TRIG        = BIT14
 } WAKEUP_REASON;
 
@@ -145,8 +144,8 @@ typedef enum {
     SAR_TRIG_EN        = SAR_TRIG,
     BT_TRIG_EN         = BT_TRIG,
     RISCV_TRIG_EN      = RISCV_TRIG,
-    XTAL_DEAD_TRIG_EN  = XTAL_DEAD_TRIG,
     RISCV_TRAP_TRIG_EN = RISCV_TRAP_TRIG,
+    XTAL_DEAD_TRIG_EN  = XTAL_DEAD_TRIG,
     USB_TRIG_EN        = USB_TRIG
 } WAKEUP_ENABLE;
 

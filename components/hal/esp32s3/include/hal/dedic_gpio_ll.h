@@ -1,17 +1,17 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #pragma once
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <stdint.h>
 #include <stdbool.h>
 #include "soc/system_struct.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 static inline void _dedic_gpio_ll_enable_bus_clock(bool enable)
 {
@@ -20,7 +20,10 @@ static inline void _dedic_gpio_ll_enable_bus_clock(bool enable)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define dedic_gpio_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _dedic_gpio_ll_enable_bus_clock(__VA_ARGS__)
+#define dedic_gpio_ll_enable_bus_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _dedic_gpio_ll_enable_bus_clock(__VA_ARGS__); \
+    } while(0)
 
 static inline void _dedic_gpio_ll_reset_register(void)
 {
@@ -30,7 +33,10 @@ static inline void _dedic_gpio_ll_reset_register(void)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define dedic_gpio_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; _dedic_gpio_ll_reset_register(__VA_ARGS__)
+#define dedic_gpio_ll_reset_register(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _dedic_gpio_ll_reset_register(__VA_ARGS__); \
+    } while(0)
 
 #ifdef __cplusplus
 }

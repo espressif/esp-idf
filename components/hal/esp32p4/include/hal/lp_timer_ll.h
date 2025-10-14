@@ -73,6 +73,11 @@ FORCE_INLINE_ATTR void lp_timer_ll_clear_lp_intsts_mask(lp_timer_dev_t *dev, uin
     dev->lp_int_clr.val = mask;
 }
 
+FORCE_INLINE_ATTR void lp_timer_ll_lp_alarm_intr_enable(lp_timer_dev_t *dev, bool enable)
+{
+    dev->lp_int_ena.main_timer_lp_int_ena = enable;
+}
+
 #ifdef __cplusplus
 }
 #endif

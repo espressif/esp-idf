@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -41,10 +41,8 @@
 
 struct blufi_security {
 #define DH_SELF_PUB_KEY_LEN     128
-#define DH_SELF_PUB_KEY_BIT_LEN (DH_SELF_PUB_KEY_LEN * 8)
     uint8_t  self_public_key[DH_SELF_PUB_KEY_LEN];
 #define SHARE_KEY_LEN           128
-#define SHARE_KEY_BIT_LEN       (SHARE_KEY_LEN * 8)
     uint8_t  share_key[SHARE_KEY_LEN];
     size_t   share_len;
 #define PSK_LEN                 16
@@ -67,6 +65,12 @@ extern void btc_blufi_report_error(esp_blufi_error_state_t state);
 
 void blufi_dh_negotiate_data_handler(uint8_t *data, int len, uint8_t **output_data, int *output_len, bool *need_free)
 {
+    if (data == NULL || len < 3) {
+        BLUFI_ERROR("BLUFI Invalid data format");
+        btc_blufi_report_error(ESP_BLUFI_DATA_FORMAT_ERROR);
+        return;
+    }
+
     int ret;
     uint8_t type = data[0];
 
@@ -85,6 +89,7 @@ void blufi_dh_negotiate_data_handler(uint8_t *data, int len, uint8_t **output_da
         }
         blufi_sec->dh_param = (uint8_t *)malloc(blufi_sec->dh_param_len);
         if (blufi_sec->dh_param == NULL) {
+            blufi_sec->dh_param_len = 0;  /* Reset length to avoid using unallocated memory */
             btc_blufi_report_error(ESP_BLUFI_DH_MALLOC_ERROR);
             BLUFI_ERROR("%s, malloc failed\n", __func__);
             return;
@@ -96,6 +101,13 @@ void blufi_dh_negotiate_data_handler(uint8_t *data, int len, uint8_t **output_da
             btc_blufi_report_error(ESP_BLUFI_DH_PARAM_ERROR);
             return;
         }
+
+        if (len < (blufi_sec->dh_param_len + 1)) {
+            BLUFI_ERROR("%s, invalid dh param len\n", __func__);
+            btc_blufi_report_error(ESP_BLUFI_DH_PARAM_ERROR);
+            return;
+        }
+
         uint8_t *param = blufi_sec->dh_param;
         memcpy(blufi_sec->dh_param, &data[1], blufi_sec->dh_param_len);
         ret = mbedtls_dhm_read_params(&blufi_sec->dhm, &param, &param[blufi_sec->dh_param_len]);
@@ -108,7 +120,14 @@ void blufi_dh_negotiate_data_handler(uint8_t *data, int len, uint8_t **output_da
         blufi_sec->dh_param = NULL;
 
         const int dhm_len = mbedtls_dhm_get_len(&blufi_sec->dhm);
-        ret = mbedtls_dhm_make_public(&blufi_sec->dhm, dhm_len, blufi_sec->self_public_key, dhm_len, myrand, NULL);
+
+        if (dhm_len > DH_SELF_PUB_KEY_LEN) {
+            BLUFI_ERROR("%s dhm len not support %d\n", __func__, dhm_len);
+            btc_blufi_report_error(ESP_BLUFI_DH_PARAM_ERROR);
+            return;
+        }
+
+        ret = mbedtls_dhm_make_public(&blufi_sec->dhm, dhm_len, blufi_sec->self_public_key, DH_SELF_PUB_KEY_LEN, myrand, NULL);
         if (ret) {
             BLUFI_ERROR("%s make public failed %d\n", __func__, ret);
             btc_blufi_report_error(ESP_BLUFI_MAKE_PUBLIC_ERROR);
@@ -117,7 +136,7 @@ void blufi_dh_negotiate_data_handler(uint8_t *data, int len, uint8_t **output_da
 
         ret = mbedtls_dhm_calc_secret( &blufi_sec->dhm,
                 blufi_sec->share_key,
-                SHARE_KEY_BIT_LEN,
+                SHARE_KEY_LEN,
                 &blufi_sec->share_len,
                 myrand, NULL);
         if (ret) {
@@ -134,7 +153,7 @@ void blufi_dh_negotiate_data_handler(uint8_t *data, int len, uint8_t **output_da
             return;
         }
 
-        mbedtls_aes_setkey_enc(&blufi_sec->aes, blufi_sec->psk, 128);
+        mbedtls_aes_setkey_enc(&blufi_sec->aes, blufi_sec->psk, PSK_LEN * 8);
 
         /* alloc output data */
         *output_data = &blufi_sec->self_public_key[0];
@@ -158,6 +177,10 @@ int blufi_aes_encrypt(uint8_t iv8, uint8_t *crypt_data, int crypt_len)
     size_t iv_offset = 0;
     uint8_t iv0[16];
 
+    if (!blufi_sec) {
+        return -1;
+    }
+
     memcpy(iv0, blufi_sec->iv, sizeof(blufi_sec->iv));
     iv0[0] = iv8;   /* set iv8 as the iv0[0] */
 
@@ -174,6 +197,10 @@ int blufi_aes_decrypt(uint8_t iv8, uint8_t *crypt_data, int crypt_len)
     int ret;
     size_t iv_offset = 0;
     uint8_t iv0[16];
+
+    if (!blufi_sec) {
+        return -1;
+    }
 
     memcpy(iv0, blufi_sec->iv, sizeof(blufi_sec->iv));
     iv0[0] = iv8;   /* set iv8 as the iv0[0] */
@@ -204,7 +231,7 @@ esp_err_t blufi_security_init(void)
     mbedtls_dhm_init(&blufi_sec->dhm);
     mbedtls_aes_init(&blufi_sec->aes);
 
-    memset(blufi_sec->iv, 0x0, 16);
+    memset(blufi_sec->iv, 0x0, sizeof(blufi_sec->iv));
     return 0;
 }
 
@@ -223,5 +250,5 @@ void blufi_security_deinit(void)
     memset(blufi_sec, 0x0, sizeof(struct blufi_security));
 
     free(blufi_sec);
-    blufi_sec =  NULL;
+    blufi_sec = NULL;
 }

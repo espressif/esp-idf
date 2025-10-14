@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  *
@@ -27,9 +27,6 @@
 #include "esp_vfs_eventfd.h"
 #include "nvs_flash.h"
 #include "driver/rtc_io.h"
-#include "driver/uart.h"
-#include "openthread/logging.h"
-#include "openthread/thread.h"
 
 #if !SOC_IEEE802154_SUPPORTED
 #error "Openthread sleepy device is only supported for the SoCs which have IEEE 802.15.4 module"
@@ -58,16 +55,6 @@ static void create_config_network(otInstance *instance)
         abort();
     }
     ESP_ERROR_CHECK(esp_openthread_auto_start(NULL));
-}
-
-static esp_netif_t *init_openthread_netif(const esp_openthread_platform_config_t *config)
-{
-    esp_netif_config_t cfg = ESP_NETIF_DEFAULT_OPENTHREAD();
-    esp_netif_t *netif = esp_netif_new(&cfg);
-    assert(netif != NULL);
-    ESP_ERROR_CHECK(esp_netif_attach(netif, esp_openthread_netif_glue_init(config)));
-
-    return netif;
 }
 
 static void ot_state_change_callback(otChangedFlags changed_flags, void* ctx)
@@ -115,20 +102,17 @@ static void ot_deep_sleep_init(void)
     struct timeval now;
     gettimeofday(&now, NULL);
     int sleep_time_ms = (now.tv_sec - s_sleep_enter_time.tv_sec) * 1000 + (now.tv_usec - s_sleep_enter_time.tv_usec) / 1000;
-    esp_sleep_wakeup_cause_t wake_up_cause = esp_sleep_get_wakeup_cause();
-    switch (wake_up_cause) {
-    case ESP_SLEEP_WAKEUP_TIMER: {
-        ESP_LOGI(TAG, "Wake up from timer. Time spent in deep sleep and boot: %dms", sleep_time_ms);
-        break;
-    }
-    case ESP_SLEEP_WAKEUP_EXT1: {
-        ESP_LOGI(TAG, "Wake up from GPIO. Time spent in deep sleep and boot: %dms", sleep_time_ms);
-        break;
-    }
-    case ESP_SLEEP_WAKEUP_UNDEFINED:
-    default:
+
+    uint32_t wake_up_causes = esp_sleep_get_wakeup_causes();
+    if (wake_up_causes & BIT(ESP_SLEEP_WAKEUP_UNDEFINED)) {
         ESP_LOGI(TAG, "Not a deep sleep reset");
-        break;
+    } else {
+        if(wake_up_causes & BIT(ESP_SLEEP_WAKEUP_TIMER)) {
+            ESP_LOGI(TAG, "Wake up from timer. Time spent in deep sleep and boot: %dms", sleep_time_ms);
+        }
+        if(wake_up_causes & BIT(ESP_SLEEP_WAKEUP_EXT1)) {
+            ESP_LOGI(TAG, "Wake up from GPIO. Time spent in deep sleep and boot: %dms", sleep_time_ms);
+        }
     }
 
     // Set the methods of how to wake up:
@@ -163,44 +147,6 @@ static void ot_deep_sleep_init(void)
     ESP_ERROR_CHECK(gpio_pulldown_dis(gpio_wakeup_pin));
 }
 
-
-static void ot_task_worker(void *aContext)
-{
-    esp_openthread_platform_config_t config = {
-        .radio_config = ESP_OPENTHREAD_DEFAULT_RADIO_CONFIG(),
-        .host_config = ESP_OPENTHREAD_DEFAULT_HOST_CONFIG(),
-        .port_config = ESP_OPENTHREAD_DEFAULT_PORT_CONFIG(),
-    };
-
-    // Initialize the OpenThread stack
-    ESP_ERROR_CHECK(esp_openthread_init(&config));
-
-    ot_deep_sleep_init();
-
-#if CONFIG_OPENTHREAD_LOG_LEVEL_DYNAMIC
-    // The OpenThread log level directly matches ESP log level
-    (void)otLoggingSetLevel(CONFIG_LOG_DEFAULT_LEVEL);
-#endif
-    esp_netif_t *openthread_netif;
-    // Initialize the esp_netif bindings
-    openthread_netif = init_openthread_netif(&config);
-    esp_netif_set_default_netif(openthread_netif);
-    otSetStateChangedCallback(esp_openthread_get_instance(), ot_state_change_callback, NULL);
-
-    create_config_network(esp_openthread_get_instance());
-
-    // Run the main loop
-    esp_openthread_launch_mainloop();
-
-    // Clean up
-    esp_openthread_netif_glue_deinit();
-    esp_netif_destroy(openthread_netif);
-
-    esp_vfs_eventfd_unregister();
-    vTaskDelete(NULL);
-}
-
-
 void app_main(void)
 {
     // Used eventfds:
@@ -215,6 +161,16 @@ void app_main(void)
     ESP_ERROR_CHECK(esp_event_loop_create_default());
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_vfs_eventfd_register(&eventfd_config));
+    ot_deep_sleep_init();
 
-    xTaskCreate(ot_task_worker, "ot_power_save_main", 4096, NULL, 5, NULL);
+    esp_openthread_platform_config_t config = {
+        .radio_config = ESP_OPENTHREAD_DEFAULT_RADIO_CONFIG(),
+        .host_config = ESP_OPENTHREAD_DEFAULT_HOST_CONFIG(),
+        .port_config = ESP_OPENTHREAD_DEFAULT_PORT_CONFIG(),
+    };
+    ESP_ERROR_CHECK(esp_openthread_start(&config));
+    esp_netif_set_default_netif(esp_openthread_get_netif());
+
+    otSetStateChangedCallback(esp_openthread_get_instance(), ot_state_change_callback, NULL);
+    create_config_network(esp_openthread_get_instance());
 }

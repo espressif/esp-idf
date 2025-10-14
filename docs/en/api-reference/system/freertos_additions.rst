@@ -111,7 +111,7 @@ The following example demonstrates the usage of :cpp:func:`xRingbufferSendAcquir
             .buf = item->buf,
         };
         //Actually send to the ring buffer for consumer to use
-        res = xRingbufferSendComplete(buf_handle, &item);
+        res = xRingbufferSendComplete(buf_handle, (void *)item);
         if (res != pdTRUE) {
             printf("Failed to send item\n");
         }
@@ -295,6 +295,10 @@ Referring to the diagram above, the **16, 20, and 8 byte items are retrieved in 
 Byte buffers **do not allow multiple retrievals before returning** (every retrieval must be followed by a return before another retrieval is permitted). When using :cpp:func:`xRingbufferReceive` or :cpp:func:`xRingbufferReceiveFromISR`, all continuous stored data will be retrieved. :cpp:func:`xRingbufferReceiveUpTo` or :cpp:func:`xRingbufferReceiveUpToFromISR` can be used to restrict the maximum number of bytes retrieved. Since every retrieval must be followed by a return, the space is freed as soon as the data is returned.
 
 Referring to the diagram above, the 38 bytes of continuous stored data at the tail of the buffer is retrieved, returned, and freed. The next call to :cpp:func:`xRingbufferReceive` or :cpp:func:`xRingbufferReceiveFromISR` then wraps around and does the same to the 30 bytes of continuous stored data at the head of the buffer.
+
+.. note::
+
+    Retrieving items from Allow-Split buffers must be done via :cpp:func:`xRingbufferReceiveSplit` or :cpp:func:`xRingbufferReceiveSplitFromISR` instead of :cpp:func:`xRingbufferReceive` or :cpp:func:`xRingbufferReceiveFromISR`.
 
 Ring Buffers with Queue Sets
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^

@@ -1,0 +1,22 @@
+# Refer to https://ast-grep.github.io/guide/rule-config.html for Rule Essentials
+id: recommended-way-to-use-hal-config
+message: Don't expand HAL_CONFIG macro manually
+severity: error # error, warning, info, hint
+note: Should use HAL_CONFIG() to compute the value of the HAL_CONFIG macros
+language: C
+files:
+  - "components/**/*"
+  - "examples/**/*"
+ignores:
+  - "components/hal/platform_port/include/hal/config.h"
+rule:
+  kind: identifier
+  pattern: $A
+  regex: "^HAL_CONFIG_"
+transform:
+  B:
+    substring:
+      source: $A
+      startChar: 11
+fix:
+  HAL_CONFIG($B)

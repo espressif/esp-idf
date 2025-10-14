@@ -32,7 +32,7 @@ typedef enum {
 } lcd_rgb_data_endian_t;
 
 /**
- * @brief LCD color space
+ * @brief The color space of the LCD input color data
  */
 typedef enum {
     LCD_COLOR_SPACE_RGB = COLOR_SPACE_RGB, /*!< Color space: RGB */
@@ -56,6 +56,7 @@ typedef enum {
     LCD_COLOR_FMT_RGB666 = COLOR_TYPE_ID(COLOR_SPACE_RGB, COLOR_PIXEL_RGB666), ///< RGB666
     LCD_COLOR_FMT_RGB888 = COLOR_TYPE_ID(COLOR_SPACE_RGB, COLOR_PIXEL_RGB888), ///< RGB888
     LCD_COLOR_FMT_YUV422 = COLOR_TYPE_ID(COLOR_SPACE_YUV, COLOR_PIXEL_YUV422), ///< YUV422
+    LCD_COLOR_FMT_GRAY8  = COLOR_TYPE_ID(COLOR_SPACE_GRAY, COLOR_PIXEL_GRAY8), ///< 8-bit gray scale
 } lcd_color_format_t;
 
 /**

@@ -4,6 +4,12 @@
 default_stages: [pre-commit]
 
 repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: "v0.9.7"
+    hooks:
+      - id: ruff-format
+      - id: ruff
+        args: [ "--fix", "--show-fixes" ]
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.5.0
     hooks:
@@ -25,7 +31,9 @@ repos:
             .*.pb-c.c|
             .*.yuv|
             .*.rgb|
-            .*COPYING.*
+            .*.gray|
+            .*COPYING.*|
+            docs/sphinx-known-warnings\.txt
           )$
       - id: end-of-file-fixer
         exclude: *whitespace_excludes
@@ -39,21 +47,6 @@ repos:
       - id: no-commit-to-branch
         name: Do not use uppercase letters in the branch name
         args: ['--pattern', '^[^A-Z]*[A-Z]']
-  - repo: https://github.com/PyCQA/flake8
-    rev: 5.0.4
-    hooks:
-      - id: flake8
-        args: ['--config=.flake8', '--tee', '--benchmark']
-  - repo: https://github.com/asottile/reorder-python-imports
-    rev: v3.12.0
-    hooks:
-      - id: reorder-python-imports
-        name: Reorder Python imports
-        args: [--py38-plus]
-        exclude: >
-          (?x)^(
-              .*_pb2.py
-          )$
   - repo: https://github.com/codespell-project/codespell
     rev: v2.3.0
     hooks:
@@ -72,11 +65,6 @@ repos:
         language: python
         pass_filenames: false
         always_run: true
-      - id: check-deprecated-kconfigs-options
-        name: Check if any Kconfig Options Deprecated
-        entry: tools/ci/check_deprecated_kconfigs.py
-        language: python
-        files: 'sdkconfig\.ci$|sdkconfig\.rename$|sdkconfig.*$'
       - id: cmake-lint
         name: Check CMake Files Format
         entry: cmakelint --linelength=120 --spaces=4 --filter=-whitespace/indent
@@ -156,7 +144,7 @@ repos:
         require_serial: true
         additional_dependencies:
           - PyYAML == 5.3.1
-          - idf-build-apps~=2.0
+          - idf-build-apps~=2.12
       - id: sort-yaml-files
         name: sort yaml files
         entry: tools/ci/sort_yaml.py
@@ -171,15 +159,6 @@ repos:
         files: 'tools/ci/sort_yaml\.py$'
         additional_dependencies:
           - ruamel.yaml
-      - id: check-build-test-rules-path-exists
-        name: check path in .build-test-rules.yml exists
-        entry: tools/ci/check_build_test_rules.py check-exist
-        language: python
-        additional_dependencies:
-          - PyYAML == 5.3.1
-        always_run: true
-        pass_filenames: false
-        require_serial: true
       - id: cleanup-ignore-lists
         name: Remove non-existing patterns from ignore lists
         entry: tools/ci/cleanup_ignore_lists.py
@@ -198,14 +177,19 @@ repos:
     rev: v4.0.1
     hooks:
       - id: file-contents-sorter
-        files: 'tools\/ci\/(executable-list\.txt|mypy_ignore_list\.txt|check_copyright_ignore\.txt)'
+        files: "tools/ci/(\
+          executable-list\\.txt\
+          |mypy_ignore_list\\.txt\
+          |check_copyright_ignore\\.txt\
+          |exclude_check_tools_files\\.txt\
+        )"
   - repo: https://github.com/espressif/check-copyright/
-    rev: v1.0.3
+    rev: v1.1.1
     hooks:
       - id: check-copyright
         args: ['--ignore', 'tools/ci/check_copyright_ignore.txt', '--config', 'tools/ci/check_copyright_config.yaml']
   - repo: https://github.com/espressif/conventional-precommit-linter
-    rev: v1.7.0
+    rev: v1.10.0
     hooks:
       - id: conventional-precommit-linter
         stages: [commit-msg]
@@ -243,6 +227,7 @@ repos:
         name: Lint rST files in docs folder using Sphinx Lint
         files: ^(docs/en|docs/zh_CN)/.*\.(rst|inc)$
   - repo: https://github.com/espressif/esp-idf-kconfig.git
-    rev: v2.3.0
+    rev: v3.2.0
     hooks:
       - id: check-kconfig-files
+      - id: check-deprecated-kconfig-options

@@ -24,7 +24,7 @@
 
     ```
     cd $IDF_PATH/examples/system/sysview_tracing_heap_log
-    xtensa-esp32-elf-gdb -x gdbinit build/sysview_tracing_heap_log.elf
+    xtensa-esp32-elf-gdb -x $IDF_PATH/tools/esp_app_trace/test/sysview/gdbinit build/sysview_tracing_heap_log.elf
     ```
     When program stops at `heap_trace_stop`  quit GDB and OpenOCD
 
@@ -45,7 +45,7 @@
 
     ```
     cd $IDF_PATH/examples/system/sysview_tracing_heap_log
-    xtensa-esp32-elf-gdb -x gdbinit-mcore build/sysview_tracing_heap_log.elf
+    xtensa-esp32-elf-gdb -x $IDF_PATH/tools/esp_app_trace/test/sysview/gdbinit-mcore build/sysview_tracing_heap_log.elf
     ```
     When program stops at `heap_trace_stop`  quit GDB and OpenOCD
 
@@ -59,6 +59,7 @@
     You can use the commands from the `test.sh` to generate expected result files
 
     ```
+    cd $IDF_PATH/tools/esp_app_trace/test/sysview/
     $IDF_PATH/tools/esp_app_trace/sysviewtrace_proc.py -d -p -b sysview_tracing_heap_log.elf heap_log0.svdat heap_log1.svdat &> expected_output
     $IDF_PATH/tools/esp_app_trace/sysviewtrace_proc.py -j -b sysview_tracing_heap_log.elf heap_log0.svdat heap_log1.svdat &> expected_output.json
     $IDF_PATH/tools/esp_app_trace/sysviewtrace_proc.py -d -p -b sysview_tracing_heap_log.elf heap_log_mcore.svdat &> expected_output_mcore

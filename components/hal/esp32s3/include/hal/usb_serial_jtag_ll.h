@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -191,7 +191,7 @@ static inline void usb_serial_jtag_ll_txfifo_flush(void)
  *
  * @param enable Enable USJ JTAG bridge
  */
-FORCE_INLINE_ATTR void usb_serial_jtag_ll_phy_set_jtag_bridge(bool enable)
+FORCE_INLINE_ATTR void usb_serial_jtag_ll_phy_enable_jtag_bridge(bool enable)
 {
     USB_SERIAL_JTAG.conf0.usb_jtag_bridge_en = enable;
 }
@@ -327,7 +327,10 @@ FORCE_INLINE_ATTR void usb_serial_jtag_ll_enable_bus_clock(bool clk_en)
 }
 
 // SYSTEM.perip_clk_enx are shared registers, so this function must be used in an atomic way
-#define usb_serial_jtag_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; usb_serial_jtag_ll_enable_bus_clock(__VA_ARGS__)
+#define usb_serial_jtag_ll_enable_bus_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        usb_serial_jtag_ll_enable_bus_clock(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Reset the USJ module
@@ -339,7 +342,10 @@ FORCE_INLINE_ATTR void usb_serial_jtag_ll_reset_register(void)
 }
 
 // SYSTEM.perip_clk_enx are shared registers, so this function must be used in an atomic way
-#define usb_serial_jtag_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; usb_serial_jtag_ll_reset_register(__VA_ARGS__)
+#define usb_serial_jtag_ll_reset_register(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        usb_serial_jtag_ll_reset_register(__VA_ARGS__); \
+    } while(0)
 
 /**
  * Get the enable status of the USJ module

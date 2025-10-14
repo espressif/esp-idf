@@ -30,17 +30,26 @@ tools/test_apps/system/eh_frame:
 
 tools/test_apps/system/esp_intr_dump:
 
+tools/test_apps/system/flash_auto_suspend_iram_reduction:
+  disable:
+    - if: IDF_TARGET == "esp32" or IDF_TARGET == "esp32s2
+      reason: Targets do not support auto-suspend
+  disable_test:
+    - if: IDF_TARGET != "esp32c3"
+      temporary: true
+      reason: lack of runners
+
 tools/test_apps/system/g0_components:
   enable:
-    - if: INCLUDE_DEFAULT == 1 or IDF_TARGET in ["esp32p4", "esp32c5", "esp32c61"] # preview targets
+    - if: INCLUDE_DEFAULT == 1 or IDF_TARGET in ["esp32c5", "esp32c61", "esp32h21", "esp32h4"] # preview targets
 
 tools/test_apps/system/g1_components:
 
 tools/test_apps/system/gdb:
   disable_test:
-    - if: IDF_TARGET in ["esp32s3", "esp32c2", "esp32c3", "esp32c5", "esp32c61", "esp32p4"]
+    - if: IDF_TARGET in ["esp32p4", "esp32c5", "esp32c61"]
       temporary: true
-      reason: lack of runners
+      reason: not supported yet # TODO: IDF-13142
 
 tools/test_apps/system/gdb_loadable_elf:
   disable_test:
@@ -52,15 +61,24 @@ tools/test_apps/system/gdb_loadable_elf:
       temporary: true
       reason: target esp32c6, esp32h2 is not supported yet
 
+tools/test_apps/system/init_array:
+  enable:
+    - if: INCLUDE_DEFAULT == 1 or IDF_TARGET == "linux"
+  depends_components:
+    - esp_system
+  depends_filepatterns:
+    - tools/tools.json
+
+tools/test_apps/system/log:
+  disable_test:
+    - if: IDF_TARGET not in ["esp32", "esp32c3"]
+      reason: test only on esp32 and c3 as other targets are similar
+
 tools/test_apps/system/longjmp_test:
   enable:
     - if: IDF_TARGET in ["esp32", "esp32s2", "esp32s3"]
       temporary: true
       reason: the other targets are not tested yet
-  disable_test:
-    - if: IDF_TARGET == "esp32s3"
-      temporary: true
-      reason: lack of runners
 
 tools/test_apps/system/memprot:
   enable:
@@ -85,7 +103,7 @@ tools/test_apps/system/no_embedded_paths:
 
 tools/test_apps/system/panic:
   enable:
-    - if: INCLUDE_DEFAULT == 1 or IDF_TARGET in ["esp32p4", "esp32c61"] # preview targets
+    - if: INCLUDE_DEFAULT == 1 or IDF_TARGET in ["esp32p4", "esp32c61", "esp32h21"] # preview targets
 
 tools/test_apps/system/rtc_mem_reserve:
   enable:

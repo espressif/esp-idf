@@ -159,7 +159,7 @@ SPI flash can be accessed by SPI1 (ESP-IDF ``esp_flash`` driver APIs), or by poi
 
     PSRAM can be accessed by pointers, hardware guarantees the data consistency when PSRAM is only accessed via pointers.
 
-.. only:: esp32s3
+.. only:: SOC_PSRAM_DMA_CAPABLE and not esp32s2
 
     PSRAM can also be accessed by EDMA. Data desynchronization may happen because hardware does not guarantee the data consistency under such condition. You should call :cpp:func:`esp_cache_msync` to synchronize the Cache and the PSRAM.
 
@@ -169,7 +169,9 @@ SPI flash can be accessed by SPI1 (ESP-IDF ``esp_flash`` driver APIs), or by poi
 Thread Safety
 =============
 
-APIs in ``esp_mmu_map.h`` are not guaranteed to be thread-safe.
+Following APIs in ``esp_mmu_map.h`` are not guaranteed to be thread-safe:
+
+- :cpp:func:`esp_mmu_map_dump_mapped_blocks`
 
 APIs in ``esp_cache.h`` are guaranteed to be thread-safe.
 

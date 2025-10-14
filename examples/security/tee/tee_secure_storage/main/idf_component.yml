@@ -1,0 +1,3 @@
+dependencies:
+  tee_sec_storage:
+    path: ${IDF_PATH}/components/esp_tee/subproject/components/tee_sec_storage

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -107,6 +107,16 @@ static esp_netif_t *g_nan_netif;
 
 #define NAN_EXAMPLE_SERVICE_NAME    "ESP_NAN-Service"
 
+static void nan_receive_event_handler(void *arg, esp_event_base_t event_base,
+                                      int32_t event_id, void *event_data)
+{
+    wifi_event_nan_receive_t *evt = (wifi_event_nan_receive_t *)event_data;
+    if (evt->ssi_len) {
+        ESP_LOGI(TAG, "Received payload from Peer "MACSTR" [Peer Service id - %d] - ", MAC2STR(evt->peer_if_mac), evt->peer_inst_id);
+        ESP_LOG_BUFFER_HEXDUMP(TAG, evt->ssi, evt->ssi_len, ESP_LOG_INFO);
+    }
+}
+
 static void cmd_ping_on_ping_success(esp_ping_handle_t hdl, void *args)
 {
     uint8_t ttl;
@@ -210,6 +220,7 @@ void initialise_wifi(void)
 static int wifi_cmd_nan_disc(int argc, char **argv)
 {
     int nerrors = arg_parse(argc, argv, (void **) &nan_args);
+    static esp_event_handler_instance_t s_instance_nan_receive;
     esp_err_t ret;
 
     if (nerrors != 0) {
@@ -235,12 +246,22 @@ static int wifi_cmd_nan_disc(int argc, char **argv)
             nan_cfg.warm_up_sec = nan_args.warmup_time->ival[0];
         }
 
-        g_nan_netif = esp_netif_create_default_wifi_nan();
+        if (!g_nan_netif) {
+            g_nan_netif = esp_netif_create_default_wifi_nan();
+        }
+
         if ((esp_wifi_nan_start(&nan_cfg)) != ESP_OK) {
             ESP_LOGI(TAG, "Failed to start NAN");
             esp_netif_destroy_default_wifi(g_nan_netif);
+            g_nan_netif = NULL;
             return 1;
         }
+
+        if (!s_instance_nan_receive) {
+            ESP_ERROR_CHECK(esp_event_handler_instance_register(WIFI_EVENT, WIFI_EVENT_NAN_RECEIVE,
+                                    &nan_receive_event_handler, NULL, &s_instance_nan_receive));
+        }
+
         return 0;
     }
 
@@ -251,7 +272,12 @@ static int wifi_cmd_nan_disc(int argc, char **argv)
             ESP_LOGI(TAG, "Failed to stop NAN");
             return 1;
         }
+
+        ESP_ERROR_CHECK(esp_event_handler_instance_unregister(WIFI_EVENT, WIFI_EVENT_NAN_RECEIVE,
+                                s_instance_nan_receive));
+        s_instance_nan_receive = 0;
         esp_netif_destroy_default_wifi(g_nan_netif);
+        g_nan_netif = NULL;
     }
 
     return 0;
@@ -261,7 +287,6 @@ static int wifi_cmd_nan_publish(int argc, char **argv)
 {
     int nerrors = arg_parse(argc, argv, (void **) &pub_args);
     uint32_t pub_id;
-    bool ndp_resp_needed = false;
 
     if (nerrors != 0) {
         arg_print_errors(stderr, pub_args.end, argv[0]);
@@ -295,7 +320,7 @@ static int wifi_cmd_nan_publish(int argc, char **argv)
         strlcpy(publish.matching_filter, pub_args.filter->sval[0], ESP_WIFI_MAX_SVC_NAME_LEN);
     }
 
-    if (!esp_wifi_nan_publish_service(&publish, ndp_resp_needed)) {
+    if (!esp_wifi_nan_publish_service(&publish)) {
         return 1;
     }
 
@@ -349,38 +374,59 @@ static int wifi_cmd_nan_subscribe(int argc, char **argv)
 static int wifi_cmd_nan_followup(int argc, char **argv)
 {
     int nerrors = arg_parse(argc, argv, (void **) &fup_args);
+    uint16_t ssi_len = 0;
+    int ret = 0;
 
     if (nerrors != 0) {
         arg_print_errors(stderr, fup_args.end, argv[0]);
         return 1;
     }
 
-    wifi_nan_followup_params_t fup = {0};
+    if (fup_args.text->count) {
+        ssi_len = strlen(fup_args.text->sval[0]);
+        if (ssi_len >= ESP_WIFI_MAX_FUP_SSI_LEN) {
+            ESP_LOGE(TAG, "Length(%d) too long for Service Specific Info", ssi_len);
+            return 1;
+        }
+    }
+    wifi_nan_followup_params_t *fup = calloc(1, sizeof(wifi_nan_followup_params_t) + ssi_len);
+
+    if (!fup) {
+        ESP_LOGE(TAG, "Failed to allocate memory for Follow-up buffer");
+        return 1;
+    }
+    if (ssi_len) {
+        fup->ssi = (uint8_t *)(fup + 1);
+        memcpy(fup->ssi, fup_args.text->sval[0], ssi_len);
+        fup->ssi_len = ssi_len;
+    }
+
     if (fup_args.own_id->count) {
-        fup.inst_id = fup_args.own_id->ival[0];
+        fup->inst_id = fup_args.own_id->ival[0];
     }
 
     if (!fup_args.peer_id->count && !fup_args.mac_addr->count) {
-        ESP_LOGE(TAG, "Missing peer's service instance id or peer's MAC.");
-        return 1;
+        ESP_LOGE(TAG, "Missing peer's service instance id or peer's MAC");
+        ret = 1;
+        goto exit;
     }
     if (fup_args.peer_id->count) {
-        fup.peer_inst_id = fup_args.peer_id->ival[0];
+        fup->peer_inst_id = fup_args.peer_id->ival[0];
     }
     if (fup_args.mac_addr->count &&
-            esp_supplicant_str_to_mac((char *)fup_args.mac_addr->sval[0], fup.peer_mac) != ESP_OK) {
-        return 1;
+            esp_supplicant_str_to_mac((char *)fup_args.mac_addr->sval[0], fup->peer_mac) != ESP_OK) {
+        ret = 1;
+        goto exit;
     }
 
-    if (fup_args.text->count) {
-        strlcpy(fup.svc_info, fup_args.text->sval[0], ESP_WIFI_MAX_SVC_INFO_LEN);
+    if (esp_wifi_nan_send_message(fup) != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to send Follow-up");
+        ret = 1;
     }
 
-    if (esp_wifi_nan_send_message(&fup) != ESP_OK) {
-        return 1;
-    }
-
-    return 0;
+exit:
+    free(fup);
+    return ret;
 }
 
 static int wifi_cmd_ndp(int argc, char **argv)
@@ -443,7 +489,7 @@ void register_nan(void)
     nan_args.init = arg_lit0("S", "start", "NAN Start");
     nan_args.deinit = arg_lit0("T", "stop", "NAN Stop");
     nan_args.master_pref = arg_int0("p", "mast_pref", "<1-254>", "NAN Master Preference");
-    nan_args.op_channel = arg_int0("c", "op_chan", "<1-11>", "NAN Operating Channe");
+    nan_args.op_channel = arg_int0("c", "op_chan", "<1-11>", "NAN Operating Channel");
     nan_args.warmup_time = arg_int0("w", "warmup", "<5-120>", "NAN Warmup Time in Sec");
     nan_args.end = arg_end(1);
 

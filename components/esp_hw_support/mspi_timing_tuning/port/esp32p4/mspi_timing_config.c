@@ -15,17 +15,17 @@
 #include "esp_private/mspi_timing_config.h"
 #include "mspi_timing_tuning_configs.h"
 #include "hal/psram_ctrlr_ll.h"
-#include "hal/mspi_timing_tuning_ll.h"
+#include "hal/mspi_ll.h"
 #include "soc/hp_sys_clkrst_struct.h"
 
-const static char *TAG = "MSPI Timing";
+ESP_LOG_ATTR_TAG(TAG, "MSPI Timing");
 
 //-------------------------------------MSPI Clock Setting-------------------------------------//
 void mspi_timing_config_set_psram_clock(uint32_t psram_freq_mhz, mspi_timing_speed_mode_t speed_mode, bool control_both_mspi)
 {
     uint32_t freqdiv = MSPI_TIMING_MPLL_FREQ_MHZ / MSPI_TIMING_CORE_CLOCK_DIV / psram_freq_mhz;
     assert(freqdiv > 0);
-    ESP_EARLY_LOGD(TAG, "psram_freq_mhz: %" PRIu32 " mhz, bus clock div: %" PRIu32, psram_freq_mhz, freqdiv);
+    ESP_DRAM_LOGD(TAG, "psram_freq_mhz: %" PRIu32 " mhz, bus clock div: %" PRIu32, psram_freq_mhz, freqdiv);
     PERIPH_RCC_ATOMIC() {
     	//MSPI2 and MSPI3 share the register for core clock. So we only set MSPI2 here.
         psram_ctrlr_ll_enable_core_clock(PSRAM_CTRLR_LL_MSPI_ID_2, true);
@@ -40,7 +40,7 @@ void mspi_timing_config_set_flash_clock(uint32_t flash_freq_mhz, mspi_timing_spe
 #if MSPI_TIMING_FLASH_NEEDS_TUNING
     assert(HP_SYS_CLKRST.peri_clk_ctrl00.reg_flash_clk_src_sel == 1);
 
-    uint32_t core_clock_mhz = MSPI_TIMING_SPLL_FREQ_MHZ / MSPI_TIMING_LL_FLASH_CORE_CLK_DIV;
+    uint32_t core_clock_mhz = MSPI_TIMING_SPLL_FREQ_MHZ / MSPI_TIMING_LL_HP_FLASH_CORE_CLK_DIV;
     assert(core_clock_mhz == 120);
     uint32_t freqdiv = core_clock_mhz / flash_freq_mhz;
 

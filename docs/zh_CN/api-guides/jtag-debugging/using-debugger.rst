@@ -9,7 +9,7 @@
 * :ref:`jtag-debugging-using-debugger-command-line`
 * :ref:`jtag-debugging-with-idf-py`
 
-关于如何使用 VS Code 进行调试，请参阅文档 `使用 VS Code 调试 <https://github.com/espressif/vscode-esp-idf-extension/blob/master/docs/DEBUGGING.md>`__。
+关于如何使用 VS Code 进行调试，请参阅文档 `使用 VS Code 调试 <https://docs.espressif.com/projects/vscode-esp-idf-extension/zh_CN/latest/debugproject.html>`__。
 
 
 .. _jtag-debugging-using-debugger-eclipse:
@@ -23,20 +23,20 @@
 
 作为一款集成开发环境 (IDE)，Eclipse 提供了一套强大的工具，用于开发和调试软件应用程序。对于 ESP-IDF 应用程序，`IDF Eclipse 插件 <https://github.com/espressif/idf-eclipse-plugin>`_ 提供了两种调试方式:
 
-1.  `ESP-IDF GDB OpenOCD 调试 <https://github.com/espressif/idf-eclipse-plugin/blob/master/docs/OpenOCD%20Debugging.md#esp-idf-gdb-openocd-debugging>`_
+1.  `ESP-IDF GDB OpenOCD 调试 <https://docs.espressif.com/projects/espressif-ide/en/latest/openocddebugging.html>`_
 2.  GDB 硬件调试
 
 默认情况下，Eclipse 通过 GDB 硬件调试插件支持 OpenOCD 调试。该调试方式需要从命令行启动 OpenOCD 服务器，并在 Eclipse 中配置 GDB 客户端，整个过程耗时且容易出错。
 
 为了使调试过程更加容易，`IDF Eclipse 插件 <https://github.com/espressif/idf-eclipse-plugin>`_ 提供了定制的 ESP-IDF GDB OpenOCD 调试功能，支持在 Eclipse 内部配置好 OpenOCD 服务器和 GDB 客户端。该插件已经设置好所有必需的配置参数，点击一个按钮即可开始调试。
 
-因此，建议通过 `IDF Eclipse 插件 <https://github.com/espressif/idf-eclipse-plugin>`_ 进行 `ESP-IDF GDB OpenOCD 调试 <https://github.com/espressif/idf-eclipse-plugin/blob/master/docs/OpenOCD%20Debugging.md#esp-idf-gdb-openocd-debugging>`__。
+因此，建议通过 `IDF Eclipse 插件 <https://github.com/espressif/idf-eclipse-plugin>`_ 进行 `ESP-IDF GDB OpenOCD 调试 <https://docs.espressif.com/projects/espressif-ide/en/latest/openocddebugging.html>`__。
 
 **GDB 硬件调试**
 
 .. note::
 
-    只有在无法使用 `ESP-IDF GDB OpenOCD 调试 <https://github.com/espressif/idf-eclipse-plugin/blob/master/docs/OpenOCD%20Debugging.md#esp-idf-gdb-openocd-debugging>`_ 的情况下，才建议使用 GDB 硬件调试。
+    只有在无法使用 `ESP-IDF GDB OpenOCD 调试 <https://docs.espressif.com/projects/espressif-ide/en/latest/openocddebugging.html>`_ 的情况下，才建议使用 GDB 硬件调试。
 
 首先，打开 Eclipse，选择 ``Help`` > ``Install New Software`` 来安装 ``GDB Hardware Debugging`` 插件。
 
@@ -232,7 +232,7 @@
 
 4.  ``idf.py gdbgui``
 
-    启动 `gdbgui <https://www.gdbgui.com>`_，在浏览器中打开调试器的前端界面。请在运行安装脚本时添加 "--enable-gdbgui" 参数，即运行 ``install.sh --enable-gdbgui``，从而确保支持 ``gdbgui`` 选项。
+    启动 `gdbgui <https://www.gdbgui.com>`_，在浏览器中打开调试器的前端界面。要启用此选项，请参照 `安装说明 <https://www.gdbgui.com/installation/>`_，使用 ``pipx`` 方法设置该工具。关于系统依赖项、限制及其他注意事项，请参考安装页面和 `问题追踪 <https://github.com/cs01/gdbgui/issues>`_。
 
 
     上述这些命令也可以合并到一起使用，``idf.py`` 会自动将后台进程（比如 openocd）最先运行，交互式进程（比如 GDB，monitor）最后运行。

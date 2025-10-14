@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -34,13 +34,18 @@ extern "C" {
 #define LP_ADC_FORCE_XPD_SAR_PD  2 // Force power down
 #define LP_ADC_FORCE_XPD_SAR_PU  3 // Force power up
 
+// ESP32P4 ADC2 channel is 2-7, so we need to subtract 2 to get the correct channel
+#define ADC_LL_UNIT2_CHANNEL_SUBSTRATION 2
+
+#define ADC_LL_NEED_APB_PERIPH_CLAIM(ADC_UNIT)      (((ADC_UNIT) == ADC_UNIT_1) ? 0 : 1)
+
 /*---------------------------------------------------------------
                     Oneshot
 ---------------------------------------------------------------*/
 #define ADC_LL_DATA_INVERT_DEFAULT(PERIPH_NUM)         (0)
 #define ADC_LL_SAR_CLK_DIV_DEFAULT(PERIPH_NUM)         (1)
 #define LP_ADC_LL_SAR_CLK_DIV_DEFAULT(PERIPH_NUM)      (2)
-#define ADC_LL_DELAY_CYCLE_AFTER_DONE_SIGNAL           (0)
+#define ADC_LL_DELAY_CYCLE_AFTER_DONE_SIGNAL           (10)
 
 /*---------------------------------------------------------------
                     DMA
@@ -145,6 +150,7 @@ static inline void adc_ll_set_sample_cycle(uint32_t sample_cycle)
  *
  * @param div Division factor.
  */
+__attribute__((always_inline))
 static inline void adc_ll_digi_set_clk_div(uint32_t div)
 {
     /* ADC clock divided from digital controller clock clk */
@@ -202,11 +208,12 @@ static inline void adc_ll_digi_set_convert_mode(adc_ll_digi_convert_mode_t mode)
  * @param div_b Division factor. Range: 1 ~ 63.
  * @param div_a Division factor. Range: 0 ~ 63.
  */
+__attribute__((always_inline))
 static inline void adc_ll_digi_controller_clk_div(uint32_t div_num, uint32_t div_b, uint32_t div_a)
 {
     HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl23, reg_adc_clk_div_num, div_num);
-    HP_SYS_CLKRST.peri_clk_ctrl23.reg_adc_clk_div_numerator = div_a;
-    HP_SYS_CLKRST.peri_clk_ctrl23.reg_adc_clk_div_denominator = div_b;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl23, reg_adc_clk_div_numerator, div_a);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl23, reg_adc_clk_div_denominator, div_b);
 }
 
 /**
@@ -214,6 +221,7 @@ static inline void adc_ll_digi_controller_clk_div(uint32_t div_num, uint32_t div
  *
  * @param clk_src clock source for ADC digital controller.
  */
+__attribute__((always_inline))
 static inline void adc_ll_digi_clk_sel(adc_continuous_clk_src_t clk_src)
 {
     switch (clk_src) {
@@ -326,6 +334,7 @@ static inline void adc_ll_digi_filter_enable(adc_digi_iir_filter_t idx, adc_unit
  * @param adc_n ADC unit.
  * @param patt_len Items range: 1 ~ 16.
  */
+__attribute__((always_inline))
 static inline void adc_ll_digi_set_pattern_table_len(adc_unit_t adc_n, uint32_t patt_len)
 {
     if (adc_n == ADC_UNIT_1) {
@@ -345,6 +354,7 @@ static inline void adc_ll_digi_set_pattern_table_len(adc_unit_t adc_n, uint32_t 
  * @param pattern_index Items index. Range: 0 ~ 11.
  * @param pattern Stored conversion rules.
  */
+__attribute__((always_inline))
 static inline void adc_ll_digi_set_pattern_table(adc_unit_t adc_n, uint32_t pattern_index, adc_digi_pattern_config_t table)
 {
     uint32_t tab;
@@ -352,17 +362,30 @@ static inline void adc_ll_digi_set_pattern_table(adc_unit_t adc_n, uint32_t patt
     uint8_t offset = (pattern_index % 4) * 6;
     adc_ll_digi_pattern_table_t pattern = {0};
 
-    pattern.val = (table.atten & 0x3) | ((table.channel & 0xF) << 2);
     if (table.unit == ADC_UNIT_1){
+        pattern.val = (table.atten & 0x3) | ((table.channel & 0xF) << 2);
         tab = ADC.sar1_patt_tab[index].sar1_patt_tab;               //Read old register value
         tab &= (~(0xFC0000 >> offset));                             //Clear old data
         tab |= ((uint32_t)(pattern.val & 0x3F) << 18) >> offset;    //Fill in the new data
         ADC.sar1_patt_tab[index].sar1_patt_tab = tab;               //Write back
     } else {
+        pattern.val = (table.atten & 0x3) | (((table.channel + 2) & 0xF) << 2);
         tab = ADC.sar2_patt_tab[index].sar2_patt_tab;               //Read old register value
         tab &= (~(0xFC0000 >> offset));                             //clear old data
         tab |= ((uint32_t)(pattern.val & 0x3F) << 18) >> offset;    //Fill in the new data
         ADC.sar2_patt_tab[index].sar2_patt_tab = tab;               //Write back
+    }
+}
+
+
+/**
+ * Rest pattern table to default value
+ */
+static inline void adc_ll_digi_reset_pattern_table(void)
+{
+    for(int i = 0; i < 4; i++) {
+        ADC.sar1_patt_tab[i].sar1_patt_tab = 0xffffff;
+        ADC.sar2_patt_tab[i].sar2_patt_tab = 0xffffff;
     }
 }
 
@@ -404,6 +427,7 @@ static inline void adc_ll_digi_output_invert(adc_unit_t adc_n, bool inv_en)
  * @note The trigger interval should not be smaller than the sampling time of the SAR ADC.
  * @param cycle The clock cycle (trigger interval) of the measurement. Range: 30 ~ 4095.
  */
+__attribute__((always_inline))
 static inline void adc_ll_digi_set_trigger_interval(uint32_t cycle)
 {
     ADC.ctrl2.timer_target = cycle;
@@ -448,6 +472,7 @@ static inline void adc_ll_digi_reset(void)
 /**
  * Enable digital controller timer to trigger the measurement.
  */
+__attribute__((always_inline))
 static inline void adc_ll_digi_trigger_enable(void)
 {
     ADC.ctrl2.timer_sel = 1;
@@ -457,6 +482,7 @@ static inline void adc_ll_digi_trigger_enable(void)
 /**
  * Disable digital controller timer to trigger the measurement.
  */
+__attribute__((always_inline))
 static inline void adc_ll_digi_trigger_disable(void)
 {
     ADC.ctrl2.timer_en = 0;
@@ -494,28 +520,58 @@ static inline uint32_t adc_ll_pwdet_get_cct(void)
                     Common setting
 ---------------------------------------------------------------*/
 
+static inline void _adc_ll_sar1_clock_force_en(bool enable)
+{
+    HP_SYS_CLKRST.clk_force_on_ctrl0.reg_sar1_clk_force_on = enable;
+}
+
+// HP_SYS_CLKRST.clk_force_on_ctrl0 are shared registers, so this function must be used in an atomic way
+#define adc_ll_sar1_clock_force_en(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _adc_ll_sar1_clock_force_en(__VA_ARGS__); \
+    } while(0)
+
+static inline void _adc_ll_sar2_clock_force_en(bool enable)
+{
+    HP_SYS_CLKRST.clk_force_on_ctrl0.reg_sar2_clk_force_on = enable;
+}
+
+// HP_SYS_CLKRST.clk_force_on_ctrl0 are shared registers, so this function must be used in an atomic way
+#define adc_ll_sar2_clock_force_en(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _adc_ll_sar2_clock_force_en(__VA_ARGS__); \
+    } while(0)
+
 /**
  * @brief Enable the ADC clock
  * @param enable true to enable, false to disable
  */
-static inline void adc_ll_enable_bus_clock(bool enable)
+__attribute__((always_inline))
+static inline void _adc_ll_enable_bus_clock(bool enable)
 {
     HP_SYS_CLKRST.soc_clk_ctrl2.reg_adc_apb_clk_en = enable;
     HP_SYS_CLKRST.peri_clk_ctrl23.reg_adc_clk_en = enable;
 }
 // HP_SYS_CLKRST.soc_clk_ctrl2 are shared registers, so this function must be used in an atomic way
-#define adc_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; adc_ll_enable_bus_clock(__VA_ARGS__)
+#define adc_ll_enable_bus_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _adc_ll_enable_bus_clock(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Reset ADC module
  */
-static inline void adc_ll_reset_register(void)
+__attribute__((always_inline))
+static inline void _adc_ll_reset_register(void)
 {
     HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_adc = 1;
     HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_adc = 0;
 }
 //  HP_SYS_CLKRST.hp_rst_en2 is a shared register, so this function must be used in an atomic way
-#define adc_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; adc_ll_reset_register(__VA_ARGS__)
+#define adc_ll_reset_register(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _adc_ll_reset_register(__VA_ARGS__); \
+    } while(0)
 
 
 
@@ -525,6 +581,7 @@ static inline void adc_ll_reset_register(void)
  * @param adc_n ADC unit.
  * @param manage Set ADC power status.
  */
+__attribute__((always_inline))
 static inline void adc_ll_digi_set_power_manage(adc_unit_t adc_n, adc_ll_power_t manage)
 {
     if (adc_n == ADC_UNIT_1) {
@@ -649,6 +706,128 @@ static inline void adc_ll_set_controller(adc_unit_t adc_n, adc_ll_controller_t c
                 break;
         }
     }
+}
+
+/*---------------------------------------------------------------
+                    Calibration
+---------------------------------------------------------------*/
+
+/**
+ * @brief Set common calibration configuration. Should be shared with other parts (PWDET).
+ */
+__attribute__((always_inline))
+static inline void adc_ll_calibration_init(adc_unit_t adc_n)
+{
+    if (adc_n == ADC_UNIT_1) {
+        REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_DREF_ADDR, 4);
+    } else {
+        REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR2_DREF_ADDR, 4);
+    }
+}
+
+/**
+ * Configure the registers for ADC calibration. You need to call the ``adc_ll_calibration_finish`` interface to resume after calibration.
+ *
+ * @note  Different ADC units and different attenuation options use different calibration data (initial data).
+ *
+ * @param adc_n ADC index number.
+ * @param internal_gnd true:  Disconnect from the IO port and use the internal GND as the calibration voltage.
+ *                     false: Use IO external voltage as calibration voltage.
+ */
+static inline void adc_ll_calibration_prepare(adc_unit_t adc_n, bool internal_gnd)
+{
+    /* Enable/disable internal connect GND (for calibration). */
+    if (adc_n == ADC_UNIT_1) {
+        if (internal_gnd) {
+            REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_ENCAL_GND_ADDR, 1);
+        } else {
+            REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_ENCAL_GND_ADDR, 0);
+        }
+    } else {
+        if (internal_gnd) {
+            REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR2_ENCAL_GND_ADDR, 1);
+        } else {
+            REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR2_ENCAL_GND_ADDR, 0);
+        }
+    }
+}
+
+/**
+ * Resume register status after calibration.
+ *
+ * @param adc_n ADC index number.
+ */
+static inline void adc_ll_calibration_finish(adc_unit_t adc_n)
+{
+    if (adc_n == ADC_UNIT_1) {
+        REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_ENCAL_GND_ADDR, 0);
+    } else {    //adc_n == ADC_UNIT_2
+        REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR2_ENCAL_GND_ADDR, 0);
+    }
+}
+
+/**
+ * Set the calibration result to ADC.
+ *
+ * @note  Different ADC units and different attenuation options use different calibration data (initial data).
+ *
+ * @param adc_n ADC index number.
+ */
+__attribute__((always_inline))
+static inline void adc_ll_set_calibration_param(adc_unit_t adc_n, uint32_t param)
+{
+    uint8_t msb = param >> 8;
+    uint8_t lsb = param & 0xFF;
+
+    if (adc_n == ADC_UNIT_1) {
+        REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_INITIAL_CODE_HIGH_ADDR, msb);
+        REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_INITIAL_CODE_LOW_ADDR, lsb);
+    } else {
+        REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR2_INITIAL_CODE_HIGH_ADDR, msb);
+        REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR2_INITIAL_CODE_LOW_ADDR, lsb);
+    }
+}
+
+/**
+ * Set the SAR DTEST param
+ *
+ * @param param DTEST value
+ */
+__attribute__((always_inline))
+static inline void adc_ll_set_dtest_param(uint32_t param)
+{
+    REGI2C_WRITE_MASK(I2C_SAR_ADC, I2C_SAR_ADC_DTEST_VDD_GRP1, param);
+}
+
+/**
+ * Set the SAR ENT param
+ *
+ * @param param ENT value
+ */
+__attribute__((always_inline))
+static inline void adc_ll_set_ent_param(uint32_t param)
+{
+    REGI2C_WRITE_MASK(I2C_SAR_ADC, I2C_SAR_ADC_ENT_VDD_GRP1, param);
+}
+
+/**
+ * Init regi2c SARADC registers
+ */
+__attribute__((always_inline))
+static inline void adc_ll_regi2c_init(void)
+{
+    adc_ll_set_dtest_param(0);
+    adc_ll_set_ent_param(1);
+}
+
+/**
+ * Deinit regi2c SARADC registers
+ */
+__attribute__((always_inline))
+static inline void adc_ll_regi2c_adc_deinit(void)
+{
+    adc_ll_set_dtest_param(0);
+    adc_ll_set_ent_param(0);
 }
 
 /*---------------------------------------------------------------

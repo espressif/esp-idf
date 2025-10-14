@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,8 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#include "soc/soc_caps.h"
 
 /**
  * The result when checking whether the key to decrypt the RSA parameters is ready.
@@ -24,6 +26,13 @@ typedef enum {
     DS_SIGNATURE_MD_FAIL = 2,               /**< Message digest check failed, signature invalid. */
     DS_SIGNATURE_PADDING_AND_MD_FAIL = 3,   /**< Both padding and MD check failed. */
 } ds_signature_check_t;
+
+#if SOC_KEY_MANAGER_DS_KEY_DEPLOY
+typedef enum {
+    DS_KEY_SOURCE_EFUSE = 0,
+    DS_KEY_SOURCE_KEY_MGR = 1,
+} ds_key_source_t;
+#endif
 
 #ifdef __cplusplus
 }

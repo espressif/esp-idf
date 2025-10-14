@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -37,7 +37,6 @@ typedef struct {
 static hci_driver_uart_env_t s_hci_driver_uart_env;
 static struct hci_h4_sm s_hci_driver_uart_h4_sm;
 static uint8_t s_hci_driver_uart_rx_data[CONFIG_BT_LE_HCI_RX_PROC_DATA_LEN];
-static hci_driver_uart_params_config_t hci_driver_uart_params = BT_HCI_DRIVER_UART_CONFIG_DEFAULT();
 
 static int
 hci_driver_uart_tx(hci_driver_data_type_t data_type, uint8_t *data, uint32_t length,
@@ -111,6 +110,7 @@ hci_driver_uart_rx_task(void *p)
             ESP_LOG_BUFFER_HEXDUMP(TAG, data, read_len, ESP_LOG_DEBUG);
             ret = hci_h4_sm_rx(s_hci_driver_uart_env.h4_sm, data, read_len);
             if (ret < 0) {
+                ESP_LOGE(TAG, "parse rx data error! sm_state:%d\n", s_hci_driver_uart_env.h4_sm->state);
                 r_ble_ll_hci_ev_hw_err(ESP_HCI_SYNC_LOSS_ERR);
             }
         }
@@ -140,7 +140,7 @@ hci_driver_uart_task_create(void)
 }
 
 static void
-hci_driver_uart_deinit(void)
+hci_driver_uart_task_delete(void)
 {
     if (s_hci_driver_uart_env.tx_task_handler) {
         vTaskDelete(s_hci_driver_uart_env.tx_task_handler);
@@ -151,6 +151,12 @@ hci_driver_uart_deinit(void)
         vTaskDelete(s_hci_driver_uart_env.rx_task_handler);
         s_hci_driver_uart_env.rx_task_handler = NULL;
     }
+}
+
+static void
+hci_driver_uart_deinit(void)
+{
+    hci_driver_uart_task_delete();
 
     ESP_ERROR_CHECK(uart_driver_delete(s_hci_driver_uart_env.hci_uart_params->hci_uart_port));
 
@@ -169,7 +175,7 @@ hci_driver_uart_init(hci_driver_forward_fn *cb)
     memset(&s_hci_driver_uart_env, 0, sizeof(hci_driver_uart_env_t));
 
     s_hci_driver_uart_env.h4_sm = &s_hci_driver_uart_h4_sm;
-    hci_h4_sm_init(s_hci_driver_uart_env.h4_sm, &s_hci_driver_mem_alloc, hci_driver_uart_h4_frame_cb);
+    hci_h4_sm_init(s_hci_driver_uart_env.h4_sm, &s_hci_driver_mem_alloc, &s_hci_driver_mem_free, hci_driver_uart_h4_frame_cb);
 
     rc = hci_driver_util_init();
     if (rc) {
@@ -183,8 +189,8 @@ hci_driver_uart_init(hci_driver_forward_fn *cb)
 
     s_hci_driver_uart_env.rx_data = s_hci_driver_uart_rx_data;
     s_hci_driver_uart_env.forward_cb = cb;
-    s_hci_driver_uart_env.hci_uart_params = &hci_driver_uart_params;
-    hci_driver_uart_config(&hci_driver_uart_params);
+    s_hci_driver_uart_env.hci_uart_params = hci_driver_uart_config_param_get();
+    hci_driver_uart_config(s_hci_driver_uart_env.hci_uart_params);
     /* Currently, the queue size is set to 1. It will be considered as semaphore. */
     ESP_ERROR_CHECK(uart_driver_install(s_hci_driver_uart_env.hci_uart_params->hci_uart_port,
                                         CONFIG_BT_LE_HCI_UART_RX_BUFFER_SIZE,
@@ -207,12 +213,23 @@ error:
 int
 hci_driver_uart_reconfig_pin(int tx_pin, int rx_pin, int cts_pin, int rts_pin)
 {
-    hci_driver_uart_params_config_t *uart_param = s_hci_driver_uart_env.hci_uart_params;
-    uart_param->hci_uart_tx_pin = tx_pin;
-    uart_param->hci_uart_rx_pin = rx_pin;
-    uart_param->hci_uart_rts_pin = rts_pin;
-    uart_param->hci_uart_cts_pin = cts_pin;
-    return hci_driver_uart_config(uart_param);
+    int rc;
+
+    hci_driver_uart_task_delete();
+    hci_driver_uart_pin_update(tx_pin, rx_pin, cts_pin, rts_pin);
+    /* Currently, the queue size is set to 1. It will be considered as semaphore. */
+    ESP_ERROR_CHECK(uart_driver_install(s_hci_driver_uart_env.hci_uart_params->hci_uart_port,
+                                        CONFIG_BT_LE_HCI_UART_RX_BUFFER_SIZE,
+                                        CONFIG_BT_LE_HCI_UART_TX_BUFFER_SIZE,
+                                        1, &s_hci_driver_uart_env.rx_event_queue,
+                                        0));
+    rc = hci_driver_uart_task_create();
+    if (rc) {
+        hci_driver_uart_task_delete();
+        return -2;
+    }
+
+    return 0;
 }
 
 hci_driver_ops_t hci_driver_uart_ops = {

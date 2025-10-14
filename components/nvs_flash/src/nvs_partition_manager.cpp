@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,6 +11,8 @@
 #ifndef LINUX_TARGET
 #include "nvs_encrypted_partition.hpp"
 #endif // ! LINUX_TARGET
+
+using namespace std;
 
 namespace nvs {
 

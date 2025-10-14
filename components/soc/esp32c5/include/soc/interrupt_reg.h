@@ -19,6 +19,8 @@ extern "C" {
 /* We only have a single core on the C5, CORE0 */
 #define INTERRUPT_CORE0_CPU_INT_THRESH_REG      INTERRUPT_CURRENT_CORE_INT_THRESH_REG
 
+#define INTTHRESH_STANDARD  1
+
 #ifdef __cplusplus
 }
 #endif

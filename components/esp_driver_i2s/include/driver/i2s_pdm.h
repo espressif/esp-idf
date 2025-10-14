@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -52,6 +52,9 @@ extern "C" {
     .slot_mask = (mono_or_stereo  == I2S_SLOT_MODE_MONO) ? \
                  I2S_PDM_SLOT_LEFT : I2S_PDM_SLOT_BOTH, \
     .data_fmt = I2S_PDM_DATA_FMT_RAW, \
+    .hp_en = false, /* No effect, only for cpp compatibility */ \
+    .hp_cut_off_freq_hz = 35.5, /* No effect, only for cpp compatibility */ \
+    .amplify_num = 1, /* No effect, only for cpp compatibility */ \
 }
 #else
 /**
@@ -270,7 +273,16 @@ esp_err_t i2s_channel_reconfig_pdm_rx_gpio(i2s_chan_handle_t handle, const i2s_p
     .slot_bit_width = I2S_SLOT_BIT_WIDTH_AUTO, \
     .slot_mode = mono_or_stereo, \
     .data_fmt = I2S_PDM_DATA_FMT_RAW, \
+    .sd_prescale = 0, /* No effect, only for cpp compatibility */ \
+    .sd_scale = I2S_PDM_SIG_SCALING_MUL_1, /* No effect, only for cpp compatibility */ \
+    .hp_scale = I2S_PDM_SIG_SCALING_DIV_2, /* No effect, only for cpp compatibility */ \
+    .lp_scale = I2S_PDM_SIG_SCALING_MUL_1, /* No effect, only for cpp compatibility */ \
+    .sinc_scale = I2S_PDM_SIG_SCALING_MUL_1, /* No effect, only for cpp compatibility */ \
     .line_mode = I2S_PDM_TX_ONE_LINE_CODEC, \
+    .hp_en = false, /* No effect, only for cpp compatibility */ \
+    .hp_cut_off_freq_hz = 35.5, /* No effect, only for cpp compatibility */ \
+    .sd_dither = 0, /* No effect, only for cpp compatibility */ \
+    .sd_dither2 = 1, /* No effect, only for cpp compatibility */ \
 }
 
 /**
@@ -310,8 +322,17 @@ esp_err_t i2s_channel_reconfig_pdm_rx_gpio(i2s_chan_handle_t handle, const i2s_p
     .slot_bit_width = I2S_SLOT_BIT_WIDTH_AUTO, \
     .slot_mode = mono_or_stereo, \
     .data_fmt = I2S_PDM_DATA_FMT_RAW, \
+    .sd_prescale = 0, /* No effect, only for cpp compatibility */ \
+    .sd_scale = I2S_PDM_SIG_SCALING_MUL_1, /* No effect, only for cpp compatibility */ \
+    .hp_scale = I2S_PDM_SIG_SCALING_MUL_1, /* No effect, only for cpp compatibility */ \
+    .lp_scale = I2S_PDM_SIG_SCALING_MUL_1, /* No effect, only for cpp compatibility */ \
+    .sinc_scale = I2S_PDM_SIG_SCALING_MUL_1, /* No effect, only for cpp compatibility */ \
     .line_mode = ((mono_or_stereo) == I2S_SLOT_MODE_MONO ? \
                  I2S_PDM_TX_ONE_LINE_DAC : I2S_PDM_TX_TWO_LINE_DAC), \
+    .hp_en = true, /* No effect, only for cpp compatibility */ \
+    .hp_cut_off_freq_hz = 35.5, /* No effect, only for cpp compatibility */ \
+    .sd_dither = 0, /* No effect, only for cpp compatibility */ \
+    .sd_dither2 = 1, /* No effect, only for cpp compatibility */ \
 }
 #else // SOC_I2S_HW_VERSION_2
 /**
@@ -343,6 +364,11 @@ esp_err_t i2s_channel_reconfig_pdm_rx_gpio(i2s_chan_handle_t handle, const i2s_p
     .slot_mode = mono_or_stereo, \
     .slot_mask = I2S_PDM_SLOT_BOTH, \
     .data_fmt = I2S_PDM_DATA_FMT_RAW, \
+    .sd_prescale = 0, /* No effect, only for cpp compatibility */ \
+    .sd_scale = I2S_PDM_SIG_SCALING_MUL_1, /* No effect, only for cpp compatibility */ \
+    .hp_scale = I2S_PDM_SIG_SCALING_MUL_1, /* No effect, only for cpp compatibility */ \
+    .lp_scale = I2S_PDM_SIG_SCALING_MUL_1, /* No effect, only for cpp compatibility */ \
+    .sinc_scale = I2S_PDM_SIG_SCALING_MUL_1, /* No effect, only for cpp compatibility */ \
 }
 #endif // SOC_I2S_HW_VERSION_2
 
@@ -428,7 +454,7 @@ typedef struct {
 #if SOC_I2S_HW_VERSION_1
     i2s_pdm_slot_mask_t     slot_mask;          /*!< Slot mask to choose left or right slot */
 #endif
-    i2s_pdm_data_fmt_t   data_fmt;              /*!< The data format of PDM TX mode. It determines what kind of data format is written in software.
+    i2s_pdm_data_fmt_t      data_fmt;           /*!< The data format of PDM TX mode. It determines what kind of data format is written in software.
                                                  *   Typically, set this field to I2S_PDM_DATA_FMT_PCM when PCM2PDM filter is supported in the hardware,
                                                  *   so that you can write PCM format data in software, and then the hardware PCM2PDM filter will help to
                                                  *   convert it into PDM format on the line. Otherwise if this field is set to I2S_PDM_DATA_FMT_RAW,

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,6 +15,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
+#include "soc/soc_caps.h"
 #include "hal/ds_types.h"
 
 #ifdef __cplusplus
@@ -37,6 +38,13 @@ void ds_hal_finish(void);
  * @brief Write the initialization vector.
  */
 void ds_hal_configure_iv(const uint32_t *iv);
+
+#if SOC_KEY_MANAGER_DS_KEY_DEPLOY
+/**
+ * @brief Set the DS key source.
+ */
+void ds_hal_set_key_source(ds_key_source_t key_source);
+#endif
 
 /**
  * @brief Write the message which should be signed.

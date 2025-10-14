@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,14 +8,21 @@
 #include "btc/btc_task.h"
 #include "osi/thread.h"
 
-#if BTC_DYNAMIC_MEMORY == FALSE
-void *btc_profile_cb_tab[BTC_PID_NUM] = {};
-#else
+#if BTC_DYNAMIC_MEMORY == TRUE
 void **btc_profile_cb_tab;
+#else
+void *btc_profile_cb_tab[BTC_PID_NUM] = {};
 #endif
 
 void esp_profile_cb_reset(void)
 {
+#if BTC_DYNAMIC_MEMORY == TRUE
+    void *p = btc_profile_cb_tab;
+    if (p == NULL) {
+        return;
+    }
+#endif
+
     int i;
 
     for (i = 0; i < BTC_PID_NUM; i++) {
@@ -25,6 +32,13 @@ void esp_profile_cb_reset(void)
 
 int btc_profile_cb_set(btc_pid_t profile_id, void *cb)
 {
+#if BTC_DYNAMIC_MEMORY == TRUE
+    void *p = btc_profile_cb_tab;
+    if (p == NULL) {
+        return -1;
+    }
+#endif
+
     if (profile_id < 0 || profile_id >= BTC_PID_NUM) {
         return -1;
     }
@@ -36,6 +50,13 @@ int btc_profile_cb_set(btc_pid_t profile_id, void *cb)
 
 void *btc_profile_cb_get(btc_pid_t profile_id)
 {
+#if BTC_DYNAMIC_MEMORY == TRUE
+    void *p = btc_profile_cb_tab;
+    if (p == NULL) {
+        return NULL;
+    }
+#endif
+
     if (profile_id < 0 || profile_id >= BTC_PID_NUM) {
         return NULL;
     }

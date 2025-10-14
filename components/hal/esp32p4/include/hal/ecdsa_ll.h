@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,6 +11,7 @@
 #include "soc/ecdsa_reg.h"
 #include "soc/hp_sys_clkrst_struct.h"
 #include "soc/soc_caps.h"
+#include "soc/efuse_periph.h"
 #include "hal/ecdsa_types.h"
 
 #ifdef __cplusplus
@@ -93,7 +94,10 @@ static inline void ecdsa_ll_enable_bus_clock(bool enable)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define ecdsa_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; ecdsa_ll_enable_bus_clock(__VA_ARGS__)
+#define ecdsa_ll_enable_bus_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        ecdsa_ll_enable_bus_clock(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Reset the ECDSA peripheral module
@@ -430,6 +434,34 @@ static inline int ecdsa_ll_get_operation_result(void)
 static inline int ecdsa_ll_check_k_value(void)
 {
     return REG_GET_BIT(ECDSA_RESULT_REG, ECDSA_K_VALUE_WARNING);
+}
+
+/**
+ * @brief Check if the ECDSA deterministic mode is supported
+ */
+static inline bool ecdsa_ll_is_deterministic_mode_supported(void)
+{
+    return true;
+}
+
+/**
+ * @brief Set the ECDSA key block in eFuse
+ *
+ * @param curve    ECDSA curve type
+ * @param efuse_blk eFuse block number
+ */
+__attribute__((always_inline)) static inline void ecdsa_ll_set_ecdsa_key_blk(ecdsa_curve_t curve, int efuse_blk)
+{
+    (void) curve;
+    EFUSE.conf.cfg_ecdsa_blk = efuse_blk;
+}
+
+/**
+ * @brief Check if the ECDSA peripheral uses MPI module's memory
+ */
+static inline bool ecdsa_ll_is_mpi_required(void)
+{
+    return true;    // TODO: IDF-13523
 }
 
 #ifdef __cplusplus

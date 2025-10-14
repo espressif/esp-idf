@@ -16,7 +16,7 @@ menu "Main Flash configuration"
         config SPI_FLASH_BROWNOUT_RESET
             bool
             default y
-            select ESP_SYSTEM_BROWNOUT_INTR
+            select ESP_BROWNOUT_USE_INTR
             help
                 When brownout happens during flash erase/write operations,
                 send reset command to stop the flash operations to improve stability.
@@ -109,6 +109,18 @@ menu "Main Flash configuration"
                 This config is used for setting Tsus parameter. Tsus means CS# high to next command after
                 suspend. You can refer to the chapter of AC CHARACTERISTICS of flash datasheet.
 
+        config SPI_FLASH_SUSPEND_TRS_VAL_US
+            int "SPI flash tRS value (refer to chapter AC CHARACTERISTICS)"
+            default 50
+            range 20 200
+            depends on SOC_SPI_MEM_SUPPORT_TSUS_TRES_SEPERATE_CTR && (!ESP32P4_SELECTS_REV_LESS_V3)
+            help
+                This config is used for setting Trs parameter. Trs means CS Latency Between Resume And Next Suspend.
+                You can refer to the chapter of AC CHARACTERISTICS of flash datasheet.
+                For high-performance scenarios, some flash chips allow this set value to be smaller than the
+                given value in the datasheet without causing errors in the flash state machine.
+                When you have any related needs, please contact espressif business team.
+
         config SPI_FLASH_FORCE_ENABLE_XMC_C_SUSPEND
             bool "Enable XMC-C series flash chip suspend feature anyway"
             default n
@@ -119,6 +131,17 @@ menu "Main Flash configuration"
                 config option to keep the legacy behavior.
 
                 For new users, DO NOT enable this config.
+
+        config SPI_FLASH_FORCE_ENABLE_C6_H2_SUSPEND
+            bool "Enable chip suspend feature on c6 or h2 anyway (DO NOT ENABLE FOR NEW USERS OR APPLICATIONS)"
+            default n
+            help
+                Flash suspend has a defect on ESP32C6 until v0.2 and ESP32H2 until v1.2. If you already use suspend
+                feature for mass production, you can enable this for bypassing check after knowing the risk.
+                But if you are new users, or developing new applications, or producing a new batch,
+                please DO NOT enable this config option.
+
+                For more information, please refer to errata or connect to Espressif business support team.
 
         config SPI_FLASH_SOFTWARE_RESUME
             bool "Resume flash program/erase form suspend state by software control"
@@ -143,6 +166,28 @@ menu "Main Flash configuration"
                 task can suspend the erase/program operation. When this option is enabled, task
                 scheduler is disabled, only interrupt can suspend erase/program operation.
 
+        config SPI_FLASH_AUTO_CHECK_SUSPEND_STATUS
+            bool "Check flash status automatically after flash suspend"
+            default n
+            depends on SPI_FLASH_AUTO_SUSPEND
+            help
+                Majority flash supports to use flash register to judge if flash suspend status is
+                done or not. So enable this config, the behavior would use flash register WIP bit to judge
+                whether suspend is valid instead of waiting for a specific long time, which can save a
+                lot of time and benefit for performance improvement.
+
+        config SPI_FLASH_PLACE_FUNCTIONS_IN_IRAM
+            bool "Place spi_flash operation functions into IRAM" if SPI_FLASH_AUTO_SUSPEND
+            default y
+            help
+                When disabled, certain functions in `spi_flash` component will be placed into Flash memory
+                instead of IRAM. Disabling this option will save almost 10KB of IRAM depending on which
+                functions are used.
+
+                When enabled, these functions will be placed in internal RAM, with better performance.
+
+                For more information please refer to programming guide.
+
     endmenu
 endmenu
 
@@ -157,6 +202,8 @@ menu "SPI Flash driver"
             If this option is enabled, any time SPI flash is written then the data will be read
             back and verified. This can catch hardware problems with SPI flash, or flash which
             was not erased before verification.
+
+            This will slightly influence the write performance.
 
     config SPI_FLASH_LOG_FAILED_WRITE
         bool "Log errors if verification fails"
@@ -205,7 +252,8 @@ menu "SPI Flash driver"
 
     config SPI_FLASH_ROM_IMPL
         bool "Use esp_flash implementation in ROM"
-        depends on ESP_ROM_HAS_SPI_FLASH
+        depends on ESP_ROM_HAS_SPI_FLASH && !ESPTOOLPY_OCT_FLASH
+        # ROM never supports octal flash before. Future if ROM supports it we can use a ESP_ROM_x macro
         default n
         help
             Enable this flag to use new SPI flash driver functions from ROM instead of ESP-IDF.
@@ -338,7 +386,7 @@ menu "SPI Flash driver"
 
         config SPI_FLASH_SUPPORT_ISSI_CHIP
             bool "ISSI"
-            default y if SPI_FLASH_VENDOR_ISSI_SUPPORTED
+            default y if SPI_FLASH_VENDOR_ISSI_SUPPORT_ENABLED
             default n
             help
                 Enable this to support auto detection of ISSI chips if chip vendor not directly
@@ -347,7 +395,7 @@ menu "SPI Flash driver"
 
         config SPI_FLASH_SUPPORT_MXIC_CHIP
             bool "MXIC"
-            default y if SPI_FLASH_VENDOR_MXIC_SUPPORTED
+            default y if SPI_FLASH_VENDOR_MXIC_SUPPORT_ENABLED
             default n
             help
                 Enable this to support auto detection of MXIC chips if chip vendor not directly
@@ -356,7 +404,7 @@ menu "SPI Flash driver"
 
         config SPI_FLASH_SUPPORT_GD_CHIP
             bool "GigaDevice"
-            default y if SPI_FLASH_VENDOR_GD_SUPPORTED
+            default y if SPI_FLASH_VENDOR_GD_SUPPORT_ENABLED
             default n
             help
                 Enable this to support auto detection of GD (GigaDevice) chips if chip vendor not
@@ -370,7 +418,7 @@ menu "SPI Flash driver"
 
         config SPI_FLASH_SUPPORT_WINBOND_CHIP
             bool "Winbond"
-            default y if SPI_FLASH_VENDOR_WINBOND_SUPPORTED
+            default y if SPI_FLASH_VENDOR_WINBOND_SUPPORT_ENABLED
             default n
             help
                 Enable this to support auto detection of Winbond chips if chip vendor not directly
@@ -380,7 +428,7 @@ menu "SPI Flash driver"
         config SPI_FLASH_SUPPORT_BOYA_CHIP
             bool "BOYA"
             # ESP32 doesn't usually use this chip, default n to save iram.
-            default y if SPI_FLASH_VENDOR_BOYA_SUPPORTED
+            default y if SPI_FLASH_VENDOR_BOYA_SUPPORT_ENABLED
             default n
             help
                 Enable this to support auto detection of BOYA chips if chip vendor not directly
@@ -390,7 +438,7 @@ menu "SPI Flash driver"
         config SPI_FLASH_SUPPORT_TH_CHIP
             bool "TH"
             # ESP32 doesn't usually use this chip, default n to save iram.
-            default y if SPI_FLASH_VENDOR_TH_SUPPORTED
+            default y if SPI_FLASH_VENDOR_TH_SUPPORT_ENABLED
             default n
             help
                 Enable this to support auto detection of TH chips if chip vendor not directly

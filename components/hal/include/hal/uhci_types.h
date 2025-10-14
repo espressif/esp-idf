@@ -1,13 +1,8 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
-
-
-// Though the UHCI driver hasn't been published, some types are defined here
-// for users to develop over the HAL. See example: controller_hci_uart_esp32c3
 
 #pragma once
 

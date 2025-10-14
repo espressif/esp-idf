@@ -1,0 +1,29 @@
+menu "Example 'SPP SERVER' Config"
+
+    choice EXAMPLE_SPP_SERVER
+        prompt "SPP TRANSPORT mode"
+        default EXAMPLE_SPP_THROUGHPUT
+        help
+            Define SPP TRANSPORT mode
+
+        config EXAMPLE_SPP_THROUGHPUT
+            bool "Throughput"
+        config EXAMPLE_SPP_RELIABLE
+            bool "Reliable"
+    endchoice
+
+    config EXAMPLE_ENABLE_RF_EMC_TEST_MODE
+        bool
+        prompt "Enable BLE EMC test mode for RF"
+        default n
+        help
+            Use this option to enable BLE EMC test mode for RF.
+
+    config EXAMPLE_ENABLE_RF_TESTING_CONFIGURATION_COMMAND
+        bool
+        prompt "Enable Configuration command during RF testing"
+        default n
+        help
+            Use this option to enable configuration command when this example is used for RF testing.
+
+endmenu

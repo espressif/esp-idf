@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -37,6 +37,7 @@ static inline void btc_gatts_cb_to_app(esp_gatts_cb_event_t event, esp_gatt_if_t
 {
     esp_gatts_cb_t btc_gatts_cb = (esp_gatts_cb_t)btc_profile_cb_get(BTC_PID_GATTS);
     if (btc_gatts_cb) {
+        BTC_TRACE_DEBUG("btc_gatts_cb_to_app, gatts_if %d, event=%d", gatts_if, event);
         btc_gatts_cb(event, gatts_if, param);
     }
 }
@@ -616,6 +617,8 @@ void btc_gatts_call_handler(btc_msg_t *msg)
 {
     btc_ble_gatts_args_t *arg = (btc_ble_gatts_args_t *)msg->arg;
 
+    BTC_TRACE_DEBUG("%s act %d", __func__, msg->act);
+
     switch (msg->act) {
     case BTC_GATTS_ACT_APP_REGISTER: {
         tBT_UUID uuid;
@@ -763,6 +766,8 @@ void btc_gatts_cb_handler(btc_msg_t *msg)
     esp_ble_gatts_cb_param_t param;
     tBTA_GATTS *p_data = (tBTA_GATTS *)msg->arg;
     esp_gatt_if_t gatts_if;
+
+    BTC_TRACE_DEBUG("%s act %d", __func__, msg->act);
 
     switch (msg->act) {
     case BTA_GATTS_REG_EVT: {

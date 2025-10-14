@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,7 +27,10 @@ static inline void sha_ll_enable_bus_clock(bool enable)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define sha_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; sha_ll_enable_bus_clock(__VA_ARGS__)
+#define sha_ll_enable_bus_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        sha_ll_enable_bus_clock(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Reset the SHA peripheral module
@@ -44,7 +47,20 @@ static inline void sha_ll_reset_register(void)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define sha_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; sha_ll_reset_register(__VA_ARGS__)
+#define sha_ll_reset_register(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        sha_ll_reset_register(__VA_ARGS__); \
+    } while(0)
+
+/**
+ * @brief Load the mode for the SHA engine
+ *
+ * @param sha_type The SHA algorithm type
+ */
+static inline void sha_ll_set_mode(esp_sha_type sha_type)
+{
+    REG_WRITE(SHA_MODE_REG, sha_type);
+}
 
 /**
  * @brief Start a new SHA block conversions (no initial hash in HW)
@@ -53,7 +69,7 @@ static inline void sha_ll_reset_register(void)
  */
 static inline void sha_ll_start_block(esp_sha_type sha_type)
 {
-    REG_WRITE(SHA_MODE_REG, sha_type);
+    (void) sha_type;
     REG_WRITE(SHA_START_REG, 1);
 }
 
@@ -64,29 +80,23 @@ static inline void sha_ll_start_block(esp_sha_type sha_type)
  */
 static inline void sha_ll_continue_block(esp_sha_type sha_type)
 {
-    REG_WRITE(SHA_MODE_REG, sha_type);
+    (void) sha_type;
     REG_WRITE(SHA_CONTINUE_REG, 1);
 }
 
 /**
  * @brief Start a new SHA message conversion using DMA (no initial hash in HW)
- *
- * @param sha_type The SHA algorithm type
  */
-static inline void sha_ll_start_dma(esp_sha_type sha_type)
+static inline void sha_ll_start_dma(void)
 {
-    REG_WRITE(SHA_MODE_REG, sha_type);
     REG_WRITE(SHA_DMA_START_REG, 1);
 }
 
 /**
  * @brief Continue a SHA message conversion using DMA (initial hash in HW)
- *
- * @param sha_type The SHA algorithm type
  */
-static inline void sha_ll_continue_dma(esp_sha_type sha_type)
+static inline void sha_ll_continue_dma(void)
 {
-    REG_WRITE(SHA_MODE_REG, sha_type);
     REG_WRITE(SHA_DMA_CONTINUE_REG, 1);
 }
 

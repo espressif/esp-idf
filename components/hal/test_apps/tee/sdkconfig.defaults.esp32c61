@@ -1,0 +1,2 @@
+# Enable SPIRAM
+CONFIG_SPIRAM=y

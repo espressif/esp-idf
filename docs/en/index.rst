@@ -19,6 +19,13 @@ This is the documentation for Espressif IoT Development Framework (`esp-idf <htt
 
     This document describes using ESP-IDF with the {IDF_TARGET_NAME} SoC.
 
+.. only:: esp32c2
+
+    .. important::
+
+        The {IDF_TARGET_NAME} SoC series group currently includes only one series, the ESP8684. Therefore, any reference to {IDF_TARGET_NAME} in this document applies to the ESP8684.
+
+
 ==================  ==================  ==================
 |Get Started|_      |API Reference|_    |API Guides|_
 ------------------  ------------------  ------------------

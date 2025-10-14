@@ -1,8 +1,7 @@
 [mapping:gdma_driver]
 archive: libesp_hw_support.a
 entries:
-    # performance optimization, always put the DMA default interrupt handler in IRAM
-    if SOC_GDMA_SUPPORTED = y:
+    if GDMA_ISR_HANDLER_IN_IRAM = y:
         gdma: gdma_default_tx_isr (noflash)
         gdma: gdma_default_rx_isr (noflash)
 

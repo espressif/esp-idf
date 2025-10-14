@@ -23,7 +23,7 @@ static void IRAM_ATTR test_delay_post_cache_disable(void *args)
     esp_rom_delay_us(1000);
 }
 
-TEST_CASE("gptimer_interrupt_iram_safe", "[gptimer]")
+TEST_CASE("gptimer works with cache disabled", "[gptimer]")
 {
     gptimer_handle_t gptimer = NULL;
     gptimer_config_t timer_config = {

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,8 +9,11 @@
 #include <string.h>
 #include "hal/assert.h"
 #include "soc/ecdsa_reg.h"
+#include "soc/ecdsa_struct.h"
 #include "soc/pcr_struct.h"
+#include "soc/efuse_periph.h"
 #include "hal/ecdsa_types.h"
+#include "hal/ecc_ll.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -31,7 +34,7 @@ typedef enum {
  * @brief Interrupt types in ECDSA
  */
 typedef enum {
-    ECDSA_INT_CALC_DONE,
+    ECDSA_INT_PREP_DONE,
     ECDSA_INT_SHA_RELEASE,
 } ecdsa_ll_intr_type_t;
 
@@ -97,8 +100,8 @@ static inline void ecdsa_ll_reset_register(void)
 static inline void ecdsa_ll_enable_intr(ecdsa_ll_intr_type_t type)
 {
     switch (type) {
-        case ECDSA_INT_CALC_DONE:
-            REG_SET_FIELD(ECDSA_INT_ENA_REG, ECDSA_CALC_DONE_INT_ENA, 1);
+        case ECDSA_INT_PREP_DONE:
+            REG_SET_FIELD(ECDSA_INT_ENA_REG, ECDSA_PREP_DONE_INT_ENA, 1);
             break;
         case ECDSA_INT_SHA_RELEASE:
             REG_SET_FIELD(ECDSA_INT_ENA_REG, ECDSA_SHA_RELEASE_INT_ENA, 1);
@@ -117,8 +120,8 @@ static inline void ecdsa_ll_enable_intr(ecdsa_ll_intr_type_t type)
 static inline void ecdsa_ll_disable_intr(ecdsa_ll_intr_type_t type)
 {
     switch (type) {
-        case ECDSA_INT_CALC_DONE:
-            REG_SET_FIELD(ECDSA_INT_ENA_REG, ECDSA_CALC_DONE_INT_ENA, 0);
+        case ECDSA_INT_PREP_DONE:
+            REG_SET_FIELD(ECDSA_INT_ENA_REG, ECDSA_PREP_DONE_INT_ENA, 0);
             break;
         case ECDSA_INT_SHA_RELEASE:
             REG_SET_FIELD(ECDSA_INT_ENA_REG, ECDSA_SHA_RELEASE_INT_ENA, 0);
@@ -137,8 +140,8 @@ static inline void ecdsa_ll_disable_intr(ecdsa_ll_intr_type_t type)
 static inline void ecdsa_ll_clear_intr(ecdsa_ll_intr_type_t type)
 {
     switch (type) {
-        case ECDSA_INT_CALC_DONE:
-            REG_SET_FIELD(ECDSA_INT_CLR_REG, ECDSA_CALC_DONE_INT_CLR, 1);
+        case ECDSA_INT_PREP_DONE:
+            REG_SET_FIELD(ECDSA_INT_CLR_REG, ECDSA_PREP_DONE_INT_CLR, 1);
             break;
         case ECDSA_INT_SHA_RELEASE:
             REG_SET_FIELD(ECDSA_INT_CLR_REG, ECDSA_SHA_RELEASE_INT_CLR, 1);
@@ -205,6 +208,26 @@ static inline void ecdsa_ll_set_z_mode(ecdsa_ll_sha_mode_t mode)
             break;
         default:
             HAL_ASSERT(false && "Unsupported curve");
+            break;
+    }
+}
+
+/**
+ * @brief Set the signature generation type of ECDSA operation
+ *
+ * @param type Type of the ECDSA signature
+ */
+static inline void ecdsa_ll_set_k_type(ecdsa_sign_type_t type)
+{
+    switch (type) {
+        case ECDSA_K_TYPE_TRNG:
+            REG_CLR_BIT(ECDSA_CONF_REG, ECDSA_DETERMINISTIC_K);
+            break;
+        case ECDSA_K_TYPE_DETERMINISITIC:
+            REG_SET_BIT(ECDSA_CONF_REG, ECDSA_DETERMINISTIC_K);
+            break;
+        default:
+            HAL_ASSERT(false && "Unsupported K type");
             break;
     }
 }
@@ -374,6 +397,46 @@ static inline void ecdsa_ll_read_param(ecdsa_ll_param_t param, uint8_t *buf, uin
 static inline int ecdsa_ll_get_operation_result(void)
 {
     return REG_GET_BIT(ECDSA_RESULT_REG, ECDSA_OPERATION_RESULT);
+}
+
+/**
+ * @brief Check if the ECDSA curves configuration is supported
+ * The ECDSA curves configuration is only avliable in chip version
+ * above 1.2 in ESP32-H2
+ */
+static inline bool ecdsa_ll_is_configurable_curve_supported(void)
+{
+    return ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 102);
+}
+
+/**
+ * @brief Check if the ECDSA deterministic mode is supported
+ * The ECDSA deterministic mode is only available in chip version
+ * above 1.2 in ESP32-H2
+ */
+static inline bool ecdsa_ll_is_deterministic_mode_supported(void)
+{
+    return ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 102);
+}
+
+/**
+ * @brief Set the ECDSA key block in eFuse
+ *
+ * @param curve    ECDSA curve type
+ * @param efuse_blk eFuse block number
+ */
+__attribute__((always_inline)) static inline void ecdsa_ll_set_ecdsa_key_blk(ecdsa_curve_t curve, int efuse_blk)
+{
+    (void) curve;
+    EFUSE.conf.cfg_ecdsa_blk = efuse_blk;
+}
+
+/**
+ * @brief Check if the ECDSA peripheral uses MPI module's memory
+ */
+static inline bool ecdsa_ll_is_mpi_required(void)
+{
+    return !ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 102);
 }
 
 #ifdef __cplusplus

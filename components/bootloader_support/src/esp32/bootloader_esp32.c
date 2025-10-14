@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,6 +27,7 @@
 #include "soc/rtc.h"
 #include "soc/spi_periph.h"
 #include "hal/gpio_hal.h"
+#include "hal/mmu_hal.h"
 #include "xtensa/config/core.h"
 #include "xt_instr_macros.h"
 
@@ -37,7 +38,7 @@
 #include "esp_rom_spiflash.h"
 #include "esp_efuse.h"
 
-static const char *TAG = "boot.esp32";
+ESP_LOG_ATTR_TAG(TAG, "boot.esp32");
 
 #if !CONFIG_APP_BUILD_TYPE_RAM
 static void bootloader_reset_mmu(void)
@@ -59,6 +60,15 @@ static void bootloader_reset_mmu(void)
     mmu_init(1);
     DPORT_REG_CLR_BIT(DPORT_APP_CACHE_CTRL1_REG, DPORT_APP_CACHE_MMU_IA_CLR);
 #endif
+
+    mmu_hal_config_t mmu_config = {
+#if CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
+        .core_nums = 1,
+#else
+        .core_nums = SOC_CPU_CORES_NUM,
+#endif
+    };
+    mmu_hal_ctx_init(&mmu_config);
 
     /* normal ROM boot exits with DROM0 cache unmasked,
         but serial bootloader exits with it masked. */
@@ -91,7 +101,7 @@ static void wdt_reset_info_dump(int cpu)
 {
     uint32_t inst = 0, pid = 0, stat = 0, data = 0, pc = 0,
              lsstat = 0, lsaddr = 0, lsdata = 0, dstat = 0;
-    const char *cpu_name = cpu ? "APP" : "PRO";
+    const char *cpu_name = cpu ? ESP_LOG_ATTR_STR("APP") : ESP_LOG_ATTR_STR("PRO");
 
     if (cpu == 0) {
         stat = DPORT_REG_READ(DPORT_PRO_CPU_RECORD_STATUS_REG);
@@ -167,7 +177,7 @@ esp_err_t bootloader_init(void)
 
 #if XCHAL_ERRATUM_572
     uint32_t memctl = XCHAL_CACHE_MEMCTL_DEFAULT;
-    WSR(MEMCTL, memctl);
+    WSR(XT_REG_MEMCTL, memctl);
 #endif // XCHAL_ERRATUM_572
 
 // In RAM_APP, memory will be initialized in `call_start_cpu0`
@@ -190,7 +200,7 @@ esp_err_t bootloader_init(void)
 
     // init eFuse virtual mode (read eFuses to RAM)
 #ifdef CONFIG_EFUSE_VIRTUAL
-    ESP_LOGW(TAG, "eFuse virtual mode is enabled. If Secure boot or Flash encryption is enabled then it does not provide any security. FOR TESTING ONLY!");
+    ESP_EARLY_LOGW(TAG, "eFuse virtual mode is enabled. If Secure boot or Flash encryption is enabled then it does not provide any security. FOR TESTING ONLY!");
 #ifndef CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH
     esp_efuse_init_virtual_mode_in_ram();
 #endif

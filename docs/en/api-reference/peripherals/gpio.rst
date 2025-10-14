@@ -81,7 +81,7 @@ In addition, if you would like to dump the configurations of all IOs, you can us
 
 ::
 
-    gpio_dump_all_io_configuration(stdout, SOC_GPIO_VALID_GPIO_MASK);
+    gpio_dump_io_configuration(stdout, SOC_GPIO_VALID_GPIO_MASK);
 
 If an IO pin is routed to a peripheral signal through the GPIO matrix, the signal ID printed in the dump information is defined in the :component_file:`soc/{IDF_TARGET_PATH_NAME}/include/soc/gpio_sig_map.h` header file. The word ``**RESERVED**`` indicates the IO is occupied by either SPI flash or PSRAM. It is strongly not recommended to reconfigure them for other application purposes.
 
@@ -99,8 +99,8 @@ Do not rely on the default configurations values in the Technical Reference Manu
         gpio_config_t usb_phy_conf = {
             .pin_bit_mask = (1ULL << USB_PHY_DP_PIN) | (1ULL << USB_PHY_DM_PIN),
             .mode = GPIO_MODE_INPUT_OUTPUT,
-            .pull_up_en = 0,
-            .pull_down_en = 0,
+            .pull_up_en = GPIO_PULLUP_DISABLE,
+            .pull_down_en = GPIO_PULLDOWN_DISABLE,
             .intr_type = GPIO_INTR_DISABLE,
         };
         gpio_config(&usb_phy_conf);

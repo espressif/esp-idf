@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -509,7 +509,7 @@ static void * coex_schm_curr_phase_get_wrapper(void)
 
 static int coex_register_start_cb_wrapper(int (* cb)(void))
 {
-#if CONFIG_SW_COEXIST_ENABLE
+#if CONFIG_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE
     return coex_register_start_cb(cb);
 #else
     return 0;
@@ -518,7 +518,7 @@ static int coex_register_start_cb_wrapper(int (* cb)(void))
 
 static int coex_schm_process_restart_wrapper(void)
 {
-#if CONFIG_SW_COEXIST_ENABLE
+#if CONFIG_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE
     return coex_schm_process_restart();
 #else
     return 0;
@@ -527,7 +527,7 @@ static int coex_schm_process_restart_wrapper(void)
 
 static int coex_schm_register_cb_wrapper(int type, int(*cb)(int))
 {
-#if CONFIG_SW_COEXIST_ENABLE
+#if CONFIG_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE
     return coex_schm_register_callback(type, cb);
 #else
     return 0;
@@ -549,6 +549,15 @@ static uint8_t coex_schm_flexible_period_get_wrapper(void)
     return coex_schm_flexible_period_get();
 #else
     return 1;
+#endif
+}
+
+static void * coex_schm_get_phase_by_idx_wrapper(int phase_idx)
+{
+#if CONFIG_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE
+    return coex_schm_get_phase_by_idx(phase_idx);
+#else
+    return NULL;
 #endif
 }
 
@@ -687,5 +696,6 @@ wifi_osi_funcs_t g_wifi_osi_funcs = {
     ._coex_schm_register_cb = coex_schm_register_cb_wrapper,
     ._coex_schm_flexible_period_set = coex_schm_flexible_period_set_wrapper,
     ._coex_schm_flexible_period_get = coex_schm_flexible_period_get_wrapper,
+    ._coex_schm_get_phase_by_idx = coex_schm_get_phase_by_idx_wrapper,
     ._magic = ESP_WIFI_OS_ADAPTER_MAGIC,
 };

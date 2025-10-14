@@ -23,10 +23,6 @@ typedef struct {
     int gen_gpio_num;           /*!< The GPIO number used to output the PWM signal */
     struct {
         uint32_t invert_pwm: 1;   /*!< Whether to invert the PWM signal (done by GPIO matrix) */
-        uint32_t io_loop_back: 1; /*!< For debug/test, the signal output from the GPIO will be fed to the input path as well */
-        uint32_t io_od_mode: 1;   /*!< Configure the GPIO as open-drain mode */
-        uint32_t pull_up: 1;      /*!< Whether to pull up internally */
-        uint32_t pull_down: 1;    /*!< Whether to pull down internally */
     } flags;                      /*!< Extra configuration flags for generator */
 } mcpwm_generator_config_t;
 

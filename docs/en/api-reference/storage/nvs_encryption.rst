@@ -14,6 +14,7 @@ Data stored in NVS partitions can be encrypted using XTS-AES in the manner simil
 
     NVS encryption can be facilitated by enabling :ref:`CONFIG_NVS_ENCRYPTION` and :ref:`CONFIG_NVS_SEC_KEY_PROTECTION_SCHEME` > ``CONFIG_NVS_SEC_KEY_PROTECT_USING_FLASH_ENC`` or ``CONFIG_NVS_SEC_KEY_PROTECT_USING_HMAC`` depending on the scheme to be used.
 
+.. _nvs_encr_flash_enc_scheme:
 
 NVS Encryption: Flash Encryption-Based Scheme
 ---------------------------------------------
@@ -104,6 +105,8 @@ It is possible for an application to use different keys for different NVS partit
 
 .. only:: SOC_HMAC_SUPPORTED
 
+    .. _nvs_encr_hmac_scheme:
+
     NVS Encryption: HMAC Peripheral-Based Scheme
     --------------------------------------------
 
@@ -121,7 +124,7 @@ It is possible for an application to use different keys for different NVS partit
 
     .. note::
 
-        The valid range for the config :ref:`CONFIG_NVS_SEC_HMAC_EFUSE_KEY_ID` is from ``0`` (:cpp:enumerator:`hmac_key_id_t::HMAC_KEY0`) to ``5`` (:cpp:enumerator:`hmac_key_id_t::HMAC_KEY5`). By default, the config is set to ``6`` (:cpp:enumerator:`hmac_key_id_t::HMAC_KEY_MAX`), which have to be configured before building the user application.
+        The valid range for the config :ref:`CONFIG_NVS_SEC_HMAC_EFUSE_KEY_ID` is from ``0`` (:cpp:enumerator:`hmac_key_id_t::HMAC_KEY0`) to ``5`` (:cpp:enumerator:`hmac_key_id_t::HMAC_KEY5`). By default, the config is set to ``-1``, which have to be configured before building the user application.
 
     - If no key is found, a key is generated internally and stored at the eFuse block specified at :ref:`CONFIG_NVS_SEC_HMAC_EFUSE_KEY_ID`.
     - If a key is found with the purpose :cpp:enumerator:`esp_efuse_purpose_t::ESP_EFUSE_KEY_PURPOSE_HMAC_UP`, the same is used for the derivation of the XTS encryption keys.
@@ -216,6 +219,9 @@ The component :component:`nvs_sec_provider` stores all the implementation-specif
 
     This component offers factory functions with which a particular security scheme can be registered without having to worry about the APIs to generate and read the encryption keys (e.g., :cpp:func:`nvs_sec_provider_register_hmac`). Refer to the :example:`security/nvs_encryption_hmac` example for API usage.
 
+.. note::
+
+    To use a custom implementation for NVS encryption key derivation or protection (instead of the ones provided by the :component:`nvs_sec_provider` component), select the :ref:`CONFIG_NVS_SEC_KEY_PROTECTION_SCHEME` -> ``CONFIG_NVS_SEC_KEY_PROTECT_NONE`` configuration option.
 
 API Reference
 -------------

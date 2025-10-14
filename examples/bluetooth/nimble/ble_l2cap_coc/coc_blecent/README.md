@@ -22,7 +22,6 @@ Maximum data of 512 bytes can be transferred over L2CAP when MTU is set to 512 a
 Note :
 
 * To install the dependency packages needed, please refer to the top level [README file](../../../../README.md#running-test-python-script-pytest).
-* Currently this Python utility is only supported on Linux (BLE communication is via BLuez + DBus).
 
 ## How to Use Example
 
@@ -49,7 +48,7 @@ idf.py menuconfig
 
 In the `Component Config` menu:
 
-* Change Component config → Bluetooth → NimBLE Options → Maximum number of connection oriented channels to a value greater than 0
+* Change Component config → Bluetooth → NimBLE Options → L2CAP → Maximum number of connection oriented channels to a value greater than 0
 * Change Component config → Bluetooth → NimBLE Options → Memory Settings → MSYS_1 Block Size to 536 (For maximum transmission of data)
 
 ### Build and Flash

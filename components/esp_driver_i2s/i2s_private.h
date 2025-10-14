@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +13,7 @@
 #include "freertos/queue.h"
 #include "soc/lldesc.h"
 #include "soc/soc_caps.h"
+#include "soc/soc_caps_full.h"
 #include "hal/i2s_hal.h"
 #include "hal/lp_i2s_hal.h"
 #if SOC_LP_I2S_SUPPORTED
@@ -27,7 +28,7 @@
 #endif
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/esp_gpio_reserve.h"
-#if SOC_I2S_SUPPORT_SLEEP_RETENTION
+#if SOC_HAS(PAU)
 #include "esp_private/sleep_retention.h"
 #endif
 #include "esp_pm.h"
@@ -61,9 +62,10 @@ extern "C" {
 #define I2S_RCC_ATOMIC()
 #endif
 
-#define I2S_USE_RETENTION_LINK  (SOC_I2S_SUPPORT_SLEEP_RETENTION && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP)
+#define I2S_USE_RETENTION_LINK  (SOC_HAS(PAU) && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP)
 
 #define I2S_NULL_POINTER_CHECK(tag, p)          ESP_RETURN_ON_FALSE((p), ESP_ERR_INVALID_ARG, tag, "input parameter '"#p"' is NULL")
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
 
 /**
  * @brief i2s channel state for checking if the operation in under right driver state
@@ -121,7 +123,6 @@ typedef struct {
     bool                    auto_clear_before_cb;    /*!< Set to auto clear DMA TX descriptor before callback, i2s will always send zero automatically if no data to send */
     uint32_t                rw_pos;         /*!< reading/writing pointer position */
     void                    *curr_ptr;      /*!< Pointer to current dma buffer */
-    void                    *curr_desc;     /*!< Pointer to current dma descriptor used for pre-load */
     lldesc_t                **desc;         /*!< dma descriptor array */
     uint8_t                 **bufs;         /*!< dma buffer array */
 } i2s_dma_t;
@@ -131,14 +132,14 @@ typedef struct {
  * @note  Both i2s rx and tx channel are under its control
  */
 typedef struct {
-    i2s_port_t              id;             /*!< i2s port id */
+    int                     id;             /*!< i2s port id */
     i2s_hal_context_t       hal;            /*!< hal context */
     uint32_t                chan_occupancy; /*!< channel occupancy (rx/tx) */
     bool                    full_duplex;    /*!< is full_duplex */
     i2s_chan_handle_t       tx_chan;        /*!< tx channel handler */
     i2s_chan_handle_t       rx_chan;        /*!< rx channel handler */
     _lock_t                 mutex;          /*!< mutex for controller */
-#if SOC_I2S_SUPPORT_SLEEP_RETENTION
+#if SOC_HAS(PAU)
     sleep_retention_module_t slp_retention_mod; /*!< Sleep retention module */
     bool                    retention_link_created;  /*!< Whether the retention link is created */
 #endif
@@ -159,14 +160,22 @@ struct i2s_channel_obj_t {
     /* Stored configurations */
     int                     intr_prio_flags;/*!< i2s interrupt priority flags */
     void                    *mode_info;     /*!< Slot, clock and gpio information of each mode */
-    bool                    is_etm_start;   /*!< Whether start by etm tasks */
-    bool                    is_etm_stop;    /*!< Whether stop by etm tasks */
+    struct {
+        bool                is_etm_start: 1;   /*!< Whether start by etm tasks */
+        bool                is_etm_stop: 1;    /*!< Whether stop by etm tasks */
+        bool                is_raw_pdm: 1;     /*!< Flag of whether send/receive PDM in raw data, i.e., no PCM2PDM/PDM2PCM filter enabled */
+        bool                is_external: 1;    /*!< Whether use external clock */
+        bool                full_duplex_slave: 1; /*!< whether the channel is forced to switch to slave role for full duplex */
 #if SOC_I2S_SUPPORTS_APLL
-    bool                    apll_en;        /*!< Flag of whether APLL enabled */
+        bool                apll_en: 1;        /*!< Flag of whether APLL enabled */
 #endif
-    bool                    is_raw_pdm;     /*!< Flag of whether send/receive PDM in raw data, i.e., no PCM2PDM/PDM2PCM filter enabled */
+    };
     uint32_t                active_slot;    /*!< Active slot number */
     uint32_t                total_slot;     /*!< Total slot number */
+    i2s_clock_src_t         clk_src;        /*!< Clock source */
+    uint32_t                sclk_hz;        /*!< Source clock frequency */
+    uint32_t                origin_mclk_hz; /*!< Original mclk frequency */
+    uint32_t                curr_mclk_hz;   /*!< Current mclk frequency */
     /* Locks and queues */
     SemaphoreHandle_t       mutex;          /*!< Mutex semaphore for the channel operations */
     SemaphoreHandle_t       binary;         /*!< Binary semaphore for writing / reading / enabling / disabling */
@@ -215,11 +224,11 @@ struct lp_i2s_channel_obj_t {
  */
 typedef struct {
     portMUX_TYPE            spinlock;                          /*!< Platform level lock */
-    i2s_controller_t        *controller[SOC_I2S_NUM];          /*!< Controller object */
-    const char              *comp_name[SOC_I2S_NUM];           /*!< The component name that occupied i2s controller */
+    i2s_controller_t        *controller[SOC_I2S_ATTR(INST_NUM)];          /*!< Controller object */
+    const char              *comp_name[SOC_I2S_ATTR(INST_NUM)];           /*!< The component name that occupied i2s controller */
 #if SOC_LP_I2S_SUPPORTED
     lp_i2s_controller_t     *lp_controller[SOC_LP_I2S_NUM];    /*!< LP controller object*/
-    const char              *lp_comp_name[SOC_I2S_NUM];        /*!< The component name that occupied lp i2s controller */
+    const char              *lp_comp_name[SOC_I2S_ATTR(INST_NUM)];        /*!< The component name that occupied lp i2s controller */
 #endif
 } i2s_platform_t;
 
@@ -250,7 +259,6 @@ esp_err_t i2s_free_dma_desc(i2s_chan_handle_t handle);
  * @brief Allocate memory for I2S DMA descriptor and DMA buffer
  *
  * @param handle        I2S channel handle
- * @param num           Number of DMA descriptors
  * @param bufsize       The DMA buffer size
  *
  * @return
@@ -258,7 +266,7 @@ esp_err_t i2s_free_dma_desc(i2s_chan_handle_t handle);
  *      - ESP_ERR_INVALID_ARG   NULL pointer or bufsize is too big
  *      - ESP_ERR_NO_MEM        No memory for DMA descriptor and DMA buffer
  */
-esp_err_t i2s_alloc_dma_desc(i2s_chan_handle_t handle, uint32_t num, uint32_t bufsize);
+esp_err_t i2s_alloc_dma_desc(i2s_chan_handle_t handle, uint32_t bufsize);
 
 /**
  * @brief Get DMA buffer size
@@ -305,7 +313,7 @@ void i2s_gpio_check_and_set(i2s_chan_handle_t handle, int gpio, uint32_t signal_
  *      - ESP_OK                Set mclk output gpio success
  *      - ESP_ERR_INVALID_ARG   Invalid GPIO number
  */
-esp_err_t i2s_check_set_mclk(i2s_chan_handle_t handle, i2s_port_t id, int gpio_num, i2s_clock_src_t clk_src, bool is_invert);
+esp_err_t i2s_check_set_mclk(i2s_chan_handle_t handle, int id, int gpio_num, i2s_clock_src_t clk_src, bool is_invert);
 
 /**
  * @brief Attach data out signal and data in signal to a same gpio

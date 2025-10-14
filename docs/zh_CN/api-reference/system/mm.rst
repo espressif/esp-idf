@@ -159,7 +159,7 @@ SPI flash 可以通过 SPI1（ESP-IDF ``spi_flash`` 驱动 API）或指针进行
 
     PSRAM 可以通过指针进行访问。当只通过指针访问 PSRAM 时，硬件可以保证数据的一致性。
 
-.. only:: esp32s3
+.. only:: SOC_PSRAM_DMA_CAPABLE and not esp32s2
 
     PSRAM 也可以通过 EDMA 进行访问，但有可能发生数据不同步的问题。因为在这种情况下，硬件不能保证数据的一致性。应调用 :cpp:func:`esp_cache_msync` 来同步 cache 和 PSRAM。
 
@@ -169,7 +169,9 @@ SPI flash 可以通过 SPI1（ESP-IDF ``spi_flash`` 驱动 API）或指针进行
 线程安全
 ========
 
-``esp_mmu_map.h`` 中的 API 不能确保线程的安全性。
+``esp_mmu_map.h`` 中的以下 API 不能确保线程的安全性：
+
+- :cpp:func:`esp_mmu_map_dump_mapped_blocks`
 
 ``esp_cache.h`` 中的 API 能够确保线程的安全性。
 

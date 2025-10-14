@@ -1,0 +1,33 @@
+menu "Example Configuration"
+
+    choice EXAMPLE_UART_WAKEUP_MODE
+        prompt "uart wakeup mode"
+        default UART_WK_MODE_ACTIVE_THRESH
+        help
+            Uart wakeup MODE_ACTIVE_THRESH | MODE_FIFO_THRESH | MODE_START_BIT | MODE_CHAR_SEQ to be selected
+            for uart wakeup during light sleep. Specifically, wakeup MODE_ACTIVE_THRESH doesn't require a clock.
+            In contrast, the other three wakeup modes need XTAL (not RC FAST for instability) ungated during light
+            sleep, where the chips used should support sleep clock icg control. However, they consume more power
+            as XTAL must be powered on.
+
+        config UART_WK_MODE_ACTIVE_THRESH
+            bool "MODE_ACTIVE_THRESH"
+        config UART_WK_MODE_FIFO_THRESH
+            bool "MODE_FIFO_THRESH"
+            depends on SOC_UART_WAKEUP_SUPPORT_FIFO_THRESH_MODE && SOC_PM_SUPPORT_PMU_CLK_ICG && SOC_PMU_SUPPORTED
+        config UART_WK_MODE_START_BIT
+            bool "MODE_START_BIT"
+            depends on SOC_UART_WAKEUP_SUPPORT_START_BIT_MODE && SOC_PM_SUPPORT_PMU_CLK_ICG && SOC_PMU_SUPPORTED
+        config UART_WK_MODE_CHAR_SEQ
+            bool "MODE_CHAR_SEQ"
+            depends on SOC_UART_WAKEUP_SUPPORT_CHAR_SEQ_MODE && SOC_PM_SUPPORT_PMU_CLK_ICG && SOC_PMU_SUPPORTED
+    endchoice
+
+    config EXAMPLE_UART_WAKEUP_MODE_SELCTED
+        int
+        default 0 if UART_WK_MODE_ACTIVE_THRESH
+        default 1 if UART_WK_MODE_FIFO_THRESH
+        default 2 if UART_WK_MODE_START_BIT
+        default 3 if UART_WK_MODE_CHAR_SEQ
+
+endmenu

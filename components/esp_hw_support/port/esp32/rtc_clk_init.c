@@ -9,7 +9,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include "esp32/rom/rtc.h"
-#include "esp_rom_uart.h"
+#include "esp_rom_serial_output.h"
 #include "esp_cpu.h"
 #include "soc/rtc.h"
 #include "soc/rtc_periph.h"
@@ -26,7 +26,7 @@
 static soc_xtal_freq_t rtc_clk_xtal_freq_estimate(void);
 extern void rtc_clk_cpu_freq_to_xtal(int freq, int div);
 
-static const char* TAG = "rtc_clk_init";
+ESP_HW_LOG_ATTR_TAG(TAG, "rtc_clk_init");
 
 void rtc_clk_init(rtc_clk_config_t cfg)
 {
@@ -150,7 +150,7 @@ static soc_xtal_freq_t rtc_clk_xtal_freq_estimate(void)
         rtc_clk_8m_enable(true, true);
     }
 
-    uint64_t cal_val = rtc_clk_cal_ratio(RTC_CAL_8MD256, XTAL_FREQ_EST_CYCLES);
+    uint64_t cal_val = rtc_clk_cal_ratio(CLK_CAL_RC_FAST_D256, XTAL_FREQ_EST_CYCLES);
     /* cal_val contains period of 8M/256 clock in XTAL clock cycles
      * (shifted by RTC_CLK_CAL_FRACT bits).
      * Xtal frequency will be (cal_val * 8M / 256) / 2^19

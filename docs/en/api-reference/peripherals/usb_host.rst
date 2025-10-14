@@ -3,6 +3,8 @@ USB Host
 
 :link_to_translation:`zh_CN:[中文]`
 
+{IDF_TARGET_OTG_NUM_HOST_CHAN: default="8", esp32p4="16"}
+
 The document provides information regarding the USB Host Library. This document is split into the following sections:
 
 .. contents:: Sections
@@ -31,11 +33,12 @@ The Host Library has the following features:
     :esp32p4: - Supports High Speed (HS), Full Speed (FS) and Low Speed (LS) Devices.
     - Supports all four transfer types: Control, Bulk, Interrupt, and Isochronous.
     :esp32p4: - Supports High-Bandwidth Isochronous endpoints.
+    :esp32p4: - {IDF_TARGET_NAME} includes two USB 2.0 OTG peripherals: one High-Speed and one Full-Speed. Both support USB Host functionality. However, due to a current software limitation, only one can operate as a USB Host at a time. Support for dual USB Host operation is planned for a future update.
     - Allows multiple class drivers to run simultaneously, i.e., multiple clients of the Host Library.
     - A single device can be used by multiple clients simultaneously, e.g., composite devices.
     - The Host Library itself and the underlying Host Stack does not internally instantiate any OS tasks. The number of tasks is entirely controlled by how the Host Library interface is used. However, a general rule of thumb regarding the number of tasks is ``(the number of host class drivers running + 1)``.
-    - Allows single Hub support (If option :ref:`CONFIG_USB_HOST_HUBS_SUPPORTED` is enabled).
-    - Allows multiple Hubs support (If option :ref:`CONFIG_USB_HOST_HUB_MULTI_LEVEL` is enabled).
+    - Allows single Hub support (If option `CONFIG_USB_HOST_HUBS_SUPPORTED` is enabled).
+    - Allows multiple Hubs support (If option `CONFIG_USB_HOST_HUB_MULTI_LEVEL` is enabled).
 
 Currently, the Host Library and the underlying Host Stack has the following limitations:
 
@@ -44,8 +47,6 @@ Currently, the Host Library and the underlying Host Stack has the following limi
     - Only supports Asynchronous transfers.
     - Only supports using one configuration. Changing to other configurations after enumeration is not supported yet.
     - Transfer timeouts are not supported yet.
-    :esp32p4: - {IDF_TARGET_NAME} contains two USB-OTG peripherals USB 2.0 OTG High-Speed and USB 2.0 OTG Full-Speed. Only the High-Speed instance is supported now.
-    - The External Hub Driver: Supports only devices with the same speed as upstream port speed (e.g., Low-speed device won't work through Full-speed external Hub).
     - The External Hub Driver: Remote Wakeup feature is not supported (External Hubs are active, even if there are no devices inserted).
     - The External Hub Driver: Doesn't handle error cases (overcurrent handling, errors during initialization etc. are not implemented yet).
     - The External Hub Driver: No Interface selection. The Driver uses the first available Interface with Hub Class code (09h).
@@ -103,7 +104,7 @@ Therefore, in addition to the client tasks, the Host Library also requires a tas
 Devices
 ^^^^^^^
 
-The Host Library shields clients from the details of device handling, encompassing details such as connection, memory allocation, and enumeration. The clients are provided only with a list of already connected and enumerated devices to choose from. By default during enumeration, each device is automatically configured to use the first configuration found, namely, the first configuration descriptor returned on a Get Configuration Descriptor request. For most standard devices, the first configuration will have a ``bConfigurationValue`` of ``1``. If option  :ref:`CONFIG_USB_HOST_ENABLE_ENUM_FILTER_CALLBACK` is enabled, a different ``bConfigurationValue`` can be selected, see `Multiple Configuration Support`_ for more details.
+The Host Library shields clients from the details of device handling, encompassing details such as connection, memory allocation, and enumeration. The clients are provided only with a list of already connected and enumerated devices to choose from. By default during enumeration, each device is automatically configured to use the first configuration found, namely, the first configuration descriptor returned on a Get Configuration Descriptor request. For most standard devices, the first configuration will have a ``bConfigurationValue`` of ``1``. If option  `CONFIG_USB_HOST_ENABLE_ENUM_FILTER_CALLBACK` is enabled, a different ``bConfigurationValue`` can be selected, see `Multiple Configuration Support`_ for more details.
 
 It is possible for two or more clients to simultaneously communicate with the same device as long as they are not communicating to the same interface. However, multiple clients can simultaneously communicate with the same device's default endpoint (i.e., EP0), which will result in their control transfers being serialized.
 
@@ -402,9 +403,79 @@ UVC
 """
 
 * A host class driver for the USB Video Device Class is distributed as a managed component via the `ESP Component Registry <https://components.espressif.com/component/espressif/usb_host_uvc>`__.
-* :example:`peripherals/usb/host/uvc` demonstrates how to capture video from a USB camera using the `libuvc` library and stream the video over Wi-Fi by hosting a TCP server, with the option to visualize the captured video on a PC using the provided `player.py` script.
+* :example:`peripherals/usb/host/uvc` demonstrates how to capture video frames from a USB camera using the UVC driver.
 
 .. ---------------------------------------------- USB Host Menuconfig --------------------------------------------------
+
+.. only:: esp32s3
+
+    External PHY Configuration
+    --------------------------
+
+    The {IDF_TARGET_NAME} contains two USB controllers—the USB-OTG and USB-Serial-JTAG. However, both controllers share a **single PHY**, which means only one can operate at a time. To use USB Host functionality while the USB-Serial-JTAG is active (e.g., for debugging or flashing), an **external PHY** is required, since the PHY is used by USB-Serial-JTAG.
+
+    .. note::
+        An external PHY is not the only way to enable debugging alongside USB Host or Device functionality. It is also possible to switch the debugging interface from USB-Serial-JTAG to plain JTAG by burning the appropriate eFuses. For details, refer to the `JTAG Debugging <https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/api-guides/jtag-debugging/index.html>`_ in the ESP-IDF Programming Guide for your target.
+
+    {IDF_TARGET_NAME} supports connecting external PHY ICs. This allows independent operation of both USB-OTG and USB-Serial-JTAG controllers. Various external PHY ICs may require different hardware configurations. Please refer to the respective IC datasheets for details. A general connection diagram is available in the official ESP documentation: `Use an external PHY <https://docs.espressif.com/projects/esp-iot-solution/en/latest/usb/usb_overview/usb_phy.html#use-an-external-phy>`__.
+
+    **List of Tested External PHY ICs:**
+
+    - **SP5301** — Directly supported by {IDF_TARGET_NAME}. See the guide above for schematic and routing details.
+    - **TUSB1106** — Directly supported by {IDF_TARGET_NAME}. Works with the external-PHY driver via GPIO mapping. Follow the reference wiring in the TUSB1106 datasheet (power-supply options and recommended series resistors on D+/D–).
+    - **STUSB03E** — Requires signal routing using an analog switch. See example below.
+
+    .. figure:: ../../../_static/usb_host/ext_phy_schematic_stusb03e.png
+       :align: center
+       :alt: External PHY with Analog Switch Schematic (Host mode)
+
+       Example connection using STUSB03E and analog switch (Host mode)
+
+    .. note::
+        This schematic is a minimal example intended only to demonstrate the external PHY connection. It omits other essential components and signals (e.g., VCC, GND, RESET) required for a complete, functional {IDF_TARGET_NAME} design.
+        The schematic includes both a +5 V rail (used to power USB devices) and a VCC rail (typically 3.3 V). VCC should match the chip supply voltage. Ensure that +5 V for the USB bus is appropriately sourced and protected (e.g., with a power switch and current limiting). Always comply with USB host power requirements, particularly when supporting USB bus-powered devices.
+
+    Hardware configuration is handled via GPIO mapping to the PHY's pins. Any unused pins (e.g., :cpp:member:`usb_phy_ext_io_conf_t::suspend_n_io_num`) **must be set to -1**.
+
+    .. note::
+        The :cpp:member:`usb_phy_ext_io_conf_t::suspend_n_io_num` pin is **currently not supported** and does not need to be connected.
+
+    **Example Code:**
+
+    .. code-block:: c
+
+        // GPIO configuration for external PHY
+        const usb_phy_ext_io_conf_t ext_io_conf = {
+            .vp_io_num  = 8,
+            .vm_io_num  = 5,
+            .rcv_io_num = 11,
+            .oen_io_num = 17,
+            .vpo_io_num = 4,
+            .vmo_io_num = 46,
+            .fs_edge_sel_io_num = 38,
+            .suspend_n_io_num = -1,
+        };
+
+        // Configuration and initialization of external PHY for OTG controller (Host mode)
+        const usb_phy_config_t phy_config = {
+            .controller = USB_PHY_CTRL_OTG,
+            .target = USB_PHY_TARGET_EXT,
+            .otg_mode = USB_OTG_MODE_HOST,
+            .otg_speed = USB_PHY_SPEED_FULL,
+            .ext_io_conf = &ext_io_conf
+        };
+
+        usb_phy_handle_t phy_hdl;
+        ESP_ERROR_CHECK(usb_new_phy(&phy_config, &phy_hdl));
+
+        // Configure USB Host to use the externally initialized PHY
+        usb_host_config_t host_config = {
+            .skip_phy_setup = true,
+            // Add other host configuration fields as needed
+        };
+        ESP_ERROR_CHECK(usb_host_install(&host_config));
+
+    This setup ensures that the USB Host stack uses the **external PHY** and bypasses PHY setup.
 
 Host Stack Configuration
 ------------------------
@@ -439,10 +510,10 @@ The figure above shows all the delay values associated with both turning on port
 
 Configurable parameters of the USB host stack can be configured with multiple options via Menuconfig.
 
-* For debounce delay, refer to :ref:`CONFIG_USB_HOST_DEBOUNCE_DELAY_MS`.
-* For reset hold interval, refer to :ref:`CONFIG_USB_HOST_RESET_HOLD_MS`.
-* For reset recovery interval, refer to :ref:`CONFIG_USB_HOST_RESET_RECOVERY_MS`.
-* For ``SetAddress()`` recovery interval, refer to :ref:`CONFIG_USB_HOST_SET_ADDR_RECOVERY_MS`.
+* For debounce delay, refer to `CONFIG_USB_HOST_DEBOUNCE_DELAY_MS`.
+* For reset hold interval, refer to `CONFIG_USB_HOST_RESET_HOLD_MS`.
+* For reset recovery interval, refer to `CONFIG_USB_HOST_RESET_RECOVERY_MS`.
+* For ``SetAddress()`` recovery interval, refer to `CONFIG_USB_HOST_SET_ADDR_RECOVERY_MS`.
 
 Downstream Port Configuration
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -457,21 +528,21 @@ Each external Hub has a Hub Descriptor which describes the device characteristic
 
 Configurable parameters of the downstream port can be configured with multiple options via Menuconfig.
 
-* For custom value to stabilize the power after powering on the port (PwrOn2PwrGood value), refer to :ref:`CONFIG_USB_HOST_EXT_PORT_CUSTOM_POWER_ON_DELAY_MS`.
-* For reset recovery interval, refer to :ref:`CONFIG_USB_HOST_EXT_PORT_RESET_RECOVERY_DELAY_MS`.
+* For custom value to stabilize the power after powering on the port (PwrOn2PwrGood value), refer to `CONFIG_USB_HOST_EXT_PORT_CUSTOM_POWER_ON_DELAY_MS`.
+* For reset recovery interval, refer to `CONFIG_USB_HOST_EXT_PORT_RESET_RECOVERY_DELAY_MS`.
 
 .. note::
 
-    The specification claims, that for a hub with no power switches, PwrOn2PwrGood must be set to zero. Meanwhile, for some devices, this value could be increased to give extra time for device to power-up. To enable this feature, refer to :ref:`CONFIG_USB_HOST_EXT_PORT_CUSTOM_POWER_ON_DELAY_ENABLE`.
+    The specification claims, that for a hub with no power switches, PwrOn2PwrGood must be set to zero. Meanwhile, for some devices, this value could be increased to give extra time for device to power-up. To enable this feature, refer to `CONFIG_USB_HOST_EXT_PORT_CUSTOM_POWER_ON_DELAY_ENABLE`.
 
 Host Channels
 """""""""""""
 
-When external Hubs support feature is enabled (:ref:`CONFIG_USB_HOST_HUBS_SUPPORTED`), the amount of Host channels plays important role, as each downstream device requires vacant channel.
+When external Hubs support feature is enabled (`CONFIG_USB_HOST_HUBS_SUPPORTED`), the amount of Host channels plays important role, as each downstream device requires vacant channel.
 
 To handle each attached device, different amount of channels are required. This amount does depend on the device class (EPs number).
 
-Supported amount of channels for {IDF_TARGET_NAME} is {OTG_NUM_HOST_CHAN}.
+Supported amount of channels for {IDF_TARGET_NAME} is {IDF_TARGET_OTG_NUM_HOST_CHAN}.
 
 .. note::
 
@@ -495,7 +566,7 @@ The enumeration filter is a callback function of type :cpp:type:`usb_host_enum_f
 * Select the configuration of the USB device.
 * Filter which USB devices should be enumerated.
 
-To use the enumeration filter, users should enable the :ref:`CONFIG_USB_HOST_ENABLE_ENUM_FILTER_CALLBACK` option using menuconfig. Users can specify the callback by setting :cpp:member:`usb_host_config_t::enum_filter_cb` which is then passed to the Host Library when calling :cpp:func:`usb_host_install`.
+To use the enumeration filter, users should enable the `CONFIG_USB_HOST_ENABLE_ENUM_FILTER_CALLBACK` option using menuconfig. Users can specify the callback by setting :cpp:member:`usb_host_config_t::enum_filter_cb` which is then passed to the Host Library when calling :cpp:func:`usb_host_install`.
 
 .. -------------------------------------------------- API Reference ----------------------------------------------------
 
@@ -504,20 +575,26 @@ API Reference
 
 The API of the USB Host Library is separated into the following header files. However, it is sufficient for applications to only ``#include "usb/usb_host.h"`` and all USB Host Library headers will also be included.
 
-- :component_file:`usb/include/usb/usb_host.h` contains the functions and types of the USB Host Library.
-- :component_file:`usb/include/usb/usb_helpers.h` contains various helper functions that are related to the USB protocol such as descriptor parsing.
-- :component_file:`usb/include/usb/usb_types_stack.h` contains types that are used across multiple layers of the USB Host stack.
-- :component_file:`usb/include/usb/usb_types_ch9.h` contains types and macros related to Chapter 9 of the USB2.0 specification, i.e., descriptors and standard requests.
+- `usb/include/usb/usb_host.h` contains the functions and types of the USB Host Library.
+- `usb/include/usb/usb_helpers.h` contains various helper functions that are related to the USB protocol such as descriptor parsing.
+- `usb/include/usb/usb_types_stack.h` contains types that are used across multiple layers of the USB Host stack.
+- `usb/include/usb/usb_types_ch9.h` contains types and macros related to Chapter 9 of the USB2.0 specification, i.e., descriptors and standard requests.
+- `usb/include/usb/usb_types_ch11.h` contains types and macros related to Chapter 11 of the USB2.0 specification, i.e., hub specifications
 
+Header File
+^^^^^^^^^^^
 
-.. include-build-file:: inc/usb_host.inc
+- ``usb_host.h`` can be included with:
 
-.. include-build-file:: inc/usb_helpers.inc
+.. code:: c
 
-.. include-build-file:: inc/usb_types_stack.inc
+    #include "usb/usb_host.h"
 
-.. include-build-file:: inc/usb_types_ch9.inc
+- This header file is a part of the API provided by the ``usb`` component. The ``usb`` component is distributed via the `ESP Component Registry <https://components.espressif.com/components/espressif/usb>`__. Thus, to use it, please add the Device Stack component as dependency using the following command:
 
+.. code:: bash
+
+    idf.py add-dependency usb
 .. ------------------------------------------------ Maintainers Notes --------------------------------------------------
 
 Maintainers Notes

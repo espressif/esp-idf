@@ -71,10 +71,10 @@ void app_main(void)
         // capture on both edge
         .flags.neg_edge = true,
         .flags.pos_edge = true,
-        // pull up internally
-        .flags.pull_up = true,
     };
     ESP_ERROR_CHECK(mcpwm_new_capture_channel(cap_timer, &cap_ch_conf, &cap_chan));
+    // pull up the GPIO internally
+    ESP_ERROR_CHECK(gpio_set_pull_mode(HC_SR04_ECHO_GPIO, GPIO_PULLUP_ONLY));
 
     ESP_LOGI(TAG, "Register capture callback");
     TaskHandle_t cur_task = xTaskGetCurrentTaskHandle();

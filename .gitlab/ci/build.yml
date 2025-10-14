@@ -3,10 +3,7 @@
   extends:
     - .after_script:build:ccache-show-stats:upload-failed-job-logs
   image: $ESP_ENV_IMAGE
-  tags:
-    - build
-    # build only on shiny servers since shiny storage server is at the same location
-    - shiny
+  tags: [build, shiny]
   variables:
     # Enable ccache for all build jobs. See configure_ci_environment.sh for more ccache related settings.
     IDF_CCACHE_ENABLE: "1"
@@ -24,7 +21,7 @@
     - pipeline_variables
   artifacts:
     paths:
-      # The other artifacts patterns are defined under tools/ci/artifacts_handler.py
+      # The other artifacts patterns are defined under .idf_ci.toml
       # Now we're uploading/downloading the binary files from our internal storage server
       #
       # keep the log file to help debug
@@ -37,19 +34,16 @@
   variables:
     IDF_TOOLCHAIN: clang
     TEST_BUILD_OPTS_EXTRA: ""
-    TEST_DIR: tools/test_apps/system/clang_build_test
-    PYTEST_IGNORE_COLLECT_IMPORT_ERROR: "1"
   script:
     # CI specific options start from "--parallel-count xxx". could ignore when running locally
-    - run_cmd python tools/ci/ci_build_apps.py $TEST_DIR -v
+    - run_cmd idf-build-apps build
+      -p tools/test_apps/system/clang_build_test
       -t $IDF_TARGET
-      --copy-sdkconfig
       --parallel-count ${CI_NODE_TOTAL:-1}
       --parallel-index ${CI_NODE_INDEX:-1}
       --modified-components ${MR_MODIFIED_COMPONENTS}
       --modified-files ${MR_MODIFIED_FILES}
       $TEST_BUILD_OPTS_EXTRA
-    - python tools/ci/artifacts_handler.py upload
 
 ######################
 # build_template_app #
@@ -108,7 +102,7 @@ gcc_static_analyzer:
     ANALYZING_APP: "examples/get-started/hello_world"
   script:
     - echo "CONFIG_COMPILER_STATIC_ANALYZER=y" >> ${ANALYZING_APP}/sdkconfig.defaults
-    - python -m idf_build_apps build -v -p ${ANALYZING_APP} -t all
+    - idf-build-apps build -p ${ANALYZING_APP}
 
 ########################################
 # Clang Build Apps Without Tests Cases #
@@ -211,8 +205,45 @@ build_clang_test_apps_esp32p4:
   script:
     - ${IDF_PATH}/tools/ci/test_configure_ci_environment.sh
     - cd ${IDF_PATH}/tools/test_build_system
-    - python ${IDF_PATH}/tools/ci/get_known_failure_cases_file.py
+    - run_cmd idf-ci gitlab download-known-failure-cases-file ${KNOWN_FAILURE_CASES_FILE_NAME}
     - pytest
+      --cleanup-idf-copy
+      --parallel-count ${CI_NODE_TOTAL:-1}
+      --parallel-index ${CI_NODE_INDEX:-1}
+      --work-dir ${CI_PROJECT_DIR}/test_build_system
+      --junitxml ${CI_PROJECT_DIR}/XUNIT_RESULT.xml
+      --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}
+
+.test_build_system_macos_template_extension:
+  tags:
+    - macos
+  variables:
+    PYENV_VERSION: "3.10"
+    # CCACHE_DIR: "/cache/idf_ccache". On macOS, you cannot write to this folder due to insufficient permissions.
+    CCACHE_DIR: "" # ccache will use "$HOME/Library/Caches/ccache".
+    # Workaround for a bug in Parallels executor where CI_PROJECT_DIR is not an absolute path,
+    # but a relative path to the build directory (builds/espressif/esp-idf instead of ~/builds/espressif/esp-idf.
+    # GitLab sets the project dir to this template `<builds_dir>/<namespace>/<project_name>`
+    IDF_PATH: "/Users/espressif/builds/espressif/esp-idf"
+
+.test_build_system_minimal_cmake_template:
+  extends: .test_build_system_template
+  variables:
+    INSTALL_EXTRA_TOOLS: cmake@3.22.1
+  script:
+    - MINIMAL_SUPPORTED_CMAKE_VERSION=$(echo "${INSTALL_EXTRA_TOOLS}" | sed -n 's/.*cmake@\([0-9.]*\).*/\1/p')
+    - export PATH=$(echo "$PATH" | sed -E "s|/tools/cmake/[0-9.]+|/tools/cmake/${MINIMAL_SUPPORTED_CMAKE_VERSION}|")
+    - ACTUAL_CMAKE_VERSION=$(cmake --version | head -n1 | awk '{print $3}')
+    - |
+      if [ "${ACTUAL_CMAKE_VERSION}" != "${MINIMAL_SUPPORTED_CMAKE_VERSION}" ]; then
+        echo "ERROR: Wrong minimal CMake version! Detected: ${ACTUAL_CMAKE_VERSION}, but should be: ${MINIMAL_SUPPORTED_CMAKE_VERSION}"
+        exit 1
+      fi
+    - ${IDF_PATH}/tools/ci/test_configure_ci_environment.sh
+    - cd ${IDF_PATH}/tools/test_build_system
+    - run_cmd idf-ci gitlab download-known-failure-cases-file ${KNOWN_FAILURE_CASES_FILE_NAME}
+    - pytest
+      -k cmake
       --cleanup-idf-copy
       --parallel-count ${CI_NODE_TOTAL:-1}
       --parallel-index ${CI_NODE_INDEX:-1}
@@ -227,17 +258,25 @@ pytest_build_system:
 pytest_build_system_macos:
   extends:
     - .test_build_system_template
+    - .test_build_system_macos_template_extension
     - .before_script:build:macos
     - .after_script:build:macos:upload-failed-job-logs:ccache-show-stats
     - .rules:build:macos
-  tags:
-    - macos_shell
   parallel: 3
+
+pytest_build_system_minimal_cmake:
+  extends: .test_build_system_minimal_cmake_template
+
+pytest_build_system_macos_minimal_cmake:
+  extends:
+    - .test_build_system_minimal_cmake_template
+    - .test_build_system_macos_template_extension
+    - .before_script:build:macos
+    - .after_script:build:macos:upload-failed-job-logs:ccache-show-stats
+    - .rules:build:macos
   variables:
-    PYENV_VERSION: "3.9"
-    # CCACHE_DIR: "/cache/idf_ccache". On macOS, you cannot write to this folder due to insufficient permissions.
-    CCACHE_DIR: "" # ccache will use "$HOME/Library/Caches/ccache".
-    CCACHE_MAXSIZE: "5G" # To preserve the limited Macbook storage. CCACHE automatically prunes old caches to fit the set limit.
+    INSTALL_EXTRA_TOOLS: ninja cmake@3.22.1
+
 build_docker:
   extends:
     - .before_script:minimal
@@ -292,11 +331,7 @@ generate_build_child_pipeline:
       - non_test_related_apps.txt
     expire_in: 1 week
     when: always
-  variables:
-    PYTEST_IGNORE_COLLECT_IMPORT_ERROR: "1"
   script:
-    # requires basic pytest dependencies
-    - run_cmd bash install.sh --enable-pytest
     - run_cmd python tools/ci/dynamic_pipelines/scripts/generate_build_child_pipeline.py
 
 build_child_pipeline:
@@ -308,12 +343,9 @@ build_child_pipeline:
     - pipeline_variables
     - generate_build_child_pipeline
   variables:
-    IS_MR_PIPELINE: $IS_MR_PIPELINE
     MR_MODIFIED_COMPONENTS: $MR_MODIFIED_COMPONENTS
     MR_MODIFIED_FILES: $MR_MODIFIED_FILES
     PARENT_PIPELINE_ID: $CI_PIPELINE_ID
-    BUILD_AND_TEST_ALL_APPS: $BUILD_AND_TEST_ALL_APPS
-    REPORT_EXIT_CODE: $REPORT_EXIT_CODE
   # https://gitlab.com/gitlab-org/gitlab/-/issues/214340
   inherit:
     variables: false
@@ -322,3 +354,22 @@ build_child_pipeline:
       - artifact: build_child_pipeline.yml
         job: generate_build_child_pipeline
     strategy: depend
+
+generate_disabled_apps_report:
+  extends:
+    - .build_template
+  tags: [fast_run, shiny]
+  dependencies: # set dependencies to null to avoid missing artifacts issue
+  needs:
+    - pipeline_variables
+    - job: baseline_manifest_sha
+      optional: true
+  artifacts:
+    paths:
+      - disabled_report.html
+    expire_in: 1 week
+    when: always
+  script:
+    - pip install dominate idf-build-apps>=2.12.0
+    - run_cmd python tools/ci/gen_disabled_report.py --output disabled_report.html --verbose --enable-preview-targets
+    - echo "Report generated at https://${CI_PAGES_HOSTNAME}:${CI_SERVER_PORT}/-/esp-idf/-/jobs/${CI_JOB_ID}/artifacts/disabled_report.html"

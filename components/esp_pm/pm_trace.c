@@ -1,10 +1,11 @@
 /*
- * SPDX-FileCopyrightText: 2016-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2016-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include "esp_attr.h"
+#include "esp_sleep.h"
 #include "esp_private/pm_trace.h"
 #include "driver/gpio.h"
 #include "soc/soc.h"
@@ -55,6 +56,10 @@ void esp_pm_trace_init(void)
         }
         gpio_set_direction(io - 1, GPIO_MODE_OUTPUT);
     }
+#if SOC_PM_SUPPORT_RTC_PERIPH_PD
+    /* to force tracing GPIOs to keep state */
+    esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_ON);
+#endif
 }
 
 void IRAM_ATTR esp_pm_trace_enter(esp_pm_trace_event_t event, int core_id)

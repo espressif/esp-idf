@@ -23,8 +23,8 @@ The table below provides more information on pin usage, and please note the comm
       - Comments
 
     * - GPIO0
-      - LP_GPIO0
       -
+      - LP_GPIO0
       -
 
     * - GPIO1
@@ -59,7 +59,7 @@ The table below provides more information on pin usage, and please note the comm
 
     * - GPIO7
       -
-      - LP_GPIO7
+      -
       - Strapping pin
 
     * - GPIO8
@@ -150,7 +150,7 @@ The table below provides more information on pin usage, and please note the comm
     * - GPIO25
       -
       -
-      -
+      - Strapping pin
 
     * - GPIO26
       -
@@ -169,8 +169,8 @@ The table below provides more information on pin usage, and please note the comm
 
 .. note::
 
-    - Strapping pin: GPIO2, GPIO7, GPIO27, and GPIO28 are strapping pins. For more information, please refer to `datasheet <{IDF_TARGET_DATASHEET_EN_URL}>`__.
-	  - SPI0/1: GPIO16 ~ GPIO22 are usually used for SPI flash and not recommended for other uses.
+    - Strapping pin: GPIO2, GPIO7, GPIO25, GPIO27, and GPIO28 are strapping pins. For more information, please refer to `datasheet <{IDF_TARGET_DATASHEET_EN_URL}>`__.
+	  - SPI0/1: GPIO16 ~ GPIO22 are usually used for SPI flash and PSRAM, they're not recommended for other uses.
 	  - USB-JTAG: GPIO13 and GPIO14 are used by USB-JTAG by default. If they are reconfigured to operate as normal GPIOs, USB-JTAG functionality will be disabled.
 
 ---

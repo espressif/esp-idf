@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -55,6 +55,8 @@ initializer that should be kept in sync
         .stack_size         = 4096,                     \
         .core_id            = tskNO_AFFINITY,           \
         .task_caps          = (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT),       \
+        .max_req_hdr_len    = CONFIG_HTTPD_MAX_REQ_HDR_LEN,    \
+        .max_uri_len        = CONFIG_HTTPD_MAX_URI_LEN,        \
         .server_port        = 80,                       \
         .ctrl_port          = ESP_HTTPD_DEF_CTRL_PORT,  \
         .max_open_sockets   = 7,                        \
@@ -172,6 +174,13 @@ typedef struct httpd_config {
     size_t      stack_size;         /*!< The maximum stack size allowed for the server task */
     BaseType_t  core_id;            /*!< The core the HTTP server task will run on */
     uint32_t    task_caps;          /*!< The memory capabilities to use when allocating the HTTP server task's stack */
+
+    /**
+     * Size limits for the header and URI buffers respectively.
+     * These are just limits, allocation would depend upon actual size of URI/header.
+     */
+    size_t max_req_hdr_len;    /*!< Size limit for the header buffer (By default this value is set to CONFIG_HTTPD_MAX_REQ_HDR_LEN, overwrite is possible) */
+    size_t max_uri_len;    /*!< Size limit for the URI buffer By default this value is set to CONFIG_HTTPD_MAX_URI_LEN, overwrite is possible) */
 
     /**
      * TCP Port number for receiving and transmitting HTTP traffic
@@ -358,19 +367,13 @@ esp_err_t httpd_stop(httpd_handle_t handle);
  * @{
  */
 
-/* Max supported HTTP request header length */
-#define HTTPD_MAX_REQ_HDR_LEN CONFIG_HTTPD_MAX_REQ_HDR_LEN
-
-/* Max supported HTTP request URI length */
-#define HTTPD_MAX_URI_LEN CONFIG_HTTPD_MAX_URI_LEN
-
 /**
  * @brief HTTP Request Data Structure
  */
 typedef struct httpd_req {
     httpd_handle_t  handle;                     /*!< Handle to server instance */
     int             method;                     /*!< The type of HTTP request, -1 if unsupported method, HTTP_ANY for wildcard method to support every method */
-    const char      uri[HTTPD_MAX_URI_LEN + 1]; /*!< The URI of this request (1 byte extra for null termination) */
+    const char      uri[CONFIG_HTTPD_MAX_URI_LEN + 1]; /*!< The URI of this request (1 byte extra for null termination) */
     size_t          content_len;                /*!< Length of the request body */
     void           *aux;                        /*!< Internally used members */
 
@@ -438,7 +441,7 @@ typedef struct httpd_uri {
      */
     void *user_ctx;
 
-#ifdef CONFIG_HTTPD_WS_SUPPORT
+#if CONFIG_HTTPD_WS_SUPPORT || __DOXYGEN__
     /**
      * Flag for indicating a WebSocket endpoint.
      * If this flag is true, then method must be HTTP_GET. Otherwise the handshake will not be handled.
@@ -455,6 +458,14 @@ typedef struct httpd_uri {
      * Pointer to subprotocol supported by URI
      */
     const char *supported_subprotocol;
+
+#if CONFIG_HTTPD_WS_PRE_HANDSHAKE_CB_SUPPORT || __DOXYGEN__
+    /**
+     * Pointer to WebSocket pre-handshake callback. This will be called before the WebSocket handshake is processed,
+     * i.e. before the server responds with the WebSocket handshake response or before switching to the WebSocket handler.
+     */
+    esp_err_t (*ws_pre_handshake_cb)(httpd_req_t *req);
+#endif
 #endif
 } httpd_uri_t;
 
@@ -569,7 +580,7 @@ typedef enum {
      */
     HTTPD_501_METHOD_NOT_IMPLEMENTED,
 
-    /* When HTTP version is not 1.1 */
+    /* When HTTP version is not 1.1 or 1.0*/
     HTTPD_505_VERSION_NOT_SUPPORTED,
 
     /* Returned when http_parser halts parsing due to incorrect
@@ -611,10 +622,10 @@ typedef enum {
     /* Incoming payload is too large */
     HTTPD_413_CONTENT_TOO_LARGE,
 
-    /* URI length greater than CONFIG_HTTPD_MAX_URI_LEN */
+    /* URI length greater than CONFIG_CONFIG_HTTPD_MAX_URI_LEN */
     HTTPD_414_URI_TOO_LONG,
 
-    /* Headers section larger than CONFIG_HTTPD_MAX_REQ_HDR_LEN */
+    /* Headers section larger than CONFIG_CONFIG_HTTPD_MAX_REQ_HDR_LEN */
     HTTPD_431_REQ_HDR_FIELDS_TOO_LARGE,
 
     /* Used internally for retrieving the total count of errors */
@@ -964,7 +975,7 @@ esp_err_t httpd_req_get_hdr_value_str(httpd_req_t *r, const char *field, char *v
  *
  * @return
  *  - Length    : Query is found in the request URL
- *  - Zero      : Query not found / Null arguments / Invalid request
+ *  - Zero      : Query not found / Null arguments / Invalid request / uri is empty
  */
 size_t httpd_req_get_url_query_len(httpd_req_t *r);
 
@@ -992,6 +1003,7 @@ size_t httpd_req_get_url_query_len(httpd_req_t *r);
  *
  * @return
  *  - ESP_OK : Query is found in the request URL and copied to buffer
+ *  - ESP_FAIL                   : uri is empty
  *  - ESP_ERR_NOT_FOUND          : Query not found
  *  - ESP_ERR_INVALID_ARG        : Null arguments
  *  - ESP_ERR_HTTPD_INVALID_REQ  : Invalid HTTP request pointer
@@ -1147,7 +1159,7 @@ esp_err_t httpd_resp_send_chunk(httpd_req_t *r, const char *buf, ssize_t buf_len
 /**
  * @brief   API to send a complete string as HTTP response.
  *
- * This API simply calls http_resp_send with buffer length
+ * This API simply calls httpd_resp_send with buffer length
  * set to string length assuming the buffer contains a null
  * terminated string
  *
@@ -1168,7 +1180,7 @@ static inline esp_err_t httpd_resp_sendstr(httpd_req_t *r, const char *str) {
 /**
  * @brief   API to send a string as an HTTP response chunk.
  *
- * This API simply calls http_resp_send_chunk with buffer length
+ * This API simply calls httpd_resp_send_chunk with buffer length
  * set to string length assuming the buffer contains a null
  * terminated string
  *
@@ -1669,7 +1681,7 @@ esp_err_t httpd_queue_work(httpd_handle_t handle, httpd_work_fn_t work, void *ar
  * Functions and structs for WebSocket server
  * @{
  */
-#ifdef CONFIG_HTTPD_WS_SUPPORT
+#if CONFIG_HTTPD_WS_SUPPORT || __DOXYGEN__
 /**
  * @brief Enum for WebSocket packet types (Opcode in the header)
  * @note Please refer to RFC6455 Section 5.4 for more details
@@ -1804,10 +1816,48 @@ esp_err_t httpd_ws_send_data(httpd_handle_t handle, int socket, httpd_ws_frame_t
 esp_err_t httpd_ws_send_data_async(httpd_handle_t handle, int socket, httpd_ws_frame_t *frame,
                                    transfer_complete_cb callback, void *arg);
 
-#endif /* CONFIG_HTTPD_WS_SUPPORT */
+#endif /* CONFIG_HTTPD_WS_SUPPORT || __DOXYGEN__ */
 /** End of WebSocket related stuff
  * @}
  */
+
+/**
+ * @brief Get the length of the raw request data received from the client.
+ *
+ * @param[in] req     Current request
+ * @return
+ *  - 0      : If req is NULL
+ *  - size_t : The length of the buffer containing raw HTTP request data
+ */
+size_t httpd_get_raw_req_data_len(httpd_req_t *req);
+
+/**
+ * @brief Get the raw HTTP request data received from the client.
+ *
+ *        NOTE - This function returns different data for different http server states.
+ * 1. HTTP_SERVER_EVENT_ON_CONNECTED - Returns the data containing information related to URI and headers.
+ * 2. HTTP_SERVER_EVENT_ON_HEADER - Returns the data containing information related to only headers.
+ * 3. HTTP_SERVER_EVENT_ON_DATA - Returns the data containing information related to only headers.
+ * 4. HTTP_SERVER_EVENT_SENT_DATA - Returns the data containing information related to only headers.
+ * 5. HTTP_SERVER_EVENT_DISCONNECTED - Returns the data containing information related to only headers.
+ * 6. HTTP_SERVER_EVENT_STOP - Returns the data containing information related to only headers.
+ *
+ * @param[in] req     Current request
+ * @param[out] buf    Buffer to store the raw request data
+ * @param[in] buf_len The length of the buffer.
+ * @return
+ *  - ESP_OK                : On successful copy of raw request data
+ *  - ESP_ERR_INVALID_ARG   : If req or buf is NULL, or buf_len is 0
+ */
+esp_err_t httpd_get_raw_req_data(httpd_req_t *req, char *buf, size_t buf_len);
+
+/**
+ * @brief Get the HTTPD server state
+ *
+ * @param[in] handle    Handle to server returned by httpd_start
+ * @return HTTPD server state
+ */
+esp_http_server_event_id_t httpd_get_server_state(httpd_handle_t handle);
 
 #ifdef __cplusplus
 }

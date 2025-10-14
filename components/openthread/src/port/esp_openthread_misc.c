@@ -76,5 +76,5 @@ otPlatMcuPowerState otPlatGetMcuPowerState(otInstance *instance)
 void otPlatAssertFail(const char *filename, int line)
 {
     ESP_LOGE(OT_PLAT_LOG_TAG, "Assert failed at %s:%d", filename, line);
-    assert(false);
+    ESP_OPENTHREAD_ASSERT(false);
 }

@@ -30,6 +30,9 @@ esp_err_t adc_dma_init(adc_dma_t *adc_dma)
     //alloc rx gdma channel
     gdma_channel_alloc_config_t rx_alloc_config = {
         .direction = GDMA_CHANNEL_DIRECTION_RX,
+#if CONFIG_ADC_CONTINUOUS_ISR_IRAM_SAFE
+        .flags.isr_cache_safe = true,
+#endif
     };
     ret = gdma_new_ahb_channel(&rx_alloc_config, &(adc_dma->gdma_chan));
     if (ret != ESP_OK) {

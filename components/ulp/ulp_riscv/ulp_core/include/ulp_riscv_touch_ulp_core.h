@@ -48,7 +48,7 @@ esp_err_t ulp_riscv_touch_pad_filter_read_smooth(touch_pad_t touch_num, uint32_t
  * @brief Force reset benchmark to raw data of touch sensor.
  * @note Refer `touch_pad_reset_benchmark()` for more details
  *
- * @param touch_num     Touch pad index (TOUCH_PAD_MAX resets basaline of all channels)
+ * @param touch_num     Touch pad index (TOUCH_PAD_MAX resets baseline of all channels)
  * @return esp_err_t    ESP_OK when successful
  */
 esp_err_t ulp_riscv_touch_pad_reset_benchmark(touch_pad_t touch_num);

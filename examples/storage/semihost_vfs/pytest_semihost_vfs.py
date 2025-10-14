@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import os
 import shutil
@@ -8,6 +8,7 @@ from itertools import zip_longest
 
 import pytest
 from pytest_embedded_idf import IdfDut
+from pytest_embedded_idf.utils import idf_parametrize
 
 TEMP_DIR = tempfile.mkdtemp()
 HOST_FILE_NAME = 'host_file.txt'
@@ -24,6 +25,7 @@ def prepare() -> t.Generator[None, None, None]:
 
 
 @pytest.mark.jtag
+@idf_parametrize('target', ['esp32'], indirect=['target'])
 @pytest.mark.parametrize(
     'embedded_services, no_gdb, openocd_cli_args',
     [
@@ -31,9 +33,9 @@ def prepare() -> t.Generator[None, None, None]:
             'esp,idf,jtag',
             'y',
             f'-c \'set ESP_SEMIHOST_BASEDIR "{TEMP_DIR}"\' -f board/esp32-wrover-kit-3.3v.cfg',
-            marks=[pytest.mark.esp32],
         ),
-    ], ids=[
+    ],
+    ids=[
         'esp32',
     ],
     indirect=True,
@@ -47,7 +49,7 @@ def test_semihost_vfs(dut: IdfDut) -> None:
         dut.expect_exact('example: Wrote 2776 bytes')
     dut.expect_exact('====================== HOST DATA START =========================')
 
-    with open(HOST_FILE_PATH) as f:
+    with open(HOST_FILE_PATH, encoding='utf-8') as f:
         for line in f:
             if line.strip():
                 dut.expect_exact(line.strip())
@@ -55,7 +57,7 @@ def test_semihost_vfs(dut: IdfDut) -> None:
     dut.expect_exact('====================== HOST DATA END =========================')
     dut.expect_exact('example: Read 6121 bytes')
 
-    with open(os.path.join(TEMP_DIR, 'esp32_stdout.txt')) as f:
+    with open(os.path.join(TEMP_DIR, 'esp32_stdout.txt'), encoding='utf-8') as f:
 
         def expected_content() -> t.Iterator[str]:
             yield 'example: Switched to semihosted stdout'

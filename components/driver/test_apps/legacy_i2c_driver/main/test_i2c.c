@@ -679,7 +679,7 @@ static void uart_aut_baud_det_init(int rxd_io_num)
     gpio_func_sel(rxd_io_num, PIN_FUNC_GPIO);
     gpio_set_direction(rxd_io_num, GPIO_MODE_INPUT_OUTPUT);
     esp_rom_gpio_connect_out_signal(rxd_io_num, i2c_periph_signal[0].scl_out_sig, 0, 0);
-    esp_rom_gpio_connect_in_signal(rxd_io_num, UART_PERIPH_SIGNAL(1, SOC_UART_RX_PIN_IDX), 0);
+    esp_rom_gpio_connect_in_signal(rxd_io_num, UART_PERIPH_SIGNAL(1, SOC_UART_PERIPH_SIGNAL_RX), 0);
     HP_UART_BUS_CLK_ATOMIC() {
         uart_ll_enable_bus_clock(1, true);
         uart_ll_reset_register(1);

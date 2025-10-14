@@ -18,7 +18,7 @@ extern "C" {
 /**
  * @brief Group of RMT RX callbacks
  * @note The callbacks are all running under ISR environment
- * @note When CONFIG_RMT_ISR_IRAM_SAFE is enabled, the callback itself and functions called by it should be placed in IRAM.
+ * @note When CONFIG_RMT_RX_ISR_CACHE_SAFE is enabled, the callback itself and functions called by it should be placed in IRAM.
  *       The variables used in the function should be in the SRAM as well.
  */
 typedef struct {
@@ -41,7 +41,6 @@ typedef struct {
     struct {
         uint32_t invert_in: 1;    /*!< Whether to invert the incoming RMT channel signal */
         uint32_t with_dma: 1;     /*!< If set, the driver will allocate an RMT channel with DMA capability */
-        uint32_t io_loop_back: 1; /*!< For debug/test, the signal output from the GPIO will be fed to the input path as well */
         uint32_t allow_pd: 1;     /*!< If set, driver allows the power domain to be powered off when system enters sleep mode.
                                        This can save power, but at the expense of more RAM being consumed to save register context. */
     } flags;                      /*!< RX channel config flags */
@@ -100,7 +99,7 @@ esp_err_t rmt_receive(rmt_channel_handle_t rx_channel, void *buffer, size_t buff
  * @brief Set callbacks for RMT RX channel
  *
  * @note User can deregister a previously registered callback by calling this function and setting the callback member in the `cbs` structure to NULL.
- * @note When CONFIG_RMT_ISR_IRAM_SAFE is enabled, the callback itself and functions called by it should be placed in IRAM.
+ * @note When CONFIG_RMT_RX_ISR_CACHE_SAFE is enabled, the callback itself and functions called by it should be placed in IRAM.
  *       The variables used in the function should be in the SRAM as well. The `user_data` should also reside in SRAM.
  *
  * @param[in] rx_channel RMT generic channel that created by `rmt_new_rx_channel()`

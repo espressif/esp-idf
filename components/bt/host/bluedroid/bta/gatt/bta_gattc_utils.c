@@ -523,7 +523,8 @@ BOOLEAN bta_gattc_enqueue(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
                 cmd_data->api_write.p_value = (UINT8 *)(cmd_data + 1);
 			    memcpy(cmd_data->api_write.p_value, p_data->api_write.p_value, len);
             } else {
-                APPL_TRACE_ERROR("%s(), line = %d, alloc fail, no memory.", __func__, __LINE__);
+                APPL_TRACE_ERROR("%s(), line = %d, alloc fail, size %d,no memory. free=%d, largest_block=%d", __func__, __LINE__,
+                                heap_caps_get_free_size(MALLOC_CAP_DEFAULT), heap_caps_get_largest_free_block(MALLOC_CAP_DEFAULT));
                 return FALSE;
             }
         } else {

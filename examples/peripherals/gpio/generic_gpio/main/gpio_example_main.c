@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,18 +18,17 @@
  * This test code shows how to configure gpio and how to use gpio interrupt.
  *
  * GPIO status:
- * GPIO18: output (ESP32C2/ESP32H2 uses GPIO8 as the second output pin)
- * GPIO19: output (ESP32C2/ESP32H2 uses GPIO9 as the second output pin)
- * GPIO4:  input, pulled up, interrupt from rising edge and falling edge
- * GPIO5:  input, pulled up, interrupt from rising edge.
+ * GPIO_OUTPUT_IO_0: output
+ * GPIO_OUTPUT_IO_1: output
+ * GPIO_INPUT_IO_0:  input, pulled up, interrupt from rising edge and falling edge
+ * GPIO_INPUT_IO_1:  input, pulled up, interrupt from rising edge.
  *
- * Note. These are the default GPIO pins to be used in the example. You can
- * change IO pins in menuconfig.
+ * Note. You can check the default GPIO pins to be used in menuconfig, and the IOs can be changed.
  *
  * Test:
- * Connect GPIO18(8) with GPIO4
- * Connect GPIO19(9) with GPIO5
- * Generate pulses on GPIO18(8)/19(9), that triggers interrupt on GPIO4/5
+ * Connect GPIO_OUTPUT_IO_0 with GPIO_INPUT_IO_0
+ * Connect GPIO_OUTPUT_IO_1 with GPIO_INPUT_IO_1
+ * Generate pulses on GPIO_OUTPUT_IO_0/1, that triggers interrupt on GPIO_INPUT_IO_0/1
  *
  */
 
@@ -84,9 +83,9 @@ void app_main(void)
     //bit mask of the pins that you want to set,e.g.GPIO18/19
     io_conf.pin_bit_mask = GPIO_OUTPUT_PIN_SEL;
     //disable pull-down mode
-    io_conf.pull_down_en = 0;
+    io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
     //disable pull-up mode
-    io_conf.pull_up_en = 0;
+    io_conf.pull_up_en = GPIO_PULLUP_DISABLE;
     //configure GPIO with the given settings
     gpio_config(&io_conf);
 
@@ -97,7 +96,7 @@ void app_main(void)
     //set as input mode
     io_conf.mode = GPIO_MODE_INPUT;
     //enable pull-up mode
-    io_conf.pull_up_en = 1;
+    io_conf.pull_up_en = GPIO_PULLUP_ENABLE;
     gpio_config(&io_conf);
 
     //change gpio interrupt type for one pin

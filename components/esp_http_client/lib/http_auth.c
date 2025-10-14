@@ -41,7 +41,7 @@ static int md5_printf(char *md, const char *fmt, ...)
     unsigned char digest[MD5_MAX_LEN];
     int len, i;
     md5_context_t md5_ctx;
-    va_list ap;
+    va_list ap = {0};
     va_start(ap, fmt);
     len = vasprintf((char **)&buf, fmt, ap);
     if (buf == NULL) {
@@ -76,7 +76,7 @@ static int sha256_sprintf(char *sha, const char *fmt, ...)
     unsigned char *buf;
     unsigned char digest[SHA256_LEN];
     int len, i;
-    va_list ap;
+    va_list ap = {0};
     va_start(ap, fmt);
     len = vasprintf((char **)&buf, fmt, ap);
     if (buf == NULL) {

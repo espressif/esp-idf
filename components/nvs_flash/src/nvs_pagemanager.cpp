@@ -1,9 +1,11 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #include "nvs_pagemanager.hpp"
+
+using namespace std;
 
 namespace nvs
 {
@@ -56,77 +58,79 @@ esp_err_t PageManager::load(Partition *partition, uint32_t baseSector, uint32_t 
 
     // if power went out after a new item for the given key was written,
     // but before the old one was erased, we end up with a duplicate item
-    Page& lastPage = back();
-    size_t lastItemIndex = SIZE_MAX;
-    Item item;
-    size_t itemIndex = 0;
-    while (lastPage.findItem(Page::NS_ANY, ItemType::ANY, nullptr, itemIndex, item) == ESP_OK) {
-        itemIndex += item.span;
-        lastItemIndex = itemIndex;
-    }
-
-    if (lastItemIndex != SIZE_MAX) {
-        auto last = PageManager::TPageListIterator(&lastPage);
-        TPageListIterator it;
-
-        for (it = begin(); it != last; ++it) {
-
-            if ((it->state() != Page::PageState::FREEING) &&
-                    (it->eraseItem(item.nsIndex, item.datatype, item.key, item.chunkIndex) == ESP_OK)) {
-                break;
-            }
+    if (!partition->get_readonly()) {
+        Page& lastPage = back();
+        size_t lastItemIndex = SIZE_MAX;
+        Item item;
+        size_t itemIndex = 0;
+        while (lastPage.findItem(Page::NS_ANY, ItemType::ANY, nullptr, itemIndex, item) == ESP_OK) {
+            itemIndex += item.span;
+            lastItemIndex = itemIndex;
         }
-        if ((it == last) && (item.datatype == ItemType::BLOB_IDX)) {
-            /* Rare case in which the blob was stored using old format, but power went just after writing
-             * blob index during modification. Loop again and delete the old version blob*/
+
+        if (lastItemIndex != SIZE_MAX) {
+            auto last = PageManager::TPageListIterator(&lastPage);
+            TPageListIterator it;
+
             for (it = begin(); it != last; ++it) {
 
                 if ((it->state() != Page::PageState::FREEING) &&
-                        (it->eraseItem(item.nsIndex, ItemType::BLOB, item.key, item.chunkIndex) == ESP_OK)) {
+                        (it->eraseItem(item.nsIndex, item.datatype, item.key, item.chunkIndex) == ESP_OK)) {
                     break;
                 }
             }
-        }
-    }
+            if ((it == last) && (item.datatype == ItemType::BLOB_IDX)) {
+                /* Rare case in which the blob was stored using old format, but power went just after writing
+                * blob index during modification. Loop again and delete the old version blob*/
+                for (it = begin(); it != last; ++it) {
 
-    // check if power went out while page was being freed
-    for (auto it = begin(); it!= end(); ++it) {
-        if (it->state() == Page::PageState::FREEING) {
-            Page* newPage = &mPageList.back();
-            if (newPage->state() == Page::PageState::ACTIVE) {
-                auto err = newPage->erase();
+                    if ((it->state() != Page::PageState::FREEING) &&
+                            (it->eraseItem(item.nsIndex, ItemType::BLOB, item.key, item.chunkIndex) == ESP_OK)) {
+                        break;
+                    }
+                }
+            }
+        }
+
+        // check if power went out while page was being freed
+        for (auto it = begin(); it!= end(); ++it) {
+            if (it->state() == Page::PageState::FREEING) {
+                Page* newPage = &mPageList.back();
+                if (newPage->state() == Page::PageState::ACTIVE) {
+                    auto err = newPage->erase();
+                    if (err != ESP_OK) {
+                        return err;
+                    }
+                    mPageList.erase(newPage);
+                    mFreePageList.push_back(newPage);
+                }
+                auto err = activatePage();
                 if (err != ESP_OK) {
                     return err;
                 }
-                mPageList.erase(newPage);
-                mFreePageList.push_back(newPage);
-            }
-            auto err = activatePage();
-            if (err != ESP_OK) {
-                return err;
-            }
-            newPage = &mPageList.back();
+                newPage = &mPageList.back();
 
-            err = it->copyItems(*newPage);
-            if (err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND) {
-                return err;
-            }
+                err = it->copyItems(*newPage);
+                if (err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND) {
+                    return err;
+                }
 
-            err = it->erase();
-            if (err != ESP_OK) {
-                return err;
-            }
+                err = it->erase();
+                if (err != ESP_OK) {
+                    return err;
+                }
 
-            Page* p = static_cast<Page*>(it);
-            mPageList.erase(it);
-            mFreePageList.push_back(p);
-            break;
+                Page* p = static_cast<Page*>(it);
+                mPageList.erase(it);
+                mFreePageList.push_back(p);
+                break;
+            }
         }
-    }
 
-    // partition should have at least one free page
-    if (mFreePageList.empty()) {
-        return ESP_ERR_NVS_NO_FREE_PAGES;
+        // partition should have at least one free page if it is not read-only
+        if (mFreePageList.empty()) {
+            return ESP_ERR_NVS_NO_FREE_PAGES;
+        }
     }
 
     return ESP_OK;

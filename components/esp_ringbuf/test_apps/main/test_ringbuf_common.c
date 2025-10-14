@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +12,7 @@
 #include "sdkconfig.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
@@ -19,6 +20,7 @@
 #include "freertos/ringbuf.h"
 #include "unity.h"
 #include "esp_rom_sys.h"
+#include "esp_task.h"
 
 #include "test_functions.h"
 
@@ -1041,4 +1043,337 @@ TEST_CASE("Test no-split buffers always receive items in order", "[esp_ringbuf][
 
     // Cleanup
     vRingbufferDelete(buffer_handle);
+}
+
+/* ---------------------------- Test no-split ring buffer SendAquire and SendComplete ---------------------------
+ * The following test case tests the SendAquire and SendComplete functions of the no-split ring buffer.
+ *
+ * The test case will do the following...
+ * 1) Create a no-split ring buffer.
+ * 2) Acquire space on the buffer to send an item.
+ * 3) Send the item to the buffer.
+ * 4) Verify that the item is received correctly.
+ * 5) Acquire space on the buffer until the buffer is full and the acquire pointer wraps around.
+ * 6) Send the items out-of-order to the buffer.
+ * 7) Verify that the items are not received until the first item is sent.
+ * 8) Send the first item.
+ * 9) Verify that the items are received in the correct order.
+ */
+TEST_CASE("Test no-split buffers can receive items if the acquire pointer wraps around", "[esp_ringbuf][linux]")
+{
+    // Create buffer
+    RingbufHandle_t buffer_handle = xRingbufferCreate(BUFFER_SIZE, RINGBUF_TYPE_NOSPLIT);
+    TEST_ASSERT_MESSAGE(buffer_handle != NULL, "Failed to create ring buffer");
+
+    // Acquire space on the buffer to send an item and write to the item
+    void *item1;
+    TEST_ASSERT_EQUAL(pdTRUE, xRingbufferSendAcquire(buffer_handle, &item1, LARGE_ITEM_SIZE, TIMEOUT_TICKS));
+    *(uint32_t *)item1 = 0x123;
+
+    // Send the item to the buffer
+    TEST_ASSERT_EQUAL(pdTRUE, xRingbufferSendComplete(buffer_handle, item1));
+
+    // Verify that the item is received correctly
+    size_t item_size;
+    uint32_t *received_item = xRingbufferReceive(buffer_handle, &item_size, TIMEOUT_TICKS);
+    TEST_ASSERT_NOT_NULL(received_item);
+    TEST_ASSERT_EQUAL(item_size, LARGE_ITEM_SIZE);
+    TEST_ASSERT_EQUAL(*(uint32_t *)received_item, 0x123);
+
+    // Return the space to the buffer after receiving the item
+    vRingbufferReturnItem(buffer_handle, received_item);
+
+    // At this point, the buffer should be empty
+    UBaseType_t items_waiting;
+    vRingbufferGetInfo(buffer_handle, NULL, NULL, NULL, NULL, &items_waiting);
+    TEST_ASSERT_MESSAGE(items_waiting == 0, "Incorrect items waiting");
+
+    // Acquire space on the buffer until the buffer is full and the acquire pointer wraps around
+#define MAX_LARGE_ITEMS ( BUFFER_SIZE / ( LARGE_ITEM_SIZE + ITEM_HDR_SIZE ) )
+    void *items[MAX_LARGE_ITEMS];
+    for (int i = 0; i < MAX_LARGE_ITEMS; i++) {
+        TEST_ASSERT_EQUAL(pdTRUE, xRingbufferSendAcquire(buffer_handle, &items[i], LARGE_ITEM_SIZE, TIMEOUT_TICKS));
+        TEST_ASSERT_NOT_NULL(items[i]);
+        *(uint32_t *)items[i] = (0x100 + i);
+    }
+
+    // At this point, the buffer should be full and the acquire pointer must have wrapped around
+    xRingbufferPrintInfo(buffer_handle);
+    UBaseType_t uFree, uRead, uWrite, uAcquire;
+    vRingbufferGetInfo(buffer_handle, &uFree, &uRead, &uWrite, &uAcquire, &items_waiting);
+    TEST_ASSERT_EQUAL_UINT32(uAcquire, uWrite);
+    TEST_ASSERT_EQUAL_UINT32(uAcquire, uRead);
+    TEST_ASSERT_EQUAL_UINT32(uAcquire, uFree);
+    TEST_ASSERT_EQUAL(0U, xRingbufferGetCurFreeSize(buffer_handle));
+
+    // Send the items out-of-order to the buffer. Verify that the items are not received until the first item is sent.
+    // In this case, we send the items in the reverse order until the first item is sent.
+    for (int i = MAX_LARGE_ITEMS - 1; i > 0; i--) {
+        TEST_ASSERT_EQUAL(pdTRUE, xRingbufferSendComplete(buffer_handle, items[i]));
+        TEST_ASSERT_NULL(xRingbufferReceive(buffer_handle, &item_size, 0));
+    }
+
+    // Send the first item
+    TEST_ASSERT_EQUAL(pdTRUE, xRingbufferSendComplete(buffer_handle, items[0]));
+
+    // Verify that the items are received in the correct order
+    for (int i = 0; i < MAX_LARGE_ITEMS; i++) {
+        received_item = xRingbufferReceive(buffer_handle, &item_size, TIMEOUT_TICKS);
+        TEST_ASSERT_EQUAL(*(uint32_t *)received_item, (0x100 + i));
+        vRingbufferReturnItem(buffer_handle, received_item);
+    }
+
+    // Cleanup
+    vRingbufferDelete(buffer_handle);
+}
+
+static void acquire_all_items(RingbufHandle_t buffer_handle, void **items, int capacity)
+{
+    // Acquire all items with SendAcquire
+    for (int i = 0; i < capacity; i++) {
+        printf("Acquire %d item\n", i);
+        TEST_ASSERT_EQUAL(pdTRUE, xRingbufferSendAcquire(buffer_handle, &items[i], MEDIUM_ITEM_SIZE, 0));
+        TEST_ASSERT_NOT_NULL(items[i]);
+    }
+}
+
+static void write_and_send_all_items(RingbufHandle_t buffer_handle, void **items, int capacity, uint8_t data[])
+{
+    // Write to all acquired items and send them with SendComplete
+    for (int i = 0; i < capacity; i++) {
+        printf("Write and Send %d item\n", i);
+        memset(items[i], data[i], MEDIUM_ITEM_SIZE);
+        TEST_ASSERT_EQUAL(pdTRUE, xRingbufferSendComplete(buffer_handle, items[i]));
+    }
+}
+
+static void receive_all_items(RingbufHandle_t buffer_handle, void **rx_items, int capacity)
+{
+    // Receive all items
+    for (int i = 0; i < capacity; i++) {
+        printf("Receive %d item\n", i);
+        size_t item_size;
+        rx_items[i] = xRingbufferReceive(buffer_handle, &item_size, 0);
+        TEST_ASSERT_NOT_NULL(rx_items[i]);
+        TEST_ASSERT_EQUAL(MEDIUM_ITEM_SIZE, item_size);
+    }
+}
+
+static void read_and_return_item(RingbufHandle_t buffer_handle, void **rx_items, int index, uint8_t data)
+{
+    TEST_ASSERT_NOT_NULL(rx_items[index]);
+    TEST_ASSERT_EQUAL(((uint8_t *)rx_items[index])[0], data);
+    vRingbufferReturnItem(buffer_handle, rx_items[index]);
+}
+
+static void read_received_all_items(RingbufHandle_t buffer_handle, void **rx_items, int capacity, uint8_t data[])
+{
+    for (int i = 0; i < capacity; i++) {
+        printf("Read and return %d item\n", i);
+        read_and_return_item(buffer_handle, rx_items, i, data[i]);
+    }
+}
+
+TEST_CASE("Test no-split buffers returning oldest item when full frees one slot", "[esp_ringbuf][linux]")
+{
+    // Create buffer
+    RingbufHandle_t buffer_handle = xRingbufferCreate(BUFFER_SIZE, RINGBUF_TYPE_NOSPLIT);
+    TEST_ASSERT_MESSAGE(buffer_handle != NULL, "Failed to create ring buffer");
+    const int capacity = BUFFER_SIZE / (ITEM_HDR_SIZE + MEDIUM_ITEM_SIZE);
+    TEST_ASSERT_EQUAL(4, capacity);
+    void *rx_items[capacity];
+    uint8_t data[] = {10, 11, 12, 13};
+
+    acquire_all_items(buffer_handle, rx_items, capacity);
+    write_and_send_all_items(buffer_handle, rx_items, capacity, data);
+    receive_all_items(buffer_handle, rx_items, capacity);
+
+    const int free_idx = 0;
+    printf("-- Read and returning only %d item\n", free_idx);
+    TEST_ASSERT_EQUAL(((uint8_t *)rx_items[free_idx])[0], data[free_idx]);
+    vRingbufferReturnItem(buffer_handle, rx_items[free_idx]);
+    xRingbufferPrintInfo(buffer_handle);
+
+    printf("-- Verify that only the first item is returned.\n");
+    TEST_ASSERT_EQUAL(pdTRUE, xRingbufferSendAcquire(buffer_handle, &rx_items[free_idx], MEDIUM_ITEM_SIZE, 0));
+    xRingbufferPrintInfo(buffer_handle);
+    data[free_idx] = 20;
+    memset(rx_items[free_idx], data[free_idx], MEDIUM_ITEM_SIZE);
+    TEST_ASSERT_EQUAL(pdTRUE, xRingbufferSendComplete(buffer_handle, rx_items[free_idx]));
+
+    printf("-- Attempting to acquire a second item should fail, as expected.\n");
+    TEST_ASSERT_EQUAL(pdFALSE, xRingbufferSendAcquire(buffer_handle, &rx_items[free_idx], MEDIUM_ITEM_SIZE, 0));
+
+    printf("-- Receive the first item second time, making it available for reading\n");
+    size_t item_size;
+    rx_items[free_idx] = xRingbufferReceive(buffer_handle, &item_size, 0);
+    TEST_ASSERT_NOT_NULL(rx_items[free_idx]);
+    TEST_ASSERT_EQUAL(((uint8_t *)rx_items[free_idx])[0], data[free_idx]);
+
+    printf("-- Read and return all items\n");
+    read_received_all_items(buffer_handle, rx_items, capacity, data);
+    xRingbufferPrintInfo(buffer_handle);
+
+    printf("-- Repeat the process: Acquire -> Write -> Send -> Receive -> Read -> Return\n");
+    for (int i = 0; i < capacity; i++) {
+        data[i] = 100 + i;
+    }
+    acquire_all_items(buffer_handle, rx_items, capacity);
+    write_and_send_all_items(buffer_handle, rx_items, capacity, data);
+    receive_all_items(buffer_handle, rx_items, capacity);
+    read_received_all_items(buffer_handle, rx_items, capacity, data);
+
+    // Cleanup
+    vRingbufferDelete(buffer_handle);
+}
+
+TEST_CASE("Test no-split buffers returning non-oldest item when full does not free slot", "[esp_ringbuf][linux]")
+{
+    // Create buffer
+    RingbufHandle_t buffer_handle = xRingbufferCreate(BUFFER_SIZE, RINGBUF_TYPE_NOSPLIT);
+    TEST_ASSERT_MESSAGE(buffer_handle != NULL, "Failed to create ring buffer");
+    const int capacity = BUFFER_SIZE / (ITEM_HDR_SIZE + MEDIUM_ITEM_SIZE);
+    TEST_ASSERT_EQUAL(4, capacity);
+    void *rx_items[capacity];
+    uint8_t data[] = {10, 11, 12, 13};
+
+    acquire_all_items(buffer_handle, rx_items, capacity);
+    write_and_send_all_items(buffer_handle, rx_items, capacity, data);
+    receive_all_items(buffer_handle, rx_items, capacity);
+
+    const int free_idx = 1;
+    printf("-- Read and returning only %d item\n", free_idx);
+    TEST_ASSERT_EQUAL(((uint8_t *)rx_items[free_idx])[0], data[free_idx]);
+    vRingbufferReturnItem(buffer_handle, rx_items[free_idx]);
+
+    printf("-- Verify that only the second item is returned. Can not acquire the second item\n");
+    TEST_ASSERT_EQUAL(pdFALSE, xRingbufferSendAcquire(buffer_handle, &rx_items[free_idx], MEDIUM_ITEM_SIZE, 0));
+
+    xRingbufferPrintInfo(buffer_handle);
+    printf("-- Read and return the rest of the items\n");
+    for (int i = 0; i < capacity; i++) {
+        if (i != free_idx) {
+            read_and_return_item(buffer_handle, rx_items, i, data[i]);
+        }
+    }
+    xRingbufferPrintInfo(buffer_handle);
+
+    printf("-- Repeat the process: Acquire -> Write -> Send -> Receive -> Read -> Return\n");
+    for (int i = 0; i < capacity; i++) {
+        data[i] = 100 + i;
+    }
+    acquire_all_items(buffer_handle, rx_items, capacity);
+    write_and_send_all_items(buffer_handle, rx_items, capacity, data);
+    receive_all_items(buffer_handle, rx_items, capacity);
+    read_received_all_items(buffer_handle, rx_items, capacity, data);
+
+    // Cleanup
+    vRingbufferDelete(buffer_handle);
+}
+
+TEST_CASE("Test no-split full buffer becomes empty when oldest is returned last", "[esp_ringbuf][linux]")
+{
+    RingbufHandle_t buffer_handle = xRingbufferCreate(BUFFER_SIZE, RINGBUF_TYPE_NOSPLIT);
+    TEST_ASSERT_MESSAGE(buffer_handle != NULL, "Failed to create ring buffer");
+    const int capacity = BUFFER_SIZE / (ITEM_HDR_SIZE + MEDIUM_ITEM_SIZE);
+    TEST_ASSERT_EQUAL(4, capacity);
+    uint8_t data[] = {10, 11, 12, 13};
+
+    // 1) Acquire, write, complete: buffer becomes FULL
+    void *rx_items[capacity];
+    acquire_all_items(buffer_handle, rx_items, capacity);
+    write_and_send_all_items(buffer_handle, rx_items, capacity, data);
+    TEST_ASSERT_EQUAL(0U, xRingbufferGetCurFreeSize(buffer_handle)); // FULL
+
+    // 2) Receive all items but DON'T return yet (hold them)
+    receive_all_items(buffer_handle, rx_items, capacity);
+    UBaseType_t items_waiting_after_recv;
+    vRingbufferGetInfo(buffer_handle, NULL, NULL, NULL, NULL, &items_waiting_after_recv);
+    TEST_ASSERT_EQUAL(0, items_waiting_after_recv);
+    TEST_ASSERT_EQUAL(0U, xRingbufferGetCurFreeSize(buffer_handle)); // still FULL
+
+    // 3) Return non-oldest first — still no space (FULL must remain)
+    for (int i = 1; i < capacity; ++i) {
+        read_and_return_item(buffer_handle, rx_items, i, data[i]);
+    }
+    void *tmp;
+    TEST_ASSERT_EQUAL(pdFALSE, xRingbufferSendAcquire(buffer_handle, &tmp, MEDIUM_ITEM_SIZE, 0));
+    TEST_ASSERT_NULL(tmp);
+
+    // 4) Return the oldest last — now FULL must clear, buffer becomes truly empty
+    xRingbufferPrintInfo(buffer_handle);
+    read_and_return_item(buffer_handle, rx_items, 0, data[0]);
+    xRingbufferPrintInfo(buffer_handle);
+
+    // Verify: pointers collapse, not FULL anymore, new acquires succeed
+    UBaseType_t uFree, uRead, uWrite, uAcquire, waiting;
+    vRingbufferGetInfo(buffer_handle, &uFree, &uRead, &uWrite, &uAcquire, &waiting);
+    TEST_ASSERT_EQUAL_UINT32(waiting, 0);
+    TEST_ASSERT_EQUAL_UINT32(uFree, uRead);
+    TEST_ASSERT_EQUAL_UINT32(uFree, uAcquire);
+
+    TEST_ASSERT_GREATER_THAN_UINT32(0, xRingbufferGetCurFreeSize(buffer_handle)); // FULL cleared
+
+    void *slot;
+    TEST_ASSERT_EQUAL(pdTRUE, xRingbufferSendAcquire(buffer_handle, &slot, MEDIUM_ITEM_SIZE, 0));
+    TEST_ASSERT_NOT_NULL(slot);
+    vRingbufferDelete(buffer_handle);
+}
+
+/* ----------------------------------- Test ring buffer reset --------------------------------------
+ * Reset Case: Test that vRingbufferReset() empties the ring buffer
+ * Reset unblocks sender: Test that vRingbufferReset() will unblock a previously blocked sender
+ */
+
+static uint8_t item[SMALL_ITEM_SIZE] = {0};
+
+TEST_CASE("Test ring buffer reset", "[esp_ringbuf][linux]")
+{
+    // Create buffer
+    RingbufHandle_t rb = xRingbufferCreate(SMALL_ITEM_SIZE, RINGBUF_TYPE_BYTEBUF);
+    TEST_ASSERT_MESSAGE(rb != NULL, "Failed to create ring buffer");
+    // Fill buffer
+    TEST_ASSERT_EQUAL(pdTRUE, xRingbufferSend(rb, item, SMALL_ITEM_SIZE, 0));
+    // Confirm buffer is full
+    TEST_ASSERT_EQUAL(0, xRingbufferGetCurFreeSize(rb));
+    // Reset ring buffer
+    vRingbufferReset(rb);
+    // Confirm buffer is empty
+    TEST_ASSERT_EQUAL(SMALL_ITEM_SIZE, xRingbufferGetCurFreeSize(rb));
+    // Cleanup
+    vRingbufferDelete(rb);
+}
+
+static volatile bool post_reset_send = false;
+
+static void post_reset_send_task(void *arg)
+{
+    RingbufHandle_t rb = (RingbufHandle_t)arg;
+    TEST_ASSERT_EQUAL(pdTRUE, xRingbufferSend(rb, item, SMALL_ITEM_SIZE, portMAX_DELAY));
+    post_reset_send = true;
+    vTaskDelete(NULL);
+}
+
+TEST_CASE("Test ring buffer reset unblocks sender ", "[esp_ringbuf][linux]")
+{
+    // Create buffer
+    RingbufHandle_t rb = xRingbufferCreate(SMALL_ITEM_SIZE, RINGBUF_TYPE_BYTEBUF);
+    TEST_ASSERT_MESSAGE(rb != NULL, "Failed to create ring buffer");
+    // Fill buffer
+    TEST_ASSERT_EQUAL(pdTRUE, xRingbufferSend(rb, item, SMALL_ITEM_SIZE, 0));
+    // Confirm buffer is full
+    TEST_ASSERT_EQUAL(0, xRingbufferGetCurFreeSize(rb));
+    // Launch task to block on sending to full ring buffer
+    post_reset_send = false;
+    xTaskCreatePinnedToCore(post_reset_send_task, "send tsk", 2048, (void*)rb, ESP_TASK_MAIN_PRIO + 1, NULL, 0);
+    vTaskDelay(10);
+    // Confirm blocked task has not sent
+    TEST_ASSERT_EQUAL(false, post_reset_send);
+    // Reset the ring buffer
+    vRingbufferReset(rb);
+
+    TEST_ASSERT_EQUAL(true, post_reset_send);
+    // Cleanup
+    vRingbufferDelete(rb);
+    vTaskDelay(1);
 }

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -148,9 +148,11 @@ esp_err_t jpeg_encoder_process(jpeg_encoder_handle_t encoder_engine, const jpeg_
 
     esp_err_t ret = ESP_OK;
 
+#if CONFIG_PM_ENABLE
     if (encoder_engine->codec_base->pm_lock) {
         ESP_RETURN_ON_ERROR(esp_pm_lock_acquire(encoder_engine->codec_base->pm_lock), TAG, "acquire pm_lock failed");
     }
+#endif
     jpeg_hal_context_t *hal = &encoder_engine->codec_base->hal;
     uint8_t *raw_buffer = (uint8_t*)encode_inbuf;
     uint32_t compressed_size;
@@ -183,6 +185,16 @@ esp_err_t jpeg_encoder_process(jpeg_encoder_handle_t encoder_engine, const jpeg_
         encoder_engine->color_space = JPEG_ENC_SRC_YUV422;
         best_hb_idx = JPEG_ENC_SRC_YUV422_HB;
         break;
+#if !(CONFIG_ESP_REV_MIN_FULL < 300 && SOC_IS(ESP32P4))
+    case JPEG_ENCODE_IN_FORMAT_YUV444:
+        encoder_engine->color_space = JPEG_ENC_SRC_YUV444;
+        best_hb_idx = JPEG_ENC_SRC_YUV444_HB;
+        break;
+    case JPEG_ENCODE_IN_FORMAT_YUV420:
+        encoder_engine->color_space = JPEG_ENC_SRC_YUV420;
+        best_hb_idx = JPEG_ENC_SRC_YUV420_HB;
+        break;
+#endif
     default:
         ESP_LOGE(TAG, "wrong, we don't support encode from such format.");
         ret = ESP_ERR_NOT_SUPPORTED;
@@ -237,7 +249,7 @@ esp_err_t jpeg_encoder_process(jpeg_encoder_handle_t encoder_engine, const jpeg_
     memset(encoder_engine->txlink, 0, sizeof(dma2d_descriptor_t));
     s_cfg_desc(encoder_engine, encoder_engine->txlink, JPEG_DMA2D_2D_ENABLE, DMA2D_DESCRIPTOR_BLOCK_RW_MODE_MULTIPLE, dma_vb, dma_hb, JPEG_DMA2D_EOF_NOT_LAST, dma2d_desc_pixel_format_to_pbyte_value(picture_format), DMA2D_DESCRIPTOR_BUFFER_OWNER_DMA, encoder_engine->header_info->origin_v, encoder_engine->header_info->origin_h, raw_buffer, NULL);
 
-    ret = esp_cache_msync((void*)raw_buffer, encoder_engine->header_info->origin_v * encoder_engine->header_info->origin_h * encoder_engine->bytes_per_pixel, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
+    ret = esp_cache_msync((void*)raw_buffer, inbuf_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
     assert(ret == ESP_OK);
 
     dma2d_trans_config_t trans_desc = {
@@ -261,6 +273,12 @@ esp_err_t jpeg_encoder_process(jpeg_encoder_handle_t encoder_engine, const jpeg_
             goto err1;
         }
 
+        if (s_rcv_event.dma_evt & JPEG_DMA2D_RX_DESC_EMPTY) {
+            ESP_LOGE(TAG, "Due to image quality issues, the generated image is larger than the buffer provided by the user. You can increase the buffer or ignore this information");
+            ret = ESP_ERR_INVALID_STATE;
+            goto err2; // dma2d will freeup this channel in this event, so goto err2
+        }
+
         if (s_rcv_event.dma_evt & JPEG_DMA2D_RX_EOF) {
             ESP_GOTO_ON_ERROR(esp_cache_msync((void*)encoder_engine->rxlink, encoder_engine->dma_desc_size, ESP_CACHE_MSYNC_FLAG_DIR_M2C), err1, TAG, "sync memory to cache failed");
             compressed_size = s_dma_desc_get_len(encoder_engine->rxlink);
@@ -274,18 +292,22 @@ esp_err_t jpeg_encoder_process(jpeg_encoder_handle_t encoder_engine, const jpeg_
     *out_size = compressed_size;
 
     xSemaphoreGive(encoder_engine->codec_base->codec_mutex);
+#if CONFIG_PM_ENABLE
     if (encoder_engine->codec_base->pm_lock) {
         ESP_RETURN_ON_ERROR(esp_pm_lock_release(encoder_engine->codec_base->pm_lock), TAG, "release pm_lock failed");
     }
+#endif
     return ESP_OK;
 
 err1:
     dma2d_force_end(encoder_engine->trans_desc, &need_yield);
 err2:
     xSemaphoreGive(encoder_engine->codec_base->codec_mutex);
+#if CONFIG_PM_ENABLE
     if (encoder_engine->codec_base->pm_lock) {
         esp_pm_lock_release(encoder_engine->codec_base->pm_lock);
     }
+#endif
     return ret;
 }
 
@@ -367,6 +389,19 @@ static bool s_jpeg_rx_eof(dma2d_channel_handle_t dma2d_chan, dma2d_event_data_t 
     return higher_priority_task_awoken;
 }
 
+static bool s_jpeg_rx_desc_empty(dma2d_channel_handle_t dma2d_chan, dma2d_event_data_t *event_data, void *user_data)
+{
+    jpeg_encoder_handle_t encoder_engine = (jpeg_encoder_handle_t) user_data;
+    portBASE_TYPE higher_priority_task_awoken = pdFALSE;
+    jpeg_enc_dma2d_evt_t s_event = {
+        .dma_evt = JPEG_DMA2D_RX_DESC_EMPTY,
+        .encoder_status = 0,
+    };
+    xQueueSendFromISR(encoder_engine->evt_queue, &s_event, &higher_priority_task_awoken);
+
+    return higher_priority_task_awoken;
+}
+
 static void jpeg_enc_config_dma_trans_ability(jpeg_encoder_handle_t encoder_engine)
 {
     // set transfer ability
@@ -442,6 +477,7 @@ static bool s_jpeg_enc_transaction_on_job_picked(uint32_t channel_num, const dma
 
     static dma2d_rx_event_callbacks_t jpeg_dec_cbs = {
         .on_recv_eof = s_jpeg_rx_eof,
+        .on_desc_empty = s_jpeg_rx_desc_empty,
     };
 
     dma2d_register_rx_event_callbacks(rx_chan, &jpeg_dec_cbs, encoder_engine);
@@ -470,6 +506,7 @@ static void s_cfg_desc(jpeg_encoder_handle_t encoder_engine, dma2d_descriptor_t 
     dsc->next       = next_dsc;
     esp_err_t ret = esp_cache_msync((void*)dsc, encoder_engine->dma_desc_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_INVALIDATE);
     assert(ret == ESP_OK);
+    (void)ret;
 }
 
 static void s_jpeg_enc_config_picture_color_space(jpeg_encoder_handle_t encoder_engine)

@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Unlicense OR CC0-1.0
+
+
+cfg prefetch true     # enable data prefetch
+cfg eof_on upstream # set EOF on upstream
+cfg trailing_bytes 9  # due to prefetch is enable, upstream is 8 bytes ahead of downstream
+
+loop:
+	set 1..7 0..6,
+	set 0 L,
+	write 8,
+	read 8,
+	jmp loop

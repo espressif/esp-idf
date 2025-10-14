@@ -2,6 +2,6 @@
 
 components/cxx/test_apps:
   enable:
-    - if: IDF_TARGET in ["esp32", "esp32c3"]
+    - if: IDF_TARGET in ["esp32", "esp32c3", "esp32c61", "esp32p4"]
       temporary: true
       reason: the other targets are not tested yet

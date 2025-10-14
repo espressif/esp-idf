@@ -78,7 +78,7 @@ static const UINT8  base_uuid[LEN_UUID_128] = {0xFB, 0x34, 0x9B, 0x5F, 0x80, 0x0
                                                0x00, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
                                               };
 
-static UINT32 gatt_tcb_id;
+static UINT8 gatt_tcb_id[GATT_MAX_PHY_CHANNEL / 8 + 1];
 
 /*******************************************************************************
 **
@@ -108,7 +108,7 @@ void gatt_free_pending_ind(tGATT_TCB *p_tcb)
 **
 ** Function         gatt_free_pending_enc_queue
 **
-** Description       Free all buffers in pending encyption queue
+** Description       Free all buffers in pending encryption queue
 **
 ** Returns       None
 **
@@ -222,7 +222,7 @@ void gatt_set_srv_chg(void)
 **
 ** Description     Find the app id in on the new service changed list
 **
-** Returns     Pointer to the found new service changed item othwerwise NULL
+** Returns     Pointer to the found new service changed item otherwise NULL
 **
 *******************************************************************************/
 tGATTS_PENDING_NEW_SRV_START *gatt_sr_is_new_srv_chg(tBT_UUID *p_app_uuid128, tBT_UUID *p_svc_uuid, UINT16 svc_inst)
@@ -299,7 +299,7 @@ tGATTS_PENDING_NEW_SRV_START *gatt_add_pending_new_srv_start(tGATTS_HNDL_RANGE *
 **
 ** Function     gatt_add_srv_chg_clt
 **
-** Description  Add a service chnage client to the service change client queue
+** Description  Add a service change client to the service change client queue
 **
 ** Returns    Pointer to the service change client buffer; Null no buffer available
 **
@@ -682,7 +682,7 @@ BOOLEAN gatt_remove_a_srv_from_list(tGATT_SRV_LIST_INFO *p_list, tGATT_SRV_LIST_
 **
 ** Function  gatt_add_an_item_to_list
 **
-** Description  add an service handle range to the list in decending
+** Description  add an service handle range to the list in descending
 **              order of the start handle
 **
 ** Returns   BOOLEAN TRUE-if add is successful
@@ -808,7 +808,7 @@ BOOLEAN gatt_find_the_connected_bda(UINT8 start_idx, BD_ADDR bda, UINT8 *p_found
 **
 ** Function         gatt_is_srv_chg_ind_pending
 **
-** Description      Check whether a service chnaged is in the indication pending queue
+** Description      Check whether a service changed is in the indication pending queue
 **                  or waiting for an Ack already
 **
 ** Returns         BOOLEAN
@@ -846,9 +846,9 @@ BOOLEAN gatt_is_srv_chg_ind_pending (tGATT_TCB *p_tcb)
 **
 ** Function         gatt_is_bda_in_the_srv_chg_clt_list
 **
-** Description      This function check the specified bda is in the srv chg clinet list or not
+** Description      This function check the specified bda is in the srv chg client list or not
 **
-** Returns         pointer to the found elemenet otherwise NULL
+** Returns         pointer to the found element otherwise NULL
 **
 *******************************************************************************/
 tGATTS_SRV_CHG *gatt_is_bda_in_the_srv_chg_clt_list (BD_ADDR bda)
@@ -1005,7 +1005,7 @@ UINT8 gatt_find_i_tcb_free(void)
     UINT8 i = 0, j = GATT_INDEX_INVALID;
 
     for (i = 0; i < GATT_MAX_PHY_CHANNEL; i ++) {
-        if (!((1 << i) & gatt_tcb_id)) {
+        if (!(gatt_tcb_id[i >> 3] & (1 << (i & 0x7)))) {
             j = i;
             break;
         }
@@ -1030,9 +1030,9 @@ tGATT_TCB *gatt_tcb_alloc(UINT8 tcb_idx)
         /* Add tcb  block to list in gatt_cb */
         list_append(gatt_cb.p_tcb_list, p_tcb);
         /*  Update tcb id */
-        gatt_tcb_id |= 1 << tcb_idx;
-    } else if(p_tcb) {
-	osi_free(p_tcb);
+        gatt_tcb_id[tcb_idx >> 3] |= (1 << (tcb_idx & 0x7));
+    } else if (p_tcb) {
+        osi_free(p_tcb);
         p_tcb = NULL;
     }
     return p_tcb;
@@ -1051,7 +1051,7 @@ void gatt_tcb_free( tGATT_TCB *p_tcb)
 {
     UINT8 tcb_idx = p_tcb->tcb_idx;
     if (list_remove(gatt_cb.p_tcb_list, p_tcb)) {
-        gatt_tcb_id &= ~(1 << tcb_idx);
+        gatt_tcb_id[tcb_idx >> 3] &= ~(1 << (tcb_idx & 0x7));
     }
 }
 /*******************************************************************************
@@ -1078,9 +1078,9 @@ tGATT_TCB *gatt_allocate_tcb_by_bdaddr(BD_ADDR bda, tBT_TRANSPORT transport)
     }
     if (i != GATT_INDEX_INVALID) {
         p_tcb = gatt_tcb_alloc(i);
-	if (!p_tcb) {
-	    return NULL;
-	}
+        if (!p_tcb) {
+            return NULL;
+        }
         if (allocated) {
             memset(p_tcb, 0, sizeof(tGATT_TCB));
             p_tcb->pending_enc_clcb = fixed_queue_new(QUEUE_SIZE_MAX);
@@ -1205,7 +1205,7 @@ UINT8 gatt_build_uuid_to_stream(UINT8 **p_dst, tBT_UUID uuid)
     if (uuid.len == LEN_UUID_16) {
         UINT16_TO_STREAM (p, uuid.uu.uuid16);
         len = LEN_UUID_16;
-    } else if (uuid.len == LEN_UUID_32) { /* always convert 32 bits into 128 bits as alwats */
+    } else if (uuid.len == LEN_UUID_32) { /* always convert 32 bits into 128 bits as always */
         gatt_convert_uuid32_to_uuid128(p, uuid.uu.uuid32);
         p += LEN_UUID_128;
         len = LEN_UUID_128;
@@ -1465,7 +1465,7 @@ UINT8 gatt_sr_alloc_rcb(tGATT_HDL_LIST_ELEM *p_list )
     UINT8   ii = 0;
     tGATT_SR_REG    *p_sreg = NULL;
 
-    /*this is a new application servoce start */
+    /*this is a new application service start */
     for (ii = 0, p_sreg = gatt_cb.sr_reg; ii < GATT_MAX_SR_PROFILES; ii++, p_sreg++) {
         if (!p_sreg->in_use) {
             memset (p_sreg, 0, sizeof(tGATT_SR_REG));
@@ -1616,7 +1616,7 @@ UINT32 gatt_add_sdp_record (tBT_UUID *p_uuid, UINT16 start_hdl, UINT16 end_hdl)
         break;
 
     default:
-        GATT_TRACE_ERROR("inavlid UUID len=%d", p_uuid->len);
+        GATT_TRACE_ERROR("invalid UUID len=%d", p_uuid->len);
         SDP_DeleteRecord(sdp_handle);
         return 0;
         break;
@@ -1633,7 +1633,7 @@ UINT32 gatt_add_sdp_record (tBT_UUID *p_uuid, UINT16 start_hdl, UINT16 end_hdl)
 
     SDP_AddProtocolList(sdp_handle, 2, proto_elem_list);
 
-    /* Make the service browseable */
+    /* Make the service browsable */
     SDP_AddUuidSequence (sdp_handle, ATTR_ID_BROWSE_GROUP_LIST, 1, &list);
 
     return (sdp_handle);
@@ -1868,7 +1868,7 @@ UINT8 gatt_num_apps_hold_link(tGATT_TCB *p_tcb)
 **
 ** Function         gatt_num_clcb_by_bd_addr
 **
-** Description      The function searches all LCB with macthing bd address
+** Description      The function searches all LCB with matching bd address
 **
 ** Returns          total number of clcb found.
 **
@@ -1892,7 +1892,7 @@ UINT8 gatt_num_clcb_by_bd_addr(BD_ADDR bda)
 **
 ** Function         gatt_sr_update_cback_cnt
 **
-** Description      The function searches all LCB with macthing bd address
+** Description      The function searches all LCB with matching bd address
 **
 ** Returns          total number of clcb found.
 **
@@ -1916,7 +1916,7 @@ void gatt_sr_copy_prep_cnt_to_cback_cnt(tGATT_TCB *p_tcb )
 **
 ** Function         gatt_sr_is_cback_cnt_zero
 **
-** Description      The function searches all LCB with macthing bd address
+** Description      The function searches all LCB with matching bd address
 **
 ** Returns          True if thetotal application callback count is zero
 **
@@ -2015,7 +2015,7 @@ void gatt_sr_reset_prep_cnt(tGATT_TCB *p_tcb )
 **
 ** Function         gatt_sr_update_cback_cnt
 **
-** Description    Update the teh application callback count
+** Description    Update the the application callback count
 **
 ** Returns           None
 **
@@ -2045,7 +2045,7 @@ void gatt_sr_update_cback_cnt(tGATT_TCB *p_tcb, tGATT_IF gatt_if, BOOLEAN is_inc
 **
 ** Function         gatt_sr_update_prep_cnt
 **
-** Description    Update the teh prepare write request count
+** Description    Update the the prepare write request count
 **
 ** Returns           None
 **
@@ -2461,7 +2461,7 @@ void gatt_dbg_display_uuid(tBT_UUID bt_uuid)
 
 }
 
-
+#if (tGATT_BG_CONN_DEV == TRUE)
 /*******************************************************************************
 **
 ** Function         gatt_is_bg_dev_for_app
@@ -2552,7 +2552,7 @@ BOOLEAN gatt_add_bg_dev_list(tGATT_REG *p_reg,  BD_ADDR bd_addr, BOOLEAN is_init
         for (i = 0; i < GATT_MAX_APPS; i ++) {
             if (is_initator) {
                 if (p_dev->gatt_if[i] == gatt_if) {
-                    GATT_TRACE_ERROR("device already in iniator white list");
+                    GATT_TRACE_ERROR("device already in initiator white list");
                     return TRUE;
                 } else if (p_dev->gatt_if[i] == 0) {
                     p_dev->gatt_if[i] = gatt_if;
@@ -2618,9 +2618,9 @@ BOOLEAN gatt_remove_bg_dev_for_app(tGATT_IF gatt_if, BD_ADDR bd_addr)
 **
 ** Function         gatt_get_num_apps_for_bg_dev
 **
-** Description      Gte the number of applciations for the specified background device
+** Description      Gte the number of applications for the specified background device
 **
-** Returns          UINT8 total number fo applications
+** Returns          UINT8 total number for applications
 **
 *******************************************************************************/
 UINT8 gatt_get_num_apps_for_bg_dev(BD_ADDR bd_addr)
@@ -2842,7 +2842,7 @@ BOOLEAN gatt_update_auto_connect_dev (tGATT_IF gatt_if, BOOLEAN add, BD_ADDR bd_
     }
     return ret;
 }
-
+#endif // #if (tGATT_BG_CONN_DEV == TRUE)
 
 
 /*******************************************************************************

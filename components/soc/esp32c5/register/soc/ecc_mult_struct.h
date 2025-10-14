@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -78,67 +78,69 @@ typedef union {
     struct {
         /** start : R/W/SC; bitpos: [0]; default: 0;
          *  Configures whether to start calculation of ECC Accelerator. This bit will be
-         *  self-cleared after the calculation is done. \\
-         *  0: No effect\\
-         *  1: Start calculation of ECC Accelerator\\
+         *  self-cleared after the calculation is done.
+         *  0: No effect
+         *  1: Start calculation of ECC Accelerator
          */
         uint32_t start:1;
         /** reset : WT; bitpos: [1]; default: 0;
-         *  Configures whether to reset ECC Accelerator. \\
-         *  0: No effect\\
-         *  1: Reset\\
+         *  Configures whether to reset ECC Accelerator.
+         *  0: No effect
+         *  1: Reset
          */
         uint32_t reset:1;
-        /** key_length : R/W; bitpos: [2]; default: 0;
-         *  Configures the key length mode bit of ECC Accelerator. \\
-         *  0: P-192\\
-         *  1: P-256\\
+        /** key_length : R/W; bitpos: [3:2]; default: 0;
+         *  Configures the key length mode bit of ECC Accelerator.
+         *  0: P-192
+         *  1: P-256
+         *  2: P-384
+         *  3: SM2
          */
-        uint32_t key_length:1;
-        /** mod_base : R/W; bitpos: [3]; default: 0;
-         *  Configures the mod base of mod operation, only valid in work_mode 8-11. \\
-         *  0: n(order of curve)\\
-         *  1: p(mod base of curve)\\
+        uint32_t key_length:2;
+        /** mod_base : R/W; bitpos: [4]; default: 0;
+         *  Configures the mod base of mod operation, only valid in work_mode 8-11.
+         *  0: n(order of curve)
+         *  1: p(mod base of curve)
          */
         uint32_t mod_base:1;
-        /** work_mode : R/W; bitpos: [7:4]; default: 0;
-         *  Configures the work mode of ECC Accelerator.\\
-         *  0: Point Multi mode\\
-         *  1: Reserved\\
-         *  2: Point Verif mode\\
-         *  3: Point Verif + Multi mode\\
-         *  4: Jacobian Point Multi mode\\
-         *  5: Reserved\\
-         *  6: Jacobian Point Verif mode\\
-         *  7: Point Verif + Jacobian Point Multi mode\\
-         *  8: Mod Add mode\\
-         *  9. Mod Sub mode\\
-         *  10: Mod Multi mode\\
-         *  11: Mod Div mode\\
+        /** work_mode : R/W; bitpos: [8:5]; default: 0;
+         *  Configures the work mode of ECC Accelerator.
+         *  0: Point Multi mode
+         *  1: Reserved
+         *  2: Point Verif mode
+         *  3: Point Verif + Multi mode
+         *  4: Jacobian Point Multi mode
+         *  5: Reserved
+         *  6: Jacobian Point Verif mode
+         *  7: Point Verif + Jacobian Point Multi mode
+         *  8: Mod Add mode
+         *  9. Mod Sub mode
+         *  10: Mod Multi mode
+         *  11: Mod Div mode
          */
         uint32_t work_mode:4;
-        /** security_mode : R/W; bitpos: [8]; default: 0;
-         *  Configures the security mode of ECC Accelerator.\\
-         *  0: no secure function enabled.\\
-         *  1: enable constant-time calculation in all point multiplication modes.\\
+        /** security_mode : R/W; bitpos: [9]; default: 0;
+         *  Configures the security mode of ECC Accelerator.
+         *  0: no secure function enabled.
+         *  1: enable constant-time calculation in all point multiplication modes.
          */
         uint32_t security_mode:1;
-        uint32_t reserved_9:20;
+        uint32_t reserved_10:19;
         /** verification_result : RO/SS; bitpos: [29]; default: 0;
          *  Represents the verification result of ECC Accelerator, valid only when calculation
          *  is done.
          */
         uint32_t verification_result:1;
         /** clk_en : R/W; bitpos: [30]; default: 0;
-         *  Configures whether to force on register clock gate. \\
-         *  0: No effect\\
-         *  1: Force on\\
+         *  Configures whether to force on register clock gate.
+         *  0: No effect
+         *  1: Force on
          */
         uint32_t clk_en:1;
         /** mem_clock_gate_force_on : R/W; bitpos: [31]; default: 0;
-         *  Configures whether to force on ECC memory clock gate. \\
-         *  0: No effect\\
-         *  1: Force on\\
+         *  Configures whether to force on ECC memory clock gate.
+         *  0: No effect
+         *  1: Force on
          */
         uint32_t mem_clock_gate_force_on:1;
     };
@@ -152,7 +154,7 @@ typedef union {
  */
 typedef union {
     struct {
-        /** date : R/W; bitpos: [27:0]; default: 37752928;
+        /** date : R/W; bitpos: [27:0]; default: 37781792;
          *  ECC mult version control register
          */
         uint32_t date:28;
@@ -171,18 +173,18 @@ typedef struct {
     volatile ecc_mult_conf_reg_t conf;
     uint32_t reserved_020[55];
     volatile ecc_mult_date_reg_t date;
-    volatile uint32_t k[8];
-    volatile uint32_t px[8];
-    volatile uint32_t py[8];
-    volatile uint32_t qx[8];
-    volatile uint32_t qy[8];
-    volatile uint32_t qz[8];
+    volatile uint32_t k[12];
+    volatile uint32_t px[12];
+    volatile uint32_t py[12];
+    volatile uint32_t qx[12];
+    volatile uint32_t qy[12];
+    volatile uint32_t qz[12];
 } ecc_mult_dev_t;
 
 extern ecc_mult_dev_t ECC;
 
 #ifndef __cplusplus
-_Static_assert(sizeof(ecc_mult_dev_t) == 0x1c0, "Invalid size of ecc_mult_dev_t structure");
+_Static_assert(sizeof(ecc_mult_dev_t) == 0x220, "Invalid size of ecc_mult_dev_t structure");
 #endif
 
 #ifdef __cplusplus

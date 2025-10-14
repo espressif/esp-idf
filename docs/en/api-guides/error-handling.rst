@@ -21,7 +21,7 @@ Identifying and handling run-time errors is important for developing robust appl
   - CPU exceptions: access to protected regions of memory, illegal instruction, etc.
   - System level checks: watchdog timeout, cache access error, stack overflow, stack smashing, heap corruption, etc.
 
-This guide explains ESP-IDF error handling mechanisms related to recoverable errors, and provides some common error handling patterns.
+This guide primarily introduces the error handling mechanisms in ESP-IDF for **recoverable errors** and provides common error handling patterns. Some sections also mention macros used for **unrecoverable errors**, with the aim of illustrating their use in scenarios with different levels of error severity.
 
 For instructions on diagnosing unrecoverable errors, see :doc:`Fatal Errors <fatal-errors>`.
 
@@ -45,13 +45,29 @@ Additionally, :cpp:func:`esp_err_to_name_r` function will attempt to interpret t
 
 This feature is enabled by default, but can be disabled to reduce application binary size. See :ref:`CONFIG_ESP_ERR_TO_NAME_LOOKUP`. When this feature is disabled, :cpp:func:`esp_err_to_name` and :cpp:func:`esp_err_to_name_r` are still defined and can be called. In this case, :cpp:func:`esp_err_to_name` will return ``UNKNOWN ERROR``, and :cpp:func:`esp_err_to_name_r` will return ``Unknown error 0xXXXX(YYYYY)``, where ``0xXXXX`` and ``YYYYY`` are the hexadecimal and decimal representations of the error code, respectively.
 
-
 .. _esp-error-check-macro:
 
-``ESP_ERROR_CHECK`` Macro
--------------------------
+Macro For Unrecoverable Errors
+------------------------------
 
-:c:macro:`ESP_ERROR_CHECK` macro serves similar purpose as ``assert``, except that it checks :cpp:type:`esp_err_t` value rather than a ``bool`` condition. If the argument of :c:macro:`ESP_ERROR_CHECK` is not equal :c:macro:`ESP_OK`, then an error message is printed on the console, and ``abort()`` is called.
+The :c:macro:`ESP_ERROR_CHECK` macro, defined in ``esp_err.h``, is used to handle unrecoverable errors in ESP-IDF applications. It functions similarly to the standard ``assert`` macro, but specifically checks whether an :cpp:type:`esp_err_t` value is equal to :c:macro:`ESP_OK`. If the value is not :c:macro:`ESP_OK`, :c:macro:`ESP_ERROR_CHECK` prints a detailed error message and calls ``abort()``, terminating the application.
+
+The behavior of :c:macro:`ESP_ERROR_CHECK` can be controlled using assertion-related configuration options:
+
+- If ``CONFIG_COMPILER_OPTIMIZATION_ASSERTIONS_ENABLE`` is set (default), the macro prints an error message and terminates the program.
+- If ``CONFIG_COMPILER_OPTIMIZATION_ASSERTIONS_SILENT`` is enabled, the program terminates silently without printing an error message.
+- If ``CONFIG_COMPILER_OPTIMIZATION_ASSERTIONS_DISABLE`` (``NDEBUG`` is defined), the macro only prints an error message and does not terminate the program.
+
+Use :c:macro:`ESP_ERROR_CHECK` in situations where an error is considered fatal and the application cannot continue safely. For situations where the application can recover from an error, use the macros described in the next section.
+
+``ESP_ERROR_CHECK_WITHOUT_ABORT``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The :c:macro:`ESP_ERROR_CHECK_WITHOUT_ABORT` macro, defined in ``esp_err.h``, is closely related to the **Macros For Recoverable Errors**. The macro behaves similarly to :c:macro:`ESP_ERROR_CHECK`, but instead of terminating the program with ``abort()``, it prints an error message in the same format and returns the error code if the value is not :c:macro:`ESP_OK`. This allows the application to continue running, making it suitable for cases where errors should be reported but are not considered fatal.
+
+The behavior of :c:macro:`ESP_ERROR_CHECK_WITHOUT_ABORT` is controlled by the same assertion-related configuration options as :c:macro:`ESP_ERROR_CHECK`. If either ``CONFIG_COMPILER_OPTIMIZATION_ASSERTIONS_DISABLE`` or ``CONFIG_COMPILER_OPTIMIZATION_ASSERTIONS_SILENT`` is enabled, the macro does not print any error message, otherwise, the macro prints an error message.
+
+Use :c:macro:`ESP_ERROR_CHECK_WITHOUT_ABORT` when you want to print errors for diagnostic purposes without stopping the application.
 
 Error message will typically look like this:
 
@@ -76,50 +92,40 @@ Error message will typically look like this:
 - Finally, backtrace is printed. This is part of panic handler output common to all fatal errors. See :doc:`Fatal Errors <fatal-errors>` for more information about the backtrace.
 
 
-.. _esp-error-check-without-abort-macro:
-
-``ESP_ERROR_CHECK_WITHOUT_ABORT`` Macro
----------------------------------------
-
-:c:macro:`ESP_ERROR_CHECK_WITHOUT_ABORT` macro serves similar purpose as ``ESP_ERROR_CHECK``, except that it will not call ``abort()``.
-
-
-.. _esp-return-on-error-macro:
-
-``ESP_RETURN_ON_ERROR`` Macro
+Macros For Recoverable Errors
 -----------------------------
 
-:c:macro:`ESP_RETURN_ON_ERROR` macro checks the error code, if the error code is not equal :c:macro:`ESP_OK`, it prints the message and returns the error code.
+For recoverable errors, ESP-IDF provides a set of macros defined in ``esp_check.h``. The **ESP_RETURN_ON_...**, **ESP_GOTO_ON_...**, and **ESP_RETURN_VOID_ON_...** macros enable concise and consistent error handling, improving code readability and maintainability. Unlike ``ESP_ERROR_CHECK``, these macros do not terminate the program; instead, they print an error message and return or jump as appropriate. For use in interrupt service routines (ISRs), corresponding ``_ISR`` versions (such as :c:macro:`ESP_RETURN_ON_ERROR_ISR`) are available, ensuring safe operation in interrupt contexts.
 
+The macros are defined as follows:
 
-.. _esp-goto-on-error-macro:
+- **ESP_RETURN_ON_...**: Return from the function if an error or failed condition is detected:
 
-``ESP_GOTO_ON_ERROR`` Macro
----------------------------
+    - :c:macro:`ESP_RETURN_ON_ERROR` - Checks an error code; if not :c:macro:`ESP_OK`, prints a message and returns the error code.
+    - :c:macro:`ESP_RETURN_ON_FALSE` - Checks a condition; if false, prints a message and returns the supplied ``err_code``.
+    - :c:macro:`ESP_RETURN_ON_ERROR_ISR` - For ISR context.
+    - :c:macro:`ESP_RETURN_ON_FALSE_ISR` - For ISR context.
 
-:c:macro:`ESP_GOTO_ON_ERROR` macro checks the error code, if the error code is not equal :c:macro:`ESP_OK`, it prints the message, sets the local variable ``ret`` to the code, and then exits by jumping to ``goto_tag``.
+- **ESP_GOTO_ON_...**: Jump to a label if an error or failed condition is detected:
 
+    - :c:macro:`ESP_GOTO_ON_ERROR` - Checks an error code; if not :c:macro:`ESP_OK`, prints a message, sets ``ret`` to the code, and jumps to ``goto_tag``.
+    - :c:macro:`ESP_GOTO_ON_FALSE` - Checks a condition; if false, prints a message, sets ``ret`` to ``err_code``, and jumps to ``goto_tag``.
+    - :c:macro:`ESP_GOTO_ON_ERROR_ISR` - For ISR context.
+    - :c:macro:`ESP_GOTO_ON_FALSE_ISR` - For ISR context.
 
-.. _esp-return-on-false-macro:
+- **ESP_RETURN_VOID_...**: Return from a ``void`` function if an error or failed condition is detected:
 
-``ESP_RETURN_ON_FALSE`` Macro
------------------------------
+    - :c:macro:`ESP_RETURN_VOID_ON_ERROR` - Checks an error code; if not :c:macro:`ESP_OK`, prints a message and returns.
+    - :c:macro:`ESP_RETURN_VOID_ON_FALSE` - Checks a condition; if false, prints a message and returns.
+    - :c:macro:`ESP_RETURN_VOID_ON_ERROR_ISR` - For ISR context.
+    - :c:macro:`ESP_RETURN_VOID_ON_FALSE_ISR` - For ISR context.
 
-:c:macro:`ESP_RETURN_ON_FALSE` macro checks the condition, if the condition is not equal ``true``, it prints the message and returns with the supplied ``err_code``.
-
-
-.. _esp-goto-on-false-macro:
-
-``ESP_GOTO_ON_FALSE`` Macro
----------------------------
-
-:c:macro:`ESP_GOTO_ON_FALSE` macro checks the condition, if the condition is not equal ``true``, it prints the message, sets the local variable ``ret`` to the supplied ``err_code``, and then exits by jumping to ``goto_tag``.
-
+The default behavior of these macros can be adjusted: if the :ref:`CONFIG_COMPILER_OPTIMIZATION_CHECKS_SILENT` option is enabled in Kconfig, error messages will not be included in the application binary and will not be printed.
 
 .. _check_macros_examples:
 
-``CHECK MACROS`` Examples
--------------------------
+Error Handling Examples
+-----------------------
 
 Some examples
 
@@ -142,13 +148,6 @@ Some examples
         // clean up
         return ret;
     }
-
-.. note::
-
-     If the option :ref:`CONFIG_COMPILER_OPTIMIZATION_CHECKS_SILENT` in Kconfig is enabled, the error message will be discarded, while the other action works as is.
-
-     The ``ESP_RETURN_XX`` and ``ESP_GOTO_xx`` macros cannot be called from ISR. While there are ``xx_ISR`` versions for each of them, e.g., ``ESP_RETURN_ON_ERROR_ISR``, these macros could be used in ISR.
-
 
 Error Handling Patterns
 -----------------------
@@ -191,7 +190,7 @@ Error Handling Patterns
             return err;
         }
 
-3. Convert into unrecoverable error, for example using ``ESP_ERROR_CHECK``. See `ESP_ERROR_CHECK macro`_ section for details.
+3. Convert into unrecoverable error, for example using ``ESP_ERROR_CHECK``. See `Macro For Unrecoverable Errors`_ section for details.
 
     Terminating the application in case of an error is usually undesirable behavior for middleware components, but is sometimes acceptable at application level.
 
@@ -208,3 +207,8 @@ C++ Exceptions
 --------------
 
 See :ref:`cplusplus_exceptions`.
+
+API Reference
+-------------
+
+See :ref:`esp-check-api-ref`.

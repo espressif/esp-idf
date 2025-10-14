@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,6 +19,8 @@
 #include <random>
 #include "test_fixtures.hpp"
 #include "spi_flash_mmap.h"
+
+using namespace std;
 
 #define TEST_ESP_ERR(rc, res) CHECK((rc) == (res))
 #define TEST_ESP_OK(rc) CHECK((rc) == ESP_OK)
@@ -606,7 +608,7 @@ TEST_CASE("nvs api tests", "[nvs]")
     nvs_handle_t handle_2;
     TEST_ESP_OK(nvs_open("namespace2", NVS_READWRITE, &handle_2));
     TEST_ESP_OK(nvs_set_i32(handle_2, "foo", 0x3456789a));
-    const char *str = "value 0123456789abcdef0123456789abcdef";
+    char str[] = "value 0123456789abcdef0123456789abcdef";
     TEST_ESP_OK(nvs_set_str(handle_2, "key", str));
 
     int32_t v1;
@@ -617,7 +619,7 @@ TEST_CASE("nvs api tests", "[nvs]")
     TEST_ESP_OK(nvs_get_i32(handle_2, "foo", &v2));
     CHECK(0x3456789a == v2);
 
-    char buf[strlen(str) + 1];
+    char buf[sizeof(str)];
     size_t buf_len = sizeof(buf);
 
     size_t buf_len_needed;
@@ -1268,13 +1270,15 @@ public:
                 } else {
                     blobBufLen = largeBlobLen ;
                 }
-                uint8_t buf[blobBufLen];
+                uint8_t* buf = new uint8_t[blobBufLen];
                 memset(buf, 0, blobBufLen);
 
                 size_t len = blobBufLen;
                 auto err = nvs_get_blob(handle, keys[index], buf, &len);
+                auto eval_result = evaluate(delayCount, err, types[index], written[index], potentially_written[index], buf, values[index], future_values[index], blobBufLen);
+                delete [] buf;
 
-                REQUIRE(evaluate(delayCount, err, types[index], written[index], potentially_written[index], buf, values[index], future_values[index], blobBufLen) == true);
+                REQUIRE(eval_result == true);
                 break;
             }
 
@@ -1369,7 +1373,7 @@ public:
                 } else {
                     blobBufLen = largeBlobLen ;
                 }
-                uint8_t buf[blobBufLen];
+                uint8_t* buf = new uint8_t[blobBufLen];
                 memset(buf, 0, blobBufLen);
                 size_t blobLen = gen() % blobBufLen;
                 std::generate_n(buf, blobLen, [&]() -> uint8_t {
@@ -1384,16 +1388,19 @@ public:
                 if (err == ESP_ERR_FLASH_OP_FAIL) {
                     // mark potentially written
                     potentially_written[index] = true;
+                    delete [] buf;
                     return err;
                 }
                 if (err == ESP_ERR_NVS_REMOVE_FAILED) {
                     written[index] = true;
                     memcpy(reinterpret_cast<uint8_t *>(values[index]), buf, blobBufLen);
+                    delete [] buf;
                     return ESP_ERR_FLASH_OP_FAIL;
                 }
                 REQUIRE(err == ESP_OK);
                 written[index] = true;
                 memcpy(reinterpret_cast<char *>(values[index]), buf, blobBufLen);
+                delete [] buf;
                 break;
             }
 
@@ -2887,16 +2894,20 @@ TEST_CASE("inconsistent fields in item header with correct crc are handled for m
     // initial values
     uint32_t uval1 = 1;
     uint32_t uval2 = 2;
-    uint8_t blob_data1[blob_key1_chunk_0_len + blob_key1_chunk_1_len];
-    uint8_t blob_data2[blob_key2_chunk_len];
+    size_t blob_data1_len = blob_key1_chunk_0_len + blob_key1_chunk_1_len;
+    size_t blob_data2_len = blob_key2_chunk_len;
+    uint8_t* blob_data1 = new uint8_t[blob_data1_len];
+    uint8_t* blob_data2 = new uint8_t[blob_data2_len];
 
     // value buffers
     uint32_t read_u32_1;
     uint32_t read_u32_2;
-    uint8_t read_blob1[sizeof(blob_data1)];
-    uint8_t read_blob2[sizeof(blob_data2)];
-    size_t read_blob1_size = sizeof(read_blob1);
-    size_t read_blob2_size = sizeof(read_blob2);
+
+    size_t read_blob1_size = blob_data1_len;
+    size_t read_blob2_size = blob_data2_len;
+    uint8_t* read_blob1 = new uint8_t[read_blob1_size];
+    uint8_t* read_blob2 = new uint8_t[read_blob2_size];
+
 
     // Skip one page, 2 entries of page header and 3 entries of valueblob1's BLOB_DATA entries
     const size_t blob_index_offset = 4096 + 32 * 2 + 32 * 3;
@@ -2919,10 +2930,10 @@ TEST_CASE("inconsistent fields in item header with correct crc are handled for m
     // initialize buffers
     read_u32_1 = 0;
     read_u32_2 = 0;
-    memset(blob_data1, 0x55, sizeof(blob_data1));
-    memset(blob_data2, 0xaa, sizeof(blob_data2));
-    memset(read_blob1, 0, sizeof(read_blob1));
-    memset(read_blob2, 0, sizeof(read_blob2));
+    memset(blob_data1, 0x55, blob_data1_len);
+    memset(blob_data2, 0xaa, blob_data2_len);
+    memset(read_blob1, 0, read_blob1_size);
+    memset(read_blob2, 0, read_blob2_size);
 
     // Write initial data to the nvs partition
     {
@@ -2931,8 +2942,8 @@ TEST_CASE("inconsistent fields in item header with correct crc are handled for m
         nvs_handle_t handle;
         TEST_ESP_OK(nvs_open("test", NVS_READWRITE, &handle));
         TEST_ESP_OK(nvs_set_u32(handle, ukey1, uval1));
-        TEST_ESP_OK(nvs_set_blob(handle, blob_key1, blob_data1, sizeof(blob_data1)));
-        TEST_ESP_OK(nvs_set_blob(handle, blob_key2, blob_data2, sizeof(blob_data2)));
+        TEST_ESP_OK(nvs_set_blob(handle, blob_key1, blob_data1, blob_data1_len));
+        TEST_ESP_OK(nvs_set_blob(handle, blob_key2, blob_data2, blob_data2_len));
         TEST_ESP_OK(nvs_set_u32(handle, ukey2, uval2));
         nvs_close(handle);
 
@@ -3065,8 +3076,8 @@ TEST_CASE("inconsistent fields in item header with correct crc are handled for m
         nvs_handle_t handle;
         TEST_ESP_OK(nvs_open("test", NVS_READWRITE, &handle));
         TEST_ESP_OK(nvs_get_u32(handle, ukey1, &read_u32_1));
-        TEST_ESP_ERR(nvs_get_blob(handle, blob_key1, &read_blob1, &read_blob1_size), ESP_ERR_NVS_NOT_FOUND);
-        TEST_ESP_OK(nvs_get_blob(handle, blob_key2, &read_blob2, &read_blob2_size));
+        TEST_ESP_ERR(nvs_get_blob(handle, blob_key1, read_blob1,  &read_blob1_size), ESP_ERR_NVS_NOT_FOUND);
+        TEST_ESP_OK(nvs_get_blob(handle, blob_key2, read_blob2, &read_blob2_size));
         TEST_ESP_OK(nvs_get_u32(handle, ukey2, &read_u32_2));
         nvs_close(handle);
         TEST_ESP_OK(nvs_flash_deinit_partition(f.part()->get_partition_name()));
@@ -3074,7 +3085,8 @@ TEST_CASE("inconsistent fields in item header with correct crc are handled for m
         // validate the data
         CHECK(read_u32_1 == uval1);
         CHECK(read_u32_2 == uval2);
-        CHECK(memcmp(read_blob2, blob_data2, sizeof(blob_data2)) == 0);
+        CHECK(read_blob2_size == blob_data2_len);
+        CHECK(memcmp(read_blob2, blob_data2, read_blob2_size) == 0);
     }
 }
 
@@ -3805,6 +3817,85 @@ TEST_CASE("nvs multiple write with same key but different types", "[nvs]")
 
     TEST_ESP_OK(nvs_flash_deinit_partition(NVS_DEFAULT_PART_NAME));
 }
+
+#ifndef CONFIG_NVS_LEGACY_DUP_KEYS_COMPATIBILITY
+// Following test case is not valid for new behavior not leading to multiple active values under the same key
+TEST_CASE("nvs multiple write with same key blob and string involved", "[nvs]")
+{
+    PartitionEmulationFixture f(0, 10);
+
+    nvs_handle_t handle_1;
+    const uint32_t NVS_FLASH_SECTOR = 6;
+    const uint32_t NVS_FLASH_SECTOR_COUNT_MIN = 3;
+    TEMPORARILY_DISABLED(f.emu.setBounds(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR + NVS_FLASH_SECTOR_COUNT_MIN);)
+
+    for (uint16_t j = NVS_FLASH_SECTOR; j < NVS_FLASH_SECTOR + NVS_FLASH_SECTOR_COUNT_MIN; ++j) {
+        f.erase(j);
+    }
+    TEST_ESP_OK(nvs::NVSPartitionManager::get_instance()->init_custom(f.part(),
+                                                                      NVS_FLASH_SECTOR,
+                                                                      NVS_FLASH_SECTOR_COUNT_MIN));
+
+    TEST_ESP_OK(nvs_open("namespace1", NVS_READWRITE, &handle_1));
+
+    nvs_erase_all(handle_1);
+
+    const char key_name[] = "foo";
+
+    // integer variables
+    int32_t v32;
+    int8_t v8;
+
+    // string
+    #define str_data_len 64
+    const char str_data[] = "string data";
+    char str_buf[str_data_len] = {0};
+    size_t str_len = str_data_len;
+
+    // blob
+    #define blob_data_len 64
+    uint8_t blob_data[blob_data_len] = {0};
+    uint8_t blob_buf[blob_data_len] = {0};
+    size_t blob_read_size;
+
+    // first write is i32
+    TEST_ESP_OK(nvs_set_i32(handle_1, key_name, (int32_t)12345678));
+
+    TEST_ESP_ERR(nvs_get_i8(handle_1, key_name, &v8), ESP_ERR_NVS_NOT_FOUND);
+    TEST_ESP_OK(nvs_get_i32(handle_1, key_name, &v32));
+    TEST_ESP_ERR(nvs_get_str(handle_1, key_name, str_buf, &str_len), ESP_ERR_NVS_NOT_FOUND);
+    TEST_ESP_ERR(nvs_get_blob(handle_1, key_name, blob_buf, &blob_read_size), ESP_ERR_NVS_NOT_FOUND);
+
+
+    // second write is string
+    TEST_ESP_OK(nvs_set_str(handle_1, key_name, str_data));
+
+    TEST_ESP_ERR(nvs_get_i8(handle_1, key_name, &v8), ESP_ERR_NVS_NOT_FOUND);
+    TEST_ESP_ERR(nvs_get_i32(handle_1, key_name, &v32), ESP_ERR_NVS_NOT_FOUND);
+    TEST_ESP_OK(nvs_get_str(handle_1, key_name, str_buf, &str_len));
+    TEST_ESP_ERR(nvs_get_blob(handle_1, key_name, blob_buf, &blob_read_size), ESP_ERR_NVS_NOT_FOUND);
+
+    // third write is blob
+    TEST_ESP_OK(nvs_set_blob(handle_1, key_name, blob_data, blob_data_len));
+
+    TEST_ESP_ERR(nvs_get_i8(handle_1, key_name, &v8), ESP_ERR_NVS_NOT_FOUND);
+    TEST_ESP_ERR(nvs_get_i32(handle_1, key_name, &v32), ESP_ERR_NVS_NOT_FOUND);
+    TEST_ESP_ERR(nvs_get_str(handle_1, key_name, str_buf, &str_len), ESP_ERR_NVS_NOT_FOUND);
+    TEST_ESP_OK(nvs_get_blob(handle_1, key_name, blob_buf, &blob_read_size));
+
+    // fourth write is i8
+    TEST_ESP_OK(nvs_set_i8(handle_1, key_name, (int8_t)12));
+
+    TEST_ESP_OK(nvs_get_i8(handle_1, key_name, &v8));
+    TEST_ESP_ERR(nvs_get_i32(handle_1, key_name, &v32), ESP_ERR_NVS_NOT_FOUND);
+    TEST_ESP_ERR(nvs_get_str(handle_1, key_name, str_buf, &str_len), ESP_ERR_NVS_NOT_FOUND);
+    TEST_ESP_ERR(nvs_get_blob(handle_1, key_name, blob_buf, &blob_read_size), ESP_ERR_NVS_NOT_FOUND);
+
+    nvs_close(handle_1);
+
+    TEST_ESP_OK(nvs_flash_deinit_partition(NVS_DEFAULT_PART_NAME));
+}
+#endif // !CONFIG_NVS_LEGACY_DUP_KEYS_COMPATIBILITY
 
 TEST_CASE("nvs find key tests", "[nvs]")
 {

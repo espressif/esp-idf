@@ -18,14 +18,23 @@ Each UART controller is independently configurable with parameters such as baud 
 
     Additionally, the {IDF_TARGET_NAME} chip has one low-power (LP) UART controller. It is the cut-down version of regular UART. Usually, the LP UART controller only support basic UART functionality with a much smaller RAM size, and does not support IrDA or RS485 protocols. For a full list of difference between UART and LP UART, please refer to the **{IDF_TARGET_NAME} Technical Reference Manual** > **UART Controller (UART)** > **Features** [`PDF <{IDF_TARGET_TRM_EN_URL}#uart>`__]).
 
+.. only:: SOC_UHCI_SUPPORTED
+
+    .. toctree::
+        :hidden:
+
+        uhci
+
+    The {IDF_TARGET_NAME} chip also supports using DMA with UART. For details, see to :doc:`uhci`.
+
 Functional Overview
 -------------------
 
 The overview describes how to establish communication between an {IDF_TARGET_NAME} and other UART devices using the functions and data types of the UART driver. A typical programming workflow is broken down into the sections provided below:
 
-1. :ref:`uart-api-setting-communication-parameters` - Setting baud rate, data bits, stop bits, etc.
-2. :ref:`uart-api-setting-communication-pins` - Assigning pins for connection to a device
-3. :ref:`uart-api-driver-installation` - Allocating {IDF_TARGET_NAME}'s resources for the UART driver
+1. :ref:`uart-api-driver-installation` - Allocating {IDF_TARGET_NAME}'s resources for the UART driver
+2. :ref:`uart-api-setting-communication-parameters` - Setting baud rate, data bits, stop bits, etc.
+3. :ref:`uart-api-setting-communication-pins` - Assigning pins for connection to a device
 4. :ref:`uart-api-running-uart-communication` - Sending/receiving data
 5. :ref:`uart-api-using-interrupts` - Triggering interrupts on specific communication events
 6. :ref:`uart-api-deleting-driver` - Freeing allocated resources if a UART communication is no longer required
@@ -39,13 +48,39 @@ Steps 1 to 3 comprise the configuration stage. Step 4 is where the UART starts o
 The UART driver's functions identify each of the UART controllers using :cpp:type:`uart_port_t`. This identification is needed for all the following function calls.
 
 
+.. _uart-api-driver-installation:
+
+Install Drivers
+^^^^^^^^^^^^^^^^^^^
+
+First of all, install the driver by calling :cpp:func:`uart_driver_install` and specify the following parameters:
+
+- UART port number
+- Size of RX ring buffer
+- Size of TX ring buffer
+- Event queue size
+- Pointer to store the event queue handle
+- Flags to allocate an interrupt
+
+.. _driver-code-snippet:
+
+The function allocates the required internal resources for the UART driver.
+
+.. code-block:: c
+
+    // Setup UART buffered IO with event queue
+    const int uart_buffer_size = (1024 * 2);
+    QueueHandle_t uart_queue;
+    // Install UART driver using an event queue here
+    ESP_ERROR_CHECK(uart_driver_install({IDF_TARGET_UART_EXAMPLE_PORT}, uart_buffer_size, uart_buffer_size, 10, &uart_queue, 0));
+
+
 .. _uart-api-setting-communication-parameters:
 
 Set Communication Parameters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-UART communication parameters can be configured all in a single step or individually in multiple steps.
-
+As the next step, UART communication parameters can be configured all in a single step or individually in multiple steps.
 
 Single Step
 """""""""""
@@ -104,43 +139,14 @@ Each of the above functions has a ``_get_`` counterpart to check the currently s
 Set Communication Pins
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-After setting communication parameters, configure the physical GPIO pins to which the other UART device will be connected. For this, call the function :cpp:func:`uart_set_pin` and specify the GPIO pin numbers to which the driver should route the TX, RX, RTS, and CTS signals. If you want to keep a currently allocated pin number for a specific signal, pass the macro :c:macro:`UART_PIN_NO_CHANGE`.
+After setting communication parameters, configure the physical GPIO pins to which the other UART device will be connected. For this, call the function :cpp:func:`uart_set_pin` and specify the GPIO pin numbers to which the driver should route the TX, RX, RTS, CTS, DTR, and DSR signals. If you want to keep a currently allocated pin number for a specific signal, pass the macro :c:macro:`UART_PIN_NO_CHANGE`.
 
 The same macro :c:macro:`UART_PIN_NO_CHANGE` should be specified for pins that will not be used.
 
 .. code-block:: c
 
-  // Set UART pins(TX: IO4, RX: IO5, RTS: IO18, CTS: IO19)
-  ESP_ERROR_CHECK(uart_set_pin({IDF_TARGET_UART_EXAMPLE_PORT}, 4, 5, 18, 19));
-
-.. _uart-api-driver-installation:
-
-Install Drivers
-^^^^^^^^^^^^^^^^^^^
-
-Once the communication pins are set, install the driver by calling :cpp:func:`uart_driver_install` and specify the following parameters:
-
-- UART port number
-- Size of TX ring buffer
-- Size of RX ring buffer
-- Pointer to store the event queue handle
-- Event queue size
-- Flags to allocate an interrupt
-
-.. _driver-code-snippet:
-
-The function allocates the required internal resources for the UART driver.
-
-.. code-block:: c
-
-    // Setup UART buffered IO with event queue
-    const int uart_buffer_size = (1024 * 2);
-    QueueHandle_t uart_queue;
-    // Install UART driver using an event queue here
-    ESP_ERROR_CHECK(uart_driver_install({IDF_TARGET_UART_EXAMPLE_PORT}, uart_buffer_size, \
-                                            uart_buffer_size, 10, &uart_queue, 0));
-
-Once this step is complete, you can connect the external UART device and check the communication.
+  // Set UART pins(TX: IO4, RX: IO5, RTS: IO18, CTS: IO19, DTR: UNUSED, DSR: UNUSED)
+  ESP_ERROR_CHECK(uart_set_pin({IDF_TARGET_UART_EXAMPLE_PORT}, 4, 5, 18, 19, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE));
 
 
 .. _uart-api-running-uart-communication:
@@ -233,7 +239,7 @@ The UART controller supports a number of communication modes. A mode can be sele
 Use Interrupts
 ^^^^^^^^^^^^^^^^
 
-There are many interrupts that can be generated depending on specific UART states or detected errors. The full list of available interrupts is provided in *{IDF_TARGET_NAME} Technical Reference Manual* > *UART Controller (UART)* > *UART Interrupts* and *UHCI Interrupts* [`PDF <{IDF_TARGET_TRM_EN_URL}#uart>`__]. You can enable or disable specific interrupts by calling :cpp:func:`uart_enable_intr_mask` or :cpp:func:`uart_disable_intr_mask` respectively.
+There are many interrupts that can be generated depending on specific UART states or detected errors. The full list of available interrupts is provided in *{IDF_TARGET_NAME} Technical Reference Manual* > *UART Controller (UART)* > *UART Interrupts* [`PDF <{IDF_TARGET_TRM_EN_URL}#uart>`__]. You can enable or disable specific interrupts by calling :cpp:func:`uart_enable_intr_mask` or :cpp:func:`uart_disable_intr_mask` respectively.
 
 The UART driver provides a convenient way to handle specific interrupts by wrapping them into corresponding events. Events defined in :cpp:type:`uart_event_type_t` can be reported to a user application using the FreeRTOS queue functionality.
 
@@ -321,11 +327,15 @@ The {IDF_TARGET_NAME}'s RS485 UART hardware can detect signal collisions during 
 
 The collision detection feature allows handling collisions when their interrupts are activated and triggered. The interrupts ``UART_RS485_FRM_ERR_INT`` and ``UART_RS485_PARITY_ERR_INT`` can be used with the collision detection feature to control frame errors and parity bit errors accordingly in RS485 mode. This functionality is supported in the UART driver and can be used by selecting the :cpp:enumerator:`UART_MODE_RS485_APP_CTRL` mode (see the function :cpp:func:`uart_set_mode`).
 
-The collision detection feature can work with circuit A and circuit C (see Section `Interface Connection Options`_). In the case of using circuit A or B, the RTS pin connected to the DE pin of the bus driver should be controlled by the user application. Use the function :cpp:func:`uart_get_collision_flag` to check if the collision detection flag has been raised.
+The collision detection feature can work with circuit A and circuit C (see Section `Interface Connection Options`_). Use the function :cpp:func:`uart_get_collision_flag` to check if the collision detection flag has been raised. In the case of using circuit A or B, either DTR or RTS pin can be connected to the DE/~RE pin of the transceiver module to achieve half-duplex communication.
 
-The {IDF_TARGET_NAME} UART controllers themselves do not support half-duplex communication as they cannot provide automatic control of the RTS pin connected to the RE/DE input of RS485 bus driver. However, half-duplex communication can be achieved via software control of the RTS pin by the UART driver. This can be enabled by selecting the :cpp:enumerator:`UART_MODE_RS485_HALF_DUPLEX` mode when calling :cpp:func:`uart_set_mode`.
+The RS485 half-duplex communication mode is supported by the UART driver and can be activated by selecting the :cpp:enumerator:`UART_MODE_RS485_HALF_DUPLEX` mode calling :cpp:func:`uart_set_mode`. The DTR line is automatically controlled by the hardware directly under RS485 half-duplex mode, while the RTS line is software-controlled by the UART driver. Once the host starts writing data to the TX FIFO buffer, the UART driver automatically asserts the RTS pin (logic 1); once the last bit of the data has been transmitted, the driver de-asserts the RTS pin (logic 0). To use this mode, the software would have to disable the hardware flow control function. Since the switching is made in the interrupt handler, comparing to DTR line, some latency is expected on RTS line.
 
-Once the host starts writing data to the TX FIFO buffer, the UART driver automatically asserts the RTS pin (logic 1); once the last bit of the data has been transmitted, the driver de-asserts the RTS pin (logic 0). To use this mode, the software would have to disable the hardware flow control function. This mode works with all the used circuits shown below.
+.. only:: esp32
+
+    .. note::
+
+        On {IDF_TARGET_NAME}, DTR signal is only available on UART0. For other UART ports, you can only connect RTS signal to the DE/~RE pin of the transceiver module.
 
 
 Interface Connection Options
@@ -352,7 +362,7 @@ Circuit A: Collision Detection Circuit
                     |              B|----------<> B
          TXD ------>| D    ADM483   |
  ESP                |               |     RS485 bus side
-         RTS ------>| DE            |
+     DTR/RTS ------>| DE            |
                     |              A|----------<> A
                +----| /RE           |
                |    +-------x-------+
@@ -375,7 +385,7 @@ Circuit B: Manual Switching Transmitter/Receiver Without Collision Detection
                     |              B|-----------<> B
          TXD ------>| D    ADM483   |
  ESP                |               |     RS485 bus side
-         RTS --+--->| DE            |
+     DTR/RTS --+--->| DE            |
                |    |              A|-----------<> A
                +----| /RE           |
                     +-------x-------+
@@ -428,21 +438,13 @@ API Reference
 -------------
 
 .. include-build-file:: inc/uart.inc
+.. include-build-file:: inc/uart_wakeup.inc
 .. include-build-file:: inc/uart_types.inc
 
 
 GPIO Lookup Macros
 ^^^^^^^^^^^^^^^^^^
 
-The UART peripherals have dedicated IO_MUX pins to which they are connected directly. However, signals can also be routed to other pins using the less direct GPIO matrix. To use direct routes, you need to know which pin is a dedicated IO_MUX pin for a UART channel. GPIO Lookup Macros simplify the process of finding and assigning IO_MUX pins. You choose a macro based on either the IO_MUX pin number, or a required UART channel name, and the macro returns the matching counterpart for you. See some examples below.
-
-.. note::
-
-    These macros are useful if you need very high UART baud rates (over 40 MHz), which means you will have to use IO_MUX pins only. In other cases, these macros can be ignored, and you can use the GPIO Matrix as it allows you to configure any GPIO pin for any UART function.
-
-1. :c:macro:`UART_NUM_2_TXD_DIRECT_GPIO_NUM` returns the IO_MUX pin number of UART channel 2 TXD pin (pin 17)
-2. :c:macro:`UART_GPIO19_DIRECT_CHANNEL` returns the UART number of GPIO 19 when connected to the UART peripheral via IO_MUX (this is UART_NUM_0)
-3. :c:macro:`UART_CTS_GPIO19_DIRECT_CHANNEL` returns the UART number of GPIO 19 when used as the UART CTS pin via IO_MUX (this is UART_NUM_0). It is similar to the above macro but specifies the pin function which is also part of the IO_MUX assignment.
+Some UART ports have dedicated IO_MUX pins to which they are connected directly. These can be useful if you need very high UART baud rates, which means you will have to use IO_MUX pins only. In other cases, any GPIO pin can be used for UART communication by routing the signals through the GPIO matrix. If the UART port has dedicated IO_MUX pins, :c:macro:`UART_NUM_x_TXD_DIRECT_GPIO_NUM` and :c:macro:`UART_NUM_x_RXD_DIRECT_GPIO_NUM` can be used to find the corresponding IO_MUX pin numbers.
 
 .. include-build-file:: inc/uart_channel.inc
-

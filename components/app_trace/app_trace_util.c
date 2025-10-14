@@ -44,7 +44,7 @@ void esp_apptrace_log_unlock(void)
 
 esp_err_t esp_apptrace_tmo_check(esp_apptrace_tmo_t *tmo)
 {
-    if (tmo->tmo != (int64_t)-1) {
+    if (tmo->tmo != (int64_t) -1) {
         tmo->elapsed = esp_timer_get_time() - tmo->start;
         if (tmo->elapsed >= tmo->tmo) {
             return ESP_ERR_TIMEOUT;

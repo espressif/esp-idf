@@ -721,6 +721,9 @@ static void btc_hd_call_arg_deep_free(btc_msg_t *msg)
 void btc_hd_call_handler(btc_msg_t *msg)
 {
     btc_hidd_args_t *arg = (btc_hidd_args_t *)(msg->arg);
+
+    BTC_TRACE_DEBUG("%s act %d", __func__, msg->act);
+
     switch (msg->act) {
     case BTC_HD_INIT_EVT:
         btc_hd_init();
@@ -778,6 +781,8 @@ void btc_hd_cb_handler(btc_msg_t *msg)
     tBTA_HD *p_data = (tBTA_HD *)msg->arg;
     esp_hidd_cb_param_t param = {0};
     BTC_TRACE_API("%s: event=%s", __func__, dump_hd_event(event));
+
+    BTC_TRACE_DEBUG("%s act %d", __func__, msg->act);
 
     switch (event) {
     case BTA_HD_ENABLE_EVT:
@@ -844,6 +849,7 @@ void btc_hd_cb_handler(btc_msg_t *msg)
             // }
             // btc_storage_set_hidd((bt_bdaddr_t *)&p_data->conn.bda);
             btc_hd_cb.status = BTC_HD_CONNECTED;
+            btc_hd_cb.in_use = TRUE;
         } else if (p_data->conn.conn_status == BTA_HD_CONN_STATE_DISCONNECTED) {
             btc_hd_cb.status = BTC_HD_DISCONNECTED;
         }
@@ -903,14 +909,10 @@ void btc_hd_cb_handler(btc_msg_t *msg)
         btc_hd_cb_to_app(ESP_HIDD_INTR_DATA_EVT, &param);
         break;
     case BTA_HD_VC_UNPLUG_EVT: {
-        bt_bdaddr_t *bd_addr = (bt_bdaddr_t *)&p_data->conn.bda;
-        if (bta_dm_check_if_only_hd_connected(p_data->conn.bda)) {
-            BTC_TRACE_DEBUG("%s: Removing bonding as only HID profile connected", __func__);
-            BTA_DmRemoveDevice((uint8_t *)&p_data->conn.bda, BT_TRANSPORT_BR_EDR);
-        } else {
-            BTC_TRACE_DEBUG("%s: Only removing HID data as some other profiles connected", __func__);
-            btc_hd_remove_device(*bd_addr);
-        }
+#if BTC_HID_REMOVE_DEVICE_BONDING
+        BTC_TRACE_DEBUG("%s: Removing bonding information", __func__);
+        BTA_DmRemoveDevice((uint8_t *)&p_data->conn.bda, BT_TRANSPORT_BR_EDR);
+#endif
 
         if (btc_hd_cb.status == BTC_HD_DISCONNECTING || btc_hd_cb.status == BTC_HD_CONNECTING ||
             btc_hd_cb.status == BTC_HD_CONNECTED) {
@@ -919,6 +921,8 @@ void btc_hd_cb_handler(btc_msg_t *msg)
             param.close.conn_status = p_data->conn.conn_status;
             btc_hd_cb_to_app(ESP_HIDD_CLOSE_EVT, &param);
         }
+
+        btc_hd_cb.in_use = FALSE;
 
         param.vc_unplug.status = p_data->conn.status;
         param.vc_unplug.conn_status = p_data->conn.conn_status;
@@ -960,6 +964,24 @@ void btc_hd_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
         break;
     default:
         break;
+    }
+}
+
+void btc_hd_get_profile_status(esp_hidd_profile_status_t *param)
+{
+    if (is_hidd_init()) {
+        param->hidd_inited = true;
+        if (btc_hd_cb.status == BTC_HD_CONNECTED) {
+            param->conn_num++;
+        }
+        if (btc_hd_cb.in_use) {
+            param->plug_vc_dev_num++;
+        }
+        if (btc_hd_cb.app_registered) {
+            param->reg_app_num++;
+        }
+    } else {
+        param->hidd_inited = false;
     }
 }
 

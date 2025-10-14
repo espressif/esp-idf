@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -153,21 +153,29 @@ static err_t openthread_netif_init(struct netif *netif)
 
 const ip_addr_t *lwip_hook_ip6_select_source_address(struct netif *netif, const ip6_addr_t *dest)
 {
-    const ip6_addr_t *cur_addr;
+    ip6_addr_t cand_addr = { 0 };
     uint8_t idx = 0;
+    otError err = OT_ERROR_NONE;
     // Only process with ot netif.
     if (!(netif->name[0] == 'o' && netif->name[1] == 't')) {
         return NULL;
     }
-    // Currently, prefer the address with the same prefix of the destination address.
-    // If no address found, return NULL for selection source address using the default algorithm.
-    for (idx = 0; idx < LWIP_IPV6_NUM_ADDRESSES; idx++) {
-        if (!ip6_addr_isvalid(netif_ip6_addr_state(netif, idx))) {
-            continue;
-        }
-        cur_addr = netif_ip6_addr(netif, idx);
-        if (ip6_addr_netcmp_zoneless(cur_addr, dest)) {
-            return netif_ip_addr6(netif, idx);
+    otMessageInfo message_info = { 0 };
+    memcpy(message_info.mPeerAddr.mFields.m32, dest->addr, sizeof(message_info.mPeerAddr.mFields.m32));
+    otInstance *instance = esp_openthread_get_instance();
+    esp_openthread_task_switching_lock_acquire(portMAX_DELAY);
+    err = otIp6SelectSourceAddress(instance, &message_info);
+    esp_openthread_task_switching_lock_release();
+    if (err == OT_ERROR_NONE) {
+        // If a Src address was selected by the OT stack, use this address.
+        memcpy(cand_addr.addr, message_info.mSockAddr.mFields.m32, sizeof(cand_addr.addr));
+        for (idx = 0; idx < LWIP_IPV6_NUM_ADDRESSES; idx++) {
+            if (!ip6_addr_isvalid(netif_ip6_addr_state(netif, idx))) {
+                continue;
+            }
+            if (ip6_addr_zoneless_eq(netif_ip6_addr(netif, idx), &cand_addr)) {
+                return netif_ip_addr6(netif, idx);
+            }
         }
     }
     return NULL;

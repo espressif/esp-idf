@@ -344,6 +344,8 @@ typedef struct {
                                                  to be still in the middle of a complete transaction (partially done),
                                                  you are allowed to configure 2D-DMA channel hardware/descriptor in this
                                                  callback, and let the channels start running again */
+    dma2d_event_callback_t on_desc_empty;   /*!< Invoked when the buffer size pointed to by the received linked list
+                                                 descriptor is less than the length of the data to be received */
 } dma2d_rx_event_callbacks_t;
 
 /**

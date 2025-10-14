@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -125,6 +125,14 @@ typedef enum {
                       AWB
 ---------------------------------------------------------------*/
 
+#if SOC_ISP_AWB_WINDOW_X_NUMS
+#define ISP_AWB_WINDOW_X_NUM   SOC_ISP_AWB_WINDOW_X_NUMS      // The AWB window number for sampling
+#define ISP_AWB_WINDOW_Y_NUM   SOC_ISP_AWB_WINDOW_Y_NUMS      // The AWB window number for sampling
+#else
+#define ISP_AWB_WINDOW_X_NUM   0
+#define ISP_AWB_WINDOW_Y_NUM   0
+#endif
+
 /**
  * @brief ISP AWB sample point in the ISP pipeline
  */
@@ -133,12 +141,21 @@ typedef enum {
     ISP_AWB_SAMPLE_POINT_AFTER_CCM,        ///< Sample AWB data after CCM (Color Correction Matrix)
 } isp_awb_sample_point_t;
 
+/**
+ * @brief ISP AWB gain
+ */
+typedef struct {
+    uint32_t gain_r;    ///< White balance gain for R channel
+    uint32_t gain_g;    ///< White balance gain for G channel
+    uint32_t gain_b;    ///< White balance gain for B channel
+} isp_awb_gain_t;
+
 /*---------------------------------------------------------------
                       BF
 ---------------------------------------------------------------*/
 #if SOC_ISP_BF_SUPPORTED
-#define ISP_BF_TEMPLATE_X_NUMS    SOC_ISP_BF_TEMPLATE_X_NUMS    // BF template x field nums
-#define ISP_BF_TEMPLATE_Y_NUMS    SOC_ISP_BF_TEMPLATE_Y_NUMS    // BF template y field nums
+#define ISP_BF_TEMPLATE_X_NUMS    SOC_ISP_BF_TEMPLATE_X_NUMS    ///< BF template x field nums
+#define ISP_BF_TEMPLATE_Y_NUMS    SOC_ISP_BF_TEMPLATE_Y_NUMS    ///< BF template y field nums
 #else
 #define ISP_BF_TEMPLATE_X_NUMS    0
 #define ISP_BF_TEMPLATE_Y_NUMS    0

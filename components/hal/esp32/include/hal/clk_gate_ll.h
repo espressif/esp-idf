@@ -99,6 +99,8 @@ static inline uint32_t periph_ll_get_rst_en_mask(periph_module_t periph, bool en
         return DPORT_LEDC_RST;
     case PERIPH_WIFI_MODULE:
         return DPORT_WIFIMAC_RST;
+    case PERIPH_BT_MODULE:
+        return (DPORT_BTBB_RST | DPORT_BTMAC_RST | DPORT_RW_BTMAC_RST | DPORT_RW_BTLP_RST);
     case PERIPH_UART0_MODULE:
         return DPORT_UART_RST;
     case PERIPH_UART1_MODULE:

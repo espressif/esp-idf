@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,8 +12,9 @@
 #include "soc/rtc.h"
 #include "soc/clk_tree_defs.h"
 #include "soc/touch_sensor_periph.h"
-#include "driver/rtc_io.h"
+#include "esp_private/gpio.h"
 #include "driver/touch_sens.h"
+#include "esp_private/esp_gpio_reserve.h"
 
 #if SOC_TOUCH_SENSOR_VERSION <= 2
 #include "esp_private/rtc_ctrl.h"
@@ -21,7 +22,6 @@
 #include "soc/interrupts.h"
 #include "esp_intr_alloc.h"
 #endif
-#include "esp_private/touch_sens_helper.h"
 
 #if CONFIG_TOUCH_ENABLE_DEBUG_LOG
 // The local log level must be defined before including esp_log.h
@@ -32,7 +32,7 @@
 #include "esp_check.h"
 #include "touch_sens_private.h"
 
-#define TOUCH_CHANNEL_CHECK(num)        ESP_RETURN_ON_FALSE(num >= TOUCH_MIN_CHAN_ID && num <= TOUCH_MAX_CHAN_ID,  \
+#define TOUCH_CHANNEL_CHECK(num)        ESP_RETURN_ON_FALSE((int)(num) >= (int)TOUCH_MIN_CHAN_ID && num <= TOUCH_MAX_CHAN_ID,  \
                                         ESP_ERR_INVALID_ARG, TAG, "The channel number is out of supported range");
 
 static const char *TAG = "touch";
@@ -42,10 +42,11 @@ touch_sensor_handle_t g_touch = NULL;
 static void touch_channel_pin_init(int id)
 {
     gpio_num_t pin = touch_sensor_channel_io_map[id];
-    rtc_gpio_init(pin);
-    rtc_gpio_set_direction(pin, RTC_GPIO_MODE_DISABLED);
-    rtc_gpio_pulldown_dis(pin);
-    rtc_gpio_pullup_dis(pin);
+    assert(pin >= 0);
+    if (esp_gpio_reserve(BIT64(pin)) & BIT64(pin)) {
+        ESP_LOGW(TAG, "The GPIO%d is conflict with other module", (int)pin);
+    }
+    gpio_config_as_analog(pin);
 }
 
 static void s_touch_free_resource(touch_sensor_handle_t sens_handle)
@@ -102,7 +103,7 @@ esp_err_t touch_sensor_del_controller(touch_sensor_handle_t sens_handle)
     esp_err_t ret = ESP_OK;
     // Take the semaphore to make sure the touch has stopped
     xSemaphoreTakeRecursive(sens_handle->mutex, portMAX_DELAY);
-    ESP_GOTO_ON_FALSE(!sens_handle->is_enabled, ESP_ERR_INVALID_STATE, err, TAG, "Touch sensor has not disabled");
+    TOUCH_GOTO_ON_FALSE_FSM(!sens_handle->is_enabled, ESP_ERR_INVALID_STATE, err, TAG, "Touch sensor has not disabled");
     FOR_EACH_TOUCH_CHANNEL(i) {
         ESP_GOTO_ON_FALSE(!sens_handle->ch[i], ESP_ERR_INVALID_STATE, err, TAG, "There are still some touch channels not deleted");
     }
@@ -135,40 +136,39 @@ esp_err_t touch_sensor_new_channel(touch_sensor_handle_t sens_handle, int chan_i
     TOUCH_NULL_POINTER_CHECK(chan_cfg);
     TOUCH_NULL_POINTER_CHECK(ret_chan_handle);
     TOUCH_CHANNEL_CHECK(chan_id);
+    uint32_t ch_offset = chan_id - TOUCH_MIN_CHAN_ID;
 
     ESP_RETURN_ON_FALSE(g_touch == sens_handle, ESP_ERR_INVALID_ARG, TAG, "The input touch sensor handle is unmatched");
 
     esp_err_t ret = ESP_OK;
     xSemaphoreTakeRecursive(sens_handle->mutex, portMAX_DELAY);
 
-    ESP_GOTO_ON_FALSE(!sens_handle->is_enabled, ESP_ERR_INVALID_STATE, err2, TAG, "Please disable the touch sensor first");
-    ESP_GOTO_ON_FALSE(!sens_handle->ch[chan_id], ESP_ERR_INVALID_STATE, err2, TAG, "The channel %d has been registered", chan_id);
+    TOUCH_GOTO_ON_FALSE_FSM(!sens_handle->is_enabled, ESP_ERR_INVALID_STATE, err2, TAG, "Please disable the touch sensor first");
+    ESP_GOTO_ON_FALSE(!sens_handle->ch[ch_offset], ESP_ERR_INVALID_STATE, err2, TAG, "The channel %d has been registered", chan_id);
 
-    sens_handle->ch[chan_id] = (touch_channel_handle_t)heap_caps_calloc(1, sizeof(struct touch_channel_s), TOUCH_MEM_ALLOC_CAPS);
-    ESP_GOTO_ON_FALSE(sens_handle->ch[chan_id], ESP_ERR_NO_MEM, err2, TAG, "No memory for touch channel");
-    sens_handle->ch[chan_id]->id = chan_id;
-    sens_handle->ch[chan_id]->base = sens_handle;
-    sens_handle->ch[chan_id]->prox_id = 0;
+    sens_handle->ch[ch_offset] = (touch_channel_handle_t)heap_caps_calloc(1, sizeof(struct touch_channel_s), TOUCH_MEM_ALLOC_CAPS);
+    ESP_GOTO_ON_FALSE(sens_handle->ch[ch_offset], ESP_ERR_NO_MEM, err2, TAG, "No memory for touch channel");
+    sens_handle->ch[ch_offset]->id = chan_id;
+    sens_handle->ch[ch_offset]->base = sens_handle;
+#if SOC_TOUCH_SUPPORT_PROX_SENSING
+    sens_handle->ch[ch_offset]->prox_id = 0;
+#endif
 
     /* Init the channel */
-    ESP_GOTO_ON_ERROR(touch_priv_config_channel(sens_handle->ch[chan_id], chan_cfg),
+    ESP_GOTO_ON_ERROR(touch_priv_config_channel(sens_handle->ch[ch_offset], chan_cfg),
                       err1, TAG, "Failed to configure the touch channel %d", chan_id);
     touch_channel_pin_init(chan_id);
-
-    touch_chan_benchmark_config_t bm_cfg = {.do_reset = true};
     TOUCH_ENTER_CRITICAL(TOUCH_PERIPH_LOCK);
     sens_handle->chan_mask |= 1 << chan_id;
-    /* Reset the benchmark to overwrite the legacy benchmark during the deep sleep */
-    touch_priv_config_benchmark(sens_handle->ch[chan_id], &bm_cfg);
     TOUCH_EXIT_CRITICAL(TOUCH_PERIPH_LOCK);
 
-    *ret_chan_handle = sens_handle->ch[chan_id];
+    *ret_chan_handle = sens_handle->ch[ch_offset];
 
     xSemaphoreGiveRecursive(sens_handle->mutex);
     return ret;
 err1:
-    free(sens_handle->ch[chan_id]);
-    sens_handle->ch[chan_id] = NULL;
+    free(sens_handle->ch[ch_offset]);
+    sens_handle->ch[ch_offset] = NULL;
 err2:
     xSemaphoreGiveRecursive(sens_handle->mutex);
     return ret;
@@ -181,8 +181,8 @@ esp_err_t touch_sensor_del_channel(touch_channel_handle_t chan_handle)
     esp_err_t ret = ESP_OK;
     touch_sensor_handle_t sens_handle = chan_handle->base;
     xSemaphoreTakeRecursive(sens_handle->mutex, portMAX_DELAY);
+    TOUCH_GOTO_ON_FALSE_FSM(!sens_handle->is_enabled, ESP_ERR_INVALID_STATE, err, TAG, "Please disable the touch sensor first");
 
-    ESP_GOTO_ON_FALSE(!sens_handle->is_enabled, ESP_ERR_INVALID_STATE, err, TAG, "Please disable the touch sensor first");
 #if SOC_TOUCH_SUPPORT_WATERPROOF
     if (sens_handle->shield_chan == chan_handle) {
         ESP_GOTO_ON_ERROR(touch_sensor_config_waterproof(sens_handle, NULL), err, TAG, "Failed to disable waterproof on this channel");
@@ -206,13 +206,14 @@ esp_err_t touch_sensor_del_channel(touch_channel_handle_t chan_handle)
         TOUCH_EXIT_CRITICAL(TOUCH_PERIPH_LOCK);
     }
 #endif
-    int id = chan_handle->id;
+    int ch_offset = chan_handle->id - TOUCH_MIN_CHAN_ID;
+    assert(ch_offset >= 0);
     TOUCH_ENTER_CRITICAL(TOUCH_PERIPH_LOCK);
-    sens_handle->chan_mask &= ~(1UL << id);
+    sens_handle->chan_mask &= ~(1UL << chan_handle->id);
     TOUCH_EXIT_CRITICAL(TOUCH_PERIPH_LOCK);
 
-    free(g_touch->ch[id]);
-    g_touch->ch[id] = NULL;
+    free(g_touch->ch[ch_offset]);
+    g_touch->ch[ch_offset] = NULL;
 err:
     xSemaphoreGiveRecursive(sens_handle->mutex);
     return ret;
@@ -226,7 +227,7 @@ esp_err_t touch_sensor_reconfig_controller(touch_sensor_handle_t sens_handle, co
 
     esp_err_t ret = ESP_OK;
     xSemaphoreTakeRecursive(sens_handle->mutex, portMAX_DELAY);
-    ESP_GOTO_ON_FALSE(!sens_handle->is_enabled, ESP_ERR_INVALID_STATE, err, TAG, "Please disable the touch sensor first");
+    TOUCH_GOTO_ON_FALSE_FSM(!sens_handle->is_enabled, ESP_ERR_INVALID_STATE, err, TAG, "Please disable the touch sensor first");
 
     ESP_GOTO_ON_ERROR(touch_priv_config_controller(sens_handle, sens_cfg), err, TAG, "Configure touch controller failed");
 
@@ -242,7 +243,7 @@ esp_err_t touch_sensor_enable(touch_sensor_handle_t sens_handle)
     esp_err_t ret = ESP_OK;
     xSemaphoreTakeRecursive(sens_handle->mutex, portMAX_DELAY);
 
-    ESP_GOTO_ON_FALSE(!sens_handle->is_enabled, ESP_ERR_INVALID_STATE, err, TAG, "Touch sensor has already enabled");
+    TOUCH_GOTO_ON_FALSE_FSM(!sens_handle->is_enabled, ESP_ERR_INVALID_STATE, err, TAG, "Touch sensor has already enabled");
     ESP_GOTO_ON_FALSE(sens_handle->sample_cfg_num, ESP_ERR_INVALID_STATE, err, TAG, "No sample configuration was added to the touch controller");
 
     sens_handle->is_enabled = true;
@@ -272,7 +273,7 @@ esp_err_t touch_sensor_disable(touch_sensor_handle_t sens_handle)
 
     esp_err_t ret = ESP_OK;
     xSemaphoreTakeRecursive(sens_handle->mutex, portMAX_DELAY);
-    ESP_GOTO_ON_FALSE(sens_handle->is_enabled, ESP_ERR_INVALID_STATE, err, TAG, "Touch sensor has not enabled");
+    TOUCH_GOTO_ON_FALSE_FSM(sens_handle->is_enabled, ESP_ERR_INVALID_STATE, err, TAG, "Touch sensor has not enabled");
 
     TOUCH_ENTER_CRITICAL(TOUCH_PERIPH_LOCK);
     touch_ll_interrupt_disable(TOUCH_LL_INTR_MASK_ALL);
@@ -280,7 +281,7 @@ esp_err_t touch_sensor_disable(touch_sensor_handle_t sens_handle)
     TOUCH_EXIT_CRITICAL(TOUCH_PERIPH_LOCK);
     sens_handle->is_enabled = false;
 
-err:
+    TOUCH_FSM_ERR_TAG(err)
     xSemaphoreGiveRecursive(sens_handle->mutex);
     return ret;
 }
@@ -293,7 +294,7 @@ esp_err_t touch_sensor_reconfig_channel(touch_channel_handle_t chan_handle, cons
     esp_err_t ret = ESP_OK;
     touch_sensor_handle_t sens_handle = chan_handle->base;
     xSemaphoreTakeRecursive(sens_handle->mutex, portMAX_DELAY);
-    ESP_GOTO_ON_FALSE(!sens_handle->is_enabled, ESP_ERR_INVALID_STATE, err, TAG, "Please disable the touch sensor first");
+    TOUCH_GOTO_ON_FALSE_FSM(!sens_handle->is_enabled, ESP_ERR_INVALID_STATE, err, TAG, "Please disable the touch sensor first");
 
     ESP_GOTO_ON_ERROR(touch_priv_config_channel(chan_handle, chan_cfg), err, TAG, "Configure touch channel failed");
 
@@ -307,17 +308,23 @@ esp_err_t touch_sensor_start_continuous_scanning(touch_sensor_handle_t sens_hand
     TOUCH_NULL_POINTER_CHECK_ISR(sens_handle);
 
     esp_err_t ret = ESP_OK;
+    TOUCH_GOTO_ON_FALSE_FSM_ISR(sens_handle->is_enabled, ESP_ERR_INVALID_STATE, err, TAG, "Please enable the touch sensor first");
+    TOUCH_GOTO_ON_FALSE_FSM_ISR(!sens_handle->is_started, ESP_ERR_INVALID_STATE, err, TAG, "Continuous scanning has started already");
 
-    ESP_GOTO_ON_FALSE_ISR(sens_handle->is_enabled, ESP_ERR_INVALID_STATE, err, TAG, "Please enable the touch sensor first");
-    ESP_GOTO_ON_FALSE_ISR(!sens_handle->is_started, ESP_ERR_INVALID_STATE, err, TAG, "Continuous scanning has started already");
-
+#if SOC_TOUCH_SENSOR_VERSION == 1
+    if (sens_handle->sw_filter_timer) {
+        ESP_GOTO_ON_ERROR_ISR(esp_timer_start_periodic(sens_handle->sw_filter_timer, sens_handle->timer_interval_ms * 1000),
+                              err, TAG, "Failed to start the sw filter timer");
+    }
+#endif
     TOUCH_ENTER_CRITICAL_SAFE(TOUCH_PERIPH_LOCK);
     sens_handle->is_started = true;
     touch_ll_enable_fsm_timer(true);
     touch_ll_start_fsm_repeated_timer();
     TOUCH_EXIT_CRITICAL_SAFE(TOUCH_PERIPH_LOCK);
-
+#if !CONFIG_TOUCH_SKIP_FSM_CHECK || SOC_TOUCH_SENSOR_VERSION == 1
 err:
+#endif
     return ret;
 }
 
@@ -326,16 +333,21 @@ esp_err_t touch_sensor_stop_continuous_scanning(touch_sensor_handle_t sens_handl
     TOUCH_NULL_POINTER_CHECK_ISR(sens_handle);
 
     esp_err_t ret = ESP_OK;
+    TOUCH_GOTO_ON_FALSE_FSM_ISR(sens_handle->is_started, ESP_ERR_INVALID_STATE, err, TAG, "Continuous scanning not started yet");
 
-    ESP_GOTO_ON_FALSE_ISR(sens_handle->is_started, ESP_ERR_INVALID_STATE, err, TAG, "Continuous scanning not started yet");
-
+#if SOC_TOUCH_SENSOR_VERSION == 1
+    if (sens_handle->sw_filter_timer) {
+        ESP_GOTO_ON_ERROR(esp_timer_stop(sens_handle->sw_filter_timer), err, TAG, "Failed to stop the timer");
+    }
+#endif
     TOUCH_ENTER_CRITICAL_SAFE(TOUCH_PERIPH_LOCK);
     touch_ll_stop_fsm_repeated_timer();
     touch_ll_enable_fsm_timer(false);
     sens_handle->is_started = false;
     TOUCH_EXIT_CRITICAL_SAFE(TOUCH_PERIPH_LOCK);
-
+#if !CONFIG_TOUCH_SKIP_FSM_CHECK || SOC_TOUCH_SENSOR_VERSION == 1
 err:
+#endif
     return ret;
 }
 
@@ -344,8 +356,8 @@ esp_err_t touch_sensor_trigger_oneshot_scanning(touch_sensor_handle_t sens_handl
     TOUCH_NULL_POINTER_CHECK(sens_handle);
 
     esp_err_t ret = ESP_OK;
-    ESP_GOTO_ON_FALSE(sens_handle->is_enabled, ESP_ERR_INVALID_STATE, err, TAG, "Please enable the touch sensor first");
-    ESP_GOTO_ON_FALSE(!sens_handle->is_started, ESP_ERR_INVALID_STATE, err, TAG, "Failed to trigger oneshot scanning because scanning has started");
+    TOUCH_GOTO_ON_FALSE_FSM(sens_handle->is_enabled, ESP_ERR_INVALID_STATE, err, TAG, "Please enable the touch sensor first");
+    TOUCH_GOTO_ON_FALSE_FSM(!sens_handle->is_started, ESP_ERR_INVALID_STATE, err, TAG, "Failed to trigger oneshot scanning because scanning has started");
     TOUCH_ENTER_CRITICAL(TOUCH_PERIPH_LOCK);
     sens_handle->is_started = true;
     TOUCH_EXIT_CRITICAL(TOUCH_PERIPH_LOCK);
@@ -366,15 +378,17 @@ esp_err_t touch_sensor_trigger_oneshot_scanning(touch_sensor_handle_t sens_handl
     FOR_EACH_TOUCH_CHANNEL(i) {
         if (sens_handle->ch[i]) {
             TOUCH_ENTER_CRITICAL(TOUCH_PERIPH_LOCK);
-            touch_ll_channel_sw_measure_mask(BIT(i));
+            touch_ll_channel_sw_measure_mask(BIT(sens_handle->ch[i]->id));
             touch_ll_trigger_oneshot_measurement();
             TOUCH_EXIT_CRITICAL(TOUCH_PERIPH_LOCK);
             while (!touch_ll_is_measure_done()) {
+#if SOC_TOUCH_SENSOR_VERSION >= 2
                 if (g_touch->is_meas_timeout) {
                     g_touch->is_meas_timeout = false;
                     ESP_LOGW(TAG, "The measurement time on channel %d exceed the limitation", i);
                     break;
                 }
+#endif
                 if (timeout_ms >= 0) {
                     ESP_GOTO_ON_FALSE(xTaskGetTickCount() <= end_tick, ESP_ERR_TIMEOUT, err, TAG, "Wait for measurement done timeout");
                 }
@@ -385,7 +399,12 @@ esp_err_t touch_sensor_trigger_oneshot_scanning(touch_sensor_handle_t sens_handl
     TOUCH_ENTER_CRITICAL(TOUCH_PERIPH_LOCK);
     touch_ll_channel_sw_measure_mask(0);
     TOUCH_EXIT_CRITICAL(TOUCH_PERIPH_LOCK);
-
+#if SOC_TOUCH_SENSOR_VERSION == 1
+    /* If software filter enabled, do the filter immediately after oneshot scanning */
+    if (sens_handle->sw_filter_timer) {
+        touch_priv_execute_sw_filter(sens_handle);
+    }
+#endif
 err:
     xSemaphoreGiveRecursive(sens_handle->mutex);
     TOUCH_ENTER_CRITICAL(TOUCH_PERIPH_LOCK);
@@ -406,16 +425,19 @@ esp_err_t touch_sensor_register_callbacks(touch_sensor_handle_t sens_handle, con
     }
     ESP_RETURN_ON_FALSE(!user_ctx || esp_ptr_internal(user_ctx), ESP_ERR_INVALID_ARG, TAG, "user context not in internal RAM");
 #endif
+#if SOC_TOUCH_SENSOR_VERSION == 1
+    if (sens_handle->data_filter_fn == NULL) {
+        ESP_RETURN_ON_FALSE(!(callbacks->on_active || callbacks->on_inactive), ESP_ERR_INVALID_STATE, TAG, "filter has not configured");
+    }
+#endif
 
     esp_err_t ret = ESP_OK;
     xSemaphoreTakeRecursive(sens_handle->mutex, portMAX_DELAY);
-
-    ESP_GOTO_ON_FALSE(!sens_handle->is_enabled, ESP_ERR_INVALID_STATE, err, TAG, "Please disable the touch sensor first");
-
+    TOUCH_GOTO_ON_FALSE_FSM(!sens_handle->is_enabled, ESP_ERR_INVALID_STATE, err, TAG, "Please disable the touch sensor first");
     memcpy(&sens_handle->cbs, callbacks, sizeof(touch_event_callbacks_t));
     sens_handle->user_ctx = user_ctx;
 
-err:
+    TOUCH_FSM_ERR_TAG(err)
     xSemaphoreGiveRecursive(sens_handle->mutex);
     return ret;
 }
@@ -427,14 +449,6 @@ esp_err_t touch_channel_read_data(touch_channel_handle_t chan_handle, touch_chan
     return touch_priv_channel_read_data(chan_handle, type, data);
 }
 
-esp_err_t touch_channel_config_benchmark(touch_channel_handle_t chan_handle, const touch_chan_benchmark_config_t *benchmark_cfg)
-{
-    TOUCH_NULL_POINTER_CHECK_ISR(chan_handle);
-    TOUCH_NULL_POINTER_CHECK_ISR(benchmark_cfg);
-    touch_priv_config_benchmark(chan_handle, benchmark_cfg);
-    return ESP_OK;
-}
-
 /******************************************************************************/
 /*                            Scope: Private APIs                             */
 /******************************************************************************/
@@ -443,12 +457,30 @@ esp_err_t touch_sensor_get_channel_info(touch_channel_handle_t chan_handle, touc
     TOUCH_NULL_POINTER_CHECK(chan_handle);
     TOUCH_NULL_POINTER_CHECK(chan_info);
     xSemaphoreTakeRecursive(chan_handle->base->mutex, portMAX_DELAY);
+    memset(chan_info, 0, sizeof(touch_chan_info_t));
     chan_info->chan_id = chan_handle->id;
     chan_info->chan_gpio = touch_sensor_channel_io_map[chan_handle->id];
-    chan_info->flags.can_wake_dp_slp = chan_handle == chan_handle->base->deep_slp_chan;
+#if SOC_TOUCH_SENSOR_VERSION == 1
+    // All channels on V1 can wake up deep sleep
+    chan_info->flags.can_wake_dp_slp = true;
+    chan_info->abs_active_thresh[0] = touch_ll_get_chan_active_threshold(chan_handle->id);
+#elif SOC_TOUCH_SENSOR_VERSION == 2
+    chan_info->flags.can_wake_dp_slp = (!chan_handle->base->allow_pd) || (chan_handle == chan_handle->base->deep_slp_chan);
+    chan_info->active_thresh[0] = touch_ll_get_chan_active_threshold(chan_handle->id);
+#elif SOC_TOUCH_SENSOR_VERSION == 3
+    chan_info->flags.can_wake_dp_slp = (!chan_handle->base->allow_pd) || (chan_handle == chan_handle->base->deep_slp_chan);
+    for (int i = 0; i < TOUCH_SAMPLE_CFG_NUM; i++) {
+        chan_info->active_thresh[i] = touch_ll_get_chan_active_threshold(chan_handle->id, i);
+    }
+#endif
+
+#if SOC_TOUCH_SUPPORT_PROX_SENSING
     chan_info->flags.is_proxi = chan_handle->prox_id > 0;
+#endif
+#if SOC_TOUCH_SUPPORT_WATERPROOF
     chan_info->flags.is_guard = chan_handle == chan_handle->base->guard_chan;
     chan_info->flags.is_shield = chan_handle == chan_handle->base->shield_chan;
+#endif
     xSemaphoreGiveRecursive(chan_handle->base->mutex);
     return ESP_OK;
 }

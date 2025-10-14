@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -178,6 +178,7 @@ typedef union {
     struct {
         /** gpio_hold1 : R/W; bitpos: [31:0]; default: 0;
          *  reserved
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t gpio_hold1:32;
     };
@@ -189,17 +190,23 @@ typedef union {
  */
 typedef union {
     struct {
-        uint32_t reserved_0:29;
-        /** force_download_boot_status : RO; bitpos: [29]; default: 0;
-         *  get force download mode status
+        uint32_t reserved_0:27;
+        /** force_download_boot_status : RO; bitpos: [28:27]; default: 0;
+         *  get force download mode status,
+         *  bit1:download boot1
+         *  bit0:download boot0
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
-        uint32_t force_download_boot_status:1;
-        /** force_download_boot : R/W; bitpos: [30]; default: 0;
+        uint32_t force_download_boot_status:2;
+        /** force_download_boot : R/W; bitpos: [30:29]; default: 0;
          *  enable chip entry download mode or not
-         *  1: enable
-         *  0: no operation
+         *  00: no operation
+         *  01:force download boot0(uart/usb)
+         *  10:force download boot1(uart/sdio)
+         *  11: no operation
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
-        uint32_t force_download_boot:1;
+        uint32_t force_download_boot:2;
         /** hpsys_sw_reset : WT; bitpos: [31]; default: 0;
          *  enable hp system reset by software or not
          *  1: reset
@@ -230,18 +237,21 @@ typedef union {
         uint32_t cpu_core0_sw_reset:1;
         /** cpu_core0_ocd_halt_on_reset : R/W; bitpos: [29]; default: 0;
          *  reserved
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t cpu_core0_ocd_halt_on_reset:1;
         /** cpu_core0_stat_vector_sel : R/W; bitpos: [30]; default: 1;
          *  configure core boot address
          *  1: ROM
          *  0: lp memory
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t cpu_core0_stat_vector_sel:1;
         /** cpu_core0_dreset_mask : R/W; bitpos: [31]; default: 0;
          *  disable bypass core dreset
          *  1: enable bypass
          *  0: disable bypass
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t cpu_core0_dreset_mask:1;
     };
@@ -356,6 +366,7 @@ typedef union {
         uint32_t reserved_0:22;
         /** sdio_act_dnum : R/W; bitpos: [31:22]; default: 10;
          *  reserved
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t sdio_act_dnum:10;
     };
@@ -394,6 +405,7 @@ typedef union {
         uint32_t reserved_0:29;
         /** sar2_pwdet_cct : R/W; bitpos: [31:29]; default: 0;
          *  configure sar cct
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t sar2_pwdet_cct:3;
     };
@@ -410,6 +422,7 @@ typedef union {
          *  enable modem sync bridge or not
          *  1: enable
          *  0: disable
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t modem_sync_bridge_en:1;
     };
@@ -423,18 +436,22 @@ typedef union {
     struct {
         /** lp_debug_sel0 : R/W; bitpos: [6:0]; default: 0;
          *  need des
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t lp_debug_sel0:7;
         /** lp_debug_sel1 : R/W; bitpos: [13:7]; default: 0;
          *  need des
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t lp_debug_sel1:7;
         /** lp_debug_sel2 : R/W; bitpos: [20:14]; default: 0;
          *  need des
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t lp_debug_sel2:7;
         /** lp_debug_sel3 : R/W; bitpos: [27:21]; default: 0;
          *  need des
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t lp_debug_sel3:7;
         uint32_t reserved_28:4;
@@ -449,6 +466,7 @@ typedef union {
     struct {
         /** lp_debug_sel4 : R/W; bitpos: [6:0]; default: 0;
          *  need des
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t lp_debug_sel4:7;
         uint32_t reserved_7:25;
@@ -498,6 +516,7 @@ typedef union {
         uint32_t reserved_30:1;
         /** aon_bypass : R/W; bitpos: [31]; default: 0;
          *  reserved
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t aon_bypass:1;
     };
@@ -543,12 +562,54 @@ typedef union {
     uint32_t val;
 } lp_aon_mem_ctrl_reg_t;
 
+/** Type of puf_mem_sw register
+ *  configure the power switch of PUFMEM
+ */
+typedef union {
+    struct {
+        /** puf_mem_sw_reg : R/W; bitpos: [0]; default: 1;
+         *  power switch of PD_LPPUFMEM
+         */
+        uint32_t puf_mem_sw_reg:1;
+        uint32_t reserved_1:31;
+    };
+    uint32_t val;
+} lp_aon_puf_mem_sw_reg_t;
+
+/** Type of puf_mem_iso register
+ *  configure the iso of PD_PUFMEM
+ */
+typedef union {
+    struct {
+        /** puf_mem_iso_reg : R/W; bitpos: [0]; default: 0;
+         *  ISO enable of PD_LPPUFMEM to PD_SYS
+         */
+        uint32_t puf_mem_iso_reg:1;
+        uint32_t reserved_1:31;
+    };
+    uint32_t val;
+} lp_aon_puf_mem_iso_reg_t;
+
+/** Type of puf_mem_discharge register
+ *  configure the discharge gate of PUFMEM
+ */
+typedef union {
+    struct {
+        /** puf_mem_discharge_reg : R/W; bitpos: [0]; default: 0;
+         *  discharge gate of LPPUFMEM
+         */
+        uint32_t puf_mem_discharge_reg:1;
+        uint32_t reserved_1:31;
+    };
+    uint32_t val;
+} lp_aon_puf_mem_discharge_reg_t;
+
 /** Type of date register
  *  reserved
  */
 typedef union {
     struct {
-        /** date : R/W; bitpos: [30:0]; default: 36774512;
+        /** date : R/W; bitpos: [30:0]; default: 37818656;
          *  version register
          */
         uint32_t date:31;
@@ -569,6 +630,7 @@ typedef union {
     struct {
         /** spram_mem_aux_ctrl : R/W; bitpos: [31:0]; default: 8304;
          *  configure lp memory power status
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t spram_mem_aux_ctrl:32;
     };
@@ -582,6 +644,7 @@ typedef union {
     struct {
         /** sprf_mem_aux_ctrl : R/W; bitpos: [31:0]; default: 8304;
          *  configure memory in lp system power status
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t sprf_mem_aux_ctrl:32;
     };
@@ -622,7 +685,10 @@ typedef struct {
     volatile lp_aon_backup_dma_cfg1_reg_t backup_dma_cfg1;
     volatile lp_aon_backup_dma_cfg2_reg_t backup_dma_cfg2;
     volatile lp_aon_mem_ctrl_reg_t mem_ctrl;
-    uint32_t reserved_080[223];
+    volatile lp_aon_puf_mem_sw_reg_t puf_mem_sw;
+    volatile lp_aon_puf_mem_iso_reg_t puf_mem_iso;
+    volatile lp_aon_puf_mem_discharge_reg_t puf_mem_discharge;
+    uint32_t reserved_08c[220];
     volatile lp_aon_date_reg_t date;
 } lp_aon_dev_t;
 

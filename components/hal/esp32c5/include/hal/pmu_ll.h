@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -522,6 +522,11 @@ FORCE_INLINE_ATTR void pmu_ll_hp_clear_reject_intr_status(pmu_dev_t *hw)
     hw->hp_ext.int_clr.reject = 1;
 }
 
+FORCE_INLINE_ATTR void pmu_ll_hp_enable_sw_intr(pmu_dev_t *hw, bool enable)
+{
+    hw->hp_ext.int_ena.sw = enable;
+}
+
 FORCE_INLINE_ATTR uint32_t pmu_ll_hp_get_wakeup_cause(pmu_dev_t *hw)
 {
     return hw->wakeup.status0;
@@ -701,6 +706,16 @@ FORCE_INLINE_ATTR uint32_t pmu_ll_lp_get_interrupt_raw(pmu_dev_t *hw)
 FORCE_INLINE_ATTR void pmu_ll_lp_clear_intsts_mask(pmu_dev_t *hw, uint32_t mask)
 {
     hw->lp_ext.int_clr.val = mask;
+}
+
+FORCE_INLINE_ATTR void pmu_ll_lp_trigger_sw_intr(pmu_dev_t *hw)
+{
+    hw->hp_lp_cpu_comm.lp_trigger_hp = 1;
+}
+
+FORCE_INLINE_ATTR void pmu_ll_hp_trigger_sw_intr(pmu_dev_t *hw)
+{
+    hw->hp_lp_cpu_comm.hp_trigger_lp = 1;
 }
 
 FORCE_INLINE_ATTR void pmu_ll_lp_clear_sw_intr_status(pmu_dev_t *hw)

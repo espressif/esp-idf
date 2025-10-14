@@ -7,9 +7,9 @@
 #include "soc/touch_sensor_channel.h"
 
 /* Store IO number corresponding to the Touch Sensor channel number. */
-/* Note: T14 is an internal channel that does not have a corresponding external GPIO. */
+/* Note: T0 is an internal channel that does not have a corresponding external GPIO. */
 const int touch_sensor_channel_io_map[] = {
-    TOUCH_PAD_NUM0_GPIO_NUM,
+    -1,
     TOUCH_PAD_NUM1_GPIO_NUM,
     TOUCH_PAD_NUM2_GPIO_NUM,
     TOUCH_PAD_NUM3_GPIO_NUM,
@@ -23,5 +23,5 @@ const int touch_sensor_channel_io_map[] = {
     TOUCH_PAD_NUM11_GPIO_NUM,
     TOUCH_PAD_NUM12_GPIO_NUM,
     TOUCH_PAD_NUM13_GPIO_NUM,
-    -1,
+    TOUCH_PAD_NUM14_GPIO_NUM,
 };

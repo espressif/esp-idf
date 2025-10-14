@@ -13,7 +13,7 @@ When conducting an SPI transaction, transactions can be classified into several 
 Protocol
 ^^^^^^^^
 
-About the details of how master should communicate with the SPI Slave, see :doc:`/api-reference/protocols/esp_spi_slave_protocol`.
+About the details of how master should communicate with the SPI Slave, see `ESP SPI Slave HD Protocol <https://espressif.github.io/idf-extra-components/latest/esp_serial_slave_link/spi_slave_hd_protocol.html#spi-slave-hd-half-duplex-protocol>`_.
 
 Through these different transactions, the slave provides these services to the master:
 
@@ -47,6 +47,11 @@ Slave Initialization
 Call :cpp:func:`spi_slave_hd_init` to initialize the SPI bus as well as the peripheral and the driver. The SPI Slave exclusively uses the SPI peripheral, pins of the bus before it is deinitialized, which means other devices are unable to use the above resources during initialization. Thus, to ensure SPI resources are correctly occupied and the connections work properly, most configurations of the slave should be done as soon as the slave is initialized.
 
 The :cpp:type:`spi_bus_config_t` specifies how the bus should be initialized, while :cpp:type:`spi_slave_hd_slot_config_t` specifies how the SPI Slave driver should work.
+
+Enable/Disable Driver (Optional)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Slave driver supports disabling / enabling driver after it is initialized by calling to :cpp:func:`spi_slave_hd_disable` / :cpp:func:`spi_slave_hd_enable`, to be able to change clock or power config or sleep to save power. By default, the driver state is `enabled` after initialized.
 
 Deinitialization (Optional)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^

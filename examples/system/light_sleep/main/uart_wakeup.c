@@ -1,24 +1,35 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
+#include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_check.h"
+#include "esp_err.h"
 #include "esp_sleep.h"
 #include "soc/uart_pins.h"
 #include "driver/uart.h"
-#include "driver/gpio.h"
+#include "driver/uart_wakeup.h"
 #include "sdkconfig.h"
 
-#define EXAMPLE_UART_NUM        0
+#define EXAMPLE_UART_NUM        CONFIG_ESP_CONSOLE_UART_NUM
 /* Notice that ESP32 has to use the iomux input to configure uart as wakeup source
  * Please use 'UxRXD_GPIO_NUM' as uart rx pin. No limitation to the other target */
 #define EXAMPLE_UART_TX_IO_NUM  U0TXD_GPIO_NUM
 #define EXAMPLE_UART_RX_IO_NUM  U0RXD_GPIO_NUM
 
-#define EXAMPLE_UART_WAKEUP_THRESHOLD   3
+#if CONFIG_ESP_CONSOLE_UART
+#define EXAMPLE_UART_BAUDRATE  CONFIG_ESP_CONSOLE_UART_BAUDRATE
+#else
+#define EXAMPLE_UART_BAUDRATE  115200
+#endif
+
+#define EXAMPLE_UART_WAKEUP_EDGE_THRESHOLD   3
+#define EXAMPLE_UART_WAKEUP_FIFO_THRESHOLD   8
+#define EXAMPLE_UART_WAKEUP_CHARS_SEQ        "ok"
+#define EXAMPLE_UART_WAKEUP_CHARS_SEQ_LEN    SOC_UART_WAKEUP_CHARS_SEQ_MAX_LEN
 
 #define EXAMPLE_READ_BUF_SIZE   1024
 #define EXAMPLE_UART_BUF_SIZE   (EXAMPLE_READ_BUF_SIZE * 2)
@@ -36,6 +47,7 @@ static void uart_wakeup_task(void *arg)
     }
 
     uint8_t* dtmp = (uint8_t*) malloc(EXAMPLE_READ_BUF_SIZE);
+    assert(dtmp);
 
     while(1) {
         // Waiting for UART event.
@@ -94,10 +106,10 @@ static void uart_wakeup_task(void *arg)
     vTaskDelete(NULL);
 }
 
-static esp_err_t uart_initialization(void)
+static void uart_initialization(void)
 {
     uart_config_t uart_cfg = {
-        .baud_rate  = CONFIG_ESP_CONSOLE_UART_BAUDRATE,
+        .baud_rate  = EXAMPLE_UART_BAUDRATE,
         .data_bits  = UART_DATA_8_BITS,
         .parity     = UART_PARITY_DISABLE,
         .stop_bits  = UART_STOP_BITS_1,
@@ -109,40 +121,67 @@ static esp_err_t uart_initialization(void)
 #endif
     };
     //Install UART driver, and get the queue.
-    ESP_RETURN_ON_ERROR(uart_driver_install(EXAMPLE_UART_NUM, EXAMPLE_UART_BUF_SIZE, EXAMPLE_UART_BUF_SIZE, 20, &uart_evt_que, 0),
-                        TAG, "Install uart failed");
+    ESP_ERROR_CHECK(uart_driver_install(EXAMPLE_UART_NUM, EXAMPLE_UART_BUF_SIZE, EXAMPLE_UART_BUF_SIZE, 20, &uart_evt_que, 0));
     if (EXAMPLE_UART_NUM == CONFIG_ESP_CONSOLE_UART_NUM) {
         /* temp fix for uart garbled output, can be removed when IDF-5683 done */
-        ESP_RETURN_ON_ERROR(uart_wait_tx_idle_polling(EXAMPLE_UART_NUM), TAG, "Wait uart tx done failed");
+        ESP_ERROR_CHECK(uart_wait_tx_idle_polling(EXAMPLE_UART_NUM));
     }
-    ESP_RETURN_ON_ERROR(uart_param_config(EXAMPLE_UART_NUM, &uart_cfg), TAG, "Configure uart param failed");
-    ESP_RETURN_ON_ERROR(uart_set_pin(EXAMPLE_UART_NUM, EXAMPLE_UART_TX_IO_NUM, EXAMPLE_UART_RX_IO_NUM, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE),
-                        TAG, "Configure uart gpio pins failed");
-    return ESP_OK;
+    ESP_ERROR_CHECK(uart_param_config(EXAMPLE_UART_NUM, &uart_cfg));
+    ESP_ERROR_CHECK(uart_set_pin(EXAMPLE_UART_NUM, EXAMPLE_UART_TX_IO_NUM, EXAMPLE_UART_RX_IO_NUM, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE));
 }
 
-static esp_err_t uart_wakeup_config(void)
+static void uart_wakeup_config(void)
 {
-    /* UART will wakeup the chip up from light sleep if the edges that RX pin received has reached the threshold
-     * Besides, the Rx pin need extra configuration to enable it can work during light sleep */
-    ESP_RETURN_ON_ERROR(gpio_sleep_set_direction(EXAMPLE_UART_RX_IO_NUM, GPIO_MODE_INPUT), TAG, "Set uart sleep gpio failed");
-    ESP_RETURN_ON_ERROR(gpio_sleep_set_pull_mode(EXAMPLE_UART_RX_IO_NUM, GPIO_PULLUP_ONLY), TAG, "Set uart sleep gpio failed");
-    ESP_RETURN_ON_ERROR(uart_set_wakeup_threshold(EXAMPLE_UART_NUM, EXAMPLE_UART_WAKEUP_THRESHOLD),
-                        TAG, "Set uart wakeup threshold failed");
-    /* Only uart0 and uart1 (if has) support to be configured as wakeup source */
-    ESP_RETURN_ON_ERROR(esp_sleep_enable_uart_wakeup(EXAMPLE_UART_NUM),
-                        TAG, "Configure uart as wakeup source failed");
-    return ESP_OK;
+    uart_wakeup_cfg_t uart_wakeup_cfg = {};
+    uint8_t wakeup_mode = CONFIG_EXAMPLE_UART_WAKEUP_MODE_SELCTED;
+    switch (wakeup_mode) {
+    /* UART will wakeup the chip up from light sleep if the edges that RX pin received reaches the threshold */
+#if SOC_UART_WAKEUP_SUPPORT_ACTIVE_THRESH_MODE
+    case UART_WK_MODE_ACTIVE_THRESH:
+        uart_wakeup_cfg.wakeup_mode = UART_WK_MODE_ACTIVE_THRESH;
+        uart_wakeup_cfg.rx_edge_threshold = EXAMPLE_UART_WAKEUP_EDGE_THRESHOLD;
+        break;
+#endif
+    /* UART will wakeup the chip up from light sleep if the number of chars that RX FIFO received reaches the threshold */
+#if SOC_UART_WAKEUP_SUPPORT_FIFO_THRESH_MODE
+    case UART_WK_MODE_FIFO_THRESH:
+        uart_wakeup_cfg.wakeup_mode = UART_WK_MODE_FIFO_THRESH;
+        uart_wakeup_cfg.rx_fifo_threshold = EXAMPLE_UART_WAKEUP_FIFO_THRESHOLD;
+        break;
+#endif
+    /* UART will wakeup the chip up from light sleep if RX FIFO receives a start bit */
+#if SOC_UART_WAKEUP_SUPPORT_START_BIT_MODE
+    case UART_WK_MODE_START_BIT:
+        uart_wakeup_cfg.wakeup_mode = UART_WK_MODE_START_BIT;
+        break;
+#endif
+    /* UART will wakeup the chip up from light sleep if the chars sequence that RX FIFO received matches the predefined value */
+#if SOC_UART_WAKEUP_SUPPORT_CHAR_SEQ_MODE
+    case UART_WK_MODE_CHAR_SEQ:
+        uart_wakeup_cfg.wakeup_mode = UART_WK_MODE_CHAR_SEQ;
+        // uart wakeup chars len need less than SOC_UART_WAKEUP_CHARS_SEQ_MAX_LEN
+        strncpy(uart_wakeup_cfg.wake_chars_seq, EXAMPLE_UART_WAKEUP_CHARS_SEQ, EXAMPLE_UART_WAKEUP_CHARS_SEQ_LEN);
+        break;
+#endif
+    default:
+        ESP_LOGE(TAG, "Unknown UART wakeup mode");
+        ESP_ERROR_CHECK(ESP_FAIL);
+        break;
+    }
+
+    ESP_ERROR_CHECK(uart_wakeup_setup(EXAMPLE_UART_NUM, &uart_wakeup_cfg));
+    ESP_ERROR_CHECK(esp_sleep_enable_uart_wakeup(EXAMPLE_UART_NUM));
 }
 
 esp_err_t example_register_uart_wakeup(void)
 {
-    /* Initialize uart1 */
-    ESP_RETURN_ON_ERROR(uart_initialization(), TAG, "Initialize uart%d failed", EXAMPLE_UART_NUM);
+    /* Initialize console uart */
+    uart_initialization();
     /* Enable wakeup from uart */
-    ESP_RETURN_ON_ERROR(uart_wakeup_config(), TAG, "Configure uart as wakeup source failed");
+    uart_wakeup_config();
 
     xTaskCreate(uart_wakeup_task, "uart_wakeup_task", 4096, NULL, 5, NULL);
     ESP_LOGI(TAG, "uart wakeup source is ready");
+
     return ESP_OK;
 }

@@ -9,7 +9,7 @@
 
 .. gpio-summary
 
-The {IDF_TARGET_NAME} chip features 25 physical GPIO pins (GPIO0 ~ GPIO24). Each pin can be used as a general-purpose I/O, or to be connected to an internal peripheral signal. Through GPIO matrix and IO MUX, peripheral input signals can be from any IO pins, and peripheral output signals can be routed to any IO pins. Together these modules provide highly configurable I/O. For more details, see *{IDF_TARGET_NAME} Technical Reference Manual* > *IO MUX and GPIO Matrix (GPIO, IO_MUX)* [`PDF <{IDF_TARGET_TRM_EN_URL}#iomuxgpio>`__].
+The {IDF_TARGET_NAME} chip features 30 physical GPIO pins (GPIO0 ~ GPIO29). Each pin can be used as a general-purpose I/O, or to be connected to an internal peripheral signal. Through GPIO matrix and IO MUX, peripheral input signals can be from any IO pins, and peripheral output signals can be routed to any IO pins. Together these modules provide highly configurable I/O. For more details, see *{IDF_TARGET_NAME} Technical Reference Manual* > *IO MUX and GPIO Matrix (GPIO, IO_MUX)* [`PDF <{IDF_TARGET_TRM_EN_URL}#iomuxgpio>`__].
 
 The table below provides more information on pin usage, and please note the comments in the table for GPIOs with restrictions.
 
@@ -147,10 +147,35 @@ The table below provides more information on pin usage, and please note the comm
       -
       -
 
+    * - GPIO25
+      -
+      -
+      -
+
+    * - GPIO26
+      -
+      -
+      -
+
+    * - GPIO27
+      -
+      -
+      -
+
+    * - GPIO28
+      -
+      -
+      -
+
+    * - GPIO29
+      -
+      -
+      -
+
 .. note::
 
   - Some pins are used as strapping pins, which can be used to select in which boot mode to load the chip, etc.. The details can be found in `datasheet <{IDF_TARGET_DATASHEET_EN_URL}>`_ > ``Strapping Pins``.
-	- SPI0/1: GPIO14 ~ GPIO17 and GPIO19 ~ GPIO21 are usually used for SPI flash and not recommended for other uses.
+	- SPI0/1: GPIO14 ~ GPIO17 and GPIO19 ~ GPIO21 are usually used for SPI flash and PSRAM, they're not recommended for other uses.
 	- USB-JTAG: GPIO12 and GPIO13 are used by USB-JTAG by default. If they are reconfigured to operate as normal GPIOs, USB-JTAG functionality will be disabled.
 
 ---

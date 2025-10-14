@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -434,7 +434,10 @@ cleanup:
     TEST_ESP_OK(esp_eth_driver_uninstall(eth_handle));
     TEST_ESP_OK(phy->del(phy));
     TEST_ESP_OK(mac->del(mac));
+#ifndef CONFIG_TARGET_ETH_PHY_DEVICE_W5500
+// only unregister events if the device != W5500, since w5500 doesn't support loopback and we don't register the event
     TEST_ESP_OK(esp_event_handler_unregister(ETH_EVENT, ESP_EVENT_ANY_ID, eth_event_handler));
+#endif
     TEST_ESP_OK(esp_event_loop_delete_default());
     extra_cleanup();
     vEventGroupDelete(eth_event_group);
@@ -500,7 +503,7 @@ TEST_CASE("ethernet dhcp test", "[ethernet]")
     // combine driver with netif
     esp_eth_netif_glue_handle_t glue = esp_eth_new_netif_glue(eth_handle);
     TEST_ESP_OK(esp_netif_attach(eth_netif, glue));
-    // register user defined event handers
+    // register user defined event handlers
     TEST_ESP_OK(esp_event_handler_register(ETH_EVENT, ESP_EVENT_ANY_ID, &eth_event_handler, eth_event_group));
     TEST_ESP_OK(esp_event_handler_register(IP_EVENT, IP_EVENT_ETH_GOT_IP, &got_ip_event_handler, eth_event_group));
     // start Ethernet driver
@@ -548,7 +551,7 @@ TEST_CASE("ethernet start/stop stress test with IP stack", "[ethernet]")
     // combine driver with netif
     esp_eth_netif_glue_handle_t glue = esp_eth_new_netif_glue(eth_handle);
     TEST_ESP_OK(esp_netif_attach(eth_netif, glue));
-    // register user defined event handers
+    // register user defined event handlers
     TEST_ESP_OK(esp_event_handler_register(ETH_EVENT, ESP_EVENT_ANY_ID, &eth_event_handler, eth_event_group));
     TEST_ESP_OK(esp_event_handler_register(IP_EVENT, IP_EVENT_ETH_GOT_IP, &got_ip_event_handler, eth_event_group));
 
@@ -620,6 +623,9 @@ esp_err_t http_event_handle(esp_http_client_event_t *evt)
     case HTTP_EVENT_ON_HEADER:
         ESP_LOGI(TAG, "HTTP_EVENT_ON_HEADER");
         break;
+    case HTTP_EVENT_ON_HEADERS_COMPLETE:
+        ESP_LOGI(TAG, "HTTP_EVENT_ON_HEADERS_COMPLETE");
+        break;
     case HTTP_EVENT_ON_DATA:
         esp_rom_md5_update(&md5_context, evt->data, evt->data_len);
         break;
@@ -631,6 +637,8 @@ esp_err_t http_event_handle(esp_http_client_event_t *evt)
         break;
     case HTTP_EVENT_REDIRECT:
         ESP_LOGI(TAG, "HTTP_EVENT_REDIRECT");
+        break;
+    default:
         break;
     }
     return ESP_OK;
@@ -674,7 +682,7 @@ TEST_CASE("ethernet download test", "[ethernet]")
     // combine driver with netif
     esp_eth_netif_glue_handle_t glue = esp_eth_new_netif_glue(eth_handle);
     TEST_ESP_OK(esp_netif_attach(eth_netif, glue));
-    // register user defined event handers
+    // register user defined event handlers
     TEST_ESP_OK(esp_event_handler_register(ETH_EVENT, ESP_EVENT_ANY_ID, &eth_event_handler, eth_event_group));
     TEST_ESP_OK(esp_event_handler_register(IP_EVENT, IP_EVENT_ETH_GOT_IP, &got_ip_event_handler, eth_event_group));
     // start Ethernet driver

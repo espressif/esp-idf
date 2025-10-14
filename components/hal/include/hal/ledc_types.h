@@ -35,6 +35,7 @@ typedef enum {
     LEDC_DUTY_DIR_MAX,
 } ledc_duty_direction_t;
 
+#if SOC_LEDC_SUPPORTED
 /**
  * @brief LEDC global clock sources
  */
@@ -49,8 +50,6 @@ typedef enum {
 #if SOC_LEDC_SUPPORT_XTAL_CLOCK
     LEDC_SLOW_CLK_XTAL = LEDC_USE_XTAL_CLK,       /*!< LEDC low speed timer clock source XTAL clock*/
 #endif
-
-    LEDC_SLOW_CLK_RTC8M __attribute__((deprecated)) = LEDC_SLOW_CLK_RC_FAST,    /*!< Alias of 'LEDC_SLOW_CLK_RC_FAST'*/
 } ledc_slow_clk_sel_t;
 
 /**
@@ -81,6 +80,10 @@ typedef enum  {
     LEDC_SCLK = LEDC_USE_PLL_DIV_CLK, /*!< Selecting this value for LEDC_TICK_SEL_TIMER let the hardware take its source clock from LEDC_CLK_SEL */
 #endif
 } ledc_clk_src_t;
+#else
+typedef int ledc_clk_cfg_t;
+typedef int ledc_clk_src_t;
+#endif
 
 typedef enum {
     LEDC_TIMER_0 = 0, /*!< LEDC timer 0 */

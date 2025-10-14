@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +12,7 @@
 #include "multi_heap.h"
 #include "multi_heap_platform.h"
 #include "esp_heap_caps_init.h"
+#include "esp_heap_task_info_internal.h"
 #include "heap_memory_layout.h"
 
 #include "esp_private/startup_internal.h"
@@ -144,6 +145,10 @@ void heap_caps_init(void)
         heap_idx++;
         assert(heap_idx <= num_heaps);
 
+        // add the name of the newly created heap to match the region name in which it will be created
+#if CONFIG_HEAP_TASK_TRACKING
+        heap->name = type->name;
+#endif // CONFIG_HEAP_TASK_TRACKING
         memcpy(heap->caps, type->caps, sizeof(heap->caps));
         heap->start = region->start;
         heap->end = region->start + region->size;
@@ -168,13 +173,15 @@ void heap_caps_init(void)
     assert(SLIST_EMPTY(&registered_heaps));
 
     heap_t *heaps_array = NULL;
+    heap_t *used_heap = NULL;
     for (size_t i = 0; i < num_heaps; i++) {
-        if (heap_caps_match(&temp_heaps[i], MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL)) {
+        used_heap = temp_heaps + i;
+        if (heap_caps_match(used_heap, MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL)) {
             /* use the first DRAM heap which can fit the data.
              * the allocated block won't include the block owner bytes since this operation
              * is done by the top level API heap_caps_malloc(). So we need to add it manually
              * after successful allocation. Allocate extra 4 bytes for that purpose. */
-            heaps_array = multi_heap_malloc(temp_heaps[i].heap, MULTI_HEAP_ADD_BLOCK_OWNER_SIZE(sizeof(heap_t) * num_heaps));
+            heaps_array = multi_heap_malloc(used_heap->heap, MULTI_HEAP_ADD_BLOCK_OWNER_SIZE(sizeof(heap_t) * num_heaps));
             if (heaps_array != NULL) {
                 break;
             }
@@ -199,6 +206,13 @@ void heap_caps_init(void)
          * until the smaller heaps are full. */
         sorted_add_to_registered_heaps(&heaps_array[i]);
     }
+
+#if CONFIG_HEAP_TASK_TRACKING
+    heap_caps_update_per_task_info_alloc(used_heap,
+                                         MULTI_HEAP_REMOVE_BLOCK_OWNER_OFFSET(heaps_array),
+                                         multi_heap_get_full_block_size(used_heap->heap, MULTI_HEAP_REMOVE_BLOCK_OWNER_OFFSET(heaps_array)),
+                                         get_all_caps(used_heap));
+#endif
 }
 
 esp_err_t heap_caps_add_region(intptr_t start, intptr_t end)
@@ -279,6 +293,15 @@ esp_err_t heap_caps_add_region_with_caps(const uint32_t caps[], intptr_t start, 
         err = ESP_ERR_NO_MEM;
         goto done;
     }
+#if CONFIG_HEAP_TASK_TRACKING
+    // add the name of the newly created heap to match the region name in which it will be created
+    for(size_t i = 0; i < soc_memory_type_count; i++) {
+        if (get_ored_caps(caps) == get_ored_caps(soc_memory_types[i].caps)) {
+            p_new->name = soc_memory_types[i].name;
+            break;
+        }
+    }
+#endif // CONFIG_HEAP_TASK_TRACKING
     memcpy(p_new->caps, caps, sizeof(p_new->caps));
     p_new->start = start;
     p_new->end = end;

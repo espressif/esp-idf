@@ -1,0 +1,18 @@
+[mapping:i3c_driver]
+archive: libesp_driver_i3c.a
+entries:
+    if I3C_MASTER_ISR_HANDLER_IN_IRAM = y:
+        i3c_master: i3c_master_isr_handler_default (noflash)
+        i3c_master: do_dma_transaction_handler (noflash)
+        i3c_master: do_fifo_transaction_handler (noflash)
+        i3c_master: handle_tx_data_buf_threshold_int (noflash)
+        i3c_master: handle_transfer_complete_int (noflash)
+        i3c_master: handle_rx_data_buf_threshold_int (noflash)
+
+[mapping:i3c_driver_gdma]
+archive: libesp_hw_support.a
+entries:
+    if I3C_MASTER_ISR_HANDLER_IN_IRAM = y:
+        gdma_link: gdma_link_mount_buffers (noflash)
+        gdma_link: gdma_link_get_head_addr (noflash)
+        gdma_link: gdma_link_count_buffer_size_till_eof (noflash)

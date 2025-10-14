@@ -37,6 +37,7 @@ components/**/build/
 components/**/build_*_*/
 components/**/sdkconfig
 components/**/sdkconfig.old
+components/**/test_apps/wifi_nvs_config/nvs_data_suffix.csv
 
 # Example project files
 examples/**/build/
@@ -64,8 +65,6 @@ build_summary_*.xml
 *.gcno
 coverage.info
 coverage_report/
-
-test_multi_heap_host
 
 # VS Code Settings
 .vscode/
@@ -99,7 +98,7 @@ managed_components
 pytest-embedded/
 # legacy one
 pytest_embedded_log/
-list_job*.txt
+app_info_*.txt
 size_info*.txt
 XUNIT_RESULT*.xml
 .manifest_sha

@@ -12,14 +12,6 @@ if(NOT CONFIG_APP_BUILD_TYPE_PURE_RAM_APP)
     list(APPEND srcs "image_process.c")
 endif()
 
-if(CONFIG_SOC_BOD_SUPPORTED)
-    list(APPEND srcs "brownout.c")
-endif()
-
-if(CONFIG_ESP_CONSOLE_USB_CDC)
-    list(APPEND srcs "usb_console.c")
-endif()
-
 if(CONFIG_ESP_IPC_ISR_ENABLE)
     list(APPEND srcs "esp_ipc_isr.c")
     if(CONFIG_IDF_TARGET_ARCH_XTENSA)

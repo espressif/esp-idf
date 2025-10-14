@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -74,7 +74,7 @@
 #define ESP_SPI_SLAVE_TV        (12.5*3.5)
 #define WIRE_DELAY              12.5
 
-#elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32P4
+#elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32P4 || CONFIG_IDF_TARGET_ESP32H4
 #define SLAVE_IOMUX_PIN_MISO    -1
 #define SLAVE_IOMUX_PIN_MOSI    -1
 #define SLAVE_IOMUX_PIN_SCLK    -1
@@ -82,13 +82,18 @@
 #define SLAVE_IOMUX_PIN_WP      -1
 #define SLAVE_IOMUX_PIN_HD      -1
 
+#if CONFIG_IDF_TARGET_ESP32H4
+#define UNCONNECTED_PIN         27
+#else
 #define UNCONNECTED_PIN         41
+#endif
 #define INPUT_ONLY_PIN          46
 #define GPIO_DELAY              0
 #define ESP_SPI_SLAVE_TV        0
 #define WIRE_DELAY              12.5
 
 #else
+#define UNCONNECTED_PIN         8
 #define GPIO_DELAY              0
 #define ESP_SPI_SLAVE_TV        0
 #define WIRE_DELAY              12.5
@@ -111,22 +116,6 @@
 #define TEST_DMA_MAX_SIZE       4092///< length of each transaction with dma
 #define MAX_TEST_SIZE           16  ///< in this test we run several transactions, this is the maximum trans that can be run
 #define PSET_NAME_LEN           30  ///< length of each param set name
-
-//test low frequency, high frequency until freq limit for worst case (both GPIO)
-#define TEST_FREQ_DEFAULT(){    \
-         1 * 1000 * 1000,       \
-         8 * 1000 * 1000,       \
-         9 * 1000 * 1000,       \
-        10 * 1000 * 1000,       \
-        11 * 1000 * 1000,       \
-        13 * 1000 * 1000,       \
-        16 * 1000 * 1000,       \
-        20 * 1000 * 1000,       \
-        26 * 1000 * 1000,       \
-        40 * 1000 * 1000,       \
-        80 * 1000 * 1000,       \
-        0,\
-    }
 
 //default bus config for tests
 #define SPI_BUS_TEST_DEFAULT_CONFIG() {\
@@ -233,9 +222,6 @@ typedef struct {
     slave_txdata_t slave_trans[MAX_TEST_SIZE];
 } spitest_context_t;
 
-// fill default value of spitest_param_set_t
-void spitest_def_param(void* arg);
-
 // functions for slave task
 esp_err_t init_slave_context(spi_slave_task_context_t *context, spi_host_device_t host);
 void deinit_slave_context(spi_slave_task_context_t *context);
@@ -282,11 +268,18 @@ void spitest_gpio_input_sel(uint32_t gpio_num, int func, uint32_t signal_idx);
 
 //Note this cs_num is the ID of the connected devices' ID, e.g. if 2 devices are connected to the bus,
 //then the cs_num of the 1st and 2nd devices are 0 and 1 respectively.
-void same_pin_func_sel(spi_bus_config_t bus, spi_device_interface_config_t dev, uint8_t cs_num);
+//Enable `soft_master` to connect to soft spi master instead of hardware master.
+void same_pin_func_sel(spi_bus_config_t bus, uint8_t cs_pin, uint8_t cs_dev_id, bool soft_master);
 
 // Soft simulated spi master host for slave testing
-// TODO: `speed_hz` is not implemented yet, temp to max 500Hz
+// `speed_hz` max 500kHz
 // TODO: mode 0 only
-void spi_master_trans_impl_gpio(spi_bus_config_t bus, uint8_t cs_pin, uint8_t speed_hz, void *tx, void *rx, uint32_t len);
+void spi_master_trans_impl_gpio(spi_bus_config_t bus, uint8_t cs_pin, uint32_t speed_hz, uint8_t *tx, uint8_t *rx, uint32_t len, bool hold_cs);
+
+// Send/Receive long buffer by soft spi master in segments to the slave_hd through its DMA, refer to `essl_spi_wrdma/essl_spi_rddma`
+void essl_sspi_hd_dma_trans_seg(spi_bus_config_t bus, uint8_t cs_pin, uint32_t speed_hz, bool is_rx, void *buffer, int len, int seg_len);
+
+// Write/Read the shared buffer of the slave_hd by soft spi master, refer to `essl_spi_wrbuf/essl_spi_rdbuf`
+void essl_sspi_hd_buffer_trans(spi_bus_config_t bus, uint8_t cs_pin, uint32_t speed_hz, spi_command_t cmd, uint8_t addr, void *buffer, uint32_t len);
 
 #endif  //_TEST_COMMON_SPI_H_

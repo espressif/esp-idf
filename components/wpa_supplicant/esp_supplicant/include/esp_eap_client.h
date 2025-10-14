@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -28,6 +28,18 @@ typedef enum {
     ESP_EAP_TTLS_PHASE2_PAP,        /**< PAP (Password Authentication Protocol) */
     ESP_EAP_TTLS_PHASE2_CHAP        /**< CHAP (Challenge Handshake Authentication Protocol) */
 } esp_eap_ttls_phase2_types;
+
+/**
+ * @brief Bitmask of supported EAP authentication methods.
+ */
+typedef enum {
+    ESP_EAP_TYPE_NONE    = 0,        /*!< No EAP method defined */
+    ESP_EAP_TYPE_TLS     = (1 << 0), /*!< EAP-TLS method */
+    ESP_EAP_TYPE_TTLS    = (1 << 1), /*!< EAP-TTLS method */
+    ESP_EAP_TYPE_PEAP    = (1 << 2), /*!< EAP-PEAP method */
+    ESP_EAP_TYPE_FAST    = (1 << 3),  /*!< EAP-FAST method */
+    ESP_EAP_TYPE_ALL     = (ESP_EAP_TYPE_TLS | ESP_EAP_TYPE_TTLS | ESP_EAP_TYPE_PEAP | ESP_EAP_TYPE_FAST), /*!< All supported EAP methods */
+} esp_eap_method_t;
 
 /**
  * @brief Configuration settings for EAP-FAST
@@ -70,6 +82,8 @@ esp_err_t esp_wifi_sta_enterprise_enable(void);
  *
  * @note Disabling EAP authentication may cause the device to connect to the Wi-Fi
  * network using other available authentication methods, if configured using esp_wifi_set_config().
+ * @note Calling this will reset all eap configuration set using esp_eap_client_xxx APIs.
+ * Please call esp_eap_client_XXX APIs again to set new config after calling this function.
  *
  * @return
  *    - ESP_OK: EAP authentication disabled successfully.
@@ -318,6 +332,49 @@ esp_err_t esp_eap_client_set_fast_params(esp_eap_fast_config config);
  *    - ESP_OK: The option to use the default certificate bundle was set successfully.
  */
 esp_err_t esp_eap_client_use_default_cert_bundle(bool use_default_bundle);
+
+/**
+ * @brief     Set Opportunistic key caching support for station.
+ *
+ * @param enable Boolean indicating whether to enable (true) or disable (false) OKC support.
+ */
+void esp_wifi_set_okc_support(bool enable);
+
+/**
+ * @brief Set the domain name for certificate validation
+ *
+ * This function sets the expected domain name for validating the certificate's subject name.
+ * If the provided domain name does not match the certificate's subject name, validation will fail.
+ *
+ * @attention  1. The `domain_name` should be a NULL-terminated string.
+ *
+ * @param[in] domain_name The expected domain name. Pass `NULL` to clear the domain matching.
+ *
+ * @return
+ *    - ESP_OK: The domain match was set successfully.
+ *    - ESP_ERR_INVALID_ARG: Invalid argument (length > 255).
+ *    - ESP_ERR_NO_MEM: Memory allocation failure.
+ *    - ESP_ERR_NOT_SUPPORTED: Feature not supported.
+ */
+esp_err_t esp_eap_client_set_domain_name(const char *domain_name);
+
+/**
+ * @brief Set one or more EAP (Extensible Authentication Protocol) methods to be used by the EAP client.
+ *
+ * This API sets the allowed EAP authentication methods using a bitmask.
+ * Multiple methods can be specified by OR-ing together values from `esp_eap_method_t`.
+ *
+ * @param[in] methods Bitmask of EAP methods to enable.
+ *
+ * @return
+ *     - ESP_OK on success
+ *     - ESP_ERR_INVALID_ARG if none of the methods are valid
+ *
+ * @note
+ * If this API is not called, all supported EAP methods will be considered.
+ * If one or more methods are set using this API, only the specified methods will be considered.
+ */
+esp_err_t esp_eap_client_set_eap_methods(esp_eap_method_t methods);
 
 #ifdef __cplusplus
 }

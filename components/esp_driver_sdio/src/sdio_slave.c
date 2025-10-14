@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -85,10 +85,10 @@ The driver of FIFOs works as below:
 #include "esp_intr_alloc.h"
 #include "esp_log.h"
 #include "hal/sdio_slave_hal.h"
-#include "hal/gpio_hal.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "esp_private/periph_ctrl.h"
+#include "esp_private/gpio.h"
 #if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
 #include "esp_private/sleep_retention.h"
 #endif
@@ -283,15 +283,12 @@ no_mem:
 
 static void configure_pin(int pin, uint32_t func, bool pullup)
 {
-    const int sdmmc_func = func;
     const int drive_strength = 3;
     assert(pin != -1);
-    uint32_t reg = GPIO_PIN_MUX_REG[pin];
-    assert(reg != UINT32_MAX);
 
-    PIN_INPUT_ENABLE(reg);
-    gpio_hal_iomux_func_sel(reg, sdmmc_func);
-    PIN_SET_DRV(reg, drive_strength);
+    gpio_input_enable(pin);
+    gpio_func_sel(pin, func);
+    gpio_set_drive_capability(pin, drive_strength);
     gpio_pulldown_dis(pin);
     if (pullup) {
         gpio_pullup_en(pin);
@@ -327,13 +324,14 @@ static inline esp_err_t sdio_slave_hw_init(sdio_slave_config_t *config)
 
 static void recover_pin(int pin, int sdio_func)
 {
-    uint32_t reg = GPIO_PIN_MUX_REG[pin];
-    assert(reg != UINT32_MAX);
+    gpio_io_config_t io_cfg = {};
+    esp_err_t ret = gpio_get_io_config(pin, &io_cfg);
+    assert(ret == ESP_OK);
+    (void)ret;
 
-    int func = REG_GET_FIELD(reg, MCU_SEL);
-    if (func == sdio_func) {
+    if (io_cfg.fun_sel == sdio_func) {
         gpio_set_direction(pin, GPIO_MODE_INPUT);
-        gpio_hal_iomux_func_sel(reg, PIN_FUNC_GPIO);
+        gpio_func_sel(pin, PIN_FUNC_GPIO);
     }
 }
 
@@ -457,6 +455,13 @@ esp_err_t sdio_slave_reset(void)
     critical_exit_recv();
     err = ESP_OK;
     return err;
+}
+
+esp_err_t sdio_slave_reset_hw(void)
+{
+    sdio_slave_hw_deinit();
+    sdio_slave_hw_init(&context.config);
+    return sdio_slave_reset();
 }
 
 void sdio_slave_stop(void)

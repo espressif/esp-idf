@@ -24,7 +24,6 @@ static const char *TAG = "ISP_BF";
 esp_err_t esp_isp_bf_configure(isp_proc_handle_t proc, const esp_isp_bf_config_t *config)
 {
     ESP_RETURN_ON_FALSE(proc, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
-    ESP_RETURN_ON_FALSE(proc->bf_fsm == ISP_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "bf is enabled already");
 
     if (config) {
         bool valid_padding_setting = (!config->padding_line_tail_valid_end_pixel && !config->padding_line_tail_valid_start_pixel) || (config->padding_line_tail_valid_end_pixel > config->padding_line_tail_valid_start_pixel);
@@ -39,6 +38,7 @@ esp_err_t esp_isp_bf_configure(isp_proc_handle_t proc, const esp_isp_bf_config_t
         };
         memcpy(bf_hal_cfg.bf_template, config->bf_template, ISP_BF_TEMPLATE_X_NUMS * ISP_BF_TEMPLATE_X_NUMS * sizeof(uint8_t));
         isp_hal_bf_config(&(proc->hal), &bf_hal_cfg);
+        isp_ll_bf_set_clk_ctrl_mode(proc->hal.hw, ISP_LL_PIPELINE_CLK_CTRL_AUTO);
     } else {
         isp_hal_bf_config(&(proc->hal), NULL);
     }
@@ -51,7 +51,6 @@ esp_err_t esp_isp_bf_enable(isp_proc_handle_t proc)
     ESP_RETURN_ON_FALSE(proc, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
     ESP_RETURN_ON_FALSE(proc->bf_fsm == ISP_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "bf is enabled already");
 
-    isp_ll_bf_clk_enable(proc->hal.hw, true);
     isp_ll_bf_enable(proc->hal.hw, true);
     proc->bf_fsm = ISP_FSM_ENABLE;
 
@@ -64,7 +63,6 @@ esp_err_t esp_isp_bf_disable(isp_proc_handle_t proc)
     ESP_RETURN_ON_FALSE(proc->bf_fsm == ISP_FSM_ENABLE, ESP_ERR_INVALID_STATE, TAG, "bf isn't enabled yet");
 
     isp_ll_bf_enable(proc->hal.hw, false);
-    isp_ll_bf_clk_enable(proc->hal.hw, false);
     proc->bf_fsm = ISP_FSM_INIT;
 
     return ESP_OK;

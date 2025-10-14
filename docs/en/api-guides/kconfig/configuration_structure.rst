@@ -16,7 +16,7 @@ In context of ESP-IDF, configuration consists of several files, most importantly
 - ``sdkconfig.defaults`` file, containing user-defined default values for the configuration options.
 - ``sdkconfig.rename`` file, containing ``OLD_NAME NEW_NAME`` pairs of configuration names to ensure backward compatibility. This file is used primarily by component or ESP-IDF developers.
 
-Configuration files can be divided into two groups: those primarily **defining** the configuration options and those containing the **values** of these options. First group includes ``Kconfig``, ``Kcofnig.projbuild`` and ``sdkconfig.rename`` files, second group includes ``sdkconfig``, ``sdkconfig.defaults``, ``sdkconfig.h`` and ``sdkconfig.cmake`` files. All the files will be described in the following sections.
+Configuration files can be divided into two groups: those primarily **defining** the configuration options and those containing the **values** of these options. First group includes ``Kconfig``, ``Kconfig.projbuild`` and ``sdkconfig.rename`` files, second group includes ``sdkconfig``, ``sdkconfig.defaults``, ``sdkconfig.h`` and ``sdkconfig.cmake`` files. All the files will be described in the following sections.
 
 For more information about the configuration system in ESP-IDF, please refer to the :ref:`Configuration Overview <configuration-overview>`.
 
@@ -87,17 +87,17 @@ Example:
 
 .. code-block:: kconfig
 
-    # new name            old name
-    CONFIG_HYPEDRIVE      CONFIG_WARP_DRIVE
-    CONFIG_DISABLE_WAPRT_ !CONFIG_ENABLE_WARP_DRIVE
+    # old name            new name
+    CONFIG_WARP_DRIVE     CONFIG_HYPERDRIVE
+    CONFIG_ENABLE_WARP_DRIVE !CONFIG_DISABLE_HYPERDRIVE
 
 ``sdkconfig``:
 
 .. code-block:: kconfig
 
     (...)
-    CONFIG_HYPEDRIVE=y
-    CONFIG_DISABLE_HYPEDRIVE=n
+    CONFIG_HYPERDRIVE=y
+    CONFIG_DISABLE_HYPERDRIVE=n
     (...)
     # Deprecated options for backward compatibility
     CONFIG_WARP_DRIVE=y

@@ -1,12 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include "soc/rtc_io_periph.h"
 
-const int rtc_io_num_map[SOC_GPIO_PIN_COUNT] = {
+const int8_t rtc_io_num_map[SOC_GPIO_PIN_COUNT] = {
     RTCIO_GPIO0_CHANNEL,    //GPIO0
     RTCIO_GPIO1_CHANNEL,    //GPIO1
     RTCIO_GPIO2_CHANNEL,    //GPIO2
@@ -32,4 +32,9 @@ const int rtc_io_num_map[SOC_GPIO_PIN_COUNT] = {
     -1,//GPIO22
     -1,//GPIO23
     -1,//GPIO24
+    -1,//GPIO25
+    -1,//GPIO26
+    -1,//GPIO27
+    -1,//GPIO28
+    -1,//GPIO29
 };

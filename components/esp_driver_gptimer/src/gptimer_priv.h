@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,17 +9,26 @@
 #include <stdint.h>
 #include <stdatomic.h>
 #include "sdkconfig.h"
-#include "soc/soc_caps.h"
+#if CONFIG_GPTIMER_ENABLE_DEBUG_LOG
+// The local log level must be defined before including esp_log.h
+// Set the maximum log level for gptimer driver
+#define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
+#endif
+#include "soc/soc_caps_full.h"
 #include "freertos/FreeRTOS.h"
 #include "esp_err.h"
+#include "esp_log.h"
+#include "esp_check.h"
+#include "esp_attr.h"
 #include "esp_intr_alloc.h"
 #include "esp_heap_caps.h"
-#include "clk_ctrl_os.h"
 #include "esp_pm.h"
 #include "soc/timer_periph.h"
 #include "hal/timer_types.h"
 #include "hal/timer_hal.h"
 #include "hal/timer_ll.h"
+#include "clk_ctrl_os.h"
+#include "esp_private/esp_clk_tree_common.h"
 #include "esp_private/sleep_retention.h"
 #include "esp_private/periph_ctrl.h"
 
@@ -29,21 +38,19 @@ extern "C" {
 
 // If ISR handler is allowed to run whilst cache is disabled,
 // Make sure all the code and related variables used by the handler are in the SRAM
-#if CONFIG_GPTIMER_ISR_IRAM_SAFE || CONFIG_GPTIMER_CTRL_FUNC_IN_IRAM
+#if CONFIG_GPTIMER_OBJ_CACHE_SAFE
 #define GPTIMER_MEM_ALLOC_CAPS      (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
 #else
 #define GPTIMER_MEM_ALLOC_CAPS      MALLOC_CAP_DEFAULT
 #endif
 
-#if CONFIG_GPTIMER_ISR_IRAM_SAFE
+#if CONFIG_GPTIMER_ISR_CACHE_SAFE
 #define GPTIMER_INTR_ALLOC_FLAGS    (ESP_INTR_FLAG_IRAM | ESP_INTR_FLAG_INTRDISABLED)
 #else
 #define GPTIMER_INTR_ALLOC_FLAGS    ESP_INTR_FLAG_INTRDISABLED
 #endif
 
 #define GPTIMER_ALLOW_INTR_PRIORITY_MASK ESP_INTR_FLAG_LOWMED
-
-#define GPTIMER_PM_LOCK_NAME_LEN_MAX 16
 
 #define GPTIMER_USE_RETENTION_LINK  (SOC_TIMER_SUPPORT_SLEEP_RETENTION && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP)
 
@@ -53,20 +60,23 @@ extern "C" {
 #define GPTIMER_CLOCK_SRC_ATOMIC()
 #endif
 
+///!< Logging settings
+#define TAG "gptimer"
+
+///!< Forward declaration
 typedef struct gptimer_t gptimer_t;
 
 typedef struct gptimer_group_t {
     int group_id;
     portMUX_TYPE spinlock; // to protect per-group register level concurrent access
-    gptimer_t *timers[SOC_TIMER_GROUP_TIMERS_PER_GROUP];
+    gptimer_t *timers[SOC_GPTIMER_ATTR(TIMERS_PER_TIMG)];
 } gptimer_group_t;
 
 typedef enum {
-    GPTIMER_FSM_INIT,        // Timer is initialized, but not enabled
-    GPTIMER_FSM_ENABLE,      // Timer is enabled, but is not running
-    GPTIMER_FSM_ENABLE_WAIT, // Timer is in the middle of the enable process (Intermediate state)
-    GPTIMER_FSM_RUN,         // Timer is in running
-    GPTIMER_FSM_RUN_WAIT,    // Timer is in the middle of the run process (Intermediate state)
+    GPTIMER_FSM_INIT,    // Timer is initialized, but not enabled yet
+    GPTIMER_FSM_ENABLE,  // Timer is enabled, but is not running yet
+    GPTIMER_FSM_RUN,     // Timer is in running
+    GPTIMER_FSM_WAIT,    // Timer is in the middle of state change (Intermediate state)
 } gptimer_fsm_t;
 
 struct gptimer_t {
@@ -84,9 +94,8 @@ struct gptimer_t {
     gptimer_alarm_cb_t on_alarm;
     void *user_ctx;
     gptimer_clock_source_t clk_src;
-    esp_pm_lock_handle_t pm_lock; // power management lock
 #if CONFIG_PM_ENABLE
-    char pm_lock_name[GPTIMER_PM_LOCK_NAME_LEN_MAX]; // pm lock name
+    esp_pm_lock_handle_t pm_lock; // power management lock
 #endif
     struct {
         uint32_t intr_shared: 1;

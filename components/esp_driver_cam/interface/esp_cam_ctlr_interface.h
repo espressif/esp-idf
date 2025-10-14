@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,7 @@
 #include <stdbool.h>
 #include "esp_err.h"
 #include "esp_cam_ctlr_types.h"
+#include "hal/cam_ctlr_types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -132,6 +133,32 @@ struct esp_cam_ctlr_t {
      *        - ESP_ERR_INVALID_STATE: Invalid driver state
      */
     esp_err_t (*get_buffer_len)(esp_cam_ctlr_t *, size_t *);
+
+    /**
+     * @brief Allocate aligned camera buffer for ESP CAM controller
+     *
+     * @param[in]   esp_cam_ctlr_t *    ESP CAM controller handle
+     * @param[in]   size_t              Buffer size in bytes
+     * @param[in]   uint32_t            Buffer allocation capabilities
+     *
+     * @return
+     *        - Buffer pointer on success
+     *        - NULL on failure
+     */
+    void *(*alloc_buffer)(esp_cam_ctlr_t *, size_t, uint32_t);
+
+    /**
+     * @brief Configure format conversion
+     *
+     * @param[in] esp_cam_ctlr_t *      ESP CAM controller handle
+     * @param[in] const cam_ctlr_format_conv_config_t * Color conversion configuration
+     *
+     * @return
+     *        - ESP_OK on success
+     *        - ESP_ERR_INVALID_ARG:   Invalid argument
+     *        - ESP_ERR_NOT_SUPPORTED: Format conversion not supported by this controller
+     */
+    esp_err_t (*format_conversion)(esp_cam_ctlr_t *, const cam_ctlr_format_conv_config_t *);
 
     void *user_data;  ///< User data
 };

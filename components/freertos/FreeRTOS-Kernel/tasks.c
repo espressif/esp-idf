@@ -6,7 +6,7 @@
  *
  * SPDX-License-Identifier: MIT
  *
- * SPDX-FileContributor: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -125,6 +125,29 @@
 #ifndef configIDLE_TASK_NAME
     #define configIDLE_TASK_NAME    "IDLE"
 #endif
+
+/* Reserve space for Core ID and null termination. */
+#if ( configNUMBER_OF_CORES > 9 )
+    /* More than 9 cores require 2 characters for core ID and 1 for null termination. */
+    #if ( configMAX_TASK_NAME_LEN < 3U )
+        #error Minimum required task name length is 3. Please increase configMAX_TASK_NAME_LEN.
+    #endif
+    #define taskRESERVED_TASK_NAME_LENGTH    3U
+
+#elif ( configNUMBER_OF_CORES > 1 )
+    /* Multi-core systems with up to 9 cores require 1 character for core ID and 1 for null termination. */
+    #if ( configMAX_TASK_NAME_LEN < 2U )
+        #error Minimum required task name length is 2. Please increase configMAX_TASK_NAME_LEN.
+    #endif
+    #define taskRESERVED_TASK_NAME_LENGTH    2U
+
+#else /* if ( configNUMBER_OF_CORES > 9 ) */
+    /* Reserve space for null termination. */
+    #if ( configMAX_TASK_NAME_LEN < 1U )
+        #error Minimum required task name length is 1. Please increase configMAX_TASK_NAME_LEN.
+    #endif
+    #define taskRESERVED_TASK_NAME_LENGTH    1U
+#endif /* if ( ( configNUMBER_OF_CORES > 1 ) */
 
 /*-----------------------------------------------------------*/
 
@@ -2254,7 +2277,7 @@ static BaseType_t prvCreateIdleTasks( void )
     BaseType_t xCoreID;
 
     #if ( configNUMBER_OF_CORES > 1 )
-        char cIdleName[ configMAX_TASK_NAME_LEN ];
+    char cIdleName[ configMAX_TASK_NAME_LEN ] = { 0 };
     #endif /* #if ( configNUMBER_OF_CORES > 1 ) */
 
     /* Add each idle task at the lowest priority. */
@@ -2262,7 +2285,7 @@ static BaseType_t prvCreateIdleTasks( void )
     {
         #if ( configNUMBER_OF_CORES > 1 )
         {
-            BaseType_t x;
+            BaseType_t xIdleTaskNameIndex;
 
             if( xReturn == pdFAIL )
             {
@@ -2275,14 +2298,17 @@ static BaseType_t prvCreateIdleTasks( void )
                 mtCOVERAGE_TEST_MARKER();
             }
 
-            for( x = ( BaseType_t ) 0; x < ( BaseType_t ) configMAX_TASK_NAME_LEN; x++ )
+            /* MISRA Ref 14.3.1 [Configuration dependent invariant] */
+            /* More details at: https://github.com/FreeRTOS/FreeRTOS-Kernel/blob/main/MISRA.md#rule-143. */
+            /* coverity[misra_c_2012_rule_14_3_violation] */
+            for( xIdleTaskNameIndex = 0U; xIdleTaskNameIndex < ( configMAX_TASK_NAME_LEN - taskRESERVED_TASK_NAME_LENGTH ); xIdleTaskNameIndex++ )
             {
-                cIdleName[ x ] = configIDLE_TASK_NAME[ x ];
+                /* MISRA Ref 18.1.1 [Configuration dependent bounds checking] */
+                /* More details at: https://github.com/FreeRTOS/FreeRTOS-Kernel/blob/main/MISRA.md#rule-181. */
+                /* coverity[misra_c_2012_rule_18_1_violation] */
+                cIdleName[ xIdleTaskNameIndex ] = configIDLE_TASK_NAME[ xIdleTaskNameIndex ];
 
-                /* Don't copy all configMAX_TASK_NAME_LEN if the string is shorter than
-                 * configMAX_TASK_NAME_LEN characters just in case the memory after the
-                 * string is not accessible (extremely unlikely). */
-                if( cIdleName[ x ] == ( char ) 0x00 )
+                if( cIdleName[ xIdleTaskNameIndex ] == ( char ) 0x00 )
                 {
                     break;
                 }
@@ -2292,26 +2318,9 @@ static BaseType_t prvCreateIdleTasks( void )
                 }
             }
 
-            /* Append the idle task number to the end of the name if there is space. */
-            if( x < ( BaseType_t ) configMAX_TASK_NAME_LEN )
-            {
-                cIdleName[ x ] = ( char ) ( xCoreID + '0' );
-                x++;
-
-                /* And append a null character if there is space. */
-                if( x < ( BaseType_t ) configMAX_TASK_NAME_LEN )
-                {
-                    cIdleName[ x ] = '\0';
-                }
-                else
-                {
-                    mtCOVERAGE_TEST_MARKER();
-                }
-            }
-            else
-            {
-                mtCOVERAGE_TEST_MARKER();
-            }
+            /* Append the idle task number to the end of the name. */
+            cIdleName[ xIdleTaskNameIndex ] = ( char ) ( xCoreID + '0' );
+            cIdleName[ xIdleTaskNameIndex + 1 ] = '\0';
         }
         #endif /* #if ( configNUMBER_OF_CORES > 1 ) */
 
@@ -3063,19 +3072,7 @@ char * pcTaskGetName( TaskHandle_t xTaskToQuery ) /*lint !e971 Unqualified char 
                 /* Arrange for xTickCount to reach xNextTaskUnblockTime in
                  * xTaskIncrementTick() when the scheduler resumes.  This ensures
                  * that any delayed tasks are resumed at the correct time. */
-                #if ( configNUMBER_OF_CORES > 1 )
-                {
-                    /* In SMP, the entire tickless idle handling block
-                     * is replaced with a critical section, taking the kernel lock. */
-                    configASSERT( taskIS_SCHEDULER_SUSPENDED() == pdFALSE );
-                }
-                #else /* configNUMBER_OF_CORES > 1 */
-                {
-                    /* In single-core, the entire tickless idle handling block
-                     * is done with scheduler suspended. */
-                    configASSERT( taskIS_SCHEDULER_SUSPENDED() == pdTRUE );
-                }
-                #endif /* configNUMBER_OF_CORES > 1 */
+                configASSERT( taskIS_SCHEDULER_SUSPENDED() == pdTRUE );
                 configASSERT( xTicksToJump != ( TickType_t ) 0 );
 
                 xPendedTicks++;
@@ -4369,31 +4366,37 @@ static portTASK_FUNCTION( prvIdleTask, pvParameters )
 
             if( xExpectedIdleTime >= configEXPECTED_IDLE_TIME_BEFORE_SLEEP )
             {
-                prvENTER_CRITICAL_OR_SUSPEND_ALL( &xKernelLock );
+                /* In SMP mode, the entire tickless idle handling block
+                 * must be done with the kernel lock held. */
+                prvENTER_CRITICAL_SMP_ONLY( &xKernelLock );
                 {
-                    /* Now the scheduler is suspended, the expected idle
-                     * time can be sampled again, and this time its value can
-                     * be used. */
-                    configASSERT( xNextTaskUnblockTime >= xTickCount );
-                    xExpectedIdleTime = prvGetExpectedIdleTime();
-
-                    /* Define the following macro to set xExpectedIdleTime to 0
-                     * if the application does not want
-                     * portSUPPRESS_TICKS_AND_SLEEP() to be called. */
-                    configPRE_SUPPRESS_TICKS_AND_SLEEP_PROCESSING( xExpectedIdleTime );
-
-                    if( xExpectedIdleTime >= configEXPECTED_IDLE_TIME_BEFORE_SLEEP )
+                    vTaskSuspendAll();
                     {
-                        traceLOW_POWER_IDLE_BEGIN();
-                        portSUPPRESS_TICKS_AND_SLEEP( xExpectedIdleTime );
-                        traceLOW_POWER_IDLE_END();
+                        /* Now the scheduler is suspended, the expected idle
+                         * time can be sampled again, and this time its value can
+                         * be used. */
+                        configASSERT( xNextTaskUnblockTime >= xTickCount );
+                        xExpectedIdleTime = prvGetExpectedIdleTime();
+
+                        /* Define the following macro to set xExpectedIdleTime to 0
+                         * if the application does not want
+                         * portSUPPRESS_TICKS_AND_SLEEP() to be called. */
+                        configPRE_SUPPRESS_TICKS_AND_SLEEP_PROCESSING( xExpectedIdleTime );
+
+                        if( xExpectedIdleTime >= configEXPECTED_IDLE_TIME_BEFORE_SLEEP )
+                        {
+                            traceLOW_POWER_IDLE_BEGIN();
+                            portSUPPRESS_TICKS_AND_SLEEP( xExpectedIdleTime );
+                            traceLOW_POWER_IDLE_END();
+                        }
+                        else
+                        {
+                            mtCOVERAGE_TEST_MARKER();
+                        }
                     }
-                    else
-                    {
-                        mtCOVERAGE_TEST_MARKER();
-                    }
+                    ( void ) xTaskResumeAll();
                 }
-                ( void ) prvEXIT_CRITICAL_OR_RESUME_ALL( &xKernelLock );
+                prvEXIT_CRITICAL_SMP_ONLY( &xKernelLock );
             }
             else
             {

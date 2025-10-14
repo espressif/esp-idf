@@ -1,22 +1,22 @@
 #!/usr/bin/env python
 #
-# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import os
 import sys
 import tempfile
 import unittest
+import warnings
 from pathlib import Path
+from subprocess import TimeoutExpired
 from subprocess import run
-from typing import List
 
 import yaml
 
 try:
     EXT_IDF_PATH = os.environ['IDF_PATH']  # type: str
 except KeyError:
-    print(('This test needs to run within ESP-IDF environmnet. '
-           'Please run export script first.'), file=sys.stderr)
+    print(('This test needs to run within ESP-IDF environment. Please run export script first.'), file=sys.stderr)
     exit(1)
 
 CWD = os.path.join(os.path.dirname(__file__))
@@ -27,6 +27,18 @@ try:
 except ImportError:
     sys.path.append(os.path.join(CWD, '..'))
     from idf_py_actions.tools import generate_hints
+
+
+def safe_cleanup_tmpdir(tmpdir: tempfile.TemporaryDirectory) -> None:
+    """Safely cleanup temporary directory, handling specific errors on Windows."""
+    try:
+        tmpdir.cleanup()
+    except (PermissionError, NotADirectoryError):
+        warnings.warn(
+            f'Failed to cleanup temporary directory {tmpdir.name}. '
+            'This is common on Windows when files are still in use.',
+            UserWarning,
+        )
 
 
 class TestHintsMassages(unittest.TestCase):
@@ -45,17 +57,28 @@ class TestHintsMassages(unittest.TestCase):
                 self.assertEqual(generated_hint, hint)
 
     def tearDown(self) -> None:
-        self.tmpdir.cleanup()
+        safe_cleanup_tmpdir(self.tmpdir)
 
 
-def run_idf(args: List[str], cwd: Path) -> str:
+def run_idf(args: list[str], cwd: Path) -> str:
     # Simple helper to run idf command and return it's stdout.
-    cmd = [
-        sys.executable,
-        os.path.join(os.environ['IDF_PATH'], 'tools', 'idf.py')
-    ]
-    proc = run(cmd + args, capture_output=True, cwd=cwd, text=True)
-    return str(proc.stdout + proc.stderr)
+    cmd = [sys.executable, os.path.join(os.environ['IDF_PATH'], 'tools', 'idf.py')]
+    try:
+        proc = run(cmd + args, capture_output=True, cwd=cwd, text=True, timeout=10 * 60)
+        return str(proc.stdout + proc.stderr)
+    except TimeoutExpired as e:
+        # Print captured output on timeout to help with debugging
+        print(f'\n{"=" * 80}')
+        print(f'TEST TIMEOUT: idf.py {" ".join(args)} timed out')
+        print(f'{"=" * 80}')
+        if e.stdout:
+            print('CAPTURED STDOUT:')
+            print(e.stdout)
+        if e.stderr:
+            print('CAPTURED STDERR:')
+            print(e.stderr)
+        print(f'{"=" * 80}')
+        raise
 
 
 class TestHintModuleComponentRequirements(unittest.TestCase):
@@ -68,10 +91,9 @@ class TestHintModuleComponentRequirements(unittest.TestCase):
 
         self.projectdir = self.tmpdirpath / 'project'
         self.projectdir.mkdir(parents=True)
-        (self.projectdir / 'CMakeLists.txt').write_text((
-            'cmake_minimum_required(VERSION 3.16)\n'
-            'include($ENV{IDF_PATH}/tools/cmake/project.cmake)\n'
-            'project(foo)'))
+        (self.projectdir / 'CMakeLists.txt').write_text(
+            'cmake_minimum_required(VERSION 3.22)\ninclude($ENV{IDF_PATH}/tools/cmake/project.cmake)\nproject(foo)'
+        )
 
         maindir = self.projectdir / 'main'
         maindir.mkdir()
@@ -104,9 +126,7 @@ class TestHintModuleComponentRequirements(unittest.TestCase):
         # REQUIRES instead of PRIV_REQUIRES.
         run_idf(['fullclean'], self.projectdir)
         maincmake = self.projectdir / 'main' / 'CMakeLists.txt'
-        maincmake.write_text(('idf_component_register(SRCS "foo.c" '
-                              'REQUIRES esp_timer '
-                              'INCLUDE_DIRS ".")'))
+        maincmake.write_text('idf_component_register(SRCS "foo.c" REQUIRES esp_timer INCLUDE_DIRS ".")')
         output = run_idf(['app'], self.projectdir)
         self.assertIn('To fix this, add component1 to REQUIRES list of idf_component_register call', output)
 
@@ -115,16 +135,14 @@ class TestHintModuleComponentRequirements(unittest.TestCase):
         # to component1.h. Now the hint should report that esp_psram should
         # be moved from PRIV_REQUIRES to REQUIRES for component1.
         run_idf(['fullclean'], self.projectdir)
-        maincmake.write_text(('idf_component_register(SRCS "foo.c" '
-                              'REQUIRES esp_timer component1 '
-                              'INCLUDE_DIRS ".")'))
+        maincmake.write_text('idf_component_register(SRCS "foo.c" REQUIRES esp_timer component1 INCLUDE_DIRS ".")')
         (self.projectdir / 'components' / 'component1' / 'component1.h').write_text('#include "esp_psram.h"')
         component1cmake.write_text('idf_component_register(INCLUDE_DIRS "." PRIV_REQUIRES esp_psram)')
         output = run_idf(['app'], self.projectdir)
         self.assertIn('To fix this, move esp_psram from PRIV_REQUIRES into REQUIRES', output)
 
     def tearDown(self) -> None:
-        self.tmpdir.cleanup()
+        safe_cleanup_tmpdir(self.tmpdir)
 
 
 class TestNestedModuleComponentRequirements(unittest.TestCase):
@@ -147,12 +165,13 @@ class TestNestedModuleComponentRequirements(unittest.TestCase):
 
         self.projectdir = maindir / 'project'
         self.projectdir.mkdir(parents=True)
-        (self.projectdir / 'CMakeLists.txt').write_text((
-            'cmake_minimum_required(VERSION 3.16)\n'
+        (self.projectdir / 'CMakeLists.txt').write_text(
+            'cmake_minimum_required(VERSION 3.22)\n'
             f'set(EXTRA_COMPONENT_DIRS "{components.as_posix()}")\n'
             'set(COMPONENTS main)\n'
             'include($ENV{IDF_PATH}/tools/cmake/project.cmake)\n'
-            'project(foo)'))
+            'project(foo)'
+        )
 
         maindir = self.projectdir / 'main'
         maindir.mkdir()
@@ -164,11 +183,13 @@ class TestNestedModuleComponentRequirements(unittest.TestCase):
         # when components are nested. The main component should be identified as the
         # real source, not the component1 component.
         output = run_idf(['app'], self.projectdir)
-        self.assertNotIn('esp_timer.h found in component esp_timer which is already in the requirements list of component1', output)
+        self.assertNotIn(
+            'esp_timer.h found in component esp_timer which is already in the requirements list of component1', output
+        )
         self.assertIn('To fix this, add esp_timer to PRIV_REQUIRES list of idf_component_register call', output)
 
     def tearDown(self) -> None:
-        self.tmpdir.cleanup()
+        safe_cleanup_tmpdir(self.tmpdir)
 
 
 class TestTrimmedModuleComponentRequirements(unittest.TestCase):
@@ -181,11 +202,12 @@ class TestTrimmedModuleComponentRequirements(unittest.TestCase):
 
         self.projectdir = self.tmpdirpath / 'project'
         self.projectdir.mkdir(parents=True)
-        (self.projectdir / 'CMakeLists.txt').write_text((
-            'cmake_minimum_required(VERSION 3.16)\n'
+        (self.projectdir / 'CMakeLists.txt').write_text(
+            'cmake_minimum_required(VERSION 3.22)\n'
             'set(COMPONENTS main)\n'
             'include($ENV{IDF_PATH}/tools/cmake/project.cmake)\n'
-            'project(foo)'))
+            'project(foo)'
+        )
 
         maindir = self.projectdir / 'main'
         maindir.mkdir()
@@ -194,10 +216,12 @@ class TestTrimmedModuleComponentRequirements(unittest.TestCase):
 
     def test_trimmed_component_requirements(self) -> None:
         output = run_idf(['app'], self.projectdir)
-        self.assertIn('To fix this, add esp_http_client to PRIV_REQUIRES list of idf_component_register call in', output)
+        self.assertIn(
+            'To fix this, add esp_http_client to PRIV_REQUIRES list of idf_component_register call in', output
+        )
 
     def tearDown(self) -> None:
-        self.tmpdir.cleanup()
+        safe_cleanup_tmpdir(self.tmpdir)
 
 
 if __name__ == '__main__':

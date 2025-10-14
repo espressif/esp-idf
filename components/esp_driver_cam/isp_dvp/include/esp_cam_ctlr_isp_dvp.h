@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -28,9 +28,9 @@ typedef struct {
     int de_io;                                    ///< ISP DVP de IO numbers
     struct {
         uint32_t pclk_invert: 1;                  ///< The pclk is inverted
-        uint32_t hsync_invert: 1;                 ///< The hsync signal is inverted
-        uint32_t vsync_invert: 1;                 ///< The vsync signal is inverted
-        uint32_t de_invert: 1;                    ///< The de signal is inverted
+        uint32_t hsync_invert: 1;                 ///< The hsync signal is inverted (i.e. active low)
+        uint32_t vsync_invert: 1;                 ///< The vsync signal is inverted (i.e. active high)
+        uint32_t de_invert: 1;                    ///< The de signal is inverted (i.e. active low)
     } io_flags;                                   ///< ISP DVP IO flags
     int queue_items;                              ///< Queue items
     struct {

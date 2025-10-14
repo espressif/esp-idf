@@ -1,0 +1,18 @@
+[mapping:esp_usb_cdc_rom_console]
+archive: libesp_usb_cdc_rom_console.a
+entries:
+    if ESP_CONSOLE_USB_CDC_SUPPORT_ETS_PRINTF:
+        usb_console:esp_usb_console_write_char (noflash)
+        usb_console:esp_usb_console_write_buf (noflash)
+        usb_console:esp_usb_console_flush_internal (noflash)
+        usb_console:esp_usb_console_osglue_wait_proc (noflash)
+        usb_console:esp_usb_console_osglue_dis_int (noflash)
+        usb_console:esp_usb_console_osglue_ena_int (noflash)
+        usb_console:esp_usb_console_interrupt (noflash)
+        usb_console:esp_usb_console_poll_interrupts (noflash)
+        usb_console:esp_usb_console_cdc_acm_cb (noflash)
+        usb_console:esp_usb_console_dfu_detach_cb (noflash)
+        usb_console:esp_usb_console_before_restart (noflash)
+        usb_console:esp_usb_console_on_restart_timeout (noflash)
+        vfs_cdcacm:cdcacm_tx_cb (noflash)
+        vfs_cdcacm:cdcacm_rx_cb (noflash)

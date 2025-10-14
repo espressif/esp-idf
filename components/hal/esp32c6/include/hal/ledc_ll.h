@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,6 +16,7 @@
 #include "soc/clk_tree_defs.h"
 #include "hal/assert.h"
 #include "esp_rom_sys.h"    //for sync issue workaround
+#include "soc/soc_caps.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -31,7 +32,8 @@ extern "C" {
 #define LEDC_LL_FRACTIONAL_MAX     ((1 << LEDC_LL_FRACTIONAL_BITS) - 1)
 #define LEDC_LL_GLOBAL_CLOCKS      SOC_LEDC_CLKS
 
-#define LEDC_LL_GLOBAL_CLK_DEFAULT LEDC_SLOW_CLK_RC_FAST
+#define LEDC_LL_GLOBAL_CLK_NC_BY_DEFAULT    1
+#define LEDC_LL_GLOBAL_CLK_DEFAULT          LEDC_SLOW_CLK_RC_FAST   // The temporal global clock source to set to at least make the LEDC core clock on
 
 /**
  * @brief Enable peripheral register clock
@@ -56,7 +58,7 @@ static inline void ledc_ll_enable_reset_reg(bool enable)
  */
 static inline void ledc_ll_enable_mem_power(bool enable)
 {
-    // No register to control the power for LEDC memory block on C6
+    // No LEDC memory block on C6
 }
 
 /**
@@ -71,6 +73,32 @@ static inline void ledc_ll_enable_clock(ledc_dev_t *hw, bool en)
 {
     (void)hw;
     PCR.ledc_sclk_conf.ledc_sclk_en = en;
+}
+
+/**
+ * @brief Enable the power for LEDC channel
+ *
+ * @param hw Beginning address of the peripheral registers
+ * @param speed_mode LEDC speed_mode, low-speed mode only
+ * @param channel_num LEDC channel index (0-5), select from ledc_channel_t
+ * @param en True to enable, false to disable
+ */
+static inline void ledc_ll_enable_channel_power(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_channel_t channel_num, bool en)
+{
+    // No per channel power control on C6
+}
+
+/**
+ * @brief Enable the power for LEDC timer
+ *
+ * @param hw Beginning address of the peripheral registers
+ * @param speed_mode LEDC speed_mode, low-speed mode only
+ * @param timer_sel LEDC timer index (0-3), select from ledc_timer_t
+ * @param en True to enable, false to disable
+ */
+static inline void ledc_ll_enable_timer_power(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_timer_t timer_sel, bool en)
+{
+    // No per timer power control on C6
 }
 
 /**
@@ -452,6 +480,7 @@ static inline void ledc_ll_set_duty_range_wr_addr(ledc_dev_t *hw, ledc_mode_t sp
  */
 static inline void ledc_ll_set_fade_param_range(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_channel_t channel_num, uint8_t range, uint32_t dir, uint32_t cycle, uint32_t scale, uint32_t step)
 {
+    HAL_ASSERT(range < SOC_LEDC_GAMMA_CURVE_FADE_RANGE_MAX);
     // To workaround sync issue
     // This is to ensure the fade param write to the gamma_wr register would not mess up the last wr_addr
     ledc_ll_set_duty_range_wr_addr(hw, speed_mode, channel_num, range);
@@ -577,13 +606,12 @@ static inline void ledc_ll_set_sig_out_en(ledc_dev_t *hw, ledc_mode_t speed_mode
  * @param hw Beginning address of the peripheral registers
  * @param speed_mode LEDC speed_mode, low-speed mode only
  * @param channel_num LEDC channel index (0-5), select from ledc_channel_t
- * @param duty_start The duty start
  *
  * @return None
  */
-static inline void ledc_ll_set_duty_start(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_channel_t channel_num, bool duty_start)
+static inline void ledc_ll_set_duty_start(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_channel_t channel_num)
 {
-    hw->channel_group[speed_mode].channel[channel_num].conf1.duty_start = duty_start;
+    hw->channel_group[speed_mode].channel[channel_num].conf1.duty_start = 1;
 }
 
 /**

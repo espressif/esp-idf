@@ -27,15 +27,14 @@ typedef struct SHAContext {
     uint32_t total_input_bits[4];
 } SHA_CTX;
 
-enum SHA_TYPE {
+typedef enum SHA_TYPE {
     SHA1 = 0,
     SHA2_256,
     SHA2_384,
     SHA2_512,
 
-
     SHA_INVALID = -1,
-};
+} SHA_TYPE;
 
 /* Do not use these function in multi core mode due to
  * inside they have no safe implementation (without DPORT workaround).

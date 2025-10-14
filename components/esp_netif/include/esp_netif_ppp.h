@@ -31,6 +31,9 @@ typedef struct esp_netif_ppp_config {
 #ifdef CONFIG_LWIP_PPP_SERVER_SUPPORT
     esp_ip4_addr_t ppp_our_ip4_addr;   /**< Set our preferred address, typically used when we're the PPP server */
     esp_ip4_addr_t ppp_their_ip4_addr; /**< Set our preferred address, typically used when we're the PPP server */
+    esp_ip4_addr_t ppp_dns1_addr;      /**< DNS to provide if peer asks for it, typically used when we're the PPP server */
+    esp_ip4_addr_t ppp_dns2_addr;      /**< DNS to provide if peer asks for it, typically used when we're the PPP server */
+    bool ppp_passive;                  /**< Try once to initiate connection, stay silent if it fails, typically used when we're the PPP server */
 #endif // CONFIG_LWIP_PPP_SERVER_SUPPORT
 } esp_netif_ppp_config_t;
 

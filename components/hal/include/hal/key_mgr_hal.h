@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -111,11 +111,11 @@ void key_mgr_hal_write_public_info(const uint8_t *public_info_buf, const size_t 
  */
 void key_mgr_hal_read_public_info(uint8_t *public_info_buf, const size_t read_len);
 
-/* @brief Set the AES-XTS key length for the Key Manager */
-void key_mgr_hal_set_xts_aes_key_len(const esp_key_mgr_xts_aes_key_len_t key_len);
+/* @brief Set the XTS-AES key length for the Key Manager */
+void key_mgr_hal_set_xts_aes_key_len(const esp_key_mgr_key_type_t key_type, const esp_key_mgr_xts_aes_key_len_t key_len);
 
-/* @brief Get the AES-XTS key length for the Key Manager */
-esp_key_mgr_xts_aes_key_len_t key_mgr_hal_get_aes_xts_key_len(void);
+/* @brief Get the XTS-AES key length for the Key Manager */
+esp_key_mgr_xts_aes_key_len_t key_mgr_hal_get_xts_aes_key_len(const esp_key_mgr_key_type_t key_type);
 
 /**
  * @brief Read state of Key Manager

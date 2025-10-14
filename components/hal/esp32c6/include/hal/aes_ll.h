@@ -143,7 +143,7 @@ static inline esp_aes_state_t aes_ll_get_state(void)
  *
  * @note Only used for DMA transforms
  *
- * @param mode
+ * @param mode Mode of operation to set (e.g., ECB, CBC, CTR, etc.)
  */
 static inline void aes_ll_set_block_mode(esp_aes_mode_t mode)
 {

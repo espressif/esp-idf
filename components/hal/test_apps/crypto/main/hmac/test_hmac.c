@@ -1,11 +1,11 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <string.h>
-#include "esp_private/esp_crypto_lock_internal.h"
+#include "esp_crypto_periph_clk.h"
 #include "esp_log.h"
 #include "memory_checks.h"
 #include "unity_fixture.h"
@@ -61,24 +61,13 @@ static void write_and_padd(uint8_t *block, const uint8_t *data, uint16_t data_le
     bzero(block + data_len + 1, SHA256_BLOCK_SZ - data_len - 1);
 }
 
-static esp_err_t hmac_calculate(uint32_t key_id, const void *message, size_t message_len, uint8_t *hmac)
+esp_err_t hmac_calculate(uint32_t key_id, const void *message, size_t message_len, uint8_t *hmac)
 {
     const uint8_t *message_bytes = (const uint8_t *)message;
 
-    HMAC_RCC_ATOMIC() {
-        hmac_ll_enable_bus_clock(true);
-        hmac_ll_reset_register();
-    }
-
-    SHA_RCC_ATOMIC() {
-        sha_ll_enable_bus_clock(true);
-        sha_ll_reset_register();
-    }
-
-    DS_RCC_ATOMIC() {
-        ds_ll_enable_bus_clock(true);
-        ds_ll_reset_register();
-    }
+    esp_crypto_hmac_enable_periph_clk(true);
+    esp_crypto_sha_enable_periph_clk(true);
+    esp_crypto_ds_enable_periph_clk(true);
 
     hmac_hal_start();
 
@@ -130,17 +119,9 @@ static esp_err_t hmac_calculate(uint32_t key_id, const void *message, size_t mes
 
     hmac_hal_read_result_256(hmac);
 
-    DS_RCC_ATOMIC() {
-        ds_ll_enable_bus_clock(false);
-    }
-
-    SHA_RCC_ATOMIC() {
-        sha_ll_enable_bus_clock(false);
-    }
-
-    HMAC_RCC_ATOMIC() {
-        hmac_ll_enable_bus_clock(false);
-    }
+    esp_crypto_hmac_enable_periph_clk(false);
+    esp_crypto_sha_enable_periph_clk(false);
+    esp_crypto_ds_enable_periph_clk(false);
 
     return ESP_OK;
 }

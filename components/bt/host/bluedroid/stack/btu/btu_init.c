@@ -254,17 +254,6 @@ UINT16 BTU_BleAclPktSize(void)
 #endif
 }
 
-#if SCAN_QUEUE_CONGEST_CHECK
-bool BTU_check_queue_is_congest(void)
-{
-    if (osi_thread_queue_wait_size(btu_thread, 0) >= BT_QUEUE_CONGEST_SIZE) {
-        return true;
-    }
-
-    return false;
-}
-#endif
-
 int get_btu_work_queue_size(void)
 {
     return osi_thread_queue_wait_size(btu_thread, 0);

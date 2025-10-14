@@ -1,9 +1,0 @@
-name: 'newlib'
-version: '4.3.0'
-cpe: cpe:2.3:a:newlib_project:newlib:{}:*:*:*:*:*:*:*
-supplier: 'Organization: Espressif Systems (Shanghai) CO LTD'
-originator: 'Organization: Red Hat Incorporated'
-description: An open-source C standard library implementation with additional features and patches from Espressif.
-cve-exclude-list:
-  - cve: CVE-2024-30949
-    reason: A vulnerability was discovered in the gettimeofday system call implementation within the RISC-V libgloss component of Newlib. ESP-IDF does not link against libgloss for RISC-V, hence the issue is not directly applicable. Still, the relevant fix has been patched through https://github.com/espressif/newlib-esp32/commit/047ba47013c2656a1e7838dc86cbc75aeeaa67a7

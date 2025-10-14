@@ -9,6 +9,7 @@ menu "Example Configuration"
 
     choice EXAMPLE_LCD_PARLIO_SIMULATE_INTERFACE
         prompt "LCD interface"
+        default EXAMPLE_LCD_PARLIO_SIMULATE_I80 if SOC_PARLIO_SUPPORT_I80_LCD
         default EXAMPLE_LCD_PARLIO_SIMULATE_SPI
         help
             Select LCD controller model

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -507,14 +507,6 @@ void intr_matrix_set(int cpu_no, uint32_t model_num, uint32_t intr_num);
 #endif
 
 #define ETS_MEM_BAR() asm volatile ( "" : : : "memory" )
-
-typedef enum {
-    OK = 0,
-    FAIL,
-    PENDING,
-    BUSY,
-    CANCEL,
-} STATUS;
 
 /**
   * @}

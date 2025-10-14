@@ -1,0 +1,3 @@
+CONFIG_ESP_SYSTEM_USE_FRAME_POINTER=y
+# Increase size of bootloader due to frame pointer
+CONFIG_PARTITION_TABLE_OFFSET=0x10000

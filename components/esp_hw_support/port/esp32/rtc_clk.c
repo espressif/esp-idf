@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,16 +27,20 @@
 #include "hal/clk_tree_ll.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/io_mux_reg.h"
+#ifndef BOOTLOADER_BUILD
+#include "esp_private/systimer.h"
+#include "hal/lact_ll.h"
+#endif
 
 #define XTAL_32K_BOOTSTRAP_TIME_US      7
 
-static void rtc_clk_cpu_freq_to_8m(void);
+static void rtc_clk_cpu_freq_to_rc_fast(void);
 static void rtc_clk_cpu_freq_to_pll_mhz(int cpu_freq_mhz);
 
 // Current PLL frequency, in MHZ (320 or 480). Zero if PLL is not enabled.
 static uint32_t s_cur_pll_freq;
 
-static const char* TAG = "rtc_clk";
+ESP_HW_LOG_ATTR_TAG(TAG, "rtc_clk");
 
 static void rtc_clk_32k_enable_common(clk_ll_xtal32k_enable_mode_t mode)
 {
@@ -113,6 +117,11 @@ void rtc_clk_32k_enable(bool enable)
 void rtc_clk_32k_enable_external(void)
 {
     rtc_clk_32k_enable_common(CLK_LL_XTAL32K_ENABLE_MODE_EXTERNAL);
+}
+
+void rtc_clk_32k_disable_external(void)
+{
+    clk_ll_xtal32k_disable();
 }
 
 /* Helping external 32kHz crystal to start up.
@@ -275,12 +284,12 @@ void rtc_clk_apll_coeff_set(uint32_t o_div, uint32_t sdm0, uint32_t sdm1, uint32
 void rtc_clk_slow_src_set(soc_rtc_slow_clk_src_t clk_src)
 {
 #ifndef BOOTLOADER_BUILD
-    soc_rtc_slow_clk_src_t clk_src_before_switch = clk_ll_rtc_slow_get_src();
     // Keep the RTC8M_CLK on in sleep if RTC clock is rc_fast_d256.
-    if (clk_src == SOC_RTC_SLOW_CLK_SRC_RC_FAST_D256 && clk_src_before_switch != SOC_RTC_SLOW_CLK_SRC_RC_FAST_D256) {       // Switch to RC_FAST_D256
+    if ((clk_src == SOC_RTC_SLOW_CLK_SRC_RC_FAST_D256) && (esp_sleep_sub_mode_dump_config(NULL)[ESP_SLEEP_RTC_USE_RC_FAST_MODE] == 0)) { // Switch to RC_FAST_D256
         esp_sleep_sub_mode_config(ESP_SLEEP_RTC_USE_RC_FAST_MODE, true);
-    } else if (clk_src != SOC_RTC_SLOW_CLK_SRC_RC_FAST_D256 && clk_src_before_switch == SOC_RTC_SLOW_CLK_SRC_RC_FAST_D256) { // Switch away from RC_FAST_D256
-        esp_sleep_sub_mode_config(ESP_SLEEP_RTC_USE_RC_FAST_MODE, false);
+    } else if (clk_src != SOC_RTC_SLOW_CLK_SRC_RC_FAST_D256) {
+        // This is the only user of ESP_SLEEP_RTC_USE_RC_FAST_MODE submode, so force disable it.
+        esp_sleep_sub_mode_force_disable(ESP_SLEEP_RTC_USE_RC_FAST_MODE);
     }
 #endif
 
@@ -369,13 +378,16 @@ void rtc_clk_cpu_freq_to_xtal(int cpu_freq, int div)
     clk_ll_ref_tick_set_divider(SOC_CPU_CLK_SRC_XTAL, cpu_freq);
     /* switch clock source */
     clk_ll_cpu_set_src(SOC_CPU_CLK_SRC_XTAL);
+#ifndef BOOTLOADER_BUILD
+    lact_ll_set_clock_prescale(LACT_LL_GET_HW(LACT_MODULE), cpu_freq / LACT_TICKS_PER_US);
+#endif
     rtc_clk_apb_freq_update(cpu_freq * MHZ);
     /* lower the voltage */
     int dbias = (cpu_freq <= 2) ? DIG_DBIAS_2M : DIG_DBIAS_XTAL;
     REG_SET_FIELD(RTC_CNTL_REG, RTC_CNTL_DIG_DBIAS_WAK, dbias);
 }
 
-static void rtc_clk_cpu_freq_to_8m(void)
+static void rtc_clk_cpu_freq_to_rc_fast(void)
 {
     esp_rom_set_cpu_ticks_per_us(8);
     REG_SET_FIELD(RTC_CNTL_REG, RTC_CNTL_DIG_DBIAS_WAK, DIG_DBIAS_XTAL);
@@ -384,26 +396,63 @@ static void rtc_clk_cpu_freq_to_8m(void)
     clk_ll_ref_tick_set_divider(SOC_CPU_CLK_SRC_RC_FAST, 8);
     /* switch clock source */
     clk_ll_cpu_set_src(SOC_CPU_CLK_SRC_RC_FAST);
+#ifndef BOOTLOADER_BUILD
+    lact_ll_set_clock_prescale(LACT_LL_GET_HW(LACT_MODULE), SOC_CLK_RC_FAST_FREQ_APPROX / MHZ / LACT_TICKS_PER_US);
+#endif
     rtc_clk_apb_freq_update(SOC_CLK_RC_FAST_FREQ_APPROX);
 }
+
+#ifndef BOOTLOADER_BUILD
+static const DRAM_ATTR int16_t dfs_lact_compensate_table[3][3] = {   \
+/* From / To 80     160     240*/   \
+/* 10  */   {78,    172,    -1},    \
+/* 20  */   {2,     105,    -90},   \
+/* 40  */   {-190,  -18,    -372},  \
+};
+
+__attribute__((weak)) IRAM_ATTR int16_t rtc_clk_get_lact_compensation_delay(uint32_t cur_freq, uint32_t tar_freq)
+{
+    return dfs_lact_compensate_table[(cur_freq == 10) ? 0 : (cur_freq == 20) ? 1 : 2][(tar_freq == 80) ? 0 : (tar_freq == 160) ? 1 : 2];
+}
+#endif
 
 /**
  * Switch to one of PLL-based frequencies. Current frequency can be XTAL or PLL.
  * PLL must already be enabled.
  * @param cpu_freq new CPU frequency
  */
-static void rtc_clk_cpu_freq_to_pll_mhz(int cpu_freq_mhz)
+__attribute__((optimize("-O2")))
+NOINLINE_ATTR static void rtc_clk_cpu_freq_to_pll_mhz(int cpu_freq_mhz)
 {
     int dbias = (cpu_freq_mhz == 240) ? DIG_DBIAS_240M : DIG_DBIAS_80M_160M;
-    clk_ll_cpu_set_freq_mhz_from_pll(cpu_freq_mhz);
     REG_SET_FIELD(RTC_CNTL_REG, RTC_CNTL_DIG_DBIAS_WAK, dbias);
+#ifndef BOOTLOADER_BUILD
+    uint32_t cur_freq = esp_rom_get_cpu_ticks_per_us();
+    int16_t delay_cycle = rtc_clk_get_lact_compensation_delay(cur_freq, cpu_freq_mhz);
+    if (cur_freq <= 40 && delay_cycle >= 0) {
+        lact_ll_set_clock_prescale(LACT_LL_GET_HW(LACT_MODULE), 80 / LACT_TICKS_PER_US);
+        for (int i = 0; i < delay_cycle; ++i) {
+            __asm__ __volatile__("nop");
+        }
+    }
+#endif
+    clk_ll_cpu_set_freq_mhz_from_pll(cpu_freq_mhz);
     /* adjust ref_tick */
     clk_ll_ref_tick_set_divider(SOC_CPU_CLK_SRC_PLL, cpu_freq_mhz);
     /* switch clock source */
     clk_ll_cpu_set_src(SOC_CPU_CLK_SRC_PLL);
     rtc_clk_apb_freq_update(80 * MHZ);
     esp_rom_set_cpu_ticks_per_us(cpu_freq_mhz);
+#ifndef BOOTLOADER_BUILD
+    if (cur_freq <= 40 && delay_cycle < 0) {
+        for (int i = 0; i > delay_cycle; --i) {
+            __asm__ __volatile__("nop");
+        }
+        lact_ll_set_clock_prescale(LACT_LL_GET_HW(LACT_MODULE), 80 / LACT_TICKS_PER_US);
+    }
+#endif
     rtc_clk_wait_for_slow_cycle();
+    esp_rom_delay_us(30);
 }
 
 void rtc_clk_cpu_freq_set_xtal(void)
@@ -418,6 +467,11 @@ void rtc_clk_cpu_set_to_default_config(void)
 
     rtc_clk_cpu_freq_to_xtal(freq_mhz, 1);
     rtc_clk_wait_for_slow_cycle();
+}
+
+void rtc_clk_cpu_freq_set_xtal_for_sleep(void)
+{
+    rtc_clk_cpu_freq_set_xtal();
 }
 
 bool rtc_clk_cpu_freq_mhz_to_config(uint32_t freq_mhz, rtc_cpu_freq_config_t* out_config)
@@ -488,7 +542,7 @@ void rtc_clk_cpu_freq_set_config(const rtc_cpu_freq_config_t* config)
         rtc_clk_bbpll_configure(rtc_clk_xtal_freq_get(), config->source_freq_mhz);
         rtc_clk_cpu_freq_to_pll_mhz(config->freq_mhz);
     } else if (config->source == SOC_CPU_CLK_SRC_RC_FAST) {
-        rtc_clk_cpu_freq_to_8m();
+        rtc_clk_cpu_freq_to_rc_fast();
     }
 }
 

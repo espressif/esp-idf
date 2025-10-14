@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -92,7 +92,8 @@ static int ssl_handshake_params_init( mbedtls_ssl_handshake_params *handshake )
 #if defined(MBEDTLS_DHM_C)
     mbedtls_dhm_init( &handshake->dhm_ctx );
 #endif
-#if defined(MBEDTLS_ECDH_C)
+#if defined(MBEDTLS_ECDH_C) && \
+    defined(MBEDTLS_KEY_EXCHANGE_SOME_ECDH_OR_ECDHE_1_2_ENABLED)
     mbedtls_ecdh_init( &handshake->ecdh_ctx );
 #endif
 #if defined(MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED)
@@ -121,9 +122,11 @@ static int ssl_handshake_params_init( mbedtls_ssl_handshake_params *handshake )
 
 static int ssl_handshake_init( mbedtls_ssl_context *ssl )
 {
+#if defined(MBEDTLS_SSL_PROTO_TLS1_2)
     /* Clear old handshake information if present */
     if( ssl->transform_negotiate )
         mbedtls_ssl_transform_free( ssl->transform_negotiate );
+#endif /* MBEDTLS_SSL_PROTO_TLS1_2 */
     if( ssl->session_negotiate )
         mbedtls_ssl_session_free( ssl->session_negotiate );
     if( ssl->handshake )
@@ -133,10 +136,12 @@ static int ssl_handshake_init( mbedtls_ssl_context *ssl )
      * Either the pointers are now NULL or cleared properly and can be freed.
      * Now allocate missing structures.
      */
+#if defined(MBEDTLS_SSL_PROTO_TLS1_2)
     if( ssl->transform_negotiate == NULL )
     {
         ssl->transform_negotiate = mbedtls_calloc( 1, sizeof(mbedtls_ssl_transform) );
     }
+#endif /* MBEDTLS_SSL_PROTO_TLS1_2 */
 
     if( ssl->session_negotiate == NULL )
     {
@@ -156,17 +161,22 @@ static int ssl_handshake_init( mbedtls_ssl_context *ssl )
 
     /* All pointers should exist and can be directly freed without issue */
     if( ssl->handshake == NULL ||
+#if defined(MBEDTLS_SSL_PROTO_TLS1_2)
         ssl->transform_negotiate == NULL ||
+#endif /* MBEDTLS_SSL_PROTO_TLS1_2 */
         ssl->session_negotiate == NULL )
     {
         ESP_LOGD(TAG, "alloc() of ssl sub-contexts failed");
 
         mbedtls_free( ssl->handshake );
-        mbedtls_free( ssl->transform_negotiate );
-        mbedtls_free( ssl->session_negotiate );
-
         ssl->handshake = NULL;
+
+#if defined(MBEDTLS_SSL_PROTO_TLS1_2)
+        mbedtls_free( ssl->transform_negotiate );
         ssl->transform_negotiate = NULL;
+#endif /* MBEDTLS_SSL_PROTO_TLS1_2 */
+
+        mbedtls_free( ssl->session_negotiate );
         ssl->session_negotiate = NULL;
 
         return( MBEDTLS_ERR_SSL_ALLOC_FAILED );
@@ -174,7 +184,9 @@ static int ssl_handshake_init( mbedtls_ssl_context *ssl )
 
     /* Initialize structures */
     mbedtls_ssl_session_init( ssl->session_negotiate );
+#if defined(MBEDTLS_SSL_PROTO_TLS1_2)
     mbedtls_ssl_transform_init( ssl->transform_negotiate );
+#endif /* MBEDTLS_SSL_PROTO_TLS1_2 */
     int ret = ssl_handshake_params_init( ssl->handshake );
     if (ret != 0) {
         return ret;
@@ -347,6 +359,43 @@ int __wrap_mbedtls_ssl_read(mbedtls_ssl_context *ssl, unsigned char *buf, size_t
 
     ret = __real_mbedtls_ssl_read(ssl, buf, len);
 
+#if CONFIG_MBEDTLS_SSL_PROTO_TLS1_3
+        /*
+         * As per RFC 8446, section 4.6.1 the server may send a NewSessionTicket message at any time after the
+         * client Finished message.
+         * If a post-handshake message is received, connection state is changed to `MBEDTLS_SSL_TLS1_3_NEW_SESSION_TICKET`
+         * and when the message is parsed, the return value is `MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET`.
+         * When the session ticket is parsed, reduce the ssl->in_msglen by the length of the
+         * NewSessionTicket message.
+        */
+        if (mbedtls_ssl_get_version_number(ssl) == MBEDTLS_SSL_VERSION_TLS1_3) {
+            if (ret == MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET) {
+                ESP_LOGD(TAG, "got session ticket in TLS 1.3 connection, retry read");
+
+                /* At this stage, we have received a NewSessionTicket messages
+                 * We should decrement the ssl->in_msglen by the length of the
+                 * NewSessionTicket message.
+                 *
+                 * The NewSessionTicket message has been parsed internally by mbedTLS
+                 * and it is stored in the mbedTLS context. This msglen size update
+                 * is also handled by mbedTLS but in case of dynamic buffer,
+                 * we need to free the rx buffer if it is allocated
+                 * and prepare for the next read. So we have to update the msglen
+                 * by ourselves and free the rx buffer if no more data is available.
+                 */
+                if (ssl->MBEDTLS_PRIVATE(in_hslen) < ssl->MBEDTLS_PRIVATE(in_msglen)) {
+                    ssl->MBEDTLS_PRIVATE(in_msglen) -= ssl->MBEDTLS_PRIVATE(in_hslen);
+                    memmove(ssl->MBEDTLS_PRIVATE(in_msg), ssl->MBEDTLS_PRIVATE(in_msg) + ssl->MBEDTLS_PRIVATE(in_hslen),
+                        ssl->MBEDTLS_PRIVATE(in_msglen));
+                    MBEDTLS_PUT_UINT16_BE(ssl->MBEDTLS_PRIVATE(in_msglen), ssl->in_len, 0);
+                } else {
+                    ssl->MBEDTLS_PRIVATE(in_msglen) = 0;
+                }
+                ssl->MBEDTLS_PRIVATE(in_hslen) = 0;
+            }
+        }
+#endif // CONFIG_MBEDTLS_SSL_PROTO_TLS1_3
+
     if (rx_done(ssl)) {
         CHECK_OK(esp_mbedtls_free_rx_buffer(ssl));
     }
@@ -367,21 +416,6 @@ void __wrap_mbedtls_ssl_free(mbedtls_ssl_context *ssl)
     }
 
     __real_mbedtls_ssl_free(ssl);
-}
-
-int __wrap_mbedtls_ssl_session_reset(mbedtls_ssl_context *ssl)
-{
-    CHECK_OK(esp_mbedtls_reset_add_tx_buffer(ssl));
-
-    CHECK_OK(esp_mbedtls_reset_add_rx_buffer(ssl));
-
-    CHECK_OK(__real_mbedtls_ssl_session_reset(ssl));
-
-    CHECK_OK(esp_mbedtls_reset_free_tx_buffer(ssl));
-
-    esp_mbedtls_reset_free_rx_buffer(ssl);
-
-    return 0;
 }
 
 int __wrap_mbedtls_ssl_send_alert_message(mbedtls_ssl_context *ssl, unsigned char level, unsigned char message)

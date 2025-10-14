@@ -481,12 +481,12 @@ GPIO 矩阵与 IO_MUX 管脚
 
 .. only:: not esp32
 
-    {IDF_TARGET_SPI2_IOMUX_PIN_CS:default="N/A",   esp32s2="10", esp32s3="10", esp32c2="10", esp32c3="10", esp32c6="16", esp32h2="1", esp32p4="7" , esp32c5="10", esp32c61="8"}
-    {IDF_TARGET_SPI2_IOMUX_PIN_CLK:default="N/A",  esp32s2="12", esp32s3="12", esp32c2="6",  esp32c3="6",  esp32c6="6",  esp32h2="4", esp32p4="9" , esp32c5="6",  esp32c61="6"}
-    {IDF_TARGET_SPI2_IOMUX_PIN_MOSI:default="N/A", esp32s2="11"  esp32s3="11", esp32c2="7"   esp32c3="7",  esp32c6="7",  esp32h2="5", esp32p4="8" , esp32c5="7",  esp32c61="7"}
-    {IDF_TARGET_SPI2_IOMUX_PIN_MISO:default="N/A", esp32s2="13"  esp32s3="13", esp32c2="2"   esp32c3="2",  esp32c6="2",  esp32h2="0", esp32p4="10", esp32c5="2",  esp32c61="2"}
-    {IDF_TARGET_SPI2_IOMUX_PIN_HD:default="N/A",   esp32s2="9"   esp32s3="9",  esp32c2="4"   esp32c3="4",  esp32c6="4",  esp32h2="3", esp32p4="6" , esp32c5="4",  esp32c61="3"}
-    {IDF_TARGET_SPI2_IOMUX_PIN_WP:default="N/A",   esp32s2="14"  esp32s3="14", esp32c2="5"   esp32c3="5",  esp32c6="5",  esp32h2="2", esp32p4="11", esp32c5="5",  esp32c61="4"}
+    {IDF_TARGET_SPI2_IOMUX_PIN_CS:default="N/A",   esp32s2="10", esp32s3="10", esp32c2="10", esp32c3="10", esp32c6="16", esp32h2="1", esp32p4="7" , esp32c5="10", esp32c61="8", esp32h21="12", esp32h4="20"}
+    {IDF_TARGET_SPI2_IOMUX_PIN_CLK:default="N/A",  esp32s2="12", esp32s3="12", esp32c2="6",  esp32c3="6",  esp32c6="6",  esp32h2="4", esp32p4="9" , esp32c5="6",  esp32c61="6", esp32h21="2",  esp32h4="16"}
+    {IDF_TARGET_SPI2_IOMUX_PIN_MOSI:default="N/A", esp32s2="11"  esp32s3="11", esp32c2="7"   esp32c3="7",  esp32c6="7",  esp32h2="5", esp32p4="8" , esp32c5="7",  esp32c61="7", esp32h21="3",  esp32h4="17"}
+    {IDF_TARGET_SPI2_IOMUX_PIN_MISO:default="N/A", esp32s2="13"  esp32s3="13", esp32c2="2"   esp32c3="2",  esp32c6="2",  esp32h2="0", esp32p4="10", esp32c5="2",  esp32c61="2", esp32h21="4",  esp32h4="15"}
+    {IDF_TARGET_SPI2_IOMUX_PIN_HD:default="N/A",   esp32s2="9"   esp32s3="9",  esp32c2="4"   esp32c3="4",  esp32c6="4",  esp32h2="3", esp32p4="6" , esp32c5="4",  esp32c61="3", esp32h21="1",  esp32h4="19"}
+    {IDF_TARGET_SPI2_IOMUX_PIN_WP:default="N/A",   esp32s2="14"  esp32s3="14", esp32c2="5"   esp32c3="5",  esp32c6="5",  esp32h2="2", esp32p4="11", esp32c5="5",  esp32c61="4", esp32h21="0",  esp32h4="18"}
 
     芯片的大多数外围信号都与之专用的 IO_MUX 管脚连接，但这些信号也可以通过较不直接的 GPIO 矩阵路由到任何其他可用的管脚。只要有一个信号是通过 GPIO 矩阵路由的，那么所有的信号都将通过它路由。
 
@@ -532,10 +532,10 @@ GPIO 矩阵与 IO_MUX 管脚
 传输事务持续时间
 ^^^^^^^^^^^^^^^^^^^^
 
-{IDF_TARGET_TRANS_TIME_INTR_DMA:default="N/A", esp32="28", esp32s2="23", esp32c3="28", esp32s3="26", esp32c2="42", esp32c6="34", esp32h2="58", esp32p4="44", esp32c5="24", esp32c61="32"}
-{IDF_TARGET_TRANS_TIME_POLL_DMA:default="N/A", esp32="10", esp32s2="9",  esp32c3="10", esp32s3="11", esp32c2="17", esp32c6="17", esp32h2="28", esp32p4="27", esp32c5="15", esp32c61="17"}
-{IDF_TARGET_TRANS_TIME_INTR_CPU:default="N/A", esp32="25", esp32s2="22", esp32c3="27", esp32s3="24", esp32c2="40", esp32c6="32", esp32h2="54", esp32p4="26", esp32c5="22", esp32c61="29"}
-{IDF_TARGET_TRANS_TIME_POLL_CPU:default="N/A", esp32="8",  esp32s2="8",  esp32c3="9",  esp32s3="9",  esp32c2="15", esp32c6="15", esp32h2="24", esp32p4="12", esp32c5="12", esp32c61="14"}
+{IDF_TARGET_MAX_TRANS_TIME_INTR_DMA:default="N/A", esp32="28", esp32s2="23", esp32c3="28", esp32s3="26", esp32c2="42", esp32c6="34", esp32h2="58", esp32p4="44", esp32c5="24", esp32c61="32", esp32h21="60", esp32h4="70"}
+{IDF_TARGET_MAX_TRANS_TIME_POLL_DMA:default="N/A", esp32="10", esp32s2="9",  esp32c3="10", esp32s3="11", esp32c2="17", esp32c6="17", esp32h2="28", esp32p4="27", esp32c5="15", esp32c61="17", esp32h21="32", esp32h4="35"}
+{IDF_TARGET_MAX_TRANS_TIME_INTR_CPU:default="N/A", esp32="25", esp32s2="22", esp32c3="27", esp32s3="24", esp32c2="40", esp32c6="32", esp32h2="54", esp32p4="26", esp32c5="22", esp32c61="29", esp32h21="55", esp32h4="60"}
+{IDF_TARGET_MAX_TRANS_TIME_POLL_CPU:default="N/A", esp32="8",  esp32s2="8",  esp32c3="9",  esp32s3="9",  esp32c2="15", esp32c6="15", esp32h2="24", esp32p4="12", esp32c5="12", esp32c61="14", esp32h21="26", esp32h4="25"}
 
 传输事务持续时间包括设置 SPI 外设寄存器，将数据复制到 FIFO 或设置 DMA 链接，以及 SPI 传输事务时间。
 
@@ -547,21 +547,23 @@ GPIO 矩阵与 IO_MUX 管脚
 
 单个字节数据的典型传输事务持续时间如下。
 
-- 使用 DMA 的中断传输事务：{IDF_TARGET_TRANS_TIME_INTR_DMA} µs。
-- 使用 CPU 的中断传输事务：{IDF_TARGET_TRANS_TIME_INTR_CPU} µs。
-- 使用 DMA 的轮询传输事务：{IDF_TARGET_TRANS_TIME_POLL_DMA} µs。
-- 使用 CPU 的轮询传输事务：{IDF_TARGET_TRANS_TIME_POLL_CPU} µs。
+- 使用 DMA 的中断传输事务：{IDF_TARGET_MAX_TRANS_TIME_INTR_DMA} µs。
+- 使用 CPU 的中断传输事务：{IDF_TARGET_MAX_TRANS_TIME_INTR_CPU} µs。
+- 使用 DMA 的轮询传输事务：{IDF_TARGET_MAX_TRANS_TIME_POLL_DMA} µs。
+- 使用 CPU 的轮询传输事务：{IDF_TARGET_MAX_TRANS_TIME_POLL_CPU} µs。
 
 请注意，以上数据测试时，:ref:`CONFIG_SPI_MASTER_ISR_IN_IRAM` 选项处于启用状态，SPI 传输事务相关的代码放置在 IRAM 中。若关闭此选项（例如为了节省 IRAM），可能影响传输事务持续时间。
 
 SPI 时钟频率
 ^^^^^^^^^^^^^^^^^^^
 
-GPSPI 外设的时钟源可以通过设置 :cpp:member:`spi_device_handle_t::cfg::clock_source` 选择，可用的时钟源请参阅 :cpp:type:`spi_clock_source_t`。
+GPSPI 外设的时钟源可以通过设置 :cpp:member:`spi_device_interface_config_t::clock_source` 选择，可用的时钟源请参阅 :cpp:type:`spi_clock_source_t`。
 
-默认情况下，驱动程序将把 :cpp:member:`spi_device_handle_t::cfg::clock_source` 设置为 ``SPI_CLK_SRC_DEFAULT``。这往往代表 GPSPI 时钟源中的最高频率，在不同的芯片中这一数值会有所不同。
+默认情况下，驱动程序将把时钟源设置为 ``SPI_CLK_SRC_DEFAULT``。这往往代表 GPSPI 可选时钟源中的最高频率，在不同的芯片上这一数值会有所不同。
 
 设备的实际时钟频率可能不完全等于所设置的数字，驱动会将其重新计算为与硬件兼容的最接近的数字，并且不超过时钟源的时钟频率。调用函数 :cpp:func:`spi_device_get_actual_freq` 以了解驱动计算的实际频率。
+
+设备的时钟频率可在传输过程中实时更改，可以通过设置 :cpp:member:`spi_transaction_t::override_freq_hz` 实现，此操作将为该设备的该次及以后的传输使用新的时钟频率。若某次期望设置的时钟频率无法实现，驱动将打印警告并继续使用之前的时钟频率进行传输。
 
 写入或读取阶段的理论最大传输速度可根据下表计算：
 
@@ -610,7 +612,7 @@ GPSPI 外设的时钟源可以通过设置 :cpp:member:`spi_device_handle_t::cfg
 
 .. note::
 
-    SPI 驱动是基于 FreeRTOS 的 API 实现的，在使用 :ref:`CONFIG_SPI_MASTER_IN_IRAM` 时，不得启用 :ref:`CONFIG_FREERTOS_PLACE_FUNCTIONS_INTO_FLASH`。
+    SPI 驱动是基于 FreeRTOS 的 API 实现的，在使用 :ref:`CONFIG_SPI_MASTER_IN_IRAM` 时，应启用 :ref:`CONFIG_FREERTOS_IN_IRAM`。
 
 单个中断传输事务传输 n 字节的总成本为 **20+8n/Fspi[MHz]** [µs]，故传输速度为 **n/(20+8n/Fspi)**。8 MHz 时钟速度的传输速度见下表。
 
@@ -653,6 +655,26 @@ GPSPI 外设的时钟源可以通过设置 :cpp:member:`spi_device_handle_t::cfg
 
 注意，ISR 在 flash 操作期间默认处于禁用状态。要在 flash 操作期间继续发送传输事务，请启用 :ref:`CONFIG_SPI_MASTER_ISR_IN_IRAM`，并在 :cpp:member:`spi_bus_config_t::intr_flags` 中设置 :c:macro:`ESP_INTR_FLAG_IRAM`。此时，flash 操作前列队的传输事务将由 ISR 并行处理。此外，每个设备的回调和它们的 ``callee`` 函数都应该在 IRAM 中，避免回调因缓存丢失而崩溃。详情请参阅 :ref:`iram-safe-interrupt-handlers`。
 
+.. only:: esp32h2
+
+    时序调整
+    --------
+
+    .. only:: esp32h2
+
+        该功能只在芯片版本 v1.2 及以上中支持。
+
+    为了适应不同从设备的时序要求，以及提高信号稳定性， GP-SPI 控制器在接收数据时支持两种采样模式：采样模式 0 和采样模式 1 ，可通过 :cpp:member:`spi_device_interface_config_t::sample_point` 进行配置。
+
+    采样模式 0 （ SPI mode 0 ）：
+
+    .. wavedrom:: /../_static/diagrams/spi/spi_mode0_delay.json
+
+    采样模式 1 （ SPI mode 0 ）：
+
+    .. wavedrom:: /../_static/diagrams/spi/spi_mode0_std.json
+
+    默认情况下，驱动使用采样模式 0 ，当从设备遵守 SPI 标准时序时，采样模式 0 可以在高时钟频率时更稳定的接收数据。
 
 .. only:: esp32
 
@@ -661,7 +683,7 @@ GPSPI 外设的时钟源可以通过设置 :cpp:member:`spi_device_handle_t::cfg
     时序影响因素
     ---------------------
 
-    如图所示，SCLK 发射沿之后、信号被内部寄存器锁存之前，MISO 线存在延迟。因此，MISO 管脚的设置时间是 SPI 时钟速度的限制因素。当延迟过长时，设置松弛度 < 0，违反了设置时序要求，读取可能有误。
+    如图所示， SCLK 发射沿之后、信号被内部寄存器锁存之前， MISO 线存在延迟。因此， MISO 管脚的设置时间是 SPI 时钟速度的限制因素。当延迟过长时，设置松弛度 < 0 ，违反了设置时序要求，读取可能有误。
 
     .. image:: /../_static/spi_miso.png
         :scale: 40 %

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -210,19 +210,6 @@ esp_err_t touch_sensor_trigger_oneshot_scanning(touch_sensor_handle_t sens_handl
 esp_err_t touch_sensor_register_callbacks(touch_sensor_handle_t sens_handle, const touch_event_callbacks_t *callbacks, void *user_ctx);
 
 /**
- * @brief Confiture the touch sensor benchmark for all the registered channels
- * @note  This function can be called no matter the touch sensor controller is enabled or not (i.e. ENABLED or SCANNING state).
- *        And it can also be called in ISR/callback context.
- *
- * @param[in]  chan_handle      Touch channel handle
- * @param[in]  benchmark_cfg    The benchmark configurations
- * @return
- *      - ESP_OK                On success
- *      - ESP_ERR_INVALID_ARG   NULL pointer
- */
-esp_err_t touch_channel_config_benchmark(touch_channel_handle_t chan_handle, const touch_chan_benchmark_config_t *benchmark_cfg);
-
-/**
  * @brief Read the touch channel data according to the types
  * @note  This function can be called no matter the touch sensor controller is enabled or not (i.e. ENABLED or SCANNING state).
  *        And it can also be called in ISR/callback context.
@@ -241,6 +228,21 @@ esp_err_t touch_channel_config_benchmark(touch_channel_handle_t chan_handle, con
  *      - ESP_ERR_INVALID_ARG   Invalid argument or NULL pointer
  */
 esp_err_t touch_channel_read_data(touch_channel_handle_t chan_handle, touch_chan_data_type_t type, uint32_t *data);
+
+#if SOC_TOUCH_SUPPORT_BENCHMARK
+/**
+ * @brief Confiture the touch sensor benchmark for all the registered channels
+ * @note  This function can be called no matter the touch sensor controller is enabled or not (i.e. ENABLED or SCANNING state).
+ *        And it can also be called in ISR/callback context.
+ *
+ * @param[in]  chan_handle      Touch channel handle
+ * @param[in]  benchmark_cfg    The benchmark configurations
+ * @return
+ *      - ESP_OK                On success
+ *      - ESP_ERR_INVALID_ARG   NULL pointer
+ */
+esp_err_t touch_channel_config_benchmark(touch_channel_handle_t chan_handle, const touch_chan_benchmark_config_t *benchmark_cfg);
+#endif  // SOC_TOUCH_SUPPORT_BENCHMARK
 
 #if SOC_TOUCH_SUPPORT_WATERPROOF
 /**
@@ -308,6 +310,36 @@ esp_err_t touch_sensor_config_sleep_wakeup(touch_sensor_handle_t sens_handle, co
  */
 esp_err_t touch_sensor_config_denoise_channel(touch_sensor_handle_t sens_handle, const touch_denoise_chan_config_t *denoise_cfg);
 #endif
+
+/**
+ * @brief Touch channel information
+ *
+ */
+typedef struct {
+    int chan_id;                                            /*!< Touch channel number */
+    int chan_gpio;                                          /*!< Corresponding GPIO of this channel */
+    union {
+        uint32_t abs_active_thresh[TOUCH_SAMPLE_CFG_NUM];   /*!< The configured absolute threshould of this channel (only used for V1) */
+        uint32_t active_thresh[TOUCH_SAMPLE_CFG_NUM];       /*!< The configured relative threshould of this channel (used except V1) */
+    };
+    struct {
+        uint32_t can_wake_dp_slp: 1;                        /*!< Whether this channel can wakeup from deep sleep */
+        uint32_t is_proxi: 1;                               /*!< Whether this channel is used for proximity sensing */
+        uint32_t is_guard: 1;                               /*!< Whether this channel is used for waterproof guard channel */
+        uint32_t is_shield: 1;                              /*!< Whether this channel is used for waterproof shield channel */
+    } flags;                                                /*!< Channel sub-feature flags */
+} touch_chan_info_t;
+
+/**
+ * @brief Get the touch channel information by the channel handle
+ *
+ * @param[in]  chan_handle  Touch channel handle
+ * @param[out] chan_info    Touch channel information
+ * @return
+ *      - ESP_OK:               Success to get the channel information
+ *      - ESP_ERR_INVALID_ARG:  NULL pointer
+ */
+esp_err_t touch_sensor_get_channel_info(touch_channel_handle_t chan_handle, touch_chan_info_t *chan_info);
 
 #ifdef __cplusplus
 }
