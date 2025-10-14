@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 # !/usr/bin/env python3
 # this file defines some functions for testing cli and br under pytest framework
+import logging
 import os
 import re
 import socket
@@ -28,7 +29,7 @@ def extract_address(
             try:
                 result = dut.expect(pattern, timeout=5)[1].decode()
             except Exception as e:
-                print(f'Error: {e}')
+                logging.error(f'Error: {e}')
                 return default_return
             return func(result)
 
@@ -151,7 +152,7 @@ def getDeviceRole(dut: IdfDut) -> str:
     wait(dut, 1)
     execute_command(dut, 'state')
     role = dut.expect(r'\W+(\w+)\W+Done', timeout=5)[1].decode()
-    print(role)
+    logging.info(role)
     return str(role)
 
 
@@ -310,7 +311,7 @@ def get_host_interface_name() -> str:
             interface_name = config.get('interface_name')
             if interface_name:
                 if interface_name == 'eth0':
-                    print(
+                    logging.warning(
                         f"Warning: 'eth0' is not recommended as a valid network interface. "
                         f"Please check and update the 'interface_name' in the configuration file: "
                         f'{config_path}'
@@ -318,9 +319,9 @@ def get_host_interface_name() -> str:
                 else:
                     return str(interface_name)
             else:
-                print("Warning: Configuration file found but 'interface_name' is not defined.")
+                logging.warning("Warning: Configuration file found but 'interface_name' is not defined.")
     except Exception as e:
-        print(f'Error: Failed to read or parse {config_path}. Details: {e}')
+        logging.error(f'Error: Failed to read or parse {config_path}. Details: {e}')
     if 'eth1' in netifaces.interfaces():
         return 'eth1'
 
@@ -338,8 +339,8 @@ def check_if_host_receive_ra(br: IdfDut) -> bool:
     omrprefix = get_omrprefix(br)
     command = 'ip -6 route | grep ' + str(interface_name)
     out_str = subprocess.getoutput(command)
-    print('br omrprefix: ', str(omrprefix))
-    print('host route table:\n', str(out_str))
+    logging.info(f'br omrprefix: {omrprefix}')
+    logging.info(f'host route table:\n {out_str}')
     return str(omrprefix) in str(out_str)
 
 
@@ -404,7 +405,7 @@ def create_host_udp_server(myudp: udp_parameter) -> None:
             AF_INET = socket.AF_INET6
         else:
             AF_INET = socket.AF_INET
-        print('The host start to create udp server!')
+        logging.info('The host start to create udp server!')
         if_index = socket.if_nametoindex(interface_name)
         sock = socket.socket(AF_INET, socket.SOCK_DGRAM)
         sock.bind((myudp.addr, myudp.port))
@@ -417,13 +418,14 @@ def create_host_udp_server(myudp: udp_parameter) -> None:
             )
         sock.settimeout(myudp.timeout)
         myudp.init_flag = True
-        print('The host start to receive message!')
+        logging.info('The host start to receive message!')
         myudp.udp_bytes = (sock.recvfrom(1024))[0]
-        print('The host has received message: ', myudp.udp_bytes)
+        udp_str = str(myudp.udp_bytes)
+        logging.info(f'The host has received message: {udp_str}')
     except OSError:
-        print('The host did not receive message!')
+        logging.error('The host did not receive message!')
     finally:
-        print('Close the socket.')
+        logging.info('Close the socket.')
         sock.close()
 
 
@@ -438,10 +440,10 @@ def host_udp_send_message(udp_target: udp_parameter) -> None:
         sock.bind(('::', 12350))
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_BINDTODEVICE, interface_name.encode())
         sock.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_MULTICAST_HOPS, 32)
-        print('Host is sending message')
+        logging.info('Host is sending message')
         sock.sendto(udp_target.udp_bytes, (udp_target.addr, udp_target.port))
     except OSError:
-        print('Host cannot send message')
+        logging.error('Host cannot send message')
     finally:
         sock.close()
 
@@ -481,13 +483,13 @@ def host_close_service() -> None:
     command = 'ps auxww | grep avahi-publish-s'
     out_bytes = subprocess.check_output(command, shell=True, timeout=5)
     out_str = out_bytes.decode('utf-8')
-    print('host close service avahi status:\n', out_str)
+    logging.info(f'host close service avahi status:\n {out_str}')
     service_info = [line for line in out_str.splitlines() if 'testxxx _testxxx._udp' in line]
     for line in service_info:
-        print('Process:', line)
+        logging.info(f'Process:{line}')
         pid = line.split()[1]
         command = 'kill -9 ' + pid
-        print('kill ', pid)
+        logging.info(f'kill {pid}')
         subprocess.call(command, shell=True, timeout=5)
         time.sleep(1)
 
@@ -520,24 +522,24 @@ def open_host_interface() -> None:
 
 def get_domain() -> str:
     hostname = socket.gethostname()
-    print('hostname is: ', hostname)
+    logging.info(f'hostname is: {hostname}')
     command = 'ps -auxww | grep avahi-daemon | grep running'
     out_str = subprocess.getoutput(command)
-    print('avahi status:\n', out_str)
+    logging.info(f'avahi status:\n {out_str}')
     role = re.findall(r'\[([\w\W]+)\.local\]', str(out_str))[0]
-    print('active host is: ', role)
+    logging.info(f'active host is: {role}')
     return str(role)
 
 
 def flush_ipv6_addr_by_interface() -> None:
     interface_name = get_host_interface_name()
-    print(f'flush ipv6 addr : {interface_name}')
+    logging.info(f'flush ipv6 addr : {interface_name}')
     command_show_addr = f'ip -6 addr show dev {interface_name}'
     command_show_route = f'ip -6 route show dev {interface_name}'
     addr_before = subprocess.getoutput(command_show_addr)
     route_before = subprocess.getoutput(command_show_route)
-    print(f'Before flush, IPv6 addresses: \n{addr_before}')
-    print(f'Before flush, IPv6 routes: \n{route_before}')
+    logging.info(f'Before flush, IPv6 addresses: \n{addr_before}')
+    logging.info(f'Before flush, IPv6 routes: \n{route_before}')
     subprocess.run(['ip', 'link', 'set', interface_name, 'down'])
     subprocess.run(['ip', '-6', 'addr', 'flush', 'dev', interface_name])
     subprocess.run(['ip', '-6', 'route', 'flush', 'dev', interface_name])
@@ -545,8 +547,8 @@ def flush_ipv6_addr_by_interface() -> None:
     time.sleep(5)
     addr_after = subprocess.getoutput(command_show_addr)
     route_after = subprocess.getoutput(command_show_route)
-    print(f'After flush, IPv6 addresses: \n{addr_after}')
-    print(f'After flush, IPv6 routes: \n{route_after}')
+    logging.info(f'After flush, IPv6 addresses: \n{addr_after}')
+    logging.info(f'After flush, IPv6 routes: \n{route_after}')
 
 
 class tcp_parameter:
@@ -575,28 +577,29 @@ def create_host_tcp_server(mytcp: tcp_parameter) -> None:
             AF_INET = socket.AF_INET6
         else:
             AF_INET = socket.AF_INET
-        print('The host start to create a tcp server!')
+        logging.info('The host start to create a tcp server!')
         sock = socket.socket(AF_INET, socket.SOCK_STREAM)
         sock.bind((mytcp.addr, mytcp.port))
         sock.listen(5)
         mytcp.listen_flag = True
 
-        print('The tcp server is waiting for connection!')
+        logging.info('The tcp server is waiting for connection!')
         sock.settimeout(mytcp.timeout)
         connfd, addr = sock.accept()
-        print('The tcp server connected with ', addr)
+        logging.info(f'The tcp server connected with {addr}')
         mytcp.recv_flag = True
 
         mytcp.tcp_bytes = connfd.recv(1024)
-        print('The tcp server has received message: ', mytcp.tcp_bytes)
+        tcp_str = str(mytcp.tcp_bytes)
+        logging.info(f'The tcp server has received message: {tcp_str}')
 
     except OSError:
         if mytcp.recv_flag:
-            print('The tcp server did not receive message!')
+            logging.error('The tcp server did not receive message!')
         else:
-            print('The tcp server fail to connect!')
+            logging.error('The tcp server fail to connect!')
     finally:
-        print('Close the socket.')
+        logging.info('Close the socket.')
         sock.close()
 
 
