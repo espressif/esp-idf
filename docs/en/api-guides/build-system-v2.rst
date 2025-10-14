@@ -1,6 +1,10 @@
 Build System v2
 ***************
 
+.. attention::
+
+    Build System v2 is currently available as a **Technical Preview** intended for **testing and evaluation**. Features, functionality, and performance are **subject to change without notice**, and **production use is not recommended** at this stage.
+
 ESP-IDF CMake-based build system v2, referred to in this documentation simply as v2 or build system, is a successor to the original CMake-based :doc:`/api-guides/build-system`, referred to as v1. The v2 addresses limitations introduced in the previous version while trying to maintain backward compatibility for components written for v1. The most significant changes include the ability to use Kconfig variables to specify component dependencies, the removal of early component evaluation using CMake script mode, and support for writing components using the native CMake approach. While v2 aims to be as backward compatible with v1 as possible, meaning most components written for v1 should work without modification with v2, there are design differences between v1 and v2 that may require changes in v1 components to work with v2. The incompatibilities are described in :ref:`cmakev2-breaking-changes`.
 
 Creating a New Project
@@ -272,12 +276,12 @@ Also ensure that the ``esp_chip_info`` function is retained in the final binary 
 
 .. _cmakev2-breaking-changes:
 
-Breaking Changes for V1 Components
+Breaking Changes for v1 Components
 ==================================
 
 While most of the v1 components should be usable without any modifications in v2, there are some differences between v1 and v2 that might require changes to v1 components. This section outlines the breaking changes that may occur if a v1 component is used with v2 and explains how the component can be modified to work with both v1 and v2.
 
-Updating Component for Version 2 Compatibility
+Updating Component for v2 Compatibility
 ----------------------------------------------
 
 If a component needs to be evaluated with both v1 and v2, and requires modifications to function with v2, the ``IDF_BUILD_V2`` variable can be used by the component to determine whether it is being evaluated under v1 or v2, and adjust its behavior accordingly. The ``IDF_BUILD_V2`` is set when the component is evaluated with v2. This variable can be used to conditionally adjust only small parts of the existing v1 component, or a completely new ``CMakeLists.txt`` can be created for v2 and conditionally included in the v1 component's ``CMakeLists.txt``. For more information on how to write a v2 component, please see `Creating a New Component`_.
@@ -308,18 +312,18 @@ The hello_world example ``CMakeLists_v2.txt`` for v2.
 
 .. code-block:: cmake
 
-    idf_component_include(spi_flash INTERFACE spi_flash)
+    idf_component_include(spi_flash)
 
-    add_library("${COMPONENT_TARGET}" STATIC
+    add_library(${COMPONENT_TARGET} STATIC
         "hello_world_main.c"
     )
 
-    target_include_directories("${COMPONENT_TARGET}" PUBLIC
+    target_include_directories(${COMPONENT_TARGET} PUBLIC
         "${CMAKE_CURRENT_LIST_DIR}"
     )
 
-    target_link_libraries("${COMPONENT_TARGET}" PRIVATE
-        "${spi_flash}"
+    target_link_libraries(${COMPONENT_TARGET} PRIVATE
+        idf::spi_flash
     )
 
 The ``BUILD_COMPONENTS`` Build Property is Unavailable
