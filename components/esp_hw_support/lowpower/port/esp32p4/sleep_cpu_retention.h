@@ -11,7 +11,7 @@
 #include "freertos/FreeRTOS.h"
 #include "esp_err.h"
 
-#if ESP_SLEEP_POWER_DOWN_CPU && !CONFIG_FREERTOS_UNICORE
+#if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU && !CONFIG_FREERTOS_UNICORE
 #include <stdatomic.h>
 #include "soc/hp_system_reg.h"
 typedef enum {
@@ -46,7 +46,7 @@ typedef struct {
     } retent;
 } sleep_cpu_retention_t;
 
-#if ESP_SLEEP_POWER_DOWN_CPU && !CONFIG_FREERTOS_UNICORE
+#if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU && !CONFIG_FREERTOS_UNICORE
     esp_err_t esp_sleep_cpu_retention_init_impl(sleep_cpu_retention_t *sleep_cpu_retention_ptr, smp_retention_state_t *s_smp_retention_state);
 #else
     esp_err_t esp_sleep_cpu_retention_init_impl(sleep_cpu_retention_t *sleep_cpu_retention_ptr);

@@ -85,14 +85,14 @@ static void test_pcnt_sleep_retention(void)
     esp_sleep_context_t sleep_ctx;
     esp_sleep_set_sleep_context(&sleep_ctx);
     printf("go to light sleep for 1 seconds\r\n");
-#if ESP_SLEEP_POWER_DOWN_CPU
+#if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU
     TEST_ESP_OK(sleep_cpu_configure(true));
 #endif
     TEST_ESP_OK(esp_sleep_enable_timer_wakeup(1 * 1000 * 1000));
     TEST_ESP_OK(esp_light_sleep_start());
 
     printf("Waked up! Let's see if PCNT driver can still work...\r\n");
-#if ESP_SLEEP_POWER_DOWN_CPU
+#if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU
     TEST_ESP_OK(sleep_cpu_configure(false));
 #endif
 

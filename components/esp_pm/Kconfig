@@ -214,6 +214,11 @@ menu "Power Management"
             If any module belonging to the peripheral power domain chooses not to be powered down during sleep,
             then the peripheral power domain will not be powered off either.
 
+    config PM_ESP_SLEEP_POWER_DOWN_CPU
+        bool
+        default y if (PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP && !ESP32P4_SELECTS_REV_LESS_V3)
+        default y if (PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && ESP32P4_SELECTS_REV_LESS_V3)
+
     config PM_UPDATE_CCOMPARE_HLI_WORKAROUND
         bool
         default y if PM_ENABLE && BTDM_CTRL_HLI

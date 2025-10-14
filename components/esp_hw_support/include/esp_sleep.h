@@ -140,12 +140,6 @@ enum {
     ESP_ERR_SLEEP_TOO_SHORT_SLEEP_DURATION = ESP_ERR_INVALID_ARG,
 };
 
-#if CONFIG_ESP32P4_SELECTS_REV_LESS_V3
-#define ESP_SLEEP_POWER_DOWN_CPU CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
-#else
-#define ESP_SLEEP_POWER_DOWN_CPU CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP
-#endif
-
 /**
  * @brief Disable wakeup source
  *
@@ -781,7 +775,7 @@ void esp_deep_sleep_disable_rom_logging(void);
 void esp_sleep_enable_lowpower_analog_mode(bool enable);
 #endif
 
-#if ESP_SLEEP_POWER_DOWN_CPU
+#if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU
 
 #if SOC_PM_CPU_RETENTION_BY_RTCCNTL
 /**
@@ -820,7 +814,7 @@ esp_err_t esp_sleep_cpu_retention_init(void);
  * Release system retention memory.
  */
 esp_err_t esp_sleep_cpu_retention_deinit(void);
-#endif // ESP_SLEEP_POWER_DOWN_CPU
+#endif // CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU
 
 /**
  * @brief Configure to isolate all GPIO pins in sleep state
