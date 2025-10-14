@@ -79,12 +79,5 @@ esp_err_t esp_flash_encryption_use_efuse_key(void)
     // Force Key Manager to use eFuse key for XTS-AES operation
     key_mgr_hal_set_key_usage(ESP_KEY_MGR_XTS_AES_128_KEY, ESP_KEY_MGR_USE_EFUSE_KEY);
 
-    // TODO: Check if this is necessary else remove it
-    // In case Flash Encryption is enabled by a key deployed using the Key Manager,
-    // we just need to reset the SPI flash to ensure the key is used.
-    // Enabling Key Manager and forcing it to use its OWN key is handled in the
-    // Key Manager's key deployment API itself.
-    _mspi_timing_ll_reset_mspi();
-
     return ESP_OK;
 }
