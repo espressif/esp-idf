@@ -53,11 +53,11 @@ The table below shows the latest qualification for Espressif Bluetooth LE Host.
       - .. centered:: Design Number / Qualified Design ID [1]_
       - .. centered:: Specification Version [2]_
     * - ESP-Bluedroid
-      - .. centered:: `198312 <https://qualification.bluetooth.com/ListingDetails/165785>`__
+      - .. centered:: |198312|
       - .. centered:: 5.3
     * - ESP-NimBLE
-      - .. centered:: `141499 <https://qualification.bluetooth.com/ListingDetails/97856>`__
-      - .. centered:: 5.1
+      - .. centered:: |Q371597|
+      - .. centered:: 6.1
 
 .. |141661| replace:: `141661 <https://qualification.bluetooth.com/ListingDetails/98048>`__
 .. |147845| replace:: `147845 <https://qualification.bluetooth.com/ListingDetails/105426>`__
@@ -65,7 +65,7 @@ The table below shows the latest qualification for Espressif Bluetooth LE Host.
 .. |194009| replace:: `194009 <https://qualification.bluetooth.com/ListingDetails/160725>`__
 .. |199258| replace:: `199258 <https://qualification.bluetooth.com/ListingDetails/166887>`__
 .. |198312| replace:: `198312 <https://qualification.bluetooth.com/ListingDetails/165785>`__
-.. |141499| replace:: `141499 <https://qualification.bluetooth.com/ListingDetails/97856>`__
+.. |Q371597| replace:: `Q371597 <https://qualification.bluetooth.com/ListingDetails/310315>`__
 .. |Q331318| replace:: `Q331318 <https://qualification.bluetooth.com/ListingDetails/257081>`__
 .. |Q335877| replace:: `Q335877 <https://qualification.bluetooth.com/ListingDetails/262779>`__
 
