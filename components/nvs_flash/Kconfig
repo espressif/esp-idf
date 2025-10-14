@@ -51,4 +51,21 @@ menu "NVS"
         default n
         help
             This option enforces internal use of Block Device Layer instead ESP_Partition.
+
+    config NVS_FLASH_VERIFY_ERASE
+        bool "Enable verification of erase operations by reading back the erased data"
+        default n
+        help
+            This option ensures that erase operations are verified by reading back the flash memory.
+
+    config NVS_FLASH_ERASE_ATTEMPTS
+        int "Total number of flash erase attempts in case the erase verification fails"
+        depends on NVS_FLASH_VERIFY_ERASE
+        range 1 10
+        default 2
+        help
+            Configures the total number of flash erase attempts. The flash erase operation will be attempted
+            up to this number of times before returning an error.
+            Minimum value is 1, maximum value is 10.
+
 endmenu
