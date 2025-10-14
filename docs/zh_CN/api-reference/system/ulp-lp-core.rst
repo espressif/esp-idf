@@ -210,8 +210,8 @@ ULP LP 内核协处理器如何启动取决于 :cpp:type:`ulp_lp_core_cfg_t` 中
 ULP 有以下唤醒源：
     * :c:macro:`ULP_LP_CORE_WAKEUP_SOURCE_HP_CPU` - LP 内核可以被 HP CPU 唤醒。
     * :c:macro:`ULP_LP_CORE_WAKEUP_SOURCE_LP_TIMER` - LP 内核可以被 LP 定时器唤醒。
-    * :c:macro:`ULP_LP_CORE_WAKEUP_SOURCE_ETM` - LP 内核可以被 ETM 事件唤醒。（暂不支持）
-    * :c:macro:`ULP_LP_CORE_WAKEUP_SOURCE_LP_IO` - 当 LP IO 电平变化时，LP 内核会被唤醒。（暂不支持）
+    * :c:macro:`ULP_LP_CORE_WAKEUP_SOURCE_ETM` - LP 内核可以被 ETM 事件唤醒。
+    * :c:macro:`ULP_LP_CORE_WAKEUP_SOURCE_LP_IO` - 当 LP IO 电平变化时，LP 内核会被唤醒。
     * :c:macro:`ULP_LP_CORE_WAKEUP_SOURCE_LP_UART` - 当 LP UART 在不同模式下接收到唤醒数据时，LP 内核会被唤醒。
 
 ULP 被唤醒时会经历以下步骤：
