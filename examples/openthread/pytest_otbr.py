@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 # !/usr/bin/env python3
 import copy
+import logging
 import os.path
 import random
 import re
@@ -9,7 +10,6 @@ import secrets
 import subprocess
 import threading
 import time
-from typing import Tuple
 
 import ot_ci_function as ocf
 import pexpect
@@ -76,7 +76,7 @@ from pytest_embedded_idf.dut import IdfDut
 
 @pytest.fixture(scope='module', name='Init_avahi')
 def fixture_Init_avahi() -> bool:
-    print('Init Avahi')
+    logging.info('Init Avahi')
     ocf.start_avahi()
     time.sleep(10)
     return True
@@ -84,7 +84,7 @@ def fixture_Init_avahi() -> bool:
 
 @pytest.fixture(name='Init_interface')
 def fixture_Init_interface() -> bool:
-    print('Init interface')
+    logging.info('Init interface')
     ocf.flush_ipv6_addr_by_interface()
     # The sleep time is set based on experience; reducing it might cause the host to be unready.
     time.sleep(30)
@@ -136,7 +136,7 @@ PORT_MAPPING = {
     ],
     indirect=True,
 )
-def test_thread_connect(dut:Tuple[IdfDut, IdfDut, IdfDut]) -> None:
+def test_thread_connect(dut: tuple[IdfDut, IdfDut, IdfDut]) -> None:
     br = dut[2]
     cli_h2 = dut[1]
     dut[0].serial.stop_redirect_thread()
@@ -210,7 +210,7 @@ def formBasicWiFiThreadNetwork(br:IdfDut, cli:IdfDut) -> None:
     ],
     indirect=True,
 )
-def test_Bidirectional_IPv6_connectivity(Init_interface:bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> None:
+def test_Bidirectional_IPv6_connectivity(Init_interface: bool, dut: tuple[IdfDut, IdfDut, IdfDut]) -> None:
     br = dut[2]
     cli  = dut[1]
     assert Init_interface
@@ -220,10 +220,10 @@ def test_Bidirectional_IPv6_connectivity(Init_interface:bool, dut: Tuple[IdfDut,
     try:
         assert ocf.is_joined_wifi_network(br)
         cli_global_unicast_addr = ocf.get_global_unicast_addr(cli, br)
-        print('cli_global_unicast_addr', cli_global_unicast_addr)
+        logging.info(f'cli_global_unicast_addr {cli_global_unicast_addr}')
         command = 'ping ' + str(cli_global_unicast_addr) + ' -c 10'
         out_str = subprocess.getoutput(command)
-        print('ping result:\n', str(out_str))
+        logging.info(f'ping result:\n{out_str}')
         role = re.findall(r' (\d+)%', str(out_str))[0]
         assert role != '100'
         interface_name = ocf.get_host_interface_name()
@@ -231,7 +231,8 @@ def test_Bidirectional_IPv6_connectivity(Init_interface:bool, dut: Tuple[IdfDut,
         out_bytes = subprocess.check_output(command, shell=True, timeout=5)
         out_str = out_bytes.decode('utf-8')
         onlinkprefix = ocf.get_onlinkprefix(br)
-        host_global_unicast_addr = re.findall(r'\W+(%s(?:\w+:){3}\w+)\W+' % onlinkprefix, str(out_str))
+        pattern = rf'\W+({onlinkprefix}(?:\w+:){{3}}\w+)\W+'
+        host_global_unicast_addr = re.findall(pattern, out_str)
         rx_nums = 0
         for ip_addr in host_global_unicast_addr:
             txrx_nums = ocf.ot_ping(cli, str(ip_addr), count=5)
@@ -263,7 +264,7 @@ def test_Bidirectional_IPv6_connectivity(Init_interface:bool, dut: Tuple[IdfDut,
     ],
     indirect=True,
 )
-def test_multicast_forwarding_A(Init_interface:bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> None:
+def test_multicast_forwarding_A(Init_interface: bool, dut: tuple[IdfDut, IdfDut, IdfDut]) -> None:
     br = dut[2]
     cli  = dut[1]
     assert Init_interface
@@ -278,7 +279,7 @@ def test_multicast_forwarding_A(Init_interface:bool, dut: Tuple[IdfDut, IdfDut, 
         interface_name = ocf.get_host_interface_name()
         command = 'ping -I ' + str(interface_name) + ' -t 64 ff04::125 -c 10'
         out_str = subprocess.getoutput(command)
-        print('ping result:\n', str(out_str))
+        logging.info(f'ping result:\n{out_str}')
         role = re.findall(r' (\d+)%', str(out_str))[0]
         assert role != '100'
         ocf.execute_command(cli, 'udp open')
@@ -317,7 +318,7 @@ def test_multicast_forwarding_A(Init_interface:bool, dut: Tuple[IdfDut, IdfDut, 
     ],
     indirect=True,
 )
-def test_multicast_forwarding_B(Init_interface:bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> None:
+def test_multicast_forwarding_B(Init_interface: bool, dut: tuple[IdfDut, IdfDut, IdfDut]) -> None:
     br = dut[2]
     cli  = dut[1]
     assert Init_interface
@@ -372,7 +373,9 @@ def test_multicast_forwarding_B(Init_interface:bool, dut: Tuple[IdfDut, IdfDut, 
     ],
     indirect=True,
 )
-def test_service_discovery_of_Thread_device(Init_interface:bool, Init_avahi:bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> None:
+def test_service_discovery_of_Thread_device(
+    Init_interface: bool, Init_avahi: bool, dut: tuple[IdfDut, IdfDut, IdfDut]
+) -> None:
     br = dut[2]
     cli  = dut[1]
     assert Init_interface
@@ -384,14 +387,14 @@ def test_service_discovery_of_Thread_device(Init_interface:bool, Init_avahi:bool
         assert ocf.is_joined_wifi_network(br)
         command = 'avahi-browse -rt _testyyy._udp'
         out_str = subprocess.getoutput(command)
-        print('avahi-browse:\n', str(out_str))
+        logging.info(f'avahi-browse:\n{out_str}')
         assert 'myTest' not in str(out_str)
         hostname = 'myTest'
         command = 'srp client host name ' + hostname
         ocf.execute_command(cli, command)
         cli.expect('Done', timeout=5)
         cli_global_unicast_addr = ocf.get_global_unicast_addr(cli, br)
-        print('cli_global_unicast_addr', cli_global_unicast_addr)
+        logging.info(f'cli_global_unicast_addr {cli_global_unicast_addr}')
         command = 'srp client host address ' + str(cli_global_unicast_addr)
         ocf.execute_command(cli, command)
         cli.expect('Done', timeout=5)
@@ -404,7 +407,7 @@ def test_service_discovery_of_Thread_device(Init_interface:bool, Init_avahi:bool
         ocf.wait(cli, 3)
         command = 'avahi-browse -rt _testyyy._udp'
         out_str = subprocess.getoutput(command)
-        print('avahi-browse:\n', str(out_str))
+        logging.info(f'avahi-browse:\n {out_str}')
         assert 'myTest' in str(out_str)
     finally:
         ocf.execute_command(br, 'factoryreset')
@@ -432,7 +435,9 @@ def test_service_discovery_of_Thread_device(Init_interface:bool, Init_avahi:bool
     ],
     indirect=True,
 )
-def test_service_discovery_of_WiFi_device(Init_interface:bool, Init_avahi:bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> None:
+def test_service_discovery_of_WiFi_device(
+    Init_interface: bool, Init_avahi: bool, dut: tuple[IdfDut, IdfDut, IdfDut]
+) -> None:
     br = dut[2]
     cli  = dut[1]
     assert Init_interface
@@ -448,7 +453,7 @@ def test_service_discovery_of_WiFi_device(Init_interface:bool, Init_avahi:bool, 
         cli.expect('Done', timeout=5)
         ocf.wait(cli, 1)
         domain_name = ocf.get_domain()
-        print('domain name is: ', domain_name)
+        logging.info(f'domain name is: {domain_name}')
         command = 'dns resolve ' + domain_name + '.default.service.arpa.'
 
         ocf.execute_command(cli, command)
@@ -501,7 +506,7 @@ def test_service_discovery_of_WiFi_device(Init_interface:bool, Init_avahi:bool, 
     ],
     indirect=True,
 )
-def test_ICMP_NAT64(Init_interface:bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> None:
+def test_ICMP_NAT64(Init_interface: bool, dut: tuple[IdfDut, IdfDut, IdfDut]) -> None:
     br = dut[2]
     cli  = dut[1]
     assert Init_interface
@@ -511,7 +516,7 @@ def test_ICMP_NAT64(Init_interface:bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> 
     try:
         assert ocf.is_joined_wifi_network(br)
         host_ipv4_address = ocf.get_host_ipv4_address()
-        print('host_ipv4_address: ', host_ipv4_address)
+        logging.info(f'host_ipv4_address: {host_ipv4_address}')
         rx_nums = ocf.ot_ping(cli, str(host_ipv4_address), count=5)[1]
         assert rx_nums != 0
     finally:
@@ -540,7 +545,7 @@ def test_ICMP_NAT64(Init_interface:bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> 
     ],
     indirect=True,
 )
-def test_UDP_NAT64(Init_interface:bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> None:
+def test_UDP_NAT64(Init_interface: bool, dut: tuple[IdfDut, IdfDut, IdfDut]) -> None:
     br = dut[2]
     cli  = dut[1]
     assert Init_interface
@@ -555,7 +560,7 @@ def test_UDP_NAT64(Init_interface:bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> N
         cli.expect('Done', timeout=5)
         ocf.wait(cli, 3)
         host_ipv4_address = ocf.get_host_ipv4_address()
-        print('host_ipv4_address: ', host_ipv4_address)
+        logging.info(f'host_ipv4_address: {host_ipv4_address}')
         myudp = ocf.udp_parameter('INET4', host_ipv4_address, 5090, '', False, 15.0, b'')
         udp_mission = threading.Thread(target=ocf.create_host_udp_server, args=(myudp, ))
         udp_mission.start()
@@ -597,7 +602,7 @@ def test_UDP_NAT64(Init_interface:bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> N
     ],
     indirect=True,
 )
-def test_TCP_NAT64(Init_interface:bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> None:
+def test_TCP_NAT64(Init_interface: bool, dut: tuple[IdfDut, IdfDut, IdfDut]) -> None:
     br = dut[2]
     cli  = dut[1]
     assert Init_interface
@@ -613,7 +618,7 @@ def test_TCP_NAT64(Init_interface:bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> N
         ocf.wait(cli, 3)
         host_ipv4_address = ocf.get_host_ipv4_address()
         connect_address = ocf.get_ipv6_from_ipv4(host_ipv4_address, br)
-        print('connect_address is: ', connect_address)
+        logging.info(f'connect_address is: {connect_address}')
         mytcp = ocf.tcp_parameter('INET4', host_ipv4_address, 12345, False, False, 15.0, b'')
         tcp_mission = threading.Thread(target=ocf.create_host_tcp_server, args=(mytcp, ))
         tcp_mission.start()
@@ -668,7 +673,7 @@ def test_TCP_NAT64(Init_interface:bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> N
     ],
     indirect=True,
 )
-def test_ot_sleepy_device(dut: Tuple[IdfDut, IdfDut]) -> None:
+def test_ot_sleepy_device(dut: tuple[IdfDut, IdfDut]) -> None:
     leader = dut[0]
     sleepy_device = dut[1]
     fail_info = re.compile(r'Core\W*?\d\W*?register dump')
@@ -719,7 +724,7 @@ def test_ot_sleepy_device(dut: Tuple[IdfDut, IdfDut]) -> None:
     ],
     indirect=True,
 )
-def test_basic_startup(dut: Tuple[IdfDut, IdfDut]) -> None:
+def test_basic_startup(dut: tuple[IdfDut, IdfDut]) -> None:
     br = dut[1]
     dut[0].serial.stop_redirect_thread()
     try:
@@ -762,7 +767,7 @@ def test_basic_startup(dut: Tuple[IdfDut, IdfDut]) -> None:
     ],
     indirect=True,
 )
-def test_NAT64_DNS(Init_interface:bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> None:
+def test_NAT64_DNS(Init_interface: bool, dut: tuple[IdfDut, IdfDut, IdfDut]) -> None:
     br = dut[2]
     cli  = dut[1]
     assert Init_interface
@@ -803,7 +808,7 @@ def test_NAT64_DNS(Init_interface:bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> N
     ],
     indirect=True,
 )
-def test_br_meshcop(Init_interface:bool, Init_avahi:bool, dut: Tuple[IdfDut, IdfDut]) -> None:
+def test_br_meshcop(Init_interface: bool, Init_avahi: bool, dut: tuple[IdfDut, IdfDut]) -> None:
     br = dut[1]
     assert Init_interface
     assert Init_avahi
@@ -829,9 +834,9 @@ def test_br_meshcop(Init_interface:bool, Init_avahi:bool, dut: Tuple[IdfDut, Idf
         except subprocess.CalledProcessError as e:
             output_bytes = e.stdout
         finally:
-            print('out_bytes: ', output_bytes)
+            logging.info(f'out_bytes: {output_bytes!r}')
             output_str = str(output_bytes)
-            print('out_str: ', output_str)
+            logging.info(f'out_str: {output_str}')
 
             assert 'hostname = [esp-ot-br.local]' in str(output_str)
             assert ('address = [' + ipv4_address + ']') in str(output_str)
@@ -866,7 +871,7 @@ def test_br_meshcop(Init_interface:bool, Init_avahi:bool, dut: Tuple[IdfDut, Idf
     ],
     indirect=True,
 )
-def test_https_NAT64_DNS(Init_interface:bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> None:
+def test_https_NAT64_DNS(Init_interface: bool, dut: tuple[IdfDut, IdfDut, IdfDut]) -> None:
     br = dut[2]
     cli  = dut[1]
     assert Init_interface
@@ -905,7 +910,7 @@ def test_https_NAT64_DNS(Init_interface:bool, dut: Tuple[IdfDut, IdfDut, IdfDut]
     ],
     indirect=True,
 )
-def test_trel_connect(dut: Tuple[IdfDut, IdfDut]) -> None:
+def test_trel_connect(dut: tuple[IdfDut, IdfDut]) -> None:
     trel_s3 = dut[1]
     trel_c6 = dut[0]
     trel_list = [trel_c6]
@@ -960,7 +965,7 @@ def test_trel_connect(dut: Tuple[IdfDut, IdfDut]) -> None:
     ],
     indirect=True,
 )
-def test_br_lib_check(dut: Tuple[IdfDut, IdfDut]) -> None:
+def test_br_lib_check(dut: tuple[IdfDut, IdfDut]) -> None:
     br = dut[1]
     dut[0].serial.stop_redirect_thread()
     try:
@@ -998,7 +1003,7 @@ def test_br_lib_check(dut: Tuple[IdfDut, IdfDut]) -> None:
     ],
     indirect=True,
 )
-def test_ot_ssed_device(dut: Tuple[IdfDut, IdfDut]) -> None:
+def test_ot_ssed_device(dut: tuple[IdfDut, IdfDut]) -> None:
     leader = dut[0]
     ssed_device = dut[1]
     try:
