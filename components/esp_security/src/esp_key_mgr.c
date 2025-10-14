@@ -11,7 +11,6 @@
 #include "esp_crypto_lock.h"
 #include "esp_log.h"
 #include "esp_err.h"
-#include "esp_heap_caps.h"
 #include "esp_rom_crc.h"
 #include "esp_efuse.h"
 #include "hal/key_mgr_types.h"
@@ -126,6 +125,7 @@ static void esp_key_mgr_release_key_lock(esp_key_mgr_key_type_t key_type)
     case ESP_KEY_MGR_DS_KEY:
     case ESP_KEY_MGR_PSRAM_128_KEY:
     case ESP_KEY_MGR_PSRAM_256_KEY:
+        break;
     default:
         ESP_LOGE(TAG, "Invalid key type");
         break;
@@ -228,8 +228,6 @@ typedef struct {
     esp_key_mgr_huk_info_t *huk_recovery_info;
 } huk_deploy_config_t;
 
-static const uint8_t zeros[KEY_MGR_HUK_INFO_SIZE] = {0};
-
 static esp_err_t configure_huk(esp_huk_mode_t huk_mode, uint8_t *huk_info)
 {
     esp_err_t ret = huk_hal_configure(huk_mode, huk_info);
@@ -242,11 +240,9 @@ static esp_err_t configure_huk(esp_huk_mode_t huk_mode, uint8_t *huk_info)
         huk_hal_recharge_huk_memory();
         ret = huk_hal_configure(huk_mode, huk_info);
         if (ret != ESP_OK) {
-            // heap_caps_free(huk_recovery_info_zeros);
             return ret;
         }
     }
-    // heap_caps_free(huk_recovery_info_zeros);
 #endif
 
     if (!key_mgr_hal_is_huk_valid()) {
@@ -260,13 +256,6 @@ static esp_err_t deploy_huk(huk_deploy_config_t *config)
 {
     esp_err_t esp_ret = ESP_FAIL;
 
-    // TODO: Could we use config->huk_recovery_info->info directly instead of allocating a copy of it?
-    // Advantage: BOOTLOADER_BUILD would be able to use this function.
-    // Note: We can memset it to zeros in case of an error.
-    uint8_t *huk_recovery_info = (uint8_t *) heap_caps_calloc(1, KEY_MGR_HUK_INFO_SIZE, MALLOC_CAP_INTERNAL);
-    if (!huk_recovery_info) {
-        return ESP_ERR_NO_MEM;
-    }
     if (config->use_pre_generated_huk_info) {
         ESP_LOGD(TAG, "Using pre-generated HUK info");
 
@@ -275,41 +264,34 @@ static esp_err_t deploy_huk(huk_deploy_config_t *config)
 
         if (!check_huk_info_validity(config->pre_generated_huk_info)) {
             ESP_LOGE(TAG, "HUK info is not valid");
-            heap_caps_free(huk_recovery_info);
             return ESP_ERR_INVALID_ARG;
         }
 
-        memcpy(huk_recovery_info, config->pre_generated_huk_info->info, KEY_MGR_HUK_INFO_SIZE);
         ESP_LOGD(TAG, "Recovering HUK from given HUK recovery info");
 
-        esp_ret = configure_huk(ESP_HUK_MODE_RECOVERY, huk_recovery_info);
+        esp_ret = configure_huk(ESP_HUK_MODE_RECOVERY, (uint8_t *) config->pre_generated_huk_info->info);
         if (esp_ret != ESP_OK) {
             ESP_LOGE(TAG, "Failed to recover HUK");
-            heap_caps_free(huk_recovery_info);
             return esp_ret;
         }
 
         // Copy the pre generated huk info in the output key recovery info
-        memcpy(config->huk_recovery_info->info, huk_recovery_info, KEY_MGR_HUK_INFO_SIZE);
+        memcpy(config->huk_recovery_info->info, config->pre_generated_huk_info->info, KEY_MGR_HUK_INFO_SIZE);
         config->huk_recovery_info->crc = config->pre_generated_huk_info->crc;
     } else {
         // Generate new HUK and corresponding HUK info
         ESP_LOGD(TAG, "Generating new HUK");
 
-        esp_ret = configure_huk(ESP_HUK_MODE_GENERATION, huk_recovery_info);
+        esp_ret = configure_huk(ESP_HUK_MODE_GENERATION, config->huk_recovery_info->info);
         if (esp_ret != ESP_OK) {
             ESP_LOGE(TAG, "Failed to generate HUK");
-            heap_caps_free(huk_recovery_info);
+            memset(config->huk_recovery_info->info, 0, KEY_MGR_HUK_INFO_SIZE);
             return esp_ret;
         }
 
-        memcpy(config->huk_recovery_info->info, huk_recovery_info, KEY_MGR_HUK_INFO_SIZE);
-        config->huk_recovery_info->crc = esp_rom_crc32_le(0,  huk_recovery_info, KEY_MGR_HUK_INFO_SIZE);
+        config->huk_recovery_info->crc = esp_rom_crc32_le(0,  config->huk_recovery_info->info, KEY_MGR_HUK_INFO_SIZE);
     }
 
-    ESP_LOG_BUFFER_HEX_LEVEL("HUK INFO", huk_recovery_info, KEY_MGR_HUK_INFO_SIZE, ESP_LOG_DEBUG);
-    // Free the local buffer for huk recovery info
-    heap_caps_free(huk_recovery_info);
     return ESP_OK;
 }
 
@@ -342,13 +324,12 @@ static esp_err_t key_mgr_deploy_key_aes_mode(aes_deploy_config_t *config)
         ESP_LOGD(TAG, "HUK deployed successfully");
     }
 
-    // TODO: Could we use config->key_info->info directly instead of allocating a copy of it?
-    // Advantage: BOOTLOADER_BUILD would be able to use this function.
-    // Note: We can memset it to zeros in case of an error.
-    uint8_t *key_recovery_info = (uint8_t *) heap_caps_calloc(1, KEY_MGR_KEY_RECOVERY_INFO_SIZE, MALLOC_CAP_INTERNAL);
-    if (!key_recovery_info) {
-        return ESP_ERR_NO_MEM;
+    uint8_t key_recovery_info_index = 0;
+    if (config->key_purpose == ESP_KEY_MGR_KEY_PURPOSE_XTS_AES_256_2 || config->key_purpose == ESP_KEY_MGR_KEY_PURPOSE_PSRAM_256_2) {
+        key_recovery_info_index = 1;
     }
+
+    uint8_t *key_recovery_info = config->key_info->key_info[key_recovery_info_index].info;
 
     // STEP 1: Init Step
     // Set mode
@@ -370,7 +351,6 @@ static esp_err_t key_mgr_deploy_key_aes_mode(aes_deploy_config_t *config)
         key_mgr_hal_use_sw_init_key();
     } else if (!esp_efuse_find_purpose(ESP_EFUSE_KEY_PURPOSE_KM_INIT_KEY, NULL)) {
         ESP_LOGE(TAG, "Could not find key with purpose KM_INIT_KEY");
-        heap_caps_free(key_recovery_info);
         return ESP_FAIL;
     }
 
@@ -381,15 +361,12 @@ static esp_err_t key_mgr_deploy_key_aes_mode(aes_deploy_config_t *config)
 
     if (config->key_config->use_pre_generated_sw_init_key) {
         key_mgr_hal_write_sw_init_key(config->key_config->sw_init_key, KEY_MGR_SW_INIT_KEY_SIZE);
-        ESP_LOG_BUFFER_HEX_LEVEL("SW_INIT_KEY", config->key_config->sw_init_key, KEY_MGR_SW_INIT_KEY_SIZE, ESP_LOG_DEBUG);
     }
 
     ESP_LOGD(TAG, "Writing Information into Key Manager Registers");
     key_mgr_hal_write_assist_info(config->key_config->k2_info, KEY_MGR_K2_INFO_SIZE);
-    ESP_LOG_BUFFER_HEX_LEVEL("K2_INFO", config->key_config->k2_info, KEY_MGR_K2_INFO_SIZE, ESP_LOG_DEBUG);
 
     key_mgr_hal_write_public_info(config->k1_encrypted, KEY_MGR_K1_ENCRYPTED_SIZE);
-    ESP_LOG_BUFFER_HEX_LEVEL("K1_ENCRYPTED", config->k1_encrypted, KEY_MGR_K1_ENCRYPTED_SIZE, ESP_LOG_DEBUG);
 
     key_mgr_hal_continue();
 
@@ -397,12 +374,10 @@ static esp_err_t key_mgr_deploy_key_aes_mode(aes_deploy_config_t *config)
     key_mgr_wait_for_state(ESP_KEY_MGR_STATE_GAIN);
 
     key_mgr_hal_read_public_info(key_recovery_info, KEY_MGR_KEY_RECOVERY_INFO_SIZE);
-    ESP_LOG_BUFFER_HEX_LEVEL("KEY_RECOVERY_INFO", key_recovery_info, KEY_MGR_KEY_RECOVERY_INFO_SIZE, ESP_LOG_DEBUG);
 
     if (config->key_purpose != ESP_KEY_MGR_KEY_PURPOSE_XTS_AES_256_1 && config->key_purpose != ESP_KEY_MGR_KEY_PURPOSE_PSRAM_256_1) {
         if (!key_mgr_hal_is_key_deployment_valid(key_type)) {
             ESP_LOGE(TAG, "Key deployment is not valid");
-            heap_caps_free(key_recovery_info);
             return ESP_FAIL;
         }
     }
@@ -412,17 +387,7 @@ static esp_err_t key_mgr_deploy_key_aes_mode(aes_deploy_config_t *config)
     key_mgr_hal_continue();
     key_mgr_wait_for_state(ESP_KEY_MGR_STATE_IDLE);
 
-    if (config->key_purpose == ESP_KEY_MGR_KEY_PURPOSE_XTS_AES_256_2 || config->key_purpose == ESP_KEY_MGR_KEY_PURPOSE_PSRAM_256_2) {
-        memcpy(config->key_info->key_info[1].info, key_recovery_info, KEY_MGR_KEY_RECOVERY_INFO_SIZE);
-        config->key_info->key_info[1].crc = esp_rom_crc32_le(0, key_recovery_info, KEY_MGR_KEY_RECOVERY_INFO_SIZE);
-
-    } else {
-        memcpy(config->key_info->key_info[0].info, key_recovery_info, KEY_MGR_KEY_RECOVERY_INFO_SIZE);
-        config->key_info->key_info[0].crc = esp_rom_crc32_le(0, key_recovery_info, KEY_MGR_KEY_RECOVERY_INFO_SIZE);
-    }
-
-    heap_caps_free(key_recovery_info);
-
+    config->key_info->key_info[key_recovery_info_index].crc = esp_rom_crc32_le(0, key_recovery_info, KEY_MGR_KEY_RECOVERY_INFO_SIZE);
     config->key_info->key_type = key_type;
     config->key_info->magic = KEY_HUK_SECTOR_MAGIC;
 
@@ -437,8 +402,6 @@ esp_err_t esp_key_mgr_deploy_key_in_aes_mode(const esp_key_mgr_aes_key_config_t 
 
     ESP_LOGD(TAG, "Key deployment in AES mode");
 
-    // TODO: Would making this static help in saving static memory?
-    // if so, memset the structure to 0 before using it
     aes_deploy_config_t aes_deploy_config = {
         .key_config = key_config,
         .key_info = key_recovery_info,
@@ -504,7 +467,6 @@ static esp_err_t key_mgr_recover_key(key_recovery_config_t *config)
         }
 
         ESP_LOGD(TAG, "HUK recovered successfully");
-        ESP_LOG_BUFFER_HEX_LEVEL("HUK INFO", config->key_recovery_info->huk_info.info, KEY_MGR_HUK_INFO_SIZE, ESP_LOG_DEBUG);
         config->huk_recovered = true;
     }
 
@@ -530,14 +492,12 @@ static esp_err_t key_mgr_recover_key(key_recovery_config_t *config)
             return ESP_FAIL;
         }
         key_mgr_hal_write_assist_info(config->key_recovery_info->key_info[1].info, KEY_MGR_KEY_RECOVERY_INFO_SIZE);
-        ESP_LOG_BUFFER_HEX_LEVEL("RECOVERY_INFO[1]", config->key_recovery_info->key_info[0].info, KEY_MGR_KEY_RECOVERY_INFO_SIZE, ESP_LOG_DEBUG);
     } else {
         if (!check_key_info_validity(&config->key_recovery_info->key_info[0])) {
             ESP_LOGE(TAG, "Key info not valid");
             return ESP_FAIL;
         }
         key_mgr_hal_write_assist_info(config->key_recovery_info->key_info[0].info, KEY_MGR_KEY_RECOVERY_INFO_SIZE);
-        ESP_LOG_BUFFER_HEX_LEVEL("RECOVERY_INFO[0]", config->key_recovery_info->key_info[0].info, KEY_MGR_KEY_RECOVERY_INFO_SIZE, ESP_LOG_DEBUG);
     }
 
     key_mgr_hal_continue();
@@ -567,8 +527,6 @@ esp_err_t esp_key_mgr_activate_key(esp_key_mgr_key_recovery_info_t *key_recovery
 
     ESP_LOGD(TAG, "Activating key of type %d", key_type);
 
-    // TODO: Would making this static help in saving static memory?
-    // if so, memset the structure to 0 before using it
     key_recovery_config_t key_recovery_config = {
         .key_recovery_info = key_recovery_info,
     };
@@ -650,10 +608,12 @@ static esp_err_t key_mgr_deploy_key_ecdh0_mode(ecdh0_deploy_config_t *config)
         ESP_LOGD(TAG, "HUK deployed successfully");
     }
 
-    uint8_t *key_recovery_info = (uint8_t *) heap_caps_calloc(1, KEY_MGR_KEY_RECOVERY_INFO_SIZE, MALLOC_CAP_INTERNAL);
-    if (!key_recovery_info) {
-        return ESP_ERR_NO_MEM;
+    uint8_t key_recovery_info_index = 0;
+    if (config->key_purpose == ESP_KEY_MGR_KEY_PURPOSE_XTS_AES_256_2 || config->key_purpose == ESP_KEY_MGR_KEY_PURPOSE_PSRAM_256_2) {
+        key_recovery_info_index = 1;
     }
+
+    uint8_t *key_recovery_info = config->key_info->key_info[key_recovery_info_index].info;
 
     // Step 1 : Initialization
     // Configure deployment mode to ECDH0
@@ -686,12 +646,10 @@ static esp_err_t key_mgr_deploy_key_ecdh0_mode(ecdh0_deploy_config_t *config)
 
     key_mgr_hal_read_public_info(key_recovery_info, KEY_MGR_KEY_RECOVERY_INFO_SIZE);
     key_mgr_hal_read_assist_info(config->ecdh0_key_info);
-    ESP_LOG_BUFFER_HEX_LEVEL("KEY_RECOVERY_INFO", key_recovery_info, KEY_MGR_KEY_RECOVERY_INFO_SIZE, ESP_LOG_DEBUG);
 
     if (config->key_purpose != ESP_KEY_MGR_KEY_PURPOSE_XTS_AES_256_1 && config->key_purpose != ESP_KEY_MGR_KEY_PURPOSE_PSRAM_256_1) {
         if (!key_mgr_hal_is_key_deployment_valid(key_type)) {
             ESP_LOGE(TAG, "Key deployment is not valid");
-            heap_caps_free(key_recovery_info);
             return ESP_FAIL;
         }
     }
@@ -701,16 +659,7 @@ static esp_err_t key_mgr_deploy_key_ecdh0_mode(ecdh0_deploy_config_t *config)
     key_mgr_hal_continue();
     key_mgr_wait_for_state(ESP_KEY_MGR_STATE_IDLE);
 
-    if (config->key_purpose == ESP_KEY_MGR_KEY_PURPOSE_XTS_AES_256_2 || config->key_purpose == ESP_KEY_MGR_KEY_PURPOSE_PSRAM_256_2) {
-        memcpy(config->key_info->key_info[1].info, key_recovery_info, KEY_MGR_KEY_RECOVERY_INFO_SIZE);
-        config->key_info->key_info[1].crc = esp_rom_crc32_le(0, key_recovery_info, KEY_MGR_KEY_RECOVERY_INFO_SIZE);
-    } else {
-        memcpy(config->key_info->key_info[0].info, key_recovery_info, KEY_MGR_KEY_RECOVERY_INFO_SIZE);
-        config->key_info->key_info[0].crc = esp_rom_crc32_le(0, key_recovery_info, KEY_MGR_KEY_RECOVERY_INFO_SIZE);
-    }
-
-    heap_caps_free(key_recovery_info);
-
+    config->key_info->key_info[key_recovery_info_index].crc = esp_rom_crc32_le(0, key_recovery_info, KEY_MGR_KEY_RECOVERY_INFO_SIZE);
     config->key_info->key_type = key_type;
     config->key_info->magic = KEY_HUK_SECTOR_MAGIC;
 
@@ -728,8 +677,6 @@ esp_err_t esp_key_mgr_deploy_key_in_ecdh0_mode(const esp_key_mgr_ecdh0_key_confi
 
     esp_key_mgr_key_type_t key_type = key_config->key_type;
 
-    // TODO: Would making this static help in saving static memory?
-    // if so, memset the structure to 0 before using it
     ecdh0_deploy_config_t ecdh0_deploy_config = {
         .key_config = key_config,
         .key_info = key_info,
@@ -799,10 +746,12 @@ static esp_err_t key_mgr_deploy_key_random_mode(random_deploy_config_t *config)
         ESP_LOGD(TAG, "HUK deployed successfully");
     }
 
-    uint8_t *key_recovery_info = (uint8_t *) heap_caps_calloc(1, KEY_MGR_KEY_RECOVERY_INFO_SIZE, MALLOC_CAP_INTERNAL);
-    if (!key_recovery_info) {
-        return ESP_ERR_NO_MEM;
+    uint8_t key_recovery_info_index = 0;
+    if (config->key_purpose == ESP_KEY_MGR_KEY_PURPOSE_XTS_AES_256_2 || config->key_purpose == ESP_KEY_MGR_KEY_PURPOSE_PSRAM_256_2) {
+        key_recovery_info_index = 1;
     }
+
+    uint8_t *key_recovery_info = config->key_info->key_info[key_recovery_info_index].info;
 
     // Configure deployment mode to RANDOM
     key_mgr_hal_set_key_generator_mode(ESP_KEY_MGR_KEYGEN_MODE_RANDOM);
@@ -827,12 +776,10 @@ static esp_err_t key_mgr_deploy_key_random_mode(random_deploy_config_t *config)
     // No configuration for Random deploy mode
     key_mgr_wait_for_state(ESP_KEY_MGR_STATE_GAIN);
     key_mgr_hal_read_public_info(key_recovery_info, KEY_MGR_KEY_RECOVERY_INFO_SIZE);
-    ESP_LOG_BUFFER_HEX_LEVEL("KEY_RECOVERY_INFO", key_recovery_info, KEY_MGR_KEY_RECOVERY_INFO_SIZE, ESP_LOG_DEBUG);
 
     if (config->key_purpose != ESP_KEY_MGR_KEY_PURPOSE_XTS_AES_256_1 && config->key_purpose != ESP_KEY_MGR_KEY_PURPOSE_PSRAM_256_1) {
         if (!key_mgr_hal_is_key_deployment_valid(key_type)) {
             ESP_LOGE(TAG, "Key deployment is not valid");
-            heap_caps_free(key_recovery_info);
             return ESP_FAIL;
         }
     }
@@ -842,16 +789,7 @@ static esp_err_t key_mgr_deploy_key_random_mode(random_deploy_config_t *config)
     key_mgr_hal_continue();
     key_mgr_wait_for_state(ESP_KEY_MGR_STATE_IDLE);
 
-    if (config->key_purpose == ESP_KEY_MGR_KEY_PURPOSE_XTS_AES_256_2 || config->key_purpose == ESP_KEY_MGR_KEY_PURPOSE_PSRAM_256_2) {
-        memcpy(config->key_info->key_info[1].info, key_recovery_info, KEY_MGR_KEY_RECOVERY_INFO_SIZE);
-        config->key_info->key_info[1].crc = esp_rom_crc32_le(0, key_recovery_info, KEY_MGR_KEY_RECOVERY_INFO_SIZE);
-    } else {
-        memcpy(config->key_info->key_info[0].info, key_recovery_info, KEY_MGR_KEY_RECOVERY_INFO_SIZE);
-        config->key_info->key_info[0].crc = esp_rom_crc32_le(0, key_recovery_info, KEY_MGR_KEY_RECOVERY_INFO_SIZE);
-    }
-
-    heap_caps_free(key_recovery_info);
-
+    config->key_info->key_info[key_recovery_info_index].crc = esp_rom_crc32_le(0, key_recovery_info, KEY_MGR_KEY_RECOVERY_INFO_SIZE);
     config->key_info->key_type = key_type;
     config->key_info->magic = KEY_HUK_SECTOR_MAGIC;
 
@@ -866,8 +804,6 @@ esp_err_t esp_key_mgr_deploy_key_in_random_mode(const esp_key_mgr_random_key_con
 
     ESP_LOGD(TAG, "Key deployment in Random mode");
 
-    // TODO: Would making this static help in saving static memory?
-    // if so, memset the structure to 0 before using it
     random_deploy_config_t random_deploy_config = {
         .key_config = key_config,
         .key_info = key_recovery_info,
