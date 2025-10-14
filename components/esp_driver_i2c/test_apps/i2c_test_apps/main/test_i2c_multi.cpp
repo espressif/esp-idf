@@ -733,6 +733,151 @@ static void i2c_slave_read_multi_buffer_test(void)
 
 TEST_CASE_MULTIPLE_DEVICES("I2C master write slave with multi buffer api test", "[i2c][test_env=generic_multi_device][timeout=150]", i2c_master_write_multi_buffer_test, i2c_slave_read_multi_buffer_test);
 
+static void i2c_slave_reset_tx_fifo_test_master(void)
+{
+    uint8_t data_rd[16] = {0}; // Buffer for reading data from slave
+
+    // Configure I2C master bus
+    i2c_master_bus_config_t i2c_mst_config = {};
+    i2c_mst_config.i2c_port = TEST_I2C_PORT;
+    i2c_mst_config.sda_io_num = I2C_MASTER_SDA_IO;
+    i2c_mst_config.scl_io_num = I2C_MASTER_SCL_IO;
+    i2c_mst_config.clk_source = I2C_CLK_SRC_DEFAULT;
+    i2c_mst_config.flags.enable_internal_pullup = true;
+
+    i2c_master_bus_handle_t bus_handle;
+    TEST_ESP_OK(i2c_new_master_bus(&i2c_mst_config, &bus_handle));
+
+    // Configure I2C device
+    i2c_device_config_t dev_cfg = {};
+    dev_cfg.dev_addr_length = I2C_ADDR_BIT_LEN_7;
+    dev_cfg.device_address = ESP_SLAVE_ADDR;
+    dev_cfg.scl_speed_hz = 100000;
+    dev_cfg.scl_wait_us = 20000;
+
+    i2c_master_dev_handle_t dev_handle;
+    TEST_ESP_OK(i2c_master_bus_add_device(bus_handle, &dev_cfg, &dev_handle));
+
+    unity_wait_for_signal("i2c slave init finish");
+
+    // First read: Request 8 bytes from slave (slave prepared 16 bytes)
+    memset(data_rd, 0, sizeof(data_rd));
+    TEST_ESP_OK(i2c_master_receive(dev_handle, data_rd, 8, -1));
+
+    printf("First read (8 bytes): ");
+    for (int i = 0; i < 8; i++) {
+        printf("0x%02x ", data_rd[i]);
+    }
+    printf("\n");
+
+    // Verify first batch data (0x00 to 0x07)
+    for (int i = 0; i < 8; i++) {
+        TEST_ASSERT_EQUAL_HEX8(i, data_rd[i]);
+    }
+
+    unity_send_signal("first read complete");
+    unity_wait_for_signal("slave reset tx fifo");
+
+    // Second read: Request 8 bytes again (should get new data after reset)
+    memset(data_rd, 0, sizeof(data_rd));
+    TEST_ESP_OK(i2c_master_receive(dev_handle, data_rd, 8, -1));
+
+    printf("Second read (8 bytes): ");
+    for (int i = 0; i < 8; i++) {
+        printf("0x%02x ", data_rd[i]);
+    }
+    printf("\n");
+
+    // Verify second batch data (0x10 to 0x17)
+    for (int i = 0; i < 8; i++) {
+        TEST_ASSERT_EQUAL_HEX8(0x10 + i, data_rd[i]);
+    }
+
+    unity_send_signal("second read complete");
+
+    // Cleanup
+    TEST_ESP_OK(i2c_master_bus_rm_device(dev_handle));
+    TEST_ESP_OK(i2c_del_master_bus(bus_handle));
+}
+
+static void i2c_slave_reset_tx_fifo_test_slave(void)
+{
+    i2c_slave_dev_handle_t handle;
+    uint8_t data_wr_first[16];  // First batch of data (0x00 to 0x0F)
+    uint8_t data_wr_second[16]; // Second batch of data (0x10 to 0x1F)
+
+    event_queue = xQueueCreate(5, sizeof(i2c_slave_event_t));
+    assert(event_queue);
+
+    // Configure I2C slave
+    i2c_slave_config_t i2c_slv_config = {};
+    i2c_slv_config.i2c_port = TEST_I2C_PORT;
+    i2c_slv_config.sda_io_num = I2C_SLAVE_SDA_IO;
+    i2c_slv_config.scl_io_num = I2C_SLAVE_SCL_IO;
+    i2c_slv_config.clk_source = I2C_CLK_SRC_DEFAULT;
+    i2c_slv_config.send_buf_depth = 32; // Larger buffer for test
+    i2c_slv_config.receive_buf_depth = DATA_LENGTH;
+    i2c_slv_config.slave_addr = ESP_SLAVE_ADDR;
+    i2c_slv_config.flags.enable_internal_pullup = true;
+
+    TEST_ESP_OK(i2c_new_slave_device(&i2c_slv_config, &handle));
+
+    // Register event callbacks
+    i2c_slave_event_callbacks_t cbs = {};
+    cbs.on_request = i2c_slave_request_cb;
+    cbs.on_receive = i2c_slave_receive_cb;
+    TEST_ESP_OK(i2c_slave_register_event_callbacks(handle, &cbs, NULL));
+
+    // Prepare first batch of data (0x00 to 0x0F)
+    for (int i = 0; i < 16; i++) {
+        data_wr_first[i] = i;
+    }
+
+    // Prepare second batch of data (0x10 to 0x1F)
+    for (int i = 0; i < 16; i++) {
+        data_wr_second[i] = 0x10 + i;
+    }
+
+    unity_send_signal("i2c slave init finish");
+
+    // Wait for first request and send first batch data
+    i2c_slave_event_t evt;
+    uint32_t write_len;
+
+    if (xQueueReceive(event_queue, &evt, portMAX_DELAY) == pdTRUE) {
+        if (evt == I2C_SLAVE_EVT_TX) {
+            printf("Slave: Preparing first batch data (16 bytes)\n");
+            TEST_ESP_OK(i2c_slave_write(handle, data_wr_first, 16, &write_len, 1000));
+            printf("Slave: Written %lu bytes to TX buffer\n", write_len);
+        }
+    }
+
+    unity_wait_for_signal("first read complete");
+
+    // Reset TX FIFO to clear remaining data
+    printf("Slave: Resetting TX FIFO\n");
+    TEST_ESP_OK(i2c_slave_reset_tx_fifo(handle));
+
+    unity_send_signal("slave reset tx fifo");
+
+    // Wait for second request and send second batch data
+    if (xQueueReceive(event_queue, &evt, portMAX_DELAY) == pdTRUE) {
+        if (evt == I2C_SLAVE_EVT_TX) {
+            printf("Slave: Preparing second batch data (16 bytes)\n");
+            TEST_ESP_OK(i2c_slave_write(handle, data_wr_second, 16, &write_len, 1000));
+            printf("Slave: Written %lu bytes to TX buffer\n", write_len);
+        }
+    }
+
+    unity_wait_for_signal("second read complete");
+
+    // Cleanup
+    vQueueDelete(event_queue);
+    TEST_ESP_OK(i2c_del_slave_device(handle));
+}
+
+TEST_CASE_MULTIPLE_DEVICES("I2C slave reset TX FIFO test", "[i2c][test_env=generic_multi_device][timeout=150]", i2c_slave_reset_tx_fifo_test_master, i2c_slave_reset_tx_fifo_test_slave);
+
 #if SOC_HP_I2C_NUM > 1
 // Now chips with multiple I2C controllers are up to 2, can test more ports when we have more I2C controllers.
 static void i2c_master_write_test_more_port(void)
