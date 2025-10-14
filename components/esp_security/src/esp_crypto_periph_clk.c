@@ -39,6 +39,11 @@
 #include "hal/crypto_dma_ll.h"
 #endif
 
+#if NON_OS_BUILD
+// To suppress build errors about spinlock's __DECLARE_RCC_ATOMIC_ENV
+int __DECLARE_RCC_ATOMIC_ENV __attribute__((unused));
+#endif
+
 #if SOC_AES_SUPPORTED
 void esp_crypto_aes_enable_periph_clk(bool enable)
 {

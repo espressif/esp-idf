@@ -6,7 +6,7 @@ if(${target} STREQUAL "linux")
 endif()
 
 set(srcs "")
-set(priv_requires "esp_hw_support")
+set(priv_requires esp_hw_support hal efuse)
 set(priv_includes "")
 
 if(NOT non_os_build)
@@ -30,7 +30,7 @@ if(NOT non_os_build)
     endif()
 
     list(APPEND srcs "src/esp_crypto_lock.c" "src/esp_crypto_periph_clk.c")
-    list(APPEND priv_requires efuse esp_system esp_timer)
+    list(APPEND priv_requires esp_system esp_timer)
 elseif(esp_tee_build)
     list(APPEND srcs "src/esp_crypto_lock.c" "src/esp_crypto_periph_clk.c")
     list(APPEND includes "src/${IDF_TARGET}")
