@@ -225,11 +225,11 @@ esp_err_t rmt_new_tx_channel(const rmt_tx_channel_config_t *config, rmt_channel_
     ESP_GOTO_ON_FALSE(config->flags.with_dma == 0, ESP_ERR_NOT_SUPPORTED, err, TAG, "DMA not supported");
 #endif
 
-    // malloc channel memory
-    uint32_t mem_caps = RMT_MEM_ALLOC_CAPS;
+    // allocate channel memory from internal memory because it contains atomic variable
+    uint32_t mem_caps = MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT;
     if (config->flags.with_dma) {
         // DMA descriptors must be placed in internal SRAM
-        mem_caps |= MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA;
+        mem_caps |= MALLOC_CAP_DMA;
     }
     tx_channel = heap_caps_calloc(1, sizeof(rmt_tx_channel_t) + sizeof(rmt_tx_trans_desc_t) * config->trans_queue_depth, mem_caps);
     ESP_GOTO_ON_FALSE(tx_channel, ESP_ERR_NO_MEM, err, TAG, "no mem for tx channel");
@@ -765,7 +765,7 @@ static esp_err_t rmt_tx_disable(rmt_channel_handle_t channel)
 #if !SOC_RMT_SUPPORT_ASYNC_STOP
         // we do a trick to stop the undergoing transmission
         // stop interrupt, insert EOF marker to the RMT memory, polling the trans_done event
-        channel->hw_mem_base[0].val = 0;
+        memset(channel->hw_mem_base, 0, channel->mem_block_num * SOC_RMT_MEM_WORDS_PER_CHANNEL * sizeof(rmt_symbol_word_t));
         while (!(rmt_ll_tx_get_interrupt_status_raw(hal->regs, channel_id) & RMT_LL_EVENT_TX_DONE(channel_id))) {}
 #endif
         rmt_ll_clear_interrupt_status(hal->regs, RMT_LL_EVENT_TX_MASK(channel_id));

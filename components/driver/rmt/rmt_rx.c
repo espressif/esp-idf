@@ -200,11 +200,11 @@ esp_err_t rmt_new_rx_channel(const rmt_rx_channel_config_t *config, rmt_channel_
     if (config->flags.with_dma) {
         num_dma_nodes = config->mem_block_symbols * sizeof(rmt_symbol_word_t) / RMT_DMA_DESC_BUF_MAX_SIZE + 1;
     }
-    // malloc channel memory
-    uint32_t mem_caps = RMT_MEM_ALLOC_CAPS;
+    // allocate channel memory from internal memory because it contains atomic variable
+    uint32_t mem_caps = MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT;
     if (config->flags.with_dma) {
         // DMA descriptors must be placed in internal SRAM
-        mem_caps |= MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA;
+        mem_caps |= MALLOC_CAP_DMA;
     }
     rx_channel = heap_caps_calloc(1, sizeof(rmt_rx_channel_t) + num_dma_nodes * sizeof(dma_descriptor_t), mem_caps);
     ESP_GOTO_ON_FALSE(rx_channel, ESP_ERR_NO_MEM, err, TAG, "no mem for rx channel");
