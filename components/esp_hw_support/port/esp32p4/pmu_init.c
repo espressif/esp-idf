@@ -133,6 +133,7 @@ static inline void pmu_power_domain_force_default(pmu_context_t *ctx)
         PMU_HP_PD_TOP,
         PMU_HP_PD_CNNT,
         PMU_HP_PD_HPMEM,
+        PMU_HP_PD_CPU
     };
 
     for (uint8_t idx = 0; idx < (sizeof(pmu_hp_domains) / sizeof(pmu_hp_power_domain_t)); idx++) {

@@ -68,7 +68,11 @@ const regdma_entries_config_t cache_regs_retention[] = {
     [4] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_CACHE_LINK(0x04), CACHE_SYNC_MAP_REG,  CACHE_MAP_L1_CACHE_MASK, CACHE_SYNC_MAP_M,       1, 0), .owner = ENTRY(0) },
     [5] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_CACHE_LINK(0x05), CACHE_SYNC_CTRL_REG, 0,                       CACHE_SYNC_RGID_M,      1, 0), .owner = ENTRY(0) },
     [6] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_CACHE_LINK(0x06), CACHE_SYNC_CTRL_REG, CACHE_INVALIDATE_ENA,    CACHE_INVALIDATE_ENA_M, 1, 0), .owner = ENTRY(0) },
-    [7] = { .config = REGDMA_LINK_WAIT_INIT(REGDMA_CACHE_LINK(0x07), CACHE_SYNC_CTRL_REG, CACHE_SYNC_DONE,         CACHE_SYNC_DONE_M,      1, 0), .owner = ENTRY(0) },
+    [7] = { .config = REGDMA_LINK_WAIT_INIT(REGDMA_CACHE_LINK(0x07),  CACHE_SYNC_CTRL_REG, CACHE_SYNC_DONE,         CACHE_SYNC_DONE_M,      1, 0), .owner = ENTRY(0) },
+    // Reset L2 CACHE SYNC
+    [8] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_CACHE_LINK(0x08), CACHE_L2_CACHE_SYNC_RST_CTRL_REG, CACHE_L2_CACHE_SYNC_RST,    CACHE_L2_CACHE_SYNC_RST_M, 1, 0), .owner = ENTRY(0) },
+    [9] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_CACHE_LINK(0x09), CACHE_L2_CACHE_SYNC_RST_CTRL_REG, 0,    CACHE_L2_CACHE_SYNC_RST_M, 1, 0), .owner = ENTRY(0) },
+
 };
 _Static_assert(ARRAY_SIZE(cache_regs_retention) == CACHE_RETENTION_LINK_LEN, "Inconsistent L2 CACHE retention link length definitions");
 

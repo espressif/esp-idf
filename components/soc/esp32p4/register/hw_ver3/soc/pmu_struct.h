@@ -1,17 +1,15 @@
 /**
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
 #pragma once
 
 #include <stdint.h>
-#include "soc/pmu_reg.h"
+#include "pmu_reg.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-//TODO: IDF-13420
 
 typedef union {
     struct {
@@ -19,7 +17,8 @@ typedef union {
         uint32_t dcdc_switch_pd_en :1;
         uint32_t mem_dslp     : 1;
         uint32_t mem_pd_en    : 1;
-        uint32_t reserved1    : 6;
+        uint32_t reserved1    : 5;
+        uint32_t hp_cpu_pd_en : 1;
         uint32_t cnnt_pd_en   : 1;
         uint32_t top_pd_en    : 1;
     };
@@ -243,10 +242,10 @@ typedef union {
 typedef struct pmu_lp_hw_regmap_t {
     pmu_lp_regulator0_reg_t    regulator0;
     pmu_lp_regulator1_reg_t    regulator1;
-    pmu_lp_xtal_reg_t          xtal;   /* Only LP_SLEEP mode under lp system is valid */
+    pmu_lp_xtal_reg_t          xtal;   /* HP_SLEEP: PMU_HP_SLEEP_LP_DCDC_RESERVE_REG LP_SLEEP: PMU_LP_SLEEP_XTAL_REG */
     pmu_lp_dig_power_reg_t     dig_power;
     pmu_lp_clk_power_reg_t     clk_power;
-    pmu_lp_bias_reg_t          bias;   /* Only LP_SLEEP mode under lp system is valid */
+    pmu_lp_bias_reg_t          bias;   /* HP_SLEEP: PMU_LP_SLEEP_LP_BIAS_RESERVE_REG LP_SLEEP: PMU_LP_SLEEP_BIAS_REG */
 } pmu_lp_hw_regmap_t;
 
 
@@ -474,9 +473,10 @@ typedef union {
 
 typedef union {
     struct {
-        uint32_t modem_wait_target : 20;
-        uint32_t reserved0         : 4;
-        uint32_t lp_ana_wait_target: 8;
+        uint32_t modem_wait_target          : 20;
+        uint32_t reserved0                  : 2;
+        uint32_t lp_ana_wait_target_expand  : 2;
+        uint32_t lp_ana_wait_target         : 8;
     };
     uint32_t val;
 } pmu_slp_wakeup_cntl5_reg_t;
@@ -703,7 +703,8 @@ typedef struct pmu_lp_ext_hw_regmap_t {
 
 typedef union {
     struct {
-        uint32_t reserved_0:7;
+        uint32_t reserved_0:6;
+        uint32_t cnt_clr:1;
         uint32_t force_tieh_sel:1;
         uint32_t xpd:1;
         uint32_t tieh_sel:3;
@@ -771,9 +772,9 @@ typedef union {
 
 typedef union {
     struct {
-        uint32_t ana_vddbat_mode    : 2;
-        uint32_t reserved1          : 29;
-        uint32_t sw_update          : 1;
+        uint32_t module     : 2;
+        uint32_t reserved1  : 29;
+        uint32_t sw_update  : 1;
     };
     uint32_t val;
 } pmu_vddbat_cfg_t;
@@ -917,8 +918,28 @@ typedef struct pmu_dev_t {
         volatile uint32_t val;
     } pmu_rdn_eco;
 
+    union {
+        struct {
+            volatile uint32_t force_hp_cpu_reset    :   1;
+            volatile uint32_t force_hp_cpu_iso      :   1;
+            volatile uint32_t force_hp_cpu_pu       :   1;
+            volatile uint32_t force_hp_cpu_no_reset :   1;
+            volatile uint32_t force_hp_cpu_no_iso   :   1;
+            volatile uint32_t force_hp_cpu_pd       :   1;
+            volatile uint32_t reserved0             :   26;
+        };
+        volatile uint32_t val;
+    } power_pd_hp_cpu_cntl;
 
-    uint32_t reserved[121];
+    union {
+        struct {
+            volatile uint32_t xpd_hp_cpu_mask   :   5;
+            volatile uint32_t pd_hp_cpu_mask    :   27;
+        };
+        volatile uint32_t val;
+    } power_pd_hp_cpu_mask;
+
+    uint32_t reserved[119];
 
     union {
         struct {
@@ -934,7 +955,7 @@ extern pmu_dev_t PMU;
 #ifndef __cplusplus
 _Static_assert(sizeof(pmu_dev_t) == 0x400, "Invalid size of pmu_dev_t structure");
 
-_Static_assert(offsetof(pmu_dev_t, reserved) == (PMU_RDN_ECO_REG - DR_REG_PMU_BASE) + 4, "Invalid size of pmu_dev_t structure");
+_Static_assert(offsetof(pmu_dev_t, reserved) == (PMU_POWER_PD_HP_CPU_MASK_REG - DR_REG_PMU_BASE) + 4, "Invalid size of pmu_dev_t structure");
 #endif
 
 #ifdef __cplusplus

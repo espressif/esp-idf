@@ -1028,6 +1028,28 @@ static inline void usb_dwc_ll_qtd_get_status(usb_dwc_ll_dma_qtd_t *qtd, int *rem
     qtd->buffer_status_val = 0;
 }
 
+/**
+ * @brief Get the current BVALID override configuration.
+ *
+ * @param[out] Get the current BVALID override configuration.
+ */
+FORCE_INLINE_ATTR bool usb_dwc_ll_get_bvalid_override(usb_dwc_dev_t *hw)
+{
+    return hw->gotgctl_reg.bvalidoven;
+}
+
+/**
+ * @brief Enable BVALID override in USB OTG controller.
+ *
+ * When enabled, the controller ignores the hardware-detected VBUS BVALID signal
+ * and uses the software-defined override value instead. This is typically used
+ * to reduce USB leakage current during sleep by forcing BVALID low.
+ */
+FORCE_INLINE_ATTR void usb_dwc_ll_enable_bvalid_override(usb_dwc_dev_t *hw, bool override)
+{
+    hw->gotgctl_reg.bvalidoven = override;
+}
+
 // ---------------------------- Power and Clock Gating Register --------------------------------
 FORCE_INLINE_ATTR void usb_dwc_ll_set_stoppclk(usb_dwc_dev_t *hw, bool stop)
 {

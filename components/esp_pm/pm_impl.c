@@ -380,7 +380,7 @@ static esp_err_t esp_pm_sleep_configure(const esp_pm_config_t *config)
 {
     esp_err_t err = ESP_OK;
 
-#if ESP_SLEEP_POWER_DOWN_CPU && CONFIG_SOC_LIGHT_SLEEP_SUPPORTED
+#if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU && CONFIG_SOC_LIGHT_SLEEP_SUPPORTED
     err = sleep_cpu_configure(config->light_sleep_enable);
     if (err != ESP_OK) {
         return err;

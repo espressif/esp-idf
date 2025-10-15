@@ -16,6 +16,7 @@
 #include "soc/pmu_struct.h"
 #include "hal/pmu_types.h"
 #include "hal/misc.h"
+#include "hal/config.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -379,32 +380,68 @@ FORCE_INLINE_ATTR void pmu_ll_imm_set_lp_pad_hold_all(pmu_dev_t *hw, bool hold_a
 
 FORCE_INLINE_ATTR void pmu_ll_hp_set_power_force_reset(pmu_dev_t *hw, pmu_hp_power_domain_t domain, bool rst)
 {
-    hw->power.hp_pd[domain].force_reset = rst;
+    if (domain == PMU_HP_PD_CPU) {
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+        hw->power_pd_hp_cpu_cntl.force_hp_cpu_reset = rst;
+#endif
+    } else {
+        hw->power.hp_pd[domain].force_reset = rst;
+    }
 }
 
 FORCE_INLINE_ATTR void pmu_ll_hp_set_power_force_isolate(pmu_dev_t *hw, pmu_hp_power_domain_t domain, bool iso)
 {
-    hw->power.hp_pd[domain].force_iso = iso;
+    if (domain == PMU_HP_PD_CPU) {
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+        hw->power_pd_hp_cpu_cntl.force_hp_cpu_iso = iso;
+#endif
+    } else {
+        hw->power.hp_pd[domain].force_iso = iso;
+    }
 }
 
 FORCE_INLINE_ATTR void pmu_ll_hp_set_power_force_power_up(pmu_dev_t *hw, pmu_hp_power_domain_t domain, bool fpu)
 {
-    hw->power.hp_pd[domain].force_pu = fpu;
+    if (domain == PMU_HP_PD_CPU) {
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+        hw->power_pd_hp_cpu_cntl.force_hp_cpu_pu = fpu;
+#endif
+    } else {
+        hw->power.hp_pd[domain].force_pu = fpu;
+    }
 }
 
 FORCE_INLINE_ATTR void pmu_ll_hp_set_power_force_no_reset(pmu_dev_t *hw, pmu_hp_power_domain_t domain, bool no_rst)
 {
-    hw->power.hp_pd[domain].force_no_reset = no_rst;
+    if (domain == PMU_HP_PD_CPU) {
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+        hw->power_pd_hp_cpu_cntl.force_hp_cpu_no_reset = no_rst;
+#endif
+    } else {
+        hw->power.hp_pd[domain].force_no_reset = no_rst;
+    }
 }
 
 FORCE_INLINE_ATTR void pmu_ll_hp_set_power_force_no_isolate(pmu_dev_t *hw, pmu_hp_power_domain_t domain, bool no_iso)
 {
-    hw->power.hp_pd[domain].force_no_iso = no_iso;
+    if (domain == PMU_HP_PD_CPU) {
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+        hw->power_pd_hp_cpu_cntl.force_hp_cpu_no_iso = no_iso;
+#endif
+    } else {
+        hw->power.hp_pd[domain].force_no_iso = no_iso;
+    }
 }
 
 FORCE_INLINE_ATTR void pmu_ll_hp_set_power_force_power_down(pmu_dev_t *hw, pmu_hp_power_domain_t domain, bool fpd)
 {
-    hw->power.hp_pd[domain].force_pd = fpd;
+    if (domain == PMU_HP_PD_CPU) {
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+        hw->power_pd_hp_cpu_cntl.force_hp_cpu_pd = fpd;
+#endif
+    } else {
+        hw->power.hp_pd[domain].force_pd = fpd;
+    }
 }
 
 FORCE_INLINE_ATTR void pmu_ll_lp_set_power_force_reset(pmu_dev_t *hw, bool rst)
