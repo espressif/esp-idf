@@ -250,7 +250,7 @@
         :SOC_EFUSE_DIS_PAD_JTAG: - ``DIS_PAD_JTAG``：永久禁用 JTAG
         :not esp32: - ``DIS_DOWNLOAD_MANUAL_ENCRYPT``：禁用 UART 引导加载程序加密访问
         :SOC_EFUSE_DIS_DOWNLOAD_MSPI: - ``DIS_DOWNLOAD_MSPI``：禁用下载模式下的 MSPI 访问
-        :SOC_FLASH_ENCRYPTION_XTS_AES_SUPPORT_PSEUDO_ROUND: - ``XTS_DPA_PSEUDO_LEVEL``：启用 XTS-AES 外设的伪轮次功能。要烧录到 eFuse 中的值可以是 1、2 或 3，表示安全等级。默认情况下，ESP-IDF 的引导加载程序在启动过程中启用 flash 加密的发布模式时，会将该 eFuse 的值配置为 1。
+        :SOC_FLASH_ENCRYPTION_XTS_AES_SUPPORT_PSEUDO_ROUND: - ``XTS_DPA_PSEUDO_LEVEL``：启用 XTS-AES 外设的伪轮次功能。要烧录到 eFuse 中的值可以是 1、2 或 3，表示安全等级。默认情况下，ESP-IDF 的引导加载程序在启动过程中启用 flash 加密的量产模式时，会将该 eFuse 的值配置为 1。
 
     可运行以下命令烧录相应的 eFuse：
 
@@ -292,16 +292,16 @@
 
 6. 配置项目
 
-    项目的引导加载程序和应用程序二进制文件必须使用默认配置的 flash 加密发布模式进行构建。
+    项目的引导加载程序和应用程序二进制文件必须使用默认配置的 flash 加密量产模式进行构建。
 
-    如下所示，可以在 menuconfig 中设置 flash 加密发布模式：
+    如下所示，可以在 menuconfig 中设置 flash 加密量产模式：
 
     .. list::
 
         - :ref:`启动时启用 flash 加密 <CONFIG_SECURE_FLASH_ENC_ENABLED>`。
-        :esp32: - :ref:`选择发布模式 <CONFIG_SECURE_FLASH_ENCRYPTION_MODE>` （注意，若选择发布模式，则将烧录 ``DISABLE_DL_ENCRYPT`` 和 ``DISABLE_DL_DECRYPT`` eFuse 位，ROM 下载模式下 flash 加密硬件将被禁用）。
+        :esp32: - :ref:`选择量产模式 <CONFIG_SECURE_FLASH_ENCRYPTION_MODE>` （注意，若选择量产模式，则将烧录 ``DISABLE_DL_ENCRYPT`` 和 ``DISABLE_DL_DECRYPT`` eFuse 位，ROM 下载模式下 flash 加密硬件将被禁用）。
         :esp32: - :ref:`选择 UART ROM 下载模式（永久禁用（推荐））<CONFIG_SECURE_UART_ROM_DL_MODE>` （注意，此选项仅在 :ref:`CONFIG_ESP32_REV_MIN` 设为 3 (ESP32 V3) 时可用）。UART ROM 下载模式在默认设置中自动启用，但建议永久禁用此模式以减少攻击者可用的选项。
-        :not esp32: - :ref:`选择发布模式 <CONFIG_SECURE_FLASH_ENCRYPTION_MODE>` （注意，若选择发布模式，则将烧录 ``EFUSE_DIS_DOWNLOAD_MANUAL_ENCRYPT`` eFuse 位，ROM 下载模式下 flash 加密硬件将被禁用）。
+        :not esp32: - :ref:`选择量产模式 <CONFIG_SECURE_FLASH_ENCRYPTION_MODE>` （注意，若选择量产模式，则将烧录 ``EFUSE_DIS_DOWNLOAD_MANUAL_ENCRYPT`` eFuse 位，ROM 下载模式下 flash 加密硬件将被禁用）。
         :not esp32: - :ref:`选择 UART ROM 下载模式（永久切换到安全模式（推荐））<CONFIG_SECURE_UART_ROM_DL_MODE>`。这是推荐的默认选项，如果不需要，也可将其更改为永久禁用 UART ROM 下载模式。
         - :ref:`选择适当的引导加载程序日志级别 <CONFIG_BOOTLOADER_LOG_LEVEL>`。
         - 保存配置并退出。
@@ -500,8 +500,8 @@ flash 加密指南
         :SOC_EFUSE_DIS_USB_JTAG: - ``DIS_USB_JTAG``：禁止从 USB 切换到 JTAG。
         :SOC_EFUSE_DIS_PAD_JTAG: - ``DIS_PAD_JTAG``：永久禁用 JTAG。
         :SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS: - ``SECURE_BOOT_AGGRESSIVE_REVOKE``：主动吊销密钥摘要。详请请参阅 :ref:`secure-boot-v2-aggressive-key-revocation`。
-        :SOC_ECDSA_P192_CURVE_DEFAULT_DISABLED: - ``WR_DIS_ECDSA_CURVE_MODE``：禁止写入 ECDSA 曲线模式。
-        :SOC_ECDSA_SUPPORT_CURVE_P384: - ``WR_DIS_SECURE_BOOT_SHA384_EN``：禁止写入 SHA-384 Secure Boot 的 SHA-384 eFuse 位。
+        :SOC_ECDSA_P192_CURVE_DEFAULT_DISABLED: - ``WR_DIS_ECDSA_CURVE_MODE``：禁止写入 ECDSA 曲线模式的 eFuse 位。由于此写保护位与 ``ECC_FORCE_CONST_TIME`` 共享，建议先配置好 ``ECC_FORCE_CONST_TIME`` eFuse 字段后，再设置此写保护位）。
+        :SOC_ECDSA_SUPPORT_CURVE_P384: - ``WR_DIS_SECURE_BOOT_SHA384_EN``：禁止写入 SHA-384 Secure Boot 的 eFuse 位。由于此写保护位与 ``XTS_DPA_PSEUDO_LEVEL`` 和 ``ECC_FORCE_CONST_TIME`` 共享，建议先配置好这两个 eFuse，再设置此写保护位。
 
     运行以下命令烧录相应的 eFuse：
 

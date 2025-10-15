@@ -44,7 +44,7 @@ esp_err_t esp_flash_encryption_enable_secure_features(void)
 
     esp_efuse_write_field_bit(ESP_EFUSE_DIS_DIRECT_BOOT);
 
-#if defined(CONFIG_SECURE_FLASH_ENCRYPTION_MODE_RELEASE) && defined(SOC_FLASH_ENCRYPTION_XTS_AES_SUPPORT_PSEUDO_ROUND)
+#if CONFIG_SECURE_FLASH_PSEUDO_ROUND_FUNC
     ESP_LOGI(TAG, "Enable XTS-AES pseudo rounds function...");
     uint8_t xts_pseudo_level = CONFIG_SECURE_FLASH_PSEUDO_ROUND_FUNC_STRENGTH;
     esp_efuse_write_field_blob(ESP_EFUSE_XTS_DPA_PSEUDO_LEVEL, &xts_pseudo_level, ESP_EFUSE_XTS_DPA_PSEUDO_LEVEL[0]->bit_count);

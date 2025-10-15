@@ -37,12 +37,6 @@ esp_err_t esp_secure_boot_enable_secure_features(void)
     ESP_LOGW(TAG, "UART ROM Download mode kept enabled - SECURITY COMPROMISED");
 #endif
 
-#ifdef SOC_ECDSA_P192_CURVE_DEFAULT_DISABLED
-    if (ecdsa_ll_is_configurable_curve_supported()) {
-        esp_efuse_write_field_bit(ESP_EFUSE_WR_DIS_ECDSA_CURVE_MODE);
-    }
-#endif
-
 #ifndef CONFIG_SECURE_BOOT_ALLOW_JTAG
     ESP_LOGI(TAG, "Disable hardware & software JTAG...");
     esp_efuse_write_field_bit(ESP_EFUSE_DIS_PAD_JTAG);

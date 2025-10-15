@@ -212,8 +212,13 @@ void esp_flash_encryption_set_release_mode(void)
 
 #ifdef SOC_FLASH_ENCRYPTION_XTS_AES_SUPPORT_PSEUDO_ROUND
     if (spi_flash_encrypt_ll_is_pseudo_rounds_function_supported()) {
-        uint8_t xts_pseudo_level = ESP_XTS_AES_PSEUDO_ROUNDS_LOW;
-        esp_efuse_write_field_blob(ESP_EFUSE_XTS_DPA_PSEUDO_LEVEL, &xts_pseudo_level, ESP_EFUSE_XTS_DPA_PSEUDO_LEVEL[0]->bit_count);
+        uint8_t xts_pseudo_level = 0;
+        esp_efuse_read_field_blob(ESP_EFUSE_XTS_DPA_PSEUDO_LEVEL, &xts_pseudo_level, ESP_EFUSE_XTS_DPA_PSEUDO_LEVEL[0]->bit_count);
+
+        if (xts_pseudo_level == ESP_XTS_AES_PSEUDO_ROUNDS_DISABLE) {
+            xts_pseudo_level = ESP_XTS_AES_PSEUDO_ROUNDS_LOW;
+            esp_efuse_write_field_blob(ESP_EFUSE_XTS_DPA_PSEUDO_LEVEL, &xts_pseudo_level, ESP_EFUSE_XTS_DPA_PSEUDO_LEVEL[0]->bit_count);
+        }
     }
 #endif
 
