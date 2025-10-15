@@ -37,6 +37,9 @@ extern "C" {
 #include <sys/param.h>
 #include "encoding.h"
 #include "esp_assert.h"
+#if __riscv_zcmp && SOC_CPU_ZCMP_WORKAROUND
+#include "riscv/csr_clic.h"
+#endif
 
 /********************************************************
  Physical Memory Attributes (PMA) register fields
@@ -223,6 +226,16 @@ extern "C" {
 
 #define RV_READ_MSTATUS_AND_DISABLE_INTR() ({ unsigned long __tmp; \
   asm volatile ("csrrci %0, mstatus, 0x8"  : "=r"(__tmp)); __tmp; })
+
+#if __riscv_zcmp && SOC_CPU_ZCMP_WORKAROUND
+#define RV_READ_MINTTHRESH_AND_DISABLE_INTR() ({ unsigned long __tmp; \
+    asm volatile ( \
+        "li t0, 0xff\n\t" \
+        "csrrw %0, %1, t0" : "=r"(__tmp) : "i"(MINTTHRESH_CSR) : "t0", "memory"); __tmp; })
+
+#define RV_RESTORE_MINTTHRESH(val) \
+  asm volatile ("csrw %0, %1" :: "i"(MINTTHRESH_CSR), "r"(val) : "memory")
+#endif
 
 #define _CSR_STRINGIFY(REG) #REG /* needed so the 'reg' argument can be a macro or a register name */
 

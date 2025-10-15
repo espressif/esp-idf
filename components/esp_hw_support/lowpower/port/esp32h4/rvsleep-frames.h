@@ -83,6 +83,7 @@ STRUCT_BEGIN
     STRUCT_FIELD (long, 4, RV_SLP_CTX_MTVAL,    mtval)      /* Machine Trap Value */
     STRUCT_FIELD (long, 4, RV_SLP_CTX_MIE,      mie)        /* Machine intr enable */
     STRUCT_FIELD (long, 4, RV_SLP_CTX_MIP,      mip)        /* Machine intr pending */
+    STRUCT_FIELD (long, 4, RV_SLP_CTX_MINTTHRESH, mintthresh)  /* Machine intr threshold */
 
     STRUCT_FIELD (long, 4, RV_SLP_CTX_PMUFUNC,  pmufunc)    /* A field is used to identify whether it is going
                                                              * to sleep or has just been awakened. We use the
@@ -197,7 +198,6 @@ STRUCT_BEGIN
 
     STRUCT_FIELD (long, 4, RV_SLP_CTX_MCYCLE,           mcycle)
     STRUCT_FIELD (long, 4, RV_SLP_CTX_MTVT,             mtvt)
-    STRUCT_FIELD (long, 4, RV_SLP_CTX_MINTTHRESH,       mintthresh)
     STRUCT_FIELD (long, 4, RV_SLP_CTX_MXSTATUS,         mxstatus)
     STRUCT_FIELD (long, 4, RV_SLP_CTX_MHCR,             mhcr)
     STRUCT_FIELD (long, 4, RV_SLP_CTX_MHINT,            mhint)

@@ -182,6 +182,8 @@
 
 #define SOC_CPU_HAS_LOCKUP_RESET        1
 
+#define SOC_CPU_ZCMP_WORKAROUND         1
+
 /*-------------------------- DIGITAL SIGNATURE CAPS ----------------------------------------*/
 /** The maximum length of a Digital Signature in bits. */
 #define SOC_DS_SIGNATURE_MAX_BIT_LEN (3072)
