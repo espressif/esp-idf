@@ -229,7 +229,7 @@ To enable the secure element support, and use it in your project for TLS connect
 
         When using Digital Signature for the TLS connection, along with the other required params, only the client certification (`clientcert_buf`) and the DS params (`ds_data`) are required and the client key (`clientkey_buf`) can be set to NULL.
 
-    * An example of mutual authentication with the DS peripheral can be found at :example:`ssl mutual auth<protocols/mqtt/ssl_mutual_auth>` which internally uses (ESP-TLS) for the TLS connection.
+    * A mutual-authentication example that utilizes the DS peripheral is shipped with the standalone `espressif/mqtt <https://components.espressif.com/components/espressif/mqtt>`__ component and internally relies on ESP-TLS for the TLS connection. Follow the component documentation to fetch and build that example.
 
 .. only:: SOC_ECDSA_SUPPORTED
 

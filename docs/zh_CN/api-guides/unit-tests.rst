@@ -349,7 +349,6 @@ Mocks
 
 - :component_file:`NVS 页面类的单元测试 <nvs_flash/host_test/nvs_page_test/README.md>`。
 - :component_file:`esp_event 的单元测试 <esp_event/host_test/esp_event_unit_test/main/esp_event_test.cpp>`。
-- :component_file:`mqtt 的单元测试 <mqtt/esp-mqtt/host_test/README.md>`。
 
 .. _adjustments_for_mocks:
 

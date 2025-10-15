@@ -3,7 +3,6 @@
 # SPDX-FileCopyrightText: 2018-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
-from __future__ import print_function, unicode_literals
 
 import argparse
 import os
@@ -11,7 +10,8 @@ import re
 import subprocess
 import sys
 
-from idf_ci_utils import IDF_PATH, get_submodule_dirs
+from idf_ci_utils import IDF_PATH
+from idf_ci_utils import get_submodule_dirs
 
 # regular expression for matching Kconfig files
 RE_KCONFIG = r'^Kconfig(\.projbuild)?(\.in)?$'
@@ -20,8 +20,6 @@ RE_KCONFIG = r'^Kconfig(\.projbuild)?(\.in)?$'
 # Note: ignore_dirs is a tuple in order to be able to use it directly with the startswith() built-in function which
 # accepts tuples but no lists.
 IGNORE_DIRS: tuple = (
-    # Kconfigs from submodules need to be ignored:
-    os.path.join(IDF_PATH, 'components', 'mqtt', 'esp-mqtt'),
     # Test Kconfigs are also ignored
     os.path.join(IDF_PATH, 'tools', 'ldgen', 'test', 'data'),
     os.path.join(IDF_PATH, 'tools', 'kconfig_new', 'test'),
@@ -30,9 +28,9 @@ IGNORE_DIRS: tuple = (
 ignore_dirs: tuple = IGNORE_DIRS
 
 
-def valid_directory(path:str) -> str:
+def valid_directory(path: str) -> str:
     if not os.path.isdir(path):
-        raise argparse.ArgumentTypeError('{} is not a valid directory!'.format(path))
+        raise argparse.ArgumentTypeError(f'{path} is not a valid directory!')
     return str(path)
 
 
@@ -52,7 +50,7 @@ parser.add_argument(
     '-d',
     nargs='*',
     help='Extra paths for recursively searching Kconfig files. (for example $IDF_PATH)',
-    type=valid_directory
+    type=valid_directory,
 )
 
 args, unknown_args = parser.parse_known_args()
@@ -67,21 +65,17 @@ files_to_check: list = args.files
 # except IGNORE_DIRS and submodules (if exclude is given)
 # paths to KConfig files are passed to esp-idf-kconfig kconfcheck tool
 if args.includes:
-        for directory in args.includes:
-            for root, dirnames, filenames in os.walk(directory):
-                for filename in filenames:
-                    full_path = os.path.join(root, filename)
-                    if full_path.startswith(ignore_dirs):
-                        continue
-                    if re.search(RE_KCONFIG, filename):
-                        files_to_check.append(f'{full_path}')
-                    elif re.search(RE_KCONFIG, filename, re.IGNORECASE):
-                        # On Windows Kconfig files are working with different cases!
-                        print(
-                            '{}: Incorrect filename. The case should be "Kconfig"!'.format(
-                                full_path
-                            )
-                        )
+    for directory in args.includes:
+        for root, dirnames, filenames in os.walk(directory):
+            for filename in filenames:
+                full_path = os.path.join(root, filename)
+                if full_path.startswith(ignore_dirs):
+                    continue
+                if re.search(RE_KCONFIG, filename):
+                    files_to_check.append(f'{full_path}')
+                elif re.search(RE_KCONFIG, filename, re.IGNORECASE):
+                    # On Windows Kconfig files are working with different cases!
+                    print(f'{full_path}: Incorrect filename. The case should be "Kconfig"!')
 
 
 if __name__ == '__main__':

@@ -66,7 +66,7 @@ As mentioned in the `ESP-TLS` documentation, the application only needs to provi
 Example for SSL Mutual Authentication Using DS
 ----------------------------------------------
 
-The example :example:`protocols/mqtt/ssl_ds` shows how to use the DS peripheral for mutual authentication. The example uses `mqtt_client` (Implemented through `ESP-MQTT`) to connect to broker ``test.mosquitto.org`` using SSL transport with mutual authentication. The SSL part is internally performed with `ESP-TLS`. See :example_file:`protocols/mqtt/ssl_ds/README.md` for more details.
+The SSL mutual authentication example that previously lived under ``examples/protocols/mqtt/ssl_ds`` is now shipped with the standalone `espressif/mqtt <https://components.espressif.com/components/espressif/mqtt>`__ component. Follow the component documentation to fetch the SSL DS example and build it together with ESP-MQTT. The example continues to use `mqtt_client` (implemented by ESP-MQTT) to connect to ``test.mosquitto.org`` over mutual-authenticated TLS, with the TLS portion handled by `ESP-TLS`.
 
 API Reference
 -------------
