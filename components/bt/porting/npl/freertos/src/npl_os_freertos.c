@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -116,7 +116,7 @@ IRAM_ATTR npl_freertos_event_deinit(struct ble_npl_event *ev)
 #if OS_MEM_ALLOC
     os_memblock_put(&ble_freertos_ev_pool,ev->event);
 #else
-    bt_osi_mem_free(ev->event);
+    bt_osi_mem_free_internal(ev->event);
 #endif
     ev->event = NULL;
 }
@@ -170,7 +170,7 @@ npl_freertos_eventq_deinit(struct ble_npl_eventq *evq)
 #if OS_MEM_ALLOC
     os_memblock_put(&ble_freertos_evq_pool,eventq);
 #else
-    bt_osi_mem_free((void *)eventq);
+    bt_osi_mem_free_internal((void *)eventq);
 #endif
     evq->eventq = NULL;
 }
@@ -391,7 +391,7 @@ npl_freertos_mutex_deinit(struct ble_npl_mutex *mu)
 #if OS_MEM_ALLOC
     os_memblock_put(&ble_freertos_mutex_pool,mutex);
 #else
-    bt_osi_mem_free((void *)mutex);
+    bt_osi_mem_free_internal((void *)mutex);
 #endif
     mu->mutex = NULL;
 
@@ -528,7 +528,7 @@ npl_freertos_sem_deinit(struct ble_npl_sem *sem)
 #if OS_MEM_ALLOC
     os_memblock_put(&ble_freertos_sem_pool,semaphore);
 #else
-    bt_osi_mem_free((void *)semaphore);
+    bt_osi_mem_free_internal((void *)semaphore);
 #endif
     sem->sem = NULL;
 
@@ -707,7 +707,7 @@ npl_freertos_callout_init(struct ble_npl_callout *co, struct ble_npl_eventq *evq
 
         if (esp_timer_create(&create_args, &callout->handle) != ESP_OK) {
             ble_npl_event_deinit(&callout->ev);
-            bt_osi_mem_free((void *)callout);
+            bt_osi_mem_free_internal((void *)callout);
             co->co = NULL;
             return -1;
         }
@@ -716,7 +716,7 @@ npl_freertos_callout_init(struct ble_npl_callout *co, struct ble_npl_eventq *evq
 
         if (!callout->handle) {
             ble_npl_event_deinit(&callout->ev);
-            bt_osi_mem_free((void *)callout);
+            bt_osi_mem_free_internal((void *)callout);
             co->co = NULL;
             return -1;
         }
@@ -764,7 +764,7 @@ npl_freertos_callout_deinit(struct ble_npl_callout *co)
 #if OS_MEM_ALLOC
     os_memblock_put(&ble_freertos_co_pool,callout);
 #else
-    bt_osi_mem_free((void *)callout);
+    bt_osi_mem_free_internal((void *)callout);
 #endif // OS_MEM_ALLOC
     co->co = NULL;
     memset(co, 0, sizeof(struct ble_npl_callout));
@@ -1203,27 +1203,27 @@ int npl_freertos_mempool_init(void)
     return 0;
 _error:
     if (ble_freertos_ev_buf) {
-        bt_osi_mem_free(ble_freertos_ev_buf);
+        bt_osi_mem_free_internal(ble_freertos_ev_buf);
         ble_freertos_ev_buf = NULL;
     }
 
     if (ble_freertos_evq_buf) {
-        bt_osi_mem_free(ble_freertos_evq_buf);
+        bt_osi_mem_free_internal(ble_freertos_evq_buf);
         ble_freertos_evq_buf = NULL;
     }
 
     if (ble_freertos_co_buf) {
-        bt_osi_mem_free(ble_freertos_co_buf);
+        bt_osi_mem_free_internal(ble_freertos_co_buf);
         ble_freertos_co_buf = NULL;
     }
 
     if (ble_freertos_sem_buf) {
-        bt_osi_mem_free(ble_freertos_sem_buf);
+        bt_osi_mem_free_internal(ble_freertos_sem_buf);
         ble_freertos_sem_buf = NULL;
     }
 
     if (ble_freertos_mutex_buf) {
-        bt_osi_mem_free(ble_freertos_mutex_buf);
+        bt_osi_mem_free_internal(ble_freertos_mutex_buf);
         ble_freertos_mutex_buf = NULL;
     }
     return -1;
@@ -1232,23 +1232,23 @@ _error:
 void npl_freertos_mempool_deinit(void)
 {
     if (ble_freertos_ev_buf) {
-        bt_osi_mem_free(ble_freertos_ev_buf);
+        bt_osi_mem_free_internal(ble_freertos_ev_buf);
         ble_freertos_ev_buf = NULL;
     }
     if (ble_freertos_evq_buf) {
-        bt_osi_mem_free(ble_freertos_evq_buf);
+        bt_osi_mem_free_internal(ble_freertos_evq_buf);
         ble_freertos_evq_buf = NULL;
     }
     if (ble_freertos_co_buf) {
-        bt_osi_mem_free(ble_freertos_co_buf);
+        bt_osi_mem_free_internal(ble_freertos_co_buf);
         ble_freertos_co_buf = NULL;
     }
     if (ble_freertos_sem_buf) {
-        bt_osi_mem_free(ble_freertos_sem_buf);
+        bt_osi_mem_free_internal(ble_freertos_sem_buf);
         ble_freertos_sem_buf = NULL;
     }
     if (ble_freertos_mutex_buf) {
-        bt_osi_mem_free(ble_freertos_mutex_buf);
+        bt_osi_mem_free_internal(ble_freertos_mutex_buf);
         ble_freertos_mutex_buf = NULL;
     }
 }
@@ -1256,7 +1256,7 @@ void npl_freertos_mempool_deinit(void)
 void npl_freertos_funcs_deinit(void)
 {
     if (npl_funcs) {
-        bt_osi_mem_free(npl_funcs);
+        bt_osi_mem_free_internal(npl_funcs);
     }
     npl_funcs = NULL;
 }
