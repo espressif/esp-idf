@@ -21,7 +21,7 @@
 
 #ifndef UNIT_TEST
 #include "esp_heap_caps.h"
-#include "esp_rom_serial_output.h"
+#include "esp_rom_uart.h"
 #endif /* !UNIT_TEST */
 
 /* MACRO */
