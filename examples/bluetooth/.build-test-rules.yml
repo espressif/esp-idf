@@ -162,6 +162,24 @@ examples/bluetooth/nimble:
       temporary: true
       reason: The runner doesn't support yet
 
+examples/bluetooth/nimble/ble_chan_sound_initiator:
+  enable:
+    - if: SOC_BLE_SUPPORTED == 1 and IDF_TARGET == "esp32c6"
+      temporary: true
+      reason: Channel Sounding example only supported on ESP32-C6
+  depends_filepatterns:
+    - examples/bluetooth/nimble/ble_chan_sound_initiator/**/*
+    - examples/bluetooth/nimble/common/**/*
+
+examples/bluetooth/nimble/ble_chan_sound_reflector:
+  enable:
+    - if: SOC_BLE_SUPPORTED == 1 and IDF_TARGET == "esp32c6"
+      temporary: true
+      reason: Channel Sounding example only supported on ESP32-C6
+  depends_filepatterns:
+    - examples/bluetooth/nimble/ble_chan_sound_reflector/**/*
+    - examples/bluetooth/nimble/common/**/*
+
 examples/bluetooth/nimble/ble_cte:
   enable:
     - if: IDF_TARGET in ["esp32h2"]
