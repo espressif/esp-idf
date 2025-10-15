@@ -59,8 +59,9 @@ typedef struct modem_clock_context {
     modem_clock_hal_context_t *hal;
     portMUX_TYPE              lock;
     struct {
-        int16_t     refs;
-        uint16_t    reserved;   /* reserved for 4 bytes aligned */
+        int16_t     refs;               /* Reference count for this device, if with_refcnt is enabled */
+        uint16_t    with_refcnt : 1;    /* Enable reference count management (true=use refs, false=ignore refs) */
+        uint16_t    reserved    : 15;   /* reserved for 15 bits aligned */
         void (*configure)(struct modem_clock_context *, bool);
     } dev[MODEM_CLOCK_DEVICE_MAX];
     /* the low-power clock source for each module */
@@ -171,29 +172,30 @@ modem_clock_context_t * __attribute__((weak)) IRAM_ATTR MODEM_CLOCK_instance(voi
     static DRAM_ATTR modem_clock_context_t modem_clock_context = {
         .hal = &modem_clock_hal, .lock = portMUX_INITIALIZER_UNLOCKED,
         .dev = {
-            [MODEM_CLOCK_MODEM_ADC_COMMON_FE]   = { .refs = 0, .configure = modem_clock_modem_adc_common_fe_configure },
-            [MODEM_CLOCK_MODEM_PRIVATE_FE]      = { .refs = 0, .configure = modem_clock_modem_private_fe_configure },
-            [MODEM_CLOCK_COEXIST]               = { .refs = 0, .configure = modem_clock_coex_configure },
-            [MODEM_CLOCK_I2C_MASTER]            = { .refs = 0, .configure = modem_clock_i2c_master_configure },
+            [MODEM_CLOCK_MODEM_ADC_COMMON_FE]   = { .refs = 0, .with_refcnt = true,     .configure = modem_clock_modem_adc_common_fe_configure },
+            [MODEM_CLOCK_MODEM_PRIVATE_FE]      = { .refs = 0, .with_refcnt = true,     .configure = modem_clock_modem_private_fe_configure },
+            [MODEM_CLOCK_COEXIST]               = { .refs = 0, .with_refcnt = true,     .configure = modem_clock_coex_configure },
+            // ANALOG_CLOCK_ENABLE/DISABLE has its own ref_cnt management.
+            [MODEM_CLOCK_I2C_MASTER]            = { .refs = 0, .with_refcnt = false,    .configure = modem_clock_i2c_master_configure },
 #if SOC_PHY_CALIBRATION_CLOCK_IS_INDEPENDENT
-            [MODEM_CLOCK_WIFI_APB]              = { .refs = 0, .configure = modem_clock_wifi_apb_configure },
-            [MODEM_CLOCK_WIFI_BB_44M]           = { .refs = 0, .configure = modem_clock_wifi_bb_44m_configure },
+            [MODEM_CLOCK_WIFI_APB]              = { .refs = 0, .with_refcnt = true,     .configure = modem_clock_wifi_apb_configure },
+            [MODEM_CLOCK_WIFI_BB_44M]           = { .refs = 0, .with_refcnt = true,     .configure = modem_clock_wifi_bb_44m_configure },
 #endif
 #if SOC_WIFI_SUPPORTED
-            [MODEM_CLOCK_WIFI_MAC]              = { .refs = 0, .configure = modem_clock_wifi_mac_configure },
-            [MODEM_CLOCK_WIFI_BB]               = { .refs = 0, .configure = modem_clock_wifi_bb_configure },
+            [MODEM_CLOCK_WIFI_MAC]              = { .refs = 0, .with_refcnt = true,     .configure = modem_clock_wifi_mac_configure },
+            [MODEM_CLOCK_WIFI_BB]               = { .refs = 0, .with_refcnt = true,     .configure = modem_clock_wifi_bb_configure },
 #endif
-            [MODEM_CLOCK_ETM]                   = { .refs = 0, .configure = modem_clock_etm_configure },
+            [MODEM_CLOCK_ETM]                   = { .refs = 0, .with_refcnt = true,     .configure = modem_clock_etm_configure },
 #if SOC_BT_SUPPORTED
-            [MODEM_CLOCK_BLE_MAC]               = { .refs = 0, .configure = modem_clock_ble_mac_configure },
+            [MODEM_CLOCK_BLE_MAC]               = { .refs = 0, .with_refcnt = true,     .configure = modem_clock_ble_mac_configure },
 #endif
 #if SOC_IEEE802154_SUPPORTED || SOC_BT_SUPPORTED
-            [MODEM_CLOCK_BT_I154_COMMON_BB]       = { .refs = 0, .configure = modem_clock_ble_i154_bb_configure },
+            [MODEM_CLOCK_BT_I154_COMMON_BB]       = { .refs = 0, .with_refcnt = true,   .configure = modem_clock_ble_i154_bb_configure },
 #endif
 #if SOC_IEEE802154_SUPPORTED
-            [MODEM_CLOCK_802154_MAC]            = { .refs = 0, .configure = modem_clock_ieee802154_mac_configure },
+            [MODEM_CLOCK_802154_MAC]            = { .refs = 0, .with_refcnt = true,     .configure = modem_clock_ieee802154_mac_configure },
 #endif
-            [MODEM_CLOCK_DATADUMP]              = { .refs = 0, .configure = modem_clock_data_dump_configure }
+            [MODEM_CLOCK_DATADUMP]              = { .refs = 0, .with_refcnt = true,     .configure = modem_clock_data_dump_configure }
         },
         .lpclk_src = { [0 ... PERIPH_MODEM_MODULE_NUM - 1] = MODEM_CLOCK_LPCLK_SRC_INVALID }
     };
@@ -243,11 +245,14 @@ esp_err_t modem_clock_domain_clk_gate_disable(modem_clock_domain_t domain, pmu_h
 
 static void IRAM_ATTR modem_clock_device_enable(modem_clock_context_t *ctx, uint32_t dev_map)
 {
+    int16_t refs = 0;
     esp_os_enter_critical_safe(&ctx->lock);
     for (int i = 0; dev_map; dev_map >>= 1, i++) {
         if (dev_map & BIT(0)) {
-            ctx->dev[i].refs++;
-            (*ctx->dev[i].configure)(ctx, true);
+            refs = ctx->dev[i].with_refcnt ? ctx->dev[i].refs++ : refs;
+            if (refs == 0 || !ctx->dev[i].with_refcnt) {
+                (*ctx->dev[i].configure)(ctx, true);
+            }
         }
     }
     esp_os_exit_critical_safe(&ctx->lock);
@@ -259,14 +264,16 @@ static void IRAM_ATTR modem_clock_device_disable(modem_clock_context_t *ctx, uin
     esp_os_enter_critical_safe(&ctx->lock);
     for (int i = 0; dev_map; dev_map >>= 1, i++) {
         if (dev_map & BIT(0)) {
-            refs = --ctx->dev[i].refs;
-            if (refs == 0) {
+            refs = ctx->dev[i].with_refcnt ? --ctx->dev[i].refs : refs;
+            if (refs == 0 || !ctx->dev[i].with_refcnt) {
                 (*ctx->dev[i].configure)(ctx, false);
+            }
+            if (ctx->dev[i].with_refcnt) {
+                assert(refs >= 0);
             }
         }
     }
     esp_os_exit_critical_safe(&ctx->lock);
-    assert(refs >= 0);
 }
 
 void IRAM_ATTR modem_clock_module_mac_reset(shared_periph_module_t module)
