@@ -140,7 +140,7 @@ pytest_build_system_win_minimal_cmake:
 pytest_buildv2_system_win:
   extends:
     - .test_build_system_template_win
-    - .rules:labels:windows_pytest_build_system
+    - .rules:labels:buildv2
   parallel: 2
   needs: []
   tags: [windows-build, brew]
