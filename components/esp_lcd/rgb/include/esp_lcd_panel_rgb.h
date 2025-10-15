@@ -18,6 +18,9 @@ extern "C" {
 #endif
 
 #if SOC_LCD_RGB_SUPPORTED
+
+#define ESP_RGB_LCD_PANEL_MAX_FB_NUM         3 // maximum supported frame buffer number
+
 /**
  * @brief LCD RGB timing structure
  * @verbatim
@@ -142,6 +145,7 @@ typedef struct {
     size_t bits_per_pixel;        /*!< Frame buffer color depth, in bpp, specially, if set to zero, it will default to `data_width`.
                                        When using a Serial RGB interface, this value could be different from `data_width` */
     size_t num_fbs;               /*!< Number of screen-sized frame buffers that allocated by the driver. By default (set to either 0 or 1) only one frame buffer will be used. Maximum number of buffers are 3 */
+    void *user_fbs[ESP_RGB_LCD_PANEL_MAX_FB_NUM];              /*!< Array of user-provided frame buffers. If not NULL, the driver will use these buffers instead of allocating its own */
     size_t bounce_buffer_size_px; /*!< If it's non-zero, the driver allocates two DRAM bounce buffers for DMA use.
                                        DMA fetching from DRAM bounce buffer is much faster than PSRAM frame buffer. */
     size_t dma_burst_size;        /*!< DMA burst size, in bytes */
@@ -249,6 +253,18 @@ esp_err_t esp_lcd_rgb_panel_get_frame_buffer(esp_lcd_panel_handle_t panel, uint3
  *      - ESP_OK: Start a refresh successfully
  */
 esp_err_t esp_lcd_rgb_panel_refresh(esp_lcd_panel_handle_t panel);
+
+/**
+ * @brief Allocate a draw buffer for RGB LCD panel
+ *
+ * @note This function differs from the normal 'heap_caps_*' functions in that it can also automatically handle the alignment required by DMA burst, cache line size, etc.
+ *
+ * @param[in] panel LCD panel handle, returned from `esp_lcd_new_rgb_panel`
+ * @param[in] size Size of memory to be allocated
+ * @param[in] caps Bitwise OR of MALLOC_CAP_* flags indicating the type of memory desired for the allocation
+ * @return Pointer to a new buffer of size 'size' with capabilities 'caps', or NULL if allocation failed
+ */
+void *esp_lcd_rgb_alloc_draw_buffer(esp_lcd_panel_handle_t panel, size_t size, uint32_t caps);
 
 /**
  * @brief LCD color conversion profile
