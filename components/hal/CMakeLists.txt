@@ -22,10 +22,6 @@ if(CONFIG_SOC_LP_TIMER_SUPPORTED)
     list(APPEND srcs "lp_timer_hal.c")
 endif()
 
-if(CONFIG_SOC_WDT_SUPPORTED AND NOT CONFIG_HAL_WDT_USE_ROM_IMPL)
-    list(APPEND srcs "wdt_hal_iram.c")
-endif()
-
 if(CONFIG_SOC_KEY_MANAGER_SUPPORTED)
     list(APPEND srcs "key_mgr_hal.c")
     list(APPEND srcs "huk_hal.c")
@@ -52,7 +48,6 @@ endif()
 if(esp_tee_build)
     list(APPEND srcs "apm_hal.c"
                      "brownout_hal.c"
-                     "wdt_hal_iram.c"
                      "aes_hal.c"
                      "sha_hal.c"
                      "hmac_hal.c"
@@ -306,20 +301,8 @@ elseif(NOT BOOTLOADER_BUILD)
 
     if(${target} STREQUAL "esp32s2")
         list(APPEND srcs
-                    "xt_wdt_hal.c"
                     "esp32s2/cp_dma_hal.c")
     endif()
-
-    if(${target} STREQUAL "esp32s3")
-        list(APPEND srcs
-            "xt_wdt_hal.c")
-    endif()
-
-    if(${target} STREQUAL "esp32c3")
-        list(APPEND srcs
-            "xt_wdt_hal.c")
-    endif()
-
 
     if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/${target}/rtc_cntl_hal.c")
         list(APPEND srcs "${target}/rtc_cntl_hal.c")

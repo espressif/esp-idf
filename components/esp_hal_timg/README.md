@@ -1,6 +1,7 @@
-# ESP Hardware Abstraction Layer for Timer Groups (`esp_hal_timg`)
+# ESP Hardware Abstraction Layer for Timer Group Peripheral
 
-⚠️ **Notice**: This HAL component is under active development. API stability and backward-compatibility between versions are not guaranteed at this time.
+> [!NOTE]
+> This component is currently in beta. Its API, behavior, and compatibility may change at any time and without notice; backward compatibility is not guaranteed. Use caution when integrating into production systems.
 
 ## Overview
 
@@ -11,7 +12,7 @@ The `esp_hal_timg` component provides a **Hardware Abstraction Layer** for the G
 The HAL architecture consists of two primary layers:
 
 1. **HAL Layer (Upper)**: Defines the operational sequences and data structures required to interact with timer peripherals, including:
-   - Initialization and deinitialization
+   - Initialization and de-initialization
    - Timer control operations (start, stop, reload)
    - Alarm and event handling
    - Counter operations

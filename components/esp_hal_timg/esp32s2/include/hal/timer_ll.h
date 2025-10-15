@@ -14,18 +14,24 @@
 #include "soc/timer_group_struct.h"
 #include "soc/system_reg.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+// Total number of general purpose timers
+#define TIMER_LL_GPTIMERS_TOTAL     (TIMG_LL_INST_NUM * TIMG_LL_GPTIMERS_PER_INST)
 
 // Get timer group register base address with giving group number
 #define TIMER_LL_GET_HW(group_id) ((group_id == 0) ? (&TIMERG0) : (&TIMERG1))
+
+// Bit width of GPTIMER counter
+#define TIMER_LL_COUNTER_BIT_WIDTH   64
 
 // Get alarm interrupt mask with the given timer ID
 #define TIMER_LL_EVENT_ALARM(timer_id) (1 << (timer_id))
 
 // Support APB as function clock
 #define TIMER_LL_FUNC_CLOCK_SUPPORT_APB 1
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * @brief Set clock source for timer

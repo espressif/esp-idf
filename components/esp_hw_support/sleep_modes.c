@@ -576,7 +576,7 @@ static SLEEP_FN_ATTR void suspend_timers(uint32_t sleep_flags) {
     if (!(sleep_flags & RTC_SLEEP_PD_XTAL)) {
 #if SOC_SLEEP_TGWDT_STOP_WORKAROUND
         /* If timegroup implemented task watchdog or interrupt watchdog is running, we have to stop it. */
-        for (uint32_t tg_num = 0; tg_num < SOC_MODULE_ATTR(TIMG, INST_NUM); ++tg_num) {
+        for (uint32_t tg_num = 0; tg_num < TIMG_LL_GET(INST_NUM); ++tg_num) {
             if (mwdt_ll_check_if_enabled(TIMER_LL_GET_HW(tg_num))) {
                 mwdt_ll_write_protect_disable(TIMER_LL_GET_HW(tg_num));
                 mwdt_ll_disable(TIMER_LL_GET_HW(tg_num));
@@ -602,7 +602,7 @@ static SLEEP_FN_ATTR void resume_timers(uint32_t sleep_flags) {
         }
 #endif
 #if SOC_SLEEP_TGWDT_STOP_WORKAROUND
-        for (uint32_t tg_num = 0; tg_num < SOC_MODULE_ATTR(TIMG, INST_NUM); ++tg_num) {
+        for (uint32_t tg_num = 0; tg_num < TIMG_LL_GET(INST_NUM); ++tg_num) {
             if (s_stopped_tgwdt_bmap & BIT(tg_num)) {
                 mwdt_ll_write_protect_disable(TIMER_LL_GET_HW(tg_num));
                 mwdt_ll_enable(TIMER_LL_GET_HW(tg_num));

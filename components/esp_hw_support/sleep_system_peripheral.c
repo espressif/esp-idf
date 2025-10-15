@@ -11,7 +11,7 @@
 #include "soc/soc_caps_full.h"
 #include "soc/system_periph_retention.h"
 #include "soc/uart_periph.h"
-#include "soc/timer_periph.h"
+#include "hal/timer_ll.h"
 
 #include "esp_sleep.h"
 #include "esp_log.h"
@@ -189,7 +189,7 @@ bool peripheral_domain_pd_allowed(void)
 #if SOC_TIMER_SUPPORT_SLEEP_RETENTION
     mask.bitmap[SLEEP_RETENTION_MODULE_TG0_TIMER0 >> 5] |= BIT(SLEEP_RETENTION_MODULE_TG0_TIMER0 % 32);
     mask.bitmap[SLEEP_RETENTION_MODULE_TG1_TIMER0 >> 5] |= BIT(SLEEP_RETENTION_MODULE_TG1_TIMER0 % 32);
-#if SOC_GPTIMER_ATTR(TIMERS_PER_TIMG) > 1
+#if TIMG_LL_GET(GPTIMERS_PER_INST) > 1
     mask.bitmap[SLEEP_RETENTION_MODULE_TG0_TIMER1 >> 5] |= BIT(SLEEP_RETENTION_MODULE_TG0_TIMER1 % 32);
     mask.bitmap[SLEEP_RETENTION_MODULE_TG1_TIMER1 >> 5] |= BIT(SLEEP_RETENTION_MODULE_TG1_TIMER1 % 32);
 #endif

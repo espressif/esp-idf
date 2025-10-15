@@ -9,9 +9,8 @@
 #include <stdbool.h>
 #include "sdkconfig.h"
 #include "soc/soc_caps.h"
+#include "hal/mwdt_periph.h"
 #include "hal/wdt_hal.h"
-#include "hal/mwdt_ll.h"
-#include "hal/timg_ll.h"
 #include "soc/system_intr.h"
 #include "freertos/FreeRTOS.h"
 #include "esp_cpu.h"
@@ -29,7 +28,7 @@
 #include "esp_private/sleep_retention.h"
 #endif
 
-#if SOC_MODULE_ATTR(TIMG, INST_NUM) > 1
+#if TIMG_LL_GET(INST_NUM) > 1
 
 /* If we have two hardware timer groups, use the second one for interrupt watchdog. */
 #define WDT_LEVEL_INTR_SOURCE   SYS_TG1_WDT_INTR_SOURCE
@@ -50,7 +49,7 @@
 #define IWDT_PERIPH             PERIPH_TIMG0_MODULE
 #define IWDT_TIMER_GROUP        0
 
-#endif // SOC_MODULE_ATTR(TIMG, INST_NUM) > 1
+#endif // TIMG_LL_GET(INST_NUM) > 1
 
 #if CONFIG_ESP_INT_WDT
 #if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_MWDT_SUPPORT_SLEEP_RETENTION

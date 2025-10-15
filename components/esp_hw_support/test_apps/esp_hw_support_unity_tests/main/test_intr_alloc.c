@@ -18,7 +18,7 @@
 #include "unity.h"
 #include "esp_intr_alloc.h"
 #include "driver/gptimer.h"
-#include "soc/soc_caps_full.h"
+#include "hal/timer_periph.h"
 #include "soc/system_intr.h"
 #if SOC_GPSPI_SUPPORTED
 #include "soc/spi_periph.h"
@@ -38,9 +38,9 @@ static bool on_timer_alarm(gptimer_handle_t timer, const gptimer_alarm_event_dat
 
 static void timer_test(int flags)
 {
-    static int count[SOC_MODULE_ATTR(GPTIMER, TIMERS_TOTAL)] = {0};
-    gptimer_handle_t gptimers[SOC_MODULE_ATTR(GPTIMER, TIMERS_TOTAL)];
-    intr_handle_t inth[SOC_MODULE_ATTR(GPTIMER, TIMERS_TOTAL)];
+    static int count[TIMER_LL_GPTIMERS_TOTAL] = {0};
+    gptimer_handle_t gptimers[TIMER_LL_GPTIMERS_TOTAL];
+    intr_handle_t inth[TIMER_LL_GPTIMERS_TOTAL];
 
     gptimer_config_t config = {
         .clk_src = GPTIMER_CLK_SRC_DEFAULT,
@@ -48,7 +48,7 @@ static void timer_test(int flags)
         .resolution_hz = 1000000,
         .flags.intr_shared = (flags & ESP_INTR_FLAG_SHARED) == ESP_INTR_FLAG_SHARED,
     };
-    for (int i = 0; i < SOC_MODULE_ATTR(GPTIMER, TIMERS_TOTAL); i++) {
+    for (int i = 0; i < TIMER_LL_GPTIMERS_TOTAL; i++) {
         TEST_ESP_OK(gptimer_new_timer(&config, &gptimers[i]));
     }
     gptimer_alarm_config_t alarm_config = {
@@ -60,7 +60,7 @@ static void timer_test(int flags)
         .on_alarm = on_timer_alarm,
     };
 
-    for (int i = 0; i < SOC_MODULE_ATTR(GPTIMER, TIMERS_TOTAL); i++) {
+    for (int i = 0; i < TIMER_LL_GPTIMERS_TOTAL; i++) {
         TEST_ESP_OK(gptimer_register_event_callbacks(gptimers[i], &cbs, &count[i]));
         alarm_config.alarm_count += 10000 * i;
         TEST_ESP_OK(gptimer_set_alarm_action(gptimers[i], &alarm_config));
@@ -73,39 +73,39 @@ static void timer_test(int flags)
     if ((flags & ESP_INTR_FLAG_SHARED)) {
         /* Check that the allocated interrupts are actually shared */
         int intr_num = esp_intr_get_intno(inth[0]);
-        for (int i = 0; i < SOC_MODULE_ATTR(GPTIMER, TIMERS_TOTAL); i++) {
+        for (int i = 0; i < TIMER_LL_GPTIMERS_TOTAL; i++) {
             TEST_ASSERT_EQUAL(intr_num, esp_intr_get_intno(inth[i]));
         }
     }
 
     vTaskDelay(1000 / portTICK_PERIOD_MS);
     printf("Timer values after 1 sec:");
-    for (int i = 0; i < SOC_MODULE_ATTR(GPTIMER, TIMERS_TOTAL); i++) {
+    for (int i = 0; i < TIMER_LL_GPTIMERS_TOTAL; i++) {
         printf(" %d", count[i]);
     }
     printf("\r\n");
 
-    for (int i = 0; i < SOC_MODULE_ATTR(GPTIMER, TIMERS_TOTAL); i++) {
+    for (int i = 0; i < TIMER_LL_GPTIMERS_TOTAL; i++) {
         TEST_ASSERT_NOT_EQUAL(0, count[i]);
     }
 
     printf("Disabling timers' interrupt...\r\n");
-    for (int i = 0; i < SOC_MODULE_ATTR(GPTIMER, TIMERS_TOTAL); i++) {
+    for (int i = 0; i < TIMER_LL_GPTIMERS_TOTAL; i++) {
         esp_intr_disable(inth[i]);
         count[i] = 0;
     }
 
     vTaskDelay(1000 / portTICK_PERIOD_MS);
     printf("Timer values after 1 sec:");
-    for (int i = 0; i < SOC_MODULE_ATTR(GPTIMER, TIMERS_TOTAL); i++) {
+    for (int i = 0; i < TIMER_LL_GPTIMERS_TOTAL; i++) {
         printf(" %d", count[i]);
     }
     printf("\r\n");
-    for (int i = 0; i < SOC_MODULE_ATTR(GPTIMER, TIMERS_TOTAL); i++) {
+    for (int i = 0; i < TIMER_LL_GPTIMERS_TOTAL; i++) {
         TEST_ASSERT_EQUAL(0, count[i]);
     }
 
-    for (int i = 0; i < SOC_MODULE_ATTR(GPTIMER, TIMERS_TOTAL); i++) {
+    for (int i = 0; i < TIMER_LL_GPTIMERS_TOTAL; i++) {
         TEST_ESP_OK(gptimer_stop(gptimers[i]));
         TEST_ESP_OK(gptimer_disable(gptimers[i]));
         TEST_ESP_OK(gptimer_del_timer(gptimers[i]));
@@ -256,7 +256,7 @@ void IRAM_ATTR int_handler1(void *arg)
 {
     intr_alloc_test_ctx_t *ctx = (intr_alloc_test_ctx_t *)arg;
     esp_rom_printf("handler 1 called.\n");
-    if ( ctx->flag1 ) {
+    if (ctx->flag1) {
         ctx->flag3 = true;
     } else {
         ctx->flag1 = true;
@@ -273,7 +273,7 @@ void IRAM_ATTR int_handler2(void *arg)
 {
     intr_alloc_test_ctx_t *ctx = (intr_alloc_test_ctx_t *)arg;
     esp_rom_printf("handler 2 called.\n");
-    if ( ctx->flag2 ) {
+    if (ctx->flag2) {
         ctx->flag4 = true;
     } else {
         ctx->flag2 = true;
@@ -321,7 +321,7 @@ TEST_CASE("allocate 2 handlers for a same source and remove the later one", "[in
 #endif
 
     vTaskDelay(100);
-    TEST_ASSERT( ctx.flag1 && ctx.flag2 );
+    TEST_ASSERT(ctx.flag1 && ctx.flag2);
 
     printf("remove intr 1.\n");
     r = esp_intr_free(handle2);
@@ -335,7 +335,7 @@ TEST_CASE("allocate 2 handlers for a same source and remove the later one", "[in
 #endif
 
     vTaskDelay(500);
-    TEST_ASSERT( ctx.flag3 && !ctx.flag4 );
+    TEST_ASSERT(ctx.flag3 && !ctx.flag4);
     printf("test passed.\n");
     esp_intr_free(handle1);
 }

@@ -28,4 +28,4 @@ idf_component_register(SRCS ${srcs}
                        PRIV_INCLUDE_DIRS ${priv_includes}
                        LDFRAGMENTS "linker.lf"
                        REQUIRES "freertos"
-                       PRIV_REQUIRES "soc" "esp_rom" "esp_system")
+                       PRIV_REQUIRES esp_hal_wdt)

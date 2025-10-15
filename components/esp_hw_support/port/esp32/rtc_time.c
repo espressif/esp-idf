@@ -10,7 +10,7 @@
 #include "hal/rtc_cntl_ll.h"
 #include "hal/timg_ll.h"
 #include "soc/rtc.h"
-#include "soc/timer_periph.h"
+#include "hal/timer_periph.h"
 #include "esp_hw_log.h"
 #include "esp_private/periph_ctrl.h"
 
