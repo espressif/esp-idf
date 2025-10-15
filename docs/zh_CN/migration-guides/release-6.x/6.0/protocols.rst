@@ -105,3 +105,19 @@ ESP-Modbus
 ~~~~
 
 * `v2 版本讨论 <https://github.com/espressif/esp-modbus/discussions>`__
+
+ESP-MQTT
+--------
+
+重大变更：ESP-MQTT 迁移为托管组件，并更新了示例集。
+
+- ESP-MQTT 组件已从 ESP-IDF 中移除，现在作为托管组件 ``espressif/mqtt`` 提供。
+  - 在应用中添加该组件，请运行 ``idf.py add-dependency espressif/mqtt``。
+  - 头文件与 API（``mqtt_client.h``）保持一致，但组件通过 Component Manager 获取。
+
+- ESP-IDF 中的示例变更：
+  - 移除了 ``examples/protocols/mqtt/ssl*`` 下的旧版 MQTT TLS 示例。
+  - 新增参考示例：
+
+    - ``examples/protocols/mqtt``：基于 TLS 的 MQTT。
+    - ``examples/protocols/mqtt5``：基于 TLS 的 MQTT v5.0。

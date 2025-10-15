@@ -53,7 +53,6 @@ These third party libraries can be included into the application (firmware) prod
 
 * :component_file:`SD/MMC driver <sdmmc/sdmmc_cmd.c>` is derived from `OpenBSD SD/MMC driver`_, Copyright (C) 2006 Uwe Stuehler, and is licensed under BSD License.
 
-* :component:`ESP-MQTT <mqtt>` Package (contiki-mqtt), Copyright (C) 2014 Stephen Robinson, MQTT-ESP - Tuan PM <tuanpm at live dot com> is licensed under Apache License 2.0 as described in :component_file:`LICENSE file <mqtt/esp-mqtt/LICENSE>`.
 
 * :component:`BLE Mesh <bt/esp_ble_mesh>` is adapted from Zephyr Project, Copyright (C) 2017-2018 Intel Corporation and licensed under Apache License 2.0.
 
