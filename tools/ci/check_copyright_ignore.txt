@@ -764,6 +764,10 @@ examples/bluetooth/esp_ble_mesh/aligenie_demo/components/vendor_model/include/ge
 examples/bluetooth/esp_ble_mesh/aligenie_demo/components/vendor_model/include/genie_timer.h
 examples/bluetooth/esp_ble_mesh/aligenie_demo/components/vendor_model/include/genie_util.h
 examples/bluetooth/nimble/ble_ancs/main/main.c
+examples/bluetooth/nimble/ble_chan_sound_initiator/main/gatt_svr.c
+examples/bluetooth/nimble/ble_chan_sound_reflector/main/ble_chan_reflector.h
+examples/bluetooth/nimble/ble_chan_sound_reflector/main/gatt_svr.c
+examples/bluetooth/nimble/ble_chan_sound_reflector/main/main.c
 examples/bluetooth/nimble/ble_gattc_gatts_coex/main/blecoex.h
 examples/bluetooth/nimble/blecent/main/blecent.h
 examples/bluetooth/nimble/blecent/main/main.c

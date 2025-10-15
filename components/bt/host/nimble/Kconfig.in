@@ -708,6 +708,27 @@ menu "BLE 5.x Features"
     endif
 endmenu #BLE5.x
 
+menu "BLE 6.x Features"
+    depends on (SOC_BLE_60_SUPPORTED || BT_CONTROLLER_DISABLED)
+
+    menuconfig BT_NIMBLE_60_FEATURE_SUPPORT
+        bool "Enable BLE 6 feature"
+        depends on BT_NIMBLE_ENABLED && (SOC_BLE_60_SUPPORTED || BT_CONTROLLER_DISABLED)
+        default n
+        help
+            Enable BLE 6 feature
+
+    if BT_NIMBLE_60_FEATURE_SUPPORT
+        config BT_NIMBLE_CHANNEL_SOUNDING
+            bool "ble channel souding feature"
+            depends on BT_NIMBLE_ENABLED
+            default n
+            help
+                Used to enable/disable the channel sounding feature
+
+    endif
+endmenu #BLE6.x
+
 menu "Services"
     depends on BT_NIMBLE_GATT_SERVER
 
@@ -954,6 +975,7 @@ menu "Services"
             default -1 if BT_NIMBLE_SVC_GAP_CAR_CHAR_NOT_SUPP
             default 0 if BT_NIMBLE_SVC_GAP_CAR_NOT_SUPP
             default 1 if BT_NIMBLE_SVC_GAP_CAR_SUPP
+
 
         menu "GAP Appearance write permissions"
             depends on BT_NIMBLE_GAP_SERVICE
