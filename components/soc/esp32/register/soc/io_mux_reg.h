@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -84,12 +84,6 @@
 
 #define PIN_FUNC_GPIO                               2
 
-#define SPI_CLK_GPIO_NUM                            6
-#define SPI_CS0_GPIO_NUM                            11
-#define SPI_Q_GPIO_NUM                              7
-#define SPI_D_GPIO_NUM                              8
-#define SPI_WP_GPIO_NUM                             10
-#define SPI_HD_GPIO_NUM                             9
 #define XTAL32K_P_GPIO_NUM                          32
 #define XTAL32K_N_GPIO_NUM                          33
 
