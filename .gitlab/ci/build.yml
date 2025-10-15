@@ -256,7 +256,9 @@ pytest_build_system:
   parallel: 3
 
 pytest_buildv2_system:
-  extends: .test_build_system_template
+  extends:
+    - .test_build_system_template
+    - .rules:labels:buildv2
   parallel: 3
   script:
     - ${IDF_PATH}/tools/ci/test_configure_ci_environment.sh
