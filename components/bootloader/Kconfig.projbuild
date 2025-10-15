@@ -1082,8 +1082,9 @@ menu "Security features"
 
     config SECURE_FLASH_PSEUDO_ROUND_FUNC
         bool "Permanently enable XTS-AES's pseudo rounds function"
-        default y
-        depends on SECURE_FLASH_ENCRYPTION_MODE_RELEASE && SOC_FLASH_ENCRYPTION_XTS_AES_SUPPORT_PSEUDO_ROUND
+        default y if SECURE_FLASH_ENCRYPTION_MODE_RELEASE
+        default n
+        depends on SECURE_FLASH_ENC_ENABLED && SOC_FLASH_ENCRYPTION_XTS_AES_SUPPORT_PSEUDO_ROUND
         help
             If set (default), the bootloader will permanently enable the XTS-AES peripheral's pseudo rounds function.
             Note: Enabling this config would burn an efuse.
