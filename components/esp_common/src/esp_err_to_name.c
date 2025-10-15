@@ -746,6 +746,9 @@ static const esp_err_msg_t esp_err_msg_table[] = {
 #   ifdef      ESP_ERR_MBEDTLS_SSL_TICKET_SETUP_FAILED
     ERR_TBL_IT(ESP_ERR_MBEDTLS_SSL_TICKET_SETUP_FAILED),        /* 32796 0x801c mbedtls api returned failed */
 #   endif
+#   ifdef      ESP_ERR_MBEDTLS_SSL_READ_FAILED
+    ERR_TBL_IT(ESP_ERR_MBEDTLS_SSL_READ_FAILED),                /* 32797 0x801d mbedtls api returned failed */
+#   endif
 #   ifdef      ESP_ERR_WOLFSSL_SSL_SET_HOSTNAME_FAILED
     ERR_TBL_IT(ESP_ERR_WOLFSSL_SSL_SET_HOSTNAME_FAILED),        /* 32817 0x8031 wolfSSL api returned error */
 #   endif
