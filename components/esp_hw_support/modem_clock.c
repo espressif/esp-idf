@@ -21,6 +21,9 @@
 #include "hal/clk_tree_ll.h"
 #include "hal/regi2c_ctrl_ll.h"
 #include "esp_private/regi2c_ctrl.h"
+#if CONFIG_IDF_TARGET_ESP32H2
+#include "soc/rtc.h"
+#endif // CONFIG_IDF_TARGET_ESP32H2
 
 // Please define the frequently called modules in the low bit,
 // which will improve the execution efficiency
@@ -429,7 +432,7 @@ void modem_clock_select_lp_clock_source(shared_periph_module_t module, modem_clo
         if (selected) {
             rc_clk_en = clk_ll_rc32k_is_enabled();
             if (!rc_clk_en) {
-                clk_ll_rc32k_enable();
+                rtc_clk_rc32k_enable(true);
             }
             modem_clock_hal_select_ble_rtc_timer_lpclk_source(MODEM_CLOCK_instance()->hal, MODEM_CLOCK_LPCLK_SRC_RC32K);
         }
@@ -442,7 +445,7 @@ void modem_clock_select_lp_clock_source(shared_periph_module_t module, modem_clo
         if (!rc_clk_en) {
             extern void r_esp_ble_rtc_ticks_delay(uint32_t ticks);
             r_esp_ble_rtc_ticks_delay(2);
-            clk_ll_rc32k_disable();
+            rtc_clk_rc32k_enable(false);
         }
 #endif // CONFIG_IDF_TARGET_ESP32H2
 #if SOC_BLE_USE_WIFI_PWR_CLK_WORKAROUND
