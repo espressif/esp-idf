@@ -15,7 +15,6 @@ ignores:
   # the following files should be refactored to remove Kconfig macros
   - "components/hal/twai_hal_v1.c"
   - "components/hal/esp32/include/hal/twai_ll.h"
-  - "components/hal/esp32/include/hal/uart_ll.h"
   - "components/hal/include/hal/twai_types_deprecated.h"
 rule:
   any:
