@@ -23,7 +23,7 @@
 #include "esp_private/esp_clk.h"
 #include "esp_private/gpio.h"
 #include "esp_private/esp_gpio_reserve.h"
-#include "driver/twai.h"
+#include "driver/twai_types_legacy.h"
 #include "soc/soc_caps.h"
 #include "soc/soc.h"
 #include "soc/io_mux_reg.h"
