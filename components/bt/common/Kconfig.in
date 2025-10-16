@@ -255,3 +255,9 @@ config BT_BLE_LOG_UHCI_OUT_UART_IO_NUM_TX
     default 0
     help
         IO number for UART TX port
+
+config BT_LE_USED_MEM_STATISTICS_ENABLED
+    bool "Enable used memory statistics"
+    default n
+    help
+        Used in internal tests only. Enable used memory statistics.
