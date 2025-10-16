@@ -8,10 +8,12 @@
 #include <string.h>
 #include <stdlib.h>
 #include <sys/param.h>
+#include <unistd.h>
 #include "esp_heap_caps.h"
 #include "esp_log.h"
 #include "esp_console.h"
 #include "esp_system.h"
+#include "freertos/idf_additions.h"
 #include "linenoise/linenoise.h"
 #include "argtable3/argtable3.h"
 #include "sys/queue.h"
@@ -261,6 +263,178 @@ esp_err_t esp_console_run(const char *cmdline, int *cmd_ret)
     free(argv);
     return ESP_OK;
 }
+
+#ifdef CONFIG_CONSOLE_COMMAND_ON_TASK
+
+typedef struct esp_console_task_handle {
+    const cmd_item_t *cmd;       //!< Pointer to the command definition
+    TaskHandle_t task_handle;    //!< Handle of the created task (protected by lock)
+    FILE *_stdin;                //!< Pipe for command input
+    FILE *_stdout;               //!< Pipe for command output
+    FILE *_stderr;               //!< Pipe for command error output
+    uint8_t flags;               //!< Flags for task execution
+    int exit_code;               //!< Exit code of the command (protected by lock)
+    _lock_t lock;                //!< Lock to protect task_handle and exit_code
+    size_t argc;                 //!< Number of command line arguments
+    char *argv[0];               //!< Command line arguments (flexible array member)
+} esp_console_task_handle_t;
+
+static void task_cmd(void *arg)
+{
+    esp_console_task_handle_t *task = (esp_console_task_handle_t *)arg;
+
+    if (task->_stdin) {
+        __getreent()->_stdin = task->_stdin;
+    }
+    if (task->_stdout) {
+        __getreent()->_stdout = task->_stdout;
+    }
+    if (task->_stderr) {
+        __getreent()->_stderr = task->_stderr;
+    }
+
+    int exit_code = -1;
+    if (task->cmd->def.func) {
+        exit_code = task->cmd->def.func(task->argc, task->argv);
+    }
+    if (task->cmd->def.func_w_context) {
+        exit_code = (*task->cmd->def.func_w_context)(task->cmd->def.context, task->argc, task->argv);
+    }
+
+    if (task->flags & ESP_CONSOLE_TASK_CLOSE_STDIN) {
+        fclose(__getreent()->_stdin);
+    }
+
+    if (task->flags & ESP_CONSOLE_TASK_CLOSE_STDOUT) {
+        fclose(__getreent()->_stdout);
+    }
+
+    if (task->flags & ESP_CONSOLE_TASK_CLOSE_STDERR) {
+        fclose(__getreent()->_stderr);
+    }
+    __getreent()->_stdin = _REENT_STDIN(_GLOBAL_REENT);
+    __getreent()->_stdout = _REENT_STDOUT(_GLOBAL_REENT);
+    __getreent()->_stderr = _REENT_STDERR(_GLOBAL_REENT);
+
+    __lock_acquire(task->lock);
+    task->exit_code = exit_code;
+    task->task_handle = NULL;
+    __lock_release(task->lock);
+
+    vTaskDelete(NULL);
+}
+
+esp_err_t esp_console_run_on_task(const char *cmdline, FILE *_stdin, FILE *_stdout, FILE *_stderr, uint8_t flags, esp_console_task_handle_t **out_task)
+{
+    const size_t cmd_len = strlen(cmdline);
+    if (!cmd_len || cmd_len >= s_config.max_cmdline_length) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    // Try to do all memory allocations in one go
+    // Calculate the size of each component for clarity and maintainability
+    const size_t task_struct_size = sizeof(esp_console_task_handle_t); // Size of the task struct
+    const size_t argv_array_size = sizeof(char *) * s_config.max_cmdline_args; // Size of argv array
+    const size_t cmdline_buf_size = cmd_len + 1; // Size of command line buffer (including null terminator)
+    const size_t total_size = task_struct_size + argv_array_size + cmdline_buf_size;
+
+    esp_console_task_handle_t *task = (esp_console_task_handle_t *) heap_caps_calloc(1, total_size, s_config.heap_alloc_caps);
+    if (task == NULL) {
+        return ESP_ERR_NO_MEM;
+    }
+
+    // The line buffer is placed after the struct and argv array
+    char *line_buf = (char *)(((char *)task) + task_struct_size + argv_array_size);
+    strlcpy(line_buf, cmdline, cmd_len + 1);
+
+    task->argc = esp_console_split_argv(line_buf, task->argv,
+                                        s_config.max_cmdline_args);
+    if (task->argc == 0) {
+        free(task);
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    task->exit_code = -1;
+    task->cmd = find_command_by_name(task->argv[0]);
+    if (task->cmd == NULL) {
+        free(task);
+        return ESP_ERR_NOT_FOUND;
+    }
+
+    task->_stdin = _stdin;
+    task->_stdout = _stdout;
+    task->_stderr = _stderr;
+    task->flags = flags;
+    __lock_init(task->lock);
+
+    uint32_t stack_size = task->cmd->def.stack_size ? task->cmd->def.stack_size : (CONFIG_CONSOLE_COMMAND_DEFAULT_TASK_STACK_SIZE);
+    UBaseType_t priority = task->cmd->def.priority ? task->cmd->def.priority : (CONFIG_CONSOLE_COMMAND_DEFAULT_TASK_PRIORITY);
+    BaseType_t handle = xTaskCreate(&task_cmd, task->argv[0], stack_size, task, priority, &task->task_handle);
+
+    if (handle != pdPASS) {
+        __lock_close(task->lock);
+        free(task);
+        return ESP_ERR_NO_MEM;
+    }
+    *out_task = task;
+
+    return ESP_OK;
+}
+
+void esp_console_task_free(esp_console_task_handle_t *task)
+{
+    __lock_acquire(task->lock);
+    TaskHandle_t handle = task->task_handle;
+    __lock_release(task->lock);
+
+    if (handle) {
+        // Wait for the task to finish before deleting
+        esp_console_wait_task(task, NULL);
+        vTaskDelete(handle);
+
+        __lock_acquire(task->lock);
+        task->task_handle = NULL;
+        __lock_release(task->lock);
+    }
+    __lock_close(task->lock);
+    free(task);
+}
+
+bool esp_console_task_is_running(esp_console_task_handle_t *task)
+{
+    __lock_acquire(task->lock);
+    TaskHandle_t handle = task->task_handle;
+    __lock_release(task->lock);
+
+    if (handle) {
+        return eTaskGetState(handle) != eDeleted;
+    }
+    return false;
+}
+
+void esp_console_wait_task(esp_console_task_handle_t *task, int *cmd_ret)
+{
+    TaskHandle_t handle;
+
+    __lock_acquire(task->lock);
+    handle = task->task_handle;
+    __lock_release(task->lock);
+
+    if (handle) {
+        // Wait until task is done
+        while (eTaskGetState(handle) != eDeleted) {
+            vTaskDelay(10 / portTICK_PERIOD_MS);
+        }
+    }
+
+    if (cmd_ret) {
+        __lock_acquire(task->lock);
+        *cmd_ret = task->exit_code;
+        __lock_release(task->lock);
+    }
+}
+
+#endif // CONFIG_CONSOLE_COMMAND_ON_TASK
 
 static struct {
     struct arg_str *help_cmd;

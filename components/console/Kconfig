@@ -7,4 +7,25 @@ menu "Console Library"
             Instead of listing the commands in the order of registration, the help command lists
             the available commands in sorted order, if this option is enabled.
 
+    config CONSOLE_COMMAND_ON_TASK
+        bool "Enable command on task"
+        default n
+        help
+            In addition to run the command on current task, the console can also run commands on a dedicated
+            task. This allows for longer running commands without blocking the console input, pipelines, and
+            keeping the original task stack smaller.
+
+    config CONSOLE_COMMAND_DEFAULT_TASK_STACK_SIZE
+        int "Console default task stack size"
+        default 4096
+        depends on CONSOLE_COMMAND_ON_TASK
+        help
+            Default stack size for the console command task, unless overridden.
+
+    config CONSOLE_COMMAND_DEFAULT_TASK_PRIORITY
+        int "Console default task priority"
+        default 5
+        depends on CONSOLE_COMMAND_ON_TASK
+        help
+            Default priority for the console command task, unless overridden.
 endmenu
