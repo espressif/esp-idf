@@ -61,7 +61,6 @@ MIPI DSI 接口的 LCD
     - :cpp:member:`esp_lcd_dpi_panel_config_t::dpi_clock_freq_mhz` 设置 DPI 时钟频率 (MHz)。像素时钟频率越高，刷新率越高，但如果 DMA 带宽不足或 LCD 控制器芯片不支持高像素时钟频率，则可能会导致闪烁。
     - :cpp:member:`esp_lcd_dpi_panel_config_t::in_color_format` 设置输入的像素数据的格式。可用的像素格式见 :cpp:type:`lcd_color_format_t`。MIPI LCD 通常使用 **RGB888** 来获得最佳色彩深度。
     - :cpp:member:`esp_lcd_dpi_panel_config_t::video_timing` 设置 LCD 面板的特定时序参数。包括 LCD 分辨率和消隐间隔在内的必要参数列表见 :cpp:type:`esp_lcd_video_timing_t`，请依据 LCD 技术规格书填写参数。
-    - :cpp:member:`esp_lcd_dpi_panel_config_t::extra_dpi_panel_flags::use_dma2d` 设置是否用 2D DMA 将用户数据异步复制到帧 buffer 中。
 
     .. code-block:: c
 
@@ -81,10 +80,26 @@ MIPI DSI 接口的 LCD
                 .vsync_pulse_width = EXAMPLE_MIPI_DSI_LCD_VSYNC,
                 .vsync_front_porch = EXAMPLE_MIPI_DSI_LCD_VFP,
             },
-            .flags.use_dma2d = true,
         };
         ESP_ERROR_CHECK(esp_lcd_new_panel_dpi(mipi_dsi_bus, &dpi_config, &mipi_dpi_panel));
         ESP_ERROR_CHECK(esp_lcd_panel_init(mipi_dpi_panel));
+
+#. 配置绘制位图钩子函数（可选）
+
+    若想使用 DMA2D 实现绘制位图，驱动程序内部已实现 DMA2D 绘制位图的钩子函数，用户只需调用 :func:`esp_lcd_dpi_panel_enable_dma2d` 即可。
+
+    .. code-block:: c
+
+        ESP_ERROR_CHECK(esp_lcd_dpi_panel_enable_dma2d(mipi_dpi_panel));
+
+    若需更高级的应用，用户可为绘制位图添加自定义钩子，例如通过 PPA 实现旋转、缩放等操作。
+
+    .. code-block:: c
+
+        esp_lcd_panel_hooks_t hooks = {
+            .draw_bitmap_hook = custom_draw_bitmap_hook,
+        };
+        ESP_ERROR_CHECK(esp_lcd_dpi_panel_register_hooks(mipi_dpi_panel, &hooks, &user_ctx));
 
 关于 MIPI DPHY 的供电
 ---------------------
