@@ -231,11 +231,6 @@
 #define SOC_GDMA_SUPPORT_SLEEP_RETENTION    1
 #define SOC_AXI_DMA_EXT_MEM_ENC_ALIGNMENT   (16)
 
-/*-------------------------- 2D-DMA CAPS -------------------------------------*/
-#define SOC_DMA2D_GROUPS                            (1U) // Number of 2D-DMA groups
-#define SOC_DMA2D_TX_CHANNELS_PER_GROUP             (3)  // Number of 2D-DMA TX (OUT) channels in each group
-#define SOC_DMA2D_RX_CHANNELS_PER_GROUP             (2)  // Number of 2D-DMA RX (IN) channels in each group
-
 /*-------------------------- GPIO CAPS ---------------------------------------*/
 // ESP32-P4 has 1 GPIO peripheral
 #define SOC_GPIO_PORT                      1U

@@ -631,18 +631,6 @@ config SOC_AXI_DMA_EXT_MEM_ENC_ALIGNMENT
     int
     default 16
 
-config SOC_DMA2D_GROUPS
-    int
-    default 1
-
-config SOC_DMA2D_TX_CHANNELS_PER_GROUP
-    int
-    default 3
-
-config SOC_DMA2D_RX_CHANNELS_PER_GROUP
-    int
-    default 2
-
 config SOC_GPIO_PORT
     int
     default 1

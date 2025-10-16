@@ -22,7 +22,7 @@
 // This tests the hardware capability of multiple 2D-DMA transactions running together, and the driver capbility of
 // transactions being send to a queue, and waiting for free channels becoming available, and being picked to start the
 // real hardware operation.
-#define M2M_TRANS_TIMES (8)
+#define M2M_TRANS_TIMES (12)
 
 // Descriptor and buffer address and size should aligned to 64 bytes (the cacheline size alignment restriction) to be used by CPU
 

@@ -283,7 +283,6 @@ static inline void ledc_ll_get_clock_divider(ledc_dev_t *hw, ledc_mode_t speed_m
 static inline void ledc_ll_get_clock_source(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_timer_t timer_sel, ledc_clk_src_t *clk_src)
 {
     // The target has no timer-specific clock source option
-    HAL_ASSERT(hw->timer_group[speed_mode].timer[timer_sel].conf.tick_sel == 0);
     *clk_src = LEDC_SCLK;
 }
 
@@ -403,7 +402,7 @@ static inline void ledc_ll_set_duty_int_part(ledc_dev_t *hw, ledc_mode_t speed_m
  */
 static inline void ledc_ll_get_duty(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_channel_t channel_num, uint32_t *duty_val)
 {
-    *duty_val = (hw->channel_group[speed_mode].channel[channel_num].duty_r.duty >> 4);
+    *duty_val = (hw->channel_group[speed_mode].channel[channel_num].duty_r.duty_r >> 4);
 }
 
 /**
@@ -444,7 +443,7 @@ static inline void ledc_ll_set_fade_param_range(ledc_dev_t *hw, ledc_mode_t spee
  */
 static inline void ledc_ll_set_range_number(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_channel_t channel_num, uint32_t range_num)
 {
-    hw->chn_gamma_conf[channel_num].ch0_gamma_entry_num = range_num;
+    hw->chn_gamma_conf[channel_num].gamma_entry_num = range_num;
 }
 
 /**
@@ -459,7 +458,7 @@ static inline void ledc_ll_set_range_number(ledc_dev_t *hw, ledc_mode_t speed_mo
  */
 static inline void ledc_ll_get_range_number(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_channel_t channel_num, uint32_t *range_num)
 {
-    *range_num = hw->chn_gamma_conf[channel_num].ch0_gamma_entry_num;
+    *range_num = hw->chn_gamma_conf[channel_num].gamma_entry_num;
 }
 
 /**

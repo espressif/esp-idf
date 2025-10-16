@@ -11,8 +11,6 @@
 extern "C" {
 #endif
 
-// TODO: IDF-13425
-
 /** UART_FIFO_REG register
  *  FIFO data register
  */

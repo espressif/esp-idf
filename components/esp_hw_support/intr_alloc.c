@@ -67,7 +67,7 @@ typedef struct vector_desc_t vector_desc_t;
 
 struct shared_vector_desc_t {
     int disabled: 1;
-    int source: 8;
+    int source: 16;
     volatile uint32_t *statusreg;
     uint32_t statusmask;
     intr_handler_t isr;
@@ -95,7 +95,7 @@ struct vector_desc_t {
     int flags: 16;                          //OR of VECDESC_FL_* defines
     unsigned int cpu: 1;
     unsigned int intno: 5;
-    int source: 8;                          //Interrupt mux flags, used when not shared
+    int source: 16;                 //Interrupt mux flags, used when not shared
     shared_vector_desc_t *shared_vec_info;  //used when VECDESC_FL_SHARED
     vector_desc_t *next;
 };
