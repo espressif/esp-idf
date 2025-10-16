@@ -17,6 +17,8 @@
     .equ EXC_ILLEGAL_INSTRUCTION, 0x2
     .equ panic_from_exception, xt_unhandled_exception
     .equ panic_from_isr, panicHandler
+    .equ CSR_UINTSTATUS, 0xCB1
+    .equ CSR_UINTTHRESH, 0x047
 
 #if ( SOC_CPU_COPROC_NUM > 0 )
     /* Targets with coprocessors present a special CSR to get Illegal Instruction exception reason */
@@ -94,8 +96,11 @@
     sw    t0, RV_STK_MSTATUS(sp)
     csrr  t0, utvec
     sw    t0, RV_STK_MTVEC(sp)
+    /* NOTE: C6 and H2 possess the utval CSR, but rest of the SoCs don't */
+    #if CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2
     csrr  t0, utval
     sw    t0, RV_STK_MTVAL(sp)
+    #endif
     #else
     csrr  t0, mstatus
     sw    t0, RV_STK_MSTATUS(sp)
@@ -465,6 +470,24 @@ _tee_interrupt_handler:
     li      t0, INTERRUPT_CURRENT_CORE_INT_THRESH_REG
     sw      s3, 0(t0)
     fence
+#elif CONFIG_SECURE_ENABLE_TEE
+    /* Restore the U-mode interrupt threshold level.
+     *
+     * If uintstatus == 0, it means we have returned here after servicing a
+     * U-mode interrupt that was delegated via M-mode. In this case, we should
+     * reset the threshold to the minimum valid level.
+     *
+     * If uintstatus != 0, we are currently handling a U-mode interrupt that
+     * either originated directly in U-mode or is a nested U-mode interrupt.
+     * In this case, the threshold must be retained, so we skip the reset.
+     */
+    csrr    t0, CSR_UINTSTATUS
+    bnez    t0, _skip_thresh_reset
+    csrr    t0, CSR_UINTTHRESH
+    li      t1, (1 << (8 - NLBITS) - 1)
+    beq     t0, t1, _skip_thresh_reset
+    csrw    CSR_UINTTHRESH, t1
+_skip_thresh_reset:
 #endif // !SOC_INT_HW_NESTED_SUPPORTED
 
     /* The RTOS will restore the current TCB stack pointer. This routine will preserve s1 and s2.

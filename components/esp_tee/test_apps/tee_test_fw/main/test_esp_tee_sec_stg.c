@@ -252,7 +252,6 @@ TEST_CASE("Test TEE Secure Storage - Operations with invalid/non-existent keys",
     // Test ECDSA key with AES operation
     ESP_LOGI(TAG, "Key ID: %s - Trying AES operation with ECDSA key...", key_cfg.id);
     esp_err_t err = esp_tee_sec_storage_clear_key(key_cfg.id);
-    ESP_LOGW(TAG, "err: %x", err);
     TEST_ASSERT_TRUE(err == ESP_OK || err == ESP_ERR_NOT_FOUND);
     TEST_ESP_OK(esp_tee_sec_storage_gen_key(&key_cfg));
     TEST_ESP_ERR(ESP_ERR_INVALID_STATE, esp_tee_sec_storage_aead_encrypt(&aead_ctx, tag, sizeof(tag), ciphertext));

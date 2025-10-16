@@ -111,7 +111,6 @@ static void tee_ota_task(void *pvParameter)
             task_fatal_error();
         } else if (data_read > 0) {
             if (image_header_was_checked == false) {
-                /* TODO: TEE image header is missing the `esp_app_desc_t` configuration structure */
                 if (data_read > sizeof(esp_image_header_t) + sizeof(esp_image_segment_header_t)) {
                     esp_image_header_t img_hdr;
                     memcpy(&img_hdr, ota_write_data, sizeof(esp_image_header_t));

@@ -39,22 +39,37 @@ static void assert_valid_block(const heap_t *heap, const block_header_t *block)
 esp_err_t esp_tee_heap_init(void *start_ptr, size_t size)
 {
     assert(start_ptr);
-    if (size < (tlsf_size() + tlsf_block_size_min() + sizeof(heap_t))) {
-        // Region too small to be a heap.
+
+    heap_t *result = (heap_t *)start_ptr;
+    size_t usable_size = size - sizeof(heap_t);
+
+#if CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2
+    bool too_small = (usable_size < tlsf_size() + tlsf_block_size_min());
+#else
+    bool too_small = (size < sizeof(heap_t));
+#endif
+
+    if (too_small) {
         return ESP_ERR_INVALID_SIZE;
     }
 
-    heap_t *result = (heap_t *)start_ptr;
-    size -= sizeof(heap_t);
+#if CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2
+    void *heap = tlsf_create_with_pool(start_ptr + sizeof(heap_t), usable_size);
+    size_t overhead = tlsf_size();
+#else
+    size_t max_bytes = 0;
+    void *heap = tlsf_create_with_pool(start_ptr + sizeof(heap_t), usable_size, max_bytes);
+    size_t overhead = tlsf_size(heap);
+#endif
 
-    result->heap_data = tlsf_create_with_pool(start_ptr + sizeof(heap_t), size);
-    if (result->heap_data == NULL) {
+    if (heap == NULL) {
         return ESP_FAIL;
     }
 
+    result->heap_data = heap;
     result->lock = NULL;
-    result->free_bytes = size - tlsf_size();
-    result->pool_size = size;
+    result->free_bytes = usable_size - overhead;
+    result->pool_size = usable_size;
     result->minimum_free_bytes = result->free_bytes;
 
     tee_heap = (multi_heap_handle_t)result;

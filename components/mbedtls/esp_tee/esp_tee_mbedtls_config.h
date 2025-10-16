@@ -22,6 +22,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+#include "soc/soc_caps.h"
 #include "sdkconfig.h"
 
 #ifndef ESP_TEE_MBEDTLS_CONFIG_H
@@ -50,13 +51,24 @@
 #define MBEDTLS_ECP_C
 #define MBEDTLS_ECDSA_C
 
+#if CONFIG_MBEDTLS_SHA1_C
 #define MBEDTLS_SHA1_C
+#endif
 #define MBEDTLS_SHA224_C
 #define MBEDTLS_SHA256_C
+#if SOC_SHA_SUPPORT_SHA512 && CONFIG_MBEDTLS_SHA512_C
+#define MBEDTLS_SHA384_C
+#define MBEDTLS_SHA512_C
+#endif
 
 #if CONFIG_MBEDTLS_HARDWARE_SHA
+#if CONFIG_MBEDTLS_SHA1_C
 #define MBEDTLS_SHA1_ALT
+#endif
 #define MBEDTLS_SHA256_ALT
+#if SOC_SHA_SUPPORT_SHA512 && CONFIG_MBEDTLS_SHA512_C
+#define MBEDTLS_SHA512_ALT
+#endif
 #endif
 
 #ifdef CONFIG_MBEDTLS_HARDWARE_ECC

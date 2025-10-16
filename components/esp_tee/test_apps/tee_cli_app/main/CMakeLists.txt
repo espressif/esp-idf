@@ -8,4 +8,6 @@ if(CONFIG_SECURE_TEE_ATTESTATION)
 endif()
 
 idf_component_register(SRCS ${srcs}
-                       INCLUDE_DIRS ".")
+                       INCLUDE_DIRS "."
+                       PRIV_REQUIRES app_update console esp_event esp_http_client
+                                     esp_https_ota esp_wifi mbedtls nvs_flash)

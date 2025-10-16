@@ -7,11 +7,12 @@
 #include "esp_attr.h"
 #include "esp_rom_sys.h"
 #include "esp_private/panic_reason.h"
+#include "esp_private/vectors_const.h"
 
 #include "riscv/csr.h"
 #include "riscv/encoding.h"
 #include "riscv/rvruntime-frames.h"
-
+#include "soc/tee_reg.h"
 #include "esp_tee.h"
 #include "panic_helper.h"
 #include "sdkconfig.h"
@@ -23,7 +24,7 @@ void panic_print_backtrace(const void *f, int depth)
     uint32_t sp = (uint32_t)((RvExcFrame *)f)->sp;
     const int per_line = 8;
     for (int x = 0; x < depth; x += per_line * sizeof(uint32_t)) {
-        uint32_t *spp = (uint32_t *)(sp + x);
+        __attribute__((unused)) uint32_t *spp = (uint32_t *)(sp + x);
         tee_panic_print("0x%08x: ", sp + x);
         for (int y = 0; y < per_line; y++) {
             tee_panic_print("0x%08x%s", spp[y], y == per_line - 1 ? "\r\n" : " ");
@@ -33,7 +34,7 @@ void panic_print_backtrace(const void *f, int depth)
 
 void panic_print_registers(const void *f, int core)
 {
-    uint32_t *regs = (uint32_t *)f;
+    __attribute__((unused)) uint32_t *regs = (uint32_t *)f;
 
     // only print ABI name
     const char *desc[] = {
@@ -60,16 +61,26 @@ void panic_print_registers(const void *f, int core)
         const char *name;
         uint32_t value;
     } csr_regs[] = {
-        { "MIE     ", RV_READ_CSR(mie)      },
-        { "MIP     ", RV_READ_CSR(mip)      },
-        { "MSCRATCH", RV_READ_CSR(mscratch) },
-        { "UEPC    ", RV_READ_CSR(uepc)     },
-        { "USTATUS ", RV_READ_CSR(ustatus)  },
-        { "UTVEC   ", RV_READ_CSR(utvec)    },
-        { "UCAUSE  ", RV_READ_CSR(ucause)   },
-        { "UTVAL   ", RV_READ_CSR(utval)    },
-        { "UIE     ", RV_READ_CSR(uie)      },
-        { "UIP     ", RV_READ_CSR(uip)      },
+        { "MSCRATCH  ", RV_READ_CSR(mscratch) },
+        { "UEPC      ", RV_READ_CSR(uepc)     },
+        { "USTATUS   ", RV_READ_CSR(ustatus)  },
+        { "UTVEC     ", RV_READ_CSR(utvec)    },
+        { "UCAUSE    ", RV_READ_CSR(ucause)   },
+#if SOC_INT_PLIC_SUPPORTED
+        { "MIE       ", RV_READ_CSR(mie)      },
+        { "MIP       ", RV_READ_CSR(mip)      },
+        { "UTVAL     ", RV_READ_CSR(utval)    },
+        { "UIE       ", RV_READ_CSR(uie)      },
+        { "UIP       ", RV_READ_CSR(uip)      },
+#endif
+#if SOC_INT_CLIC_SUPPORTED
+        { "USCRATCH  ", RV_READ_CSR(0x040)  },
+        { "MEXSTATUS ", RV_READ_CSR(0x7E1)  },
+        { "MINTSTATUS", RV_READ_CSR(0xFB1)  },
+        { "MINTTHRESH", RV_READ_CSR(0x347)  },
+        { "UINTSTATUS", RV_READ_CSR(0xCB1)  },
+        { "UINTTHRESH", RV_READ_CSR(0x047)  },
+#endif
     };
 
     tee_panic_print("\n\n");
@@ -86,7 +97,7 @@ void panic_print_registers(const void *f, int core)
 void panic_print_rsn(const void *f, int core, const char *rsn)
 {
     const RvExcFrame *regs = (const RvExcFrame *)f;
-    const void *addr = (const void *)regs->mepc;
+    __attribute__((unused)) const void *addr = (const void *)regs->mepc;
 
     tee_panic_print("Guru Meditation Error: Core %d panic'ed (%s). Exception was unhandled.\n", core, rsn);
     tee_panic_print("Fault addr: %p | Origin: %s\n", addr, (regs->mstatus & MSTATUS_MPP) ? "M-mode" : "U-mode");
@@ -116,9 +127,10 @@ void panic_print_exccause(const void *f, int core)
     };
 
     const char *rsn = NULL;
-    if (regs->mcause < (sizeof(reason) / sizeof(reason[0]))) {
-        if (reason[regs->mcause] != NULL) {
-            rsn = (reason[regs->mcause]);
+    uint32_t mcause = regs->mcause & VECTORS_MCAUSE_REASON_MASK;
+    if (mcause < (sizeof(reason) / sizeof(reason[0]))) {
+        if (reason[mcause] != NULL) {
+            rsn = (reason[mcause]);
         }
     }
 

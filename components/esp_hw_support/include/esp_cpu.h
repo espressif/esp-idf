@@ -271,15 +271,33 @@ FORCE_INLINE_ATTR void esp_cpu_intr_set_mtvt_addr(const void *mtvt_addr)
 {
     rv_utils_set_mtvt((uint32_t)mtvt_addr);
 }
+
+/**
+ * @brief Set the base address of the current CPU's Interrupt Vector Table (XTVT), based
+ * on the current privilege level
+ *
+ * @param xtvt_addr Interrupt Vector Table's base address
+ *
+ * @note The XTVT table is only applicable when CLIC is supported
+ */
+FORCE_INLINE_ATTR void esp_cpu_intr_set_xtvt_addr(const void *xtvt_addr)
+{
+    rv_utils_set_xtvt((uint32_t)xtvt_addr);
+}
 #endif  //#if SOC_INT_CLIC_SUPPORTED
 
 #if SOC_CPU_SUPPORT_WFE
 /**
  * @brief Disable the WFE (wait for event) feature for CPU.
  */
-FORCE_INLINE_ATTR void rv_utils_disable_wfe_mode(void)
+FORCE_INLINE_ATTR void esp_cpu_disable_wfe_mode(void)
 {
+#if CONFIG_SECURE_ENABLE_TEE && !NON_OS_BUILD
+    extern esprv_int_mgmt_t esp_tee_intr_sec_srv_cb;
+    esp_tee_intr_sec_srv_cb(2, SS_RV_UTILS_WFE_MODE_ENABLE, false);
+#else
     rv_utils_wfe_mode_enable(false);
+#endif
 }
 #endif
 
@@ -451,7 +469,12 @@ FORCE_INLINE_ATTR uint32_t esp_cpu_intr_get_enabled_mask(void)
 #ifdef __XTENSA__
     return xt_utils_intr_get_enabled_mask();
 #else
+#if CONFIG_SECURE_ENABLE_TEE && !NON_OS_BUILD && CONFIG_IDF_TARGET_ESP32C5
+    extern esprv_int_mgmt_t esp_tee_intr_sec_srv_cb;
+    return esp_tee_intr_sec_srv_cb(1, SS_RV_UTILS_INTR_GET_ENABLED_MASK);
+#else
     return rv_utils_intr_get_enabled_mask();
+#endif
 #endif
 }
 

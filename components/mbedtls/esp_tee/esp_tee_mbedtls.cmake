@@ -65,3 +65,6 @@ target_sources(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/sha/core/sha.c"
 
 target_sources(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/ecc/esp_ecc.c"
                                   "${COMPONENT_DIR}/port/ecc/ecc_alt.c")
+
+# HMAC-based PBKDF2 implementation
+target_sources(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/esp_hmac_pbkdf2.c")
