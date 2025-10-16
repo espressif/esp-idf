@@ -743,5 +743,9 @@
             hint_variables: ['W5500', 'w5500']
 
 -
+    re: "error: 'struct extra_dpi_panel_flags' has no member named 'use_dma2d'"
+    hint: "The `use_dma2d` member has been removed in ESP-IDF v6.0. Please use the `esp_lcd_dpi_panel_enable_dma2d()` function to enable DMA2D for the DPI panel."
+
+-
     re: "error: 'MALLOC_CAP_EXEC' undeclared \\(first use in this function\\)"
     hint: "MALLOC_CAP_EXEC capability cannot be used if CONFIG_ESP_SYSTEM_PMP_IDRAM_SPLIT or CONFIG_ESP_SYSTEM_MEMPROT_FEATURE is enabled. \nFor further information about those configurations, run 'idf.py docs -sp api-reference/kconfig-reference.html#memory-protection'"

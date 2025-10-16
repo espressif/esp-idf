@@ -20,6 +20,8 @@ typedef struct esp_lcd_dpi_panel_t esp_lcd_dpi_panel_t;
 static esp_err_t dpi_panel_del(esp_lcd_panel_t *panel);
 static esp_err_t dpi_panel_init(esp_lcd_panel_t *panel);
 static esp_err_t dpi_panel_draw_bitmap(esp_lcd_panel_t *panel, int x_start, int y_start, int x_end, int y_end, const void *color_data);
+static esp_err_t dpi_panel_draw_bitmap_2d(esp_lcd_panel_t *panel, int x_start, int y_start, int x_end, int y_end, const void *color_data,
+                                          size_t src_x_size, size_t src_y_size, int src_x_start, int src_y_start, int src_x_end, int src_y_end);
 
 struct esp_lcd_dpi_panel_t {
     esp_lcd_panel_t base;         // Base class of generic lcd panel
@@ -37,8 +39,14 @@ struct esp_lcd_dpi_panel_t {
     dw_gdma_channel_handle_t dma_chan;   // DMA channel
     intr_handle_t brg_intr;              // DSI Bridge interrupt handle
     dw_gdma_link_list_handle_t link_lists[DPI_PANEL_MAX_FB_NUM]; // DMA link list
-    esp_async_fbcpy_handle_t fbcpy_handle; // Use DMA2D to do frame buffer copy
+
+    // hook fields
+    esp_lcd_panel_draw_bitmap_hook_t draw_bitmap_hook; // Draw bitmap hook function
+    void* hook_ctx; // Hook context
+    bool (*on_hook_end)(esp_lcd_panel_handle_t panel); // Callback to be invoked when the draw bitmap hook completes its operation
+    esp_async_fbcpy_handle_t fbcpy_handle; // Use DMA2D to do frame buffer copy (only when using DMA2D draw bitmap hook)
     SemaphoreHandle_t draw_sem;            // A semaphore used to synchronize the draw operations when DMA2D is used
+
 #if CONFIG_PM_ENABLE
     esp_pm_lock_handle_t pm_lock;          // Power management lock
 #endif
@@ -47,7 +55,15 @@ struct esp_lcd_dpi_panel_t {
     void *user_ctx; // User context for the callback
 };
 
-IRAM_ATTR
+static bool dpi_panel_draw_bitmap_hook_end(esp_lcd_panel_t *panel)
+{
+    esp_lcd_dpi_panel_t *dpi_panel = __containerof(panel, esp_lcd_dpi_panel_t, base);
+    if (dpi_panel->on_color_trans_done) {
+        return dpi_panel->on_color_trans_done(panel, NULL, dpi_panel->user_ctx);
+    }
+    return false;
+}
+
 static bool async_fbcpy_done_cb(esp_async_fbcpy_handle_t mcp, esp_async_fbcpy_event_data_t *event, void *cb_args)
 {
     bool need_yield = false;
@@ -60,8 +76,8 @@ static bool async_fbcpy_done_cb(esp_async_fbcpy_handle_t mcp, esp_async_fbcpy_ev
         need_yield = true;
     }
 
-    if (dpi_panel->on_color_trans_done) {
-        if (dpi_panel->on_color_trans_done(&dpi_panel->base, NULL, dpi_panel->user_ctx)) {
+    if (dpi_panel->on_hook_end) {
+        if (dpi_panel->on_hook_end(&dpi_panel->base)) {
             need_yield = true;
         }
     }
@@ -168,13 +184,10 @@ esp_err_t esp_lcd_new_panel_dpi(esp_lcd_dsi_bus_handle_t bus, const esp_lcd_dpi_
 {
     esp_err_t ret = ESP_OK;
     esp_lcd_dpi_panel_t *dpi_panel = NULL;
-    esp_async_fbcpy_handle_t fbcpy_ctx = NULL;
     ESP_RETURN_ON_FALSE(bus && panel_config && ret_panel, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     ESP_RETURN_ON_FALSE(panel_config->virtual_channel < 4, ESP_ERR_INVALID_ARG, TAG, "invalid virtual channel %d", panel_config->virtual_channel);
     ESP_RETURN_ON_FALSE(panel_config->dpi_clock_freq_mhz, ESP_ERR_INVALID_ARG, TAG, "invalid DPI clock frequency %"PRIu32, panel_config->dpi_clock_freq_mhz);
-#if !SOC_DMA2D_SUPPORTED
-    ESP_RETURN_ON_FALSE(!panel_config->flags.use_dma2d, ESP_ERR_NOT_SUPPORTED, TAG, "DMA2D is not supported");
-#endif // !SOC_DMA2D_SUPPORTED
+
     size_t num_fbs = panel_config->num_fbs;
     // if the user doesn't specify the number of frame buffers, then fallback to use one frame buffer
     if (num_fbs == 0) {
@@ -226,17 +239,6 @@ esp_err_t esp_lcd_new_panel_dpi(esp_lcd_dsi_bus_handle_t bus, const esp_lcd_dpi_
     dpi_panel->bits_per_pixel = bits_per_pixel;
     dpi_panel->h_pixels = panel_config->video_timing.h_size;
     dpi_panel->v_pixels = panel_config->video_timing.v_size;
-
-#if SOC_DMA2D_SUPPORTED
-    if (panel_config->flags.use_dma2d) {
-        esp_async_fbcpy_config_t fbcpy_config = {};
-        ESP_GOTO_ON_ERROR(esp_async_fbcpy_install(&fbcpy_config, &fbcpy_ctx), err, TAG, "install async memcpy 2d failed");
-        dpi_panel->fbcpy_handle = fbcpy_ctx;
-        dpi_panel->draw_sem = xSemaphoreCreateBinaryWithCaps(DSI_MEM_ALLOC_CAPS);
-        ESP_GOTO_ON_FALSE(dpi_panel->draw_sem, ESP_ERR_NO_MEM, err, TAG, "no memory for draw semaphore");
-        xSemaphoreGive(dpi_panel->draw_sem);
-    }
-#endif // SOC_DMA2D_SUPPORTED
 
     // if the clock source is not assigned, fallback to the default clock source
     mipi_dsi_dpi_clock_source_t dpi_clk_src = panel_config->dpi_clk_src;
@@ -331,6 +333,7 @@ esp_err_t esp_lcd_new_panel_dpi(esp_lcd_dsi_bus_handle_t bus, const esp_lcd_dpi_
     dpi_panel->base.del = dpi_panel_del;
     dpi_panel->base.init = dpi_panel_init;
     dpi_panel->base.draw_bitmap = dpi_panel_draw_bitmap;
+    dpi_panel->base.draw_bitmap_2d = dpi_panel_draw_bitmap_2d;
     *ret_panel = &dpi_panel->base;
     ESP_LOGD(TAG, "dpi panel created @%p", dpi_panel);
     return ESP_OK;
@@ -347,6 +350,11 @@ static esp_err_t dpi_panel_del(esp_lcd_panel_t *panel)
     esp_lcd_dsi_bus_handle_t bus = dpi_panel->bus;
     int bus_id = bus->bus_id;
     mipi_dsi_hal_context_t *hal = &bus->hal;
+
+    // check if the panel is using DMA2D draw bitmap hook
+    if (dpi_panel->fbcpy_handle) {
+        ESP_RETURN_ON_FALSE(false, ESP_ERR_INVALID_STATE, TAG, "please call `esp_lcd_dpi_panel_disable_dma2d()` before deleting the panel");
+    }
     // disable the DPI clock
     PERIPH_RCC_ATOMIC() {
         mipi_dsi_ll_enable_dpi_clock(bus_id, false);
@@ -366,12 +374,6 @@ static esp_err_t dpi_panel_del(esp_lcd_panel_t *panel)
         if (dpi_panel->link_lists[i]) {
             dw_gdma_del_link_list(dpi_panel->link_lists[i]);
         }
-    }
-    if (dpi_panel->fbcpy_handle) {
-        esp_async_fbcpy_uninstall(dpi_panel->fbcpy_handle);
-    }
-    if (dpi_panel->draw_sem) {
-        vSemaphoreDeleteWithCaps(dpi_panel->draw_sem);
     }
     if (dpi_panel->brg_intr) {
         esp_intr_free(dpi_panel->brg_intr);
@@ -470,12 +472,128 @@ static esp_err_t dpi_panel_init(esp_lcd_panel_t *panel)
     return ESP_OK;
 }
 
+static esp_err_t dpi_panel_draw_bitmap_dma2d_hook(esp_lcd_panel_t *panel, const esp_lcd_draw_bitmap_hook_data_t *hook_data, void* hook_ctx)
+{
+    ESP_LOGV(TAG, "copy draw buffer by DMA2D");
+    esp_lcd_dpi_panel_t *dpi_panel = __containerof(panel, esp_lcd_dpi_panel_t, base);
+    // ensure the previous draw operation is finished
+    ESP_RETURN_ON_FALSE(xSemaphoreTake(dpi_panel->draw_sem, 0) == pdTRUE, ESP_ERR_INVALID_STATE,
+                        TAG, "previous draw operation is not finished");
+
+    esp_async_fbcpy_trans_desc_t fbcpy_trans_config = {
+        .src_buffer = hook_data->src_data,
+        .dst_buffer = hook_data->dst_data,
+        .src_buffer_size_x = hook_data->src_x_size,
+        .src_buffer_size_y = hook_data->src_y_size,
+        .dst_buffer_size_x = hook_data->dst_x_size,
+        .dst_buffer_size_y = hook_data->dst_y_size,
+        .src_offset_x = hook_data->src_x_start,
+        .src_offset_y = hook_data->src_y_start,
+        .dst_offset_x = hook_data->dst_x_start,
+        .dst_offset_y = hook_data->dst_y_start,
+        .copy_size_x = hook_data->src_x_end - hook_data->src_x_start,
+        .copy_size_y = hook_data->src_y_end - hook_data->src_y_start,
+        .pixel_format_fourcc_id = dpi_panel->in_color_format,
+    };
+    // save the on_hook_end callback, and invoke it when the async memcpy is done
+    dpi_panel->on_hook_end = hook_data->on_hook_end;
+    ESP_RETURN_ON_ERROR(esp_async_fbcpy(dpi_panel->fbcpy_handle, &fbcpy_trans_config, async_fbcpy_done_cb, dpi_panel), TAG, "async memcpy failed");
+    return ESP_OK;
+}
+
+esp_err_t esp_lcd_dpi_panel_register_hooks(esp_lcd_panel_t *panel, const esp_lcd_panel_hooks_t *hooks, void *hook_ctx)
+{
+    ESP_RETURN_ON_FALSE(panel && hooks, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    esp_lcd_dpi_panel_t *dpi_panel = __containerof(panel, esp_lcd_dpi_panel_t, base);
+
+    dpi_panel->draw_bitmap_hook = hooks->draw_bitmap_hook;
+    dpi_panel->hook_ctx = hook_ctx;
+
+    return ESP_OK;
+}
+
+esp_err_t esp_lcd_dpi_panel_enable_dma2d(esp_lcd_panel_handle_t panel)
+{
+    esp_err_t ret = ESP_OK;
+    ESP_RETURN_ON_FALSE(panel, ESP_ERR_INVALID_ARG, TAG, "invalid panel");
+
+    esp_lcd_dpi_panel_t *dpi_panel = __containerof(panel, esp_lcd_dpi_panel_t, base);
+
+    // Check if built-in DMA2D draw bitmap hook is registered
+    ESP_RETURN_ON_FALSE(!dpi_panel->fbcpy_handle, ESP_ERR_INVALID_STATE, TAG, "draw bitmap DMA2D hook is already registered");
+
+    // Initialize DMA2D resources
+    esp_async_fbcpy_config_t fbcpy_config = {};
+    ESP_RETURN_ON_ERROR(esp_async_fbcpy_install(&fbcpy_config, &dpi_panel->fbcpy_handle), TAG, "install async memcpy 2d failed");
+
+    dpi_panel->draw_sem = xSemaphoreCreateBinaryWithCaps(DSI_MEM_ALLOC_CAPS);
+    ESP_GOTO_ON_FALSE(dpi_panel->draw_sem, ESP_ERR_NO_MEM, err, TAG, "no memory for draw semaphore");
+    xSemaphoreGive(dpi_panel->draw_sem);
+    // Register the DMA2D draw bitmap hook
+    esp_lcd_panel_hooks_t hooks = {
+        .draw_bitmap_hook = dpi_panel_draw_bitmap_dma2d_hook,
+    };
+    ESP_GOTO_ON_ERROR(esp_lcd_dpi_panel_register_hooks(panel, &hooks, dpi_panel->user_ctx), err, TAG, "register DMA2D draw bitmap hook failed");
+
+    return ESP_OK;
+
+err:
+    if (dpi_panel->fbcpy_handle) {
+        esp_async_fbcpy_uninstall(dpi_panel->fbcpy_handle);
+        dpi_panel->fbcpy_handle = NULL;
+    }
+    if (dpi_panel->draw_sem) {
+        vSemaphoreDeleteWithCaps(dpi_panel->draw_sem);
+        dpi_panel->draw_sem = NULL;
+    }
+    return ret;
+}
+
+esp_err_t esp_lcd_dpi_panel_disable_dma2d(esp_lcd_panel_handle_t panel)
+{
+    ESP_RETURN_ON_FALSE(panel, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    esp_lcd_dpi_panel_t *dpi_panel = __containerof(panel, esp_lcd_dpi_panel_t, base);
+
+    // Check if built-in DMA2D draw bitmap hook is registered
+    ESP_RETURN_ON_FALSE(dpi_panel->fbcpy_handle, ESP_ERR_INVALID_STATE, TAG, "draw bitmap DMA2D hook not registered");
+
+    esp_lcd_panel_hooks_t hooks = {
+        .draw_bitmap_hook = NULL,
+    };
+    ESP_RETURN_ON_ERROR(esp_lcd_dpi_panel_register_hooks(panel, &hooks, NULL), TAG, "unregister DMA2D draw bitmap hook failed");
+    if (dpi_panel->fbcpy_handle) {
+        ESP_RETURN_ON_ERROR(esp_async_fbcpy_uninstall(dpi_panel->fbcpy_handle), TAG, "uninstall DMA2D failed");
+        dpi_panel->fbcpy_handle = NULL;
+    }
+    if (dpi_panel->draw_sem) {
+        vSemaphoreDeleteWithCaps(dpi_panel->draw_sem);
+        dpi_panel->draw_sem = NULL;
+    }
+
+    return ESP_OK;
+}
+
 static esp_err_t dpi_panel_draw_bitmap(esp_lcd_panel_t *panel, int x_start, int y_start, int x_end, int y_end, const void *color_data)
 {
+    size_t src_x_size = x_end - x_start;
+    size_t src_y_size = y_end - y_start;
+    size_t src_x_start = 0;
+    size_t src_y_start = 0;
+    size_t src_x_end = src_x_size;
+    size_t src_y_end = src_y_size;
+    ESP_RETURN_ON_ERROR(dpi_panel_draw_bitmap_2d(panel, x_start, y_start, x_end, y_end, color_data, src_x_size, src_y_size, src_x_start, src_y_start, src_x_end, src_y_end),
+                        TAG, "draw bitmap failed");
+    return ESP_OK;
+}
+
+static esp_err_t dpi_panel_draw_bitmap_2d(esp_lcd_panel_t *panel, int x_start, int y_start, int x_end, int y_end, const void *color_data,
+                                          size_t src_x_size, size_t src_y_size, int src_x_start, int src_y_start, int src_x_end, int src_y_end)
+{
     esp_lcd_dpi_panel_t *dpi_panel = __containerof(panel, esp_lcd_dpi_panel_t, base);
+
     uint8_t cur_fb_index = dpi_panel->cur_fb_index;
     uint8_t *frame_buffer = dpi_panel->fbs[cur_fb_index];
-    uint8_t *draw_buffer = (uint8_t *)color_data;
+    const uint8_t *draw_buffer = (const uint8_t *)color_data;
     size_t fb_size = dpi_panel->fb_size;
     size_t bits_per_pixel = dpi_panel->bits_per_pixel;
 
@@ -501,7 +619,31 @@ static esp_err_t dpi_panel_draw_bitmap(esp_lcd_panel_t *panel, int x_start, int 
         do_copy = true;
     }
 
-    if (!do_copy) { // no copy, just do cache memory write back
+    if (dpi_panel->draw_bitmap_hook) { // copy using draw bitmap hook
+        ESP_LOGV(TAG, "copy draw buffer by draw bitmap hook");
+        // Note, whether the previous draw operation is finished should be ensured by the hook
+
+        esp_lcd_draw_bitmap_hook_data_t hook_data = {
+            .dst_data = frame_buffer,
+            .dst_x_size = dpi_panel->h_pixels,
+            .dst_y_size = dpi_panel->v_pixels,
+            .dst_x_start = x_start,
+            .dst_y_start = y_start,
+            .dst_x_end = x_end,
+            .dst_y_end = y_end,
+            .src_data = draw_buffer,
+            .src_x_size = src_x_size,
+            .src_y_size = src_y_size,
+            .src_x_start = src_x_start,
+            .src_y_start = src_y_start,
+            .src_x_end = src_x_end,
+            .src_y_end = src_y_end,
+            .bits_per_pixel = bits_per_pixel,
+            .on_hook_end = dpi_panel_draw_bitmap_hook_end,
+        };
+
+        ESP_RETURN_ON_ERROR(dpi_panel->draw_bitmap_hook(panel, &hook_data, dpi_panel->hook_ctx), TAG, "draw_bitmap_hook failed");
+    } else if (!do_copy) { // no copy, just do cache memory write back
         ESP_LOGV(TAG, "draw buffer is in frame buffer memory range, do cache write back only");
         // only write back the LCD lines that updated by the draw buffer
         uint8_t *cache_sync_start = dpi_panel->fbs[draw_buf_fb_index] + (y_start * dpi_panel->h_pixels) * bits_per_pixel / 8;
@@ -514,18 +656,19 @@ static esp_err_t dpi_panel_draw_bitmap(esp_lcd_panel_t *panel, int x_start, int 
         if (dpi_panel->on_color_trans_done) {
             dpi_panel->on_color_trans_done(&dpi_panel->base, NULL, dpi_panel->user_ctx);
         }
-    } else if (!dpi_panel->fbcpy_handle) { // copy by CPU
+    } else { // copy by CPU
         ESP_LOGV(TAG, "copy draw buffer by CPU");
-        const uint8_t *from = draw_buffer;
+        const uint8_t *from = draw_buffer + (src_y_start * src_x_size + src_x_start) * bits_per_pixel / 8;
         uint8_t *to = frame_buffer + (y_start * dpi_panel->h_pixels + x_start) * bits_per_pixel / 8;
         uint32_t copy_bytes_per_line = (x_end - x_start) * bits_per_pixel / 8;
-        uint32_t bytes_per_line = bits_per_pixel * dpi_panel->h_pixels / 8;
+        uint32_t dst_bytes_per_line = bits_per_pixel * dpi_panel->h_pixels / 8;
+        uint32_t src_bytes_per_line = bits_per_pixel * src_x_size / 8;
         // please note, we assume the user provided draw_buffer is compact,
         // but the destination is a sub-window of the frame buffer, so we need to skip the stride
         for (int y = y_start; y < y_end; y++) {
             memcpy(to, from, copy_bytes_per_line);
-            to += bytes_per_line;
-            from += copy_bytes_per_line;
+            to += dst_bytes_per_line;
+            from += src_bytes_per_line;
         }
         uint8_t *cache_sync_start = frame_buffer + (y_start * dpi_panel->h_pixels) * bits_per_pixel / 8;
         size_t cache_sync_size = (y_end - y_start) * dpi_panel->h_pixels * bits_per_pixel / 8;
@@ -535,33 +678,6 @@ static esp_err_t dpi_panel_draw_bitmap(esp_lcd_panel_t *panel, int x_start, int 
         if (dpi_panel->on_color_trans_done) {
             dpi_panel->on_color_trans_done(&dpi_panel->base, NULL, dpi_panel->user_ctx);
         }
-    } else { // copy by DMA2D
-        ESP_LOGV(TAG, "copy draw buffer by DMA2D");
-        // ensure the previous draw operation is finished
-        ESP_RETURN_ON_FALSE(xSemaphoreTake(dpi_panel->draw_sem, 0) == pdTRUE, ESP_ERR_INVALID_STATE,
-                            TAG, "previous draw operation is not finished");
-
-        // write back the user's draw buffer, so that the DMA can see the correct data
-        // Note, the user draw buffer should be 1D array, and contiguous in memory, no stride
-        size_t color_data_size = (x_end - x_start) * (y_end - y_start) * bits_per_pixel / 8;
-        esp_cache_msync(draw_buffer, color_data_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
-
-        esp_async_fbcpy_trans_desc_t fbcpy_trans_config = {
-            .src_buffer = draw_buffer,
-            .dst_buffer = (void *)frame_buffer,
-            .src_buffer_size_x = x_end - x_start,
-            .src_buffer_size_y = y_end - y_start,
-            .dst_buffer_size_x = dpi_panel->h_pixels,
-            .dst_buffer_size_y = dpi_panel->v_pixels,
-            .src_offset_x = 0,
-            .src_offset_y = 0,
-            .dst_offset_x = x_start,
-            .dst_offset_y = y_start,
-            .copy_size_x = x_end - x_start,
-            .copy_size_y = y_end - y_start,
-            .pixel_format_fourcc_id = dpi_panel->in_color_format,
-        };
-        ESP_RETURN_ON_ERROR(esp_async_fbcpy(dpi_panel->fbcpy_handle, &fbcpy_trans_config, async_fbcpy_done_cb, dpi_panel), TAG, "async memcpy failed");
     }
 
     return ESP_OK;

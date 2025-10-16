@@ -61,7 +61,6 @@ MIPI DSI Interfaced LCD
     - :cpp:member:`esp_lcd_dpi_panel_config_t::dpi_clock_freq_mhz` sets the DPI clock frequency in MHz. Higher pixel clock frequency results in higher refresh rate, but may cause flickering if the DMA bandwidth is not sufficient or the LCD controller chip does not support high pixel clock frequency.
     - :cpp:member:`esp_lcd_dpi_panel_config_t::in_color_format` sets the pixel format of the input pixel data. The available pixel formats are listed in :cpp:type:`lcd_color_format_t`. We usually use **RGB888** for MIPI LCD to get the best color depth.
     - :cpp:member:`esp_lcd_dpi_panel_config_t::video_timing` sets the LCD panel specific timing parameters. All required parameters are listed in the :cpp:type:`esp_lcd_video_timing_t`, including the LCD resolution and blanking porches. Please fill them according to the datasheet of your LCD.
-    - :cpp:member:`esp_lcd_dpi_panel_config_t::extra_dpi_panel_flags::use_dma2d` sets whether to use the 2D DMA peripheral to copy the user data to the frame buffer, asynchronously.
 
     .. code-block:: c
 
@@ -81,10 +80,26 @@ MIPI DSI Interfaced LCD
                 .vsync_pulse_width = EXAMPLE_MIPI_DSI_LCD_VSYNC,
                 .vsync_front_porch = EXAMPLE_MIPI_DSI_LCD_VFP,
             },
-            .flags.use_dma2d = true,
         };
         ESP_ERROR_CHECK(esp_lcd_new_panel_dpi(mipi_dsi_bus, &dpi_config, &mipi_dpi_panel));
         ESP_ERROR_CHECK(esp_lcd_panel_init(mipi_dpi_panel));
+
+#. Configure draw bitmap hook function (optional)
+
+    If you want to use DMA2D to implement draw bitmap, the driver has already implemented the DMA2D draw bitmap hook function, you only need to call :func:`esp_lcd_dpi_panel_enable_dma2d` to enable it.
+
+    .. code-block:: c
+
+        ESP_ERROR_CHECK(esp_lcd_dpi_panel_enable_dma2d(mipi_dpi_panel));
+
+    If you need more advanced applications, you can add a custom hook for draw bitmap, such as using PPA to implement rotation, scaling, etc.
+
+    .. code-block:: c
+
+        esp_lcd_panel_hooks_t hooks = {
+            .draw_bitmap_hook = custom_draw_bitmap_hook,
+        };
+        ESP_ERROR_CHECK(esp_lcd_dpi_panel_register_hooks(mipi_dpi_panel, &hooks, &user_ctx));
 
 Power Supply for MIPI DPHY
 --------------------------

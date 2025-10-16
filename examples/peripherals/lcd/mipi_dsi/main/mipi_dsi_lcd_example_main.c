@@ -228,9 +228,6 @@ void app_main(void)
             .vsync_pulse_width = EXAMPLE_MIPI_DSI_LCD_VSYNC,
             .vsync_front_porch = EXAMPLE_MIPI_DSI_LCD_VFP,
         },
-#if CONFIG_EXAMPLE_USE_DMA2D_COPY_FRAME
-        .flags.use_dma2d = true, // use DMA2D to copy draw buffer into frame buffer
-#endif
     };
 
 #if CONFIG_EXAMPLE_LCD_USE_ILI9881C
@@ -262,6 +259,12 @@ void app_main(void)
         .vendor_config = &vendor_config,
     };
     ESP_ERROR_CHECK(esp_lcd_new_panel_ek79007(mipi_dbi_io, &lcd_dev_config, &mipi_dpi_panel));
+#endif
+
+#if CONFIG_EXAMPLE_USE_DMA2D_COPY_FRAME
+    // use DMA2D to copy draw buffer into frame buffer
+    ESP_ERROR_CHECK(esp_lcd_dpi_panel_enable_dma2d(mipi_dpi_panel));
+    ESP_LOGI(TAG, "DPI panel added DMA2D draw bitmap hook");
 #endif
 
     ESP_ERROR_CHECK(esp_lcd_panel_reset(mipi_dpi_panel));

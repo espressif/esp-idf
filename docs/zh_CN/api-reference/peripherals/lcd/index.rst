@@ -53,6 +53,7 @@ LCD 数据面板操作
 * :cpp:func:`esp_lcd_panel_reset` 可以重置 LCD 数据面板。
 * :cpp:func:`esp_lcd_panel_init` 执行基本的数据面板初始化。
 * :cpp:func:`esp_lcd_panel_draw_bitmap` 可以将绘制 buffer 刷新到 LCD 屏幕上，其中目标绘制窗口是可配置的。请注意，使用该函数需要确保绘制 buffer 是一维数组，且每行像素数据之间没有跨距。
+* :cpp:func:`esp_lcd_panel_draw_bitmap_2d` 可以绘制部分位图到 LCD 屏幕上，源窗口和目标绘制窗口都是可配置的。请注意，此时绘制 buffer 可以是二维数组，也可以是每行像素数据之间没有跨距的一维数组。
 
 .. _steps_add_manufacture_init:
 
