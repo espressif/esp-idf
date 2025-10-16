@@ -1,7 +1,7 @@
 # Register the component
 idf_component_register(SRCS "ulp_riscv_touch_example_main.c"
                        INCLUDE_DIRS ""
-                       PRIV_REQUIRES driver
+                       PRIV_REQUIRES esp_driver_touch_sens
                        REQUIRES ulp)
 
 #

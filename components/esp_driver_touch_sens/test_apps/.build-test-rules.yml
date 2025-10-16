@@ -1,8 +1,5 @@
 components/esp_driver_touch_sens/test_apps/touch_sens:
   disable:
     - if: SOC_TOUCH_SENSOR_SUPPORTED != 1
-    - if: SOC_TOUCH_SENSOR_VERSION == 1
-      temporary: true
-      reason: currently driver ng does not support version 1
   depends_components:
     - esp_driver_touch_sens

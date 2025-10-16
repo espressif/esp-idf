@@ -17,7 +17,7 @@
     }                                                       \
 }                                                           \
 
-esp_err_t ulp_riscv_touch_pad_read_raw_data(touch_pad_t touch_num, uint32_t *raw_data)
+esp_err_t ulp_riscv_touch_pad_read_raw_data(int touch_num, uint32_t *raw_data)
 {
     /* Check Arguments */
     if (!raw_data) {
@@ -31,7 +31,7 @@ esp_err_t ulp_riscv_touch_pad_read_raw_data(touch_pad_t touch_num, uint32_t *raw
     return ESP_OK;
 }
 
-esp_err_t ulp_riscv_touch_pad_read_benchmark(touch_pad_t touch_num, uint32_t *benchmark)
+esp_err_t ulp_riscv_touch_pad_read_benchmark(int touch_num, uint32_t *benchmark)
 {
     /* Check Arguments */
     if (!benchmark) {
@@ -45,7 +45,7 @@ esp_err_t ulp_riscv_touch_pad_read_benchmark(touch_pad_t touch_num, uint32_t *be
     return ESP_OK;
 }
 
-esp_err_t ulp_riscv_touch_pad_filter_read_smooth(touch_pad_t touch_num, uint32_t *smooth_data)
+esp_err_t ulp_riscv_touch_pad_filter_read_smooth(int touch_num, uint32_t *smooth_data)
 {
     /* Check Arguments */
     if (!smooth_data) {
@@ -59,10 +59,10 @@ esp_err_t ulp_riscv_touch_pad_filter_read_smooth(touch_pad_t touch_num, uint32_t
     return ESP_OK;
 }
 
-esp_err_t ulp_riscv_touch_pad_reset_benchmark(touch_pad_t touch_num)
+esp_err_t ulp_riscv_touch_pad_reset_benchmark(int touch_num)
 {
     /* Check Arguments */
-    if (touch_num > TOUCH_PAD_MAX || touch_num < 0) {
+    if (touch_num > SOC_TOUCH_MAX_CHAN_ID || touch_num < 0) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -72,7 +72,7 @@ esp_err_t ulp_riscv_touch_pad_reset_benchmark(touch_pad_t touch_num)
     return ESP_OK;
 }
 
-esp_err_t ulp_riscv_touch_pad_sleep_channel_read_data(touch_pad_t touch_num, uint32_t *raw_data)
+esp_err_t ulp_riscv_touch_pad_sleep_channel_read_data(int touch_num, uint32_t *raw_data)
 {
     /* Check Arguments */
     if (!raw_data) {
@@ -86,7 +86,7 @@ esp_err_t ulp_riscv_touch_pad_sleep_channel_read_data(touch_pad_t touch_num, uin
     return ESP_OK;
 }
 
-esp_err_t ulp_riscv_touch_pad_sleep_channel_read_benchmark(touch_pad_t touch_num, uint32_t *benchmark)
+esp_err_t ulp_riscv_touch_pad_sleep_channel_read_benchmark(int touch_num, uint32_t *benchmark)
 {
     /* Check Arguments */
     if (!benchmark) {
@@ -100,7 +100,7 @@ esp_err_t ulp_riscv_touch_pad_sleep_channel_read_benchmark(touch_pad_t touch_num
     return ESP_OK;
 }
 
-esp_err_t ulp_riscv_touch_pad_sleep_channel_read_smooth(touch_pad_t touch_num, uint32_t *smooth_data)
+esp_err_t ulp_riscv_touch_pad_sleep_channel_read_smooth(int touch_num, uint32_t *smooth_data)
 {
     /* Check Arguments */
     if (!smooth_data) {

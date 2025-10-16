@@ -287,6 +287,8 @@ Touch Sensor
 
 The ``touch_sensor_sample_config_t::bypass_shield_output`` member for version 3 touch sensor has been removed because it is not supported in the version 3 hardware.
 
+The dependencies of legacy touch sensor driver are removed from ULP touch driver, now you need to use ``int`` instead of ``touch_pad_t`` to indicate the touch channel ID.
+
 I2S
 ---
 

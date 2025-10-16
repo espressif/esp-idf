@@ -287,6 +287,8 @@ Touch Sensor
 
 第三版触摸传感器的驱动配置项 ``touch_sensor_sample_config_t::bypass_shield_output`` 已被移除，因为第三版触摸传感器硬件已不支持该功能。
 
+旧版触摸传感器驱动依赖已被移除，现在你需要使用 ``int`` 类型代替 ``touch_pad_t`` 类型来指示触摸通道 ID。
+
 I2S
 ---
 
