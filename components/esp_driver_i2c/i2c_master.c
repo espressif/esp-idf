@@ -877,7 +877,7 @@ static esp_err_t i2c_master_bus_destroy(i2c_master_bus_handle_t bus_handle)
     i2c_master_bus_handle_t i2c_master = bus_handle;
     esp_err_t err = ESP_OK;
     if (i2c_master->base) {
-        i2c_common_deinit_pins(i2c_master->base);
+        ESP_RETURN_ON_ERROR(i2c_common_deinit_pins(i2c_master->base), TAG, "failed to deinit i2c pins");
         err = i2c_release_bus_handle(i2c_master->base);
     }
     if (err == ESP_OK) {
