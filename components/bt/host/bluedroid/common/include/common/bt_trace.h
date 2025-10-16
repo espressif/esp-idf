@@ -24,6 +24,9 @@
 #include "bluedroid_user_config.h"
 #include "stack/bt_types.h"
 #include "bt_common.h"
+#if CONFIG_BLE_HOST_COMPRESSED_LOG_ENABLE
+#include "host_log_index.h"
+#endif
 
 #if (BT_BLE_LOG_SPI_OUT_HOST_ENABLED && !CLASSIC_BT_INCLUDED)
 #include "ble_log/ble_log_spi_out.h"
