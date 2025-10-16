@@ -246,3 +246,9 @@ ULP
 ---
 
 LP-Core 在深度睡眠期间遇到异常时，将唤醒主 CPU。此功能默认启用，若不需要此行为，可以通过 :ref:`CONFIG_ULP_TRAP_WAKEUP` Kconfig 配置选项禁用。
+
+``esp_common``
+----------------
+
+- ``EXT_RAM_ATTR`` 自 v5.0 已弃用，现已移除。请使用 ``EXT_RAM_BSS_ATTR`` 宏将 ``.bss`` 放在 PSRAM 上。
+- RTC 相关内存属性 (``RTC_x_ATTR``) 已从没有 RTC 存储的芯片中移除。

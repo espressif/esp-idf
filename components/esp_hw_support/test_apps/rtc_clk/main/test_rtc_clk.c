@@ -364,7 +364,10 @@ TEST_CASE("Test rtc clk calibration compensation", "[rtc_clk]")
 #endif
 
 #if SOC_DEEP_SLEEP_SUPPORTED
-static RTC_NOINIT_ATTR int64_t start = 0;
+#if SOC_RTC_FAST_MEM_SUPPORTED || SOC_RTC_SLOW_MEM_SUPPORTED
+RTC_NOINIT_ATTR
+#endif
+static int64_t start = 0;
 
 static void trigger_deepsleep(void)
 {
