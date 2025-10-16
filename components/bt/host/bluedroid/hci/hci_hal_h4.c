@@ -25,6 +25,7 @@
 #include "hci/hci_trans_int.h"
 #include "osi/thread.h"
 #include "osi/pkt_queue.h"
+#include "esp_bt_main.h"
 #if (BLE_ADV_REPORT_FLOW_CONTROL == TRUE)
 #include "osi/mutex.h"
 #include "osi/alarm.h"
@@ -645,6 +646,11 @@ static int host_recv_pkt_cb(uint8_t *data, uint16_t len)
             fixed_queue_enqueue(hci_hal_env.rx_q, pkt, FIXED_QUEUE_MAX_TIMEOUT);
         }
     } else {
+        if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+            // Prevent race condition during host deinit/disable
+            // Host not ready, dropped advertising report
+            return 0;
+        }
 #if (BLE_42_SCAN_EN == TRUE)
 #if !BLE_ADV_REPORT_FLOW_CONTROL
         // drop the packets if pkt_queue length goes beyond upper limit
