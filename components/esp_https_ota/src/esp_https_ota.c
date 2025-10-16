@@ -165,7 +165,22 @@ static esp_err_t _http_connect(esp_https_ota_t *https_ota_handle)
          * is enabled
          */
         int post_len = esp_http_client_get_post_field(https_ota_handle->http_client, &post_data);
-        err = esp_http_client_open(https_ota_handle->http_client, post_len);
+
+#if CONFIG_ESP_HTTPS_OTA_ENABLE_PARTIAL_DOWNLOAD
+        // If support_persistent_connection is enabled and this is a subsequent request, skip connection
+        if (esp_http_client_is_persistent_connection(https_ota_handle->http_client) && https_ota_handle->state == ESP_HTTPS_OTA_IN_PROGRESS) {
+            ESP_LOGD(TAG, "Using existing connection for partial download");
+            err = esp_http_client_prepare(https_ota_handle->http_client);
+            if (err != ESP_OK) {
+                ESP_LOGE(TAG, "Failed to reset HTTP client response state: %s", esp_err_to_name(err));
+                return err;
+            }
+            err = esp_http_client_request_send(https_ota_handle->http_client, post_len);
+        } else
+#endif
+        {
+            err = esp_http_client_open(https_ota_handle->http_client, post_len);
+        }
         if (err != ESP_OK) {
             ESP_LOGE(TAG, "Failed to open HTTP connection: %s", esp_err_to_name(err));
             return err;
@@ -827,7 +842,10 @@ esp_err_t esp_https_ota_perform(esp_https_ota_handle_t https_ota_handle)
 #if CONFIG_ESP_HTTPS_OTA_ENABLE_PARTIAL_DOWNLOAD
     if (handle->partial_http_download) {
         if (handle->state == ESP_HTTPS_OTA_IN_PROGRESS && handle->image_length > handle->binary_file_len) {
-            esp_http_client_close(handle->http_client);
+            // Only close connection if support_persistent_connection is not enabled
+            if (!esp_http_client_is_persistent_connection(handle->http_client)) {
+                esp_http_client_close(handle->http_client);
+            }
             char *header_val = NULL;
             int header_size = 0;
 #if CONFIG_ESP_HTTPS_OTA_DECRYPT_CB
