@@ -18,6 +18,7 @@ list(APPEND pr esp_driver_uart esp_driver_usb_serial_jtag esp_usb_cdc_rom_consol
 
 list(APPEND sources "vfs.c"
                     "vfs_eventfd.c"
+                    "vfs_pipe.c"
                     "vfs_semihost.c"
                     "nullfs.c"
                     )
