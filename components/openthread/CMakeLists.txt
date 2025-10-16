@@ -113,6 +113,7 @@ if(CONFIG_OPENTHREAD_ENABLED)
             "openthread/src/core/thread/mesh_forwarder.cpp"
             "openthread/src/core/thread/mesh_forwarder_ftd.cpp"
             "openthread/src/core/thread/mesh_forwarder_mtd.cpp"
+            "openthread/src/core/thread/message_framer.cpp"
             "openthread/src/core/thread/mle.cpp"
             "openthread/src/core/thread/mle_router.cpp"
             "openthread/src/core/thread/mle_types.cpp"
