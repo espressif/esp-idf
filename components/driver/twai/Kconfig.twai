@@ -13,6 +13,14 @@ menu "Legacy TWAI Driver Configurations"
         help
             This configuration option used to bypass the conflict check mechanism with legacy code.
 
+    config TWAI_SUPPRESS_DEPRECATE_WARN
+        bool "Suppress legacy driver deprecated warning"
+        default n
+        help
+            whether to suppress the deprecation warnings when using legacy twai driver
+            (driver/twai.h). If you want to continue using the legacy driver,
+            and don't want to see related deprecation warnings, you can enable this option.
+
     config TWAI_ERRATA_FIX_BUS_OFF_REC
         bool "Add SW workaround for REC change during bus-off"
         depends on IDF_TARGET_ESP32
