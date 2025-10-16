@@ -165,51 +165,39 @@ esp_err_t esp_openthread_radio_process(otInstance *aInstance, const esp_openthre
 
     if (get_event(EVENT_TX_DONE)) {
         clr_event(EVENT_TX_DONE);
-#if CONFIG_OPENTHREAD_DIAG
-        if (otPlatDiagModeGet()) {
-            otPlatDiagRadioTransmitDone(aInstance, &s_transmit_frame, OT_ERROR_NONE);
-        } else
-#endif
-        {
-            if (s_ack_frame.mPsdu == NULL) {
-                otPlatRadioTxDone(aInstance, &s_transmit_frame, NULL, OT_ERROR_NONE);
-            } else {
-                otPlatRadioTxDone(aInstance, &s_transmit_frame, &s_ack_frame, OT_ERROR_NONE);
-                esp_ieee802154_receive_handle_done(s_ack_frame.mPsdu - 1);
-                s_ack_frame.mPsdu = NULL;
-            }
+
+        if (s_ack_frame.mPsdu == NULL) {
+            otPlatRadioTxDone(aInstance, &s_transmit_frame, NULL, OT_ERROR_NONE);
+        } else {
+            otPlatRadioTxDone(aInstance, &s_transmit_frame, &s_ack_frame, OT_ERROR_NONE);
+            esp_ieee802154_receive_handle_done(s_ack_frame.mPsdu - 1);
+            s_ack_frame.mPsdu = NULL;
         }
     }
 
     if (get_event(EVENT_TX_FAILED)) {
         clr_event(EVENT_TX_FAILED);
-#if CONFIG_OPENTHREAD_DIAG
-        if (otPlatDiagModeGet()) {
-            otPlatDiagRadioTransmitDone(aInstance, &s_transmit_frame, OT_ERROR_CHANNEL_ACCESS_FAILURE);
-        } else
-#endif
-        {
-            otError err = OT_ERROR_NONE;
 
-            switch (s_tx_error) {
-            case ESP_IEEE802154_TX_ERR_CCA_BUSY:
-            case ESP_IEEE802154_TX_ERR_ABORT:
-            case ESP_IEEE802154_TX_ERR_COEXIST:
-                err = OT_ERROR_CHANNEL_ACCESS_FAILURE;
-                break;
+        otError err = OT_ERROR_NONE;
 
-            case ESP_IEEE802154_TX_ERR_NO_ACK:
-            case ESP_IEEE802154_TX_ERR_INVALID_ACK:
-                err = OT_ERROR_NO_ACK;
-                break;
+        switch (s_tx_error) {
+        case ESP_IEEE802154_TX_ERR_CCA_BUSY:
+        case ESP_IEEE802154_TX_ERR_ABORT:
+        case ESP_IEEE802154_TX_ERR_COEXIST:
+            err = OT_ERROR_CHANNEL_ACCESS_FAILURE;
+            break;
 
-            default:
-                ETS_ASSERT(false);
-                break;
-            }
+        case ESP_IEEE802154_TX_ERR_NO_ACK:
+        case ESP_IEEE802154_TX_ERR_INVALID_ACK:
+            err = OT_ERROR_NO_ACK;
+            break;
 
-            otPlatRadioTxDone(aInstance, &s_transmit_frame, NULL, err);
+        default:
+            ETS_ASSERT(false);
+            break;
         }
+
+        otPlatRadioTxDone(aInstance, &s_transmit_frame, NULL, err);
     }
 
     if (get_event(EVENT_ENERGY_DETECT_DONE)) {
@@ -219,14 +207,7 @@ esp_err_t esp_openthread_radio_process(otInstance *aInstance, const esp_openthre
 
     while (atomic_load(&s_recv_queue.used)) {
         if (s_receive_frame[s_recv_queue.head].mPsdu != NULL) {
-#if CONFIG_OPENTHREAD_DIAG
-            if (otPlatDiagModeGet()) {
-                otPlatDiagRadioReceiveDone(aInstance, &s_receive_frame[s_recv_queue.head], OT_ERROR_NONE);
-            } else
-#endif
-            {
-                otPlatRadioReceiveDone(aInstance, &s_receive_frame[s_recv_queue.head], OT_ERROR_NONE);
-            }
+            otPlatRadioReceiveDone(aInstance, &s_receive_frame[s_recv_queue.head], OT_ERROR_NONE);
             esp_ieee802154_receive_handle_done(s_receive_frame[s_recv_queue.head].mPsdu - 1);
             s_receive_frame[s_recv_queue.head].mPsdu = NULL;
             s_recv_queue.head = (s_recv_queue.head + 1) % CONFIG_IEEE802154_RX_BUFFER_SIZE;
