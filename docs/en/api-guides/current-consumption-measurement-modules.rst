@@ -3,7 +3,7 @@ Current Consumption Measurement of Modules
 
 :link_to_translation:`zh_CN:[中文]`
 
-{IDF_TARGET_SOC_BOOT_PIN:default="Not updated", esp32="IO0", esp32s2="IO0", esp32s3="IO0", esp32c3="IO9", esp32c2="IO9", "esp32c6"="IO9", "esp32h2"="IO9", "esp32p4"="IO35", "esp32c5"="IO28"}
+{IDF_TARGET_SOC_BOOT_PIN:default="Not updated", esp32="IO0", esp32s2="IO0", esp32s3="IO0", esp32c3="IO9", esp32c2="IO9", "esp32c6"="IO9", "esp32h2"="IO9", "esp32p4"="IO35", "esp32c5"="IO28", "esp32c61"="IO9"}
 
 You may want to know the current consumption of a `module <https://www.espressif.com/en/products/modules>`__ in Deep-sleep mode, :doc:`other power-saving modes </api-reference/system/sleep_modes>`, and Active mode to develop some applications sensitive to power consumption. This section introduces how to measure the current consumption of a module running such an application.
 
@@ -26,7 +26,11 @@ Can We Use a Development Board?
 
     For {IDF_TARGET_NAME}, you can use development boards such as `ESP32-C5-DevKitC-1 <https://docs.espressif.com/projects/espressif-esp-dev-kits/en/latest/esp32c5/esp32-c5-devkitc-1/index.html>`__ to measure current consumption of corresponding modules as these development boards are equipped with headers, which can be used to measure current drawn by modules.
 
-.. only:: esp32c6 or esp32h2 or esp32c5
+.. only:: esp32c61
+
+    For {IDF_TARGET_NAME}, you can use development boards such as `ESP32-C61-DevKitC-1 <https://docs.espressif.com/projects/espressif-esp-dev-kits/en/latest/esp32c61/esp32-c61-devkitc-1/index.html>`__ to measure current consumption of corresponding modules as these development boards are equipped with headers, which can be used to measure current drawn by modules.
+
+.. only:: esp32c6 or esp32h2 or esp32c5 or esp32c61
 
     With such development boards, you can measure current consumption of modules in Deep-sleep mode by flashing chips with the :example:`deep_sleep <system/deep_sleep>` example. However, you can also measure current of bare modules equipped with {IDF_TARGET_NAME} chip using the following method.
 
