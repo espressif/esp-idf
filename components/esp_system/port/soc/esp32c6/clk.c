@@ -221,6 +221,7 @@ void rtc_clk_select_rtc_slow_clk(void)
  */
 __attribute__((weak)) void esp_perip_clk_init(void)
 {
+#if CONFIG_ESP_WIFI_ENABLED
     /* During system initialization, the low-power clock source of the modem
      * (WiFi, BLE or Coexist) follows the configuration of the slow clock source
      * of the system. If the WiFi, BLE or Coexist module needs a higher
@@ -236,6 +237,7 @@ __attribute__((weak)) void esp_perip_clk_init(void)
                                                                         : (rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_OSC_SLOW) ? MODEM_CLOCK_LPCLK_SRC_EXT32K   \
                                                                         : MODEM_CLOCK_LPCLK_SRC_RC_SLOW);
     modem_clock_select_lp_clock_source(PERIPH_WIFI_MODULE, modem_lpclk_src, 0);
+#endif
 
     soc_reset_reason_t rst_reason = esp_rom_get_reset_reason(0);
     if ((rst_reason != RESET_REASON_CPU0_MWDT0) && (rst_reason != RESET_REASON_CPU0_MWDT1)      \

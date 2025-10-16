@@ -233,25 +233,6 @@ void rtc_clk_select_rtc_slow_clk(void)
  */
 __attribute__((weak)) void esp_perip_clk_init(void)
 {
-    soc_rtc_slow_clk_src_t rtc_slow_clk_src = rtc_clk_slow_src_get();
-
-    if (rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_RC_SLOW) {
-        esp_sleep_pd_config(ESP_PD_DOMAIN_XTAL32K, ESP_PD_OPTION_AUTO);
-        REG_CLR_BIT(LP_CLKRST_HP_CLK_CTRL_REG, LP_CLKRST_HP_XTAL_32K_CLK_EN);
-        REG_CLR_BIT(LP_CLKRST_HP_CLK_CTRL_REG, LP_CLKRST_HP_RC_32K_CLK_EN);
-        esp_sleep_pd_config(ESP_PD_DOMAIN_RC32K, ESP_PD_OPTION_AUTO);
-    } else if (rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_XTAL32K) {
-        // RC slow (150K) always ON
-        esp_sleep_pd_config(ESP_PD_DOMAIN_RC32K, ESP_PD_OPTION_AUTO);
-        REG_CLR_BIT(LP_CLKRST_HP_CLK_CTRL_REG, LP_CLKRST_HP_RC_32K_CLK_EN);
-        esp_sleep_pd_config(ESP_PD_DOMAIN_XTAL32K, ESP_PD_OPTION_ON);
-    } else if (rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_RC32K) {
-        // RC slow (150K) always ON
-        esp_sleep_pd_config(ESP_PD_DOMAIN_XTAL32K, ESP_PD_OPTION_AUTO);
-        REG_CLR_BIT(LP_CLKRST_HP_CLK_CTRL_REG, LP_CLKRST_HP_XTAL_32K_CLK_EN);
-        esp_sleep_pd_config(ESP_PD_DOMAIN_RC32K, ESP_PD_OPTION_ON);
-    }
-
     soc_reset_reason_t rst_reason = esp_rom_get_reset_reason(0);
     // HP modules related clock control
     if ((rst_reason == RESET_REASON_CHIP_POWER_ON) || (rst_reason == RESET_REASON_CORE_PMU_PWR_DOWN)
