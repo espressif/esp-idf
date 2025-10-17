@@ -166,4 +166,8 @@ if BLE_LOG_ENABLED
             help
                 GPIO number for UART TX
     endif
+
+    menu "Settings of BLE Log Compression"
+        source "$IDF_PATH/components/bt/common/ble_log/extension/log_compression/Kconfig.in"
+    endmenu
 endif

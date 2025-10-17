@@ -1,0 +1,17 @@
+log_config:
+  db_path: "ble_log/ble_log_database"
+
+  modules:
+    BLE_MESH:
+      description: "BLE Mesh"
+      code_path: [@BLE_MESH_CODE_PATH@]
+      log_index_file: @BLE_MESH_LOG_INDEX_HEADER@
+      tags: [@BLE_MESH_TAGS@]
+      tags_with_preserve: [@BLE_MESH_TAGS_PRESERVE@]
+
+    BLE_HOST:
+      description: "BLE Host"
+      code_path: [@HOST_CODE_PATH@]
+      log_index_file: @HOST_LOG_INDEX_HEADER@
+      tags: [@BLE_HOST_TAGS@]
+      tags_with_preserve: [@BLE_HOST_TAGS_PRESERVE@]
