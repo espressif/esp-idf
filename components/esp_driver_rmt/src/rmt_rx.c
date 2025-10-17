@@ -23,7 +23,7 @@ static void rmt_rx_default_isr(void *args);
 static bool rmt_dma_rx_one_block_cb(gdma_channel_handle_t dma_chan, gdma_event_data_t *event_data, void *user_data);
 
 __attribute__((always_inline))
-static inline void rmt_rx_mount_dma_buffer(rmt_rx_channel_t *rx_chan, const void *buffer, size_t buffer_size, size_t per_block_size, size_t last_block_size)
+static inline void rmt_rx_mount_dma_buffer(rmt_rx_channel_t *rx_chan, const void *buffer, size_t buffer_size, size_t mem_alignment, size_t per_block_size, size_t last_block_size)
 {
     uint8_t *data = (uint8_t *)buffer;
     for (int i = 0; i < rx_chan->num_dma_nodes; i++) {
@@ -194,8 +194,8 @@ esp_err_t rmt_new_rx_channel(const rmt_rx_channel_config_t *config, rmt_channel_
     ESP_RETURN_ON_FALSE(config->flags.allow_pd == 0, ESP_ERR_NOT_SUPPORTED, TAG, "not able to power down in light sleep");
 #endif // SOC_RMT_SUPPORT_SLEEP_RETENTION
 
-    // malloc channel memory
-    uint32_t mem_caps = RMT_MEM_ALLOC_CAPS;
+    // allocate channel memory from internal memory because it contains atomic variable
+    uint32_t mem_caps = MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT;
     rx_channel = heap_caps_calloc(1, sizeof(rmt_rx_channel_t), mem_caps);
     ESP_GOTO_ON_FALSE(rx_channel, ESP_ERR_NO_MEM, err, TAG, "no mem for rx channel");
     // gpio is not configured yet
@@ -206,7 +206,7 @@ esp_err_t rmt_new_rx_channel(const rmt_rx_channel_config_t *config, rmt_channel_
     size_t num_dma_nodes = 0;
     if (config->flags.with_dma) {
         // DMA descriptors must be placed in internal SRAM
-        mem_caps |= MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA;
+        mem_caps |= MALLOC_CAP_DMA;
         num_dma_nodes = config->mem_block_symbols * sizeof(rmt_symbol_word_t) / DMA_DESCRIPTOR_BUFFER_MAX_SIZE + 1;
         num_dma_nodes = MAX(2, num_dma_nodes); // at least 2 DMA nodes for ping-pong
         rmt_dma_descriptor_t *dma_nodes =  heap_caps_aligned_calloc(RMT_DMA_DESC_ALIGN, num_dma_nodes, sizeof(rmt_dma_descriptor_t), mem_caps);
@@ -423,7 +423,7 @@ esp_err_t rmt_receive(rmt_channel_handle_t channel, void *buffer, size_t buffer_
         size_t per_dma_block_size = buffer_size / rx_chan->num_dma_nodes;
         per_dma_block_size = ALIGN_DOWN(per_dma_block_size, mem_alignment);
         size_t last_dma_block_size = buffer_size - per_dma_block_size * (rx_chan->num_dma_nodes - 1);
-        rmt_rx_mount_dma_buffer(rx_chan, buffer, buffer_size, per_dma_block_size, last_dma_block_size);
+        rmt_rx_mount_dma_buffer(rx_chan, buffer, buffer_size, mem_alignment, per_dma_block_size, last_dma_block_size);
         gdma_reset(channel->dma_chan);
         gdma_start(channel->dma_chan, (intptr_t)rx_chan->dma_nodes); // note, we must use the cached descriptor address to start the DMA
     }
