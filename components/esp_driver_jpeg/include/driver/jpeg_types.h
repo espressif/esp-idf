@@ -19,12 +19,12 @@ extern "C" {
  * @brief Enumeration for jpeg output format.
  */
 typedef enum {
-    JPEG_DECODE_OUT_FORMAT_RGB888 = COLOR_TYPE_ID(COLOR_SPACE_RGB, COLOR_PIXEL_RGB888),        /*!< output RGB888 format */
-    JPEG_DECODE_OUT_FORMAT_RGB565 = COLOR_TYPE_ID(COLOR_SPACE_RGB, COLOR_PIXEL_RGB565),        /*!< output RGB565 format */
-    JPEG_DECODE_OUT_FORMAT_GRAY = COLOR_TYPE_ID(COLOR_SPACE_GRAY, COLOR_PIXEL_GRAY8),          /*!< output the gray picture */
-    JPEG_DECODE_OUT_FORMAT_YUV444 = COLOR_TYPE_ID(COLOR_SPACE_YUV, COLOR_PIXEL_YUV444),        /*!< output yuv444 format */
-    JPEG_DECODE_OUT_FORMAT_YUV422 = COLOR_TYPE_ID(COLOR_SPACE_YUV, COLOR_PIXEL_YUV422),        /*!< output yuv422 format */
-    JPEG_DECODE_OUT_FORMAT_YUV420 = COLOR_TYPE_ID(COLOR_SPACE_YUV, COLOR_PIXEL_YUV420),        /*!< output yuv420 format */
+    JPEG_DECODE_OUT_FORMAT_RGB888 = ESP_COLOR_FOURCC_RGB24,        /*!< output RGB888 format */
+    JPEG_DECODE_OUT_FORMAT_RGB565 = ESP_COLOR_FOURCC_RGB16_BE,        /*!< output RGB565 format */
+    JPEG_DECODE_OUT_FORMAT_GRAY = ESP_COLOR_FOURCC_GREY,          /*!< output the gray picture */
+    JPEG_DECODE_OUT_FORMAT_YUV444 = ESP_COLOR_FOURCC_YUV,        /*!< output yuv444 format */
+    JPEG_DECODE_OUT_FORMAT_YUV422 = ESP_COLOR_FOURCC_YVYU,        /*!< output yuv422 format */
+    JPEG_DECODE_OUT_FORMAT_YUV420 = ESP_COLOR_FOURCC_OUYY_EVYY,        /*!< output yuv420 format */
 } jpeg_dec_output_format_t;
 
 /**
@@ -55,13 +55,13 @@ typedef enum {
  * @brief Enumeration for jpeg input format.
  */
 typedef enum {
-    JPEG_ENCODE_IN_FORMAT_RGB888 = COLOR_TYPE_ID(COLOR_SPACE_RGB, COLOR_PIXEL_RGB888),       /*!< input RGB888 format */
-    JPEG_ENCODE_IN_FORMAT_RGB565 = COLOR_TYPE_ID(COLOR_SPACE_RGB, COLOR_PIXEL_RGB565),       /*!< input RGB565 format */
-    JPEG_ENCODE_IN_FORMAT_GRAY = COLOR_TYPE_ID(COLOR_SPACE_GRAY, COLOR_PIXEL_GRAY8),         /*!< input GRAY format */
-    JPEG_ENCODE_IN_FORMAT_YUV422 = COLOR_TYPE_ID(COLOR_SPACE_YUV, COLOR_PIXEL_YUV422),       /*!< input YUV422 format */
+    JPEG_ENCODE_IN_FORMAT_RGB888 = ESP_COLOR_FOURCC_RGB24,       /*!< input RGB888 format */
+    JPEG_ENCODE_IN_FORMAT_RGB565 = ESP_COLOR_FOURCC_RGB16_BE,       /*!< input RGB565 format */
+    JPEG_ENCODE_IN_FORMAT_GRAY = ESP_COLOR_FOURCC_GREY,         /*!< input GRAY format */
+    JPEG_ENCODE_IN_FORMAT_YUV422 = ESP_COLOR_FOURCC_YVYU,       /*!< input YUV422 format */
 #if !(CONFIG_ESP_REV_MIN_FULL < 300 && SOC_IS(ESP32P4)) // Invisible for unsupported chips
-    JPEG_ENCODE_IN_FORMAT_YUV444 = COLOR_TYPE_ID(COLOR_SPACE_YUV, COLOR_PIXEL_YUV444),       /*!< input YUV444 format */
-    JPEG_ENCODE_IN_FORMAT_YUV420 = COLOR_TYPE_ID(COLOR_SPACE_YUV, COLOR_PIXEL_YUV420),       /*!< input YUV420 format */
+    JPEG_ENCODE_IN_FORMAT_YUV444 = ESP_COLOR_FOURCC_YUV,       /*!< input YUV444 format */
+    JPEG_ENCODE_IN_FORMAT_YUV420 = ESP_COLOR_FOURCC_OUYY_EVYY,       /*!< input YUV420 format */
 #endif
 } jpeg_enc_input_format_t;
 

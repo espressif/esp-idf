@@ -45,9 +45,9 @@ typedef struct {
  * @brief Enum for JPEG sampling mode.
  */
 typedef enum {
-    JPEG_SAMPLE_MODE_YUV444 = COLOR_TYPE_ID(COLOR_SPACE_YUV, COLOR_PIXEL_YUV444),  ///< sample in YUV444
-    JPEG_SAMPLE_MODE_YUV422 = COLOR_TYPE_ID(COLOR_SPACE_YUV, COLOR_PIXEL_YUV422),  ///< sample in YUV422
-    JPEG_SAMPLE_MODE_YUV420 = COLOR_TYPE_ID(COLOR_SPACE_YUV, COLOR_PIXEL_YUV420),  ///< sample in YUV420
+    JPEG_SAMPLE_MODE_YUV444 = ESP_COLOR_FOURCC_YUV,  ///< sample in YUV444
+    JPEG_SAMPLE_MODE_YUV422 = ESP_COLOR_FOURCC_YVYU,  ///< sample in YUV422
+    JPEG_SAMPLE_MODE_YUV420 = ESP_COLOR_FOURCC_OUYY_EVYY,  ///< sample in YUV420
 } jpeg_sample_mode_t;
 
 /**
@@ -65,22 +65,22 @@ typedef union {
  * @brief Enumeration for jpeg decoder sample methods.
 */
 typedef enum {
-    JPEG_DOWN_SAMPLING_YUV444 = COLOR_TYPE_ID(COLOR_SPACE_YUV, COLOR_PIXEL_YUV444),        /*!< Sample by YUV444 */
-    JPEG_DOWN_SAMPLING_YUV422 = COLOR_TYPE_ID(COLOR_SPACE_YUV, COLOR_PIXEL_YUV422),        /*!< Sample by YUV422 */
-    JPEG_DOWN_SAMPLING_YUV420 = COLOR_TYPE_ID(COLOR_SPACE_YUV, COLOR_PIXEL_YUV420),        /*!< Sample by YUV420 */
-    JPEG_DOWN_SAMPLING_GRAY   = COLOR_TYPE_ID(COLOR_SPACE_GRAY, COLOR_PIXEL_GRAY8),        /*!< Sample the gray picture */
+    JPEG_DOWN_SAMPLING_YUV444 = ESP_COLOR_FOURCC_YUV,        /*!< Sample by YUV444 */
+    JPEG_DOWN_SAMPLING_YUV422 = ESP_COLOR_FOURCC_YVYU,        /*!< Sample by YUV422 */
+    JPEG_DOWN_SAMPLING_YUV420 = ESP_COLOR_FOURCC_OUYY_EVYY,        /*!< Sample by YUV420 */
+    JPEG_DOWN_SAMPLING_GRAY   = ESP_COLOR_FOURCC_GREY,        /*!< Sample the gray picture */
 } jpeg_down_sampling_type_t;
 
 /**
  * @brief JPEG encoder source formats.
  */
 typedef enum {
-    JPEG_ENC_SRC_RGB888 = COLOR_TYPE_ID(COLOR_SPACE_RGB, COLOR_PIXEL_RGB888),   /*!< JPEG encoder source RGB888 */
-    JPEG_ENC_SRC_YUV422 = COLOR_TYPE_ID(COLOR_SPACE_YUV, COLOR_PIXEL_YUV422),   /*!< JPEG encoder source YUV422 */
-    JPEG_ENC_SRC_RGB565 = COLOR_TYPE_ID(COLOR_SPACE_RGB, COLOR_PIXEL_RGB565),   /*!< JPEG encoder source RGB565 */
-    JPEG_ENC_SRC_YUV444 = COLOR_TYPE_ID(COLOR_SPACE_YUV, COLOR_PIXEL_YUV444),   /*!< JPEG encoder source YUV444 */
-    JPEG_ENC_SRC_YUV420 = COLOR_TYPE_ID(COLOR_SPACE_YUV, COLOR_PIXEL_YUV420),   /*!< JPEG encoder source YUV420 */
-    JPEG_ENC_SRC_GRAY = COLOR_TYPE_ID(COLOR_SPACE_GRAY, COLOR_PIXEL_GRAY8),     /*!< JPEG encoder source GRAY */
+    JPEG_ENC_SRC_RGB888 = ESP_COLOR_FOURCC_RGB24,   /*!< JPEG encoder source RGB888 */
+    JPEG_ENC_SRC_YUV422 = ESP_COLOR_FOURCC_YVYU,   /*!< JPEG encoder source YUV422 */
+    JPEG_ENC_SRC_RGB565 = ESP_COLOR_FOURCC_RGB16_BE,   /*!< JPEG encoder source RGB565 */
+    JPEG_ENC_SRC_YUV444 = ESP_COLOR_FOURCC_YUV,   /*!< JPEG encoder source YUV444 */
+    JPEG_ENC_SRC_YUV420 = ESP_COLOR_FOURCC_OUYY_EVYY,   /*!< JPEG encoder source YUV420 */
+    JPEG_ENC_SRC_GRAY = ESP_COLOR_FOURCC_GREY,     /*!< JPEG encoder source GRAY */
 } jpeg_enc_src_type_t;
 
 #ifdef __cplusplus

@@ -97,6 +97,28 @@ static inline uint32_t dma2d_desc_pixel_format_to_pbyte_value(color_space_pixel_
     }
 }
 
+// Helper function to convert pixel format to 2D-DMA descriptor pbyte value
+static inline uint32_t dma2d_desc_pixel_format_to_pbyte_value_fourcc(uint32_t four_character_code)
+{
+    switch (color_hal_pixel_format_fourcc_get_bit_depth(four_character_code)) {
+    case 4:
+        return DMA2D_DESCRIPTOR_PBYTE_0B5_PER_PIXEL;
+    case 8:
+        return DMA2D_DESCRIPTOR_PBYTE_1B0_PER_PIXEL;
+    case 12:
+        return DMA2D_DESCRIPTOR_PBYTE_1B5_PER_PIXEL;
+    case 16:
+        return DMA2D_DESCRIPTOR_PBYTE_2B0_PER_PIXEL;
+    case 24:
+        return DMA2D_DESCRIPTOR_PBYTE_3B0_PER_PIXEL;
+    case 32:
+        return DMA2D_DESCRIPTOR_PBYTE_4B0_PER_PIXEL;
+    default:
+        // Unsupported bit depth
+        abort();
+    }
+}
+
 /**
  * @brief Enumeration of peripherals which have the 2D-DMA capability
  */
