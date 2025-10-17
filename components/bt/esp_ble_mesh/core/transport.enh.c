@@ -1151,11 +1151,14 @@ int bt_mesh_trans_send(struct bt_mesh_net_tx *tx, struct net_buf_simple *msg,
     }
 
 #if CONFIG_BLE_MESH_LONG_PACKET
-    if (tx->ctx->enh.long_pkt_cfg_used == true &&
-        (tx->ctx->enh.long_pkt_cfg == BLE_MESH_LONG_PACKET_FORCE ||
-         tx->ctx->enh.long_pkt_cfg == BLE_MESH_LONG_PACKET_PREFER) &&
-        msg->len > BLE_MESH_EXT_SDU_UNSEG_MAX) {
-        tx->ctx->send_tag |= BLE_MESH_TAG_SEND_SEGMENTED;
+    if (tx->ctx->enh.long_pkt_cfg_used == true) {
+        if (tx->ctx->enh.long_pkt_cfg == BLE_MESH_LONG_PACKET_FORCE &&
+            msg->len > BLE_MESH_EXT_SDU_UNSEG_MAX) {
+            tx->ctx->send_tag |= BLE_MESH_TAG_SEND_SEGMENTED;
+        } else if (tx->ctx->enh.long_pkt_cfg == BLE_MESH_LONG_PACKET_PREFER &&
+            msg->len > BLE_MESH_SDU_UNSEG_MAX) {
+            tx->ctx->send_tag |= BLE_MESH_TAG_SEND_SEGMENTED;
+        }
     } else {
         if (msg->len > BLE_MESH_SDU_UNSEG_MAX) {
             tx->ctx->send_tag |= BLE_MESH_TAG_SEND_SEGMENTED;
