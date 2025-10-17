@@ -12,6 +12,59 @@
 #include "esp32c5/rom/rom_layout.h"
 #include "esp_tee.h"
 
+#define IS_PMA_ENTRY_UNLOCKED(ENTRY) \
+    ((RV_READ_CSR((CSR_PMACFG0) + (ENTRY)) & PMA_L) == 0)
+
+static void esp_tee_configure_invalid_regions(void)
+{
+    const unsigned PMA_NONE                            = PMA_L | PMA_EN;
+    __attribute__((unused)) const unsigned PMA_RW      = PMA_L | PMA_EN | PMA_R | PMA_W;
+    __attribute__((unused)) const unsigned PMA_RX      = PMA_L | PMA_EN | PMA_R | PMA_X;
+    __attribute__((unused)) const unsigned PMA_RWX     = PMA_L | PMA_EN | PMA_R | PMA_W | PMA_X;
+
+    // ROM uses some PMA entries, so we need to clear them before using them in ESP-IDF
+
+    // 0. Gap at bottom of address space
+    PMA_RESET_AND_ENTRY_SET_NAPOT(0, 0, SOC_CPU_SUBSYSTEM_LOW, PMA_NAPOT | PMA_NONE);
+
+    // 1. Gap between debug region & IROM
+    PMA_RESET_AND_ENTRY_SET_TOR(1, SOC_CPU_SUBSYSTEM_HIGH, PMA_NONE);
+    PMA_RESET_AND_ENTRY_SET_TOR(2, SOC_IROM_MASK_LOW, PMA_TOR | PMA_NONE);
+
+    // 2. ROM has configured the ROM region to be cacheable, so we just need to lock the configuration
+    PMA_RESET_AND_ENTRY_SET_TOR(3, SOC_IROM_MASK_LOW, PMA_NONE);
+    PMA_RESET_AND_ENTRY_SET_TOR(4, SOC_DROM_MASK_HIGH, PMA_TOR | PMA_RX);
+
+    // 3. Gap between DRAM and I_Cache
+    PMA_RESET_AND_ENTRY_SET_TOR(5, SOC_IRAM_HIGH, PMA_NONE);
+    PMA_RESET_AND_ENTRY_SET_TOR(6, SOC_IROM_LOW, PMA_TOR | PMA_NONE);
+
+    // 4. ROM has configured the MSPI region with RX permission, we should add W attribute for psram and lock the configuration
+    // This function sets invalid regions but this is a valid memory region configuration that could have
+    // been configured using PMP as well, but due to insufficient PMP entries we are configuring this using PMA.
+    // This entry is also required to be set using PMA because the region needs to be configured as cacheable.
+    PMA_RESET_AND_ENTRY_SET_NAPOT(7, SOC_IROM_LOW, (SOC_IROM_HIGH - SOC_IROM_LOW), PMA_NAPOT | PMA_RWX);
+
+    // 5. Gap between D_Cache & LP_RAM
+    PMA_RESET_AND_ENTRY_SET_TOR(8, SOC_DROM_HIGH, PMA_NONE);
+    PMA_RESET_AND_ENTRY_SET_TOR(9, SOC_RTC_IRAM_LOW, PMA_TOR | PMA_NONE);
+
+    // 6. End of address space
+    PMA_RESET_AND_ENTRY_SET_TOR(10, SOC_PERIPHERAL_HIGH, PMA_NONE);
+    PMA_RESET_AND_ENTRY_SET_TOR(11, UINT32_MAX, PMA_TOR | PMA_NONE);
+
+    // 7. Using PMA to configure the TEE text and data section access attribute. */
+    PMA_ENTRY_CFG_RESET(12);
+    assert(IS_PMA_ENTRY_UNLOCKED(13));
+    assert(IS_PMA_ENTRY_UNLOCKED(14));
+    assert(IS_PMA_ENTRY_UNLOCKED(15));
+
+    extern int _tee_iram_end;
+    PMA_RESET_AND_ENTRY_SET_TOR(13, SOC_S_IRAM_START, PMA_NONE);
+    PMA_RESET_AND_ENTRY_SET_TOR(14, (int)&_tee_iram_end, PMA_TOR | PMA_RX);
+    PMA_RESET_AND_ENTRY_SET_TOR(15, SOC_S_DRAM_END, PMA_TOR | PMA_RW);
+}
+
 void esp_tee_configure_region_protection(void)
 {
     /* Notes on implementation:
@@ -32,6 +85,13 @@ void esp_tee_configure_region_protection(void)
     const unsigned RW      = PMP_L | PMP_R | PMP_W;
     const unsigned RX      = PMP_L | PMP_R | PMP_X;
     const unsigned RWX     = PMP_L | PMP_R | PMP_W | PMP_X;
+
+    //
+    // Configure all the invalid address regions using PMA
+    //
+    // We lock the PMA entries since they mark the invalid regions and is applicable to both the privilege modes
+    //
+    esp_tee_configure_invalid_regions();
 
     //
     // Configure all the valid address regions using PMP
@@ -69,7 +129,6 @@ void esp_tee_configure_region_protection(void)
         PMP_ENTRY_SET(5, SOC_IRAM_HIGH, PMP_TOR | RWX);
         _Static_assert(SOC_IRAM_LOW < SOC_IRAM_HIGH, "Invalid RAM region");
     } else {
-        // TODO: [IDF-13827] TEE SRAM region to be partitioned into text and data sections using APM
         // REE SRAM (D/IRAM)
         PMP_ENTRY_SET(4, (int)SOC_NS_IRAM_START, NONE);
         PMP_ENTRY_SET(5, (int)esp_tee_app_config.ns_iram_end, PMP_TOR | RX);
