@@ -6,6 +6,7 @@
 
 #include "soc/soc.h"
 #include "soc/soc_caps.h"
+#include "soc/plic_reg.h"
 
 #include "riscv/encoding.h"
 #include "riscv/rvruntime-frames.h"
@@ -41,6 +42,11 @@ _ns_sp:
     .align 4
     .global _s_sp
 _s_sp:
+    .word 0
+
+    .align 4
+    .global _s_intr_thresh
+_s_intr_thresh:
     .word 0
 
 /* Macro which first allocates space on the stack to save general
@@ -272,6 +278,17 @@ _machine_ecall:
     lui     t0, ESP_TEE_M2U_SWITCH_MAGIC
     beq     a1, t0, _skip_ctx_restore
 
+    /* Check if we need to restore the MXINT threshold register */
+    la      t0, _s_intr_thresh
+    lw      t1, 0(t0)
+    beqz    t1, _skip_thresh_restore     # if saved threshold == 0, skip
+
+    /* Restore PLIC_MXINT_THRESH_REG */
+    sw      zero, 0(t0)
+    li      t0, PLIC_MXINT_THRESH_REG
+    sw      t1, 0(t0)
+
+_skip_thresh_restore:
     /* Switching back to the saved REE stack */
     la      t0, _ns_sp
     lw      sp, 0(t0)
@@ -309,6 +326,20 @@ _user_ecall:
     save_general_regs
     save_mepc
 
+    # Check if REE is in a critical section
+    li      t0, PLIC_UXINT_THRESH_REG
+    lw      t1, 0(t0)               # t1 = current UXINT threshold
+    li      t2, 1
+    ble     t1, t2, _process_ecall  # if threshold <= 1 -> continue
+
+    # Save current MXINT threshold and mirror UXINT threshold into MXINT
+    li      t0, PLIC_MXINT_THRESH_REG
+    lw      t2, 0(t0)               # t3 = current MXINT threshold
+    la      t3, _s_intr_thresh
+    sw      t2, 0(t3)               # save old MXINT threshold
+    sw      t1, 0(t0)
+
+_process_ecall:
     /* Save the U-mode (i.e. REE) stack pointer */
     la      t0, _ns_sp
     sw      sp, 0(t0)
@@ -319,6 +350,7 @@ _user_ecall:
     /* Load the TEE entry point (see _tee_s_entry) in the mepc */
     la      t0, _tee_s_entry
     csrw    mepc, t0
+    fence
 
     /* Disable the U-mode delegation of all interrupts */
     csrwi   mideleg, 0
