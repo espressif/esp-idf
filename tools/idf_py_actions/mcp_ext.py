@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
 import json
@@ -6,8 +6,6 @@ import os
 import subprocess
 import sys
 from typing import Any
-from typing import Dict
-from typing import Optional
 
 from click.core import Context
 
@@ -25,19 +23,23 @@ except ImportError:
     MCP_AVAILABLE = False
 
 
-def action_extensions(base_actions: Dict, project_path: str) -> Dict:
+def action_extensions(base_actions: dict, project_path: str) -> dict:
     """ESP-IDF MCP Server Extension"""
 
     def start_mcp_server(action_name: str, ctx: Context, args: PropertyDict, **kwargs: Any) -> None:
         """Start MCP server for ESP-IDF project integration"""
         if not MCP_AVAILABLE:
-            raise FatalError(
-                'MCP dependencies not available. Install with: pip install "mcp[cli]"\n'
-                'Or use: python -m pip install mcp'
-            )
+            raise FatalError('MCP dependencies not available. Install with: ./install.sh --enable-mcp')
 
+        current_project = None
         # Use current working directory if available, fallback to project_path
-        current_project = os.getcwd() if os.path.exists(os.path.join(os.getcwd(), 'CMakeLists.txt')) else project_path
+        for project_dir in [os.getcwd(), project_path]:
+            if project_dir and os.path.exists(os.path.join(project_dir, 'CMakeLists.txt')):
+                current_project = project_dir
+                break
+
+        if not current_project:
+            raise FatalError('Open the MCP server in a valid ESP-IDF project directory.')
 
         print(f'Starting ESP-IDF MCP Server for project: {current_project}')
         print(f'Target: {get_target(current_project)}')
@@ -89,7 +91,7 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
                 return f'Error setting target: {str(e)}'
 
         @mcp.tool()
-        def flash_project(port: Optional[str] = None) -> str:
+        def flash_project(port: str | None = None) -> str:
             """Flash the built project to connected device"""
             try:
                 flash_args = []
@@ -113,7 +115,7 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
                 return f'Error flashing: {str(e)}'
 
         @mcp.tool()
-        def monitor_serial(port: Optional[str] = None) -> str:
+        def monitor_serial(port: str | None = None) -> str:
             """Start serial monitor (returns immediately, monitor runs in background)"""
             try:
                 monitor_args = []

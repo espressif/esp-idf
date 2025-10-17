@@ -1,0 +1,8 @@
+# Python package requirements for MCP (Model Context Protocol) server functionality in ESP-IDF.
+# This feature can be enabled by running "install.{sh,bat,ps1,fish} --enable-mcp"
+#
+# This file lists Python packages without version specifiers. Version details
+# are stored in a separate constraints file. For more information, visit:
+# https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/tools/idf-tools.html
+
+mcp[cli]

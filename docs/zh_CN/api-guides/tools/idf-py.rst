@@ -292,7 +292,7 @@ MCP 服务器还提供以下资源：
 - ``project://devices``：获取已连接的 ESP 设备列表
 
 .. note::
-   MCP 服务器需要安装 ``mcp`` Python 包。使用以下命令安装：``pip install "mcp[cli]"`` 或 ``python -m pip install mcp``。
+   MCP 服务器需要安装 ``mcp`` Python 包。使用以下命令安装：``./install.sh --enable-mcp``。
 
 将 ESP-IDF MCP 服务器添加到 IDE
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

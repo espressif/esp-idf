@@ -292,7 +292,7 @@ The MCP server also provides these resources:
 - ``project://devices``: Get list of connected ESP devices
 
 .. note::
-   The MCP server requires the ``mcp`` Python package to be installed. Install it with: ``pip install "mcp[cli]"`` or ``python -m pip install mcp``.
+   The MCP server requires the ``mcp`` Python package to be installed. Install it with: ``./install.sh --enable-mcp``.
 
 Adding ESP-IDF MCP Server to IDEs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -304,24 +304,6 @@ Use the Claude CLI to add the ESP-IDF MCP server:
 .. code-block:: bash
 
   claude mcp add esp-idf python /path/to/esp-idf/tools/idf.py mcp-server --env IDF_PATH=/path/to/esp-idf
-
-**Cursor and Other IDEs:**
-
-For IDEs that support MCP via JSON configuration (such as Cursor), add the following to your MCP settings:
-
-.. code-block:: json
-
-  {
-    "mcpServers": {
-      "esp-idf": {
-        "command": "python",
-        "args": ["/path/to/esp-idf/tools/idf.py", "mcp-server"],
-        "env": {
-          "IDF_PATH": "/path/to/esp-idf"
-        }
-      }
-    }
-  }
 
 Global Options
 ==============
