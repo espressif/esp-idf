@@ -93,6 +93,10 @@ Some notes to avoid confusion in configuring :cpp:type:`ppa_srm_oper_config_t`:
     - Output block's width/height is totally determined by the input block's width/height, scaling factor, and rotation angle, so output block's width/height does not need to be configured. However, please make sure the output block can fit at the offset location in the output picture.
     - If the color mode of the input or output picture is ``PPA_SRM_COLOR_MODE_YUV420``, then its ``pic_w``, ``pic_h``, ``block_w``, ``block_h``, ``block_offset_x``, ``block_offset_y`` fields must be even.
 
+.. note::
+
+    The PPA SRM internally uses bilinear scaling algorithm to process. Therefore, it may cause chromatic aberration and loss of contrast at the edges in a scaled picture.
+
 Blend
 ~~~~~
 
