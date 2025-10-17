@@ -178,6 +178,8 @@ esp_err_t esp_isp_new_processor(const esp_isp_processor_cfg_t *proc_config, isp_
         isp_ll_set_byte_swap(proc->hal.hw, true);
     }
 
+    isp_ll_shadow_set_mode(proc->hal.hw, ISP_SHADOW_MODE_UPDATE_ONLY_NEXT_VSYNC);
+
     proc->in_color_format = in_color_format;
     proc->out_color_format = out_color_format;
     proc->h_res = proc_config->h_res;

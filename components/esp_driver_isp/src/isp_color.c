@@ -43,6 +43,9 @@ esp_err_t esp_isp_color_configure(isp_proc_handle_t proc, const esp_isp_color_co
         isp_hal_color_config(&(proc->hal), NULL);
     }
 
+    bool valid = isp_ll_shadow_update_color(proc->hal.hw);
+    ESP_RETURN_ON_FALSE_ISR(valid, ESP_ERR_INVALID_STATE, TAG, "failed to update color shadow register");
+
     return ESP_OK;
 }
 
