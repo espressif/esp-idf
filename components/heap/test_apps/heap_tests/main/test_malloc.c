@@ -205,7 +205,7 @@ TEST_CASE("test get allocated size", "[heap]")
     void *ptr_array[iterations];
 
     for (size_t i = 0; i < iterations; i++) {
-        ptr_array[i] = heap_caps_malloc(alloc_sizes[i], MALLOC_CAP_DEFAULT);
+        ptr_array[i] = heap_caps_malloc(alloc_sizes[i], MALLOC_CAP_INTERNAL);
         TEST_ASSERT_NOT_NULL(ptr_array[i]);
 
         // test that the heap_caps_get_allocated_size() returns the right number of bytes (aligned to 4 bytes
@@ -218,7 +218,7 @@ TEST_CASE("test get allocated size", "[heap]")
         // when the pointer to the first, last (calculated from the requested size) and to a byte
         // in the middle of the chunk is passed as parameter
         TEST_ASSERT(aligned_size <= heap_caps_get_containing_block_size(ptr_array[i]));
-        TEST_ASSERT(aligned_size <= heap_caps_get_containing_block_size(ptr_array[i] + alloc_sizes[i]));
+        TEST_ASSERT(aligned_size <= heap_caps_get_containing_block_size(ptr_array[i] + alloc_sizes[i] - 1));
         TEST_ASSERT(aligned_size <= heap_caps_get_containing_block_size(ptr_array[i] + (alloc_sizes[i] / 2)));
 
         heap_caps_free(ptr_array[i]);
