@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -75,6 +75,7 @@ typedef bool (*tlsf_walker)(void* ptr, size_t size, int used, void* user);
 
 /* Debugging. */
 void tlsf_walk_pool(pool_t pool, tlsf_walker walker, void* user);
+void tlsf_walk_pool_patched(pool_t pool, tlsf_walker walker, void* user);
 /* Returns nonzero if any internal consistency check fails. */
 int tlsf_check(tlsf_t tlsf);
 int tlsf_check_pool(pool_t pool);
@@ -100,13 +101,22 @@ typedef bool (*poison_check_pfunc_t)(void *start, size_t size, bool is_free, boo
 void tlsf_poison_fill_pfunc_set(poison_fill_pfunc_t pfunc);
 
 /*!
- * @brief Set the function to call for checking memory region when
- * poisoning is configured.
+ * @brief Set the function to call in tlsf_check for checking memory
+ * region when poisoning is configured.
  *
  * @param pfunc The callback function to trigger for checking
  * the content of a memory region.
  */
 void tlsf_poison_check_pfunc_set(poison_check_pfunc_t pfunc);
+
+/*!
+ * @brief Set the function to call  in tlsf_walk_pool for checking memory
+ * region when poisoning is configured.
+ *
+ * @param pfunc The callback function to trigger for checking
+ * the content of a memory region.
+ */
+void tlsf_walk_pool_pfunc_set(poison_check_pfunc_t pfunc);
 
 #ifdef __cplusplus
 }
