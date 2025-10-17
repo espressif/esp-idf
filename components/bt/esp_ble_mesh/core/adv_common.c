@@ -828,13 +828,13 @@ void bt_mesh_adv_common_init(void)
 #if CONFIG_BLE_MESH_EXT_ADV
     bt_mesh_adv_inst_supported_adv_type_add(BLE_MESH_ADV_INS, BLE_MESH_ADV_EXT_PROV);
     bt_mesh_adv_inst_supported_adv_type_add(BLE_MESH_ADV_INS, BLE_MESH_ADV_EXT_DATA);
-#if !CONFIG_BLE_MESH_RELAY_ADV_BUF
+#if CONFIG_BLE_MESH_RELAY && !CONFIG_BLE_MESH_RELAY_ADV_BUF
     bt_mesh_adv_inst_supported_adv_type_add(BLE_MESH_ADV_INS, BLE_MESH_ADV_EXT_RELAY_DATA);
 #endif
 #if CONFIG_BLE_MESH_LONG_PACKET
     bt_mesh_adv_inst_supported_adv_type_add(BLE_MESH_ADV_INS, BLE_MESH_ADV_EXT_LONG_PROV);
     bt_mesh_adv_inst_supported_adv_type_add(BLE_MESH_ADV_INS, BLE_MESH_ADV_EXT_LONG_DATA);
-#if !CONFIG_BLE_MESH_RELAY_ADV_BUF
+#if CONFIG_BLE_MESH_RELAY && !CONFIG_BLE_MESH_RELAY_ADV_BUF
     bt_mesh_adv_inst_supported_adv_type_add(BLE_MESH_ADV_INS, BLE_MESH_ADV_EXT_LONG_RELAY_DATA);
 #endif /* !CONFIG_BLE_MESH_RELAY_ADV_BUF */
 #endif /* CONFIG_BLE_MESH_LONG_PACKET */
