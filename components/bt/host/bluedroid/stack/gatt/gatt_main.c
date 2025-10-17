@@ -169,7 +169,7 @@ void gatt_free(void)
     gatt_cb.sign_op_queue = NULL;
     fixed_queue_free(gatt_cb.srv_chg_clt_q, NULL);
     gatt_cb.srv_chg_clt_q = NULL;
-    fixed_queue_free(gatt_cb.pending_new_srv_start_q, NULL);
+    fixed_queue_free(gatt_cb.pending_new_srv_start_q, osi_free_func);
     gatt_cb.pending_new_srv_start_q = NULL;
 
     list_node_t *p_node = NULL;
