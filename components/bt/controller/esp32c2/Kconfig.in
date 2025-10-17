@@ -458,10 +458,12 @@ config BT_LE_LL_DUP_SCAN_LIST_COUNT
 
 config BT_LE_LL_SCA
     int "BLE Sleep clock accuracy"
-    range 0 500
+    range 0 3000
     default 60
     help
         Sleep clock accuracy of our device (in ppm)
+        The Bluetooth LE spec requires a Sleep Clock Accuracy (SCA) of < ±500 ppm.
+        This options allows for a larger value to enable the use of less accurate clock sources.
 
 config BT_LE_LL_PEER_SCA_SET_ENABLE
     bool "Enable to set constant peer SCA"
