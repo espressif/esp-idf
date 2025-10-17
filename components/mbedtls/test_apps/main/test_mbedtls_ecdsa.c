@@ -28,6 +28,7 @@
 #include "ecdsa/ecdsa_alt.h"
 #if SOC_KEY_MANAGER_SUPPORTED
 #include "esp_key_mgr.h"
+#include "hal/key_mgr_ll.h"
 #endif
 
 #if SOC_ECDSA_SUPPORTED
@@ -384,6 +385,10 @@ static void deploy_key_in_key_manager(const uint8_t *k1_encrypted, esp_key_mgr_k
 
 TEST_CASE("mbedtls ECDSA signature generation on SECP192R1", "[mbedtls][key_manager_key]")
 {
+    if (!key_mgr_ll_is_supported()) {
+        TEST_IGNORE_MESSAGE("Key manager is not supported");
+    }
+
     deploy_key_in_key_manager(k1_ecdsa192_encrypt, ESP_KEY_MGR_ECDSA_192_KEY);
     test_ecdsa_sign(MBEDTLS_ECP_DP_SECP192R1, sha, ecdsa192_pub_x, ecdsa192_pub_y, false, USE_ECDSA_KEY_FROM_KEY_MANAGER);
     esp_key_mgr_deactivate_key(ESP_KEY_MGR_ECDSA_192_KEY);
@@ -391,6 +396,10 @@ TEST_CASE("mbedtls ECDSA signature generation on SECP192R1", "[mbedtls][key_mana
 
 TEST_CASE("mbedtls ECDSA signature generation on SECP256R1", "[mbedtls][key_manager_key]")
 {
+    if (!key_mgr_ll_is_supported()) {
+        TEST_IGNORE_MESSAGE("Key manager is not supported");
+    }
+
     deploy_key_in_key_manager(k1_ecdsa256_encrypt, ESP_KEY_MGR_ECDSA_256_KEY);
     test_ecdsa_sign(MBEDTLS_ECP_DP_SECP256R1, sha, ecdsa256_pub_x, ecdsa256_pub_y, false, USE_ECDSA_KEY_FROM_KEY_MANAGER);
     esp_key_mgr_deactivate_key(ESP_KEY_MGR_ECDSA_256_KEY);
@@ -427,6 +436,10 @@ TEST_CASE("mbedtls ECDSA deterministic signature generation on SECP384R1", "[mbe
 #if SOC_KEY_MANAGER_SUPPORTED
 TEST_CASE("mbedtls ECDSA deterministic signature generation on SECP192R1", "[mbedtls][key_manager_key]")
 {
+    if (!key_mgr_ll_is_supported()) {
+        TEST_IGNORE_MESSAGE("Key manager is not supported");
+    }
+
     if (!ecdsa_ll_is_deterministic_mode_supported()) {
         ESP_LOGI(TAG, "Skipping test because ECDSA deterministic mode is not supported.");
     } else {
@@ -515,6 +528,10 @@ TEST_CASE("mbedtls ECDSA export public key on SECP384R1", "[mbedtls][efuse_key]"
 #if SOC_KEY_MANAGER_SUPPORTED
 TEST_CASE("mbedtls ECDSA export public key on SECP192R1", "[mbedtls][key_manager_key]")
 {
+    if (!key_mgr_ll_is_supported()) {
+        TEST_IGNORE_MESSAGE("Key manager is not supported");
+    }
+
     deploy_key_in_key_manager(k1_ecdsa192_encrypt, ESP_KEY_MGR_ECDSA_192_KEY);
     test_ecdsa_export_pubkey(MBEDTLS_ECP_DP_SECP192R1, ecdsa192_pub_x, ecdsa192_pub_y, USE_ECDSA_KEY_FROM_KEY_MANAGER);
     esp_key_mgr_deactivate_key(ESP_KEY_MGR_ECDSA_192_KEY);
@@ -522,6 +539,10 @@ TEST_CASE("mbedtls ECDSA export public key on SECP192R1", "[mbedtls][key_manager
 
 TEST_CASE("mbedtls ECDSA export public key on SECP256R1", "[mbedtls][key_manager_key]")
 {
+    if (!key_mgr_ll_is_supported()) {
+        TEST_IGNORE_MESSAGE("Key manager is not supported");
+    }
+
     deploy_key_in_key_manager(k1_ecdsa256_encrypt, ESP_KEY_MGR_ECDSA_256_KEY);
     test_ecdsa_export_pubkey(MBEDTLS_ECP_DP_SECP256R1, ecdsa256_pub_x, ecdsa256_pub_y,  USE_ECDSA_KEY_FROM_KEY_MANAGER);
     esp_key_mgr_deactivate_key(ESP_KEY_MGR_ECDSA_256_KEY);

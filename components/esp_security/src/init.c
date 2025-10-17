@@ -29,13 +29,13 @@
 
 __attribute__((unused)) static const char *TAG = "esp_security";
 
+#if SOC_KEY_MANAGER_SUPPORT_KEY_DEPLOYMENT
 static void esp_key_mgr_init(void)
 {
     // The following code initializes the key manager.
     // When Flash Encryption is already enabled, Key Manager is initialized by the
     // ROM, and when Flash Encryption is enabled during boot up, Key Manager is
     // initialized by the bootloader.
-#if SOC_KEY_MANAGER_SUPPORT_KEY_DEPLOYMENT
     if (!efuse_hal_flash_encryption_enabled()) {
         // Enable key manager clock
         key_mgr_ll_power_up();
@@ -50,13 +50,17 @@ static void esp_key_mgr_init(void)
         // Force Key Manager to use eFuse key by-default for an XTS-AES operation.
         key_mgr_ll_set_key_usage(ESP_KEY_MGR_XTS_AES_128_KEY, ESP_KEY_MGR_USE_EFUSE_KEY);
     }
-#endif /* SOC_KEY_MANAGER_SUPPORT_KEY_DEPLOYMENT */
 }
+#endif /* SOC_KEY_MANAGER_SUPPORT_KEY_DEPLOYMENT */
 
 ESP_SYSTEM_INIT_FN(esp_security_init, SECONDARY, BIT(0), 103)
 {
     esp_crypto_clk_init();
+
+#if SOC_KEY_MANAGER_SUPPORT_KEY_DEPLOYMENT
     esp_key_mgr_init();
+#endif
+
 #if CONFIG_ESP_CRYPTO_DPA_PROTECTION_AT_STARTUP
     esp_crypto_dpa_protection_startup();
 #endif

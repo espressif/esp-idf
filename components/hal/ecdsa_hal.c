@@ -19,6 +19,7 @@
 
 #ifdef SOC_KEY_MANAGER_ECDSA_KEY_DEPLOY
 #include "hal/key_mgr_hal.h"
+#include "hal/key_mgr_ll.h"
 #endif
 
 #define ECDSA_HAL_P192_COMPONENT_LEN        24
@@ -40,9 +41,14 @@ static void configure_ecdsa_periph(ecdsa_hal_config_t *conf)
 {
 
     if (conf->use_km_key == 0) {
+
         ecdsa_hal_set_efuse_key(conf->curve, conf->efuse_key_blk);
 
 #if SOC_KEY_MANAGER_ECDSA_KEY_DEPLOY
+        if (!key_mgr_ll_is_supported()) {
+            HAL_ASSERT(false && "Key manager is not supported");
+        }
+
         // Force Key Manager to use eFuse key for XTS-AES operation
         if (conf->curve == ECDSA_CURVE_SECP192R1) {
             key_mgr_hal_set_key_usage(ESP_KEY_MGR_ECDSA_192_KEY, ESP_KEY_MGR_USE_EFUSE_KEY);
