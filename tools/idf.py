@@ -212,15 +212,36 @@ def init_cli(verbose_output: list | None = None) -> Any:
     def check_deprecation(ctx: click.core.Context) -> None:
         """Prints deprecation warnings for arguments in given context"""
         for option in ctx.command.params:
-            default = () if option.multiple else option.default
-            if isinstance(option, Option) and option.deprecated and ctx.params[option.name] != default:
-                deprecation = Deprecation(option.deprecated)
-                if deprecation.exit_with_error:
-                    error = deprecation.full_message(f'Option "{option.name}"')
-                    raise FatalError(f'Error: {error}')
-                else:
-                    error = deprecation.full_message(f'Option "{option.name}"')
-                    print_warning(f'Warning: {error}')
+            # Skip non-Option parameters
+            if not isinstance(option, Option):
+                continue
+            # Skip options that are not marked as deprecated
+            if not option.deprecated:
+                continue
+            # Skip options without a name (can't check or report them)
+            if option.name is None:
+                continue
+
+            # If get_parameter_source is available, use it to check if option was explicitly provided
+            if hasattr(ctx, 'get_parameter_source'):
+                source = ctx.get_parameter_source(option.name)
+                # Skip if option was not explicitly provided by user (only warn when actually used)
+                if source not in (click.core.ParameterSource.COMMANDLINE, click.core.ParameterSource.ENVIRONMENT):
+                    continue
+            else:
+                # Fallback: check if value differs from default
+                default = () if option.multiple else option.default
+                # Skip if option value is still at default (only warn when user provided a value)
+                if ctx.params.get(option.name, default) == default:
+                    continue
+
+            deprecation = Deprecation(option.deprecated)
+            if deprecation.exit_with_error:
+                error = deprecation.full_message(f'Option "{option.name}"')
+                raise FatalError(f'Error: {error}')
+            else:
+                error = deprecation.full_message(f'Option "{option.name}"')
+                print_warning(f'Warning: {error}')
 
     class Task:
         def __init__(
