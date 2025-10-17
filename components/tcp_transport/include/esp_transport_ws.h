@@ -24,6 +24,7 @@ typedef enum ws_transport_opcodes {
     WS_TRANSPORT_OPCODES_CLOSE = 0x08,
     WS_TRANSPORT_OPCODES_PING = 0x09,
     WS_TRANSPORT_OPCODES_PONG = 0x0a,
+    WS_TRANSPORT_OPCODES_COMPRESSED = 0x40,
     WS_TRANSPORT_OPCODES_FIN = 0x80,
     WS_TRANSPORT_OPCODES_NONE = 0x100,   /*!< not a valid opcode to indicate no message previously received
                                           * from the API esp_transport_ws_get_read_opcode() */
@@ -48,6 +49,13 @@ typedef struct {
                                              *   If false, only user frames are propagated, control frames are handled
                                              *   automatically during read operations
                                              */
+    bool per_msg_compress;                  /*!< Hint the server to enable per-message compression (RFC7692) */
+    int per_msg_client_deflate_window_bit;  /*!< Hint the server Per-message deflate window bit 8 to 15; or leave 0 to let server decide */
+    int per_msg_server_deflate_window_bit;  /*!< Hint the server Per-message deflate window bit 8 to 15; or leave 0 to let server decide */
+    bool per_msg_server_no_ctx_takeover;    /*!< Hint the server to reset the compression stream on every WS frame on server side
+                                             *   True for a safer transfer, false for better performance */
+    bool per_msg_client_no_ctx_takeover;    /*!< Hint the server to reset the compression stream on every WS frame on client side
+                                             *   True for a safer transfer, false for better performance */
 } esp_transport_ws_config_t;
 
 /**
@@ -183,6 +191,78 @@ int esp_transport_ws_send_raw(esp_transport_handle_t t, ws_transport_opcodes_t o
  *      - Fin flag as a boolean
  */
 bool esp_transport_ws_get_fin_flag(esp_transport_handle_t t);
+
+/**
+ * @brief      Returns the RSV1 flag (permessage-deflate) of the last read frame
+ *
+ * @param[in]  t    The transport handle
+ *
+ * @return
+ *     - true if the last read frame was compressed
+ *     - false otherwise
+ */
+bool esp_transport_ws_get_rsv1_flag(esp_transport_handle_t t);
+
+/**
+ * @brief      Get per-message compression flag
+ *
+ * @param[in]  t     The transport handle
+ *
+ * @return
+ *     - true if per-message compression is enabled
+ *     - false if per-message compression is disabled
+ */
+bool esp_transport_ws_get_per_msg_compress(esp_transport_handle_t t);
+
+/**
+ * @brief      Get client deflate window bit for per-message compression
+ *
+ * @param[in]  t     The transport handle
+ *
+ * @return
+ *     - client deflate window bit
+ */
+int esp_transport_ws_get_per_msg_client_deflate_window_bit(esp_transport_handle_t t);
+
+/**
+ * @brief      Get server deflate window bit for per-message compression
+ *
+ * @param[in]  t     The transport handle
+ *
+ * @return
+ *     - server deflate window bit
+ */
+int esp_transport_ws_get_per_msg_server_deflate_window_bit(esp_transport_handle_t t);
+
+/**
+ * @brief      Get server no context takeover flag for per-message compression
+ *
+ * If this is returned to be true, then the server-to-client's compression handle should be reset
+ * on every frame transfer. If this is false, then the server-to-client's compression handle
+ * should not be reset over the lifespan of this esp_transport_handle_t.
+ *
+ * @param[in]  t     The transport handle
+ *
+ * @return
+ *     - true if server no context takeover is enabled
+ *     - false if server no context takeover is disabled
+ */
+bool esp_transport_ws_get_per_msg_server_no_ctx_takeover(esp_transport_handle_t t);
+
+/**
+ * @brief      Get client no context takeover flag for per-message compression
+ *
+ * If this is returned to be true, then the client-to-server's compression handle should be reset
+ * on every frame transfer. If this is false, then the client-to-server's compression handle
+ * should not be reset over the lifespan of this esp_transport_handle_t.
+ *
+ * @param[in]  t     The transport handle
+ *
+ * @return
+ *     - true if client no context takeover is enabled
+ *     - false if client no context takeover is disabled
+ */
+bool esp_transport_ws_get_per_msg_client_no_ctx_takeover(esp_transport_handle_t t);
 
 /**
  * @brief               Returns the HTTP status code of the websocket handshake
