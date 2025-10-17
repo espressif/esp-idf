@@ -20,6 +20,10 @@
 extern "C" {
 #endif
 
+#define MEM_AUX_SHUTDOWN         BIT(0)
+#define MEM_AUX_LIGHTSLEEP       BIT(1)
+#define MEM_AUX_DEEPSLEEP        BIT(2)
+
 /**
  * @brief ROM obtains the wake-up type through LP_SYS_STORE9_REG[0].
  *         Set the flag to inform
@@ -65,6 +69,17 @@ FORCE_INLINE_ATTR void lp_sys_ll_set_pau_link_addr(uint32_t addr)
     LP_SYS.backup_dma_cfg2.link_addr_aon = addr;
 }
 
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+FORCE_INLINE_ATTR void lp_sys_ll_set_hp_mem_lowpower_mode(uint32_t mode)
+{
+    LP_SYS.hp_mem_aux_ctrl.hp_mem_lowpower_mode = mode;
+}
+
+FORCE_INLINE_ATTR void lp_sys_ll_set_lp_mem_lowpower_mode(uint32_t mode)
+{
+    LP_SYS.lp_mem_aux_ctrl.lp_mem_lowpower_mode = mode;
+}
+#endif
 #ifdef __cplusplus
 }
 #endif
