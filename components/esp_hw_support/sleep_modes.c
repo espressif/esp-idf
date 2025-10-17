@@ -2452,19 +2452,37 @@ esp_err_t esp_sleep_pd_config(esp_sleep_pd_domain_t domain, esp_sleep_pd_option_
     esp_os_enter_critical_safe(&s_config.lock);
     int refs = 0;
     if (s_config.domain[domain].pd_option == ESP_PD_OPTION_AUTO) {
+        // If domain is currently in auto mode, transition to the new mode directly
+        // - If option is ESP_PD_OPTION_ON: set refs to 1
+        // - If option is ESP_PD_OPTION_OFF: set refs to 0
+        // - If option is ESP_PD_OPTION_AUTO: no change in refs
         s_config.domain[domain].refs = (option == ESP_PD_OPTION_ON) ? 1 : 0;
         s_config.domain[domain].pd_option = option;
     } else {
         if (option == ESP_PD_OPTION_AUTO) {
+            // If switching from manual to auto mode, reset references and return to auto management
             s_config.domain[domain].refs = 0;
             s_config.domain[domain].pd_option = option;
         } else {
-            refs = (option == ESP_PD_OPTION_ON)  ? s_config.domain[domain].refs++ \
-                 : (option == ESP_PD_OPTION_OFF) ? --s_config.domain[domain].refs \
-                 : s_config.domain[domain].refs;
+            // Manual mode operations (ESP_PD_OPTION_ON/ESP_PD_OPTION_OFF)
+            // The reference counting implements the following state machine:
+            // - ON operations increment references, only update pd_option when refs transitions from 0 to 1
+            // - OFF operations decrement references, only update pd_option when refs transitions from 1 to 0
+            // - This provides symmetric reference counting for resource management
+            if (option == ESP_PD_OPTION_ON) {
+                // Get refs value after incrementing: this ensures pd_option is updated when transitioning
+                // from 0->1 (first request) but not on subsequent increments
+                refs = s_config.domain[domain].refs++;
+            } else if (option == ESP_PD_OPTION_OFF) {
+                // Get refs value after decrementing: this ensures pd_option is updated when transitioning
+                // from 1->0 (last release) but not on intermediate decrements
+                refs = --s_config.domain[domain].refs;
+            }
             if (refs == 0) {
+                // Only update pd_option when reference count reaches 0, indicating all users have released
                 s_config.domain[domain].pd_option = option;
             } else if (refs < 0) {
+                // Error case: reference count went negative, which indicates unbalanced ON/OFF calls
                 s_config.domain[domain].refs = 0;
                 err = ESP_ERR_INVALID_STATE;
             }
