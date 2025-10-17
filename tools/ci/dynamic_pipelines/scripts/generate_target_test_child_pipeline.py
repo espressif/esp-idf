@@ -45,17 +45,31 @@ def main(output_filepath: str) -> None:
         known_warnings_dict = yaml.safe_load(fr) or dict()
 
     exclude_runner_tags_set = set(known_warnings_dict.get('no_runner_tags', []))
+    exclude_runner_tags_matching = []
     # EXCLUDE_RUNNER_TAGS is a string separated by ';'
     # like 'esp32,generic;esp32c3,wifi'
+    # or with wildcard like 'esp32,*; esp32p4,wifi,*'
     if exclude_runner_tags := os.getenv('EXCLUDE_RUNNER_TAGS'):
-        exclude_runner_tags_set.update(exclude_runner_tags.split(';'))
+        for tag in exclude_runner_tags.split(';'):
+            if '*' not in tag:
+                exclude_runner_tags_set.add(tag)
+            else:
+                match_group = {el for el in tag.split(',') if el != '*'}
+                if len(match_group) == 0:
+                    print('WARNING: wildcard exclusion requires at least one specific tag — skipped')
+                    continue
+                exclude_runner_tags_matching.append(match_group)
 
     flattened_cases = []
-    additional_dict: t.Dict[GroupKey, t.Dict[str, t.Any]] = {}
+    additional_dict: dict[GroupKey, dict[str, t.Any]] = {}
     for key, grouped_cases in cases.grouped_cases.items():
         # skip test cases with no runner tags
         if ','.join(sorted(key.runner_tags)) in exclude_runner_tags_set:
             print(f'WARNING: excluding test cases with runner tags: {key.runner_tags}')
+            continue
+
+        if any(set(key.runner_tags) & group for group in exclude_runner_tags_matching):
+            print(f'WARNING: Excluding test cases with runner tags (wildcard match): {key.runner_tags}')
             continue
 
         flattened_cases.extend(grouped_cases)
