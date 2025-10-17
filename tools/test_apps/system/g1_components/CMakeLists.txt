@@ -5,7 +5,7 @@
 cmake_minimum_required(VERSION 3.22)
 
 set(g0_components soc hal esp_common esp_rom)  # also <arch>, i.e. xtensa or riscv, will be added below
-set(g1_components spi_flash freertos log heap esp_libc esp_system esp_hw_support esp_mm)
+set(g1_components spi_flash freertos log heap esp_libc esp_system esp_hw_support esp_mm esp_stdio)
 set(COMPONENTS ${g0_components} ${g1_components} main)
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)

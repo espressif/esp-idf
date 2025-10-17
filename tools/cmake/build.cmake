@@ -316,13 +316,14 @@ function(__build_init idf_path)
     endforeach()
 
     if("${target}" STREQUAL "linux")
-        set(requires_common freertos esp_hw_support heap log soc hal esp_rom esp_common esp_system linux)
+        set(requires_common freertos esp_hw_support heap log soc hal esp_rom esp_common esp_system linux esp_stdio)
         idf_build_set_property(__COMPONENT_REQUIRES_COMMON "${requires_common}")
     else()
         # Set components required by all other components in the build
         #
         # - esp_hw_support is here for backward compatibility
-        set(requires_common cxx esp_libc freertos esp_hw_support heap log soc hal esp_rom esp_common esp_system)
+        set(requires_common cxx esp_libc freertos esp_hw_support heap log soc hal
+                     esp_rom esp_common esp_system esp_stdio)
         idf_build_set_property(__COMPONENT_REQUIRES_COMMON "${requires_common}")
     endif()
 

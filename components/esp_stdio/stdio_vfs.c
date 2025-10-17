@@ -1,22 +1,24 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "sdkconfig.h"
 #include <fcntl.h>
 #include "esp_err.h"
 #include "esp_rom_sys.h"
+#include "esp_stdio.h"
+#include <sys/errno.h>
+#if CONFIG_VFS_SUPPORT_IO
 #include "esp_vfs_cdcacm.h"
 #include "esp_private/esp_vfs_cdcacm.h"
 #include "driver/esp_private/usb_serial_jtag_vfs.h"
 #include "driver/esp_private/uart_vfs.h"
 #include "esp_private/usb_console.h"
-#include "esp_vfs_console.h"
-#include "sdkconfig.h"
 #include "esp_private/startup_internal.h"
 #include "esp_private/nullfs.h"
-#include <sys/errno.h>
+#endif
 
 #define STRINGIFY(s) STRINGIFY2(s)
 #define STRINGIFY2(s) #s
@@ -79,7 +81,6 @@ int console_open(const char * path, int flags, int mode)
 
 ssize_t console_write(int fd, const void *data, size_t size)
 {
-    // All function calls are to primary, except from write and close, which will be forwarded to both primary and secondary.
     write(vfs_console.fd_primary, data, size);
 #if CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG
     write(vfs_console.fd_secondary, data, size);
@@ -237,7 +238,7 @@ static esp_err_t esp_vfs_dev_console_register(void)
     return esp_vfs_register_fs(ESP_VFS_DEV_CONSOLE, &s_vfs_console, ESP_VFS_FLAG_STATIC, NULL);
 }
 
-esp_err_t esp_vfs_console_register(void)
+esp_err_t esp_stdio_register(void)
 {
     esp_err_t err = ESP_OK;
 // Primary vfs part.
@@ -261,7 +262,7 @@ esp_err_t esp_vfs_console_register(void)
 
 ESP_SYSTEM_INIT_FN(init_vfs_console, CORE, BIT(0), 119)
 {
-    return esp_vfs_console_register();
+    return esp_stdio_register();
 }
 
 #endif // CONFIG_VFS_SUPPORT_IO

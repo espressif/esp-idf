@@ -7,7 +7,6 @@
 #pragma once
 
 #include "esp_err.h"
-#include "esp_vfs.h"
 #include "esp_vfs_common.h"
 
 #ifdef __cplusplus

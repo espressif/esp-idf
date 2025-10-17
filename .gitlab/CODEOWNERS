@@ -117,13 +117,12 @@
 /components/esp_ringbuf/              @esp-idf-codeowners/system
 /components/esp_rom/                  @esp-idf-codeowners/system @esp-idf-codeowners/bluetooth @esp-idf-codeowners/wifi
 /components/esp_security/             @esp-idf-codeowners/security
+/components/esp_stdio/                @esp-idf-codeowners/storage @esp-idf-codeowners/system
 /components/esp_system/               @esp-idf-codeowners/system
 /components/esp_tee/                  @esp-idf-codeowners/security
 /components/esp_timer/                @esp-idf-codeowners/system
 /components/esp-tls/                  @esp-idf-codeowners/app-utilities
 /components/esp_usb_cdc_rom_console/  @esp-idf-codeowners/system @esp-idf-codeowners/peripherals/usb
-/components/esp_vfs_*/                @esp-idf-codeowners/storage
-/components/esp_vfs_console/          @esp-idf-codeowners/storage @esp-idf-codeowners/system
 /components/esp_wifi/                 @esp-idf-codeowners/wifi
 /components/espcoredump/              @esp-idf-codeowners/debugging
 /components/esptool_py/               @esp-idf-codeowners/tools
