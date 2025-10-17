@@ -724,7 +724,7 @@ Calling :cpp:func:`esp_isp_demosaic_configure` to configure Demosaic function, y
         ...
     };
 
-    ESP_ERROR_CHECK(esp_isp_demosaic_configure(isp_proc, &sharpen_config));
+    ESP_ERROR_CHECK(esp_isp_demosaic_configure(isp_proc, &demosaic_config));
     ESP_ERROR_CHECK(esp_isp_demosaic_enable(isp_proc));
 
 After calling :cpp:func:`esp_isp_demosaic_configure`, you need to enable the ISP Demosaic controller, by calling :cpp:func:`esp_isp_demosaic_enable`. This function:

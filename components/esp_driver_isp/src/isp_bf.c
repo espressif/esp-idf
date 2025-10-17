@@ -43,6 +43,9 @@ esp_err_t esp_isp_bf_configure(isp_proc_handle_t proc, const esp_isp_bf_config_t
         isp_hal_bf_config(&(proc->hal), NULL);
     }
 
+    bool valid = isp_ll_shadow_update_bf(proc->hal.hw);
+    ESP_RETURN_ON_FALSE_ISR(valid, ESP_ERR_INVALID_STATE, TAG, "failed to update bf shadow register");
+
     return ESP_OK;
 }
 

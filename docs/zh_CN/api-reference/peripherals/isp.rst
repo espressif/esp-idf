@@ -724,7 +724,7 @@ ISP 去马赛克控制器
         ...
     };
 
-    ESP_ERROR_CHECK(esp_isp_demosaic_configure(isp_proc, &sharpen_config));
+    ESP_ERROR_CHECK(esp_isp_demosaic_configure(isp_proc, &demosaic_config));
     ESP_ERROR_CHECK(esp_isp_demosaic_enable(isp_proc));
 
 调用 :cpp:func:`esp_isp_demosaic_configure` 后，需要通过调用 :cpp:func:`esp_isp_demosaic_enable` 来启用 ISP 去马赛克控制器。此函数：
