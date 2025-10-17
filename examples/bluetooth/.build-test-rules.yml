@@ -243,12 +243,12 @@ examples/bluetooth/nimble/ble_multi_conn:
 examples/bluetooth/nimble/ble_pawr_adv:
   <<: *bt_default_depends
   enable:
-    - if: IDF_TARGET == "esp32c6"
+    - if: SOC_ESP_NIMBLE_CONTROLLER == 1 and IDF_TARGET != "esp32c2"
 
 examples/bluetooth/nimble/ble_pawr_adv_conn:
   <<: *bt_default_depends
   enable:
-    - if: IDF_TARGET == "esp32c6"
+    - if: SOC_ESP_NIMBLE_CONTROLLER == 1 and IDF_TARGET != "esp32c2"
 
 examples/bluetooth/nimble/ble_periodic_adv:
   <<: *bt_default_depends
