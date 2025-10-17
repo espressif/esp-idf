@@ -144,7 +144,6 @@ typedef struct {
     bool coll_det_flg;                  /*!< UART collision detection flag */
     bool rx_always_timeout_flg;         /*!< UART always detect rx timeout flag */
     int rx_buffered_len;                /*!< UART cached data length */
-    int rx_buf_size;                    /*!< RX ring buffer size */
     bool rx_buffer_full_flg;            /*!< RX ring buffer full flag. */
     uint8_t *rx_data_buf;               /*!< Data buffer to stash FIFO data*/
     uint8_t rx_stash_len;               /*!< stashed data length.(When using flow control, after reading out FIFO data, if we fail to push to buffer, we can just stash them.) */
@@ -154,8 +153,8 @@ typedef struct {
     bool tx_waiting_fifo;               /*!< this flag indicates that some task is waiting for FIFO empty interrupt, used to send all data without any data buffer*/
     uint8_t *tx_ptr;                    /*!< TX data pointer to push to FIFO in TX buffer mode*/
     uart_tx_data_t *tx_head;            /*!< TX data pointer to head of the current buffer in TX ring buffer*/
-    uint32_t tx_len_tot;                /*!< Total length of current item in ring buffer*/
-    uint32_t tx_len_cur;
+    uint32_t trans_total_remaining_len; /*!< Remaining data length of the current processing transaction in TX ring buffer*/
+    uint32_t trans_chunk_remaining_len; /*!< Remaining data length of the current processing chunk of the transaction in TX ring buffer*/
     uint8_t tx_brk_flg;                 /*!< Flag to indicate to send a break signal in the end of the item sending procedure */
     uint8_t tx_brk_len;                 /*!< TX break signal cycle length/number */
     uint8_t tx_waiting_brk;             /*!< Flag to indicate that TX FIFO is ready to send break signal after FIFO is empty, do not push data into TX FIFO right now.*/
@@ -1222,15 +1221,15 @@ static void UART_ISR_ATTR uart_rx_intr_handler_default(void *param)
                 //That would cause a watch_dog reset because empty interrupt happens so often.
                 //Although this is a loop in ISR, this loop will execute at most 128 turns.
                 while (tx_fifo_rem) {
-                    if (p_uart->tx_len_tot == 0 || p_uart->tx_ptr == NULL || p_uart->tx_len_cur == 0) {
+                    if (p_uart->trans_total_remaining_len == 0 || p_uart->tx_ptr == NULL || p_uart->trans_chunk_remaining_len == 0) {
                         size_t size;
                         p_uart->tx_head = (uart_tx_data_t *) xRingbufferReceiveFromISR(p_uart->tx_ring_buf, &size);
                         if (p_uart->tx_head) {
                             //The first item is the data description
                             //Get the first item to get the data information
-                            if (p_uart->tx_len_tot == 0) {
+                            if (p_uart->trans_total_remaining_len == 0) {
                                 p_uart->tx_ptr = NULL;
-                                p_uart->tx_len_tot = p_uart->tx_head->tx_data.size;
+                                p_uart->trans_total_remaining_len = p_uart->tx_head->tx_data.size;
                                 if (p_uart->tx_head->type == UART_DATA_BREAK) {
                                     p_uart->tx_brk_flg = 1;
                                     p_uart->tx_brk_len = p_uart->tx_head->tx_data.brk_len;
@@ -1242,22 +1241,22 @@ static void UART_ISR_ATTR uart_rx_intr_handler_default(void *param)
                                 //Update the TX item pointer, we will need this to return item to buffer.
                                 p_uart->tx_ptr = (uint8_t *)p_uart->tx_head;
                                 en_tx_flg = true;
-                                p_uart->tx_len_cur = size;
+                                p_uart->trans_chunk_remaining_len = size;
                             }
                         } else {
                             //Can not get data from ring buffer, return;
                             break;
                         }
                     }
-                    if (p_uart->tx_len_tot > 0 && p_uart->tx_ptr && p_uart->tx_len_cur > 0) {
+                    if (p_uart->trans_total_remaining_len > 0 && p_uart->tx_ptr && p_uart->trans_chunk_remaining_len > 0) {
                         // To fill the TX FIFO.
                         uint32_t send_len = uart_enable_tx_write_fifo(uart_num, (const uint8_t *) p_uart->tx_ptr,
-                                                                      MIN(p_uart->tx_len_cur, tx_fifo_rem));
+                                                                      MIN(p_uart->trans_chunk_remaining_len, tx_fifo_rem));
                         p_uart->tx_ptr += send_len;
-                        p_uart->tx_len_tot -= send_len;
-                        p_uart->tx_len_cur -= send_len;
+                        p_uart->trans_total_remaining_len -= send_len;
+                        p_uart->trans_chunk_remaining_len -= send_len;
                         tx_fifo_rem -= send_len;
-                        if (p_uart->tx_len_cur == 0) {
+                        if (p_uart->trans_chunk_remaining_len == 0) {
                             //Return item to ring buffer.
                             vRingbufferReturnItemFromISR(p_uart->tx_ring_buf, p_uart->tx_head, &HPTaskAwoken);
                             need_yield |= (HPTaskAwoken == pdTRUE);
@@ -1265,7 +1264,7 @@ static void UART_ISR_ATTR uart_rx_intr_handler_default(void *param)
                             p_uart->tx_ptr = NULL;
                             //Sending item done, now we need to send break if there is a record.
                             //Set TX break signal after FIFO is empty
-                            if (p_uart->tx_len_tot == 0 && p_uart->tx_brk_flg == 1) {
+                            if (p_uart->trans_total_remaining_len == 0 && p_uart->tx_brk_flg == 1) {
                                 uart_hal_clr_intsts_mask(&(uart_context[uart_num].hal), UART_INTR_TX_BRK_DONE);
                                 UART_ENTER_CRITICAL_ISR(&(uart_context[uart_num].spinlock));
                                 uart_hal_tx_break(&(uart_context[uart_num].hal), p_uart->tx_brk_len);
@@ -1592,6 +1591,8 @@ int uart_tx_chars(uart_port_t uart_num, const char *buffer, uint32_t len)
     return tx_len;
 }
 
+// Per transaction in the ring buffer:
+// A data description item, followed by one or more data chunk items
 static int uart_tx_all(uart_port_t uart_num, const char *src, size_t size, bool brk_en, int brk_len)
 {
     if (size == 0) {
@@ -1606,7 +1607,6 @@ static int uart_tx_all(uart_port_t uart_num, const char *src, size_t size, bool 
 #endif
     p_uart_obj[uart_num]->coll_det_flg = false;
     if (p_uart_obj[uart_num]->tx_buf_size > 0) {
-        size_t max_size = xRingbufferGetMaxItemSize(p_uart_obj[uart_num]->tx_ring_buf);
         int offset = 0;
         uart_tx_data_t evt;
         evt.tx_data.size = size;
@@ -1618,7 +1618,7 @@ static int uart_tx_all(uart_port_t uart_num, const char *src, size_t size, bool 
         }
         xRingbufferSend(p_uart_obj[uart_num]->tx_ring_buf, (void *) &evt, sizeof(uart_tx_data_t), portMAX_DELAY);
         while (size > 0) {
-            size_t send_size = size > max_size / 2 ? max_size / 2 : size;
+            size_t send_size = MIN(size, xRingbufferGetCurFreeSize(p_uart_obj[uart_num]->tx_ring_buf));
             xRingbufferSend(p_uart_obj[uart_num]->tx_ring_buf, (void *)(src + offset), send_size, portMAX_DELAY);
             size -= send_size;
             offset += send_size;
@@ -1746,7 +1746,79 @@ esp_err_t uart_get_tx_buffer_free_size(uart_port_t uart_num, size_t *size)
     ESP_RETURN_ON_FALSE((uart_num < UART_NUM_MAX), ESP_ERR_INVALID_ARG, UART_TAG, "uart_num error");
     ESP_RETURN_ON_FALSE((p_uart_obj[uart_num]), ESP_ERR_INVALID_ARG, UART_TAG, "uart driver error");
     ESP_RETURN_ON_FALSE((size != NULL), ESP_ERR_INVALID_ARG, UART_TAG, "arg pointer is NULL");
-    *size = p_uart_obj[uart_num]->tx_buf_size - p_uart_obj[uart_num]->tx_len_tot;
+
+    // If tx buffer is disabled or ring buffer is full, overall enqueueable payload is 0
+    if (p_uart_obj[uart_num]->tx_buf_size == 0 || xRingbufferGetCurFreeSize(p_uart_obj[uart_num]->tx_ring_buf) == 0) {
+        *size = 0;
+        return ESP_OK;
+    }
+
+    // Tight conservative bound for NOSPLIT ring buffer overall enqueueable payload across up to two segments
+    const size_t RINGBUF_ITEM_HDR_SIZE = 8; // per public ringbuf API docs
+
+    // Per-item cap in current state and basis to infer minimal buffer size
+    size_t max_item = xRingbufferGetMaxItemSize(p_uart_obj[uart_num]->tx_ring_buf);
+
+    // Get current ring buffer pointer offsets and items waiting to detect empty
+    UBaseType_t off_free = 0;
+    UBaseType_t off_acq = 0;
+    UBaseType_t items_waiting = 0;
+    vRingbufferGetInfo(p_uart_obj[uart_num]->tx_ring_buf, &off_free, NULL, NULL, &off_acq, &items_waiting);
+
+    // Minimal possible total buffer size for NOSPLIT: see ringbuf initialization logic
+    // xMaxItemSize = ALIGN4(xSize/2) - header => xSize_min = 2 * (xMaxItemSize + header - up_to_3_alignment)
+    size_t buf_size_min = 2 * (max_item + RINGBUF_ITEM_HDR_SIZE - 3);
+    buf_size_min &= ~((size_t)3); // align down to 4 bytes
+
+    size_t total_payload = 0;
+    if (off_acq == off_free && items_waiting == 0) {
+        // Empty buffer: conservatively treat as a single large contiguous segment
+        total_payload = p_uart_obj[uart_num]->tx_buf_size - RINGBUF_ITEM_HDR_SIZE;
+    } else if (off_acq <= off_free) {
+        // Single contiguous free segment
+        size_t seg = (size_t)off_free - (size_t)off_acq;
+        if (seg > RINGBUF_ITEM_HDR_SIZE) {
+            size_t usable = seg - RINGBUF_ITEM_HDR_SIZE;
+            usable &= ~((size_t)3);
+            if (usable > max_item) {
+                usable = max_item;
+            }
+            total_payload = usable;
+        }
+    } else {
+        // Free space wraps: two segments [acq..tail) and [head..free)
+        size_t seg1 = buf_size_min - (size_t)off_acq;
+        size_t seg2 = (size_t)off_free; // from head (offset 0) to free
+        size_t payload1 = 0;
+        if (seg1 > RINGBUF_ITEM_HDR_SIZE) {
+            size_t usable1 = seg1 - RINGBUF_ITEM_HDR_SIZE;
+            usable1 &= ~((size_t)3);
+            if (usable1 > max_item) {
+                usable1 = max_item;
+            }
+            payload1 = usable1;
+        }
+        size_t payload2 = 0;
+        if (seg2 > RINGBUF_ITEM_HDR_SIZE) {
+            size_t usable2 = seg2 - RINGBUF_ITEM_HDR_SIZE;
+            usable2 &= ~((size_t)3);
+            if (usable2 > max_item) {
+                usable2 = max_item;
+            }
+            payload2 = usable2;
+        }
+        total_payload = payload1 + payload2;
+    }
+
+    // Subtract the cost of the transaction's data description item (header + aligned struct)
+    size_t desc_cost = RINGBUF_ITEM_HDR_SIZE + (((sizeof(uart_tx_data_t)) + 3) & ~((size_t)3));
+    if (total_payload > desc_cost) {
+        total_payload -= desc_cost;
+    } else {
+        total_payload = 0;
+    }
+
+    *size = total_payload;
     return ESP_OK;
 }
 
@@ -1922,7 +1994,8 @@ esp_err_t uart_driver_install(uart_port_t uart_num, int rx_buffer_size, int tx_b
         p_uart_obj[uart_num]->event_queue_size = event_queue_size;
         p_uart_obj[uart_num]->tx_ptr = NULL;
         p_uart_obj[uart_num]->tx_head = NULL;
-        p_uart_obj[uart_num]->tx_len_tot = 0;
+        p_uart_obj[uart_num]->trans_total_remaining_len = 0;
+        p_uart_obj[uart_num]->trans_chunk_remaining_len = 0;
         p_uart_obj[uart_num]->tx_brk_flg = 0;
         p_uart_obj[uart_num]->tx_brk_len = 0;
         p_uart_obj[uart_num]->tx_waiting_brk = 0;
