@@ -790,7 +790,9 @@ static void *esp_cam_ctlr_dvp_cam_alloc_buffer(esp_cam_ctlr_t *handle, size_t si
  * @param cam_handle Camera controller handle
  * @param src_format Source format
  * @param dst_format Destination format
- * @return ESP_OK on success, ESP_FAIL on failure
+ * @return
+ *        - ESP_OK on success
+ *        - ESP_ERR_INVALID_ARG: Invalid argument
  */
 esp_err_t esp_cam_ctlr_dvp_format_conversion(esp_cam_ctlr_handle_t cam_handle,
                                              const cam_ctlr_format_conv_config_t *config)
@@ -803,6 +805,12 @@ esp_err_t esp_cam_ctlr_dvp_format_conversion(esp_cam_ctlr_handle_t cam_handle,
 
     ESP_LOGD(TAG, "Configure format conversion: %d -> %d", config->src_format, config->dst_format);
 
+#if !CONFIG_ESP32P4_SELECTS_REV_LESS_V3
+    if (config->src_format == CAM_CTLR_COLOR_YUV420) {
+        ESP_LOGE(TAG, "YUV420 is not allowed for source format");
+        return ESP_ERR_INVALID_ARG;
+    }
+#endif
     // Configure color format conversion
     cam_hal_color_format_convert(&ctlr->hal, config);
 
@@ -868,8 +876,16 @@ esp_err_t esp_cam_new_dvp_ctlr(const esp_cam_ctlr_dvp_config_t *config, esp_cam_
 
     cam_hal_config_t cam_hal_config = {
         .port = config->ctlr_id,
+        .cam_data_width = config->cam_data_width == 0 ? 8 : config->cam_data_width,
+        .bit_swap_en = config->bit_swap_en,
         .byte_swap_en = config->byte_swap_en,
     };
+
+    ESP_RETURN_ON_FALSE(cam_hal_config.cam_data_width == 8 || cam_hal_config.cam_data_width == 16 || cam_hal_config.cam_data_width == 24, ESP_ERR_INVALID_ARG, TAG, "invalid argument: cam_data_width is not 8 or 16 or 24");
+
+#if !CONFIG_ESP32P4_SELECTS_REV_LESS_V3
+    ESP_RETURN_ON_FALSE(cam_hal_config.cam_data_width != 8 || cam_hal_config.byte_swap_en == 0, ESP_ERR_INVALID_ARG, TAG, "invalid argument: byte swap is not supported when cam_data_width is 8");
+#endif
 
     if (!config->pin_dont_init) {
         // Initialzie DVP clock and GPIO internally
