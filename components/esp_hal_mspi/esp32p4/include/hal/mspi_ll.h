@@ -139,6 +139,20 @@ static inline void _mspi_timing_ll_reset_mspi(void)
         _mspi_timing_ll_reset_mspi(__VA_ARGS__); \
     } while(0)
 
+__attribute__((always_inline))
+static inline void _mspi_timing_ll_reset_mspi_apb(void)
+{
+    REG_SET_BIT(HP_SYS_CLKRST_HP_RST_EN0_REG, HP_SYS_CLKRST_REG_RST_EN_MSPI_APB);
+    REG_CLR_BIT(HP_SYS_CLKRST_HP_RST_EN0_REG, HP_SYS_CLKRST_REG_RST_EN_MSPI_APB);
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_RC_ATOMIC_ENV variable in advance
+#define mspi_timing_ll_reset_mspi_apb(...) do { \
+        (void)__DECLARE_RCC_RC_ATOMIC_ENV; \
+        _mspi_timing_ll_reset_mspi_apb(__VA_ARGS__); \
+    } while(0)
+
 /*---------------------------------------------------------------
                     PSRAM tuning
 ---------------------------------------------------------------*/

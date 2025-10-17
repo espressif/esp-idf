@@ -39,6 +39,12 @@
 #include "hal/ldo_ll.h"
 #endif
 
+#if (CONFIG_ESP_REV_MIN_FULL == 300)
+#include "soc/hp_system_reg.h"
+#include "hal/mmu_ll.h"
+#include "hal/mspi_ll.h"
+#endif
+
 #define HP(state)   (PMU_MODE_HP_ ## state)
 #define LP(state)   (PMU_MODE_LP_ ## state)
 

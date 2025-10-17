@@ -968,7 +968,7 @@ void IRAM_ATTR sleep_retention_do_extra_retention(bool backup_or_restore)
         return;
     }
 #if SOC_PAU_IN_TOP_DOMAIN
-    pau_regdma_enable_aon_link_entry(false);
+    bool origin_bypass_en = pau_regdma_enable_aon_link_entry(false);
 #endif
     // Set extra linked list head pointer to hardware
     pau_regdma_set_extra_link_addr(s_retention.lists[s_retention.highpri].entries[EXTRA_LINK_NUM]);
@@ -982,6 +982,9 @@ void IRAM_ATTR sleep_retention_do_extra_retention(bool backup_or_restore)
     } else {
         pau_regdma_trigger_extra_link_restore();
     }
+#if SOC_PAU_IN_TOP_DOMAIN
+    pau_regdma_enable_aon_link_entry(origin_bypass_en);
+#endif
 }
 
 #if SOC_PM_RETENTION_SW_TRIGGER_REGDMA
