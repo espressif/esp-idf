@@ -34,6 +34,7 @@ if(NOT non_os_build)
                      "sleep_usb.c"
                      "sleep_gpio.c"
                      "sleep_event.c"
+                     "sleep_mspi.c"
                      "regi2c_ctrl.c"
                      "esp_gpio_reserve.c"
                      "sar_periph_ctrl_common.c"
