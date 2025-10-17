@@ -430,6 +430,9 @@ static void bt_mesh_scan_cb(struct bt_mesh_adv_report *adv_rpt)
 #endif
         adv_rpt->adv_type != BLE_MESH_ADV_NONCONN_IND &&
        adv_rpt->adv_type != BLE_MESH_ADV_IND
+#if CONFIG_BLE_MESH_EXT_ADV
+       && adv_rpt->adv_type != BLE_MESH_EXT_ADV_NONCONN_IND
+#endif
 #if CONFIG_BLE_MESH_RPR_SRV && CONFIG_BLE_MESH_RPR_SRV_ACTIVE_SCAN
        && adv_rpt->adv_type != BLE_MESH_ADV_SCAN_RSP
 #endif

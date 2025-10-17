@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -32,6 +32,27 @@ static inline void btc_ble_mesh_set_client_common_param(esp_ble_mesh_client_comm
         output->ctx.send_cred  = input->ctx.send_cred;
         output->ctx.send_tag   = input->ctx.send_tag;
         output->msg_timeout    = input->msg_timeout;
+        if (input->ctx.enh.adv_cfg_used) {
+            output->ctx.enh.adv_cfg_used = input->ctx.enh.adv_cfg_used;
+            output->ctx.enh.adv_cfg.adv_cnt = input->ctx.enh.adv_cfg.adv_cnt;
+            output->ctx.enh.adv_cfg.adv_itvl = input->ctx.enh.adv_cfg.adv_itvl;
+            output->ctx.enh.adv_cfg.channel_map = input->ctx.enh.adv_cfg.channel_map;
+        }
+#if CONFIG_BLE_MESH_EXT_ADV
+        if (input->ctx.enh.ext_adv_cfg_used) {
+            output->ctx.enh.ext_adv_cfg_used = input->ctx.enh.ext_adv_cfg_used;
+            output->ctx.enh.ext_adv_cfg.primary_phy = input->ctx.enh.ext_adv_cfg.primary_phy;
+            output->ctx.enh.ext_adv_cfg.secondary_phy = input->ctx.enh.ext_adv_cfg.secondary_phy;
+            output->ctx.enh.ext_adv_cfg.include_tx_power = input->ctx.enh.ext_adv_cfg.include_tx_power;
+            output->ctx.enh.ext_adv_cfg.tx_power = input->ctx.enh.ext_adv_cfg.tx_power;
+        }
+#if CONFIG_BLE_MESH_LONG_PACKET
+        if (input->ctx.enh.long_pkt_cfg_used) {
+            output->ctx.enh.long_pkt_cfg_used = input->ctx.enh.long_pkt_cfg_used;
+            output->ctx.enh.long_pkt_cfg = input->ctx.enh.long_pkt_cfg;
+        }
+#endif
+#endif
     }
 }
 
