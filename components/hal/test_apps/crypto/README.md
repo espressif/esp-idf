@@ -106,7 +106,7 @@ espefuse.py -p $ESPPORT burn_key BLOCK_KEY2 main/ds/keys/4096/ds_key3.bin HMAC_D
 
 # Burning the ECDSA keys
 
-By default, ECDSA tests are disabled. You can enable it after disabling HMAC tests using `idf.py menuconfig -> Test App Configuration -> Enable ECDSA Peripheral test cases`
+By default, ECDSA tests are disabled. You can enable it after disabling HMAC & DS tests using `idf.py menuconfig -> Test App Configuration -> Enable ECDSA Peripheral test cases`
 
 The ECDSA tests need some ECDSA keys to be burned in the `BLOCK_KEY3` and `BLOCK_KEY4` of the efuses. As this verification application is independent of the efuse component, the user needs to manually burn the keys and their key purposes using `espefuse.py`.
 

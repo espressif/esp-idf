@@ -27,6 +27,7 @@
 #include "hal/ecdsa_ll.h"
 #include "hal/ecdsa_hal.h"
 #include "esp_efuse.h"
+#include "esp_efuse_chip.h"
 #endif
 #if SOC_ECC_SUPPORTED
 #include "hal/ecc_ll.h"
@@ -37,8 +38,24 @@
 
 #define ECDSA_KEY_MAGIC             (short) 0xECD5A
 #define ECDSA_KEY_MAGIC_TEE         (short) 0xA5DCE
-#define ECDSA_SHA_LEN               32
+
+/* Key lengths for different ECDSA curves */
+#define ECDSA_KEY_LEN_P192          24
+#define ECDSA_KEY_LEN_P256          32
+#define ECDSA_KEY_LEN_P384          48
+
+#if SOC_ECDSA_SUPPORT_CURVE_P384
+#define MAX_ECDSA_COMPONENT_LEN     48
+#define MAX_ECDSA_SHA_LEN           48
+#else
 #define MAX_ECDSA_COMPONENT_LEN     32
+#define MAX_ECDSA_SHA_LEN           32
+#endif
+
+#define ECDSA_SHA_LEN               32
+#if SOC_ECDSA_SUPPORT_CURVE_P384
+#define ECDSA_SHA_LEN_P384          48
+#endif /* SOC_ECDSA_SUPPORT_CURVE_P384 */
 
 #if CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN_CONSTANT_TIME_CM
 #include "esp_timer.h"
@@ -67,6 +84,19 @@
 __attribute__((unused)) static const char *TAG = "ecdsa_alt";
 
 #if SOC_ECDSA_SUPPORTED
+/**
+ * @brief Check if the extracted efuse blocks are valid
+ *
+ * @param high_blk High efuse block number
+ * @param low_blk Low efuse block number
+ * @return true if both blocks are valid, false otherwise
+ */
+static inline bool is_efuse_blk_valid(int high_blk, int low_blk)
+{
+    return (high_blk >= EFUSE_BLK0 && high_blk < EFUSE_BLK_MAX &&
+            low_blk >= EFUSE_BLK0 && low_blk < EFUSE_BLK_MAX);
+}
+
 static void esp_ecdsa_acquire_hardware(void)
 {
     esp_crypto_ecdsa_lock_acquire();
@@ -101,10 +131,79 @@ static void esp_ecdsa_release_hardware(void)
 }
 #endif /* SOC_ECDSA_SUPPORTED */
 
+#if SOC_ECDSA_SUPPORT_EXPORT_PUBKEY || CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN
+/**
+ * @brief Validate if the efuse block(s) have the appropriate ECDSA key purpose for the given curve
+ *
+ * This function validates that the provided efuse block(s) have been programmed with the appropriate
+ * ECDSA key purpose for the specified curve type. It handles both curve-specific key purposes
+ * (when SOC_ECDSA_SUPPORT_CURVE_SPECIFIC_KEY_PURPOSES is defined) and generic ECDSA key purpose.
+ *
+ * For SECP384R1 curve, it checks for both high and low key blocks when supported.
+ * For SECP192R1 and SECP256R1 curves, it validates the single block.
+ *
+ * @param[in] grp_id The ECP group ID (curve type) to validate the key purpose for
+ * @param[in] efuse_blk The efuse block(s) to validate (can be combined for 384-bit keys)
+ *
+ * @return
+ *      - 0 on success (block(s) have correct purpose)
+ *      - MBEDTLS_ERR_ECP_BAD_INPUT_DATA if input parameters are invalid
+ *      - MBEDTLS_ERR_ECP_INVALID_KEY if block(s) don't have appropriate key purpose
+ */
+static int esp_ecdsa_validate_efuse_block(mbedtls_ecp_group_id grp_id, int efuse_blk)
+{
+    int low_blk = efuse_blk;
+    esp_efuse_purpose_t expected_key_purpose_low;
+#if SOC_ECDSA_SUPPORT_CURVE_SPECIFIC_KEY_PURPOSES
+#if SOC_ECDSA_SUPPORT_CURVE_P384
+    int high_blk;
+    HAL_ECDSA_EXTRACT_KEY_BLOCKS(efuse_blk, high_blk, low_blk);
+    esp_efuse_purpose_t expected_key_purpose_high;
+#endif
+
+    switch (grp_id) {
+        case MBEDTLS_ECP_DP_SECP192R1:
+            expected_key_purpose_low = ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY_P192;
+            break;
+        case MBEDTLS_ECP_DP_SECP256R1:
+            expected_key_purpose_low = ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY_P256;
+            break;
+#if SOC_ECDSA_SUPPORT_CURVE_P384
+        case MBEDTLS_ECP_DP_SECP384R1:
+            expected_key_purpose_low = ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY_P384_L;
+            expected_key_purpose_high = ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY_P384_H;
+            break;
+#endif
+        default:
+            ESP_LOGE(TAG, "Unsupported ECDSA curve ID: %d", grp_id);
+            return MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
+    }
+#else /* SOC_ECDSA_SUPPORT_CURVE_SPECIFIC_KEY_PURPOSES */
+    expected_key_purpose_low = ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY;
+#endif  /* !SOC_ECDSA_SUPPORT_CURVE_SPECIFIC_KEY_PURPOSES */
+
+    if (expected_key_purpose_low != esp_efuse_get_key_purpose((esp_efuse_block_t)low_blk)) {
+        ESP_LOGE(TAG, "Key burned in efuse has incorrect purpose");
+        return MBEDTLS_ERR_ECP_INVALID_KEY;
+    }
+
+#if SOC_ECDSA_SUPPORT_CURVE_SPECIFIC_KEY_PURPOSES && SOC_ECDSA_SUPPORT_CURVE_P384
+    // Only check high block purpose for P384 curves that actually use it
+    if (grp_id == MBEDTLS_ECP_DP_SECP384R1 &&
+        expected_key_purpose_high != esp_efuse_get_key_purpose((esp_efuse_block_t)high_blk)) {
+        ESP_LOGE(TAG, "Key burned in efuse has incorrect purpose for high block");
+        return MBEDTLS_ERR_ECP_INVALID_KEY;
+    }
+#endif
+
+    return 0;
+}
+#endif /* SOC_ECDSA_SUPPORT_EXPORT_PUBKEY || CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN */
+
 static void __attribute__((unused)) ecdsa_be_to_le(const uint8_t* be_point, uint8_t *le_point, uint8_t len)
 {
     /* When the size is 24 bytes, it should be padded with 0 bytes*/
-    memset(le_point, 0x0, 32);
+    memset(le_point, 0x0, len);
 
     for(int i = 0; i < len; i++) {
         le_point[i] = be_point[len - i - 1];
@@ -117,14 +216,16 @@ int esp_ecdsa_load_pubkey(mbedtls_ecp_keypair *keypair, int efuse_blk)
     int ret = -1;
     bool use_km_key = (efuse_blk == USE_ECDSA_KEY_FROM_KEY_MANAGER)? true: false;
     if (!use_km_key) {
-        if (efuse_blk < EFUSE_BLK_KEY0 || efuse_blk >= EFUSE_BLK_KEY_MAX) {
+        int high_blk, low_blk;
+        HAL_ECDSA_EXTRACT_KEY_BLOCKS(efuse_blk, high_blk, low_blk);
+
+        if (!is_efuse_blk_valid(high_blk, low_blk)) {
             ESP_LOGE(TAG, "Invalid efuse block selected");
             return ret;
         }
     }
 
     ecdsa_curve_t curve;
-    esp_efuse_block_t blk;
     uint16_t len;
     uint8_t zeroes[MAX_ECDSA_COMPONENT_LEN] = {0};
     uint8_t qx_le[MAX_ECDSA_COMPONENT_LEN];
@@ -132,18 +233,25 @@ int esp_ecdsa_load_pubkey(mbedtls_ecp_keypair *keypair, int efuse_blk)
 
     if (keypair->MBEDTLS_PRIVATE(grp).id == MBEDTLS_ECP_DP_SECP192R1) {
         curve = ECDSA_CURVE_SECP192R1;
-        len = 24;
+        len = ECDSA_KEY_LEN_P192;
     } else if (keypair->MBEDTLS_PRIVATE(grp).id == MBEDTLS_ECP_DP_SECP256R1) {
         curve = ECDSA_CURVE_SECP256R1;
-        len = 32;
-    } else {
+        len = ECDSA_KEY_LEN_P256;
+    }
+#if SOC_ECDSA_SUPPORT_CURVE_P384
+    else if (keypair->MBEDTLS_PRIVATE(grp).id == MBEDTLS_ECP_DP_SECP384R1) {
+        curve = ECDSA_CURVE_SECP384R1;
+        len = ECDSA_KEY_LEN_P384;
+    }
+#endif
+    else {
         return MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
     }
 
     if (!use_km_key) {
-        if (!esp_efuse_find_purpose(ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY, &blk)) {
-            ESP_LOGE(TAG, "No efuse block with purpose ECDSA_KEY found");
-            return MBEDTLS_ERR_ECP_INVALID_KEY;
+        ret = esp_ecdsa_validate_efuse_block(keypair->MBEDTLS_PRIVATE(grp).id, efuse_blk);
+        if (ret != 0) {
+            return ret;
         }
     }
 
@@ -200,7 +308,11 @@ static int validate_ecdsa_pk_input(mbedtls_pk_context *key_ctx, esp_ecdsa_pk_con
         return ret;
     }
 
-    if (conf->grp_id != MBEDTLS_ECP_DP_SECP192R1 && conf->grp_id != MBEDTLS_ECP_DP_SECP256R1) {
+    if (conf->grp_id != MBEDTLS_ECP_DP_SECP192R1 && conf->grp_id != MBEDTLS_ECP_DP_SECP256R1
+#if SOC_ECDSA_SUPPORT_CURVE_P384
+        && conf->grp_id != MBEDTLS_ECP_DP_SECP384R1
+#endif
+        ) {
         ESP_LOGE(TAG, "Invalid EC curve group id mentioned in esp_ecdsa_pk_conf_t");
         return ret;
     }
@@ -219,8 +331,11 @@ int esp_ecdsa_privkey_load_mpi(mbedtls_mpi *key, int efuse_blk)
 
     bool use_km_key = (efuse_blk == USE_ECDSA_KEY_FROM_KEY_MANAGER)? true: false;
     if (!use_km_key) {
-        if (efuse_blk < EFUSE_BLK_KEY0 || efuse_blk >= EFUSE_BLK_KEY_MAX) {
-            ESP_LOGE(TAG, "Invalid efuse block");
+        int high_blk, low_blk;
+        HAL_ECDSA_EXTRACT_KEY_BLOCKS(efuse_blk, high_blk, low_blk);
+
+        if (!is_efuse_blk_valid(high_blk, low_blk)) {
+            ESP_LOGE(TAG, "Invalid efuse block selected");
             return -1;
         }
     }
@@ -257,8 +372,11 @@ int esp_ecdsa_privkey_load_pk_context(mbedtls_pk_context *key_ctx, int efuse_blk
 
     bool use_km_key = (efuse_blk == USE_ECDSA_KEY_FROM_KEY_MANAGER)? true: false;
     if (!use_km_key) {
-        if (efuse_blk < EFUSE_BLK_KEY0 || efuse_blk >= EFUSE_BLK_KEY_MAX) {
-            ESP_LOGE(TAG, "Invalid efuse block");
+        int high_blk, low_blk;
+        HAL_ECDSA_EXTRACT_KEY_BLOCKS(efuse_blk, high_blk, low_blk);
+
+        if (!is_efuse_blk_valid(high_blk, low_blk)) {
+            ESP_LOGE(TAG, "Invalid efuse block selected");
             return -1;
         }
     }
@@ -289,7 +407,6 @@ int esp_ecdsa_set_pk_context(mbedtls_pk_context *key_ctx, esp_ecdsa_pk_conf_t *c
         efuse_key_block = conf->efuse_block;
     }
 
-
     if ((ret = esp_ecdsa_privkey_load_pk_context(key_ctx, efuse_key_block)) != 0) {
         ESP_LOGE(TAG, "Loading private key context failed, esp_ecdsa_privkey_load_pk_context() returned %d", ret);
         return ret;
@@ -318,10 +435,9 @@ static int esp_ecdsa_sign(mbedtls_ecp_group *grp, mbedtls_mpi* r, mbedtls_mpi* s
                           ecdsa_sign_type_t k_type)
 {
     ecdsa_curve_t curve;
-    esp_efuse_block_t blk;
     uint16_t len;
     uint8_t zeroes[MAX_ECDSA_COMPONENT_LEN] = {0};
-    uint8_t sha_le[ECDSA_SHA_LEN];
+    uint8_t sha_le[MAX_ECDSA_SHA_LEN];
     uint8_t r_le[MAX_ECDSA_COMPONENT_LEN];
     uint8_t s_le[MAX_ECDSA_COMPONENT_LEN];
 
@@ -329,17 +445,29 @@ static int esp_ecdsa_sign(mbedtls_ecp_group *grp, mbedtls_mpi* r, mbedtls_mpi* s
         return MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
     }
 
-    if (msg_len != ECDSA_SHA_LEN) {
+    if ((grp->id == MBEDTLS_ECP_DP_SECP192R1 && msg_len != ECDSA_SHA_LEN) ||
+        (grp->id == MBEDTLS_ECP_DP_SECP256R1 && msg_len != ECDSA_SHA_LEN)
+#if SOC_ECDSA_SUPPORT_CURVE_P384
+        || (grp->id == MBEDTLS_ECP_DP_SECP384R1 && msg_len != ECDSA_SHA_LEN_P384)
+#endif
+    ) {
         return MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
     }
 
     if (grp->id == MBEDTLS_ECP_DP_SECP192R1) {
         curve = ECDSA_CURVE_SECP192R1;
-        len = 24;
+        len = ECDSA_KEY_LEN_P192;
     } else if (grp->id == MBEDTLS_ECP_DP_SECP256R1) {
         curve = ECDSA_CURVE_SECP256R1;
-        len = 32;
-    } else {
+        len = ECDSA_KEY_LEN_P256;
+    }
+#if SOC_ECDSA_SUPPORT_CURVE_P384
+    else if (grp->id == MBEDTLS_ECP_DP_SECP384R1) {
+        curve = ECDSA_CURVE_SECP384R1;
+        len = ECDSA_KEY_LEN_P384;
+    }
+#endif
+    else {
         return MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
     }
 
@@ -347,10 +475,11 @@ static int esp_ecdsa_sign(mbedtls_ecp_group *grp, mbedtls_mpi* r, mbedtls_mpi* s
     if (d->MBEDTLS_PRIVATE(n) == (unsigned short) USE_ECDSA_KEY_FROM_KEY_MANAGER) {
         use_km_key = true;
     }
+
     if (!use_km_key) {
-        if (!esp_efuse_find_purpose(ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY, &blk)) {
-            ESP_LOGE(TAG, "No efuse block with purpose ECDSA_KEY found");
-            return MBEDTLS_ERR_ECP_INVALID_KEY;
+        int ret = esp_ecdsa_validate_efuse_block(grp->id, d->MBEDTLS_PRIVATE(n));
+        if (ret != 0) {
+            return ret;
         }
     }
 
@@ -426,10 +555,10 @@ int esp_ecdsa_tee_load_pubkey(mbedtls_ecp_keypair *keypair, const char *tee_key_
     esp_tee_sec_storage_type_t key_type;
 
     if (keypair->MBEDTLS_PRIVATE(grp).id == MBEDTLS_ECP_DP_SECP256R1) {
-        len = 32;
+        len = ECDSA_KEY_LEN_P256;
         key_type = ESP_SEC_STG_KEY_ECDSA_SECP256R1;
     } else if (keypair->MBEDTLS_PRIVATE(grp).id == MBEDTLS_ECP_DP_SECP192R1) {
-        len = 24;
+        len = ECDSA_KEY_LEN_P192;
         key_type = ESP_SEC_STG_KEY_ECDSA_SECP192R1;
     } else {
         return MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
@@ -526,15 +655,20 @@ static int esp_ecdsa_tee_sign(mbedtls_ecp_group *grp, mbedtls_mpi* r, mbedtls_mp
         return MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
     }
 
-    if (msg_len != ECDSA_SHA_LEN) {
+    if ((grp->id == MBEDTLS_ECP_DP_SECP192R1 && msg_len != ECDSA_SHA_LEN) ||
+        (grp->id == MBEDTLS_ECP_DP_SECP256R1 && msg_len != ECDSA_SHA_LEN)
+#if SOC_ECDSA_SUPPORT_CURVE_P384
+        || (grp->id == MBEDTLS_ECP_DP_SECP384R1 && msg_len != ECDSA_SHA_LEN_P384)
+#endif
+    ) {
         return MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
     }
 
     if (grp->id == MBEDTLS_ECP_DP_SECP256R1) {
-        len = 32;
+        len = ECDSA_KEY_LEN_P256;
         key_type = ESP_SEC_STG_KEY_ECDSA_SECP256R1;
     } else if (grp->id == MBEDTLS_ECP_DP_SECP192R1) {
-        len = 24;
+        len = ECDSA_KEY_LEN_P192;
         key_type = ESP_SEC_STG_KEY_ECDSA_SECP192R1;
     } else {
         return MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
@@ -881,23 +1015,35 @@ static int esp_ecdsa_verify(mbedtls_ecp_group *grp,
     uint8_t s_le[MAX_ECDSA_COMPONENT_LEN];
     uint8_t qx_le[MAX_ECDSA_COMPONENT_LEN];
     uint8_t qy_le[MAX_ECDSA_COMPONENT_LEN];
-    uint8_t sha_le[ECDSA_SHA_LEN];
+    uint8_t sha_le[MAX_ECDSA_SHA_LEN];
 
     if (!grp || !buf || !Q || !r || !s) {
         return MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
     }
 
-    if (blen != ECDSA_SHA_LEN) {
+    if ((grp->id == MBEDTLS_ECP_DP_SECP192R1 && blen != ECDSA_SHA_LEN) ||
+        (grp->id == MBEDTLS_ECP_DP_SECP256R1 && blen != ECDSA_SHA_LEN)
+#if SOC_ECDSA_SUPPORT_CURVE_P384
+        || (grp->id == MBEDTLS_ECP_DP_SECP384R1 && blen != ECDSA_SHA_LEN_P384)
+#endif
+    ) {
         return MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
     }
 
     if (grp->id == MBEDTLS_ECP_DP_SECP192R1) {
         curve = ECDSA_CURVE_SECP192R1;
-        len = 24;
+        len = ECDSA_KEY_LEN_P192;
     } else if (grp->id == MBEDTLS_ECP_DP_SECP256R1) {
         curve = ECDSA_CURVE_SECP256R1;
-        len = 32;
-    } else {
+        len = ECDSA_KEY_LEN_P256;
+    }
+#if SOC_ECDSA_SUPPORT_CURVE_P384
+    else if (grp->id == MBEDTLS_ECP_DP_SECP384R1) {
+        curve = ECDSA_CURVE_SECP384R1;
+        len = ECDSA_KEY_LEN_P384;
+    }
+#endif
+    else {
         return MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
     }
 
@@ -957,9 +1103,12 @@ int __wrap_mbedtls_ecdsa_verify_restartable(mbedtls_ecp_group *grp,
                          const mbedtls_mpi *s,
                          mbedtls_ecdsa_restart_ctx *rs_ctx)
 {
-    if (((grp->id == MBEDTLS_ECP_DP_SECP192R1 && esp_efuse_is_ecdsa_p192_curve_supported())
-        || (grp->id == MBEDTLS_ECP_DP_SECP256R1 && esp_efuse_is_ecdsa_p256_curve_supported()))
-        && blen == ECDSA_SHA_LEN) {
+    if ((grp->id == MBEDTLS_ECP_DP_SECP192R1 && blen == ECDSA_SHA_LEN && esp_efuse_is_ecdsa_p192_curve_supported()) ||
+        (grp->id == MBEDTLS_ECP_DP_SECP256R1 && blen == ECDSA_SHA_LEN && esp_efuse_is_ecdsa_p256_curve_supported())
+#if SOC_ECDSA_SUPPORT_CURVE_P384
+        || (grp->id == MBEDTLS_ECP_DP_SECP384R1 && blen == ECDSA_SHA_LEN_P384)
+#endif
+    ) {
         return esp_ecdsa_verify(grp, buf, blen, Q, r, s);
     } else {
         return __real_mbedtls_ecdsa_verify_restartable(grp, buf, blen, Q, r, s, rs_ctx);

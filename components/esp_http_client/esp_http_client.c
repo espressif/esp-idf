@@ -36,6 +36,7 @@ ESP_STATIC_ASSERT((int)ESP_HTTP_CLIENT_TLS_VER_ANY == (int)ESP_TLS_VER_ANY, "Enu
 ESP_STATIC_ASSERT((int)ESP_HTTP_CLIENT_TLS_VER_MAX <= (int)ESP_TLS_VER_TLS_MAX, "HTTP client supported TLS is not supported in esp-tls");
 ESP_STATIC_ASSERT((int)HTTP_TLS_DYN_BUF_RX_STATIC == (int)ESP_TLS_DYN_BUF_RX_STATIC, "Enum mismatch in esp_http_client and esp-tls");
 ESP_STATIC_ASSERT((int)HTTP_TLS_DYN_BUF_STRATEGY_MAX <= (int)ESP_TLS_DYN_BUF_STRATEGY_MAX, "HTTP client supported TLS is not supported in esp-tls");
+ESP_STATIC_ASSERT((int)ESP_HTTP_CLIENT_ECDSA_CURVE_MAX <= (int)ESP_TLS_ECDSA_CURVE_MAX, "HTTP client supported ECDSA curve is not supported in esp-tls");
 
 #if CONFIG_ESP_HTTP_CLIENT_EVENT_POST_TIMEOUT == -1
 #define ESP_HTTP_CLIENT_EVENT_POST_TIMEOUT portMAX_DELAY
@@ -889,7 +890,13 @@ esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *co
     }
 #ifdef CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN
     if (config->use_ecdsa_peripheral) {
+#if SOC_ECDSA_SUPPORT_CURVE_P384
+        esp_transport_ssl_set_client_key_ecdsa_peripheral_extended(ssl, config->ecdsa_key_efuse_blk, config->ecdsa_key_efuse_blk_high);
+#else
         esp_transport_ssl_set_client_key_ecdsa_peripheral(ssl, config->ecdsa_key_efuse_blk);
+#endif
+        // Set the ECDSA curve
+        esp_transport_ssl_set_ecdsa_curve(ssl, config->ecdsa_curve);
     }
 #endif
     if (config->client_key_password && config->client_key_password_len > 0) {

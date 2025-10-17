@@ -11,7 +11,6 @@ api-reference/storage/nvs_flash.rst
 api-reference/storage/partition.rst
 api-reference/storage/mass_mfg.rst
 api-reference/storage/fatfsgen.rst
-api-reference/storage/index.rst
 api-reference/storage/nvs_partition_parse.rst
 api-reference/index.rst
 api-reference/protocols/esp_serial_slave_link.rst

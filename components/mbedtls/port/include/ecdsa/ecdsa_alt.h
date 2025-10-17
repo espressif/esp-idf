@@ -12,6 +12,7 @@
 #include "mbedtls/pk.h"
 #include "sdkconfig.h"
 #include "soc/soc_caps.h"
+#include "hal/ecdsa_types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -50,7 +51,7 @@ typedef struct {
  *
  * @param keypair The mbedtls ECP key-pair structure
  * @param efuse_blk The efuse key block that should be used as the private key.
- *                  The key purpose of this block must be ECDSA_KEY
+ *                  The efuse block where ECDSA key is stored.  If two blocks are used to store the key, then the macro HAL_ECDSA_COMBINE_KEY_BLOCKS() can be used to combine them. The macro is defined in hal/ecdsa_types.h.
  * @return - 0 if successful
  *         - MBEDTLS_ERR_ECP_BAD_INPUT_DATA if invalid ecp group id specified
  *         - MBEDTLS_ERR_ECP_INVALID_KEY if efuse block with purpose ECDSA_KEY is not found
@@ -70,7 +71,7 @@ int esp_ecdsa_load_pubkey(mbedtls_ecp_keypair *keypair, int efuse_blk);
  * @param key The MPI in which this functions stores the hardware context.
  *            This must be uninitialized
  * @param efuse_blk The efuse key block that should be used as the private key.
- *                  The key purpose of this block must be ECDSA_KEY
+ *                  The efuse block where ECDSA key is stored.  If two blocks are used to store the key, then the macro HAL_ECDSA_COMBINE_KEY_BLOCKS() can be used to combine them. The macro is defined in hal/ecdsa_types.h.
  *
  * @return - 0 if successful
  *         - -1 otherwise
@@ -86,7 +87,7 @@ int esp_ecdsa_privkey_load_mpi(mbedtls_mpi *key, int efuse_blk);
  * @param key_ctx The context in which this functions stores the hardware context.
  *                This must be uninitialized
  * @param efuse_blk The efuse key block that should be used as the private key.
- *                  The key purpose of this block must be ECDSA_KEY
+ *                  The efuse block where ECDSA key is stored.  If two blocks are used to store the key, then the macro HAL_ECDSA_COMBINE_KEY_BLOCKS() can be used to combine them. The macro is defined in hal/ecdsa_types.h.
  *
  * @return - 0 if successful
  *         - -1 otherwise
