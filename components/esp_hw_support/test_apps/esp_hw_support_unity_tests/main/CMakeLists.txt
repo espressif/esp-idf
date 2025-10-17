@@ -26,6 +26,6 @@ endif()
 # In order for the cases defined by `TEST_CASE` to be linked into the final elf,
 # the component can be registered as WHOLE_ARCHIVE
 idf_component_register(SRCS ${srcs}
-                       REQUIRES unity esp_driver_gpio esp_driver_gptimer
-                       REQUIRES esp_driver_uart test_utils efuse spi_flash esp_timer
+                       PRIV_REQUIRES unity esp_driver_gpio esp_driver_gptimer esp_driver_uart
+                                     test_utils efuse spi_flash esp_timer esp_hal_wdt
                        WHOLE_ARCHIVE)
