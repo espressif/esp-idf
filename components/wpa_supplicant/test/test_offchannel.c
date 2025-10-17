@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  *
@@ -25,10 +25,10 @@
 #include "memory_checks.h"
 #include "freertos/event_groups.h"
 
-#define WIFI_START_EVENT        0x00000001
-#define WIFI_ROC_DONE_EVENT     0x00000002
-#define WIFI_ACTION_RX_EVENT    0x00000003
-#define WIFI_SCAN_DONE_EVENT    0x00000004
+#define WIFI_START_EVENT        BIT(0)
+#define WIFI_ROC_DONE_EVENT     BIT(1)
+#define WIFI_ACTION_RX_EVENT    BIT(2)
+#define WIFI_SCAN_DONE_EVENT    BIT(3)
 
 #define TEST_LISTEN_CHANNEL     6
 
