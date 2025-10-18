@@ -140,6 +140,12 @@ Supported since ESP-IDF v5.1.
 | release/v5.4           | v5.4.1+     | v5.4.1   |
 | release/v5.5 and above | v5.5+       | v5.5     |
 
+### ESP32-P4
+
+#### v1.0, v1.3
+
+Supported since ESP-IDF v5.3.
+
 ## What If the ESP-IDF Version Is Lower than the `Required` Version?
 
 Latest ESP-IDF versions can prevent from downloading to, or even execute binaries on unsupported chips. ESP-IDF of versions v4.4.5+, v5.0.1+, v5.1 and above have both esptool download check and bootloader loading check against the chip revision. While ESP-IDF v4.3.5 has only esptool downloading check.
