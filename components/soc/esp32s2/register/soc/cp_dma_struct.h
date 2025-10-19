@@ -545,7 +545,7 @@ typedef union {
 } cp_dma_date_reg_t;
 
 
-typedef struct {
+typedef struct cp_dma_dev_t {
     volatile cp_dma_int_raw_reg_t dma_int_raw;
     volatile cp_dma_int_st_reg_t dma_int_st;
     volatile cp_dma_int_ena_reg_t dma_int_ena;

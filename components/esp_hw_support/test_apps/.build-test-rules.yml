@@ -7,12 +7,16 @@ components/esp_hw_support/test_apps/dma:
       reason: No general DMA controller on ESP32
   depends_filepatterns:
     - components/esp_hw_support/dma/**/*
+  depends_components:
+    - esp_hal_dma
 
 components/esp_hw_support/test_apps/dma2d:
   disable:
     - if: SOC_DMA2D_SUPPORTED != 1
   depends_filepatterns:
     - components/esp_hw_support/dma/**/*
+  depends_components:
+    - esp_hal_dma
 
 components/esp_hw_support/test_apps/host_test_linux:
   enable:

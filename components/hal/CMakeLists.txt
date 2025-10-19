@@ -116,34 +116,6 @@ elseif(NOT BOOTLOADER_BUILD)
         endif()
     endif()
 
-    if(CONFIG_SOC_GDMA_SUPPORTED)
-        list(APPEND srcs "gdma_hal_top.c")
-
-        if(CONFIG_SOC_GDMA_SUPPORT_CRC)
-            list(APPEND srcs "gdma_hal_crc_gen.c")
-        endif()
-
-        if(CONFIG_SOC_AHB_GDMA_VERSION EQUAL 1)
-            list(APPEND srcs "gdma_hal_ahb_v1.c")
-        endif()
-
-        if(CONFIG_SOC_AHB_GDMA_VERSION EQUAL 2)
-            list(APPEND srcs "gdma_hal_ahb_v2.c")
-        endif()
-
-        if(CONFIG_SOC_AXI_GDMA_SUPPORTED)
-            list(APPEND srcs "gdma_hal_axi.c")
-        endif()
-    endif()
-
-    if(CONFIG_SOC_DW_GDMA_SUPPORTED)
-        list(APPEND srcs "dw_gdma_hal.c")
-    endif()
-
-    if(CONFIG_SOC_DMA2D_SUPPORTED)
-        list(APPEND srcs "dma2d_hal.c")
-    endif()
-
     if(CONFIG_SOC_I2S_SUPPORTED)
         list(APPEND srcs "i2s_hal.c")
     endif()
@@ -297,11 +269,6 @@ elseif(NOT BOOTLOADER_BUILD)
 
     if(CONFIG_SOC_TEMP_SENSOR_SUPPORTED)
         list(APPEND srcs "temperature_sensor_hal.c")
-    endif()
-
-    if(${target} STREQUAL "esp32s2")
-        list(APPEND srcs
-                    "esp32s2/cp_dma_hal.c")
     endif()
 
     if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/${target}/rtc_cntl_hal.c")

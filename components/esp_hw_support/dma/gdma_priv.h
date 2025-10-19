@@ -29,7 +29,7 @@
 #include "hal/gdma_ll.h"
 #include "hal/gdma_hal_ahb.h"
 #include "hal/gdma_hal_axi.h"
-#include "soc/gdma_periph.h"
+#include "hal/gdma_periph.h"
 #include "soc/periph_defs.h"
 #include "esp_private/gdma.h"
 #include "esp_private/periph_ctrl.h"
@@ -58,8 +58,8 @@ typedef struct gdma_group_t {
     portMUX_TYPE spinlock;  // group level spinlock, protect group level stuffs, e.g. hal object, pair handle slots and reference count of each pair
     uint32_t tx_periph_in_use_mask; // each bit indicates which peripheral (TX direction) has been occupied
     uint32_t rx_periph_in_use_mask; // each bit indicates which peripheral (RX direction) has been occupied
-    gdma_pair_t *pairs[SOC_GDMA_PAIRS_PER_GROUP_MAX];  // handles of GDMA pairs
-    int pair_ref_counts[SOC_GDMA_PAIRS_PER_GROUP_MAX]; // reference count used to protect pair install/uninstall
+    gdma_pair_t *pairs[GDMA_LL_GET(PAIRS_PER_INST)];  // handles of GDMA pairs
+    int pair_ref_counts[GDMA_LL_GET(PAIRS_PER_INST)]; // reference count used to protect pair install/uninstall
 } gdma_group_t;
 
 struct gdma_pair_t {

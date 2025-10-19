@@ -118,8 +118,6 @@
 
 /*-------------------------- GDMA CAPS -------------------------------------*/
 #define SOC_AHB_GDMA_VERSION            1U
-#define SOC_GDMA_NUM_GROUPS_MAX         1U
-#define SOC_GDMA_PAIRS_PER_GROUP_MAX    1U
 
 /*-------------------------- GPIO CAPS ---------------------------------------*/
 // ESP32-C2 has 1 GPIO peripheral

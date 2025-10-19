@@ -157,8 +157,6 @@
 
 /*-------------------------- GDMA CAPS -------------------------------------*/
 #define SOC_AHB_GDMA_VERSION            1U
-#define SOC_GDMA_NUM_GROUPS_MAX         1U
-#define SOC_GDMA_PAIRS_PER_GROUP_MAX    3
 
 /*-------------------------- GPIO CAPS ---------------------------------------*/
 // ESP32-C3 has 1 GPIO peripheral

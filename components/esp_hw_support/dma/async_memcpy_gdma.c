@@ -199,25 +199,25 @@ err:
     return ret;
 }
 
-#if SOC_AHB_GDMA_SUPPORTED
+#if SOC_HAS(AHB_GDMA)
 esp_err_t esp_async_memcpy_install_gdma_ahb(const async_memcpy_config_t *config, async_memcpy_handle_t *mcp)
 {
     return esp_async_memcpy_install_gdma_template(config, mcp, gdma_new_ahb_channel, SOC_GDMA_BUS_AHB);
 }
-#endif // SOC_AHB_GDMA_SUPPORTED
+#endif // SOC_HAS(AHB_GDMA)
 
-#if SOC_AXI_GDMA_SUPPORTED
+#if SOC_HAS(AXI_GDMA)
 esp_err_t esp_async_memcpy_install_gdma_axi(const async_memcpy_config_t *config, async_memcpy_handle_t *mcp)
 {
     return esp_async_memcpy_install_gdma_template(config, mcp, gdma_new_axi_channel, SOC_GDMA_BUS_AXI);
 }
-#endif // SOC_AXI_GDMA_SUPPORTED
+#endif // SOC_HAS(AXI_GDMA)
 
-#if SOC_AHB_GDMA_SUPPORTED
+#if SOC_HAS(AHB_GDMA)
 /// default installation falls back to use the AHB GDMA
 esp_err_t esp_async_memcpy_install(const async_memcpy_config_t *config, async_memcpy_handle_t *asmcp)
 __attribute__((alias("esp_async_memcpy_install_gdma_ahb")));
-#elif SOC_AXI_GDMA_SUPPORTED
+#elif SOC_HAS(AXI_GDMA)
 /// default installation falls back to use the AXI GDMA
 esp_err_t esp_async_memcpy_install(const async_memcpy_config_t *config, async_memcpy_handle_t *asmcp)
 __attribute__((alias("esp_async_memcpy_install_gdma_axi")));
@@ -310,22 +310,22 @@ static esp_err_t mcp_gdma_memcpy(async_memcpy_context_t *ctx, void *dst, void *s
     async_memcpy_gdma_context_t *mcp_gdma = __containerof(ctx, async_memcpy_gdma_context_t, parent);
     size_t dma_link_item_alignment = 4;
     // buffer location check
-#if SOC_AHB_GDMA_SUPPORTED
+#if SOC_HAS(AHB_GDMA)
     if (mcp_gdma->gdma_bus_id == SOC_GDMA_BUS_AHB) {
-#if !SOC_AHB_GDMA_SUPPORT_PSRAM
+#if !GDMA_LL_GET(AHB_PSRAM_CAPABLE)
         ESP_RETURN_ON_FALSE(esp_ptr_internal(src) && esp_ptr_internal(dst), ESP_ERR_INVALID_ARG, TAG, "AHB GDMA can only access SRAM");
-#endif // !SOC_AHB_GDMA_SUPPORT_PSRAM
+#endif // !GDMA_LL_GET(AHB_PSRAM_CAPABLE)
         dma_link_item_alignment = GDMA_LL_AHB_DESC_ALIGNMENT;
     }
-#endif // SOC_AHB_GDMA_SUPPORTED
-#if SOC_AXI_GDMA_SUPPORTED
+#endif // SOC_HAS(AHB_GDMA)
+#if SOC_HAS(AXI_GDMA)
     if (mcp_gdma->gdma_bus_id == SOC_GDMA_BUS_AXI) {
-#if !SOC_AXI_GDMA_SUPPORT_PSRAM
+#if !GDMA_LL_GET(AXI_PSRAM_CAPABLE)
         ESP_RETURN_ON_FALSE(esp_ptr_internal(src) && esp_ptr_internal(dst), ESP_ERR_INVALID_ARG, TAG, "AXI GDMA can only access SRAM");
-#endif // !SOC_AXI_GDMA_SUPPORT_PSRAM
+#endif // !GDMA_LL_GET(AXI_PSRAM_CAPABLE)
         dma_link_item_alignment = GDMA_LL_AXI_DESC_ALIGNMENT;
     }
-#endif // SOC_AXI_GDMA_SUPPORTED
+#endif // SOC_HAS(AXI_GDMA)
     // alignment check
     ESP_RETURN_ON_FALSE(check_buffer_alignment(mcp_gdma, src, dst, n), ESP_ERR_INVALID_ARG, TAG, "address|size not aligned: %p -> %p, sz=%zu", src, dst, n);
 

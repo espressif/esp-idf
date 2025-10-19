@@ -88,14 +88,6 @@ if(CONFIG_SOC_ETM_SUPPORTED)
     list(APPEND srcs "${target_folder}/etm_periph.c")
 endif()
 
-if(CONFIG_SOC_GDMA_SUPPORTED)
-    list(APPEND srcs "${target_folder}/gdma_periph.c")
-endif()
-
-if(CONFIG_SOC_DMA2D_SUPPORTED)
-    list(APPEND srcs "${target_folder}/dma2d_periph.c")
-endif()
-
 if(CONFIG_SOC_GPSPI_SUPPORTED)
     list(APPEND srcs "${target_folder}/spi_periph.c")
 endif()
