@@ -28,8 +28,8 @@ static const usb_otg_signal_conn_t otg_signals = {
 };
 
 static const usb_internal_phy_io_t internal_phy_io = {
-    .dp = 21,
-    .dm = 22,
+    .dp = 22,
+    .dm = 21,
 };
 
 /* --------------------------------- Public --------------------------------- */
