@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -30,6 +30,13 @@ extern "C" {
 // TODO: On P4 ECO2, SRM block size needs update
 #define PPA_LL_SRM_DEFAULT_BLOCK_SIZE   18 // 18 x 18 block size
 #define PPA_LL_SRM_YUV420_BLOCK_SIZE    20 // 20 x 20 block size
+
+/**
+ * @brief Enumeration of PPA SRM macro block size options
+ */
+typedef enum {
+    PPA_LL_SRM_MB_SIZE_16_16,   /*!< SRM engine processes with a macro block size of 16 x 16 */
+} ppa_ll_srm_mb_size_t;
 
 /**
  * @brief Enumeration of PPA blending mode
@@ -369,6 +376,28 @@ static inline void ppa_ll_srm_configure_rx_alpha(ppa_dev_t *dev, ppa_alpha_updat
         // Unsupported alpha update mode
         abort();
     }
+}
+
+/**
+ * @brief Get the current configured PPA SRM macro block size
+ *
+ * @param dev Peripheral instance address
+ * @return The current configured macro block size, one of the values in ppa_ll_srm_mb_size_t
+ */
+static inline ppa_ll_srm_mb_size_t ppa_ll_srm_get_mb_size(ppa_dev_t *dev)
+{
+    return PPA_LL_SRM_MB_SIZE_16_16;
+}
+
+/**
+ * @brief Whether to bypass the macro block order function in PPA SRM
+ *
+ * @param dev Peripheral instance address
+ * @param enable True to bypass; False to not bypass
+ */
+static inline void ppa_ll_srm_bypass_mb_order(ppa_dev_t *dev, bool enable)
+{
+    dev->sr_byte_order.sr_macro_bk_ro_bypass = enable;
 }
 
 //////////////////////////////////// Blending ////////////////////////////////////////

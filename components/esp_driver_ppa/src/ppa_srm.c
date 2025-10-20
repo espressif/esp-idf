@@ -154,6 +154,28 @@ bool ppa_srm_transaction_on_picked(uint32_t num_chans, const dma2d_trans_channel
     ppa_ll_srm_enable_mirror_x(platform->hal.dev, srm_trans_desc->mirror_x);
     ppa_ll_srm_enable_mirror_y(platform->hal.dev, srm_trans_desc->mirror_y);
 
+    // Hardware bug workaround (DIG-734)
+    uint32_t w_out = srm_trans_desc->in.block_w * srm_trans_desc->scale_x_int + srm_trans_desc->in.block_w * srm_trans_desc->scale_x_frag / PPA_LL_SRM_SCALING_FRAG_MAX;
+    uint32_t w_divisor = (ppa_out_color_mode == PPA_SRM_COLOR_MODE_ARGB8888 || ppa_out_color_mode == PPA_SRM_COLOR_MODE_RGB888) ? 32 : 64;
+    uint32_t w_left = w_out % w_divisor;
+    w_left = (w_left == 0) ? w_divisor : w_left;
+    uint32_t h_mb = (ppa_ll_srm_get_mb_size(platform->hal.dev) == PPA_LL_SRM_MB_SIZE_16_16) ? 16 : 32;
+    uint32_t h_in_left = srm_trans_desc->in.block_h % h_mb;
+    h_in_left = (h_in_left == 0) ? h_mb : h_in_left;
+    uint32_t h_left = h_in_left * srm_trans_desc->scale_y_int + h_in_left * srm_trans_desc->scale_y_frag / PPA_LL_SRM_SCALING_FRAG_MAX;
+    const uint32_t dma2d_fifo_depth_bits = 12 * 128;
+    color_space_pixel_format_t out_pixel_format = {
+        .color_type_id = ppa_out_color_mode,
+    };
+    uint32_t out_pixel_depth = color_hal_pixel_format_get_bit_depth(out_pixel_format);
+    bool bypass_mb_order = false;
+    if (((w_out > w_divisor) || (srm_trans_desc->in.block_h > h_mb)) && // will be cut into more than one trans unit
+            ((w_left * h_left * out_pixel_depth) < dma2d_fifo_depth_bits)
+       ) {
+        bypass_mb_order = true;
+    }
+    ppa_ll_srm_bypass_mb_order(platform->hal.dev, bypass_mb_order);
+
     ppa_ll_srm_start(platform->hal.dev);
 
     // No need to yield
