@@ -292,7 +292,8 @@ The MCP server also provides these resources:
 - ``project://devices``: Get list of connected ESP devices
 
 .. note::
-   The MCP server requires the ``mcp`` Python package to be installed. Install it with: ``./install.sh --enable-mcp``.
+
+    The MCP server requires the ``mcp`` Python package to be installed. Install it with: ``./install.sh --enable-mcp``.
 
 Adding ESP-IDF MCP Server to IDEs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
