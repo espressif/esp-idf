@@ -16,6 +16,12 @@
 #include "hal/config.h"
 #include "soc/hp_sys_clkrst_struct.h"
 
+#define LCD_LL_GET(_attr)       LCD_LL_ ## _attr
+#define LCD_LL_RGB_BUS_WIDTH    24
+#define LCD_LL_RGB_PANEL_NUM    1
+#define LCD_LL_I80_BUS_WIDTH    24
+#define LCD_LL_I80_BUS_NUM      1
+
 #ifdef __cplusplus
 extern "C" {
 #endif

@@ -10,7 +10,7 @@
 #include "hal/mipi_dsi_ll.h"
 #include "hal/assert.h"
 #include "hal/log.h"
-#include "soc/mipi_dsi_periph.h"
+#include "hal/mipi_dsi_periph.h"
 
 HAL_LOG_ATTR_TAG(TAG, "dsi_hal");
 

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "soc/mipi_dsi_periph.h"
+#include "hal/mipi_dsi_periph.h"
 #include "soc/interrupts.h"
 
 const soc_mipi_dsi_phy_pll_freq_range_t soc_mipi_dsi_phy_pll_ranges[] = {

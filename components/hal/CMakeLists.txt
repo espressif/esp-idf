@@ -148,14 +148,6 @@ elseif(NOT BOOTLOADER_BUILD)
         endif()
     endif()
 
-    if(CONFIG_SOC_LCDCAM_SUPPORTED)
-        list(APPEND srcs "lcd_hal.c")
-    endif()
-
-    if(CONFIG_SOC_MIPI_DSI_SUPPORTED)
-        list(APPEND srcs "mipi_dsi_hal.c")
-    endif()
-
     if(CONFIG_SOC_MIPI_CSI_SUPPORTED)
         list(APPEND srcs "mipi_csi_hal.c")
     endif()

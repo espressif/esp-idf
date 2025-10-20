@@ -80,6 +80,7 @@ else()
                                     # IDF-13980
                                     esp_hal_i2c
                                     esp_hal_wdt
+                                    esp_hal_lcd
                         LDFRAGMENTS "linker.lf" "app.lf")
     add_subdirectory(port)
 

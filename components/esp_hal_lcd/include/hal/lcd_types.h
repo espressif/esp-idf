@@ -14,14 +14,14 @@
 extern "C" {
 #endif
 
-#if SOC_I2S_SUPPORTS_LCD_CAMERA || SOC_LCDCAM_SUPPORTED
+#if SOC_HAS(I2S_I80_LCD) || SOC_HAS(LCDCAM_I80_LCD) || SOC_HAS(LCDCAM_RGB_LCD)
 /**
  * @brief LCD clock source
  */
 typedef soc_periph_lcd_clk_src_t lcd_clock_source_t;
 #else
 typedef int lcd_clock_source_t;
-#endif // SOC_I2S_SUPPORTS_LCD_CAMERA || SOC_LCDCAM_SUPPORTED
+#endif
 
 /**
  * @brief RGB data endian
@@ -83,7 +83,6 @@ typedef enum {
     LCD_YUV_CONV_STD_BT601 = COLOR_CONV_STD_RGB_YUV_BT601, /*!< YUV<->RGB conversion standard: BT.601 */
     LCD_YUV_CONV_STD_BT709 = COLOR_CONV_STD_RGB_YUV_BT709, /*!< YUV<->RGB conversion standard: BT.709 */
 } lcd_yuv_conv_std_t;
-
 
 /**
  * @brief YUV422 packing order

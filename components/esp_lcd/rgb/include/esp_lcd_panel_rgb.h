@@ -11,6 +11,8 @@
 #include "esp_lcd_types.h"
 #include "soc/soc_caps.h"
 
+#define ESP_LCD_RGB_BUS_WIDTH_MAX 24
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -148,7 +150,7 @@ typedef struct {
     gpio_num_t de_gpio_num;       /*!< GPIO used for DE signal, set to -1 if it's not used */
     gpio_num_t pclk_gpio_num;     /*!< GPIO used for PCLK signal, set to -1 if it's not used */
     gpio_num_t disp_gpio_num;     /*!< GPIO used for display control signal, set to -1 if it's not used */
-    gpio_num_t data_gpio_nums[SOC_LCDCAM_RGB_DATA_WIDTH]; /*!< GPIOs used for data lines */
+    gpio_num_t data_gpio_nums[ESP_LCD_RGB_BUS_WIDTH_MAX]; /*!< GPIOs used for data lines */
     struct {
         uint32_t disp_active_low: 1;     /*!< If this flag is enabled, a low level of display control signal can turn the screen on; vice versa */
         uint32_t refresh_on_demand: 1;   /*!< If this flag is enabled, the host only refresh the frame buffer in `esp_lcd_panel_draw_bitmap` and `esp_lcd_rgb_panel_refresh`. */

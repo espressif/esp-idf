@@ -22,6 +22,11 @@
 #include "hal/i2s_types.h"
 #include "hal/hal_utils.h"
 
+#define I2S_LL_GET(_attr)       I2S_LL_ ## _attr
+#define I2S_LL_BUS_WIDTH        24
+#define I2S_LL_INST_NUM         2
+#define I2S_LL_TRANS_SIZE_ALIGN_WORD  1  // I2S DMA transfer size must be aligned to word
+#define I2S_LL_ADC_DAC_CAPABLE        1  // I2S supports to connect to ADC / DAC converters
 
 #ifdef __cplusplus
 extern "C" {
@@ -761,8 +766,7 @@ static inline void i2s_ll_rx_enable_msb_shift(i2s_dev_t *hw, bool msb_shift_enab
 static inline void i2s_ll_tx_select_pdm_slot(i2s_dev_t *hw, i2s_pdm_slot_mask_t slot_mask, bool is_mono)
 {
     if (is_mono) {
-        switch (slot_mask)
-        {
+        switch (slot_mask) {
         case I2S_PDM_SLOT_RIGHT:
             hw->conf_chan.tx_chan_mod = 3;
             break;
@@ -776,8 +780,7 @@ static inline void i2s_ll_tx_select_pdm_slot(i2s_dev_t *hw, i2s_pdm_slot_mask_t 
             break;
         }
     } else {
-        switch (slot_mask)
-        {
+        switch (slot_mask) {
         case I2S_PDM_SLOT_RIGHT:
             hw->conf_chan.tx_chan_mod = 1;
             break;
@@ -799,8 +802,7 @@ static inline void i2s_ll_tx_select_pdm_slot(i2s_dev_t *hw, i2s_pdm_slot_mask_t 
  */
 static inline void i2s_ll_rx_select_pdm_slot(i2s_dev_t *hw, i2s_pdm_slot_mask_t slot_mask)
 {
-    switch (slot_mask)
-    {
+    switch (slot_mask) {
     case I2S_PDM_SLOT_RIGHT:
         hw->conf_chan.rx_chan_mod = 1;
         break;
@@ -825,8 +827,7 @@ static inline void i2s_ll_rx_select_pdm_slot(i2s_dev_t *hw, i2s_pdm_slot_mask_t 
 static inline void i2s_ll_tx_select_std_slot(i2s_dev_t *hw, i2s_std_slot_mask_t slot_mask, bool is_mono)
 {
     if (is_mono) {
-        switch (slot_mask)
-        {
+        switch (slot_mask) {
         case I2S_STD_SLOT_RIGHT:
             hw->conf_chan.tx_chan_mod = 3;
             break;
@@ -840,8 +841,7 @@ static inline void i2s_ll_tx_select_std_slot(i2s_dev_t *hw, i2s_std_slot_mask_t 
             break;
         }
     } else {
-        switch (slot_mask)
-        {
+        switch (slot_mask) {
         case I2S_STD_SLOT_RIGHT:
             hw->conf_chan.tx_chan_mod = 1;
             break;
@@ -866,8 +866,7 @@ static inline void i2s_ll_tx_select_std_slot(i2s_dev_t *hw, i2s_std_slot_mask_t 
  */
 static inline void i2s_ll_rx_select_std_slot(i2s_dev_t *hw, i2s_std_slot_mask_t slot_mask, bool is_msb_right)
 {
-    switch (slot_mask)
-    {
+    switch (slot_mask) {
     case I2S_STD_SLOT_RIGHT:
         hw->conf_chan.rx_chan_mod = is_msb_right ? 1 : 2;
         break;

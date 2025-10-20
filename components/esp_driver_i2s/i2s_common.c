@@ -32,7 +32,7 @@
 #include "hal/cache_ll.h"
 #endif
 
-#if SOC_MODULE_SUPPORT(I2S, ADC_DAC)
+#if I2S_LL_GET(ADC_DAC_CAPABLE)
 #include "hal/adc_ll.h"
 #endif
 #if SOC_I2S_SUPPORTS_APLL
@@ -255,7 +255,7 @@ static i2s_controller_t *i2s_acquire_controller_obj(int id)
         i2s_obj = pre_alloc;
         g_i2s.controller[id] = i2s_obj;
         portEXIT_CRITICAL(&g_i2s.spinlock);
-#if SOC_MODULE_SUPPORT(I2S, ADC_DAC)
+#if I2S_LL_GET(ADC_DAC_CAPABLE)
         if (id == I2S_NUM_0) {
             adc_ll_digi_set_data_source(0);
         }

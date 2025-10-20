@@ -26,8 +26,6 @@
 /*------------------------------- I2S ---------------------------------------*/
 // helper macros to access module attributes
 #define _SOC_CAPS_I2S_INST_NUM                    1  // Number of I2S instances
-#define _SOC_CAPS_I2S_MAX_DATA_WIDTH              24
-#define _SOC_CAPS_I2S_SUPPORT_DMA_EQUAL           1
 
 /*------------------------------- Touch Sensor ------------------------------------*/
 #define _SOC_CAPS_TOUCH_CHAN_NUM                  15  // Number of touch sensor channels
