@@ -44,21 +44,32 @@ def main(output_filepath: str) -> None:
     with open(KNOWN_GENERATE_TEST_CHILD_PIPELINE_WARNINGS_FILEPATH) as fr:
         known_warnings_dict = yaml.safe_load(fr) or dict()
 
-    exclude_runner_tags_set = set(known_warnings_dict.get('no_runner_tags', []))
+    def _process_match_group(runner_tags: str) -> set | None:
+        match_group = {_el for _el in runner_tags.split(',') if _el != '*'}
+        if len(match_group) == 0:
+            print('WARNING: wildcard exclusion requires at least one specific tag — skipped')
+            return None
+        return match_group
+
+    exclude_runner_tags_set = set()
     exclude_runner_tags_matching = []
+    for _tag in known_warnings_dict.get('no_runner_tags', []):
+        if '*' not in _tag:
+            exclude_runner_tags_set.add(_tag)
+        else:
+            if res := _process_match_group(_tag):
+                exclude_runner_tags_matching.append(res)
+
     # EXCLUDE_RUNNER_TAGS is a string separated by ';'
     # like 'esp32,generic;esp32c3,wifi'
     # or with wildcard like 'esp32,*; esp32p4,wifi,*'
     if exclude_runner_tags := os.getenv('EXCLUDE_RUNNER_TAGS'):
-        for tag in exclude_runner_tags.split(';'):
-            if '*' not in tag:
-                exclude_runner_tags_set.add(tag)
+        for _tag in exclude_runner_tags.split(';'):
+            if '*' not in _tag:
+                exclude_runner_tags_set.add(_tag)
             else:
-                match_group = {el for el in tag.split(',') if el != '*'}
-                if len(match_group) == 0:
-                    print('WARNING: wildcard exclusion requires at least one specific tag — skipped')
-                    continue
-                exclude_runner_tags_matching.append(match_group)
+                if res := _process_match_group(_tag):
+                    exclude_runner_tags_matching.append(res)
 
     flattened_cases = []
     additional_dict: dict[GroupKey, dict[str, t.Any]] = {}
@@ -68,6 +79,7 @@ def main(output_filepath: str) -> None:
             print(f'WARNING: excluding test cases with runner tags: {key.runner_tags}')
             continue
 
+        print(f'INFO: key.runner tags: {key.runner_tags}')
         if any(set(key.runner_tags) & group for group in exclude_runner_tags_matching):
             print(f'WARNING: Excluding test cases with runner tags (wildcard match): {key.runner_tags}')
             continue
