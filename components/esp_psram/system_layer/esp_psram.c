@@ -154,6 +154,35 @@ static void IRAM_ATTR s_mapping(int v_start, int size)
 }
 #endif  //CONFIG_IDF_TARGET_ESP32
 
+#if CONFIG_ESP32P4_REV_MIN_FULL == 300
+#include "hal/psram_ctrlr_ll.h"
+static void IRAM_ATTR esp_psram_p4_rev3_workaround(void)
+{
+    spi_mem_s_dev_t backup_reg = {};
+    psram_ctrlr_ll_backup_registers(PSRAM_CTRLR_LL_MSPI_ID_2, &backup_reg);
+
+    __attribute__((unused)) volatile uint32_t val = 0;
+    psram_ctrlr_ll_disable_core_err_resp();
+
+    /**
+     * this workaround is to have two dummy reads, therefore
+     * - map 1 page
+     * - read 2 times
+     * - delay 1us
+     *
+     * The mapping will be overwritten by the real mapping in `s_psram_mapping`
+     */
+    mmu_ll_write_entry(1, 0, 0, MMU_TARGET_PSRAM0);
+    val = *(uint32_t *)(0x88000000);
+    val = *(uint32_t *)(0x88000080);
+    esp_rom_delay_us(1);
+
+    _psram_ctrlr_ll_reset_module_clock(PSRAM_CTRLR_LL_MSPI_ID_2);
+    psram_ctrlr_ll_enable_core_err_resp();
+    psram_ctrlr_ll_restore_registers(PSRAM_CTRLR_LL_MSPI_ID_2, &backup_reg);
+}
+#endif
+
 static esp_err_t s_psram_chip_init(void)
 {
     if (s_psram_ctx.is_chip_initialised) {
@@ -374,6 +403,10 @@ esp_err_t esp_psram_init(void)
             return ret;
         }
     }
+
+#if CONFIG_ESP32P4_REV_MIN_FULL == 300
+    esp_psram_p4_rev3_workaround();
+#endif
 
     uint32_t psram_available_size = 0;
     ret = esp_psram_impl_get_available_size(&psram_available_size);
