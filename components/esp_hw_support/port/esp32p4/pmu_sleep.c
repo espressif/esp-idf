@@ -160,7 +160,9 @@ const pmu_sleep_config_t* pmu_sleep_config_default(
     )
 {
     pmu_sleep_power_config_t power_default = PMU_SLEEP_POWER_CONFIG_DEFAULT(sleep_flags);
-
+#if !CONFIG_ESP32P4_SELECTS_REV_LESS_V3
+    power_default.hp_sys.dig_power.cpu_pd_en = (sleep_flags & PMU_SLEEP_PD_CPU) ? 1 : 0;
+#endif
     if (dslp) {
         config->param.lp_sys.analog_wait_target_cycle  = rtc_time_us_to_slowclk(PMU_LP_ANALOG_WAIT_TARGET_TIME_DSLP_US, slowclk_period);
 
