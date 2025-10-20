@@ -211,7 +211,6 @@ const pmu_sleep_config_t* pmu_sleep_config_default(
         }
         power_default.hp_sys.dig_power.dcdc_switch_pd_en = 0;
         analog_default.hp_sys.analog.dcm_vset = CONFIG_ESP_SLEEP_DCM_VSET_VAL_IN_SLEEP;
-        analog_default.hp_sys.analog.xpd = 0;
         if (sleep_flags & PMU_SLEEP_PD_VDDSDIO) {
             analog_default.hp_sys.analog.xpd_0p1a = 0;
         } else {
