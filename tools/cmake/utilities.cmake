@@ -1,3 +1,5 @@
+include(${CMAKE_CURRENT_LIST_DIR}/deduplicate_flags.cmake)
+
 # set_default
 #
 # Define a variable to a default value if otherwise unset.
@@ -456,18 +458,4 @@ function(add_deprecated_target_alias old_target new_target)
         COMMENT "Warning: command \"${old_target}\" is deprecated. Have you wanted to run \"${new_target}\" instead?"
     )
     add_dependencies(${old_target} ${new_target})
-endfunction()
-
-
-# Remove duplicates from a string containing compilation flags
-function(remove_duplicated_flags FLAGS UNIQFLAGS)
-    set(FLAGS_LIST "${FLAGS}")
-    # Convert the given flags, as a string, into a CMake list type
-    separate_arguments(FLAGS_LIST)
-    # Remove all the duplicated flags
-    list(REMOVE_DUPLICATES FLAGS_LIST)
-    # Convert the list back to a string
-    string(REPLACE ";" " " FLAGS_LIST "${FLAGS_LIST}")
-    # Return that string to the caller
-    set(${UNIQFLAGS} "${FLAGS_LIST}" PARENT_SCOPE)
 endfunction()
