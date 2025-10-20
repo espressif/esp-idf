@@ -100,10 +100,6 @@ esp_err_t esp_openthread_radio_init(const esp_openthread_platform_config_t *conf
 
     ot::Spinel::RadioSpinelCallbacks callbacks;
     memset(&callbacks, 0, sizeof(callbacks));
-#if CONFIG_OPENTHREAD_DIAG
-    callbacks.mDiagReceiveDone  = otPlatDiagRadioReceiveDone;
-    callbacks.mDiagTransmitDone = otPlatDiagRadioTransmitDone;
-#endif // CONFIG_OPENTHREAD_DIAG
     callbacks.mEnergyScanDone = otPlatRadioEnergyScanDone;
     callbacks.mReceiveDone    = otPlatRadioReceiveDone;
     callbacks.mTransmitDone   = otPlatRadioTxDone;
