@@ -114,13 +114,6 @@ bool ppa_srm_transaction_on_picked(uint32_t num_chans, const dma2d_trans_channel
     }
 
     ppa_srm_color_mode_t ppa_out_color_mode = srm_trans_desc->out.srm_cm;
-    if (ppa_out_color_mode == PPA_SRM_COLOR_MODE_YUV444) {
-        ppa_out_color_mode = PPA_SRM_COLOR_MODE_YUV420;
-        dma2d_csc_config_t dma_rx_csc = {
-            .rx_csc_option = DMA2D_CSC_RX_YUV420_TO_YUV444,
-        };
-        dma2d_configure_color_space_conversion(dma2d_rx_chan, &dma_rx_csc);
-    }
 
     // Configure the block size to be received by the SRM engine, which is passed from the 2D-DMA TX channel (i.e. 2D-DMA dscr-port mode)
     uint32_t block_h = 0, block_v = 0;
@@ -179,7 +172,9 @@ esp_err_t ppa_do_scale_rotate_mirror(ppa_client_handle_t ppa_client, const ppa_s
     uint32_t buf_alignment_size = (uint32_t)ppa_client->engine->platform->buf_alignment_size;
     ESP_RETURN_ON_FALSE(((uint32_t)config->out.buffer & (buf_alignment_size - 1)) == 0 && (config->out.buffer_size & (buf_alignment_size - 1)) == 0,
                         ESP_ERR_INVALID_ARG, TAG, "out.buffer addr or out.buffer_size not aligned to cache line size");
-    ESP_RETURN_ON_FALSE(ppa_ll_srm_is_color_mode_supported(config->in.srm_cm) && ppa_ll_srm_is_color_mode_supported(config->out.srm_cm), ESP_ERR_INVALID_ARG, TAG, "unsupported color mode");
+    ESP_RETURN_ON_FALSE(ppa_ll_srm_is_color_mode_supported(config->in.srm_cm) &&
+                        (ppa_ll_srm_is_color_mode_supported(config->out.srm_cm) && config->out.srm_cm != PPA_SRM_COLOR_MODE_YUV444),
+                        ESP_ERR_INVALID_ARG, TAG, "unsupported color mode");
     // For YUV420 input/output: in desc, ha/hb/va/vb/x/y must be even number
     // For YUV422 input/output: in desc, ha/hb/x must be even number
     if (config->in.srm_cm == PPA_SRM_COLOR_MODE_YUV420) {
@@ -289,9 +284,6 @@ esp_err_t ppa_do_scale_rotate_mirror(ppa_client_handle_t ppa_client, const ppa_s
         dma_trans_desc->channel_flags = 0;
         if (config->in.srm_cm == PPA_SRM_COLOR_MODE_YUV444) {
             dma_trans_desc->channel_flags |= DMA2D_CHANNEL_FUNCTION_FLAG_TX_CSC;
-        }
-        if (config->out.srm_cm == PPA_SRM_COLOR_MODE_YUV444) {
-            dma_trans_desc->channel_flags |= DMA2D_CHANNEL_FUNCTION_FLAG_RX_CSC;
         }
         dma_trans_desc->specified_tx_channel_mask = 0;
         dma_trans_desc->specified_rx_channel_mask = 0;

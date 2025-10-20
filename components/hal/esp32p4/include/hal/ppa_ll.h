@@ -244,7 +244,7 @@ static inline bool ppa_ll_srm_is_color_mode_supported(ppa_srm_color_mode_t color
     case PPA_SRM_COLOR_MODE_RGB888:
     case PPA_SRM_COLOR_MODE_RGB565:
     case PPA_SRM_COLOR_MODE_YUV420:
-    case PPA_SRM_COLOR_MODE_YUV444: // YUV444 not supported by PPA hardware, but can be converted by 2D-DMA before/after PPA
+    case PPA_SRM_COLOR_MODE_YUV444: // YUV444 not supported by PPA hardware, but can be converted by 2D-DMA before PPA, and not supported as output color mode
 #if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
     case PPA_SRM_COLOR_MODE_YUV422_UYVY:
     case PPA_SRM_COLOR_MODE_YUV422_VYUY:
