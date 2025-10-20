@@ -245,6 +245,9 @@ static inline void i2s_ll_tx_clk_set_src(i2s_dev_t *hw, i2s_clock_src_t src)
     case I2S_CLK_SRC_XTAL:
         PCR.i2s_tx_clkm_conf.i2s_tx_clkm_sel = 0;
         break;
+    case I2S_CLK_SRC_PLL_240M:
+        PCR.i2s_tx_clkm_conf.i2s_tx_clkm_sel = 1;
+        break;
     case I2S_CLK_SRC_PLL_160M:
         PCR.i2s_tx_clkm_conf.i2s_tx_clkm_sel = 2;
         break;
@@ -270,6 +273,9 @@ static inline void i2s_ll_rx_clk_set_src(i2s_dev_t *hw, i2s_clock_src_t src)
     {
     case I2S_CLK_SRC_XTAL:
         PCR.i2s_rx_clkm_conf.i2s_rx_clkm_sel = 0;
+        break;
+    case I2S_CLK_SRC_PLL_240M:
+        PCR.i2s_rx_clkm_conf.i2s_rx_clkm_sel = 1;
         break;
     case I2S_CLK_SRC_PLL_160M:
         PCR.i2s_rx_clkm_conf.i2s_rx_clkm_sel = 2;
