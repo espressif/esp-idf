@@ -20,7 +20,7 @@ extern "C" {
  */
 typedef struct {
     int gen_gpio_num;           /*!< The GPIO number used to output the PWM signal */
-    struct {
+    struct extra_mcpwm_generator_flags {
         uint32_t invert_pwm: 1;   /*!< Whether to invert the PWM signal (done by GPIO matrix) */
     } flags;                      /*!< Extra configuration flags for generator */
 } mcpwm_generator_config_t;

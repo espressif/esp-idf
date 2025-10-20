@@ -20,7 +20,7 @@ extern "C" {
  */
 typedef struct {
     mcpwm_timer_event_t timer_event; /*!< Timer event, upon which MCPWM timer will generate the sync signal */
-    struct {
+    struct extra_mcpwm_timer_event_flags {
         uint32_t propagate_input_sync: 1; /*!< The input sync signal would be routed to its sync output */
     } flags;                          /*!< Extra configuration flags for timer sync source */
 } mcpwm_timer_sync_src_config_t;
@@ -46,7 +46,7 @@ esp_err_t mcpwm_new_timer_sync_src(mcpwm_timer_handle_t timer, const mcpwm_timer
 typedef struct {
     int group_id; /*!< MCPWM group ID */
     int gpio_num; /*!< GPIO used by sync source */
-    struct {
+    struct extra_mcpwm_gpio_sync_src_flags {
         uint32_t active_neg: 1;   /*!< Whether the sync signal is active on negedge, by default, the sync signal's posedge is treated as active */
     } flags;                      /*!< Extra configuration flags for GPIO sync source */
 } mcpwm_gpio_sync_src_config_t;
