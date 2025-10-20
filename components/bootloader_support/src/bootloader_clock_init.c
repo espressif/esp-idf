@@ -38,7 +38,7 @@ __attribute__((weak)) void bootloader_clock_configure(void)
 
 #if CONFIG_IDF_TARGET_ESP32
     /* On ESP32 rev 0, switching to 80/160 MHz if clock was previously set to
-     * 240 MHz may cause the chip to lock up (see section 3.5 of the errata
+     * 240 MHz may cause the chip to lock up (see CPU-3.5 of the errata
      * document). For rev. 0, switch to 240 instead if it has been enabled
      * previously.
      */

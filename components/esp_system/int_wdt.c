@@ -210,7 +210,7 @@ void esp_int_wdt_cpu_init(void)
 #endif
 #if CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
     /*
-     * This is a workaround for issue 3.15 in "ESP32 ECO and workarounds for
+     * This is a workaround for issue WDT-3.15 in "ESP32 ECO and workarounds for
      * Bugs" document.
      */
     _lx_intr_livelock_counter = 0;

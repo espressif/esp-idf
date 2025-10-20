@@ -88,7 +88,7 @@ esp_err_t gpio_set_intr_type(gpio_num_t gpio_num, gpio_int_type_t intr_type);
  *
  * @note ESP32: Please do not use the interrupt of GPIO36 and GPIO39 when using ADC or Wi-Fi and Bluetooth with sleep mode enabled.
  *       Please refer to the comments of `adc1_get_raw`.
- *       Please refer to Section 3.11 of <a href="https://espressif.com/sites/default/files/documentation/eco_and_workarounds_for_bugs_in_esp32_en.pdf">ESP32 ECO and Workarounds for Bugs</a> for the description of this issue.
+ *       Please refer to GPIO-3.11 of <a href="https://espressif.com/sites/default/files/documentation/eco_and_workarounds_for_bugs_in_esp32_en.pdf">ESP32 ECO and Workarounds for Bugs</a> for the description of this issue.
 
  *
  * @param  gpio_num GPIO number. If you want to enable an interrupt on e.g. GPIO16, gpio_num should be GPIO_NUM_16 (16);
