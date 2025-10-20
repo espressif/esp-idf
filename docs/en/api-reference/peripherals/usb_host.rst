@@ -579,7 +579,7 @@ The API of the USB Host Library is separated into the following header files. Ho
 - `usb/include/usb/usb_helpers.h` contains various helper functions that are related to the USB protocol such as descriptor parsing.
 - `usb/include/usb/usb_types_stack.h` contains types that are used across multiple layers of the USB Host stack.
 - `usb/include/usb/usb_types_ch9.h` contains types and macros related to Chapter 9 of the USB2.0 specification, i.e., descriptors and standard requests.
-- `usb/include/usb/usb_types_ch11.h` contains types and macros related to Chapter 11 of the USB2.0 specification, i.e., hub specifications
+- `usb/include/usb/usb_types_ch11.h` contains types and macros related to Chapter 11 of the USB2.0 specification, i.e., hub specifications.
 
 Header File
 ^^^^^^^^^^^
@@ -590,11 +590,12 @@ Header File
 
     #include "usb/usb_host.h"
 
-- This header file is a part of the API provided by the ``usb`` component. The ``usb`` component is distributed via the `ESP Component Registry <https://components.espressif.com/components/espressif/usb>`__. Thus, to use it, please add the Device Stack component as dependency using the following command:
+- This header file is a part of the API provided by the ``usb`` component. The ``usb`` component is distributed via the `ESP Component Registry <https://components.espressif.com/components/espressif/usb>`__. Thus, to use it, please add the Host Stack component as dependency using the following command:
 
 .. code:: bash
 
     idf.py add-dependency usb
+
 .. ------------------------------------------------ Maintainers Notes --------------------------------------------------
 
 Maintainers Notes
