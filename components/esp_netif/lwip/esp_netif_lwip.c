@@ -658,7 +658,9 @@ static err_t netif_mld_mac_filter_cb(struct netif *netif, const ip6_addr_t *grou
         // internal pointer hasn't been configured yet (probably in the interface init_fn())
         return ERR_VAL;
     }
-    ESP_LOGD(TAG, "Multicast add filter IPv6: " IPV6STR, IPV62STR(*group));
+    ESP_LOGD(TAG, "Multicast %s filter IPv6: " IPV6STR,
+             (action == NETIF_ADD_MAC_FILTER) ? "add" : "remove",
+             IPV62STR(*group));
     uint8_t mac[NETIF_MAX_HWADDR_LEN];
     mac[0] = 0x33;
     mac[1] = 0x33;
@@ -1022,6 +1024,15 @@ static esp_err_t esp_netif_lwip_add(esp_netif_t *esp_netif)
 #endif
 #if LWIP_IPV6 && LWIP_IPV6_MLD
         netif_set_mld_mac_filter(esp_netif->lwip_netif, netif_mld_mac_filter_cb);
+        /* Align L2 multicast filters with current MLD groups, since mld6 processing
+         * may have started before the callback was registered. */
+        if (esp_netif->lwip_netif && (esp_netif->lwip_netif->flags & NETIF_FLAG_MLD6)) {
+            struct mld_group *group = netif_mld6_data(esp_netif->lwip_netif);
+            while (group) {
+                netif_mld_mac_filter_cb(esp_netif->lwip_netif, &group->group_address, NETIF_ADD_MAC_FILTER);
+                group = group->next;
+            }
+        }
 #endif
     }
     lwip_set_esp_netif(esp_netif->lwip_netif, esp_netif);
