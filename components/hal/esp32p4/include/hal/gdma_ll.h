@@ -14,6 +14,7 @@
 #include <stdbool.h>
 #include "soc/hp_sys_clkrst_struct.h"
 #include "soc/soc_etm_source.h"
+#include "hal/config.h"
 
 #define GDMA_LL_CHANNEL_MAX_PRIORITY 5 // supported priority levels: [0,5]
 
@@ -48,6 +49,10 @@
 #define GDMA_LL_AHB_DESC_ALIGNMENT      4
 #define GDMA_LL_AXI_DESC_ALIGNMENT      8
 #define GDMA_LL_MAX_BURST_SIZE_PSRAM    64 // PSRAM controller doesn't support burst access with size > 64 bytes
+
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+#define GDMA_LL_AHB_BURST_SIZE_ADJUSTABLE 1 // AHB GDMA supports adjustable burst size
+#endif
 
 #define GDMA_LL_TX_ETM_EVENT_TABLE(group, chan, event)                \
     (uint32_t[2][GDMA_ETM_EVENT_MAX]){                                \
