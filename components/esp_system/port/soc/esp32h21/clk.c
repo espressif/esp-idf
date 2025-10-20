@@ -30,7 +30,6 @@
 #include "esp_private/esp_pmu.h"
 #include "esp_rom_uart.h"
 #include "esp_rom_sys.h"
-#include "esp_sleep.h"
 
 // TODO: [ESP32H21] IDF-11900, IDF-11907
 
