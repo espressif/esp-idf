@@ -158,7 +158,7 @@ static int parse_dns_request(char *req, size_t req_len, char *dns_reply, size_t 
                         esp_netif_get_ip_info(esp_netif_get_handle_from_ifkey(h->entry[i].if_key), &ip_info);
                         ip.addr = ip_info.ip.addr;
                         break;
-                    } else if (h->entry->ip.addr != IPADDR_ANY) {
+                    } else if (h->entry[i].ip.addr != IPADDR_ANY) {
                         ip.addr = h->entry[i].ip.addr;
                         break;
                     }
