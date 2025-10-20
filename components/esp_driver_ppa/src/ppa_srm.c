@@ -121,13 +121,6 @@ bool ppa_srm_transaction_on_picked(uint32_t num_chans, const dma2d_trans_channel
     }
 
     ppa_srm_color_mode_t ppa_out_color_mode = srm_trans_desc->out.srm_cm;
-    if (ppa_out_color_mode == PPA_SRM_COLOR_MODE_YUV444) {
-        ppa_out_color_mode = PPA_SRM_COLOR_MODE_YUV420;
-        dma2d_csc_config_t dma_rx_csc = {
-            .rx_csc_option = DMA2D_CSC_RX_YUV420_TO_YUV444,
-        };
-        dma2d_configure_color_space_conversion(dma2d_rx_chan, &dma_rx_csc);
-    }
 
     dma2d_rx_event_callbacks_t dma_event_cbs = {
         .on_recv_eof = ppa_transaction_done_cb,
@@ -281,9 +274,6 @@ esp_err_t ppa_do_scale_rotate_mirror(ppa_client_handle_t ppa_client, const ppa_s
         dma_trans_desc->channel_flags = 0;
         if (config->in.srm_cm == PPA_SRM_COLOR_MODE_YUV444) {
             dma_trans_desc->channel_flags |= DMA2D_CHANNEL_FUNCTION_FLAG_TX_CSC;
-        }
-        if (config->out.srm_cm == PPA_SRM_COLOR_MODE_YUV444) {
-            dma_trans_desc->channel_flags |= DMA2D_CHANNEL_FUNCTION_FLAG_RX_CSC;
         }
         dma_trans_desc->specified_tx_channel_mask = 0;
         dma_trans_desc->specified_rx_channel_mask = 0;
