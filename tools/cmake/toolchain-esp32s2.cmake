@@ -1,4 +1,4 @@
-include($ENV{IDF_PATH}/tools/cmake${IDF_BUILD_VER_TAG}/utilities.cmake)
+include($ENV{IDF_PATH}/tools/cmake/deduplicate_flags.cmake)
 
 set(CMAKE_SYSTEM_NAME Generic)
 

@@ -1,6 +1,12 @@
 # SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
+# To maintain backward compatibility for those who might expect
+# remove_duplicated_flags to be available when utilities.cmake is included,
+# we ensure its presence. The remove_duplicated_flags function is primarily
+# used by toolchain CMake files.
+include(${CMAKE_CURRENT_LIST_DIR}/../cmake/deduplicate_flags.cmake)
+
 # Note: CMake does not support nested lists. The functions idf_die, idf_warn,
 # idf_msg, and idf_dbg use ARGV# values because this is the only way to prevent
 # arguments from being altered by CMake. ARGV and ARGN contain a flattened list
@@ -604,31 +610,6 @@ function(__get_compile_options)
         list(APPEND compile_options $<$<COMPILE_LANGUAGE:ASM>:${option}>)
     endforeach()
     set(${ARG_OUTPUT} "${compile_options}" PARENT_SCOPE)
-endfunction()
-
-#[[
-    remove_duplicated_flags(<flags> <uniq_flags>)
-
-    *flags[in]*
-
-        Input string with compilation flags.
-
-    *uniq_flags[out]*
-
-        Output string with unified compilation flags.
-
-    Remove duplicate entries from a string of compilation flags.
-#]]
-function(remove_duplicated_flags FLAGS UNIQFLAGS)
-    set(FLAGS_LIST "${FLAGS}")
-    # Convert the given flags, as a string, into a CMake list type
-    separate_arguments(FLAGS_LIST)
-    # Remove all the duplicated flags
-    list(REMOVE_DUPLICATES FLAGS_LIST)
-    # Convert the list back to a string
-    string(REPLACE ";" " " FLAGS_LIST "${FLAGS_LIST}")
-    # Return that string to the caller
-    set(${UNIQFLAGS} "${FLAGS_LIST}" PARENT_SCOPE)
 endfunction()
 
 #[[
