@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,16 +17,15 @@
 #include "freertos/semphr.h"
 #include "freertos/task.h"
 
+#define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
+#include "esp_log.h"
 #include "esp_app_trace.h"
-#include "esp_app_trace_util.h"
 
 #define ESP_APPTRACE_TEST_USE_PRINT_LOCK        0
 #define ESP_APPTRACE_TEST_PRN_WRERR_MAX         5
 #define ESP_APPTRACE_TEST_BLOCKS_BEFORE_CRASH   100
 #define ESP_APPTRACE_TEST_BLOCK_SIZE            1024
 
-#define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
-#include "esp_log.h"
 const static char *TAG = "esp_apptrace_test";
 
 #if ESP_APPTRACE_TEST_USE_PRINT_LOCK == 1
@@ -67,9 +66,9 @@ const static char *TAG = "esp_apptrace_test";
 #define ESP_APPTRACE_TEST_LOGO( format, ... )  ESP_APPTRACE_TEST_LOG_LEVEL(E, ESP_LOG_NONE, format, ##__VA_ARGS__)
 
 #if CONFIG_APPTRACE_SV_ENABLE == 0
-#define ESP_APPTRACE_TEST_WRITE(_b_, _s_)            esp_apptrace_write(ESP_APPTRACE_DEST_JTAG, _b_, _s_, ESP_APPTRACE_TMO_INFINITE)
-#define ESP_APPTRACE_TEST_WRITE_FROM_ISR(_b_, _s_)   esp_apptrace_write(ESP_APPTRACE_DEST_JTAG, _b_, _s_, 0UL)
-#define ESP_APPTRACE_TEST_WRITE_NOWAIT(_b_, _s_)     esp_apptrace_write(ESP_APPTRACE_DEST_JTAG, _b_, _s_, 0)
+#define ESP_APPTRACE_TEST_WRITE(_b_, _s_)            esp_apptrace_write(_b_, _s_, ESP_APPTRACE_TMO_INFINITE)
+#define ESP_APPTRACE_TEST_WRITE_FROM_ISR(_b_, _s_)   esp_apptrace_write(_b_, _s_, 0UL)
+#define ESP_APPTRACE_TEST_WRITE_NOWAIT(_b_, _s_)     esp_apptrace_write(_b_, _s_, 0)
 
 typedef struct {
     uint8_t *buf;
@@ -625,7 +624,7 @@ static int esp_logtrace_printf(const char *fmt, ...)
 
     va_start(ap, fmt);
 
-    int ret = esp_apptrace_vprintf_to(ESP_APPTRACE_DEST_JTAG, ESP_APPTRACE_TMO_INFINITE, fmt, ap);
+    int ret = esp_apptrace_vprintf_to(ESP_APPTRACE_TMO_INFINITE, fmt, ap);
 
     va_end(ap);
 
@@ -657,7 +656,7 @@ static void esp_logtrace_task(void *p)
             break;
         }
     }
-    esp_err_t ret = esp_apptrace_flush(ESP_APPTRACE_DEST_JTAG, ESP_APPTRACE_TMO_INFINITE);
+    esp_err_t ret = esp_apptrace_flush(ESP_APPTRACE_TMO_INFINITE);
     if (ret != ESP_OK) {
         ESP_APPTRACE_TEST_LOGE("Failed to flush printf buf (%d)!", ret);
     }

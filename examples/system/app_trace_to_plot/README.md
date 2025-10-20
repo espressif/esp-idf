@@ -58,8 +58,10 @@ After running the plotting tool and starting apptrace with OpenOCD separately, y
 
 
 ```bash
-idf.py openocd --openocd-commands 'reset;esp apptrace start tcp://localhost:53535 0 -1 5'
+idf.py openocd --openocd-commands "-f board/esp32-wrover-kit-3.3v.cfg -c 'init;reset;esp apptrace start tcp://localhost:53535 0 -1 5'"
 ```
+
+![App Trace Plot Output](telemetry.png)
 
 **Note:** data.json file is an example for plot config file. It can be changed or modified.
 

@@ -9,6 +9,6 @@ components/app_trace/test_apps:
     - esp_driver_uart
     - esp_driver_gptimer
   disable:
-    - if: IDF_TARGET in ["esp32c5", "esp32c61", "esp32h21", "esp32h4"]
+    - if: IDF_TARGET in ["esp32h21", "esp32h4"]
       temporary: true
-      reason: not support yet # TODO: [ESP32C5] IDF-8705, [ESP32C61] IDF-9306, [ESP32H21] IDF-11539 [ESP32H4] IDF-12325
+      reason: not support yet # TODO: [ESP32H21] IDF-11539 [ESP32H4] IDF-12325

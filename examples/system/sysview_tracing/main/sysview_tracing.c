@@ -7,12 +7,14 @@
    CONDITIONS OF ANY KIND, either express or implied.
 */
 
+#include "esp_err.h"
 #include "sdkconfig.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <inttypes.h>
 #include "esp_log.h"
+#include "esp_app_trace.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "driver/gptimer.h"
