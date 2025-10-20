@@ -18,6 +18,7 @@
 #include "hal/color_hal.h"
 #include "esp_cache.h"
 #include "ppa_performance.h"
+#include "esp_random.h"
 
 #define ALIGN_UP(num, align)    (((num) + ((align) - 1)) & ~((align) - 1))
 
@@ -835,5 +836,88 @@ TEST_CASE("ppa_fill_performance", "[PPA]")
 
     TEST_ESP_OK(ppa_unregister_client(ppa_client_handle));
 
+    free(out_buf);
+}
+
+TEST_CASE("ppa_srm_stress_test", "[PPA]")
+{
+    // Configurable parameters
+    const uint32_t w = 200;
+    const uint32_t h = 200;
+    const ppa_srm_color_mode_t in_cm = PPA_SRM_COLOR_MODE_RGB565;
+    const ppa_srm_color_mode_t out_cm = PPA_SRM_COLOR_MODE_RGB565;
+    const ppa_srm_rotation_angle_t rotation = PPA_SRM_ROTATION_ANGLE_0;
+    const float scale_x = 1.0;
+    const float scale_y = 1.0;
+
+    color_space_pixel_format_t in_pixel_format = {
+        .color_type_id = in_cm,
+    };
+    color_space_pixel_format_t out_pixel_format = {
+        .color_type_id = out_cm,
+    };
+
+    uint32_t in_buf_size = w * h * color_hal_pixel_format_get_bit_depth(in_pixel_format) / 8;
+    uint32_t out_buf_size = ALIGN_UP(w * h * color_hal_pixel_format_get_bit_depth(out_pixel_format) / 8, 64);
+    uint8_t *out_buf = heap_caps_aligned_calloc(4, out_buf_size, sizeof(uint8_t), MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA);
+    TEST_ASSERT_NOT_NULL(out_buf);
+    uint8_t *in_buf = heap_caps_aligned_calloc(4, in_buf_size, sizeof(uint8_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT | MALLOC_CAP_DMA);
+    TEST_ASSERT_NOT_NULL(in_buf);
+
+    ppa_client_handle_t ppa_client_handle;
+    ppa_client_config_t ppa_client_config = {
+        .oper_type = PPA_OPERATION_SRM,
+        .max_pending_trans_num = 1,
+    };
+    TEST_ESP_OK(ppa_register_client(&ppa_client_config, &ppa_client_handle));
+
+    // Test on different sizes of the block
+    int test_iterations = 50;
+    while (test_iterations-- > 0) {
+        uint32_t block_w_initial = esp_random() % (w - 100);
+        uint32_t block_h_initial = esp_random() % (h - 100);
+        block_w_initial = (block_w_initial == 0) ? 1 : block_w_initial;
+        block_h_initial = (block_h_initial == 0) ? 1 : block_h_initial;
+        uint32_t block_w = 0;
+        uint32_t block_h = 0;
+        for (int i = 0; i < 100; i++) {
+            block_w = block_w_initial + i;
+            block_h = block_h_initial + i;
+            // printf("block_w = %ld, block_h = %ld\n", block_w, block_h);
+            ppa_srm_oper_config_t oper_config = {
+                .in.buffer = in_buf,
+                .in.pic_w = w,
+                .in.pic_h = h,
+                .in.block_w = block_w,
+                .in.block_h = block_h,
+                .in.block_offset_x = 0,
+                .in.block_offset_y = 0,
+                .in.srm_cm = in_cm,
+
+                .out.buffer = out_buf,
+                .out.buffer_size = out_buf_size,
+                .out.pic_w = block_w,
+                .out.pic_h = block_h,
+                .out.block_offset_x = 0,
+                .out.block_offset_y = 0,
+                .out.srm_cm = out_cm,
+
+                .rotation_angle = rotation,
+                .scale_x = scale_x,
+                .scale_y = scale_y,
+
+                .rgb_swap = 0,
+                .byte_swap = 0,
+
+                .mode = PPA_TRANS_MODE_BLOCKING,
+            };
+
+            TEST_ESP_OK(ppa_do_scale_rotate_mirror(ppa_client_handle, &oper_config));
+        }
+    }
+
+    TEST_ESP_OK(ppa_unregister_client(ppa_client_handle));
+
+    free(in_buf);
     free(out_buf);
 }
