@@ -15,6 +15,8 @@
 #include <stdlib.h>
 #include "soc/spi_periph.h"
 #include "soc/spi_struct.h"
+#include "soc/pcr_struct.h"
+#include "hal/assert.h"
 #include "hal/spi_types.h"
 #include "hal/spi_flash_types.h"
 #include <sys/param.h> // For MIN/MAX
@@ -31,6 +33,8 @@ extern "C" {
 
 typedef typeof(GPSPI2.clock.val) gpspi_flash_ll_clock_reg_t;
 #define GPSPI_FLASH_LL_PERIPHERAL_FREQUENCY_MHZ  (80)
+#define GPSPI_FLASH_LL_SUPPORT_CLK_SRC_PRE_DIV   (1)
+#define GPSPI_FLASH_LL_PERIPH_CLK_DIV_MAX ((SPI_CLKCNT_N + 1) * (SPI_CLKDIV_PRE + 1)) //peripheral internal maxmum clock divider
 
 /*------------------------------------------------------------------------------
  * Control
@@ -424,6 +428,56 @@ static inline uint32_t gpspi_flash_ll_calculate_clock_reg(uint8_t clkdiv)
         div_parameter = ((clkdiv - 1) | (((clkdiv / 2 - 1) & 0xff) << 6) | (((clkdiv - 1) & 0xff) << 12));
     }
     return div_parameter;
+}
+
+/**
+ * Set the clock source
+ *
+ * @param hw Beginning address of the peripheral registers.
+ * @param clk_source Clock source to use
+ */
+static inline void gpspi_flash_ll_set_clk_source(spi_dev_t *hw, spi_clock_source_t clk_source)
+{
+    uint32_t clk_id = 0;
+    switch (clk_source) {
+    case SOC_MOD_CLK_PLL_F160M:
+        clk_id = 1;
+        break;
+    case SOC_MOD_CLK_RC_FAST:
+        clk_id = 2;
+        break;
+    case SOC_MOD_CLK_XTAL:
+        clk_id = 0;
+        break;
+    default:
+        HAL_ASSERT(false);
+    }
+
+    PCR.spi2_clkm_conf.spi2_clkm_sel = clk_id;
+}
+
+/**
+ * Enable/disable SPI flash module clock
+ *
+ * @param host_id    SPI host ID
+ * @param enable     true to enable, false to disable
+ */
+static inline void gpspi_flash_ll_enable_clock(spi_dev_t *hw, bool enable)
+{
+    PCR.spi2_clkm_conf.spi2_clkm_en = enable;
+}
+
+/**
+ * Enable/disable SPI flash module clock
+ *
+ * @param hw Beginning address of the peripheral registers.
+ * @param enable     true to enable, false to disable
+ */
+static inline void gpspi_flash_ll_clk_source_pre_div(spi_dev_t *hw, uint8_t hs_div, uint8_t mst_div)
+{
+    // In IDF master driver 'mst_div' will be const 2 and 'hs_div' is actually pre_div temporally
+    (void) hs_div;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(PCR.spi2_clkm_conf, spi2_clkm_div_num, mst_div - 1);
 }
 
 #ifdef __cplusplus

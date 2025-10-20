@@ -8,7 +8,6 @@
 #include "esp_err.h"
 #include <stdint.h>
 #include <stdbool.h>
-
 #include "hal/spi_flash_types.h"
 
 #ifdef __cplusplus
@@ -104,6 +103,7 @@ struct esp_flash_t {
     uint32_t busy             :1;   ///< This flag is used to verify chip's status.
     uint32_t hpm_dummy_ena    :1;   ///< This flag is used to verify whether flash works under HPM status.
     uint32_t reserved_flags   :30;  ///< reserved.
+    int clock_source;               ///< Clock source for GPSPI.
 };
 
 

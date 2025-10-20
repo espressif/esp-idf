@@ -15,6 +15,7 @@
 #include <stdlib.h>
 #include "soc/spi_periph.h"
 #include "soc/spi_struct.h"
+#include "soc/pcr_struct.h"
 #include "hal/spi_types.h"
 #include "hal/spi_flash_types.h"
 #include <sys/param.h> // For MIN/MAX
@@ -423,6 +424,34 @@ static inline uint32_t gpspi_flash_ll_calculate_clock_reg(uint8_t clkdiv)
     // }
     // return div_parameter;
     abort();
+}
+
+__attribute__((always_inline))
+static inline void gpspi_flash_ll_set_clk_source(spi_dev_t *hw, spi_clock_source_t clk_source)
+{
+    switch (clk_source) {
+    case SPI_CLK_SRC_RC_FAST:
+        PCR.spi2_clkm_conf.spi2_clkm_sel = 2;
+        break;
+    case SPI_CLK_SRC_XTAL:
+        PCR.spi2_clkm_conf.spi2_clkm_sel = 0;
+        break;
+    default:
+        PCR.spi2_clkm_conf.spi2_clkm_sel = 1;
+        break;
+    }
+}
+
+/**
+ * Enable/disable SPI flash module clock
+ *
+ * @param hw Beginning address of the peripheral registers.
+ * @param enable     true to enable, false to disable
+ */
+static inline void gpspi_flash_ll_enable_clock(spi_dev_t *hw, bool enable)
+{
+    (void) hw;
+    PCR.spi2_clkm_conf.spi2_clkm_en = enable;
 }
 
 #ifdef __cplusplus
