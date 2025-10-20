@@ -33,14 +33,15 @@ typedef struct {
                                                          Only takes effect when using level or pulse delimiter, set to `-1` if only use the soft delimiter */
     gpio_num_t              data_gpio_nums[PARLIO_RX_UNIT_MAX_DATA_WIDTH]; /*!< Parallel IO data GPIO numbers, set to `-1` if it's not used,
                                                                                 The driver will take [0 .. (data_width - 1)] as the data pins */
-    struct {
+    /// Extra configuration flags for PARLIO RX unit
+    struct extra_parlio_rx_unit_flags {
         uint32_t            free_clk : 1;           /*!< Whether the input external clock is a free-running clock. A free-running clock will always keep running (e.g. I2S bclk),
                                                          a non-free-running clock will start when there are data transporting and stop when the bus idle (e.g. SPI).
                                                          This flag only takes effect when select PARLIO_CLK_SRC_EXTERNAL as clock source */
         uint32_t            clk_gate_en : 1;        /*!< Enable RX clock gating, only available when the clock direction is output(not supported on ESP32-C6)
                                                          the output clock will be controlled by the valid gpio,
                                                          i.e. high level of valid gpio to enable the clock output, low to disable */
-        uint32_t            allow_pd: 1;             /*!< Set to allow power down. When this flag set, the driver will backup/restore the PARLIO registers before/after entering/exist sleep mode.
+        uint32_t            allow_pd: 1;            /*!< Set to allow power down. When this flag set, the driver will backup/restore the PARLIO registers before/after entering/exist sleep mode.
                                                          By this approach, the system can power off PARLIO's power domain.
                                                          This can save power, but at the expense of more RAM being consumed. */
     } flags;                                        /*!< RX driver flags */
