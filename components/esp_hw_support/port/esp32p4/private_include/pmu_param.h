@@ -34,7 +34,7 @@ extern "C" {
 // FOR LIGHTSLEEP
 #define PMU_HP_DRVB_LIGHTSLEEP      0
 #define PMU_LP_DRVB_LIGHTSLEEP      0
-#define PMU_HP_XPD_LIGHTSLEEP       1
+#define PMU_HP_XPD_LIGHTSLEEP       0 // Always use DCDC power supply in lightsleep
 
 #define PMU_DBG_ATTEN_LIGHTSLEEP_DEFAULT    0
 #define PMU_HP_DBIAS_LIGHTSLEEP_0V6 1
