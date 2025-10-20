@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -10,8 +10,9 @@
 #include "esp_partition.h"
 #include "esp_check.h"
 #include "tinyusb.h"
-#include "tusb_msc_storage.h"
-#include "tusb_cdc_acm.h"
+#include "tinyusb_default_config.h"
+#include "tinyusb_msc.h"
+#include "tinyusb_cdc_acm.h"
 
 #define BASE_PATH "/usb" // base path to mount the partition
 
@@ -144,42 +145,36 @@ void app_main(void)
     ESP_LOGI(TAG, "Initializing storage...");
 
     static wl_handle_t wl_handle = WL_INVALID_HANDLE;
+
     ESP_ERROR_CHECK(storage_init_spiflash(&wl_handle));
 
-    const tinyusb_msc_spiflash_config_t config_spi = {
-        .wl_handle = wl_handle
+    tinyusb_msc_storage_handle_t storage_hdl = NULL;
+
+    const tinyusb_msc_storage_config_t storage_cfg = {
+        .mount_point = TINYUSB_MSC_STORAGE_MOUNT_APP,       // Initial mount point to APP
+        .medium.wl_handle = wl_handle,
+        .fat_fs = {
+            .base_path = BASE_PATH,                        // User specific base path
+        },
     };
-    ESP_ERROR_CHECK(tinyusb_msc_storage_init_spiflash(&config_spi));
-    ESP_ERROR_CHECK(tinyusb_msc_storage_mount(BASE_PATH));
+
+    ESP_ERROR_CHECK(tinyusb_msc_new_storage_spiflash(&storage_cfg, &storage_hdl));
+
     file_operations();
 
     ESP_LOGI(TAG, "USB Composite initialization");
-    const tinyusb_config_t tusb_cfg = {
-        .device_descriptor = NULL,
-        .string_descriptor = NULL,
-        .string_descriptor_count = 0,
-        .external_phy = false,
-#if (TUD_OPT_HIGH_SPEED)
-        .fs_configuration_descriptor = NULL,
-        .hs_configuration_descriptor = NULL,
-        .qualifier_descriptor = NULL,
-#else
-        .configuration_descriptor = NULL,
-#endif // TUD_OPT_HIGH_SPEED
-    };
+    const tinyusb_config_t tusb_cfg = TINYUSB_DEFAULT_CONFIG();
     ESP_ERROR_CHECK(tinyusb_driver_install(&tusb_cfg));
 
     tinyusb_config_cdcacm_t acm_cfg = {
-        .usb_dev = TINYUSB_USBDEV_0,
         .cdc_port = TINYUSB_CDC_ACM_0,
-        .rx_unread_buf_sz = 64,
         .callback_rx = &tinyusb_cdc_rx_callback, // the first way to register a callback
         .callback_rx_wanted_char = NULL,
         .callback_line_state_changed = NULL,
         .callback_line_coding_changed = NULL
     };
 
-    ESP_ERROR_CHECK(tusb_cdc_acm_init(&acm_cfg));
+    ESP_ERROR_CHECK(tinyusb_cdcacm_init(&acm_cfg));
     /* the second way to register a callback */
     ESP_ERROR_CHECK(tinyusb_cdcacm_register_callback(
                         TINYUSB_CDC_ACM_0,
