@@ -213,6 +213,7 @@
 /tools/ci/                    @esp-idf-codeowners/ci
 /tools/cmake/                 @esp-idf-codeowners/build-config
 /tools/cmake/toolchain-*.cmake      @esp-idf-codeowners/toolchain
+/tools/cmakev2/               @esp-idf-codeowners/build-config
 /tools/esp_app_trace/         @esp-idf-codeowners/debugging
 /tools/gdb_panic_server.py    @esp-idf-codeowners/debugging
 /tools/kconfig*/              @esp-idf-codeowners/build-config
