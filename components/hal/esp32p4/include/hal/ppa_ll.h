@@ -600,6 +600,17 @@ static inline void ppa_ll_srm_get_dma_dscr_port_mode_block_size(ppa_dev_t *dev, 
     }
 }
 
+/**
+ * @brief Whether to bypass the macro block order function in PPA SRM
+ *
+ * @param dev Peripheral instance address
+ * @param enable True to bypass; False to not bypass
+ */
+static inline void ppa_ll_srm_bypass_mb_order(ppa_dev_t *dev, bool enable)
+{
+    dev->sr_byte_order.sr_macro_bk_ro_bypass = enable;
+}
+
 //////////////////////////////////// Blending ////////////////////////////////////////
 /*
  * Alpha Blending Calculation:
