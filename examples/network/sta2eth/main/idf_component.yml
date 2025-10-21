@@ -8,6 +8,6 @@ dependencies:
   dns_server:
     path: ${IDF_PATH}/examples/protocols/http_server/captive_portal/components/dns_server
   espressif/ethernet_init:
-    version: "*"
+    version: "1.0.0"
   espressif/network_provisioning:
     version: "^1.0.5"
