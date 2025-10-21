@@ -1,11 +1,11 @@
 cmake_minimum_required(VERSION 3.22)
-project(esp-idf C CXX ASM)
 
 if(CMAKE_CURRENT_LIST_DIR STREQUAL CMAKE_SOURCE_DIR)
     message(FATAL_ERROR "Current directory '${CMAKE_CURRENT_LIST_DIR}' is not buildable. "
-    "Change directories to one of the example projects in '${CMAKE_CURRENT_LIST_DIR}/examples' and try "
-    "again.")
+    "Change directories to one of the example projects in '${CMAKE_CURRENT_LIST_DIR}/examples' and try again.")
 endif()
+
+project(esp-idf C CXX ASM)
 
 # Variables compile_options, c_compile_options, cxx_compile_options, compile_definitions, link_options shall
 # not be unset as they may already contain flags, set by toolchain-TARGET.cmake files.
