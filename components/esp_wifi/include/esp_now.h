@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,23 +14,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/** \defgroup WiFi_APIs WiFi Related APIs
-  * @brief WiFi APIs
-  */
-
-/** @addtogroup WiFi_APIs
-  * @{
-  */
-
-/** \defgroup ESPNOW_APIs  ESPNOW APIs
-  * @brief ESP32 ESPNOW APIs
-  *
-  */
-
-/** @addtogroup ESPNOW_APIs
-  * @{
-  */
 
 #define ESP_ERR_ESPNOW_BASE         (ESP_ERR_WIFI_BASE + 100) /*!< ESPNOW error number base. */
 #define ESP_ERR_ESPNOW_NOT_INIT     (ESP_ERR_ESPNOW_BASE + 1) /*!< ESPNOW is not initialized. */
@@ -367,14 +350,6 @@ esp_err_t esp_now_set_pmk(const uint8_t *pmk);
   *          - ESP_ERR_ESPNOW_NOT_INIT : ESPNOW is not initialized
   */
 esp_err_t esp_now_set_wake_window(uint16_t window);
-
-/**
-  * @}
-  */
-
-/**
-  * @}
-  */
 
 #ifdef __cplusplus
 }
