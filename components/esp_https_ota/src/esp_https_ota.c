@@ -14,6 +14,7 @@
 #include <sys/param.h>
 #include <inttypes.h>
 #include "esp_check.h"
+#include "esp_flash_encrypt.h"
 #include "hal/efuse_hal.h"
 
 ESP_EVENT_DEFINE_BASE(ESP_HTTPS_OTA_EVENT);
@@ -344,8 +345,9 @@ esp_err_t esp_https_ota_begin(const esp_https_ota_config_t *ota_config, esp_http
     if (ota_config->ota_resumption) {
         // We allow resumption only if we have minimum buffer size already written to flash
         if (ota_config->ota_image_bytes_written >= DEFAULT_OTA_BUF_SIZE) {
-            ESP_LOGI(TAG, "Valid OTA resumption case, offset %d", ota_config->ota_image_bytes_written);
-            https_ota_handle->binary_file_len = ota_config->ota_image_bytes_written;
+            // For FE case the flash is written in multiples of 16 bytes. So, we need to align the offset to 16 bytes.
+            https_ota_handle->binary_file_len = esp_flash_encryption_enabled() ? (ota_config->ota_image_bytes_written & ~0xF) : ota_config->ota_image_bytes_written;
+            ESP_LOGD(TAG, "Resuming OTA from offset: %d", https_ota_handle->binary_file_len);
         }
     }
 
