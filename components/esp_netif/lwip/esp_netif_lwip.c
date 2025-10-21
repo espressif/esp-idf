@@ -1420,12 +1420,7 @@ esp_err_t esp_netif_receive(esp_netif_t *esp_netif, void *buffer, size_t len, vo
         esp_event_post(IP_EVENT, IP_EVENT_TX_RX, &evt, sizeof(evt), 0);
     }
 #endif
-#ifdef CONFIG_ESP_NETIF_RECEIVE_REPORT_ERRORS
     return esp_netif->lwip_input_fn(esp_netif->netif_handle, buffer, len, eb);
-#else
-    esp_netif->lwip_input_fn(esp_netif->netif_handle, buffer, len, eb);
-    return ESP_OK;
-#endif
 }
 
 #if CONFIG_LWIP_IPV4
