@@ -4,6 +4,14 @@ menu "Legacy Driver Configurations"
 
     menu "Legacy I2C Driver Configurations"
         depends on SOC_I2C_SUPPORTED
+        config I2C_SUPPRESS_DEPRECATE_WARN
+            bool "Suppress legacy driver deprecated warning"
+            default n
+            help
+                whether to suppress the deprecation warnings when using legacy i2c driver
+                (driver/i2c.h). If you want to continue using the legacy driver,
+                and don't want to see related deprecation warnings, you can enable this option.
+
         config I2C_SKIP_LEGACY_CONFLICT_CHECK
             bool "Skip legacy conflict check"
             default n
