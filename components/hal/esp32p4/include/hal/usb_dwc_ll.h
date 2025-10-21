@@ -1061,6 +1061,21 @@ FORCE_INLINE_ATTR bool usb_dwc_ll_get_stoppclk_st(usb_dwc_dev_t *hw)
     return hw->pcgcctl_reg.stoppclk;
 }
 
+FORCE_INLINE_ATTR void usb_dwc_ll_set_gatehclk(usb_dwc_dev_t *hw, bool gate)
+{
+    hw->pcgcctl_reg.gatehclk = gate;
+}
+
+FORCE_INLINE_ATTR bool usb_dwc_ll_get_gatehclk_st(usb_dwc_dev_t *hw)
+{
+    return hw->pcgcctl_reg.gatehclk;
+}
+
+FORCE_INLINE_ATTR bool usb_dwc_ll_get_physleep_st(usb_dwc_dev_t *hw)
+{
+    return hw->pcgcctl_reg.physleep;
+}
+
 #ifdef __cplusplus
 }
 #endif
