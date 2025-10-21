@@ -199,7 +199,6 @@ static esp_err_t uhci_gdma_initialize(uhci_controller_handle_t uhci_ctrl, const 
     // Initialize DMA RX channel
     gdma_channel_alloc_config_t rx_alloc_config = {
         .direction = GDMA_CHANNEL_DIRECTION_RX,
-        .sibling_chan = uhci_ctrl->tx_dir.dma_chan,
     };
     ESP_RETURN_ON_ERROR(gdma_new_ahb_channel(&rx_alloc_config, &uhci_ctrl->rx_dir.dma_chan), TAG, "DMA rx channel alloc failed");
     gdma_connect(uhci_ctrl->rx_dir.dma_chan, GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_UHCI, 0));
