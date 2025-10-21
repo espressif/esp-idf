@@ -40,7 +40,7 @@ typedef union {
 typedef union {
     struct {
         /** rst : WO; bitpos: [0]; default: 0;
-         *  Soft reset. Writing logic 1 resets CTU CAN FD. After writing logic 1, logic 0 does
+         *  Soft reset. Writing logic 1 resets CAN FD. After writing logic 1, logic 0 does
          *  not need to be written, this bit
          *  is automatically cleared.
          *  0: invalid
@@ -48,11 +48,11 @@ typedef union {
          */
         uint32_t rst:1;
         /** bmm : R/W; bitpos: [1]; default: 0;
-         *  Bus monitoring mode. In this mode CTU CAN FD only receives frames and sends only
+         *  Bus monitoring mode. In this mode CAN FD only receives frames and sends only
          *  recessive bits on CAN
          *  bus. When a dominant bit is sent, it is re-routed internally so that bus value is
          *  not changed. When this mode is
-         *  enabled, CTU CAN FD will not transmit any frame from TXT Buffers,
+         *  enabled, CAN FD will not transmit any frame from TXT Buffers,
          *  0b0 - BMM_DISABLED - Bus monitoring mode disabled.
          *  0b1 - BMM_ENABLED - Bus monitoring mode enabled.
          */
@@ -75,7 +75,7 @@ typedef union {
          */
         uint32_t afm:1;
         /** fde : R/W; bitpos: [4]; default: 1;
-         *  Flexible data rate enable. When flexible data rate is enabled CTU CAN FD recognizes
+         *  Flexible data rate enable. When flexible data rate is enabled CAN FD recognizes
          *  CAN FD frames (FDF bit
          *  = 1).
          *  0b0 - FDE_DISABLE - Flexible data-rate support disabled.
@@ -122,7 +122,7 @@ typedef union {
         uint32_t txbbm:1;
         uint32_t reserved_11:5;
         /** rtrle : R/W; bitpos: [16]; default: 0;
-         *  Retransmitt Limit Enable. If enabled, CTU CAN FD only attempts to retransmitt each
+         *  Retransmitt Limit Enable. If enabled, CAN FD only attempts to retransmitt each
          *  frame up to RTR_TH
          *  times.
          *  0b0 - RTRLE_DISABLED - Retransmitt limit is disabled.
@@ -136,21 +136,21 @@ typedef union {
          */
         uint32_t rtrth:4;
         /** ilbp : R/W; bitpos: [21]; default: 0;
-         *  Internal Loop Back mode. When enabled, CTU CAN FD receives any frame it transmits.
+         *  Internal Loop Back mode. When enabled, CAN FD receives any frame it transmits.
          *  0b0 - INT_LOOP_DISABLED - Internal loop-back is disabled.
          *  0b1 - INT_LOOP_ENABLED - Internal loop-back is enabled.
          */
         uint32_t ilbp:1;
         /** ena : R/W; bitpos: [22]; default: 0;
-         *  Main enable bit of CTU CAN FD. When enabled, CTU CAN FD communicates on CAN bus.
+         *  Main enable bit of CAN FD. When enabled, CAN FD communicates on CAN bus.
          *  When disabled, it
          *  is bus-off and does not take part of CAN bus communication.
-         *  0b0 - CTU_CAN_DISABLED - The CAN Core is disabled.
-         *  0b1 - CTU_CAN_ENABLED - The CAN Core is enabled.
+         *  0b0 - CAN_DISABLED - The CAN Core is disabled.
+         *  0b1 - CAN_ENABLED - The CAN Core is enabled.
          */
         uint32_t ena:1;
         /** nisofd : R/W; bitpos: [23]; default: 0;
-         *  Non ISO FD. When this bit is set, CTU CAN FD is compliant to NON-ISO CAN FD
+         *  Non ISO FD. When this bit is set, CAN FD is compliant to NON-ISO CAN FD
          *  specification (no stuff
          *  count field). This bit should be modified only when SETTINGS[ENA]=0.
          *  0b0 - ISO_FD - The CAN Controller conforms to ISO CAN FD specification.
@@ -159,7 +159,7 @@ typedef union {
          */
         uint32_t nisofd:1;
         /** pex : R/W; bitpos: [24]; default: 0;
-         *  Protocol exception handling. When this bit is set, CTU CAN FD will start
+         *  Protocol exception handling. When this bit is set, CAN FD will start
          *  integration upon detection of protocol
          *  exception. This should be modified only when SETTINGS[ENA] = ’0’.
          *  0b0 - PROTOCOL_EXCEPTION_DISABLED - Protocol exception handling is disabled.
@@ -167,11 +167,11 @@ typedef union {
          */
         uint32_t pex:1;
         /** tbfbo : R/W; bitpos: [25]; default: 1;
-         *  All TXT buffers shall go to "TX failed" state when CTU CAN FD becomes bus-off.
+         *  All TXT buffers shall go to "TX failed" state when CAN FD becomes bus-off.
          *  0b0 - TXTBUF_FAILED_BUS_OFF_DISABLED - TXT Buffers dont go to "TX failed" state
-         *  when CTU CAN
+         *  when CAN
          *  FD becomes bus-off.
-         *  0b1 - TXTBUF_FAILED_BUS_OFF_ENABLED - TXT Buffers go to "TX failed" state when CTU
+         *  0b1 - TXTBUF_FAILED_BUS_OFF_ENABLED - TXT Buffers go to "TX failed" state when
          *  CAN FD
          *  becomes bus-off.
          */
@@ -638,13 +638,13 @@ typedef union {
          */
         uint32_t eft:1;
         /** rxs : RO; bitpos: [4]; default: 0;
-         *  CTU CAN FD is receiver of CAN Frame.
+         *  CAN FD is receiver of CAN Frame.
          *  0: not receiving
          *  1: receiving
          */
         uint32_t rxs:1;
         /** txs : RO; bitpos: [5]; default: 0;
-         *  CTU CAN FD is transmitter of CAN Frame.
+         *  CAN FD is transmitter of CAN Frame.
          *  0: not transmitting
          *  1: transmitting
          */
@@ -657,7 +657,7 @@ typedef union {
          */
         uint32_t ewl:1;
         /** idle : RO; bitpos: [7]; default: 1;
-         *  Bus is idle (no frame is being transmitted/received) or CTU CAN FD is bus-off.
+         *  Bus is idle (no frame is being transmitted/received) or CAN FD is bus-off.
          *  0: active
          *  1: not active
          */
@@ -796,11 +796,11 @@ typedef union {
         /** txtb0_state : RO; bitpos: [3:0]; default: 8;
          *  Status of TXT buffer 1.
          *  0b0000 - TXT_NOT_EXIST - TXT buffer does not exist in the core (applies only to TXT
-         *  buffers 3-8, when CTU
+         *  buffers 3-8, when
          *  CAN FD was synthesized with less than 8 TXT buffers).
-         *  0b0001 - TXT_RDY - TXT buffer is in "Ready" state, it is waiting for CTU CAN FD to
+         *  0b0001 - TXT_RDY - TXT buffer is in "Ready" state, it is waiting for CAN FD to
          *  start transmission from it.
-         *  0b0010 - TXT_TRAN - TXT buffer is in "TX in progress" state. CTU CAN FD is
+         *  0b0010 - TXT_TRAN - TXT buffer is in "TX in progress" state. CAN FD is
          *  transmitting frame.
          *  0b0011 - TXT_ABTP - TXT buffer is in "Abort in progress" state.
          *  0b0100 - TXT_TOK - TXT buffer is in "TX OK" state.
@@ -897,7 +897,7 @@ typedef union {
          */
         uint32_t alc_id_field:3;
         /** ts_bits : RO; bitpos: [29:24]; default: 0;
-         *  Number of active bits of CTU CAN FD time-base minus 1 (0x3F = 64 bit time-base).
+         *  Number of active bits of CAN FD time-base minus 1 (0x3F = 64 bit time-base).
          */
         uint32_t ts_bits:6;
         uint32_t reserved_30:2;
@@ -1536,7 +1536,7 @@ typedef union {
          */
         uint32_t txb8:1;
         /** txt_buffer_count : RO; bitpos: [19:16]; default: 4;
-         *  Number of TXT buffers present in CTU CAN FD. Lowest buffer is always 1. Highest
+         *  Number of TXT buffers present in CAN FD. Lowest buffer is always 1. Highest
          *  buffer
          *  is at index equal to number of present buffers.
          */
@@ -1609,7 +1609,7 @@ typedef union {
 typedef union {
     struct {
         /** rx_fr_ctr_val : RO; bitpos: [31:0]; default: 0;
-         *  Number of received frames by CTU CAN FD.
+         *  Number of received frames by CAN FD.
          */
         uint32_t rx_fr_ctr_val:32;
     };
@@ -1622,7 +1622,7 @@ typedef union {
 typedef union {
     struct {
         /** tx_ctr_val : RO; bitpos: [31:0]; default: 0;
-         *  Number of transmitted frames by CTU CAN FD.
+         *  Number of transmitted frames by CAN FD.
          */
         uint32_t tx_ctr_val:32;
     };
