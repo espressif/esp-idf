@@ -158,7 +158,6 @@ Copyright (C) 2011 ChaN, all right reserved.
 .. _CMock: https://github.com/ThrowTheSwitch/CMock
 .. _protobuf-c: https://github.com/protobuf-c/protobuf-c
 .. _Unity: https://github.com/ThrowTheSwitch/Unity
-.. _asio: https://github.com/chriskohlhoff/asio
 .. _zephyr: https://github.com/zephyrproject-rtos/zephyr
 .. _mynewt-nimble: https://github.com/apache/mynewt-nimble
 .. _ESP-IDF Programming Guide: https://docs.espressif.com/projects/esp-idf/en/latest/
