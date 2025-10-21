@@ -1,9 +1,0 @@
-menu "OpenThread Sleepy Example"
-
-    config OPENTHREAD_AUTO_START
-        bool 'Enable the automatic start mode.'
-        default False
-        help
-            If enabled, the Openthread Device will create or connect to thread network with pre-configured
-            network parameters automatically. Otherwise, user need to configure Thread via CLI command manually.
-endmenu

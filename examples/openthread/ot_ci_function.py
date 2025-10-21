@@ -168,7 +168,7 @@ def getDataset(dut: IdfDut) -> str:
 
 
 def init_thread(dut: IdfDut) -> None:
-    dut.expect('>', timeout=10)
+    dut.expect('OpenThread attached to netif', timeout=10)
     wait(dut, 3)
     reset_thread(dut)
 
@@ -176,7 +176,6 @@ def init_thread(dut: IdfDut) -> None:
 def reset_thread(dut: IdfDut) -> None:
     execute_command(dut, 'factoryreset')
     dut.expect('OpenThread attached to netif', timeout=20)
-    dut.expect('>', timeout=10)
     wait(dut, 3)
     clean_buffer(dut)
 
@@ -636,9 +635,9 @@ def get_nat64prefix(br: IdfDut) -> str:
     return str(nat64prefix)
 
 
-def execute_command(dut: IdfDut, command: str) -> None:
+def execute_command(dut: IdfDut, command: str, prefix: str = 'ot ') -> None:
     clean_buffer(dut)
-    dut.write(command)
+    dut.write(prefix + command)
 
 
 def get_ouput_string(dut: IdfDut, command: str, wait_time: int) -> str:
