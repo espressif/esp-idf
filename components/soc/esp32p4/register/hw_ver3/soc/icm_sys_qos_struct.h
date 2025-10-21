@@ -144,12 +144,12 @@ typedef struct {
     volatile icm_axi_hw_cfg_reg_reg_t hw_cfg_reg;
     volatile icm_axi_cmd_reg_t cmd;
     volatile icm_axi_data_reg_t data;
-} icm_axi_dev_t;
+} axi_icm_qos_dev_t;
 
-extern icm_axi_dev_t ICM_SYS;
+extern axi_icm_qos_dev_t AXI_ICM_QOS;
 
 #ifndef __cplusplus
-_Static_assert(sizeof(icm_axi_dev_t) == 0x10, "Invalid size of icm_axi_dev_t structure");
+_Static_assert(sizeof(axi_icm_qos_dev_t) == 0x10, "Invalid size of axi_icm_qos_dev_t structure");
 #endif
 
 #ifdef __cplusplus
