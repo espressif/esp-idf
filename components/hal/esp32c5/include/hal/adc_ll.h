@@ -62,7 +62,7 @@ extern "C" {
 #define ADC_LL_CLKM_DIV_B_DEFAULT         1
 #define ADC_LL_CLKM_DIV_A_DEFAULT         0
 #define ADC_LL_DEFAULT_CONV_LIMIT_EN      0
-#define ADC_LL_DEFAULT_CONV_LIMIT_NUM     10
+#define ADC_LL_DEFAULT_CONV_LIMIT_NUM     255
 
 #define ADC_LL_POWER_MANAGE_SUPPORTED     1 //ESP32C5 supported to manage power mode
 /*---------------------------------------------------------------

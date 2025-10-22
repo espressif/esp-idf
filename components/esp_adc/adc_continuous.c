@@ -344,6 +344,10 @@ esp_err_t adc_continuous_start(adc_continuous_handle_t handle)
     adc_hal_digi_connect(true);
     adc_hal_digi_enable(true);
 
+#if ADC_LL_DEFAULT_CONV_LIMIT_EN
+    adc_ll_digi_convert_limit_enable(false);
+#endif
+
     return ESP_OK;
 }
 
