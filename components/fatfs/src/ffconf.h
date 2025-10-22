@@ -7,7 +7,7 @@
 /  Configurations of FatFs Module
 /---------------------------------------------------------------------------*/
 
-#define FFCONF_DEF	80286	/* Revision ID */
+#define FFCONF_DEF	80386	/* Revision ID */
 
 /*---------------------------------------------------------------------------/
 / Function Configurations
@@ -36,29 +36,29 @@
 
 
 #define FF_USE_MKFS		1
-/* This option switches f_mkfs() function. (0:Disable or 1:Enable) */
+/* This option switches f_mkfs() . (0:Disable or 1:Enable) */
 
 
 #define FF_USE_FASTSEEK	CONFIG_FATFS_USE_FASTSEEK
-/* This option switches fast seek function. (0:Disable or 1:Enable) */
+/* This option switches fast seek feature. (0:Disable or 1:Enable) */
 
 
-#define FF_USE_EXPAND	1
-/* This option switches f_expand function. (0:Disable or 1:Enable) */
+#define FF_USE_EXPAND	0
+/* This option switches f_expand(). (0:Disable or 1:Enable) */
 
 
 #define FF_USE_CHMOD	1
-/* This option switches attribute manipulation functions, f_chmod() and f_utime().
+/* This option switches attribute control API functions, f_chmod() and f_utime().
 /  (0:Disable or 1:Enable) Also FF_FS_READONLY needs to be 0 to enable this option. */
 
 
 #define FF_USE_LABEL	CONFIG_FATFS_USE_LABEL
-/* This option switches volume label functions, f_getlabel() and f_setlabel().
+/* This option switches volume label API functions, f_getlabel() and f_setlabel().
 /  (0:Disable or 1:Enable) */
 
 
 #define FF_USE_FORWARD	0
-/* This option switches f_forward() function. (0:Disable or 1:Enable) */
+/* This option switches f_forward(). (0:Disable or 1:Enable) */
 
 #if defined(CONFIG_FATFS_USE_STRFUNC_WITHOUT_CRLF_CONV)
 #define FF_USE_STRFUNC 1
@@ -90,7 +90,7 @@
 #define FF_STRF_ENCODE	3
 #endif
 
-/* FF_USE_STRFUNC switches string functions, f_gets(), f_putc(), f_puts() and
+/* FF_USE_STRFUNC switches string API functions, f_gets(), f_putc(), f_puts() and
 /  f_printf().
 /
 /   0: Disable. FF_PRINT_LLI, FF_PRINT_FLOAT and FF_STRF_ENCODE have no effect.
@@ -99,7 +99,7 @@
 /
 /  FF_PRINT_LLI = 1 makes f_printf() support long long argument and FF_PRINT_FLOAT = 1/2
 /  makes f_printf() support floating point argument. These features want C99 or later.
-/  When FF_LFN_UNICODE >= 1 with LFN enabled, string functions convert the character
+/  When FF_LFN_UNICODE >= 1 with LFN enabled, string API functions convert the character
 /  encoding in it. FF_STRF_ENCODE selects assumption of character encoding ON THE FILE
 /  to be read/written via those functions.
 /
@@ -154,19 +154,18 @@
 #ifdef CONFIG_FATFS_MAX_LFN
 #define FF_MAX_LFN    CONFIG_FATFS_MAX_LFN
 #endif
-
 /* The FF_USE_LFN switches the support for LFN (long file name).
 /
 /   0: Disable LFN. FF_MAX_LFN has no effect.
-/   1: Enable LFN with static  working buffer on the BSS. Always NOT thread-safe.
+/   1: Enable LFN with static working buffer on the BSS. Always NOT thread-safe.
 /   2: Enable LFN with dynamic working buffer on the STACK.
 /   3: Enable LFN with dynamic working buffer on the HEAP.
 /
-/  To enable the LFN, ffunicode.c needs to be added to the project. The LFN function
+/  To enable the LFN, ffunicode.c needs to be added to the project. The LFN feature
 /  requiers certain internal working buffer occupies (FF_MAX_LFN + 1) * 2 bytes and
 /  additional (FF_MAX_LFN + 44) / 15 * 32 bytes when exFAT is enabled.
 /  The FF_MAX_LFN defines size of the working buffer in UTF-16 code unit and it can
-/  be in range of 12 to 255. It is recommended to be set it 255 to fully support LFN
+/  be in range of 12 to 255. It is recommended to be set 255 to fully support the LFN
 /  specification.
 /  When use stack for the working buffer, take care on stack overflow. When use heap
 /  memory for the working buffer, memory management functions, ff_memalloc() and
@@ -198,12 +197,24 @@
 
 
 #define FF_FS_RPATH		0
-/* This option configures support for relative path.
+/* This option configures support for relative path feature.
 /
-/   0: Disable relative path and remove related functions.
-/   1: Enable relative path. f_chdir() and f_chdrive() are available.
-/   2: f_getcwd() function is available in addition to 1.
+/   0: Disable relative path and remove related API functions.
+/   1: Enable relative path and dot names. f_chdir() and f_chdrive() are available.
+/   2: f_getcwd() is available in addition to 1.
 */
+
+
+#define FF_PATH_DEPTH	10
+/*  This option defines maximum depth of directory in the exFAT volume. It is NOT
+/   relevant to FAT/FAT32 volume.
+/   For example, FF_PATH_DEPTH = 3 will able to follow a path "/dir1/dir2/dir3/file"
+/   but a sub-directory in the dir3 will not able to be followed and set current
+/   directory.
+/   The size of filesystem object (FATFS) increases FF_PATH_DEPTH * 24 bytes.
+/   When FF_FS_EXFAT == 0 or FF_FS_RPATH == 0, this option has no effect.
+*/
+
 
 
 /*---------------------------------------------------------------------------/
@@ -219,7 +230,7 @@
 /* FF_STR_VOLUME_ID switches support for volume ID in arbitrary strings.
 /  When FF_STR_VOLUME_ID is set to 1 or 2, arbitrary strings can be used as drive
 /  number in the path name. FF_VOLUME_STRS defines the volume ID strings for each
-/  logical drives. Number of items must not be less than FF_VOLUMES. Valid
+/  logical drive. Number of items must not be less than FF_VOLUMES. Valid
 /  characters for the volume ID strings are A-Z, a-z and 0-9, however, they are
 /  compared in case-insensitive. If FF_STR_VOLUME_ID >= 1 and FF_VOLUME_STRS is
 /  not defined, a user defined volume string table is needed as:
@@ -232,9 +243,10 @@
 /* This option switches support for multiple volumes on the physical drive.
 /  By default (0), each logical drive number is bound to the same physical drive
 /  number and only an FAT volume found on the physical drive will be mounted.
-/  When this function is enabled (1), each logical drive number can be bound to
+/  When this feature is enabled (1), each logical drive number can be bound to
 /  arbitrary physical drive and partition listed in the VolToPart[]. Also f_fdisk()
-/  function will be available. */
+/  will be available. */
+
 
 /* SD card sector size */
 #define FF_SS_SDCARD      512
@@ -246,8 +258,8 @@
 /* This set of options configures the range of sector size to be supported. (512,
 /  1024, 2048 or 4096) Always set both 512 for most systems, generic memory card and
 /  harddisk, but a larger value may be required for on-board flash memory and some
-/  type of optical media. When FF_MAX_SS is larger than FF_MIN_SS, FatFs is configured
-/  for variable sector size mode and disk_ioctl() function needs to implement
+/  type of optical media. When FF_MAX_SS is larger than FF_MIN_SS, FatFs is
+/  configured for variable sector size mode and disk_ioctl() needs to implement
 /  GET_SECTOR_SIZE command. */
 
 
@@ -257,14 +269,14 @@
 
 
 #define FF_MIN_GPT		0x10000000
-/* Minimum number of sectors to switch GPT as partitioning format in f_mkfs and
-/  f_fdisk function. 0x100000000 max. This option has no effect when FF_LBA64 == 0. */
+/* Minimum number of sectors to switch GPT as partitioning format in f_mkfs() and
+/  f_fdisk(). 2^32 sectors maximum. This option has no effect when FF_LBA64 == 0. */
 
 
 #define FF_USE_TRIM		1
 /* This option switches support for ATA-TRIM. (0:Disable or 1:Enable)
-/  To enable Trim function, also CTRL_TRIM command should be implemented to the
-/  disk_ioctl() function. */
+/  To enable this feature, also CTRL_TRIM command should be implemented to
+/  the disk_ioctl(). */
 
 
 
@@ -274,7 +286,7 @@
 
 #define FF_FS_TINY		(!CONFIG_FATFS_PER_FILE_CACHE)
 /* This option switches tiny buffer configuration. (0:Normal or 1:Tiny)
-/  At the tiny configuration, size of file object (FIL) is shrinked FF_MAX_SS bytes.
+/  At the tiny configuration, size of file object (FIL) is reduced FF_MAX_SS bytes.
 /  Instead of private sector buffer eliminated from the file object, common sector
 /  buffer in the filesystem object (FATFS) is used for the file data transfer. */
 
@@ -288,20 +300,25 @@
 #define FF_FS_NORTC		0
 #define FF_NORTC_MON	1
 #define FF_NORTC_MDAY	1
-#define FF_NORTC_YEAR	2022
+#define FF_NORTC_YEAR	2025
 /* The option FF_FS_NORTC switches timestamp feature. If the system does not have
 /  an RTC or valid timestamp is not needed, set FF_FS_NORTC = 1 to disable the
 /  timestamp feature. Every object modified by FatFs will have a fixed timestamp
 /  defined by FF_NORTC_MON, FF_NORTC_MDAY and FF_NORTC_YEAR in local time.
-/  To enable timestamp function (FF_FS_NORTC = 0), get_fattime() function need to be
-/  added to the project to read current time form real-time clock. FF_NORTC_MON,
+/  To enable timestamp function (FF_FS_NORTC = 0), get_fattime() need to be added
+/  to the project to read current time form real-time clock. FF_NORTC_MON,
 /  FF_NORTC_MDAY and FF_NORTC_YEAR have no effect.
 /  These options have no effect in read-only configuration (FF_FS_READONLY = 1). */
 
 
-#define FF_FS_NOFSINFO	(CONFIG_FATFS_DONT_TRUST_FREE_CLUSTER_CNT << 0 | CONFIG_FATFS_DONT_TRUST_LAST_ALLOC << 1)
-/* If you need to know correct free space on the FAT32 volume, set bit 0 of this
-/  option, and f_getfree() function at the first time after volume mount will force
+#define FF_FS_CRTIME	0
+/* This option enables(1)/disables(0) the timestamp of the file created. When
+/  set 1, the file created time is available in FILINFO structure. */
+
+
+#define FF_FS_NOFSINFO	0
+/* If you need to know the correct free space on the FAT32 volume, set bit 0 of
+/  this option, and f_getfree() on the first time after volume mount will force
 /  a full FAT scan. Bit 1 controls the use of last allocated cluster number.
 /
 /  bit0=0: Use free cluster count in the FSINFO if available.
@@ -328,16 +345,17 @@
 /* The option FF_FS_REENTRANT switches the re-entrancy (thread safe) of the FatFs
 /  module itself. Note that regardless of this option, file access to different
 /  volume is always re-entrant and volume control functions, f_mount(), f_mkfs()
-/  and f_fdisk() function, are always not re-entrant. Only file/directory access
-/  to the same volume is under control of this featuer.
+/  and f_fdisk(), are always not re-entrant. Only file/directory access to
+/  the same volume is under control of this featuer.
 /
 /   0: Disable re-entrancy. FF_FS_TIMEOUT have no effect.
 /   1: Enable re-entrancy. Also user provided synchronization handlers,
-/      ff_mutex_create(), ff_mutex_delete(), ff_mutex_take() and ff_mutex_give()
-/      function, must be added to the project. Samples are available in ffsystem.c.
+/      ff_mutex_create(), ff_mutex_delete(), ff_mutex_take() and ff_mutex_give(),
+/      must be added to the project. Samples are available in ffsystem.c.
 /
 /  The FF_FS_TIMEOUT defines timeout period in unit of O/S time tick.
 */
+
 
 #define FF_USE_DYN_BUFFER CONFIG_FATFS_USE_DYN_BUFFERS
 /* The option FF_USE_DYN_BUFFER controls source of size used for buffers in the FS and FIL objects.
@@ -345,6 +363,10 @@
 /   0: Disable dynamic buffer size and use static size buffers defined by FF_MAX_SS.
 /   1: Enable dynamic buffer size and use ff_memmalloc() to allocate buffers.
 */
+
+
+
+/*--- End of configuration options ---*/
 
 #include <sys/param.h>
 #include "freertos/FreeRTOS.h"
@@ -355,9 +377,6 @@
  */
 void* ff_memalloc (unsigned msize);
 void ff_memfree(void*);
-
-
-/*--- End of configuration options ---*/
 
 /* Redefine names of disk IO functions to prevent name collisions */
 #define disk_initialize     ff_disk_initialize
