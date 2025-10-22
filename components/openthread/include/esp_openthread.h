@@ -7,6 +7,7 @@
 #pragma once
 
 #include "esp_err.h"
+#include "esp_netif.h"
 #include "esp_openthread_types.h"
 #include "openthread/dataset.h"
 #include "openthread/error.h"
@@ -88,6 +89,29 @@ otInstance *esp_openthread_get_instance(void);
  *
  */
 esp_err_t esp_openthread_mainloop_exit(void);
+
+/**
+ * @brief   Starts the full OpenThread stack and create a handle task.
+ *
+ * @note The OpenThread instance will also be initialized in this function.
+ *
+ * @param[in]  config      The OpenThread platform configuration.
+ *
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_STATE if already initialized
+ *
+ */
+esp_err_t esp_openthread_start(esp_openthread_platform_config_t *config);
+
+/**
+ * @brief This function performs OpenThread stack and platform driver deinitialization and delete the handle task.
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_STATE if Thread is already active
+ *
+ */
+esp_err_t esp_openthread_stop(void);
 
 #ifdef __cplusplus
 } // end of extern "C"
