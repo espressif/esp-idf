@@ -59,6 +59,8 @@ struct bt_mesh_queue {
 };
 
 static struct bt_mesh_queue adv_queue;
+static bt_mesh_mutex_t adv_buf_alloc_lock;
+
 /* We reserve one queue item for bt_mesh_adv_update() */
 #if CONFIG_BLE_MESH_SUPPORT_BLE_ADV
 #define BLE_MESH_ADV_QUEUE_SIZE     (CONFIG_BLE_MESH_ADV_BUF_COUNT + CONFIG_BLE_MESH_BLE_ADV_BUF_COUNT + 1)
@@ -375,8 +377,10 @@ struct net_buf *bt_mesh_adv_create_from_pool(struct net_buf_pool *pool,
         return NULL;
     }
 
+    bt_mesh_r_mutex_lock(&adv_buf_alloc_lock);
     buf = net_buf_alloc(pool, timeout);
     if (!buf) {
+        bt_mesh_r_mutex_unlock(&adv_buf_alloc_lock);
         return NULL;
     }
 
@@ -390,6 +394,7 @@ struct net_buf *bt_mesh_adv_create_from_pool(struct net_buf_pool *pool,
 
     adv->type = type;
 
+    bt_mesh_r_mutex_unlock(&adv_buf_alloc_lock);
     return buf;
 }
 
@@ -669,6 +674,7 @@ void bt_mesh_adv_init(void)
     __ASSERT(ret == pdTRUE, "Failed to create adv thread");
     (void)ret;
 #endif /* CONFIG_BLE_MESH_FREERTOS_STATIC_ALLOC_EXTERNAL && (CONFIG_SPIRAM_CACHE_WORKAROUND || !CONFIG_IDF_TARGET_ESP32) && CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY */
+    bt_mesh_r_mutex_create(&adv_buf_alloc_lock);
 }
 
 #if CONFIG_BLE_MESH_DEINIT
@@ -724,6 +730,7 @@ void bt_mesh_adv_deinit(void)
 #if CONFIG_BLE_MESH_SUPPORT_BLE_ADV
     bt_mesh_ble_adv_deinit();
 #endif /* CONFIG_BLE_MESH_SUPPORT_BLE_ADV */
+    bt_mesh_r_mutex_free(&adv_buf_alloc_lock);
 }
 #endif /* CONFIG_BLE_MESH_DEINIT */
 
