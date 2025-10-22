@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -158,7 +158,7 @@ extern "C" {
     }
 #endif
 
-#ifdef CONFIG_ESP_WIFI_NAN_ENABLE
+#ifdef CONFIG_ESP_WIFI_NAN_SYNC_ENABLE
 /**
 * @brief  Default configuration reference of WIFI NAN
 */
@@ -204,7 +204,7 @@ extern "C" {
 #define ESP_NETIF_BASE_DEFAULT_WIFI_AP         &_g_esp_netif_inherent_ap_config
 #endif
 
-#ifdef CONFIG_ESP_WIFI_NAN_ENABLE
+#ifdef CONFIG_ESP_WIFI_NAN_SYNC_ENABLE
 /**
  * @brief  Default base config (esp-netif inherent) of WIFI NAN
  */
@@ -230,7 +230,7 @@ extern "C" {
 #ifdef CONFIG_ESP_WIFI_SOFTAP_SUPPORT
 #define ESP_NETIF_NETSTACK_DEFAULT_WIFI_AP      _g_esp_netif_netstack_default_wifi_ap
 #endif
-#ifdef CONFIG_ESP_WIFI_NAN_ENABLE
+#ifdef CONFIG_ESP_WIFI_NAN_SYNC_ENABLE
 #define ESP_NETIF_NETSTACK_DEFAULT_WIFI_NAN     _g_esp_netif_netstack_default_wifi_nan
 #endif
 #ifdef CONFIG_PPP_SUPPORT
@@ -249,7 +249,7 @@ extern const esp_netif_netstack_config_t *_g_esp_netif_netstack_default_wifi_sta
 #ifdef CONFIG_ESP_WIFI_SOFTAP_SUPPORT
 extern const esp_netif_netstack_config_t *_g_esp_netif_netstack_default_wifi_ap;
 #endif
-#ifdef CONFIG_ESP_WIFI_NAN_ENABLE
+#ifdef CONFIG_ESP_WIFI_NAN_SYNC_ENABLE
 extern const esp_netif_netstack_config_t *_g_esp_netif_netstack_default_wifi_nan;
 #endif
 #ifdef CONFIG_PPP_SUPPORT
@@ -264,7 +264,7 @@ extern const esp_netif_inherent_config_t _g_esp_netif_inherent_sta_config;
 #ifdef CONFIG_ESP_WIFI_SOFTAP_SUPPORT
 extern const esp_netif_inherent_config_t _g_esp_netif_inherent_ap_config;
 #endif
-#ifdef CONFIG_ESP_WIFI_NAN_ENABLE
+#ifdef CONFIG_ESP_WIFI_NAN_SYNC_ENABLE
 extern const esp_netif_inherent_config_t _g_esp_netif_inherent_nan_config;
 #endif
 extern const esp_netif_inherent_config_t _g_esp_netif_inherent_eth_config;

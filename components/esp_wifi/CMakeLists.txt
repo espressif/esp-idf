@@ -48,7 +48,7 @@ if(CONFIG_ESP_WIFI_ENABLED OR CONFIG_ESP_HOST_WIFI_ENABLED)
             "src/smartconfig_ack.c")
     endif()
 
-    if(CONFIG_ESP_WIFI_NAN_ENABLE)
+    if(CONFIG_ESP_WIFI_NAN_SYNC_ENABLE OR CONFIG_ESP_WIFI_NAN_USD_ENABLE)
         list(APPEND srcs "wifi_apps/nan_app/src/nan_app.c")
     endif()
     if(CONFIG_ESP_WIFI_ENABLE_ROAMING_APP)

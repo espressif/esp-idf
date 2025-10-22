@@ -177,10 +177,10 @@ void wifi_nan_subscribe(void)
 #endif
 
     /* Start NAN Discovery */
-    wifi_nan_config_t nan_cfg = WIFI_NAN_CONFIG_DEFAULT();
+    wifi_nan_sync_config_t nan_cfg = WIFI_NAN_SYNC_CONFIG_DEFAULT();
     esp_netif_t *nan_netif = esp_netif_create_default_wifi_nan();
     (void) nan_netif;
-    esp_wifi_nan_start(&nan_cfg);
+    esp_wifi_nan_sync_start(&nan_cfg);
 
     /* Subscribe a service */
     uint8_t sub_id;

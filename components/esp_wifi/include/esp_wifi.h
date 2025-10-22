@@ -1788,6 +1788,8 @@ esp_err_t esp_wifi_action_tx_req(wifi_action_tx_req_t *req);
 /**
   * @brief      Remain on the target channel for required duration
   *
+  * @attention 1. The API returns ESP_ERR_INVALID_ARG when `req->allow_broadcast` is true and the device operates in AP+STA mode.
+  *
   * @param    req  roc request structure containing relevant fields
   *
   * @return

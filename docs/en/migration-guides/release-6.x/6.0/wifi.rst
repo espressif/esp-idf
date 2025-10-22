@@ -46,4 +46,18 @@ The following Wi-Fi functions have been modified.
 
 - **WPS:** The function ``esp_wifi_wps_start`` no longer accepts a ``timeout_ms`` argument. It should now be called as ``esp_wifi_wps_start(void)``.
 
-- **NAN:** The function argument ``ndp_resp_needed`` of ``esp_wifi_nan_publish_service`` has been moved to structure ``wifi_nan_publish_cfg_t``.
+- **NAN:**
+    - NAN API's are modified so that they can be shared between two separate NAN modes of operation called NAN Synchronization (NAN-Sync) and NAN Unsynchronized Discovery (NAN-USD) roles:
+        - ``esp_wifi_nan_sync_start`` and ``esp_wifi_nan_sync_stop`` replace the previous ``esp_wifi_nan_start`` / ``esp_wifi_nan_stop`` pair.
+        - Functions starting with prefix ``esp_wifi_nan_*`` are shared by both NAN-Sync and NAN-USD modes (for example ``esp_wifi_nan_publish_service`` and ``esp_wifi_nan_subscribe_service``).
+        - Use ``WIFI_NAN_SYNC_CONFIG_DEFAULT()`` instead of the former ``WIFI_NAN_CONFIG_DEFAULT()`` macro when initialising synchronized NAN configuration.
+        - The structure ``wifi_nan_config_t`` has been renamed to ``wifi_nan_sync_config_t``; update declarations such as ``wifi_config_t.nan`` to use the new type.
+        - NAN datapath APIs and associated structures are valid for NAN Synchronization (NAN-Sync) clusters only.
+    - Wi-Fi events ``WIFI_EVENT_NAN_STARTED`` / ``WIFI_EVENT_NAN_STOPPED`` have been renamed to ``WIFI_EVENT_NAN_SYNC_STARTED`` / ``WIFI_EVENT_NAN_SYNC_STOPPED``.
+    - The function argument ``ndp_resp_needed`` of ``esp_wifi_nan_publish_service`` has been moved to structure ``wifi_nan_publish_cfg_t``.
+    - The structure ``wifi_nan_wfa_ssi_t`` now declares its ``proto`` field as ``uint8_t`` (previously ``wifi_nan_svc_proto_t``). Update code that stores pointers to this field or relies on its size to treat it as a single octet.
+    - The structures ``wifi_nan_publish_cfg_t`` and ``wifi_nan_subscribe_cfg_t`` now include a ``usd_discovery_flag`` bitfield together with corresponding ``wifi_nan_usd_config_t`` members. Add designated initialisers for these fields when constructing the structures to avoid accidental field shifts.
+
+- **Off-Channel Operations:**
+    - The structure :cpp:struct:`wifi_action_tx_req_t` now includes a ``bssid`` field that is placed in Address3 of the transmitted action frame. Initialise this field explicitly; leaving it all zeros retains the previous behaviour where the Wi-Fi driver inserts the broadcast address, so frames do not carry unintended BSSID values.
+    - The structure :cpp:struct:`wifi_roc_req_t` now includes an ``allow_broadcast`` flag that controls whether broadcast and multicast action frames are passed to the ``rx_cb`` callback during remain-on-channel operations. Existing applications should review the default ``false`` value and enable it when discovery of broadcast peers is required. Frames whose Address3/BSSID is already broadcast continue to reach the callback even when ``allow_broadcast`` remains ``false``.

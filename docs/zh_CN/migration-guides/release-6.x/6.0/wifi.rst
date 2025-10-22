@@ -46,5 +46,18 @@ Wi-Fi
 
 - **WPS：** 函数 ``esp_wifi_wps_start`` 不再接受 ``timeout_ms`` 参数。现在应调用为 ``esp_wifi_wps_start(void)``。
 
-- **NAN：** 函数 ``esp_wifi_nan_publish_service`` 的参数 ``ndp_resp_needed`` 已移至结构体 ``wifi_nan_publish_cfg_t``。
+- **NAN：**
+    -  已调整 NAN API，使其可在两个独立的 NAN 工作模式间共享：NAN 同步（NAN-Sync）与 NAN 非同步发现（NAN-USD）：
+        - ``esp_wifi_nan_sync_start`` 与 ``esp_wifi_nan_sync_stop`` 取代原有的 ``esp_wifi_nan_start`` / ``esp_wifi_nan_stop``。
+        - 以 ``esp_wifi_nan_*`` 为前缀的函数在 NAN-Sync 与 NAN 非同步发现（NAN-USD） 模式间通用（例如 ``esp_wifi_nan_publish_service``、``esp_wifi_nan_subscribe_service``）。
+        - 初始化 NAN 同步配置时，请使用 ``WIFI_NAN_SYNC_CONFIG_DEFAULT()``，原 ``WIFI_NAN_CONFIG_DEFAULT()`` 已停用。
+        - 结构体 ``wifi_nan_config_t`` 已重命名为 ``wifi_nan_sync_config_t``，例如需将 ``wifi_config_t.nan`` 等声明更新为新类型。
+        - NAN 数据通道相关的 API 与结构体目前仅适用于 NAN 同步（NAN-Sync）集群。
+    - Wi-Fi 事件 ``WIFI_EVENT_NAN_STARTED`` / ``WIFI_EVENT_NAN_STOPPED`` 已重命名为 ``WIFI_EVENT_NAN_SYNC_STARTED`` / ``WIFI_EVENT_NAN_SYNC_STOPPED``。
+    - 函数 ``esp_wifi_nan_publish_service`` 的参数 ``ndp_resp_needed`` 已移至结构体 ``wifi_nan_publish_cfg_t``。
+    - 结构体 ``wifi_nan_wfa_ssi_t`` 中的 ``proto`` 字段类型现为 ``uint8_t`` （之前为 ``wifi_nan_svc_proto_t``）。如果代码存储该字段的指针或依赖其大小，请按单个八位字节处理。
+    - 结构体 ``wifi_nan_publish_cfg_t`` 和 ``wifi_nan_subscribe_cfg_t`` 新增 ``usd_discovery_flag`` 位域及对应的 ``wifi_nan_usd_config_t`` 成员。构造这些结构体时，请为新增字段提供指定初始化器，以避免字段偏移。
 
+- **离信道操作：**
+    - 结构体 :cpp:struct:`wifi_action_tx_req_t` 新增 ``bssid`` 字段，该字段会写入发送动作帧的 Address3。请显式初始化该字段；保持全零时将沿用之前的行为，由 Wi-Fi 驱动填入广播地址，从而避免帧携带意外的 BSSID。
+    - 结构体 :cpp:struct:`wifi_roc_req_t` 新增 ``allow_broadcast`` 标志，用于控制在驻留信道期间是否将广播/组播动作帧传递给 ``rx_cb`` 回调。现有应用应结合默认值 ``false`` 评估是否需要启用该选项，以便在需要时进行广播节点发现。若动作帧的 Address3/BSSID 本身为广播地址，即便 ``allow_broadcast`` 保持 ``false``，回调仍会收到该帧。
