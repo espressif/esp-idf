@@ -369,6 +369,10 @@ static void adv_thread(void *p)
             continue;
         }
 
+        if (recv_evts & ADV_TASK_PKT_SEND_EVT) {
+            recv_evts &= ~ADV_TASK_PKT_SEND_EVT;
+        }
+
         recv_evts = received_adv_evts_handle(recv_evts);
 
         if (recv_evts) {

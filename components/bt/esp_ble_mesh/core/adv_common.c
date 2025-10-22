@@ -2,7 +2,7 @@
 
 /*
  * SPDX-FileCopyrightText: 2017 Intel Corporation
- * SPDX-FileContributor: 2018-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2018-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -33,6 +33,8 @@ struct bt_mesh_adv_queue relay_adv_queue;
 #define BLE_MESH_MAX_TIME_INTERVAL       0xFFFFFFFF
 
 #endif
+
+static bt_mesh_mutex_t adv_buf_alloc_lock;
 
 #if CONFIG_BLE_MESH_FRIEND
 /* We reserve one extra buffer for each friendship, since we need to be able
@@ -344,8 +346,10 @@ struct net_buf *bt_mesh_adv_create_from_pool(enum bt_mesh_adv_type type,
         return NULL;
     }
 
+    bt_mesh_r_mutex_lock(&adv_buf_alloc_lock);
     buf = net_buf_alloc(pool, timeout);
     if (!buf) {
+        bt_mesh_r_mutex_unlock(&adv_buf_alloc_lock);
         BT_WARN("Buf alloc failed");
         return NULL;
     }
@@ -359,7 +363,7 @@ struct net_buf *bt_mesh_adv_create_from_pool(enum bt_mesh_adv_type type,
     (void)memset(adv, 0, sizeof(*adv));
 
     adv->type = type;
-
+    bt_mesh_r_mutex_unlock(&adv_buf_alloc_lock);
     return buf;
 }
 
@@ -620,6 +624,7 @@ void bt_mesh_adv_task_init(void adv_thread(void *p))
 
 void bt_mesh_adv_common_init(void)
 {
+    bt_mesh_r_mutex_create(&adv_buf_alloc_lock);
     bt_mesh_adv_queue_init(&adv_queue, BLE_MESH_ADV_QUEUE_SIZE, bt_mesh_task_post);
     bt_mesh_adv_type_init(BLE_MESH_ADV_PROV, &adv_queue, &adv_buf_pool, adv_alloc);
     bt_mesh_adv_type_init(BLE_MESH_ADV_DATA, &adv_queue, &adv_buf_pool, adv_alloc);
@@ -679,5 +684,6 @@ void bt_mesh_adv_common_deinit(void)
 
     bt_mesh_unref_buf_from_pool(&adv_buf_pool);
     memset(adv_pool, 0, sizeof(adv_pool));
+    bt_mesh_r_mutex_free(&adv_buf_alloc_lock);
 }
 #endif /* CONFIG_BLE_MESH_DEINIT */
