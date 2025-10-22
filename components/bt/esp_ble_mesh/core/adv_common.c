@@ -748,6 +748,12 @@ uint16_t ble_mesh_adv_buf_count_get(void)
     adv_count += CONFIG_BLE_MESH_LONG_PACKET_RELAY_ADV_BUF_COUNT;
 #endif
 #endif
+
+#if (CONFIG_BLE_MESH_SUPPORT_BLE_ADV && \
+    !(CONFIG_BLE_MESH_USE_BLE_50 && CONFIG_BLE_MESH_SEPARATE_BLE_ADV_INSTANCE))
+    adv_count += CONFIG_BLE_MESH_BLE_ADV_BUF_COUNT;
+#endif /* CONFIG_BLE_MESH_SUPPORT_BLE_ADV */
+
     return adv_count;
 }
 
@@ -822,13 +828,13 @@ void bt_mesh_adv_common_init(void)
 #if CONFIG_BLE_MESH_EXT_ADV
     bt_mesh_adv_inst_supported_adv_type_add(BLE_MESH_ADV_INS, BLE_MESH_ADV_EXT_PROV);
     bt_mesh_adv_inst_supported_adv_type_add(BLE_MESH_ADV_INS, BLE_MESH_ADV_EXT_DATA);
-#if !CONFIG_BLE_MESH_RELAY_ADV_BUF
+#if CONFIG_BLE_MESH_RELAY && !CONFIG_BLE_MESH_RELAY_ADV_BUF
     bt_mesh_adv_inst_supported_adv_type_add(BLE_MESH_ADV_INS, BLE_MESH_ADV_EXT_RELAY_DATA);
 #endif
 #if CONFIG_BLE_MESH_LONG_PACKET
     bt_mesh_adv_inst_supported_adv_type_add(BLE_MESH_ADV_INS, BLE_MESH_ADV_EXT_LONG_PROV);
     bt_mesh_adv_inst_supported_adv_type_add(BLE_MESH_ADV_INS, BLE_MESH_ADV_EXT_LONG_DATA);
-#if !CONFIG_BLE_MESH_RELAY_ADV_BUF
+#if CONFIG_BLE_MESH_RELAY && !CONFIG_BLE_MESH_RELAY_ADV_BUF
     bt_mesh_adv_inst_supported_adv_type_add(BLE_MESH_ADV_INS, BLE_MESH_ADV_EXT_LONG_RELAY_DATA);
 #endif /* !CONFIG_BLE_MESH_RELAY_ADV_BUF */
 #endif /* CONFIG_BLE_MESH_LONG_PACKET */

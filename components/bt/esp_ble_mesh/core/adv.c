@@ -362,6 +362,10 @@ void bt_mesh_adv_update(void)
 
 void bt_mesh_adv_init(void)
 {
+    bt_mesh_adv_common_init();
+    adv_queue = bt_mesh_adv_queue_get();
+
+    assert(adv_queue && adv_queue->q.handle && adv_queue->send);
 
 #if CONFIG_BLE_MESH_RELAY_ADV_BUF
     bt_mesh_relay_adv_init();
@@ -370,10 +374,6 @@ void bt_mesh_adv_init(void)
 #if CONFIG_BLE_MESH_SUPPORT_BLE_ADV
     bt_mesh_ble_adv_init();
 #endif
-    bt_mesh_adv_common_init();
-    adv_queue = bt_mesh_adv_queue_get();
-
-    assert(adv_queue && adv_queue->q.handle && adv_queue->send);
 
 #if CONFIG_BLE_MESH_RELAY_ADV_BUF && !CONFIG_BLE_MESH_SUPPORT_MULTI_ADV
     QueueHandle_t relay_adv_handle =
