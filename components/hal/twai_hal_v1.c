@@ -270,7 +270,7 @@ uint32_t twai_hal_get_events(twai_hal_context_t *hal_ctx)
 
     //Handle low latency events
     if (events & TWAI_HAL_EVENT_BUS_OFF) {
-#ifdef CONFIG_TWAI_ERRATA_FIX_BUS_OFF_REC
+#if TWAI_LL_HAS_BUSOFF_REC_ISSUE
         //Errata workaround: Force REC to 0 by re-triggering bus-off (by setting TEC to 0 then 255)
         twai_ll_set_tec(hal_ctx->dev, 0);
         twai_ll_set_tec(hal_ctx->dev, 255);
