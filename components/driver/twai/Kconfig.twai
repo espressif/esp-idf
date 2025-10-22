@@ -42,15 +42,4 @@ menu "Legacy TWAI Driver Configurations"
             on detection of this errata condition. Note that if a frame is being sent on the bus during the reset
             bus during the reset, the message will be lost.
 
-    config TWAI_ERRATA_FIX_LISTEN_ONLY_DOM
-        bool "Add SW workaround for listen only transmits dominant bit errata"
-        depends on IDF_TARGET_ESP32 || IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3 || IDF_TARGET_ESP32C3
-        default y
-        help
-            When in the listen only mode, the TWAI controller must not influence the TWAI bus (i.e., must not send
-            any dominant bits). However, while in listen only mode on the ESP32/ESP32-S2/ESP32-S3/ESP32-C3, the
-            TWAI controller will still transmit dominant bits when it detects an error (i.e., as part of an active
-            error frame). Enabling this option will add a workaround that forces the TWAI controller into an error
-            passive state on initialization, thus preventing any dominant bits from being sent.
-
 endmenu # TWAI Configuration

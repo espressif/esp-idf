@@ -143,12 +143,10 @@ void twai_hal_start(twai_hal_context_t *hal_ctx)
     twai_ll_set_mode(hal_ctx->dev, hal_ctx->enable_listen_only, hal_ctx->enable_self_test, hal_ctx->enable_loopback);
     //Clear the TEC and REC
     twai_ll_set_tec(hal_ctx->dev, 0);
-#ifdef CONFIG_TWAI_ERRATA_FIX_LISTEN_ONLY_DOM
-    /*
-    Errata workaround: Prevent transmission of dominant error frame while in listen only mode by setting REC to 128
-    before exiting reset mode. This forces the controller to be error passive (thus only transmits recessive bits).
-    The TEC/REC remain frozen in listen only mode thus ensuring we remain error passive.
-    */
+#if TWAI_LL_HAS_LOM_DOM_ISSUE
+    // Errata workaround: Prevent transmission of dominant error frame while in listen only mode by setting REC to 128
+    // before exiting reset mode. This forces the controller to be error passive (thus only transmits recessive bits).
+    // The TEC/REC remain frozen in listen only mode thus ensuring we remain error passive.
     if (hal_ctx->enable_listen_only) {
         twai_ll_set_rec(hal_ctx->dev, 128);
     } else
