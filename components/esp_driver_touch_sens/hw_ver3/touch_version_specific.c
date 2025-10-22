@@ -63,6 +63,10 @@ void IRAM_ATTR touch_priv_default_intr_handler(void *arg)
     touch_base_event_data_t data;
     touch_ll_get_active_channel_mask(&data.status_mask);
     int ch_offset = touch_ll_get_current_meas_channel() - TOUCH_MIN_CHAN_ID;
+    if (ch_offset < 0 || ch_offset >= (int)SOC_MODULE_ATTR(TOUCH, CHAN_NUM)) {
+        /* Not a valid channel */
+        return;
+    }
     data.chan = g_touch->ch[ch_offset];
     /* If the channel is not registered, return directly */
     if (!data.chan) {
