@@ -1,7 +1,7 @@
 /*
  * SPDX-FileCopyrightText: 2016 Intel Corporation
  * SPDX-FileCopyrightText: 2016 Wind River Systems, Inc.
- * SPDX-FileContributor: 2018-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2018-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -41,6 +41,28 @@ uint32_t k_uptime_get_32(void)
      * but esp_timer_get_time is in microseconds
      */
     return (uint32_t)(esp_timer_get_time() / 1000);
+}
+
+/**
+ * @brief Get elapsed time.
+ *
+ * This routine computes the elapsed time between the current system uptime
+ * and an earlier reference time, in milliseconds.
+ *
+ * @param reftime Pointer to a reference time, which is updated to the current
+ *                uptime upon return.
+ *
+ * @return Elapsed time.
+ */
+int64_t k_uptime_delta(int64_t *reftime)
+{
+    int64_t uptime, delta;
+
+    uptime = k_uptime_get();
+    delta = uptime - *reftime;
+    *reftime = uptime;
+
+    return delta;
 }
 
 void bt_mesh_timer_init(void)
