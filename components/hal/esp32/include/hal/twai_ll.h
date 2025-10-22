@@ -40,6 +40,11 @@
 // cycle, the transmit interrupt could be lost.
 #define TWAI_LL_HAS_INTR_LOST_ISSUE     1
 
+// When in the listen only mode, the TWAI controller must not influence the TWAI bus (i.e., must not send
+// any dominant bits). However, while in listen only mode, the TWAI controller will still transmit dominant
+// bits when it detects an error (i.e., as part of an active error frame).
+#define TWAI_LL_HAS_LOM_DOM_ISSUE       1
+
 #ifdef __cplusplus
 extern "C" {
 #endif
