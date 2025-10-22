@@ -231,7 +231,8 @@ static inline uint32_t twai_hal_decode_interrupt(twai_hal_context_t *hal_ctx)
         TWAI_HAL_SET_BITS(events, TWAI_HAL_EVENT_RX_BUFF_FRAME);
     }
     //Transmit interrupt set whenever TX buffer becomes free
-#ifdef CONFIG_TWAI_ERRATA_FIX_TX_INTR_LOST
+#if TWAI_LL_HAS_INTR_LOST_ISSUE
+    // Errata workaround: Check the transmit buffer status bit to recover any lost transmit interrupt.
     if ((interrupts & TWAI_LL_INTR_TI || hal_ctx->state_flags & TWAI_HAL_STATE_FLAG_TX_BUFF_OCCUPIED) && status & TWAI_LL_STATUS_TBS) {
 #else
     if (interrupts & TWAI_LL_INTR_TI) {

@@ -7,12 +7,6 @@ menu "Legacy TWAI Driver Configurations"
         help
             Place the TWAI ISR in to IRAM to reduce latency and increase performance
 
-    config TWAI_SKIP_LEGACY_CONFLICT_CHECK
-        bool "Skip legacy driver conflict check"
-        default n
-        help
-            This configuration option used to bypass the conflict check mechanism with legacy code.
-
     config TWAI_SUPPRESS_DEPRECATE_WARN
         bool "Suppress legacy driver deprecated warning"
         default n
@@ -21,14 +15,11 @@ menu "Legacy TWAI Driver Configurations"
             (driver/twai.h). If you want to continue using the legacy driver,
             and don't want to see related deprecation warnings, you can enable this option.
 
-    config TWAI_ERRATA_FIX_TX_INTR_LOST
-        bool "Add SW workaround for TX interrupt lost errata"
-        depends on IDF_TARGET_ESP32
-        default y
+    config TWAI_SKIP_LEGACY_CONFLICT_CHECK
+        bool "Skip legacy driver conflict check"
+        default n
         help
-            On the ESP32, when a transmit interrupt occurs, and interrupt register is read on the same APB clock
-            cycle, the transmit interrupt could be lost. Enabling this option will add a workaround that checks the
-            transmit buffer status bit to recover any lost transmit interrupt.
+            This configuration option used to bypass the conflict check mechanism with legacy code.
 
     config TWAI_ERRATA_FIX_RX_FRAME_INVALID
         bool "Add SW workaround for invalid RX frame errata"
