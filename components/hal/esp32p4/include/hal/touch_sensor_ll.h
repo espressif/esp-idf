@@ -493,7 +493,7 @@ __attribute__((always_inline))
 static inline uint32_t touch_ll_get_current_meas_channel(void)
 {
     uint32_t curr_chan = LP_TOUCH.chn_status.scan_curr;
-    HAL_ASSERT(curr_chan < 14);
+    HAL_ASSERT(curr_chan <= 14);
     // Workaround: the curr channel read 0 when the actual channel is 14
     curr_chan = curr_chan == 0 ? 14 : curr_chan;
     return curr_chan;
