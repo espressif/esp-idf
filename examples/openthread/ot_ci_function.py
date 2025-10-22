@@ -9,8 +9,10 @@ import socket
 import struct
 import subprocess
 import time
-from collections.abc import Callable
 from functools import wraps
+from typing import Callable
+from typing import Optional
+from typing import Tuple
 
 import netifaces
 import pexpect
@@ -19,19 +21,33 @@ from pytest_embedded_idf.dut import IdfDut
 
 
 def extract_address(
-    command: str, pattern: str, default_return: str = ''
+    command: str,
+    pattern: str,
+    default_return: str = '',
+    retries: int = 3,
+    delay: int = 2,
 ) -> Callable[[Callable[[str], str]], Callable[[IdfDut], str]]:
     def decorator(func: Callable[[str], str]) -> Callable[[IdfDut], str]:
         @wraps(func)
         def wrapper(dut: IdfDut) -> str:
-            clean_buffer(dut)
-            execute_command(dut, command)
-            try:
-                result = dut.expect(pattern, timeout=5)[1].decode()
-            except Exception as e:
-                logging.error(f'Error: {e}')
-                return default_return
-            return func(result)
+            # requires Python3.10
+            # last_exception: Exception | None = None
+            last_exception: Optional[Exception] = None
+            for attempt in range(1, retries + 1):
+                try:
+                    clean_buffer(dut)
+                    execute_command(dut, command)
+                    result = dut.expect(pattern, timeout=5)[1].decode()
+                    return func(result)
+                except Exception as e:
+                    logging.exception(f'[{command}] Attempt {attempt}/{retries} failed: {e}')
+                    last_exception = e
+                    if attempt < retries:
+                        time.sleep(delay)
+
+            if last_exception:
+                logging.exception(f'[{command}] Giving up after {retries} retries.')
+            return default_return
 
         return wrapper
 
@@ -133,7 +149,7 @@ def wait_for_join(dut: IdfDut, role: str) -> bool:
     return False
 
 
-def joinWiFiNetwork(dut: IdfDut, wifi: wifi_parameter) -> tuple[str, int]:
+def joinWiFiNetwork(dut: IdfDut, wifi: wifi_parameter) -> Tuple[str, int]:
     clean_buffer(dut)
     ip_address = ''
     for order in range(1, wifi.retry_times):
@@ -173,6 +189,12 @@ def init_thread(dut: IdfDut) -> None:
     reset_thread(dut)
 
 
+def stop_thread(dut: IdfDut) -> None:
+    execute_command(dut, 'thread stop')
+    dut.expect('disabled', timeout=20)
+    reset_thread(dut)
+
+
 def reset_thread(dut: IdfDut) -> None:
     execute_command(dut, 'factoryreset')
     dut.expect('OpenThread attached to netif', timeout=20)
@@ -180,28 +202,28 @@ def reset_thread(dut: IdfDut) -> None:
     clean_buffer(dut)
 
 
+def hardreset_dut(dut: IdfDut) -> None:
+    dut.serial.hard_reset()
+    time.sleep(5)
+    execute_command(dut, 'factoryreset')
+
+
 # get the mleid address of the thread
-def get_mleid_addr(dut: IdfDut) -> str:
-    dut_adress = ''
-    execute_command(dut, 'ipaddr mleid')
-    dut_adress = dut.expect(r'\n((?:\w+:){7}\w+)\r', timeout=5)[1].decode()
-    return str(dut_adress)
+@extract_address('ipaddr mleid', r'\n((?:\w+:){7}\w+)\r')
+def get_mleid_addr(addr: str) -> str:
+    return addr
 
 
 # get the rloc address of the thread
-def get_rloc_addr(dut: IdfDut) -> str:
-    dut_adress = ''
-    execute_command(dut, 'ipaddr rloc')
-    dut_adress = dut.expect(r'\n((?:\w+:){7}\w+)\r', timeout=5)[1].decode()
-    return str(dut_adress)
+@extract_address('ipaddr rloc', r'\n((?:\w+:){7}\w+)\r')
+def get_rloc_addr(addr: str) -> str:
+    return addr
 
 
 # get the linklocal address of the thread
-def get_linklocal_addr(dut: IdfDut) -> str:
-    dut_adress = ''
-    execute_command(dut, 'ipaddr linklocal')
-    dut_adress = dut.expect(r'\n((?:\w+:){7}\w+)\r', timeout=5)[1].decode()
-    return str(dut_adress)
+@extract_address('ipaddr linklocal', r'\n((?:\w+:){7}\w+)\r')
+def get_linklocal_addr(addr: str) -> str:
+    return addr
 
 
 # get the global unicast address of the thread:
@@ -222,7 +244,7 @@ def get_rloc16_addr(rloc16: str) -> str:
 # ping of thread
 def ot_ping(
     dut: IdfDut, target: str, timeout: int = 5, count: int = 1, size: int = 56, interval: int = 1, hoplimit: int = 64
-) -> tuple[int, int]:
+) -> Tuple[int, int]:
     command = f'ping {str(target)} {size} {count} {interval} {hoplimit} {str(timeout)}'
     execute_command(dut, command)
     transmitted = dut.expect(r'(\d+) packets transmitted', timeout=60)[1].decode()
@@ -619,22 +641,19 @@ def decimal_to_hex(decimal_str: str) -> str:
     return hex_str
 
 
-def get_omrprefix(br: IdfDut) -> str:
-    execute_command(br, 'br omrprefix')
-    omrprefix = br.expect(r'Local: ((?:\w+:){4}):/\d+\r', timeout=5)[1].decode()
-    return str(omrprefix)
+@extract_address('br omrprefix', r'Local: ((?:\w+:){4}):/\d+\r')
+def get_omrprefix(addr: str) -> str:
+    return addr
 
 
-def get_onlinkprefix(br: IdfDut) -> str:
-    execute_command(br, 'br onlinkprefix')
-    onlinkprefix = br.expect(r'Local: ((?:\w+:){4}):/\d+\r', timeout=5)[1].decode()
-    return str(onlinkprefix)
+@extract_address('br onlinkprefix', r'Local: ((?:\w+:){4}):/\d+\r')
+def get_onlinkprefix(addr: str) -> str:
+    return addr
 
 
-def get_nat64prefix(br: IdfDut) -> str:
-    execute_command(br, 'br nat64prefix')
-    nat64prefix = br.expect(r'Local: ((?:\w+:){6}):/\d+', timeout=5)[1].decode()
-    return str(nat64prefix)
+@extract_address('br nat64prefix', r'Local: ((?:\w+:){6}):/\d+')
+def get_nat64prefix(addr: str) -> str:
+    return addr
 
 
 def execute_command(dut: IdfDut, command: str, prefix: str = 'ot ') -> None:
@@ -647,3 +666,17 @@ def get_ouput_string(dut: IdfDut, command: str, wait_time: int) -> str:
     tmp = dut.expect(pexpect.TIMEOUT, timeout=wait_time)
     clean_buffer(dut)
     return str(tmp)
+
+
+def wait_for_host_network(host: str = '8.8.8.8', retries: int = 6, interval: int = 10) -> None:
+    for attempt in range(1, retries + 1):
+        try:
+            subprocess.run(['ping', '-c', '1', '-W', '2', host], check=True)
+            logging.info(f'Host network reachable on attempt {attempt}')
+            return
+        except subprocess.CalledProcessError:
+            logging.info(f'Ping attempt {attempt} failed, retrying in {interval} seconds...')
+            if attempt < retries:
+                time.sleep(interval)
+            else:
+                raise RuntimeError(f'Host network is not reachable after {retries} attempts.')
