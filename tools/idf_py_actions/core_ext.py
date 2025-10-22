@@ -102,8 +102,6 @@ def action_extensions(base_actions: dict, project_path: str) -> Any:
 
         env: dict[str, Any] = {}
 
-        # Enforce NG mode for esp-idf-size v 1.x. After v 2.x is fully incorporated, 'ESP_IDF_SIZE_NG' can be removed.
-        env['ESP_IDF_SIZE_NG'] = '1'
         env['ESP_IDF_SIZE_FORCE_TERMINAL'] = '1'
         env['SIZE_OUTPUT_FORMAT'] = output_format
         if output_file:
