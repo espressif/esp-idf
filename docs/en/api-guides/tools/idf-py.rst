@@ -347,7 +347,9 @@ Create a ``CMakePresets.json`` or ``CMakeUserPresets.json`` file in your project
       ]
   }
 
-.. note:: The ``version`` field represents the JSON schema version for CMake Presets. In this example it is set to ``3`` to match the schema supported by ESP-IDF’s minimal supported CMake version. If you are using a newer CMake version, you can increase the ``version`` field accordingly - see `CMake Presets`_.
+.. note::
+
+    The ``version`` field represents the JSON schema version for CMake Presets. In this example it is set to ``3`` to match the schema supported by ESP-IDF's minimal supported CMake version. If you are using a newer CMake version, you can increase the ``version`` field accordingly—see `CMake Presets`_.
 
 **Current Limitations**
 
@@ -358,10 +360,12 @@ Automatic Preset Selection
 
 If no preset is specified but a ``CMakePresets.json`` file exists, ``idf.py`` will automatically select a preset:
 
-1. If a preset named ``default`` exists, it will be used
-2. Otherwise, the first preset in the file will be selected
+1. If a preset named ``default`` exists, it will be used.
+2. Otherwise, the first preset in the file will be selected.
 
-.. note:: The environment variable ``IDF_PRESET`` can be used to set the default preset name, e.g., ``export IDF_PRESET=production``. Command-line arguments override environment variables.
+.. note::
+
+    The environment variable ``IDF_PRESET`` can be used to set the default preset name, e.g., ``export IDF_PRESET=production``. Command-line arguments override environment variables.
 
 **SDKCONFIG File Placement**
 
