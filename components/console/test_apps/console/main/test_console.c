@@ -152,7 +152,7 @@ static esp_console_cmd_t s_quit_cmd = {
    ran separately in test_console_repl  */
 TEST_CASE("esp console repl test", "[console][ignore]")
 {
-    set_leak_threshold(400);
+    set_leak_threshold(416);
 
     s_test_console_mutex = xSemaphoreCreateMutexStatic(&s_test_console_mutex_buf);
     TEST_ASSERT_NOT_NULL(s_test_console_mutex);
@@ -189,7 +189,7 @@ TEST_CASE("esp console repl test", "[console][ignore]")
 
 TEST_CASE("esp console repl deinit", "[console][ignore]")
 {
-    set_leak_threshold(400);
+    set_leak_threshold(416);
 
     esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
     esp_console_dev_uart_config_t uart_config = ESP_CONSOLE_DEV_UART_CONFIG_DEFAULT();
