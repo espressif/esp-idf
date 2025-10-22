@@ -19,17 +19,15 @@
 #include "esp_err.h"
 #include "esp_event.h"
 #include "esp_log.h"
+#include "esp_netif.h"
 #include "esp_openthread.h"
-#include "esp_openthread_cli.h"
 #include "esp_openthread_lock.h"
 #include "esp_openthread_netif_glue.h"
 #include "esp_ot_sleepy_device_config.h"
 #include "esp_vfs_eventfd.h"
 #include "esp_private/esp_clk.h"
-#include "driver/uart.h"
 #include "nvs_flash.h"
-#include "openthread/logging.h"
-#include "openthread/thread.h"
+#include "ot_examples_common.h"
 #if CONFIG_ESP_SLEEP_DEBUG
 #include "esp_private/esp_pmu.h"
 #include "esp_private/esp_sleep_internal.h"
@@ -50,7 +48,7 @@
 static esp_pm_lock_handle_t s_cli_pm_lock = NULL;
 TimerHandle_t xTimer;
 
-#if CONFIG_OPENTHREAD_AUTO_START
+#if CONFIG_OPENTHREAD_NETWORK_AUTO_START
 static void create_config_network(otInstance *instance)
 {
     otLinkModeConfig linkMode = { 0 };
@@ -73,7 +71,7 @@ static void create_config_network(otInstance *instance)
     otError error = otDatasetGetActiveTlvs(esp_openthread_get_instance(), &dataset);
     ESP_ERROR_CHECK(esp_openthread_auto_start((error == OT_ERROR_NONE) ? &dataset : NULL));
 }
-#endif // CONFIG_OPENTHREAD_AUTO_START
+#endif // CONFIG_OPENTHREAD_NETWORK_AUTO_START
 
 static esp_err_t esp_openthread_sleep_device_init(void)
 {
@@ -105,16 +103,6 @@ static void process_state_change(otChangedFlags flags, void* context)
     }
 }
 
-static esp_netif_t *init_openthread_netif(const esp_openthread_platform_config_t *config)
-{
-    esp_netif_config_t cfg = ESP_NETIF_DEFAULT_OPENTHREAD();
-    esp_netif_t *netif = esp_netif_new(&cfg);
-    assert(netif != NULL);
-    ESP_ERROR_CHECK(esp_netif_attach(netif, esp_openthread_netif_glue_init(config)));
-
-    return netif;
-}
-
 #if CONFIG_ESP_SLEEP_DEBUG
 static esp_sleep_context_t s_sleep_ctx;
 
@@ -127,63 +115,6 @@ void vTimerCallback( TimerHandle_t xTimer )
     ESP_LOGD(TAG, "PMU_SLEEP_PD_MODEM: %s", (s_sleep_ctx.sleep_flags & PMU_SLEEP_PD_MODEM) ? "True":"False");
 }
 #endif
-
-static void ot_task_worker(void *aContext)
-{
-    otError ret;
-    esp_openthread_platform_config_t config = {
-        .radio_config = ESP_OPENTHREAD_DEFAULT_RADIO_CONFIG(),
-        .host_config = ESP_OPENTHREAD_DEFAULT_HOST_CONFIG(),
-        .port_config = ESP_OPENTHREAD_DEFAULT_PORT_CONFIG(),
-    };
-
-    // Initialize the OpenThread stack
-    ESP_ERROR_CHECK(esp_openthread_init(&config));
-
-    esp_openthread_lock_acquire(portMAX_DELAY);
-    ret = otSetStateChangedCallback(esp_openthread_get_instance(), process_state_change, esp_openthread_get_instance());
-    esp_openthread_lock_release();
-    if(ret != OT_ERROR_NONE) {
-        ESP_LOGE(TAG, "Failed to set state changed callback");
-    }
-#if CONFIG_OPENTHREAD_LOG_LEVEL_DYNAMIC
-    // The OpenThread log level directly matches ESP log level
-    (void)otLoggingSetLevel(CONFIG_LOG_DEFAULT_LEVEL);
-#endif
-    // Initialize the OpenThread cli
-#if CONFIG_OPENTHREAD_CLI
-    esp_openthread_cli_init();
-#endif
-    esp_netif_t *openthread_netif;
-    // Initialize the esp_netif bindings
-    openthread_netif = init_openthread_netif(&config);
-    esp_netif_set_default_netif(openthread_netif);
-#if CONFIG_OPENTHREAD_AUTO_START
-    create_config_network(esp_openthread_get_instance());
-#endif // CONFIG_OPENTHREAD_AUTO_START
-
-#if CONFIG_OPENTHREAD_CLI
-    esp_openthread_cli_create_task();
-#endif
-#if CONFIG_ESP_SLEEP_DEBUG
-    esp_sleep_set_sleep_context(&s_sleep_ctx);
-    esp_log_level_set(TAG, ESP_LOG_DEBUG);
-
-    // Use freeRTOS timer so that it is lower priority than OpenThread
-    xTimer = xTimerCreate("print_sleep_flag", pdMS_TO_TICKS(2000), pdTRUE, NULL, vTimerCallback);
-    xTimerStart( xTimer, 0 );
-#endif
-
-    // Run the main loop
-    esp_openthread_launch_mainloop();
-
-    // Clean up
-    esp_openthread_netif_glue_deinit();
-    esp_netif_destroy(openthread_netif);
-
-    esp_vfs_eventfd_unregister();
-    vTaskDelete(NULL);
-}
 
 static esp_err_t ot_power_save_init(void)
 {
@@ -227,5 +158,31 @@ void app_main(void)
     ESP_ERROR_CHECK(esp_vfs_eventfd_register(&eventfd_config));
     ESP_ERROR_CHECK(ot_power_save_init());
     ESP_ERROR_CHECK(esp_openthread_sleep_device_init());
-    xTaskCreate(ot_task_worker, "ot_power_save_main", 4096, NULL, 5, NULL);
+
+#if CONFIG_OPENTHREAD_CLI
+    ot_console_start();
+#endif
+
+    static esp_openthread_platform_config_t config = {
+        .radio_config = ESP_OPENTHREAD_DEFAULT_RADIO_CONFIG(),
+        .host_config = ESP_OPENTHREAD_DEFAULT_HOST_CONFIG(),
+        .port_config = ESP_OPENTHREAD_DEFAULT_PORT_CONFIG(),
+    };
+    ESP_ERROR_CHECK(esp_openthread_start(&config));
+    esp_netif_set_default_netif(esp_openthread_get_netif());
+
+    otSetStateChangedCallback(esp_openthread_get_instance(), process_state_change, esp_openthread_get_instance());
+
+#if CONFIG_OPENTHREAD_NETWORK_AUTO_START
+    create_config_network(esp_openthread_get_instance());
+#endif
+
+#if CONFIG_ESP_SLEEP_DEBUG
+    esp_sleep_set_sleep_context(&s_sleep_ctx);
+    esp_log_level_set(TAG, ESP_LOG_DEBUG);
+
+    // Use freeRTOS timer so that it is lower priority than OpenThread
+    xTimer = xTimerCreate("print_sleep_flag", pdMS_TO_TICKS(2000), pdTRUE, NULL, vTimerCallback);
+    xTimerStart( xTimer, 0 );
+#endif
 }
