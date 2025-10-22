@@ -359,7 +359,7 @@ class ObjectNode(EntityNode):
 
             if obj_sections:
                 symbol = entity.symbol
-                remove_sections = [s.replace('.*', '.%s' % symbol) for s in sections if '.*' in s]
+                remove_sections = [s.replace('.*', f'.{symbol}') for s in sections if '.*' in s]
                 filtered_sections = [s for s in obj_sections if s not in remove_sections]
 
                 if set(filtered_sections) != set(obj_sections):
@@ -542,7 +542,7 @@ class Generation:
                     and mapping.name not in self.check_mapping_exceptions
                 ):
                     if not entities.check_exists(entity):
-                        message = "'%s' not found" % str(entity)
+                        message = f"'{entity}' not found"
                         raise GenerationException(message, mapping)
 
                 if (obj, symbol, scheme_name) in mapping.flags.keys():
@@ -553,7 +553,7 @@ class Generation:
                         if flag.target not in scheme_dictionary[scheme_name].keys() or flag.section not in [
                             _s.name for _s in scheme_dictionary[scheme_name][flag.target]
                         ]:
-                            message = "%s->%s not defined in scheme '%s'" % (flag.section, flag.target, scheme_name)
+                            message = f"{flag.section}->{flag.target} not defined in scheme '{scheme_name}'"
                             raise GenerationException(message, mapping)
                 else:
                     flags = None
@@ -648,7 +648,7 @@ class Generation:
             if fragment.name in dict_to_append_to:
                 stored = dict_to_append_to[fragment.name].path
                 new = fragment.path
-                message = "Duplicate definition of fragment '%s' found in %s and %s." % (fragment.name, stored, new)
+                message = f"Duplicate definition of fragment '{fragment.name}' found in {stored} and {new}."
                 raise GenerationException(message)
 
             dict_to_append_to[fragment.name] = fragment
@@ -668,6 +668,6 @@ class GenerationException(LdGenFailure):
 
     def __str__(self):
         if self.fragment:
-            return "%s\nIn fragment '%s' defined in '%s'." % (self.message, self.fragment.name, self.fragment.path)
+            return f"{self.message}\nIn fragment '{self.fragment.name}' defined in '{self.fragment.path}'."
         else:
             return self.message

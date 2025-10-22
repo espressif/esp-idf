@@ -139,7 +139,7 @@ def main():
                 # ParseException is raised on incorrect grammar
                 # ParseFatalException is raised on correct grammar, but inconsistent contents (ex. duplicate
                 # keys, key unsupported by fragment, unexpected number of values, etc.)
-                raise LdGenFailure('failed to parse %s\n%s' % (fragment_file, str(e)))
+                raise LdGenFailure(f'failed to parse {fragment_file}\n{e}')
             generation_model.add_fragments_from_file(fragment_file)
 
         non_contiguous_sram = sdkconfig.evaluate_expression('SOC_MEM_NON_CONTIGUOUS_SRAM')
@@ -164,7 +164,7 @@ def main():
             ) as f:  # only create output file after generation has succeeded
                 f.write(output.read())
     except LdGenFailure as e:
-        print('linker script generation failed for %s\nERROR: %s' % (input_file.name, e))
+        print(f'linker script generation failed for {input_file.name}\nERROR: {e}')
         sys.exit(1)
 
 

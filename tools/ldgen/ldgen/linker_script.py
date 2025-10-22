@@ -84,7 +84,7 @@ class LinkerScript:
         # Add information that this is a generated file.
         output_file.write('/* Automatically generated file; DO NOT EDIT */\n')
         output_file.write('/* Espressif IoT Development Framework Linker Script */\n')
-        output_file.write('/* Generated from: %s */\n' % self.file)
+        output_file.write(f'/* Generated from: {self.file} */\n')
         output_file.write('\n')
 
         # Do the text replacement
