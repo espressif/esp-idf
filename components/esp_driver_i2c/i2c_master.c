@@ -1436,7 +1436,7 @@ esp_err_t i2c_master_execute_defined_operations(i2c_master_dev_handle_t i2c_dev,
         case I2C_MASTER_CMD_WRITE:
             i2c_ops[i].hw_cmd.op_code = I2C_LL_CMD_WRITE;
             i2c_ops[i].hw_cmd.ack_en = i2c_operation[i].write.ack_check;
-            i2c_ops[i].data = i2c_operation[i].write.data;
+            i2c_ops[i].data = (uint8_t *)i2c_operation[i].write.data;
             i2c_ops[i].total_bytes = i2c_operation[i].write.total_bytes;
             break;
         case I2C_MASTER_CMD_READ:
