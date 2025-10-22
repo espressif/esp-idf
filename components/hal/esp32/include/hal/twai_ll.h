@@ -36,6 +36,10 @@
 // condition is that both TEC and REC become 0.
 #define TWAI_LL_HAS_BUSOFF_REC_ISSUE    1
 
+// On the ESP32, when a transmit interrupt occurs, and interrupt register is read on the same APB clock
+// cycle, the transmit interrupt could be lost.
+#define TWAI_LL_HAS_INTR_LOST_ISSUE     1
+
 #ifdef __cplusplus
 extern "C" {
 #endif
