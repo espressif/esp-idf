@@ -3,7 +3,7 @@ comment "Read the help text of the option below for explanation"
 
 config ESP32H4_SELECTS_REV_MP
     bool "Select ESP32-H4 MP version"
-    default n
+    default y
     help
         Enable this option to select ESP32-H4 MP revision.
         MP revisions have some hardware differences with Beta revision.
