@@ -957,8 +957,8 @@ static inline void _adc_ll_enable_bus_clock(bool enable)
  */
 static inline void _adc_ll_reset_register(void)
 {
-    SET_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_APB_SARADC_RST);
-    CLEAR_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_APB_SARADC_RST);
+    SET_PERI_REG_MASK(DPORT_PERIP_RST_EN0_REG, DPORT_APB_SARADC_RST);
+    CLEAR_PERI_REG_MASK(DPORT_PERIP_RST_EN0_REG, DPORT_APB_SARADC_RST);
 }
 //  SYSTEM.perip_rst_en0 is a shared register, so this function must be used in an atomic way
 #define adc_ll_reset_register(...) do { \

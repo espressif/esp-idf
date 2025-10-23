@@ -90,7 +90,7 @@ static inline uint32_t periph_ll_get_rst_en_reg(shared_periph_module_t periph)
     case PERIPH_WIFI_BT_COMMON_MODULE:
         return DPORT_CORE_RST_EN_REG;
     default:
-        return DPORT_PERIP_RST_EN_REG;
+        return DPORT_PERIP_RST_EN0_REG;
     }
 }
 

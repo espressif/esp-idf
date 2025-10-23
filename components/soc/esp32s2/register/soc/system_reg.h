@@ -402,7 +402,6 @@ extern "C" {
 #define DPORT_CRYPTO_AES_CLK_EN_V  0x1
 #define DPORT_CRYPTO_AES_CLK_EN_S  1
 
-#define DPORT_PERIP_RST_EN_REG DPORT_PERIP_RST_EN0_REG
 #define DPORT_PERIP_RST_EN0_REG          (DR_REG_SYSTEM_BASE + 0x048)
 /* DPORT_ADC2_ARB_RST : R/W ;bitpos:[30] ;default: 1'b0 ; */
 /*description: */

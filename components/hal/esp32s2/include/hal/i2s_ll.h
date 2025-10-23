@@ -117,8 +117,8 @@ static inline void i2s_ll_enable_bus_clock(int i2s_id, bool enable)
 static inline void i2s_ll_reset_register(int i2s_id)
 {
     (void) i2s_id;
-    DPORT_SET_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_I2S0_RST);
-    DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_I2S0_RST);
+    DPORT_SET_PERI_REG_MASK(DPORT_PERIP_RST_EN0_REG, DPORT_I2S0_RST);
+    DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_RST_EN0_REG, DPORT_I2S0_RST);
 }
 
 /// use a macro to wrap the function, force the caller to use it in a critical section

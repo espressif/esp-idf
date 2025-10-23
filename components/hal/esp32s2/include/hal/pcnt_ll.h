@@ -480,8 +480,8 @@ static inline void pcnt_ll_enable_bus_clock(int group_id, bool enable)
 static inline void pcnt_ll_reset_register(int group_id)
 {
     (void)group_id;
-    DPORT_SET_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_PCNT_RST);
-    DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_PCNT_RST);
+    DPORT_SET_PERI_REG_MASK(DPORT_PERIP_RST_EN0_REG, DPORT_PCNT_RST);
+    DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_RST_EN0_REG, DPORT_PCNT_RST);
 }
 
 /// use a macro to wrap the function, force the caller to use it in a critical section

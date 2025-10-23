@@ -69,9 +69,9 @@ static inline void ledc_ll_enable_bus_clock(bool enable)
 static inline void ledc_ll_enable_reset_reg(bool enable)
 {
     if (enable) {
-        DPORT_SET_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_LEDC_RST);
+        DPORT_SET_PERI_REG_MASK(DPORT_PERIP_RST_EN0_REG, DPORT_LEDC_RST);
     } else {
-        DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_LEDC_RST);
+        DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_RST_EN0_REG, DPORT_LEDC_RST);
     }
 }
 
