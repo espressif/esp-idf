@@ -111,8 +111,6 @@ esp_rom_spiflash_result_t esp_rom_spiflash_unlock(void) __attribute__((alias("es
 
 #endif // CONFIG_IDF_TARGET_ESP32
 
-#if CONFIG_SPI_FLASH_ROM_DRIVER_PATCH
-
 #if CONFIG_IDF_TARGET_ESP32
 
 static esp_rom_spiflash_result_t esp_rom_spiflash_enable_write(esp_rom_spiflash_chip_t *spi);
@@ -801,5 +799,3 @@ void esp_rom_opiflash_cache_mode_config(esp_rom_spiflash_read_mode_t mode, const
 }
 
 #endif // IDF_TARGET
-
-#endif // CONFIG_SPI_FLASH_ROM_DRIVER_PATCH
