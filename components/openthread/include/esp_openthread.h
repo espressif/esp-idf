@@ -102,7 +102,7 @@ esp_err_t esp_openthread_mainloop_exit(void);
  *      - ESP_ERR_INVALID_STATE if already initialized
  *
  */
-esp_err_t esp_openthread_start(esp_openthread_platform_config_t *config);
+esp_err_t esp_openthread_start(const esp_openthread_config_t *config);
 
 /**
  * @brief This function performs OpenThread stack and platform driver deinitialization and delete the handle task.
