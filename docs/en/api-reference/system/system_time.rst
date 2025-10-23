@@ -105,7 +105,7 @@ To initialize a particular SNTP server and also start the SNTP service, simply c
     esp_sntp_config_t config = ESP_NETIF_SNTP_DEFAULT_CONFIG("pool.ntp.org");
     esp_netif_sntp_init(&config);
 
-This code automatically performs time synchronization once a reply from the SNTP server is received. Sometimes it is useful to wait until the time gets synchronized, :cpp:func:`esp_netif_sntp_sync_wait()` can be used for this purpose:
+This code automatically performs time synchronization once a reply from the SNTP server is received. Sometimes it is useful to wait until the time gets synchronized, :cpp:func:`esp_netif_sntp_sync_wait()` can be used for this purpose. Applications can also subscribe to an event posted when time is synchronized (``NETIF_SNTP_EVENT``, ID ``NETIF_SNTP_TIME_SYNC``). The event data is a pointer to :cpp:type:`esp_netif_sntp_time_sync_t` containing the synchronized ``timeval``:
 
 .. code-block:: c
 

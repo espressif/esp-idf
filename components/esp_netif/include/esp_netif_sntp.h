@@ -18,6 +18,29 @@ extern "C" {
 #endif
 
 /**
+ * @brief SNTP event base for esp-netif
+ */
+ESP_EVENT_DECLARE_BASE(NETIF_SNTP_EVENT);
+
+/**
+ * @brief Event IDs for NETIF_SNTP_EVENT
+ */
+typedef enum {
+    NETIF_SNTP_TIME_SYNC = 0,  /**< System time synchronized via SNTP */
+} esp_netif_sntp_event_t;
+
+/**
+ * @brief Event payload for NETIF_SNTP_TIME_SYNC
+ *
+ * The event data passed to handlers registered for
+ * `NETIF_SNTP_EVENT`/`NETIF_SNTP_TIME_SYNC` is a pointer to this struct.
+ */
+typedef struct esp_netif_sntp_time_sync {
+    struct timeval tv;  ///< Time of synchronization as reported by SNTP
+} esp_netif_sntp_time_sync_t;
+
+
+/**
  * @brief Time sync notification function
  */
 typedef void (*esp_sntp_time_cb_t)(struct timeval *tv);

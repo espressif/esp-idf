@@ -83,6 +83,15 @@ This example can use 3 time synchronization method:
 - `sntp_get_sync_status()` and `sntp_set_sync_status()` - get/set time synchronization status.
 - `sntp_get_sync_mode()` and `sntp_set_sync_mode()` - get/set the sync mode. Allowable two mode: `SNTP_SYNC_MODE_IMMED` and `SNTP_SYNC_MODE_SMOOTH`.
 
+## Events
+
+The esp-netif SNTP wrapper emits an event when the system time is synchronized:
+
+- Event base: `NETIF_SNTP_EVENT`
+- Event ID: `NETIF_SNTP_TIME_SYNC`
+
+Register a handler after creating the default event loop (the event data is a pointer to `esp_netif_sntp_time_sync_t` containing the synchronized `timeval`). You can convert the timeval to human-readable local time or UTC if desired using `localtime_r()`/`gmtime_r()`.
+
 ## Mode of update time
 
 `sntp_set_sync_mode()` - Set the sync mode of the system time. It has two mode:
