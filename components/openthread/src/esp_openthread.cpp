@@ -235,15 +235,14 @@ esp_err_t esp_openthread_deinit(void)
 
 static void ot_task_worker(void *aContext)
 {
-    esp_openthread_platform_config_t* config = (esp_openthread_platform_config_t *)aContext;
+    const esp_openthread_config_t* config = *(esp_openthread_config_t **)aContext;
     // Initialize the OpenThread stack
-    ESP_ERROR_CHECK(esp_openthread_init(config));
+    ESP_ERROR_CHECK(esp_openthread_init(&(config->platform_config)));
 
 #if CONFIG_OPENTHREAD_FTD || CONFIG_OPENTHREAD_MTD
-    esp_netif_config_t cfg = ESP_NETIF_DEFAULT_OPENTHREAD();
-    esp_netif_t *openthread_netif = esp_netif_new(&cfg);
+    esp_netif_t *openthread_netif = esp_netif_new(&(config->netif_config));
     assert(openthread_netif != NULL);
-    ESP_ERROR_CHECK(esp_netif_attach(openthread_netif, esp_openthread_netif_glue_init(config)));
+    ESP_ERROR_CHECK(esp_netif_attach(openthread_netif, esp_openthread_netif_glue_init(&(config->platform_config))));
 #endif
 
 #if CONFIG_OPENTHREAD_LOG_LEVEL_DYNAMIC
@@ -256,10 +255,10 @@ static void ot_task_worker(void *aContext)
     esp_openthread_cli_console_command_register();
 #endif // CONFIG_OPENTHREAD_CLI
 
-    xSemaphoreGive(s_ot_syn_semaphore);
 #if CONFIG_OPENTHREAD_RADIO
     otAppNcpInit(esp_openthread_get_instance());
 #endif
+    xSemaphoreGive(s_ot_syn_semaphore);
 
     // Run the main loop
     esp_openthread_launch_mainloop();
@@ -284,12 +283,13 @@ static void ot_task_worker(void *aContext)
     vTaskDelay(portMAX_DELAY);
 }
 
-esp_err_t esp_openthread_start(esp_openthread_platform_config_t *config)
+esp_err_t esp_openthread_start(const esp_openthread_config_t *config)
 {
+    assert(config);
     ESP_RETURN_ON_FALSE(s_ot_syn_semaphore == NULL, ESP_ERR_INVALID_STATE, OT_PLAT_LOG_TAG, "OpenThread has been initialized");
     s_ot_syn_semaphore = xSemaphoreCreateBinary();
     ESP_RETURN_ON_FALSE(s_ot_syn_semaphore != NULL, ESP_ERR_INVALID_STATE, OT_PLAT_LOG_TAG, "Failed to create s_ot_syn_semaphore");
-    assert(xTaskCreate(ot_task_worker, CONFIG_OPENTHREAD_TASK_NAME, CONFIG_OPENTHREAD_TASK_SIZE, config, CONFIG_OPENTHREAD_TASK_PRIORITY, &s_ot_task_handle) == pdPASS);
+    assert(xTaskCreate(ot_task_worker, CONFIG_OPENTHREAD_TASK_NAME, CONFIG_OPENTHREAD_TASK_SIZE, &config, CONFIG_OPENTHREAD_TASK_PRIORITY, &s_ot_task_handle) == pdPASS);
     xSemaphoreTake(s_ot_syn_semaphore, portMAX_DELAY);
     return ESP_OK;
 }
