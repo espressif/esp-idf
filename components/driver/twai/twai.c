@@ -226,7 +226,7 @@ static void twai_intr_handler_main(void *arg)
     portENTER_CRITICAL_ISR(&p_twai_obj->spinlock);
     events = twai_hal_get_events(p_twai_obj->hal);    //Get the events that triggered the interrupt
 
-#if defined(CONFIG_TWAI_ERRATA_FIX_RX_FRAME_INVALID) || TWAI_LL_HAS_RX_FIFO_ISSUE
+#if TWAI_LL_HAS_RX_FRAME_ISSUE || TWAI_LL_HAS_RX_FIFO_ISSUE
     // Errata workaround: Reset the peripheral on detection of this errata condition.
     // Note that if a frame is being sent on the bus during the reset, the message will be lost.
     if (events & TWAI_HAL_EVENT_NEED_PERIPH_RESET) {
