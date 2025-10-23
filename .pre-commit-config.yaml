@@ -51,6 +51,7 @@ repos:
             .*.pb-c.c|
             .*.yuv|
             .*.rgb|
+            .*.gray|
             .*COPYING.*|
             docs/sphinx-known-warnings\.txt
           )$

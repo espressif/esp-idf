@@ -144,15 +144,6 @@ void mipi_dsi_hal_host_gen_read_short_packet(mipi_dsi_hal_context_t *hal, uint8_
                                              mipi_dsi_data_type_t dt, uint16_t header_data, void *ret_buffer, uint16_t buffer_size);
 
 /**
- * @brief Set DPI color coding
- *
- * @param hal Pointer to the HAL driver context
- * @param color_coding Color coding
- * @param sub_config Sub configuration
- */
-void mipi_dsi_hal_host_dpi_set_color_coding(mipi_dsi_hal_context_t *hal, lcd_color_format_t color_coding, uint32_t sub_config);
-
-/**
  * @brief Set horizontal timing parameters for DPI
  *
  * @param hal Pointer to the HAL driver context
