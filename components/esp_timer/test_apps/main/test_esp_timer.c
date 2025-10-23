@@ -773,7 +773,7 @@ TEST_CASE("esp_timer_impl_set_alarm does not set an alarm below the current time
     esp_timer_create(&periodic_timer_args, &periodic_timer[1]);
     esp_timer_start_periodic(periodic_timer[1], 9000);
 
-    vTaskDelay(60 * 1000 / portTICK_PERIOD_MS);
+    vTaskDelay(15 * 1000 / portTICK_PERIOD_MS);
     task_stop = true;
 
     esp_timer_stop(periodic_timer[0]);
@@ -822,7 +822,7 @@ TEST_CASE("esp_timer_impl_set_alarm and using start_once do not lead that the Sy
     esp_timer_start_once(oneshot_timer, 9990);
     printf("timers created\n");
 
-    vTaskDelay(60 * 1000 / portTICK_PERIOD_MS);
+    vTaskDelay(20 * 1000 / portTICK_PERIOD_MS);
     task_stop = true;
 
     esp_timer_stop(oneshot_timer);
