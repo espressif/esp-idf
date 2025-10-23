@@ -64,20 +64,13 @@ typedef struct {
 } esp_lcd_panel_io_callbacks_t;
 
 /**
- * @brief Configuration of LCD color conversion
+ * @brief Configuration of LCD color conversion: YUV <-> RGB
  */
 typedef struct {
-    lcd_color_range_t in_color_range;    /*!< Color range of the input color */
-    lcd_color_range_t out_color_range;   /*!< Color range of the output color */
-    union {
-        struct {
-            lcd_yuv_conv_std_t conv_std; /*!< YUV conversion standard: BT601, BT709 */
-            struct {
-                lcd_yuv422_pack_order_t in_pack_order; /*!< YUV422 packing order of the input color */
-            } yuv422; /*!< YUV422 specific */
-        } yuv; /*!< YUV specific */
-    } spec; /*!< Extra configuration for specific color conversion */
-} esp_lcd_color_conv_config_t;
+    lcd_color_range_t in_color_range;  /*!< Color range of the input color */
+    lcd_color_range_t out_color_range; /*!< Color range of the output color */
+    lcd_yuv_conv_std_t conv_std;       /*!< YUV conversion standard: BT601, BT709 */
+} esp_lcd_color_conv_yuv_config_t;
 
 #ifdef __cplusplus
 }

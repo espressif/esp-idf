@@ -195,7 +195,7 @@ static inline void lcd_ll_set_pixel_clock_prescale(lcd_cam_dev_t *dev, uint32_t 
  * @param dev LCD register base address
  * @param en True to enable converter, False to disable converter
  */
-static inline void lcd_ll_enable_rgb_yuv_convert(lcd_cam_dev_t *dev, bool en)
+static inline void lcd_ll_enable_color_convert(lcd_cam_dev_t *dev, bool en)
 {
     dev->lcd_rgb_yuv.lcd_conv_bypass = en;
 }
@@ -258,24 +258,22 @@ static inline void lcd_ll_set_yuv_convert_std(lcd_cam_dev_t *dev, lcd_yuv_conv_s
 }
 
 /**
- * @brief Set the converter mode: RGB565 to YUV
+ * @brief Set the converter mode: RGB to YUV
  *
  * @param dev LCD register base address
- * @param yuv_sample YUV sample mode
+ * @param in_color_format Input color format
+ * @param out_color_format Output color format
  */
-static inline void lcd_ll_set_convert_mode_rgb_to_yuv(lcd_cam_dev_t *dev, lcd_yuv_sample_t yuv_sample)
+static inline void lcd_ll_set_rgb2yuv_convert_mode(lcd_cam_dev_t *dev, lcd_color_format_t in_color_format, lcd_color_format_t out_color_format)
 {
     dev->lcd_rgb_yuv.lcd_conv_trans_mode = 1;
     dev->lcd_rgb_yuv.lcd_conv_yuv2yuv_mode = 3;
-    switch (yuv_sample) {
-    case LCD_YUV_SAMPLE_422:
+    switch (out_color_format) {
+    case LCD_COLOR_FMT_YUV422_UYVY:
         dev->lcd_rgb_yuv.lcd_conv_yuv_mode = 0;
         break;
-    case LCD_YUV_SAMPLE_420:
+    case LCD_COLOR_FMT_YUV420_OUYY_EVYY:
         dev->lcd_rgb_yuv.lcd_conv_yuv_mode = 1;
-        break;
-    case LCD_YUV_SAMPLE_411:
-        dev->lcd_rgb_yuv.lcd_conv_yuv_mode = 2;
         break;
     default:
         abort();
@@ -283,24 +281,22 @@ static inline void lcd_ll_set_convert_mode_rgb_to_yuv(lcd_cam_dev_t *dev, lcd_yu
 }
 
 /**
- * @brief Set the converter mode: YUV to RGB565
+ * @brief Set the converter mode: YUV to RGB
  *
  * @param dev LCD register base address
- * @param yuv_sample YUV sample mode
+ * @param in_color_format Input color format
+ * @param out_color_format Output color format
  */
-static inline void lcd_ll_set_convert_mode_yuv_to_rgb(lcd_cam_dev_t *dev, lcd_yuv_sample_t yuv_sample)
+static inline void lcd_ll_set_yuv2rgb_convert_mode(lcd_cam_dev_t *dev, lcd_color_format_t in_color_format, lcd_color_format_t out_color_format)
 {
     dev->lcd_rgb_yuv.lcd_conv_trans_mode = 0;
     dev->lcd_rgb_yuv.lcd_conv_yuv2yuv_mode = 3;
-    switch (yuv_sample) {
-    case LCD_YUV_SAMPLE_422:
+    switch (in_color_format) {
+    case LCD_COLOR_FMT_YUV422_UYVY:
         dev->lcd_rgb_yuv.lcd_conv_yuv_mode = 0;
         break;
-    case LCD_YUV_SAMPLE_420:
+    case LCD_COLOR_FMT_YUV420_OUYY_EVYY:
         dev->lcd_rgb_yuv.lcd_conv_yuv_mode = 1;
-        break;
-    case LCD_YUV_SAMPLE_411:
-        dev->lcd_rgb_yuv.lcd_conv_yuv_mode = 2;
         break;
     default:
         abort();
@@ -311,35 +307,28 @@ static inline void lcd_ll_set_convert_mode_yuv_to_rgb(lcd_cam_dev_t *dev, lcd_yu
  * @brief Set the converter mode: YUV to YUV
  *
  * @param dev LCD register base address
- * @param src_sample Source YUV sample mode
- * @param dst_sample Destination YUV sample mode
+ * @param in_color_format Input color format
+ * @param out_color_format Output color format
  */
-static inline void lcd_ll_set_convert_mode_yuv_to_yuv(lcd_cam_dev_t *dev, lcd_yuv_sample_t src_sample, lcd_yuv_sample_t dst_sample)
+static inline void lcd_ll_set_yuv2yuv_convert_mode(lcd_cam_dev_t *dev, lcd_color_format_t in_color_format, lcd_color_format_t out_color_format)
 {
-    HAL_ASSERT(src_sample != dst_sample);
     dev->lcd_rgb_yuv.lcd_conv_trans_mode = 1;
-    switch (src_sample) {
-    case LCD_YUV_SAMPLE_422:
+    switch (in_color_format) {
+    case LCD_COLOR_FMT_YUV422_UYVY:
         dev->lcd_rgb_yuv.lcd_conv_yuv_mode = 0;
         break;
-    case LCD_YUV_SAMPLE_420:
+    case LCD_COLOR_FMT_YUV420_OUYY_EVYY:
         dev->lcd_rgb_yuv.lcd_conv_yuv_mode = 1;
-        break;
-    case LCD_YUV_SAMPLE_411:
-        dev->lcd_rgb_yuv.lcd_conv_yuv_mode = 2;
         break;
     default:
         abort();
     }
-    switch (dst_sample) {
-    case LCD_YUV_SAMPLE_422:
+    switch (out_color_format) {
+    case LCD_COLOR_FMT_YUV422_UYVY:
         dev->lcd_rgb_yuv.lcd_conv_yuv2yuv_mode = 0;
         break;
-    case LCD_YUV_SAMPLE_420:
+    case LCD_COLOR_FMT_YUV420_OUYY_EVYY:
         dev->lcd_rgb_yuv.lcd_conv_yuv2yuv_mode = 1;
-        break;
-    case LCD_YUV_SAMPLE_411:
-        dev->lcd_rgb_yuv.lcd_conv_yuv2yuv_mode = 2;
         break;
     default:
         abort();

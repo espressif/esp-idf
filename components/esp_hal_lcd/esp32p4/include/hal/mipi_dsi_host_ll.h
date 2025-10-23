@@ -188,9 +188,6 @@ static inline void mipi_dsi_host_ll_dpi_set_color_coding(dsi_host_dev_t *dev, lc
     case LCD_COLOR_FMT_RGB565:
         dev->dpi_color_coding.dpi_color_coding = MIPI_DSI_LL_COLOR_CODE_16BIT_CONFIG1 + sub_config;
         break;
-    case LCD_COLOR_FMT_RGB666:
-        dev->dpi_color_coding.dpi_color_coding = MIPI_DSI_LL_COLOR_CODE_18BIT_CONFIG1 + sub_config;
-        break;
     case LCD_COLOR_FMT_RGB888:
         dev->dpi_color_coding.dpi_color_coding = MIPI_DSI_LL_COLOR_CODE_24BIT;
         break;

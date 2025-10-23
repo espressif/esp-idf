@@ -26,7 +26,7 @@ extern "C" {
  *    Byte 1: |  G7  -  G0  |
  *    Byte 0: |  R7  -  R0  |
  */
-#define ESP_COLOR_FOURCC_RGB24            ESP_COLOR_FOURCC('R', 'G', 'B', '3') /* 24 bpp RGB-8-8-8 */
+#define ESP_COLOR_FOURCC_RGB24          ESP_COLOR_FOURCC('R', 'G', 'B', '3') /* 24 bpp RGB-8-8-8 */
 
 /**
  * RGB565_BE
@@ -35,7 +35,7 @@ extern "C" {
  *    Byte 1: |  G2   G1   G0 | B4   B3   B2   B1   B0  |
  *    Byte 0: |  R4   R3   R2   R1   R0 | G5   G4   G3  |
  */
- #define ESP_COLOR_FOURCC_RGB16_BE         ESP_COLOR_FOURCC('R', 'G', 'B', 'B') /* 16 bpp RGB-5-6-5, big endian */
+#define ESP_COLOR_FOURCC_RGB16_BE       ESP_COLOR_FOURCC('R', 'G', 'B', 'B') /* 16 bpp RGB-5-6-5, big endian */
 
 /**
  * Grey8
@@ -43,7 +43,7 @@ extern "C" {
  *            | bit7 - bit0 |
  *    Byte 0: |  G7  -  G0  |
  */
-#define ESP_COLOR_FOURCC_GREY             ESP_COLOR_FOURCC('G', 'R', 'E', 'Y') /* 8 bpp Greyscale */
+#define ESP_COLOR_FOURCC_GREY           ESP_COLOR_FOURCC('G', 'R', 'E', 'Y') /* 8 bpp Greyscale */
 
 /**
  * YUV444
@@ -52,7 +52,16 @@ extern "C" {
  *    |Y0|U0|V0| |Y1|U1|V1|
  *    +--+--+--+ +--+--+--+
  */
- #define ESP_COLOR_FOURCC_YUV             ESP_COLOR_FOURCC('V', '3', '0', '8') /* 24 bpp, Y-U-V 4:4:4 */
+#define ESP_COLOR_FOURCC_YUV            ESP_COLOR_FOURCC('V', '3', '0', '8') /* 24 bpp, Y-U-V 4:4:4 */
+
+/**
+ * YUYV422
+ * Memory Layout:
+ *    +--+--+--+--+ +--+--+--+--+
+ *    |Y0|U0|Y1|V0| |Y2|U2|Y3|V2|
+ *    +--+--+--+--+ +--+--+--+--+
+ */
+#define ESP_COLOR_FOURCC_YUYV           ESP_COLOR_FOURCC('Y', 'U', 'Y', 'V') /* 16 bpp, YUYV 4:2:2 */
 
 /**
  * YVYU422
@@ -61,7 +70,25 @@ extern "C" {
  *    |Y0|V0|Y1|U0| |Y2|V2|Y3|U2|
  *    +--+--+--+--+ +--+--+--+--+
  */
- #define ESP_COLOR_FOURCC_YVYU            ESP_COLOR_FOURCC('Y', 'V', 'Y', 'U') /* 16 bpp, YVYU 4:2:2 */
+#define ESP_COLOR_FOURCC_YVYU           ESP_COLOR_FOURCC('Y', 'V', 'Y', 'U') /* 16 bpp, YVYU 4:2:2 */
+
+/**
+ * UYVY422
+ * Memory Layout:
+ *    +--+--+--+--+ +--+--+--+--+
+ *    |U0|Y0|V0|Y1| |U2|Y2|V2|Y3|
+ *    +--+--+--+--+ +--+--+--+--+
+ */
+#define ESP_COLOR_FOURCC_UYVY           ESP_COLOR_FOURCC('U', 'Y', 'V', 'Y') /* 16 bpp, UYVY 4:2:2 */
+
+/**
+ * VYUY422
+ * Memory Layout:
+ *    +--+--+--+--+ +--+--+--+--+
+ *    |V0|Y0|U0|Y1| |V2|Y2|U2|Y3|
+ *    +--+--+--+--+ +--+--+--+--+
+ */
+#define ESP_COLOR_FOURCC_VYUY           ESP_COLOR_FOURCC('V', 'Y', 'U', 'Y') /* 16 bpp, VYUY 4:2:2 */
 
 /**
  * Espressif YUV420, U00 V10 shared Y00 Y01 Y10 Y11, U02 V12 shared Y02 Y03 Y12 Y13
@@ -72,7 +99,7 @@ extern "C" {
  * Line2 |V10|Y10|Y11| |V12|Y12|Y13|
  *       +---+---+---+ +---+---+---+
  */
- #define ESP_COLOR_FOURCC_OUYY_EVYY       ESP_COLOR_FOURCC('O', 'U', 'E', 'V') /* 12 bpp, Espressif Y-U-V 4:2:0 */
+#define ESP_COLOR_FOURCC_OUYY_EVYY      ESP_COLOR_FOURCC('O', 'U', 'E', 'V') /* 12 bpp, Espressif Y-U-V 4:2:0 */
 
 
 /*---------------------------------------------------------------
@@ -215,7 +242,7 @@ typedef enum {
  *
  * @note Save enum 0 for special purpose
  */
- typedef enum {
+typedef enum {
     COLOR_SPACE_RAW = 1,     ///< Color space raw
     COLOR_SPACE_RGB,         ///< Color space rgb
     COLOR_SPACE_YUV,         ///< Color space yuv

@@ -176,8 +176,8 @@ esp_err_t esp_lcd_new_i80_bus(const esp_lcd_i80_bus_config_t *bus_config, esp_lc
     ESP_GOTO_ON_ERROR(ret, err, TAG, "install DMA failed");
     // disable RGB-LCD mode
     lcd_ll_enable_rgb_mode(bus->hal.dev, false);
-    // disable YUV-RGB converter
-    lcd_ll_enable_rgb_yuv_convert(bus->hal.dev, false);
+    // disable color converter
+    lcd_ll_enable_color_convert(bus->hal.dev, false);
     // set how much data to read from DMA each time
     lcd_ll_set_dma_read_stride(bus->hal.dev, bus->bus_width);
     // sometime, we need to change the output data order: ABAB->BABA
