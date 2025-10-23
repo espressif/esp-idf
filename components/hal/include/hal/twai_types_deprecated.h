@@ -8,9 +8,9 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include "sdkconfig.h"
 #include "soc/soc_caps.h"
 #include "soc/clk_tree_defs.h"
+#include "hal/config.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -56,11 +56,11 @@ extern "C" {
 #define TWAI_TIMING_CONFIG_10KBITS()    {.clk_src = TWAI_CLK_SRC_DEFAULT, .quanta_resolution_hz = 200000, .brp = 0, .prop_seg = 0, .tseg_1 = 15, .tseg_2 = 4, .sjw = 3, .ssp_offset = 0, .triple_sampling = false}
 #endif // SOC_TWAI_BRP_MAX > 256
 
-#if (SOC_TWAI_BRP_MAX > 128) || (CONFIG_ESP32_REV_MIN_FULL >= 200)
+#if (SOC_TWAI_BRP_MAX > 128) || (SOC_IS(ESP32) && (HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 200))
 #define TWAI_TIMING_CONFIG_12_5KBITS()  {.clk_src = TWAI_CLK_SRC_DEFAULT, .quanta_resolution_hz = 312500, .brp = 0, .prop_seg = 0, .tseg_1 = 16, .tseg_2 = 8, .sjw = 3, .ssp_offset = 0, .triple_sampling = false}
 #define TWAI_TIMING_CONFIG_16KBITS()    {.clk_src = TWAI_CLK_SRC_DEFAULT, .quanta_resolution_hz = 400000, .brp = 0, .prop_seg = 0, .tseg_1 = 16, .tseg_2 = 8, .sjw = 3, .ssp_offset = 0, .triple_sampling = false}
 #define TWAI_TIMING_CONFIG_20KBITS()    {.clk_src = TWAI_CLK_SRC_DEFAULT, .quanta_resolution_hz = 400000, .brp = 0, .prop_seg = 0, .tseg_1 = 15, .tseg_2 = 4, .sjw = 3, .ssp_offset = 0, .triple_sampling = false}
-#endif // (SOC_TWAI_BRP_MAX > 128) || (CONFIG_ESP32_REV_MIN_FULL >= 200)
+#endif
 
 #if SOC_TWAI_CLK_SUPPORT_XTAL
 #define TWAI_TIMING_CONFIG_25KBITS()    {.clk_src = TWAI_CLK_SRC_DEFAULT, .quanta_resolution_hz = 500000, .brp = 0, .prop_seg = 0, .tseg_1 = 15, .tseg_2 = 4, .sjw = 3, .ssp_offset = 0, .triple_sampling = false}
@@ -71,7 +71,7 @@ extern "C" {
 #define TWAI_TIMING_CONFIG_100KBITS()   {.clk_src = TWAI_CLK_SRC_DEFAULT, .quanta_resolution_hz = 2000000, .brp = 0, .prop_seg = 0, .tseg_1 = 15, .tseg_2 = 4, .sjw = 3, .ssp_offset = 0, .triple_sampling = false}
 #define TWAI_TIMING_CONFIG_125KBITS()   {.clk_src = TWAI_CLK_SRC_DEFAULT, .quanta_resolution_hz = 2000000, .brp = 0, .prop_seg = 0, .tseg_1 = 11, .tseg_2 = 4, .sjw = 3, .ssp_offset = 0, .triple_sampling = false}
 #define TWAI_TIMING_CONFIG_250KBITS()   {.clk_src = TWAI_CLK_SRC_DEFAULT, .quanta_resolution_hz = 4000000, .brp = 0, .prop_seg = 0, .tseg_1 = 11, .tseg_2 = 4, .sjw = 2, .ssp_offset = 0, .triple_sampling = false}
-#if SOC_TWAI_CLK_SUPPORT_XTAL && CONFIG_XTAL_FREQ == 40   // TWAI_CLK_SRC_XTAL = 40M
+#if SOC_TWAI_CLK_SUPPORT_XTAL && HAL_CONFIG(XTAL_HINT_FREQ_MHZ) == 40   // TWAI_CLK_SRC_XTAL = 40M
 #define TWAI_TIMING_CONFIG_500KBITS()   {.clk_src = TWAI_CLK_SRC_DEFAULT, .quanta_resolution_hz = 10000000, .brp = 0, .prop_seg = 0, .tseg_1 = 15, .tseg_2 = 4, .sjw = 3, .ssp_offset = 0, .triple_sampling = false}
 #define TWAI_TIMING_CONFIG_800KBITS()   {.clk_src = TWAI_CLK_SRC_DEFAULT, .quanta_resolution_hz = 20000000, .brp = 0, .prop_seg = 0, .tseg_1 = 16, .tseg_2 = 8, .sjw = 3, .ssp_offset = 0, .triple_sampling = false}
 #define TWAI_TIMING_CONFIG_1MBITS()     {.clk_src = TWAI_CLK_SRC_DEFAULT, .quanta_resolution_hz = 20000000, .brp = 0, .prop_seg = 0, .tseg_1 = 15, .tseg_2 = 4, .sjw = 3, .ssp_offset = 0, .triple_sampling = false}
