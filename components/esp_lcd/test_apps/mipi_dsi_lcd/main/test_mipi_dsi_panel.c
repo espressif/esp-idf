@@ -269,7 +269,7 @@ TEST_CASE("MIPI DSI draw YUV422 image (EK79007)", "[mipi_dsi]")
         .virtual_channel = 0,
 
         // YUV422 -> RGB888
-        .in_color_format = LCD_COLOR_FMT_YUV422,
+        .in_color_format = LCD_COLOR_FMT_YUV422_YUYV,
         .out_color_format = LCD_COLOR_FMT_RGB888,
 
         .video_timing = {
@@ -298,15 +298,12 @@ TEST_CASE("MIPI DSI draw YUV422 image (EK79007)", "[mipi_dsi]")
     TEST_ESP_OK(esp_lcd_new_panel_ek79007(mipi_dbi_io, &lcd_dev_config, &mipi_dpi_panel));
 
     // Set color conversion configuration
-    esp_lcd_color_conv_config_t convert_config = {
+    esp_lcd_color_conv_yuv_config_t convert_config = {
         .in_color_range = LCD_COLOR_RANGE_FULL,
         .out_color_range = LCD_COLOR_RANGE_FULL,
-        .spec.yuv = {
-            .conv_std = LCD_YUV_CONV_STD_BT601,
-            .yuv422.in_pack_order = LCD_YUV422_PACK_ORDER_YUYV,
-        }
+        .conv_std = LCD_YUV_CONV_STD_BT601,
     };
-    TEST_ESP_OK(esp_lcd_dpi_panel_set_color_conversion(mipi_dpi_panel, &convert_config));
+    TEST_ESP_OK(esp_lcd_dpi_panel_set_yuv_conversion(mipi_dpi_panel, &convert_config));
 
     TEST_ESP_OK(esp_lcd_panel_reset(mipi_dpi_panel));
     TEST_ESP_OK(esp_lcd_panel_init(mipi_dpi_panel));

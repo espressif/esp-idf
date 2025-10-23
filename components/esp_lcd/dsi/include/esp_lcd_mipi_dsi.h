@@ -91,8 +91,6 @@ typedef struct {
     uint8_t num_fbs;                           /*!< Number of screen-sized frame buffers that allocated by the driver
                                                     By default (set to either 0 or 1) only one frame buffer will be created */
     esp_lcd_video_timing_t video_timing;       /*!< Video timing */
-    /** @deprecated Duplicate of in_color_format; use in_color_format instead. */
-    lcd_color_rgb_pixel_format_t pixel_format __attribute__((deprecated("pixel_format is deprecated, use in_color_format instead"))); /*!< Pixel format that used by the MIPI LCD device */
     /// Extra configuration flags for MIPI DSI DPI panel
     struct extra_dpi_panel_flags {
         uint32_t use_dma2d: 1; /*!< Use DMA2D to copy user buffer to the frame buffer when necessary */
@@ -141,7 +139,7 @@ esp_err_t esp_lcd_dpi_panel_get_frame_buffer(esp_lcd_panel_handle_t dpi_panel, u
 esp_err_t esp_lcd_dpi_panel_set_pattern(esp_lcd_panel_handle_t dpi_panel, mipi_dsi_pattern_type_t pattern);
 
 /**
- * @brief Set color conversion configuration for DPI panel
+ * @brief Set color conversion (YUV<->RGB) configuration for DPI panel
  *
  * @param[in] dpi_panel MIPI DPI panel handle, returned from esp_lcd_new_panel_dpi()
  * @param[in] config Color conversion configuration
@@ -150,7 +148,7 @@ esp_err_t esp_lcd_dpi_panel_set_pattern(esp_lcd_panel_handle_t dpi_panel, mipi_d
  *      - ESP_ERR_INVALID_ARG: Set color conversion configuration failed because of invalid argument
  *      - ESP_FAIL: Set color conversion configuration failed because of other error
  */
-esp_err_t esp_lcd_dpi_panel_set_color_conversion(esp_lcd_panel_handle_t dpi_panel, const esp_lcd_color_conv_config_t *config);
+esp_err_t esp_lcd_dpi_panel_set_yuv_conversion(esp_lcd_panel_handle_t dpi_panel, const esp_lcd_color_conv_yuv_config_t *config);
 
 /**
  * @brief Type of LCD DPI panel event data

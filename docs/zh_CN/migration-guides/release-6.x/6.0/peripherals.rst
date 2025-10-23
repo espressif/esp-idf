@@ -255,7 +255,10 @@ LCD
 - ``esp_lcd_panel_disp_off`` 函数已被移除。请使用 :func:`esp_lcd_panel_disp_on_off` 函数来控制显示内容的开关。
 - :cpp:type:`esp_lcd_rgb_panel_event_callbacks_t` 中的 ``on_bounce_frame_finish`` 成员已被 :cpp:member:`esp_lcd_rgb_panel_event_callbacks_t::on_frame_buf_complete` 成员取代，用于指示一个完整的帧缓冲区已被发送给 LCD 控制器。
 - I2C 接口的 LCD IO 层驱动有两套实现，分别基于新、旧 I2C Master 总线驱动。由于旧版的 I2C Master 驱动逐渐被弃用，遂 LCD 的 IO 层也移除对旧版的支持，只使用 ``driver/i2c_master.h`` 中提供的 API。
-- :cpp:member:`esp_lcd_dpi_panel_config_t::pixel_format` 成员已经被废弃。建议仅使用 :cpp:member:`esp_lcd_dpi_panel_config_t::in_color_format` 来设定 MIPI DSI 驱动输入的像素数据格式。
+- :cpp:type:`esp_lcd_dpi_panel_config_t` 结构体中的 ``pixel_format`` 成员已经被删除。建议仅使用 :cpp:member:`esp_lcd_dpi_panel_config_t::in_color_format` 来设定 MIPI DSI 驱动输入的像素数据格式。
+- :cpp:type:`esp_lcd_rgb_panel_config_t` 结构体中的 ``bits_per_pixel`` 成员已经被删除。内部帧缓冲区的色彩深度现在由 :cpp:member:`esp_lcd_rgb_panel_config_t::in_color_format` 成员决定。
+- ``esp_lcd_dpi_panel_set_color_conversion`` 函数已被 :cpp:func:`esp_lcd_dpi_panel_set_yuv_conversion` 取代,用于设置 YUV 到 RGB 的色彩转换配置。
+- :cpp:func:`esp_lcd_rgb_panel_set_yuv_conversion` 函数的签名已改变。原先使用的 ``esp_lcd_yuv_conv_config_t`` 配置类型现已被 :cpp:type:`esp_lcd_color_conv_yuv_config_t` 取代。
 - NT35510 LCD 设备驱动已经从 ESP-IDF 中移动到外部仓库，并且托管在了 `ESP Component Registry <https://components.espressif.com/components/espressif/esp_lcd_nt35510/versions/1.0.0/readme>`__ 上。如果你的项目使用到了 NT35510 驱动，你可以通过运行 ``idf.py add-dependency "espressif/esp_lcd_nt35510"`` 将它添加到你的项目中。
 
 SPI

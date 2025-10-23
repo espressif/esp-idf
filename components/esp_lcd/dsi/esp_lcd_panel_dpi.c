@@ -184,33 +184,11 @@ esp_err_t esp_lcd_new_panel_dpi(esp_lcd_dsi_bus_handle_t bus, const esp_lcd_dpi_
 
     // by default, use RGB888 as the input color format
     lcd_color_format_t in_color_format = LCD_COLOR_FMT_RGB888;
-    size_t bits_per_pixel = 24;
-    // the deprecated way to set the pixel format
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-    switch (panel_config->pixel_format) {
-    case LCD_COLOR_PIXEL_FORMAT_RGB565:
-        bits_per_pixel = 16;
-        break;
-    case LCD_COLOR_PIXEL_FORMAT_RGB666:
-        // RGB data in the memory must be constructed in 6-6-6 (18 bits) for each pixel
-        bits_per_pixel = 18;
-        break;
-    case LCD_COLOR_PIXEL_FORMAT_RGB888:
-        bits_per_pixel = 24;
-        break;
-    }
-    in_color_format = COLOR_TYPE_ID(COLOR_SPACE_RGB, panel_config->pixel_format);
-#pragma GCC diagnostic pop
-    // the recommended way to set the input color format
+    // override in_color_format if specified by the user
     if (panel_config->in_color_format) {
         in_color_format = panel_config->in_color_format;
-        // if user sets the in_color_format, it can override the pixel format setting
-        color_space_pixel_format_t in_color_id = {
-            .color_type_id = in_color_format,
-        };
-        bits_per_pixel = color_hal_pixel_format_get_bit_depth(in_color_id);
     }
+    size_t bits_per_pixel = color_hal_pixel_format_fourcc_get_bit_depth(in_color_format);
     // by default, out_color_format is the same as in_color_format (i.e. no color format conversion)
     lcd_color_format_t out_color_format = in_color_format;
     if (panel_config->out_color_format) {
@@ -581,9 +559,7 @@ static esp_err_t dpi_panel_draw_bitmap(esp_lcd_panel_t *panel, int x_start, int 
             .dst_offset_y = y_start,
             .copy_size_x = x_end - x_start,
             .copy_size_y = y_end - y_start,
-            .pixel_format_unique_id = {
-                .color_type_id = dpi_panel->in_color_format,
-            }
+            .pixel_format_fourcc_id = dpi_panel->in_color_format,
         };
         ESP_RETURN_ON_ERROR(esp_async_fbcpy(dpi_panel->fbcpy_handle, &fbcpy_trans_config, async_fbcpy_done_cb, dpi_panel), TAG, "async memcpy failed");
     }
@@ -591,22 +567,15 @@ static esp_err_t dpi_panel_draw_bitmap(esp_lcd_panel_t *panel, int x_start, int 
     return ESP_OK;
 }
 
-esp_err_t esp_lcd_dpi_panel_set_color_conversion(esp_lcd_panel_handle_t panel, const esp_lcd_color_conv_config_t *config)
+esp_err_t esp_lcd_dpi_panel_set_yuv_conversion(esp_lcd_panel_handle_t panel, const esp_lcd_color_conv_yuv_config_t *config)
 {
-    ESP_RETURN_ON_FALSE(panel, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    ESP_RETURN_ON_FALSE(panel && config, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     esp_lcd_dpi_panel_t *dpi_panel = __containerof(panel, esp_lcd_dpi_panel_t, base);
     esp_lcd_dsi_bus_handle_t bus = dpi_panel->bus;
     mipi_dsi_hal_context_t *hal = &bus->hal;
 
-    if (dpi_panel->in_color_format == COLOR_TYPE_ID(COLOR_SPACE_YUV, COLOR_PIXEL_YUV422)
-            && COLOR_SPACE_TYPE(dpi_panel->out_color_format) == LCD_COLOR_SPACE_RGB) {
-        // YUV422->RGB
-        mipi_dsi_brg_ll_set_input_color_range(hal->bridge, config->in_color_range);
-        mipi_dsi_brg_ll_set_yuv_convert_std(hal->bridge, config->spec.yuv.conv_std);
-        mipi_dsi_brg_ll_set_yuv422_pack_order(hal->bridge, config->spec.yuv.yuv422.in_pack_order);
-    } else {
-        ESP_RETURN_ON_FALSE(false, ESP_ERR_NOT_SUPPORTED, TAG, "unsupported conversion mode");
-    }
+    mipi_dsi_brg_ll_set_input_color_range(hal->bridge, config->in_color_range);
+    mipi_dsi_brg_ll_set_yuv_convert_std(hal->bridge, config->conv_std);
     return ESP_OK;
 }
 
