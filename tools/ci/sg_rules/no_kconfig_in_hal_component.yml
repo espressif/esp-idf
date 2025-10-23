@@ -12,10 +12,6 @@ ignores:
   - "components/hal/platform_port/**/*"
   - "components/hal/test_apps/**/*"
   - "components/esp_hal*/test_apps/**/*"
-  # the following files should be refactored to remove Kconfig macros
-  - "components/hal/twai_hal_v1.c"
-  - "components/hal/esp32/include/hal/twai_ll.h"
-  - "components/hal/include/hal/twai_types_deprecated.h"
 rule:
   any:
     - kind: argument_list
@@ -47,9 +43,6 @@ ignores:
   - "components/hal/platform_port/**/*"
   - "components/hal/test_apps/**/*"
   - "components/esp_hal*/test_apps/**/*"
-  # the following files should be refactored to remove sdkconfig.h
-  - "components/hal/twai_hal_v1.c"
-  - "components/hal/include/hal/twai_types_deprecated.h"
 rule:
   kind: preproc_include
   has:

@@ -5,7 +5,6 @@
  */
 
 #include <stddef.h>
-#include "sdkconfig.h"
 #include "esp_compiler.h"
 #include "hal/log.h"
 #include "hal/twai_hal.h"
