@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,6 +16,9 @@
 #include "hal/rtc_io_hal.h"
 #include "soc/rtc_io_periph.h"
 #include "soc/soc_caps.h"
+#if SOC_LP_GPIO_MATRIX_SUPPORTED
+#include "soc/lp_gpio_pins.h"
+#endif
 
 static const char __attribute__((__unused__)) *RTCIO_TAG = "RTCIO";
 
@@ -181,8 +184,14 @@ esp_err_t rtc_gpio_iomux_func_sel(gpio_num_t gpio_num, int func)
 #if SOC_LP_GPIO_MATRIX_SUPPORTED
 esp_err_t lp_gpio_connect_in_signal(gpio_num_t gpio_num, uint32_t signal_idx, bool inv)
 {
-    ESP_RETURN_ON_FALSE(rtc_gpio_is_valid_gpio(gpio_num), ESP_ERR_INVALID_ARG, RTCIO_TAG, "LP_IO number error");
-    rtcio_hal_matrix_in(rtc_io_number_get(gpio_num), signal_idx, inv);
+    uint32_t io_num;
+    if (gpio_num == LP_GPIO_MATRIX_CONST_ZERO_INPUT || gpio_num == LP_GPIO_MATRIX_CONST_ONE_INPUT) {
+        io_num = gpio_num;
+    } else {
+        ESP_RETURN_ON_FALSE(rtc_gpio_is_valid_gpio(gpio_num), ESP_ERR_INVALID_ARG, RTCIO_TAG, "LP_IO number error");
+        io_num = rtc_io_number_get(gpio_num);
+    }
+    rtcio_hal_matrix_in(io_num, signal_idx, inv);
     return ESP_OK;
 }
 
