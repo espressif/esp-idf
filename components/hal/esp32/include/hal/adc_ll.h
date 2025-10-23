@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,6 +7,7 @@
 #pragma once
 
 #include <stdbool.h>
+#include "esp_rom_sys.h"
 #include "hal/adc_types.h"
 #include "hal/misc.h"
 #include "hal/assert.h"
@@ -48,7 +49,7 @@ extern "C" {
 
 //On esp32, ADC can only be continuously triggered when `ADC_LL_DEFAULT_CONV_LIMIT_EN == 1`, `ADC_LL_DEFAULT_CONV_LIMIT_NUM != 0`
 #define ADC_LL_DEFAULT_CONV_LIMIT_EN      1
-#define ADC_LL_DEFAULT_CONV_LIMIT_NUM     10
+#define ADC_LL_DEFAULT_CONV_LIMIT_NUM     255
 
 /*---------------------------------------------------------------
                     PWDET (Power Detect)
@@ -158,6 +159,8 @@ static inline void adc_ll_digi_set_convert_limit_num(uint32_t meas_num)
  */
 static inline void adc_ll_digi_convert_limit_enable(bool enable)
 {
+    //ESP32 has a hardware limitaton, meas_num_limit can only be cleared after ADC enters sample phase(10~15us after start)
+    esp_rom_delay_us(60);
     SYSCON.saradc_ctrl2.meas_num_limit = enable;
 }
 
