@@ -249,14 +249,14 @@ In standard mode, there are always two sound channels, i.e., the left and right 
 
     .. wavedrom:: /../_static/diagrams/i2s/tdm_pcm_long.json
 
-.. only:: SOC_I2S_SUPPORTS_LCD_CAMERA
+.. only:: esp32 or esp32s2
 
     LCD/Camera Mode
     ^^^^^^^^^^^^^^^
 
     LCD/Camera mode is only supported on I2S0 over a parallel bus. For LCD mode, I2S0 should work at master TX mode. For camera mode, I2S0 should work at slave RX mode. These two modes are not implemented by the I2S driver. Please refer to :doc:`/api-reference/peripherals/lcd/i80_lcd` for details about the LCD implementation. For more information, see **{IDF_TARGET_NAME} Technical Reference Manual** > **I2S Controller (I2S)** > LCD Mode [`PDF <{IDF_TARGET_TRM_EN_URL}#camlcdctrl>`__].
 
-.. only:: SOC_I2S_SUPPORTS_ADC_DAC
+.. only:: esp32
 
     ADC/DAC Mode
     ^^^^^^^^^^^^

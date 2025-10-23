@@ -19,8 +19,9 @@
 #include "driver/gpio.h"
 #include "test_i80_board.h"
 
-#if SOC_I2S_SUPPORTS_LCD_CAMERA
+#if SOC_HAS(I2S_I80_LCD)
 #include "driver/i2s_std.h"
+#include "hal/i2s_ll.h"
 
 TEST_CASE("i80_and_i2s_driver_co-existence", "[lcd][i2s]")
 {
@@ -50,9 +51,11 @@ TEST_CASE("i80_and_i2s_driver_co-existence", "[lcd][i2s]")
     TEST_ASSERT_EQUAL(ESP_ERR_NOT_FOUND, i2s_new_channel(&chan_cfg, &tx_handle, NULL));
     TEST_ESP_OK(esp_lcd_del_i80_bus(i80_bus));
 }
-#endif // SOC_I2S_SUPPORTS_LCD_CAMERA
+#endif // SOC_HAS(I2S_I80_LCD)
 
 #if SOC_LCDCAM_I80_LCD_SUPPORTED
+#include "hal/lcd_ll.h"
+
 TEST_CASE("lcd_i80_device_swap_color_bytes", "[lcd]")
 {
     esp_lcd_i80_bus_handle_t i80_bus = NULL;
@@ -178,10 +181,10 @@ TEST_CASE("lcd_i80_device_clock_mode", "[lcd]")
 
 TEST_CASE("lcd_i80_bus_and_device_allocation", "[lcd]")
 {
-#if SOC_I2S_SUPPORTS_LCD_CAMERA
-#define TEST_NUM_LCD_I80_BUSES SOC_LCD_I80_BUSES
-#elif SOC_LCDCAM_I80_LCD_SUPPORTED
-#define TEST_NUM_LCD_I80_BUSES SOC_LCDCAM_I80_NUM_BUSES
+#if SOC_HAS(I2S_I80_LCD)
+#define TEST_NUM_LCD_I80_BUSES I2S_LL_GET(INST_NUM)
+#elif SOC_HAS(LCDCAM_I80_LCD)
+#define TEST_NUM_LCD_I80_BUSES LCD_LL_GET(I80_BUS_NUM)
 #endif
     esp_lcd_i80_bus_handle_t i80_buses[TEST_NUM_LCD_I80_BUSES] = {};
     esp_lcd_i80_bus_config_t bus_config = {
@@ -461,7 +464,7 @@ TEST_CASE("lcd_panel_with_i80_interface_(st7789, 8bits)", "[lcd]")
 }
 
 // TODO: support the test on I2S LCD (IDF-7202)
-#if !SOC_I2S_SUPPORTS_LCD_CAMERA
+#if !SOC_HAS(I2S_I80_LCD)
 TEST_CASE("i80_lcd_send_colors_to_fixed_region", "[lcd]")
 {
     int x_start = 100;

@@ -35,16 +35,18 @@
 #define SOC_DMA2D_SUPPORTED             1
 #define SOC_GPTIMER_SUPPORTED           1
 #define SOC_PCNT_SUPPORTED              1
-#define SOC_LCDCAM_SUPPORTED            1
-#define SOC_LCDCAM_CAM_SUPPORTED        1 // support the camera driver based on the LCD_CAM peripheral
-#define SOC_LCDCAM_I80_LCD_SUPPORTED    1 // support the Intel 8080 bus driver based on the LCD_CAM peripheral
-#define SOC_LCDCAM_RGB_LCD_SUPPORTED    1 // support the RGB LCD driver based on the LCD_CAM peripheral
+#define SOC_LCDCAM_CAM_SUPPORTED        1
+#define SOC_LCDCAM_I80_LCD_SUPPORTED    1
+#define SOC_LCDCAM_RGB_LCD_SUPPORTED    1
+#define SOC_LCD_I80_SUPPORTED           1
+#define SOC_LCD_RGB_SUPPORTED           1
 #define SOC_MIPI_CSI_SUPPORTED          1
 #define SOC_MIPI_DSI_SUPPORTED          1
 #define SOC_MCPWM_SUPPORTED             1
 #define SOC_TWAI_SUPPORTED              1
 #define SOC_ETM_SUPPORTED               1
 #define SOC_PARLIO_SUPPORTED            1
+#define SOC_PARLIO_LCD_SUPPORTED        1
 #define SOC_ASYNC_MEMCPY_SUPPORTED      1
 #define SOC_EMAC_SUPPORTED              1
 #define SOC_USB_OTG_SUPPORTED           1
@@ -433,16 +435,6 @@
 #define SOC_RMT_SUPPORT_DMA                   1  /*!< RMT peripheral can connect to DMA channel */
 #define SOC_RMT_SUPPORT_SLEEP_RETENTION       1  /*!< The sleep retention feature can help back up RMT registers before sleep */
 
-/*-------------------------- LCD CAPS ----------------------------------------*/
-/* I80 bus and RGB timing generator can't work at the same time in the LCD_CAM peripheral */
-#define SOC_LCD_I80_SUPPORTED              1  /*!< support intel 8080 driver */
-#define SOC_LCD_RGB_SUPPORTED              1  /*!< RGB LCD is supported */
-#define SOC_LCDCAM_I80_NUM_BUSES           1U /*!< LCD_CAM peripheral provides one LCD Intel 8080 bus */
-#define SOC_LCDCAM_I80_BUS_WIDTH           24 /*!< Intel 8080 bus max data width */
-#define SOC_LCDCAM_RGB_NUM_PANELS          1U /*!< Support one RGB LCD panel */
-#define SOC_LCDCAM_RGB_DATA_WIDTH          24 /*!< Number of LCD data lines */
-#define SOC_LCD_SUPPORT_RGB_YUV_CONV       1  /*!< Support color format conversion between RGB and YUV */
-
 /*-------------------------- MCPWM CAPS --------------------------------------*/
 #define SOC_MCPWM_GROUPS                     (2U)   ///< 2 MCPWM groups on the chip (i.e., the number of independent MCPWM peripherals)
 #define SOC_MCPWM_TIMERS_PER_GROUP           (3)    ///< The number of timers that each group has
@@ -484,7 +476,6 @@
 #define SOC_PARLIO_TRANS_BIT_ALIGN           1  /*!< Support bit alignment in transaction */
 #define SOC_PARLIO_TX_SUPPORT_LOOP_TRANSMISSION 1  /*!< Support loop transmission */
 #define SOC_PARLIO_SUPPORT_SLEEP_RETENTION   1   /*!< Support back up registers before sleep */
-#define SOC_PARLIO_SUPPORT_SPI_LCD           1   /*!< Support to drive SPI interfaced LCD */
 #define SOC_PARLIO_SUPPORT_I80_LCD           1   /*!< Support to drive I80 interfaced LCD */
 
 /*--------------------------- MPI CAPS ---------------------------------------*/

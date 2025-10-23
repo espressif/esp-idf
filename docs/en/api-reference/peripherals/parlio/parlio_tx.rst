@@ -410,7 +410,7 @@ Application Examples
 
     - :example:`peripherals/parlio/parlio_tx/simple_rgb_led_matrix` demonstrates how to use the TX unit driver of {IDF_TARGET_NAME} to support HUB75 interface RGB LED matrix panels and use the LVGL library to display simple UI elements.
     :SOC_PARLIO_TX_SUPPORT_LOOP_TRANSMISSION: - :example:`peripherals/parlio/parlio_tx/advanced_rgb_led_matrix` demonstrates how to use the infinite loop transmission feature of the TX unit of {IDF_TARGET_NAME} to support HUB75 interface RGB LED matrix panels. Compared to the simple_rgb_led_matrix example, it does not require manual loop scanning and is more flexible.
-    :SOC_PARLIO_SUPPORT_SPI_LCD: - :example:`peripherals/lcd/parlio_simulate` demonstrates how to use the TX unit driver of the parallel IO peripheral to drive screens with SPI or I80 interfaces.
+    :SOC_PARLIO_LCD_SUPPORTED: - :example:`peripherals/lcd/parlio_simulate` demonstrates how to use the TX unit driver of the parallel IO peripheral to drive screens with SPI or I80 interfaces.
 
 API Reference
 -------------

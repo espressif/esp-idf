@@ -124,14 +124,6 @@ if(CONFIG_SOC_TEMP_SENSOR_SUPPORTED)
     list(APPEND srcs "${target_folder}/temperature_sensor_periph.c")
 endif()
 
-if(CONFIG_SOC_LCDCAM_SUPPORTED OR CONFIG_SOC_I2S_SUPPORTS_LCD_CAMERA)
-    list(APPEND srcs "${target_folder}/lcd_periph.c")
-endif()
-
-if(CONFIG_SOC_MIPI_DSI_SUPPORTED)
-    list(APPEND srcs "${target_folder}/mipi_dsi_periph.c")
-endif()
-
 if(CONFIG_SOC_MIPI_CSI_SUPPORTED)
     list(APPEND srcs "${target_folder}/mipi_csi_periph.c")
 endif()

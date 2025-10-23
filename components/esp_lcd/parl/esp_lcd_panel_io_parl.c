@@ -27,7 +27,7 @@
 #include "esp_check.h"
 #include "esp_heap_caps.h"
 #include "soc/soc_caps.h"
-#include "soc/lcd_periph.h"
+#include "hal/lcd_periph.h"
 #include "hal/gpio_hal.h"
 #include "driver/gpio.h"
 #include "driver/parlio_tx.h"

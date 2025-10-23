@@ -22,9 +22,6 @@
 /*------------------------------- I2S ---------------------------------------*/
 // helper macros to access module attributes
 #define _SOC_CAPS_I2S_INST_NUM                    2  // Number of I2S instances
-#define _SOC_CAPS_I2S_MAX_DATA_WIDTH              24 // Maximum data line width of I2S
-#define _SOC_CAPS_I2S_TRANS_SIZE_ALIGN_WORD       1  // I2S DMA transfer size must be aligned to word
-#define _SOC_CAPS_I2S_SUPPORT_ADC_DAC             1  // I2S supports to connect to ADC / DAC converters
 
 /*------------------------------- Touch Sensor ------------------------------------*/
 #define _SOC_CAPS_TOUCH_CHAN_NUM                  10 // Number of touch sensor channels

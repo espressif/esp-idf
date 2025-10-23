@@ -241,7 +241,7 @@ examples/peripherals/lcd/mipi_dsi:
 
 examples/peripherals/lcd/parlio_simulate:
   disable:
-    - if: SOC_PARLIO_SUPPORT_SPI_LCD != 1
+    - if: SOC_PARLIO_LCD_SUPPORTED != 1
   depends_components:
     - esp_lcd
     - esp_driver_parlio

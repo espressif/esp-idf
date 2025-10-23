@@ -137,7 +137,7 @@ esp_err_t esp_lcd_new_i80_bus(const esp_lcd_i80_bus_config_t *bus_config, esp_lc
     ESP_GOTO_ON_FALSE(bus_id >= 0, ESP_ERR_NOT_FOUND, err, TAG, "no free i80 bus slot");
     bus->bus_id = bus_id;
     // enable APB to access LCD registers
-    PERIPH_RCC_ACQUIRE_ATOMIC(lcd_periph_i80_signals.buses[bus_id].module, ref_count) {
+    PERIPH_RCC_ACQUIRE_ATOMIC(soc_lcd_i80_signals[bus_id].module, ref_count) {
         if (ref_count == 0) {
             lcd_ll_enable_bus_clock(bus_id, true);
             lcd_ll_reset_register(bus_id);
@@ -162,7 +162,7 @@ esp_err_t esp_lcd_new_i80_bus(const esp_lcd_i80_bus_config_t *bus_config, esp_lc
     // install interrupt service, (LCD peripheral shares the same interrupt source with Camera peripheral with different mask)
     // interrupt is disabled by default
     int isr_flags = LCD_I80_INTR_ALLOC_FLAGS | ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_LOWMED;
-    ret = esp_intr_alloc_intrstatus(lcd_periph_i80_signals.buses[bus_id].irq_id, isr_flags,
+    ret = esp_intr_alloc_intrstatus(soc_lcd_i80_signals[bus_id].irq_id, isr_flags,
                                     (uint32_t)lcd_ll_get_interrupt_status_reg(bus->hal.dev),
                                     LCD_LL_EVENT_I80, i80_lcd_default_isr_handler, bus, &bus->intr);
     ESP_GOTO_ON_ERROR(ret, err, TAG, "install interrupt failed");
@@ -214,7 +214,7 @@ err:
             gdma_del_link_list(bus->dma_link);
         }
         if (bus->bus_id >= 0) {
-            PERIPH_RCC_RELEASE_ATOMIC(lcd_periph_i80_signals.buses[bus->bus_id].module, ref_count) {
+            PERIPH_RCC_RELEASE_ATOMIC(soc_lcd_i80_signals[bus->bus_id].module, ref_count) {
                 if (ref_count == 0) {
                     lcd_ll_enable_bus_clock(bus->bus_id, false);
                 }
@@ -241,7 +241,7 @@ esp_err_t esp_lcd_del_i80_bus(esp_lcd_i80_bus_handle_t bus)
     ESP_GOTO_ON_FALSE(LIST_EMPTY(&bus->device_list), ESP_ERR_INVALID_STATE, err, TAG, "device list not empty");
     int bus_id = bus->bus_id;
     lcd_com_remove_device(LCD_COM_DEVICE_TYPE_I80, bus_id);
-    PERIPH_RCC_RELEASE_ATOMIC(lcd_periph_i80_signals.buses[bus_id].module, ref_count) {
+    PERIPH_RCC_RELEASE_ATOMIC(soc_lcd_i80_signals[bus_id].module, ref_count) {
         if (ref_count == 0) {
             lcd_ll_enable_bus_clock(bus_id, false);
         }
@@ -646,14 +646,14 @@ static esp_err_t lcd_i80_bus_configure_gpio(esp_lcd_i80_bus_handle_t bus, const 
     for (size_t i = 0; i < bus_config->bus_width; i++) {
         gpio_func_sel(bus_config->data_gpio_nums[i], PIN_FUNC_GPIO);
         // the esp_rom_gpio_connect_out_signal function will also help enable the output path properly
-        esp_rom_gpio_connect_out_signal(bus_config->data_gpio_nums[i], lcd_periph_i80_signals.buses[bus_id].data_sigs[i], false, false);
+        esp_rom_gpio_connect_out_signal(bus_config->data_gpio_nums[i], soc_lcd_i80_signals[bus_id].data_sigs[i], false, false);
     }
     // D/C signal
     gpio_func_sel(bus_config->dc_gpio_num, PIN_FUNC_GPIO);
-    esp_rom_gpio_connect_out_signal(bus_config->dc_gpio_num, lcd_periph_i80_signals.buses[bus_id].dc_sig, false, false);
+    esp_rom_gpio_connect_out_signal(bus_config->dc_gpio_num, soc_lcd_i80_signals[bus_id].dc_sig, false, false);
     // WR signal (PCLK)
     gpio_func_sel(bus_config->wr_gpio_num, PIN_FUNC_GPIO);
-    esp_rom_gpio_connect_out_signal(bus_config->wr_gpio_num, lcd_periph_i80_signals.buses[bus_id].wr_sig, false, false);
+    esp_rom_gpio_connect_out_signal(bus_config->wr_gpio_num, soc_lcd_i80_signals[bus_id].wr_sig, false, false);
     return ESP_OK;
 }
 
@@ -720,7 +720,7 @@ static void lcd_i80_switch_devices(lcd_panel_io_i80_t *cur_device, lcd_panel_io_
         }
         if (next_device->cs_gpio_num >= 0) {
             // connect CS signal to the new device
-            esp_rom_gpio_connect_out_signal(next_device->cs_gpio_num, lcd_periph_i80_signals.buses[bus->bus_id].cs_sig,
+            esp_rom_gpio_connect_out_signal(next_device->cs_gpio_num, soc_lcd_i80_signals[bus->bus_id].cs_sig,
                                             next_device->flags.cs_active_high, false);
         }
     }

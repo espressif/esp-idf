@@ -8,10 +8,10 @@
 
 #include <stdint.h>
 #include <stddef.h>
-#include "soc/soc_caps_full.h"
-
-// helper macros to access module attributes
-#define SOC_MIPI_DSI_ATTR(_attr) SOC_MODULE_ATTR(MIPI_DSI, _attr)
+#include "soc/soc_caps.h"
+#if SOC_HAS(MIPI_DSI)
+#include "hal/mipi_dsi_ll.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -35,7 +35,7 @@ typedef struct {
     const int brg_irq_id;    // interrupt source ID for MIPI DSI Bridge
 } soc_mipi_dsi_signal_desc_t;
 
-extern const soc_mipi_dsi_signal_desc_t soc_mipi_dsi_signals[SOC_MIPI_DSI_ATTR(INST_NUM)];
+extern const soc_mipi_dsi_signal_desc_t soc_mipi_dsi_signals[MIPI_DSI_LL_GET(BUS_NUM)];
 
 #endif // SOC_HAS(MIPI_DSI)
 

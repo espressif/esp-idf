@@ -32,7 +32,7 @@ LCD 通常由两个主要平面组成：
     :SOC_LCD_I80_SUPPORTED: i80_lcd
     :SOC_LCD_RGB_SUPPORTED: rgb_lcd
     :SOC_MIPI_DSI_SUPPORTED: dsi_lcd
-    :SOC_PARLIO_SUPPORT_SPI_LCD: parl_lcd
+    :SOC_PARLIO_LCD_SUPPORTED: parl_lcd
 
 .. note::
 
@@ -85,7 +85,7 @@ LCD 数据面板操作
     :SOC_LCD_RGB_SUPPORTED: * :example:`peripherals/lcd/rgb_panel` 展示了如何安装 RGB 面板驱动程序，并基于 LVGL 库在屏幕上显示散点图。
     :SOC_I2C_SUPPORTED: * :example:`peripherals/lcd/i2c_oled` 演示了如何使用 `esp_lcd` 组件中的 SSD1306 面板驱动来简化移植 LVGL 库，并在 OLED 屏幕上显示滚动文本。
     :SOC_MIPI_DSI_SUPPORTED: * :example:`peripherals/lcd/mipi_dsi` 演示了如何安装 MIPI DSI LCD 驱动程序，并在屏幕上显示一个 LVGL 小部件。
-    :SOC_PARLIO_SUPPORT_SPI_LCD: * :example:`peripherals/lcd/parlio_simulate` 演示了如何使用 Parallel IO 外设驱动 SPI 或 I80 接口的屏幕。
+    :SOC_PARLIO_LCD_SUPPORTED: * :example:`peripherals/lcd/parlio_simulate` 演示了如何使用 Parallel IO 外设驱动 SPI 或 I80 接口的屏幕。
 
 
 API 参考
