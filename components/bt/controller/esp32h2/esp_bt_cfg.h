@@ -297,7 +297,7 @@ extern "C" {
 #define RUN_BQB_TEST                        (0)
 #define RUN_QA_TEST                         (0)
 #define NIMBLE_DISABLE_SCAN_BACKOFF         (0)
-
+#define BT_LL_CTRL_PRIO_LVL_CFG ((CONFIG_BT_LE_DFT_SYNC_SCHED_PRIO_LEVEL << 4) | (CONFIG_BT_LE_DFT_PERIODIC_ADV_SCHED_PRIO_LEVEL << 2) | CONFIG_BT_LE_DFT_ADV_SCHED_PRIO_LEVEL)
 #ifdef __cplusplus
 }
 #endif
