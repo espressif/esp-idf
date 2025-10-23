@@ -168,3 +168,37 @@ LWIP
 ****
 
 lwIP TCP/IP 线程名称由 "tiT" 更改为 "tcpip"。
+
+
+SNTP 头文件移除
+---------------
+
+已弃用的 ``sntp.h`` 头文件在 IDF v6.0 中已被移除。应用程序现在应该包含 ``esp_sntp.h`` 而不是 ``sntp.h`` 来使用 SNTP 功能。
+
+Ping API 移除
+-------------
+
+已弃用的 ping API 和头文件在 IDF v6.0 中已被移除：
+
+- ``esp_ping.h`` 头文件已被移除
+- ``ping.h`` 头文件已被移除
+- 函数 ``ping_init()``、``ping_deinit()``、``esp_ping_set_target()``、``esp_ping_get_target()`` 和 ``esp_ping_result()`` 已被移除
+
+应用程序现在应该使用来自 ``ping/ping_sock.h`` 的基于套接字的 ping API：
+
+.. code-block:: c
+
+    #include "ping/ping_sock.h"
+    // 创建 ping 会话
+    esp_ping_config_t config = ESP_PING_DEFAULT_CONFIG();
+    config.target_addr = target_ip;
+    esp_ping_callbacks_t cbs = {
+        .on_ping_success = on_ping_success,
+        .on_ping_timeout = on_ping_timeout,
+        .on_ping_end = on_ping_end,
+    };
+    esp_ping_handle_t ping;
+    esp_ping_new_session(&config, &cbs, &ping);
+    esp_ping_start(ping);
+
+完整示例请参考 :example:`protocols/icmp_echo`。

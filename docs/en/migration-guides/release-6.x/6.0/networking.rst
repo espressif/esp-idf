@@ -168,3 +168,37 @@ LWIP
 ****
 
 The lwIP TCP/IP thread name has changed from "tiT" to "tcpip".
+
+
+SNTP Header File Removal
+------------------------
+
+The deprecated ``sntp.h`` header file has been removed in IDF v6.0. Applications should now include ``esp_sntp.h`` instead of ``sntp.h`` for SNTP functionality.
+
+Ping API Removal
+----------------
+
+The deprecated ping APIs and headers have been removed in IDF v6.0:
+
+- ``esp_ping.h`` header file has been removed
+- ``ping.h`` header file has been removed
+- Functions ``ping_init()``, ``ping_deinit()``, ``esp_ping_set_target()``, ``esp_ping_get_target()``, and ``esp_ping_result()`` have been removed
+
+Applications should now use the socket-based ping API from ``ping/ping_sock.h``:
+
+.. code-block:: c
+
+    #include "ping/ping_sock.h"
+    // Create ping session
+    esp_ping_config_t config = ESP_PING_DEFAULT_CONFIG();
+    config.target_addr = target_ip;
+    esp_ping_callbacks_t cbs = {
+        .on_ping_success = on_ping_success,
+        .on_ping_timeout = on_ping_timeout,
+        .on_ping_end = on_ping_end,
+    };
+    esp_ping_handle_t ping;
+    esp_ping_new_session(&config, &cbs, &ping);
+    esp_ping_start(ping);
+
+For a complete example, see :example:`protocols/icmp_echo`.
