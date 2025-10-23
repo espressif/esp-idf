@@ -49,6 +49,10 @@
 // RX FIFO is no longer recoverable.
 #define TWAI_LL_HAS_RX_FIFO_ISSUE       1
 
+// On the ESP32, when receiving a data or remote frame, if a bus error occurs in the data or CRC field,
+// the data field of the NEXT received frame could be invalid.
+#define TWAI_LL_HAS_RX_FRAME_ISSUE      1
+
 #ifdef __cplusplus
 extern "C" {
 #endif

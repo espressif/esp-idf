@@ -17,7 +17,8 @@
 #define TWAI_HAL_INIT_REC    0
 #define TWAI_HAL_INIT_EWL    96
 
-#if CONFIG_IDF_TARGET_ESP32 // only esp32 have this errata, TODO: IDF-13002 check errata runtime
+#if TWAI_LL_HAS_RX_FRAME_ISSUE || TWAI_LL_HAS_RX_FIFO_ISSUE
+// context for errata workarounds
 typedef struct twai_hal_errata_ctx_t {
     twai_hal_frame_t tx_frame_save;
     twai_ll_reg_save_t reg_save;
@@ -26,7 +27,7 @@ typedef struct twai_hal_errata_ctx_t {
 #endif
 
 size_t twai_hal_get_mem_requirment(void) {
-#if CONFIG_IDF_TARGET_ESP32 // only esp32 have this errata, TODO: IDF-13002 check errata runtime
+#if TWAI_LL_HAS_RX_FRAME_ISSUE || TWAI_LL_HAS_RX_FIFO_ISSUE
     return sizeof(twai_hal_context_t) + sizeof(twai_hal_errata_ctx_t);
 #else
     return sizeof(twai_hal_context_t);
@@ -49,7 +50,7 @@ bool twai_hal_init(twai_hal_context_t *hal_ctx, const twai_hal_config_t *config)
     if (!twai_ll_is_in_reset_mode(hal_ctx->dev)) {    //Must enter reset mode to write to config registers
         return false;
     }
-#if CONFIG_IDF_TARGET_ESP32 // only esp32 have this errata, TODO: IDF-13002 check errata runtime
+#if TWAI_LL_HAS_RX_FRAME_ISSUE || TWAI_LL_HAS_RX_FIFO_ISSUE
     hal_ctx->errata_ctx = (twai_hal_errata_ctx_t *)(hal_ctx + 1);   //errata context is place at end of hal_ctx
 #endif
 #if SOC_TWAI_SUPPORT_MULTI_ADDRESS_LAYOUT
@@ -289,12 +290,13 @@ uint32_t twai_hal_get_events(twai_hal_context_t *hal_ctx)
             .ack_err = (type == TWAI_LL_ERR_OTHER) && (seg == TWAI_LL_ERR_SEG_ACK_SLOT),
         };
         hal_ctx->errors = errors;
-#ifdef CONFIG_TWAI_ERRATA_FIX_RX_FRAME_INVALID
+#if TWAI_LL_HAS_RX_FRAME_ISSUE
         //Check for errata condition (RX message has bus error at particular segments)
         if (dir == TWAI_LL_ERR_DIR_RX &&
             ((seg == TWAI_LL_ERR_SEG_DATA || seg == TWAI_LL_ERR_SEG_CRC_SEQ) ||
              (seg == TWAI_LL_ERR_SEG_ACK_DELIM && type == TWAI_LL_ERR_OTHER))) {
             TWAI_HAL_SET_BITS(events, TWAI_HAL_EVENT_NEED_PERIPH_RESET);
+            HAL_LOGD("TWAI_HAL", "RX frame invalid detected");
         }
 #endif
     }
@@ -308,7 +310,7 @@ uint32_t twai_hal_get_events(twai_hal_context_t *hal_ctx)
         HAL_LOGD("TWAI_HAL", "RX FIFO corruption detected");
     }
 #endif
-#if defined(CONFIG_TWAI_ERRATA_FIX_RX_FRAME_INVALID) || TWAI_LL_HAS_RX_FIFO_ISSUE
+#if TWAI_LL_HAS_RX_FRAME_ISSUE || TWAI_LL_HAS_RX_FIFO_ISSUE
     if (events & TWAI_HAL_EVENT_NEED_PERIPH_RESET) {
         //A peripheral reset will invalidate an RX event;
         TWAI_HAL_CLEAR_BITS(events, (TWAI_HAL_EVENT_RX_BUFF_FRAME));
@@ -317,7 +319,7 @@ uint32_t twai_hal_get_events(twai_hal_context_t *hal_ctx)
     return events;
 }
 
-#if CONFIG_IDF_TARGET_ESP32 // only esp32 have this errata, TODO: IDF-13002 check errata runtime
+#if TWAI_LL_HAS_RX_FRAME_ISSUE || TWAI_LL_HAS_RX_FIFO_ISSUE
 bool twai_hal_is_hw_busy(twai_hal_context_t *hal_ctx)
 {
     return (TWAI_LL_STATUS_TS | TWAI_LL_STATUS_RS) & twai_ll_get_status(hal_ctx->dev);
@@ -366,7 +368,7 @@ void twai_hal_recover_from_reset(twai_hal_context_t *hal_ctx)
         TWAI_HAL_CLEAR_BITS(hal_ctx->state_flags, TWAI_HAL_STATE_FLAG_TX_NEED_RETRY);
     }
 }
-#endif // CONFIG_IDF_TARGET_ESP32
+#endif // TWAI_LL_HAS_RX_FRAME_ISSUE || TWAI_LL_HAS_RX_FIFO_ISSUE
 
 void twai_hal_format_frame(const twai_hal_trans_desc_t *trans_desc, twai_hal_frame_t *frame)
 {
@@ -406,7 +408,7 @@ void twai_hal_set_tx_buffer_and_transmit(twai_hal_context_t *hal_ctx, twai_hal_f
         twai_ll_set_cmd_tx(hal_ctx->dev);
     }
     TWAI_HAL_SET_BITS(hal_ctx->state_flags, TWAI_HAL_STATE_FLAG_TX_BUFF_OCCUPIED);
-#if defined(CONFIG_TWAI_ERRATA_FIX_RX_FRAME_INVALID) || TWAI_LL_HAS_RX_FIFO_ISSUE
+#if TWAI_LL_HAS_RX_FRAME_ISSUE || TWAI_LL_HAS_RX_FIFO_ISSUE
     if (&hal_ctx->errata_ctx->tx_frame_save == tx_frame) {
         return;
     }
@@ -414,7 +416,7 @@ void twai_hal_set_tx_buffer_and_transmit(twai_hal_context_t *hal_ctx, twai_hal_f
     ESP_COMPILER_DIAGNOSTIC_PUSH_IGNORE("-Wanalyzer-overlapping-buffers") // TODO IDF-11085
     memcpy(&hal_ctx->errata_ctx->tx_frame_save, tx_frame, sizeof(twai_hal_frame_t));
     ESP_COMPILER_DIAGNOSTIC_POP("-Wanalyzer-overlapping-buffers")
-#endif  //defined(CONFIG_TWAI_ERRATA_FIX_RX_FRAME_INVALID) || TWAI_LL_HAS_RX_FIFO_ISSUE
+#endif  //TWAI_LL_HAS_RX_FRAME_ISSUE || TWAI_LL_HAS_RX_FIFO_ISSUE
 }
 
 uint32_t twai_hal_get_rx_msg_count(twai_hal_context_t *hal_ctx)

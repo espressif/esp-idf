@@ -21,15 +21,4 @@ menu "Legacy TWAI Driver Configurations"
         help
             This configuration option used to bypass the conflict check mechanism with legacy code.
 
-    config TWAI_ERRATA_FIX_RX_FRAME_INVALID
-        bool "Add SW workaround for invalid RX frame errata"
-        depends on IDF_TARGET_ESP32
-        default y
-        help
-            On the ESP32, when receiving a data or remote frame, if a bus error occurs in the data or CRC field,
-            the data of the next received frame could be invalid. Enabling this option will add a workaround that
-            will reset the peripheral on detection of this errata condition. Note that if a frame is transmitted on
-            the bus whilst the reset is ongoing, the message will not be receive by the peripheral sent on the bus
-            during the reset, the message will be lost.
-
 endmenu # TWAI Configuration
