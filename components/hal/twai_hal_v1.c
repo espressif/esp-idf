@@ -7,6 +7,7 @@
 #include <stddef.h>
 #include "sdkconfig.h"
 #include "esp_compiler.h"
+#include "hal/log.h"
 #include "hal/twai_hal.h"
 #include "hal/twai_ll.h"
 #include "soc/soc_caps.h"
@@ -177,7 +178,7 @@ void twai_hal_start_bus_recovery(twai_hal_context_t *hal_ctx)
 
 /* ------------------------------------ IRAM Content ------------------------------------ */
 
-#ifdef CONFIG_TWAI_ERRATA_FIX_RX_FIFO_CORRUPT
+#if TWAI_LL_HAS_RX_FIFO_ISSUE
 //Errata condition occurs at 64 messages. Threshold set to 62 to prevent the chance of failing to detect errata condition.
 #define TWAI_RX_FIFO_CORRUPT_THRESH     62
 #endif
@@ -300,13 +301,14 @@ uint32_t twai_hal_get_events(twai_hal_context_t *hal_ctx)
     if (events & TWAI_HAL_EVENT_ARB_LOST) {
         twai_ll_clear_arb_lost_cap(hal_ctx->dev);
     }
-#ifdef CONFIG_TWAI_ERRATA_FIX_RX_FIFO_CORRUPT
+#if TWAI_LL_HAS_RX_FIFO_ISSUE
     //Check for errata condition (rx_msg_count >= corruption_threshold)
     if (events & TWAI_HAL_EVENT_RX_BUFF_FRAME && twai_ll_get_rx_msg_count(hal_ctx->dev) >= TWAI_RX_FIFO_CORRUPT_THRESH) {
         TWAI_HAL_SET_BITS(events, TWAI_HAL_EVENT_NEED_PERIPH_RESET);
+        HAL_LOGD("TWAI_HAL", "RX FIFO corruption detected");
     }
 #endif
-#if defined(CONFIG_TWAI_ERRATA_FIX_RX_FRAME_INVALID) || defined(CONFIG_TWAI_ERRATA_FIX_RX_FIFO_CORRUPT)
+#if defined(CONFIG_TWAI_ERRATA_FIX_RX_FRAME_INVALID) || TWAI_LL_HAS_RX_FIFO_ISSUE
     if (events & TWAI_HAL_EVENT_NEED_PERIPH_RESET) {
         //A peripheral reset will invalidate an RX event;
         TWAI_HAL_CLEAR_BITS(events, (TWAI_HAL_EVENT_RX_BUFF_FRAME));
@@ -404,7 +406,7 @@ void twai_hal_set_tx_buffer_and_transmit(twai_hal_context_t *hal_ctx, twai_hal_f
         twai_ll_set_cmd_tx(hal_ctx->dev);
     }
     TWAI_HAL_SET_BITS(hal_ctx->state_flags, TWAI_HAL_STATE_FLAG_TX_BUFF_OCCUPIED);
-#if defined(CONFIG_TWAI_ERRATA_FIX_RX_FRAME_INVALID) || defined(CONFIG_TWAI_ERRATA_FIX_RX_FIFO_CORRUPT)
+#if defined(CONFIG_TWAI_ERRATA_FIX_RX_FRAME_INVALID) || TWAI_LL_HAS_RX_FIFO_ISSUE
     if (&hal_ctx->errata_ctx->tx_frame_save == tx_frame) {
         return;
     }
@@ -412,7 +414,7 @@ void twai_hal_set_tx_buffer_and_transmit(twai_hal_context_t *hal_ctx, twai_hal_f
     ESP_COMPILER_DIAGNOSTIC_PUSH_IGNORE("-Wanalyzer-overlapping-buffers") // TODO IDF-11085
     memcpy(&hal_ctx->errata_ctx->tx_frame_save, tx_frame, sizeof(twai_hal_frame_t));
     ESP_COMPILER_DIAGNOSTIC_POP("-Wanalyzer-overlapping-buffers")
-#endif  //defined(CONFIG_TWAI_ERRATA_FIX_RX_FRAME_INVALID) || defined(CONFIG_TWAI_ERRATA_FIX_RX_FIFO_CORRUPT)
+#endif  //defined(CONFIG_TWAI_ERRATA_FIX_RX_FRAME_INVALID) || TWAI_LL_HAS_RX_FIFO_ISSUE
 }
 
 uint32_t twai_hal_get_rx_msg_count(twai_hal_context_t *hal_ctx)

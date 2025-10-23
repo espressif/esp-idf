@@ -45,6 +45,10 @@
 // bits when it detects an error (i.e., as part of an active error frame).
 #define TWAI_LL_HAS_LOM_DOM_ISSUE       1
 
+// On the ESP32, when the RX FIFO overruns and the RX message counter maxes out at 64 messages, the entire
+// RX FIFO is no longer recoverable.
+#define TWAI_LL_HAS_RX_FIFO_ISSUE       1
+
 #ifdef __cplusplus
 extern "C" {
 #endif

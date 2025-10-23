@@ -32,14 +32,4 @@ menu "Legacy TWAI Driver Configurations"
             the bus whilst the reset is ongoing, the message will not be receive by the peripheral sent on the bus
             during the reset, the message will be lost.
 
-    config TWAI_ERRATA_FIX_RX_FIFO_CORRUPT
-        bool "Add SW workaround for RX FIFO corruption errata"
-        depends on IDF_TARGET_ESP32
-        default y
-        help
-            On the ESP32, when the RX FIFO overruns and the RX message counter maxes out at 64 messages, the entire
-            RX FIFO is no longer recoverable. Enabling this option will add a workaround that resets the peripheral
-            on detection of this errata condition. Note that if a frame is being sent on the bus during the reset
-            bus during the reset, the message will be lost.
-
 endmenu # TWAI Configuration
