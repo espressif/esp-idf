@@ -36,9 +36,9 @@ menu "Application Level Tracing"
     config APPTRACE_DEST_UART_NUM
         int "UART port number"
         depends on APPTRACE_DEST_UART
-        range 0 1 if (SOC_UART_NUM <= 2)
-        range 0 2 if (SOC_UART_NUM <= 3)
-        range 0 5 if (SOC_UART_NUM <= 6)
+        range 0 1 if (SOC_UART_HP_NUM <= 2)
+        range 0 2 if (SOC_UART_HP_NUM <= 3)
+        range 0 4 if (SOC_UART_HP_NUM <= 5)
         default 1
         help
             UART communication port number for the apptrace destination.
@@ -83,7 +83,7 @@ menu "Application Level Tracing"
         default 4096
         range 2048 32768
         help
-            Size of the UART output ring buffer.
+            Size of the UART output ring buffer. Must be power of two.
             This size related to the baudrate, system tick frequency and amount of data to transfer.
 
     config APPTRACE_UART_TX_MSG_SIZE
@@ -94,16 +94,6 @@ menu "Application Level Tracing"
         range 64 32768
         help
             Maximum size of the single message to transfer.
-
-    config APPTRACE_UART_TASK_PRIO
-        int
-        prompt "UART Task Priority" if APPTRACE_DEST_UART
-        depends on APPTRACE_DEST_UART
-        default 1
-        range 1 32
-        help
-            UART task priority. In case of high events rate,
-            this parameter could be changed up to (configMAX_PRIORITIES-1).
 
     config APPTRACE_TRAX_ENABLE
         bool

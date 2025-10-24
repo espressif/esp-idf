@@ -56,7 +56,7 @@ void app_main(void)
         if (res != ESP_OK) {
             ESP_LOGE(TAG, "Failed to write data to host [0x%x] (%s)", res, esp_err_to_name(res));
         }
-        esp_apptrace_flush( 1000);
+        esp_apptrace_flush(1000);
         vTaskDelay(50 / portTICK_PERIOD_MS);
     }
 
