@@ -247,7 +247,7 @@ struct ptp_state_s
   bool can_send_delayreq;
   struct timespec delayreq_time; // time of last delay_req sent
   int path_delay_avgcount;
-  int peer_delay_avgcount;  
+  int peer_delay_avgcount;
   long path_delay_ns;
   long peer_delay_ns; // used for gPTP peer delay measurement
   long delayreq_interval;
@@ -314,16 +314,16 @@ static struct ptp_state_s *s_state;
  ****************************************************************************/
 #ifdef ESP_PTP
 
+// Convert 8 bytes to 64-bit signed integer (nanoseconds << 16)
 static int64_t get_correction_ns(uint8_t *correction_field)
 {
-    // Convert 6 bytes to 64-bit signed integer (nanoseconds << 16)
     int64_t correction = 0;
-    
+
     // Handle sign extension for negative numbers
     if (correction_field[0] & 0x80) {
         correction = -1LL; // Fill with 1's for negative number
     }
-    
+
     // Build the value byte by byte
     correction = (correction << 8) | correction_field[0];
     correction = (correction << 8) | correction_field[1];
@@ -331,7 +331,9 @@ static int64_t get_correction_ns(uint8_t *correction_field)
     correction = (correction << 8) | correction_field[3];
     correction = (correction << 8) | correction_field[4];
     correction = (correction << 8) | correction_field[5];
-    
+    correction = (correction << 8) | correction_field[6];
+    correction = (correction << 8) | correction_field[7];
+
     // Convert from 2^16 scale to nanoseconds
     return correction >> 16;
 }
@@ -382,7 +384,6 @@ static int ptp_net_send(FAR struct ptp_state_s *state, void *ptp_msg, uint16_t p
   if (ret > 0 && ts && ts_info->type == L2TAP_IREC_TIME_STAMP)
     {
       *ts = *(struct timespec *)ts_info->data;
-      ESP_LOGD("net_send", "ts is %lld.%09ld", (long long)ts->tv_sec, ts->tv_nsec);
     }
 
   return ret;
@@ -415,8 +416,6 @@ static int ptp_net_recv(FAR struct ptp_state_s *state, void *ptp_msg, uint16_t p
   if (ret > 0 && ts && ts_info->type == L2TAP_IREC_TIME_STAMP)
     {
       *ts = *(struct timespec *)ts_info->data;
-      ESP_LOGD("net_recv", "ts is %lld.%09ld", (long long)ts->tv_sec, ts->tv_nsec);
-      /* GETTING ZERO VALUES FOR TS !!! */
     }
 
   memcpy(ptp_msg, &eth_frame[ETH_HEADER_LEN], ret);
@@ -1741,7 +1740,7 @@ static int ptp_process_delay_req(FAR struct ptp_state_s *state,
     }
 
   clock_gettime(CLOCK_MONOTONIC, &state->last_transmitted_delayresp);
-  
+
 /* gPTP profile requires response follow-up message */
 
 #ifdef CONFIG_NETUTILS_PTPD_GPTP_PROFILE
@@ -1885,7 +1884,7 @@ static int ptp_process_delay_resp_follow_up(FAR struct ptp_state_s *state,
       return OK;
     }
 
-  /* In gPTP (802.1AS), delay is measured between peers, not 
+  /* In gPTP (802.1AS), delay is measured between peers, not
    * between the server and the client. It is calculated as follows:
 
      Peer A                          Peer B
@@ -1897,7 +1896,7 @@ static int ptp_process_delay_resp_follow_up(FAR struct ptp_state_s *state,
   t4 |<-----------------------------------| t3
      |                                    |
      |   Peer delay_resp_follow_up (t3)   |
-     |<-----------------------------------| 
+     |<-----------------------------------|
 
     Peer A calculates peer_delay = ((t4 - t1) - (t3 - t2))/2
   */
@@ -1991,7 +1990,7 @@ static int ptp_process_rx_packet(FAR struct ptp_state_s *state,
       return ptp_process_delay_req(state, &state->rxbuf.delay_req);
 #endif
 
-    case PTP_MSGTYPE_PDELAY_RESP_FOLLOW_UP: // 
+    case PTP_MSGTYPE_PDELAY_RESP_FOLLOW_UP: //
       ptpinfo("Got peer delay resp follow-up, seq %ld\n",
               (long)ptp_get_sequence(&state->rxbuf.header));
       return ptp_process_delay_resp_follow_up(state, &state->rxbuf.delay_resp_follow_up);
