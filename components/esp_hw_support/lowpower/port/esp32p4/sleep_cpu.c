@@ -276,7 +276,11 @@ static TCM_IRAM_ATTR esp_err_t do_cpu_retention(sleep_cpu_entry_cb_t goto_sleep,
         }
 #endif
 
-        return (*goto_sleep)(wakeup_opt, reject_opt, lslp_mem_inf_fpu, dslp);
+        uint32_t reject =  (*goto_sleep)(wakeup_opt, reject_opt, lslp_mem_inf_fpu, dslp);
+        if (reject) {
+            restore_mstatus(mstatus);
+            return reject;
+        }
     }
 #if CONFIG_PM_CHECK_SLEEP_RETENTION_FRAME
     else {
