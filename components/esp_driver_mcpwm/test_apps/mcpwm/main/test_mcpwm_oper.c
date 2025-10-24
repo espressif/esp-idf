@@ -1,12 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "unity.h"
-#include "soc/soc_caps.h"
+#include "hal/mcpwm_ll.h"
 #include "driver/mcpwm_oper.h"
 #include "driver/mcpwm_timer.h"
 #include "driver/mcpwm_gen.h"
@@ -16,8 +16,8 @@
 
 TEST_CASE("mcpwm_operator_install_uninstall", "[mcpwm]")
 {
-    const int total_operators = SOC_MCPWM_OPERATORS_PER_GROUP * SOC_MCPWM_GROUPS;
-    mcpwm_timer_handle_t timers[SOC_MCPWM_GROUPS];
+    const int total_operators = MCPWM_LL_GET(OPERATORS_PER_GROUP) * MCPWM_LL_GET(GROUP_NUM);
+    mcpwm_timer_handle_t timers[MCPWM_LL_GET(GROUP_NUM)];
     mcpwm_oper_handle_t operators[total_operators];
 
     mcpwm_timer_config_t timer_config = {
@@ -29,28 +29,28 @@ TEST_CASE("mcpwm_operator_install_uninstall", "[mcpwm]")
     mcpwm_operator_config_t operator_config = {
     };
     printf("install one MCPWM timer for each group\r\n");
-    for (int i = 0; i < SOC_MCPWM_GROUPS; i++) {
+    for (int i = 0; i < MCPWM_LL_GET(GROUP_NUM); i++) {
         timer_config.group_id = i;
         TEST_ESP_OK(mcpwm_new_timer(&timer_config, &timers[i]));
     }
     printf("install MCPWM operators for each group\r\n");
     int k = 0;
-    for (int i = 0; i < SOC_MCPWM_GROUPS; i++) {
+    for (int i = 0; i < MCPWM_LL_GET(GROUP_NUM); i++) {
         operator_config.group_id = i;
-        for (int j = 0; j < SOC_MCPWM_OPERATORS_PER_GROUP; j++) {
+        for (int j = 0; j < MCPWM_LL_GET(OPERATORS_PER_GROUP); j++) {
             TEST_ESP_OK(mcpwm_new_operator(&operator_config, &operators[k++]));
         }
         TEST_ESP_ERR(ESP_ERR_NOT_FOUND, mcpwm_new_operator(&operator_config, &operators[0]));
     }
     printf("connect MCPWM timer and operators\r\n");
     k = 0;
-    for (int i = 0; i < SOC_MCPWM_GROUPS; i++) {
-        for (int j = 0; j < SOC_MCPWM_OPERATORS_PER_GROUP; j++) {
+    for (int i = 0; i < MCPWM_LL_GET(GROUP_NUM); i++) {
+        for (int j = 0; j < MCPWM_LL_GET(OPERATORS_PER_GROUP); j++) {
             TEST_ESP_OK(mcpwm_operator_connect_timer(operators[k++], timers[i]));
         }
     }
 
-#if SOC_MCPWM_GROUPS > 1
+#if MCPWM_LL_GET(GROUP_NUM) > 1
     TEST_ESP_ERR(ESP_ERR_INVALID_ARG, mcpwm_operator_connect_timer(operators[0], timers[1]));
 #endif
 
@@ -58,7 +58,7 @@ TEST_CASE("mcpwm_operator_install_uninstall", "[mcpwm]")
     for (int i = 0; i < total_operators; i++) {
         TEST_ESP_OK(mcpwm_del_operator(operators[i]));
     }
-    for (int i = 0; i < SOC_MCPWM_GROUPS; i++) {
+    for (int i = 0; i < MCPWM_LL_GET(GROUP_NUM); i++) {
         TEST_ESP_OK(mcpwm_del_timer(timers[i]));
     }
 }

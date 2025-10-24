@@ -1,12 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "unity.h"
-#include "soc/soc_caps.h"
+#include "hal/mcpwm_ll.h"
 #include "driver/mcpwm_cap.h"
 #include "driver/mcpwm_timer.h"
 #include "driver/mcpwm_oper.h"
@@ -28,11 +28,11 @@ TEST_CASE("mcpwm_generator_install_uninstall", "[mcpwm]")
     TEST_ESP_OK(mcpwm_new_operator(&oper_config, &oper));
 
     printf("create MCPWM generators from that operator\r\n");
-    mcpwm_gen_handle_t gens[SOC_MCPWM_GENERATORS_PER_OPERATOR];
+    mcpwm_gen_handle_t gens[MCPWM_LL_GET(GENERATORS_PER_OPERATOR)];
     mcpwm_generator_config_t gen_config = {
         .gen_gpio_num = TEST_PWMA_GPIO,
     };
-    for (int i = 0; i < SOC_MCPWM_GENERATORS_PER_OPERATOR; i++) {
+    for (int i = 0; i < MCPWM_LL_GET(GENERATORS_PER_OPERATOR); i++) {
         TEST_ESP_OK(mcpwm_new_generator(oper, &gen_config, &gens[i]));
     }
     TEST_ESP_ERR(ESP_ERR_NOT_FOUND, mcpwm_new_generator(oper, &gen_config, &gens[0]));
@@ -40,7 +40,7 @@ TEST_CASE("mcpwm_generator_install_uninstall", "[mcpwm]")
     printf("delete generators and operator\r\n");
     // can't delete operator if the generator is till in working
     TEST_ESP_ERR(ESP_ERR_INVALID_STATE, mcpwm_del_operator(oper));
-    for (int i = 0; i < SOC_MCPWM_GENERATORS_PER_OPERATOR; i++) {
+    for (int i = 0; i < MCPWM_LL_GET(GENERATORS_PER_OPERATOR); i++) {
         TEST_ESP_OK(mcpwm_del_generator(gens[i]));
     }
     TEST_ESP_OK(mcpwm_del_operator(oper));

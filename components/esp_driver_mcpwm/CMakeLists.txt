@@ -16,6 +16,7 @@ if(CONFIG_SOC_MCPWM_SUPPORTED)
     endif()
 endif()
 
+set(requires esp_hal_mcpwm)
 if(${target} STREQUAL "linux")
     set(priv_requires "")
 else()
@@ -24,6 +25,7 @@ endif()
 
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS ${public_include}
+                       REQUIRES "${requires}"
                        PRIV_REQUIRES "${priv_requires}"
                        LDFRAGMENTS "linker.lf"
                       )
