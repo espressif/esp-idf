@@ -805,6 +805,28 @@ esp_err_t esp_ble_create_sc_oob_data(void)
 
     return (btc_transfer_context(&msg, NULL, 0, NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
+
+esp_err_t esp_ble_gap_get_local_irk(uint8_t local_irk[16])
+{
+    if (local_irk == NULL) {
+        ESP_LOGE(__func__, "local_irk is NULL");
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        ESP_LOGE(__func__, "Bluedroid is not enabled");
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    /* Use BTM API to safely retrieve local IRK */
+    if (BTM_GetLocalIRK(local_irk)) {
+        ESP_LOGD(__func__, "Local IRK retrieved successfully");
+        return ESP_OK;
+    } else {
+        ESP_LOGW(__func__, "Local IRK not available");
+        return ESP_ERR_INVALID_STATE;
+    }
+}
 #endif /* #if (SMP_INCLUDED == TRUE) */
 
 esp_err_t esp_ble_gap_disconnect(esp_bd_addr_t remote_device)
