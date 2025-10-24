@@ -123,6 +123,8 @@ struct esp_netif_obj {
 #ifdef CONFIG_ESP_NETIF_SET_DNS_PER_DEFAULT_NETIF
     ip_addr_t dns[DNS_MAX_SERVERS];
 #endif
+    // initial MTU preference to apply after netif_add(); 0 means use stack default
+    uint16_t configured_mtu;
 };
 
 typedef enum esp_netif_set_default_state {

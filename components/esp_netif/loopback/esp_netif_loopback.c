@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -483,5 +483,16 @@ esp_err_t esp_netif_tcpip_exec(esp_netif_callback_fn fn, void*ctx)
 esp_netif_t *esp_netif_get_handle_from_ifkey(const char *if_key)
 {
     return esp_netif_get_handle_from_ifkey_unsafe(if_key);
+}
+
+// MTU control is not supported in loopback build.
+esp_err_t esp_netif_set_mtu(esp_netif_t *esp_netif, uint16_t mtu)
+{
+    return ESP_ERR_NOT_SUPPORTED;
+}
+
+esp_err_t esp_netif_get_mtu(esp_netif_t *esp_netif, uint16_t *mtu)
+{
+    return ESP_ERR_NOT_SUPPORTED;
 }
 #endif /* CONFIG_ESP_NETIF_LOOPBACK */

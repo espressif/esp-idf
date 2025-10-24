@@ -698,6 +698,48 @@ TEST(esp_netif, set_get_dnsserver)
     }
 }
 
+TEST(esp_netif, initial_mtu_config_applied)
+{
+    // Ensure TCP/IP stack is initialized
+    test_case_uses_tcpip();
+
+    // Minimal driver config to satisfy start-time sanity checks
+    esp_netif_driver_ifconfig_t driver_config = { .handle = (void*)1, .transmit = dummy_transmit };
+
+    // Case 1: explicit MTU configured
+    uint16_t mtu_out = 0;
+    esp_netif_inherent_config_t base1 = { .if_key = "mtu_if0" };
+    base1.mtu = 1400;
+    esp_netif_config_t cfg1 = {
+        .base = &base1,
+        .stack = ESP_NETIF_NETSTACK_DEFAULT_WIFI_STA,
+        .driver = &driver_config,
+    };
+    esp_netif_t *n1 = esp_netif_new(&cfg1);
+    TEST_ASSERT_NOT_NULL(n1);
+    esp_netif_action_start(n1, NULL, 0, NULL);
+    TEST_ASSERT_EQUAL(ESP_OK, esp_netif_get_mtu(n1, &mtu_out));
+    TEST_ASSERT_EQUAL_UINT16(1400, mtu_out);
+    esp_netif_destroy(n1);
+
+    // Case 2: default MTU (0 means use stack default, e.g., 1500)
+    esp_netif_inherent_config_t base2 = { .if_key = "mtu_if1" };
+    // base2.mtu intentionally left 0
+    esp_netif_config_t cfg2 = {
+        .base = &base2,
+        .stack = ESP_NETIF_NETSTACK_DEFAULT_WIFI_STA,
+        .driver = &driver_config,
+    };
+    esp_netif_t *n2 = esp_netif_new(&cfg2);
+    TEST_ASSERT_NOT_NULL(n2);
+    esp_netif_action_start(n2, NULL, 0, NULL);
+    TEST_ASSERT_EQUAL(ESP_OK, esp_netif_get_mtu(n2, &mtu_out));
+    TEST_ASSERT_EQUAL_UINT16(1500, mtu_out);
+    struct netif *netif = esp_netif_get_netif_impl(n2);
+    TEST_ASSERT_EQUAL_UINT16(1500, netif->mtu);
+    esp_netif_destroy(n2);
+}
+
 TEST_GROUP_RUNNER(esp_netif)
 {
     /**
@@ -727,6 +769,7 @@ TEST_GROUP_RUNNER(esp_netif)
     RUN_TEST_CASE(esp_netif, dhcp_server_state_transitions_wifi_ap)
     RUN_TEST_CASE(esp_netif, dhcp_server_state_transitions_mesh)
 #endif
+    RUN_TEST_CASE(esp_netif, initial_mtu_config_applied)
     RUN_TEST_CASE(esp_netif, route_priority)
     RUN_TEST_CASE(esp_netif, set_get_dnsserver)
     RUN_TEST_CASE(esp_netif, unified_netif_status_event)

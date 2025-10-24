@@ -487,8 +487,45 @@ int esp_netif_get_netif_impl_index(esp_netif_t *esp_netif);
  * @return
  *         - ESP_OK
  *         - ESP_ERR_ESP_NETIF_INVALID_PARAMS
-*/
+ */
 esp_err_t esp_netif_get_netif_impl_name(esp_netif_t *esp_netif, char* name);
+
+/**
+ * @brief  Set interface MTU at runtime
+ *
+ * Updates the underlying stack's MTU for the given interface. This affects
+ * TCP effective MSS calculation and IP fragmentation behavior for future
+ * transmissions on this interface.
+ *
+ * Notes:
+ * - Applies per-interface, not per-connection. Existing TCP connections may
+ *   adjust naturally based on effective MSS calculations during send.
+ * - Some interfaces may renegotiate MTU (e.g., DHCP/PPP) and override this;
+ *   reapply as needed after link events.
+ * - On stacks that do not support runtime MTU updates, returns ESP_ERR_NOT_SUPPORTED.
+ *
+ * @param[in]  esp_netif Handle to esp-netif instance
+ * @param[in]  mtu       New MTU value to set (in bytes)
+ * @return
+ *         - ESP_OK on success
+ *         - ESP_ERR_ESP_NETIF_INVALID_PARAMS if parameters are invalid or interface not ready
+ *         - ESP_ERR_NOT_SUPPORTED if not supported by the current net stack
+ */
+esp_err_t esp_netif_set_mtu(esp_netif_t *esp_netif, uint16_t mtu);
+
+/**
+ * @brief  Get interface MTU
+ *
+ * Reads the underlying stack's MTU for the given interface.
+ *
+ * @param[in]  esp_netif Handle to esp-netif instance
+ * @param[out] mtu       Pointer to store MTU (in bytes)
+ * @return
+ *         - ESP_OK on success
+ *         - ESP_ERR_ESP_NETIF_INVALID_PARAMS if parameters are invalid or interface not ready
+ *         - ESP_ERR_NOT_SUPPORTED if not supported by the current net stack
+ */
+esp_err_t esp_netif_get_mtu(esp_netif_t *esp_netif, uint16_t *mtu);
 
 /**
  * @brief  Enable NAPT on an interface

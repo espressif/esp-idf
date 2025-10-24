@@ -35,6 +35,7 @@
 #include "lwip/priv/tcpip_priv.h"
 #include "lwip/netif.h"
 #include "lwip/etharp.h"
+#include "lwip/prot/ip4.h"
 #if CONFIG_ESP_NETIF_BRIDGE_EN
 #include "netif/bridgeif.h"
 #endif // CONFIG_ESP_NETIF_BRIDGE_EN
@@ -680,6 +681,9 @@ static err_t netif_mld_mac_filter_cb(struct netif *netif, const ip6_addr_t *grou
 
 static esp_err_t esp_netif_init_configuration(esp_netif_t *esp_netif, const esp_netif_config_t *cfg)
 {
+#define MAX_MTU_SIZE 9000   /* lwip doesn't have a global maximum, 9000 is selected as a reasonable max MTU for most cases
+                               it is possible to override this upper bound by runtime configuration esp_netif_set_mtu() */
+
     // Basic esp_netif and lwip is a mandatory configuration and cannot be updated after esp_netif_new()
     if (cfg == NULL || cfg->base == NULL || cfg->stack == NULL) {
         return ESP_ERR_ESP_NETIF_INVALID_PARAMS;
@@ -710,6 +714,12 @@ static esp_err_t esp_netif_init_configuration(esp_netif_t *esp_netif, const esp_
     }
     if (cfg->base->route_prio) {
         esp_netif->route_prio = cfg->base->route_prio;
+    }
+    // Store initial MTU preference (applied after netif_add()). 0 keeps stack default.
+    if (cfg->base->mtu >= IP_HLEN && cfg->base->mtu <= MAX_MTU_SIZE) {
+        esp_netif->configured_mtu = cfg->base->mtu;
+    } else {
+        esp_netif->configured_mtu = 0;
     }
 
 #if CONFIG_ESP_NETIF_BRIDGE_EN
@@ -1009,6 +1019,10 @@ static esp_err_t esp_netif_lwip_add(esp_netif_t *esp_netif)
 #if CONFIG_ESP_NETIF_BRIDGE_EN
     }
 #endif // CONFIG_ESP_NETIF_BRIDGE_EN
+    // Apply configured MTU (if provided) after netif has been added and initialized
+    if (esp_netif->configured_mtu) {
+        esp_netif->lwip_netif->mtu = esp_netif->configured_mtu;
+    }
     if (esp_netif->driver_set_mac_filter) {
 #if LWIP_IPV4 && LWIP_IGMP
         netif_set_igmp_mac_filter(esp_netif->lwip_netif, netif_igmp_mac_filter_cb);
@@ -2717,6 +2731,48 @@ esp_err_t esp_netif_get_netif_impl_name(esp_netif_t *esp_netif, char* name)
         return ESP_ERR_ESP_NETIF_INVALID_PARAMS;
     }
     return esp_netif_lwip_ipc_call(esp_netif_get_netif_impl_name_api, esp_netif, name);
+}
+
+static esp_err_t esp_netif_set_mtu_api(esp_netif_api_msg_t *msg)
+{
+    esp_netif_t *esp_netif = msg->esp_netif;
+    uint16_t mtu = *(uint16_t *)msg->data;
+    esp_netif->lwip_netif->mtu = mtu;
+    return ESP_OK;
+}
+
+esp_err_t esp_netif_set_mtu(esp_netif_t *esp_netif, uint16_t mtu)
+{
+    ESP_LOGD(TAG, "%s esp_netif:%p mtu:%u", __func__, esp_netif, (unsigned)mtu);
+    if (esp_netif == NULL || esp_netif->lwip_netif == NULL) {
+        return ESP_ERR_ESP_NETIF_INVALID_PARAMS;
+    }
+    /* Validate MTU is at least large enough for IP header */
+    if (mtu < IP_HLEN) {
+        ESP_LOGE(TAG, "MTU is too small, must be at least %d", IP_HLEN);
+        return ESP_ERR_ESP_NETIF_INVALID_PARAMS;
+    }
+    return esp_netif_lwip_ipc_call(esp_netif_set_mtu_api, esp_netif, &mtu);
+}
+
+static esp_err_t esp_netif_get_mtu_api(esp_netif_api_msg_t *msg)
+{
+    esp_netif_t *esp_netif = msg->esp_netif;
+    if (esp_netif == NULL || esp_netif->lwip_netif == NULL || msg->data == NULL) {
+        return ESP_ERR_ESP_NETIF_INVALID_PARAMS;
+    }
+    uint16_t *mtu_out = (uint16_t *)msg->data;
+    *mtu_out = (uint16_t)esp_netif->lwip_netif->mtu;
+    return ESP_OK;
+}
+
+esp_err_t esp_netif_get_mtu(esp_netif_t *esp_netif, uint16_t *mtu)
+{
+    ESP_LOGD(TAG, "%s esp_netif:%p", __func__, esp_netif);
+    if (esp_netif == NULL || esp_netif->lwip_netif == NULL || mtu == NULL) {
+        return ESP_ERR_ESP_NETIF_INVALID_PARAMS;
+    }
+    return esp_netif_lwip_ipc_call(esp_netif_get_mtu_api, esp_netif, mtu);
 }
 
 #if IP_NAPT
