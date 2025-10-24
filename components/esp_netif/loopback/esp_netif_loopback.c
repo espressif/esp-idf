@@ -345,7 +345,7 @@ bool esp_netif_is_netif_up(esp_netif_t *esp_netif)
 
 esp_err_t esp_netif_get_old_ip_info(esp_netif_t *esp_netif, esp_netif_ip_info_t *ip_info)
 {
-    ESP_LOGD(TAG, "%s esp_netif:%p", __func__, esp_netif);
+    ESP_LOGV(TAG, "%s esp_netif:%p", __func__, esp_netif);
 
     if (esp_netif == NULL || ip_info == NULL) {
         return ESP_ERR_INVALID_ARG;
@@ -356,7 +356,7 @@ esp_err_t esp_netif_get_old_ip_info(esp_netif_t *esp_netif, esp_netif_ip_info_t 
 
 esp_err_t esp_netif_get_ip_info(esp_netif_t *esp_netif, esp_netif_ip_info_t *ip_info)
 {
-    ESP_LOGD(TAG, "%s esp_netif:%p", __func__, esp_netif);
+    ESP_LOGV(TAG, "%s esp_netif:%p", __func__, esp_netif);
 
     if (esp_netif == NULL || ip_info == NULL) {
         return ESP_ERR_INVALID_ARG;
@@ -374,7 +374,7 @@ bool esp_netif_is_valid_static_ip(esp_netif_ip_info_t *ip_info)
 
 esp_err_t esp_netif_set_old_ip_info(esp_netif_t *esp_netif, const esp_netif_ip_info_t *ip_info)
 {
-    ESP_LOGD(TAG, "%s esp_netif:%p", __func__, esp_netif);
+    ESP_LOGV(TAG, "%s esp_netif:%p", __func__, esp_netif);
 
     if (esp_netif == NULL || ip_info == NULL) {
         return ESP_ERR_INVALID_ARG;
