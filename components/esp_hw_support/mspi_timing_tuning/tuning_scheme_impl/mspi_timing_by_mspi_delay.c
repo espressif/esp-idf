@@ -181,7 +181,7 @@ static void psram_exec_cmd(int mspi_id, psram_cmd_mode_t mode,
 static void s_psram_write_data(uint8_t *buf, uint32_t addr, uint32_t len)
 {
     if (len % FIFO_SIZE_BYTE != 0) {
-        ESP_EARLY_LOGE(TAG, "wrong length %d", len);
+        ESP_DRAM_LOGE(TAG, "wrong length %d", len);
         assert(false);
     }
 
@@ -206,7 +206,7 @@ static void s_psram_write_data(uint8_t *buf, uint32_t addr, uint32_t len)
 static void s_psram_read_data(uint8_t *buf, uint32_t addr, uint32_t len)
 {
     if (len % FIFO_SIZE_BYTE != 0) {
-        ESP_EARLY_LOGE(TAG, "wrong length %d", len);
+        ESP_DRAM_LOGE(TAG, "wrong length %d", len);
         assert(false);
     }
 
@@ -272,17 +272,17 @@ static uint32_t s_select_best_tuning_config_str(const mspi_timing_config_t *conf
     if (consecutive_length < 3) {
         //tuning is FAIL, select default point, and generate a warning
         best_point = configs->default_config_id;
-        ESP_EARLY_LOGW(TAG, "tuning fail, best point is fallen back to index %"PRIu32"", best_point);
+        ESP_DRAM_LOGW(TAG, "tuning fail, best point is fallen back to index %"PRIu32"", best_point);
     }
 #if MSPI_TIMING_FLASH_CONSECUTIVE_LEN_MAX
     else if (consecutive_length > MSPI_TIMING_FLASH_CONSECUTIVE_LEN_MAX) {
         best_point = configs->default_config_id;
-        ESP_EARLY_LOGW(TAG, "tuning fail, best point is fallen back to index %"PRIu32"", best_point);
+        ESP_DRAM_LOGW(TAG, "tuning fail, best point is fallen back to index %"PRIu32"", best_point);
     }
 #endif
     else {
         best_point = end - consecutive_length / 2;
-        ESP_EARLY_LOGI(TAG, "tuning success, best point is index %"PRIu32"", best_point);
+        ESP_DRAM_LOGD(TAG, "tuning success, best point is index %"PRIu32"", best_point);
     }
 
     return best_point;
@@ -301,7 +301,7 @@ uint32_t mspi_timing_flash_select_best_tuning_config(const void *configs, uint32
 {
     const mspi_timing_config_t *timing_configs = (const mspi_timing_config_t *)configs;
     uint32_t best_point = s_select_best_tuning_config(timing_configs, consecutive_length, end, reference_data, is_ddr, true);
-    ESP_EARLY_LOGI(TAG, "Flash timing tuning index: %"PRIu32"", best_point);
+    ESP_DRAM_LOGD(TAG, "Flash timing tuning index: %"PRIu32"", best_point);
 
     return best_point;
 }
@@ -310,7 +310,7 @@ uint32_t mspi_timing_psram_select_best_tuning_config(const void *configs, uint32
 {
     const mspi_timing_config_t *timing_configs = (const mspi_timing_config_t *)configs;
     uint32_t best_point = s_select_best_tuning_config(timing_configs, consecutive_length, end, reference_data, is_ddr, false);
-    ESP_EARLY_LOGI(TAG, "PSRAM timing tuning index: %"PRIu32"", best_point);
+    ESP_DRAM_LOGD(TAG, "PSRAM timing tuning index: %"PRIu32"", best_point);
 
     return best_point;
 }
@@ -359,7 +359,7 @@ void mspi_timing_flash_config_set_tuning_regs(bool control_both_mspi)
     int spi0_extra_dummy = 0;
     mspi_timing_ll_get_flash_dummy(MSPI_TIMING_LL_MSPI_ID_0, &spi0_usr_dummy, &spi0_extra_dummy);
     mspi_timing_ll_get_flash_dummy(MSPI_TIMING_LL_MSPI_ID_1, &spi1_usr_dummy, &spi1_extra_dummy);
-    ESP_EARLY_LOGV(TAG, "flash, spi0_usr_dummy: %d, spi0_extra_dummy: %d, spi1_usr_dummy: %d, spi1_extra_dummy: %d", spi0_usr_dummy, spi0_extra_dummy, spi1_usr_dummy, spi1_extra_dummy);
+    ESP_DRAM_LOGV(TAG, "flash, spi0_usr_dummy: %d, spi0_extra_dummy: %d, spi1_usr_dummy: %d, spi1_extra_dummy: %d", spi0_usr_dummy, spi0_extra_dummy, spi1_usr_dummy, spi1_extra_dummy);
 }
 
 void mspi_timing_psram_config_clear_tuning_regs(bool control_both_mspi)
@@ -378,7 +378,7 @@ void mspi_timing_psram_config_set_tuning_regs(bool control_both_mspi)
     int spi0_usr_rdummy = 0;
     int spi0_extra_dummy = 0;
     mspi_timing_ll_get_psram_dummy(MSPI_TIMING_LL_MSPI_ID_0, &spi0_usr_rdummy, &spi0_extra_dummy);
-    ESP_EARLY_LOGV(TAG, "psram, spi0_usr_rdummy: %d, spi0_extra_dummy: %d", spi0_usr_rdummy, spi0_extra_dummy);
+    ESP_DRAM_LOGV(TAG, "psram, spi0_usr_rdummy: %d, spi0_extra_dummy: %d", spi0_usr_rdummy, spi0_extra_dummy);
 }
 
 /*-------------------------------------------------------------------------------------------------

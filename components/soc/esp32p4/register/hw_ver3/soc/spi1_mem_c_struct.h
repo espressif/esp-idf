@@ -29,8 +29,9 @@ typedef union {
         uint32_t reserved_8:9;
         /** flash_pe : R/W/SC; bitpos: [17]; default: 0;
          *  In user mode, it is set to indicate that program/erase operation will be triggered.
-         *  The bit is combined with spi1_mem_c_usr bit. The bit will be cleared once the
+         *  The bit is combined with spi_mem_usr bit. The bit will be cleared once the
          *  operation done.1: enable 0: disable.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t flash_pe:1;
         /** usr : R/W/SC; bitpos: [18]; default: 0;
@@ -41,68 +42,81 @@ typedef union {
         /** flash_hpm : R/W/SC; bitpos: [19]; default: 0;
          *  Drive Flash into high performance mode.  The bit will be cleared once the operation
          *  done.1: enable 0: disable.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t flash_hpm:1;
         /** flash_res : R/W/SC; bitpos: [20]; default: 0;
          *  This bit combined with reg_resandres bit releases Flash from the power-down state
          *  or high performance mode and obtains the devices ID. The bit will be cleared once
          *  the operation done.1: enable 0: disable.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t flash_res:1;
         /** flash_dp : R/W/SC; bitpos: [21]; default: 0;
          *  Drive Flash into power down.  An operation will be triggered when the bit is set.
          *  The bit will be cleared once the operation done.1: enable 0: disable.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t flash_dp:1;
         /** flash_ce : R/W/SC; bitpos: [22]; default: 0;
          *  Chip erase enable. Chip erase operation will be triggered when the bit is set. The
          *  bit will be cleared once the operation done.1: enable 0: disable.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t flash_ce:1;
         /** flash_be : R/W/SC; bitpos: [23]; default: 0;
          *  Block erase enable(32KB) .  Block erase operation will be triggered when the bit is
          *  set. The bit will be cleared once the operation done.1: enable 0: disable.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t flash_be:1;
         /** flash_se : R/W/SC; bitpos: [24]; default: 0;
          *  Sector erase enable(4KB). Sector erase operation will be triggered when the bit is
          *  set. The bit will be cleared once the operation done.1: enable 0: disable.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t flash_se:1;
         /** flash_pp : R/W/SC; bitpos: [25]; default: 0;
          *  Page program enable(1 byte ~256 bytes data to be programmed). Page program
          *  operation  will be triggered when the bit is set. The bit will be cleared once the
          *  operation done .1: enable 0: disable.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t flash_pp:1;
         /** flash_wrsr : R/W/SC; bitpos: [26]; default: 0;
          *  Write status register enable.   Write status operation  will be triggered when the
          *  bit is set. The bit will be cleared once the operation done.1: enable 0: disable.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t flash_wrsr:1;
         /** flash_rdsr : R/W/SC; bitpos: [27]; default: 0;
          *  Read status register-1.  Read status operation will be triggered when the bit is
          *  set. The bit will be cleared once the operation done.1: enable 0: disable.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t flash_rdsr:1;
         /** flash_rdid : R/W/SC; bitpos: [28]; default: 0;
          *  Read JEDEC ID . Read ID command will be sent when the bit is set. The bit will be
          *  cleared once the operation done. 1: enable 0: disable.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t flash_rdid:1;
         /** flash_wrdi : R/W/SC; bitpos: [29]; default: 0;
          *  Write flash disable. Write disable command will be sent when the bit is set. The
          *  bit will be cleared once the operation done. 1: enable 0: disable.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t flash_wrdi:1;
         /** flash_wren : R/W/SC; bitpos: [30]; default: 0;
          *  Write flash enable.  Write enable command will be sent when the bit is set. The bit
          *  will be cleared once the operation done. 1: enable 0: disable.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t flash_wren:1;
         /** flash_read : R/W/SC; bitpos: [31]; default: 0;
          *  Read flash enable. Read flash operation will be triggered when the bit is set. The
          *  bit will be cleared once the operation done. 1: enable 0: disable.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t flash_read:1;
     };
@@ -130,7 +144,7 @@ typedef union {
     struct {
         uint32_t reserved_0:9;
         /** ck_out_edge : R/W; bitpos: [9]; default: 0;
-         *  the bit combined with spi1_mem_c_mosi_delay_mode bits to set mosi signal delay mode.
+         *  the bit combined with spi_mem_mosi_delay_mode bits to set mosi signal delay mode.
          */
         uint32_t ck_out_edge:1;
         uint32_t reserved_10:2;
@@ -152,13 +166,15 @@ typedef union {
         uint32_t fwrite_qio:1;
         uint32_t reserved_16:8;
         /** usr_miso_highpart : HRO; bitpos: [24]; default: 0;
-         *  read-data phase only access to high-part of the buffer spi1_mem_c_w8~spi1_mem_c_w15. 1:
+         *  read-data phase only access to high-part of the buffer spi_mem_w8~spi_mem_w15. 1:
          *  enable 0: disable.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t usr_miso_highpart:1;
         /** usr_mosi_highpart : HRO; bitpos: [25]; default: 0;
-         *  write-data phase only access to high-part of the buffer spi1_mem_c_w8~spi1_mem_c_w15. 1:
+         *  write-data phase only access to high-part of the buffer spi_mem_w8~spi_mem_w15. 1:
          *  enable 0: disable.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t usr_mosi_highpart:1;
         /** usr_dummy_idle : R/W; bitpos: [26]; default: 0;
@@ -195,7 +211,7 @@ typedef union {
 typedef union {
     struct {
         /** usr_dummy_cyclelen : R/W; bitpos: [5:0]; default: 7;
-         *  The length in spi1_mem_c_clk cycles of dummy phase. The register value shall be
+         *  The length in spi_mem_clk cycles of dummy phase. The register value shall be
          *  (cycle_num-1).
          */
         uint32_t usr_dummy_cyclelen:6;
@@ -268,16 +284,18 @@ typedef union {
         /** fcs_crc_en : HRO; bitpos: [10]; default: 0;
          *  For SPI1,  initialize crc32 module before writing encrypted data to flash. Active
          *  low.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t fcs_crc_en:1;
         /** tx_crc_en : HRO; bitpos: [11]; default: 0;
          *  For SPI1,  enable crc32 when writing encrypted data to flash. 1: enable 0:disable
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t tx_crc_en:1;
         uint32_t reserved_12:1;
         /** fastrd_mode : R/W; bitpos: [13]; default: 1;
-         *  This bit enable the bits: spi1_mem_c_fread_qio, spi1_mem_c_fread_dio, spi1_mem_c_fread_qout
-         *  and spi1_mem_c_fread_dout. 1: enable 0: disable.
+         *  This bit enable the bits: spi_mem_fread_qio, spi_mem_fread_dio, spi_mem_fread_qout
+         *  and spi_mem_fread_dout. 1: enable 0: disable.
          */
         uint32_t fastrd_mode:1;
         /** fread_dual : R/W; bitpos: [14]; default: 0;
@@ -286,7 +304,8 @@ typedef union {
         uint32_t fread_dual:1;
         /** resandres : R/W; bitpos: [15]; default: 1;
          *  The Device ID is read out to SPI1_MEM_C_RD_STATUS register,  this bit combine with
-         *  spi1_mem_c_flash_res bit. 1: enable 0: disable.
+         *  spi_mem_flash_res bit. 1: enable 0: disable.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t resandres:1;
         uint32_t reserved_16:2;
@@ -309,6 +328,7 @@ typedef union {
         /** wrsr_2b : R/W; bitpos: [22]; default: 0;
          *  two bytes data will be written to status register when it is set. 1: enable 0:
          *  disable.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t wrsr_2b:1;
         /** fread_dio : R/W; bitpos: [23]; default: 0;
@@ -338,11 +358,23 @@ typedef union {
          */
         uint32_t clk_mode:2;
         /** cs_hold_dly_res : R/W; bitpos: [11:2]; default: 1023;
-         *  After RES/DP/HPM command is sent, SPI1 waits (SPI1_MEM_C_CS_HOLD_DELAY_RES[9:0] * 512)
-         *  SPI_CLK cycles.
+         *  After RES/DP/HPM command is sent, SPI1 waits (SPI1_MEM_C_CS_HOLD_DELAY_RES[9:0] *
+         *  512) SPI_CLK cycles.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t cs_hold_dly_res:10;
-        uint32_t reserved_12:20;
+        /** cs_hold_dly_per : R/W; bitpos: [20:12]; default: 511;
+         *  After PER command is sent, SPI1 waits (SPI1_MEM_C_CS_HOLD_DLY_PER[8:0] * 128)
+         *  SPI_CLK cycles.
+         */
+        uint32_t cs_hold_dly_per:9;
+        uint32_t reserved_21:2;
+        /** cs_hold_dly_per_en : R/W; bitpos: [23]; default: 0;
+         *  1: use SPI1_MEM_C_CS_HOLD_DLY_PER for per, use SPI1_MEM_C_CS_HOLD_DELAY_RES for
+         *  pes/dp/hpm . 0: use SPI1_MEM_C_CS_HOLD_DELAY_RES for pes/dp/hpm/per .
+         */
+        uint32_t cs_hold_dly_per_en:1;
+        uint32_t reserved_24:8;
     };
     uint32_t val;
 } spi1_mem_c_ctrl1_reg_t;
@@ -367,16 +399,16 @@ typedef union {
 typedef union {
     struct {
         /** clkcnt_l : R/W; bitpos: [7:0]; default: 3;
-         *  In the master mode it must be equal to spi1_mem_c_clkcnt_N.
+         *  In the master mode it must be equal to SPI1_MEM_C_CLKCNT_N.
          */
         uint32_t clkcnt_l:8;
         /** clkcnt_h : R/W; bitpos: [15:8]; default: 1;
-         *  In the master mode it must be floor((spi1_mem_c_clkcnt_N+1)/2-1).
+         *  In the master mode it must be floor((SPI1_MEM_C_CLKCNT_N+1)/2-1).
          */
         uint32_t clkcnt_h:8;
         /** clkcnt_n : R/W; bitpos: [23:16]; default: 3;
-         *  In the master mode it is the divider of spi1_mem_c_clk. So spi1_mem_c_clk frequency is
-         *  system/(spi1_mem_c_clkcnt_N+1)
+         *  In the master mode it is the divider of spi_mem_clk. So spi_mem_clk frequency is
+         *  system/(SPI1_MEM_C_CLKCNT_N+1)
          */
         uint32_t clkcnt_n:8;
         uint32_t reserved_24:7;
@@ -422,11 +454,12 @@ typedef union {
 typedef union {
     struct {
         /** status : R/W/SS; bitpos: [15:0]; default: 0;
-         *  The value is stored when set spi1_mem_c_flash_rdsr bit and spi1_mem_c_flash_res bit.
+         *  The value is stored when set spi_mem_flash_rdsr bit and spi_mem_flash_res bit.
          */
         uint32_t status:16;
         /** wb_mode : R/W; bitpos: [23:16]; default: 0;
-         *  Mode bits in the flash fast read mode  it is combined with spi1_mem_c_fastrd_mode bit.
+         *  Mode bits in the flash fast read mode  it is combined with spi_mem_fastrd_mode bit.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t wb_mode:8;
         uint32_t reserved_24:8;
@@ -471,37 +504,44 @@ typedef union {
         uint32_t reserved_0:1;
         /** cache_usr_addr_4byte : R/W; bitpos: [1]; default: 0;
          *  For SPI1,  cache  read flash with 4 bytes address, 1: enable, 0:disable.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t cache_usr_addr_4byte:1;
         uint32_t reserved_2:1;
         /** fdin_dual : R/W; bitpos: [3]; default: 0;
          *  For SPI1, din phase apply 2 signals. 1: enable 0: disable. The bit is the same with
-         *  spi1_mem_c_fread_dio.
+         *  spi_mem_fread_dio.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t fdin_dual:1;
         /** fdout_dual : R/W; bitpos: [4]; default: 0;
          *  For SPI1, dout phase apply 2 signals. 1: enable 0: disable. The bit is the same
-         *  with spi1_mem_c_fread_dio.
+         *  with spi_mem_fread_dio.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t fdout_dual:1;
         /** faddr_dual : R/W; bitpos: [5]; default: 0;
          *  For SPI1, address phase apply 2 signals. 1: enable 0: disable.  The bit is the same
-         *  with spi1_mem_c_fread_dio.
+         *  with spi_mem_fread_dio.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t faddr_dual:1;
         /** fdin_quad : R/W; bitpos: [6]; default: 0;
          *  For SPI1, din phase apply 4 signals. 1: enable 0: disable.  The bit is the same
-         *  with spi1_mem_c_fread_qio.
+         *  with spi_mem_fread_qio.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t fdin_quad:1;
         /** fdout_quad : R/W; bitpos: [7]; default: 0;
          *  For SPI1, dout phase apply 4 signals. 1: enable 0: disable.  The bit is the same
-         *  with spi1_mem_c_fread_qio.
+         *  with spi_mem_fread_qio.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t fdout_quad:1;
         /** faddr_quad : R/W; bitpos: [8]; default: 0;
          *  For SPI1, address phase apply 4 signals. 1: enable 0: disable.  The bit is the same
-         *  with spi1_mem_c_fread_qio.
+         *  with spi_mem_fread_qio.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t faddr_quad:1;
         uint32_t reserved_9:23;
@@ -531,8 +571,8 @@ typedef union {
         uint32_t waiti_addr_en:1;
         /** waiti_addr_cyclelen : R/W; bitpos: [4:3]; default: 0;
          *  When SPI1_MEM_C_WAITI_ADDR_EN is set, the  cycle length of sent out address is
-         *  (SPI1_MEM_C_WAITI_ADDR_CYCLELEN[1:0] + 1) SPI  bus clock cycles. It is not active when
-         *  SPI1_MEM_C_WAITI_ADDR_EN is cleared.
+         *  (SPI1_MEM_C_WAITI_ADDR_CYCLELEN[1:0] + 1) SPI  bus clock cycles. It is not active
+         *  when SPI1_MEM_C_WAITI_ADDR_EN is cleared.
          */
         uint32_t waiti_addr_cyclelen:2;
         uint32_t reserved_5:4;
@@ -613,8 +653,8 @@ typedef union {
          */
         uint32_t pes_end_en:1;
         /** sus_timeout_cnt : R/W; bitpos: [31:25]; default: 4;
-         *  When SPI1 checks SUS/SUS1/SUS2 bits fail for SPI1_MEM_C_SUS_TIMEOUT_CNT[6:0] times, it
-         *  will be treated as check pass.
+         *  When SPI1 checks SUS/SUS1/SUS2 bits fail for SPI1_MEM_C_SUS_TIMEOUT_CNT[6:0] times,
+         *  it will be treated as check pass.
          */
         uint32_t sus_timeout_cnt:7;
     };
@@ -655,34 +695,34 @@ typedef union {
         uint32_t wait_pesr_cmd_2b:1;
         /** flash_hpm_dly_128 : R/W; bitpos: [2]; default: 0;
          *  1: SPI1 waits (SPI1_MEM_C_CS_HOLD_DELAY_RES[9:0] * 128) SPI_CLK cycles after HPM
-         *  command is sent. 0: SPI1 waits (SPI1_MEM_C_CS_HOLD_DELAY_RES[9:0] * 4) SPI_CLK cycles
-         *  after HPM command is sent.
+         *  command is sent. 0: SPI1 waits (SPI1_MEM_C_CS_HOLD_DELAY_RES[9:0] * 4) SPI_CLK
+         *  cycles after HPM command is sent.
          */
         uint32_t flash_hpm_dly_128:1;
         /** flash_res_dly_128 : R/W; bitpos: [3]; default: 0;
          *  1: SPI1 waits (SPI1_MEM_C_CS_HOLD_DELAY_RES[9:0] * 128) SPI_CLK cycles after RES
-         *  command is sent. 0: SPI1 waits (SPI1_MEM_C_CS_HOLD_DELAY_RES[9:0] * 4) SPI_CLK cycles
-         *  after RES command is sent.
+         *  command is sent. 0: SPI1 waits (SPI1_MEM_C_CS_HOLD_DELAY_RES[9:0] * 4) SPI_CLK
+         *  cycles after RES command is sent.
          */
         uint32_t flash_res_dly_128:1;
         /** flash_dp_dly_128 : R/W; bitpos: [4]; default: 0;
          *  1: SPI1 waits (SPI1_MEM_C_CS_HOLD_DELAY_RES[9:0] * 128) SPI_CLK cycles after DP
-         *  command is sent. 0: SPI1 waits (SPI1_MEM_C_CS_HOLD_DELAY_RES[9:0] * 4) SPI_CLK cycles
-         *  after DP command is sent.
+         *  command is sent. 0: SPI1 waits (SPI1_MEM_C_CS_HOLD_DELAY_RES[9:0] * 4) SPI_CLK
+         *  cycles after DP command is sent.
          */
         uint32_t flash_dp_dly_128:1;
         /** flash_per_dly_128 : R/W; bitpos: [5]; default: 0;
          *  Valid when SPI1_MEM_C_FLASH_PER_WAIT_EN is 1. 1: SPI1 waits
-         *  (SPI1_MEM_C_CS_HOLD_DELAY_RES[9:0] * 128) SPI_CLK cycles after PER command is sent. 0:
-         *  SPI1 waits (SPI1_MEM_C_CS_HOLD_DELAY_RES[9:0] * 4) SPI_CLK cycles after PER command is
-         *  sent.
+         *  (SPI1_MEM_C_CS_HOLD_DELAY_RES[9:0] * 128) SPI_CLK cycles after PER command is sent.
+         *  0: SPI1 waits (SPI1_MEM_C_CS_HOLD_DELAY_RES[9:0] * 4) SPI_CLK cycles after PER
+         *  command is sent.
          */
         uint32_t flash_per_dly_128:1;
         /** flash_pes_dly_128 : R/W; bitpos: [6]; default: 0;
          *  Valid when SPI1_MEM_C_FLASH_PES_WAIT_EN is 1. 1: SPI1 waits
-         *  (SPI1_MEM_C_CS_HOLD_DELAY_RES[9:0] * 128) SPI_CLK cycles after PES command is sent. 0:
-         *  SPI1 waits (SPI1_MEM_C_CS_HOLD_DELAY_RES[9:0] * 4) SPI_CLK cycles after PES command is
-         *  sent.
+         *  (SPI1_MEM_C_CS_HOLD_DELAY_RES[9:0] * 128) SPI_CLK cycles after PES command is sent.
+         *  0: SPI1 waits (SPI1_MEM_C_CS_HOLD_DELAY_RES[9:0] * 4) SPI_CLK cycles after PES
+         *  command is sent.
          */
         uint32_t flash_pes_dly_128:1;
         /** spi0_lock_en : R/W; bitpos: [7]; default: 0;
@@ -739,8 +779,8 @@ typedef union {
         uint32_t fmem_usr_ddr_dqs_thd:7;
         /** fmem_ddr_dqs_loop : HRO; bitpos: [21]; default: 0;
          *  1: Do not need the input of SPI_DQS signal, SPI0 starts to receive data when
-         *  spi0_slv_st is in SPI1_MEM_C_DIN state. It is used when there is no SPI_DQS signal or
-         *  SPI_DQS signal is not stable. 0: SPI0 starts to store data at the positive and
+         *  spi0_slv_st is in SPI1_MEM_C_DIN state. It is used when there is no SPI_DQS signal
+         *  or SPI_DQS signal is not stable. 0: SPI0 starts to store data at the positive and
          *  negative edge of SPI_DQS.
          */
         uint32_t fmem_ddr_dqs_loop:1;
@@ -801,11 +841,13 @@ typedef union {
     struct {
         /** tx_crc_data : RO; bitpos: [31:0]; default: 4294967295;
          *  For SPI1, the value of crc32.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t tx_crc_data:32;
     };
     uint32_t val;
 } spi1_mem_c_tx_crc_reg_t;
+
 
 /** Group: Interrupt registers */
 /** Type of int_ena register
@@ -894,19 +936,19 @@ typedef union {
          */
         uint32_t pes_end_int_raw:1;
         /** wpe_end_int_raw : R/WTC/SS; bitpos: [2]; default: 0;
-         *  The raw bit for SPI1_MEM_C_WPE_END_INT interrupt. 1: Triggered when WRSR/PP/SE/BE/CE
-         *  is sent and flash is already idle. 0: Others.
+         *  The raw bit for SPI1_MEM_C_WPE_END_INT interrupt. 1: Triggered when
+         *  WRSR/PP/SE/BE/CE is sent and flash is already idle. 0: Others.
          */
         uint32_t wpe_end_int_raw:1;
         /** slv_st_end_int_raw : R/WTC/SS; bitpos: [3]; default: 0;
-         *  The raw bit for SPI1_MEM_C_SLV_ST_END_INT interrupt. 1: Triggered when spi1_slv_st is
-         *  changed from non idle state to idle state. It means that SPI_CS raises high. 0:
+         *  The raw bit for SPI1_MEM_C_SLV_ST_END_INT interrupt. 1: Triggered when spi1_slv_st
+         *  is changed from non idle state to idle state. It means that SPI_CS raises high. 0:
          *  Others
          */
         uint32_t slv_st_end_int_raw:1;
         /** mst_st_end_int_raw : R/WTC/SS; bitpos: [4]; default: 0;
-         *  The raw bit for SPI1_MEM_C_MST_ST_END_INT interrupt. 1: Triggered when spi1_mst_st is
-         *  changed from non idle state to idle state. 0: Others.
+         *  The raw bit for SPI1_MEM_C_MST_ST_END_INT interrupt. 1: Triggered when spi1_mst_st
+         *  is changed from non idle state to idle state. 0: Others.
          */
         uint32_t mst_st_end_int_raw:1;
         uint32_t reserved_5:5;
@@ -985,7 +1027,7 @@ typedef union {
  */
 typedef union {
     struct {
-        /** date : R/W; bitpos: [27:0]; default: 35660128;
+        /** date : R/W; bitpos: [27:0]; default: 38801712;
          *  Version control register
          */
         uint32_t date:28;

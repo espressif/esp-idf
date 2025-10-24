@@ -233,16 +233,16 @@ static void s_sweep_for_success_sample_points(uint8_t *reference_data, void *con
 #endif
             if (memcmp(reference_data, read_data, sizeof(read_data)) == 0) {
                 out_array[config_idx] += 1;
-                ESP_EARLY_LOGV(TAG, "config_idx: %d, good", config_idx);
+                ESP_DRAM_LOGV(TAG, "config_idx: %d, good", config_idx);
             } else {
-                ESP_EARLY_LOGV(TAG, "config_idx: %d, bad", config_idx);
+                ESP_DRAM_LOGV(TAG, "config_idx: %d, bad", config_idx);
             }
         }
     }
 
-    ESP_EARLY_LOGD(TAG, "test nums: %" PRIu32 ", test result: [id][good/bad][good_times]:", s_tuning_cfg_drv.sweep_test_nums);
+    ESP_DRAM_LOGD(TAG, "test nums: %" PRIu32 ", test result: [id][good/bad][good_times]:", s_tuning_cfg_drv.sweep_test_nums);
     for (config_idx = 0; config_idx < timing_config->available_config_num; config_idx++) {
-        ESP_EARLY_LOGD(TAG, "[%"PRIu32"][%s][%" PRIu32 "] ", config_idx, out_array[config_idx] == s_tuning_cfg_drv.sweep_test_nums ? "good" : "bad", out_array[config_idx]);
+        ESP_DRAM_LOGD(TAG, "[%"PRIu32"][%s][%" PRIu32 "] ", config_idx, out_array[config_idx] == s_tuning_cfg_drv.sweep_test_nums ? "good" : "bad", out_array[config_idx]);
     }
 }
 
@@ -349,6 +349,7 @@ void mspi_timing_flash_tuning(void)
      * set MSPI related regs to 20mhz configuration, to get reference data from FLASH
      * see detailed comments in this function (`mspi_timing_enter_low_speed_mode`)
      */
+    ESP_EARLY_LOGI(TAG, "Enter flash timing tuning");
     mspi_timing_enter_low_speed_mode(true);
 
 #if SOC_MEMSPI_TIMING_TUNING_BY_MSPI_DELAY || SOC_MEMSPI_TIMING_TUNING_BY_FLASH_DELAY
@@ -397,6 +398,7 @@ void mspi_timing_psram_tuning(void)
      * set MSPI related regs to 20mhz configuration, to write reference data to PSRAM
      * see detailed comments in this function (`mspi_timing_enter_low_speed_mode`)
      */
+    ESP_EARLY_LOGI(TAG, "Enter psram timing tuning");
     mspi_timing_enter_low_speed_mode(true);
 
     // write data into psram, used to do timing tuning test.

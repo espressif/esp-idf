@@ -774,11 +774,19 @@ void esp_rom_opiflash_cache_mode_config(esp_rom_spiflash_read_mode_t mode, const
         // Patch for ROM function `esp_rom_opiflash_cache_mode_config`, because when dummy is 0,
         // `SPI_MEM_USR_DUMMY` should be 0. `esp_rom_opiflash_cache_mode_config` doesn't handle this
         // properly.
-        if (cache->dummy_bit_len == 0) {
+        uint16_t dummy_cyclelen = cache->dummy_bit_len;
+        if (mode == ESP_ROM_SPIFLASH_DIO_MODE) {
+            dummy_cyclelen -= 4; // wb_mode(8) / line_width(2)
+            dummy_cyclelen += rom_spiflash_legacy_data->dummy_len_plus[0];
+        } else if (mode == ESP_ROM_SPIFLASH_QIO_MODE) {
+            dummy_cyclelen -= 2; // wb_mode(8) / line_width(4)
+            dummy_cyclelen += rom_spiflash_legacy_data->dummy_len_plus[0];
+        }
+        if (dummy_cyclelen == 0) {
             REG_CLR_BIT(SPI_MEM_USER_REG(0), SPI_MEM_USR_DUMMY);
         } else {
             REG_SET_BIT(SPI_MEM_USER_REG(0), SPI_MEM_USR_DUMMY);
-            REG_SET_FIELD(SPI_MEM_USER1_REG(0), SPI_MEM_USR_DUMMY_CYCLELEN, cache->dummy_bit_len - 1 + rom_spiflash_legacy_data->dummy_len_plus[0]);
+            REG_SET_FIELD(SPI_MEM_USER1_REG(0), SPI_MEM_USR_DUMMY_CYCLELEN, dummy_cyclelen - 1);
         }
         REG_SET_FIELD(SPI_MEM_USER2_REG(0), SPI_MEM_USR_COMMAND_VALUE, cache->cmd);
         REG_SET_FIELD(SPI_MEM_USER2_REG(0), SPI_MEM_USR_COMMAND_BITLEN, cache->cmd_bit_len - 1);
