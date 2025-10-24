@@ -24,6 +24,7 @@
 #include "esp_netif_types.h"
 #include "esp_openthread.h"
 #include "esp_openthread_lock.h"
+#include "esp_openthread_netif_glue.h"
 #include "esp_openthread_types.h"
 #include "esp_ot_config.h"
 #include "esp_vfs_eventfd.h"
@@ -59,10 +60,13 @@ void app_main(void)
     ot_console_start();
 #endif
 
-    esp_openthread_platform_config_t config = {
-        .radio_config = ESP_OPENTHREAD_DEFAULT_RADIO_CONFIG(),
-        .host_config = ESP_OPENTHREAD_DEFAULT_HOST_CONFIG(),
-        .port_config = ESP_OPENTHREAD_DEFAULT_PORT_CONFIG(),
+    static esp_openthread_config_t config = {
+        .netif_config = ESP_NETIF_DEFAULT_OPENTHREAD(),
+        .platform_config = {
+            .radio_config = ESP_OPENTHREAD_DEFAULT_RADIO_CONFIG(),
+            .host_config = ESP_OPENTHREAD_DEFAULT_HOST_CONFIG(),
+            .port_config = ESP_OPENTHREAD_DEFAULT_PORT_CONFIG(),
+        },
     };
 
     ESP_ERROR_CHECK(esp_openthread_start(&config));
