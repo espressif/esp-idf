@@ -38,7 +38,7 @@ void mcpwm_hal_operator_reset(mcpwm_hal_context_t *hal, int oper_id)
     mcpwm_ll_operator_update_action_at_once(hal->dev, oper_id);
     mcpwm_ll_deadtime_stop_update_delay(hal->dev, oper_id, false);
     mcpwm_ll_deadtime_update_delay_at_once(hal->dev, oper_id);
-    for (int i = 0; i < SOC_MCPWM_COMPARATORS_PER_OPERATOR; i++) {
+    for (int i = 0; i < MCPWM_LL_GET(COMPARATORS_PER_OPERATOR); i++) {
         mcpwm_ll_operator_stop_update_compare(hal->dev, oper_id, i, false);
         mcpwm_ll_operator_update_compare_at_once(hal->dev, oper_id, i);
     }
