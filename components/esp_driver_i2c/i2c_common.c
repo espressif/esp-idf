@@ -458,8 +458,8 @@ esp_err_t i2c_common_deinit_pins(i2c_bus_handle_t handle)
         ESP_RETURN_ON_ERROR(rtc_gpio_deinit(handle->sda_num), TAG, "deinit rtc gpio failed");
         ESP_RETURN_ON_ERROR(rtc_gpio_deinit(handle->scl_num), TAG, "deinit rtc gpio failed");
 #if SOC_LP_GPIO_MATRIX_SUPPORTED
-        lp_gpio_connect_in_signal(LP_GPIO_MATRIX_CONST_ZERO_INPUT, i2c_periph_signal[port_id].scl_in_sig, 0);
-        lp_gpio_connect_in_signal(LP_GPIO_MATRIX_CONST_ZERO_INPUT, i2c_periph_signal[port_id].sda_in_sig, 0);
+        ESP_RETURN_ON_ERROR(lp_gpio_connect_in_signal(LP_GPIO_MATRIX_CONST_ZERO_INPUT, i2c_periph_signal[port_id].scl_in_sig, 0), TAG, "failed to connect lp gpio to zero");
+        ESP_RETURN_ON_ERROR(lp_gpio_connect_in_signal(LP_GPIO_MATRIX_CONST_ZERO_INPUT, i2c_periph_signal[port_id].sda_in_sig, 0), TAG, "failed to connect lp gpio to zero");
 #endif
     }
 #endif
