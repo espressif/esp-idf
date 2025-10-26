@@ -726,7 +726,7 @@ extern "C" {
 #define EFUSE_RD_RESERVE_0_158_M  (EFUSE_RD_RESERVE_0_158_V << EFUSE_RD_RESERVE_0_158_S)
 #define EFUSE_RD_RESERVE_0_158_V  0x00000001U
 #define EFUSE_RD_RESERVE_0_158_S  30
-/** EFUSE_ECDSA_P384_ENABLE : RO; bitpos: [31]; default: 0;
+/** EFUSE_SECURE_BOOT_SHA384_EN : RO; bitpos: [31]; default: 0;
  *  Represents if the chip supports Secure Boot using SHA-384
  */
 #define EFUSE_SECURE_BOOT_SHA384_EN    (BIT(31))
