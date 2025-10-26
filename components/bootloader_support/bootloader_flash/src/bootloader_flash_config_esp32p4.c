@@ -224,6 +224,7 @@ static void bootloader_spi_flash_resume(void)
 
 esp_err_t bootloader_init_spi_flash(void)
 {
+    bootloader_init_mspi_clock();
     bootloader_init_flash_configure();
     bootloader_spi_flash_resume();
     bootloader_flash_unlock();

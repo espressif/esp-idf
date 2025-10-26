@@ -34,7 +34,11 @@ __attribute__((weak)) void bootloader_clock_configure(void)
     esp_rom_output_tx_wait_idle(0);
 
     /* Set CPU to a higher certain frequency. Keep other clocks unmodified. */
+#if CONFIG_IDF_TARGET_ESP32P4 && !CONFIG_ESP32P4_SELECTS_REV_LESS_V3
+    int cpu_freq_mhz = 100;
+#else
     int cpu_freq_mhz = CPU_CLK_FREQ_MHZ_BTLD;
+#endif
 
 #if CONFIG_IDF_TARGET_ESP32
     /* On ESP32 rev 0, switching to 80/160 MHz if clock was previously set to

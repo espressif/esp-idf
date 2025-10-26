@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -65,7 +65,12 @@ void bootloader_clock_configure(void)
 void esp_rtc_init(void)
 {
 #if SOC_PMU_SUPPORTED
+#if CONFIG_ESP32P4_REV_MIN_300
+    //TODO: IDF-13453
+    ESP_EARLY_LOGW(TAG, "pmu_init not supported\n");
+#else
     pmu_init();
+#endif
 #endif
 }
 

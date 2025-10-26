@@ -8,6 +8,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include "sdkconfig.h"
 #include "soc/soc.h"
 #include "soc/clk_tree_defs.h"
 #include "hal/hal_utils.h"
@@ -189,6 +190,7 @@ typedef struct {
 /**
  * Default initializer for rtc_clk_config_t
  */
+#if CONFIG_ESP32P4_SELECTS_REV_LESS_V3
 #define RTC_CLK_CONFIG_DEFAULT() { \
     .xtal_freq = CONFIG_XTAL_FREQ, \
     .cpu_freq_mhz = 90, \
@@ -200,6 +202,19 @@ typedef struct {
     .clk_8m_dfreq = RTC_CNTL_CK8M_DFREQ_DEFAULT, \
     .rc32k_dfreq = RTC_CNTL_RC32K_DFREQ_DEFAULT, \
 }
+#else
+#define RTC_CLK_CONFIG_DEFAULT() { \
+    .xtal_freq = CONFIG_XTAL_FREQ, \
+    .cpu_freq_mhz = 100, \
+    .fast_clk_src = SOC_RTC_FAST_CLK_SRC_RC_FAST, \
+    .slow_clk_src = SOC_RTC_SLOW_CLK_SRC_RC_SLOW, \
+    .clk_rtc_clk_div = 0, \
+    .clk_8m_clk_div = 0, \
+    .slow_clk_dcap = RTC_CNTL_SCK_DCAP_DEFAULT, \
+    .clk_8m_dfreq = RTC_CNTL_CK8M_DFREQ_DEFAULT, \
+    .rc32k_dfreq = RTC_CNTL_RC32K_DFREQ_DEFAULT, \
+}
+#endif
 
 /**
  * Initialize clocks and set CPU frequency

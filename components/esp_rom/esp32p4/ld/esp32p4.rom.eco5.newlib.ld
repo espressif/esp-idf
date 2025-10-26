@@ -1,14 +1,14 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 /* ROM function interface esp32p4.rom.newlib.ld for esp32p4
  *
  *
- * Generated from ./target/esp32p4/interface-esp32p4.yml md5sum f6516bd9708d890f63db87f8aed53ca7
+ * Generated from ./target/esp32p4/interface-esp32p4.yml md5sum 56d78222be1daa0502090a078288f4d5
  *
- * Compatible with ROM where ECO version equal or greater to 0.
+ * Compatible with ROM where ECO version equal or greater to 5.
  *
  * THIS FILE WAS AUTOMATICALLY GENERATED. DO NOT EDIT.
  */
@@ -95,5 +95,5 @@ __swbuf_r = 0x4fc00388;
 __swbuf = 0x4fc0038c;
 __swsetup_r = 0x4fc00390;
 /* Data (.data, .bss, .rodata) */
-syscall_table_ptr = 0x4ff3ffe4;
-_global_impure_ptr = 0x4ff3ffe0;
+syscall_table_ptr = 0x4ffbffe4;
+_global_impure_ptr = 0x4ffbffe0;

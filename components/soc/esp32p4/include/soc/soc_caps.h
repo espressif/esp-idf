@@ -773,7 +773,6 @@
 
 /*-------------------------- Memory CAPS --------------------------*/
 #define SOC_MEM_TCM_SUPPORTED                      (1)
-#define SOC_MEM_NON_CONTIGUOUS_SRAM                (1)
 #define SOC_ASYNCHRONOUS_BUS_ERROR_MODE            (1)
 /*--------------------------- EMAC --------------------------------*/
 #define SOC_EMAC_IEEE_1588_SUPPORT                 (1)      /*!< EMAC Supports IEEE1588 time stamping */
