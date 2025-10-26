@@ -67,6 +67,18 @@ typedef enum {
     ADC_LL_CTRL_DIG = 0,    ///< For ADC1. Select DIG controller.
 } adc_ll_controller_t;
 
+typedef struct  {
+    union {
+        struct {
+            uint8_t atten:      2;
+            uint8_t channel:    3;
+            uint8_t unit:       1;
+            uint8_t reserved:   2;
+        };
+        uint8_t val;
+    };
+} __attribute__((packed)) adc_ll_digi_pattern_table_t;
+
 /*---------------------------------------------------------------
                     Digital controller setting
 ---------------------------------------------------------------*/
@@ -115,6 +127,28 @@ static inline void adc_ll_digi_set_clk_div(uint32_t div)
 }
 
 /**
+ * Enable max conversion number detection for digital controller.
+ * If the number of ADC conversion is equal to the maximum, the conversion is stopped.
+ *
+ * @note Only used for bootloader RNG.
+ * @param enable  true: enable; false: disable
+ */
+static inline void adc_ll_digi_convert_limit_enable(bool enable)
+{
+    APB_SARADC.saradc_ctrl2.saradc_saradc_meas_num_limit = enable;
+}
+
+/**
+ * Enable output data to DMA from adc digital controller.
+ *
+ * @note Only used for bootloader RNG.
+ */
+static inline void adc_ll_digi_dma_enable(void)
+{
+    APB_SARADC.saradc_dma_conf.saradc_apb_adc_trans = 1;
+}
+
+/**
  * Sets the number of cycles required for the conversion to complete and wait for the arbiter to stabilize.
  *
  * @note Only ADC2 have arbiter function.
@@ -138,6 +172,39 @@ static inline void adc_ll_digi_output_invert(adc_unit_t adc_n, bool inv_en)
     } else { // adc_n == ADC_UNIT_2
         APB_SARADC.saradc_ctrl2.saradc_saradc_sar2_inv = inv_en;   // Enable / Disable ADC data invert
     }
+}
+
+/**
+ * Set the interval clock cycle for the digital controller to trigger the measurement.
+ * Expression: `trigger_meas_freq` = `controller_clk` / 2 / interval.
+ *
+ * @note The trigger interval should not be smaller than the sampling time of the SAR ADC.
+ * @note Only used for bootloader RNG.
+ * @param cycle The clock cycle (trigger interval) of the measurement. Range: 30 ~ 4095.
+ */
+static inline void adc_ll_digi_set_trigger_interval(uint32_t cycle)
+{
+    APB_SARADC.saradc_ctrl2.saradc_saradc_timer_target = cycle;
+}
+
+/**
+ * Enable digital controller timer to trigger the measurement.
+ *
+ * @note Only used for bootloader RNG.
+ */
+static inline void adc_ll_digi_trigger_enable(void)
+{
+    APB_SARADC.saradc_ctrl2.saradc_saradc_timer_en = 1;
+}
+
+/**
+ * Disable digital controller timer to trigger the measurement.
+ *
+ * @note Only used for bootloader RNG.
+ */
+static inline void adc_ll_digi_trigger_disable(void)
+{
+    APB_SARADC.saradc_ctrl2.saradc_saradc_timer_en = 0;
 }
 
 /**
@@ -294,20 +361,20 @@ static inline uint32_t adc_ll_pwdet_get_cct(void)
  * @brief Enable the ADC clock
  * @param enable true to enable, false to disable
  */
-static inline void adc_ll_enable_bus_clock(bool enable)
+static inline void _adc_ll_enable_bus_clock(bool enable)
 {
     SYSTEM.perip_clk_en0.apb_saradc_clk_en = enable;
 }
 // SYSTEM.perip_clk_en0 is a shared register, so this function must be used in an atomic way
 #define adc_ll_enable_bus_clock(...) do { \
         (void)__DECLARE_RCC_ATOMIC_ENV; \
-        adc_ll_enable_bus_clock(__VA_ARGS__); \
+        _adc_ll_enable_bus_clock(__VA_ARGS__); \
     } while(0)
 
 /**
  * @brief Reset ADC module
  */
-static inline void adc_ll_reset_register(void)
+static inline void _adc_ll_reset_register(void)
 {
     SYSTEM.perip_rst_en0.apb_saradc_rst = 1;
     SYSTEM.perip_rst_en0.apb_saradc_rst = 0;
@@ -315,7 +382,7 @@ static inline void adc_ll_reset_register(void)
 //  SYSTEM.perip_rst_en0 is a shared register, so this function must be used in an atomic way
 #define adc_ll_reset_register(...) do { \
         (void)__DECLARE_RCC_ATOMIC_ENV; \
-        adc_ll_reset_register(__VA_ARGS__); \
+        _adc_ll_reset_register(__VA_ARGS__); \
     } while(0)
 
 /**
@@ -344,6 +411,70 @@ __attribute__((always_inline))
 static inline void adc_ll_set_controller(adc_unit_t adc_n, adc_ll_controller_t ctrl)
 {
     //Not used on ESP32-C2
+}
+
+/**
+ * Set pattern table length for digital controller.
+ * The pattern table that defines the conversion rules for each SAR ADC. Each table has 8 items, in which channel selection,
+ * resolution and attenuation are stored. When the conversion is started, the controller reads conversion rules from the
+ * pattern table one by one. For each controller the scan sequence has at most 8 different rules before repeating itself.
+ *
+ * @param adc_n ADC unit.
+ * @param patt_len Items range: 1 ~ 8.
+ *
+ * @note Only used for bootloader RNG.
+ */
+static inline void adc_ll_digi_set_pattern_table_len(adc_unit_t adc_n, uint32_t patt_len)
+{
+    (void)adc_n;
+    APB_SARADC.saradc_ctrl.saradc_saradc_sar_patt_len = patt_len - 1;
+}
+
+/**
+ * Reset pattern table to default value
+ *
+ * @note Only used for bootloader RNG.
+ */
+static inline void adc_ll_digi_reset_pattern_table(void)
+{
+    APB_SARADC.saradc_sar_patt_tab1.saradc_saradc_sar_patt_tab1 = 0xffffff;
+    APB_SARADC.saradc_sar_patt_tab2.saradc_saradc_sar_patt_tab2 = 0xffffff;
+}
+
+/**
+ * Set pattern table for digital controller.
+ * The pattern table that defines the conversion rules for each SAR ADC. Each table has 8 items, in which channel selection,
+ * resolution and attenuation are stored. When the conversion is started, the controller reads conversion rules from the
+ * pattern table one by one. For each controller the scan sequence has at most 8 different rules before repeating itself.
+ *
+ * @param adc_n ADC unit.
+ * @param pattern_index Items index. Range: 0 ~ 7.
+ * @param table Stored conversion rules.
+ *
+ * @note Only used for bootloader RNG.
+ */
+static inline void adc_ll_digi_set_pattern_table(adc_unit_t adc_n, uint32_t pattern_index, adc_digi_pattern_config_t table)
+{
+    uint32_t tab;
+    uint8_t index = pattern_index / 4;
+    uint8_t offset = (pattern_index % 4) * 6;
+    adc_ll_digi_pattern_table_t pattern = {0};
+
+    (void)adc_n;
+
+    pattern.val = (table.atten & 0x3) | ((table.channel & 0x7) << 2) | ((table.unit & 0x1) << 5);
+
+    if (index == 0) {
+        tab = APB_SARADC.saradc_sar_patt_tab1.saradc_saradc_sar_patt_tab1;          // Read old register value
+        tab &= (~(0xFC0000 >> offset));                                             // Clear old data
+        tab |= ((uint32_t)(pattern.val & 0x3F) << 18) >> offset;                    // Fill in the new data
+        APB_SARADC.saradc_sar_patt_tab1.saradc_saradc_sar_patt_tab1 = tab;          // Write back
+    } else {
+        tab = APB_SARADC.saradc_sar_patt_tab2.saradc_saradc_sar_patt_tab2;          // Read old register value
+        tab &= (~(0xFC0000 >> offset));                                             // Clear old data
+        tab |= ((uint32_t)(pattern.val & 0x3F) << 18) >> offset;                    // Fill in the new data
+        APB_SARADC.saradc_sar_patt_tab2.saradc_saradc_sar_patt_tab2 = tab;          // Write back
+    }
 }
 
 /* ADC calibration code. */
@@ -403,6 +534,69 @@ static inline void adc_ll_set_calibration_param(adc_unit_t adc_n, uint32_t param
     uint8_t lsb = param & 0xFF;
     REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_INITIAL_CODE_HIGH_ADDR, msb);
     REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_INITIAL_CODE_LOW_ADDR, lsb);
+}
+
+/**
+ * Set the SAR DTEST param
+ *
+ * @param param DTEST value
+ */
+__attribute__((always_inline))
+static inline void adc_ll_set_dtest_param(uint32_t param)
+{
+    REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC_DTEST_RTC_ADDR, param);
+}
+
+/**
+ * Set the SAR ENT param
+ *
+ * @param param ENT value
+ */
+__attribute__((always_inline))
+static inline void adc_ll_set_ent_param(uint32_t param)
+{
+    REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC_ENT_TSENS_ADDR, param);
+}
+
+/**
+ * Enable/disable the calibration voltage reference for ADC unit.
+ *
+ * @param adc_n ADC index number.
+ * @param en true to enable, false to disable
+ */
+__attribute__((always_inline))
+static inline void adc_ll_enable_calibration_ref(adc_unit_t adc_n, bool en)
+{
+    if (adc_n == ADC_UNIT_1) {
+        REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC1_ENCAL_REF_ADDR, en);
+    } else {
+        REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC2_ENCAL_REF_ADDR, en);
+    }
+}
+
+/**
+ * Init regi2c SARADC registers
+ */
+__attribute__((always_inline))
+static inline void adc_ll_regi2c_init(void)
+{
+    adc_ll_set_dtest_param(0);
+    adc_ll_set_ent_param(0);
+    // Config ADC circuit (Analog part) with I2C(HOST ID 0x69) and chose internal voltage as sampling source
+    adc_ll_enable_calibration_ref(ADC_UNIT_1, true);
+    adc_ll_enable_calibration_ref(ADC_UNIT_2, true);
+}
+
+/**
+ * Deinit regi2c SARADC registers
+ */
+__attribute__((always_inline))
+static inline void adc_ll_regi2c_adc_deinit(void)
+{
+    adc_ll_set_dtest_param(0);
+    adc_ll_set_ent_param(0);
+    adc_ll_enable_calibration_ref(ADC_UNIT_1, false);
+    adc_ll_enable_calibration_ref(ADC_UNIT_2, false);
 }
 
 /*---------------------------------------------------------------

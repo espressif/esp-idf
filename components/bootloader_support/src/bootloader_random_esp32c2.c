@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,56 +12,60 @@
 #include "soc/system_reg.h"
 #include "esp_private/regi2c_ctrl.h"
 #include "soc/regi2c_saradc.h"
+#include "hal/adc_ll.h"
+#include "hal/sar_ctrl_ll.h"
+#include "hal/clk_gate_ll.h"
+
+#define ADC_RNG_CLKM_DIV_NUM            15
+#define ADC_RNG_CLKM_DIV_B              0
+#define ADC_RNG_CLKM_DIV_A              0
 
 void bootloader_random_enable(void)
 {
-    /* RNG module is always clock enabled */
-    REG_SET_FIELD(RTC_CNTL_SENSOR_CTRL_REG, RTC_CNTL_FORCE_XPD_SAR, 0x3);
+    sar_ctrl_ll_set_power_mode(SAR_CTRL_LL_POWER_ON);
     SET_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_SAR_I2C_PU_M);
 
-    // Bridging sar2 internal reference voltage
-    REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC2_ENCAL_REF_ADDR, 1);
-    REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC_DTEST_RTC_ADDR, 0);
-    REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC_ENT_RTC_ADDR, 0);
-    REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC_ENT_TSENS_ADDR, 0);
+#ifndef BOOTLOADER_BUILD
+    regi2c_saradc_enable();
+#else
+    regi2c_ctrl_ll_i2c_sar_periph_enable();
+#endif
+    ANALOG_CLOCK_ENABLE();
+    adc_ll_regi2c_init();
 
-    // Enable SAR ADC2 internal channel to read adc2 ref voltage for additional entropy
-    SET_PERI_REG_MASK(SYSTEM_PERIP_CLK_EN0_REG, SYSTEM_APB_SARADC_CLK_EN_M);
-    CLEAR_PERI_REG_MASK(SYSTEM_PERIP_RST_EN0_REG, SYSTEM_APB_SARADC_RST_M);
-    REG_SET_FIELD(APB_SARADC_APB_ADC_CLKM_CONF_REG, APB_SARADC_REG_CLK_SEL, 0x2);
-    SET_PERI_REG_MASK(APB_SARADC_APB_ADC_CLKM_CONF_REG, APB_SARADC_CLK_EN_M);
-    SET_PERI_REG_MASK(APB_SARADC_CTRL_REG, APB_SARADC_SAR_CLK_GATED_M);
-    REG_SET_FIELD(APB_SARADC_CTRL_REG, APB_SARADC_XPD_SAR_FORCE, 0x3);
-    REG_SET_FIELD(APB_SARADC_CTRL_REG, APB_SARADC_SAR_CLK_DIV, 1);
+    _adc_ll_enable_bus_clock(true);
+    _adc_ll_reset_register();
+    adc_ll_digi_clk_sel(ADC_DIGI_CLK_SRC_PLL_F80M);
+    adc_ll_digi_controller_clk_div(ADC_RNG_CLKM_DIV_NUM, ADC_RNG_CLKM_DIV_B, ADC_RNG_CLKM_DIV_A);
+    adc_ll_digi_set_power_manage(ADC_LL_POWER_SW_ON);
+    adc_ll_digi_set_clk_div(1);
 
-    REG_SET_FIELD(APB_SARADC_FSM_WAIT_REG, APB_SARADC_RSTB_WAIT, 8);
-    REG_SET_FIELD(APB_SARADC_FSM_WAIT_REG, APB_SARADC_XPD_WAIT, 5);
-    REG_SET_FIELD(APB_SARADC_FSM_WAIT_REG, APB_SARADC_STANDBY_WAIT, 100);
+    adc_ll_digi_set_fsm_time(ADC_LL_FSM_RSTB_WAIT_DEFAULT, ADC_LL_FSM_START_WAIT_DEFAULT,
+        ADC_LL_FSM_STANDBY_WAIT_DEFAULT);
 
-    SET_PERI_REG_MASK(APB_SARADC_CTRL_REG, APB_SARADC_SAR_PATT_P_CLEAR_M);
-    CLEAR_PERI_REG_MASK(APB_SARADC_CTRL_REG, APB_SARADC_SAR_PATT_P_CLEAR_M);
-    REG_SET_FIELD(APB_SARADC_CTRL_REG, APB_SARADC_SAR_PATT_LEN, 0);
-    REG_SET_FIELD(APB_SARADC_SAR_PATT_TAB1_REG, APB_SARADC_SAR_PATT_TAB1, 0x9cffff);// Set adc2 internal channel & atten
-    REG_SET_FIELD(APB_SARADC_SAR_PATT_TAB2_REG, APB_SARADC_SAR_PATT_TAB2, 0xffffff);
-    // Set ADC sampling frequency
-    REG_SET_FIELD(APB_SARADC_CTRL2_REG, APB_SARADC_TIMER_TARGET, 100);
-    REG_SET_FIELD(APB_SARADC_APB_ADC_CLKM_CONF_REG, APB_SARADC_REG_CLKM_DIV_NUM, 15);
-    CLEAR_PERI_REG_MASK(APB_SARADC_CTRL2_REG, APB_SARADC_MEAS_NUM_LIMIT);
-    SET_PERI_REG_MASK(APB_SARADC_DMA_CONF_REG, APB_SARADC_APB_ADC_TRANS_M);
-    SET_PERI_REG_MASK(APB_SARADC_CTRL2_REG, APB_SARADC_TIMER_EN);
+    adc_digi_pattern_config_t pattern_config = {};
+    pattern_config.unit = ADC_UNIT_2;
+    pattern_config.atten = ADC_ATTEN_DB_12;
+    pattern_config.channel = ADC_CHANNEL_1;     //Use reserved channel 1 to get internal voltage
+    adc_ll_digi_set_pattern_table(ADC_UNIT_2, 0, pattern_config);
+    adc_ll_digi_set_pattern_table_len(ADC_UNIT_2, 1);
+
+
+    adc_ll_digi_set_trigger_interval(100);
+    adc_ll_digi_convert_limit_enable(false);
+    adc_ll_digi_dma_enable();
+    adc_ll_digi_trigger_enable();
 }
 
 void bootloader_random_disable(void)
 {
-    /* Restore internal I2C bus state */
-    REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC2_ENCAL_REF_ADDR, 0);
-
-    /* Restore SARADC to default mode */
-    CLEAR_PERI_REG_MASK(APB_SARADC_CTRL2_REG, APB_SARADC_TIMER_EN);
-    CLEAR_PERI_REG_MASK(APB_SARADC_DMA_CONF_REG, APB_SARADC_APB_ADC_TRANS_M);
-    REG_SET_FIELD(APB_SARADC_SAR_PATT_TAB1_REG, APB_SARADC_SAR_PATT_TAB1, 0xffffff);
-    REG_SET_FIELD(APB_SARADC_SAR_PATT_TAB2_REG, APB_SARADC_SAR_PATT_TAB2, 0xffffff);
-    CLEAR_PERI_REG_MASK(APB_SARADC_APB_ADC_CLKM_CONF_REG, APB_SARADC_CLK_EN_M);
-    REG_SET_FIELD(APB_SARADC_CTRL_REG, APB_SARADC_XPD_SAR_FORCE, 0);
-    REG_SET_FIELD(RTC_CNTL_SENSOR_CTRL_REG, RTC_CNTL_FORCE_XPD_SAR, 0);
+    _adc_ll_enable_bus_clock(false);
+    adc_ll_digi_trigger_disable();
+    adc_ll_digi_reset_pattern_table();
+    adc_ll_regi2c_adc_deinit();
+#ifndef BOOTLOADER_BUILD
+    regi2c_saradc_disable();
+#endif
+    // disable analog i2c master clock
+    ANALOG_CLOCK_DISABLE();
 }
