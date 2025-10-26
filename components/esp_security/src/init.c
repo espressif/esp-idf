@@ -94,7 +94,7 @@ ESP_SYSTEM_INIT_FN(esp_security_init, SECONDARY, BIT(0), 103)
 #if CONFIG_SECURE_BOOT_V2_ENABLED
 // H2, H21
 #if SOC_ECDSA_P192_CURVE_DEFAULT_DISABLED
-    // Also write protects the ECDSA_CURVE_MODE efuse bit.
+    // Also write protects the ECC_FORCE_CONST_TIME efuse bit.
     if (ecdsa_ll_is_configurable_curve_supported()) {
         err = esp_efuse_write_field_bit(ESP_EFUSE_WR_DIS_ECDSA_CURVE_MODE);
         if (err != ESP_OK) {
