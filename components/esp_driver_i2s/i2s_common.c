@@ -1311,7 +1311,12 @@ esp_err_t i2s_channel_write(i2s_chan_handle_t handle, const void *src, size_t si
     ESP_RETURN_ON_FALSE(xSemaphoreTake(handle->binary, pdMS_TO_TICKS(timeout_ms)) == pdTRUE, ESP_ERR_INVALID_STATE, TAG, "The channel is not enabled");
     src_byte = (char *)src;
     while (size > 0 && handle->state == I2S_CHAN_STATE_RUNNING) {
-        if (handle->dma.rw_pos == handle->dma.buf_size || handle->dma.curr_ptr == NULL) {
+        /* Acquire the new DMA buffer while:
+         * 1. The current buffer is fully filled
+         * 2. The current buffer is not set
+         * 3. The queue is almost full, i.e., the curr_ptr is nearly to be invalid
+         */
+        if (handle->dma.rw_pos == handle->dma.buf_size || handle->dma.curr_ptr == NULL || uxQueueSpacesAvailable(handle->msg_queue) <= (handle->dma.desc_num > 2 ? 1 : 0)) {
             if (xQueueReceive(handle->msg_queue, &(handle->dma.curr_ptr), pdMS_TO_TICKS(timeout_ms)) == pdFALSE) {
                 ret = ESP_ERR_TIMEOUT;
                 break;
@@ -1356,7 +1361,12 @@ esp_err_t i2s_channel_read(i2s_chan_handle_t handle, void *dest, size_t size, si
     /* The binary semaphore can only be taken when the channel has been enabled and no other reading operation in progress */
     ESP_RETURN_ON_FALSE(xSemaphoreTake(handle->binary, pdMS_TO_TICKS(timeout_ms)) == pdTRUE, ESP_ERR_INVALID_STATE, TAG, "The channel is not enabled");
     while (size > 0 && handle->state == I2S_CHAN_STATE_RUNNING) {
-        if (handle->dma.rw_pos == handle->dma.buf_size || handle->dma.curr_ptr == NULL) {
+        /* Acquire the new DMA buffer while:
+         * 1. The current buffer is fully filled
+         * 2. The current buffer is not set
+         * 3. The queue is almost full, i.e., the curr_ptr is nearly to be invalid
+         */
+        if (handle->dma.rw_pos == handle->dma.buf_size || handle->dma.curr_ptr == NULL || uxQueueSpacesAvailable(handle->msg_queue) <= (handle->dma.desc_num > 2 ? 1 : 0)) {
             if (xQueueReceive(handle->msg_queue, &(handle->dma.curr_ptr), pdMS_TO_TICKS(timeout_ms)) == pdFALSE) {
                 ret = ESP_ERR_TIMEOUT;
                 break;
