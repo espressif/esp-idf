@@ -64,11 +64,11 @@ esp_err_t esp_isp_blc_configure(isp_proc_handle_t isp_proc, const esp_isp_blc_co
 esp_err_t esp_isp_blc_enable(isp_proc_handle_t isp_proc)
 {
     ESP_RETURN_ON_FALSE(isp_proc, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
-    ESP_RETURN_ON_FALSE(isp_proc->blc_fsm == ISP_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "blc is enabled already");
+    isp_fsm_t expected_fsm = ISP_FSM_INIT;
+    ESP_RETURN_ON_FALSE(atomic_compare_exchange_strong(&isp_proc->blc_fsm, &expected_fsm, ISP_FSM_ENABLE), ESP_ERR_INVALID_STATE, TAG, "blc is enabled already");
 
     // Enable BLC module
     isp_ll_blc_enable(isp_proc->hal.hw, true);
-    isp_proc->blc_fsm = ISP_FSM_ENABLE;
 
     ESP_LOGD(TAG, "BLC enabled");
     return ESP_OK;
@@ -77,7 +77,7 @@ esp_err_t esp_isp_blc_enable(isp_proc_handle_t isp_proc)
 esp_err_t esp_isp_blc_set_correction_offset(isp_proc_handle_t isp_proc, esp_isp_blc_offset_t *offset)
 {
     ESP_RETURN_ON_FALSE(isp_proc && offset, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
-    ESP_RETURN_ON_FALSE(isp_proc->blc_fsm == ISP_FSM_ENABLE, ESP_ERR_INVALID_STATE, TAG, "blc isn't enabled yet");
+    ESP_RETURN_ON_FALSE(atomic_load(&isp_proc->blc_fsm) == ISP_FSM_ENABLE, ESP_ERR_INVALID_STATE, TAG, "blc isn't enabled yet");
 
     // Set correction offset for each channel
     isp_ll_blc_set_correction_offset(isp_proc->hal.hw, offset->top_left_chan_offset, offset->top_right_chan_offset, offset->bottom_left_chan_offset, offset->bottom_right_chan_offset);
@@ -92,11 +92,11 @@ esp_err_t esp_isp_blc_set_correction_offset(isp_proc_handle_t isp_proc, esp_isp_
 esp_err_t esp_isp_blc_disable(isp_proc_handle_t isp_proc)
 {
     ESP_RETURN_ON_FALSE(isp_proc, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
-    ESP_RETURN_ON_FALSE(isp_proc->blc_fsm == ISP_FSM_ENABLE, ESP_ERR_INVALID_STATE, TAG, "blc isn't enabled yet");
+    isp_fsm_t expected_fsm = ISP_FSM_ENABLE;
+    ESP_RETURN_ON_FALSE(atomic_compare_exchange_strong(&isp_proc->blc_fsm, &expected_fsm, ISP_FSM_INIT), ESP_ERR_INVALID_STATE, TAG, "blc isn't enabled yet");
 
     // Disable BLC module
     isp_ll_blc_enable(isp_proc->hal.hw, false);
-    isp_proc->blc_fsm = ISP_FSM_INIT;
 
     ESP_LOGD(TAG, "BLC disabled");
     return ESP_OK;
