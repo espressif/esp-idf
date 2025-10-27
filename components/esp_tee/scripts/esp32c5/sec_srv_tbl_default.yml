@@ -96,6 +96,30 @@ secure_services:
         type: IDF
         function: spi_flash_chip_generic_config_host_io_mode
         args: 2
+      - id: 23
+        type: IDF
+        function: mspi_timing_flash_tuning
+        args: 0
+      - id: 24
+        type: IDF
+        function: mspi_timing_psram_tuning
+        args: 0
+      - id: 25
+        type: IDF
+        function: mspi_timing_enter_low_speed_mode
+        args: 1
+      - id: 26
+        type: IDF
+        function: mspi_timing_enter_high_speed_mode
+        args: 1
+      - id: 27
+        type: IDF
+        function: mspi_timing_change_speed_mode_cache_safe
+        args: 1
+      - id: 28
+        type: IDF
+        function: spi_timing_get_flash_timing_param
+        args: 1
   # ID: 30-53 (24) - Interrupt Handling
   - family: interrupt_handling
     entries:

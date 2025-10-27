@@ -28,10 +28,7 @@
 #define MSPI_TIMING_FLASH_MODULE_CLOCK               120
 #endif
 //------------------------------------FLASH Needs Tuning or not-------------------------------------//
-/* TODO: [ESP-TEE | IDF-10425] The SPI1 controller is protected by APM when ESP-TEE is enabled.
- * MSPI tuning requires access to this controller, so it is currently disabled.
- */
-#if MSPI_TIMING_FLASH_STR_MODE && !CONFIG_SECURE_ENABLE_TEE
+#if MSPI_TIMING_FLASH_STR_MODE
 #define MSPI_TIMING_FLASH_NEEDS_TUNING               (MSPI_TIMING_FLASH_MODULE_CLOCK > 40)
 #endif
 
@@ -48,8 +45,7 @@
 #define MSPI_TIMING_PSRAM_MODULE_CLOCK               10      //Define this to 10MHz
 #endif
 //------------------------------------PSRAM Needs Tuning or not-------------------------------------//
-/* TODO: [ESP-TEE | IDF-10425] */
-#if MSPI_TIMING_PSRAM_STR_MODE && !CONFIG_SECURE_ENABLE_TEE
+#if MSPI_TIMING_PSRAM_STR_MODE
 #define MSPI_TIMING_PSRAM_NEEDS_TUNING               (MSPI_TIMING_PSRAM_MODULE_CLOCK > 40)
 #endif
 

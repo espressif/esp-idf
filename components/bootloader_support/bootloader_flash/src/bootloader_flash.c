@@ -217,13 +217,10 @@ static uint32_t current_mapped_size;
 // Current bootloader mapping (ab)used for bootloader_read()
 static uint32_t current_read_mapping = UINT32_MAX;
 
-#if ESP_TEE_BUILD && CONFIG_IDF_TARGET_ESP32C6
-extern void spi_common_set_dummy_output(esp_rom_spiflash_read_mode_t mode);
-extern void spi_dummy_len_fix(uint8_t spi, uint8_t freqdiv);
-
-/* TODO: [ESP-TEE] Workarounds for the ROM read API
- *
- * The esp_rom_spiflash_read API requires two workarounds on ESP32-C6 ECO0:
+#if ESP_TEE_BUILD
+/* [ESP-TEE] Workarounds for the ROM SPI flash APIs */
+/*
+ * TODO: The esp_rom_spiflash_read API requires two workarounds on ESP32-C6 ECO0 -
  *
  * 1. [IDF-7199] Call esp_rom_spiflash_write API once before reading.
  *    Without this, reads return corrupted data.
@@ -231,10 +228,14 @@ extern void spi_dummy_len_fix(uint8_t spi, uint8_t freqdiv);
  * 2. Configure ROM flash parameters before each read using the function below.
  *    Without this, the first byte read is corrupted.
  *
- * Note: These workarounds are not needed for ESP32-C6 ECO1 and later versions.
+ * NOTE: These workarounds are not needed for ESP32-C6 ECO1 and later versions.
  */
 static void rom_read_api_workaround(void)
 {
+#if CONFIG_ESP32C6_REV_MIN_0
+    extern void spi_common_set_dummy_output(esp_rom_spiflash_read_mode_t mode);
+    extern void spi_dummy_len_fix(uint8_t spi, uint8_t freqdiv);
+
     static bool is_first_call = true;
     if (is_first_call) {
         uint32_t dummy_val = UINT32_MAX;
@@ -268,6 +269,43 @@ static void rom_read_api_workaround(void)
     spi_dummy_len_fix(1, freqdiv);
     esp_rom_spiflash_config_readmode(read_mode);
     spi_common_set_dummy_output(read_mode);
+#endif
+}
+
+/*
+ * TODO: [IDF-13582]
+ *
+ * When `esp_flash_read()` is invoked from REE, it enables SPI1 WB (write-back) mode
+ * via `spi_flash_ll_wb_mode_enable()`. The ROM flash APIs used by TEE do not support
+ * WB mode, causing failures when TEE later accesses flash.
+ *
+ * Workaround applied in TEE flash layer:
+ * 1. Save the current WB mode state.
+ * 2. Temporarily disable WB mode before calling ROM flash APIs.
+ * 3. Restore WB mode state after the ROM API call completes.
+ *
+ * NOTE: This workaround will become removed once IDF-13582 is implemented.
+ */
+static inline bool spi1_wb_mode_save_and_disable(void)
+{
+#if SOC_SPI_MEM_SUPPORT_WB_MODE_INDEPENDENT_CONTROL
+    if (REG_GET_BIT(SPI_MEM_RD_STATUS_REG(1), SPI_MEM_WB_MODE_EN)) {
+        REG_CLR_BIT(SPI_MEM_RD_STATUS_REG(1), SPI_MEM_WB_MODE_EN);
+        return true;
+    }
+#endif
+    return false;
+}
+
+static inline void spi1_wb_mode_restore(bool saved_state)
+{
+#if SOC_SPI_MEM_SUPPORT_WB_MODE_INDEPENDENT_CONTROL
+    if (saved_state) {
+        REG_SET_BIT(SPI_MEM_RD_STATUS_REG(1), SPI_MEM_WB_MODE_EN);
+    }
+#else
+    (void)saved_state;
+#endif
 }
 #endif
 
@@ -416,8 +454,9 @@ static esp_err_t bootloader_flash_read_no_decrypt(size_t src_addr, void *dest, s
 #else
 #if !ESP_TEE_BUILD
     cache_hal_disable(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
-#elif CONFIG_ESP32C6_REV_MIN_0
+#else
     rom_read_api_workaround();
+    bool is_wb_saved = spi1_wb_mode_save_and_disable();
 #endif
 #endif
 
@@ -428,6 +467,8 @@ static esp_err_t bootloader_flash_read_no_decrypt(size_t src_addr, void *dest, s
 #else
 #if !ESP_TEE_BUILD
     cache_hal_enable(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
+#else
+    spi1_wb_mode_restore(is_wb_saved);
 #endif
 #endif
 
@@ -550,6 +591,10 @@ esp_err_t bootloader_flash_write(size_t dest_addr, void *src, size_t size, bool 
         return err;
     }
 
+#if ESP_TEE_BUILD
+    bool is_wb_saved = spi1_wb_mode_save_and_disable();
+#endif
+
     esp_rom_spiflash_result_t rc = ESP_ROM_SPIFLASH_RESULT_OK;
 
     if (write_encrypted && !ENCRYPTION_IS_VIRTUAL) {
@@ -564,6 +609,7 @@ esp_err_t bootloader_flash_write(size_t dest_addr, void *src, size_t size, bool 
      * from being read from already memory-mapped addresses that were modified.
      */
 #if ESP_TEE_BUILD
+    spi1_wb_mode_restore(is_wb_saved);
     spi_flash_check_and_flush_cache(dest_addr, size);
 #endif
 

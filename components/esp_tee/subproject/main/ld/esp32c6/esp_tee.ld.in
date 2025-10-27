@@ -40,6 +40,11 @@ PROVIDE ( esp_tee_app_config        = SRAM_REE_SEG_START + 0x2e0 );
 
 PROVIDE ( GDMA                      = 0x60080000 );
 
+/* SPI Flash functions required from the ROM (refer esp32c6.rom.spiflash.ld) */
+PROVIDE ( spi_flash_check_and_flush_cache            = 0x4000021c );
+PROVIDE ( spi_flash_chip_generic_config_host_io_mode = 0x400002c4 );
+PROVIDE ( memspi_host_flush_cache                    = 0x40000308 );
+
 /* Default entry point: */
 ENTRY(esp_tee_init);
 
@@ -98,6 +103,7 @@ SECTIONS
     *libhal.a:cache_hal.c*(.literal .text .literal.* .text.*)
     *libhal.a:wdt_hal_iram.c*(.literal .text .literal.* .text.*)
     *libhal.a:apm_hal.c*(.literal .text .literal.* .text.*)
+    *libesp_hal_mspi.a:*(.literal .text .literal.* .text.*)
     /* IDF components */
     *libbootloader_support.a:*(.literal .text .literal.* .text.*)
     *libesp_hw_support.a:*(.literal .text .literal.* .text.*)
@@ -146,6 +152,7 @@ SECTIONS
     /* HAL (noflash) */
     *libhal.a:mmu_hal.c*(.rodata .srodata .rodata.* .srodata.*)
     *libhal.a:cache_hal.c*(.rodata .srodata .rodata.* .srodata.*)
+    *libesp_hal_mspi.a:*(.rodata .srodata .rodata.* .srodata.*)
     _tee_rodata_end = ABSOLUTE(.);
     _tee_dram_end = ABSOLUTE(.);
   } > sram_tee_seg
