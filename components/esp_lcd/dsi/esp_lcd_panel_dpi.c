@@ -408,14 +408,9 @@ static esp_err_t dpi_panel_del(esp_lcd_panel_t *panel)
     return ESP_OK;
 }
 
-esp_err_t esp_lcd_dpi_panel_get_frame_buffer(esp_lcd_panel_handle_t panel, uint32_t fb_num, void **fb0, ...)
+static void esp_lcd_dpi_panel_get_frame_buffer_v(esp_lcd_dpi_panel_t *dpi_panel, uint32_t fb_num, void **fb0, va_list args)
 {
-    ESP_RETURN_ON_FALSE(panel, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
-    esp_lcd_dpi_panel_t *dpi_panel = __containerof(panel, esp_lcd_dpi_panel_t, base);
-    ESP_RETURN_ON_FALSE(fb_num && fb_num <= dpi_panel->num_fbs, ESP_ERR_INVALID_ARG, TAG, "invalid frame buffer number");
     void **fb_itor = fb0;
-    va_list args = {};
-    va_start(args, fb0);
     for (uint32_t i = 0; i < fb_num; i++) {
         if (fb_itor) {
             *fb_itor = dpi_panel->fbs[i];
@@ -424,7 +419,19 @@ esp_err_t esp_lcd_dpi_panel_get_frame_buffer(esp_lcd_panel_handle_t panel, uint3
             }
         }
     }
+}
+
+esp_err_t esp_lcd_dpi_panel_get_frame_buffer(esp_lcd_panel_handle_t panel, uint32_t fb_num, void **fb0, ...)
+{
+    ESP_RETURN_ON_FALSE(panel, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    esp_lcd_dpi_panel_t *dpi_panel = __containerof(panel, esp_lcd_dpi_panel_t, base);
+    ESP_RETURN_ON_FALSE(fb_num && fb_num <= dpi_panel->num_fbs, ESP_ERR_INVALID_ARG, TAG, "invalid frame buffer number");
+
+    va_list args = {0};
+    va_start(args, fb0);
+    esp_lcd_dpi_panel_get_frame_buffer_v(dpi_panel, fb_num, fb0, args);
     va_end(args);
+
     return ESP_OK;
 }
 
