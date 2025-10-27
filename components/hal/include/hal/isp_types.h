@@ -435,6 +435,18 @@ typedef union {
     uint32_t val;    ///< 32-bit gradient ratio value
 } isp_lsc_gain_t;
 
+/*---------------------------------------------------------------
+                    WBG (White Balance Gain)
+---------------------------------------------------------------*/
+/**
+ * @brief ISP White Balance Gain
+ */
+typedef struct {
+    uint32_t gain_r;    ///< White balance gain for R channel
+    uint32_t gain_g;    ///< White balance gain for G channel
+    uint32_t gain_b;    ///< White balance gain for B channel
+} isp_wbg_gain_t;
+
 #ifdef __cplusplus
 }
 #endif
