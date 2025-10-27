@@ -346,6 +346,11 @@ void pmu_init(void);
  */
 uint32_t pmu_sleep_get_wakup_retention_cost(void);
 
+/**
+ * Workaround for esp32p4 v3 MPSI access failure after power up.
+ */
+void pmu_sleep_p4_rev3_workaround(void);
+
 #endif //#if SOC_PMU_SUPPORTED
 
 #ifdef __cplusplus

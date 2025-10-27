@@ -10,6 +10,7 @@
 #include <sys/cdefs.h>
 #include <inttypes.h>
 
+#include "sdkconfig.h"
 #include "esp_private/regdma_link.h"
 
 #include "esp_heap_caps.h"
@@ -20,7 +21,11 @@
 
 
 #define REGDMA_LINK_ADDR_ALIGN      (4)
+#if CONFIG_IDF_TARGET_ESP32P4
+#define REGDMA_LINK_MEM_TYPE_CAPS   (MALLOC_CAP_DEFAULT | MALLOC_CAP_RETENTION)
+#else
 #define REGDMA_LINK_MEM_TYPE_CAPS   (MALLOC_CAP_DMA | MALLOC_CAP_DEFAULT)
+#endif
 
 void * regdma_link_new_continuous(void *backup, void *buff, int len, void *restore, void *next, bool skip_b, bool skip_r, int id, int module)
 {

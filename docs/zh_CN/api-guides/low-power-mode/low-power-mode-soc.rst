@@ -271,6 +271,9 @@ Light-sleep 模式配置
 
     - 关闭 CPU (:ref:`CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP`)
 
+    .. only:: esp32p4
+
+      对于 ESP32P4 芯片, 只有大于 3.0 的芯片版本才支持单独掉电 CPU 电源域。
 
 .. only:: SOC_PM_SUPPORT_TAGMEM_PD
 

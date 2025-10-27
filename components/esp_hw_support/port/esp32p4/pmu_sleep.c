@@ -40,6 +40,12 @@
 #include "hal/ldo_ll.h"
 #endif
 
+#if (CONFIG_ESP_REV_MIN_FULL == 300)
+#include "soc/hp_system_reg.h"
+#include "hal/mmu_ll.h"
+#include "hal/mspi_ll.h"
+#endif
+
 #define HP(state)   (PMU_MODE_HP_ ## state)
 #define LP(state)   (PMU_MODE_LP_ ## state)
 
@@ -160,7 +166,9 @@ const pmu_sleep_config_t* pmu_sleep_config_default(
     )
 {
     pmu_sleep_power_config_t power_default = PMU_SLEEP_POWER_CONFIG_DEFAULT(sleep_flags);
-
+#if !CONFIG_ESP32P4_SELECTS_REV_LESS_V3
+    power_default.hp_sys.dig_power.cpu_pd_en = (sleep_flags & PMU_SLEEP_PD_CPU) ? 1 : 0;
+#endif
     if (dslp) {
         config->param.lp_sys.analog_wait_target_cycle  = rtc_time_us_to_slowclk(PMU_LP_ANALOG_WAIT_TARGET_TIME_DSLP_US, slowclk_period);
 
@@ -489,3 +497,21 @@ uint32_t pmu_sleep_get_wakup_retention_cost(void)
 {
     return PMU_REGDMA_S2A_WORK_TIME_US;
 }
+
+#if (CONFIG_ESP_REV_MIN_FULL == 300)
+void pmu_sleep_p4_rev3_workaround(void)
+{
+    REG_CLR_BIT(SPI_MEM_C_CACHE_FCTRL_REG, SPI_MEM_C_CLOSE_AXI_INF_EN);
+    REG_SET_BIT(SPI_MEM_C_CACHE_FCTRL_REG, SPI_MEM_C_AXI_REQ_EN);
+    REG_SET_FIELD(HP_SYSTEM_CORE_ERR_RESP_DIS_REG, HP_SYSTEM_CORE_ERR_RESP_DIS, 0x7);
+    REG_WRITE(SPI_MEM_C_MMU_ITEM_INDEX_REG, 0);
+    uint32_t mmu_backup = mmu_ll_read_entry(MMU_LL_FLASH_MMU_ID, 0);
+    mmu_ll_write_entry(MMU_LL_FLASH_MMU_ID, 0, 0, MMU_TARGET_FLASH0);
+    __attribute__((unused)) volatile uint32_t val = 0;
+    val = *(uint32_t *)(0x80000000);
+    val = *(uint32_t *)(0x80000080);
+    mmu_ll_write_entry(MMU_LL_FLASH_MMU_ID, 0, mmu_backup, MMU_TARGET_FLASH0);
+    _mspi_timing_ll_reset_mspi();
+    _mspi_timing_ll_reset_mspi_apb();
+}
+#endif

@@ -26,10 +26,18 @@
 
 /* Index of memory in `soc_memory_types[]` */
 enum {
-    SOC_MEMORY_TYPE_L2MEM   = 0,
-    SOC_MEMORY_TYPE_SPIRAM  = 1,
-    SOC_MEMORY_TYPE_TCM     = 2,
-    SOC_MEMORY_TYPE_RTCRAM  = 3,
+    SOC_MEMORY_TYPE_L2MEM       = 0,
+    /**
+     *  The L2 memory that regdma can access regardless of the l2 cache size. After PD_TOP sleep, the cache
+     *  occupancy MEM configuration is reset, regdma allocates linked list memory from here to avoid being
+     *  unable to access the linked list memory occupied by cache after reset.
+     *  For esp32p4 chips with version < V3.0, the hardware default size of the L2 Cache is 256KB.
+     *  For esp32p4 chips with version >= V3.0, the hardware default size of the L2 Cache is 128KB.
+     */
+    SOC_MEMORY_TYPE_RETENT_MEM  = 1,
+    SOC_MEMORY_TYPE_SPIRAM      = 2,
+    SOC_MEMORY_TYPE_TCM         = 3,
+    SOC_MEMORY_TYPE_RTCRAM      = 4,
     SOC_MEMORY_TYPE_NUM,
 };
 
@@ -54,11 +62,12 @@ enum {
  * in turn to continue matching.
  */
 const soc_memory_type_desc_t soc_memory_types[SOC_MEMORY_TYPE_NUM] = {
-    /*                       Mem Type Name  | High Priority Matching                     | Medium Priority Matching                     | Low Priority Matching */
-    [SOC_MEMORY_TYPE_L2MEM]  = { "RAM",     { MALLOC_L2MEM_BASE_CAPS | MALLOC_CAP_SIMD,    0,                                             0 }},
-    [SOC_MEMORY_TYPE_SPIRAM] = { "SPIRAM",  { MALLOC_CAP_SPIRAM,                           0,                                             ESP32P4_MEM_COMMON_CAPS | MALLOC_CAP_SIMD }},
-    [SOC_MEMORY_TYPE_TCM]    = { "TCM",     { MALLOC_CAP_TCM,                              ESP32P4_MEM_COMMON_CAPS | MALLOC_CAP_INTERNAL, 0 }},
-    [SOC_MEMORY_TYPE_RTCRAM] = { "RTCRAM",  { MALLOC_CAP_RTCRAM,                           0,                                             MALLOC_RTCRAM_BASE_CAPS}},
+    /*                                  Mem Type Name   | High Priority Matching                                            | Medium Priority Matching                     | Low Priority Matching */
+    [SOC_MEMORY_TYPE_RETENT_MEM]    = { "RETENT_RAM",   { MALLOC_L2MEM_BASE_CAPS | MALLOC_CAP_RETENTION | MALLOC_CAP_SIMD,    0,                                             0 }},
+    [SOC_MEMORY_TYPE_L2MEM]         = { "RAM",          { MALLOC_L2MEM_BASE_CAPS | MALLOC_CAP_SIMD,                           0,                                             0 }},
+    [SOC_MEMORY_TYPE_SPIRAM]        = { "SPIRAM",       { MALLOC_CAP_SPIRAM,                                                  0,                                             ESP32P4_MEM_COMMON_CAPS | MALLOC_CAP_SIMD }},
+    [SOC_MEMORY_TYPE_TCM]           = { "TCM",          { MALLOC_CAP_TCM,                                                     ESP32P4_MEM_COMMON_CAPS | MALLOC_CAP_INTERNAL, 0 }},
+    [SOC_MEMORY_TYPE_RTCRAM]        = { "RTCRAM",       { MALLOC_CAP_RTCRAM,                                                  0,                                             MALLOC_RTCRAM_BASE_CAPS}},
 };
 
 const size_t soc_memory_type_count = sizeof(soc_memory_types) / sizeof(soc_memory_type_desc_t);
@@ -96,14 +105,14 @@ const size_t soc_memory_type_count = sizeof(soc_memory_types) / sizeof(soc_memor
 
 const soc_memory_region_t soc_memory_regions[] = {
 #ifdef CONFIG_SPIRAM
-    { SOC_EXTRAM_LOW,       SOC_EXTRAM_SIZE,                               SOC_MEMORY_TYPE_SPIRAM, 0,                      false}, //PSRAM, if available
+    { SOC_EXTRAM_LOW,       SOC_EXTRAM_SIZE,                               SOC_MEMORY_TYPE_SPIRAM,      0,                      false}, //PSRAM, if available
 #endif
-    { SOC_DRAM_USABLE_LOW,  APP_USABLE_DIRAM_END - SOC_DRAM_USABLE_LOW,    SOC_MEMORY_TYPE_L2MEM,  SOC_IRAM_USABLE_LOW,    false},
-    { APP_USABLE_DIRAM_END, STARTUP_DATA_SIZE,                             SOC_MEMORY_TYPE_L2MEM,  APP_USABLE_DIRAM_END,   true},
+    { SOC_DRAM_USABLE_LOW,  APP_USABLE_DIRAM_END - SOC_DRAM_USABLE_LOW,    SOC_MEMORY_TYPE_RETENT_MEM,  SOC_IRAM_USABLE_LOW,    false},
+    { APP_USABLE_DIRAM_END, STARTUP_DATA_SIZE,                             SOC_MEMORY_TYPE_L2MEM,       APP_USABLE_DIRAM_END,   true},
 #ifdef CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
-    { 0x50108000,           APP_USABLE_LP_RAM_SIZE,                        SOC_MEMORY_TYPE_RTCRAM, 0,                      false}, //LPRAM
+    { 0x50108000,           APP_USABLE_LP_RAM_SIZE,                        SOC_MEMORY_TYPE_RTCRAM,      0,                      false}, //LPRAM
 #endif
-    { 0x30100000,           0x2000,                                        SOC_MEMORY_TYPE_TCM,    0,                      false},
+    { 0x30100000,           0x2000,                                        SOC_MEMORY_TYPE_TCM,         0,                      false},
 };
 
 const size_t soc_memory_region_count = sizeof(soc_memory_regions) / sizeof(soc_memory_region_t);
