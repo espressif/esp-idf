@@ -42,7 +42,7 @@
 #define RFCOMM_UIH                      0xEF
 
 /*
-** Defenitions for the TS control frames
+** Definitions for the TS control frames
 */
 #define RFCOMM_CTRL_FRAME_LEN           3
 #define RFCOMM_MIN_OFFSET               5 /* ctrl 2 , len 1 or 2 bytes, credit 1 byte */
@@ -90,13 +90,6 @@
     pf   = (*p_data++ & RFCOMM_PF_MASK) >> RFCOMM_PF_OFFSET;\
 }
 
-#define RFCOMM_PARSE_LEN_FIELD(ea, length, p_data)          \
-{                                                           \
-    ea = (*p_data & RFCOMM_EA);                             \
-    length = (*p_data++ >> RFCOMM_SHIFT_LENGTH1);           \
-    if (!ea) length += (*p_data++ << RFCOMM_SHIFT_LENGTH2); \
-}
-
 #define RFCOMM_FRAME_IS_CMD(initiator, cr)                  \
     (( (initiator) && !(cr)) || (!(initiator) &&  (cr)))
 
@@ -139,7 +132,7 @@
 #define RFCOMM_MSC_FC               0x02          /* Flow control*/
 #define RFCOMM_MSC_RTC              0x04          /* Ready to communicate*/
 #define RFCOMM_MSC_RTR              0x08          /* Ready to receive*/
-#define RFCOMM_MSC_IC               0x40          /* Incomming call indicator*/
+#define RFCOMM_MSC_IC               0x40          /* Incoming call indicator*/
 #define RFCOMM_MSC_DV               0x80          /* Data Valid*/
 
 #define RFCOMM_MSC_SHIFT_BREAK          4
