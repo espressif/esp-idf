@@ -1296,14 +1296,9 @@ BOOLEAN gatt_parse_uuid_from_cmd(tBT_UUID *p_uuid_rec, UINT16 uuid_size, UINT8 *
 void gatt_start_rsp_timer(UINT16 clcb_idx)
 {
     tGATT_CLCB *p_clcb = gatt_clcb_find_by_idx(clcb_idx);
-    UINT32 timeout = GATT_WAIT_FOR_RSP_TOUT;
     p_clcb->rsp_timer_ent.param  = (TIMER_PARAM_TYPE)p_clcb;
-    if (p_clcb->operation == GATTC_OPTYPE_DISCOVERY &&
-            p_clcb->op_subtype == GATT_DISC_SRVC_ALL) {
-        timeout = GATT_WAIT_FOR_DISC_RSP_TOUT;
-    }
     btu_start_timer (&p_clcb->rsp_timer_ent, BTU_TTYPE_ATT_WAIT_FOR_RSP,
-                     timeout);
+                     GATT_WAIT_FOR_RSP_TOUT);
 }
 /*******************************************************************************
 **
