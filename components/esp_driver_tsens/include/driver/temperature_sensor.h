@@ -46,6 +46,9 @@ typedef struct {
         .range_min = min,                              \
         .range_max = max,                              \
         .clk_src = TEMPERATURE_SENSOR_CLK_SRC_DEFAULT, \
+        .flags = {                                     \
+            .allow_pd = 0,                             \
+        },                                             \
     }
 
 /**

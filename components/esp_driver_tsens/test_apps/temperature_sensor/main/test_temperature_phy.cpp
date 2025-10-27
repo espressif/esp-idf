@@ -41,16 +41,20 @@ struct temperature_sensor_obj_t {
 static void start_wifi_as_softap(void)
 {
     uint8_t ssid_len = strlen(TEST_DEFAULT_SSID);
-    wifi_config_t w_config = {
-        .ap.ssid = TEST_DEFAULT_SSID,
-        .ap.password = TEST_DEFAULT_PWD,
-        .ap.ssid_len = ssid_len,
-        .ap.channel = TEST_DEFAULT_CHANNEL,
-        .ap.authmode = WIFI_AUTH_WPA2_PSK,
-        .ap.ssid_hidden = false,
-        .ap.max_connection = 4,
-        .ap.beacon_interval = 100,
-    };
+    wifi_config_t w_config = {}; // Zero-initialize the structure
+
+    // Assign members
+    strncpy((char *)w_config.ap.ssid, TEST_DEFAULT_SSID, sizeof(w_config.ap.ssid) - 1);
+    w_config.ap.ssid[sizeof(w_config.ap.ssid) - 1] = 0; // Ensure null termination
+    strncpy((char *)w_config.ap.password, TEST_DEFAULT_PWD, sizeof(w_config.ap.password) - 1);
+    w_config.ap.password[sizeof(w_config.ap.password) - 1] = 0; // Ensure null termination
+
+    w_config.ap.ssid_len = ssid_len;
+    w_config.ap.channel = TEST_DEFAULT_CHANNEL;
+    w_config.ap.authmode = WIFI_AUTH_WPA2_PSK;
+    w_config.ap.ssid_hidden = false;
+    w_config.ap.max_connection = 4;
+    w_config.ap.beacon_interval = 100;
 
     TEST_ESP_OK(esp_wifi_set_mode(WIFI_MODE_AP));
     TEST_ESP_OK(esp_wifi_set_config(WIFI_IF_AP, &w_config));
@@ -72,10 +76,13 @@ static void stop_wifi(void)
 
 static void wifi_connect(void)
 {
-    wifi_config_t w_config = {
-        .sta.ssid = TEST_DEFAULT_SSID,
-        .sta.password = TEST_DEFAULT_PWD,
-    };
+    wifi_config_t w_config = {}; // Zero-initialize the structure
+
+    // Assign members
+    strncpy((char *)w_config.sta.ssid, TEST_DEFAULT_SSID, sizeof(w_config.sta.ssid) - 1);
+    w_config.sta.ssid[sizeof(w_config.sta.ssid) - 1] = 0; // Ensure null termination
+    strncpy((char *)w_config.sta.password, TEST_DEFAULT_PWD, sizeof(w_config.sta.password) - 1);
+    w_config.sta.password[sizeof(w_config.sta.password) - 1] = 0; // Ensure null termination
 
     TEST_ESP_OK(esp_wifi_set_config(WIFI_IF_STA, &w_config));
     TEST_ESP_OK(esp_wifi_connect());
