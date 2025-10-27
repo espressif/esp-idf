@@ -2,7 +2,7 @@
 
 /*
  * SPDX-FileCopyrightText: 2017 Intel Corporation
- * SPDX-FileContributor: 2018-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2018-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -450,6 +450,13 @@ int bt_mesh_init(const struct bt_mesh_prov *prov,
     }
 
 #if CONFIG_BLE_MESH_V11_SUPPORT
+    extern int bt_mesh_ext_log_init(void);
+    err = bt_mesh_ext_log_init();
+    if (err) {
+        BT_ERR("Bluetooth Mesh lib log init failed, err %d", err);
+        return err;
+    }
+
     extern int bt_mesh_v11_ext_init(void);
     err = bt_mesh_v11_ext_init();
     if (err) {
