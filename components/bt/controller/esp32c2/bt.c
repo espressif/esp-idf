@@ -747,7 +747,7 @@ void controller_wakeup_cb(void *arg)
 #if CONFIG_FREERTOS_USE_TICKLESS_IDLE
 static bool esp_bt_check_wakeup_by_bt(void)
 {
-   return (esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_BT);
+    return (esp_sleep_get_wakeup_causes() & BIT(ESP_SLEEP_WAKEUP_BT));
 }
 #endif // CONFIG_FREERTOS_USE_TICKLESS_IDLE
 
