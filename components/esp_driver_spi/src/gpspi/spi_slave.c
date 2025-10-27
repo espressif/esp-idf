@@ -103,20 +103,26 @@ static inline bool SPI_SLAVE_ISR_ATTR bus_is_iomux(spi_slave_t *host)
     return host->flags & SPICOMMON_BUSFLAG_IOMUX_PINS;
 }
 
-static void SPI_SLAVE_ISR_ATTR freeze_cs(spi_slave_t *host)
+static inline void SPI_SLAVE_ISR_ATTR freeze_cs(spi_slave_t *host)
 {
+#if SPI_LL_SLAVE_NEEDS_CS_WORKAROUND
+    // This workaround only for ESP32 due to old hardware design, see MR !3207
     esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ONE_INPUT, host->cs_in_signal, false);
+#endif
 }
 
 // Use this function instead of cs_initial to avoid overwrite the output config
 // This is used in test by internal gpio matrix connections
 static inline void SPI_SLAVE_ISR_ATTR restore_cs(spi_slave_t *host)
 {
+#if SPI_LL_SLAVE_NEEDS_CS_WORKAROUND
+    // This workaround only for ESP32 due to old hardware design, see MR !3207
     if (host->cs_iomux) {
         gpio_ll_set_input_signal_from(GPIO_HAL_GET_HW(GPIO_PORT_0), host->cs_in_signal, false);
     } else {
         esp_rom_gpio_connect_in_signal(host->cfg.spics_io_num, host->cs_in_signal, false);
     }
+#endif
 }
 
 #if (SOC_CPU_CORES_NUM > 1) && (!CONFIG_FREERTOS_UNICORE)
@@ -640,21 +646,13 @@ static void SPI_SLAVE_ISR_ATTR s_spi_slave_dma_prepare_data(spi_dma_ctx_t *dma_c
 
         spi_dma_reset(dma_ctx->rx_dma_chan);
         spi_slave_hal_hw_prepare_rx(hal->hw);
+        spi_dma_start(dma_ctx->rx_dma_chan, dma_ctx->dmadesc_rx);
     }
     if (hal->tx_buffer) {
         spicommon_dma_desc_setup_link(dma_ctx->dmadesc_tx, hal->tx_buffer, (hal->bitlen + 7) / 8, false);
 
         spi_dma_reset(dma_ctx->tx_dma_chan);
         spi_slave_hal_hw_prepare_tx(hal->hw);
-    }
-}
-
-static void SPI_SLAVE_ISR_ATTR s_spi_slave_start_dma(spi_dma_ctx_t *dma_ctx, spi_slave_hal_context_t *hal)
-{
-    if (hal->rx_buffer) {
-        spi_dma_start(dma_ctx->rx_dma_chan, dma_ctx->dmadesc_rx);
-    }
-    if (hal->tx_buffer) {
         spi_dma_start(dma_ctx->tx_dma_chan, dma_ctx->dmadesc_tx);
     }
 }
@@ -784,10 +782,7 @@ static void SPI_SLAVE_ISR_ATTR spi_intr(void *arg)
 
         //The slave rx dma get disturbed by unexpected transaction. Only connect the CS and start DMA when slave is ready.
         if (use_dma) {
-            // Note: order of restore_cs and s_spi_slave_start_dma is important
-            // restore_cs also bring potential glitch, should happen before start DMA
             restore_cs(host);
-            s_spi_slave_start_dma(host->dma_ctx, hal);
         }
 
         //Kick off transfer
