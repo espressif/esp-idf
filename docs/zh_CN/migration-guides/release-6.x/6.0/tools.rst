@@ -54,6 +54,20 @@ CMake 版本升级
 
 此变更影响所有使用系统自带 CMake 或自定义 CMake 的 ESP-IDF 用户。
 
+Unit-Test-App
+-------------
+
+旧版的 unit-test-app 已经从 ESP-IDF 仓库中移出，目前已无 ESP-IDF 组件使用该组件进行测试。现在可通过 `乐鑫组件注册表 <https://components.espressif.com/components/espressif/unit-test-app>`__ 获取 unit-test-app，并且可以使用 ``idf.py create-project-from-example`` 命令创建测试应用：
+
+.. code-block:: bash
+
+    idf.py create-project-from-example espressif/unit-test-app:unit-test-app
+
+Catch
+-----
+
+之前位于 tools/catch 目录下的 Catch2 单元测试库（仅头文件）已被移除。若想在项目中继续使用 Catch2，请迁移至 Catch2 3.x，该版本可从 `乐鑫组件注册表 <https://components.espressif.com/components/espressif/catch2>`__ 中获取。关于从 Catch2 2.x 迁移到 Catch2 3.x 的示例，请参见 79a2c15477dc327550ff46a64ee0f8b4679cc417 中的提交记录。
+
 移除 ``idf.py size --legacy`` 选项
 -------------------------------------
 
@@ -84,4 +98,3 @@ CMake 版本升级
                 }
             ]
         }
-
