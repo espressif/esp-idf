@@ -178,7 +178,9 @@ menu "Power Management"
     config PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
         bool "Power down Digital Peripheral in light sleep (EXPERIMENTAL)"
         depends on SOC_PM_SUPPORT_TOP_PD && SOC_PAU_SUPPORTED
+        depends on !(IDF_TARGET_ESP32P4 && (ESP_REV_MIN_FULL = 300) && SPIRAM)
         select PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP if !ESP32P4_SELECTS_REV_LESS_V3
+        select ESP_SLEEP_POWER_DOWN_FLASH if (IDF_TARGET_ESP32P4 && (ESP_REV_MIN_FULL = 300))
         default n #TODO: enable by default if periph init/deinit management supported (WIFI-5252)
         help
             If enabled, digital peripherals will try to powered down in light sleep, then all related peripherals will
