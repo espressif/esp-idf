@@ -30,6 +30,8 @@ static void inline huk_hal_wait_for_state(esp_huk_state_t state)
 
 esp_err_t huk_hal_configure(const esp_huk_mode_t huk_mode, uint8_t *huk_info_buf)
 {
+    huk_ll_power_up();
+
     if (esp_rom_km_huk_conf(huk_mode, huk_info_buf) != ETS_OK) {
         return ESP_FAIL;
     }
