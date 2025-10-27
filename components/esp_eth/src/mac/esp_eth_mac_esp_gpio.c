@@ -12,7 +12,6 @@
 #include "soc/soc_caps.h"
 #include "soc/gpio_sig_map.h"
 #include "soc/io_mux_reg.h"
-#include "soc/gpio_periph.h"
 #include "hal/emac_periph.h"
 #include "esp_private/gpio.h"
 #include "esp_private/eth_mac_esp_gpio.h"

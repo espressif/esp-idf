@@ -12,7 +12,6 @@
 #include "esp_rom_gpio.h"
 #include "esp32c5/rom/spi_flash.h"
 #include "esp32c5/rom/efuse.h"
-#include "soc/gpio_periph.h"
 #include "soc/io_mux_reg.h"
 #include "esp_rom_efuse.h"
 #include "soc/efuse_reg.h"

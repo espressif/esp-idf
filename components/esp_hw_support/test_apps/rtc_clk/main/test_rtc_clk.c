@@ -10,8 +10,6 @@
 #include "esp_attr.h"
 #include "soc/soc_caps.h"
 #include "soc/rtc.h"
-#include "soc/rtc_periph.h"
-#include "soc/gpio_periph.h"
 #include "hal/gpio_ll.h"
 #include "soc/io_mux_reg.h"
 #include "driver/rtc_io.h"
@@ -448,7 +446,7 @@ TEST_CASE_MULTIPLE_STAGES("Test rtc clk calibration compensation across deep sle
  * output either 150k, 32k, 8M clock to GPIO25.
  */
 #if CONFIG_IDF_TARGET_ESP32
-
+#include "soc/rtc_io_reg.h"
 #include "soc/sens_reg.h"
 
 static void pull_out_clk(int sel)

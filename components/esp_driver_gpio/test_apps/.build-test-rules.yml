@@ -3,9 +3,12 @@
 components/esp_driver_gpio/test_apps:
   depends_components:
     - esp_driver_gpio
+    - esp_hal_gpio
+
 components/esp_driver_gpio/test_apps/gpio_extensions:
   enable:
     - if: SOC_DEDICATED_GPIO_SUPPORTED == 1
     - if: SOC_GPIO_SUPPORT_PIN_GLITCH_FILTER == 1 or SOC_GPIO_FLEX_GLITCH_FILTER_NUM > 0
   depends_components:
     - esp_driver_gpio
+    - esp_hal_gpio

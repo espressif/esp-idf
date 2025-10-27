@@ -86,6 +86,11 @@ entries:
         sleep_modes: esp_sleep_sub_mode_config (noflash)
         sleep_modes: esp_sleep_sub_mode_force_disable (noflash)
 
+[mapping:hal_gpio_pm]
+archive: libesp_hal_gpio.a
+entries:
+    gpio_hal: gpio_hal_isolate_in_sleep (noflash)
+
 [mapping:soc_pm]
 archive: libsoc.a
 entries:

@@ -14,7 +14,7 @@
 #include "driver/rtc_io.h"
 #include "driver/lp_io.h"
 #include "hal/rtc_io_hal.h"
-#include "soc/rtc_io_periph.h"
+#include "hal/rtc_io_periph.h"
 #include "soc/soc_caps.h"
 #if SOC_LP_GPIO_MATRIX_SUPPORTED
 #include "soc/lp_gpio_pins.h"

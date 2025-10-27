@@ -21,7 +21,7 @@
 #include "driver/gpio.h"
 #include "hal/gpio_hal.h"
 #include "hal/rtc_io_hal.h"
-#include "soc/rtc_io_periph.h"
+#include "hal/rtc_io_periph.h"
 #include "soc/uart_pins.h"
 
 #include "hal/rtc_hal.h"

@@ -13,6 +13,7 @@
 #include "driver/gpio.h"
 #include "esp_rom_gpio.h"
 #include "hal/gpio_hal.h"
+#include "soc/gpio_reg.h"
 #include "esp_attr.h"
 #include "esp_private/gpio.h"
 #endif
