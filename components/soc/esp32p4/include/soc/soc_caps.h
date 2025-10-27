@@ -359,6 +359,7 @@
 #define SOC_ISP_DVP_SUPPORTED                    1
 #define SOC_ISP_LSC_SUPPORTED                    1
 #define SOC_ISP_SHARPEN_SUPPORTED                1
+#define SOC_ISP_WBG_SUPPORTED                    1
 #define SOC_ISP_SHARE_CSI_BRG                    1
 
 #define SOC_ISP_NUMS                             1U
