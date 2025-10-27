@@ -4,18 +4,16 @@ import ipaddress
 import subprocess
 import threading
 import time
-from typing import Dict
-from typing import Union
 
 import pytest
 from pytest_embedded import Dut
 from pytest_embedded_idf.utils import idf_parametrize
 from scapy import layers
-from scapy.all import AsyncSniffer
 from scapy.all import ICMP
 from scapy.all import IP
 from scapy.all import TCP
 from scapy.all import UDP
+from scapy.all import AsyncSniffer
 
 udp_port = 1234
 tcp_port = 4321
@@ -95,7 +93,7 @@ def create_config(dut: Dut) -> dict:
     tmp_ip = ipaddress.IPv4Address(vlanServer_conf['ip'])
     vlanServer_net_addr = ipaddress.IPv4Address(int(tmp_ip) & int(subnet_mask))
 
-    config: Dict[str, Union[str, dict, dict, str, str, list, list, list, list]] = {
+    config: dict[str, str | dict | dict | str | str | list | list | list | list] = {
         # Basic Configurations
         'pc_iface': pc_iface,
         'vlanClient': vlanClient_conf,
@@ -103,10 +101,11 @@ def create_config(dut: Dut) -> dict:
         'esp_vlanClient_ip': esp_vlanClient_ip,
         'esp_vlanServer_ip': esp_vlanServer_ip,
         'vlan_create_cmd_l': [
-            f'ip netns add ns_vlanClient',
+            'ip netns add ns_vlanClient',
             f'ip link add link {pc_iface} name {vlanClient_conf["name"]} type vlan id {vlanClient_conf["id"]}',
             f'ip link set {vlanClient_conf["name"]} netns ns_vlanClient',
-            f'ip netns exec ns_vlanClient ip addr add {vlanClient_conf["ip"]}/255.255.255.0 dev {vlanClient_conf["name"]}',
+            f'ip netns exec ns_vlanClient ip addr add {vlanClient_conf["ip"]}/255.255.255.0 '
+            f'dev {vlanClient_conf["name"]}',
             f'ip netns exec ns_vlanClient ip link set dev {vlanClient_conf["name"]} up',
             f'ip link add link {pc_iface} name {vlanServer_conf["name"]} type vlan id {vlanServer_conf["id"]}',
             f'ip addr add {vlanServer_conf["ip"]}/255.255.255.0 dev {vlanServer_conf["name"]}',
@@ -117,7 +116,7 @@ def create_config(dut: Dut) -> dict:
             f'ip netns exec ns_vlanClient ip link delete {vlanClient_conf["name"]}',
             f'ip link set dev {vlanServer_conf["name"]} down',
             f'ip link delete {vlanServer_conf["name"]}',
-            f'ip netns delete ns_vlanClient',
+            'ip netns delete ns_vlanClient',
         ],
         'set_route_cmd_l': [
             f'ip netns exec ns_vlanClient ip route add {vlanServer_net_addr}/24 via {esp_vlanClient_ip}'
@@ -148,7 +147,10 @@ def ping_test(config: dict) -> None:
     )
 
     # Stop sniffing
-    capture.join(timeout=20)
+    try:
+        capture.join(timeout=20)
+    except OSError as e:
+        print(f'[ERROR] Packet capture failed: {e}')
     vlanServer_pkt_list = capture.results
 
     clear_network(config)
@@ -227,7 +229,10 @@ def udp_test(config: dict) -> None:
     udp_server_client_comm(config, udp_port)
 
     # Stop sniffing
-    capture.join(timeout=20)
+    try:
+        capture.join(timeout=20)
+    except OSError as e:
+        print(f'[ERROR] Packet capture failed: {e}')
     vlanServer_pkt_list = capture.results
 
     clear_network(config)
@@ -307,7 +312,10 @@ def tcp_test(config: dict) -> None:
     tcp_server_client_comm(config, tcp_port)
 
     # Stop sniffing
-    capture.join(timeout=20)
+    try:
+        capture.join(timeout=20)
+    except OSError as e:
+        print(f'[ERROR] Packet capture failed: {e}')
     vlanServer_pkt_list = capture.results
 
     clear_network(config)
