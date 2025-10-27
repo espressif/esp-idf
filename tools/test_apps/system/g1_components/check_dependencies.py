@@ -26,8 +26,8 @@ def parse_dependencies(file_path: str) -> Tuple[Dict[str, List[str]], List[str]]
                 parts = line.split(' -> ')
 
                 if (len(parts) >= 2):
-                    source = parts[0]
-                    target = parts[1].split()[0]  # Extracting the target component
+                    source = parts[0].strip('"')
+                    target = parts[1].split()[0].strip('"')  # Extracting the target component
                     logging.debug(f'Parsed dependency: {source} -> {target}')
 
                     # Check that g1/g0 dependencies are either on the list of expected violations
