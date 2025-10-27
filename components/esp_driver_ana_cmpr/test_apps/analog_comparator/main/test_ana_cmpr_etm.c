@@ -140,13 +140,16 @@ TEST_CASE("ana_cmpr etm event", "[ana_cmpr][etm]")
     esp_rom_delay_us(TEST_TIME_US);
     gpio_set_level(src_gpio, 1);
 
+    // the gptimer should already stopped, so delay any time here is ok
+    vTaskDelay(10);
+
     uint64_t cnt_us = 0;
     TEST_ESP_OK(gptimer_get_raw_count(gptimer, &cnt_us));
     printf("Count: %" PRIu64 "\n", cnt_us);
     // gptimer timer should stopped
     uint64_t cnt_us_again = 0;
     TEST_ESP_OK(gptimer_get_raw_count(gptimer, &cnt_us_again));
-    TEST_ASSERT(cnt_us_again == cnt_us);
+    TEST_ASSERT_EQUAL(cnt_us, cnt_us_again);
 
     test_ana_cmpr_deinit_etm(handles);
     test_ana_cmpr_deinit(cmpr);
