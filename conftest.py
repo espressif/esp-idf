@@ -366,27 +366,33 @@ def set_dut_log_url(record_xml_attribute: t.Callable[[str, object], None], _pexp
     # Record the "dut_log_url" attribute in the XML report once test execution finished
     yield
 
-    if not isinstance(_pexpect_logfile, str):
-        record_xml_attribute('dut_log_url', 'No log URL found')
-        return
+    def _attach_log_url_to_xml_attribute(log_file_path: str) -> str:
+        if not isinstance(log_file_path, str):
+            return 'No log URL found'
 
-    ci_pages_url = os.getenv('CI_PAGES_URL')
-    logdir_pattern = re.compile(rf'({DEFAULT_LOGDIR}/.*)')
-    match = logdir_pattern.search(_pexpect_logfile)
+        ci_pages_url = os.getenv('CI_PAGES_URL')
+        logdir_pattern = re.compile(rf'({DEFAULT_LOGDIR}/.*)')
+        match = logdir_pattern.search(log_file_path)
 
-    if not match:
-        record_xml_attribute('dut_log_url', 'No log URL found')
-        return
+        if not match:
+            return 'No log URL found'
 
-    if not ci_pages_url:
-        record_xml_attribute('dut_log_url', _pexpect_logfile)
-        return
+        if not ci_pages_url:
+            return log_file_path
 
-    job_id = os.getenv('CI_JOB_ID', '0')
-    modified_ci_pages_url = ci_pages_url.replace('esp-idf', '-/esp-idf')
-    log_url = f'{modified_ci_pages_url}/-/jobs/{job_id}/artifacts/{match.group(1)}'
+        job_id = os.getenv('CI_JOB_ID', '0')
+        modified_ci_pages_url = ci_pages_url.replace('esp-idf', '-/esp-idf')
+        log_url = f'{modified_ci_pages_url}/-/jobs/{job_id}/artifacts/{match.group(1)}'
 
-    record_xml_attribute('dut_log_url', log_url)
+        return log_url
+
+    xml_attribute = []
+    if isinstance(_pexpect_logfile, str):
+        xml_attribute.append(_attach_log_url_to_xml_attribute(_pexpect_logfile))
+    if isinstance(_pexpect_logfile, tuple):
+        for i, log_file in enumerate(_pexpect_logfile):
+            xml_attribute.append(_attach_log_url_to_xml_attribute(log_file))
+    record_xml_attribute('dut_log_url', ';'.join(xml_attribute))
 
 
 ######################
