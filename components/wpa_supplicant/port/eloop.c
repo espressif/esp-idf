@@ -156,7 +156,7 @@ overflow:
                "ELOOP: Too long timeout (secs=%u usecs=%u) to ever happen - ignore it",
                secs, usecs);
     os_free(timeout);
-    return 0;
+    return -1;
 }
 
 static bool timeout_exists(struct eloop_timeout *old)
@@ -398,6 +398,9 @@ void eloop_destroy(void)
                    "eloop_data=%p user_data=%p handler=%p",
                    sec, usec, timeout->eloop_data, timeout->user_data,
                    timeout->handler);
+        if (timeout->handler) {
+            timeout->handler(timeout->eloop_data, timeout->user_data);
+        }
         eloop_remove_timeout(timeout);
     }
     if (eloop_data_lock) {
