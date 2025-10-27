@@ -83,14 +83,6 @@ elseif(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "uart_hal.c" "uart_hal_iram.c")
     endif()
 
-    if(CONFIG_SOC_GPIO_PORT)
-        list(APPEND srcs "gpio_hal.c")
-    endif()
-
-    if(CONFIG_SOC_RTCIO_PIN_COUNT)
-        list(APPEND srcs "rtc_io_hal.c")
-    endif()
-
     if(CONFIG_SOC_LEDC_SUPPORTED)
         list(APPEND srcs "ledc_hal.c" "ledc_hal_iram.c")
     endif()
@@ -125,10 +117,6 @@ elseif(NOT BOOTLOADER_BUILD)
 
     if(CONFIG_SOC_I2S_SUPPORTED)
         list(APPEND srcs "i2s_hal.c")
-    endif()
-
-    if(CONFIG_SOC_SDM_SUPPORTED)
-        list(APPEND srcs "sdm_hal.c")
     endif()
 
     if(CONFIG_SOC_SDMMC_HOST_SUPPORTED)
@@ -258,6 +246,7 @@ idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS ${includes}
                        PRIV_INCLUDE_DIRS ${priv_include}
                        REQUIRES soc esp_rom
+                       PRIV_REQUIRES esp_hal_gpio
                        LDFRAGMENTS linker.lf)
 
 if(CONFIG_HAL_DEFAULT_ASSERTION_LEVEL EQUAL 1)

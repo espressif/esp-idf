@@ -23,7 +23,7 @@
 #include "esp_clk_tree.h"
 #include "driver/gpio.h"
 #include "driver/sdm.h"
-#include "soc/sdm_periph.h"
+#include "hal/sdm_periph.h"
 #include "hal/sdm_hal.h"
 #include "hal/sdm_ll.h"
 #include "hal/hal_utils.h"

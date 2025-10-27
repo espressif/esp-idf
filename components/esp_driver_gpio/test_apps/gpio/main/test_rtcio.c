@@ -16,7 +16,7 @@
 #include "freertos/queue.h"
 #include "esp_err.h"
 #include "esp_log.h"
-#include "soc/rtc_io_periph.h"
+#include "hal/rtc_io_periph.h"
 #include "soc/soc_caps.h"
 #include "hal/rtc_io_ll.h"
 

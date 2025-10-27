@@ -10,7 +10,7 @@
 #include "freertos/task.h"
 #include "unity.h"
 #include "driver/sdm.h"
-#include "soc/sdm_periph.h"
+#include "hal/sdm_periph.h"
 #include "esp_attr.h"
 
 TEST_CASE("sdm_channel_install_uninstall", "[sdm]")

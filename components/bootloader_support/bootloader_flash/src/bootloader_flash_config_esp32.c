@@ -13,7 +13,6 @@
 #include "esp_rom_efuse.h"
 #include "esp32/rom/spi_flash.h"
 #include "esp32/rom/cache.h"
-#include "soc/gpio_periph.h"
 #include "soc/efuse_reg.h"
 #include "soc/spi_reg.h"
 #include "soc/dport_reg.h"

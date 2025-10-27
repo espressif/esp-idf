@@ -7,6 +7,7 @@ endif()
 set(srcs)
 set(public_include "include")
 set(priv_requires esp_pm esp_driver_gpio)
+set(requires esp_hal_gpio)
 if(CONFIG_SOC_SDM_SUPPORTED)
     list(APPEND srcs "src/sdm.c")
 endif()
@@ -14,5 +15,6 @@ endif()
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS ${public_include}
                        PRIV_REQUIRES "${priv_requires}"
+                       REQUIRES "${requires}"
                        LDFRAGMENTS "linker.lf"
                       )

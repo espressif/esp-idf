@@ -23,7 +23,7 @@
 #include "esp_rom_gpio.h"
 #include "freertos/FreeRTOS.h"
 #include "driver/dedic_gpio.h"
-#include "soc/dedic_gpio_periph.h"
+#include "hal/dedic_gpio_periph.h"
 
 #if DEDIC_GPIO_LL_ALLOW_REG_ACCESS
 #include "soc/dedic_gpio_struct.h"

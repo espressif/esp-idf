@@ -12,7 +12,7 @@
 #include "unity_test_utils.h"
 #include "esp_rom_sys.h"
 #include "soc/soc_caps_full.h"
-#include "soc/dedic_gpio_periph.h"
+#include "hal/dedic_gpio_periph.h"
 #include "hal/dedic_gpio_cpu_ll.h"
 #include "driver/gpio.h"
 #include "driver/dedic_gpio.h"

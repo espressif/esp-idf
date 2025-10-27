@@ -17,7 +17,7 @@
 #include "bootloader_flash_priv.h"
 #include "bootloader_common.h"
 #include "bootloader_utility.h"
-#include "soc/gpio_periph.h"
+#include "soc/soc_caps.h"
 #include "soc/rtc.h"
 #include "soc/efuse_reg.h"
 #include "hal/gpio_ll.h"
