@@ -1742,13 +1742,28 @@ static inline void isp_ll_awb_set_wb_gain_clk_ctrl_mode(isp_dev_t *hw, isp_ll_pi
  * @brief Set AWB white balance gain
  *
  * @param[in] hw              Hardware instance address
- * @param[in] gain            AWB white balance gain
+ * @param[in] gain            WBG white balance gain
  */
-static inline void isp_ll_awb_set_wb_gain(isp_dev_t *hw, isp_awb_gain_t gain)
+static inline void isp_ll_awb_set_wb_gain(isp_dev_t *hw, isp_wbg_gain_t gain)
 {
     hw->wbg_coef_r.wbg_r = gain.gain_r;
     hw->wbg_coef_g.wbg_g = gain.gain_g;
     hw->wbg_coef_b.wbg_b = gain.gain_b;
+}
+#else
+static inline void isp_ll_awb_enable_wb_gain(isp_dev_t *hw, bool enable)
+{
+    //for compatibility
+}
+
+static inline void isp_ll_awb_set_wb_gain_clk_ctrl_mode(isp_dev_t *hw, isp_ll_pipeline_clk_ctrl_t mode)
+{
+    //for compatibility
+}
+
+static inline void isp_ll_awb_set_wb_gain(isp_dev_t *hw, isp_wbg_gain_t gain)
+{
+    //for compatibility
 }
 #endif  //#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
 

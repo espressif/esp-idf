@@ -78,6 +78,7 @@ typedef struct isp_processor_t {
     isp_fsm_t                   color_fsm;
     isp_fsm_t                   lsc_fsm;
     isp_fsm_t                   blc_fsm;
+    isp_fsm_t                   wbg_fsm;
     esp_isp_evt_cbs_t           cbs;
     void                        *user_data;
 
