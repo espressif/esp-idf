@@ -121,6 +121,9 @@ const size_t soc_memory_region_count = sizeof(soc_memory_regions) / sizeof(soc_m
 extern int _data_start_low, _data_start_high, _heap_start_low, _heap_start_high, _iram_start, _iram_end, _rtc_force_slow_end;
 #else
 extern int _data_start, _heap_start, _iram_start, _iram_end, _rtc_force_slow_end;
+#if CONFIG_P4_REV3_MSPI_CRASH_AFTER_POWER_UP_WORKAROUND
+extern int _rtc_p4_rev3_mspi_workaround_start, _rtc_p4_rev3_mspi_workaround_end;
+#endif
 #endif
 extern int _tcm_text_start, _tcm_data_end;
 extern int _rtc_reserved_start, _rtc_reserved_end;
@@ -154,5 +157,7 @@ SOC_RESERVE_MEMORY_REGION( SOC_EXTRAM_LOW, SOC_EXTRAM_HIGH, extram_region);
 SOC_RESERVE_MEMORY_REGION((intptr_t)&_rtc_reserved_start, (intptr_t)&_rtc_reserved_end, rtc_reserved_data);
 /* This includes any memory reserved for ULP RAM */
 SOC_RESERVE_MEMORY_REGION((intptr_t)&_rtc_reserved_end, (intptr_t)&_rtc_force_slow_end, rtcram_data);
-
+#if CONFIG_P4_REV3_MSPI_CRASH_AFTER_POWER_UP_WORKAROUND
+SOC_RESERVE_MEMORY_REGION((intptr_t)&_rtc_p4_rev3_mspi_workaround_start, (intptr_t)&_rtc_p4_rev3_mspi_workaround_end, p4_rev3_mspi_workaround);
+#endif
 #endif

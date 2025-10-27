@@ -23,6 +23,12 @@ if(CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP OR
     endif()
 endif()
 
+if(CONFIG_P4_REV3_MSPI_CRASH_AFTER_POWER_UP_WORKAROUND)
+    list(APPEND srcs "port/esp32p4/p4_rev3_mspi_workaround.S")
+    set_property(TARGET ${COMPONENT_LIB}
+                APPEND PROPERTY INTERFACE_LINK_LIBRARIES "-u p4_rev3_mspi_workaround")
+endif()
+
 if(CONFIG_SOC_PM_MMU_TABLE_RETENTION_WHEN_TOP_PD AND CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP)
     list(APPEND srcs "port/${target}/sleep_mmu.c")
 endif()
