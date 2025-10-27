@@ -89,6 +89,10 @@
                                                  SPI_OUT_HCI_QUEUE_SIZE +\
                                                  SPI_OUT_MESH_QUEUE_SIZE)
 
+#if SPI_OUT_LL_ENABLED && CONFIG_SOC_ESP_NIMBLE_CONTROLLER
+#include "os/os_mbuf.h"
+#endif /* SPI_OUT_LL_ENABLED && CONFIG_SOC_ESP_NIMBLE_CONTROLLER */
+
 // Private typedefs
 typedef struct {
     // CRITICAL: 0 for available, 1 for need queue (ISR), 2 for in queue
@@ -156,6 +160,7 @@ enum {
     LL_LOG_FLAG_ISR,
     LL_LOG_FLAG_HCI,
     LL_LOG_FLAG_RAW,
+    LL_LOG_FLAG_OMDATA,
     LL_LOG_FLAG_HCI_UPSTREAM,
 };
 
@@ -205,7 +210,7 @@ static inline void spi_out_log_cb_append_trans(spi_out_log_cb_t *log_cb);
 static inline void spi_out_log_cb_flush_trans(spi_out_log_cb_t *log_cb);
 static bool spi_out_log_cb_write(spi_out_log_cb_t *log_cb, const uint8_t *addr, uint16_t len,
                                  const uint8_t *addr_append, uint16_t len_append, uint8_t source,
-                                 bool with_checksum);
+                                 bool with_checksum, bool omdata);
 static void spi_out_log_cb_write_loss(spi_out_log_cb_t *log_cb);
 static void spi_out_log_cb_dump(spi_out_log_cb_t *log_cb);
 
@@ -582,7 +587,7 @@ IRAM_ATTR static inline void spi_out_log_cb_flush_trans(spi_out_log_cb_t *log_cb
 // Return value: Need append
 IRAM_ATTR static bool spi_out_log_cb_write(spi_out_log_cb_t *log_cb, const uint8_t *addr, uint16_t len,
                                            const uint8_t *addr_append, uint16_t len_append, uint8_t source,
-                                           bool with_checksum)
+                                           bool with_checksum, bool omdata)
 {
     spi_out_trans_cb_t *trans_cb = log_cb->trans_cb[log_cb->trans_cb_idx];
 
@@ -598,7 +603,16 @@ IRAM_ATTR static bool spi_out_log_cb_write(spi_out_log_cb_t *log_cb, const uint8
     memcpy(buf, (const uint8_t *)&head, SPI_OUT_FRAME_HEAD_LEN);
     memcpy(buf + SPI_OUT_FRAME_HEAD_LEN, addr, len);
     if (len_append && addr_append) {
-        memcpy(buf + SPI_OUT_FRAME_HEAD_LEN + len, addr_append, len_append);
+#if SPI_OUT_LL_ENABLED && CONFIG_SOC_ESP_NIMBLE_CONTROLLER
+        if (omdata) {
+            os_mbuf_copydata((struct os_mbuf *)addr_append, 0,
+                             len_append, buf + SPI_OUT_FRAME_HEAD_LEN + len);
+        }
+        else
+#endif /* SPI_OUT_LL_ENABLED && CONFIG_SOC_ESP_NIMBLE_CONTROLLER */
+        {
+            memcpy(buf + SPI_OUT_FRAME_HEAD_LEN + len, addr_append, len_append);
+        }
     }
 
     uint32_t checksum = 0;
@@ -628,7 +642,7 @@ IRAM_ATTR static void spi_out_log_cb_write_loss(spi_out_log_cb_t *log_cb)
             .lost_bytes_cnt = log_cb->lost_bytes_cnt,
         };
         spi_out_log_cb_write(log_cb, (const uint8_t *)&payload, sizeof(loss_payload_t),
-                             NULL, 0, BLE_LOG_SPI_OUT_SOURCE_LOSS, true);
+                             NULL, 0, BLE_LOG_SPI_OUT_SOURCE_LOSS, true, false);
 
         log_cb->lost_frame_cnt = 0;
         log_cb->lost_bytes_cnt = 0;
@@ -756,9 +770,9 @@ static void spi_out_write_hex(spi_out_log_cb_t *log_cb, uint8_t source,
         if (with_ts) {
             uint32_t os_ts = pdTICKS_TO_MS(xTaskGetTickCount());
             need_append |= spi_out_log_cb_write(log_cb, (const uint8_t *)&os_ts,
-                                                sizeof(uint32_t), addr, len, source, true);
+                                                sizeof(uint32_t), addr, len, source, true, false);
         } else {
-            need_append |= spi_out_log_cb_write(log_cb, addr, len, NULL, 0, source, true);
+            need_append |= spi_out_log_cb_write(log_cb, addr, len, NULL, 0, source, true, false);
         }
     }
     if (need_append) {
@@ -1157,11 +1171,12 @@ IRAM_ATTR void ble_log_spi_out_ll_write(uint32_t len, const uint8_t *addr, uint3
         log_cb = ll_task_log_cb;
         source = BLE_LOG_SPI_OUT_SOURCE_ESP;
     }
+    bool omdata = flag & BIT(LL_LOG_FLAG_OMDATA);
 
     bool need_append;
     if (spi_out_log_cb_check_trans(log_cb, (uint16_t)(len + len_append), &need_append)) {
         need_append |= spi_out_log_cb_write(log_cb, addr, (uint16_t)len, addr_append,
-                                            (uint16_t)len_append, source, true);
+                                            (uint16_t)len_append, source, true, omdata);
     }
     if (need_append) {
         if (in_isr) {
@@ -1288,7 +1303,7 @@ IRAM_ATTR void ble_log_spi_out_le_audio_write(const uint8_t *addr, uint16_t len)
     bool need_append;
     if (spi_out_log_cb_check_trans(log_cb, len, &need_append)) {
         need_append |= spi_out_log_cb_write(log_cb, addr, len, NULL, 0,
-                                            BLE_LOG_SPI_OUT_SOURCE_LE_AUDIO, false);
+                                            BLE_LOG_SPI_OUT_SOURCE_LE_AUDIO, false, false);
     }
     if (need_append) {
         spi_out_log_cb_append_trans(log_cb);
