@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,6 +17,7 @@
 #include "ccomp_timer.h"
 #include "hal/color_hal.h"
 #include "esp_cache.h"
+#include "ppa_performance.h"
 
 #define ALIGN_UP(num, align)    (((num) + ((align) - 1)) & ~((align) - 1))
 
@@ -350,6 +351,39 @@ TEST_CASE("ppa_srm_basic_data_correctness_check", "[PPA]")
     printf("\n");
     TEST_ASSERT_EQUAL_UINT8_ARRAY((void *)out_buf_expected, (void *)out_buf, buf_len);
 
+#if !(CONFIG_IDF_TARGET_ESP32P4 && CONFIG_ESP32P4_SELECTS_REV_LESS_V3)
+    // Test a rgb2gray color conversion
+    memset(out_buf, 0, out_buf_size);
+    esp_cache_msync((void *)out_buf, out_buf_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
+
+    const uint8_t r_weight = 100;
+    const uint8_t g_weight = 56;
+    const uint8_t b_weight = 100;
+    TEST_ESP_OK(ppa_set_rgb2gray_formula(r_weight, g_weight, b_weight));
+    oper_config.out.srm_cm = PPA_SRM_COLOR_MODE_GRAY8;
+    oper_config.rotation_angle = PPA_SRM_ROTATION_ANGLE_0;
+    uint8_t out_buf_expected_gray[16] = {};
+    for (int i = 0; i < block_w * block_h; i++) {
+        const uint16_t pix = in_buf[(i / block_w + in_block_offset_y) * w + (i % block_w + in_block_offset_x)];
+        uint8_t _r = ((pix >> 8) & 0xF8);
+        uint8_t _g = ((pix >> 3) & 0xFC);
+        uint8_t _b = ((pix << 3) & 0xF8);
+        out_buf_expected_gray[(i / block_w + out_block_offset_y) * w + (i % block_w + out_block_offset_x)] = (_r * r_weight + _g * g_weight + _b * b_weight) >> 8;
+    }
+
+    TEST_ESP_OK(ppa_do_scale_rotate_mirror(ppa_client_handle, &oper_config));
+
+    // Check result
+    for (int i = 0; i < w * h; i++) {
+        if (i % 4 == 0) {
+            printf("\n");
+        }
+        printf("0x%02X ", out_buf[i]);
+    }
+    printf("\n");
+    TEST_ASSERT_EQUAL_UINT8_ARRAY((void *)out_buf_expected_gray, (void *)out_buf, w * h);
+#endif // !(CONFIG_IDF_TARGET_ESP32P4 && CONFIG_ESP32P4_SELECTS_REV_LESS_V3)
+
     TEST_ESP_OK(ppa_unregister_client(ppa_client_handle));
 
     free(out_buf);
@@ -526,6 +560,20 @@ TEST_CASE("ppa_fill_basic_data_correctness_check", "[PPA]")
                                                           };
     TEST_ASSERT_EACH_EQUAL_UINT16(fill_pixel_expected.val, (void *)((uint32_t)out_buf + w * block_offset_y * out_pixel_depth / 8), block_w * block_h);
 
+#if !(CONFIG_IDF_TARGET_ESP32P4 && CONFIG_ESP32P4_SELECTS_REV_LESS_V3)
+    // Test a yuv color fill
+    oper_config.out.fill_cm = PPA_FILL_COLOR_MODE_YUV422; // output YUV422 is with YVYU packed order
+    const color_macroblock_yuv_data_t fill_yuv_color = {.y = 0xFF, .u = 0x55, .v = 0xAA};
+    oper_config.fill_yuv_color = fill_yuv_color;
+    out_pixel_format.color_type_id = PPA_FILL_COLOR_MODE_YUV422;
+    out_pixel_depth = color_hal_pixel_format_get_bit_depth(out_pixel_format); // bits
+    TEST_ESP_OK(ppa_do_fill(ppa_client_handle, &oper_config));
+
+    // Check result (2 pixels per macro pixel)
+    const uint32_t fill_pixel_expected_yuv422 = ((fill_yuv_color.y << 24) | (fill_yuv_color.v << 16) | (fill_yuv_color.y << 8) | (fill_yuv_color.u));
+    TEST_ASSERT_EACH_EQUAL_UINT32(fill_pixel_expected_yuv422, (void *)((uint32_t)out_buf + w * block_offset_y * out_pixel_depth / 8), block_w * block_h / 2);
+#endif // !(CONFIG_IDF_TARGET_ESP32P4 && CONFIG_ESP32P4_SELECTS_REV_LESS_V3)
+
     TEST_ESP_OK(ppa_unregister_client(ppa_client_handle));
 
     free(out_buf);
@@ -541,15 +589,6 @@ TEST_CASE("ppa_fill_basic_data_correctness_check", "[PPA]")
  * T = k * x + b
  * k = (T - b) / x
  */
-
-#define PPA_SRM_MIN_PERFORMANCE_PX_PER_SEC      (21000 * 1000)  // k_min
-#define PPA_SRM_TIME_OFFSET                     (-26000)        // b_approx
-
-#define PPA_BLEND_MIN_PERFORMANCE_PX_PER_SEC    (31500 * 1000)  // k_min
-#define PPA_BLEND_TIME_OFFSET                   (-37150)        // b_approx
-
-#define PPA_FILL_MIN_PERFORMANCE_PX_PER_SEC     (150000 * 1000)  // k_min
-#define PPA_FILL_TIME_OFFSET                    (-106000)        // b_approx
 
 TEST_CASE("ppa_srm_performance", "[PPA]")
 {

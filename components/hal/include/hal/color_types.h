@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -179,10 +179,13 @@ typedef union {
 /**
  * @brief Data structure for RGB888 pixel unit
  */
-typedef struct {
-    uint8_t b;      /*!< B component [0, 255] */
-    uint8_t g;      /*!< G component [0, 255] */
-    uint8_t r;      /*!< R component [0, 255] */
+typedef union {
+    struct {
+        uint8_t b;          /*!< B component [0, 255] */
+        uint8_t g;          /*!< G component [0, 255] */
+        uint8_t r;          /*!< R component [0, 255] */
+    };
+    uint32_t val;           /*!< 32-bit RGB888 value */
 } color_pixel_rgb888_data_t;
 
 /**
@@ -196,6 +199,29 @@ typedef union {
     };
     uint16_t val;           /*!< 16-bit RGB565 value */
 } color_pixel_rgb565_data_t;
+
+/**
+ * @brief Data structure for GRAY8 pixel unit
+ */
+typedef union {
+    struct {
+        uint8_t gray;      /*!< Gray component [0, 255] */
+    };
+    uint8_t val;           /*!< 8-bit GRAY8 value */
+} color_pixel_gray8_data_t;
+
+/**
+ * @brief Data structure for YUV macroblock unit
+ *
+ * For YUV420, a macroblock is 2x2 pixels
+ * For YUV422, a macroblock is 2x1 pixels
+ * For YUV444, a macro block is a 1x1 pixel
+ */
+typedef struct {
+    uint8_t y;      /*!< Y component [0, 255] */
+    uint8_t u;      /*!< U component [0, 255] */
+    uint8_t v;      /*!< V component [0, 255] */
+} color_macroblock_yuv_data_t;
 
 /*---------------------------------------------------------------
                         Color Components

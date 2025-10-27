@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -127,6 +127,7 @@ typedef struct {
     };
     ppa_color_range_t yuv_range;            /*!< When the color mode is any YUV color space, this field is to describe its color range */
     ppa_color_conv_std_rgb_yuv_t yuv_std;   /*!< When the color mode is any YUV color space, this field is to describe its YUV<->RGB conversion standard */
+    color_yuv422_pack_order_t yuv422_pack_order; /*!< When the color mode is YUV422, this field is to describe its data pack order */
 } ppa_in_pic_blk_config_t;
 
 /**
@@ -268,7 +269,12 @@ typedef struct {
 
     uint32_t fill_block_w;                         /*!< The width of the block to be filled (unit: pixel) */
     uint32_t fill_block_h;                         /*!< The height of the block to be filled (unit: pixel) */
-    color_pixel_argb8888_data_t fill_argb_color;   /*!< The color to be filled, in ARGB8888 format */
+    union {
+        color_pixel_argb8888_data_t fill_argb_color;    /*!< For any ARGB/RGB format color to be filled, use this field to fill A (if applicable)/R/G/B components */
+        color_pixel_gray8_data_t fill_gray8_color;      /*!< For GRAY8 format color to be filled */
+        color_macroblock_yuv_data_t fill_yuv_color;     /*!< For any YUV format color to be filled, use this field to fill Y/U/V components */
+        uint32_t fill_color_val;                        /*!< The color to be filled, in a raw 32-bit value. The interpretation of the value depends on the selected `fill_cm` */
+    };
 
     ppa_trans_mode_t mode;                         /*!< Determines whether to block inside the operation functions, see `ppa_trans_mode_t` */
     void *user_data;                               /*!< User registered data to be passed into `done_cb` callback function */
@@ -286,6 +292,23 @@ typedef struct {
  *      - ESP_FAIL: Perform a fill operation failed because the client's pending transactions has reached its maximum capacity
  */
 esp_err_t ppa_do_fill(ppa_client_handle_t ppa_client, const ppa_fill_oper_config_t *config);
+
+/**
+ * @brief Configure the RGB888 to GRAY8 color conversion coefficients for ppa_do_scale_rotate_mirror and ppa_do_fill
+ *
+ * The gray value is calculated as: gray = (r_weight * R + g_weight * G + b_weight * B) >> 8
+ * Note: (r_weight + g_weight + b_weight) should equal to 256.
+ *
+ * @param r_weight Coefficient for R component, range: [0, 255]
+ * @param g_weight Coefficient for G component, range: [0, 255]
+ * @param b_weight Coefficient for B component, range: [0, 255]
+ * @return
+ *     - ESP_OK: Set the RGB888 to GRAY color conversion formula successfully
+ *     - ESP_ERR_NOT_SUPPORTED: Set the RGB888 to GRAY color conversion formula failed because the PPA peripheral does not support this feature
+ *     - ESP_ERR_INVALID_ARG: Set the RGB888 to GRAY color conversion formula failed because of invalid argument
+ *     - ESP_ERR_INVALID_STATE: Set the RGB888 to GRAY color conversion formula failed because the PPA peripheral not initialized
+ */
+esp_err_t ppa_set_rgb2gray_formula(uint8_t r_weight, uint8_t g_weight, uint8_t b_weight);
 
 #ifdef __cplusplus
 }
