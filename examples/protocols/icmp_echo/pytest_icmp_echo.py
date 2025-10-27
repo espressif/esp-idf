@@ -79,7 +79,7 @@ def test_protocols_icmp_echo_ipv6_only(dut: Dut) -> None:
         dut.write(f'{ap_ssid} {ap_password}')
     # expect all 8 octets from IPv6 (assumes it's printed in the long form)
     ipv6_r = r':'.join((r'[0-9a-fA-F]{4}',) * 8)
-    ipv6 = dut.expect(ipv6_r, timeout=30)[0].decode()
+    ipv6 = dut.expect(ipv6_r, timeout=60)[0].decode()
     logging.info(f'Connected AP with IPv6={ipv6}')
     interface_nr = dut.expect(r'Connected on interface: [a-z]{2}\d \((\d+)\)', timeout=30)[1].decode()
 

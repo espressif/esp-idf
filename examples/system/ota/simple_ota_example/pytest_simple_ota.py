@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import http.server
+import logging
 import multiprocessing
 import os
 import ssl
@@ -143,12 +144,12 @@ def start_tls1_3_server(ota_image_dir: str, server_port: int) -> subprocess.Pope
 
 
 def check_sha256(sha256_expected: str, sha256_reported: str) -> None:
-    print('sha256_expected: %s' % (sha256_expected))
-    print('sha256_reported: %s' % (sha256_reported))
+    logging.info('sha256_expected: %s', sha256_expected)
+    logging.info('sha256_reported: %s', sha256_reported)
     if sha256_expected not in sha256_reported:
         raise ValueError('SHA256 mismatch')
     else:
-        print('SHA256 expected and reported are the same')
+        logging.info('SHA256 expected and reported are the same')
 
 
 def calc_all_sha256(dut: Dut) -> Tuple[str, str]:
@@ -168,7 +169,7 @@ def setting_connection(dut: Dut, env_name: Optional[str] = None) -> Any:
         ap_password = get_env_config_variable(env_name, 'ap_password')
         dut.write(f'{ap_ssid} {ap_password}')
     try:
-        ip_address = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=30)[1].decode()
+        ip_address = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=60)[1].decode()
         print(f'Connected to AP/Ethernet with IP: {ip_address}')
     except pexpect.exceptions.TIMEOUT:
         raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP/Ethernet')

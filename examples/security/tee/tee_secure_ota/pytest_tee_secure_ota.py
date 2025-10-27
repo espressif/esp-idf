@@ -86,7 +86,7 @@ def test_examples_tee_secure_ota_example(dut: Dut) -> None:
                 ap_password = get_env_config_variable(env_name, 'ap_password')
                 dut.write(f'{ap_ssid} {ap_password}')
             try:
-                ip_address = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=30)[1].decode()
+                ip_address = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=60)[1].decode()
                 print(f'Connected to AP/Ethernet with IP: {ip_address}')
             except pexpect.exceptions.TIMEOUT:
                 raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')

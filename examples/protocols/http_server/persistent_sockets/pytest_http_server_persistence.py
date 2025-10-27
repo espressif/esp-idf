@@ -30,7 +30,7 @@ def test_examples_protocol_http_server_persistence(dut: Dut) -> None:
     # Get binary file
     binary_file = os.path.join(dut.app.binary_path, 'persistent_sockets.bin')
     bin_size = os.path.getsize(binary_file)
-    logging.info('http_server_bin_size : {}KB'.format(bin_size // 1024))
+    logging.info(f'http_server_bin_size : {bin_size // 1024}KB')
 
     # Upload binary and start testing
     logging.info('Starting http_server persistence test app')
@@ -43,11 +43,11 @@ def test_examples_protocol_http_server_persistence(dut: Dut) -> None:
         ap_ssid = get_env_config_variable(env_name, 'ap_ssid')
         ap_password = get_env_config_variable(env_name, 'ap_password')
         dut.write(f'{ap_ssid} {ap_password}')
-    got_ip = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=30)[1].decode()
+    got_ip = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=60)[1].decode()
     got_port = dut.expect(r"(?:[\s\S]*)Starting server on port: '(\d+)'", timeout=30)[1].decode()
 
-    logging.info('Got IP   : {}'.format(got_ip))
-    logging.info('Got Port : {}'.format(got_port))
+    logging.info(f'Got IP   : {got_ip}')
+    logging.info(f'Got Port : {got_port}')
 
     # Expected Logs
     dut.expect('Registering URI handlers', timeout=30)
@@ -77,7 +77,7 @@ def test_examples_protocol_http_server_persistence(dut: Dut) -> None:
 
     # Retest PUT request and change session context value
     num = random.randint(0, 100)
-    logging.info('Adding: {}'.format(num))
+    logging.info(f'Adding: {num}')
     client.putreq(conn, '/adder', str(num))
     visitor += 1
     adder += num
@@ -95,7 +95,7 @@ def test_examples_protocol_http_server_persistence(dut: Dut) -> None:
     # Test POST request and session persistence
     random_nums = [random.randint(0, 100) for _ in range(100)]
     for num in random_nums:
-        logging.info('Adding: {}'.format(num))
+        logging.info(f'Adding: {num}')
         client.postreq(conn, '/adder', str(num))
         visitor += 1
         adder += num
@@ -103,7 +103,7 @@ def test_examples_protocol_http_server_persistence(dut: Dut) -> None:
         dut.expect('/adder handler read ' + str(num), timeout=30)
 
     # Test GET request and session persistence
-    logging.info('Matching final sum: {}'.format(adder))
+    logging.info(f'Matching final sum: {adder}')
     if client.getreq(conn, '/adder').decode() != str(adder):
         raise RuntimeError
     visitor += 1

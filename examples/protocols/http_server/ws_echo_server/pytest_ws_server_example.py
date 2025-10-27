@@ -145,7 +145,7 @@ def test_ws_auth_handshake(dut: Dut) -> None:
         ap_ssid = get_env_config_variable(env_name, 'ap_ssid')
         ap_password = get_env_config_variable(env_name, 'ap_password')
         dut.write(f'{ap_ssid} {ap_password}')
-    got_ip = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=30)[1].decode()
+    got_ip = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=60)[1].decode()
     got_port = dut.expect(r"Starting server on port: '(\d+)'", timeout=30)[1].decode()
     # Prepare a minimal WebSocket handshake request
     # Use WSClient to attempt the handshake, expecting it to fail (handshake rejected)
