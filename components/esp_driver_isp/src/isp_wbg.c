@@ -33,7 +33,6 @@ esp_err_t esp_isp_wbg_configure(isp_proc_handle_t isp_proc, const esp_isp_wbg_co
 #endif
 
     ESP_RETURN_ON_FALSE(isp_proc, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
-    ESP_RETURN_ON_FALSE(isp_proc->wbg_fsm == ISP_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "wbg is enabled already");
 
     // Configure clock control mode
     isp_ll_awb_set_wb_gain_clk_ctrl_mode(isp_proc->hal.hw, ISP_LL_PIPELINE_CLK_CTRL_AUTO);
@@ -44,11 +43,11 @@ esp_err_t esp_isp_wbg_configure(isp_proc_handle_t isp_proc, const esp_isp_wbg_co
 esp_err_t esp_isp_wbg_enable(isp_proc_handle_t isp_proc)
 {
     ESP_RETURN_ON_FALSE(isp_proc, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
-    ESP_RETURN_ON_FALSE(isp_proc->wbg_fsm == ISP_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "wbg is enabled already");
+    isp_fsm_t expected_fsm = ISP_FSM_INIT;
+    ESP_RETURN_ON_FALSE(atomic_compare_exchange_strong(&isp_proc->wbg_fsm, &expected_fsm, ISP_FSM_ENABLE), ESP_ERR_INVALID_STATE, TAG, "wbg is enabled already");
 
     // Enable WBG module
     isp_ll_awb_enable_wb_gain(isp_proc->hal.hw, true);
-    isp_proc->wbg_fsm = ISP_FSM_ENABLE;
 
     ESP_LOGD(TAG, "WBG enabled");
     return ESP_OK;
@@ -57,7 +56,7 @@ esp_err_t esp_isp_wbg_enable(isp_proc_handle_t isp_proc)
 esp_err_t esp_isp_wbg_set_wb_gain(isp_proc_handle_t isp_proc, isp_wbg_gain_t gain)
 {
     ESP_RETURN_ON_FALSE(isp_proc, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
-    ESP_RETURN_ON_FALSE(isp_proc->wbg_fsm == ISP_FSM_ENABLE, ESP_ERR_INVALID_STATE, TAG, "wbg isn't enabled yet");
+    ESP_RETURN_ON_FALSE(atomic_load(&isp_proc->wbg_fsm) == ISP_FSM_ENABLE, ESP_ERR_INVALID_STATE, TAG, "wbg isn't enabled yet");
 
     // Set WBG gain
     isp_ll_awb_set_wb_gain(isp_proc->hal.hw, gain);
@@ -68,11 +67,11 @@ esp_err_t esp_isp_wbg_set_wb_gain(isp_proc_handle_t isp_proc, isp_wbg_gain_t gai
 esp_err_t esp_isp_wbg_disable(isp_proc_handle_t isp_proc)
 {
     ESP_RETURN_ON_FALSE(isp_proc, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
-    ESP_RETURN_ON_FALSE(isp_proc->wbg_fsm == ISP_FSM_ENABLE, ESP_ERR_INVALID_STATE, TAG, "wbg isn't enabled yet");
+    isp_fsm_t expected_fsm = ISP_FSM_ENABLE;
+    ESP_RETURN_ON_FALSE(atomic_compare_exchange_strong(&isp_proc->wbg_fsm, &expected_fsm, ISP_FSM_INIT), ESP_ERR_INVALID_STATE, TAG, "wbg isn't enabled yet");
 
     // Disable WBG module
     isp_ll_awb_enable_wb_gain(isp_proc->hal.hw, false);
-    isp_proc->wbg_fsm = ISP_FSM_INIT;
 
     ESP_LOGD(TAG, "WBG disabled");
     return ESP_OK;
