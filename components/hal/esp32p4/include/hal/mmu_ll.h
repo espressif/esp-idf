@@ -294,10 +294,10 @@ __attribute__((always_inline)) static inline void mmu_ll_write_entry(uint32_t mm
     // Anti-FI check to confirm the encryption status for PSRAM entry.
     // This avoids a potential FI attacks to keep PSRAM unencrypted and
     // hence read out plaintext in execute from PSRAM model.
-    if (mmu_ll_cache_encryption_enabled() && mmu_id == MMU_LL_PSRAM_MMU_ID) {
+    if (mmu_ll_cache_encryption_enabled() && target == MMU_TARGET_PSRAM0) {
         ESP_FAULT_ASSERT(REG_READ(content_reg) & SOC_MMU_PSRAM_SENSITIVE);
     } else {
-        ESP_FAULT_ASSERT(!(mmu_ll_cache_encryption_enabled() && mmu_id == MMU_LL_PSRAM_MMU_ID));
+        ESP_FAULT_ASSERT(!(mmu_ll_cache_encryption_enabled() && target == MMU_TARGET_PSRAM0));
     }
 }
 
