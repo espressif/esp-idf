@@ -8,4 +8,4 @@ from pytest_embedded_idf.utils import idf_parametrize
 @pytest.mark.generic
 @idf_parametrize('target', ['esp32', 'esp32s2', 'esp32s3'], indirect=['target'])
 def test_ulp_fsm(dut: Dut) -> None:
-    dut.run_all_single_board_cases()
+    dut.run_all_single_board_cases(reset=True)
