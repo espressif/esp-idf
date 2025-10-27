@@ -76,9 +76,12 @@ typedef UINT8 tGATT_SEC_ACTION;
 
 #define GATT_HDR_SIZE           3 /* 1B opcode + 2B handle */
 
-/* wait for ATT cmd response timeout value */
-#define GATT_WAIT_FOR_RSP_TOUT       30
-#define GATT_WAIT_FOR_DISC_RSP_TOUT  15
+/**
+ * Wait for ATT cmd response timeout value (40 seconds).
+ * The max connection supervision timeout is 32 seconds,
+ * And The ATT cmd may not be sent out by controller immediately.
+ */
+#define GATT_WAIT_FOR_RSP_TOUT       40
 #define GATT_REQ_RETRY_LIMIT         2
 #define GATT_WAIT_FOR_IND_ACK_TOUT   5
 
