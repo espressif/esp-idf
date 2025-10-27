@@ -115,6 +115,15 @@ SECTIONS
     ALIGNED_SYMBOL(4, _rtc_force_slow_end)
   } > lp_ram_seg
 
+#if CONFIG_P4_REV3_MSPI_CRASH_AFTER_POWER_UP_WORKAROUND
+  .rtc.p4_rev3_mspi_workaround :
+  {
+    ALIGNED_SYMBOL(4, _rtc_p4_rev3_mspi_workaround_start)
+    KEEP (*(.p4_rev3_mspi_workaround.rtc_text .p4_rev3_mspi_workaround.rtc_text.*))
+    ALIGNED_SYMBOL(4, _rtc_p4_rev3_mspi_workaround_end)
+  } > rev3_mspi_workaround_seg
+#endif
+
   /**
    * This section holds RTC data that should have fixed addresses.
    * The data are not initialized at power-up and are retained during deep
