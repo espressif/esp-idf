@@ -185,58 +185,6 @@ void SwitchoverDone(otInstance *aInstance, bool aSuccess)
     s_esp_radio_spinel_callbacks[idx].switchover_done(aSuccess);
 }
 
-#if CONFIG_OPENTHREAD_DIAG
-void DiagReceiveDone(otInstance *aInstance, otRadioFrame *aFrame, otError aError)
-{
-    esp_radio_spinel_idx_t idx = get_index_from_instance(aInstance);
-    assert(s_esp_radio_spinel_callbacks[idx].diag_receive_done);
-    uint8_t *frame = (uint8_t *)malloc(aFrame->mLength + 1);
-    esp_ieee802154_frame_info_t frame_info;
-    if (frame) {
-        frame[0] = aFrame->mLength;
-        memcpy((void *)(frame + 1), aFrame->mPsdu, frame[0]);
-        frame_info.rssi = aFrame->mInfo.mRxInfo.mRssi;
-        frame_info.timestamp = aFrame->mInfo.mRxInfo.mTimestamp;
-        frame_info.pending = aFrame->mInfo.mRxInfo.mAckedWithFramePending;
-        s_esp_radio_spinel_callbacks[idx].diag_receive_done(frame, &frame_info);
-        free(frame);
-    } else {
-        ESP_LOGE(ESP_SPINEL_LOG_TAG, "Fail to alloc memory for frame");
-    }
-}
-
-void DiagTransmitDone(otInstance *aInstance, otRadioFrame *aFrame, otError aError)
-{
-    esp_radio_spinel_idx_t idx = get_index_from_instance(aInstance);
-    assert(s_esp_radio_spinel_callbacks[idx].diag_transmit_done && s_esp_radio_spinel_callbacks[idx].diag_transmit_failed);
-    if (aError == OT_ERROR_NONE) {
-        uint8_t *frame = (uint8_t *)malloc(aFrame->mLength + 1);
-        if (frame) {
-            esp_ieee802154_frame_info_t ack_info;
-            frame[0] = aFrame->mLength;
-            memcpy((void *)(frame + 1), aFrame->mPsdu, frame[0]);
-            s_esp_radio_spinel_callbacks[idx].diag_transmit_done(frame, &ack_info);
-            free(frame);
-        } else {
-            ESP_LOGE(ESP_SPINEL_LOG_TAG, "Fail to alloc memory for frame");
-        }
-    } else {
-        switch (aError) {
-        case OT_ERROR_CHANNEL_ACCESS_FAILURE:
-            s_esp_radio_spinel_callbacks[idx].diag_transmit_failed(ESP_IEEE802154_TX_ERR_CCA_BUSY);
-            break;
-        case OT_ERROR_NO_ACK:
-            s_esp_radio_spinel_callbacks[idx].diag_transmit_failed(ESP_IEEE802154_TX_ERR_NO_ACK);
-            break;
-        default:
-            s_esp_radio_spinel_callbacks[idx].diag_transmit_failed(ESP_IEEE802154_TX_ERR_CCA_BUSY);
-            break;
-        }
-    }
-}
-#endif // CONFIG_OPENTHREAD_DIAG
-
-
 void esp_radio_spinel_set_callbacks(const esp_radio_spinel_callbacks_t aCallbacks, esp_radio_spinel_idx_t idx)
 {
     s_esp_radio_spinel_callbacks[idx] = aCallbacks;
@@ -247,10 +195,6 @@ void esp_radio_spinel_set_callbacks(const esp_radio_spinel_callbacks_t aCallback
     Callbacks.mEnergyScanDone = EnergyScanDone;
     Callbacks.mTxStarted = TxStarted;
     Callbacks.mSwitchoverDone = SwitchoverDone;
-#if CONFIG_OPENTHREAD_DIAG
-    Callbacks.mDiagReceiveDone = DiagReceiveDone;
-    Callbacks.mDiagTransmitDone = DiagTransmitDone;
-#endif // CONFIG_OPENTHREAD_DIAG
 
     s_radio[idx].SetCallbacks(Callbacks);
 }
