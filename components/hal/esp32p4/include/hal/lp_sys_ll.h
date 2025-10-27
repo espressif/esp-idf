@@ -13,6 +13,7 @@
 #include "soc/soc.h"
 #include "soc/lp_system_struct.h"
 #include "hal/misc.h"
+#include "hal/config.h"
 #include "esp32p4/rom/rtc.h"
 
 
