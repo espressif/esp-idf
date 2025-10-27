@@ -88,13 +88,13 @@ patterns = [
 [gitlab.artifacts.s3.junit]
 bucket = "idf-artifacts"
 patterns = [
-    'XUNIT_RESULT_*.xml',
+    '**/XUNIT_RESULT_*.xml',
 ]
 
 [gitlab.artifacts.s3.env]
 bucket = "idf-artifacts"
 patterns = [
-    'pipeline.env',
+    '**/pipeline.env',
 ]
 
 [gitlab.artifacts.s3.longterm]

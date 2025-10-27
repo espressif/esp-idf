@@ -64,3 +64,21 @@ deploy_update_SHA_in_esp-dockerfiles:
   environment:
     name: deploy_update_SHA_in_esp-dockerfiles_production
     deployment_tier: production
+
+upload_junit_report:
+  extends:
+    - .deploy_job_template
+  tags: [ fast_run, shiny ]
+  needs:
+    - pipeline_variables
+    - job: build_child_pipeline
+      artifacts: false
+  script:
+    - run_cmd idf-ci gitlab download-artifacts --type junit
+  rules:
+    - when: always
+  artifacts:
+    reports:
+      junit: XUNIT_RESULT_*.xml
+    expire_in: 1 week
+    when: always
