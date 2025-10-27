@@ -218,10 +218,10 @@ DFS 有如下可配置选项：
     - 1000
 
   * - ``max_freq_mhz``
-    - 160
+    - {IDF_TARGET_NAME} 支持的最大 CPU 频率
 
   * - ``min_freq_mhz``
-    - 40
+    - {CONFIG_XTAL_FREQ}
 
   * - ``light_sleep_enable``
     - false
@@ -288,6 +288,14 @@ Light-sleep 模式配置
 
           由于 flash 和 PSRAM 共用供电管脚，PSRAM 关闭供电将会导致数据丢失，因此，为保证 light sleep 不破坏程序运行状态，启用该选项的前提是系统没有使用 PSRAM。
 
+.. only:: SOC_PM_SUPPORT_TOP_PD
+
+    - 关闭数字外设模块及 TOP 电源域下的所有子电源域 (:ref:`CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP`)
+
+.. only:: SOC_PM_SUPPORT_RTC_PERIPH_PD
+
+    - 关闭 RTC 数字外设模块，系统睡眠时自动关闭 RTC 数字外设是系统电源管理默认策略，用户可以调用 `esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_ON)` 在睡眠状态下开启 RTC 数字外设模块
+
 .. only:: esp32c2
 
     - 减少 Power Managemet 模块片内 RAM 内存资源使用量 (:ref:`CONFIG_PM_SLEEP_FUNC_IN_IRAM`)，当 :ref:`CONFIG_PM_SLEEP_FUNC_IN_IRAM` 禁止时，下面表格中选项分别用于控制 Power Management 模块各部分组件启用或禁止片内 RAM 优化
@@ -335,7 +343,61 @@ Light-sleep 模式配置
 推荐配置
 +++++++++
 
-.. only:: esp32c3 or esp32s3
+.. only:: esp32c6 or esp32c5
+
+  .. list-table::
+   :header-rows: 1
+   :widths: 30 15
+
+   * - 配置名称
+     - 设置情况
+
+   * - 启用电源管理组件 (:ref:`CONFIG_PM_ENABLE`)
+     - ON
+
+   * - 启用 Tickless IDLE 模式 (:ref:`CONFIG_FREERTOS_USE_TICKLESS_IDLE`)
+     - ON
+
+   * - RTOS Tick rate (Hz) (:ref:`CONFIG_FREERTOS_HZ`)
+     - 1000
+
+   * - 进入睡眠模式前最小 IDLE Tick 数 (:ref:`CONFIG_FREERTOS_IDLE_TIME_BEFORE_SLEEP`)
+     - 3
+
+   * - 将 light sleep 相关代码放置在片内 RAM 中 (:ref:`CONFIG_PM_SLP_IRAM_OPT`)
+     - ON
+
+   * - 将 RTOS IDLE 相关代码放置在片内 RAM 中 (:ref:`CONFIG_PM_RTOS_IDLE_OPT`)
+     - ON
+
+   * - RTC 慢速时钟源 (:ref:`CONFIG_RTC_CLK_SRC`)
+     - 内部 150 kHz 振荡器
+
+   * - 芯片休眠时禁用所有 GPIO (:ref:`CONFIG_PM_SLP_DISABLE_GPIO`)
+     - ON
+
+   * - 关闭 MAC 和基带 (:ref:`CONFIG_ESP_PHY_MAC_BB_PD`)
+     - ON
+
+   * - 关闭 CPU (:ref:`CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP`)
+     - ON
+
+   * - 在 light sleep 状态关闭 flash 供电 (:ref:`CONFIG_ESP_SLEEP_POWER_DOWN_FLASH`)
+     - OFF
+
+   * - ``max_freq_mhz``
+     - {IDF_TARGET_NAME} 支持的最大 CPU 频率
+
+   * - ``min_freq_mhz``
+     - {CONFIG_XTAL_FREQ}
+
+   * - ``light_sleep_enable``
+     - true
+
+  .. note::
+      上表中不涉及的配置均是默认。
+
+.. only:: esp32s3
 
   .. list-table::
    :header-rows: 1
@@ -374,20 +436,71 @@ Light-sleep 模式配置
    * - 关闭 CPU (:ref:`CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP`)
      - ON
 
-.. only:: SOC_PM_SUPPORT_TAGMEM_PD
-
    * - 关闭指令和数据缓存中的标签存储器 (I/D-cache tag memory)  (:ref:`CONFIG_PM_RESTORE_CACHE_TAGMEM_AFTER_LIGHT_SLEEP`)
      - ON
-
 
    * - 在 light sleep 状态关闭 flash 供电 (:ref:`CONFIG_ESP_SLEEP_POWER_DOWN_FLASH`)
      - OFF
 
    * - ``max_freq_mhz``
-     - 160
+     - {IDF_TARGET_NAME} 支持的最大 CPU 频率
 
    * - ``min_freq_mhz``
-     - 40
+     - {CONFIG_XTAL_FREQ}
+
+   * - ``light_sleep_enable``
+     - true
+
+  .. note::
+      上表中不涉及的配置均是默认。
+
+.. only:: esp32c3
+
+  .. list-table::
+   :header-rows: 1
+   :widths: 30 15
+
+   * - 配置名称
+     - 设置情况
+
+   * - 启用电源管理组件 (:ref:`CONFIG_PM_ENABLE`)
+     - ON
+
+   * - 启用 Tickless IDLE 模式 (:ref:`CONFIG_FREERTOS_USE_TICKLESS_IDLE`)
+     - ON
+
+   * - RTOS Tick rate (Hz) (:ref:`CONFIG_FREERTOS_HZ`)
+     - 1000
+
+   * - 进入睡眠模式前最小 IDLE Tick 数 (:ref:`CONFIG_FREERTOS_IDLE_TIME_BEFORE_SLEEP`)
+     - 3
+
+   * - 将 light sleep 相关代码放置在片内 RAM 中 (:ref:`CONFIG_PM_SLP_IRAM_OPT`)
+     - OFF
+
+   * - 将 RTOS IDLE 相关代码放置在片内 RAM 中 (:ref:`CONFIG_PM_RTOS_IDLE_OPT`)
+     - OFF
+
+   * - RTC 慢速时钟源 (:ref:`CONFIG_RTC_CLK_SRC`)
+     - 内部 150 kHz 振荡器
+
+   * - 芯片休眠时禁用所有 GPIO (:ref:`CONFIG_PM_SLP_DISABLE_GPIO`)
+     - ON
+
+   * - 关闭 MAC 和基带 (:ref:`CONFIG_ESP_PHY_MAC_BB_PD`)
+     - ON
+
+   * - 关闭 CPU (:ref:`CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP`)
+     - ON
+
+   * - 在 light sleep 状态关闭 flash 供电 (:ref:`CONFIG_ESP_SLEEP_POWER_DOWN_FLASH`)
+     - OFF
+
+   * - ``max_freq_mhz``
+     - {IDF_TARGET_NAME} 支持的最大 CPU 频率
+
+   * - ``min_freq_mhz``
+     - {CONFIG_XTAL_FREQ}
 
    * - ``light_sleep_enable``
      - true
@@ -432,7 +545,7 @@ Light-sleep 模式配置
       - 160
 
     * - ``min_freq_mhz``
-      - 40
+      - {CONFIG_XTAL_FREQ}
 
     * - ``light_sleep_enable``
       - true
@@ -480,7 +593,7 @@ Light-sleep 模式配置
      - 120
 
    * - ``min_freq_mhz``
-     - 40
+     - {CONFIG_XTAL_FREQ}
 
    * - ``light_sleep_enable``
      - true
