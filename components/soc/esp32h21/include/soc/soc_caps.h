@@ -287,6 +287,7 @@
 #define SOC_LEDC_GAMMA_CURVE_FADE_RANGE_MAX (16)
 #define SOC_LEDC_FADE_PARAMS_BIT_WIDTH      (10)
 #define SOC_LEDC_SUPPORT_SLEEP_RETENTION    (1)
+#define SOC_LEDC_SUPPORT_ETM                (1)
 
 /*-------------------------- MPU CAPS ----------------------------------------*/
 // #define SOC_MPU_CONFIGURABLE_REGIONS_SUPPORTED    0

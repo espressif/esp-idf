@@ -397,6 +397,7 @@ static inline esp_err_t _uart_set_pin4(uart_port_t uart_num, int tx_io_num, int 
 // Error function for invalid argument count
 static inline esp_err_t __uart_set_pin_invalid_args__(int dummy, ...)
 {
+    (void)dummy;
     ESP_RETURN_ON_FALSE(false, ESP_FAIL, "uart", "Invalid number of arguments to uart_set_pin(). Expected 5 or 7 arguments.");
     return ESP_OK;
 }

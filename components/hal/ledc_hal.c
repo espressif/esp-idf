@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -61,5 +61,18 @@ void ledc_hal_get_clk_cfg(ledc_hal_context_t *hal, ledc_timer_t timer_sel, ledc_
 void ledc_hal_get_fade_param(ledc_hal_context_t *hal, ledc_channel_t channel_num, uint32_t range, uint32_t *dir, uint32_t *cycle, uint32_t *scale, uint32_t *step)
 {
     ledc_ll_get_fade_param_range(hal->dev, hal->speed_mode, channel_num, range, dir, cycle, scale, step);
+}
+#endif
+
+#if LEDC_LL_CHANNEL_SUPPORT_OVF_CNT
+void ledc_hal_channel_configure_maximum_timer_ovf_cnt(ledc_hal_context_t *hal, ledc_channel_t channel, uint32_t max_ovf_cnt)
+{
+    if (max_ovf_cnt == 0) {
+        ledc_ll_channel_enable_timer_ovt_cnt(hal->dev, hal->speed_mode, channel, false);
+    } else {
+        ledc_ll_channel_enable_timer_ovt_cnt(hal->dev, hal->speed_mode, channel, true);
+        ledc_ll_channel_set_maximum_timer_ovf_cnt(hal->dev, hal->speed_mode, channel, max_ovf_cnt);
+        ledc_ll_channel_reset_timer_ovf_cnt(hal->dev, hal->speed_mode, channel);
+    }
 }
 #endif
