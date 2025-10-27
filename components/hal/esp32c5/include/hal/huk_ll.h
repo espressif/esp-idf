@@ -29,6 +29,14 @@
 extern "C" {
 #endif
 
+static inline void huk_ll_power_up(void)
+{
+    /* huk force_pd MUST be cleared!!! */
+    REG_CLR_BIT(LP_AON_MEM_CTRL_REG, LP_AON_HUK_MEM_FORCE_PD);
+    /* huk force_pu MUST be set!!! */
+    REG_SET_BIT(LP_AON_MEM_CTRL_REG, LP_AON_HUK_MEM_FORCE_PU);
+}
+
 /* @brief Configure the HUK mode */
 static inline void huk_ll_configure_mode(const esp_huk_mode_t huk_mode)
 {

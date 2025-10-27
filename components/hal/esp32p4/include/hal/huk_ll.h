@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -26,6 +26,11 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+static inline void huk_ll_power_up(void)
+{
+
+}
 
 /* @brief Configure the HUK mode */
 static inline void huk_ll_configure_mode(const esp_huk_mode_t huk_mode)
