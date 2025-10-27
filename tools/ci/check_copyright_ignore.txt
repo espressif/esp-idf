@@ -949,7 +949,6 @@ tools/test_apps/protocols/mqtt/publish_connect_test/main/publish_test.c
 tools/test_apps/security/secure_boot/main/secure_boot_main.c
 tools/test_apps/security/secure_boot/main/secure_boot_main_esp32.c
 tools/test_apps/system/bootloader_sections/main/test_main.c
-tools/test_apps/system/build_test/main/test_main.c
 tools/test_apps/system/cxx_no_except/main/main.cpp
 tools/test_apps/system/gdb_loadable_elf/main/hello_world_main.c
 tools/test_apps/system/longjmp_test/main/hello_world_main.c

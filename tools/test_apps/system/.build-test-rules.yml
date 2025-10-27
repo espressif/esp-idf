@@ -4,12 +4,36 @@ tools/test_apps/system/bootloader_sections:
   disable:
     - if: CONFIG_NAME == "rtc_retain" and SOC_RTC_FAST_MEM_SUPPORTED != 1
 
-tools/test_apps/system/build_test:
+tools/test_apps/system/build_tests/client_only_mbedtls:
   disable:
-    - if: CONFIG_NAME == "no_rvfplib" and ESP_ROM_HAS_RVFPLIB != 1
-    - if: CONFIG_NAME == "usb_serial_jtag" AND SOC_USB_SERIAL_JTAG_SUPPORTED != 1
-    - if: CONFIG_NAME == "usb_console_ets_printf" AND SOC_USB_OTG_SUPPORTED != 1
-    - if: CONFIG_NAME == "phy_multiple_init_data" AND IDF_TARGET == "esp32p4" # Update with caps here when IDF-7460 is resolved
+    - if: IDF_TARGET not in ["esp32c3"]
+      reason: Testing on a single target is sufficient
+
+tools/test_apps/system/build_tests/custom_mac:
+  disable:
+    - if: IDF_TARGET not in ["esp32c3"]
+      reason: Testing on a single target is sufficient
+
+tools/test_apps/system/build_tests/no_esp_cert_bundle:
+  disable:
+    - if: IDF_TARGET not in ["esp32c3"]
+      reason: Testing on a single target is sufficient
+
+tools/test_apps/system/build_tests/no_hwsg:
+  disable:
+    - if: SOC_ASSIST_DEBUG_SUPPORTED != 1
+
+tools/test_apps/system/build_tests/panic_silent_reboot:
+  disable:
+    - if: IDF_TARGET != "esp32"
+
+tools/test_apps/system/build_tests/trax_esp32:
+  disable:
+    - if: IDF_TARGET != "esp32"
+
+tools/test_apps/system/build_tests/trax_esp32s2:
+  disable:
+    - if: IDF_TARGET != "esp32s2"
 
 tools/test_apps/system/clang_build_test:
   enable:

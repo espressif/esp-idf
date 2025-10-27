@@ -1,0 +1,6 @@
+| Supported Targets | ESP32-C2 | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP32-P4 |
+| ----------------- | -------- | -------- | -------- | --------- | -------- |
+
+This project tests building with the no_rvfplib configuration.
+
+This project uses MINIMAL_BUILD=y to reduce build time and dependencies.

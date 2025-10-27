@@ -1,3 +1,5 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
-components/esp_libc/test_apps/newlib:
+components/esp_libc/test_apps/no_rvfplib:
+  disable:
+    - if: ESP_ROM_HAS_RVFPLIB != 1
