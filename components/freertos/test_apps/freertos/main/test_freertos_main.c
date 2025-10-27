@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +10,7 @@
 #include "unity_test_runner.h"
 #include "esp_heap_caps.h"
 #include "test_utils.h"
+#include "esp_task_wdt.h"
 
 #define TEST_MEMORY_LEAK_THRESHOLD (-512)
 
@@ -27,6 +28,10 @@ void setUp(void)
 {
     before_free_8bit = heap_caps_get_free_size(MALLOC_CAP_8BIT);
     before_free_32bit = heap_caps_get_free_size(MALLOC_CAP_32BIT);
+
+    esp_task_wdt_add(NULL);
+    esp_task_wdt_reset();
+
 }
 
 void tearDown(void)
@@ -37,10 +42,23 @@ void tearDown(void)
     size_t after_free_32bit = heap_caps_get_free_size(MALLOC_CAP_32BIT);
     check_leak(before_free_8bit, after_free_8bit, "8BIT");
     check_leak(before_free_32bit, after_free_32bit, "32BIT");
+
+    esp_task_wdt_reset();
+    esp_task_wdt_delete(NULL);
 }
 
 void app_main(void)
 {
+
+    // Configure the task watchdog timer to catch any tests that hang
+    esp_task_wdt_config_t config = {
+        .timeout_ms = 25 * 1000, // 25 seconds, smaller than the default pytest timeout
+        .idle_core_mask = 0,
+        .trigger_panic = true,
+    };
+
+    esp_task_wdt_init(&config);
+
     /*
     Some FreeRTOS tests are reliant on the main task being at priority UNITY_FREERTOS_PRIORITY to test scheduling
     behavior. Thus, we raise the main task's priority before any tasks are run. See IDF-6088
