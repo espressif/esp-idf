@@ -740,7 +740,10 @@ static int esp_supp_rx_action(uint8_t *hdr, uint8_t *payload, size_t len, uint8_
         rx_param->frm_len = len;
         os_memcpy(rx_param->action_frm, payload, len);
 
-        eloop_register_timeout(0, 0, esp_dpp_rx_action, rx_param, NULL);
+        if (eloop_register_timeout(0, 0, esp_dpp_rx_action, rx_param, NULL) != 0) {
+            os_free(rx_param);
+            return ESP_ERR_NO_MEM;
+        }
     }
 
     return ret;

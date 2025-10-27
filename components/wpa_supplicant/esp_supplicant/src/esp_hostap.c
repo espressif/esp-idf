@@ -545,7 +545,10 @@ bool wpa_ap_remove(u8* bssid)
             return false;
         }
         os_memcpy(addr, sta->addr, ETH_ALEN);
-        eloop_register_timeout(0, 10000, ap_free_sta_timeout, hapd, addr);
+        if (eloop_register_timeout(0, 10000, ap_free_sta_timeout, hapd, addr) != 0) {
+            os_free(addr);
+            return false;
+        }
     } else
 #endif
         ap_free_sta(hapd, sta);
