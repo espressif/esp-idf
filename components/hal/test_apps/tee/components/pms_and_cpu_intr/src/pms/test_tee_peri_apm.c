@@ -76,35 +76,29 @@ static const uint32_t test_peri_apm_lp_peri_reg[] = {
                                         BIT64(APM_TEE_LP_PERIPH_LP_PERI)      | \
                                         BIT64(APM_TEE_LP_PERIPH_LP_APM))
 
-IRAM_ATTR static uint32_t reg_read(uint32_t addr)
+FORCE_INLINE_ATTR uint32_t reg_read(uint32_t addr)
 {
-    uint32_t val;
-    asm volatile (
-        "li t0, 0x100\n"
-        "lw %0, 0(%1)\n"
-        "1:\n"
-        "nop\n"
-        "addi t0, t0, -1\n"
-        "bnez t0, 1b\n"
-        : "=r"(val)
+    uint32_t value;
+    __asm__ volatile (
+        "lw   %0, 0(%1)\n"
+        "fence\n"
+        "nop\nnop\nnop\nnop\n"
+        : "=r"(value)
         : "r"(addr)
-        : "t0", "memory"
+        : "memory"
     );
-    return val;
+    return value;
 }
 
-IRAM_ATTR static void reg_write(uint32_t addr, uint32_t value)
+FORCE_INLINE_ATTR void reg_write(uint32_t addr, uint32_t value)
 {
-    asm volatile (
-        "li t0, 0x100\n"
-        "sw %1, 0(%0)\n"
-        "1:\n"
-        "nop\n"
-        "addi t0, t0, -1\n"
-        "bnez t0, 1b\n"
+    __asm__ volatile (
+        "sw   %1, 0(%0)\n"
+        "fence\n"
+        "nop\nnop\nnop\nnop\n"
         :
         : "r"(addr), "r"(value)
-        : "t0", "memory"
+        : "memory"
     );
 }
 
