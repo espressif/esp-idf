@@ -238,6 +238,7 @@ typedef uint64_t UINT64;
 typedef bool BOOLEAN;
 /* Maximum UUID size - 16 bytes, and structure to hold any type of UUID. */
 #define MAX_UUID_SIZE              16
+#define MAX_UUID_NUM               32
 
 typedef struct {
 #define LEN_UUID_16     2
