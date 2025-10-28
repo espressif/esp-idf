@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -68,6 +68,14 @@ extern "C" {
 #define TEST_DATA5_GPIO     29
 #define TEST_DATA6_GPIO     30
 #define TEST_DATA7_GPIO     31
+#define TEST_DATA8_GPIO     35
+#define TEST_DATA9_GPIO     36
+#define TEST_DATA10_GPIO    39
+#define TEST_DATA11_GPIO    40
+#define TEST_DATA12_GPIO    41
+#define TEST_DATA13_GPIO    42
+#define TEST_DATA14_GPIO    43
+#define TEST_DATA15_GPIO    44
 #else
 #error "Unsupported target"
 #endif
