@@ -40,7 +40,7 @@
 /* For targets that uses a CLIC as their interrupt controller, CPU_INT_LINES_COUNT represents the external interrupts count */
 #define CPU_INT_LINES_COUNT 32
 
-static const char* TAG = "intr_alloc";
+ESP_LOG_ATTR_TAG(TAG, "intr_alloc");
 
 #define ETS_INTERNAL_TIMER0_INTR_NO 6
 #define ETS_INTERNAL_TIMER1_INTR_NO 15

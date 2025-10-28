@@ -40,7 +40,7 @@ menu "ESP Security Specific"
     config ESP_CRYPTO_FORCE_ECC_CONSTANT_TIME_POINT_MUL
         bool "Forcefully enable ECC constant time point multiplication operations"
         depends on SOC_ECC_CONSTANT_TIME_POINT_MUL
-        default N
+        default n
         help
             If enabled, the app startup code will burn the ECC_FORCE_CONST_TIME efuse bit to force the
             ECC peripheral to always perform constant time point multiplication operations,
@@ -51,10 +51,16 @@ menu "ESP Security Specific"
             time point multiplication operations by changing the default ESP-IDF configurations.
             Performing constant time operations protect the ECC multiplication operations from timing attacks.
 
+            For targets that support Secure Boot using ECDSA-P384, the write-protection bit of the efuse
+            bit could be shared by multiple other efuse bits and can be programmed by the application when
+            Secure Boot is enabled.
+            Thus, you could select CONFIG_SECURE_BOOT_SKIP_WRITE_PROTECTION_SCA, in case you would like
+            to skip the write-protection of the efuse bit.
+
     config ESP_ECDSA_ENABLE_P192_CURVE
         bool "Enable ECDSA 192-curve operations"
         depends on SOC_ECDSA_P192_CURVE_DEFAULT_DISABLED
-        default N
+        default n
         help
             By default, only the 256-bit curve operations are allowed. If this configuration is enabled,
             it will set the eFuse to allow ECDSA operations using both the 192-bit and 256-bit curves.

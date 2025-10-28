@@ -37,3 +37,8 @@ esp_err_t esp_tee_sec_storage_aead_decrypt(const esp_tee_sec_storage_aead_ctx_t 
 {
     return esp_tee_service_call_with_noniram_intr_disabled(5, SS_ESP_TEE_SEC_STORAGE_AEAD_DECRYPT, ctx, tag, tag_len, output);
 }
+
+esp_err_t esp_tee_sec_storage_ecdsa_sign_pbkdf2(const esp_tee_sec_storage_pbkdf2_ctx_t *ctx, const uint8_t *hash, size_t hlen, esp_tee_sec_storage_ecdsa_sign_t *out_sign, esp_tee_sec_storage_ecdsa_pubkey_t *out_pubkey)
+{
+    return esp_tee_service_call(6, SS_ESP_TEE_SEC_STORAGE_ECDSA_SIGN_PBKDF2, ctx, hash, hlen, out_sign, out_pubkey);
+}

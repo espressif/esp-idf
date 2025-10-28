@@ -79,6 +79,7 @@ static IRAM_ATTR bool adc_dma_intr(adc_continuous_ctx_t *adc_digi_ctx)
         else {
             esp_err_t msync_ret = esp_cache_msync((void *)finished_buffer, finished_size, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
             assert(msync_ret == ESP_OK);
+            (void)msync_ret;
         }
 #endif
 
@@ -126,6 +127,7 @@ static IRAM_ATTR bool adc_dma_intr(adc_continuous_ctx_t *adc_digi_ctx)
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
     esp_err_t msync_ret = esp_cache_msync((void *)(adc_digi_ctx->hal.rx_desc), adc_digi_ctx->adc_desc_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_INVALIDATE);
     assert(msync_ret == ESP_OK);
+    (void)msync_ret;
 #endif
     return need_yield;
 }
@@ -260,9 +262,7 @@ esp_err_t adc_continuous_start(adc_continuous_handle_t handle)
     ANALOG_CLOCK_ENABLE();
 
     //reset ADC digital part to reset ADC sampling EOF counter
-    ADC_BUS_CLK_ATOMIC() {
-        adc_ll_reset_register();
-    }
+    sar_periph_ctrl_adc_reset();
 
 #if CONFIG_PM_ENABLE
     if (handle->pm_lock) {
@@ -337,6 +337,7 @@ esp_err_t adc_continuous_start(adc_continuous_handle_t handle)
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
     esp_err_t ret = esp_cache_msync(handle->hal.rx_desc, handle->adc_desc_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
     assert(ret == ESP_OK);
+    (void)ret;
 #endif
 
     adc_dma_start(handle->adc_dma, handle->hal.rx_desc);
@@ -357,7 +358,7 @@ esp_err_t adc_continuous_stop(adc_continuous_handle_t handle)
     adc_hal_digi_enable(false);
     adc_hal_digi_connect(false);
 #if ADC_LL_WORKAROUND_CLEAR_EOF_COUNTER
-    periph_module_reset(PERIPH_SARADC_MODULE);
+    sar_periph_ctrl_adc_reset();
     adc_hal_digi_clr_eof();
 #endif
 

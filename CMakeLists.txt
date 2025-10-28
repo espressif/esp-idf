@@ -175,6 +175,14 @@ if(CMAKE_C_COMPILER_ID MATCHES "GNU" AND CMAKE_C_COMPILER_VERSION VERSION_GREATE
     list(APPEND c_compile_options "-fzero-init-padding-bits=all" "-fno-malloc-dce")
 endif()
 
+if(CONFIG_COMPILER_CXX_GLIBCXX_CONSTEXPR_COLD_CONSTEXPR)
+    list(APPEND cxx_compile_options "-D_GLIBCXX20_CONSTEXPR=__attribute__((cold)) constexpr")
+    list(APPEND cxx_compile_options "-D_GLIBCXX23_CONSTEXPR=__attribute__((cold)) constexpr")
+elseif(CONFIG_COMPILER_CXX_GLIBCXX_CONSTEXPR_COLD)
+    list(APPEND cxx_compile_options "-D_GLIBCXX20_CONSTEXPR=__attribute__((cold))")
+    list(APPEND cxx_compile_options "-D_GLIBCXX23_CONSTEXPR=__attribute__((cold))")
+endif()
+
 __generate_prefix_map(prefix_map_compile_options)
 list(APPEND compile_options ${prefix_map_compile_options})
 
@@ -320,3 +328,12 @@ foreach(component_target ${build_component_targets})
     endif()
     set(__idf_component_context 0)
 endforeach()
+
+# Run component validation checks after all components have been processed
+# Only run validation for the main project, not subprojects like bootloader
+idf_build_get_property(bootloader_build BOOTLOADER_BUILD)
+idf_build_get_property(esp_tee_build ESP_TEE_BUILD)
+if(NOT bootloader_build AND NOT esp_tee_build)
+    include("${CMAKE_CURRENT_LIST_DIR}/tools/cmake/component_validation.cmake")
+    __component_validation_run_checks()
+endif()

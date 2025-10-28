@@ -149,7 +149,7 @@ For example::
 
     fatfs_create_spiflash_image(my_fatfs_partition my_folder FLASH_IN_PROJECT)
 
-If FLASH_IN_PROJECT is not specified, the image will still be generated, but you will have to flash it manually using ``esptool.py`` or a custom build system target.
+If FLASH_IN_PROJECT is not specified, the image will still be generated, but you will have to flash it manually using ``esptool`` or a custom build system target.
 
 For an example, see :example:`storage/fatfs/fatfsgen`.
 

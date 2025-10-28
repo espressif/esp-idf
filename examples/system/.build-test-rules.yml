@@ -335,6 +335,12 @@ examples/system/ulp/lp_core/lp_i2c:
   depends_components:
     - ulp
 
+examples/system/ulp/lp_core/lp_mailbox:
+  enable:
+    - if: SOC_LP_CORE_SUPPORTED == 1
+  depends_components:
+    - ulp
+
 examples/system/ulp/lp_core/lp_spi:
   enable:
     - if: SOC_LP_SPI_SUPPORTED == 1 and SOC_DEEP_SLEEP_SUPPORTED == 1
@@ -406,6 +412,12 @@ examples/system/ulp/ulp_riscv/gpio:
     - ulp
 
 examples/system/ulp/ulp_riscv/gpio_interrupt:
+  enable:
+    - if: SOC_RISCV_COPROC_SUPPORTED == 1
+  depends_components:
+    - ulp
+
+examples/system/ulp/ulp_riscv/gpio_pulse_counter:
   enable:
     - if: SOC_RISCV_COPROC_SUPPORTED == 1
   depends_components:

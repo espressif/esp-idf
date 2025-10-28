@@ -150,7 +150,7 @@ int spicommon_irqdma_source_for_host(spi_host_device_t host)
 #if !SOC_GDMA_SUPPORTED
 
 #if SPI_LL_DMA_SHARED
-static inline periph_module_t get_dma_periph(int dma_chan)
+static inline shared_periph_module_t get_dma_periph(int dma_chan)
 {
     assert(dma_chan >= 1 && dma_chan <= SOC_SPI_DMA_CHAN_NUM);
     if (dma_chan == 1) {
@@ -614,7 +614,8 @@ esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_conf
     }
     //set flags for DUAL mode according to output-capability of MOSI and MISO pins.
     if ((bus_config->mosi_io_num < 0 || GPIO_IS_VALID_OUTPUT_GPIO(bus_config->mosi_io_num)) &&
-            (bus_config->miso_io_num < 0 || GPIO_IS_VALID_OUTPUT_GPIO(bus_config->miso_io_num))) {
+            (bus_config->miso_io_num < 0 || GPIO_IS_VALID_OUTPUT_GPIO(bus_config->miso_io_num)) &&
+            (bus_config->miso_io_num != bus_config->mosi_io_num)) {
         temp_flag |= SPICOMMON_BUSFLAG_DUAL;
     }
 

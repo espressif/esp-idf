@@ -68,7 +68,7 @@ void IRAM_ATTR touch_priv_default_intr_handler(void *arg)
         return;
     }
     /* It actually won't be out of range in the real environment, but limit the range to pass the coverity check */
-    uint32_t curr_chan_offset = (curr_chan >= SOC_TOUCH_SENSOR_NUM ? SOC_TOUCH_SENSOR_NUM - 1 : curr_chan) - TOUCH_MIN_CHAN_ID;
+    uint32_t curr_chan_offset = (curr_chan >= SOC_MODULE_ATTR(TOUCH, CHAN_NUM) ? SOC_MODULE_ATTR(TOUCH, CHAN_NUM) - 1 : curr_chan) - TOUCH_MIN_CHAN_ID;
     data.chan = g_touch->ch[curr_chan_offset];
     /* If the channel is not registered, return directly */
     if (!data.chan) {
@@ -77,7 +77,7 @@ void IRAM_ATTR touch_priv_default_intr_handler(void *arg)
     data.chan_id = data.chan->id;
 
     if (status & TOUCH_LL_INTR_MASK_DONE) {
-#if !SOC_TOUCH_PROXIMITY_MEAS_DONE_SUPPORTED
+#if !TOUCH_LL_SUPPORT_PROX_DONE
         /* For the target like ESP32-S2 that don't support proximity done interrupt,
            Simulate the interrupt by software by judge the scan times. */
         if (data.chan->prox_id > 0 &&

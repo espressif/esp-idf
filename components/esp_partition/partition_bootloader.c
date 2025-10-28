@@ -10,7 +10,7 @@
 #include "bootloader_flash_priv.h" // bootloader_ssupport/bootloader_flash/include
 #include "esp_log.h"
 
-static const char* TAG = "partition_bootloader";
+ESP_LOG_ATTR_TAG(TAG, "partition_bootloader");
 
 // populates the internal_partition_list from flash
 const esp_partition_t* esp_partition_find_first(esp_partition_type_t type, esp_partition_subtype_t subtype, const char* label)

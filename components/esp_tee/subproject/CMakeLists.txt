@@ -82,7 +82,7 @@ if(CONFIG_SECURE_BOOT_V2_ENABLED)
                 "Secure Boot Signing Key Not found."
                 "\nGenerate the Secure Boot V2 RSA-PSS 3072 Key."
                 "\nTo generate one, you can use this command:"
-                "\n\t${espsecure_py_cmd} generate_signing_key --version 2 your_key.pem"
+                "\n\t${espsecure_py_cmd} generate-signing-key --version 2 your_key.pem"
             )
         endif()
 

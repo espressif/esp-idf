@@ -118,7 +118,9 @@ void esp_flash_dump_counters(FILE* stream)
 
 #define IO_STR_LEN  10
 
-static const char io_mode_str[][IO_STR_LEN] = {
+// Used only for logging, do not use for other purposes or remove ESP_LOG_ATTR.
+// (this can be placed in noload section for bin logging mode).
+static ESP_LOG_ATTR const char io_mode_str[][IO_STR_LEN] = {
     "slowrd",
     "fastrd",
     "dout",

@@ -284,6 +284,60 @@ static inline int temperature_sensor_ll_load_calib_param(void)
     return tsens_cal;
 }
 
+/**
+ * @brief Structure for temperature sensor related register values
+ */
+typedef struct {
+    uint32_t tsens_ctrl;      // Temperature sensor control register (APB_SARADC_APB_TSENS_CTRL_REG)
+    uint32_t tsens_ctrl2;     // Temperature sensor control register 2 (APB_SARADC_TSENS_CTRL2_REG)
+    uint32_t tsens_wake;      // Temperature sensor wake register (APB_TSENS_WAKE_REG)
+    uint32_t tsens_sample;    // Temperature sensor sample register (APB_TSENS_SAMPLE_REG)
+    uint32_t cali;            // ADC calibration register
+    uint32_t clkm_conf;       // ADC clock configuration register
+    uint32_t int_ena;         // ADC interrupt enable register
+    uint32_t int_raw;         // ADC interrupt raw status register
+    uint32_t int_st;          // ADC interrupt status register
+    uint32_t int_clr;         // ADC interrupt clear register
+} tsens_ll_reg_values_t;
+
+/**
+ * @brief Read temperature sensor related ADC register values for backup
+ *
+ * @param reg_values Output parameter, pointer to structure for storing register values
+ */
+static inline void tsens_ll_backup_registers(tsens_ll_reg_values_t *reg_values)
+{
+    reg_values->tsens_ctrl = APB_SARADC.saradc_apb_tsens_ctrl.val;
+    reg_values->tsens_ctrl2 = APB_SARADC.saradc_tsens_ctrl2.val;
+    reg_values->tsens_wake = APB_SARADC.tsens_wake.val;
+    reg_values->tsens_sample = APB_SARADC.tsens_sample.val;
+    reg_values->cali = APB_SARADC.saradc_cali.val;
+    reg_values->clkm_conf = APB_SARADC.saradc_clkm_conf.val;
+    reg_values->int_ena = APB_SARADC.saradc_int_ena.val;
+    reg_values->int_raw = APB_SARADC.saradc_int_raw.val;
+    reg_values->int_st = APB_SARADC.saradc_int_st.val;
+    reg_values->int_clr = APB_SARADC.saradc_int_clr.val;
+}
+
+/**
+ * @brief Restore temperature sensor related ADC register values from backup
+ *
+ * @param reg_values Input parameter, pointer to structure containing register values to restore
+ */
+static inline void tsens_ll_restore_registers(const tsens_ll_reg_values_t *reg_values)
+{
+    APB_SARADC.saradc_apb_tsens_ctrl.val = reg_values->tsens_ctrl;
+    APB_SARADC.saradc_tsens_ctrl2.val = reg_values->tsens_ctrl2;
+    APB_SARADC.tsens_wake.val = reg_values->tsens_wake;
+    APB_SARADC.tsens_sample.val = reg_values->tsens_sample;
+    APB_SARADC.saradc_cali.val = reg_values->cali;
+    APB_SARADC.saradc_clkm_conf.val = reg_values->clkm_conf;
+    APB_SARADC.saradc_int_ena.val = reg_values->int_ena;
+    APB_SARADC.saradc_int_raw.val = reg_values->int_raw;
+    APB_SARADC.saradc_int_st.val = reg_values->int_st;
+    APB_SARADC.saradc_int_clr.val = reg_values->int_clr;
+}
+
 #ifdef __cplusplus
 }
 #endif

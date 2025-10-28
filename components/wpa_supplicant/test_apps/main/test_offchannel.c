@@ -135,6 +135,7 @@ void esp_send_action_frame(uint8_t *dest_mac, const uint8_t *buf, uint32_t len,
     req->data_len = len;
     req->rx_cb = dummy_rx_action;
     req->channel = channel;
+    req->sec_channel = WIFI_SECOND_CHAN_NONE;
     req->wait_time_ms = wait_time_ms;
     req->type = WIFI_OFFCHAN_TX_REQ;
 

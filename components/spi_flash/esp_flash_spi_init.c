@@ -138,7 +138,9 @@ esp_flash_t *esp_flash_default_chip = NULL;
 }
 #define TSUS_VAL_SUSPEND CONFIG_SPI_FLASH_SUSPEND_TSUS_VAL_US
 #if SOC_SPI_MEM_SUPPORT_TSUS_TRES_SEPERATE_CTR
+#if !CONFIG_ESP32P4_SELECTS_REV_LESS_V3
 #define TRS_VAL_SUSPEND CONFIG_SPI_FLASH_SUSPEND_TRS_VAL_US
+#endif
 #endif // SOC_SPI_MEM_SUPPORT_TSUS_TRES_SEPERATE_CTR
 #endif //!CONFIG_SPI_FLASH_AUTO_SUSPEND
 #endif // Other target
@@ -527,12 +529,14 @@ esp_err_t esp_flash_init_default_chip(void)
     cfg.tsus_val = TSUS_VAL_SUSPEND;
 
     #if SOC_SPI_MEM_SUPPORT_TSUS_TRES_SEPERATE_CTR
+    #if !CONFIG_ESP32P4_SELECTS_REV_LESS_V3
     if (TRS_VAL_SUSPEND > 400 || TRS_VAL_SUSPEND < 20) {
         // Assume that the TRS value cannot larger than 400 (because the performance might be really bad)
         // And value cannot smaller than 20 (never see that small tsus value, might be wrong)
         return ESP_ERR_INVALID_ARG;
     }
     cfg.trs_val = TRS_VAL_SUSPEND;
+    #endif
     #endif // SOC_SPI_MEM_SUPPORT_TSUS_TRES_SEPERATE_CTR
 
     #endif // CONFIG_SPI_FLASH_AUTO_SUSPEND

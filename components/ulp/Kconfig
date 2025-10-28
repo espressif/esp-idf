@@ -92,12 +92,21 @@ menu "Ultra Low Power (ULP) Co-processor"
             Note: For LP ROM prints to work properly, make sure that the LP core boots
             from the LP ROM.
 
+    config ULP_TRAP_WAKEUP
+        depends on ULP_COPROC_TYPE_LP_CORE
+        bool
+        prompt "Enable wakeup of HP-CPU when LP-core encounters an exception"
+        default "y"
+        help
+            Set this option to also trigger a wakeup signal to the HP-CPU when
+            the LP-core encounters an exception.
+
     menu "ULP Debugging Options"
         config ULP_PANIC_OUTPUT_ENABLE
             depends on ULP_COPROC_TYPE_LP_CORE && SOC_ULP_LP_UART_SUPPORTED
             bool
             prompt "Enable panic handler which outputs over LP UART"
-            default "y" if SOC_LP_CORE_SUPPORT_STORE_LOAD_EXCEPTIONS
+            default "n"
             help
                 Set this option to enable panic handler functionality. If this option is
                 enabled then the LP Core will output a panic dump over LP UART,

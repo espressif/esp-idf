@@ -194,6 +194,11 @@ Enabling "Nano" formatting reduces the stack usage of each function that calls `
 
 .. _Newlib README file: https://sourceware.org/newlib/README
 
+libstdc++
+@@@@@@@@@
+
+- Enable :ref:`CONFIG_COMPILER_CXX_GLIBCXX_CONSTEXPR_COLD_CONSTEXPR<CONFIG_COMPILER_CXX_GLIBCXX_CONSTEXPR_COLD_CONSTEXPR>` or :ref:`CONFIG_COMPILER_CXX_GLIBCXX_CONSTEXPR_COLD<CONFIG_COMPILER_CXX_GLIBCXX_CONSTEXPR_COLD>` to observe the impact on your application's binary size.
+
 .. _minimizing_binary_mbedtls:
 
 MbedTLS Features
@@ -223,6 +228,7 @@ These include:
     - Consider disabling some cipher suites listed in the ``TLS Key Exchange Methods`` sub-menu (i.e., :ref:`CONFIG_MBEDTLS_KEY_EXCHANGE_RSA`).
     - Consider disabling :ref:`CONFIG_MBEDTLS_ERROR_STRINGS` if the application is already pulling in mbedTLS error strings through using :cpp:func:`mbedtls_strerror`.
     :esp32h2: - For {IDF_TARGET_NAME} v1.2 and above, consider disabling :ref:`CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN_MASKING_CM` and :ref:`CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN_CONSTANT_TIME_CM` as the software countermeasures for the ECDSA sign operation are not required.
+    :SOC_AES_SUPPORT_DMA: - Consider disabling :ref:CONFIG_MBEDTLS_AES_HW_SMALL_DATA_LEN_OPTIM if the application does not involve or require performance optimization for operations that involve small data lengths, such as NVS encryption/decryption or TLS communication when performed on small data segments.
 
 The help text for each option has some more information for reference.
 

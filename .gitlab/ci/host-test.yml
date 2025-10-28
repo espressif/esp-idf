@@ -77,23 +77,11 @@ test_fatfsgen_on_host:
     - ./test_wl_fatfsgen.py
     - ./test_fatfsparse.py
 
-test_multi_heap_on_host:
-  extends: .host_test_template
-  script:
-    - cd components/heap/test_multi_heap_host
-    - ./test_all_configs.sh
-
 test_certificate_bundle_on_host:
   extends: .host_test_template
   script:
     - cd components/mbedtls/esp_crt_bundle/test_gen_crt_bundle/
     - ./test_gen_crt_bundle.py
-
-test_gdbstub_on_host:
-  extends: .host_test_template
-  script:
-    - cd components/esp_gdbstub/test_gdbstub_host
-    - make test
 
 # Test for create virtualenv. It must be invoked from Python, not from virtualenv.
 # Use docker image system python without any extra dependencies
@@ -200,20 +188,21 @@ test_tools:
     INSTALL_EXTRA_TOOLS: "qemu-xtensa qemu-riscv32"  # for test_idf_qemu.py
   script:
     - stat=0
+    - run_cmd idf-ci gitlab download-known-failure-cases-file ${KNOWN_FAILURE_CASES_FILE_NAME}
     - cd ${IDF_PATH}/tools/ci/test_autocomplete
-    - pytest --noconftest test_autocomplete.py --junitxml=${IDF_PATH}/XUNIT_AUTOCOMP.xml                  || stat=1
+    - run_cmd pytest --noconftest test_autocomplete.py --junitxml=${IDF_PATH}/XUNIT_AUTOCOMP.xml     --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}             || stat=1
     - cd ${IDF_PATH}/tools/test_idf_py
-    - pytest --noconftest test_idf_py.py       --junitxml=${IDF_PATH}/XUNIT_IDF_PY.xml                    || stat=1
-    - pytest --noconftest test_hints.py        --junitxml=${IDF_PATH}/XUNIT_HINTS.xml                     || stat=1
-    - pytest --noconftest test_idf_qemu.py     --junitxml=${IDF_PATH}/XUNIT_IDF_PY_QEMU.xml               || stat=1
+    - run_cmd pytest --noconftest test_idf_py.py       --junitxml=${IDF_PATH}/XUNIT_IDF_PY.xml       --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}             || stat=1
+    - run_cmd pytest --noconftest test_hints.py        --junitxml=${IDF_PATH}/XUNIT_HINTS.xml        --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}             || stat=1
+    - run_cmd pytest --noconftest test_idf_qemu.py     --junitxml=${IDF_PATH}/XUNIT_IDF_PY_QEMU.xml  --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}             || stat=1
     - cd ${IDF_PATH}/tools/test_bsasm
-    - pytest --noconftest test_bsasm.py        --junitxml=${IDF_PATH}/XUNIT_BSASM.xml                     || stat=1
+    - run_cmd pytest --noconftest test_bsasm.py        --junitxml=${IDF_PATH}/XUNIT_BSASM.xml        --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}             || stat=1
     - cd ${IDF_PATH}/tools/test_mkdfu
-    - pytest --noconftest test_mkdfu.py        --junitxml=${IDF_PATH}/XUNIT_MKDFU.xml                     || stat=1
+    - run_cmd pytest --noconftest test_mkdfu.py        --junitxml=${IDF_PATH}/XUNIT_MKDFU.xml        --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}             || stat=1
     - cd ${IDF_PATH}/tools/test_idf_size
-    - pytest --noconftest test_idf_size.py     --junitxml=${IDF_PATH}/XUNIT_IDF_SIZE.xml                  || stat=1
+    - run_cmd pytest --noconftest test_idf_size.py     --junitxml=${IDF_PATH}/XUNIT_IDF_SIZE.xml     --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}             || stat=1
     - cd ${IDF_PATH}/tools/test_idf_diag
-    - pytest --noconftest test_idf_diag.py     --junitxml=${IDF_PATH}/XUNIT_IDF_DIAG.xml                  || stat=1
+    - run_cmd pytest --noconftest test_idf_diag.py     --junitxml=${IDF_PATH}/XUNIT_IDF_DIAG.xml     --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}             || stat=1
     - cd ${IDF_PATH}
     - shellcheck -s sh tools/detect_python.sh                                                             || stat=1
     - shellcheck -s bash tools/detect_python.sh                                                           || stat=1
@@ -229,13 +218,6 @@ test_split_path_by_spaces:
   script:
     - cd ${IDF_PATH}/tools
     - python -m unittest split_paths_by_spaces.py
-
-test_mqtt_on_host:
-  extends: .host_test_template
-  script:
-    - cd ${IDF_PATH}/components/mqtt/esp-mqtt/host_test
-    - idf.py build
-    - LSAN_OPTIONS=verbosity=1:log_threads=1 build/host_mqtt_client_test.elf
 
 test_transport_on_host:
   extends: .host_test_template

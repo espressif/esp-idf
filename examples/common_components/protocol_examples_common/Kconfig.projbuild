@@ -137,7 +137,7 @@ menu "Example Connection Configuration"
         choice EXAMPLE_ETHERNET_TYPE
             prompt "Ethernet Type"
             default EXAMPLE_USE_INTERNAL_ETHERNET if SOC_EMAC_SUPPORTED
-            default EXAMPLE_USE_W5500
+            default EXAMPLE_USE_DUMMY
             help
                 Select which kind of Ethernet will be used in the example.
 
@@ -148,21 +148,11 @@ menu "Example Connection Configuration"
                 help
                     Select internal Ethernet MAC controller.
 
-            config EXAMPLE_USE_DM9051
-                bool "DM9051 Module"
-                select EXAMPLE_USE_SPI_ETHERNET
+            config EXAMPLE_USE_DUMMY
+                bool "DUMMY Module"
                 select ETH_USE_SPI_ETHERNET
-                select ETH_SPI_ETHERNET_DM9051
                 help
-                    Select external SPI-Ethernet module.
-
-            config EXAMPLE_USE_W5500
-                bool "W5500 Module"
-                select EXAMPLE_USE_SPI_ETHERNET
-                select ETH_USE_SPI_ETHERNET
-                select ETH_SPI_ETHERNET_W5500
-                help
-                    Select external SPI-Ethernet module (W5500).
+                    Dummy option to just to pass builds, will be fixed by IDF-14059
 
             config EXAMPLE_USE_OPENETH
                 bool "OpenCores Ethernet MAC (EXPERIMENTAL)"
@@ -179,7 +169,7 @@ menu "Example Connection Configuration"
         if EXAMPLE_USE_INTERNAL_ETHERNET
             choice EXAMPLE_ETH_PHY_MODEL
                 prompt "Ethernet PHY Device"
-                default EXAMPLE_ETH_PHY_IP101
+                default EXAMPLE_ETH_PHY_GENERIC
                 help
                     Select the Ethernet PHY device to use in the example.
 
@@ -191,46 +181,6 @@ menu "Example Connection Configuration"
                         even if the PHY meets IEEE 802.3 standard. A typical example is loopback
                         functionality, where certain PHYs may require setting a specific speed mode to
                         operate correctly.
-
-                config EXAMPLE_ETH_PHY_IP101
-                    bool "IP101"
-                    help
-                        IP101 is a single port 10/100 MII/RMII/TP/Fiber Fast Ethernet Transceiver.
-                        Goto http://www.icplus.com.tw/pp-IP101G.html for more information about it.
-
-                config EXAMPLE_ETH_PHY_RTL8201
-                    bool "RTL8201/SR8201"
-                    help
-                        RTL8201F/SR8201F is a single port 10/100Mb Ethernet Transceiver with auto MDIX.
-                        Goto http://www.corechip-sz.com/productsview.asp?id=22 for more information about it.
-
-                config EXAMPLE_ETH_PHY_LAN87XX
-                    bool "LAN87xx"
-                    help
-                        Below chips are supported:
-                        LAN8710A is a small footprint MII/RMII 10/100 Ethernet Transceiver with HP Auto-MDIX and
-                            flexPWR® Technology.
-                        LAN8720A is a small footprint RMII 10/100 Ethernet Transceiver with HP Auto-MDIX Support.
-                        LAN8740A/LAN8741A is a small footprint MII/RMII 10/100 Energy Efficient Ethernet Transceiver
-                            with HP Auto-MDIX and flexPWR® Technology.
-                        LAN8742A is a small footprint RMII 10/100 Ethernet Transceiver with HP Auto-MDIX and
-                            flexPWR® Technology.
-                        Goto https://www.microchip.com for more information about them.
-
-                config EXAMPLE_ETH_PHY_DP83848
-                    bool "DP83848"
-                    help
-                        DP83848 is a single port 10/100Mb/s Ethernet Physical Layer Transceiver.
-                        Goto http://www.ti.com/product/DP83848J for more information about it.
-
-                config EXAMPLE_ETH_PHY_KSZ80XX
-                    bool "KSZ80xx"
-                    help
-                        With the KSZ80xx series, Microchip offers single-chip 10BASE-T/100BASE-TX
-                        Ethernet Physical Layer Transceivers (PHY).
-                        The following chips are supported: KSZ8001, KSZ8021, KSZ8031, KSZ8041,
-                            KSZ8051, KSZ8061, KSZ8081, KSZ8091
-                        Goto https://www.microchip.com for more information about them.
             endchoice
 
             config EXAMPLE_ETH_MDC_GPIO
@@ -249,65 +199,6 @@ menu "Example Connection Configuration"
                 help
                     Set the GPIO number used by SMI MDIO.
         endif
-
-        if EXAMPLE_USE_SPI_ETHERNET
-            config EXAMPLE_ETH_SPI_HOST
-                int "SPI Host Number"
-                range 0 2
-                default 1
-                help
-                    Set the SPI host used to communicate with the SPI Ethernet Controller.
-
-            config EXAMPLE_ETH_SPI_SCLK_GPIO
-                int "SPI SCLK GPIO number"
-                range ENV_GPIO_RANGE_MIN ENV_GPIO_OUT_RANGE_MAX
-                default 14
-                help
-                    Set the GPIO number used by SPI SCLK.
-
-            config EXAMPLE_ETH_SPI_MOSI_GPIO
-                int "SPI MOSI GPIO number"
-                range ENV_GPIO_RANGE_MIN ENV_GPIO_OUT_RANGE_MAX
-                default 13
-                help
-                    Set the GPIO number used by SPI MOSI.
-
-            config EXAMPLE_ETH_SPI_MISO_GPIO
-                int "SPI MISO GPIO number"
-                range ENV_GPIO_RANGE_MIN ENV_GPIO_IN_RANGE_MAX
-                default 12
-                help
-                    Set the GPIO number used by SPI MISO.
-
-            config EXAMPLE_ETH_SPI_CS_GPIO
-                int "SPI CS GPIO number"
-                range ENV_GPIO_RANGE_MIN ENV_GPIO_OUT_RANGE_MAX
-                default 15
-                help
-                    Set the GPIO number used by SPI CS.
-
-            config EXAMPLE_ETH_SPI_CLOCK_MHZ
-                int "SPI clock speed (MHz)"
-                range 5 80
-                default 36
-                help
-                    Set the clock speed (MHz) of SPI interface.
-
-            config EXAMPLE_ETH_SPI_INT_GPIO
-                int "Interrupt GPIO number"
-                range -1 ENV_GPIO_IN_RANGE_MAX
-                default 4
-                help
-                    Set the GPIO number used by the SPI Ethernet module interrupt line.
-                    Set -1 to use SPI Ethernet module in polling mode.
-
-            config EXAMPLE_ETH_SPI_POLLING_MS_VAL
-                depends on EXAMPLE_ETH_SPI_INT_GPIO < 0
-                int "Polling period in msec of SPI Ethernet Module"
-                default 10
-                help
-                    Set SPI Ethernet module polling period.
-        endif # EXAMPLE_USE_SPI_ETHERNET
 
         config EXAMPLE_ETH_PHY_RST_GPIO
             int "PHY Reset GPIO number"

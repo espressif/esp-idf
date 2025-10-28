@@ -2,7 +2,7 @@
 
 /*
  * SPDX-FileCopyrightText: 2017 Intel Corporation
- * SPDX-FileContributor: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -48,9 +48,6 @@ extern "C" {
 
 #define BLE_MESH_ADV_INS_UNUSED 0xFF
 
-/* We reserve one queue item for bt_mesh_adv_update() */
-#define BLE_MESH_ADV_QUEUE_SIZE     (CONFIG_BLE_MESH_ADV_BUF_COUNT + 1)
-
 struct bt_mesh_adv {
     const struct bt_mesh_send_cb *cb;
     void *cb_data;
@@ -60,7 +57,22 @@ struct bt_mesh_adv {
     bt_mesh_atomic_t busy;
 
     uint8_t xmit;
+
+    uint32_t adv_itvl;
+    uint8_t  adv_cnt;
+    uint8_t channel_map;
 };
+
+#if CONFIG_BLE_MESH_USE_BLE_50
+#define EXT_ADV(buf)       CONTAINER_OF(BLE_MESH_ADV(buf), bt_mesh_ext_adv_t, adv)
+typedef struct {
+    struct bt_mesh_adv adv;
+    uint8_t primary_phy;
+    uint8_t secondary_phy;
+    uint8_t include_tx_power:1;
+    int8_t  tx_power;
+} bt_mesh_ext_adv_t;
+#endif
 
 #if CONFIG_BLE_MESH_FRIEND
 
@@ -110,14 +122,6 @@ typedef struct bt_mesh_msg {
     uint32_t timestamp; /* Timestamp recorded when the relay packet is posted to queue */
 } bt_mesh_msg_t;
 
-typedef struct bt_mesh_adv *(*bt_mesh_pool_allocator_t)(int id);
-typedef void (*bt_mesh_adv_queue_send_cb_t)(bt_mesh_msg_t *msg, uint32_t timeout, bool front);
-
-struct bt_mesh_adv_queue {
-    bt_mesh_queue_t q;
-    bt_mesh_adv_queue_send_cb_t send;
-};
-
 struct bt_mesh_adv_inst {
     uint8_t id;
 #if CONFIG_BLE_MESH_SUPPORT_MULTI_ADV
@@ -132,6 +136,16 @@ struct bt_mesh_adv_inst {
 enum bt_mesh_adv_type {
     BLE_MESH_ADV_PROV,
     BLE_MESH_ADV_DATA,
+#if CONFIG_BLE_MESH_EXT_ADV
+    BLE_MESH_ADV_EXT_PROV,
+    BLE_MESH_ADV_EXT_DATA,
+    BLE_MESH_ADV_EXT_RELAY_DATA,
+#if CONFIG_BLE_MESH_LONG_PACKET
+    BLE_MESH_ADV_EXT_LONG_PROV,
+    BLE_MESH_ADV_EXT_LONG_DATA,
+    BLE_MESH_ADV_EXT_LONG_RELAY_DATA,
+#endif /* CONFIG_BLE_MESH_LONG_PACKET */
+#endif /* CONFIG_BLE_MESH_EXT_ADV */
 #if CONFIG_BLE_MESH_FRIEND
     BLE_MESH_ADV_FRIEND,
 #endif
@@ -155,15 +169,20 @@ typedef enum {
     BLE_MESH_BUF_REF_MAX,
 } bt_mesh_buf_ref_flag_t;
 
-struct bt_mesh_adv_type_manager {
-    struct bt_mesh_adv_queue *adv_q;
-    struct net_buf_pool *pool;
-   bt_mesh_pool_allocator_t pool_allocator;
-};
 
 static const uint8_t adv_type[] = {
     [BLE_MESH_ADV_PROV]   = BLE_MESH_DATA_MESH_PROV,
     [BLE_MESH_ADV_DATA]   = BLE_MESH_DATA_MESH_MESSAGE,
+#if CONFIG_BLE_MESH_EXT_ADV
+    [BLE_MESH_ADV_EXT_PROV] = BLE_MESH_DATA_MESH_PROV,
+    [BLE_MESH_ADV_EXT_RELAY_DATA] = BLE_MESH_DATA_MESH_MESSAGE,
+    [BLE_MESH_ADV_EXT_DATA] = BLE_MESH_DATA_MESH_MESSAGE,
+#if CONFIG_BLE_MESH_LONG_PACKET
+    [BLE_MESH_ADV_EXT_LONG_PROV] = BLE_MESH_DATA_MESH_PROV,
+    [BLE_MESH_ADV_EXT_LONG_RELAY_DATA] = BLE_MESH_DATA_MESH_MESSAGE,
+    [BLE_MESH_ADV_EXT_LONG_DATA] = BLE_MESH_DATA_MESH_MESSAGE,
+#endif /* CONFIG_BLE_MESH_LONG_PACKET */
+#endif /* CONFIG_BLE_MESH_EXT_ADV */
 #if CONFIG_BLE_MESH_FRIEND
     [BLE_MESH_ADV_FRIEND]   = BLE_MESH_DATA_MESH_MESSAGE,
 #endif
@@ -172,6 +191,20 @@ static const uint8_t adv_type[] = {
 #endif
     [BLE_MESH_ADV_BEACON] = BLE_MESH_DATA_MESH_BEACON,
     [BLE_MESH_ADV_URI]    = BLE_MESH_DATA_URI,
+};
+
+typedef struct bt_mesh_adv *(*bt_mesh_pool_allocator_t)(int id, enum bt_mesh_adv_type type);
+typedef void (*bt_mesh_adv_queue_send_cb_t)(bt_mesh_msg_t *msg, uint32_t timeout, bool front);
+
+struct bt_mesh_adv_type_manager {
+    struct bt_mesh_adv_queue *adv_q;
+    struct net_buf_pool *pool;
+   bt_mesh_pool_allocator_t pool_allocator;
+};
+
+struct bt_mesh_adv_queue {
+    bt_mesh_queue_t q;
+    bt_mesh_adv_queue_send_cb_t send;
 };
 
 static inline TickType_t K_WAIT(int32_t val)
@@ -255,7 +288,7 @@ void bt_mesh_relay_adv_deinit(void);
 #endif /* CONFIG_BLE_MESH_RELAY_ADV_BUF */
 
 #if CONFIG_BLE_MESH_FRIEND
-struct bt_mesh_adv *bt_mesh_frnd_adv_buf_get(int id);
+struct bt_mesh_adv *bt_mesh_frnd_adv_buf_get(int id, enum bt_mesh_adv_type type);
 struct net_buf_pool *bt_mesh_frnd_adv_pool_get(void);
 void bt_mesh_frnd_adv_init(void);
 #if CONFIG_BLE_MESH_DEINIT

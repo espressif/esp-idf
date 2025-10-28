@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 def action_extensions(base_actions, project_path=None):
     def echo(name, *args, **kwargs):
@@ -11,45 +11,21 @@ def action_extensions(base_actions, project_path=None):
 
     # Add global options
     extensions = {
+        'version': '1.0.0',
         'global_options': [
-            {
-                'names': ['--test-0'],
-                'help': 'Non-deprecated option.',
-                'deprecated': False
-            },
-            {
-                'names': ['--test-1'],
-                'help': 'Deprecated option 1.',
-                'deprecated': True
-            },
-            {
-                'names': ['--test-2'],
-                'help': 'Deprecated option 2.',
-                'deprecated': 'Please update your parameters.'
-            },
+            {'names': ['--test-0'], 'help': 'Non-deprecated option.', 'deprecated': False},
+            {'names': ['--test-1'], 'help': 'Deprecated option 1.', 'deprecated': True},
+            {'names': ['--test-2'], 'help': 'Deprecated option 2.', 'deprecated': 'Please update your parameters.'},
             {
                 'names': ['--test-3'],
                 'help': 'Deprecated option 3.',
-                'deprecated': {
-                    'custom_message': 'Please update your parameters.'
-                }
+                'deprecated': {'custom_message': 'Please update your parameters.'},
             },
-            {
-                'names': ['--test-4'],
-                'help': 'Deprecated option 4.',
-                'deprecated': {
-                    'since': 'v4.0',
-                    'removed': 'v5.0'
-                }
-            },
+            {'names': ['--test-4'], 'help': 'Deprecated option 4.', 'deprecated': {'since': 'v4.0', 'removed': 'v5.0'}},
             {
                 'names': ['--test-5'],
                 'help': 'Deprecated option 5.',
-                'deprecated': {
-                    'since': 'v2.0',
-                    'removed': 'v3.0',
-                    'exit_with_error': True
-                }
+                'deprecated': {'since': 'v2.0', 'removed': 'v3.0', 'exit_with_error': True},
             },
         ],
         'actions': {
@@ -70,25 +46,21 @@ def action_extensions(base_actions, project_path=None):
                         'names': ['--test-sub-1'],
                         'help': 'Deprecated subcommand option 1',
                         'default': None,
-                        'deprecated': True
+                        'deprecated': True,
                     },
                 ],
-                'arguments': [{
-                    'names': ['test-arg-0'],
-                }],
+                'arguments': [
+                    {
+                        'names': ['test-arg-0'],
+                    }
+                ],
             },
             'test-1': {
                 'callback': echo,
                 'help': 'Deprecated command 1',
-                'deprecated': 'Please use alternative command.'
+                'deprecated': 'Please use alternative command.',
             },
-            'test-2': {
-                'callback': echo,
-                'help': 'Deprecated command 2',
-                'deprecated': {
-                    'exit_with_error': True
-                }
-            },
+            'test-2': {'callback': echo, 'help': 'Deprecated command 2', 'deprecated': {'exit_with_error': True}},
         },
     }
 

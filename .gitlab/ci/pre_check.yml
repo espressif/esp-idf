@@ -142,6 +142,10 @@ pipeline_variables:
         MR_MODIFIED_COMPONENTS=$(run_cmd python tools/ci/ci_get_mr_info.py components --modified-files $MODIFIED_FILES | tr '\n' ';')
         echo "MR_MODIFIED_COMPONENTS=\"$MR_MODIFIED_COMPONENTS\"" >> pipeline.env
       fi
+    - |
+      if [ -n "$PIPELINE_COMMIT_SHA" ]; then
+        echo "PIPELINE_COMMIT_SHA=$PIPELINE_COMMIT_SHA" >> pipeline.env
+      fi
     - echo "OOCD_DISTRO_URL_ARMHF=$OOCD_DISTRO_URL_ARMHF" >> pipeline.env
     - echo "OOCD_DISTRO_URL_ARM64=$OOCD_DISTRO_URL_ARM64" >> pipeline.env
     - run_cmd idf-ci gitlab pipeline-variables >> pipeline.env

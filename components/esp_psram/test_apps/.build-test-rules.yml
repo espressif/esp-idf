@@ -10,3 +10,4 @@ components/esp_psram/test_apps/psram:
     - esp_driver_gpio
     - esp_driver_spi
     - spi_flash
+    - esp_hal_mspi

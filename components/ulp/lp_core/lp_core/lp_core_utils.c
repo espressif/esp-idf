@@ -181,12 +181,17 @@ void __attribute__((noreturn)) ulp_lp_core_abort(void)
     while (1);
 }
 
-void ulp_lp_core_sw_intr_enable(bool enable)
+void ulp_lp_core_sw_intr_to_hp_trigger(void)
+{
+    pmu_ll_lp_trigger_sw_intr(&PMU);
+}
+
+void ulp_lp_core_sw_intr_from_hp_enable(bool enable)
 {
     pmu_ll_lp_enable_sw_intr(&PMU, enable);
 }
 
-void ulp_lp_core_sw_intr_clear(void)
+void ulp_lp_core_sw_intr_from_hp_clear(void)
 {
     pmu_ll_lp_clear_sw_intr_status(&PMU);
 }

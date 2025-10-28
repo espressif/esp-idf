@@ -5,7 +5,7 @@
  */
 
 #include "soc/soc.h"
-#include "soc/interrupt_reg.h"
+#include "riscv/csr_clic.h"
 #include "riscv/rvruntime-frames.h"
 #include "soc/soc_caps.h"
 #include "sdkconfig.h"
@@ -181,6 +181,20 @@
 #endif
 .endm
 
+.macro mintthresh_csr_disable reg
+#if __riscv_zcmp && INTTHRESH_STANDARD
+    /* Workaround for triggering an interrupt even when mstatus.mie is 0, when cm.push is called. */
+    li t0, 0xff
+    csrrw \reg, MINTTHRESH_CSR, t0
+#endif
+.endm
+
+.macro mintthresh_csr_restore reg
+#if __riscv_zcmp && INTTHRESH_STANDARD
+    csrw MINTTHRESH_CSR, \reg
+#endif
+.endm
+
 .macro xret
 #if CONFIG_SECURE_ENABLE_TEE
     uret
@@ -215,6 +229,8 @@ rtos_save_fpu_coproc:
 _panic_handler:
     /* Allocate space on the stack and store general purpose registers */
     save_general_regs RV_STK_FRMSZ
+
+    mintthresh_csr_disable s5
 
     /* As gp register is not saved by the macro, save it here */
     sw    gp, RV_STK_GP(sp)
@@ -278,7 +294,8 @@ hwlp_not_used:
      * For example, bit 1 can be set and bit 0 won't, even if the reason is an FPU instruction. */
     andi  a1, a0, EXT_ILL_RSN_FPU
     bnez  a1, rtos_save_fpu_coproc
-#if SOC_CPU_HAS_FPU_EXT_ILL_BUG
+    /* The FPU_EXT_ILL bug was fixed on revision 3.0 and higher */
+#if SOC_CPU_HAS_FPU_EXT_ILL_BUG && CONFIG_ESP32P4_SELECTS_REV_LESS_V3
     /* If the SOC present the hardware EXT_ILL CSR bug, it doesn't support FPU load/store detection
      * so we have to check the instruction's opcode (in `mtval` = `t0`) */
     andi  a0, t0, 0b1011111
@@ -365,6 +382,8 @@ _store_mcause:
      * Restore the registers and return from the exception.
      */
 _return_from_exception:
+    mintthresh_csr_restore s5
+
     restore_xepc
     /* MTVEC and SP are assumed to be unmodified.
      * MSTATUS, MHARTID, MTVAL are read-only and not restored.
@@ -464,6 +483,8 @@ _tee_interrupt_handler:
 
     /* After dispatch c handler, disable interrupt to make freertos make context switch */
 
+    mintthresh_csr_disable s5
+
     disable_intr
     /* MIE cleared. Nested interrupts are disabled */
 
@@ -509,6 +530,9 @@ _skip_thresh_reset:
     csrw    mcause, s1
     csrw    mstatus, a0
 #endif
+
+    mintthresh_csr_restore s5
+
     restore_xepc
     restore_general_regs
     /* exit, this will also re-enable the interrupts */

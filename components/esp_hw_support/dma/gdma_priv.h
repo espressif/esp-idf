@@ -42,9 +42,6 @@
 
 #define GDMA_ACCESS_ENCRYPTION_MEM_ALIGNMENT 16 /*!< The alignment of the memory and size when DMA accesses the encryption memory */
 
-///!< Logging settings
-#define TAG "gdma"
-
 #ifdef __cplusplus
 extern "C" {
 #endif

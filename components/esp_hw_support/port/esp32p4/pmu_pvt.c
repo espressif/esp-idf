@@ -24,7 +24,7 @@
 #include "hal/efuse_hal.h"
 #include "esp_hw_log.h"
 
-static __attribute__((unused)) const char *TAG = "pmu_pvt";
+ESP_HW_LOG_ATTR_TAG(TAG, "pmu_pvt");
 
 #if CONFIG_ESP_ENABLE_PVT
 

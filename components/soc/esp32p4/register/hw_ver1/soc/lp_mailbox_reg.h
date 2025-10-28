@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -11,197 +11,197 @@
 extern "C" {
 #endif
 
-/** MB_MASSEGE_0_REG register
+/** MB_MESSAGE_0_REG register
  *  need_des
  */
-#define MB_MASSEGE_0_REG (DR_REG_MB_BASE + 0x0)
-/** MB_MASSEGE_0 : R/W; bitpos: [31:0]; default: 0;
+#define MB_MESSAGE_0_REG (DR_REG_MB_BASE + 0x0)
+/** MB_MESSAGE_0 : R/W; bitpos: [31:0]; default: 0;
  *  need_des
  */
-#define MB_MASSEGE_0    0xFFFFFFFFU
-#define MB_MASSEGE_0_M  (MB_MASSEGE_0_V << MB_MASSEGE_0_S)
-#define MB_MASSEGE_0_V  0xFFFFFFFFU
-#define MB_MASSEGE_0_S  0
+#define MB_MESSAGE_0    0xFFFFFFFFU
+#define MB_MESSAGE_0_M  (MB_MESSAGE_0_V << MB_MESSAGE_0_S)
+#define MB_MESSAGE_0_V  0xFFFFFFFFU
+#define MB_MESSAGE_0_S  0
 
-/** MB_MASSEGE_1_REG register
+/** MB_MESSAGE_1_REG register
  *  need_des
  */
-#define MB_MASSEGE_1_REG (DR_REG_MB_BASE + 0x4)
-/** MB_MASSEGE_1 : R/W; bitpos: [31:0]; default: 0;
+#define MB_MESSAGE_1_REG (DR_REG_MB_BASE + 0x4)
+/** MB_MESSAGE_1 : R/W; bitpos: [31:0]; default: 0;
  *  need_des
  */
-#define MB_MASSEGE_1    0xFFFFFFFFU
-#define MB_MASSEGE_1_M  (MB_MASSEGE_1_V << MB_MASSEGE_1_S)
-#define MB_MASSEGE_1_V  0xFFFFFFFFU
-#define MB_MASSEGE_1_S  0
+#define MB_MESSAGE_1    0xFFFFFFFFU
+#define MB_MESSAGE_1_M  (MB_MESSAGE_1_V << MB_MESSAGE_1_S)
+#define MB_MESSAGE_1_V  0xFFFFFFFFU
+#define MB_MESSAGE_1_S  0
 
-/** MB_MASSEGE_2_REG register
+/** MB_MESSAGE_2_REG register
  *  need_des
  */
-#define MB_MASSEGE_2_REG (DR_REG_MB_BASE + 0x8)
-/** MB_MASSEGE_2 : R/W; bitpos: [31:0]; default: 0;
+#define MB_MESSAGE_2_REG (DR_REG_MB_BASE + 0x8)
+/** MB_MESSAGE_2 : R/W; bitpos: [31:0]; default: 0;
  *  need_des
  */
-#define MB_MASSEGE_2    0xFFFFFFFFU
-#define MB_MASSEGE_2_M  (MB_MASSEGE_2_V << MB_MASSEGE_2_S)
-#define MB_MASSEGE_2_V  0xFFFFFFFFU
-#define MB_MASSEGE_2_S  0
+#define MB_MESSAGE_2    0xFFFFFFFFU
+#define MB_MESSAGE_2_M  (MB_MESSAGE_2_V << MB_MESSAGE_2_S)
+#define MB_MESSAGE_2_V  0xFFFFFFFFU
+#define MB_MESSAGE_2_S  0
 
-/** MB_MASSEGE_3_REG register
+/** MB_MESSAGE_3_REG register
  *  need_des
  */
-#define MB_MASSEGE_3_REG (DR_REG_MB_BASE + 0xc)
-/** MB_MASSEGE_3 : R/W; bitpos: [31:0]; default: 0;
+#define MB_MESSAGE_3_REG (DR_REG_MB_BASE + 0xc)
+/** MB_MESSAGE_3 : R/W; bitpos: [31:0]; default: 0;
  *  need_des
  */
-#define MB_MASSEGE_3    0xFFFFFFFFU
-#define MB_MASSEGE_3_M  (MB_MASSEGE_3_V << MB_MASSEGE_3_S)
-#define MB_MASSEGE_3_V  0xFFFFFFFFU
-#define MB_MASSEGE_3_S  0
+#define MB_MESSAGE_3    0xFFFFFFFFU
+#define MB_MESSAGE_3_M  (MB_MESSAGE_3_V << MB_MESSAGE_3_S)
+#define MB_MESSAGE_3_V  0xFFFFFFFFU
+#define MB_MESSAGE_3_S  0
 
-/** MB_MASSEGE_4_REG register
+/** MB_MESSAGE_4_REG register
  *  need_des
  */
-#define MB_MASSEGE_4_REG (DR_REG_MB_BASE + 0x10)
-/** MB_MASSEGE_4 : R/W; bitpos: [31:0]; default: 0;
+#define MB_MESSAGE_4_REG (DR_REG_MB_BASE + 0x10)
+/** MB_MESSAGE_4 : R/W; bitpos: [31:0]; default: 0;
  *  need_des
  */
-#define MB_MASSEGE_4    0xFFFFFFFFU
-#define MB_MASSEGE_4_M  (MB_MASSEGE_4_V << MB_MASSEGE_4_S)
-#define MB_MASSEGE_4_V  0xFFFFFFFFU
-#define MB_MASSEGE_4_S  0
+#define MB_MESSAGE_4    0xFFFFFFFFU
+#define MB_MESSAGE_4_M  (MB_MESSAGE_4_V << MB_MESSAGE_4_S)
+#define MB_MESSAGE_4_V  0xFFFFFFFFU
+#define MB_MESSAGE_4_S  0
 
-/** MB_MASSEGE_5_REG register
+/** MB_MESSAGE_5_REG register
  *  need_des
  */
-#define MB_MASSEGE_5_REG (DR_REG_MB_BASE + 0x14)
-/** MB_MASSEGE_5 : R/W; bitpos: [31:0]; default: 0;
+#define MB_MESSAGE_5_REG (DR_REG_MB_BASE + 0x14)
+/** MB_MESSAGE_5 : R/W; bitpos: [31:0]; default: 0;
  *  need_des
  */
-#define MB_MASSEGE_5    0xFFFFFFFFU
-#define MB_MASSEGE_5_M  (MB_MASSEGE_5_V << MB_MASSEGE_5_S)
-#define MB_MASSEGE_5_V  0xFFFFFFFFU
-#define MB_MASSEGE_5_S  0
+#define MB_MESSAGE_5    0xFFFFFFFFU
+#define MB_MESSAGE_5_M  (MB_MESSAGE_5_V << MB_MESSAGE_5_S)
+#define MB_MESSAGE_5_V  0xFFFFFFFFU
+#define MB_MESSAGE_5_S  0
 
-/** MB_MASSEGE_6_REG register
+/** MB_MESSAGE_6_REG register
  *  need_des
  */
-#define MB_MASSEGE_6_REG (DR_REG_MB_BASE + 0x18)
-/** MB_MASSEGE_6 : R/W; bitpos: [31:0]; default: 0;
+#define MB_MESSAGE_6_REG (DR_REG_MB_BASE + 0x18)
+/** MB_MESSAGE_6 : R/W; bitpos: [31:0]; default: 0;
  *  need_des
  */
-#define MB_MASSEGE_6    0xFFFFFFFFU
-#define MB_MASSEGE_6_M  (MB_MASSEGE_6_V << MB_MASSEGE_6_S)
-#define MB_MASSEGE_6_V  0xFFFFFFFFU
-#define MB_MASSEGE_6_S  0
+#define MB_MESSAGE_6    0xFFFFFFFFU
+#define MB_MESSAGE_6_M  (MB_MESSAGE_6_V << MB_MESSAGE_6_S)
+#define MB_MESSAGE_6_V  0xFFFFFFFFU
+#define MB_MESSAGE_6_S  0
 
-/** MB_MASSEGE_7_REG register
+/** MB_MESSAGE_7_REG register
  *  need_des
  */
-#define MB_MASSEGE_7_REG (DR_REG_MB_BASE + 0x1c)
-/** MB_MASSEGE_7 : R/W; bitpos: [31:0]; default: 0;
+#define MB_MESSAGE_7_REG (DR_REG_MB_BASE + 0x1c)
+/** MB_MESSAGE_7 : R/W; bitpos: [31:0]; default: 0;
  *  need_des
  */
-#define MB_MASSEGE_7    0xFFFFFFFFU
-#define MB_MASSEGE_7_M  (MB_MASSEGE_7_V << MB_MASSEGE_7_S)
-#define MB_MASSEGE_7_V  0xFFFFFFFFU
-#define MB_MASSEGE_7_S  0
+#define MB_MESSAGE_7    0xFFFFFFFFU
+#define MB_MESSAGE_7_M  (MB_MESSAGE_7_V << MB_MESSAGE_7_S)
+#define MB_MESSAGE_7_V  0xFFFFFFFFU
+#define MB_MESSAGE_7_S  0
 
-/** MB_MASSEGE_8_REG register
+/** MB_MESSAGE_8_REG register
  *  need_des
  */
-#define MB_MASSEGE_8_REG (DR_REG_MB_BASE + 0x20)
-/** MB_MASSEGE_8 : R/W; bitpos: [31:0]; default: 0;
+#define MB_MESSAGE_8_REG (DR_REG_MB_BASE + 0x20)
+/** MB_MESSAGE_8 : R/W; bitpos: [31:0]; default: 0;
  *  need_des
  */
-#define MB_MASSEGE_8    0xFFFFFFFFU
-#define MB_MASSEGE_8_M  (MB_MASSEGE_8_V << MB_MASSEGE_8_S)
-#define MB_MASSEGE_8_V  0xFFFFFFFFU
-#define MB_MASSEGE_8_S  0
+#define MB_MESSAGE_8    0xFFFFFFFFU
+#define MB_MESSAGE_8_M  (MB_MESSAGE_8_V << MB_MESSAGE_8_S)
+#define MB_MESSAGE_8_V  0xFFFFFFFFU
+#define MB_MESSAGE_8_S  0
 
-/** MB_MASSEGE_9_REG register
+/** MB_MESSAGE_9_REG register
  *  need_des
  */
-#define MB_MASSEGE_9_REG (DR_REG_MB_BASE + 0x24)
-/** MB_MASSEGE_9 : R/W; bitpos: [31:0]; default: 0;
+#define MB_MESSAGE_9_REG (DR_REG_MB_BASE + 0x24)
+/** MB_MESSAGE_9 : R/W; bitpos: [31:0]; default: 0;
  *  need_des
  */
-#define MB_MASSEGE_9    0xFFFFFFFFU
-#define MB_MASSEGE_9_M  (MB_MASSEGE_9_V << MB_MASSEGE_9_S)
-#define MB_MASSEGE_9_V  0xFFFFFFFFU
-#define MB_MASSEGE_9_S  0
+#define MB_MESSAGE_9    0xFFFFFFFFU
+#define MB_MESSAGE_9_M  (MB_MESSAGE_9_V << MB_MESSAGE_9_S)
+#define MB_MESSAGE_9_V  0xFFFFFFFFU
+#define MB_MESSAGE_9_S  0
 
-/** MB_MASSEGE_10_REG register
+/** MB_MESSAGE_10_REG register
  *  need_des
  */
-#define MB_MASSEGE_10_REG (DR_REG_MB_BASE + 0x28)
-/** MB_MASSEGE_10 : R/W; bitpos: [31:0]; default: 0;
+#define MB_MESSAGE_10_REG (DR_REG_MB_BASE + 0x28)
+/** MB_MESSAGE_10 : R/W; bitpos: [31:0]; default: 0;
  *  need_des
  */
-#define MB_MASSEGE_10    0xFFFFFFFFU
-#define MB_MASSEGE_10_M  (MB_MASSEGE_10_V << MB_MASSEGE_10_S)
-#define MB_MASSEGE_10_V  0xFFFFFFFFU
-#define MB_MASSEGE_10_S  0
+#define MB_MESSAGE_10    0xFFFFFFFFU
+#define MB_MESSAGE_10_M  (MB_MESSAGE_10_V << MB_MESSAGE_10_S)
+#define MB_MESSAGE_10_V  0xFFFFFFFFU
+#define MB_MESSAGE_10_S  0
 
-/** MB_MASSEGE_11_REG register
+/** MB_MESSAGE_11_REG register
  *  need_des
  */
-#define MB_MASSEGE_11_REG (DR_REG_MB_BASE + 0x2c)
-/** MB_MASSEGE_11 : R/W; bitpos: [31:0]; default: 0;
+#define MB_MESSAGE_11_REG (DR_REG_MB_BASE + 0x2c)
+/** MB_MESSAGE_11 : R/W; bitpos: [31:0]; default: 0;
  *  need_des
  */
-#define MB_MASSEGE_11    0xFFFFFFFFU
-#define MB_MASSEGE_11_M  (MB_MASSEGE_11_V << MB_MASSEGE_11_S)
-#define MB_MASSEGE_11_V  0xFFFFFFFFU
-#define MB_MASSEGE_11_S  0
+#define MB_MESSAGE_11    0xFFFFFFFFU
+#define MB_MESSAGE_11_M  (MB_MESSAGE_11_V << MB_MESSAGE_11_S)
+#define MB_MESSAGE_11_V  0xFFFFFFFFU
+#define MB_MESSAGE_11_S  0
 
-/** MB_MASSEGE_12_REG register
+/** MB_MESSAGE_12_REG register
  *  need_des
  */
-#define MB_MASSEGE_12_REG (DR_REG_MB_BASE + 0x30)
-/** MB_MASSEGE_12 : R/W; bitpos: [31:0]; default: 0;
+#define MB_MESSAGE_12_REG (DR_REG_MB_BASE + 0x30)
+/** MB_MESSAGE_12 : R/W; bitpos: [31:0]; default: 0;
  *  need_des
  */
-#define MB_MASSEGE_12    0xFFFFFFFFU
-#define MB_MASSEGE_12_M  (MB_MASSEGE_12_V << MB_MASSEGE_12_S)
-#define MB_MASSEGE_12_V  0xFFFFFFFFU
-#define MB_MASSEGE_12_S  0
+#define MB_MESSAGE_12    0xFFFFFFFFU
+#define MB_MESSAGE_12_M  (MB_MESSAGE_12_V << MB_MESSAGE_12_S)
+#define MB_MESSAGE_12_V  0xFFFFFFFFU
+#define MB_MESSAGE_12_S  0
 
-/** MB_MASSEGE_13_REG register
+/** MB_MESSAGE_13_REG register
  *  need_des
  */
-#define MB_MASSEGE_13_REG (DR_REG_MB_BASE + 0x34)
-/** MB_MASSEGE_13 : R/W; bitpos: [31:0]; default: 0;
+#define MB_MESSAGE_13_REG (DR_REG_MB_BASE + 0x34)
+/** MB_MESSAGE_13 : R/W; bitpos: [31:0]; default: 0;
  *  need_des
  */
-#define MB_MASSEGE_13    0xFFFFFFFFU
-#define MB_MASSEGE_13_M  (MB_MASSEGE_13_V << MB_MASSEGE_13_S)
-#define MB_MASSEGE_13_V  0xFFFFFFFFU
-#define MB_MASSEGE_13_S  0
+#define MB_MESSAGE_13    0xFFFFFFFFU
+#define MB_MESSAGE_13_M  (MB_MESSAGE_13_V << MB_MESSAGE_13_S)
+#define MB_MESSAGE_13_V  0xFFFFFFFFU
+#define MB_MESSAGE_13_S  0
 
-/** MB_MASSEGE_14_REG register
+/** MB_MESSAGE_14_REG register
  *  need_des
  */
-#define MB_MASSEGE_14_REG (DR_REG_MB_BASE + 0x38)
-/** MB_MASSEGE_14 : R/W; bitpos: [31:0]; default: 0;
+#define MB_MESSAGE_14_REG (DR_REG_MB_BASE + 0x38)
+/** MB_MESSAGE_14 : R/W; bitpos: [31:0]; default: 0;
  *  need_des
  */
-#define MB_MASSEGE_14    0xFFFFFFFFU
-#define MB_MASSEGE_14_M  (MB_MASSEGE_14_V << MB_MASSEGE_14_S)
-#define MB_MASSEGE_14_V  0xFFFFFFFFU
-#define MB_MASSEGE_14_S  0
+#define MB_MESSAGE_14    0xFFFFFFFFU
+#define MB_MESSAGE_14_M  (MB_MESSAGE_14_V << MB_MESSAGE_14_S)
+#define MB_MESSAGE_14_V  0xFFFFFFFFU
+#define MB_MESSAGE_14_S  0
 
-/** MB_MASSEGE_15_REG register
+/** MB_MESSAGE_15_REG register
  *  need_des
  */
-#define MB_MASSEGE_15_REG (DR_REG_MB_BASE + 0x3c)
-/** MB_MASSEGE_15 : R/W; bitpos: [31:0]; default: 0;
+#define MB_MESSAGE_15_REG (DR_REG_MB_BASE + 0x3c)
+/** MB_MESSAGE_15 : R/W; bitpos: [31:0]; default: 0;
  *  need_des
  */
-#define MB_MASSEGE_15    0xFFFFFFFFU
-#define MB_MASSEGE_15_M  (MB_MASSEGE_15_V << MB_MASSEGE_15_S)
-#define MB_MASSEGE_15_V  0xFFFFFFFFU
-#define MB_MASSEGE_15_S  0
+#define MB_MESSAGE_15    0xFFFFFFFFU
+#define MB_MESSAGE_15_M  (MB_MESSAGE_15_V << MB_MESSAGE_15_S)
+#define MB_MESSAGE_15_V  0xFFFFFFFFU
+#define MB_MESSAGE_15_S  0
 
 /** MB_LP_INT_RAW_REG register
  *  need_des

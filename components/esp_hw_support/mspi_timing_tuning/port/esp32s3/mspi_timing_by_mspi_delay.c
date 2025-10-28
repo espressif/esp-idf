@@ -50,7 +50,7 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #if MSPI_TIMING_FLASH_NEEDS_TUNING || MSPI_TIMING_PSRAM_NEEDS_TUNING
-const static char *TAG = "MSPI Timing";
+ESP_LOG_ATTR_TAG(TAG, "MSPI Timing");
 
 //If one of the FLASH / PSRAM or both of them need timing tuning, we should build following code
 typedef enum {

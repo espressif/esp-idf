@@ -10,7 +10,7 @@ This utility is designed to create instances of factory NVS partition images on 
 
 Please note that this utility only creates manufacturing binary images which then need to be flashed onto your devices using:
 
-- `esptool.py`_
+- `esptool`_
 - `Flash Download tool <https://www.espressif.com/en/support/download/other-tools?keys=flash+download+tools>`_ (available on Windows only)
     - Download and unzip it, and follow the instructions inside the *doc* folder.
 - Direct flash programming using custom production tools.
@@ -304,4 +304,4 @@ While running the manufacturing utility, the following folders will be created i
 - ``csv/`` for storing the generated intermediate CSV files
 - ``keys/`` for storing encryption keys (when generating encrypted factory images)
 
-.. _esptool.py: https://github.com/espressif/esptool/#readme
+.. _esptool: https://github.com/espressif/esptool/#readme

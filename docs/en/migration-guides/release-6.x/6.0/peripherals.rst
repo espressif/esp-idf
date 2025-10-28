@@ -6,6 +6,37 @@ Peripherals
 Common Changes
 --------------
 
+Legacy Driver Dependencies Removal
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The legacy driver component :component:`driver` has been deprecated and no longer contains public dependencies on the following driver components:
+
+.. list::
+    :class: no-bullet
+
+    - :component:`esp_driver_ana_cmpr`
+    - :component:`esp_driver_dac`
+    - :component:`esp_driver_gptimer`
+    - :component:`esp_driver_i2s`
+    - :component:`esp_driver_ledc`
+    - :component:`esp_driver_mcpwm`
+    - :component:`esp_driver_parlio`
+    - :component:`esp_driver_pcnt`
+    - :component:`esp_driver_rmt`
+    - :component:`esp_driver_sdio`
+    - :component:`esp_driver_sdm`
+    - :component:`esp_driver_sdmmc`
+    - :component:`esp_driver_sdspi`
+    - :component:`esp_driver_spi`
+    - :component:`esp_driver_tsens`
+    - :component:`esp_driver_twai`
+    - :component:`esp_driver_uart`
+    - :component:`esp_driver_usb_serial_jtag`
+
+If your project uses legacy :component:`driver` component, it is strongly recommended to remove :component:`driver` component dependencies, and add new driver component (usually ``esp_driver_xxx``) dependencies to your project.
+
+If you still need to keep legacy :component:`driver` component (e.g. your project depends on the legacy ``i2c`` driver), please keep the :component:`driver` component remaining in the dependency list of your project (usually ``<project_root>/main/CMakeLists.txt``), and manually add component dependencies that are no longer included in :component:`driver` as needed.
+
 All drivers' ``io_loop_back`` configuration have been removed
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -53,6 +84,29 @@ The ``io_od_mode`` member in the :cpp:type:`rmt_tx_channel_config_t` configurati
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     The legacy MCPWM driver ``driver/mcpwm.h`` is deprecated since version 5.0 (see :ref:`deprecate_mcpwm_legacy_driver`). Starting from version 6.0, the legacy driver is completely removed. The new driver is placed in the :component:`esp_driver_mcpwm`, and the header file path is ``driver/mcpwm_prelude``.
+
+    Variadic Generator APIs are Removed
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    The legacy variadic ("varg") generator APIs have been removed in this release. Code that used vararg-style calls for generator action setup must be migrated to the explicit, typed APIs. These APIs use configuration structs and clearly-typed setter functions (for example, :cpp:type:`mcpwm_generator_config_t`, :cpp:type:`mcpwm_gen_timer_event_action_t` and :cpp:type:`mcpwm_generator_set_action_on_timer_event`).
+
+    Migration steps (summary):
+
+    - Replace varg-style action configuration with helper structs/macros and dedicated setter functions::
+
+        .. code-block:: c
+
+            /* Old (varg) */
+            mcpwm_generator_set_actions_on_compare_event(my_generator,
+                MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, my_comparator, MCPWM_GEN_ACTION_LOW),
+                MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_DOWN, my_comparator, MCPWM_GEN_ACTION_HIGH),
+                MCPWM_GEN_COMPARE_EVENT_ACTION_END());
+
+            /* New */
+            mcpwm_generator_set_action_on_compare_event(my_generator,
+                MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, my_comparator, MCPWM_GEN_ACTION_LOW));
+            mcpwm_generator_set_action_on_compare_event(my_generator,
+                MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_DOWN, my_comparator, MCPWM_GEN_ACTION_HIGH));
 
 GPIO
 ----
@@ -184,19 +238,22 @@ LCD
 - The ``on_bounce_frame_finish`` member in :cpp:type:`esp_lcd_rgb_panel_event_callbacks_t` has been replaced by :cpp:member:`esp_lcd_rgb_panel_event_callbacks_t::on_frame_buf_complete`, which indicates that a complete frame buffer has been sent to the LCD controller.
 - The LCD IO layer driver for the I2C interface previously had two implementations, based on the new and legacy I2C master bus drivers. As the legacy I2C driver is being deprecated, support for it in the LCD IO layer has been removed. Only the APIs provided in ``driver/i2c_master.h`` are now used.
 - :cpp:member:`esp_lcd_dpi_panel_config_t::pixel_format` member is deprecated. It is recommended to only use :cpp:member:`esp_lcd_dpi_panel_config_t::in_color_format` to set the MIPI DSI driver's input pixel data format.
+- The NT35510 LCD device driver has been moved out of ESP-IDF and is now hosted in the `ESP Component Registry <https://components.espressif.com/components/espressif/esp_lcd_nt35510/versions/1.0.0/readme>`__. If your project uses the NT35510 driver, you can add it to your project by running ``idf.py add-dependency "espressif/esp_lcd_nt35510"``.
 
 SPI
 ---
 
 - The :ref:`CONFIG_SPI_MASTER_IN_IRAM` option is now invisible by default in menuconfig and depends on :ref:`CONFIG_FREERTOS_IN_IRAM`. This change was made to prevent potential crashes when SPI functions in IRAM call FreeRTOS functions that are placed in flash.
-  - To enable SPI master IRAM optimization:
+- To enable SPI master IRAM optimization:
 
-    1. Navigate to ``Component config`` → ``FreeRTOS`` → ``Port`` in menuconfig
-    2. Enable ``Place FreeRTOS functions in IRAM`` (:ref:`CONFIG_FREERTOS_IN_IRAM`)
-    3. Navigate to ``Component config`` → ``ESP-Driver:SPI Configurations``
-    4. Enable ``Place transmitting functions of SPI master into IRAM`` (:ref:`CONFIG_SPI_MASTER_IN_IRAM`)
+    1. Navigate to ``Component config`` → ``FreeRTOS`` → ``Port`` in menuconfig.
+    2. Enable ``Place FreeRTOS functions in IRAM`` (:ref:`CONFIG_FREERTOS_IN_IRAM`).
+    3. Navigate to ``Component config`` → ``ESP-Driver:SPI Configurations`` in menuconfig.
+    4. Enable ``Place transmitting functions of SPI master into IRAM`` (:ref:`CONFIG_SPI_MASTER_IN_IRAM`).
 
-  - Note that enabling :ref:`CONFIG_FREERTOS_IN_IRAM` will increase IRAM usage. Consider this trade-off when optimizing for SPI performance.
+    .. note::
+
+        Note that enabling :ref:`CONFIG_FREERTOS_IN_IRAM` will increase IRAM usage. Consider this trade-off when optimizing for SPI performance.
 
 - Deprecated HSPI and VSPI related IOMUX pin macros on ESP32 and ESP32S2 have been removed.
 
@@ -204,7 +261,6 @@ PSRAM
 -----
 
 Deprecated header file ``esp_spiram.h`` has been removed. Please use ``esp_psram.h`` instead.
-
 
 SPI Flash Driver
 ----------------
@@ -215,12 +271,14 @@ SPI Flash Driver
 - Deprecated API ``spi_flash_get_counters`` has been removed. Please use :cpp:func:`esp_flash_get_counters` instead.
 - Deprecated API ``spi_flash_reset_counters`` has been removed. Please use :cpp:func:`esp_flash_reset_counters` instead.
 
-Note that enabling :ref:`CONFIG_FREERTOS_IN_IRAM` will increase IRAM usage. Consider this trade-off when optimizing for SPI performance.
+.. note::
+
+    Note that enabling :ref:`CONFIG_FREERTOS_IN_IRAM` will increase IRAM usage. Consider this trade-off when optimizing for SPI performance.
 
 Touch Element
 -------------
 
-The ``touch_element`` component is moved to [ESP Component Registry](https://components.espressif.com/components/espressif/touch_element/versions/1.0.0/readme).
+The ``touch_element`` component is moved to `ESP Component Registry <https://components.espressif.com/components/espressif/touch_element/versions/1.0.0/readme>`__.
 
 You can add this dependency to your project by running ``idf.py add-dependency "espressif/touch_element"``.
 
@@ -228,3 +286,15 @@ Touch Sensor
 ------------
 
 The ``touch_sensor_sample_config_t::bypass_shield_output`` member for version 3 touch sensor has been removed because it is not supported in the version 3 hardware.
+
+I2S
+---
+
+- ``i2s_port_t`` type has been removed. Please use ``int`` type instead. Its enum items ``I2S_NUM_0``, ``I2S_NUM_1``, ``I2S_NUM_2`` and ``I2S_NUM_AUTO`` have been replaced by macro definitions to ensure compatibility.
+
+USB
+---
+
+The ``usb`` component is moved to ESP Component Registry
+
+You can add this dependency to your project by running ``idf.py add-dependency "espressif/usb"``.

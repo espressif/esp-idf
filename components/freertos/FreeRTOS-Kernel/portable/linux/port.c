@@ -6,7 +6,7 @@
  *
  * SPDX-License-Identifier: MIT
  *
- * SPDX-FileContributor: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -422,6 +422,12 @@ void vPortThreadDying( void *pxTaskToDelete, volatile BaseType_t *pxPendYield )
 
 void vPortCancelThread( void *pxTaskToDelete )
 {
+    #if ( CONFIG_FREERTOS_TASK_PRE_DELETION_HOOK )
+        /* Call the user defined task pre-deletion hook before canceling the thread */
+        extern void vTaskPreDeletionHook( void * pxTCB );
+        vTaskPreDeletionHook( pxTaskToDelete );
+    #endif /* CONFIG_FREERTOS_TASK_PRE_DELETION_HOOK */
+
     Thread_t *pxThreadToCancel = prvGetThreadFromTask( pxTaskToDelete );
 
     /*

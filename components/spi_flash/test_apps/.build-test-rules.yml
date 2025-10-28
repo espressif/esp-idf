@@ -14,6 +14,7 @@ components/spi_flash/test_apps/esp_flash:
     - esp_driver_gpio
     - esp_driver_spi
     - esptool_py # Some flash related kconfigs are listed here.
+    - esp_hal_mspi
 
 components/spi_flash/test_apps/esp_flash_stress:
   disable:
@@ -23,6 +24,7 @@ components/spi_flash/test_apps/esp_flash_stress:
   depends_components:
     - esp_mm
     - spi_flash
+    - esp_hal_mspi
 
 components/spi_flash/test_apps/flash_encryption:
   disable:
@@ -37,11 +39,13 @@ components/spi_flash/test_apps/flash_encryption:
   depends_components:
     - esp_mm
     - spi_flash
+    - esp_hal_mspi
 
 components/spi_flash/test_apps/flash_mmap:
   depends_components:
     - esp_mm
     - spi_flash
+    - esp_hal_mspi
   enable:
     - if: CONFIG_NAME == "release" and IDF_TARGET != "linux"
     - if: CONFIG_NAME == "rom_impl" and ESP_ROM_HAS_SPI_FLASH == 1
@@ -64,6 +68,7 @@ components/spi_flash/test_apps/flash_suspend:
   depends_components:
     - spi_flash
     - esp_driver_gptimer
+    - esp_hal_mspi
 
 components/spi_flash/test_apps/mspi_test:
   disable:
@@ -78,3 +83,4 @@ components/spi_flash/test_apps/mspi_test:
     - esp_driver_gpio
     - esp_driver_spi
     - esptool_py # Some flash related kconfigs are listed here.
+    - esp_hal_mspi

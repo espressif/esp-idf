@@ -198,10 +198,6 @@ static esp_err_t wifi_deinit_internal(void)
 
     esp_supplicant_deinit();
 
-#if CONFIG_ESP_WIFI_ENABLE_ROAMING_APP
-    roam_deinit_app();
-#endif
-
 #if CONFIG_ESP_WIFI_SLP_SAMPLE_BEACON_FEATURE
     wifi_beacon_offset_config_t offset_config = WIFI_BEACON_OFFSET_CONFIG_DEFAULT(false);
     esp_wifi_beacon_offset_configure(&offset_config);
@@ -470,10 +466,6 @@ esp_err_t esp_wifi_init(const wifi_init_config_t *config)
             ESP_LOGE(TAG, "Failed to init supplicant (0x%x)", result);
             goto _deinit;
         }
-
-#if CONFIG_ESP_WIFI_ENABLE_ROAMING_APP
-        roam_init_app();
-#endif
 
     } else {
         goto _deinit;

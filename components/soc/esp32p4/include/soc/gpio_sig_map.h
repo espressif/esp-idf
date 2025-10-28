@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -196,13 +196,9 @@
 #define PWM1_SYNC2_PAD_IN_IDX                              100
 #define PWM1_CH2_B_PAD_OUT_IDX                             100
 #define PWM1_F0_PAD_IN_IDX                                 101
-#define ADP_CHRG_PAD_OUT_IDX                               101
 #define PWM1_F1_PAD_IN_IDX                                 102
-#define ADP_DISCHRG_PAD_OUT_IDX                            102
 #define PWM1_F2_PAD_IN_IDX                                 103
-#define ADP_PRB_EN_PAD_OUT_IDX                             103
 #define PWM1_CAP0_PAD_IN_IDX                               104
-#define ADP_SNS_EN_PAD_OUT_IDX                             104
 #define PWM1_CAP1_PAD_IN_IDX                               105
 #define TWAI0_STANDBY_PAD_OUT_IDX                          105
 #define PWM1_CAP2_PAD_IN_IDX                               106
@@ -224,7 +220,6 @@
 #define USB_SRP_SESSEND_PAD_IN_IDX                         114
 #define USB_OTG11_DRVVBUS_PAD_OUT_IDX                      114
 #define USB_SRP_CHRGVBUS_PAD_OUT_IDX                       115
-#define OTG_DRVVBUS_PAD_OUT_IDX                            116
 #define ULPI_CLK_PAD_IN_IDX                                117
 #define RNG_CHAIN_CLK_PAD_OUT_IDX                          117
 #define USB_HSPHY_REFCLK_IN_IDX                            118
@@ -260,9 +255,7 @@
 #define I3C_SLV_SCL_PAD_OUT_IDX                            136
 #define I3C_SLV_SDA_PAD_IN_IDX                             137
 #define I3C_SLV_SDA_PAD_OUT_IDX                            137
-#define ADP_PRB_PAD_IN_IDX                                 138
 #define I3C_MST_SCL_PULLUP_EN_PAD_OUT_IDX                  138
-#define ADP_SNS_PAD_IN_IDX                                 139
 #define I3C_MST_SDA_PULLUP_EN_PAD_OUT_IDX                  139
 #define USB_JTAG_TDO_BRIDGE_PAD_IN_IDX                     140
 #define USB_JTAG_TDI_BRIDGE_PAD_OUT_IDX                    140
@@ -458,13 +451,13 @@
 #define CORE_GPIO_IN_PAD_IN27_IDX                          241
 #define CORE_GPIO_OUT_PAD_OUT27_IDX                        241
 #define CORE_GPIO_IN_PAD_IN28_IDX                          242
-#define CORE_GPIO_OUT_PAD_OUT28_IDX                        242
+#define PARLIO_TX_CS_PAD_OUT_IDX                           242    // only exists on ESP32P4 Rev. 3.0 and later
 #define CORE_GPIO_IN_PAD_IN29_IDX                          243
-#define CORE_GPIO_OUT_PAD_OUT29_IDX                        243
+#define EMAC_PTP_PPS_PAD_OUT_IDX                           243
 #define CORE_GPIO_IN_PAD_IN30_IDX                          244
-#define CORE_GPIO_OUT_PAD_OUT30_IDX                        244
+#define ANA_COMP0_OUT_IDX                                  244
 #define CORE_GPIO_IN_PAD_IN31_IDX                          245
-#define CORE_GPIO_OUT_PAD_OUT31_IDX                        245
+#define ANA_COMP1_OUT_IDX                                  245
 #define RMT_SIG_PAD_IN0_IDX                                246
 #define RMT_SIG_PAD_OUT0_IDX                               246
 #define RMT_SIG_PAD_IN1_IDX                                247
@@ -485,4 +478,5 @@
 #define SIG_IN_FUNC254_IDX                                 254
 #define SIG_IN_FUNC255_IDX                                 255
 #define SIG_IN_FUNC255_IDX                                 255
+// version date 230403
 #define SIG_GPIO_OUT_IDX                                   256

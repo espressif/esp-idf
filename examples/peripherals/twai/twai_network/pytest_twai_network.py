@@ -53,9 +53,6 @@ def generate_target_combinations(target_list: list, count: int = 2) -> list:
     ],
     indirect=True,
 )
-@pytest.mark.temp_skip_ci(
-    targets=['esp32c5,esp32'], reason="C5 twai don't support listen only in network test, see errata issue 5"
-)
 def test_twai_network_multi(dut: tuple[IdfDut, IdfDut], socket_can: Bus) -> None:
     """
     Test TWAI network communication between two nodes:

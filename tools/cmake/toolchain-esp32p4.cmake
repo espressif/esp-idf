@@ -7,7 +7,9 @@ set(CMAKE_CXX_COMPILER riscv32-esp-elf-g++)
 set(CMAKE_ASM_COMPILER riscv32-esp-elf-gcc)
 set(_CMAKE_TOOLCHAIN_PREFIX riscv32-esp-elf-)
 
-set(_CMAKE_TOOLCHAIN_COMMON_FLAGS "-march=rv32imafc_zicsr_zifencei_zaamo_zalrsc_xespv_xesploop -mabi=ilp32f")
+set(_CMAKE_TOOLCHAIN_COMMON_FLAGS "-march=rv32imafc_zicsr_zifencei_zaamo_zalrsc_zcb_zcmp_zcmt_xesploop_xespv \
+                                   -mabi=ilp32f \
+                                   -mno-cm-popret -mno-cm-push-reverse")
 
 remove_duplicated_flags("${_CMAKE_TOOLCHAIN_COMMON_FLAGS} -mtune=esp-base ${CMAKE_C_FLAGS}" UNIQ_CMAKE_C_FLAGS)
 set(CMAKE_C_FLAGS "${UNIQ_CMAKE_C_FLAGS}" CACHE STRING "C Compiler Base Flags" FORCE)

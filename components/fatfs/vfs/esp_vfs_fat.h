@@ -16,6 +16,26 @@
 extern "C" {
 #endif
 
+typedef enum {
+    FORMATTED_DURING_LAST_MOUNT = 1 << 0, // The FATFS partition was formatted during the last mount
+} vfs_fat_x_ctx_flags_t;
+
+typedef PARTITION esp_vfs_fat_pdrv_part_t;
+
+/**
+ * @note When the value of item is less than or equal to 100, it specifies the partition size in percentage of the entire drive space.
+ *       When it is larger than 100, it specifies number of sectors. The partition map table is terminated by a zero,
+ *       4th partition in MBR format or no remaining space for next allocation. If the specified size is larger than remaining space on the drive,
+ *       the partition is truncated at end of the drive.
+ *
+ *       For example:
+ *
+ *       `{100, 0, 0, 0}` will create a single partition with 100% of the drive space.
+ *       `{50, 50, 0, 0}` will create two partitions, first with 50% of the drive space and second with the remaining 50%.
+ *       `{0x10000000, 0x10000000, 0x10000000, 0}` will create three partitions, each with a size of 256 MiB, leaving remaining space non-allocated.
+ */
+typedef LBA_t esp_vfs_fat_drive_divide_arr_t[4];
+
 /**
  * @brief Configuration structure for esp_vfs_fat_register
  */
@@ -152,9 +172,10 @@ typedef esp_vfs_fat_mount_config_t esp_vfs_fat_sdmmc_mount_config_t;
  *                      For SDMMC peripheral, pass a pointer to sdmmc_slot_config_t
  *                      structure initialized using SDMMC_SLOT_CONFIG_DEFAULT.
  * @param mount_config  pointer to structure with extra parameters for mounting FATFS
- * @param[out] out_card  if not NULL, pointer to the card information structure will be returned via this argument
+ * @param[out] out_card  pointer to the card information structure will be returned via this argument
  * @return
  *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_ARG if any of the arguments is NULL
  *      - ESP_ERR_INVALID_STATE if esp_vfs_fat_sdmmc_mount was already called
  *      - ESP_ERR_NO_MEM if memory can not be allocated
  *      - ESP_FAIL if partition can not be mounted
@@ -192,12 +213,13 @@ esp_err_t esp_vfs_fat_sdmmc_mount(const char* base_path,
  *                      For SPI peripheral, pass a pointer to sdspi_device_config_t
  *                      structure initialized using SDSPI_DEVICE_CONFIG_DEFAULT().
  * @param mount_config  pointer to structure with extra parameters for mounting FATFS
- * @param[out] out_card If not NULL, pointer to the card information structure will be returned via
+ * @param[out] out_card Pointer to the card information structure will be returned via
  *                      this argument. It is suggested to hold this handle and use it to unmount the card later if
  *                      needed. Otherwise it's not suggested to use more than one card at the same time and unmount one
  *                      of them in your application.
  * @return
  *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_ARG if any of the arguments is NULL
  *      - ESP_ERR_INVALID_STATE if esp_vfs_fat_sdmmc_mount was already called
  *      - ESP_ERR_NO_MEM if memory can not be allocated
  *      - ESP_FAIL if partition can not be mounted

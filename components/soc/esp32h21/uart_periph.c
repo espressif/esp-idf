@@ -106,6 +106,7 @@ const uart_signal_conn_t uart_periph_signal[SOC_UART_NUM] = {
     },
 };
 
+#if SOC_PAU_SUPPORTED && SOC_UART_SUPPORT_SLEEP_RETENTION
 /**
  * UART registers to be saved during sleep retention
  *
@@ -156,3 +157,4 @@ const uart_reg_retention_info_t uart_reg_retention_info[SOC_UART_HP_NUM] = {
         .array_size = ARRAY_SIZE(uart1_regdma_entries),
     },
 };
+#endif

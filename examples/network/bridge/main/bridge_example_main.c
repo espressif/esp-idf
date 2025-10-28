@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -101,10 +101,14 @@ static void example_wifi_init(void)
 
 void app_main(void)
 {
+    // Create default event loop that running in background
+    ESP_ERROR_CHECK(esp_event_loop_create_default());
+
     // Initialize Ethernet driver
     uint8_t eth_port_cnt = 0;
     esp_eth_handle_t *eth_handles;
-    ESP_ERROR_CHECK(example_eth_init(&eth_handles, &eth_port_cnt));
+
+    ESP_ERROR_CHECK(ethernet_init_all(&eth_handles, &eth_port_cnt));
 
     // The same MAC address will be used for all Ethernet ports since the bridge acts as one device
     uint8_t common_mac_addr[ETH_ADDR_LEN];
@@ -117,8 +121,6 @@ void app_main(void)
 
     // Initialize TCP/IP network interface
     ESP_ERROR_CHECK(esp_netif_init());
-    // Create default event loop that running in background
-    ESP_ERROR_CHECK(esp_event_loop_create_default());
 
     // Create instances of esp-netif for Ethernet ports
     esp_netif_t **eth_netifs = calloc(eth_port_cnt, sizeof(esp_netif_t *));

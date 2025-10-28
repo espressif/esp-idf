@@ -16,6 +16,7 @@
 
 #include <stdlib.h> //for abs()
 #include <string.h>
+#include "hal/config.h"
 #include "esp_types.h"
 #include "soc/spi_periph.h"
 #include "soc/spi_struct.h"
@@ -261,6 +262,10 @@ static inline void spi_ll_master_init(spi_dev_t *hw)
     //Disable unneeded ints
     hw->slave.val = 0;
     hw->user.val = 0;
+
+    //Disable unused error_end condition
+    hw->user1.mst_wfull_err_end_en = 0;
+    hw->user2.mst_rempty_err_end_en = 0;
 
     hw->dma_conf.val = 0;
     hw->dma_conf.slv_tx_seg_trans_clr_en = 1;
@@ -763,13 +768,16 @@ static inline void spi_ll_master_keep_cs(spi_dev_t *hw, int keep_active)
  *----------------------------------------------------------------------------*/
 /**
  * Set the standard clock mode for master.
+ * This config take effect only when SPI_CLK (pre-div before periph) div >=2
  *
  * @param hw  Beginning address of the peripheral registers.
  * @param enable_std True for std timing, False for half cycle delay sampling.
  */
 static inline void spi_ll_master_set_rx_timing_mode(spi_dev_t *hw, spi_sampling_point_t sample_point)
 {
-    //This is not supported
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+    hw->clock.clk_edge_sel = (sample_point == SPI_SAMPLING_POINT_PHASE_1);
+#endif
 }
 
 /**
@@ -777,7 +785,11 @@ static inline void spi_ll_master_set_rx_timing_mode(spi_dev_t *hw, spi_sampling_
  */
 static inline bool spi_ll_master_is_rx_std_sample_supported(void)
 {
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+    return true;
+#else
     return false;
+#endif
 }
 
 /**

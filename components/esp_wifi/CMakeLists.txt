@@ -63,7 +63,7 @@ idf_component_register(SRCS "${srcs}"
                     PRIV_REQUIRES esp_pm esp_timer nvs_flash
                                   wpa_supplicant hal lwip esp_coex
                     PRIV_INCLUDE_DIRS ../wpa_supplicant/src/ ../wpa_supplicant/esp_supplicant/src/
-                                  wifi_apps/roaming_app/include
+                                  wifi_apps/roaming_app/include wifi_apps/roaming_app/src
                     LDFRAGMENTS "${ldfragments}")
 
 if(CONFIG_ESP_WIFI_ENABLED OR CONFIG_ESP_HOST_WIFI_ENABLED)

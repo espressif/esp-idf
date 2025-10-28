@@ -8,7 +8,6 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include <stdarg.h>
 #include "esp_err.h"
 #include "driver/mcpwm_types.h"
 
@@ -84,8 +83,6 @@ typedef struct {
  */
 #define MCPWM_GEN_TIMER_EVENT_ACTION(dir, ev, act) \
     (mcpwm_gen_timer_event_action_t) { .direction = dir, .event = ev, .action = act }
-#define MCPWM_GEN_TIMER_EVENT_ACTION_END() \
-    (mcpwm_gen_timer_event_action_t) { .event = MCPWM_TIMER_EVENT_INVALID }
 
 /**
  * @brief Set generator action on MCPWM timer event
@@ -101,21 +98,6 @@ typedef struct {
 esp_err_t mcpwm_generator_set_action_on_timer_event(mcpwm_gen_handle_t gen, mcpwm_gen_timer_event_action_t ev_act);
 
 /**
- * @brief Set generator actions on multiple MCPWM timer events
- *
- * @note This is an aggregation version of `mcpwm_generator_set_action_on_timer_event`, which allows user to set multiple actions in one call.
- *
- * @param[in] gen MCPWM generator handle, allocated by `mcpwm_new_generator()`
- * @param[in] ev_act MCPWM timer event action list, must be terminated by `MCPWM_GEN_TIMER_EVENT_ACTION_END()`
- * @return
- *      - ESP_OK: Set generator actions successfully
- *      - ESP_ERR_INVALID_ARG: Set generator actions failed because of invalid argument
- *      - ESP_ERR_INVALID_STATE: Set generator actions failed because of timer is not connected to operator
- *      - ESP_FAIL: Set generator actions failed because of other error
- */
-esp_err_t mcpwm_generator_set_actions_on_timer_event(mcpwm_gen_handle_t gen, mcpwm_gen_timer_event_action_t ev_act, ...);
-
-/**
  * @brief Generator action on specific comparator event
  */
 typedef struct {
@@ -129,8 +111,6 @@ typedef struct {
  */
 #define MCPWM_GEN_COMPARE_EVENT_ACTION(dir, cmp, act) \
     (mcpwm_gen_compare_event_action_t) { .direction = dir, .comparator = cmp, .action = act }
-#define MCPWM_GEN_COMPARE_EVENT_ACTION_END() \
-    (mcpwm_gen_compare_event_action_t) { .comparator = NULL }
 
 /**
  * @brief Set generator action on MCPWM compare event
@@ -143,20 +123,6 @@ typedef struct {
  *      - ESP_FAIL: Set generator action failed because of other error
  */
 esp_err_t mcpwm_generator_set_action_on_compare_event(mcpwm_gen_handle_t generator, mcpwm_gen_compare_event_action_t ev_act);
-
-/**
- * @brief Set generator actions on multiple MCPWM compare events
- *
- * @note This is an aggregation version of `mcpwm_generator_set_action_on_compare_event`, which allows user to set multiple actions in one call.
- *
- * @param[in] generator MCPWM generator handle, allocated by `mcpwm_new_generator()`
- * @param[in] ev_act MCPWM compare event action list, must be terminated by `MCPWM_GEN_COMPARE_EVENT_ACTION_END()`
- * @return
- *      - ESP_OK: Set generator actions successfully
- *      - ESP_ERR_INVALID_ARG: Set generator actions failed because of invalid argument
- *      - ESP_FAIL: Set generator actions failed because of other error
- */
-esp_err_t mcpwm_generator_set_actions_on_compare_event(mcpwm_gen_handle_t generator, mcpwm_gen_compare_event_action_t ev_act, ...);
 
 /**
  * @brief Generator action on specific brake event
@@ -172,8 +138,6 @@ typedef struct {
  */
 #define MCPWM_GEN_BRAKE_EVENT_ACTION(dir, mode, act) \
     (mcpwm_gen_brake_event_action_t) { .direction = dir, .brake_mode = mode, .action = act }
-#define MCPWM_GEN_BRAKE_EVENT_ACTION_END() \
-    (mcpwm_gen_brake_event_action_t) { .brake_mode = MCPWM_OPER_BRAKE_MODE_INVALID }
 
 /**
  * @brief Set generator action on MCPWM brake event
@@ -186,20 +150,6 @@ typedef struct {
  *      - ESP_FAIL: Set generator action failed because of other error
  */
 esp_err_t mcpwm_generator_set_action_on_brake_event(mcpwm_gen_handle_t generator, mcpwm_gen_brake_event_action_t ev_act);
-
-/**
- * @brief Set generator actions on multiple MCPWM brake events
- *
- * @note This is an aggregation version of `mcpwm_generator_set_action_on_brake_event`, which allows user to set multiple actions in one call.
- *
- * @param[in] generator MCPWM generator handle, allocated by `mcpwm_new_generator()`
- * @param[in] ev_act MCPWM brake event action list, must be terminated by `MCPWM_GEN_BRAKE_EVENT_ACTION_END()`
- * @return
- *      - ESP_OK: Set generator actions successfully
- *      - ESP_ERR_INVALID_ARG: Set generator actions failed because of invalid argument
- *      - ESP_FAIL: Set generator actions failed because of other error
- */
-esp_err_t mcpwm_generator_set_actions_on_brake_event(mcpwm_gen_handle_t generator, mcpwm_gen_brake_event_action_t ev_act, ...);
 
 /**
  * @brief Generator action on specific fault event

@@ -30,3 +30,10 @@ Bootloader Support
 The following deprecated functions have been removed:
 
 - :cpp:func:`esp_secure_boot_verify_signature_block` – Use :cpp:func:`esp_secure_boot_verify_ecdsa_signature_block` instead.
+
+.. only:: SOC_HMAC_SUPPORTED
+
+    NVS Security Provider
+    ---------------------
+
+    - When NVS encryption is enabled on SoCs with the HMAC peripheral that have flash encryption enabled, the HMAC-based NVS encryption scheme is now selected as default instead of the flash encryption-based scheme. If your application previously used the flash encryption-based scheme, you need to manually configure the NVS encryption scheme to flash encryption from HMAC through ``menuconfig`` or your project's ``sdkconfig`` (i.e., setting ``CONFIG_NVS_SEC_KEY_PROTECT_USING_FLASH_ENC=y``).

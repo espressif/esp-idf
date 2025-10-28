@@ -10,7 +10,7 @@
 #include "soc/lpperi_reg.h"
 #include "pmu_bit_defs.h"
 
-static const char *TAG = "sleep_clock";
+ESP_LOG_ATTR_TAG(TAG, "sleep_clock");
 
 esp_err_t sleep_clock_system_retention_init(void *arg)
 {

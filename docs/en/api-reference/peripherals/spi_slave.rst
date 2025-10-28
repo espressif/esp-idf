@@ -258,6 +258,10 @@ Restrictions and Known Issues
 
     If DMA is enabled, a Device's launch edge is half of an SPI clock cycle ahead of the normal time, shifting to the Master's actual latch edge. In this case, if the GPIO matrix is bypassed, the hold time for data sampling is 68.75 ns and no longer a half of an SPI clock cycle. If the GPIO matrix is used, the hold time will increase to 93.75 ns. The Host should sample the data immediately at the latch edge or communicate in SPI modes 1 or 3. If your Host cannot meet these timing requirements, initialize your Device without DMA.
 
+    3. ESP32 SPI Slave **still** outputs the level 0/1 on the MISO pin even when the CS line is not asserted, which may cause other devices on the bus to output incorrect data. The solution is:
+
+      1) Use a separate bus for the ESP32 SPI Slave, not sharing it with other devices.
+      2) Add a buffer chip between the ESP32 SPI MISO pin and the bus, such as 74HC125.
 
 Application Examples
 --------------------

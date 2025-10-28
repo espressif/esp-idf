@@ -283,6 +283,10 @@ config SOC_LP_VAD_SUPPORTED
     bool
     default y
 
+config SOC_LP_MAILBOX_SUPPORTED
+    bool
+    default y
+
 config SOC_SPIRAM_SUPPORTED
     bool
     default y
@@ -835,19 +839,11 @@ config SOC_LP_I2C_FIFO_LEN
     int
     default 16
 
-config SOC_I2S_NUM
-    int
-    default 3
-
 config SOC_I2S_HW_VERSION_2
     bool
     default y
 
 config SOC_I2S_SUPPORTS_ETM
-    bool
-    default y
-
-config SOC_I2S_SUPPORTS_XTAL
     bool
     default y
 
@@ -899,14 +895,6 @@ config SOC_I2S_PDM_MAX_RX_LINES
     int
     default 4
 
-config SOC_I2S_TDM_FULL_DATA_WIDTH
-    bool
-    default y
-
-config SOC_I2S_SUPPORT_SLEEP_RETENTION
-    bool
-    default y
-
 config SOC_LP_I2S_NUM
     int
     default 1
@@ -915,7 +903,15 @@ config SOC_ISP_BF_SUPPORTED
     bool
     default y
 
+config SOC_ISP_BLC_SUPPORTED
+    bool
+    default y
+
 config SOC_ISP_CCM_SUPPORTED
+    bool
+    default y
+
+config SOC_ISP_COLOR_SUPPORTED
     bool
     default y
 
@@ -927,15 +923,11 @@ config SOC_ISP_DVP_SUPPORTED
     bool
     default y
 
-config SOC_ISP_SHARPEN_SUPPORTED
-    bool
-    default y
-
-config SOC_ISP_COLOR_SUPPORTED
-    bool
-    default y
-
 config SOC_ISP_LSC_SUPPORTED
+    bool
+    default y
+
+config SOC_ISP_SHARPEN_SUPPORTED
     bool
     default y
 
@@ -970,6 +962,14 @@ config SOC_ISP_AF_CTLR_NUMS
 config SOC_ISP_AF_WINDOW_NUMS
     int
     default 3
+
+config SOC_ISP_AWB_WINDOW_X_NUMS
+    int
+    default 5
+
+config SOC_ISP_AWB_WINDOW_Y_NUMS
+    int
+    default 5
 
 config SOC_ISP_BF_TEMPLATE_X_NUMS
     int
@@ -1575,6 +1575,10 @@ config SOC_SPI_MEM_SUPPORT_CACHE_32BIT_ADDR_MAP
     bool
     default y
 
+config SOC_SPI_MEM_SUPPORT_TSUS_TRES_SEPERATE_CTR
+    bool
+    default y
+
 config SOC_SPI_PERIPH_SUPPORT_CONTROL_DUMMY_OUT
     bool
     default y
@@ -1659,10 +1663,6 @@ config SOC_TOUCH_SENSOR_VERSION
     int
     default 3
 
-config SOC_TOUCH_SENSOR_NUM
-    int
-    default 14
-
 config SOC_TOUCH_MIN_CHAN_ID
     int
     default 1
@@ -1690,14 +1690,6 @@ config SOC_TOUCH_SUPPORT_PROX_SENSING
 config SOC_TOUCH_PROXIMITY_CHANNEL_NUM
     int
     default 3
-
-config SOC_TOUCH_PROXIMITY_MEAS_DONE_SUPPORTED
-    bool
-    default y
-
-config SOC_TOUCH_SUPPORT_FREQ_HOP
-    bool
-    default y
 
 config SOC_TOUCH_SAMPLE_CFG_NUM
     int

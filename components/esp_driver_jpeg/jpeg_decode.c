@@ -382,6 +382,7 @@ static void cfg_desc(jpeg_decoder_handle_t decoder_engine, dma2d_descriptor_t *d
     dsc->next       = next_dsc;
     esp_err_t ret = esp_cache_msync((void*)dsc, decoder_engine->dma_desc_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_INVALIDATE);
     assert(ret == ESP_OK);
+    (void)ret;
 }
 
 static esp_err_t jpeg_dec_config_dma_descriptor(jpeg_decoder_handle_t decoder_engine)

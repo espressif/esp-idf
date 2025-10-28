@@ -54,7 +54,7 @@ The ``idf.py`` command-line tool provides a front-end for easily managing your p
 
 - CMake_, which configures the project to be built
 - Ninja_ which builds the project
-- `esptool.py`_ for flashing the target.
+- `esptool`_ for flashing the target.
 
 For more details about configuring the build system using ``idf.py``, please refer to :doc:`IDF Frontend <tools/idf-py>`.
 
@@ -605,6 +605,7 @@ To avoid duplication, every component automatically requires some "common" IDF c
 
 The list of common components is: cxx, esp_libc, freertos, esp_hw_support, heap, log, soc, hal, esp_rom, esp_common, esp_system, xtensa/riscv.
 
+.. _including-components-in-the-build:
 
 Including Components in the Build
 ---------------------------------
@@ -718,7 +719,7 @@ Project_include.cmake
 
 For components that have build requirements that must be evaluated before any component CMakeLists files are evaluated, you can create a file called ``project_include.cmake`` in the component directory. This CMake file is included when ``project.cmake`` is evaluating the entire project.
 
-``project_include.cmake`` files are used inside ESP-IDF, for defining project-wide build features such as ``esptool.py`` command line arguments and the ``bootloader`` "special app".
+``project_include.cmake`` files are used inside ESP-IDF, for defining project-wide build features such as ``esptool`` command line arguments and the ``bootloader`` "special app".
 
 Unlike component ``CMakeLists.txt`` files, when including a ``project_include.cmake`` file the current source directory (``CMAKE_CURRENT_SOURCE_DIR`` and working directory) is the project directory. Use the variable ``COMPONENT_DIR`` for the absolute directory of the component.
 
@@ -1109,7 +1110,7 @@ You can find more detailed information on how the project configuration works in
 Flash Arguments
 ===============
 
-There are some scenarios that we want to flash the target board without IDF. For this case we want to save the built binaries, esptool.py and esptool write_flash arguments. It's simple to write a script to save binaries and esptool.py.
+There are some scenarios that we want to flash the target board without IDF. For this case we want to save the built binaries, esptool and esptool write-flash arguments. It's simple to write a script to save binaries and esptool.
 
 After running a project build, the build directory contains binary output files (``.bin`` files) for the project and also the following flashing data files:
 
@@ -1119,9 +1120,9 @@ After running a project build, the build directory contains binary output files 
 
 .. highlight:: bash
 
-You can pass any of these flasher argument files to ``esptool.py`` as follows::
+You can pass any of these flasher argument files to ``esptool`` as follows::
 
-  python esptool.py --chip esp32 write_flash @build/flash_project_args
+  esptool --chip esp32 write-flash @build/flash_project_args
 
 Alternatively, it is possible to manually copy the parameters from the argument file and pass them on the command line.
 
@@ -1155,7 +1156,7 @@ Here is an example minimal "pure CMake" component CMakeLists file for a componen
 
   target_include_directories(json PUBLIC cJSON)
 
-- This is actually an equivalent declaration to the IDF ``json`` component :idf_file:`/components/json/CMakeLists.txt`.
+- This is actually an equivalent declaration to the `espressif/cjson <https://github.com/espressif/idf-extra-components/tree/master/cjson>`_ managed component.
 - This file is quite simple as there are not a lot of source files. For components with a large number of files, the globbing behavior of ESP-IDF's component logic can make the component CMakeLists style simpler.)
 - Any time a component adds a library target with the component name, the ESP-IDF build system will automatically add this to the build, expose public include directories, etc. If a component wants to add a library target with a different name, dependencies will need to be added manually via CMake commands.
 
@@ -1567,7 +1568,7 @@ For integration into IDEs and other build systems, when CMake runs the build pro
 
 - ``compile_commands.json`` is a standard format JSON file which describes every source file which is compiled in the project. A CMake feature generates this file, and many IDEs know how to parse it.
 - ``project_description.json`` contains some general information about the ESP-IDF project, configured paths, etc.
-- ``flasher_args.json`` contains esptool.py arguments to flash the project's binary files. There are also ``flash_*_args`` files which can be used directly with esptool.py. See `Flash arguments`_.
+- ``flasher_args.json`` contains esptool arguments to flash the project's binary files. There are also ``flash_*_args`` files which can be used directly with esptool. See `Flash arguments`_.
 - ``CMakeCache.txt`` is the CMake cache file which contains other information about the CMake process, toolchain, etc.
 - ``config/sdkconfig.json`` is a JSON-formatted version of the project configuration values.
 - ``config/kconfig_menus.json`` is a JSON-formatted version of the menus shown in menuconfig, for use in external IDE UIs.
@@ -1750,7 +1751,7 @@ Application Examples
 .. _esp-idf-template: https://github.com/espressif/esp-idf-template
 .. _cmake: https://cmake.org
 .. _ninja: https://ninja-build.org
-.. _esptool.py: https://github.com/espressif/esptool/#readme
+.. _esptool: https://github.com/espressif/esptool/#readme
 .. _CMake v3.22 documentation: https://cmake.org/cmake/help/v3.22/index.html
 .. _cmake command line documentation: https://cmake.org/cmake/help/v3.22/manual/cmake.1.html#options
 .. _cmake add_library: https://cmake.org/cmake/help/v3.22/command/add_library.html

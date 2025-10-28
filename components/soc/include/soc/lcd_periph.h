@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,7 @@
 
 #include "soc/soc_caps.h"
 #include "soc/periph_defs.h"
+#include "soc/soc_caps_full.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -16,7 +17,7 @@ extern "C" {
 #if SOC_LCDCAM_I80_LCD_SUPPORTED
 typedef struct {
     struct {
-        const periph_module_t module;
+        const shared_periph_module_t module;
         const int irq_id;
         const int data_sigs[SOC_LCDCAM_I80_BUS_WIDTH];
         const int cs_sig;
@@ -31,7 +32,7 @@ extern const lcd_i80_signal_conn_t lcd_periph_i80_signals;
 #if SOC_LCDCAM_RGB_LCD_SUPPORTED
 typedef struct {
     struct {
-        const periph_module_t module;
+        const shared_periph_module_t module;
         const int irq_id;
         const int data_sigs[SOC_LCDCAM_RGB_DATA_WIDTH];
         const int hsync_sig;
@@ -48,9 +49,8 @@ extern const lcd_rgb_signal_conn_t lcd_periph_rgb_signals;
 #if SOC_I2S_SUPPORTS_LCD_CAMERA
 typedef struct {
     struct {
-        const periph_module_t module;
         const int irq_id;
-        const int data_sigs[SOC_I2S_MAX_DATA_WIDTH];
+        const int data_sigs[SOC_MODULE_ATTR(I2S, MAX_DATA_WIDTH)];
         const int wr_sig;
     } buses[SOC_LCD_I80_BUSES];
 } lcd_i2s_signal_conn_t;

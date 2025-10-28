@@ -999,7 +999,6 @@ static esp_err_t lcd_rgb_panel_init_trans_link(esp_rgb_panel_t *rgb_panel)
         size_t buffer_alignment = rgb_panel->int_mem_align;
         size_t num_dma_nodes_per_bounce_buffer = esp_dma_calculate_node_count(rgb_panel->bb_size, buffer_alignment, LCD_DMA_DESCRIPTOR_BUFFER_MAX_SIZE);
         gdma_link_list_config_t link_cfg = {
-            .buffer_alignment = buffer_alignment,
             .item_alignment = LCD_GDMA_DESCRIPTOR_ALIGN,
             .num_items = num_dma_nodes_per_bounce_buffer * RGB_LCD_PANEL_BOUNCE_BUF_NUM,
             .flags = {
@@ -1011,6 +1010,7 @@ static esp_err_t lcd_rgb_panel_init_trans_link(esp_rgb_panel_t *rgb_panel)
         gdma_buffer_mount_config_t mount_cfgs[RGB_LCD_PANEL_BOUNCE_BUF_NUM] = {0};
         for (int i = 0; i < RGB_LCD_PANEL_BOUNCE_BUF_NUM; i++) {
             mount_cfgs[i].buffer = rgb_panel->bounce_buffer[i];
+            mount_cfgs[i].buffer_alignment = buffer_alignment;
             mount_cfgs[i].length = rgb_panel->bb_size;
             mount_cfgs[i].flags.mark_eof = true; // we use the DMA EOF interrupt to copy the frame buffer (partially) to the bounce buffer
         }
@@ -1019,7 +1019,6 @@ static esp_err_t lcd_rgb_panel_init_trans_link(esp_rgb_panel_t *rgb_panel)
 #if RGB_LCD_NEEDS_SEPARATE_RESTART_LINK
         // create restart link
         gdma_link_list_config_t restart_link_cfg = {
-            .buffer_alignment = buffer_alignment,
             .item_alignment = LCD_GDMA_DESCRIPTOR_ALIGN,
             .num_items = 1, // the restart link only contains one node
             .flags = {
@@ -1029,6 +1028,7 @@ static esp_err_t lcd_rgb_panel_init_trans_link(esp_rgb_panel_t *rgb_panel)
         ESP_RETURN_ON_ERROR(gdma_new_link_list(&restart_link_cfg, &rgb_panel->dma_restart_link), TAG, "create DMA restart link list failed");
         gdma_buffer_mount_config_t restart_buffer_mount_cfg = {
             .buffer = rgb_panel->bounce_buffer[0] + restart_skip_bytes,
+            .buffer_alignment = buffer_alignment,
             .length = MIN(LCD_DMA_DESCRIPTOR_BUFFER_MAX_SIZE, rgb_panel->bb_size) - restart_skip_bytes,
         };
         ESP_RETURN_ON_ERROR(gdma_link_mount_buffers(rgb_panel->dma_restart_link, 0, &restart_buffer_mount_cfg, 1, NULL),
@@ -1042,7 +1042,6 @@ static esp_err_t lcd_rgb_panel_init_trans_link(esp_rgb_panel_t *rgb_panel)
         size_t buffer_alignment = rgb_panel->flags.fb_in_psram ? rgb_panel->ext_mem_align : rgb_panel->int_mem_align;
         uint32_t num_dma_nodes = esp_dma_calculate_node_count(rgb_panel->fb_size, buffer_alignment, LCD_DMA_DESCRIPTOR_BUFFER_MAX_SIZE);
         gdma_link_list_config_t link_cfg = {
-            .buffer_alignment = buffer_alignment,
             .item_alignment = LCD_GDMA_DESCRIPTOR_ALIGN,
             .num_items = num_dma_nodes,
             .flags = {
@@ -1060,13 +1059,13 @@ static esp_err_t lcd_rgb_panel_init_trans_link(esp_rgb_panel_t *rgb_panel)
             ESP_RETURN_ON_ERROR(gdma_new_link_list(&link_cfg, &rgb_panel->dma_fb_links[i]), TAG, "create frame buffer DMA link failed");
             // mount bounce buffers to the DMA link list
             mount_cfg.buffer = rgb_panel->fbs[i];
+            mount_cfg.buffer_alignment = buffer_alignment;
             ESP_RETURN_ON_ERROR(gdma_link_mount_buffers(rgb_panel->dma_fb_links[i], 0, &mount_cfg, 1, NULL),
                                 TAG, "mount DMA frame buffer failed");
         }
 #if RGB_LCD_NEEDS_SEPARATE_RESTART_LINK
         // create restart link
         gdma_link_list_config_t restart_link_cfg = {
-            .buffer_alignment = buffer_alignment,
             .item_alignment = LCD_GDMA_DESCRIPTOR_ALIGN,
             .num_items = 1, // the restart link only contains one node
             .flags = {
@@ -1076,6 +1075,7 @@ static esp_err_t lcd_rgb_panel_init_trans_link(esp_rgb_panel_t *rgb_panel)
         ESP_RETURN_ON_ERROR(gdma_new_link_list(&restart_link_cfg, &rgb_panel->dma_restart_link), TAG, "create DMA restart link list failed");
         gdma_buffer_mount_config_t restart_buffer_mount_cfg = {
             .buffer = rgb_panel->fbs[0] + restart_skip_bytes,
+            .buffer_alignment = buffer_alignment,
             .length = MIN(LCD_DMA_DESCRIPTOR_BUFFER_MAX_SIZE, rgb_panel->fb_size) - restart_skip_bytes,
             .flags.bypass_buffer_align_check = true, // the restart buffer may doesn't match the buffer alignment but it doesn't really matter in this case
         };

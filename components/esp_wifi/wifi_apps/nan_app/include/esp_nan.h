@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -67,13 +67,12 @@ esp_err_t esp_wifi_nan_stop(void);
   * @attention  This API should be called after esp_wifi_nan_start().
   *
   * @param      publish_cfg  Configuration parameters for publishing a service.
-  * @param      ndp_resp_needed Setting this true will require user response for every NDP Req using esp_wifi_nan_datapath_resp API.
   *
   * @return
   *    - non-zero: Publish service identifier
   *    - zero: failed
   */
-uint8_t esp_wifi_nan_publish_service(const wifi_nan_publish_cfg_t *publish_cfg, bool ndp_resp_needed);
+uint8_t esp_wifi_nan_publish_service(const wifi_nan_publish_cfg_t *publish_cfg);
 
 /**
   * @brief      Subscribe for a service within the NAN cluster
@@ -128,7 +127,7 @@ uint8_t esp_wifi_nan_datapath_req(wifi_nan_datapath_req_t *req);
 /**
   * @brief      Respond to a NAN Datapath request with Accept or Reject
   *
-  * @attention  This API should be called if ndp_resp_needed is set True by the Publisher and
+  * @attention  This API should be called if ndp_resp_needed is set 1 in wifi_nan_publish_cfg_t and
   *             a WIFI_EVENT_NDP_INDICATION event is received due to an incoming NDP request.
   *
   * @param      resp  NAN Datapath Response parameters.

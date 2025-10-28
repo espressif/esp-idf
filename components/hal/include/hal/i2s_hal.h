@@ -16,7 +16,7 @@
 #pragma once
 
 #include "soc/soc_caps.h"
-#if SOC_I2S_SUPPORTED
+#if SOC_HAS(I2S)
 #include "hal/i2s_types.h"
 #include "hal/i2s_ll.h"
 #endif
@@ -25,7 +25,7 @@
 extern "C" {
 #endif
 
-#if SOC_I2S_SUPPORTED
+#if SOC_HAS(I2S)
 /**
  * @brief General slot configuration information
  * @note It is a general purpose struct, not supposed to be used directly by user
@@ -138,7 +138,7 @@ typedef struct {
  * @brief Init I2S hal context
  *
  * @param hal Context of the HAL layer
- * @param port_id The I2S port number, the max port number is (SOC_I2S_NUM -1)
+ * @param port_id The I2S port number, the max port number is (SOC_I2S_ATTR(INST_NUM) -1)
  */
 void i2s_hal_init(i2s_hal_context_t *hal, int port_id);
 

@@ -35,7 +35,7 @@
 #include "hal/uart_hal.h"
 #endif
 
-static __attribute__((unused)) const char *TAG = "sleep";
+ESP_LOG_ATTR_TAG(TAG, "sleep");
 
 static DRAM_ATTR  sleep_cpu_retention_t s_cpu_retention;
 

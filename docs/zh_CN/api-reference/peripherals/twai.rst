@@ -16,7 +16,7 @@ TWAI 是一种适用于汽车和工业应用的高可靠性的多主机实时串
 
 .. only:: SOC_TWAI_SUPPORT_FD
 
-    {IDF_TARGET_NAME} TWAI 控制器兼容 ISO11898-1 FD 格式帧，可以发送和接收经典格式和 FD 格式帧。
+    {IDF_TARGET_NAME} TWAI 控制器兼容 ISO11898-1 FD (a.k.a. CAN FD) 格式帧，可以发送和接收经典格式和 FD 格式帧。
 
 .. only:: not SOC_TWAI_SUPPORT_FD
 
@@ -89,12 +89,6 @@ TWAI 是一种适用于汽车和工业应用的高可靠性的多主机实时串
     - :cpp:member:`twai_onchip_node_config_t::flags::enable_loopback` 使能自收发模式，节点会收到自己发送的报文（如果配置了过滤器则还需要符合过滤规则），同时也会发送到总线。
     - :cpp:member:`twai_onchip_node_config_t::flags::enable_listen_only` 配置为监听模式，节点只接收，不发送任何显性位，包括 ACK 和错误帧。
     - :cpp:member:`twai_onchip_node_config_t::flags::no_receive_rtr` 使用过滤器时是否同时过滤掉符合 ID 规则的远程帧。
-
-.. only:: esp32c5
-
-    .. note::
-
-        注意： ESP32C5 的监听模式在总线上有多个节点相互发送 ACK 信号时无法正常工作。一种替代方案是使用本身支持监听模式的收发器（例如 TJA1145），并结合启用自测模式。
 
 函数 :cpp:func:`twai_node_enable` 将启动 TWAI 控制器，此时 TWAI 控制器就连接到了总线，可以向总线发送报文。如果收到了总线上其他节点发送的报文，或者检测到了总线错误，也将产生相应事件。
 

@@ -23,6 +23,7 @@
     - AE：自动曝光
     - HIST：直方图
     - BF：拜耳域降噪
+    - BLC：黑电平校正
     - LSC：镜头阴影校正
     - CCM：色彩校正矩阵
 
@@ -46,7 +47,7 @@ ISP 流水线
         isp_chs [label = "对比度 &\n 色调 & 饱和度", width = 150, height = 70];
         isp_yuv [label = "YUV 限制\n YUB2RGB", width = 120, height = 70];
 
-        isp_header -> BF -> LSC -> 去马赛克 -> CCM -> gamma 校正 -> RGB 转 YUV -> 锐化 -> isp_chs -> isp_yuv -> isp_tail;
+        isp_header -> BLC -> BF -> LSC -> 去马赛克 -> CCM -> gamma 校正 -> RGB 转 YUV -> 锐化 -> isp_chs -> isp_yuv -> isp_tail;
 
         LSC -> HIST
         去马赛克 -> AWB
@@ -70,6 +71,7 @@ ISP 驱动程序提供以下服务：
 - :ref:`isp-ae-statistics` - 涵盖如何单次或连续获取 AE 统计信息。
 - :ref:`isp-hist-statistics` - 涵盖如何单次或连续获取直方图统计信息。
 - :ref:`isp-bf` - 涵盖如何启用和配置 BF 功能。
+- :ref:`isp-blc` - 涵盖如何启用和配置 BLC 功能。
 - :ref:`isp-lsc` - 涵盖如何启用和配置 LSC 功能。
 - :ref:`isp-ccm-config` - 涵盖如何配置 CCM。
 - :ref:`isp-demosaic` - 涵盖如何配置去马赛克功能。
@@ -517,6 +519,64 @@ ISP BF 控制器
 调用 :cpp:func:`esp_isp_bf_disable` 函数会执行相反的操作，即将驱动程序恢复到 **init** 状态。
 
 
+.. _isp-blc:
+
+ISP BLC 控制器
+~~~~~~~~~~~~~~
+
+黑电平校正 (BLC) 旨在解决因相机传感器中光线折射不均而引起的问题。
+
+可调用 :cpp:func:`esp_isp_blc_configure` 函数配置 BLC 模块以进行校正。
+
+.. code-block:: c
+
+    esp_isp_blc_config_t blc_config = {
+        .window = {
+            .top_left = {
+                .x = 0,
+                .y = 0,
+            },
+            .btm_right = {
+                .x = CONFIG_EXAMPLE_MIPI_CSI_DISP_HRES,
+                .y = CONFIG_EXAMPLE_MIPI_CSI_DISP_VRES,
+            },
+        },
+        .filter_enable = true,
+        .filter_threshold = {
+            .top_left_chan_thresh = 128,
+            .top_right_chan_thresh = 128,
+            .bottom_left_chan_thresh = 128,
+            .bottom_right_chan_thresh = 128,
+        },
+        .stretch = {
+            .top_left_chan_stretch_en = true,
+            .top_right_chan_stretch_en = true,
+            .bottom_left_chan_stretch_en = true,
+            .bottom_right_chan_stretch_en = true,
+        },
+    };
+    ESP_ERROR_CHECK(esp_isp_blc_configure(isp_proc, &blc_config));
+    ESP_ERROR_CHECK(esp_isp_blc_enable(isp_proc));
+
+调用 :cpp:func:`esp_isp_blc_configure` 后，需要通过调用 :cpp:func:`esp_isp_blc_enable` 来启用 ISP BLC 控制器。此函数：
+
+* 将驱动程序状态从 **init** 切换到 **enable**。
+
+调用 :cpp:func:`esp_isp_blc_disable` 函数会执行相反的操作，即将驱动程序恢复到 **init** 状态。
+
+调用 :cpp:func:`esp_isp_blc_set_correction_offset` 函数来设置 BLC 校正偏移量。
+
+.. code-block:: c
+
+    esp_isp_blc_offset_t blc_offset = {
+        .top_left_chan_offset = 20,
+        .top_right_chan_offset = 20,
+        .bottom_left_chan_offset = 20,
+        .bottom_right_chan_offset = 20,
+    };
+    ESP_ERROR_CHECK(esp_isp_blc_set_correction_offset(isp_proc, &blc_offset));
+
+
 .. _isp-lsc:
 
 ISP LSC 控制器
@@ -565,7 +625,7 @@ ISP 色彩控制器
 {IDF_TARGET_SOC_ISP_COLOR_SATURATION_MAX:default="1.0", esp32p4="1.0"}
 {IDF_TARGET_SOC_ISP_COLOR_SATURATION_DEFAULT:default="1.0", esp32p4="1.0"}
 
-{IDF_TARGET_SOC_ISP_COLOR_HUE_MAX:default="360", esp32p4="360"}
+{IDF_TARGET_SOC_ISP_COLOR_HUE_MAX:default="359", esp32p4="359"}
 {IDF_TARGET_SOC_ISP_COLOR_HUE_DEFAULT:default="0", esp32p4="0"}
 
 {IDF_TARGET_SOC_ISP_COLOR_BRIGHTNESS_MIN:default="-127", esp32p4="-127"}
@@ -861,6 +921,7 @@ API 参考
 .. include-build-file:: inc/isp_ae.inc
 .. include-build-file:: inc/isp_awb.inc
 .. include-build-file:: inc/isp_bf.inc
+.. include-build-file:: inc/isp_blc.inc
 .. include-build-file:: inc/isp_lsc.inc
 .. include-build-file:: inc/isp_ccm.inc
 .. include-build-file:: inc/isp_demosaic.inc

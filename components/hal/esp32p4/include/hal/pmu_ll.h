@@ -493,6 +493,11 @@ FORCE_INLINE_ATTR void pmu_ll_hp_clear_reject_cause(pmu_dev_t *hw)
     hw->wakeup.cntl4.slp_reject_cause_clr = 1;
 }
 
+FORCE_INLINE_ATTR void pmu_ll_hp_enable_sw_intr(pmu_dev_t *hw, bool enable)
+{
+    hw->hp_ext.int_ena.sw = enable;
+}
+
 FORCE_INLINE_ATTR bool pmu_ll_hp_is_sleep_wakeup(pmu_dev_t *hw)
 {
     return (hw->hp_ext.int_raw.wakeup == 1);
@@ -501,6 +506,16 @@ FORCE_INLINE_ATTR bool pmu_ll_hp_is_sleep_wakeup(pmu_dev_t *hw)
 FORCE_INLINE_ATTR bool pmu_ll_hp_is_sleep_reject(pmu_dev_t *hw)
 {
     return (hw->hp_ext.int_raw.reject == 1);
+}
+
+FORCE_INLINE_ATTR void pmu_ll_lp_trigger_sw_intr(pmu_dev_t *hw)
+{
+    hw->hp_lp_cpu_comm.lp_trigger_hp = 1;
+}
+
+FORCE_INLINE_ATTR void pmu_ll_hp_trigger_sw_intr(pmu_dev_t *hw)
+{
+    hw->hp_lp_cpu_comm.hp_trigger_lp = 1;
 }
 
 FORCE_INLINE_ATTR void pmu_ll_hp_clear_sw_intr_status(pmu_dev_t *hw)

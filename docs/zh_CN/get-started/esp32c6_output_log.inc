@@ -3,47 +3,30 @@
 .. code-block:: none
 
     ...
-    esptool esp32c6 -p /dev/ttyUSB0 -b 460800 --before=default_reset --after=hard_reset --no-stub write_flash --flash_mode dio --flash_freq 80m --flash_size 2MB 0x0 bootloader/bootloader.bin 0x10000 hello_world.bin 0x8000 partition_table/partition-table.bin
-    esptool.py v4.3
-    Serial port /dev/ttyUSB0
-    Connecting....
-    Chip is ESP32-C6 (revision v0.0)
-    Features: WiFi 6, BT 5
-    Crystal is 40MHz
-    MAC: 60:55:f9:f6:01:38
-    Changing baud rate to 460800
+    esptool --chip esp32c6 -p /dev/ttyUSB0 -b 460800 --before=default-reset --after=hard-reset write-flash --flash-mode dio --flash-freq 80m --flash-size 2MB 0x0 bootloader/bootloader.bin 0x8000 partition_table/partition-table.bin 0x10000 hello_world.bin
+    esptool v5.0.2
+    Connected to ESP32-C6 on /dev/ttyUSB0:
+    Chip type:          ESP32-C6 (QFN40) (revision v0.0)
+    Features:           Wi-Fi 6, BT 5 (LE), IEEE802.15.4, Single Core + LP Core, 160MHz
+    Crystal frequency:  40MHz
+    MAC:                40:4c:ca:ff:fe:50:bf:18
+    BASE MAC:           40:4c:ca:50:bf:18
+    MAC_EXT:            ff:fe
+
+    Stub flasher running.
+    Changing baud rate to 460800...
     Changed.
-    Enabling default SPI flash mode...
+
     Configuring flash size...
-    Flash will be erased from 0x00000000 to 0x00004fff...
-    Flash will be erased from 0x00010000 to 0x00028fff...
+    Flash will be erased from 0x00000000 to 0x00005fff...
     Flash will be erased from 0x00008000 to 0x00008fff...
-    Erasing flash...
-    Took 0.17s to erase flash block
-    Writing at 0x00000000... (5 %)
-    Writing at 0x00000c00... (23 %)
-    Writing at 0x00001c00... (47 %)
-    Writing at 0x00003000... (76 %)
-    Writing at 0x00004000... (100 %)
-    Wrote 17408 bytes at 0x00000000 in 0.5 seconds (254.6 kbit/s)...
+    Flash will be erased from 0x00010000 to 0x0002efff...
+    SHA digest in image updated.
+    Wrote 22512 bytes (13994 compressed) at 0x00000000 in 0.3 seconds (662.3 kbit/s).
     Hash of data verified.
-    Erasing flash...
-    Took 0.85s to erase flash block
-    Writing at 0x00010000... (1 %)
-    Writing at 0x00014c00... (20 %)
-    Writing at 0x00019c00... (40 %)
-    Writing at 0x0001ec00... (60 %)
-    Writing at 0x00023c00... (80 %)
-    Writing at 0x00028c00... (100 %)
-    Wrote 102400 bytes at 0x00010000 in 3.2 seconds (253.5 kbit/s)...
+    Wrote 3072 bytes (103 compressed) at 0x00008000 in 0.0 seconds (630.2 kbit/s).
     Hash of data verified.
-    Erasing flash...
-    Took 0.04s to erase flash block
-    Writing at 0x00008000... (33 %)
-    Writing at 0x00008400... (66 %)
-    Writing at 0x00008800... (100 %)
-    Wrote 3072 bytes at 0x00008000 in 0.1 seconds (269.0 kbit/s)...
+    Wrote 122976 bytes (63916 compressed) at 0x00010000 in 0.9 seconds (1087.1 kbit/s).
     Hash of data verified.
 
-    Leaving...
     Hard resetting via RTS pin...

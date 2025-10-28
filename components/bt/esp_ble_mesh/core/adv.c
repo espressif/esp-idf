@@ -2,7 +2,7 @@
 
 /*
  * SPDX-FileCopyrightText: 2017 Intel Corporation
- * SPDX-FileContributor: 2018-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2018-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -60,6 +60,7 @@ static inline int adv_send(struct net_buf *buf)
     void *cb_data = BLE_MESH_ADV(buf)->cb_data;
     struct bt_mesh_adv_param param = {0};
     uint16_t duration = 0U, adv_int = 0U;
+    uint8_t adv_cnt = 0;
     struct bt_mesh_adv_data ad = {0};
     int err = 0;
 
@@ -69,10 +70,20 @@ static inline int adv_send(struct net_buf *buf)
 #if CONFIG_BLE_MESH_SUPPORT_BLE_ADV
     if (BLE_MESH_ADV(buf)->type != BLE_MESH_ADV_BLE) {
 #endif
-        adv_int = MAX(ADV_ITVL_MIN,
-                      BLE_MESH_TRANSMIT_INT(BLE_MESH_ADV(buf)->xmit));
-        duration = (BLE_MESH_TRANSMIT_COUNT(BLE_MESH_ADV(buf)->xmit) + 1) *
-                   (adv_int + 10);
+        if (BLE_MESH_ADV(buf)->adv_itvl != BLE_MESH_ADV_ITVL_DEFAULT) {
+            adv_int = MAX(ADV_ITVL_MIN, BLE_MESH_ADV(buf)->adv_itvl);
+        } else {
+            adv_int = MAX(ADV_ITVL_MIN,
+                        BLE_MESH_TRANSMIT_INT(BLE_MESH_ADV(buf)->xmit));
+        }
+
+        if (BLE_MESH_ADV(buf)->adv_cnt != BLE_MESH_ADV_CNT_DEFAULT) {
+            adv_cnt = BLE_MESH_ADV(buf)->adv_cnt;
+        } else {
+            adv_cnt = BLE_MESH_TRANSMIT_COUNT(BLE_MESH_ADV(buf)->xmit) + 1;
+        }
+
+        duration = adv_cnt * (adv_int + 10);
 
         BT_DBG("count %u interval %ums duration %ums",
                BLE_MESH_TRANSMIT_COUNT(BLE_MESH_ADV(buf)->xmit) + 1, adv_int,
@@ -86,10 +97,38 @@ static inline int adv_send(struct net_buf *buf)
         param.interval_min = ADV_SCAN_UNIT(adv_int);
         param.interval_max = param.interval_min;
 
+        if (BLE_MESH_ADV(buf)->channel_map) {
+            param.channel_map = BLE_MESH_ADV(buf)->channel_map;
+        } else {
+            param.channel_map = BLE_MESH_ADV_CHAN_DEFAULT;
+        }
 #if CONFIG_BLE_MESH_USE_BLE_50
-        param.adv_duration = duration;
-        param.adv_count = BLE_MESH_TRANSMIT_COUNT(BLE_MESH_ADV(buf)->xmit) + 1;
+#if CONFIG_BLE_MESH_EXT_ADV
+        if (BLE_MESH_ADV(buf)->type == BLE_MESH_ADV_EXT_PROV ||
+            BLE_MESH_ADV(buf)->type == BLE_MESH_ADV_EXT_DATA ||
+            BLE_MESH_ADV(buf)->type == BLE_MESH_ADV_EXT_RELAY_DATA
+#if CONFIG_BLE_MESH_LONG_PACKET
+            || BLE_MESH_ADV(buf)->type == BLE_MESH_ADV_EXT_LONG_PROV
+            || BLE_MESH_ADV(buf)->type == BLE_MESH_ADV_EXT_LONG_DATA
+            || BLE_MESH_ADV(buf)->type == BLE_MESH_ADV_EXT_LONG_RELAY_DATA
 #endif
+            ) {
+                param.primary_phy = EXT_ADV(buf)->primary_phy;
+                param.secondary_phy = EXT_ADV(buf)->secondary_phy;
+                param.include_tx_power = EXT_ADV(buf)->include_tx_power;
+                param.tx_power = EXT_ADV(buf)->tx_power;
+        } else
+#endif
+        {
+            param.primary_phy = BLE_MESH_ADV_PRI_PHY_DEFAULT;
+            param.secondary_phy = BLE_MESH_ADV_SEC_PHY_DEFAULT;
+            param.include_tx_power = BLE_MESH_TX_POWER_INCLUDE_DEFAULT;
+            param.tx_power = BLE_MESH_TX_POWER_DEFAULT;
+        }
+
+        param.adv_duration = duration;
+        param.adv_count = adv_cnt;
+#endif /* CONFIG_BLE_MESH_USE_BLE_50 */
 
 #if CONFIG_BLE_MESH_PROXY_SOLIC_PDU_TX
         if (BLE_MESH_ADV(buf)->type == BLE_MESH_ADV_PROXY_SOLIC) {

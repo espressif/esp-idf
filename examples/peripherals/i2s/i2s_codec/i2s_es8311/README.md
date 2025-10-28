@@ -142,7 +142,7 @@ The example have contained a piece of music in canon.pcm, if you want to play yo
 2. Install 'ffmpeg' tool
 3. Check your music format using ```ffprobe a.mp3```, you can get the stream format (e.g. Stream #0.0: Audio: mp3, 44100Hz, stereo, s16p, 64kb/s)
 4. Cut your music since there is no enough space for the whole piece of music. ```ffmpeg -i  a.mp3 -ss 00:00:00  -t  00:00:20  a_cut.mp3```
-5. Transfer the music format into .pcm. ```ffmpeg -i a_cut.mp3 -f s16ls -ar 16000 -ac -1 -acodec pcm_s16le a.pcm```
+5. Transfer the music format into .pcm. ```ffmpeg -i a_cut.mp3 -f s16le -ar 16000 -ac 2 -acodec pcm_s16le a.pcm```
 6. Move 'a.pcm' under 'main' directory
 7. Replace 'canon.pcm' with 'a.pcm' in 'CMakeLists.txt' under 'main' directory
 8. Replace '_binary_canon_pcm_start' and '_binary_canon_pcm_end' with '_binary_a_pcm_start' and '_binary_a_pcm_end' in `i2s_es8311_example.c`

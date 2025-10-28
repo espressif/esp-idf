@@ -95,7 +95,7 @@ void btc_dev_cb_arg_deep_free(btc_msg_t *msg)
 
 void btc_dev_call_handler(btc_msg_t *msg)
 {
-    BTC_TRACE_DEBUG("%s act %d\n", __FUNCTION__, msg->act);
+    BTC_TRACE_DEBUG("%s act %d", __func__, msg->act);
 
     switch (msg->act) {
 #if (ESP_COEX_VSC_INCLUDED == TRUE)
@@ -116,6 +116,8 @@ void btc_dev_call_handler(btc_msg_t *msg)
 void btc_dev_cb_handler(btc_msg_t *msg)
 {
     esp_bt_dev_cb_param_t *param = (esp_bt_dev_cb_param_t *)msg->arg;
+
+    BTC_TRACE_DEBUG("%s act %d", __func__, msg->act);
 
     if (msg->act < ESP_BT_DEV_EVT_MAX) {
         btc_dev_cb_to_app(msg->act, param);

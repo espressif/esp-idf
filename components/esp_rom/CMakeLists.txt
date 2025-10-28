@@ -55,10 +55,6 @@ if(CONFIG_SOC_SYSTIMER_SUPPORTED)
     list(APPEND sources "patches/esp_rom_systimer.c")
 endif()
 
-if(CONFIG_HAL_WDT_USE_ROM_IMPL)
-    list(APPEND sources "patches/esp_rom_wdt.c")
-endif()
-
 if(CONFIG_ESP_ROM_CLIC_INT_TYPE_PATCH)
     list(APPEND sources "patches/esp_rom_clic.c")
 endif()

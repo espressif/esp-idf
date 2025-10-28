@@ -91,11 +91,11 @@ def test_case_name(request: FixtureRequest, target: str, config: str) -> str:
 
 
 @pytest.fixture(scope='session')
-def pipeline_id(request: FixtureRequest) -> t.Optional[str]:
+def pipeline_id(request: FixtureRequest) -> str | None:
     return request.config.getoption('pipeline_id', None) or os.getenv('PARENT_PIPELINE_ID', None)  # type: ignore
 
 
-def get_pipeline_commit_sha_by_pipeline_id(pipeline_id: str) -> t.Optional[str]:
+def get_pipeline_commit_sha_by_pipeline_id(pipeline_id: str) -> str | None:
     gl = gitlab_api.Gitlab(os.getenv('CI_PROJECT_ID', 'espressif/esp-idf'))
     pipeline = gl.project.pipelines.get(pipeline_id)
     if not pipeline:
@@ -120,12 +120,12 @@ class AppDownloader:
     def __init__(
         self,
         commit_sha: str,
-        pipeline_id: t.Optional[str] = None,
+        pipeline_id: str | None = None,
     ) -> None:
         self.commit_sha = commit_sha
         self.pipeline_id = pipeline_id
 
-    def download_app(self, app_build_path: str, artifact_type: t.Optional[str] = None) -> None:
+    def download_app(self, app_build_path: str, artifact_type: str | None = None) -> None:
         args = [
             'idf-ci',
             'gitlab',
@@ -155,9 +155,9 @@ class OpenOCD:
         self.RETRY_DELAY = 1
         self.TELNET_PORT = 4444
         self.dut = dut
-        self.telnet: t.Optional[Telnet] = None
+        self.telnet: Telnet | None = None
         self.log_file = os.path.join(self.dut.logdir, 'ocd.txt')
-        self.proc: t.Optional[pexpect.spawn] = None
+        self.proc: pexpect.spawn | None = None
 
     def __enter__(self) -> 'OpenOCD':
         return self
@@ -169,7 +169,7 @@ class OpenOCD:
         desc_path = os.path.join(self.dut.app.binary_path, 'project_description.json')
 
         try:
-            with open(desc_path, 'r') as f:
+            with open(desc_path) as f:
                 project_desc = json.load(f)
         except FileNotFoundError:
             logging.error('Project description file not found at %s', desc_path)
@@ -200,7 +200,7 @@ class OpenOCD:
                 if self.proc and self.proc.isalive():
                     self.proc.expect_exact('Info : Listening on port 3333 for gdb connections', timeout=5)
                     self.connect_telnet()
-                    self.write('log_output {}'.format(self.log_file))
+                    self.write(f'log_output {self.log_file}')
                     return self
             except (pexpect.exceptions.EOF, pexpect.exceptions.TIMEOUT, ConnectionRefusedError) as e:
                 logging.error('Error running OpenOCD: %s', str(e))
@@ -258,8 +258,8 @@ def openocd_dut(dut: IdfDut) -> OpenOCD:
 
 @pytest.fixture(scope='session')
 def app_downloader(
-    pipeline_id: t.Optional[str],
-) -> t.Optional[AppDownloader]:
+    pipeline_id: str | None,
+) -> AppDownloader | None:
     if commit_sha := os.getenv('PIPELINE_COMMIT_SHA'):
         logging.debug('pipeline commit sha from CI env is %s', commit_sha)
         return AppDownloader(commit_sha, None)
@@ -283,9 +283,9 @@ def app_downloader(
 def build_dir(
     request: FixtureRequest,
     app_path: str,
-    target: t.Optional[str],
-    config: t.Optional[str],
-    app_downloader: t.Optional[AppDownloader],
+    target: str | None,
+    config: str | None,
+    app_downloader: AppDownloader | None,
 ) -> str:
     """
     Check local build dir with the following priority:
@@ -561,10 +561,10 @@ def pytest_runtest_makereport(item, call):  # type: ignore
 
         if isinstance(_dut, list):
             logs_files.extend([template.format(get_path(d.logfile)) for d in _dut])
-            dut_artifacts_url.append('{}:'.format(_dut[0].test_case_name))
+            dut_artifacts_url.append(f'{_dut[0].test_case_name}:')
         else:
             logs_files.append(template.format(get_path(_dut.logfile)))
-            dut_artifacts_url.append('{}:'.format(_dut.test_case_name))
+            dut_artifacts_url.append(f'{_dut.test_case_name}:')
 
         for file in logs_files:
             dut_artifacts_url.append('    - {}'.format(quote(file, safe=':/')))

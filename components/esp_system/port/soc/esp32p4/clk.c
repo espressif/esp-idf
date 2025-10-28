@@ -76,7 +76,7 @@
 
 static void select_rtc_slow_clk(soc_rtc_slow_clk_src_t rtc_slow_clk_src);
 
-static const char *TAG = "clk";
+ESP_LOG_ATTR_TAG(TAG, "clk");
 
 // This function must be allocated in IRAM.
 void IRAM_ATTR esp_rtc_init(void)
@@ -162,7 +162,9 @@ static void select_rtc_slow_clk(soc_rtc_slow_clk_src_t rtc_slow_clk_src)
      */
     int retry_32k_xtal = 3;
 
+    soc_rtc_slow_clk_src_t old_rtc_slow_clk_src = rtc_clk_slow_src_get();
     do {
+        bool revoke_32k_enable = false;
         if (rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_XTAL32K) {
             /* 32k XTAL oscillator needs to be enabled and running before it can
              * be used. Hardware doesn't have a direct way of checking if the
@@ -186,6 +188,7 @@ static void select_rtc_slow_clk(soc_rtc_slow_clk_src_t rtc_slow_clk_src)
                     }
                     ESP_EARLY_LOGW(TAG, "32 kHz clock not found, switching to internal 150 kHz oscillator");
                     rtc_slow_clk_src = SOC_RTC_SLOW_CLK_SRC_RC_SLOW;
+                    revoke_32k_enable = true;
                 }
             }
         } else if (rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_RC32K) {
@@ -195,7 +198,8 @@ static void select_rtc_slow_clk(soc_rtc_slow_clk_src_t rtc_slow_clk_src)
 
         // Disable unused clock sources after clock source switching is complete.
         // Regardless of the clock source selection, the internal 136K clock source will always keep on.
-        if (rtc_slow_clk_src != SOC_RTC_SLOW_CLK_SRC_XTAL32K) {
+        if (revoke_32k_enable || \
+                ((old_rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_XTAL32K) && rtc_slow_clk_src != SOC_RTC_SLOW_CLK_SRC_XTAL32K)) {
             rtc_clk_32k_enable(false);
         }
         if (rtc_slow_clk_src != SOC_RTC_SLOW_CLK_SRC_RC32K) {
@@ -258,17 +262,8 @@ __attribute__((weak)) void esp_perip_clk_init(void)
         REG_CLR_BIT(HP_SYS_CLKRST_CLK_FORCE_ON_CTRL0_REG,   HP_SYS_CLKRST_REG_CPUICM_GATED_CLK_FORCE_ON
                     | HP_SYS_CLKRST_REG_TCM_CPU_CLK_FORCE_ON
                     | HP_SYS_CLKRST_REG_BUSMON_CPU_CLK_FORCE_ON
-                    | HP_SYS_CLKRST_REG_L1CACHE_CPU_CLK_FORCE_ON
-                    | HP_SYS_CLKRST_REG_L1CACHE_D_CPU_CLK_FORCE_ON
-                    | HP_SYS_CLKRST_REG_L1CACHE_I0_CPU_CLK_FORCE_ON
-                    | HP_SYS_CLKRST_REG_L1CACHE_I1_CPU_CLK_FORCE_ON
                     | HP_SYS_CLKRST_REG_TRACE_CPU_CLK_FORCE_ON
-                    | HP_SYS_CLKRST_REG_TRACE_SYS_CLK_FORCE_ON
-                    | HP_SYS_CLKRST_REG_L1CACHE_MEM_CLK_FORCE_ON
-                    | HP_SYS_CLKRST_REG_L1CACHE_D_MEM_CLK_FORCE_ON
-                    | HP_SYS_CLKRST_REG_L1CACHE_I0_MEM_CLK_FORCE_ON
-                    | HP_SYS_CLKRST_REG_L1CACHE_I1_MEM_CLK_FORCE_ON
-                    | HP_SYS_CLKRST_REG_L2CACHE_MEM_CLK_FORCE_ON);
+                    | HP_SYS_CLKRST_REG_TRACE_SYS_CLK_FORCE_ON);
         _adc_ll_sar1_clock_force_en(false);
         _adc_ll_sar2_clock_force_en(false);
         _emac_ll_clock_force_en(false);
@@ -299,11 +294,11 @@ __attribute__((weak)) void esp_perip_clk_init(void)
         _uart_ll_enable_bus_clock(UART_NUM_4, false);
         _uart_ll_sclk_disable(&UART4);
 
-        _timer_ll_enable_bus_clock(0, false);
+        _timg_ll_enable_bus_clock(0, false);
         _timer_ll_enable_clock(0, 0, false);
         _timer_ll_enable_clock(0, 1, false);
 
-        _timer_ll_enable_bus_clock(1, false);
+        _timg_ll_enable_bus_clock(1, false);
         _timer_ll_enable_clock(1, 0, false);
         _timer_ll_enable_clock(1, 1, false);
 

@@ -48,7 +48,7 @@
 #endif
 
 // Using the same tag as in startup.c to keep the logs unchanged
-static const char* TAG = "cpu_start";
+ESP_LOG_ATTR_TAG(TAG, "cpu_start");
 
 // Hook to force the linker to include this file
 void esp_system_include_startup_funcs(void)

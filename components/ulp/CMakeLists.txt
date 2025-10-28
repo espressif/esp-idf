@@ -84,8 +84,16 @@ if(CONFIG_ULP_COPROC_TYPE_LP_CORE)
     if(CONFIG_SOC_LP_VAD_SUPPORTED)
         list(APPEND srcs "lp_core/shared/ulp_lp_core_lp_vad_shared.c")
     endif()
+
+    list(APPEND srcs "lp_core/lp_core_mailbox.c")
+    if(CONFIG_SOC_LP_MAILBOX_SUPPORTED)
+        list(APPEND srcs "lp_core/lp_core_mailbox_impl_hw.c")
+    else()
+        list(APPEND srcs "lp_core/lp_core_mailbox_impl_sw.c")
+    endif()
+
 endif()
 
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS ${includes}
-                       REQUIRES driver esp_adc)
+                       REQUIRES esp_adc esp_driver_gpio esp_driver_uart esp_driver_i2s esp_hal_i2c)

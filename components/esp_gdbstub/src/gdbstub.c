@@ -5,24 +5,22 @@
  */
 
 #include <string.h>
-#include "sys/reent.h"
+#include <sys/param.h>
+#include <sys/reent.h>
+#include "sdkconfig.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 #include "esp_gdbstub.h"
 #include "esp_gdbstub_common.h"
 #include "esp_gdbstub_memory_regions.h"
-#include "sdkconfig.h"
-#include <sys/param.h>
-
-#include "soc/soc_caps.h"
-#include "soc/uart_reg.h"
-#include "soc/periph_defs.h"
 #include "esp_attr.h"
 #include "esp_cpu.h"
 #include "esp_log.h"
 #include "esp_intr_alloc.h"
+
+#include "soc/soc_caps.h"
+#include "soc/interrupts.h"
 #include "hal/wdt_hal.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "sdkconfig.h"
 
 #if GDBSTUB_QXFER_FEATURES_ENABLED
 #define GDBSTUB_QXFER_SUPPORTED_STR ";qXfer:features:read+"
@@ -124,10 +122,10 @@ static wdt_hal_context_t rtc_wdt_ctx = RWDT_HAL_CONTEXT_DEFAULT();
 static bool rtc_wdt_ctx_enabled = false;
 static wdt_hal_context_t wdt0_context = {.inst = WDT_MWDT0, .mwdt_dev = &TIMERG0};
 static bool wdt0_context_enabled = false;
-#if SOC_MODULE_ATTR(TIMG, INST_NUM) >= 2
+#if TIMG_LL_GET(INST_NUM) >= 2
 static wdt_hal_context_t wdt1_context = {.inst = WDT_MWDT1, .mwdt_dev = &TIMERG1};
 static bool wdt1_context_enabled = false;
-#endif // SOC_MODULE_ATTR(TIMG, INST_NUM)
+#endif // TIMG_LL_GET(INST_NUM)
 
 /**
  * Disable all enabled WDTs
@@ -135,7 +133,7 @@ static bool wdt1_context_enabled = false;
 static inline void disable_all_wdts(void)
 {
     wdt0_context_enabled = wdt_hal_is_enabled(&wdt0_context);
-    #if SOC_MODULE_ATTR(TIMG, INST_NUM) >= 2
+    #if TIMG_LL_GET(INST_NUM) >= 2
     wdt1_context_enabled = wdt_hal_is_enabled(&wdt1_context);
     #endif
     rtc_wdt_ctx_enabled = wdt_hal_is_enabled(&rtc_wdt_ctx);
@@ -148,7 +146,7 @@ static inline void disable_all_wdts(void)
         wdt_hal_write_protect_enable(&wdt0_context);
     }
 
-    #if SOC_MODULE_ATTR(TIMG, INST_NUM) >= 2
+    #if TIMG_LL_GET(INST_NUM) >= 2
     /* Interrupt WDT is the Main Watchdog Timer of Timer Group 1 */
     if (true == wdt1_context_enabled) {
         wdt_hal_write_protect_disable(&wdt1_context);
@@ -156,7 +154,7 @@ static inline void disable_all_wdts(void)
         wdt_hal_feed(&wdt1_context);
         wdt_hal_write_protect_enable(&wdt1_context);
     }
-    #endif // SOC_MODULE_ATTR(TIMG, INST_NUM) >= 2
+    #endif // TIMG_LL_GET(INST_NUM) >= 2
 
     if (true == rtc_wdt_ctx_enabled) {
         wdt_hal_write_protect_disable(&rtc_wdt_ctx);
@@ -177,14 +175,14 @@ static inline void enable_all_wdts(void)
         wdt_hal_enable(&wdt0_context);
         wdt_hal_write_protect_enable(&wdt0_context);
     }
-    #if SOC_MODULE_ATTR(TIMG, INST_NUM) >= 2
+    #if TIMG_LL_GET(INST_NUM) >= 2
     /* Interrupt WDT is the Main Watchdog Timer of Timer Group 1 */
     if (false == wdt1_context_enabled) {
         wdt_hal_write_protect_disable(&wdt1_context);
         wdt_hal_enable(&wdt1_context);
         wdt_hal_write_protect_enable(&wdt1_context);
     }
-    #endif // SOC_MODULE_ATTR(TIMG, INST_NUM) >= 2
+    #endif // TIMG_LL_GET(INST_NUM) >= 2
 
     if (false == rtc_wdt_ctx_enabled) {
         wdt_hal_write_protect_disable(&rtc_wdt_ctx);

@@ -20,7 +20,7 @@ menu "Recovery Bootloader and Rollback"
             Flash address where the recovery bootloader is stored.
             This value must be written to the eFuse field (ESP_EFUSE_RECOVERY_BOOTLOADER_FLASH_SECTOR)
             to activate the recovery bootloader in the ROM bootloader. The eFuse can be programmed
-            using espefuse.py or in the user application with the API esp_efuse_set_recovery_bootloader_offset().
+            using espefuse or in the user application with the API esp_efuse_set_recovery_bootloader_offset().
             Setting this value in the config allows parttool.py to verify that it does not overlap with existing
             partitions in the partition table.
 

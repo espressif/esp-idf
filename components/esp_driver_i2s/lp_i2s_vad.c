@@ -74,7 +74,7 @@ esp_err_t lp_i2s_vad_new_unit(lp_vad_t vad_id, const lp_vad_init_config_t *init_
 err:
     bool success_free = s_vad_free(vad_id);
     assert(success_free);
-
+    (void)success_free;
     return ret;
 }
 

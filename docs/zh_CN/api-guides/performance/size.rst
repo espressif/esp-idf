@@ -194,6 +194,11 @@ ESP-IDF 的 I/O 函数（ ``printf()`` 和 ``scanf()`` 等）默认使用 Newlib
 
 .. _Newlib README 文件: https://sourceware.org/newlib/README
 
+libstdc++
+@@@@@@@@@
+
+- 启用 :ref:`CONFIG_COMPILER_CXX_GLIBCXX_CONSTEXPR_COLD_CONSTEXPR<CONFIG_COMPILER_CXX_GLIBCXX_CONSTEXPR_COLD_CONSTEXPR>` 或 :ref:`CONFIG_COMPILER_CXX_GLIBCXX_CONSTEXPR_COLD<CONFIG_COMPILER_CXX_GLIBCXX_CONSTEXPR_COLD>` 观察对应用程序二进制大小的影响。
+
 .. _minimizing_binary_mbedtls:
 
 MbedTLS 功能
@@ -223,6 +228,7 @@ MbedTLS 功能
     - 可以考虑禁用在 ``TLS Key Exchange Methods`` 子菜单中列出的一些密码套件（例如 :ref:`CONFIG_MBEDTLS_KEY_EXCHANGE_RSA`），以减小代码大小。
     - 如果应用程序已经通过使用 :cpp:func:`mbedtls_strerror` 拉取 mbedTLS 错误字符串，则可以考虑禁用 :ref:`CONFIG_MBEDTLS_ERROR_STRINGS`。
     :esp32h2: - 对于 {IDF_TARGET_NAME} v1.2 及以上版本，可以考虑禁用 :ref:`CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN_MASKING_CM` 和 :ref:`CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN_CONSTANT_TIME_CM`，因为无需再使用 ECDSA 签名的软件防护措施。
+    :SOC_AES_SUPPORT_DMA: - 如果应用程序不涉及或不需要针对小数据长度操作进行性能优化，例如在处理小数据段时进行的 NVS 加密/解密操作、TLS 通信等，可以考虑禁用 :ref:`CONFIG_MBEDTLS_AES_HW_SMALL_DATA_LEN_OPTIM`。
 
 每个选项的帮助文本中都有更多信息可供参考。
 

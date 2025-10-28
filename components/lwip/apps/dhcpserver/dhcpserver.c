@@ -50,6 +50,7 @@
 #define DHCPRELEASE   7
 
 #define DHCP_OPTION_SUBNET_MASK   1
+#define DHCP_OPTION_HOST_NAME    12
 #define DHCP_OPTION_ROUTER        3
 #define DHCP_OPTION_DNS_SERVER    6
 #define DHCP_OPTION_REQ_IPADDR   50
@@ -142,6 +143,11 @@ struct dhcps_t {
     struct udp_pcb *dhcps_pcb;
     dhcps_handle_state state;
     bool has_declined_ip;
+#if CONFIG_LWIP_DHCPS_REPORT_CLIENT_HOSTNAME
+    /* Temporary storage for option 12 parsed from the current packet */
+    char opt_hostname[CONFIG_LWIP_DHCPS_MAX_HOSTNAME_LEN];
+    bool opt_hostname_present;
+#endif
 };
 
 
@@ -462,27 +468,32 @@ static u8_t *add_offer_options(dhcps_t *dhcps, u8_t *optptr)
         }
     }
 
-    // In order of preference
-    if (dhcps_dns_enabled(dhcps->dhcps_dns)) {
-        uint8_t size = 4;
+    // Add DNS option if either main or backup DNS is set
+    if (dhcps_dns_enabled(dhcps->dhcps_dns) &&
+        (dhcps->dns_server[DNS_TYPE_MAIN].addr || dhcps->dns_server[DNS_TYPE_BACKUP].addr)) {
 
+        uint8_t size = 0;
+
+        if (dhcps->dns_server[DNS_TYPE_MAIN].addr) {
+            size += 4;
+        }
         if (dhcps->dns_server[DNS_TYPE_BACKUP].addr) {
             size += 4;
         }
 
         *optptr++ = DHCP_OPTION_DNS_SERVER;
         *optptr++ = size;
-        optptr = dhcps_option_ip(optptr, &dhcps->dns_server[DNS_TYPE_MAIN]);
 
+        if (dhcps->dns_server[DNS_TYPE_MAIN].addr) {
+            optptr = dhcps_option_ip(optptr, &dhcps->dns_server[DNS_TYPE_MAIN]);
+        }
         if (dhcps->dns_server[DNS_TYPE_BACKUP].addr) {
             optptr = dhcps_option_ip(optptr, &dhcps->dns_server[DNS_TYPE_BACKUP]);
         }
-#ifdef CONFIG_LWIP_DHCPS_ADD_DNS
     } else {
         *optptr++ = DHCP_OPTION_DNS_SERVER;
         *optptr++ = 4;
         optptr = dhcps_option_ip(optptr, &ipadd);
-#endif /* CONFIG_LWIP_DHCPS_ADD_DNS */
     }
 
     ip4_addr_t broadcast_addr = { .addr = (ipadd.addr & dhcps->dhcps_mask.addr) | ~dhcps->dhcps_mask.addr };
@@ -923,6 +934,33 @@ static u8_t parse_options(dhcps_t *dhcps, u8_t *optptr, s16_t len)
                 type = *(optptr + 2);
                 break;
 
+#if CONFIG_LWIP_DHCPS_REPORT_CLIENT_HOSTNAME
+            case DHCP_OPTION_HOST_NAME: {
+                /* option format: code(1) len(1) value(len) */
+                u8_t olen = *(optptr + 1);
+                const u8_t *oval = optptr + 2;
+                if (olen > 0) {
+                    /* clamp to configured max, keep room for NUL */
+                    size_t copy_len = olen;
+                    if (copy_len >= CONFIG_LWIP_DHCPS_MAX_HOSTNAME_LEN) {
+                        copy_len = CONFIG_LWIP_DHCPS_MAX_HOSTNAME_LEN - 1;
+                    }
+                    size_t j = 0;
+                    for (; j < copy_len; ++j) {
+                        char c = (char)oval[j];
+                        if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '.' || c == '-' || c == '_') {
+                            dhcps->opt_hostname[j] = c;
+                        } else {
+                            dhcps->opt_hostname[j] = '-';
+                        }
+                    }
+                    dhcps->opt_hostname[j] = '\0';
+                    dhcps->opt_hostname_present = true;
+                }
+                break;
+            }
+#endif
+
             case DHCP_OPTION_REQ_IPADDR://50
                 if (memcmp((char *) &client.addr, (char *) optptr + 2, 4) == 0) {
 #if DHCPS_DEBUG
@@ -1111,7 +1149,7 @@ POOL_CHECK:
             return 4;
         }
 
-        s16_t ret = parse_options(dhcps, &m->options[4], len);;
+        s16_t ret = parse_options(dhcps, &m->options[4], len);
 
         if (ret == DHCPS_STATE_RELEASE || ret == DHCPS_STATE_NAK || ret ==  DHCPS_STATE_DECLINE) {
             if (pnode != NULL) {
@@ -1130,6 +1168,21 @@ POOL_CHECK:
             }
             memset(&dhcps->client_address, 0x0, sizeof(dhcps->client_address));
         }
+
+#if CONFIG_LWIP_DHCPS_REPORT_CLIENT_HOSTNAME
+        /* If we parsed a hostname from options and we have a lease entry, store it */
+        if (pdhcps_pool != NULL) {
+            if (dhcps->opt_hostname_present) {
+                size_t n = strnlen(dhcps->opt_hostname, CONFIG_LWIP_DHCPS_MAX_HOSTNAME_LEN);
+                if (n > 0) {
+                    memset(pdhcps_pool->hostname, 0, sizeof(pdhcps_pool->hostname));
+                    memcpy(pdhcps_pool->hostname, dhcps->opt_hostname, n);
+                } else {
+                    pdhcps_pool->hostname[0] = '\0';
+                }
+            }
+        }
+#endif
 
 #if DHCPS_DEBUG
         DHCPS_LOG("dhcps: xid changed\n");
@@ -1619,4 +1672,40 @@ err_t dhcps_dns_getserver(dhcps_t *dhcps, ip4_addr_t *dnsserver)
     return dhcps_dns_getserver_by_type(dhcps, dnsserver, DNS_TYPE_MAIN);
 }
 
+#if CONFIG_LWIP_DHCPS_REPORT_CLIENT_HOSTNAME
+bool dhcps_get_hostname_on_mac(dhcps_t *dhcps, const u8_t *mac, char *out, size_t out_len)
+{
+    if ((dhcps == NULL) || (mac == NULL) || (out == NULL) || (out_len == 0)) {
+        return false;
+    }
+    list_node *pnode = dhcps->plist;
+    while (pnode) {
+        struct dhcps_pool *pool = pnode->pnode;
+        if (memcmp(pool->mac, mac, sizeof(pool->mac)) == 0) {
+            size_t maxcpy = (out_len > 0) ? out_len - 1 : 0;
+            size_t srclen = 0;
+            /* hostname may be empty string */
+            srclen = strnlen(pool->hostname, CONFIG_LWIP_DHCPS_MAX_HOSTNAME_LEN);
+            if (maxcpy > 0) {
+                if (srclen > maxcpy) srclen = maxcpy;
+                if (srclen) memcpy(out, pool->hostname, srclen);
+                out[srclen] = '\0';
+            }
+            return true;
+        }
+        pnode = pnode->pnext;
+    }
+    return false;
+}
+#else
+bool dhcps_get_hostname_on_mac(dhcps_t *dhcps, const u8_t *mac, char *out, size_t out_len)
+{
+    LWIP_UNUSED_ARG(dhcps);
+    LWIP_UNUSED_ARG(mac);
+    if (out && out_len) {
+        out[0] = '\0';
+    }
+    return false;
+}
+#endif
 #endif // ESP_DHCPS

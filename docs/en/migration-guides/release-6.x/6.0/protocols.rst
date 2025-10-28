@@ -3,6 +3,57 @@ Protocols
 
 :link_to_translation:`zh_CN:[中文]`
 
+JSON
+----
+
+Removed Built-in JSON Component
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The built-in ``json`` component has been removed from ESP-IDF. Users should migrate to using the ``espressif/cjson`` component from the `IDF Component Manager <https://components.espressif.com/>`_.
+
+Migration Steps
+^^^^^^^^^^^^^^^
+
+1. **Remove json from CMakeLists.txt**
+
+   In your component's ``CMakeLists.txt``, remove ``json`` from the ``REQUIRES`` or ``PRIV_REQUIRES`` list:
+
+   .. code-block:: cmake
+
+       # Before
+       idf_component_register(SRCS "main.c"
+                              PRIV_REQUIRES json esp_http_server)
+
+       # After
+       idf_component_register(SRCS "main.c"
+                              PRIV_REQUIRES esp_http_server)
+
+2. **Add espressif/cjson to idf_component.yml**
+
+   Add the ``espressif/cjson`` dependency to your component's ``idf_component.yml`` file. If this file doesn't exist, create it in your component directory (e.g., ``main/idf_component.yml``):
+
+   .. code-block:: yaml
+
+       dependencies:
+         espressif/cjson: "^1.7.19"
+
+3. **No Code Changes Required**
+
+   The API remains the same. Your existing code using cJSON functions will continue to work without modifications:
+
+   .. code-block:: c
+
+       #include "cJSON.h"
+
+       // Existing code works unchanged
+       cJSON *root = cJSON_Parse(json_string);
+       cJSON *item = cJSON_GetObjectItem(root, "key");
+       cJSON_Delete(root);
+
+For more information:
+
+- `espressif/cjson component <https://components.espressif.com/components/espressif/cjson>`_
+- `cJSON on GitHub <https://github.com/espressif/idf-extra-components/tree/master/cjson>`_
 
 ESP-TLS
 -------
@@ -40,13 +91,13 @@ Since ESP-IDF version v6.0, the examples for component ``esp-modbus v1`` which i
 
 The examples below demonstrate the ESP-Modbus library of serial and TCP ports for both slave and master implementations respectively.
 
-- `mb_serial_slave - demonstrates how to use {IDF_TARGET_NAME} as a Modbus serial slave device with the esp-modbus stack, enabling an external Modbus host to read and write device parameters using the Modbus protocol. <https://github.com/espressif/esp-modbus/tree/main/examples/serial/mb_serial_slave>`__
+- `mb_serial_slave <https://github.com/espressif/esp-modbus/tree/main/examples/serial/mb_serial_slave>`__ - demonstrates how to use {IDF_TARGET_NAME} as a Modbus serial slave device with the esp-modbus stack, enabling an external Modbus host to read and write device parameters using the Modbus protocol.
 
-- `mb_serial_master - demonstrates how to use the esp-modbus stack port on {IDF_TARGET_NAME} as a Modbus serial master device, capable of reading and writing values from slave devices in a Modbus segment. <https://github.com/espressif/esp-modbus/tree/main/examples/serial/mb_serial_master>`__
+- `mb_serial_master <https://github.com/espressif/esp-modbus/tree/main/examples/serial/mb_serial_master>`__ - demonstrates how to use the esp-modbus stack port on {IDF_TARGET_NAME} as a Modbus serial master device, capable of reading and writing values from slave devices in a Modbus segment.
 
-- `mb_tcp_slave - demonstrates the esp-modbus TCP slave stack port, allowing an external Modbus host to read and write device parameters via the Modbus protocol. <https://github.com/espressif/esp-modbus/tree/main/examples/tcp/mb_tcp_slave>`__
+- `mb_tcp_slave <https://github.com/espressif/esp-modbus/tree/main/examples/tcp/mb_tcp_slave>`__ - demonstrates the esp-modbus TCP slave stack port, allowing an external Modbus host to read and write device parameters via the Modbus protocol.
 
-- `mb_tcp_master` - demonstrates how to use the esp-modbus stack port on {IDF_TARGET_NAME} as a Modbus TCP master device, capable of reading and writing values from slave devices in a Modbus network. <https://github.com/espressif/esp-modbus/tree/main/examples/tcp/mb_tcp_master>`__
+- `mb_tcp_master <https://github.com/espressif/esp-modbus/tree/main/examples/tcp/mb_tcp_master>`__ - demonstrates how to use the esp-modbus stack port on {IDF_TARGET_NAME} as a Modbus TCP master device, capable of reading and writing values from slave devices in a Modbus network.
 
 Please refer to the ``README.md`` documents of each specific example for details.
 

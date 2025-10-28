@@ -210,7 +210,7 @@ void twai_hal_start_bus_recovery(twai_hal_context_t *hal_ctx);
  * @param hal_ctx Context of the HAL layer
  * @return TX Error Counter Value
  */
-uint32_t twai_hal_get_tec(twai_hal_context_t *hal_ctx);
+uint16_t twai_hal_get_tec(twai_hal_context_t *hal_ctx);
 
 /**
  * @brief Get the value of the RX Error Counter
@@ -218,7 +218,7 @@ uint32_t twai_hal_get_tec(twai_hal_context_t *hal_ctx);
  * @param hal_ctx Context of the HAL layer
  * @return RX Error Counter Value
  */
-uint32_t twai_hal_get_rec(twai_hal_context_t *hal_ctx);
+uint16_t twai_hal_get_rec(twai_hal_context_t *hal_ctx);
 
 /**
  * @brief Check if certain HAL state flags are set

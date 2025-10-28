@@ -219,6 +219,9 @@ NVS Security Provider
 
     该组件通过工厂函数注册了特殊的安全框架，可以实现出厂即用的安全方案。在该方案中，无需使用 API 来生成、读取加密密钥（如 :cpp:func:`nvs_sec_provider_register_hmac`）。要了解 API 的使用，参考示例 :example:`security/nvs_encryption_hmac`。
 
+.. note::
+
+    如果不希望使用 :component: `nvs_sec_provider` 组件的默认实现，而使用自定义方式生成或者保护 NVS 加密密钥，请选择 :ref:`CONFIG_NVS_SEC_KEY_PROTECTION_SCHEME` -> ``CONFIG_NVS_SEC_KEY_PROTECT_NONE`` 配置项。
 
 API 参考
 -------------

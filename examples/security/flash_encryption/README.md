@@ -4,11 +4,11 @@
 # Flash Encryption
 
 The example demonstrates the flash encryption application by providing a code using FATFS and NVS partitions on a device with the flash encryption enabled.
-As the flash encryption can be enabled either in Development or Release mode, a guidance of how to use either mode is provided. 
+As the flash encryption can be enabled either in Development or Release mode, a guidance of how to use either mode is provided.
 
 The example code checks if the flash encryption feature is enabled/disabled and if enabled, it prints a status information of all the eFuses related to the flash encryption mode (Development/Release) and FLASH_CRYPT_CNT (for ESP32) or SPI_BOOT_CRYPT_CNT (for ESP32-S2 and newer targets).
 
-The example also demonstrates: 
+The example also demonstrates:
 
 1. Writing and reading encrypted partitions in the flash memory.
 2. Initialization of FATFS, formatting, writing and reading file. Both encrypted as well as non-encrypted.
@@ -118,7 +118,7 @@ Steps:
 
 1. Generate an unique flash encryption key on a host
 ```
-espsecure.py generate_flash_encryption_key example_flash_encryption_key.bin
+espsecure generate-flash-encryption-key example_flash_encryption_key.bin
 ```
 
 Alternatively, if you want to further develop the workflow, it might be useful to use all-zeroes "easy to restore" flash encryption key instead. However, never use this key in a production!
@@ -142,8 +142,8 @@ dd if=/dev/zero bs=1 count=0x96000 of=build/fat_encrypted.bin
 dd if=/dev/zero bs=1 count=0x96000 of=build/fat_not_encr.bin
 ```
 
-4. Encrypt flash artefacts on a host using flash encryption key. 
-First, figure out the offsets of particular artefacts in the flash memory, as it is one of the inputs to the encryption algorithm. 
+4. Encrypt flash artefacts on a host using flash encryption key.
+First, figure out the offsets of particular artefacts in the flash memory, as it is one of the inputs to the encryption algorithm.
 Lookup the section listing partition table in output of the command `idf.py build` i.e.
 ```
 Partition table binary generated. Contents:
@@ -170,17 +170,17 @@ The offsets of the bootloader, application code and the partition table binaries
 From the example application perspective it is necessary to encrypt every artefact except for 'nvs', 'custom_nvs' and 'fat_not_encr' partitions, as their content is expected to be plaintext.
 
 ```
-espsecure.py encrypt_flash_data --keyfile example_flash_encryption_key.bin --output build/bootloader_encrypted.bin --address 0x1000 build/bootloader/bootloader.bin
-espsecure.py encrypt_flash_data --keyfile example_flash_encryption_key.bin --output build/flash_encryption_encrypted.bin --address 0x20000 build/flash_encryption.bin
-espsecure.py encrypt_flash_data --keyfile example_flash_encryption_key.bin --output build/partition_table_encrypted.bin --address 0xd000 build/partition_table/partition-table.bin
-espsecure.py encrypt_flash_data --keyfile example_flash_encryption_key.bin --output build/storage_encrypted.bin --address 0x14000 build/storage.bin
-espsecure.py encrypt_flash_data --keyfile example_flash_encryption_key.bin --output build/sample_encryption_keys_encrypted.bin --address 0x120000 sample_encryption_keys.bin
-espsecure.py encrypt_flash_data --keyfile example_flash_encryption_key.bin --output build/fat_encrypted_encrypted.bin --address 0x127000 build/fat_encrypted.bin
+espsecure encrypt-flash-data --keyfile example_flash_encryption_key.bin --output build/bootloader_encrypted.bin --address 0x1000 build/bootloader/bootloader.bin
+espsecure encrypt-flash-data --keyfile example_flash_encryption_key.bin --output build/flash_encryption_encrypted.bin --address 0x20000 build/flash_encryption.bin
+espsecure encrypt-flash-data --keyfile example_flash_encryption_key.bin --output build/partition_table_encrypted.bin --address 0xd000 build/partition_table/partition-table.bin
+espsecure encrypt-flash-data --keyfile example_flash_encryption_key.bin --output build/storage_encrypted.bin --address 0x14000 build/storage.bin
+espsecure encrypt-flash-data --keyfile example_flash_encryption_key.bin --output build/sample_encryption_keys_encrypted.bin --address 0x120000 sample_encryption_keys.bin
+espsecure encrypt-flash-data --keyfile example_flash_encryption_key.bin --output build/fat_encrypted_encrypted.bin --address 0x127000 build/fat_encrypted.bin
 ```
 
 5. Merge all the flash artefacts into one file
 ```
-esptool.py --chip ESP32 merge_bin -o build\merged_encrypted_flash.bin --flash_mode dio --flash_size 4MB \
+esptool --chip ESP32 merge-bin -o build\merged_encrypted_flash.bin --flash-mode dio --flash-size 4MB \
 0x1000 build/bootloader_encrypted.bin \
 0xd000 build/partition_table_encrypted.bin \
 0xe000 build/nvs.bin \
@@ -196,41 +196,41 @@ Ignore the warning `Warning: Image file at 0x1000 doesn't look like an image fil
 Output flash binary file is `build\merged_encrypted_flash.bin`
 
 6. Burn the encryption key and set the efuses in ESP32-based device
-This step can be performed only once. If the workflow is using non-zero flash encryption key generated in step 1, keep the encryption key file on a safe place for future application updates. 
+This step can be performed only once. If the workflow is using non-zero flash encryption key generated in step 1, keep the encryption key file on a safe place for future application updates.
 
 ```
-espefuse.py --chip esp32 --do-not-confirm --port $PORT burn_key flash_encryption example_flash_encryption_key.bin
-espefuse.py --chip esp32 --do-not-confirm --port $PORT burn_efuse FLASH_CRYPT_CONFIG 0xf
-espefuse.py --chip esp32 --do-not-confirm --port $PORT burn_efuse FLASH_CRYPT_CNT 127
+espefuse --chip esp32 --do-not-confirm --port $PORT burn-key flash_encryption example_flash_encryption_key.bin
+espefuse --chip esp32 --do-not-confirm --port $PORT burn-efuse FLASH_CRYPT_CONFIG 0xf
+espefuse --chip esp32 --do-not-confirm --port $PORT burn-efuse FLASH_CRYPT_CNT 127
 ```
 
 7. Burn security eFuses
-WARNING: This step can be performed only once! 
+WARNING: This step can be performed only once!
 ```
-espefuse.py --chip esp32 --do-not-confirm --port $PORT burn_efuse DISABLE_DL_ENCRYPT 0x1
-espefuse.py --chip esp32 --do-not-confirm --port $PORT burn_efuse DISABLE_DL_DECRYPT 0x1
-espefuse.py --chip esp32 --do-not-confirm --port $PORT burn_efuse DISABLE_DL_CACHE 0x1
-espefuse.py --chip esp32 --do-not-confirm --port $PORT burn_efuse JTAG_DISABLE 0x1
+espefuse --chip esp32 --do-not-confirm --port $PORT burn-efuse DISABLE_DL_ENCRYPT 0x1
+espefuse --chip esp32 --do-not-confirm --port $PORT burn-efuse DISABLE_DL_DECRYPT 0x1
+espefuse --chip esp32 --do-not-confirm --port $PORT burn-efuse DISABLE_DL_CACHE 0x1
+espefuse --chip esp32 --do-not-confirm --port $PORT burn-efuse JTAG_DISABLE 0x1
 ```
 
 8. Flash the image to the ESP32-based device
 ```
-python -m esptool --chip esp32 --port $PORT -b 460800 write_flash --force --flash_mode dio \
---flash_size 4MB --flash_freq 40m \
+esptool --chip esp32 --port $PORT -b 460800 write-flash --force --flash-mode dio \
+--flash-size 4MB --flash-freq 40m \
 0x0000 build\merged_encrypted_flash.bin
 ```
 
-9. Monitor the output, then reset the device 
+9. Monitor the output, then reset the device
 ```
 idf.py --port $PORT monitor
 ```
 
 10. You can verify the efuse settings using
 ```
-espefuse.py --chip esp32 --port $PORT summary
+espefuse --chip esp32 --port $PORT summary
 ```
 
-For subsequent application update, only steps 4,5,8 are required. 
+For subsequent application update, only steps 4,5,8 are required.
 
 
 ## Example Output
@@ -255,7 +255,7 @@ Reading with spi_flash_read:
 I (408) example: 0x3ffb4da0   00 01 02 03 04 05 06 07  08 09 0a 0b 0c 0d 0e 0f  |................|
 I (418) example: 0x3ffb4db0   10 11 12 13 14 15 16 17  18 19 1a 1b 1c 1d 1e 1f  |................|
 ....
-I (509) example: FAT partition "fat_not_encr" is not encrypted. Size is (0x96000 bytes) 
+I (509) example: FAT partition "fat_not_encr" is not encrypted. Size is (0x96000 bytes)
 ....
 I (3429) example: Read partition using esp_flash_read until test string is found
 I (3649) example: 0x3ffb4f90   74 68 65 20 71 75 69 63  6b 20 62 72 6f 77 6e 20  |the quick brown |
@@ -265,13 +265,13 @@ I (3669) example: Test string was found at offset (0x7000)
 ....
 I (3679) example: FAT partition "fat_encrypted" is not encrypted. Size is (0x96000 bytes)
 ....
-I (7099) example: Read partition using esp_flash_read at expected offset (0x7000) 
+I (7099) example: Read partition using esp_flash_read at expected offset (0x7000)
 I (7099) example: 0x3ffb4f84   74 68 65 20 71 75 69 63  6b 20 62 72 6f 77 6e 20  |the quick brown |
 I (7099) example: 0x3ffb4f94   66 6f 78 20 6a 75 6d 70  65 64 20 6f 76 65 72 20  |fox jumped over |
 I (7109) example: 0x3ffb4fa4   74 68 65 20 6c 61 7a 79  20 64 6f 67              |the lazy dog|
 I (7119) example: Data matches test string
 ```
-Note: Above, the partition `fat_encrypted` has flag `encrypted` set in partition table, but it's actual state 
+Note: Above, the partition `fat_encrypted` has flag `encrypted` set in partition table, but it's actual state
 is `not encrypted` until the flash encryption is enabled in security part of menuconfig as demonstrated below.
 After enabling flash encryption in Development mode, the output shows the process of enabling the flash encryption:
 
@@ -318,9 +318,9 @@ I (4083) example: 0x3ffb4fc0   66 6f 78 20 6a 75 6d 70  65 64 20 6f 76 65 72 20 
 I (4093) example: 0x3ffb4fd0   74 68 65 20 6c 61 7a 79  20 64 6f 67              |the lazy dog|
 I (4103) example: Test string was found at offset (0x7000)
 ....
-I (4113) example: FAT partition "fat_encrypted" is encrypted. Size is (0x96000 bytes) 
+I (4113) example: FAT partition "fat_encrypted" is encrypted. Size is (0x96000 bytes)
 ....
-I (8033) example: Read partition using esp_flash_read at expected offset (0x7000) 
+I (8033) example: Read partition using esp_flash_read at expected offset (0x7000)
 I (8033) example: 0x3ffb4fa4   a7 ea d5 a7 ed cf f6 f7  4a a2 54 a0 4f 92 73 7b  |........J.T.O.s{|
 I (8043) example: 0x3ffb4fb4   63 eb 5d fc 14 b9 da 3b  f2 be d0 94 de eb b2 dc  |c.]....;........|
 I (8053) example: 0x3ffb4fc4   38 aa 14 62 b7 23 61 7d  b6 34 43 53              |8..b.#a}.4CS|
@@ -359,9 +359,9 @@ I (3803) example_fatfs: 0x3ffb4fd0   66 6f 78 20 6a 75 6d 70  65 64 20 6f 76 65 
 I (3803) example_fatfs: 0x3ffb4fe0   74 68 65 20 6c 61 7a 79  20 64 6f 67              |the lazy dog|
 I (3813) example_fatfs: Test string was found at offset (0x7000)
 ....
-I (3823) example_fatfs: FAT partition "fat_encrypted" is encrypted. Size is (0x96000 bytes) 
+I (3823) example_fatfs: FAT partition "fat_encrypted" is encrypted. Size is (0x96000 bytes)
 ....
-I (7303) example_fatfs: Read partition using esp_flash_read at expected offset (0x7000) 
+I (7303) example_fatfs: Read partition using esp_flash_read at expected offset (0x7000)
 I (7303) example_fatfs: 0x3ffb4fb4   3b 8f f4 e1 c1 f4 73 43  d9 28 3f 57 f3 2b d2 b0  |;.....sC.(?W.+..|
 I (7313) example_fatfs: 0x3ffb4fc4   41 7a 8f 09 81 1d 92 51  74 8a ee 2a c3 64 8f 75  |Az.....Qt..*.d.u|
 I (7323) example_fatfs: 0x3ffb4fd4   61 fe 08 b6 b4 0c cb 08  5a b8 65 29              |a.......Z.e)|
@@ -375,12 +375,10 @@ I (7413) example: NVS partition "custom_nvs" is encrypted.
 
 ## Troubleshooting
 
-It is also possible to use esptool.py utility to read the eFuse values and check if flash encryption is enabled or not
+It is also possible to use espefuse utility to read the eFuse values and check if flash encryption is enabled or not
 
 ```
-python $IDF_PATH/components/esptool_py/esptool/espefuse.py --port $PORT summary
+espefuse --port $PORT summary
 ```
 
 If FLASH_CRYPT_CNT (for ESP32) or SPI_BOOT_CRYPT_CNT (for ESP32-S2 and newer targets) eFuse value is non-zero, the flash encryption is enabled
-
-

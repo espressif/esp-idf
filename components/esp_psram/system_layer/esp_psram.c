@@ -251,6 +251,7 @@ static void s_psram_mapping(uint32_t psram_available_size, uint32_t start_page)
     const void *v_start_8bit_aligned = NULL;
     ret = esp_mmu_map_reserve_block_with_caps(size_to_map, MMU_MEM_CAP_READ | MMU_MEM_CAP_WRITE | MMU_MEM_CAP_8BIT | MMU_MEM_CAP_32BIT, MMU_TARGET_PSRAM0, &v_start_8bit_aligned);
     assert(ret == ESP_OK);
+    (void)ret;
 
 #if CONFIG_IDF_TARGET_ESP32
     s_mapping((int)v_start_8bit_aligned, size_to_map);
@@ -663,6 +664,7 @@ static size_t esp_psram_get_effective_mapped_size(void)
         uint32_t psram_available_size = 0;
         esp_err_t ret = esp_psram_impl_get_available_size(&psram_available_size);
         assert(ret == ESP_OK);
+        (void)ret;
 
 #if CONFIG_SPIRAM_RODATA
         psram_available_size -= mmu_psram_get_rodata_segment_length();

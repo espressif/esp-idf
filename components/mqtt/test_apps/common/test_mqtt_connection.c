@@ -104,7 +104,7 @@ void connect_test_fixture_setup(void)
     eth_esp32_emac_config_t esp32_emac_config = ETH_ESP32_EMAC_DEFAULT_CONFIG();
     s_mac = esp_eth_mac_new_esp32(&esp32_emac_config, &mac_config);
     eth_phy_config_t phy_config = ETH_PHY_DEFAULT_CONFIG();
-    s_phy = esp_eth_phy_new_ip101(&phy_config);
+    s_phy = esp_eth_phy_new_generic(&phy_config);
     esp_eth_config_t eth_config = ETH_DEFAULT_CONFIG(s_mac, s_phy);
 
     // install Ethernet driver

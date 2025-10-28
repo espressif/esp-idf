@@ -31,7 +31,7 @@
 #define QPI_PSRAM_WRITE                0X38
 #define QPI_PSRAM_FAST_READ_DUMMY      6
 
-const static char *TAG = "MSPI Timing";
+ESP_LOG_ATTR_TAG(TAG, "MSPI Timing");
 
 //-------------------------------------FLASH timing tuning register config-------------------------------------//
 void mspi_timing_get_flash_tuning_configs(mspi_timing_config_t *config)

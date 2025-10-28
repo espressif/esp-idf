@@ -17,7 +17,6 @@
 #include "esp_timer.h"
 #include "esp_vfs.h"
 #include "esp_vfs_dev.h" // Old headers for the aliasing functions
-#include "esp_vfs_usb_serial_jtag.h" // Old headers for the aliasing functions
 #include "esp_attr.h"
 #include "esp_log.h"
 #include "sdkconfig.h"

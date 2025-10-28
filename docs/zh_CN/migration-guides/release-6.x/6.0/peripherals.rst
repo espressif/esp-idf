@@ -6,8 +6,39 @@
 公共变化
 --------
 
+旧版驱动依赖移除
+~~~~~~~~~~~~~~~~
+
+旧版驱动组件 :component:`driver` 已被弃用，不再包含对以下驱动组件的公共依赖：
+
+.. list::
+    :class: no-bullet
+
+    - :component:`esp_driver_ana_cmpr`
+    - :component:`esp_driver_dac`
+    - :component:`esp_driver_gptimer`
+    - :component:`esp_driver_i2s`
+    - :component:`esp_driver_ledc`
+    - :component:`esp_driver_mcpwm`
+    - :component:`esp_driver_parlio`
+    - :component:`esp_driver_pcnt`
+    - :component:`esp_driver_rmt`
+    - :component:`esp_driver_sdio`
+    - :component:`esp_driver_sdm`
+    - :component:`esp_driver_sdmmc`
+    - :component:`esp_driver_sdspi`
+    - :component:`esp_driver_spi`
+    - :component:`esp_driver_tsens`
+    - :component:`esp_driver_twai`
+    - :component:`esp_driver_uart`
+    - :component:`esp_driver_usb_serial_jtag`
+
+如果您的项目使用了老旧的 :component:`driver` 驱动组件，强烈建议移除对 :component:`driver` 驱动组件的依赖，并为项目添加新驱动组件（通常是 ``esp_driver_xxx``）的依赖。
+
+如仍需保留老旧的 :component:`driver` 驱动组件（例如您的项目依赖旧版 ``i2c`` 驱动），请将 :component:`driver` 组件保留在项目的组件依赖列表文件中（通常是 ``<project_root>/main/CMakeLists.txt`` ），并根据项目需要手动添加 :component:`driver` 中不再包含的驱动组件依赖。
+
 所有驱动的 ``io_loop_back`` 配置已被移除
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 不同的驱动对象可以共享同一个 GPIO 编号，联合起来可以实现更加复杂的功能。比如将 RMT 外设的 TX 通道和 RX 通道绑定在同一个 GPIO 上，进而模拟单总线的读写时序。在以前的版本中，你需要在驱动的配置中额外设置 ``io_loop_back`` 来实现这种“回环”功能，现在，这个配置已经被移除。不同的驱动只需要在配置中设置相同的 GPIO 编号就能实现这个功能。
 
@@ -54,6 +85,29 @@ RMT
 
         旧版的 MCPWM 驱动 ``driver/mcpwm.h`` 在 5.0 的版本中就已经被弃用（请参考 :ref:`deprecate_mcpwm_legacy_driver`）。从 6.0 版本开始，旧版驱动被完全移除。新驱动位于 :component:`esp_driver_mcpwm` 组件中，头文件引用路径为 ``driver/mcpwm_prelude``。
 
+    可变参数生成器 API 已被移除
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    本版本中已移除旧版的可变参数（"varg"）生成器 API。原先使用可变参数方式配置生成器动作的代码，需迁移到显式、类型化的 API。这些新 API 使用配置结构体和类型明确的设置函数（例如 :cpp:type:`mcpwm_generator_config_t`、:cpp:type:`mcpwm_gen_timer_event_action_t` 和 :cpp:type:`mcpwm_generator_set_action_on_timer_event`）。
+
+    迁移步骤（摘要）：
+
+    - 用辅助结构体/宏和专用设置函数替换 varg 风格的动作配置::
+
+        .. code-block:: c
+
+            /* 旧版（varg）*/
+            mcpwm_generator_set_actions_on_compare_event(my_generator,
+                MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, my_comparator, MCPWM_GEN_ACTION_LOW),
+                MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_DOWN, my_comparator, MCPWM_GEN_ACTION_HIGH),
+                MCPWM_GEN_COMPARE_EVENT_ACTION_END());
+
+            /* 新版 */
+            mcpwm_generator_set_action_on_compare_event(my_generator,
+                MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, my_comparator, MCPWM_GEN_ACTION_LOW));
+            mcpwm_generator_set_action_on_compare_event(my_generator,
+                MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_DOWN, my_comparator, MCPWM_GEN_ACTION_HIGH));
+
 GPIO
 ----
 
@@ -89,12 +143,12 @@ I2C 从机在 v5.4 上已经被重新设计。在当前版本上，老的 I2C �
 主要的概念上和用法上的改变如下所示:
 
 主要概念更新
-~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~
 
 - 老版本的 I2C 从机驱动是主动读写，这不符合 I2C 从机的一般用法。在新版的 I2C 从机中，I2C 的读写通过主机驱动产生的事件以触发回调被动完成。
 
 主要用法更新
-~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~
 
 - ``i2c_slave_receive`` 被移除， 在新驱动中使用回调接收数据。
 - ``i2c_slave_transmit`` 已被 ``i2c_slave_write`` 取代。
@@ -104,7 +158,7 @@ I2C 从机在 v5.4 上已经被重新设计。在当前版本上，老的 I2C �
 同时，I2C的主机驱动也有一些API用法上的改动
 
 主要用法更新
-~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~
 
 当主机在I2C总线上检测到NACK，以下的函数目前会返回 ``ESP_ERR_INVALID_RESPONSE``，而不是像之前一样返回 ``ESP_ERR_INVALID_STATE``：
 - ``i2c_master_transmit``
@@ -184,25 +238,47 @@ LCD
 - :cpp:type:`esp_lcd_rgb_panel_event_callbacks_t` 中的 ``on_bounce_frame_finish`` 成员已被 :cpp:member:`esp_lcd_rgb_panel_event_callbacks_t::on_frame_buf_complete` 成员取代，用于指示一个完整的帧缓冲区已被发送给 LCD 控制器。
 - I2C 接口的 LCD IO 层驱动有两套实现，分别基于新、旧 I2C Master 总线驱动。由于旧版的 I2C Master 驱动逐渐被弃用，遂 LCD 的 IO 层也移除对旧版的支持，只使用 ``driver/i2c_master.h`` 中提供的 API。
 - :cpp:member:`esp_lcd_dpi_panel_config_t::pixel_format` 成员已经被废弃。建议仅使用 :cpp:member:`esp_lcd_dpi_panel_config_t::in_color_format` 来设定 MIPI DSI 驱动输入的像素数据格式。
+- NT35510 LCD 设备驱动已经从 ESP-IDF 中移动到外部仓库，并且托管在了 `ESP Component Registry <https://components.espressif.com/components/espressif/esp_lcd_nt35510/versions/1.0.0/readme>`__ 上。如果你的项目使用到了 NT35510 驱动，你可以通过运行 ``idf.py add-dependency "espressif/esp_lcd_nt35510"`` 将它添加到你的项目中。
 
 SPI
 ---
 
-:ref:`CONFIG_SPI_MASTER_IN_IRAM` 选项在 menuconfig 中默认不可见，并且依赖于 :ref:`CONFIG_FREERTOS_IN_IRAM`。这样修改是为了防止位于 IRAM 中的 SPI 函数调用位于 flash 中的 FreeRTOS 函数时可能发生的崩溃。
+- :ref:`CONFIG_SPI_MASTER_IN_IRAM` 选项在 menuconfig 中默认不可见，并且依赖于 :ref:`CONFIG_FREERTOS_IN_IRAM`。这样修改是为了防止位于 IRAM 中的 SPI 函数调用位于 flash 中的 FreeRTOS 函数时可能发生的崩溃。
+- 按照下列步骤，启用 SPI 主机 IRAM 优化：
 
-要启用 SPI 主机 IRAM 优化：
+    1. 在 menuconfig 中进入 ``Component config`` → ``FreeRTOS`` → ``Port``。
+    2. 启用 ``Place FreeRTOS functions in IRAM`` (:ref:`CONFIG_FREERTOS_IN_IRAM`)。
+    3. 在 menuconfig 中进入 ``Component config`` → ``ESP-Driver:SPI Configurations``。
+    4. 启用 ``Place transmitting functions of SPI master into IRAM`` (:ref:`CONFIG_SPI_MASTER_IN_IRAM`)。
 
-1. 在 menuconfig 中进入 ``Component config`` → ``FreeRTOS`` → ``Port``
-2. 启用 ``Place FreeRTOS functions in IRAM`` (:ref:`CONFIG_FREERTOS_IN_IRAM`)
-3. 在 menuconfig 中进入 ``Component config`` → ``ESP-Driver:SPI Configurations``
-4. 启用 ``Place transmitting functions of SPI master into IRAM`` (:ref:`CONFIG_SPI_MASTER_IN_IRAM`)
+    .. note::
 
-请注意，启用 :ref:`CONFIG_FREERTOS_IN_IRAM` 会显著增加 IRAM 使用量。在优化 SPI 性能时，需进行权衡。
+        启用 :ref:`CONFIG_FREERTOS_IN_IRAM` 会显著增加 IRAM 使用量。在优化 SPI 性能时，需进行权衡。
+
+- ESP32 和 ESP32S2 上已弃用的 HSPI 和 VSPI 相关 IOMUX 引脚宏已被移除。
+
+PSRAM
+-----
+
+已弃用的头文件 ``esp_spiram.h`` 已被移除，请改用 ``esp_psram.h``。
+
+SPI flash 驱动
+--------------
+
+- 已弃用的 ``enum`` 类型 ``esp_flash_speed_t`` 已被移除。主 flash 速度由 :ref:`CONFIG_ESPTOOLPY_FLASHFREQ` 选项控制。
+- 已弃用的头文件 ``esp_spi_flash.h`` 已被移除。请改用 ``spi_flash_mmap.h``。
+- 已弃用的 API ``spi_flash_dump_counters`` 已被移除。请改用 :cpp:func:`esp_flash_dump_counters`。
+- 已弃用的 API ``spi_flash_get_counters`` 已被移除。请改用 :cpp:func:`esp_flash_get_counters`。
+- 已弃用的 API ``spi_flash_reset_counters`` 已被移除。请改用 :cpp:func:`esp_flash_reset_counters`。
+
+.. note::
+
+    启用 :ref:`CONFIG_FREERTOS_IN_IRAM` 会显著增加 IRAM 使用量。在优化 SPI 性能时，需进行权衡。
 
 Touch Element
 -------------
 
-``touch_element`` 组件已移至 [ESP Component Registry](https://components.espressif.com/components/espressif/touch_element/versions/1.0.0/readme)。
+``touch_element`` 组件已移至 `ESP Component Registry <https://components.espressif.com/components/espressif/touch_element/versions/1.0.0/readme>`__。
 
 您可以通过运行 ``idf.py add-dependency "espressif/touch_element"`` 将这个依赖添加到您的项目中。
 
@@ -210,3 +286,8 @@ Touch Sensor
 ------------
 
 第三版触摸传感器的驱动配置项 ``touch_sensor_sample_config_t::bypass_shield_output`` 已被移除，因为第三版触摸传感器硬件已不支持该功能。
+
+I2S
+---
+
+- ``i2s_port_t`` 类型已被移除。请使用 ``int`` 类型代替。该类型原有的 enum 项 ``I2S_NUM_0``，``I2S_NUM_1``，``I2S_NUM_2`` 和 ``I2S_NUM_AUTO`` 已用宏定义代替，以保证兼容性。

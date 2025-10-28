@@ -248,12 +248,12 @@ esp_err_t mcpwm_set_prescale(mcpwm_group_t *group, uint32_t expect_module_resolu
         }
         module_prescale = fit_module_prescale;
         group_prescale = fit_group_prescale;
+        ESP_RETURN_ON_FALSE(group_prescale > 0 && group_prescale <= MCPWM_LL_MAX_GROUP_PRESCALE, ESP_ERR_INVALID_STATE, TAG,
+                            "set group prescale failed, group clock cannot match the resolution");
         group_resolution_hz = periph_src_clk_hz / group_prescale;
     }
 
     ESP_LOGD(TAG, "group (%d) calc prescale:%"PRIu32", module calc prescale:%"PRIu32"", group_id, group_prescale, module_prescale);
-    ESP_RETURN_ON_FALSE(group_prescale > 0 && group_prescale <= MCPWM_LL_MAX_GROUP_PRESCALE, ESP_ERR_INVALID_STATE, TAG,
-                        "set group prescale failed, group clock cannot match the resolution");
 
     // check if we need to update the group prescale, group prescale is shared by all mcpwm modules
     bool prescale_conflict = false;

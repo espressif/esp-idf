@@ -27,7 +27,7 @@
 #include "soc/pmu_reg.h"
 #include "pmu_param.h"
 
-static const char *TAG = "rtc_clk_init";
+ESP_HW_LOG_ATTR_TAG(TAG, "rtc_clk_init");
 
 /**
  * Initialize the ICG map of some modem clock domains in the PMU_ACTIVE state

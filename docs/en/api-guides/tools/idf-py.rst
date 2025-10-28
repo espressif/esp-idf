@@ -7,7 +7,7 @@ The ``idf.py`` command-line tool provides a front-end for easily managing your p
 
 - CMake_, which configures the project to be built.
 - Ninja_, which builds the project.
-- `esptool.py`_, which flashes the target.
+- `esptool`_, which flashes the target.
 
 The :ref:`Step 5. First Steps on ESP-IDF <get-started-configure>` contains a brief introduction on how to set up ``idf.py`` to configure, build, and flash projects.
 
@@ -120,7 +120,7 @@ This command automatically builds the project if necessary, and then flash it to
 
 .. note:: The environment variables ``ESPPORT`` and ``ESPBAUD`` can be used to set default values for the ``-p`` and ``-b`` options, respectively. Providing these options on the command line overrides the default.
 
-``idf.py`` uses the ``write_flash`` command of ``esptool.py`` under the hood to flash the target. You can pass additional arguments to configure the flash writing process using the ``--extra-args`` option. For example, to `write to an external SPI flash chip <https://docs.espressif.com/projects/esptool/en/latest/esptool/advanced-options.html#custom-spi-pin-configuration>`_, use the following command: ``idf.py flash --extra-args="--spi-connection <CLK>,<Q>,<D>,<HD>,<CS>"``. To see the full list of available arguments, run ``esptool.py write_flash --help`` or see the `esptool.py documentation <https://docs.espressif.com/projects/esptool/en/latest/esptool/index.html>`_.
+``idf.py`` uses the ``write-flash`` command of ``esptool`` under the hood to flash the target. You can pass additional arguments to configure the flash writing process using the ``--extra-args`` option. For example, to `write to an external SPI flash chip <https://docs.espressif.com/projects/esptool/en/latest/esptool/advanced-options.html#custom-spi-pin-configuration>`_, use the following command: ``idf.py flash --extra-args="--spi-connection <CLK>,<Q>,<D>,<HD>,<CS>"``. To see the full list of available arguments, run ``esptool write-flash --help`` or see the `esptool documentation <https://docs.espressif.com/projects/esptool/en/latest/esptool/index.html>`_.
 
 Similarly to the ``build`` command, the command can be run with ``app``, ``bootloader`` and ``partition-table`` arguments to flash only the app, bootloader or partition table as applicable.
 
@@ -152,7 +152,7 @@ There are also some format specific options, which are listed below:
 - Only for raw format:
 
   - ``--flash-offset``: This option will create a merged binary that should be flashed at the specified offset, instead of at the standard offset of 0x0.
-  - ``--fill-flash-size``: If set, the final binary file will be padded with FF bytes up to this flash size in order to fill the full flash content with the image and re-write the whole flash chip upon flashing.
+  - ``--pad-to-size``: If set, the final binary file will be padded with FF bytes up to this flash size in order to fill the full flash content with the image and re-write the whole flash chip upon flashing.
 
 - Only for uf2 format:
 
@@ -216,7 +216,7 @@ This command prints size information per source file in the project.
 Options
 ^^^^^^^
 
-- ``--format`` specifies the output format with available options: ``text``, ``csv``, ``json``, default being ``text``.
+- ``--format`` specifies the output format with available options: ``text``, ``csv``, ``json2``, ``tree``, ``raw``, default being ``text``.
 - ``--output-file`` optionally specifies the name of the file to print the command output to instead of the standard output.
 
 Reconfigure the Project: ``reconfigure``
@@ -301,7 +301,112 @@ Arguments from a file can be combined with additional command line arguments, an
 
 A further example of how this argument file can be used, e.g., creating configuration profile files via @filename, is in the :example_file:`Multiple Build Configurations Example <build_system/cmake/multi_config/README.md>`.
 
+Extending ``idf.py``
+====================
+
+``idf.py`` can be extended with additional subcommands, global options, and callbacks provided by extension files in your project and components which participate in the build, as well as by external Python packages exposing entry points.
+
+- **From components participating in the build**: Place a file named ``idf_ext.py`` in the project root or in a component's root directory that is registered in the project's ``CMakeLists.txt``. Component extensions are discovered after the project is configured - run ``idf.py build`` or ``idf.py reconfigure`` to make newly added commands available.
+- **From Python entry points**: Any installed Python package may contribute extensions by defining an entry point in the ``idf_extension`` group. Package installation is sufficient, no project build is required.
+
+.. important::
+
+   Extensions must not define subcommands or options that have the same names as the core ``idf.py`` commands. Custom actions and options are checked for name collisions, overriding defaults is not possible and a warning is printed. For Python entry points, use unique identifiers as duplicate entry point names will be ignored with a warning.
+
+Extension File Example
+----------------------
+
+An extension file defines an ``action_extensions`` function which returns additional actions/options. The same structure is used for component-based extensions (``idf_ext.py``) and for package-based extensions (e.g., ``<package_name>_ext.py``):
+
+.. code-block:: python
+
+  from typing import Any
+  import click
+
+  def action_extensions(base_actions: dict, project_path: str) -> dict:
+      def hello_test(subcommand_name: str, ctx: click.Context, global_args: dict, **action_args: Any) -> None:
+          message = action_args.get('message')
+          print(f"Running action: {subcommand_name}. Message: {message}")
+
+      def global_callback_detail(ctx: click.Context, global_args: dict, tasks: list) -> None:
+          if getattr(global_args, 'detail', False):
+              print(f"About to execute {len(tasks)} task(s): {[t.name for t in tasks]}")
+
+      return {
+          "version": "1",
+          "global_options": [
+              {
+                  "names": ["--detail", "-d"],
+                  "is_flag": True,
+                  "help": "Enable detailed output",
+              }
+          ],
+          "global_action_callbacks": [global_callback_detail],
+          "actions": {
+              "hello": {
+                  "callback": hello_test,
+                  "short_help": "Hello from component",
+                  "help": "Test command from component extension",
+                  "options": [
+                      {
+                          "names": ["--message", "-m"],
+                          "help": "Custom message to display",
+                          "default": "Hi there!",
+                          "type": str,
+                      }
+                  ]
+              },
+          },
+      }
+
+
+Extension API Reference
+-----------------------
+
+The ``action_extensions`` function takes arguments ``base_actions`` (all currently registered commands) and ``project_path`` (absolute project directory) and returns a dictionary with up to four keys:
+
+- ``version``: A string representing the interface version of the extension. Currently, the API version is ``1``. **This key is mandatory** and must be provided.
+- ``global_options``: A list of options available globally for all commands. Each option is a dictionary with fields such as ``names``, ``help``, ``type``, ``is_flag``, ``scope``, etc.
+- ``global_action_callbacks``: A list of functions called once before any task execution. Each global action callback function accepts three arguments:
+
+   - ``ctx`` — The `click context`_
+   - ``global_args`` — All available global arguments
+   - ``tasks`` — The list of tasks to be executed. Task refer to the action / sub-command used with `idf.py`
+
+- ``actions``: A dictionary of new subcommands. Each action has a ``callback`` function and may also include ``options``, ``arguments``, ``dependencies``, etc. Each action callback function accepts three to four arguments:
+
+   - ``subcommand_name`` — the name of the command (useful if multiple commands share the same callback)
+   - ``ctx`` — the `click context`_
+   - ``global_args`` — all available global arguments,
+   - ``**action_args`` — (optional) arguments passed to the action
+
+Basic Usage Examples
+--------------------
+
+1) Provide an extension from a component in your project
+
+  Create ``idf_ext.py`` in the project root or in a registered component (for example ``components/my_component/idf_ext.py``). Use the extension file example above as your ``idf_ext.py`` implementation.
+
+  Run ``idf.py build`` or ``idf.py reconfigure`` to load the new command, then ``idf.py --help`` will show the new extension.
+
+2) Provide an extension via a Python package entry point
+
+  Implement your extension in a module named ``<package_name>_ext.py`` using the extension file example above, and expose the ``action_extensions`` function via the ``idf_extension`` entry-point group. For example, with ``pyproject.toml``:
+
+  .. code-block:: TOML
+
+    [project]
+    name = "my_comp"
+    version = "0.1.0"
+
+    [project.entry-points.idf_extension]
+    my_pkg_ext = "my_component.my_ext:action_extensions"
+
+
+  Install the package into the same Python environment as ``idf.py`` (for example with ``pip install -e .`` in the package directory). It is recommended to use a unique module name (e.g., ``<package_name>_ext.py``) to avoid name conflicts. After successful installation, ``idf.py --help`` will show the new extension.
+
 .. _cmake: https://cmake.org
 .. _ninja: https://ninja-build.org
-.. _esptool.py: https://github.com/espressif/esptool/#readme
+.. _esptool: https://github.com/espressif/esptool/#readme
 .. _CCache: https://ccache.dev/
+.. _click context: https://click.palletsprojects.com/en/stable/api/#context

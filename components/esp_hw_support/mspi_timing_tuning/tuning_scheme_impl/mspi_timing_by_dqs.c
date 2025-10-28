@@ -45,7 +45,7 @@
 
 #define WRONG_DELAYLINE 16
 
-const static char *TAG = "MSPI DQS";
+ESP_LOG_ATTR_TAG(TAG, "MSPI DQS");
 const static uint32_t s_test_data[MSPI_TIMING_TEST_DATA_LEN] = {0x7f786655, 0xa5ff005a, 0x3f3c33aa, 0xa5ff5a00, 0x1f1e9955, 0xa5005aff, 0x0f0fccaa, 0xa55a00ff,
                                                                 0x07876655, 0xffa55a00, 0x03c333aa, 0xff00a55a, 0x01e19955, 0xff005aa5, 0x00f0ccaa, 0xff5a00a5,
                                                                 0x80786655, 0x00a5ff5a, 0xc03c33aa, 0x00a55aff, 0xe01e9355, 0x00ff5aa5, 0xf00fccaa, 0x005affa5,

@@ -10,7 +10,7 @@ Starting with ESP-IDF v6.0, the build system no longer allows orphan sections in
 
 .. note::
 
-   An *orphan section* is a section that is not explicitly placed into any output section by the linker script and is not discarded during linking.
+    An *orphan section* is a section that is not explicitly placed into any output section by the linker script and is not discarded during linking.
 
 How to Resolve Orphan Section Errors
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -23,7 +23,7 @@ If you encounter an orphan section error during linking, you can resolve it usin
 
 .. warning::
 
-   The option 3 is **not recommended**, as orphan sections may indicate misconfigured memory mapping or unintentional behavior in your application.
+    The option 3 is **not recommended**, as orphan sections may indicate misconfigured memory mapping or unintentional behavior in your application.
 
 Change in Global Constructor Order
 ----------------------------------
@@ -61,7 +61,7 @@ Example (from ``components/unity/unity_runner.c``):
 
 .. note::
 
-   This approach is suitable only for very specific cases.
+    This approach is suitable only for very specific cases.
 
 Use Constructor Priorities
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -79,3 +79,8 @@ Changes in Configuration Files Syntax
 -------------------------------------
 
 ESP-IDF v6 uses esp-idf-kconfig v3, which introduces several changes in the configuration (``Kconfig``) files. For the full list of changes, please refer to the `esp-idf-kconfig migration guide from v2.x to v3.x <https://docs.espressif.com/projects/esp-idf-kconfig/en/latest/developer-guide/migration-guide.html>`_.
+
+Compiler Options
+----------------
+
+The default compiler warnings will be considered as errors. The configuration option :ref:`CONFIG_COMPILER_DISABLE_DEFAULT_ERRORS` has been changed to N.

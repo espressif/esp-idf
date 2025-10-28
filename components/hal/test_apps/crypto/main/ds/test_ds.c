@@ -15,7 +15,7 @@
 #include "esp_log.h"
 #include "ds_types.h"
 
-const static char *TAG = "test_ds";
+ESP_LOG_ATTR_TAG(TAG, "test_ds");
 
 #include "rom/efuse.h"
 #include "rom/sha.h"

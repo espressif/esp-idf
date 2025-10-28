@@ -633,9 +633,7 @@ esp_err_t spi_bus_remove_device(spi_device_handle_t handle)
 
 esp_err_t spi_device_get_actual_freq(spi_device_handle_t handle, int* freq_khz)
 {
-    if ((spi_device_t *)handle == NULL || freq_khz == NULL) {
-        return ESP_ERR_INVALID_ARG;
-    }
+    SPI_CHECK(handle && freq_khz, "invalid arg", ESP_ERR_INVALID_ARG);
 
     *freq_khz = handle->hal_dev.timing_conf.real_freq / 1000;
     return ESP_OK;
@@ -667,10 +665,10 @@ static SPI_MASTER_ISR_ATTR void spi_setup_device(spi_device_t *dev, spi_trans_pr
             .use_gpio = !(dev->host->bus_attr->flags & SPICOMMON_BUSFLAG_IOMUX_PINS),
         };
 
-        if (ESP_OK == spi_hal_cal_clock_conf(&timing_param, &dev->hal_dev.timing_conf)) {
+        if ((trans_buf->trans->override_freq_hz <= SPI_PERIPH_SRC_FREQ_MAX) && (ESP_OK == spi_hal_cal_clock_conf(&timing_param, &dev->hal_dev.timing_conf))) {
             clock_changed = true;
         } else {
-            ESP_EARLY_LOGW(SPI_TAG, "assigned clock speed %d not supported", trans_buf->trans->override_freq_hz);
+            ESP_EARLY_LOGW(SPI_TAG, "assigned override_freq_hz %d not supported", trans_buf->trans->override_freq_hz);
         }
     }
 
@@ -977,6 +975,7 @@ static void SPI_MASTER_ISR_ATTR spi_intr(void *arg)
                 // invalidate priv_trans.buffer_to_rcv anyway, only user provide aligned buffer can rcv correct data in post_cb
                 esp_err_t ret = esp_cache_msync((void *)host->cur_trans_buf.buffer_to_rcv, buffer_byte_len, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
                 assert(ret == ESP_OK);
+                (void)ret;
             }
 #endif
         }
@@ -1203,6 +1202,7 @@ static SPI_MASTER_ISR_ATTR esp_err_t setup_priv_desc(spi_host_t *host, spi_trans
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
         esp_err_t ret = esp_cache_msync((void *)send_ptr, tx_byte_len, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
         assert(ret == ESP_OK);
+        (void)ret;
 #endif
     }
 
@@ -1221,6 +1221,7 @@ static SPI_MASTER_ISR_ATTR esp_err_t setup_priv_desc(spi_host_t *host, spi_trans
         // do invalid here to hold on cache status to avoid hardware auto write back during dma transaction
         esp_err_t ret = esp_cache_msync((void *)rcv_ptr, rx_byte_len, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
         assert(ret == ESP_OK);
+        (void)ret;
 #endif
     }
     priv_desc->buffer_to_send = send_ptr;

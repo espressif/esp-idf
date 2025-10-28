@@ -84,7 +84,7 @@ struct twdt_obj {
 
 // ----------------------- Objects -------------------------
 
-static const char *TAG = "task_wdt";
+ESP_LOG_ATTR_TAG(TAG, "task_wdt");
 static portMUX_TYPE spinlock = portMUX_INITIALIZER_UNLOCKED;
 static twdt_obj_t *p_twdt_obj = NULL;
 
@@ -488,7 +488,7 @@ static void task_wdt_isr(void *arg)
         return;
     }
 
-    ESP_EARLY_LOGE(TAG, "%s", DRAM_STR("Tasks currently running:"));
+    ESP_EARLY_LOGE(TAG, "%s", ESP_LOG_ATTR_DRAM_STR("Tasks currently running:"));
     for (int x = 0; x < CONFIG_FREERTOS_NUMBER_OF_CORES; x++) {
         ESP_EARLY_LOGE(TAG, "CPU %d: %s", x, pcTaskGetName(xTaskGetCurrentTaskHandleForCore(x)));
     }

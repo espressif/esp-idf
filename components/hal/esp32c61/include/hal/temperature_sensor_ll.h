@@ -284,6 +284,42 @@ static inline int temperature_sensor_ll_load_calib_param(void)
     return tsens_cal;
 }
 
+/**
+ * @brief Structure for temperature sensor related register values
+ */
+typedef struct {
+    uint32_t tsens_ctrl;      // Temperature sensor control register (SARADC_APB_TSENS_CTRL_REG)
+    uint32_t tsens_ctrl2;     // Temperature sensor control register 2 (SARADC_TSENS_CTRL2_REG)
+    uint32_t tsens_wake;      // Temperature sensor wake register (APB_TSENS_WAKE_REG)
+    uint32_t tsens_sample;    // Temperature sensor sample register (APB_TSENS_SAMPLE_REG)
+} tsens_ll_reg_values_t;
+
+/**
+ * @brief Read temperature sensor related ADC register values for backup
+ *
+ * @param reg_values Output parameter, pointer to structure for storing register values
+ */
+static inline void tsens_ll_backup_registers(tsens_ll_reg_values_t *reg_values)
+{
+    reg_values->tsens_ctrl = ADC.saradc_apb_tsens_ctrl.val;
+    reg_values->tsens_ctrl2 = ADC.saradc_tsens_ctrl2.val;
+    reg_values->tsens_wake = ADC.tsens_wake.val;
+    reg_values->tsens_sample = ADC.tsens_sample.val;
+}
+
+/**
+ * @brief Restore temperature sensor related ADC register values from backup
+ *
+ * @param reg_values Input parameter, pointer to structure containing register values to restore
+ */
+static inline void tsens_ll_restore_registers(const tsens_ll_reg_values_t *reg_values)
+{
+    ADC.saradc_apb_tsens_ctrl.val = reg_values->tsens_ctrl;
+    ADC.saradc_tsens_ctrl2.val = reg_values->tsens_ctrl2;
+    ADC.tsens_wake.val = reg_values->tsens_wake;
+    ADC.tsens_sample.val = reg_values->tsens_sample;
+}
+
 #ifdef __cplusplus
 }
 #endif

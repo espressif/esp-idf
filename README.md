@@ -83,7 +83,7 @@ See the Getting Started guide links above for a detailed setup guide. This is a 
 
 ## Flashing the Project
 
-When the build finishes, it will print a command line to use esptool.py to flash the chip. However you can also do this automatically by running:
+When the build finishes, it will print a command line to use `esptool` to flash the chip. However you can also do this automatically by running:
 
 `idf.py -p PORT flash`
 

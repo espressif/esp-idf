@@ -172,7 +172,7 @@ class TEESerial(IdfSerial):
             flash_size = self._get_flash_size()
 
             esptool.main(
-                f'--no-stub write_flash {offs} {bootloader_path} --force {encrypt} --flash_size {flash_size}'.split(),
+                f'--no-stub write-flash {offs} {bootloader_path} --force {encrypt} --flash-size {flash_size}'.split(),
                 esp=self.esp,
             )
 
@@ -189,7 +189,7 @@ class TEESerial(IdfSerial):
                 temp_file.flush()
 
                 esptool.main(
-                    f'--no-stub write_flash {offs} {temp_file.name} --flash_size {flash_size}'.split(), esp=self.esp
+                    f'--no-stub write-flash {offs} {temp_file.name} --flash-size {flash_size}'.split(), esp=self.esp
                 )
         else:
             self.erase_partition(partition)
@@ -201,11 +201,11 @@ class TEESerial(IdfSerial):
         flash_size = self._get_flash_size()
         flash_file = bin_path
 
-        args = f'{no_stub} write_flash {offs} {flash_file}'.split()
+        args = f'{no_stub} write-flash {offs} {flash_file}'.split()
 
         if encrypt:
             args.append('--encrypt')
-        args += f'--flash_size {flash_size}'.split()
+        args += f'--flash-size {flash_size}'.split()
 
         esptool.main(args, esp=self.esp)
 
@@ -229,10 +229,10 @@ class TEESerial(IdfSerial):
                 keyfile = self.app.sdkconfig.get('SECURE_BOOT_SIGNING_KEY')
                 espsecure.main(
                     [
-                        'sign_data',
+                        'sign-data',
                         '--version',
                         '2',
-                        '--append_signatures',
+                        '--append-signatures',
                         '--keyfile',
                         keyfile,
                         '--output',

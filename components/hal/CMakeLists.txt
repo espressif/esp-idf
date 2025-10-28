@@ -22,10 +22,6 @@ if(CONFIG_SOC_LP_TIMER_SUPPORTED)
     list(APPEND srcs "lp_timer_hal.c")
 endif()
 
-if(CONFIG_SOC_WDT_SUPPORTED AND NOT CONFIG_HAL_WDT_USE_ROM_IMPL)
-    list(APPEND srcs "wdt_hal_iram.c")
-endif()
-
 if(CONFIG_SOC_KEY_MANAGER_SUPPORTED)
     list(APPEND srcs "key_mgr_hal.c")
     list(APPEND srcs "huk_hal.c")
@@ -52,27 +48,13 @@ endif()
 if(esp_tee_build)
     list(APPEND srcs "apm_hal.c"
                      "brownout_hal.c"
-                     "wdt_hal_iram.c"
                      "aes_hal.c"
                      "sha_hal.c"
                      "hmac_hal.c"
                      "ds_hal.c"
                      "ecc_hal.c")
-
-    if(CONFIG_SECURE_TEE_EXT_FLASH_MEMPROT_SPI1)
-        list(APPEND srcs "spi_flash_hal.c")
-    endif()
 elseif(NOT BOOTLOADER_BUILD)
     list(APPEND srcs "color_hal.c")
-
-    if(NOT CONFIG_APP_BUILD_TYPE_PURE_RAM_APP)
-        if(CONFIG_SOC_SPI_FLASH_SUPPORTED)
-            list(APPEND srcs "spi_flash_hal.c" "spi_flash_hal_iram.c")
-        endif()
-        if(CONFIG_SOC_FLASH_ENC_SUPPORTED)
-            list(APPEND srcs "spi_flash_encrypt_hal_iram.c")
-        endif()
-    endif()
 
     if(CONFIG_SOC_CLK_TREE_SUPPORTED)
         list(APPEND srcs "${target}/clk_tree_hal.c")
@@ -92,10 +74,6 @@ elseif(NOT BOOTLOADER_BUILD)
 
     if(CONFIG_SOC_RTCIO_PIN_COUNT)
         list(APPEND srcs "rtc_io_hal.c")
-    endif()
-
-    if(CONFIG_SOC_GPTIMER_SUPPORTED)
-        list(APPEND srcs "timer_hal.c")
     endif()
 
     if(CONFIG_SOC_LEDC_SUPPORTED)
@@ -132,9 +110,9 @@ elseif(NOT BOOTLOADER_BUILD)
 
     if(CONFIG_SOC_TWAI_SUPPORTED)
         if(CONFIG_SOC_TWAI_SUPPORT_FD)
-            list(APPEND srcs "twai_hal_ctufd.c")
+            list(APPEND srcs "twai_hal_v2.c")
         else()
-            list(APPEND srcs "twai_hal_sja1000.c")
+            list(APPEND srcs "twai_hal_v1.c")
         endif()
     endif()
 
@@ -267,10 +245,6 @@ elseif(NOT BOOTLOADER_BUILD)
         endif()
     endif()
 
-    if(CONFIG_SOC_GPSPI_SUPPORTED AND NOT CONFIG_IDF_TARGET_ESP32)
-        list(APPEND srcs "spi_flash_hal_gpspi.c")
-    endif()
-
     if(CONFIG_SOC_SDIO_SLAVE_SUPPORTED)
         list(APPEND srcs "sdio_slave_hal.c")
     endif()
@@ -327,20 +301,8 @@ elseif(NOT BOOTLOADER_BUILD)
 
     if(${target} STREQUAL "esp32s2")
         list(APPEND srcs
-                    "xt_wdt_hal.c"
                     "esp32s2/cp_dma_hal.c")
     endif()
-
-    if(${target} STREQUAL "esp32s3")
-        list(APPEND srcs
-            "xt_wdt_hal.c")
-    endif()
-
-    if(${target} STREQUAL "esp32c3")
-        list(APPEND srcs
-            "xt_wdt_hal.c")
-    endif()
-
 
     if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/${target}/rtc_cntl_hal.c")
         list(APPEND srcs "${target}/rtc_cntl_hal.c")

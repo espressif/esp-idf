@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -734,6 +734,11 @@ extern "C" esp_err_t nvs_flash_register_security_scheme(nvs_sec_scheme_t *scheme
     memcpy(&nvs_sec_default_scheme_cfg, scheme_cfg, sizeof(nvs_sec_scheme_t));
 
     return ESP_OK;
+}
+
+extern "C" void nvs_flash_deregister_security_scheme(void)
+{
+    memset(&nvs_sec_default_scheme_cfg, 0x00, sizeof(nvs_sec_scheme_t));
 }
 
 extern "C" nvs_sec_scheme_t *nvs_flash_get_default_security_scheme(void)

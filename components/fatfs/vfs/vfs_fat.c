@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,10 +14,12 @@
 #include <sys/fcntl.h>
 #include <sys/lock.h>
 #include "esp_vfs_fat.h"
+#include "vfs_fat_internal.h"
 #include "esp_vfs.h"
 #include "esp_log.h"
 #include "ff.h"
 #include "diskio_impl.h"
+#include "private_include/diskio_private.h"
 
 #define F_WRITE_MALLOC_ZEROING_BUF_SIZE_LIMIT 512
 
@@ -1529,4 +1531,64 @@ fail:
     ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);
     errno = fresult_to_errno(res);
     return -1;
+}
+
+esp_err_t esp_vfs_fat_format_drive(uint8_t ldrv, const esp_vfs_fat_mount_config_t* mount_config)
+{
+    if (mount_config == NULL || !ff_diskio_is_registered(ldrv)) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    FRESULT res = FR_OK;
+    esp_err_t err = ESP_OK;
+    const size_t workbuf_size = 4096;
+    void* workbuf = NULL;
+
+    workbuf = ff_memalloc(workbuf_size);
+    if (workbuf == NULL) {
+        return ESP_ERR_NO_MEM;
+    }
+
+    size_t sector_size = 512; // default value
+    ff_diskio_get_sector_size(ldrv, &sector_size);
+    size_t alloc_unit_size = esp_vfs_fat_get_allocation_unit_size(sector_size, mount_config->allocation_unit_size);
+    ESP_LOGW(TAG, "formatting drive, allocation unit size=%d", alloc_unit_size);
+    const MKFS_PARM opt = {(BYTE)FM_ANY, (mount_config->use_one_fat ? 1 : 2), 0, 0, alloc_unit_size};
+    char drv[3] = {(char)('0' + ldrv), ':', 0};
+    res = f_mkfs(drv, &opt, workbuf, workbuf_size);
+    if (res != FR_OK) {
+        err = ESP_FAIL;
+        ESP_LOGE(TAG, "f_mkfs failed (%d)", res);
+    }
+
+    free(workbuf);
+    return err;
+}
+
+esp_err_t esp_vfs_fat_partition_drive(uint8_t pdrv, const esp_vfs_fat_drive_divide_arr_t drive_divide)
+{
+    if (!ff_diskio_is_registered(pdrv)) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    FRESULT res = FR_OK;
+    esp_err_t err = ESP_OK;
+    const size_t workbuf_size = 4096;
+    void* workbuf = NULL;
+    ESP_LOGD(TAG, "partitioning drive");
+
+    workbuf = ff_memalloc(workbuf_size);
+    if (workbuf == NULL) {
+        return ESP_ERR_NO_MEM;
+    }
+
+    LBA_t ptbl[4] = {drive_divide[0], drive_divide[1], drive_divide[2], drive_divide[3]};
+    res = f_fdisk(pdrv, ptbl, workbuf);
+    if (res != FR_OK) {
+        err = ESP_FAIL;
+        ESP_LOGE(TAG, "f_fdisk failed (%d)", res);
+    }
+
+    free(workbuf);
+    return err;
 }

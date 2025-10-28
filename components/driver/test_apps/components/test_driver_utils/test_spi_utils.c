@@ -76,6 +76,7 @@ void spitest_slave_task(void* arg)
     while (1) {
         BaseType_t ret = xQueueReceive(queue, &txdata, portMAX_DELAY);
         assert(ret);
+        (void)ret;
 
         spi_slave_transaction_t t = {};
         t.length = txdata.len;

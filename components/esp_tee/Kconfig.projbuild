@@ -81,12 +81,19 @@ menu "ESP-TEE (Trusted Execution Environment)"
         endchoice
 
         config SECURE_TEE_SEC_STG_EFUSE_HMAC_KEY_ID
-            int "Secure Storage: eFuse HMAC key ID"
+            int "Secure Storage: eFuse HMAC key ID for storage encryption keys"
             depends on SECURE_TEE_SEC_STG_MODE_RELEASE
             range -1 5
             default -1
             help
                 eFuse block key ID storing the HMAC key for deriving the TEE secure storage encryption keys
+
+        config SECURE_TEE_PBKDF2_EFUSE_HMAC_KEY_ID
+            int "Secure Storage: eFuse HMAC key ID for PBKDF2 key derivation"
+            range -1 5
+            default -1
+            help
+                eFuse block key ID storing the HMAC key for deriving PBKDF2-based ECDSA keys
 
         config SECURE_TEE_SEC_STG_SUPPORT_SECP192R1_SIGN
             bool "Secure Storage: Support signing with the ECDSA SECP192R1 curve"

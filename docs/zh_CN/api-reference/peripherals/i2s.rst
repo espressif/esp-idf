@@ -988,6 +988,7 @@ STD RX 模式
 
     ...
 
+
 .. only:: SOC_I2S_HW_VERSION_1
 
     单工模式
@@ -1046,6 +1047,7 @@ STD RX 模式
         };
         ESP_ERROR_CHECK(i2s_channel_init_std_mode(rx_handle, &std_rx_cfg));
         ESP_ERROR_CHECK(i2s_channel_enable(rx_handle));
+
 
 .. only:: SOC_I2S_HW_VERSION_2
 

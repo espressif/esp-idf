@@ -114,8 +114,10 @@ typedef enum {
 
 #if SOC_LP_CORE_SUPPORTED
 #define RTC_LP_CORE_TRIG_EN         PMU_LP_CORE_WAKEUP_EN   //!< LP core wakeup
+#define RTC_LP_CORE_TRAP_TRIG_EN    PMU_LP_CORE_TRAP_WAKEUP_EN   //!< LP core trap (exception) wakeup
 #else
 #define RTC_LP_CORE_TRIG_EN         0
+#define RTC_LP_CORE_TRAP_TRIG_EN    0
 #endif //SOC_LP_CORE_SUPPORTED
 
 #if SOC_LP_VAD_SUPPORTED

@@ -3,10 +3,8 @@
 # otatool is used to perform ota-level operations - flashing ota partition
 # erasing ota partition and switching ota partition
 #
-# SPDX-FileCopyrightText: 2018-2021 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2018-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import division, print_function
-
 import argparse
 import binascii
 import collections
@@ -16,12 +14,18 @@ import sys
 import tempfile
 
 try:
-    from parttool import PARTITION_TABLE_OFFSET, PartitionName, PartitionType, ParttoolTarget
+    from parttool import PARTITION_TABLE_OFFSET
+    from parttool import PartitionName
+    from parttool import PartitionType
+    from parttool import ParttoolTarget
 except ImportError:
     COMPONENTS_PATH = os.path.expandvars(os.path.join('$IDF_PATH', 'components'))
     PARTTOOL_DIR = os.path.join(COMPONENTS_PATH, 'partition_table')
     sys.path.append(PARTTOOL_DIR)
-    from parttool import PARTITION_TABLE_OFFSET, PartitionName, PartitionType, ParttoolTarget
+    from parttool import PARTITION_TABLE_OFFSET
+    from parttool import PartitionName
+    from parttool import PartitionType
+    from parttool import ParttoolTarget
 
 __version__ = '2.0'
 
@@ -35,15 +39,31 @@ def status(msg):
         print(msg)
 
 
-class OtatoolTarget():
-
+class OtatoolTarget:
     OTADATA_PARTITION = PartitionType('data', 'ota')
 
-    def __init__(self, port=None, baud=None, partition_table_offset=PARTITION_TABLE_OFFSET, partition_table_file=None,
-                 spi_flash_sec_size=SPI_FLASH_SEC_SIZE, esptool_args=[], esptool_write_args=[],
-                 esptool_read_args=[], esptool_erase_args=[]):
-        self.target = ParttoolTarget(port, baud, partition_table_offset, partition_table_file, esptool_args,
-                                     esptool_write_args, esptool_read_args, esptool_erase_args)
+    def __init__(
+        self,
+        port=None,
+        baud=None,
+        partition_table_offset=PARTITION_TABLE_OFFSET,
+        partition_table_file=None,
+        spi_flash_sec_size=SPI_FLASH_SEC_SIZE,
+        esptool_args=[],
+        esptool_write_args=[],
+        esptool_read_args=[],
+        esptool_erase_args=[],
+    ):
+        self.target = ParttoolTarget(
+            port,
+            baud,
+            partition_table_offset,
+            partition_table_file,
+            esptool_args,
+            esptool_write_args,
+            esptool_read_args,
+            esptool_erase_args,
+        )
         self.spi_flash_sec_size = spi_flash_sec_size
 
         temp_file = tempfile.NamedTemporaryFile(delete=False)
@@ -71,8 +91,8 @@ class OtatoolTarget():
         for i in range(2):
             start = i * (self.spi_flash_sec_size >> 1)
 
-            seq = bytearray(self.otadata[start:start + 4])
-            crc = bytearray(self.otadata[start + 28:start + 32])
+            seq = bytearray(self.otadata[start : start + 4])
+            crc = bytearray(self.otadata[start + 28 : start + 32])
 
             seq = struct.unpack('I', seq)
             crc = struct.unpack('I', crc)
@@ -118,7 +138,9 @@ class OtatoolTarget():
 
         try:
             if isinstance(ota_id, int):
-                ota_partition_next = filter(lambda p: p.subtype - gen.MIN_PARTITION_SUBTYPE_APP_OTA  == ota_id, ota_partitions)
+                ota_partition_next = filter(
+                    lambda p: p.subtype - gen.MIN_PARTITION_SUBTYPE_APP_OTA == ota_id, ota_partitions
+                )
             else:
                 ota_partition_next = filter(lambda p: p.name == ota_id, ota_partitions)
 
@@ -192,8 +214,8 @@ class OtatoolTarget():
     def read_ota_partition(self, ota_id, output):
         self.target.read_partition(self._get_partition_id_from_ota_id(ota_id), output)
 
-    def write_ota_partition(self, ota_id, input):
-        self.target.write_partition(self._get_partition_id_from_ota_id(ota_id), input)
+    def write_ota_partition(self, ota_id, input_file):
+        self.target.write_partition(self._get_partition_id_from_ota_id(ota_id), input_file)
 
     def erase_ota_partition(self, ota_id):
         self.target.erase_partition(self._get_partition_id_from_ota_id(ota_id))
@@ -205,8 +227,10 @@ def _read_otadata(target):
     otadata_info = target._get_otadata_info()
 
     print('             {:8s} \t  {:8s} | \t  {:8s} \t   {:8s}'.format('OTA_SEQ', 'CRC', 'OTA_SEQ', 'CRC'))
-    print('Firmware:  0x{:08x} \t0x{:08x} | \t0x{:08x} \t 0x{:08x}'.format(otadata_info[0].seq, otadata_info[0].crc,
-          otadata_info[1].seq, otadata_info[1].crc))
+    print(
+        f'Firmware:  {otadata_info[0].seq:#08x} \t{otadata_info[0].crc:#08x} | '
+        f'\t{otadata_info[1].seq:#08x} \t {otadata_info[1].crc:#08x}'
+    )
 
 
 def _erase_otadata(target):
@@ -220,12 +244,12 @@ def _switch_ota_partition(target, ota_id):
 
 def _read_ota_partition(target, ota_id, output):
     target.read_ota_partition(ota_id, output)
-    status('Read ota partition contents to file {}'.format(output))
+    status(f'Read ota partition contents to file {output}')
 
 
-def _write_ota_partition(target, ota_id, input):
-    target.write_ota_partition(ota_id, input)
-    status('Written contents of file {} to ota partition'.format(input))
+def _write_ota_partition(target, ota_id, input_file):
+    target.write_ota_partition(ota_id, input_file)
+    status(f'Written contents of file {input_file} to ota partition')
 
 
 def _erase_ota_partition(target, ota_id):
@@ -240,9 +264,13 @@ def main():
 
     parser.add_argument('--quiet', '-q', help='suppress stderr messages', action='store_true')
     parser.add_argument('--esptool-args', help='additional main arguments for esptool', nargs='+')
-    parser.add_argument('--esptool-write-args', help='additional subcommand arguments for esptool write_flash', nargs='+')
-    parser.add_argument('--esptool-read-args', help='additional subcommand arguments for esptool read_flash', nargs='+')
-    parser.add_argument('--esptool-erase-args', help='additional subcommand arguments for esptool erase_region', nargs='+')
+    parser.add_argument(
+        '--esptool-write-args', help='additional subcommand arguments for esptool write-flash', nargs='+'
+    )
+    parser.add_argument('--esptool-read-args', help='additional subcommand arguments for esptool read-flash', nargs='+')
+    parser.add_argument(
+        '--esptool-erase-args', help='additional subcommand arguments for esptool erase-region', nargs='+'
+    )
 
     # There are two possible sources for the partition table: a device attached to the host
     # or a partition table CSV/binary file. These sources are mutually exclusive.
@@ -250,10 +278,14 @@ def main():
 
     parser.add_argument('--baud', '-b', help='baudrate to use', type=int)
 
-    parser.add_argument('--partition-table-offset', '-o', help='offset to read the partition table from',  type=str)
+    parser.add_argument('--partition-table-offset', '-o', help='offset to read the partition table from', type=str)
 
-    parser.add_argument('--partition-table-file', '-f', help='file (CSV/binary) to read the partition table from; \
-                                                            overrides device attached to specified port as the partition table source when defined')
+    parser.add_argument(
+        '--partition-table-file',
+        '-f',
+        help='file (CSV/binary) to read the partition table from; '
+        'overrides device attached to specified port as the partition table source when defined',
+    )
 
     subparsers = parser.add_subparsers(dest='operation', help='run otatool -h for additional help')
 
@@ -269,15 +301,25 @@ def main():
     slot_or_name_parser_args.add_argument('--slot', help='slot number of the ota partition', type=int)
     slot_or_name_parser_args.add_argument('--name', help='name of the ota partition')
 
-    subparsers.add_parser('switch_ota_partition', help='switch otadata partition', parents=[slot_or_name_parser, spi_flash_sec_size])
+    subparsers.add_parser(
+        'switch_ota_partition', help='switch otadata partition', parents=[slot_or_name_parser, spi_flash_sec_size]
+    )
 
-    read_ota_partition_subparser = subparsers.add_parser('read_ota_partition', help='read contents of an ota partition', parents=[slot_or_name_parser])
-    read_ota_partition_subparser.add_argument('--output', help='file to write the contents of the ota partition to', required=True)
+    read_ota_partition_subparser = subparsers.add_parser(
+        'read_ota_partition', help='read contents of an ota partition', parents=[slot_or_name_parser]
+    )
+    read_ota_partition_subparser.add_argument(
+        '--output', help='file to write the contents of the ota partition to', required=True
+    )
 
-    write_ota_partition_subparser = subparsers.add_parser('write_ota_partition', help='write contents to an ota partition', parents=[slot_or_name_parser])
+    write_ota_partition_subparser = subparsers.add_parser(
+        'write_ota_partition', help='write contents to an ota partition', parents=[slot_or_name_parser]
+    )
     write_ota_partition_subparser.add_argument('--input', help='file whose contents to write to the ota partition')
 
-    subparsers.add_parser('erase_ota_partition', help='erase contents of an ota partition', parents=[slot_or_name_parser])
+    subparsers.add_parser(
+        'erase_ota_partition', help='erase contents of an ota partition', parents=[slot_or_name_parser]
+    )
 
     args = parser.parse_args()
 
@@ -324,7 +366,7 @@ def main():
     target = OtatoolTarget(**target_args)
 
     # Create the operation table and execute the operation
-    common_args = {'target':target}
+    common_args = {'target': target}
 
     ota_id = []
 
@@ -338,18 +380,18 @@ def main():
         pass
 
     otatool_ops = {
-        'read_otadata':(_read_otadata, []),
-        'erase_otadata':(_erase_otadata, []),
-        'switch_ota_partition':(_switch_ota_partition, ota_id),
-        'read_ota_partition':(_read_ota_partition, ['output'] + ota_id),
-        'write_ota_partition':(_write_ota_partition, ['input'] + ota_id),
-        'erase_ota_partition':(_erase_ota_partition, ota_id)
+        'read_otadata': (_read_otadata, []),
+        'erase_otadata': (_erase_otadata, []),
+        'switch_ota_partition': (_switch_ota_partition, ota_id),
+        'read_ota_partition': (_read_ota_partition, ['output'] + ota_id),
+        'write_ota_partition': (_write_ota_partition, ['input'] + ota_id),
+        'erase_ota_partition': (_erase_ota_partition, ota_id),
     }
 
     (op, op_args) = otatool_ops[args.operation]
 
     for op_arg in op_args:
-        common_args.update({op_arg:vars(args)[op_arg]})
+        common_args.update({op_arg: vars(args)[op_arg]})
 
     try:
         common_args['ota_id'] = common_args.pop('name')

@@ -1,10 +1,10 @@
 BluFi
-=======
+=====
 
 :link_to_translation:`zh_CN:[中文]`
 
 Overview
-----------
+--------
 
 The BluFi for {IDF_TARGET_NAME} is a Wi-Fi network configuration function via Bluetooth channel. It provides a secure protocol to pass Wi-Fi configuration and credentials to {IDF_TARGET_NAME}. Using this information, {IDF_TARGET_NAME} can then connect to an AP or establish a SoftAP.
 
@@ -14,13 +14,13 @@ You can customize symmetric encryption, asymmetric encryption, and checksum supp
 
 
 Getting Started
------------------
+---------------
 
 This section provides a step-by-step guide to configuring Wi-Fi on an {IDF_TARGET_NAME} device using the EspBlufi app.
 
 
 Prerequisites
-^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^
 
 Hardware:
 
@@ -41,10 +41,10 @@ For detailed instructions on flashing BluFi example, please refer to ESP-IDF :do
 
 
 Configuring Wi-Fi via the EspBlufi App
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Setting {IDF_TARGET_NAME} to Station Mode
-###############################################
+#########################################
 
 
 1. **Power on {IDF_TARGET_NAME}**
@@ -147,7 +147,7 @@ Setting {IDF_TARGET_NAME} to Station Mode
 
 
 Setting {IDF_TARGET_NAME} as a SoftAP
-###############################################
+#####################################
 
 
 1. **Connect via EspBlufi**
@@ -225,7 +225,7 @@ Setting {IDF_TARGET_NAME} as a SoftAP
 
 
 The BluFi Flow
-----------------
+--------------
 
 The BluFi networking flow includes the configuration of the SoftAP and Station.
 
@@ -258,7 +258,7 @@ The following uses Station as an example to illustrate the core parts of the pro
     2. The data lengths before and after symmetric encryption/decryption must stay the same. It also supports in-place encryption and decryption.
 
 The Flow Chart of BluFi
--------------------------
+-----------------------
 
 .. seqdiag::
     :caption: BluFi Flow Chart
@@ -287,7 +287,7 @@ The Flow Chart of BluFi
 .. _frame_formats:
 
 The Frame Formats Defined in BluFi
-------------------------------------
+----------------------------------
 
 The frame formats for the communication between the mobile phone App and {IDF_TARGET_NAME} are defined as follows:
 
@@ -703,11 +703,12 @@ If you require a higher level of security, it is recommended to implement your o
 
    esp_err_t esp_blufi_register_callbacks(esp_blufi_callbacks_t *callbacks)
 
+
 GATT Related Instructions
-----------------------------
+-------------------------
 
 UUID
-^^^^^
+^^^^
 
 BluFi Service UUID: 0xFFFF, 16 bit
 

@@ -36,11 +36,11 @@ extern "C" {
 #define I2S_LL_CLK_FRAC_DIV_AB_MAX 512 // I2S_MCLK = I2S_SRC_CLK / (N + b/a), the a/b register is 9 bit-width
 #define I2S_LL_SLOT_FRAME_BIT_MAX  128 // Up-to 128 bits in one frame, determined by MAX(half_sample_bits) * 2
 
-#define I2S_LL_PLL_F160M_CLK_FREQ      (160 * 1000000) // PLL_F160M_CLK: 160MHz
-#define I2S_LL_DEFAULT_CLK_FREQ     I2S_LL_PLL_F160M_CLK_FREQ    // The default PLL clock frequency while using I2S_CLK_SRC_DEFAULT
+#define I2S_LL_DEFAULT_CLK_FREQ     (160 * 1000000) // PLL_F160M_CLK: 160MHz
+#define I2S_LL_SUPPORT_XTAL        1    // Support XTAL as I2S clock source
 
 #define I2S_LL_ETM_EVENT_TABLE(i2s_port, chan_dir, event)  \
-    (uint32_t[SOC_I2S_NUM][2][I2S_ETM_EVENT_MAX]){{  \
+    (uint32_t[SOC_I2S_ATTR(INST_NUM)][2][I2S_ETM_EVENT_MAX]){{  \
                                           [I2S_DIR_RX - 1] = {  \
                                               [I2S_ETM_EVENT_DONE] = I2S_EVT_RX_DONE, \
                                               [I2S_ETM_EVENT_REACH_THRESH] = I2S_EVT_X_WORDS_RECEIVED,  \
@@ -52,7 +52,7 @@ extern "C" {
 
 
 #define I2S_LL_ETM_TASK_TABLE(i2s_port, chan_dir, task)  \
-    (uint32_t[SOC_I2S_NUM][2][I2S_ETM_TASK_MAX]){{  \
+    (uint32_t[SOC_I2S_ATTR(INST_NUM)][2][I2S_ETM_TASK_MAX]){{  \
                                          [I2S_DIR_RX - 1] = {  \
                                              [I2S_ETM_TASK_START] = I2S_TASK_START_RX, \
                                              [I2S_ETM_TASK_STOP] = I2S_TASK_STOP_RX, \

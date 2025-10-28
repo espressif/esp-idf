@@ -22,7 +22,7 @@
 #define PSRAM_LOW_SPEED_CORE_CLOCK_MHZ     MSPI_TIMING_LL_CORE_CLOCK_MHZ_DEFAULT
 #define PSRAM_HIGH_SPEED_CORE_CLOCK_MHZ    MSPI_TIMING_CORE_CLOCK_MHZ
 
-const static char *TAG = "MSPI Timing";
+ESP_LOG_ATTR_TAG(TAG, "MSPI Timing");
 
 //-------------------------------------MSPI Clock Setting-------------------------------------//
 static void s_mspi_flash_set_core_clock(uint8_t mspi_id, uint32_t core_clock_mhz)

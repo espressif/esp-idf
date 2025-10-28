@@ -15,7 +15,7 @@
 #include "nvs_flash.h"
 #include "sdkconfig.h"
 
-static const char *TAG = "test";
+ESP_LOG_ATTR_TAG(TAG, "test");
 
 static uint8_t buffer[SPI_FLASH_SEC_SIZE];
 

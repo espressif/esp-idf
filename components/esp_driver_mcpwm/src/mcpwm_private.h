@@ -8,7 +8,6 @@
 
 #include <stdint.h>
 #include <stdlib.h>
-#include <stdarg.h>
 #include <sys/cdefs.h>
 #include <sys/lock.h>
 #include "sdkconfig.h"

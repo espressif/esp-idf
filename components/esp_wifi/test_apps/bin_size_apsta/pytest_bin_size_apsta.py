@@ -1,8 +1,7 @@
 # SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import os
-from typing import Callable
-from typing import Tuple
+from collections.abc import Callable
 
 import pytest
 from pytest_embedded import Dut
@@ -14,17 +13,17 @@ SAVE_BIN_SIZE_TH = {
         'esp32': 16600,
         'esp32c2': 19700,
         'esp32c3': 19600,
-        'esp32c5': 19650,
+        'esp32c5': 17800,
         'esp32c6': 19650,
-        'esp32c61': 19700,
+        'esp32c61': 17800,
         'esp32s2': 16600,
         'esp32s3': 16550,
         'default': 16000,
     },
     'disable_nan': {
         'esp32': 29600,
-        'esp32c5': 32000,
-        'esp32c61': 32000,
+        'esp32c5': 31700,
+        'esp32c61': 31600,
         'esp32s2': 28000,
         # other chips does not support nan
         'default': 0,
@@ -56,8 +55,8 @@ def _get_diff_th(
     indirect=['target'],
 )
 def test_wifi_bin_size_apsta(
-    dut: Tuple[Dut, Dut],
-    config: Tuple[str, str],
+    dut: tuple[Dut, Dut],
+    config: tuple[str, str],
     log_performance: Callable[[str, object], None],
 ) -> None:
     # dut logs are not needed

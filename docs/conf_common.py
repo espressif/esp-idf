@@ -92,11 +92,10 @@ WIFI_DOCS = [
     'api-reference/network/esp_smartconfig.rst',
     'api-reference/network/esp_wifi.rst',
     'api-reference/network/esp_dpp.rst',
-    'api-reference/provisioning/provisioning.rst',
-    'api-reference/provisioning/wifi_provisioning.rst',
     'migration-guides/release-5.x/5.2/wifi.rst',
     'migration-guides/release-5.x/5.4/wifi.rst',
     'migration-guides/release-5.x/5.5/wifi.rst',
+    'migration-guides/release-6.x/6.0/wifi.rst',
 ]
 
 IEEE802154_DOCS = ['migration-guides/release-5.x/5.1/ieee802154.rst', 'migration-guides/release-5.x/5.2/ieee802154.rst']
@@ -300,7 +299,7 @@ ESP32C5_DOCS = [
     'api-guides/phy.rst',
     'api-reference/peripherals/sd_pullup_requirements.rst',
     'api-guides/RF_calibration.rst',
-]
+] + ESP_TEE_DOCS
 
 ESP32C61_DOCS = [
     'api-guides/phy.rst',
@@ -447,7 +446,6 @@ linkcheck_anchors = False
 linkcheck_exclude_documents = [
     'index',  # several false positives due to the way we link to different sections
     'api-reference/protocols/esp_local_ctrl',  # Fails due to `https://<mdns-hostname>.local`
-    'api-reference/provisioning/wifi_provisioning',  # Fails due to `https://<mdns-hostname>.local`
 ]
 
 

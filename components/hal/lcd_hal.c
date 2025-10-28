@@ -8,6 +8,8 @@
 #include "hal/lcd_ll.h"
 #include "hal/log.h"
 
+HAL_LOG_ATTR_TAG(TAG, "lcd_hal");
+
 void lcd_hal_init(lcd_hal_context_t *hal, int id)
 {
     hal->dev = LCD_LL_GET_HW(id);
@@ -37,7 +39,7 @@ uint32_t lcd_hal_cal_pclk_freq(lcd_hal_context_t *hal, uint32_t src_freq_hz, uin
         real_freq = hal_utils_calc_clk_div_frac_fast(&lcd_clk_info, lcd_clk_div);
     }
 
-    HAL_EARLY_LOGD("lcd_hal", "n=%"PRIu32",a=%"PRIu32",b=%"PRIu32",mo=%"PRIu32, lcd_clk_div->integer, lcd_clk_div->denominator, lcd_clk_div->numerator, mo);
+    HAL_EARLY_LOGD(TAG, "n=%"PRIu32",a=%"PRIu32",b=%"PRIu32",mo=%"PRIu32, lcd_clk_div->integer, lcd_clk_div->denominator, lcd_clk_div->numerator, mo);
     lcd_ll_set_pixel_clock_prescale(hal->dev, mo);
     return real_freq / mo;
 }

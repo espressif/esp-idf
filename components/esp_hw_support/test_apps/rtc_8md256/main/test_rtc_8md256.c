@@ -17,7 +17,7 @@
 #include "soc/soc_caps.h"
 
 
-static const char TAG[] = "rtc_8m";
+ESP_LOG_ATTR_TAG(TAG, "rtc_8m");
 
 static void test_deepsleep(bool force_rtc_periph)
 {

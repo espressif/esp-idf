@@ -14,16 +14,21 @@
  * - PWDET
  */
 
+#include <sys/lock.h>
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "esp_private/sar_periph_ctrl.h"
 #include "esp_private/regi2c_ctrl.h"
 #include "esp_private/esp_modem_clock.h"
 #include "esp_private/critical_section.h"
+#include "esp_private/adc_share_hw_ctrl.h"
 #include "hal/sar_ctrl_ll.h"
+#include "hal/adc_ll.h"
+#include "hal/temperature_sensor_ll.h"
 
-static const char *TAG = "sar_periph_ctrl";
+ESP_LOG_ATTR_TAG(TAG, "sar_periph_ctrl");
 extern portMUX_TYPE rtc_spinlock;
+static _lock_t adc_reset_lock;
 
 
 void sar_periph_ctrl_init(void)
@@ -119,4 +124,36 @@ void sar_periph_ctrl_adc_continuous_power_acquire(void)
 void sar_periph_ctrl_adc_continuous_power_release(void)
 {
     s_sar_power_release();
+}
+
+/*------------------------------------------------------------------------------
+* ADC Reset
+*----------------------------------------------------------------------------*/
+void sar_periph_ctrl_adc_reset(void)
+{
+    // Acquire ADC reset lock to prevent temperature sensor readings during ADC reset
+    adc_reset_lock_acquire();
+
+    ADC_BUS_CLK_ATOMIC() {
+        // Save temperature sensor related register values before ADC reset
+        tsens_ll_reg_values_t saved_tsens_regs = {};
+        tsens_ll_backup_registers(&saved_tsens_regs);
+        adc_ll_reset_register();
+        // Restore temperature sensor related register values after ADC reset
+        temperature_sensor_ll_reset_module();
+        tsens_ll_restore_registers(&saved_tsens_regs);
+    }
+
+    // Release ADC reset lock after ADC reset is complete
+    adc_reset_lock_release();
+}
+
+void adc_reset_lock_acquire(void)
+{
+    _lock_acquire(&adc_reset_lock);
+}
+
+void adc_reset_lock_release(void)
+{
+    _lock_release(&adc_reset_lock);
 }

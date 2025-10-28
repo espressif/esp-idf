@@ -11,7 +11,6 @@
 const lcd_i2s_signal_conn_t lcd_periph_i2s_signals = {
     .buses = {
         [0] = {
-            .module = PERIPH_I2S0_MODULE,
             .irq_id = ETS_I2S0_INTR_SOURCE,
             .data_sigs = {
                 I2S0O_DATA_OUT0_IDX,
@@ -42,7 +41,6 @@ const lcd_i2s_signal_conn_t lcd_periph_i2s_signals = {
             .wr_sig = I2S0O_WS_OUT_IDX,
         },
         [1] = {
-            .module = PERIPH_I2S1_MODULE,
             .irq_id = ETS_I2S1_INTR_SOURCE,
             .data_sigs = {
                 I2S1O_DATA_OUT0_IDX,

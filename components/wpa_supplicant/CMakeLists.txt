@@ -245,6 +245,7 @@ idf_component_register(SRCS "${srcs}" "${esp_srcs}" "${tls_src}" "${roaming_src}
                     INCLUDE_DIRS include port/include esp_supplicant/include
                     PRIV_INCLUDE_DIRS src src/utils esp_supplicant/src src/crypto
                                       ../esp_wifi/wifi_apps/roaming_app/include
+                                      ../esp_wifi/wifi_apps/roaming_app/src
                     LDFRAGMENTS   ${linker_fragments}
                     PRIV_REQUIRES mbedtls esp_timer esp_wifi)
 
@@ -264,7 +265,6 @@ target_compile_definitions(${COMPONENT_LIB} PRIVATE
     EAP_PEAP
     USE_WPA2_TASK
     CONFIG_WPS
-    USE_WPS_TASK
     ESPRESSIF_USE
     CONFIG_ECC
     CONFIG_IEEE80211W
@@ -288,8 +288,14 @@ endif()
 if(CONFIG_ESP_WIFI_SOFTAP_SAE_SUPPORT)
     target_compile_definitions(${COMPONENT_LIB} PRIVATE CONFIG_SAE)
 endif()
+if(CONFIG_ESP_WIFI_WPA3_COMPATIBLE_SUPPORT)
+    target_compile_definitions(${COMPONENT_LIB} PRIVATE CONFIG_WPA3_COMPAT)
+endif()
 if(CONFIG_ESP_WIFI_WPS_STRICT)
     target_compile_definitions(${COMPONENT_LIB} PRIVATE CONFIG_WPS_STRICT)
+endif()
+if(CONFIG_ESP_WIFI_WPS_RECONNECT_ON_FAIL)
+    target_compile_definitions(${COMPONENT_LIB} PRIVATE CONFIG_WPS_RECONNECT_ON_FAIL)
 endif()
 if(CONFIG_ESP_WIFI_SUITE_B_192)
     target_compile_definitions(${COMPONENT_LIB} PRIVATE CONFIG_SUITEB192)

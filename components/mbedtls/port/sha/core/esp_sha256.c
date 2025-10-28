@@ -34,6 +34,7 @@
 
 #include "esp_sha_internal.h"
 #include "sha/sha_core.h"
+#include "esp_compiler.h"
 
 /* Implementation that should never be optimized out by the compiler */
 static void mbedtls_zeroize(void *v, size_t n)
@@ -132,7 +133,8 @@ int mbedtls_internal_sha256_process(mbedtls_sha256_context *ctx, const unsigned 
     esp_internal_sha_update_state(ctx);
 
 #if SOC_SHA_SUPPORT_DMA
-    if (sha_operation_mode(64) == SHA_DMA_MODE) {
+    // Unlikely to use DMA because data size is 64 bytes which is smaller than the DMA threshold
+    if (unlikely(sha_operation_mode(64) == SHA_DMA_MODE)) {
         int ret = esp_sha_dma(ctx->mode, data, 64, NULL, 0, ctx->first_block);
         if (ret != 0) {
             esp_sha_release_hardware();

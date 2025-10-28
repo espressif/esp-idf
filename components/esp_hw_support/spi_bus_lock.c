@@ -267,7 +267,7 @@ struct spi_bus_lock_dev_t {
  */
 portMUX_TYPE s_spinlock = portMUX_INITIALIZER_UNLOCKED;
 
-DRAM_ATTR static const char TAG[] = "bus_lock";
+ESP_LOG_ATTR_TAG_DRAM(TAG, "bus_lock");
 
 static inline int mask_get_id(uint32_t mask);
 static inline int dev_lock_get_id(spi_bus_lock_dev_t *dev_lock);

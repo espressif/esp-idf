@@ -210,14 +210,6 @@ if(CONFIG_SOC_SHA_SUPPORTED)
     endif()
 endif()
 
-if(CONFIG_SOC_AES_SUPPORTED)
-    if(CONFIG_SOC_AES_SUPPORT_DMA)
-        set(AES_PERIPHERAL_TYPE "dma")
-    else()
-        set(AES_PERIPHERAL_TYPE "block")
-    endif()
-endif()
-
 if(SHA_PERIPHERAL_TYPE STREQUAL "core")
     target_include_directories(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/sha/core/include")
 
@@ -229,7 +221,7 @@ if(SHA_PERIPHERAL_TYPE STREQUAL "core")
     target_sources(mbedcrypto PRIVATE  "${SHA_CORE_SRCS}")
 endif()
 
-if(AES_PERIPHERAL_TYPE STREQUAL "dma")
+if(CONFIG_SOC_AES_SUPPORT_DMA)
     if(NOT CONFIG_SOC_AES_GDMA)
         set(AES_DMA_SRCS "${COMPONENT_DIR}/port/aes/dma/esp_aes_crypto_dma_impl.c")
     else()
@@ -242,7 +234,7 @@ if(AES_PERIPHERAL_TYPE STREQUAL "dma")
     target_sources(mbedcrypto PRIVATE  "${AES_DMA_SRCS}")
 endif()
 
-if((SHA_PERIPHERAL_TYPE STREQUAL "core" AND CONFIG_SOC_SHA_SUPPORT_DMA) OR AES_PERIPHERAL_TYPE STREQUAL "dma")
+if((SHA_PERIPHERAL_TYPE STREQUAL "core" AND CONFIG_SOC_SHA_SUPPORT_DMA) OR CONFIG_SOC_AES_SUPPORT_DMA)
     target_link_libraries(mbedcrypto PRIVATE idf::esp_mm)
     if(CONFIG_SOC_SHA_GDMA OR CONFIG_SOC_AES_GDMA)
         if(CONFIG_SOC_AXI_DMA_EXT_MEM_ENC_ALIGNMENT)
@@ -263,7 +255,7 @@ if(CONFIG_SOC_AES_SUPPORTED)
     target_include_directories(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/aes/include")
     target_sources(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/aes/esp_aes_xts.c"
                                   "${COMPONENT_DIR}/port/aes/esp_aes_common.c"
-                                  "${COMPONENT_DIR}/port/aes/${AES_PERIPHERAL_TYPE}/esp_aes.c"
+                                  "${COMPONENT_DIR}/port/aes/esp_aes.c"
     )
 endif()
 
@@ -278,6 +270,10 @@ target_sources(mbedcrypto PRIVATE
                 "${COMPONENT_DIR}/port/esp_ds/esp_rsa_sign_alt.c"
                 "${COMPONENT_DIR}/port/esp_ds/esp_rsa_dec_alt.c"
                 "${COMPONENT_DIR}/port/esp_ds/esp_ds_common.c")
+endif()
+
+if(CONFIG_SOC_HMAC_SUPPORTED)
+    target_sources(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/esp_hmac_pbkdf2.c")
 endif()
 
 # Note: some mbedTLS hardware acceleration can be enabled/disabled by config.

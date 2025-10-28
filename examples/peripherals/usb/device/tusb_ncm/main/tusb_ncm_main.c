@@ -31,7 +31,7 @@ static esp_err_t usb_recv_callback(void *buffer, uint16_t len, void *ctx)
 {
     bool *is_wifi_connected = ctx;
     if (*is_wifi_connected) {
-        esp_wifi_internal_tx(ESP_IF_WIFI_STA, buffer, len);
+        esp_wifi_internal_tx(WIFI_IF_STA, buffer, len);
     }
     return ESP_OK;
 }
@@ -57,11 +57,11 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base,
     if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
         ESP_LOGI(TAG, "WiFi STA disconnected");
         *is_connected = false;
-        esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_STA, NULL);
+        esp_wifi_internal_reg_rxcb(WIFI_IF_STA, NULL);
         esp_wifi_connect();
     } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_CONNECTED) {
         ESP_LOGI(TAG, "WiFi STA connected");
-        esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_STA, pkt_wifi2usb);
+        esp_wifi_internal_reg_rxcb(WIFI_IF_STA, pkt_wifi2usb);
         *is_connected = true;
     }
 }

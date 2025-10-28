@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -128,13 +128,6 @@
 #define GPIO_PAD_PULLUP(num) do{PIN_PULLDWN_DIS(IOMUX_REG_GPIO##num);PIN_PULLUP_EN(IOMUX_REG_GPIO##num);}while(0)
 #define GPIO_PAD_PULLDOWN(num) do{PIN_PULLUP_DIS(IOMUX_REG_GPIO##num);PIN_PULLDWN_EN(IOMUX_REG_GPIO##num);}while(0)
 #define GPIO_PAD_SET_DRV(num, drv) PIN_SET_DRV(IOMUX_REG_GPIO##num, drv)
-
-#define SPI_HD_GPIO_NUM              28
-#define SPI_WP_GPIO_NUM              26
-#define SPI_CS0_GPIO_NUM             24
-#define SPI_CLK_GPIO_NUM             29
-#define SPI_D_GPIO_NUM               30
-#define SPI_Q_GPIO_NUM               25
 
 #define SD_CLK_GPIO_NUM              19
 #define SD_CMD_GPIO_NUM              18

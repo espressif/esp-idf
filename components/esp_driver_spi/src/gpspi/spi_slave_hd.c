@@ -475,6 +475,7 @@ static SPI_SLAVE_ISR_ATTR void s_spi_slave_hd_segment_isr(void *arg)
         uint32_t buff_len = (host->rx_curr_trans.trans->len + alignment - 1) & (~(alignment - 1));
         esp_err_t ret = esp_cache_msync((void *)host->rx_curr_trans.aligned_buffer, buff_len, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
         assert(ret == ESP_OK);
+        (void)ret;
 #endif
         if (callback->cb_recv) {
             spi_slave_hd_event_t ev = {
@@ -617,6 +618,7 @@ static SPI_SLAVE_ISR_ATTR void spi_slave_hd_append_rx_isr(void *arg)
         uint32_t buff_len = (ret_priv_trans.trans->len + alignment - 1) & (~(alignment - 1));
         esp_err_t ret = esp_cache_msync((void *)ret_priv_trans.aligned_buffer, buff_len, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
         assert(ret == ESP_OK);
+        (void)ret;
 #endif
         bool ret_queue = true;
         if (callback->cb_recv) {

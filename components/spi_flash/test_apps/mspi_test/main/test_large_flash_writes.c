@@ -17,7 +17,6 @@
 #include "esp_log.h"
 #include "esp_rom_spiflash.h"
 #include "esp_private/cache_utils.h"
-#include "soc/timer_periph.h"
 #include "esp_flash.h"
 #include "esp_partition.h"
 

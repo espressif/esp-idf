@@ -10,6 +10,7 @@
 #include <sys/lock.h>
 #include <sys/param.h>
 
+#include "sdkconfig.h"
 #include "esp_attr.h"
 #include "esp_check.h"
 #include "esp_ipc_isr.h"
@@ -18,19 +19,14 @@
 #include "esp_rom_crc.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "esp_heap_caps.h"
 #include "riscv/csr.h"
-#include "soc/soc_caps.h"
-#include "soc/intpri_reg.h"
-#include "soc/cache_reg.h"
-#include "soc/clint_reg.h"
-#include "soc/clic_reg.h"
 #include "soc/pcr_reg.h"
+#include "soc/intpri_reg.h"
+#include "soc/soc_caps.h"
 #include "soc/rtc_periph.h"
 #include "esp_private/esp_pmu.h"
 #include "esp_private/sleep_cpu.h"
 #include "esp_private/sleep_event.h"
-#include "sdkconfig.h"
 
 #include "esp32h4/rom/rtc.h"
 #include "esp32h4/rom/cache.h"
@@ -469,6 +465,7 @@ static IRAM_ATTR void smp_core_do_retention(void)
     // Wait another core start to do retention
     bool smp_skip_retention = false;
     smp_retention_state_t another_core_state;
+    ESP_COMPILER_DIAGNOSTIC_PUSH_IGNORE("-Wanalyzer-infinite-loop")
     while (1) {
         another_core_state = atomic_load(&s_smp_retention_state[!core_id]);
         if (another_core_state == SMP_SKIP_RETENTION) {
@@ -479,6 +476,7 @@ static IRAM_ATTR void smp_core_do_retention(void)
             break;
         }
     }
+    ESP_COMPILER_DIAGNOSTIC_POP("-Wanalyzer-infinite-loop")
 
     if (!smp_skip_retention) {
         atomic_store(&s_smp_retention_state[core_id], SMP_BACKUP_START);
@@ -544,9 +542,11 @@ void sleep_smp_cpu_wakeup_prepare(void)
 #if ESP_SLEEP_POWER_DOWN_CPU
     uint8_t core_id = esp_cpu_get_core_id();
     if (atomic_load(&s_smp_retention_state[core_id]) == SMP_RESTORE_DONE) {
+        ESP_COMPILER_DIAGNOSTIC_PUSH_IGNORE("-Wanalyzer-infinite-loop")
         while (atomic_load(&s_smp_retention_state[!core_id]) != SMP_RESTORE_DONE) {
             ;
         }
+        ESP_COMPILER_DIAGNOSTIC_POP("-Wanalyzer-infinite-loop")
     }
     atomic_store(&s_smp_retention_state[core_id], SMP_IDLE);
 #else

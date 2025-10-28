@@ -61,8 +61,8 @@
 // #define SOC_BOD_SUPPORTED               1    //TODO: [ESP32H21] IDF-11530
 // #define SOC_APM_SUPPORTED               1    //TODO: [ESP32H21] IDF-11494
 #define SOC_PMU_SUPPORTED               1
-// #define SOC_LP_TIMER_SUPPORTED          1
-// #define SOC_LP_AON_SUPPORTED            1
+#define SOC_LP_TIMER_SUPPORTED          1
+#define SOC_LP_AON_SUPPORTED            1
 // #define SOC_LP_PERIPHERALS_SUPPORTED    1
 #define SOC_CLK_TREE_SUPPORTED          1
 // #define SOC_ASSIST_DEBUG_SUPPORTED      1    //TODO: [ESP32H21] IDF-11544
@@ -81,10 +81,9 @@
 #define SOC_AES_SUPPORTED               1
 // #define SOC_SDIO_SLAVE_SUPPORTED        1
 #define SOC_PAU_SUPPORTED               1
-// #define SOC_LIGHT_SLEEP_SUPPORTED       1    //TODO: [ESP32H21] IDF-11517, IDF-11520
-// #define SOC_DEEP_SLEEP_SUPPORTED        1    //TODO: [ESP32H21] IDF-11515
-// #define SOC_MODEM_CLOCK_SUPPORTED       1
-// #define SOC_PM_SUPPORTED                1
+#define SOC_LIGHT_SLEEP_SUPPORTED       1
+#define SOC_DEEP_SLEEP_SUPPORTED        1
+#define SOC_PM_SUPPORTED                1
 
 /*-------------------------- XTAL CAPS ---------------------------------------*/
 #define SOC_XTAL_SUPPORT_32M                        1
@@ -234,7 +233,7 @@
 // #define SOC_GPIO_CLOCKOUT_CHANNEL_NUM       (3)
 
 /*-------------------------- Sigma Delta Modulator CAPS -----------------*/
-#define SOC_SDM_SUPPORT_SLEEP_RETENTION 1
+// #define SOC_SDM_SUPPORT_SLEEP_RETENTION 1 //TODO [ESP32H21] IDF-14159
 
 /*-------------------------- ETM CAPS -----------------------------------*/
 #define SOC_ETM_SUPPORT_SLEEP_RETENTION 1
@@ -271,18 +270,13 @@
 // #define SOC_I2C_SUPPORT_SLEEP_RETENTION           (1)
 
 /*-------------------------- I2S CAPS ----------------------------------------*/
-// #define SOC_I2S_NUM                 (1U)
 // #define SOC_I2S_HW_VERSION_2        (1)
 // // #define SOC_I2S_SUPPORTS_ETM        (1)
-// #define SOC_I2S_SUPPORTS_XTAL       (1)
-// #define SOC_I2S_SUPPORTS_PLL_F96M   (1)
-// #define SOC_I2S_SUPPORTS_PLL_F64M   (1)
 // #define SOC_I2S_SUPPORTS_PCM        (1)
 // #define SOC_I2S_SUPPORTS_PDM        (1)
 // #define SOC_I2S_SUPPORTS_PDM_TX     (1)
 // #define SOC_I2S_PDM_MAX_TX_LINES    (2)
 // #define SOC_I2S_SUPPORTS_TDM        (1)
-// #define SOC_I2S_TDM_FULL_DATA_WIDTH (1)  /*!< No limitation to data bit width when using multiple slots */
 
 /*-------------------------- LEDC CAPS ---------------------------------------*/
 #define SOC_LEDC_SUPPORT_PLL_DIV_CLOCK      (1)

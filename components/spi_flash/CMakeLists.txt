@@ -6,6 +6,7 @@ if(${target} STREQUAL "linux")
                           "linux/cache_utils.c"
                           "linux/flash_mmap.c"
                            INCLUDE_DIRS include
+                           REQUIRES esp_hal_mspi
                            PRIV_INCLUDE_DIRS include/spi_flash)
     return()
 endif()
@@ -60,7 +61,7 @@ else()
 endif()
 
 idf_component_register(SRCS "${srcs}"
-                    REQUIRES hal
+                    REQUIRES hal esp_hal_mspi
                     PRIV_REQUIRES "${priv_requires}"
                     INCLUDE_DIRS include
                     PRIV_INCLUDE_DIRS include/spi_flash

@@ -590,8 +590,15 @@ static void s_i2c_send_commands(i2c_master_bus_handle_t i2c_master, TickType_t t
             // For i2c nack detected, the i2c transaction not finish.
             // start->address->nack->stop
             // So wait the whole transaction finishes, then quit the function.
+            TickType_t start_tick = xTaskGetTickCount();
+            const TickType_t timeout_ticks = ticks_to_wait;
             while (i2c_ll_is_bus_busy(hal->dev)) {
-                __asm__ __volatile__("nop");
+                if ((xTaskGetTickCount() - start_tick) > timeout_ticks) {
+                    ESP_LOGE(TAG, "I2C bus is still busy but software timeout detected");
+                    atomic_store(&i2c_master->status, I2C_STATUS_TIMEOUT);
+                    s_i2c_hw_fsm_reset(i2c_master, true);
+                    break;
+                }
             }
         }
         s_i2c_err_log_print(event, i2c_master->bypass_nack_log);
@@ -1037,9 +1044,6 @@ esp_err_t i2c_new_master_bus(const i2c_master_bus_config_t *bus_config, i2c_mast
     i2c_master->base->sda_num = bus_config->sda_io_num;
     i2c_master->base->pull_up_enable = bus_config->flags.enable_internal_pullup;
 
-    if (i2c_master->base->pull_up_enable == false) {
-        ESP_LOGW(TAG, "Please check pull-up resistances whether be connected properly. Otherwise unexpected behavior would happen. For more detailed information, please read docs");
-    }
     ESP_GOTO_ON_ERROR(i2c_param_master_config(i2c_master->base, bus_config), err, TAG, "i2c configure parameter failed");
 
     if (!i2c_master->base->is_lp_i2c) {

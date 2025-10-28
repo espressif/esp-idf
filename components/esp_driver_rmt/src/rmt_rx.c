@@ -22,7 +22,7 @@ static void rmt_rx_default_isr(void *args);
 static bool rmt_dma_rx_one_block_cb(gdma_channel_handle_t dma_chan, gdma_event_data_t *event_data, void *user_data);
 
 __attribute__((always_inline))
-static inline void rmt_rx_mount_dma_buffer(rmt_rx_channel_t *rx_chan, const void *buffer, size_t buffer_size, size_t per_block_size, size_t last_block_size)
+static inline void rmt_rx_mount_dma_buffer(rmt_rx_channel_t *rx_chan, const void *buffer, size_t buffer_size, size_t mem_alignment, size_t per_block_size, size_t last_block_size)
 {
     uint8_t *data = (uint8_t *)buffer;
     gdma_buffer_mount_config_t mount_configs[rx_chan->num_dma_nodes];
@@ -31,6 +31,7 @@ static inline void rmt_rx_mount_dma_buffer(rmt_rx_channel_t *rx_chan, const void
         mount_configs[i] = (gdma_buffer_mount_config_t) {
             .buffer = data + i * per_block_size,
             .length = per_block_size,
+            .buffer_alignment = mem_alignment,
             .flags = {
                 .mark_final = false,
             }
@@ -50,12 +51,12 @@ static esp_err_t rmt_rx_init_dma_link(rmt_rx_channel_t *rx_channel, const rmt_rx
     };
     ESP_RETURN_ON_ERROR(gdma_new_ahb_channel(&dma_chan_config, &rx_channel->base.dma_chan), TAG, "allocate RX DMA channel failed");
     gdma_transfer_config_t transfer_cfg = {
-        .access_ext_mem = false, // [IDF-8997]: PSRAM is not supported yet
+        .access_ext_mem = true, // support receive buffer to PSRAM
         .max_data_burst_size = 32,
     };
     ESP_RETURN_ON_ERROR(gdma_config_transfer(rx_channel->base.dma_chan, &transfer_cfg), TAG, "config DMA transfer failed");
     // get the alignment requirement from DMA
-    gdma_get_alignment_constraints(rx_channel->base.dma_chan, &rx_channel->dma_int_mem_alignment, NULL);
+    gdma_get_alignment_constraints(rx_channel->base.dma_chan, &rx_channel->dma_int_mem_alignment, &rx_channel->dma_ext_mem_alignment);
 
     // register event callbacks
     gdma_rx_event_callbacks_t cbs = {
@@ -64,13 +65,13 @@ static esp_err_t rmt_rx_init_dma_link(rmt_rx_channel_t *rx_channel, const rmt_rx
     // register the DMA callbacks may fail if the interrupt service can not be installed successfully
     ESP_RETURN_ON_ERROR(gdma_register_rx_event_callbacks(rx_channel->base.dma_chan, &cbs, rx_channel), TAG, "register DMA callbacks failed");
 
+    size_t buffer_alignment = MAX(rx_channel->dma_int_mem_alignment, rx_channel->dma_ext_mem_alignment);
     rx_channel->num_dma_nodes = esp_dma_calculate_node_count(config->mem_block_symbols * sizeof(rmt_symbol_word_t),
-                                                             rx_channel->dma_int_mem_alignment, DMA_DESCRIPTOR_BUFFER_MAX_SIZE);
+                                                             buffer_alignment, DMA_DESCRIPTOR_BUFFER_MAX_SIZE);
     rx_channel->num_dma_nodes = MAX(2, rx_channel->num_dma_nodes); // at least 2 DMA nodes for ping-pong
 
     //  create DMA link list
     gdma_link_list_config_t dma_link_config = {
-        .buffer_alignment = rx_channel->dma_int_mem_alignment,
         .item_alignment = RMT_DMA_DESC_ALIGN,
         .num_items = rx_channel->num_dma_nodes,
         .flags = {
@@ -209,9 +210,8 @@ esp_err_t rmt_new_rx_channel(const rmt_rx_channel_config_t *config, rmt_channel_
     ESP_RETURN_ON_FALSE(config->flags.allow_pd == 0, ESP_ERR_NOT_SUPPORTED, TAG, "not able to power down in light sleep");
 #endif // SOC_RMT_SUPPORT_SLEEP_RETENTION
 
-    // malloc channel memory
-    uint32_t mem_caps = RMT_MEM_ALLOC_CAPS;
-    rx_channel = heap_caps_calloc(1, sizeof(rmt_rx_channel_t), mem_caps);
+    // allocate channel memory from internal memory because it contains atomic variable
+    rx_channel = heap_caps_calloc(1, sizeof(rmt_rx_channel_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     ESP_GOTO_ON_FALSE(rx_channel, ESP_ERR_NO_MEM, err, TAG, "no mem for rx channel");
     // gpio is not configured yet
     rx_channel->base.gpio_num = -1;
@@ -356,11 +356,13 @@ esp_err_t rmt_receive(rmt_channel_handle_t channel, void *buffer, size_t buffer_
 
 #if SOC_RMT_SUPPORT_DMA
     uint32_t int_mem_cache_line_size = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA);
+    uint32_t ext_mem_cache_line_size = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_DATA);
     if (channel->dma_chan) {
-        // [IDF-8997]: Currently we assume the user buffer is allocated from internal RAM, PSRAM is not supported yet.
-        ESP_RETURN_ON_FALSE_ISR(esp_ptr_internal(buffer), ESP_ERR_INVALID_ARG, TAG, "user buffer not in the internal RAM");
-        // append the alignment requirement from the DMA and cache line size
-        mem_alignment = MAX(MAX(mem_alignment, rx_chan->dma_int_mem_alignment), int_mem_cache_line_size);
+        if (esp_ptr_external_ram(buffer)) {
+            mem_alignment = MAX(MAX(mem_alignment, rx_chan->dma_ext_mem_alignment), ext_mem_cache_line_size);
+        } else {
+            mem_alignment = MAX(MAX(mem_alignment, rx_chan->dma_int_mem_alignment), int_mem_cache_line_size);
+        }
     }
 #endif // SOC_RMT_SUPPORT_DMA
 
@@ -412,15 +414,16 @@ esp_err_t rmt_receive(rmt_channel_handle_t channel, void *buffer, size_t buffer_
 #if SOC_RMT_SUPPORT_DMA
     if (channel->dma_chan) {
         // invalidate the user buffer, in case cache auto-write back happens and breaks the data just written by the DMA
-        if (int_mem_cache_line_size) {
-            // this function will also check the alignment of the buffer and size, against the cache line size
+        uint32_t data_cache_line_size = esp_cache_get_line_size_by_addr(buffer);
+        if (data_cache_line_size) {
+            // invalidate the user buffer, so that the DMA modified data can be seen by CPU
             ESP_RETURN_ON_ERROR_ISR(esp_cache_msync(buffer, buffer_size, ESP_CACHE_MSYNC_FLAG_DIR_M2C), TAG, "cache sync failed");
         }
         // we will mount the buffer to multiple DMA nodes, in a balanced way
         size_t per_dma_block_size = buffer_size / rx_chan->num_dma_nodes;
         per_dma_block_size = ALIGN_DOWN(per_dma_block_size, mem_alignment);
         size_t last_dma_block_size = buffer_size - per_dma_block_size * (rx_chan->num_dma_nodes - 1);
-        rmt_rx_mount_dma_buffer(rx_chan, buffer, buffer_size, per_dma_block_size, last_dma_block_size);
+        rmt_rx_mount_dma_buffer(rx_chan, buffer, buffer_size, mem_alignment, per_dma_block_size, last_dma_block_size);
         gdma_reset(channel->dma_chan);
         gdma_start(channel->dma_chan, gdma_link_get_head_addr(rx_chan->dma_link)); // note, we must use the cached descriptor address to start the DMA
     }
@@ -806,7 +809,7 @@ static bool rmt_dma_rx_one_block_cb(gdma_channel_handle_t dma_chan, gdma_event_d
     rmt_rx_trans_desc_t *trans_desc = &rx_chan->trans_desc;
     uint32_t channel_id = channel->channel_id;
 
-    uint32_t data_cache_line_size = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA);
+    uint32_t data_cache_line_size = esp_cache_get_line_size_by_addr(trans_desc->buffer);
     if (data_cache_line_size) {
         // invalidate the user buffer, so that the DMA modified data can be seen by CPU
         esp_cache_msync(trans_desc->buffer, trans_desc->buffer_size, ESP_CACHE_MSYNC_FLAG_DIR_M2C);

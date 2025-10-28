@@ -73,7 +73,7 @@ menu "Serial flasher config"
             bool "DTR Mode"
     endchoice
 
-    # Note: we use esptool.py to flash bootloader in
+    # Note: we use esptool to flash bootloader in
     # dio mode for QIO/QOUT, bootloader then upgrades
     # itself to quad mode during initialisation
     config ESPTOOLPY_FLASHMODE
@@ -160,7 +160,7 @@ menu "Serial flasher config"
         prompt "Before flashing"
         default ESPTOOLPY_BEFORE_RESET
         help
-            Configure whether esptool.py should reset the ESP32 before flashing.
+            Configure whether esptool should reset the ESP32 before flashing.
 
             Automatic resetting depends on the RTS & DTR signals being
             wired from the serial port to the ESP32. Most USB development
@@ -174,14 +174,14 @@ menu "Serial flasher config"
 
     config ESPTOOLPY_BEFORE
         string
-        default "default_reset" if ESPTOOLPY_BEFORE_RESET
-        default "no_reset" if ESPTOOLPY_BEFORE_NORESET
+        default "default-reset" if ESPTOOLPY_BEFORE_RESET
+        default "no-reset" if ESPTOOLPY_BEFORE_NORESET
 
     choice ESPTOOLPY_AFTER
         prompt "After flashing"
         default ESPTOOLPY_AFTER_RESET
         help
-            Configure whether esptool.py should reset the ESP32 after flashing.
+            Configure whether esptool should reset the ESP32 after flashing.
 
             Automatic resetting depends on the RTS & DTR signals being
             wired from the serial port to the ESP32. Most USB development
@@ -195,8 +195,8 @@ menu "Serial flasher config"
 
     config ESPTOOLPY_AFTER
         string
-        default "hard_reset" if ESPTOOLPY_AFTER_RESET
-        default "no_reset" if ESPTOOLPY_AFTER_NORESET
+        default "hard-reset" if ESPTOOLPY_AFTER_RESET
+        default "no-reset" if ESPTOOLPY_AFTER_NORESET
 
     config ESPTOOLPY_MONITOR_BAUD
         int

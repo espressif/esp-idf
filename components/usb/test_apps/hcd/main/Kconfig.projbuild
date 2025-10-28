@@ -1,1 +1,0 @@
-source "$IDF_PATH/components/usb/test_apps/common/Kconfig.common"

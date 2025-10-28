@@ -74,6 +74,8 @@ typedef struct {
     void (*hal_init)(gdma_hal_context_t *hal, const gdma_hal_config_t *config);
 } gdma_channel_search_info_t;
 
+ESP_LOG_ATTR_TAG(TAG, "gdma");
+
 static esp_err_t do_allocate_gdma_channel(const gdma_channel_search_info_t *search_info, const gdma_channel_alloc_config_t *config, gdma_channel_handle_t *ret_chan)
 {
     esp_err_t ret = ESP_OK;

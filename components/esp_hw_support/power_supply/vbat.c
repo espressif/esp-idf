@@ -56,7 +56,7 @@
 #endif
 #endif
 
-static const char TAG[] = "VBAT";
+ESP_LOG_ATTR_TAG(TAG, "VBAT");
 #endif
 
 static struct {

@@ -50,6 +50,10 @@ static void panic(const char* fmt, ...);
 static arg_panicfn* s_panic = panic;
 
 void dbg_printf(const char* fmt, ...) {
+    if (fmt == NULL) {
+        return;
+    }
+
     va_list args = {0};
     va_start(args, fmt);
     vfprintf(stderr, fmt, args);
@@ -57,6 +61,10 @@ void dbg_printf(const char* fmt, ...) {
 }
 
 static void panic(const char* fmt, ...) {
+    if (fmt == NULL) {
+        return;
+    }
+
     va_list args = {0};
     char* s;
 

@@ -44,9 +44,11 @@ enum {
 #ifdef CONFIG_ESP_SYSTEM_MEMPROT
 #define MALLOC_DIRAM_BASE_CAPS      ESP32S3_MEM_COMMON_CAPS | MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA | MALLOC_CAP_RETENTION
 #define MALLOC_RTCRAM_BASE_CAPS     ESP32S3_MEM_COMMON_CAPS | MALLOC_CAP_INTERNAL
+#define MALLOC_IRAM_BASE_CAPS       0
 #else
 #define MALLOC_DIRAM_BASE_CAPS      ESP32S3_MEM_COMMON_CAPS | MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA | MALLOC_CAP_RETENTION | MALLOC_CAP_EXEC
 #define MALLOC_RTCRAM_BASE_CAPS     ESP32S3_MEM_COMMON_CAPS | MALLOC_CAP_INTERNAL | MALLOC_CAP_EXEC
+#define MALLOC_IRAM_BASE_CAPS       MALLOC_CAP_EXEC
 #endif
 
 // The memory used for SIMD instructions requires the bus of its memory regions be able to transfer the data in 128-bit
@@ -61,7 +63,7 @@ const soc_memory_type_desc_t soc_memory_types[SOC_MEMORY_TYPE_NUM] = {
 /*                           Mem Type Name | High Priority Matching                    | Medium Priority Matching                                                         | Low Priority Matching */
     [SOC_MEMORY_TYPE_DIRAM]  = { "RAM",    { MALLOC_DIRAM_BASE_CAPS | MALLOC_CAP_SIMD,   0,                                                                                 0 }},
     [SOC_MEMORY_TYPE_DRAM]   = { "DRAM",   { 0,                                          ESP32S3_MEM_COMMON_CAPS | MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA | MALLOC_CAP_SIMD,  0 }},
-    [SOC_MEMORY_TYPE_IRAM]   = { "IRAM",   { MALLOC_CAP_EXEC,                            MALLOC_CAP_32BIT | MALLOC_CAP_INTERNAL,                                            0 }},
+    [SOC_MEMORY_TYPE_IRAM]   = { "IRAM",   { MALLOC_IRAM_BASE_CAPS,                      MALLOC_CAP_32BIT | MALLOC_CAP_INTERNAL,                                            0 }},
     [SOC_MEMORY_TYPE_SPIRAM] = { "SPIRAM", { MALLOC_CAP_SPIRAM,                          0,                                                                                 ESP32S3_MEM_COMMON_CAPS | MALLOC_CAP_SIMD }},
     [SOC_MEMORY_TYPE_RTCRAM] = { "RTCRAM", { MALLOC_CAP_RTCRAM,                          0,                                                                                 MALLOC_RTCRAM_BASE_CAPS }},
 };

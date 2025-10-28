@@ -97,7 +97,7 @@ static void btc_deinit_bluetooth(void)
 
 void btc_main_call_handler(btc_msg_t *msg)
 {
-    BTC_TRACE_DEBUG("%s act %d\n", __func__, msg->act);
+    BTC_TRACE_DEBUG("%s act %d", __func__, msg->act);
 
     switch (msg->act) {
     case BTC_MAIN_ACT_INIT:
@@ -127,101 +127,132 @@ uint32_t btc_get_ble_status(void)
         return status;
     }
 
-    #if (BLE_INCLUDED == TRUE)
+#if (BLE_INCLUDED == TRUE)
     // Number of active advertising
     extern uint8_t btm_ble_adv_active_count(void);
-    if (btm_ble_adv_active_count()) {
+    uint8_t adv_cnt = btm_ble_adv_active_count();
+    if (adv_cnt) {
+        BTC_TRACE_WARNING("%s advertising active, cnt %d", __func__, adv_cnt);
         status |= BIT(BTC_BLE_STATUS_ADV);
     }
 
     // Number of active scanning
     extern uint8_t btm_ble_scan_active_count(void);
-    if (btm_ble_scan_active_count()) {
+    uint8_t scan_cnt = btm_ble_scan_active_count();
+    if (scan_cnt) {
+        BTC_TRACE_WARNING("%s scan active, cnt %d", __func__, scan_cnt);
         status |= BIT(BTC_BLE_STATUS_SCAN);
     }
 
     // Number of active GATT tcb
     extern uint8_t gatt_tcb_active_count(void);
-    if (gatt_tcb_active_count()) {
+    uint8_t gatt_tcb_cnt = gatt_tcb_active_count();
+    if (gatt_tcb_cnt) {
+        BTC_TRACE_WARNING("%s gatt tcb active, cnt %d", __func__, gatt_tcb_cnt);
         status |= BIT(BTC_BLE_STATUS_CONN);
     }
 
     // Number of active ACL connection
     extern uint8_t btm_ble_acl_active_count(void);
-    if (btm_ble_acl_active_count()) {
+    uint8_t acl_cnt = btm_ble_acl_active_count();
+    if (acl_cnt) {
+        BTC_TRACE_WARNING("%s acl connection active, cnt %d", __func__, acl_cnt);
         status |= BIT(BTC_BLE_STATUS_CONN);
     }
 
     // Number of active L2C plcb
     extern uint8_t l2cu_ble_plcb_active_count(void);
-    if (l2cu_ble_plcb_active_count()) {
+    uint8_t plcb_cnt = l2cu_ble_plcb_active_count();
+    if (plcb_cnt) {
+        BTC_TRACE_WARNING("%s l2c plcb active, cnt %d", __func__, plcb_cnt);
         status |= BIT(BTC_BLE_STATUS_CONN);
     }
 
     // Address resolve status
     extern uint8_t btm_get_ble_addr_resolve_disable_status(void);
-    if (btm_get_ble_addr_resolve_disable_status()) {
+    uint8_t addr_resolve_disable = btm_get_ble_addr_resolve_disable_status();
+    if (addr_resolve_disable) {
+        BTC_TRACE_WARNING("%s address resolve disabled", __func__);
         status |= BIT(BTC_BLE_STATUS_ADDR_RESOLVE_DISABLE);
     }
 
-    #if (SMP_INCLUDED == TRUE)
+#if (SMP_INCLUDED == TRUE)
     // Number of recorded devices
     extern uint8_t btm_ble_sec_dev_record_count(void);
-    if (btm_ble_sec_dev_record_count()) {
+    uint8_t sec_dev_cnt = btm_ble_sec_dev_record_count();
+    if (sec_dev_cnt) {
+        BTC_TRACE_WARNING("%s security device record count %d", __func__, sec_dev_cnt);
         status |= BIT(BTC_BLE_STATUS_DEVICE_REC);
     }
 
     // Number of saved bonded devices
-    if (btc_storage_get_num_ble_bond_devices()) {
+    int bond_cnt = btc_storage_get_num_ble_bond_devices();
+    if (bond_cnt) {
+        BTC_TRACE_WARNING("%s bonded devices count %d", __func__, bond_cnt);
         status |= BIT(BTC_BLE_STATUS_BOND);
     }
-    #endif
+#endif // SMP_INCLUDED
 
-    #if (BLE_PRIVACY_SPT == TRUE)
+#if (BLE_PRIVACY_SPT == TRUE)
     // Privacy enabled
     extern uint8_t btm_ble_privacy_is_enabled(void);
-    if (btm_ble_privacy_is_enabled()) {
+    uint8_t privacy_en = btm_ble_privacy_is_enabled();
+    if (privacy_en) {
+        BTC_TRACE_WARNING("%s privacy enabled", __func__);
         status |= BIT(BTC_BLE_STATUS_PRIVACY);
     }
-    #endif
-    #endif
+#endif // BLE_PRIVACY_SPT
 
-    #if (BLE_50_EXTEND_ADV_EN == TRUE)
-    // Number of active extended advertsing
+#endif // BLE_INCLUDED
+
+#if (BLE_50_EXTEND_ADV_EN == TRUE)
+    // Number of active extended advertising
     extern uint8_t btm_ble_ext_adv_active_count(void);
-    if (btm_ble_ext_adv_active_count()) {
+    uint8_t ext_adv_cnt = btm_ble_ext_adv_active_count();
+    if (ext_adv_cnt) {
+        BTC_TRACE_WARNING("%s extended advertising active, cnt %d", __func__, ext_adv_cnt);
         status |= BIT(BTC_BLE_STATUS_EXT_ADV);
     }
-    #endif
+#endif // BLE_50_EXTEND_ADV_EN
 
-    #if (GATTC_INCLUDED == TRUE)
+#if (GATTC_INCLUDED == TRUE)
     // Number of registered GATTC APP
     extern uint8_t bta_gattc_cl_rcb_active_count(void);
-    if (bta_gattc_cl_rcb_active_count()) {
+    uint8_t gattc_app_cnt = bta_gattc_cl_rcb_active_count();
+    if (gattc_app_cnt) {
+        BTC_TRACE_WARNING("%s GATTC app active, cnt %d", __func__, gattc_app_cnt);
         status |= BIT(BTC_BLE_STATUS_GATTC_APP);
     }
 
     // Number of saved GATTC cache
     extern UINT8 bta_gattc_co_get_addr_num(void);
-    if (bta_gattc_co_get_addr_num()) {
+    uint8_t gattc_cache_cnt = bta_gattc_co_get_addr_num();
+    if (gattc_cache_cnt) {
+        BTC_TRACE_WARNING("%s GATTC cache count %d", __func__, gattc_cache_cnt);
         status |= BIT(BTC_BLE_STATUS_GATTC_CACHE);
     }
-    #endif
+#endif // GATTC_INCLUDED
 
-    #if (GATTS_INCLUDED == TRUE)
+#if (GATTS_INCLUDED == TRUE)
     // Number of registered GATTS service
     extern uint8_t bta_gatts_srvc_active_count(void);
-    if (bta_gatts_srvc_active_count()) {
+    uint8_t gatts_srvc_cnt = bta_gatts_srvc_active_count();
+    if (gatts_srvc_cnt) {
+        BTC_TRACE_WARNING("%s GATTS service active, cnt %d", __func__, gatts_srvc_cnt);
         status |= BIT(BTC_BLE_STATUS_GATTS_SRVC);
     }
-    #endif
+#endif // GATTS_INCLUDED
 
-    #if SMP_INCLUDED == TRUE
+#if (SMP_INCLUDED == TRUE)
     extern uint8_t smp_get_state(void);
-    if (smp_get_state()) {
+    uint8_t smp_state = smp_get_state();
+    if (smp_state) {
+        BTC_TRACE_WARNING("%s SMP state active, state=%d", __func__, smp_state);
         status |= BIT(BTC_BLE_STATUS_SMP_STATE);
     }
-    #endif
+#endif // SMP_INCLUDED
+
+    BTC_TRACE_WARNING("%s exit, final status=0x%x", __func__, status);
 
     return status;
 }

@@ -31,7 +31,7 @@
 #include "ecdsa_params.h"
 #include "hal_crypto_common.h"
 
-__attribute__((unused)) static const char * TAG = "crypto_test";
+ESP_LOG_ATTR_TAG(TAG, "crypto_test");
 
 static void ecdsa_enable_and_reset(void)
 {

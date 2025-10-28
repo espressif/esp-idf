@@ -33,7 +33,6 @@ choice ESP32P4_REV_MIN
     config ESP32P4_REV_MIN_300
         bool "Rev v3.0"
         depends on !ESP32P4_SELECTS_REV_LESS_V3
-        select ESPTOOLPY_NO_STUB # TODO: IDF-13911
 endchoice
 
 config ESP32P4_REV_MIN_FULL

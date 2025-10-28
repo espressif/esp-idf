@@ -48,8 +48,6 @@ components/esp_hw_support/test_apps/sleep_retention:
 components/esp_hw_support/test_apps/usb_phy:
   enable:
     - if: SOC_USB_OTG_SUPPORTED == 1
-  depends_components:
-    - usb
   depends_filepatterns:
     - components/hal/usb*.c
     - components/hal/include/hal/usb*.h

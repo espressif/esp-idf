@@ -11,6 +11,7 @@
 
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/adc_share_hw_ctrl.h"
+#include "esp_private/sar_periph_ctrl.h"
 
 #define I2C_SAR_ADC_INIT_CODE_VAL       2166
 #define ADC_RNG_CLKM_DIV_NUM            0
@@ -19,7 +20,12 @@
 
 void bootloader_random_enable(void)
 {
+#ifndef BOOTLOADER_BUILD
+    sar_periph_ctrl_adc_reset();
+#else
     _adc_ll_reset_register();
+#endif
+
     _adc_ll_enable_bus_clock(true);
 
     adc_ll_digi_clk_sel(ADC_DIGI_CLK_SRC_XTAL);

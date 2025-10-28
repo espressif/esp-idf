@@ -12,8 +12,8 @@
 
 typedef struct gptimer_platform_t {
     _lock_t mutex;                             // platform level mutex lock
-    gptimer_group_t *groups[SOC_TIMG_ATTR(INST_NUM)]; // timer group pool
-    int group_ref_counts[SOC_TIMG_ATTR(INST_NUM)];    // reference count used to protect group install/uninstall
+    gptimer_group_t *groups[TIMG_LL_GET(INST_NUM)]; // timer group pool
+    int group_ref_counts[TIMG_LL_GET(INST_NUM)];    // reference count used to protect group install/uninstall
 } gptimer_platform_t;
 
 // gptimer driver platform, it's always a singleton
@@ -50,8 +50,8 @@ gptimer_group_t *gptimer_acquire_group_handle(int group_id)
         // we need to increase/decrease the reference count before enable/disable/reset the peripheral
         PERIPH_RCC_ACQUIRE_ATOMIC(soc_timg_gptimer_signals[group_id][0].parent_module, ref_count) {
             if (ref_count == 0) {
-                timer_ll_enable_bus_clock(group_id, true);
-                timer_ll_reset_register(group_id);
+                timg_ll_enable_bus_clock(group_id, true);
+                timg_ll_reset_register(group_id);
             }
         }
         ESP_LOGD(TAG, "new group (%d) @%p", group_id, group);
@@ -78,7 +78,7 @@ void gptimer_release_group_handle(gptimer_group_t *group)
         // disable bus clock for the timer group
         PERIPH_RCC_RELEASE_ATOMIC(soc_timg_gptimer_signals[group_id][0].parent_module, ref_count) {
             if (ref_count == 0) {
-                timer_ll_enable_bus_clock(group_id, false);
+                timg_ll_enable_bus_clock(group_id, false);
             }
         }
         free(group);

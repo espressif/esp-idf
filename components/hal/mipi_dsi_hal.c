@@ -12,6 +12,8 @@
 #include "hal/log.h"
 #include "soc/mipi_dsi_periph.h"
 
+HAL_LOG_ATTR_TAG(TAG, "dsi_hal");
+
 void mipi_dsi_hal_init(mipi_dsi_hal_context_t *hal, const mipi_dsi_hal_config_t *config)
 {
     hal->host = MIPI_DSI_LL_GET_HOST(config->bus_id);
@@ -85,7 +87,7 @@ void mipi_dsi_hal_configure_phy_pll(mipi_dsi_hal_context_t *hal, uint32_t phy_cl
     mipi_dsi_hal_phy_write_register(hal, 0x18, 0x80 | (((pll_M - 1) >> 5) & 0x0F));
     // update the real lane bit rate
     hal->lane_bit_rate_mbps = ref_freq_mhz * pll_M / pll_N;
-    HAL_LOGD("dsi_hal", "phy pll: ref=%" PRIu32 "Hz, lane_bit_rate=%" PRIu32 "Mbps, M=%" PRId16 ", N=%" PRId8 ", hsfreqrange=%" PRId8,
+    HAL_LOGD(TAG, "phy pll: ref=%" PRIu32 "Hz, lane_bit_rate=%" PRIu32 "Mbps, M=%" PRId16 ", N=%" PRId8 ", hsfreqrange=%" PRId8,
              phy_clk_src_freq_hz, hal->lane_bit_rate_mbps, pll_M, pll_N, hs_freq_sel);
 }
 

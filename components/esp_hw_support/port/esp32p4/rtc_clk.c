@@ -23,7 +23,7 @@
 #include "esp_private/sleep_event.h"
 #include "esp_private/regi2c_ctrl.h"
 
-static const char *TAG = "rtc_clk";
+ESP_HW_LOG_ATTR_TAG(TAG, "rtc_clk");
 
 // CPLL frequency option, in 360/400MHz. Zero if CPLL is not enabled.
 static int s_cur_cpll_freq = 0;

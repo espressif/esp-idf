@@ -160,37 +160,6 @@ esp_err_t mcpwm_generator_set_action_on_timer_event(mcpwm_gen_handle_t gen, mcpw
     return ESP_OK;
 }
 
-esp_err_t mcpwm_generator_set_actions_on_timer_event(mcpwm_gen_handle_t gen, mcpwm_gen_timer_event_action_t ev_act, ...)
-{
-    ESP_RETURN_ON_FALSE(gen, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
-    mcpwm_oper_t *oper = gen->oper;
-    mcpwm_group_t *group = oper->group;
-    mcpwm_timer_t *timer = oper->timer;
-    ESP_RETURN_ON_FALSE(timer, ESP_ERR_INVALID_STATE, TAG, "no timer is connected to the operator");
-    mcpwm_gen_timer_event_action_t ev_act_itor = ev_act;
-    bool invalid_utep = false;
-    bool invalid_dtez = false;
-    va_list it = {};
-    va_start(it, ev_act);
-    while (ev_act_itor.event != MCPWM_TIMER_EVENT_INVALID) {
-        invalid_utep = (timer->count_mode == MCPWM_TIMER_COUNT_MODE_UP_DOWN) &&
-                       (ev_act_itor.direction == MCPWM_TIMER_DIRECTION_UP) &&
-                       (ev_act_itor.event == MCPWM_TIMER_EVENT_FULL);
-        invalid_dtez = (timer->count_mode == MCPWM_TIMER_COUNT_MODE_UP_DOWN) &&
-                       (ev_act_itor.direction == MCPWM_TIMER_DIRECTION_DOWN) &&
-                       (ev_act_itor.event == MCPWM_TIMER_EVENT_EMPTY);
-        if (invalid_utep || invalid_dtez) {
-            va_end(it);
-            ESP_RETURN_ON_FALSE(false, ESP_ERR_INVALID_ARG, TAG, "UTEP and DTEZ can't be reached under MCPWM_TIMER_COUNT_MODE_UP_DOWN mode");
-        }
-        mcpwm_ll_generator_set_action_on_timer_event(group->hal.dev, oper->oper_id, gen->gen_id,
-                                                     ev_act_itor.direction, ev_act_itor.event, ev_act_itor.action);
-        ev_act_itor = va_arg(it, mcpwm_gen_timer_event_action_t);
-    }
-    va_end(it);
-    return ESP_OK;
-}
-
 esp_err_t mcpwm_generator_set_action_on_compare_event(mcpwm_gen_handle_t gen, mcpwm_gen_compare_event_action_t ev_act)
 {
     ESP_RETURN_ON_FALSE(gen, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
@@ -202,23 +171,6 @@ esp_err_t mcpwm_generator_set_action_on_compare_event(mcpwm_gen_handle_t gen, mc
     return ESP_OK;
 }
 
-esp_err_t mcpwm_generator_set_actions_on_compare_event(mcpwm_gen_handle_t gen, mcpwm_gen_compare_event_action_t ev_act, ...)
-{
-    ESP_RETURN_ON_FALSE(gen, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
-    mcpwm_oper_t *oper = gen->oper;
-    mcpwm_group_t *group = oper->group;
-    mcpwm_gen_compare_event_action_t ev_act_itor = ev_act;
-    va_list it = {};
-    va_start(it, ev_act);
-    while (ev_act_itor.comparator) {
-        mcpwm_ll_generator_set_action_on_compare_event(group->hal.dev, oper->oper_id, gen->gen_id,
-                                                       ev_act_itor.direction, ev_act_itor.comparator->cmpr_id, ev_act_itor.action);
-        ev_act_itor = va_arg(it, mcpwm_gen_compare_event_action_t);
-    }
-    va_end(it);
-    return ESP_OK;
-}
-
 esp_err_t mcpwm_generator_set_action_on_brake_event(mcpwm_gen_handle_t gen, mcpwm_gen_brake_event_action_t ev_act)
 {
     ESP_RETURN_ON_FALSE(gen, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
@@ -227,23 +179,6 @@ esp_err_t mcpwm_generator_set_action_on_brake_event(mcpwm_gen_handle_t gen, mcpw
     mcpwm_group_t *group = oper->group;
     mcpwm_ll_generator_set_action_on_brake_event(group->hal.dev, oper->oper_id, gen->gen_id,
                                                  ev_act.direction, ev_act.brake_mode, ev_act.action);
-    return ESP_OK;
-}
-
-esp_err_t mcpwm_generator_set_actions_on_brake_event(mcpwm_gen_handle_t gen, mcpwm_gen_brake_event_action_t ev_act, ...)
-{
-    ESP_RETURN_ON_FALSE(gen, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
-    mcpwm_oper_t *oper = gen->oper;
-    mcpwm_group_t *group = oper->group;
-    mcpwm_gen_brake_event_action_t ev_act_itor = ev_act;
-    va_list it = {};
-    va_start(it, ev_act);
-    while (ev_act_itor.brake_mode != MCPWM_OPER_BRAKE_MODE_INVALID) {
-        mcpwm_ll_generator_set_action_on_brake_event(group->hal.dev, oper->oper_id, gen->gen_id,
-                                                     ev_act_itor.direction, ev_act_itor.brake_mode, ev_act_itor.action);
-        ev_act_itor = va_arg(it, mcpwm_gen_brake_event_action_t);
-    }
-    va_end(it);
     return ESP_OK;
 }
 

@@ -74,8 +74,8 @@ Default pins for SDSPI are listed in the table above [Pin assignments](#1-pin-as
 
 However on some development boards the SD card slot can be wired to default dedicated pins for SDMMC, which are listed in the table below.
 
-SD card pin | ESP32-P4 pin 
-------------|--------------     
+SD card pin | ESP32-P4 pin
+------------|--------------
 D0  (MISO)  | GPIO39
 D3  (CS)    | GPIO42
 CLK (SCK)   | GPIO43
@@ -160,7 +160,7 @@ Check you board documentation/schematics for appropriate procedure.
 
 An attempt to download a new firmware under this conditions may also result in the board's serial port disappearing from your PC device list - rebooting your computer should fix the issue. After your device is back, use
 
-`esptool.py --port PORT --before no_reset --baud 115200 --chip esp32 erase_flash`
+`esptool --port PORT --before no-reset --baud 115200 --chip esp32 erase-flash`
 
 to erase your board's flash, then flash the firmware again.
 

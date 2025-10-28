@@ -219,10 +219,10 @@ mainmenu "Espressif IoT Development Framework Configuration"
 
                 When loading the BIN with UART, the ROM will jump to ram and run the app after finishing the ROM
                 startup code, so there's no additional startup initialization required. You can use the
-                `load_ram` in esptool.py to load the generated .bin file into ram and execute.
+                `load-ram` in esptool to load the generated .bin file into ram and execute.
 
                 Example:
-                    esptool.py --chip {chip} -p {port} -b {baud} --no-stub load_ram {app.bin}
+                    esptool --chip {chip} -p {port} -b {baud} --no-stub load-ram {app.bin}
 
                 Recommended sdkconfig.defaults for building loadable ELF files is as follows.
                 CONFIG_APP_BUILD_TYPE_RAM is required, other options help reduce application
@@ -407,7 +407,7 @@ mainmenu "Espressif IoT Development Framework Configuration"
 
         config COMPILER_ASSERT_NDEBUG_EVALUATE
             bool "Enable the evaluation of the expression inside assert(X) when NDEBUG is set"
-            default y
+            default n
             help
                 When NDEBUG is set, assert(X) will not cause code to trigger an assertion.
                 With this option set, assert(X) will still evaluate the expression X, though
@@ -416,9 +416,6 @@ mainmenu "Espressif IoT Development Framework Configuration"
 
                 This is not according to the standard, which states that the assert(X) should
                 be replaced with ((void)0) if NDEBUG is defined.
-
-                In ESP-IDF v6.0 the default behavior will change to "no" to be in line with the
-                standard.
 
         choice COMPILER_FLOAT_LIB_FROM
             prompt "Compiler float lib source"
@@ -578,7 +575,7 @@ mainmenu "Espressif IoT Development Framework Configuration"
 
         config COMPILER_DISABLE_DEFAULT_ERRORS
             bool "Disable errors for default warnings"
-            default "y"
+            default "n"
             help
                 Enable this option if you do not want default warnings to be considered as errors,
                 especially when updating IDF.
@@ -684,6 +681,34 @@ mainmenu "Espressif IoT Development Framework Configuration"
             depends on IDF_TOOLCHAIN_GCC
             help
                 Enable compiler static analyzer. This may produce false-positive results and increases compile time.
+
+        choice COMPILER_CXX_GLIBCXX_CONSTEXPR
+            prompt "Define _GLIBCXX_CONSTEXPR"
+            default COMPILER_CXX_GLIBCXX_CONSTEXPR_NO_CHANGE
+            depends on IDF_TOOLCHAIN_GCC && !IDF_TARGET_LINUX
+            help
+                Modify libstdc++ _GLIBCXX20_CONSTEXPR and _GLIBCXX23_CONSTEXPR definitions to provide size
+                optimizations. The total size optimization depends on the application's structure.
+                There is no robust way to determine which option would be better in a particular case.
+                Please try all available options to find the best size optimization.
+
+            config COMPILER_CXX_GLIBCXX_CONSTEXPR_NO_CHANGE
+                bool "No change"
+                help
+                    Use default _GLIBCXX20_CONSTEXPR and _GLIBCXX23_CONSTEXPR defined in libstdc++
+
+            config COMPILER_CXX_GLIBCXX_CONSTEXPR_COLD_CONSTEXPR
+                bool "_GLIBCXX2X_CONSTEXPR=__attribute__((cold)) constexpr"
+                help
+                    Define _GLIBCXX20_CONSTEXPR=__attribute__((cold)) constexpr
+                    Define _GLIBCXX23_CONSTEXPR=__attribute__((cold)) constexpr
+
+            config COMPILER_CXX_GLIBCXX_CONSTEXPR_COLD
+                bool "_GLIBCXX2X_CONSTEXPR=__attribute__((cold))"
+                help
+                    Define _GLIBCXX20_CONSTEXPR=__attribute__((cold)).
+                    Define _GLIBCXX23_CONSTEXPR=__attribute__((cold)).
+        endchoice
 
     endmenu # Compiler Options
 

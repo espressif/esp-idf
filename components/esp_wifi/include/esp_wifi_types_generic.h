@@ -11,7 +11,6 @@
 #include <stddef.h>
 #include "sdkconfig.h"
 #include "esp_event_base.h"
-#include "esp_interface.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -35,12 +34,12 @@ typedef enum {
   * @brief Wi-Fi interface type
   */
 typedef enum {
-    WIFI_IF_STA = ESP_IF_WIFI_STA,    /**< Station interface */
-    WIFI_IF_AP  = ESP_IF_WIFI_AP,     /**< Soft-AP interface */
+    WIFI_IF_STA,    /**< Station interface */
+    WIFI_IF_AP,     /**< Soft-AP interface */
 #if CONFIG_SOC_WIFI_NAN_SUPPORT || !CONFIG_SOC_WIFI_ENABLED
-    WIFI_IF_NAN = ESP_IF_WIFI_NAN,    /**< NAN interface */
+    WIFI_IF_NAN,    /**< NAN interface */
 #endif
-    WIFI_IF_MAX                       /**< Maximum number of interfaces */
+    WIFI_IF_MAX     /**< Maximum number of interfaces */
 } wifi_interface_t;
 
 typedef enum {
@@ -96,8 +95,8 @@ typedef enum {
     WIFI_AUTH_WAPI_PSK,         /**< Authenticate mode : WAPI_PSK */
     WIFI_AUTH_OWE,              /**< Authenticate mode : OWE */
     WIFI_AUTH_WPA3_ENT_192,     /**< Authenticate mode : WPA3_ENT_SUITE_B_192_BIT */
-    WIFI_AUTH_WPA3_EXT_PSK,     /**< This authentication mode will yield same result as WIFI_AUTH_WPA3_PSK and not recommended to be used. It will be deprecated in future, please use WIFI_AUTH_WPA3_PSK instead. */
-    WIFI_AUTH_WPA3_EXT_PSK_MIXED_MODE, /**< This authentication mode will yield same result as WIFI_AUTH_WPA3_PSK and not recommended to be used. It will be deprecated in future, please use WIFI_AUTH_WPA3_PSK instead.*/
+    WIFI_AUTH_DUMMY_1,          /**< Placeholder: Previously used by WIFI_AUTH_WPA3_EXT_PSK */
+    WIFI_AUTH_DUMMY_2,          /**< Placeholder: Previously used by WIFI_AUTH_WPA3_EXT_PSK_MIXED_MODE */
     WIFI_AUTH_DPP,              /**< Authenticate mode : DPP */
     WIFI_AUTH_WPA3_ENTERPRISE,  /**< Authenticate mode : WPA3-Enterprise Only Mode */
     WIFI_AUTH_WPA2_WPA3_ENTERPRISE, /**< Authenticate mode : WPA3-Enterprise Transition Mode */
@@ -114,12 +113,9 @@ typedef enum {
     WIFI_REASON_UNSPECIFIED                        = 1,     /**< Unspecified reason */
     WIFI_REASON_AUTH_EXPIRE                        = 2,     /**< Authentication expired */
     WIFI_REASON_AUTH_LEAVE                         = 3,     /**< Deauthentication due to leaving */
-    WIFI_REASON_ASSOC_EXPIRE                       = 4,     /**< Deprecated, will be removed in next IDF major release */
     WIFI_REASON_DISASSOC_DUE_TO_INACTIVITY         = 4,     /**< Disassociated due to inactivity */
     WIFI_REASON_ASSOC_TOOMANY                      = 5,     /**< Too many associated stations */
-    WIFI_REASON_NOT_AUTHED                         = 6,     /**< Deprecated, will be removed in next IDF major release */
     WIFI_REASON_CLASS2_FRAME_FROM_NONAUTH_STA      = 6,     /**< Class 2 frame received from nonauthenticated STA */
-    WIFI_REASON_NOT_ASSOCED                        = 7,     /**< Deprecated, will be removed in next IDF major release */
     WIFI_REASON_CLASS3_FRAME_FROM_NONASSOC_STA     = 7,     /**< Class 3 frame received from nonassociated STA */
     WIFI_REASON_ASSOC_LEAVE                        = 8,     /**< Deassociated due to leaving */
     WIFI_REASON_ASSOC_NOT_AUTHED                   = 9,     /**< Association but not authenticated */
@@ -537,8 +533,10 @@ typedef struct {
     bool ftm_responder;                       /**< Enable FTM Responder mode */
     wifi_pmf_config_t pmf_cfg;                /**< Configuration for Protected Management Frame */
     wifi_sae_pwe_method_t sae_pwe_h2e;        /**< Configuration for SAE PWE derivation method */
-    uint8_t transition_disable;               /**< Whether to enable transition disable feature */
-    uint8_t sae_ext;                          /**< Enable SAE EXT feature. SOC_GCMP_SUPPORT is required for this feature. */
+    uint8_t transition_disable: 1;            /**< Whether to enable transition disable feature */
+    uint8_t sae_ext: 1;                       /**< Enable SAE EXT feature. SOC_GCMP_SUPPORT is required for this feature. */
+    uint8_t wpa3_compatible_mode: 1;          /**< Enable WPA3 compatible authmode feature. Note: Enabling this will override the AP configuration's authmode and pairwise_cipher. The AP will operate as a WPA2 access point for all stations except for those that support WPA3 compatible mode. Only WPA3 compatibility mode stations will be able to use WPA3-SAE */
+    uint8_t reserved: 5;                      /**< Reserved for future feature set */
     wifi_bss_max_idle_config_t bss_max_idle_cfg;  /**< Configuration for bss max idle, effective if CONFIG_WIFI_BSS_MAX_IDLE_SUPPORT is enabled */
     uint16_t gtk_rekey_interval;              /**< GTK rekeying interval in seconds. If set to 0, GTK rekeying is disabled. Range: 60 ~ 65535 including 0. */
 } wifi_ap_config_t;
@@ -565,7 +563,8 @@ typedef struct {
     uint32_t ft_enabled: 1;                   /**< Whether FT is enabled for the connection */
     uint32_t owe_enabled: 1;                  /**< Whether OWE is enabled for the connection */
     uint32_t transition_disable: 1;           /**< Whether to enable transition disable feature */
-    uint32_t reserved1: 26;                   /**< Reserved for future feature set */
+    uint32_t disable_wpa3_compatible_mode: 1; /**< Whether to disable wpa3 compatible authmode feature. Disabling this prevents connecting to WPA3-Personal RSN override (compatibility mode) APs; connection falls back to WPA2 only. */
+    uint32_t reserved1: 25;                   /**< Reserved for future feature set */
     wifi_sae_pwe_method_t sae_pwe_h2e;        /**< Configuration for SAE PWE derivation method */
     wifi_sae_pk_mode_t sae_pk_mode;           /**< Configuration for SAE-PK (Public Key) Authentication method */
     uint8_t failure_retry_cnt;                /**< Number of connection retries station will do before moving to next AP. scan_method should be set as WIFI_ALL_CHANNEL_SCAN to use this config.
@@ -582,7 +581,7 @@ typedef struct {
     uint32_t vht_mu_beamformee_disabled: 1;                       /**< Whether to disable support for operation as an VHT MU beamformee. */
     uint32_t vht_mcs8_enabled: 1;                                 /**< Whether to support VHT-MCS8. The default value is 0. */
     uint32_t reserved2: 19;                                       /**< Reserved for future feature set */
-    uint8_t sae_h2e_identifier[SAE_H2E_IDENTIFIER_LEN];/**< Password identifier for H2E. this needs to be null terminated string */
+    uint8_t sae_h2e_identifier[SAE_H2E_IDENTIFIER_LEN];           /**< Password identifier for H2E. Strings null-terminated (length < SAE_H2E_IDENTIFIER_LEN) or non-null terminated (length = SAE_H2E_IDENTIFIER_LEN) are accepted. Non-null terminated string with 0xFF for full length of SAE_H2E_IDENTIFIER_LEN is not considered a valid identifier */
 } wifi_sta_config_t;
 
 /**
@@ -794,6 +793,7 @@ typedef struct {
     uint8_t dest_mac[6];        /**< Destination MAC address */
     wifi_action_tx_t type;      /**< ACTION TX operation type */
     uint8_t channel;            /**< Channel on which to perform ACTION TX Operation */
+    wifi_second_chan_t sec_channel;    /**< Secondary channel */
     uint32_t wait_time_ms;      /**< Duration to wait for on target channel */
     bool no_ack;                /**< Indicates no ack required */
     wifi_action_rx_cb_t rx_cb;  /**< Rx Callback to receive action frames */
@@ -844,8 +844,6 @@ typedef struct {
     uint8_t channel;            /**< Primary channel of the FTM Responder */
     uint8_t frm_count;          /**< No. of FTM frames requested in terms of 4 or 8 bursts (allowed values - 0(No pref), 16, 24, 32, 64) */
     uint16_t burst_period;      /**< Requested period between FTM bursts in 100's of milliseconds (allowed values 0(No pref) - 100) */
-    bool use_get_report_api;    /**< True - Using esp_wifi_ftm_get_report to get FTM report, False - Using ftm_report_data from
-                                     WIFI_EVENT_FTM_REPORT to get FTM report */
 } wifi_ftm_initiator_cfg_t;
 
 #define ESP_WIFI_NAN_MAX_SVC_SUPPORTED  2      /**< Maximum number of NAN services supported */
@@ -903,12 +901,12 @@ typedef struct {
     char service_name[ESP_WIFI_MAX_SVC_NAME_LEN];   /**< Service name identifier */
     wifi_nan_service_type_t type;                   /**< Service type */
     char matching_filter[ESP_WIFI_MAX_FILTER_LEN];  /**< Comma separated filters for filtering services */
-    char svc_info[ESP_WIFI_MAX_SVC_INFO_LEN];       /**< To be deprecated in next major release, use ssi instead */
     uint8_t single_replied_event: 1;                /**< Give single Replied event or every time */
     uint8_t datapath_reqd: 1;                       /**< NAN Datapath required for the service */
     uint8_t fsd_reqd: 1;                            /**< Further Service Discovery(FSD) required */
     uint8_t fsd_gas: 1;                             /**< 0 - Follow-up used for FSD, 1 - GAS used for FSD */
-    uint8_t reserved: 4;                            /**< Reserved */
+    uint8_t ndp_resp_needed: 1;                     /**< 0 - Auto-Accept NDP Requests, 1 - Require explicit response with esp_wifi_nan_datapath_resp */
+    uint8_t reserved: 3;                            /**< Reserved */
     uint16_t ssi_len;                               /**< Length of service specific info, maximum allowed length - ESP_WIFI_MAX_SVC_SSI_LEN */
     uint8_t *ssi;                                   /**< Service Specific Info of type wifi_nan_wfa_ssi_t for WFA defined protocols, otherwise proprietary and defined by Applications */
 } wifi_nan_publish_cfg_t;
@@ -921,7 +919,6 @@ typedef struct {
     char service_name[ESP_WIFI_MAX_SVC_NAME_LEN];   /**< Service name identifier */
     wifi_nan_service_type_t type;                   /**< Service type */
     char matching_filter[ESP_WIFI_MAX_FILTER_LEN];  /**< Comma separated filters for filtering services */
-    char svc_info[ESP_WIFI_MAX_SVC_INFO_LEN];       /**< To be deprecated in next major release, use ssi instead */
     uint8_t single_match_event: 1;                  /**< Give single Match event(per SSI update)  or every time */
     uint8_t datapath_reqd: 1;                       /**< NAN Datapath required for the service */
     uint8_t fsd_reqd: 1;                            /**< Further Service Discovery(FSD) required */
@@ -939,7 +936,6 @@ typedef struct {
     uint8_t inst_id;                                /**< Own service instance id */
     uint8_t peer_inst_id;                           /**< Peer's service instance id */
     uint8_t peer_mac[6];                            /**< Peer's MAC address */
-    char svc_info[ESP_WIFI_MAX_SVC_INFO_LEN];       /**< To be deprecated in next major release, use ssi instead */
     uint16_t ssi_len;                               /**< Length of service specific info, maximum allowed length - ESP_WIFI_MAX_FUP_SSI_LEN */
     uint8_t *ssi;                                   /**< Service Specific Info of type wifi_nan_wfa_ssi_t for WFA defined protocols, otherwise proprietary and defined by Applications */
 } wifi_nan_followup_params_t;
@@ -1284,9 +1280,7 @@ typedef struct {
     uint32_t rtt_raw;                           /**< Raw average Round-Trip-Time with peer in Nano-Seconds */
     uint32_t rtt_est;                           /**< Estimated Round-Trip-Time with peer in Nano-Seconds */
     uint32_t dist_est;                          /**< Estimated one-way distance in Centi-Meters */
-    wifi_ftm_report_entry_t *ftm_report_data;   /**< Pointer to FTM Report, should be freed after use. Note: Highly recommended
-                                                     to use API esp_wifi_ftm_get_report to get the report instead of using this */
-    uint8_t ftm_report_num_entries;             /**< Number of entries in the FTM Report data */
+    uint8_t ftm_report_num_entries;             /**< Number of entries in the FTM Report, use esp_wifi_ftm_get_report to fetch it */
 } wifi_event_ftm_report_t;
 
 #define WIFI_STATIS_BUFFER    (1<<0)    /**< Buffer status */
@@ -1395,7 +1389,6 @@ typedef struct {
     uint8_t inst_id;                                 /**< Our Service Identifier */
     uint8_t peer_inst_id;                            /**< Peer's Service Identifier */
     uint8_t peer_if_mac[6];                          /**< Peer's NAN Interface MAC */
-    uint8_t peer_svc_info[ESP_WIFI_MAX_SVC_INFO_LEN];/**< To be deprecated in next major release, use ssi instead */
     uint32_t reserved_1;                             /**< Reserved */
     uint32_t reserved_2;                             /**< Reserved */
     uint16_t ssi_len;                                /**< Length of service specific info */
@@ -1410,7 +1403,6 @@ typedef struct {
     uint8_t ndp_id;                             /**< NDP instance id */
     uint8_t peer_nmi[6];                        /**< Peer's NAN Management Interface MAC */
     uint8_t peer_ndi[6];                        /**< Peer's NAN Data Interface MAC */
-    uint8_t svc_info[ESP_WIFI_MAX_SVC_INFO_LEN];/**< To be deprecated in next major release, use ssi instead */
     uint32_t reserved_1;                        /**< Reserved */
     uint32_t reserved_2;                        /**< Reserved */
     uint16_t ssi_len;                           /**< Length of service specific info */
@@ -1426,7 +1418,6 @@ typedef struct {
     uint8_t peer_nmi[6];                        /**< Peer's NAN Management Interface MAC */
     uint8_t peer_ndi[6];                        /**< Peer's NAN Data Interface MAC */
     uint8_t own_ndi[6];                         /**< Own NAN Data Interface MAC */
-    uint8_t svc_info[ESP_WIFI_MAX_SVC_INFO_LEN];/**< To be deprecated in next major release, use ssi instead */
     uint32_t reserved_1;                        /**< Reserved */
     uint32_t reserved_2;                        /**< Reserved */
     uint16_t ssi_len;                           /**< Length of Service Specific Info */
@@ -1446,7 +1437,6 @@ typedef struct {
   * @brief Argument structure for WIFI_EVENT_STA_NEIGHBOR_REP event
   */
 typedef struct {
-    uint8_t report[ESP_WIFI_MAX_NEIGHBOR_REP_LEN];  /**< Neighbor Report received from the AP (will be deprecated in next major release, use n_report instead)*/
     uint16_t report_len;                            /**< Length of the report*/
     uint8_t n_report[];                             /**< Neighbor Report received from the AP*/
 } wifi_event_neighbor_report_t;

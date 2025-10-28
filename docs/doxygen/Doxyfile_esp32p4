@@ -10,13 +10,10 @@ INPUT += \
     $(PROJECT_PATH)/components/ulp/lp_core/lp_core/include/ulp_lp_core_uart.h \
     $(PROJECT_PATH)/components/ulp/lp_core/lp_core/include/ulp_lp_core_utils.h \
     $(PROJECT_PATH)/components/ulp/lp_core/lp_core/include/ulp_lp_core_interrupts.h \
+	$(PROJECT_PATH)/components/ulp/lp_core/lp_core/include/ulp_lp_core_mailbox.h \
     $(PROJECT_PATH)/components/ulp/lp_core/lp_core/include/ulp_lp_core_spi.h \
     $(PROJECT_PATH)/components/ulp/lp_core/shared/include/ulp_lp_core_lp_vad_shared.h \
     $(PROJECT_PATH)/components/ulp/ulp_common/include/ulp_common.h \
-    $(PROJECT_PATH)/components/usb/include/usb/usb_helpers.h \
-    $(PROJECT_PATH)/components/usb/include/usb/usb_host.h \
-    $(PROJECT_PATH)/components/usb/include/usb/usb_types_ch9.h \
-    $(PROJECT_PATH)/components/usb/include/usb/usb_types_stack.h \
     $(PROJECT_PATH)/components/esp_driver_bitscrambler/include/driver/bitscrambler.h \
     $(PROJECT_PATH)/components/esp_driver_bitscrambler/include/driver/bitscrambler_loopback.h \
     $(PROJECT_PATH)/components/esp_driver_cam/include/esp_cam_ctlr.h \
@@ -37,6 +34,7 @@ INPUT += \
     $(PROJECT_PATH)/components/esp_driver_isp/include/driver/isp_awb.h \
     $(PROJECT_PATH)/components/esp_driver_isp/include/driver/isp_ccm.h \
     $(PROJECT_PATH)/components/esp_driver_isp/include/driver/isp_bf.h \
+    $(PROJECT_PATH)/components/esp_driver_isp/include/driver/isp_blc.h \
     $(PROJECT_PATH)/components/esp_driver_isp/include/driver/isp_lsc.h \
     $(PROJECT_PATH)/components/esp_driver_isp/include/driver/isp_demosaic.h \
     $(PROJECT_PATH)/components/esp_driver_isp/include/driver/isp_sharpen.h \

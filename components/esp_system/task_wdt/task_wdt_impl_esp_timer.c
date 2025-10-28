@@ -37,7 +37,7 @@ typedef struct {
  * init function. */
 static twdt_ctx_soft_t init_context;
 
-static const char *TAG = "task_wdt_impl_soft";
+ESP_LOG_ATTR_TAG(TAG, "task_wdt_impl_soft");
 
 esp_err_t esp_task_wdt_impl_timer_allocate(const esp_task_wdt_config_t *config,
                                            twdt_isr_callback callback,

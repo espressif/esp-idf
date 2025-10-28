@@ -1,7 +1,6 @@
 # SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import logging
-from collections import namedtuple
 from typing import Any
 
 import esptool
@@ -32,7 +31,7 @@ class LoadableAppSerial(EspSerial):
     def _start(self) -> None:
         self.load_ram()
 
-    @EspSerial.use_esptool(hard_reset_after=False, no_stub=True)
+    @EspSerial.use_esptool()
     def load_ram(self) -> None:
         if not self.app.bin_file:
             logging.error('No image file detected. Skipping load ram...')
@@ -40,8 +39,4 @@ class LoadableAppSerial(EspSerial):
 
         with open(self.app.bin_file, 'rb') as f_bin_file:
             self.esp.change_baud(460800)
-            try:
-                # esptool v5.0+
-                esptool.load_ram(self.esp, input=f_bin_file)
-            except TypeError:
-                esptool.load_ram(self.esp, namedtuple('args', 'filename')(f_bin_file))
+            esptool.load_ram(self.esp, f_bin_file)

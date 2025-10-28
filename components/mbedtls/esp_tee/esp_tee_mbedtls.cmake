@@ -48,7 +48,7 @@ target_include_directories(mbedcrypto PRIVATE ${crypto_port_inc_dirs})
 target_sources(mbedcrypto PRIVATE "${COMPONENT_DIR}/esp_tee/esp_tee_crypto_shared_gdma.c")
 
 # AES implementation
-target_sources(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/aes/dma/esp_aes.c"
+target_sources(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/aes/esp_aes.c"
                                   "${COMPONENT_DIR}/port/aes/dma/esp_aes_dma_core.c")
 
 target_sources(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/aes/esp_aes_common.c"
@@ -65,3 +65,6 @@ target_sources(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/sha/core/sha.c"
 
 target_sources(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/ecc/esp_ecc.c"
                                   "${COMPONENT_DIR}/port/ecc/ecc_alt.c")
+
+# HMAC-based PBKDF2 implementation
+target_sources(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/esp_hmac_pbkdf2.c")

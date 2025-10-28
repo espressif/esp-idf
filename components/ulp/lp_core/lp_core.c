@@ -13,11 +13,13 @@
 #include "soc/pmu_reg.h"
 #include "hal/misc.h"
 #include "esp_private/periph_ctrl.h"
+#include "esp_private/pmu_share_hw.h"
 #include "ulp_common.h"
 #include "ulp_lp_core.h"
 #include "ulp_lp_core_memory_shared.h"
 #include "ulp_lp_core_lp_timer_shared.h"
 #include "hal/lp_core_ll.h"
+#include "hal/pmu_ll.h"
 
 #if CONFIG_IDF_TARGET_ESP32P4
 #include "esp32p4/rom/rtc.h"
@@ -189,7 +191,28 @@ void ulp_lp_core_stop(void)
     lp_core_ll_request_sleep();
 }
 
-void ulp_lp_core_sw_intr_trigger(void)
+void ulp_lp_core_sw_intr_to_lp_trigger(void)
 {
+    /* Write-only register, no need to protect it */
     lp_core_ll_hp_wake_lp();
+}
+
+void ulp_lp_core_sw_intr_trigger_self(void)
+{
+    /* Write-only register, no need to protect it */
+    pmu_ll_lp_trigger_sw_intr(&PMU);
+}
+
+void ulp_lp_core_sw_intr_from_lp_enable(bool enable)
+{
+    /* Interrupt enable register must be protected since it is a R/W one */
+    pmu_lock_acquire();
+    pmu_ll_hp_enable_sw_intr(&PMU, enable);
+    pmu_lock_release();
+}
+
+void ulp_lp_core_sw_intr_from_lp_clear(void)
+{
+    /* Write-only register, no need to protect it */
+    pmu_ll_hp_clear_sw_intr_status(&PMU);
 }

@@ -25,7 +25,7 @@
 #include "hal/mspi_ll.h"
 #include "rom/spi_flash.h"
 
-const static char *TAG = "Flash Delay";
+ESP_LOG_ATTR_TAG(TAG, "Flash Delay");
 
 void mspi_timing_flash_init(uint32_t flash_freq_mhz)
 {

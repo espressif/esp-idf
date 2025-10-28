@@ -11,7 +11,7 @@ This guide provides an overview of the overall security features available in va
 
 .. note::
 
-    In this guide, most used commands are in the form of ``idf.py secure-<command>``, which is a wrapper around corresponding ``espsecure.py <command>``. The ``idf.py`` based commands provides more user-friendly experience, although may lack some of the advanced functionality of their ``espsecure.py`` based counterparts.
+    In this guide, most used commands are in the form of ``idf.py secure-<command>``, which is a wrapper around corresponding ``espsecure <command>``. The ``idf.py`` based commands provides more user-friendly experience, although may lack some of the advanced functionality of their ``espsecure`` based counterparts.
 
 .. only:: TARGET_SUPPORT_QEMU
 
@@ -55,7 +55,7 @@ Secure Boot Best Practices
 
 * Generate the signing key on a system with a quality source of entropy.
 * Always keep the signing key private. A leak of this key will compromise the Secure Boot system.
-* Do not allow any third party to observe any aspects of the key generation or signing process using ``idf.py secure-`` or ``espsecure.py`` commands. Both processes are vulnerable to timing or other side-channel attacks.
+* Do not allow any third party to observe any aspects of the key generation or signing process using ``idf.py secure-`` or ``espsecure`` commands. Both processes are vulnerable to timing or other side-channel attacks.
 * Ensure that all security eFuses have been correctly programmed, including disabling of the debug interfaces, non-required boot mediums (e.g., UART DL mode), etc.
 
 
@@ -183,7 +183,7 @@ UART Download Mode
 
     .. important::
 
-        If UART Download mode is disabled then ``esptool.py`` can not work on the device.
+        If UART Download mode is disabled then ``esptool`` can not work on the device.
 
 .. only:: SOC_SUPPORTS_SECURE_DL_MODE
 
@@ -191,12 +191,12 @@ UART Download Mode
 
     * Secure UART Download mode can also be enabled by calling :cpp:func:`esp_efuse_enable_rom_secure_download_mode`.
     * This mode does not allow any arbitrary code to execute if downloaded through the UART download mode.
-    * It also limits the available commands in Download mode to update SPI config, e.g., changing baud rate, basic flash write, and the command to return a summary of currently enabled security features (``get_security_info``).
+    * It also limits the available commands in Download mode to update SPI config, e.g., changing baud rate, basic flash write, and the command to return a summary of currently enabled security features (``get-security-info``).
     * To disable Download Mode entirely, select the :ref:`CONFIG_SECURE_UART_ROM_DL_MODE` to the recommended option ``Permanently disable ROM Download Mode`` or call :cpp:func:`esp_efuse_disable_rom_download_mode` at runtime.
 
     .. important::
 
-        In Secure UART Download mode, ``esptool.py`` can only work with the argument ``--no-stub``.
+        In Secure UART Download mode, ``esptool`` can only work with the argument ``--no-stub``.
 
 .. only:: SOC_WIFI_SUPPORTED
 
@@ -265,7 +265,7 @@ Product Security
 
     ESP-IDF provides various security schemes to establish a secure session between ESP and the provisioning entity, they are highlighted at :ref:`provisioning_security_schemes`.
 
-    Please refer to the :doc:`../api-reference/provisioning/wifi_provisioning` documentation for details and the example code for this feature.
+    Please refer to `network_provisioning <https://github.com/espressif/idf-extra-components/tree/master/network_provisioning>`_ for details and the example code for this feature.
 
     .. note::
 

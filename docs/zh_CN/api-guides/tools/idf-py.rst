@@ -7,7 +7,7 @@ IDF 前端工具 - ``idf.py``
 
 - CMake_ 用于配置要构建的工程。
 - Ninja_ 用于构建工程。
-- `esptool.py`_ 用于烧录目标芯片。
+- `esptool`_ 用于烧录目标芯片。
 
 :ref:`第五步：开始使用 ESP-IDF 吧 <get-started-configure>` 简要介绍了设置 ``idf.py`` 以配置、构建及烧录工程的操作流程。
 
@@ -120,7 +120,7 @@ ESP-IDF 支持多个目标芯片，运行 ``idf.py --list-targets`` 查看当前
 
 .. note:: 环境变量 ``ESPPORT`` 和 ``ESPBAUD`` 可分别设置 ``-p`` 和 ``-b`` 选项的默认值，在命令行上设置这些选项的参数可覆盖默认值。
 
-``idf.py`` 在内部使用 ``esptool.py`` 的 ``write_flash`` 命令来烧录目标设备。通过 ``--extra-args`` 选项传递额外的参数，并配置烧录过程。例如，要 `写入到外部 SPI flash 芯片 <https://docs.espressif.com/projects/esptool/en/latest/esptool/advanced-options.html#custom-spi-pin-configuration>`_，请使用以下命令： ``idf.py flash --extra-args="--spi-connection <CLK>,<Q>,<D>,<HD>,<CS>"``。要查看所有可用参数，请运行 ``esptool.py write_flash --help`` 或查看 `esptool.py 文档 <https://docs.espressif.com/projects/esptool/en/latest/esptool/index.html>`_。
+``idf.py`` 在内部使用 ``esptool`` 的 ``write-flash`` 命令来烧录目标设备。通过 ``--extra-args`` 选项传递额外的参数，并配置烧录过程。例如，要 `写入到外部 SPI flash 芯片 <https://docs.espressif.com/projects/esptool/en/latest/esptool/advanced-options.html#custom-spi-pin-configuration>`_，请使用以下命令： ``idf.py flash --extra-args="--spi-connection <CLK>,<Q>,<D>,<HD>,<CS>"``。要查看所有可用参数，请运行 ``esptool write-flash --help`` 或查看 `esptool 文档 <https://docs.espressif.com/projects/esptool/en/latest/esptool/index.html>`_。
 
 与 ``build`` 命令类似，使用 ``app``、``bootloader`` 或 ``partition-table`` 参数运行此命令，可选择仅烧录应用程序、引导加载程序或分区表。
 
@@ -152,7 +152,7 @@ uf2 二进制文件也可以通过 :ref:`idf.py uf2 <generate-uf2-binary>` 生�
 - 仅针对 raw 格式：
 
   - ``--flash-offset``：此选项创建的合并二进制文件应在指定偏移处进行烧录，而不是在标准偏移地址 0x0 处。
-  - ``--fill-flash-size``：设置此选项，系统将在最终的二进制文件中添加 FF 字节直至文件大小与 flash 大小等同，从而确保烧录范围能够完整地覆盖整个 flash 芯片，且在烧录时整个 flash 芯片都被重写。
+  - ``--pad-to-size``：设置此选项，系统将在最终的二进制文件中添加 FF 字节直至文件大小与 flash 大小等同，从而确保烧录范围能够完整地覆盖整个 flash 芯片，且在烧录时整个 flash 芯片都被重写。
 
 - 仅针对 uf2 格式：
 
@@ -216,7 +216,7 @@ uf2 二进制文件也可以通过 :ref:`idf.py uf2 <generate-uf2-binary>` 生�
 选项
 ^^^^^^^
 
-- ``--format`` 指定输出格式，可输出 ``text``、``csv``、 ``json`` 格式，默认格式为 ``text``。
+- ``--format`` 指定输出格式，可输出 ``text``、``csv``、``json2``、``tree``、``raw`` 格式，默认格式为 ``text``。
 - ``--output-file`` 可选参数，可以指定命令输出文件的文件名，而非标准输出。
 
 重新配置工程：``reconfigure``
@@ -301,7 +301,112 @@ uf2 二进制文件也可以通过 :ref:`idf.py uf2 <generate-uf2-binary>` 生�
 
 关于参数文件的更多示例，如通过 @filename 创建配置文件概要，请参阅 :example_file:`多个构建配置示例 <build_system/cmake/multi_config/README.md>`。
 
+扩展 ``idf.py``
+====================
+
+``idf.py`` 支持扩展功能。通过项目中的扩展文件以及参与构建的组件中的扩展文件，可以增加额外的子命令、全局选项和回调函数；通过暴露入口点的外部 Python 包，可以提供新的扩展功能。
+
+- **参与构建的组件**：在项目根目录，或注册在项目 ``CMakeLists.txt`` 中的组件根目录，放置名为 ``idf_ext.py`` 的文件，该文件会在项目配置完成后得到识别。运行 ``idf.py build`` 或 ``idf.py reconfigure``，新添加的命令即可生效。
+- **Python 入口点**：对于任何已安装的 Python 包，在 ``idf_extension`` 组中定义入口点后，就可以提供扩展功能。只要安装了 Python 包就可以使用扩展功能，无需重新构建项目。
+
+.. important::
+
+   扩展不能定义与 ``idf.py`` 命令同名的子命令或选项。系统会检查自定义的动作和选项名称是否存在冲突，不允许覆盖默认命令，如有冲突会打印警告。对于 Python 入口点，必须使用唯一标识符，否则会忽略重复的入口点名称并发出警告。
+
+扩展文件示例
+----------------------
+
+扩展文件需要定义一个 ``action_extensions`` 函数，用于返回扩展的动作或选项。组件扩展 ``idf_ext.py`` 和基于包的扩展（例如 ``<package_name>_ext.py``）使用相同的结构，如下所示：
+
+.. code-block:: python
+
+  from typing import Any
+  import click
+
+  def action_extensions(base_actions: dict, project_path: str) -> dict:
+      def hello_test(subcommand_name: str, ctx: click.Context, global_args: dict, **action_args: Any) -> None:
+          message = action_args.get('message')
+          print(f"Running action: {subcommand_name}. Message: {message}")
+
+      def global_callback_detail(ctx: click.Context, global_args: dict, tasks: list) -> None:
+          if getattr(global_args, 'detail', False):
+              print(f"About to execute {len(tasks)} task(s): {[t.name for t in tasks]}")
+
+      return {
+          "version": "1",
+          "global_options": [
+              {
+                  "names": ["--detail", "-d"],
+                  "is_flag": True,
+                  "help": "Enable detailed output",
+              }
+          ],
+          "global_action_callbacks": [global_callback_detail],
+          "actions": {
+              "hello": {
+                  "callback": hello_test,
+                  "short_help": "Hello from component",
+                  "help": "Test command from component extension",
+                  "options": [
+                      {
+                          "names": ["--message", "-m"],
+                          "help":  "Custom message to display",
+                          "default": "Hi there!",
+                          "type": str,
+                      }
+                  ]
+              },
+          },
+      }
+
+
+扩展 API 参考
+-----------------------
+
+``action_extensions`` 函数接收两个参数： ``base_actions`` 表示当前已注册的所有命令， ``project_path`` 表示项目的绝对路径。该函数返回一个包含最多四个键的字典：
+
+- ``version``：表示扩展接口版本。当前 API 版本为 ``1``。此键为必填项。
+- ``global_options``：一组全局选项，适用于所有命令。每个选项都是一个字典，包含 ``names``、 ``help``、 ``type``、 ``is_flag``、 ``scope`` 等字段。
+- ``global_action_callbacks``：表示一组全局回调函数，在执行任何任务之前都会调用一次。每个全局回调函数接受三个参数：
+
+   - ``ctx``：即 `click context`_
+   - ``global_args``：所有可用的全局参数
+   - ``tasks``：将要执行的任务列表。任务指的是运行 ``idf.py`` 时所调用的具体动作或子命令
+
+- ``actions``：子命令字典，用于定义新的子命令。每个子命令都有一个 ``callback`` 函数，并且可以包含 ``options``、 ``arguments``、 ``dependencies`` 等。每个回调函数接受三到四个参数：
+
+   - ``subcommand_name``：命令的名称（在多个命令共享同一回调时很有用）
+   - ``ctx``：即 `click context`_
+   - ``global_args``：所有可用的全局参数
+   - ``**action_args``：传递给该子命令的具体参数，可选
+
+基本用法示例
+--------------------
+
+1) **通过项目组件提供扩展**
+
+  在项目根目录或某个已注册的组件目录下创建 ``idf_ext.py`` （例如 ``components/my_component/idf_ext.py`` ）。实现内容可参考上面的扩展文件示例。
+
+  运行 ``idf.py build`` 或 ``idf.py reconfigure`` 加载新命令，然后执行 ``idf.py --help`` 即可看到新扩展。
+
+2) **通过 Python 包入口点提供扩展**
+
+  使用上述扩展文件示例，在名为 ``<package_name>_ext.py`` 的模块中实现扩展，并通过 ``idf_extension`` 入口点组暴露 ``action_extensions`` 函数。例如，在 ``pyproject.toml`` 中配置：
+
+  .. code-block:: TOML
+
+    [project]
+    name = "my_comp"
+    version = "0.1.0"
+
+    [project.entry-points.idf_extension]
+    my_pkg_ext = "my_component.my_ext:action_extensions"
+
+
+  将该包安装到与 ``idf.py`` 相同的 Python 环境中（例如在包目录下执行 ``pip install -e .``）。建议使用唯一的模块名（例如 ``<package_name>_ext.py``）避免命名冲突。安装成功后，运行 ``idf.py --help`` 就可以看到新扩展命令。
+
 .. _cmake: https://cmake.org
 .. _ninja: https://ninja-build.org
-.. _esptool.py: https://github.com/espressif/esptool/#readme
+.. _esptool: https://github.com/espressif/esptool/#readme
 .. _CCache: https://ccache.dev/
+.. _click context: https://click.palletsprojects.com/en/stable/api/#context

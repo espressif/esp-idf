@@ -54,7 +54,6 @@ components/fatfs/src/ffconf.h
 
 components/idf_test/include/idf_performance.h
 
-components/json/cJSON/
 
 components/spiffs/include/spiffs_config.h
 
@@ -97,7 +96,6 @@ components/protocomm/include/transports/protocomm_httpd.h
 components/fatfs/src/diskio.h
 components/fatfs/diskio/diskio_sdmmc.h
 components/mbedtls/esp_crt_bundle/include/esp_crt_bundle.h
-components/usb/include/usb/usb_types_stack.h
 
 ### Headers that don't compile with C++
 #

@@ -13,6 +13,8 @@ typedef struct {
     int pair_id;
 } gdma_channel_retention_arg_t;
 
+ESP_LOG_ATTR_TAG(TAG, "gdma");
+
 static esp_err_t sleep_gdma_channel_retention_init(void *arg)
 {
     gdma_channel_retention_arg_t *parg = (gdma_channel_retention_arg_t *)arg;

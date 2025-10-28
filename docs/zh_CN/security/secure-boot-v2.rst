@@ -50,7 +50,7 @@
 
 .. note::
 
-    在本指南中，最常用的命令形式为 ``idf.py secure-<command>``，这是对应 ``espsecure.py <command>`` 的封装。基于 ``idf.py`` 的命令能提供更好的用户体验，但与基于 ``espsecure.py`` 的命令相比，可能会损失一部分高级功能。
+    在本指南中，最常用的命令形式为 ``idf.py secure-<command>``，这是对应 ``espsecure <command>`` 的封装。基于 ``idf.py`` 的命令能提供更好的用户体验，但与基于 ``espsecure`` 的命令相比，可能会损失一部分高级功能。
 
 背景
 ----
@@ -350,7 +350,7 @@
 
     - 默认 flash MMU 页面大小为 64 KB
     :SOC_MMU_PAGE_SIZE_CONFIGURABLE: - {IDF_TARGET_NAME} 支持配置 flash MMU 页面大小，``CONFIG_MMU_PAGE_SIZE`` 根据 :ref:`CONFIG_ESPTOOLPY_FLASHSIZE` 设置
-    - 在进行由 ``esptool.py`` 执行的 ``elf2image`` 转换时，可以通过使用选项 ``--secure-pad-v2`` 应用安全填充
+    - 在进行由 ``esptool`` 执行的 ``elf2image`` 转换时，可以通过使用选项 ``--secure-pad-v2`` 应用安全填充
 
 带有安全填充和签名块的安全启动 v2 签名镜像的内容如下表所示：
 
@@ -441,7 +441,7 @@
 
     - KEY_PURPOSE_X - 将 SECURE_BOOT_DIGESTX (X = 0, 1, 2) 烧录到 KEY_PURPOSE_X (X = 0, 1, 2, 3, 4, 5)，设置密钥块功能。例如：若设置 KEY_PURPOSE_2 为 SECURE_BOOT_DIGEST1，则 BLOCK_KEY2 将具有安全启动 v2 公钥摘要。注意，必须设置写保护位，该字段无读保护位。
 
-    - BLOCK_KEYX - 该块包含其在 KEY_PURPOSE_X 中烧录的功能的对应数据，并存储公钥的 SHA-256 哈希摘要。公钥模数、指数、预先计算的 R 和 M' 值的 SHA-256 哈希摘要都将写入 eFuse 密钥块。这个摘要大小为 776 字节，偏移量从 36 到 812，如 :ref:`signature-block-format` 所示。注意，必须设置写保护位，但切勿设置读保护位。
+    - BLOCK_KEYX - 该块包含其在 KEY_PURPOSE_X 中烧录的功能的对应数据，并存储公钥的 SHA-256 哈希摘要。这个摘要大小为 32 字节。该摘要是根据签名块中的 776 字节数据（偏移量 36 到 812，包括公钥模数、指数、预先计算的 R 和 M' 值）计算得到的，具体内容见 :ref:`signature-block-format`。注意，必须设置写保护位，但切勿设置读保护位。
 
     - KEY_REVOKEX - 与 3 个密钥块中的每一个相对应的撤销标记。例如，设置 KEY_REVOKE2 将撤销密钥功能为 SECURE_BOOT_DIGEST2 的密钥块。
 
@@ -487,7 +487,7 @@
 
     在生产环境下，建议使用 OpenSSL 或其他行业标准的加密程序生成密钥对，详情请参阅 :ref:`secure-boot-v2-generate-key`。
 
-7. 运行 ``idf.py bootloader`` 构建启用了安全启动的引导加载程序，构建输出中会包含一个烧录命令的提示，使用 ``esptool.py write_flash`` 烧录。
+7. 运行 ``idf.py bootloader`` 构建启用了安全启动的引导加载程序，构建输出中会包含一个烧录命令的提示，使用 ``esptool write-flash`` 烧录。
 
 8. 烧录引导加载程序前，请运行指定命令并等待烧录完成。注意，此处的指定命令需要手动输入，构建系统不会执行此过程。
 
@@ -621,7 +621,7 @@
 使用 ``idf.py`` 进行签名
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-对于生产构建，将签名密钥存储在远程签名服务器上，而不是本地构建机器上，是一种比较好的方案，这也是默认的 ESP-IDF 安全启动配置。可以使用命令行工具 ``espsecure.py`` 在远程系统上为应用程序镜像和分区表数据签名，供安全启动使用。
+对于生产构建，将签名密钥存储在远程签名服务器上，而不是本地构建机器上，是一种比较好的方案，这也是默认的 ESP-IDF 安全启动配置。可以使用命令行工具 ``espsecure`` 在远程系统上为应用程序镜像和分区表数据签名，供安全启动使用。
 
 使用远程签名时，请禁用选项 :ref:`CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES`，并构建固件。此时，私钥无需存在于构建系统中。
 
@@ -663,7 +663,7 @@
 
     .. note::
 
-        在上述三种远程签名工作流程中，已签名的二进制文件将写入提供给 ``--output`` 参数的文件名中。选项 ``--append_signatures`` 支持将多个签名（最多 3 个）附加到镜像中。
+        在上述三种远程签名工作流程中，已签名的二进制文件将写入提供给 ``--output`` 参数的文件名中。选项 ``--append-signatures`` 支持将多个签名（最多 3 个）附加到镜像中。
 
 .. only:: not SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS
 
@@ -689,7 +689,7 @@
     * 应独立计算并分别存储 1 到 3 个 {IDF_TARGET_SBV2_KEY} 公钥对（密钥 #0, #1, #2）。
     * 完成烧录后，应设置 KEY_DIGEST eFuse 为写保护位。
     * 未使用的 KEY_DIGEST 槽必须烧录其相应的 KEY_REVOKE eFuse，以永久禁用。请在设备离开工厂前完成此操作。
-    * 烧录 eFuse 可以由二级引导加载程序在首次从 menuconfig 启用 ``Secure Boot v2`` 后进行，也可以使用 ``espefuse.py``，后者与 ROM 中的串行引导加载程序通信。
+    * 烧录 eFuse 可以由二级引导加载程序在首次从 menuconfig 启用 ``Secure Boot v2`` 后进行，也可以使用 ``espefuse``，后者与 ROM 中的串行引导加载程序通信。
     * KEY_DIGEST 应从密钥摘要 #0 开始，按顺序编号。如果使用了密钥摘要 #1，则必须使用密钥摘要 #0。如果使用了密钥摘要 #2，则必须使用密钥摘要 #0 和 #1。
     * 二级引导加载程序不支持 OTA 升级，它将至少由一个私钥签名，也可能使用全部三个私钥，并在工厂内烧录。
     * 应用程序应仅由单个私钥签名，其他私钥应妥善保管。但如果需要注销某些私钥，也可以使用多个签名私钥，请参阅下文的 :ref:`secure-boot-v2-key-revocation`。
@@ -704,14 +704,14 @@
 
     .. code-block::
 
-        idf.py secure-sign-data -k secure_boot_signing_key2.pem --append_signatures -o signed_bootloader.bin build/bootloader/bootloader.bin
+        idf.py secure-sign-data -k secure_boot_signing_key2.pem --append-signatures -o signed_bootloader.bin build/bootloader/bootloader.bin
 
     * 使用多个私钥签名时，建议独立签名这些私钥，可以的话请在不同服务器上进行签名，并将它们分开存储。
     * 可以使用以下命令查看附加到二进制文件的签名：
 
     .. code-block::
 
-        espsecure.py signature_info_v2 datafile.bin
+        espsecure signature-info-v2 datafile.bin
 
     .. only:: SOC_ECDSA_SUPPORT_CURVE_P384
 

@@ -23,6 +23,7 @@ Terminology
     - AE: Auto exposure
     - HIST: Histogram
     - BF: Bayer noise filter
+    - BLC: Black Level Correction
     - LSC: Lens Shading Correction
     - CCM: Color correction matrix
 
@@ -46,7 +47,7 @@ ISP Pipeline
         isp_chs [label = "Contrast &\n Hue & Saturation", width = 150, height = 70];
         isp_yuv [label = "YUV Limit\n YUB2RGB", width = 120, height = 70];
 
-        isp_header -> BF -> LSC -> Demosaic -> CCM -> Gamma -> RGB2YUV -> SHARP -> isp_chs -> isp_yuv -> isp_tail;
+        isp_header -> BLC -> BF -> LSC -> Demosaic -> CCM -> Gamma -> RGB2YUV -> SHARP -> isp_chs -> isp_yuv -> isp_tail;
 
         LSC -> HIST
         Demosaic -> AWB
@@ -70,6 +71,7 @@ The ISP driver offers following services:
 - :ref:`isp-ae-statistics` - covers how to get AE statistics one-shot or continuously.
 - :ref:`isp-hist-statistics` - covers how to get histogram statistics one-shot or continuously.
 - :ref:`isp-bf` - covers how to enable and configure BF function.
+- :ref:`isp-blc` - covers how to enable and configure BLC function.
 - :ref:`isp-lsc` - covers how to enable and configure LSC function.
 - :ref:`isp-ccm-config` - covers how to configure the CCM.
 - :ref:`isp-demosaic` - covers how to configure the Demosaic function.
@@ -516,6 +518,63 @@ After calling :cpp:func:`esp_isp_bf_configure`, you need to enable the ISP BF co
 
 Calling :cpp:func:`esp_isp_bf_disable` does the opposite, that is, put the driver back to the **init** state.
 
+.. _isp-blc:
+
+ISP BLC Controller
+^^^^^^^^^^^^^^^^^^
+
+Black Level Correction (BLC) aims for the issues caused by the uneven black level of the image.
+
+Calling :cpp:func:`esp_isp_blc_configure` to configure the BLC module to do the correction.
+
+.. code-block:: c
+
+    esp_isp_blc_config_t blc_config = {
+        .window = {
+            .top_left = {
+                .x = 0,
+                .y = 0,
+            },
+            .btm_right = {
+                .x = CONFIG_EXAMPLE_MIPI_CSI_DISP_HRES,
+                .y = CONFIG_EXAMPLE_MIPI_CSI_DISP_VRES,
+            },
+        },
+        .filter_enable = true,
+        .filter_threshold = {
+            .top_left_chan_thresh = 128,
+            .top_right_chan_thresh = 128,
+            .bottom_left_chan_thresh = 128,
+            .bottom_right_chan_thresh = 128,
+        },
+        .stretch = {
+            .top_left_chan_stretch_en = true,
+            .top_right_chan_stretch_en = true,
+            .bottom_left_chan_stretch_en = true,
+            .bottom_right_chan_stretch_en = true,
+        },
+    };
+    ESP_ERROR_CHECK(esp_isp_blc_configure(isp_proc, &blc_config));
+    ESP_ERROR_CHECK(esp_isp_blc_enable(isp_proc));
+
+After calling :cpp:func:`esp_isp_blc_configure`, you need to enable the ISP BLC controller by calling :cpp:func:`esp_isp_blc_enable`. This function:
+
+* Switches the driver state from **init** to **enable**.
+
+Calling :cpp:func:`esp_isp_blc_disable` does the opposite, that is, put the driver back to the **init** state.
+
+Calling :cpp:func:`esp_isp_blc_set_correction_offset` to set the BLC correction offset.
+
+.. code-block:: c
+
+    esp_isp_blc_offset_t blc_offset = {
+        .top_left_chan_offset = 20,
+        .top_right_chan_offset = 20,
+        .bottom_left_chan_offset = 20,
+        .bottom_right_chan_offset = 20,
+    };
+    ESP_ERROR_CHECK(esp_isp_blc_set_correction_offset(isp_proc, &blc_offset));
+
 
 .. _isp-lsc:
 
@@ -565,7 +624,7 @@ Calling :cpp:func:`esp_isp_color_configure` to configure color function, you can
 {IDF_TARGET_SOC_ISP_COLOR_SATURATION_MAX:default="1.0", esp32p4="1.0"}
 {IDF_TARGET_SOC_ISP_COLOR_SATURATION_DEFAULT:default="1.0", esp32p4="1.0"}
 
-{IDF_TARGET_SOC_ISP_COLOR_HUE_MAX:default="360", esp32p4="360"}
+{IDF_TARGET_SOC_ISP_COLOR_HUE_MAX:default="359", esp32p4="359"}
 {IDF_TARGET_SOC_ISP_COLOR_HUE_DEFAULT:default="0", esp32p4="0"}
 
 {IDF_TARGET_SOC_ISP_COLOR_BRIGHTNESS_MIN:default="-127", esp32p4="-127"}
@@ -861,6 +920,7 @@ API Reference
 .. include-build-file:: inc/isp_ae.inc
 .. include-build-file:: inc/isp_awb.inc
 .. include-build-file:: inc/isp_bf.inc
+.. include-build-file:: inc/isp_blc.inc
 .. include-build-file:: inc/isp_lsc.inc
 .. include-build-file:: inc/isp_ccm.inc
 .. include-build-file:: inc/isp_demosaic.inc

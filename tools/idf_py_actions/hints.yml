@@ -55,6 +55,11 @@
             hint_variables: ['esp_spiram_get_chip_size and esp_spiram_get_size', 'esp_psram_get_size()']
 
 -
+    re: "error: implicit declaration of function '(MCPWM_GEN_TIMER_EVENT_ACTION_END|MCPWM_GEN_COMPARE_EVENT_ACTION_END|MCPWM_GEN_BRAKE_EVENT_ACTION_END)'"
+    hint: "Macro function '{}()' has been removed. Please don't use variadic APIs when setting MCPWM generator actions."
+    match_to_output: True
+
+-
     re: "error: implicit declaration of function 'esp_secure_boot_verify_rsa_signature_block'"
     hint: "'esp_secure_boot_verify_rsa_signature_block()' has been made private and is no longer available."
 
@@ -281,6 +286,11 @@
 -
     re: "`iram0_0_seg' overflowed"
     hint: "The applications static IRAM usage is larger than the available IRAM size.\nFor more information on how to reduce IRAM usage run 'idf.py docs -sp api-guides/performance/ram-usage.html#optimizing-iram-usage' "
+
+-
+    re: "Failed to resolve component 'usb'"
+    hint: "USB host layer ('usb' component) was removed from ESP-IDF. Please use 'usb' component from IDF component manager instead.\nYou can install 'usb' component using 'idf.py add-dependency espressif/usb' command.\nRefer to the migration guide for more details."
+    match_to_output: True
 
 -
     re: "fatal error: (tinyusb.h): No such file or directory"
@@ -567,3 +577,137 @@
         -
             re_variables: ['xTaskNotifyWait']
             hint_variables: ['xTaskNotifyWait', 'the macro xTaskNotifyWait']
+
+-
+    re: "(no previous prototype for 'vTaskPreDeletionHook'|undefined reference to `vTaskPreDeletionHook')"
+    hint: "CONFIG_FREERTOS_TASK_PRE_DELETION_HOOK is enabled but your project does not provide vTaskPreDeletionHook( void * pxTCB ). Either disable the Kconfig option or implement the hook."
+
+-
+    re: "error: implicit declaration of function 'vPortCleanUpTCB'"
+    hint: "The legacy FreeRTOS hook vPortCleanUpTCB() has been removed from ESP-IDF. Use CONFIG_FREERTOS_TASK_PRE_DELETION_HOOK with vTaskPreDeletionHook( void * pxTCB ) instead."
+
+-
+    re: "error: implicit declaration of function 'esp_lcd_new_panel_nt35510'"
+    hint: "The NT35510 LCD device driver has been moved out of ESP-IDF and is now hosted in the Component Registry. You can add it to your project by running idf.py add-dependency \"espressif/esp_lcd_nt35510\""
+
+-
+    re: "cannot open linker script file bootloader.ld"
+    hint: "The file 'bootloader.ld' was renamed to 'bootloader.ld.in' in ESP-IDF v6.0. Please use update your build scripts."
+
+-
+    re: "fatal error: esp_wpa2.h: No such file or directory"
+    hint: "The header file 'esp_wpa2.h' has been removed. Please use 'esp_eap_client.h' instead."
+
+-
+    re: "error: implicit declaration of function '(esp_wifi_sta_wpa2_ent_enable|esp_wifi_sta_wpa2_ent_disable|esp_wifi_sta_wpa2_ent_set_identity|esp_wifi_sta_wpa2_ent_clear_identity|esp_wifi_sta_wpa2_ent_set_username|esp_wifi_sta_wpa2_ent_clear_username|esp_wifi_sta_wpa2_ent_set_password|esp_wifi_sta_wpa2_ent_clear_password|esp_wifi_sta_wpa2_ent_set_new_password|esp_wifi_sta_wpa2_ent_clear_new_password|esp_wifi_sta_wpa2_ent_set_ca_cert|esp_wifi_sta_wpa2_ent_clear_ca_cert|esp_wifi_sta_wpa2_ent_set_cert_key|esp_wifi_sta_wpa2_ent_clear_cert_key|esp_wifi_sta_wpa2_ent_set_disable_time_check|esp_wifi_sta_wpa2_ent_get_disable_time_check|esp_wifi_sta_wpa2_ent_set_ttls_phase2_method|esp_wifi_sta_wpa2_set_suiteb_192bit_certification|esp_wifi_sta_wpa2_ent_set_pac_file|esp_wifi_sta_wpa2_ent_set_fast_phase1_params|esp_wifi_sta_wpa2_use_default_cert_bundle)'"
+    hint: "The function '{}' has been removed from esp_wpa2.h. Please use the equivalent function from esp_eap_client.h instead."
+    match_to_output: True
+
+-
+    re: "error: too many arguments to function 'esp_supp_dpp_init'"
+    hint: "The function 'esp_supp_dpp_init' no longer accepts a callback. Please register for Wi-Fi events directly to get DPP events."
+
+-
+    re: "error: unknown type name '(esp_supp_dpp_event_t|esp_supp_dpp_event_cb_t)'"
+    hint: "The DPP event callback 'esp_supp_dpp_event_cb_t' and event enum 'esp_supp_dpp_event_t' have been removed. Please use Wi-Fi events directly."
+
+-
+    re: "error: implicit declaration of function 'esp_rrm_send_neighbor_rep_request'"
+    hint: "The function 'esp_rrm_send_neighbor_rep_request' has been removed. Use 'esp_rrm_send_neighbor_report_request' instead."
+
+-
+    re: "error: implicit declaration of function '(esp_wifi_set_ant_gpio|esp_wifi_get_ant_gpio|esp_wifi_set_ant|esp_wifi_get_ant)'"
+    hint: "The function '{}' has been removed. Please use the equivalent function from the esp_phy component (e.g. 'esp_phy_set_ant_gpio')."
+    match_to_output: True
+
+-
+    re: "error: implicit declaration of function 'esp_wifi_config_espnow_rate'"
+    hint: "The function 'esp_wifi_config_espnow_rate' has been removed. Use 'esp_now_set_peer_rate_config' instead."
+
+-
+    re: "error: too many arguments to function 'esp_wifi_wps_start'"
+    hint: "The function 'esp_wifi_wps_start' no longer accepts a 'timeout_ms' argument."
+
+-
+    re: "error: '(WIFI_AUTH_WPA3_EXT_PSK|WIFI_AUTH_WPA3_EXT_PSK_MIXED_MODE)' undeclared"
+    hint: "The authentication modes 'WIFI_AUTH_WPA3_EXT_PSK' and 'WIFI_AUTH_WPA3_EXT_PSK_MIXED_MODE' have been removed. Use 'WIFI_AUTH_WPA3_PSK' instead."
+
+-
+    re: "error: 'struct wifi_event_neighbor_report_t' has no member named 'report'"
+    hint: "In the 'wifi_event_neighbor_report_t' structure, the 'report' field has been removed. Please use the 'n_report' field instead."
+
+-
+    re: "fatal error: esp_interface.h: No such file or directory"
+    hint: "The header file 'esp_interface.h' has been removed. The 'wifi_interface_t' enum is now defined in 'esp_wifi_types_generic.h'. The enum values (e.g. 'WIFI_IF_STA', 'WIFI_IF_AP') are no longer defined based on 'ESP_IF_WIFI_STA', 'ESP_IF_WIFI_AP', etc."
+
+-
+    re: "error: 'use_get_report_api' undeclared"
+    hint: "The field 'use_get_report_api' from structure 'wifi_ftm_initiator_cfg_t' has been removed. Please use 'esp_wifi_ftm_get_report' to fetch raw FTM report data instead."
+
+-
+    re: "error: 'ftm_report_data' undeclared"
+    hint: "The field 'ftm_report_data' from structure 'wifi_event_ftm_report_t' has been removed. Please use 'esp_wifi_ftm_get_report' to fetch raw FTM report data instead."
+
+-
+    re: "error: 'svc_info' undeclared"
+    hint: "The field 'svc_info' from structures 'wifi_nan_publish_cfg_t', 'wifi_nan_subscribe_cfg_t', 'wifi_nan_followup_params_t', 'wifi_event_ndp_indication_t', 'wifi_event_ndp_confirm_t' has been removed. Please use the equivalent fields 'ssi' and 'ssi_len' instead."
+
+-
+    re: "error: 'peer_svc_info' undeclared"
+    hint: "The field 'peer_svc_info' from structure 'wifi_event_nan_receive_t' has been removed. Please use the equivalent fields 'ssi' and 'ssi_len' instead."
+
+-
+    re: "error: too few arguments to function 'esp_wifi_nan_publish_service'"
+    hint: "The function argument 'ndp_resp_needed' of 'esp_wifi_nan_publish_service' has been moved to structure 'wifi_nan_publish_cfg_t'."
+
+-
+    re: "error: '(WIFI_REASON_ASSOC_EXPIRE|WIFI_REASON_NOT_AUTHED|WIFI_REASON_NOT_ASSOCED)' undeclared"
+    hint: "The Wi-Fi disconnection reason codes '{0}' have been removed. Please use '{1}', '{2}', and '{3}' respectively."
+    variables:
+        -
+            re_variables: ['WIFI_REASON_ASSOC_EXPIRE']
+            hint_variables: ['WIFI_REASON_ASSOC_EXPIRE', 'WIFI_REASON_AUTH_EXPIRE']
+        -
+            re_variables: ['WIFI_REASON_NOT_AUTHED']
+            hint_variables: ['WIFI_REASON_NOT_AUTHED', 'WIFI_REASON_CLASS2_FRAME_FROM_NONAUTH_STA']
+        -
+            re_variables: ['WIFI_REASON_NOT_ASSOCED']
+            hint_variables: ['WIFI_REASON_NOT_ASSOCED', 'WIFI_REASON_CLASS3_FRAME_FROM_NONASSOC_STA']
+
+-
+    re: "error: '(ESP_IF_WIFI_STA|ESP_IF_WIFI_AP)' undeclared"
+    hint: "The macros '{}' have been removed. Please use the enum values 'WIFI_IF_STA' and 'WIFI_IF_AP' directly."
+    match_to_output: True
+
+-
+    re: "error: implicit declaration of function 'esp_eth_phy_new_{}'"
+    hint: "The Ethernet {} driver has been moved out of ESP-IDF and is now hosted in the Component Registry. You can add it to your project by running idf.py add-dependency \"espressif/{}\""
+    variables:
+        -
+            re_variables: ['ip101']
+            hint_variables: ['IP101', 'ip101']
+        -
+            re_variables: ['lan87xx']
+            hint_variables: ['LAN87XX', 'lan87xx']
+        -
+            re_variables: ['rtl8201']
+            hint_variables: ['RTL8201', 'rtl8201']
+        -
+            re_variables: ['dp83848']
+            hint_variables: ['DP83848', 'dp83848']
+        -
+            re_variables: ['ksz80xx']
+            hint_variables: ['KSZ80XX', 'ksz80xx']
+        -
+            re_variables: ['dm9051']
+            hint_variables: ['DM9051', 'dm9051']
+        -
+            re_variables: ['ksz8851snl']
+            hint_variables: ['KSZ8851SNL', 'ksz8851snl']
+        -
+            re_variables: ['w5500']
+            hint_variables: ['W5500', 'w5500']
+
+-
+    re: "error: 'MALLOC_CAP_EXEC' undeclared \\(first use in this function\\)"
+    hint: "MALLOC_CAP_EXEC capability cannot be used if CONFIG_ESP_SYSTEM_PMP_IDRAM_SPLIT or CONFIG_ESP_SYSTEM_MEMPROT_FEATURE is enabled. \nFor further information about those configurations, run 'idf.py docs -sp api-reference/kconfig-reference.html#memory-protection'"

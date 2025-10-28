@@ -338,6 +338,31 @@ The event data structure, :cpp:class:`ip_event_tx_rx_t`, contains the following 
 - :cpp:member:`ip_event_tx_rx_t::len`: Length of the data frame.
 - :cpp:member:`ip_event_tx_rx_t::esp_netif`: The network interface on which the packet was sent or received.
 
+IP Events: Netif Status (Unified)
+---------------------------------
+
+ESP-NETIF emits unified status events when an interface becomes usable for L3 traffic or goes down. These are derived from the lwIP extended netif callbacks and posted on ``IP_EVENT``:
+
+- ``IP_EVENT_NETIF_UP`` / ``IP_EVENT_NETIF_DOWN``
+
+ESP-IDF normalizes link and administrative state changes into these two events (including PPP). Subscribe as follows:
+
+.. code-block:: c
+
+    static void netif_status_handler(void *arg, esp_event_base_t base, int32_t id, void *data)
+    {
+        const ip_event_netif_status_t *evt = (const ip_event_netif_status_t *)data;
+        ESP_LOGI("netif", "status %s on %s", (id == IP_EVENT_NETIF_UP) ? "UP" : "DOWN", esp_netif_get_desc(evt->esp_netif));
+    }
+
+    esp_event_handler_register(IP_EVENT, IP_EVENT_NETIF_UP, &netif_status_handler, NULL);
+    esp_event_handler_register(IP_EVENT, IP_EVENT_NETIF_DOWN, &netif_status_handler, NULL);
+
+Event Data Structure
+^^^^^^^^^^^^^^^^^^^^
+
+The event data structure is :cpp:type:`ip_event_netif_status_t`, which contains the ``esp_netif`` handle of the interface that changed state.
+
 
 .. _esp_netif_api_reference:
 

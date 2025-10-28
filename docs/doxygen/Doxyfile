@@ -161,7 +161,10 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_eth/include/esp_eth.h \
     $(PROJECT_PATH)/components/esp_event/include/esp_event_base.h \
     $(PROJECT_PATH)/components/esp_event/include/esp_event.h \
+    $(PROJECT_PATH)/components/esp_hal_timg/include/hal/timer_types.h \
     $(PROJECT_PATH)/components/esp_hal_i2c/include/hal/i2c_types.h \
+    $(PROJECT_PATH)/components/esp_hal_mspi/include/hal/esp_flash_err.h \
+    $(PROJECT_PATH)/components/esp_hal_mspi/include/hal/spi_flash_types.h \
     $(PROJECT_PATH)/components/esp_http_client/include/esp_http_client.h \
     $(PROJECT_PATH)/components/esp_http_server/include/esp_http_server.h \
     $(PROJECT_PATH)/components/esp_https_ota/include/esp_https_ota.h \
@@ -188,7 +191,6 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_lcd/include/esp_lcd_panel_dev.h \
     $(PROJECT_PATH)/components/esp_lcd/include/esp_lcd_panel_ssd1306.h \
     $(PROJECT_PATH)/components/esp_lcd/include/esp_lcd_panel_st7789.h \
-    $(PROJECT_PATH)/components/esp_lcd/include/esp_lcd_panel_nt35510.h \
     $(PROJECT_PATH)/components/esp_lcd/include/esp_lcd_types.h \
     $(PROJECT_PATH)/components/esp_local_ctrl/include/esp_local_ctrl.h \
     $(PROJECT_PATH)/components/esp_mm/include/esp_mmu_map.h \
@@ -250,7 +252,6 @@ INPUT = \
     $(PROJECT_PATH)/components/hal/include/hal/adc_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/color_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/dac_types.h \
-    $(PROJECT_PATH)/components/hal/include/hal/esp_flash_err.h \
     $(PROJECT_PATH)/components/hal/include/hal/gpio_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/i2s_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/lcd_types.h \
@@ -262,10 +263,8 @@ INPUT = \
     $(PROJECT_PATH)/components/hal/include/hal/rtc_io_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/sdio_slave_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/sdm_types.h \
-    $(PROJECT_PATH)/components/hal/include/hal/spi_flash_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/spi_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/temperature_sensor_types.h \
-    $(PROJECT_PATH)/components/hal/include/hal/timer_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/twai_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/uart_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/efuse_hal.h \
@@ -329,12 +328,6 @@ INPUT = \
     $(PROJECT_PATH)/components/vfs/include/esp_vfs_ops.h \
     $(PROJECT_PATH)/components/vfs/include/esp_vfs.h \
     $(PROJECT_PATH)/components/wear_levelling/include/wear_levelling.h \
-    $(PROJECT_PATH)/components/wifi_provisioning/include/wifi_provisioning/manager.h \
-    $(PROJECT_PATH)/components/wifi_provisioning/include/wifi_provisioning/scheme_ble.h \
-    $(PROJECT_PATH)/components/wifi_provisioning/include/wifi_provisioning/scheme_console.h \
-    $(PROJECT_PATH)/components/wifi_provisioning/include/wifi_provisioning/scheme_softap.h \
-    $(PROJECT_PATH)/components/wifi_provisioning/include/wifi_provisioning/wifi_config.h \
-    $(PROJECT_PATH)/components/wifi_provisioning/include/wifi_provisioning/wifi_scan.h \
     $(PROJECT_PATH)/components/wpa_supplicant/esp_supplicant/include/esp_dpp.h \
     $(PROJECT_PATH)/components/wpa_supplicant/esp_supplicant/include/esp_supplicant_utils.h \
     $(PROJECT_PATH)/components/esp_driver_uart/include/driver/uart_wakeup.h \

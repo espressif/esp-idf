@@ -47,11 +47,11 @@
 #define TWAI_SET_FLAG(var, mask)    ((var) |= (mask))
 #define TWAI_RESET_FLAG(var, mask)  ((var) &= ~(mask))
 
-#ifdef CONFIG_TWAI_ISR_IN_IRAM
+#if defined(CONFIG_TWAI_ISR_IN_IRAM) || defined(CONFIG_TWAI_ISR_IN_IRAM_LEGACY)
 #define TWAI_MALLOC_CAPS    (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
 #else
 #define TWAI_MALLOC_CAPS    MALLOC_CAP_DEFAULT
-#endif  //CONFIG_TWAI_ISR_IN_IRAM
+#endif  // CONFIG_TWAI_ISR_IN_IRAM || CONFIG_TWAI_ISR_IN_IRAM_LEGACY
 
 #define DRIVER_DEFAULT_INTERRUPTS   0xE7        //Exclude data overrun (bit[3]) and brp_div (bit[4])
 
@@ -123,7 +123,7 @@ static void twai_alert_handler(twai_obj_t *p_twai_obj, uint32_t alert_code, int 
         //Signify alert has occurred
         TWAI_SET_FLAG(p_twai_obj->alerts_triggered, alert_code);
         *alert_req = 1;
-#ifndef CONFIG_TWAI_ISR_IN_IRAM     //Only log if ISR is not in IRAM
+#if !defined(CONFIG_TWAI_ISR_IN_IRAM) && !defined(CONFIG_TWAI_ISR_IN_IRAM_LEGACY)     //Only log if ISR is not in IRAM
         if (p_twai_obj->alerts_enabled & TWAI_ALERT_AND_LOG) {
             if (alert_code >= ALERT_LOG_LEVEL_ERROR) {
                 ESP_EARLY_LOGE(TWAI_TAG, "Alert %" PRIu32, alert_code);
@@ -133,7 +133,7 @@ static void twai_alert_handler(twai_obj_t *p_twai_obj, uint32_t alert_code, int 
                 ESP_EARLY_LOGI(TWAI_TAG, "Alert %" PRIu32, alert_code);
             }
         }
-#endif  //CONFIG_TWAI_ISR_IN_IRAM
+#endif  // !CONFIG_TWAI_ISR_IN_IRAM && !CONFIG_TWAI_ISR_IN_IRAM_LEGACY
     }
 }
 
@@ -486,7 +486,7 @@ esp_err_t twai_driver_install_v2(const twai_general_config_t *g_config, const tw
     // assert the GPIO number is not a negative number (shift operation on a negative number is undefined)
     TWAI_CHECK(GPIO_IS_VALID_OUTPUT_GPIO(g_config->tx_io), ESP_ERR_INVALID_ARG);
     TWAI_CHECK(GPIO_IS_VALID_GPIO(g_config->rx_io), ESP_ERR_INVALID_ARG);
-#ifndef CONFIG_TWAI_ISR_IN_IRAM
+#if !defined(CONFIG_TWAI_ISR_IN_IRAM) && !defined(CONFIG_TWAI_ISR_IN_IRAM_LEGACY)
     TWAI_CHECK(!(g_config->intr_flags & ESP_INTR_FLAG_IRAM), ESP_ERR_INVALID_ARG);
 #endif
     int controller_id = g_config->controller_id;

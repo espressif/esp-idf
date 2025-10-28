@@ -13,6 +13,8 @@
 #include "crypto/sha256.h"
 #include "crypto/sha384.h"
 
+#include "mbedtls/esp_mbedtls_random.h"
+
 /* TODO: Remove this once the appropriate solution is found
  *
  * ssl_misc.h header uses private elements from
@@ -24,8 +26,6 @@
 // located at mbedtls/library/ssl_misc.h
 #include "ssl_misc.h"
 
-#include "mbedtls/ctr_drbg.h"
-#include "mbedtls/entropy.h"
 #include "mbedtls/debug.h"
 #include "mbedtls/oid.h"
 #ifdef ESPRESSIF_USE
@@ -75,8 +75,6 @@ struct tls_data {
 
 typedef struct tls_context {
     mbedtls_ssl_context ssl;            /*!< TLS/SSL context */
-    mbedtls_entropy_context entropy;    /*!< mbedTLS entropy context structure */
-    mbedtls_ctr_drbg_context ctr_drbg;  /*!< mbedTLS ctr drbg context structure */
     mbedtls_ssl_config conf;            /*!< TLS/SSL config to be shared structures */
     mbedtls_x509_crt cacert;            /*!< Container for X.509 CA certificate */
     mbedtls_x509_crt *cacert_ptr;       /*!< Pointer to the cacert being used. */
@@ -105,9 +103,7 @@ static void tls_mbedtls_cleanup(tls_context_t *tls)
     mbedtls_x509_crt_free(&tls->cacert);
     mbedtls_x509_crt_free(&tls->clientcert);
     mbedtls_pk_free(&tls->clientkey);
-    mbedtls_entropy_free(&tls->entropy);
     mbedtls_ssl_config_free(&tls->conf);
-    mbedtls_ctr_drbg_free(&tls->ctr_drbg);
     mbedtls_ssl_free(&tls->ssl);
 }
 
@@ -181,7 +177,7 @@ static int set_pki_context(tls_context_t *tls, const struct tls_connection_param
 
     ret = mbedtls_pk_parse_key(&tls->clientkey, cfg->private_key_blob, cfg->private_key_blob_len,
                                (const unsigned char *)cfg->private_key_passwd,
-                               cfg->private_key_passwd ? os_strlen(cfg->private_key_passwd) : 0, mbedtls_ctr_drbg_random, &tls->ctr_drbg);
+                               cfg->private_key_passwd ? os_strlen(cfg->private_key_passwd) : 0, mbedtls_esp_random, NULL);
     if (ret < 0) {
         wpa_printf(MSG_ERROR, "mbedtls_pk_parse_keyfile returned -0x%x", -ret);
         return ret;
@@ -599,9 +595,7 @@ static int tls_create_mbedtls_handle(struct tls_connection *conn,
     assert(tls != NULL);
 
     mbedtls_ssl_init(&tls->ssl);
-    mbedtls_ctr_drbg_init(&tls->ctr_drbg);
     mbedtls_ssl_config_init(&tls->conf);
-    mbedtls_entropy_init(&tls->entropy);
 
     ret = set_client_config(params, tls);
     if (ret != 0) {
@@ -609,14 +603,7 @@ static int tls_create_mbedtls_handle(struct tls_connection *conn,
         goto exit;
     }
 
-    ret = mbedtls_ctr_drbg_seed(&tls->ctr_drbg, mbedtls_entropy_func,
-                                &tls->entropy, NULL, 0);
-    if (ret != 0) {
-        wpa_printf(MSG_ERROR, "mbedtls_ctr_drbg_seed returned -0x%x", -ret);
-        goto exit;
-    }
-
-    mbedtls_ssl_conf_rng(&tls->conf, mbedtls_ctr_drbg_random, &tls->ctr_drbg);
+    mbedtls_ssl_conf_rng(&tls->conf, mbedtls_esp_random, NULL);
 
 #if defined(CONFIG_MBEDTLS_SSL_PROTO_TLS1_3) && !defined(CONFIG_TLSV13)
     /* Disable TLSv1.3 even when enabled in MbedTLS and not enabled in WiFi config.

@@ -543,19 +543,7 @@ config SOC_I2C_SLAVE_CAN_GET_STRETCH_CAUSE
     bool
     default y
 
-config SOC_I2S_NUM
-    int
-    default 2
-
 config SOC_I2S_HW_VERSION_2
-    bool
-    default y
-
-config SOC_I2S_SUPPORTS_XTAL
-    bool
-    default y
-
-config SOC_I2S_SUPPORTS_PLL_F160M
     bool
     default y
 
@@ -967,10 +955,6 @@ config SOC_TOUCH_SENSOR_VERSION
     int
     default 2
 
-config SOC_TOUCH_SENSOR_NUM
-    int
-    default 15
-
 config SOC_TOUCH_MIN_CHAN_ID
     int
     default 1
@@ -1002,10 +986,6 @@ config SOC_TOUCH_SUPPORT_DENOISE_CHAN
 config SOC_TOUCH_PROXIMITY_CHANNEL_NUM
     int
     default 3
-
-config SOC_TOUCH_PROXIMITY_MEAS_DONE_SUPPORTED
-    bool
-    default y
 
 config SOC_TOUCH_SAMPLE_CFG_NUM
     int

@@ -70,8 +70,7 @@ menu "Hardware Settings"
         # regardless of power management configuration.
         config ESP_SLEEP_POWER_DOWN_FLASH
             bool "Power down flash in light sleep when there is no SPIRAM or SPIRAM has independent power supply"
-            # TODO: PM-383
-            select PM_SLP_IRAM_OPT if (!IDF_TARGET_ESP32H21 && !IDF_TARGET_ESP32H4)
+            select PM_SLP_IRAM_OPT
             select ESP_PERIPH_CTRL_FUNC_IN_IRAM
             select ESP_REGI2C_CTRL_FUNC_IN_IRAM
             depends on !SPIRAM || ESP_LDO_RESERVE_PSRAM

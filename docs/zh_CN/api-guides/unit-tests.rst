@@ -168,17 +168,9 @@ DUT2 (slave) 终端::
 切换到 ``tools/unit-test-app`` 目录下进行配置和编译：
 
 * ``idf.py menuconfig`` - 配置单元测试程序。
-* ``idf.py -T all build`` - 编译单元测试程序，测试每个组件 ``test`` 子目录下的用例。
-* ``idf.py -T "xxx yyy" build`` - 编译单元测试程序，对以空格分隔的特定组件进行测试（如 ``idf.py -T heap build`` - 仅对 ``heap`` 组件目录下的单元测试程序进行编译）。
-* ``idf.py -T all -E "xxx yyy" build`` - 编译单元测试程序，测试除指定组件之外的所有组件（例如 ``idf.py -T all -E "ulp mbedtls" build`` - 编译所有的单元测试，不包括 ``ulp`` 和 ``mbedtls`` 组件。）。
+* ``idf.py build`` - 构建单元测试应用程序。
 
-.. note::
-
-    由于 Windows 命令提示符固有限制，需使用以下语法来编译多个组件的单元测试程序：``idf.py -T xxx -T yyy build`` 或者在 PowerShell 中使用 ``idf.py -T \`"xxx yyy\`" build``，在 Windows 命令提示符中使用 ``idf.py -T \^"ssd1306 hts221\^" build``。
-
-当编译完成时，它会打印出烧写芯片的指令。你只需要运行 ``idf.py flash`` 即可烧写所有编译输出的文件。
-
-你还可以运行 ``idf.py -T all flash`` 或者 ``idf.py -T xxx flash`` 来编译并烧写，所有需要的文件都会在烧写之前自动重新编译。
+构建完成后，终端会显示烧录芯片的操作说明。你可以直接运行 ``idf.py flash``，烧录所有构建输出。
 
 运行单元测试
 --------------

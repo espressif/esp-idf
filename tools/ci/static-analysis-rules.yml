@@ -18,7 +18,6 @@ skip:
   - "components/esp_phy/lib"
   - "components/esp_wifi/lib"
   - "components/esp_wifi/lib_esp32"
-  - "components/json/cJSON"
   - "components/lwip/lwip"
   - "components/mbedtls/mbedtls"
   - "components/mqtt/esp-mqtt"
@@ -38,4 +37,3 @@ skip:
   - "components/bt/host/bluedroid/stack/gatt/att_protocol.c"
   - "components/bt/host/bluedroid/stack/gatt/gatt_db.c"
   - "components/bt/host/bluedroid/stack/l2cap/l2c_utils.c"
-  - "components/wifi_provisioning/src/scheme_ble.c"

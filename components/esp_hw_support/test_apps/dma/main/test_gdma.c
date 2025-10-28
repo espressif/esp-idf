@@ -173,7 +173,7 @@ TEST_CASE("GDMA channel allocation", "[GDMA]")
 }
 
 static void test_gdma_config_link_list(gdma_channel_handle_t tx_chan, gdma_channel_handle_t rx_chan,
-                                       gdma_link_list_handle_t *tx_link_list, gdma_link_list_handle_t *rx_link_list, size_t sram_alignment, bool dma_link_in_ext_mem)
+                                       gdma_link_list_handle_t *tx_link_list, gdma_link_list_handle_t *rx_link_list, bool dma_link_in_ext_mem)
 {
 
     gdma_strategy_config_t strategy = {
@@ -193,7 +193,6 @@ static void test_gdma_config_link_list(gdma_channel_handle_t tx_chan, gdma_chann
 
     // create DMA link list for TX channel (a singly link with 3 nodes)
     gdma_link_list_config_t tx_link_list_config = {
-        .buffer_alignment = 1,
         .item_alignment = 8, // 8-byte alignment required by the AXI-GDMA
         .num_items = 3,
         .flags = {
@@ -204,7 +203,6 @@ static void test_gdma_config_link_list(gdma_channel_handle_t tx_chan, gdma_chann
     TEST_ESP_OK(gdma_new_link_list(&tx_link_list_config, tx_link_list));
     // create DMA link list for RX channel
     gdma_link_list_config_t rx_link_list_config = {
-        .buffer_alignment = sram_alignment, // RX buffer should be aligned to the cache line size, because we will do cache invalidate later
         .item_alignment = 8, // 8-byte alignment required by the AXI-GDMA
         .num_items = 5,
         .flags = {
@@ -235,7 +233,7 @@ static void test_gdma_m2m_transaction(gdma_channel_handle_t tx_chan, gdma_channe
 
     gdma_link_list_handle_t tx_link_list = NULL;
     gdma_link_list_handle_t rx_link_list = NULL;
-    test_gdma_config_link_list(tx_chan, rx_chan, &tx_link_list, &rx_link_list, sram_alignment, dma_link_in_ext_mem);
+    test_gdma_config_link_list(tx_chan, rx_chan, &tx_link_list, &rx_link_list, dma_link_in_ext_mem);
 
     // allocate the source buffer from SRAM
     uint8_t *src_data = heap_caps_calloc(1, 128, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
@@ -270,10 +268,12 @@ static void test_gdma_m2m_transaction(gdma_channel_handle_t tx_chan, gdma_channe
     gdma_buffer_mount_config_t tx_buf_mount_config[] = {
         [0] = {
             .buffer = src_data,
+            .buffer_alignment = 1,
             .length = 64,
         },
         [1] = {
             .buffer = src_data + 64,
+            .buffer_alignment = 1,
             .length = 64,
 #if !SOC_DMA_CAN_ACCESS_FLASH
             .flags = {
@@ -285,6 +285,7 @@ static void test_gdma_m2m_transaction(gdma_channel_handle_t tx_chan, gdma_channe
 #if SOC_DMA_CAN_ACCESS_FLASH
         [2] = {
             .buffer = (void *)src_string,
+            .buffer_alignment = 1,
             .length = src_string_len,
             .flags = {
                 .mark_eof = true,
@@ -297,6 +298,7 @@ static void test_gdma_m2m_transaction(gdma_channel_handle_t tx_chan, gdma_channe
 
     gdma_buffer_mount_config_t rx_buf_mount_config = {
         .buffer = dst_data,
+        .buffer_alignment = sram_alignment, // RX buffer should be aligned to the cache line size, because we will do cache invalidate later
         .length = 256,
     };
     TEST_ESP_OK(gdma_link_mount_buffers(rx_link_list, 0, &rx_buf_mount_config, 1, NULL));
@@ -428,7 +430,7 @@ static void test_gdma_m2m_unaligned_buffer_test(uint8_t *dst_data, uint8_t *src_
 
     gdma_link_list_handle_t tx_link_list = NULL;
     gdma_link_list_handle_t rx_link_list = NULL;
-    test_gdma_config_link_list(tx_chan, rx_chan, &tx_link_list, &rx_link_list, sram_alignment, false);
+    test_gdma_config_link_list(tx_chan, rx_chan, &tx_link_list, &rx_link_list, false);
 
     // prepare the source data
     for (int i = 0; i < data_length; i++) {
@@ -442,6 +444,7 @@ static void test_gdma_m2m_unaligned_buffer_test(uint8_t *dst_data, uint8_t *src_
     gdma_buffer_mount_config_t tx_buf_mount_config[] = {
         [0] = {
             .buffer = src_data,
+            .buffer_alignment = 1,
             .length = data_length,
             .flags = {
                 .mark_eof = true,
@@ -457,6 +460,7 @@ static void test_gdma_m2m_unaligned_buffer_test(uint8_t *dst_data, uint8_t *src_
     TEST_ESP_OK(esp_dma_split_rx_buffer_to_cache_aligned(dst_data + offset_len, data_length, &align_array, &stash_buffer));
     for (int i = 0; i < 3; i++) {
         rx_aligned_buf_mount_config[i].buffer = align_array.aligned_buffer[i].aligned_buffer;
+        rx_aligned_buf_mount_config[i].buffer_alignment = sram_alignment;
         rx_aligned_buf_mount_config[i].length = align_array.aligned_buffer[i].length;
     }
     TEST_ESP_OK(gdma_link_mount_buffers(rx_link_list, 0, rx_aligned_buf_mount_config, 3, NULL));
@@ -559,7 +563,6 @@ TEST_CASE("GDMA M2M Unaligned RX Buffer Test", "[GDMA][M2M]")
     gdma_link_list_handle_t rx_link_list = NULL;
     // create DMA link list for TX channel
     gdma_link_list_config_t tx_link_list_config = {
-        .buffer_alignment = 32,
         .item_alignment = 8, // 8-byte alignment required by the AXI-GDMA
         .num_items = 20,
         .flags = {
@@ -569,7 +572,6 @@ TEST_CASE("GDMA M2M Unaligned RX Buffer Test", "[GDMA][M2M]")
     TEST_ESP_OK(gdma_new_link_list(&tx_link_list_config, &tx_link_list));
     // create DMA link list for RX channel
     gdma_link_list_config_t rx_link_list_config = {
-        .buffer_alignment = 32,
         .item_alignment = 8, // 8-byte alignment required by the AXI-GDMA
         .num_items = 20,
         .flags = {
@@ -603,6 +605,7 @@ TEST_CASE("GDMA M2M Unaligned RX Buffer Test", "[GDMA][M2M]")
 
     gdma_buffer_mount_config_t tx_buf_mount_config = {
         .buffer = src_data,
+        .buffer_alignment = 32,
         .length = COPY_SIZE,
         .flags = {
             .mark_eof = true,
@@ -613,6 +616,7 @@ TEST_CASE("GDMA M2M Unaligned RX Buffer Test", "[GDMA][M2M]")
 
     gdma_buffer_mount_config_t rx_buf_mount_config = {
         .buffer = dst_data,
+        .buffer_alignment = 32,
         .length = COPY_SIZE,
         .flags = {
             .mark_final = true, // using singly list, so terminate the link here

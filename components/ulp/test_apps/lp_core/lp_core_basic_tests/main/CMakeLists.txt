@@ -61,6 +61,7 @@ endif()
 idf_component_register(SRCS ${app_sources}
                        INCLUDE_DIRS "lp_core"
                        REQUIRES ulp unity esp_timer test_utils
+                       PRIV_REQUIRES driver esp_driver_gptimer esp_driver_tsens
                        WHOLE_ARCHIVE
                        EMBED_FILES "test_vad_8k.pcm")
 
@@ -100,3 +101,5 @@ endif()
 
 ulp_embed_binary(lp_core_test_app_prefix1 "lp_core/test_main_prefix1.c"  "${lp_core_exp_dep_srcs}" PREFIX "ulp1_")
 ulp_embed_binary(lp_core_test_app_prefix2 "lp_core/test_main_prefix2.c"  "${lp_core_exp_dep_srcs}" PREFIX "ulp2_")
+
+ulp_embed_binary(lp_core_test_app_exception "lp_core/test_main_exception.c" "${lp_core_exp_dep_srcs}")

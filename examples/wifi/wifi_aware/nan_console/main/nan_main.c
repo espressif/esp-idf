@@ -114,9 +114,6 @@ static void nan_receive_event_handler(void *arg, esp_event_base_t event_base,
     if (evt->ssi_len) {
         ESP_LOGI(TAG, "Received payload from Peer "MACSTR" [Peer Service id - %d] - ", MAC2STR(evt->peer_if_mac), evt->peer_inst_id);
         ESP_LOG_BUFFER_HEXDUMP(TAG, evt->ssi, evt->ssi_len, ESP_LOG_INFO);
-    } else {
-        ESP_LOGI(TAG, "Received message '%s' from Peer "MACSTR" [Peer Service id - %d]",
-                 evt->peer_svc_info, MAC2STR(evt->peer_if_mac), evt->peer_inst_id);
     }
 }
 
@@ -290,7 +287,6 @@ static int wifi_cmd_nan_publish(int argc, char **argv)
 {
     int nerrors = arg_parse(argc, argv, (void **) &pub_args);
     uint32_t pub_id;
-    bool ndp_resp_needed = false;
 
     if (nerrors != 0) {
         arg_print_errors(stderr, pub_args.end, argv[0]);
@@ -324,7 +320,7 @@ static int wifi_cmd_nan_publish(int argc, char **argv)
         strlcpy(publish.matching_filter, pub_args.filter->sval[0], ESP_WIFI_MAX_SVC_NAME_LEN);
     }
 
-    if (!esp_wifi_nan_publish_service(&publish, ndp_resp_needed)) {
+    if (!esp_wifi_nan_publish_service(&publish)) {
         return 1;
     }
 

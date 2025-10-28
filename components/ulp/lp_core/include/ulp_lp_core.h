@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -65,12 +65,44 @@ esp_err_t ulp_lp_core_load_binary(const uint8_t* program_binary, size_t program_
 void ulp_lp_core_stop(void);
 
 /**
- * @brief Trigger a SW interrupt to the LP CPU from the PMU
+ * @brief Enable or disable the software interrupts requested by the LP CPU via the PMU
+ */
+void ulp_lp_core_sw_intr_from_lp_enable(bool enable);
+
+/**
+ * @brief Clear the software interrupt requested by the LP CPU via the PMU
+ */
+void ulp_lp_core_sw_intr_from_lp_clear(void);
+
+/**
+ * @brief Trigger a software interrupt to the LP CPU from the PMU
  *
  * @note This is the same SW trigger that is used to wake up the LP CPU
  *
  */
-void ulp_lp_core_sw_intr_trigger(void);
+void ulp_lp_core_sw_intr_to_lp_trigger(void);
+
+/**
+ * @brief Trigger a software interrupt to the LP CPU from the PMU
+ *
+ * @note This function is an alias for `ulp_lp_core_sw_intr_to_lp_trigger`
+ *
+ */
+static inline void ulp_lp_core_sw_intr_trigger(void)
+{
+    ulp_lp_core_sw_intr_to_lp_trigger();
+}
+
+/**
+ * @brief Trigger a software interrupt on the HP core from the PMU
+ *
+ * @note This function generates the same software interrupt that the LP core would normally
+ *       use to notify the HP core. It can be called directly by the HP core itself in order
+ *       to simulate or re-issue such a notification. This is particularly useful if the HP
+ *       core missed a previous interrupt from the LP core and needs to retrigger the
+ *       notification sequence.
+ */
+void ulp_lp_core_sw_intr_trigger_self(void);
 
 #ifdef __cplusplus
 }

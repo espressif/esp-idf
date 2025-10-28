@@ -6,7 +6,6 @@
 
 #include "soc/regdma.h"
 #include "soc/system_periph_retention.h"
-#include "soc/timer_periph.h"
 #include "soc/uart_reg.h"
 #include "soc/systimer_reg.h"
 #include "soc/timer_group_reg.h"

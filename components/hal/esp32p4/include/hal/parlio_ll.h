@@ -14,6 +14,7 @@
 #include "hal/misc.h"
 #include "hal/parlio_types.h"
 #include "hal/hal_utils.h"
+#include "hal/config.h"
 #include "soc/hp_sys_clkrst_struct.h"
 #include "soc/lp_clkrst_struct.h"
 #include "soc/parl_io_struct.h"
@@ -33,8 +34,16 @@
 #define PARLIO_LL_EVENT_TX_MASK          (PARLIO_LL_EVENT_TX_FIFO_EMPTY | PARLIO_LL_EVENT_TX_EOF)
 #define PARLIO_LL_EVENT_RX_MASK          (PARLIO_LL_EVENT_RX_FIFO_FULL)
 
+
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) < 300
 #define PARLIO_LL_TX_DATA_LINE_AS_VALID_SIG 15 // TXD[15] can be used a valid signal
+#endif
+
 #define PARLIO_LL_TX_DATA_LINE_AS_CLK_GATE  15 // TXD[15] can be used as clock gate signal
+
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+#define PARLIO_LL_TX_VALID_MAX_DELAY        32767
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -554,23 +563,6 @@ static inline void parlio_ll_tx_set_trans_bit_len(parl_io_dev_t *dev, uint32_t b
 }
 
 /**
- * @brief Set TX valid signal delay
- *
- * @param dev Parallel IO register base address
- * @param start_delay Number of clock cycles to delay
- * @param stop_delay Number of clock cycles to delay
- * @return true: success, false: valid delay is not supported
- */
-static inline bool parlio_ll_tx_set_valid_delay(parl_io_dev_t *dev, uint32_t start_delay, uint32_t stop_delay)
-{
-    (void)dev;
-    if (start_delay == 0 && stop_delay == 0) {
-        return true;
-    }
-    return false;
-}
-
-/**
  * @brief Check if tx size can be determined by DMA
  *
  * @param dev Parallel IO register base address (not used)
@@ -619,19 +611,6 @@ __attribute__((always_inline))
 static inline void parlio_ll_tx_start(parl_io_dev_t *dev, bool en)
 {
     dev->tx_start_cfg.tx_start = en;
-}
-
-/**
- * @brief Whether to treat the MSB of TXD as the valid signal
- *
- * @note If enabled, TXD[15] will work as valid signal, which stay high during data transmission.
- *
- * @param dev Parallel IO register base address
- * @param en True to enable, False to disable
- */
-static inline void parlio_ll_tx_treat_msb_as_valid(parl_io_dev_t *dev, bool en)
-{
-    dev->tx_genrl_cfg.tx_valid_output_en = en;
 }
 
 /**
@@ -792,6 +771,62 @@ static inline void parlio_ll_clear_interrupt_status(parl_io_dev_t *dev, uint32_t
 static inline volatile void *parlio_ll_get_interrupt_status_reg(parl_io_dev_t *dev)
 {
     return &dev->int_st;
+}
+
+/**********************************************************************************************************************/
+/************************ The following functions behave differently based on the chip revision ***********************/
+/**********************************************************************************************************************/
+
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+/**
+ * @brief Set the clock gating from the valid signal
+ *
+ * @param dev Parallel IO register base address
+ * @param en If set to true, the clock is gated by the valid signal, otherwise it is gated by the MSB of the data line.
+ */
+static inline void parlio_ll_tx_clock_gating_from_valid(parl_io_dev_t *dev, bool en)
+{
+    dev->tx_genrl_cfg.tx_valid_output_en = en;
+}
+#else
+/**
+ * @brief Whether to treat the MSB of TXD as the valid signal
+ *
+ * @note If enabled, TXD[15] will work as valid signal, which stay high during data transmission.
+ *
+ * @param dev Parallel IO register base address
+ * @param en True to enable, False to disable
+ */
+static inline void parlio_ll_tx_treat_msb_as_valid(parl_io_dev_t *dev, bool en)
+{
+    dev->tx_genrl_cfg.tx_valid_output_en = en;
+}
+#endif
+
+/**
+ * @brief Set TX valid signal delay
+ *
+ * @param dev Parallel IO register base address
+ * @param start_delay Number of clock cycles to delay
+ * @param stop_delay Number of clock cycles to delay
+ * @return true: success, false: valid delay is not supported
+ */
+static inline bool parlio_ll_tx_set_valid_delay(parl_io_dev_t *dev, uint32_t start_delay, uint32_t stop_delay)
+{
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+    if (start_delay > PARLIO_LL_TX_VALID_MAX_DELAY || stop_delay > PARLIO_LL_TX_VALID_MAX_DELAY) {
+        return false;
+    }
+    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->tx_cs_cfg, tx_cs_start_delay, start_delay);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->tx_cs_cfg, tx_cs_stop_delay, stop_delay);
+    return true;
+#else
+    (void)dev;
+    if (start_delay == 0 && stop_delay == 0) {
+        return true;
+    }
+    return false;
+#endif
 }
 
 #ifdef __cplusplus

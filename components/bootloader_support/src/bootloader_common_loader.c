@@ -30,7 +30,7 @@
 #define IS_FIELD_SET(rev_full) (((rev_full) != 65535) && ((rev_full) != 0))
 #define ALIGN_UP(num, align) (((num) + ((align) - 1)) & ~((align) - 1))
 
-static const char* TAG = "boot_comm";
+ESP_LOG_ATTR_TAG(TAG, "boot_comm");
 
 bool bootloader_common_check_chip_revision_validity(const esp_image_header_t *img_hdr, bool check_max_revision)
 {

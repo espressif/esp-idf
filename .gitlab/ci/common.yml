@@ -52,7 +52,7 @@ variables:
   CHECKOUT_REF_SCRIPT: "$CI_PROJECT_DIR/tools/ci/checkout_project_ref.py"
 
   # Docker images
-  ESP_ENV_IMAGE: "${CI_DOCKER_REGISTRY}/esp-env-v6.0:2"
+  ESP_ENV_IMAGE: "${CI_DOCKER_REGISTRY}/esp-env-v6.0:3"
   ESP_IDF_DOC_ENV_IMAGE: "${CI_DOCKER_REGISTRY}/esp-idf-doc-env-v6.0:2-1"
   TARGET_TEST_ENV_IMAGE: "${CI_DOCKER_REGISTRY}/target-test-env-v6.0:2"
   SONARQUBE_SCANNER_IMAGE: "${CI_DOCKER_REGISTRY}/sonarqube-scanner:5"
@@ -97,6 +97,7 @@ variables:
   CCACHE_MAXSIZE: "50G"
 
   FF_USE_NEW_BASH_EVAL_STRATEGY: "true"
+  FORCE_COLOR: "1"  # rich print with color
 
 ################################################
 # `before_script` and `after_script` Templates #
@@ -334,9 +335,10 @@ variables:
       TEMP_FILE=$(mktemp)
       # merged results pipelines, by default
       if [[ -n $CI_MERGE_REQUEST_SOURCE_BRANCH_SHA ]]; then
-        git fetch origin $CI_MERGE_REQUEST_DIFF_BASE_SHA --depth=1 ${GIT_FETCH_EXTRA_FLAGS}
-        git fetch origin $CI_MERGE_REQUEST_SOURCE_BRANCH_SHA --depth=1 ${GIT_FETCH_EXTRA_FLAGS}
-        git diff --name-only $CI_MERGE_REQUEST_DIFF_BASE_SHA $CI_MERGE_REQUEST_SOURCE_BRANCH_SHA > "$TEMP_FILE"
+        git fetch origin $CI_MERGE_REQUEST_TARGET_BRANCH_SHA
+        git fetch origin $CI_MERGE_REQUEST_SOURCE_BRANCH_SHA
+
+        git diff --name-only $CI_MERGE_REQUEST_TARGET_BRANCH_SHA...$CI_MERGE_REQUEST_SOURCE_BRANCH_SHA > "$TEMP_FILE"
         GIT_DIFF_OUTPUT=$(cat "$TEMP_FILE")
         git fetch origin $CI_COMMIT_SHA --depth=1 ${GIT_FETCH_EXTRA_FLAGS}
       # merge request pipelines, when the mr got conflicts

@@ -25,7 +25,7 @@ extern __attribute__((unused)) portMUX_TYPE rtc_spinlock;
 /*------------------------------------------------------------------------------------------------------------
 -----------------------------------------Temperature Sensor---------------------------------------------------
 ------------------------------------------------------------------------------------------------------------*/
-static const char *TAG_TSENS = "temperature_sensor";
+ESP_LOG_ATTR_TAG(TAG_TSENS, "temperature_sensor");
 
 #define INT_NOT_USED 999999
 
@@ -103,7 +103,10 @@ int16_t temp_sensor_get_raw_value(bool *range_changed)
         s_first_temp_read = false;
     }
 
+    adc_reset_lock_acquire();
     result = temperature_sensor_hal_get_degree(range_changed);
+    adc_reset_lock_release();
+
     esp_os_exit_critical(&rtc_spinlock);
 
     return result;

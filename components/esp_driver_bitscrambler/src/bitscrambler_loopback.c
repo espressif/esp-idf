@@ -108,7 +108,6 @@ esp_err_t bitscrambler_loopback_create(bitscrambler_handle_t *handle, int attach
 
     // create DMA link list for TX and RX
     gdma_link_list_config_t dma_link_cfg = {
-        .buffer_alignment = 4,
         .item_alignment = align,
         .num_items = desc_ct,
     };
@@ -229,6 +228,7 @@ esp_err_t bitscrambler_loopback_run(bitscrambler_handle_t bs, void *buffer_in, s
     // mount in and out buffer to the DMA link list
     gdma_buffer_mount_config_t in_buf_mount_config = {
         .buffer = buffer_in,
+        .buffer_alignment = 4,
         .length = length_bytes_in,
         .flags = {
             .mark_eof = true,
@@ -238,6 +238,7 @@ esp_err_t bitscrambler_loopback_run(bitscrambler_handle_t bs, void *buffer_in, s
     gdma_link_mount_buffers(bsl->tx_link_list, 0, &in_buf_mount_config, 1, NULL);
     gdma_buffer_mount_config_t out_buf_mount_config = {
         .buffer = buffer_out,
+        .buffer_alignment = 4,
         .length = length_bytes_out,
         .flags = {
             .mark_eof = false,

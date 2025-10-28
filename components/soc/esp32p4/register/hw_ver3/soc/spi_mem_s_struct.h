@@ -180,11 +180,7 @@ typedef union {
          *  1: MSPI supports AWSIZE 0~3. 0: When AWSIZE 0~1, MSPI reply SLV_ERR.
          */
         uint32_t aw_size0_1_support_en:1;
-        /** axi_rdata_back_fast : R/W; bitpos: [23]; default: 1;
-         *  1: Reply AXI read data to AXI bus when one AXI read beat data is available. 0:
-         *  Reply AXI read data to AXI bus when all the read data is available.
-         */
-        uint32_t axi_rdata_back_fast:1;
+        uint32_t reserved_23:1;
         /** mem_rresp_ecc_err_en : R/W; bitpos: [24]; default: 0;
          *  1: RRESP is SLV_ERR when there is a ECC error in AXI read data. 0: RRESP is OKAY
          *  when there is a ECC error in AXI read data. The ECC error information is recorded
@@ -200,9 +196,9 @@ typedef union {
          */
         uint32_t mem_aw_splice_en:1;
         /** mem_ram0_en : HRO; bitpos: [27]; default: 1;
-         *  When SPI_MEM_S_DUAL_RAM_EN is 0 and SPI_MEM_S_RAM0_EN is 1, only EXT_RAM0 will be
-         *  accessed. When SPI_MEM_S_DUAL_RAM_EN is 0 and SPI_MEM_S_RAM0_EN is 0, only EXT_RAM1
-         *  will be accessed. When SPI_MEM_S_DUAL_RAM_EN is 1,  EXT_RAM0 and EXT_RAM1 will be
+         *  When spi_mem_s_DUAL_RAM_EN is 0 and spi_mem_s_RAM0_EN is 1, only EXT_RAM0 will be
+         *  accessed. When spi_mem_s_DUAL_RAM_EN is 0 and spi_mem_s_RAM0_EN is 0, only EXT_RAM1
+         *  will be accessed. When spi_mem_s_DUAL_RAM_EN is 1,  EXT_RAM0 and EXT_RAM1 will be
          *  accessed at the same time.
          */
         uint32_t mem_ram0_en:1;
@@ -287,12 +283,24 @@ typedef union {
  */
 typedef union {
     struct {
-        uint32_t reserved_0:7;
-        /** mem_fsub_pin : R/W; bitpos: [7]; default: 0;
+        uint32_t reserved_0:4;
+        /** mem_dq_oe_ctrl : R/W; bitpos: [4]; default: 1;
+         *  For SPI BUS IO,  APB ctrl IO DQ OE func.1: enable 0: disable.
+         */
+        uint32_t mem_dq_oe_ctrl:1;
+        /** mem_ck_oe_ctrl : R/W; bitpos: [5]; default: 1;
+         *  For SPI BUS IO,  APB ctrl IO CK OE func.1: enable 0: disable.
+         */
+        uint32_t mem_ck_oe_ctrl:1;
+        /** mem_cs_oe_ctrl : R/W; bitpos: [6]; default: 1;
+         *  For SPI BUS IO,  APB ctrl IO CS OE func.1: enable 0: disable.
+         */
+        uint32_t mem_cs_oe_ctrl:1;
+        /** mem_fsub_pin : HRO; bitpos: [7]; default: 0;
          *  For SPI0,  flash is connected to SUBPINs.
          */
         uint32_t mem_fsub_pin:1;
-        /** mem_ssub_pin : R/W; bitpos: [8]; default: 0;
+        /** mem_ssub_pin : HRO; bitpos: [8]; default: 0;
          *  For SPI0,  sram is connected to SUBPINs.
          */
         uint32_t mem_ssub_pin:1;
@@ -316,47 +324,81 @@ typedef union {
     struct {
         /** mem_axi_req_en : R/W; bitpos: [0]; default: 0;
          *  For SPI0, AXI master access enable, 1: enable, 0:disable.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t mem_axi_req_en:1;
         /** mem_cache_usr_addr_4byte : R/W; bitpos: [1]; default: 0;
          *  For SPI0,  cache  read flash with 4 bytes address, 1: enable, 0:disable.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t mem_cache_usr_addr_4byte:1;
         /** mem_cache_flash_usr_cmd : R/W; bitpos: [2]; default: 0;
          *  For SPI0,  cache  read flash for user define command, 1: enable, 0:disable.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t mem_cache_flash_usr_cmd:1;
         /** mem_fdin_dual : R/W; bitpos: [3]; default: 0;
          *  For SPI0 flash, din phase apply 2 signals. 1: enable 0: disable. The bit is the
          *  same with spi_mem_s_fread_dio.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t mem_fdin_dual:1;
         /** mem_fdout_dual : R/W; bitpos: [4]; default: 0;
          *  For SPI0 flash, dout phase apply 2 signals. 1: enable 0: disable. The bit is the
          *  same with spi_mem_s_fread_dio.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t mem_fdout_dual:1;
         /** mem_faddr_dual : R/W; bitpos: [5]; default: 0;
          *  For SPI0 flash, address phase apply 2 signals. 1: enable 0: disable.  The bit is
          *  the same with spi_mem_s_fread_dio.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t mem_faddr_dual:1;
         /** mem_fdin_quad : R/W; bitpos: [6]; default: 0;
          *  For SPI0 flash, din phase apply 4 signals. 1: enable 0: disable.  The bit is the
          *  same with spi_mem_s_fread_qio.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t mem_fdin_quad:1;
         /** mem_fdout_quad : R/W; bitpos: [7]; default: 0;
          *  For SPI0 flash, dout phase apply 4 signals. 1: enable 0: disable.  The bit is the
          *  same with spi_mem_s_fread_qio.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t mem_fdout_quad:1;
         /** mem_faddr_quad : R/W; bitpos: [8]; default: 0;
          *  For SPI0 flash, address phase apply 4 signals. 1: enable 0: disable.  The bit is
          *  the same with spi_mem_s_fread_qio.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t mem_faddr_quad:1;
-        uint32_t reserved_9:21;
+        /** mem_arb_wei_en : R/W; bitpos: [9]; default: 0;
+         *  To enable SPI0 arbiter weight func while AXI read/write access SPI0  1: enable 0:
+         *  disable.
+         */
+        uint32_t mem_arb_wei_en:1;
+        /** mem_arb_req0_pri : R/W; bitpos: [10]; default: 0;
+         *  To set AXI read priority in SPI0 arbiter. The larger the value, the greater the
+         *  priority.
+         */
+        uint32_t mem_arb_req0_pri:1;
+        /** mem_arb_req1_pri : R/W; bitpos: [11]; default: 0;
+         *  To set AXI write priority in SPI0 arbiter. The larger the value, the greater the
+         *  priority.
+         */
+        uint32_t mem_arb_req1_pri:1;
+        /** mem_arb_req0_wei : R/W; bitpos: [15:12]; default: 0;
+         *  To set AXI read priority weight in SPI0 arbiter. While the priority are same, the
+         *  larger the value, the greater the weight.
+         */
+        uint32_t mem_arb_req0_wei:4;
+        /** mem_arb_req1_wei : R/W; bitpos: [19:16]; default: 0;
+         *  To set AXI write priority weight in SPI0 arbiter. While the priority are same, the
+         *  larger the value, the greater the weight.
+         */
+        uint32_t mem_arb_req1_wei:4;
+        uint32_t reserved_20:10;
         /** same_aw_ar_addr_chk_en : R/W; bitpos: [30]; default: 1;
          *  Set this bit to check AXI read/write the same address region.
          */
@@ -462,16 +504,16 @@ typedef union {
 typedef union {
     struct {
         /** mem_clkcnt_l : R/W; bitpos: [7:0]; default: 3;
-         *  In the master mode it must be equal to spi_mem_s_clkcnt_N.
+         *  In the master mode it must be equal to spi_mem_s_CLKCNT_N.
          */
         uint32_t mem_clkcnt_l:8;
         /** mem_clkcnt_h : R/W; bitpos: [15:8]; default: 1;
-         *  In the master mode it must be floor((spi_mem_s_clkcnt_N+1)/2-1).
+         *  In the master mode it must be floor((spi_mem_s_CLKCNT_N+1)/2-1).
          */
         uint32_t mem_clkcnt_h:8;
         /** mem_clkcnt_n : R/W; bitpos: [23:16]; default: 3;
          *  In the master mode it is the divider of spi_mem_s_clk. So spi_mem_s_clk frequency is
-         *  system/(spi_mem_s_clkcnt_N+1)
+         *  system/(spi_mem_s_CLKCNT_N+1)
          */
         uint32_t mem_clkcnt_n:8;
         uint32_t reserved_24:7;
@@ -490,22 +532,26 @@ typedef union {
 typedef union {
     struct {
         /** mem_sclkcnt_l : R/W; bitpos: [7:0]; default: 3;
-         *  For SPI0 external RAM  interface, it must be equal to spi_mem_s_clkcnt_N.
+         *  For SPI0 external RAM  interface, it must be equal to spi_mem_s_SCLKCNT_N.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t mem_sclkcnt_l:8;
         /** mem_sclkcnt_h : R/W; bitpos: [15:8]; default: 1;
-         *  For SPI0 external RAM  interface, it must be floor((spi_mem_s_clkcnt_N+1)/2-1).
+         *  For SPI0 external RAM  interface, it must be floor((spi_mem_s_SCLKCNT_N+1)/2-1).
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t mem_sclkcnt_h:8;
         /** mem_sclkcnt_n : R/W; bitpos: [23:16]; default: 3;
          *  For SPI0 external RAM  interface, it is the divider of spi_mem_s_clk. So spi_mem_s_clk
-         *  frequency is system/(spi_mem_s_clkcnt_N+1)
+         *  frequency is system/(spi_mem_s_SCLKCNT_N+1)
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t mem_sclkcnt_n:8;
         uint32_t reserved_24:7;
         /** mem_sclk_equ_sysclk : R/W; bitpos: [31]; default: 0;
          *  For SPI0 external RAM  interface, 1: spi_mem_s_clk is equal to system 0: spi_mem_s_clk
          *  is divided from system clock.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t mem_sclk_equ_sysclk:1;
     };
@@ -544,7 +590,7 @@ typedef union {
         uint32_t mem_cs_setup:1;
         uint32_t reserved_8:1;
         /** mem_ck_out_edge : R/W; bitpos: [9]; default: 0;
-         *  The bit combined with SPI_MEM_S_CK_IDLE_EDGE bit to control SPI clock mode 0~3.
+         *  The bit combined with spi_mem_s_CK_IDLE_EDGE bit to control SPI clock mode 0~3.
          */
         uint32_t mem_ck_out_edge:1;
         uint32_t reserved_10:16;
@@ -611,6 +657,7 @@ typedef union {
         uint32_t reserved_0:16;
         /** mem_wb_mode : R/W; bitpos: [23:16]; default: 0;
          *  Mode bits in the flash fast read mode  it is combined with spi_mem_s_fastrd_mode bit.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t mem_wb_mode:8;
         uint32_t reserved_24:8;
@@ -628,52 +675,63 @@ typedef union {
         /** mem_cache_usr_saddr_4byte : R/W; bitpos: [0]; default: 0;
          *  For SPI0, In the external RAM mode, cache read flash with 4 bytes command, 1:
          *  enable, 0:disable.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t mem_cache_usr_saddr_4byte:1;
         /** mem_usr_sram_dio : R/W; bitpos: [1]; default: 0;
          *  For SPI0, In the external RAM mode, spi dual I/O mode enable, 1: enable, 0:disable
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t mem_usr_sram_dio:1;
         /** mem_usr_sram_qio : R/W; bitpos: [2]; default: 0;
          *  For SPI0, In the external RAM mode, spi quad I/O mode enable, 1: enable, 0:disable
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t mem_usr_sram_qio:1;
         /** mem_usr_wr_sram_dummy : R/W; bitpos: [3]; default: 0;
          *  For SPI0, In the external RAM mode, it is the enable bit of dummy phase for write
          *  operations.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t mem_usr_wr_sram_dummy:1;
         /** mem_usr_rd_sram_dummy : R/W; bitpos: [4]; default: 1;
          *  For SPI0, In the external RAM mode, it is the enable bit of dummy phase for read
          *  operations.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t mem_usr_rd_sram_dummy:1;
         /** mem_cache_sram_usr_rcmd : R/W; bitpos: [5]; default: 1;
          *  For SPI0, In the external RAM mode cache read external RAM for user define command.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t mem_cache_sram_usr_rcmd:1;
         /** mem_sram_rdummy_cyclelen : R/W; bitpos: [11:6]; default: 1;
          *  For SPI0, In the external RAM mode, it is the length in bits of read dummy phase.
          *  The register value shall be (bit_num-1).
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t mem_sram_rdummy_cyclelen:6;
         uint32_t reserved_12:2;
         /** mem_sram_addr_bitlen : R/W; bitpos: [19:14]; default: 23;
          *  For SPI0, In the external RAM mode, it is the length in bits of address phase. The
          *  register value shall be (bit_num-1).
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t mem_sram_addr_bitlen:6;
         /** mem_cache_sram_usr_wcmd : R/W; bitpos: [20]; default: 1;
          *  For SPI0, In the external RAM mode cache write sram for user define command
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t mem_cache_sram_usr_wcmd:1;
         /** mem_sram_oct : R/W; bitpos: [21]; default: 0;
          *  reserved
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t mem_sram_oct:1;
         /** mem_sram_wdummy_cyclelen : R/W; bitpos: [27:22]; default: 1;
          *  For SPI0, In the external RAM mode, it is the length in bits of write dummy phase.
          *  The register value shall be (bit_num-1).
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t mem_sram_wdummy_cyclelen:6;
         uint32_t reserved_28:4;
@@ -690,73 +748,88 @@ typedef union {
          *  SPI clock mode bits. 0: SPI clock is off when CS inactive 1: SPI clock is delayed
          *  one cycle after CS inactive 2: SPI clock is delayed two cycles after CS inactive 3:
          *  SPI clock is always on.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t mem_sclk_mode:2;
         /** mem_swb_mode : R/W; bitpos: [9:2]; default: 0;
          *  Mode bits in the external RAM fast read mode  it is combined with
          *  spi_mem_s_fastrd_mode bit.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t mem_swb_mode:8;
         /** mem_sdin_dual : R/W; bitpos: [10]; default: 0;
          *  For SPI0 external RAM , din phase apply 2 signals. 1: enable 0: disable. The bit is
          *  the same with spi_mem_s_usr_sram_dio.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t mem_sdin_dual:1;
         /** mem_sdout_dual : R/W; bitpos: [11]; default: 0;
          *  For SPI0 external RAM , dout phase apply 2 signals. 1: enable 0: disable. The bit
          *  is the same with spi_mem_s_usr_sram_dio.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t mem_sdout_dual:1;
         /** mem_saddr_dual : R/W; bitpos: [12]; default: 0;
          *  For SPI0 external RAM , address phase apply 2 signals. 1: enable 0: disable. The
          *  bit is the same with spi_mem_s_usr_sram_dio.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t mem_saddr_dual:1;
         uint32_t reserved_13:1;
         /** mem_sdin_quad : R/W; bitpos: [14]; default: 0;
          *  For SPI0 external RAM , din phase apply 4 signals. 1: enable 0: disable. The bit is
          *  the same with spi_mem_s_usr_sram_qio.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t mem_sdin_quad:1;
         /** mem_sdout_quad : R/W; bitpos: [15]; default: 0;
          *  For SPI0 external RAM , dout phase apply 4 signals. 1: enable 0: disable. The bit
          *  is the same with spi_mem_s_usr_sram_qio.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t mem_sdout_quad:1;
         /** mem_saddr_quad : R/W; bitpos: [16]; default: 0;
          *  For SPI0 external RAM , address phase apply 4 signals. 1: enable 0: disable. The
          *  bit is the same with spi_mem_s_usr_sram_qio.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t mem_saddr_quad:1;
         /** mem_scmd_quad : R/W; bitpos: [17]; default: 0;
          *  For SPI0 external RAM , cmd phase apply 4 signals. 1: enable 0: disable. The bit is
          *  the same with spi_mem_s_usr_sram_qio.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t mem_scmd_quad:1;
         /** mem_sdin_oct : R/W; bitpos: [18]; default: 0;
          *  For SPI0 external RAM , din phase apply 8 signals. 1: enable 0: disable.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t mem_sdin_oct:1;
         /** mem_sdout_oct : R/W; bitpos: [19]; default: 0;
          *  For SPI0 external RAM , dout phase apply 8 signals. 1: enable 0: disable.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t mem_sdout_oct:1;
         /** mem_saddr_oct : R/W; bitpos: [20]; default: 0;
          *  For SPI0 external RAM , address phase apply 4 signals. 1: enable 0: disable.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t mem_saddr_oct:1;
         /** mem_scmd_oct : R/W; bitpos: [21]; default: 0;
          *  For SPI0 external RAM , cmd phase apply 8 signals. 1: enable 0: disable.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t mem_scmd_oct:1;
         /** mem_sdummy_rin : R/W; bitpos: [22]; default: 1;
          *  In the dummy phase of a MSPI read data transfer when accesses to external RAM, the
          *  signal level of SPI bus is output by the MSPI controller.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t mem_sdummy_rin:1;
         /** mem_sdummy_wout : R/W; bitpos: [23]; default: 1;
          *  In the dummy phase of a MSPI write data transfer when accesses to external RAM, the
          *  signal level of SPI bus is output by the MSPI controller.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t mem_sdummy_wout:1;
         /** smem_wdummy_dqs_always_out : R/W; bitpos: [24]; default: 0;
@@ -771,10 +844,12 @@ typedef union {
         uint32_t smem_wdummy_always_out:1;
         /** mem_sdin_hex : R/W; bitpos: [26]; default: 0;
          *  For SPI0 external RAM , din phase apply 16 signals. 1: enable 0: disable.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t mem_sdin_hex:1;
         /** mem_sdout_hex : R/W; bitpos: [27]; default: 0;
          *  For SPI0 external RAM , dout phase apply 16 signals. 1: enable 0: disable.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t mem_sdout_hex:1;
         uint32_t reserved_28:2;
@@ -800,12 +875,14 @@ typedef union {
         /** mem_cache_sram_usr_rd_cmd_value : R/W; bitpos: [15:0]; default: 0;
          *  For SPI0,When cache mode is enable it is the read command value of command phase
          *  for sram.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t mem_cache_sram_usr_rd_cmd_value:16;
         uint32_t reserved_16:12;
         /** mem_cache_sram_usr_rd_cmd_bitlen : R/W; bitpos: [31:28]; default: 0;
          *  For SPI0,When cache mode is enable it is the length in bits of command phase for
          *  sram. The register value shall be (bit_num-1).
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t mem_cache_sram_usr_rd_cmd_bitlen:4;
     };
@@ -820,12 +897,14 @@ typedef union {
         /** mem_cache_sram_usr_wr_cmd_value : R/W; bitpos: [15:0]; default: 0;
          *  For SPI0,When cache mode is enable it is the write command value of command phase
          *  for sram.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t mem_cache_sram_usr_wr_cmd_value:16;
         uint32_t reserved_16:12;
         /** mem_cache_sram_usr_wr_cmd_bitlen : R/W; bitpos: [31:28]; default: 0;
          *  For SPI0,When cache mode is enable it is the in bits of command phase  for sram.
          *  The register value shall be (bit_num-1).
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t mem_cache_sram_usr_wr_cmd_bitlen:4;
     };
@@ -877,7 +956,7 @@ typedef union {
         uint32_t smem_usr_ddr_dqs_thd:7;
         /** smem_ddr_dqs_loop : R/W; bitpos: [21]; default: 0;
          *  1: Do not need the input of SPI_DQS signal, SPI0 starts to receive data when
-         *  spi0_slv_st is in SPI_MEM_S_DIN state. It is used when there is no SPI_DQS signal or
+         *  spi0_slv_st is in spi_mem_s_DIN state. It is used when there is no SPI_DQS signal or
          *  SPI_DQS signal is not stable. 0: SPI0 starts to store data at the positive and
          *  negative edge of SPI_DQS.
          */
@@ -942,7 +1021,7 @@ typedef union {
          */
         uint32_t smem_cs_hold_time:5;
         /** smem_ecc_cs_hold_time : R/W; bitpos: [14:12]; default: 3;
-         *  SPI_MEM_S_SMEM_CS_HOLD_TIME + SPI_MEM_S_SMEM_ECC_CS_HOLD_TIME is the SPI0 and SPI1 CS hold
+         *  spi_mem_s_smem_CS_HOLD_TIME + spi_mem_s_smem_ECC_CS_HOLD_TIME is the SPI0 and SPI1 CS hold
          *  cycles in ECC mode when accessed external RAM.
          */
         uint32_t smem_ecc_cs_hold_time:3;
@@ -959,7 +1038,7 @@ typedef union {
         uint32_t reserved_17:8;
         /** smem_cs_hold_delay : R/W; bitpos: [30:25]; default: 0;
          *  These bits are used to set the minimum CS high time tSHSL between SPI burst
-         *  transfer when accesses to external RAM. tSHSL is (SPI_MEM_S_SMEM_CS_HOLD_DELAY[5:0] + 1)
+         *  transfer when accesses to external RAM. tSHSL is (spi_mem_s_smem_CS_HOLD_DELAY[5:0] + 1)
          *  MSPI core clock cycles.
          */
         uint32_t smem_cs_hold_delay:6;
@@ -981,11 +1060,11 @@ typedef union {
 typedef union {
     struct {
         uint32_t reserved_0:7;
-        /** mem_lock_delay_time : R/W; bitpos: [11:7]; default: 4;
+        /** mem_lock_delay_time : R/W; bitpos: [18:7]; default: 4;
          *  The lock delay time of SPI0/1 arbiter by spi0_slv_st, after PER is sent by SPI1.
          */
-        uint32_t mem_lock_delay_time:5;
-        uint32_t reserved_12:20;
+        uint32_t mem_lock_delay_time:12;
+        uint32_t reserved_19:13;
     };
     uint32_t val;
 } spi_mem_s_fsm_reg_t;
@@ -1026,9 +1105,17 @@ typedef union {
          *  The enable bit for SPI_MEM_S_AXI_WADDR_ERR_INT interrupt.
          */
         uint32_t mem_axi_waddr_err_int__ena:1;
-        uint32_t reserved_10:18;
+        uint32_t reserved_10:16;
+        /** mem_rx_trans_ovf_int_ena : R/W; bitpos: [26]; default: 0;
+         *  The enable bit for spi_mem_s_RX_TRANS_OVF_INT interrupt.
+         */
+        uint32_t mem_rx_trans_ovf_int_ena:1;
+        /** mem_tx_trans_udf_int_ena : R/W; bitpos: [27]; default: 0;
+         *  The enable bit for spi_mem_s_TX_TRANS_UDF_INT interrupt.
+         */
+        uint32_t mem_tx_trans_udf_int_ena:1;
         /** mem_dqs0_afifo_ovf_int_ena : R/W; bitpos: [28]; default: 0;
-         *  The enable bit for SPI_MEM_S_DQS0_AFIFO_OVF_INT interrupt.
+         *  The enable bit for spi_mem_s_DQS0_AFIFO_OVF_INT interrupt.
          */
         uint32_t mem_dqs0_afifo_ovf_int_ena:1;
         /** mem_dqs1_afifo_ovf_int_ena : R/W; bitpos: [29]; default: 0;
@@ -1081,7 +1168,15 @@ typedef union {
          *  The clear bit for SPI_MEM_S_AXI_WADDR_ERR_INT interrupt.
          */
         uint32_t mem_axi_waddr_err_int_clr:1;
-        uint32_t reserved_10:18;
+        uint32_t reserved_10:16;
+        /** mem_rx_trans_ovf_int_clr : WT; bitpos: [26]; default: 0;
+         *  The clear bit for spi_mem_s_RX_TRANS_OVF_INT interrupt.
+         */
+        uint32_t mem_rx_trans_ovf_int_clr:1;
+        /** mem_tx_trans_udf_int_clr : WT; bitpos: [27]; default: 0;
+         *  The clear bit for spi_mem_s_TX_TRANS_UDF_INT interrupt.
+         */
+        uint32_t mem_tx_trans_udf_int_clr:1;
         /** mem_dqs0_afifo_ovf_int_clr : WT; bitpos: [28]; default: 0;
          *  The clear bit for SPI_MEM_S_DQS0_AFIFO_OVF_INT interrupt.
          */
@@ -1152,7 +1247,17 @@ typedef union {
          *  address is invalid by compared to MMU configuration. 0: Others.
          */
         uint32_t mem_axi_waddr_err_int_raw:1;
-        uint32_t reserved_10:18;
+        uint32_t reserved_10:16;
+        /** mem_rx_trans_ovf_int_raw : R/WTC/SS; bitpos: [26]; default: 0;
+         *  The raw bit for  spi_mem_s_RX_TRANS_OVF_INT interrupt. 1: Triggered when the rx fifo
+         *  to spi bus is overrflow.
+         */
+        uint32_t mem_rx_trans_ovf_int_raw:1;
+        /** mem_tx_trans_udf_int_raw : R/WTC/SS; bitpos: [27]; default: 0;
+         *  The raw bit for spi_mem_s_TX_TRANS_UDF_INT interrupt. 1: Triggered when the tx fifo
+         *  to spi bus is underflow.
+         */
+        uint32_t mem_tx_trans_udf_int_raw:1;
         /** mem_dqs0_afifo_ovf_int_raw : R/WTC/SS; bitpos: [28]; default: 0;
          *  The raw bit for SPI_MEM_S_DQS0_AFIFO_OVF_INT interrupt. 1: Triggered when the AFIFO
          *  connected to SPI_DQS1 is overflow.
@@ -1211,7 +1316,15 @@ typedef union {
          *  The enable bit for SPI_MEM_S_AXI_WADDR_ERR_INT interrupt.
          */
         uint32_t mem_axi_waddr_err_int_st:1;
-        uint32_t reserved_10:18;
+        uint32_t reserved_10:16;
+        /** mem_rx_trans_ovf_int_st : RO; bitpos: [26]; default: 0;
+         *  The status bit for  spi_mem_s_RX_TRANS_OVF_INT interrupt.
+         */
+        uint32_t mem_rx_trans_ovf_int_st:1;
+        /** mem_tx_trans_udf_int_st : RO; bitpos: [27]; default: 0;
+         *  The status bit for spi_mem_s_TX_TRANS_UDF_INT interrupt.
+         */
+        uint32_t mem_tx_trans_udf_int_st:1;
         /** mem_dqs0_afifo_ovf_int_st : RO; bitpos: [28]; default: 0;
          *  The status bit for SPI_MEM_S_DQS0_AFIFO_OVF_INT interrupt.
          */
@@ -1233,62 +1346,175 @@ typedef union {
 } spi_mem_s_int_st_reg_t;
 
 
+/** Group: DLL debug and  configuration registers */
+/** Type of mem_dll_dly_db register
+ *  MSPI DLL function and debug configuration register
+ */
+typedef union {
+    struct {
+        /** mem_dll_db_cfg_vld_cnt : R/W; bitpos: [7:0]; default: 0;
+         *  Configures the end time of the debug window.
+         */
+        uint32_t mem_dll_db_cfg_vld_cnt:8;
+        /** mem_dll_db_cnt_mode_sel : R/W; bitpos: [11:8]; default: 0;
+         *  [3]:1-spi_din[15:8]. 0-spi_din[7:0]. [2]:1-only shift wptr or rptr. 0-both shift
+         *  wptr and rptr. [1]:1-wprt[3:0] and rptr[3:0]. 0-rptr[3:0] and wprt[3:0].
+         *  [0]:1-neg_ptr[3:0]. 0-pos_prt[3:0].
+         */
+        uint32_t mem_dll_db_cnt_mode_sel:4;
+        /** mem_dll_db_cnt_clr : R/W; bitpos: [12]; default: 0;
+         *  Configures the start time of the debug window. 1: Clear db_vld_cnt to 0 and Get
+         *  ready for debug. 0: No debug.
+         */
+        uint32_t mem_dll_db_cnt_clr:1;
+        /** mem_dll_din_dly_sel : R/W; bitpos: [13]; default: 0;
+         *  Configures the din channel. 1: Use  delayed data. 0: Do not use delayed data.
+         */
+        uint32_t mem_dll_din_dly_sel:1;
+        uint32_t reserved_14:18;
+    };
+    uint32_t val;
+} spi_mem_s_dll_dly_db_reg_t;
+
+
+/** Group: DLL debug status registers */
+/** Type of mem_dll_db_st0 register
+ *  MSPI DLL debug status0 register
+ */
+typedef union {
+    struct {
+        /** mem_db_fifo_cnt_h : RO; bitpos: [31:0]; default: 0;
+         *  Debug  for DLL FIFO pointer. Use a 64bits shift register to record pointer changes
+         *  during the debug window. db_fifo_cnt[63:32]
+         */
+        uint32_t mem_db_fifo_cnt_h:32;
+    };
+    uint32_t val;
+} spi_mem_s_dll_db_st0_reg_t;
+
+/** Type of mem_dll_db_st1 register
+ *  MSPI DLL debug status1 register
+ */
+typedef union {
+    struct {
+        /** mem_db_fifo_cnt_l : RO; bitpos: [31:0]; default: 0;
+         *  Debug  for DLL FIFO pointer. Use a 64bits shift register to record pointer changes
+         *  during the debug window. db_fifo_cnt[31:0]
+         */
+        uint32_t mem_db_fifo_cnt_l:32;
+    };
+    uint32_t val;
+} spi_mem_s_dll_db_st1_reg_t;
+
+
 /** Group: PMS control and configuration registers */
-/** Type of fmem_pmsn_attr register
+/** Type of fmem_pms0_attr register
  *  MSPI flash PMS section $n attribute register
  */
 typedef union {
     struct {
-        /** fmem_pms_rd_attr : R/W; bitpos: [0]; default: 1;
-         *  1: SPI1 flash PMS section $n read accessible. 0: Not allowed.
+        /** fmem_pms0_rd_attr : R/W; bitpos: [0]; default: 1;
+         *  1: SPI1 flash PMS section 0 read accessible. 0: Not allowed.
          */
-        uint32_t fmem_pms_rd_attr:1;
-        /** fmem_pms_wr_attr : R/W; bitpos: [1]; default: 1;
-         *  1: SPI1 flash PMS section $n write accessible. 0: Not allowed.
+        uint32_t fmem_pms0_rd_attr:1;
+        /** fmem_pms0_wr_attr : R/W; bitpos: [1]; default: 1;
+         *  1: SPI1 flash PMS section 0 write accessible. 0: Not allowed.
          */
-        uint32_t fmem_pms_wr_attr:1;
-        /** fmem_pms_ecc : R/W; bitpos: [2]; default: 0;
-         *  SPI1 flash PMS section $n ECC mode, 1: enable ECC mode. 0: Disable it. The flash
-         *  PMS section $n is configured by registers SPI_MEM_S_FMEM_PMS$n_ADDR_REG and
-         *  SPI_MEM_S_FMEM_PMS$n_SIZE_REG.
+        uint32_t fmem_pms0_wr_attr:1;
+        /** fmem_pms0_ecc : R/W; bitpos: [2]; default: 0;
+         *  SPI1 flash PMS section 0 ECC mode, 1: enable ECC mode. 0: Disable it. The flash PMS
+         *  section 0 is configured by registers spi_mem_s_fmem_PMS0_ADDR_REG and
+         *  spi_mem_s_fmem_PMS0_SIZE_REG.
          */
-        uint32_t fmem_pms_ecc:1;
-        uint32_t reserved_3:29;
+        uint32_t fmem_pms0_ecc:1;
+        /** fmem_pms0_nonsecure_rd_attr : R/W; bitpos: [3]; default: 1;
+         *  1: SPI1 flash  non-secure PMS section 0 read accessible. 0: Not allowed.
+         */
+        uint32_t fmem_pms0_nonsecure_rd_attr:1;
+        /** fmem_pms0_nonsecure_wr_attr : R/W; bitpos: [4]; default: 1;
+         *  1: SPI1 flash non-secure PMS section 0 write accessible. 0: Not allowed.
+         */
+        uint32_t fmem_pms0_nonsecure_wr_attr:1;
+        /** fmem_pms0_nonsecure_ecc : R/W; bitpos: [5]; default: 0;
+         *  SPI1 flash non-secure PMS section 0 ECC mode, 1: enable ECC mode. 0: Disable it.
+         *  The flash PMS section 0 is configured by registers spi_mem_s_fmem_PMS0_ADDR_REG and
+         *  spi_mem_s_fmem_PMS0_SIZE_REG.
+         */
+        uint32_t fmem_pms0_nonsecure_ecc:1;
+        uint32_t reserved_6:26;
+    };
+    uint32_t val;
+} spi_mem_s_fmem_pms0_attr_reg_t;
+
+/** Type of fmem_pmsn_attr register
+ *  SPI1 flash PMS section n attribute register
+ */
+typedef union {
+    struct {
+        /** fmem_pmsn_rd_attr : R/W; bitpos: [0]; default: 1;
+         *  1: SPI1 flash PMS section n read accessible. 0: Not allowed.
+         */
+        uint32_t fmem_pmsn_rd_attr:1;
+        /** fmem_pmsn_wr_attr : R/W; bitpos: [1]; default: 1;
+         *  1: SPI1 flash PMS section n write accessible. 0: Not allowed.
+         */
+        uint32_t fmem_pmsn_wr_attr:1;
+        /** fmem_pmsn_ecc : R/W; bitpos: [2]; default: 0;
+         *  SPI1 flash PMS section n ECC mode, 1: enable ECC mode. 0: Disable it. The flash PMS
+         *  section n is configured by registers spi_mem_s_fmem_PMSn_ADDR_REG and
+         *  spi_mem_s_fmem_PMSn_SIZE_REG.
+         */
+        uint32_t fmem_pmsn_ecc:1;
+        /** fmem_pmsn_nonsecure_rd_attr : R/W; bitpos: [3]; default: 1;
+         *  1: SPI1 flash  non-secure PMS section n read accessible. 0: Not allowed.
+         */
+        uint32_t fmem_pmsn_nonsecure_rd_attr:1;
+        /** fmem_pmsn_nonsecure_wr_attr : R/W; bitpos: [4]; default: 1;
+         *  1: SPI1 flash non-secure PMS section n write accessible. 0: Not allowed.
+         */
+        uint32_t fmem_pmsn_nonsecure_wr_attr:1;
+        /** fmem_pmsn_nonsecure_ecc : R/W; bitpos: [5]; default: 0;
+         *  SPI1 flash non-secure PMS section n ECC mode, 1: enable ECC mode. 0: Disable it.
+         *  The flash PMS section n is configured by registers spi_mem_s_fmem_PMSn_ADDR_REG and
+         *  spi_mem_s_fmem_PMSn_SIZE_REG.
+         */
+        uint32_t fmem_pmsn_nonsecure_ecc:1;
+        uint32_t reserved_6:26;
     };
     uint32_t val;
 } spi_mem_s_fmem_pmsn_attr_reg_t;
 
 /** Type of fmem_pmsn_addr register
- *  SPI1 flash PMS section $n start address register
+ *  SPI1 flash PMS section n start address register
  */
 typedef union {
     struct {
-        /** fmem_pms_addr_s : R/W; bitpos: [26:0]; default: 0;
-         *  SPI1 flash PMS section $n start address value
+        /** fmem_pmsn_addr_s : R/W; bitpos: [26:0]; default: 0;
+         *  SPI1 flash PMS section n start address value
          */
-        uint32_t fmem_pms_addr_s:27;
+        uint32_t fmem_pmsn_addr_s:27;
         uint32_t reserved_27:5;
     };
     uint32_t val;
 } spi_mem_s_fmem_pmsn_addr_reg_t;
 
 /** Type of fmem_pmsn_size register
- *  SPI1 flash PMS section $n start address register
+ *  SPI1 flash PMS section n start address register
  */
 typedef union {
     struct {
-        /** fmem_pms_size : R/W; bitpos: [14:0]; default: 4096;
-         *  SPI1 flash PMS section $n address region is (SPI_MEM_S_FMEM_PMS$n_ADDR_S,
-         *  SPI_MEM_S_FMEM_PMS$n_ADDR_S + SPI_MEM_S_FMEM_PMS$n_SIZE)
+        /** fmem_pmsn_size : R/W; bitpos: [14:0]; default: 4096;
+         *  SPI1 flash PMS section n address region is (spi_mem_s_fmem_PMSn_ADDR_S,
+         *  spi_mem_s_fmem_PMSn_ADDR_S + spi_mem_s_fmem_PMSn_SIZE)
          */
-        uint32_t fmem_pms_size:15;
+        uint32_t fmem_pmsn_size:15;
         uint32_t reserved_15:17;
     };
     uint32_t val;
 } spi_mem_s_fmem_pmsn_size_reg_t;
 
 /** Type of smem_pmsn_attr register
- *  SPI1 flash PMS section $n start address register
+ *  SPI1 external RAM PMS section n attribute register
  */
 typedef union {
     struct {
@@ -1306,18 +1532,32 @@ typedef union {
          *  SPI_MEM_S_SMEM_PMS$n_SIZE_REG.
          */
         uint32_t smem_pms_ecc:1;
-        uint32_t reserved_3:29;
+        /** smem_pmsn_nonsecure_rd_attr : R/W; bitpos: [3]; default: 1;
+         *  1: SPI1 external RAM non-secure PMS section n read accessible. 0: Not allowed.
+         */
+        uint32_t smem_pmsn_nonsecure_rd_attr:1;
+        /** smem_pmsn_nonsecure_wr_attr : R/W; bitpos: [4]; default: 1;
+         *  1: SPI1 external RAM non-secure PMS section n write accessible. 0: Not allowed.
+         */
+        uint32_t smem_pmsn_nonsecure_wr_attr:1;
+        /** smem_pmsn_nonsecure_ecc : R/W; bitpos: [5]; default: 0;
+         *  SPI1 external RAM non-secure PMS section n ECC mode, 1: enable ECC mode. 0: Disable
+         *  it. The external RAM PMS section n is configured by registers
+         *  spi_mem_s_smem_PMSn_ADDR_REG and spi_mem_s_smem_PMSn_SIZE_REG.
+         */
+        uint32_t smem_pmsn_nonsecure_ecc:1;
+        uint32_t reserved_6:26;
     };
     uint32_t val;
 } spi_mem_s_smem_pmsn_attr_reg_t;
 
 /** Type of smem_pmsn_addr register
- *  SPI1 external RAM PMS section $n start address register
+ *  SPI1 external RAM PMS section n start address register
  */
 typedef union {
     struct {
-        /** smem_pms_addr_s : R/W; bitpos: [26:0]; default: 0;
-         *  SPI1 external RAM PMS section $n start address value
+        /** smem_pmsn_addr_s : R/W; bitpos: [26:0]; default: 0;
+         *  SPI1 external RAM PMS section n start address value
          */
         uint32_t smem_pms_addr_s:27;
         uint32_t reserved_27:5;
@@ -1326,7 +1566,7 @@ typedef union {
 } spi_mem_s_smem_pmsn_addr_reg_t;
 
 /** Type of smem_pmsn_size register
- *  SPI1 external RAM PMS section $n start address register
+ *  SPI1 external RAM PMS section n start address register
  */
 typedef union {
     struct {
@@ -1347,7 +1587,7 @@ typedef union {
     struct {
         /** mem_reject_addr : R/SS/WTC; bitpos: [26:0]; default: 0;
          *  This bits show the first SPI1 access error address. It is cleared by when
-         *  SPI_MEM_S_PMS_REJECT_INT_CLR bit is set.
+         *  spi_mem_s_PMS_REJECT_INT_CLR bit is set.
          */
         uint32_t mem_reject_addr:27;
         /** mem_pm_en : R/W; bitpos: [27]; default: 0;
@@ -1356,22 +1596,22 @@ typedef union {
         uint32_t mem_pm_en:1;
         /** mem_pms_ld : R/SS/WTC; bitpos: [28]; default: 0;
          *  1: SPI1 write access error. 0: No write access error. It is cleared by when
-         *  SPI_MEM_S_PMS_REJECT_INT_CLR bit is set.
+         *  spi_mem_s_PMS_REJECT_INT_CLR bit is set.
          */
         uint32_t mem_pms_ld:1;
         /** mem_pms_st : R/SS/WTC; bitpos: [29]; default: 0;
          *  1: SPI1 read access error. 0: No read access error. It is cleared by when
-         *  SPI_MEM_S_PMS_REJECT_INT_CLR bit is set.
+         *  spi_mem_s_PMS_REJECT_INT_CLR bit is set.
          */
         uint32_t mem_pms_st:1;
         /** mem_pms_multi_hit : R/SS/WTC; bitpos: [30]; default: 0;
          *  1: SPI1 access is rejected because of address miss. 0: No address miss error. It is
-         *  cleared by when  SPI_MEM_S_PMS_REJECT_INT_CLR bit is set.
+         *  cleared by when  spi_mem_s_PMS_REJECT_INT_CLR bit is set.
          */
         uint32_t mem_pms_multi_hit:1;
         /** mem_pms_ivd : R/SS/WTC; bitpos: [31]; default: 0;
          *  1: SPI1 access is rejected because of address multi-hit. 0: No address multi-hit
-         *  error. It is cleared by when  SPI_MEM_S_PMS_REJECT_INT_CLR bit is set.
+         *  error. It is cleared by when  spi_mem_s_PMS_REJECT_INT_CLR bit is set.
          */
         uint32_t mem_pms_ivd:1;
     };
@@ -1388,11 +1628,11 @@ typedef union {
         uint32_t reserved_0:5;
         /** mem_ecc_err_cnt : R/SS/WTC; bitpos: [10:5]; default: 0;
          *  This bits show the error times of MSPI ECC read. It is cleared by when
-         *  SPI_MEM_S_ECC_ERR_INT_CLR bit is set.
+         *  spi_mem_s_ECC_ERR_INT_CLR bit is set.
          */
         uint32_t mem_ecc_err_cnt:6;
         /** fmem_ecc_err_int_num : R/W; bitpos: [16:11]; default: 10;
-         *  Set the error times of MSPI ECC read to generate MSPI SPI_MEM_S_ECC_ERR_INT interrupt.
+         *  Set the error times of MSPI ECC read to generate MSPI spi_mem_s_ECC_ERR_INT interrupt.
          */
         uint32_t fmem_ecc_err_int_num:6;
         /** fmem_ecc_err_int_en : R/W; bitpos: [17]; default: 0;
@@ -1416,9 +1656,9 @@ typedef union {
         uint32_t mem_usr_ecc_addr_en:1;
         uint32_t reserved_22:2;
         /** mem_ecc_continue_record_err_en : R/W; bitpos: [24]; default: 1;
-         *  1: The error information in SPI_MEM_S_ECC_ERR_BITS and SPI_MEM_S_ECC_ERR_ADDR is
-         *  updated when there is an ECC error. 0: SPI_MEM_S_ECC_ERR_BITS and
-         *  SPI_MEM_S_ECC_ERR_ADDR record the first ECC error information.
+         *  1: The error information in spi_mem_s_ECC_ERR_BITS and spi_mem_s_ECC_ERR_ADDR is
+         *  updated when there is an ECC error. 0: spi_mem_s_ECC_ERR_BITS and
+         *  spi_mem_s_ECC_ERR_ADDR record the first ECC error information.
          */
         uint32_t mem_ecc_continue_record_err_en:1;
         /** mem_ecc_err_bits : R/SS/WTC; bitpos: [31:25]; default: 0;
@@ -1437,7 +1677,7 @@ typedef union {
     struct {
         /** mem_ecc_err_addr : R/SS/WTC; bitpos: [26:0]; default: 0;
          *  This bits show the first MSPI ECC error address. It is cleared by when
-         *  SPI_MEM_S_ECC_ERR_INT_CLR bit is set.
+         *  spi_mem_s_ECC_ERR_INT_CLR bit is set.
          */
         uint32_t mem_ecc_err_addr:27;
         uint32_t reserved_27:5;
@@ -2279,13 +2519,13 @@ typedef union {
  */
 typedef union {
     struct {
-        /** xts_physical_address : R/W; bitpos: [25:0]; default: 0;
+        /** xts_physical_address : R/W; bitpos: [29:0]; default: 0;
          *  This bits stores the physical-address parameter which will be used in manual
          *  encryption calculation. This value should aligned with byte number decided by
          *  line-size parameter.
          */
-        uint32_t xts_physical_address:26;
-        uint32_t reserved_26:6;
+        uint32_t xts_physical_address:30;
+        uint32_t reserved_30:2;
     };
     uint32_t val;
 } spi_mem_s_xts_physical_address_reg_t;
@@ -2364,7 +2604,7 @@ typedef union {
  */
 typedef union {
     struct {
-        /** xts_date : R/W; bitpos: [29:0]; default: 538972176;
+        /** xts_date : R/W; bitpos: [29:0]; default: 539035911;
          *  This bits stores the last modified-time of manual encryption feature.
          */
         uint32_t xts_date:30;
@@ -2421,17 +2661,23 @@ typedef union {
          *  controlled by rtc.
          */
         uint32_t mmu_mem_force_pu:1;
-        uint32_t reserved_3:13;
+        /** mmu_page_size : R/W; bitpos: [4:3]; default: 0;
+         *  0: Max page size , 1: Max page size/2 , 2: Max page size/4, 3: Max page size/8
+         */
+        uint32_t mmu_page_size:2;
+        uint32_t reserved_5:11;
         /** mem_aux_ctrl : R/W; bitpos: [29:16]; default: 4896;
          *  MMU PSRAM aux control register
          */
         uint32_t mem_aux_ctrl:14;
         /** mem_rdn_ena : R/W; bitpos: [30]; default: 0;
          *  ECO register enable bit
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t mem_rdn_ena:1;
         /** mem_rdn_result : RO; bitpos: [31]; default: 0;
          *  MSPI module clock domain and AXI clock domain ECO register result register
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t mem_rdn_result:1;
     };
@@ -2468,6 +2714,37 @@ typedef union {
 } spi_mem_s_dpa_ctrl_reg_t;
 
 
+/** Group: External mem cryption PSEUDO registers */
+/** Type of mem_xts_pseudo_round_conf register
+ *  SPI memory cryption PSEUDO register
+ */
+typedef union {
+    struct {
+        /** mem_mode_pseudo : R/W; bitpos: [1:0]; default: 0;
+         *  Set the mode of pseudo. 2'b00: crypto without pseudo. 2'b01: state T with pseudo
+         *  and state D without pseudo. 2'b10: state T with pseudo and state D with few pseudo.
+         *  2'b11: crypto with pseudo.
+         */
+        uint32_t mem_mode_pseudo:2;
+        /** mem_pseudo_rng_cnt : R/W; bitpos: [4:2]; default: 7;
+         *  xts aes peseudo function base round that must be performed.
+         */
+        uint32_t mem_pseudo_rng_cnt:3;
+        /** mem_pseudo_base : R/W; bitpos: [8:5]; default: 2;
+         *  xts aes peseudo function base round that must be performed.
+         */
+        uint32_t mem_pseudo_base:4;
+        /** mem_pseudo_inc : R/W; bitpos: [10:9]; default: 2;
+         *  xts aes peseudo function increment round that will be performed randomly between 0 &
+         *  2**(inc+1).
+         */
+        uint32_t mem_pseudo_inc:2;
+        uint32_t reserved_11:21;
+    };
+    uint32_t val;
+} spi_mem_s_xts_pseudo_round_conf_reg_t;
+
+
 /** Group: ECO registers */
 /** Type of mem_registerrnd_eco_high register
  *  MSPI ECO high register
@@ -2476,6 +2753,7 @@ typedef union {
     struct {
         /** mem_registerrnd_eco_high : R/W; bitpos: [31:0]; default: 892;
          *  ECO high register
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t mem_registerrnd_eco_high:32;
     };
@@ -2489,6 +2767,7 @@ typedef union {
     struct {
         /** mem_registerrnd_eco_low : R/W; bitpos: [31:0]; default: 892;
          *  ECO low register
+         *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t mem_registerrnd_eco_low:32;
     };
@@ -2502,7 +2781,7 @@ typedef union {
  */
 typedef union {
     struct {
-        /** mem_date : R/W; bitpos: [27:0]; default: 36712704;
+        /** mem_date : R/W; bitpos: [27:0]; default: 38801984;
          *  SPI0 register version.
          */
         uint32_t mem_date:28;
@@ -2542,8 +2821,12 @@ typedef struct spi_mem_s_dev_t {
     uint32_t reserved_0d0;
     volatile spi_mem_s_ddr_reg_t mem_ddr;
     volatile spi_mem_s_smem_ddr_reg_t smem_ddr;
-    uint32_t reserved_0dc[9];
-    volatile spi_mem_s_fmem_pmsn_attr_reg_t fmem_pmsn_attr[4];
+    volatile spi_mem_s_dll_dly_db_reg_t mem_dll_dly_db;
+    volatile spi_mem_s_dll_db_st0_reg_t mem_dll_db_st0;
+    volatile spi_mem_s_dll_db_st1_reg_t mem_dll_db_st1;
+    uint32_t reserved_0e8[6];
+    volatile spi_mem_s_fmem_pms0_attr_reg_t fmem_pms0_attr;
+    volatile spi_mem_s_fmem_pmsn_attr_reg_t fmem_pmsn_attr[3];
     volatile spi_mem_s_fmem_pmsn_addr_reg_t fmem_pmsn_addr[4];
     volatile spi_mem_s_fmem_pmsn_size_reg_t fmem_pmsn_size[4];
     volatile spi_mem_s_smem_pmsn_attr_reg_t smem_pmsn_attr[4];
@@ -2587,7 +2870,8 @@ typedef struct spi_mem_s_dev_t {
     volatile spi_mem_s_mmu_item_index_reg_t mem_mmu_item_index;
     volatile spi_mem_s_mmu_power_ctrl_reg_t mem_mmu_power_ctrl;
     volatile spi_mem_s_dpa_ctrl_reg_t mem_dpa_ctrl;
-    uint32_t reserved_38c[25];
+    volatile spi_mem_s_xts_pseudo_round_conf_reg_t mem_xts_pseudo_round_conf;
+    uint32_t reserved_390[24];
     volatile spi_mem_s_registerrnd_eco_high_reg_t mem_registerrnd_eco_high;
     volatile spi_mem_s_registerrnd_eco_low_reg_t mem_registerrnd_eco_low;
     uint32_t reserved_3f8;

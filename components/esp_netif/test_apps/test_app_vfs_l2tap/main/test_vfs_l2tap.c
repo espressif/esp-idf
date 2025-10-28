@@ -195,7 +195,7 @@ static void ethernet_init(test_vfs_eth_network_t *network_hndls)
 #ifdef CONFIG_IDF_TARGET_ESP32P4
     phy_config.reset_gpio_num = 51;
 #endif // CONFIG_IDF_TARGET_ESP32P4
-    network_hndls->phy = esp_eth_phy_new_ip101(&phy_config);
+    network_hndls->phy = esp_eth_phy_new_generic(&phy_config);
     esp_eth_config_t eth_config = ETH_DEFAULT_CONFIG(network_hndls->mac, network_hndls->phy);
     network_hndls->eth_handle = NULL;
     // install Ethernet driver

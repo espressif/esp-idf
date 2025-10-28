@@ -10,11 +10,6 @@ import threading
 import time
 from threading import Thread
 from typing import Any
-from typing import Dict
-from typing import List
-from typing import Optional
-from typing import Tuple
-from typing import Union
 
 from click import INT
 from click.core import Context
@@ -31,7 +26,7 @@ from idf_py_actions.tools import get_sdkconfig_value
 from idf_py_actions.tools import yellow_print
 
 
-def chip_rev_to_int(chip_rev: Optional[str]) -> Union[int, None]:
+def chip_rev_to_int(chip_rev: str | None) -> int | None:
     # The chip rev will be derived from the elf file if none are returned.
     # The chip rev must be supplied for coredump files generated with idf versions less than 5.1 in order to load
     # rom elf file.
@@ -43,11 +38,11 @@ def chip_rev_to_int(chip_rev: Optional[str]) -> Union[int, None]:
     return major * 100 + minor
 
 
-def action_extensions(base_actions: Dict, project_path: str) -> Dict:
+def action_extensions(base_actions: dict, project_path: str) -> dict:
     OPENOCD_OUT_FILE = 'openocd_out.txt'
     GDBGUI_OUT_FILE = 'gdbgui_out.txt'
     # Internal dictionary of currently active processes, threads and their output files
-    processes: Dict = {'threads_to_join': [], 'allow_hints': True}
+    processes: dict = {'threads_to_join': [], 'allow_hints': True}
 
     def _print_hints(file_name: str) -> None:
         if not processes['allow_hints']:
@@ -61,7 +56,7 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
                 sys.stdout.flush()
                 print(hint, file=sys.stderr)
 
-    def _check_openocd_errors(fail_if_openocd_failed: Dict, target: str, ctx: Context) -> None:
+    def _check_openocd_errors(fail_if_openocd_failed: dict, target: str, ctx: Context) -> None:
         if fail_if_openocd_failed:
             if 'openocd' in processes and processes['openocd'] is not None:
                 p = processes['openocd']
@@ -69,9 +64,9 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
                 # watch OpenOCD (for 5x500ms) to check if it hasn't terminated or outputs an error
                 for _ in range(5):
                     if p.poll() is not None:
-                        print('OpenOCD exited with {}'.format(p.poll()))
+                        print(f'OpenOCD exited with {p.poll()}')
                         break
-                    with open(name, 'r', encoding='utf-8') as f:
+                    with open(name, encoding='utf-8') as f:
                         content = f.read()
                         if re.search(r'Listening on port \d+ for gdb connections', content):
                             # expect OpenOCD has started successfully - stop watching
@@ -79,10 +74,10 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
                     time.sleep(0.5)
 
                 # OpenOCD exited or is not listening -> print full log and terminate
-                with open(name, 'r', encoding='utf-8') as f:
+                with open(name, encoding='utf-8') as f:
                     print(f.read())
 
-                raise FatalError('Action "{}" failed due to errors in OpenOCD'.format(target), ctx)
+                raise FatalError(f'Action "{target}" failed due to errors in OpenOCD', ctx)
 
     def _terminate_async_target(target: str) -> None:
         if target in processes and processes[target] is not None:
@@ -103,16 +98,16 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
                     _print_hints(processes[target + '_outfile_name'])
             except Exception as e:
                 print(e)
-                print('Failed to close/kill {}'.format(target))
+                print(f'Failed to close/kill {target}')
             processes[target] = None  # to indicate this has ended
 
     def _get_espcoredump_instance(
         ctx: Context,
         args: PropertyDict,
-        gdb_timeout_sec: Optional[int] = None,
-        core: Optional[str] = None,
-        chip_rev: Optional[str] = None,
-        save_core: Optional[str] = None,
+        gdb_timeout_sec: int | None = None,
+        core: str | None = None,
+        chip_rev: str | None = None,
+        save_core: str | None = None,
     ) -> CoreDump:
         ensure_build_directory(args, ctx.info_name)
         project_desc = get_project_desc(args, ctx)
@@ -130,7 +125,7 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         espcoredump_kwargs['chip_rev'] = chip_rev_to_int(chip_rev)
 
         # for reproducible builds
-        extra_gdbinit_file = project_desc.get('debug_prefix_map_gdbinit', None)
+        extra_gdbinit_file = project_desc['gdbinit_files']['02_prefix_map']
 
         if extra_gdbinit_file:
             espcoredump_kwargs['extra_gdbinit_file'] = extra_gdbinit_file
@@ -202,13 +197,13 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
                 name = processes[target + '_outfile_name']
                 pos = 0
                 while True:
-                    with open(name, 'r', encoding='utf-8') as f:
+                    with open(name, encoding='utf-8') as f:
                         f.seek(pos)
                         for line in f:
                             print(line.rstrip())
                         pos = f.tell()
                     if p.poll() is not None:
-                        print('"{}" exited with {}'.format(target, p.poll()))
+                        print(f'"{target}" exited with {p.poll()}')
                         break
                     time.sleep(0.5)
             except KeyboardInterrupt:
@@ -220,12 +215,12 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         desc_path = os.path.join(args.build_dir, 'project_description.json')
         if not os.path.exists(desc_path):
             ensure_build_directory(args, ctx.info_name)
-        with open(desc_path, 'r', encoding='utf-8') as f:
+        with open(desc_path, encoding='utf-8') as f:
             project_desc = json.load(f)
             return project_desc
 
     def openocd(
-        action: str, ctx: Context, args: PropertyDict, openocd_scripts: Optional[str], openocd_commands: str
+        action: str, ctx: Context, args: PropertyDict, openocd_scripts: str | None, openocd_commands: str
     ) -> None:
         """
         Execute openocd as external tool
@@ -239,11 +234,11 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
             openocd_arguments = project_desc.get('debug_arguments_openocd', '')
             print(
                 'Note: OpenOCD cfg not found (via env variable OPENOCD_COMMANDS nor as a --openocd-commands argument)\n'
-                'OpenOCD arguments default to: "{}"'.format(openocd_arguments)
+                f'OpenOCD arguments default to: "{openocd_arguments}"'
             )
         # script directory is taken from the environment by OpenOCD, update only if command line arguments to override
         if openocd_scripts is not None:
-            openocd_arguments += ' -s {}'.format(openocd_scripts)
+            openocd_arguments += f' -s {openocd_scripts}'
         local_dir = project_desc['build_dir']
         args = ['openocd'] + shlex.split(openocd_arguments)
         openocd_out_name = os.path.join(local_dir, OPENOCD_OUT_FILE)
@@ -259,11 +254,9 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         processes['openocd'] = process
         processes['openocd_outfile'] = openocd_out
         processes['openocd_outfile_name'] = openocd_out_name
-        print('OpenOCD started as a background task {}'.format(process.pid))
+        print(f'OpenOCD started as a background task {process.pid}')
 
-    def get_gdb_args(
-        project_desc: Dict[str, Any], gdb_x: Tuple, gdb_ex: Tuple, gdb_commands: Optional[str]
-    ) -> List[str]:
+    def get_gdb_args(project_desc: dict[str, Any], gdb_x: tuple, gdb_ex: tuple, gdb_commands: str | None) -> list[str]:
         # check if the application was built and ELF file is in place.
         app_elf = os.path.join(project_desc.get('build_dir', ''), project_desc.get('app_elf', ''))
         if not os.path.exists(app_elf):
@@ -292,7 +285,10 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
                 gdb_args.append(f'-x={gdb_x_list[gdb_x_index]}')
                 gdb_x_list.pop(gdb_x_index)
                 continue
-            if name == 'connect' and gdb_x_list:  # TODO IDF-11692
+            # If the user provides a gdbinit file with name not in the "gdbinit_files" list,
+            # we assume the connection logic is defined within it.
+            # Otherwise, the configuration may be invalid.
+            if name == 'connect' and gdb_x_list:
                 continue
             gdb_args.append(f'-x={path}')
         # append user-defined gdbinit files
@@ -309,7 +305,7 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
 
         return gdb_args
 
-    def _get_gdbgui_version(ctx: Context) -> Tuple[int, ...]:
+    def _get_gdbgui_version(ctx: Context) -> tuple[int, ...]:
         subprocess_success = False
         try:
             completed_process = subprocess.run(
@@ -337,10 +333,10 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         action: str,
         ctx: Context,
         args: PropertyDict,
-        gdbgui_port: Optional[str],
-        gdbinit: Tuple,
-        ex: Tuple,
-        gdb_commands: Optional[str],
+        gdbgui_port: str | None,
+        gdbinit: tuple,
+        ex: tuple,
+        gdb_commands: str | None,
         require_openocd: bool,
     ) -> None:
         """
@@ -388,10 +384,10 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         processes['gdbgui'] = process
         processes['gdbgui_outfile'] = gdbgui_out
         processes['gdbgui_outfile_name'] = gdbgui_out_name
-        print('gdbgui started as a background task {}'.format(process.pid))
+        print(f'gdbgui started as a background task {process.pid}')
         _check_openocd_errors(fail_if_openocd_failed, action, ctx)
 
-    def global_callback(ctx: Context, global_args: PropertyDict, tasks: List) -> None:
+    def global_callback(ctx: Context, global_args: PropertyDict, tasks: list) -> None:
         def move_to_front(task_name: str) -> None:
             for index, task in enumerate(tasks):
                 if task.name == task_name:
@@ -422,8 +418,8 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         action: str,
         ctx: Context,
         args: PropertyDict,
-        gdbinit: Tuple,
-        ex: Tuple,
+        gdbinit: tuple,
+        ex: tuple,
         gdb_commands: str,
         require_openocd: bool,
     ) -> None:
@@ -437,10 +433,10 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         ctx: Context,
         args: PropertyDict,
         batch: bool,
-        gdb_tui: Optional[int],
-        gdbinit: Tuple,
-        ex: Tuple,
-        gdb_commands: Optional[str],
+        gdb_tui: int | None,
+        gdbinit: tuple,
+        ex: tuple,
+        gdb_commands: str | None,
         require_openocd: bool,
     ) -> None:
         """
@@ -484,9 +480,9 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         ctx: Context,
         args: PropertyDict,
         gdb_timeout_sec: int,
-        core: Optional[str] = None,
-        chip_rev: Optional[str] = None,
-        save_core: Optional[str] = None,
+        core: str | None = None,
+        chip_rev: str | None = None,
+        save_core: str | None = None,
     ) -> None:
         espcoredump = _get_espcoredump_instance(
             ctx=ctx, args=args, gdb_timeout_sec=gdb_timeout_sec, core=core, chip_rev=chip_rev, save_core=save_core
@@ -498,9 +494,9 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         action: str,
         ctx: Context,
         args: PropertyDict,
-        core: Optional[str] = None,
-        chip_rev: Optional[str] = None,
-        save_core: Optional[str] = None,
+        core: str | None = None,
+        chip_rev: str | None = None,
+        save_core: str | None = None,
     ) -> None:
         espcoredump = _get_espcoredump_instance(ctx=ctx, args=args, core=core, chip_rev=chip_rev, save_core=save_core)
 

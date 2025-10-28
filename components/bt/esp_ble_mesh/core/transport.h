@@ -2,7 +2,7 @@
 
 /*
  * SPDX-FileCopyrightText: 2017 Intel Corporation
- * SPDX-FileContributor: 2018-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2018-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,11 +17,58 @@ extern "C" {
 #endif
 
 #define TRANS_SEQ_AUTH_NVAL             0xffffffffffffffff
-
+#if CONFIG_BLE_MESH_LONG_PACKET
+#include "adv.h"
+/**
+ * Advertising Packet Length: 29 bytes
+ *
+ * Network Layer:
+ * - Network Header: 9 bytes
+ * - NetMIC: 4 bytes (for unsegmented messages), 8 bytes (for segmented messages)
+ *
+ * Lower Transport PDU:
+ * - Unsegmented:
+ *   - Header: 1 byte
+ *   - Payload: up to 15 bytes
+ * - Segmented:
+ *   - Header: 4 bytes
+ *   - Payload: up to 12 bytes per segment
+ *
+ * Upper Transport PDU (Access Messages):
+ * - Unsegmented:
+ *   - TransMIC: 4 bytes
+ *   - Max Access Payload: 11 bytes
+ * - Segmented:
+ *   - TransMIC size depends on ASZMIC flag:
+ *     - 4-byte TransMIC: Max payload = (32 segments * 12 bytes) - 4 = 380 bytes
+ *     - 8-byte TransMIC: Max payload = (32 segments * 12 bytes) - 8 = 376 bytes
+ *
+ * Extended Advertising (ADV) Support:
+ * - If ADV length is increased to 249 bytes:
+ *   - Max access payload = 32 * (249 - 17) - 8 = 7416 bytes
+ *   - (17 bytes = Network Header + Segment Header + TransMIC)
+ *
+ * Reliability Consideration:
+ * - To achieve an expected valid message ratio of x,
+ *   the minimum ADV packet length should be:
+ *     min_adv_len = 21 / (1 - x)
+ *   Example:
+ *     For >80% success rate (x = 0.8), min_adv_len = 105 bytes
+ */
+#define BLE_MESH_EXT_SDU_UNSEG_MAX          (CONFIG_BLE_MESH_LONG_PACKET_ADV_LEN - 18)
+#define BLE_MESH_EXT_CTL_SEG_SDU_MAX        (CONFIG_BLE_MESH_LONG_PACKET_ADV_LEN - 21)
+#define BLE_MESH_EXT_APP_SEG_SDU_MAX        (CONFIG_BLE_MESH_LONG_PACKET_ADV_LEN - 17)
+#define BLE_MESH_EXT_TX_SDU_MAX             (CONFIG_BLE_MESH_LONG_PACKET_TX_SEG_CNT * BLE_MESH_EXT_APP_SEG_SDU_MAX)
+#define BLE_MESH_EXT_RX_SDU_MAX             (CONFIG_BLE_MESH_LONG_PACKET_RX_SEG_CNT * BLE_MESH_EXT_APP_SEG_SDU_MAX)
+#endif
 #define BLE_MESH_SDU_UNSEG_MAX          11
+#define BLE_MESH_MSG_UNSEG_MAX          (BLE_MESH_SDU_UNSEG_MAX + BLE_MESH_MIC_SHORT)
 #define BLE_MESH_CTL_SEG_SDU_MAX        8
+/** Maximum size of an access message segment (in octets). */
 #define BLE_MESH_APP_SEG_SDU_MAX        12
-#define BLE_MESH_TX_SDU_MAX             (CONFIG_BLE_MESH_TX_SEG_MAX * 12)
+
+#define BLE_MESH_TX_SDU_MAX              MAX(BLE_MESH_MSG_UNSEG_MAX, (CONFIG_BLE_MESH_TX_SEG_MAX * 12))
+#define BLE_MESH_RX_SDU_MAX              MAX(BLE_MESH_MSG_UNSEG_MAX, (BLE_MESH_APP_SEG_SDU_MAX * 32))
 
 #define TRANS_SEQ_ZERO_MASK             ((uint16_t)BIT_MASK(13))
 #define TRANS_CTL_OP_MASK               ((uint8_t)BIT_MASK(7))

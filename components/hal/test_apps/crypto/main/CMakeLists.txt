@@ -30,14 +30,13 @@ endif()
 if(CONFIG_SOC_AES_SUPPORTED)
    list(APPEND srcs "aes/test_aes.c"
                      "$ENV{IDF_PATH}/components/mbedtls/port/aes/esp_aes_common.c"
-                     "aes/aes_block.c")
+                     "$ENV{IDF_PATH}/components/mbedtls/port/aes/esp_aes.c")
+
    list(APPEND priv_include_dirs "$ENV{IDF_PATH}/components/mbedtls/port/include"
                                  "$ENV{IDF_PATH}/components/mbedtls/port/aes/include")
 
    if(CONFIG_SOC_AES_SUPPORT_DMA)
       list(APPEND priv_include_dirs "$ENV{IDF_PATH}/components/mbedtls/port/aes/dma/include")
-      list(APPEND srcs "$ENV{IDF_PATH}/components/mbedtls/port/aes/dma/esp_aes.c")
-
       if(NOT CONFIG_SOC_AES_GDMA)
          list(APPEND srcs "$ENV{IDF_PATH}/components/mbedtls/port/aes/dma/esp_aes_crypto_dma_impl.c")
       else()

@@ -350,7 +350,7 @@ typedef enum {
  * @brief I2S clock source enum
  */
 typedef enum {
-    I2S_CLK_SRC_DEFAULT = SOC_MOD_CLK_XTAL,             /*!< Select XTAL as the default source clock  */
+    I2S_CLK_SRC_DEFAULT = 0,                            /*!< Auto select maximum clock source asdefault source clock  */
     I2S_CLK_SRC_PLL_160M = SOC_MOD_CLK_PLL_F160M,       /*!< Select PLL_F160M as the source clock (only supported on P4 hw_ver3) */
     I2S_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,                /*!< Select XTAL as the source clock */
     I2S_CLK_SRC_APLL = SOC_MOD_CLK_APLL,                /*!< Select APLL as the source clock */

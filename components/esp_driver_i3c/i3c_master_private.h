@@ -161,6 +161,7 @@ struct i3c_master_bus_t {
     gdma_channel_handle_t dma_rx_chan; /**< DMA channel handle for RX. */
     gdma_link_list_handle_t tx_dma_link; /**< Linked list for TX DMA. */
     gdma_link_list_handle_t rx_dma_link; /**< Linked list for RX DMA. */
+    size_t dma_buffer_alignment; /**< Alignment of the DMA buffer. */
     i3c_transaction_handler_t transaction_handler; /**< Function pointer for transaction handling (FIFO or DMA) */
 };
 

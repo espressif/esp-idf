@@ -1289,54 +1289,6 @@ esp_err_t esp_wifi_get_csi_config(wifi_csi_config_t *config);
 esp_err_t esp_wifi_set_csi(bool en);
 
 /**
-  * @brief     Set antenna GPIO configuration
-  *
-  * @param     config  Antenna GPIO configuration.
-  *
-  * @return
-  *    - ESP_OK: succeed
-  *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
-  *    - ESP_ERR_INVALID_ARG: Invalid argument, e.g. parameter is NULL, invalid GPIO number etc
-  */
-esp_err_t esp_wifi_set_ant_gpio(const wifi_ant_gpio_config_t *config) __attribute__((deprecated("Please use esp_phy_set_ant_gpio instead")));
-
-/**
-  * @brief     Get current antenna GPIO configuration
-  *
-  * @param     config  Antenna GPIO configuration.
-  *
-  * @return
-  *    - ESP_OK: succeed
-  *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
-  *    - ESP_ERR_INVALID_ARG: invalid argument, e.g. parameter is NULL
-  */
-esp_err_t esp_wifi_get_ant_gpio(wifi_ant_gpio_config_t *config) __attribute__((deprecated("Please use esp_phy_get_ant_gpio instead")));
-
-/**
-  * @brief     Set antenna configuration
-  *
-  * @param     config  Antenna configuration.
-  *
-  * @return
-  *    - ESP_OK: succeed
-  *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
-  *    - ESP_ERR_INVALID_ARG: Invalid argument, e.g. parameter is NULL, invalid antenna mode or invalid GPIO number
-  */
-esp_err_t esp_wifi_set_ant(const wifi_ant_config_t *config) __attribute__((deprecated("Please use esp_phy_set_ant instead")));
-
-/**
-  * @brief     Get current antenna configuration
-  *
-  * @param     config  Antenna configuration.
-  *
-  * @return
-  *    - ESP_OK: succeed
-  *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
-  *    - ESP_ERR_INVALID_ARG: invalid argument, e.g. parameter is NULL
-  */
-esp_err_t esp_wifi_get_ant(wifi_ant_config_t *config) __attribute__((deprecated("Please use esp_phy_get_ant instead")));
-
-/**
  * @brief      Get the TSF time
  *             In Station mode or SoftAP+Station mode if station is not connected or station doesn't receive at least
  *             one beacon after connected, will return 0
@@ -1458,8 +1410,7 @@ esp_err_t esp_wifi_ftm_resp_set_offset(int16_t offset_cm);
   *                (sizeof(wifi_ftm_report_entry_t) * num_entries) where the API will fill up to num_entries
   *                valid FTM measurements in the buffer. Total number of entries can be found in the event
   *                WIFI_EVENT_FTM_REPORT as ftm_report_num_entries
-  * @attention  2. The internal FTM report is freed upon use of this API which means the API can only be used
-  *                once after every FTM session initiated
+  * @attention  2. The internal FTM report is freed upon use of this API OR after initiating a fresh FTM session
   * @attention  3. Passing the buffer as NULL merely frees the FTM report
   *
   * @param      report  Pointer to the buffer for receiving the FTM report
@@ -1829,6 +1780,7 @@ esp_err_t esp_wifi_get_bandwidths(wifi_interface_t ifx, wifi_bandwidths_t *bw);
   * @return
   *    - ESP_OK: succeed
   *    - ESP_ERR_NO_MEM: failed to allocate memory
+  *    - ESP_ERR_INVALID_ARG: the <channel, sec_channel> pair is invalid
   *    - ESP_FAIL: failed to send frame
   */
 esp_err_t esp_wifi_action_tx_req(wifi_action_tx_req_t *req);
@@ -1841,6 +1793,7 @@ esp_err_t esp_wifi_action_tx_req(wifi_action_tx_req_t *req);
   * @return
   *    - ESP_OK: succeed
   *    - ESP_ERR_NO_MEM: failed to allocate memory
+  *    - ESP_ERR_INVALID_ARG: the <channel, sec_channel> pair is invalid
   *    - ESP_FAIL: failed to perform roc operation
   */
 esp_err_t esp_wifi_remain_on_channel(wifi_roc_req_t * req);

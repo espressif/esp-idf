@@ -137,6 +137,15 @@ static void netif_unset_mldv6_flag(esp_netif_t *netif);
 
 static esp_err_t esp_netif_destroy_api(esp_netif_api_msg_t *msg);
 
+static inline esp_netif_t* lwip_get_esp_netif(struct netif *netif)
+{
+#if LWIP_ESP_NETIF_DATA
+    return (esp_netif_t*)netif_get_client_data(netif, lwip_netif_client_id);
+#else
+    return (esp_netif_t*)netif->state;
+#endif
+}
+
 static void netif_callback_fn(struct netif* netif, netif_nsc_reason_t reason, const netif_ext_callback_args_t* args)
 {
 #if LWIP_IPV4
@@ -144,6 +153,19 @@ static void netif_callback_fn(struct netif* netif, netif_nsc_reason_t reason, co
         esp_netif_internal_dhcpc_cb(netif);
     }
 #endif /* LWIP_IPV4 */
+    // Normalize link/admin status: post only NETIF_UP/NETIF_DOWN when the effective state flips
+    if ((reason & (LWIP_NSC_LINK_CHANGED | LWIP_NSC_STATUS_CHANGED)) != 0) {
+        esp_netif_t *esp_netif = lwip_get_esp_netif(netif);
+        if (esp_netif) {
+            bool now_up = esp_netif_is_netif_up(esp_netif);
+            if (now_up != esp_netif->last_status_up) {
+                ip_event_netif_status_t evt = { .esp_netif = esp_netif };
+                esp_event_post(IP_EVENT, now_up ? IP_EVENT_NETIF_UP : IP_EVENT_NETIF_DOWN,
+                               &evt, sizeof(evt), 0);
+                esp_netif->last_status_up = now_up;
+            }
+        }
+    }
 #if LWIP_IPV6
     if ((reason & LWIP_NSC_IPV6_ADDR_STATE_CHANGED) && (args != NULL)) {
         s8_t addr_idx = args->ipv6_addr_state_changed.addr_index;
@@ -393,15 +415,6 @@ esp_err_t esp_netif_set_default_netif(esp_netif_t *esp_netif)
 esp_netif_t *esp_netif_get_default_netif(void)
 {
     return s_last_default_esp_netif;
-}
-
-static inline esp_netif_t* lwip_get_esp_netif(struct netif *netif)
-{
-#if LWIP_ESP_NETIF_DATA
-    return (esp_netif_t*)netif_get_client_data(netif, lwip_netif_client_id);
-#else
-    return (esp_netif_t*)netif->state;
-#endif
 }
 
 static inline void lwip_set_esp_netif(struct netif *netif, esp_netif_t* esp_netif)
@@ -1128,6 +1141,16 @@ static void esp_netif_dhcps_cb(void* arg, uint8_t ip[4], uint8_t mac[6])
     memcpy((char *)&evt.mac, mac, sizeof(evt.mac));
     ESP_LOGI(TAG, "DHCP server assigned IP to a client, IP is: " IPSTR, IP2STR(&evt.ip));
     ESP_LOGD(TAG, "Client's MAC: %x:%x:%x:%x:%x:%x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+
+    /* Try to fetch hostname for this MAC if available */
+    if (esp_netif && esp_netif->dhcps) {
+        /* Ensure zero-terminated even if not found */
+        if (!dhcps_get_hostname_on_mac(esp_netif->dhcps, mac, evt.hostname, sizeof(evt.hostname))) {
+            if (sizeof(evt.hostname) > 0) {
+                evt.hostname[0] = '\0';
+            }
+        }
+    }
 
     int ret = esp_event_post(IP_EVENT, IP_EVENT_ASSIGNED_IP_TO_CLIENT, &evt, sizeof(evt), 0);
     if (ESP_OK != ret) {
@@ -2212,9 +2235,9 @@ static void netif_unset_mldv6_flag(esp_netif_t *esp_netif)
 
 #endif
 
-esp_ip6_addr_type_t esp_netif_ip6_get_addr_type(esp_ip6_addr_t* ip6_addr)
+esp_ip6_addr_type_t esp_netif_ip6_get_addr_type(const esp_ip6_addr_t* ip6_addr)
 {
-    ip6_addr_t* lwip_ip6_info = (ip6_addr_t*)ip6_addr;
+    const ip6_addr_t* lwip_ip6_info = (const ip6_addr_t*)ip6_addr;
 
     if (ip6_addr_isglobal(lwip_ip6_info)) {
         return ESP_IP6_ADDR_IS_GLOBAL;

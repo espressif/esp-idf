@@ -82,19 +82,8 @@ esp_err_t sd_host_create_sdmmc_controller(const sd_host_sdmmc_cfg_t *config, sd_
         ESP_RETURN_ON_ERROR(ret, TAG, "no available sd host controller");
     }
 
-    size_t alignment = 0;
-    size_t cache_alignment_bytes = 0;
-    ret = esp_cache_get_alignment(0, &cache_alignment_bytes);
-    assert(ret == ESP_OK);
-    if (cache_alignment_bytes != 0) {
-        alignment = cache_alignment_bytes;
-    } else {
-        alignment = 4;
-    }
-
-    ESP_LOGD(TAG, "size: %d, alignment: %d", sizeof(sdmmc_desc_t), alignment);
     ctlr->dma_desc_num = config->dma_desc_num ? config->dma_desc_num : SD_HOST_SDMMC_DMA_DESC_CNT;
-    ctlr->dma_desc = heap_caps_aligned_calloc(alignment, 1, sizeof(sdmmc_desc_t) * ctlr->dma_desc_num, SD_HOST_SDMMC_DMA_ALLOC_CAPS);
+    ctlr->dma_desc = heap_caps_calloc(1, sizeof(sdmmc_desc_t) * ctlr->dma_desc_num, SD_HOST_SDMMC_DMA_ALLOC_CAPS);
     ESP_LOGD(TAG, "ctlr->dma_desc addr: %p", ctlr->dma_desc);
     ESP_RETURN_ON_FALSE(ctlr->dma_desc, ESP_ERR_NO_MEM, TAG, "no mem for dma descriptors");
 
@@ -477,6 +466,7 @@ bool sd_host_check_buffer_alignment(sd_host_sdmmc_slot_t *slot, const void *buf,
     }
     ret = esp_cache_get_alignment(cache_flags, &cache_alignment_bytes);
     assert(ret == ESP_OK);
+    (void)ret;
 
     bool is_aligned = false;
     size_t alignment = 0;
@@ -1019,6 +1009,7 @@ static void sd_host_slot_get_clk_dividers(sd_host_sdmmc_slot_t *slot, uint32_t f
 
     esp_err_t ret = esp_clk_tree_src_get_freq_hz(clk_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clk_src_freq_hz);
     assert(ret == ESP_OK);
+    (void)ret;
     ESP_LOGD(TAG, "clk_src_freq_hz: %"PRId32" hz", clk_src_freq_hz);
 
 #if SDMMC_LL_MAX_FREQ_KHZ_FPGA
@@ -1073,6 +1064,7 @@ static int sd_host_calc_freq(soc_periph_sdmmc_clk_src_t src, const int host_div,
     uint32_t clk_src_freq_hz = 0;
     esp_err_t ret = esp_clk_tree_src_get_freq_hz(src, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clk_src_freq_hz);
     assert(ret == ESP_OK);
+    (void)ret;
 
     return clk_src_freq_hz / host_div / ((card_div == 0) ? 1 : card_div * 2) / 1000;
 }

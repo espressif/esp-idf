@@ -10,7 +10,7 @@ NOTE: This document on release branches may be out-of-date. Check the [Compatibi
 
 See [Compatibility Advisory for Chip Revision Numbering Scheme](https://www.espressif.com/sites/default/files/advisory_downloads/AR2022-005%20Compatibility%20Advisory%20for%20Chip%20Revision%20Numbering%20%20Scheme.pdf) on the versioning of Espressif SoC revisions.
 
-You can run `esptool chip_id` to detect the series and revision of an SoC. See [SoC Errata](https://www.espressif.com/en/support/documents/technical-documents?keys=errata) for more on how to distinguish between chip revisions, and the improvements provided by chip revisions. And run `idf.py --version` to know the version of current ESP-IDF.
+You can run `esptool chip-id` to detect the series and revision of an SoC. See [SoC Errata](https://www.espressif.com/en/support/documents/technical-documents?keys=errata) for more on how to distinguish between chip revisions, and the improvements provided by chip revisions. And run `idf.py --version` to know the version of current ESP-IDF.
 
 ## ESP-IDF Support for Different Chip Revisions
 

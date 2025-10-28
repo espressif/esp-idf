@@ -7,4 +7,31 @@ menu "Example Configuration"
             Enable user callback for esp_https_server which can be used to get SSL context (connection information)
             E.g. Certificate of the connected client
 
+    choice EXAMPLE_ENABLE_HTTPS_SERVER_TLS_VERSION
+        prompt "Choose TLS version"
+        default EXAMPLE_ENABLE_HTTPS_SERVER_TLS_1_2_ONLY
+        config EXAMPLE_ENABLE_HTTPS_SERVER_TLS_1_2_ONLY
+            bool "TLS 1.2"
+            select MBEDTLS_SSL_PROTO_TLS1_2
+            help
+                Enable HTTPS server TLS 1.2
+        config EXAMPLE_ENABLE_HTTPS_SERVER_TLS_1_3_ONLY
+            bool "TLS 1.3"
+            select MBEDTLS_SSL_PROTO_TLS1_3
+            help
+                Enable HTTPS server TLS 1.3
+        config EXAMPLE_ENABLE_HTTPS_SERVER_TLS_ANY
+            bool "TLS 1.3 and 1.2"
+            select MBEDTLS_SSL_PROTO_TLS1_3
+            select MBEDTLS_SSL_PROTO_TLS1_2
+            help
+                Enable HTTPS server TLS 1.3 and 1.2
+    endchoice
+
+    config EXAMPLE_ENABLE_HTTPS_SERVER_CUSTOM_CIPHERSUITES
+        bool "Enable HTTPS server custom ciphersuites"
+        default n
+        help
+            Enable HTTPS server custom ciphersuites
+
 endmenu

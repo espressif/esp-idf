@@ -40,7 +40,7 @@
  * complete the transactions.
  */
 
-static const char *TAG = "dma2d";
+ESP_LOG_ATTR_TAG(TAG, "dma2d");
 
 typedef struct dma2d_platform_t {
     _lock_t mutex;                              // platform level mutex lock to protect the dma2d_acquire_pool/dma2d_release_pool process

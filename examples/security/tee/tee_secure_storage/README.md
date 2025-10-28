@@ -39,7 +39,7 @@ TEE Secure Storage follows the NVS partition format and uses an AES-XTS encrypti
 #### Configure the eFuse key ID storing the HMAC key
 
 - Navigate to `ESP-TEE (Trusted Execution Environment) → Secure Services → Secure Storage: Mode` and enable the `Release` mode configuration.
-- Set the eFuse key ID storing the HMAC key at `ESP-TEE (Trusted Execution Environment) → Secure Services → Secure Storage: eFuse HMAC key ID`.
+- Set the eFuse key ID storing the HMAC key at `ESP-TEE (Trusted Execution Environment) → Secure Services → Secure Storage: eFuse HMAC key ID for storage encryption keys`.
 
 **Note:** Before running the example, users must program the HMAC key into the configured eFuse block - refer to the snippet below. The TEE checks whether the specified eFuse block is empty or already programmed with a key. If the block is empty, an error will be returned; otherwise, the pre-programmed key will be used.
 
@@ -48,7 +48,7 @@ TEE Secure Storage follows the NVS partition format and uses an AES-XTS encrypti
 openssl rand -out hmac_key_file.bin 32
 # Programming the HMAC key (256-bit) in eFuse
 # Here, BLOCK_KEYx is a free eFuse key-block between BLOCK_KEY0 and BLOCK_KEY5
-espefuse.py -p PORT burn_key BLOCK_KEYx hmac_key_file.bin HMAC_UP
+espefuse -p PORT burn-key BLOCK_KEYx hmac_key_file.bin HMAC_UP
 ```
 
 ### Build and Flash

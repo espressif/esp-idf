@@ -383,19 +383,11 @@ config SOC_I2C_STOP_INDEPENDENT
     bool
     default y
 
-config SOC_I2S_NUM
-    int
-    default 2
-
 config SOC_I2S_HW_VERSION_1
     bool
     default y
 
 config SOC_I2S_SUPPORTS_APLL
-    bool
-    default y
-
-config SOC_I2S_SUPPORTS_PLL_F160M
     bool
     default y
 
@@ -427,27 +419,7 @@ config SOC_I2S_PDM_MAX_RX_LINES
     int
     default 1
 
-config SOC_I2S_SUPPORTS_ADC_DAC
-    bool
-    default y
-
-config SOC_I2S_SUPPORTS_ADC
-    bool
-    default y
-
 config SOC_I2S_SUPPORTS_LCD_CAMERA
-    bool
-    default y
-
-config SOC_I2S_MAX_DATA_WIDTH
-    int
-    default 24
-
-config SOC_I2S_TRANS_SIZE_ALIGN_WORD
-    bool
-    default y
-
-config SOC_I2S_LCD_I80_VARIANT
     bool
     default y
 
@@ -666,10 +638,6 @@ config SOC_LP_TIMER_BIT_WIDTH_HI
 config SOC_TOUCH_SENSOR_VERSION
     int
     default 1
-
-config SOC_TOUCH_SENSOR_NUM
-    int
-    default 10
 
 config SOC_TOUCH_MIN_CHAN_ID
     int

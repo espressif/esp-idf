@@ -18,7 +18,7 @@ class SDKConfig:
 
     def __init__(self, kconfig_file, sdkconfig_file):
         self.config = kconfiglib.Kconfig(kconfig_file)
-        self.config.load_config(sdkconfig_file)
+        self.config.load_config(sdkconfig_file, load_deprecated=True)
         self.config.warn = False  # eval_string may contain un-declared symbol
 
     def evaluate_expression(self, expression):

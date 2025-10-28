@@ -7,10 +7,11 @@ if(BOOTLOADER_BUILD)
              "src/nvs_bootloader_xts_aes.c")
 
     set(requires "esp_partition")
+    set(priv_requires "mbedtls" "nvs_sec_provider")
 
     idf_component_register(SRCS "${srcs}"
                         REQUIRES "${requires}"
-                        PRIV_REQUIRES "mbedtls"
+                        PRIV_REQUIRES "${priv_requires}"
                         INCLUDE_DIRS "include"
                         PRIV_INCLUDE_DIRS "private_include"
     )
@@ -60,10 +61,9 @@ else()
             "src/nvs_bootloader.c")
 
     set(requires esp_partition)
-    if(${target} STREQUAL "linux")
-        set(priv_requires spi_flash)
-    else()
-        set(priv_requires spi_flash esp_libc esptool_py)
+    set(priv_requires spi_flash)
+    if(NOT ${target} STREQUAL "linux")
+        list(APPEND priv_requires esp_libc esptool_py nvs_sec_provider)
     endif()
 
     idf_component_register(SRCS "${srcs}"

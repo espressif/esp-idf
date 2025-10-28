@@ -207,7 +207,7 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
                 for task in tasks:
                     if fnmatch.fnmatch(task.name, 'efuse-*'):
                         if 'before' in task.action_args.keys():
-                            task.action_args['before'] = 'no_reset'
+                            task.action_args['before'] = 'no-reset'
 
     def _get_project_desc(args: PropertyDict, ctx: Context) -> Any:
         desc_path = os.path.join(args.build_dir, 'project_description.json')
@@ -263,9 +263,9 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
                     '-m',
                     'esptool',
                     f'--chip={target}',
-                    'merge_bin',
+                    'merge-bin',
                     f'--output={bin_path}',
-                    f'--fill-flash-size={flash_size}',
+                    f'--pad-to-size={flash_size}',
                     '@flash_args',
                 ],
                 cwd=args.build_dir,

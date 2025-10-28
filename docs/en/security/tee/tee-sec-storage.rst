@@ -21,6 +21,13 @@ Additionally, the secure storage provides interfaces for performing the followin
 
   As per the current implementation, the TEE Secure Storage partition **must** have the label ``secure_storage``.
 
+TEE secure storage also supports ECDSA signing with keys derived via PBKDF2 (Password-Based Key Derivation Function 2), using an HMAC key programmed in eFuse along with a user-provided salt. This mechanism enables ECDSA signing on both P-256 and P-192 curves without requiring storage of the actual private keys. The eFuse HMAC key ID for the PBKDF2 operations is specified via the :ref:`CONFIG_SECURE_TEE_PBKDF2_EFUSE_HMAC_KEY_ID` option.
+
+.. important::
+
+  - The eFuse HMAC key ID used for PBKDF2-based signing **CANNOT** be the same as the one used for deriving TEE secure storage encryption keys (i.e., :ref:`CONFIG_SECURE_TEE_SEC_STG_EFUSE_HMAC_KEY_ID`).
+  - This eFuse ID is also exclusive to the TEE and **CANNOT** be used by the REE for any purpose.
+
 Internals
 ---------
 

@@ -20,7 +20,6 @@
 #include "soc/spi1_mem_s_reg.h"
 #include "soc/systimer_reg.h"
 #include "soc/timer_group_reg.h"
-#include "soc/timer_periph.h"
 #include "soc/uart_reg.h"
 #include "esp32p4/rom/cache.h"
 #include "soc/pvt_reg.h"

@@ -1,4 +1,3 @@
-
 menu "Wi-Fi"
     visible if (SOC_WIFI_SUPPORTED || SOC_WIRELESS_HOST_SUPPORTED)
 
@@ -308,19 +307,19 @@ menu "Wi-Fi"
                 explicitly configured before attempting connection. Please refer to the Wi-Fi Driver API Guide
                 for details.
 
-        config ESP_WIFI_ENABLE_SAE_PK
-            bool "Enable SAE-PK"
-            default y
-            depends on (ESP_WIFI_ENABLE_WPA3_SAE && ESP_WIFI_ENABLE_SAE_H2E)
-            help
-                Select this option to enable SAE-PK
-
         config ESP_WIFI_ENABLE_SAE_H2E
             bool "Enable SAE-H2E"
             default y
             depends on ESP_WIFI_ENABLE_WPA3_SAE
             help
                 Select this option to enable SAE-H2E
+
+        config ESP_WIFI_ENABLE_SAE_PK
+            bool "Enable SAE-PK"
+            default y
+            depends on ESP_WIFI_ENABLE_SAE_H2E
+            help
+                Select this option to enable SAE-PK
 
         config ESP_WIFI_SOFTAP_SAE_SUPPORT
             bool "Enable WPA3 Personal(SAE) SoftAP"
@@ -339,6 +338,13 @@ menu "Wi-Fi"
                 PMF (Protected Management Frames) is a prerequisite feature for a WPA3 connection, it needs to be
                 explicitly configured before attempting connection. Please refer to the Wi-Fi Driver API Guide
                 for details.
+
+        config ESP_WIFI_WPA3_COMPATIBLE_SUPPORT
+            bool "Enable WPA3 Compatible support"
+            default y
+            depends on ESP_WIFI_ENABLE_SAE_H2E
+            help
+                Select this option to support wpa3_compatible mode for station and AP
 
         config ESP_WIFI_SLP_IRAM_OPT
             bool "WiFi SLP IRAM speed optimization"
@@ -813,6 +819,14 @@ menu "Wi-Fi"
                     Not recommended to be used since WPS credentials should not
                     be shared to other devices, making it in readable format increases
                     that risk, also passphrase requires pbkdf2 to convert in psk.
+
+            config ESP_WIFI_WPS_RECONNECT_ON_FAIL
+                bool "Reconnect to previous SSID if WPS failed"
+                default n
+                help
+                    Select this option to enable reconnection to previous SSID if WPS fails.
+                    This option will only work if station was connected to a network
+                    when WPS was started.
 
         endmenu # "WPS Configuration Options"
 

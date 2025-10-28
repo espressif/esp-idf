@@ -20,7 +20,7 @@ void __real_esp_cpu_stall(int core_id);
 static void disable_all_wdts(void)
 {
     wdt_hal_context_t wdt0_context = {.inst = WDT_MWDT0, .mwdt_dev = &TIMERG0};
-#if SOC_MODULE_ATTR(TIMG, INST_NUM) >= 2
+#if TIMG_LL_GET(INST_NUM) >= 2
     wdt_hal_context_t wdt1_context = {.inst = WDT_MWDT1, .mwdt_dev = &TIMERG1};
 #endif
 
@@ -30,7 +30,7 @@ static void disable_all_wdts(void)
     wdt_hal_disable(&wdt0_context);
     wdt_hal_write_protect_enable(&wdt0_context);
 
-#if SOC_MODULE_ATTR(TIMG, INST_NUM) >= 2
+#if TIMG_LL_GET(INST_NUM) >= 2
     //Interrupt WDT is the Main Watchdog Timer of Timer Group 1
     wdt_hal_write_protect_disable(&wdt1_context);
     wdt_hal_disable(&wdt1_context);

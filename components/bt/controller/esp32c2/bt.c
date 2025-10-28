@@ -130,6 +130,15 @@ enum {
 };
 #endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
 
+typedef union {
+    struct {
+        uint32_t rtc_freq:20;
+        uint32_t rsv:11;
+        uint32_t bt_wakeup:1;
+    };
+    uint32_t val;
+} bt_wakeup_params_t;
+
 /* External functions or variables
  ************************************************************************
  */
@@ -220,6 +229,9 @@ static void esp_bt_ctrl_log_partition_get_and_erase_first_block(void);
 #endif // CONFIG_BT_LE_CONTROLLER_LOG_STORAGE_ENABLE
 #endif /* !CONFIG_BT_LE_CONTROLLER_LOG_MODE_BLE_LOG_V2 */
 #endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
+#if CONFIG_FREERTOS_USE_TICKLESS_IDLE
+static bool esp_bt_check_wakeup_by_bt(void);
+#endif // CONFIG_FREERTOS_USE_TICKLESS_IDLE
 /* Local variable definition
  ***************************************************************************
  */
@@ -712,6 +724,7 @@ void controller_sleep_cb(uint32_t enable_tick, void *arg)
 
 void controller_wakeup_cb(void *arg)
 {
+    bt_wakeup_params_t *params;
     if (s_ble_active) {
         return;
     }
@@ -721,14 +734,24 @@ void controller_wakeup_cb(void *arg)
     esp_pm_get_configuration(&pm_config);
     assert(esp_rom_get_cpu_ticks_per_us() == pm_config.max_freq_mhz);
 #endif //CONFIG_PM_ENABLE
+    params = (bt_wakeup_params_t *)arg;
     esp_phy_enable(PHY_MODEM_BT);
     if (s_bt_lpclk_src == MODEM_CLOCK_LPCLK_SRC_RC_SLOW) {
-        uint32_t *clk_freq = (uint32_t *)arg;
-        *clk_freq = esp_clk_tree_lp_slow_get_freq_hz(ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED) / 5;
+        params->rtc_freq = esp_clk_tree_lp_slow_get_freq_hz(ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED) / 5;
     }
+#if CONFIG_FREERTOS_USE_TICKLESS_IDLE
+    params->bt_wakeup = esp_bt_check_wakeup_by_bt();
+#endif // CONFIG_FREERTOS_USE_TICKLESS_IDLE
     // need to check if need to call pm lock here
     s_ble_active = true;
 }
+
+#if CONFIG_FREERTOS_USE_TICKLESS_IDLE
+static bool esp_bt_check_wakeup_by_bt(void)
+{
+   return (esp_sleep_get_wakeup_causes() & ESP_SLEEP_WAKEUP_BT);
+}
+#endif // CONFIG_FREERTOS_USE_TICKLESS_IDLE
 
 esp_err_t controller_sleep_init(modem_clock_lpclk_src_t slow_clk_src)
 {

@@ -1,7 +1,5 @@
 # SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
-from pytest_embedded_idf.utils import idf_parametrize
-
 """
 Test case for iperf example.
 
@@ -10,6 +8,7 @@ This test case might have problem running on Windows:
 - use `sudo killall iperf` to force kill iperf, didn't implement windows version
 
 """
+
 import os
 import subprocess
 
@@ -17,9 +16,11 @@ import pytest
 from common_test_methods import get_host_ip4_by_dest_ip
 from idf_iperf_test_util import IperfUtility
 from pytest_embedded import Dut
+from pytest_embedded_idf.utils import idf_parametrize
 
 try:
-    from typing import Any, Callable, Tuple, Optional
+    from collections.abc import Callable
+    from typing import Any
 except ImportError:
     # Only used for type annotations
     pass
@@ -37,7 +38,7 @@ class IperfTestUtilityEth(IperfUtility.IperfTestUtility):
             self, dut, config_name, 'None', 'None', pc_nic_ip, pc_iperf_log_file, test_result
         )
 
-    def setup(self) -> Tuple[str, int]:
+    def setup(self) -> tuple[str, int]:
         """
         setup iperf test:
 
@@ -60,9 +61,9 @@ def test_esp_eth_iperf(
     dut: Dut,
     log_performance: Callable[[str, object], None],
     check_performance: Callable[[str, float, str], None],
-    udp_tx_bw_lim: Optional[int] = NO_BANDWIDTH_LIMIT,
-    udp_rx_bw_lim: Optional[int] = NO_BANDWIDTH_LIMIT,
-    spi_eth: Optional[bool] = False,
+    udp_tx_bw_lim: int | None = NO_BANDWIDTH_LIMIT,
+    udp_rx_bw_lim: int | None = NO_BANDWIDTH_LIMIT,
+    spi_eth: bool | None = False,
 ) -> None:
     """
     steps: |
@@ -94,27 +95,27 @@ def test_esp_eth_iperf(
     # 4. log performance and compare with pass standard
     for throughput_type in test_result:
         log_performance(
-            '{}_throughput'.format(throughput_type),
-            '{:.02f} Mbps'.format(test_result[throughput_type].get_best_throughput()),
+            f'{throughput_type}_throughput',
+            f'{test_result[throughput_type].get_best_throughput():.02f} Mbps',
         )
 
     # do check after logging, otherwise test will exit immediately if check fail, some performance can't be logged.
     for throughput_type in test_result:
         if spi_eth:
             check_performance(
-                '{}_eth_throughput_spi_eth'.format(throughput_type),
+                f'{throughput_type}_eth_throughput_spi_eth',
                 test_result[throughput_type].get_best_throughput(),
                 dut.target,
             )
         else:
             check_performance(
-                '{}_eth_throughput'.format(throughput_type),
+                f'{throughput_type}_eth_throughput',
                 test_result[throughput_type].get_best_throughput(),
                 dut.target,
             )
 
 
-@pytest.mark.ethernet_router
+@pytest.mark.eth_ip101
 @pytest.mark.parametrize(
     'config',
     [

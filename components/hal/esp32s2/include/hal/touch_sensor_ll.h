@@ -21,6 +21,7 @@
 #include "hal/assert.h"
 #include "soc/touch_sensor_periph.h"
 #include "soc/soc_caps.h"
+#include "soc/soc_caps_full.h"
 #include "soc/sens_struct.h"
 #include "soc/rtc_cntl_struct.h"
 #include "soc/rtc_io_struct.h"
@@ -53,7 +54,7 @@ extern "C" {
                                              TOUCH_LL_INTR_MASK_INACTIVE | \
                                              TOUCH_LL_INTR_MASK_TIMEOUT)
 
-#define TOUCH_LL_FULL_CHANNEL_MASK          ((uint16_t)((1U << SOC_TOUCH_SENSOR_NUM) - 1))
+#define TOUCH_LL_FULL_CHANNEL_MASK          ((uint16_t)((1U << SOC_MODULE_ATTR(TOUCH, CHAN_NUM)) - 1))
 #define TOUCH_LL_NULL_CHANNEL               (0)  // Null Channel id. Used for disabling some functions like sleep/proximity/waterproof
 
 #define TOUCH_LL_PAD_MEASURE_WAIT_MAX      (0xFF)      // The timer frequency is 8Mhz, the max value is 0xff

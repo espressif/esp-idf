@@ -1,10 +1,9 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef nvs_storage_hpp
-#define nvs_storage_hpp
+#pragma once
 
 #include <memory>
 #include <cstdlib>
@@ -175,5 +174,3 @@ struct nvs_opaque_iterator_t
     intrusive_list<nvs::Page>::iterator page;
     nvs_entry_info_t entry_info;
 };
-
-#endif /* nvs_storage_hpp */

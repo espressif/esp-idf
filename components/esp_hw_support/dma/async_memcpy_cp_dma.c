@@ -25,7 +25,7 @@
 #include "hal/cp_dma_hal.h"
 #include "hal/cp_dma_ll.h"
 
-static const char *TAG = "async_mcp.cpdma";
+ESP_LOG_ATTR_TAG(TAG, "async_mcp.cpdma");
 
 #define MCP_DMA_DESCRIPTOR_BUFFER_MAX_SIZE 4095
 
@@ -217,7 +217,6 @@ static esp_err_t mcp_cpdma_memcpy(async_memcpy_context_t *ctx, void *dst, void *
 
     // allocate gdma TX link
     gdma_link_list_config_t tx_link_cfg = {
-        .buffer_alignment = 1, // CP_DMA doesn't have alignment requirement for internal memory
         .item_alignment = 4,   // CP_DMA requires 4 bytes alignment for each descriptor
         .num_items = num_dma_nodes,
         .flags = {
@@ -230,6 +229,7 @@ static esp_err_t mcp_cpdma_memcpy(async_memcpy_context_t *ctx, void *dst, void *
     gdma_buffer_mount_config_t tx_buf_mount_config[1] = {
         [0] = {
             .buffer = src,
+            .buffer_alignment = 1, // CP_DMA doesn't have alignment requirement for internal memory
             .length = n,
             .flags = {
                 .mark_eof = true,   // mark the last item as EOF, so the RX channel can also received an EOF list item
@@ -241,7 +241,6 @@ static esp_err_t mcp_cpdma_memcpy(async_memcpy_context_t *ctx, void *dst, void *
 
     // allocate gdma RX link
     gdma_link_list_config_t rx_link_cfg = {
-        .buffer_alignment = 1, // CP_DMA doesn't have alignment requirement for internal memory
         .item_alignment = 4,   // CP_DMA requires 4 bytes alignment for each descriptor
         .num_items = num_dma_nodes,
         .flags = {
@@ -254,6 +253,7 @@ static esp_err_t mcp_cpdma_memcpy(async_memcpy_context_t *ctx, void *dst, void *
     gdma_buffer_mount_config_t rx_buf_mount_config[1] = {
         [0] = {
             .buffer = dst,
+            .buffer_alignment = 1, // CP_DMA doesn't have alignment requirement for internal memory
             .length = n,
             .flags = {
                 .mark_eof = false,  // EOF is set by TX side

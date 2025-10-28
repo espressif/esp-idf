@@ -21,7 +21,7 @@
 #include "hal/clk_tree_ll.h"
 #include "soc/pcr_reg.h"
 
-static const char *TAG = "boot.esp32h21";
+ESP_LOG_ATTR_TAG(TAG, "boot.esp32h21");
 
 void bootloader_flash_update_id()
 {
@@ -134,13 +134,13 @@ static void print_flash_info(const esp_image_header_t *bootloader_hdr)
     const char *str;
     switch (bootloader_hdr->spi_speed) {
     case ESP_IMAGE_SPI_SPEED_DIV_2:
-        str = "24MHz";
+        str = ESP_LOG_ATTR_STR("24MHz");
         break;
     case ESP_IMAGE_SPI_SPEED_DIV_1:
-        str = "48MHz";
+        str = ESP_LOG_ATTR_STR("48MHz");
         break;
     default:
-        str = "16MHz";
+        str = ESP_LOG_ATTR_STR("16MHz");
         break;
     }
     ESP_EARLY_LOGI(TAG, "SPI Speed      : %s", str);
@@ -150,53 +150,53 @@ static void print_flash_info(const esp_image_header_t *bootloader_hdr)
     esp_rom_spiflash_read_mode_t spi_mode = bootloader_flash_get_spi_mode();
     switch (spi_mode) {
     case ESP_ROM_SPIFLASH_QIO_MODE:
-        str = "QIO";
+        str = ESP_LOG_ATTR_STR("QIO");
         break;
     case ESP_ROM_SPIFLASH_QOUT_MODE:
-        str = "QOUT";
+        str = ESP_LOG_ATTR_STR("QOUT");
         break;
     case ESP_ROM_SPIFLASH_DIO_MODE:
-        str = "DIO";
+        str = ESP_LOG_ATTR_STR("DIO");
         break;
     case ESP_ROM_SPIFLASH_DOUT_MODE:
-        str = "DOUT";
+        str = ESP_LOG_ATTR_STR("DOUT");
         break;
     case ESP_ROM_SPIFLASH_FASTRD_MODE:
-        str = "FAST READ";
+        str = ESP_LOG_ATTR_STR("FAST READ");
         break;
     default:
-        str = "SLOW READ";
+        str = ESP_LOG_ATTR_STR("SLOW READ");
         break;
     }
     ESP_EARLY_LOGI(TAG, "SPI Mode       : %s", str);
 
     switch (bootloader_hdr->spi_size) {
     case ESP_IMAGE_FLASH_SIZE_1MB:
-        str = "1MB";
+        str = ESP_LOG_ATTR_STR("1MB");
         break;
     case ESP_IMAGE_FLASH_SIZE_2MB:
-        str = "2MB";
+        str = ESP_LOG_ATTR_STR("2MB");
         break;
     case ESP_IMAGE_FLASH_SIZE_4MB:
-        str = "4MB";
+        str = ESP_LOG_ATTR_STR("4MB");
         break;
     case ESP_IMAGE_FLASH_SIZE_8MB:
-        str = "8MB";
+        str = ESP_LOG_ATTR_STR("8MB");
         break;
     case ESP_IMAGE_FLASH_SIZE_16MB:
-        str = "16MB";
+        str = ESP_LOG_ATTR_STR("16MB");
         break;
     case ESP_IMAGE_FLASH_SIZE_32MB:
-        str = "32MB";
+        str = ESP_LOG_ATTR_STR("32MB");
         break;
     case ESP_IMAGE_FLASH_SIZE_64MB:
-        str = "64MB";
+        str = ESP_LOG_ATTR_STR("64MB");
         break;
     case ESP_IMAGE_FLASH_SIZE_128MB:
-        str = "128MB";
+        str = ESP_LOG_ATTR_STR("128MB");
         break;
     default:
-        str = "2MB";
+        str = ESP_LOG_ATTR_STR("2MB");
         break;
     }
     ESP_EARLY_LOGI(TAG, "SPI Flash Size : %s", str);
@@ -266,10 +266,9 @@ void bootloader_flash_hardware_init(void)
 {
     esp_rom_spiflash_attach(0, false);
 
-    //init cache hal
-    cache_hal_init();
-    //init mmu
-    mmu_hal_init();
+    // init cache and mmu
+    bootloader_init_ext_mem();
+
     // update flash ID
     bootloader_flash_update_id();
     // Check and run XMC startup flow
