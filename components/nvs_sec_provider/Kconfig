@@ -36,6 +36,17 @@ menu "NVS Security Provider"
 
     endchoice
 
+    config NVS_SEC_PROVIDER_ABORT_IF_NVS_KEYS_MISSING
+        bool "Ensure NVS keys partition presence on app startup"
+        depends on NVS_SEC_KEY_PROTECT_USING_FLASH_ENC
+        default y
+        help
+            If set (default), there is a check if the NVS keys partition is present.
+            App will call abort if the NVS keys partition is not present.
+
+            If not set, the app does not care if the NVS keys partition is present or not.
+            NVS encryption may not work if the NVS keys partition is not present.
+
     config NVS_SEC_HMAC_EFUSE_KEY_ID
         int "eFuse key ID storing the HMAC key"
         depends on NVS_SEC_KEY_PROTECT_USING_HMAC
