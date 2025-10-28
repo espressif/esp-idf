@@ -292,7 +292,7 @@ static bool test_delimiter(parlio_rx_delimiter_handle_t deli, bool free_running_
     static uint32_t task_flags = 0;
     xTaskCreate(sender_task_thread, "sender task", 4096, &task_flags, 5, &sender_task);
     // Waiting for the data ready on line
-    while ((task_flags & TEST_TASK_DATA_READY_BIT)) {
+    while (!(task_flags & TEST_TASK_DATA_READY_BIT)) {
         vTaskDelay(1);
     }
 
