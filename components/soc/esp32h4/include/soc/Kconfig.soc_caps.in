@@ -23,6 +23,10 @@ config SOC_PCNT_SUPPORTED
     bool
     default y
 
+config SOC_MCPWM_SUPPORTED
+    bool
+    default y
+
 config SOC_TWAI_SUPPORTED
     bool
     default y
@@ -591,6 +595,26 @@ config SOC_RMT_SUPPORT_SLEEP_RETENTION
     bool
     default y
 
+config SOC_MCPWM_SWSYNC_CAN_PROPAGATE
+    bool
+    default y
+
+config SOC_MCPWM_SUPPORT_ETM
+    bool
+    default y
+
+config SOC_MCPWM_SUPPORT_EVENT_COMPARATOR
+    bool
+    default y
+
+config SOC_MCPWM_CAPTURE_CLK_FROM_GROUP
+    bool
+    default y
+
+config SOC_MCPWM_SUPPORT_SLEEP_RETENTION
+    bool
+    default y
+
 config SOC_SPI_PERIPH_NUM
     int
     default 3
@@ -965,7 +989,7 @@ config SOC_PM_PAU_REGDMA_LINK_CONFIGURABLE
 
 config SOC_PM_RETENTION_MODULE_NUM
     int
-    default 32
+    default 64
 
 config SOC_CLK_RC_FAST_SUPPORT_CALIBRATION
     bool

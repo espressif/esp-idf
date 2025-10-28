@@ -242,33 +242,19 @@ typedef union {
     uint32_t val;
 } mcpwm_genn_stmp_cfg_reg_t;
 
-/** Type of genn_tstmp_a register
- *  Generatorn time stamp A's shadow register
+/** Type of genn_tstmp register
+ *  Generatorn time stamp shadow register (unified type for array access)
  */
 typedef union {
     struct {
-        /** cmprn_a : R/W; bitpos: [15:0]; default: 0;
-         *  Configures the value of PWM generator n time stamp A's shadow register.
+        /** cmprn : R/W; bitpos: [15:0]; default: 0;
+         *  Configures the value of PWM generator n time stamp shadow register.
          */
-        uint32_t cmprn_a:16;
+        uint32_t cmprn:16;
         uint32_t reserved_16:16;
     };
     uint32_t val;
-} mcpwm_genn_tstmp_a_reg_t;
-
-/** Type of genn_tstmp_b register
- *  Generatorn time stamp B's shadow register
- */
-typedef union {
-    struct {
-        /** cmprn_b : R/W; bitpos: [15:0]; default: 0;
-         *  Configures the value of PWM generator n time stamp B's shadow register.
-         */
-        uint32_t cmprn_b:16;
-        uint32_t reserved_16:16;
-    };
-    uint32_t val;
-} mcpwm_genn_tstmp_b_reg_t;
+} mcpwm_genn_tstmp_reg_t;
 
 /** Type of genn_cfg0 register
  *  Generatorn fault event T0 and T1 configuration register
@@ -371,217 +357,90 @@ typedef union {
     uint32_t val;
 } mcpwm_genn_force_reg_t;
 
-/** Type of genn_a register
- *  PWMn output signal A actions configuration register
- */
-typedef union {
-    struct {
-        /** genn_a_utez : R/W; bitpos: [1:0]; default: 0;
-         *  Configures action on PWMn A triggered by event TEZ when timer increasing.
-         *  0: No change
-         *  1: Low
-         *  2: High
-         *  3: Toggle
-         */
-        uint32_t genn_a_utez:2;
-        /** genn_a_utep : R/W; bitpos: [3:2]; default: 0;
-         *  Configures action on PWMn A triggered by event TEP when timer increasing.
-         *  0: No change
-         *  1: Low
-         *  2: High
-         *  3: Toggle
-         */
-        uint32_t genn_a_utep:2;
-        /** genn_a_utea : R/W; bitpos: [5:4]; default: 0;
-         *  Configures action on PWMn A triggered by event TEA when timer increasing.
-         *  0: No change
-         *  1: Low
-         *  2: High
-         *  3: Toggle
-         */
-        uint32_t genn_a_utea:2;
-        /** genn_a_uteb : R/W; bitpos: [7:6]; default: 0;
-         *  Configures action on PWMn A triggered by event TEB when timer increasing.
-         *  0: No change
-         *  1: Low
-         *  2: High
-         *  3: Toggle
-         */
-        uint32_t genn_a_uteb:2;
-        /** genn_a_ut0 : R/W; bitpos: [9:8]; default: 0;
-         *  Configures action on PWMn A triggered by event_t0 when timer increasing.
-         *  0: No change
-         *  1: Low
-         *  2: High
-         *  3: Toggle
-         */
-        uint32_t genn_a_ut0:2;
-        /** genn_a_ut1 : R/W; bitpos: [11:10]; default: 0;
-         *  Configures action on PWMn A triggered by event_t1 when timer increasing.
-         *  0: No change
-         *  1: Low
-         *  2: High
-         *  3: Toggle
-         */
-        uint32_t genn_a_ut1:2;
-        /** genn_a_dtez : R/W; bitpos: [13:12]; default: 0;
-         *  Configures action on PWMn A triggered by event TEZ when timer decreasing.
-         *  0: No change
-         *  1: Low
-         *  2: High
-         *  3: Toggle
-         */
-        uint32_t genn_a_dtez:2;
-        /** genn_a_dtep : R/W; bitpos: [15:14]; default: 0;
-         *  Configures action on PWMn A triggered by event TEP when timer decreasing.
-         *  0: No change
-         *  1: Low
-         *  2: High
-         *  3: Toggle
-         */
-        uint32_t genn_a_dtep:2;
-        /** genn_a_dtea : R/W; bitpos: [17:16]; default: 0;
-         *  Configures action on PWMn A triggered by event TEA when timer decreasing.
-         *  0: No change
-         *  1: Low
-         *  2: High
-         *  3: Toggle
-         */
-        uint32_t genn_a_dtea:2;
-        /** genn_a_dteb : R/W; bitpos: [19:18]; default: 0;
-         *  Configures action on PWMn A triggered by event TEB when timer decreasing.
-         *  0: No change
-         *  1: Low
-         *  2: High
-         *  3: Toggle
-         */
-        uint32_t genn_a_dteb:2;
-        /** genn_a_dt0 : R/W; bitpos: [21:20]; default: 0;
-         *  Configures action on PWMn A triggered by event_t0 when timer decreasing.
-         *  0: No change
-         *  1: Low
-         *  2: High
-         *  3: Toggle
-         */
-        uint32_t genn_a_dt0:2;
-        /** genn_a_dt1 : R/W; bitpos: [23:22]; default: 0;
-         *  Configures action on PWMn A triggered by event_t1 when timer decreasing.
-         *  0: No change
-         *  1: Low
-         *  2: High
-         *  3: Toggle
-         */
-        uint32_t genn_a_dt1:2;
-        uint32_t reserved_24:8;
-    };
-    uint32_t val;
-} mcpwm_genn_a_reg_t;
 
-/** Type of genn_b register
- *  PWMn output signal B actions configuration register
+/** Type of genn register
+ *  PWMn output signal actions configuration register (unified type for array access)
  */
 typedef union {
     struct {
-        /** genn_b_utez : R/W; bitpos: [1:0]; default: 0;
-         *  Configures action on PWMn B triggered by event TEZ when timer increasing.
-         *  0: No change
-         *  1: Low
-         *  2: High
-         *  3: Toggle
+        /** genn_utez : R/W; bitpos: [1:0]; default: 0;
+         *  Configures action on PWMn triggered by event TEZ when timer increasing.
+         *  0: No change, 1: Low, 2: High, 3: Toggle
          */
-        uint32_t genn_b_utez:2;
-        /** genn_b_utep : R/W; bitpos: [3:2]; default: 0;
-         *  Configures action on PWMn B triggered by event TEP when timer increasing.
-         *  0: No change
-         *  1: Low
-         *  2: High
-         *  3: Toggle
+        uint32_t genn_utez:2;
+        /** genn_utep : R/W; bitpos: [3:2]; default: 0;
+         *  Configures action on PWMn triggered by event TEP when timer increasing.
+         *  0: No change, 1: Low, 2: High, 3: Toggle
          */
-        uint32_t genn_b_utep:2;
-        /** genn_b_utea : R/W; bitpos: [5:4]; default: 0;
-         *  Configures action on PWMn B triggered by event TEA when timer increasing.
-         *  0: No change
-         *  1: Low
-         *  2: High
-         *  3: Toggle
+        uint32_t genn_utep:2;
+        /** genn_utea : R/W; bitpos: [5:4]; default: 0;
+         *  Configures action on PWMn triggered by event TEA when timer increasing.
+         *  0: No change, 1: Low, 2: High, 3: Toggle
          */
-        uint32_t genn_b_utea:2;
-        /** genn_b_uteb : R/W; bitpos: [7:6]; default: 0;
-         *  Configures action on PWMn B triggered by event TEB when timer increasing.
-         *  0: No change
-         *  1: Low
-         *  2: High
-         *  3: Toggle
+        uint32_t genn_utea:2;
+        /** genn_uteb : R/W; bitpos: [7:6]; default: 0;
+         *  Configures action on PWMn triggered by event TEB when timer increasing.
+         *  0: No change, 1: Low, 2: High, 3: Toggle
          */
-        uint32_t genn_b_uteb:2;
-        /** genn_b_ut0 : R/W; bitpos: [9:8]; default: 0;
-         *  Configures action on PWMn B triggered by event_t0 when timer increasing.
-         *  0: No change
-         *  1: Low
-         *  2: High
-         *  3: Toggle
+        uint32_t genn_uteb:2;
+        /** genn_ut0 : R/W; bitpos: [9:8]; default: 0;
+         *  Configures action on PWMn triggered by event_t0 when timer increasing.
+         *  0: No change, 1: Low, 2: High, 3: Toggle
          */
-        uint32_t genn_b_ut0:2;
-        /** genn_b_ut1 : R/W; bitpos: [11:10]; default: 0;
-         *  Configures action on PWMn B triggered by event_t1 when timer increasing.
-         *  0: No change
-         *  1: Low
-         *  2: High
-         *  3: Toggle
+        uint32_t genn_ut0:2;
+        /** genn_ut1 : R/W; bitpos: [11:10]; default: 0;
+         *  Configures action on PWMn triggered by event_t1 when timer increasing.
+         *  0: No change, 1: Low, 2: High, 3: Toggle
          */
-        uint32_t genn_b_ut1:2;
-        /** genn_b_dtez : R/W; bitpos: [13:12]; default: 0;
-         *  Configures action on PWMn B triggered by event TEZ when timer decreasing.
-         *  0: No change
-         *  1: Low
-         *  2: High
-         *  3: Toggle
+        uint32_t genn_ut1:2;
+        /** genn_dtez : R/W; bitpos: [13:12]; default: 0;
+         *  Configures action on PWMn triggered by event TEZ when timer decreasing.
+         *  0: No change, 1: Low, 2: High, 3: Toggle
          */
-        uint32_t genn_b_dtez:2;
-        /** genn_b_dtep : R/W; bitpos: [15:14]; default: 0;
-         *  Configures action on PWMn B triggered by event TEP when timer decreasing.
-         *  0: No change
-         *  1: Low
-         *  2: High
-         *  3: Toggle
+        uint32_t genn_dtez:2;
+        /** genn_dtep : R/W; bitpos: [15:14]; default: 0;
+         *  Configures action on PWMn triggered by event TEP when timer decreasing.
+         *  0: No change, 1: Low, 2: High, 3: Toggle
          */
-        uint32_t genn_b_dtep:2;
-        /** genn_b_dtea : R/W; bitpos: [17:16]; default: 0;
-         *  Configures action on PWMn B triggered by event TEA when timer decreasing.
-         *  0: No change
-         *  1: Low
-         *  2: High
-         *  3: Toggle
+        uint32_t genn_dtep:2;
+        /** genn_dtea : R/W; bitpos: [17:16]; default: 0;
+         *  Configures action on PWMn triggered by event TEA when timer decreasing.
+         *  0: No change, 1: Low, 2: High, 3: Toggle
          */
-        uint32_t genn_b_dtea:2;
-        /** genn_b_dteb : R/W; bitpos: [19:18]; default: 0;
-         *  Configures action on PWMn B triggered by event TEB when timer decreasing.
-         *  0: No change
-         *  1: Low
-         *  2: High
-         *  3: Toggle
+        uint32_t genn_dtea:2;
+        /** genn_dteb : R/W; bitpos: [19:18]; default: 0;
+         *  Configures action on PWMn triggered by event TEB when timer decreasing.
+         *  0: No change, 1: Low, 2: High, 3: Toggle
          */
-        uint32_t genn_b_dteb:2;
-        /** genn_b_dt0 : R/W; bitpos: [21:20]; default: 0;
-         *  Configures action on PWMn B triggered by event_t0 when timer decreasing.
-         *  0: No change
-         *  1: Low
-         *  2: High
-         *  3: Toggle
+        uint32_t genn_dteb:2;
+        /** genn_dt0 : R/W; bitpos: [21:20]; default: 0;
+         *  Configures action on PWMn triggered by event_t0 when timer decreasing.
+         *  0: No change, 1: Low, 2: High, 3: Toggle
          */
-        uint32_t genn_b_dt0:2;
-        /** genn_b_dt1 : R/W; bitpos: [23:22]; default: 0;
-         *  Configures action on PWMn B triggered by event_t1 when timer decreasing.
-         *  0: No change
-         *  1: Low
-         *  2: High
-         *  3: Toggle
+        uint32_t genn_dt0:2;
+        /** genn_dt1 : R/W; bitpos: [23:22]; default: 0;
+         *  Configures action on PWMn triggered by event_t1 when timer decreasing.
+         *  0: No change, 1: Low, 2: High, 3: Toggle
          */
-        uint32_t genn_b_dt1:2;
+        uint32_t genn_dt1:2;
         uint32_t reserved_24:8;
     };
     uint32_t val;
-} mcpwm_genn_b_reg_t;
+} mcpwm_genn_reg_t;
+
+/** Type of opn_tstmp register
+ *  Operator timestamp register (unified type for array access)
+ */
+typedef union {
+    struct {
+        /** opn_tstmp_e : R/W; bitpos: [15:0]; default: 0;
+         *  Configures the value of PWM operator timestamp.
+         */
+        uint32_t opn_tstmp_e:16;
+        uint32_t reserved_16:16;
+    };
+    uint32_t val;
+} mcpwm_opn_tstmp_reg_t;
 
 /** Type of dtn_cfg register
  *  Dead time configuration register
@@ -1498,34 +1357,6 @@ typedef union {
     uint32_t val;
 } mcpwm_evt_en2_reg_t;
 
-/** Type of opn_tstmp_e1 register
- *  Generatorn timer stamp E1 value register
- */
-typedef union {
-    struct {
-        /** opn_tstmp_e1 : R/W; bitpos: [15:0]; default: 0;
-         *  Configures generatorn timer stamp E1 value register
-         */
-        uint32_t opn_tstmp_e1:16;
-        uint32_t reserved_16:16;
-    };
-    uint32_t val;
-} mcpwm_opn_tstmp_e1_reg_t;
-
-/** Type of opn_tstmp_e2 register
- *  Generatorn timer stamp E2 value register
- */
-typedef union {
-    struct {
-        /** opn_tstmp_e2 : R/W; bitpos: [15:0]; default: 0;
-         *  Configures generatorn timer stamp E2 value register
-         */
-        uint32_t opn_tstmp_e2:16;
-        uint32_t reserved_16:16;
-    };
-    uint32_t val;
-} mcpwm_opn_tstmp_e2_reg_t;
-
 /** Type of clk register
  *  Global configuration register
  */
@@ -2239,62 +2070,36 @@ typedef union {
 
 
 typedef struct {
-    volatile mcpwm_timern_cfg0_reg_t timer0_cfg0;
-    volatile mcpwm_timern_cfg1_reg_t timer0_cfg1;
-    volatile mcpwm_timern_sync_reg_t timer0_sync;
-    volatile mcpwm_timern_status_reg_t timer0_status;
-    volatile mcpwm_timern_cfg0_reg_t timer1_cfg0;
-    volatile mcpwm_timern_cfg1_reg_t timer1_cfg1;
-    volatile mcpwm_timern_sync_reg_t timer1_sync;
-    volatile mcpwm_timern_status_reg_t timer1_status;
-    volatile mcpwm_timern_cfg0_reg_t timer2_cfg0;
-    volatile mcpwm_timern_cfg1_reg_t timer2_cfg1;
-    volatile mcpwm_timern_sync_reg_t timer2_sync;
-    volatile mcpwm_timern_status_reg_t timer2_status;
+    volatile mcpwm_timern_cfg0_reg_t timern_cfg0;
+    volatile mcpwm_timern_cfg1_reg_t timern_cfg1;
+    volatile mcpwm_timern_sync_reg_t timern_sync;
+    volatile mcpwm_timern_status_reg_t timern_status;
+} mcpwm_timer_regs_t;
+
+typedef struct {
+    volatile mcpwm_genn_stmp_cfg_reg_t gen_stmp_cfg;
+    volatile mcpwm_genn_tstmp_reg_t timestamp[2];
+    volatile mcpwm_genn_cfg0_reg_t gen_cfg0;
+    volatile mcpwm_genn_force_reg_t gen_force;
+    volatile mcpwm_genn_reg_t generator[2];
+    volatile mcpwm_dtn_cfg_reg_t dt_cfg;
+    volatile mcpwm_dtn_fed_cfg_reg_t dt_fed_cfg;
+    volatile mcpwm_dtn_red_cfg_reg_t dt_red_cfg;
+    volatile mcpwm_carriern_cfg_reg_t carrier_cfg;
+    volatile mcpwm_fhn_cfg0_reg_t fh_cfg0;
+    volatile mcpwm_fhn_cfg1_reg_t fh_cfg1;
+    volatile mcpwm_fhn_status_reg_t fh_status;
+} mcpwm_operator_reg_t;
+
+typedef struct {
+    volatile mcpwm_opn_tstmp_reg_t timestamp[2];
+} mcpwm_operator_tstmp_reg_t;
+
+typedef struct mcpwm_dev_t {
+    volatile mcpwm_timer_regs_t timer[3];
     volatile mcpwm_timer_synci_cfg_reg_t timer_synci_cfg;
     volatile mcpwm_operator_timersel_reg_t operator_timersel;
-    volatile mcpwm_genn_stmp_cfg_reg_t gen0_stmp_cfg;
-    volatile mcpwm_genn_tstmp_a_reg_t gen0_tstmp_a;
-    volatile mcpwm_genn_tstmp_b_reg_t gen0_tstmp_b;
-    volatile mcpwm_genn_cfg0_reg_t gen0_cfg0;
-    volatile mcpwm_genn_force_reg_t gen0_force;
-    volatile mcpwm_genn_a_reg_t gen0_a;
-    volatile mcpwm_genn_b_reg_t gen0_b;
-    volatile mcpwm_dtn_cfg_reg_t dt0_cfg;
-    volatile mcpwm_dtn_fed_cfg_reg_t dt0_fed_cfg;
-    volatile mcpwm_dtn_red_cfg_reg_t dt0_red_cfg;
-    volatile mcpwm_carriern_cfg_reg_t carrier0_cfg;
-    volatile mcpwm_fhn_cfg0_reg_t fh0_cfg0;
-    volatile mcpwm_fhn_cfg1_reg_t fh0_cfg1;
-    volatile mcpwm_fhn_status_reg_t fh0_status;
-    volatile mcpwm_genn_stmp_cfg_reg_t gen1_stmp_cfg;
-    volatile mcpwm_genn_tstmp_a_reg_t gen1_tstmp_a;
-    volatile mcpwm_genn_tstmp_b_reg_t gen1_tstmp_b;
-    volatile mcpwm_genn_cfg0_reg_t gen1_cfg0;
-    volatile mcpwm_genn_force_reg_t gen1_force;
-    volatile mcpwm_genn_a_reg_t gen1_a;
-    volatile mcpwm_genn_b_reg_t gen1_b;
-    volatile mcpwm_dtn_cfg_reg_t dt1_cfg;
-    volatile mcpwm_dtn_fed_cfg_reg_t dt1_fed_cfg;
-    volatile mcpwm_dtn_red_cfg_reg_t dt1_red_cfg;
-    volatile mcpwm_carriern_cfg_reg_t carrier1_cfg;
-    volatile mcpwm_fhn_cfg0_reg_t fh1_cfg0;
-    volatile mcpwm_fhn_cfg1_reg_t fh1_cfg1;
-    volatile mcpwm_fhn_status_reg_t fh1_status;
-    volatile mcpwm_genn_stmp_cfg_reg_t gen2_stmp_cfg;
-    volatile mcpwm_genn_tstmp_a_reg_t gen2_tstmp_a;
-    volatile mcpwm_genn_tstmp_b_reg_t gen2_tstmp_b;
-    volatile mcpwm_genn_cfg0_reg_t gen2_cfg0;
-    volatile mcpwm_genn_force_reg_t gen2_force;
-    volatile mcpwm_genn_a_reg_t gen2_a;
-    volatile mcpwm_genn_b_reg_t gen2_b;
-    volatile mcpwm_dtn_cfg_reg_t dt2_cfg;
-    volatile mcpwm_dtn_fed_cfg_reg_t dt2_fed_cfg;
-    volatile mcpwm_dtn_red_cfg_reg_t dt2_red_cfg;
-    volatile mcpwm_carriern_cfg_reg_t carrier2_cfg;
-    volatile mcpwm_fhn_cfg0_reg_t fh2_cfg0;
-    volatile mcpwm_fhn_cfg1_reg_t fh2_cfg1;
-    volatile mcpwm_fhn_status_reg_t fh2_status;
+    volatile mcpwm_operator_reg_t operators[3];
     volatile mcpwm_fault_detect_reg_t fault_detect;
     volatile mcpwm_cap_timer_cfg_reg_t cap_timer_cfg;
     volatile mcpwm_cap_timer_phase_reg_t cap_timer_phase;
@@ -2309,12 +2114,7 @@ typedef struct {
     volatile mcpwm_evt_en_reg_t evt_en;
     volatile mcpwm_task_en_reg_t task_en;
     volatile mcpwm_evt_en2_reg_t evt_en2;
-    volatile mcpwm_opn_tstmp_e1_reg_t op0_tstmp_e1;
-    volatile mcpwm_opn_tstmp_e2_reg_t op0_tstmp_e2;
-    volatile mcpwm_opn_tstmp_e1_reg_t op1_tstmp_e1;
-    volatile mcpwm_opn_tstmp_e2_reg_t op1_tstmp_e2;
-    volatile mcpwm_opn_tstmp_e1_reg_t op2_tstmp_e1;
-    volatile mcpwm_opn_tstmp_e2_reg_t op2_tstmp_e2;
+    volatile mcpwm_operator_tstmp_reg_t operators_timestamp[3];
     volatile mcpwm_clk_reg_t clk;
     volatile mcpwm_version_reg_t version;
 } mcpwm_dev_t;
