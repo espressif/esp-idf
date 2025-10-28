@@ -2056,7 +2056,7 @@ void bta_dm_sdp_result (tBTA_DM_MSG *p_data)
 #endif
 
     UINT32 num_uuids = 0;
-    UINT8  uuid_list[32][MAX_UUID_SIZE]; // assuming a max of 32 services
+    UINT8  uuid_list[MAX_UUID_NUM][MAX_UUID_SIZE]; // assuming a max of MAX_UUID_NUM services
 
     if ((p_data->sdp_event.sdp_result == SDP_SUCCESS)
             || (p_data->sdp_event.sdp_result == SDP_NO_RECS_MATCH)
@@ -2119,8 +2119,12 @@ void bta_dm_sdp_result (tBTA_DM_MSG *p_data)
                             (tBTA_SERVICE_MASK)(BTA_SERVICE_ID_TO_SERVICE_MASK(bta_dm_search_cb.service_index - 1));
                         tmp_svc = bta_service_id_to_uuid_lkup_tbl[bta_dm_search_cb.service_index - 1];
                         /* Add to the list of UUIDs */
-                        sdpu_uuid16_to_uuid128(tmp_svc, uuid_list[num_uuids]);
-                        num_uuids++;
+                        if (num_uuids < MAX_UUID_NUM) {
+                            sdpu_uuid16_to_uuid128(tmp_svc, uuid_list[num_uuids]);
+                            num_uuids++;
+                        } else {
+                            APPL_TRACE_WARNING("only process the first %d records\n", MAX_UUID_NUM);
+                        }
                     }
                 }
             }
@@ -2154,8 +2158,13 @@ void bta_dm_sdp_result (tBTA_DM_MSG *p_data)
                 p_sdp_rec = SDP_FindServiceInDb_128bit(bta_dm_search_cb.p_sdp_db, p_sdp_rec);
                 if (p_sdp_rec) {
                     if (SDP_FindServiceUUIDInRec_128bit(p_sdp_rec, &temp_uuid)) {
-                        memcpy(uuid_list[num_uuids], temp_uuid.uu.uuid128, MAX_UUID_SIZE);
-                        num_uuids++;
+                        if (num_uuids < MAX_UUID_NUM) {
+                            memcpy(uuid_list[num_uuids], temp_uuid.uu.uuid128, MAX_UUID_SIZE);
+                            num_uuids++;
+                        } else {
+                            APPL_TRACE_WARNING("only process the first %d records\n", MAX_UUID_NUM);
+                            break;
+                        }
                     }
                 }
             } while (p_sdp_rec);
