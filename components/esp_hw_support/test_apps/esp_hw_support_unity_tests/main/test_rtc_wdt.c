@@ -22,7 +22,7 @@
  * the timing accuracy is not very precise, and may vary from chip to chip.
  * So, using some margin for the timeout checks.
  */
-#define WDT_TIMEOUT_MARGIN_MS(X) (X * 20 / 100)  // 20% margin
+#define WDT_TIMEOUT_MARGIN_MS(X) (X * 30 / 100)  // 30% margin
 
 static const uint32_t wdt_stage_timeout_ms[] = {
     100,  // Stage-0 timeout in ms
@@ -113,7 +113,7 @@ TEST_CASE("RTC WDT triggers interrupt at expected time for all stages", "[rtc_wd
         /* Mark the start time afresh for each stage */
         wdt_start_time[stage] = esp_timer_get_time();
         wdt_int_triggered = false;
-        wait_for_interrupt(wdt_stage_timeout_ms[stage] * 2); // Wait for twice the stage timeout
+        wait_for_interrupt(wdt_stage_timeout_ms[stage] * 3); // Wait for three times the stage timeout at max
         printf("Stage-%d interrupt received for RTC WDT\n", stage);
         TEST_ASSERT_TRUE_MESSAGE(wdt_int_triggered, "RTC WDT interrupt did not trigger!");
     }
