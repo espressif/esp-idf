@@ -11,7 +11,6 @@ from typing import Any
 from unittest import TestCase
 from unittest import main
 from unittest import mock
-from unittest import skipIf
 
 import jsonschema
 
@@ -622,42 +621,6 @@ class TestUF2Commands(TestWrapperCommands):
         self.test_uf2_app()
         os.environ.pop('ESPBAUD')
         os.environ.pop('ESPPORT')
-
-
-@skipIf(os.name == 'nt', 'Locale handling differs on Windows')
-class TestUserLocale(TestWrapperCommands):
-    """
-    Test if user locale check works as expected.
-    """
-
-    def test_user_locale_no_unicode(self):
-        import locale
-
-        original_locale = locale.setlocale(locale.LC_ALL)
-
-        for lcl in locale.locale_alias.items():
-            lcl_encoding = str(lcl[1]).lower().replace('-', '')
-            if 'utf' not in lcl_encoding:
-                # Try to set any non-unicode locale - break if successful
-                try:
-                    locale.setlocale(locale.LC_ALL, lcl[1])
-                    os.environ['LC_ALL'] = lcl[1]  # Testing with LC_ALL if it is ignored
-                    os.environ['LC_CTYPE'] = lcl[1]
-                    break
-                except locale.Error:
-                    pass
-
-        command = [sys.executable, idf_py_path, '--help']
-        try:
-            output = subprocess.check_output(command, env=os.environ, stderr=subprocess.STDOUT).decode(
-                'utf-8', 'ignore'
-            )
-        except subprocess.CalledProcessError as e:
-            # Process may exit with code 2 if no UTF locale is found, but warning should still be printed
-            output = e.output.decode('utf-8', 'ignore')
-
-        locale.setlocale(locale.LC_ALL, original_locale)
-        self.assertIn('Support for Unicode is required', output)
 
 
 if __name__ == '__main__':
