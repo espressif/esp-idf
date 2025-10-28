@@ -191,7 +191,7 @@ static const char *HTTP_METHOD_MAPPING[] = {
     "REPORT"
 };
 
-static esp_err_t esp_http_client_request_send(esp_http_client_handle_t client, int write_len);
+esp_err_t esp_http_client_request_send(esp_http_client_handle_t client, int write_len);
 static esp_err_t esp_http_client_connect(esp_http_client_handle_t client);
 static esp_err_t esp_http_client_send_post_data(esp_http_client_handle_t client);
 
@@ -614,8 +614,12 @@ static esp_err_t _clear_auth_data(esp_http_client_handle_t client)
     return ESP_OK;
 }
 
-static esp_err_t esp_http_client_prepare(esp_http_client_handle_t client)
+esp_err_t esp_http_client_prepare(esp_http_client_handle_t client)
 {
+    if (client == NULL) {
+        return ESP_FAIL;
+    }
+
     client->process_again = 0;
     client->response->data_process = 0;
     client->first_line_prepared = false;
@@ -1626,8 +1630,12 @@ static int http_client_prepare_first_line(esp_http_client_handle_t client, int w
     return first_line_len;
 }
 
-static esp_err_t esp_http_client_request_send(esp_http_client_handle_t client, int write_len)
+esp_err_t esp_http_client_request_send(esp_http_client_handle_t client, int write_len)
 {
+    if (client == NULL) {
+        return ESP_FAIL;
+    }
+
     int first_line_len = 0;
     if (!client->first_line_prepared) {
         if ((first_line_len = http_client_prepare_first_line(client, write_len)) < 0) {
@@ -1958,4 +1966,16 @@ esp_err_t esp_http_client_get_chunk_length(esp_http_client_handle_t client, int 
         return ESP_FAIL;
     }
     return ESP_OK;
+}
+
+bool esp_http_client_is_persistent_connection(esp_http_client_handle_t client)
+{
+    if (client == NULL) {
+        return false;
+    }
+
+    if (http_should_keep_alive(client->parser)) {
+        return true;
+    }
+    return false;
 }
