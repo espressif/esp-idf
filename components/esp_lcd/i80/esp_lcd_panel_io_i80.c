@@ -195,10 +195,10 @@ esp_err_t esp_lcd_new_i80_bus(const esp_lcd_i80_bus_config_t *bus_config, esp_lc
     int isr_flags = LCD_I80_INTR_ALLOC_FLAGS | ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_LOWMED;
     ret = esp_intr_alloc_intrstatus(lcd_periph_i80_signals.buses[bus_id].irq_id, isr_flags,
                                     (uint32_t)lcd_ll_get_interrupt_status_reg(bus->hal.dev),
-                                    LCD_LL_EVENT_TRANS_DONE, i80_lcd_default_isr_handler, bus, &bus->intr);
+                                    LCD_LL_EVENT_I80, i80_lcd_default_isr_handler, bus, &bus->intr);
     ESP_GOTO_ON_ERROR(ret, err, TAG, "install interrupt failed");
     PERIPH_RCC_ATOMIC() {
-        lcd_ll_enable_interrupt(bus->hal.dev, LCD_LL_EVENT_TRANS_DONE, false); // disable all interrupts
+        lcd_ll_enable_interrupt(bus->hal.dev, LCD_LL_EVENT_I80, false); // disable all interrupts
     }
     lcd_ll_clear_interrupt_status(bus->hal.dev, UINT32_MAX); // clear pending interrupt
     // install DMA service
@@ -216,8 +216,8 @@ esp_err_t esp_lcd_new_i80_bus(const esp_lcd_i80_bus_config_t *bus_config, esp_lc
     // number of data cycles is controlled by DMA buffer size
     lcd_ll_enable_output_always_on(bus->hal.dev, true);
     PERIPH_RCC_ATOMIC() {
-        // enable trans done interrupt
-        lcd_ll_enable_interrupt(bus->hal.dev, LCD_LL_EVENT_TRANS_DONE, true);
+        // enable all interrupts
+        lcd_ll_enable_interrupt(bus->hal.dev, LCD_LL_EVENT_I80, true);
     }
     // trigger a quick "trans done" event, and wait for the interrupt line goes active
     // this could ensure we go into ISR handler next time we call `esp_intr_enable`
@@ -489,12 +489,13 @@ static esp_err_t panel_io_i80_tx_param(esp_lcd_panel_io_t *io, int lcd_cmd, cons
     trans_desc->cmd_value = lcd_cmd;
     // either the param is NULL or the param_size is zero, means there isn't a data phase in this transaction
     trans_desc->data = (param && param_len) ? bus->format_buffer : NULL;
-    trans_desc->data_length = trans_desc->data ? param_len : 0;
+    trans_desc->data_length = trans_desc->data ? param_len : 4;
     trans_desc->trans_done_cb = NULL; // no callback for parameter transaction
     size_t buffer_alignment = esp_ptr_internal(trans_desc->data) ? bus->int_mem_align : bus->ext_mem_align;
+    static uint32_t fake_trigger = 0;
     // mount data to DMA links
     gdma_buffer_mount_config_t mount_config = {
-        .buffer = (void *)trans_desc->data,
+        .buffer = trans_desc->data ? (void *)trans_desc->data : (&fake_trigger),
         .buffer_alignment = buffer_alignment,
         .length = trans_desc->data_length,
         .flags = {
@@ -688,6 +689,17 @@ static void lcd_periph_trigger_quick_trans_done_event(esp_lcd_i80_bus_handle_t b
     // next time when esp_intr_enable is invoked, we can go into interrupt handler immediately
     // where we dispatch transactions for i80 devices
     lcd_ll_set_phase_cycles(bus->hal.dev, 0, 1, 0);
+    static uint32_t fake_trigger = 0;
+    gdma_buffer_mount_config_t mount_config = {
+        .buffer = &fake_trigger,
+        .length = 4,
+        .flags = {
+            .mark_eof = true,   // mark the "EOF" flag to trigger LCD EOF interrupt
+            .mark_final = true, // singly link list, mark final descriptor
+        }
+    };
+    gdma_link_mount_buffers(bus->dma_link, 0, &mount_config, 1, NULL);
+    gdma_start(bus->dma_chan, gdma_link_get_head_addr(bus->dma_link));
     lcd_ll_start(bus->hal.dev);
     while (!(lcd_ll_get_interrupt_status(bus->hal.dev) & LCD_LL_EVENT_TRANS_DONE)) {}
 }
@@ -705,15 +717,15 @@ static void lcd_start_transaction(esp_lcd_i80_bus_t *bus, lcd_i80_trans_descript
     lcd_ll_set_phase_cycles(bus->hal.dev, cmd_cycles, dummy_cycles, data_cycles);
     lcd_ll_set_blank_cycles(bus->hal.dev, 1, 1);
 
-    // reset FIFO before starting a new transaction
+    // reset FIFO before starting a new transaction, in case there remains some dirty data in the FIFO because of the "fake trigger".
     lcd_ll_fifo_reset(bus->hal.dev);
 
-    if (trans_desc->data) { // some specific LCD commands can have no parameters
-        gdma_start(bus->dma_chan, gdma_link_get_head_addr(bus->dma_link));
-        // delay 1us is sufficient for DMA to pass data to LCD FIFO
-        // in fact, this is only needed when LCD pixel clock is set too high
-        esp_rom_delay_us(1);
-    }
+    // always start GDMA, because the lcd will only start working after the dma retrieves the data
+    gdma_start(bus->dma_chan, gdma_link_get_head_addr(bus->dma_link));
+    // delay 1us is sufficient for DMA to pass data to LCD FIFO
+    // in fact, this is only needed when LCD pixel clock is set too high
+    esp_rom_delay_us(1);
+
     lcd_ll_start(bus->hal.dev);
 }
 
@@ -749,6 +761,14 @@ IRAM_ATTR static void i80_lcd_default_isr_handler(void *args)
     BaseType_t high_task_woken = pdFALSE;
     bool need_yield = false;
     uint32_t intr_status = lcd_ll_get_interrupt_status(bus->hal.dev);
+
+#if LCD_LL_EVENT_UNDERRUN
+    if (intr_status & LCD_LL_EVENT_UNDERRUN) {
+        lcd_ll_clear_interrupt_status(bus->hal.dev, LCD_LL_EVENT_UNDERRUN);
+        ESP_EARLY_LOGE(TAG, "LCD underrun");
+    }
+#endif
+
     if (intr_status & LCD_LL_EVENT_TRANS_DONE) {
         // disable interrupt temporarily, only re-enable when there be remained transaction in the queue
         esp_intr_disable(bus->intr);
@@ -787,7 +807,7 @@ IRAM_ATTR static void i80_lcd_default_isr_handler(void *args)
                 // sanity check
                 assert(trans_desc);
                 // only clear the interrupt status when we're sure there still remains transaction to handle
-                lcd_ll_clear_interrupt_status(bus->hal.dev, intr_status);
+                lcd_ll_clear_interrupt_status(bus->hal.dev, LCD_LL_EVENT_TRANS_DONE);
                 // switch devices if necessary
                 lcd_i80_switch_devices(cur_device, next_device);
                 // only reverse data bit/bytes for color data
