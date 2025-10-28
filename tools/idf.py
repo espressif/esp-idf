@@ -978,83 +978,47 @@ def expand_file_arguments(argv: list[Any]) -> list[Any]:
     return argv
 
 
-def _valid_unicode_config() -> bool:
+def _valid_unicode_config() -> codecs.CodecInfo | bool:
+    # With python 3 unicode environment is required
     try:
-        _, encoding = locale.getlocale()
-        if encoding is None:
-            return False
-        encoding_name = codecs.lookup(encoding).name
-        # Check if the encoding is Unicode-capable (UTF-8, UTF-16, UTF-32 variants)
-        return encoding_name.startswith(('utf-8', 'utf-16', 'utf-32'))
+        return codecs.lookup(locale.getpreferredencoding()).name != 'ascii'
     except Exception:
         return False
 
 
 def _find_usable_locale() -> str:
-    """
-    Find the best locale for Unicode support.
-    All the locales from the locale.locale_alias are checked if present on the system.
-    The unicode locales are filtered.
-    The best locale is selected based on the user preferred locale, then c.utf8, then universal, then any english.
-    """
-    locale_name, encoding = locale.getlocale()
-
-    err_msg = (
-        'Support for Unicode is required, '
-        'locale '
-        f'{(str(locale_name) + " with " + str(encoding)) if locale_name is not None else "default"} '
-        'encoding found on your system is not sufficient.'
-        ' Please refer to the manual for your operating system for details on locale installation.'
-    )
-
-    if locale_name is None:
-        raise FatalError(err_msg)
-
-    # (priority, locale_name, encoding) - lower priority = higher preference
-    best_locale: tuple[int, str, str] | None = None
-    found_locale: tuple[int, str, str] | None = None
-    for lcl in locale.locale_alias.items():
-        try:
-            # try to set all encodings from the locale.locale_alias
-            locale.setlocale(locale.LC_ALL, lcl[1])
-            if 'utf' in str(lcl[1]).lower().replace('-', ''):
-                # filter unicode locales
-                lcl_alias_name = lcl[0].lower()
-                if str(locale_name).lower().replace(' ', '-') in lcl_alias_name:
-                    # user preferred language has unicode encoding (highest priority -1)
-                    found_locale = (-1, lcl[0], lcl[1])
-                elif 'c.utf8' == lcl_alias_name:
-                    # c.utf should be on most systems (second priority 0)
-                    found_locale = (0, lcl[0], lcl[1])
-                elif 'univ' in lcl_alias_name:
-                    # universal unicode locale (third priority 1)
-                    found_locale = (1, lcl[0], lcl[1])
-                elif 'en_' in lcl_alias_name:
-                    # any english unicode locale (fourth priority 2)
-                    found_locale = (2, lcl[0], lcl[1])
-                if found_locale is not None and (best_locale is None or found_locale[0] < best_locale[0]):
-                    best_locale = found_locale
-                    if best_locale[0] <= 1:
-                        break
-        except locale.Error:
-            # if locale is not possible to set, skip - not in user locales
-            pass
-
-    if best_locale is None:
-        raise FatalError(err_msg)
-
-    # return encoding of the best locale
-    # Windows does not support easy environment variable setting
-    # We need to raise an error but suggest to use a specific locale
-    if os.name == 'nt':
-        raise FatalError(
-            err_msg
-            + '\n'
-            + 'For example, a sufficient locale that was found on the system '
-            + f'{best_locale[1]} with encoding {best_locale[2]}'
+    try:
+        locales = (
+            subprocess.Popen(['locale', '-a'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            .communicate()[0]
+            .decode('ascii', 'replace')
         )
-    else:
-        return str(best_locale[2])
+    except OSError:
+        locales = ''
+
+    usable_locales: list[str] = []
+    for line in locales.splitlines():
+        locale = line.strip()
+        locale_name = locale.lower().replace('-', '')
+
+        # C.UTF-8 is the best option, if supported
+        if locale_name == 'c.utf8':
+            return locale
+
+        if locale_name.endswith('.utf8'):
+            # Make a preference of english locales
+            if locale.startswith('en_'):
+                usable_locales.insert(0, locale)
+            else:
+                usable_locales.append(locale)
+
+    if not usable_locales:
+        raise FatalError(
+            'Support for Unicode filenames is required, but no suitable UTF-8 locale was found on your system.'
+            ' Please refer to the manual for your operating system for details on locale reconfiguration.'
+        )
+
+    return usable_locales[0]
 
 
 if __name__ == '__main__':
@@ -1064,21 +1028,16 @@ if __name__ == '__main__':
                 'MSys/Mingw is no longer supported. Please follow the getting started guide of the '
                 'documentation in order to set up a suitiable environment, or continue at your own risk.'
             )
-        elif os.name in ('posix', 'nt') and not _valid_unicode_config():
-            # Trying to find best unicode locale available on the system and restart python with it
+        elif os.name == 'posix' and not _valid_unicode_config():
+            # Trying to find best utf-8 locale available on the system and restart python with it
             best_locale = _find_usable_locale()
 
             print_warning(
-                'Your environment is not configured to handle unicode characters.'
-                ' Environment variable LC_CTYPE is temporary set to '
-                f'{best_locale} (found on the system) for unicode support.'
+                'Your environment is not configured to handle unicode filenames outside of ASCII range.'
+                f' Environment variable LC_ALL is temporary set to {best_locale} for unicode support.'
             )
 
-            # Unset LC_ALL if it exists, as it takes precedence over LC_CTYPE
-            # This prevents infinite loops when LC_ALL is set to a non-Unicode locale
-            if 'LC_ALL' in os.environ:
-                del os.environ['LC_ALL']
-            os.environ['LC_CTYPE'] = best_locale
+            os.environ['LC_ALL'] = best_locale
             ret = subprocess.call([sys.executable] + sys.argv, env=os.environ)
             if ret:
                 raise SystemExit(ret)
