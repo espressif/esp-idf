@@ -61,6 +61,15 @@ static void _twai_rcc_clock_sel(uint8_t ctrlr_id, twai_clock_source_t clock)
 #endif //SOC_TWAI_SUPPORT_FD
 
 typedef struct {
+    twai_frame_header_t header;
+#if !SOC_TWAI_SUPPORT_FD
+    uint8_t data[8];
+#else
+    uint8_t data[64];
+#endif
+} twai_frame_store_t;
+
+typedef struct {
     struct twai_node_base api_base;
     int ctrlr_id;
     uint64_t gpio_reserved;
@@ -234,8 +243,15 @@ static void _node_isr_main(void *arg)
         }
         // node recover from busoff, restart remain tx transaction
         if ((e_data.old_sta == TWAI_ERROR_BUS_OFF) && (e_data.new_sta == TWAI_ERROR_ACTIVE)) {
-            if (xQueueReceiveFromISR(twai_ctx->tx_mount_queue, &twai_ctx->p_curr_tx, &do_yield)) {
+            twai_frame_store_t store;
+            if (xQueueReceiveFromISR(twai_ctx->tx_mount_queue, &store, &do_yield)) {
                 atomic_store(&twai_ctx->hw_busy, true);
+                twai_frame_t frame = {
+                    .header = store.header,
+                    .buffer = store.data,
+                    .buffer_len = sizeof(store.data)
+                };
+                twai_ctx->p_curr_tx = &frame;
                 _node_start_trans(twai_ctx);
             } else {
                 atomic_store(&twai_ctx->hw_busy, false);
@@ -270,6 +286,7 @@ static void _node_isr_main(void *arg)
 
     // deal TX event
     if (events & TWAI_HAL_EVENT_TX_BUFF_FREE) {
+        twai_frame_store_t store;
         if (twai_ctx->cbs.on_tx_done) {
             twai_tx_done_event_data_t tx_ev = {
                 .is_tx_success = (events & TWAI_HAL_EVENT_TX_SUCCESS),  // find 'on_error_cb' if not success
@@ -278,9 +295,15 @@ static void _node_isr_main(void *arg)
             do_yield |= twai_ctx->cbs.on_tx_done(&twai_ctx->api_base, &tx_ev, twai_ctx->user_data);
         }
         // start a new TX
-        if ((atomic_load(&twai_ctx->state) != TWAI_ERROR_BUS_OFF) && xQueueReceiveFromISR(twai_ctx->tx_mount_queue, &twai_ctx->p_curr_tx, &do_yield)) {
+        if ((atomic_load(&twai_ctx->state) != TWAI_ERROR_BUS_OFF) && xQueueReceiveFromISR(twai_ctx->tx_mount_queue, &store, &do_yield)) {
             // Sanity check, must in `hw_busy` here, otherwise logic bug is somewhere
             assert(twai_ctx->hw_busy);
+            twai_frame_t frame = {
+                .header = store.header,
+                .buffer = store.data,
+                .buffer_len = sizeof(store.data)
+            };
+            twai_ctx->p_curr_tx = &frame;
             _node_start_trans(twai_ctx);
         } else {
             atomic_store(&twai_ctx->hw_busy, false);
@@ -587,12 +610,22 @@ static esp_err_t _node_queue_tx(twai_node_handle_t node, const twai_frame_t *fra
     } else {
         //options in following steps (in_queue->2nd_check->pop_queue) should exec ASAP
         //within about 50us (minimum time for one msg), to ensure data safe
-        ESP_RETURN_ON_FALSE(xQueueSend(twai_ctx->tx_mount_queue, &frame, ticks_to_wait), ESP_ERR_TIMEOUT, TAG, "tx queue full");
+        twai_frame_store_t store = {
+            .header = frame->header,
+        };
+        memcpy(store.data, frame->buffer, frame->buffer_len);
+        ESP_RETURN_ON_FALSE(xQueueSend(twai_ctx->tx_mount_queue, &store, ticks_to_wait), ESP_ERR_TIMEOUT, TAG, "tx queue full");
         false_var = false;
         if (atomic_compare_exchange_strong(&twai_ctx->hw_busy, &false_var, true)) {
-            if (xQueueReceive(twai_ctx->tx_mount_queue, &twai_ctx->p_curr_tx, 0) != pdTRUE) {
+            if (xQueueReceive(twai_ctx->tx_mount_queue, &store, 0) != pdTRUE) {
                 assert(false && "should always get frame at this moment");
             }
+            twai_frame_t f = {
+                .header = store.header,
+                .buffer = store.data,
+                .buffer_len = sizeof(store.data)
+            };
+            twai_ctx->p_curr_tx = &f;
             _node_start_trans(twai_ctx);
         }
     }
@@ -627,7 +660,7 @@ esp_err_t twai_new_node_onchip(const twai_onchip_node_config_t *node_config, twa
 
     // state is in bus_off before enabled
     atomic_store(&node->state, TWAI_ERROR_BUS_OFF);
-    node->tx_mount_queue = xQueueCreateWithCaps(node_config->tx_queue_depth, sizeof(twai_frame_t *), TWAI_MALLOC_CAPS);
+    node->tx_mount_queue = xQueueCreateWithCaps(node_config->tx_queue_depth, sizeof(twai_frame_store_t), TWAI_MALLOC_CAPS);
     ESP_GOTO_ON_FALSE(node->tx_mount_queue, ESP_ERR_NO_MEM, err, TAG, "no_mem");
     uint32_t intr_flags = TWAI_INTR_ALLOC_FLAGS;
     intr_flags |= (node_config->intr_priority > 0) ? BIT(node_config->intr_priority) : ESP_INTR_FLAG_LOWMED;
