@@ -6,8 +6,6 @@ entries:
         esp_trace_core (noflash)
         esp_trace_registry (noflash)
         port_utils (noflash)
-        if ESP_TRACE_LIB_SEGGER_SYSVIEW:
-            adapter_encoder_sysview (noflash)
         if ESP_TRACE_TRANSPORT_APPTRACE:
             adapter_transport_apptrace (noflash)
 
