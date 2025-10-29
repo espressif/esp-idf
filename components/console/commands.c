@@ -384,18 +384,8 @@ esp_err_t esp_console_run_on_task(const char *cmdline, FILE *_stdin, FILE *_stdo
 void esp_console_task_free(esp_console_task_handle_t *task)
 {
     __lock_acquire(task->lock);
-    TaskHandle_t handle = task->task_handle;
+    assert(task->task_handle == NULL);
     __lock_release(task->lock);
-
-    if (handle) {
-        // Wait for the task to finish before deleting
-        esp_console_wait_task(task, NULL);
-        vTaskDelete(handle);
-
-        __lock_acquire(task->lock);
-        task->task_handle = NULL;
-        __lock_release(task->lock);
-    }
     __lock_close(task->lock);
     free(task);
 }

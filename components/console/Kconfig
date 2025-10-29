@@ -28,4 +28,12 @@ menu "Console Library"
         depends on CONSOLE_COMMAND_ON_TASK
         help
             Default priority for the console command task, unless overridden.
+
+    config CONSOLE_SHELL_ENABLE
+        bool "Enable console shell"
+        default n
+        depends on  CONSOLE_COMMAND_ON_TASK
+        help
+            Enable the console shell component, which provides a command line shell interface
+            for interacting with the console library.
 endmenu
