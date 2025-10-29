@@ -2,11 +2,7 @@
 
 components/app_trace/test_apps:
   depends_components:
-    - app_trace
-    - esp_timer
-    - soc
-    - esp_hw_support
-    - esp_driver_uart
+    - esp_trace
     - esp_driver_gptimer
   disable:
     - if: IDF_TARGET in ["esp32h21", "esp32h4"]

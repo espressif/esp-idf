@@ -658,7 +658,7 @@ bool xPortcheckValidStackMem(const void *ptr);
 
 // --------------------- App-Trace -------------------------
 
-#if CONFIG_ESP_TRACE_LIB_SEGGER_SYSVIEW
+#if CONFIG_ESP_TRACE_ENABLE
 extern volatile uint32_t port_switch_flag[portNUM_PROCESSORS];
 #define os_task_switch_is_pended(_cpu_) (port_switch_flag[_cpu_])
 #else

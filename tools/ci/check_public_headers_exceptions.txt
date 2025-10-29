@@ -74,7 +74,6 @@ components/heap/tlsf/tlsf_control_functions.h
 
 ### Here are the files that do not compile for some reason
 #
-components/app_trace/include/esp_sysview_trace.h
 components/esp_gdbstub/include/esp_gdbstub.h
 
 components/esp_hw_support/include/esp_memprot.h

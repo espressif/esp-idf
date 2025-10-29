@@ -1,0 +1,13 @@
+## IDF Component Manager Manifest File
+dependencies:
+  ## Required IDF version
+  idf:
+    version: '>=6.0'
+  # # Put list of dependencies here
+  #espressif/esp_sysview: ^1
+  esp_sysview:
+    git: https://github.com/espressif/idf-extra-components.git
+    path: esp_sysview
+    version: "refs/pull/600/head"
+    matches:
+      - if: "idf_version >=6.0"

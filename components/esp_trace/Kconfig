@@ -6,9 +6,6 @@ menu "ESP Trace Configuration"
         help
             Select the trace library to use.
 
-        config ESP_TRACE_LIB_SEGGER_SYSVIEW
-            bool "SEGGER SystemView"
-
         config ESP_TRACE_LIB_EXTERNAL
             bool "External library from component registry"
             help
@@ -25,11 +22,8 @@ menu "ESP Trace Configuration"
 
     config ESP_TRACE_LIB_NAME
         string
-        default "sysview" if ESP_TRACE_LIB_SEGGER_SYSVIEW
         default "ext" if ESP_TRACE_LIB_EXTERNAL
         default "none" if ESP_TRACE_LIB_NONE
-
-    rsource "$IDF_PATH/components/app_trace/sys_view/Kconfig.sysview"
 
     choice ESP_TRACE_TRANSPORT
         prompt "Trace transport"
