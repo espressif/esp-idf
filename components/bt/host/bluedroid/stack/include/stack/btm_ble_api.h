@@ -2561,6 +2561,20 @@ void BTM_BleReadControllerFeatures(tBTM_BLE_CTRL_FEATURES_CBACK  *p_vsc_cback);
 //extern
 UINT8 *BTM_CheckAdvData( UINT8 *p_adv, UINT16 adv_data_len, UINT8 type, UINT8 *p_length);
 
+/******************************************************************************
+**
+** Function         BTM_GetLocalIRK
+**
+** Description      Get the local Identity Resolving Key (IRK) from the device control block.
+**
+** Parameters       irk : output buffer (16 bytes) to copy IRK into
+**
+** Returns          true if IRK is available, false otherwise
+**
+******************************************************************************/
+bool BTM_GetLocalIRK(uint8_t *irk);
+
+
 /*******************************************************************************
 **
 ** Function         BTM_BleGetCurrentAddress
