@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -10,9 +10,12 @@
 #include "esp_system.h"
 #include "esp_log.h"
 #include "esp_console.h"
+#include "esp_shell.h"
+#include "esp_vfs_pipe.h"
 #include "linenoise/linenoise.h"
 #include "argtable3/argtable3.h"
 #include "esp_vfs_fat.h"
+#include "esp_vfs_pipe.h"
 #include "nvs.h"
 #include "nvs_flash.h"
 #include "soc/soc_caps.h"
@@ -83,6 +86,12 @@ void app_main(void)
     ESP_LOGI(TAG, "Command history disabled");
 #endif
 
+#ifdef CONFIG_CONSOLE_SHELL_ENABLE
+    /* Configure VFS to use pipe for console I/O */
+    esp_vfs_pipe_config_t cfs_config = ESP_VFS_PIPE_CONFIG_DEFAULT();
+    esp_vfs_pipe_register(&cfs_config);
+#endif
+
     /* Initialize console output periheral (UART, USB_OTG, USB_JTAG) */
     initialize_console_peripheral();
 
@@ -107,6 +116,9 @@ void app_main(void)
     /* Register commands */
     esp_console_register_help_command();
     register_system_common();
+#ifdef CONFIG_CONSOLE_COMMAND_ON_TASK
+    register_system_shell_common();
+#endif
 #if SOC_LIGHT_SLEEP_SUPPORTED
     register_system_light_sleep();
 #endif
@@ -160,7 +172,11 @@ void app_main(void)
 
         /* Try to run the command */
         int ret;
+#ifdef CONFIG_CONSOLE_SHELL_ENABLE
+        esp_err_t err = esp_shell_run(line, &ret);
+#else
         esp_err_t err = esp_console_run(line, &ret);
+#endif
         if (err == ESP_ERR_NOT_FOUND) {
             printf("Unrecognized command\n");
         } else if (err == ESP_ERR_INVALID_ARG) {
