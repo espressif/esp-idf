@@ -458,6 +458,36 @@
 #endif
 
 /**
+ * @def OPENTHREAD_CONFIG_BORDER_ROUTING_DHCP6_PD_ENABLE
+ *
+ * Define to 1 to enable Border Routing DHCPv6 PD.
+ *
+ */
+#ifndef OPENTHREAD_CONFIG_BORDER_ROUTING_DHCP6_PD_ENABLE
+#define OPENTHREAD_CONFIG_BORDER_ROUTING_DHCP6_PD_ENABLE 1
+#endif
+
+/**
+ * @def OPENTHREAD_CONFIG_BORDER_ROUTING_DHCP6_PD_CLIENT_ENABLE
+ *
+ * Define to 1 to enable Border Routing DHCPv6 client.
+ *
+ */
+#ifndef OPENTHREAD_CONFIG_BORDER_ROUTING_DHCP6_PD_CLIENT_ENABLE
+#define OPENTHREAD_CONFIG_BORDER_ROUTING_DHCP6_PD_CLIENT_ENABLE 1
+#endif
+
+/**
+ * @def OPENTHREAD_CONFIG_BORDER_ROUTING_DHCP6_PD_CLIENT_MIN_LIFETIME
+ *
+ * This parameter sets the minimum preferred lifetime (in seconds) for the Border Router's built-in OpenThread
+ * DHCPv6 Prefix Delegation (PD) client feature. The default value is set to 30 to pass the certification case.
+ */
+#ifndef OPENTHREAD_CONFIG_BORDER_ROUTING_DHCP6_PD_CLIENT_MIN_LIFETIME
+#define OPENTHREAD_CONFIG_BORDER_ROUTING_DHCP6_PD_CLIENT_MIN_LIFETIME 30
+#endif
+
+/**
  * @def OPENTHREAD_CONFIG_BORDER_ROUTING_ENABLE
  *
  * Define to 1 to enable Border Routing support.

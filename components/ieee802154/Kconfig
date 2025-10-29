@@ -53,9 +53,9 @@ menu "IEEE 802.15.4"
         int "CCA detection threshold"
         depends on IEEE802154_ENABLED
         range -120 0
-        default -60
+        default -75
         help
-            set the CCA threshold, in dB
+            set the CCA threshold, in dBm
 
     config IEEE802154_PENDING_TABLE_SIZE
         int "Pending table size"
