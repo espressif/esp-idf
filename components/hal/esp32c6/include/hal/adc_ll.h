@@ -8,6 +8,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include "esp_attr.h"
+#include "esp_rom_sys.h"
 
 #include "soc/adc_periph.h"
 #include "soc/apb_saradc_struct.h"
@@ -901,7 +902,11 @@ static inline void adc_oneshot_ll_output_invert(adc_unit_t adc_n, bool inv_en)
 static inline void adc_oneshot_ll_enable(adc_unit_t adc_n)
 {
     HAL_ASSERT(adc_n == ADC_UNIT_1);
-    APB_SARADC.saradc_onetime_sample.saradc_saradc1_onetime_sample = 1;
+    // For ESP32C6, it need to delay 50us after enable oneshot mode to ensure the ADC channel select is stable.
+    if (APB_SARADC.saradc_onetime_sample.saradc_saradc1_onetime_sample == 0) {
+        APB_SARADC.saradc_onetime_sample.saradc_saradc1_onetime_sample = 1;
+        esp_rom_delay_us(50);
+    }
 }
 
 /**
@@ -909,8 +914,7 @@ static inline void adc_oneshot_ll_enable(adc_unit_t adc_n)
  */
 static inline void adc_oneshot_ll_disable_all_unit(void)
 {
-    APB_SARADC.saradc_onetime_sample.saradc_saradc1_onetime_sample = 0;
-    APB_SARADC.saradc_onetime_sample.saradc_saradc2_onetime_sample = 0;
+    // For ESP32C6, we keep saradc_saradc1_onetime_sample as 1 when oneshot mode.
 }
 
 /**
