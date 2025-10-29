@@ -317,22 +317,15 @@ static struct ptp_state_s *s_state;
 // Convert 8 bytes to 64-bit signed integer (nanoseconds << 16)
 static int64_t get_correction_ns(uint8_t *correction_field)
 {
-    int64_t correction = 0;
+    uint64_t unsigned_correction = 0;
 
-    // Handle sign extension for negative numbers
-    if (correction_field[0] & 0x80) {
-        correction = -1LL; // Fill with 1's for negative number
+    // Interpret bytes as big-endian and build the value iteratively
+    for (int i = 0; i < 8; i++) {
+        unsigned_correction |= (uint64_t)correction_field[i] << (56 - i * 8);
     }
 
-    // Build the value byte by byte
-    correction = (correction << 8) | correction_field[0];
-    correction = (correction << 8) | correction_field[1];
-    correction = (correction << 8) | correction_field[2];
-    correction = (correction << 8) | correction_field[3];
-    correction = (correction << 8) | correction_field[4];
-    correction = (correction << 8) | correction_field[5];
-    correction = (correction << 8) | correction_field[6];
-    correction = (correction << 8) | correction_field[7];
+    // Convert to signed integer (two's complement)
+    int64_t correction = (int64_t)unsigned_correction;
 
     // Convert from 2^16 scale to nanoseconds
     return correction >> 16;
