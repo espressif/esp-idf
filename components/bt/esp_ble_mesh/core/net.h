@@ -2,7 +2,7 @@
 
 /*
  * SPDX-FileCopyrightText: 2017 Intel Corporation
- * SPDX-FileContributor: 2018-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2018-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -473,6 +473,14 @@ static inline void bt_mesh_net_recv(struct net_buf_simple *data, int8_t rssi,
                                     enum bt_mesh_net_if net_if)
 {
     struct bt_mesh_net_rx rx = { .ctx.recv_rssi = rssi };
+#if CONFIG_BLE_MESH_EXT_ADV
+    rx.ctx.enh.adv_cfg_used = false;
+    rx.ctx.enh.ext_adv_cfg_used = false;
+#if CONFIG_BLE_MESH_LONG_PACKET
+    rx.ctx.enh.long_pkt_cfg_used = (data->len >= 29);
+    rx.ctx.enh.long_pkt_cfg = BLE_MESH_LONG_PACKET_FORCE;
+#endif /* CONFIG_BLE_MESH_LONG_PACKET */
+#endif /* CONFIG_BLE_MESH_EXT_ADV */
     bt_mesh_generic_net_recv(data, &rx, net_if);
 }
 

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -183,12 +183,28 @@ static int32_t bt_mesh_client_calc_timeout(struct bt_mesh_msg_ctx *ctx,
 {
     int32_t seg_rtx_to = 0, duration = 0, time = 0;
     uint8_t seg_count = 0, seg_rtx_num = 0;
-    bool need_seg = false;
+    bool need_seg = bt_mesh_tag_send_segmented(ctx->send_tag);
     uint8_t mic_size = 0;
 
-    if (msg->len > BLE_MESH_SDU_UNSEG_MAX ||
-        bt_mesh_tag_send_segmented(ctx->send_tag)) {
-        need_seg = true;    /* Needs segmentation */
+    if (!need_seg) {
+#if CONFIG_BLE_MESH_LONG_PACKET
+        if (ctx->enh.long_pkt_cfg_used == true) {
+            if ((ctx->enh.long_pkt_cfg == BLE_MESH_LONG_PACKET_FORCE &&
+                msg->len > BLE_MESH_EXT_SDU_UNSEG_MAX) ||
+                (ctx->enh.long_pkt_cfg == BLE_MESH_LONG_PACKET_PREFER &&
+                msg->len > BLE_MESH_SDU_UNSEG_MAX)) {
+                need_seg = true;    /* Needs segmentation */
+            }
+        } else {
+            if (msg->len > BLE_MESH_SDU_UNSEG_MAX) {
+                need_seg = true;    /* Needs segmentation */
+            }
+        }
+#else
+        if (msg->len > BLE_MESH_SDU_UNSEG_MAX) {
+            need_seg = true;    /* Needs segmentation */
+        }
+#endif
     }
 
     mic_size = (need_seg && ctx->send_szmic == BLE_MESH_SEG_SZMIC_LONG &&
@@ -201,7 +217,16 @@ static int32_t bt_mesh_client_calc_timeout(struct bt_mesh_msg_ctx *ctx,
          */
         seg_rtx_num = bt_mesh_get_seg_rtx_num();
         seg_rtx_to = bt_mesh_get_seg_rtx_timeout(ctx->addr, ctx->send_ttl);
-        seg_count = (msg->len + mic_size - 1) / 12U + 1U;
+
+#if CONFIG_BLE_MESH_LONG_PACKET
+        if (ctx->enh.long_pkt_cfg &&
+            msg->len > BLE_MESH_TX_SDU_MAX) {
+            seg_count = (msg->len + mic_size - 1) / BLE_MESH_EXT_APP_SEG_SDU_MAX + 1U;
+        } else
+#endif
+        {
+            seg_count = (msg->len + mic_size - 1) / 12U + 1U;
+        }
 
         duration = bt_mesh_get_adv_duration(ctx);
 

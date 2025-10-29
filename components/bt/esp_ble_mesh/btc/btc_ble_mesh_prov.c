@@ -2950,6 +2950,8 @@ void btc_ble_mesh_model_call_handler(btc_msg_t *msg)
             .msg_timeout    = arg->model_send.msg_timeout,
         };
 
+        memcpy(&param.ctx.enh, &arg->model_send.ctx->enh, sizeof(bt_mesh_msg_enh_params_t));
+
         err = bt_mesh_client_send_msg(&param, buf, arg->model_send.need_rsp,
                                       btc_ble_mesh_client_model_timeout_cb);
         bt_mesh_free_buf(buf);
