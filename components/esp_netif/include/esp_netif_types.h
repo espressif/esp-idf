@@ -111,6 +111,8 @@ typedef enum {
     IP_EVENT_TX_RX,                    /*!< transmitting/receiving data packet */
     IP_EVENT_NETIF_UP,                 /*!< unified netif status: interface became up */
     IP_EVENT_NETIF_DOWN,               /*!< unified netif status: interface went down */
+    IP_EVENT_CUSTOM_GOT_IP,            /*!< custom netif got IP (for user-defined interfaces) */
+    IP_EVENT_CUSTOM_LOST_IP,           /*!< custom netif lost IP (for user-defined interfaces) */
 } ip_event_t;
 
 /** @brief IP event base declaration */
