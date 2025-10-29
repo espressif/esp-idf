@@ -115,9 +115,11 @@ static void adc_hal_onetime_start(adc_unit_t unit, uint32_t clk_src_freq_hz, uin
     }
 
     HAL_EARLY_LOGD(TAG, "delay for `onetime_start` signal captured: %"PRIu32"", sample_delay_us);
+
+    adc_oneshot_ll_start(true);
+    esp_rom_delay_us(sample_delay_us);
     adc_oneshot_ll_start(false);
     esp_rom_delay_us(sample_delay_us);
-    adc_oneshot_ll_start(true);
 
 #if ADC_LL_DELAY_CYCLE_AFTER_DONE_SIGNAL
     /**
@@ -147,7 +149,6 @@ bool adc_oneshot_hal_convert(adc_oneshot_hal_ctx_t *hal, int *out_raw)
     }
 
     adc_oneshot_ll_clear_event(event);
-    adc_oneshot_ll_disable_all_unit();
     adc_oneshot_ll_enable(hal->unit);
 
     adc_hal_onetime_start(hal->unit, hal->clk_src_freq_hz, &read_delay_us);
