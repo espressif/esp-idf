@@ -746,7 +746,15 @@ static int vfs_spiffs_readdir_r(void* ctx, DIR* pdir, struct dirent* entry,
     char * item_name;
     do {
         if (SPIFFS_readdir(&dir->d, &out) == 0) {
-            errno = spiffs_res_to_errno(SPIFFS_errno(efs->fs));
+            s32_t spiffs_res = SPIFFS_errno(efs->fs);
+            switch (spiffs_res) {
+                case SPIFFS_ERR_END_OF_OBJECT:
+                    errno = 0;
+                    break;
+                default:
+                    errno = spiffs_res_to_errno(spiffs_res);
+                    break;
+            }
             SPIFFS_clearerr(efs->fs);
             if (!errno) {
                 *out_dirent = NULL;
