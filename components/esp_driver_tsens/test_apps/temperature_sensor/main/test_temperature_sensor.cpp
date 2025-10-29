@@ -162,7 +162,9 @@ static void test_temperature_sensor_sleep_retention(bool allow_pd)
         .range_min = 10,
         .range_max = 50,
         .clk_src = TEMPERATURE_SENSOR_CLK_SRC_DEFAULT,
-        .flags.allow_pd = allow_pd,
+        .flags = {
+            .allow_pd = allow_pd,
+        },
     };
     temperature_sensor_handle_t temp_handle = NULL;
     TEST_ESP_OK(temperature_sensor_install(&temp_sensor, &temp_handle));
