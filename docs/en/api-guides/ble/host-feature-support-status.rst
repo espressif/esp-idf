@@ -6,7 +6,7 @@ ESP Host Major Feature Support Status
 :link_to_translation:`zh_CN:[中文]`
 
 The table below shows the support status of major features on ESP-Bluedroid and ESP-NimBLE Host.
-If you plan to run the BLE Controller and Host on {IDF_TARGET_NAME} together, the functionality of the Host may be limited by the support status of the Controller,
+If you plan to run the Bluetooth LE Controller and Host on {IDF_TARGET_NAME} together, the functionality of the Host may be limited by the support status of the Controller,
 please check the :doc:`{IDF_TARGET_NAME} Major Feature Support Status Table <ble-feature-support-status>` .
 
 |supported_def| **This feature has completed development and internal testing.** [1]_
