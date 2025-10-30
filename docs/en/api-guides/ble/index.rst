@@ -13,6 +13,7 @@ Overview
    overview
    ble-feature-support-status
    ble-qualification
+   Low Power Mode Introduction <ble-low-power-mode>
 
 ***************
 Get Started
