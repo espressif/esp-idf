@@ -66,7 +66,7 @@ TLS 连接所需的 DS 外设配置
 使用 DS 外设进行 SSL 双向认证
 -----------------------------
 
-此前位于 ``examples/protocols/mqtt/ssl_ds`` 的 SSL 双向认证示例现已随独立的 `espressif/mqtt <https://components.espressif.com/components/espressif/mqtt>`__ 组件一同提供。请按照该组件文档说明获取 SSL DS 示例并与 ESP-MQTT 一起构建。示例继续使用通过 `ESP-MQTT` 实现的 `mqtt_client` 连接到 ``test.mosquitto.org``，并使用 `ESP-TLS` 完成 TLS 双向认证。
+此前位于 ``examples/protocols/mqtt/ssl_ds`` 目录下的 SSL 双向认证示例现已随独立的 `espressif/mqtt <https://components.espressif.com/components/espressif/mqtt>`__ 组件一同提供。请参照该组件文档获取 SSL DS 示例，并与 ESP-MQTT 一起构建。该示例仍使用 `mqtt_client`（由 ESP-MQTT 实现），通过双向认证 TLS 连接至 ``test.mosquitto.org``，其中 TLS 通信层仍由 `ESP-TLS` 实现。
 
 API 参考
 --------

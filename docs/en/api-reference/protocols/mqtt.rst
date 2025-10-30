@@ -27,11 +27,13 @@ Application Examples
 Two reference examples are available in ESP-IDF:
 
 - MQTT over TLS (certificate bundle): ``examples/protocols/mqtt``
+
   - Validates the broker with ESP-IDF's certificate bundle (default).
   - Default broker URI targets ``mqtts://test.mosquitto.org:8886`` (Let's Encrypt chain).
   - Alternative configuration pins Mosquitto CA and uses ``mqtts://test.mosquitto.org:8883``.
 
 - MQTT 5.0 over TLS (certificate bundle): ``examples/protocols/mqtt5``
+
   - Uses MQTT v5.0 with TLS and validation via the certificate bundle.
   - Default broker URI targets ``mqtts://test.mosquitto.org:8886``.
 
