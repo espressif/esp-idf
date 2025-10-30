@@ -14,6 +14,7 @@
 #include "soc/pmu_struct.h"
 #include "hal/efuse_hal.h"
 #include "hal/pmu_hal.h"
+#include "hal/lp_sys_ll.h"
 #include "pmu_param.h"
 #include "esp_private/esp_pmu.h"
 #include "soc/regi2c_dig_reg.h"
@@ -176,7 +177,9 @@ static void pmu_hp_system_init_default(pmu_context_t *ctx)
         pmu_hp_system_param_default(mode, &param);
         pmu_hp_system_init(ctx, mode, &param);
     }
-    REG_SET_FIELD(LP_SYSTEM_REG_HP_MEM_AUX_CTRL_REG, LP_SYSTEM_REG_HP_MEM_AUX_CTRL, 0x2074);
+#if CONFIG_ESP32P4_REV_MIN_FULL >= 300
+    lp_sys_ll_set_hp_mem_lowpower_mode(MEM_AUX_DEEPSLEEP);
+#endif
 }
 
 static inline void pmu_lp_system_param_default(pmu_lp_mode_t mode, pmu_lp_system_param_t *param)
@@ -193,7 +196,9 @@ static void pmu_lp_system_init_default(pmu_context_t *ctx)
         pmu_lp_system_param_default(mode, &param);
         pmu_lp_system_init(ctx, mode, &param);
     }
-    REG_SET_FIELD(LP_SYSTEM_REG_LP_MEM_AUX_CTRL_REG, LP_SYSTEM_REG_LP_MEM_AUX_CTRL, 0x2074);
+#if CONFIG_ESP32P4_REV_MIN_FULL >= 300
+    lp_sys_ll_set_lp_mem_lowpower_mode(MEM_AUX_DEEPSLEEP);
+#endif
 }
 
 void pmu_init(void)

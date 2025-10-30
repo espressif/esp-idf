@@ -768,10 +768,14 @@ typedef union {
  */
 typedef union {
     struct {
-        /** hp_mem_aux_ctrl : R/W; bitpos: [31:0]; default: 8304;
+        /** hp_mem_lowpower_mode : R/W; bitpos: [2:0]; default: 0;
          *  need_des
          */
-        uint32_t hp_mem_aux_ctrl:32;
+        uint32_t hp_mem_lowpower_mode:3;
+        /** hp_mem_aux_ctrl : R/W; bitpos: [31:3]; default: 1038;
+         *  need_des
+         */
+        uint32_t hp_mem_aux_ctrl:29;
     };
     uint32_t val;
 } lp_system_reg_hp_mem_aux_ctrl_reg_t;
@@ -781,10 +785,14 @@ typedef union {
  */
 typedef union {
     struct {
-        /** lp_mem_aux_ctrl : R/W; bitpos: [31:0]; default: 8304;
+        /** lp_mem_lowpower_mode : R/W; bitpos: [2:0]; default: 0;
          *  need_des
          */
-        uint32_t lp_mem_aux_ctrl:32;
+        uint32_t lp_mem_lowpower_mode:3;
+        /** lp_mem_aux_ctrl : R/W; bitpos: [31:3]; default: 1038;
+         *  need_des
+         */
+        uint32_t lp_mem_aux_ctrl:29;
     };
     uint32_t val;
 } lp_system_reg_lp_mem_aux_ctrl_reg_t;

@@ -298,4 +298,5 @@ menu "Hardware Settings"
         bool "Place esp_intr_alloc functions in IRAM" if SPI_FLASH_AUTO_SUSPEND
         default y
 
+    orsource "./lowpower/port/esp32p4/Kconfig.p4_rev3_mspi_workaround"
 endmenu
