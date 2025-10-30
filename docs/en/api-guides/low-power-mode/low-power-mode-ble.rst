@@ -101,20 +101,7 @@ Selecting 136 kHz RC Oscillator
 
     - \ (X) Internal 136kHz RC oscillator
 
-    Generally, the 136 kHz RC oscillator cannot meet the accuracy requirement of BLE. It is only suitable for scenarios with low clock accuracy requirements, such as legacy advertising (ADV) or scanning.
-
-    However, for testing purposes, if the peer device also uses 136 kHz RC as the clock source, BLE can function under a 136 kHz RC clock through the following configuration:
-
-    **Configuration Path:**
-
-    ``Component config → Bluetooth → Controller Options``
-
-    **Configuration Options:**
-
-    - \ [*] Enable to set constant peer SCA
-    - \ (3000) Constant peer sleep clock accuracy value
-
-    **Note:** Using the 136 kHz RC oscillator may cause rare issues like connection drops or failures to establish a connection.
+    Generally, the 136 kHz RC oscillator cannot meet the accuracy requirement of BLE. It is only suitable for scenarios with low clock accuracy requirements, such as legacy advertising (ADV) or scanning. It does not support connections in central or peripheral roles.
 
 .. only:: esp32
 
@@ -140,9 +127,7 @@ Selecting 136 kHz RC Oscillator
 
     - \ (X) Internal 136 kHz RC oscillator
 
-    Generally, the 136 kHz RC oscillator cannot meet the accuracy requirement of BLE. It is only suitable for scenarios with low clock accuracy requirements, such as legacy advertising (ADV) or scanning.
-
-    If low curent consumption is required but have no access to the External 32kHz Crystal, then this clock source is recommended. However, selecting this clock source will have the sleep clock accuracy larger than 500 PPM, which is supported if the peer device is also an ESP chip. If the peer device is not an ESP chip, here's some BLE event not supported:
+    If low current consumption is required but have no access to the External 32kHz Crystal, then this clock source is recommended. However, selecting this clock source will have the sleep clock accuracy larger than 500 PPM, which is supported if the peer device is also an ESP chip. If the peer device is not an ESP chip, here's some BLE event not supported:
 
     1. Central role of Connection
     2. Advertiser of Periodic Advertising
@@ -196,11 +181,7 @@ As explained in the clock source selection section above, when ACL connections f
 
 As introduced in the clock source selection section above, if the main XTAL is used as the clock source, it will remain powered on during light-sleep, resulting in higher current consumption than other clock sources.
 
-Also, BLE operates in Auto Light-sleep mode, meaning the system decides whether to enter sleep after entering IDLE. During advertising or scanning, current will be significantly higher than during light-sleep.
-
-Thus, the average current in low power mode is somewhere between light-sleep current and peak current (usually TX current).
-
-The average current can be application specific, and depends on the BLE configuration and the period of time in light-sleep mode. Some application may have larger average currrent because it has BLE taking a larger ratio of time transmitting and receiving.
+The average current can be application specific, and depends on the BLE configuration and the period of time in light-sleep mode. Some application may have larger average current because it has BLE taking a larger ratio of time transmitting and receiving.
 
 **3. Unable to Enter light-sleep Mode**
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
