@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
- * SPDX-FileContributor: 2018-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2018-2025 Espressif Systems (Shanghai) CO LTD
  */
 #ifndef __SYS_ARCH_H__
 #define __SYS_ARCH_H__
@@ -18,12 +18,13 @@ extern "C" {
 #endif
 
 
-typedef SemaphoreHandle_t sys_sem_t;
+typedef StaticSemaphore_t sys_sem_t;
 typedef SemaphoreHandle_t sys_mutex_t;
 typedef TaskHandle_t sys_thread_t;
 
 typedef struct sys_mbox_s {
-  QueueHandle_t os_mbox;
+  StaticQueue_t os_mbox;
+  uint8_t buffer[0];
 }* sys_mbox_t;
 
 /** This is returned by _fromisr() sys functions to tell the outermost function
@@ -45,9 +46,8 @@ void sys_delay_ms(uint32_t ms);
 #define sys_mbox_valid(mbox)       (*(mbox) != NULL)
 #define sys_mbox_set_invalid(mbox) (*(mbox) = NULL)
 
-#define sys_sem_valid_val(sema)   ((sema) != NULL)
-#define sys_sem_valid(sema)       (((sema) != NULL) && sys_sem_valid_val(*(sema)))
-#define sys_sem_set_invalid(sema) ((*(sema)) = NULL)
+#define sys_sem_valid(sema) ( ( memcmp((sema), &(StaticSemaphore_t){0}, sizeof(StaticSemaphore_t)) == 0) ? pdFALSE : pdTRUE )
+#define sys_sem_set_invalid(sema) memset((sema), 0, sizeof(StaticSemaphore_t))
 
 void sys_delay_ms(uint32_t ms);
 sys_sem_t* sys_thread_sem_init(void);
