@@ -1,8 +1,6 @@
 ESP-NETIF Programmers Manual
 ============================
 
-:link_to_translation:`zh_CN:[中文]`
-
 .. _esp_netif_set_ip:
 
 Configure IP, Gateway, and DNS
