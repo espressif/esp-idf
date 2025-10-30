@@ -65,7 +65,7 @@ const static char *TAG = "esp_apptrace_test";
 #define ESP_APPTRACE_TEST_LOGV( format, ... )  ESP_APPTRACE_TEST_LOG_LEVEL(V, ESP_LOG_VERBOSE, format, ##__VA_ARGS__)
 #define ESP_APPTRACE_TEST_LOGO( format, ... )  ESP_APPTRACE_TEST_LOG_LEVEL(E, ESP_LOG_NONE, format, ##__VA_ARGS__)
 
-#if CONFIG_APPTRACE_SV_ENABLE == 0
+#if CONFIG_ESP_TRACE_LIB_SEGGER_SYSVIEW == 0
 #define ESP_APPTRACE_TEST_WRITE(_b_, _s_)            esp_apptrace_write(_b_, _s_, ESP_APPTRACE_TMO_INFINITE)
 #define ESP_APPTRACE_TEST_WRITE_FROM_ISR(_b_, _s_)   esp_apptrace_write(_b_, _s_, 0UL)
 #define ESP_APPTRACE_TEST_WRITE_NOWAIT(_b_, _s_)     esp_apptrace_write(_b_, _s_, 0)
@@ -694,7 +694,7 @@ TEST_CASE("Log trace test (2 tasks)", "[trace][ignore]")
     vSemaphoreDelete(arg2.done);
 }
 
-#else // #if CONFIG_APPTRACE_SV_ENABLE == 0
+#else // #if CONFIG_ESP_TRACE_LIB_SEGGER_SYSVIEW == 0
 
 typedef struct {
     gptimer_handle_t gptimer;
@@ -922,4 +922,4 @@ TEST_CASE("SysView trace test 2", "[trace][ignore]")
     TEST_ESP_OK(gptimer_disable(tim_arg2.gptimer));
     TEST_ESP_OK(gptimer_del_timer(tim_arg2.gptimer));
 }
-#endif // #if CONFIG_APPTRACE_SV_ENABLE == 0
+#endif // CONFIG_ESP_TRACE_LIB_SEGGER_SYSVIEW == 0

@@ -1,0 +1,144 @@
+menu "Application Level Tracing"
+    depends on ESP_TRACE_TRANSPORT_APPTRACE
+    choice APPTRACE_DESTINATION
+        prompt "Data Destination"
+        default APPTRACE_DEST_JTAG if !PM_ENABLE
+        default APPTRACE_DEST_UART if PM_ENABLE
+        help
+            Select destination for application trace: JTAG, UART, or both.
+
+        config APPTRACE_DEST_JTAG
+            bool "JTAG"
+            select APPTRACE_TRAX_ENABLE if IDF_TARGET_ARCH_XTENSA
+            depends on !PM_ENABLE
+
+        config APPTRACE_DEST_UART
+            bool "UART"
+
+        config APPTRACE_DEST_ALL
+            bool "All (runtime selection)"
+            help
+                Compile both JTAG and UART interfaces in advance (higher IRAM usage).
+                Allows runtime switching between JTAG and UART via esp_apptrace_get_user_params().
+
+                If esp_apptrace_get_user_params() is not provided by the
+                application, JTAG is used by default with the default
+                configuration defined in components/app_trace/include/esp_app_trace_config.h.
+    endchoice
+
+    config APPTRACE_BUF_SIZE
+        int "Size of the apptrace buffer"
+        depends on APPTRACE_DEST_JTAG && !APPTRACE_TRAX_ENABLE
+        default 16384
+        help
+            Size of the memory buffer for trace data in bytes.
+
+    config APPTRACE_DEST_UART_NUM
+        int "UART port number"
+        depends on APPTRACE_DEST_UART
+        range 0 1 if (SOC_UART_NUM <= 2)
+        range 0 2 if (SOC_UART_NUM <= 3)
+        range 0 5 if (SOC_UART_NUM <= 6)
+        default 1
+        help
+            UART communication port number for the apptrace destination.
+            See UART documentation for available port numbers.
+
+    config APPTRACE_UART_TX_GPIO
+        int "UART TX on GPIO<num>"
+        depends on APPTRACE_DEST_UART
+        range 0 46
+        default 12
+        help
+            This GPIO is used for UART TX pin.
+
+    config APPTRACE_UART_RX_GPIO
+        int "UART RX on GPIO<num>"
+        depends on APPTRACE_DEST_UART
+        range 0 46
+        default 13
+        help
+            This GPIO is used for UART RX pin.
+
+    config APPTRACE_UART_BAUDRATE
+        int
+        prompt "UART baud rate" if APPTRACE_DEST_UART
+        depends on APPTRACE_DEST_UART
+        default 1000000
+        range 1200 8000000
+        range 1200 1000000
+        help
+            This baud rate is used for UART.
+
+            The app's maximum baud rate depends on the UART clock source. If Power Management is disabled,
+            the UART clock source is the APB clock and all baud rates in the available range will be sufficiently
+            accurate. If Power Management is enabled, REF_TICK clock source is used so the baud rate is divided
+            from 1MHz. Baud rates above 1Mbps are not possible and values between 500Kbps and 1Mbps may not be
+            accurate.
+
+    config APPTRACE_UART_TX_BUFF_SIZE
+        int
+        prompt "UART TX ring buffer size" if APPTRACE_DEST_UART
+        depends on APPTRACE_DEST_UART
+        default 4096
+        range 2048 32768
+        help
+            Size of the UART output ring buffer.
+            This size related to the baudrate, system tick frequency and amount of data to transfer.
+
+    config APPTRACE_UART_TX_MSG_SIZE
+        int
+        prompt "UART TX message size" if APPTRACE_DEST_UART
+        depends on APPTRACE_DEST_UART
+        default 128
+        range 64 32768
+        help
+            Maximum size of the single message to transfer.
+
+    config APPTRACE_UART_TASK_PRIO
+        int
+        prompt "UART Task Priority" if APPTRACE_DEST_UART
+        depends on APPTRACE_DEST_UART
+        default 1
+        range 1 32
+        help
+            UART task priority. In case of high events rate,
+            this parameter could be changed up to (configMAX_PRIORITIES-1).
+
+    config APPTRACE_TRAX_ENABLE
+        bool
+        depends on IDF_TARGET_ARCH_XTENSA && !ESP32_TRAX && !ESP32S2_TRAX && !ESP32S3_TRAX
+        select ESP32_MEMMAP_TRACEMEM
+        select ESP32S2_MEMMAP_TRACEMEM
+        select ESP32S3_MEMMAP_TRACEMEM
+        select ESP32_MEMMAP_TRACEMEM_TWOBANKS
+        select ESP32S2_MEMMAP_TRACEMEM_TWOBANKS
+        select ESP32S3_MEMMAP_TRACEMEM_TWOBANKS
+        default n
+        help
+            Enables/disable TRAX tracing HW.
+
+    config APPTRACE_LOCK_ENABLE
+        bool "Internal Sync Lock Enable"
+        default n
+        help
+            Enables/disable application tracing module internal sync lock to prevent data corruption
+            when multiple tasks are writing to the same trace buffer.
+            Keep in mind this will slow down the trace data transfer to the host.
+
+    config APPTRACE_ONPANIC_HOST_FLUSH_TMO
+        int "Timeout for flushing last trace data to host on panic"
+        range -1 5000
+        default -1
+        help
+            Timeout for flushing last trace data to host in case of panic. In ms.
+            Use -1 to disable timeout and wait forever.
+
+    config APPTRACE_POSTMORTEM_FLUSH_THRESH
+        int "Threshold for flushing last trace data to host on panic"
+        range 0 16384
+        default 0
+        help
+            Threshold for flushing last trace data to host on panic in post-mortem mode.
+            This is minimal amount of data needed to perform flush. In bytes.
+endmenu

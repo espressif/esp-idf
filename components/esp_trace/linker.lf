@@ -1,0 +1,50 @@
+# ESP Trace Component Linker Fragment
+[mapping:esp_trace]
+archive: libesp_trace.a
+entries:
+    if ESP_TRACE_ENABLE = y:
+        esp_trace_core (noflash)
+        esp_trace_registry (noflash)
+        port_utils (noflash)
+        if ESP_TRACE_LIB_SEGGER_SYSVIEW:
+            adapter_encoder_sysview (noflash)
+        if ESP_TRACE_TRANSPORT_APPTRACE:
+            adapter_transport_apptrace (noflash)
+
+[mapping:esp_trace_driver]
+archive: libesp_driver_gptimer.a
+entries:
+    if ESP_TRACE_TS_SOURCE_GPTIMER = y:
+        gptimer: gptimer_get_raw_count (noflash)
+    else:
+        * (default)
+
+# Static registration of encoders and transports at link time
+
+[sections:esp_trace_encoder_desc]
+entries:
+    .esp_trace_encoder_desc
+
+[sections:esp_trace_transport_desc]
+entries:
+    .esp_trace_transport_desc
+
+[scheme:esp_trace_encoder_desc_default]
+entries:
+    esp_trace_encoder_desc -> flash_rodata
+
+[scheme:esp_trace_transport_desc_default]
+entries:
+    esp_trace_transport_desc -> flash_rodata
+
+[mapping:esp_trace_encoder_desc]
+archive: *
+entries:
+    * (esp_trace_encoder_desc_default);
+        esp_trace_encoder_desc -> flash_rodata KEEP() SORT(name) SURROUND(esp_trace_encoder_array)
+
+[mapping:esp_trace_transport_desc]
+archive: *
+entries:
+    * (esp_trace_transport_desc_default);
+        esp_trace_transport_desc -> flash_rodata KEEP() SORT(name) SURROUND(esp_trace_transport_array)

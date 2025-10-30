@@ -32,7 +32,7 @@ typedef struct {
 static esp_apptrace_channel_t s_trace_ch;
 static volatile int s_trace_ch_hw_initialized = 0;
 
-static esp_err_t esp_apptrace_init(const esp_apptrace_config_t *config)
+esp_err_t esp_apptrace_init(const esp_apptrace_config_t *config)
 {
     __attribute__((unused)) void *hw_data = NULL;
 
@@ -44,7 +44,7 @@ static esp_err_t esp_apptrace_init(const esp_apptrace_config_t *config)
         const esp_apptrace_uart_config_t *uart_config = &config->dest_cfg.uart;
         s_trace_ch.hw = esp_apptrace_uart_hw_get(uart_config->uart_num, &hw_data);
         s_trace_ch.hw_data = hw_data;
-#else // CONFIG_APPTRACE_DEST_NONE allows runtime selection
+#else // CONFIG_APPTRACE_DEST_ALL allows runtime selection between destinations
         if (config->dest == ESP_APPTRACE_DEST_JTAG) {
             s_trace_ch.hw = esp_apptrace_jtag_hw_get(&hw_data);
             s_trace_ch.hw_data = hw_data;
@@ -363,6 +363,11 @@ esp_err_t esp_apptrace_set_header_size(esp_apptrace_header_size_t header_size)
     return ESP_OK;
 }
 
+/* If any trace library (sysview or external) is selected with the apptrace transport,
+ * initialization will be handled by the esp_trace component
+ */
+#if CONFIG_ESP_TRACE_LIB_NONE && CONFIG_ESP_TRACE_TRANSPORT_APPTRACE
+
 esp_apptrace_config_t __attribute__((weak)) esp_apptrace_get_user_params(void)
 {
     esp_apptrace_config_t default_config = APPTRACE_CONFIG_DEFAULT();
@@ -374,3 +379,4 @@ ESP_SYSTEM_INIT_FN(apptrace_early_init, SECONDARY, ESP_SYSTEM_INIT_ALL_CORES, 11
     esp_apptrace_config_t config = esp_apptrace_get_user_params();
     return esp_apptrace_init(&config);
 }
+#endif

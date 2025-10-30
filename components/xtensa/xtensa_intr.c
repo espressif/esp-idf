@@ -156,7 +156,7 @@ xt_handler xt_set_interrupt_handler(int n, xt_handler f, void * arg)
     return ((old == &xt_unhandled_interrupt) ? 0 : old);
 }
 
-#if CONFIG_APPTRACE_SV_ENABLE
+#if CONFIG_ESP_TRACE_LIB_SEGGER_SYSVIEW
 void * xt_get_interrupt_handler_arg(int n)
 {
     xt_handler_table_entry * entry;

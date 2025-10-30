@@ -62,16 +62,19 @@ Revision: $Rev: 7745 $
 #include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include "SEGGER_SYSVIEW.h"
-#include "esp_app_trace.h"
-#include "esp_app_trace_util.h"
 #include "esp_intr_alloc.h"
-#include "esp_clk_tree.h"
-#include "esp_cpu.h"
 #include "soc/soc.h"
 #include "soc/interrupts.h"
-#include "esp_private/esp_clk.h"
+#include "esp_sysview_trace.h"
+#include "esp_trace_port_encoder.h"
+#include "esp_trace_port_transport.h"
+#include "esp_trace_util.h"
 
 extern const SEGGER_SYSVIEW_OS_API SYSVIEW_X_OS_TraceAPI;
+
+/* Encoder reference for accessing lock functions
+ * This is set by SEGGER_RTT_ESP_SetEncoder() during encoder initialization */
+extern esp_trace_encoder_t* SEGGER_SYSVIEW_GetEncoder(void);
 
 /*********************************************************************
 *
@@ -86,39 +89,6 @@ extern const SEGGER_SYSVIEW_OS_API SYSVIEW_X_OS_TraceAPI;
 #define SYSVIEW_DEVICE_NAME     CONFIG_IDF_TARGET
 // The target core name
 #define SYSVIEW_CORE_NAME       "core0" // In dual core, this will be renamed by OpenOCD as core1
-
-// Determine which timer to use as timestamp source
-#if CONFIG_APPTRACE_SV_TS_SOURCE_CCOUNT
-#define TS_USE_CCOUNT 1
-#elif CONFIG_APPTRACE_SV_TS_SOURCE_ESP_TIMER
-#define TS_USE_ESP_TIMER 1
-#else
-#define TS_USE_TIMERGROUP 1
-#endif
-
-#if TS_USE_TIMERGROUP
-#include "driver/gptimer.h"
-
-// Timer group timer divisor
-#define SYSVIEW_TIMER_DIV       2
-
-// GPTimer handle
-gptimer_handle_t s_sv_gptimer;
-
-#endif // TS_USE_TIMERGROUP
-
-#if TS_USE_ESP_TIMER
-// esp_timer provides 1us resolution
-#define SYSVIEW_TIMESTAMP_FREQ  (1000000)
-#endif // TS_USE_ESP_TIMER
-
-#if TS_USE_CCOUNT
-// CCOUNT is incremented at CPU frequency
-#define SYSVIEW_TIMESTAMP_FREQ  (CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ * 1000000)
-#endif // TS_USE_CCOUNT
-
-// System Frequency.
-#define SYSVIEW_CPU_FREQ        (esp_clk_cpu_freq())
 
 // The lowest RAM address used for IDs (pointers)
 #define SYSVIEW_RAM_BASE        (SOC_DROM_LOW)
@@ -139,9 +109,7 @@ gptimer_handle_t s_sv_gptimer;
 // disables IRQs (disables rescheduling globally). So we can not use finite timeouts for locks and return error
 // in case of expiration, because error will not be handled and SEGGER's code will go further implying that
 // everything is fine, so for multi-core env we have to wait on underlying lock forever
-#define SEGGER_LOCK_WAIT_TMO  ESP_APPTRACE_TMO_INFINITE
-
-static esp_apptrace_lock_t s_sys_view_lock = {.mux = portMUX_INITIALIZER_UNLOCKED, .int_state = 0};
+#define SEGGER_LOCK_WAIT_TMO  ESP_TRACE_TMO_INFINITE
 
 /*********************************************************************
 *
@@ -171,78 +139,51 @@ static void _cbSendSystemDesc(void) {
 *
 **********************************************************************
 */
-static int SEGGER_SYSVIEW_TS_Init(void)
-{
-    /* We only need to initialize something if we use Timer Group.
-     * esp_timer and ccount can be used as is.
-     */
-#if TS_USE_TIMERGROUP
-    // get clock source frequency
-    uint32_t counter_src_hz = 0;
-    ESP_ERROR_CHECK(esp_clk_tree_src_get_freq_hz(
-        (soc_module_clk_t)GPTIMER_CLK_SRC_DEFAULT,
-        ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &counter_src_hz));
-    gptimer_config_t config = {
-        .clk_src = GPTIMER_CLK_SRC_DEFAULT,
-        .direction = GPTIMER_COUNT_UP,
-        .resolution_hz = counter_src_hz / SYSVIEW_TIMER_DIV,
-    };
-    // pick any free GPTimer instance
-    ESP_ERROR_CHECK(gptimer_new_timer(&config, &s_sv_gptimer));
-    /* Start counting */
-    gptimer_enable(s_sv_gptimer);
-    gptimer_start(s_sv_gptimer);
-    return config.resolution_hz;
-#else
-    return SYSVIEW_TIMESTAMP_FREQ;
-#endif // TS_USE_TIMERGROUP
-}
-
 void SEGGER_SYSVIEW_Conf(void) {
     U32 disable_evts = 0;
 
-    int timestamp_freq = SEGGER_SYSVIEW_TS_Init();
-    SEGGER_SYSVIEW_Init(timestamp_freq, SYSVIEW_CPU_FREQ,
+    int timestamp_freq = esp_trace_timestamp_init();
+    SEGGER_SYSVIEW_Init(timestamp_freq, esp_trace_cpu_freq_get(),
                         &SYSVIEW_X_OS_TraceAPI, _cbSendSystemDesc);
     SEGGER_SYSVIEW_SetRAMBase(SYSVIEW_RAM_BASE);
 
-#if !CONFIG_APPTRACE_SV_EVT_OVERFLOW_ENABLE
+#if !CONFIG_SEGGER_SYSVIEW_EVT_OVERFLOW_ENABLE
     disable_evts |= SYSVIEW_EVTMASK_OVERFLOW;
 #endif
-#if !CONFIG_APPTRACE_SV_EVT_ISR_ENTER_ENABLE
+#if !CONFIG_SEGGER_SYSVIEW_EVT_ISR_ENTER_ENABLE
     disable_evts |= SYSVIEW_EVTMASK_ISR_ENTER;
 #endif
-#if !CONFIG_APPTRACE_SV_EVT_ISR_EXIT_ENABLE
+#if !CONFIG_SEGGER_SYSVIEW_EVT_ISR_EXIT_ENABLE
     disable_evts |= SYSVIEW_EVTMASK_ISR_EXIT;
 #endif
-#if !CONFIG_APPTRACE_SV_EVT_TASK_START_EXEC_ENABLE
+#if !CONFIG_SEGGER_SYSVIEW_EVT_TASK_START_EXEC_ENABLE
     disable_evts |= SYSVIEW_EVTMASK_TASK_START_EXEC;
 #endif
-#if !CONFIG_APPTRACE_SV_EVT_TASK_STOP_EXEC_ENABLE
+#if !CONFIG_SEGGER_SYSVIEW_EVT_TASK_STOP_EXEC_ENABLE
     disable_evts |= SYSVIEW_EVTMASK_TASK_STOP_EXEC;
 #endif
-#if !CONFIG_APPTRACE_SV_EVT_TASK_START_READY_ENABLE
+#if !CONFIG_SEGGER_SYSVIEW_EVT_TASK_START_READY_ENABLE
     disable_evts |= SYSVIEW_EVTMASK_TASK_START_READY;
 #endif
-#if !CONFIG_APPTRACE_SV_EVT_TASK_STOP_READY_ENABLE
+#if !CONFIG_SEGGER_SYSVIEW_EVT_TASK_STOP_READY_ENABLE
     disable_evts |= SYSVIEW_EVTMASK_TASK_STOP_READY;
 #endif
-#if !CONFIG_APPTRACE_SV_EVT_TASK_CREATE_ENABLE
+#if !CONFIG_SEGGER_SYSVIEW_EVT_TASK_CREATE_ENABLE
     disable_evts |= SYSVIEW_EVTMASK_TASK_CREATE;
 #endif
-#if !CONFIG_APPTRACE_SV_EVT_TASK_TERMINATE_ENABLE
+#if !CONFIG_SEGGER_SYSVIEW_EVT_TASK_TERMINATE_ENABLE
     disable_evts |= SYSVIEW_EVTMASK_TASK_TERMINATE;
 #endif
-#if !CONFIG_APPTRACE_SV_EVT_IDLE_ENABLE
+#if !CONFIG_SEGGER_SYSVIEW_EVT_IDLE_ENABLE
     disable_evts |= SYSVIEW_EVTMASK_IDLE;
 #endif
-#if !CONFIG_APPTRACE_SV_EVT_ISR_TO_SCHED_ENABLE
+#if !CONFIG_SEGGER_SYSVIEW_EVT_ISR_TO_SCHED_ENABLE
     disable_evts |= SYSVIEW_EVTMASK_ISR_TO_SCHEDULER;
 #endif
-#if !CONFIG_APPTRACE_SV_EVT_TIMER_ENTER_ENABLE
+#if !CONFIG_SEGGER_SYSVIEW_EVT_TIMER_ENTER_ENABLE
     disable_evts |= SYSVIEW_EVTMASK_TIMER_ENTER;
 #endif
-#if !CONFIG_APPTRACE_SV_EVT_TIMER_EXIT_ENABLE
+#if !CONFIG_SEGGER_SYSVIEW_EVT_TIMER_EXIT_ENABLE
     disable_evts |= SYSVIEW_EVTMASK_TIMER_EXIT;
 #endif
   SEGGER_SYSVIEW_DisableEvents(disable_evts);
@@ -250,15 +191,7 @@ void SEGGER_SYSVIEW_Conf(void) {
 
 U32 SEGGER_SYSVIEW_X_GetTimestamp(void)
 {
-#if TS_USE_TIMERGROUP
-    uint64_t ts = 0;
-    gptimer_get_raw_count(s_sv_gptimer, &ts);
-    return (U32) ts; // return lower part of counter value
-#elif TS_USE_CCOUNT
-    return esp_cpu_get_cycle_count();
-#elif TS_USE_ESP_TIMER
-    return (U32) esp_timer_get_time(); // return lower part of counter value
-#endif
+    return esp_trace_timestamp_get();
 }
 
 void SEGGER_SYSVIEW_X_RTT_Lock(void)
@@ -271,17 +204,21 @@ void SEGGER_SYSVIEW_X_RTT_Unlock(void)
 
 unsigned SEGGER_SYSVIEW_X_SysView_Lock(void)
 {
-    esp_apptrace_tmo_t tmo;
-    esp_apptrace_tmo_init(&tmo, SEGGER_LOCK_WAIT_TMO);
-    esp_apptrace_lock_take(&s_sys_view_lock, &tmo);
-    // to be recursive save IRQ status on the stack of the caller to keep it from overwriting
-    return s_sys_view_lock.int_state;
+    esp_trace_encoder_t *encoder = SEGGER_SYSVIEW_GetEncoder();
+    if (encoder) {
+        // Use encoder-level lock
+        return encoder->vt->take_lock(encoder, SEGGER_LOCK_WAIT_TMO);
+    }
+    return 0;
 }
 
 void SEGGER_SYSVIEW_X_SysView_Unlock(unsigned int_state)
 {
-    s_sys_view_lock.int_state = int_state;
-    esp_apptrace_lock_give(&s_sys_view_lock);
+    esp_trace_encoder_t *encoder = SEGGER_SYSVIEW_GetEncoder();
+    if (encoder) {
+        // Use encoder-level unlock
+        encoder->vt->give_lock(encoder, int_state);
+    }
 }
 
 /*************************** End of file ****************************/

@@ -1,0 +1,90 @@
+menu "ESP Trace Configuration"
+
+    choice ESP_TRACE_LIBRARY
+        prompt "Trace library"
+        default ESP_TRACE_LIB_NONE
+        help
+            Select the trace library to use.
+
+        config ESP_TRACE_LIB_SEGGER_SYSVIEW
+            bool "SEGGER SystemView"
+
+        config ESP_TRACE_LIB_EXTERNAL
+            bool "External library from component registry"
+            help
+                Use a custom encoder provided by an external component.
+                The trace core system will be enabled but no built-in encoder is included.
+
+                The external component MUST provide a header file named
+                "esp_trace_freertos_impl.h" in its include directories that
+                defines all required FreeRTOS trace macros.
+
+        config ESP_TRACE_LIB_NONE
+            bool "Disabled"
+    endchoice
+
+    config ESP_TRACE_LIB_NAME
+        string
+        default "sysview" if ESP_TRACE_LIB_SEGGER_SYSVIEW
+        default "ext" if ESP_TRACE_LIB_EXTERNAL
+        default "none" if ESP_TRACE_LIB_NONE
+
+    rsource "$IDF_PATH/components/app_trace/sys_view/Kconfig.sysview"
+
+    choice ESP_TRACE_TRANSPORT
+        prompt "Trace transport"
+        default ESP_TRACE_TRANSPORT_NONE
+        help
+            Select the trace backend to use.
+
+        config ESP_TRACE_TRANSPORT_APPTRACE
+            bool "ESP-IDF apptrace"
+
+        config ESP_TRACE_TRANSPORT_EXTERNAL
+            bool "External transport from component registry"
+            depends on !ESP_TRACE_LIB_NONE
+            help
+                Use a transport registered by an external component.
+                The trace core system will be enabled but no built-in transport is included.
+
+        config ESP_TRACE_TRANSPORT_NONE
+            bool "None"
+    endchoice
+
+    config ESP_TRACE_TRANSPORT_NAME
+        string
+        default "apptrace" if ESP_TRACE_TRANSPORT_APPTRACE
+        default "ext" if ESP_TRACE_TRANSPORT_EXTERNAL
+        default "none" if ESP_TRACE_TRANSPORT_NONE
+
+    config ESP_TRACE_ENABLE
+        bool
+        default !ESP_TRACE_LIB_NONE
+        help
+            Internal config to enable tracing dependency around components.
+
+    rsource "$IDF_PATH/components/app_trace/Kconfig.apptrace"
+
+    choice ESP_TRACE_TIMESTAMP_SOURCE
+        depends on ESP_TRACE_ENABLE
+        prompt "Trace timestamp source"
+        default ESP_TRACE_TS_SOURCE_CCOUNT if ESP_SYSTEM_SINGLE_CORE_MODE && !PM_ENABLE && !IDF_TARGET_ESP32C3
+        default ESP_TRACE_TS_SOURCE_GPTIMER if !ESP_SYSTEM_SINGLE_CORE_MODE && !PM_ENABLE && !IDF_TARGET_ESP32C3
+        default ESP_TRACE_TS_SOURCE_ESP_TIMER if PM_ENABLE || IDF_TARGET_ESP32C3
+        help
+            Select the timestamp source for tracing.
+
+        config ESP_TRACE_TS_SOURCE_CCOUNT
+            bool "CPU cycle counter (CCOUNT)"
+            depends on ESP_SYSTEM_SINGLE_CORE_MODE && !PM_ENABLE && !IDF_TARGET_ESP32C3
+
+        config ESP_TRACE_TS_SOURCE_GPTIMER
+            bool "General Purpose Timer (Timer Group)"
+            depends on !PM_ENABLE && !IDF_TARGET_ESP32C3
+
+        config ESP_TRACE_TS_SOURCE_ESP_TIMER
+            bool "esp_timer high resolution timer"
+
+    endchoice
+
+endmenu
