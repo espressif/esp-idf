@@ -1008,7 +1008,7 @@ static esp_err_t s_verify_write(esp_flash_t *chip, uint32_t verify_address, uint
         for (int r = 0; r < this_len / sizeof(uint32_t); r++) {
             if (val_in_flash[r] != expected_buf[r]) {
 #if CONFIG_SPI_FLASH_LOG_FAILED_WRITE
-                ESP_DRAM_LOGE(TAG, "Bad write at %d offset: 0x%x, expected: 0x%08x, readback: 0x%08x", r, verify_address + r, expected_buf[r], val_in_flash[r]);
+                ESP_DRAM_LOGE(TAG, "Bad write at %d offset: 0x%x, expected: 0x%08x, readback: 0x%08x", r, verify_address + r * sizeof(uint32_t), expected_buf[r], val_in_flash[r]);
 #endif  //#if CONFIG_SPI_FLASH_LOG_FAILED_WRITE
                 return ESP_FAIL;
             }
