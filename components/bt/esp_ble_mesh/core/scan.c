@@ -380,7 +380,7 @@ static void inline callback_ble_adv_pkt(const bt_mesh_addr_t *addr,
         adv_rpt.addr_type = addr->type;
         adv_rpt.adv_type = adv_type;
         adv_rpt.length = length;
-        adv_rpt.data = data;
+        adv_rpt.data = length ? data : NULL;
         adv_rpt.rssi = rssi;
         bt_mesh_ble_scan_cb_evt_to_btc(&adv_rpt);
     }
