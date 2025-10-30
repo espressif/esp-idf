@@ -39,6 +39,7 @@ BLE_DOCS = [
     'api-guides/ble/get-started/ble-connection.rst',
     'api-guides/ble/get-started/ble-data-exchange.rst',
     'api-guides/ble/smp.rst',
+    'api-guides/low-power-mode/low-power-mode-ble.rst',
     'api-reference/bluetooth/bt_le.rst',
     'api-reference/bluetooth/esp_gap_ble.rst',
     'api-reference/bluetooth/esp_gatt_defs.rst',
