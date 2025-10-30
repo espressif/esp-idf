@@ -399,7 +399,7 @@ ISP AE 控制器
 
 .. code-block:: c
 
-     esp_isp_ae_config_t ae_config = {
+    esp_isp_ae_config_t ae_config = {
         .sample_point = ISP_AE_SAMPLE_POINT_AFTER_DEMOSAIC,
     };
     isp_ae_ctlr_t ae_ctlr = NULL;

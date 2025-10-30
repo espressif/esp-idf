@@ -18,6 +18,10 @@ Wi-Fi Aware\ :sup:`TM`，也可称为 NAN (Neighbor Awareness Networking) 协议
 
 - :example:`wifi/wifi_aware/nan_subscriber` 演示如何使用 NAN 协议发现附近发布所需服务的其他设备，并通过发送消息或启动数据路径与它们进行通信。
 
+- :example:`wifi/wifi_aware/usd_publisher` 演示了如何使用轻量级 NAN 非同步服务发现 (NAN-USD) 协议向附近设备发布服务而无需形成 NAN 集群。示例讲解了如何启动 USD、发布服务、通过后续消息响应订阅者，以及在发现完成后返回空闲状态。
+
+- :example:`wifi/wifi_aware/usd_subscriber` 演示了如何使用轻量级 NAN 非同步服务发现 (NAN-USD) 协议发现附近设备发布的服务并与之交互。示例讲解了如何启用 USD 发现、订阅服务、处理后续消息交换，以及在会话结束后终止发现。
+
 API 参考
 -------------
 
