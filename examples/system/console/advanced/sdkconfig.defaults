@@ -18,3 +18,9 @@ CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y
 
 # On chips with USB serial, disable secondary console which does not make sense when using console component
 CONFIG_ESP_CONSOLE_SECONDARY_NONE=y
+
+# Will also enable filesystem
+CONFIG_CONSOLE_STORE_HISTORY=y
+
+# Enable running commands on separate tasks
+CONFIG_CONSOLE_COMMAND_ON_TASK=y

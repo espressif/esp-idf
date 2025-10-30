@@ -4,7 +4,8 @@ set(srcs "commands.c"
          "esp_console_common.c"
          "esp_console_repl_internal.c"
          "split_argv.c"
-         "linenoise/linenoise.c")
+         "linenoise/linenoise.c"
+         "shell.c")
 
 set(requires vfs)
 
