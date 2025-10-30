@@ -223,9 +223,9 @@ The format of ACK Frame:
      -
 
    * - 0x8 (b’001000)
-     - Disconnect the BLE GATT link.
+     - Disconnect the Bluetooth LE GATT link.
      -
-     - The ESP device will disconnect the BLE GATT link after receives this command.
+     - The ESP device will disconnect the Bluetooth LE GATT link after receives this command.
 
    * - 0x9 (b’001001)
      - Get the Wi-Fi list.
