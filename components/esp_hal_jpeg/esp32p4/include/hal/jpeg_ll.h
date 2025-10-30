@@ -67,7 +67,6 @@ typedef enum {
                                     JPEG_LL_INTR_UNDETECT | \
                                     JPEG_LL_INTR_DECODE_TIMEOUT)
 
-
 typedef enum {
     JPEG_LL_RLE_PARALLEL_ERR = (1 << 1),
     JPEG_LL_BS_LAST_BLOCK_EOF = (1 << 12),
@@ -436,7 +435,6 @@ static inline void jpeg_ll_codec_pause(jpeg_dev_t *hw, bool en)
 {
     hw->config.pause_en = en;
 }
-
 
 /**
  * @brief Apply soft reset, this will reset the hardware fsm and fifo.
