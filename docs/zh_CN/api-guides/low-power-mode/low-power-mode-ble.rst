@@ -36,19 +36,8 @@
 
     - \ (X) Use main XTAL as RTC clock source
 
-选择主晶振后，light-sleep 模式下主晶振电源不会关闭，因此电流消耗更高。使用 XTAL 和 32kHz 外部晶振时 light-sleep 电流参考如下：
-
-.. list-table:: light-sleep 模式下不同时钟源的电流参考值
-    :widths: auto
-    :header-rows: 1
-
-    * - 时钟源
-      - 典型 light-sleep 电流
-    * - 主晶振
-      - 3.3 mA
-    * - 32kHz 外部晶振 / 136 kHz RC
-      - 34 uA
-
+选择主晶振后，light-sleep 模式下主晶振电源不会关闭，因此电流消耗更高。
+有关使用主晶振与 32kHz 外部晶振在 light-sleep 模式下的典型电流消耗，请参考 :example_file:`Power Save README <bluetooth/nimble/power_save/README.md>` 。
 
 选择 32kHz 外部晶振
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
