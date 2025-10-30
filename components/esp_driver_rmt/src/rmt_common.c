@@ -226,14 +226,8 @@ esp_err_t rmt_select_periph_clock(rmt_channel_handle_t chan, rmt_clock_source_t 
     // if the CPU frequency goes down, the transfer+encoding scheme could be unstable because CPU can't fill the data in time
     // so, choose ESP_PM_CPU_FREQ_MAX lock for non-dma mode
     // otherwise, chose lock type based on the clock source
+    // note, even if the clock source is APB, we still use CPU_FREQ_MAX lock to ensure the stability of the RMT operation.
     esp_pm_lock_type_t pm_lock_type = chan->dma_chan ? ESP_PM_NO_LIGHT_SLEEP : ESP_PM_CPU_FREQ_MAX;
-
-#if SOC_RMT_SUPPORT_APB
-    if (clk_src == RMT_CLK_SRC_APB) {
-        // APB clock frequency can be changed during DFS
-        pm_lock_type = ESP_PM_APB_FREQ_MAX;
-    }
-#endif // SOC_RMT_SUPPORT_APB
 
     sprintf(chan->pm_lock_name, "rmt_%d_%d", group->group_id, chan->channel_id); // e.g. rmt_0_0
     ret  = esp_pm_lock_create(pm_lock_type, 0, chan->pm_lock_name, &chan->pm_lock);
