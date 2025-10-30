@@ -41,9 +41,9 @@
 #include "aes/esp_aes_gcm.h"
 #endif
 
-#ifdef SOC_AXI_DMA_EXT_MEM_ENC_ALIGNMENT
-#include "esp_flash_encrypt.h"
-#endif /* SOC_AXI_DMA_EXT_MEM_ENC_ALIGNMENT */
+#ifdef SOC_GDMA_EXT_MEM_ENC_ALIGNMENT
+#include "hal/efuse_hal.h"
+#endif /* SOC_GDMA_EXT_MEM_ENC_ALIGNMENT */
 
 /* Max size of each chunk to process when output buffer is in unaligned external ram
    must be a multiple of block size
@@ -241,17 +241,17 @@ static int esp_aes_process_dma_ext_ram(esp_aes_context *ctx, const unsigned char
 
 /* When AES-DMA operations are carried out using external memory with external memory encryption enabled,
    we need to make sure that the addresses and the sizes of the buffers on which the DMA operates are 16 byte-aligned. */
-#ifdef SOC_AXI_DMA_EXT_MEM_ENC_ALIGNMENT
-    if (esp_flash_encryption_enabled()) {
+#ifdef SOC_GDMA_EXT_MEM_ENC_ALIGNMENT
+    if (efuse_hal_flash_encryption_enabled()) {
         if (esp_ptr_external_ram(input) || esp_ptr_external_ram(output) || esp_ptr_in_drom(input) || esp_ptr_in_drom(output)) {
-            input_alignment = MAX(get_cache_line_size(input), SOC_AXI_DMA_EXT_MEM_ENC_ALIGNMENT);
-            output_alignment = MAX(get_cache_line_size(output), SOC_AXI_DMA_EXT_MEM_ENC_ALIGNMENT);
+            input_alignment = MAX(get_cache_line_size(input), SOC_GDMA_EXT_MEM_ENC_ALIGNMENT);
+            output_alignment = MAX(get_cache_line_size(output), SOC_GDMA_EXT_MEM_ENC_ALIGNMENT);
 
             input_heap_caps = MALLOC_CAP_8BIT | (esp_ptr_external_ram(input) ? MALLOC_CAP_SPIRAM : MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
             output_heap_caps = MALLOC_CAP_8BIT | (esp_ptr_external_ram(output) ? MALLOC_CAP_SPIRAM : MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
         }
     }
-#endif /* SOC_AXI_DMA_EXT_MEM_ENC_ALIGNMENT */
+#endif /* SOC_GDMA_EXT_MEM_ENC_ALIGNMENT */
 
     if (realloc_input) {
         input_buf = heap_caps_aligned_alloc(input_alignment, chunk_len, input_heap_caps);
@@ -537,19 +537,19 @@ int esp_aes_process_dma(esp_aes_context *ctx, const unsigned char *input, unsign
         return MBEDTLS_ERR_AES_INVALID_INPUT_LENGTH;
     }
 
-#ifdef SOC_AXI_DMA_EXT_MEM_ENC_ALIGNMENT
-    if (esp_flash_encryption_enabled()) {
+#ifdef SOC_GDMA_EXT_MEM_ENC_ALIGNMENT
+    if (efuse_hal_flash_encryption_enabled()) {
         if (esp_ptr_external_ram(input) || esp_ptr_external_ram(output) || esp_ptr_in_drom(input) || esp_ptr_in_drom(output)) {
-            if (((intptr_t)(input) & (SOC_AXI_DMA_EXT_MEM_ENC_ALIGNMENT - 1)) != 0) {
+            if (((intptr_t)(input) & (SOC_GDMA_EXT_MEM_ENC_ALIGNMENT - 1)) != 0) {
                 input_needs_realloc = true;
             }
 
-            if (((intptr_t)(output) & (SOC_AXI_DMA_EXT_MEM_ENC_ALIGNMENT - 1)) != 0) {
+            if (((intptr_t)(output) & (SOC_GDMA_EXT_MEM_ENC_ALIGNMENT - 1)) != 0) {
                 output_needs_realloc = true;
             }
         }
     }
-#endif /* SOC_AXI_DMA_EXT_MEM_ENC_ALIGNMENT */
+#endif /* SOC_GDMA_EXT_MEM_ENC_ALIGNMENT */
 
     /* DMA cannot access memory in the iCache range, copy input to internal ram */
     if (!s_check_dma_capable(input)) {
@@ -1002,6 +1002,20 @@ int esp_aes_process_dma(esp_aes_context *ctx, const unsigned char *input, unsign
     if (block_bytes > 0) {
         /* Flush cache if input in external ram */
 #if (CONFIG_SPIRAM && SOC_PSRAM_DMA_CAPABLE)
+#ifdef SOC_GDMA_EXT_MEM_ENC_ALIGNMENT
+        if (efuse_hal_flash_encryption_enabled()) {
+            if (esp_ptr_external_ram(input) || esp_ptr_external_ram(output) || esp_ptr_in_drom(input) || esp_ptr_in_drom(output)) {
+                if (((intptr_t)(input) & (SOC_GDMA_EXT_MEM_ENC_ALIGNMENT - 1)) != 0) {
+                    input_needs_realloc = true;
+                }
+
+                if (((intptr_t)(output) & (SOC_GDMA_EXT_MEM_ENC_ALIGNMENT - 1)) != 0) {
+                    output_needs_realloc = true;
+                }
+            }
+        }
+#endif /* SOC_GDMA_EXT_MEM_ENC_ALIGNMENT */
+
         if (esp_ptr_external_ram(input)) {
             if (esp_cache_msync((void *)input, len, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED) != ESP_OK) {
                 mbedtls_platform_zeroize(output, len);
@@ -1049,12 +1063,18 @@ int esp_aes_process_dma(esp_aes_context *ctx, const unsigned char *input, unsign
         block_in_desc = block_desc;
         block_out_desc = block_desc + crypto_dma_desc_num;
 
+#if SOC_AHB_GDMA_VERSION == 2
+        // Limit max inlink descriptor length to be 16 byte aligned, as buffer sizes need to be 16 byte aligned
+        // when Flash Encryption is enabled.
+        dma_desc_setup_link(block_in_desc, input, block_bytes, DMA_DESCRIPTOR_BUFFER_MAX_SIZE_16B_ALIGNED, 0);
+#else
         // the size field has 12 bits, but 0 not for 4096.
         // to avoid possible problem when the size is not word-aligned, we only use 4096-4 per desc.
         // Maximum size of data in the buffer that a DMA descriptor can hold.
         dma_desc_setup_link(block_in_desc, input, block_bytes, DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED, 0);
+#endif
 
-        //Limit max inlink descriptor length to be 16 byte aligned, require for EDMA
+        //Limit max outlink descriptor length to be 16 byte aligned, require for EDMA
         dma_desc_setup_link(block_out_desc, output, block_bytes, DMA_DESCRIPTOR_BUFFER_MAX_SIZE_16B_ALIGNED, 0);
 
         /* Setup in/out start descriptors */
