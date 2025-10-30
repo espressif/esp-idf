@@ -36,19 +36,8 @@ To select the main XTAL as the BLE internal clock source, configure the followin
 
     - \ (X) Use main XTAL as RTC clock source
 
-When this is selected, the main XTAL remains powered on during light-sleep, resulting in higher current consumption. The current reference for light-sleep using XTAL versus a 32kHz external crystal is shown below:
-
-.. list-table:: Current Reference Values for Different Clock Sources in Light-sleep Mode
-    :widths: auto
-    :header-rows: 1
-
-    * - Clock Source
-      - Typical Light-sleep Current
-    * - Main XTAL
-      - 3.3 mA
-    * - 32kHz External Crystal / 136 kHz RC
-      - 34 uA
-
+When this is selected, the main XTAL remains powered on during light-sleep, resulting in higher current consumption.
+Please refer :example_file:`Power Save README <bluetooth/nimble/power_save/README.md>`  for the typical current consumption in light-sleep using XTAL versus a 32kHz external crystal.
 
 Selecting 32kHz External Crystal
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
