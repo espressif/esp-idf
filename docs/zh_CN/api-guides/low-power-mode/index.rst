@@ -13,3 +13,4 @@
 
    low-power-mode-soc
    :SOC_WIFI_SUPPORTED: low-power-mode-wifi
+   :SOC_BLE_SUPPORTED: low-power-mode-ble
