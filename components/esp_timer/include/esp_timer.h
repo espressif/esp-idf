@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -158,6 +158,22 @@ esp_err_t esp_timer_create(const esp_timer_create_args_t* create_args,
 esp_err_t esp_timer_start_once(esp_timer_handle_t timer, uint64_t timeout_us);
 
 /**
+ * @brief Start a one-shot timer
+ *
+ * Timer represented by `timer` should not be running when this function is
+ * called.
+ *
+ * @param timer timer handle created using esp_timer_create()
+ * @param alarm_us timer alarm time, in absolute microseconds (as returned by
+ *                 esp_timer_get_time())
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_ARG if the handle is invalid
+ *      - ESP_ERR_INVALID_STATE if the timer is already running
+ */
+esp_err_t esp_timer_start_once_at(esp_timer_handle_t timer, uint64_t alarm_us);
+
+/**
  * @brief Start a periodic timer
  *
  * Timer represented by `timer` should not be running when this function is called.
@@ -171,6 +187,26 @@ esp_err_t esp_timer_start_once(esp_timer_handle_t timer, uint64_t timeout_us);
  *      - ESP_ERR_INVALID_STATE if the timer is already running
  */
 esp_err_t esp_timer_start_periodic(esp_timer_handle_t timer, uint64_t period);
+
+/**
+ * @brief Start a periodic timer
+ *
+ * Timer represented by `timer` should not be running when this function is called.
+ * This function starts the timer which will trigger every `period` microseconds.
+ * The first alarm will be triggered at `first_alarm_us` time.
+ *
+ * @param timer timer handle created using esp_timer_create()
+ * @param period_us timer period, in microseconds
+ * @param first_alarm_us timer first alarm time, in absolute microseconds (as
+ *                       returned by esp_timer_get_time())
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_ARG if the handle is invalid
+ *      - ESP_ERR_INVALID_STATE if the timer is already running
+ */
+esp_err_t esp_timer_start_periodic_at(esp_timer_handle_t timer,
+                                      uint64_t period_us,
+                                      uint64_t first_alarm_us);
 
 /**
  * @brief Restart a currently running timer
@@ -189,6 +225,26 @@ esp_err_t esp_timer_start_periodic(esp_timer_handle_t timer, uint64_t period);
  *      - ESP_ERR_INVALID_STATE if the timer is not running
  */
 esp_err_t esp_timer_restart(esp_timer_handle_t timer, uint64_t timeout_us);
+
+/**
+ * @brief Restart a currently running timer
+ *
+ * Type of `timer` | Action
+ * --------------- | ------
+ * One-shot timer  | Restarted immediately and times out once at `alarm_us` microseconds
+ * Periodic timer  | Restarted immediately with a new period of `timeout_us` microseconds. Next alarm is at `alarm_us` microseconds
+ *
+ * @param timer timer handle created using esp_timer_create()
+ * @param period_us In case of a periodic timer, represents the new period.
+ * @param alarm_us timer alarm time, in absolute microseconds (as returned by
+ *                 esp_timer_get_time())
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_ARG if the handle is invalid
+ *      - ESP_ERR_INVALID_STATE if the timer is not running
+ */
+esp_err_t esp_timer_restart_at(esp_timer_handle_t timer, uint64_t period_us,
+                               uint64_t alarm_us);
 
 /**
  * @brief Stop a running timer
