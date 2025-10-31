@@ -1365,12 +1365,13 @@ int ble_log_spi_out_hci_write(uint8_t source, const uint8_t *addr, uint16_t len)
         return -1;
     }
 
-    if (source == BLE_LOG_SPI_OUT_SOURCE_HCI_UPSTREAM) {
 #if SPI_OUT_LL_ENABLED
+    if (source == BLE_LOG_SPI_OUT_SOURCE_HCI_UPSTREAM) {
         ble_log_spi_out_ll_write(len, addr, 0, NULL, BIT(LL_LOG_FLAG_HCI_UPSTREAM));
-#endif // SPI_OUT_LL_ENABLED
     }
-    if (source == BLE_LOG_SPI_OUT_SOURCE_HCI_DOWNSTREAM) {
+    if (source == BLE_LOG_SPI_OUT_SOURCE_HCI_DOWNSTREAM)
+#endif /* SPI_OUT_LL_ENABLED */
+    {
         spi_out_log_cb_t *log_cb;
         bool fallback = false;
         if (!spi_out_get_task_mapping(LOG_MODULE_TASK_MAP(hci),
