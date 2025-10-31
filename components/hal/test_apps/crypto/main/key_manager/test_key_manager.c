@@ -536,7 +536,11 @@ TEST(key_manager, xts_key_128_ecdh0_deployment)
 #if CONFIG_CRYPTO_TEST_APP_ENABLE_FPGA_TESTS
 TEST(key_manager, xts_key_128_random_deployment)
 {
-    key_mgr_test_xts_aes_128_random_mode();
+    if (efuse_hal_flash_encryption_enabled()) {
+        key_mgr_test_xts_aes_128_random_mode();
+    } else {
+        ESP_LOGI("", "Flash encryption is not enabled, skipping test");
+    }
 }
 #endif /* CONFIG_CRYPTO_TEST_APP_ENABLE_FPGA_TESTS */
 #endif /* SOC_KEY_MANAGER_FE_KEY_DEPLOY_XTS_AES_128 */
@@ -555,7 +559,11 @@ TEST(key_manager, xts_key_256_ecdh0_deployment)
 #if CONFIG_CRYPTO_TEST_APP_ENABLE_FPGA_TESTS
 TEST(key_manager, xts_key_256_random_deployment)
 {
-    key_mgr_test_xts_aes_256_random_mode();
+    if (efuse_hal_flash_encryption_enabled()) {
+        key_mgr_test_xts_aes_256_random_mode();
+    } else {
+        ESP_LOGI("", "Flash encryption is not enabled, skipping test");
+    }
 }
 #endif /* CONFIG_CRYPTO_TEST_APP_ENABLE_FPGA_TESTS */
 #endif /* SOC_KEY_MANAGER_FE_KEY_DEPLOY_XTS_AES_256 */
