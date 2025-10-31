@@ -56,6 +56,7 @@ if(NOT non_os_build)
         list(APPEND srcs "sleep_modem.c"
                          "sleep_modes.c"
                          "sleep_console.c"
+                         "sleep_mspi.c"
                          "sleep_usb.c"
                          "sleep_gpio.c"
                          "sleep_event.c"

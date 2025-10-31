@@ -30,6 +30,7 @@
 #include "hal/pmu_hal.h"
 #include "hal/psram_ctrlr_ll.h"
 #include "hal/lp_sys_ll.h"
+#include "hal/lp_clkrst_ll.h"
 #include "hal/clk_gate_ll.h"
 #include "esp_private/esp_pmu.h"
 #include "pmu_param.h"
@@ -419,6 +420,10 @@ TCM_IRAM_ATTR uint32_t pmu_sleep_start(uint32_t wakeup_opt, uint32_t reject_opt,
 #endif
             rtc_clk_mpll_disable();
         }
+    } else {
+#if CONFIG_P4_REV3_MSPI_CRASH_AFTER_POWER_UP_WORKAROUND
+        lp_clkrst_ll_boot_from_lp_ram(true);
+#endif
     }
 
 
@@ -442,12 +447,16 @@ TCM_IRAM_ATTR uint32_t pmu_sleep_start(uint32_t wakeup_opt, uint32_t reject_opt,
         ;
     }
 
-#if CONFIG_SPIRAM && CONFIG_ESP_LDO_RESERVE_PSRAM
-    // Enable PSRAM chip power supply after deepsleep request rejected
     if (dslp) {
+#if CONFIG_SPIRAM && CONFIG_ESP_LDO_RESERVE_PSRAM
+        // Enable PSRAM chip power supply after deepsleep request rejected
         ldo_ll_enable(LDO_ID2UNIT(CONFIG_ESP_LDO_CHAN_PSRAM_DOMAIN), true);
-    }
 #endif
+#if CONFIG_P4_REV3_MSPI_CRASH_AFTER_POWER_UP_WORKAROUND
+        // Set reset vector back to HP ROM after deepsleep request rejected
+        lp_clkrst_ll_boot_from_lp_ram(false);
+#endif
+    }
 
     return pmu_sleep_finish(dslp);
 }
@@ -497,21 +506,3 @@ uint32_t pmu_sleep_get_wakup_retention_cost(void)
 {
     return PMU_REGDMA_S2A_WORK_TIME_US;
 }
-
-#if (CONFIG_ESP_REV_MIN_FULL == 300)
-void pmu_sleep_p4_rev3_workaround(void)
-{
-    REG_CLR_BIT(SPI_MEM_C_CACHE_FCTRL_REG, SPI_MEM_C_CLOSE_AXI_INF_EN);
-    REG_SET_BIT(SPI_MEM_C_CACHE_FCTRL_REG, SPI_MEM_C_AXI_REQ_EN);
-    REG_SET_FIELD(HP_SYSTEM_CORE_ERR_RESP_DIS_REG, HP_SYSTEM_CORE_ERR_RESP_DIS, 0x7);
-    REG_WRITE(SPI_MEM_C_MMU_ITEM_INDEX_REG, 0);
-    uint32_t mmu_backup = mmu_ll_read_entry(MMU_LL_FLASH_MMU_ID, 0);
-    mmu_ll_write_entry(MMU_LL_FLASH_MMU_ID, 0, 0, MMU_TARGET_FLASH0);
-    __attribute__((unused)) volatile uint32_t val = 0;
-    val = *(uint32_t *)(0x80000000);
-    val = *(uint32_t *)(0x80000080);
-    mmu_ll_write_entry(MMU_LL_FLASH_MMU_ID, 0, mmu_backup, MMU_TARGET_FLASH0);
-    _mspi_timing_ll_reset_mspi();
-    _mspi_timing_ll_reset_mspi_apb();
-}
-#endif
