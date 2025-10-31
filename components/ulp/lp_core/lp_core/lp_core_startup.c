@@ -22,8 +22,6 @@ void lp_core_startup()
     ets_install_putc1(lp_core_print_char);
 #endif
 
-    ulp_lp_core_update_wakeup_cause();
-
     main();
 
     ulp_lp_core_memory_shared_cfg_t* shared_mem = ulp_lp_core_memory_shared_cfg_get();
