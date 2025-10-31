@@ -25,9 +25,9 @@ extern "C" {
  * @note This macro will increase the reference lock of that peripheral.
  *       You can get the value before the increment from the `rc_name` local variable
  */
-#define PERIPH_RCC_ACQUIRE_ATOMIC(rc_periph, rc_name)                \
-    for (uint8_t rc_name, _rc_cnt = 1, __DECLARE_RCC_RC_ATOMIC_ENV;     \
-         _rc_cnt ? (rc_name = periph_rcc_acquire_enter(rc_periph), 1) : 0; \
+#define PERIPH_RCC_ACQUIRE_ATOMIC(rc_periph, rc_name)                                       \
+    for (uint8_t rc_name, _rc_cnt = 1, __DECLARE_RCC_RC_ATOMIC_ENV __attribute__((unused)); \
+         _rc_cnt ? (rc_name = periph_rcc_acquire_enter(rc_periph), 1) : 0;                  \
          periph_rcc_acquire_exit(rc_periph, rc_name), _rc_cnt--)
 
 /**
@@ -37,9 +37,9 @@ extern "C" {
  * @note This macro will decrease the reference lock of that peripheral.
  *       You can get the value after the decrease from the `rc_name` local variable
  */
-#define PERIPH_RCC_RELEASE_ATOMIC(rc_periph, rc_name)                \
-    for (uint8_t rc_name, _rc_cnt = 1, __DECLARE_RCC_RC_ATOMIC_ENV;     \
-         _rc_cnt ? (rc_name = periph_rcc_release_enter(rc_periph), 1) : 0; \
+#define PERIPH_RCC_RELEASE_ATOMIC(rc_periph, rc_name)                                       \
+    for (uint8_t rc_name, _rc_cnt = 1, __DECLARE_RCC_RC_ATOMIC_ENV __attribute__((unused)); \
+         _rc_cnt ? (rc_name = periph_rcc_release_enter(rc_periph), 1) : 0;                  \
          periph_rcc_release_exit(rc_periph, rc_name), _rc_cnt--)
 
 /**
@@ -47,9 +47,9 @@ extern "C" {
  *
  * @note User code protected by this macro should be as short as possible, because it's a critical section
  */
-#define PERIPH_RCC_ATOMIC()                   \
-    for (int _rc_cnt = 1, __DECLARE_RCC_ATOMIC_ENV; \
-         _rc_cnt ? (periph_rcc_enter(), 1) : 0;     \
+#define PERIPH_RCC_ATOMIC()                                                 \
+    for (int _rc_cnt = 1, __DECLARE_RCC_ATOMIC_ENV __attribute__((unused)); \
+         _rc_cnt ? (periph_rcc_enter(), 1) : 0;                             \
          periph_rcc_exit(), _rc_cnt--)
 
 /** @cond */
