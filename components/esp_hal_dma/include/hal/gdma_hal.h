@@ -34,6 +34,7 @@ typedef struct gdma_hal_context_t gdma_hal_context_t;
  */
 typedef struct {
     int group_id;  /*!< GDMA group ID */
+    // Extra configuration flags
     struct extra_gdma_hal_flags {
         uint32_t enable_weighted_arbitration: 1; /*!< Enable weighted arbitration */
     } flags; /*!< Extra configuration flags */

@@ -46,6 +46,7 @@ esp_err_t mcpwm_new_timer_sync_src(mcpwm_timer_handle_t timer, const mcpwm_timer
 typedef struct {
     int group_id; /*!< MCPWM group ID */
     int gpio_num; /*!< GPIO used by sync source */
+    // Extra configuration flags for GPIO sync source
     struct extra_mcpwm_gpio_sync_src_flags {
         uint32_t active_neg: 1;   /*!< Whether the sync signal is active on negedge, by default, the sync signal's posedge is treated as active */
     } flags;                      /*!< Extra configuration flags for GPIO sync source */

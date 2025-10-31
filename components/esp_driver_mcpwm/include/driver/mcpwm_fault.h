@@ -23,6 +23,7 @@ typedef struct {
     int intr_priority;            /*!< MCPWM GPIO fault interrupt priority,
                                        if set to 0, the driver will try to allocate an interrupt with a relative low priority (1,2,3) */
     int gpio_num;                 /*!< GPIO used by the fault signal */
+    // Extra configuration flags for GPIO fault
     struct extra_gpio_fault_flags {
         uint32_t active_level: 1; /*!< On which level the fault signal is treated as active */
     } flags;                      /*!< Extra configuration flags for GPIO fault */
