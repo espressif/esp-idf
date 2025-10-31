@@ -37,7 +37,8 @@ typedef struct {
     uint32_t period_ticks;               /*!< Number of count ticks within a period */
     int intr_priority;                   /*!< MCPWM timer interrupt priority,
                                               if set to 0, the driver will try to allocate an interrupt with a relative low priority (1,2,3) */
-    struct {
+    /// Extra configuration flags for MCPWM timer
+    struct extra_mcpwm_timer_flags {
         uint32_t update_period_on_empty: 1; /*!< Whether to update period when timer counts to zero */
         uint32_t update_period_on_sync: 1;  /*!< Whether to update period on sync event */
         uint32_t allow_pd: 1;               /*!< Set to allow power down. When this flag set, the driver will backup/restore the MCPWM registers before/after entering/exist sleep mode.
