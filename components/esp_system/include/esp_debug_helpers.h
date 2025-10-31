@@ -18,6 +18,9 @@ extern "C" {
 #include "esp_err.h"
 #include "esp_cpu.h"
 
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+
 /*
  * @brief   Structure used for backtracing
  *
@@ -128,6 +131,8 @@ esp_err_t esp_backtrace_print(int depth);
  *      - ESP_FAIL  One or more backtraces are corrupt
  */
 esp_err_t esp_backtrace_print_all_tasks(int depth);
+
+esp_err_t esp_backtrace_print_task(TaskHandle_t pxTask, int depth, bool panic);
 
 /**
  * @brief Set a watchpoint to break/panic when a certain memory range is accessed.
