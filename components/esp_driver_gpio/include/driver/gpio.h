@@ -460,6 +460,18 @@ esp_err_t gpio_hold_en(gpio_num_t gpio_num);
   */
 esp_err_t gpio_hold_dis(gpio_num_t gpio_num);
 
+/**
+  * @brief Get gpio pad hold function.
+  *
+  * @param gpio_num GPIO number, only support output-capable GPIOs
+  * @param out pointer
+  *
+  * @return
+  *     - ESP_OK Success
+  *     - ESP_ERR_NOT_SUPPORTED Not support pad hold function
+  */
+esp_err_t gpio_hold_get(gpio_num_t gpio_num, bool * out);
+
 #if SOC_GPIO_SUPPORT_HOLD_IO_IN_DSLP && !SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP
 /**
   * @brief Enable all digital gpio pads hold function during Deep-sleep.
