@@ -20,6 +20,7 @@
 #include "cmd_wifi.h"
 #include "cmd_nvs.h"
 #include "console_settings.h"
+#include "sys/termios.h"
 
 /*
  * We warn if a secondary serial console is enabled. A secondary serial console is always output-only and
@@ -84,6 +85,16 @@ void app_main(void)
 
     /* Initialize console output periheral (UART, USB_OTG, USB_JTAG) */
     initialize_console_peripheral();
+
+#ifdef CONFIG_VFS_SUPPORT_TERMIOS
+    // Enable Ctrl+D to generate EOF on stdin
+    struct termios term;
+    tcgetattr(fileno(stdin), &term);
+    term.c_lflag |= ICANON;  // Enable canonical mode for proper EOF handling
+    term.c_cc[VEOF] = 4;     // Set Ctrl+D (ASCII 4) as EOF character
+    tcsetattr(fileno(stdin), TCSANOW, &term);
+#endif
+
 
     /* Initialize linenoise library and esp_console*/
     initialize_console_library(HISTORY_PATH);
