@@ -201,6 +201,8 @@ ble_htp_prph_tx_htp_reset(void)
 static void
 ble_htp_prph_tx(TimerHandle_t ev)
 {
+
+#if CONFIG_BT_NIMBLE_HTP_SERVICE
     int rc;
     float temp;
 
@@ -222,6 +224,7 @@ ble_htp_prph_tx(TimerHandle_t ev)
     } else {
         MODLOG_DFLT(INFO, "Error in sending notification");
     }
+#endif
 
     ble_htp_prph_tx_htp_reset();
 }
@@ -259,7 +262,9 @@ ble_htp_prph_gap_event(struct ble_gap_event *event, void *arg)
 #endif
         ble_htp_prph_tx_htp_stop();
 
+#if CONFIG_BT_NIMBLE_HTP_SERVICE
         ble_svc_htp_on_disconnect(event->disconnect.conn.conn_handle);
+#endif
         break;
 
     case BLE_GAP_EVENT_ADV_COMPLETE:
@@ -276,7 +281,9 @@ ble_htp_prph_gap_event(struct ble_gap_event *event, void *arg)
                     "val_handle=%d\n",
                     event->subscribe.cur_notify, event->subscribe.attr_handle);
 
+#if CONFIG_BT_NIMBLE_HTP_SERVICE
         ble_svc_htp_subscribe(event->subscribe.conn_handle, event->subscribe.attr_handle);
+#endif
 
         if (event->subscribe.cur_notify) {
             ble_htp_prph_tx_htp_reset();
@@ -336,8 +343,6 @@ void ble_htp_prph_host_task(void *param)
 
 void app_main(void)
 {
-    int rc;
-
     /* Initialize NVS — it is used to store PHY calibration data */
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
@@ -368,12 +373,15 @@ void app_main(void)
     ble_htp_prph_tx_timer = xTimerCreate("ble_htp_prph_tx_timer", pdMS_TO_TICKS(1000), pdTRUE,
                                          (void *)0, ble_htp_prph_tx);
 
+#if MYNEWT_VAL(BLE_GATTS)
+    int rc;
     rc = gatt_svr_init();
     assert(rc == 0);
 
     /* Set the default device name */
     rc = ble_svc_gap_device_name_set(device_name);
     assert(rc == 0);
+#endif
 
     /* Start the task */
     nimble_port_freertos_init(ble_htp_prph_host_task);
