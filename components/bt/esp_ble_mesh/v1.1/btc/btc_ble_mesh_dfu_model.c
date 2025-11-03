@@ -165,7 +165,7 @@ static void btc_ble_mesh_dfu_client_free_req_data(btc_msg_t *msg)
     }
 
     if (msg->act >= ESP_BLE_MESH_DFU_CLIENT_EVT_MAX) {
-        BT_ERR("%s, Invalid event %d", msg->act);
+        BT_ERR("%s, Invalid event %d", __func__, msg->act);
         return;
     }
 
