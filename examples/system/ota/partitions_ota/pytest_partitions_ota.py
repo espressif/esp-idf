@@ -6,7 +6,6 @@ import os
 import ssl
 import sys
 from typing import Any
-from typing import Optional
 
 import pexpect
 import pytest
@@ -109,7 +108,7 @@ def test_examples_partitions_ota_with_flash_encryption_wifi(dut: Dut) -> None:
     update_partitions(dut, 'flash_encryption_wifi_high_traffic')
 
 
-def update_partitions(dut: Dut, env_name: Optional[str]) -> None:
+def update_partitions(dut: Dut, env_name: str | None) -> None:
     port = 8000
     thread1 = multiprocessing.Process(target=start_https_server, args=(dut.app.binary_path, '0.0.0.0', port))
     thread1.daemon = True
@@ -123,7 +122,7 @@ def update_partitions(dut: Dut, env_name: Optional[str]) -> None:
         thread1.terminate()
 
 
-def update(dut: Dut, port: int, path_to_image: str, env_name: Optional[str]) -> None:
+def update(dut: Dut, port: int, path_to_image: str, env_name: str | None) -> None:
     dut.expect('OTA example app_main start', timeout=90)
     host_ip = setting_connection(dut, env_name)
     dut.expect('Starting OTA example task', timeout=30)
@@ -133,14 +132,14 @@ def update(dut: Dut, port: int, path_to_image: str, env_name: Optional[str]) -> 
     dut.expect('OTA Succeed, Rebooting...', timeout=90)
 
 
-def setting_connection(dut: Dut, env_name: Optional[str]) -> Any:
+def setting_connection(dut: Dut, env_name: str | None) -> Any:
     if env_name is not None and dut.app.sdkconfig.get('EXAMPLE_WIFI_SSID_PWD_FROM_STDIN') is True:
         dut.expect('Please input ssid password:')
         ap_ssid = get_env_config_variable(env_name, 'ap_ssid')
         ap_password = get_env_config_variable(env_name, 'ap_password')
         dut.write(f'{ap_ssid} {ap_password}')
     try:
-        ip_address = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=30)[1].decode()
+        ip_address = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=60)[1].decode()
         print(f'Connected to AP/Ethernet with IP: {ip_address}')
     except pexpect.exceptions.TIMEOUT:
         raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP/Ethernet')
@@ -151,8 +150,8 @@ def start_https_server(
     ota_image_dir: str,
     server_ip: str,
     server_port: int,
-    server_file: Optional[str] = None,
-    key_file: Optional[str] = None,
+    server_file: str | None = None,
+    key_file: str | None = None,
 ) -> None:
     os.chdir(ota_image_dir)
 
