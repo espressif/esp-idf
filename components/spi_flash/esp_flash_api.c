@@ -1248,9 +1248,50 @@ esp_err_t esp_flash_set_io_mode(esp_flash_t* chip, bool qe)
 }
 #endif //CONFIG_SPI_FLASH_ROM_IMPL
 
+#if CONFIG_IDF_TARGET_ESP32C5
+// Hardware workaround: ESP32-C5 encrypted flash writes require CPU freq ≤ 160 MHz
+#include "soc/rtc.h"
+
+static int s_esp32c5_saved_cpu_freq_mhz;
+
+static IRAM_ATTR void esp32c5_freq_limit_acquire(void)
+{
+    rtc_cpu_freq_config_t old_config, new_config;
+    rtc_clk_cpu_freq_get_config(&old_config);
+
+    if (old_config.freq_mhz <= 160) {
+        s_esp32c5_saved_cpu_freq_mhz = 0; // No change needed
+        return;
+    }
+    s_esp32c5_saved_cpu_freq_mhz = old_config.freq_mhz;
+
+    if (rtc_clk_cpu_freq_mhz_to_config(160, &new_config)) {
+        rtc_clk_cpu_freq_set_config_fast(&new_config);
+    }
+}
+
+static IRAM_ATTR void esp32c5_freq_limit_release(void)
+{
+    if (s_esp32c5_saved_cpu_freq_mhz == 0) {
+        return; // No change was made
+    }
+
+    rtc_cpu_freq_config_t new_config;
+
+    if (rtc_clk_cpu_freq_mhz_to_config(s_esp32c5_saved_cpu_freq_mhz, &new_config)) {
+        rtc_clk_cpu_freq_set_config_fast(&new_config);
+    }
+
+    s_esp32c5_saved_cpu_freq_mhz = 0;
+}
+#endif // CONFIG_IDF_TARGET_ESP32C5
+
 #if !(CONFIG_SPI_FLASH_ROM_IMPL && !ESP_ROM_HAS_ENCRYPTED_WRITES_USING_LEGACY_DRV)
 // use `esp_flash_write_encrypted` ROM version on chips later than C3 and S3
 FORCE_INLINE_ATTR esp_err_t s_encryption_write_lock(esp_flash_t *chip) {
+#if CONFIG_IDF_TARGET_ESP32C5
+    esp32c5_freq_limit_acquire();
+#endif
 #if CONFIG_IDF_TARGET_ESP32S2
     esp_crypto_dma_lock_acquire();
 #endif //CONFIG_IDF_TARGET_ESP32S2
@@ -1262,6 +1303,9 @@ FORCE_INLINE_ATTR esp_err_t s_encryption_write_unlock(esp_flash_t *chip) {
 #if CONFIG_IDF_TARGET_ESP32S2
     esp_crypto_dma_lock_release();
 #endif //CONFIG_IDF_TARGET_ESP32S2
+#if CONFIG_IDF_TARGET_ESP32C5
+    esp32c5_freq_limit_release();
+#endif
     return err;
 }
 
@@ -1504,7 +1548,14 @@ esp_err_t IRAM_ATTR esp_flash_write_encrypted(esp_flash_t *chip, uint32_t addres
     if (length > chip->size - address) {
         return ESP_ERR_INVALID_ARG;
     }
-    return rom_esp_flash_write_encrypted(chip, address, buffer, length);
+#if CONFIG_IDF_TARGET_ESP32C5
+    esp32c5_freq_limit_acquire();
+#endif
+    err = rom_esp_flash_write_encrypted(chip, address, buffer, length);
+#if CONFIG_IDF_TARGET_ESP32C5
+    esp32c5_freq_limit_release();
+#endif
+    return err;
 }
 #endif // !(CONFIG_SPI_FLASH_ROM_IMPL && !ESP_ROM_HAS_ENCRYPTED_WRITES_USING_LEGACY_DRV)
 
