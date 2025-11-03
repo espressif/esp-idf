@@ -164,6 +164,29 @@ typedef union {
     uint32_t val;
 } jpeg_pic_size_reg_t;
 
+/** Type of extd_config register
+ *  Control and configuration registers
+ */
+typedef union {
+    struct {
+        /** extd_color_space_en : R/W; bitpos: [0]; default: 0;
+         *  Configure whether to extend picture's color space
+         *  0:disable
+         *  1:enable
+         */
+        uint32_t extd_color_space_en:1;
+        /** extd_color_space : R/W; bitpos: [1]; default: 0;
+         *  Configure extended picture's color space. Valid when JPEG_EXTD_COLOR_SPACE_EN
+         *  configured to 1
+         *  0:yuv444
+         *  1:yuv420
+         */
+        uint32_t extd_color_space:1;
+        uint32_t reserved_2:30;
+    };
+    uint32_t val;
+} jpeg_extd_config_reg_t;
+
 /** Type of t0qnr register
  *  Control and configuration registers
  */
@@ -1390,7 +1413,7 @@ typedef union {
  */
 typedef union {
     struct {
-        /** jpeg_ver : R/W; bitpos: [27:0]; default: 34673040;
+        /** jpeg_ver : R/W; bitpos: [27:0]; default: 37823072;
          *  Reserved
          */
         uint32_t jpeg_ver:28;
@@ -1404,7 +1427,7 @@ typedef struct jpeg_dev_t {
     volatile jpeg_config_reg_t config;
     volatile jpeg_dqt_info_reg_t dqt_info;
     volatile jpeg_pic_size_reg_t pic_size;
-    uint32_t reserved_00c;
+    volatile jpeg_extd_config_reg_t extd_config;
     volatile jpeg_t0qnr_reg_t t0qnr;
     volatile jpeg_t1qnr_reg_t t1qnr;
     volatile jpeg_t2qnr_reg_t t2qnr;
