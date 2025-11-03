@@ -23,7 +23,7 @@
 #include "hal/dma2d_hal.h"
 #include "hal/dma2d_ll.h"
 #include "soc/dma2d_channel.h"
-#include "soc/dma2d_periph.h"
+#include "hal/dma2d_periph.h"
 #include "soc/soc_caps.h"
 #include "esp_bit_defs.h"
 
@@ -43,9 +43,9 @@
 ESP_LOG_ATTR_TAG(TAG, "dma2d");
 
 typedef struct dma2d_platform_t {
-    _lock_t mutex;                              // platform level mutex lock to protect the dma2d_acquire_pool/dma2d_release_pool process
-    dma2d_group_t *groups[SOC_DMA2D_GROUPS];    // array of 2D-DMA group instances
-    int group_ref_counts[SOC_DMA2D_GROUPS];     // reference count used to protect group install/uninstall
+    _lock_t mutex;                                 // platform level mutex lock to protect the dma2d_acquire_pool/dma2d_release_pool process
+    dma2d_group_t *groups[DMA2D_LL_GET(INST_NUM)]; // array of 2D-DMA group instances
+    int group_ref_counts[DMA2D_LL_GET(INST_NUM)];  // reference count used to protect group install/uninstall
 } dma2d_platform_t;
 
 // 2D-DMA driver platform
@@ -54,8 +54,8 @@ static dma2d_platform_t s_platform = {
 };
 
 // extern 2D-DMA channel reserved mask variables to be ORed in the constructors
-uint32_t dma2d_tx_channel_reserved_mask[SOC_DMA2D_GROUPS] = { [0 ... SOC_DMA2D_GROUPS - 1] = 0 };
-uint32_t dma2d_rx_channel_reserved_mask[SOC_DMA2D_GROUPS] = { [0 ... SOC_DMA2D_GROUPS - 1] = 0 };
+uint32_t dma2d_tx_channel_reserved_mask[DMA2D_LL_GET(INST_NUM)] = { [0 ... DMA2D_LL_GET(INST_NUM) - 1] = 0 };
+uint32_t dma2d_rx_channel_reserved_mask[DMA2D_LL_GET(INST_NUM)] = { [0 ... DMA2D_LL_GET(INST_NUM) - 1] = 0 };
 
 // The most number of channels required for a 2D-DMA transaction (a PPA Blend operation requires 2 TX + 1 RX)
 #define DMA2D_MAX_CHANNEL_NUM_PER_TRANSACTION   3
@@ -355,7 +355,7 @@ esp_err_t dma2d_acquire_pool(const dma2d_pool_config_t *config, dma2d_pool_handl
 {
     esp_err_t ret = ESP_OK;
     ESP_RETURN_ON_FALSE(config && ret_pool, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
-    ESP_RETURN_ON_FALSE(config->pool_id < SOC_DMA2D_GROUPS, ESP_ERR_INVALID_ARG, TAG, "invalid pool_id");
+    ESP_RETURN_ON_FALSE(config->pool_id < DMA2D_LL_GET(INST_NUM), ESP_ERR_INVALID_ARG, TAG, "invalid pool_id");
     if (config->intr_priority) {
         ESP_RETURN_ON_FALSE(1 << (config->intr_priority) & ESP_INTR_FLAG_LOWMED, ESP_ERR_INVALID_ARG, TAG,
                             "invalid interrupt priority: %" PRIu32, config->intr_priority);
@@ -366,20 +366,20 @@ esp_err_t dma2d_acquire_pool(const dma2d_pool_config_t *config, dma2d_pool_handl
     _lock_acquire(&s_platform.mutex);
     if (!s_platform.groups[group_id]) {
         dma2d_group_t *pre_alloc_group = heap_caps_calloc(1, sizeof(dma2d_group_t), DMA2D_MEM_ALLOC_CAPS);
-        dma2d_tx_channel_t *pre_alloc_tx_channels = heap_caps_calloc(SOC_DMA2D_TX_CHANNELS_PER_GROUP, sizeof(dma2d_tx_channel_t), DMA2D_MEM_ALLOC_CAPS);
-        dma2d_rx_channel_t *pre_alloc_rx_channels = heap_caps_calloc(SOC_DMA2D_RX_CHANNELS_PER_GROUP, sizeof(dma2d_rx_channel_t), DMA2D_MEM_ALLOC_CAPS);
+        dma2d_tx_channel_t *pre_alloc_tx_channels = heap_caps_calloc(DMA2D_LL_GET(TX_CHANS_PER_INST), sizeof(dma2d_tx_channel_t), DMA2D_MEM_ALLOC_CAPS);
+        dma2d_rx_channel_t *pre_alloc_rx_channels = heap_caps_calloc(DMA2D_LL_GET(RX_CHANS_PER_INST), sizeof(dma2d_rx_channel_t), DMA2D_MEM_ALLOC_CAPS);
         if (pre_alloc_group && pre_alloc_tx_channels && pre_alloc_rx_channels) {
             pre_alloc_group->group_id = group_id;
             pre_alloc_group->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
             TAILQ_INIT(&pre_alloc_group->pending_trans_tailq);
-            pre_alloc_group->tx_channel_free_mask = (1 << SOC_DMA2D_TX_CHANNELS_PER_GROUP) - 1;
-            pre_alloc_group->rx_channel_free_mask = (1 << SOC_DMA2D_RX_CHANNELS_PER_GROUP) - 1;
+            pre_alloc_group->tx_channel_free_mask = (1 << DMA2D_LL_GET(TX_CHANS_PER_INST)) - 1;
+            pre_alloc_group->rx_channel_free_mask = (1 << DMA2D_LL_GET(RX_CHANS_PER_INST)) - 1;
             pre_alloc_group->tx_channel_reserved_mask = dma2d_tx_channel_reserved_mask[group_id];
             pre_alloc_group->rx_channel_reserved_mask = dma2d_rx_channel_reserved_mask[group_id];
             pre_alloc_group->tx_periph_m2m_free_id_mask = DMA2D_LL_TX_CHANNEL_PERIPH_M2M_AVAILABLE_ID_MASK;
             pre_alloc_group->rx_periph_m2m_free_id_mask = DMA2D_LL_RX_CHANNEL_PERIPH_M2M_AVAILABLE_ID_MASK;
             pre_alloc_group->intr_priority = -1;
-            for (int i = 0; i < SOC_DMA2D_TX_CHANNELS_PER_GROUP; i++) {
+            for (int i = 0; i < DMA2D_LL_GET(TX_CHANS_PER_INST); i++) {
                 pre_alloc_group->tx_chans[i] = &pre_alloc_tx_channels[i];
                 dma2d_tx_channel_t *tx_chan = pre_alloc_group->tx_chans[i];
                 tx_chan->base.group = pre_alloc_group;
@@ -387,7 +387,7 @@ esp_err_t dma2d_acquire_pool(const dma2d_pool_config_t *config, dma2d_pool_handl
                 tx_chan->base.direction = DMA2D_CHANNEL_DIRECTION_TX;
                 tx_chan->base.spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
             }
-            for (int i = 0; i < SOC_DMA2D_RX_CHANNELS_PER_GROUP; i++) {
+            for (int i = 0; i < DMA2D_LL_GET(RX_CHANS_PER_INST); i++) {
                 pre_alloc_group->rx_chans[i] = &pre_alloc_rx_channels[i];
                 dma2d_rx_channel_t *rx_chan = pre_alloc_group->rx_chans[i];
                 rx_chan->base.group = pre_alloc_group;
@@ -436,7 +436,7 @@ esp_err_t dma2d_acquire_pool(const dma2d_pool_config_t *config, dma2d_pool_handl
 
     // Allocate TX and RX interrupts
     if (s_platform.groups[group_id]) {
-        for (int i = 0; i < SOC_DMA2D_RX_CHANNELS_PER_GROUP; i++) {
+        for (int i = 0; i < DMA2D_LL_GET(RX_CHANS_PER_INST); i++) {
             dma2d_rx_channel_t *rx_chan = s_platform.groups[group_id]->rx_chans[i];
             if (rx_chan->base.intr == NULL) {
                 ret = esp_intr_alloc_intrstatus(dma2d_periph_signals.groups[group_id].rx_irq_id[i],
@@ -451,7 +451,7 @@ esp_err_t dma2d_acquire_pool(const dma2d_pool_config_t *config, dma2d_pool_handl
             }
         }
 
-        for (int i = 0; i < SOC_DMA2D_TX_CHANNELS_PER_GROUP; i++) {
+        for (int i = 0; i < DMA2D_LL_GET(TX_CHANS_PER_INST); i++) {
             dma2d_tx_channel_t *tx_chan = s_platform.groups[group_id]->tx_chans[i];
             if (tx_chan->base.intr == NULL) {
                 ret = esp_intr_alloc_intrstatus(dma2d_periph_signals.groups[group_id].tx_irq_id[i],
@@ -511,12 +511,12 @@ esp_err_t dma2d_release_pool(dma2d_pool_handle_t dma2d_pool)
     }
 
     if (do_deinitialize) {
-        for (int i = 0; i < SOC_DMA2D_RX_CHANNELS_PER_GROUP; i++) {
+        for (int i = 0; i < DMA2D_LL_GET(RX_CHANS_PER_INST); i++) {
             if (dma2d_group->rx_chans[i]->base.intr) {
                 esp_intr_free(dma2d_group->rx_chans[i]->base.intr);
             }
         }
-        for (int i = 0; i < SOC_DMA2D_TX_CHANNELS_PER_GROUP; i++) {
+        for (int i = 0; i < DMA2D_LL_GET(TX_CHANS_PER_INST); i++) {
             if (dma2d_group->tx_chans[i]->base.intr) {
                 esp_intr_free(dma2d_group->tx_chans[i]->base.intr);
             }
@@ -984,7 +984,7 @@ esp_err_t dma2d_force_end(dma2d_trans_t *trans, bool *need_yield)
     // Stop the RX channel and its bundled TX channels first
     dma2d_stop(&rx_chan->base);
     uint32_t tx_chans = rx_chan->bundled_tx_channel_mask;
-    for (int i = 0; i < SOC_DMA2D_TX_CHANNELS_PER_GROUP; i++) {
+    for (int i = 0; i < DMA2D_LL_GET(TX_CHANS_PER_INST); i++) {
         if (tx_chans & (1 << i)) {
             dma2d_stop(&group->tx_chans[i]->base);
         }

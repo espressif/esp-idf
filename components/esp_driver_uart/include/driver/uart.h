@@ -625,7 +625,9 @@ esp_err_t uart_flush_input(uart_port_t uart_num);
 esp_err_t uart_get_buffered_data_len(uart_port_t uart_num, size_t* size);
 
 /**
- * @brief   UART get TX ring buffer free space size
+ * @brief   UART get TX ring buffer free space size for the next data to be enqueued
+ *
+ * It returns the tight conservative bound for NOSPLIT ring buffer overall enqueueable payload across up to two chunks.
  *
  * @param   uart_num UART port number, the max port number is (UART_NUM_MAX -1).
  * @param   size Pointer of size_t to accept the free space size

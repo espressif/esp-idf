@@ -72,7 +72,7 @@ typedef enum {
 #if SOC_PM_SUPPORT_RC_FAST_PD
     ESP_PD_DOMAIN_RC_FAST,         //!< Internal Fast oscillator
 #endif
-#if SOC_PM_SUPPORT_CPU_PD
+#if SOC_PM_SUPPORT_CPU_PD && !CONFIG_ESP32P4_SELECTS_REV_LESS_V3
     ESP_PD_DOMAIN_CPU,             //!< CPU core
 #endif
 #if SOC_PM_SUPPORT_VDDSDIO_PD
@@ -139,8 +139,6 @@ enum {
     ESP_ERR_SLEEP_REJECT = ESP_ERR_INVALID_STATE,
     ESP_ERR_SLEEP_TOO_SHORT_SLEEP_DURATION = ESP_ERR_INVALID_ARG,
 };
-
-#define ESP_SLEEP_POWER_DOWN_CPU (CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP || (SOC_CPU_IN_TOP_DOMAIN && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP))
 
 /**
  * @brief Disable wakeup source
@@ -581,9 +579,20 @@ uint64_t esp_sleep_get_gpio_wakeup_status(void);
 #endif //SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
 
 /**
- * @brief Set power down mode for an RTC power domain in sleep mode
+ * @brief Configure power domain options for sleep mode
  *
- * If not set set using this API, all power domains default to ESP_PD_OPTION_AUTO.
+ * This function provides power domain management for sleep mode, allowing users
+ * to control which power domains remain active during sleep to maintain required
+ * functionality. The function supports:
+ *  - Automatic power management (ESP_PD_OPTION_AUTO): Power domains are controlled
+ *    automatically based on system requirements and other peripheral usage.
+ *  - Manual power control (ESP_PD_OPTION_ON/ESP_PD_OPTION_OFF): User can force
+ *    specific power domains to stay on or off during sleep.
+ *
+ * The management strategy uses reference counting when in manual mode, allowing
+ * multiple subsystems to request and release power domain resources safely without
+ * interfering with each other. Power domains will only change state when all
+ * users have released their requirements.
  *
  * @param domain  power domain to configure
  * @param option  power down option (ESP_PD_OPTION_OFF, ESP_PD_OPTION_ON, or ESP_PD_OPTION_AUTO)
@@ -777,7 +786,7 @@ void esp_deep_sleep_disable_rom_logging(void);
 void esp_sleep_enable_lowpower_analog_mode(bool enable);
 #endif
 
-#if ESP_SLEEP_POWER_DOWN_CPU
+#if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU
 
 #if SOC_PM_CPU_RETENTION_BY_RTCCNTL
 /**
@@ -816,7 +825,7 @@ esp_err_t esp_sleep_cpu_retention_init(void);
  * Release system retention memory.
  */
 esp_err_t esp_sleep_cpu_retention_deinit(void);
-#endif // ESP_SLEEP_POWER_DOWN_CPU
+#endif // CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU
 
 /**
  * @brief Configure to isolate all GPIO pins in sleep state

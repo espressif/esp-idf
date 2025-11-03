@@ -433,12 +433,12 @@ LCD
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     - ``mcpwm_gpio_init`` 和 ``mcpwm_set_pin``：GPIO 管脚配置在子模块配置中完成，例如在 :cpp:member:`mcpwm_generator_config_t::gen_gpio_num` 中设置 PWM GPIO 管脚。
-    - ``mcpwm_init``：为得到预期的 PWM 波形，用户需要至少分配一个 MCPWM 定时器和 MCPWM 运算器，然后通过调用 :cpp:func:`mcpwm_operator_connect_timer` 将二者连接起来。然后，用户需要调用如:cpp:func:`mcpwm_generator_set_actions_on_timer_event`， :cpp:func:`mcpwm_generator_set_actions_on_compare_event` 来设置发生器对不同事件的动作。
+    - ``mcpwm_init``：为得到预期的 PWM 波形，用户需要至少分配一个 MCPWM 定时器和 MCPWM 运算器，然后通过调用 :cpp:func:`mcpwm_operator_connect_timer` 将二者连接起来。然后，用户需要调用如:cpp:func:`mcpwm_generator_set_action_on_timer_event`， :cpp:func:`mcpwm_generator_set_action_on_compare_event` 来设置发生器对不同事件的动作。
     - ``mcpwm_group_set_resolution``：新驱动中，群组分辨率固定为最大值，通常为 80 MHz。
     - ``mcpwm_timer_set_resolution``：MCPWM 定时器的分辨率在 :cpp:member:`mcpwm_timer_config_t::resolution_hz` 中进行设置。
     - ``mcpwm_set_frequency``：PWM 频率由 :cpp:member:`mcpwm_timer_config_t::resolution_hz` ，:cpp:member:`mcpwm_timer_config_t::count_mode` 和:cpp:member:`mcpwm_timer_config_t::period_ticks` 决定。
     - ``mcpwm_set_duty``：为设置 PWM 占空比，用户应调用 :cpp:func:`mcpwm_comparator_set_compare_value` 来改变比较器的阈值。
-    - ``mcpwm_set_duty_type``：新驱动中没有预设的占空比模式，通过设置不同的发生器行为，如 :cpp:func:`mcpwm_generator_set_actions_on_timer_event`，来配置占空比模式。
+    - ``mcpwm_set_duty_type``：新驱动中没有预设的占空比模式，通过设置不同的发生器行为，如 :cpp:func:`mcpwm_generator_set_action_on_timer_event`，来配置占空比模式。
     - ``mcpwm_set_signal_high`` 和 ``mcpwm_set_signal_low`` 更新为 :cpp:func:`mcpwm_generator_set_force_level`。新驱动中，这是通过为发生器设置力作用来实现的，而不是在后台将占空比改为 0% 或 100%。
     - ``mcpwm_start`` 和 ``mcpwm_stop`` 更新为 :cpp:func:`mcpwm_timer_start_stop`。用户可以用更多的模式来启动和停止 MCPWM 定时器，详见 :cpp:type:`mcpwm_timer_start_stop_cmd_t`。
     - ``mcpwm_carrier_init`` 更新为 :cpp:func:`mcpwm_operator_apply_carrier`。
@@ -450,7 +450,7 @@ LCD
     - ``mcpwm_carrier_output_invert`` 更新为 :cpp:member:`mcpwm_carrier_config_t::invert_before_modulate` 和 :cpp:member:`mcpwm_carrier_config_t::invert_after_modulate`。
     - ``mcpwm_deadtime_enable`` 与 ``mcpwm_deadtime_disable`` 更新为 :cpp:func:`mcpwm_generator_set_dead_time`。
     - ``mcpwm_fault_init`` 更新为 :cpp:func:`mcpwm_new_gpio_fault`。
-    - ``mcpwm_fault_set_oneshot_mode`` 与 ``mcpwm_fault_set_cyc_mode`` 更新为 :cpp:func:`mcpwm_operator_set_brake_on_fault` 与 :cpp:func:`mcpwm_generator_set_actions_on_brake_event`。
+    - ``mcpwm_fault_set_oneshot_mode`` 与 ``mcpwm_fault_set_cyc_mode`` 更新为 :cpp:func:`mcpwm_operator_set_brake_on_fault` 与 :cpp:func:`mcpwm_generator_set_action_on_brake_event`。
     - 由于 ``mcpwm_capture_enable`` 与 :cpp:func:`mcpwm_capture_enable_channel` 重复，因此在更新后被删除。
     - 由于 ``mcpwm_capture_disable`` 与 :cpp:func:`mcpwm_capture_capture_disable_channel` 重复，因此在更新后被删除。
     - ``mcpwm_capture_enable_channel`` 与 ``mcpwm_capture_disable_channel`` 更新为 :cpp:func:`mcpwm_capture_channel_enable` 与 :cpp:func:`mcpwm_capture_channel_disable`。

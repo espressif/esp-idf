@@ -545,7 +545,7 @@ struct ext_funcs_t ext_funcs_ro = {
     ._esp_intr_alloc = esp_intr_alloc_wrapper,
     ._esp_intr_free = esp_intr_free_wrapper,
     ._malloc = bt_osi_mem_malloc_internal,
-    ._free = bt_osi_mem_free,
+    ._free = bt_osi_mem_free_internal,
     ._task_create = task_create_wrapper,
     ._task_delete = task_delete_wrapper,
     ._osi_assert = osi_assert_wrapper,
@@ -764,7 +764,7 @@ IRAM_ATTR void controller_wakeup_cb(void *arg)
 #ifdef CONFIG_FREERTOS_USE_TICKLESS_IDLE
 static bool esp_bt_check_wakeup_by_bt(void)
 {
-   return (esp_sleep_get_wakeup_causes() & ESP_SLEEP_WAKEUP_BT);
+   return (esp_sleep_get_wakeup_causes() & BIT(ESP_SLEEP_WAKEUP_BT));
 }
 
 static esp_err_t sleep_modem_ble_mac_retention_init(void *arg)

@@ -13,7 +13,7 @@ entries:
         gdma: gdma_reset (noflash)
 
 [mapping:gdma_hal]
-archive: libhal.a
+archive: libesp_hal_dma.a
 entries:
     # performance optimization, always put the DMA default interrupt handler in IRAM
     if SOC_GDMA_SUPPORTED = y:
@@ -116,7 +116,7 @@ entries:
         dma2d: dma2d_enqueue (noflash)
 
 [mapping:dma2d_hal]
-archive: libhal.a
+archive: libesp_hal_dma.a
 entries:
     if DMA2D_ISR_IRAM_SAFE = y || DMA2D_OPERATION_FUNC_IN_IRAM = y:
         dma2d_hal: dma2d_hal_tx_reset_channel (noflash)

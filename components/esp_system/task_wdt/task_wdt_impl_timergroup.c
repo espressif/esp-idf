@@ -8,9 +8,8 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include "sdkconfig.h"
+#include "hal/mwdt_periph.h"
 #include "hal/wdt_hal.h"
-#include "hal/mwdt_ll.h"
-#include "hal/timg_ll.h"
 #include "soc/system_intr.h"
 #include "esp_check.h"
 #include "esp_err.h"

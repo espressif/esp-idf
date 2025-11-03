@@ -17,12 +17,14 @@
 #include <sys/param.h>
 #include "hal/assert.h"
 #include "hal/misc.h"
+#include "hal/config.h"
 #include "soc/spi_mem_s_struct.h"
 #include "soc/spi_mem_s_reg.h"
 #include "soc/spi1_mem_s_reg.h"
 #include "soc/spi1_mem_s_struct.h"
 #include "soc/hp_sys_clkrst_struct.h"
 #include "soc/clk_tree_defs.h"
+#include "soc/hp_system_struct.h"
 #include "rom/opi_flash.h"
 
 #ifdef __cplusplus
@@ -255,6 +257,52 @@ static inline void psram_ctrlr_ll_enable_axi_access(uint32_t mspi_id, bool en)
     SPIMEM2.mem_cache_fctrl.close_axi_inf_en = !en;
 }
 
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+/**
+ * @brief Enable PSRAM AXI weight arbiter for TX / RX AXI requests
+ *
+ * @param mspi_id      mspi_id
+ * @param en           enable / disable
+ */
+__attribute__((always_inline))
+static inline void psram_ctrlr_ll_enable_axi_req_weight_arbiter(uint32_t mspi_id, bool en)
+{
+    (void)mspi_id;
+    SPIMEM2.mem_cache_fctrl.mem_arb_wei_en = en;
+}
+
+/**
+ * @brief Set PSRAM AXI request weight
+ *
+ * @param mspi_id      mspi_id
+ * @param rd_weight    read weight
+ * @param wr_weight    write weight
+ */
+__attribute__((always_inline))
+static inline void psram_ctrlr_ll_set_axi_req_weight(uint32_t mspi_id, uint32_t rd_weight, uint32_t wr_weight)
+{
+    //1~15
+    HAL_ASSERT(rd_weight && rd_weight < 16);
+    HAL_ASSERT(wr_weight && wr_weight < 16);
+
+    SPIMEM2.mem_cache_fctrl.mem_arb_req0_wei = rd_weight;
+    SPIMEM2.mem_cache_fctrl.mem_arb_req1_wei = wr_weight;
+}
+
+/**
+ * @brief Set PSRAM AXI request priority
+ *
+ * @param mspi_id      mspi_id
+ * @param rd_prio      read priority
+ * @param wr_prio      write priority
+ */
+static inline void psram_ctrlr_ll_set_axi_req_priority(uint32_t mspi_id, uint32_t rd_prio, uint32_t wr_prio)
+{
+    SPIMEM2.mem_cache_fctrl.mem_arb_req0_pri = rd_prio;
+    SPIMEM2.mem_cache_fctrl.mem_arb_req1_pri = wr_prio;
+}
+#endif
+
 /**
  * @brief Enable PSRAM write splice transfer
  *
@@ -308,20 +356,20 @@ static inline void _psram_ctrlr_ll_enable_module_clock(uint32_t mspi_id, bool en
  * @param mspi_id      mspi_id
  */
 __attribute__((always_inline))
-static inline void psram_ctrlr_ll_reset_module_clock(uint32_t mspi_id)
+static inline void _psram_ctrlr_ll_reset_module_clock(uint32_t mspi_id)
 {
     (void)mspi_id;
     HP_SYS_CLKRST.hp_rst_en0.reg_rst_en_dual_mspi_axi = 1;
-    HP_SYS_CLKRST.hp_rst_en0.reg_rst_en_dual_mspi_axi = 0;
     HP_SYS_CLKRST.hp_rst_en0.reg_rst_en_dual_mspi_apb = 1;
     HP_SYS_CLKRST.hp_rst_en0.reg_rst_en_dual_mspi_apb = 0;
+    HP_SYS_CLKRST.hp_rst_en0.reg_rst_en_dual_mspi_axi = 0;
 }
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
 #define psram_ctrlr_ll_reset_module_clock(...) do { \
         (void)__DECLARE_RCC_ATOMIC_ENV; \
-        psram_ctrlr_ll_reset_module_clock(__VA_ARGS__); \
+        _psram_ctrlr_ll_reset_module_clock(__VA_ARGS__); \
     } while(0)
 
 /**
@@ -779,6 +827,48 @@ static inline void psram_ctrlr_ll_wait_all_transaction_done(void)
     while (SPIMEM2.smem_axi_addr_ctrl.val != ALL_TRANSACTION_DONE) {
         ;
     }
+}
+
+/**
+ * @brief Backup PSRAM controller registers
+ *
+ * @param mspi_id     mspi_id
+ * @param reg         registers
+ */
+__attribute__((always_inline))
+static inline void psram_ctrlr_ll_backup_registers(uint32_t mspi_id, spi_mem_s_dev_t *reg)
+{
+    memcpy(reg, &SPIMEM2, sizeof(spi_mem_s_dev_t));
+}
+
+/**
+ * @brief Restore PSRAM controller registers
+ *
+ * @param mspi_id     mspi_id
+ * @param reg         registers
+ */
+__attribute__((always_inline))
+static inline void psram_ctrlr_ll_restore_registers(uint32_t mspi_id, spi_mem_s_dev_t *reg)
+{
+    memcpy(&SPIMEM2, reg, sizeof(spi_mem_s_dev_t));
+}
+
+/**
+ * @brief Disable core error response
+ */
+__attribute__((always_inline))
+static inline void psram_ctrlr_ll_disable_core_err_resp(void)
+{
+    HP_SYSTEM.core_err_resp_dis.val = 0x7;
+}
+
+/**
+ * @brief Enable core error response
+ */
+__attribute__((always_inline))
+static inline void psram_ctrlr_ll_enable_core_err_resp(void)
+{
+    HP_SYSTEM.core_err_resp_dis.val = 0x0;
 }
 
 #ifdef __cplusplus

@@ -1,7 +1,7 @@
 /*
  * SPDX-FileCopyrightText: 2017 Nordic Semiconductor ASA
  * SPDX-FileCopyrightText: 2015-2017 Intel Corporation
- * SPDX-FileContributor: 2018-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2018-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -77,11 +77,17 @@ extern "C" {
 #endif
 #endif /* CONFIG_BT_NIMBLE_ENABLED */
 
+#if CONFIG_BLE_MESH_LONG_PACKET
+#define BLE_MESH_GAP_ADV_MAX_LEN    (2 + CONFIG_BLE_MESH_LONG_PACKET_ADV_LEN)
+#else
 #define BLE_MESH_GAP_ADV_MAX_LEN    31
+#endif
 
 #define BLE_MESH_GATT_DEF_MTU_SIZE  23
 
 #if CONFIG_BLE_MESH_USE_BLE_50
+#define BLE_MESH_TX_POWER_INCLUDE_DEFAULT                           false
+#define BLE_MESH_TX_POWER_DEFAULT                                   0x7f
 #define BLE_MESH_ADV_PHY_UNASSIGNED                                 0
 #define BLE_MESH_ADV_PHY_1M                                         1
 #define BLE_MESH_ADV_PHY_2M                                         2
@@ -91,6 +97,8 @@ extern "C" {
 #define BLE_MESH_ADV_PHY_OPTION_PREFER_S8                           2
 #define BLE_MESH_ADV_PHY_OPTION_REQUIRE_S2                          3
 #define BLE_MESH_ADV_PHY_OPTION_REQUIRE_S8                          4
+#define BLE_MESH_ADV_PRI_PHY_DEFAULT              BLE_MESH_ADV_PHY_1M
+#define BLE_MESH_ADV_SEC_PHY_DEFAULT              BLE_MESH_ADV_PHY_1M
 #endif
 
 /* BD ADDR types */
@@ -112,6 +120,9 @@ extern "C" {
 #define BLE_MESH_ADV_SCAN_RSP               0x04
 #else
 /* Bluetooth Core Spec 6.0, Vol 4, Part E, 7.7.65.13 */
+#if CONFIG_BLE_MESH_EXT_ADV
+#define BLE_MESH_EXT_ADV_NONCONN_IND       (0)
+#endif
 #define BLE_MESH_ADV_IND                   (0x13)
 #define BLE_MESH_ADV_DIRECT_IND            (0x15)
 #define BLE_MESH_ADV_SCAN_IND              (0x12)
@@ -120,10 +131,15 @@ extern "C" {
 #define BLE_MESH_ADV_SCAN_RSP              (0x1b)
 #endif
 
+#define BLE_MESH_ADV_ITVL_DEFAULT          (0)
+#define BLE_MESH_ADV_CNT_DEFAULT           (0)
+
 /* advertising channel map */
-#define BLE_MESH_ADV_CHNL_37                BIT(0)
-#define BLE_MESH_ADV_CHNL_38                BIT(1)
-#define BLE_MESH_ADV_CHNL_39                BIT(2)
+#define BLE_MESH_ADV_CHAN_UNASSIGNED        (0)
+#define BLE_MESH_ADV_CHAN_37                BIT(0)
+#define BLE_MESH_ADV_CHAN_38                BIT(1)
+#define BLE_MESH_ADV_CHAN_39                BIT(2)
+#define BLE_MESH_ADV_CHAN_DEFAULT           (BLE_MESH_ADV_CHAN_39|BLE_MESH_ADV_CHAN_38|BLE_MESH_ADV_CHAN_37)
 
 /* Advertising filter policy */
 #define BLE_MESH_AP_SCAN_CONN_ALL           0x00
@@ -472,6 +488,8 @@ struct bt_mesh_adv_param {
     /** Maximum Advertising Interval (N * 0.625) */
     uint16_t interval_max;
 
+    uint8_t channel_map;
+
 #if CONFIG_BLE_MESH_USE_BLE_50
     /** Maximum Advertising Duration (N * 0.625) */
     uint16_t adv_duration;
@@ -484,6 +502,10 @@ struct bt_mesh_adv_param {
 
     /** Advertising Secondary PHY */
     uint8_t secondary_phy;
+
+    int8_t tx_power;
+
+    uint8_t include_tx_power : 1;
 #endif
 };
 
@@ -577,6 +599,8 @@ struct bt_mesh_adv_report {
 
     /* Secondary advertising PHY */
     uint8_t secondary_phy;
+
+    uint8_t tx_power;
 #endif /* CONFIG_BLE_MESH_USE_BLE_50 */
 };
 

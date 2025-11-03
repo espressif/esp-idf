@@ -55,6 +55,10 @@ config SOC_PARLIO_SUPPORTED
     bool
     default y
 
+config SOC_PARLIO_LCD_SUPPORTED
+    bool
+    default y
+
 config SOC_ASYNC_MEMCPY_SUPPORTED
     bool
     default y
@@ -499,23 +503,11 @@ config SOC_AHB_GDMA_VERSION
     int
     default 2
 
-config SOC_GDMA_NUM_GROUPS_MAX
-    int
-    default 1
-
-config SOC_GDMA_PAIRS_PER_GROUP_MAX
-    int
-    default 3
-
 config SOC_GDMA_SUPPORT_ETM
     bool
     default y
 
 config SOC_GDMA_SUPPORT_SLEEP_RETENTION
-    bool
-    default y
-
-config SOC_AHB_GDMA_SUPPORT_PSRAM
     bool
     default y
 
@@ -980,10 +972,6 @@ config SOC_PARLIO_TX_SUPPORT_EOF_FROM_DMA
     default y
 
 config SOC_PARLIO_SUPPORT_SLEEP_RETENTION
-    bool
-    default y
-
-config SOC_PARLIO_SUPPORT_SPI_LCD
     bool
     default y
 

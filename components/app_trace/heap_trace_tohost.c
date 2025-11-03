@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include "sdkconfig.h"
-
+#include "freertos/FreeRTOS.h"
 #include "esp_heap_trace.h"
 #include "esp_heap_caps.h"
 #if CONFIG_APPTRACE_SV_ENABLE

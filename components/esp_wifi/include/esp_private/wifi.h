@@ -39,7 +39,7 @@ typedef struct {
     void *storage;        /**< storage for FreeRTOS queue */
 } wifi_static_queue_t;
 
-struct nan_callbacks {
+struct nan_sync_callbacks {
     void (* service_match)(uint8_t sub_id, uint8_t pub_id, uint8_t pub_mac[6], uint16_t capab,
                            uint8_t ssi_ver, uint8_t *ssi, uint16_t ssi_len);
     void (* replied)(uint8_t pub_id, uint8_t sub_id, uint8_t pub_mac[6], uint8_t *ssi, uint16_t ssi_len);
@@ -780,7 +780,7 @@ esp_err_t esp_nan_internal_datapath_end(wifi_nan_datapath_end_req_t *req);
   *    - ESP_OK: succeed
   *    - others: failed
   */
-esp_err_t esp_nan_internal_register_callbacks(struct nan_callbacks *cb);
+esp_err_t esp_nan_internal_register_callbacks(struct nan_sync_callbacks *cb);
 
 /**
   * @brief     Connect WiFi station to the AP.

@@ -13,12 +13,12 @@
 #include "soc/timer_group_struct.h"
 #include "soc/dport_reg.h"
 
+// Get timer group register base address with giving group number
+#define LACT_LL_GET_HW(group_id) ((group_id == 0) ? (&TIMERG0) : (&TIMERG1))
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-// Get timer group register base address with giving group number
-#define LACT_LL_GET_HW(group_id) ((group_id == 0) ? (&TIMERG0) : (&TIMERG1))
 
 /**
  * @brief Set clock prescale for LACT timer

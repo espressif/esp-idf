@@ -298,6 +298,10 @@ The range of the duty cycle values passed to functions depends on selected ``dut
 
         The hardware limitation above only applies to chip revision before v1.2.
 
+    .. only:: esp32p4
+
+        The hardware limitation above only applies to chip revision before v3.0.
+
 
 Change PWM Duty Cycle Using Hardware
 """"""""""""""""""""""""""""""""""""

@@ -22,7 +22,7 @@
 #include "hal/i2c_hal.h"
 #include "hal/gpio_hal.h"
 #include "soc/i2c_periph.h"
-#include "driver/i2c.h"
+#include "driver/i2c_types_legacy.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_rom_gpio.h"
 #include "esp_rom_sys.h"
@@ -253,6 +253,17 @@ static i2c_obj_t *p_i2c_obj[I2C_NUM_MAX] = {0};
 static void i2c_isr_handler_default(void *arg);
 static void i2c_master_cmd_begin_static(i2c_port_t i2c_num, BaseType_t* HPTaskAwoken);
 static esp_err_t i2c_hw_fsm_reset(i2c_port_t i2c_num);
+
+// Forward declarations for functions used before their definitions
+esp_err_t i2c_set_pin(i2c_port_t i2c_num, gpio_num_t sda_io_num, gpio_num_t scl_io_num, bool sda_pullup_en, bool scl_pullup_en, i2c_mode_t mode);
+i2c_cmd_handle_t i2c_cmd_link_create_static(uint8_t* buffer, uint32_t size);
+void i2c_cmd_link_delete_static(i2c_cmd_handle_t cmd_handle);
+esp_err_t i2c_master_start(i2c_cmd_handle_t cmd_handle);
+esp_err_t i2c_master_stop(i2c_cmd_handle_t cmd_handle);
+esp_err_t i2c_master_write(i2c_cmd_handle_t cmd_handle, const uint8_t *data, size_t data_len, bool ack_en);
+esp_err_t i2c_master_write_byte(i2c_cmd_handle_t cmd_handle, uint8_t data, bool ack_en);
+esp_err_t i2c_master_read(i2c_cmd_handle_t cmd_handle, uint8_t *data, size_t data_len, i2c_ack_type_t ack);
+esp_err_t i2c_master_cmd_begin(i2c_port_t i2c_num, i2c_cmd_handle_t cmd_handle, TickType_t ticks_to_wait);
 
 static void i2c_hw_disable(i2c_port_t i2c_num)
 {

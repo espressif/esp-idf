@@ -66,7 +66,7 @@ typedef struct {
         .flags = 0,                   \
     }
 
-#if SOC_AHB_GDMA_SUPPORTED
+#if SOC_HAS(AHB_GDMA)
 /**
  * @brief Install async memcpy driver, with AHB-GDMA as the backend
  *
@@ -79,9 +79,9 @@ typedef struct {
  *      - ESP_FAIL: Install async memcpy driver failed because of other error
  */
 esp_err_t esp_async_memcpy_install_gdma_ahb(const async_memcpy_config_t *config, async_memcpy_handle_t *mcp);
-#endif // SOC_AHB_GDMA_SUPPORTED
+#endif // SOC_HAS(AHB_GDMA)
 
-#if SOC_AXI_GDMA_SUPPORTED
+#if SOC_HAS(AXI_GDMA)
 /**
  * @brief Install async memcpy driver, with AXI-GDMA as the backend
  *
@@ -94,7 +94,7 @@ esp_err_t esp_async_memcpy_install_gdma_ahb(const async_memcpy_config_t *config,
  *      - ESP_FAIL: Install async memcpy driver failed because of other error
  */
 esp_err_t esp_async_memcpy_install_gdma_axi(const async_memcpy_config_t *config, async_memcpy_handle_t *mcp);
-#endif // SOC_AXI_GDMA_SUPPORTED
+#endif // SOC_HAS(AXI_GDMA)
 
 #if SOC_CP_DMA_SUPPORTED
 /**

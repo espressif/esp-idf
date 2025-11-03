@@ -410,7 +410,7 @@ TX 单元可以选择各种不同的时钟源，其中外部时钟源较为特�
 
     - :example:`peripherals/parlio/parlio_tx/simple_rgb_led_matrix` 演示了如何使用 {IDF_TARGET_NAME} 的 TX 单元驱动支持 HUB75 接口的 RGB LED 矩阵板，并使用 LVGL 库来展示简单的 UI 元素。
     :SOC_PARLIO_TX_SUPPORT_LOOP_TRANSMISSION: - :example:`peripherals/parlio/parlio_tx/advanced_rgb_led_matrix` 演示了如何使用 {IDF_TARGET_NAME} 的 TX 单元的无限循环发送特性支持 HUB75 接口的 RGB LED 矩阵板。相比 simple_rgb_led_matrix 示例，不需要手动执行循环扫描，使用更加灵活。
-    :SOC_PARLIO_SUPPORT_SPI_LCD: - :example:`peripherals/lcd/parlio_simulate` 演示了如何使用并行 IO 外设的 TX 单元驱动 SPI 或 I80 接口的屏幕。
+    :SOC_PARLIO_LCD_SUPPORTED: - :example:`peripherals/lcd/parlio_simulate` 演示了如何使用并行 IO 外设的 TX 单元驱动 SPI 或 I80 接口的屏幕。
 
 API 参考
 -------------

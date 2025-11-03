@@ -52,7 +52,7 @@ static void eth_test_start_sleep(esp_eth_handle_t eth_handle, bool pd_top_down)
     esp_sleep_set_sleep_context(&sleep_ctx);
 
     // Configure sleep
-#if ESP_SLEEP_POWER_DOWN_CPU
+#if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU
     if (pd_top_down) {
         printf("Enable CPU power down\n");
         TEST_ESP_OK(sleep_cpu_configure(true));
@@ -69,7 +69,7 @@ static void eth_test_start_sleep(esp_eth_handle_t eth_handle, bool pd_top_down)
     printf("\n           ( -.-)Zzz\n\n");
     TEST_ESP_OK(esp_light_sleep_start());
     printf("\n           ( o_o)!\n\n");
-#if ESP_SLEEP_POWER_DOWN_CPU
+#if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU
     if (pd_top_down) {
         TEST_ESP_OK(sleep_cpu_configure(false));
     }
@@ -349,7 +349,7 @@ TEST_CASE("internal emac sleep retention", "[sleep_retention]")
     ESP_LOGI(TAG, "Testing with PD_TOP powered up");
     test_emac_sleep_retention(false);
 
-#if ESP_SLEEP_POWER_DOWN_CPU
+#if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU
     ESP_LOGI(TAG, "Testing with PD_TOP powered down");
     test_emac_sleep_retention(true);
 #endif

@@ -57,8 +57,8 @@ struct dma2d_group_t {
     uint8_t rx_channel_reserved_mask;                               // Bit mask indicating the being reserved RX channels
     uint32_t tx_periph_m2m_free_id_mask;                            // Bit mask indicating the available TX M2M peripheral selelction IDs at the moment
     uint32_t rx_periph_m2m_free_id_mask;                            // Bit mask indicating the available RX M2M peripheral selelction IDs at the moment
-    dma2d_tx_channel_t *tx_chans[SOC_DMA2D_TX_CHANNELS_PER_GROUP];  // Handles of 2D-DMA TX channels
-    dma2d_rx_channel_t *rx_chans[SOC_DMA2D_RX_CHANNELS_PER_GROUP];  // Handles of 2D-DMA RX channels
+    dma2d_tx_channel_t *tx_chans[DMA2D_LL_GET(TX_CHANS_PER_INST)];  // Handles of 2D-DMA TX channels
+    dma2d_rx_channel_t *rx_chans[DMA2D_LL_GET(RX_CHANS_PER_INST)];  // Handles of 2D-DMA RX channels
     int intr_priority;                                              // All channels in the same group should share the same interrupt priority
 };
 

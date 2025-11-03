@@ -398,6 +398,8 @@ int os_reltime_expired(struct os_time *now,
 		struct os_time *ts,
 		os_time_t timeout_secs);
 int os_reltime_initialized(struct os_reltime *t);
+void os_reltime_add_ms(struct os_reltime *ts, int ms);
+int os_reltime_in_ms(struct os_reltime *ts);
 
 #ifdef CONFIG_NATIVE_WINDOWS
 void wpa_unicode2ascii_inplace(TCHAR *str);
@@ -433,6 +435,11 @@ static inline int is_broadcast_ether_addr(const u8 *a)
 static inline int is_multicast_ether_addr(const u8 *a)
 {
 	return a[0] & 0x01;
+}
+
+static inline bool ether_addr_equal(const u8 *a, const u8 *b)
+{
+        return os_memcmp(a, b, ETH_ALEN) == 0;
 }
 
 #define broadcast_ether_addr (const u8 *) "\xff\xff\xff\xff\xff\xff"

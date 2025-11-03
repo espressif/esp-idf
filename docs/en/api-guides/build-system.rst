@@ -605,6 +605,7 @@ To avoid duplication, every component automatically requires some "common" IDF c
 
 The list of common components is: cxx, esp_libc, freertos, esp_hw_support, heap, log, soc, hal, esp_rom, esp_common, esp_system, xtensa/riscv.
 
+.. _including-components-in-the-build:
 
 Including Components in the Build
 ---------------------------------
@@ -1155,7 +1156,7 @@ Here is an example minimal "pure CMake" component CMakeLists file for a componen
 
   target_include_directories(json PUBLIC cJSON)
 
-- This is actually an equivalent declaration to the IDF ``json`` component :idf_file:`/components/json/CMakeLists.txt`.
+- This is actually an equivalent declaration to the `espressif/cjson <https://github.com/espressif/idf-extra-components/tree/master/cjson>`_ managed component.
 - This file is quite simple as there are not a lot of source files. For components with a large number of files, the globbing behavior of ESP-IDF's component logic can make the component CMakeLists style simpler.)
 - Any time a component adds a library target with the component name, the ESP-IDF build system will automatically add this to the build, expose public include directories, etc. If a component wants to add a library target with a different name, dependencies will need to be added manually via CMake commands.
 

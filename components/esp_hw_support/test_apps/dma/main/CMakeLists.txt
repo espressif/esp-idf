@@ -26,6 +26,6 @@ idf_component_register(SRCS ${srcs}
                        PRIV_REQUIRES unity esp_mm esp_driver_gpio
                        WHOLE_ARCHIVE)
 
-idf_component_get_property(lib_name soc COMPONENT_LIB)
+idf_component_get_property(lib_name esp_hal_dma COMPONENT_LIB)
 # Test GDMA retention correctness with software retention feature
 target_compile_definitions(${lib_name} PRIVATE "CI_TEST_SW_RETENTION=1")

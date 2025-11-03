@@ -868,6 +868,29 @@ static esp_err_t set_server_config(esp_tls_cfg_server_t *cfg, esp_tls_t *tls)
     }
 #endif
 
+    // Configure per-service TLS version
+    const esp_tls_proto_ver_t tls_ver = cfg->tls_version;
+    if (tls_ver == ESP_TLS_VER_TLS_1_3) {
+#if CONFIG_MBEDTLS_SSL_PROTO_TLS1_3
+        ESP_LOGI(TAG, "Setting server TLS version to 0x%4x", MBEDTLS_SSL_VERSION_TLS1_3);
+        mbedtls_ssl_conf_min_tls_version(&tls->conf, MBEDTLS_SSL_VERSION_TLS1_3);
+        mbedtls_ssl_conf_max_tls_version(&tls->conf, MBEDTLS_SSL_VERSION_TLS1_3);
+#else
+        ESP_LOGE(TAG, "TLS 1.3 is not enabled in config");
+        return ESP_ERR_INVALID_ARG;
+#endif
+    } else if (tls_ver == ESP_TLS_VER_TLS_1_2) {
+        ESP_LOGD(TAG, "Setting server TLS version to 0x%4x", MBEDTLS_SSL_VERSION_TLS1_2);
+        mbedtls_ssl_conf_min_tls_version(&tls->conf, MBEDTLS_SSL_VERSION_TLS1_2);
+        mbedtls_ssl_conf_max_tls_version(&tls->conf, MBEDTLS_SSL_VERSION_TLS1_2);
+    }
+
+    if (cfg->ciphersuites_list != NULL && cfg->ciphersuites_list[0] != 0) {
+        ESP_LOGD(TAG, "Set the server ciphersuites list (user-provided)");
+        mbedtls_ssl_conf_ciphersuites(&tls->conf, cfg->ciphersuites_list);
+    } else {
+        ESP_LOGD(TAG, "No custom cipher suites provided - using default");
+    }
     return ESP_OK;
 }
 

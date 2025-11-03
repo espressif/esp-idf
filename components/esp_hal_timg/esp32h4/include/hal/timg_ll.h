@@ -14,6 +14,14 @@
 #include "soc/timer_group_struct.h"
 #include "soc/pcr_struct.h"
 
+#define TIMG_LL_GET(_attr) TIMG_LL_ ## _attr
+
+// Number of Timer Group instances
+#define TIMG_LL_INST_NUM 2
+
+// Number of general purpose timers in each Timer Group
+#define TIMG_LL_GPTIMERS_PER_INST 1
+
 #ifdef __cplusplus
 extern "C" {
 #endif

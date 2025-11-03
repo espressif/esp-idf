@@ -10,32 +10,40 @@
 extern "C" {
 #endif
 
-/** Group: conf0 */
+/** Group: Configuration Register */
 /** Type of chn_conf0 register
  *  Configuration register 0 for channel n
  */
 typedef union {
     struct {
         /** timer_sel : R/W; bitpos: [1:0]; default: 0;
-         *  Configures which timer is channel n selected.\\0: Select timer0\\1: Select
-         *  timer1\\2: Select timer2\\3: Select timer3
+         *  Configures which timer is channel n selected.
+         *  0: Select timer0
+         *  1: Select timer1
+         *  2: Select timer2
+         *  3: Select timer3
          */
         uint32_t timer_sel:2;
         /** sig_out_en : R/W; bitpos: [2]; default: 0;
-         *  Configures whether or not to enable signal output on channel n.\\0: Signal output
-         *  disable\\1: Signal output enable
+         *  Configures whether or not to enable signal output on channel n.
+         *  0: Signal output disable
+         *  1: Signal output enable
          */
         uint32_t sig_out_en:1;
         /** idle_lv : R/W; bitpos: [3]; default: 0;
          *  Configures the output value when channel n is inactive. Valid only when
-         *  LEDC_SIG_OUT_EN_CHn is 0.\\0: Output level is low\\1: Output level is high
+         *  LEDC_SIG_OUT_EN_CHn is 0.
+         *  0: Output level is low
+         *  1: Output level is high
          */
         uint32_t idle_lv:1;
         /** para_up : WT; bitpos: [4]; default: 0;
          *  Configures whether or not to update LEDC_HPOINT_CHn, LEDC_DUTY_START_CHn,
          *  LEDC_SIG_OUT_EN_CHn, LEDC_TIMER_SEL_CHn, LEDC_DUTY_NUM_CHn, LEDC_DUTY_CYCLE_CHn,
          *  LEDC_DUTY_SCALE_CHn, LEDC_DUTY_INC_CHn, and LEDC_OVF_CNT_EN_CHn fields for channel
-         *  n, and will be automatically cleared by hardware.\\0: Invalid. No effect\\1: Update
+         *  n, and will be automatically cleared by hardware.
+         *  0: Invalid. No effect
+         *  1: Update
          */
         uint32_t para_up:1;
         /** ovf_num : R/W; bitpos: [14:5]; default: 0;
@@ -44,12 +52,15 @@ typedef union {
          */
         uint32_t ovf_num:10;
         /** ovf_cnt_en : R/W; bitpos: [15]; default: 0;
-         *  Configures whether or not to enable the ovf_cnt of channel n.\\0: Disable\\1: Enable
+         *  Configures whether or not to enable the ovf_cnt of channel n.
+         *  0: Disable
+         *  1: Enable
          */
         uint32_t ovf_cnt_en:1;
         /** ovf_cnt_reset : WT; bitpos: [16]; default: 0;
-         *  Configures whether or not to reset the  ovf_cnt of channel n.\\0: Invalid. No
-         *  effect\\1: Reset the ovf_cnt
+         *  Configures whether or not to reset the  ovf_cnt of channel n.
+         *  0: Invalid. No effect
+         *  1: Reset the ovf_cnt
          */
         uint32_t ovf_cnt_reset:1;
         uint32_t reserved_17:15;
@@ -93,30 +104,30 @@ typedef union {
     struct {
         uint32_t reserved_0:31;
         /** duty_start : R/W/SC; bitpos: [31]; default: 0;
-         *  Configures whether the duty cycle fading configurations take effect.\\0: Not take
-         *  effect\\1: Take effect
+         *  Configures whether the duty cycle fading configurations take effect.
+         *  0: Not take effect
+         *  1: Take effect
          */
         uint32_t duty_start:1;
     };
     uint32_t val;
 } ledc_chn_conf1_reg_t;
 
+/** Group: Status Register */
 /** Type of chn_duty_r register
  *  Current duty cycle register for channel n
  */
 typedef union {
     struct {
-        /** duty_ch0_r : RO; bitpos: [24:0]; default: 0;
+        /** duty_r : RO; bitpos: [24:0]; default: 0;
          *  Represents the current duty of output signal on channel n.
          */
-        uint32_t duty:25;
+        uint32_t duty_r:25;
         uint32_t reserved_25:7;
     };
     uint32_t val;
 } ledc_chn_duty_r_reg_t;
 
-
-/** Group: conf1 */
 /** Type of timern_conf register
  *  Timer n configuration register
  */
@@ -132,21 +143,22 @@ typedef union {
          */
         uint32_t clk_div:18;
         /** pause : R/W; bitpos: [23]; default: 0;
-         *  Configures whether or not to pause the counter in timer n.\\0: Normal\\1: Pause
+         *  Configures whether or not to pause the counter in timer n.
+         *  0: Normal
+         *  1: Pause
          */
         uint32_t pause:1;
         /** rst : R/W; bitpos: [24]; default: 1;
-         *  Configures whether or not to reset timer n. The counter will show 0 after
-         *  reset.\\0: Not reset\\1: Reset
+         *  Configures whether or not to reset timer n. The counter will show 0 after reset.
+         *  0: Not reset
+         *  1: Reset
          */
         uint32_t rst:1;
-        /** tick_sel : R/W; bitpos: [25]; default: 0;
-         *  Configures which clock is timer n selected. Unused.
-         */
-        uint32_t tick_sel:1;
+        uint32_t reserved_25:1;
         /** para_up : WT; bitpos: [26]; default: 0;
-         *  Configures whether or not to update LEDC_CLK_DIV_TIMERn and
-         *  LEDC_TIMERn_DUTY_RES.\\0: Invalid. No effect\\1: Update
+         *  Configures whether or not to update LEDC_CLK_DIV_TIMERn and LEDC_TIMERn_DUTY_RES.
+         *  0: Invalid. No effect
+         *  1: Update
          */
         uint32_t para_up:1;
         uint32_t reserved_27:5;
@@ -167,6 +179,688 @@ typedef union {
     };
     uint32_t val;
 } ledc_timern_value_reg_t;
+
+/** Type of conf register
+ *  LEDC global configuration register
+ */
+typedef union {
+    struct {
+        /** apb_clk_sel : R/W; bitpos: [1:0]; default: 0;
+         *  Configures the clock source for the four timers.
+         *  0: APB_CLK
+         *  1: RC_FAST_CLK
+         *  2: XTAL_CLK
+         *  3: Invalid. No clock
+         */
+        uint32_t apb_clk_sel:2;
+        /** gamma_ram_clk_en_ch0 : R/W; bitpos: [2]; default: 0;
+         *  Configures whether or not to open LEDC ch0 gamma ram clock gate.
+         *  0: Open the clock gate only when application writes or reads LEDC ch0 gamma ram
+         *  1: Force open the clock gate for LEDC ch0 gamma ram
+         */
+        uint32_t gamma_ram_clk_en_ch0:1;
+        /** gamma_ram_clk_en_ch1 : R/W; bitpos: [3]; default: 0;
+         *  Configures whether or not to open LEDC ch1 gamma ram clock gate.
+         *  0: Open the clock gate only when application writes or reads LEDC ch1 gamma ram
+         *  1: Force open the clock gate for LEDC ch1 gamma ram
+         */
+        uint32_t gamma_ram_clk_en_ch1:1;
+        /** gamma_ram_clk_en_ch2 : R/W; bitpos: [4]; default: 0;
+         *  Configures whether or not to open LEDC ch2 gamma ram clock gate.
+         *  0: Open the clock gate only when application writes or reads LEDC ch2 gamma ram
+         *  1: Force open the clock gate for LEDC ch2 gamma ram
+         */
+        uint32_t gamma_ram_clk_en_ch2:1;
+        /** gamma_ram_clk_en_ch3 : R/W; bitpos: [5]; default: 0;
+         *  Configures whether or not to open LEDC ch3 gamma ram clock gate.
+         *  0: Open the clock gate only when application writes or reads LEDC ch3 gamma ram
+         *  1: Force open the clock gate for LEDC ch3 gamma ram
+         */
+        uint32_t gamma_ram_clk_en_ch3:1;
+        /** gamma_ram_clk_en_ch4 : R/W; bitpos: [6]; default: 0;
+         *  Configures whether or not to open LEDC ch4 gamma ram clock gate.
+         *  0: Open the clock gate only when application writes or reads LEDC ch4 gamma ram
+         *  1: Force open the clock gate for LEDC ch4 gamma ram
+         */
+        uint32_t gamma_ram_clk_en_ch4:1;
+        /** gamma_ram_clk_en_ch5 : R/W; bitpos: [7]; default: 0;
+         *  Configures whether or not to open LEDC ch5 gamma ram clock gate.
+         *  0: Open the clock gate only when application writes or reads LEDC ch5 gamma ram
+         *  1: Force open the clock gate for LEDC ch5 gamma ram
+         */
+        uint32_t gamma_ram_clk_en_ch5:1;
+        /** gamma_ram_clk_en_ch6 : R/W; bitpos: [8]; default: 0;
+         *  Configures whether or not to open LEDC ch6 gamma ram clock gate.
+         *  0: Open the clock gate only when application writes or reads LEDC ch6 gamma ram
+         *  1: Force open the clock gate for LEDC ch6 gamma ram
+         */
+        uint32_t gamma_ram_clk_en_ch6:1;
+        /** gamma_ram_clk_en_ch7 : R/W; bitpos: [9]; default: 0;
+         *  Configures whether or not to open LEDC ch7 gamma ram clock gate.
+         *  0: Open the clock gate only when application writes or reads LEDC ch7 gamma ram
+         *  1: Force open the clock gate for LEDC ch7 gamma ram
+         */
+        uint32_t gamma_ram_clk_en_ch7:1;
+        uint32_t reserved_10:21;
+        /** clk_en : R/W; bitpos: [31]; default: 0;
+         *  Configures whether or not to open register clock gate.
+         *  0: Open the clock gate only when application writes registers
+         *  1: Force open the clock gate for register
+         */
+        uint32_t clk_en:1;
+    };
+    uint32_t val;
+} ledc_conf_reg_t;
+
+/** Type of chn_gamma_conf register
+ *  Ledc chn gamma config register.
+ */
+typedef union {
+    struct {
+        /** gamma_entry_num : R/W; bitpos: [4:0]; default: 0;
+         *  Configures the number of duty cycle fading rages for LEDC chn.
+         */
+        uint32_t gamma_entry_num:5;
+        /** gamma_pause : WT; bitpos: [5]; default: 0;
+         *  Configures whether or not to pause duty cycle fading of LEDC chn.
+         *  0: Invalid. No effect
+         *  1: Pause
+         */
+        uint32_t gamma_pause:1;
+        /** gamma_resume : WT; bitpos: [6]; default: 0;
+         *  Configures whether or nor to resume duty cycle fading of LEDC chn.
+         *  0: Invalid. No effect
+         *  1: Resume
+         */
+        uint32_t gamma_resume:1;
+        uint32_t reserved_7:25;
+    };
+    uint32_t val;
+} ledc_chn_gamma_conf_reg_t;
+
+/** Type of evt_task_en0 register
+ *  Ledc event task enable bit register0.
+ */
+typedef union {
+    struct {
+        /** evt_duty_chng_end_ch0_en : R/W; bitpos: [0]; default: 0;
+         *  Configures whether or not to enable the ledc_ch0_duty_chng_end event.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t evt_duty_chng_end_ch0_en:1;
+        /** evt_duty_chng_end_ch1_en : R/W; bitpos: [1]; default: 0;
+         *  Configures whether or not to enable the ledc_ch1_duty_chng_end event.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t evt_duty_chng_end_ch1_en:1;
+        /** evt_duty_chng_end_ch2_en : R/W; bitpos: [2]; default: 0;
+         *  Configures whether or not to enable the ledc_ch2_duty_chng_end event.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t evt_duty_chng_end_ch2_en:1;
+        /** evt_duty_chng_end_ch3_en : R/W; bitpos: [3]; default: 0;
+         *  Configures whether or not to enable the ledc_ch3_duty_chng_end event.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t evt_duty_chng_end_ch3_en:1;
+        /** evt_duty_chng_end_ch4_en : R/W; bitpos: [4]; default: 0;
+         *  Configures whether or not to enable the ledc_ch4_duty_chng_end event.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t evt_duty_chng_end_ch4_en:1;
+        /** evt_duty_chng_end_ch5_en : R/W; bitpos: [5]; default: 0;
+         *  Configures whether or not to enable the ledc_ch5_duty_chng_end event.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t evt_duty_chng_end_ch5_en:1;
+        /** evt_duty_chng_end_ch6_en : R/W; bitpos: [6]; default: 0;
+         *  Configures whether or not to enable the ledc_ch6_duty_chng_end event.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t evt_duty_chng_end_ch6_en:1;
+        /** evt_duty_chng_end_ch7_en : R/W; bitpos: [7]; default: 0;
+         *  Configures whether or not to enable the ledc_ch7_duty_chng_end event.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t evt_duty_chng_end_ch7_en:1;
+        /** evt_ovf_cnt_pls_ch0_en : R/W; bitpos: [8]; default: 0;
+         *  Configures whether or not to enable the ledc_ch0_ovf_cnt_pls event.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t evt_ovf_cnt_pls_ch0_en:1;
+        /** evt_ovf_cnt_pls_ch1_en : R/W; bitpos: [9]; default: 0;
+         *  Configures whether or not to enable the ledc_ch1_ovf_cnt_pls event.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t evt_ovf_cnt_pls_ch1_en:1;
+        /** evt_ovf_cnt_pls_ch2_en : R/W; bitpos: [10]; default: 0;
+         *  Configures whether or not to enable the ledc_ch2_ovf_cnt_pls event.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t evt_ovf_cnt_pls_ch2_en:1;
+        /** evt_ovf_cnt_pls_ch3_en : R/W; bitpos: [11]; default: 0;
+         *  Configures whether or not to enable the ledc_ch3_ovf_cnt_pls event.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t evt_ovf_cnt_pls_ch3_en:1;
+        /** evt_ovf_cnt_pls_ch4_en : R/W; bitpos: [12]; default: 0;
+         *  Configures whether or not to enable the ledc_ch4_ovf_cnt_pls event.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t evt_ovf_cnt_pls_ch4_en:1;
+        /** evt_ovf_cnt_pls_ch5_en : R/W; bitpos: [13]; default: 0;
+         *  Configures whether or not to enable the ledc_ch5_ovf_cnt_pls event.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t evt_ovf_cnt_pls_ch5_en:1;
+        /** evt_ovf_cnt_pls_ch6_en : R/W; bitpos: [14]; default: 0;
+         *  Configures whether or not to enable the ledc_ch6_ovf_cnt_pls event.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t evt_ovf_cnt_pls_ch6_en:1;
+        /** evt_ovf_cnt_pls_ch7_en : R/W; bitpos: [15]; default: 0;
+         *  Configures whether or not to enable the ledc_ch7_ovf_cnt_pls event.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t evt_ovf_cnt_pls_ch7_en:1;
+        /** evt_time_ovf_timer0_en : R/W; bitpos: [16]; default: 0;
+         *  Configures whether or not to enable the ledc_timer0_ovf event.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t evt_time_ovf_timer0_en:1;
+        /** evt_time_ovf_timer1_en : R/W; bitpos: [17]; default: 0;
+         *  Configures whether or not to enable the ledc_timer1_ovf event.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t evt_time_ovf_timer1_en:1;
+        /** evt_time_ovf_timer2_en : R/W; bitpos: [18]; default: 0;
+         *  Configures whether or not to enable the ledc_timer2_ovf event.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t evt_time_ovf_timer2_en:1;
+        /** evt_time_ovf_timer3_en : R/W; bitpos: [19]; default: 0;
+         *  Configures whether or not to enable the ledc_timer3_ovf event.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t evt_time_ovf_timer3_en:1;
+        /** evt_time0_cmp_en : R/W; bitpos: [20]; default: 0;
+         *  Configures whether or not to enable the ledc_timer0_cmp event.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t evt_time0_cmp_en:1;
+        /** evt_time1_cmp_en : R/W; bitpos: [21]; default: 0;
+         *  Configures whether or not to enable the ledc_timer1_cmp event.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t evt_time1_cmp_en:1;
+        /** evt_time2_cmp_en : R/W; bitpos: [22]; default: 0;
+         *  Configures whether or not to enable the ledc_timer2_cmp event.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t evt_time2_cmp_en:1;
+        /** evt_time3_cmp_en : R/W; bitpos: [23]; default: 0;
+         *  Configures whether or not to enable the ledc_timer3_cmp event.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t evt_time3_cmp_en:1;
+        /** task_duty_scale_update_ch0_en : R/W; bitpos: [24]; default: 0;
+         *  Configures whether or not to enable the ledc_ch0_duty_scale_update task.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t task_duty_scale_update_ch0_en:1;
+        /** task_duty_scale_update_ch1_en : R/W; bitpos: [25]; default: 0;
+         *  Configures whether or not to enable the ledc_ch1_duty_scale_update task.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t task_duty_scale_update_ch1_en:1;
+        /** task_duty_scale_update_ch2_en : R/W; bitpos: [26]; default: 0;
+         *  Configures whether or not to enable the ledc_ch2_duty_scale_update task.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t task_duty_scale_update_ch2_en:1;
+        /** task_duty_scale_update_ch3_en : R/W; bitpos: [27]; default: 0;
+         *  Configures whether or not to enable the ledc_ch3_duty_scale_update task.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t task_duty_scale_update_ch3_en:1;
+        /** task_duty_scale_update_ch4_en : R/W; bitpos: [28]; default: 0;
+         *  Configures whether or not to enable the ledc_ch4_duty_scale_update task.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t task_duty_scale_update_ch4_en:1;
+        /** task_duty_scale_update_ch5_en : R/W; bitpos: [29]; default: 0;
+         *  Configures whether or not to enable the ledc_ch5_duty_scale_update task.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t task_duty_scale_update_ch5_en:1;
+        /** task_duty_scale_update_ch6_en : R/W; bitpos: [30]; default: 0;
+         *  Configures whether or not to enable the ledc_ch6_duty_scale_update task.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t task_duty_scale_update_ch6_en:1;
+        /** task_duty_scale_update_ch7_en : R/W; bitpos: [31]; default: 0;
+         *  Configures whether or not to enable the ledc_ch7_duty_scale_update task.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t task_duty_scale_update_ch7_en:1;
+    };
+    uint32_t val;
+} ledc_evt_task_en0_reg_t;
+
+/** Type of evt_task_en1 register
+ *  Ledc event task enable bit register1.
+ */
+typedef union {
+    struct {
+        /** task_timer0_res_update_en : R/W; bitpos: [0]; default: 0;
+         *  Configures whether or not to enable ledc_timer0_res_update task.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t task_timer0_res_update_en:1;
+        /** task_timer1_res_update_en : R/W; bitpos: [1]; default: 0;
+         *  Configures whether or not to enable ledc_timer1_res_update task.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t task_timer1_res_update_en:1;
+        /** task_timer2_res_update_en : R/W; bitpos: [2]; default: 0;
+         *  Configures whether or not to enable ledc_timer2_res_update task.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t task_timer2_res_update_en:1;
+        /** task_timer3_res_update_en : R/W; bitpos: [3]; default: 0;
+         *  Configures whether or not to enable ledc_timer3_res_update task.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t task_timer3_res_update_en:1;
+        /** task_timer0_cap_en : R/W; bitpos: [4]; default: 0;
+         *  Configures whether or not to enable ledc_timer0_cap task.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t task_timer0_cap_en:1;
+        /** task_timer1_cap_en : R/W; bitpos: [5]; default: 0;
+         *  Configures whether or not to enable ledc_timer1_cap task.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t task_timer1_cap_en:1;
+        /** task_timer2_cap_en : R/W; bitpos: [6]; default: 0;
+         *  Configures whether or not to enable ledc_timer2_cap task.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t task_timer2_cap_en:1;
+        /** task_timer3_cap_en : R/W; bitpos: [7]; default: 0;
+         *  Configures whether or not to enable ledc_timer3_cap task.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t task_timer3_cap_en:1;
+        /** task_sig_out_dis_ch0_en : R/W; bitpos: [8]; default: 0;
+         *  Configures whether or not to enable ledc_ch0_sig_out_dis task.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t task_sig_out_dis_ch0_en:1;
+        /** task_sig_out_dis_ch1_en : R/W; bitpos: [9]; default: 0;
+         *  Configures whether or not to enable ledc_ch1_sig_out_dis task.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t task_sig_out_dis_ch1_en:1;
+        /** task_sig_out_dis_ch2_en : R/W; bitpos: [10]; default: 0;
+         *  Configures whether or not to enable ledc_ch2_sig_out_dis task.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t task_sig_out_dis_ch2_en:1;
+        /** task_sig_out_dis_ch3_en : R/W; bitpos: [11]; default: 0;
+         *  Configures whether or not to enable ledc_ch3_sig_out_dis task.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t task_sig_out_dis_ch3_en:1;
+        /** task_sig_out_dis_ch4_en : R/W; bitpos: [12]; default: 0;
+         *  Configures whether or not to enable ledc_ch4_sig_out_dis task.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t task_sig_out_dis_ch4_en:1;
+        /** task_sig_out_dis_ch5_en : R/W; bitpos: [13]; default: 0;
+         *  Configures whether or not to enable ledc_ch5_sig_out_dis task.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t task_sig_out_dis_ch5_en:1;
+        /** task_sig_out_dis_ch6_en : R/W; bitpos: [14]; default: 0;
+         *  Configures whether or not to enable ledc_ch6_sig_out_dis task.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t task_sig_out_dis_ch6_en:1;
+        /** task_sig_out_dis_ch7_en : R/W; bitpos: [15]; default: 0;
+         *  Configures whether or not to enable ledc_ch7_sig_out_dis task.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t task_sig_out_dis_ch7_en:1;
+        /** task_ovf_cnt_rst_ch0_en : R/W; bitpos: [16]; default: 0;
+         *  Configures whether or not to enable ledc_ch0_ovf_cnt_rst task.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t task_ovf_cnt_rst_ch0_en:1;
+        /** task_ovf_cnt_rst_ch1_en : R/W; bitpos: [17]; default: 0;
+         *  Configures whether or not to enable ledc_ch1_ovf_cnt_rst task.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t task_ovf_cnt_rst_ch1_en:1;
+        /** task_ovf_cnt_rst_ch2_en : R/W; bitpos: [18]; default: 0;
+         *  Configures whether or not to enable ledc_ch2_ovf_cnt_rst task.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t task_ovf_cnt_rst_ch2_en:1;
+        /** task_ovf_cnt_rst_ch3_en : R/W; bitpos: [19]; default: 0;
+         *  Configures whether or not to enable ledc_ch3_ovf_cnt_rst task.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t task_ovf_cnt_rst_ch3_en:1;
+        /** task_ovf_cnt_rst_ch4_en : R/W; bitpos: [20]; default: 0;
+         *  Configures whether or not to enable ledc_ch4_ovf_cnt_rst task.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t task_ovf_cnt_rst_ch4_en:1;
+        /** task_ovf_cnt_rst_ch5_en : R/W; bitpos: [21]; default: 0;
+         *  Configures whether or not to enable ledc_ch5_ovf_cnt_rst task.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t task_ovf_cnt_rst_ch5_en:1;
+        /** task_ovf_cnt_rst_ch6_en : R/W; bitpos: [22]; default: 0;
+         *  Configures whether or not to enable ledc_ch6_ovf_cnt_rst task.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t task_ovf_cnt_rst_ch6_en:1;
+        /** task_ovf_cnt_rst_ch7_en : R/W; bitpos: [23]; default: 0;
+         *  Configures whether or not to enable ledc_ch7_ovf_cnt_rst task.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t task_ovf_cnt_rst_ch7_en:1;
+        /** task_timer0_rst_en : R/W; bitpos: [24]; default: 0;
+         *  Configures whether or not to enable ledc_timer0_rst task.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t task_timer0_rst_en:1;
+        /** task_timer1_rst_en : R/W; bitpos: [25]; default: 0;
+         *  Configures whether or not to enable ledc_timer1_rst task.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t task_timer1_rst_en:1;
+        /** task_timer2_rst_en : R/W; bitpos: [26]; default: 0;
+         *  Configures whether or not to enable ledc_timer2_rst task.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t task_timer2_rst_en:1;
+        /** task_timer3_rst_en : R/W; bitpos: [27]; default: 0;
+         *  Configures whether or not to enable ledc_timer3_rst task.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t task_timer3_rst_en:1;
+        /** task_timer0_pause_resume_en : R/W; bitpos: [28]; default: 0;
+         *  Configures whether or not to enable ledc_timer0_pause_resume task.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t task_timer0_pause_resume_en:1;
+        /** task_timer1_pause_resume_en : R/W; bitpos: [29]; default: 0;
+         *  Configures whether or not to enable ledc_timer1_pause_resume task.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t task_timer1_pause_resume_en:1;
+        /** task_timer2_pause_resume_en : R/W; bitpos: [30]; default: 0;
+         *  Configures whether or not to enable ledc_timer2_pause_resume task.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t task_timer2_pause_resume_en:1;
+        /** task_timer3_pause_resume_en : R/W; bitpos: [31]; default: 0;
+         *  Configures whether or not to enable ledc_timer3_pause_resume task.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t task_timer3_pause_resume_en:1;
+    };
+    uint32_t val;
+} ledc_evt_task_en1_reg_t;
+
+/** Type of evt_task_en2 register
+ *  Ledc event task enable bit register2.
+ */
+typedef union {
+    struct {
+        /** task_gamma_restart_ch0_en : R/W; bitpos: [0]; default: 0;
+         *  Configures whether or not to enable ledc_ch0_gamma_restart task.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t task_gamma_restart_ch0_en:1;
+        /** task_gamma_restart_ch1_en : R/W; bitpos: [1]; default: 0;
+         *  Configures whether or not to enable ledc_ch1_gamma_restart task.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t task_gamma_restart_ch1_en:1;
+        /** task_gamma_restart_ch2_en : R/W; bitpos: [2]; default: 0;
+         *  Configures whether or not to enable ledc_ch2_gamma_restart task.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t task_gamma_restart_ch2_en:1;
+        /** task_gamma_restart_ch3_en : R/W; bitpos: [3]; default: 0;
+         *  Configures whether or not to enable ledc_ch3_gamma_restart task.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t task_gamma_restart_ch3_en:1;
+        /** task_gamma_restart_ch4_en : R/W; bitpos: [4]; default: 0;
+         *  Configures whether or not to enable ledc_ch4_gamma_restart task.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t task_gamma_restart_ch4_en:1;
+        /** task_gamma_restart_ch5_en : R/W; bitpos: [5]; default: 0;
+         *  Configures whether or not to enable ledc_ch5_gamma_restart task.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t task_gamma_restart_ch5_en:1;
+        /** task_gamma_restart_ch6_en : R/W; bitpos: [6]; default: 0;
+         *  Configures whether or not to enable ledc_ch6_gamma_restart task.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t task_gamma_restart_ch6_en:1;
+        /** task_gamma_restart_ch7_en : R/W; bitpos: [7]; default: 0;
+         *  Configures whether or not to enable ledc_ch7_gamma_restart task.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t task_gamma_restart_ch7_en:1;
+        /** task_gamma_pause_ch0_en : R/W; bitpos: [8]; default: 0;
+         *  Configures whether or not to enable ledc_ch0_gamma_pause task.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t task_gamma_pause_ch0_en:1;
+        /** task_gamma_pause_ch1_en : R/W; bitpos: [9]; default: 0;
+         *  Configures whether or not to enable ledc_ch1_gamma_pause task.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t task_gamma_pause_ch1_en:1;
+        /** task_gamma_pause_ch2_en : R/W; bitpos: [10]; default: 0;
+         *  Configures whether or not to enable ledc_ch2_gamma_pause task.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t task_gamma_pause_ch2_en:1;
+        /** task_gamma_pause_ch3_en : R/W; bitpos: [11]; default: 0;
+         *  Configures whether or not to enable ledc_ch3_gamma_pause task.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t task_gamma_pause_ch3_en:1;
+        /** task_gamma_pause_ch4_en : R/W; bitpos: [12]; default: 0;
+         *  Configures whether or not to enable ledc_ch4_gamma_pause task.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t task_gamma_pause_ch4_en:1;
+        /** task_gamma_pause_ch5_en : R/W; bitpos: [13]; default: 0;
+         *  Configures whether or not to enable ledc_ch5_gamma_pause task.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t task_gamma_pause_ch5_en:1;
+        /** task_gamma_pause_ch6_en : R/W; bitpos: [14]; default: 0;
+         *  Configures whether or not to enable ledc_ch6_gamma_pause task.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t task_gamma_pause_ch6_en:1;
+        /** task_gamma_pause_ch7_en : R/W; bitpos: [15]; default: 0;
+         *  Configures whether or not to enable ledc_ch7_gamma_pause task.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t task_gamma_pause_ch7_en:1;
+        /** task_gamma_resume_ch0_en : R/W; bitpos: [16]; default: 0;
+         *  Configures whether or not to enable ledc_ch0_gamma_resume task.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t task_gamma_resume_ch0_en:1;
+        /** task_gamma_resume_ch1_en : R/W; bitpos: [17]; default: 0;
+         *  Configures whether or not to enable ledc_ch1_gamma_resume task.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t task_gamma_resume_ch1_en:1;
+        /** task_gamma_resume_ch2_en : R/W; bitpos: [18]; default: 0;
+         *  Configures whether or not to enable ledc_ch2_gamma_resume task.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t task_gamma_resume_ch2_en:1;
+        /** task_gamma_resume_ch3_en : R/W; bitpos: [19]; default: 0;
+         *  Configures whether or not to enable ledc_ch3_gamma_resume task.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t task_gamma_resume_ch3_en:1;
+        /** task_gamma_resume_ch4_en : R/W; bitpos: [20]; default: 0;
+         *  Configures whether or not to enable ledc_ch4_gamma_resume task.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t task_gamma_resume_ch4_en:1;
+        /** task_gamma_resume_ch5_en : R/W; bitpos: [21]; default: 0;
+         *  Configures whether or not to enable ledc_ch5_gamma_resume task.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t task_gamma_resume_ch5_en:1;
+        /** task_gamma_resume_ch6_en : R/W; bitpos: [22]; default: 0;
+         *  Configures whether or not to enable ledc_ch6_gamma_resume task.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t task_gamma_resume_ch6_en:1;
+        /** task_gamma_resume_ch7_en : R/W; bitpos: [23]; default: 0;
+         *  Configures whether or not to enable ledc_ch7_gamma_resume task.
+         *  0: Disable
+         *  1: Enable
+         */
+        uint32_t task_gamma_resume_ch7_en:1;
+        uint32_t reserved_24:8;
+    };
+    uint32_t val;
+} ledc_evt_task_en2_reg_t;
+
+/** Type of timern_cmp register
+ *  Ledc timern compare value register.
+ */
+typedef union {
+    struct {
+        /** timer_cmp : R/W; bitpos: [19:0]; default: 0;
+         *  Configures the comparison value for LEDC timern.
+         */
+        uint32_t timer_cmp:20;
+        uint32_t reserved_20:12;
+    };
+    uint32_t val;
+} ledc_timern_cmp_reg_t;
+
+/** Type of timern_cnt_cap register
+ *  Ledc timern captured count value register.
+ */
+typedef union {
+    struct {
+        /** timer_cnt_cap : RO; bitpos: [19:0]; default: 0;
+         *  Represents the captured LEDC timern count value.
+         */
+        uint32_t timer_cnt_cap:20;
+        uint32_t reserved_20:12;
+    };
+    uint32_t val;
+} ledc_timern_cnt_cap_reg_t;
 
 
 /** Group: Interrupt Register */
@@ -571,607 +1265,13 @@ typedef union {
 } ledc_int_clr_reg_t;
 
 
-/** Group: gamma */
-/** Type of chn_gamma_conf register
- *  Ledc chn gamma config register.
- */
-typedef union {
-    struct {
-        /** ch0_gamma_entry_num : R/W; bitpos: [4:0]; default: 0;
-         *  Configures the number of duty cycle fading rages for LEDC chn.
-         */
-        uint32_t ch0_gamma_entry_num:5;
-        /** ch0_gamma_pause : WT; bitpos: [5]; default: 0;
-         *  Configures whether or not to pause duty cycle fading of LEDC chn.\\0: Invalid. No
-         *  effect\\1: Pause
-         */
-        uint32_t ch0_gamma_pause:1;
-        /** ch0_gamma_resume : WT; bitpos: [6]; default: 0;
-         *  Configures whether or nor to resume duty cycle fading of LEDC chn.\\0: Invalid. No
-         *  effect\\1: Resume
-         */
-        uint32_t ch0_gamma_resume:1;
-        uint32_t reserved_7:25;
-    };
-    uint32_t val;
-} ledc_chn_gamma_conf_reg_t;
-
-
-/** Group: en0 */
-/** Type of evt_task_en0 register
- *  Ledc event task enable bit register0.
- */
-typedef union {
-    struct {
-        /** evt_duty_chng_end_ch0_en : R/W; bitpos: [0]; default: 0;
-         *  Configures whether or not to enable the ledc_ch0_duty_chng_end event.\\0:
-         *  Disable\\1: Enable
-         */
-        uint32_t evt_duty_chng_end_ch0_en:1;
-        /** evt_duty_chng_end_ch1_en : R/W; bitpos: [1]; default: 0;
-         *  Configures whether or not to enable the ledc_ch1_duty_chng_end event.\\0:
-         *  Disable\\1: Enable
-         */
-        uint32_t evt_duty_chng_end_ch1_en:1;
-        /** evt_duty_chng_end_ch2_en : R/W; bitpos: [2]; default: 0;
-         *  Configures whether or not to enable the ledc_ch2_duty_chng_end event.\\0:
-         *  Disable\\1: Enable
-         */
-        uint32_t evt_duty_chng_end_ch2_en:1;
-        /** evt_duty_chng_end_ch3_en : R/W; bitpos: [3]; default: 0;
-         *  Configures whether or not to enable the ledc_ch3_duty_chng_end event.\\0:
-         *  Disable\\1: Enable
-         */
-        uint32_t evt_duty_chng_end_ch3_en:1;
-        /** evt_duty_chng_end_ch4_en : R/W; bitpos: [4]; default: 0;
-         *  Configures whether or not to enable the ledc_ch4_duty_chng_end event.\\0:
-         *  Disable\\1: Enable
-         */
-        uint32_t evt_duty_chng_end_ch4_en:1;
-        /** evt_duty_chng_end_ch5_en : R/W; bitpos: [5]; default: 0;
-         *  Configures whether or not to enable the ledc_ch5_duty_chng_end event.\\0:
-         *  Disable\\1: Enable
-         */
-        uint32_t evt_duty_chng_end_ch5_en:1;
-        /** evt_duty_chng_end_ch6_en : R/W; bitpos: [6]; default: 0;
-         *  Configures whether or not to enable the ledc_ch6_duty_chng_end event.\\0:
-         *  Disable\\1: Enable
-         */
-        uint32_t evt_duty_chng_end_ch6_en:1;
-        /** evt_duty_chng_end_ch7_en : R/W; bitpos: [7]; default: 0;
-         *  Configures whether or not to enable the ledc_ch7_duty_chng_end event.\\0:
-         *  Disable\\1: Enable
-         */
-        uint32_t evt_duty_chng_end_ch7_en:1;
-        /** evt_ovf_cnt_pls_ch0_en : R/W; bitpos: [8]; default: 0;
-         *  Configures whether or not to enable the ledc_ch0_ovf_cnt_pls event.\\0: Disable\\1:
-         *  Enable
-         */
-        uint32_t evt_ovf_cnt_pls_ch0_en:1;
-        /** evt_ovf_cnt_pls_ch1_en : R/W; bitpos: [9]; default: 0;
-         *  Configures whether or not to enable the ledc_ch1_ovf_cnt_pls event.\\0: Disable\\1:
-         *  Enable
-         */
-        uint32_t evt_ovf_cnt_pls_ch1_en:1;
-        /** evt_ovf_cnt_pls_ch2_en : R/W; bitpos: [10]; default: 0;
-         *  Configures whether or not to enable the ledc_ch2_ovf_cnt_pls event.\\0: Disable\\1:
-         *  Enable
-         */
-        uint32_t evt_ovf_cnt_pls_ch2_en:1;
-        /** evt_ovf_cnt_pls_ch3_en : R/W; bitpos: [11]; default: 0;
-         *  Configures whether or not to enable the ledc_ch3_ovf_cnt_pls event.\\0: Disable\\1:
-         *  Enable
-         */
-        uint32_t evt_ovf_cnt_pls_ch3_en:1;
-        /** evt_ovf_cnt_pls_ch4_en : R/W; bitpos: [12]; default: 0;
-         *  Configures whether or not to enable the ledc_ch4_ovf_cnt_pls event.\\0: Disable\\1:
-         *  Enable
-         */
-        uint32_t evt_ovf_cnt_pls_ch4_en:1;
-        /** evt_ovf_cnt_pls_ch5_en : R/W; bitpos: [13]; default: 0;
-         *  Configures whether or not to enable the ledc_ch5_ovf_cnt_pls event.\\0: Disable\\1:
-         *  Enable
-         */
-        uint32_t evt_ovf_cnt_pls_ch5_en:1;
-        /** evt_ovf_cnt_pls_ch6_en : R/W; bitpos: [14]; default: 0;
-         *  Configures whether or not to enable the ledc_ch6_ovf_cnt_pls event.\\0: Disable\\1:
-         *  Enable
-         */
-        uint32_t evt_ovf_cnt_pls_ch6_en:1;
-        /** evt_ovf_cnt_pls_ch7_en : R/W; bitpos: [15]; default: 0;
-         *  Configures whether or not to enable the ledc_ch7_ovf_cnt_pls event.\\0: Disable\\1:
-         *  Enable
-         */
-        uint32_t evt_ovf_cnt_pls_ch7_en:1;
-        /** evt_time_ovf_timer0_en : R/W; bitpos: [16]; default: 0;
-         *  Configures whether or not to enable the ledc_timer0_ovf event.\\0: Disable\\1:
-         *  Enable
-         */
-        uint32_t evt_time_ovf_timer0_en:1;
-        /** evt_time_ovf_timer1_en : R/W; bitpos: [17]; default: 0;
-         *  Configures whether or not to enable the ledc_timer1_ovf event.\\0: Disable\\1:
-         *  Enable
-         */
-        uint32_t evt_time_ovf_timer1_en:1;
-        /** evt_time_ovf_timer2_en : R/W; bitpos: [18]; default: 0;
-         *  Configures whether or not to enable the ledc_timer2_ovf event.\\0: Disable\\1:
-         *  Enable
-         */
-        uint32_t evt_time_ovf_timer2_en:1;
-        /** evt_time_ovf_timer3_en : R/W; bitpos: [19]; default: 0;
-         *  Configures whether or not to enable the ledc_timer3_ovf event.\\0: Disable\\1:
-         *  Enable
-         */
-        uint32_t evt_time_ovf_timer3_en:1;
-        /** evt_timer0_cmp_en : R/W; bitpos: [20]; default: 0;
-         *  Configures whether or not to enable the ledc_timer0_cmp event.\\0: Disable\\1:
-         *  Enable
-         */
-        uint32_t evt_timer0_cmp_en:1;
-        /** evt_timer1_cmp_en : R/W; bitpos: [21]; default: 0;
-         *  Configures whether or not to enable the ledc_timer1_cmp event.\\0: Disable\\1:
-         *  Enable
-         */
-        uint32_t evt_timer1_cmp_en:1;
-        /** evt_timer2_cmp_en : R/W; bitpos: [22]; default: 0;
-         *  Configures whether or not to enable the ledc_timer2_cmp event.\\0: Disable\\1:
-         *  Enable
-         */
-        uint32_t evt_timer2_cmp_en:1;
-        /** evt_timer3_cmp_en : R/W; bitpos: [23]; default: 0;
-         *  Configures whether or not to enable the ledc_timer3_cmp event.\\0: Disable\\1:
-         *  Enable
-         */
-        uint32_t evt_timer3_cmp_en:1;
-        /** task_duty_scale_update_ch0_en : R/W; bitpos: [24]; default: 0;
-         *  Configures whether or not to enable the ledc_ch0_duty_scale_update task.\\0:
-         *  Disable\\1: Enable
-         */
-        uint32_t task_duty_scale_update_ch0_en:1;
-        /** task_duty_scale_update_ch1_en : R/W; bitpos: [25]; default: 0;
-         *  Configures whether or not to enable the ledc_ch1_duty_scale_update task.\\0:
-         *  Disable\\1: Enable
-         */
-        uint32_t task_duty_scale_update_ch1_en:1;
-        /** task_duty_scale_update_ch2_en : R/W; bitpos: [26]; default: 0;
-         *  Configures whether or not to enable the ledc_ch2_duty_scale_update task.\\0:
-         *  Disable\\1: Enable
-         */
-        uint32_t task_duty_scale_update_ch2_en:1;
-        /** task_duty_scale_update_ch3_en : R/W; bitpos: [27]; default: 0;
-         *  Configures whether or not to enable the ledc_ch3_duty_scale_update task.\\0:
-         *  Disable\\1: Enable
-         */
-        uint32_t task_duty_scale_update_ch3_en:1;
-        /** task_duty_scale_update_ch4_en : R/W; bitpos: [28]; default: 0;
-         *  Configures whether or not to enable the ledc_ch4_duty_scale_update task.\\0:
-         *  Disable\\1: Enable
-         */
-        uint32_t task_duty_scale_update_ch4_en:1;
-        /** task_duty_scale_update_ch5_en : R/W; bitpos: [29]; default: 0;
-         *  Configures whether or not to enable the ledc_ch5_duty_scale_update task.\\0:
-         *  Disable\\1: Enable
-         */
-        uint32_t task_duty_scale_update_ch5_en:1;
-        /** task_duty_scale_update_ch6_en : R/W; bitpos: [30]; default: 0;
-         *  Configures whether or not to enable the ledc_ch6_duty_scale_update task.\\0:
-         *  Disable\\1: Enable
-         */
-        uint32_t task_duty_scale_update_ch6_en:1;
-        /** task_duty_scale_update_ch7_en : R/W; bitpos: [31]; default: 0;
-         *  Configures whether or not to enable the ledc_ch7_duty_scale_update task.\\0:
-         *  Disable\\1: Enable
-         */
-        uint32_t task_duty_scale_update_ch7_en:1;
-    };
-    uint32_t val;
-} ledc_evt_task_en0_reg_t;
-
-
-/** Group: en1 */
-/** Type of evt_task_en1 register
- *  Ledc event task enable bit register1.
- */
-typedef union {
-    struct {
-        /** task_timer0_res_update_en : R/W; bitpos: [0]; default: 0;
-         *  Configures whether or not to enable ledc_timer0_res_update task.\\0: Disable\\1:
-         *  Enable
-         */
-        uint32_t task_timer0_res_update_en:1;
-        /** task_timer1_res_update_en : R/W; bitpos: [1]; default: 0;
-         *  Configures whether or not to enable ledc_timer1_res_update task.\\0: Disable\\1:
-         *  Enable
-         */
-        uint32_t task_timer1_res_update_en:1;
-        /** task_timer2_res_update_en : R/W; bitpos: [2]; default: 0;
-         *  Configures whether or not to enable ledc_timer2_res_update task.\\0: Disable\\1:
-         *  Enable
-         */
-        uint32_t task_timer2_res_update_en:1;
-        /** task_timer3_res_update_en : R/W; bitpos: [3]; default: 0;
-         *  Configures whether or not to enable ledc_timer3_res_update task.\\0: Disable\\1:
-         *  Enable
-         */
-        uint32_t task_timer3_res_update_en:1;
-        /** task_timer0_cap_en : R/W; bitpos: [4]; default: 0;
-         *  Configures whether or not to enable ledc_timer0_cap task.\\0: Disable\\1: Enable
-         */
-        uint32_t task_timer0_cap_en:1;
-        /** task_timer1_cap_en : R/W; bitpos: [5]; default: 0;
-         *  Configures whether or not to enable ledc_timer1_cap task.\\0: Disable\\1: Enable
-         */
-        uint32_t task_timer1_cap_en:1;
-        /** task_timer2_cap_en : R/W; bitpos: [6]; default: 0;
-         *  Configures whether or not to enable ledc_timer2_cap task.\\0: Disable\\1: Enable
-         */
-        uint32_t task_timer2_cap_en:1;
-        /** task_timer3_cap_en : R/W; bitpos: [7]; default: 0;
-         *  Configures whether or not to enable ledc_timer3_cap task.\\0: Disable\\1: Enable
-         */
-        uint32_t task_timer3_cap_en:1;
-        /** task_sig_out_dis_ch0_en : R/W; bitpos: [8]; default: 0;
-         *  Configures whether or not to enable ledc_ch0_sig_out_dis task.\\0: Disable\\1:
-         *  Enable
-         */
-        uint32_t task_sig_out_dis_ch0_en:1;
-        /** task_sig_out_dis_ch1_en : R/W; bitpos: [9]; default: 0;
-         *  Configures whether or not to enable ledc_ch1_sig_out_dis task.\\0: Disable\\1:
-         *  Enable
-         */
-        uint32_t task_sig_out_dis_ch1_en:1;
-        /** task_sig_out_dis_ch2_en : R/W; bitpos: [10]; default: 0;
-         *  Configures whether or not to enable ledc_ch2_sig_out_dis task.\\0: Disable\\1:
-         *  Enable
-         */
-        uint32_t task_sig_out_dis_ch2_en:1;
-        /** task_sig_out_dis_ch3_en : R/W; bitpos: [11]; default: 0;
-         *  Configures whether or not to enable ledc_ch3_sig_out_dis task.\\0: Disable\\1:
-         *  Enable
-         */
-        uint32_t task_sig_out_dis_ch3_en:1;
-        /** task_sig_out_dis_ch4_en : R/W; bitpos: [12]; default: 0;
-         *  Configures whether or not to enable ledc_ch4_sig_out_dis task.\\0: Disable\\1:
-         *  Enable
-         */
-        uint32_t task_sig_out_dis_ch4_en:1;
-        /** task_sig_out_dis_ch5_en : R/W; bitpos: [13]; default: 0;
-         *  Configures whether or not to enable ledc_ch5_sig_out_dis task.\\0: Disable\\1:
-         *  Enable
-         */
-        uint32_t task_sig_out_dis_ch5_en:1;
-        /** task_sig_out_dis_ch6_en : R/W; bitpos: [14]; default: 0;
-         *  Configures whether or not to enable ledc_ch6_sig_out_dis task.\\0: Disable\\1:
-         *  Enable
-         */
-        uint32_t task_sig_out_dis_ch6_en:1;
-        /** task_sig_out_dis_ch7_en : R/W; bitpos: [15]; default: 0;
-         *  Configures whether or not to enable ledc_ch7_sig_out_dis task.\\0: Disable\\1:
-         *  Enable
-         */
-        uint32_t task_sig_out_dis_ch7_en:1;
-        /** task_ovf_cnt_rst_ch0_en : R/W; bitpos: [16]; default: 0;
-         *  Configures whether or not to enable ledc_ch0_ovf_cnt_rst task.\\0: Disable\\1:
-         *  Enable
-         */
-        uint32_t task_ovf_cnt_rst_ch0_en:1;
-        /** task_ovf_cnt_rst_ch1_en : R/W; bitpos: [17]; default: 0;
-         *  Configures whether or not to enable ledc_ch1_ovf_cnt_rst task.\\0: Disable\\1:
-         *  Enable
-         */
-        uint32_t task_ovf_cnt_rst_ch1_en:1;
-        /** task_ovf_cnt_rst_ch2_en : R/W; bitpos: [18]; default: 0;
-         *  Configures whether or not to enable ledc_ch2_ovf_cnt_rst task.\\0: Disable\\1:
-         *  Enable
-         */
-        uint32_t task_ovf_cnt_rst_ch2_en:1;
-        /** task_ovf_cnt_rst_ch3_en : R/W; bitpos: [19]; default: 0;
-         *  Configures whether or not to enable ledc_ch3_ovf_cnt_rst task.\\0: Disable\\1:
-         *  Enable
-         */
-        uint32_t task_ovf_cnt_rst_ch3_en:1;
-        /** task_ovf_cnt_rst_ch4_en : R/W; bitpos: [20]; default: 0;
-         *  Configures whether or not to enable ledc_ch4_ovf_cnt_rst task.\\0: Disable\\1:
-         *  Enable
-         */
-        uint32_t task_ovf_cnt_rst_ch4_en:1;
-        /** task_ovf_cnt_rst_ch5_en : R/W; bitpos: [21]; default: 0;
-         *  Configures whether or not to enable ledc_ch5_ovf_cnt_rst task.\\0: Disable\\1:
-         *  Enable
-         */
-        uint32_t task_ovf_cnt_rst_ch5_en:1;
-        /** task_ovf_cnt_rst_ch6_en : R/W; bitpos: [22]; default: 0;
-         *  Configures whether or not to enable ledc_ch6_ovf_cnt_rst task.\\0: Disable\\1:
-         *  Enable
-         */
-        uint32_t task_ovf_cnt_rst_ch6_en:1;
-        /** task_ovf_cnt_rst_ch7_en : R/W; bitpos: [23]; default: 0;
-         *  Configures whether or not to enable ledc_ch7_ovf_cnt_rst task.\\0: Disable\\1:
-         *  Enable
-         */
-        uint32_t task_ovf_cnt_rst_ch7_en:1;
-        /** task_timer0_rst_en : R/W; bitpos: [24]; default: 0;
-         *  Configures whether or not to enable ledc_timer0_rst task.\\0: Disable\\1: Enable
-         */
-        uint32_t task_timer0_rst_en:1;
-        /** task_timer1_rst_en : R/W; bitpos: [25]; default: 0;
-         *  Configures whether or not to enable ledc_timer1_rst task.\\0: Disable\\1: Enable
-         */
-        uint32_t task_timer1_rst_en:1;
-        /** task_timer2_rst_en : R/W; bitpos: [26]; default: 0;
-         *  Configures whether or not to enable ledc_timer2_rst task.\\0: Disable\\1: Enable
-         */
-        uint32_t task_timer2_rst_en:1;
-        /** task_timer3_rst_en : R/W; bitpos: [27]; default: 0;
-         *  Configures whether or not to enable ledc_timer3_rst task.\\0: Disable\\1: Enable
-         */
-        uint32_t task_timer3_rst_en:1;
-        /** task_timer0_pause_resume_en : R/W; bitpos: [28]; default: 0;
-         *  Configures whether or not to enable ledc_timer0_pause_resume task.\\0: Disable\\1:
-         *  Enable
-         */
-        uint32_t task_timer0_pause_resume_en:1;
-        /** task_timer1_pause_resume_en : R/W; bitpos: [29]; default: 0;
-         *  Configures whether or not to enable ledc_timer1_pause_resume task.\\0: Disable\\1:
-         *  Enable
-         */
-        uint32_t task_timer1_pause_resume_en:1;
-        /** task_timer2_pause_resume_en : R/W; bitpos: [30]; default: 0;
-         *  Configures whether or not to enable ledc_timer2_pause_resume task.\\0: Disable\\1:
-         *  Enable
-         */
-        uint32_t task_timer2_pause_resume_en:1;
-        /** task_timer3_pause_resume_en : R/W; bitpos: [31]; default: 0;
-         *  Configures whether or not to enable ledc_timer3_pause_resume task.\\0: Disable\\1:
-         *  Enable
-         */
-        uint32_t task_timer3_pause_resume_en:1;
-    };
-    uint32_t val;
-} ledc_evt_task_en1_reg_t;
-
-
-/** Group: en2 */
-/** Type of evt_task_en2 register
- *  Ledc event task enable bit register2.
- */
-typedef union {
-    struct {
-        /** task_gamma_restart_ch0_en : R/W; bitpos: [0]; default: 0;
-         *  Configures whether or not to enable ledc_ch0_gamma_restart task.\\0: Disable\\1:
-         *  Enable
-         */
-        uint32_t task_gamma_restart_ch0_en:1;
-        /** task_gamma_restart_ch1_en : R/W; bitpos: [1]; default: 0;
-         *  Configures whether or not to enable ledc_ch1_gamma_restart task.\\0: Disable\\1:
-         *  Enable
-         */
-        uint32_t task_gamma_restart_ch1_en:1;
-        /** task_gamma_restart_ch2_en : R/W; bitpos: [2]; default: 0;
-         *  Configures whether or not to enable ledc_ch2_gamma_restart task.\\0: Disable\\1:
-         *  Enable
-         */
-        uint32_t task_gamma_restart_ch2_en:1;
-        /** task_gamma_restart_ch3_en : R/W; bitpos: [3]; default: 0;
-         *  Configures whether or not to enable ledc_ch3_gamma_restart task.\\0: Disable\\1:
-         *  Enable
-         */
-        uint32_t task_gamma_restart_ch3_en:1;
-        /** task_gamma_restart_ch4_en : R/W; bitpos: [4]; default: 0;
-         *  Configures whether or not to enable ledc_ch4_gamma_restart task.\\0: Disable\\1:
-         *  Enable
-         */
-        uint32_t task_gamma_restart_ch4_en:1;
-        /** task_gamma_restart_ch5_en : R/W; bitpos: [5]; default: 0;
-         *  Configures whether or not to enable ledc_ch5_gamma_restart task.\\0: Disable\\1:
-         *  Enable
-         */
-        uint32_t task_gamma_restart_ch5_en:1;
-        /** task_gamma_restart_ch6_en : R/W; bitpos: [6]; default: 0;
-         *  Configures whether or not to enable ledc_ch6_gamma_restart task.\\0: Disable\\1:
-         *  Enable
-         */
-        uint32_t task_gamma_restart_ch6_en:1;
-        /** task_gamma_restart_ch7_en : R/W; bitpos: [7]; default: 0;
-         *  Configures whether or not to enable ledc_ch7_gamma_restart task.\\0: Disable\\1:
-         *  Enable
-         */
-        uint32_t task_gamma_restart_ch7_en:1;
-        /** task_gamma_pause_ch0_en : R/W; bitpos: [8]; default: 0;
-         *  Configures whether or not to enable ledc_ch0_gamma_pause task.\\0: Disable\\1:
-         *  Enable
-         */
-        uint32_t task_gamma_pause_ch0_en:1;
-        /** task_gamma_pause_ch1_en : R/W; bitpos: [9]; default: 0;
-         *  Configures whether or not to enable ledc_ch1_gamma_pause task.\\0: Disable\\1:
-         *  Enable
-         */
-        uint32_t task_gamma_pause_ch1_en:1;
-        /** task_gamma_pause_ch2_en : R/W; bitpos: [10]; default: 0;
-         *  Configures whether or not to enable ledc_ch2_gamma_pause task.\\0: Disable\\1:
-         *  Enable
-         */
-        uint32_t task_gamma_pause_ch2_en:1;
-        /** task_gamma_pause_ch3_en : R/W; bitpos: [11]; default: 0;
-         *  Configures whether or not to enable ledc_ch3_gamma_pause task.\\0: Disable\\1:
-         *  Enable
-         */
-        uint32_t task_gamma_pause_ch3_en:1;
-        /** task_gamma_pause_ch4_en : R/W; bitpos: [12]; default: 0;
-         *  Configures whether or not to enable ledc_ch4_gamma_pause task.\\0: Disable\\1:
-         *  Enable
-         */
-        uint32_t task_gamma_pause_ch4_en:1;
-        /** task_gamma_pause_ch5_en : R/W; bitpos: [13]; default: 0;
-         *  Configures whether or not to enable ledc_ch5_gamma_pause task.\\0: Disable\\1:
-         *  Enable
-         */
-        uint32_t task_gamma_pause_ch5_en:1;
-        /** task_gamma_pause_ch6_en : R/W; bitpos: [14]; default: 0;
-         *  Configures whether or not to enable ledc_ch6_gamma_pause task.\\0: Disable\\1:
-         *  Enable
-         */
-        uint32_t task_gamma_pause_ch6_en:1;
-        /** task_gamma_pause_ch7_en : R/W; bitpos: [15]; default: 0;
-         *  Configures whether or not to enable ledc_ch7_gamma_pause task.\\0: Disable\\1:
-         *  Enable
-         */
-        uint32_t task_gamma_pause_ch7_en:1;
-        /** task_gamma_resume_ch0_en : R/W; bitpos: [16]; default: 0;
-         *  Configures whether or not to enable ledc_ch0_gamma_resume task.\\0: Disable\\1:
-         *  Enable
-         */
-        uint32_t task_gamma_resume_ch0_en:1;
-        /** task_gamma_resume_ch1_en : R/W; bitpos: [17]; default: 0;
-         *  Configures whether or not to enable ledc_ch1_gamma_resume task.\\0: Disable\\1:
-         *  Enable
-         */
-        uint32_t task_gamma_resume_ch1_en:1;
-        /** task_gamma_resume_ch2_en : R/W; bitpos: [18]; default: 0;
-         *  Configures whether or not to enable ledc_ch2_gamma_resume task.\\0: Disable\\1:
-         *  Enable
-         */
-        uint32_t task_gamma_resume_ch2_en:1;
-        /** task_gamma_resume_ch3_en : R/W; bitpos: [19]; default: 0;
-         *  Configures whether or not to enable ledc_ch3_gamma_resume task.\\0: Disable\\1:
-         *  Enable
-         */
-        uint32_t task_gamma_resume_ch3_en:1;
-        /** task_gamma_resume_ch4_en : R/W; bitpos: [20]; default: 0;
-         *  Configures whether or not to enable ledc_ch4_gamma_resume task.\\0: Disable\\1:
-         *  Enable
-         */
-        uint32_t task_gamma_resume_ch4_en:1;
-        /** task_gamma_resume_ch5_en : R/W; bitpos: [21]; default: 0;
-         *  Configures whether or not to enable ledc_ch5_gamma_resume task.\\0: Disable\\1:
-         *  Enable
-         */
-        uint32_t task_gamma_resume_ch5_en:1;
-        /** task_gamma_resume_ch6_en : R/W; bitpos: [22]; default: 0;
-         *  Configures whether or not to enable ledc_ch6_gamma_resume task.\\0: Disable\\1:
-         *  Enable
-         */
-        uint32_t task_gamma_resume_ch6_en:1;
-        /** task_gamma_resume_ch7_en : R/W; bitpos: [23]; default: 0;
-         *  Configures whether or not to enable ledc_ch7_gamma_resume task.\\0: Disable\\1:
-         *  Enable
-         */
-        uint32_t task_gamma_resume_ch7_en:1;
-        uint32_t reserved_24:8;
-    };
-    uint32_t val;
-} ledc_evt_task_en2_reg_t;
-
-
-/** Group: cmp */
-/** Type of timern_cmp register
- *  Ledc timern compare value register.
- */
-typedef union {
-    struct {
-        /** timer0_cmp : R/W; bitpos: [19:0]; default: 0;
-         *  Configures the comparison value for LEDC timern.
-         */
-        uint32_t timer0_cmp:20;
-        uint32_t reserved_20:12;
-    };
-    uint32_t val;
-} ledc_timern_cmp_reg_t;
-
-
-/** Group: cap */
-/** Type of timern_cnt_cap register
- *  Ledc timern captured count value register.
- */
-typedef union {
-    struct {
-        /** timer0_cnt_cap : RO; bitpos: [19:0]; default: 0;
-         *  Represents the captured LEDC timern count value.
-         */
-        uint32_t timer_cnt_cap:20;
-        uint32_t reserved_20:12;
-    };
-    uint32_t val;
-} ledc_timern_cnt_cap_reg_t;
-
-
-/** Group: Configuration Register */
-/** Type of conf register
- *  LEDC global configuration register
- */
-typedef union {
-    struct {
-        /** apb_clk_sel : R/W; bitpos: [1:0]; default: 0;
-         *  Configures the clock source for the four timers.\\0: APB_CLK\\1: RC_FAST_CLK\\2:
-         *  XTAL_CLK\\3: Invalid. No clock
-         */
-        uint32_t apb_clk_sel:2;
-        /** gamma_ram_clk_en_ch0 : R/W; bitpos: [2]; default: 0;
-         *  Configures whether or not to open LEDC ch0 gamma ram clock gate.\\0: Open the clock
-         *  gate only when application writes or reads LEDC ch0 gamma ram\\1: Force open the
-         *  clock gate for LEDC ch0 gamma ram
-         */
-        uint32_t gamma_ram_clk_en_ch0:1;
-        /** gamma_ram_clk_en_ch1 : R/W; bitpos: [3]; default: 0;
-         *  Configures whether or not to open LEDC ch1 gamma ram clock gate.\\0: Open the clock
-         *  gate only when application writes or reads LEDC ch1 gamma ram\\1: Force open the
-         *  clock gate for LEDC ch1 gamma ram
-         */
-        uint32_t gamma_ram_clk_en_ch1:1;
-        /** gamma_ram_clk_en_ch2 : R/W; bitpos: [4]; default: 0;
-         *  Configures whether or not to open LEDC ch2 gamma ram clock gate.\\0: Open the clock
-         *  gate only when application writes or reads LEDC ch2 gamma ram\\1: Force open the
-         *  clock gate for LEDC ch2 gamma ram
-         */
-        uint32_t gamma_ram_clk_en_ch2:1;
-        /** gamma_ram_clk_en_ch3 : R/W; bitpos: [5]; default: 0;
-         *  Configures whether or not to open LEDC ch3 gamma ram clock gate.\\0: Open the clock
-         *  gate only when application writes or reads LEDC ch3 gamma ram\\1: Force open the
-         *  clock gate for LEDC ch3 gamma ram
-         */
-        uint32_t gamma_ram_clk_en_ch3:1;
-        /** gamma_ram_clk_en_ch4 : R/W; bitpos: [6]; default: 0;
-         *  Configures whether or not to open LEDC ch4 gamma ram clock gate.\\0: Open the clock
-         *  gate only when application writes or reads LEDC ch4 gamma ram\\1: Force open the
-         *  clock gate for LEDC ch4 gamma ram
-         */
-        uint32_t gamma_ram_clk_en_ch4:1;
-        /** gamma_ram_clk_en_ch5 : R/W; bitpos: [7]; default: 0;
-         *  Configures whether or not to open LEDC ch5 gamma ram clock gate.\\0: Open the clock
-         *  gate only when application writes or reads LEDC ch5 gamma ram\\1: Force open the
-         *  clock gate for LEDC ch5 gamma ram
-         */
-        uint32_t gamma_ram_clk_en_ch5:1;
-        /** gamma_ram_clk_en_ch6 : R/W; bitpos: [8]; default: 0;
-         *  Configures whether or not to open LEDC ch6 gamma ram clock gate.\\0: Open the clock
-         *  gate only when application writes or reads LEDC ch6 gamma ram\\1: Force open the
-         *  clock gate for LEDC ch6 gamma ram
-         */
-        uint32_t gamma_ram_clk_en_ch6:1;
-        /** gamma_ram_clk_en_ch7 : R/W; bitpos: [9]; default: 0;
-         *  Configures whether or not to open LEDC ch7 gamma ram clock gate.\\0: Open the clock
-         *  gate only when application writes or reads LEDC ch7 gamma ram\\1: Force open the
-         *  clock gate for LEDC ch7 gamma ram
-         */
-        uint32_t gamma_ram_clk_en_ch7:1;
-        uint32_t reserved_10:21;
-        /** clk_en : R/W; bitpos: [31]; default: 0;
-         *  Configures whether or not to open register clock gate.\\0: Open the clock gate only
-         *  when application writes registers\\1: Force open the clock gate for register
-         */
-        uint32_t clk_en:1;
-    };
-    uint32_t val;
-} ledc_conf_reg_t;
-
-
 /** Group: Version Register */
 /** Type of date register
  *  Version control register
  */
 typedef union {
     struct {
-        /** ledc_date : R/W; bitpos: [27:0]; default: 36712560;
+        /** ledc_date : R/W; bitpos: [27:0]; default: 37765152;
          *  Configures the version.
          */
         uint32_t ledc_date:28;
@@ -1179,6 +1279,7 @@ typedef union {
     };
     uint32_t val;
 } ledc_date_reg_t;
+
 
 typedef struct {
     volatile ledc_chn_conf0_reg_t conf0;
@@ -1205,7 +1306,7 @@ typedef struct {
     volatile ledc_ch_group_reg_t channel_group[1];
     volatile ledc_timer_group_reg_t timer_group[1];
     volatile ledc_int_raw_reg_t int_raw;
-    volatile ledc_int_st_reg_t  int_st;
+    volatile ledc_int_st_reg_t int_st;
     volatile ledc_int_ena_reg_t int_ena;
     volatile ledc_int_clr_reg_t int_clr;
     uint32_t reserved_0d0[12];
@@ -1220,7 +1321,6 @@ typedef struct {
     volatile ledc_conf_reg_t conf;
     volatile ledc_date_reg_t date;
 } ledc_dev_t;
-
 
 /**
  * Gamma fade param group ram type
@@ -1243,7 +1343,6 @@ typedef struct {
 typedef struct {
     volatile ledc_gamma_channel_t channel[8];
 } ledc_gamma_ram_t;
-
 
 extern ledc_dev_t LEDC;
 extern ledc_gamma_ram_t LEDC_GAMMA_RAM;

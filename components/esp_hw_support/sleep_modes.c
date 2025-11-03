@@ -327,8 +327,14 @@ static portMUX_TYPE __attribute__((unused)) spinlock_rtc_deep_sleep = portMUX_IN
 
 ESP_LOG_ATTR_TAG(TAG, "sleep");
 
-/* APP core of esp32 can't access to RTC FAST MEMORY, do not define it with RTC_IRAM_ATTR */
-RTC_SLOW_ATTR static int32_t s_sleep_sub_mode_ref_cnt[ESP_SLEEP_MODE_MAX] = { 0 };
+/* APP core of esp32 can't access to RTC FAST MEMORY, do not define it with RTC_IRAM_ATTR,
+   RTC_SLOW_ATTR is for ESP_SLEEP_USE_ADC_TSEN_MONITOR_MODE only, For other submodules, there is
+   no logical error if the ref_cnt is stored in DRAM. and ESP_SLEEP_USE_ADC_TSEN_MONITOR_MODE
+   will only be used on chips that support RTC_MEM */
+#if SOC_RTC_FAST_MEM_SUPPORTED || SOC_RTC_SLOW_MEM_SUPPORTED
+RTC_SLOW_ATTR
+#endif
+static int32_t s_sleep_sub_mode_ref_cnt[ESP_SLEEP_MODE_MAX] = { 0 };
 
 void esp_sleep_overhead_out_time_refresh(void)
 {
@@ -360,7 +366,6 @@ static void gpio_deep_sleep_wakeup_prepare(void);
 #if ESP_ROM_SUPPORT_DEEP_SLEEP_WAKEUP_STUB && SOC_DEEP_SLEEP_SUPPORTED
 #if SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY
 static RTC_FAST_ATTR esp_deep_sleep_wake_stub_fn_t wake_stub_fn_handler = NULL;
-
 static void RTC_IRAM_ATTR __attribute__((used, noinline)) esp_wake_stub_start(void)
 {
     if (wake_stub_fn_handler) {
@@ -391,7 +396,6 @@ static void __attribute__((section(".rtc.entry.text"))) esp_wake_stub_entry(void
     // which is sufficient for instruction addressing in RTC fast memory.
     __asm__ __volatile__ ("call4 " SYM2STR(esp_wake_stub_start) "\n");
 #endif
-
 }
 
 void RTC_IRAM_ATTR esp_set_deep_sleep_wake_stub_default_entry(void)
@@ -427,7 +431,7 @@ esp_deep_sleep_wake_stub_fn_t esp_get_deep_sleep_wake_stub(void)
 #if CONFIG_IDF_TARGET_ESP32
 /* APP core of esp32 can't access to RTC FAST MEMORY, link to RTC SLOW MEMORY instead*/
 RTC_SLOW_ATTR
-#else
+#elif (SOC_RTC_FAST_MEM_SUPPORTED || SOC_RTC_SLOW_MEM_SUPPORTED)
 RTC_IRAM_ATTR
 #endif
 void esp_set_deep_sleep_wake_stub(esp_deep_sleep_wake_stub_fn_t new_stub)
@@ -443,7 +447,7 @@ void esp_set_deep_sleep_wake_stub(esp_deep_sleep_wake_stub_fn_t new_stub)
 #if CONFIG_IDF_TARGET_ESP32
 /* APP core of esp32 can't access to RTC FAST MEMORY, link to RTC SLOW MEMORY instead*/
 RTC_SLOW_ATTR
-#else
+#elif (SOC_RTC_FAST_MEM_SUPPORTED || SOC_RTC_SLOW_MEM_SUPPORTED)
 RTC_IRAM_ATTR
 #endif
 void esp_default_wake_deep_sleep(void)
@@ -576,7 +580,7 @@ static SLEEP_FN_ATTR void suspend_timers(uint32_t sleep_flags) {
     if (!(sleep_flags & RTC_SLEEP_PD_XTAL)) {
 #if SOC_SLEEP_TGWDT_STOP_WORKAROUND
         /* If timegroup implemented task watchdog or interrupt watchdog is running, we have to stop it. */
-        for (uint32_t tg_num = 0; tg_num < SOC_MODULE_ATTR(TIMG, INST_NUM); ++tg_num) {
+        for (uint32_t tg_num = 0; tg_num < TIMG_LL_GET(INST_NUM); ++tg_num) {
             if (mwdt_ll_check_if_enabled(TIMER_LL_GET_HW(tg_num))) {
                 mwdt_ll_write_protect_disable(TIMER_LL_GET_HW(tg_num));
                 mwdt_ll_disable(TIMER_LL_GET_HW(tg_num));
@@ -602,7 +606,7 @@ static SLEEP_FN_ATTR void resume_timers(uint32_t sleep_flags) {
         }
 #endif
 #if SOC_SLEEP_TGWDT_STOP_WORKAROUND
-        for (uint32_t tg_num = 0; tg_num < SOC_MODULE_ATTR(TIMG, INST_NUM); ++tg_num) {
+        for (uint32_t tg_num = 0; tg_num < TIMG_LL_GET(INST_NUM); ++tg_num) {
             if (s_stopped_tgwdt_bmap & BIT(tg_num)) {
                 mwdt_ll_write_protect_disable(TIMER_LL_GET_HW(tg_num));
                 mwdt_ll_enable(TIMER_LL_GET_HW(tg_num));
@@ -932,14 +936,14 @@ static esp_err_t FORCE_IRAM_ATTR esp_sleep_start_safe(uint32_t sleep_flags, uint
 #endif
 
 #if SOC_PMU_SUPPORTED
-#if SOC_PM_CPU_RETENTION_BY_SW && ESP_SLEEP_POWER_DOWN_CPU
+#if SOC_PM_CPU_RETENTION_BY_SW && CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU
         esp_sleep_execute_event_callbacks(SLEEP_EVENT_HW_GOTO_SLEEP, (void *)0);
         if (sleep_flags & (PMU_SLEEP_PD_CPU | PMU_SLEEP_PD_TOP)) {
             result = esp_sleep_cpu_retention(pmu_sleep_start, s_config.wakeup_triggers, reject_triggers, config->power.hp_sys.dig_power.mem_dslp, deep_sleep);
         } else
 #endif
         {
-#if !CONFIG_FREERTOS_UNICORE && ESP_SLEEP_POWER_DOWN_CPU && SOC_PM_CPU_RETENTION_BY_SW
+#if !CONFIG_FREERTOS_UNICORE && CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU && SOC_PM_CPU_RETENTION_BY_SW
             // Skip smp retention if CPU power domain power-down is not allowed
             esp_sleep_cpu_skip_retention();
 #endif
@@ -1136,7 +1140,7 @@ static esp_err_t SLEEP_FN_ATTR esp_sleep_start(uint32_t sleep_flags, uint32_t cl
 
     if (should_skip_sleep) {
         result = ESP_ERR_SLEEP_REJECT;
-#if ESP_SLEEP_POWER_DOWN_CPU && !CONFIG_FREERTOS_UNICORE && SOC_PM_CPU_RETENTION_BY_SW
+#if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU && !CONFIG_FREERTOS_UNICORE && SOC_PM_CPU_RETENTION_BY_SW
         esp_sleep_cpu_skip_retention();
 #endif
     } else {
@@ -1438,7 +1442,7 @@ esp_err_t esp_light_sleep_start(void)
 #endif
 
 #if !CONFIG_FREERTOS_UNICORE
-#if ESP_SLEEP_POWER_DOWN_CPU && SOC_PM_CPU_RETENTION_BY_SW
+#if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU && SOC_PM_CPU_RETENTION_BY_SW
     sleep_smp_cpu_sleep_prepare();
 #else
     esp_ipc_isr_stall_other_cpu();
@@ -1601,7 +1605,7 @@ esp_err_t esp_light_sleep_start(void)
         }
         esp_set_time_from_rtc();
     } else {
-#if !CONFIG_FREERTOS_UNICORE && ESP_SLEEP_POWER_DOWN_CPU && SOC_PM_CPU_RETENTION_BY_SW
+#if !CONFIG_FREERTOS_UNICORE && CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU && SOC_PM_CPU_RETENTION_BY_SW
         esp_sleep_cpu_skip_retention();
 #endif
     }
@@ -1618,7 +1622,7 @@ esp_err_t esp_light_sleep_start(void)
 
 #if !CONFIG_FREERTOS_UNICORE
     esp_ipc_isr_stall_resume();
-#if ESP_SLEEP_POWER_DOWN_CPU && SOC_PM_CPU_RETENTION_BY_SW
+#if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU && SOC_PM_CPU_RETENTION_BY_SW
     sleep_smp_cpu_wakeup_prepare();
 #else
     esp_ipc_isr_release_other_cpu();
@@ -2448,19 +2452,37 @@ esp_err_t esp_sleep_pd_config(esp_sleep_pd_domain_t domain, esp_sleep_pd_option_
     esp_os_enter_critical_safe(&s_config.lock);
     int refs = 0;
     if (s_config.domain[domain].pd_option == ESP_PD_OPTION_AUTO) {
+        // If domain is currently in auto mode, transition to the new mode directly
+        // - If option is ESP_PD_OPTION_ON: set refs to 1
+        // - If option is ESP_PD_OPTION_OFF: set refs to 0
+        // - If option is ESP_PD_OPTION_AUTO: no change in refs
         s_config.domain[domain].refs = (option == ESP_PD_OPTION_ON) ? 1 : 0;
         s_config.domain[domain].pd_option = option;
     } else {
         if (option == ESP_PD_OPTION_AUTO) {
+            // If switching from manual to auto mode, reset references and return to auto management
             s_config.domain[domain].refs = 0;
             s_config.domain[domain].pd_option = option;
         } else {
-            refs = (option == ESP_PD_OPTION_ON)  ? s_config.domain[domain].refs++ \
-                 : (option == ESP_PD_OPTION_OFF) ? --s_config.domain[domain].refs \
-                 : s_config.domain[domain].refs;
+            // Manual mode operations (ESP_PD_OPTION_ON/ESP_PD_OPTION_OFF)
+            // The reference counting implements the following state machine:
+            // - ON operations increment references, only update pd_option when refs transitions from 0 to 1
+            // - OFF operations decrement references, only update pd_option when refs transitions from 1 to 0
+            // - This provides symmetric reference counting for resource management
+            if (option == ESP_PD_OPTION_ON) {
+                // Get refs value after incrementing: this ensures pd_option is updated when transitioning
+                // from 0->1 (first request) but not on subsequent increments
+                refs = s_config.domain[domain].refs++;
+            } else if (option == ESP_PD_OPTION_OFF) {
+                // Get refs value after decrementing: this ensures pd_option is updated when transitioning
+                // from 1->0 (last release) but not on intermediate decrements
+                refs = --s_config.domain[domain].refs;
+            }
             if (refs == 0) {
+                // Only update pd_option when reference count reaches 0, indicating all users have released
                 s_config.domain[domain].pd_option = option;
             } else if (refs < 0) {
+                // Error case: reference count went negative, which indicates unbalanced ON/OFF calls
                 s_config.domain[domain].refs = 0;
                 err = ESP_ERR_INVALID_STATE;
             }
@@ -2558,7 +2580,7 @@ esp_err_t esp_sleep_clock_config(esp_sleep_clock_t clock, esp_sleep_clock_option
 #if SOC_PM_SUPPORT_TOP_PD && SOC_PAU_SUPPORTED
 FORCE_INLINE_ATTR bool top_domain_pd_allowed(void) {
     bool top_pd_allowed = true;
-#if ESP_SLEEP_POWER_DOWN_CPU
+#if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU
     top_pd_allowed &= cpu_domain_pd_allowed();
 #else
     top_pd_allowed = false;
@@ -2689,7 +2711,7 @@ static SLEEP_FN_ATTR uint32_t get_power_down_flags(void)
     }
 #endif
 
-#if SOC_PM_SUPPORT_CPU_PD && ESP_SLEEP_POWER_DOWN_CPU
+#if SOC_PM_SUPPORT_CPU_PD && CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU && !CONFIG_ESP32P4_SELECTS_REV_LESS_V3
     if ((s_config.domain[ESP_PD_DOMAIN_CPU].pd_option != ESP_PD_OPTION_ON) && cpu_domain_pd_allowed()) {
         pd_flags |= RTC_SLEEP_PD_CPU;
     }
@@ -2733,7 +2755,7 @@ static SLEEP_FN_ATTR uint32_t get_power_down_flags(void)
 #endif
 
 #if SOC_PM_SUPPORT_CNNT_PD
-    if (s_config.domain[ESP_PD_DOMAIN_CNNT].pd_option != ESP_PD_OPTION_ON) {
+    if (s_config.domain[ESP_PD_DOMAIN_CNNT].pd_option != ESP_PD_OPTION_ON && top_domain_pd_allowed()) {
         pd_flags |= PMU_SLEEP_PD_CNNT;
     }
 #endif
@@ -2863,7 +2885,7 @@ static SLEEP_FN_ATTR uint32_t get_sleep_clock_icg_flags(void)
 #if CONFIG_IDF_TARGET_ESP32
 /* APP core of esp32 can't access to RTC FAST MEMORY, do not define it with RTC_IRAM_ATTR */
 RTC_SLOW_ATTR
-#else
+#elif (SOC_RTC_FAST_MEM_SUPPORTED || SOC_RTC_SLOW_MEM_SUPPORTED)
 RTC_IRAM_ATTR
 #endif
 void esp_deep_sleep_disable_rom_logging(void)

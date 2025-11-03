@@ -2088,6 +2088,7 @@ esp_err_t esp_ble_gap_set_resolvable_private_address_timeout(uint16_t rpa_timeou
  *
  */
 esp_err_t esp_ble_gap_add_device_to_resolving_list(esp_bd_addr_t peer_addr, uint8_t addr_type, uint8_t *peer_irk);
+
 /**
  * @brief           This function clears the random address for the application
  *
@@ -2493,6 +2494,28 @@ esp_err_t esp_ble_sc_oob_req_reply(esp_bd_addr_t bd_addr, uint8_t p_c[16], uint8
 *
 */
 esp_err_t esp_ble_create_sc_oob_data(void);
+
+/**
+ * @brief           Get the local Identity Resolving Key (IRK).
+ *
+ * @note            This API retrieves the local IRK stored in the device's security database.
+ *                  The IRK is used by the controller to generate and resolve Resolvable Private Addresses (RPA).
+ *                  The IRK length is always 16 bytes (ESP_BT_OCTET16_LEN).
+ *
+ * @note            Usage Restrictions: Do NOT call this API during a disconnection event or while
+ *                  a BLE disconnection is in progress. Calling this API during disconnection may lead
+ *                  to undefined behavior or accessing invalid information.
+ *
+ * @param[out]      local_irk: Buffer to hold the 16-byte IRK. The array notation [16] explicitly
+ *                             indicates the required buffer size (ESP_BT_OCTET16_LEN).
+ *
+ * @return
+ *                  - ESP_OK : success
+ *                  - ESP_ERR_INVALID_ARG : local_irk is NULL
+ *                  - ESP_ERR_INVALID_STATE : BLE stack not initialized or IRK not available
+ */
+esp_err_t esp_ble_gap_get_local_irk(uint8_t local_irk[16]);
+
 #endif /* #if (SMP_INCLUDED == TRUE) */
 
 /**

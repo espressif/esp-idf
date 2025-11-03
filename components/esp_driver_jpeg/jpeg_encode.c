@@ -165,8 +165,6 @@ esp_err_t jpeg_encoder_process(jpeg_encoder_handle_t encoder_engine, const jpeg_
     jpeg_enc_format_hb_t best_hb_idx = 0;
 
     encoder_engine->picture_format = encode_cfg->src_type;
-    color_space_pixel_format_t picture_format;
-    picture_format.color_type_id = encoder_engine->picture_format;
 
     switch (encode_cfg->src_type) {
     case JPEG_ENCODE_IN_FORMAT_RGB888:
@@ -247,7 +245,7 @@ esp_err_t jpeg_encoder_process(jpeg_encoder_handle_t encoder_engine, const jpeg_
 
     // 2D direction
     memset(encoder_engine->txlink, 0, sizeof(dma2d_descriptor_t));
-    s_cfg_desc(encoder_engine, encoder_engine->txlink, JPEG_DMA2D_2D_ENABLE, DMA2D_DESCRIPTOR_BLOCK_RW_MODE_MULTIPLE, dma_vb, dma_hb, JPEG_DMA2D_EOF_NOT_LAST, dma2d_desc_pixel_format_to_pbyte_value(picture_format), DMA2D_DESCRIPTOR_BUFFER_OWNER_DMA, encoder_engine->header_info->origin_v, encoder_engine->header_info->origin_h, raw_buffer, NULL);
+    s_cfg_desc(encoder_engine, encoder_engine->txlink, JPEG_DMA2D_2D_ENABLE, DMA2D_DESCRIPTOR_BLOCK_RW_MODE_MULTIPLE, dma_vb, dma_hb, JPEG_DMA2D_EOF_NOT_LAST, dma2d_desc_pixel_format_to_pbyte_value_fourcc(encoder_engine->picture_format), DMA2D_DESCRIPTOR_BUFFER_OWNER_DMA, encoder_engine->header_info->origin_v, encoder_engine->header_info->origin_h, raw_buffer, NULL);
 
     ret = esp_cache_msync((void*)raw_buffer, inbuf_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
     assert(ret == ESP_OK);
@@ -512,10 +510,8 @@ static void s_cfg_desc(jpeg_encoder_handle_t encoder_engine, dma2d_descriptor_t 
 static void s_jpeg_enc_config_picture_color_space(jpeg_encoder_handle_t encoder_engine)
 {
     jpeg_hal_context_t *hal = &encoder_engine->codec_base->hal;
-    color_space_pixel_format_t picture_format;
     jpeg_ll_config_picture_pixel_format(hal->dev, encoder_engine->color_space);
-    picture_format.color_type_id = encoder_engine->picture_format;
-    encoder_engine->bytes_per_pixel = color_hal_pixel_format_get_bit_depth(picture_format);
+    encoder_engine->bytes_per_pixel = color_hal_pixel_format_fourcc_get_bit_depth(encoder_engine->picture_format);
     if (encoder_engine->color_space == JPEG_ENC_SRC_GRAY) {
         encoder_engine->header_info->num_components = 1;
     } else {

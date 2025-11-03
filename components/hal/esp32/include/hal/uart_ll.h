@@ -338,11 +338,12 @@ FORCE_INLINE_ATTR void uart_ll_read_rxfifo(uart_dev_t *hw, uint8_t *buf, uint32_
 {
     //Get the UART APB fifo addr. Read fifo, we use APB address
     uint32_t fifo_addr = (hw == &UART0) ? UART_FIFO_REG(0) : (hw == &UART1) ? UART_FIFO_REG(1) : UART_FIFO_REG(2);
-    for(uint32_t i = 0; i < rd_len; i++) {
+    for (uint32_t i = 0; i < rd_len; i++) {
         buf[i] = READ_PERI_REG(fifo_addr);
-#ifdef CONFIG_COMPILER_OPTIMIZATION_PERF
+        // workaround a hardware issue when CPU is @240MHz (especially when enable O2 optimization),
+        // always add a NOP instruction here to ensure the data is read correctly.
+        // UART FIFO read is not a performance critical part where 1 clock cycle matters.
         __asm__ __volatile__("nop");
-#endif
     }
 }
 

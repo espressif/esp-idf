@@ -14,6 +14,7 @@
 #include "soc/hp_sys_clkrst_struct.h"
 #include "hal/assert.h"
 #include "hal/misc.h"
+#include "hal/config.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -27,9 +28,15 @@ extern "C" {
 #define PPA_LL_SRM_SCALING_INT_MAX   (PPA_SR_SCAL_X_INT_V + 1)
 #define PPA_LL_SRM_SCALING_FRAG_MAX  (PPA_SR_SCAL_X_FRAG_V + 1)
 
-// TODO: On P4 ECO2, SRM block size needs update
-#define PPA_LL_SRM_DEFAULT_BLOCK_SIZE   18 // 18 x 18 block size
-#define PPA_LL_SRM_YUV420_BLOCK_SIZE    20 // 20 x 20 block size
+/**
+ * @brief Enumeration of PPA SRM macro block size options
+ */
+typedef enum {
+    PPA_LL_SRM_MB_SIZE_16_16,   /*!< SRM engine processes with a macro block size of 16 x 16 */
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+    PPA_LL_SRM_MB_SIZE_32_32,   /*!< SRM engine processes with a macro block size of 32 x 32 */
+#endif
+} ppa_ll_srm_mb_size_t;
 
 /**
  * @brief Enumeration of PPA blending mode
@@ -73,6 +80,29 @@ static inline void ppa_ll_reset_register(void)
         (void)__DECLARE_RCC_ATOMIC_ENV; \
         ppa_ll_reset_register(__VA_ARGS__); \
     } while(0)
+
+/**
+ * @brief Configure the RGB888 to GRAY8 color conversion coefficients for SRM and Blending (excluding Fill)
+ *
+ * The gray value is calculated as: gray = (r_coeff * R + g_coeff * G + b_coeff * B) >> 8
+ *
+ * @param dev Peripheral instance address
+ * @param r_coeff Coefficient for Red channel, range 0-255
+ * @param g_coeff Coefficient for Green channel, range 0-255
+ * @param b_coeff Coefficient for Blue channel, range 0-255
+ */
+static inline void ppa_ll_set_rgb2gray_coeff(ppa_dev_t *dev, uint8_t r_coeff, uint8_t g_coeff, uint8_t b_coeff)
+{
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+    HAL_ASSERT((r_coeff + g_coeff + b_coeff == 256) && "Sum of RGB to GRAY coefficients must be 256");
+    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->rgb2gray, rgb2gray_r, r_coeff);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->rgb2gray, rgb2gray_g, g_coeff);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->rgb2gray, rgb2gray_b, b_coeff);
+#else
+    // GRAY8 color mode is not supported by PPA hardware before P4 ECO5
+    abort();
+#endif
+}
 
 ///////////////////////// Scaling, Rotating, Mirroring (SRM) //////////////////////////////
 /**
@@ -176,6 +206,30 @@ static inline void ppa_ll_srm_start(ppa_dev_t *dev)
 }
 
 /**
+ * @brief Check if the given color mode is supported by PPA SRM engine
+ *
+ * @param color_mode One of the values in ppa_srm_color_mode_t
+ * @return true if supported; false if not supported
+ */
+static inline bool ppa_ll_srm_is_color_mode_supported(ppa_srm_color_mode_t color_mode)
+{
+    switch (color_mode) {
+    case PPA_SRM_COLOR_MODE_ARGB8888:
+    case PPA_SRM_COLOR_MODE_RGB888:
+    case PPA_SRM_COLOR_MODE_RGB565:
+    case PPA_SRM_COLOR_MODE_YUV420:
+    case PPA_SRM_COLOR_MODE_YUV444: // YUV444 not supported by PPA hardware, but can be converted by 2D-DMA before/after PPA
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+    case PPA_SRM_COLOR_MODE_YUV422:
+    case PPA_SRM_COLOR_MODE_GRAY8:
+#endif
+        return true;
+    default:
+        return false;
+    }
+}
+
+/**
  * @brief Set the source image color mode for PPA Scaling-Rotating-Mirroring engine RX
  *
  * @param dev Peripheral instance address
@@ -197,6 +251,14 @@ static inline void ppa_ll_srm_set_rx_color_mode(ppa_dev_t *dev, ppa_srm_color_mo
     case PPA_SRM_COLOR_MODE_YUV420:
         val = 8;
         break;
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+    case PPA_SRM_COLOR_MODE_YUV422:
+        val = 9;
+        break;
+    case PPA_SRM_COLOR_MODE_GRAY8:
+        val = 12;
+        break;
+#endif
     default:
         // Unsupported SRM rx color mode
         abort();
@@ -226,6 +288,14 @@ static inline void ppa_ll_srm_set_tx_color_mode(ppa_dev_t *dev, ppa_srm_color_mo
     case PPA_SRM_COLOR_MODE_YUV420:
         val = 8;
         break;
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+    case PPA_SRM_COLOR_MODE_YUV422:
+        val = 9;
+        break;
+    case PPA_SRM_COLOR_MODE_GRAY8:
+        val = 12;
+        break;
+#endif
     default:
         // Unsupported SRM tx color mode
         abort();
@@ -318,6 +388,38 @@ static inline void ppa_ll_srm_set_tx_yuv_range(ppa_dev_t *dev, ppa_color_range_t
 }
 
 /**
+ * @brief Set PPA SRM input side YUV422 data format packing order
+ *
+ * @param dev Peripheral instance address
+ * @param pack_order One of the pack order options in color_yuv422_pack_order_t
+ */
+static inline void ppa_ll_srm_set_rx_yuv422_pack_order(ppa_dev_t *dev, color_yuv422_pack_order_t pack_order)
+{
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+    switch (pack_order) {
+    case COLOR_YUV422_PACK_ORDER_YVYU:
+        dev->sr_color_mode.yuv422_rx_byte_order = 0;
+        break;
+    case COLOR_YUV422_PACK_ORDER_YUYV:
+        dev->sr_color_mode.yuv422_rx_byte_order = 1;
+        break;
+    case COLOR_YUV422_PACK_ORDER_VYUY:
+        dev->sr_color_mode.yuv422_rx_byte_order = 2;
+        break;
+    case COLOR_YUV422_PACK_ORDER_UYVY:
+        dev->sr_color_mode.yuv422_rx_byte_order = 3;
+        break;
+    default:
+        // Unsupported YUV422 pack order
+        abort();
+    }
+#else
+    // YUV422 not supported by PPA SRM hardware before P4 ECO5
+    abort();
+#endif
+}
+
+/**
  * @brief Enable PPA SRM input data swap in RGB (e.g. ARGB becomes BGRA, RGB becomes BGR)
  *
  * @param dev Peripheral instance address
@@ -377,6 +479,112 @@ static inline void ppa_ll_srm_configure_rx_alpha(ppa_dev_t *dev, ppa_alpha_updat
     }
 }
 
+/**
+ * @brief Get the current configured PPA SRM macro block size
+ *
+ * @param dev Peripheral instance address
+ * @return The current configured macro block size, one of the values in ppa_ll_srm_mb_size_t
+ */
+static inline ppa_ll_srm_mb_size_t ppa_ll_srm_get_mb_size(ppa_dev_t *dev)
+{
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+    return (dev->sr_byte_order.sr_bk_size_sel == 0) ? PPA_LL_SRM_MB_SIZE_32_32 : PPA_LL_SRM_MB_SIZE_16_16;
+#else
+    return PPA_LL_SRM_MB_SIZE_16_16;
+#endif
+}
+
+/**
+ * @brief Set PPA SRM macro block size
+ *
+ * @param dev Peripheral instance address
+ * @param mb_size Macro block size to be set, one of the values in ppa_ll_srm_mb_size_t
+ */
+static inline void ppa_ll_srm_set_mb_size(ppa_dev_t *dev, ppa_ll_srm_mb_size_t mb_size)
+{
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+    switch (mb_size) {
+    case PPA_LL_SRM_MB_SIZE_16_16:
+        dev->sr_byte_order.sr_bk_size_sel = 1;
+        break;
+    case PPA_LL_SRM_MB_SIZE_32_32:
+        dev->sr_byte_order.sr_bk_size_sel = 0;
+        break;
+    default:
+        // Unsupported SRM macro block size
+        abort();
+    }
+#else
+    HAL_ASSERT(mb_size == PPA_LL_SRM_MB_SIZE_16_16);
+#endif
+}
+
+/**
+ * @brief Retrieve the 2D-DMA descriptor port mode block size (in pixel) according to the PPA SRM input color mode and configured macro block size
+ *
+ * @param dev Peripheral instance address
+ * @param in_color_mode Input color mode, one of the values in ppa_srm_color_mode_t
+ * @param mb_size SRM macro block size, one of the values in ppa_ll_srm_mb_size_t
+ * @param[out] block_h Returned block horizontal width
+ * @param[out] block_v Returned block wvertical height
+ */
+static inline void ppa_ll_srm_get_dma_dscr_port_mode_block_size(ppa_dev_t *dev, ppa_srm_color_mode_t in_color_mode, ppa_ll_srm_mb_size_t mb_size, uint32_t *block_h, uint32_t *block_v)
+{
+    if (mb_size == PPA_LL_SRM_MB_SIZE_16_16) {
+        switch (in_color_mode) {
+        case PPA_SRM_COLOR_MODE_ARGB8888:
+        case PPA_SRM_COLOR_MODE_RGB888:
+        case PPA_SRM_COLOR_MODE_RGB565:
+        case PPA_SRM_COLOR_MODE_GRAY8:
+            *block_h = 18;
+            *block_v = 18;
+            break;
+        case PPA_SRM_COLOR_MODE_YUV420:
+            *block_h = 20;
+            *block_v = 18;
+            break;
+        case PPA_SRM_COLOR_MODE_YUV422:
+            *block_h = 20;
+            *block_v = 20;
+            break;
+        default:
+            // Unsupported SRM input color mode
+            *block_h = 0;
+            *block_v = 0;
+        }
+    }
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+    else if (mb_size == PPA_LL_SRM_MB_SIZE_32_32) {
+        switch (in_color_mode) {
+        case PPA_SRM_COLOR_MODE_ARGB8888:
+        case PPA_SRM_COLOR_MODE_RGB888:
+        case PPA_SRM_COLOR_MODE_RGB565:
+        case PPA_SRM_COLOR_MODE_GRAY8:
+            *block_h = 34;
+            *block_v = 34;
+            break;
+        case PPA_SRM_COLOR_MODE_YUV420:
+            *block_h = 36;
+            *block_v = 34;
+            break;
+        case PPA_SRM_COLOR_MODE_YUV422:
+            *block_h = 36;
+            *block_v = 36;
+            break;
+        default:
+            // Unsupported SRM input color mode
+            *block_h = 0;
+            *block_v = 0;
+        }
+    }
+#endif
+    else {
+        // Unsupported SRM macro block size
+        *block_h = 0;
+        *block_v = 0;
+    }
+}
+
 //////////////////////////////////// Blending ////////////////////////////////////////
 /*
  * Alpha Blending Calculation:
@@ -427,6 +635,33 @@ static inline void ppa_ll_blend_start(ppa_dev_t *dev, ppa_ll_blend_trans_mode_t 
 }
 
 /**
+ * @brief Check if the given color mode is supported by PPA blending engine
+ *
+ * @param color_mode One of the values in ppa_blend_color_mode_t
+ * @return true if supported (by any of rx_bg, rx_fg, tx); false if not supported
+ */
+static inline bool ppa_ll_blend_is_color_mode_supported(ppa_blend_color_mode_t color_mode)
+{
+    switch (color_mode) {
+    case PPA_BLEND_COLOR_MODE_ARGB8888:
+    case PPA_BLEND_COLOR_MODE_RGB888:
+    case PPA_BLEND_COLOR_MODE_RGB565:
+    case PPA_BLEND_COLOR_MODE_A8:
+    case PPA_BLEND_COLOR_MODE_A4:
+    // case PPA_BLEND_COLOR_MODE_L8:
+    // case PPA_BLEND_COLOR_MODE_L4:
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+    case PPA_BLEND_COLOR_MODE_YUV420:
+    case PPA_BLEND_COLOR_MODE_YUV422:
+    case PPA_BLEND_COLOR_MODE_GRAY8:
+#endif
+        return true;
+    default:
+        return false;
+    }
+}
+
+/**
  * @brief Set the source image color mode for background for PPA blending engine RX
  *
  * @param dev Peripheral instance address
@@ -451,6 +686,17 @@ static inline void ppa_ll_blend_set_rx_bg_color_mode(ppa_dev_t *dev, ppa_blend_c
     // case PPA_BLEND_COLOR_MODE_L4:
     //     val = 5;
     //     break;
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+    case PPA_BLEND_COLOR_MODE_YUV420:
+        val = 8;
+        break;
+    case PPA_BLEND_COLOR_MODE_YUV422:
+        val = 9;
+        break;
+    case PPA_BLEND_COLOR_MODE_GRAY8:
+        val = 12;
+        break;
+#endif
     default:
         // Unsupported blending rx background color mode
         abort();
@@ -515,11 +761,158 @@ static inline void ppa_ll_blend_set_tx_color_mode(ppa_dev_t *dev, ppa_blend_colo
     case PPA_BLEND_COLOR_MODE_RGB565:
         val = 2;
         break;
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+    case PPA_BLEND_COLOR_MODE_YUV420:
+        val = 8;
+        break;
+    case PPA_BLEND_COLOR_MODE_YUV422:
+        val = 9;
+        break;
+    case PPA_BLEND_COLOR_MODE_GRAY8:
+        val = 12;
+        break;
+#endif
     default:
         // Unsupported blending tx color mode
         abort();
     }
     dev->blend_color_mode.blend_tx_cm = val;
+}
+
+/**
+ * @brief Set YUV to RGB protocol when PPA blending source image background pixel color space is YUV
+ *
+ * @param dev Peripheral instance address
+ * @param std One of the RGB-YUV conversion standards in ppa_color_conv_std_rgb_yuv_t
+ */
+static inline void ppa_ll_blend_set_rx_bg_yuv2rgb_std(ppa_dev_t *dev, ppa_color_conv_std_rgb_yuv_t std)
+{
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+    switch (std) {
+    case PPA_COLOR_CONV_STD_RGB_YUV_BT601:
+        dev->blend_color_mode.blend0_rx_yuv2rgb_protocol = 0;
+        break;
+    case PPA_COLOR_CONV_STD_RGB_YUV_BT709:
+        dev->blend_color_mode.blend0_rx_yuv2rgb_protocol = 1;
+        break;
+    default:
+        // Unsupported RGB-YUV conversion standard
+        abort();
+    }
+#else
+    // YUV not supported by PPA blending hardware before P4 ECO5
+    abort();
+#endif
+}
+
+/**
+ * @brief Set RGB to YUV protocol when PPA blending destination image pixel color space is YUV
+ *
+ * @param dev Peripheral instance address
+ * @param std One of the RGB-YUV conversion standards in ppa_color_conv_std_rgb_yuv_t
+ */
+static inline void ppa_ll_blend_set_tx_rgb2yuv_std(ppa_dev_t *dev, ppa_color_conv_std_rgb_yuv_t std)
+{
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+    switch (std) {
+    case PPA_COLOR_CONV_STD_RGB_YUV_BT601:
+        dev->blend_color_mode.blend_tx_rgb2yuv_protocol = 0;
+        break;
+    case PPA_COLOR_CONV_STD_RGB_YUV_BT709:
+        dev->blend_color_mode.blend_tx_rgb2yuv_protocol = 1;
+        break;
+    default:
+        // Unsupported RGB-YUV conversion standard
+        abort();
+    }
+#else
+    // YUV not supported by PPA blending hardware before P4 ECO5
+    abort();
+#endif
+}
+
+/**
+ * @brief Set PPA blending source image background YUV input range
+ *
+ * @param dev Peripheral instance address
+ * @param range One of color range options in ppa_color_range_t
+ */
+static inline void ppa_ll_blend_set_rx_bg_yuv_range(ppa_dev_t *dev, ppa_color_range_t range)
+{
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+    switch (range) {
+    case PPA_COLOR_RANGE_LIMIT:
+        dev->blend_color_mode.blend0_rx_yuv_range = 0;
+        break;
+    case PPA_COLOR_RANGE_FULL:
+        dev->blend_color_mode.blend0_rx_yuv_range = 1;
+        break;
+    default:
+        // Unsupported color range
+        abort();
+    }
+#else
+    // YUV not supported by PPA blending hardware before P4 ECO5
+    abort();
+#endif
+}
+
+/**
+ * @brief Set PPA blending destination image YUV output range
+ *
+ * @param dev Peripheral instance address
+ * @param range One of color range options in ppa_color_range_t
+ */
+static inline void ppa_ll_blend_set_tx_yuv_range(ppa_dev_t *dev, ppa_color_range_t range)
+{
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+    switch (range) {
+    case PPA_COLOR_RANGE_LIMIT:
+        dev->blend_color_mode.blend_tx_yuv_range = 0;
+        break;
+    case PPA_COLOR_RANGE_FULL:
+        dev->blend_color_mode.blend_tx_yuv_range = 1;
+        break;
+    default:
+        // Unsupported color range
+        abort();
+    }
+#else
+    // YUV not supported by PPA blending hardware before P4 ECO5
+    abort();
+#endif
+}
+
+/**
+ * @brief Set PPA blending source image background YUV422 data format packing order
+ *
+ * @param dev Peripheral instance address
+ * @param pack_order One of the pack order options in color_yuv422_pack_order_t
+ */
+static inline void ppa_ll_blend_set_rx_bg_yuv422_pack_order(ppa_dev_t *dev, color_yuv422_pack_order_t pack_order)
+{
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+    switch (pack_order) {
+    case COLOR_YUV422_PACK_ORDER_YVYU:
+        dev->blend_color_mode.blend0_rx_yuv422_byte_order = 0;
+        break;
+    case COLOR_YUV422_PACK_ORDER_YUYV:
+        dev->blend_color_mode.blend0_rx_yuv422_byte_order = 1;
+        break;
+    case COLOR_YUV422_PACK_ORDER_VYUY:
+        dev->blend_color_mode.blend0_rx_yuv422_byte_order = 2;
+        break;
+    case COLOR_YUV422_PACK_ORDER_UYVY:
+        dev->blend_color_mode.blend0_rx_yuv422_byte_order = 3;
+        break;
+    default:
+        // Unsupported YUV422 pack order
+        abort();
+    }
+#else
+    // YUV422 not supported by PPA blending hardware before P4 ECO5
+    abort();
+#endif
 }
 
 /**
@@ -645,15 +1038,44 @@ static inline void ppa_ll_blend_configure_rx_fg_alpha(ppa_dev_t *dev, ppa_alpha_
 /**
  * @brief Configure PPA blending pixel filling image block
  *
+ * The color to be filled is directly relying on the blend_tx_fix_pixel register field value.
+ * For fill operation, the data does not go through any color space conversion in the blending engine.
+ *
  * @param dev Peripheral instance address
- * @param data The fix data to be filled to the image block pixels in ARGB8888 format
+ * @param color_mode One of the values in ppa_fill_color_mode_t
+ * @param data The point of the fix data to be filled to the image block pixels
  * @param hb The horizontal width of image block that would be filled in fix pixel filling mode. The unit is pixel.
  * @param vb The vertical height of image block that would be filled in fix pixel filling mode. The unit is pixel.
  */
-static inline void ppa_ll_blend_configure_filling_block(ppa_dev_t *dev, color_pixel_argb8888_data_t *data, uint32_t hb, uint32_t vb)
+static inline void ppa_ll_blend_configure_filling_block(ppa_dev_t *dev, ppa_fill_color_mode_t color_mode, void *data, uint32_t hb, uint32_t vb)
 {
     HAL_ASSERT(hb <= PPA_BLEND_HB_V && vb <= PPA_BLEND_VB_V);
-    dev->blend_fix_pixel.blend_tx_fix_pixel = data->val;
+    uint32_t fill_color_data = 0;
+    switch (color_mode) {
+    case PPA_FILL_COLOR_MODE_ARGB8888:
+    case PPA_FILL_COLOR_MODE_RGB888:
+    case PPA_FILL_COLOR_MODE_RGB565:
+    case PPA_FILL_COLOR_MODE_GRAY8:
+        fill_color_data = *(uint32_t *)data;
+        break;
+    case PPA_FILL_COLOR_MODE_YUV422: {
+        color_macroblock_yuv_data_t *yuv_data = (color_macroblock_yuv_data_t *)data;
+        fill_color_data = ((yuv_data->y) << 24) | ((yuv_data->v) << 16) | ((yuv_data->y) << 8) | (yuv_data->u);
+        break;
+    }
+    // case PPA_FILL_COLOR_MODE_YUV420: {
+    //     color_macroblock_yuv_data_t *yuv_data = (color_macroblock_yuv_data_t *)data;
+    //     if (yuv_data->u != yuv_data->v) {
+    //         abort();
+    //     }
+    //     fill_color_data = ((yuv_data->y) << 16) | ((yuv_data->y) << 8) | (yuv_data->v);
+    //     break;
+    // }
+    default:
+        // Unsupported filling color mode
+        abort();
+    }
+    dev->blend_fix_pixel.blend_tx_fix_pixel = fill_color_data;
     dev->blend_tx_size.blend_hb = hb;
     dev->blend_tx_size.blend_vb = vb;
 }

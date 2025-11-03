@@ -55,10 +55,6 @@ if(CONFIG_SOC_SYSTIMER_SUPPORTED)
     list(APPEND sources "patches/esp_rom_systimer.c")
 endif()
 
-if(CONFIG_HAL_WDT_USE_ROM_IMPL)
-    list(APPEND sources "patches/esp_rom_wdt.c")
-endif()
-
 if(CONFIG_ESP_ROM_CLIC_INT_TYPE_PATCH)
     list(APPEND sources "patches/esp_rom_clic.c")
 endif()
@@ -177,9 +173,6 @@ endif()
 
 if(BOOTLOADER_BUILD)
     if(target STREQUAL "esp32")
-        if(NOT CONFIG_SPI_FLASH_ROM_DRIVER_PATCH)
-            rom_linker_script("spiflash_legacy")
-        endif()
         if(CONFIG_ESP32_REV_MIN_FULL GREATER_EQUAL 300)
             rom_linker_script("eco3")
         endif()
@@ -237,11 +230,6 @@ else() # Regular app build
             if(CONFIG_LIBC_NEWLIB)
                 rom_linker_script("newlib-reent-funcs")
             endif()
-        endif()
-
-        if(NOT CONFIG_SPI_FLASH_ROM_DRIVER_PATCH)
-            # For ESP32, inclusion of ROM driver do not depend on CONFIG_SPI_FLASH_ROM_IMPL
-            rom_linker_script("spiflash_legacy")
         endif()
 
         if(CONFIG_ESP32_REV_MIN_FULL GREATER_EQUAL 300)

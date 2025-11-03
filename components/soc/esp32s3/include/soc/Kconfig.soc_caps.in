@@ -43,10 +43,6 @@ config SOC_GPTIMER_SUPPORTED
     bool
     default y
 
-config SOC_LCDCAM_SUPPORTED
-    bool
-    default y
-
 config SOC_LCDCAM_CAM_SUPPORTED
     bool
     default y
@@ -56,6 +52,14 @@ config SOC_LCDCAM_I80_LCD_SUPPORTED
     default y
 
 config SOC_LCDCAM_RGB_LCD_SUPPORTED
+    bool
+    default y
+
+config SOC_LCD_I80_SUPPORTED
+    bool
+    default y
+
+config SOC_LCD_RGB_SUPPORTED
     bool
     default y
 
@@ -427,22 +431,6 @@ config SOC_AHB_GDMA_VERSION
     int
     default 1
 
-config SOC_GDMA_NUM_GROUPS_MAX
-    int
-    default 1
-
-config SOC_GDMA_PAIRS_PER_GROUP
-    int
-    default 5
-
-config SOC_GDMA_PAIRS_PER_GROUP_MAX
-    int
-    default 5
-
-config SOC_AHB_GDMA_SUPPORT_PSRAM
-    bool
-    default y
-
 config SOC_GPIO_PORT
     int
     default 1
@@ -742,50 +730,6 @@ config SOC_RMT_SUPPORT_APB
 config SOC_RMT_SUPPORT_DMA
     bool
     default y
-
-config SOC_LCD_I80_SUPPORTED
-    bool
-    default y
-
-config SOC_LCD_RGB_SUPPORTED
-    bool
-    default y
-
-config SOC_LCD_I80_BUSES
-    int
-    default 1
-
-config SOC_LCD_RGB_PANELS
-    int
-    default 1
-
-config SOC_LCD_I80_BUS_WIDTH
-    int
-    default 16
-
-config SOC_LCD_RGB_DATA_WIDTH
-    int
-    default 16
-
-config SOC_LCD_SUPPORT_RGB_YUV_CONV
-    bool
-    default y
-
-config SOC_LCDCAM_I80_NUM_BUSES
-    int
-    default 1
-
-config SOC_LCDCAM_I80_BUS_WIDTH
-    int
-    default 16
-
-config SOC_LCDCAM_RGB_NUM_PANELS
-    int
-    default 1
-
-config SOC_LCDCAM_RGB_DATA_WIDTH
-    int
-    default 16
 
 config SOC_RTC_CNTL_CPU_PD_DMA_BUS_WIDTH
     int

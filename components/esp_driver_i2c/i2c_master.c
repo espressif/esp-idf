@@ -590,8 +590,15 @@ static void s_i2c_send_commands(i2c_master_bus_handle_t i2c_master, TickType_t t
             // For i2c nack detected, the i2c transaction not finish.
             // start->address->nack->stop
             // So wait the whole transaction finishes, then quit the function.
+            TickType_t start_tick = xTaskGetTickCount();
+            const TickType_t timeout_ticks = ticks_to_wait;
             while (i2c_ll_is_bus_busy(hal->dev)) {
-                __asm__ __volatile__("nop");
+                if ((xTaskGetTickCount() - start_tick) > timeout_ticks) {
+                    ESP_LOGE(TAG, "I2C bus is still busy but software timeout detected");
+                    atomic_store(&i2c_master->status, I2C_STATUS_TIMEOUT);
+                    s_i2c_hw_fsm_reset(i2c_master, true);
+                    break;
+                }
             }
         }
         s_i2c_err_log_print(event, i2c_master->bypass_nack_log);
@@ -870,7 +877,7 @@ static esp_err_t i2c_master_bus_destroy(i2c_master_bus_handle_t bus_handle)
     i2c_master_bus_handle_t i2c_master = bus_handle;
     esp_err_t err = ESP_OK;
     if (i2c_master->base) {
-        i2c_common_deinit_pins(i2c_master->base);
+        ESP_RETURN_ON_ERROR(i2c_common_deinit_pins(i2c_master->base), TAG, "failed to deinit i2c pins");
         err = i2c_release_bus_handle(i2c_master->base);
     }
     if (err == ESP_OK) {
@@ -1429,7 +1436,7 @@ esp_err_t i2c_master_execute_defined_operations(i2c_master_dev_handle_t i2c_dev,
         case I2C_MASTER_CMD_WRITE:
             i2c_ops[i].hw_cmd.op_code = I2C_LL_CMD_WRITE;
             i2c_ops[i].hw_cmd.ack_en = i2c_operation[i].write.ack_check;
-            i2c_ops[i].data = i2c_operation[i].write.data;
+            i2c_ops[i].data = (uint8_t *)i2c_operation[i].write.data;
             i2c_ops[i].total_bytes = i2c_operation[i].write.total_bytes;
             break;
         case I2C_MASTER_CMD_READ:

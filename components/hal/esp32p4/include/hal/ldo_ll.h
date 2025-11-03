@@ -15,6 +15,7 @@
 #include "hal/pmu_types.h"
 #include "soc/pmu_struct.h"
 #include "soc/efuse_struct.h"
+#include "hal/config.h"
 
 #ifdef __cplusplus
 extern "C" {

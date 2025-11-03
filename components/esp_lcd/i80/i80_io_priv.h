@@ -39,7 +39,7 @@
 #include "esp_private/gdma_link.h"
 #include "esp_private/esp_dma_utils.h"
 #include "esp_private/gpio.h"
-#include "soc/lcd_periph.h"
+#include "hal/lcd_periph.h"
 #include "soc/io_mux_reg.h"
 #include "soc/gpio_sig_map.h"
 

@@ -433,12 +433,12 @@ LCD
     ^^^^^^^^^^^^^^^^^^^^^^^^^
 
     - ``mcpwm_gpio_init`` and ``mcpwm_set_pin``: GPIO configurations are moved to submodule's own configuration. e.g., set the PWM GPIO in :cpp:member:`mcpwm_generator_config_t::gen_gpio_num`.
-    - ``mcpwm_init``: To get an expected PWM waveform, users need to allocated at least one MCPWM timer and MCPWM operator, then connect them by calling :cpp:func:`mcpwm_operator_connect_timer`. After that, users should set the generator's actions on various events by calling e.g., :cpp:func:`mcpwm_generator_set_actions_on_timer_event`, :cpp:func:`mcpwm_generator_set_actions_on_compare_event`.
+    - ``mcpwm_init``: To get an expected PWM waveform, users need to allocated at least one MCPWM timer and MCPWM operator, then connect them by calling :cpp:func:`mcpwm_operator_connect_timer`. After that, users should set the generator's actions on various events by calling e.g., :cpp:func:`mcpwm_generator_set_action_on_timer_event`, :cpp:func:`mcpwm_generator_set_action_on_compare_event`.
     - ``mcpwm_group_set_resolution``: in the new driver, the group resolution is fixed to the maximum, usually it is 80 MHz.
     - ``mcpwm_timer_set_resolution``: MCPWM Timer resolution is set in :cpp:member:`mcpwm_timer_config_t::resolution_hz`.
     - ``mcpwm_set_frequency``: PWM frequency is determined by :cpp:member:`mcpwm_timer_config_t::resolution_hz`, :cpp:member:`mcpwm_timer_config_t::count_mode` and :cpp:member:`mcpwm_timer_config_t::period_ticks`.
     - ``mcpwm_set_duty``: To set the PWM duty cycle, users should call :cpp:func:`mcpwm_comparator_set_compare_value` to change comparator's threshold.
-    - ``mcpwm_set_duty_type``: There is no preset duty cycle types. The duty cycle type is configured by setting different generator actions. e.g., :cpp:func:`mcpwm_generator_set_actions_on_timer_event`.
+    - ``mcpwm_set_duty_type``: There is no preset duty cycle types. The duty cycle type is configured by setting different generator actions. e.g., :cpp:func:`mcpwm_generator_set_action_on_timer_event`.
     - ``mcpwm_set_signal_high`` and ``mcpwm_set_signal_low`` are replaced by :cpp:func:`mcpwm_generator_set_force_level`. In the new driver, it is implemented by setting force action for the generator, instead of changing the duty cycle to 0% or 100% at the background.
     - ``mcpwm_start`` and ``mcpwm_stop`` are replaced by :cpp:func:`mcpwm_timer_start_stop`. You have more modes to start and stop the MCPWM timer, see :cpp:type:`mcpwm_timer_start_stop_cmd_t`.
     - ``mcpwm_carrier_init`` is replaced by :cpp:func:`mcpwm_operator_apply_carrier`.
@@ -450,7 +450,7 @@ LCD
     - ``mcpwm_carrier_output_invert`` is replaced by :cpp:member:`mcpwm_carrier_config_t::invert_before_modulate` and :cpp:member:`mcpwm_carrier_config_t::invert_after_modulate`.
     - ``mcpwm_deadtime_enable`` and ``mcpwm_deadtime_disable`` are replaced by :cpp:func:`mcpwm_generator_set_dead_time`.
     - ``mcpwm_fault_init`` is replaced by :cpp:func:`mcpwm_new_gpio_fault`.
-    - ``mcpwm_fault_set_oneshot_mode``, ``mcpwm_fault_set_cyc_mode`` are replaced by :cpp:func:`mcpwm_operator_set_brake_on_fault` and :cpp:func:`mcpwm_generator_set_actions_on_brake_event`.
+    - ``mcpwm_fault_set_oneshot_mode``, ``mcpwm_fault_set_cyc_mode`` are replaced by :cpp:func:`mcpwm_operator_set_brake_on_fault` and :cpp:func:`mcpwm_generator_set_action_on_brake_event`.
     - ``mcpwm_capture_enable`` is removed. It is duplicated to :cpp:func:`mcpwm_capture_enable_channel`.
     - ``mcpwm_capture_disable`` is removed. It is duplicated to :cpp:func:`mcpwm_capture_capture_disable_channel`.
     - ``mcpwm_capture_enable_channel`` and ``mcpwm_capture_disable_channel`` are replaced by :cpp:func:`mcpwm_capture_channel_enable` and :cpp:func:`mcpwm_capture_channel_disable`.

@@ -14,153 +14,156 @@
 extern "C" {
 #endif
 
-typedef struct esp_cam_ctlr_t esp_cam_ctlr_t;  /*!< Type of CAM controller */
+/**
+ * @brief Type of CAM controller.
+ */
+typedef struct esp_cam_ctlr_t esp_cam_ctlr_t;
 
 /**
- * @brief Cam controller interface
+ * @brief CAM controller interface.
  */
 struct esp_cam_ctlr_t {
     /**
-     * @brief Enable ESP CAM controller
+     * @brief Enable ESP CAM controller.
      *
-     * @param[in] handle  ESP CAM controller handle
+     * @param[in] handle ESP CAM controller handle.
      *
      * @return
-     *        - ESP_OK
-     *        - ESP_ERR_INVALID_ARG:   Invalid argument
-     *        - ESP_ERR_INVALID_STATE: Invalid state
+     *      - ESP_OK: Success.
+     *      - ESP_ERR_INVALID_ARG: Invalid argument.
+     *      - ESP_ERR_INVALID_STATE: Invalid state.
      */
     esp_err_t (*enable)(esp_cam_ctlr_t *ctlr);
 
     /**
-     * @brief Start ESP CAM controller
+     * @brief Start ESP CAM controller.
      *
-     * @param[in] handle  ESP CAM controller handle
+     * @param[in] handle ESP CAM controller handle.
      *
      * @return
-     *        - ESP_OK
-     *        - ESP_ERR_INVALID_ARG:   Invalid argument
-     *        - ESP_ERR_INVALID_STATE: Invalid state
+     *      - ESP_OK: Success.
+     *      - ESP_ERR_INVALID_ARG: Invalid argument.
+     *      - ESP_ERR_INVALID_STATE: Invalid state.
      */
     esp_err_t (*start)(esp_cam_ctlr_t *ctlr);
 
     /**
-     * @brief Stop ESP CAM controller
+     * @brief Stop ESP CAM controller.
      *
-     * @param[in] handle  ESP CAM controller handle
+     * @param[in] handle ESP CAM controller handle.
      *
      * @return
-     *        - ESP_OK
-     *        - ESP_ERR_INVALID_ARG:   Invalid argument
-     *        - ESP_ERR_INVALID_STATE: Invalid state
+     *      - ESP_OK: Success.
+     *      - ESP_ERR_INVALID_ARG: Invalid argument.
+     *      - ESP_ERR_INVALID_STATE: Invalid state.
      */
     esp_err_t (*stop)(esp_cam_ctlr_t *ctlr);
 
     /**
-     * @brief Disable ESP CAM controller
+     * @brief Disable ESP CAM controller.
      *
-     * @param[in] handle  ESP CAM controller handle
+     * @param[in] handle ESP CAM controller handle.
      *
      * @return
-     *        - ESP_OK
-     *        - ESP_ERR_INVALID_ARG:   Invalid argument
-     *        - ESP_ERR_INVALID_STATE: Invalid state
+     *      - ESP_OK: Success.
+     *      - ESP_ERR_INVALID_ARG: Invalid argument.
+     *      - ESP_ERR_INVALID_STATE: Invalid state.
      */
     esp_err_t (*disable)(esp_cam_ctlr_t *ctlr);
 
     /**
-     * @brief Receive data to the given transaction
+     * @brief Receive data to the given transaction.
      *
-     * @param[in] handle      ESP CAM controller handle
-     * @param[in] trans       ESP CAM controller transaction type
-     * @param[in] timeout_ms  Timeout in ms
+     * @param[in] handle      ESP CAM controller handle.
+     * @param[in] trans       ESP CAM controller transaction type.
+     * @param[in] timeout_ms  Timeout. Measurement unit: milliseconds.
      *
      * @return
-     *        - ESP_OK
-     *        - ESP_ERR_INVALID_ARG:   Invalid argument
-     *        - ESP_ERR_INVALID_STATE: Invalid state
+     *      - ESP_OK: Success.
+     *      - ESP_ERR_INVALID_ARG: Invalid argument.
+     *      - ESP_ERR_INVALID_STATE: Invalid state.
      */
     esp_err_t (*receive)(esp_cam_ctlr_t *ctlr, esp_cam_ctlr_trans_t *trans, uint32_t timeout_ms);
 
     /**
-     * @brief Delete ESP CAM controller handle
+     * @brief Delete ESP CAM controller handle.
      *
-     * @param[in] handle  ESP CAM controller handle
+     * @param[in] handle ESP CAM controller handle.
      *
      * @return
-     *        - ESP_OK
-     *        - ESP_ERR_INVALID_ARG:   Invalid argument
-     *        - ESP_ERR_INVALID_STATE: Invalid state
+     *      - ESP_OK: Success.
+     *      - ESP_ERR_INVALID_ARG: Invalid argument.
+     *      - ESP_ERR_INVALID_STATE: Invalid state.
      */
     esp_err_t (*del)(esp_cam_ctlr_t *ctlr);
 
     /**
-     * @brief Register ESP CAM controller event callbacks
+     * @brief Register ESP CAM controller event callbacks.
      *
-     * @param[in] handle  ESP CAM controller handle
+     * @param[in] handle  ESP CAM controller handle.
      *
      * @return
-     *        - ESP_OK
-     *        - ESP_ERR_INVALID_ARG:   Invalid argument
-     *        - ESP_ERR_INVALID_STATE: Invalid state
+     *      - ESP_OK: Success.
+     *      - ESP_ERR_INVALID_ARG: Invalid argument.
+     *      - ESP_ERR_INVALID_STATE: Invalid state.
      */
     esp_err_t (*register_event_callbacks)(esp_cam_ctlr_t *ctlr, const esp_cam_ctlr_evt_cbs_t *cbs, void *user_ctx);
 
     /**
-     * @brief Get ESP CAM controller internal malloced backup buffer(s) addr
+     * @brief Get ESP CAM controller internal malloced backup buffer(s) address.
      *
-     * @param[in]   esp_cam_ctlr_t *    ESP CAM controller handle
-     * @param[in]   uint32_t            Number of frame buffer(s) to get. This value must be the same as the number of the followed fbN parameters
-     * @param[out]  const void **       Address of the frame buffer 0 (first frame buffer)
-     * @param[out]  ...                 List of other frame buffers if any
+     * @param[in]   esp_cam_ctlr_t *    ESP CAM controller handle.
+     * @param[in]   uint32_t            Number of frame buffer(s) to get. This value must match the number of the following fbN parameters.
+     * @param[out]  const void **       Address of the frame buffer 0 (first frame buffer).
+     * @param[out]  ...                 List of other frame buffers if any.
      *
      * @return
-     *        - ESP_OK
-     *        - ESP_ERR_INVALID_ARG:   Invalid argument
-     *        - ESP_ERR_INVALID_STATE: Invalid driver state
+     *      - ESP_OK: Success.
+     *      - ESP_ERR_INVALID_ARG: Invalid argument.
+     *      - ESP_ERR_INVALID_STATE: Invalid driver state.
      */
     esp_err_t (*get_internal_buffer)(esp_cam_ctlr_t *, uint32_t, const void **, ...);
 
     /**
-     * @brief Get ESP CAM controller internal backup buffer length
+     * @brief Get ESP CAM controller internal backup buffer length.
      *
-     * @param[in]   esp_cam_ctlr_t *    ESP CAM controller handle
-     * @param[out]  size_t *          The size of each frame buffer, in bytes.
+     * @param[in]   esp_cam_ctlr_t *    ESP CAM controller handle.
+     * @param[out]  size_t *          The size of each frame buffer. Measurement unit: bytes.
      *
      * @return
-     *        - ESP_OK
-     *        - ESP_ERR_INVALID_ARG:   NULL ptr
-     *        - ESP_ERR_INVALID_STATE: Invalid driver state
+     *      - ESP_OK: Success.
+     *      - ESP_ERR_INVALID_ARG: NULL pointer.
+     *      - ESP_ERR_INVALID_STATE: Invalid driver state.
      */
     esp_err_t (*get_buffer_len)(esp_cam_ctlr_t *, size_t *);
 
     /**
-     * @brief Allocate aligned camera buffer for ESP CAM controller
+     * @brief Allocate aligned camera buffer for ESP CAM controller.
      *
-     * @param[in]   esp_cam_ctlr_t *    ESP CAM controller handle
-     * @param[in]   size_t              Buffer size in bytes
-     * @param[in]   uint32_t            Buffer allocation capabilities
+     * @param[in]   esp_cam_ctlr_t *    ESP CAM controller handle.
+     * @param[in]   size_t              Buffer size. Measurement unit: bytes.
+     * @param[in]   uint32_t            Buffer allocation capabilities.
      *
      * @return
-     *        - Buffer pointer on success
-     *        - NULL on failure
+     *      - Buffer pointer on success.
+     *      - NULL on failure.
      */
     void *(*alloc_buffer)(esp_cam_ctlr_t *, size_t, uint32_t);
 
     /**
-     * @brief Configure format conversion
+     * @brief Configure format conversion.
      *
-     * @param[in] esp_cam_ctlr_t *      ESP CAM controller handle
-     * @param[in] const cam_ctlr_format_conv_config_t * Color conversion configuration
+     * @param[in] esp_cam_ctlr_t *      ESP CAM controller handle.
+     * @param[in] const cam_ctlr_format_conv_config_t * Color conversion configuration.
      *
      * @return
-     *        - ESP_OK on success
-     *        - ESP_ERR_INVALID_ARG:   Invalid argument
-     *        - ESP_ERR_NOT_SUPPORTED: Format conversion not supported by this controller
+     *      - ESP_OK: Success.
+     *      - ESP_ERR_INVALID_ARG: Invalid argument.
+     *      - ESP_ERR_NOT_SUPPORTED: Format conversion not supported by this controller.
      */
     esp_err_t (*format_conversion)(esp_cam_ctlr_t *, const cam_ctlr_format_conv_config_t *);
 
-    void *user_data;  ///< User data
+    void *user_data; /*!< User data. */
 };
 
 #ifdef __cplusplus

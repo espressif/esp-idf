@@ -29,7 +29,7 @@ static void s_test_i2s_enter_light_sleep(int sec, bool allow_power_down)
     esp_sleep_context_t sleep_ctx;
     esp_sleep_set_sleep_context(&sleep_ctx);
     printf("Entering light sleep for %d seconds\n", sec);
-#if ESP_SLEEP_POWER_DOWN_CPU
+#if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU
     printf("Enable CPU power down\n");
     TEST_ESP_OK(sleep_cpu_configure(true));
 #endif
@@ -37,7 +37,7 @@ static void s_test_i2s_enter_light_sleep(int sec, bool allow_power_down)
     TEST_ESP_OK(esp_sleep_enable_timer_wakeup(sec * 1000 * 1000));
     TEST_ESP_OK(esp_light_sleep_start());
 
-#if ESP_SLEEP_POWER_DOWN_CPU
+#if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU
     TEST_ESP_OK(sleep_cpu_configure(false));
 #endif
     printf("Woke up from light sleep\n");

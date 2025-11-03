@@ -2,7 +2,7 @@
 
 /*
  * SPDX-FileCopyrightText: 2017 Intel Corporation
- * SPDX-FileContributor: 2018-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2018-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -29,10 +29,15 @@
 
 #define BLE_MESH_SDU_MAX_LEN    384
 
+/* Extended SDU maximum length (message length + TransMIC size) calculation:
+ * 32 segments maximum × (249 bytes max PDU - 17 bytes overhead)
+ * 17 bytes = 9 bytes mesh header + 4 bytes transport overhead + 4-byte NetMIC */
+#define BLE_MESH_EXT_SDU_MAX_LEN    (32*(249-17))
+
 extern const struct bt_mesh_comp *comp_0;
 static uint16_t dev_primary_addr;
 
-static int model_send(struct bt_mesh_model *model,
+static int model_send(const struct bt_mesh_model *model,
                       struct bt_mesh_net_tx *tx, bool implicit_bind,
                       struct net_buf_simple *msg,
                       const struct bt_mesh_send_cb *cb, void *cb_data);
@@ -295,7 +300,7 @@ static void mod_publish(struct k_work *work)
     }
 }
 
-struct bt_mesh_elem *bt_mesh_model_elem(struct bt_mesh_model *mod)
+struct bt_mesh_elem *bt_mesh_model_elem(const struct bt_mesh_model *mod)
 {
     return &comp_0->elem[mod->elem_idx];
 }
@@ -543,12 +548,31 @@ struct bt_mesh_elem *bt_mesh_elem_find(uint16_t addr)
     return NULL;
 }
 
+bool bt_mesh_has_addr(uint16_t addr)
+{
+    uint16_t index;
+
+    if (BLE_MESH_ADDR_IS_UNICAST(addr)) {
+        return bt_mesh_elem_find(addr) != NULL;
+    }
+
+    for (index = 0; index < comp_0->elem_count; index++) {
+        struct bt_mesh_elem *elem = &comp_0->elem[index];
+
+        if (bt_mesh_elem_find_group(elem, addr)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 uint8_t bt_mesh_elem_count(void)
 {
     return comp_0->elem_count;
 }
 
-static bool model_has_key(struct bt_mesh_model *mod, uint16_t key)
+static bool model_has_key(const struct bt_mesh_model *mod, uint16_t key)
 {
     int i;
 
@@ -630,7 +654,7 @@ static int get_opcode(struct net_buf_simple *buf, uint32_t *opcode, bool pull_bu
         if (pull_buf) {
             *opcode = net_buf_simple_pull_u8(buf) << 16;
             /* Using LE for the CID since the model layer is defined as
-            * little-endian in the mesh spec and using BT_MESH_MODEL_OP_3
+            * little-endian in the mesh spec and using BLE_MESH_MODEL_OP_3
             * will declare the opcode in this way.
             */
             *opcode |= net_buf_simple_pull_le16(buf);
@@ -788,7 +812,7 @@ void bt_mesh_model_msg_init(struct net_buf_simple *msg, uint32_t opcode)
     case 3:
         net_buf_simple_add_u8(msg, ((opcode >> 16) & 0xff));
         /* Using LE for the CID since the model layer is defined as
-         * little-endian in the mesh spec and using BT_MESH_MODEL_OP_3
+         * little-endian in the mesh spec and using BLE_MESH_MODEL_OP_3
          * will declare the opcode in this way.
          */
         net_buf_simple_add_le16(msg, opcode & 0xffff);
@@ -946,7 +970,7 @@ void bt_mesh_choose_better_security_cred(struct bt_mesh_net_tx *tx)
 }
 #endif /* !CONFIG_BLE_MESH_V11_SUPPORT */
 
-static int model_send(struct bt_mesh_model *model,
+static int model_send(const struct bt_mesh_model *model,
                       struct bt_mesh_net_tx *tx, bool implicit_bind,
                       struct net_buf_simple *msg,
                       const struct bt_mesh_send_cb *cb, void *cb_data)
@@ -973,10 +997,24 @@ static int model_send(struct bt_mesh_model *model,
         return -EINVAL;
     }
 
+#if CONFIG_BLE_MESH_LONG_PACKET
+    if (msg->len > MIN(BLE_MESH_EXT_TX_SDU_MAX, BLE_MESH_EXT_SDU_MAX_LEN) - BLE_MESH_MIC_SHORT) {
+        BT_ERR("Too big ext message (len %d)", msg->len);
+        return -EMSGSIZE;
+    }
+
+    if ((msg->len <= MIN(BLE_MESH_EXT_TX_SDU_MAX, BLE_MESH_EXT_SDU_MAX_LEN) - BLE_MESH_MIC_SHORT) &&
+        (msg->len > MIN(BLE_MESH_TX_SDU_MAX, BLE_MESH_SDU_MAX_LEN) - BLE_MESH_MIC_SHORT) &&
+        !tx->ctx->enh.long_pkt_cfg_used) {
+        BT_ERR("Extended message length %d requires long packet mode, but long_pkt_cfg_used is false", msg->len);
+        return -EMSGSIZE;
+    }
+#else
     if (msg->len > MIN(BLE_MESH_TX_SDU_MAX, BLE_MESH_SDU_MAX_LEN) - BLE_MESH_MIC_SHORT) {
         BT_ERR("Too big message (len %d)", msg->len);
         return -EMSGSIZE;
     }
+#endif
 
     if (!implicit_bind && !model_has_key(model, tx->ctx->app_idx)) {
         BT_ERR("Model not bound to AppKey 0x%04x", tx->ctx->app_idx);
@@ -1022,7 +1060,7 @@ int bt_mesh_model_send_implicit(struct bt_mesh_model *model,
     return model_send(model, &tx, implicit_bind, msg, cb, cb_data);
 }
 
-int bt_mesh_model_send(struct bt_mesh_model *model,
+int bt_mesh_model_send(const struct bt_mesh_model *model,
                        struct bt_mesh_msg_ctx *ctx,
                        struct net_buf_simple *msg,
                        const struct bt_mesh_send_cb *cb, void *cb_data)

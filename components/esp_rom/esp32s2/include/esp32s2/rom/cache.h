@@ -860,7 +860,7 @@ void Cache_Set_Default_Mode(void);
   *
   * @return None
   */
-void Cache_Enable_Defalut_DCache_Mode(void);
+void Cache_Enable_Default_DCache_Mode(void);
 
 /**
   * @brief Travel tag memory to run a call back function.

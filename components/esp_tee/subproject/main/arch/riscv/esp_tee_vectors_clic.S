@@ -25,6 +25,7 @@
     .equ ECALL_U_MODE, 0x8
     .equ ECALL_M_MODE, 0xb
     .equ CSR_UINTTHRESH, 0x047
+    .equ CSR_MINTTHRESH, 0x347
 
     .global esp_tee_global_interrupt_handler
     .global esp_tee_service_dispatcher
@@ -40,6 +41,11 @@ _ns_sp:
     .align 4
     .global _s_sp
 _s_sp:
+    .word 0
+
+    .align 4
+    .global _s_intr_thresh
+_s_intr_thresh:
     .word 0
 
 /* Macro which first allocates space on the stack to save general
@@ -285,6 +291,16 @@ _1:
     lui     t0, ESP_TEE_M2U_SWITCH_MAGIC
     beq     a1, t0, _skip_ctx_restore
 
+    /* Check if we need to restore the MINTTHRESH register */
+    la      t0, _s_intr_thresh
+    lw      t1, 0(t0)
+    beqz    t1, _skip_thresh_restore     # if saved threshold == 0, skip
+
+    /* Restore CSR_MINTTHRESH */
+    sw      zero, 0(t0)
+    csrw    CSR_MINTTHRESH, t1
+
+_skip_thresh_restore:
     /* Switching back to the saved REE stack */
     la      t0, _ns_sp
     lw      sp, 0(t0)
@@ -322,6 +338,17 @@ _user_ecall:
     save_general_regs
     save_mepc
 
+    # Check if REE is in a critical section
+    csrr    t0, CSR_UINTTHRESH      # t0 = current UINTTHRESH
+    beqz    t0, _process_ecall      # if threshold == 0 -> continue
+
+    # Save current MINTTHRESH and mirror UINTTHRESH into MINTTHRESH
+    csrr    t1, CSR_MINTTHRESH      # t1 = current MINTTHRESH
+    la      t2, _s_intr_thresh
+    sw      t1, 0(t2)               # save old MINTTHRESH
+    csrw    CSR_MINTTHRESH, t0      # set MINTTHRESH = UINTTHRESH
+
+_process_ecall:
     /* Save the U-mode (i.e. REE) stack pointer */
     la      t0, _ns_sp
     sw      sp, 0(t0)

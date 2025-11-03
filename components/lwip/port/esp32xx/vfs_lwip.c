@@ -23,7 +23,7 @@
 
 _Static_assert(MAX_FDS >= CONFIG_LWIP_MAX_SOCKETS, "MAX_FDS < CONFIG_LWIP_MAX_SOCKETS");
 _Static_assert(FD_SETSIZE >= CONFIG_LWIP_MAX_SOCKETS, "FD_SETSIZE < CONFIG_LWIP_MAX_SOCKETS");
-_Static_assert(LWIP_SOCKET_OFFSET >= 6, "Not enough room for esp_vfs_console (LWIP_SOCKET_OFFSET < 6)");
+_Static_assert(LWIP_SOCKET_OFFSET >= 6, "Not enough room for esp_stdio (LWIP_SOCKET_OFFSET < 6)");
 
 #ifdef CONFIG_VFS_SUPPORT_SELECT
 

@@ -25,6 +25,11 @@ size_json_filename = "size_${CI_JOB_ID}.json"
 
 verbose = 1  # INFO
 
+additional_build_targets = [
+    'esp32h21',
+    'esp32h4',
+]
+
 # collect
 collect_app_info_filename = "app_info_${CI_JOB_NAME_SLUG}.txt"
 junitxml = "build_summary_${CI_JOB_NAME_SLUG}.xml"

@@ -85,6 +85,29 @@ RMT
 
         旧版的 MCPWM 驱动 ``driver/mcpwm.h`` 在 5.0 的版本中就已经被弃用（请参考 :ref:`deprecate_mcpwm_legacy_driver`）。从 6.0 版本开始，旧版驱动被完全移除。新驱动位于 :component:`esp_driver_mcpwm` 组件中，头文件引用路径为 ``driver/mcpwm_prelude``。
 
+    可变参数生成器 API 已被移除
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    本版本中已移除旧版的可变参数（"varg"）生成器 API。原先使用可变参数方式配置生成器动作的代码，需迁移到显式、类型化的 API。这些新 API 使用配置结构体和类型明确的设置函数（例如 :cpp:type:`mcpwm_generator_config_t`、:cpp:type:`mcpwm_gen_timer_event_action_t` 和 :cpp:type:`mcpwm_generator_set_action_on_timer_event`）。
+
+    迁移步骤（摘要）：
+
+    - 用辅助结构体/宏和专用设置函数替换 varg 风格的动作配置::
+
+        .. code-block:: c
+
+            /* 旧版（varg）*/
+            mcpwm_generator_set_actions_on_compare_event(my_generator,
+                MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, my_comparator, MCPWM_GEN_ACTION_LOW),
+                MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_DOWN, my_comparator, MCPWM_GEN_ACTION_HIGH),
+                MCPWM_GEN_COMPARE_EVENT_ACTION_END());
+
+            /* 新版 */
+            mcpwm_generator_set_action_on_compare_event(my_generator,
+                MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, my_comparator, MCPWM_GEN_ACTION_LOW));
+            mcpwm_generator_set_action_on_compare_event(my_generator,
+                MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_DOWN, my_comparator, MCPWM_GEN_ACTION_HIGH));
+
 GPIO
 ----
 
@@ -115,29 +138,47 @@ UART
 I2C
 ---
 
-I2C 从机在 v5.4 上已经被重新设计。在当前版本上，老的 I2C 从机驱动已经被移除，详细内容请参考编程指南中关于 I2C 从机的部分。
+旧版 I2C 驱动生命周期终止
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-主要的概念上和用法上的改变如下所示:
+.. warning::
+
+    旧版 I2C 驱动（``driver/i2c.h``）已在 ESP-IDF v6.0 中被标记为 **生命周期终止（End-of-Life, EOL）**，并计划在 **v7.0 中彻底移除**。
+
+    - ESP-IDF 将不再为旧版驱动提供及时的更新、错误修复或安全补丁。
+    - 强烈建议用户尽快迁移到新版 I2C 驱动：``driver/i2c_master.h`` 和 ``driver/i2c_slave.h``。
+    - 如需暂时抑制编译警告，可在 menuconfig 中启用 ``Component config``  > ``Legacy Driver Configurations`` > ``Legacy I2C Driver Configurations`` > ``Suppress legacy driver deprecated warning``。
+
+新版 I2C 驱动主要改进了从机和主机的使用方式，详细内容请参考 :ref:`I2C 迁移指南 <migration_guide_i2c_driver_5_2>` 和 :doc:`I2C 驱动编程指南 <../../../api-reference/peripherals/i2c>`。
+
+I2C 从机驱动更新
+~~~~~~~~~~~~~~~~~~
+
+I2C 从机驱动在 v5.4 上已经被重新设计。在当前版本上，旧的 I2C 从机驱动已经被移除。
 
 主要概念更新
-~~~~~~~~~~~~
+^^^^^^^^^^^^
 
-- 老版本的 I2C 从机驱动是主动读写，这不符合 I2C 从机的一般用法。在新版的 I2C 从机中，I2C 的读写通过主机驱动产生的事件以触发回调被动完成。
+- 旧版本的 I2C 从机驱动是主动读写，这不符合 I2C 从机的一般用法。在新版的 I2C 从机中，I2C 的读写通过主机驱动产生的事件以触发回调被动完成。
 
 主要用法更新
-~~~~~~~~~~~~
+^^^^^^^^^^^^
 
-- ``i2c_slave_receive`` 被移除， 在新驱动中使用回调接收数据。
+- ``i2c_slave_receive`` 被移除，在新驱动中使用回调接收数据。
 - ``i2c_slave_transmit`` 已被 ``i2c_slave_write`` 取代。
 - ``i2c_slave_write_ram`` 被移除。
 - ``i2c_slave_read_ram`` 被移除。
 
-同时，I2C的主机驱动也有一些API用法上的改动
+I2C 主机驱动更新
+~~~~~~~~~~~~~~~~~~
+
+I2C 主机驱动的 API 也有一些用法上的改动。
 
 主要用法更新
-~~~~~~~~~~~~
+^^^^^^^^^^^^
 
-当主机在I2C总线上检测到NACK，以下的函数目前会返回 ``ESP_ERR_INVALID_RESPONSE``，而不是像之前一样返回 ``ESP_ERR_INVALID_STATE``：
+当主机在 I2C 总线上检测到 NACK，以下的函数目前会返回 ``ESP_ERR_INVALID_RESPONSE``，而不是像之前一样返回 ``ESP_ERR_INVALID_STATE``：
+
 - ``i2c_master_transmit``
 - ``i2c_master_multi_buffer_transmit``
 - ``i2c_master_transmit_receive``
@@ -247,6 +288,7 @@ SPI flash 驱动
 - 已弃用的 API ``spi_flash_dump_counters`` 已被移除。请改用 :cpp:func:`esp_flash_dump_counters`。
 - 已弃用的 API ``spi_flash_get_counters`` 已被移除。请改用 :cpp:func:`esp_flash_get_counters`。
 - 已弃用的 API ``spi_flash_reset_counters`` 已被移除。请改用 :cpp:func:`esp_flash_reset_counters`。
+- Kconfig 选项 ``CONFIG_SPI_FLASH_ROM_DRIVER_PATCH`` 已被移除，考虑到这个选项不会被广泛被用户使用，且有因误用而导致出现严重的问题，遂决定移除。
 
 .. note::
 
@@ -264,7 +306,16 @@ Touch Sensor
 
 第三版触摸传感器的驱动配置项 ``touch_sensor_sample_config_t::bypass_shield_output`` 已被移除，因为第三版触摸传感器硬件已不支持该功能。
 
+旧版触摸传感器驱动依赖已被移除，现在你需要使用 ``int`` 类型代替 ``touch_pad_t`` 类型来指示触摸通道 ID。
+
 I2S
 ---
 
 - ``i2s_port_t`` 类型已被移除。请使用 ``int`` 类型代替。该类型原有的 enum 项 ``I2S_NUM_0``，``I2S_NUM_1``，``I2S_NUM_2`` 和 ``I2S_NUM_AUTO`` 已用宏定义代替，以保证兼容性。
+
+USB
+---
+
+``usb`` 组件已迁移至 `乐鑫组件注册表 <https://components.espressif.com/components/espressif/usb>`__。
+
+你可以通过运行 ``idf.py add-dependency "espressif/usb"``，将此依赖添加到项目中。

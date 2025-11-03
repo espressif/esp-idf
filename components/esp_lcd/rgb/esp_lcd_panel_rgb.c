@@ -39,7 +39,7 @@
 #include "esp_lcd_common.h"
 #include "esp_cache.h"
 #include "esp_memory_utils.h"
-#include "soc/lcd_periph.h"
+#include "hal/lcd_periph.h"
 #include "soc/io_mux_reg.h"
 #include "hal/lcd_hal.h"
 #include "hal/lcd_ll.h"
@@ -127,7 +127,7 @@ struct esp_rgb_panel_t {
     gpio_num_t de_gpio_num;       // GPIO used for DE signal, set to -1 if it's not used
     gpio_num_t pclk_gpio_num;     // GPIO used for PCLK signal, set to -1 if it's not used
     gpio_num_t disp_gpio_num;     // GPIO used for display control signal, set to -1 if it's not used
-    gpio_num_t data_gpio_nums[SOC_LCDCAM_RGB_DATA_WIDTH]; // GPIOs used for data lines, we keep these GPIOs for action like "invert_color"
+    gpio_num_t data_gpio_nums[LCD_LL_GET(RGB_BUS_WIDTH)]; // GPIOs used for data lines, we keep these GPIOs for action like "invert_color"
     uint64_t gpio_reserve_mask; // GPIOs reserved by this panel, used to revoke the GPIO reservation when the panel is deleted
     uint32_t src_clk_hz;   // Peripheral source clock resolution
     esp_lcd_rgb_timing_t timings;   // RGB timing parameters (e.g. pclk, sync pulse, porch width)
@@ -210,7 +210,7 @@ static esp_err_t lcd_rgb_panel_destroy(esp_rgb_panel_t *rgb_panel)
         lcd_ll_enable_clock(rgb_panel->hal.dev, false);
     }
     if (rgb_panel->panel_id >= 0) {
-        PERIPH_RCC_RELEASE_ATOMIC(lcd_periph_rgb_signals.panels[rgb_panel->panel_id].module, ref_count) {
+        PERIPH_RCC_RELEASE_ATOMIC(soc_lcd_rgb_signals[rgb_panel->panel_id].module, ref_count) {
             if (ref_count == 0) {
                 lcd_ll_enable_bus_clock(rgb_panel->panel_id, false);
             }
@@ -266,7 +266,7 @@ esp_err_t esp_lcd_new_rgb_panel(const esp_lcd_rgb_panel_config_t *rgb_panel_conf
     esp_rgb_panel_t *rgb_panel = NULL;
     ESP_RETURN_ON_FALSE(rgb_panel_config && ret_panel, ESP_ERR_INVALID_ARG, TAG, "invalid parameter");
     size_t data_width = rgb_panel_config->data_width;
-    ESP_RETURN_ON_FALSE((data_width > 0) && (data_width <= SOC_LCDCAM_RGB_DATA_WIDTH) && ((data_width % 8) == 0), ESP_ERR_INVALID_ARG,
+    ESP_RETURN_ON_FALSE((data_width > 0) && (data_width <= LCD_LL_GET(RGB_BUS_WIDTH)) && ((data_width % 8) == 0), ESP_ERR_INVALID_ARG,
                         TAG, "unsupported data width %d", data_width);
     ESP_RETURN_ON_FALSE(!(rgb_panel_config->flags.double_fb && rgb_panel_config->flags.no_fb),
                         ESP_ERR_INVALID_ARG, TAG, "double_fb conflicts with no_fb");
@@ -321,7 +321,7 @@ esp_err_t esp_lcd_new_rgb_panel(const esp_lcd_rgb_panel_config_t *rgb_panel_conf
     rgb_panel->panel_id = panel_id;
 
     // enable APB to access LCD registers
-    PERIPH_RCC_ACQUIRE_ATOMIC(lcd_periph_rgb_signals.panels[panel_id].module, ref_count) {
+    PERIPH_RCC_ACQUIRE_ATOMIC(soc_lcd_rgb_signals[panel_id].module, ref_count) {
         if (ref_count == 0) {
             lcd_ll_enable_bus_clock(panel_id, true);
             lcd_ll_reset_register(panel_id);
@@ -342,12 +342,12 @@ esp_err_t esp_lcd_new_rgb_panel(const esp_lcd_rgb_panel_config_t *rgb_panel_conf
     lcd_ll_reset(rgb_panel->hal.dev);
     // install interrupt service, (LCD peripheral shares the interrupt source with Camera by different mask)
     int isr_flags = LCD_RGB_INTR_ALLOC_FLAGS | ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_LOWMED;
-    ret = esp_intr_alloc_intrstatus(lcd_periph_rgb_signals.panels[panel_id].irq_id, isr_flags,
+    ret = esp_intr_alloc_intrstatus(soc_lcd_rgb_signals[panel_id].irq_id, isr_flags,
                                     (uint32_t)lcd_ll_get_interrupt_status_reg(rgb_panel->hal.dev),
-                                    LCD_LL_EVENT_VSYNC_END, rgb_lcd_default_isr_handler, rgb_panel, &rgb_panel->intr);
+                                    LCD_LL_EVENT_RGB, rgb_lcd_default_isr_handler, rgb_panel, &rgb_panel->intr);
     ESP_GOTO_ON_ERROR(ret, err, TAG, "install interrupt failed");
     PERIPH_RCC_ATOMIC() {
-        lcd_ll_enable_interrupt(rgb_panel->hal.dev, LCD_LL_EVENT_VSYNC_END, false); // disable all interrupts
+        lcd_ll_enable_interrupt(rgb_panel->hal.dev, LCD_LL_EVENT_RGB, false); // disable all interrupts
     }
     lcd_ll_clear_interrupt_status(rgb_panel->hal.dev, UINT32_MAX); // clear pending interrupt
 
@@ -593,7 +593,7 @@ static esp_err_t rgb_panel_init(esp_lcd_panel_t *panel)
     lcd_ll_enable_auto_next_frame(rgb_panel->hal.dev, rgb_panel->flags.stream_mode);
     PERIPH_RCC_ATOMIC() {
         // trigger interrupt on the end of frame
-        lcd_ll_enable_interrupt(rgb_panel->hal.dev, LCD_LL_EVENT_VSYNC_END, true);
+        lcd_ll_enable_interrupt(rgb_panel->hal.dev, LCD_LL_EVENT_RGB, true);
     }
     // enable intr
     esp_intr_enable(rgb_panel->intr);
@@ -711,7 +711,7 @@ static esp_err_t rgb_panel_invert_color(esp_lcd_panel_t *panel, bool invert_colo
     // inverting the data line by GPIO matrix
     for (int i = 0; i < rgb_panel->data_width; i++) {
         if (rgb_panel->data_gpio_nums[i] >= 0) {
-            esp_rom_gpio_connect_out_signal(rgb_panel->data_gpio_nums[i], lcd_periph_rgb_signals.panels[panel_id].data_sigs[i],
+            esp_rom_gpio_connect_out_signal(rgb_panel->data_gpio_nums[i], soc_lcd_rgb_signals[panel_id].data_sigs[i],
                                             invert_color_data, false);
         }
     }
@@ -766,36 +766,36 @@ static esp_err_t lcd_rgb_panel_configure_gpio(esp_rgb_panel_t *rgb_panel, const 
     for (size_t i = 0; i < panel_config->data_width; i++) {
         if (GPIO_IS_VALID_OUTPUT_GPIO(panel_config->data_gpio_nums[i])) {
             gpio_matrix_output(panel_config->data_gpio_nums[i],
-                               lcd_periph_rgb_signals.panels[panel_id].data_sigs[i], false, false);
+                               soc_lcd_rgb_signals[panel_id].data_sigs[i], false, false);
             gpio_reserve_mask |= (1ULL << panel_config->data_gpio_nums[i]);
         }
     }
     if (GPIO_IS_VALID_OUTPUT_GPIO(panel_config->hsync_gpio_num)) {
         gpio_matrix_output(panel_config->hsync_gpio_num,
-                           lcd_periph_rgb_signals.panels[panel_id].hsync_sig, false, false);
+                           soc_lcd_rgb_signals[panel_id].hsync_sig, false, false);
         gpio_reserve_mask |= (1ULL << panel_config->hsync_gpio_num);
     }
     if (GPIO_IS_VALID_OUTPUT_GPIO(panel_config->vsync_gpio_num)) {
         gpio_matrix_output(panel_config->vsync_gpio_num,
-                           lcd_periph_rgb_signals.panels[panel_id].vsync_sig, false, false);
+                           soc_lcd_rgb_signals[panel_id].vsync_sig, false, false);
         gpio_reserve_mask |= (1ULL << panel_config->vsync_gpio_num);
     }
     // PCLK may not be necessary in some cases (i.e. VGA output)
     if (GPIO_IS_VALID_OUTPUT_GPIO(panel_config->pclk_gpio_num)) {
         gpio_matrix_output(panel_config->pclk_gpio_num,
-                           lcd_periph_rgb_signals.panels[panel_id].pclk_sig, false, false);
+                           soc_lcd_rgb_signals[panel_id].pclk_sig, false, false);
         gpio_reserve_mask |= (1ULL << panel_config->pclk_gpio_num);
     }
     // DE signal might not be necessary for some RGB LCD
     if (GPIO_IS_VALID_OUTPUT_GPIO(panel_config->de_gpio_num)) {
         gpio_matrix_output(panel_config->de_gpio_num,
-                           lcd_periph_rgb_signals.panels[panel_id].de_sig, false, false);
+                           soc_lcd_rgb_signals[panel_id].de_sig, false, false);
         gpio_reserve_mask |= (1ULL << panel_config->de_gpio_num);
     }
     // disp enable GPIO is optional, it is a general purpose output GPIO
     if (GPIO_IS_VALID_OUTPUT_GPIO(panel_config->disp_gpio_num)) {
         gpio_matrix_output(panel_config->disp_gpio_num,
-                           lcd_periph_rgb_signals.panels[panel_id].disp_sig, false, false);
+                           soc_lcd_rgb_signals[panel_id].disp_sig, false, false);
         gpio_reserve_mask |= (1ULL << panel_config->disp_gpio_num);
     }
 
@@ -1203,6 +1203,12 @@ IRAM_ATTR static void rgb_lcd_default_isr_handler(void *args)
     // clear the interrupt status
     uint32_t intr_status = lcd_ll_get_interrupt_status(rgb_panel->hal.dev);
     lcd_ll_clear_interrupt_status(rgb_panel->hal.dev, intr_status);
+
+#if LCD_LL_EVENT_UNDERRUN
+    if (intr_status & LCD_LL_EVENT_UNDERRUN) {
+        ESP_EARLY_LOGE(TAG, "LCD underrun");
+    }
+#endif
 
     // VSYNC event happened
     if (intr_status & LCD_LL_EVENT_VSYNC_END) {

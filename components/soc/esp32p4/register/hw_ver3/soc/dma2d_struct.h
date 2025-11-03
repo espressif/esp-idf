@@ -10,11 +10,8 @@
 extern "C" {
 #endif
 
-//TODO: IDF-13427
-
-/** Group: out */
 /** Type of out_conf0_chn register
- *  Configures the tx direction of channel 0
+ *  Configures the tx direction of channel n
  */
 typedef union {
     struct {
@@ -48,7 +45,7 @@ typedef union {
          */
         uint32_t out_loop_test_chn:1;
         /** out_mem_burst_length_chn : R/W; bitpos: [8:6]; default: 0;
-         *  Block size of Tx channel 0. 0: 8 bytes      1: 16 bytes      2: 32 bytes    3: 64
+         *  Block size of Tx channel 0. 0: 8 bytes     1: 16 bytes      2: 32 bytes    3: 64
          *  bytes    4: 128 bytes
          */
         uint32_t out_mem_burst_length_chn:3;
@@ -92,7 +89,7 @@ typedef union {
 } dma2d_out_conf0_chn_reg_t;
 
 /** Type of out_int_raw_chn register
- *  Raw interrupt status of TX channel 0
+ *  Raw interrupt status of TX channel n
  */
 typedef union {
     struct {
@@ -160,7 +157,7 @@ typedef union {
 } dma2d_out_int_raw_chn_reg_t;
 
 /** Type of out_int_ena_chn register
- *  Interrupt enable bits of TX channel 0
+ *  Interrupt enable bits of TX channel n
  */
 typedef union {
     struct {
@@ -222,7 +219,7 @@ typedef union {
 } dma2d_out_int_ena_chn_reg_t;
 
 /** Type of out_int_st_chn register
- *  Masked interrupt status of TX channel 0
+ *  Masked interrupt status of TX channel n
  */
 typedef union {
     struct {
@@ -284,7 +281,7 @@ typedef union {
 } dma2d_out_int_st_chn_reg_t;
 
 /** Type of out_int_clr_chn register
- *  Interrupt clear bits of TX channel 0
+ *  Interrupt clear bits of TX channel n
  */
 typedef union {
     struct {
@@ -346,20 +343,20 @@ typedef union {
 } dma2d_out_int_clr_chn_reg_t;
 
 /** Type of outfifo_status_chn register
- *  Represents the status of the tx fifo of channel 0
+ *  Represents the status of the tx fifo of channel n
  */
 typedef union {
     struct {
         /** outfifo_full_l2_chn : RO; bitpos: [0]; default: 0;
-         *  Tx FIFO full signal for Tx channel 0.
+         *  Tx FIFO full signal for Tx channel n.
          */
         uint32_t outfifo_full_l2_chn:1;
         /** outfifo_empty_l2_chn : RO; bitpos: [1]; default: 1;
-         *  Tx FIFO empty signal for Tx channel 0.
+         *  Tx FIFO empty signal for Tx channel n.
          */
         uint32_t outfifo_empty_l2_chn:1;
         /** outfifo_cnt_l2_chn : RO; bitpos: [5:2]; default: 0;
-         *  The register stores the byte number of the data in Tx FIFO for Tx channel 0.
+         *  The register stores the byte number of the data in Tx FIFO for Tx channel n.
          */
         uint32_t outfifo_cnt_l2_chn:4;
         uint32_t reserved_6:1;
@@ -396,27 +393,27 @@ typedef union {
          */
         uint32_t out_remain_under_8b_chn:1;
         /** outfifo_full_l1_chn : RO; bitpos: [15]; default: 0;
-         *  Tx FIFO full signal for Tx channel 0.
+         *  Tx FIFO full signal for Tx channel n.
          */
         uint32_t outfifo_full_l1_chn:1;
         /** outfifo_empty_l1_chn : RO; bitpos: [16]; default: 1;
-         *  Tx FIFO empty signal for Tx channel 0.
+         *  Tx FIFO empty signal for Tx channel n.
          */
         uint32_t outfifo_empty_l1_chn:1;
         /** outfifo_cnt_l1_chn : RO; bitpos: [21:17]; default: 0;
-         *  The register stores the byte number of the data in Tx FIFO for Tx channel 0.
+         *  The register stores the byte number of the data in Tx FIFO for Tx channel n.
          */
         uint32_t outfifo_cnt_l1_chn:5;
         /** outfifo_full_l3_chn : RO; bitpos: [22]; default: 0;
-         *  Tx FIFO full signal for Tx channel 0.
+         *  Tx FIFO full signal for Tx channel n.
          */
         uint32_t outfifo_full_l3_chn:1;
         /** outfifo_empty_l3_chn : RO; bitpos: [23]; default: 1;
-         *  Tx FIFO empty signal for Tx channel 0.
+         *  Tx FIFO empty signal for Tx channel n.
          */
         uint32_t outfifo_empty_l3_chn:1;
         /** outfifo_cnt_l3_chn : RO; bitpos: [28:24]; default: 0;
-         *  The register stores the byte number of the data in Tx FIFO for Tx channel 0.
+         *  The register stores the byte number of the data in Tx FIFO for Tx channel n.
          */
         uint32_t outfifo_cnt_l3_chn:5;
         uint32_t reserved_29:3;
@@ -425,7 +422,7 @@ typedef union {
 } dma2d_outfifo_status_chn_reg_t;
 
 /** Type of out_push_chn register
- *  Configures the tx fifo of channel 0
+ *  Configures the tx fifo of channel n
  */
 typedef union {
     struct {
@@ -443,7 +440,7 @@ typedef union {
 } dma2d_out_push_chn_reg_t;
 
 /** Type of out_link_conf_chn register
- *  Configures the tx descriptor operations of channel 0
+ *  Configures the tx descriptor operations of channel n
  */
 typedef union {
     struct {
@@ -471,7 +468,7 @@ typedef union {
 } dma2d_out_link_conf_chn_reg_t;
 
 /** Type of out_link_addr_chn register
- *  Configures the tx descriptor address of channel 0
+ *  Configures the tx descriptor address of channel n
  */
 typedef union {
     struct {
@@ -484,7 +481,7 @@ typedef union {
 } dma2d_out_link_addr_chn_reg_t;
 
 /** Type of out_state_chn register
- *  Represents the working status of the tx descriptor of channel 0
+ *  Represents the working status of the tx descriptor of channel n
  */
 typedef union {
     struct {
@@ -510,7 +507,7 @@ typedef union {
 } dma2d_out_state_chn_reg_t;
 
 /** Type of out_eof_des_addr_chn register
- *  Represents the address associated with the outlink descriptor of channel 0
+ *  Represents the address associated with the outlink descriptor of channel n
  */
 typedef union {
     struct {
@@ -524,7 +521,7 @@ typedef union {
 } dma2d_out_eof_des_addr_chn_reg_t;
 
 /** Type of out_dscr_chn register
- *  Represents the address associated with the outlink descriptor of channel 0
+ *  Represents the address associated with the outlink descriptor of channel n
  */
 typedef union {
     struct {
@@ -537,7 +534,7 @@ typedef union {
 } dma2d_out_dscr_chn_reg_t;
 
 /** Type of out_dscr_bf0_chn register
- *  Represents the address associated with the outlink descriptor of channel 0
+ *  Represents the address associated with the outlink descriptor of channel n
  */
 typedef union {
     struct {
@@ -550,7 +547,7 @@ typedef union {
 } dma2d_out_dscr_bf0_chn_reg_t;
 
 /** Type of out_dscr_bf1_chn register
- *  Represents the address associated with the outlink descriptor of channel 0
+ *  Represents the address associated with the outlink descriptor of channel n
  */
 typedef union {
     struct {
@@ -563,7 +560,7 @@ typedef union {
 } dma2d_out_dscr_bf1_chn_reg_t;
 
 /** Type of out_peri_sel_chn register
- *  Configures the tx peripheral of channel 0
+ *  Configures the tx peripheral of channel n
  */
 typedef union {
     struct {
@@ -578,7 +575,7 @@ typedef union {
 } dma2d_out_peri_sel_chn_reg_t;
 
 /** Type of out_arb_chn register
- *  Configures the tx arbiter of channel 0
+ *  Configures the tx arbiter of channel n
  */
 typedef union {
     struct {
@@ -586,17 +583,17 @@ typedef union {
          *  Set the max number of token count of arbiter
          */
         uint32_t out_arb_token_num_chn:4;
-        /** out_arb_priority_chn : R/W; bitpos: [5:4]; default: 1;
+        /** out_arb_priority_chn : R/W; bitpos: [7:4]; default: 1;
          *  Set the priority of channel
          */
-        uint32_t out_arb_priority_chn:2;
-        uint32_t reserved_6:26;
+        uint32_t out_arb_priority_chn:4;
+        uint32_t reserved_8:24;
     };
     uint32_t val;
 } dma2d_out_arb_chn_reg_t;
 
 /** Type of out_ro_status_chn register
- *  Represents the status of the tx reorder module of channel 0
+ *  Represents the status of the tx reorder module of channel n
  */
 typedef union {
     struct {
@@ -628,7 +625,7 @@ typedef union {
 } dma2d_out_ro_status_chn_reg_t;
 
 /** Type of out_ro_pd_conf_chn register
- *  Configures the tx reorder memory of channel 0
+ *  Configures the tx reorder memory of channel n
  */
 typedef union {
     struct {
@@ -652,7 +649,7 @@ typedef union {
 } dma2d_out_ro_pd_conf_chn_reg_t;
 
 /** Type of out_color_convert_chn register
- *  Configures the tx color convert of channel 0
+ *  Configures the tx color convert of channel n
  */
 typedef union {
     struct {
@@ -678,7 +675,7 @@ typedef union {
 } dma2d_out_color_convert_chn_reg_t;
 
 /** Type of out_scramble_chn register
- *  Configures the tx scramble of channel 0
+ *  Configures the tx scramble of channel n
  */
 typedef union {
     struct {
@@ -693,7 +690,7 @@ typedef union {
 } dma2d_out_scramble_chn_reg_t;
 
 /** Type of out_etm_conf_chn register
- *  Configures the tx etm of channel 0
+ *  Configures the tx etm of channel n
  */
 typedef union {
     struct {
@@ -732,10 +729,8 @@ typedef union {
     uint32_t val;
 } dma2d_out_dscr_port_blk_chn_reg_t;
 
-
-/** Group: in */
 /** Type of in_conf0_chn register
- *  Configures the rx direction of channel 0
+ *  Configures the rx direction of channel n
  */
 typedef union {
     struct {
@@ -808,7 +803,7 @@ typedef union {
 } dma2d_in_conf0_chn_reg_t;
 
 /** Type of in_int_raw_chn register
- *  Raw interrupt status of RX channel 0
+ *  Raw interrupt status of RX channel n
  */
 typedef union {
     struct {
@@ -880,7 +875,7 @@ typedef union {
 } dma2d_in_int_raw_chn_reg_t;
 
 /** Type of in_int_ena_chn register
- *  Interrupt enable bits of RX channel 0
+ *  Interrupt enable bits of RX channel n
  */
 typedef union {
     struct {
@@ -946,7 +941,7 @@ typedef union {
 } dma2d_in_int_ena_chn_reg_t;
 
 /** Type of in_int_st_chn register
- *  Masked interrupt status of RX channel 0
+ *  Masked interrupt status of RX channel n
  */
 typedef union {
     struct {
@@ -1012,7 +1007,7 @@ typedef union {
 } dma2d_in_int_st_chn_reg_t;
 
 /** Type of in_int_clr_chn register
- *  Interrupt clear bits of RX channel 0
+ *  Interrupt clear bits of RX channel n
  */
 typedef union {
     struct {
@@ -1078,20 +1073,20 @@ typedef union {
 } dma2d_in_int_clr_chn_reg_t;
 
 /** Type of infifo_status_chn register
- *  Represents the status of the rx fifo of channel 0
+ *  Represents the status of the rx fifo of channel n
  */
 typedef union {
     struct {
         /** infifo_full_l2_chn : RO; bitpos: [0]; default: 0;
-         *  Rx FIFO full signal for Rx channel.
+         *  Rx FIFO full signal for Rx channel n.
          */
         uint32_t infifo_full_l2_chn:1;
         /** infifo_empty_l2_chn : RO; bitpos: [1]; default: 1;
-         *  Rx FIFO empty signal for Rx channel.
+         *  Rx FIFO empty signal for Rx channel n.
          */
         uint32_t infifo_empty_l2_chn:1;
         /** infifo_cnt_l2_chn : RO; bitpos: [5:2]; default: 0;
-         *  The register stores the byte number of the data in Rx FIFO for Rx channel.
+         *  The register stores the byte number of the data in Rx FIFO for Rx channel n.
          */
         uint32_t infifo_cnt_l2_chn:4;
         uint32_t reserved_6:1;
@@ -1128,27 +1123,27 @@ typedef union {
          */
         uint32_t in_remain_under_8b_chn:1;
         /** infifo_full_l1_chn : RO; bitpos: [15]; default: 0;
-         *  Tx FIFO full signal for Tx channel 0.
+         *  Rx FIFO full signal for Tx channel n.
          */
         uint32_t infifo_full_l1_chn:1;
         /** infifo_empty_l1_chn : RO; bitpos: [16]; default: 1;
-         *  Tx FIFO empty signal for Tx channel 0.
+         *  Rx FIFO empty signal for Tx channel n.
          */
         uint32_t infifo_empty_l1_chn:1;
         /** infifo_cnt_l1_chn : RO; bitpos: [21:17]; default: 0;
-         *  The register stores the byte number of the data in Tx FIFO for Tx channel 0.
+         *  The register stores the byte number of the data in Rx FIFO for Rx channel n.
          */
         uint32_t infifo_cnt_l1_chn:5;
         /** infifo_full_l3_chn : RO; bitpos: [22]; default: 0;
-         *  Tx FIFO full signal for Tx channel 0.
+         *  Rx FIFO full signal for Rx channel n.
          */
         uint32_t infifo_full_l3_chn:1;
         /** infifo_empty_l3_chn : RO; bitpos: [23]; default: 1;
-         *  Tx FIFO empty signal for Tx channel 0.
+         *  Rx FIFO empty signal for Rx channel n.
          */
         uint32_t infifo_empty_l3_chn:1;
         /** infifo_cnt_l3_chn : RO; bitpos: [28:24]; default: 0;
-         *  The register stores the byte number of the data in Tx FIFO for Tx channel 0.
+         *  The register stores the byte number of the data in Rx FIFO for Rx channel n.
          */
         uint32_t infifo_cnt_l3_chn:5;
         uint32_t reserved_29:3;
@@ -1157,7 +1152,7 @@ typedef union {
 } dma2d_infifo_status_chn_reg_t;
 
 /** Type of in_pop_chn register
- *  Configures the rx fifo of channel 0
+ *  Configures the rx fifo of channel n
  */
 typedef union {
     struct {
@@ -1175,7 +1170,7 @@ typedef union {
 } dma2d_in_pop_chn_reg_t;
 
 /** Type of in_link_conf_chn register
- *  Configures the rx descriptor operations of channel 0
+ *  Configures the rx descriptor operations of channel n
  */
 typedef union {
     struct {
@@ -1208,7 +1203,7 @@ typedef union {
 } dma2d_in_link_conf_chn_reg_t;
 
 /** Type of in_link_addr_chn register
- *  Configures the rx descriptor address of channel 0
+ *  Configures the rx descriptor address of channel n
  */
 typedef union {
     struct {
@@ -1221,7 +1216,7 @@ typedef union {
 } dma2d_in_link_addr_chn_reg_t;
 
 /** Type of in_state_chn register
- *  Represents the working status of the rx descriptor of channel 0
+ *  Represents the working status of the rx descriptor of channel n
  */
 typedef union {
     struct {
@@ -1247,7 +1242,7 @@ typedef union {
 } dma2d_in_state_chn_reg_t;
 
 /** Type of in_suc_eof_des_addr_chn register
- *  Represents the address associated with the inlink descriptor of channel 0
+ *  Represents the address associated with the inlink descriptor of channel n
  */
 typedef union {
     struct {
@@ -1261,7 +1256,7 @@ typedef union {
 } dma2d_in_suc_eof_des_addr_chn_reg_t;
 
 /** Type of in_err_eof_des_addr_chn register
- *  Represents the address associated with the inlink descriptor of channel 0
+ *  Represents the address associated with the inlink descriptor of channel n
  */
 typedef union {
     struct {
@@ -1275,7 +1270,7 @@ typedef union {
 } dma2d_in_err_eof_des_addr_chn_reg_t;
 
 /** Type of in_dscr_chn register
- *  Represents the address associated with the inlink descriptor of channel 0
+ *  Represents the address associated with the inlink descriptor of channel n
  */
 typedef union {
     struct {
@@ -1288,7 +1283,7 @@ typedef union {
 } dma2d_in_dscr_chn_reg_t;
 
 /** Type of in_dscr_bf0_chn register
- *  Represents the address associated with the inlink descriptor of channel 0
+ *  Represents the address associated with the inlink descriptor of channel n
  */
 typedef union {
     struct {
@@ -1301,7 +1296,7 @@ typedef union {
 } dma2d_in_dscr_bf0_chn_reg_t;
 
 /** Type of in_dscr_bf1_chn register
- *  Represents the address associated with the inlink descriptor of channel 0
+ *  Represents the address associated with the inlink descriptor of channel n
  */
 typedef union {
     struct {
@@ -1314,7 +1309,7 @@ typedef union {
 } dma2d_in_dscr_bf1_chn_reg_t;
 
 /** Type of in_peri_sel_chn register
- *  Configures the rx peripheral of channel 0
+ *  Configures the rx peripheral of channel n
  */
 typedef union {
     struct {
@@ -1329,7 +1324,7 @@ typedef union {
 } dma2d_in_peri_sel_chn_reg_t;
 
 /** Type of in_arb_chn register
- *  Configures the rx arbiter of channel 0
+ *  Configures the rx arbiter of channel n
  */
 typedef union {
     struct {
@@ -1337,17 +1332,17 @@ typedef union {
          *  Set the max number of token count of arbiter
          */
         uint32_t in_arb_token_num_chn:4;
-        /** in_arb_priority_chn : R/W; bitpos: [4]; default: 1;
+        /** in_arb_priority_chn : R/W; bitpos: [7:4]; default: 1;
          *  Set the priority of channel
          */
-        uint32_t in_arb_priority_chn:1;
-        uint32_t reserved_5:27;
+        uint32_t in_arb_priority_chn:4;
+        uint32_t reserved_8:24;
     };
     uint32_t val;
 } dma2d_in_arb_chn_reg_t;
 
 /** Type of in_ro_status_chn register
- *  Represents the status of the rx reorder module of channel 0
+ *  Represents the status of the rx reorder module of channel n
  */
 typedef union {
     struct {
@@ -1379,7 +1374,7 @@ typedef union {
 } dma2d_in_ro_status_chn_reg_t;
 
 /** Type of in_ro_pd_conf_chn register
- *  Configures the rx reorder memory of channel 0
+ *  Configures the rx reorder memory of channel n
  */
 typedef union {
     struct {
@@ -1403,13 +1398,13 @@ typedef union {
 } dma2d_in_ro_pd_conf_chn_reg_t;
 
 /** Type of in_color_convert_chn register
- *  Configures the tx color convert of channel 0
+ *  Configures the Rx color convert of channel n
  */
 typedef union {
     struct {
         /** in_color_output_sel_chn : R/W; bitpos: [1:0]; default: 0;
          *  Set final color convert process and output type    0: RGB888 to RGB565     1:
-         *  output directly
+         *  output directly     2: YUV444 to YUV422    3: YUV444 to YUV420
          */
         uint32_t in_color_output_sel_chn:2;
         /** in_color_3b_proc_en_chn : R/W; bitpos: [2]; default: 0;
@@ -1428,7 +1423,7 @@ typedef union {
 } dma2d_in_color_convert_chn_reg_t;
 
 /** Type of in_scramble_chn register
- *  Configures the rx scramble of channel 0
+ *  Configures the rx scramble of channel n
  */
 typedef union {
     struct {
@@ -1448,7 +1443,7 @@ typedef union {
 } dma2d_in_scramble_chn_reg_t;
 
 /** Type of in_etm_conf_chn register
- *  Configures the rx etm of channel 0
+ *  Configures the rx etm of channel n
  */
 typedef union {
     struct {
@@ -1469,8 +1464,6 @@ typedef union {
     uint32_t val;
 } dma2d_in_etm_conf_chn_reg_t;
 
-
-/** Group: Status Registers */
 /** Type of axi_err register
  *  Represents the status of th axi bus
  */
@@ -1514,7 +1507,7 @@ typedef union {
  */
 typedef union {
     struct {
-        /** date : R/W; bitpos: [31:0]; default: 36716816;
+        /** date : R/W; bitpos: [31:0]; default: 37822864;
          *  register version.
          */
         uint32_t date:32;
@@ -1522,8 +1515,6 @@ typedef union {
     uint32_t val;
 } dma2d_date_reg_t;
 
-
-/** Group: Configuration Registers */
 /** Type of rst_conf register
  *  Configures the reset of axi
  */
@@ -1681,7 +1672,6 @@ typedef union {
     uint32_t val;
 } dma2d_rdn_eco_low_reg_t;
 
-
 /** Type of in/out_color_param_h/m/l_chn register
  *  Configures the rx/tx color convert parameter of channel n
  */
@@ -1713,11 +1703,13 @@ typedef union {
     uint32_t val[2];
 } dma2d_color_param_reg_t;
 
+
 typedef struct {
     volatile dma2d_color_param_reg_t param_h;
     volatile dma2d_color_param_reg_t param_m;
     volatile dma2d_color_param_reg_t param_l;
 } dma2d_color_param_group_chn_reg_t;
+
 
 typedef struct {
     volatile dma2d_out_conf0_chn_reg_t out_conf0;
@@ -1746,32 +1738,6 @@ typedef struct {
     uint32_t reserved_out[36];
 } dma2d_out_chn_reg_t;
 
-typedef struct {
-    volatile dma2d_in_conf0_chn_reg_t in_conf0;
-    volatile dma2d_in_int_raw_chn_reg_t in_int_raw;
-    volatile dma2d_in_int_ena_chn_reg_t in_int_ena;
-    volatile dma2d_in_int_st_chn_reg_t in_int_st;
-    volatile dma2d_in_int_clr_chn_reg_t in_int_clr;
-    volatile dma2d_infifo_status_chn_reg_t infifo_status;
-    volatile dma2d_in_pop_chn_reg_t in_pop;
-    volatile dma2d_in_link_conf_chn_reg_t in_link_conf;
-    volatile dma2d_in_link_addr_chn_reg_t in_link_addr;
-    volatile dma2d_in_state_chn_reg_t in_state;
-    volatile dma2d_in_suc_eof_des_addr_chn_reg_t in_suc_eof_des_addr;
-    volatile dma2d_in_err_eof_des_addr_chn_reg_t in_err_eof_des_addr;
-    volatile dma2d_in_dscr_chn_reg_t in_dscr;
-    volatile dma2d_in_dscr_bf0_chn_reg_t in_dscr_bf0;
-    volatile dma2d_in_dscr_bf1_chn_reg_t in_dscr_bf1;
-    volatile dma2d_in_peri_sel_chn_reg_t in_peri_sel;
-    volatile dma2d_in_arb_chn_reg_t in_arb;
-    volatile dma2d_in_ro_status_chn_reg_t in_ro_status;
-    volatile dma2d_in_ro_pd_conf_chn_reg_t in_ro_pd_conf;
-    volatile dma2d_in_color_convert_chn_reg_t in_color_convert;
-    volatile dma2d_in_scramble_chn_reg_t in_scramble;
-    volatile dma2d_color_param_group_chn_reg_t in_color_param_group;
-    volatile dma2d_in_etm_conf_chn_reg_t in_etm_conf;
-    uint32_t reserved_570[36];
-} dma2d_in_ch0_reg_t;
 
 typedef struct {
     volatile dma2d_in_conf0_chn_reg_t in_conf0;
@@ -1792,16 +1758,20 @@ typedef struct {
     volatile dma2d_in_peri_sel_chn_reg_t in_peri_sel;
     volatile dma2d_in_arb_chn_reg_t in_arb;
     volatile dma2d_in_ro_status_chn_reg_t in_ro_status;
+    volatile dma2d_in_ro_pd_conf_chn_reg_t in_ro_pd_conf;               /* only exist on channel0 */
+    volatile dma2d_in_color_convert_chn_reg_t in_color_convert;         /* only exist on channel0 */
+    volatile dma2d_in_scramble_chn_reg_t in_scramble;                   /* only exist on channel0 */
+    volatile dma2d_color_param_group_chn_reg_t in_color_param_group;    /* only exist on channel0 */
     volatile dma2d_in_etm_conf_chn_reg_t in_etm_conf;
-    uint32_t reserved_64c[45];
-} dma2d_in_ch1_reg_t;
+    uint32_t reserved_in[36];
+} dma2d_in_chn_reg_t;
+
 
 typedef struct dma2d_dev_t {
-    volatile dma2d_out_chn_reg_t out_channel[3];
-    uint32_t reserved_300[128];
-    volatile dma2d_in_ch0_reg_t in_channel0;
-    volatile dma2d_in_ch1_reg_t in_channel1;
-    uint32_t reserved_700[192];
+    volatile dma2d_out_chn_reg_t out_channel[4];
+    uint32_t reserved_400[64];
+    volatile dma2d_in_chn_reg_t in_channel[3];
+    uint32_t reserved_800[128];
     volatile dma2d_axi_err_reg_t axi_err;
     volatile dma2d_rst_conf_reg_t rst_conf;
     volatile dma2d_intr_mem_start_addr_reg_t intr_mem_start_addr;

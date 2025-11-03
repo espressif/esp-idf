@@ -154,7 +154,9 @@ static void select_rtc_slow_clk(slow_clk_sel_t slow_clk)
      */
     int retry_ext_clk = 3;
 
+    soc_rtc_slow_clk_src_t old_rtc_slow_clk_src = rtc_clk_slow_src_get();
     do {
+        bool revoke_32k_enable = false;
         if (rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_OSC_SLOW) {
             /* external clock needs to be connected to PIN0 before it can
              * be used. Here we use rtc_clk_cal function to count
@@ -174,13 +176,15 @@ static void select_rtc_slow_clk(slow_clk_sel_t slow_clk)
                     }
                     ESP_EARLY_LOGW(TAG, "external clock connected to pin0 not found, switching to internal 150 kHz oscillator");
                     rtc_slow_clk_src = SOC_RTC_SLOW_CLK_SRC_RC_SLOW;
+                    revoke_32k_enable = true;
                 }
             }
         } else if (rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_RC_FAST_D256) {
             rtc_clk_8m_enable(true, true);
         }
         rtc_clk_slow_src_set(rtc_slow_clk_src);
-        if (rtc_slow_clk_src != SOC_RTC_SLOW_CLK_SRC_OSC_SLOW) {
+        if (revoke_32k_enable || \
+                ((old_rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_OSC_SLOW) && (rtc_slow_clk_src != SOC_RTC_SLOW_CLK_SRC_OSC_SLOW))) {
             rtc_clk_32k_disable_external();
         }
         if (SLOW_CLK_CAL_CYCLES > 0) {

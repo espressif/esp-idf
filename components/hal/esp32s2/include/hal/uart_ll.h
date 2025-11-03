@@ -72,7 +72,7 @@ FORCE_INLINE_ATTR bool uart_ll_is_enabled(uint32_t uart_num)
                             (uart_num == 1) ? DPORT_UART1_RST : 0);
     uint32_t uart_en_bit  = ((uart_num == 0) ? DPORT_UART_CLK_EN :
                             (uart_num == 1) ? DPORT_UART1_CLK_EN : 0);
-    return DPORT_REG_GET_BIT(DPORT_PERIP_RST_EN_REG, uart_rst_bit) == 0 &&
+    return DPORT_REG_GET_BIT(DPORT_PERIP_RST_EN0_REG, uart_rst_bit) == 0 &&
         DPORT_REG_GET_BIT(DPORT_PERIP_CLK_EN_REG, uart_en_bit) != 0;
 }
 
@@ -112,12 +112,12 @@ static inline void uart_ll_reset_register(uart_port_t uart_num)
 {
     switch (uart_num) {
     case 0:
-        DPORT_SET_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_UART_RST);
-        DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_UART_RST);
+        DPORT_SET_PERI_REG_MASK(DPORT_PERIP_RST_EN0_REG, DPORT_UART_RST);
+        DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_RST_EN0_REG, DPORT_UART_RST);
         break;
     case 1:
-        DPORT_SET_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_UART1_RST);
-        DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_UART1_RST);
+        DPORT_SET_PERI_REG_MASK(DPORT_PERIP_RST_EN0_REG, DPORT_UART1_RST);
+        DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_RST_EN0_REG, DPORT_UART1_RST);
         break;
     default:
         abort();

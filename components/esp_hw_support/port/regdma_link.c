@@ -10,6 +10,7 @@
 #include <sys/cdefs.h>
 #include <inttypes.h>
 
+#include "sdkconfig.h"
 #include "esp_private/regdma_link.h"
 
 #include "esp_heap_caps.h"
@@ -20,7 +21,11 @@
 
 
 #define REGDMA_LINK_ADDR_ALIGN      (4)
+#if CONFIG_IDF_TARGET_ESP32P4
+#define REGDMA_LINK_MEM_TYPE_CAPS   (MALLOC_CAP_DEFAULT | MALLOC_CAP_RETENTION)
+#else
 #define REGDMA_LINK_MEM_TYPE_CAPS   (MALLOC_CAP_DMA | MALLOC_CAP_DEFAULT)
+#endif
 
 void * regdma_link_new_continuous(void *backup, void *buff, int len, void *restore, void *next, bool skip_b, bool skip_r, int id, int module)
 {
@@ -600,37 +605,39 @@ static void regdma_link_update_branch_write_wait_next_wrapper(void *link, regdma
 
 void regdma_link_update_next(void *link, int nentry, ...)
 {
+    if (!link) {
+        return;
+    }
+
     va_list args;
     va_start(args, nentry);
-    if (link) {
-        regdma_entry_buf_t next;
-        memset(next, 0, sizeof(regdma_entry_buf_t));
-        for (int i = 0; i < nentry && i < REGDMA_LINK_ENTRY_NUM; i++) { // Ignore more arguments
-            next[i] = va_arg(args, void *);
-        }
+    regdma_entry_buf_t next;
+    memset(next, 0, sizeof(regdma_entry_buf_t));
+    for (int i = 0; i < nentry && i < REGDMA_LINK_ENTRY_NUM; i++) { // Ignore more arguments
+        next[i] = va_arg(args, void *);
+    }
 
-        regdma_link_head_t head = REGDMA_LINK_HEAD(link);
-        if (head.branch) {
-            typedef void (*update_branch_fn_t)(void *, regdma_entry_buf_t *);
-            static const update_branch_fn_t updatefn_b[] = {
-                [0] = regdma_link_update_branch_continuous_next_wrapper,
-                [1] = regdma_link_update_branch_addr_map_next_wrapper,
-                [2] = regdma_link_update_branch_write_wait_next_wrapper,
-                [3] = regdma_link_update_branch_write_wait_next_wrapper
-            };
-            assert((head.mode < ARRAY_SIZE(updatefn_b)));
-            (*updatefn_b[head.mode])(link, &next);
-        } else {
-            typedef void (*update_fn_t)(void *, void *);
-            static const update_fn_t updatefn[] = {
-                [0] = regdma_link_update_continuous_next_wrapper,
-                [1] = regdma_link_update_addr_map_next_wrapper,
-                [2] = regdma_link_update_write_wait_next_wrapper,
-                [3] = regdma_link_update_write_wait_next_wrapper
-            };
-            assert((head.mode < ARRAY_SIZE(updatefn)));
-            (*updatefn[head.mode])(link, next[0]);
-        }
+    regdma_link_head_t head = REGDMA_LINK_HEAD(link);
+    if (head.branch) {
+        typedef void (*update_branch_fn_t)(void *, regdma_entry_buf_t *);
+        static const update_branch_fn_t updatefn_b[] = {
+            [0] = regdma_link_update_branch_continuous_next_wrapper,
+            [1] = regdma_link_update_branch_addr_map_next_wrapper,
+            [2] = regdma_link_update_branch_write_wait_next_wrapper,
+            [3] = regdma_link_update_branch_write_wait_next_wrapper
+        };
+        assert((head.mode < ARRAY_SIZE(updatefn_b)));
+        (*updatefn_b[head.mode])(link, &next);
+    } else {
+        typedef void (*update_fn_t)(void *, void *);
+        static const update_fn_t updatefn[] = {
+            [0] = regdma_link_update_continuous_next_wrapper,
+            [1] = regdma_link_update_addr_map_next_wrapper,
+            [2] = regdma_link_update_write_wait_next_wrapper,
+            [3] = regdma_link_update_write_wait_next_wrapper
+        };
+        assert((head.mode < ARRAY_SIZE(updatefn)));
+        (*updatefn[head.mode])(link, next[0]);
     }
     va_end(args);
 }

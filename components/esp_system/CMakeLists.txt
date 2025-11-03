@@ -32,7 +32,6 @@ else()
     list(APPEND srcs "crosscore_int.c"
             "esp_ipc.c"
             "esp_err.c"
-            "esp_system_console.c"
             "freertos_hooks.c"
             "int_wdt.c"
             "panic.c"
@@ -80,7 +79,8 @@ else()
                                     # [REFACTOR-TODO] Provide system hook to release dependency reversion.
                                     # IDF-13980
                                     esp_hal_i2c
-                                    esp_hal_timg # task_wdt_impl_timergroup.c relies on it
+                                    esp_hal_wdt
+                                    esp_hal_lcd
                         LDFRAGMENTS "linker.lf" "app.lf")
     add_subdirectory(port)
 

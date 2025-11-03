@@ -181,6 +181,7 @@ static inline __attribute__((always_inline)) void clk_ll_xtal32k_enable(clk_ll_x
     LP_AON_CLKRST.xtal32k.dbuf_xtal32k = cfg.dbuf;
     // Enable xtal32k xpd
     SET_PERI_REG_MASK(PMU_HP_SLEEP_LP_CK_POWER_REG, PMU_HP_SLEEP_XPD_XTAL32K);
+    REG_SET_BIT(LP_CLKRST_HP_CLK_CTRL_REG, LP_CLKRST_HP_XTAL_32K_CLK_EN);
 }
 
 /**
@@ -188,6 +189,7 @@ static inline __attribute__((always_inline)) void clk_ll_xtal32k_enable(clk_ll_x
  */
 static inline __attribute__((always_inline)) void clk_ll_xtal32k_disable(void)
 {
+    REG_CLR_BIT(LP_CLKRST_HP_CLK_CTRL_REG, LP_CLKRST_HP_XTAL_32K_CLK_EN);
     // Disable xtal32k xpd
     CLEAR_PERI_REG_MASK(PMU_HP_SLEEP_LP_CK_POWER_REG, PMU_HP_SLEEP_XPD_XTAL32K);
 }
@@ -207,6 +209,7 @@ static inline __attribute__((always_inline)) bool clk_ll_xtal32k_is_enabled(void
  */
 static inline __attribute__((always_inline)) void clk_ll_rc32k_enable(void)
 {
+    REG_SET_BIT(LP_CLKRST_HP_CLK_CTRL_REG, LP_CLKRST_HP_RC_32K_CLK_EN);
     // Enable rc32k xpd status
     SET_PERI_REG_MASK(PMU_HP_SLEEP_LP_CK_POWER_REG, PMU_HP_SLEEP_XPD_RC32K);
 }
@@ -218,6 +221,7 @@ static inline __attribute__((always_inline)) void clk_ll_rc32k_disable(void)
 {
     // Disable rc32k xpd status
     CLEAR_PERI_REG_MASK(PMU_HP_SLEEP_LP_CK_POWER_REG, PMU_HP_SLEEP_XPD_RC32K);
+    REG_CLR_BIT(LP_CLKRST_HP_CLK_CTRL_REG, LP_CLKRST_HP_RC_32K_CLK_EN);
 }
 
 /**

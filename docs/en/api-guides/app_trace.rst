@@ -41,27 +41,31 @@ Using of this feature depends on two components:
 
 1. **Host side:** Application tracing is done over JTAG, so it needs OpenOCD to be set up and running on host machine. For instructions on how to set it up, please see :doc:`JTAG Debugging <../api-guides/jtag-debugging/index>` for details.
 
-2. **Target side:** Application tracing functionality can be enabled in menuconfig. Please go to ``Component config`` > ``Application Level Tracing`` menu, which allows selecting destination for the trace data (hardware interface for transport: JTAG or/and UART). Choosing any of the destinations automatically enables the ``CONFIG_APPTRACE_ENABLE`` option. For UART interfaces, users have to define port number, baud rate, TX and RX pins numbers, and additional UART-related parameters.
+2. **Target side:** Application tracing functionality can be enabled in menuconfig. **Important:** You must first enable application tracing by going to ``Component config`` > ``Application Level Tracing`` > ``Enable Application Level Tracing`` (:ref:`CONFIG_APPTRACE_ENABLE`). After enabling this option, you can configure the destination for the trace data. For UART interfaces, users have to define port number, baud rate, TX and RX pins numbers, and additional UART-related parameters. When FreeRTOS SystemView Tracing is enabled, selected destination will be used for systemview tracing as well.
 
 .. note::
 
     In order to achieve higher data rates and minimize the number of dropped packets, it is recommended to optimize the setting of JTAG clock frequency, so that it is at maximum and still provides stable operation of JTAG. See :ref:`jtag-debugging-tip-optimize-jtag-speed`.
 
-There are two additional menuconfig options not mentioned above:
+There are some additional menuconfig options not mentioned above:
 
 1. *Threshold for flushing last trace data to host on panic* (:ref:`CONFIG_APPTRACE_POSTMORTEM_FLUSH_THRESH`). This option is necessary due to the nature of working over JTAG. In this mode, trace data is exposed to the host in 16 KB blocks. In post-mortem mode, when one block is filled, it is exposed to the host and the previous one becomes unavailable. In other words, the trace data is overwritten in 16 KB granularity. On panic, the latest data from the current input block is exposed to the host and the host can read them for post-analysis. System panic may occur when a very small amount of data are not exposed to the host yet. In this case, the previous 16 KB of collected data will be lost and the host will see the latest, but very small piece of the trace. It can be insufficient to diagnose the problem. This menuconfig option allows avoiding such situations. It controls the threshold for flushing data in case of apanic. For example, users can decide that it needs no less than 512 bytes of the recent trace data, so if there is less then 512 bytes of pending data at the moment of panic, they will not be flushed and will not overwrite the previous 16 KB. The option is only meaningful in post-mortem mode and when working over JTAG.
 
 2. *Timeout for flushing last trace data to host on panic* (:ref:`CONFIG_APPTRACE_ONPANIC_HOST_FLUSH_TMO`). The option is only meaningful in streaming mode and it controls the maximum time that the tracing module will wait for the host to read the last data in case of panic.
 
-3. *UART RX/TX ring buffer size* (:ref:`CONFIG_APPTRACE_UART_TX_BUFF_SIZE`). The size of the buffer depends on the amount of data transferred through the UART.
+3. *Internal Sync Lock* (:ref:`CONFIG_APPTRACE_LOCK_ENABLE`). Enable this option to protect trace buffer writes with locks, preventing data corruption when multiple tasks generate trace data concurrently.
 
-4. *UART TX message size* (:ref:`CONFIG_APPTRACE_UART_TX_MSG_SIZE`). The maximum size of the single message to transfer.
+4. *UART RX/TX ring buffer size* (:ref:`CONFIG_APPTRACE_UART_TX_BUFF_SIZE`). The size of the buffer depends on the amount of data transferred through the UART.
+
+5. *UART TX message size* (:ref:`CONFIG_APPTRACE_UART_TX_MSG_SIZE`). The maximum size of the single message to transfer.
 
 
 How to Use This Library
 -----------------------
 
-This library provides APIs for transferring arbitrary data between the host and {IDF_TARGET_NAME}. When enabled in menuconfig, the target application tracing module is initialized automatically at the system startup, so all what the user needs to do is to call corresponding APIs to send, receive or flush the data.
+This library provides APIs for transferring arbitrary data between the host and {IDF_TARGET_NAME}. When enabled in menuconfig, the application tracing module is automatically initialized during system startup using configuration from menuconfig. Users can then call corresponding APIs to send, receive, or flush the data.
+
+Optionally, users can override the default configuration by implementing the weak callback function :cpp:func:`esp_apptrace_get_user_params()`.
 
 
 .. _app_trace-application-specific-tracing:
@@ -71,14 +75,36 @@ Application Specific Tracing
 
 In general, users should decide what type of data should be transferred in every direction and how these data must be interpreted (processed). The following steps must be performed to transfer data between the target and the host:
 
-1. On the target side, users should implement algorithms for writing trace data to the host. Piece of code below shows an example on how to do this.
+1. **Configuration:** Application tracing is automatically initialized during system startup using configuration from menuconfig. If you need to override the default configuration at runtime (e.g., to use custom UART pins), implement the :cpp:func:`esp_apptrace_get_user_params()` callback:
+
+    .. code-block:: c
+
+        #include "esp_app_trace.h"
+
+        esp_apptrace_config_t *esp_apptrace_get_user_params(void)
+        {
+            esp_apptrace_config_t config = APPTRACE_CONFIG_DEFAULT();
+
+            // Customize configuration if needed
+            // For example, to use different UART pins:
+            config.dest_cfg.uart.tx_pin_num = GPIO_NUM_17;
+            config.dest_cfg.uart.rx_pin_num = GPIO_NUM_16;
+
+            return config;
+        }
+
+    .. note::
+
+        This callback is optional. Only implement it if you need to override menuconfig settings. For most use cases, configuring through menuconfig is sufficient.
+
+2. On the target side, users should implement algorithms for writing trace data to the host. Piece of code below shows an example on how to do this.
 
     .. code-block:: c
 
         #include "esp_app_trace.h"
         ...
         char buf[] = "Hello World!";
-        esp_err_t res = esp_apptrace_write(ESP_APPTRACE_DEST_JTAG, buf, strlen(buf), ESP_APPTRACE_TMO_INFINITE);
+        esp_err_t res = esp_apptrace_write(buf, strlen(buf), ESP_APPTRACE_TMO_INFINITE);
         if (res != ESP_OK) {
             ESP_LOGE(TAG, "Failed to write data to host!");
             return res;
@@ -91,13 +117,13 @@ In general, users should decide what type of data should be transferred in every
         #include "esp_app_trace.h"
         ...
         int number = 10;
-        char *ptr = (char *)esp_apptrace_buffer_get(ESP_APPTRACE_DEST_JTAG, 32, 100/*tmo in us*/);
+        char *ptr = (char *)esp_apptrace_buffer_get(32, 100/*tmo in us*/);
         if (ptr == NULL) {
             ESP_LOGE(TAG, "Failed to get buffer!");
             return ESP_FAIL;
         }
         sprintf(ptr, "Here is the number %d", number);
-        esp_err_t res = esp_apptrace_buffer_put(ESP_APPTRACE_DEST_JTAG, ptr, 100/*tmo in us*/);
+        esp_err_t res = esp_apptrace_buffer_put(ptr, 100/*tmo in us*/);
         if (res != ESP_OK) {
             /* in case of error host tracing tool (e.g., OpenOCD) will report incomplete user buffer */
             ESP_LOGE(TAG, "Failed to put buffer!");
@@ -115,13 +141,13 @@ In general, users should decide what type of data should be transferred in every
         size_t sz = sizeof(buf);
 
         /* config down buffer */
-        esp_err_t res = esp_apptrace_down_buffer_config(ESP_APPTRACE_DEST_JTAG, down_buf, sizeof(down_buf));
+        esp_err_t res = esp_apptrace_down_buffer_config(down_buf, sizeof(down_buf));
         if (res != ESP_OK) {
             ESP_LOGE(TAG, "Failed to config down buffer!");
             return res;
         }
         /* check for incoming data and read them if any */
-        res = esp_apptrace_read(ESP_APPTRACE_DEST_JTAG, buf, &sz, 0/*do not wait*/);
+        res = esp_apptrace_read(buf, &sz, 0/*do not wait*/);
         if (res != ESP_OK) {
             ESP_LOGE(TAG, "Failed to read data from host!");
             return res;
@@ -142,12 +168,12 @@ In general, users should decide what type of data should be transferred in every
         size_t sz = 32;
 
         /* config down buffer */
-        esp_err_t res = esp_apptrace_down_buffer_config(ESP_APPTRACE_DEST_JTAG, down_buf, sizeof(down_buf));
+        esp_err_t res = esp_apptrace_down_buffer_config(down_buf, sizeof(down_buf));
         if (res != ESP_OK) {
             ESP_LOGE(TAG, "Failed to config down buffer!");
             return res;
         }
-        char *ptr = (char *)esp_apptrace_down_buffer_get(ESP_APPTRACE_DEST_JTAG, &sz, 100/*tmo in us*/);
+        char *ptr = (char *)esp_apptrace_down_buffer_get(&sz, 100/*tmo in us*/);
         if (ptr == NULL) {
             ESP_LOGE(TAG, "Failed to get buffer!");
             return ESP_FAIL;
@@ -158,22 +184,22 @@ In general, users should decide what type of data should be transferred in every
         } else {
             printf("No data");
         }
-        res = esp_apptrace_down_buffer_put(ESP_APPTRACE_DEST_JTAG, ptr, 100/*tmo in us*/);
+        res = esp_apptrace_down_buffer_put(ptr, 100/*tmo in us*/);
         if (res != ESP_OK) {
             /* in case of error host tracing tool (e.g., OpenOCD) will report incomplete user buffer */
             ESP_LOGE(TAG, "Failed to put buffer!");
             return res;
         }
 
-2. The next step is to build the program image and download it to the target as described in the :ref:`Getting Started Guide <get-started-build>`.
+3. The next step is to build the program image and download it to the target as described in the :ref:`Getting Started Guide <get-started-build>`.
 
-3. Run OpenOCD (see :doc:`JTAG Debugging <../api-guides/jtag-debugging/index>`).
+4. Run OpenOCD (see :doc:`JTAG Debugging <../api-guides/jtag-debugging/index>`).
 
-4. Connect to OpenOCD telnet server. It can be done using the following command in terminal ``telnet <oocd_host> 4444``. If telnet session is opened on the same machine which runs OpenOCD, you can use ``localhost`` as ``<oocd_host>`` in the command above.
+5. Connect to OpenOCD telnet server. It can be done using the following command in terminal ``telnet <oocd_host> 4444``. If telnet session is opened on the same machine which runs OpenOCD, you can use ``localhost`` as ``<oocd_host>`` in the command above.
 
-5. Start trace data collection using special OpenOCD command. This command will transfer tracing data and redirect them to the specified file or socket (currently only files are supported as trace data destination). For description of the corresponding commands, see `OpenOCD Application Level Tracing Commands`_.
+6. Start trace data collection using special OpenOCD command. This command will transfer tracing data and redirect them to the specified file or socket (currently only files are supported as trace data destination). For description of the corresponding commands, see `OpenOCD Application Level Tracing Commands`_.
 
-6. The final step is to process received data. Since the format of data is defined by users, the processing stage is out of the scope of this document. Good starting points for data processor are python scripts in ``$IDF_PATH/tools/esp_app_trace``: ``apptrace_proc.py`` (used for feature tests) and ``logtrace_proc.py`` (see more details in section `Logging to Host`_).
+7. The final step is to process received data. Since the format of data is defined by users, the processing stage is out of the scope of this document. Good starting points for data processor are python scripts in ``$IDF_PATH/tools/esp_app_trace``: ``apptrace_proc.py`` (used for feature tests) and ``logtrace_proc.py`` (see more details in section `Logging to Host`_).
 
 
 OpenOCD Application Level Tracing Commands
@@ -302,9 +328,10 @@ How To Use It
 
 In order to use logging via trace module, users need to perform the following steps:
 
-1. On the target side, the special vprintf-like function :cpp:func:`esp_apptrace_vprintf` needs to be installed. It sends log data to the host. An example is ``esp_log_set_vprintf(esp_apptrace_vprintf);``. To send log data to UART again, use ``esp_log_set_vprintf(vprintf);``.
-2. Follow instructions in items 2-5 in `Application Specific Tracing`_.
-3. To print out collected log records, run the following command in terminal: ``$IDF_PATH/tools/esp_app_trace/logtrace_proc.py /path/to/trace/file /path/to/program/elf/file``.
+1. Enable application tracing in menuconfig (``Component config`` > ``Application Level Tracing`` > ``Enable Application Level Tracing``).
+2. On the target side, the special vprintf-like function :cpp:func:`esp_apptrace_vprintf` needs to be installed. It sends log data to the host. An example is ``esp_log_set_vprintf(esp_apptrace_vprintf);``. To send log data to UART again, use ``esp_log_set_vprintf(vprintf);``.
+3. Follow instructions in items 4-6 in `Application Specific Tracing`_ (OpenOCD setup and trace collection).
+4. To print out collected log records, run the following command in terminal: ``$IDF_PATH/tools/esp_app_trace/logtrace_proc.py /path/to/trace/file /path/to/program/elf/file``.
 
 
 Log Trace Processor Command Options
@@ -342,11 +369,9 @@ How To Use It
 
 Support for this feature is enabled by ``Component config`` > ``Application Level Tracing`` > ``FreeRTOS SystemView Tracing`` (:ref:`CONFIG_APPTRACE_SV_ENABLE`) menuconfig option. There are several other options enabled under the same menu:
 
-1. SytemView destination. Select the destination interface: JTAG or UART. In case of UART, it will be possible to connect SystemView application to the {IDF_TARGET_NAME} directly and receive data in real-time.
+1. {IDF_TARGET_NAME} timer to use as SystemView timestamp source: (:ref:`CONFIG_APPTRACE_SV_TS_SOURCE`) selects the source of timestamps for SystemView events. In the single core mode, timestamps are generated using {IDF_TARGET_NAME} internal cycle counter running at maximum frequency. (:ref:`CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ`) In the dual-core mode, external timer is used to generate timestamps. It's frequency is 1/2 of the CPU frequency.
 
-2. {IDF_TARGET_NAME} timer to use as SystemView timestamp source: (:ref:`CONFIG_APPTRACE_SV_TS_SOURCE`) selects the source of timestamps for SystemView events. In the single core mode, timestamps are generated using {IDF_TARGET_NAME} internal cycle counter running at maximum 240 Mhz (about 4 ns granularity). In the dual-core mode, external timer working at 40 Mhz is used, so the timestamp granularity is 25 ns.
-
-3. Individually enabled or disabled collection of SystemView events (``CONFIG_APPTRACE_SV_EVT_XXX``):
+2. Individually enabled or disabled collection of SystemView events (``CONFIG_APPTRACE_SV_EVT_XXX``):
 
     - Trace Buffer Overflow Event
     - ISR Enter Event
@@ -362,10 +387,9 @@ Support for this feature is enabled by ``Component config`` > ``Application Leve
     - Timer Enter Event
     - Timer Exit Event
 
-ESP-IDF has all the code required to produce SystemView compatible traces, so users can just configure necessary project options (see above), build, download the image to target, and use OpenOCD to collect data as described in the previous sections.
+ESP-IDF has all the code required to produce SystemView compatible traces.
 
-4. Select Pro or App CPU in menuconfig options ``Component config`` > ``Application Level Tracing`` > ``FreeRTOS SystemView Tracing`` to trace over the UART interface in real-time.
-
+3. Select Pro or App CPU in menuconfig options ``Component config`` > ``Application Level Tracing`` > ``FreeRTOS SystemView Tracing`` to trace over the UART interface in real-time.
 
 OpenOCD SystemView Tracing Command Options
 """"""""""""""""""""""""""""""""""""""""""

@@ -11,6 +11,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include "esp_err.h"
+#include "esp_blockdev.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -612,6 +613,51 @@ uint32_t esp_partition_get_main_flash_sector_size(void);
  *         or one of the error codes from the lower-level flash driver.
  */
 esp_err_t esp_partition_copy(const esp_partition_t* dest_part, uint32_t dest_offset, const esp_partition_t* src_part, uint32_t src_offset, size_t size);
+
+
+/* *************************************************************************************
+ * Block Device Layer interface
+ * *************************************************************************************/
+
+/**
+ * @brief Creates block device instance associated with the desired partition and returns the corresponding handle. Convenient version.
+ *
+ * The Block Device Layer (BDL) interface allows generic access to each partition, represented by its unique parameters or by existing 'esp_partition_t' object.
+ * Each  BDL structure instance is employed as an extension to existing partition object, ie the partition object is not created if not found.
+ * The BDL instance is to be created and destroyed only via the corresponding create/release APIs. Ignoring this requirement may lead to memory leaks and similar troubles.
+ *
+ * New BDL structure instance is created on the application's heap, it is initialized with the partition's holder details (esp_partition_t) and the caller obtains
+ * corresponding BDL handle in 'out_bdl_handle' output parameter. The life-cycle of such BDL object is fully managed by the owner (caller) and is not checked during
+ * possible esp_partition_t changes or instance destruction.
+ *
+ * @param[in] type Partition type, one of esp_partition_type_t values or an 8-bit unsigned integer.
+ *             To find all partitions, no matter the type, use ESP_PARTITION_TYPE_ANY, and set
+ *             subtype argument to ESP_PARTITION_SUBTYPE_ANY.
+ * @param[in] subtype Partition subtype, one of esp_partition_subtype_t values or an 8-bit unsigned integer
+ *                To find all partitions of given type, use ESP_PARTITION_SUBTYPE_ANY.
+ * @param[in] label (optional) Partition label. Set this value if looking
+ *             for partition with a specific name. Pass NULL otherwise.
+ * @param[out] out_bdl_handle Block device instance handle for "native" BDL control
+ *
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_NO_MEM if memory allocation has failed
+ *      - ESP_ERR_NOT_FOUND if the partition defined by the parameters cannot be found
+ */
+esp_err_t esp_partition_get_blockdev(const esp_partition_type_t type, const esp_partition_subtype_t subtype, const char *label, esp_blockdev_handle_t *out_bdl_handle);
+
+/**
+ * @brief The same as esp_partition_get_blockdev(), it just accepts existing partition holder as an parameter and doesn't provide the partition search by itself.
+ *
+ * @param[in] partition Pointer to existing esp_partition_t instance
+ * @param[out] out_bdl_handle Block device instance handle for "native" BDL control
+ *
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_NO_MEM if memory allocation has failed
+ *      - ESP_ERR_NOT_FOUND if the partition defined by the parameters cannot be found
+ */
+esp_err_t esp_partition_ptr_get_blockdev(const esp_partition_t *partition, esp_blockdev_handle_t *out_bdl_handle);
 
 #ifdef __cplusplus
 }

@@ -70,27 +70,64 @@ The deprecated ``STATUS`` type has been removed from ``ets_sys.h`` ROM header fi
 App Trace
 ----------
 
-Removed extra data buffering option. `CONFIG_APPTRACE_PENDING_DATA_SIZE_MAX` is no longer supported.
+Configuration Changes
+^^^^^^^^^^^^^^^^^^^^^
 
-Removed deprecated `ESP_APPTRACE_DEST_TRAX` enum value. Use `ESP_APPTRACE_DEST_JTAG` instead.
+Previously, application tracing was automatically enabled when a destination was configured. Now you must explicitly enable application tracing through ``CONFIG_APPTRACE_ENABLE``` option before configuring any destination.
 
-The :cpp:func:`esp_apptrace_down_buffer_config` function now requires a destination parameter and returns an error code for proper error handling.
+To enable application tracing, go to "Component config" → "Application Level Tracing" → "Enable Application Level Tracing" in menuconfig.
+
+Removed extra data buffering option. ``CONFIG_APPTRACE_PENDING_DATA_SIZE_MAX`` is no longer supported.
+
+Removed deprecated ``ESP_APPTRACE_DEST_TRAX`` enum value. Use ``ESP_APPTRACE_DEST_JTAG`` instead.
+
+Initialization Flow Changes
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If you need to override the default configuration at runtime, you can implement the ``esp_apptrace_get_user_params()`` callback function. A weak default implementation exists that returns menuconfig defaults (``APPTRACE_CONFIG_DEFAULT()``). Your application can override this by providing its own configuration.
+
+   .. code-block:: c
+
+       esp_apptrace_config_t esp_apptrace_get_user_params(void)
+       {
+           esp_apptrace_config_t config = APPTRACE_CONFIG_DEFAULT();
+
+           // Override with custom values (example for UART)
+           config.dest_cfg.uart.uart_num = UART_NUM_0;
+           config.dest_cfg.uart.baud_rate = 921600;
+           config.dest_cfg.uart.tx_pin_num = GPIO_NUM_17;
+           config.dest_cfg.uart.rx_pin_num = GPIO_NUM_16;
+
+           return config;
+       }
+
+   **Important:**
+
+   - Do **not** add ``__attribute__((weak))`` to your implementation
+   - You can also use destination-specific macros: ``APPTRACE_JTAG_CONFIG_DEFAULT()`` or ``APPTRACE_UART_CONFIG_DEFAULT()``
+
+API Changes
+^^^^^^^^^^^
+
+The destination parameter has been removed from all apptrace APIs.
 
 Old Version:
 
 .. code-block:: c
 
-    esp_apptrace_down_buffer_config(down_buf, sizeof(down_buf));
+    esp_apptrace_write(ESP_APPTRACE_DEST_JTAG, data, size, timeout);
+    esp_apptrace_read(ESP_APPTRACE_DEST_UART, buffer, &size, timeout);
+    esp_apptrace_flush(ESP_APPTRACE_DEST_JTAG, min_sz, timeout);
 
 Update to:
 
 .. code-block:: c
 
-    esp_err_t res = esp_apptrace_down_buffer_config(ESP_APPTRACE_DEST_JTAG, down_buf, sizeof(down_buf));
-    if (res != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to config down buffer!");
-        return res;
-    }
+    esp_apptrace_write(data, size, timeout);
+    esp_apptrace_read(buffer, &size, timeout);
+    esp_apptrace_flush(min_sz, timeout);
+
+The destination is now configured in menuconfig under "Application Level Tracing" → "Data Destination".
 
 The UART destination configuration has been simplified:
 
@@ -114,10 +151,18 @@ New configuration:
     CONFIG_APPTRACE_DEST_UART=y
     CONFIG_APPTRACE_DEST_UART_NUM=0  # or 1, 2 depending on target
 
+SystemView Destination
+^^^^^^^^^^^^^^^^^^^^^^
+
+The SystemView destination is now controlled by the same configuration as the application trace destination. When SystemView is enabled, it will use the destination configured under "Application Level Tracing" → "Data Destination".
+
+This means that if you have both application tracing and SystemView enabled, they will share the same destination (JTAG or UART) as configured in the menuconfig. SystemView will not have its own destination configuration.
+
 FreeRTOS
 --------
 
-**Removed Functions**
+Removed Functions
+^^^^^^^^^^^^^^^^^
 
 The following deprecated FreeRTOS functions have been removed in ESP-IDF v6.0:
 
@@ -128,21 +173,24 @@ The following deprecated FreeRTOS functions have been removed in ESP-IDF v6.0:
 The following compatibility functions have been removed in ESP-IDF v6.0. These functions were maintained for backward compatibility with previous ESP-IDF versions as they were changed to either macros or separate functions in FreeRTOS. This compatibility has been removed.
 
 - :cpp:func:`xQueueGenericReceive` - Use :cpp:func:`xQueueReceive`, :cpp:func:`xQueuePeek`, or :cpp:func:`xQueueSemaphoreTake` instead, depending on your use case.
-- :cpp:func:`vTaskDelayUntil` - Use :cpp:func:`xTaskDelayUntil` instead
-- :cpp:func:`ulTaskNotifyTake` - Use the macro ``ulTaskNotifyTake`` instead
-- :cpp:func:`xTaskNotifyWait` - Use the macro ``xTaskNotifyWait`` instead
+- :cpp:func:`vTaskDelayUntil` - Use :cpp:func:`xTaskDelayUntil` instead.
+- :cpp:func:`ulTaskNotifyTake` - Use the macro ``ulTaskNotifyTake`` instead.
+- :cpp:func:`xTaskNotifyWait` - Use the macro ``xTaskNotifyWait`` instead.
 
-**Deprecated Functions**
+Deprecated Functions
+^^^^^^^^^^^^^^^^^^^^
 
 The function :cpp:func:`pxTaskGetStackStart` has been deprecated. Use :cpp:func:`xTaskGetStackStart` instead for improved type safety.
 
-**API Added**
+API Added
+^^^^^^^^^
 
 Task snapshot APIs have been made public to support external frameworks like ESP Insights. These APIs are now provided through ``freertos/freertos_debug.h`` instead of the deprecated ``freertos/task_snapshot.h``.
 
 For safe use while the scheduler is running, use ``vTaskSuspendAll()`` before calling snapshot functions, and ``xTaskResumeAll()`` afterward.
 
-**Memory Placement**
+Memory Placement
+^^^^^^^^^^^^^^^^
 
 - To reduce IRAM usage, the default placement for most FreeRTOS functions has been changed from IRAM to flash. Consequently, the ``CONFIG_FREERTOS_PLACE_FUNCTIONS_INTO_FLASH`` option has been removed. This change saves a significant amount of IRAM but may have a slight performance impact. For performance-critical applications, you can restore the previous behavior by enabling the new :ref:`CONFIG_FREERTOS_IN_IRAM` option.
 - Before enabling ``CONFIG_FREERTOS_IN_IRAM``, it is recommended to run performance tests to measure the actual impact on your specific use case. The performance difference between flash and IRAM configurations depends on factors such as flash cache efficiency, API usage patterns, and system load.
@@ -150,7 +198,8 @@ For safe use while the scheduler is running, use ``vTaskSuspendAll()`` before ca
 - Task snapshot functions are automatically placed in IRAM when ``CONFIG_ESP_PANIC_HANDLER_IRAM`` is enabled, ensuring they remain accessible during panic handling.
 - ``vTaskGetSnapshot`` is kept in IRAM unless ``CONFIG_FREERTOS_PLACE_ISR_FUNCTIONS_INTO_FLASH`` is enabled, as it is used by the Task Watchdog interrupt handler.
 
-**Removed Configuration Options**
+Removed Configuration Options
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The following hidden (and always true) configuration options have been removed:
 
@@ -160,21 +209,24 @@ The following hidden (and always true) configuration options have been removed:
 Ring Buffer
 -----------
 
-**Memory Placement**
+Memory Placement
+^^^^^^^^^^^^^^^^
 
 To reduce IRAM usage, the default placement for `esp_ringbuf` functions has been changed from IRAM to Flash. Consequently, the ``CONFIG_RINGBUF_PLACE_FUNCTIONS_INTO_FLASH`` option has been removed. This change saves a significant amount of IRAM but may have a slight performance impact. For performance-critical applications, the previous behavior can be restored by enabling the new :ref:`CONFIG_RINGBUF_IN_IRAM` option.
 
 Log
 ---
 
-**Removed Functions**
+Removed Functions
+^^^^^^^^^^^^^^^^^
 
 The following deprecated Log functions have been removed in ESP-IDF v6.0:
 
 - :cpp:func:`esp_log_buffer_hex` - Use :cpp:func:`ESP_LOG_BUFFER_HEX` instead.
 - :cpp:func:`esp_log_buffer_char` - Use :cpp:func:`ESP_LOG_BUFFER_CHAR` instead.
 
-**Removed Headers**
+Removed Headers
+^^^^^^^^^^^^^^^
 
 - ``esp_log_internal.h`` - Use ``esp_log_buffer.h`` instead.
 
@@ -199,7 +251,8 @@ The partial download functionality in ESP HTTPS OTA has been moved under a confi
 
 To use partial download features in your OTA applications, you need to enable the component-level configuration :ref:`CONFIG_ESP_HTTPS_OTA_ENABLE_PARTIAL_DOWNLOAD` in menuconfig (``Component config`` → ``ESP HTTPS OTA`` → ``Enable partial HTTP download for OTA``).
 
-**Removed Deprecated APIs**
+Removed Deprecated APIs
+^^^^^^^^^^^^^^^^^^^^^^^
 
 The following deprecated functions have been removed from the ``app_update`` component:
 
@@ -213,7 +266,8 @@ Gcov
 
 The gcov component has been moved to a separate repository. `esp_gcov <https://components.espressif.com/components/espressif/esp_gcov>`_  is now a managed component.
 
-**Component Dependency**
+Component Dependency
+^^^^^^^^^^^^^^^^^^^^
 
 Projects using gcov functionality must now add the esp_gcov component as a dependency in their ``idf_component.yml`` manifest file:
 
@@ -222,13 +276,15 @@ Projects using gcov functionality must now add the esp_gcov component as a depen
     dependencies:
       espressif/esp_gcov: ^1
 
-**Configuration Changes**
+Configuration Changes
+^^^^^^^^^^^^^^^^^^^^^
 
 The gcov configuration options have moved from the Application Level Tracing menu to a dedicated ``GNU Code Coverage`` menu section.
 
 The ``CONFIG_APPTRACE_GCOV_ENABLE`` option has been renamed to ``CONFIG_ESP_GCOV_ENABLE``.
 
-**Header File Changes**
+Header File Changes
+^^^^^^^^^^^^^^^^^^^
 
 For the gcov functionality, include the ``esp_gcov.h`` header file instead of ``esp_app_trace.h``.
 
@@ -253,3 +309,9 @@ Heap
 In previous versions of ESP-IDF, the capability MALLOC_CAP_EXEC would be available regardless of the memory protection configuration state. This implied that a call to e.g., :cpp:func:`heap_caps_malloc` with MALLOC_CAP_EXEC would return NULL when CONFIG_ESP_SYSTEM_MEMPROT_FEATURE or CONFIG_ESP_SYSTEM_PMP_IDRAM_SPLIT are enabled.
 
 Since ESP-IDF v6.0, the definition of MALLOC_CAP_EXEC is conditional, meaning that if CONFIG_ESP_SYSTEM_MEMPROT is enabled, MALLOC_CAP_EXEC will not be defined. Therefore, using it will generate a compile time error.
+
+``esp_common``
+--------------
+
+- ``EXT_RAM_ATTR`` was deprecated since v5.0, Now it has been removed. Please use the macro ``EXT_RAM_BSS_ATTR`` to put ``.bss`` on PSRAM.
+- RTC related memory attributes (``RTC_x_ATTR``) have been removed on those chips without RTC memory.

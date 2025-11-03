@@ -240,12 +240,21 @@ else()
     set(wps_registrar_src "")
 endif()
 
+if(CONFIG_ESP_WIFI_NAN_USD_ENABLE)
+    set(usd_src
+    "src/common/nan_de.c"
+    "esp_supplicant/src/esp_nan_usd.c")
+else()
+    set(usd_src "")
+endif()
+
 idf_component_register(SRCS "${srcs}" "${esp_srcs}" "${tls_src}" "${roaming_src}"
-                            "${crypto_src}" "${mbo_src}" "${dpp_src}" "${wps_registrar_src}"
+                            "${crypto_src}" "${mbo_src}" "${dpp_src}" "${wps_registrar_src}" "${usd_src}"
                     INCLUDE_DIRS include port/include esp_supplicant/include
                     PRIV_INCLUDE_DIRS src src/utils esp_supplicant/src src/crypto
                                       ../esp_wifi/wifi_apps/roaming_app/include
                                       ../esp_wifi/wifi_apps/roaming_app/src
+                                      esp_supplicant/include/esp_private
                     LDFRAGMENTS   ${linker_fragments}
                     PRIV_REQUIRES mbedtls esp_timer esp_wifi)
 
@@ -348,6 +357,9 @@ if(CONFIG_ESP_WIFI_ENABLE_WPA3_OWE_STA)
 endif()
 if(CONFIG_ESP_WIFI_EAP_TLS1_3)
     target_compile_definitions(${COMPONENT_LIB} PRIVATE CONFIG_TLSV13)
+endif()
+if(CONFIG_ESP_WIFI_NAN_USD_ENABLE)
+    target_compile_definitions(${COMPONENT_LIB} PRIVATE CONFIG_NAN_USD)
 endif()
 set_property(TARGET ${COMPONENT_LIB} APPEND PROPERTY LINK_INTERFACE_MULTIPLICITY 3)
 

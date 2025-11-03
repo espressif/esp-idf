@@ -270,10 +270,14 @@ static inline void temperature_sensor_ll_set_sample_rate(uint16_t rate)
  */
 static inline int temperature_sensor_ll_load_calib_param(void)
 {
+#ifdef EFUSE_TEMPERATURE_SENSOR
     uint32_t cal_temp = EFUSE.rd_sys_part2_data3.temperature_sensor;
     // BIT(8) stands for sign: 1: negative, 0: positive
     int tsens_cal = ((cal_temp & BIT(8)) != 0)? -(uint8_t)cal_temp: (uint8_t)cal_temp;
     return tsens_cal;
+#else
+    return 0;
+#endif
 }
 
 #ifdef __cplusplus

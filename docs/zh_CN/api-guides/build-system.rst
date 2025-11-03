@@ -605,6 +605,7 @@ Spark Plug 组件
 
 通用组件包括：cxx、esp_libc、freertos、esp_hw_support、heap、log、soc、hal、esp_rom、esp_common、esp_system。
 
+.. _including-components-in-the-build:
 
 在构建中导入组件
 -----------------
@@ -1155,7 +1156,7 @@ ESP-IDF 构建系统用“组件”的概念“封装”了 CMake，并提供了
 
   target_include_directories(json PUBLIC cJSON)
 
-- 这实际上与 IDF 中的 :idf_file:`json 组件 </components/json/CMakeLists.txt>` 是等效的。
+- 这实际上与 `espressif/cjson <https://github.com/espressif/idf-extra-components/tree/master/cjson>`_ 托管组件是等效的。
 - 因为组件中的源文件不多，所以这个 CMakeLists 文件非常简单。对于具有大量源文件的组件而言，ESP-IDF 支持的组件通配符，可以简化组件 CMakeLists 的样式。
 - 每当组件中新增一个与组件同名的库目标时，ESP-IDF 构建系统会自动将其添加到构建中，并公开公共的 include 目录。如果组件想要添加一个与组件不同名的库目标，就需要使用 CMake 命令手动添加依赖关系。
 

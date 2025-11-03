@@ -267,6 +267,45 @@ Read Otadata Partition: ``read-otadata``
 
 This command prints the contents of the ``otadata`` partition which stores the information about the currently selected OTA app slot. Refer to :doc:`/api-reference/system/ota` for more about the ``otadata`` partition.
 
+Start MCP Server: ``mcp-server``
+---------------------------------
+
+.. code-block:: bash
+
+  idf.py mcp-server
+
+This command starts an MCP (Model Context Protocol) server that enables AI integration with ESP-IDF projects. The MCP server provides tools and resources that allow AI assistants to interact with your ESP-IDF project through a standardized protocol.
+
+The MCP server provides the following tools:
+
+- ``build_project``: Build the ESP-IDF project with specified target
+- ``set_target``: Set the ESP-IDF target (esp32, esp32s3, esp32c6, etc.)
+- ``flash_project``: Flash the built project to a connected device
+- ``monitor_serial``: Start serial monitor (runs in background)
+- ``clean_project``: Clean build artifacts
+- ``menuconfig``: Open menuconfig interface (terminal-based)
+
+The MCP server also provides these resources:
+
+- ``project://config``: Get current project configuration
+- ``project://status``: Get current project build status
+- ``project://devices``: Get list of connected ESP devices
+
+.. note::
+
+    The MCP server requires the ``mcp`` Python package to be installed. Install it with: ``./install.sh --enable-mcp``.
+
+Adding ESP-IDF MCP Server to IDEs
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+**Claude Desktop:**
+
+Use the Claude CLI to add the ESP-IDF MCP server:
+
+.. code-block:: bash
+
+  claude mcp add esp-idf python /path/to/esp-idf/tools/idf.py mcp-server --env IDF_PATH=/path/to/esp-idf
+
 Global Options
 ==============
 

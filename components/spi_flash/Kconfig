@@ -241,14 +241,7 @@ menu "SPI Flash driver"
             These APIs may be used to collect performance data for spi_flash APIs
             and to help understand behaviour of libraries which use SPI flash.
 
-    config SPI_FLASH_ROM_DRIVER_PATCH
-        bool "Enable SPI flash ROM driver patched functions"
-        default y
-        help
-            Enable this flag to use patched versions of SPI flash ROM driver functions.
-            This option should be enabled, if any one of the following is true: (1) need to write
-            to flash on ESP32-D2WD; (2) main SPI flash is connected to non-default pins; (3) main
-            SPI flash chip is manufactured by ISSI.
+
 
     config SPI_FLASH_ROM_IMPL
         bool "Use esp_flash implementation in ROM"

@@ -21,6 +21,7 @@
 #include "hal/i2s_types.h"
 #include "hal/hal_utils.h"
 
+#define I2S_LL_GET(_attr)       I2S_LL_ ## _attr
 
 #ifdef __cplusplus
 extern "C" {

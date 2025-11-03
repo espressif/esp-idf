@@ -11,5 +11,3 @@ entries:
         esp_rom_cache_writeback_esp32s3 (noflash)
     if SOC_SYSTIMER_SUPPORTED = y:
         esp_rom_systimer (noflash)
-    if HAL_WDT_USE_ROM_IMPL = y:
-        esp_rom_wdt (noflash)

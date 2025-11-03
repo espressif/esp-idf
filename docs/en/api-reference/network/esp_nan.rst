@@ -18,6 +18,10 @@ Application Examples
 
 - :example:`wifi/wifi_aware/nan_subscriber` demonstrates how to use the NAN protocol to discover other devices that publishes the required service in the proximity, and communicate with them either by sending a message or initiating a datapath.
 
+- :example:`wifi/wifi_aware/usd_publisher` demonstrates how to use lightweight NAN Unsynchronized Service Discovery (NAN-USD) to advertise a service to nearby devices without forming NAN clusters. It walks through bringing up USD, publishing a service, responding to subscribers with follow-up messages, and returning to the idle state once discovery completes.
+
+- :example:`wifi/wifi_aware/usd_subscriber` demonstrates how to use the lightweight NAN Unsynchronized Service Discovery (NAN-USD) protocol to discover services advertised by nearby devices and interact with them. It covers enabling USD discovery, subscribing to services, handling follow-up exchanges, and terminating discovery after the session ends.
+
 API Reference
 -------------
 

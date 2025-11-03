@@ -1,0 +1,3 @@
+CONFIG_ESP_CONSOLE_NONE=y
+# Destination selection on runtime
+CONFIG_APPTRACE_DEST_NONE=y

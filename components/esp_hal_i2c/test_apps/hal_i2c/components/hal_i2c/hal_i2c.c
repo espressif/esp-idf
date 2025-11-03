@@ -6,14 +6,13 @@
 
 #include <stdio.h>
 #include "esp_log.h"
-#include "hal/i2c_ll.h"
 #include "soc/io_mux_reg.h"
 #include "soc/periph_defs.h"
 #include "soc/gpio_sig_map.h"
 #include "hal/gpio_ll.h"
 #include "hal/gpio_hal.h"
-#include "esp_rom_gpio.h"
 #include "hal/i2c_ll.h"
+#include "esp_rom_gpio.h"
 #include "esp_cpu.h"
 #include "esp_check.h"
 #include "esp_private/periph_ctrl.h"

@@ -70,27 +70,64 @@ ROM 头文件
 App 追踪
 ----------
 
-已移除额外数据缓冲选项。不再支持 `CONFIG_APPTRACE_PENDING_DATA_SIZE_MAX` 配置项。
+配置更改
+^^^^^^^^^^
 
-已移除弃用的 `ESP_APPTRACE_DEST_TRAX` 枚举值。请改用 `ESP_APPTRACE_DEST_JTAG`。
+此前，当配置传输目标时，应用程序跟踪会自动启用。现在必须在配置任何目标前，通过 ``CONFIG_APPTRACE_ENABLE`` 选项显式启用应用程序跟踪功能。
 
-函数 :cpp:func:`esp_apptrace_down_buffer_config` 现在需要一个目标参数，并返回一个错误代码以便进行适当的错误处理。
+如需启用应用程序跟踪，请在 menuconfig 中依次进入 "Component config" → "Application Level Tracing" → "Enable Application Level Tracing" 进行设置。
 
-旧代码：
+已移除额外数据缓冲选项。不再支持 ``CONFIG_APPTRACE_PENDING_DATA_SIZE_MAX`` 配置项。
+
+已移除弃用的 ``ESP_APPTRACE_DEST_TRAX`` 枚举值。请改用 ``ESP_APPTRACE_DEST_JTAG``。
+
+初始化流程更改
+^^^^^^^^^^^^^^^^^^^
+
+如需在运行时覆盖默认配置，可以实现 ``esp_apptrace_get_user_params()`` 回调函数。系统提供了一个弱默认实现，返回 menuconfig 的默认配置（``APPTRACE_CONFIG_DEFAULT()``）。您的应用程序可以通过提供自己的配置来覆盖此默认实现。
+
+   .. code-block:: c
+
+       esp_apptrace_config_t esp_apptrace_get_user_params(void)
+       {
+           esp_apptrace_config_t config = APPTRACE_CONFIG_DEFAULT();
+
+           // 使用自定义值覆盖（UART 示例）
+           config.dest_cfg.uart.uart_num = UART_NUM_0;
+           config.dest_cfg.uart.baud_rate = 921600;
+           config.dest_cfg.uart.tx_pin_num = GPIO_NUM_17;
+           config.dest_cfg.uart.rx_pin_num = GPIO_NUM_16;
+
+           return config;
+       }
+
+   **重要提示：**
+
+   - 请 **勿** 在您的实现中添加 ``__attribute__((weak))``
+   - 您也可以使用特定目标的宏：``APPTRACE_JTAG_CONFIG_DEFAULT()`` 或 ``APPTRACE_UART_CONFIG_DEFAULT()``
+
+API 更改
+^^^^^^^^^^^
+
+所有 apptrace API 中的目标参数已被移除。
+
+旧版本：
 
 .. code-block:: c
 
-    esp_apptrace_down_buffer_config(down_buf, sizeof(down_buf));
+    esp_apptrace_write(ESP_APPTRACE_DEST_JTAG, data, size, timeout);
+    esp_apptrace_read(ESP_APPTRACE_DEST_UART, buffer, &size, timeout);
+    esp_apptrace_flush(ESP_APPTRACE_DEST_JTAG, min_sz, timeout);
 
-现在需要修改成：
+更新为：
 
 .. code-block:: c
 
-    esp_err_t res = esp_apptrace_down_buffer_config(ESP_APPTRACE_DEST_JTAG, down_buf, sizeof(down_buf));
-    if (res != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to config down buffer!");
-        return res;
-    }
+    esp_apptrace_write(data, size, timeout);
+    esp_apptrace_read(buffer, &size, timeout);
+    esp_apptrace_flush(min_sz, timeout);
+
+目标现在在 menuconfig 中的 "Application Level Tracing" → "Data Destination" 下全局配置。
 
 UART 目标配置已简化：
 
@@ -114,10 +151,18 @@ UART 目标配置已简化：
     CONFIG_APPTRACE_DEST_UART=y
     CONFIG_APPTRACE_DEST_UART_NUM=0  # 或 1、2，具体取决于目标芯片
 
+SystemView 的传输目标
+^^^^^^^^^^^^^^^^^^^^^^^
+
+SystemView 的传输目标现在由与应用程序跟踪目标相同的配置控制。启用 SystemView 后，它将使用在 "Application Level Tracing" → "Data Destination" 下配置的目标传输方式。
+
+这意味着如果同时启用了应用程序跟踪和 SystemView，它们将共享在 menuconfig 中配置的相同目标传输方式（JTAG 或 UART）。SystemView 将不再拥有独立的传输目标配置。
+
 FreeRTOS
 --------
 
-**已移除的函数**
+已移除的函数
+^^^^^^^^^^^^^^
 
 以下已弃用的 FreeRTOS 函数已在 ESP-IDF v6.0 中移除：
 
@@ -127,22 +172,25 @@ FreeRTOS
 
 以下兼容性函数已在 ESP-IDF v6.0 中移除。这些函数原本是为了向后兼容旧版本 ESP-IDF 而维护的，因为它们在 FreeRTOS 中已被更改为宏或独立函数。现已移除此兼容性支持。
 
-- :cpp:func:`xQueueGenericReceive` - 请根据具体使用场景选择 :cpp:func:`xQueueReceive`、:cpp:func:`xQueuePeek` 或 :cpp:func:`xQueueSemaphoreTake` 替代
-- :cpp:func:`vTaskDelayUntil` - 请使用 :cpp:func:`xTaskDelayUntil` 替代
-- :cpp:func:`ulTaskNotifyTake` - 请使用宏 ``ulTaskNotifyTake`` 替代
-- :cpp:func:`xTaskNotifyWait` - 请使用宏 ``xTaskNotifyWait`` 替代
+- :cpp:func:`xQueueGenericReceive` - 请根据具体使用场景选择 :cpp:func:`xQueueReceive`、:cpp:func:`xQueuePeek` 或 :cpp:func:`xQueueSemaphoreTake` 替代。
+- :cpp:func:`vTaskDelayUntil` - 请使用 :cpp:func:`xTaskDelayUntil` 替代。
+- :cpp:func:`ulTaskNotifyTake` - 请使用宏 ``ulTaskNotifyTake`` 替代。
+- :cpp:func:`xTaskNotifyWait` - 请使用宏 ``xTaskNotifyWait`` 替代。
 
-**已弃用的函数**
+已弃用的函数
+^^^^^^^^^^^^^^
 
 函数 :cpp:func:`pxTaskGetStackStart` 已弃用。请使用 :cpp:func:`xTaskGetStackStart` 替代以提高类型安全性。
 
-**新增 API**
+新增 API
+^^^^^^^^^
 
 任务快照 API 已对外公开，以支持 ESP Insights 等外部框架。这些 API 现通过 ``freertos/freertos_debug.h`` 头文件提供，不再使用已弃用的 ``freertos/task_snapshot.h``。
 
 在调度程序运行时安全使用的方案是：调用快照函数前先执行 ``vTaskSuspendAll()`` 暂停所有任务，完成后调用 ``xTaskResumeAll()`` 恢复运行。
 
-**内存布局**
+内存布局
+^^^^^^^^^^^^
 
 - 为了减少 IRAM 的使用，大多数 FreeRTOS 函数的默认存储位置已从 IRAM 更改为 flash。因此，``CONFIG_FREERTOS_PLACE_FUNCTIONS_INTO_FLASH`` 选项已被移除。这项变更可显著节省 IRAM 空间，但可能会对性能造成轻微影响。如果应用对性能有严苛要求，可通过启用新选项 :ref:`CONFIG_FREERTOS_IN_IRAM` 恢复原先配置。
 - 启用 ``CONFIG_FREERTOS_IN_IRAM`` 前，建议进行性能测试以评估对具体应用场景的实际影响。flash 和 IRAM 配置的性能差异取决于 flash 缓存效率、API 调用模式和系统负载等因素。
@@ -150,7 +198,8 @@ FreeRTOS
 - 当启用 ``CONFIG_ESP_PANIC_HANDLER_IRAM`` 时，任务快照函数会自动存入 IRAM，确保在系统崩溃处理期间仍可调用。
 - 除非启用 ``CONFIG_FREERTOS_PLACE_ISR_FUNCTIONS_INTO_FLASH``，否则 ``vTaskGetSnapshot`` 将始终保留在 IRAM 中，因为该函数被任务看门狗中断处理程序所调用。
 
-**已移除的配置选项**
+已移除的配置选项
+^^^^^^^^^^^^^^^^^^
 
 以下隐藏（且始终启用）的配置选项已被移除：
 
@@ -160,21 +209,24 @@ FreeRTOS
 环形缓冲区
 ----------
 
-**内存布局**
+内存布局
+^^^^^^^^^^
 
-为了减少 IRAM 的使用，`esp_ringbuf` 函数的默认位置已从 IRAM 更改为 Flash。因此，``CONFIG_RINGBUF_PLACE_FUNCTIONS_INTO_FLASH`` 选项已被移除。此举可节省大量 IRAM，但可能会对性能造成轻微影响。对于性能要求严苛的应用程序，可通过启用新增的 :ref:`CONFIG_RINGBUF_IN_IRAM` 选项来恢复之前的行为。
+为了减少 IRAM 的使用，`esp_ringbuf` 函数的默认位置已从 IRAM 更改为 flash。因此，``CONFIG_RINGBUF_PLACE_FUNCTIONS_INTO_FLASH`` 选项已被移除。此举可节省大量 IRAM，但可能会对性能造成轻微影响。对于性能要求严苛的应用程序，可通过启用新增的 :ref:`CONFIG_RINGBUF_IN_IRAM` 选项来恢复之前的行为。
 
 Log
 ---
 
-**已移除的函数**
+已移除的函数
+^^^^^^^^^^^^^^
 
 以下已弃用的 Log 函数已在 ESP-IDF v6.0 中移除：
 
 - :cpp:func:`esp_log_buffer_hex` – 请使用 :cpp:func:`ESP_LOG_BUFFER_HEX` 替代。
 - :cpp:func:`esp_log_buffer_char` – 请使用 :cpp:func:`ESP_LOG_BUFFER_CHAR` 替代。
 
-**已移除的头文件**
+已移除的头文件
+^^^^^^^^^^^^^^^
 
 - ``esp_log_internal.h`` – 请使用 ``esp_log_buffer.h`` 替代。
 
@@ -199,7 +251,8 @@ ESP HTTPS OTA 的分段下载功能已移至配置选项下，以便在未使用
 
 如果要在 OTA 应用中使用分段下载功能，需要在 menuconfig 中启用组件级配置 :ref:`CONFIG_ESP_HTTPS_OTA_ENABLE_PARTIAL_DOWNLOAD` (``Component config`` → ``ESP HTTPS OTA`` → ``Enable partial HTTP download for OTA``)。
 
-**已移除的废弃 API**
+已移除的废弃 API
+^^^^^^^^^^^^^^^^^^^^
 
 以下废弃函数已从 ``app_update`` 组件中移除：
 
@@ -213,7 +266,8 @@ Gcov
 
 gcov 组件已移至独立仓库。`esp_gcov <https://components.espressif.com/components/espressif/esp_gcov>`_ 现为托管组件。
 
-**组件依赖**
+组件依赖
+^^^^^^^^^^^
 
 使用 gcov 功能的项目现在必须在 ``idf_component.yml`` 清单文件中添加 esp_gcov 组件作为依赖项：
 
@@ -222,13 +276,15 @@ gcov 组件已移至独立仓库。`esp_gcov <https://components.espressif.com/c
     dependencies:
       espressif/esp_gcov: ^1
 
-**配置更改**
+配置更改
+^^^^^^^^^^^
 
 gcov 配置选项已从应用程序级别追踪菜单移至专用的 ``GNU Code Coverage`` 菜单。
 
 ``CONFIG_APPTRACE_GCOV_ENABLE`` 选项已重命名为 ``CONFIG_ESP_GCOV_ENABLE``。
 
-**头文件更改**
+头文件更改
+^^^^^^^^^^^
 
 对于 gcov 功能，请改用 ``esp_gcov.h`` 头文件替代原有的 ``esp_app_trace.h``。
 
@@ -246,3 +302,9 @@ ULP
 ---
 
 LP-Core 在深度睡眠期间遇到异常时，将唤醒主 CPU。此功能默认启用，若不需要此行为，可以通过 :ref:`CONFIG_ULP_TRAP_WAKEUP` Kconfig 配置选项禁用。
+
+``esp_common``
+----------------
+
+- ``EXT_RAM_ATTR`` 自 v5.0 已弃用，现已移除。请使用 ``EXT_RAM_BSS_ATTR`` 宏将 ``.bss`` 放在 PSRAM 上。
+- RTC 相关内存属性 (``RTC_x_ATTR``) 已从没有 RTC 存储的芯片中移除。

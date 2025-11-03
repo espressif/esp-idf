@@ -32,7 +32,7 @@
 #include "hal/cache_ll.h"
 #endif
 
-#if SOC_MODULE_SUPPORT(I2S, ADC_DAC)
+#if I2S_LL_GET(ADC_DAC_CAPABLE)
 #include "hal/adc_ll.h"
 #endif
 #if SOC_I2S_SUPPORTS_APLL
@@ -255,7 +255,7 @@ static i2s_controller_t *i2s_acquire_controller_obj(int id)
         i2s_obj = pre_alloc;
         g_i2s.controller[id] = i2s_obj;
         portEXIT_CRITICAL(&g_i2s.spinlock);
-#if SOC_MODULE_SUPPORT(I2S, ADC_DAC)
+#if I2S_LL_GET(ADC_DAC_CAPABLE)
         if (id == I2S_NUM_0) {
             adc_ll_digi_set_data_source(0);
         }
@@ -1303,7 +1303,12 @@ esp_err_t i2s_channel_write(i2s_chan_handle_t handle, const void *src, size_t si
     ESP_RETURN_ON_FALSE(xSemaphoreTake(handle->binary, pdMS_TO_TICKS(timeout_ms)) == pdTRUE, ESP_ERR_INVALID_STATE, TAG, "The channel is not enabled");
     src_byte = (char *)src;
     while (size > 0 && handle->state == I2S_CHAN_STATE_RUNNING) {
-        if (handle->dma.rw_pos == handle->dma.buf_size || handle->dma.curr_ptr == NULL) {
+        /* Acquire the new DMA buffer while:
+         * 1. The current buffer is fully filled
+         * 2. The current buffer is not set
+         * 3. The queue is almost full, i.e., the curr_ptr is nearly to be invalid
+         */
+        if (handle->dma.rw_pos == handle->dma.buf_size || handle->dma.curr_ptr == NULL || uxQueueSpacesAvailable(handle->msg_queue) <= 1) {
             if (xQueueReceive(handle->msg_queue, &(handle->dma.curr_ptr), pdMS_TO_TICKS(timeout_ms)) == pdFALSE) {
                 ret = ESP_ERR_TIMEOUT;
                 break;
@@ -1348,7 +1353,12 @@ esp_err_t i2s_channel_read(i2s_chan_handle_t handle, void *dest, size_t size, si
     /* The binary semaphore can only be taken when the channel has been enabled and no other reading operation in progress */
     ESP_RETURN_ON_FALSE(xSemaphoreTake(handle->binary, pdMS_TO_TICKS(timeout_ms)) == pdTRUE, ESP_ERR_INVALID_STATE, TAG, "The channel is not enabled");
     while (size > 0 && handle->state == I2S_CHAN_STATE_RUNNING) {
-        if (handle->dma.rw_pos == handle->dma.buf_size || handle->dma.curr_ptr == NULL) {
+        /* Acquire the new DMA buffer while:
+         * 1. The current buffer is fully filled
+         * 2. The current buffer is not set
+         * 3. The queue is almost full, i.e., the curr_ptr is nearly to be invalid
+         */
+        if (handle->dma.rw_pos == handle->dma.buf_size || handle->dma.curr_ptr == NULL || uxQueueSpacesAvailable(handle->msg_queue) <= 1) {
             if (xQueueReceive(handle->msg_queue, &(handle->dma.curr_ptr), pdMS_TO_TICKS(timeout_ms)) == pdFALSE) {
                 ret = ESP_ERR_TIMEOUT;
                 break;

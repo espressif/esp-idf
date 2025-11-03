@@ -75,17 +75,17 @@ ESP-NETIF
 移除弃用的 :cpp:func:`esp_netif_next`
 -------------------------------------
 
-已从 :doc:`/api-reference/network/esp_netif` 中移除弃用的迭代辅助函数 :cpp:func:`esp_netif_next`。该 API 在迭代过程中不会对接口列表或 TCP/IP 上下文进行加锁，因而并不安全。
+已从 :doc:`/api-reference/network/esp_netif` 中移除弃用的迭代辅助函数 :cpp:func:`esp_netif_next`。该 API 本质上不安全，因为在迭代过程中它既不锁定接口列表，也不锁定 TCP/IP 上下文。
 
-请使用以下替代方案：
+请使用以下替代方案之一：
 
-- 仅在完全可控的上下文中直接调用 :cpp:func:`esp_netif_next_unsafe`，或在 :cpp:func:`esp_netif_tcpip_exec` 中执行以保证在 TCP/IP 上下文内安全运行。
-- 使用 :cpp:func:`esp_netif_find_if` 并配合谓词查找特定接口，从而避免手动迭代。
+- 仅在完全控制的上下文中直接调用 :cpp:func:`esp_netif_next_unsafe`，或在 :cpp:func:`esp_netif_tcpip_exec` 函数内部调用该函数，以便在 TCP/IP 上下文中安全运行。
+- 使用 :cpp:func:`esp_netif_find_if` 并配合谓词函数查找特定接口，无需手动迭代。
 
 迁移方式
 ~~~~~~~~~
 
-之前：
+之前用法：
 
 .. code-block:: c
 
@@ -94,7 +94,7 @@ ESP-NETIF
         // 使用 "it"
     }
 
-之后（在可控上下文中进行不加锁迭代）：
+之后用法（在受控上下文中非安全迭代）：
 
 .. code-block:: c
 
@@ -103,7 +103,7 @@ ESP-NETIF
         // 使用 "it"
     }
 
-推荐方式（在 TCP/IP 上下文中迭代）：
+推荐用法（在 TCP/IP 上下文中迭代）：
 
 .. code-block:: c
 
@@ -119,7 +119,7 @@ ESP-NETIF
     // 在 TCP/IP 上下文中安全执行迭代
     ESP_ERROR_CHECK(esp_netif_tcpip_exec(iterate_netifs, NULL));
 
-替代方式（使用谓词查找）：
+替代方案（使用谓词查找）：
 
 .. code-block:: c
 
@@ -168,3 +168,37 @@ LWIP
 ****
 
 lwIP TCP/IP 线程名称由 "tiT" 更改为 "tcpip"。
+
+
+SNTP 头文件移除
+---------------
+
+已弃用的 ``sntp.h`` 头文件在 IDF v6.0 中已被移除。应用程序现在应该包含 ``esp_sntp.h`` 而不是 ``sntp.h`` 来使用 SNTP 功能。
+
+Ping API 移除
+-------------
+
+已弃用的 ping API 和头文件在 IDF v6.0 中已被移除：
+
+- ``esp_ping.h`` 头文件已被移除
+- ``ping.h`` 头文件已被移除
+- 函数 ``ping_init()``、``ping_deinit()``、``esp_ping_set_target()``、``esp_ping_get_target()`` 和 ``esp_ping_result()`` 已被移除
+
+应用程序现在应该使用来自 ``ping/ping_sock.h`` 的基于套接字的 ping API：
+
+.. code-block:: c
+
+    #include "ping/ping_sock.h"
+    // 创建 ping 会话
+    esp_ping_config_t config = ESP_PING_DEFAULT_CONFIG();
+    config.target_addr = target_ip;
+    esp_ping_callbacks_t cbs = {
+        .on_ping_success = on_ping_success,
+        .on_ping_timeout = on_ping_timeout,
+        .on_ping_end = on_ping_end,
+    };
+    esp_ping_handle_t ping;
+    esp_ping_new_session(&config, &cbs, &ping);
+    esp_ping_start(ping);
+
+完整示例请参考 :example:`protocols/icmp_echo`。

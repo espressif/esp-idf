@@ -17,8 +17,6 @@
 #include <string.h>
 #include "esp_app_trace.h"
 
-#if CONFIG_APPTRACE_ENABLE
-
 #include "esp_log.h"
 const static char *TAG = "esp_host_file_io";
 
@@ -79,13 +77,13 @@ typedef struct {
     void *file;
 } esp_apptrace_ftell_args_t;
 
-static esp_err_t esp_apptrace_file_cmd_send(esp_apptrace_dest_t dest, uint8_t cmd, void (*prep_args)(uint8_t *, void *), void *args, uint32_t args_len)
+static esp_err_t esp_apptrace_file_cmd_send(uint8_t cmd, void (*prep_args)(uint8_t *, void *), void *args, uint32_t args_len)
 {
     esp_err_t ret;
     esp_apptrace_fcmd_hdr_t *hdr;
 
     ESP_EARLY_LOGV(TAG, "%s %d", __func__, cmd);
-    uint8_t *ptr = esp_apptrace_buffer_get(dest, sizeof(*hdr) + args_len, ESP_APPTRACE_TMO_INFINITE); //TODO: finite tmo
+    uint8_t *ptr = esp_apptrace_buffer_get(sizeof(*hdr) + args_len, ESP_APPTRACE_TMO_INFINITE); //TODO: finite tmo
     if (ptr == NULL) {
         return ESP_ERR_NO_MEM;
     }
@@ -97,13 +95,13 @@ static esp_err_t esp_apptrace_file_cmd_send(esp_apptrace_dest_t dest, uint8_t cm
     }
 
     // now indicate that this buffer is ready to be sent off to host
-    ret = esp_apptrace_buffer_put(dest, ptr, ESP_APPTRACE_TMO_INFINITE);//TODO: finite tmo
+    ret = esp_apptrace_buffer_put(ptr, ESP_APPTRACE_TMO_INFINITE);//TODO: finite tmo
     if (ret != ESP_OK) {
         ESP_EARLY_LOGE(TAG, "Failed to put apptrace buffer (%d)!", ret);
         return ret;
     }
 
-    ret = esp_apptrace_flush(dest, ESP_APPTRACE_TMO_INFINITE);//TODO: finite tmo
+    ret = esp_apptrace_flush(ESP_APPTRACE_TMO_INFINITE);//TODO: finite tmo
     if (ret != ESP_OK) {
         ESP_EARLY_LOGE(TAG, "Failed to flush apptrace buffer (%d)!", ret);
         return ret;
@@ -112,12 +110,12 @@ static esp_err_t esp_apptrace_file_cmd_send(esp_apptrace_dest_t dest, uint8_t cm
     return ESP_OK;
 }
 
-static esp_err_t esp_apptrace_file_rsp_recv(esp_apptrace_dest_t dest, uint8_t *buf, uint32_t buf_len)
+static esp_err_t esp_apptrace_file_rsp_recv(uint8_t *buf, uint32_t buf_len)
 {
     uint32_t tot_rd = 0;
     while (tot_rd < buf_len) {
         uint32_t rd_size = buf_len - tot_rd;
-        esp_err_t ret = esp_apptrace_read(dest, buf + tot_rd, &rd_size, ESP_APPTRACE_TMO_INFINITE); //TODO: finite tmo
+        esp_err_t ret = esp_apptrace_read(buf + tot_rd, &rd_size, ESP_APPTRACE_TMO_INFINITE); //TODO: finite tmo
         if (ret != ESP_OK) {
             ESP_EARLY_LOGE(TAG, "Failed to read (%d)!", ret);
             return ret;
@@ -137,7 +135,7 @@ static void esp_apptrace_fopen_args_prepare(uint8_t *buf, void *priv)
     memcpy(buf + args->path_len, args->mode, args->mode_len);
 }
 
-void *esp_apptrace_fopen(esp_apptrace_dest_t dest, const char *path, const char *mode)
+void *esp_apptrace_fopen(const char *path, const char *mode)
 {
     esp_apptrace_fopen_args_t cmd_args;
 
@@ -151,7 +149,7 @@ void *esp_apptrace_fopen(esp_apptrace_dest_t dest, const char *path, const char 
     cmd_args.mode = mode;
     cmd_args.mode_len = strlen(mode) + 1;
 
-    esp_err_t ret = esp_apptrace_file_cmd_send(dest, ESP_APPTRACE_FILE_CMD_FOPEN, esp_apptrace_fopen_args_prepare,
+    esp_err_t ret = esp_apptrace_file_cmd_send(ESP_APPTRACE_FILE_CMD_FOPEN, esp_apptrace_fopen_args_prepare,
                                                &cmd_args, cmd_args.path_len + cmd_args.mode_len);
     if (ret != ESP_OK) {
         ESP_EARLY_LOGE(TAG, "Failed to send file cmd (%d)!", ret);
@@ -160,7 +158,7 @@ void *esp_apptrace_fopen(esp_apptrace_dest_t dest, const char *path, const char 
 
     // now read the answer
     void *resp;
-    ret = esp_apptrace_file_rsp_recv(dest, (uint8_t *)&resp, sizeof(resp));
+    ret = esp_apptrace_file_rsp_recv((uint8_t *)&resp, sizeof(resp));
     if (ret != ESP_OK) {
         ESP_EARLY_LOGE(TAG, "Failed to read response (%d)!", ret);
         return NULL;
@@ -176,12 +174,12 @@ static void esp_apptrace_fclose_args_prepare(uint8_t *buf, void *priv)
     memcpy(buf, &args->file, sizeof(args->file));
 }
 
-int esp_apptrace_fclose(esp_apptrace_dest_t dest, void *stream)
+int esp_apptrace_fclose(void *stream)
 {
     esp_apptrace_fclose_args_t cmd_args;
 
     cmd_args.file = stream;
-    esp_err_t ret = esp_apptrace_file_cmd_send(dest, ESP_APPTRACE_FILE_CMD_FCLOSE, esp_apptrace_fclose_args_prepare,
+    esp_err_t ret = esp_apptrace_file_cmd_send(ESP_APPTRACE_FILE_CMD_FCLOSE, esp_apptrace_fclose_args_prepare,
                                                &cmd_args, sizeof(cmd_args));
     if (ret != ESP_OK) {
         ESP_EARLY_LOGE(TAG, "Failed to send file cmd (%d)!", ret);
@@ -190,7 +188,7 @@ int esp_apptrace_fclose(esp_apptrace_dest_t dest, void *stream)
 
     // now read the answer
     int resp;
-    ret = esp_apptrace_file_rsp_recv(dest, (uint8_t *)&resp, sizeof(resp));
+    ret = esp_apptrace_file_rsp_recv((uint8_t *)&resp, sizeof(resp));
     if (ret != ESP_OK) {
         ESP_EARLY_LOGE(TAG, "Failed to read response (%d)!", ret);
         return EOF;
@@ -207,7 +205,7 @@ static void esp_apptrace_fwrite_args_prepare(uint8_t *buf, void *priv)
     memcpy(buf + sizeof(args->file), args->buf, args->size);
 }
 
-size_t esp_apptrace_fwrite(esp_apptrace_dest_t dest, const void *ptr, size_t size, size_t nmemb, void *stream)
+size_t esp_apptrace_fwrite(const void *ptr, size_t size, size_t nmemb, void *stream)
 {
     esp_apptrace_fwrite_args_t cmd_args;
 
@@ -220,7 +218,7 @@ size_t esp_apptrace_fwrite(esp_apptrace_dest_t dest, const void *ptr, size_t siz
     cmd_args.buf = (void *)ptr;
     cmd_args.size = size * nmemb;
     cmd_args.file = stream;
-    esp_err_t ret = esp_apptrace_file_cmd_send(dest, ESP_APPTRACE_FILE_CMD_FWRITE, esp_apptrace_fwrite_args_prepare,
+    esp_err_t ret = esp_apptrace_file_cmd_send(ESP_APPTRACE_FILE_CMD_FWRITE, esp_apptrace_fwrite_args_prepare,
                                                &cmd_args, sizeof(cmd_args.file) + cmd_args.size);
     if (ret != ESP_OK) {
         ESP_EARLY_LOGE(TAG, "Failed to send file cmd (%d)!", ret);
@@ -229,7 +227,7 @@ size_t esp_apptrace_fwrite(esp_apptrace_dest_t dest, const void *ptr, size_t siz
 
     // now read the answer
     size_t resp;
-    ret = esp_apptrace_file_rsp_recv(dest, (uint8_t *)&resp, sizeof(resp));
+    ret = esp_apptrace_file_rsp_recv((uint8_t *)&resp, sizeof(resp));
     if (ret != ESP_OK) {
         ESP_EARLY_LOGE(TAG, "Failed to read response (%d)!", ret);
         return 0;
@@ -249,7 +247,7 @@ static void esp_apptrace_fread_args_prepare(uint8_t *buf, void *priv)
     memcpy(buf + sizeof(args->file), &args->size, sizeof(args->size));
 }
 
-size_t esp_apptrace_fread(esp_apptrace_dest_t dest, void *ptr, size_t size, size_t nmemb, void *stream)
+size_t esp_apptrace_fread(void *ptr, size_t size, size_t nmemb, void *stream)
 {
     esp_apptrace_fread_args_t cmd_args;
 
@@ -261,7 +259,7 @@ size_t esp_apptrace_fread(esp_apptrace_dest_t dest, void *ptr, size_t size, size
 
     cmd_args.size = size * nmemb;
     cmd_args.file = stream;
-    esp_err_t ret = esp_apptrace_file_cmd_send(dest, ESP_APPTRACE_FILE_CMD_FREAD, esp_apptrace_fread_args_prepare,
+    esp_err_t ret = esp_apptrace_file_cmd_send(ESP_APPTRACE_FILE_CMD_FREAD, esp_apptrace_fread_args_prepare,
                                                &cmd_args, sizeof(cmd_args));
     if (ret != ESP_OK) {
         ESP_EARLY_LOGE(TAG, "Failed to send file cmd (%d)!", ret);
@@ -270,7 +268,7 @@ size_t esp_apptrace_fread(esp_apptrace_dest_t dest, void *ptr, size_t size, size
 
     // now read the answer
     size_t resp;
-    ret = esp_apptrace_file_rsp_recv(dest, (uint8_t *)&resp, sizeof(resp));
+    ret = esp_apptrace_file_rsp_recv((uint8_t *)&resp, sizeof(resp));
     if (ret != ESP_OK) {
         ESP_EARLY_LOGE(TAG, "Failed to read response (%d)!", ret);
         return 0;
@@ -279,7 +277,7 @@ size_t esp_apptrace_fread(esp_apptrace_dest_t dest, void *ptr, size_t size, size
         return 0;
     }
 
-    ret = esp_apptrace_file_rsp_recv(dest, ptr, resp);
+    ret = esp_apptrace_file_rsp_recv(ptr, resp);
     if (ret != ESP_OK) {
         ESP_EARLY_LOGE(TAG, "Failed to read file data (%d)!", ret);
         return 0;
@@ -300,7 +298,7 @@ static void esp_apptrace_fseek_args_prepare(uint8_t *buf, void *priv)
     memcpy(buf + sizeof(args->file) + sizeof(args->offset), &args->whence, sizeof(args->whence));
 }
 
-int esp_apptrace_fseek(esp_apptrace_dest_t dest, void *stream, long offset, int whence)
+int esp_apptrace_fseek(void *stream, long offset, int whence)
 {
     esp_apptrace_fseek_args_t cmd_args;
 
@@ -309,7 +307,7 @@ int esp_apptrace_fseek(esp_apptrace_dest_t dest, void *stream, long offset, int 
     cmd_args.file = stream;
     cmd_args.offset = offset;
     cmd_args.whence = whence;
-    esp_err_t ret = esp_apptrace_file_cmd_send(dest, ESP_APPTRACE_FILE_CMD_FSEEK, esp_apptrace_fseek_args_prepare,
+    esp_err_t ret = esp_apptrace_file_cmd_send(ESP_APPTRACE_FILE_CMD_FSEEK, esp_apptrace_fseek_args_prepare,
                                                &cmd_args, sizeof(cmd_args));
     if (ret != ESP_OK) {
         ESP_EARLY_LOGE(TAG, "Failed to send file cmd (%d)!", ret);
@@ -318,7 +316,7 @@ int esp_apptrace_fseek(esp_apptrace_dest_t dest, void *stream, long offset, int 
 
     // now read the answer
     int resp;
-    ret = esp_apptrace_file_rsp_recv(dest, (uint8_t *)&resp, sizeof(resp));
+    ret = esp_apptrace_file_rsp_recv((uint8_t *)&resp, sizeof(resp));
     if (ret != ESP_OK) {
         ESP_EARLY_LOGE(TAG, "Failed to read response (%d)!", ret);
         return -1;
@@ -334,12 +332,12 @@ static void esp_apptrace_ftell_args_prepare(uint8_t *buf, void *priv)
     memcpy(buf, &args->file, sizeof(args->file));
 }
 
-int esp_apptrace_ftell(esp_apptrace_dest_t dest, void *stream)
+int esp_apptrace_ftell(void *stream)
 {
     esp_apptrace_ftell_args_t cmd_args;
 
     cmd_args.file = stream;
-    esp_err_t ret = esp_apptrace_file_cmd_send(dest, ESP_APPTRACE_FILE_CMD_FTELL, esp_apptrace_ftell_args_prepare,
+    esp_err_t ret = esp_apptrace_file_cmd_send(ESP_APPTRACE_FILE_CMD_FTELL, esp_apptrace_ftell_args_prepare,
                                                &cmd_args, sizeof(cmd_args));
     if (ret != ESP_OK) {
         ESP_EARLY_LOGE(TAG, "Failed to send file cmd (%d)!", ret);
@@ -348,7 +346,7 @@ int esp_apptrace_ftell(esp_apptrace_dest_t dest, void *stream)
 
     // now read the answer
     int resp;
-    ret = esp_apptrace_file_rsp_recv(dest, (uint8_t *)&resp, sizeof(resp));
+    ret = esp_apptrace_file_rsp_recv((uint8_t *)&resp, sizeof(resp));
     if (ret != ESP_OK) {
         ESP_EARLY_LOGE(TAG, "Failed to read response (%d)!", ret);
         return -1;
@@ -357,10 +355,10 @@ int esp_apptrace_ftell(esp_apptrace_dest_t dest, void *stream)
     return resp;
 }
 
-int esp_apptrace_fstop(esp_apptrace_dest_t dest)
+int esp_apptrace_fstop(void)
 {
     ESP_EARLY_LOGV(TAG, "%s", __func__);
-    esp_err_t ret = esp_apptrace_file_cmd_send(dest, ESP_APPTRACE_FILE_CMD_STOP, NULL, NULL, 0);
+    esp_err_t ret = esp_apptrace_file_cmd_send(ESP_APPTRACE_FILE_CMD_STOP, NULL, NULL, 0);
     if (ret != ESP_OK) {
         ESP_EARLY_LOGE(TAG, "Failed to send files transfer stop cmd (%d)!", ret);
     }
@@ -374,12 +372,12 @@ static void esp_apptrace_feof_args_prepare(uint8_t *buf, void *priv)
     memcpy(buf, &args->file, sizeof(args->file));
 }
 
-int esp_apptrace_feof(esp_apptrace_dest_t dest, void *stream)
+int esp_apptrace_feof(void *stream)
 {
     esp_apptrace_feof_args_t cmd_args;
 
     cmd_args.file = stream;
-    esp_err_t ret = esp_apptrace_file_cmd_send(dest, ESP_APPTRACE_FILE_CMD_FEOF, esp_apptrace_feof_args_prepare,
+    esp_err_t ret = esp_apptrace_file_cmd_send(ESP_APPTRACE_FILE_CMD_FEOF, esp_apptrace_feof_args_prepare,
                                                &cmd_args, sizeof(cmd_args));
     if (ret != ESP_OK) {
         ESP_EARLY_LOGE(TAG, "Failed to send file cmd (%d)!", ret);
@@ -388,7 +386,7 @@ int esp_apptrace_feof(esp_apptrace_dest_t dest, void *stream)
 
     // now read the answer
     int resp;
-    ret = esp_apptrace_file_rsp_recv(dest, (uint8_t *)&resp, sizeof(resp));
+    ret = esp_apptrace_file_rsp_recv((uint8_t *)&resp, sizeof(resp));
     if (ret != ESP_OK) {
         ESP_EARLY_LOGE(TAG, "Failed to read response (%d)!", ret);
         return EOF;
@@ -396,5 +394,3 @@ int esp_apptrace_feof(esp_apptrace_dest_t dest, void *stream)
 
     return resp;
 }
-
-#endif

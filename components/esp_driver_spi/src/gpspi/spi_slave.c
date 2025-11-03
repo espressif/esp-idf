@@ -407,9 +407,13 @@ esp_err_t spi_slave_disable(spi_host_device_t host)
 
 static void SPI_SLAVE_ISR_ATTR spi_slave_uninstall_priv_trans(spi_host_device_t host, spi_slave_trans_priv_t *priv_trans)
 {
+    __attribute__((unused)) spi_slave_transaction_t *trans = (spi_slave_transaction_t *)priv_trans->trans;
+#if CONFIG_IDF_TARGET_ESP32
+    if (spihost[host]->dma_enabled && (trans->trans_len % 32)) {
+        ESP_EARLY_LOGW(SPI_TAG, "Use DMA but real trans_len is not 4 bytes aligned, slave may loss data");
+    }
+#endif
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
-    spi_slave_transaction_t *trans = (spi_slave_transaction_t *)priv_trans->trans;
-
     if (spihost[host]->dma_enabled) {
         if (trans->tx_buffer && (trans->tx_buffer != priv_trans->tx_buffer)) {
             free(priv_trans->tx_buffer);

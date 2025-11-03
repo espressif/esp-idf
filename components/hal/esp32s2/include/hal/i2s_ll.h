@@ -25,6 +25,10 @@
 #include "hal/assert.h"
 
 
+#define I2S_LL_GET(_attr)       I2S_LL_ ## _attr
+#define I2S_LL_BUS_WIDTH        24
+#define I2S_LL_INST_NUM         1
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -113,8 +117,8 @@ static inline void i2s_ll_enable_bus_clock(int i2s_id, bool enable)
 static inline void i2s_ll_reset_register(int i2s_id)
 {
     (void) i2s_id;
-    DPORT_SET_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_I2S0_RST);
-    DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_I2S0_RST);
+    DPORT_SET_PERI_REG_MASK(DPORT_PERIP_RST_EN0_REG, DPORT_I2S0_RST);
+    DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_RST_EN0_REG, DPORT_I2S0_RST);
 }
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
@@ -857,8 +861,7 @@ static inline void i2s_ll_rx_enable_msb_shift(i2s_dev_t *hw, bool msb_shift_enab
 static inline void i2s_ll_tx_select_std_slot(i2s_dev_t *hw, i2s_std_slot_mask_t slot_mask, bool is_mono)
 {
     if (is_mono) {
-        switch (slot_mask)
-        {
+        switch (slot_mask) {
         case I2S_STD_SLOT_RIGHT:
             hw->conf_chan.tx_chan_mod = 3;
             break;
@@ -872,8 +875,7 @@ static inline void i2s_ll_tx_select_std_slot(i2s_dev_t *hw, i2s_std_slot_mask_t 
             break;
         }
     } else {
-        switch (slot_mask)
-        {
+        switch (slot_mask) {
         case I2S_STD_SLOT_RIGHT:
             hw->conf_chan.tx_chan_mod = 1;
             break;
@@ -897,8 +899,7 @@ static inline void i2s_ll_tx_select_std_slot(i2s_dev_t *hw, i2s_std_slot_mask_t 
  */
 static inline void i2s_ll_rx_select_std_slot(i2s_dev_t *hw, i2s_std_slot_mask_t slot_mask, bool is_msb_right)
 {
-    switch (slot_mask)
-    {
+    switch (slot_mask) {
     case I2S_STD_SLOT_RIGHT:
         hw->conf_chan.rx_chan_mod = is_msb_right ? 1 : 2;
         break;

@@ -15,13 +15,21 @@
 #include "soc/pcr_struct.h"
 #include "soc/soc_etm_source.h"
 
+// Get timer group register base address with giving group number
+// Total number of general purpose timers
+#define TIMER_LL_GPTIMERS_TOTAL     (TIMG_LL_INST_NUM * TIMG_LL_GPTIMERS_PER_INST)
+
+#define TIMER_LL_GET_HW(group_id) ((group_id == 0) ? (&TIMERG0) : (&TIMERG1))
+
+// Bit width of GPTIMER counter
+#define TIMER_LL_COUNTER_BIT_WIDTH   54
+
+// Get alarm interrupt mask with the given timer ID
+#define TIMER_LL_EVENT_ALARM(timer_id) (1 << (timer_id))
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-// Get timer group register base address with giving group number
-#define TIMER_LL_GET_HW(group_id) ((group_id == 0) ? (&TIMERG0) : (&TIMERG1))
-#define TIMER_LL_EVENT_ALARM(timer_id) (1 << (timer_id))
 
 #define TIMER_LL_ETM_TASK_TABLE(group, timer, task)                                        \
     (uint32_t [2][1][GPTIMER_ETM_TASK_MAX]){{{                                             \

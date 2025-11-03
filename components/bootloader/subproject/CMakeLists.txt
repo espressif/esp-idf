@@ -32,7 +32,8 @@ set(COMPONENTS
     main
     efuse
     esp_libc
-    esp_tee)
+    esp_tee
+    esp_stdio)
 
 # EXTRA_COMPONENT_DIRS can be populated with directories containing one or several components.
 # Make sure this variable contains `bootloader_components` directory of the project being compiled.

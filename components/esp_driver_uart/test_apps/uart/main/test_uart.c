@@ -419,21 +419,71 @@ TEST_CASE("uart tx with ringbuffer test", "[uart]")
         rd_data[i] = 0;
     }
 
-    size_t tx_buffer_free_space;
-    uart_get_tx_buffer_free_size(uart_num, &tx_buffer_free_space);
-    TEST_ASSERT_EQUAL_INT(2048, tx_buffer_free_space); // full tx buffer space is free
     uart_write_bytes(uart_num, (const char *)wr_data, 1024);
-    uart_get_tx_buffer_free_size(uart_num, &tx_buffer_free_space);
-    TEST_ASSERT_LESS_THAN(2048, tx_buffer_free_space); // tx transmit in progress: tx buffer has content
-    TEST_ASSERT_GREATER_OR_EQUAL(1024, tx_buffer_free_space);
     uart_wait_tx_done(uart_num, portMAX_DELAY);
-    uart_get_tx_buffer_free_size(uart_num, &tx_buffer_free_space);
-    TEST_ASSERT_EQUAL_INT(2048, tx_buffer_free_space); // tx done: tx buffer back to empty
+
     uart_read_bytes(uart_num, rd_data, 1024, pdMS_TO_TICKS(1000));
     TEST_ASSERT_EQUAL_HEX8_ARRAY(wr_data, rd_data, 1024);
+
     TEST_ESP_OK(uart_driver_delete(uart_num));
     free(rd_data);
     free(wr_data);
+}
+
+TEST_CASE("uart tx ring buffer free space test", "[uart]")
+{
+    uart_port_param_t port_param = {};
+    TEST_ASSERT(port_select(&port_param));
+    // This is a test on the driver API, no need to test for both HP/LP uart port, call port_select() to be compatible with pytest
+    // Let's only test on HP UART
+    if (port_param.port_num < SOC_UART_HP_NUM) {
+        uart_port_t uart_num = port_param.port_num;
+        uint8_t *rd_data = (uint8_t *)malloc(1024);
+        TEST_ASSERT_NOT_NULL(rd_data);
+        uint8_t *wr_data = (uint8_t *)malloc(256);
+        TEST_ASSERT_NOT_NULL(wr_data);
+        uart_config_t uart_config = {
+            .baud_rate = 2000000,
+            .data_bits = UART_DATA_8_BITS,
+            .parity = UART_PARITY_DISABLE,
+            .stop_bits = UART_STOP_BITS_1,
+            .flow_ctrl = UART_HW_FLOWCTRL_CTS_RTS,
+            .rx_flow_ctrl_thresh = port_param.rx_flow_ctrl_thresh,
+            .source_clk = port_param.default_src_clk,
+        };
+        uart_wait_tx_idle_polling(uart_num);
+        TEST_ESP_OK(uart_param_config(uart_num, &uart_config));
+        TEST_ESP_OK(uart_driver_install(uart_num, 256, 1024 * 2, 20, NULL, 0));
+        // Let CTS be high, so that transmission is blocked
+        esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ONE_INPUT, uart_periph_signal[uart_num].pins[SOC_UART_PERIPH_SIGNAL_CTS].signal, false);
+
+        // When nothing pushed to the TX ring buffer, the free space should be the full capacity
+        size_t tx_buffer_free_space;
+        uart_get_tx_buffer_free_size(uart_num, &tx_buffer_free_space);
+        TEST_ASSERT_EQUAL_INT(2020, tx_buffer_free_space); // no-split ring buffer: 2048 - 20 (data description item) - 8 (header)
+
+        // Push 1024 bytes to the TX ring buffer
+        uart_write_bytes(uart_num, (const char *)wr_data, 1024); // two chunks
+        vTaskDelay(pdMS_TO_TICKS(500));
+        uart_get_tx_buffer_free_size(uart_num, &tx_buffer_free_space);
+        TEST_ASSERT_LESS_THAN(2020, tx_buffer_free_space); // tx buffer has content
+        TEST_ASSERT_GREATER_OR_EQUAL(952, tx_buffer_free_space);
+
+        // Fill the remaining space in the TX ring buffer
+        uart_write_bytes(uart_num, (const char *)wr_data, tx_buffer_free_space);
+        uart_get_tx_buffer_free_size(uart_num, &tx_buffer_free_space);
+        TEST_ASSERT_EQUAL_INT(0, tx_buffer_free_space); // tx buffer is full
+
+        // Let CTS be low, so that transmission is unblocked
+        esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ONE_INPUT, uart_periph_signal[uart_num].pins[SOC_UART_PERIPH_SIGNAL_CTS].signal, true);
+        uart_wait_tx_done(uart_num, portMAX_DELAY);
+        uart_get_tx_buffer_free_size(uart_num, &tx_buffer_free_space);
+        TEST_ASSERT_EQUAL_INT(2020, tx_buffer_free_space); // tx buffer is back to full capacity
+
+        TEST_ESP_OK(uart_driver_delete(uart_num));
+        free(rd_data);
+        free(wr_data);
+    }
 }
 
 TEST_CASE("uart int state restored after flush", "[uart]")

@@ -60,6 +60,7 @@
 #include "esp_partition.h"
 #include "hal/wdt_hal.h"
 #endif // CONFIG_BT_CTRL_LE_LOG_STORAGE_EN
+#include "esp_rom_gpio.h"
 #if CONFIG_BT_ENABLED
 
 /* Macro definition
@@ -2398,6 +2399,11 @@ static void * coex_schm_curr_phase_get_wrapper(void)
 #else
     return NULL;
 #endif
+}
+
+void btdm_gpio_matrix_out(uint32_t gpio, uint32_t signal_idx, bool out_inv, bool oen_inv)
+{
+    esp_rom_gpio_connect_out_signal(gpio, signal_idx, out_inv, oen_inv);
 }
 
 #endif /*  CONFIG_BT_ENABLED */

@@ -336,6 +336,7 @@ static inline void touch_ll_enable_channel_mask(uint16_t enable_mask)
  *
  * @note Generally no manual removal is required.
  */
+__attribute__((always_inline))
 static inline void touch_ll_clear_active_channel_status(void)
 {
     SENS.sar_touch_ctrl2.touch_meas_en_clr = 1;

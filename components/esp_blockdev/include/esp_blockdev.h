@@ -217,8 +217,8 @@ typedef struct esp_blockdev_t {
     /* Device context pointer */
     void* ctx;
 
-    const esp_blockdev_flags_t device_flags;
-    const esp_blockdev_geometry_t geometry;
+    esp_blockdev_flags_t device_flags;
+    esp_blockdev_geometry_t geometry;
     const esp_blockdev_ops_t* ops;
 
 } esp_blockdev_t;

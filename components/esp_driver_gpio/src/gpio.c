@@ -839,7 +839,8 @@ esp_err_t gpio_iomux_output(gpio_num_t gpio_num, int func)
 
 esp_err_t gpio_matrix_input(gpio_num_t gpio_num, uint32_t signal_idx, bool in_inv)
 {
-    GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
+    GPIO_CHECK((gpio_num == GPIO_MATRIX_CONST_ZERO_INPUT) || (gpio_num == GPIO_MATRIX_CONST_ONE_INPUT) || GPIO_IS_VALID_GPIO(gpio_num), \
+               "GPIO number error", ESP_ERR_INVALID_ARG);
 
     gpio_hal_matrix_in(gpio_context.gpio_hal, gpio_num, signal_idx, in_inv);
 

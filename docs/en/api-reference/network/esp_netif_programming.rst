@@ -40,6 +40,31 @@ This section provides more details on specific use cases for the SNTP service, s
 3. Wait for the system time to synchronize using :cpp:func:`esp_netif_sntp_sync_wait()` (if required).
 4. Stop and destroy the service using :cpp:func:`esp_netif_sntp_deinit()`.
 
+Events
+^^^^^^
+
+The SNTP wrapper posts an event when the system time is synchronized:
+
+- Event base: ``NETIF_SNTP_EVENT``
+- Event ID: ``NETIF_SNTP_TIME_SYNC``
+- Event data: pointer to :cpp:type:`esp_netif_sntp_time_sync_t` with the synchronized ``timeval``
+
+Register a handler after creating the default event loop:
+
+.. code-block:: c
+
+    static void sntp_evt_handler(void *arg, esp_event_base_t base, int32_t id, void *data)
+    {
+        const esp_netif_sntp_time_sync_t *evt = (const esp_netif_sntp_time_sync_t *)data;
+        if (evt) {
+            ESP_LOGI("sntp", "time synchronized: %ld.%06ld", (long)evt->tv.tv_sec, (long)evt->tv.tv_usec);
+            // Optionally convert to human-readable time using localtime_r() or gmtime_r()
+        }
+    }
+
+    ESP_ERROR_CHECK(esp_event_loop_create_default());
+    ESP_ERROR_CHECK(esp_event_handler_register(NETIF_SNTP_EVENT, NETIF_SNTP_TIME_SYNC, &sntp_evt_handler, NULL));
+
 
 Basic Mode with Statically Defined Server(s)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

@@ -316,7 +316,7 @@ void i2s_hal_pdm_set_rx_slot(i2s_hal_context_t *hal, bool is_slave, const i2s_ha
 
 void i2s_hal_pdm_enable_rx_channel(i2s_hal_context_t *hal, bool pdm2pcm_en)
 {
-#if !SOC_I2S_SUPPORTS_PDM2CDM
+#if !SOC_I2S_SUPPORTS_PDM2PCM
     HAL_ASSERT(!pdm2pcm_en);
 #endif
     i2s_ll_rx_enable_pdm(hal->dev, pdm2pcm_en);

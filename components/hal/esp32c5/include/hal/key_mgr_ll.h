@@ -206,7 +206,7 @@ static inline void key_mgr_ll_set_key_usage(const esp_key_mgr_key_type_t key_typ
             }
             break;
         default:
-            HAL_ASSERT(false && "Unsupported mode");
+            HAL_ASSERT(false && "Unsupported key type");
             return;
     }
 }
@@ -218,28 +218,23 @@ static inline esp_key_mgr_key_usage_t key_mgr_ll_get_key_usage(esp_key_mgr_key_t
         case ESP_KEY_MGR_ECDSA_256_KEY:
         case ESP_KEY_MGR_ECDSA_384_KEY:
             return (esp_key_mgr_key_usage_t) (REG_GET_BIT(KEYMNG_STATIC_REG, KEYMNG_USE_EFUSE_KEY_ECDSA));
-            break;
 
         case ESP_KEY_MGR_XTS_AES_128_KEY:
         case ESP_KEY_MGR_XTS_AES_256_KEY:
             return (esp_key_mgr_key_usage_t) (REG_GET_BIT(KEYMNG_STATIC_REG, KEYMNG_USE_EFUSE_KEY_FLASH));
-            break;
 
         case ESP_KEY_MGR_HMAC_KEY:
             return (esp_key_mgr_key_usage_t) (REG_GET_BIT(KEYMNG_STATIC_REG, KEYMNG_USE_EFUSE_KEY_HMAC));
-            break;
 
         case ESP_KEY_MGR_DS_KEY:
             return (esp_key_mgr_key_usage_t) (REG_GET_BIT(KEYMNG_STATIC_REG, KEYMNG_USE_EFUSE_KEY_DS));
-            break;
 
         case ESP_KEY_MGR_PSRAM_128_KEY:
         case ESP_KEY_MGR_PSRAM_256_KEY:
             return (esp_key_mgr_key_usage_t) (REG_GET_BIT(KEYMNG_STATIC_REG, KEYMNG_USE_EFUSE_KEY_PSRAM));
-            break;
 
         default:
-            HAL_ASSERT(false && "Unsupported mode");
+            HAL_ASSERT(false && "Unsupported key type");
             return ESP_KEY_MGR_USAGE_INVALID;
     }
     return ESP_KEY_MGR_USAGE_INVALID;
@@ -288,7 +283,7 @@ static inline void key_mgr_ll_lock_use_efuse_key_reg(esp_key_mgr_key_type_t key_
             break;
 
         default:
-            HAL_ASSERT(false && "Unsupported mode");
+            HAL_ASSERT(false && "Unsupported key type");
             return;
     }
 }
@@ -331,28 +326,23 @@ static inline bool key_mgr_ll_is_key_deployment_valid(const esp_key_mgr_key_type
             return REG_GET_FIELD(KEYMNG_KEY_VLD_REG, KEYMNG_KEY_ECDSA_256_VLD);
         case ESP_KEY_MGR_ECDSA_384_KEY:
             return REG_GET_FIELD(KEYMNG_KEY_VLD_REG, KEYMNG_KEY_ECDSA_384_VLD);
-            break;
 
         case ESP_KEY_MGR_XTS_AES_128_KEY:
         case ESP_KEY_MGR_XTS_AES_256_KEY:
             return REG_GET_FIELD(KEYMNG_KEY_VLD_REG, KEYMNG_KEY_FLASH_VLD);
-            break;
 
         case ESP_KEY_MGR_HMAC_KEY:
             return REG_GET_FIELD(KEYMNG_KEY_VLD_REG, KEYMNG_KEY_HMAC_VLD);
-            break;
 
         case ESP_KEY_MGR_DS_KEY:
             return REG_GET_FIELD(KEYMNG_KEY_VLD_REG, KEYMNG_KEY_DS_VLD);
-            break;
 
         case ESP_KEY_MGR_PSRAM_128_KEY:
         case ESP_KEY_MGR_PSRAM_256_KEY:
             return REG_GET_FIELD(KEYMNG_KEY_VLD_REG, KEYMNG_KEY_PSRAM_VLD);
-            break;
 
         default:
-            HAL_ASSERT(false && "Unsupported mode");
+            HAL_ASSERT(false && "Unsupported key type");
             return 0;
     }
 }
@@ -446,6 +436,11 @@ static inline uint32_t key_mgr_ll_get_date_info(void)
 {
     // Only the least significant 28 bits have desired information
     return (uint32_t)(0x0FFFFFFF & REG_READ(KEYMNG_DATE_REG));
+}
+
+static inline bool key_mgr_ll_is_supported(void)
+{
+    return true;
 }
 
 #ifdef __cplusplus

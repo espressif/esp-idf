@@ -1,35 +1,49 @@
 menu "Application Level Tracing"
 
-    choice APPTRACE_DESTINATION1
-        prompt "Data Destination 1"
-        default APPTRACE_DEST_NONE
+    config APPTRACE_ENABLE
+        bool "Enable Application Level Tracing"
+        default n
         help
-            Select destination for application trace: JTAG or none (to disable).
+            Enables/disable application tracing module.
+            This must be enabled to use any tracing library.
+
+    choice APPTRACE_DESTINATION
+        prompt "Data Destination"
+        default APPTRACE_DEST_JTAG if !PM_ENABLE
+        default APPTRACE_DEST_UART if PM_ENABLE
+        depends on APPTRACE_ENABLE
+        help
+            Select destination for application trace: JTAG or UART.
+            When SystemView is enabled, this also controls the SystemView destination.
 
         config APPTRACE_DEST_JTAG
             bool "JTAG"
             select APPTRACE_TRAX_ENABLE if IDF_TARGET_ARCH_XTENSA
-            select APPTRACE_MEMBUFS_APPTRACE_PROTO_ENABLE
-            select APPTRACE_ENABLE
-
-        config APPTRACE_DEST_NONE
-            bool "None"
-
-    endchoice
-
-    choice APPTRACE_DESTINATION2
-        prompt "Data Destination 2"
-        default APPTRACE_DEST_UART_NONE
-        help
-            Select destination for application trace: UART or none (to disable).
+            depends on !PM_ENABLE
 
         config APPTRACE_DEST_UART
             bool "UART"
-            select APPTRACE_ENABLE
 
-        config APPTRACE_DEST_UART_NONE
-            bool "None"
+        config APPTRACE_DEST_NONE
+            bool "None (runtime selection)"
+            help
+                Compile both JTAG and UART interfaces. Increases IRAM usage.
+                Allows runtime selection via esp_apptrace_get_user_params().
+
+                With this option, destination and configuration must be provided
+                at runtime. Default JTAG and UART settings are defined in
+                components/app_trace/include/esp_app_trace_config.h.
+
+                Override these by implementing esp_apptrace_get_user_params()
+                in your application.
     endchoice
+
+    config APPTRACE_BUF_SIZE
+        int "Size of the apptrace buffer"
+        depends on APPTRACE_DEST_JTAG && !APPTRACE_TRAX_ENABLE
+        default 16384
+        help
+            Size of the memory buffer for trace data in bytes.
 
     config APPTRACE_DEST_UART_NUM
         int "UART port number"
@@ -107,6 +121,7 @@ menu "Application Level Tracing"
     config APPTRACE_UART_TASK_PRIO
         int
         prompt "UART Task Priority" if APPTRACE_DEST_UART
+        depends on APPTRACE_DEST_UART
         default 1
         range 1 32
         help
@@ -126,23 +141,13 @@ menu "Application Level Tracing"
         help
             Enables/disable TRAX tracing HW.
 
-    config APPTRACE_MEMBUFS_APPTRACE_PROTO_ENABLE
-        bool
-        default n
-        help
-            Enables/disable swapping memory buffers tracing protocol.
-
-    config APPTRACE_ENABLE
-        bool
-        default n
-        help
-            Enables/disable application tracing module.
-
     config APPTRACE_LOCK_ENABLE
-        bool
-        default !APPTRACE_SV_ENABLE
+        bool "Internal Sync Lock Enable"
+        depends on APPTRACE_ENABLE
+        default n
         help
             Enables/disable application tracing module internal sync lock.
+            Keep in mind this will slow down the trace data transfer to the host.
 
     config APPTRACE_ONPANIC_HOST_FLUSH_TMO
         int "Timeout for flushing last trace data to host on panic"
@@ -162,13 +167,6 @@ menu "Application Level Tracing"
             Threshold for flushing last trace data to host on panic in post-mortem mode.
             This is minimal amount of data needed to perform flush. In bytes.
 
-    config APPTRACE_BUF_SIZE
-        int "Size of the apptrace buffer"
-        depends on APPTRACE_MEMBUFS_APPTRACE_PROTO_ENABLE && !APPTRACE_TRAX_ENABLE
-        default 16384
-        help
-            Size of the memory buffer for trace data in bytes.
-
     menu "FreeRTOS SystemView Tracing"
         depends on APPTRACE_ENABLE
         config APPTRACE_SV_ENABLE
@@ -178,30 +176,9 @@ menu "Application Level Tracing"
             help
                 Enables support for SEGGER SystemView tracing functionality.
 
-        choice APPTRACE_SV_DEST
-            prompt "SystemView destination"
-            depends on APPTRACE_SV_ENABLE
-            default APPTRACE_SV_DEST_JTAG
-            help
-                SystemView will transfer data through the defined interface.
-
-            config APPTRACE_SV_DEST_JTAG
-                bool "Data destination JTAG"
-                depends on  !PM_ENABLE && !APPTRACE_DEST_NONE
-                help
-                    Send SEGGER SystemView events through JTAG interface.
-
-            config APPTRACE_SV_DEST_UART
-                bool "Data destination UART"
-                depends on APPTRACE_DEST_UART
-                help
-                    Send SEGGER SystemView events through UART interface.
-
-        endchoice
-
         choice APPTRACE_SV_CPU
             prompt "CPU to trace"
-            depends on APPTRACE_SV_DEST_UART && !ESP_SYSTEM_SINGLE_CORE_MODE
+            depends on APPTRACE_SV_ENABLE && APPTRACE_DEST_UART && !ESP_SYSTEM_SINGLE_CORE_MODE
             default APPTRACE_SV_DEST_CPU_0
             help
                 Define the CPU to trace by SystemView.
@@ -217,7 +194,6 @@ menu "Application Level Tracing"
                     Send SEGGER SystemView events for App CPU.
 
         endchoice
-
 
         choice APPTRACE_SV_TS_SOURCE
             prompt "Timer to use as timestamp source"

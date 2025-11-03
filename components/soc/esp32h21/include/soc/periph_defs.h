@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,37 +14,10 @@ extern "C" {
 
 // TODO: IDF-11855
 typedef enum {
-    PERIPH_LEDC_MODULE = 0,
-    PERIPH_UART0_MODULE,
-    PERIPH_UART1_MODULE,
-    PERIPH_USB_DEVICE_MODULE,
-    PERIPH_I2C0_MODULE,
-    PERIPH_I2C1_MODULE,
-    PERIPH_I2S1_MODULE,
     PERIPH_TIMG0_MODULE,
     PERIPH_TIMG1_MODULE,
     PERIPH_UHCI0_MODULE,
-    PERIPH_RMT_MODULE,
-    PERIPH_PCNT_MODULE,
-    PERIPH_SPI_MODULE,  //SPI1
-    PERIPH_SPI2_MODULE, //SPI2
-    PERIPH_TWAI0_MODULE,
-    PERIPH_RNG_MODULE,
-    PERIPH_RSA_MODULE,
-    PERIPH_AES_MODULE,
-    PERIPH_SHA_MODULE,
-    PERIPH_ECC_MODULE,
-    PERIPH_HMAC_MODULE,
-    PERIPH_DS_MODULE,
-    PERIPH_ECDSA_MODULE,
-    PERIPH_GDMA_MODULE,
-    PERIPH_MCPWM0_MODULE,
-    PERIPH_ETM_MODULE,
-    PERIPH_PARLIO_MODULE,
     PERIPH_SYSTIMER_MODULE,
-    PERIPH_SARADC_MODULE,
-    PERIPH_TEMPSENSOR_MODULE,
-    PERIPH_ASSIST_DEBUG_MODULE,
     /* Peripherals clock managed by the modem_clock driver must be listed last in the enumeration */
     PERIPH_BT_MODULE,
     PERIPH_IEEE802154_MODULE,
@@ -55,7 +28,7 @@ typedef enum {
     PERIPH_MODEM_ADC_COMMON_FE_MODULE,
     PERIPH_MODULE_MAX
     /*  !!! Don't append soc modules here !!! */
-} periph_module_t;
+} shared_periph_module_t;
 
 #define PERIPH_MODEM_MODULE_MIN PERIPH_BT_MODULE
 #define PERIPH_MODEM_MODULE_MAX PERIPH_MODEM_ADC_COMMON_FE_MODULE

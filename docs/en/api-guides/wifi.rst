@@ -320,7 +320,7 @@ IP_EVENT_STA_LOST_IP
 
 This event arises when the IPV4 address becomes invalid.
 
-IP_EVENT_STA_LOST_IP does not arise immediately after the Wi-Fi disconnects. Instead, it starts an IPV4 address lost timer. If the IPV4 address is got before ip lost timer expires, IP_EVENT_STA_LOST_IP does not happen. Otherwise, the event arises when the IPV4 address lost timer expires.
+IP_EVENT_STA_LOST_IP does not arise immediately after the Wi-Fi disconnects. Instead, it starts an IPV4 address lost timer (configurable via :ref:`CONFIG_ESP_NETIF_LOST_IP_TIMER_ENABLE` and :ref:`CONFIG_ESP_NETIF_IP_LOST_TIMER_INTERVAL`). If the IPV4 address is got before the timer expires, IP_EVENT_STA_LOST_IP does not happen. Otherwise, the event arises when the IPV4 address lost timer expires.
 
 Generally, the application can ignore this event, because it is just a debug event to inform that the IPV4 address is lost.
 
@@ -2093,6 +2093,14 @@ Detailed information on creating certificates and how to run wpa2_enterprise exa
     Please note that NAN Datapath security is not supported i.e., the data packets will go out unencrypted. NAN uses a separate interface for Discovery and Datapath, which is other than that used for STA and AP. NAN operates in standalone mode, which means co-existence with STA or AP interface is not supported.
 
     Refer to ESP-IDF examples :idf_file:`examples/wifi/wifi_aware/nan_publisher/README.md` and :idf_file:`examples/wifi/wifi_aware/nan_subscriber/README.md` to setup a NAN Publisher and Subscriber.
+
+Wi-Fi Aware\ :sup:`TM` (NAN): Unsynchronized Service Discovery (USD)
+--------------------------------------------------------------------
+Unsynchronized Service Discovery (USD) is a mechanism for devices to discover the services that have been made discoverable on new devices that enter the RF environment, without requiring synchronization between the devices.
+
+USD uses Service Info field in the SDEA of a Publish and Follow-up message to convey the service specific information.
+
+Refer to ESP-IDF examples :idf_file:`examples/wifi/wifi_aware/usd_publisher/README.md` and :idf_file:`examples/wifi/wifi_aware/usd_subscriber/README.md` to setup a NAN-USD Publisher and Subscriber.
 
 Wireless Network Management
 ----------------------------

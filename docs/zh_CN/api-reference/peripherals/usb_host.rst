@@ -568,6 +568,34 @@ USB 设备可能是热插拔的，因此必须配置电源开关和设备连接�
 
 在 menuconfig 中启用 `CONFIG_USB_HOST_ENABLE_ENUM_FILTER_CALLBACK` 选项即可启用枚举过滤器。可以通过设置 :cpp:member:`usb_host_config_t::enum_filter_cb` 来指定回调函数，该函数会在调用 :cpp:func:`usb_host_install` 时传递至主机库。
 
+.. -------------------------------------------------- API Reference ----------------------------------------------------
+
+API 参考
+--------
+
+USB 主机库的 API 包含以下头文件，但应用程序调用该 API 时只需 ``#include "usb/usb_host.h"``，就可以包含所有 USB 主机库的头文件。
+
+- `usb/include/usb/usb_host.h` 包含 USB 主机库的函数和类型。
+- `usb/include/usb/usb_helpers.h` 包含与 USB 协议相关的各种辅助函数，如描述符解析等。
+- `usb/include/usb/usb_types_stack.h` 包含在 USB 主机栈的多个层次中使用的类型。
+- `usb/include/usb/usb_types_ch9.h` 包含了与 USB 2.0 规范中第 9 章相关的类型和宏，即描述符和标准请求。
+- `usb/include/usb/usb_types_ch11.h` 包含与 USB2.0 规范第 11 章相关的类型和宏，即集线器规范。
+
+头文件
+^^^^^^^
+
+- ``usb_host.h`` 可以通过以下方式包含：
+
+.. code:: c
+
+    #include "usb/usb_host.h"
+
+- 该头文件是 ``usb`` 组件提供的 API 的一部分。``usb`` 组件通过 `乐鑫组件注册表 <https://components.espressif.com/components/espressif/usb>`__ 分发。因此，若要使用该组件，请通过以下命令将 Host Stack 组件添加为依赖项：
+
+.. code:: bash
+
+    idf.py add-dependency usb
+
 .. ------------------------------------------------ Maintainers Notes --------------------------------------------------
 
 维护注意事项

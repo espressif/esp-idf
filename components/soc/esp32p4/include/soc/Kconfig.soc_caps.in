@@ -51,10 +51,6 @@ config SOC_PCNT_SUPPORTED
     bool
     default y
 
-config SOC_LCDCAM_SUPPORTED
-    bool
-    default y
-
 config SOC_LCDCAM_CAM_SUPPORTED
     bool
     default y
@@ -64,6 +60,14 @@ config SOC_LCDCAM_I80_LCD_SUPPORTED
     default y
 
 config SOC_LCDCAM_RGB_LCD_SUPPORTED
+    bool
+    default y
+
+config SOC_LCD_I80_SUPPORTED
+    bool
+    default y
+
+config SOC_LCD_RGB_SUPPORTED
     bool
     default y
 
@@ -88,6 +92,10 @@ config SOC_ETM_SUPPORTED
     default y
 
 config SOC_PARLIO_SUPPORTED
+    bool
+    default y
+
+config SOC_PARLIO_LCD_SUPPORTED
     bool
     default y
 
@@ -209,7 +217,11 @@ config SOC_ECDSA_SUPPORTED
 
 config SOC_KEY_MANAGER_SUPPORTED
     bool
-    default n
+    default y
+
+config SOC_HUK_SUPPORTED
+    bool
+    default y
 
 config SOC_FLASH_ENC_SUPPORTED
     bool
@@ -380,6 +392,10 @@ config SOC_AES_SUPPORT_AES_128
     default y
 
 config SOC_AES_SUPPORT_AES_256
+    bool
+    default y
+
+config SOC_AES_SUPPORT_PSEUDO_ROUND_FUNCTION
     bool
     default y
 
@@ -603,22 +619,6 @@ config SOC_GDMA_SUPPORT_CRC
     bool
     default y
 
-config SOC_GDMA_NUM_GROUPS_MAX
-    int
-    default 2
-
-config SOC_GDMA_PAIRS_PER_GROUP_MAX
-    int
-    default 3
-
-config SOC_AHB_GDMA_SUPPORT_PSRAM
-    bool
-    default y
-
-config SOC_AXI_GDMA_SUPPORT_PSRAM
-    bool
-    default y
-
 config SOC_GDMA_SUPPORT_ETM
     bool
     default y
@@ -630,18 +630,6 @@ config SOC_GDMA_SUPPORT_SLEEP_RETENTION
 config SOC_AXI_DMA_EXT_MEM_ENC_ALIGNMENT
     int
     default 16
-
-config SOC_DMA2D_GROUPS
-    int
-    default 1
-
-config SOC_DMA2D_TX_CHANNELS_PER_GROUP
-    int
-    default 3
-
-config SOC_DMA2D_RX_CHANNELS_PER_GROUP
-    int
-    default 2
 
 config SOC_GPIO_PORT
     int
@@ -1211,34 +1199,6 @@ config SOC_RMT_SUPPORT_SLEEP_RETENTION
     bool
     default y
 
-config SOC_LCD_I80_SUPPORTED
-    bool
-    default y
-
-config SOC_LCD_RGB_SUPPORTED
-    bool
-    default y
-
-config SOC_LCDCAM_I80_NUM_BUSES
-    int
-    default 1
-
-config SOC_LCDCAM_I80_BUS_WIDTH
-    int
-    default 24
-
-config SOC_LCDCAM_RGB_NUM_PANELS
-    int
-    default 1
-
-config SOC_LCDCAM_RGB_DATA_WIDTH
-    int
-    default 24
-
-config SOC_LCD_SUPPORT_RGB_YUV_CONV
-    bool
-    default y
-
 config SOC_MCPWM_GROUPS
     int
     default 2
@@ -1356,10 +1316,6 @@ config SOC_PARLIO_TX_SUPPORT_LOOP_TRANSMISSION
     default y
 
 config SOC_PARLIO_SUPPORT_SLEEP_RETENTION
-    bool
-    default y
-
-config SOC_PARLIO_SUPPORT_SPI_LCD
     bool
     default y
 
@@ -1753,7 +1709,7 @@ config SOC_KEY_MANAGER_SUPPORT_KEY_DEPLOYMENT
 
 config SOC_KEY_MANAGER_ECDSA_KEY_DEPLOY
     bool
-    default y
+    default n
 
 config SOC_KEY_MANAGER_FE_KEY_DEPLOY
     bool
@@ -1764,6 +1720,14 @@ config SOC_KEY_MANAGER_FE_KEY_DEPLOY_XTS_AES_128
     default y
 
 config SOC_KEY_MANAGER_FE_KEY_DEPLOY_XTS_AES_256
+    bool
+    default y
+
+config SOC_KEY_MANAGER_HMAC_KEY_DEPLOY
+    bool
+    default y
+
+config SOC_KEY_MANAGER_DS_KEY_DEPLOY
     bool
     default y
 
@@ -1915,6 +1879,10 @@ config SOC_PM_SUPPORT_TOUCH_SENSOR_WAKEUP
     bool
     default y
 
+config SOC_PM_SUPPORT_CPU_PD
+    bool
+    default y
+
 config SOC_PM_SUPPORT_XTAL32K_PD
     bool
     default y
@@ -1964,10 +1932,6 @@ config SOC_PM_PAU_REGDMA_LINK_MULTI_ADDR
     default y
 
 config SOC_PAU_IN_TOP_DOMAIN
-    bool
-    default y
-
-config SOC_CPU_IN_TOP_DOMAIN
     bool
     default y
 

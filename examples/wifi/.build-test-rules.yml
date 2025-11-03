@@ -98,7 +98,7 @@ examples/wifi/softap_sta:
   disable:
     - if: (SOC_WIFI_SUPPORTED != 1) and (SOC_WIRELESS_HOST_SUPPORTED != 1)
 
-examples/wifi/wifi_aware:
+examples/wifi/wifi_aware/nan_console:
   disable:
     - if: SOC_WIFI_NAN_SUPPORT != 1
       reason: targets esp32c3, esp32s3, esp32c2 and esp32c6 are not supported
@@ -114,3 +114,43 @@ examples/wifi/wifi_aware:
     - nvs_flash
   depends_filepatterns:
     - examples/system/console/advanced/components/**/*
+
+examples/wifi/wifi_aware/nan_publisher:
+  disable:
+    - if: SOC_WIFI_NAN_SUPPORT != 1
+      reason: targets esp32c3, esp32s3, esp32c2 and esp32c6 are not supported
+  depends_components:
+    - esp_wifi
+    - esp_phy
+    - esp_netif
+    - lwip
+    - esp_event
+    - esp_coex
+    - wpa_supplicant
+    - mbedtls
+    - nvs_flash
+
+examples/wifi/wifi_aware/nan_subscriber:
+  disable:
+    - if: SOC_WIFI_NAN_SUPPORT != 1
+      reason: targets esp32c3, esp32s3, esp32c2 and esp32c6 are not supported
+  depends_components:
+    - esp_wifi
+    - esp_phy
+    - esp_netif
+    - lwip
+    - esp_event
+    - esp_coex
+    - wpa_supplicant
+    - mbedtls
+    - nvs_flash
+
+examples/wifi/wifi_aware/usd_publisher:
+  <<: *wifi_depends_default
+  disable:
+    - if: SOC_WIFI_SUPPORTED != 1
+
+examples/wifi/wifi_aware/usd_subscriber:
+  <<: *wifi_depends_default
+  disable:
+    - if: SOC_WIFI_SUPPORTED != 1

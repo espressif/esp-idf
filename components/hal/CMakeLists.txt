@@ -22,10 +22,6 @@ if(CONFIG_SOC_LP_TIMER_SUPPORTED)
     list(APPEND srcs "lp_timer_hal.c")
 endif()
 
-if(CONFIG_SOC_WDT_SUPPORTED AND NOT CONFIG_HAL_WDT_USE_ROM_IMPL)
-    list(APPEND srcs "wdt_hal_iram.c")
-endif()
-
 if(CONFIG_SOC_KEY_MANAGER_SUPPORTED)
     list(APPEND srcs "key_mgr_hal.c")
     list(APPEND srcs "huk_hal.c")
@@ -52,7 +48,6 @@ endif()
 if(esp_tee_build)
     list(APPEND srcs "apm_hal.c"
                      "brownout_hal.c"
-                     "wdt_hal_iram.c"
                      "aes_hal.c"
                      "sha_hal.c"
                      "hmac_hal.c"
@@ -121,34 +116,6 @@ elseif(NOT BOOTLOADER_BUILD)
         endif()
     endif()
 
-    if(CONFIG_SOC_GDMA_SUPPORTED)
-        list(APPEND srcs "gdma_hal_top.c")
-
-        if(CONFIG_SOC_GDMA_SUPPORT_CRC)
-            list(APPEND srcs "gdma_hal_crc_gen.c")
-        endif()
-
-        if(CONFIG_SOC_AHB_GDMA_VERSION EQUAL 1)
-            list(APPEND srcs "gdma_hal_ahb_v1.c")
-        endif()
-
-        if(CONFIG_SOC_AHB_GDMA_VERSION EQUAL 2)
-            list(APPEND srcs "gdma_hal_ahb_v2.c")
-        endif()
-
-        if(CONFIG_SOC_AXI_GDMA_SUPPORTED)
-            list(APPEND srcs "gdma_hal_axi.c")
-        endif()
-    endif()
-
-    if(CONFIG_SOC_DW_GDMA_SUPPORTED)
-        list(APPEND srcs "dw_gdma_hal.c")
-    endif()
-
-    if(CONFIG_SOC_DMA2D_SUPPORTED)
-        list(APPEND srcs "dma2d_hal.c")
-    endif()
-
     if(CONFIG_SOC_I2S_SUPPORTED)
         list(APPEND srcs "i2s_hal.c")
     endif()
@@ -179,14 +146,6 @@ elseif(NOT BOOTLOADER_BUILD)
         if(CONFIG_SOC_ADC_DMA_SUPPORTED)
             list(APPEND srcs "adc_hal.c")
         endif()
-    endif()
-
-    if(CONFIG_SOC_LCDCAM_SUPPORTED)
-        list(APPEND srcs "lcd_hal.c")
-    endif()
-
-    if(CONFIG_SOC_MIPI_DSI_SUPPORTED)
-        list(APPEND srcs "mipi_dsi_hal.c")
     endif()
 
     if(CONFIG_SOC_MIPI_CSI_SUPPORTED)
@@ -303,23 +262,6 @@ elseif(NOT BOOTLOADER_BUILD)
     if(CONFIG_SOC_TEMP_SENSOR_SUPPORTED)
         list(APPEND srcs "temperature_sensor_hal.c")
     endif()
-
-    if(${target} STREQUAL "esp32s2")
-        list(APPEND srcs
-                    "xt_wdt_hal.c"
-                    "esp32s2/cp_dma_hal.c")
-    endif()
-
-    if(${target} STREQUAL "esp32s3")
-        list(APPEND srcs
-            "xt_wdt_hal.c")
-    endif()
-
-    if(${target} STREQUAL "esp32c3")
-        list(APPEND srcs
-            "xt_wdt_hal.c")
-    endif()
-
 
     if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/${target}/rtc_cntl_hal.c")
         list(APPEND srcs "${target}/rtc_cntl_hal.c")

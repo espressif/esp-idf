@@ -1,17 +1,24 @@
 menu "ESP NETIF Adapter"
 
+    config ESP_NETIF_LOST_IP_TIMER_ENABLE
+        bool "Enable IPv4 lost IP event timer"
+        default y
+        help
+            Enable raising LOST_IP events using a timer when the IPv4 address becomes invalid.
+            When disabled, the timer is not started and LOST_IP events are not posted.
+            The delay is configured by ESP_NETIF_IP_LOST_TIMER_INTERVAL.
+
     config ESP_NETIF_IP_LOST_TIMER_INTERVAL
         int "IP Address lost timer interval (seconds)"
         range 0 65535
         default 120
         help
-            The value of 0 indicates the IP lost timer is disabled, otherwise the timer is enabled.
-
             The IP address may be lost because of some reasons, e.g. when the station disconnects
             from soft-AP, or when DHCP IP renew fails etc. If the IP lost timer is enabled, it will
             be started every time the IP is lost. Event SYSTEM_EVENT_STA_LOST_IP will be raised if
-            the timer expires. The IP lost timer is stopped if the station get the IP again before
-            the timer expires.
+            the timer expires. The IP lost timer is stopped if the station gets the IP again before
+            the timer expires. For backward compatibility, setting the interval to 0 disables the
+            timer as well.
 
     config ESP_NETIF_PROVIDE_CUSTOM_IMPLEMENTATION
         bool "Use only ESP-NETIF headers"
@@ -53,12 +60,9 @@ menu "ESP NETIF Adapter"
             to blink data traffic indication lights.
 
     config ESP_NETIF_RECEIVE_REPORT_ERRORS
-        bool "Use esp_err_t to report errors from esp_netif_receive"
-        default n
-        help
-            Enable if esp_netif_receive() should return error code. This is useful to inform upper layers
-            that packet input to TCP/IP stack failed, so the upper layers could implement flow control.
-            This option is disabled by default due to backward compatibility and will be enabled in v6.0 (IDF-7194)
+        # Hidden option forcing esp_netif_receive to report errors with external components and backward compatibility
+        bool
+        default y
 
     config ESP_NETIF_L2_TAP
         bool "Enable netif L2 TAP support"

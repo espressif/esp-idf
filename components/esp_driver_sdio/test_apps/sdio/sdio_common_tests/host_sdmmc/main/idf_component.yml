@@ -3,3 +3,5 @@ dependencies:
   espressif/esp_serial_slave_link: "^1.1.0"
   test_driver_utils:
     path: ${IDF_PATH}/components/driver/test_apps/components/test_driver_utils
+  test_utils:
+    path: ${IDF_PATH}/tools/test_apps/components/test_utils

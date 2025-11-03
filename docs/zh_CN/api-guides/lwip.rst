@@ -38,6 +38,17 @@ ESP-IDF 间接支持以下常见的 lwIP 应用程序 API：
 - mDNS 与 lwIP 的默认 mDNS 使用不同实现方式，请参阅 :doc:`/api-reference/protocols/mdns`。但启用 :ref:`CONFIG_LWIP_DNS_SUPPORT_MDNS_QUERIES` 设置项后，lwIP 可以使用 ``gethostbyname()`` 等标准 API 和 ``hostname.local`` 约定查找 mDNS 主机。
 - lwIP 中的 PPP 实现可用于在 ESP-IDF 中创建 PPPoS（串行 PPP）接口。请参阅 :doc:`/api-reference/network/esp_netif` 组件文档，使用 :component_file:`esp_netif/include/esp_netif_defaults.h` 中定义的 ``ESP_NETIF_DEFAULT_PPP()`` 宏创建并配置 PPP 网络接口。:component_file:`esp_netif/include/esp_netif_ppp.h` 中提供了其他的运行时设置。PPPoS 接口通常用于与 NBIoT/GSM/LTE 调制解调器交互。`esp_modem <https://components.espressif.com/component/espressif/esp_modem>`_ 仓库还支持更多应用层友好的 API，该仓库内部使用了上述 PPP lwIP 模块。
 
+DHCP 地址冲突检测
+-------------------------------
+
+通常情况下，DHCP 服务器在提供选定的 IPv4 地址前，会验证该地址在网络上的唯一性。然而，有些服务器（包括 ESP-IDF 中的 DHCP 服务器）为了简化操作并加快地址分配速度，默认情况下不会进行这种验证。
+
+为避免潜在的 IP 地址冲突与连接问题，ESP-IDF 的 DHCP 客户端提供了多种选项，可在绑定 IPv4 地址前对服务器分配的地址进行验证（参见 :ref:`CONFIG_LWIP_DHCP_CHECKS_OFFERED_ADDRESS`）：
+
+- **简单 ARP 检测，默认选项** (``CONFIG_LWIP_DHCP_DOES_ARP_CHECK``)：发送两个 ARP 探测，只有当分配的 IP 的回复来自与接口 MAC 不同的 MAC 地址时才拒绝该分配。这种方式速度快约 1-2 秒，可避免 AP 在 ARP 回复中回显客户端 MAC 的网络中出现误判冲突。**如果遇到 DHCP DECLINE 循环，即分配 IP 的 ARP 回复显示接口自身的 MAC 时，请使用此选项。**
+- **地址冲突检测 (ACD)** (``CONFIG_LWIP_DHCP_DOES_ACD_CHECK``)：使用上游 lwIP ACD （符合 RFC 5227 标准）来探测或宣告地址。某些接入点会使用客户端自身的 MAC 地址来响应 ARP 探测；上游行为会将探测期间收到的任何匹配发送方 IP 视为冲突，这可能导致在此类网络上反复出现 DHCP DECLINE。**只有在需要完全符合 RFC 5227 标准，并了解某些接入点的潜在问题时，才使用此选项。**
+- **无冲突检测** (``CONFIG_LWIP_DHCP_DOES_NOT_CHECK_OFFERED_IP``)：不进行额外检查直接绑定地址。**当不需要冲突检测时，使用此选项可获得最大兼容性。**
+
 BSD 套接字 API
 -----------------
 

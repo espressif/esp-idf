@@ -23,9 +23,14 @@ entries:
         gdma: gdma_start (noflash)
         gdma_link: gdma_link_get_head_addr (noflash)
 
-[mapping:esp_lcd_rgb_hal]
+[mapping:esp_lcd_rgb_hal_common]
 archive: libhal.a
 entries:
     if LCD_RGB_ISR_IRAM_SAFE = y:
-        lcd_hal: lcd_hal_cal_pclk_freq (noflash)
         hal_utils: hal_utils_calc_clk_div_frac_fast (noflash)
+
+[mapping:esp_lcd_rgb_hal]
+archive: libesp_hal_lcd.a
+entries:
+    if LCD_RGB_ISR_IRAM_SAFE = y:
+        lcd_hal: lcd_hal_cal_pclk_freq (noflash)

@@ -111,6 +111,14 @@ config SOC_I2S_SUPPORTED
     bool
     default y
 
+config SOC_I2S_I80_LCD_SUPPORTED
+    bool
+    default y
+
+config SOC_LCD_I80_SUPPORTED
+    bool
+    default y
+
 config SOC_RMT_SUPPORTED
     bool
     default y
@@ -458,22 +466,6 @@ config SOC_I2S_HW_VERSION_1
 config SOC_I2S_SUPPORTS_APLL
     bool
     default y
-
-config SOC_I2S_SUPPORTS_LCD_CAMERA
-    bool
-    default y
-
-config SOC_LCD_I80_SUPPORTED
-    bool
-    default y
-
-config SOC_LCD_I80_BUSES
-    int
-    default 1
-
-config SOC_LCD_I80_BUS_WIDTH
-    int
-    default 24
 
 config SOC_LEDC_HAS_TIMER_SPECIFIC_MUX
     bool

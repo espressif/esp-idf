@@ -94,7 +94,7 @@ menu "Power Management"
     config PM_CHECK_SLEEP_RETENTION_FRAME
         bool
         depends on (PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP || \
-            (SOC_CPU_IN_TOP_DOMAIN && PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP))
+            (ESP32P4_SELECTS_REV_LESS_V3 && PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP))
         default y if IDF_CI_BUILD
         default n
         help
@@ -117,7 +117,7 @@ menu "Power Management"
 
     config PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP
         bool "Power down CPU in light sleep"
-        depends on SOC_PM_SUPPORT_CPU_PD
+        depends on SOC_PM_SUPPORT_CPU_PD && !ESP32P4_SELECTS_REV_LESS_V3
         select PM_RESTORE_CACHE_TAGMEM_AFTER_LIGHT_SLEEP if ESP32S3_DATA_CACHE_16KB
         default y
         help
@@ -132,8 +132,9 @@ menu "Power Management"
 
     choice
         bool "Retentive memory alloaction strategy for light sleep"
-        depends on  SOC_PM_CPU_RETENTION_BY_SW && \
-            (PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP || (PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_CPU_IN_TOP_DOMAIN))
+        depends on SOC_PM_CPU_RETENTION_BY_SW
+        depends on PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP || \
+            (PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && ESP32P4_SELECTS_REV_LESS_V3)
         default PM_CPU_RETENTION_DYNAMIC
         help
             In light sleep mode, certain CPU states and data need to be preserved in memory while cpu domain
@@ -177,7 +178,7 @@ menu "Power Management"
     config PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
         bool "Power down Digital Peripheral in light sleep (EXPERIMENTAL)"
         depends on SOC_PM_SUPPORT_TOP_PD && SOC_PAU_SUPPORTED
-        select PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP if !SOC_CPU_IN_TOP_DOMAIN
+        select PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP if !ESP32P4_SELECTS_REV_LESS_V3
         default n #TODO: enable by default if periph init/deinit management supported (WIFI-5252)
         help
             If enabled, digital peripherals will try to powered down in light sleep, then all related peripherals will
@@ -212,6 +213,11 @@ menu "Power Management"
             domain is powered down during sleep also depends on the sleep working strategy selected by the driver.
             If any module belonging to the peripheral power domain chooses not to be powered down during sleep,
             then the peripheral power domain will not be powered off either.
+
+    config PM_ESP_SLEEP_POWER_DOWN_CPU
+        bool
+        default y if (PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP && !ESP32P4_SELECTS_REV_LESS_V3)
+        default y if (PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && ESP32P4_SELECTS_REV_LESS_V3)
 
     config PM_UPDATE_CCOMPARE_HLI_WORKAROUND
         bool

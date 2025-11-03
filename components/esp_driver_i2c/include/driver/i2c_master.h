@@ -59,6 +59,10 @@ typedef struct {
  *
  * This structure is used to define individual I2C operations (write or read)
  * within a sequence of I2C master transactions.
+ *
+ * @note The union contains either write or read operation parameters.
+ *       - For write operations: use `.write.data` (const uint8_t *) to provide data to be written
+ *       - For read operations: use `.read.data` (uint8_t *) to provide buffer for storing read data
  */
 typedef struct {
     i2c_master_command_t command; /**< I2C command indicating the type of operation (START, WRITE, READ, or STOP) */
@@ -70,7 +74,7 @@ typedef struct {
          */
         struct {
             bool ack_check;        /**< Whether to enable ACK check during WRITE operation */
-            uint8_t *data;         /**< Pointer to the data to be written */
+            const uint8_t *data;   /**< Pointer to the data to be written */
             size_t total_bytes;    /**< Total number of bytes to write */
         } write;
         /**

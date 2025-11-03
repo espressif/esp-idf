@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -79,6 +79,28 @@ typedef dma2d_descriptor_align8_t dma2d_descriptor_t;
 static inline uint32_t dma2d_desc_pixel_format_to_pbyte_value(color_space_pixel_format_t pixel_format)
 {
     switch (color_hal_pixel_format_get_bit_depth(pixel_format)) {
+    case 4:
+        return DMA2D_DESCRIPTOR_PBYTE_0B5_PER_PIXEL;
+    case 8:
+        return DMA2D_DESCRIPTOR_PBYTE_1B0_PER_PIXEL;
+    case 12:
+        return DMA2D_DESCRIPTOR_PBYTE_1B5_PER_PIXEL;
+    case 16:
+        return DMA2D_DESCRIPTOR_PBYTE_2B0_PER_PIXEL;
+    case 24:
+        return DMA2D_DESCRIPTOR_PBYTE_3B0_PER_PIXEL;
+    case 32:
+        return DMA2D_DESCRIPTOR_PBYTE_4B0_PER_PIXEL;
+    default:
+        // Unsupported bit depth
+        abort();
+    }
+}
+
+// Helper function to convert pixel format to 2D-DMA descriptor pbyte value
+static inline uint32_t dma2d_desc_pixel_format_to_pbyte_value_fourcc(uint32_t four_character_code)
+{
+    switch (color_hal_pixel_format_fourcc_get_bit_depth(four_character_code)) {
     case 4:
         return DMA2D_DESCRIPTOR_PBYTE_0B5_PER_PIXEL;
     case 8:
@@ -236,20 +258,23 @@ typedef enum {
 typedef enum {
     DMA2D_CSC_RX_NONE,                          /*!< 2D-DMA RX perform no CSC */
     DMA2D_CSC_RX_SCRAMBLE,                      /*!< 2D-DMA RX perform only data scramble */
-    DMA2D_CSC_RX_YUV422_TO_YUV444,              /*!< 2D-DMA RX perform YUV422 to YUV444 conversion */
-    DMA2D_CSC_RX_YUV420_TO_YUV444,              /*!< 2D-DMA RX perform YUV420 to YUV444 conversion */
-    DMA2D_CSC_RX_YUV420_TO_RGB888_601,          /*!< 2D-DMA RX perform YUV420 to RGB888 conversion (follow BT601 standard) */
-    DMA2D_CSC_RX_YUV420_TO_RGB565_601,          /*!< 2D-DMA RX perform YUV420 to RGB565 conversion (follow BT601 standard) */
-    DMA2D_CSC_RX_YUV420_TO_RGB888_709,          /*!< 2D-DMA RX perform YUV420 to RGB888 conversion (follow BT709 standard) */
-    DMA2D_CSC_RX_YUV420_TO_RGB565_709,          /*!< 2D-DMA RX perform YUV420 to RGB565 conversion (follow BT709 standard) */
-    DMA2D_CSC_RX_YUV422_TO_RGB888_601,          /*!< 2D-DMA RX perform YUV422 to RGB888 conversion (follow BT601 standard) */
-    DMA2D_CSC_RX_YUV422_TO_RGB565_601,          /*!< 2D-DMA RX perform YUV422 to RGB565 conversion (follow BT601 standard) */
-    DMA2D_CSC_RX_YUV422_TO_RGB888_709,          /*!< 2D-DMA RX perform YUV422 to RGB888 conversion (follow BT709 standard) */
-    DMA2D_CSC_RX_YUV422_TO_RGB565_709,          /*!< 2D-DMA RX perform YUV422 to RGB565 conversion (follow BT709 standard) */
-    DMA2D_CSC_RX_YUV444_TO_RGB888_601,          /*!< 2D-DMA RX perform YUV444 to RGB888 conversion (follow BT601 standard) */
-    DMA2D_CSC_RX_YUV444_TO_RGB565_601,          /*!< 2D-DMA RX perform YUV444 to RGB565 conversion (follow BT601 standard) */
-    DMA2D_CSC_RX_YUV444_TO_RGB888_709,          /*!< 2D-DMA RX perform YUV444 to RGB888 conversion (follow BT709 standard) */
-    DMA2D_CSC_RX_YUV444_TO_RGB565_709,          /*!< 2D-DMA RX perform YUV444 to RGB565 conversion (follow BT709 standard) */
+    DMA2D_CSC_RX_YUV422_TO_YUV444,              /*!< 2D-DMA RX perform YUV422-JPEG to YUV444 conversion */
+    DMA2D_CSC_RX_YUV422_TO_YUV420,              /*!< 2D-DMA RX perform YUV422-JPEG to YUV420 conversion */
+    DMA2D_CSC_RX_YUV420_TO_YUV444,              /*!< 2D-DMA RX perform YUV420-JPEG to YUV444 conversion */
+    DMA2D_CSC_RX_YUV420_TO_RGB888_601,          /*!< 2D-DMA RX perform YUV420-JPEG to RGB888 conversion (follow BT601 standard) */
+    DMA2D_CSC_RX_YUV420_TO_RGB565_601,          /*!< 2D-DMA RX perform YUV420-JPEG to RGB565 conversion (follow BT601 standard) */
+    DMA2D_CSC_RX_YUV420_TO_RGB888_709,          /*!< 2D-DMA RX perform YUV420-JPEG to RGB888 conversion (follow BT709 standard) */
+    DMA2D_CSC_RX_YUV420_TO_RGB565_709,          /*!< 2D-DMA RX perform YUV420-JPEG to RGB565 conversion (follow BT709 standard) */
+    DMA2D_CSC_RX_YUV422_TO_RGB888_601,          /*!< 2D-DMA RX perform YUV422-JPEG to RGB888 conversion (follow BT601 standard) */
+    DMA2D_CSC_RX_YUV422_TO_RGB565_601,          /*!< 2D-DMA RX perform YUV422-JPEG to RGB565 conversion (follow BT601 standard) */
+    DMA2D_CSC_RX_YUV422_TO_RGB888_709,          /*!< 2D-DMA RX perform YUV422-JPEG to RGB888 conversion (follow BT709 standard) */
+    DMA2D_CSC_RX_YUV422_TO_RGB565_709,          /*!< 2D-DMA RX perform YUV422-JPEG to RGB565 conversion (follow BT709 standard) */
+    DMA2D_CSC_RX_YUV444_TO_YUV422,              /*!< 2D-DMA RX perform YUV444-JPEG to YUV422-MIPI conversion */
+    DMA2D_CSC_RX_YUV444_TO_YUV420,              /*!< 2D-DMA RX perform YUV444-JPEG to YUV420 conversion */
+    DMA2D_CSC_RX_YUV444_TO_RGB888_601,          /*!< 2D-DMA RX perform YUV444-JPEG to RGB888 conversion (follow BT601 standard) */
+    DMA2D_CSC_RX_YUV444_TO_RGB565_601,          /*!< 2D-DMA RX perform YUV444-JPEG to RGB565 conversion (follow BT601 standard) */
+    DMA2D_CSC_RX_YUV444_TO_RGB888_709,          /*!< 2D-DMA RX perform YUV444-JPEG to RGB888 conversion (follow BT709 standard) */
+    DMA2D_CSC_RX_YUV444_TO_RGB565_709,          /*!< 2D-DMA RX perform YUV444-JPEG to RGB565 conversion (follow BT709 standard) */
     DMA2D_CSC_RX_INVALID,                       /*!< Invalid 2D-DMA RX color space conversion */
 } dma2d_csc_rx_option_t;
 
