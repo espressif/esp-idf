@@ -33,6 +33,7 @@ void ble_store_config_init(void);
 static void ble_prox_cent_scan(void);
 static int ble_prox_cent_gap_event(struct ble_gap_event *event, void *arg);
 
+#if MYNEWT_VAL(BLE_GATTC)
 static int
 ble_prox_cent_on_read(uint16_t conn_handle,
                       const struct ble_gatt_error *error,
@@ -172,6 +173,7 @@ ble_prox_cent_on_disc_complete(const struct peer *peer, int status, void *arg)
      */
     ble_prox_cent_read_write_subscribe(peer);
 }
+#endif
 
 /**
  * Initiates the GAP general discovery procedure.
@@ -480,6 +482,7 @@ ble_prox_cent_gap_event(struct ble_gap_event *event, void *arg)
                 return 0;
             }
 #else
+#if MYNEWT_VAL(BLE_GATTC)
             /* Perform service discovery */
             rc = peer_disc_all(event->connect.conn_handle,
                                ble_prox_cent_on_disc_complete, NULL);
@@ -487,6 +490,7 @@ ble_prox_cent_gap_event(struct ble_gap_event *event, void *arg)
                 MODLOG_DFLT(ERROR, "Failed to discover services; rc=%d\n", rc);
                 return 0;
             }
+#endif
 #endif // BLE_GATT_CACHING_ASSOC_ENABLE
 #endif
         } else {
@@ -547,6 +551,7 @@ ble_prox_cent_gap_event(struct ble_gap_event *event, void *arg)
             return 0;
         }
 #else
+#if MYNEWT_VAL(BLE_GATTC)
         /*** Go for service discovery after encryption has been successfully enabled ***/
         rc = peer_disc_all(event->connect.conn_handle,
                            ble_prox_cent_on_disc_complete, NULL);
@@ -554,6 +559,7 @@ ble_prox_cent_gap_event(struct ble_gap_event *event, void *arg)
             MODLOG_DFLT(ERROR, "Failed to discover services; rc=%d\n", rc);
             return 0;
         }
+#endif
 #endif // BLE_GATT_CACHING_ASSOC_ENABLE
 #endif
         return 0;
@@ -656,6 +662,7 @@ ble_prox_cent_path_loss_task(void *pvParameters)
                         path_loss = 0;
                     }
 
+#if MYNEWT_VAL(BLE_GATTC)
                     rc = ble_gattc_write_no_rsp_flat(i, conn_peer[i].val_handle,
                                                      &path_loss, sizeof(path_loss));
                     if (rc != 0) {
@@ -664,6 +671,7 @@ ble_prox_cent_path_loss_task(void *pvParameters)
                     } else {
                         MODLOG_DFLT(INFO, "Write to alert level characteristis done");
                     }
+#endif
                 }
             }
         }
@@ -743,7 +751,6 @@ app_main(void)
 
     /* Initialize a task to keep checking path loss of the link */
     ble_prox_cent_init();
-
     for (int i = 0; i <= MYNEWT_VAL(BLE_MAX_CONNECTIONS); i++) {
         disconn_peer[i].addr = NULL;
         disconn_peer[i].link_lost = true;
