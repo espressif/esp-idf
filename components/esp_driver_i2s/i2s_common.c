@@ -418,6 +418,9 @@ uint32_t i2s_get_buf_size(i2s_chan_handle_t handle, uint32_t data_bit_width, uin
     uint32_t bytes_per_sample = (data_bit_width + 7) / 8;
 #endif  // CONFIG_IDF_TARGET_ESP32
     uint32_t bytes_per_frame = bytes_per_sample * active_chan;
+    if (bytes_per_frame == 0) {
+        return 0;
+    }
     uint32_t bufsize = dma_frame_num * bytes_per_frame;
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
     /* bufsize need to align with cache line size */
