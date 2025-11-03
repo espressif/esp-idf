@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,17 +12,15 @@
 #include "sys/socket.h"
 #include "esp_rom_md5.h"
 #include "esp_tls_crypto.h"
-#include "mbedtls/sha256.h"
 
 #include "esp_log.h"
 #include "esp_check.h"
 
 #include "http_utils.h"
 #include "http_auth.h"
+#include "http_crypto.h"
 
 #define MD5_MAX_LEN (33)
-#define SHA256_LEN (32)
-#define SHA256_HEX_LEN (65)
 #define HTTP_AUTH_BUF_LEN (1024)
 
 static const char *TAG = "HTTP_AUTH";
@@ -85,19 +83,13 @@ static int sha256_sprintf(char *sha, const char *fmt, ...)
     }
 
     int ret = 0;
-    mbedtls_sha256_context sha256;
-    mbedtls_sha256_init(&sha256);
-    if (mbedtls_sha256_starts(&sha256, 0) != 0) {
-        goto exit;
-    }
-    if (mbedtls_sha256_update(&sha256, buf, len) != 0) {
-        goto exit;
-    }
-    if (mbedtls_sha256_finish(&sha256, digest) != 0) {
+
+    esp_err_t err = http_crypto_sha256(buf, len, digest);
+    if (err != ESP_OK) {
         goto exit;
     }
 
-    for (i = 0; i < 32; ++i) {
+    for (i = 0; i < SHA256_LEN; ++i) {
         sprintf(&sha[i * 2], "%02x", (unsigned int)digest[i]);
     }
     sha[SHA256_HEX_LEN - 1] = '\0';
@@ -105,7 +97,6 @@ static int sha256_sprintf(char *sha, const char *fmt, ...)
 
 exit:
     free(buf);
-    mbedtls_sha256_free(&sha256);
     va_end(ap);
     return ret;
 }

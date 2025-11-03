@@ -11,7 +11,7 @@
 #include <sys/random.h>
 #include <esp_log.h>
 #include <esp_err.h>
-#include <mbedtls/sha1.h>
+
 #include <mbedtls/base64.h>
 #include <mbedtls/error.h>
 
@@ -143,35 +143,15 @@ esp_err_t httpd_ws_respond_server_handshake(httpd_req_t *req, const char *suppor
 
     ESP_LOGD(TAG, LOG_FMT("Server key before encoding: %s"), server_raw_text);
 
-    /* Generate SHA-1 first and then encode to Base64 */
-    size_t key_len = strlen(server_raw_text);
-
 #if CONFIG_MBEDTLS_SHA1_C || CONFIG_MBEDTLS_HARDWARE_SHA
-    int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
-    mbedtls_sha1_context ctx;
-    mbedtls_sha1_init(&ctx);
-
-    if ((ret = mbedtls_sha1_starts(&ctx)) != 0) {
-        goto sha_end;
-    }
-
-    if ((ret = mbedtls_sha1_update(&ctx, (uint8_t *)server_raw_text, key_len)) != 0) {
-        goto sha_end;
-    }
-
-    if ((ret = mbedtls_sha1_finish(&ctx, server_key_hash)) != 0) {
-        goto sha_end;
-    }
-
-sha_end:
-    mbedtls_sha1_free(&ctx);
-    if (ret != 0) {
-        ESP_LOGE(TAG, "Error in calculating SHA1 sum , returned 0x%02X", ret);
-        return ESP_FAIL;
+    esp_err_t err = httpd_crypto_sha1((const uint8_t *)server_raw_text, strlen(server_raw_text), server_key_hash);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to compute SHA-1 hash");
+        return err;
     }
 #else
     ESP_LOGE(TAG, "Please enable CONFIG_MBEDTLS_SHA1_C or CONFIG_MBEDTLS_HARDWARE_SHA to support SHA1 operations");
-    return ESP_FAIL;
+    return ESP_ERR_NOT_SUPPORTED;
 #endif /* CONFIG_MBEDTLS_SHA1_C || CONFIG_MBEDTLS_HARDWARE_SHA */
 
     size_t encoded_len = 0;

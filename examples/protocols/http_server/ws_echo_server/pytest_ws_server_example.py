@@ -48,8 +48,20 @@ class WsClient:
 
 
 @pytest.mark.wifi_router
+@pytest.mark.parametrize(
+    'config',
+    [
+        'default',  # mbedTLS crypto backend
+        'psa',  # PSA crypto backend (tests SHA-1 for WebSocket handshake)
+    ],
+    indirect=True,
+)
 @idf_parametrize('target', ['esp32'], indirect=['target'])
 def test_examples_protocol_http_ws_echo_server(dut: Dut) -> None:
+    """
+    Test WebSocket echo server with both mbedTLS and PSA crypto backends.
+    This specifically tests the SHA-1 computation used in WebSocket handshake (RFC 6455).
+    """
     # Get binary file
     binary_file = os.path.join(dut.app.binary_path, 'ws_echo_server.bin')
     bin_size = os.path.getsize(binary_file)
@@ -98,11 +110,20 @@ def test_examples_protocol_http_ws_echo_server(dut: Dut) -> None:
 
 
 @pytest.mark.wifi_router
+@pytest.mark.parametrize(
+    'config',
+    [
+        'default',  # mbedTLS crypto backend
+        'psa',  # PSA crypto backend (tests SHA-1 for WebSocket handshake)
+    ],
+    indirect=True,
+)
 @idf_parametrize('target', ['esp32'], indirect=['target'])
 def test_ws_auth_handshake(dut: Dut) -> None:
     """
     Test that connecting to /ws does NOT print the handshake success log.
     This is used to verify ws_pre_handshake_cb can reject the handshake.
+    Tests both mbedTLS and PSA crypto backends.
     """
     # Wait for device to connect and start server
     if dut.app.sdkconfig.get('EXAMPLE_WIFI_SSID_PWD_FROM_STDIN') is True:
