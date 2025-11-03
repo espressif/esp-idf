@@ -191,7 +191,7 @@ You can find code examples in the :example:`storage/nvs` directory of ESP-IDF ex
 
   Default NVS partition is erased for a clean run of this example. Then mock data consisting of different NVS integer data types are written.
 
-  After that, iteration is performed over the individual data types, as well as the generic ``NVS_TYPE_ANY``, and relevant entry info gained from iteration is logged.
+  After that, the example iterates over each individual data type as well as the generic ``NVS_TYPE_ANY`` type, and logs the information obtained from each iteration.
 
 Internals
 ---------
