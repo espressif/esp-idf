@@ -189,6 +189,10 @@ static void uart_module_enable(uart_port_t uart_num)
     if (uart_context[uart_num].hw_enabled != true) {
         periph_module_enable(uart_periph_signal[uart_num].module);
         if (uart_num != CONFIG_ESP_CONSOLE_UART_NUM) {
+            // Workaround: Set RX signal to high to avoid false RX BRK_DET interrupt raised after register reset
+            if (uart_context[uart_num].rx_io_num == -1) {
+                esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ONE_INPUT, UART_PERIPH_SIGNAL(uart_num, SOC_UART_RX_PIN_IDX), false);
+            }
             // Workaround for ESP32C3/S3: enable core reset before enabling uart module clock to prevent uart output
             // garbage value.
 #if SOC_UART_REQUIRE_CORE_RESET
