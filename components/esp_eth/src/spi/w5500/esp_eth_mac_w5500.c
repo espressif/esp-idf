@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +13,7 @@
 #include "esp_attr.h"
 #include "esp_log.h"
 #include "esp_check.h"
+#include "esp_timer.h"
 #include "esp_system.h"
 #include "esp_intr_alloc.h"
 #include "esp_heap_caps.h"
@@ -30,6 +31,8 @@ static const char *TAG = "w5500.mac";
 #define W5500_SPI_LOCK_TIMEOUT_MS (50)
 #define W5500_TX_MEM_SIZE (0x4000)
 #define W5500_RX_MEM_SIZE (0x4000)
+#define W5500_100M_TX_TMO_US (200)
+#define W5500_10M_TX_TMO_US (1500)
 #define W5500_ETH_MAC_RX_BUF_SIZE_AUTO (0)
 
 typedef struct {
@@ -64,6 +67,7 @@ typedef struct {
     uint8_t addr[6];
     bool packets_remain;
     uint8_t *rx_buffer;
+    uint32_t tx_tmo;
 } emac_w5500_t;
 
 static void *w5500_spi_init(const void *spi_config)
@@ -245,18 +249,8 @@ err:
 static esp_err_t w5500_write_buffer(emac_w5500_t *emac, const void *buffer, uint32_t len, uint16_t offset)
 {
     esp_err_t ret = ESP_OK;
-    uint32_t remain = len;
-    const uint8_t *buf = buffer;
-    offset %= W5500_TX_MEM_SIZE;
-    if (offset + len > W5500_TX_MEM_SIZE) {
-        remain = (offset + len) % W5500_TX_MEM_SIZE;
-        len = W5500_TX_MEM_SIZE - offset;
-        ESP_GOTO_ON_ERROR(w5500_write(emac, W5500_MEM_SOCK_TX(0, offset), buf, len), err, TAG, "write TX buffer failed");
-        offset += len;
-        buf += len;
-    }
-    ESP_GOTO_ON_ERROR(w5500_write(emac, W5500_MEM_SOCK_TX(0, offset), buf, remain), err, TAG, "write TX buffer failed");
 
+    ESP_GOTO_ON_ERROR(w5500_write(emac, W5500_MEM_SOCK_TX(0, offset), buffer, len), err, TAG, "write TX buffer failed");
 err:
     return ret;
 }
@@ -264,18 +258,7 @@ err:
 static esp_err_t w5500_read_buffer(emac_w5500_t *emac, void *buffer, uint32_t len, uint16_t offset)
 {
     esp_err_t ret = ESP_OK;
-    uint32_t remain = len;
-    uint8_t *buf = buffer;
-    offset %= W5500_RX_MEM_SIZE;
-    if (offset + len > W5500_RX_MEM_SIZE) {
-        remain = (offset + len) % W5500_RX_MEM_SIZE;
-        len = W5500_RX_MEM_SIZE - offset;
-        ESP_GOTO_ON_ERROR(w5500_read(emac, W5500_MEM_SOCK_RX(0, offset), buf, len), err, TAG, "read RX buffer failed");
-        offset += len;
-        buf += len;
-    }
-    ESP_GOTO_ON_ERROR(w5500_read(emac, W5500_MEM_SOCK_RX(0, offset), buf, remain), err, TAG, "read RX buffer failed");
-
+    ESP_GOTO_ON_ERROR(w5500_read(emac, W5500_MEM_SOCK_RX(0, offset), buffer, len), err, TAG, "read RX buffer failed");
 err:
     return ret;
 }
@@ -284,7 +267,6 @@ static esp_err_t w5500_set_mac_addr(emac_w5500_t *emac)
 {
     esp_err_t ret = ESP_OK;
     ESP_GOTO_ON_ERROR(w5500_write(emac, W5500_REG_MAC, emac->addr, 6), err, TAG, "write MAC address register failed");
-
 err:
     return ret;
 }
@@ -338,7 +320,8 @@ static esp_err_t w5500_setup_default(emac_w5500_t *emac)
     esp_err_t ret = ESP_OK;
     uint8_t reg_value = 16;
 
-    // Only SOCK0 can be used as MAC RAW mode, so we give the whole buffer (16KB TX and 16KB RX) to SOCK0
+    // Only SOCK0 can be used as MAC RAW mode, so we give the whole buffer (16KB TX and 16KB RX) to SOCK0, which doesn't have any effect for TX though.
+    // A larger TX buffer doesn't buy us pipelining - each SEND is one frame and must complete before the next.
     ESP_GOTO_ON_ERROR(w5500_write(emac, W5500_REG_SOCK_RXBUF_SIZE(0), &reg_value, sizeof(reg_value)), err, TAG, "set rx buffer size failed");
     ESP_GOTO_ON_ERROR(w5500_write(emac, W5500_REG_SOCK_TXBUF_SIZE(0), &reg_value, sizeof(reg_value)), err, TAG, "set tx buffer size failed");
     reg_value = 0;
@@ -490,11 +473,14 @@ err:
 static esp_err_t emac_w5500_set_speed(esp_eth_mac_t *mac, eth_speed_t speed)
 {
     esp_err_t ret = ESP_OK;
+    emac_w5500_t *emac = __containerof(mac, emac_w5500_t, parent);
     switch (speed) {
     case ETH_SPEED_10M:
+        emac->tx_tmo = W5500_10M_TX_TMO_US;
         ESP_LOGD(TAG, "working in 10Mbps");
         break;
     case ETH_SPEED_100M:
+        emac->tx_tmo = W5500_100M_TX_TMO_US;
         ESP_LOGD(TAG, "working in 100Mbps");
         break;
     default:
@@ -589,14 +575,16 @@ static esp_err_t emac_w5500_transmit(esp_eth_mac_t *mac, uint8_t *buf, uint32_t 
     ESP_GOTO_ON_ERROR(w5500_send_command(emac, W5500_SCR_SEND, 100), err, TAG, "issue SEND command failed");
 
     // pooling the TX done event
-    int retry = 0;
     uint8_t status = 0;
-    while (!(status & W5500_SIR_SEND)) {
-        ESP_GOTO_ON_ERROR(w5500_read(emac, W5500_REG_SOCK_IR(0), &status, sizeof(status)), err, TAG, "read SOCK0 IR failed");
-        if ((retry++ > 3 && !is_w5500_sane_for_rxtx(emac)) || retry > 10) {
+    uint64_t start = esp_timer_get_time();
+    uint64_t now = 0;
+    do {
+        now = esp_timer_get_time();
+        if (!is_w5500_sane_for_rxtx(emac) || (now - start) > emac->tx_tmo) {
             return ESP_FAIL;
         }
-    }
+        ESP_GOTO_ON_ERROR(w5500_read(emac, W5500_REG_SOCK_IR(0), &status, sizeof(status)), err, TAG, "read SOCK0 IR failed");
+    } while (!(status & W5500_SIR_SEND));
     // clear the event bit
     status  = W5500_SIR_SEND;
     ESP_GOTO_ON_ERROR(w5500_write(emac, W5500_REG_SOCK_IR(0), &status, sizeof(status)), err, TAG, "write SOCK0 IR failed");
