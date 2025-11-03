@@ -35,4 +35,9 @@ if(NOT CONFIG_SECURE_BOOT OR CONFIG_SECURE_BOOT_FLASH_BOOTLOADER_DEFAULT)
 
     # Add bootloader as a dependency to the flash target
     add_dependencies(flash bootloader)
+
+    if(CONFIG_SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT)
+        # Also add bootloader as a dependency to the encrypted-flash target
+        add_dependencies(encrypted-flash bootloader)
+    endif()
 endif()
