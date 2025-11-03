@@ -13,6 +13,7 @@
    overview
    ble-feature-support-status
    ble-qualification
+   低功耗模式介绍 <ble-low-power-mode>
 
 **********
 快速入门
