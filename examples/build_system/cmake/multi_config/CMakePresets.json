@@ -1,0 +1,34 @@
+{
+    "version": 3,
+    "configurePresets": [
+        {
+            "name": "default",
+            "binaryDir": "build/default",
+            "displayName": "Default (development)",
+            "description": "Development configuration",
+            "cacheVariables": {
+                "SDKCONFIG": "./build/default/sdkconfig"
+            }
+        },
+        {
+            "name": "prod1",
+            "binaryDir": "build/prod1",
+            "displayName": "Product 1",
+            "description": "Production configuration for product 1",
+            "cacheVariables": {
+                "SDKCONFIG_DEFAULTS": "sdkconfig.defaults.prod_common;sdkconfig.defaults.prod1",
+                "SDKCONFIG": "./build/prod1/sdkconfig"
+            }
+        },
+        {
+            "name": "prod2",
+            "binaryDir": "build/prod2",
+            "displayName": "Product 2",
+            "description": "Production configuration for product 2",
+            "cacheVariables": {
+                "SDKCONFIG_DEFAULTS": "sdkconfig.defaults.prod_common;sdkconfig.defaults.prod2",
+                "SDKCONFIG": "./build/prod2/sdkconfig"
+            }
+        }
+    ]
+}

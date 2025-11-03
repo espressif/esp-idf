@@ -306,6 +306,73 @@ MCP 服务器提供以下工具：
 
   claude mcp add esp-idf python /path/to/esp-idf/tools/idf.py mcp-server --env IDF_PATH=/path/to/esp-idf
 
+配置预设：``--preset``
+========================
+
+ESP-IDF 支持 `CMake presets`_ 以简化多个构建配置的管理。此功能允许定义可重用的配置配置文件，这些文件指定构建目录、缓存变量和其他 CMake 设置。
+
+.. code-block:: bash
+
+  idf.py --preset <preset-name> build
+
+此命令使用指定的配置预设来构建项目。该预设定义了诸如构建目录位置、CMake 缓存变量（包括 ``SDKCONFIG`` 路径）和生成器首选项等设置。
+
+预设定义文件
+--------------
+
+在项目根目录下创建一个 ``CMakePresets.json`` 或 ``CMakeUserPresets.json`` 文件来定义 **配置预设**。例如：
+
+.. code-block:: json
+
+  {
+      "version": 3,
+      "configurePresets": [
+          {
+              "name": "default",
+              "binaryDir": "build/default",
+              "displayName": "Default Configuration",
+              "cacheVariables": {
+                  "SDKCONFIG": "./build/default/sdkconfig"
+              }
+          },
+          {
+              "name": "production",
+              "binaryDir": "build/production",
+              "displayName": "Production Build",
+              "cacheVariables": {
+                  "SDKCONFIG_DEFAULTS": "sdkconfig.defaults.prod_common;sdkconfig.defaults.production",
+                  "SDKCONFIG": "./build/production/sdkconfig"
+              }
+          }
+      ]
+  }
+
+.. note::
+
+    字段 ``version`` 代表 CMake Presets 的 JSON 模式版本。在本例中，其值设为 ``3``，以匹配 ESP-IDF 支持的最低 CMake 版本所支持的模式。如果你使用的是更高版本的 CMake，可以相应地增加 ``version`` 字段的值。请参阅 `CMake Presets`_。
+
+**当前限制**
+
+- ESP-IDF 目前不支持用于预设继承的 ``inherits`` 字段。包含继承的预设将显示警告。
+
+自动预设选择
+----------------
+
+如果未指定预设但存在 ``CMakePresets.json`` 文件，``idf.py`` 将自动选择一个预设：
+
+1.  如果存在名为 ``default`` 的预设，则将使用它。
+2.  否则，将选择文件中的第一个预设。
+
+.. note::
+
+    环境变量 ``IDF_PRESET`` 可用于设置默认预设名称，例如 ``export IDF_PRESET=production``。命令行参数会覆盖环境变量。
+
+**SDKCONFIG 文件位置**
+
+默认情况下，``sdkconfig`` 文件在项目根目录中创建。但是，在使用 CMake 预设时，可以使用 ``SDKCONFIG`` 缓存变量指定 ``sdkconfig`` 文件的自定义位置。
+
+完整示例请参阅 :example_file:`Multiple Build Configurations Example <build_system/cmake/multi_config/README.md>`。
+
 全局选项
 ==============
 
@@ -449,3 +516,4 @@ MCP 服务器提供以下工具：
 .. _esptool: https://github.com/espressif/esptool/#readme
 .. _CCache: https://ccache.dev/
 .. _click context: https://click.palletsprojects.com/en/stable/api/#context
+.. _CMake presets: https://cmake.org/cmake/help/latest/manual/cmake-presets.7.html
