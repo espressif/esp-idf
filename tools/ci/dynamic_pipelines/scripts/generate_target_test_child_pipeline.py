@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 """This file is used for generating the child pipeline for target test jobs.
 
@@ -47,7 +47,7 @@ def get_tags_with_amount(s: str) -> t.List[str]:
 
 
 def get_target_test_jobs(
-    paths: str, apps: t.List[App], exclude_runner_tags: t.Set[str]
+    paths: str, apps: t.List[App], exclude_runner_tags: t.Set[str], exclude_runner_tags_matching: t.List[t.Set]
 ) -> t.Tuple[t.List[Job], t.List[str], t.List[str]]:
     """
     Return the target test jobs and the extra yaml files to include
@@ -79,6 +79,10 @@ def get_target_test_jobs(
         runner_tags = get_tags_with_amount(target_selector) + list(env_markers)
         if ','.join(runner_tags) in exclude_runner_tags:
             print('WARNING: excluding test cases with runner tags:', runner_tags)
+            continue
+
+        if any(set(runner_tags) & group for group in exclude_runner_tags_matching):
+            print(f'WARNING: Excluding test cases with runner tags (wildcard match): {runner_tags}')
             continue
 
         target_test_job = TargetTestJob(
@@ -115,16 +119,38 @@ def generate_target_test_child_pipeline(
     with open(KNOWN_GENERATE_TEST_CHILD_PIPELINE_WARNINGS_FILEPATH) as fr:
         known_warnings_dict = yaml.safe_load(fr) or dict()
 
-    exclude_runner_tags_set = set(known_warnings_dict.get('no_runner_tags', []))
+    def _process_match_group(runner_tags: str) -> t.Union[t.Set, None]:
+        match_group = {_el for _el in runner_tags.split(',') if _el != '*'}
+        if len(match_group) == 0:
+            print('WARNING: wildcard exclusion requires at least one specific tag — skipped')
+            return None
+        return match_group
+
+    exclude_runner_tags_set = set()
+    exclude_runner_tags_matching = []
+    for _tag in known_warnings_dict.get('no_runner_tags', []):
+        if '*' not in _tag:
+            exclude_runner_tags_set.add(_tag)
+        else:
+            if res := _process_match_group(_tag):
+                exclude_runner_tags_matching.append(res)
+
     # EXCLUDE_RUNNER_TAGS is a string separated by ';'
     # like 'esp32,generic;esp32c3,wifi'
+    # or with wildcard like 'esp32,*; esp32p4,wifi,*'
     if exclude_runner_tags := os.getenv('EXCLUDE_RUNNER_TAGS'):
-        exclude_runner_tags_set.update(exclude_runner_tags.split(';'))
+        for _tag in exclude_runner_tags.split(';'):
+            if '*' not in _tag:
+                exclude_runner_tags_set.add(_tag)
+            else:
+                if res := _process_match_group(_tag):
+                    exclude_runner_tags_matching.append(res)
 
     target_test_jobs, extra_include_yml, no_env_marker_test_cases = get_target_test_jobs(
         paths=paths,
         apps=apps,
         exclude_runner_tags=exclude_runner_tags_set,
+        exclude_runner_tags_matching=exclude_runner_tags_matching,
     )
 
     known_no_env_marker_test_cases = set(known_warnings_dict.get('no_env_marker_test_cases', []))
