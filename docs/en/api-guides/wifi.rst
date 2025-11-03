@@ -2933,11 +2933,11 @@ Wi-Fi AMSDU
 Wi-Fi Fragment
 -------------------------
 
-.. only:: esp32 or esp32s2
+.. only:: not SOC_WIFI_TXOP_SUPPORT
 
     supports Wi-Fi receiving fragment, but does not support Wi-Fi transmitting fragment.
 
-.. only:: esp32c3 or esp32s3 or esp32c5 or esp32c6
+.. only:: SOC_WIFI_TXOP_SUPPORT
 
     {IDF_TARGET_NAME} supports Wi-Fi receiving and transmitting fragment.
 
