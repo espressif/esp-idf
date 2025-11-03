@@ -11,9 +11,6 @@ import subprocess
 import time
 from concurrent.futures import Future
 from concurrent.futures import ThreadPoolExecutor
-from typing import List
-from typing import Optional
-from typing import Union
 
 import netifaces
 import paramiko  # type: ignore
@@ -34,7 +31,7 @@ MIN_TCP_THROUGHPUT = 4
 
 
 class EndnodeSsh:
-    def __init__(self, host_ip: str, usr: str, passwd: Optional[str] = None):
+    def __init__(self, host_ip: str, usr: str, passwd: str | None = None):
         key_string = os.getenv('CI_ETHVM_KEY')
         key = None
         if key_string:
@@ -55,7 +52,7 @@ class EndnodeSsh:
         error = stderr.read().decode().strip()
         if error:
             out = ''
-            logging.error('ssh_endnode_exec error: {}'.format(error))
+            logging.error(f'ssh_endnode_exec error: {error}')
 
         return out  # type: ignore
 
@@ -91,7 +88,7 @@ class SwitchSsh:
             }
             self.ssh_client = ConnectHandler(**edgeSwitch)
 
-    def exec_cmd(self, cmd: Union[str, List[str]]) -> str:
+    def exec_cmd(self, cmd: str | list[str]) -> str:
         if self.type == self.EDGE_SWITCH_5XP:
             _, stdout, stderr = self.ssh_client.exec_command(cmd)
 
@@ -99,7 +96,7 @@ class SwitchSsh:
             error = stderr.read().decode().strip()
 
             if error != 'TSW Init OK!':
-                raise Exception('switch_5xp exec_cmd error: {}'.format(error))
+                raise Exception(f'switch_5xp exec_cmd error: {error}')
         else:
             out = self.ssh_client.send_config_set(cmd, cmd_verify=False, exit_config_mode=False)
         return out  # type: ignore
@@ -159,7 +156,7 @@ def get_host_interface_name_in_same_net(ip_addr: str) -> str:
 
 def get_host_mac_by_interface(interface_name: str, addr_type: int = netifaces.AF_LINK) -> str:
     for _addr in netifaces.ifaddresses(interface_name)[addr_type]:
-        host_mac = _addr['addr'].replace('%{}'.format(interface_name), '')
+        host_mac = _addr['addr'].replace(f'%{interface_name}', '')
         assert isinstance(host_mac, str)
         return host_mac
     return ''
@@ -167,7 +164,7 @@ def get_host_mac_by_interface(interface_name: str, addr_type: int = netifaces.AF
 
 def get_host_brcast_ip_by_interface(interface_name: str, ip_type: int = netifaces.AF_INET) -> str:
     for _addr in netifaces.ifaddresses(interface_name)[ip_type]:
-        host_ip = _addr['broadcast'].replace('%{}'.format(interface_name), '')
+        host_ip = _addr['broadcast'].replace(f'%{interface_name}', '')
         assert isinstance(host_ip, str)
         return host_ip
     return ''
@@ -190,7 +187,7 @@ def run_iperf(
     if ipaddress.ip_address(server_ip).is_multicast:
         # Configure Multicast Server
         server_proc = subprocess.Popen(
-            ['iperf', '-u', '-s', '-i', '1', '-t', '%i' % interval, '-B', '%s%%%s' % (server_ip, server_if)],
+            ['iperf', '-u', '-s', '-i', '1', '-t', str(interval), '-B', f'{server_ip}%{server_if}'],
             text=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
@@ -200,20 +197,20 @@ def run_iperf(
         if endnode_ip == '':
             raise RuntimeError('End node IP address not found')
         client_res = endnode.exec_cmd(
-            'iperf -u -c %s -t %i -i 1 -b %iM --ttl 5 -B %s' % (server_ip, interval, bandwidth_lim, endnode_ip)
+            f'iperf -u -c {server_ip} -t {interval} -i 1 -b {bandwidth_lim}M --ttl 5 -B {endnode_ip}'
         )
         if server_proc.wait(10) is None:  # Process did not finish.
             server_proc.terminate()
     else:
         # Configure Server
         server_proc = subprocess.Popen(
-            ['iperf', '%s' % proto, '-s', '-i', '1', '-t', '%i' % interval],
+            ['iperf', proto, '-s', '-i', '1', '-t', str(interval)],
             text=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
         )
         # Configure Client
-        client_res = endnode.exec_cmd('iperf %s -c %s -t %i -i 1 -b %iM' % (proto, server_ip, interval, bandwidth_lim))
+        client_res = endnode.exec_cmd(f'iperf {proto} -c {server_ip} -t {interval} -i 1 -b {bandwidth_lim}M')
         if server_proc.wait(10) is None:  # Process did not finish.
             server_proc.terminate()
 
@@ -243,8 +240,8 @@ def send_brcast_msg_host_to_endnode(endnode: EndnodeSsh, host_brcast_ip: str, te
     try:
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
         sock.sendto(test_msg.encode('utf-8'), (host_brcast_ip, 5100))
-    except socket.error as e:
-        raise Exception('Host brcast send failed %s' % e)
+    except OSError as e:
+        raise Exception(f'Host brcast send failed {e}')
 
     nc_endnode_out = endnode.get_async_res()
     sock.close()
@@ -253,18 +250,24 @@ def send_brcast_msg_host_to_endnode(endnode: EndnodeSsh, host_brcast_ip: str, te
 
 def send_brcast_msg_endnode_to_host(endnode: EndnodeSsh, host_brcast_ip: str, test_msg: str) -> str:
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)  # Allow binding if port still in TIME_WAIT
     sock.settimeout(5)
     try:
         sock.bind(('', 5100))
-    except socket.error as e:
-        raise Exception('Host bind failed %s' % e)
+        # Give socket time to be fully ready to receive before we tell endnode to send.
+        # Even with SSH latency, there's a small window where a fast-received packet could be dropped.
+        time.sleep(0.1)
+    except OSError as e:
+        raise Exception(f'Host bind failed {e}')
 
-    endnode.exec_cmd('echo -n "%s" | nc -b -w0 -u %s 5100' % (test_msg, host_brcast_ip))
+    endnode.exec_cmd(f'echo -n "{test_msg}" | nc -b -w0 -u {host_brcast_ip} 5100')
 
     try:
         nc_host_out = sock.recv(1500).decode('utf-8')
-    except socket.error as e:
-        raise Exception('Host recv failed %s', e)
+    except TimeoutError:
+        raise Exception('Host recv timed out after 5 seconds')
+    except OSError as e:
+        raise Exception(f'Host recv failed {e}')
 
     sock.close()
     return nc_host_out
@@ -430,16 +433,15 @@ def test_esp_eth_bridge(dut: Dut, dev_user: str, dev_password: str) -> None:
 
     if bandwidth_udp < MIN_UDP_THROUGHPUT:
         raise RuntimeError(
-            'Unicast UDP throughput expected %.2f, actual %.2f' % (MIN_UDP_THROUGHPUT, bandwidth_udp) + ' Mbits/s'
+            f'Unicast UDP throughput expected {MIN_UDP_THROUGHPUT:.2f}, actual {bandwidth_udp:.2f} Mbits/s'
         )
     if bandwidth_tcp < MIN_TCP_THROUGHPUT:
         raise RuntimeError(
-            'Unicast TCP throughput expected %.2f, actual %.2f' % (MIN_TCP_THROUGHPUT, bandwidth_tcp) + ' Mbits/s'
+            f'Unicast TCP throughput expected {MIN_TCP_THROUGHPUT:.2f}, actual {bandwidth_tcp:.2f} Mbits/s'
         )
     if bandwidth_mcast_udp < MIN_UDP_THROUGHPUT:
         raise RuntimeError(
-            'Multicast UDP throughput expected %.2f, actual %.2f' % (MIN_UDP_THROUGHPUT, bandwidth_mcast_udp)
-            + ' Mbits/s'
+            f'Multicast UDP throughput expected {MIN_UDP_THROUGHPUT:.2f}, actual {bandwidth_mcast_udp:.2f} Mbits/s'
         )
 
     # ------------------------------------------------
@@ -493,7 +495,7 @@ def test_esp_eth_bridge(dut: Dut, dev_user: str, dev_password: str) -> None:
 
     # try to add more FDB entries than configured max number
     for i in range(BR_PORTS_NUM + 1):
-        dut.write('add --addr=01:02:03:00:00:%02x' % i + ' -d')
+        dut.write(f'add --addr=01:02:03:00:00:{i:02x} -d')
         if i < BR_PORTS_NUM:
             dut.expect_exact('Bridge Config OK!')
         else:
@@ -507,7 +509,7 @@ def test_esp_eth_bridge(dut: Dut, dev_user: str, dev_password: str) -> None:
 
     # remove dummy entries
     for i in range(BR_PORTS_NUM):
-        dut.write('remove --addr=01:02:03:00:00:%02x' % i)
+        dut.write(f'remove --addr=01:02:03:00:00:{i:02x}')
         dut.expect_exact('Bridge Config OK!')
 
     # valid multiple ports at once
