@@ -1639,10 +1639,12 @@ static int uart_tx_all(uart_port_t uart_num, const char *src, size_t size, bool 
         xRingbufferSend(p_uart_obj[uart_num]->tx_ring_buf, (void *) &evt, sizeof(uart_tx_data_t), portMAX_DELAY);
         while (size > 0) {
             size_t send_size = MIN(size, xRingbufferGetCurFreeSize(p_uart_obj[uart_num]->tx_ring_buf));
-            xRingbufferSend(p_uart_obj[uart_num]->tx_ring_buf, (void *)(src + offset), send_size, portMAX_DELAY);
-            size -= send_size;
-            offset += send_size;
-            uart_enable_tx_intr(uart_num, 1, UART_THRESHOLD_NUM(uart_num, UART_EMPTY_THRESH_DEFAULT));
+            if (send_size > 0) {
+                xRingbufferSend(p_uart_obj[uart_num]->tx_ring_buf, (void *)(src + offset), send_size, portMAX_DELAY);
+                size -= send_size;
+                offset += send_size;
+                uart_enable_tx_intr(uart_num, 1, UART_THRESHOLD_NUM(uart_num, UART_EMPTY_THRESH_DEFAULT));
+            }
         }
     } else {
         while (size) {
