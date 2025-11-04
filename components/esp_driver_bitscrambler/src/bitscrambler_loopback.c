@@ -232,7 +232,7 @@ esp_err_t bitscrambler_loopback_run(bitscrambler_handle_t bs, void *buffer_in, s
         .length = length_bytes_in,
         .flags = {
             .mark_eof = true,
-            .mark_final = true,
+            .mark_final = GDMA_FINAL_LINK_TO_NULL,
         }
     };
     gdma_link_mount_buffers(bsl->tx_link_list, 0, &in_buf_mount_config, 1, NULL);
@@ -242,7 +242,7 @@ esp_err_t bitscrambler_loopback_run(bitscrambler_handle_t bs, void *buffer_in, s
         .length = length_bytes_out,
         .flags = {
             .mark_eof = false,
-            .mark_final = true,
+            .mark_final = GDMA_FINAL_LINK_TO_NULL,
         }
     };
     gdma_link_mount_buffers(bsl->rx_link_list, 0, &out_buf_mount_config, 1, NULL);

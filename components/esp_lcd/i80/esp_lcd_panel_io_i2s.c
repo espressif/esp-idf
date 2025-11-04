@@ -498,7 +498,7 @@ static esp_err_t panel_io_i80_tx_param(esp_lcd_panel_io_t *io, int lcd_cmd, cons
     gdma_buffer_mount_config_t mount_config = {
         .flags = {
             .mark_eof = true,
-            .mark_final = true, // singly link list, mark final descriptor
+            .mark_final = GDMA_FINAL_LINK_TO_NULL, // singly link list, mark final descriptor
         }
     };
 
@@ -578,7 +578,7 @@ static esp_err_t panel_io_i80_tx_color(esp_lcd_panel_io_t *io, int lcd_cmd, cons
     gdma_buffer_mount_config_t mount_config = {
         .flags = {
             .mark_eof = true,
-            .mark_final = true, // singly link list, mark final descriptor
+            .mark_final = GDMA_FINAL_LINK_TO_NULL, // singly link list, mark final descriptor
         }
     };
 
@@ -707,7 +707,7 @@ static void i2s_lcd_trigger_quick_trans_done_event(esp_lcd_i80_bus_handle_t bus)
         .length = 4,
         .flags = {
             .mark_eof = true,   // mark the "EOF" flag to trigger I2S EOF interrupt
-            .mark_final = true, // singly link list, mark final descriptor
+            .mark_final = GDMA_FINAL_LINK_TO_NULL, // singly link list, mark final descriptor
         }
     };
     gdma_link_mount_buffers(bus->dma_link, 0, &mount_config, 1, NULL);
@@ -796,7 +796,7 @@ static IRAM_ATTR void i2s_lcd_default_isr_handler(void *args)
                     .length = trans_desc->data_length,
                     .flags = {
                         .mark_eof = true,
-                        .mark_final = true, // singly link list, mark final descriptor
+                        .mark_final = GDMA_FINAL_LINK_TO_NULL, // singly link list, mark final descriptor
                     }
                 };
                 gdma_link_mount_buffers(bus->dma_link, 0, &mount_config, 1, NULL);

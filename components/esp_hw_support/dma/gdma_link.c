@@ -203,9 +203,22 @@ esp_err_t gdma_link_mount_buffers(gdma_link_list_handle_t list, int start_item_i
             lli_nc->dw0.size = lli_nc->dw0.length;
             // mark the EOF node
             lli_nc->dw0.suc_eof = (config->flags.mark_eof == 1) && (i == num_items_need - 1);
-            // mark the final node
-            if ((config->flags.mark_final == 1) && (i == num_items_need - 1)) {
-                lli_nc->next = NULL;
+            if (i == num_items_need - 1) {
+                // mark the final node
+                switch (config->flags.mark_final) {
+                    case GDMA_FINAL_LINK_TO_NULL:
+                        lli_nc->next = NULL;
+                        break;
+                    case GDMA_FINAL_LINK_TO_HEAD:
+                        lli_nc->next = (gdma_link_list_item_t *)(list->items);
+                        break;
+                    case GDMA_FINAL_LINK_TO_START:
+                        lli_nc->next = (gdma_link_list_item_t *)(list->items + start_item_index * item_size);
+                        break;
+                    default:
+                        lli_nc->next = (gdma_link_list_item_t *)(list->items + (i + begin_item_idx + 1) % list_item_capacity * item_size);
+                        break;
+                }
             } else {
                 lli_nc->next = (gdma_link_list_item_t *)(list->items + (i + begin_item_idx + 1) % list_item_capacity * item_size);
             }
