@@ -61,3 +61,5 @@ Wi-Fi
 - **离信道操作：**
     - 结构体 :cpp:struct:`wifi_action_tx_req_t` 新增 ``bssid`` 字段，该字段会写入发送动作帧的 Address3。请显式初始化该字段；保持全零时将沿用之前的行为，由 Wi-Fi 驱动填入广播地址，从而避免帧携带意外的 BSSID。
     - 结构体 :cpp:struct:`wifi_roc_req_t` 新增 ``allow_broadcast`` 标志，用于控制在驻留信道期间是否将广播/组播动作帧传递给 ``rx_cb`` 回调。现有应用应结合默认值 ``false`` 评估是否需要启用该选项，以便在需要时进行广播节点发现。若动作帧的 Address3/BSSID 本身为广播地址，即便 ``allow_broadcast`` 保持 ``false``，回调仍会收到该帧。
+
+- **Wi-Fi Initialization：** 如果 Wi-Fi 驱动已经初始化成功，再次调用函数 ``esp_wifi_init`` ，将不再返回 ``ESP_OK``，而是 ``ESP_ERR_INVALID_STATE``。
