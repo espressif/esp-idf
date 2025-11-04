@@ -729,7 +729,7 @@ mainmenu "Espressif IoT Development Framework Configuration"
 
     endmenu
 
-    menu "Configuration for components not included in the build"
+    menu "Project configuration for components not included in the build"
         depends on "${IDF_BUILD_V2}"
         osource "$COMPONENT_KCONFIGS_PROJBUILD_EXCLUDED_SOURCE_FILE"
     endmenu
