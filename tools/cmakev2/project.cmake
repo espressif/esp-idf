@@ -568,6 +568,10 @@ macro(idf_project_init)
         # Ensure this function is executed only once throughout the entire
         # project.
 
+        # Warn about the use of deprecated variables.
+        deprecate_variable(COMPONENTS)
+        deprecate_variable(EXCLUDE_COMPONENTS)
+
         # Set PROJECT_NAME build property
         __init_project_name()
 
