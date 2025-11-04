@@ -61,3 +61,5 @@ The following Wi-Fi functions have been modified.
 - **Off-Channel Operations:**
     - The structure :cpp:struct:`wifi_action_tx_req_t` now includes a ``bssid`` field that is placed in Address3 of the transmitted action frame. Initialise this field explicitly; leaving it all zeros retains the previous behaviour where the Wi-Fi driver inserts the broadcast address, so frames do not carry unintended BSSID values.
     - The structure :cpp:struct:`wifi_roc_req_t` now includes an ``allow_broadcast`` flag that controls whether broadcast and multicast action frames are passed to the ``rx_cb`` callback during remain-on-channel operations. Existing applications should review the default ``false`` value and enable it when discovery of broadcast peers is required. Frames whose Address3/BSSID is already broadcast continue to reach the callback even when ``allow_broadcast`` remains ``false``.
+
+- **Wi-Fi Initialization:** If the Wi-Fi driver has already been initialized by function `esp_wifi_init`, calling the function `esp_wifi_init` again will not reinitialize the driver and will return `ESP_ERR_INVALID_STATE` instead of `ESP_OK`.
