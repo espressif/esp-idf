@@ -128,7 +128,7 @@ function(__init_project_configuration)
     if(IDF_TARGET STREQUAL "linux")
         # Building for Linux target, fall back to an older version of the standard
         # if the preferred one is not supported by the compiler.
-        set(preferred_c_versions gnu17 gnu11 gnu99)
+        set(preferred_c_versions gnu23 gnu17 gnu11 gnu99)
         set(ver_found FALSE)
         foreach(c_version ${preferred_c_versions})
             check_c_compiler_flag("-std=${c_version}" ver_${c_version}_supported)
@@ -143,7 +143,7 @@ function(__init_project_configuration)
                     "${preferred_c_versions}. Please upgrade the host compiler.")
         endif()
 
-        set(preferred_cxx_versions gnu++2b gnu++20 gnu++2a gnu++17 gnu++14)
+        set(preferred_cxx_versions gnu++26 gnu++2b gnu++20 gnu++2a gnu++17 gnu++14)
         set(ver_found FALSE)
         foreach(cxx_version ${preferred_cxx_versions})
             check_cxx_compiler_flag("-std=${cxx_version}" ver_${cxx_version}_supported)
@@ -167,8 +167,8 @@ function(__init_project_configuration)
         # function, which must be called after project().
         # Please update docs/en/api-guides/c.rst, docs/en/api-guides/cplusplus.rst and
         # tools/test_apps/system/cxx_build_test/main/test_cxx_standard.cpp when changing this.
-        list(APPEND c_compile_options   "-std=gnu17")
-        list(APPEND cxx_compile_options "-std=gnu++2b")
+        list(APPEND c_compile_options   "-std=gnu23")
+        list(APPEND cxx_compile_options "-std=gnu++26")
     endif()
 
     if(CONFIG_COMPILER_OPTIMIZATION_SIZE)
