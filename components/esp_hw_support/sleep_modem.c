@@ -130,7 +130,6 @@ void mac_bb_power_up_cb_execute(void)
 #endif ///CONFIG_MAC_BB_PD
 
 #if SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY
-
 typedef struct sleep_modem_config {
     _lock_t phy_link_lock;
     void    *phy_link;
@@ -196,11 +195,16 @@ __attribute__((unused)) void sleep_modem_phy_deinit(sleep_modem_type_t modem_mas
     _lock_release(&s_sleep_modem.phy_link_lock);
 }
 
-void IRAM_ATTR sleep_modem_do_phy_retention(bool restore, bool wifimac_link_is_sel)
+void IRAM_ATTR sleep_modem_phy_retention_complete(void)
 {
-    sleep_phy_link_config(s_sleep_modem.phy_link, 1);
-    sleep_retention_do_phy_retention(!restore, wifimac_link_is_sel);
-    sleep_phy_link_config(s_sleep_modem.phy_link, 0);
+    sleep_retention_phy_retention_complete();
+}
+
+void IRAM_ATTR sleep_modem_do_phy_retention(bool restore, bool wifimac_link_is_sel, uint8_t flags)
+{
+    sleep_phy_link_config(s_sleep_modem.phy_link, flags);
+    sleep_retention_do_phy_retention(!restore, wifimac_link_is_sel, true);
+    sleep_phy_link_config(s_sleep_modem.phy_link, SLEEP_MODEM_RESET_RETENTION);
     if (!restore) {
         s_sleep_modem.phy_link_done = 1;
     }
@@ -208,7 +212,7 @@ void IRAM_ATTR sleep_modem_do_phy_retention(bool restore, bool wifimac_link_is_s
 
 inline __attribute__((always_inline)) bool sleep_modem_phy_link_enabled(void)
 {
-    return (s_sleep_modem.phy_link != NULL);
+    return s_sleep_modem.modem_mask;
 }
 
 inline __attribute__((always_inline)) bool sleep_modem_phy_link_done(void)
