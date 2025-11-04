@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 import base64
 import io
@@ -234,42 +234,48 @@ def run_iperf(
     return float(performance.group(3))
 
 
-def send_brcast_msg_host_to_endnode(endnode: EndnodeSsh, host_brcast_ip: str, test_msg: str) -> str:
-    endnode.exec_cmd_async('timeout 4s nc -u -w 0 -l -p 5100')
+def send_brcast_msg_host_to_endnode(endnode: EndnodeSsh, host_brcast_ip: str, port: int, test_msg: str) -> str:
+    endnode.exec_cmd_async(f'timeout 4s nc -u -w 0 -l -p {port}')
     time.sleep(1)
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     try:
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-        sock.sendto(test_msg.encode('utf-8'), (host_brcast_ip, 5100))
+        sock.sendto(test_msg.encode('utf-8'), (host_brcast_ip, port))
     except OSError as e:
-        raise Exception(f'Host brcast send failed {e}')
+        logging.error(f'Host brcast send failed {e}')
+        sock.close()
+        return ''
 
     nc_endnode_out = endnode.get_async_res()
     sock.close()
     return nc_endnode_out
 
 
-def send_brcast_msg_endnode_to_host(endnode: EndnodeSsh, host_brcast_ip: str, test_msg: str) -> str:
+def send_brcast_msg_endnode_to_host(endnode: EndnodeSsh, host_brcast_ip: str, port: int, test_msg: str) -> str:
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)  # Allow binding if port still in TIME_WAIT
     sock.settimeout(5)
     try:
-        sock.bind(('', 5100))
-        # Give socket time to be fully ready to receive before we tell endnode to send.
-        # Even with SSH latency, there's a small window where a fast-received packet could be dropped.
-        time.sleep(0.1)
+        sock.bind(('', port))
     except OSError as e:
-        raise Exception(f'Host bind failed {e}')
+        logging.error(f'Host bind failed {e}')
+        sock.close()
+        return ''
 
-    endnode.exec_cmd(f'echo -n "{test_msg}" | nc -b -w0 -u {host_brcast_ip} 5100')
+    # Give socket time to be fully ready to receive before we tell endnode to send.
+    # Even with SSH latency, there's a small window where a fast-received packet could be dropped.
+    time.sleep(1)
 
+    endnode.exec_cmd(f'echo -n "{test_msg}" | nc -b -w0 -u {host_brcast_ip} {port}')
+
+    nc_host_out = ''
     try:
         nc_host_out = sock.recv(1500).decode('utf-8')
     except TimeoutError:
-        raise Exception('Host recv timed out after 5 seconds')
+        logging.error('Host recv timed out after 5 seconds')
     except OSError as e:
-        raise Exception(f'Host recv failed {e}')
+        logging.error(f'Host recv failed {e}')
 
     sock.close()
     return nc_host_out
@@ -558,25 +564,25 @@ def eth_bridge_test(dut: Dut, dev_user: str, dev_password: str) -> None:
     # At first, check normal condition
     TEST_MSG = 'ESP32 bridge test message'
     host_brcast_ip = get_host_brcast_ip_by_interface(host_if, netifaces.AF_INET)
-    endnode_recv = send_brcast_msg_host_to_endnode(endnode, host_brcast_ip, TEST_MSG)
+    endnode_recv = send_brcast_msg_host_to_endnode(endnode, host_brcast_ip, 5100, TEST_MSG)
     if endnode_recv != TEST_MSG:
         raise RuntimeError('Broadcast message was not received by endnode')
-    host_recv = send_brcast_msg_endnode_to_host(endnode, host_brcast_ip, TEST_MSG)
+    host_recv = send_brcast_msg_endnode_to_host(endnode, host_brcast_ip, 5200, TEST_MSG)
     if host_recv != TEST_MSG:
-        raise RuntimeError('Broadcast message was not received by host')
+        raise RuntimeError('Broadcast message was not received by host (normal condition)')
 
     # now, configure forward the broadcast only to port #1
     dut.write('add --addr=ff:ff:ff:ff:ff:ff -p 1')
     dut.expect_exact('Bridge Config OK!')
     # we should not be able to receive a message at endnode (no forward to port #2)...
-    endnode_recv = send_brcast_msg_host_to_endnode(endnode, host_brcast_ip, TEST_MSG)
+    endnode_recv = send_brcast_msg_host_to_endnode(endnode, host_brcast_ip, 5101, TEST_MSG)
     if endnode_recv != '':
         raise RuntimeError('Broadcast message should not be received by endnode')
 
     # ... but we should be able to do the same in opposite direction (forward to port #1)
-    host_recv = send_brcast_msg_endnode_to_host(endnode, host_brcast_ip, TEST_MSG)
+    host_recv = send_brcast_msg_endnode_to_host(endnode, host_brcast_ip, 5201, TEST_MSG)
     if host_recv != TEST_MSG:
-        raise RuntimeError('Broadcast message was not received by host')
+        raise RuntimeError('Broadcast message was not received by host (forward only to port #1)')
 
     # Remove ARP record from Test host computer. ARP is broadcasted, hence Bridge port does not reply to a request since
     # it does not receive it (no forward to Bridge port). As a result, Bridge is not pingable.
@@ -597,7 +603,7 @@ def eth_bridge_test(dut: Dut, dev_user: str, dev_password: str) -> None:
         raise RuntimeError('Bridge is not reachable')
 
     # ...but we should still not be able to receive a message at endnode (no forward to port #2)
-    endnode_recv = send_brcast_msg_host_to_endnode(endnode, host_brcast_ip, TEST_MSG)
+    endnode_recv = send_brcast_msg_host_to_endnode(endnode, host_brcast_ip, 5102, TEST_MSG)
     if endnode_recv != '':
         raise RuntimeError('Broadcast message should not be received by endnode')
 
