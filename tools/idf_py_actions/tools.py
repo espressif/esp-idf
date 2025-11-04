@@ -657,11 +657,14 @@ def ensure_build_directory(
     if always_run_cmake or _new_cmakecache_entries(cache, cache_cmdl):
         if args.generator is None:
             args.generator = _detect_cmake_generator(prog_name)
+
         try:
             cmake_args = [
                 'cmake',
                 '-G',
                 args.generator,
+                '-B',
+                args.build_dir,
                 '-DPYTHON_DEPS_CHECKED=1',
                 f'-DPYTHON={sys.executable}',
                 '-DESP_PLATFORM=1',
@@ -672,6 +675,9 @@ def ensure_build_directory(
             if args.define_cache_entry:
                 cmake_args += ['-D' + d for d in args.define_cache_entry]
             cmake_args += [project_dir]
+
+            if args.preset:
+                cmake_args += ['--preset', args.preset]
 
             hints = not args.no_hints
             RunTool('cmake', cmake_args, cwd=args.build_dir, env=env, hints=hints)()
