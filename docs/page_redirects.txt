@@ -107,14 +107,14 @@ hw-reference/esp32s2/usermacos-setup_mesh       api-reference/network/esp-wifi-m
 hw-reference/chip-series-comparison             "https://products.espressif.com/#/product-comparison"
 
 # Getting Started
-get-started/macos-setup                         get-started/linux-macos-setup
-get-started/linux-setup                         get-started/linux-macos-setup
+get-started/linux-macos-setup                   get-started/index
 get-started/windows-setup-scratch               get-started/windows-setup
-get-started/linux-setup-scratch                 get-started/linux-macos-setup
-get-started/macos-setup-scratch                 get-started/linux-macos-setup
+get-started/linux-setup-scratch                 get-started/linux-setup
+get-started/macos-setup-scratch                 get-started/macos-setup
 get-started/toolchain-setup-scratch             get-started/index
 get-started/eclipse-setup                       get-started/index
 get-started/vscode-setup                        get-started/index
+get-started/windows-setup-update                get-started/windows-setup
 
 # Kconfig documentation got pretty serious file structure changes
 api-reference/kconfig                          api-reference/kconfig-reference

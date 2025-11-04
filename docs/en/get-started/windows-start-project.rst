@@ -1,10 +1,38 @@
-Now since all requirements are met, the next topic guides you on how to start your first project.
+********************************************
+Start a Project on Windows from Command Line
+********************************************
 
-This guide helps you on the first steps using ESP-IDF. Follow this guide to start a new project on the {IDF_TARGET_NAME} and build, flash, and monitor the device output.
+This guide helps you to start a new project on the {IDF_TARGET_NAME} and build, flash, and monitor the device output on Windows.
+
+
+.. _get-started-set-up-env:
+
+Activate the Environment
+========================
 
 .. note::
 
-    If you have not yet installed ESP-IDF, please go to :ref:`get-started-step-by-step` and follow the instruction in order to get all the software needed to use this guide.
+    This section describes the default and recommended procedures to activate the environment from ESP-IDF v6.0. If you use the :doc:`legacy method for updating ESP-IDF tools <windows-setup-update-legacy>`, skip this section.
+
+Before using ESP-IDF tools in the terminal, you must activate the ESP-IDF environment. You can do this either via the GUI or CLI.
+
+- `Activate Using EIM GUI`_
+- `Activate Using EIM CLI`_
+
+Activate Using EIM GUI
+~~~~~~~~~~~~~~~~~~~~~~
+
+.. include:: eim-gui-activate-env.rst
+
+Activate Using EIM CLI
+~~~~~~~~~~~~~~~~~~~~~~
+
+Upon successful installation of ESP-IDF, the EIM places **shortcuts** on your desktop to launch a terminal with activated ESP-IDF environment.
+
+For example, click the ``IDF_v5.4.2_Powershell`` shortcut to open a PowerShell session with the environment set up.
+
+Once done, you have successfully activated the ESP-IDF environment in your terminal. All subsequent ESP-IDF commands should be run in this activated terminal.
+
 
 Start a Project
 ===================
@@ -24,6 +52,8 @@ Copy the project :example:`get-started/hello_world` to ``~/esp`` directory:
 
 .. note:: There is a range of example projects in the :idf:`examples` directory in ESP-IDF. You can copy any project in the same way as presented above and run it. It is also possible to build examples in-place without copying them first.
 
+.. _get-started-connect:
+
 Connect Your Device
 ===================
 
@@ -36,6 +66,8 @@ If you are not sure how to check the serial port name, please refer to :doc:`est
 .. note::
 
     Keep the port name handy as it is needed in the next steps.
+
+.. _get-started-configure:
 
 Configure Your Project
 ======================
@@ -90,3 +122,5 @@ You are using this menu to set up project specific variables, e.g., Wi-Fi networ
         ``USB CDC``
 
     3. Save the new configuration and exit the ``menuconfig`` screen.
+
+.. include:: start-project.rst

@@ -9,7 +9,7 @@ The ``idf.py`` command-line tool provides a front-end for easily managing your p
 - Ninja_, which builds the project.
 - `esptool`_, which flashes the target.
 
-The :ref:`Step 5. First Steps on ESP-IDF <get-started-configure>` contains a brief introduction on how to set up ``idf.py`` to configure, build, and flash projects.
+:ref:`Configure Your Project for Windows, <get-started-configure>` :ref:`Linux, or macOS <get-started-configure-linux-macos>` contains a brief introduction on how to set up ``idf.py`` to configure, build, and flash projects.
 
 .. important::
 
@@ -176,7 +176,7 @@ For commands that are not known to ``idf.py``, an attempt to execute them as a b
 
 The command ``idf.py`` supports `shell autocompletion <https://click.palletsprojects.com/shell-completion/>`_ for bash, zsh and fish shells.
 
-To enable autocompletion for ``idf.py``, use the ``export`` command (:ref:`Step 4. Set up the environment variables <get-started-set-up-env>`). Autocompletion is initiated by pressing the TAB key. Type ``idf.py -`` and press the TAB key to autocomplete options.
+To enable autocompletion for ``idf.py``, use the ``export`` command (:ref:`setting up the environment for Windows <get-started-set-up-env>`, :ref:`Linux or macOS <get-started-set-up-env-linux-macos>`). Autocompletion is initiated by pressing the TAB key. Type ``idf.py -`` and press the TAB key to autocomplete options.
 
 The autocomplete support for PowerShell is planned in the future.
 

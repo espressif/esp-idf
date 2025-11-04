@@ -117,7 +117,7 @@ JTAG 调试
 
 .. highlight:: bash
 
-如果已经按照 :doc:`快速入门 <../../get-started/index>` 完成了 ESP-IDF 及其 CMake 构建系统的安装，那么 OpenOCD 已经被默认安装到了你的开发系统中。在 :ref:`设置开发环境 <get-started-set-up-env>` 结束后，应该能够在终端中运行如下 OpenOCD 命令：
+如果已经按照 :doc:`快速入门 <../../get-started/index>` 完成了 ESP-IDF 及其 CMake 构建系统的安装，那么 OpenOCD 已经被默认安装到了你的开发系统中。在 :ref:`Windows  <get-started-set-up-env>`、:ref:`Linux 或 macOS 设置开发环境<get-started-set-up-env-linux-macos>` 结束后，应该能够在终端中运行如下 OpenOCD 命令：
 
 .. code-block:: none
 
@@ -136,7 +136,7 @@ JTAG 调试
 
 你还可以检查 ``OPENOCD_SCRIPTS`` 环境变量的值，以确认 OpenOCD 配置文件的路径，Linux 和 macOS 用户可以在终端输入 ``echo $OPENOCD_SCRIPTS``，Windows 用户需要输入 ``echo %OPENOCD_SCRIPTS%``。如果终端输出了有效路径，则表明已经正确安装 OpenOCD。
 
-如果无法执行上述步骤，请再次阅读快速入门手册，Linux 和 macOS 用户请参考 :ref:`设置安装工具 <get-started-set-up-tools>` 章节，Windows 用户请参考 :ref:`ESP-IDF 工具安装器 <get-started-windows-tools-installer>`。
+如果无法执行上述步骤，请再次阅读快速入门的 :ref:`安装  <get-started-how-to-get-esp-idf>` 章节。
 
 .. note::
 
@@ -178,7 +178,7 @@ OpenOCD 安装完成后就可以配置 {IDF_TARGET_NAME} 目标（即带 JTAG �
 
 .. highlight:: bash
 
-打开终端，按照《快速入门指南》中的 :ref:`设置开发环境 <get-started-set-up-env>` 章节进行操作。运行 OpenOCD 时，需要提供与目标开发板相关的配置文件。构建项目后，ESP-IDF 会生成 ``build/project_description.json`` 文件，其中 ``debug_arguments_openocd`` 字段保存了默认的 OpenOCD 配置信息。请运行如下命令，以启动 OpenOCD（该命令适用于 Windows、Linux 和 macOS）：
+打开终端，按照快速入门中:ref:`Windows  <get-started-set-up-env>`、:ref:`Linux 或 macOS 设置开发环境 <get-started-set-up-env-linux-macos>` 章节进行操作。运行 OpenOCD 时，需要提供与目标开发板相关的配置文件。构建项目后，ESP-IDF 会生成 ``build/project_description.json`` 文件，其中 ``debug_arguments_openocd`` 字段保存了默认的 OpenOCD 配置信息。请运行如下命令，以启动 OpenOCD（该命令适用于 Windows、Linux 和 macOS）：
 
 .. include:: {IDF_TARGET_PATH_NAME}.inc
     :start-after: run-openocd

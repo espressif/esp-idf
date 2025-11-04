@@ -222,3 +222,17 @@ For erasing the OTA data, if present, you can run this command:
     idf.py -p PORT erase-otadata
 
 The flash erase command can take a while to be done. Do not disconnect your device while the flash erasing is in progress.
+
+
+Related Documents
+=================
+
+* :doc:`establish-serial-connection`
+* :doc:`../api-guides/tools/idf-monitor`
+
+.. toctree::
+    :hidden:
+    :maxdepth: 1
+
+    establish-serial-connection
+    flashing-troubleshooting
