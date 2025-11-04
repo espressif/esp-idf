@@ -1535,6 +1535,10 @@ config SOC_PM_PAU_REGDMA_LINK_CONFIGURABLE
     bool
     default y
 
+config SOC_PM_PAU_REGDMA_COMMON_PHY_LINK_ENTRY
+    bool
+    default y
+
 config SOC_PM_PAU_REGDMA_LINK_IDX_PHY
     int
     default 4

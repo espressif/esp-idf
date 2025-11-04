@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -346,7 +346,7 @@ void sleep_retention_do_extra_retention(bool backup_or_restore);
 void sleep_retention_do_system_retention(bool backup_or_restore);
 #endif
 
-#if SOC_PM_SUPPORT_PMU_MODEM_STATE
+#if SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY
 /**
  * @brief Software trigger REGDMA to do phy linked list retention
  *
@@ -354,9 +354,16 @@ void sleep_retention_do_system_retention(bool backup_or_restore);
  *                          or false for restore to register from memory
  * @param wifimac_link_is_sel true to use dedicated WiFi MAC link,
  *                             false to use modem entry link
+ * @param blocking Software wait for REGDMA to complete
  */
-void sleep_retention_do_phy_retention(bool backup_or_restore, bool wifimac_link_is_sel);
-#endif /*SOC_PM_SUPPORT_PMU_MODEM_STATE */
+void sleep_retention_do_phy_retention(bool backup_or_restore, bool wifimac_link_is_sel, bool blocking);
+
+/**
+ * @brief Completion process of REGDMA for PHY linked list retention
+ *
+ */
+void sleep_retention_phy_retention_complete(void);
+#endif /*SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY */
 #endif // SOC_PAU_SUPPORTED
 
 #ifdef __cplusplus
