@@ -136,3 +136,45 @@ pytest_build_system_win_minimal_cmake:
     - cd ${IDF_PATH}\tools\test_build_system
     - idf-ci gitlab download-known-failure-cases-file ${KNOWN_FAILURE_CASES_FILE_NAME}
     - pytest -k cmake --junitxml=${CI_PROJECT_DIR}\XUNIT_RESULT.xml --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}
+
+pytest_buildv2_system_win:
+  extends:
+    - .test_build_system_template_win
+    - .rules:labels:buildv2
+  parallel: 2
+  needs: []
+  tags: [windows-build, brew]
+  artifacts:
+    paths:
+      - XUNIT_RESULT.xml
+      - test_build_system
+    expire_in: 2 days
+    reports:
+      junit: XUNIT_RESULT.xml
+    when: always
+  script:
+    - .\install.ps1 --enable-ci
+    - . .\export.ps1
+    - python "${SUBMODULE_FETCH_TOOL}" -s "all"
+    - cd ${IDF_PATH}\tools\test_build_system
+    - idf-ci gitlab download-known-failure-cases-file ${KNOWN_FAILURE_CASES_FILE_NAME}
+    - pytest
+      --buildv2
+      --parallel-count ${CI_NODE_TOTAL}
+      --parallel-index ${CI_NODE_INDEX}
+      --junitxml=${CI_PROJECT_DIR}\XUNIT_RESULT.xml
+      --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}
+      --
+      test_non_default_target.py
+      test_component_manager.py
+      test_build.py
+      test_bootloader.py
+      test_git.py
+      test_kconfig.py
+      test_partition.py
+      test_reproducible_build.py
+      test_sdkconfig.py
+      test_versions.py
+      test_common.py
+      test_components.py
+      test_cmake.py
