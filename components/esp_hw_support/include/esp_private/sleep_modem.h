@@ -10,6 +10,7 @@
 #include "sdkconfig.h"
 #include "esp_err.h"
 #include "esp_sleep.h"
+#include "esp_attr.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -90,9 +91,14 @@ void sleep_modem_mac_bb_power_up_prepare(void);
 #endif // SOC_PM_RETENTION_HAS_CLOCK_BUG && CONFIG_MAC_BB_PD
 
 #if SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY
+/**
+ * @brief Phy retention completes
+ *
+ */
+void sleep_modem_phy_retention_complete(void);
 
 /**
- * @brief The retention action in the modem state of PHY module
+ * @brief The retention action of PHY module
  *
  * @param restore  true for restore the PHY context, false for backup the PHY context
  * @param flags Configure flags for phy link
