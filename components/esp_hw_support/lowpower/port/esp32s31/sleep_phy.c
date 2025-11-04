@@ -44,7 +44,6 @@ typedef struct {
 #define DESC_SKIP_WIFI_ENTRY_CNT         (4)
 #define DESC_SKIP_WIFI_RESTORE_ENTRY_CNT (1)
     void *regdma_desc[DESC_IDX_I2C_MST_DIS + 1 + DESC_SKIP_WIFI_ENTRY_CNT];
-
 } sleep_phy_link_context_t;
 
 static esp_err_t sleep_phy_retention_init(void *arg)
@@ -112,7 +111,6 @@ esp_err_t sleep_phy_link_init(void **link_head)
                                      REGDMA_PHY_LINK(0x0b), REGDMA_PHY_LINK(0x15), REGDMA_PHY_LINK(0x16), REGDMA_PHY_LINK(0x17) /* WiFi Related entries */
                                     };
             static DRAM_ATTR sleep_phy_link_context_t phy_link_context;
-
             for (int i = 0; (err == ESP_OK) && (i < ARRAY_SIZE(phy_link_context.regdma_desc)); i++) {
                 void *desc = sleep_retention_find_link_by_id(id_array[i]);
                 if (desc) {
