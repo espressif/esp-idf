@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -107,7 +107,7 @@ static int parse_dns_request(char *req, size_t req_len, char *dns_reply, size_t 
     memset(dns_reply, 0, dns_reply_max_len);
     memcpy(dns_reply, req, req_len);
 
-    // Endianess of NW packet different from chip
+    // Endianness of NW packet different from chip
     dns_header_t *header = (dns_header_t *)dns_reply;
     ESP_LOGD(TAG, "DNS query with header id: 0x%X, flags: 0x%X, qd_count: %d",
              ntohs(header->id), ntohs(header->flags), ntohs(header->qd_count));
