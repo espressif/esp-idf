@@ -16,7 +16,7 @@
 #include "esp_private/sleep_modem.h"
 #include "esp_private/sleep_retention.h"
 
-#if SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY
+#if SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY || SOC_PM_SUPPORT_PMU_MODEM_STATE
 
 #define SARADC_TSENS_REG                (0x6000e058)
 #define SARADC_TSENS_PU                 (BIT(22))
@@ -180,4 +180,4 @@ esp_err_t sleep_phy_link_deinit(void *link_context)
 #endif
     return ESP_OK;
 }
-#endif /* SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY */
+#endif /* SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY || SOC_PM_SUPPORT_PMU_MODEM_STATE */
