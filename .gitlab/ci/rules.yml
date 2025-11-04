@@ -46,6 +46,7 @@
 
 .patterns-build_system: &patterns-build_system
   - "tools/cmake/**/*"
+  - "tools/cmakev2/**/*"
   - "tools/kconfig_new/**/*"
   - "tools/idf.py"
   - "tools/idf_py_actions/**/*"
@@ -275,6 +276,9 @@
 .if-label-build: &if-label-build
   if: '$BOT_LABEL_BUILD || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*build(?:,[^,\n\r]+)*$/i'
 
+.if-label-buildv2: &if-label-buildv2
+  if: '$BOT_LABEL_BUILDV2 || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*buildv2(?:,[^,\n\r]+)*$/i'
+
 .if-label-docker: &if-label-docker
   if: '$BOT_LABEL_DOCKER || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*docker(?:,[^,\n\r]+)*$/i'
 
@@ -362,6 +366,12 @@
       changes: *patterns-build_template-app
     - <<: *if-dev-push
       changes: *patterns-downloadable-tools
+
+.rules:labels:buildv2:
+  rules:
+    - <<: *if-revert-branch
+      when: never
+    - <<: *if-label-buildv2
 
 .rules:labels:nvs_coverage:
   rules:

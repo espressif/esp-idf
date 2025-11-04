@@ -4,8 +4,6 @@ if(${target} STREQUAL "linux")
     return() # This component is not supported by the POSIX/Linux simulator
 endif()
 
-idf_build_get_property(components_to_build BUILD_COMPONENTS)
-
 set(srcs)
 set(include)
 set(ld_fragments linker.lf)
@@ -19,8 +17,9 @@ if(CONFIG_ETH_ENABLED)
     set(srcs "src/esp_eth.c" "src/phy/esp_eth_phy_802_3.c")
     set(include "include")
 
-    if(NOT CMAKE_BUILD_EARLY_EXPANSION)
+    if(NOT CMAKE_BUILD_EARLY_EXPANSION AND NOT IDF_BUILD_V2)
         # esp_netif related
+        idf_build_get_property(components_to_build BUILD_COMPONENTS)
         if(esp_netif IN_LIST components_to_build)
             list(APPEND srcs "src/esp_eth_netif_glue.c")
         endif()
@@ -46,6 +45,9 @@ idf_component_register(SRCS "${srcs}"
                        PRIV_REQUIRES ${priv_requires})
 
 if(CONFIG_ETH_ENABLED)
+    if(IDF_BUILD_V2)
+        target_sources(${COMPONENT_TARGET} PRIVATE "$<$<TARGET_EXISTS:idf::esp_netif>:src/esp_eth_netif_glue.c>")
+    endif()
     if(CONFIG_ETH_USE_SPI_ETHERNET)
         idf_component_optional_requires(PUBLIC esp_driver_spi)
     endif()

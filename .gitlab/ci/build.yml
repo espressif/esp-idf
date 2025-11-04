@@ -255,6 +255,38 @@ pytest_build_system:
   extends: .test_build_system_template
   parallel: 3
 
+pytest_buildv2_system:
+  extends:
+    - .test_build_system_template
+    - .rules:labels:buildv2
+  parallel: 3
+  script:
+    - ${IDF_PATH}/tools/ci/test_configure_ci_environment.sh
+    - cd ${IDF_PATH}/tools/test_build_system
+    - run_cmd idf-ci gitlab download-known-failure-cases-file ${KNOWN_FAILURE_CASES_FILE_NAME}
+    - pytest
+      --buildv2
+      --cleanup-idf-copy
+      --parallel-count ${CI_NODE_TOTAL:-1}
+      --parallel-index ${CI_NODE_INDEX:-1}
+      --work-dir ${CI_PROJECT_DIR}/test_build_system
+      --junitxml ${CI_PROJECT_DIR}/XUNIT_RESULT.xml
+      --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}
+      --
+      test_non_default_target.py
+      test_component_manager.py
+      test_build.py
+      test_bootloader.py
+      test_git.py
+      test_kconfig.py
+      test_partition.py
+      test_reproducible_build.py
+      test_sdkconfig.py
+      test_versions.py
+      test_common.py
+      test_components.py
+      test_cmake.py
+
 pytest_build_system_macos:
   extends:
     - .test_build_system_template

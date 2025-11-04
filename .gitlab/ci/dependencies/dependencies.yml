@@ -76,3 +76,7 @@
     - if-schedule-test-build-system-windows
   patterns:
     - build_system_win
+
+"labels:buildv2":
+  labels:
+    - buildv2

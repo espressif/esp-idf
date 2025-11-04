@@ -187,6 +187,13 @@ class TestOptionalDependencyWithKconfig:
             'set(EXTRA_COMPONENT_DIRS foo)',
         )
 
+        # Add explicit PRIV_REQUIRES for cmakev2 compatibility
+        replace_in_file(
+            (test_app_copy / 'main' / 'CMakeLists.txt'),
+            '# placeholder_inside_idf_component_register',
+            'PRIV_REQUIRES foo',
+        )
+
         idf_py('reconfigure')
 
         data = json.load(open(test_app_copy / 'build' / 'project_description.json'))
