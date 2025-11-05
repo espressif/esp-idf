@@ -30,7 +30,7 @@ extern "C" {
 *
 * @note Please do not modify this value
 */
-#define ESP_BT_CTRL_CONFIG_VERSION      0x02505080
+#define ESP_BT_CTRL_CONFIG_VERSION      0x02509280
 
 /**
 * @brief Internal use only
@@ -376,8 +376,6 @@ typedef void (* esp_bt_hci_tl_callback_t) (void *arg, uint8_t status);
     .connect_en = BT_CTRL_BLE_MASTER,                                      \
     .scan_en = BT_CTRL_BLE_SCAN,                                           \
     .ble_aa_check = BLE_CTRL_CHECK_CONNECT_IND_ACCESS_ADDRESS_ENABLED,     \
-    .ble_log_mode_en = BLE_LOG_MODE_EN,                                    \
-    .ble_log_level = BLE_LOG_LEVEL,                                        \
     .adv_en = BT_CTRL_BLE_ADV,                                             \
 }
 
@@ -504,8 +502,6 @@ typedef struct {
     bool connect_en;                        /*!< True if the connection feature is enabled (default); false otherwise. Configurable in menuconfig.*/
     bool scan_en;                           /*!< True if the scan feature is enabled (default); false otherwise. Configurable in menuconfig.*/
     bool ble_aa_check;                      /*!< True if adds a verification step for the Access Address within the CONNECT_IND PDU; false otherwise. Configurable in menuconfig */
-    uint32_t ble_log_mode_en;               /*!< BLE log mode enable */
-    uint8_t ble_log_level;                  /*!< BLE log level */
     bool adv_en;                            /*!< True if the ADV feature is enabled (default); false otherwise. Configurable in menuconfig.*/
 } esp_bt_controller_config_t;
 

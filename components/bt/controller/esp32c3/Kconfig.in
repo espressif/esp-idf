@@ -616,15 +616,15 @@ menu "Controller debug log Options (Experimental)"
 
     config BT_CTRL_LE_LOG_MODE_EN
         depends on BT_CTRL_LE_LOG_EN
-        int "Enable log for specified BLE mode"
-        range 0 4095
-        default 4093
+        hex "Enable log for specified BLE mode"
+        range 0 0xFFFF
+        default 0xDB7F
 
     config BT_CTRL_LE_LOG_LEVEL
         depends on BT_CTRL_LE_LOG_EN
         int "The level of BLE log"
         range 0 5
-        default 2
+        default 1
 
     config BT_CTRL_LE_LOG_BUF1_SIZE
         depends on BT_CTRL_LE_LOG_EN
