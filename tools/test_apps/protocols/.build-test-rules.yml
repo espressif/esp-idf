@@ -5,6 +5,8 @@ tools/test_apps/protocols/esp_netif/build_config:
     - if: IDF_TARGET in ["esp32", "esp32c2"]
       temporary: false
       reason: No need to test on all targets
+  depends_components:
+    - esp_netif
 
 tools/test_apps/protocols/mqtt/publish_connect_test:
   enable:
@@ -29,3 +31,6 @@ tools/test_apps/protocols/netif_components:
     - if: IDF_TARGET == "esp32"
       temporary: true
       reason: one target is enough to verify netif component dependencies
+  depends_components:
+    - esp_netif
+    - lwip
