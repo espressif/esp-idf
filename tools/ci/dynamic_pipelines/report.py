@@ -1,10 +1,7 @@
 # SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import abc
-import copy
-import fnmatch
 import html
-import os
 import re
 import typing as t
 from textwrap import dedent
@@ -29,13 +26,10 @@ from .constants import SIZE_DIFFERENCE_BYTES_THRESHOLD
 from .constants import TOP_N_APPS_BY_SIZE_DIFF
 from .models import GitlabJob
 from .models import TestCase
-from .utils import fetch_failed_testcases_failure_ratio
 from .utils import format_permalink
 from .utils import get_artifacts_url
 from .utils import get_repository_file_url
 from .utils import is_url
-from .utils import known_failure_issue_jira_fast_link
-from .utils import load_known_failure_cases
 
 
 class ReportGenerator:
@@ -78,7 +72,7 @@ class ReportGenerator:
         return ''
 
     @staticmethod
-    def write_report_to_file(report_str: str, job_id: int, output_filepath: str) -> t.Optional[str]:
+    def write_report_to_file(report_str: str, job_id: int, output_filepath: str) -> str | None:
         """
         Writes the report to a file and constructs a modified URL based on environment settings.
 
@@ -106,9 +100,9 @@ class ReportGenerator:
         :return: Content of the file as string
         """
         try:
-            with open(filepath, 'r', encoding='utf-8') as f:
+            with open(filepath, encoding='utf-8') as f:
                 return f.read()
-        except (IOError, FileNotFoundError) as e:
+        except (OSError, FileNotFoundError) as e:
             print(f'Warning: Could not read file {filepath}: {e}')
             return ''
 
@@ -140,8 +134,8 @@ class ReportGenerator:
         items: list,
         headers: list,
         row_attrs: list,
-        value_functions: t.Optional[list] = None,
-    ) -> t.List:
+        value_functions: list | None = None,
+    ) -> list:
         """
         Appends a formatted section to a report based on the provided items. This section includes
         a header and a table constructed from the items list with specified headers and attributes.
@@ -173,7 +167,7 @@ class ReportGenerator:
 
     @staticmethod
     def generate_additional_info_section(
-        title: str, count: int, report_url: t.Optional[str] = None, add_permalink: bool = True
+        title: str, count: int, report_url: str | None = None, add_permalink: bool = True
     ) -> str:
         """
         Generate a section for the additional info string.
@@ -194,10 +188,10 @@ class ReportGenerator:
 
     def _create_table_for_items(
         self,
-        items: t.Union[t.List[TestCase], t.List[GitlabJob]],
-        headers: t.List[str],
-        row_attrs: t.List[str],
-        value_functions: t.Optional[t.List[t.Tuple[str, t.Callable[[t.Union[TestCase, GitlabJob]], str]]]] = None,
+        items: list[TestCase] | list[GitlabJob],
+        headers: list[str],
+        row_attrs: list[str],
+        value_functions: list[tuple[str, t.Callable[[TestCase | GitlabJob], str]]] | None = None,
     ) -> str:
         """
         Create a PrettyTable and convert it to an HTML string for the provided test cases.
@@ -237,8 +231,8 @@ class ReportGenerator:
 
     @staticmethod
     def _filter_items(
-        items: t.Union[t.List[TestCase], t.List[GitlabJob]], condition: t.Callable[[t.Union[TestCase, GitlabJob]], bool]
-    ) -> t.List[TestCase]:
+        items: list[TestCase] | list[GitlabJob], condition: t.Callable[[TestCase | GitlabJob], bool]
+    ) -> list[TestCase]:
         """
         Filter items s based on a given condition.
 
@@ -250,11 +244,11 @@ class ReportGenerator:
 
     @staticmethod
     def _sort_items(
-        items: t.List[t.Union[TestCase, GitlabJob, AppWithMetricsInfo]],
-        key: t.Union[str, t.Callable[[t.Union[TestCase, GitlabJob, AppWithMetricsInfo]], t.Any]],
+        items: list[TestCase | GitlabJob | AppWithMetricsInfo],
+        key: str | t.Callable[[TestCase | GitlabJob | AppWithMetricsInfo], t.Any],
         order: str = 'asc',
-        sort_function: t.Optional[t.Callable[[t.Any], t.Any]] = None,
-    ) -> t.List[t.Union[TestCase, GitlabJob, AppWithMetricsInfo]]:
+        sort_function: t.Callable[[t.Any], t.Any] | None = None,
+    ) -> list[TestCase | GitlabJob | AppWithMetricsInfo]:
         """
         Sort items based on a given key, order, and optional custom sorting function.
 
@@ -350,7 +344,7 @@ class BuildReportGenerator(ReportGenerator):
         local_commit_id: str,
         *,
         title: str = 'Build Report',
-        apps: t.List[AppWithMetricsInfo],
+        apps: list[AppWithMetricsInfo],
     ) -> None:
         super().__init__(project_id, mr_iid, pipeline_id, job_id, commit_id, local_commit_id, title=title)
         self.apps = apps
@@ -367,7 +361,7 @@ class BuildReportGenerator(ReportGenerator):
         self.skipped_apps_report_file = 'skipped_apps.html'
 
     @staticmethod
-    def custom_sort(item: AppWithMetricsInfo) -> t.Tuple[int, t.Any]:
+    def custom_sort(item: AppWithMetricsInfo) -> tuple[int, t.Any]:
         """
         Custom sort function to:
         1. Push items with zero binary sizes to the end.
@@ -424,7 +418,7 @@ class BuildReportGenerator(ReportGenerator):
     @staticmethod
     def split_new_and_existing_apps(
         apps: t.Iterable[AppWithMetricsInfo],
-    ) -> t.Tuple[t.List[AppWithMetricsInfo], t.List[AppWithMetricsInfo]]:
+    ) -> tuple[list[AppWithMetricsInfo], list[AppWithMetricsInfo]]:
         """
         Splits apps into new apps and existing apps.
 
@@ -435,7 +429,7 @@ class BuildReportGenerator(ReportGenerator):
         existing_apps = [app for app in apps if not app.is_new_app]
         return new_apps, existing_apps
 
-    def filter_apps_by_criteria(self, build_status: str, preserve: bool) -> t.List[AppWithMetricsInfo]:
+    def filter_apps_by_criteria(self, build_status: str, preserve: bool) -> list[AppWithMetricsInfo]:
         """
         Filters apps based on build status and preserve criteria.
 
@@ -445,7 +439,7 @@ class BuildReportGenerator(ReportGenerator):
         """
         return [app for app in self.apps if app.build_status == build_status and app.preserve == preserve]
 
-    def get_built_apps_report_parts(self) -> t.List[str]:
+    def get_built_apps_report_parts(self) -> list[str]:
         """
         Generates report parts for new and existing apps.
 
@@ -617,7 +611,7 @@ class BuildReportGenerator(ReportGenerator):
 
         return sections
 
-    def get_failed_apps_report_parts(self) -> t.List[str]:
+    def get_failed_apps_report_parts(self) -> list[str]:
         failed_apps = [app for app in self.apps if app.build_status == BuildStatus.FAILED]
         if not failed_apps:
             return []
@@ -645,7 +639,7 @@ class BuildReportGenerator(ReportGenerator):
         )
         return failed_apps_table_section
 
-    def get_skipped_apps_report_parts(self) -> t.List[str]:
+    def get_skipped_apps_report_parts(self) -> list[str]:
         skipped_apps = [app for app in self.apps if app.build_status == BuildStatus.SKIPPED]
         if not skipped_apps:
             return []
@@ -681,248 +675,6 @@ class BuildReportGenerator(ReportGenerator):
         )
 
 
-class TargetTestReportGenerator(ReportGenerator):
-    def __init__(
-        self,
-        project_id: int,
-        mr_iid: int,
-        pipeline_id: int,
-        job_id: int,
-        commit_id: str,
-        local_commit_id: str,
-        *,
-        title: str = 'Target Test Report',
-        test_cases: t.List[TestCase],
-    ) -> None:
-        super().__init__(project_id, mr_iid, pipeline_id, job_id, commit_id, local_commit_id, title=title)
-
-        self.test_cases = test_cases
-        self._known_failure_cases_set = None
-        self.report_titles_map = {
-            'failed_yours': 'Testcases failed ONLY on your branch (known failures are excluded)',
-            'failed_others': 'Testcases failed on your branch as well as on others (known failures are excluded)',
-            'failed_known': 'Known Failure Cases',
-            'skipped': 'Skipped Test Cases',
-            'succeeded': 'Succeeded Test Cases',
-        }
-        self.skipped_test_cases_report_file = 'skipped_cases.html'
-        self.succeeded_cases_report_file = 'succeeded_cases.html'
-        self.failed_cases_report_file = 'failed_cases.html'
-
-    @property
-    def known_failure_cases_set(self) -> t.Optional[t.Set[str]]:
-        if self._known_failure_cases_set is None:
-            self._known_failure_cases_set = load_known_failure_cases()
-
-        return self._known_failure_cases_set
-
-    def get_known_failure_cases(self) -> t.List[TestCase]:
-        """
-        Retrieve the known failure test cases.
-        :return: A list of known failure test cases.
-        """
-        if self.known_failure_cases_set is None:
-            return []
-        matched_cases = [
-            testcase
-            for testcase in self.test_cases
-            if any(fnmatch.fnmatch(testcase.name, pattern) for pattern in self.known_failure_cases_set)
-            and testcase.is_failure
-        ]
-        return matched_cases
-
-    @staticmethod
-    def filter_test_cases(
-        cur_branch_failures: t.List[TestCase],
-        other_branch_failures: t.List[TestCase],
-    ) -> t.Tuple[t.List[TestCase], t.List[TestCase]]:
-        """
-        Filter the test cases into current branch failures and other branch failures.
-
-        :param cur_branch_failures: List of failed test cases on the current branch.
-        :param other_branch_failures: List of failed test cases on other branches.
-        :return: A tuple containing two lists:
-            - failed_test_cases_cur_branch_only: Test cases that have failed only on the current branch.
-            - failed_test_cases_other_branch_exclude_cur_branch: Test cases that have failed on other branches
-        excluding the current branch.
-        """
-        cur_branch_unique_failures = []
-        other_branch_failure_map = {tc.name: tc for tc in other_branch_failures}
-
-        for cur_tc in cur_branch_failures:
-            if cur_tc.latest_failed_count > 0 and (
-                cur_tc.name not in other_branch_failure_map
-                or other_branch_failure_map[cur_tc.name].latest_failed_count == 0
-            ):
-                cur_branch_unique_failures.append(cur_tc)
-        uniq_fail_names = {cur_tc.name for cur_tc in cur_branch_unique_failures}
-        other_branch_exclusive_failures = [tc for tc in other_branch_failures if tc.name not in uniq_fail_names]
-
-        return cur_branch_unique_failures, other_branch_exclusive_failures
-
-    def get_failed_cases_report_parts(self) -> t.List[str]:
-        """
-        Generate the report parts for failed test cases and update the additional info section.
-        :return: A list of strings representing the table sections for the failed test cases.
-        """
-        known_failures = self.get_known_failure_cases()
-        failed_test_cases = self._filter_items(
-            self.test_cases, lambda tc: tc.is_failure and tc.name not in {case.name for case in known_failures}
-        )
-        failed_test_cases_cur_branch = self._sort_items(
-            fetch_failed_testcases_failure_ratio(
-                copy.deepcopy(failed_test_cases),
-                branches_filter={'include_branches': [os.getenv('CI_MERGE_REQUEST_SOURCE_BRANCH_NAME', '')]},
-            ),
-            key='latest_failed_count',
-        )
-        failed_test_cases_other_branch = self._sort_items(
-            fetch_failed_testcases_failure_ratio(
-                copy.deepcopy(failed_test_cases),
-                branches_filter={'exclude_branches': [os.getenv('CI_MERGE_REQUEST_SOURCE_BRANCH_NAME', '')]},
-            ),
-            key='latest_failed_count',
-        )
-        failed_test_cases_cur_branch, failed_test_cases_other_branch = self.filter_test_cases(
-            failed_test_cases_cur_branch, failed_test_cases_other_branch
-        )
-        cur_branch_cases_table_section = self.create_table_section(
-            title=self.report_titles_map['failed_yours'],
-            items=failed_test_cases_cur_branch,
-            headers=[
-                'Test Case',
-                'Test App Path',
-                'Failure Reason',
-                'These test cases failed exclusively on your branch in the latest 40 runs',
-                'Dut Log URL',
-                'Create Known Failure Case Jira',
-                'Job URL',
-                'Grafana URL',
-            ],
-            row_attrs=['name', 'app_path', 'failure', 'dut_log_url', 'ci_job_url', 'ci_dashboard_url'],
-            value_functions=[
-                (
-                    'These test cases failed exclusively on your branch in the latest 40 runs',
-                    lambda item: f'{getattr(item, "latest_failed_count", "")} / '
-                    f'{getattr(item, "latest_total_count", "")}',
-                ),
-                ('Create Known Failure Case Jira', known_failure_issue_jira_fast_link),
-            ],
-        )
-        other_branch_cases_table_section = self.create_table_section(
-            title=self.report_titles_map['failed_others'],
-            items=failed_test_cases_other_branch,
-            headers=[
-                'Test Case',
-                'Test App Path',
-                'Failure Reason',
-                'Cases that failed in other branches as well (40 latest testcases)',
-                'Dut Log URL',
-                'Create Known Failure Case Jira',
-                'Job URL',
-                'Grafana URL',
-            ],
-            row_attrs=['name', 'app_path', 'failure', 'dut_log_url', 'ci_job_url', 'ci_dashboard_url'],
-            value_functions=[
-                (
-                    'Cases that failed in other branches as well (40 latest testcases)',
-                    lambda item: f'{getattr(item, "latest_failed_count", "")} '
-                    f'/ {getattr(item, "latest_total_count", "")}',
-                ),
-                ('Create Known Failure Case Jira', known_failure_issue_jira_fast_link),
-            ],
-        )
-        known_failures_cases_table_section = self.create_table_section(
-            title=self.report_titles_map['failed_known'],
-            items=known_failures,
-            headers=['Test Case', 'Test App Path', 'Failure Reason', 'Job URL', 'Grafana URL'],
-            row_attrs=['name', 'app_path', 'failure', 'ci_job_url', 'ci_dashboard_url'],
-        )
-        failed_cases_report_url = self.write_report_to_file(
-            self.generate_html_report(
-                ''.join(
-                    cur_branch_cases_table_section
-                    + other_branch_cases_table_section
-                    + known_failures_cases_table_section
-                )
-            ),
-            self.job_id,
-            self.failed_cases_report_file,
-        )
-        self.additional_info += self.generate_additional_info_section(
-            self.report_titles_map['failed_yours'], len(failed_test_cases_cur_branch), failed_cases_report_url
-        )
-        self.additional_info += self.generate_additional_info_section(
-            self.report_titles_map['failed_others'], len(failed_test_cases_other_branch), failed_cases_report_url
-        )
-        self.additional_info += self.generate_additional_info_section(
-            self.report_titles_map['failed_known'], len(known_failures), failed_cases_report_url
-        )
-        return cur_branch_cases_table_section + other_branch_cases_table_section + known_failures_cases_table_section
-
-    def get_skipped_cases_report_parts(self) -> t.List[str]:
-        """
-        Generate the report parts for skipped test cases and update the additional info section.
-        :return: A list of strings representing the table sections for the skipped test cases.
-        """
-        skipped_test_cases = self._filter_items(self.test_cases, lambda tc: tc.is_skipped)
-        skipped_cases_table_section = self.create_table_section(
-            title=self.report_titles_map['skipped'],
-            items=skipped_test_cases,
-            headers=['Test Case', 'Test App Path', 'Skipped Reason', 'Grafana URL'],
-            row_attrs=['name', 'app_path', 'skipped', 'ci_dashboard_url'],
-        )
-        skipped_cases_report_url = self.write_report_to_file(
-            self.generate_html_report(''.join(skipped_cases_table_section)),
-            self.job_id,
-            self.skipped_test_cases_report_file,
-        )
-        self.additional_info += self.generate_additional_info_section(
-            self.report_titles_map['skipped'], len(skipped_test_cases), skipped_cases_report_url
-        )
-        return skipped_cases_table_section
-
-    def get_succeeded_cases_report_parts(self) -> t.List[str]:
-        """
-        Generate the report parts for succeeded test cases and update the additional info section.
-        :return: A list of strings representing the table sections for the succeeded test cases.
-        """
-        succeeded_test_cases = self._filter_items(self.test_cases, lambda tc: tc.is_success)
-        succeeded_cases_table_section = self.create_table_section(
-            title=self.report_titles_map['succeeded'],
-            items=succeeded_test_cases,
-            headers=['Test Case', 'Test App Path', 'Job URL', 'Grafana URL'],
-            row_attrs=['name', 'app_path', 'ci_job_url', 'ci_dashboard_url'],
-        )
-        succeeded_cases_report_url = self.write_report_to_file(
-            self.generate_html_report(''.join(succeeded_cases_table_section)),
-            self.job_id,
-            self.succeeded_cases_report_file,
-        )
-        self.additional_info += self.generate_additional_info_section(
-            self.report_titles_map['succeeded'],
-            len(succeeded_test_cases),
-            succeeded_cases_report_url,
-            add_permalink=False,
-        )
-        self.additional_info += '\n'
-        return succeeded_cases_table_section
-
-    def _get_report_str(self) -> str:
-        """
-        Generate a complete HTML report string by processing test cases.
-        :return: Complete HTML report string.
-        """
-        self.additional_info = f'**Test Case Summary ({self.get_commit_summary}):**\n'
-        failed_cases_report_parts = self.get_failed_cases_report_parts()
-        skipped_cases_report_parts = self.get_skipped_cases_report_parts()
-        succeeded_cases_report_parts = self.get_succeeded_cases_report_parts()
-
-        return self.generate_html_report(
-            ''.join(failed_cases_report_parts + skipped_cases_report_parts + succeeded_cases_report_parts)
-        )
-
-
 class JobReportGenerator(ReportGenerator):
     def __init__(
         self,
@@ -934,7 +686,7 @@ class JobReportGenerator(ReportGenerator):
         local_commit_id: str,
         *,
         title: str = 'Job Report',
-        jobs: t.List[GitlabJob],
+        jobs: list[GitlabJob],
     ):
         super().__init__(project_id, mr_iid, pipeline_id, job_id, commit_id, local_commit_id, title=title)
         self.jobs = jobs

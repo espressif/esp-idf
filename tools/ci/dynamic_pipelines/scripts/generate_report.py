@@ -13,10 +13,8 @@ from idf_ci_local.app import enrich_apps_with_metrics_info
 
 from dynamic_pipelines.report import BuildReportGenerator
 from dynamic_pipelines.report import JobReportGenerator
-from dynamic_pipelines.report import TargetTestReportGenerator
 from dynamic_pipelines.utils import fetch_app_metrics
 from dynamic_pipelines.utils import fetch_failed_jobs
-from dynamic_pipelines.utils import parse_testcases_from_filepattern
 
 
 def main() -> None:
@@ -25,7 +23,6 @@ def main() -> None:
 
     report_actions: dict[str, t.Callable[[argparse.Namespace], None]] = {
         'build': generate_build_report,
-        'target_test': generate_target_test_report,
         'job': generate_jobs_report,
     }
 
@@ -39,7 +36,7 @@ def main() -> None:
 def setup_argument_parser() -> argparse.ArgumentParser:
     report_type_parser: argparse.ArgumentParser = argparse.ArgumentParser(add_help=False)
     report_type_parser.add_argument(
-        '--report-type', choices=['build', 'target_test', 'job'], required=True, help='Type of report to generate'
+        '--report-type', choices=['build', 'job'], required=True, help='Type of report to generate'
     )
     report_type_args: argparse.Namespace
     remaining_args: list[str]
@@ -104,24 +101,6 @@ def generate_build_report(args: argparse.Namespace) -> None:
     report_generator.post_report()
 
 
-def generate_target_test_report(args: argparse.Namespace) -> None:
-    test_cases: list[t.Any] = parse_testcases_from_filepattern(args.junit_report_filepattern)
-    report_generator = TargetTestReportGenerator(
-        args.project_id,
-        args.mr_iid,
-        args.pipeline_id,
-        args.job_id,
-        args.commit_id,
-        args.local_commit_id,
-        test_cases=test_cases,
-    )
-    report_generator.post_report()
-
-    if GitlabEnvVars().IDF_CI_IS_DEBUG_PIPELINE:
-        print('Debug pipeline detected, exit non-zero to fail the pipeline in order to block merge')
-        exit(30)
-
-
 def generate_jobs_report(args: argparse.Namespace) -> None:
     jobs: list[t.Any] = fetch_failed_jobs(args.commit_id)
 
@@ -132,6 +111,10 @@ def generate_jobs_report(args: argparse.Namespace) -> None:
         args.project_id, args.mr_iid, args.pipeline_id, args.job_id, args.commit_id, args.local_commit_id, jobs=jobs
     )
     report_generator.post_report(print_retry_jobs_message=any(job.is_failed for job in jobs))
+
+    if GitlabEnvVars().IDF_CI_IS_DEBUG_PIPELINE:
+        print('Debug pipeline detected, exit non-zero to fail the pipeline in order to block merge')
+        exit(30)
 
 
 if __name__ == '__main__':

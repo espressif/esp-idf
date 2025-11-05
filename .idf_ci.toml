@@ -48,7 +48,6 @@ pre_yaml_jinja = """
 include:
   - .gitlab/ci/common.yml
   - tools/ci/dynamic_pipelines/templates/.dynamic_jobs.yml
-  - tools/ci/dynamic_pipelines/templates/generate_target_test_report.yml
 """
 
 [gitlab.artifacts.s3.debug]
