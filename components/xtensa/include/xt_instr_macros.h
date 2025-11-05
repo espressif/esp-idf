@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -53,10 +53,10 @@
 */
 #ifdef __ASSEMBLER__
     .macro SET_STACK  new_sp tmp1 tmp2
-    addi tmp1, new_sp, -SAVE_AREA_OFFSET
-    addi tmp2, tmp1, -BASE_AREA_SP_OFFSET
-    s32i new_sp, tmp2, 0
-    addi new_sp, tmp1, 0
+    addi \tmp1, \new_sp, -SAVE_AREA_OFFSET
+    addi \tmp2, \tmp1, -BASE_AREA_SP_OFFSET
+    s32i \new_sp, \tmp2, 0
+    addi \new_sp, \tmp1, 0
     rsr.ps \tmp1
     movi \tmp2, ~(PS_WOE_MASK | PS_OWB_MASK | PS_CALLINC_MASK)
     and \tmp1, \tmp1, \tmp2

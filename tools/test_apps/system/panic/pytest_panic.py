@@ -54,7 +54,7 @@ CONFIGS = [
     pytest.param('coredump_flash_elf_soft_sha', marks=TARGETS_ALL),
     pytest.param('coredump_uart_bin_crc', marks=TARGETS_ALL),
     pytest.param('coredump_uart_elf_crc', marks=TARGETS_ALL),
-    pytest.param('coredump_flash_custom_stack', marks=TARGETS_RISCV),
+    pytest.param('coredump_flash_custom_stack', marks=TARGETS_ALL),
     pytest.param('gdbstub', marks=TARGETS_ALL),
     pytest.param('panic', marks=TARGETS_ALL),
 ]

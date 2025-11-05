@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -565,4 +565,16 @@ void esp_core_dump_summary_parse_backtrace_info(esp_core_dump_bt_info_t *bt_info
 
 #endif /* #if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH && CONFIG_ESP_COREDUMP_DATA_FORMAT_ELF */
 
-#endif
+#if CONFIG_ESP_COREDUMP_STACK_SIZE > 0
+
+/* Helper function defined in core_dump_stack_switch.S */
+void esp_core_dump_port_write_on_new_stack(uint32_t new_sp);
+
+void esp_core_dump_port_write(uint32_t new_stack, uint32_t new_sp)
+{
+    (void)new_stack;
+    esp_core_dump_port_write_on_new_stack(new_sp);
+}
+#endif // CONFIG_ESP_COREDUMP_STACK_SIZE > 0
+
+#endif // CONFIG_ESP_COREDUMP_ENABLE
