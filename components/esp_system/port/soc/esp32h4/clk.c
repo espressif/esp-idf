@@ -38,7 +38,7 @@ static void select_rtc_slow_clk(soc_rtc_slow_clk_src_t rtc_slow_clk_src);
 
 ESP_LOG_ATTR_TAG(TAG, "clk");
 
-void esp_rtc_init(void)
+__attribute__((weak)) void esp_rtc_init(void)
 {
 #if SOC_PMU_SUPPORTED && !CONFIG_IDF_ENV_FPGA
     pmu_init();
