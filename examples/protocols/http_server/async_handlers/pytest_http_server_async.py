@@ -185,3 +185,96 @@ def test_http_server_async_handler_same_session_sequential(dut: Dut) -> None:
 
     conn.close()
     logging.info('=== Test completed successfully: Same session sequential requests work ===')
+
+
+@pytest.mark.ethernet
+@idf_parametrize('target', ['esp32'], indirect=['target'])
+def test_http_server_async_handler_force_close_and_recovery(dut: Dut) -> None:
+    """
+    Test that verifies server robustness:
+    1. Send /long request and forcefully close before completion
+    2. Verify server doesn't crash
+    3. Send another /long request and verify it completes successfully
+    4. While second /long is running, hit /quick to verify concurrent handling
+    """
+    # Get binary file
+    binary_file = os.path.join(dut.app.binary_path, 'simple.bin')
+    bin_size = os.path.getsize(binary_file)
+    logging.info(f'http_server_bin_size : {bin_size // 1024}KB')
+    logging.info('Waiting to connect with Ethernet')
+
+    # Parse IP address of Ethernet
+    got_ip = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=30)[1].decode()
+    got_port = 80  # Assuming the server is running on port 80
+    logging.info(f'Got IP   : {got_ip}')
+    dut.expect('starting async req task worker', timeout=30)
+    dut.expect('starting async req task worker', timeout=30)
+    dut.expect(f"Starting server on port: '{got_port}'", timeout=30)
+    dut.expect('Registering URI handlers', timeout=30)
+    logging.info(f'Connecting to server at {got_ip}:{got_port}')
+
+    # Test 1: Send /long request and forcefully close connection
+    logging.info('=== Test 1: Sending /long request and forcefully closing connection ===')
+    conn_force_close = http.client.HTTPConnection(got_ip, got_port, timeout=10)
+    conn_force_close.request('GET', '/long?test=force_close')
+
+    # Verify request is received
+    dut.expect('uri: /long', timeout=30)
+    dut.expect('Found query string => test=force_close', timeout=30)
+
+    # Wait a bit to let the async handler start processing
+    time.sleep(10)
+
+    # Forcefully close the connection without reading response
+    logging.info('Forcefully closing connection before /long completes')
+    conn_force_close.close()
+
+    # Verify server doesn't crash (check for SW_CPU_RESET which indicates a crash)
+    try:
+        dut.expect('SW_CPU_RESET', timeout=10)
+        pytest.fail('Server crashed with SW_CPU_RESET after force close - test failed')
+    except Exception:
+        # No SW_CPU_RESET found - this is expected, server should remain stable
+        logging.info('Server remained stable after force close (no SW_CPU_RESET detected)')
+
+    # Test 2: Verify server is still functional by sending another /long request
+    logging.info('=== Test 2: Sending another /long request to verify server recovery ===')
+    conn_recovery = http.client.HTTPConnection(got_ip, got_port, timeout=70)
+    conn_recovery.request('GET', '/long?test=recovery')
+
+    # Verify request is received
+    dut.expect('uri: /long', timeout=30)
+    dut.expect('Found query string => test=recovery', timeout=30)
+
+    # Test 3: While /long is running, hit /quick endpoint
+    logging.info('=== Test 3: Hitting /quick while /long is running ===')
+    time.sleep(5)  # Let /long run for a bit
+
+    conn_quick = http.client.HTTPConnection(got_ip, got_port, timeout=10)
+    conn_quick.request('GET', '/quick?test=concurrent')
+    dut.expect('uri: /quick', timeout=30)
+
+    # Get /quick response (should complete immediately)
+    response_quick = conn_quick.getresponse()
+    logging.info(f'Response status for /quick: {response_quick.status}')
+    assert response_quick.status == 200, 'Failed to access /quick URI while /long is running'
+    quick_data = response_quick.read().decode()
+    assert 'random:' in quick_data, 'Expected random number in /quick response'
+    conn_quick.close()
+    logging.info('/quick request completed successfully while /long was running')
+
+    # Now wait for the /long request to complete
+    logging.info('Waiting for /long request to complete...')
+    response_long = conn_recovery.getresponse()
+    logging.info(f'Response status for /long: {response_long.status}')
+    assert response_long.status == 200, 'Failed to complete /long URI after force close recovery'
+
+    # Verify we got the full response
+    response_data = response_long.read().decode()
+    assert 'req:' in response_data, 'Expected request count in response'
+    assert '59' in response_data, 'Expected final tick (59) in response'
+
+    conn_recovery.close()
+    logging.info(
+        '=== Test completed successfully: Server recovered from force close and handled concurrent requests ==='
+    )
