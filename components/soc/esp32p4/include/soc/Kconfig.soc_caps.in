@@ -695,6 +695,14 @@ config SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK
     hex
     default 0x007FFFFFFFFF0000
 
+config SOC_GPIO_SUPPORT_FORCE_HOLD
+    bool
+    default y
+
+config SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP
+    bool
+    default y
+
 config SOC_GPIO_CLOCKOUT_BY_GPIO_MATRIX
     bool
     default y
@@ -714,10 +722,6 @@ config SOC_DEBUG_PROBE_NUM_UNIT
 config SOC_DEBUG_PROBE_MAX_OUTPUT_WIDTH
     int
     default 16
-
-config SOC_GPIO_SUPPORT_FORCE_HOLD
-    bool
-    default y
 
 config SOC_RTCIO_PIN_COUNT
     int

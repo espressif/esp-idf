@@ -11,6 +11,7 @@
 #include <esp_types.h>
 #include "soc/pmu_struct.h"
 #include "hal/pmu_hal.h"
+#include "sdkconfig.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -330,6 +331,7 @@ typedef struct {
 } pmu_sleep_digital_config_t;
 
 
+#if CONFIG_ESP32P4_SELECTS_REV_LESS_V3
 #define PMU_SLEEP_DIGITAL_DSLP_CONFIG_DEFAULT(sleep_flags) {            \
     .syscntl = {                                                        \
         .dig_pad_slp_sel = 0,                                           \
@@ -343,6 +345,19 @@ typedef struct {
         .lp_pad_hold_all = (sleep_flags & PMU_SLEEP_PD_LP_PERIPH) ? 1 : 0, \
     }                                                                   \
 }
+#else // !CONFIG_ESP32P4_SELECTS_REV_LESS_V3
+#define PMU_SLEEP_DIGITAL_DSLP_CONFIG_DEFAULT(sleep_flags) {            \
+    .syscntl = {                                                        \
+        .dig_pad_slp_sel = 0,                                           \
+    }                                                                   \
+}
+
+#define PMU_SLEEP_DIGITAL_LSLP_CONFIG_DEFAULT(sleep_flags) {            \
+    .syscntl = {                                                        \
+        .dig_pad_slp_sel = 0,                                           \
+    }                                                                   \
+}
+#endif
 
 typedef struct {
     struct {

@@ -18,10 +18,12 @@
 #include "soc/lp_gpio_struct.h"
 #include "soc/lp_iomux_struct.h"
 #include "soc/lp_gpio_sig_map.h"
+#include "soc/lp_system_struct.h"
 #include "soc/pmu_struct.h"
 #include "hal/gpio_types.h"
 #include "hal/misc.h"
 #include "hal/assert.h"
+#include "hal/config.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -312,9 +314,13 @@ static inline bool rtcio_ll_is_pulldown_enabled(int rtcio_num)
  */
 static inline void rtcio_ll_force_hold_enable(int rtcio_num)
 {
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+    LP_SYS.pad_rtc_hold_ctrl0.pad_rtc_hold_ctrl0 |= BIT(rtcio_num);
+#else
     uint32_t hold_mask = HAL_FORCE_READ_U32_REG_FIELD(LP_IOMUX.lp_pad_hold, reg_lp_gpio_hold);
     hold_mask |= BIT(rtcio_num);
     HAL_FORCE_MODIFY_U32_REG_FIELD(LP_IOMUX.lp_pad_hold, reg_lp_gpio_hold, hold_mask);
+#endif
 }
 
 /**
@@ -325,9 +331,13 @@ static inline void rtcio_ll_force_hold_enable(int rtcio_num)
  */
 static inline void rtcio_ll_force_hold_disable(int rtcio_num)
 {
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+    LP_SYS.pad_rtc_hold_ctrl0.pad_rtc_hold_ctrl0 &= ~BIT(rtcio_num);
+#else
     uint32_t hold_mask = HAL_FORCE_READ_U32_REG_FIELD(LP_IOMUX.lp_pad_hold, reg_lp_gpio_hold);
     hold_mask &= ~BIT(rtcio_num);
     HAL_FORCE_MODIFY_U32_REG_FIELD(LP_IOMUX.lp_pad_hold, reg_lp_gpio_hold, hold_mask);
+#endif
 }
 
 /**
