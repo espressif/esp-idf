@@ -67,7 +67,12 @@ MCPWM Timers
 
 You can allocate a MCPWM timer object by calling :cpp:func:`mcpwm_new_timer` function, with a configuration structure :cpp:type:`mcpwm_timer_config_t` as the parameter. The configuration structure is defined as:
 
-- :cpp:member:`mcpwm_timer_config_t::group_id` specifies the MCPWM group ID. The ID should belong to [0, :c:macro:`SOC_MCPWM_GROUPS` - 1] range. Please note, timers located in different groups are totally independent.
+- :cpp:member:`mcpwm_timer_config_t::group_id` specifies the MCPWM group ID. The ID should belong to [0, ``MCPWM_GROUP_NUM`` - 1] range, where ``MCPWM_GROUP_NUM`` is the number of MCPWM groups available on the chip. Please note, timers located in different groups are totally independent.
+
+.. note::
+
+    For the number of MCPWM groups available on the chip, please refer to *{IDF_TARGET_NAME} Technical Reference Manual* > *Motor Control PWM (MCPWM)* [`PDF <{IDF_TARGET_TRM_EN_URL}#mcpwm>`__].
+
 - :cpp:member:`mcpwm_timer_config_t::intr_priority` sets the priority of the interrupt. If it is set to ``0``, the driver will allocate an interrupt with a default priority. Otherwise, the driver will use the given priority.
 - :cpp:member:`mcpwm_timer_config_t::clk_src` sets the clock source of the timer.
 - :cpp:member:`mcpwm_timer_config_t::resolution_hz` sets the expected resolution of the timer. The driver internally sets a proper divider based on the clock source and the resolution.
@@ -89,7 +94,7 @@ MCPWM Operators
 
 You can allocate a MCPWM operator object by calling :cpp:func:`mcpwm_new_operator` function, with a configuration structure :cpp:type:`mcpwm_operator_config_t` as the parameter. The configuration structure is defined as:
 
-- :cpp:member:`mcpwm_operator_config_t::group_id` specifies the MCPWM group ID. The ID should belong to [0, :c:macro:`SOC_MCPWM_GROUPS` - 1] range. Please note, operators located in different groups are totally independent.
+- :cpp:member:`mcpwm_operator_config_t::group_id` specifies the MCPWM group ID. The ID should belong to [0, ``MCPWM_GROUP_NUM`` - 1] range, where ``MCPWM_GROUP_NUM`` is the number of MCPWM groups available on the chip. Please note, operators located in different groups are totally independent.
 - :cpp:member:`mcpwm_operator_config_t::intr_priority` sets the priority of the interrupt. If it is set to ``0``, the driver will allocate an interrupt with a default priority. Otherwise, the driver will use the given priority.
 - :cpp:member:`mcpwm_operator_config_t::update_gen_action_on_tez` sets whether to update the generator action when the timer counts to zero. Here and below, the timer refers to the one that is connected to the operator by :cpp:func:`mcpwm_operator_connect_timer`.
 - :cpp:member:`mcpwm_operator_config_t::update_gen_action_on_tep` sets whether to update the generator action when the timer counts to peak.
@@ -140,7 +145,7 @@ There are two types of faults: A fault signal reflected from the GPIO and a faul
 
 To allocate a GPIO fault object, you can call the :cpp:func:`mcpwm_new_gpio_fault` function, with the configuration structure :cpp:type:`mcpwm_gpio_fault_config_t` as the parameter. The configuration structure is defined as:
 
-- :cpp:member:`mcpwm_gpio_fault_config_t::group_id` sets the MCPWM group ID. The ID should belong to [0, :c:macro:`SOC_MCPWM_GROUPS` - 1] range. Please note, GPIO faults located in different groups are totally independent, i.e., GPIO faults in group 0 can not be detected by the operator in group 1.
+- :cpp:member:`mcpwm_gpio_fault_config_t::group_id` sets the MCPWM group ID. The ID should belong to [0, ``MCPWM_GROUP_NUM`` - 1] range, where ``MCPWM_GROUP_NUM`` is the number of MCPWM groups available on the chip. Please note, GPIO faults located in different groups are totally independent, i.e., GPIO faults in group 0 can not be detected by the operator in group 1.
 - :cpp:member:`mcpwm_gpio_fault_config_t::intr_priority` sets the priority of the interrupt. If it is set to ``0``, the driver will allocate an interrupt with a default priority. Otherwise, the driver will use the given priority.
 - :cpp:member:`mcpwm_gpio_fault_config_t::gpio_num` sets the GPIO number used by the fault.
 - :cpp:member:`mcpwm_gpio_fault_config_t::active_level` sets the active level of the fault signal.
@@ -161,7 +166,7 @@ The sync source is what can be used to synchronize the MCPWM timer and MCPWM cap
 
 To allocate a GPIO sync source, you can call the :cpp:func:`mcpwm_new_gpio_sync_src` function, with configuration structure :cpp:type:`mcpwm_gpio_sync_src_config_t` as the parameter. The configuration structure is defined as:
 
-- :cpp:member:`mcpwm_gpio_sync_src_config_t::group_id` sets the MCPWM group ID. The ID should belong to [0, :c:macro:`SOC_MCPWM_GROUPS` - 1] range. Please note, the GPIO sync sources located in different groups are totally independent, i.e., GPIO sync source in group 0 can not be detected by the timers in group 1.
+- :cpp:member:`mcpwm_gpio_sync_src_config_t::group_id` sets the MCPWM group ID. The ID should belong to [0, ``MCPWM_GROUP_NUM`` - 1] range, where ``MCPWM_GROUP_NUM`` is the number of MCPWM groups available on the chip. Please note, the GPIO sync sources located in different groups are totally independent, i.e., GPIO sync source in group 0 can not be detected by the timers in group 1.
 - :cpp:member:`mcpwm_gpio_sync_src_config_t::gpio_num` sets the GPIO number used by the sync source.
 - :cpp:member:`mcpwm_gpio_sync_src_config_t::active_neg` sets whether the sync signal is active on falling edges.
 - :cpp:member:`mcpwm_gpio_sync_src_config_t::pull_up` and :cpp:member:`mcpwm_gpio_sync_src_config_t::pull_down` set whether to pull up and/or pull down the GPIO internally.
@@ -188,7 +193,7 @@ The MCPWM group has a dedicated timer which is used to capture the timestamp whe
 
 To allocate a capture timer, you can call the :cpp:func:`mcpwm_new_capture_timer` function, with configuration structure :cpp:type:`mcpwm_capture_timer_config_t` as the parameter. The configuration structure is defined as:
 
-- :cpp:member:`mcpwm_capture_timer_config_t::group_id` sets the MCPWM group ID. The ID should belong to [0, :c:macro:`SOC_MCPWM_GROUPS` - 1] range.
+- :cpp:member:`mcpwm_capture_timer_config_t::group_id` sets the MCPWM group ID. The ID should belong to [0, ``MCPWM_GROUP_NUM`` - 1] range, where ``MCPWM_GROUP_NUM`` is the number of MCPWM groups available on the chip.
 - :cpp:member:`mcpwm_capture_timer_config_t::clk_src` sets the clock source of the capture timer.
 - :cpp:member:`mcpwm_capture_timer_config_t::resolution_hz` The driver internally will set a proper divider based on the clock source and the resolution. If it is set to ``0``, the driver will pick an appropriate resolution on its own, and you can subsequently view the current timer resolution via :cpp:func:`mcpwm_capture_timer_get_resolution`.
 

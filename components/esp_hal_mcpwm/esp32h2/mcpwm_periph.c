@@ -1,85 +1,83 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include "soc/soc.h"
-#include "soc/mcpwm_periph.h"
+#include "hal/mcpwm_periph.h"
 #include "soc/mcpwm_reg.h"
 #include "soc/gpio_sig_map.h"
 
-const mcpwm_signal_conn_t mcpwm_periph_signals = {
-    .groups = {
-        [0] = {
-            .module_name = "MCPWM0",
-            .irq_id = ETS_MCPWM0_INTR_SOURCE,
-            .operators = {
-                [0] = {
-                    .generators = {
-                        [0] = {
-                            .pwm_sig = PWM0_OUT0A_IDX
-                        },
-                        [1] = {
-                            .pwm_sig = PWM0_OUT0B_IDX
-                        }
-                    }
-                },
-                [1] = {
-                    .generators = {
-                        [0] = {
-                            .pwm_sig = PWM0_OUT1A_IDX
-                        },
-                        [1] = {
-                            .pwm_sig = PWM0_OUT1B_IDX
-                        }
-                    }
-                },
-                [2] = {
-                    .generators = {
-                        [0] = {
-                            .pwm_sig = PWM0_OUT2A_IDX
-                        },
-                        [1] = {
-                            .pwm_sig = PWM0_OUT2B_IDX
-                        }
+const soc_mcpwm_signal_desc_t soc_mcpwm_signals[1] = {
+    {
+        .module_name = "MCPWM0",
+        .irq_id = ETS_MCPWM0_INTR_SOURCE,
+        .operators = {
+            [0] = {
+                .generators = {
+                    [0] = {
+                        .pwm_sig = PWM0_OUT0A_IDX
+                    },
+                    [1] = {
+                        .pwm_sig = PWM0_OUT0B_IDX
                     }
                 }
             },
-            .gpio_faults = {
-                [0] = {
-                    .fault_sig = PWM0_F0_IN_IDX
-                },
-                [1] = {
-                    .fault_sig = PWM0_F1_IN_IDX
-                },
-                [2] = {
-                    .fault_sig = PWM0_F2_IN_IDX
+            [1] = {
+                .generators = {
+                    [0] = {
+                        .pwm_sig = PWM0_OUT1A_IDX
+                    },
+                    [1] = {
+                        .pwm_sig = PWM0_OUT1B_IDX
+                    }
                 }
             },
-            .captures = {
-                [0] = {
-                    .cap_sig = PWM0_CAP0_IN_IDX
-                },
-                [1] = {
-                    .cap_sig = PWM0_CAP1_IN_IDX
-                },
-                [2] = {
-                    .cap_sig = PWM0_CAP2_IN_IDX
-                }
-            },
-            .gpio_synchros = {
-                [0] = {
-                    .sync_sig = PWM0_SYNC0_IN_IDX
-                },
-                [1] = {
-                    .sync_sig = PWM0_SYNC1_IN_IDX
-                },
-                [2] = {
-                    .sync_sig = PWM0_SYNC2_IN_IDX
+            [2] = {
+                .generators = {
+                    [0] = {
+                        .pwm_sig = PWM0_OUT2A_IDX
+                    },
+                    [1] = {
+                        .pwm_sig = PWM0_OUT2B_IDX
+                    }
                 }
             }
         },
+        .gpio_faults = {
+            [0] = {
+                .fault_sig = PWM0_F0_IN_IDX
+            },
+            [1] = {
+                .fault_sig = PWM0_F1_IN_IDX
+            },
+            [2] = {
+                .fault_sig = PWM0_F2_IN_IDX
+            }
+        },
+        .captures = {
+            [0] = {
+                .cap_sig = PWM0_CAP0_IN_IDX
+            },
+            [1] = {
+                .cap_sig = PWM0_CAP1_IN_IDX
+            },
+            [2] = {
+                .cap_sig = PWM0_CAP2_IN_IDX
+            }
+        },
+        .gpio_synchros = {
+            [0] = {
+                .sync_sig = PWM0_SYNC0_IN_IDX
+            },
+            [1] = {
+                .sync_sig = PWM0_SYNC1_IN_IDX
+            },
+            [2] = {
+                .sync_sig = PWM0_SYNC2_IN_IDX
+            }
+        }
     }
 };
 
@@ -124,7 +122,7 @@ static const regdma_entries_config_t mcpwm_regs_retention[] = {
     },
 };
 
-const mcpwm_reg_retention_info_t mcpwm_reg_retention_info[SOC_MCPWM_GROUPS] = {
+const mcpwm_reg_retention_info_t mcpwm_reg_retention_info[1] = {
     [0] = {
         .regdma_entry_array = mcpwm_regs_retention,
         .array_size = ARRAY_SIZE(mcpwm_regs_retention),
