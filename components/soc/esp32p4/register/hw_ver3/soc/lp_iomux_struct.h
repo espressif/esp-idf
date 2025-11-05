@@ -114,22 +114,6 @@ typedef union {
 } lp_iomux_ext_wakeup0_sel_reg_t;
 
 
-/** Group: lp_pad_hold */
-/** Type of lp_pad_hold register
- *  Reserved
- */
-typedef union {
-    struct {
-        /** reg_lp_gpio_hold : R/W; bitpos: [15:0]; default: 0;
-         *  Reserved
-         */
-        uint32_t reg_lp_gpio_hold:16;
-        uint32_t reserved_16:16;
-    };
-    uint32_t val;
-} lp_iomux_lp_pad_hold_reg_t;
-
-
 /** Group: lp_pad_hys */
 /** Type of lp_pad_hys register
  *  Reserved
@@ -151,7 +135,7 @@ typedef struct lp_iomux_dev_t {
     volatile lp_iomux_ver_date_reg_t ver_date;
     volatile lp_iomux_pad_reg_t pad[16];
     volatile lp_iomux_ext_wakeup0_sel_reg_t ext_wakeup0_sel;
-    volatile lp_iomux_lp_pad_hold_reg_t lp_pad_hold;
+    uint32_t reserved_04c;
     volatile lp_iomux_lp_pad_hys_reg_t lp_pad_hys;
 } lp_iomux_dev_t;
 

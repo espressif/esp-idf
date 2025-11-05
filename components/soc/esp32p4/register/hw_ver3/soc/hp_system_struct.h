@@ -413,37 +413,6 @@ typedef union {
 } hp_crypto_ctrl_reg_t;
 
 
-/** Group: HP GPIO O HOLD CTRL0 REG */
-/** Type of gpio_o_hold_ctrl0 register
- *  NA
- */
-typedef union {
-    struct {
-        /** reg_gpio_0_hold_low : R/W; bitpos: [31:0]; default: 0;
-         *  hold control for gpio47~16
-         */
-        uint32_t reg_gpio_0_hold_low:32;
-    };
-    uint32_t val;
-} hp_gpio_o_hold_ctrl0_reg_t;
-
-
-/** Group: HP GPIO O HOLD CTRL1 REG */
-/** Type of gpio_o_hold_ctrl1 register
- *  NA
- */
-typedef union {
-    struct {
-        /** reg_gpio_0_hold_high : R/W; bitpos: [8:0]; default: 0;
-         *  hold control for gpio56~48
-         */
-        uint32_t reg_gpio_0_hold_high:9;
-        uint32_t reserved_9:23;
-    };
-    uint32_t val;
-} hp_gpio_o_hold_ctrl1_reg_t;
-
-
 /** Group: HP SYS RDN ECO CS REG */
 /** Type of sys_rdn_eco_cs register
  *  NA
@@ -2149,8 +2118,7 @@ typedef struct hp_system_dev_t {
     volatile hp_cpu_corestalled_st_reg_t cpu_corestalled_st;
     uint32_t reserved_068[2];
     volatile hp_crypto_ctrl_reg_t crypto_ctrl;
-    volatile hp_gpio_o_hold_ctrl0_reg_t gpio_o_hold_ctrl0;
-    volatile hp_gpio_o_hold_ctrl1_reg_t gpio_o_hold_ctrl1;
+    uint32_t reserved_074[2];
     volatile hp_sys_rdn_eco_cs_reg_t sys_rdn_eco_cs;
     volatile hp_cache_apb_postw_en_reg_t cache_apb_postw_en;
     volatile hp_l2_mem_subsize_reg_t l2_mem_subsize;
