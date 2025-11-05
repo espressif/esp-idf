@@ -5,6 +5,12 @@ config BLE_LOG_ENABLED
         Enable BLE Log Module
 
 if BLE_LOG_ENABLED
+    config BLE_LOG_TASK_STACK_SIZE
+        int "Stack size for BLE Log Task"
+        default 1024
+        help
+            Stack size for BLE Log Task
+
     config BLE_LOG_LBM_TRANS_SIZE
         int "Buffer size for each peripheral transport"
         default 512
