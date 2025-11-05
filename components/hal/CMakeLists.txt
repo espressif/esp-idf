@@ -111,10 +111,6 @@ elseif(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "rmt_hal.c")
     endif()
 
-    if(CONFIG_SOC_PCNT_SUPPORTED)
-        list(APPEND srcs "pcnt_hal.c")
-    endif()
-
     if(CONFIG_SOC_UHCI_SUPPORTED)
         list(APPEND srcs "uhci_hal.c")
     endif()

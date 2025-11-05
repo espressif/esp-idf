@@ -8,11 +8,11 @@
 
 #include <stdint.h>
 #include <stddef.h>
-#include "soc/soc_caps_full.h"
+#include "soc/soc_caps.h"
 #include "soc/interrupts.h"
-
-// helper macros to access module attributes
-#define SOC_PCNT_ATTR(_attr) SOC_MODULE_ATTR(PCNT, _attr)
+#if SOC_HAS(PCNT)
+#include "hal/pcnt_ll.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -26,13 +26,13 @@ typedef struct {
         struct {
             const int pulse_sig_id_matrix; // pulse signal ID in the GPIO matrix
             const int ctl_sig_id_matrix;   // control signal ID in the GPIO matrix
-        } channels[SOC_PCNT_ATTR(CHANS_PER_UNIT)];
+        } channels[PCNT_LL_GET(CHANS_PER_UNIT)];
         const int clear_sig_id_matrix;     // clear signal ID in the GPIO matrix
-    } units[SOC_PCNT_ATTR(UNITS_PER_INST)];
+    } units[PCNT_LL_GET(UNITS_PER_INST)];
     const int irq_id; // interrupt source ID
 } soc_pcnt_signal_desc_t;
 
-extern const soc_pcnt_signal_desc_t soc_pcnt_signals[SOC_PCNT_ATTR(INST_NUM)];
+extern const soc_pcnt_signal_desc_t soc_pcnt_signals[PCNT_LL_GET(INST_NUM)];
 
 #endif // SOC_HAS(PCNT)
 

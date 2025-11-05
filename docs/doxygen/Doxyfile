@@ -261,7 +261,7 @@ INPUT = \
     $(PROJECT_PATH)/components/hal/include/hal/ledc_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/mcpwm_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/parlio_types.h \
-    $(PROJECT_PATH)/components/hal/include/hal/pcnt_types.h \
+    $(PROJECT_PATH)/components/esp_hal_pcnt/include/hal/pcnt_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/rmt_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/rtc_io_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/sdio_slave_types.h \
