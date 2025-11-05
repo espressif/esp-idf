@@ -332,6 +332,9 @@ void esp_phy_enable(esp_phy_modem_t modem)
         assert(phy_module_has_clock_bits(PHY_INIT_MODEM_CLOCK_REQUIRED_BITS));
         if (s_is_phy_calibrated == false) {
             esp_phy_load_cal_and_init();
+#if CONFIG_ESP_PHY_PLL_TRACK_TEMP_DEBUG
+            phy_track_temp_debug(CONFIG_ESP_PHY_PLL_TRACK_TEMP_DEBUG_FLAG, CONFIG_ESP_PHY_PLL_TRACK_TEMP_DELTA);
+#endif
             s_is_phy_calibrated = true;
         } else {
 #if SOC_PM_SUPPORT_PMU_MODEM_STATE && CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP
