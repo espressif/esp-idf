@@ -74,7 +74,7 @@ esp_err_t esp_sleep_sub_mode_force_disable(esp_sleep_sub_mode_t mode);
  */
 int32_t* esp_sleep_sub_mode_dump_config(FILE *stream);
 
-#if SOC_GPIO_SUPPORT_HOLD_IO_IN_DSLP && !SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP
+#if !SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP
 /**
  * @brief Isolate all digital IOs except those that are held during deep sleep
  *

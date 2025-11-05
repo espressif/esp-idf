@@ -22,6 +22,7 @@
 #include "soc/io_mux_reg.h"
 #include "soc/io_mux_struct.h"
 #include "soc/hp_system_struct.h"
+#include "soc/lp_system_struct.h"
 #include "soc/lp_iomux_struct.h"
 #include "soc/hp_sys_clkrst_struct.h"
 #include "soc/pmu_struct.h"
@@ -31,6 +32,7 @@
 #include "hal/gpio_types.h"
 #include "hal/misc.h"
 #include "hal/assert.h"
+#include "hal/config.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -504,6 +506,13 @@ static inline void gpio_ll_get_drive_capability(gpio_dev_t *hw, uint32_t gpio_nu
 __attribute__((always_inline))
 static inline void gpio_ll_hold_en(gpio_dev_t *hw, uint32_t gpio_num)
 {
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+    if (gpio_num < 32) {
+        LP_SYS.pad_rtc_hold_ctrl0.pad_rtc_hold_ctrl0 |= (1 << gpio_num);
+    } else {
+        LP_SYS.pad_rtc_hold_ctrl1.pad_rtc_hold_ctrl1 |= (1 << (gpio_num - 32));
+    }
+#else
     uint64_t bit_mask = 1ULL << gpio_num;
     if (!(bit_mask & SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK)) {
         // GPIO 0-15
@@ -519,6 +528,7 @@ static inline void gpio_ll_hold_en(gpio_dev_t *hw, uint32_t gpio_num)
             HP_SYSTEM.gpio_o_hold_ctrl1.reg_gpio_0_hold_high |= (bit_mask >> (32 + SOC_RTCIO_PIN_COUNT));
         }
     }
+#endif
 }
 
 /**
@@ -530,6 +540,13 @@ static inline void gpio_ll_hold_en(gpio_dev_t *hw, uint32_t gpio_num)
 __attribute__((always_inline))
 static inline void gpio_ll_hold_dis(gpio_dev_t *hw, uint32_t gpio_num)
 {
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+    if (gpio_num < 32) {
+        LP_SYS.pad_rtc_hold_ctrl0.pad_rtc_hold_ctrl0 &= ~(1 << gpio_num);
+    } else {
+        LP_SYS.pad_rtc_hold_ctrl1.pad_rtc_hold_ctrl1 &= ~(1 << (gpio_num - 32));
+    }
+#else
     uint64_t bit_mask = 1ULL << gpio_num;
     if (!(bit_mask & SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK)) {
         // GPIO 0-15
@@ -545,6 +562,7 @@ static inline void gpio_ll_hold_dis(gpio_dev_t *hw, uint32_t gpio_num)
             HP_SYSTEM.gpio_o_hold_ctrl1.reg_gpio_0_hold_high &= ~(bit_mask >> (32 + SOC_RTCIO_PIN_COUNT));
         }
     }
+#endif
 }
 
 /**
@@ -567,6 +585,13 @@ static inline bool gpio_ll_is_digital_io_hold(gpio_dev_t *hw, uint32_t gpio_num)
         // GPIO 0-15
         abort();
     } else {
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+        if (gpio_num < 32) {
+            return !!(LP_SYS.pad_rtc_hold_ctrl0.pad_rtc_hold_ctrl0 & (1 << gpio_num));
+        } else {
+            return !!(LP_SYS.pad_rtc_hold_ctrl1.pad_rtc_hold_ctrl1 & (1 << (gpio_num - 32)));
+        }
+#else
         if (gpio_num < 32 + SOC_RTCIO_PIN_COUNT) {
             // GPIO 16-47
             return !!(HP_SYSTEM.gpio_o_hold_ctrl0.reg_gpio_0_hold_low & (bit_mask >> SOC_RTCIO_PIN_COUNT));
@@ -574,6 +599,7 @@ static inline bool gpio_ll_is_digital_io_hold(gpio_dev_t *hw, uint32_t gpio_num)
             // GPIO 48-54
             return !!(HP_SYSTEM.gpio_o_hold_ctrl1.reg_gpio_0_hold_high & (bit_mask >> (32 + SOC_RTCIO_PIN_COUNT)));
         }
+#endif
     }
 }
 
