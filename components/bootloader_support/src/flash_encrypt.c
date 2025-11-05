@@ -450,11 +450,11 @@ bool esp_flash_encryption_cfg_verify_release_mode(void)
 
 #if CONFIG_SECURE_FLASH_ENCRYPTION_KEY_SOURCE_EFUSES
     esp_efuse_purpose_t purposes[] = {
-#if SOC_FLASH_ENCRYPTION_XTS_AES_256
+#if SOC_EFUSE_XTS_AES_KEY_256
         ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_1,
         ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_2,
 #endif
-#if SOC_FLASH_ENCRYPTION_XTS_AES_128
+#if SOC_EFUSE_XTS_AES_KEY_128
         ESP_EFUSE_KEY_PURPOSE_XTS_AES_128_KEY,
 #endif
     };
