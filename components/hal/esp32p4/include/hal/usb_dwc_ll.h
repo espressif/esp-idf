@@ -28,7 +28,8 @@ extern "C" {
 ----------------------------------------------------------------------------- */
 
 #define USB_DWC_QTD_LIST_MEM_ALIGN              512
-#define USB_DWC_FRAME_LIST_MEM_ALIGN            512     // The frame list needs to be 512 bytes aligned (contrary to the databook)
+#define USB_DWC_FRAME_LIST_MEM_ALIGN            512        // The frame list needs to be 512 bytes aligned (contrary to the databook)
+#define USB_DWC_CORE_REG_GSNPSID_4_20a          0x4F54420A // From 4.20a upward, the reset sequence is changed
 
 /* -----------------------------------------------------------------------------
 ------------------------------- Global Registers -------------------------------
@@ -279,12 +280,28 @@ static inline void usb_dwc_ll_grstctl_reset_frame_counter(usb_dwc_dev_t *hw)
 
 static inline void usb_dwc_ll_grstctl_core_soft_reset(usb_dwc_dev_t *hw)
 {
-    hw->grstctl_reg.csftrst = 1;
-}
+    const uint32_t gnspsid = hw->gsnpsid_reg.val;
 
-static inline bool usb_dwc_ll_grstctl_is_core_soft_reset_in_progress(usb_dwc_dev_t *hw)
-{
-    return hw->grstctl_reg.csftrst;
+    // Start core soft reset
+    hw->grstctl_reg.csftrst = 1;
+
+    // Wait for the reset to complete
+    if (gnspsid < USB_DWC_CORE_REG_GSNPSID_4_20a) {
+        // Version < 4.20a
+        while (hw->grstctl_reg.csftrst) {
+            ;
+        }
+    } else {
+        // Version >= 4.20a
+        while (!(hw->grstctl_reg.csftrstdone)) {
+            ;
+        }
+        usb_dwc_grstctl_reg_t grstctl;
+        grstctl.val = hw->grstctl_reg.val;
+        grstctl.csftrst     = 0; // Clear RESET bit once reset is done
+        grstctl.csftrstdone = 1; // Write 1 to clear RESET_DONE bit
+        hw->grstctl_reg.val = grstctl.val;
+    }
 }
 
 // --------------------------- GINTSTS Register --------------------------------
