@@ -20,7 +20,6 @@
 #include "freertos/FreeRTOS.h"
 #include "esp_app_format.h"
 #include "esp_core_dump_types.h"
-#include "esp_core_dump_port_impl.h"
 #include "esp_core_dump.h"
 
 #ifdef __cplusplus
@@ -181,6 +180,16 @@ void esp_core_dump_summary_parse_exc_regs(esp_core_dump_summary_t *summary, void
 void esp_core_dump_summary_parse_backtrace_info(esp_core_dump_bt_info_t *bt_info, const void *vaddr,
                                                 const void *paddr, uint32_t stack_size);
 #endif /* CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH */
+
+/**
+ * @brief Stack switching implemented in C for RISC-V, Assembly for Xtensa
+ *
+ * This function switches to the coredump stack, writes the ELF core dump,
+ * reports stack usage, and restores the original stack.
+ * @param new_stack new stack buffer address
+ * @param new_sp aligned stack pointer address
+ */
+void esp_core_dump_port_write(uint32_t new_stack, uint32_t new_sp);
 
 #ifdef __cplusplus
 }
