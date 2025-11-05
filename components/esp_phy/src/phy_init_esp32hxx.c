@@ -118,6 +118,9 @@ void esp_phy_enable(esp_phy_modem_t modem)
         if (!s_phy_is_enabled) {
             register_chipv7_phy(NULL, NULL, PHY_RF_CAL_FULL);
             phy_version_print();
+#if CONFIG_ESP_PHY_PLL_TRACK_TEMP_DEBUG
+            phy_track_temp_debug(CONFIG_ESP_PHY_PLL_TRACK_TEMP_DEBUG_FLAG, CONFIG_ESP_PHY_PLL_TRACK_TEMP_DELTA);
+#endif
             s_phy_is_enabled = true;
         } else {
             phy_wakeup_init();
