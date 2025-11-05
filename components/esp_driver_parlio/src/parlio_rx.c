@@ -394,7 +394,9 @@ static bool parlio_rx_default_desc_done_callback(gdma_channel_handle_t dma_chan,
         memcpy(rx_unit->usr_recv_buf + rx_unit->curr_trans.recv_bytes, evt_data.data, evt_data.recv_bytes);
     } else {
         portENTER_CRITICAL_ISR(&s_rx_spinlock);
-        rx_unit->curr_trans.delimiter->under_using = false;
+        if (rx_unit->curr_trans.delimiter) {
+            rx_unit->curr_trans.delimiter->under_using = false;
+        }
         portEXIT_CRITICAL_ISR(&s_rx_spinlock);
     }
     /* Update received bytes */
@@ -454,6 +456,10 @@ static esp_err_t parlio_rx_unit_init_dma(parlio_rx_unit_handle_t rx_unit, size_t
     };
     ESP_RETURN_ON_ERROR(gdma_config_transfer(rx_unit->dma_chan, &trans_cfg), TAG, "config DMA transfer failed");
     ESP_RETURN_ON_ERROR(gdma_get_alignment_constraints(rx_unit->dma_chan, &rx_unit->dma_mem_align, NULL), TAG, "get alignment constraints failed");
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+    uint32_t cache_line_size = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA);
+    rx_unit->dma_mem_align = rx_unit->dma_mem_align > cache_line_size ? rx_unit->dma_mem_align : cache_line_size;
+#endif
 
     /* Register callbacks */
     gdma_rx_event_callbacks_t cbs = {
@@ -1126,4 +1132,51 @@ esp_err_t parlio_rx_unit_register_event_callbacks(parlio_rx_unit_handle_t rx_uni
 err:
     xSemaphoreGive(rx_unit->mutex);
     return ret;
+}
+
+esp_err_t parlio_rx_unit_force_trigger_eof(parlio_rx_unit_handle_t rx_unit, bool *need_yield)
+{
+    ESP_RETURN_ON_FALSE_ISR(rx_unit, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+
+    int uint_id = rx_unit->base.unit_id;
+    parlio_unit_base_handle_t pair_tx_unit = rx_unit->base.group->tx_units[uint_id];
+    /* This function will reset the whole parlio module,
+       If the pair tx unit is in using,
+       the reset operation will affect the TX unit and lead to unknown behavior */
+    ESP_RETURN_ON_FALSE_ISR(!pair_tx_unit, ESP_ERR_INVALID_STATE, TAG, "can't be called when pair tx unit is in using");
+
+    /* Stop and reset the DMA channel first */
+    ESP_RETURN_ON_ERROR_ISR(gdma_stop(rx_unit->dma_chan), TAG, "stop DMA channel failed");
+    ESP_RETURN_ON_ERROR_ISR(gdma_reset(rx_unit->dma_chan), TAG, "reset DMA channel failed");
+
+    parlio_hal_context_t *hal = &rx_unit->base.group->hal;
+    /* Save the current register values */
+    parl_io_dev_t save_curr_regs = *(parl_io_dev_t *)hal->regs;
+    /* Reset the hardware FSM of the parlio module */
+    PARLIO_RCC_ATOMIC() {
+        parlio_ll_reset_register(rx_unit->base.group->group_id);
+    }
+    /* Switch to the default clock source to ensure the register values can be written back successfully */
+    PARLIO_CLOCK_SRC_ATOMIC() {
+        parlio_ll_rx_set_clock_source(hal->regs, PARLIO_CLK_SRC_DEFAULT);
+    }
+    /* Restore the register values and clock source*/
+    memcpy(hal->regs, &save_curr_regs, sizeof(parl_io_dev_t));
+    parlio_ll_rx_update_config(hal->regs);
+    PARLIO_CLOCK_SRC_ATOMIC() {
+        parlio_ll_rx_set_clock_source(hal->regs, rx_unit->clk_src);
+    }
+
+    /* Force to trigger the EOF interrupt */
+    gdma_event_data_t event_data = {
+        .flags.normal_eof = 1
+    };
+    bool _need_yield = false;
+    _need_yield |= parlio_rx_default_desc_done_callback(rx_unit->dma_chan, &event_data, rx_unit);
+    _need_yield |= parlio_rx_default_eof_callback(rx_unit->dma_chan, &event_data, rx_unit);
+    if (need_yield) {
+        *need_yield |= _need_yield;
+    }
+
+    return ESP_OK;
 }
