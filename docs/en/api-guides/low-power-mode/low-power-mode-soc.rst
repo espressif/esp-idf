@@ -271,6 +271,9 @@ This section introduces the recommended configuration and configuration steps fo
 
     - Power down CPU (:ref:`CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP`)
 
+    .. only:: esp32p4
+
+      For ESP32P4, only revisions greater than 3.0 support the CPU power domain individual power-down.
 
 .. only:: SOC_PM_SUPPORT_TAGMEM_PD
 

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +13,7 @@
 #include "soc/soc.h"
 #include "soc/lp_system_struct.h"
 #include "hal/misc.h"
+#include "hal/config.h"
 #include "esp32p4/rom/rtc.h"
 
 
@@ -38,6 +39,11 @@ FORCE_INLINE_ATTR void lp_sys_ll_inform_wakeup_type(bool dslp)
 FORCE_INLINE_ATTR void lp_sys_ll_set_pau_aon_bypass(bool bypass)
 {
     LP_SYS.backup_dma_cfg1.aon_bypass = bypass ? 1 : 0;
+}
+
+FORCE_INLINE_ATTR bool lp_sys_ll_get_pau_aon_bypass(void)
+{
+    return LP_SYS.backup_dma_cfg1.aon_bypass;
 }
 
 FORCE_INLINE_ATTR void lp_sys_ll_set_pau_link_tout_thres(uint32_t tout)

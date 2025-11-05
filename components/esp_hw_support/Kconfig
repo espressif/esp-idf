@@ -292,4 +292,5 @@ menu "Hardware Settings"
             Otherwise, internal voltage will be set to fix dbias.
             This is a must for stable mass production. Disable for debugging only.
 
+    orsource "./lowpower/port/esp32p4/Kconfig.p4_rev3_mspi_workaround"
 endmenu

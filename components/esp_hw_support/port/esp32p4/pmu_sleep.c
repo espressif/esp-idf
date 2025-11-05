@@ -30,6 +30,7 @@
 #include "hal/pmu_hal.h"
 #include "hal/psram_ctrlr_ll.h"
 #include "hal/lp_sys_ll.h"
+#include "hal/lp_clkrst_ll.h"
 #include "hal/clk_gate_ll.h"
 #include "esp_private/esp_pmu.h"
 #include "pmu_param.h"
@@ -159,7 +160,9 @@ const pmu_sleep_config_t* pmu_sleep_config_default(
     )
 {
     pmu_sleep_power_config_t power_default = PMU_SLEEP_POWER_CONFIG_DEFAULT(sleep_flags);
-
+#if !CONFIG_ESP32P4_SELECTS_REV_LESS_V3
+    power_default.hp_sys.dig_power.cpu_pd_en = (sleep_flags & PMU_SLEEP_PD_CPU) ? 1 : 0;
+#endif
     if (dslp) {
         config->param.lp_sys.analog_wait_target_cycle  = rtc_time_us_to_slowclk(PMU_LP_ANALOG_WAIT_TARGET_TIME_DSLP_US, slowclk_period);
 
@@ -405,6 +408,10 @@ TCM_IRAM_ATTR uint32_t pmu_sleep_start(uint32_t wakeup_opt, uint32_t reject_opt,
 #endif
             rtc_clk_mpll_disable();
         }
+    } else {
+#if CONFIG_P4_REV3_MSPI_CRASH_AFTER_POWER_UP_WORKAROUND
+        lp_clkrst_ll_boot_from_lp_ram(true);
+#endif
     }
 
 
@@ -428,12 +435,16 @@ TCM_IRAM_ATTR uint32_t pmu_sleep_start(uint32_t wakeup_opt, uint32_t reject_opt,
         ;
     }
 
-#if CONFIG_SPIRAM && CONFIG_ESP_LDO_RESERVE_PSRAM
-    // Enable PSRAM chip power supply after deepsleep request rejected
     if (dslp) {
+#if CONFIG_SPIRAM && CONFIG_ESP_LDO_RESERVE_PSRAM
+        // Enable PSRAM chip power supply after deepsleep request rejected
         ldo_ll_enable(LDO_ID2UNIT(CONFIG_ESP_LDO_CHAN_PSRAM_DOMAIN), true);
-    }
 #endif
+#if CONFIG_P4_REV3_MSPI_CRASH_AFTER_POWER_UP_WORKAROUND
+        // Set reset vector back to HP ROM after deepsleep request rejected
+        lp_clkrst_ll_boot_from_lp_ram(false);
+#endif
+    }
 
     return pmu_sleep_finish(dslp);
 }
