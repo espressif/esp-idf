@@ -394,6 +394,7 @@ TEST_CASE("Test vTaskSuspendAll allows scheduling on other cores", "[freertos]")
         // Cleanup tasks
         vTaskDelete(a1_task_hdl);
         vTaskDelete(b1_task_hdl);
+        vTaskDelay(10);
     }
 
     vSemaphoreDelete(test_unblk_done_sem);
