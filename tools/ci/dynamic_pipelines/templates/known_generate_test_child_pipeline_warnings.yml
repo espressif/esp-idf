@@ -24,5 +24,7 @@ no_runner_tags:
   - esp32c6,jtag
   - esp32c61,jtag
   - esp32h2,jtag
+  - esp32p4,*
   - esp32p4,jtag
+  - esp32p4_2,*
   - esp32s2,usb_host_flash_disk
