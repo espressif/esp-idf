@@ -219,6 +219,33 @@ menu "PHY"
                 PLL track helps the PHY module adapt to temperature changes, ensuring stable performance.
                 When pll enabled, the ESP PHY module will periodically track and adjust PLL parameters.
 
+        config ESP_PHY_PLL_TRACK_TEMP_DEBUG
+            bool "PHY temperature tracking debug mode"
+            depends on ESP_PHY_DEBUG
+            default n
+            help
+                If enabled, allows customization of temperature delta for PHY track pll.
+
+        config ESP_PHY_PLL_TRACK_TEMP_DEBUG_FLAG
+            int "Debug flag for PHY temperature tracking"
+            depends on ESP_PHY_PLL_TRACK_TEMP_DEBUG
+            range 1 3
+            default 1
+            help
+                Bitmask debug flag passed to the PHY temperature tracking routine.
+                Each bit enables a specific tracking mode.
+
+                - bit0: PLL tracking
+                - bit1: Calibration parameter tracking
+
+        config ESP_PHY_PLL_TRACK_TEMP_DELTA
+            int "Temperature delta for PHY track pll"
+            depends on ESP_PHY_PLL_TRACK_TEMP_DEBUG
+            range 0 255
+            default 10
+            help
+                Set the temperature delta for PHY track pll.
+
         config ESP_PHY_INIT_IRAM
             bool "Place PHY (de)init in IRAM"
             depends on SOC_IEEE802154_BLE_ONLY
