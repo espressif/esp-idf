@@ -9,7 +9,7 @@ from pytest_embedded_idf.utils import idf_parametrize
 
 
 @pytest.mark.generic
-@idf_parametrize('target', ['esp32c6'], indirect=['target'])
+@idf_parametrize('target', ['supported_targets'], indirect=['target'])
 def test_example_tee_basic(dut: Dut) -> None:
     # Logging example binary details
     binary_files = [
@@ -19,7 +19,7 @@ def test_example_tee_basic(dut: Dut) -> None:
     for file_name, log_label in binary_files:
         binary_file = os.path.join(dut.app.binary_path, file_name)
         bin_size = os.path.getsize(binary_file)
-        logging.info('{}: {}KB'.format(log_label, bin_size // 1024))
+        logging.info(f'{log_label}: {bin_size // 1024}KB')
 
     # Start test
     dut.expect('AES-256-CBC operations in TEE', timeout=30)

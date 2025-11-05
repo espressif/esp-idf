@@ -1,5 +1,5 @@
-| Supported Targets | ESP32-C6 |
-| ----------------- | -------- |
+| Supported Targets | ESP32-C5 | ESP32-C6 |
+| ----------------- | -------- | -------- |
 
 # Basic TEE example
 
