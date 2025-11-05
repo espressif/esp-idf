@@ -1,16 +1,8 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
-/*******************************************************************************
- * NOTICE
- * The hal is not public api, don't use in application code.
- * See readme.md in hal/include/hal/readme.md
- ******************************************************************************/
-
-// The LL layer for ESP32-S2 PCNT register operations
 
 #pragma once
 
@@ -18,14 +10,17 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include "soc/pcnt_struct.h"
-#include "soc/dport_reg.h"
-#include "soc/dport_access.h"
+#include "soc/pcr_struct.h"
 #include "hal/pcnt_types.h"
+#include "hal/misc.h"
 #include "hal/assert.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+// Get PCNT attribute
+#define PCNT_LL_GET(attr)                   (PCNT_LL_ ## attr)
 
 #define PCNT_LL_GET_HW(num)      (((num) == 0) ? (&PCNT) : NULL)
 #define PCNT_LL_MAX_GLITCH_WIDTH 1023
@@ -41,6 +36,17 @@ typedef enum {
     PCNT_LL_WATCH_EVENT_ZERO_CROSS,
     PCNT_LL_WATCH_EVENT_MAX
 } pcnt_ll_watch_event_id_t;
+
+typedef enum {
+    PCNT_LL_STEP_EVENT_REACH_INTERVAL_FORWARD = PCNT_LL_WATCH_EVENT_MAX,
+    PCNT_LL_STEP_EVENT_REACH_INTERVAL_BACKWARD,
+} pcnt_ll_step_event_id_t;
+
+// SoC-based capabilities
+#define PCNT_LL_INST_NUM                   1  // Number of PCNT instances
+#define PCNT_LL_UNITS_PER_INST             4  // Number of units in each PCNT instance
+#define PCNT_LL_CHANS_PER_UNIT             2  // Number of channels in each PCNT unit
+#define PCNT_LL_THRES_POINT_PER_UNIT       2  // Number of threshold points in each PCNT unit
 
 #define PCNT_LL_WATCH_EVENT_MASK          ((1 << PCNT_LL_WATCH_EVENT_MAX) - 1)
 #define PCNT_LL_UNIT_WATCH_EVENT(unit_id) (1 << (unit_id))
@@ -150,6 +156,39 @@ static inline void pcnt_ll_clear_count(pcnt_dev_t *hw, uint32_t unit)
 {
     hw->ctrl.val |= 1 << (2 * unit);
     hw->ctrl.val &= ~(1 << (2 * unit));
+}
+
+/**
+ * @brief Enable PCNT step comparator event
+ *
+ * @param hw Peripheral PCNT hardware instance address.
+ * @param unit PCNT unit number
+ * @param enable true to enable, false to disable
+ */
+static inline void pcnt_ll_enable_step_notify(pcnt_dev_t *hw, uint32_t unit, bool enable)
+{
+    if (enable) {
+        hw->ctrl.val |= 1 << (8 + unit);
+    } else {
+        hw->ctrl.val &= ~(1 << (8 + unit));
+    }
+}
+
+/**
+ * @brief Set PCNT step value
+ *
+ * @param hw Peripheral PCNT hardware instance address.
+ * @param unit PCNT unit number
+ * @param direction PCNT step direction
+ * @param value PCNT step value
+ */
+static inline void pcnt_ll_set_step_value(pcnt_dev_t *hw, uint32_t unit, pcnt_step_direction_t direction, uint16_t value)
+{
+    if (direction == PCNT_STEP_FORWARD) {
+        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->conf_unit[unit].conf3, cnt_h_step_un, value);
+    } else {
+        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->conf_unit[unit].conf3, cnt_l_step_un, value);
+    }
 }
 
 /**
@@ -338,7 +377,7 @@ static inline int pcnt_ll_get_low_limit_value(pcnt_dev_t *hw, uint32_t unit)
     pcnt_un_conf2_reg_t conf2_reg;
     conf2_reg.val = hw->conf_unit[unit].conf2.val;
 
-    int16_t value = conf2_reg.cnt_l_lim_un;
+    int16_t value = conf2_reg.cnt_l_lim_un ;
     return value;
 }
 
@@ -358,9 +397,9 @@ static inline int pcnt_ll_get_thres_value(pcnt_dev_t *hw, uint32_t unit, uint32_
     conf1_reg.val = hw->conf_unit[unit].conf1.val;
 
     if (thres == 0) {
-        value = conf1_reg.cnt_thres0_un;
+        value = conf1_reg.cnt_thres0_un ;
     } else {
-        value = conf1_reg.cnt_thres1_un;
+        value = conf1_reg.cnt_thres1_un ;
     }
     return value;
 }
@@ -460,19 +499,8 @@ static inline volatile void *pcnt_ll_get_intr_status_reg(pcnt_dev_t *hw)
 static inline void pcnt_ll_enable_bus_clock(int group_id, bool enable)
 {
     (void)group_id;
-    if (enable) {
-        DPORT_SET_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, DPORT_PCNT_CLK_EN);
-    } else {
-        DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, DPORT_PCNT_CLK_EN);
-    }
+    PCR.pcnt_conf.pcnt_clk_en = enable;
 }
-
-/// use a macro to wrap the function, force the caller to use it in a critical section
-/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define pcnt_ll_enable_bus_clock(...) do { \
-        (void)__DECLARE_RCC_ATOMIC_ENV; \
-        pcnt_ll_enable_bus_clock(__VA_ARGS__); \
-    } while(0)
 
 /**
  * @brief Reset the PCNT module
@@ -480,17 +508,18 @@ static inline void pcnt_ll_enable_bus_clock(int group_id, bool enable)
 static inline void pcnt_ll_reset_register(int group_id)
 {
     (void)group_id;
-    DPORT_SET_PERI_REG_MASK(DPORT_PERIP_RST_EN0_REG, DPORT_PCNT_RST);
-    DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_RST_EN0_REG, DPORT_PCNT_RST);
+    PCR.pcnt_conf.pcnt_rst_en = 1;
+    PCR.pcnt_conf.pcnt_rst_en = 0;
 }
 
-/// use a macro to wrap the function, force the caller to use it in a critical section
-/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define pcnt_ll_reset_register(...) do { \
-        (void)__DECLARE_RCC_ATOMIC_ENV; \
-        pcnt_ll_reset_register(__VA_ARGS__); \
-    } while(0)
-
+/**
+ * @brief Check if the step notify is supported
+ */
+static inline bool pcnt_ll_is_step_notify_supported(int group_id)
+{
+    (void)group_id;
+    return true;
+}
 
 #ifdef __cplusplus
 }

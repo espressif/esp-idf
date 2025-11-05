@@ -19,6 +19,9 @@
 extern "C" {
 #endif
 
+// Get PCNT attribute
+#define PCNT_LL_GET(attr)                   (PCNT_LL_ ## attr)
+
 #define PCNT_LL_GET_HW(num)      (((num) == 0) ? (&PCNT) : NULL)
 #define PCNT_LL_MAX_GLITCH_WIDTH 1023
 #define PCNT_LL_MAX_LIM          SHRT_MAX
@@ -39,9 +42,14 @@ typedef enum {
     PCNT_LL_STEP_EVENT_REACH_INTERVAL_BACKWARD,
 } pcnt_ll_step_event_id_t;
 
+// SoC-based capabilities
+#define PCNT_LL_INST_NUM                   1  // Number of PCNT instances
+#define PCNT_LL_UNITS_PER_INST             4  // Number of units in each PCNT instance
+#define PCNT_LL_CHANS_PER_UNIT             2  // Number of channels in each PCNT unit
+#define PCNT_LL_THRES_POINT_PER_UNIT       2  // Number of threshold points in each PCNT unit
+
 #define PCNT_LL_WATCH_EVENT_MASK          ((1 << PCNT_LL_WATCH_EVENT_MAX) - 1)
 #define PCNT_LL_UNIT_WATCH_EVENT(unit_id) (1 << (unit_id))
-#define PCNT_LL_CLOCK_SUPPORT_APB         1
 
 /**
  * @brief Set clock source for pcnt group
@@ -52,7 +60,17 @@ typedef enum {
 static inline void pcnt_ll_set_clock_source(pcnt_dev_t *hw, pcnt_clock_source_t clk_src)
 {
     (void)hw;
-    HAL_ASSERT(clk_src == PCNT_CLK_SRC_APB && "unsupported clock source");
+    switch (clk_src) {
+    case PCNT_CLK_SRC_XTAL:
+        PCR.pcnt_conf.pcnt_clk_sel = 0;
+        break;
+    case PCNT_CLK_SRC_RC_FAST:
+        PCR.pcnt_conf.pcnt_clk_sel = 1;
+        break;
+    default:
+        HAL_ASSERT(false && "unsupported clock source");
+        break;
+    }
 }
 
 /**
@@ -491,6 +509,7 @@ static inline void pcnt_ll_enable_bus_clock(int group_id, bool enable)
 {
     (void)group_id;
     PCR.pcnt_conf.pcnt_clk_en = enable;
+    PCR.pcnt_conf.pcnt_reg_clk_en = enable;
 }
 
 /**
@@ -511,7 +530,6 @@ static inline bool pcnt_ll_is_step_notify_supported(int group_id)
     (void)group_id;
     return true;
 }
-
 
 #ifdef __cplusplus
 }
