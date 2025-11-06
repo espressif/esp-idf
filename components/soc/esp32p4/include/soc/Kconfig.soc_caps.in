@@ -1879,6 +1879,10 @@ config SOC_PM_SUPPORT_TOUCH_SENSOR_WAKEUP
     bool
     default y
 
+config SOC_PM_SUPPORT_LP_UART_WAKEUP
+    bool
+    default y
+
 config SOC_PM_SUPPORT_CPU_PD
     bool
     default y
