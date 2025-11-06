@@ -8,6 +8,7 @@ This section contains reference of the high-level storage APIs. They are based o
 - :doc:`Partitions API <partition>` allow block based access to SPI flash according to the :doc:`/api-guides/partition-tables`.
 - :doc:`Non-Volatile Storage library (NVS) <nvs_flash>` implements a fault-tolerant wear-levelled key-value storage in SPI NOR flash.
 - :doc:`Virtual File System (VFS) <vfs>` library provides an interface for registration of file system drivers. SPIFFS, FAT and various other file system libraries are based on the VFS.
+- :doc:`Block Device Layer <blockdev>` defines a common block-device abstraction so storage drivers, middleware, and filesystems can interoperate without bespoke adapters.
 - :doc:`SPIFFS <spiffs>` is a wear-levelled file system optimized for SPI NOR flash, well suited for small partition sizes and low throughput
 - :doc:`FAT <fatfs>` is a standard file system which can be used in SPI flash or on SD/MMC cards
 - :doc:`Wear Levelling <wear-levelling>` library implements a flash translation layer (FTL) suitable for SPI NOR flash. It is used as a container for FAT partitions in flash.
@@ -33,6 +34,7 @@ For information about storage security, please refer to :doc:`Storage Security <
     nvs_partition_parse.rst
     sdmmc
     partition
+    blockdev
     spiffs
     vfs
     wear-levelling
