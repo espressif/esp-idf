@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -74,4 +74,9 @@ void ledc_hal_get_fade_end_intr_status(ledc_hal_context_t *hal, uint32_t *intr_s
 void ledc_hal_clear_fade_end_intr_status(ledc_hal_context_t *hal, ledc_channel_t channel_num)
 {
     ledc_ll_clear_fade_end_intr_status(hal->dev, hal->speed_mode, channel_num);
+}
+
+volatile void* ledc_hal_get_fade_end_intr_addr(ledc_hal_context_t *hal)
+{
+    return ledc_ll_get_fade_end_intr_addr(hal->dev);
 }
