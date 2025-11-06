@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,6 +27,8 @@
 #if UNW_UNKNOWN_TARGET
 #error "Unsupported architecture for unwinding"
 #endif
+
+#define MAX_ITERATIONS  100
 
 /**
  * @brief Dimension of an array (number of elements)
@@ -150,7 +152,7 @@ typedef struct {
 
 /**
  * @brief Set a register's offset (relative to CFA).
- * The highest bit is set to 1 to mark that this register needs to be retrived because it has been
+ * The highest bit is set to 1 to mark that this register needs to be retrieved because it has been
  * altered.
  */
 #define ESP_EH_FRAME_SET_REG_OFFSET(offset)     (0x80000000 | offset)
@@ -201,7 +203,7 @@ typedef struct {
 #define ESP_EH_FRAME_GET_CFA_OFF(value)         ((value) >> 8)
 
 /**
- * @brief Unsupported opcode value to return when exeucting 0-opcode type instructions.
+ * @brief Unsupported opcode value to return when executing 0-opcode type instructions.
  */
 #define ESP_EH_FRAME_UNSUPPORTED_OPCODE ((uint32_t) -1)
 
@@ -589,7 +591,8 @@ static inline uint32_t esp_eh_frame_execute_opcode_0(const uint32_t opcode, cons
  * @param state DWARF machine state. The registers contained in the state will
  *              modified accordingly to the instructions.
  *
- * @return true if the execution went fine, false if an unsupported instruction was met.
+ * @return true if the execution went fine, false if an unsupported instruction was met or if the DWARF
+ *         instructions were not enough (not properly generated) to reach the current location (PC).
  */
 static bool esp_eh_frame_execute(const uint8_t* instructions, const uint32_t instructions_length,
                                  const ExecutionFrame* frame, dwarf_regs* state)
@@ -637,8 +640,18 @@ static bool esp_eh_frame_execute(const uint8_t* instructions, const uint32_t ins
 
         /* As the state->location can also be modified by 0-opcode instructions (in the function)
          * and also because we need to break the loop (and not only the switch), let's put this
-         * check here, after the execution of the instruction, outside of the switch block. */
-        if (state->location >= EXECUTION_FRAME_PC(*frame)) {
+         * check here, after the execution of the instruction, outside of the switch block.
+         * We should stop executing the opcodes as soon as we go AFTER the program counter that
+         * interests us. For example, if we have the following DWARF instructions:
+         * ```
+         *   DW_CFA_advance_loc: 2 to 40382ecc
+         *   DW_CFA_offset: r1 (ra) at cfa-4
+         *   DW_CFA_nop
+         * ```
+         * And out current PC is `0x40382ecc`, we MUST execute the instructions that are after it
+         * (until the next DW_CFA_advance_loc, where we would need to stop)
+         * */
+        if (state->location > EXECUTION_FRAME_PC(*frame)) {
             break;
         }
     }
@@ -727,7 +740,7 @@ static uint32_t esp_eh_frame_initialize_state(const uint8_t* cie, ExecutionFrame
  * @param state DWARF VM registers.
  *
  * @return Return Address of the current context. Frame has been restored to the previous context
- * (before calling the function program counter is currently going throught).
+ * (before calling the function program counter is currently going through).
  */
 static uint32_t esp_eh_frame_restore_caller_state(const uint32_t* fde,
                                                   ExecutionFrame* frame,
@@ -768,7 +781,7 @@ static uint32_t esp_eh_frame_restore_caller_state(const uint32_t* fde,
      */
     bool success = esp_eh_frame_execute(instructions, instructions_length, frame, state);
     if (!success) {
-        /* An error occured (unsupported opcode), return PC as the return address.
+        /* An error occurred (unsupported opcode), return PC as the return address.
          * This will be tested by the caller, and the backtrace will be finished. */
         return EXECUTION_FRAME_PC(*frame);
     }
@@ -799,7 +812,7 @@ static uint32_t esp_eh_frame_restore_caller_state(const uint32_t* fde,
     /* If the frame was not available, it would be possible to retrieve the return address
      * register thanks to CIE structure.
      * The return address points to the address the PC needs to jump to. It
-     * does NOT point to the instruction where the routine call occured.
+     * does NOT point to the instruction where the routine call occurred.
      * This can cause problems with functions without epilogue (i.e. function
      * which last instruction is a function call). This happens when compiler
      * optimization are ON or when a function is marked as "noreturn".
@@ -840,7 +853,7 @@ static bool esp_eh_frame_missing_info(const uint32_t* fde, uint32_t pc)
 
 /**
  * @brief When one step of the backtrace is generated, output it to the serial.
- * This function can be overriden as it is defined as weak.
+ * This function can be overridden as it is defined as weak.
  *
  * @param pc Program counter of the backtrace step.
  * @param sp Stack pointer of the backtrace step.
@@ -866,7 +879,7 @@ void esp_eh_frame_print_backtrace(const void *frame_or)
     ExecutionFrame frame = *((ExecutionFrame*) frame_or);
     uint32_t size = 0;
     uint8_t* enc_values = NULL;
-    bool end_of_backtrace = false;
+    int iterations = 0;
 
     /* Start parsing the .eh_frame_hdr section. */
     fde_header* header = (fde_header*) EH_FRAME_HDR_ADDR;
@@ -893,7 +906,7 @@ void esp_eh_frame_print_backtrace(const void *frame_or)
     const table_entry* sorted_table = (const table_entry*) enc_values;
 
     panic_print_str("Backtrace:");
-    while (!end_of_backtrace) {
+    for (iterations = 1; iterations < MAX_ITERATIONS; iterations++) {
 
         /* Output one step of the backtrace. */
         esp_eh_frame_generated_step(EXECUTION_FRAME_PC(frame), EXECUTION_FRAME_SP(frame));
@@ -927,13 +940,19 @@ void esp_eh_frame_print_backtrace(const void *frame_or)
         uint32_t ra = esp_eh_frame_restore_caller_state(fde, &frame, &state);
 
         /* End of backtrace is reached if the stack and the PC don't change anymore. */
-        end_of_backtrace = (EXECUTION_FRAME_SP(frame) == prev_sp) && (EXECUTION_FRAME_PC(frame) == ra);
+        if ((EXECUTION_FRAME_SP(frame) == prev_sp) && (EXECUTION_FRAME_PC(frame) == ra)) {
+            break;
+        }
 
         /* Go back to the caller: update stack pointer and program counter. */
         EXECUTION_FRAME_PC(frame) = ra;
     }
 
     panic_print_str("\r\n");
+
+    if (iterations >= MAX_ITERATIONS) {
+        panic_print_str("Backtrace ended abruptly: maximum iterations reached\r\n");
+    }
 }
 
 /**
