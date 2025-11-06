@@ -524,10 +524,10 @@ void SMP_SecureConnectionOobDataReply(UINT8 *p_data)
 ** Description      This function is called to encrypt the data with the specified
 **                  key
 **
-** Parameters:      key                 - Pointer to key key[0] conatins the MSB
+** Parameters:      key                 - Pointer to key key[0] contains the MSB
 **                  key_len             - key length
 **                  plain_text          - Pointer to data to be encrypted
-**                                        plain_text[0] conatins the MSB
+**                                        plain_text[0] contains the MSB
 **                  pt_len              - plain text length
 **                  p_out                - output of the encrypted texts
 **
