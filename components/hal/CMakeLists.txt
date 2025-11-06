@@ -184,10 +184,6 @@ elseif(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "vbat_hal.c")
     endif()
 
-    if(CONFIG_SOC_JPEG_CODEC_SUPPORTED)
-        list(APPEND srcs "jpeg_hal.c")
-    endif()
-
     if(CONFIG_SOC_PPA_SUPPORTED)
         list(APPEND srcs "ppa_hal.c")
     endif()

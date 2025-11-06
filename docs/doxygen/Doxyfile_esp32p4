@@ -21,7 +21,6 @@ INPUT += \
     $(PROJECT_PATH)/components/esp_driver_cam/csi/include/esp_cam_ctlr_csi.h \
     $(PROJECT_PATH)/components/esp_driver_cam/isp_dvp/include/esp_cam_ctlr_isp_dvp.h \
     $(PROJECT_PATH)/components/hal/include/hal/isp_types.h \
-    $(PROJECT_PATH)/components/hal/include/hal/jpeg_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/ppa_types.h \
     $(PROJECT_PATH)/components/esp_driver_touch_sens/include/driver/touch_sens.h \
     $(PROJECT_PATH)/components/esp_driver_touch_sens/include/driver/touch_sens_types.h \

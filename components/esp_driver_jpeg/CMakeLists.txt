@@ -23,6 +23,7 @@ if(CONFIG_SOC_JPEG_CODEC_SUPPORTED)
     endif()
 endif()
 
+set(requires esp_hal_jpeg)
 if(${target} STREQUAL "linux")
     set(priv_requires "")
 else()
@@ -32,4 +33,5 @@ endif()
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS ${public_include}
                        PRIV_REQUIRES "${priv_requires}"
+                       REQUIRES "${requires}"
                       )

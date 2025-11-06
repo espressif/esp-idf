@@ -166,6 +166,7 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_event/include/esp_event.h \
     $(PROJECT_PATH)/components/esp_hal_timg/include/hal/timer_types.h \
     $(PROJECT_PATH)/components/esp_hal_i2c/include/hal/i2c_types.h \
+    $(PROJECT_PATH)/components/esp_hal_jpeg/include/hal/jpeg_types.h \
     $(PROJECT_PATH)/components/esp_hal_lcd/include/hal/lcd_types.h \
     $(PROJECT_PATH)/components/esp_hal_mspi/include/hal/esp_flash_err.h \
     $(PROJECT_PATH)/components/esp_hal_mspi/include/hal/spi_flash_types.h \
