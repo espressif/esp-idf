@@ -11,6 +11,13 @@ set -euo pipefail
 
 TEMPLATE_APP_PATH="esp-idf-template"
 
+# Set default paths for template app builds
+BUILD_PATH="${IDF_PATH}/build_template_app"
+BUILD_DIR="${BUILD_PATH}/@t/@w"
+
+LOG_PATH="${IDF_PATH}/log_template_app"
+BUILD_LOG_CMAKE="${LOG_PATH}/cmake_@t_@w.txt"
+
 gen_configs() {
     # CONFIG_COMPILER_OPTIMIZATION_NONE with flag -O0
     echo "CONFIG_COMPILER_OPTIMIZATION_NONE=y" > ${TEMPLATE_APP_PATH}/sdkconfig.ci.O0

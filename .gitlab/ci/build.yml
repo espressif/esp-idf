@@ -16,12 +16,6 @@
 .build_template_app_template:
   extends:
     - .build_template
-  variables:
-    LOG_PATH: "${CI_PROJECT_DIR}/log_template_app"
-    BUILD_PATH: "${CI_PROJECT_DIR}/build_template_app"
-    BUILD_DIR: "${BUILD_PATH}/@t/@w"
-    BUILD_LOG_CMAKE: "${LOG_PATH}/cmake_@t_@w.txt"
-    BUILD_COMMAND_ARGS: ""
   artifacts:
     paths:
       - log_template_app/*
@@ -40,7 +34,6 @@
     # Only do the default cmake build for each target, remaining part are done in the build_template_app job
     - tools/ci/build_template_app.sh ${BUILD_COMMAND_ARGS}
 
-# build-related-pre-check-jobs ------------------------------------------------
 # Build at least one project for each target at earliest stage to reduce build cost for obvious failing commits
 fast_template_app:
   extends:
@@ -50,7 +43,16 @@ fast_template_app:
   tags: [fast_run, shiny]
   variables:
     BUILD_COMMAND_ARGS: "-p"
-#------------------------------------------------------------------------------
+
+# This job builds template app with permutations of targets and optimization levels
+build_template_app:
+  extends:
+    - .build_template_app_template
+    - .rules:build
+  stage: host_test
+  needs:
+    - job: fast_template_app
+      artifacts: false
 
 #######################
 # gnu_static_analyzer #
@@ -255,17 +257,6 @@ build_docker:
     # The workaround mentioned there works, but leaves around directories which need to be cleaned up manually.
     # Therefore, build a copy of the example located inside the container.
     - docker run --rm --workdir /opt/esp/idf/examples/get-started/blink ${DOCKER_TMP_IMAGE_NAME} idf.py build
-
-# This job builds template app with permutations of targets and optimization levels
-build_template_app:
-  extends:
-    - .build_template_app_template
-    - .rules:build
-  stage: host_test
-  dependencies: # set dependencies to null to avoid missing artifacts issue
-  needs:
-    - job: fast_template_app
-      artifacts: false
 
 ####################
 # Dynamic Pipeline #
