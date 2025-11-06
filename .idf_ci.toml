@@ -48,7 +48,6 @@ pre_yaml_jinja = """
 include:
   - .gitlab/ci/common.yml
   - tools/ci/dynamic_pipelines/templates/.dynamic_jobs.yml
-  - tools/ci/dynamic_pipelines/templates/generate_target_test_report.yml
 """
 
 [gitlab.artifacts.s3.debug]
@@ -89,13 +88,13 @@ patterns = [
 [gitlab.artifacts.s3.junit]
 bucket = "idf-artifacts"
 patterns = [
-    'XUNIT_RESULT_*.xml',
+    '**/XUNIT_RESULT_*.xml',
 ]
 
 [gitlab.artifacts.s3.env]
 bucket = "idf-artifacts"
 patterns = [
-    'pipeline.env',
+    '**/pipeline.env',
 ]
 
 [gitlab.artifacts.s3.longterm]
