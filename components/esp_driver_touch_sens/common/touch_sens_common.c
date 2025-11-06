@@ -49,6 +49,14 @@ static void touch_channel_pin_init(int id)
     gpio_config_as_analog(pin);
 }
 
+static void touch_channel_pin_deinit(int id)
+{
+    gpio_num_t pin = touch_sensor_channel_io_map[id];
+    assert(pin >= 0);
+    esp_gpio_revoke(BIT64(pin));
+    gpio_reset_pin(pin);
+}
+
 static void s_touch_free_resource(touch_sensor_handle_t sens_handle)
 {
     if (!sens_handle) {
@@ -211,6 +219,7 @@ esp_err_t touch_sensor_del_channel(touch_channel_handle_t chan_handle)
     TOUCH_ENTER_CRITICAL(TOUCH_PERIPH_LOCK);
     sens_handle->chan_mask &= ~(1UL << chan_handle->id);
     TOUCH_EXIT_CRITICAL(TOUCH_PERIPH_LOCK);
+    touch_channel_pin_deinit(chan_handle->id);
 
     free(g_touch->ch[ch_offset]);
     g_touch->ch[ch_offset] = NULL;
