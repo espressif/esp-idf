@@ -37,6 +37,8 @@ extern "C" {
 #define sdio_slave_ll_get_host(ID)  (&HOST)
 /// Get address of the only HINF registers
 #define sdio_slave_ll_get_hinf(ID)  (&HINF)
+/// Get the mask of the interrupt status.
+#define sdio_slave_ll_intr_status_mask  (0xff | SDIO_SLC0_RX_DONE_INT_ST | SDIO_SLC0_RX_EOF_INT_ST | SDIO_SLC0_TX_DONE_INT_ST)
 
 /*
  *  SLC2 DMA Desc struct, aka sdio_slave_ll_desc_t
@@ -531,6 +533,17 @@ static inline void sdio_slave_ll_slvint_fetch_clear(slc_dev_t *slc, sdio_slave_l
     sdio_slave_ll_slvint_t slv_int = (sdio_slave_ll_slvint_t)(slc->slc_slc0int_st.val & 0xff);
     *out_slv_int = slv_int;
     slc->slc_slc0int_clr.val = slv_int;
+}
+
+/**
+ * Get the address of the interrupt status register.
+ *
+ * @param slc Address of the SLC registers
+ * @return Address of the interrupt status register
+ */
+static inline volatile void* sdio_slave_ll_get_intr_status_reg(slc_dev_t *slc)
+{
+    return &slc->slc_slc0int_st.val;
 }
 
 #ifdef __cplusplus

@@ -345,6 +345,11 @@ FORCE_INLINE_ATTR uint32_t uart_ll_get_intr_ena_status(uart_dev_t *hw)
     return hw->int_ena.val;
 }
 
+FORCE_INLINE_ATTR volatile void* uart_ll_get_intr_status_reg(uart_dev_t *hw)
+{
+    return &hw->int_st.val;
+}
+
 /**
  * @brief  Read the UART rxfifo.
  *
