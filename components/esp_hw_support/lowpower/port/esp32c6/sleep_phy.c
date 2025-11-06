@@ -39,19 +39,15 @@ typedef struct {
 #define DESC_IDX_I2C_MST_ENA (0)
 #define DESC_IDX_I2C_MST_SEL (1)
 #define DESC_IDX_I2C_MST_DIS (2)
-    void *regdma_desc[DESC_IDX_I2C_MST_DIS + 1];
+#define DESC_IDX_SKIP_WIFI               (3)
+#define DESC_SKIP_WIFI_ENTRY_CNT         (8)
+#define DESC_SKIP_WIFI_RESTORE_ENTRY_CNT (1)
+    void *regdma_desc[DESC_IDX_I2C_MST_DIS + 1 + DESC_SKIP_WIFI_ENTRY_CNT];
 } sleep_phy_link_context_t;
-static DRAM_ATTR struct{
-    void *skip_link[8];
-} s_phy_skip_links;
 
-esp_err_t sleep_phy_link_init(void **link_head)
+esp_err_t sleep_phy_link_init(void **link_context)
 {
     esp_err_t err = ESP_OK;
-    const int skip_idx_list[] = {
-        REGDMA_PHY_LINK(0x10), REGDMA_PHY_LINK(0x1c), REGDMA_PHY_LINK(0x1d), REGDMA_PHY_LINK(0x1e), REGDMA_PHY_LINK(0x1f),
-        REGDMA_PHY_LINK(0x20), REGDMA_PHY_LINK(0x21), REGDMA_PHY_LINK(0x22)
-    };
 
 #if SOC_PM_PAU_REGDMA_LINK_MODEM
     static regdma_link_config_t phy_modem_config[] = {
@@ -111,18 +107,10 @@ esp_err_t sleep_phy_link_init(void **link_head)
     phy_modem_config[22].write_wait.value = phy_ana_i2c_master_burst_rf_onoff(false);
 
     void *link = NULL;
-    uint8_t skip_idx = 0;
     for (int i = ARRAY_SIZE(phy_modem_config) - 1; (err == ESP_OK) && (i >= 0); i--) {
         void *next = regdma_link_init_safe(&phy_modem_config[i], false, 0, link);
         if (next) {
             link = next;
-            for (int idx = 0; idx < ARRAY_SIZE(skip_idx_list); idx ++) {
-                if (skip_idx_list[idx] == phy_modem_config[i].id) {
-                    s_phy_skip_links.skip_link[skip_idx] = next;
-                    skip_idx ++;
-                    break;
-                }
-            }
         } else {
             regdma_link_destroy(link, 0);
             err = ESP_ERR_NO_MEM;
@@ -131,7 +119,10 @@ esp_err_t sleep_phy_link_init(void **link_head)
     if (err == ESP_OK) {
         pau_regdma_set_modem_link_addr(link);
 
-        const int id_array[] = { REGDMA_PHY_LINK(0x00), REGDMA_PHY_LINK(0x01), REGDMA_PHY_LINK(0x1b) };
+        const int id_array[] = { REGDMA_PHY_LINK(0x00), REGDMA_PHY_LINK(0x01), REGDMA_PHY_LINK(0x1b),                           /* I2C MST CLK entries */
+                                 REGDMA_PHY_LINK(0x10), REGDMA_PHY_LINK(0x1c), REGDMA_PHY_LINK(0x1d), REGDMA_PHY_LINK(0x1e),
+                                 REGDMA_PHY_LINK(0x1f), REGDMA_PHY_LINK(0x20), REGDMA_PHY_LINK(0x21), REGDMA_PHY_LINK(0x22)     /* WiFi Related entries */
+                                };
         static DRAM_ATTR sleep_phy_link_context_t phy_link_context;
 
         for (int i = 0; (err == ESP_OK) && (i < ARRAY_SIZE(phy_link_context.regdma_desc)); i++) {
@@ -144,7 +135,9 @@ esp_err_t sleep_phy_link_init(void **link_head)
         }
         if (err == ESP_OK) {
             phy_link_context.link_head = link;
-            *link_head = (void *)&phy_link_context;
+            *link_context = (void *)&phy_link_context;
+        } else {
+            regdma_link_destroy(link, 0);
         }
     }
 #endif
@@ -155,7 +148,7 @@ void IRAM_ATTR sleep_phy_link_config(void *link_context, uint32_t flags)
 {
     sleep_phy_link_context_t *phy_link_context = (sleep_phy_link_context_t *)link_context;
 
-    if (flags & BIT(0)) {
+    if (flags & SLEEP_MODEM_SKIP_I2C_MST_CLK_RETENTION) {
         regdma_link_set_skip_flag(phy_link_context->regdma_desc[DESC_IDX_I2C_MST_ENA], true, true);
         regdma_link_set_skip_flag(phy_link_context->regdma_desc[DESC_IDX_I2C_MST_SEL], true, true);
         regdma_link_set_skip_flag(phy_link_context->regdma_desc[DESC_IDX_I2C_MST_DIS], true, true);
@@ -164,20 +157,27 @@ void IRAM_ATTR sleep_phy_link_config(void *link_context, uint32_t flags)
         regdma_link_set_skip_flag(phy_link_context->regdma_desc[DESC_IDX_I2C_MST_SEL], true, false);
         regdma_link_set_skip_flag(phy_link_context->regdma_desc[DESC_IDX_I2C_MST_DIS], false, true);
     }
+
+    if (flags & SLEEP_MODEM_SKIP_WIFI_RETENTION) {
+        for (int i = 0; i < DESC_SKIP_WIFI_ENTRY_CNT; i++) {
+            regdma_link_set_skip_flag(phy_link_context->regdma_desc[DESC_IDX_SKIP_WIFI + i], true, true);
+        }
+    } else {
+        for (int i = 0; i < DESC_SKIP_WIFI_ENTRY_CNT; i++) {
+            if (i < DESC_SKIP_WIFI_RESTORE_ENTRY_CNT) {
+                regdma_link_set_skip_flag(phy_link_context->regdma_desc[DESC_IDX_SKIP_WIFI + i], true, false);
+            } else {
+                regdma_link_set_skip_flag(phy_link_context->regdma_desc[DESC_IDX_SKIP_WIFI + i], false, true);
+            }
+        }
+    }
 }
 
-esp_err_t sleep_phy_link_deinit(void *link_head)
+esp_err_t sleep_phy_link_deinit(void *link_context)
 {
 #if SOC_PM_PAU_REGDMA_LINK_MODEM
-    regdma_link_destroy(((sleep_modem_state_phy_link_context_t *)link_head)->link_head, 0);
+    regdma_link_destroy(((sleep_phy_link_context_t *)link_context)->link_head, 0);
 #endif
     return ESP_OK;
-}
-
-void sleep_phy_skip_wifi_reg(bool skip)
-{
-    for (int i = 0; i < ARRAY_SIZE(s_phy_skip_links.skip_link); i++) {
-        regdma_link_set_skip_flag(s_phy_skip_links.skip_link[i], skip, skip);
-    }
 }
 #endif /* SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY */
