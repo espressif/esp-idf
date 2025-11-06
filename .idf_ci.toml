@@ -89,6 +89,7 @@ patterns = [
 bucket = "idf-artifacts"
 patterns = [
     '**/XUNIT_RESULT_*.xml',
+    '**/build_summary_*.xml',
 ]
 
 [gitlab.artifacts.s3.env]
