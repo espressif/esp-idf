@@ -22,13 +22,13 @@ uart_hal_context_t hal = {
     .dev = (uart_dev_t *)UART_LL_GET_HW(LP_UART_NUM_0),
 };
 
-static esp_err_t lp_core_uart_check_timeout(uint32_t intr_mask, int32_t timeout, uint32_t *ticker)
+static esp_err_t lp_core_uart_check_timeout(uint32_t intr_mask, int32_t timeout, uint32_t *cycle_count)
 {
     if (timeout > -1) {
-        /* If the timeout value is not -1, delay for 1 CPU cycle and keep track of ticks */
+        /* If the timeout value is not -1, delay for 1 CPU cycle and keep track of cycles */
         ulp_lp_core_delay_cycles(1);
-        *ticker = *ticker + 1;
-        if (*ticker >= timeout) {
+        (*cycle_count)++;
+        if (*cycle_count >= (uint32_t)timeout) {
             /* Disable and clear interrupt bits */
             uart_hal_disable_intr_mask(&hal, intr_mask);
             uart_hal_clr_intsts_mask(&hal, intr_mask);
