@@ -223,6 +223,10 @@ static bool uart_module_enable(uart_port_t uart_num)
                 uart_ll_enable_bus_clock(uart_num, true);
             }
             if (uart_num != CONFIG_ESP_CONSOLE_UART_NUM) {
+                // Workaround: Set RX signal to high to avoid false RX BRK_DET interrupt raised after register reset
+                if (uart_context[uart_num].rx_io_num == -1) {
+                    esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ONE_INPUT, UART_PERIPH_SIGNAL(uart_num, SOC_UART_PERIPH_SIGNAL_RX), false);
+                }
                 HP_UART_BUS_CLK_ATOMIC() {
                     uart_ll_reset_register(uart_num);
                 }
@@ -253,6 +257,16 @@ static bool uart_module_enable(uart_port_t uart_num)
         }
 #if (SOC_UART_LP_NUM >= 1)
         else {
+            // Workaround: Set RX signal to high to avoid false RX BRK_DET interrupt raised after register reset
+            if (uart_context[uart_num].rx_io_num == -1) { // if RX pin is already configured, then workaround not needed, skip
+#if SOC_LP_GPIO_MATRIX_SUPPORTED
+                lp_gpio_connect_in_signal(LP_GPIO_MATRIX_CONST_ONE_INPUT, UART_PERIPH_SIGNAL(uart_num, SOC_UART_PERIPH_SIGNAL_RX), false);
+#else
+                // the signal is directly connected to its LP IO pin, the only way is to enable its pullup
+                uint32_t io_num = uart_periph_signal[uart_num].pins[SOC_UART_PERIPH_SIGNAL_RX].default_gpio;
+                gpio_pullup_en(io_num);
+#endif
+            }
             LP_UART_BUS_CLK_ATOMIC() {
                 lp_uart_ll_enable_bus_clock(TO_LP_UART_NUM(uart_num), true);
                 lp_uart_ll_reset_register(TO_LP_UART_NUM(uart_num));
@@ -718,6 +732,12 @@ static bool uart_try_set_iomux_pin(uart_port_t uart_num, int io_num, uint32_t id
         }
         rtc_gpio_init(io_num);
         rtc_gpio_iomux_func_sel(io_num, upin->iomux_func);
+        // undo the workaround done in uart_module_enable for RX pin
+#if !SOC_LP_GPIO_MATRIX_SUPPORTED
+        if (upin->input) {
+            gpio_pullup_dis(io_num);
+        }
+#endif
     }
 #endif
 
@@ -1619,10 +1639,12 @@ static int uart_tx_all(uart_port_t uart_num, const char *src, size_t size, bool 
         xRingbufferSend(p_uart_obj[uart_num]->tx_ring_buf, (void *) &evt, sizeof(uart_tx_data_t), portMAX_DELAY);
         while (size > 0) {
             size_t send_size = MIN(size, xRingbufferGetCurFreeSize(p_uart_obj[uart_num]->tx_ring_buf));
-            xRingbufferSend(p_uart_obj[uart_num]->tx_ring_buf, (void *)(src + offset), send_size, portMAX_DELAY);
-            size -= send_size;
-            offset += send_size;
-            uart_enable_tx_intr(uart_num, 1, UART_THRESHOLD_NUM(uart_num, UART_EMPTY_THRESH_DEFAULT));
+            if (send_size > 0) {
+                xRingbufferSend(p_uart_obj[uart_num]->tx_ring_buf, (void *)(src + offset), send_size, portMAX_DELAY);
+                size -= send_size;
+                offset += send_size;
+                uart_enable_tx_intr(uart_num, 1, UART_THRESHOLD_NUM(uart_num, UART_EMPTY_THRESH_DEFAULT));
+            }
         }
     } else {
         while (size) {
@@ -2016,12 +2038,6 @@ esp_err_t uart_driver_install(uart_port_t uart_num, int rx_buffer_size, int tx_b
         return ESP_FAIL;
     }
 
-    uart_intr_config_t uart_intr = {
-        .intr_enable_mask = UART_INTR_CONFIG_FLAG,
-        .rxfifo_full_thresh = UART_THRESHOLD_NUM(uart_num, UART_FULL_THRESH_DEFAULT),
-        .rx_timeout_thresh = UART_TOUT_THRESH_DEFAULT,
-        .txfifo_empty_intr_thresh = UART_THRESHOLD_NUM(uart_num, UART_EMPTY_THRESH_DEFAULT),
-    };
     uart_module_enable(uart_num);
     uart_hal_disable_intr_mask(&(uart_context[uart_num].hal), UART_LL_INTR_MASK);
     uart_hal_clr_intsts_mask(&(uart_context[uart_num].hal), UART_LL_INTR_MASK);
@@ -2031,6 +2047,12 @@ esp_err_t uart_driver_install(uart_port_t uart_num, int rx_buffer_size, int tx_b
                          &p_uart_obj[uart_num]->intr_handle);
     ESP_GOTO_ON_ERROR(ret, err, UART_TAG, "Could not allocate an interrupt for UART");
 
+    uart_intr_config_t uart_intr = {
+        .intr_enable_mask = UART_INTR_CONFIG_FLAG,
+        .rxfifo_full_thresh = UART_THRESHOLD_NUM(uart_num, UART_FULL_THRESH_DEFAULT),
+        .rx_timeout_thresh = UART_TOUT_THRESH_DEFAULT,
+        .txfifo_empty_intr_thresh = UART_THRESHOLD_NUM(uart_num, UART_EMPTY_THRESH_DEFAULT),
+    };
     ret = uart_intr_config(uart_num, &uart_intr);
     ESP_GOTO_ON_ERROR(ret, err, UART_TAG, "Could not configure the interrupt for UART");
 

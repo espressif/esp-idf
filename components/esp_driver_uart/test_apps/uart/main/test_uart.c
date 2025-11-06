@@ -440,7 +440,7 @@ TEST_CASE("uart tx ring buffer free space test", "[uart]")
         uart_port_t uart_num = port_param.port_num;
         uint8_t *rd_data = (uint8_t *)malloc(1024);
         TEST_ASSERT_NOT_NULL(rd_data);
-        uint8_t *wr_data = (uint8_t *)malloc(256);
+        uint8_t *wr_data = (uint8_t *)malloc(2048);
         TEST_ASSERT_NOT_NULL(wr_data);
         uart_config_t uart_config = {
             .baud_rate = 2000000,
@@ -475,7 +475,7 @@ TEST_CASE("uart tx ring buffer free space test", "[uart]")
         TEST_ASSERT_EQUAL_INT(0, tx_buffer_free_space); // tx buffer is full
 
         // Let CTS be low, so that transmission is unblocked
-        esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ONE_INPUT, uart_periph_signal[uart_num].pins[SOC_UART_PERIPH_SIGNAL_CTS].signal, true);
+        esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ZERO_INPUT, uart_periph_signal[uart_num].pins[SOC_UART_PERIPH_SIGNAL_CTS].signal, false);
         uart_wait_tx_done(uart_num, portMAX_DELAY);
         uart_get_tx_buffer_free_size(uart_num, &tx_buffer_free_space);
         TEST_ASSERT_EQUAL_INT(2020, tx_buffer_free_space); // tx buffer is back to full capacity
