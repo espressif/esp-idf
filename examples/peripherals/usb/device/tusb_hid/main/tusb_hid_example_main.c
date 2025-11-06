@@ -16,6 +16,11 @@
 #define APP_BUTTON (GPIO_NUM_0) // Use BOOT signal by default
 static const char *TAG = "example";
 
+/* Flag to indicate if the host has suspended the USB bus */
+static bool suspended = false;
+/* Flag of possibility to Wakeup Host via Remote Wakeup feature */
+static bool wakeup_host = false;
+
 /************* TinyUSB descriptors ****************/
 
 #define TUSB_DESC_TOTAL_LEN      (TUD_CONFIG_DESC_LEN + CFG_TUD_HID * TUD_HID_DESC_LEN)
@@ -152,6 +157,24 @@ static void app_send_hid_demo(void)
     }
 }
 
+void tud_suspend_cb(bool remote_wakeup_en)
+{
+    ESP_LOGI(TAG, "USB device suspended");
+    suspended = true;
+    if (remote_wakeup_en) {
+        ESP_LOGI(TAG, "Remote wakeup available, press the button to wake up the Host");
+        wakeup_host = true;
+    } else {
+        ESP_LOGI(TAG, "Remote wakeup not available");
+    }
+}
+
+void tud_resume_cb(void)
+{
+    ESP_LOGI(TAG, "USB device resumed");
+    suspended = false;
+}
+
 void app_main(void)
 {
     // Initialize button that will trigger HID reports
@@ -182,7 +205,17 @@ void app_main(void)
         if (tud_mounted()) {
             static bool send_hid_data = true;
             if (send_hid_data) {
-                app_send_hid_demo();
+                if (!suspended) {
+                    app_send_hid_demo();
+                } else {
+                    if (wakeup_host) {
+                        ESP_LOGI(TAG, "Waking up the Host");
+                        tud_remote_wakeup();
+                        wakeup_host = false;
+                    } else {
+                        ESP_LOGI(TAG, "USB Host remote wakeup is not available.");
+                    }
+                }
             }
             send_hid_data = !gpio_get_level(APP_BUTTON);
         }
