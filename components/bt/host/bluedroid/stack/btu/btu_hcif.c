@@ -3057,6 +3057,10 @@ static void btu_ble_cte_connless_iq_report_evt(UINT8 *p)
     for (uint8_t i = 0; i < connless_iq_rpt.sample_count; i++)
     {
         STREAM_TO_UINT8(connless_iq_rpt.i_sample[i], p);
+    }
+
+    for (uint8_t i = 0; i < connless_iq_rpt.sample_count; i++)
+    {
         STREAM_TO_UINT8(connless_iq_rpt.q_sample[i], p);
     }
 
@@ -3088,6 +3092,10 @@ static void btu_ble_cte_conn_iq_report_evt(UINT8 *p)
     for (uint8_t i = 0; i < conn_iq_rpt.sample_count; i++)
     {
         STREAM_TO_UINT8(conn_iq_rpt.i_sample[i], p);
+    }
+
+    for (uint8_t i = 0; i < conn_iq_rpt.sample_count; i++)
+    {
         STREAM_TO_UINT8(conn_iq_rpt.q_sample[i], p);
     }
 
