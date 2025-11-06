@@ -1,5 +1,8 @@
 components/esp_driver_twai/test_apps/test_twai:
   disable:
     - if: SOC_TWAI_SUPPORTED != 1
+    - if: IDF_TARGET == "esp32p4"
+      temporary: true
+      reason: p4 rev3 migration # TODO: IDF-14393
   depends_components:
     - esp_driver_twai

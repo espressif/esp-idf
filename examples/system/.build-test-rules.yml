@@ -2,6 +2,9 @@
 
 examples/system/app_trace_basic:
   disable:
+    - if: IDF_TARGET == "esp32p4"
+      temporary: true
+      reason: p4 rev3 migration # TODO: IDF-14364
     - if: IDF_TARGET == "esp32h21"
       temporary: true
       reason: not supported yet #TODO: OCD-1081
@@ -107,6 +110,9 @@ examples/system/gcov:
     - if: IDF_TARGET == "esp32c61"
       temporary: true
       reason: lack of runners
+    - if: IDF_TARGET == "esp32p4"
+      temporary: true
+      reason: p4 rev3 migration # TODO: IDF-14440
 
 examples/system/gdbstub:
   disable:
@@ -268,6 +274,9 @@ examples/system/select:
 examples/system/sysview_tracing:
   disable:
     - if: SOC_GPTIMER_SUPPORTED != 1
+    - if: IDF_TARGET == "esp32p4"
+      temporary: true
+      reason: p4 rev3 migration # TODO: IDF-14364
   disable_test:
     - if: IDF_TARGET == "esp32h21"
       temporary: true
@@ -282,6 +291,9 @@ examples/system/sysview_tracing:
 examples/system/sysview_tracing_heap_log:
   disable:
     - if: SOC_GPTIMER_SUPPORTED != 1
+    - if: IDF_TARGET == "esp32p4"
+      temporary: true
+      reason: p4 rev3 migration # TODO: IDF-14364
   disable_test:
     - if: IDF_TARGET == "esp32h21"
       temporary: true
@@ -303,6 +315,10 @@ examples/system/task_watchdog:
 examples/system/ulp/lp_core/build_system:
   enable:
     - if: SOC_LP_CORE_SUPPORTED == 1
+  disable_test:
+    - if: IDF_TARGET == "esp32p4"
+      temporary: true
+      reason: p4 rev3 migration # TODO: IDF-14422
   depends_components:
     - ulp
 
@@ -323,6 +339,10 @@ examples/system/ulp/lp_core/gpio:
 examples/system/ulp/lp_core/gpio_intr_pulse_counter:
   enable:
     - if: (SOC_LP_CORE_SUPPORTED == 1) and (SOC_ULP_LP_UART_SUPPORTED == 1 and SOC_DEEP_SLEEP_SUPPORTED == 1)
+  disable_test:
+    - if: IDF_TARGET == "esp32p4"
+      temporary: true
+      reason: p4 rev3 migration # TODO: IDF-14422
   depends_components:
     - ulp
 
@@ -335,12 +355,20 @@ examples/system/ulp/lp_core/gpio_wakeup:
 examples/system/ulp/lp_core/inter_cpu_critical_section/:
   enable:
     - if: SOC_LP_CORE_SUPPORTED == 1
+  disable_test:
+    - if: IDF_TARGET == "esp32p4"
+      temporary: true
+      reason: p4 rev3 migration # TODO: IDF-14422
   depends_components:
     - ulp
 
 examples/system/ulp/lp_core/interrupt:
   enable:
     - if: SOC_LP_CORE_SUPPORTED == 1
+  disable_test:
+    - if: IDF_TARGET == "esp32p4"
+      temporary: true
+      reason: p4 rev3 migration # TODO: IDF-14422
   depends_components:
     - ulp
 
