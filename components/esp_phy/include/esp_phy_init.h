@@ -212,6 +212,7 @@ void esp_phy_modem_init(uint8_t modem);
  * @param modem Modem calling phy retention
  */
 void esp_phy_modem_deinit(uint8_t modem);
+
 #if CONFIG_MAC_BB_PD
 /**
  * @brief Initialize backup memory for MAC and Baseband power up/down

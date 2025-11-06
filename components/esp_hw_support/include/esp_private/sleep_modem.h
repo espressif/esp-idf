@@ -95,9 +95,9 @@ void sleep_modem_mac_bb_power_up_prepare(void);
  * @brief The retention action in the modem state of PHY module
  *
  * @param restore  true for restore the PHY context, false for backup the PHY context
- * @param wifimac_link_is_sel  true to trigger REGDMA via PHY link
+ * @param flags Configure flags for phy link
  */
-void sleep_modem_do_phy_retention(bool restore, bool wifimac_link_is_sel);
+void sleep_modem_do_phy_retention(bool restore, bool wifimac_link_is_sel, uint8_t flags);
 
 /**
  * @brief Get phy link state
@@ -254,24 +254,24 @@ bool sleep_modem_wifi_modem_state_skip_light_sleep(void);
 
 /**
  * @brief Function to initialize and create the phy link
- * @param link_head the pointer that point to the head of the created phy link
+ * @param link_context PHY link regdma description conteoxt pointer
  * @return
  *   - ESP_OK on success
  *   - ESP_ERR_NO_MEM if no memory for link
  *   - ESP_ERR_INVALID_ARG if value is out of range
  *   - ESP_ERR_INVALID_STATE if the phy module retention state is invalid
  */
-esp_err_t sleep_phy_link_init(void **link_head);
+esp_err_t sleep_phy_link_init(void **link_context);
 
 /**
  * @brief Function to destroy and de-initialize phy link
- * @param link_head the phy link head will be destroyed
+ * @param link_context PHY link regdma description conteoxt pointer
  * @return
  *   - ESP_OK on success
  *   - ESP_ERR_INVALID_ARG if value is out of range
  *   - ESP_ERR_INVALID_STATE if the phy module retention state is invalid
  */
-esp_err_t sleep_phy_link_deinit(void *link_head);
+esp_err_t sleep_phy_link_deinit(void *link_context);
 
 /**
  * @brief Function to configure PHY link regdma description at runtime
