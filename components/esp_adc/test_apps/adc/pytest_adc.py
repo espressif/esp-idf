@@ -30,3 +30,15 @@ def test_adc(dut: Dut) -> None:
 @idf_parametrize('target', ['esp32c2'], indirect=['target'])
 def test_adc_esp32c2_xtal_26mhz(dut: Dut) -> None:
     dut.run_all_single_board_cases(timeout=120, reset=True)
+
+
+# P4 REV2 adc
+@pytest.mark.adc
+@pytest.mark.parametrize('config', ['p4_rev2'], indirect=True)
+@idf_parametrize(
+    'target',
+    ['esp32p4'],
+    indirect=['target'],
+)
+def test_adc_p4_rev2(dut: Dut) -> None:
+    dut.run_all_single_board_cases(timeout=120, reset=True)
