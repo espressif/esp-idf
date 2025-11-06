@@ -19,7 +19,6 @@
 
 #define USB_WRAP_LL_SELECT_PHY_SUPPORTED        1   // Can swap to another internal FSLS PHY
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif

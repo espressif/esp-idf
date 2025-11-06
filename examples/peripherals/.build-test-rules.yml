@@ -566,6 +566,9 @@ examples/peripherals/usb/device:
   depends_components:
     - fatfs
   depends_filepatterns:
+    - components/soc/esp32*/include/soc/usb_dwc_struct.h
+    - components/esp_hw_support/usb_phy/usb_phy.c
+    - components/esp_hw_support/include/esp_private/usb_phy.h
     - examples/peripherals/usb/device/**/*
 
 examples/peripherals/usb/device/cherryusb_serial_device:
@@ -595,14 +598,9 @@ examples/peripherals/usb/host:
       reason: lack of runners with usb_host_flash_disk tag
   depends_components:
     - fatfs
+    - esp_hal_usb
   depends_filepatterns:
-    - components/hal/usb*.c
-    - components/hal/include/hal/usb*.h
-    - components/hal/esp32*/include/hal/usb*.h
-    - components/soc/esp32*/usb*.c
-    - components/soc/include/soc/usb*.h
-    - components/soc/esp32*/include/soc/usb_dwc_*.h
-    - components/soc/esp32*/include/soc/usb_wrap_*.h
+    - components/soc/esp32*/include/soc/usb_dwc_struct.h
     - components/esp_hw_support/usb_phy/usb_phy.c
     - components/esp_hw_support/include/esp_private/usb_phy.h
     - examples/peripherals/usb/host/**/*

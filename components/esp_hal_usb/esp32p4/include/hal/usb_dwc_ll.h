@@ -6,11 +6,11 @@
 
 #pragma once
 
+#include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include "esp_attr.h"
 #include "soc/usb_dwc_struct.h"
-#include "soc/usb_dwc_cfg.h"
 #include "hal/usb_dwc_types.h"
 #include "hal/misc.h"
 
@@ -21,14 +21,15 @@ extern "C" {
 /* ----------------------------- Helper Macros ------------------------------ */
 
 // Get USB hardware instance
-#define USB_DWC_LL_GET_HW(num) (&USB_DWC)
+#define USB_DWC_LL_GET_HW(num) (((num) == 1) ? &USB_DWC_FS : &USB_DWC_HS)
 
 /* -----------------------------------------------------------------------------
 --------------------------------- DWC Constants --------------------------------
 ----------------------------------------------------------------------------- */
 
 #define USB_DWC_QTD_LIST_MEM_ALIGN              512
-#define USB_DWC_FRAME_LIST_MEM_ALIGN            512     // The frame list needs to be 512 bytes aligned (contrary to the databook)
+#define USB_DWC_FRAME_LIST_MEM_ALIGN            512        // The frame list needs to be 512 bytes aligned (contrary to the databook)
+#define USB_DWC_CORE_REG_GSNPSID_4_20a          0x4F54420A // From 4.20a upward, the reset sequence is changed
 
 /* -----------------------------------------------------------------------------
 ------------------------------- Global Registers -------------------------------
@@ -165,7 +166,6 @@ typedef struct {
     uint8_t *buffer;
 } usb_dwc_ll_dma_qtd_t;
 
-
 /* -----------------------------------------------------------------------------
 ------------------------------- Global Registers -------------------------------
 ----------------------------------------------------------------------------- */
@@ -202,6 +202,11 @@ static inline void usb_dwc_ll_gahbcfg_dis_global_intr(usb_dwc_dev_t *hw)
 static inline void usb_dwc_ll_gusbcfg_force_host_mode(usb_dwc_dev_t *hw)
 {
     hw->gusbcfg_reg.forcehstmode = 1;
+}
+
+static inline void usb_dwc_ll_gusbcfg_en_hnp_cap(usb_dwc_dev_t *hw)
+{
+    hw->gusbcfg_reg.hnpcap = 1;
 }
 
 static inline void usb_dwc_ll_gusbcfg_dis_hnp_cap(usb_dwc_dev_t *hw)
@@ -274,9 +279,27 @@ static inline void usb_dwc_ll_grstctl_reset_frame_counter(usb_dwc_dev_t *hw)
 
 static inline void usb_dwc_ll_grstctl_core_soft_reset(usb_dwc_dev_t *hw)
 {
+    const uint32_t gnspsid = hw->gsnpsid_reg.val;
+
+    // Start core soft reset
     hw->grstctl_reg.csftrst = 1;
-    while (hw->grstctl_reg.csftrst) {
-        ;
+
+    // Wait for the reset to complete
+    if (gnspsid < USB_DWC_CORE_REG_GSNPSID_4_20a) {
+        // Version < 4.20a
+        while (hw->grstctl_reg.csftrst) {
+            ;
+        }
+    } else {
+        // Version >= 4.20a
+        while (!(hw->grstctl_reg.csftrstdone)) {
+            ;
+        }
+        usb_dwc_grstctl_reg_t grstctl;
+        grstctl.val = hw->grstctl_reg.val;
+        grstctl.csftrst     = 0; // Clear RESET bit once reset is done
+        grstctl.csftrstdone = 1; // Write 1 to clear RESET_DONE bit
+        hw->grstctl_reg.val = grstctl.val;
     }
 }
 
@@ -399,18 +422,18 @@ static inline void usb_dwc_ll_hcfg_set_num_frame_list_entries(usb_dwc_dev_t *hw,
 {
     uint32_t frlisten;
     switch (num_entries) {
-        case USB_HAL_FRAME_LIST_LEN_8:
-            frlisten = 0;
-            break;
-        case USB_HAL_FRAME_LIST_LEN_16:
-            frlisten = 1;
-            break;
-        case USB_HAL_FRAME_LIST_LEN_32:
-            frlisten = 2;
-            break;
-        default: //USB_HAL_FRAME_LIST_LEN_64
-            frlisten = 3;
-            break;
+    case USB_HAL_FRAME_LIST_LEN_8:
+        frlisten = 0;
+        break;
+    case USB_HAL_FRAME_LIST_LEN_16:
+        frlisten = 1;
+        break;
+    case USB_HAL_FRAME_LIST_LEN_32:
+        frlisten = 2;
+        break;
+    default: //USB_HAL_FRAME_LIST_LEN_64
+        frlisten = 3;
+        break;
     }
     hw->hcfg_reg.frlisten = frlisten;
 }
@@ -810,30 +833,57 @@ static inline void usb_dwc_ll_hctsiz_set_qtd_list_len(volatile usb_dwc_host_chan
 /**
  * @brief Perform PING protocol
  *
- * @note This function is here only for compatibility reasons. PING is not relevant on FS only targets
+ * PING protocol is automatically enabled if High-Speed device responds with NYET in Scatter-Gather DMA mode.
+ * The application must disable PING for next transfer.
+ * Relevant only for OUT transfers.
+ *
  * @param[in] chan   Channel registers
  * @param[in] enable true: Enable PING, false: Disable PING
  */
 static inline void usb_dwc_ll_hctsiz_set_dopng(volatile usb_dwc_host_chan_regs_t *chan, bool enable)
 {
+    chan->hctsiz_reg.dopng = (uint32_t)(enable && !chan->hcchar_reg.epdir);
 }
 
 /**
  * @brief Set scheduling info for Periodic channel
  *
- * @note ESP32-S2 is Full-Speed only, so SCHED_INFO is always set to 0xFF
  * @attention This function must be called for each periodic channel!
  * @see USB-OTG databook: Table 5-47
  *
  * @param[in] chan             Channel registers
- * @param[in] tokens_per_frame Ignored
- * @param[in] offset           Ignored
+ * @param[in] tokens_per_frame HS: Number of tokens per frame FS: Must be set 8
+ * @param[in] offset           Offset of the channel
  */
 static inline void usb_dwc_ll_hctsiz_set_sched_info(volatile usb_dwc_host_chan_regs_t *chan, int tokens_per_frame, int offset)
 {
     usb_dwc_hctsiz_reg_t hctsiz;
     hctsiz.val = chan->hctsiz_reg.val;
-    hctsiz.xfersize |= 0xFF;
+    uint8_t sched_info_val;
+    switch (tokens_per_frame) {
+    case 1:
+        offset %= 8; // If the required offset > 8, we must wrap around to SCHED_INFO size = 8
+        sched_info_val = 0b00000001;
+        break;
+    case 2:
+        offset %= 4;
+        sched_info_val = 0b00010001;
+        break;
+    case 4:
+        offset %= 2;
+        sched_info_val = 0b01010101;
+        break;
+    case 8:
+        offset = 0;
+        sched_info_val = 0b11111111;
+        break;
+    default:
+        abort();
+        break;
+    }
+    sched_info_val <<= offset;
+    hctsiz.xfersize &= ~(0xFF);
+    hctsiz.xfersize |= sched_info_val;
     chan->hctsiz_reg.val = hctsiz.val;
 }
 
@@ -975,6 +1025,28 @@ static inline void usb_dwc_ll_qtd_get_status(usb_dwc_ll_dma_qtd_t *qtd, int *rem
     *rem_len = qtd->in_non_iso.xfer_size;
     //Clear the QTD just for safety
     qtd->buffer_status_val = 0;
+}
+
+/**
+ * @brief Get the current BVALID override configuration.
+ *
+ * @param[out] Get the current BVALID override configuration.
+ */
+FORCE_INLINE_ATTR bool usb_dwc_ll_get_bvalid_override(usb_dwc_dev_t *hw)
+{
+    return hw->gotgctl_reg.bvalidoven;
+}
+
+/**
+ * @brief Enable BVALID override in USB OTG controller.
+ *
+ * When enabled, the controller ignores the hardware-detected VBUS BVALID signal
+ * and uses the software-defined override value instead. This is typically used
+ * to reduce USB leakage current during sleep by forcing BVALID low.
+ */
+FORCE_INLINE_ATTR void usb_dwc_ll_enable_bvalid_override(usb_dwc_dev_t *hw, bool override)
+{
+    hw->gotgctl_reg.bvalidoven = override;
 }
 
 // ---------------------------- Power and Clock Gating Register --------------------------------

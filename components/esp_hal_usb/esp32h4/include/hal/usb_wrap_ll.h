@@ -17,7 +17,6 @@
 
 #define USB_WRAP_LL_EXT_PHY_SUPPORTED           0   // Cannot route to an external FSLS PHY
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -70,11 +69,11 @@ FORCE_INLINE_ATTR void usb_wrap_ll_phy_disable_srp_sessend_override(usb_wrap_dev
 FORCE_INLINE_ATTR void usb_wrap_ll_phy_enable_pin_exchg(usb_wrap_dev_t *hw, bool enable)
 {
     if (enable) {
-    hw->wrap_otg_conf.wrap_exchg_pins = 1;
+        hw->wrap_otg_conf.wrap_exchg_pins = 1;
         hw->wrap_otg_conf.wrap_exchg_pins_override = 1;
     } else {
-    hw->wrap_otg_conf.wrap_exchg_pins_override = 0;
-    hw->wrap_otg_conf.wrap_exchg_pins = 0;
+        hw->wrap_otg_conf.wrap_exchg_pins_override = 0;
+        hw->wrap_otg_conf.wrap_exchg_pins = 0;
     }
 }
 
