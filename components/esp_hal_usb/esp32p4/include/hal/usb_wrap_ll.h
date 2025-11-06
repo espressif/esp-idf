@@ -58,8 +58,10 @@ FORCE_INLINE_ATTR void usb_wrap_ll_phy_select(usb_wrap_dev_t *hw, unsigned int p
     switch (phy_idx) {
     case 0:
         LP_SYS.usb_ctrl.sw_usb_phy_sel = true;
+        break;
     case 1:
         LP_SYS.usb_ctrl.sw_usb_phy_sel = false;
+        break;
     default:
         break;
     }
