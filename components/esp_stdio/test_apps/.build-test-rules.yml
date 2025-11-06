@@ -4,5 +4,6 @@ components/esp_stdio/test_apps/stdio:
     - if: CONFIG_NAME == "serial_jtag_only" and SOC_USB_SERIAL_JTAG_SUPPORTED != 1
     - if: CONFIG_NAME == "serial_jtag_only_no_vfs" and SOC_USB_SERIAL_JTAG_SUPPORTED != 1
     - if: CONFIG_NAME == "stdio_no_vfs" and SOC_USB_SERIAL_JTAG_SUPPORTED != 1
+    - if: IDF_TARGET == "esp32p4" # TODO: IDF-14364
   disable_test:
     - if: CONFIG_NAME == "simple" and IDF_TARGET != "esp32"

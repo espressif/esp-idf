@@ -12,6 +12,9 @@ components/driver/test_apps/legacy_twai:
   disable:
     - if: SOC_TWAI_SUPPORTED != 1 or SOC_TWAI_SUPPORT_FD == 1
       reason: legacy driver doesn't support FD
+    - if: IDF_TARGET == "esp32p4"
+      temporary: true
+      reason: p4 rev3 migration # TODO: IDF-14393
   depends_filepatterns:
     - components/driver/twai/**/*
   depends_components:

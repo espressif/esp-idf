@@ -14,6 +14,7 @@ from pytest_embedded_idf.utils import idf_parametrize
     indirect=True,
 )
 @idf_parametrize('target', ['supported_targets'], indirect=['target'])
+@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration # TODO: IDF-14399')
 def test_master_single_dev(case_tester) -> None:  # type: ignore
     for case in case_tester.test_menu:
         if 'test_env' in case.attributes:
@@ -39,6 +40,7 @@ def test_master_esp_flash(case_tester) -> None:  # type: ignore
 
 
 @pytest.mark.generic_multi_device
+@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration # TODO: IDF-14399')
 @pytest.mark.parametrize(
     'count, config',
     [

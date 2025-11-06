@@ -4,6 +4,10 @@ components/esp_adc/test_apps/adc:
   disable:
     - if: SOC_ADC_SUPPORTED != 1
     - if: CONFIG_NAME == "gdma_iram_safe" and IDF_TARGET in ["esp32", "esp32s2", "esp32c2"]
+  disable_test:
+    - if: IDF_TARGET == "esp32p4" and CONFIG_NAME != "esp32p4_eco4"
+      temporary: true
+      reason: p4 rev3 migration # TODO: IDF-14357
   depends_components:
     - esp_adc
     - esp_driver_gpio

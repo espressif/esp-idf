@@ -10,6 +10,7 @@ from pytest_embedded_idf.utils import soc_filtered_targets
 
 @pytest.mark.generic
 @idf_parametrize('target', soc_filtered_targets('SOC_CLK_TREE_SUPPORTED == 1'), indirect=['target'])
+@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration # TODO: IDF-14441')
 def test_rtc_clk(case_tester: CaseTester) -> None:
     for case in case_tester.test_menu:
         if 'test_env' in case.attributes:
