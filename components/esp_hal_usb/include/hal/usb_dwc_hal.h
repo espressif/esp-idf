@@ -263,7 +263,6 @@ void usb_dwc_hal_core_soft_reset(usb_dwc_hal_context_t *hal);
  */
 bool usb_dwc_hal_fifo_config_is_valid(const usb_dwc_hal_context_t *hal, const usb_dwc_hal_fifo_config_t *config);
 
-
 /**
  * @brief Set the FIFO sizes of the USB-DWC core
  *
@@ -759,14 +758,14 @@ static inline void usb_dwc_hal_xfer_desc_fill(void *desc_list, uint32_t desc_idx
     usb_dwc_ll_dma_qtd_t *qtd_list = (usb_dwc_ll_dma_qtd_t *)desc_list;
     if (flags & USB_DWC_HAL_XFER_DESC_FLAG_IN) {
         usb_dwc_ll_qtd_set_in(&qtd_list[desc_idx],
-                           xfer_data_buff, xfer_len,
-                           flags & USB_DWC_HAL_XFER_DESC_FLAG_HOC);
+                              xfer_data_buff, xfer_len,
+                              flags & USB_DWC_HAL_XFER_DESC_FLAG_HOC);
     } else {
         usb_dwc_ll_qtd_set_out(&qtd_list[desc_idx],
-                            xfer_data_buff,
-                            xfer_len,
-                            flags & USB_DWC_HAL_XFER_DESC_FLAG_HOC,
-                            flags & USB_DWC_HAL_XFER_DESC_FLAG_SETUP);
+                               xfer_data_buff,
+                               xfer_len,
+                               flags & USB_DWC_HAL_XFER_DESC_FLAG_HOC,
+                               flags & USB_DWC_HAL_XFER_DESC_FLAG_SETUP);
     }
 }
 

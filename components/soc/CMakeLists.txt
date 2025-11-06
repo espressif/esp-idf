@@ -158,10 +158,6 @@ if(CONFIG_SOC_IEEE802154_SUPPORTED)
     endif()
 endif()
 
-if(CONFIG_SOC_USB_OTG_SUPPORTED)
-    list(APPEND srcs "${target_folder}/usb_dwc_periph.c")
-endif()
-
 if(CONFIG_SOC_DAC_SUPPORTED)
     list(APPEND srcs "${target_folder}/dac_periph.c")
 endif()

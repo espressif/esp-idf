@@ -239,16 +239,6 @@ elseif(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "usb_serial_jtag_hal.c")
     endif()
 
-    if(CONFIG_SOC_USB_UTMI_PHY_NUM GREATER 0)
-        list(APPEND srcs "usb_utmi_hal.c")
-    endif()
-
-    if(CONFIG_SOC_USB_OTG_SUPPORTED)
-        list(APPEND srcs
-                    "usb_dwc_hal.c"
-                    "usb_wrap_hal.c")
-    endif()
-
     if(CONFIG_SOC_TOUCH_SENSOR_SUPPORTED)
         # Source files for the legacy touch hal driver
         if(CONFIG_SOC_TOUCH_SENSOR_VERSION LESS 3)

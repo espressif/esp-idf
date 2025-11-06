@@ -166,7 +166,6 @@ typedef struct {
     uint8_t *buffer;
 } usb_dwc_ll_dma_qtd_t;
 
-
 /* -----------------------------------------------------------------------------
 ------------------------------- Global Registers -------------------------------
 ----------------------------------------------------------------------------- */
@@ -423,18 +422,18 @@ static inline void usb_dwc_ll_hcfg_set_num_frame_list_entries(usb_dwc_dev_t *hw,
 {
     uint32_t frlisten;
     switch (num_entries) {
-        case USB_HAL_FRAME_LIST_LEN_8:
-            frlisten = 0;
-            break;
-        case USB_HAL_FRAME_LIST_LEN_16:
-            frlisten = 1;
-            break;
-        case USB_HAL_FRAME_LIST_LEN_32:
-            frlisten = 2;
-            break;
-        default: //USB_HAL_FRAME_LIST_LEN_64
-            frlisten = 3;
-            break;
+    case USB_HAL_FRAME_LIST_LEN_8:
+        frlisten = 0;
+        break;
+    case USB_HAL_FRAME_LIST_LEN_16:
+        frlisten = 1;
+        break;
+    case USB_HAL_FRAME_LIST_LEN_32:
+        frlisten = 2;
+        break;
+    default: //USB_HAL_FRAME_LIST_LEN_64
+        frlisten = 3;
+        break;
     }
     hw->hcfg_reg.frlisten = frlisten;
 }
@@ -862,25 +861,25 @@ static inline void usb_dwc_ll_hctsiz_set_sched_info(volatile usb_dwc_host_chan_r
     hctsiz.val = chan->hctsiz_reg.val;
     uint8_t sched_info_val;
     switch (tokens_per_frame) {
-        case 1:
-            offset %= 8; // If the required offset > 8, we must wrap around to SCHED_INFO size = 8
-            sched_info_val = 0b00000001;
-            break;
-        case 2:
-            offset %= 4;
-            sched_info_val = 0b00010001;
-            break;
-        case 4:
-            offset %= 2;
-            sched_info_val = 0b01010101;
-            break;
-        case 8:
-            offset = 0;
-            sched_info_val = 0b11111111;
-            break;
-        default:
-            abort();
-            break;
+    case 1:
+        offset %= 8; // If the required offset > 8, we must wrap around to SCHED_INFO size = 8
+        sched_info_val = 0b00000001;
+        break;
+    case 2:
+        offset %= 4;
+        sched_info_val = 0b00010001;
+        break;
+    case 4:
+        offset %= 2;
+        sched_info_val = 0b01010101;
+        break;
+    case 8:
+        offset = 0;
+        sched_info_val = 0b11111111;
+        break;
+    default:
+        abort();
+        break;
     }
     sched_info_val <<= offset;
     hctsiz.xfersize &= ~(0xFF);
