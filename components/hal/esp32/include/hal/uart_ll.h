@@ -37,7 +37,6 @@ extern "C" {
 
 #define UART_LL_INTR_MASK         (0x7ffff) //All interrupt mask
 
-
 // Define UART interrupts
 typedef enum {
     UART_INTR_RXFIFO_FULL      = (0x1<<0),
@@ -298,6 +297,11 @@ static inline uint32_t uart_ll_get_intraw_mask(uart_dev_t *hw)
 FORCE_INLINE_ATTR uint32_t uart_ll_get_intsts_mask(uart_dev_t *hw)
 {
     return hw->int_st.val;
+}
+
+FORCE_INLINE_ATTR volatile void* uart_ll_get_intr_status_reg(uart_dev_t *hw)
+{
+    return &hw->int_st.val;
 }
 
 /**

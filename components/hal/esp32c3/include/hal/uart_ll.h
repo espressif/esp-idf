@@ -315,6 +315,11 @@ FORCE_INLINE_ATTR uint32_t uart_ll_get_intsts_mask(uart_dev_t *hw)
     return hw->int_st.val;
 }
 
+FORCE_INLINE_ATTR volatile void* uart_ll_get_intr_status_reg(uart_dev_t *hw)
+{
+    return &hw->int_st.val;
+}
+
 /**
  * @brief  Clear the UART interrupt status based on the given mask.
  *

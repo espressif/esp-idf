@@ -34,6 +34,8 @@ extern "C" {
 #define LEDC_LL_FRACTIONAL_BITS    (8)
 #define LEDC_LL_FRACTIONAL_MAX     ((1 << LEDC_LL_FRACTIONAL_BITS) - 1)
 #define LEDC_LL_GLOBAL_CLOCKS      SOC_LEDC_CLKS
+/// Get the mask of the fade end interrupt status register.
+#define LEDC_LL_FADE_END_INTR_MASK  (0xffUL << LEDC_DUTY_CHNG_END_CH0_INT_ENA_S)
 
 // Channel tasks: ID, enable register and bit
 #define LEDC_LL_ETM_CHANNEL_TASK_ID(group, channel, task) \
@@ -569,7 +571,6 @@ static inline void ledc_ll_set_fade_end_intr(ledc_dev_t *hw, ledc_mode_t speed_m
  *
  * @param hw Beginning address of the peripheral registers
  * @param speed_mode LEDC speed_mode, low-speed mode only
- * @param channel_num LEDC channel index (0-7), select from ledc_channel_t
  * @param intr_status The fade end interrupt status
  *
  * @return None
@@ -580,6 +581,18 @@ static inline void ledc_ll_get_fade_end_intr_status(ledc_dev_t *hw, ledc_mode_t 
     uint32_t int_en_base = LEDC_DUTY_CHNG_END_CH0_INT_ENA_S;
     *intr_status = (value >> int_en_base) & 0xff;
 }
+
+/**
+ * @brief Get the address of the fade end interrupt status register.
+ *
+ * @param hw Beginning address of the peripheral registers
+ * @return Pointer to the fade end interrupt status register.
+ */
+static inline volatile void* ledc_ll_get_fade_end_intr_addr(ledc_dev_t *hw)
+{
+    return &hw->int_st.val;
+}
+
 
 /**
  * @brief Clear fade end interrupt status

@@ -720,3 +720,8 @@ void sdio_slave_hal_slvint_fetch_clear(sdio_slave_context_t *hal, sdio_slave_ll_
 {
     sdio_slave_ll_slvint_fetch_clear(hal->slc, out_int_mask);
 }
+
+volatile void* sdio_slave_hal_get_intr_status_reg(sdio_slave_context_t *hal)
+{
+    return sdio_slave_ll_get_intr_status_reg(hal->slc);
+}
