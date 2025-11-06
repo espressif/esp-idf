@@ -3,6 +3,9 @@
 examples/security/flash_encryption:
   disable:
     - if: CONFIG_NAME == "psram" and SOC_SPIRAM_SUPPORTED != 1
+    - if: IDF_TARGET == "esp32p4"
+      temporary: true
+      reason: p4 rev3 migration # TODO: IDF-14367
   disable_test:
     - if: IDF_TARGET in ["esp32s2", "esp32s3", "esp32c6", "esp32h2", "esp32c2", "esp32c5", "esp32c61"]
       temporary: true

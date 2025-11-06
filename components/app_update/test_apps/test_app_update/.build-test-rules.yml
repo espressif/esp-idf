@@ -15,6 +15,9 @@ components/app_update/test_apps:
     - if: IDF_TARGET == "esp32c61" and CONFIG_NAME == "xip_psram_with_rom_impl"
       temporary: true
       reason: not supported yet  # TODO: [ESP32C61] IDF-12784
+    - if: IDF_TARGET == "esp32p4"
+      temporary: true
+      reason: p4 rev3 migration # TODO: IDF-14401
   disable_test:
     - if: CONFIG_NAME == "recovery_bootloader" and SOC_RECOVERY_BOOTLOADER_SUPPORTED == 1 and IDF_TARGET == "esp32c61"
       temporary: true

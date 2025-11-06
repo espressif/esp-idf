@@ -8,8 +8,13 @@ components/freertos/test_apps/build_tests/orig_inc_path:
   enable:
     - if: IDF_TARGET in ["esp32"]
       reason: The feature only depends on the build system, nothing target-specific that needs to be tested
+
 components/freertos/test_apps/freertos:
   disable:
     - if: CONFIG_NAME == "smp" and IDF_TARGET == "esp32p4"
       temporary: true
       reason: target(s) not supported yet
+  disable_test:
+    - if: IDF_TARGET == "esp32p4"
+      temporary: true
+      reason: p4 rev3 migration # TODO: IDF-14421

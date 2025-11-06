@@ -17,6 +17,7 @@ from pytest_embedded_idf.utils import idf_parametrize
 @idf_parametrize(
     'target', ['esp32', 'esp32s2', 'esp32c3', 'esp32c5', 'esp32c6', 'esp32h2', 'esp32p4'], indirect=['target']
 )
+@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration # TODO: IDF-14414')
 def test_rmt(dut: Dut) -> None:
     dut.run_all_single_board_cases()
 

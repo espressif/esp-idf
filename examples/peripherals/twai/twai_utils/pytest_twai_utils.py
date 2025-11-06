@@ -646,6 +646,7 @@ def test_twai_range_filters(twai: TwaiTestHelper) -> None:
 @pytest.mark.twai_std
 @pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='no runner')
 @idf_parametrize('target', soc_filtered_targets('SOC_TWAI_SUPPORTED == 1'), indirect=['target'])
+@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration # TODO: IDF-14393')
 def test_twai_external_communication(twai: TwaiTestHelper, can_manager: CanBusManager) -> None:
     """
     Test bidirectional communication with external CAN interface (hardware level).
