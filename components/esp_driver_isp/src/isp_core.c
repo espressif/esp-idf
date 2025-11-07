@@ -119,7 +119,16 @@ esp_err_t esp_isp_new_processor(const esp_isp_processor_cfg_t *proc_config, isp_
         isp_ll_set_clock_div(proc->hal.hw, &clk_div);
     }
     proc->clk_src = clk_src;
-    proc->isp_fsm = ISP_FSM_INIT;
+    atomic_init(&proc->isp_fsm, ISP_FSM_INIT);
+    atomic_init(&proc->bf_fsm, ISP_FSM_INIT);
+    atomic_init(&proc->blc_fsm, ISP_FSM_INIT);
+    atomic_init(&proc->ccm_fsm, ISP_FSM_INIT);
+    atomic_init(&proc->color_fsm, ISP_FSM_INIT);
+    atomic_init(&proc->demosaic_fsm, ISP_FSM_INIT);
+    atomic_init(&proc->gamma_fsm, ISP_FSM_INIT);
+    atomic_init(&proc->lsc_fsm, ISP_FSM_INIT);
+    atomic_init(&proc->sharpen_fsm, ISP_FSM_INIT);
+    atomic_init(&proc->wbg_fsm, ISP_FSM_INIT);
     proc->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
 
     //Input & Output color format
@@ -189,7 +198,7 @@ err:
 esp_err_t esp_isp_del_processor(isp_proc_handle_t proc)
 {
     ESP_RETURN_ON_FALSE(proc, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
-    ESP_RETURN_ON_FALSE(proc->isp_fsm == ISP_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "processor isn't in init state");
+    ESP_RETURN_ON_FALSE(atomic_load(&proc->isp_fsm) == ISP_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "processor isn't in init state");
 
     //declaim first, then do free
     ESP_RETURN_ON_ERROR(s_isp_declaim_processor(proc), TAG, "declaim processor fail");
@@ -205,7 +214,7 @@ esp_err_t esp_isp_del_processor(isp_proc_handle_t proc)
 esp_err_t esp_isp_register_event_callbacks(isp_proc_handle_t proc, const esp_isp_evt_cbs_t *cbs, void *user_data)
 {
     ESP_RETURN_ON_FALSE(proc && cbs, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
-    ESP_RETURN_ON_FALSE(proc->isp_fsm == ISP_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "processor isn't in the init state");
+    ESP_RETURN_ON_FALSE(atomic_load(&proc->isp_fsm) == ISP_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "processor isn't in the init state");
 
 #if CONFIG_ISP_ISR_IRAM_SAFE
     if (cbs->on_sharpen_frame_done) {
@@ -230,11 +239,11 @@ esp_err_t esp_isp_register_event_callbacks(isp_proc_handle_t proc, const esp_isp
 esp_err_t esp_isp_enable(isp_proc_handle_t proc)
 {
     ESP_RETURN_ON_FALSE(proc, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
-    ESP_RETURN_ON_FALSE(proc->isp_fsm == ISP_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "processor isn't in init state");
+    isp_fsm_t expected_fsm = ISP_FSM_INIT;
+    ESP_RETURN_ON_FALSE(atomic_compare_exchange_strong(&proc->isp_fsm, &expected_fsm, ISP_FSM_ENABLE), ESP_ERR_INVALID_STATE, TAG, "processor isn't in init state");
     ESP_RETURN_ON_FALSE(proc->bypass_isp == false, ESP_ERR_INVALID_STATE, TAG, "processor is configured to be bypassed");
 
     isp_ll_enable(proc->hal.hw, true);
-    proc->isp_fsm = ISP_FSM_ENABLE;
 
     return ESP_OK;
 }
@@ -242,10 +251,10 @@ esp_err_t esp_isp_enable(isp_proc_handle_t proc)
 esp_err_t esp_isp_disable(isp_proc_handle_t proc)
 {
     ESP_RETURN_ON_FALSE(proc, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
-    ESP_RETURN_ON_FALSE(proc->isp_fsm == ISP_FSM_ENABLE, ESP_ERR_INVALID_STATE, TAG, "processor isn't in enable state");
+    isp_fsm_t expected_fsm = ISP_FSM_ENABLE;
+    ESP_RETURN_ON_FALSE(atomic_compare_exchange_strong(&proc->isp_fsm, &expected_fsm, ISP_FSM_INIT), ESP_ERR_INVALID_STATE, TAG, "processor isn't in enable state");
 
     isp_ll_enable(proc->hal.hw, false);
-    proc->isp_fsm = ISP_FSM_INIT;
 
     return ESP_OK;
 }

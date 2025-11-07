@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -49,10 +49,10 @@ esp_err_t esp_isp_bf_configure(isp_proc_handle_t proc, const esp_isp_bf_config_t
 esp_err_t esp_isp_bf_enable(isp_proc_handle_t proc)
 {
     ESP_RETURN_ON_FALSE(proc, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
-    ESP_RETURN_ON_FALSE(proc->bf_fsm == ISP_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "bf is enabled already");
+    isp_fsm_t expected_fsm = ISP_FSM_INIT;
+    ESP_RETURN_ON_FALSE(atomic_compare_exchange_strong(&proc->bf_fsm, &expected_fsm, ISP_FSM_ENABLE), ESP_ERR_INVALID_STATE, TAG, "bf is enabled already");
 
     isp_ll_bf_enable(proc->hal.hw, true);
-    proc->bf_fsm = ISP_FSM_ENABLE;
 
     return ESP_OK;
 }
@@ -60,10 +60,10 @@ esp_err_t esp_isp_bf_enable(isp_proc_handle_t proc)
 esp_err_t esp_isp_bf_disable(isp_proc_handle_t proc)
 {
     ESP_RETURN_ON_FALSE(proc, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
-    ESP_RETURN_ON_FALSE(proc->bf_fsm == ISP_FSM_ENABLE, ESP_ERR_INVALID_STATE, TAG, "bf isn't enabled yet");
+    isp_fsm_t expected_fsm = ISP_FSM_ENABLE;
+    ESP_RETURN_ON_FALSE(atomic_compare_exchange_strong(&proc->bf_fsm, &expected_fsm, ISP_FSM_INIT), ESP_ERR_INVALID_STATE, TAG, "bf isn't enabled yet");
 
     isp_ll_bf_enable(proc->hal.hw, false);
-    proc->bf_fsm = ISP_FSM_INIT;
 
     return ESP_OK;
 }
