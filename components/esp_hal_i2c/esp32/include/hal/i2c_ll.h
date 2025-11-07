@@ -10,7 +10,7 @@
 
 #include <stdbool.h>
 #include "hal/misc.h"
-#include "soc/i2c_periph.h"
+#include "hal/i2c_periph.h"
 #include "soc/i2c_struct.h"
 #include "soc/clk_tree_defs.h"
 #include "soc/dport_reg.h"
