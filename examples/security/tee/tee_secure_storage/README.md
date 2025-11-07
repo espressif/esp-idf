@@ -1,5 +1,5 @@
-| Supported Targets | ESP32-C5 | ESP32-C6 |
-| ----------------- | -------- | -------- |
+| Supported Targets | ESP32-C5 | ESP32-C6 | ESP32-C61 |
+| ----------------- | -------- | -------- | --------- |
 
 # TEE: Secure Storage example
 
@@ -31,22 +31,37 @@ Open the project configuration menu (`idf.py menuconfig`).
 
 - Configure the secure storage example key ID at `Example Configuration → TEE: Secure Storage Key ID`.
 
-TEE Secure Storage follows the NVS partition format and uses an AES-XTS encryption scheme derived via the HMAC peripheral. It supports two key derivation modes, configurable via `CONFIG_SECURE_TEE_SEC_STG_MODE`:
+TEE Secure Storage follows the NVS partition format and uses an XTS-AES encryption scheme derived via the HMAC peripheral or software-based HMAC implementation. It supports two key derivation modes, configurable via `CONFIG_SECURE_TEE_SEC_STG_MODE`:
 
   - **Development** Mode: Encryption keys are embedded in the ESP-TEE firmware (identical across all instances).
-  - **Release** Mode: Encryption keys are derived via the HMAC peripheral using a key stored in eFuse, specified by `CONFIG_SECURE_TEE_SEC_STG_EFUSE_HMAC_KEY_ID`.
+  - **Release** Mode: Encryption keys are derived using a key stored in eFuse, specified by `CONFIG_SECURE_TEE_SEC_STG_EFUSE_HMAC_KEY_ID`.
 
-#### Configure the eFuse key ID storing the HMAC key
+#### Configure the eFuse key ID for storage encryption
 
 - Navigate to `ESP-TEE (Trusted Execution Environment) → Secure Services → Secure Storage: Mode` and enable the `Release` mode configuration.
-- Set the eFuse key ID storing the HMAC key at `ESP-TEE (Trusted Execution Environment) → Secure Services → Secure Storage: eFuse HMAC key ID for storage encryption keys`.
+- Set the eFuse key ID storing the HMAC/USER key at `ESP-TEE (Trusted Execution Environment) → Secure Services → Secure Storage: eFuse HMAC key ID for storage encryption keys`.
 
-**Note:** Before running the example, users must program the HMAC key into the configured eFuse block - refer to the snippet below. The TEE checks whether the specified eFuse block is empty or already programmed with a key. If the block is empty, an error will be returned; otherwise, the pre-programmed key will be used.
+**Note:** Before running the example, users must program the required key into the configured eFuse block - refer to the snippet below. The TEE checks whether the specified eFuse block is empty or already programmed with a key. If the block is empty, an error will be returned; otherwise, the pre-programmed key will be used.
+
+**For targets without HMAC peripheral (ESP32-C61):**
+
+```shell
+# Generate a random 32-byte key
+openssl rand -out hmac_key_file.bin 32
+# Program the USER purpose key (256-bit) in eFuse
+# Here, BLOCK_KEYx is a free eFuse key-block between BLOCK_KEY0 and BLOCK_KEY5
+espefuse -p PORT burn-key --no-read-protect BLOCK_KEYx hmac_key_file.bin USER
+```
+
+> [!IMPORTANT]
+> When programming the key into eFuse for targets without HMAC peripheral, ensure that it is **NOT** marked as read-protected (use the `--no-read-protect` flag). If the key is read-protected, the TEE will be unable to access it. However, this does not weaken security: the APM peripheral already blocks software access to the key, and any illegal read or write attempt from the REE triggers a fault.
+
+**For targets with HMAC peripheral:**
 
 ```shell
 # Generate a random 32-byte HMAC key
 openssl rand -out hmac_key_file.bin 32
-# Programming the HMAC key (256-bit) in eFuse
+# Program the HMAC key (256-bit) in eFuse
 # Here, BLOCK_KEYx is a free eFuse key-block between BLOCK_KEY0 and BLOCK_KEY5
 espefuse -p PORT burn-key BLOCK_KEYx hmac_key_file.bin HMAC_UP
 ```
