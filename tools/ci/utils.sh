@@ -96,6 +96,25 @@ function run_cmd() {
   fi
 }
 
+function pytest_for_ut() {
+  pytest_args="-c NUL -p no:idf-ci -p no:pytest_embedded"
+
+  if [ -n "${CI_JOB_ID-}" ]; then
+    if [ -z "${KNOWN_FAILURE_CASES_FILE_NAME-}" ]; then
+      echo "Error: KNOWN_FAILURE_CASES_FILE_NAME is not set."
+      return 1
+    fi
+
+    pytest_args="${pytest_args} --junitxml XUNIT_RESULT_${CI_JOB_ID}.xml --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}"
+
+    if [ ! -e "${KNOWN_FAILURE_CASES_FILE_NAME}" ]; then
+      run_cmd idf-ci gitlab download-known-failure-cases-file "${KNOWN_FAILURE_CASES_FILE_NAME}"
+    fi
+  fi
+
+  run_cmd pytest "$@" "${pytest_args}"
+}
+
 # Retries a command RETRY_ATTEMPTS times in case of failure
 # Inspired by https://stackoverflow.com/a/8351489
 function retry_failed() {

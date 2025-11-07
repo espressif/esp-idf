@@ -129,6 +129,8 @@
   - "tools/bsasm.py"
   - "tools/test_bsasm/**/*"
 
+  - "tools/ci/test_soc_headers_load_in_idf_build_apps.py"
+
 .patterns-docker: &patterns-docker
   - "tools/docker/**/*"
 

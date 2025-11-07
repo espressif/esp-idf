@@ -6,13 +6,16 @@
   dependencies: # set dependencies to null to avoid missing artifacts issue
   # run host_test jobs immediately, only after upload cache
   needs:
+    - pipeline_variables
     - job: upload-pip-cache
       optional: true
       artifacts: false
     - job: upload-submodules-cache
       optional: true
       artifacts: false
-    - pipeline_variables
+    - job: fast_template_app
+      optional: true
+      artifacts: false
   artifacts:
     expire_in: 1 week
     when: always
@@ -52,14 +55,14 @@ test_partition_table_on_host:
   extends: .host_test_template
   script:
     - cd components/partition_table/test_gen_esp32part_host
-    - ./gen_esp32part_tests.py
+    - pytest_for_ut ./gen_esp32part_tests.py
 
 test_ldgen_on_host:
   extends: .host_test_template
   script:
     - cd tools/ldgen/test
     - export PYTHONPATH=$PYTHONPATH:..
-    - python -m unittest
+    - pytest_for_ut .
   variables:
     LC_ALL: C.UTF-8
 
@@ -67,21 +70,19 @@ test_spiffs_on_host:
   extends: .host_test_template
   script:
     - cd components/spiffs/test_spiffsgen/
-    - ./test_spiffsgen.py
+    - pytest_for_ut ./test_spiffsgen.py
 
 test_fatfsgen_on_host:
   extends: .host_test_template
   script:
     - cd components/fatfs/test_fatfsgen/
-    - ./test_fatfsgen.py
-    - ./test_wl_fatfsgen.py
-    - ./test_fatfsparse.py
+    - pytest_for_ut ./test_fatfsgen.py ./test_wl_fatfsgen.py ./test_fatfsparse.py
 
 test_certificate_bundle_on_host:
   extends: .host_test_template
   script:
     - cd components/mbedtls/esp_crt_bundle/test_gen_crt_bundle/
-    - ./test_gen_crt_bundle.py
+    - pytest_for_ut ./test_gen_crt_bundle.py
 
 # Test for create virtualenv. It must be invoked from Python, not from virtualenv.
 # Use docker image system python without any extra dependencies
@@ -104,15 +105,17 @@ test_cli_installer:
     - python3 ${IDF_PATH}/tools/idf_tools.py download required qemu-riscv32 qemu-xtensa cmake cmake@3.22.1
     - cd ${IDF_PATH}/tools/test_idf_tools
     - python3 -m pip install jsonschema
+    # Testing with system python3, so don't use any third-party packages
     - python3 ./test_idf_tools.py -v
     - python3 ./test_idf_tools_python_env.py
     # It runs at the end because it modifies dependencies
     - IDF_TEST_MAY_BREAK_DEPENDENCIES=1 python3 ./test_idf_tools.py -v TestSystemDependencies.test_commands_when_nodeps
 
-.test_efuse_table_on_host_template:
+test_efuse_table_on_host:
   extends: .host_test_template
-  variables:
-    IDF_TARGET: "esp32"
+  parallel:
+    matrix:
+      - IDF_TARGET: [esp32, esp32s2, esp32c3, esp32s3, esp32c2, esp32c6, esp32h2, esp32p4, esp32c5, esp32c61]
   artifacts:
     when: on_failure
     paths:
@@ -122,35 +125,7 @@ test_cli_installer:
     - ./efuse_table_gen.py -t "${IDF_TARGET}" ${IDF_PATH}/components/efuse/${IDF_TARGET}/esp_efuse_table.csv
     - git diff --exit-code -- ${IDF_TARGET}/esp_efuse_table.c || { echo 'Differences found for ${IDF_TARGET} target. Please run idf.py efuse-common-table and commit the changes.'; exit 1; }
     - cd ${IDF_PATH}/components/efuse/test_efuse_host
-    - ./efuse_tests.py
-
-test_efuse_table_on_host_esp32:
-  extends: .test_efuse_table_on_host_template
-
-test_efuse_table_on_host_esp32s2:
-  extends: .test_efuse_table_on_host_template
-  variables:
-    IDF_TARGET: esp32s2
-
-test_efuse_table_on_host_esp32s3:
-  extends: .test_efuse_table_on_host_template
-  variables:
-    IDF_TARGET: esp32s3
-
-test_efuse_table_on_host_esp32c3:
-  extends: .test_efuse_table_on_host_template
-  variables:
-    IDF_TARGET: esp32c3
-
-test_efuse_table_on_host_esp32h2:
-  extends: .test_efuse_table_on_host_template
-  variables:
-    IDF_TARGET: esp32h2
-
-test_efuse_table_on_host_esp32c6:
-  extends: .test_efuse_table_on_host_template
-  variables:
-    IDF_TARGET: esp32c6
+    - pytest_for_ut ./efuse_tests.py
 
 test_logtrace_proc:
   extends: .host_test_template
@@ -217,7 +192,7 @@ test_split_path_by_spaces:
   extends: .host_test_template
   script:
     - cd ${IDF_PATH}/tools
-    - python -m unittest split_paths_by_spaces.py
+    - pytest_for_ut ./split_paths_by_spaces.py
 
 test_transport_on_host:
   extends: .host_test_template
@@ -256,12 +231,13 @@ test_gen_soc_caps_kconfig:
   extends: .host_test_template
   script:
     - cd ${IDF_PATH}/tools/gen_soc_caps_kconfig/
-    - ./test/test_gen_soc_caps_kconfig.py
+    - pytest_for_ut ./test/test_gen_soc_caps_kconfig.py
 
 test_idf_build_apps_load_soc_caps:
   extends: .host_test_template
   script:
-    - python tools/ci/check_soc_headers_load_in_idf_build_apps.py
+    - cd tools/ci
+    - pytest_for_ut ./test_soc_headers_load_in_idf_build_apps.py
 
 test_nvs_gen_check:
   extends: .host_test_template
@@ -275,7 +251,7 @@ test_nvs_gen_check:
     LC_ALL: C.UTF-8
   script:
     - cd ${IDF_PATH}/components/nvs_flash/nvs_partition_tool
-    - pytest --noconftest test_nvs_gen_check.py --junitxml=XUNIT_RESULT.xml
+    - pytest_for_ut test_nvs_gen_check.py
 
 test_esp_rom:
   extends: .host_test_template
@@ -286,7 +262,7 @@ test_esp_rom:
       junit: XUNIT_RESULT.xml
   script:
     - cd ${IDF_PATH}/components/esp_rom/
-    - pytest --noconftest test_esp_rom.py --junitxml=XUNIT_RESULT.xml
+    - pytest_for_ut test_esp_rom.py
 
 make_sure_soc_caps_compatible_in_idf_build_apps:
     extends:
