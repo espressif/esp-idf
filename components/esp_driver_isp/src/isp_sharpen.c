@@ -45,6 +45,9 @@ esp_err_t esp_isp_sharpen_configure(isp_proc_handle_t proc, const esp_isp_sharpe
         isp_hal_sharpen_config(&(proc->hal), NULL);
     }
 
+    bool valid = isp_ll_shadow_update_sharpen(proc->hal.hw);
+    ESP_RETURN_ON_FALSE_ISR(valid, ESP_ERR_INVALID_STATE, TAG, "failed to update sharp shadow register");
+
     return ESP_OK;
 }
 
