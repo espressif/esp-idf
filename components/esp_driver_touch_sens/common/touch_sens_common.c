@@ -43,6 +43,8 @@ static void touch_channel_pin_init(int id)
 {
     gpio_num_t pin = touch_sensor_channel_io_map[id];
     assert(pin >= 0);
+    /* Touch pad will output the sawtooth wave on the pin,
+       so it needs to be reserved, in case of conflict with other output signals */
     if (esp_gpio_reserve(BIT64(pin)) & BIT64(pin)) {
         ESP_LOGW(TAG, "The GPIO%d is conflict with other module", (int)pin);
     }
@@ -53,7 +55,7 @@ static void touch_channel_pin_deinit(int id)
 {
     gpio_num_t pin = touch_sensor_channel_io_map[id];
     assert(pin >= 0);
-    esp_gpio_revoke(BIT64(pin));
+    /* esp_gpio_revoke is called in gpio_reset_pin */
     gpio_reset_pin(pin);
 }
 

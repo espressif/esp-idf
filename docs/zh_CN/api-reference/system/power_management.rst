@@ -102,10 +102,13 @@ ESP-IDF 中集成的电源管理算法可以根据应用程序组件的需求，
 
 目前以下外设驱动程序可感知动态调频，并在调频期间使用 ``ESP_PM_APB_FREQ_MAX`` 锁：
 
-- SPI master
-- I2C
-- I2S（如果 APLL 锁在使用中，I2S 则会启用 ``ESP_PM_NO_LIGHT_SLEEP`` 锁）
-- SDMMC
+.. list::
+
+  - SPI master
+  - I2C
+  :SOC_I2S_HW_VERSION_1 or not SOC_I2S_SUPPORTS_APLL: - I2S
+  :not SOC_I2S_HW_VERSION_1 and SOC_I2S_SUPPORTS_APLL: - I2S（如果 APLL 锁在使用中，I2S 则会启用 ``ESP_PM_NO_LIGHT_SLEEP`` 锁）
+  - SDMMC
 
 启用以下驱动程序时，将占用 ``ESP_PM_APB_FREQ_MAX`` 锁：
 
