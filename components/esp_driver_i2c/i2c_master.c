@@ -1296,6 +1296,10 @@ esp_err_t i2c_master_transmit_receive(i2c_master_dev_handle_t i2c_dev, const uin
     ESP_RETURN_ON_FALSE((write_buffer != NULL) && (write_size > 0), ESP_ERR_INVALID_ARG, TAG, "i2c transmit buffer or size invalid");
     ESP_RETURN_ON_FALSE((read_buffer != NULL) && (read_size > 0), ESP_ERR_INVALID_ARG, TAG, "i2c receive buffer or size invalid");
 
+#if CONFIG_I2C_ISR_IRAM_SAFE
+    ESP_RETURN_ON_FALSE(esp_ptr_internal(read_buffer), ESP_ERR_INVALID_ARG, TAG, "read buffer not in internal RAM");
+#endif
+
     esp_err_t ret = ESP_OK;
     i2c_operation_t i2c_ops[] = {
         {.hw_cmd = I2C_TRANS_START_COMMAND},
@@ -1319,6 +1323,10 @@ esp_err_t i2c_master_receive(i2c_master_dev_handle_t i2c_dev, uint8_t *read_buff
     ESP_RETURN_ON_FALSE(i2c_dev != NULL, ESP_ERR_INVALID_ARG, TAG, "i2c handle not initialized");
     ESP_RETURN_ON_FALSE((read_buffer != NULL) && (read_size > 0), ESP_ERR_INVALID_ARG, TAG, "i2c receive buffer or size invalid");
     esp_err_t ret = ESP_OK;
+
+#if CONFIG_I2C_ISR_IRAM_SAFE
+    ESP_RETURN_ON_FALSE(esp_ptr_internal(read_buffer), ESP_ERR_INVALID_ARG, TAG, "read buffer not in internal RAM");
+#endif
 
     i2c_operation_t i2c_ops[] = {
         {.hw_cmd = I2C_TRANS_START_COMMAND},
@@ -1440,6 +1448,9 @@ esp_err_t i2c_master_execute_defined_operations(i2c_master_dev_handle_t i2c_dev,
             i2c_ops[i].total_bytes = i2c_operation[i].write.total_bytes;
             break;
         case I2C_MASTER_CMD_READ:
+#if CONFIG_I2C_ISR_IRAM_SAFE
+            ESP_RETURN_ON_FALSE(esp_ptr_internal(i2c_operation[i].read.data), ESP_ERR_INVALID_ARG, TAG, "read buffer not in internal RAM");
+#endif
             i2c_ops[i].hw_cmd.op_code = I2C_LL_CMD_READ;
             i2c_ops[i].hw_cmd.ack_val = i2c_operation[i].read.ack_value;
             i2c_ops[i].data = i2c_operation[i].read.data;
