@@ -255,7 +255,10 @@ LCD
 - The ``esp_lcd_panel_disp_off`` function has been removed. Please use the :func:`esp_lcd_panel_disp_on_off` function to control display on/off.
 - The ``on_bounce_frame_finish`` member in :cpp:type:`esp_lcd_rgb_panel_event_callbacks_t` has been replaced by :cpp:member:`esp_lcd_rgb_panel_event_callbacks_t::on_frame_buf_complete`, which indicates that a complete frame buffer has been sent to the LCD controller.
 - The LCD IO layer driver for the I2C interface previously had two implementations, based on the new and legacy I2C master bus drivers. As the legacy I2C driver is being deprecated, support for it in the LCD IO layer has been removed. Only the APIs provided in ``driver/i2c_master.h`` are now used.
-- :cpp:member:`esp_lcd_dpi_panel_config_t::pixel_format` member is deprecated. It is recommended to only use :cpp:member:`esp_lcd_dpi_panel_config_t::in_color_format` to set the MIPI DSI driver's input pixel data format.
+- ``pixel_format`` member in the :cpp:type:`esp_lcd_dpi_panel_config_t` structure has been removed. It is recommended to only use :cpp:member:`esp_lcd_dpi_panel_config_t::in_color_format` to set the MIPI DSI driver's input pixel data format.
+- ``bits_per_pixel`` member in the :cpp:type:`esp_lcd_rgb_panel_config_t` structure has been removed. The color depth of the internal framebuffer is now determined by the :cpp:member:`esp_lcd_rgb_panel_config_t::in_color_format` member.
+- ``esp_lcd_dpi_panel_set_color_conversion`` function is replaced by :cpp:func:`esp_lcd_dpi_panel_set_yuv_conversion` to set YUV to RGB color conversion profile.
+- :cpp:func:`esp_lcd_rgb_panel_set_yuv_conversion` function has a different signature. The ``esp_lcd_yuv_conv_config_t`` configuration type is now replaced by :cpp:type:`esp_lcd_color_conv_yuv_config_t`.
 - The NT35510 LCD device driver has been moved out of ESP-IDF and is now hosted in the `ESP Component Registry <https://components.espressif.com/components/espressif/esp_lcd_nt35510/versions/1.0.0/readme>`__. If your project uses the NT35510 driver, you can add it to your project by running ``idf.py add-dependency "espressif/esp_lcd_nt35510"``.
 
 SPI

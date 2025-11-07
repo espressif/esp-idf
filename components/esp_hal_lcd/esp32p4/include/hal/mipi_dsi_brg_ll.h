@@ -310,24 +310,24 @@ static inline void mipi_dsi_brg_ll_set_yuv_convert_std(dsi_brg_dev_t *dev, lcd_y
  * @brief Set the YUV422 packing order
  *
  * @param dev Pointer to the DSI bridge controller register base address
- * @param order YUV422 packing order
+ * @param color_format Color format
  */
-static inline void mipi_dsi_brg_ll_set_yuv422_pack_order(dsi_brg_dev_t *dev, lcd_yuv422_pack_order_t order)
+static inline void _mipi_dsi_brg_ll_set_yuv422_pack_order(dsi_brg_dev_t *dev, lcd_color_format_t color_format)
 {
-    switch (order) {
-    case LCD_YUV422_PACK_ORDER_UYVY:
+    switch (color_format) {
+    case LCD_COLOR_FMT_YUV422_UYVY:
         dev->yuv_cfg.yuv422_format = 0;
         dev->yuv_cfg.yuv_pix_endian = 1;
         break;
-    case LCD_YUV422_PACK_ORDER_VYUY:
+    case LCD_COLOR_FMT_YUV422_VYUY:
         dev->yuv_cfg.yuv422_format = 1;
         dev->yuv_cfg.yuv_pix_endian = 1;
         break;
-    case LCD_YUV422_PACK_ORDER_YUYV:
+    case LCD_COLOR_FMT_YUV422_YUYV:
         dev->yuv_cfg.yuv422_format = 2;
         dev->yuv_cfg.yuv_pix_endian = 1;
         break;
-    case LCD_YUV422_PACK_ORDER_YVYU:
+    case LCD_COLOR_FMT_YUV422_YVYU:
         dev->yuv_cfg.yuv422_format = 3;
         dev->yuv_cfg.yuv_pix_endian = 1;
         break;
@@ -349,22 +349,23 @@ static inline void mipi_dsi_brg_ll_set_yuv422_pack_order(dsi_brg_dev_t *dev, lcd
  */
 static inline void mipi_dsi_brg_ll_set_input_color_format(dsi_brg_dev_t *dev, lcd_color_format_t color_format)
 {
+    bool is_yuv422 = false;
     switch (color_format) {
     case LCD_COLOR_FMT_RGB888:
         dev->pixel_type.raw_type = 0;
-        dev->pixel_type.data_in_type = 0;
-        break;
-    case LCD_COLOR_FMT_RGB666:
-        dev->pixel_type.raw_type = 1;
         dev->pixel_type.data_in_type = 0;
         break;
     case LCD_COLOR_FMT_RGB565:
         dev->pixel_type.raw_type = 2;
         dev->pixel_type.data_in_type = 0;
         break;
-    case LCD_COLOR_FMT_YUV422:
+    case LCD_COLOR_FMT_YUV422_YUYV:
+    case LCD_COLOR_FMT_YUV422_YVYU:
+    case LCD_COLOR_FMT_YUV422_VYUY:
+    case LCD_COLOR_FMT_YUV422_UYVY:
         dev->pixel_type.raw_type = 9;
         dev->pixel_type.data_in_type = 1;
+        is_yuv422 = true;
         break;
     case LCD_COLOR_FMT_GRAY8:
         dev->pixel_type.raw_type = 12;
@@ -372,6 +373,11 @@ static inline void mipi_dsi_brg_ll_set_input_color_format(dsi_brg_dev_t *dev, lc
         break;
     default:
         abort();
+    }
+
+    // set YUV422 packing order
+    if (is_yuv422) {
+        _mipi_dsi_brg_ll_set_yuv422_pack_order(dev, color_format);
     }
 }
 
@@ -386,9 +392,6 @@ static inline void mipi_dsi_brg_ll_set_output_color_format(dsi_brg_dev_t *dev, l
     switch (color_format) {
     case LCD_COLOR_FMT_RGB888:
         dev->pixel_type.dpi_type = 0;
-        break;
-    case LCD_COLOR_FMT_RGB666:
-        dev->pixel_type.dpi_type = 1;
         break;
     case LCD_COLOR_FMT_RGB565:
         dev->pixel_type.dpi_type = 2;
@@ -435,24 +438,30 @@ static inline void mipi_dsi_brg_ll_set_input_color_range(dsi_brg_dev_t *dev, lcd
  */
 static inline void mipi_dsi_brg_ll_set_input_color_format(dsi_brg_dev_t *dev, lcd_color_format_t color_format)
 {
+    bool is_yuv422 = false;
     switch (color_format) {
     case LCD_COLOR_FMT_RGB888:
         dev->pixel_type.raw_type = 0;
-        dev->pixel_type.data_in_type = 0;
-        break;
-    case LCD_COLOR_FMT_RGB666:
-        dev->pixel_type.raw_type = 1;
         dev->pixel_type.data_in_type = 0;
         break;
     case LCD_COLOR_FMT_RGB565:
         dev->pixel_type.raw_type = 2;
         dev->pixel_type.data_in_type = 0;
         break;
-    case LCD_COLOR_FMT_YUV422:
+    case LCD_COLOR_FMT_YUV422_YUYV:
+    case LCD_COLOR_FMT_YUV422_YVYU:
+    case LCD_COLOR_FMT_YUV422_VYUY:
+    case LCD_COLOR_FMT_YUV422_UYVY:
         dev->pixel_type.data_in_type = 1;
+        is_yuv422 = true;
         break;
     default:
         abort();
+    }
+
+    // set YUV422 packing order
+    if (is_yuv422) {
+        _mipi_dsi_brg_ll_set_yuv422_pack_order(dev, color_format);
     }
 }
 
@@ -467,9 +476,6 @@ static inline void mipi_dsi_brg_ll_set_output_color_format(dsi_brg_dev_t *dev, l
     switch (color_format) {
     case LCD_COLOR_FMT_RGB565:
         dev->pixel_type.raw_type = 2;
-        break;
-    case LCD_COLOR_FMT_RGB666:
-        dev->pixel_type.raw_type = 1;
         break;
     case LCD_COLOR_FMT_RGB888:
         dev->pixel_type.raw_type = 0;

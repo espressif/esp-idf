@@ -12,12 +12,13 @@
 #include "sdkconfig.h"
 #if CONFIG_LCD_ENABLE_DEBUG_LOG
 // The local log level must be defined before including esp_log.h
-// Set the maximum log level for this source file
-#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
+// Set the maximum log level for gptimer driver
+#define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
 #endif
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_attr.h"
+#include "esp_log.h"
 #include "esp_check.h"
 #include "esp_pm.h"
 #include "esp_lcd_panel_interface.h"
@@ -45,6 +46,7 @@
 #include "hal/lcd_ll.h"
 #include "hal/cache_hal.h"
 #include "hal/cache_ll.h"
+#include "hal/color_hal.h"
 #include "rgb_lcd_rotation_sw.h"
 
 // hardware issue workaround
@@ -72,7 +74,7 @@
 
 #define RGB_LCD_PANEL_BOUNCE_BUF_NUM     2 // bounce buffer number
 
-static const char *TAG = "lcd_panel.rgb";
+ESP_LOG_ATTR_TAG(TAG, "lcd.rgb");
 
 typedef struct esp_rgb_panel_t esp_rgb_panel_t;
 
@@ -98,11 +100,12 @@ struct esp_rgb_panel_t {
     int panel_id;          // LCD panel ID
     lcd_hal_context_t hal; // Hal layer object
     size_t data_width;     // Number of data lines
-    size_t fb_bits_per_pixel; // Frame buffer color depth, in bpp
-    size_t num_fbs;           // Number of frame buffers
-    size_t output_bits_per_pixel; // Color depth seen from the output data line. Default to fb_bits_per_pixel, but can be changed by YUV-RGB conversion
-    size_t dma_burst_size;  // DMA transfer burst size
-    intr_handle_t intr;    // LCD peripheral interrupt handle
+    size_t num_fbs;        // Number of frame buffers
+    lcd_color_format_t in_color_format;  // Input color format
+    lcd_color_format_t out_color_format; // Output color format
+    size_t fb_bits_per_pixel; // Frame buffer (the input buffer of the LCD controller) color depth, in bpp
+    size_t dma_burst_size;    // DMA transfer burst size
+    intr_handle_t intr;       // LCD peripheral interrupt handle
 #if CONFIG_PM_ENABLE
     esp_pm_lock_handle_t pm_lock; // Power management lock
 #endif
@@ -288,9 +291,6 @@ static esp_err_t lcd_rgb_panel_destroy(esp_rgb_panel_t *rgb_panel)
 
 esp_err_t esp_lcd_new_rgb_panel(const esp_lcd_rgb_panel_config_t *rgb_panel_config, esp_lcd_panel_handle_t *ret_panel)
 {
-#if CONFIG_LCD_ENABLE_DEBUG_LOG
-    esp_log_level_set(TAG, ESP_LOG_DEBUG);
-#endif
     esp_err_t ret = ESP_OK;
     esp_rgb_panel_t *rgb_panel = NULL;
     ESP_RETURN_ON_FALSE(rgb_panel_config && ret_panel, ESP_ERR_INVALID_ARG, TAG, "invalid parameter");
@@ -317,13 +317,23 @@ esp_err_t esp_lcd_new_rgb_panel(const esp_lcd_rgb_panel_config_t *rgb_panel_conf
     }
     ESP_RETURN_ON_FALSE(num_fbs <= ESP_RGB_LCD_PANEL_MAX_FB_NUM, ESP_ERR_INVALID_ARG, TAG, "too many frame buffers");
 
-    // bpp defaults to the number of data lines, but for serial RGB interface, they're not equal
-    // e.g. for serial RGB 8-bit interface, data lines are 8, whereas the bpp is 24 (RGB888)
-    size_t fb_bits_per_pixel = data_width;
-    if (rgb_panel_config->bits_per_pixel) { // override bpp if it's set
-        fb_bits_per_pixel = rgb_panel_config->bits_per_pixel;
+    // by default, we guess the input color format according to the data lines number, usually 16 lines means RGB565, 24 lines means RGB888
+    lcd_color_format_t in_color_format = 0;
+    if (rgb_panel_config->data_width == 24) {
+        in_color_format = LCD_COLOR_FMT_RGB888;
+    } else if (rgb_panel_config->data_width == 16) {
+        in_color_format = LCD_COLOR_FMT_RGB565;
     }
+    // override the color format if it's explicitly specified by the user
+    if (rgb_panel_config->in_color_format) {
+        in_color_format = rgb_panel_config->in_color_format;
+    }
+    ESP_RETURN_ON_FALSE(in_color_format != 0, ESP_ERR_INVALID_ARG, TAG, "cannot determine input color format");
+    // if out_color_format is not specified, set it the same as in_color_format
+    lcd_color_format_t out_color_format = rgb_panel_config->out_color_format ? rgb_panel_config->out_color_format : in_color_format;
+
     // calculate buffer size
+    size_t fb_bits_per_pixel = color_hal_pixel_format_fourcc_get_bit_depth(in_color_format);
     size_t fb_size = rgb_panel_config->timings.h_res * rgb_panel_config->timings.v_res * fb_bits_per_pixel / 8;
     size_t bb_size = rgb_panel_config->bounce_buffer_size_px * fb_bits_per_pixel / 8;
     size_t expect_bb_eof_count = 0;
@@ -343,6 +353,8 @@ esp_err_t esp_lcd_new_rgb_panel(const esp_lcd_rgb_panel_config_t *rgb_panel_conf
     rgb_panel->fb_size = fb_size;
     rgb_panel->bb_size = bb_size;
     rgb_panel->fb_bits_per_pixel = fb_bits_per_pixel;
+    rgb_panel->in_color_format = in_color_format;
+    rgb_panel->out_color_format = out_color_format;
     rgb_panel->expect_eof_count = expect_bb_eof_count;
     // register to platform
     int panel_id = lcd_com_register_device(LCD_COM_DEVICE_TYPE_RGB, rgb_panel);
@@ -359,26 +371,27 @@ esp_err_t esp_lcd_new_rgb_panel(const esp_lcd_rgb_panel_config_t *rgb_panel_conf
 
     // initialize HAL layer, so we can call LL APIs later
     lcd_hal_init(&rgb_panel->hal, panel_id);
+    lcd_hal_context_t *hal = &rgb_panel->hal;
     // enable clock
     LCD_CLOCK_SRC_ATOMIC() {
-        lcd_ll_enable_clock(rgb_panel->hal.dev, true);
+        lcd_ll_enable_clock(hal->dev, true);
     }
     // set clock source
     ret = lcd_rgb_panel_select_clock_src(rgb_panel, rgb_panel_config->clk_src);
     ESP_GOTO_ON_ERROR(ret, err, TAG, "set source clock failed");
     // reset peripheral and FIFO after we select a correct clock source
-    lcd_ll_fifo_reset(rgb_panel->hal.dev);
-    lcd_ll_reset(rgb_panel->hal.dev);
+    lcd_ll_fifo_reset(hal->dev);
+    lcd_ll_reset(hal->dev);
     // install interrupt service, (LCD peripheral shares the interrupt source with Camera by different mask)
     int isr_flags = LCD_RGB_INTR_ALLOC_FLAGS | ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_LOWMED;
     ret = esp_intr_alloc_intrstatus(soc_lcd_rgb_signals[panel_id].irq_id, isr_flags,
-                                    (uint32_t)lcd_ll_get_interrupt_status_reg(rgb_panel->hal.dev),
+                                    (uint32_t)lcd_ll_get_interrupt_status_reg(hal->dev),
                                     LCD_LL_EVENT_RGB, rgb_lcd_default_isr_handler, rgb_panel, &rgb_panel->intr);
     ESP_GOTO_ON_ERROR(ret, err, TAG, "install interrupt failed");
     PERIPH_RCC_ATOMIC() {
-        lcd_ll_enable_interrupt(rgb_panel->hal.dev, LCD_LL_EVENT_RGB, false); // disable all interrupts
+        lcd_ll_enable_interrupt(hal->dev, LCD_LL_EVENT_RGB, false); // disable all interrupts
     }
-    lcd_ll_clear_interrupt_status(rgb_panel->hal.dev, UINT32_MAX); // clear pending interrupt
+    lcd_ll_clear_interrupt_status(hal->dev, UINT32_MAX); // clear pending interrupt
 
     // install DMA service
     rgb_panel->flags.stream_mode = !rgb_panel_config->flags.refresh_on_demand;
@@ -402,7 +415,6 @@ esp_err_t esp_lcd_new_rgb_panel(const esp_lcd_rgb_panel_config_t *rgb_panel_conf
     rgb_panel->pclk_gpio_num = rgb_panel_config->pclk_gpio_num;
     rgb_panel->timings = rgb_panel_config->timings;
     rgb_panel->data_width = rgb_panel_config->data_width;
-    rgb_panel->output_bits_per_pixel = fb_bits_per_pixel; // by default, the output bpp is the same as the frame buffer bpp
     rgb_panel->flags.disp_en_level = !rgb_panel_config->flags.disp_active_low;
     rgb_panel->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
     // fill function table
@@ -522,53 +534,21 @@ esp_err_t esp_lcd_rgb_panel_refresh(esp_lcd_panel_handle_t panel)
     return ESP_OK;
 }
 
-esp_err_t esp_lcd_rgb_panel_set_yuv_conversion(esp_lcd_panel_handle_t panel, const esp_lcd_yuv_conv_config_t *config)
+esp_err_t esp_lcd_rgb_panel_set_yuv_conversion(esp_lcd_panel_handle_t panel, const esp_lcd_color_conv_yuv_config_t *config)
 {
-    ESP_RETURN_ON_FALSE(panel, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    ESP_RETURN_ON_FALSE(panel && config, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     esp_rgb_panel_t *rgb_panel = __containerof(panel, esp_rgb_panel_t, base);
     lcd_hal_context_t *hal = &rgb_panel->hal;
-    bool en_conversion = config != NULL;
 
-    // bits per pixel for different YUV sample
-    const uint8_t bpp_yuv[] = {
-        [LCD_YUV_SAMPLE_422] = 16,
-        [LCD_YUV_SAMPLE_420] = 12,
-        [LCD_YUV_SAMPLE_411] = 12,
-    };
+    lcd_ll_set_yuv2rgb_convert_mode(hal->dev, rgb_panel->in_color_format, rgb_panel->out_color_format);
 
-    if (en_conversion) {
-        if (memcmp(&config->src, &config->dst, sizeof(config->src)) == 0) {
-            ESP_RETURN_ON_FALSE(false, ESP_ERR_INVALID_ARG, TAG, "conversion source and destination are the same");
-        }
-
-        if (config->src.color_space == LCD_COLOR_SPACE_YUV && config->dst.color_space == LCD_COLOR_SPACE_RGB) { // YUV->RGB
-            lcd_ll_set_convert_mode_yuv_to_rgb(hal->dev, config->src.yuv_sample);
-            rgb_panel->output_bits_per_pixel = rgb_panel->fb_bits_per_pixel;
-        } else if (config->src.color_space == LCD_COLOR_SPACE_RGB && config->dst.color_space == LCD_COLOR_SPACE_YUV) { // RGB->YUV
-            lcd_ll_set_convert_mode_rgb_to_yuv(hal->dev, config->dst.yuv_sample);
-            rgb_panel->output_bits_per_pixel = bpp_yuv[config->dst.yuv_sample];
-        } else if (config->src.color_space == LCD_COLOR_SPACE_YUV && config->dst.color_space == LCD_COLOR_SPACE_YUV) { // YUV->YUV
-            lcd_ll_set_convert_mode_yuv_to_yuv(hal->dev, config->src.yuv_sample, config->dst.yuv_sample);
-            rgb_panel->output_bits_per_pixel = bpp_yuv[config->dst.yuv_sample];
-        } else {
-            ESP_RETURN_ON_FALSE(false, ESP_ERR_NOT_SUPPORTED, TAG, "unsupported conversion mode");
-        }
-
-        // set conversion standard
-        lcd_ll_set_yuv_convert_std(hal->dev, config->std);
-        // set conversion data width
-        lcd_ll_set_convert_data_width(hal->dev, rgb_panel->data_width);
-        // set color range
-        lcd_ll_set_input_color_range(hal->dev, config->src.color_range);
-        lcd_ll_set_output_color_range(hal->dev, config->dst.color_range);
-    } else {
-        // output bpp equals to frame buffer bpp
-        rgb_panel->output_bits_per_pixel = rgb_panel->fb_bits_per_pixel;
-    }
-
-    // enable or disable RGB-YUV conversion
-    lcd_ll_enable_rgb_yuv_convert(hal->dev, en_conversion);
-
+    // set conversion standard
+    lcd_ll_set_yuv_convert_std(hal->dev, config->conv_std);
+    // set color range
+    lcd_ll_set_input_color_range(hal->dev, config->in_color_range);
+    lcd_ll_set_output_color_range(hal->dev, config->out_color_range);
+    // set conversion data width
+    lcd_ll_set_convert_data_width(hal->dev, rgb_panel->data_width);
     return ESP_OK;
 }
 
@@ -619,6 +599,8 @@ static esp_err_t rgb_panel_init(esp_lcd_panel_t *panel)
     // enable RGB mode and set data width
     lcd_ll_enable_rgb_mode(rgb_panel->hal.dev, true);
     lcd_ll_set_dma_read_stride(rgb_panel->hal.dev, rgb_panel->data_width);
+    // enable conversion if the input color format is different from the output color format
+    lcd_ll_enable_color_convert(rgb_panel->hal.dev, rgb_panel->in_color_format != rgb_panel->out_color_format);
     // enable data phase only
     lcd_ll_set_phase_cycles(rgb_panel->hal.dev, 0, 0, 1);
     // number of data cycles is controlled by DMA buffer size
@@ -628,8 +610,9 @@ static esp_err_t rgb_panel_init(esp_lcd_panel_t *panel)
                           !rgb_panel->timings.flags.vsync_idle_low, rgb_panel->timings.flags.de_idle_high);
     // configure blank region timing
     lcd_ll_set_blank_cycles(rgb_panel->hal.dev, 1, 1); // RGB panel always has a front and back blank (porch region)
+    size_t out_bits_per_pixel = color_hal_pixel_format_fourcc_get_bit_depth(rgb_panel->out_color_format);
     lcd_ll_set_horizontal_timing(rgb_panel->hal.dev, rgb_panel->timings.hsync_pulse_width,
-                                 rgb_panel->timings.hsync_back_porch, rgb_panel->timings.h_res * rgb_panel->output_bits_per_pixel / rgb_panel->data_width,
+                                 rgb_panel->timings.hsync_back_porch, rgb_panel->timings.h_res * out_bits_per_pixel / rgb_panel->data_width,
                                  rgb_panel->timings.hsync_front_porch);
     lcd_ll_set_vertical_timing(rgb_panel->hal.dev, rgb_panel->timings.vsync_pulse_width,
                                rgb_panel->timings.vsync_back_porch, rgb_panel->timings.v_res,
@@ -1283,3 +1266,11 @@ IRAM_ATTR static void rgb_lcd_default_isr_handler(void *args)
         portYIELD_FROM_ISR();
     }
 }
+
+#if CONFIG_LCD_ENABLE_DEBUG_LOG
+__attribute__((constructor))
+static void rgb_lcd_override_default_log_level(void)
+{
+    esp_log_level_set(TAG, ESP_LOG_VERBOSE);
+}
+#endif

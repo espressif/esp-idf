@@ -32,31 +32,17 @@ typedef enum {
 } lcd_rgb_data_endian_t;
 
 /**
- * @brief The color space of the LCD input color data
+ * @brief LCD color type, in FourCC format
  */
 typedef enum {
-    LCD_COLOR_SPACE_RGB = COLOR_SPACE_RGB, /*!< Color space: RGB */
-    LCD_COLOR_SPACE_YUV = COLOR_SPACE_YUV, /*!< Color space: YUV */
-} lcd_color_space_t;
-
-/**
- * @brief LCD color pixel format in RGB color space
- */
-typedef enum {
-    LCD_COLOR_PIXEL_FORMAT_RGB565 = COLOR_PIXEL_RGB565, /*!< 16 bits, 5 bits per R/B value, 6 bits for G value */
-    LCD_COLOR_PIXEL_FORMAT_RGB666 = COLOR_PIXEL_RGB666, /*!< 18 bits, 6 bits per R/G/B value */
-    LCD_COLOR_PIXEL_FORMAT_RGB888 = COLOR_PIXEL_RGB888, /*!< 24 bits, 8 bits per R/G/B value */
-} lcd_color_rgb_pixel_format_t;
-
-/**
- * @brief LCD color format
- */
-typedef enum {
-    LCD_COLOR_FMT_RGB565 = COLOR_TYPE_ID(COLOR_SPACE_RGB, COLOR_PIXEL_RGB565), ///< RGB565
-    LCD_COLOR_FMT_RGB666 = COLOR_TYPE_ID(COLOR_SPACE_RGB, COLOR_PIXEL_RGB666), ///< RGB666
-    LCD_COLOR_FMT_RGB888 = COLOR_TYPE_ID(COLOR_SPACE_RGB, COLOR_PIXEL_RGB888), ///< RGB888
-    LCD_COLOR_FMT_YUV422 = COLOR_TYPE_ID(COLOR_SPACE_YUV, COLOR_PIXEL_YUV422), ///< YUV422
-    LCD_COLOR_FMT_GRAY8  = COLOR_TYPE_ID(COLOR_SPACE_GRAY, COLOR_PIXEL_GRAY8), ///< 8-bit gray scale
+    LCD_COLOR_FMT_GRAY8  = ESP_COLOR_FOURCC_GREY,      ///< 8-bit gray scale
+    LCD_COLOR_FMT_RGB565 = ESP_COLOR_FOURCC_RGB16_BE,  ///< RGB565
+    LCD_COLOR_FMT_RGB888 = ESP_COLOR_FOURCC_RGB24,     ///< RGB888
+    LCD_COLOR_FMT_YUV422_YUYV = ESP_COLOR_FOURCC_YUYV, ///< YUV422 packed in YUYV order
+    LCD_COLOR_FMT_YUV422_YVYU = ESP_COLOR_FOURCC_YVYU, ///< YUV422 packed in YVYU order
+    LCD_COLOR_FMT_YUV422_VYUY = ESP_COLOR_FOURCC_VYUY, ///< YUV422 packed in VYUY order
+    LCD_COLOR_FMT_YUV422_UYVY = ESP_COLOR_FOURCC_UYVY, ///< YUV422 packed in UYVY order
+    LCD_COLOR_FMT_YUV420_OUYY_EVYY = ESP_COLOR_FOURCC_OUYY_EVYY, ///< YUV420 packed in OUYY/EVYY order
 } lcd_color_format_t;
 
 /**
@@ -68,31 +54,12 @@ typedef enum {
 } lcd_color_range_t;
 
 /**
- * @brief YUV sampling method
- */
-typedef enum {
-    LCD_YUV_SAMPLE_422 = COLOR_PIXEL_YUV422, /*!< YUV 4:2:2 sampling */
-    LCD_YUV_SAMPLE_420 = COLOR_PIXEL_YUV420, /*!< YUV 4:2:0 sampling */
-    LCD_YUV_SAMPLE_411 = COLOR_PIXEL_YUV411, /*!< YUV 4:1:1 sampling */
-} lcd_yuv_sample_t;
-
-/**
  * @brief The standard used for conversion between RGB and YUV
  */
 typedef enum {
     LCD_YUV_CONV_STD_BT601 = COLOR_CONV_STD_RGB_YUV_BT601, /*!< YUV<->RGB conversion standard: BT.601 */
     LCD_YUV_CONV_STD_BT709 = COLOR_CONV_STD_RGB_YUV_BT709, /*!< YUV<->RGB conversion standard: BT.709 */
 } lcd_yuv_conv_std_t;
-
-/**
- * @brief YUV422 packing order
- */
-typedef enum {
-    LCD_YUV422_PACK_ORDER_YUYV = COLOR_YUV422_PACK_ORDER_YUYV, /*!< YUYV */
-    LCD_YUV422_PACK_ORDER_YVYU = COLOR_YUV422_PACK_ORDER_YVYU, /*!< YVYU */
-    LCD_YUV422_PACK_ORDER_UYVY = COLOR_YUV422_PACK_ORDER_UYVY, /*!< UYVY */
-    LCD_YUV422_PACK_ORDER_VYUY = COLOR_YUV422_PACK_ORDER_VYUY, /*!< VYUY */
-} lcd_yuv422_pack_order_t;
 
 #ifdef __cplusplus
 }

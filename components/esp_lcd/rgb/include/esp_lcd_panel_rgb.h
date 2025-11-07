@@ -142,8 +142,10 @@ typedef struct {
     lcd_clock_source_t clk_src;   /*!< Clock source for the RGB LCD peripheral */
     esp_lcd_rgb_timing_t timings; /*!< RGB timing parameters, including the screen resolution */
     size_t data_width;            /*!< Number of data lines */
-    size_t bits_per_pixel;        /*!< Frame buffer color depth, in bpp, specially, if set to zero, it will default to `data_width`.
-                                       When using a Serial RGB interface, this value could be different from `data_width` */
+    lcd_color_format_t in_color_format;  /*!< Format of the input data (color space and pixel format),
+                                              which is the format stored in the frame buffer */
+    lcd_color_format_t out_color_format; /*!< Format of the output data (color space and pixel format),
+                                              which is the format that the panel device can accept */
     size_t num_fbs;               /*!< Number of screen-sized frame buffers that allocated by the driver. By default (set to either 0 or 1) only one frame buffer will be used. Maximum number of buffers are 3 */
     void *user_fbs[ESP_RGB_LCD_PANEL_MAX_FB_NUM];              /*!< Array of user-provided frame buffers. If not NULL, the driver will use these buffers instead of allocating its own */
     size_t bounce_buffer_size_px; /*!< If it's non-zero, the driver allocates two DRAM bounce buffers for DMA use.
@@ -267,37 +269,16 @@ esp_err_t esp_lcd_rgb_panel_refresh(esp_lcd_panel_handle_t panel);
 void *esp_lcd_rgb_alloc_draw_buffer(esp_lcd_panel_handle_t panel, size_t size, uint32_t caps);
 
 /**
- * @brief LCD color conversion profile
- */
-typedef struct {
-    lcd_color_space_t color_space; /*!< Color space of the image */
-    lcd_color_range_t color_range; /*!< Color range of the image */
-    lcd_yuv_sample_t yuv_sample;   /*!< YUV sample format of the image */
-} esp_lcd_color_conv_profile_t;
-
-/**
- * @brief Configuration of YUG-RGB conversion
- */
-typedef struct {
-    lcd_yuv_conv_std_t std;           /*!< YUV conversion standard: BT601, BT709 */
-    esp_lcd_color_conv_profile_t src; /*!< Color conversion profile of the input image */
-    esp_lcd_color_conv_profile_t dst; /*!< Color conversion profile of the output image */
-} esp_lcd_yuv_conv_config_t;
-
-/**
  * @brief Configure how to convert the color format between RGB and YUV
  *
- * @note Pass in `config` as NULL will disable the RGB-YUV converter.
- * @note The hardware converter can only parse a "packed" storage format, while "planar" and "semi-planar" format is not supported.
- *
  * @param[in] panel LCD panel handle, returned from `esp_lcd_new_rgb_panel`
- * @param[in] config Configuration of RGB-YUV conversion
+ * @param[in] config Configuration of RGB-YUV conversion profile
  * @return
  *      - ESP_ERR_INVALID_ARG: Configure RGB-YUV conversion failed because of invalid argument
  *      - ESP_ERR_NOT_SUPPORTED: Configure RGB-YUV conversion failed because the conversion mode is not supported by the hardware
  *      - ESP_OK: Configure RGB-YUV conversion successfully
  */
-esp_err_t esp_lcd_rgb_panel_set_yuv_conversion(esp_lcd_panel_handle_t panel, const esp_lcd_yuv_conv_config_t *config);
+esp_err_t esp_lcd_rgb_panel_set_yuv_conversion(esp_lcd_panel_handle_t panel, const esp_lcd_color_conv_yuv_config_t *config);
 
 #endif // SOC_LCD_RGB_SUPPORTED
 
