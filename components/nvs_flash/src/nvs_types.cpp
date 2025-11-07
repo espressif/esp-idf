@@ -33,9 +33,12 @@ uint32_t Item::calculateCrc32WithoutValue() const
     return result;
 }
 
-uint32_t Item::calculateCrc32(const uint8_t* data, size_t size)
+uint32_t Item::calculateCrc32(const uint8_t* data, size_t size, uint32_t* initial_crc32)
 {
     uint32_t result = 0xffffffff;
+    if(initial_crc32) {
+        result = *initial_crc32;
+    }
     result = esp_rom_crc32_le(result, data, size);
     return result;
 }
