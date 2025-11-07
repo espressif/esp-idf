@@ -67,7 +67,7 @@ static void ulp_riscv_i2c_format_cmd(uint32_t cmd_idx, uint8_t op_code, uint8_t 
                    ((byte_num & 0xFF) << 0));      // Byte Num
 }
 
-static inline int32_t ulp_riscv_i2c_wait_for_interrupt(int32_t ticks_to_wait)
+static inline int32_t ulp_riscv_i2c_wait_for_interrupt(int32_t cycles_to_wait)
 {
     uint32_t status = 0;
     uint32_t to = 0;
@@ -90,13 +90,13 @@ static inline int32_t ulp_riscv_i2c_wait_for_interrupt(int32_t ticks_to_wait)
             return -1;
         }
 
-        if (ticks_to_wait > -1) {
-            /* If the ticks_to_wait value is not -1, keep track of ticks and
+        if (cycles_to_wait > -1) {
+            /* If the cycles_to_wait value is not -1, keep track of cycles and
              * break from the loop once the timeout is reached.
              */
             ulp_riscv_delay_cycles(1);
             to++;
-            if (to >= ticks_to_wait) {
+            if (to >= cycles_to_wait) {
                 return -1;
             }
         }

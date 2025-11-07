@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,7 +25,7 @@ extern "C" {
  * @param device_addr       I2C device address (7-bit)
  * @param data_rd           Buffer to hold data to be read
  * @param size              Size of data to be read in bytes
- * @param ticks_to_wait     Operation timeout in CPU cycles. Set to -1 to wait forever.
+ * @param cycles_to_wait    Operation timeout in CPU cycles. Set to -1 to wait forever.
  *
  * @return esp_err_t    ESP_OK when successful
  *
@@ -34,7 +34,7 @@ extern "C" {
  */
 esp_err_t lp_core_i2c_master_read_from_device(i2c_port_t lp_i2c_num, uint16_t device_addr,
                                               uint8_t *data_rd, size_t size,
-                                              int32_t ticks_to_wait);
+                                              int32_t cycles_to_wait);
 
 /**
  * @brief Write to I2C device
@@ -46,7 +46,7 @@ esp_err_t lp_core_i2c_master_read_from_device(i2c_port_t lp_i2c_num, uint16_t de
  * @param device_addr       I2C device address (7-bit)
  * @param data_wr           Buffer which holds the data to be written
  * @param size              Size of data to be written in bytes
- * @param ticks_to_wait     Operation timeout in CPU cycles. Set to -1 to wait forever.
+ * @param cycles_to_wait    Operation timeout in CPU cycles. Set to -1 to wait forever.
  *
  * @return esp_err_t    ESP_OK when successful
  *
@@ -55,7 +55,7 @@ esp_err_t lp_core_i2c_master_read_from_device(i2c_port_t lp_i2c_num, uint16_t de
  */
 esp_err_t lp_core_i2c_master_write_to_device(i2c_port_t lp_i2c_num, uint16_t device_addr,
                                              const uint8_t *data_wr, size_t size,
-                                             int32_t ticks_to_wait);
+                                             int32_t cycles_to_wait);
 
 /**
  * @brief Write to and then read from an I2C device in a single transaction
@@ -69,7 +69,7 @@ esp_err_t lp_core_i2c_master_write_to_device(i2c_port_t lp_i2c_num, uint16_t dev
  * @param write_size        Size of data to be written in bytes
  * @param data_rd           Buffer to hold data to be read
  * @param read_size         Size of data to be read in bytes
- * @param ticks_to_wait     Operation timeout in CPU cycles. Set to -1 to wait forever.
+ * @param cycles_to_wait    Operation timeout in CPU cycles. Set to -1 to wait forever.
  *
  * @return esp_err_t    ESP_OK when successful
  *
@@ -79,7 +79,7 @@ esp_err_t lp_core_i2c_master_write_to_device(i2c_port_t lp_i2c_num, uint16_t dev
 esp_err_t lp_core_i2c_master_write_read_device(i2c_port_t lp_i2c_num, uint16_t device_addr,
                                                const uint8_t *data_wr, size_t write_size,
                                                uint8_t *data_rd, size_t read_size,
-                                               int32_t ticks_to_wait);
+                                               int32_t cycles_to_wait);
 
 /**
  * @brief Enable or disable ACK checking by the LP_I2C controller during write operations
