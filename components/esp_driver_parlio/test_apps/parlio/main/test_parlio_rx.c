@@ -548,6 +548,47 @@ TEST_CASE("parallel_rx_unit_receive_transaction_test", "[parlio_rx]")
     free(payload);
 };
 
+TEST_CASE("parallel_rx_unit_receive_external_memory_test", "[parlio_rx]")
+{
+    parlio_rx_unit_handle_t rx_unit = NULL;
+    parlio_rx_delimiter_handle_t deli = NULL;
+    size_t payload_size = 1000;
+
+    parlio_rx_unit_config_t config = TEST_DEFAULT_UNIT_CONFIG(PARLIO_CLK_SRC_DEFAULT, 1000000);
+    config.flags.free_clk = 1;
+    TEST_ESP_OK(parlio_new_rx_unit(&config, &rx_unit));
+
+    parlio_rx_soft_delimiter_config_t sft_deli_cfg = {
+        .sample_edge = PARLIO_SAMPLE_EDGE_POS,
+        .eof_data_len = payload_size,
+        .timeout_ticks = 0,
+    };
+    TEST_ESP_OK(parlio_new_rx_soft_delimiter(&sft_deli_cfg, &deli));
+
+    TEST_ESP_OK(parlio_rx_unit_enable(rx_unit, true));
+
+    parlio_receive_config_t recv_config = {
+        .delimiter = deli,
+        .flags.partial_rx_en = false,
+    };
+
+    /* Do not specify alignment, check if the driver can work correctly */
+    uint8_t *payload = heap_caps_calloc_prefer(1, payload_size, MALLOC_CAP_DMA | MALLOC_CAP_SPIRAM, TEST_PARLIO_DMA_MEM_ALLOC_CAPS);
+    printf("payload addr: %p size: %u\n", payload, payload_size);
+    TEST_ASSERT(payload);
+
+    printf("Testing the external memory receive functionality...\n");
+    TEST_ESP_OK(parlio_rx_soft_delimiter_start_stop(rx_unit, deli, true));
+    TEST_ESP_OK(parlio_rx_unit_receive(rx_unit, payload, payload_size, &recv_config));
+    TEST_ESP_OK(parlio_rx_unit_wait_all_done(rx_unit, 5000));
+    TEST_ESP_OK(parlio_rx_soft_delimiter_start_stop(rx_unit, deli, false));
+
+    TEST_ESP_OK(parlio_rx_unit_disable(rx_unit));
+    TEST_ESP_OK(parlio_del_rx_delimiter(deli));
+    TEST_ESP_OK(parlio_del_rx_unit(rx_unit));
+    free(payload);
+}
+
 TEST_CASE("parallel_rx_unit_receive_timeout_test", "[parlio_rx]")
 {
     printf("init a gpio to simulate valid signal\r\n");
@@ -689,7 +730,7 @@ TEST_CASE("parallel_rx_unit_force_trigger_eof_test", "[parlio_rx]")
     uint32_t alignment = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA);
     alignment = alignment < 4 ? 4 : alignment;
     size_t buff_size = ALIGN_UP(TEST_TASK_LARGE_TRANS_SIZE, alignment);
-    recv_buff = heap_caps_aligned_calloc(alignment, 1, buff_size, TEST_PARLIO_DMA_MEM_ALLOC_CAPS);
+    recv_buff = heap_caps_aligned_calloc(alignment, 1, buff_size, MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA);
     TEST_ASSERT_NOT_NULL(recv_buff);
 
     gpio_set_intr_type(TEST_VALID_GPIO, GPIO_INTR_NEGEDGE);

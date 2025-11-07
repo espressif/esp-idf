@@ -164,7 +164,7 @@ size_t parlio_rx_mount_transaction_buffer(parlio_rx_unit_handle_t rx_unit, parli
         if (rest_size >= 2 * PARLIO_MAX_ALIGNED_DMA_BUF_SIZE) {
             mount_size = PARLIO_RX_MOUNT_SIZE_CALC(trans->aligned_payload.buf.body.length, body_node_num, trans->alignment);
         } else if (rest_size <= PARLIO_MAX_ALIGNED_DMA_BUF_SIZE) {
-            mount_size = (required_node_num == 2) && (i == 0) ? PARLIO_RX_MOUNT_SIZE_CALC(rest_size, 2, trans->alignment) : rest_size;
+            mount_size = (required_node_num - tail_node_num == 2) && (i == 0) ? PARLIO_RX_MOUNT_SIZE_CALC(rest_size, 2, trans->alignment) : rest_size;
         } else {
             mount_size = PARLIO_RX_MOUNT_SIZE_CALC(rest_size, 2, trans->alignment);
         }
@@ -401,7 +401,15 @@ static bool parlio_rx_default_desc_done_callback(gdma_channel_handle_t dma_chan,
     size_t finished_length = gdma_link_get_length(rx_unit->dma_link, rx_unit->curr_node_id);
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
     esp_err_t ret = ESP_OK;
-    ret = esp_cache_msync(finished_buffer, finished_length, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
+    size_t sync_size = finished_length;
+    /* The sych length should be the cache line size for the un-aligned head and tail part */
+    for (int i = 0; i < 2; i++) {
+        if (finished_buffer == rx_unit->stash_buf[i]) {
+            sync_size = rx_unit->dma_mem_align;
+            break;
+        }
+    }
+    ret = esp_cache_msync(finished_buffer, sync_size, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
     if (ret != ESP_OK) {
         ESP_EARLY_LOGW(TAG, "failed to sync dma buffer from memory to cache");
     }
@@ -988,11 +996,6 @@ esp_err_t parlio_rx_unit_receive(parlio_rx_unit_handle_t rx_unit,
         ESP_RETURN_ON_FALSE(payload_size >= 2 * alignment, ESP_ERR_INVALID_ARG, TAG, "The payload size should greater than %"PRIu32, 2 * alignment);
     }
 
-#if CONFIG_PARLIO_RX_ISR_CACHE_SAFE
-    ESP_RETURN_ON_FALSE(esp_ptr_internal(payload), ESP_ERR_INVALID_ARG, TAG, "payload not in internal RAM");
-#else
-    ESP_RETURN_ON_FALSE(recv_cfg->flags.indirect_mount || esp_ptr_internal(payload), ESP_ERR_INVALID_ARG, TAG, "payload not in internal RAM");
-#endif
     if (recv_cfg->delimiter->eof_data_len) {
         ESP_RETURN_ON_FALSE(payload_size >= recv_cfg->delimiter->eof_data_len, ESP_ERR_INVALID_ARG,
                             TAG, "payload size should be greater than eof_data_len");
