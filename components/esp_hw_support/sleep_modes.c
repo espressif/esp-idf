@@ -1220,6 +1220,26 @@ static esp_err_t FORCE_IRAM_ATTR deep_sleep_start(bool allow_sleep_rejection)
     // Correct the sleep time
     s_config.sleep_time_adjustment = DEEP_SLEEP_TIME_OVERHEAD_US;
 
+#if CONFIG_ESP_SLEEP_ENABLE_RTC_WDT_IN_DEEP_SLEEP
+    // Safety net: enable WDT in case exit from deep sleep fails
+    wdt_hal_context_t rtc_wdt_ctx = RWDT_HAL_CONTEXT_DEFAULT();
+    bool wdt_was_enabled = wdt_hal_is_enabled(&rtc_wdt_ctx);    // If WDT was enabled in the user code, then do not change it here.
+    if (!wdt_was_enabled) {
+        wdt_hal_init(&rtc_wdt_ctx, WDT_RWDT, 0, false);
+        uint64_t stage_timeout_ticks = (uint32_t)(1000ULL * rtc_clk_slow_freq_get_hz() / 1000ULL);
+#if CONFIG_ESP_SLEEP_ENABLE_RTC_WDT_IN_SLEEP
+        uint64_t sleep_timout_ticks = rtc_time_us_to_slowclk(s_config.sleep_duration, s_config.rtc_clk_cal_period);
+#else
+        uint64_t sleep_timout_ticks = 0;
+#endif
+        uint64_t slow_clk_comp_ticks = get_slow_clk_zero_drift_compensate(sleep_timout_ticks + stage_timeout_ticks);
+        wdt_hal_write_protect_disable(&rtc_wdt_ctx);
+        wdt_hal_config_stage(&rtc_wdt_ctx, WDT_STAGE0, (uint32_t)(stage_timeout_ticks + sleep_timout_ticks + slow_clk_comp_ticks), WDT_STAGE_ACTION_RESET_RTC);
+        wdt_hal_enable(&rtc_wdt_ctx);
+        wdt_hal_write_protect_enable(&rtc_wdt_ctx);
+    }
+#endif
+
 #if SOC_PMU_SUPPORTED
     uint32_t force_pd_flags = PMU_SLEEP_PD_TOP | PMU_SLEEP_PD_VDDSDIO | PMU_SLEEP_PD_MODEM | PMU_SLEEP_PD_HP_PERIPH \
                             | PMU_SLEEP_PD_CPU | PMU_SLEEP_PD_MEM | PMU_SLEEP_PD_XTAL;
@@ -1265,7 +1285,16 @@ static esp_err_t FORCE_IRAM_ATTR deep_sleep_start(bool allow_sleep_rejection)
         // can take several CPU cycles for the sleep mode to start.
         ESP_INFINITE_LOOP();
     }
+
     // Never returns here, except that the sleep is rejected.
+#if CONFIG_ESP_SLEEP_ENABLE_RTC_WDT_IN_DEEP_SLEEP
+    if (!wdt_was_enabled) {
+        wdt_hal_write_protect_disable(&rtc_wdt_ctx);
+        wdt_hal_disable(&rtc_wdt_ctx);
+        wdt_hal_write_protect_enable(&rtc_wdt_ctx);
+    }
+#endif
+
     esp_ipc_isr_stall_resume();
     esp_ipc_isr_release_other_cpu();
     esp_os_exit_critical(&spinlock_rtc_deep_sleep);

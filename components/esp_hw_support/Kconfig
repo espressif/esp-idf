@@ -275,7 +275,7 @@ menu "Hardware Settings"
         config ESP_SLEEP_ENABLE_RTC_WDT_IN_SLEEP
             bool "Enable rtc wdt during sleep (EXPERIMENTAL)"
             depends on IDF_EXPERIMENTAL_FEATURES
-            depends on SOC_LIGHT_SLEEP_SUPPORTED
+            depends on (SOC_LIGHT_SLEEP_SUPPORTED || SOC_DEEP_SLEEP_SUPPORTED)
             default n
             help
                 If enabled, rtc watchdog will remain active during sleep to prevent program runaway. Specifically, its
@@ -288,6 +288,17 @@ menu "Hardware Settings"
                 this when enabling this option.
 
 
+        config ESP_SLEEP_ENABLE_RTC_WDT_IN_DEEP_SLEEP
+            bool "Enable rtc wdt during deep sleep (EXPERIMENTAL)"
+            depends on IDF_EXPERIMENTAL_FEATURES
+            depends on SOC_DEEP_SLEEP_SUPPORTED
+            default n
+            help
+                If enabled, rtc watchdog will remain active during deep sleep to prevent program runaway.
+
+                NOTE: In the current phase, the RTC watchdog will not be disabled or reset after waking from deep
+                sleep. Even though it will be reconfigured during the bootloader phase, there remains a concern that
+                a timeout could occur before this reconfiguration is completed.
     endmenu
 
     menu "RTC Clock Config"
