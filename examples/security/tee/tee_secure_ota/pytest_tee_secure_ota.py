@@ -32,7 +32,7 @@ def start_https_server(ota_image_dir: str, server_ip: str, server_port: int) -> 
 
 
 @pytest.mark.wifi_high_traffic
-@idf_parametrize('target', ['esp32c6'], indirect=['target'])
+@idf_parametrize('target', ['supported_targets'], indirect=['target'])
 def test_examples_tee_secure_ota_example(dut: Dut) -> None:
     """
     This is a positive test case, which downloads complete binary file multiple number of times.
