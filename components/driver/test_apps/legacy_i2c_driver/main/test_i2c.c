@@ -12,7 +12,7 @@
 #include "esp_attr.h"
 #include "esp_log.h"
 #include "soc/gpio_periph.h"
-#include "soc/i2c_periph.h"
+#include "hal/i2c_periph.h"
 #include "esp_system.h"
 #include "soc/uart_struct.h"
 #include "esp_private/periph_ctrl.h"

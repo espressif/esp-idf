@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "soc/i2c_periph.h"
+#include "hal/i2c_periph.h"
 #include "soc/gpio_sig_map.h"
 
 /*
