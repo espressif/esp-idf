@@ -122,6 +122,21 @@ FORCE_INLINE_ATTR void _clk_gate_ll_xtal_to_lp_periph_en(bool enable)
     } while(0)
 
 /**
+ * Enable or disable the clock gate for rtc fast to lp periph
+ * @param  enable Enable / disable
+ */
+FORCE_INLINE_ATTR void _clk_gate_ll_rtc_fast_to_lp_periph_en(bool enable)
+{
+    LP_AON_CLKRST.lp_clk_en.fosc_clk_force_on = enable;
+}
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define clk_gate_ll_rtc_fast_to_lp_periph_en(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _clk_gate_ll_rtc_fast_to_lp_periph_en(__VA_ARGS__); \
+    } while(0)
+
+/**
  * Enable or disable the clock gate for ref_50m.
  * @param  enable Enable / disable
  */

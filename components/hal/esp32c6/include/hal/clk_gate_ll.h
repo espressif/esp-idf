@@ -14,6 +14,7 @@
 #include "soc/soc.h"
 #include "soc/soc_caps.h"
 #include "esp_attr.h"
+#include "soc/lp_clkrst_struct.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -193,6 +194,18 @@ static inline bool IRAM_ATTR periph_ll_periph_enabled(shared_periph_module_t per
     return REG_GET_BIT(periph_ll_get_rst_en_reg(periph), periph_ll_get_rst_en_mask(periph, false)) == 0 &&
            REG_GET_BIT(periph_ll_get_clk_en_reg(periph), periph_ll_get_clk_en_mask(periph)) != 0;
 }
+
+/**
+ * Enable or disable the clock gate for rtc_fast to lp periph
+ * @param  enable Enable / disable
+ */
+FORCE_INLINE_ATTR void _clk_gate_ll_rtc_fast_to_lp_periph_en(bool enable)
+{
+    LP_CLKRST.lp_clk_en.fast_ori_gate = enable;
+}
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define clk_gate_ll_rtc_fast_to_lp_periph_en(...) (void)__DECLARE_RCC_ATOMIC_ENV; _clk_gate_ll_rtc_fast_to_lp_periph_en(__VA_ARGS__)
 
 #ifdef __cplusplus
 }
