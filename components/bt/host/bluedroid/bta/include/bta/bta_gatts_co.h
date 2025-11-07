@@ -46,11 +46,11 @@ extern void bta_gatts_co_update_handle_range(BOOLEAN is_add, tBTA_GATTS_HNDL_RAN
 ** Function         bta_gatts_co_srv_chg
 **
 ** Description      This call-out is to read/write/remove service change related
-**                  informaiton. The request consists of the cmd and p_req and the
+**                  information. The request consists of the cmd and p_req and the
 **                  response is returned in p_rsp
 **
 ** Parameter        cmd - request command
-**                  p_req - request paramters
+**                  p_req - request parameters
 **                  p_rsp - response data for the request
 **
 ** Returns          TRUE - if the request is processed successfully and

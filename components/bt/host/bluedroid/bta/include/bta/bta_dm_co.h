@@ -18,7 +18,7 @@
 
 /******************************************************************************
  *
- *  This is the interface file for device mananger callout functions.
+ *  This is the interface file for device manager callout functions.
  *
  ******************************************************************************/
 #ifndef BTA_DM_CO_H
