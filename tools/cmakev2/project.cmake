@@ -128,7 +128,7 @@ function(__init_project_configuration)
     if(IDF_TARGET STREQUAL "linux")
         # Building for Linux target, fall back to an older version of the standard
         # if the preferred one is not supported by the compiler.
-        set(preferred_c_versions gnu17 gnu11 gnu99)
+        set(preferred_c_versions gnu23 gnu17 gnu11 gnu99)
         set(ver_found FALSE)
         foreach(c_version ${preferred_c_versions})
             check_c_compiler_flag("-std=${c_version}" ver_${c_version}_supported)
@@ -143,7 +143,7 @@ function(__init_project_configuration)
                     "${preferred_c_versions}. Please upgrade the host compiler.")
         endif()
 
-        set(preferred_cxx_versions gnu++2b gnu++20 gnu++2a gnu++17 gnu++14)
+        set(preferred_cxx_versions gnu++26 gnu++2b gnu++20 gnu++2a gnu++17 gnu++14)
         set(ver_found FALSE)
         foreach(cxx_version ${preferred_cxx_versions})
             check_cxx_compiler_flag("-std=${cxx_version}" ver_${cxx_version}_supported)
@@ -167,8 +167,8 @@ function(__init_project_configuration)
         # function, which must be called after project().
         # Please update docs/en/api-guides/c.rst, docs/en/api-guides/cplusplus.rst and
         # tools/test_apps/system/cxx_build_test/main/test_cxx_standard.cpp when changing this.
-        list(APPEND c_compile_options   "-std=gnu17")
-        list(APPEND cxx_compile_options "-std=gnu++2b")
+        list(APPEND c_compile_options   "-std=gnu23")
+        list(APPEND cxx_compile_options "-std=gnu++26")
     endif()
 
     if(CONFIG_COMPILER_OPTIMIZATION_SIZE)
@@ -472,13 +472,10 @@ function(__init_project_configuration)
         get_filename_component(compiler_sysroot "${compiler_sysroot}/.." REALPATH)
         list(APPEND compile_options "-fdebug-prefix-map=${compiler_sysroot}=/TOOLCHAIN")
         string(APPEND gdbinit_file_lines "set substitute-path /TOOLCHAIN ${compiler_sysroot}\n")
-
-        file(WRITE "${build_dir}/prefix_map_gdbinit" "${gdbinit_file_lines}")  # TODO IDF-11667
-        idf_build_set_property(DEBUG_PREFIX_MAP_GDBINIT "${gdbinit_path}")
     else()
         set(gdbinit_file_lines "# There is no prefix map defined for the project.\n")
     endif()
-    # Write prefix_map_gdbinit file even it is empty.
+    # Write the prefix_map file even if it is empty.
     file(MAKE_DIRECTORY ${gdbinit_dir})
     file(WRITE "${gdbinit_path}" "${gdbinit_file_lines}")
 
@@ -570,6 +567,10 @@ macro(idf_project_init)
     if(NOT project_initialized)
         # Ensure this function is executed only once throughout the entire
         # project.
+
+        # Warn about the use of deprecated variables.
+        deprecate_variable(COMPONENTS)
+        deprecate_variable(EXCLUDE_COMPONENTS)
 
         # Set PROJECT_NAME build property
         __init_project_name()

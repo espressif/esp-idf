@@ -110,6 +110,40 @@ function(idf_dbg)
 endfunction()
 
 #[[
+    idf_deprecated(<msg>...)
+
+    *msg[in]*
+
+        Message to print.
+
+    Print deprecated ``<msg>``. Multiple messages are concatenated into a
+    single message with no separator between them.
+#]]
+function(idf_deprecated)
+    set(joined "")
+    math(EXPR last "${ARGC} - 1")
+    foreach(i RANGE 0 ${last})
+        string(APPEND joined "${ARGV${i}}")
+    endforeach()
+    message(DEPRECATION " IDF: ${joined}")
+endfunction()
+
+#[[
+    deprecate_variable(<var>)
+
+    *var[in]*
+
+        Deprecated variable name.
+
+    Print a warning about the use of a deprecated variable.
+#]]
+function(deprecate_variable var)
+    if(${var})
+        idf_deprecated("The use of the '${var}' variable is deprecated and will be ignored.")
+    endif()
+endfunction()
+
+#[[
     __get_real_target(TARGET <target>
                       OUTPUT <variable>)
 
