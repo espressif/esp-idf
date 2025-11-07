@@ -86,7 +86,7 @@ void cam_hal_stop_streaming(cam_hal_context_t *hal);
  * @param config Color conversion configuration. If NULL, default config is used.
  */
 void cam_hal_color_format_convert(cam_hal_context_t *hal,
-                                 const cam_ctlr_format_conv_config_t *config);
+                                  const cam_ctlr_format_conv_config_t *config);
 
 #ifdef __cplusplus
 }

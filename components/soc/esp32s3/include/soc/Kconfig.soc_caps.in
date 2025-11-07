@@ -1374,11 +1374,3 @@ config SOC_PHY_COMBO_MODULE
 config SOC_LCDCAM_CAM_SUPPORT_RGB_YUV_CONV
     bool
     default y
-
-config SOC_LCDCAM_CAM_PERIPH_NUM
-    int
-    default 1
-
-config SOC_LCDCAM_CAM_DATA_WIDTH_MAX
-    int
-    default 16

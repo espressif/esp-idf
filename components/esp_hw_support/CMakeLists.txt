@@ -233,3 +233,8 @@ if(NOT non_os_build)
         idf_component_optional_requires(PRIVATE esp_psram)
     endif()
 endif()
+
+if(${target} STREQUAL "esp32p4")
+    # for mipi_csi_share_hw_ctrl.c
+    idf_component_optional_requires(PRIVATE esp_hal_cam)
+endif()

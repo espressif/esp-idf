@@ -772,8 +772,6 @@
 
 /*--------------------------- CAM ---------------------------------*/
 #define SOC_LCDCAM_CAM_SUPPORT_RGB_YUV_CONV         (1)
-#define SOC_LCDCAM_CAM_PERIPH_NUM                   (1U)
-#define SOC_LCDCAM_CAM_DATA_WIDTH_MAX               (16U)
 
 /*--------------------------- I3C ---------------------------------*/
 #define SOC_I3C_MASTER_PERIPH_NUM                   (1)
