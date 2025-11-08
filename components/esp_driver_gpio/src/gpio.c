@@ -775,6 +775,26 @@ esp_err_t gpio_hold_dis(gpio_num_t gpio_num)
     return ret;
 }
 
+esp_err_t gpio_hold_get(gpio_num_t gpio_num, bool * out)
+{
+    GPIO_CHECK(GPIO_IS_VALID_OUTPUT_GPIO(gpio_num), "Only output-capable GPIO support this function", ESP_ERR_NOT_SUPPORTED);
+    int ret = ESP_OK;
+
+    if (rtc_gpio_is_valid_gpio(gpio_num)) {
+#if SOC_RTCIO_HOLD_SUPPORTED
+        ret = ESP_ERR_NOT_SUPPORTED;
+#endif
+    } else if (GPIO_HOLD_MASK[gpio_num]) {
+        portENTER_CRITICAL(&gpio_context.gpio_spinlock);
+        *out = gpio_hal_is_digital_io_hold(gpio_context.gpio_hal, gpio_num);
+        portEXIT_CRITICAL(&gpio_context.gpio_spinlock);
+    } else {
+        ret = ESP_ERR_NOT_SUPPORTED;
+    }
+
+    return ret;
+}
+
 #if SOC_GPIO_SUPPORT_HOLD_IO_IN_DSLP && !SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP
 void gpio_deep_sleep_hold_en(void)
 {
