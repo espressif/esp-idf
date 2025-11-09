@@ -125,9 +125,7 @@ api-reference/peripherals/gptimer.rst
 api-reference/peripherals/sdio_slave.rst
 api-reference/peripherals/bitscrambler.rst
 api-reference/peripherals/temp_sensor.rst
-api-reference/peripherals/usb_device.rst
 api-reference/peripherals/jpeg.rst
-api-reference/peripherals/usb_host.rst
 api-reference/peripherals/camera_driver.rst
 api-reference/peripherals/adc_oneshot.rst
 api-reference/peripherals/sdspi_share.rst
@@ -138,14 +136,6 @@ api-reference/peripherals/sdspi_host.rst
 api-reference/peripherals/vad.rst
 api-reference/peripherals/i2s.rst
 api-reference/peripherals/isp.rst
-api-reference/peripherals/usb_host/usb_host_notes_usbh.rst
-api-reference/peripherals/usb_host/usb_host_notes_ext_hub.rst
-api-reference/peripherals/usb_host/usb_host_notes_arch.rst
-api-reference/peripherals/usb_host/usb_host_notes_index.rst
-api-reference/peripherals/usb_host/usb_host_notes_ext_port.rst
-api-reference/peripherals/usb_host/usb_host_notes_design.rst
-api-reference/peripherals/usb_host/usb_host_notes_enum.rst
-api-reference/peripherals/usb_host/usb_host_notes_dwc_otg.rst
 api-reference/peripherals/dedic_gpio.rst
 api-reference/peripherals/sd_pullup_requirements.rst
 api-reference/peripherals/parlio.rst
