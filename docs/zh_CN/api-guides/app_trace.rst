@@ -400,7 +400,7 @@ ESP-IDF 中另一个基于应用层跟踪库的实用功能是系统级跟踪，
 如何使用
 """"""""
 
-SystemView 支持由托管组件 ``espressif/esp_sysview`` 提供。SystemView 菜单仅在以下步骤完成后才会显示：
+SystemView 功能由托管组件 ``espressif/esp_sysview`` 提供。完成以下步骤后才会显示 SystemView 配置菜单：
 
 1. 在 ``idf_component.yml`` 中添加组件依赖：
 
@@ -411,9 +411,9 @@ SystemView 支持由托管组件 ``espressif/esp_sysview`` 提供。SystemView �
 
 2. 在 menuconfig 中选择外部库：``Component config`` > ``ESP Trace Configuration`` > ``Trace library`` > ``External library from component registry``。
 
-之后，您可以在 ``Component config`` > ``SEGGER SystemView Configuration`` 中配置 SystemView。有关完整的最新说明，请参阅组件 README：`esp_sysview <https://components.espressif.com/components/espressif/esp_sysview>`_。
+之后，可通过 ``Component config`` > ``SEGGER SystemView Configuration`` 配置 SystemView。完整的最新使用指南，请参阅 `esp_sysview README <https://components.espressif.com/components/espressif/esp_sysview>`_。
 
-同一菜单栏下还有其它几个选项：
+此配置菜单还包含以下选项：
 
 1. {IDF_TARGET_NAME} 用作 SystemView 时间戳源的定时器选择：（:ref:`CONFIG_ESP_TRACE_TIMESTAMP_SOURCE`）用于选择 SystemView 事件的时间戳源。在单核模式下，时间戳由以最大频率运行的 {IDF_TARGET_NAME} 内部周期计数器生成。（:ref:`CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ`）在双核模式下，使用外部定时器生成时间戳，其频率为 CPU 频率的 1/2。
 
