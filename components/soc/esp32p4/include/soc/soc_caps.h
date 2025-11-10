@@ -209,6 +209,11 @@
 
 #define SOC_CPU_HAS_LOCKUP_RESET        1
 
+#define SOC_CPU_HAS_ZC_EXTENSIONS       1
+
+#define SOC_CPU_ZCMP_PUSH_REVERSED      1
+#define SOC_CPU_ZCMP_POPRET_ISSUE       1
+
 #define SOC_SIMD_PREFERRED_DATA_ALIGNMENT 16 // The preferred data alignment accepted by the SIMD instructions, in bytes
 
 /*-------------------------- DIGITAL SIGNATURE CAPS ----------------------------------------*/
