@@ -46,7 +46,7 @@ void app_main(void)
 
     const esp_timer_create_args_t timed_periodic_timer_args = {
             .callback = &timed_periodic_timer_callback,
-            .name = "timed periodic"
+            .name = "timed_periodic"
     };
     esp_timer_handle_t timed_periodic_timer;
     ESP_ERROR_CHECK(esp_timer_create(&timed_periodic_timer_args, &timed_periodic_timer));
@@ -64,7 +64,7 @@ void app_main(void)
     const esp_timer_create_args_t timed_oneshot_timer_args = {
             .callback = &timed_oneshot_timer_callback,
             .arg = (void*) timed_periodic_timer,
-            .name = "timed one-shot"
+            .name = "timed_one-shot"
     };
     esp_timer_handle_t timed_oneshot_timer;
     ESP_ERROR_CHECK(esp_timer_create(&timed_oneshot_timer_args, &timed_oneshot_timer));
