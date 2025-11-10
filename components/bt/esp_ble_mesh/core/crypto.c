@@ -24,9 +24,9 @@
 
 #if CONFIG_BLE_MESH_V11_SUPPORT
 #include "mesh_v1.1/utils.h"
-#endif
+#endif /* CONFIG_BLE_MESH_V11_SUPPORT */
 
-#define NET_MIC_LEN(pdu) (((pdu)[1] & 0x80) ? 8 : 4)
+#define NET_MIC_LEN(pdu)    (((pdu)[1] & 0x80) ? 8 : 4)
 #define APP_MIC_LEN(aszmic) ((aszmic) ? 8 : 4)
 
 int bt_mesh_aes_cmac(const uint8_t key[16], struct bt_mesh_sg *sg,
@@ -369,10 +369,11 @@ static int bt_mesh_ccm_encrypt(const uint8_t key[16], uint8_t nonce[13],
     size_t i = 0U, j = 0U;
     int err = 0;
 
-    BT_DBG("key %s", bt_hex(key, 16));
-    BT_DBG("nonce %s", bt_hex(nonce, 13));
-    BT_DBG("msg (len %u) %s", msg_len, bt_hex(msg, msg_len));
-    BT_DBG("aad_len %u mic_size %u", aad_len, mic_size);
+    BT_DBG("CCMEncrypt");
+    BT_DBG("Key %s", bt_hex(key, 16));
+    BT_DBG("Nonce %s", bt_hex(nonce, 13));
+    BT_DBG("Len %u: %s", msg_len, bt_hex(msg, msg_len));
+    BT_DBG("AADLen %u MicSize %u", aad_len, mic_size);
 
     /* Unsupported AAD size */
     if (aad_len >= 0xff00) {
@@ -580,7 +581,7 @@ int bt_mesh_net_obfuscate(uint8_t *pdu, uint32_t iv_index,
     uint8_t tmp[16] = {0};
     int err = 0, i;
 
-    BT_DBG("IVIndex %u, PrivacyKey %s", iv_index, bt_hex(privacy_key, 16));
+    BT_DBG("IVIndex %lu PrivacyKey %s", iv_index, bt_hex(privacy_key, 16));
 
     sys_put_be32(iv_index, &priv_rand[5]);
     memcpy(&priv_rand[9], &pdu[7], 7);
@@ -589,6 +590,7 @@ int bt_mesh_net_obfuscate(uint8_t *pdu, uint32_t iv_index,
 
     err = bt_mesh_encrypt_be(privacy_key, priv_rand, tmp);
     if (err) {
+        BT_ERR("NetObfuscateFailed (%d)", err);
         return err;
     }
 
@@ -606,9 +608,9 @@ int bt_mesh_net_encrypt(const uint8_t key[16], struct net_buf_simple *buf,
     uint8_t nonce[13] = {0};
     int err = 0;
 
-    BT_DBG("IVIndex %u EncKey %s mic_len %u", iv_index, bt_hex(key, 16),
-           mic_len);
-    BT_DBG("PDU (len %u) %s", buf->len, bt_hex(buf->data, buf->len));
+    BT_DBG("IVIndex %u EncKey %s MicLen %u proxy %u/%u",
+           iv_index, bt_hex(key, 16), mic_len, proxy, proxy_solic);
+    BT_DBG("Len %u: %s", buf->len, bt_hex(buf->data, buf->len));
 
 #if CONFIG_BLE_MESH_PROXY
     if (proxy) {
@@ -633,6 +635,8 @@ int bt_mesh_net_encrypt(const uint8_t key[16], struct net_buf_simple *buf,
                               NULL, 0, &buf->data[7], mic_len);
     if (!err) {
         net_buf_simple_add(buf, mic_len);
+    } else {
+        BT_ERR("NetEncryptFailed (%d)", err);
     }
 
     return err;
@@ -643,10 +647,11 @@ int bt_mesh_net_decrypt(const uint8_t key[16], struct net_buf_simple *buf,
 {
     uint8_t mic_len = NET_MIC_LEN(buf->data);
     uint8_t nonce[13] = {0};
+    int err;
 
-    BT_DBG("PDU (%u bytes) %s", buf->len, bt_hex(buf->data, buf->len));
-    BT_DBG("iv_index %u, key %s mic_len %u", iv_index, bt_hex(key, 16),
-           mic_len);
+    BT_DBG("IVIndex %u EncKey %s MicLen %u proxy %u/%u",
+           iv_index, bt_hex(key, 16), mic_len, proxy, proxy_solic);
+    BT_DBG("Len %u: %s", buf->len, bt_hex(buf->data, buf->len));
 
 #if CONFIG_BLE_MESH_PROXY
     if (proxy) {
@@ -669,8 +674,13 @@ int bt_mesh_net_decrypt(const uint8_t key[16], struct net_buf_simple *buf,
 
     buf->len -= mic_len;
 
-    return bt_mesh_ccm_decrypt(key, nonce, &buf->data[7], buf->len - 7,
-                               NULL, 0, &buf->data[7], mic_len);
+    err = bt_mesh_ccm_decrypt(key, nonce, &buf->data[7], buf->len - 7,
+                              NULL, 0, &buf->data[7], mic_len);
+    if (err) {
+        BT_ERR("NetDecrypt failed (%d)", err);
+    }
+
+    return err;
 }
 
 static void create_app_nonce(uint8_t nonce[13], bool dev_key, uint8_t aszmic,
@@ -698,14 +708,15 @@ int bt_mesh_app_encrypt(const uint8_t key[16], bool dev_key, uint8_t aszmic,
     uint8_t nonce[13] = {0};
     int err = 0;
 
+    BT_DBG("AppEncrypt");
     BT_DBG("AppKey %s", bt_hex(key, 16));
-    BT_DBG("dev_key %u src 0x%04x dst 0x%04x", dev_key, src, dst);
-    BT_DBG("seq_num 0x%08x iv_index 0x%08x", seq_num, iv_index);
-    BT_DBG("Clear: %s", bt_hex(buf->data, buf->len));
+    BT_DBG("DevKey %u Src 0x%04x Dst 0x%04x", dev_key, src, dst);
+    BT_DBG("SeqNum 0x%08lx IVIndex 0x%08lx", seq_num, iv_index);
+    BT_DBG("Data %u %s", buf->len, bt_hex(buf->data, buf->len));
 
     create_app_nonce(nonce, dev_key, aszmic, src, dst, seq_num, iv_index);
 
-    BT_DBG("Nonce  %s", bt_hex(nonce, 13));
+    BT_DBG("Nonce %s", bt_hex(nonce, 13));
 
     err = bt_mesh_ccm_encrypt(key, nonce, buf->data, buf->len, ad,
                               ad ? 16 : 0, buf->data, APP_MIC_LEN(aszmic));
@@ -725,12 +736,12 @@ int bt_mesh_app_decrypt(const uint8_t key[16], bool dev_key, uint8_t aszmic,
     uint8_t nonce[13] = {0};
     int err = 0;
 
-    BT_DBG("EncData (len %u) %s", buf->len, bt_hex(buf->data, buf->len));
+    BT_DBG("EncData %u %s", buf->len, bt_hex(buf->data, buf->len));
 
     create_app_nonce(nonce, dev_key, aszmic, src, dst, seq_num, iv_index);
 
     BT_DBG("AppKey %s", bt_hex(key, 16));
-    BT_DBG("Nonce  %s", bt_hex(nonce, 13));
+    BT_DBG("Nonce %s", bt_hex(nonce, 13));
 
     err = bt_mesh_ccm_decrypt(key, nonce, buf->data, buf->len, ad,
                               ad ? 16 : 0, out->data, APP_MIC_LEN(aszmic));

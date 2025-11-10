@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -202,6 +202,7 @@ static inline void bt_mesh_pb_gatt_unlock(void)
 
 void bt_mesh_provisioner_pbg_count_dec(void)
 {
+    BT_DBG("PbgCntDec:%d", prov_ctx.pbg_count);
     if (prov_ctx.pbg_count) {
         prov_ctx.pbg_count--;
     }
@@ -210,6 +211,7 @@ void bt_mesh_provisioner_pbg_count_dec(void)
 static inline void provisioner_pbg_count_inc(void)
 {
     prov_ctx.pbg_count++;
+    BT_DBG("PbgCntInc:%d", prov_ctx.pbg_count);
 }
 
 void bt_mesh_provisioner_clear_link_info(const uint8_t addr[6])
@@ -436,8 +438,8 @@ static int provisioner_start_prov_pb_gatt(const uint8_t uuid[16], const bt_mesh_
      */
     if (assign_addr == BLE_MESH_ADDR_UNASSIGNED &&
         prov_ctx.alloc_addr == BLE_MESH_ADDR_UNASSIGNED) {
-        BT_ERR("No available unicast address to assign");
         bt_mesh_pb_gatt_unlock();
+        BT_ERR("No available unicast address to assign");
         return -EIO;
     }
 
@@ -451,6 +453,7 @@ static int provisioner_start_prov_pb_gatt(const uint8_t uuid[16], const bt_mesh_
             !bt_mesh_atomic_test_bit(prov_links[i].flags, LINK_ACTIVE)) {
             if (bt_mesh_gattc_conn_create(addr, BLE_MESH_UUID_MESH_PROV_VAL)) {
                 bt_mesh_pb_gatt_unlock();
+                BT_ERR("ProvGattCreateFailed:%s", bt_hex(addr->val, 6));
                 return -EIO;
             }
 
@@ -598,6 +601,7 @@ int bt_mesh_provisioner_add_unprov_dev(struct bt_mesh_unprov_dev_add *add_dev, u
 start:
     /* If not provisioning immediately, directly return here */
     if (!(flags & START_PROV_NOW)) {
+        BT_DBG("StartProvNotSet");
         return 0;
     }
 
@@ -617,6 +621,9 @@ start:
     }
 
     if ((err = provisioner_check_unprov_dev_info(add_dev->uuid, add_dev->bearer))) {
+        if (err == -EALREADY) {
+            BT_INFO("The device is being provisioning");
+        }
         return err;
     }
 
@@ -710,6 +717,9 @@ int bt_mesh_provisioner_prov_device_with_addr(const uint8_t uuid[16], const uint
     }
 
     if ((err = provisioner_check_unprov_dev_info(uuid, bearer))) {
+        if (err == -EALREADY) {
+            BT_INFO("The device is being provisioning");
+        }
         return err;
     }
 
@@ -749,10 +759,12 @@ int bt_mesh_provisioner_delete_device(struct bt_mesh_device_delete *del_dev)
         return -EINVAL;
     }
 
+    BT_INFO("ProvisionerDeleteDevice:%s", bt_hex(del_dev->uuid, 16));
     /* Find if the device is in the device queue */
     for (i = 0; i < ARRAY_SIZE(unprov_dev); i++) {
         if (!memcmp(unprov_dev[i].uuid, del_dev->uuid, 16)) {
             memset(&unprov_dev[i], 0, sizeof(struct unprov_dev_queue));
+            BT_INFO("Device is in the queue");
             break;
         }
     }
@@ -761,6 +773,7 @@ int bt_mesh_provisioner_delete_device(struct bt_mesh_device_delete *del_dev)
     for (i = 0; i < ARRAY_SIZE(prov_links); i++) {
         if (!memcmp(prov_links[i].uuid, del_dev->uuid, 16)) {
             close_link(&prov_links[i], CLOSE_REASON_FAILED);
+            BT_INFO("Device is being provisioned");
             break;
         }
     }
@@ -776,6 +789,7 @@ int bt_mesh_provisioner_set_dev_uuid_match(uint8_t offset, uint8_t length,
         return -EINVAL;
     }
 
+    BT_INFO("SetUUIDMatch,offset:%d,value:%s,flag:%d", offset, bt_hex(match, length), prov_flag);
     (void)memset(prov_ctx.match_value, 0, 16);
 
     prov_ctx.match_offset = offset;
@@ -795,6 +809,7 @@ int bt_mesh_provisioner_adv_pkt_cb_register(unprov_adv_pkt_cb_t cb)
         return -EINVAL;
     }
 
+    BT_INFO("RegisterAdvCB:%p", notify_unprov_adv_pkt_cb);
     notify_unprov_adv_pkt_cb = cb;
     return 0;
 }
@@ -815,6 +830,7 @@ int bt_mesh_provisioner_set_prov_data_info(struct bt_mesh_prov_data_info *info)
         }
 
         prov_ctx.net_idx = info->net_idx;
+        BT_INFO("SetProvCtx,NetIndex:%d", info->net_idx);
     }
 
     return 0;
@@ -881,6 +897,7 @@ void bt_mesh_provisioner_set_prov_bearer(bt_mesh_prov_bearer_t bearers, bool cle
     } else {
         prov_ctx.bearers &= ~bearers;
     }
+    BT_INFO("ProvCtxBearer:%04x,clear:%d", prov_ctx.bearers, clear);
 }
 
 bt_mesh_prov_bearer_t bt_mesh_provisioner_get_prov_bearer(void)
@@ -909,7 +926,7 @@ int bt_mesh_provisioner_set_static_oob_value(const uint8_t *value, uint8_t lengt
 
     prov_ctx.static_oob_len = MIN(BLE_MESH_PROV_STATIC_OOB_MAX_LEN, length);
     memcpy(prov_ctx.static_oob_val, value, prov_ctx.static_oob_len);
-
+    BT_INFO("SetStaticOob:%s", bt_hex(value, prov_ctx.static_oob_len));
     return 0;
 }
 
@@ -984,11 +1001,13 @@ int bt_mesh_test_provisioner_update_alloc_addr(uint16_t unicast_addr, uint16_t e
 void bt_mesh_provisioner_fast_prov_enable(bool enable)
 {
     prov_ctx.fast_prov.enable = enable;
+    BT_INFO("FastProvEnable:%d", enable);
 }
 
 void bt_mesh_provisioner_set_fast_prov_net_idx(uint16_t net_idx)
 {
     prov_ctx.fast_prov.net_idx = net_idx;
+    BT_INFO("FastProvNetIdx:%d", net_idx);
 }
 
 uint16_t bt_mesh_provisioner_get_fast_prov_net_idx(void)
@@ -1017,7 +1036,7 @@ uint8_t bt_mesh_set_fast_prov_unicast_addr_range(uint16_t min, uint16_t max)
     prov_ctx.fast_prov.unicast_addr_max = max;
 
     prov_ctx.alloc_addr = prov_ctx.fast_prov.unicast_addr_min;
-
+    BT_INFO("FastProv,AddrMin:%04x,Max:%04x,allocAddr:%04x", min, max, prov_ctx.alloc_addr);
     return 0x0; /* status: success */
 }
 
@@ -1038,6 +1057,7 @@ static struct net_buf_simple *get_rx_buf(const uint8_t idx)
 
 static void reset_adv_link(struct bt_mesh_prov_link *link, uint8_t reason)
 {
+    BT_INFO("ResetAdvLink:%08x", link->link_id);
     bt_mesh_prov_clear_tx(link, true);
 
     if (bt_mesh_prov_get()->prov_link_close) {
@@ -1106,6 +1126,7 @@ static void send_link_open(struct bt_mesh_prov_link *link)
             if (bt_mesh_atomic_test_bit(prov_links[i].flags, LINK_ACTIVE) &&
                 prov_links[i].link_id == link->link_id) {
                 bt_mesh_rand(&link->link_id, sizeof(link->link_id));
+                BT_DBG("ProvLinkIdx:%d,LinkId:%08x", i, link->link_id);
                 break;
             }
         }
@@ -1280,6 +1301,7 @@ static void prov_capabilities(struct bt_mesh_prov_link *link,
         if ((algorithms & BIT(PROV_ALG_P256_CMAC_AES128)) ||
             (!((oob_type & BIT(PROV_STATIC_OOB_AVAILABLE)) == 0x00 ||
                output_size == 0x00 || input_size == 0x00))) {
+            BT_INFO("InvalidOobTypeSet:%02x,Alg:%02x", oob_type, algorithms);
             goto fail;
         }
     }
@@ -1358,6 +1380,7 @@ static void prov_capabilities(struct bt_mesh_prov_link *link,
      * send Remote Provisioning PDU Send with Public Key.
      */
     if (bt_mesh_atomic_test_bit(link->flags, PB_REMOTE)) {
+        BT_DBG("WaitForRprClientCmd");
         return;
     }
 
@@ -1387,6 +1410,7 @@ static int prov_auth(struct bt_mesh_prov_link *link,
     bt_mesh_input_action_t input = 0U;
     uint8_t auth_size = PROV_AUTH_SIZE(link);
 
+    BT_INFO("ProvAuth:method:%d,action:%d,size:%d", method, action, size);
     switch (method) {
     case AUTH_METHOD_NO_OOB:
         if (action || size) {
@@ -1778,6 +1802,7 @@ static void prov_gen_dh_key(struct bt_mesh_prov_link *link)
      */
     if (link->auth_method == AUTH_METHOD_OUTPUT ||
         link->auth_method == AUTH_METHOD_INPUT) {
+        BT_INFO("WaitForNextAction:%d", link->auth_method);
         return;
     }
 
@@ -1814,6 +1839,7 @@ static void prov_gen_dh_key(struct bt_mesh_prov_link *link)
      * Input Complete, because if the authentication method is
      * Output OOB or Input OOB, it will directly return above.
      */
+    BT_DBG("LinkExpect:%d", link->expect);
     if (link->expect != PROV_INPUT_COMPLETE) {
         send_confirm(link);
     }
@@ -2094,6 +2120,7 @@ static void send_prov_data(struct bt_mesh_prov_link *link)
         link->unicast_addr = alloc_addr;
     }
 
+    BT_DBG("ProvAllocAddr:%04x", link->unicast_addr);
     bt_mesh_prov_buf_init(&buf, PROV_DATA);
 
     err = bt_mesh_prov_encrypt(session_key, nonce, pdu, net_buf_simple_add(&buf, 33));
@@ -2310,7 +2337,7 @@ static void prov_complete(struct bt_mesh_prov_link *link,
 static void prov_failed(struct bt_mesh_prov_link *link,
                         struct net_buf_simple *buf)
 {
-    BT_WARN("Error 0x%02x", buf->data[0]);
+    BT_WARN("ProvError 0x%02x", buf->data[0]);
 
     close_link(link, CLOSE_REASON_FAILED);
 }
@@ -2360,7 +2387,7 @@ static void close_link(struct bt_mesh_prov_link *link, uint8_t reason)
 #if CONFIG_BLE_MESH_PB_ADV
 static void link_ack(struct bt_mesh_prov_link *link, struct prov_rx *rx, struct net_buf_simple *buf)
 {
-    BT_DBG("len %u", buf->len);
+    BT_DBG("LinkAckLen %u", buf->len);
 
     if (buf->len) {
         BT_ERR("Invalid Link ACK length %d", buf->len);
@@ -2388,7 +2415,7 @@ static void link_ack(struct bt_mesh_prov_link *link, struct prov_rx *rx, struct 
 
 static void link_close(struct bt_mesh_prov_link *link, struct prov_rx *rx, struct net_buf_simple *buf)
 {
-    BT_DBG("len %u", buf->len);
+    BT_DBG("LinkCloseLen %u", buf->len);
 
     if (buf->len != 1) {
         BT_ERR("Invalid Link Close length %d", buf->len);
@@ -2511,10 +2538,12 @@ static void gen_prov_ack(struct bt_mesh_prov_link *link,
     BT_DBG("len %u", buf->len);
 
     if (!link->tx.buf[0]) {
+        BT_DBG("NullTxbuf");
         return;
     }
 
     if (!link->tx.id) {
+        BT_DBG("ZeroTxId");
         return;
     }
 
@@ -2620,7 +2649,7 @@ void bt_mesh_provisioner_pb_adv_recv(struct net_buf_simple *buf)
     rx.xact_id = net_buf_simple_pull_u8(buf);
     rx.gpc = net_buf_simple_pull_u8(buf);
 
-    BT_DBG("link_id 0x%08x xact_id %u", rx.link_id, rx.xact_id);
+    BT_DBG("link_id 0x%08x xact_id %u gpc %u", rx.link_id, rx.xact_id, rx.gpc);
 
     link = find_pba_link(rx.link_id);
     if (link == NULL) {
@@ -2783,7 +2812,7 @@ static void protocol_timeout(struct k_work *work)
 {
     struct bt_mesh_prov_link *link = work->user_data;
 
-    BT_WARN("Protocol timeout");
+    BT_WARN("Protocol timeout,RmtAddr:%s", bt_hex(link->addr.val, 6));
 
     close_link(link, CLOSE_REASON_TIMEOUT);
 }
@@ -3112,6 +3141,7 @@ int bt_mesh_rpr_cli_pdu_recv(struct bt_mesh_prov_link *link, uint8_t type,
         return -EINVAL;
     }
 
+    BT_INFO("RprCliProvType:%d", type);
     prov_handlers[type].func(link, buf);
     return 0;
 }

@@ -48,6 +48,7 @@ void bt_mesh_prov_buf_init(struct net_buf_simple *buf, uint8_t type)
 
 bt_mesh_output_action_t bt_mesh_prov_output_action(uint8_t action)
 {
+    BT_DBG("ProvOutputAction:%d", action);
     switch (action) {
     case OUTPUT_OOB_BLINK:
         return BLE_MESH_BLINK;
@@ -66,6 +67,7 @@ bt_mesh_output_action_t bt_mesh_prov_output_action(uint8_t action)
 
 bt_mesh_input_action_t bt_mesh_prov_input_action(uint8_t action)
 {
+    BT_DBG("ProvInputAction:%d", action);
     switch (action) {
     case INPUT_OOB_PUSH:
         return BLE_MESH_PUSH;
@@ -151,20 +153,27 @@ static uint8_t bt_mesh_prov_buf_type_get(struct net_buf_simple *buf)
 
 uint8_t node_next_xact_id(struct bt_mesh_prov_link *link)
 {
+    uint8_t nxt_xact_id = 0;
     if (link->tx.id != 0 && link->tx.id != 0xFF) {
-        return ++link->tx.id;
+        nxt_xact_id = ++link->tx.id;
+    } else {
+        link->tx.id = 0x80;
+        nxt_xact_id = 0x80;
     }
 
-    link->tx.id = 0x80;
-    return link->tx.id;
+    BT_DBG("NodeNextXActId:%d", nxt_xact_id);
+    return nxt_xact_id;
 }
 
 uint8_t pvnr_next_xact_id(struct bt_mesh_prov_link *link)
 {
+    uint8_t nxt_xact_id = 0;
     if (link->tx.id > 0x7F) {
         link->tx.id = 0;
     }
-    return link->tx.id++;
+    nxt_xact_id = link->tx.id++;
+    BT_DBG("PvnrNextXActId:%d", nxt_xact_id);
+    return nxt_xact_id;
 }
 
 bool bt_mesh_gen_prov_start(struct bt_mesh_prov_link *link,
@@ -186,7 +195,7 @@ bool bt_mesh_gen_prov_start(struct bt_mesh_prov_link *link,
     link->rx.id = rx->xact_id;
     link->rx.fcs = net_buf_simple_pull_u8(buf);
 
-    BT_DBG("len %u last_seg %u total_len %u fcs 0x%02x", buf->len,
+    BT_DBG("LinkId:%08x,len %u last_seg %u total_len %u fcs 0x%02x", link->link_id, buf->len,
             START_LAST_SEG(rx->gpc), link->rx.buf->len, link->rx.fcs);
 
     /* At least one-octet pdu type is needed */
@@ -227,9 +236,10 @@ bool bt_mesh_gen_prov_start(struct bt_mesh_prov_link *link,
     link->rx.last_seg = START_LAST_SEG(rx->gpc);
     memcpy(link->rx.buf->data, buf->data, buf->len);
     XACT_SEG_RECV(link, 0);
-
+    BT_DBG("Seg: %04x, lastSeg: %04x, Data: %s", link->rx.seg, link->rx.last_seg, bt_hex(buf->data, buf->len));
     /* Still have some segments to receive */
     if (link->rx.seg) {
+        BT_DBG("Still have some segments to receive: %02x", link->rx.seg);
         return false;
     }
 
@@ -242,7 +252,7 @@ bool bt_mesh_gen_prov_cont(struct bt_mesh_prov_link *link,
 {
     uint8_t seg = CONT_SEG_INDEX(rx->gpc);
 
-    BT_DBG("len %u, seg_index %u", buf->len, seg);
+    BT_DBG("LinkId:%08x,len %u,seg_index %u", link->link_id, buf->len, seg);
 
     if (link->rx.seg == 0 && link->rx.prev_id == rx->xact_id) {
         BT_INFO("Resending ack");
@@ -287,6 +297,7 @@ bool bt_mesh_gen_prov_cont(struct bt_mesh_prov_link *link,
 
     /* Still have some segments to receive */
     if (link->rx.seg) {
+        BT_DBG("Still have some segments to receive: %02x", link->rx.seg);
         return false;
     }
 
@@ -346,12 +357,14 @@ void bt_mesh_gen_prov_ack_send(struct bt_mesh_prov_link *link, uint8_t xact_id)
     net_buf_add_u8(buf, xact_id);
     net_buf_add_u8(buf, GPC_ACK);
 
+    BT_DBG("GenericProvAckSend,LinkId:%08x,XActId:%02x", link->link_id, xact_id);
     bt_mesh_adv_send(buf, PROV_XMIT, complete, link);
     net_buf_unref(buf);
 }
 
 static void free_segments(struct bt_mesh_prov_link *link)
 {
+    BT_DBG("FreeSegments:%08x", link->link_id);
     for (size_t i = 0; i < ARRAY_SIZE(link->tx.buf); i++) {
         struct net_buf *buf = link->tx.buf[i];
 
@@ -386,6 +399,7 @@ static void buf_sent(int err, void *user_data)
     int32_t timeout = RETRANSMIT_TIMEOUT;
 
     if (!link->tx.buf[0]) {
+        BT_DBG("LinkId:%08x,NoTxBuf", link->link_id);
         return;
     }
 
@@ -412,6 +426,8 @@ static void prov_retransmit(struct k_work *work)
     struct bt_mesh_prov_link *link = work->user_data;
     int64_t timeout = TRANSACTION_TIMEOUT;
 
+    BT_DBG("LinkRetransmit:%08x,flag:%s", link->link_id, bt_hex(link->flags, sizeof(link->flags)));
+
     if (!bt_mesh_atomic_test_bit(link->flags, LINK_ACTIVE) &&
         !bt_mesh_atomic_test_bit(link->flags, LINK_CLOSING)) {
         BT_WARN("Link not active");
@@ -419,6 +435,9 @@ static void prov_retransmit(struct k_work *work)
     }
 
 #if CONFIG_BLE_MESH_FAST_PROV
+    BT_DBG("FastProv, TxPDUType %u LastTxPDU %u",
+           link->tx_pdu_type, link->last_tx_pdu);
+
     if (link->tx_pdu_type >= link->last_tx_pdu) {
         timeout = K_SECONDS(30);
     }
@@ -490,7 +509,7 @@ static void prov_retransmit(struct k_work *work)
 
         BT_DBG("%u bytes: %s", buf->len, bt_hex(buf->data, buf->len));
 
-        if (i + 1 < ARRAY_SIZE(link->tx.buf) && link->tx.buf[i + 1]) {
+        if (likely(i + 1 < ARRAY_SIZE(link->tx.buf) && link->tx.buf[i + 1])) {
             bt_mesh_adv_send(buf, PROV_XMIT, NULL, NULL);
         } else {
             bt_mesh_adv_send(buf, PROV_XMIT, &buf_sent_cb, link);
@@ -518,7 +537,7 @@ static void send_reliable(struct bt_mesh_prov_link *link, uint8_t xmit)
             break;
         }
 
-        if (i + 1 < ARRAY_SIZE(link->tx.buf) && link->tx.buf[i + 1]) {
+        if (likely(i + 1 < ARRAY_SIZE(link->tx.buf) && link->tx.buf[i + 1])) {
             bt_mesh_adv_send(buf, xmit, NULL, NULL);
         } else {
             bt_mesh_adv_send(buf, xmit, &buf_sent_cb, link);
@@ -651,6 +670,9 @@ int bt_mesh_prov_send_adv(struct bt_mesh_prov_link *link, struct net_buf_simple 
     send_reliable(link, PROV_XMIT);
 
 #if CONFIG_BLE_MESH_FAST_PROV
+    BT_DBG("FastProv, TxPDUType %u LastTxPDU %u",
+           link->tx_pdu_type, link->last_tx_pdu);
+
     if (link->tx_pdu_type >= link->last_tx_pdu) {
         timeout = K_SECONDS(60);
     }
