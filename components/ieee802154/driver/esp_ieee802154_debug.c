@@ -210,8 +210,8 @@ void ieee802154_record_print(void)
 #if CONFIG_IEEE802154_RECORD_STATE
     ESP_EARLY_LOGW(IEEE802154_TAG, "Print the record state, current state index: %d", g_ieee802154_probe.state_index);
     for (uint8_t i = 0; i < IEEE802154_ASSERT_RECORD_STATE_SIZE; i++) {
-        ESP_EARLY_LOGW(IEEE802154_TAG, "index %2d: line:%5s, state:%10s, timestamp: %lld",
-            i, g_ieee802154_probe.state[i].line_str,
+        ESP_EARLY_LOGW(IEEE802154_TAG, "index %2d: line:%5lu, state:%10s, timestamp: %lld",
+            i, g_ieee802154_probe.state[i].line,
             ieee802154_state_string[g_ieee802154_probe.state[i].state],
             g_ieee802154_probe.state[i].timestamp);
     }
@@ -221,8 +221,8 @@ void ieee802154_record_print(void)
 #if CONFIG_IEEE802154_RECORD_CMD
     ESP_EARLY_LOGW(IEEE802154_TAG, "Print the record cmd, current cmd index: %d", g_ieee802154_probe.cmd_index);
     for (uint8_t i = 0; i < IEEE802154_ASSERT_RECORD_CMD_SIZE; i++) {
-        ESP_EARLY_LOGW(IEEE802154_TAG, "index %2d: line:%5s, cmd:%10s, timestamp: %lld",
-            i, g_ieee802154_probe.cmd[i].line_str,
+        ESP_EARLY_LOGW(IEEE802154_TAG, "index %2d: line:%5lu, cmd:%10s, timestamp: %lld",
+            i, g_ieee802154_probe.cmd[i].line,
             ieee802154_get_cmd_string(g_ieee802154_probe.cmd[i].cmd),
             g_ieee802154_probe.cmd[i].timestamp);
     }
