@@ -247,6 +247,10 @@ static inline void spi_ll_master_init(spi_dev_t *hw)
     hw->slave.val = 0;
     hw->user.val = 0;
 
+    //Disable unused error_end condition
+    hw->user1.mst_wfull_err_end_en = 0;
+    hw->user2.mst_rempty_err_end_en = 0;
+
     hw->dma_conf.val = 0;
     hw->dma_conf.slv_tx_seg_trans_clr_en = 1;
     hw->dma_conf.slv_rx_seg_trans_clr_en = 1;
@@ -748,6 +752,7 @@ static inline void spi_ll_master_keep_cs(spi_dev_t *hw, int keep_active)
  *----------------------------------------------------------------------------*/
 /**
  * Set the standard clock mode for master.
+ * This config take effect only when SPI_CLK (pre-div before periph) div >=2
  *
  * @param hw  Beginning address of the peripheral registers.
  * @param enable_std True for std timing, False for half cycle delay sampling.
