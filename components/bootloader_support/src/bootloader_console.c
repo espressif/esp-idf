@@ -30,6 +30,7 @@ static void __attribute__((unused)) release_default_console_io(void)
 {
     // Default console is UART0 with TX and RX on their IOMUX pins
     gpio_ll_output_disable(&GPIO, U0TXD_GPIO_NUM);
+    gpio_ll_func_sel(&GPIO, U0TXD_GPIO_NUM, PIN_FUNC_GPIO); // Set TX pin to GPIO function to truly disable output
     esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ONE_INPUT, UART_PERIPH_SIGNAL(UART_NUM_0, SOC_UART_PERIPH_SIGNAL_RX), 0);
 }
 
