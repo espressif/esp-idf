@@ -26,7 +26,7 @@ body:
     id: chip_revision
     attributes:
       label: Espressif SoC revision.
-      description: On which Espressif SoC revision does your application run on? Run `esptool chip-id` to find it.
+      description: On which Espressif SoC revision does your application run on? Run `esptool chip-id` (or `esptool.py chip_id` for ESP-IDF v5.5 and older) to find it.
       placeholder: ex. ESP32-C3 (QFN32) (revision v0.3)
     validations:
       required: true
