@@ -14,6 +14,7 @@ Overview
    ble-feature-support-status
    ble-qualification
    Low Power Mode Introduction <ble-low-power-mode>
+   ble-multiconnection-guide
 
 ***************
 Get Started
