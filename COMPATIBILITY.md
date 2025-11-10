@@ -2,27 +2,33 @@
 
 * [中文版](./COMPATIBILITY_CN.md)
 
-Espressif keeps improving the performance of its SoCs by providing new chip revisions. However, some of the improvements require special software support. Some of the software supports are even mandatory for the chip revisions to run normally.
+This document describes the ESP-IDF support and compatibility for Espressif SoC series and revisions. The compatibility documents on release branches may be out-of-date. Please check the [Compatibility file on master](https://github.com/espressif/esp-idf/blob/master/COMPATIBILITY.md) or ESP-IDF Release Notes for the latest chip support updates.
 
-This document describes the compatibility between ESP-IDF releases and Espressif SoC revisions.
+## SoC Series Support
 
-NOTE: This document on release branches may be out-of-date. Check the [Compatibility file on master](https://github.com/espressif/esp-idf/blob/master/COMPATIBILITY.md) for the most accurate information.
+Before official support, each SoC series typically provides `preview` versions on specific branches or tags for early development. Please note that preview support for these chips will end after the official release version is published, and will not be maintained afterwards. For mass production, please use the officially released versions.
+
+After the first chip of a series completes support and passes testing, ESP-IDF will release the first official support version for that series. Chips of this series must run on this official version or higher.
+
+## Chip Revision Support
+
+After a chip series is officially supported, Espressif continues to release new chip revisions to improve performance. However, some performance improvements in new chip revisions depend on special software support, and sometimes new chip revisions must run under specific software versions to function normally.
 
 See [Compatibility Advisory for Chip Revision Numbering Scheme](https://www.espressif.com/sites/default/files/advisory_downloads/AR2022-005%20Compatibility%20Advisory%20for%20Chip%20Revision%20Numbering%20%20Scheme.pdf) on the versioning of Espressif SoC revisions.
 
-You can run `esptool chip-id` to detect the series and revision of an SoC. See [SoC Errata](https://www.espressif.com/en/support/documents/technical-documents?keys=errata) for more on how to distinguish between chip revisions, and the improvements provided by chip revisions. And run `idf.py --version` to know the version of current ESP-IDF.
+You can run `esptool chip-id` to detect the chip series and revision (use `esptool.py chip_id` for ESP-IDF v5.5 and older). See [SoC Errata](https://www.espressif.com/en/support/documents/technical-documents?keys=errata) for more on distinguishing chip revisions and revision improvements. Run `idf.py --version` to check the current ESP-IDF version.
 
-## ESP-IDF Support for Different Chip Revisions
+There are `Recommended` and `Required` versions of ESP-IDF for each chip revision:
 
-The sections below show the requirements to ESP-IDF version of chip revisions. Each chip revision corresponds to specific `Recommended` and `Required` versions of ESP-IDF:
+- `Recommended`: indicates the earliest ESP-IDF release version that currently gives the most complete support for utilizing all performance improvements of the chip revision. Using this version, software can maximize the benefits of the chip revision improvements. Running binary compiled with ESP-IDF below the `Recommended` version of a chip revision, software may not benefit from some of the bugfix/features provided by the chip revision. The chip will have almost the same behavior as its previous revision. If a chip revision involves many software updates, they may be released across multiple versions, so the recommended version may be updated periodically.
 
-- `Recommended`: shows from which version of ESP-IDF you can make use of all the improvements of the chip revision. Running binary compiled with ESP-IDF below the `Recommended` version of a chip revision, software may not benefit from the bugfix/features provided by the chip revision. The chip will have almost the same behavior as its previous revision.
-
-- `Required`: shows the minimum version required to run the chip revision normally. Running binary compiled below the `Required` version, the binary may have unpredictable behavior.
+- `Required`: indicates the minimum ESP-IDF version required for the chip revision to run normally. Running binary compiled below the `Required` version, the binary may have unpredictable behavior.
 
 Though the software can make use of all the features of a chip revision, if its version is higher than the `Recommended` version of the chip, it is still recommended to use the latest bugfix version of the release branch. The latest bugfix version fixes a number of issues and helps improve product stability.
 
-For example, if we have a chip, whose `Required`/`Recommended` version of `release/v5.1` branch is `v5.1.2`/`v5.1.4`, and the latest release on that branch is `v5.1.6`. Then the chip will not boot up with ESP-IDF `v5.1`-`v5.1.1` or will have unpredictable behavior, and application may not make use of all benefits of the chip, when running with ESP-IDF `v5.1.2` or `v5.1.3`. Though `v5.1.4` well supports the chip revision, it is still recommended to upgrade ESP-IDF to `v5.1.6`.
+For example, if we have a chip, whose `Required`/`Recommended` version of `release/v5.1` branch is `v5.1.2`/`v5.1.4`, and the latest release on that branch is `v5.1.6`. Then the chip will not boot up with ESP-IDF `v5.1`-`v5.1.1` or will have unpredictable behavior, and application may not make use of all benefits of the chip, when running with ESP-IDF `v5.1.2` or `v5.1.3`. Though `v5.1.4` will supports the chip revision, it is still recommended to upgrade ESP-IDF to `v5.1.6`.
+
+## Detailed ESP-IDF Support for Chip Revisions
 
 ### ESP32
 
@@ -145,6 +151,18 @@ Supported since ESP-IDF v5.1.
 #### v1.0, v1.3
 
 Supported since ESP-IDF v5.3.
+
+### ESP32-C5
+
+Supported since ESP-IDF v5.5.1.
+
+### ESP32-C61
+
+Supported since ESP-IDF v5.5.1.
+
+### ESP32-H4
+
+Preview support since ESP-IDF v6.0.
 
 ## What If the ESP-IDF Version Is Lower than the `Required` Version?
 
