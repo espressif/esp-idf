@@ -1054,10 +1054,6 @@ Obviously, there are cases where all these recipes are insufficient for a certai
 - The second set of commands adds a library target, which points to the "imported" library file built by the external system. Some properties need to be set in order to add include directories and tell CMake where this file is.
 - Finally, the generated library is added to `ADDITIONAL_CLEAN_FILES`_. This means ``make clean`` will delete this library. (Note that the other object files from the build won't be deleted.)
 
-.. only:: esp32
-
-   .. note:: When using an external build process with PSRAM, remember to add ``-mfix-esp32-psram-cache-issue`` to the C compiler arguments. See :ref:`CONFIG_SPIRAM_CACHE_WORKAROUND` for details of this flag.
-
 
 .. _ADDITIONAL_CLEAN_FILES_note:
 
