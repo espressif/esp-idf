@@ -158,10 +158,10 @@ size_t parlio_rx_mount_transaction_buffer(parlio_rx_unit_handle_t rx_unit, parli
     /* Mount body buffer */
     size_t mount_size = 0;
     size_t offset = 0;
+    size_t rest_size = trans->aligned_payload.buf.body.length;
     for (int i = head_node_num; i < required_node_num - tail_node_num; i++) {
-        size_t rest_size = trans->aligned_payload.buf.body.length - offset;
         if (rest_size >= 2 * PARLIO_MAX_ALIGNED_DMA_BUF_SIZE) {
-            mount_size = PARLIO_RX_MOUNT_SIZE_CALC(trans->aligned_payload.buf.body.length, body_node_num, trans->alignment);
+            mount_size = PARLIO_MAX_ALIGNED_DMA_BUF_SIZE;
         } else if (rest_size <= PARLIO_MAX_ALIGNED_DMA_BUF_SIZE) {
             mount_size = (required_node_num - tail_node_num == 2) && (i == 0) ? PARLIO_RX_MOUNT_SIZE_CALC(rest_size, 2, trans->alignment) : rest_size;
         } else {
@@ -174,6 +174,7 @@ size_t parlio_rx_mount_transaction_buffer(parlio_rx_unit_handle_t rx_unit, parli
         mount_config[i].flags.mark_eof = false;
         mount_config[i].flags.mark_final = GDMA_FINAL_LINK_TO_DEFAULT;
         offset += mount_size;
+        rest_size -= mount_size;
     }
     /* Mount tail buffer */
     if (tail_node_num) {
