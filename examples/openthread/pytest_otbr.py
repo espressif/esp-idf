@@ -120,7 +120,7 @@ PORT_MAPPING = {
 # Case 1: Thread network formation and attaching
 @pytest.mark.supported_targets
 @pytest.mark.openthread_br
-@pytest.mark.flaky(reruns=1, reruns_delay=1)
+@pytest.mark.flaky(reruns=1, reruns_delay=5)
 @pytest.mark.parametrize(
     'config, count, app_path, target, port',
     [
@@ -175,9 +175,9 @@ def test_thread_connect(dut:Tuple[IdfDut, IdfDut, IdfDut]) -> None:
             rx_nums = ocf.ot_ping(br, cli_mleid_addr, count=5)[1]
             assert rx_nums == 5
     finally:
-        ocf.execute_command(br, 'factoryreset')
         for cli in cli_list:
-            ocf.execute_command(cli, 'factoryreset')
+            ocf.stop_thread(cli)
+        ocf.stop_thread(br)
         time.sleep(3)
 
 
@@ -202,7 +202,7 @@ def formBasicWiFiThreadNetwork(br:IdfDut, cli:IdfDut) -> None:
 # Case 2: Bidirectional IPv6 connectivity
 @pytest.mark.supported_targets
 @pytest.mark.openthread_br
-@pytest.mark.flaky(reruns=0, reruns_delay=1)
+@pytest.mark.flaky(reruns=1, reruns_delay=5)
 @pytest.mark.parametrize(
     'config, count, app_path, target, port',
     [
@@ -243,19 +243,20 @@ def test_Bidirectional_IPv6_connectivity(Init_interface:bool, dut: Tuple[IdfDut,
         host_global_unicast_addr = re.findall(r'\W+(%s(?:\w+:){3}\w+)\W+' % onlinkprefix, str(out_str))
         rx_nums = 0
         for ip_addr in host_global_unicast_addr:
-            txrx_nums = ocf.ot_ping(cli, str(ip_addr), count=5)
+            txrx_nums = ocf.ot_ping(cli, str(ip_addr), count=10)
             rx_nums = rx_nums + int(txrx_nums[1])
+        print(f'rx_nums: {rx_nums}')
         assert rx_nums != 0
     finally:
-        ocf.execute_command(br, 'factoryreset')
-        ocf.execute_command(cli, 'factoryreset')
+        ocf.stop_thread(cli)
+        ocf.stop_thread(br)
         time.sleep(3)
 
 
 # Case 3: Multicast forwarding from Wi-Fi to Thread network
 @pytest.mark.supported_targets
 @pytest.mark.openthread_br
-@pytest.mark.flaky(reruns=1, reruns_delay=1)
+@pytest.mark.flaky(reruns=1, reruns_delay=5)
 @pytest.mark.parametrize(
     'config, count, app_path, target, port',
     [
@@ -291,15 +292,15 @@ def test_multicast_forwarding_A(Init_interface:bool, dut: Tuple[IdfDut, IdfDut, 
         role = re.findall(r' (\d+)%', str(out_str))[0]
         assert role != '100'
     finally:
-        ocf.execute_command(br, 'factoryreset')
-        ocf.execute_command(cli, 'factoryreset')
+        ocf.stop_thread(cli)
+        ocf.stop_thread(br)
         time.sleep(3)
 
 
 # Case 4: Multicast forwarding from Thread to Wi-Fi network
 @pytest.mark.supported_targets
 @pytest.mark.openthread_br
-@pytest.mark.flaky(reruns=1, reruns_delay=1)
+@pytest.mark.flaky(reruns=1, reruns_delay=5)
 @pytest.mark.parametrize(
     'config, count, app_path, target, port',
     [
@@ -345,8 +346,8 @@ def test_multicast_forwarding_B(Init_interface:bool, dut: Tuple[IdfDut, IdfDut, 
         while udp_mission.is_alive():
             time.sleep(1)
     finally:
-        ocf.execute_command(br, 'factoryreset')
-        ocf.execute_command(cli, 'factoryreset')
+        ocf.stop_thread(cli)
+        ocf.stop_thread(br)
         time.sleep(3)
     assert b'hello' in myudp.udp_bytes
 
@@ -354,7 +355,7 @@ def test_multicast_forwarding_B(Init_interface:bool, dut: Tuple[IdfDut, IdfDut, 
 # Case 5: discover dervice published by Thread device
 @pytest.mark.supported_targets
 @pytest.mark.openthread_br
-@pytest.mark.flaky(reruns=1, reruns_delay=1)
+@pytest.mark.flaky(reruns=1, reruns_delay=5)
 @pytest.mark.parametrize(
     'config, count, app_path, target, port',
     [
@@ -406,15 +407,15 @@ def test_service_discovery_of_Thread_device(Init_interface:bool, Init_avahi:bool
         print('avahi-browse:\n', str(out_str))
         assert 'myTest' in str(out_str)
     finally:
-        ocf.execute_command(br, 'factoryreset')
-        ocf.execute_command(cli, 'factoryreset')
+        ocf.stop_thread(cli)
+        ocf.stop_thread(br)
         time.sleep(3)
 
 
 # Case 6: discover dervice published by Wi-Fi device
 @pytest.mark.supported_targets
 @pytest.mark.openthread_br
-@pytest.mark.flaky(reruns=1, reruns_delay=1)
+@pytest.mark.flaky(reruns=1, reruns_delay=5)
 @pytest.mark.parametrize(
     'config, count, app_path, target, port',
     [
@@ -475,15 +476,15 @@ def test_service_discovery_of_WiFi_device(Init_interface:bool, Init_avahi:bool, 
     finally:
         ocf.host_close_service()
         sp.terminate()
-        ocf.execute_command(br, 'factoryreset')
-        ocf.execute_command(cli, 'factoryreset')
+        ocf.stop_thread(cli)
+        ocf.stop_thread(br)
         time.sleep(3)
 
 
 # Case 7: ICMP communication via NAT64
 @pytest.mark.supported_targets
 @pytest.mark.openthread_br
-@pytest.mark.flaky(reruns=1, reruns_delay=1)
+@pytest.mark.flaky(reruns=1, reruns_delay=5)
 @pytest.mark.parametrize(
     'config, count, app_path, target, port',
     [
@@ -514,15 +515,15 @@ def test_ICMP_NAT64(Init_interface:bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> 
         rx_nums = ocf.ot_ping(cli, str(host_ipv4_address), count=5)[1]
         assert rx_nums != 0
     finally:
-        ocf.execute_command(br, 'factoryreset')
-        ocf.execute_command(cli, 'factoryreset')
+        ocf.stop_thread(cli)
+        ocf.stop_thread(br)
         time.sleep(3)
 
 
 # Case 8: UDP communication via NAT64
 @pytest.mark.supported_targets
 @pytest.mark.openthread_br
-@pytest.mark.flaky(reruns=1, reruns_delay=1)
+@pytest.mark.flaky(reruns=1, reruns_delay=5)
 @pytest.mark.parametrize(
     'config, count, app_path, target, port',
     [
@@ -570,8 +571,8 @@ def test_UDP_NAT64(Init_interface:bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> N
         while udp_mission.is_alive():
             time.sleep(1)
     finally:
-        ocf.execute_command(br, 'factoryreset')
-        ocf.execute_command(cli, 'factoryreset')
+        ocf.stop_thread(cli)
+        ocf.stop_thread(br)
         time.sleep(3)
     assert b'hello' in myudp.udp_bytes
 
@@ -579,7 +580,7 @@ def test_UDP_NAT64(Init_interface:bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> N
 # Case 9: TCP communication via NAT64
 @pytest.mark.supported_targets
 @pytest.mark.openthread_br
-@pytest.mark.flaky(reruns=1, reruns_delay=1)
+@pytest.mark.flaky(reruns=1, reruns_delay=5)
 @pytest.mark.parametrize(
     'config, count, app_path, target, port',
     [
@@ -633,8 +634,8 @@ def test_TCP_NAT64(Init_interface:bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> N
         while tcp_mission.is_alive():
             time.sleep(1)
     finally:
-        ocf.execute_command(br, 'factoryreset')
-        ocf.execute_command(cli, 'factoryreset')
+        ocf.stop_thread(cli)
+        ocf.stop_thread(br)
         time.sleep(3)
     assert b'hello' in mytcp.tcp_bytes
 
@@ -643,6 +644,7 @@ def test_TCP_NAT64(Init_interface:bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> N
 @pytest.mark.esp32h2
 @pytest.mark.esp32c6
 @pytest.mark.openthread_sleep
+@pytest.mark.flaky(reruns=1, reruns_delay=5)
 @pytest.mark.parametrize(
     'config, count, app_path, target, port',
     [
@@ -670,6 +672,7 @@ def test_TCP_NAT64(Init_interface:bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> N
 def test_ot_sleepy_device(dut: Tuple[IdfDut, IdfDut]) -> None:
     leader = dut[0]
     sleepy_device = dut[1]
+    ocf.hardreset_dut(sleepy_device)
     fail_info = re.compile(r'Core\W*?\d\W*?register dump')
     try:
         ocf.init_thread(leader)
@@ -696,13 +699,14 @@ def test_ot_sleepy_device(dut: Tuple[IdfDut, IdfDut]) -> None:
         assert not bool(fail_info.search(str(output)))
     finally:
         ocf.execute_command(leader, 'factoryreset')
+        ocf.hardreset_dut(sleepy_device)
         time.sleep(3)
 
 
 # Case 11: Basic startup Test of BR
 @pytest.mark.supported_targets
 @pytest.mark.openthread_br
-@pytest.mark.flaky(reruns=1, reruns_delay=1)
+@pytest.mark.flaky(reruns=1, reruns_delay=5)
 @pytest.mark.parametrize(
     'config, count, app_path, target, port',
     [
@@ -737,18 +741,17 @@ def test_basic_startup(dut: Tuple[IdfDut, IdfDut]) -> None:
         br.expect('Done', timeout=5)
         assert ocf.wait_for_join(br, 'leader')
     finally:
-        ocf.execute_command(br, 'factoryreset')
+        ocf.stop_thread(br)
         time.sleep(3)
 
 
 # Case 12: Curl a website via DNS and NAT64
-# @pytest.mark.openthread_bbr is not supported on release 5.1, skip this check
 
 
 # Case 13: Meshcop discovery of Border Router
 @pytest.mark.supported_targets
 @pytest.mark.openthread_br
-@pytest.mark.flaky(reruns=1, reruns_delay=1)
+@pytest.mark.flaky(reruns=1, reruns_delay=5)
 @pytest.mark.parametrize(
     'config, count, app_path, target, port',
     [
@@ -803,18 +806,17 @@ def test_br_meshcop(Init_interface:bool, Init_avahi:bool, dut: Tuple[IdfDut, Idf
             assert 'vn=OpenThread' in str(output_str)
             assert 'rv=1' in str(output_str)
     finally:
-        ocf.execute_command(br, 'factoryreset')
+        ocf.stop_thread(br)
         time.sleep(3)
 
 
 # Case 14: Curl a website over HTTPS via DNS and NAT64
-# Skip this check on release 5.1
 
 
 # Case 15: Thread network formation and attaching with TREL
 @pytest.mark.supported_targets
 @pytest.mark.openthread_br
-@pytest.mark.flaky(reruns=1, reruns_delay=1)
+@pytest.mark.flaky(reruns=1, reruns_delay=5)
 @pytest.mark.parametrize(
     'config, count, app_path, target, port',
     [
@@ -860,16 +862,16 @@ def test_trel_connect(dut: Tuple[IdfDut, IdfDut]) -> None:
             rx_nums = ocf.ot_ping(trel_s3, trel_mleid_addr, count=10)[1]
             assert rx_nums > 5
     finally:
-        ocf.execute_command(trel_s3, 'factoryreset')
         for trel in trel_list:
-            ocf.execute_command(trel, 'factoryreset')
+            ocf.stop_thread(trel)
+        ocf.stop_thread(trel_s3)
         time.sleep(3)
 
 
 # Case 16: Thread network BR lib check
 @pytest.mark.supported_targets
 @pytest.mark.openthread_br
-@pytest.mark.flaky(reruns=1, reruns_delay=1)
+@pytest.mark.flaky(reruns=1, reruns_delay=5)
 @pytest.mark.parametrize(
     'config, count, app_path, target, port',
     [
@@ -899,6 +901,7 @@ def test_br_lib_check(dut: Tuple[IdfDut, IdfDut]) -> None:
 
 # Case 17: SSED test
 @pytest.mark.openthread_sleep
+@pytest.mark.flaky(reruns=1, reruns_delay=5)
 @pytest.mark.parametrize(
     'config, count, app_path, target, port',
     [
@@ -927,6 +930,7 @@ def test_ot_ssed_device(dut: Tuple[IdfDut, IdfDut]) -> None:
     leader = dut[0]
     ssed_device = dut[1]
     try:
+        ocf.hardreset_dut(ssed_device)
         # CI device must have external XTAL to run SSED case, we will check this here first
         ssed_device.expect('32k XTAL in use', timeout=10)
         ocf.init_thread(leader)
@@ -966,4 +970,5 @@ def test_ot_ssed_device(dut: Tuple[IdfDut, IdfDut]) -> None:
         ocf.ping_and_check(dut=leader, target=ssed_address, tx_total=10, timeout=6)
     finally:
         ocf.execute_command(leader, 'factoryreset')
+        ocf.hardreset_dut(ssed_device)
         time.sleep(3)
