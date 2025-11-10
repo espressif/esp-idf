@@ -169,7 +169,7 @@ esp_err_t esp_timer_start_once(esp_timer_handle_t timer, uint64_t timeout_us);
  * @return
  *      - ESP_OK on success
  *      - ESP_ERR_INVALID_ARG if the handle is invalid
- *      - ESP_ERR_INVALID_STATE if the timer is already running
+ *      - ESP_ERR_INVALID_STATE if the timer is already running or `alarm_us` is zero or in the past
  */
 esp_err_t esp_timer_start_once_at(esp_timer_handle_t timer, uint64_t alarm_us);
 
@@ -202,7 +202,7 @@ esp_err_t esp_timer_start_periodic(esp_timer_handle_t timer, uint64_t period);
  * @return
  *      - ESP_OK on success
  *      - ESP_ERR_INVALID_ARG if the handle is invalid
- *      - ESP_ERR_INVALID_STATE if the timer is already running
+ *      - ESP_ERR_INVALID_STATE if the timer is already running or `first_alarm_us` is zero or in the past
  */
 esp_err_t esp_timer_start_periodic_at(esp_timer_handle_t timer,
                                       uint64_t period_us,
@@ -241,7 +241,7 @@ esp_err_t esp_timer_restart(esp_timer_handle_t timer, uint64_t timeout_us);
  * @return
  *      - ESP_OK on success
  *      - ESP_ERR_INVALID_ARG if the handle is invalid
- *      - ESP_ERR_INVALID_STATE if the timer is not running
+ *      - ESP_ERR_INVALID_STATE if the timer is not running or `alarm_us` is zero or in the past
  */
 esp_err_t esp_timer_restart_at(esp_timer_handle_t timer, uint64_t period_us,
                                uint64_t alarm_us);

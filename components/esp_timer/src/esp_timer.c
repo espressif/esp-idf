@@ -154,7 +154,7 @@ esp_err_t ESP_TIMER_IRAM_ATTR esp_timer_restart(esp_timer_handle_t timer, uint64
 
 esp_err_t ESP_TIMER_IRAM_ATTR esp_timer_restart_at(esp_timer_handle_t timer, uint64_t period_us, uint64_t alarm_us)
 {
-    if (timer == NULL) {
+    if (timer == NULL || alarm_us <= esp_timer_impl_get_time() || alarm_us == 0) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -222,7 +222,7 @@ esp_err_t ESP_TIMER_IRAM_ATTR esp_timer_start_once(esp_timer_handle_t timer, uin
 
 esp_err_t ESP_TIMER_IRAM_ATTR esp_timer_start_once_at(esp_timer_handle_t timer, uint64_t alarm_us)
 {
-    if (timer == NULL) {
+    if (timer == NULL || alarm_us <= esp_timer_impl_get_time() || alarm_us == 0) {
         return ESP_ERR_INVALID_ARG;
     }
     if (!is_initialized()) {
@@ -261,7 +261,7 @@ esp_timer_start_once_at_impl(esp_timer_handle_t timer, uint64_t alarm_us)
 esp_err_t ESP_TIMER_IRAM_ATTR esp_timer_start_periodic_at(
     esp_timer_handle_t timer, uint64_t period_us, uint64_t first_alarm_us)
 {
-    if (timer == NULL) {
+    if (timer == NULL || first_alarm_us <= esp_timer_impl_get_time() || first_alarm_us == 0) {
         return ESP_ERR_INVALID_ARG;
     }
     if (!is_initialized()) {
