@@ -38,6 +38,7 @@ BLE_DOCS = [
     'api-guides/ble/ble-feature-support-status.rst',
     'api-guides/ble/host-feature-support-status.rst',
     'api-guides/ble/ble-qualification.rst',
+    'api-guides/ble/ble-multiconnection-guide.rst',
     'api-guides/ble/get-started/ble-introduction.rst',
     'api-guides/ble/get-started/ble-device-discovery.rst',
     'api-guides/ble/get-started/ble-connection.rst',
