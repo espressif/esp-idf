@@ -136,8 +136,6 @@ if(CONFIG_LIBC_NEWLIB_NANO_FORMAT)
         )
         get_filename_component(libc_dir ${libc_dir} DIRECTORY)
         target_link_directories(${COMPONENT_LIB} INTERFACE "${libc_dir}/nano")
-    else()
-        target_link_libraries(${COMPONENT_LIB} INTERFACE "--specs=nano.specs")
     endif()
 endif()
 
