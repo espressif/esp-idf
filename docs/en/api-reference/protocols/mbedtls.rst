@@ -66,7 +66,7 @@ ESP-IDF provides a preset-based configuration system for Mbed TLS to simplify se
         • Basic X.509 parsing
     * - **Bluetooth (BT)**
       - Bluetooth applications
-      - • Optimized for BLE security
+      - • Optimized for Bluetooth LE security
         • ECC P-256 curve support
         • Minimal TLS overhead
         • Bluetooth-specific algorithms
