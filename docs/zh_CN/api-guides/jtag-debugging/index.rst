@@ -28,7 +28,7 @@ JTAG 调试
 :ref:`jtag-debugging-examples`
     如果你不熟悉 GDB，请查看此小节以获取 :ref:`Eclipse 集成开发环境 <jtag-debugging-examples-eclipse>` 以及 :ref:`命令行终端 <jtag-debugging-examples-command-line>` 提供的调试示例。
 :ref:`jtag-debugging-building-openocd`
-    介绍如何在 :doc:`Windows <building-openocd-windows>`，:doc:`Linux <building-openocd-linux>` 和 :doc:`macOS <building-openocd-macos>` 操作系统上从源码构建 OpenOCD。
+    参考 OpenOCD 构建工作流以从源码构建。
 :ref:`jtag-debugging-tips-and-quirks`
     介绍使用 OpenOCD 和 GDB 通过 JTAG 接口调试 {IDF_TARGET_NAME} 时的注意事项和补充内容。
 
@@ -282,42 +282,9 @@ OpenOCD 安装完成后就可以配置 {IDF_TARGET_NAME} 目标（即带 JTAG �
 从源码构建 OpenOCD
 ------------------
 
-以下文档分别介绍了如何在各操作系统平台上从源码构建 OpenOCD。
-
-.. toctree::
-    :maxdepth: 1
-
-    Windows <building-openocd-windows>
-    Linux <building-openocd-linux>
-    macOS <building-openocd-macos>
-
 本文档在演示中所使用的 OpenOCD 是预编译好的二进制发行版，在 :ref:`jtag-debugging-setup-openocd` 章节中有所介绍。
 
-如果要使用本地从源代码编译的 OpenOCD 程序，需要将相应可执行文件的路径修改为 ``src/openocd``，并设置 ``OPENOCD_SCRIPTS`` 环境变量，使得 OpenOCD 能够找到配置文件。Linux 和 macOS 用户可以执行:
-
-.. code-block:: bash
-
-    cd ~/esp/openocd-esp32
-    export OPENOCD_SCRIPTS=$PWD/tcl
-
-Windows 用户可以执行:
-
-.. code-block:: batch
-
-    cd %USERPROFILE%\esp\openocd-esp32
-    set "OPENOCD_SCRIPTS=%CD%\tcl"
-
-针对 Linux 和 macOS 用户，运行本地编译的 OpenOCD 的示例:
-
-.. include:: {IDF_TARGET_PATH_NAME}.inc
-   :start-after: run-openocd-src-linux
-   :end-before: ---
-
-Windows 用户的示例如下:
-
-.. include:: {IDF_TARGET_PATH_NAME}.inc
-   :start-after: run-openocd-src-win
-   :end-before: ---
+如需根据特定需求从源码构建 OpenOCD，请参考 `OpenOCD 构建工作流 <https://github.com/espressif/openocd-esp32/blob/master/.github/workflows/build_openocd.yml>`_，该工作流演示了如何在不同平台（Windows、Linux、macOS）上构建 OpenOCD。
 
 .. _jtag-debugging-tips-and-quirks:
 
