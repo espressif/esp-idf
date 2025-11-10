@@ -8,8 +8,10 @@
 #include <fcntl.h>
 #include <sys/errno.h>
 #include "unity.h"
+#include "unity_test_utils_cache.h"
 #include "esp_private/usb_console.h"
 #include "esp_vfs_cdcacm.h"
+#include "esp_rom_sys.h"
 
 static void flush_write(void)
 {
@@ -263,6 +265,39 @@ static void test_usb_cdc_read_no_exit_on_newline_reception(void)
     vTaskDelay(2);  // wait for tasks to exit
 }
 
+static void IRAM_ATTR test_input_output_post_cache_disable(void *args)
+{
+    static DRAM_ATTR const char test_msg[] = "test_message\n";
+    esp_rom_printf(test_msg);
+}
+
+/**
+ * @brief Test that the tx and rx cb are placed in IRAM correctly
+ */
+static void test_usb_cdc_ets_printf_cache_disabled(void)
+{
+    test_setup(__func__, sizeof(__func__));
+
+    /* make sure blocking mode is enabled */
+    int flags = fcntl(STDIN_FILENO, F_GETFL, 0);
+    fcntl(STDIN_FILENO, F_SETFL, flags & (~O_NONBLOCK));
+
+#if CONFIG_ESP_CONSOLE_USB_CDC_SUPPORT_ETS_PRINTF
+    unity_utils_run_cache_disable_stub(test_input_output_post_cache_disable, NULL);
+#else
+#error This test must run with CONFIG_ESP_CONSOLE_USB_CDC_SUPPORT_ETS_PRINTF enabled
+#endif
+
+    // send message to the test environment to report successful test
+    char ready_msg[] = "successful test\n";
+    write(fileno(stdout), ready_msg, sizeof(ready_msg));
+
+    fcntl(STDIN_FILENO, F_SETFL, flags);
+    esp_vfs_dev_cdcacm_set_rx_line_endings(ESP_LINE_ENDINGS_CRLF);
+    esp_vfs_dev_cdcacm_set_tx_line_endings(ESP_LINE_ENDINGS_CRLF);
+    vTaskDelay(2);  // wait for tasks to exit
+}
+
 /* Always make sure that the function calling sequence in the main
  * function matches the expected order in the pytest function.
  */
@@ -272,4 +307,5 @@ void app_main(void)
     test_usb_cdc_read_non_blocking();
     test_usb_cdc_read_blocking();
     test_usb_cdc_read_no_exit_on_newline_reception();
+    test_usb_cdc_ets_printf_cache_disabled();
 }
