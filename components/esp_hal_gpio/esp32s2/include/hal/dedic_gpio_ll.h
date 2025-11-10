@@ -11,8 +11,6 @@
 #include "soc/dedic_gpio_struct.h"
 #include "soc/system_reg.h"
 
-#define DEDIC_GPIO_LL_ALLOW_REG_ACCESS  1 /*!< Allow access dedicated GPIO channel by register */
-
 #ifdef __cplusplus
 extern "C" {
 #endif

@@ -17,9 +17,6 @@
 
 #define SDM_LL_PRESCALE_MAX    (GPIO_SD0_PRESCALE_V + 1)
 
-// Support APB as function clock
-#define SDM_LL_FUNC_CLOCK_SUPPORT_APB 1
-
 #ifdef __cplusplus
 extern "C" {
 #endif

@@ -15,8 +15,9 @@
 #include <stdbool.h>
 #include "hal/assert.h"
 #include "soc/gpio_ext_struct.h"
+#include "soc/gpio_ext_reg.h"
 
-#define GPIO_LL_GLITCH_FILTER_MAX_WINDOW  64
+#define GPIO_LL_GLITCH_FILTER_MAX_WINDOW  (GPIO_EXT_FILTER_CH0_WINDOW_WIDTH_V + 1)
 
 #ifdef __cplusplus
 extern "C" {

@@ -4,6 +4,11 @@ idf_build_get_property(esp_tee_build ESP_TEE_BUILD)
 set(srcs)
 set(includes "include" "${target}/include")
 
+set(priv_requires)
+if(${target} STREQUAL "esp32")
+    list(APPEND priv_requires esp_hal_gpio)
+endif()
+
 if(esp_tee_build)
     if(CONFIG_SECURE_TEE_EXT_FLASH_MEMPROT_SPI1)
         list(APPEND srcs "spi_flash_hal.c" "spi_flash_hal_iram.c")
@@ -26,4 +31,5 @@ endif()
 
 idf_component_register(SRCS ${srcs}
                     INCLUDE_DIRS ${includes}
-                    REQUIRES soc hal)
+                    REQUIRES soc hal
+                    PRIV_REQUIRES "${priv_requires}")

@@ -220,9 +220,6 @@
 #define SOC_GPIO_SUPPORT_ETM          1
 
 // Target has no full LP IO subsystem, GPIO7~14 remain LP function (powered by VDD3V3_LP, and can be used as ext1 wakeup pins)
-// Digital IOs have their own registers to control pullup/down/capability
-// However, there is no way to control pullup/down/capability for IOs under LP function since there is no LP_IOMUX registers
-#define SOC_GPIO_SUPPORT_RTC_INDEPENDENT    (1)
 
 // LP IO peripherals have independent clock gating to manage
 #define SOC_LP_IO_CLOCK_IS_INDEPENDENT      (1)

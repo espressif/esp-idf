@@ -15,9 +15,10 @@
 #include <stdbool.h>
 #include "hal/assert.h"
 #include "soc/gpio_ext_struct.h"
+#include "soc/gpio_ext_reg.h"
 
 // the max window size is expected to be 64, but due to a hardware issue, we need to limit it to 63
-#define GPIO_LL_GLITCH_FILTER_MAX_WINDOW  63
+#define GPIO_LL_GLITCH_FILTER_MAX_WINDOW  GPIO_EXT_FILTER_CH0_WINDOW_WIDTH_V
 
 #ifdef __cplusplus
 extern "C" {

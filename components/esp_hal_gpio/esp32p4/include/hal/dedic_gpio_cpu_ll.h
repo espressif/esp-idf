@@ -14,9 +14,6 @@
 #define CSR_GPIO_IN_USER    0x804
 #define CSR_GPIO_OUT_USER   0x805
 
-/*!< The dedicated GPIO (a.k.a. fast GPIO) is featured by some customized CPU instructions, which is always enabled */
-#define DEDIC_GPIO_CPU_LL_PERIPH_ALWAYS_ENABLE  1
-
 #ifdef __cplusplus
 extern "C" {
 #endif
