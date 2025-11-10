@@ -21,7 +21,7 @@
 
 /* MACRO */
 #define BLE_LOG_TASK_PRIO                       (ESP_TASK_PRIO_MAX - 1)
-#define BLE_LOG_TASK_STACK_SIZE                 (1024)
+#define BLE_LOG_TASK_STACK_SIZE                 CONFIG_BLE_LOG_TASK_STACK_SIZE
 #define BLE_LOG_TASK_HOOK_TIMEOUT_MS            (1000)
 
 /* INTERFACE */
