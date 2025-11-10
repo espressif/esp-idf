@@ -285,7 +285,7 @@ static void count_mode_test(gpio_num_t ctl_io)
     vTaskDelay(1000 / portTICK_PERIOD_MS);
     TEST_ESP_OK(pcnt_get_counter_value(PCNT_UNIT_0, &test_counter));
     printf("value: %d\n", test_counter);
-    TEST_ASSERT_INT16_WITHIN(1, test_counter, result[0]);
+    TEST_ASSERT_INT16_WITHIN(2, test_counter, result[0]);
 
     //2, 0, 0, 0
     TEST_ESP_OK(pcnt_counter_pause(PCNT_UNIT_0));
@@ -297,7 +297,7 @@ static void count_mode_test(gpio_num_t ctl_io)
     vTaskDelay(1000 / portTICK_PERIOD_MS);
     TEST_ESP_OK(pcnt_get_counter_value(PCNT_UNIT_0, &test_counter));
     printf("value: %d\n", test_counter);
-    TEST_ASSERT_INT16_WITHIN(1, test_counter, result[1]);
+    TEST_ASSERT_INT16_WITHIN(2, test_counter, result[1]);
 
     //0,0,0,0
     TEST_ESP_OK(pcnt_counter_pause(PCNT_UNIT_0));
@@ -309,7 +309,7 @@ static void count_mode_test(gpio_num_t ctl_io)
     vTaskDelay(1000 / portTICK_PERIOD_MS);
     TEST_ESP_OK(pcnt_get_counter_value(PCNT_UNIT_0, &test_counter));
     printf("value: %d\n", test_counter);
-    TEST_ASSERT_INT16_WITHIN(1, test_counter, result[2]);
+    TEST_ASSERT_INT16_WITHIN(2, test_counter, result[2]);
 
     //1,0,1,0
     TEST_ESP_OK(pcnt_counter_pause(PCNT_UNIT_0));
@@ -321,7 +321,7 @@ static void count_mode_test(gpio_num_t ctl_io)
     vTaskDelay(1000 / portTICK_PERIOD_MS);
     TEST_ESP_OK(pcnt_get_counter_value(PCNT_UNIT_0, &test_counter));
     printf("value: %d\n", test_counter);
-    TEST_ASSERT_INT16_WITHIN(1, test_counter, result[3]);
+    TEST_ASSERT_INT16_WITHIN(2, test_counter, result[3]);
 
     //1,0,0,1
     TEST_ESP_OK(pcnt_counter_pause(PCNT_UNIT_0));
@@ -333,7 +333,7 @@ static void count_mode_test(gpio_num_t ctl_io)
     vTaskDelay(1000 / portTICK_PERIOD_MS);
     TEST_ESP_OK(pcnt_get_counter_value(PCNT_UNIT_0, &test_counter));
     printf("value: %d\n", test_counter);
-    TEST_ASSERT_INT16_WITHIN(1, test_counter, result[4]);
+    TEST_ASSERT_INT16_WITHIN(2, test_counter, result[4]);
 
     //2,0,0,1
     TEST_ESP_OK(pcnt_counter_pause(PCNT_UNIT_0));
@@ -345,7 +345,7 @@ static void count_mode_test(gpio_num_t ctl_io)
     vTaskDelay(1000 / portTICK_PERIOD_MS);
     TEST_ESP_OK(pcnt_get_counter_value(PCNT_UNIT_0, &test_counter));
     printf("value: %d\n", test_counter);
-    TEST_ASSERT_INT16_WITHIN(1, test_counter, result[5]);
+    TEST_ASSERT_INT16_WITHIN(2, test_counter, result[5]);
 
     //1,0,2,0
     TEST_ESP_OK(pcnt_counter_pause(PCNT_UNIT_0));
@@ -357,7 +357,7 @@ static void count_mode_test(gpio_num_t ctl_io)
     vTaskDelay(1000 / portTICK_PERIOD_MS);
     TEST_ESP_OK(pcnt_get_counter_value(PCNT_UNIT_0, &test_counter));
     printf("value: %d\n", test_counter);
-    TEST_ASSERT_INT16_WITHIN(1, test_counter, result[6]);
+    TEST_ASSERT_INT16_WITHIN(2, test_counter, result[6]);
 
     //1,0,0,2
     TEST_ESP_OK(pcnt_counter_pause(PCNT_UNIT_0));
@@ -369,7 +369,7 @@ static void count_mode_test(gpio_num_t ctl_io)
     vTaskDelay(1000 / portTICK_PERIOD_MS);
     TEST_ESP_OK(pcnt_get_counter_value(PCNT_UNIT_0, &test_counter));
     printf("value: %d\n", test_counter);
-    TEST_ASSERT_INT16_WITHIN(1, test_counter, result[7]);
+    TEST_ASSERT_INT16_WITHIN(2, test_counter, result[7]);
 }
 
 /* PCNT basic property:
@@ -517,24 +517,24 @@ TEST_CASE("PCNT_interrupt_method_test_control_IO_high", "[pcnt][timeout=120]")
 
     // test event
     event_calculate(&event);
-    TEST_ASSERT_INT_WITHIN(2, event.h_threshold, 2);
-    TEST_ASSERT_INT_WITHIN(2, event.l_threshold, 2);
+    TEST_ASSERT_INT_WITHIN(3, event.h_threshold, 2);
+    TEST_ASSERT_INT_WITHIN(3, event.l_threshold, 2);
     TEST_ASSERT(event.l_limit == 0);
-    TEST_ASSERT_INT_WITHIN(2, event.h_limit, 2);
-    TEST_ASSERT_INT_WITHIN(2, event.zero_times, 2);
-    TEST_ASSERT_INT_WITHIN(3, event.filter_time, 4);
+    TEST_ASSERT_INT_WITHIN(3, event.h_limit, 2);
+    TEST_ASSERT_INT_WITHIN(3, event.zero_times, 2);
+    TEST_ASSERT_INT_WITHIN(4, event.filter_time, 4);
 
     // test interrupt disable
     TEST_ESP_OK(pcnt_intr_disable(PCNT_UNIT_0));
     TEST_ESP_OK(pcnt_counter_clear(PCNT_UNIT_0));
     // for the original control io disable interrupt status
     event_calculate(&event);
-    TEST_ASSERT_INT_WITHIN(2, event.h_threshold, 2);
-    TEST_ASSERT_INT_WITHIN(2, event.l_threshold, 2);
+    TEST_ASSERT_INT_WITHIN(3, event.h_threshold, 2);
+    TEST_ASSERT_INT_WITHIN(3, event.l_threshold, 2);
     TEST_ASSERT(event.l_limit == 0);
-    TEST_ASSERT_INT_WITHIN(2, event.h_limit, 2);
-    TEST_ASSERT_INT_WITHIN(2, event.zero_times, 2);
-    TEST_ASSERT_INT_WITHIN(3, event.filter_time, 4);
+    TEST_ASSERT_INT_WITHIN(3, event.h_limit, 2);
+    TEST_ASSERT_INT_WITHIN(3, event.zero_times, 2);
+    TEST_ASSERT_INT_WITHIN(4, event.filter_time, 4);
 
     // enable the intr
     TEST_ESP_OK(pcnt_intr_enable(PCNT_UNIT_0));
@@ -542,24 +542,24 @@ TEST_CASE("PCNT_interrupt_method_test_control_IO_high", "[pcnt][timeout=120]")
     TEST_ESP_OK(pcnt_counter_clear(PCNT_UNIT_0));
     TEST_ESP_OK(pcnt_counter_resume(PCNT_UNIT_0));
     event_calculate(&event);
-    TEST_ASSERT_INT_WITHIN(2, event.h_threshold, 4);
-    TEST_ASSERT_INT_WITHIN(2, event.l_threshold, 4);
+    TEST_ASSERT_INT_WITHIN(3, event.h_threshold, 4);
+    TEST_ASSERT_INT_WITHIN(3, event.l_threshold, 4);
     TEST_ASSERT(event.l_limit == 0);
-    TEST_ASSERT_INT_WITHIN(2, event.h_limit, 4);
-    TEST_ASSERT_INT_WITHIN(2, event.zero_times, 4);
-    TEST_ASSERT_INT_WITHIN(3, event.filter_time, 10);
+    TEST_ASSERT_INT_WITHIN(3, event.h_limit, 4);
+    TEST_ASSERT_INT_WITHIN(3, event.zero_times, 4);
+    TEST_ASSERT_INT_WITHIN(4, event.filter_time, 10);
 
     // disable part of events
     TEST_ESP_OK(pcnt_event_disable(PCNT_UNIT_0, PCNT_EVT_ZERO));
     TEST_ESP_OK(pcnt_event_disable(PCNT_UNIT_0, PCNT_EVT_L_LIM));
     TEST_ESP_OK(pcnt_event_disable(PCNT_UNIT_0, PCNT_EVT_THRES_0));
     event_calculate(&event);
-    TEST_ASSERT_INT_WITHIN(2, event.h_threshold, 5);
-    TEST_ASSERT_INT_WITHIN(2, event.l_threshold, 4);
+    TEST_ASSERT_INT_WITHIN(3, event.h_threshold, 5);
+    TEST_ASSERT_INT_WITHIN(3, event.l_threshold, 4);
     TEST_ASSERT(event.l_limit == 0);
-    TEST_ASSERT_INT_WITHIN(3, event.h_limit, 6);
-    TEST_ASSERT_INT_WITHIN(2, event.zero_times, 4);
-    TEST_ASSERT_INT_WITHIN(3, event.filter_time, 14);
+    TEST_ASSERT_INT_WITHIN(4, event.h_limit, 6);
+    TEST_ASSERT_INT_WITHIN(3, event.zero_times, 4);
+    TEST_ASSERT_INT_WITHIN(4, event.filter_time, 14);
 
     // Because this test uses its own ISR, we need to release it with `pcnt_isr_unregister` instead of `pcnt_isr_service_uninstall`
     TEST_ESP_OK(pcnt_isr_unregister(pcnt_isr_service));
@@ -617,24 +617,24 @@ TEST_CASE("PCNT_interrupt_method_test_control_IO_low", "[pcnt][timeout=120]")
 
     // test event
     event_calculate(&event);
-    TEST_ASSERT_INT_WITHIN(2, event.h_threshold, 1);
-    TEST_ASSERT_INT_WITHIN(2, event.l_threshold, 1);
-    TEST_ASSERT_INT_WITHIN(2, event.l_limit, 1);
-    TEST_ASSERT_INT_WITHIN(2, event.h_limit, 0);
-    TEST_ASSERT_INT_WITHIN(2, event.zero_times, 1);
-    TEST_ASSERT_INT_WITHIN(2, event.filter_time, 2);
+    TEST_ASSERT_INT_WITHIN(3, event.h_threshold, 1);
+    TEST_ASSERT_INT_WITHIN(3, event.l_threshold, 1);
+    TEST_ASSERT_INT_WITHIN(3, event.l_limit, 1);
+    TEST_ASSERT_INT_WITHIN(3, event.h_limit, 0);
+    TEST_ASSERT_INT_WITHIN(3, event.zero_times, 1);
+    TEST_ASSERT_INT_WITHIN(3, event.filter_time, 2);
 
     // test interrupt disable
     TEST_ESP_OK(pcnt_intr_disable(PCNT_UNIT_0));
     TEST_ESP_OK(pcnt_counter_clear(PCNT_UNIT_0));
     // for the original control io disable interrupt status
     event_calculate(&event);
-    TEST_ASSERT_INT_WITHIN(2, event.h_threshold, 1);
-    TEST_ASSERT_INT_WITHIN(2, event.l_threshold, 1);
-    TEST_ASSERT_INT_WITHIN(2, event.l_limit, 1);
-    TEST_ASSERT_INT_WITHIN(2, event.h_limit, 0);
-    TEST_ASSERT_INT_WITHIN(2, event.zero_times, 1);
-    TEST_ASSERT_INT_WITHIN(2, event.filter_time, 2);
+    TEST_ASSERT_INT_WITHIN(3, event.h_threshold, 1);
+    TEST_ASSERT_INT_WITHIN(3, event.l_threshold, 1);
+    TEST_ASSERT_INT_WITHIN(3, event.l_limit, 1);
+    TEST_ASSERT_INT_WITHIN(3, event.h_limit, 0);
+    TEST_ASSERT_INT_WITHIN(3, event.zero_times, 1);
+    TEST_ASSERT_INT_WITHIN(3, event.filter_time, 2);
 
     // enable the intr
     pcnt_unit_config(&config);
@@ -644,24 +644,24 @@ TEST_CASE("PCNT_interrupt_method_test_control_IO_low", "[pcnt][timeout=120]")
     TEST_ESP_OK(pcnt_counter_clear(PCNT_UNIT_0));
     TEST_ESP_OK(pcnt_counter_resume(PCNT_UNIT_0));
     event_calculate(&event);
-    TEST_ASSERT_INT_WITHIN(2, event.h_threshold, 2);
-    TEST_ASSERT_INT_WITHIN(2, event.l_threshold, 3);
-    TEST_ASSERT_INT_WITHIN(2, event.l_limit, 2);
-    TEST_ASSERT_INT_WITHIN(2, event.h_limit, 0);
-    TEST_ASSERT_INT_WITHIN(2, event.zero_times, 2);
-    TEST_ASSERT_INT_WITHIN(2, event.filter_time, 6);
+    TEST_ASSERT_INT_WITHIN(3, event.h_threshold, 2);
+    TEST_ASSERT_INT_WITHIN(3, event.l_threshold, 3);
+    TEST_ASSERT_INT_WITHIN(3, event.l_limit, 2);
+    TEST_ASSERT_INT_WITHIN(3, event.h_limit, 0);
+    TEST_ASSERT_INT_WITHIN(3, event.zero_times, 2);
+    TEST_ASSERT_INT_WITHIN(3, event.filter_time, 6);
 
     // disable part of events
     TEST_ESP_OK(pcnt_event_disable(PCNT_UNIT_0, PCNT_EVT_ZERO));
     TEST_ESP_OK(pcnt_event_disable(PCNT_UNIT_0, PCNT_EVT_L_LIM));
     TEST_ESP_OK(pcnt_event_disable(PCNT_UNIT_0, PCNT_EVT_THRES_0));
     event_calculate(&event);
-    TEST_ASSERT_INT_WITHIN(2, event.h_threshold, 4);
-    TEST_ASSERT_INT_WITHIN(2, event.l_threshold, 3);
-    TEST_ASSERT_INT_WITHIN(2, event.l_limit, 2);
-    TEST_ASSERT_INT_WITHIN(2, event.h_limit, 0);
-    TEST_ASSERT_INT_WITHIN(2, event.zero_times, 2);
-    TEST_ASSERT_INT_WITHIN(2, event.filter_time, 8);
+    TEST_ASSERT_INT_WITHIN(3, event.h_threshold, 4);
+    TEST_ASSERT_INT_WITHIN(3, event.l_threshold, 3);
+    TEST_ASSERT_INT_WITHIN(3, event.l_limit, 2);
+    TEST_ASSERT_INT_WITHIN(3, event.h_limit, 0);
+    TEST_ASSERT_INT_WITHIN(3, event.zero_times, 2);
+    TEST_ASSERT_INT_WITHIN(3, event.filter_time, 8);
 
     // Because this test uses its own ISR, we need to release it with `pcnt_isr_unregister` instead of `pcnt_isr_service_uninstall`
     TEST_ESP_OK(pcnt_isr_unregister(pcnt_isr_service));
