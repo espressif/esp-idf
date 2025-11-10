@@ -564,6 +564,11 @@ uint32_t i2s_get_source_clk_freq(i2s_clock_src_t clk_src, uint32_t mclk_freq_hz)
         return i2s_set_get_apll_freq(mclk_freq_hz);
     }
 #endif
+#ifdef I2S_LL_DEFAULT_CLK_SRC
+    if (clk_src == I2S_CLK_SRC_DEFAULT) {
+        clk_src = I2S_LL_DEFAULT_CLK_SRC;
+    }
+#endif
     esp_clk_tree_src_get_freq_hz(clk_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clk_freq);
     return clk_freq;
 }
