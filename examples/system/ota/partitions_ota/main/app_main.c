@@ -48,6 +48,8 @@
 static const char *bind_interface_name = EXAMPLE_NETIF_DESC_ETH;
 #elif CONFIG_EXAMPLE_FIRMWARE_UPGRADE_BIND_IF_STA
 static const char *bind_interface_name = EXAMPLE_NETIF_DESC_STA;
+#elif CONFIG_EXAMPLE_FIRMWARE_UPGRADE_BIND_IF_THREAD
+static const char *bind_interface_name = EXAMPLE_NETIF_DESC_THREAD;
 #endif
 #endif
 
