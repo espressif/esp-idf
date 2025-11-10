@@ -547,6 +547,7 @@ TEST_CASE("parallel_rx_unit_receive_transaction_test", "[parlio_rx]")
     free(payload);
 };
 
+#if SOC_PSRAM_DMA_CAPABLE
 TEST_CASE("parallel_rx_unit_receive_external_memory_test", "[parlio_rx]")
 {
     parlio_rx_unit_handle_t rx_unit = NULL;
@@ -587,6 +588,7 @@ TEST_CASE("parallel_rx_unit_receive_external_memory_test", "[parlio_rx]")
     TEST_ESP_OK(parlio_del_rx_unit(rx_unit));
     free(payload);
 }
+#endif  // SOC_PSRAM_DMA_CAPABLE
 
 TEST_CASE("parallel_rx_unit_receive_timeout_test", "[parlio_rx]")
 {
@@ -939,7 +941,7 @@ static void test_gpio_neg_edge_intr(void *arg)
 {
     parlio_rx_unit_handle_t rx_unit = (parlio_rx_unit_handle_t)arg;
     bool need_yield = false;
-    parlio_rx_unit_force_trigger_eof(rx_unit, &need_yield);
+    parlio_rx_unit_trigger_fake_eof(rx_unit, &need_yield);
     if (need_yield) {
         portYIELD_FROM_ISR();
     }
@@ -992,7 +994,7 @@ TEST_CASE("parallel_rx_unit_force_trigger_eof_test", "[parlio_rx]")
     uint32_t alignment = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA);
     alignment = alignment < 4 ? 4 : alignment;
     size_t buff_size = ALIGN_UP(TEST_TASK_LARGE_TRANS_SIZE, alignment);
-    recv_buff = heap_caps_aligned_calloc(alignment, 1, buff_size, MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA);
+    recv_buff = heap_caps_aligned_calloc(alignment, 1, buff_size, TEST_PARLIO_DMA_MEM_ALLOC_CAPS);
     TEST_ASSERT_NOT_NULL(recv_buff);
 
     gpio_set_intr_type(TEST_VALID_GPIO, GPIO_INTR_NEGEDGE);
