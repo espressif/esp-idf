@@ -34,7 +34,27 @@ if(CONFIG_IDF_TOOLCHAIN_GCC)
         endif()
 
         # Clean compile options that were added by previous configurations and may be outdated
-        idf_toolchain_remove_flags(COMPILE_OPTIONS "-march=")
+        idf_toolchain_remove_flags(COMPILE_OPTIONS "-march="
+                                                   "-mno-cm-push-reverse"
+                                                   "-mno-cm-popret")
+
+        if(CONFIG_SOC_CPU_HAS_ZB_EXTENSIONS)
+            set(_march "${_march}_zba_zbb_zbs")
+        endif()
+
+        if((CONFIG_SOC_CPU_HAS_ZC_EXTENSIONS AND NOT CONFIG_SOC_CPU_ZCMP_WORKAROUND) OR
+           CONFIG_COMPILER_ENABLE_RISCV_ZCMP)
+            if(NOT CONFIG_ESP32P4_SELECTS_REV_LESS_V3)
+                set(_march "${_march}_zcb_zcmp_zcmt")
+
+                if(CONFIG_SOC_CPU_ZCMP_PUSH_REVERSED)
+                    idf_toolchain_add_flags(COMPILE_OPTIONS "-mno-cm-push-reverse")
+                endif()
+                if(CONFIG_SOC_CPU_ZCMP_POPRET_ISSUE)
+                    idf_toolchain_add_flags(COMPILE_OPTIONS "-mno-cm-popret")
+                endif()
+            endif()
+        endif()
 
         if(CONFIG_SOC_CPU_HAS_HWLOOP)
             set(_march "${_march}_xesploop")

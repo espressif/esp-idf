@@ -591,6 +591,18 @@ config SOC_CPU_HAS_LOCKUP_RESET
     bool
     default y
 
+config SOC_CPU_HAS_ZC_EXTENSIONS
+    bool
+    default y
+
+config SOC_CPU_ZCMP_PUSH_REVERSED
+    bool
+    default y
+
+config SOC_CPU_ZCMP_POPRET_ISSUE
+    bool
+    default y
+
 config SOC_SIMD_PREFERRED_DATA_ALIGNMENT
     int
     default 16
