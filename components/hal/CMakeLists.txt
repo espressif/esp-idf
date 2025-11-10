@@ -188,6 +188,7 @@ elseif(NOT BOOTLOADER_BUILD)
     endif()
 
     if(CONFIG_SOC_GPSPI_SUPPORTED)
+        # Remember to add esp_hal_gpio to esp_hal_spi PRIV_REQUIRES!!!
         list(APPEND srcs
             "spi_hal.c"
             "spi_hal_iram.c"

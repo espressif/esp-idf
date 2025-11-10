@@ -22,9 +22,6 @@
 #define GPIO_LL_ETM_TASK_ID_CLR(ch) (GPIO_TASK_CH0_CLEAR + (ch))
 #define GPIO_LL_ETM_TASK_ID_TOG(ch) (GPIO_TASK_CH0_TOGGLE + (ch))
 
-#define GPIO_LL_ETM_EVENT_CHANNELS_PER_GROUP    8
-#define GPIO_LL_ETM_TASK_CHANNELS_PER_GROUP     8
-
 #ifdef __cplusplus
 extern "C" {
 #endif

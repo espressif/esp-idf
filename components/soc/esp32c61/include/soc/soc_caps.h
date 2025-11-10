@@ -177,8 +177,6 @@
 #define SOC_GPIO_SUPPORT_ETM          1
 
 // Target has the full LP IO subsystem
-// On ESP32-C61, Digital IOs have their own registers to control pullup/down capability, independent of LP registers.
-#define SOC_GPIO_SUPPORT_RTC_INDEPENDENT    (1)
 
 // LP IO peripherals have independent clock gating to manage
 #define SOC_LP_IO_CLOCK_IS_INDEPENDENT      (1)
@@ -215,7 +213,6 @@
                                                  */
 #define SOC_RTCIO_HOLD_SUPPORTED            1
 #define SOC_RTCIO_WAKE_SUPPORTED            1
-#define SOC_RTCIO_EDGE_WAKE_SUPPORTED       1
 
 /*------------------------- Analog Comparator CAPS ---------------------------*/
 #define SOC_ANA_CMPR_NUM                       (1U)

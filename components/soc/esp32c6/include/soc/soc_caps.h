@@ -194,8 +194,6 @@
 #define SOC_GPIO_SUPPORT_ETM          1
 
 // Target has the full LP IO subsystem
-// On ESP32-C6, Digital IOs have their own registers to control pullup/down capability, independent of LP registers.
-#define SOC_GPIO_SUPPORT_RTC_INDEPENDENT    (1)
 // GPIO0~7 on ESP32C6 can support chip deep sleep wakeup
 #define SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP   (1)
 // LP IO peripherals have independent clock gating to manage
@@ -231,7 +229,6 @@
                                              */
 #define SOC_RTCIO_HOLD_SUPPORTED            1
 #define SOC_RTCIO_WAKE_SUPPORTED            1
-#define SOC_RTCIO_EDGE_WAKE_SUPPORTED       1
 
 /*-------------------------- Sigma Delta Modulator CAPS -----------------*/
 #define SOC_SDM_SUPPORT_SLEEP_RETENTION 1
