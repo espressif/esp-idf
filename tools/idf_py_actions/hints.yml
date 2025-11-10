@@ -525,6 +525,10 @@
     hint: "Please include 'driver/gpio.h' and call 'gpio_od_enable' to enable the open-drain mode."
 
 -
+    re: "(error: implicit declaration of function|undefined reference to) '(gpio_pad_set_drv|gpio_pad_pullup|gpio_pad_select_gpio|gpio_pad_unhold|gpio_matrix_in|gpio_matrix_out)'"
+    hint: "The rom GPIO functions have been renamed. Please replace with the APIs in 'esp_rom_gpio.h'."
+
+-
     re: "error: implicit declaration of function '(esp_dma_capable_malloc|esp_dma_capable_calloc|esp_cache_aligned_malloc|esp_cache_aligned_calloc)'"
     hint: "Use the memory allocation functions from the esp_heap_caps.h with proper capability flags.\nFor example, use heap_caps_malloc() with the MALLOC_CAP_CACHE_ALIGNED flag to allocate memory that is aligned to cache line."
 

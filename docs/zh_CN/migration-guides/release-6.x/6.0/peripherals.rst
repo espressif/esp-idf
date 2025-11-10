@@ -111,7 +111,13 @@ RMT
 GPIO
 ----
 
-:func:`gpio_iomux_in` 和 :func:`gpio_iomux_out` 已被 :func:`gpio_iomux_input` 和 :func:`gpio_iomux_output` 函数取代， 并移至 ``esp_private/gpio.h`` 头文件中作为仅供内部使用的私有 API。
+- :func:`gpio_iomux_in` 和 :func:`gpio_iomux_out` 已被 :func:`gpio_iomux_input` 和 :func:`gpio_iomux_output` 函数取代， 并移至 ``esp_private/gpio.h`` 头文件中作为仅供内部使用的私有 API。
+
+- ``rom_`` 前缀已添加进 ``components/esp_rom/esp32xx/include/esp32xx/rom/gpio.h`` 中的所有 GPIO ROM API。例如，:func:`gpio_iomux_in` 现在为 :func:`rom_gpio_iomux_in`。
+
+- ``MAX_PAD_GPIO_NUM``、 ``MAX_GPIO_NUM`` 和 ``DIG_IO_HOLD_BIT_SHIFT`` 宏已被移除。
+
+- 为 :func:`gpio_uninstall_isr_service` 添加了 :cpp:type:`esp_err_t` 返回类型。
 
 LEDC
 ----

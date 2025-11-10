@@ -123,9 +123,6 @@
 #define GPIO_PAD_SET_DRV(num, drv) PIN_SET_DRV(IOMUX_REG_GPIO##num, drv)
 
 #define MAX_RTC_GPIO_NUM              5
-#define MAX_PAD_GPIO_NUM             20
-#define MAX_GPIO_NUM                 24
-#define DIG_IO_HOLD_BIT_SHIFT         0
 
 
 #define REG_IO_MUX_BASE DR_REG_IO_MUX_BASE

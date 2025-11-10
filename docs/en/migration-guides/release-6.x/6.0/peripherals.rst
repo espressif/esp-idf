@@ -111,7 +111,13 @@ The ``io_od_mode`` member in the :cpp:type:`rmt_tx_channel_config_t` configurati
 GPIO
 ----
 
-:func:`gpio_iomux_in` and :func:`gpio_iomux_out` have been replaced by :func:`gpio_iomux_input` and :func:`gpio_iomux_output`, and have been moved to ``esp_private/gpio.h`` header file as private APIs for internal use only.
+- :func:`gpio_iomux_in` and :func:`gpio_iomux_out` have been replaced by :func:`gpio_iomux_input` and :func:`gpio_iomux_output`, and have been moved to ``esp_private/gpio.h`` header file as private APIs for internal use only.
+
+- ``rom_`` prefix has been added to all GPIO ROM APIs in ``components/esp_rom/esp32xx/include/esp32xx/rom/gpio.h``. For example, :func:`gpio_iomux_in` is now :func:`rom_gpio_iomux_in`.
+
+- ``MAX_PAD_GPIO_NUM``, ``MAX_GPIO_NUM``, and ``DIG_IO_HOLD_BIT_SHIFT`` macros have been removed.
+
+- Added the :cpp:type:`esp_err_t` return type to :func:`gpio_uninstall_isr_service`.
 
 LEDC
 ----
