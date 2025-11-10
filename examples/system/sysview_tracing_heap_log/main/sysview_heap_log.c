@@ -11,7 +11,7 @@
 #include <inttypes.h>
 #include "esp_err.h"
 #include "esp_app_trace.h"
-#include "esp_sysview_trace.h"
+#include "esp_sysview_heap_trace_module.h" // from esp_sysview managed component
 #include "esp_heap_trace.h"
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
@@ -71,6 +71,18 @@ static void alloc_task(void *p)
     while(1){
         vTaskDelay(100/portTICK_PERIOD_MS);
     }
+}
+
+esp_trace_open_params_t esp_trace_get_user_params(void)
+{
+    esp_trace_open_params_t trace_params = {
+        .core_cfg = NULL,
+        .encoder_name = "sysview",
+        .encoder_cfg = NULL,
+        .transport_name = "apptrace",
+        .transport_cfg = NULL,
+    };
+    return trace_params;
 }
 
 void app_main(void)

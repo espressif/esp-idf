@@ -134,10 +134,26 @@ New configuration:
     CONFIG_APPTRACE_DEST_UART=y
     CONFIG_APPTRACE_DEST_UART_NUM=0  # or 1, 2 depending on target
 
-SystemView Configuration
-^^^^^^^^^^^^^^^^^^^^^^^^
+SEGGER SystemView
+^^^^^^^^^^^^^^^^^
 
-The SystemView configuration has been moved to a new location in the menuconfig: ``Component config`` > ``ESP Trace Configuration`` > ``Trace library`` > ``SEGGER SystemView``.
+The SystemView component has been moved to a separate repository. `esp_sysview <https://components.espressif.com/components/espressif/esp_sysview>`_  is now a managed component.
+
+Configuration
+^^^^^^^^^^^^^^
+
+The SystemView configuration has been moved to a new location in the menuconfig. It becomes visible only when the project adds the ``esp_sysview`` component dependency in ``idf_component.yml`` and the external library is selected in menuconfig.
+
+Add the dependency in your component manifest:
+
+.. code-block:: yaml
+
+    dependencies:
+      espressif/esp_sysview: ^1
+
+Then, in menuconfig, select: ``Component config`` > ``ESP Trace Configuration`` > ``Trace library`` > ``External library from component registry``.
+
+After that, the SystemView configuration can be shown by selecting ``Component config`` > ``SEGGER SystemView Configuration``.
 
 The SystemView no longer has its own separate destination configuration. It shares the configuration with the application tracing transport (JTAG or UART).
 

@@ -134,10 +134,26 @@ UART 目标配置已简化：
     CONFIG_APPTRACE_DEST_UART=y
     CONFIG_APPTRACE_DEST_UART_NUM=0  # 或 1、2，具体取决于目标芯片
 
-SystemView 配置
-^^^^^^^^^^^^^^^^^^^^^^^^
+SEGGER SystemView
+^^^^^^^^^^^^^^^^^
 
-SystemView 配置已移至 menuconfig 中的新位置：``Component config`` > ``ESP Trace Configuration`` > ``Trace library`` > ``SEGGER SystemView``。
+SystemView 组件已迁移至独立仓库。`esp_sysview <https://components.espressif.com/components/espressif/esp_sysview>`_ 现为托管组件。
+
+配置
+^^^^
+
+SystemView 配置在 menuconfig 中的位置已变更。仅当项目在 ``idf_component.yml`` 中添加 ``esp_sysview`` 组件依赖，并在 menuconfig 中选择外部库时，相关配置选项才会显示。
+
+在组件清单中添加依赖：
+
+.. code-block:: yaml
+
+    dependencies:
+      espressif/esp_sysview: ^1
+
+随后在 menuconfig 中依次选择：``Component config`` > ``ESP Trace Configuration`` > ``Trace library`` > ``External library from component registry``。
+
+之后，可通过 ``Component config`` > ``SEGGER SystemView Configuration`` 查看 SystemView 配置选项。
 
 SystemView 不再拥有独立的传输目标配置。它与应用程序跟踪传输方式（JTAG 或 UART）共享配置。
 

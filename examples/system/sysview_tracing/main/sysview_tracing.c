@@ -19,11 +19,11 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "driver/gptimer.h"
+#include "soc/uart_pins.h"
 #include "esp_trace.h"
 
 static const char *TAG = "example";
 
-#if CONFIG_ESP_TRACE_LIB_SEGGER_SYSVIEW
 #if !CONFIG_USE_CUSTOM_EVENT_ID
 
 #define SYSVIEW_EXAMPLE_SEND_EVENT_ID     0
@@ -70,15 +70,6 @@ static void example_sysview_event_send(uint32_t id, uint32_t val)
 }
 
 #endif // !CONFIG_USE_CUSTOM_EVENT_ID
-
-#else
-
-#define SYSVIEW_EXAMPLE_SEND_EVENT_START()
-#define SYSVIEW_EXAMPLE_SEND_EVENT_END(_val_)
-#define SYSVIEW_EXAMPLE_WAIT_EVENT_START()
-#define SYSVIEW_EXAMPLE_WAIT_EVENT_END(_val_)
-
-#endif // CONFIG_ESP_TRACE_LIB_SEGGER_SYSVIEW
 
 typedef struct {
     gptimer_handle_t gptimer;
@@ -136,13 +127,32 @@ static void example_task(void *p)
     }
 }
 
+esp_trace_open_params_t esp_trace_get_user_params(void)
+{
+    static esp_apptrace_config_t app_trace_config = APPTRACE_CONFIG_DEFAULT();
+#if CONFIG_APPTRACE_DEST_UART
+    /* Override default values to use console pins as a uart channel */
+    app_trace_config.dest_cfg.uart.tx_pin_num = U0TXD_GPIO_NUM;
+    app_trace_config.dest_cfg.uart.rx_pin_num = U0RXD_GPIO_NUM;
+#endif
+
+    esp_trace_open_params_t trace_params = {
+        .core_cfg = NULL,
+        .encoder_name = "sysview",
+        .encoder_cfg = NULL,
+        .transport_name = "apptrace",
+        .transport_cfg = &app_trace_config,
+    };
+    return trace_params;
+}
+
 void app_main(void)
 {
     ESP_LOGI(TAG, "Hello from sysview_tracing example!");
 
     static example_event_data_t event_data[CONFIG_FREERTOS_NUMBER_OF_CORES];
 
-#if CONFIG_ESP_TRACE_LIB_SEGGER_SYSVIEW && CONFIG_USE_CUSTOM_EVENT_ID
+#if CONFIG_USE_CUSTOM_EVENT_ID
     // Currently OpenOCD does not support requesting module info from target. So do the following...
     // Wait until SystemView module receives START command from host,
     // after that data can be sent to the host using onboard API,
