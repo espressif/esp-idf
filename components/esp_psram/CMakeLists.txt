@@ -50,7 +50,8 @@ if(CONFIG_SPIRAM)
 
 endif()
 
-if(CONFIG_IDF_TARGET_ESP32 AND CONFIG_SPIRAM_CACHE_WORKAROUND AND NOT BOOTLOADER_BUILD)
+# TODO IDF-14338
+if(CONFIG_IDF_TOOLCHAIN_CLANG AND CONFIG_IDF_TARGET_ESP32 AND CONFIG_SPIRAM_CACHE_WORKAROUND AND NOT BOOTLOADER_BUILD)
     # Note: Adding as a PUBLIC compile option here causes this option to propagate to all
     # components that depend on esp_psram.
     #

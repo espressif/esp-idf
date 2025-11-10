@@ -885,13 +885,6 @@ macro(project project_name)
         unset(idf_target)
     endif()
 
-
-    if(CONFIG_LIBC_PICOLIBC)
-        idf_build_set_property(C_COMPILE_OPTIONS "-specs=picolibc.specs" APPEND)
-        idf_build_set_property(CXX_COMPILE_OPTIONS "-specs=picolibcpp.specs" APPEND)
-        idf_build_set_property(LINK_OPTIONS "-specs=picolibc.specs" APPEND)
-    endif()
-
     set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}" APPEND PROPERTY
         ADDITIONAL_CLEAN_FILES
         "${mapfile}" "${project_elf_src}")
