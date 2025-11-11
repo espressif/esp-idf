@@ -30,8 +30,7 @@ list(APPEND COMPONENTS bootloader_support efuse esp_hal_mspi esp_hal_wdt esp_sec
 # TEE-specific components
 list(APPEND COMPONENTS tee_flash_mgr tee_ota_ops tee_sec_storage tee_attestation)
 
-# Include sdkconfig.h derived from the parent build.
-include_directories(${CONFIG_DIR})
+include_directories("${SECURE_SERVICE_HEADERS_DIR}")
 
 include("${IDF_PATH}/tools/cmake/project.cmake")
 set(common_req esp_common esp_hw_support esp_rom freertos hal log esp_libc soc spi_flash)
