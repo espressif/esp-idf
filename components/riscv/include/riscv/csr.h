@@ -126,17 +126,29 @@ extern "C" {
 */
 #define PMP_ENTRY_SET(ENTRY, ADDR, CFG) do {  \
     RV_WRITE_CSR((CSR_PMPADDR0) + (ENTRY), (ADDR) >> (PMP_SHIFT));    \
-    RV_SET_CSR((CSR_PMPCFG0) + (ENTRY)/4, ((CFG)&0xFF) << (ENTRY%4)*8); \
+    PMP_ENTRY_CFG_SET(ENTRY, CFG); \
     } while(0)
 
 /*Only set PMPCFG entries*/
-#define PMP_ENTRY_CFG_SET(ENTRY, CFG) do {\
-    RV_SET_CSR((CSR_PMPCFG0) + (ENTRY)/4, ((CFG)&0xFF) << (ENTRY%4)*8); \
-    } while(0)
+#define PMP_ENTRY_CFG_SET(ENTRY, CFG) \
+    RV_SET_CSR((CSR_PMPCFG0) + (ENTRY)/4, ((CFG)&0xFF) << (ENTRY%4)*8)
 
 /*Reset all permissions of a particular PMPCFG entry*/
 #define PMP_ENTRY_CFG_RESET(ENTRY) do {\
+    RV_WRITE_CSR((CSR_PMPADDR0) + (ENTRY), 0); \
     RV_CLEAR_CSR((CSR_PMPCFG0) + (ENTRY)/4, (0xFF) << (ENTRY%4)*8); \
+    } while(0)
+
+/*Read configuration of a particular PMPCFG entry*/
+#define PMP_ENTRY_CFG_READ(ENTRY) \
+    ((RV_READ_CSR((CSR_PMPCFG0) + (ENTRY)/4) >> ((ENTRY%4)*8)) & 0xFF)
+
+#define PMP_ENTRY_ADDR_READ(ENTRY) \
+    (RV_READ_CSR((CSR_PMPADDR0) + (ENTRY)) << (PMP_SHIFT))
+
+#define PMP_RESET_AND_ENTRY_SET(ENTRY, ADDR, CFG) do {\
+    PMP_ENTRY_CFG_RESET(ENTRY); \
+    PMP_ENTRY_SET(ENTRY, ADDR, CFG); \
     } while(0)
 
 /*Reset all permissions of a particular PMACFG entry*/

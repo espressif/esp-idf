@@ -18,6 +18,10 @@
 #include "test_memprot.h"
 #include "sdkconfig.h"
 
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+#include "hal/cache_ll.h"
+#endif
+
 #define RND_VAL     (0xA5A5A5A5)
 #define SPIN_ITER   (16)
 
@@ -112,6 +116,40 @@ void test_iram_reg4_write_violation(void)
     *test_addr = RND_VAL;
 }
 
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+/* IRAM: I/DCACHE boundary region */
+void test_non_cache_iram_reg1_write_violation(void)
+{
+    uint32_t *test_addr = (uint32_t *)(CACHE_LL_L2MEM_NON_CACHE_ADDR((uint32_t)(&_iram_start) - 0x04));
+    printf("IRAM: Non-cacheable Write operation | Address: %p\n", test_addr);
+    *test_addr = RND_VAL;
+}
+
+/* IRAM: Interrupt vector table region */
+void test_non_cache_iram_reg2_write_violation(void)
+{
+    uint32_t *test_addr = (uint32_t *)(CACHE_LL_L2MEM_NON_CACHE_ADDR((uint32_t)(&_iram_text_start) - 0x04));
+    printf("IRAM: Non-cacheable Write operation | Address: %p\n", test_addr);
+    *test_addr = RND_VAL;
+}
+
+/* IRAM: Text (and data) region */
+void test_non_cache_iram_reg3_write_violation(void)
+{
+    uint32_t *test_addr = (uint32_t *)(CACHE_LL_L2MEM_NON_CACHE_ADDR((uint32_t)(&_iram_text_end) - 0x04));
+    printf("IRAM: Non-cacheable Write operation | Address: %p\n", test_addr);
+    *test_addr = RND_VAL;
+}
+
+/* IRAM: Through the data bus */
+void test_non_cache_iram_reg4_write_violation(void)
+{
+    uint32_t *test_addr = (uint32_t *)MAP_IRAM_TO_DRAM((uint32_t)&_iram_text_end - 0x04);
+    printf("IRAM: Write operation | Address: %p\n", test_addr);
+    *test_addr = RND_VAL;
+}
+#endif /* SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE */
+
 /* ---------------------------------------------------- DRAM Violation Checks ---------------------------------------------------- */
 
 static void foo_d(void)
@@ -143,6 +181,30 @@ void test_dram_reg2_execute_violation(void)
     void *test_addr = instr;
     run_function(test_addr);
 }
+
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+/* DRAM: Data region (DRAM_ATTR tagged) */
+void test_non_cache_dram_reg1_execute_violation(void)
+{
+    memcpy(&s_dram_buf, &foo_d, sizeof(s_dram_buf));
+    void *test_addr = (void *)(CACHE_LL_L2MEM_NON_CACHE_ADDR(&s_dram_buf));
+    printf("DRAM: Non-cacheable Execute operation | Address: %p\n", &s_dram_buf);
+    run_function(test_addr);
+}
+
+/* DRAM: Heap region */
+void test_non_cache_dram_reg2_execute_violation(void)
+{
+    uint8_t *instr = calloc(1024, sizeof(uint8_t));
+    assert(instr != NULL);
+
+    printf("DRAM: Non-cacheable Execute operation | Address: %p\n", instr);
+
+    memcpy(instr, &foo_d, 1024);
+    void *test_addr = (void *)(CACHE_LL_L2MEM_NON_CACHE_ADDR(instr));
+    run_function(test_addr);
+}
+#endif /* SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE */
 
 /* ---------------------------------------------------- RTC Violation Checks ---------------------------------------------------- */
 
@@ -251,6 +313,30 @@ void test_drom_reg_execute_violation(void)
     run_function(test_addr);
 }
 
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+void test_non_cache_irom_reg_write_violation(void)
+{
+    extern int _instruction_reserved_end;
+    uint32_t *test_addr = (uint32_t *)(CACHE_LL_L2MEM_NON_CACHE_ADDR((uint32_t)(&_instruction_reserved_end - 0x100)));
+    printf("Flash (IROM): Non-cacheable Write operation | Address: %p\n", test_addr);
+    *test_addr = RND_VAL;
+}
+
+void test_non_cache_drom_reg_write_violation(void)
+{
+    uint32_t *test_addr = (uint32_t *)CACHE_LL_L2MEM_NON_CACHE_ADDR(((uint32_t)(foo_buf)));
+    printf("Flash (DROM): Non-cacheable Write operation | Address: %p\n", test_addr);
+    *test_addr = RND_VAL;
+}
+
+void test_non_cache_drom_reg_execute_violation(void)
+{
+    void *test_addr = (void *)CACHE_LL_L2MEM_NON_CACHE_ADDR((void *)foo_buf);
+    printf("Flash (DROM): Non-cacheable Execute operation | Address: %p\n", test_addr);
+    run_function(test_addr);
+}
+#endif
+
 // Check if the memory alignment gaps added to the heap are correctly configured
 #if CONFIG_SPIRAM_FETCH_INSTRUCTIONS && SOC_MMU_DI_VADDR_SHARED
 void test_spiram_xip_irom_alignment_reg_execute_violation(void)
@@ -264,6 +350,20 @@ void test_spiram_xip_irom_alignment_reg_execute_violation(void)
         printf("SPIRAM (IROM): IROM alignment gap not added into heap\n");
     }
 }
+
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+void test_non_cache_spiram_xip_irom_alignment_reg_execute_violation(void)
+{
+    extern int _instruction_reserved_end;
+    if (ALIGN_UP_TO_MMU_PAGE_SIZE((uint32_t)(&_instruction_reserved_end)) - (uint32_t)(&_instruction_reserved_end) >= 4) {
+        void *test_addr = (void *)CACHE_LL_L2MEM_NON_CACHE_ADDR(&_instruction_reserved_end + 1);
+        printf("SPIRAM (IROM): Non-cacheable Execute operation | Address: %p\n", test_addr);
+        run_function(test_addr);
+    } else {
+        printf("SPIRAM (IROM): Non-cacheable IROM alignment gap not added into heap\n");
+    }
+}
+#endif
 #endif /* CONFIG_SPIRAM_FETCH_INSTRUCTIONS && SOC_MMU_DI_VADDR_SHARED */
 #endif
 
@@ -279,6 +379,20 @@ void test_spiram_xip_drom_alignment_reg_execute_violation(void)
         printf("SPIRAM (DROM): DROM alignment gap not added into heap\n");
     }
 }
+
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+void test_non_cache_spiram_xip_drom_alignment_reg_execute_violation(void)
+{
+    extern int _rodata_reserved_end;
+    if (ALIGN_UP_TO_MMU_PAGE_SIZE((uint32_t)(&_rodata_reserved_end)) - (uint32_t)(&_rodata_reserved_end) >= 4) {
+        void *test_addr = (void *)CACHE_LL_L2MEM_NON_CACHE_ADDR(&_rodata_reserved_end + 0x4);
+        printf("SPIRAM (DROM): Non-cacheable Execute operation | Address: %p\n", test_addr);
+        run_function(test_addr);
+    } else {
+        printf("SPIRAM (DROM): Non-cacheable DROM alignment gap not added into heap\n");
+    }
+}
+#endif
 #endif /* CONFIG_SPIRAM_RODATA && !CONFIG_IDF_TARGET_ESP32S2 */
 
 #ifdef CONFIG_SOC_CPU_HAS_PMA
