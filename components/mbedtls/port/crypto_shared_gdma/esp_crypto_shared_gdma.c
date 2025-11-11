@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,14 +17,16 @@
 #include "soc/soc_caps.h"
 #include "sdkconfig.h"
 
-#ifdef SOC_AXI_DMA_EXT_MEM_ENC_ALIGNMENT
-#include "esp_flash_encrypt.h"
-#endif /* SOC_AXI_DMA_EXT_MEM_ENC_ALIGNMENT */
+#ifdef SOC_GDMA_EXT_MEM_ENC_ALIGNMENT
+#include "hal/efuse_hal.h"
+#endif /* SOC_GDMA_EXT_MEM_ENC_ALIGNMENT */
 
-#if SOC_AHB_GDMA_VERSION == 1
-#include "hal/gdma_ll.h"
-#elif SOC_AXI_GDMA_SUPPORTED
+#if SOC_AXI_GDMA_SUPPORTED
 #include "hal/axi_dma_ll.h"
+#elif SOC_AHB_GDMA_VERSION == 1
+#include "hal/gdma_ll.h"
+#elif SOC_AHB_GDMA_VERSION == 2
+#include "hal/ahb_dma_ll.h"
 #endif /* SOC_AHB_GDMA_VERSION */
 
 #define NEW_CHANNEL_TIMEOUT_MS  1000
@@ -89,7 +91,16 @@ static esp_err_t crypto_shared_gdma_init(void)
         .access_ext_mem = true, // crypto peripheral may want to access PSRAM
     };
     gdma_config_transfer(tx_channel, &transfer_cfg);
+
+    /* When using AHB-GDMA version 1, the max data burst size must be 0, otherwise buffers need to be aligned as well.
+     * Whereas, in case of the other GDMA versions, the RX max burst size is default enabled, but with default burst size of 4,
+     * but it case of Flash Encryption, the buffers can be allocated from the external memory, which requires 16 byte alignment.
+     * Thus, we set the max data burst size to 16, similar to the TX channel.
+     */
+#if SOC_AHB_GDMA_VERSION == 1 || SOC_AXI_GDMA_SUPPORTED // IDF-14335: SOC_AXI_GDMA_SUPPORTED might not be needed here
     transfer_cfg.max_data_burst_size = 0;
+#endif
+
     gdma_config_transfer(rx_channel, &transfer_cfg);
 
 #ifdef SOC_AES_SUPPORTED
@@ -156,7 +167,7 @@ esp_err_t esp_crypto_shared_gdma_start(const lldesc_t *input, const lldesc_t *ou
 
 /* The external memory ecc-aes access must be enabled when there exists
    at least one buffer in the DMA descriptors that resides in external memory. */
-#ifdef SOC_AXI_DMA_EXT_MEM_ENC_ALIGNMENT
+#if (SOC_GDMA_EXT_MEM_ENC_ALIGNMENT && SOC_AXI_GDMA_SUPPORTED)
 static bool check_dma_descs_need_ext_mem_ecc_aes_access(const crypto_dma_desc_t *dmadesc)
 {
     crypto_dma_desc_t* desc = (crypto_dma_desc_t*) dmadesc;
@@ -168,7 +179,7 @@ static bool check_dma_descs_need_ext_mem_ecc_aes_access(const crypto_dma_desc_t 
     }
     return false;
 }
-#endif /* SOC_AXI_DMA_EXT_MEM_ENC_ALIGNMENT */
+#endif /* (SOC_GDMA_EXT_MEM_ENC_ALIGNMENT && SOC_AXI_GDMA_SUPPORTED) */
 
 esp_err_t esp_crypto_shared_gdma_start_axi_ahb(const crypto_dma_desc_t *input, const crypto_dma_desc_t *output, gdma_trigger_peripheral_t peripheral)
 {
@@ -203,16 +214,19 @@ esp_err_t esp_crypto_shared_gdma_start_axi_ahb(const crypto_dma_desc_t *input, c
     /* tx channel is reset by gdma_connect(), also reset rx to ensure a known state */
     gdma_get_channel_id(rx_channel, &rx_ch_id);
 
-#if SOC_AHB_GDMA_VERSION == 1
-    gdma_ll_rx_reset_channel(&GDMA, rx_ch_id);
-#elif SOC_AXI_GDMA_SUPPORTED
+    // IDF-14335: Use gdma_reset() instead
+#if SOC_AXI_GDMA_SUPPORTED
     axi_dma_ll_rx_reset_channel(&AXI_DMA, rx_ch_id);
-#endif /* SOC_AHB_GDMA_VERSION */
+#elif SOC_AHB_GDMA_VERSION == 1
+    gdma_ll_rx_reset_channel(&GDMA, rx_ch_id);
+#elif SOC_AHB_GDMA_VERSION == 2
+    ahb_dma_ll_rx_reset_channel(&AHB_DMA, rx_ch_id);
+#endif /* SOC_AXI_GDMA_SUPPORTED */
 
 /* When GDMA operations are carried out using external memory with external memory encryption enabled,
    we need to enable AXI-DMA's AES-ECC mean access bit. */
-#if (SOC_AXI_DMA_EXT_MEM_ENC_ALIGNMENT)
-    if (esp_flash_encryption_enabled()) {
+#if (SOC_GDMA_EXT_MEM_ENC_ALIGNMENT && SOC_AXI_GDMA_SUPPORTED)
+    if (efuse_hal_flash_encryption_enabled()) {
         int tx_ch_id = 0;
         gdma_get_channel_id(tx_channel, &tx_ch_id);
 
@@ -224,7 +238,7 @@ esp_err_t esp_crypto_shared_gdma_start_axi_ahb(const crypto_dma_desc_t *input, c
             axi_dma_ll_tx_enable_ext_mem_ecc_aes_access(&AXI_DMA, tx_ch_id, false);
         }
     }
-#endif /* SOC_AXI_DMA_EXT_MEM_ENC_ALIGNMENT */
+#endif /* SOC_GDMA_EXT_MEM_ENC_ALIGNMENT */
 
     gdma_start(tx_channel, (intptr_t)input);
     gdma_start(rx_channel, (intptr_t)output);
