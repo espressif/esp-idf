@@ -207,7 +207,7 @@ esp_err_t sdmmc_host_io_int_enable(int slot);
  *  - ESP_OK on success (interrupt received)
  *  - ESP_ERR_TIMEOUT if the interrupt did not occur within timeout_ticks
  */
-esp_err_t sdmmc_host_io_int_wait(int slot, TickType_t timeout_ticks);
+esp_err_t sdmmc_host_io_int_wait(int slot, uint32_t timeout_ticks);
 
 /**
  * @brief Disable SDMMC host and release allocated resources gracefully

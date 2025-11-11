@@ -516,7 +516,7 @@ esp_err_t uart_intr_config(uart_port_t uart_num, const uart_intr_config_t *intr_
  *     - ESP_FAIL Parameter error
  *     - ESP_ERR_TIMEOUT  Timeout
  */
-esp_err_t uart_wait_tx_done(uart_port_t uart_num, TickType_t ticks_to_wait);
+esp_err_t uart_wait_tx_done(uart_port_t uart_num, uint32_t ticks_to_wait);
 
 /**
  * @brief Send data to the UART port from a given buffer and length.
@@ -587,7 +587,7 @@ int uart_write_bytes_with_break(uart_port_t uart_num, const void* src, size_t si
  *     - (-1) Error
  *     - OTHERS (>=0) The number of bytes read from UART buffer
  */
-int uart_read_bytes(uart_port_t uart_num, void* buf, uint32_t length, TickType_t ticks_to_wait);
+int uart_read_bytes(uart_port_t uart_num, void* buf, uint32_t length, uint32_t ticks_to_wait);
 
 /**
  * @brief Alias of uart_flush_input.

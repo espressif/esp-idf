@@ -52,6 +52,11 @@ RTC Subsystem Control
 
 Low power modules usually share some common resources like interrupt number. To avoid conflicts, some private APIs are created in the ``esp_private/rtc_ctrl.h`` header file to manage these shared resources with ease. There used to be another header file ``driver/rtc_cntl.h`` for the same purpose, which is now removed.
 
+Removal of FreeRTOS Dependencies from Driver Header Files
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Starting from v6.0, to improve the portability of IDF drivers, all public driver header files no longer include operating-system–specific (FreeRTOS) headers. Therefore, application code that previously relied on this implicit inclusion must explicitly include the corresponding FreeRTOS headers when using v6.0 or later.
+
 ADC
 ---
 
