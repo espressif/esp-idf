@@ -230,7 +230,7 @@
 #define SOC_GDMA_SUPPORT_CRC                1
 #define SOC_GDMA_SUPPORT_ETM                1
 #define SOC_GDMA_SUPPORT_SLEEP_RETENTION    1
-#define SOC_AXI_DMA_EXT_MEM_ENC_ALIGNMENT   (16)
+#define SOC_GDMA_EXT_MEM_ENC_ALIGNMENT   (16)
 
 /*-------------------------- GPIO CAPS ---------------------------------------*/
 // ESP32-P4 has 1 GPIO peripheral
