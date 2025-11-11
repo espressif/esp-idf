@@ -223,7 +223,7 @@ void bt_mesh_ble_ext_adv_report(tBTM_BLE_EXT_ADV_REPORT *ext_adv_report)
         memcpy(adv_rpt.dir_addr, ext_adv_report->dir_addr, BLE_MESH_ADDR_LEN);
 
         adv_rpt.addr_type           = ext_adv_report->addr_type;
-        adv_rpt.data                = ext_adv_report->adv_data;
+        adv_rpt.data                = ext_adv_report->adv_data_len ? ext_adv_report->adv_data : NULL;
         adv_rpt.length              = ext_adv_report->adv_data_len;
         adv_rpt.rssi                = ext_adv_report->rssi;
         adv_rpt.event_type          = ext_adv_report->event_type;
