@@ -322,15 +322,16 @@ TEST_CASE("allocation with invalid capability should also trigger the alloc fail
 TEST_CASE("RTC memory should be lowest priority and its free size should be big enough", "[heap]")
 {
     const size_t allocation_size = 1024 * 4;
-    void *ptr = NULL;
-    size_t free_size = 0;
 
-    ptr = heap_caps_malloc(allocation_size, MALLOC_CAP_DEFAULT);
+    void *ptr = heap_caps_malloc(allocation_size, MALLOC_CAP_DEFAULT);
     TEST_ASSERT_NOT_NULL(ptr);
     TEST_ASSERT(!esp_ptr_in_rtc_dram_fast(ptr));
 
-    free_size = heap_caps_get_free_size(MALLOC_CAP_RTCRAM);
-    TEST_ASSERT_GREATER_OR_EQUAL(1024 * 4, free_size);
+    const size_t max_rtc_size = SOC_RTC_DATA_HIGH - SOC_RTC_DATA_LOW;
+    const size_t min_rtc_size_since_init = heap_caps_get_minimum_free_size(MALLOC_CAP_RTCRAM);
+    const size_t rtc_free_size = heap_caps_get_free_size(MALLOC_CAP_RTCRAM);
+    TEST_ASSERT_EQUAL(min_rtc_size_since_init, rtc_free_size);
+    TEST_ASSERT_GREATER_OR_EQUAL((max_rtc_size * 8) / 10, rtc_free_size);
 
     free(ptr);
 }
