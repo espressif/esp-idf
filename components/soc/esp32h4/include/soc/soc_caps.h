@@ -175,6 +175,8 @@
 #define SOC_HP_CPU_HAS_MULTIPLE_CORES   1   // Convenience boolean macro used to determine if a target has multiple cores.
 #define SOC_CPU_HAS_LOCKUP_RESET        1
 
+#define SOC_CPU_ZCMP_WORKAROUND         1
+
 /*-------------------------- DMA Common CAPS ----------------------------------------*/
 #define SOC_DMA_CAN_ACCESS_FLASH 1 /*!< DMA can access Flash memory */
 
