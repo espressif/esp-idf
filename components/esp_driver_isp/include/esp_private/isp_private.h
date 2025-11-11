@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +9,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <esp_types.h>
+#include <stdatomic.h>
 #include "sdkconfig.h"
 #include "esp_attr.h"
 #include "esp_log.h"
@@ -27,8 +28,12 @@
 #include "soc/isp_periph.h"
 #endif
 
+// Helper macros for atomic operations to ensure Clang compatibility
 #ifdef __cplusplus
-extern "C" {
+#include <atomic>
+#define ISP_ATOMIC_TYPE(T) std::atomic<T>
+#else
+#define ISP_ATOMIC_TYPE(T) _Atomic T
 #endif
 
 #if CONFIG_ISP_ISR_IRAM_SAFE || CONFIG_ISP_CTRL_FUNC_IN_IRAM
@@ -37,6 +42,10 @@ extern "C" {
 #else
 #define ISP_INTR_ALLOC_FLAGS    (ESP_INTR_FLAG_INTRDISABLED)
 #define ISP_MEM_ALLOC_CAPS      MALLOC_CAP_DEFAULT
+#endif
+
+#ifdef __cplusplus
+extern "C" {
 #endif
 
 typedef enum {
@@ -59,7 +68,7 @@ typedef struct isp_processor_t {
     int                         csi_brg_id;
     void                        *csi_brg_hw;
 #endif
-    isp_fsm_t                   isp_fsm;
+    ISP_ATOMIC_TYPE(isp_fsm_t)  isp_fsm;
     portMUX_TYPE                spinlock;
     color_space_pixel_format_t  in_color_format;
     color_space_pixel_format_t  out_color_format;
@@ -72,12 +81,15 @@ typedef struct isp_processor_t {
     isp_awb_ctlr_t              awb_ctlr;
     isp_ae_ctlr_t               ae_ctlr;
     isp_hist_ctlr_t             hist_ctlr;
-    isp_fsm_t                   bf_fsm;
-    isp_fsm_t                   demosaic_fsm;
-    isp_fsm_t                   sharpen_fsm;
-    isp_fsm_t                   color_fsm;
-    isp_fsm_t                   lsc_fsm;
-    isp_fsm_t                   blc_fsm;
+    ISP_ATOMIC_TYPE(isp_fsm_t)  bf_fsm;
+    ISP_ATOMIC_TYPE(isp_fsm_t)  blc_fsm;
+    ISP_ATOMIC_TYPE(isp_fsm_t)  ccm_fsm;
+    ISP_ATOMIC_TYPE(isp_fsm_t)  color_fsm;
+    ISP_ATOMIC_TYPE(isp_fsm_t)  demosaic_fsm;
+    ISP_ATOMIC_TYPE(isp_fsm_t)  gamma_fsm;
+    ISP_ATOMIC_TYPE(isp_fsm_t)  lsc_fsm;
+    ISP_ATOMIC_TYPE(isp_fsm_t)  sharpen_fsm;
+    ISP_ATOMIC_TYPE(isp_fsm_t)  wbg_fsm;
     esp_isp_evt_cbs_t           cbs;
     void                        *user_data;
 

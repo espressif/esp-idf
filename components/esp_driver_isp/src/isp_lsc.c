@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -28,7 +28,7 @@ static const char *TAG = "ISP_LSC";
 esp_err_t esp_isp_lsc_allocate_gain_array(isp_proc_handle_t isp_proc, esp_isp_lsc_gain_array_t *gain_array, size_t *out_array_size_per_channel)
 {
     ESP_RETURN_ON_FALSE(isp_proc && gain_array && out_array_size_per_channel, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
-    ESP_RETURN_ON_FALSE(isp_proc->lsc_fsm == ISP_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "lsc is enabled already");
+    ESP_RETURN_ON_FALSE(atomic_load(&isp_proc->lsc_fsm) == ISP_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "lsc is enabled already");
 
     int num_grids_x_max = ISP_LSC_GET_GRIDS(ISP_LL_HSIZE_MAX);
     int num_grids_y_max = ISP_LSC_GET_GRIDS(ISP_LL_VSIZE_MAX);
@@ -76,10 +76,10 @@ esp_err_t esp_isp_lsc_configure(isp_proc_handle_t isp_proc, const esp_isp_lsc_co
     for (int y = 0; y < num_grids_y; y++) {
         for (int x = 0; x < num_grids_x; x++) {
             int i = y * num_grids_x + x;
-            isp_ll_lut_set_wdata_r_gr(isp_proc->hal.hw, config->gain_array->gain_r[i], config->gain_array->gain_gr[i]);
-            isp_ll_lut_set_cmd(isp_proc->hal.hw, true, false, i, ISP_LL_LUT_LSC);
-            isp_ll_lut_set_wdata_gb_b(isp_proc->hal.hw, config->gain_array->gain_gb[i], config->gain_array->gain_b[i]);
-            isp_ll_lut_set_cmd(isp_proc->hal.hw, true, true, i, ISP_LL_LUT_LSC);
+            isp_ll_lut_lsc_set_wdata_r_gr(isp_proc->hal.hw, config->gain_array->gain_r[i], config->gain_array->gain_gr[i]);
+            isp_ll_lut_lsc_set_cmd(isp_proc->hal.hw, true, false, i, ISP_LL_LUT_LSC);
+            isp_ll_lut_lsc_set_wdata_gb_b(isp_proc->hal.hw, config->gain_array->gain_gb[i], config->gain_array->gain_b[i]);
+            isp_ll_lut_lsc_set_cmd(isp_proc->hal.hw, true, true, i, ISP_LL_LUT_LSC);
         }
     }
 
@@ -89,10 +89,10 @@ esp_err_t esp_isp_lsc_configure(isp_proc_handle_t isp_proc, const esp_isp_lsc_co
 esp_err_t esp_isp_lsc_enable(isp_proc_handle_t isp_proc)
 {
     ESP_RETURN_ON_FALSE(isp_proc, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
-    ESP_RETURN_ON_FALSE(isp_proc->lsc_fsm == ISP_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "lsc is enabled already");
+    isp_fsm_t expected_fsm = ISP_FSM_INIT;
+    ESP_RETURN_ON_FALSE(atomic_compare_exchange_strong(&isp_proc->lsc_fsm, &expected_fsm, ISP_FSM_ENABLE), ESP_ERR_INVALID_STATE, TAG, "lsc is enabled already");
 
     isp_ll_lsc_enable(isp_proc->hal.hw, true);
-    isp_proc->lsc_fsm = ISP_FSM_ENABLE;
 
     return ESP_OK;
 }
@@ -100,10 +100,10 @@ esp_err_t esp_isp_lsc_enable(isp_proc_handle_t isp_proc)
 esp_err_t esp_isp_lsc_disable(isp_proc_handle_t isp_proc)
 {
     ESP_RETURN_ON_FALSE(isp_proc, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
-    ESP_RETURN_ON_FALSE(isp_proc->lsc_fsm == ISP_FSM_ENABLE, ESP_ERR_INVALID_STATE, TAG, "lsc isn't enabled yet");
+    isp_fsm_t expected_fsm = ISP_FSM_ENABLE;
+    ESP_RETURN_ON_FALSE(atomic_compare_exchange_strong(&isp_proc->lsc_fsm, &expected_fsm, ISP_FSM_INIT), ESP_ERR_INVALID_STATE, TAG, "lsc isn't enabled yet");
 
     isp_ll_lsc_enable(isp_proc->hal.hw, false);
-    isp_proc->lsc_fsm = ISP_FSM_INIT;
 
     return ESP_OK;
 }
