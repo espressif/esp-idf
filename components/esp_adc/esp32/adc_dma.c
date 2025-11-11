@@ -14,7 +14,7 @@
 
 #include "hal/i2s_types.h"
 #include "driver/i2s_types.h"
-#include "soc/i2s_periph.h"
+#include "hal/i2s_periph.h"
 #include "esp_private/i2s_platform.h"
 #include "esp_private/adc_dma.h"
 #include "hal/i2s_ll.h"

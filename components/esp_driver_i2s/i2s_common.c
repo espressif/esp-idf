@@ -21,7 +21,7 @@
 #endif
 #include "esp_log.h"
 
-#include "soc/i2s_periph.h"
+#include "hal/i2s_periph.h"
 #include "soc/soc_caps.h"
 #include "soc/soc_caps_full.h"
 #include "hal/i2s_hal.h"
