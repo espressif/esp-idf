@@ -328,7 +328,7 @@ static inline void touch_ll_set_init_charge_voltage(uint32_t touch_num, touch_in
  */
 static inline void touch_ll_enable_channel_mask(uint16_t enable_mask)
 {
-    SENS.sar_touch_enable.touch_pad_worken = enable_mask;
+    SENS.sar_touch_enable.touch_pad_worken = TOUCH_LL_BITS_SWAP(enable_mask);
 }
 
 /**
