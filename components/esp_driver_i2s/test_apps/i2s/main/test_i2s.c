@@ -20,7 +20,7 @@
 #include "unity.h"
 #include "math.h"
 #include "esp_rom_gpio.h"
-#include "soc/i2s_periph.h"
+#include "hal/i2s_periph.h"
 #include "driver/i2s_std.h"
 #if SOC_I2S_SUPPORTS_PDM
 #include "driver/i2s_pdm.h"

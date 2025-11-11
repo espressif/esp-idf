@@ -165,6 +165,7 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_event/include/esp_event.h \
     $(PROJECT_PATH)/components/esp_hal_timg/include/hal/timer_types.h \
     $(PROJECT_PATH)/components/esp_hal_i2c/include/hal/i2c_types.h \
+    $(PROJECT_PATH)/components/esp_hal_i2s/include/hal/i2s_types.h \
     $(PROJECT_PATH)/components/esp_hal_jpeg/include/hal/jpeg_types.h \
     $(PROJECT_PATH)/components/esp_hal_lcd/include/hal/lcd_types.h \
     $(PROJECT_PATH)/components/esp_hal_mspi/include/hal/esp_flash_err.h \
@@ -257,7 +258,6 @@ INPUT = \
     $(PROJECT_PATH)/components/hal/include/hal/color_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/dac_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/gpio_types.h \
-    $(PROJECT_PATH)/components/hal/include/hal/i2s_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/ledc_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/mcpwm_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/parlio_types.h \

@@ -16,7 +16,9 @@ else()
 endif()
 
 # Force this project to use only G0 components
-set(all_g0_components esp_rom soc hal esp_common main)  # also <arch>, i.e. xtensa or riscv, will be added below
+# also <arch>, i.e. xtensa or riscv, will be added below
+# TODO: IDF-14079 remove esp_hal_i2s dependency when ADC hal is graduated from the common hal component
+set(all_g0_components esp_rom soc hal esp_common main esp_hal_i2s)
 set(COMPONENTS ${all_g0_components})
 
 # By default, common components include some G1+ components. Override common components to only have G0 ones

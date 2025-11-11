@@ -19,7 +19,6 @@
 #include "hal/cache_hal.h"
 #include "hal/cache_ll.h"
 #include "soc/soc_caps.h"
-#include "soc/i2s_periph.h"
 #include "soc/spi_periph.h"
 #include "soc/parlio_periph.h"
 #include "esp_attr.h"
@@ -96,20 +95,6 @@ static bool test_parlio_rx_timeout_callback(parlio_rx_unit_handle_t rx_unit, con
     return false;
 }
 
-static void connect_signal_internally(uint32_t gpio, uint32_t sigo, uint32_t sigi)
-{
-    gpio_config_t gpio_conf = {
-        .pin_bit_mask = BIT64(gpio),
-        .mode = GPIO_MODE_INPUT_OUTPUT,
-        .intr_type = GPIO_INTR_DISABLE,
-        .pull_down_en = GPIO_PULLDOWN_DISABLE,
-        .pull_up_en = GPIO_PULLUP_DISABLE,
-    };
-    gpio_config(&gpio_conf);
-    esp_rom_gpio_connect_out_signal(gpio, sigo, false, false);
-    esp_rom_gpio_connect_in_signal(gpio, sigi, false);
-}
-
 #define TEST_EOF_DATA_LEN    64
 
 static void pulse_delimiter_sender_task_i2s(void *args)
@@ -155,17 +140,6 @@ static void pulse_delimiter_sender_task_i2s(void *args)
     // Transmission will start after enable the tx channel
     TEST_ESP_OK(i2s_channel_enable(tx_chan));
 
-    // Connect GPIO signals
-    connect_signal_internally(TEST_CLK_GPIO,
-                              i2s_periph_signal[TEST_I2S_PORT].m_tx_bck_sig,
-                              parlio_periph_signals.groups[0].rx_units[0].clk_in_sig);
-    connect_signal_internally(TEST_VALID_GPIO,
-                              i2s_periph_signal[TEST_I2S_PORT].m_tx_ws_sig,
-                              parlio_periph_signals.groups[0].rx_units[0].data_sigs[TEST_VALID_SIG]);
-    connect_signal_internally(TEST_DATA0_GPIO,
-                              i2s_periph_signal[TEST_I2S_PORT].data_out_sig,
-                              parlio_periph_signals.groups[0].rx_units[0].data_sigs[0]);
-
     while (!((*task_flags) & TEST_TASK_FINISHED_BIT)) {
         vTaskDelay(pdMS_TO_TICKS(1));
         *task_flags |= TEST_TASK_DATA_READY_BIT;
@@ -192,6 +166,20 @@ static void cs_low(spi_transaction_t *trans)
 }
 
 #define TEST_SPI_CLK_FREQ   100000
+
+static void connect_signal_internally(uint32_t gpio, uint32_t sigo, uint32_t sigi)
+{
+    gpio_config_t gpio_conf = {
+        .pin_bit_mask = BIT64(gpio),
+        .mode = GPIO_MODE_INPUT_OUTPUT,
+        .intr_type = GPIO_INTR_DISABLE,
+        .pull_down_en = GPIO_PULLDOWN_DISABLE,
+        .pull_up_en = GPIO_PULLUP_DISABLE,
+    };
+    gpio_config(&gpio_conf);
+    esp_rom_gpio_connect_out_signal(gpio, sigo, false, false);
+    esp_rom_gpio_connect_in_signal(gpio, sigi, false);
+}
 
 static void level_delimiter_sender_task_spi(void *args)
 {

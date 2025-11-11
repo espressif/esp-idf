@@ -18,7 +18,7 @@
 #include "hal/i2s_hal.h"
 #include "hal/i2s_types.h"
 #include "hal/clk_tree_ll.h"
-#include "soc/i2s_periph.h"
+#include "hal/i2s_periph.h"
 #include "../dac_priv_dma.h"
 #include "esp_private/i2s_platform.h"
 #include "esp_private/esp_clk.h"
