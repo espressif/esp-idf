@@ -207,7 +207,8 @@ esp_err_t gpio_output_disable(gpio_num_t gpio_num)
 {
     GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
     gpio_hal_output_disable(gpio_context.gpio_hal, gpio_num);
-    gpio_hal_set_output_enable_ctrl(gpio_context.gpio_hal, gpio_num, false, false); // so that output disable could take effect
+    gpio_hal_set_output_enable_ctrl(gpio_context.gpio_hal, gpio_num, false, false); // so that output disable could always take effect when func sel is GPIO
+    gpio_hal_func_sel(gpio_context.gpio_hal, gpio_num, PIN_FUNC_GPIO); // otherwise the oe can only be controlled by peripheral
     return ESP_OK;
 }
 
@@ -216,6 +217,7 @@ esp_err_t gpio_output_enable(gpio_num_t gpio_num)
     GPIO_CHECK(GPIO_IS_VALID_OUTPUT_GPIO(gpio_num), "GPIO output gpio_num error", ESP_ERR_INVALID_ARG);
     gpio_hal_matrix_out_default(gpio_context.gpio_hal, gpio_num); // No peripheral output signal routed to the pin, just as a simple GPIO output
     gpio_hal_output_enable(gpio_context.gpio_hal, gpio_num);
+    gpio_hal_func_sel(gpio_context.gpio_hal, gpio_num, PIN_FUNC_GPIO); // otherwise the oe can only be controlled by peripheral
     return ESP_OK;
 }
 
@@ -1085,9 +1087,10 @@ esp_err_t gpio_dump_io_configuration(FILE *out_stream, uint64_t io_bit_mask)
         gpio_get_io_config(gpio_num, &io_config);
 
         // When the IO is used as a simple GPIO output, oe signal can only be controlled by the oe register
-        // When the IO is not used as a simple GPIO output, oe signal could be controlled by the peripheral
+        // When the IO connects to a peripheral signal through GPIO Matrix, oe signal can be controlled by the peripheral or the oe register (switch by oe_ctrl_by_periph)
+        // When the IO connects to a peripheral signal through IOMUX, oe signal can only be controlled by the peripheral
         const char *oe_str = io_config.oe ? "1" : "0";
-        if (io_config.sig_out != SIG_GPIO_OUT_IDX && io_config.oe_ctrl_by_periph) {
+        if (io_config.fun_sel != PIN_FUNC_GPIO || io_config.oe_ctrl_by_periph) {
             oe_str = "[periph_sig_ctrl]";
         }
 
