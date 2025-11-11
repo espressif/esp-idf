@@ -990,7 +990,7 @@ static esp_err_t s_verify_write(esp_flash_t *chip, uint32_t verify_address, uint
 {
     esp_err_t err = ESP_FAIL;
     uint8_t verify_buffer[VERIFY_BUF_LEN];
-    uint32_t *val_in_flash = (uint32_t *)verify_buffer;
+    const uint8_t *expected_bytes = (const uint8_t *)expected_buf;
 
     while (remain_verify_len) {
         uint32_t this_len = MIN(remain_verify_len, VERIFY_BUF_LEN);
@@ -1005,16 +1005,35 @@ static esp_err_t s_verify_write(esp_flash_t *chip, uint32_t verify_address, uint
             return err;
         }
 
-        for (int r = 0; r < this_len / sizeof(uint32_t); r++) {
-            if (val_in_flash[r] != expected_buf[r]) {
+        // Process 4-byte aligned chunks for performance
+        uint32_t *val_in_flash = (uint32_t *)verify_buffer;
+        const uint32_t *expected_words = (const uint32_t *)expected_bytes;
+        uint32_t word_count = this_len / sizeof(uint32_t);
+
+        for (uint32_t r = 0; r < word_count; r++) {
+            if (val_in_flash[r] != expected_words[r]) {
 #if CONFIG_SPI_FLASH_LOG_FAILED_WRITE
-                ESP_DRAM_LOGE(TAG, "Bad write at %d offset: 0x%x, expected: 0x%08x, readback: 0x%08x", r, verify_address + r, expected_buf[r], val_in_flash[r]);
+                ESP_DRAM_LOGE(TAG, "Bad write at offset: 0x%x, expected: 0x%08x, readback: 0x%08x", verify_address + r * sizeof(uint32_t), expected_words[r], val_in_flash[r]);
 #endif  //#if CONFIG_SPI_FLASH_LOG_FAILED_WRITE
                 return ESP_FAIL;
             }
         }
 
-        expected_buf = (uint32_t *)((void *)expected_buf + this_len);
+        // Process remaining bytes that don't align to 4-byte boundary
+        uint32_t remaining_bytes = this_len % sizeof(uint32_t);
+        if (remaining_bytes > 0) {
+            uint32_t byte_offset = word_count * sizeof(uint32_t);
+            for (uint32_t i = 0; i < remaining_bytes; i++) {
+                if (verify_buffer[byte_offset + i] != expected_bytes[byte_offset + i]) {
+#if CONFIG_SPI_FLASH_LOG_FAILED_WRITE
+                    ESP_DRAM_LOGE(TAG, "Bad write at offset: 0x%x, expected: 0x%02x, readback: 0x%02x", verify_address + byte_offset + i, expected_bytes[byte_offset + i], verify_buffer[byte_offset + i]);
+#endif  //#if CONFIG_SPI_FLASH_LOG_FAILED_WRITE
+                    return ESP_FAIL;
+                }
+            }
+        }
+
+        expected_bytes += this_len;
         remain_verify_len -= this_len;
         verify_address += this_len;
     }
