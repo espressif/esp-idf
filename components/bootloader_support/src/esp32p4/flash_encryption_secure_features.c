@@ -11,6 +11,7 @@
 #include "esp_efuse_table.h"
 #include "esp_log.h"
 #include "sdkconfig.h"
+#include "hal/key_mgr_hal.h"
 #include "hal/key_mgr_ll.h"
 #include "hal/mspi_ll.h"
 
@@ -61,7 +62,7 @@ esp_err_t esp_flash_encryption_enable_key_mgr(void)
     };
 
     // Force Key Manager to use eFuse key for XTS-AES operation
-    key_mgr_hal_set_key_usage(ESP_KEY_MGR_XTS_AES_128_KEY, ESP_KEY_MGR_USE_EFUSE_KEY);
+    key_mgr_hal_set_key_usage(ESP_KEY_MGR_FLASH_XTS_AES_KEY, ESP_KEY_MGR_USE_EFUSE_KEY);
 
     return ESP_OK;
 }
