@@ -15,7 +15,9 @@
 #include <unistd.h>
 
 #include "esp_random.h"
+#include "sdkconfig.h"
 
+#if CONFIG_LIBC_NEWLIB
 // NOTE: Remove compile-time warnings for the below newlib-provided functions
 struct _reent *__getreent(void)
 {
@@ -68,6 +70,54 @@ int _getentropy_r(struct _reent *r, void *buffer, size_t length)
     esp_fill_random(buffer, length);
     return 0;
 }
+#else
+int fstat(int fd, struct stat *st)
+{
+    errno = ENOSYS;
+    return -1;
+}
+
+int close(int fd)
+{
+    errno = ENOSYS;
+    return -1;
+}
+
+off_t lseek(int fd, off_t offset, int whence)
+{
+    errno = ENOSYS;
+    return -1;
+}
+
+ssize_t read(int fd, void *ptr, size_t len)
+{
+    errno = ENOSYS;
+    return -1;
+}
+
+ssize_t write(int fd, const void *ptr, size_t len)
+{
+    errno = ENOSYS;
+    return -1;
+}
+
+int getpid(void)
+{
+    return 1;
+}
+
+int kill(int pid, int sig)
+{
+    errno = ENOSYS;
+    return -1;
+}
+
+int getentropy(void *buffer, size_t length)
+{
+    esp_fill_random(buffer, length);
+    return 0;
+}
+#endif // CONFIG_LIBC_NEWLIB
 
 void *pthread_getspecific(pthread_key_t key)
 {

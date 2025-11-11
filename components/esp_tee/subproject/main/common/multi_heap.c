@@ -3,6 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <assert.h>
 #include <stdio.h>
 #include <stdbool.h>
 #include "esp_rom_tlsf.h"
@@ -151,6 +152,33 @@ void *calloc(size_t n, size_t size)
     return esp_tee_heap_calloc(n, size);
 }
 
+#if CONFIG_LIBC_PICOLIBC
+void *realloc(void* ptr, size_t size)
+{
+    if (tee_heap == NULL) {
+        return NULL;
+    }
+
+    if (ptr == NULL) {
+        return esp_tee_heap_malloc(heap, size);
+    }
+
+    size_t previous_block_size = tlsf_block_size(ptr);
+    void *result = tlsf_realloc(tee_heap->heap_data, ptr, size);
+    if (result) {
+        /* No need to subtract the tlsf_alloc_overhead() as it has already
+         * been subtracted when allocating the block at first with malloc */
+        tee_heap->free_bytes += previous_block_size;
+        tee_heap->free_bytes -= tlsf_block_size(result);
+        if (tee_heap->free_bytes < tee_heap->minimum_free_bytes) {
+            tee_heap->minimum_free_bytes = tee_heap->free_bytes;
+        }
+    }
+
+    return result;
+}
+#endif
+
 void free(void *ptr)
 {
     esp_tee_heap_free(ptr);
@@ -205,4 +233,11 @@ void *heap_caps_aligned_calloc(size_t alignment, size_t n, size_t size, uint32_t
         memset(ptr, 0x00, reg_size);
     }
     return ptr;
+}
+
+/* No-op function, used to force linking this file,
+   instead of the heap implementation from libc.
+ */
+void esp_tee_include_heap_impl(void)
+{
 }
