@@ -146,7 +146,11 @@ void app_main(void)
         .clk_src = CAM_CLK_SRC_DEFAULT,
         .h_res = CONFIG_EXAMPLE_CAM_HRES,
         .v_res = CONFIG_EXAMPLE_CAM_VRES,
+#if CONFIG_EXAMPLE_CAM_INPUT_FORMAT_YUV422
+        .input_data_color_type = CAM_CTLR_COLOR_YUV422,
+#else
         .input_data_color_type = CAM_CTLR_COLOR_RGB565,
+#endif
         .dma_burst_size = 64,
         .pin = &pin_cfg,
         .bk_buffer_dis = 1,
@@ -199,6 +203,20 @@ void app_main(void)
 
     //--------Enable and start Camera Controller----------//
     ESP_ERROR_CHECK(esp_cam_ctlr_enable(cam_handle));
+
+#if CONFIG_EXAMPLE_CAM_INPUT_FORMAT_YUV422
+    ESP_LOGI(TAG, "Configure format conversion: YUV422 -> RGB565");
+    // Configure format conversion
+    const cam_ctlr_format_conv_config_t conv_cfg = {
+        .src_format = CAM_CTLR_COLOR_YUV422,      // Source format: YUV422
+        .dst_format = CAM_CTLR_COLOR_RGB565,      // Destination format: RGB565
+        .conv_std = COLOR_CONV_STD_RGB_YUV_BT601,
+        .data_width = 8,
+        .input_range = COLOR_RANGE_LIMIT,
+        .output_range = COLOR_RANGE_LIMIT,
+    };
+    ESP_ERROR_CHECK(esp_cam_ctlr_format_conversion(cam_handle, &conv_cfg));
+#endif
 
     if (esp_cam_ctlr_start(cam_handle) != ESP_OK) {
         ESP_LOGE(TAG, "Driver start fail");
