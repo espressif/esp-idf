@@ -10,7 +10,7 @@ extern "C" {
 
 #include "esp_efuse.h"
 
-// md5_digest_table 39c442690c2273d557b5bb0db99fbe04
+// md5_digest_table 00c61e1122b40bab1153117e162a713c
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -145,7 +145,7 @@ extern const esp_efuse_desc_t* ESP_EFUSE_SEC_DPA_LEVEL[];
 extern const esp_efuse_desc_t* ESP_EFUSE_XTS_DPA_PSEUDO_LEVEL[];
 extern const esp_efuse_desc_t* ESP_EFUSE_XTS_DPA_CLK_ENABLE[];
 extern const esp_efuse_desc_t* ESP_EFUSE_ECC_FORCE_CONST_TIME[];
-extern const esp_efuse_desc_t* ESP_EFUSE_ECDSA_P384_ENABLE[];
+extern const esp_efuse_desc_t* ESP_EFUSE_SECURE_BOOT_SHA384_EN[];
 extern const esp_efuse_desc_t* ESP_EFUSE_SECURE_BOOT_EN[];
 extern const esp_efuse_desc_t* ESP_EFUSE_SECURE_BOOT_AGGRESSIVE_REVOKE[];
 extern const esp_efuse_desc_t* ESP_EFUSE_KM_DISABLE_DEPLOY_MODE[];

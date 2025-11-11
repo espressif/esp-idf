@@ -229,10 +229,10 @@ typedef union {
          *  0: Disable.
          */
         uint32_t ecc_force_const_time:1;
-        /** ecdsa_p384_enable : RO; bitpos: [4]; default: 0;
-         *  Represents if the chip supports ECDSA P384
+        /** secure_boot_sha384_en : RO; bitpos: [4]; default: 0;
+         *  Represents if the chip supports Secure Boot using SHA-384
          */
-        uint32_t ecdsa_p384_enable:1;
+        uint32_t secure_boot_sha384_en:1;
         /** secure_boot_en : RO; bitpos: [5]; default: 0;
          *  Represents whether secure boot is enabled or disabled.
          *  1: enabled
@@ -873,10 +873,10 @@ typedef union {
          *  Represents the programming error of EFUSE_ECC_FORCE_CONST_TIME
          */
         uint32_t ecc_force_const_time_err:1;
-        /** ecdsa_p384_enable_err : RO; bitpos: [4]; default: 0;
-         *  Represents the programming error of EFUSE_ECDSA_P384_ENABLE
+        /** secure_boot_sha384_en_err : RO; bitpos: [4]; default: 0;
+         *  Represents the programming error of EFUSE_secure_boot_sha384_en
          */
-        uint32_t ecdsa_p384_enable_err:1;
+        uint32_t secure_boot_sha384_en_err:1;
         /** secure_boot_en_err : RO; bitpos: [5]; default: 0;
          *  Represents the programming error of EFUSE_SECURE_BOOT_EN
          */

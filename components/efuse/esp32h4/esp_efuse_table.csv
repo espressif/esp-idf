@@ -109,7 +109,7 @@ SEC_DPA_LEVEL,                                   EFUSE_BLK0,  94,   2, [] Repres
 XTS_DPA_PSEUDO_LEVEL,                            EFUSE_BLK0,  96,   2, [] Represents the pseudo round level of xts-aes anti-dpa attack. 3: High. 2: Moderate 1. Low 0: Disabled
 XTS_DPA_CLK_ENABLE,                              EFUSE_BLK0,  98,   1, [] Represents whether xts-aes anti-dpa attack clock is enabled. 1. Enable. 0: Disable.
 ECC_FORCE_CONST_TIME,                            EFUSE_BLK0,  99,   1, [] Represents whether to force ecc to use const-time calculation mode.  1: Enable.  0: Disable
-ECDSA_P384_ENABLE,                               EFUSE_BLK0, 100,   1, [] Represents if the chip supports ECDSA P384
+SECURE_BOOT_SHA384_EN,                           EFUSE_BLK0, 100,   1, [] Represents if the chip supports Secure Boot using SHA-384
 SECURE_BOOT_EN,                                  EFUSE_BLK0, 101,   1, [] Represents whether secure boot is enabled or disabled. 1: enabled 0: disabled
 SECURE_BOOT_AGGRESSIVE_REVOKE,                   EFUSE_BLK0, 102,   1, [] Represents whether revoking aggressive secure boot is enabled or disabled. 1: enabled. 0: disabled
 KM_DISABLE_DEPLOY_MODE,                          EFUSE_BLK0, 103,   5, [] Represents whether the new key deployment of key manager is disabled. Bit0: Represents whether the new ECDSA key deployment is disabled0: Enabled1: DisabledBit1: Represents whether the new XTS-AES (flash and PSRAM) key deployment is disabled0: Enabled1: DisabledBit2: Represents whether the new HMAC key deployment is disabled0: Enabled1: DisabledBit3: Represents whether the new DS key deployment is disabled0: Enabled1: Disabled
