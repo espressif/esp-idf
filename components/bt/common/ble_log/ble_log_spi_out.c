@@ -41,7 +41,14 @@
 #define SPI_OUT_LOG_STR_BUF_SIZE                (100)
 #define SPI_OUT_MALLOC(size)                    heap_caps_malloc(size, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
 #define SPI_OUT_TASK_PRIORITY                   (ESP_TASK_PRIO_MAX - 1)
+
+#if CONFIG_IDF_TARGET_ARCH_RISCV
 #define SPI_OUT_TASK_STACK_SIZE                 (1024)
+#elif CONFIG_IDF_TARGET_ARCH_XTENSA
+#define SPI_OUT_TASK_STACK_SIZE                 (2048)
+#else
+static_assert(false, "BLE Log SPI Out: Unsupported target architecture");
+#endif /* CONFIG_IDF_TARGET_ARCH_RISCV */
 
 #if SPI_OUT_TS_SYNC_ENABLED
 #define SPI_OUT_TS_SYNC_TIMEOUT_MS              (1000)
