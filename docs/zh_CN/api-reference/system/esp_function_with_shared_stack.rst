@@ -6,7 +6,7 @@
 概述
 --------
 
-执行某个给定函数时，可以使用用户分配的堆栈空间，且该堆栈空间独立于当前任务的堆栈。如果有多个任务需要调用同一个使用大量堆栈空间的函数，如 ``printf``，这一机制能够节省各个任务的堆栈空间。具体而言，将给定函数作为参数传入 :cpp:func:`esp_execute_shared_stack_function` 中，给定函数便会在共享堆栈空间内执行。
+执行某个给定函数时，可以使用用户分配的堆栈空间，且该堆栈空间独立于当前任务的堆栈。如果有多个任务需要占用同一个使用大量堆栈空间的公共函数，如 ``printf``，这一机制能够节省各个任务的堆栈空间。具体而言，将给定函数作为参数传入 :cpp:func:`esp_execute_shared_stack_function` 中，给定函数便会在共享堆栈空间内执行。
 
 .. warning::
 
@@ -19,7 +19,7 @@
      :esp32p4: - 使用 AI 协处理器
      - 调用 vTaskDelete(NULL) 删除当前运行的任务
 
-  此外，共享堆栈上运行的函数，或该函数调用的任何函数中调用回溯，回溯信息都可能不正确。这方面的限制十分严格，因此将来 :cpp:func:`esp_execute_shared_stack_function` 可能会被弃用。如有用例必须使用 :cpp:func:`esp_execute_shared_stack_function` 函数才能实现，请提交 `GitHub Issue <https://github.com/espressif/esp-idf/issues>`_。
+  此外，从共享堆栈上运行的函数中，或该函数调用的任何函数中调用回溯，回溯信息都可能不正确。这方面的限制十分严格，因此将来 :cpp:func:`esp_execute_shared_stack_function` 可能会被弃用。如有用例必须使用 :cpp:func:`esp_execute_shared_stack_function` 函数才能实现，请提交 `GitHub Issue <https://github.com/espressif/esp-idf/issues>`_。
 
 
 使用方法
