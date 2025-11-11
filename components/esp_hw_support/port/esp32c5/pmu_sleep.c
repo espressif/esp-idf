@@ -285,6 +285,12 @@ const pmu_sleep_config_t* pmu_sleep_config_default(
         config->analog.hp_sys.analog.dbias = get_act_hp_dbias();
     }
 
+    if (sleep_flags & RTC_SLEEP_LP_PERIPH_USE_RC_FAST) {
+        config->analog.hp_sys.analog.dbias = get_act_hp_dbias();
+        config->analog.lp_sys[LP(SLEEP)].analog.dbg_atten = 0;
+        config->analog.lp_sys[LP(SLEEP)].analog.dbias = get_act_lp_dbias();
+    }
+
     config->power = power_default;
     pmu_sleep_param_config_t param_default = PMU_SLEEP_PARAM_CONFIG_DEFAULT(sleep_flags);
     config->param = *pmu_sleep_param_config_default(&param_default, &power_default, sleep_flags, adjustment, slowclk_src, slowclk_period, fastclk_period);

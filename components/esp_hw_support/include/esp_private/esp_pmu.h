@@ -47,6 +47,7 @@ typedef enum {
 #define RTC_SLEEP_PD_MODEM              PMU_SLEEP_PD_MODEM      //!< Power down modem(include wifi, ble and 15.4)
 
 //These flags are not power domains, but will affect some sleep parameters
+#define RTC_SLEEP_LP_PERIPH_USE_RC_FAST BIT(25)
 #define RTC_SLEEP_POWER_BY_VBAT         BIT(26)
 #define RTC_SLEEP_DIG_USE_8M            BIT(27)
 #define RTC_SLEEP_USE_ADC_TESEN_MONITOR BIT(28)
