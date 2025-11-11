@@ -9,7 +9,7 @@ from pytest_embedded_idf.utils import idf_parametrize
 
 # ---------------- Pytest build parameters ----------------
 
-SUPPORTED_TARGETS = ['esp32c6', 'esp32h2', 'esp32c5']
+SUPPORTED_TARGETS = ['esp32c6', 'esp32h2', 'esp32c5', 'esp32c61']
 
 CONFIG_DEFAULT = [
     # 'config, target, markers',
@@ -53,7 +53,7 @@ REE_ISOLATION_TEST_EXC_RSN: dict[str, str] = {
     ('MMU-spillover'): 'Cache error',
 }
 
-TEE_APM_VIOLATION_EXC_CHK = ['eFuse', 'MMU', 'AES', 'HMAC', 'DS', 'SHA PCR', 'ECC PCR', 'SWDT/BOD']
+TEE_APM_VIOLATION_EXC_CHK = ['eFuse', 'MMU', 'SWDT/BOD', 'AES', 'HMAC', 'DS', 'SHA PCR', 'ECC PCR']
 
 # ---------------- TEE default tests ----------------
 
@@ -74,6 +74,8 @@ def test_esp_tee(dut: IdfDut) -> None:
     indirect=['config', 'target'],
 )
 def test_esp_tee_crypto_aes(dut: IdfDut) -> None:
+    if dut.target == 'esp32c61':
+        pytest.skip(f'AES not supported on {dut.target}')
     dut.run_all_single_board_cases(group='aes')
     dut.run_all_single_board_cases(group='aes-gcm')
 
@@ -95,7 +97,8 @@ def test_esp_tee_crypto_sha(dut: IdfDut) -> None:
     indirect=['config', 'target'],
 )
 def test_esp_tee_aes_perf(dut: IdfDut) -> None:
-    # start test
+    if dut.target == 'esp32c61':
+        pytest.skip(f'AES not supported on {dut.target}')
     for i in range(24):
         dut.run_all_single_board_cases(name=['mbedtls AES performance'])
 
@@ -110,10 +113,12 @@ def test_esp_tee_aes_perf(dut: IdfDut) -> None:
 )
 def test_esp_tee_apm_violation(dut: IdfDut) -> None:
     for check in TEE_APM_VIOLATION_EXC_CHK:
+        if dut.target == 'esp32c61' and check in ('AES', 'HMAC', 'DS'):
+            continue
         dut.expect_exact('Press ENTER to see the list of tests')
         dut.write(f'"Test APM violation: {check}"')
         exc = dut.expect(r'Core ([01]) panic\'ed \(([^)]+)\)', timeout=30).group(2).decode()
-        if dut.target == 'esp32c5' or (dut.target == 'esp32h2' and check == 'eFuse'):
+        if dut.target in ('esp32c5', 'esp32c61') or (dut.target == 'esp32h2' and check == 'eFuse'):
             exp_str = 'APM - Space exception'
         elif check == 'SWDT/BOD':
             exp_str = 'Store access fault'
@@ -144,8 +149,9 @@ def test_esp_tee_illegal_instruction(dut: IdfDut) -> None:
 def test_esp_tee_violation_checks(dut: IdfDut) -> None:
     checks_list = TEE_VIOLATION_TEST_EXC_RSN
     for test, expected_exc in checks_list.items():
-        if expected_exc is None or dut.target == 'esp32c5':
-            # TODO: Enable when TEE SRAM is partitioned as IRAM (RX) and DRAM (RW)
+        # NOTE: For ESP32-C5, access to the region before the SRAM does
+        # not generate exceptions due to TEE PMA configuration
+        if expected_exc is None or (dut.target == 'esp32c5' and test == 'IRAM-W1'):
             continue
         dut.expect_exact('Press ENTER to see the list of tests')
         dut.write(f'"Test TEE-TEE violation: {test}"')
@@ -166,8 +172,8 @@ def test_esp_tee_isolation_checks(dut: IdfDut) -> None:
             continue
         dut.expect_exact('Press ENTER to see the list of tests')
         dut.write(f'"Test REE-TEE isolation: {test}"')
-        # NOTE: For ESP32-C5, the MMU-spillover test fails gracefully without raising panic
-        if dut.target == 'esp32c5' and test == 'MMU-spillover':
+        # NOTE: For ESP32-C5 and C61, the MMU-spillover test fails gracefully without raising panic
+        if dut.target in {'esp32c5', 'esp32c61'} and test == 'MMU-spillover':
             dut.expect_exact('Failed MMU operation, rebooting!')
             continue
         else:

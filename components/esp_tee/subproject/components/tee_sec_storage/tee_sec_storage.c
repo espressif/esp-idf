@@ -6,22 +6,24 @@
 
 #include <string.h>
 
+#include "soc/soc_caps.h"
 #include "esp_log.h"
-#include "esp_cpu.h"
 #include "esp_fault.h"
-#include "esp_flash.h"
 #include "esp_efuse.h"
 #include "esp_efuse_chip.h"
-#include "esp_hmac.h"
 #include "esp_random.h"
 #include "spi_flash_mmap.h"
+#if SOC_HMAC_SUPPORTED
+#include "esp_hmac.h"
+#include "esp_hmac_pbkdf2.h"
+#else
+#include "mbedtls/md.h"
+#endif
 
 #include "mbedtls/aes.h"
 #include "mbedtls/gcm.h"
 #include "mbedtls/sha256.h"
 #include "mbedtls/ecdsa.h"
-#include "mbedtls/error.h"
-#include "esp_hmac_pbkdf2.h"
 
 #include "esp_rom_sys.h"
 #include "nvs.h"
@@ -87,8 +89,10 @@ static const char *TAG = "secure_storage";
 #error "TEE Secure Storage: Configured eFuse block (CONFIG_SECURE_TEE_SEC_STG_EFUSE_HMAC_KEY_ID) out of range!"
 #endif
 
+#if SOC_HMAC_SUPPORTED
 #if CONFIG_SECURE_TEE_SEC_STG_EFUSE_HMAC_KEY_ID == CONFIG_SECURE_TEE_PBKDF2_EFUSE_HMAC_KEY_ID
 #error "TEE Secure Storage: Configured eFuse block for storage encryption keys (CONFIG_SECURE_TEE_SEC_STG_EFUSE_HMAC_KEY_ID) and PBKDF2 key derivation (CONFIG_SECURE_TEE_PBKDF2_EFUSE_HMAC_KEY_ID) cannot be the same!"
+#endif
 #endif
 
 static int buffer_hexdump(const char *label, const void *buffer, size_t length)
@@ -137,25 +141,60 @@ static int rand_func(void *rng_state, unsigned char *output, size_t len)
 }
 
 #if CONFIG_SECURE_TEE_SEC_STG_MODE_RELEASE
-static esp_err_t compute_nvs_keys_with_hmac(hmac_key_id_t hmac_key_id, nvs_sec_cfg_t *cfg)
+static esp_err_t compute_nvs_keys_with_hmac(esp_efuse_block_t key_blk, nvs_sec_cfg_t *cfg)
 {
-    uint32_t ekey_seed[8] = {[0 ... 7] = EKEY_SEED};
-    uint32_t tkey_seed[8] = {[0 ... 7] = TKEY_SEED};
+    const uint32_t ekey_seed[8] = {[0 ... 7] = EKEY_SEED};
+    const uint32_t tkey_seed[8] = {[0 ... 7] = TKEY_SEED};
+    esp_err_t err = ESP_FAIL;
 
     memset(cfg, 0x00, sizeof(nvs_sec_cfg_t));
 
-    esp_err_t err = ESP_FAIL;
+#if SOC_HMAC_SUPPORTED
+    hmac_key_id_t hmac_key_id = (hmac_key_id_t)(key_blk - EFUSE_BLK_KEY0);
+    if (hmac_key_id < 0 || hmac_key_id >= HMAC_KEY_MAX) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     err = esp_hmac_calculate(hmac_key_id, ekey_seed, sizeof(ekey_seed), (uint8_t *)cfg->eky);
     err |= esp_hmac_calculate(hmac_key_id, tkey_seed, sizeof(tkey_seed), (uint8_t *)cfg->tky);
     if (err != ESP_OK) {
+        memset(cfg, 0x00, sizeof(nvs_sec_cfg_t));
+        ESP_LOGE(TAG, "Failed to calculate seed HMAC");
+        return err;
+    }
+    ESP_FAULT_ASSERT(err == ESP_OK);
+#else
+    const mbedtls_md_info_t *md_info = mbedtls_md_info_from_type(MBEDTLS_MD_SHA256);
+    if (md_info == NULL) {
+        return ESP_FAIL;
+    }
+
+    uint8_t key_buf[SHA256_DIGEST_SZ] = {0};
+    /* NOTE: The eFuse key for SoCs without HMAC support should NOT be
+     * read-protected when burning in the eFuse
+     */
+    err = esp_efuse_read_block(key_blk, key_buf, 0, sizeof(key_buf) * 8);
+    if (err != ESP_OK) {
+        return err;
+    }
+
+    int ret = mbedtls_md_hmac(md_info, key_buf, sizeof(key_buf),
+                              (const uint8_t *)ekey_seed, sizeof(ekey_seed),
+                              cfg->eky);
+    ret |= mbedtls_md_hmac(md_info, key_buf, sizeof(key_buf),
+                           (const uint8_t *)tkey_seed, sizeof(tkey_seed),
+                           cfg->tky);
+    if (ret != 0) {
+        memset(cfg, 0x00, sizeof(nvs_sec_cfg_t));
         ESP_LOGE(TAG, "Failed to calculate seed HMAC");
         return ESP_FAIL;
     }
-    ESP_FAULT_ASSERT(err == ESP_OK);
+    ESP_FAULT_ASSERT(ret == 0);
+    memset(key_buf, 0x00, sizeof(key_buf));
+#endif
 
     /* NOTE: If the XTS E-key and T-key are the same, we have a hash collision */
     ESP_FAULT_ASSERT(memcmp(cfg->eky, cfg->tky, NVS_KEY_SIZE) != 0);
-
     return ESP_OK;
 }
 #endif
@@ -168,13 +207,17 @@ static esp_err_t read_security_cfg_hmac(nvs_sec_cfg_t *cfg)
 
 #if CONFIG_SECURE_TEE_SEC_STG_MODE_RELEASE
     esp_efuse_block_t hmac_key_blk = (esp_efuse_block_t)(EFUSE_BLK_KEY0 + (esp_efuse_block_t)CONFIG_SECURE_TEE_SEC_STG_EFUSE_HMAC_KEY_ID);
-    esp_efuse_purpose_t hmac_efuse_blk_purpose = esp_efuse_get_key_purpose(hmac_key_blk);
-    if (hmac_efuse_blk_purpose != ESP_EFUSE_KEY_PURPOSE_HMAC_UP) {
-        ESP_LOGE(TAG, "HMAC key is not burnt in eFuse block");
+    esp_efuse_purpose_t purpose = esp_efuse_get_key_purpose(hmac_key_blk);
+#if SOC_HMAC_SUPPORTED
+    if (purpose != ESP_EFUSE_KEY_PURPOSE_HMAC_UP) {
+#else
+    if (purpose != ESP_EFUSE_KEY_PURPOSE_USER) {
+#endif
+        ESP_LOGE(TAG, "Key is not burnt in eFuse block with expected purpose");
         return ESP_ERR_NOT_FOUND;
     }
 
-    esp_err_t err = compute_nvs_keys_with_hmac((hmac_key_id_t)CONFIG_SECURE_TEE_SEC_STG_EFUSE_HMAC_KEY_ID, cfg);
+    esp_err_t err = compute_nvs_keys_with_hmac(hmac_key_blk, cfg);
     if (err != ESP_OK) {
         return err;
     }
@@ -610,6 +653,7 @@ esp_err_t esp_tee_sec_storage_aead_decrypt(const esp_tee_sec_storage_aead_ctx_t 
     return tee_sec_storage_crypt_common(ctx->key_id, ctx->input, ctx->input_len, ctx->aad, ctx->aad_len, (uint8_t *)tag, tag_len, output, false);
 }
 
+#if SOC_HMAC_SUPPORTED
 esp_err_t esp_tee_sec_storage_ecdsa_sign_pbkdf2(const esp_tee_sec_storage_pbkdf2_ctx_t *ctx,
                                                 const uint8_t *hash, size_t hlen,
                                                 esp_tee_sec_storage_ecdsa_sign_t *out_sign,
@@ -743,3 +787,4 @@ exit:
     mbedtls_mpi_free(&s);
     return err;
 }
+#endif

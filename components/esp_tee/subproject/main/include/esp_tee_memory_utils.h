@@ -16,9 +16,15 @@ extern "C" {
 
 FORCE_INLINE_ATTR bool esp_tee_ptr_in_ree(const void *p)
 {
-    return (((intptr_t)p >= SOC_NS_IDRAM_START && (intptr_t)p < SOC_NS_IDRAM_END) ||
-            ((intptr_t)p >= (size_t)esp_tee_app_config.ns_drom_start && (intptr_t)p < SOC_S_MMU_MMAP_RESV_START_VADDR) ||
-            ((intptr_t)p >= SOC_RTC_DATA_LOW && (intptr_t)p < SOC_RTC_DATA_HIGH));
+    intptr_t addr = (intptr_t)p;
+    return (
+               (addr >= SOC_NS_IDRAM_START && addr < SOC_NS_IDRAM_END) ||
+               (addr >= (intptr_t)esp_tee_app_config.ns_drom_start &&
+                addr < SOC_S_MMU_MMAP_RESV_START_VADDR)
+#if SOC_RTC_MEM_SUPPORTED
+               || (addr >= SOC_RTC_DATA_LOW && addr < SOC_RTC_DATA_HIGH)
+#endif
+           );
 }
 
 #ifdef __cplusplus

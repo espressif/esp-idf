@@ -1,5 +1,5 @@
 menu "ESP-TEE (Trusted Execution Environment)"
-    depends on IDF_TARGET_ESP32C6 || IDF_TARGET_ESP32H2 || IDF_TARGET_ESP32C5
+    depends on IDF_TARGET_ESP32C6 || IDF_TARGET_ESP32H2 || IDF_TARGET_ESP32C5 || IDF_TARGET_ESP32C61
 
     config SECURE_ENABLE_TEE
         bool "Enable the ESP-TEE framework"
@@ -90,6 +90,7 @@ menu "ESP-TEE (Trusted Execution Environment)"
 
         config SECURE_TEE_PBKDF2_EFUSE_HMAC_KEY_ID
             int "Secure Storage: eFuse HMAC key ID for PBKDF2 key derivation"
+            depends on SOC_HMAC_SUPPORTED
             range -1 5
             default -1
             help

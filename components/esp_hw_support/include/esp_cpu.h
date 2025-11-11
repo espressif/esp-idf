@@ -469,7 +469,7 @@ FORCE_INLINE_ATTR uint32_t esp_cpu_intr_get_enabled_mask(void)
 #ifdef __XTENSA__
     return xt_utils_intr_get_enabled_mask();
 #else
-#if CONFIG_SECURE_ENABLE_TEE && !NON_OS_BUILD && CONFIG_IDF_TARGET_ESP32C5
+#if CONFIG_SECURE_ENABLE_TEE && !NON_OS_BUILD && SOC_INT_CLIC_SUPPORTED
     extern esprv_int_mgmt_t esp_tee_intr_sec_srv_cb;
     return esp_tee_intr_sec_srv_cb(1, SS_RV_UTILS_INTR_GET_ENABLED_MASK);
 #else

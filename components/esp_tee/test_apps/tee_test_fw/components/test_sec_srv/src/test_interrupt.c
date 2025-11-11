@@ -21,6 +21,12 @@
 
 static const char *TAG __attribute__((unused)) = "esp_tee_intr_test";
 
+#if CONFIG_IDF_TARGET_ESP32C61
+#define TIMER_INTR_SRC ETS_TG0_T0_INTR_SOURCE
+#else
+#define TIMER_INTR_SRC ETS_TG0_T0_LEVEL_INTR_SOURCE
+#endif
+
 /* ---------------------------------------------------- Utility functions ---------------------------------------------------- */
 
 #define TEST_TIMER_GROUP          (0)
@@ -63,7 +69,7 @@ static void test_timer_deinit(void)
 
     // Deregister ISR
     struct vector_desc_t timer_vd = {
-        .source = ETS_TG0_T0_LEVEL_INTR_SOURCE,
+        .source = TIMER_INTR_SRC,
     };
     esp_tee_intr_deregister((void *)&timer_vd);
     timer_ll_enable_clock(TEST_TIMER_GROUP, timer_id, false);
@@ -90,7 +96,7 @@ static void test_timer_init(volatile uint32_t *arg)
 
     // Register ISR
     struct vector_desc_t timer_vd = {
-        .source = ETS_TG0_T0_LEVEL_INTR_SOURCE,
+        .source = TIMER_INTR_SRC,
         .isr = test_timer_isr,
         .arg = (void *)arg,
     };
