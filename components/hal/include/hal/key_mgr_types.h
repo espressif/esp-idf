@@ -20,41 +20,32 @@ extern "C" {
  * @brief State of Key Manager: idle, load, gain or busy.
  */
 typedef enum {
-    ESP_KEY_MGR_STATE_IDLE = 0, /* Key Manager is idle */
+    ESP_KEY_MGR_STATE_IDLE = 0,     /* Key Manager is idle */
     ESP_KEY_MGR_STATE_LOAD = 1,     /* Key Manager is ready to receive input */
     ESP_KEY_MGR_STATE_GAIN = 2,     /* Key Manager is ready to provide output */
-    ESP_KEY_MGR_STATE_BUSY = 3,      /* Key Manager is busy */
+    ESP_KEY_MGR_STATE_BUSY = 3,     /* Key Manager is busy */
 } esp_key_mgr_state_t;
 
 /**
- * @brief Length of the XTS AES key
+ * @brief Length of the deployed key (XTS-AES, ECDSA)
  */
 typedef enum {
-    ESP_KEY_MGR_XTS_AES_LEN_256 = 0,     /* xts-aes key is 256 bit, please note that xts-aes algorithm is XTS_AES_128 */
-    ESP_KEY_MGR_XTS_AES_LEN_512,         /* xts-aes key is 512 bit, please note that xts-aes algorithm is XTS_AES_256  */
-} esp_key_mgr_xts_aes_key_len_t;
+    ESP_KEY_MGR_ECDSA_LEN_192 = 0,      /* ecdsa key is 192 bit */
+    ESP_KEY_MGR_ECDSA_LEN_256,          /* ecdsa key is 256 bit */
+    ESP_KEY_MGR_ECDSA_LEN_384,          /* ecdsa key is 384 bit */
+    ESP_KEY_MGR_XTS_AES_LEN_128,        /* xts-aes key is 128 bit */
+    ESP_KEY_MGR_XTS_AES_LEN_256,        /* xts-aes key is 512 bit, please note that xts-aes algorithm is XTS_AES_256  */
+} esp_key_mgr_key_len_t;
 
 /**
- * @brief Length of the PSRAM key
+ * @brief Type of the key
  */
 typedef enum {
-    ESP_KEY_MGR_PSRAM_LEN_256 = 0,     /* psram key is 256 bit, please note that xts-aes algorithm is XTS_AES_128 */
-    ESP_KEY_MGR_PSRAM_LEN_512,         /* psram key is 512 bit, please note that xts-aes algorithm is XTS_AES_256 */
-} esp_key_mgr_psram_key_len_t;
-
-/**
- * @brief Type of the key: ECDSA, XTS
- */
-typedef enum {
-    ESP_KEY_MGR_XTS_AES_128_KEY,        /* XTS-AES 128-bit key */
-    ESP_KEY_MGR_XTS_AES_256_KEY,        /* XTS-AES 256-bit key */
-    ESP_KEY_MGR_ECDSA_192_KEY,          /* ECDSA 192-bit key */
-    ESP_KEY_MGR_ECDSA_256_KEY,          /* ECDSA 256-bit key */
-    ESP_KEY_MGR_ECDSA_384_KEY,          /* ECDSA 384-bit key */
-    ESP_KEY_MGR_HMAC_KEY,               /* HMAC key */
-    ESP_KEY_MGR_DS_KEY,                 /* Digital signature key */
-    ESP_KEY_MGR_PSRAM_128_KEY,          /* PSRAM 128-bit key */
-    ESP_KEY_MGR_PSRAM_256_KEY,          /* PSRAM 256-bit key */
+    ESP_KEY_MGR_ECDSA_KEY = 0,      /* ECDSA key */
+    ESP_KEY_MGR_FLASH_XTS_AES_KEY,  /* XTS-AES key */
+    ESP_KEY_MGR_HMAC_KEY,           /* HMAC key */
+    ESP_KEY_MGR_DS_KEY,             /* Digital signature key */
+    ESP_KEY_MGR_PSRAM_XTS_AES_KEY,  /* PSRAM XTS-AES key */
 } esp_key_mgr_key_type_t;
 
 /*
@@ -140,7 +131,9 @@ typedef struct WORD_ALIGNED_ATTR PACKED_ATTR {
     uint32_t magic;
     uint32_t version; // for backward compatibility
     uint8_t key_type;
-    uint8_t reserved[15];
+    uint8_t key_len;
+    uint8_t key_deployment_mode;
+    uint8_t reserved[13];
     esp_key_mgr_huk_info_t huk_info;
     esp_key_mgr_key_info_t key_info[2]; // at most 2 key info (XTS-512_1 and XTS-512_2), at least use 1
 } esp_key_mgr_key_recovery_info_t;
