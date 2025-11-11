@@ -44,9 +44,9 @@ bool key_mgr_hal_is_result_success(void)
     return key_mgr_ll_is_result_success();
 }
 
-bool key_mgr_hal_is_key_deployment_valid(const esp_key_mgr_key_type_t key_type)
+bool key_mgr_hal_is_key_deployment_valid(const esp_key_mgr_key_type_t key_type, const esp_key_mgr_key_len_t key_len)
 {
-    return key_mgr_ll_is_key_deployment_valid(key_type);
+    return key_mgr_ll_is_key_deployment_valid(key_type, key_len);
 }
 
 void key_mgr_hal_write_sw_init_key(const uint8_t *sw_init_key_buf, const size_t data_len)
@@ -79,12 +79,12 @@ bool key_mgr_hal_is_huk_valid(void)
     return key_mgr_ll_is_huk_valid();
 }
 
-void key_mgr_hal_set_xts_aes_key_len(const esp_key_mgr_key_type_t key_type, const esp_key_mgr_xts_aes_key_len_t key_len)
+void key_mgr_hal_set_xts_aes_key_len(const esp_key_mgr_key_type_t key_type, const esp_key_mgr_key_len_t key_len)
 {
     key_mgr_ll_set_xts_aes_key_len(key_type, key_len);
 }
 
-esp_key_mgr_xts_aes_key_len_t key_mgr_hal_get_xts_aes_key_len(const esp_key_mgr_key_type_t key_type)
+esp_key_mgr_key_len_t key_mgr_hal_get_xts_aes_key_len(const esp_key_mgr_key_type_t key_type)
 {
     return key_mgr_ll_get_xts_aes_key_len(key_type);
 }
