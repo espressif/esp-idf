@@ -142,6 +142,42 @@ static void esp_key_mgr_release_hardware(bool deployment_mode)
     esp_crypto_key_mgr_enable_periph_clk(false);
 }
 
+/**
+ * @brief Check if a key purpose requires a secondary deployment stage
+ *
+ * Multi-part keys (256-bit XTS-AES and 384-bit ECDSA) require two deployment stages.
+ * This function identifies the primary purposes that need a follow-up secondary deployment.
+ *
+ * @param purpose Key purpose to check
+ * @return true if this purpose requires a secondary deployment, false otherwise
+ */
+static inline bool is_multi_stage_key_purpose(esp_key_mgr_key_purpose_t purpose)
+{
+    return (purpose == ESP_KEY_MGR_KEY_PURPOSE_FLASH_256_1 ||
+            purpose == ESP_KEY_MGR_KEY_PURPOSE_PSRAM_256_1 ||
+            purpose == ESP_KEY_MGR_KEY_PURPOSE_ECDSA_384_H);
+}
+
+/**
+ * @brief Get the secondary key purpose for a given primary purpose
+ *
+ * @param primary_purpose The primary key purpose
+ * @return The corresponding secondary purpose, or ESP_KEY_MGR_KEY_PURPOSE_INVALID if not applicable
+ */
+static inline esp_key_mgr_key_purpose_t get_secondary_key_purpose(esp_key_mgr_key_purpose_t primary_purpose)
+{
+    switch (primary_purpose) {
+    case ESP_KEY_MGR_KEY_PURPOSE_FLASH_256_1:
+        return ESP_KEY_MGR_KEY_PURPOSE_FLASH_256_2;
+    case ESP_KEY_MGR_KEY_PURPOSE_PSRAM_256_1:
+        return ESP_KEY_MGR_KEY_PURPOSE_PSRAM_256_2;
+    case ESP_KEY_MGR_KEY_PURPOSE_ECDSA_384_H:
+        return ESP_KEY_MGR_KEY_PURPOSE_ECDSA_384_L;
+    default:
+        return ESP_KEY_MGR_KEY_PURPOSE_INVALID;
+    }
+}
+
 static esp_key_mgr_key_purpose_t get_key_purpose(const esp_key_mgr_key_type_t key_type, const esp_key_mgr_key_len_t key_len)
 {
     switch (key_type) {
@@ -152,7 +188,6 @@ static esp_key_mgr_key_purpose_t get_key_purpose(const esp_key_mgr_key_type_t ke
         case ESP_KEY_MGR_ECDSA_LEN_256:
             return ESP_KEY_MGR_KEY_PURPOSE_ECDSA_256;
         case ESP_KEY_MGR_ECDSA_LEN_384:
-            // TODO: Verify: (IDF-14120)
             return ESP_KEY_MGR_KEY_PURPOSE_ECDSA_384_H;
         default:
             return ESP_KEY_MGR_KEY_PURPOSE_INVALID;
@@ -330,10 +365,7 @@ static esp_err_t key_mgr_deploy_key_aes_mode(aes_deploy_config_t *config)
         ESP_LOGD(TAG, "HUK deployed successfully");
     }
 
-    uint8_t key_recovery_info_index = 0;
-    if (config->key_purpose == ESP_KEY_MGR_KEY_PURPOSE_FLASH_256_2 || config->key_purpose == ESP_KEY_MGR_KEY_PURPOSE_PSRAM_256_2) {
-        key_recovery_info_index = 1;
-    }
+    uint8_t key_recovery_info_index = is_multi_stage_key_purpose(config->key_purpose) ? 0 : 1;
 
     uint8_t *key_recovery_info = config->key_info->key_info[key_recovery_info_index].info;
 
@@ -380,7 +412,10 @@ static esp_err_t key_mgr_deploy_key_aes_mode(aes_deploy_config_t *config)
 
     key_mgr_hal_read_public_info(key_recovery_info, KEY_MGR_KEY_RECOVERY_INFO_SIZE);
 
-    if (config->key_purpose != ESP_KEY_MGR_KEY_PURPOSE_FLASH_256_1 && config->key_purpose != ESP_KEY_MGR_KEY_PURPOSE_PSRAM_256_1) {
+    // Check if key deployment validation should be skipped for this purpose
+    // Primary purposes in multi-stage deployments skip validation after the first stage
+    // because the key is not yet completely deployed.
+    if (!is_multi_stage_key_purpose(config->key_purpose)) {
         if (!key_mgr_hal_is_key_deployment_valid(key_type, key_len)) {
             ESP_LOGE(TAG, "Key deployment is not valid");
             return ESP_FAIL;
@@ -431,8 +466,8 @@ esp_err_t esp_key_mgr_deploy_key_in_aes_mode(const esp_key_mgr_aes_key_config_t 
 
     aes_deploy_config.huk_deployed = true;
 
-    if (aes_deploy_config.key_purpose == ESP_KEY_MGR_KEY_PURPOSE_FLASH_256_1 || aes_deploy_config.key_purpose == ESP_KEY_MGR_KEY_PURPOSE_PSRAM_256_1) {
-        aes_deploy_config.key_purpose = key_config->key_type == ESP_KEY_MGR_FLASH_XTS_AES_KEY ? ESP_KEY_MGR_KEY_PURPOSE_FLASH_256_2 : ESP_KEY_MGR_KEY_PURPOSE_PSRAM_256_2;
+    if (is_multi_stage_key_purpose(aes_deploy_config.key_purpose)) {
+        aes_deploy_config.key_purpose = get_secondary_key_purpose(aes_deploy_config.key_purpose);
         aes_deploy_config.k1_encrypted = key_config->k1_encrypted[1];
         esp_ret = key_mgr_deploy_key_aes_mode(&aes_deploy_config);
         if (esp_ret != ESP_OK) {
@@ -493,25 +528,21 @@ static esp_err_t key_mgr_recover_key(key_recovery_config_t *config)
 
     key_mgr_wait_for_state(ESP_KEY_MGR_STATE_LOAD);
 
-    if (config->key_purpose == ESP_KEY_MGR_KEY_PURPOSE_FLASH_256_2 || config->key_purpose == ESP_KEY_MGR_KEY_PURPOSE_PSRAM_256_2) {
-        if (!check_key_info_validity(&config->key_recovery_info->key_info[1])) {
-            ESP_LOGE(TAG, "Key info not valid");
-            return ESP_FAIL;
-        }
-        key_mgr_hal_write_assist_info(config->key_recovery_info->key_info[1].info, KEY_MGR_KEY_RECOVERY_INFO_SIZE);
-    } else {
-        if (!check_key_info_validity(&config->key_recovery_info->key_info[0])) {
-            ESP_LOGE(TAG, "Key info not valid");
-            return ESP_FAIL;
-        }
-        key_mgr_hal_write_assist_info(config->key_recovery_info->key_info[0].info, KEY_MGR_KEY_RECOVERY_INFO_SIZE);
+    uint8_t key_recovery_info_index = is_multi_stage_key_purpose(config->key_purpose) ? 0 : 1;
+
+    if (!check_key_info_validity(&config->key_recovery_info->key_info[key_recovery_info_index])) {
+        ESP_LOGE(TAG, "Key info not valid");
+        return ESP_FAIL;
     }
 
+    key_mgr_hal_write_assist_info(config->key_recovery_info->key_info[key_recovery_info_index].info, KEY_MGR_KEY_RECOVERY_INFO_SIZE);
     key_mgr_hal_continue();
     key_mgr_wait_for_state(ESP_KEY_MGR_STATE_GAIN);
 
-    // TODO: Maybe need to extend this to ECDSA_384_L and ECDSA_384_H (IDF-14120)
-    if (config->key_purpose != ESP_KEY_MGR_KEY_PURPOSE_FLASH_256_1 && config->key_purpose != ESP_KEY_MGR_KEY_PURPOSE_PSRAM_256_1) {
+    // Check if key deployment validation should be skipped for this purpose
+    // Primary purposes in multi-stage deployments skip validation after the first stage
+    // because the key is not yet completely deployed.
+    if (!is_multi_stage_key_purpose(config->key_purpose)) {
         if (!key_mgr_hal_is_key_deployment_valid(key_type, key_len)) {
             ESP_LOGD(TAG, "Key deployment is not valid");
             return ESP_FAIL;
@@ -555,8 +586,8 @@ esp_err_t esp_key_mgr_activate_key(esp_key_mgr_key_recovery_info_t *key_recovery
         goto cleanup;
     }
 
-    if (key_recovery_config.key_purpose == ESP_KEY_MGR_KEY_PURPOSE_FLASH_256_1 || key_recovery_config.key_purpose == ESP_KEY_MGR_KEY_PURPOSE_PSRAM_256_1) {
-        key_recovery_config.key_purpose = key_recovery_config.key_purpose == ESP_KEY_MGR_KEY_PURPOSE_FLASH_256_1 ? ESP_KEY_MGR_KEY_PURPOSE_FLASH_256_2 : ESP_KEY_MGR_KEY_PURPOSE_PSRAM_256_2;
+    if (is_multi_stage_key_purpose(key_recovery_config.key_purpose)) {
+        key_recovery_config.key_purpose = get_secondary_key_purpose(key_recovery_config.key_purpose);
         esp_ret = key_mgr_recover_key(&key_recovery_config);
         if (esp_ret != ESP_OK) {
             ESP_LOGE(TAG, "Failed to recover key");
@@ -615,10 +646,7 @@ static esp_err_t key_mgr_deploy_key_ecdh0_mode(ecdh0_deploy_config_t *config)
         ESP_LOGD(TAG, "HUK deployed successfully");
     }
 
-    uint8_t key_recovery_info_index = 0;
-    if (config->key_purpose == ESP_KEY_MGR_KEY_PURPOSE_FLASH_256_2 || config->key_purpose == ESP_KEY_MGR_KEY_PURPOSE_PSRAM_256_2) {
-        key_recovery_info_index = 1;
-    }
+    uint8_t key_recovery_info_index = is_multi_stage_key_purpose(config->key_purpose) ? 0 : 1;
 
     uint8_t *key_recovery_info = config->key_info->key_info[key_recovery_info_index].info;
 
@@ -653,7 +681,10 @@ static esp_err_t key_mgr_deploy_key_ecdh0_mode(ecdh0_deploy_config_t *config)
     key_mgr_hal_read_public_info(key_recovery_info, KEY_MGR_KEY_RECOVERY_INFO_SIZE);
     key_mgr_hal_read_assist_info(config->ecdh0_key_info);
 
-    if (config->key_purpose != ESP_KEY_MGR_KEY_PURPOSE_FLASH_256_1 && config->key_purpose != ESP_KEY_MGR_KEY_PURPOSE_PSRAM_256_1) {
+    // Check if key deployment validation should be skipped for this purpose
+    // Primary purposes in multi-stage deployments skip validation after the first stage
+    // because the key is not yet completely deployed.
+    if (!is_multi_stage_key_purpose(config->key_purpose)) {
         if (!key_mgr_hal_is_key_deployment_valid(key_type, key_len)) {
             ESP_LOGE(TAG, "Key deployment is not valid");
             return ESP_FAIL;
@@ -706,8 +737,8 @@ esp_err_t esp_key_mgr_deploy_key_in_ecdh0_mode(const esp_key_mgr_ecdh0_key_confi
 
     ecdh0_deploy_config.huk_deployed = true;
 
-    if (ecdh0_deploy_config.key_purpose == ESP_KEY_MGR_KEY_PURPOSE_FLASH_256_1 || ecdh0_deploy_config.key_purpose == ESP_KEY_MGR_KEY_PURPOSE_PSRAM_256_1) {
-        ecdh0_deploy_config.key_purpose = key_config->key_type == ESP_KEY_MGR_FLASH_XTS_AES_KEY ? ESP_KEY_MGR_KEY_PURPOSE_FLASH_256_2 : ESP_KEY_MGR_KEY_PURPOSE_PSRAM_256_2;
+    if (is_multi_stage_key_purpose(ecdh0_deploy_config.key_purpose)) {
+        ecdh0_deploy_config.key_purpose = get_secondary_key_purpose(ecdh0_deploy_config.key_purpose);
         ecdh0_deploy_config.k1_G = key_config->k1_G[1];
         ecdh0_deploy_config.ecdh0_key_info = ecdh0_key_info->k2_G[1];
         esp_ret = key_mgr_deploy_key_ecdh0_mode(&ecdh0_deploy_config);
@@ -752,10 +783,7 @@ static esp_err_t key_mgr_deploy_key_random_mode(random_deploy_config_t *config)
         ESP_LOGD(TAG, "HUK deployed successfully");
     }
 
-    uint8_t key_recovery_info_index = 0;
-    if (config->key_purpose == ESP_KEY_MGR_KEY_PURPOSE_FLASH_256_2 || config->key_purpose == ESP_KEY_MGR_KEY_PURPOSE_PSRAM_256_2) {
-        key_recovery_info_index = 1;
-    }
+    uint8_t key_recovery_info_index = is_multi_stage_key_purpose(config->key_purpose) ? 0 : 1;
 
     uint8_t *key_recovery_info = config->key_info->key_info[key_recovery_info_index].info;
 
@@ -783,7 +811,10 @@ static esp_err_t key_mgr_deploy_key_random_mode(random_deploy_config_t *config)
     key_mgr_wait_for_state(ESP_KEY_MGR_STATE_GAIN);
     key_mgr_hal_read_public_info(key_recovery_info, KEY_MGR_KEY_RECOVERY_INFO_SIZE);
 
-    if (config->key_purpose != ESP_KEY_MGR_KEY_PURPOSE_FLASH_256_1 && config->key_purpose != ESP_KEY_MGR_KEY_PURPOSE_PSRAM_256_1) {
+    // Check if key deployment validation should be skipped for this purpose
+    // Primary purposes in multi-stage deployments skip validation after the first stage
+    // because the key is not yet completely deployed.
+    if (!is_multi_stage_key_purpose(config->key_purpose)) {
         if (!key_mgr_hal_is_key_deployment_valid(key_type, key_len)) {
             ESP_LOGE(TAG, "Key deployment is not valid");
             return ESP_FAIL;
@@ -833,8 +864,8 @@ esp_err_t esp_key_mgr_deploy_key_in_random_mode(const esp_key_mgr_random_key_con
 
     random_deploy_config.huk_deployed = true;
 
-    if (random_deploy_config.key_purpose == ESP_KEY_MGR_KEY_PURPOSE_FLASH_256_1 || random_deploy_config.key_purpose == ESP_KEY_MGR_KEY_PURPOSE_PSRAM_256_1) {
-        random_deploy_config.key_purpose = key_config->key_type == ESP_KEY_MGR_FLASH_XTS_AES_KEY ? ESP_KEY_MGR_KEY_PURPOSE_FLASH_256_2 : ESP_KEY_MGR_KEY_PURPOSE_PSRAM_256_2;
+    if (is_multi_stage_key_purpose(random_deploy_config.key_purpose)) {
+        random_deploy_config.key_purpose = get_secondary_key_purpose(random_deploy_config.key_purpose);
         esp_ret = key_mgr_deploy_key_random_mode(&random_deploy_config);
         if (esp_ret != ESP_OK) {
             ESP_LOGE(TAG, "Key deployment in Random mode failed");

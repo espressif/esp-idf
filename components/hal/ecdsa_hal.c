@@ -49,7 +49,7 @@ static void configure_ecdsa_periph(ecdsa_hal_config_t *conf)
             HAL_ASSERT(false && "Key manager is not supported");
         }
 
-        // Force Key Manager to use eFuse key for XTS-AES operation
+        // Force Key Manager to use eFuse key for ECDSA operation
         key_mgr_hal_set_key_usage(ESP_KEY_MGR_ECDSA_KEY, ESP_KEY_MGR_USE_EFUSE_KEY);
 #endif
     }
