@@ -319,3 +319,12 @@ USB
 ``usb`` 组件已迁移至 `乐鑫组件注册表 <https://components.espressif.com/components/espressif/usb>`__。
 
 你可以通过运行 ``idf.py add-dependency "espressif/usb"``，将此依赖添加到项目中。
+
+.. only:: SOC_TWAI_SUPPORTED
+
+    双线汽车接口 (TWAI)
+    --------------------
+
+    TWAI 在 5.5 版本已经提供的新的驱动接口，支持更灵活的配置和更丰富的功能。旧版驱动不推荐再继续使用，请参考 5.5 迁移指南 :doc:`TWAI迁移指南 <../../release-5.x/5.5/peripherals>` 和新版驱动编程指南 :doc:`TWAI驱动编程指南 <../../../api-reference/peripherals/twai>` 进行移植。
+
+    若需要继续使用旧版驱动，可以打开配置项 :ref:`CONFIG_TWAI_SUPPRESS_DEPRECATE_WARN` 以关闭编译警告。

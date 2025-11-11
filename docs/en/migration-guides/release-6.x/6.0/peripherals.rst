@@ -319,3 +319,12 @@ USB
 The ``usb`` component has been moved to `ESP Component Registry <https://components.espressif.com/components/espressif/usb>`__.
 
 You can add this dependency to your project by running ``idf.py add-dependency "espressif/usb"``.
+
+.. only:: SOC_TWAI_SUPPORTED
+
+    TWAI
+    ----
+
+    TWAI has provided a new driver interface in version 5.5, which supports more flexible configurations and richer features. The legacy driver is not recommended to be used anymore. Please refer to the 5.5 migration guide :doc:`TWAI migration guide <../../release-5.x/5.5/peripherals>` and the new driver programming guide :doc:`TWAI driver programming guide <../../../api-reference/peripherals/twai>` for migration.
+
+    If you still need to use the legacy driver, you can enable the configuration option :ref:`CONFIG_TWAI_SUPPRESS_DEPRECATE_WARN` to close the deprecation warnings.
