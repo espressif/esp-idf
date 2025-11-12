@@ -145,12 +145,12 @@ typedef union {
         /** ext_etm_ch0_event_sel : R/W; bitpos: [4:0]; default: 0;
          *  Etm event channel select gpio.
          */
-        uint32_t ext_etm_ch0_event_sel:5;
+        uint32_t ext_etm_chn_event_sel:5;
         uint32_t reserved_5:2;
         /** ext_etm_ch0_event_en : R/W; bitpos: [7]; default: 0;
          *  Etm event send enable bit.
          */
-        uint32_t ext_etm_ch0_event_en:1;
+        uint32_t ext_etm_chn_event_en:1;
         uint32_t reserved_8:24;
     };
     uint32_t val;
@@ -556,6 +556,11 @@ typedef union {
     uint32_t val;
 } gpio_ext_version_reg_t;
 
+typedef struct {
+    volatile gpio_ext_etm_event_chn_cfg_reg_t etm_event_chn_cfg[8];
+    uint32_t reserved_080[8];
+    volatile uint32_t etm_task_pn_cfg[6];
+} gpio_etm_dev_t;
 
 typedef struct {
     uint32_t reserved_000;
@@ -567,14 +572,7 @@ typedef struct {
     uint32_t reserved_060[30];
     volatile gpio_ext_glitch_filter_chn_reg_t ext_glitch_filter_chn[8];
     uint32_t reserved_0f8[8];
-    volatile gpio_ext_etm_event_chn_cfg_reg_t ext_etm_event_chn_cfg[8];
-    uint32_t reserved_138[8];
-    volatile gpio_ext_etm_task_p0_cfg_reg_t ext_etm_task_p0_cfg;
-    volatile gpio_ext_etm_task_p1_cfg_reg_t ext_etm_task_p1_cfg;
-    volatile gpio_ext_etm_task_p2_cfg_reg_t ext_etm_task_p2_cfg;
-    volatile gpio_ext_etm_task_p3_cfg_reg_t ext_etm_task_p3_cfg;
-    volatile gpio_ext_etm_task_p4_cfg_reg_t ext_etm_task_p4_cfg;
-    volatile gpio_ext_etm_task_p5_cfg_reg_t ext_etm_task_p5_cfg;
+    volatile gpio_etm_dev_t etm;
     uint32_t reserved_170[24];
     volatile gpio_ext_int_raw_reg_t ext_int_raw;
     volatile gpio_ext_int_st_reg_t ext_int_st;
@@ -585,6 +583,7 @@ typedef struct {
     volatile gpio_ext_version_reg_t ext_version;
 } gpio_ext_dev_t;
 
+extern gpio_etm_dev_t GPIO_ETM;
 extern gpio_ext_dev_t GPIO_EXT;
 
 #ifndef __cplusplus

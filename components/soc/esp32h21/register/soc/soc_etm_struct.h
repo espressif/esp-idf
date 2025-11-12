@@ -1029,7 +1029,7 @@ typedef union {
 } soc_etm_date_reg_t;
 
 
-typedef struct {
+typedef struct soc_etm_dev_t {
     volatile soc_etm_ch_ena_ad0_reg_t ch_ena_ad0;
     volatile soc_etm_ch_ena_ad0_set_reg_t ch_ena_ad0_set;
     volatile soc_etm_ch_ena_ad0_clr_reg_t ch_ena_ad0_clr;

@@ -23,9 +23,6 @@
 // Number of channels in each ETM instance
 #define ETM_LL_CHANS_PER_INST 50
 
-// Support to get and clear the status of the ETM event and task
-#define ETM_LL_SUPPORT_STATUS_REG  1
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -63,9 +60,9 @@ static inline void etm_ll_reset_register(int group_id)
 static inline void etm_ll_enable_channel(soc_etm_dev_t *hw, uint32_t chan)
 {
     if (chan < 32) {
-        hw->etm_ch_ena_ad0_set.val = 1 << chan;
+        hw->ch_ena_ad0_set.val = 1 << chan;
     } else {
-        hw->etm_ch_ena_ad1_set.val = 1 << (chan - 32);
+        hw->ch_ena_ad1_set.val = 1 << (chan - 32);
     }
 }
 
@@ -78,9 +75,9 @@ static inline void etm_ll_enable_channel(soc_etm_dev_t *hw, uint32_t chan)
 static inline void etm_ll_disable_channel(soc_etm_dev_t *hw, uint32_t chan)
 {
     if (chan < 32) {
-        hw->etm_ch_ena_ad0_clr.val = 1 << chan;
+        hw->ch_ena_ad0_clr.val = 1 << chan;
     } else {
-        hw->etm_ch_ena_ad1_clr.val = 1 << (chan - 32);
+        hw->ch_ena_ad1_clr.val = 1 << (chan - 32);
     }
 }
 
@@ -94,9 +91,9 @@ static inline void etm_ll_disable_channel(soc_etm_dev_t *hw, uint32_t chan)
 static inline bool etm_ll_is_channel_enabled(soc_etm_dev_t *hw, uint32_t chan)
 {
     if (chan < 32) {
-        return hw->etm_ch_ena_ad0.val & (1 << chan);
+        return hw->ch_ena_ad0.val & (1 << chan);
     } else {
-        return hw->etm_ch_ena_ad1.val & (1 << (chan - 32));
+        return hw->ch_ena_ad1.val & (1 << (chan - 32));
     }
 }
 
@@ -109,7 +106,7 @@ static inline bool etm_ll_is_channel_enabled(soc_etm_dev_t *hw, uint32_t chan)
  */
 static inline void etm_ll_channel_set_event(soc_etm_dev_t *hw, uint32_t chan, uint32_t event)
 {
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->channel[chan].eid, etm_chn_evt_id, event);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->channel[chan].eid, chn_evt_id, event);
 }
 
 /**
@@ -121,7 +118,7 @@ static inline void etm_ll_channel_set_event(soc_etm_dev_t *hw, uint32_t chan, ui
  */
 static inline void etm_ll_channel_set_task(soc_etm_dev_t *hw, uint32_t chan, uint32_t task)
 {
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->channel[chan].tid, etm_chn_task_id, task);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->channel[chan].tid, chn_task_id, task);
 }
 
 #ifdef __cplusplus

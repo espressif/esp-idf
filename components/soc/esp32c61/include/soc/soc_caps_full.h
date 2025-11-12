@@ -13,10 +13,6 @@
 #define _SOC_CAPS_DEDIC_GPIO_OUT_CHANS_PER_CPU     8 /*!< 8 outward channels on each CPU core */
 #define _SOC_CAPS_DEDIC_GPIO_IN_CHANS_PER_CPU      8 /*!< 8 inward channels on each CPU core */
 
-/*--------------------------- ETM (Event Task Matrix) ----------------------------*/
-#define _SOC_CAPS_ETM_INST_NUM                    1  // Number of ETM instances
-#define _SOC_CAPS_ETM_CHANS_PER_INST              50 // Number of channels in each ETM instance
-
 /*--------------------------- I2S CAPS ----------------------------------------*/
 // helper macros to access module attributes
 #define _SOC_CAPS_I2S_INST_NUM                    1  // Number of I2S instances

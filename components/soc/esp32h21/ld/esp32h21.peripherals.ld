@@ -39,6 +39,7 @@ PROVIDE ( ECDSA               = 0x6008E000 );
 PROVIDE ( IO_MUX              = 0x60090000 );
 PROVIDE ( GPIO                = 0x60091000 );
 PROVIDE ( GPIO_EXT            = 0x60091E00 );
+PROVIDE ( GPIO_ETM            = 0x60091F18 );
 PROVIDE ( MEM_MONITOR         = 0x60092000 );
 PROVIDE ( PAU                 = 0x60093000 );
 PROVIDE ( HP_SYSTEM           = 0x60095000 );
