@@ -24,7 +24,7 @@
 #include "driver/ana_cmpr_types.h"
 #include "soc/soc_caps.h"
 #include "hal/ana_cmpr_ll.h"
-#include "soc/ana_cmpr_periph.h"
+#include "hal/ana_cmpr_periph.h"
 
 #define TAG "ana_cmpr"
 

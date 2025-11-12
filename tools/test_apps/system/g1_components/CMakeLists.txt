@@ -29,6 +29,9 @@ foreach(hal_dir ${esp_hal_component_dirs})
     endif()
 endforeach()
 
+# Remove the esp_hal_xxx that not compiled in G1
+list(REMOVE_ITEM esp_hal_components "esp_hal_ana_cmpr")
+
 # These components are currently included into "G1" build, but shouldn't.
 # After removing the extra dependencies, remove the components from this list as well.
 set(extra_components_which_shouldnt_be_included

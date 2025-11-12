@@ -68,10 +68,6 @@ if(CONFIG_SOC_ADC_SUPPORTED)
     list(APPEND srcs "${target_folder}/adc_periph.c")
 endif()
 
-if(CONFIG_SOC_ANA_CMPR_SUPPORTED)
-    list(APPEND srcs "${target_folder}/ana_cmpr_periph.c")
-endif()
-
 if(CONFIG_SOC_DEBUG_PROBE_SUPPORTED)
     list(APPEND srcs "${target_folder}/debug_probe_periph.c")
 endif()
