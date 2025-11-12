@@ -7,20 +7,22 @@
 #pragma once
 
 #include <stdint.h>
-#include "soc/soc_caps_full.h"
+#include "soc/soc_caps.h"
 #include "soc/regdma.h"
+
+#if SOC_HAS(ETM)
+#include "hal/etm_ll.h"
+#endif
 
 #if SOC_HAS(PAU)
 #include "soc/retention_periph_defs.h"
 #endif
 
-// helper macros to access module attributes
-#define SOC_ETM_ATTR(_attr)    SOC_MODULE_ATTR(ETM, _attr)
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+#if SOC_HAS(ETM)
 #if SOC_HAS(PAU)
 
 typedef struct {
@@ -29,9 +31,10 @@ typedef struct {
     uint32_t array_size;                               // Size of the regdma_entry_array
 } soc_etm_retention_desc_t;
 
-extern const soc_etm_retention_desc_t soc_etm_retention_info[SOC_ETM_ATTR(INST_NUM)];
+extern const soc_etm_retention_desc_t soc_etm_retention_info[ETM_LL_GET(INST_NUM)];
 
 #endif // SOC_HAS(PAU)
+#endif // SOC_HAS(ETM)
 
 #ifdef __cplusplus
 }

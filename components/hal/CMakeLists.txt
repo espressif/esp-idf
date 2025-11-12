@@ -129,7 +129,7 @@ elseif(NOT BOOTLOADER_BUILD)
     endif()
 
     if(CONFIG_SOC_ETM_SUPPORTED)
-        list(APPEND srcs "etm_hal.c")
+        list(APPEND srcs "etm_hal.c" "${target}/etm_periph.c")
     endif()
 
     if(CONFIG_SOC_PARLIO_SUPPORTED)

@@ -23,10 +23,6 @@
 #define _SOC_CAPS_PCNT_CHANS_PER_UNIT             2  // Number of channels in each PCNT unit
 #define _SOC_CAPS_PCNT_THRES_POINT_PER_UNIT       2  // Number of threshold points in each PCNT unit
 
-/*--------------------------- ETM (Event Task Matrix) ----------------------------*/
-#define _SOC_CAPS_ETM_INST_NUM                    1  // Number of ETM instances
-#define _SOC_CAPS_ETM_CHANS_PER_INST              50 // Number of channels in each ETM instance
-
 /*------------------------------- I2S ---------------------------------------*/
 // helper macros to access module attributes
 #define _SOC_CAPS_I2S_INST_NUM                    3  // Number of I2S instances
