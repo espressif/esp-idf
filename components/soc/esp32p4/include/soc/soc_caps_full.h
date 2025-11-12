@@ -8,6 +8,3 @@
 
 #include "soc/soc_caps.h"
 #include "soc/soc_caps_eval.h"
-
-/*------------------------------- Touch Sensor ------------------------------------*/
-#define _SOC_CAPS_TOUCH_CHAN_NUM                  14  // Number of touch sensor channels

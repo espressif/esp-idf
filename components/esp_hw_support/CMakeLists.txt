@@ -73,6 +73,7 @@ if(NOT non_os_build)
     # [refactor-todo]
     list(APPEND priv_requires esp_driver_gpio   # for GPIO and RTC (by sleep_gpio and sleep_modes)
                               esp_timer
+                              esp_hal_touch_sens # for touch sensor wakeup (introduced in sleep_modes.c)
                               esp_pm)
 
     list(APPEND priv_requires esp_mm

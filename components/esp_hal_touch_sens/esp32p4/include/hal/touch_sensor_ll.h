@@ -16,7 +16,7 @@
 #include <stdbool.h>
 #include "hal/misc.h"
 #include "hal/assert.h"
-#include "soc/touch_sensor_periph.h"
+#include "hal/touch_sensor_periph.h"
 #include "soc/lp_analog_peri_struct.h"
 #include "soc/lp_clkrst_struct.h"
 #include "soc/lp_system_struct.h"
@@ -27,6 +27,9 @@
 #include "soc/soc_caps_full.h"
 #include "hal/touch_sens_types.h"
 #include "hal/config.h"
+
+#define TOUCH_LL_GET(_attr)  TOUCH_LL_ ## _attr
+#define TOUCH_LL_CHAN_NUM    14
 
 #ifdef __cplusplus
 extern "C" {
@@ -47,7 +50,7 @@ extern "C" {
 #define TOUCH_LL_INTR_MASK_PROX_DONE        BIT(5)
 #define TOUCH_LL_INTR_MASK_ALL              (0x3F)
 
-#define TOUCH_LL_FULL_CHANNEL_MASK          ((uint16_t)((1U << (SOC_MODULE_ATTR(TOUCH, CHAN_NUM))) - 1) << SOC_TOUCH_MIN_CHAN_ID)
+#define TOUCH_LL_FULL_CHANNEL_MASK          ((uint16_t)((1U << (TOUCH_LL_GET(CHAN_NUM))) - 1) << SOC_TOUCH_MIN_CHAN_ID)
 #define TOUCH_LL_NULL_CHANNEL               (15)  // Null Channel id. Used for disabling some functions like sleep/proximity/waterproof
 
 #define TOUCH_LL_PAD_MEASURE_WAIT_MAX      (0x7FFF)    // The timer frequency is 8Mhz, the max value is 0xff
@@ -100,17 +103,17 @@ static inline void touch_ll_set_charge_times(uint8_t sample_cfg_id, uint16_t cha
 {
     //The times of charge and discharge in each measure process of touch channels.
     switch (sample_cfg_id) {
-        case 0:
-            LP_ANA_PERI.touch_work_meas_num.touch_meas_num0 = charge_times;
-            break;
-        case 1:
-            LP_ANA_PERI.touch_work_meas_num.touch_meas_num1 = charge_times;
-            break;
-        case 2:
-            LP_ANA_PERI.touch_work_meas_num.touch_meas_num2 = charge_times;
-            break;
-        default:
-            abort();
+    case 0:
+        LP_ANA_PERI.touch_work_meas_num.touch_meas_num0 = charge_times;
+        break;
+    case 1:
+        LP_ANA_PERI.touch_work_meas_num.touch_meas_num1 = charge_times;
+        break;
+    case 2:
+        LP_ANA_PERI.touch_work_meas_num.touch_meas_num2 = charge_times;
+        break;
+    default:
+        abort();
     }
 }
 
@@ -122,17 +125,17 @@ static inline void touch_ll_set_charge_times(uint8_t sample_cfg_id, uint16_t cha
 static inline void touch_ll_get_charge_times(uint8_t sample_cfg_id, uint16_t *charge_times)
 {
     switch (sample_cfg_id) {
-        case 0:
-            *charge_times = LP_ANA_PERI.touch_work_meas_num.touch_meas_num0;
-            break;
-        case 1:
-            *charge_times = LP_ANA_PERI.touch_work_meas_num.touch_meas_num1;
-            break;
-        case 2:
-            *charge_times = LP_ANA_PERI.touch_work_meas_num.touch_meas_num2;
-            break;
-        default:
-            abort();
+    case 0:
+        *charge_times = LP_ANA_PERI.touch_work_meas_num.touch_meas_num0;
+        break;
+    case 1:
+        *charge_times = LP_ANA_PERI.touch_work_meas_num.touch_meas_num1;
+        break;
+    case 2:
+        *charge_times = LP_ANA_PERI.touch_work_meas_num.touch_meas_num2;
+        break;
+    default:
+        abort();
     }
 }
 
@@ -203,8 +206,8 @@ static inline void touch_ll_force_done_curr_measurement(void)
     PMU.touch_pwr_cntl.force_done = 1;
     // Force done signal should last at least one slow clock tick, wait until tick interrupt triggers
     LP_SYS.int_clr.slow_clk_tick_int_clr = 1;
-    while(LP_SYS.int_clr.slow_clk_tick_int_clr);
-    while(!LP_SYS.int_raw.slow_clk_tick_int_raw);
+    while (LP_SYS.int_clr.slow_clk_tick_int_clr);
+    while (!LP_SYS.int_raw.slow_clk_tick_int_raw);
     // Clear `force done` signal
     PMU.touch_pwr_cntl.force_done = 0;
     // Disable event tick
@@ -451,18 +454,18 @@ static inline void touch_ll_enable_out_gate(bool enable)
 static inline void touch_ll_set_clock_div(uint8_t sample_cfg_id, uint32_t div_num)
 {
     switch (sample_cfg_id) {
-        case 0:
-            LP_ANA_PERI.touch_work.div_num0 = div_num - 1;
-            break;
-        case 1:
-            LP_ANA_PERI.touch_work.div_num1 = div_num - 1;
-            break;
-        case 2:
-            LP_ANA_PERI.touch_work.div_num2 = div_num - 1;
-            break;
-        default:
-            // invalid sample_cfg_id
-            abort();
+    case 0:
+        LP_ANA_PERI.touch_work.div_num0 = div_num - 1;
+        break;
+    case 1:
+        LP_ANA_PERI.touch_work.div_num1 = div_num - 1;
+        break;
+    case 2:
+        LP_ANA_PERI.touch_work.div_num2 = div_num - 1;
+        break;
+    default:
+        // invalid sample_cfg_id
+        abort();
     }
 }
 
@@ -829,18 +832,18 @@ static inline void touch_ll_waterproof_set_shield_driver(touch_chan_shield_cap_t
 static inline void touch_ll_set_proximity_sensing_channel(uint8_t prox_chan, uint32_t touch_num)
 {
     switch (prox_chan) {
-        case 0:
-            LP_ANA_PERI.touch_approach.touch_approach_pad0 = touch_num;
-            break;
-        case 1:
-            LP_ANA_PERI.touch_approach.touch_approach_pad1 = touch_num;
-            break;
-        case 2:
-            LP_ANA_PERI.touch_approach.touch_approach_pad2 = touch_num;
-            break;
-        default:
-            // invalid proximity channel
-            abort();
+    case 0:
+        LP_ANA_PERI.touch_approach.touch_approach_pad0 = touch_num;
+        break;
+    case 1:
+        LP_ANA_PERI.touch_approach.touch_approach_pad1 = touch_num;
+        break;
+    case 2:
+        LP_ANA_PERI.touch_approach.touch_approach_pad2 = touch_num;
+        break;
+    default:
+        // invalid proximity channel
+        abort();
     }
 }
 
@@ -863,18 +866,18 @@ static inline void touch_ll_proximity_set_total_scan_times(uint32_t scan_times)
 static inline void touch_ll_proximity_set_charge_times(uint8_t sample_cfg_id, uint32_t charge_times)
 {
     switch (sample_cfg_id) {
-        case 0:
-            LP_ANA_PERI.touch_approach_work_meas_num.touch_approach_meas_num0 = charge_times;
-            break;
-        case 1:
-            LP_ANA_PERI.touch_approach_work_meas_num.touch_approach_meas_num1 = charge_times;
-            break;
-        case 2:
-            LP_ANA_PERI.touch_approach_work_meas_num.touch_approach_meas_num2 = charge_times;
-            break;
-        default:
-            // invalid sample_cfg_id
-            abort();
+    case 0:
+        LP_ANA_PERI.touch_approach_work_meas_num.touch_approach_meas_num0 = charge_times;
+        break;
+    case 1:
+        LP_ANA_PERI.touch_approach_work_meas_num.touch_approach_meas_num1 = charge_times;
+        break;
+    case 2:
+        LP_ANA_PERI.touch_approach_work_meas_num.touch_approach_meas_num2 = charge_times;
+        break;
+    default:
+        // invalid sample_cfg_id
+        abort();
     }
 }
 
@@ -887,18 +890,18 @@ static inline void touch_ll_proximity_set_charge_times(uint8_t sample_cfg_id, ui
 static inline void touch_ll_proximity_read_measure_cnt(uint8_t prox_chan, uint32_t *cnt)
 {
     switch (prox_chan) {
-        case 0:
-            *cnt = HAL_FORCE_READ_U32_REG_FIELD(LP_TOUCH.aprch_ch_data, approach_pad0_cnt);
-            break;
-        case 1:
-            *cnt = HAL_FORCE_READ_U32_REG_FIELD(LP_TOUCH.aprch_ch_data, approach_pad1_cnt);
-            break;
-        case 2:
-            *cnt = HAL_FORCE_READ_U32_REG_FIELD(LP_TOUCH.aprch_ch_data, approach_pad2_cnt);
-            break;
-        default:  // sleep channel
-            *cnt = HAL_FORCE_READ_U32_REG_FIELD(LP_TOUCH.aprch_ch_data, slp_approach_cnt);
-            break;
+    case 0:
+        *cnt = HAL_FORCE_READ_U32_REG_FIELD(LP_TOUCH.aprch_ch_data, approach_pad0_cnt);
+        break;
+    case 1:
+        *cnt = HAL_FORCE_READ_U32_REG_FIELD(LP_TOUCH.aprch_ch_data, approach_pad1_cnt);
+        break;
+    case 2:
+        *cnt = HAL_FORCE_READ_U32_REG_FIELD(LP_TOUCH.aprch_ch_data, approach_pad2_cnt);
+        break;
+    default:  // sleep channel
+        *cnt = HAL_FORCE_READ_U32_REG_FIELD(LP_TOUCH.aprch_ch_data, slp_approach_cnt);
+        break;
     }
 }
 
@@ -910,8 +913,8 @@ static inline void touch_ll_proximity_read_measure_cnt(uint8_t prox_chan, uint32
 static inline bool touch_ll_is_proximity_sensing_channel(uint32_t touch_num)
 {
     if ((LP_ANA_PERI.touch_approach.touch_approach_pad0 != touch_num)
-        && (LP_ANA_PERI.touch_approach.touch_approach_pad1 != touch_num)
-        && (LP_ANA_PERI.touch_approach.touch_approach_pad2 != touch_num)) {
+            && (LP_ANA_PERI.touch_approach.touch_approach_pad1 != touch_num)
+            && (LP_ANA_PERI.touch_approach.touch_approach_pad2 != touch_num)) {
         return false;
     }
     return true;
@@ -951,18 +954,18 @@ static inline void touch_ll_sleep_get_channel_num(uint32_t *touch_num)
 static inline void touch_ll_sleep_set_threshold(uint8_t sample_cfg_id, uint32_t touch_thresh)
 {
     switch (sample_cfg_id) {
-        case 0:
-            HAL_FORCE_MODIFY_U32_REG_FIELD(LP_ANA_PERI.touch_slp0, touch_slp_th0, touch_thresh);
-            break;
-        case 1:
-            HAL_FORCE_MODIFY_U32_REG_FIELD(LP_ANA_PERI.touch_slp1, touch_slp_th1, touch_thresh);
-            break;
-        case 2:
-            HAL_FORCE_MODIFY_U32_REG_FIELD(LP_ANA_PERI.touch_slp1, touch_slp_th2, touch_thresh);
-            break;
-        default:
-            // invalid sample_cfg_id
-            abort();
+    case 0:
+        HAL_FORCE_MODIFY_U32_REG_FIELD(LP_ANA_PERI.touch_slp0, touch_slp_th0, touch_thresh);
+        break;
+    case 1:
+        HAL_FORCE_MODIFY_U32_REG_FIELD(LP_ANA_PERI.touch_slp1, touch_slp_th1, touch_thresh);
+        break;
+    case 2:
+        HAL_FORCE_MODIFY_U32_REG_FIELD(LP_ANA_PERI.touch_slp1, touch_slp_th2, touch_thresh);
+        break;
+    default:
+        // invalid sample_cfg_id
+        abort();
     }
 }
 

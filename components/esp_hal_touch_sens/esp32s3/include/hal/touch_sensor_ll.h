@@ -19,18 +19,24 @@
 #include "esp_bit_defs.h"
 #include "hal/misc.h"
 #include "hal/assert.h"
-#include "soc/touch_sensor_periph.h"
-#include "soc/soc_caps.h"
-#include "soc/soc_caps_full.h"
-#include "soc/sens_struct.h"
+#include "hal/touch_sensor_periph.h"
 #include "soc/rtc_cntl_struct.h"
 #include "soc/rtc_io_struct.h"
+#include "soc/sens_struct.h"
+#include "soc/soc_caps.h"
+#include "soc/soc_caps_full.h"
 #include "hal/touch_sens_types.h"
+
+#define TOUCH_LL_GET(_attr)  TOUCH_LL_ ## _attr
+#define TOUCH_LL_CHAN_NUM    15
+#define TOUCH_LL_SHIELD_CHAN_ID     14  /*!< The waterproof function includes a shielded channel (TOUCH_PAD_NUM14) */
+#define TOUCH_LL_DENOISE_CHAN_ID    0   /*!< T0 is an internal channel that does not have a corresponding external GPIO.
+                                             T0 will work simultaneously with the measured channel Tn. Finally, the actual
+                                             measured value of Tn is the value after subtracting lower bits of T0. */
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
 #define TOUCH_LL_READ_RAW           0x0
 #define TOUCH_LL_READ_BENCHMARK     0x2
 #define TOUCH_LL_READ_SMOOTH        0x3
@@ -38,28 +44,26 @@ extern "C" {
 #define TOUCH_LL_TIMER_FORCE_DONE   0x3
 #define TOUCH_LL_TIMER_DONE         0x0
 
-// Interrupt mask
 #define TOUCH_LL_INTR_MASK_SCAN_DONE        BIT(4)
 #define TOUCH_LL_INTR_MASK_DONE             BIT(6)
 #define TOUCH_LL_INTR_MASK_ACTIVE           BIT(7)
 #define TOUCH_LL_INTR_MASK_INACTIVE         BIT(8)
 #define TOUCH_LL_INTR_MASK_TIMEOUT          BIT(18)
-/* S2 does NOT really have the prox done interrupt,
-   the TOUCH_LL_INTR_MASK_PROX_DONE signal is used for software simulation
-   So it is not included in the TOUCH_LL_INTR_MASK_ALL */
-#define TOUCH_LL_INTR_MASK_PROX_DONE        BIT(31)
+#define TOUCH_LL_INTR_MASK_PROX_DONE        BIT(20)
 #define TOUCH_LL_INTR_MASK_ALL              (TOUCH_LL_INTR_MASK_SCAN_DONE | \
                                              TOUCH_LL_INTR_MASK_DONE | \
                                              TOUCH_LL_INTR_MASK_ACTIVE | \
                                              TOUCH_LL_INTR_MASK_INACTIVE | \
-                                             TOUCH_LL_INTR_MASK_TIMEOUT)
+                                             TOUCH_LL_INTR_MASK_TIMEOUT | \
+                                             TOUCH_LL_INTR_MASK_PROX_DONE)
 
-#define TOUCH_LL_FULL_CHANNEL_MASK          ((uint16_t)((1U << SOC_MODULE_ATTR(TOUCH, CHAN_NUM)) - 1))
+#define TOUCH_LL_FULL_CHANNEL_MASK          ((uint16_t)((1U << TOUCH_LL_GET(CHAN_NUM)) - 1))
 #define TOUCH_LL_NULL_CHANNEL               (0)  // Null Channel id. Used for disabling some functions like sleep/proximity/waterproof
 
 #define TOUCH_LL_PAD_MEASURE_WAIT_MAX      (0xFF)      // The timer frequency is 8Mhz, the max value is 0xff
 #define TOUCH_LL_ACTIVE_THRESH_MAX         (0x3FFFFF)  // Max channel active threshold
 #define TOUCH_LL_TIMEOUT_MAX               (0x3FFFFF)  // Max timeout value
+#define TOUCH_LL_SUPPORT_PROX_DONE         (1)
 
 /**
  * Enable/disable clock gate of touch sensor.
@@ -90,9 +94,9 @@ static inline void touch_ll_reset_module(void)
  */
 static inline void touch_ll_interrupt_enable(uint32_t int_mask)
 {
-    uint32_t mask = RTCCNTL.int_ena.val;
+    uint32_t mask = RTCCNTL.int_ena_w1ts.val;
     mask |= (int_mask & TOUCH_LL_INTR_MASK_ALL);
-    RTCCNTL.int_ena.val = mask;
+    RTCCNTL.int_ena_w1ts.val = mask;
 }
 
 /**
@@ -102,9 +106,8 @@ static inline void touch_ll_interrupt_enable(uint32_t int_mask)
  */
 static inline void touch_ll_interrupt_disable(uint32_t int_mask)
 {
-    uint32_t mask = RTCCNTL.int_ena.val;
-    mask &= ~(int_mask & TOUCH_LL_INTR_MASK_ALL);
-    RTCCNTL.int_ena.val = mask;
+    uint32_t mask = int_mask & TOUCH_LL_INTR_MASK_ALL;
+    RTCCNTL.int_ena_w1tc.val = mask;
 }
 
 /**
@@ -234,7 +237,7 @@ static inline void touch_ll_set_power_on_wait_cycle(uint32_t wait_cycles)
  * @param charge_times The times of charge and discharge in each measure process of touch channels.
  *                     The timer frequency is RTC_FAST (about 16M). Range: 0 ~ 0xffff.
  */
-static inline void touch_ll_set_charge_times( uint16_t charge_times)
+static inline void touch_ll_set_charge_times(uint16_t charge_times)
 {
     HAL_FORCE_MODIFY_U32_REG_FIELD(RTCCNTL.touch_ctrl1, touch_meas_num, charge_times);
 }
@@ -261,7 +264,18 @@ static inline void touch_ll_set_measure_interval_ticks(uint16_t interval_ticks)
  */
 static inline void touch_ll_set_charge_speed(uint32_t touch_num, touch_charge_speed_t charge_speed)
 {
-    RTCIO.touch_pad[touch_num].slope = charge_speed;
+#define CHARGE_SPEED_MASK(val, num) ((val) << (29 - (num) * 3))
+    uint32_t speed_mask = 0;
+    if (touch_num < 10) {
+        speed_mask = RTCCNTL.touch_dac.val;
+        speed_mask &= ~CHARGE_SPEED_MASK(0x07, touch_num);  // clear the old value
+        RTCCNTL.touch_dac.val = speed_mask | CHARGE_SPEED_MASK(charge_speed, touch_num);
+    } else {
+        speed_mask = RTCCNTL.touch_dac1.val;
+        speed_mask &= ~CHARGE_SPEED_MASK(0x07, touch_num - 10);  // clear the old value
+        RTCCNTL.touch_dac1.val = speed_mask | CHARGE_SPEED_MASK(charge_speed, touch_num - 10);
+    }
+#undef CHARGE_SPEED_MASK
 }
 
 /**
@@ -441,7 +455,6 @@ static inline bool touch_ll_is_fsm_repeated_timer_enabled(void)
     return (bool)RTCCNTL.touch_ctrl2.touch_slp_timer_en;
 }
 
-
 /**
  * Enable the touch sensor FSM start signal from software
  */
@@ -558,7 +571,10 @@ static inline void touch_ll_filter_set_denoise_level(int denoise_lvl)
        denoise_lvl=4 -> noise_thresh=3, 1   benchmark */
     uint32_t noise_thresh = denoise_lvl == 4 ? 3 : 3 - denoise_lvl;
 
+    RTCCNTL.touch_filter_ctrl.touch_bypass_noise_thres = always_update;
     RTCCNTL.touch_filter_ctrl.touch_noise_thres = always_update ? 0 : noise_thresh;
+
+    RTCCNTL.touch_filter_ctrl.touch_bypass_nn_thres = always_update;
     RTCCNTL.touch_filter_ctrl.config2 = always_update ? 0 : noise_thresh;
     RTCCNTL.touch_filter_ctrl.config1 = 0xF;
 }
@@ -688,18 +704,18 @@ static inline void touch_ll_waterproof_set_shield_driver(touch_chan_shield_cap_t
 static inline void touch_ll_set_proximity_sensing_channel(uint8_t prox_chan, uint32_t touch_num)
 {
     switch (prox_chan) {
-        case 0:
-            SENS.sar_touch_conf.touch_approach_pad0 = touch_num;
-            break;
-        case 1:
-            SENS.sar_touch_conf.touch_approach_pad1 = touch_num;
-            break;
-        case 2:
-            SENS.sar_touch_conf.touch_approach_pad2 = touch_num;
-            break;
-        default:
-            // invalid proximity channel
-            abort();
+    case 0:
+        SENS.sar_touch_conf.touch_approach_pad0 = touch_num;
+        break;
+    case 1:
+        SENS.sar_touch_conf.touch_approach_pad1 = touch_num;
+        break;
+    case 2:
+        SENS.sar_touch_conf.touch_approach_pad2 = touch_num;
+        break;
+    default:
+        // invalid proximity channel
+        abort();
     }
 }
 
@@ -790,7 +806,7 @@ static inline void touch_ll_denoise_set_resolution(touch_denoise_chan_resolution
  */
 static inline void touch_ll_denoise_read_data(uint32_t *data)
 {
-    *data =  SENS.sar_touch_status0.touch_denoise_data;
+    *data =  SENS.sar_touch_denoise.touch_denoise_data;
 }
 
 /******************************************************************************/
@@ -831,7 +847,7 @@ static inline void touch_ll_get_measure_times(uint16_t *meas_time)
  */
 static inline void touch_ll_set_sleep_time(uint16_t sleep_time)
 {
-    // touch sensor sleep cycle Time = sleep_cycle / RTC_SLOW_CLK(90k)
+    // touch sensor sleep cycle Time = sleep_cycle / RTC_SLOW_CLK(150k)
     HAL_FORCE_MODIFY_U32_REG_FIELD(RTCCNTL.touch_ctrl1, touch_sleep_cycles, sleep_time);
 }
 
@@ -929,7 +945,18 @@ static inline void touch_ll_get_voltage_attenuation(touch_volt_atten_t *atten)
  */
 static inline void touch_ll_set_slope(touch_pad_t touch_num, touch_cnt_slope_t slope)
 {
-    RTCIO.touch_pad[touch_num].slope = slope;
+#define PAD_SLOP_MASK(val, num) ((val) << (29 - (num) * 3))
+    uint32_t curr_slop = 0;
+    if (touch_num < TOUCH_PAD_NUM10) {
+        curr_slop = RTCCNTL.touch_dac.val;
+        curr_slop &= ~PAD_SLOP_MASK(0x07, touch_num);  // clear the old value
+        RTCCNTL.touch_dac.val = curr_slop | PAD_SLOP_MASK(slope, touch_num);
+    } else {
+        curr_slop = RTCCNTL.touch_dac1.val;
+        curr_slop &= ~PAD_SLOP_MASK(0x07, touch_num - TOUCH_PAD_NUM10);  // clear the old value
+        RTCCNTL.touch_dac1.val = curr_slop | PAD_SLOP_MASK(slope, touch_num - TOUCH_PAD_NUM10);
+    }
+#undef PAD_SLOP_MASK
 }
 
 /**
@@ -944,7 +971,11 @@ static inline void touch_ll_set_slope(touch_pad_t touch_num, touch_cnt_slope_t s
  */
 static inline void touch_ll_get_slope(touch_pad_t touch_num, touch_cnt_slope_t *slope)
 {
-    *slope = (touch_cnt_slope_t)RTCIO.touch_pad[touch_num].slope;
+    if (touch_num < TOUCH_PAD_NUM10) {
+        *slope = (touch_cnt_slope_t)((RTCCNTL.touch_dac.val >> (29 - touch_num * 3)) & 0x07);
+    } else {
+        *slope = (touch_cnt_slope_t)((RTCCNTL.touch_dac1.val >> (29 - (touch_num - TOUCH_PAD_NUM10) * 3)) & 0x07);
+    }
 }
 
 /**
@@ -1232,19 +1263,22 @@ static inline void touch_ll_get_idle_channel_connect(touch_pad_conn_type_t *type
 static inline void touch_ll_intr_enable(touch_pad_intr_mask_t int_mask)
 {
     if (int_mask & TOUCH_PAD_INTR_MASK_DONE) {
-        RTCCNTL.int_ena.rtc_touch_done = 1;
+        RTCCNTL.int_ena_w1ts.rtc_touch_done_w1ts = 1;
     }
     if (int_mask & TOUCH_PAD_INTR_MASK_ACTIVE) {
-        RTCCNTL.int_ena.rtc_touch_active = 1;
+        RTCCNTL.int_ena_w1ts.rtc_touch_active_w1ts = 1;
     }
     if (int_mask & TOUCH_PAD_INTR_MASK_INACTIVE) {
-        RTCCNTL.int_ena.rtc_touch_inactive = 1;
+        RTCCNTL.int_ena_w1ts.rtc_touch_inactive_w1ts = 1;
     }
     if (int_mask & TOUCH_PAD_INTR_MASK_SCAN_DONE) {
-        RTCCNTL.int_ena.rtc_touch_scan_done = 1;
+        RTCCNTL.int_ena_w1ts.rtc_touch_scan_done_w1ts = 1;
     }
     if (int_mask & TOUCH_PAD_INTR_MASK_TIMEOUT) {
-        RTCCNTL.int_ena.rtc_touch_timeout = 1;
+        RTCCNTL.int_ena_w1ts.rtc_touch_timeout_w1ts = 1;
+    }
+    if (int_mask & TOUCH_PAD_INTR_MASK_PROXI_MEAS_DONE) {
+        RTCCNTL.int_ena_w1ts.rtc_touch_approach_loop_done_w1ts = 1;
     }
 }
 
@@ -1256,19 +1290,22 @@ static inline void touch_ll_intr_enable(touch_pad_intr_mask_t int_mask)
 static inline void touch_ll_intr_disable(touch_pad_intr_mask_t int_mask)
 {
     if (int_mask & TOUCH_PAD_INTR_MASK_DONE) {
-        RTCCNTL.int_ena.rtc_touch_done = 0;
+        RTCCNTL.int_ena_w1tc.rtc_touch_done_w1tc = 1;
     }
     if (int_mask & TOUCH_PAD_INTR_MASK_ACTIVE) {
-        RTCCNTL.int_ena.rtc_touch_active = 0;
+        RTCCNTL.int_ena_w1tc.rtc_touch_active_w1tc = 1;
     }
     if (int_mask & TOUCH_PAD_INTR_MASK_INACTIVE) {
-        RTCCNTL.int_ena.rtc_touch_inactive = 0;
+        RTCCNTL.int_ena_w1tc.rtc_touch_inactive_w1tc = 1;
     }
     if (int_mask & TOUCH_PAD_INTR_MASK_SCAN_DONE) {
-        RTCCNTL.int_ena.rtc_touch_scan_done = 0;
+        RTCCNTL.int_ena_w1tc.rtc_touch_scan_done_w1tc = 1;
     }
     if (int_mask & TOUCH_PAD_INTR_MASK_TIMEOUT) {
-        RTCCNTL.int_ena.rtc_touch_timeout = 0;
+        RTCCNTL.int_ena_w1tc.rtc_touch_timeout_w1tc = 1;
+    }
+    if (int_mask & TOUCH_PAD_INTR_MASK_PROXI_MEAS_DONE) {
+        RTCCNTL.int_ena_w1tc.rtc_touch_approach_loop_done_w1tc = 1;
     }
 }
 
@@ -1293,6 +1330,9 @@ static inline void touch_ll_intr_clear(touch_pad_intr_mask_t int_mask)
     }
     if (int_mask & TOUCH_PAD_INTR_MASK_TIMEOUT) {
         RTCCNTL.int_clr.rtc_touch_timeout = 1;
+    }
+    if (int_mask & TOUCH_PAD_INTR_MASK_PROXI_MEAS_DONE) {
+        RTCCNTL.int_clr.rtc_touch_approach_loop_done = 1;
     }
 }
 
@@ -1321,6 +1361,9 @@ static inline uint32_t touch_ll_read_intr_status_mask(void)
     }
     if (intr_st.rtc_touch_timeout) {
         intr_msk |= TOUCH_PAD_INTR_MASK_TIMEOUT;
+    }
+    if (intr_st.rtc_touch_approach_loop_done) {
+        intr_msk |= TOUCH_PAD_INTR_MASK_PROXI_MEAS_DONE;
     }
     return (intr_msk & TOUCH_PAD_INTR_MASK_ALL);
 }
@@ -1651,7 +1694,6 @@ static inline bool touch_ll_proximity_pad_check(touch_pad_t touch_num)
 }
 
 /************** sleep pad setting ***********************/
-
 /**
  * Get the trigger threshold of touch sensor in deep sleep.
  * The threshold determines the sensitivity of the touch sensor.

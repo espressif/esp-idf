@@ -9,4 +9,3 @@
 #include "soc/usb_pins.h"
 #include "soc/gpio_pins.h"
 #include "soc/spi_pins.h"
-#include "soc/touch_sensor_pins.h"

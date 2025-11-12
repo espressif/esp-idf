@@ -7,9 +7,10 @@
 // The HAL layer for Touch Sensor (common part)
 
 #include "soc/soc_pins.h"
-#include "soc/touch_sensor_pins.h"
-#include "hal/touch_sensor_hal.h"
+#include "hal/touch_sensor_legacy_hal.h"
+#include "hal/touch_sensor_ll.h"
 #include "hal/touch_sensor_legacy_types.h"
+#include "soc/soc_caps.h"
 
 static int s_sleep_cycle = -1;
 static int s_meas_times = -1;
@@ -50,7 +51,7 @@ void touch_hal_deinit(void)
     touch_ll_timeout_disable();
     touch_ll_waterproof_enable(false);
     touch_ll_denoise_enable(false);
-    touch_pad_t prox_pad[SOC_TOUCH_PROXIMITY_CHANNEL_NUM] = {[0 ... (SOC_TOUCH_PROXIMITY_CHANNEL_NUM - 1)] = 0};
+    touch_pad_t prox_pad[SOC_TOUCH_PROXIMITY_CHANNEL_NUM] = {[0 ...(SOC_TOUCH_PROXIMITY_CHANNEL_NUM - 1)] = 0};
     touch_ll_proximity_set_channel_num((const touch_pad_t *)prox_pad);
     touch_ll_sleep_set_channel_num(0);
     touch_ll_sleep_enable_proximity_sensing(false);
@@ -89,7 +90,7 @@ void touch_hal_denoise_get_config(touch_pad_denoise_t *denoise)
 
 void touch_hal_denoise_enable(void)
 {
-    touch_ll_clear_channel_mask(1U << SOC_TOUCH_DENOISE_CHANNEL);
+    touch_ll_clear_channel_mask(1U << TOUCH_LL_GET(DENOISE_CHAN_ID));
     touch_ll_denoise_enable(true);
 }
 
@@ -107,7 +108,7 @@ void touch_hal_waterproof_get_config(touch_pad_waterproof_t *waterproof)
 
 void touch_hal_waterproof_enable(void)
 {
-    touch_ll_clear_channel_mask(1U << SOC_TOUCH_SHIELD_CHANNEL);
+    touch_ll_clear_channel_mask(1U << TOUCH_LL_GET(SHIELD_CHAN_ID));
     touch_ll_waterproof_enable(true);
 }
 

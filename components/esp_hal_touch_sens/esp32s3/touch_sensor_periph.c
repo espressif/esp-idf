@@ -1,7 +1,7 @@
 /*
  * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: Apache-2.0 OR MIT
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 #include "soc/touch_sensor_channel.h"
@@ -23,5 +23,5 @@ const int touch_sensor_channel_io_map[] = {
     TOUCH_PAD_NUM11_GPIO_NUM,
     TOUCH_PAD_NUM12_GPIO_NUM,
     TOUCH_PAD_NUM13_GPIO_NUM,
-    TOUCH_PAD_NUM14_GPIO_NUM,
+    TOUCH_PAD_NUM14_GPIO_NUM
 };
