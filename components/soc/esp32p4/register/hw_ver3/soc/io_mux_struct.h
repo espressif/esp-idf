@@ -10,7 +10,6 @@
 extern "C" {
 #endif
 
-//TODO: IDF-13419
 /** Type of GPIO register
  *  IO MUX gpio configuration register
  */
