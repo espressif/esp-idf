@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,7 +12,10 @@
 #include "soc/rtc.h"
 #include "soc/clk_tree_defs.h"
 #include "soc/touch_sensor_periph.h"
+#include "soc/io_mux_reg.h"
 #include "driver/rtc_io.h"
+#include "driver/gpio.h"
+#include "esp_private/gpio.h"
 #include "driver/touch_sens.h"
 
 #if SOC_TOUCH_SENSOR_VERSION <= 2
@@ -40,10 +43,21 @@ touch_sensor_handle_t g_touch = NULL;
 static void touch_channel_pin_init(int id)
 {
     gpio_num_t pin = touch_sensor_channel_io_map[id];
-    rtc_gpio_init(pin);
-    rtc_gpio_set_direction(pin, RTC_GPIO_MODE_DISABLED);
-    rtc_gpio_pulldown_dis(pin);
-    rtc_gpio_pullup_dis(pin);
+    gpio_config_t cfg = {
+        .pin_bit_mask = BIT64(pin),
+        .mode = GPIO_MODE_DISABLE,
+        .pull_up_en = GPIO_PULLUP_DISABLE,
+        .pull_down_en = GPIO_PULLDOWN_DISABLE,
+        .intr_type = GPIO_INTR_DISABLE,
+    };
+    gpio_config(&cfg);
+    gpio_func_sel(pin, PIN_FUNC_GPIO);
+    if (pin <= MAX_RTC_GPIO_NUM) {
+        rtc_gpio_init(pin);
+        rtc_gpio_set_direction(pin, RTC_GPIO_MODE_DISABLED);
+        rtc_gpio_pulldown_dis(pin);
+        rtc_gpio_pullup_dis(pin);
+    }
 }
 
 static void s_touch_free_resource(touch_sensor_handle_t sens_handle)
@@ -420,12 +434,4 @@ esp_err_t touch_channel_read_data(touch_channel_handle_t chan_handle, touch_chan
     TOUCH_NULL_POINTER_CHECK_ISR(chan_handle);
     TOUCH_NULL_POINTER_CHECK_ISR(data);
     return touch_priv_channel_read_data(chan_handle, type, data);
-}
-
-esp_err_t touch_channel_config_benchmark(touch_channel_handle_t chan_handle, const touch_chan_benchmark_config_t *benchmark_cfg)
-{
-    TOUCH_NULL_POINTER_CHECK_ISR(chan_handle);
-    TOUCH_NULL_POINTER_CHECK_ISR(benchmark_cfg);
-    touch_priv_config_benchmark(chan_handle, benchmark_cfg);
-    return ESP_OK;
 }

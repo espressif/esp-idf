@@ -10,8 +10,6 @@
 extern "C" {
 #endif
 
-// TODO: IDF-13424
-
 /** Group: configure_register */
 /** Type of bod_mode0_cntl register
  *  need_des
@@ -153,6 +151,20 @@ typedef union {
     };
     uint32_t val;
 } lp_analog_peri_vddbat_charge_cntl_reg_t;
+
+/** Type of ck_glitch_cntl register
+ *  need_des
+ */
+typedef union {
+    struct {
+        uint32_t reserved_0:31;
+        /** ck_glitch_reset_ena : R/W; bitpos: [31]; default: 0;
+         *  need_des
+         */
+        uint32_t ck_glitch_reset_ena:1;
+    };
+    uint32_t val;
+} lp_analog_peri_ck_glitch_cntl_reg_t;
 
 /** Type of pg_glitch_cntl register
  *  need_des
@@ -692,14 +704,10 @@ typedef union {
          *  High speed touch driver
          */
         uint32_t touch_freq_drv_hs:5;
-        /** touch_bypass_shield : R/W; bitpos: [18]; default: 0;
-         *  bypass the shield channel output (only available since ECO1)
-         */
-        uint32_t touch_bypass_shield:1;
-        /** touch_freq_dbias : R/W; bitpos: [22:19]; default: 0;
+        /** touch_freq_dbias : R/W; bitpos: [22:18]; default: 0;
          *  Internal LDO voltage
          */
-        uint32_t touch_freq_dbias:4;
+        uint32_t touch_freq_dbias:5;
         uint32_t reserved_23:9;
     };
     uint32_t val;
@@ -799,7 +807,7 @@ typedef union {
     uint32_t val;
 } lp_analog_peri_touch_mux1_reg_t;
 
-/** Type of touch_pad0_th0 register
+/** Type of touch_pad_thn register
  *  need_des
  */
 typedef union {
@@ -813,12 +821,35 @@ typedef union {
     uint32_t val;
 } lp_analog_peri_touch_pad_thn_reg_t;
 
+/** Type of touch_ctrl register
+ *  Touch Control Register
+ */
+typedef union {
+    struct {
+        /** touch_update_benchmark_freq_sel : R/W; bitpos: [1:0]; default: 0;
+         *  Configure the frequency point for software to update the benchmark
+         */
+        uint32_t touch_update_benchmark_freq_sel:2;
+        /** touch_update_benchmark_pad_sel : R/W; bitpos: [5:2]; default: 0;
+         *  Configure the channel for software to update the benchmark.
+         */
+        uint32_t touch_update_benchmark_pad_sel:4;
+        /** freq_scan_cnt_rise : R/W; bitpos: [7:6]; default: 1;
+         *  Configure the number of hit frequency points that need to be determined for touch
+         *  in frequency hopping mode.
+         */
+        uint32_t freq_scan_cnt_rise:2;
+        uint32_t reserved_8:24;
+    };
+    uint32_t val;
+} lp_analog_peri_touch_ctrl_reg_t;
+
 /** Type of date register
  *  need_des
  */
 typedef union {
     struct {
-        /** lp_analog_peri_date : R/W; bitpos: [30:0]; default: 2294816;
+        /** lp_analog_peri_date : R/W; bitpos: [30:0]; default: 2425376;
          *  need_des
          */
         uint32_t lp_analog_peri_date:31;
@@ -841,7 +872,7 @@ typedef struct {
     volatile lp_analog_peri_vdd_source_cntl_reg_t vdd_source_cntl;
     volatile lp_analog_peri_vddbat_bod_cntl_reg_t vddbat_bod_cntl;
     volatile lp_analog_peri_vddbat_charge_cntl_reg_t vddbat_charge_cntl;
-    uint32_t reserved_014;
+    volatile lp_analog_peri_ck_glitch_cntl_reg_t ck_glitch_cntl;
     volatile lp_analog_peri_pg_glitch_cntl_reg_t pg_glitch_cntl;
     volatile lp_analog_peri_fib_enable_reg_t fib_enable;
     volatile lp_analog_peri_int_raw_reg_t int_raw;
@@ -870,7 +901,9 @@ typedef struct {
     volatile lp_analog_peri_touch_mux0_reg_t touch_mux0;
     volatile lp_analog_peri_touch_mux1_reg_t touch_mux1;
     volatile lp_analog_peri_touch_padx_thn_reg_t touch_padx_thn[15];
-    uint32_t reserved_1f8[129];
+    uint32_t reserved_1f8;
+    volatile lp_analog_peri_touch_ctrl_reg_t touch_ctrl;
+    uint32_t reserved_200[127];
     volatile lp_analog_peri_date_reg_t date;
 } lp_analog_peri_dev_t;
 

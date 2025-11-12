@@ -146,7 +146,7 @@ TEST_CASE("touch_sens_active_inactive_test", "[touch]")
     /* Configuring the filter */
     touch_sensor_filter_config_t filter_cfg = TOUCH_SENSOR_DEFAULT_FILTER_CONFIG();
     TEST_ESP_OK(touch_sensor_config_filter(touch, &filter_cfg));
-    TEST_ESP_OK(touch_sensor_new_channel(touch, 0, &s_chan_cfg, &touch_chan));
+    TEST_ESP_OK(touch_sensor_new_channel(touch, TOUCH_MIN_CHAN_ID, &s_chan_cfg, &touch_chan));
     /* Connect the touch channels to the internal capacitor */
     touch_ll_enable_internal_capacitor(true);
 

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,6 +25,7 @@
 #include "soc/pmu_struct.h"
 #include "soc/soc_caps.h"
 #include "hal/touch_sensor_types.h"
+#include "hal/config.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -571,6 +572,30 @@ static inline void touch_ll_sample_cfg_set_engaged_num(uint8_t sample_cfg_num)
 }
 
 /**
+ * Get the engaged sample configuration number
+ *
+ * @return The engaged sample configuration number, range 0~3.
+ */
+static inline uint32_t touch_ll_sample_cfg_get_engaged_num(void)
+{
+    uint32_t sample_cfg_num = LP_ANA_PERI.touch_scan_ctrl2.freq_scan_cnt_limit;
+    return sample_cfg_num ? sample_cfg_num : 1;
+}
+
+/**
+ * Set the number of trigger rise count (only available since P4 ver3)
+ *
+ * @param rise_cnt Configure the number of hit frequency points that need to be determined for touch
+ *                 in frequency hopping mode.
+ */
+static inline void touch_ll_sample_cfg_set_trigger_rise_cnt(uint8_t rise_cnt)
+{
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+    LP_ANA_PERI.touch_ctrl.freq_scan_cnt_rise = rise_cnt;
+#endif
+}
+
+/**
  * Set capacitance and resistance of the RC filter of the sampling frequency.
  *
  * @param sample_cfg_id The sample configuration index
@@ -596,18 +621,6 @@ static inline void touch_ll_sample_cfg_set_driver(uint8_t sample_cfg_id, uint32_
     HAL_ASSERT(sample_cfg_id < SOC_TOUCH_SAMPLE_CFG_NUM);
     LP_ANA_PERI.touch_freq_scan_para[sample_cfg_id].touch_freq_drv_ls = ls_drv;
     LP_ANA_PERI.touch_freq_scan_para[sample_cfg_id].touch_freq_drv_hs = hs_drv;
-}
-
-/**
- * Bypass the shield channel output for the specify sample configuration
- *
- * @param sample_cfg_id The sample configuration index
- * @param enable Set true to bypass the shield channel output for the current channel
- */
-static inline void touch_ll_sample_cfg_bypass_shield_output(uint8_t sample_cfg_id, bool enable)
-{
-    HAL_ASSERT(sample_cfg_id < SOC_TOUCH_SAMPLE_CFG_NUM);
-    LP_ANA_PERI.touch_freq_scan_para[sample_cfg_id].touch_bypass_shield = enable;
 }
 
 /**
@@ -736,13 +749,19 @@ static inline void touch_ll_filter_enable(bool enable)
 }
 
 /**
- * Force the update the benchmark by software
+ * Force the update the benchmark by software  (only available since P4 ver3)
  * @note  This benchmark will be applied to all enabled channel and all sampling frequency
  *
+ * @param pad_num The pad number, range [1-14]
+ * @param sample_cfg_id The sample configuration index, range [0-2]
  * @param benchmark The benchmark specified by software
  */
-static inline void touch_ll_force_update_benchmark(uint32_t benchmark)
+static inline void touch_ll_force_update_benchmark(uint32_t pad_num, uint8_t sample_cfg_id, uint32_t benchmark)
 {
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+    LP_ANA_PERI.touch_ctrl.touch_update_benchmark_pad_sel = pad_num;
+    LP_ANA_PERI.touch_ctrl.touch_update_benchmark_freq_sel = sample_cfg_id;
+#endif
     HAL_FORCE_MODIFY_U32_REG_FIELD(LP_ANA_PERI.touch_filter3, touch_benchmark_sw, benchmark);
     LP_ANA_PERI.touch_filter3.touch_update_benchmark_sw = 1;
     // waiting for update
