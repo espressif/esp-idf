@@ -55,6 +55,16 @@ static void esp_key_mgr_init(void)
 
 ESP_SYSTEM_INIT_FN(esp_security_init, SECONDARY, BIT(0), 103)
 {
+#if CONFIG_IDF_TARGET_ESP32C5
+    // Check for unsupported configuration: flash encryption with CPU frequency > 160MHz
+    // Manual encrypted flash writes are not stable at higher CPU clock.
+    // Please refer to the ESP32-C5 SoC Errata document for more details.
+    if (efuse_hal_flash_encryption_enabled() && CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ > 160) {
+        ESP_EARLY_LOGE(TAG, "Flash encryption with CPU frequency > 160MHz is not supported. Please reconfigure the CPU frequency.");
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+#endif
+
     esp_crypto_clk_init();
 
 #if SOC_KEY_MANAGER_SUPPORT_KEY_DEPLOYMENT
