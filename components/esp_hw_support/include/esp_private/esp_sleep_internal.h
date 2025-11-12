@@ -97,7 +97,7 @@ esp_err_t esp_sleep_acquire_lp_use_xtal(void);
 esp_err_t esp_sleep_release_lp_use_xtal(void);
 #endif
 
-#if SOC_GPIO_SUPPORT_HOLD_IO_IN_DSLP && !SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP
+#if !SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP
 /**
  * @brief Isolate all digital IOs except those that are held during deep sleep
  *
