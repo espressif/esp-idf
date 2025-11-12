@@ -92,7 +92,7 @@ typedef struct esp_event_remove_handler_context_t {
 } esp_event_remove_handler_context_t;
 
 typedef union esp_event_post_data {
-    uint32_t val;
+    uint8_t val[CONFIG_ESP_EVENT_POST_FROM_ISR_SIZE];
     void *ptr;
 } esp_event_post_data_t;
 
