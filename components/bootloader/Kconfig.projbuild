@@ -967,7 +967,7 @@ menu "Security features"
 
         config SECURE_BOOT_SKIP_WRITE_PROTECTION_SCA
             bool "Skip write-protection of SECURE_FLASH_PSEUDO_ROUND_FUNC_STRENGTH"
-            default y if SECURE_FLASH_PSEUDO_ROUND_FUNC
+            default y if SECURE_FLASH_PSEUDO_ROUND_FUNC && !SECURE_FLASH_ENCRYPTION_MODE_RELEASE
             default n
             depends on SOC_ECDSA_SUPPORT_CURVE_P384 && SOC_FLASH_ENCRYPTION_XTS_AES_SUPPORT_PSEUDO_ROUND
             help
