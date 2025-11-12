@@ -143,6 +143,18 @@ typedef struct {
 #define ESP_LOG_INIT_ARG_TYPE_46(a, b, c, d, ...) ESP_LOG_INIT_ARG_TYPE_4(a, b, c, d), ESP_LOG_INIT_ARG_TYPE_42(__VA_ARGS__)
 #define ESP_LOG_INIT_ARG_TYPE_47(a, b, c, d, ...) ESP_LOG_INIT_ARG_TYPE_4(a, b, c, d), ESP_LOG_INIT_ARG_TYPE_43(__VA_ARGS__)
 #define ESP_LOG_INIT_ARG_TYPE_48(a, b, c, d, ...) ESP_LOG_INIT_ARG_TYPE_4(a, b, c, d), ESP_LOG_INIT_ARG_TYPE_44(__VA_ARGS__)
+#define ESP_LOG_INIT_ARG_TYPE_49(a, b, c, d, ...) ESP_LOG_INIT_ARG_TYPE_4(a, b, c, d), ESP_LOG_INIT_ARG_TYPE_45(__VA_ARGS__)
+#define ESP_LOG_INIT_ARG_TYPE_50(a, b, c, d, ...) ESP_LOG_INIT_ARG_TYPE_4(a, b, c, d), ESP_LOG_INIT_ARG_TYPE_46(__VA_ARGS__)
+#define ESP_LOG_INIT_ARG_TYPE_51(a, b, c, d, ...) ESP_LOG_INIT_ARG_TYPE_4(a, b, c, d), ESP_LOG_INIT_ARG_TYPE_47(__VA_ARGS__)
+#define ESP_LOG_INIT_ARG_TYPE_52(a, b, c, d, ...) ESP_LOG_INIT_ARG_TYPE_4(a, b, c, d), ESP_LOG_INIT_ARG_TYPE_48(__VA_ARGS__)
+#define ESP_LOG_INIT_ARG_TYPE_53(a, b, c, d, ...) ESP_LOG_INIT_ARG_TYPE_4(a, b, c, d), ESP_LOG_INIT_ARG_TYPE_49(__VA_ARGS__)
+#define ESP_LOG_INIT_ARG_TYPE_54(a, b, c, d, ...) ESP_LOG_INIT_ARG_TYPE_4(a, b, c, d), ESP_LOG_INIT_ARG_TYPE_50(__VA_ARGS__)
+#define ESP_LOG_INIT_ARG_TYPE_55(a, b, c, d, ...) ESP_LOG_INIT_ARG_TYPE_4(a, b, c, d), ESP_LOG_INIT_ARG_TYPE_51(__VA_ARGS__)
+#define ESP_LOG_INIT_ARG_TYPE_56(a, b, c, d, ...) ESP_LOG_INIT_ARG_TYPE_4(a, b, c, d), ESP_LOG_INIT_ARG_TYPE_52(__VA_ARGS__)
+#define ESP_LOG_INIT_ARG_TYPE_57(a, b, c, d, ...) ESP_LOG_INIT_ARG_TYPE_4(a, b, c, d), ESP_LOG_INIT_ARG_TYPE_53(__VA_ARGS__)
+#define ESP_LOG_INIT_ARG_TYPE_58(a, b, c, d, ...) ESP_LOG_INIT_ARG_TYPE_4(a, b, c, d), ESP_LOG_INIT_ARG_TYPE_54(__VA_ARGS__)
+#define ESP_LOG_INIT_ARG_TYPE_59(a, b, c, d, ...) ESP_LOG_INIT_ARG_TYPE_4(a, b, c, d), ESP_LOG_INIT_ARG_TYPE_55(__VA_ARGS__)
+#define ESP_LOG_INIT_ARG_TYPE_60(a, b, c, d, ...) ESP_LOG_INIT_ARG_TYPE_4(a, b, c, d), ESP_LOG_INIT_ARG_TYPE_56(__VA_ARGS__)
 
 // Pack 4 types into a single byte (8 bits)
 #define ESP_LOG_PACK_4_TYPES(a, b, c, d) (char) ( \
