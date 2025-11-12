@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "soc/ana_cmpr_periph.h"
+#include "hal/ana_cmpr_periph.h"
 #include "soc/ana_cmpr_struct.h"
 
 const ana_cmpr_periph_t ana_cmpr_periph[SOC_ANA_CMPR_NUM] = {

@@ -28,7 +28,6 @@ extern "C" {
 
 #define ANALOG_CMPR_LL_ETM_SOURCE(unit, type)   (GPIO_EVT_ZERO_DET_POS0 + (unit) * 2 + (type))
 
-
 /**
  * @brief Enable analog comparator
  *

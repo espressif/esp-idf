@@ -4,14 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "soc/ana_cmpr_periph.h"
+#include "hal/ana_cmpr_periph.h"
 #include "soc/ana_cmpr_struct.h"
 
 const ana_cmpr_periph_t ana_cmpr_periph[SOC_ANA_CMPR_NUM] = {
     [0] = {
         .src_gpio = ANA_CMPR0_SRC_GPIO,
         .ext_ref_gpio = ANA_CMPR0_EXT_REF_GPIO,
-        .intr_src = ETS_GPIO_INTERRUPT_EXT_SOURCE,
+        .intr_src = ETS_GPIO_EXT_SOURCE,
         .module_name = "ANA_CMPR_U0",
     },
 };
