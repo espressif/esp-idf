@@ -11,11 +11,22 @@
 #include "esp_stdio.h"
 #include <sys/errno.h>
 #if CONFIG_VFS_SUPPORT_IO
+
+#if CONFIG_ESP_CONSOLE_USB_CDC
 #include "esp_vfs_cdcacm.h"
-#include "esp_private/esp_vfs_cdcacm.h"
-#include "driver/esp_private/usb_serial_jtag_vfs.h"
-#include "driver/esp_private/uart_vfs.h"
 #include "esp_private/usb_console.h"
+#endif
+#if CONFIG_ESP_CONSOLE_USB_CDC
+#include "esp_private/esp_vfs_cdcacm.h"
+#endif
+
+#if CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG_ENABLED
+#include "driver/esp_private/usb_serial_jtag_vfs.h"
+#endif
+#if CONFIG_ESP_CONSOLE_UART
+#include "driver/esp_private/uart_vfs.h"
+#endif
+
 #include "esp_private/startup_internal.h"
 #include "esp_private/nullfs.h"
 #endif

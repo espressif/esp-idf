@@ -11,10 +11,15 @@ set(sources "")
 
 # These are here to pull the misc stdio drivers into the build when using VFS
 # This maintains the old behavior of just having to add vfs as a REQUIRES to enable
-# the desired output driver. When we have requires that depend on kconfig values
-# this can be refactored to conditionally pull drivers into the build instead
-# TODO: IDF-13984 - Refactor to conditionally include stdio drivers based on Kconfig values
+# the desired output driver. For the new cmake v2 build system this is no longer
+# necessary as we can conditionally pull in dependencies.
+
 list(APPEND pr esp_driver_uart esp_driver_usb_serial_jtag esp_usb_cdc_rom_console)
+
+if(IDF_BUILD_V2)
+    # Clear driver dependencies in v2, these will be pulled in conditionally by stdio
+    set(pr "")
+endif()
 
 list(APPEND sources "vfs.c"
                     "vfs_eventfd.c"
