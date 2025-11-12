@@ -15,7 +15,7 @@
 #include "freertos/semphr.h"
 #include "soc/soc_caps.h"
 #include "soc/clk_tree_defs.h"
-#include "soc/touch_sensor_periph.h"
+#include "hal/touch_sensor_periph.h"
 #include "soc/rtc.h"
 #include "hal/hal_utils.h"
 #include "driver/touch_sens.h"
@@ -68,7 +68,7 @@ void IRAM_ATTR touch_priv_default_intr_handler(void *arg)
         return;
     }
     /* It actually won't be out of range in the real environment, but limit the range to pass the coverity check */
-    uint32_t curr_chan_offset = (curr_chan >= SOC_MODULE_ATTR(TOUCH, CHAN_NUM) ? SOC_MODULE_ATTR(TOUCH, CHAN_NUM) - 1 : curr_chan) - TOUCH_MIN_CHAN_ID;
+    uint32_t curr_chan_offset = (curr_chan >= TOUCH_LL_GET(CHAN_NUM) ? TOUCH_LL_GET(CHAN_NUM) - 1 : curr_chan) - TOUCH_MIN_CHAN_ID;
     data.chan = g_touch->ch[curr_chan_offset];
     /* If the channel is not registered, return directly */
     if (!data.chan) {

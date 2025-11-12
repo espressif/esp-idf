@@ -9,7 +9,6 @@
 #include <stdint.h>
 #include "esp_err.h"
 
-#include "hal/touch_sensor_legacy_types.h"
 #include "hal/gpio_types.h"
 
 #include "soc/soc_caps.h"

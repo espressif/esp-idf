@@ -17,7 +17,7 @@
 #include "hal/touch_sensor_ll.h"
 #include "hal/touch_sensor_legacy_types.h"
 
-#include_next "hal/touch_sensor_hal.h"
+#include_next "hal/touch_sensor_legacy_hal.h"
 
 #ifdef __cplusplus
 extern "C" {

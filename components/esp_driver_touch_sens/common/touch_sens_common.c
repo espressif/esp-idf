@@ -11,7 +11,7 @@
 #include "soc/soc_caps.h"
 #include "soc/rtc.h"
 #include "soc/clk_tree_defs.h"
-#include "soc/touch_sensor_periph.h"
+#include "hal/touch_sensor_periph.h"
 #include "esp_private/gpio.h"
 #include "driver/touch_sens.h"
 #include "esp_private/esp_gpio_reserve.h"

@@ -18,13 +18,16 @@
 #include <stdbool.h>
 #include "hal/misc.h"
 #include "hal/assert.h"
-#include "soc/touch_sensor_periph.h"
+#include "hal/touch_sensor_periph.h"
 #include "soc/sens_struct.h"
 #include "soc/rtc_io_struct.h"
 #include "soc/rtc_cntl_struct.h"
 #include "soc/soc_caps.h"
 #include "soc/soc_caps_full.h"
 #include "hal/touch_sens_types.h"
+
+#define TOUCH_LL_GET(_attr)  TOUCH_LL_ ## _attr
+#define TOUCH_LL_CHAN_NUM    10
 
 #ifdef __cplusplus
 extern "C" {
@@ -34,7 +37,7 @@ extern "C" {
 #define TOUCH_LL_BIT_SWAP(data, n, m)   (((data >> n) &  0x1)  == ((data >> m) & 0x1) ? (data) : ((data) ^ ((0x1 <<n) | (0x1 << m))))
 #define TOUCH_LL_BITS_SWAP(v)  TOUCH_LL_BIT_SWAP(v, 8, 9)
 #define TOUCH_LL_CHAN_SWAP(chan)  ((chan) == 8 ? 9 : ((chan) == 9 ? 8 : (chan)))
-#define TOUCH_LL_FULL_CHANNEL_MASK          ((uint16_t)((1U << SOC_MODULE_ATTR(TOUCH, CHAN_NUM)) - 1))
+#define TOUCH_LL_FULL_CHANNEL_MASK          ((uint16_t)((1U << TOUCH_LL_GET(CHAN_NUM)) - 1))
 #define TOUCH_LL_READ_RAW                   0x0
 
 #define TOUCH_LL_CHARGE_DURATION_MAX       (0xFFFF)
@@ -392,7 +395,6 @@ static inline bool touch_ll_is_fsm_repeated_timer_enabled(void)
     return (bool)RTCCNTL.state0.touch_slp_timer_en;
 }
 
-
 /**
  * Enable the touch sensor FSM start signal from software
  */
@@ -431,7 +433,7 @@ __attribute__((always_inline))
 static inline void touch_ll_read_chan_data(uint32_t touch_num, uint8_t type, uint32_t *data)
 {
     HAL_ASSERT(type == TOUCH_LL_READ_RAW);
-    HAL_ASSERT(touch_num < SOC_MODULE_ATTR(TOUCH, CHAN_NUM));
+    HAL_ASSERT(touch_num < TOUCH_LL_GET(CHAN_NUM));
     touch_num = TOUCH_LL_CHAN_SWAP(touch_num);
     if (touch_num & 0x1) {
         *data = HAL_FORCE_READ_U32_REG_FIELD(SENS.touch_meas[touch_num >> 1], l_val);
@@ -728,9 +730,9 @@ static inline void touch_ll_get_threshold(touch_pad_t touch_num, uint16_t *thres
 {
     touch_pad_t tp_wrap = touch_ll_num_wrap(touch_num);
     if (threshold) {
-        *threshold = (tp_wrap & 0x1 ) ?
-            HAL_FORCE_READ_U32_REG_FIELD(SENS.touch_thresh[tp_wrap / 2], l_thresh) :
-            HAL_FORCE_READ_U32_REG_FIELD(SENS.touch_thresh[tp_wrap / 2], h_thresh);
+        *threshold = (tp_wrap & 0x1) ?
+                     HAL_FORCE_READ_U32_REG_FIELD(SENS.touch_thresh[tp_wrap / 2], l_thresh) :
+                     HAL_FORCE_READ_U32_REG_FIELD(SENS.touch_thresh[tp_wrap / 2], h_thresh);
     }
 }
 
@@ -911,7 +913,7 @@ static inline uint32_t touch_ll_read_raw_data(touch_pad_t touch_num)
 {
     touch_pad_t tp_wrap = touch_ll_num_wrap(touch_num);
     return ((tp_wrap & 0x1) ? HAL_FORCE_READ_U32_REG_FIELD(SENS.touch_meas[tp_wrap / 2], l_val) :
-                              HAL_FORCE_READ_U32_REG_FIELD(SENS.touch_meas[tp_wrap / 2], h_val));
+            HAL_FORCE_READ_U32_REG_FIELD(SENS.touch_meas[tp_wrap / 2], h_val));
 }
 
 #ifdef __cplusplus

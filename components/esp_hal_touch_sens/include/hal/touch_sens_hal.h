@@ -10,7 +10,6 @@
  * See readme.md in hal/include/hal/readme.md
  ******************************************************************************/
 
-
 #pragma once
 
 #include "soc/soc_caps.h"
@@ -105,7 +104,7 @@ typedef struct {
                                                              *   of the sample configurations below.
                                                              */
     touch_out_mode_t                output_mode;            /*!< Touch channel counting mode of the binarized touch output */
-    #endif  // SOC_TOUCH_SENSOR_VERSION == 3
+#endif  // SOC_TOUCH_SENSOR_VERSION == 3
     uint32_t                        sample_cfg_num;         /*!< The sample configuration number that used for sampling */
     uint32_t                        trigger_rise_cnt;       /*!< The counter of triggered frequency points to judge whether a channel active.
                                                              *   For example, there are 3 sample configurations activated, and the trigger_rise_cnt is 2,

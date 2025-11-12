@@ -209,16 +209,6 @@ elseif(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "ds_hal.c")
     endif()
 
-    if(CONFIG_SOC_TOUCH_SENSOR_SUPPORTED)
-        # Source files for the legacy touch hal driver
-        if(CONFIG_SOC_TOUCH_SENSOR_VERSION LESS 3)
-            list(APPEND srcs "${target}/touch_sensor_hal.c")
-            list(APPEND srcs "touch_sensor_hal.c")
-        endif()
-        # Source files for the new touch hal driver
-        list(APPEND srcs "touch_sens_hal.c")
-    endif()
-
     if(CONFIG_SOC_TEMP_SENSOR_SUPPORTED)
         list(APPEND srcs "temperature_sensor_hal.c")
     endif()
