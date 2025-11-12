@@ -337,7 +337,8 @@ static esp_err_t esp_wifi_psram_check(const wifi_init_config_t *config)
 esp_err_t esp_wifi_init(const wifi_init_config_t *config)
 {
     if (s_wifi_inited) {
-        return ESP_OK;
+        ESP_LOGE(TAG, "Failed to init, WiFi is initialized by esp_wifi_init");
+        return ESP_ERR_INVALID_STATE;
     }
 
     esp_err_t result = ESP_OK;
