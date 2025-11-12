@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,11 +8,10 @@
 #include <string.h>
 
 #include "esp_err.h"
-#include "esp_private/cache_utils.h"
-
 #include "esp_rom_sys.h"
 
 #ifndef CONFIG_IDF_TARGET_LINUX
+#include "esp_private/cache_utils.h"
 #include "esp_cpu.h"
 #else
 /* esp_cpu.h isn't available when building for Linux */
@@ -30,7 +29,7 @@ static void esp_error_check_failed_print(const char *msg, esp_err_t rc, const ch
     esp_rom_printf(" (%s)", esp_err_to_name(rc));
 #endif //CONFIG_ESP_ERR_TO_NAME_LOOKUP
     esp_rom_printf(" at 0x%08x\n", esp_cpu_get_call_addr(addr));
-#if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
+#if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP && !CONFIG_IDF_TARGET_LINUX
     if (spi_flash_cache_enabled())  // strings may be in flash cache
 #endif
     {

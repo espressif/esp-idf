@@ -477,6 +477,10 @@ flash 进入 deep power-down 模式
 
 允许在未配置唤醒源的情况下进入睡眠模式。在此情况下，芯片将一直处于睡眠模式，直到从外部被复位。
 
+.. note::
+
+    睡眠流程会禁用 cache，因此请求睡眠的任务其任务栈必须位于内部内存（DRAM 或 RTC fast memory）。如果任务栈位于 PSRAM 的任务请求 Light-sleep 或 Deep-sleep，将被拒绝并返回错误。
+
 UART 输出处理
 ^^^^^^^^^^^^^^^^^^^^
 

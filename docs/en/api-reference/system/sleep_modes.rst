@@ -477,6 +477,10 @@ Entering Sleep
 
 It is also possible to enter sleep modes with no wakeup sources configured. In this case, the chip will be in sleep modes indefinitely until external reset is applied.
 
+.. note::
+
+    The sleep process will disable the cache, so the task stack of the task requesting sleep must be located in internal memory (DRAM or RTC fast memory). If a task with its stack in PSRAM requests Light-sleep or Deep-sleep, it will be rejected and an error will be returned.
+
 UART Output Handling
 ^^^^^^^^^^^^^^^^^^^^
 
