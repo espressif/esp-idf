@@ -465,8 +465,6 @@ static inline void emac_ll_disable_corresponding_emac_intr(emac_mac_dev_t *mac_r
 
 /*************** End of mac regs operation *********************/
 
-
-
 /************** Start of dma regs operation ********************/
 /* dmabusmode */
 static inline void emac_ll_reset(emac_dma_dev_t *dma_regs)
@@ -659,7 +657,6 @@ __attribute__((always_inline)) static inline void emac_ll_clear_all_pending_intr
     dma_regs->dmastatus.val = 0xFFFFFFFF;
 }
 
-
 /* dmatxpolldemand / dmarxpolldemand */
 static inline void emac_ll_transmit_poll_demand(emac_dma_dev_t *dma_regs, uint32_t val)
 {
@@ -714,7 +711,8 @@ static inline void emac_ll_ts_all_enable(emac_ptp_dev_t *ptp_regs, bool enable)
     ptp_regs->timestamp_ctrl.en_ts4all = enable;
 }
 
-static inline void emac_ll_ptp_v2_proc_enable(emac_ptp_dev_t *ptp_regs, bool enable) {
+static inline void emac_ll_ptp_v2_proc_enable(emac_ptp_dev_t *ptp_regs, bool enable)
+{
     ptp_regs->timestamp_ctrl.en_ptp_pkg_proc_ver2_fmt = enable;
 }
 
@@ -987,8 +985,7 @@ static inline void emac_ll_clock_enable_ptp(void *ext_regs, soc_periph_emac_ptp_
 {
     uint8_t clk_src_val;
 
-    switch (clk_src)
-    {
+    switch (clk_src) {
     case EMAC_PTP_CLK_SRC_XTAL:
         clk_src_val = 0;
         break;

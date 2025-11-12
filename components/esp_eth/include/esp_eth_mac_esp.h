@@ -25,7 +25,7 @@ typedef enum {
     /**
      * @brief Input RMII Clock from external. EMAC Clock GPIO number needs to be configured when this option is selected.
      *
-     * @note See components/soc/esp32(*)/emac_periph.c for available GPIO numbers.
+     * @note See components/esp_hal_emac/esp32(*)/emac_periph.c for available GPIO numbers.
      *
      */
     EMAC_CLK_EXT_IN,
@@ -36,7 +36,7 @@ typedef enum {
      * @warning ESP32 Errata: If you want the Ethernet to work with Wi-Fi or BT, don’t select ESP32 as RMII CLK output as it would result in clock instability.
      *                        Applicable only to ESP32, other ESP32 SoCs are not affected.
      *
-     * @note See components/soc/esp32(*)/emac_periph.c for available GPIO numbers.
+     * @note See components/esp_hal_emac/esp32(*)/emac_periph.c for available GPIO numbers.
      *
      */
     EMAC_CLK_OUT

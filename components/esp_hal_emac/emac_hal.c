@@ -416,7 +416,7 @@ esp_err_t emac_hal_ptp_stop(emac_hal_context_t *hal)
 esp_err_t emac_hal_ptp_adj_inc(emac_hal_context_t *hal, int32_t adj_ppb)
 {
     if (emac_ll_get_ts_update_method(hal->ptp_regs) != ETH_PTP_UPDATE_METHOD_FINE ||
-        !emac_ll_is_ts_addend_update_done(hal->ptp_regs)) {
+            !emac_ll_is_ts_addend_update_done(hal->ptp_regs)) {
         return ESP_ERR_INVALID_STATE;
     }
     /**
@@ -464,7 +464,7 @@ esp_err_t emac_hal_ptp_adj_inc(emac_hal_context_t *hal, int32_t adj_ppb)
 esp_err_t emac_hal_adj_freq_factor(emac_hal_context_t *hal, double scale_factor)
 {
     if (emac_ll_get_ts_update_method(hal->ptp_regs) != ETH_PTP_UPDATE_METHOD_FINE ||
-        !emac_ll_is_ts_addend_update_done(hal->ptp_regs)) {
+            !emac_ll_is_ts_addend_update_done(hal->ptp_regs)) {
         return ESP_ERR_INVALID_STATE;
     }
 
@@ -528,7 +528,6 @@ esp_err_t emac_hal_ptp_enable_ts4all(emac_hal_context_t *hal, bool enable)
     return ESP_OK;
 }
 #endif // SOC_EMAC_IEEE1588V2_SUPPORTED
-
 
 void emac_hal_start(emac_hal_context_t *hal)
 {
