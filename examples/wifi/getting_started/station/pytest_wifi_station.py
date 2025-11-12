@@ -16,7 +16,7 @@ DIFF_THRESHOLD = {
 }
 
 
-@pytest.mark.wifi_two_dut
+@pytest.mark.two_duts
 @pytest.mark.parametrize('count, config, skip_autoflash', [(2, 'default|enable_softap', 'y')], indirect=True)
 @idf_parametrize(
     'target',
