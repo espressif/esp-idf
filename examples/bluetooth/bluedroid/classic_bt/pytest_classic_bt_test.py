@@ -1,16 +1,15 @@
 # SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
-import os.path
+import os
 from typing import Tuple
 
 import pexpect
 import pytest
 from pytest_embedded_idf.dut import IdfDut
 
+
 # Case 1: SPP
-
-
-@pytest.mark.wifi_two_dut
+@pytest.mark.two_duts
 @pytest.mark.parametrize(
     'count, app_path, target, erase_all, config',
     [
@@ -45,7 +44,7 @@ def test_bt_spp_only(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> None:
 
 
 # Case 2: SPP_VFS
-@pytest.mark.wifi_two_dut
+@pytest.mark.two_duts
 @pytest.mark.parametrize(
     'count, app_path, target, config',
     [
@@ -74,7 +73,7 @@ def test_bt_spp_vfs(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> None:
 
 
 # Case 3: A2DP
-@pytest.mark.wifi_two_dut
+@pytest.mark.two_duts
 @pytest.mark.parametrize(
     'count, app_path, target, config',
     [
@@ -101,7 +100,7 @@ def test_bt_a2dp(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> None:
 
 
 # Case 4: HFP
-@pytest.mark.wifi_two_dut
+@pytest.mark.two_duts
 @pytest.mark.parametrize(
     'count, app_path, target, config',
     [
@@ -126,7 +125,7 @@ def test_bt_hfp(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> None:
 
 
 # # Case 5: HID
-@pytest.mark.wifi_two_dut
+@pytest.mark.two_duts
 @pytest.mark.parametrize(
     'count, app_path, target, config',
     [
@@ -155,7 +154,7 @@ def test_bt_hid(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> None:
 
 
 # Case 6: L2CAP
-@pytest.mark.wifi_two_dut
+@pytest.mark.two_duts
 @pytest.mark.parametrize(
     'count, app_path, target, config',
     [

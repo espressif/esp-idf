@@ -7,6 +7,7 @@ from typing import Tuple
 import pytest
 from pytest_embedded import Dut
 from pytest_embedded_idf.utils import idf_parametrize
+
 # diff of esp32s2/esp32s3 ~45K, others ~50K
 
 DIFF_THRESHOLD = {
@@ -16,7 +17,7 @@ DIFF_THRESHOLD = {
 }
 
 
-@pytest.mark.wifi_two_dut
+@pytest.mark.two_duts
 @pytest.mark.parametrize('count, config, skip_autoflash', [(2, 'default|enable_softap', 'y')], indirect=True)
 @idf_parametrize(
     'target',
