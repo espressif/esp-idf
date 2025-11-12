@@ -121,7 +121,7 @@ typedef UINT8 tL2CAP_CHNL_DATA_RATE;
 #define L2CAP_FCR_CHAN_OPT_ALL_MASK (L2CAP_FCR_CHAN_OPT_BASIC | L2CAP_FCR_CHAN_OPT_ERTM | L2CAP_FCR_CHAN_OPT_STREAM)
 
 /* Validity check for PSM.  PSM values must be odd.  Also, all PSM values must
-** be assigned such that the least significant bit of the most sigificant
+** be assigned such that the least significant bit of the most significant
 ** octet equals zero.
 */
 #define L2C_INVALID_PSM(psm)    (((psm) & 0x0101) != 0x0001)
@@ -938,7 +938,7 @@ typedef struct {
 **
 **  Parameters:     tL2CAP_UCD_CB_INFO
 **
-**  Return value:   TRUE if successs
+**  Return value:   TRUE if success
 **
 *******************************************************************************/
 extern BOOLEAN L2CA_UcdRegister ( UINT16 psm, tL2CAP_UCD_CB_INFO *p_cb_info );
@@ -951,7 +951,7 @@ extern BOOLEAN L2CA_UcdRegister ( UINT16 psm, tL2CAP_UCD_CB_INFO *p_cb_info );
 **
 **  Parameters:     PSM
 **
-**  Return value:   TRUE if successs
+**  Return value:   TRUE if success
 **
 *******************************************************************************/
 extern BOOLEAN L2CA_UcdDeregister ( UINT16 psm );
@@ -968,7 +968,7 @@ extern BOOLEAN L2CA_UcdDeregister ( UINT16 psm );
 **                              L2CAP_UCD_INFO_TYPE_MTU
 **
 **
-**  Return value:   TRUE if successs
+**  Return value:   TRUE if success
 **
 *******************************************************************************/
 extern BOOLEAN L2CA_UcdDiscover ( UINT16 psm, BD_ADDR rem_bda, UINT8 info_type );
@@ -1001,7 +1001,7 @@ extern UINT16 L2CA_UcdDataWrite (UINT16 psm, BD_ADDR rem_bda, BT_HDR *p_buf, UIN
 **  Parameters:     BD Addr
 **                  Timeout in second
 **
-**  Return value:   TRUE if successs
+**  Return value:   TRUE if success
 **
 *******************************************************************************/
 extern BOOLEAN L2CA_UcdSetIdleTimeout ( BD_ADDR rem_bda, UINT16 timeout );
@@ -1089,7 +1089,8 @@ extern BOOLEAN  L2CA_RegisterFixedChannel (UINT16 fixed_cid, tL2CAP_FIXED_CHNL_R
 **  Return value:   TRUE if connection started
 **
 *******************************************************************************/
-extern BOOLEAN L2CA_ConnectFixedChnl (UINT16 fixed_cid, BD_ADDR bd_addr, tBLE_ADDR_TYPE bd_addr_type, BOOLEAN is_aux);
+extern BOOLEAN L2CA_ConnectFixedChnl (UINT16 fixed_cid, BD_ADDR bd_addr, tBLE_ADDR_TYPE bd_addr_type, BOOLEAN is_aux,
+                                        BOOLEAN is_pawr_synced, UINT8 adv_handle, UINT8 subevent);
 
 /*******************************************************************************
 **
