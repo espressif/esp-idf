@@ -53,8 +53,6 @@ These third party libraries can be included into the application (firmware) prod
 
 * :component_file:`SD/MMC driver <sdmmc/sdmmc_cmd.c>` is derived from `OpenBSD SD/MMC driver`_, Copyright (C) 2006 Uwe Stuehler, and is licensed under BSD License.
 
-* :component:`ESP-MQTT <mqtt>` Package (contiki-mqtt), Copyright (C) 2014 Stephen Robinson, MQTT-ESP - Tuan PM <tuanpm at live dot com> is licensed under Apache License 2.0 as described in :component_file:`LICENSE file <mqtt/esp-mqtt/LICENSE>`.
-
 * :component:`BLE Mesh <bt/esp_ble_mesh>` is adapted from Zephyr Project, Copyright (C) 2017-2018 Intel Corporation and licensed under Apache License 2.0.
 
 * `mynewt-nimble`_, Copyright (C) 2015-2018 The Apache Software Foundation, is licensed under Apache License 2.0 as described in :component_file:`LICENSE file <bt/host/nimble/nimble/LICENSE>`.
@@ -161,7 +159,6 @@ Copyright (C) 2011 ChaN, all right reserved.
 .. _protobuf-c: https://github.com/protobuf-c/protobuf-c
 .. _Unity: https://github.com/ThrowTheSwitch/Unity
 .. _asio: https://github.com/chriskohlhoff/asio
-.. _mqtt: https://github.com/espressif/esp-mqtt
 .. _zephyr: https://github.com/zephyrproject-rtos/zephyr
 .. _mynewt-nimble: https://github.com/apache/mynewt-nimble
 .. _ESP-IDF Programming Guide: https://docs.espressif.com/projects/esp-idf/en/latest/

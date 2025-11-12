@@ -855,13 +855,6 @@ examples/protocols/https_server/wss_server/main/keep_alive.h
 examples/protocols/https_server/wss_server/main/wss_server_example.c
 examples/protocols/https_x509_bundle/main/https_x509_bundle_example_main.c
 examples/protocols/icmp_echo/main/echo_example_main.c
-examples/protocols/mqtt/ssl/main/app_main.c
-examples/protocols/mqtt/ssl_ds/main/app_main.c
-examples/protocols/mqtt/ssl_mutual_auth/main/app_main.c
-examples/protocols/mqtt/ssl_psk/main/app_main.c
-examples/protocols/mqtt/tcp/main/app_main.c
-examples/protocols/mqtt/ws/main/app_main.c
-examples/protocols/mqtt/wss/main/app_main.c
 examples/protocols/sntp/main/sntp_example_main.c
 examples/protocols/sockets/non_blocking/main/non_blocking_socket_example.c
 examples/protocols/sockets/tcp_client_multi_net/main/tcp_client_multiple.c
@@ -942,10 +935,6 @@ tools/test_apps/protocols/esp_netif/build_config/main/init_macro.h
 tools/test_apps/protocols/esp_netif/build_config/main/main.cpp
 tools/test_apps/protocols/esp_netif/build_config/main/netif_init_c99.c
 tools/test_apps/protocols/esp_netif/build_config/main/netif_init_cpp.cpp
-tools/test_apps/protocols/mqtt/build_test/main/mqtt_app.cpp
-tools/test_apps/protocols/mqtt/publish_connect_test/main/connect_test.c
-tools/test_apps/protocols/mqtt/publish_connect_test/main/publish_connect_test.c
-tools/test_apps/protocols/mqtt/publish_connect_test/main/publish_test.c
 tools/test_apps/security/secure_boot/main/secure_boot_main.c
 tools/test_apps/security/secure_boot/main/secure_boot_main_esp32.c
 tools/test_apps/system/bootloader_sections/main/test_main.c

@@ -7,6 +7,7 @@
 # Warnings in this file must be in the same overall order as the log file.
 #
 esp_ble_mesh_defs.inc:line: WARNING: Invalid C++ declaration: Expected identifier in nested name. [error at 0]
+
   
   ^
 esp_ble_mesh_defs.inc:line: WARNING: Error in declarator or parameters-and-qualifiers
@@ -305,19 +306,5 @@ If declarator-id:
     struct twai_error_flags_t
     -------------------------^
 
-mqtt_client.inc:line: WARNING: Duplicate C++ declaration, also defined at api-reference/protocols/mqtt:line.
-Declaration is '.. cpp:type:: struct esp_mqtt_event_t esp_mqtt_event_t'.
-mqtt_client.inc:line: WARNING: Duplicate C++ declaration, also defined at api-reference/protocols/mqtt:line.
-Declaration is '.. cpp:type:: struct esp_mqtt_client_config_t esp_mqtt_client_config_t'.
-mqtt_client.inc:line: WARNING: Duplicate C++ declaration, also defined at api-reference/protocols/mqtt:line.
-Declaration is '.. cpp:enum:: esp_mqtt_event_id_t'.
-mqtt_client.inc:line: WARNING: Duplicate C++ declaration, also defined at api-reference/protocols/mqtt:line.
-Declaration is '.. cpp:enum:: esp_mqtt_connect_return_code_t'.
-mqtt_client.inc:line: WARNING: Duplicate C++ declaration, also defined at api-reference/protocols/mqtt:line.
-Declaration is '.. cpp:enum:: esp_mqtt_error_type_t'.
-mqtt_client.inc:line: WARNING: Duplicate C++ declaration, also defined at api-reference/protocols/mqtt:line.
-Declaration is '.. cpp:enum:: esp_mqtt_transport_t'.
-mqtt_client.inc:line: WARNING: Duplicate C++ declaration, also defined at api-reference/protocols/mqtt:line.
-Declaration is '.. cpp:enum:: esp_mqtt_protocol_ver_t'.
 esp_heap_trace.inc:line: WARNING: Duplicate C++ declaration, also defined at api-reference/system/heap_debug:line.
 Declaration is '.. cpp:type:: struct heap_trace_record_t heap_trace_record_t'.

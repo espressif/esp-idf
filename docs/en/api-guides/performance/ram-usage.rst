@@ -132,7 +132,6 @@ The default stack sizes for these tasks are usually set conservatively high to a
    :SOC_BT_SUPPORTED: - :doc:`/api-reference/bluetooth/nimble/index` has task stack size :ref:`CONFIG_BT_NIMBLE_HOST_TASK_STACK_SIZE`.
    - The Ethernet driver creates a task for the MAC to receive Ethernet frames. If using the default config ``ETH_MAC_DEFAULT_CONFIG`` then the task stack size is 4 KB. This setting can be changed by passing a custom :cpp:class:`eth_mac_config_t` struct when initializing the Ethernet MAC.
    - FreeRTOS idle task stack size is configured by :ref:`CONFIG_FREERTOS_IDLE_TASK_STACKSIZE`.
-   - If using the :doc:`/api-reference/protocols/mqtt` component, it creates a task with stack size configured by :ref:`CONFIG_MQTT_TASK_STACK_SIZE`. MQTT stack size can also be configured using ``task_stack`` field of :cpp:class:`esp_mqtt_client_config_t`.
    - To see how to optimize RAM usage when using ``mDNS``, please check `Minimizing RAM Usage <https://docs.espressif.com/projects/esp-protocols/mdns/docs/latest/en/index.html#minimizing-ram-usage>`__.
 
 .. note::
