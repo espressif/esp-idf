@@ -67,7 +67,12 @@ MCPWM 定时器
 
 调用 :cpp:func:`mcpwm_new_timer` 函数，以配置结构体 :cpp:type:`mcpwm_timer_config_t` 为参数，分配一个 MCPWM 定时器为对象。结构体定义为：
 
-- :cpp:member:`mcpwm_timer_config_t::group_id` 指定 MCPWM 组 ID，范围为 [0, :c:macro:`SOC_MCPWM_GROUPS` - 1]。需注意，位于不同组的定时器彼此独立。
+- :cpp:member:`mcpwm_timer_config_t::group_id` 指定 MCPWM 组 ID，范围为 [0, ``MCPWM_GROUP_NUM`` - 1]，其中 ``MCPWM_GROUP_NUM`` 是芯片上可用的 MCPWM 组数量。需注意，位于不同组的定时器彼此独立。
+
+.. note::
+
+    对于芯片上可用的 MCPWM 组数量，请参阅 *{IDF_TARGET_NAME} 技术参考手册* > *电机控制脉宽调制器（MCPWM）* [`PDF <{IDF_TARGET_TRM_CN_URL}#mcpwm>`__]。
+
 - :cpp:member:`mcpwm_timer_config_t::intr_priority` 设置中断的优先级。如果设置为 ``0``，则会分配一个默认优先级的中断，否则会使用指定的优先级。
 - :cpp:member:`mcpwm_timer_config_t::clk_src` 设置定时器的时钟源。
 - :cpp:member:`mcpwm_timer_config_t::resolution_hz` 设置定时器的预期分辨率。内部驱动将根据时钟源和分辨率设置合适的分频器。
@@ -89,7 +94,7 @@ MCPWM 操作器
 
 调用 :cpp:func:`mcpwm_new_operator` 函数，以配置结构体 :cpp:type:`mcpwm_operator_config_t` 为参数，分配一个 MCPWM 操作器为对象。结构体定义为：
 
-- :cpp:member:`mcpwm_operator_config_t::group_id` 指定 MCPWM 组 ID，范围为 [0, :c:macro:`SOC_MCPWM_GROUPS` - 1]。需注意，位于不同组的操作器彼此独立。
+- :cpp:member:`mcpwm_operator_config_t::group_id` 指定 MCPWM 组 ID，范围为 [0, ``MCPWM_GROUP_NUM`` - 1]，其中 ``MCPWM_GROUP_NUM`` 是芯片上可用的 MCPWM 组数量。需注意，位于不同组的操作器彼此独立。
 - :cpp:member:`mcpwm_operator_config_t::intr_priority` 设置中断的优先级。如果设置为 ``0``，则会分配一个默认优先级的中断，否则会使用指定的优先级。
 - :cpp:member:`mcpwm_operator_config_t::update_gen_action_on_tez` 设置是否在定时器计数为零时更新生成器操作。此处及下文提到的定时器指通过 :cpp:func:`mcpwm_operator_connect_timer` 连接到操作器的定时器。
 - :cpp:member:`mcpwm_operator_config_t::update_gen_action_on_tep` 设置当定时器计数达到峰值时是否更新生成器操作。
@@ -140,7 +145,7 @@ MCPWM 故障分为两种类型：来自 GPIO 的故障信号和软件故障。
 
 调用 :cpp:func:`mcpwm_new_gpio_fault` 函数，以配置结构体 :cpp:type:`mcpwm_gpio_fault_config_t` 为参数，分配一个 GPIO 故障为对象。结构体定义为：
 
-- :cpp:member:`mcpwm_gpio_fault_config_t::group_id` 设置 MCPWM 组 ID，范围为 [0, :c:macro:`SOC_MCPWM_GROUPS` - 1]。需注意，位于不同组的 GPIO 故障彼此独立，也就是说，1 组的操作器无法检测到 0 组的 GPIO 故障。
+- :cpp:member:`mcpwm_gpio_fault_config_t::group_id` 设置 MCPWM 组 ID，范围为 [0, ``MCPWM_GROUP_NUM`` - 1]，其中 ``MCPWM_GROUP_NUM`` 是芯片上可用的 MCPWM 组数量。需注意，位于不同组的 GPIO 故障彼此独立，也就是说，1 组的操作器无法检测到 0 组的 GPIO 故障。
 - :cpp:member:`mcpwm_gpio_fault_config_t::intr_priority` 设置中断的优先级。如果设置为 ``0``，则会分配一个默认优先级的中断，否则会使用指定的优先级。
 - :cpp:member:`mcpwm_gpio_fault_config_t::gpio_num` 设置故障所使用的 GPIO 编号。
 - :cpp:member:`mcpwm_gpio_fault_config_t::active_level` 设置故障信号的有效电平。
@@ -161,7 +166,7 @@ MCPWM 同步源
 
 调用 :cpp:func:`mcpwm_new_gpio_sync_src` 函数，以配置结构体 :cpp:type:`mcpwm_gpio_sync_src_config_t` 为参数，分配一个 GPIO 同步源。结构体定义为：
 
-- :cpp:member:`mcpwm_gpio_sync_src_config_t::group_id` 指定 MCPWM 组 ID，范围为 [0, :c:macro:`SOC_MCPWM_GROUPS` - 1]。需注意，位于不同组的 GPIO 同步源彼此独立，也就是说，1 组的定时器无法检测到 0 组的 GPIO 同步源。
+- :cpp:member:`mcpwm_gpio_sync_src_config_t::group_id` 指定 MCPWM 组 ID，范围为 [0, ``MCPWM_GROUP_NUM`` - 1]，其中 ``MCPWM_GROUP_NUM`` 是芯片上可用的 MCPWM 组数量。需注意，位于不同组的 GPIO 同步源彼此独立，也就是说，1 组的定时器无法检测到 0 组的 GPIO 同步源。
 - :cpp:member:`mcpwm_gpio_sync_src_config_t::gpio_num` 设置同步源使用的 GPIO 编号。
 - :cpp:member:`mcpwm_gpio_sync_src_config_t::active_neg` 设置同步信号在下降沿是否有效。
 - :cpp:member:`mcpwm_gpio_sync_src_config_t::pull_up` 和 :cpp:member:`mcpwm_gpio_sync_src_config_t::pull_down` 设置是否在内部拉高和/或拉低 GPIO。
@@ -188,7 +193,7 @@ MCPWM 组有一个专用定时器，用于捕获特定事件发生时的时间�
 
 调用 :cpp:func:`mcpwm_new_capture_timer` 函数，以配置结构体 :cpp:type:`mcpwm_capture_timer_config_t` 为参数，分配一个捕获定时器。结构体定义为：
 
-- :cpp:member:`mcpwm_capture_timer_config_t::group_id` 设置 MCPWM 组 ID，范围为 [0, :c:macro:`SOC_MCPWM_GROUPS` - 1]。
+- :cpp:member:`mcpwm_capture_timer_config_t::group_id` 设置 MCPWM 组 ID，范围为 [0, ``MCPWM_GROUP_NUM`` - 1]，其中 ``MCPWM_GROUP_NUM`` 是芯片上可用的 MCPWM 组数量。
 - :cpp:member:`mcpwm_capture_timer_config_t::clk_src` 设置捕获定时器的时钟源。
 - :cpp:member:`mcpwm_capture_timer_config_t::resolution_hz` 设置捕获定时器的预期分辨率。内部驱动将根据时钟源和分辨率设置合适的分频器。设置为 ``0`` 时，驱动会自己选取一个适当的分辨率，后续你可以通过 :cpp:func:`mcpwm_capture_timer_get_resolution` 查看当前定时器的分辨率。
 

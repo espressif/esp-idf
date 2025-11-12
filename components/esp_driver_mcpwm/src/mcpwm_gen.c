@@ -14,7 +14,7 @@ static esp_err_t mcpwm_generator_register_to_operator(mcpwm_gen_t *gen, mcpwm_op
 {
     int gen_id = -1;
     portENTER_CRITICAL(&oper->spinlock);
-    for (int i = 0; i < SOC_MCPWM_GENERATORS_PER_OPERATOR; i++) {
+    for (int i = 0; i < MCPWM_LL_GET(GENERATORS_PER_OPERATOR); i++) {
         if (!oper->generators[i]) {
             oper->generators[i] = gen;
             gen_id = i;
@@ -78,7 +78,7 @@ esp_err_t mcpwm_new_generator(mcpwm_oper_handle_t oper, const mcpwm_generator_co
     gpio_func_sel(config->gen_gpio_num, PIN_FUNC_GPIO);
     // connect the signal to the GPIO by matrix, it will also enable the output path properly
     esp_rom_gpio_connect_out_signal(config->gen_gpio_num,
-                                    mcpwm_periph_signals.groups[group->group_id].operators[oper_id].generators[gen_id].pwm_sig,
+                                    soc_mcpwm_signals[group->group_id].operators[oper_id].generators[gen_id].pwm_sig,
                                     config->flags.invert_pwm, 0);
 
     // fill in other generator members
@@ -192,7 +192,7 @@ esp_err_t mcpwm_generator_set_action_on_fault_event(mcpwm_gen_handle_t gen, mcpw
     // check the remained triggers
     int trigger_id = -1;
     portENTER_CRITICAL(&oper->spinlock);
-    for (int i = 0; i < SOC_MCPWM_TRIGGERS_PER_OPERATOR; i++) {
+    for (int i = 0; i < MCPWM_LL_GET(TRIGGERS_PER_OPERATOR); i++) {
         if (oper->triggers[i] == MCPWM_TRIGGER_NO_ASSIGN) {
             trigger_id = i;
             oper->triggers[i] = MCPWM_TRIGGER_GPIO_FAULT;
@@ -217,7 +217,7 @@ esp_err_t mcpwm_generator_set_action_on_sync_event(mcpwm_gen_handle_t gen, mcpwm
     int trigger_id = -1;
     int trigger_sync_used = 0;
     portENTER_CRITICAL(&oper->spinlock);
-    for (int i = 0; i < SOC_MCPWM_TRIGGERS_PER_OPERATOR; i++) {
+    for (int i = 0; i < MCPWM_LL_GET(TRIGGERS_PER_OPERATOR); i++) {
         if (oper->triggers[i] == MCPWM_TRIGGER_SYNC_EVENT) {
             trigger_sync_used = 1;
             break;
@@ -241,7 +241,7 @@ esp_err_t mcpwm_generator_set_dead_time(mcpwm_gen_handle_t in_generator, mcpwm_g
 {
     ESP_RETURN_ON_FALSE(in_generator && out_generator && config, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     ESP_RETURN_ON_FALSE(in_generator->oper == out_generator->oper, ESP_ERR_INVALID_ARG, TAG, "in/out generator are not derived from the same operator");
-    ESP_RETURN_ON_FALSE(config->negedge_delay_ticks < MCPWM_LL_MAX_DEAD_DELAY && config->posedge_delay_ticks < MCPWM_LL_MAX_DEAD_DELAY,
+    ESP_RETURN_ON_FALSE(config->negedge_delay_ticks < MCPWM_LL_GET(MAX_DEAD_DELAY) && config->posedge_delay_ticks < MCPWM_LL_GET(MAX_DEAD_DELAY),
                         ESP_ERR_INVALID_ARG, TAG, "delay time out of range");
     mcpwm_oper_t *oper = in_generator->oper;
     mcpwm_group_t *group = oper->group;

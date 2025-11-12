@@ -28,8 +28,8 @@ static esp_err_t mcpwm_create_sleep_retention_link_cb(void *arg);
 
 typedef struct {
     _lock_t mutex;                           // platform level mutex lock
-    mcpwm_group_t *groups[SOC_MCPWM_GROUPS]; // array of MCPWM group instances
-    int group_ref_counts[SOC_MCPWM_GROUPS];  // reference count used to protect group install/uninstall
+    mcpwm_group_t *groups[MCPWM_LL_GET(GROUP_NUM)]; // array of MCPWM group instances
+    int group_ref_counts[MCPWM_LL_GET(GROUP_NUM)];  // reference count used to protect group install/uninstall
 } mcpwm_platform_t;
 
 static mcpwm_platform_t s_platform; // singleton platform
@@ -197,7 +197,7 @@ esp_err_t mcpwm_select_periph_clock(mcpwm_group_t *group, soc_module_clk_t clk_s
         // thus we want to use the APB_MAX lock
         pm_lock_type = ESP_PM_APB_FREQ_MAX;
 #endif
-        ret  = esp_pm_lock_create(pm_lock_type, 0, mcpwm_periph_signals.groups[group_id].module_name, &group->pm_lock);
+        ret  = esp_pm_lock_create(pm_lock_type, 0, soc_mcpwm_signals[group_id].module_name, &group->pm_lock);
         ESP_RETURN_ON_ERROR(ret, TAG, "create pm lock failed");
 #endif // CONFIG_PM_ENABLE
 
@@ -231,7 +231,7 @@ esp_err_t mcpwm_set_prescale(mcpwm_group_t *group, uint32_t expect_module_resolu
     uint32_t fit_group_prescale = 0;
     if (!(module_prescale >= 1 && module_prescale <= module_prescale_max)) {
         group_prescale = 0;
-        while (++group_prescale <= MCPWM_LL_MAX_GROUP_PRESCALE) {
+        while (++group_prescale <= MCPWM_LL_GET(MAX_GROUP_PRESCALE)) {
             group_resolution_hz = periph_src_clk_hz / group_prescale;
             module_prescale = group_resolution_hz / expect_module_resolution_hz;
             if (module_prescale >= 1 && module_prescale <= module_prescale_max) {
@@ -248,7 +248,7 @@ esp_err_t mcpwm_set_prescale(mcpwm_group_t *group, uint32_t expect_module_resolu
         }
         module_prescale = fit_module_prescale;
         group_prescale = fit_group_prescale;
-        ESP_RETURN_ON_FALSE(group_prescale > 0 && group_prescale <= MCPWM_LL_MAX_GROUP_PRESCALE, ESP_ERR_INVALID_STATE, TAG,
+        ESP_RETURN_ON_FALSE(group_prescale > 0 && group_prescale <= MCPWM_LL_GET(MAX_GROUP_PRESCALE), ESP_ERR_INVALID_STATE, TAG,
                             "set group prescale failed, group clock cannot match the resolution");
         group_resolution_hz = periph_src_clk_hz / group_prescale;
     }
