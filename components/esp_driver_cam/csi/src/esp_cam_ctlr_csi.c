@@ -213,7 +213,7 @@ esp_err_t esp_cam_new_csi_ctlr(const esp_cam_ctlr_csi_config_t *config, esp_cam_
     ESP_GOTO_ON_ERROR(dw_gdma_channel_register_event_callbacks(csi_dma_chan, &csi_dma_cbs, ctlr), err, TAG, "failed to register dwgdma callback");
 
 #if CONFIG_PM_ENABLE
-    ESP_GOTO_ON_ERROR(esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "cam_csi_ctlr", &ctlr->pm_lock), err, TAG, "failed to create pm lock");
+    ESP_GOTO_ON_ERROR(esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, "cam_csi_ctlr", &ctlr->pm_lock), err, TAG, "failed to create pm lock");
 #endif //CONFIG_PM_ENABLE
 
     ctlr->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;

@@ -191,7 +191,7 @@ esp_err_t esp_cam_new_isp_dvp_ctlr(isp_proc_handle_t isp_proc, const esp_cam_ctl
     esp_cam_ctlr_t *cam_ctlr = &(dvp_ctlr->base);
 
 #if CONFIG_PM_ENABLE
-    ESP_GOTO_ON_ERROR(esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "isp_dvp_cam_ctlr", &dvp_ctlr->pm_lock), err, TAG, "failed to create pm lock");
+    ESP_GOTO_ON_ERROR(esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, "isp_dvp_cam_ctlr", &dvp_ctlr->pm_lock), err, TAG, "failed to create pm lock");
 #endif //CONFIG_PM_ENABLE
 
     cam_ctlr->del = s_isp_del_dvp_controller;
