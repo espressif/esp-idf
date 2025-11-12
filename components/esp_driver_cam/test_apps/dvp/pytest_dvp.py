@@ -8,7 +8,7 @@ from pytest_embedded_idf.utils import idf_parametrize
 @pytest.mark.generic
 @pytest.mark.parametrize(
     'config',
-    ['cache_safe'],
+    ['cache_safe', 'release'],
     indirect=True,
 )
 @idf_parametrize('target', ['esp32p4'], indirect=['target'])
