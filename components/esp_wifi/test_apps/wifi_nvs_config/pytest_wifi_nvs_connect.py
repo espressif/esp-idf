@@ -5,7 +5,7 @@ from pytest_embedded_idf.unity_tester import CaseTester
 from pytest_embedded_idf.utils import idf_parametrize
 
 
-@pytest.mark.wifi_two_dut
+@pytest.mark.two_duts
 @pytest.mark.parametrize('count', [2], indirect=True)
 @idf_parametrize(
     'target',
@@ -16,7 +16,7 @@ def test_wifi_nvs_connect_cases(case_tester: CaseTester) -> None:  # type: ignor
     case_tester.run_all_cases()
 
 
-@pytest.mark.wifi_two_dut
+@pytest.mark.two_duts
 @pytest.mark.xtal_26mhz
 @pytest.mark.parametrize(
     'count, config, baud',

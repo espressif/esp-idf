@@ -40,7 +40,7 @@ def _get_diff_th(
     return diff_threshold.get(target) or diff_threshold['default']
 
 
-@pytest.mark.wifi_two_dut
+@pytest.mark.two_duts
 @pytest.mark.parametrize(
     'count, config, skip_autoflash',
     [

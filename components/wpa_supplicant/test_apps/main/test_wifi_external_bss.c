@@ -198,6 +198,6 @@ static void test_softap_connection(void)
 }
 
 /* Test that wifi starts, scans and stops normally when .bss segment is allowed to move to external memory  */
-TEST_CASE_MULTIPLE_DEVICES("test wifi connection for sta and softap when ESP_ALLOW_BSS_SEG_EXTERNAL_MEMORY is enabled", "[esp_wifi][test_env=wifi_two_dut]", test_station_connection, test_softap_connection);
+TEST_CASE_MULTIPLE_DEVICES("test wifi connection for sta and softap when ESP_ALLOW_BSS_SEG_EXTERNAL_MEMORY is enabled", "[esp_wifi][test_env=two_duts]", test_station_connection, test_softap_connection);
 
 #endif  // CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
