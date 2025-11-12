@@ -337,6 +337,8 @@ esp_err_t emac_hal_ptp_start(emac_hal_context_t *hal, const emac_hal_ptp_config_
 {
     uint8_t base_increment;
 
+    emac_ll_ts_ptp_snap_type_sel(hal->ptp_regs, 1);
+
     // Enable time stamping frame filtering (applicable to receive)
     emac_ll_ts_ptp_ether_enable(hal->ptp_regs, true);
     // Process frames with v2 format
