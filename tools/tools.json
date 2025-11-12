@@ -97,7 +97,8 @@
         "esp32p4",
         "esp32c61",
         "esp32h21",
-        "esp32h4"
+        "esp32h4",
+        "esp32s31"
       ],
       "version_cmd": [
         "riscv32-esp-elf-gdb-no-python",
@@ -256,7 +257,8 @@
         "esp32p4",
         "esp32c61",
         "esp32h21",
-        "esp32h4"
+        "esp32h4",
+        "esp32s31"
       ],
       "version_cmd": [
         "clang",
@@ -321,7 +323,8 @@
         "esp32h2",
         "esp32p4",
         "esp32c61",
-        "esp32h21"
+        "esp32h21",
+        "esp32s31"
       ],
       "tool_info_file": "esp-clang/esp-clang-libs.info",
       "version_cmd": [],
@@ -387,7 +390,8 @@
         "esp32c61",
         "esp32p4",
         "esp32h21",
-        "esp32h4"
+        "esp32h4",
+        "esp32s31"
       ],
       "version_cmd": [
         "riscv32-esp-elf-gcc",

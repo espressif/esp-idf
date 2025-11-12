@@ -47,7 +47,7 @@ components/spi_flash/test_apps/flash_mmap:
     - spi_flash
     - esp_hal_mspi
   enable:
-    - if: CONFIG_NAME == "release" and IDF_TARGET != "linux"
+    - if: CONFIG_NAME == "release" and IDF_TARGET not in ["linux", "esp32s31"]
     - if: CONFIG_NAME == "rom_impl" and ESP_ROM_HAS_SPI_FLASH == 1
     - if: CONFIG_NAME == "psram" and SOC_MMU_PER_EXT_MEM_TARGET == 1 # MMU per target needs test. On unified MMU chips, the entry ID is unique
     - if: CONFIG_NAME == "xip_psram" and SOC_SPIRAM_XIP_SUPPORTED == 1
