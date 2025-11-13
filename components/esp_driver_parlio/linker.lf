@@ -33,8 +33,8 @@ entries:
         esp_dma_utils: esp_dma_split_rx_buffer_to_cache_aligned (noflash)
         esp_dma_utils: esp_dma_merge_aligned_rx_buffers (noflash)
 
-[mapping:parlio_driver_soc_periph]
-archive: libsoc.a
+[mapping:parlio_driver_hal_periph]
+archive: libesp_hal_parlio.a
 entries:
     if PARLIO_RX_ISR_HANDLER_IN_IRAM = y:
         parlio_periph: parlio_periph_signals  (noflash)

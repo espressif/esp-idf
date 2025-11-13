@@ -4,15 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "soc/parlio_periph.h"
+#include "hal/parlio_periph.h"
 #include "soc/gpio_sig_map.h"
 
 const parlio_signal_conn_t parlio_periph_signals = {
     .groups = {
         [0] = {
             .module_name = "PARLIO0",
-            .tx_irq_id = ETS_PARL_IO_INTR_SOURCE,
-            .rx_irq_id = ETS_PARL_IO_INTR_SOURCE,
+            .tx_irq_id = ETS_PARL_IO_TX_INTR_SOURCE,
+            .rx_irq_id = ETS_PARL_IO_RX_INTR_SOURCE,
             .tx_units = {
                 [0] = {
                     .data_sigs = {
@@ -24,18 +24,10 @@ const parlio_signal_conn_t parlio_periph_signals = {
                         PARL_TX_DATA5_IDX,
                         PARL_TX_DATA6_IDX,
                         PARL_TX_DATA7_IDX,
-                        PARL_TX_DATA8_IDX,
-                        PARL_TX_DATA9_IDX,
-                        PARL_TX_DATA10_IDX,
-                        PARL_TX_DATA11_IDX,
-                        PARL_TX_DATA12_IDX,
-                        PARL_TX_DATA13_IDX,
-                        PARL_TX_DATA14_IDX,
-                        PARL_TX_DATA15_IDX,
                     },
                     .clk_out_sig = PARL_TX_CLK_OUT_IDX,
                     .clk_in_sig = PARL_TX_CLK_IN_IDX,
-                    .cs_sig = -1,
+                    .cs_sig = PARL_TX_CS_O_IDX,
                 }
             },
             .rx_units = {
@@ -49,16 +41,8 @@ const parlio_signal_conn_t parlio_periph_signals = {
                         PARL_RX_DATA5_IDX,
                         PARL_RX_DATA6_IDX,
                         PARL_RX_DATA7_IDX,
-                        PARL_RX_DATA8_IDX,
-                        PARL_RX_DATA9_IDX,
-                        PARL_RX_DATA10_IDX,
-                        PARL_RX_DATA11_IDX,
-                        PARL_RX_DATA12_IDX,
-                        PARL_RX_DATA13_IDX,
-                        PARL_RX_DATA14_IDX,
-                        PARL_RX_DATA15_IDX,
                     },
-                    .clk_out_sig = -1,
+                    .clk_out_sig = PARL_RX_CLK_OUT_IDX,
                     .clk_in_sig = PARL_RX_CLK_IN_IDX,
                 }
             }
@@ -68,12 +52,14 @@ const parlio_signal_conn_t parlio_periph_signals = {
 
 /**
  * PARLIO Registers to be saved during sleep retention
- * - Configuration registers, e.g.: PARL_IO_RX_CFG0_REG, PARL_IO_RX_CFG1_REG, PARL_IO_TX_CFG0_REG, PARL_IO_TX_CFG1_REG, PARL_IO_CLK_REG
+ * - Tx Configuration registers, e.g.: PARL_IO_TX_DATA_CFG_REG, PARL_IO_TX_GENRL_CFG_REG
+ * - Rx Configuration registers, e.g.: PARL_IO_RX_MODE_CFG_REG, PARL_IO_RX_DATA_CFG_REG, PARL_IO_RX_GENRL_CFG_REG
+ * - CLK Configuration registers, e.g.: PARL_IO_RX_CLK_CFG_REG, PARL_IO_TX_CLK_CFG_REG
  * - Interrupt enable registers, e.g.: PARL_IO_INT_ENA_REG
 */
-#define PARLIO_RETENTION_REGS_CNT 6
+#define PARLIO_RETENTION_REGS_CNT 8
 #define PARLIO_RETENTION_REGS_BASE (DR_REG_PARL_IO_BASE + 0x0)
-static const uint32_t parlio_regs_map[4] = {0x2f, 0x0, 0x100, 0x0};
+static const uint32_t parlio_regs_map[4] = {0x60457, 0x0, 0x0, 0x0};
 static const regdma_entries_config_t parlio_regs_retention[] = {
     // backup stage: save configuration registers
     // restore stage: restore the configuration registers
