@@ -643,11 +643,12 @@ esp_err_t esp_tee_sec_storage_ecdsa_sign_pbkdf2(const esp_tee_sec_storage_pbkdf2
         return ESP_ERR_INVALID_ARG;
     }
 
-    hmac_key_id_t key_id = (hmac_key_id_t)(CONFIG_SECURE_TEE_PBKDF2_EFUSE_HMAC_KEY_ID);
-    if (key_id < 0 || key_id >= HMAC_KEY_MAX) {
+    int cfg_key_id = (int)CONFIG_SECURE_TEE_PBKDF2_EFUSE_HMAC_KEY_ID;
+    if (cfg_key_id < 0 || cfg_key_id >= HMAC_KEY_MAX) {
         return ESP_ERR_INVALID_ARG;
     }
 
+    hmac_key_id_t key_id = (hmac_key_id_t)cfg_key_id;
     esp_efuse_block_t blk = (esp_efuse_block_t)(EFUSE_BLK_KEY0 + key_id);
     if (esp_efuse_get_key_purpose(blk) != ESP_EFUSE_KEY_PURPOSE_HMAC_UP) {
         ESP_LOGE(TAG, "HMAC key is not burnt in the specified eFuse block ID");
