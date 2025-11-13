@@ -919,6 +919,10 @@ config SOC_ISP_SHARPEN_SUPPORTED
     bool
     default y
 
+config SOC_ISP_WBG_SUPPORTED
+    bool
+    default y
+
 config SOC_ISP_SHARE_CSI_BRG
     bool
     default y

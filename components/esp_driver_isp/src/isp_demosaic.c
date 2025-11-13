@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -46,10 +46,10 @@ esp_err_t esp_isp_demosaic_configure(isp_proc_handle_t proc, const esp_isp_demos
 esp_err_t esp_isp_demosaic_enable(isp_proc_handle_t proc)
 {
     ESP_RETURN_ON_FALSE(proc, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
-    ESP_RETURN_ON_FALSE(proc->demosaic_fsm == ISP_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "demosaic is enabled already");
+    isp_fsm_t expected_fsm = ISP_FSM_INIT;
+    ESP_RETURN_ON_FALSE(atomic_compare_exchange_strong(&proc->demosaic_fsm, &expected_fsm, ISP_FSM_ENABLE), ESP_ERR_INVALID_STATE, TAG, "demosaic is enabled already");
 
     isp_ll_demosaic_enable(proc->hal.hw, true);
-    proc->demosaic_fsm = ISP_FSM_ENABLE;
 
     return ESP_OK;
 }
@@ -57,13 +57,13 @@ esp_err_t esp_isp_demosaic_enable(isp_proc_handle_t proc)
 esp_err_t esp_isp_demosaic_disable(isp_proc_handle_t proc)
 {
     ESP_RETURN_ON_FALSE(proc, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
-    ESP_RETURN_ON_FALSE(proc->demosaic_fsm == ISP_FSM_ENABLE, ESP_ERR_INVALID_STATE, TAG, "demosaic isn't enabled yet");
+    isp_fsm_t expected_fsm = ISP_FSM_ENABLE;
+    ESP_RETURN_ON_FALSE(atomic_compare_exchange_strong(&proc->demosaic_fsm, &expected_fsm, ISP_FSM_INIT), ESP_ERR_INVALID_STATE, TAG, "demosaic isn't enabled yet");
 
     if (proc->out_color_format.color_space == (uint32_t)COLOR_SPACE_RAW) {
         // for other out_color_format, demosaic module is needed for rgb interpolation algorithm
         isp_ll_demosaic_enable(proc->hal.hw, false);
     }
-    proc->demosaic_fsm = ISP_FSM_INIT;
 
     return ESP_OK;
 }

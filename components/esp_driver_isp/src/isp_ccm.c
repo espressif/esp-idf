@@ -45,6 +45,8 @@ esp_err_t esp_isp_ccm_configure(isp_proc_handle_t proc, const esp_isp_ccm_config
 esp_err_t esp_isp_ccm_enable(isp_proc_handle_t proc)
 {
     ESP_RETURN_ON_FALSE(proc, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
+    isp_fsm_t expected_fsm = ISP_FSM_INIT;
+    ESP_RETURN_ON_FALSE(atomic_compare_exchange_strong(&proc->ccm_fsm, &expected_fsm, ISP_FSM_ENABLE), ESP_ERR_INVALID_STATE, TAG, "ccm is enabled already");
 
     portENTER_CRITICAL(&proc->spinlock);
     isp_ll_ccm_enable(proc->hal.hw, true);
@@ -56,6 +58,8 @@ esp_err_t esp_isp_ccm_enable(isp_proc_handle_t proc)
 esp_err_t esp_isp_ccm_disable(isp_proc_handle_t proc)
 {
     ESP_RETURN_ON_FALSE(proc, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
+    isp_fsm_t expected_fsm = ISP_FSM_ENABLE;
+    ESP_RETURN_ON_FALSE(atomic_compare_exchange_strong(&proc->ccm_fsm, &expected_fsm, ISP_FSM_INIT), ESP_ERR_INVALID_STATE, TAG, "ccm isn't enabled yet");
 
     portENTER_CRITICAL(&proc->spinlock);
     isp_ll_ccm_enable(proc->hal.hw, false);

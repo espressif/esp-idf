@@ -24,3 +24,4 @@
 #include "driver/isp_hist.h"
 #include "driver/isp_lsc.h"
 #include "driver/isp_sharpen.h"
+#include "driver/isp_wbg.h"
