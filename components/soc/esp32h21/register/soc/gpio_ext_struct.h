@@ -113,23 +113,23 @@ typedef union {
  */
 typedef union {
     struct {
-        /** ext_filter_ch0_en : R/W; bitpos: [0]; default: 0;
+        /** ext_filter_chn_en : R/W; bitpos: [0]; default: 0;
          *  Glitch Filter channel enable bit.
          */
-        uint32_t ext_filter_ch0_en:1;
-        /** ext_filter_ch0_input_io_num : R/W; bitpos: [5:1]; default: 0;
+        uint32_t ext_filter_chn_en:1;
+        /** ext_filter_chn_input_io_num : R/W; bitpos: [5:1]; default: 0;
          *  Glitch Filter input io number.
          */
-        uint32_t ext_filter_ch0_input_io_num:5;
+        uint32_t ext_filter_chn_input_io_num:5;
         uint32_t reserved_6:2;
-        /** ext_filter_ch0_window_thres : R/W; bitpos: [13:8]; default: 0;
+        /** ext_filter_chn_window_thres : R/W; bitpos: [13:8]; default: 0;
          *  Glitch Filter window threshold.
          */
-        uint32_t ext_filter_ch0_window_thres:6;
-        /** ext_filter_ch0_window_width : R/W; bitpos: [19:14]; default: 0;
+        uint32_t ext_filter_chn_window_thres:6;
+        /** ext_filter_chn_window_width : R/W; bitpos: [19:14]; default: 0;
          *  Glitch Filter window width.
          */
-        uint32_t ext_filter_ch0_window_width:6;
+        uint32_t ext_filter_chn_window_width:6;
         uint32_t reserved_20:12;
     };
     uint32_t val;
@@ -556,6 +556,15 @@ typedef union {
     uint32_t val;
 } gpio_ext_version_reg_t;
 
+typedef struct gpio_sd_dev_t {
+    volatile gpio_ext_sigmadelta_misc_reg_t misc;
+    volatile gpio_ext_sigmadeltan_reg_t channel[4];
+} gpio_sd_dev_t;
+
+typedef struct {
+    volatile gpio_ext_glitch_filter_chn_reg_t ext_glitch_filter_chn[8];
+} gpio_glitch_filter_dev_t;
+
 typedef struct {
     volatile gpio_ext_etm_event_chn_cfg_reg_t etm_event_chn_cfg[8];
     uint32_t reserved_080[8];
@@ -564,13 +573,12 @@ typedef struct {
 
 typedef struct {
     uint32_t reserved_000;
-    volatile gpio_ext_sigmadelta_misc_reg_t ext_sigmadelta_misc;
-    volatile gpio_ext_sigmadeltan_reg_t ext_sigmadeltan[4];
+    volatile gpio_sd_dev_t sigma_delta;
     uint32_t reserved_018[16];
     volatile gpio_ext_pad_comp_config_0_reg_t ext_pad_comp_config_0;
     volatile gpio_ext_pad_comp_filter_0_reg_t ext_pad_comp_filter_0;
     uint32_t reserved_060[30];
-    volatile gpio_ext_glitch_filter_chn_reg_t ext_glitch_filter_chn[8];
+    volatile gpio_glitch_filter_dev_t glitch_filter;
     uint32_t reserved_0f8[8];
     volatile gpio_etm_dev_t etm;
     uint32_t reserved_170[24];
@@ -583,6 +591,8 @@ typedef struct {
     volatile gpio_ext_version_reg_t ext_version;
 } gpio_ext_dev_t;
 
+extern gpio_sd_dev_t SDM;
+extern gpio_glitch_filter_dev_t GLITCH_FILTER;
 extern gpio_etm_dev_t GPIO_ETM;
 extern gpio_ext_dev_t GPIO_EXT;
 

@@ -25,7 +25,7 @@
 /*-------------------------- COMMON CAPS ---------------------------------------*/
 // #define SOC_ADC_SUPPORTED               1    //TODO: [ESP32H21] IDF-11589, IDF-11592
 // #define SOC_ANA_CMPR_SUPPORTED          1
-// #define SOC_DEDICATED_GPIO_SUPPORTED    1    //TODO: [ESP32H21] IDF-11621
+#define SOC_DEDICATED_GPIO_SUPPORTED    1
 #define SOC_UART_SUPPORTED              1
 #define SOC_GDMA_SUPPORTED              1
 #define SOC_AHB_GDMA_SUPPORTED          1
@@ -43,7 +43,7 @@
 #define SOC_RTC_FAST_MEM_SUPPORTED      1
 #define SOC_RTC_MEM_SUPPORTED           1       //TODO: [ESP32H21] IDF-11548
 #define SOC_I2S_SUPPORTED               1
-// #define SOC_SDM_SUPPORTED               1    //TODO: [ESP32H21] IDF-11573
+#define SOC_SDM_SUPPORTED               1
 #define SOC_GPSPI_SUPPORTED             1
 #define SOC_LEDC_SUPPORTED              1
 #define SOC_I2C_SUPPORTED               1
@@ -194,8 +194,8 @@
 // ESP32-H21 has 1 GPIO peripheral
 #define SOC_GPIO_PORT                           1U
 #define SOC_GPIO_PIN_COUNT                      26
-// #define SOC_GPIO_SUPPORT_PIN_GLITCH_FILTER      1
-// #define SOC_GPIO_FLEX_GLITCH_FILTER_NUM         8
+#define SOC_GPIO_SUPPORT_PIN_GLITCH_FILTER      1
+#define SOC_GPIO_FLEX_GLITCH_FILTER_NUM         8
 #define SOC_GPIO_SUPPORT_PIN_HYS_FILTER         1
 
 // GPIO peripheral has the ETM extension
