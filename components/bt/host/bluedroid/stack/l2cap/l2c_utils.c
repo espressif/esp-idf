@@ -25,7 +25,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "osi/allocator.h"
 #include "device/controller.h"
 #include "stack/bt_types.h"
 #include "stack/hcimsgs.h"
@@ -36,6 +35,7 @@
 #include "stack/btm_api.h"
 #include "btm_int.h"
 #include "stack/hcidefs.h"
+#include "bt_common.h"
 #include "osi/allocator.h"
 #include "osi/list.h"
 
