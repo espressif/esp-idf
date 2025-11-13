@@ -166,20 +166,31 @@ variables:
     section_end "install_python_env"
   fi
 
+  section_start "source_export" "Source export.sh"
+  source ./export.sh
+  section_end "source_export"
+
+  REEXPORT_NEEDED=0
   if [[ ! -z "$INSTALL_EXTRA_TOOLS" ]]; then
     section_start "installing_optional_tools" "Install optional tools ${INSTALL_EXTRA_TOOLS}"
-    $IDF_PATH/tools/idf_tools.py --non-interactive install $INSTALL_EXTRA_TOOLS
+    run_cmd $IDF_PATH/tools/idf_tools.py --non-interactive install $INSTALL_EXTRA_TOOLS
     section_end "installing_optional_tools"
+
+    REEXPORT_NEEDED=1
   fi
 
   # Install esp-clang if necessary (esp-clang is separately installed)
   if [[ "$IDF_TOOLCHAIN" == "clang" && -z "$CI_CLANG_DISTRO_URL" ]]; then
     $IDF_PATH/tools/idf_tools.py --non-interactive install esp-clang
+
+    REEXPORT_NEEDED=1
   fi
 
-  section_start "source_export" "Source export.sh"
-  source ./export.sh
-  section_end "source_export"
+  if [[ $REEXPORT_NEEDED -eq 1 ]]; then
+    section_start "re_source_export" "Re-source export.sh"
+    source ./export.sh
+    section_end "re_source_export"
+  fi
 
   # Custom clang toolchain
   if [[ "$IDF_TOOLCHAIN" == "clang" && ! -z "$CI_CLANG_DISTRO_URL" ]]; then
@@ -228,30 +239,6 @@ variables:
 .before_script:minimal:
   before_script:
     - *common-before_scripts
-
-.before_script:build:macos:
-  before_script:
-    # macos is running shell executor, which means it would use
-    # the system installed /usr/local/bin/python3 by default.
-    # Ensure pyenv and PYENV_VERSION installed
-    - eval "$(pyenv init -)"
-    - *common-before_scripts
-    # remove idf-env.json, since it may contains enabled "features"
-    - rm -f $IDF_TOOLS_PATH/idf-env.json
-    # This adds tools (compilers) and the version-specific Python environment to PATH
-    - *setup_tools_and_idf_python_venv
-    - fetch_submodules
-  variables:
-    INSTALL_EXTRA_TOOLS: cmake ninja
-
-.after_script:build:macos:upload-failed-job-logs:ccache-show-stats:
-  after_script:
-    # macos is running shell executor, which means it would use
-    # the system installed /usr/local/bin/python3 by default.
-    # Ensure pyenv and PYENV_VERSION installed
-    - eval "$(pyenv init -)"
-    - *upload_failed_job_log_artifacts
-    - *show_ccache_statistics
 
 .before_script:build:
   before_script:
@@ -313,7 +300,7 @@ variables:
 
 .git_checkout_ci_commit_sha: &git_checkout_ci_commit_sha |
   git checkout $CI_COMMIT_SHA
-  git clean ${GIT_CLEAN_FLAGS}
+  eval "git clean ${GIT_CLEAN_FLAGS}"
 
 # git diff requires two commits, with different CI env var
 #
@@ -372,12 +359,46 @@ variables:
   before_script:
     - *git_init
     - *git_fetch_from_mirror_url_if_exists
-    - git fetch origin "${CI_COMMIT_SHA}" --depth=1 ${GIT_FETCH_EXTRA_FLAGS}
+    - eval "git fetch --depth=1 ${GIT_FETCH_EXTRA_FLAGS} origin ${CI_COMMIT_SHA}"
     - *git_checkout_ci_commit_sha
     - *common-before_scripts
     - *setup_tools_and_idf_python_venv
     - add_gitlab_ssh_keys
     # no submodules
+
+.brew-macos-settings:
+  variables:
+    GIT_STRATEGY: none  # we do manual git clone to use local mirror
+    IDF_CCACHE_ENABLE: "0"
+    CCACHE_DIR: "/var/tmp/cache/idf_ccache"
+  tags:
+    - macos-tart
+  image: macos-sequoia-idf-v6.1
+  cache: []  # pip cache is created under amd64, and submodules are downloaded with brew mirror, so disable cache here
+  before_script:
+    # assert LOCAL_GIT_MIRROR is set
+    - echo -e "section_start:`date +%s`:check_out\r\e[0Kchecking out from local git mirror, then reset to CI_COMMIT_SHA"
+    - |
+      if [ -z "${LOCAL_GIT_MIRROR:-}" ]; then
+        echo "Error: LOCAL_GIT_MIRROR not set, cannot clone from mirror."
+        exit 1
+      fi
+    - MIRROR_REPO_URL="${LOCAL_GIT_MIRROR}/${CI_PROJECT_PATH}"
+    - cd "${CI_PROJECT_DIR}"
+    # since .cache exists in CI_PROJECT_DIR, so can't direct `git clone .`
+    - git clone -b ${CI_MERGE_REQUEST_TARGET_BRANCH_NAME:-${CI_COMMIT_BRANCH}} --depth=1 --recursive --shallow-submodules "${MIRROR_REPO_URL}" tmp
+    - mv tmp/.git ./
+    - rm -rf tmp
+    - git reset --hard
+    # set remote url back
+    - git remote set-url origin "${CI_REPOSITORY_URL}"
+    - eval "git fetch --depth=1 ${GIT_FETCH_EXTRA_FLAGS} origin ${CI_COMMIT_SHA}"
+    - git checkout FETCH_HEAD
+    - git submodule update --init --recursive --depth=1
+    - echo -e "section_end:`date +%s`:check_out\r\e[0K"
+    - *common-before_scripts
+    - *setup_tools_and_idf_python_venv
+  after_script: []  # ccache now is disabled for macos brew runners
 
 #############
 # `default` #
