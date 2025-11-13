@@ -20,7 +20,7 @@
 #include "hal/cache_ll.h"
 #include "soc/soc_caps.h"
 #include "soc/spi_periph.h"
-#include "soc/parlio_periph.h"
+#include "hal/parlio_periph.h"
 #include "esp_attr.h"
 #include "test_board.h"
 #include "esp_private/parlio_rx_private.h"

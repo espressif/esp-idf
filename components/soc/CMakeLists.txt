@@ -113,10 +113,6 @@ if(CONFIG_SOC_MIPI_CSI_SUPPORTED)
     list(APPEND srcs "${target_folder}/mipi_csi_periph.c")
 endif()
 
-if(CONFIG_SOC_PARLIO_SUPPORTED)
-    list(APPEND srcs "${target_folder}/parlio_periph.c")
-endif()
-
 if(CONFIG_SOC_MPI_SUPPORTED)
     list(APPEND srcs "${target_folder}/mpi_periph.c")
 endif()
