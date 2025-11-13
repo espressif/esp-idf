@@ -38,7 +38,7 @@ examples/security/security_features_app:
 
 examples/security/tee/tee_attestation:
   disable:
-    - if: IDF_TARGET not in ["esp32c6", "esp32c5"]
+    - if: IDF_TARGET not in ["esp32c6", "esp32c5", "esp32c61"]
   depends_components:
     - esp_tee
   depends_filepatterns:
@@ -46,7 +46,7 @@ examples/security/tee/tee_attestation:
 
 examples/security/tee/tee_basic:
   disable:
-    - if: IDF_TARGET not in ["esp32c6", "esp32c5"]
+    - if: IDF_TARGET not in ["esp32c6", "esp32c5", "esp32c61"]
   depends_components:
     - esp_tee
   depends_filepatterns:
@@ -54,7 +54,7 @@ examples/security/tee/tee_basic:
 
 examples/security/tee/tee_secure_ota:
   disable:
-    - if: IDF_TARGET not in ["esp32c6", "esp32c5"]
+    - if: IDF_TARGET not in ["esp32c6", "esp32c5", "esp32c61"]
   depends_components:
     - esp_tee
   depends_filepatterns:
@@ -62,7 +62,7 @@ examples/security/tee/tee_secure_ota:
 
 examples/security/tee/tee_secure_storage:
   disable:
-    - if: IDF_TARGET not in ["esp32c6", "esp32c5"]
+    - if: IDF_TARGET not in ["esp32c6", "esp32c5", "esp32c61"]
   depends_components:
     - esp_tee
   depends_filepatterns:

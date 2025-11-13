@@ -22,8 +22,9 @@ def test_example_tee_basic(dut: Dut) -> None:
         logging.info(f'{log_label}: {bin_size // 1024}KB')
 
     # Start test
-    dut.expect('AES-256-CBC operations in TEE', timeout=30)
-    dut.expect('TEE: In PROTECTED M-mode', timeout=30)
-    dut.expect('AES encryption successful!', timeout=30)
-    dut.expect('ee 04 9b ee 95 6f 25 04 1e 8c e4 4e 8e 4e 7a d3', timeout=30)
-    dut.expect('AES decryption successful!', timeout=30)
+    dut.expect('AES-256-GCM operations in TEE', timeout=10)
+    dut.expect('Secure service call: PROTECTED M-mode', timeout=10)
+    dut.expect('AES-256-GCM encryption', timeout=10)
+    dut.expect('Secure service call: PROTECTED M-mode', timeout=10)
+    dut.expect('AES-256-GCM decryption', timeout=10)
+    dut.expect('Returned from app_main()', timeout=10)
