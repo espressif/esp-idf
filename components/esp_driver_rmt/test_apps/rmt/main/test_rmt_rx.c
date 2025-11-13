@@ -13,6 +13,7 @@
 #include "driver/rmt_rx.h"
 #include "driver/gpio.h"
 #include "soc/soc_caps.h"
+#include "hal/rmt_ll.h"
 #include "test_util_rmt_encoders.h"
 #include "test_board.h"
 
@@ -136,7 +137,7 @@ static void test_rmt_rx_nec_carrier(size_t mem_block_symbols, bool with_dma, rmt
     TEST_ASSERT_EQUAL(test_user_data.received_symbol_num, mem_block_symbols);
 #endif // SOC_RMT_SUPPORT_RX_PINGPONG
 
-#if SOC_RMT_SUPPORT_RX_DEMODULATION
+#if RMT_LL_SUPPORT(RX_DEMODULATION)
     rmt_carrier_config_t carrier_cfg = {
         .duty_cycle = 0.33,
         .frequency_hz = 38000,
@@ -170,7 +171,7 @@ static void test_rmt_rx_nec_carrier(size_t mem_block_symbols, bool with_dma, rmt
     printf("disable modulation and demodulation for tx and rx channels\r\n");
     TEST_ESP_OK(rmt_apply_carrier(tx_channel, NULL));
     TEST_ESP_OK(rmt_apply_carrier(rx_channel, NULL));
-#endif // SOC_RMT_SUPPORT_RX_DEMODULATION
+#endif // RMT_LL_SUPPORT(RX_DEMODULATION)
 
     TEST_ESP_OK(rmt_receive(rx_channel, remote_codes, test_rx_buffer_symbols * sizeof(rmt_symbol_word_t), &receive_config));
     printf("send NEC frame without carrier\r\n");
