@@ -139,6 +139,8 @@ examples/bluetooth/esp_hid_host:
     - if: SOC_BT_SUPPORTED != 1
   depends_components+:
     - esp_hid
+  depends_filepatterns:
+    - examples/bluetooth/bluedroid/classic_bt/pytest_classic_bt_test.py
 
 examples/bluetooth/hci/ble_adv_scan_combined:
   <<: *bt_default_depends

@@ -20,7 +20,7 @@ from pytest_embedded_idf.utils import idf_parametrize
 # )
 
 
-@pytest.mark.wifi_two_dut
+@pytest.mark.two_duts
 @pytest.mark.parametrize(
     'count, app_path',
     [
@@ -51,7 +51,7 @@ def test_wifi_getting_started(dut: tuple[IdfDut, IdfDut]) -> None:
     softap.expect('station .+ join, AID=', timeout=60)
 
 
-@pytest.mark.wifi_two_dut
+@pytest.mark.two_duts
 @pytest.mark.xtal_26mhz
 @pytest.mark.parametrize(
     'count, config, baud, app_path',
@@ -82,7 +82,7 @@ def test_wifi_getting_started_esp32c2_xtal_26mhz(dut: tuple[IdfDut, IdfDut]) -> 
     softap.expect('station .+ join, AID=', timeout=60)
 
 
-@pytest.mark.wifi_two_dut
+@pytest.mark.two_duts
 @pytest.mark.xtal_26mhz
 @pytest.mark.esp32c2eco4
 @pytest.mark.parametrize(
@@ -114,7 +114,7 @@ def test_wifi_getting_started_esp32c2eco4_xtal_26mhz(dut: tuple[IdfDut, IdfDut])
     softap.expect('station .+ join, AID=', timeout=60)
 
 
-@pytest.mark.wifi_two_dut
+@pytest.mark.two_duts
 @pytest.mark.esp32c3eco7
 @pytest.mark.parametrize(
     'count, config, app_path',
