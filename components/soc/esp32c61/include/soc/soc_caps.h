@@ -159,6 +159,7 @@
 #define SOC_GDMA_SUPPORT_ETM            1  // Support ETM submodule
 #define SOC_GDMA_SUPPORT_SLEEP_RETENTION    1
 #define SOC_GDMA_SUPPORT_WEIGHTED_ARBITRATION   1
+#define SOC_GDMA_EXT_MEM_ENC_ALIGNMENT   (16)
 
 /*-------------------------- ETM CAPS -----------------------------------*/
 #define SOC_ETM_SUPPORT_SLEEP_RETENTION 1

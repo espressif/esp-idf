@@ -43,9 +43,9 @@
 #include "esp_sha_dma_priv.h"
 #include "sdkconfig.h"
 
-#ifdef SOC_AXI_DMA_EXT_MEM_ENC_ALIGNMENT
-#include "esp_flash_encrypt.h"
-#endif /* SOC_AXI_DMA_EXT_MEM_ENC_ALIGNMENT */
+#ifdef SOC_GDMA_EXT_MEM_ENC_ALIGNMENT
+#include "hal/efuse_hal.h"
+#endif /* SOC_GDMA_EXT_MEM_ENC_ALIGNMENT */
 
 #if SOC_SHA_CRYPTO_DMA
 #include "hal/crypto_dma_ll.h"
@@ -154,7 +154,7 @@ static DRAM_ATTR crypto_dma_desc_t s_dma_descr_buf;
 static esp_err_t esp_sha_dma_process(esp_sha_type sha_type, const void *input, uint32_t ilen,
                                      const void *buf, uint32_t buf_len, bool is_first_block);
 
-#ifdef SOC_AXI_DMA_EXT_MEM_ENC_ALIGNMENT
+#ifdef SOC_GDMA_EXT_MEM_ENC_ALIGNMENT
 static esp_err_t esp_sha_dma_process_ext(esp_sha_type sha_type, const void *input, uint32_t ilen,
                                         const void *buf, uint32_t buf_len, bool is_first_block,
                                         bool realloc_input, bool realloc_buf)
@@ -170,7 +170,7 @@ static esp_err_t esp_sha_dma_process_ext(esp_sha_type sha_type, const void *inpu
 
     if (realloc_input) {
         heap_caps = MALLOC_CAP_8BIT | (esp_ptr_external_ram(input) ? MALLOC_CAP_SPIRAM : MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
-        input_copy = heap_caps_aligned_alloc(SOC_AXI_DMA_EXT_MEM_ENC_ALIGNMENT, ilen, heap_caps);
+        input_copy = heap_caps_aligned_alloc(SOC_GDMA_EXT_MEM_ENC_ALIGNMENT, ilen, heap_caps);
         if (input_copy == NULL) {
             ESP_LOGE(TAG, "Failed to allocate aligned SPIRAM memory");
             return ret;
@@ -183,7 +183,7 @@ static esp_err_t esp_sha_dma_process_ext(esp_sha_type sha_type, const void *inpu
 
     if (realloc_buf) {
         heap_caps = MALLOC_CAP_8BIT | (esp_ptr_external_ram(buf) ? MALLOC_CAP_SPIRAM : MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
-        buf_copy = heap_caps_aligned_alloc(SOC_AXI_DMA_EXT_MEM_ENC_ALIGNMENT, buf_len, heap_caps);
+        buf_copy = heap_caps_aligned_alloc(SOC_GDMA_EXT_MEM_ENC_ALIGNMENT, buf_len, heap_caps);
         if (buf_copy == NULL) {
             ESP_LOGE(TAG, "Failed to allocate aligned internal memory");
             return ret;
@@ -206,7 +206,7 @@ static esp_err_t esp_sha_dma_process_ext(esp_sha_type sha_type, const void *inpu
 
     return ret;
 }
-#endif /* SOC_AXI_DMA_EXT_MEM_ENC_ALIGNMENT */
+#endif /* SOC_GDMA_EXT_MEM_ENC_ALIGNMENT */
 
 /* Performs SHA on multiple blocks at a time */
 static esp_err_t esp_sha_dma_process(esp_sha_type sha_type, const void *input, uint32_t ilen,
@@ -227,17 +227,17 @@ static esp_err_t esp_sha_dma_process(esp_sha_type sha_type, const void *input, u
 
 /* When SHA-DMA operations are carried out using external memory with external memory encryption enabled,
    we need to make sure that the addresses and the sizes of the buffers on which the DMA operates are 16 byte-aligned. */
-#ifdef SOC_AXI_DMA_EXT_MEM_ENC_ALIGNMENT
-    if (esp_flash_encryption_enabled()) {
+#ifdef SOC_GDMA_EXT_MEM_ENC_ALIGNMENT
+    if (efuse_hal_flash_encryption_enabled()) {
         if (esp_ptr_external_ram(input) || esp_ptr_external_ram(buf) || esp_ptr_in_drom(input) || esp_ptr_in_drom(buf)) {
             bool input_needs_realloc = false;
             bool buf_needs_realloc = false;
 
-            if (ilen && ((intptr_t)(input) & (SOC_AXI_DMA_EXT_MEM_ENC_ALIGNMENT - 1)) != 0) {
+            if (ilen && ((intptr_t)(input) & (SOC_GDMA_EXT_MEM_ENC_ALIGNMENT - 1)) != 0) {
                 input_needs_realloc = true;
             }
 
-            if (buf_len && ((intptr_t)(buf) & (SOC_AXI_DMA_EXT_MEM_ENC_ALIGNMENT - 1)) != 0) {
+            if (buf_len && ((intptr_t)(buf) & (SOC_GDMA_EXT_MEM_ENC_ALIGNMENT - 1)) != 0) {
                 buf_needs_realloc = true;
             }
 
@@ -246,7 +246,7 @@ static esp_err_t esp_sha_dma_process(esp_sha_type sha_type, const void *input, u
             }
         }
     }
-#endif /* SOC_AXI_DMA_EXT_MEM_ENC_ALIGNMENT */
+#endif /* SOC_GDMA_EXT_MEM_ENC_ALIGNMENT */
 
     /* DMA descriptor for Memory to DMA-SHA transfer */
     if (ilen) {
@@ -272,6 +272,19 @@ static esp_err_t esp_sha_dma_process(esp_sha_type sha_type, const void *input, u
         s_dma_descr_buf.dw0.suc_eof = 0;
         s_dma_descr_buf.next = (&s_dma_descr_input);
     }
+
+    /* Write back buffers to memory if they are in external RAM
+     * The writeback needs to be performed in esp_sha_dma_process() instead of esp_sha_dma() to make
+     * sure that if the buffers are reallocated, then the writeback is performed on the new buffers.
+     */
+#if (CONFIG_SPIRAM && SOC_PSRAM_DMA_CAPABLE)
+    if (esp_ptr_external_ram(input)) {
+        esp_cache_msync((void *)input, ilen, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
+    }
+    if (esp_ptr_external_ram(buf)) {
+        esp_cache_msync((void *)buf, buf_len, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
+    }
+#endif
 
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
     if (ilen) {
@@ -316,15 +329,6 @@ int esp_sha_dma(esp_sha_type sha_type, const void *input, uint32_t ilen,
         esp_sha_block_mode_fallback(sha_type, input, ilen, buf, buf_len, is_first_block);
         return 0;
     }
-
-#if (CONFIG_SPIRAM && SOC_PSRAM_DMA_CAPABLE)
-    if (esp_ptr_external_ram(input)) {
-        esp_cache_msync((void *)input, ilen, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
-    }
-    if (esp_ptr_external_ram(buf)) {
-        esp_cache_msync((void *)buf, buf_len, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
-    }
-#endif
 
     /* Copy to internal buf if buf is in non DMA capable memory */
     if (!s_check_dma_capable(buf) && (buf_len != 0)) {
