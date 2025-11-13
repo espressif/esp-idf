@@ -9,8 +9,11 @@
 #include <string.h>
 #include "hal/assert.h"
 #include "hal/ecc_types.h"
+#include "hal/efuse_hal.h"
 #include "soc/ecc_mult_reg.h"
 #include "soc/hp_sys_clkrst_struct.h"
+#include "soc/chip_revision.h"
+#include "hal/config.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -124,16 +127,15 @@ static inline void ecc_ll_set_mode(ecc_mode_t mode)
 
 static inline void ecc_ll_set_curve(ecc_curve_t curve)
 {
-    switch(curve) {
-        case ECC_CURVE_SECP256R1:
-            REG_SET_BIT(ECC_MULT_CONF_REG, ECC_MULT_KEY_LENGTH);
-            break;
+    switch (curve) {
         case ECC_CURVE_SECP192R1:
-            REG_CLR_BIT(ECC_MULT_CONF_REG, ECC_MULT_KEY_LENGTH);
+        case ECC_CURVE_SECP256R1:
+        case ECC_CURVE_SECP384R1:
+        case ECC_CURVE_SM2:
+            REG_SET_FIELD(ECC_MULT_CONF_REG, ECC_MULT_KEY_LENGTH, curve);
             break;
         default:
             HAL_ASSERT(false && "Unsupported curve");
-            return;
     }
 }
 
@@ -246,10 +248,22 @@ static inline void ecc_ll_read_param(ecc_ll_param_t param, uint8_t *buf, uint16_
     memcpy(buf, (void *)reg, len);
 }
 
+static inline bool ecc_ll_is_p384_curve_operations_supported(void)
+{
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+    return true;
+#else
+    return false;
+#endif
+}
+
 static inline void ecc_ll_enable_constant_time_point_mul(bool enable)
 {
-    // Not supported for ESP32-P4
-    (void) enable; //unused
+    if (enable) {
+        REG_SET_BIT(ECC_MULT_CONF_REG, ECC_MULT_SECURITY_MODE);
+    } else {
+        REG_CLR_BIT(ECC_MULT_CONF_REG, ECC_MULT_SECURITY_MODE);
+    }
 }
 
 #ifdef __cplusplus
