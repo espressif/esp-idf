@@ -33,7 +33,6 @@ extern "C" {
 #define EMAC_HAL_DMA_DESC_SIZE                              (32)
 #endif
 
-
 /* DMA descriptor control bits */
 #define EMAC_HAL_TDES0_INTR_ON_COMPLET                      (1 << 30)
 #define EMAC_HAL_TDES0_CRC_APPEND_DISABLE                   (1 << 27)
@@ -188,7 +187,6 @@ typedef struct {
 } eth_dma_rx_descriptor_t;
 
 ASSERT_TYPE_SIZE(eth_dma_rx_descriptor_t, EMAC_HAL_DMA_DESC_SIZE);
-
 
 typedef struct emac_mac_dev_s *emac_mac_soc_regs_t;
 typedef struct emac_dma_dev_s *emac_dma_soc_regs_t;

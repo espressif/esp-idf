@@ -80,9 +80,6 @@ if(CONFIG_SOC_DEBUG_PROBE_SUPPORTED)
     list(APPEND srcs "${target_folder}/debug_probe_periph.c")
 endif()
 
-if(CONFIG_SOC_EMAC_SUPPORTED)
-    list(APPEND srcs "${target_folder}/emac_periph.c")
-endif()
 
 if(CONFIG_SOC_ETM_SUPPORTED)
     list(APPEND srcs "${target_folder}/etm_periph.c")

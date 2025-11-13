@@ -134,7 +134,6 @@ extern "C" {
 /* Enable needed DMA interrupts (recv/recv_buf_unavailabal/normal must be enabled to make eth work) */
 #define EMAC_LL_CONFIG_ENABLE_INTR_MASK    (EMAC_LL_INTR_RECEIVE_ENABLE | EMAC_LL_INTR_NORMAL_SUMMARY_ENABLE)
 
-
 /* Maximum number of MAC address to be filtered */
 #define EMAC_LL_MAX_MAC_ADDR_NUM 8
 

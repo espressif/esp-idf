@@ -30,7 +30,7 @@
 #include "freertos/semphr.h"
 #include "hal/emac_hal.h"
 #include "soc/soc.h"
-#include "soc/emac_periph.h"
+#include "hal/emac_periph.h"
 #include "clk_ctrl_os.h"
 #include "sdkconfig.h"
 #include "esp_rom_sys.h"
