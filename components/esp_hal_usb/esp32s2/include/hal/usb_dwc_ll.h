@@ -164,7 +164,6 @@ typedef struct {
     uint8_t *buffer;
 } usb_dwc_ll_dma_qtd_t;
 
-
 /* -----------------------------------------------------------------------------
 ------------------------------- Global Registers -------------------------------
 ----------------------------------------------------------------------------- */
@@ -398,18 +397,18 @@ static inline void usb_dwc_ll_hcfg_set_num_frame_list_entries(usb_dwc_dev_t *hw,
 {
     uint32_t frlisten;
     switch (num_entries) {
-        case USB_HAL_FRAME_LIST_LEN_8:
-            frlisten = 0;
-            break;
-        case USB_HAL_FRAME_LIST_LEN_16:
-            frlisten = 1;
-            break;
-        case USB_HAL_FRAME_LIST_LEN_32:
-            frlisten = 2;
-            break;
-        default: //USB_HAL_FRAME_LIST_LEN_64
-            frlisten = 3;
-            break;
+    case USB_HAL_FRAME_LIST_LEN_8:
+        frlisten = 0;
+        break;
+    case USB_HAL_FRAME_LIST_LEN_16:
+        frlisten = 1;
+        break;
+    case USB_HAL_FRAME_LIST_LEN_32:
+        frlisten = 2;
+        break;
+    default: //USB_HAL_FRAME_LIST_LEN_64
+        frlisten = 3;
+        break;
     }
     hw->hcfg_reg.frlisten = frlisten;
 }
@@ -820,7 +819,7 @@ static inline void usb_dwc_ll_hctsiz_set_dopng(volatile usb_dwc_host_chan_regs_t
 /**
  * @brief Set scheduling info for Periodic channel
  *
- * @note ESP32-S3 is Full-Speed only, so SCHED_INFO is always set to 0xFF
+ * @note ESP32-S2 is Full-Speed only, so SCHED_INFO is always set to 0xFF
  * @attention This function must be called for each periodic channel!
  * @see USB-OTG databook: Table 5-47
  *

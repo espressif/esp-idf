@@ -18,7 +18,6 @@
 
 #define USB_WRAP_LL_EXT_PHY_SUPPORTED           1   // Can route to an external FSLS PHY
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif

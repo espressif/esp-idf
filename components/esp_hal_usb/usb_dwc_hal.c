@@ -193,7 +193,6 @@ bool usb_dwc_hal_fifo_config_is_valid(const usb_dwc_hal_context_t *hal, const us
     return (used_lines <= hal->constant_config.fifo_size);
 }
 
-
 void usb_dwc_hal_set_fifo_config(usb_dwc_hal_context_t *hal, const usb_dwc_hal_fifo_config_t *config)
 {
     // Check internal HAL state
@@ -330,12 +329,12 @@ void usb_dwc_hal_chan_set_ep_char(usb_dwc_hal_context_t *hal, usb_dwc_hal_chan_t
     HAL_ASSERT(!chan_obj->flags.active);
     //Set the endpoint characteristics of the pipe
     usb_dwc_ll_hcchar_init(chan_obj->regs,
-                             ep_char->dev_addr,
-                             ep_char->bEndpointAddress & BENDPOINTADDRESS_NUM_MSK,
-                             ep_char->mps,
-                             ep_char->type,
-                             ep_char->bEndpointAddress & BENDPOINTADDRESS_DIR_MSK,
-                             ep_char->ls_via_fs_hub);
+                           ep_char->dev_addr,
+                           ep_char->bEndpointAddress & BENDPOINTADDRESS_NUM_MSK,
+                           ep_char->mps,
+                           ep_char->type,
+                           ep_char->bEndpointAddress & BENDPOINTADDRESS_DIR_MSK,
+                           ep_char->ls_via_fs_hub);
     //Save channel type
     chan_obj->type = ep_char->type;
     //If this is a periodic endpoint/channel, set its schedule in the frame list
@@ -365,7 +364,7 @@ void usb_dwc_hal_chan_set_ep_char(usb_dwc_hal_context_t *hal, usb_dwc_hal_chan_t
             interval_frame_list = 1;
         }
         // Schedule the channel in the frame list
-        for (int i = 0; i < hal->frame_list_len; i+= interval_frame_list) {
+        for (int i = 0; i < hal->frame_list_len; i += interval_frame_list) {
             int index = (offset_frame_list + i) % hal->frame_list_len;
             hal->periodic_frame_list[index] |= 1 << chan_obj->flags.chan_idx;
         }
