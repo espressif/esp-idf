@@ -89,10 +89,6 @@ if(CONFIG_SOC_LEDC_SUPPORTED)
     list(APPEND srcs "${target_folder}/ledc_periph.c")
 endif()
 
-if(CONFIG_SOC_RMT_SUPPORTED)
-    list(APPEND srcs "${target_folder}/rmt_periph.c")
-endif()
-
 if(CONFIG_SOC_SDM_SUPPORTED)
     list(APPEND srcs "${target_folder}/sdm_periph.c")
 endif()

@@ -7,7 +7,6 @@
 #include "esp_memory_utils.h"
 #include "esp_cache.h"
 #include "esp_rom_gpio.h"
-#include "soc/rmt_periph.h"
 #include "driver/gpio.h"
 #include "driver/rmt_rx.h"
 #include "rmt_private.h"
@@ -90,12 +89,12 @@ static esp_err_t rmt_rx_register_to_group(rmt_rx_channel_t *rx_channel, const rm
     // start to search for a free channel
     // a channel can take up its neighbour's memory block, so the neighbour channel won't work, we should skip these "invaded" ones
     int channel_scan_start = RMT_RX_CHANNEL_OFFSET_IN_GROUP;
-    int channel_scan_end = RMT_RX_CHANNEL_OFFSET_IN_GROUP + SOC_RMT_RX_CANDIDATES_PER_GROUP;
+    int channel_scan_end = RMT_RX_CHANNEL_OFFSET_IN_GROUP + RMT_LL_GET(RX_CANDIDATES_PER_INST);
     if (config->flags.with_dma) {
         // for DMA mode, the memory block number is always 1; for non-DMA mode, memory block number is configured by user
         mem_block_num = 1;
         // Only the last channel has the DMA capability
-        channel_scan_start = RMT_RX_CHANNEL_OFFSET_IN_GROUP + SOC_RMT_RX_CANDIDATES_PER_GROUP - 1;
+        channel_scan_start = RMT_RX_CHANNEL_OFFSET_IN_GROUP + RMT_LL_GET(RX_CANDIDATES_PER_INST) - 1;
         rx_channel->ping_pong_symbols = 0; // with DMA, we don't need to do ping-pong
     } else {
         // one channel can occupy multiple memory blocks
@@ -112,7 +111,7 @@ static esp_err_t rmt_rx_register_to_group(rmt_rx_channel_t *rx_channel, const rm
     uint32_t channel_mask = (1 << mem_block_num) - 1;
     rmt_group_t *group = NULL;
     int channel_id = -1;
-    for (int i = 0; i < SOC_RMT_GROUPS; i++) {
+    for (int i = 0; i < RMT_LL_GET(INST_NUM); i++) {
         group = rmt_acquire_group_handle(i);
         ESP_RETURN_ON_FALSE(group, ESP_ERR_NO_MEM, TAG, "no mem for group (%d)", i);
         portENTER_CRITICAL(&group->spinlock);
@@ -156,7 +155,7 @@ static esp_err_t rmt_rx_destroy(rmt_rx_channel_t *rx_channel)
         int group_id = rx_channel->base.group->group_id;
         int channel_id = rx_channel->base.channel_id;
         esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ZERO_INPUT,
-                                       rmt_periph_signals.groups[group_id].channels[channel_id + RMT_RX_CHANNEL_OFFSET_IN_GROUP].rx_sig,
+                                       soc_rmt_signals[group_id].channels[channel_id + RMT_RX_CHANNEL_OFFSET_IN_GROUP].rx_sig,
                                        false);
     }
     if (rx_channel->base.intr) {
@@ -250,7 +249,7 @@ esp_err_t rmt_new_rx_channel(const rmt_rx_channel_config_t *config, rmt_channel_
         // 2-- Get interrupt allocation flag
         int isr_flags = rmt_isr_priority_to_flags(group) | RMT_RX_INTR_ALLOC_FLAG;
         // 3-- Allocate interrupt using isr_flag
-        ret = esp_intr_alloc_intrstatus(rmt_periph_signals.groups[group_id].irq, isr_flags,
+        ret = esp_intr_alloc_intrstatus(soc_rmt_signals[group_id].irq, isr_flags,
                                         (uint32_t)rmt_ll_get_interrupt_status_reg(hal->regs),
                                         RMT_LL_EVENT_RX_MASK(channel_id), rmt_rx_default_isr, rx_channel, &rx_channel->base.intr);
         ESP_GOTO_ON_ERROR(ret, err, TAG, "install rx interrupt failed");
@@ -274,7 +273,7 @@ esp_err_t rmt_new_rx_channel(const rmt_rx_channel_config_t *config, rmt_channel_
     // always enable rx wrap, both DMA mode and ping-pong mode rely this feature
     rmt_ll_rx_enable_wrap(hal->regs, channel_id, true);
 #endif
-#if SOC_RMT_SUPPORT_RX_DEMODULATION
+#if RMT_LL_SUPPORT(RX_DEMODULATION)
     // disable carrier demodulation by default, can re-enable by `rmt_apply_carrier()`
     rmt_ll_rx_enable_carrier_demodulation(hal->regs, channel_id, false);
 #endif
@@ -283,7 +282,7 @@ esp_err_t rmt_new_rx_channel(const rmt_rx_channel_config_t *config, rmt_channel_
     gpio_func_sel(config->gpio_num, PIN_FUNC_GPIO);
     gpio_input_enable(config->gpio_num);
     esp_rom_gpio_connect_in_signal(config->gpio_num,
-                                   rmt_periph_signals.groups[group_id].channels[channel_id + RMT_RX_CHANNEL_OFFSET_IN_GROUP].rx_sig,
+                                   soc_rmt_signals[group_id].channels[channel_id + RMT_RX_CHANNEL_OFFSET_IN_GROUP].rx_sig,
                                    config->flags.invert_in);
     rx_channel->base.gpio_num = config->gpio_num;
 
@@ -451,7 +450,7 @@ esp_err_t rmt_receive(rmt_channel_handle_t channel, void *buffer, size_t buffer_
 
 static esp_err_t rmt_rx_demodulate_carrier(rmt_channel_handle_t channel, const rmt_carrier_config_t *config)
 {
-#if !SOC_RMT_SUPPORT_RX_DEMODULATION
+#if !RMT_LL_SUPPORT(RX_DEMODULATION)
     ESP_RETURN_ON_FALSE(false, ESP_ERR_NOT_SUPPORTED, TAG, "rx demodulation not supported");
 #else
     rmt_group_t *group = channel->group;
@@ -591,7 +590,7 @@ bool rmt_isr_handle_rx_done(rmt_rx_channel_t *rx_chan)
     rmt_ll_rx_enable(hal->regs, channel_id, false);
     portEXIT_CRITICAL_ISR(&channel->spinlock);
 
-#if !SOC_RMT_SUPPORT_ASYNC_STOP
+#if !RMT_LL_SUPPORT(ASYNC_STOP)
     // This is a workaround for ESP32.
     // The RX engine can not be disabled once it is enabled in ESP32
     // If the state isn't RMT_FSM_RUN, it means the RX engine was disabled
