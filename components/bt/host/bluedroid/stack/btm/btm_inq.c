@@ -240,13 +240,6 @@ tBTM_STATUS BTM_SetDiscoverability (UINT16 inq_mode, UINT16 window, UINT16 inter
         scan_mode |= HCI_PAGE_SCAN_ENABLED;
     }
 
-    if (btsnd_hcic_write_scan_enable (scan_mode)) {
-        btm_cb.btm_inq_vars.discoverable_mode &= (~BTM_DISCOVERABLE_MASK);
-        btm_cb.btm_inq_vars.discoverable_mode |= inq_mode;
-    } else {
-        return (BTM_NO_RESOURCES);
-    }
-
     /* Change the service class bit if mode has changed */
     p_cod = BTM_ReadDeviceClass();
     BTM_COD_SERVICE_CLASS(service_class, p_cod);
@@ -264,6 +257,13 @@ tBTM_STATUS BTM_SetDiscoverability (UINT16 inq_mode, UINT16 window, UINT16 inter
 
         FIELDS_TO_COD(cod, reserved_2, minor, major, service_class);
         (void) BTM_SetDeviceClass (cod);
+    }
+
+    if (btsnd_hcic_write_scan_enable (scan_mode)) {
+        btm_cb.btm_inq_vars.discoverable_mode &= (~BTM_DISCOVERABLE_MASK);
+        btm_cb.btm_inq_vars.discoverable_mode |= inq_mode;
+    } else {
+        return (BTM_NO_RESOURCES);
     }
 
     return (BTM_SUCCESS);
