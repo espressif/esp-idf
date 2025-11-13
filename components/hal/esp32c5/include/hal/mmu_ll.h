@@ -233,7 +233,7 @@ __attribute__((always_inline)) static inline void mmu_ll_write_entry(uint32_t mm
     if (mmu_ll_cache_encryption_enabled() && target == MMU_TARGET_PSRAM0 && efuse_hal_chip_revision() > 100) {
         ESP_FAULT_ASSERT(REG_READ(SPI_MEM_MMU_ITEM_CONTENT_REG(0)) & SOC_MMU_SENSITIVE);
     } else {
-        ESP_FAULT_ASSERT(!(mmu_ll_cache_encryption_enabled() && mmu_id == MMU_LL_PSRAM_MMU_ID && efuse_hal_chip_revision() > 100));
+        ESP_FAULT_ASSERT(!(mmu_ll_cache_encryption_enabled() && target == MMU_TARGET_PSRAM0 && efuse_hal_chip_revision() > 100));
     }
 }
 
