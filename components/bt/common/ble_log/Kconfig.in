@@ -7,6 +7,8 @@ config BLE_LOG_ENABLED
 if BLE_LOG_ENABLED
     config BLE_LOG_TASK_STACK_SIZE
         int "Stack size for BLE Log Task"
+        default 1024 if IDF_TARGET_ARCH_RISCV
+        default 2048 if IDF_TARGET_ARCH_XTENSA
         default 1024
         help
             Stack size for BLE Log Task
