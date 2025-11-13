@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,7 +9,6 @@
 #include "esp_attr.h"
 #include "esp_err.h"
 #include "soc/soc_caps.h"
-#include "hal/efuse_ll.h"
 #include "sdkconfig.h"
 
 #ifdef __cplusplus
@@ -184,14 +183,14 @@ void esp_flash_encryption_init_checks(void);
  */
 esp_err_t esp_flash_encryption_enable_secure_features(void);
 
-#if CONFIG_SOC_KEY_MANAGER_FE_KEY_DEPLOY
+#if SOC_KEY_MANAGER_FE_KEY_DEPLOY
 /** @brief Enable the key manager for flash encryption
  *
  * @return
  *  - ESP_OK - On success
  */
-esp_err_t esp_flash_encryption_enable_key_mgr(void);
-#endif // CONFIG_SOC_KEY_MANAGER_FE_KEY_DEPLOY
+esp_err_t esp_flash_encryption_use_efuse_key(void);
+#endif // SOC_KEY_MANAGER_FE_KEY_DEPLOY
 
 #endif /* BOOTLOADER_BUILD && CONFIG_SECURE_FLASH_ENC_ENABLED */
 

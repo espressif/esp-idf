@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,6 +16,14 @@
 #include "esp_log.h"
 #include "hal/wdt_hal.h"
 #include "sdkconfig.h"
+#include "soc/soc_caps.h"
+
+#if SOC_KEY_MANAGER_SUPPORTED
+#include "esp_key_mgr.h"
+#include "hal/key_mgr_ll.h"
+#include "rom/key_mgr.h"
+#include "esp_rom_crc.h"
+#endif
 
 #ifdef CONFIG_SOC_EFUSE_CONSISTS_OF_ONE_KEY_BLOCK
 #include "soc/sensitive_reg.h"
@@ -124,8 +132,151 @@ esp_err_t esp_flash_encrypt_check_and_update(void)
     return ESP_OK;
 }
 
+#if CONFIG_SECURE_FLASH_ENCRYPTION_KEY_SOURCE_KEY_MGR
+static esp_err_t key_manager_read_key_recovery_info(esp_key_mgr_key_recovery_info_t *key_recovery_info)
+{
+    esp_err_t err = ESP_FAIL;
+    uint32_t crc = 0;
+
+    for (int i = 0; i < 2; i++) {
+        err = bootloader_flash_read(KEY_HUK_SECTOR_OFFSET(i), (uint32_t *)key_recovery_info, sizeof(esp_key_mgr_key_recovery_info_t), false);
+        if (err != ESP_OK) {
+            ESP_LOGD(TAG, "Failed to read key recovery info from Key Manager sector %d: %x", i, err);
+            continue;
+        }
+
+        // check Key Recovery Info magic
+        if (key_recovery_info->magic != KEY_HUK_SECTOR_MAGIC) {
+            ESP_LOGD(TAG, "Key Manager sector %d Magic %08x failed", i, key_recovery_info->magic);
+            continue;
+        }
+
+#if CONFIG_SECURE_FLASH_ENCRYPTION_AES256
+        if (key_recovery_info->key_type != ESP_KEY_MGR_XTS_AES_256_KEY) {
+            ESP_LOGD(TAG, "Key Manager sector %d has incorrect key type", i);
+            continue;
+        }
+#else
+        if (key_recovery_info->key_type != ESP_KEY_MGR_XTS_AES_128_KEY) {
+            ESP_LOGD(TAG, "Key Manager sector %d has incorrect key type", i);
+            continue;
+        }
+#endif
+
+        // check HUK Info CRC
+        crc = esp_rom_crc32_le(0, key_recovery_info->huk_info.info, HUK_INFO_LEN);
+        if (crc != key_recovery_info->huk_info.crc) {
+            ESP_LOGD(TAG, "Key Manager sector %d HUK Info CRC error", i);
+            continue;
+        }
+
+        // check Key Info 0 CRC
+        crc = esp_rom_crc32_le(0, key_recovery_info->key_info[0].info, KEY_INFO_LEN);
+        if (crc != key_recovery_info->key_info[0].crc) {
+            ESP_LOGD(TAG, "Key Manager sector %d Key Info 0 CRC error", i);
+            continue;
+        }
+
+#if CONFIG_SECURE_FLASH_ENCRYPTION_AES256
+        // check Key Info 1 CRC
+        crc = esp_rom_crc32_le(0, key_recovery_info->key_info[1].info, KEY_INFO_LEN);
+        if (crc != key_recovery_info->key_info[1].crc) {
+            ESP_LOGD(TAG, "Key Manager sector %d Key Info 1 CRC error", i);
+            continue;
+        }
+#endif
+
+        ESP_LOGI(TAG, "Valid Key Manager key recovery info found in sector %d", i);
+        return ESP_OK;
+    }
+
+    ESP_LOGD(TAG, "No valid key recovery info found");
+    return ESP_ERR_NOT_FOUND;
+}
+
+static esp_err_t key_manager_generate_key(esp_key_mgr_key_recovery_info_t *key_recovery_info)
+{
+    ESP_LOGI(TAG, "Deploying new flash encryption key using Key Manager");
+
+    esp_key_mgr_random_key_config_t key_config;
+    memset(&key_config, 0, sizeof(esp_key_mgr_random_key_config_t));
+
+#if CONFIG_SECURE_FLASH_ENCRYPTION_AES256
+    key_config.key_type = ESP_KEY_MGR_XTS_AES_256_KEY;
+#else
+    key_config.key_type = ESP_KEY_MGR_XTS_AES_128_KEY;
+#endif
+
+    // Generate a new key and load it into Key Manager
+    esp_err_t err = esp_key_mgr_deploy_key_in_random_mode(&key_config, key_recovery_info);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to generate key for Key Manager: %x", err);
+        return err;
+    }
+
+    ESP_LOGV(TAG, "Successfully deployed new flash encryption key using Key Manager");
+
+    // Write the key recovery info of the newly generated key into the flash
+    for (int i = 0; i < 2; i++) {
+        err = bootloader_flash_erase_sector(i);
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to erase sector %d: %x", i, err);
+            return err;
+        }
+    }
+
+    // Write the key recovery info of the newly generated key into the flash
+    err = bootloader_flash_write(KEY_HUK_SECTOR_OFFSET(0), (uint32_t *)key_recovery_info, sizeof(esp_key_mgr_key_recovery_info_t), false);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to write key recovery info to flash: %x", err);
+        return err;
+    }
+
+    ESP_LOGV(TAG, "Successfully wrote the newly generated Flash Encryption key recovery info into the flash");
+
+    return ESP_OK;
+}
+
+static esp_err_t key_manager_check_and_generate_key(void)
+{
+    /*
+     1. Check if we have a valid key info in the first two sectors of the flash
+     2. If we have a valid key info, check if it is valid
+        1. If the key is valid, use it
+        2. If the key is not valid, generate a new key and load it into key manager
+     3. If not, generate a new key and load it into key manager
+    */
+   esp_key_mgr_key_recovery_info_t key_recovery_info;
+
+   memset(&key_recovery_info, 0, sizeof(esp_key_mgr_key_recovery_info_t));
+
+   esp_err_t err = key_manager_read_key_recovery_info(&key_recovery_info);
+   if (err == ESP_ERR_NOT_FOUND) {
+        // No valid key recovery info found, generate a new key
+        err = key_manager_generate_key(&key_recovery_info);
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to generate key for Key Manager: %x", err);
+            return err;
+        }
+   } else {
+       // Valid key recovery info found, use it
+       ESP_LOGI(TAG, "Using pre-deployed Key Manager key for flash encryption");
+   }
+
+   // Recover key using the key recovery info
+   err = esp_key_mgr_activate_key(&key_recovery_info);
+   if (err != ESP_OK) {
+       ESP_LOGE(TAG, "Failed to activate Key Manager key: %x", err);
+       return err;
+   }
+
+   return ESP_OK;
+}
+#endif
+
 static esp_err_t check_and_generate_encryption_keys(void)
 {
+#if CONFIG_SECURE_FLASH_ENCRYPTION_KEY_SOURCE_EFUSES
     size_t key_size = 32;
 #ifdef CONFIG_IDF_TARGET_ESP32
     enum { BLOCKS_NEEDED = 1 };
@@ -214,12 +365,60 @@ static esp_err_t check_and_generate_encryption_keys(void)
         ESP_LOGI(TAG, "Using pre-loaded flash encryption key in efuse");
     }
 
+#if SOC_KEY_MANAGER_FE_KEY_DEPLOY
+    // In the case of Key Manager supported targets, the default XTS-AES key source is set to Key Manager.
+    esp_flash_encryption_use_efuse_key();
+#endif
+#elif CONFIG_SECURE_FLASH_ENCRYPTION_KEY_SOURCE_KEY_MGR
+    esp_err_t err = key_manager_check_and_generate_key();
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to check and generate key using Key Manager: %x", err);
+        return err;
+    }
+
+#if CONFIG_SECURE_FLASH_ENCRYPTION_AES128
+    err = esp_efuse_write_field_bit(ESP_EFUSE_KM_XTS_KEY_LENGTH_256);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to set the efuse bit KM_XTS_KEY_LENGTH_256: %x", err);
+        return err;
+    }
+#endif
+
+    const uint32_t force_key_mgr_key_for_fe = 1 << ESP_KEY_MGR_FORCE_USE_KM_XTS_AES_KEY;
+    err = esp_efuse_write_field_blob(ESP_EFUSE_FORCE_USE_KEY_MANAGER_KEY, &force_key_mgr_key_for_fe, ESP_EFUSE_FORCE_USE_KEY_MANAGER_KEY[0]->bit_count);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to set the efuse bit %d (XTS-AES key) of FORCE_USE_KEY_MANAGER_KEY: %x", ESP_KEY_MGR_FORCE_USE_KM_XTS_AES_KEY, err);
+        return err;
+    }
+
+    ESP_LOGV(TAG, "Successfully activated the flash encryption key using Key Manager");
+#endif
+
     return ESP_OK;
 }
 
 esp_err_t esp_flash_encrypt_init(void)
 {
-    if (esp_flash_encryption_enabled() || esp_flash_encrypt_initialized_once()) {
+    if (esp_flash_encryption_enabled()) {
+        return ESP_OK;
+    }
+
+#if CONFIG_SECURE_FLASH_ENCRYPTION_KEY_SOURCE_KEY_MGR
+    if (!(key_mgr_ll_is_supported() && key_mgr_ll_flash_encryption_supported())) {
+        ESP_LOGE(TAG, "Flash Encryption using Key Manager is not supported, please use efuses instead");
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+#endif
+
+    if (esp_flash_encrypt_initialized_once()) {
+#if CONFIG_SECURE_FLASH_ENCRYPTION_KEY_SOURCE_KEY_MGR
+        // Allow generating a new key if the key recovery info is not present in the flash
+        esp_err_t err = key_manager_check_and_generate_key();
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to recover key using Key Manager: %x", err);
+            return err;
+        }
+#endif
         return ESP_OK;
     }
 
@@ -258,10 +457,6 @@ esp_err_t esp_flash_encrypt_contents(void)
 
 #ifdef CONFIG_SOC_EFUSE_CONSISTS_OF_ONE_KEY_BLOCK
     REG_WRITE(SENSITIVE_XTS_AES_KEY_UPDATE_REG, 1);
-#endif
-
-#if CONFIG_SOC_KEY_MANAGER_FE_KEY_DEPLOY
-    esp_flash_encryption_enable_key_mgr();
 #endif
 
     err = encrypt_bootloader(); // PART_SUBTYPE_BOOTLOADER_PRIMARY

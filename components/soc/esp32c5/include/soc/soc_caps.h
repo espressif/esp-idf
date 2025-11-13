@@ -511,6 +511,7 @@
 #define SOC_EFUSE_ECDSA_KEY 1
 #define SOC_EFUSE_ECDSA_KEY_P192 1
 #define SOC_EFUSE_ECDSA_KEY_P384 1
+#define SOC_EFUSE_XTS_AES_KEY_128 1
 
 /*-------------------------- HUK CAPS----------------------------*/
 #define SOC_HUK_MEM_NEEDS_RECHARGE 1
@@ -533,8 +534,10 @@
 
 /*-------------------------- Flash Encryption CAPS----------------------------*/
 #define SOC_FLASH_ENCRYPTED_XTS_AES_BLOCK_MAX   (64)
-#define SOC_FLASH_ENCRYPTION_XTS_AES        1
-#define SOC_FLASH_ENCRYPTION_XTS_AES_128    1
+#define SOC_FLASH_ENCRYPTION_XTS_AES            1
+#define SOC_FLASH_ENCRYPTION_XTS_AES_OPTIONS    1
+#define SOC_FLASH_ENCRYPTION_XTS_AES_128        1  /* SOC_EFUSE_XTS_AES_KEY_128 (1) || SOC_KEY_MANAGER_FE_KEY_DEPLOY_XTS_AES_128 (1) */
+#define SOC_FLASH_ENCRYPTION_XTS_AES_256        1  /* SOC_EFUSE_XTS_AES_KEY_256 (0) || SOC_KEY_MANAGER_FE_KEY_DEPLOY_XTS_AES_256 (1) */
 #define SOC_FLASH_ENCRYPTION_XTS_AES_SUPPORT_PSEUDO_ROUND  1
 
 /*-------------------------- PSRAM Encryption CAPS----------------------------*/

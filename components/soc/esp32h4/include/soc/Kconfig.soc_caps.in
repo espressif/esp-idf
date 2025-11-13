@@ -815,6 +815,10 @@ config SOC_EFUSE_ECDSA_KEY
     bool
     default n
 
+config SOC_EFUSE_XTS_AES_KEY_128
+    bool
+    default y
+
 config SOC_SECURE_BOOT_V2_RSA
     bool
     default y

@@ -474,6 +474,7 @@
 #define SOC_EFUSE_ECDSA_USE_HARDWARE_K 1 // Force use hardware TRNG supplied K for ECDSA
 #endif
 #define SOC_EFUSE_ECDSA_KEY 1
+#define SOC_EFUSE_XTS_AES_KEY_128 1
 
 /*-------------------------- Secure Boot CAPS----------------------------*/
 #define SOC_SECURE_BOOT_V2_RSA              1

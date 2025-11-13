@@ -11,6 +11,9 @@
 #include "esp_efuse_table.h"
 #include "esp_log.h"
 #include "sdkconfig.h"
+#include "esp_crypto_periph_clk.h"
+#include "esp_key_mgr.h"
+#include "hal/key_mgr_hal.h"
 #include "hal/key_mgr_ll.h"
 #include "hal/mspi_ll.h"
 
@@ -51,18 +54,12 @@ esp_err_t esp_flash_encryption_enable_secure_features(void)
     return ESP_OK;
 }
 
-esp_err_t esp_flash_encryption_enable_key_mgr(void)
+esp_err_t esp_flash_encryption_use_efuse_key(void)
 {
-    _key_mgr_ll_enable_bus_clock(true);
-    _key_mgr_ll_enable_peripheral_clock(true);
-    _key_mgr_ll_reset_register();
-
-    while (key_mgr_ll_get_state() != ESP_KEY_MGR_STATE_IDLE) {
-    };
+    esp_crypto_key_mgr_enable_periph_clk(true);
 
     // Force Key Manager to use eFuse key for XTS-AES operation
-    key_mgr_ll_set_key_usage(ESP_KEY_MGR_XTS_AES_128_KEY, ESP_KEY_MGR_USE_EFUSE_KEY);
-    _mspi_timing_ll_reset_mspi();
+    key_mgr_hal_set_key_usage(ESP_KEY_MGR_XTS_AES_128_KEY, ESP_KEY_MGR_USE_EFUSE_KEY);
 
     return ESP_OK;
 }

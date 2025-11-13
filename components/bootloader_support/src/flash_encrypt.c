@@ -16,6 +16,10 @@
 #include "hal/spi_flash_encrypt_hal.h"
 #include "soc/soc_caps.h"
 
+#if SOC_KEY_MANAGER_SUPPORTED
+#include "esp_key_mgr.h"
+#endif /* SOC_KEY_MANAGER_SUPPORTED */
+
 #if CONFIG_IDF_TARGET_ESP32
 #define CRYPT_CNT ESP_EFUSE_FLASH_CRYPT_CNT
 #define WR_DIS_CRYPT_CNT ESP_EFUSE_WR_DIS_FLASH_CRYPT_CNT
@@ -444,12 +448,13 @@ bool esp_flash_encryption_cfg_verify_release_mode(void)
     }
 #endif
 
+#if CONFIG_SECURE_FLASH_ENCRYPTION_KEY_SOURCE_EFUSES
     esp_efuse_purpose_t purposes[] = {
-#if SOC_FLASH_ENCRYPTION_XTS_AES_256
+#if SOC_EFUSE_XTS_AES_KEY_256
         ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_1,
         ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_2,
 #endif
-#if SOC_FLASH_ENCRYPTION_XTS_AES_128
+#if SOC_EFUSE_XTS_AES_KEY_128
         ESP_EFUSE_KEY_PURPOSE_XTS_AES_128_KEY,
 #endif
     };
@@ -482,6 +487,23 @@ bool esp_flash_encryption_cfg_verify_release_mode(void)
         }
     }
     result &= secure;
+#elif CONFIG_SECURE_FLASH_ENCRYPTION_KEY_SOURCE_KEY_MGR
+#if CONFIG_SECURE_FLASH_ENCRYPTION_AES128
+    secure = esp_efuse_read_field_bit(ESP_EFUSE_KM_XTS_KEY_LENGTH_256);
+    result &= secure;
+    if (!secure) {
+        ESP_LOGW(TAG, "Not enabled Key Manager XTS-AES-128 key (set KM_XTS_KEY_LENGTH_256->1)");
+    }
+#endif
+
+    const uint32_t force_key_mgr_key = esp_efuse_read_field_bit(ESP_EFUSE_FORCE_USE_KEY_MANAGER_KEY);
+    secure = (force_key_mgr_key & (1 << ESP_KEY_MGR_FORCE_USE_KM_XTS_AES_KEY));
+    result &= secure;
+
+    if (!secure) {
+        ESP_LOGW(TAG, "Not forcing Key Manager to use XTS-AES key (set FORCE_USE_KEY_MANAGER_KEY->1)");
+    }
+#endif
 
 #if SOC_FLASH_ENCRYPTION_XTS_AES_SUPPORT_PSEUDO_ROUND
     if (spi_flash_encrypt_ll_is_pseudo_rounds_function_supported()) {

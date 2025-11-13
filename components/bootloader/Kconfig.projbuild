@@ -839,6 +839,26 @@ menu "Security features"
             Read https://docs.espressif.com/projects/esp-idf/en/latest/security/flash-encryption.html
             before enabling.
 
+    choice SECURE_FLASH_ENCRYPTION_KEY_SOURCE
+        bool "Flash Encryption Key Source"
+        depends on SECURE_FLASH_ENC_ENABLED
+        default SECURE_FLASH_ENCRYPTION_KEY_SOURCE_EFUSES
+        help
+            Specify the key source for the Flash Encryption Key
+
+        config SECURE_FLASH_ENCRYPTION_KEY_SOURCE_EFUSES
+            bool "eFuse Key Block"
+            help
+                Use a key that is stored in the eFuses key blocks.
+
+        config SECURE_FLASH_ENCRYPTION_KEY_SOURCE_KEY_MGR
+            bool "Key Manager"
+            depends on SOC_KEY_MANAGER_SUPPORTED && SOC_KEY_MANAGER_FE_KEY_DEPLOY && \
+                !(IDF_TARGET_ESP32P4 && ESP32P4_SELECTS_REV_LESS_V3)
+            help
+                Use a key that is deployed using the Key Manager
+    endchoice
+
     choice SECURE_FLASH_ENCRYPTION_KEYSIZE
         bool "Size of generated XTS-AES key"
         default SECURE_FLASH_ENCRYPTION_AES128
@@ -860,11 +880,16 @@ menu "Security features"
 
         config SECURE_FLASH_ENCRYPTION_AES128
             bool "AES-128 (256-bit key)"
-            depends on SOC_FLASH_ENCRYPTION_XTS_AES_128 && !(IDF_TARGET_ESP32C2 && SECURE_BOOT)
+            depends on SOC_FLASH_ENCRYPTION_XTS_AES_128 && \
+                ((SECURE_FLASH_ENCRYPTION_KEY_SOURCE_EFUSES && SOC_EFUSE_XTS_AES_KEY_128) || \
+                (SECURE_FLASH_ENCRYPTION_KEY_SOURCE_KEY_MGR && SOC_KEY_MANAGER_FE_KEY_DEPLOY_XTS_AES_128)) && \
+                !(IDF_TARGET_ESP32C2 && SECURE_BOOT)
 
         config SECURE_FLASH_ENCRYPTION_AES256
             bool "AES-256 (512-bit key)"
-            depends on SOC_FLASH_ENCRYPTION_XTS_AES_256
+            depends on SOC_FLASH_ENCRYPTION_XTS_AES_256 && \
+                ((SECURE_FLASH_ENCRYPTION_KEY_SOURCE_EFUSES && SOC_EFUSE_XTS_AES_KEY_256) || \
+                (SECURE_FLASH_ENCRYPTION_KEY_SOURCE_KEY_MGR && SOC_KEY_MANAGER_FE_KEY_DEPLOY_XTS_AES_256))
     endchoice
 
     choice SECURE_FLASH_ENCRYPTION_MODE

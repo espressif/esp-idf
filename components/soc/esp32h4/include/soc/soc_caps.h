@@ -438,6 +438,7 @@
 #define SOC_EFUSE_DIS_ICACHE 0
 #define SOC_EFUSE_BLOCK9_KEY_PURPOSE_QUIRK 1  // XTS-AES key purpose not supported for this block
 #define SOC_EFUSE_ECDSA_KEY 0 // TODO: [ESP32H4] IDF-12259
+#define SOC_EFUSE_XTS_AES_KEY_128 1
 
 /*-------------------------- Secure Boot CAPS----------------------------*/
 #define SOC_SECURE_BOOT_V2_RSA              1
