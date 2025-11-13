@@ -162,11 +162,11 @@ static sdm_group_t *sdm_acquire_group_handle(int group_id, sdm_clock_source_t cl
         ESP_LOGD(TAG, "new group (%d) at %p", group_id, group);
 #if CONFIG_PM_ENABLE
         esp_pm_lock_type_t pm_type = ESP_PM_NO_LIGHT_SLEEP;
-#if TIMER_LL_FUNC_CLOCK_SUPPORT_APB
+#if SDM_LL_FUNC_CLOCK_SUPPORT_APB
         if (clk_src == SDM_CLK_SRC_APB) {
             pm_type = ESP_PM_APB_FREQ_MAX;
         }
-#endif // TIMER_LL_FUNC_CLOCK_SUPPORT_APB
+#endif // SDM_LL_FUNC_CLOCK_SUPPORT_APB
         if (esp_pm_lock_create(pm_type, 0, soc_sdm_signals[group_id].module_name, &group->pm_lock) != ESP_OK) {
             ESP_LOGE(TAG, "fail to create PM lock for group %d", group_id);
         }
@@ -327,7 +327,7 @@ esp_err_t sdm_new_channel(const sdm_config_t *config, sdm_channel_handle_t *ret_
     // preset the duty cycle to zero
     sdm_ll_set_pulse_density(group->hal.dev, chan_id, 0);
 
-    // initialize other members of timer
+    // initialize other members
     chan->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
     atomic_init(&chan->fsm, SDM_FSM_INIT); // set the initial state to INIT
 

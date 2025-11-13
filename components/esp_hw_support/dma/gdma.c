@@ -11,7 +11,7 @@
  *  +-----------------------------------+--+     +--+-----------------------------------+
  *  |            GDMA-Group-X           |  |     |  |            GDMA-Group-Y           |
  *  | +-------------+    +------------+ |  |     |  | +-------------+    +------------+ |
- *  | | GDMA-Pair-0 |... |GDMA-Pair-N | |  |     |  | | GDMA-Pair-0 |... |GDMA-Pair-N | |
+ *  | | GDMA-Pair-0 |... |GDMA-Pair-N | |  |     |  | | GDMA-Pair-0 |... |GDMA-Pair-M | |
  *  | |             |    |            | |  |     |  | |             |    |            | |
  *  | |  TX-Chan    |... | TX-Chan    | |  |     |  | |  TX-Chan    |... | TX-Chan    | |
  *  | |  RX-Chan    |    | RX-Chan    | |  |     |  | |  RX-Chan    |    | RX-Chan    | |
@@ -29,25 +29,13 @@
 #include "gdma_priv.h"
 #include "esp_memory_utils.h"
 #include "esp_flash_encrypt.h"
-#include "esp_private/critical_section.h"
-
-#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
-#include "esp_private/gdma_sleep_retention.h"
-#endif
-
-#if !SOC_RCC_IS_INDEPENDENT
-// Reset and Clock Control registers are mixing with other peripherals, so we need to use a critical section
-#define GDMA_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
-#else
-#define GDMA_RCC_ATOMIC()
-#endif
 
 #define GDMA_INVALID_PERIPH_TRIG  (0x3F)
 #define SEARCH_REQUEST_RX_CHANNEL (1 << 0)
 #define SEARCH_REQUEST_TX_CHANNEL (1 << 1)
 
 typedef struct gdma_platform_t {
-    portMUX_TYPE spinlock;                         // platform level spinlock, protect the group handle slots and reference count of each group.
+    portMUX_TYPE spinlock;                       // platform level spinlock, protect the group handle slots and reference count of each group.
     gdma_group_t *groups[GDMA_LL_GET(INST_NUM)]; // array of GDMA group instances
     int group_ref_counts[GDMA_LL_GET(INST_NUM)]; // reference count used to protect group install/uninstall
 } gdma_platform_t;
@@ -84,7 +72,23 @@ static esp_err_t do_allocate_gdma_channel(const gdma_channel_search_info_t *sear
     int search_code = 0;
     gdma_pair_t *pair = NULL;
     gdma_group_t *group = NULL;
-    ESP_RETURN_ON_FALSE(config && ret_chan, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+
+    // Validate input parameters
+    ESP_RETURN_ON_FALSE(search_info && config && ret_chan, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    ESP_RETURN_ON_FALSE(search_info->start_group_id < search_info->end_group_id, ESP_ERR_INVALID_ARG, TAG, "invalid group range");
+    ESP_RETURN_ON_FALSE(search_info->pairs_per_group > 0, ESP_ERR_INVALID_ARG, TAG, "invalid pairs_per_group");
+    if (config->sibling_chan) {
+        ESP_RETURN_ON_FALSE(config->sibling_chan->direction != config->direction, ESP_ERR_INVALID_ARG, TAG,
+                            "sibling channel should have a different direction");
+        ESP_RETURN_ON_FALSE(config->sibling_chan->pair, ESP_ERR_INVALID_ARG, TAG, "invalid sibling channel");
+    }
+
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_GDMA_SUPPORT_SLEEP_RETENTION
+    // retention module is per GDMA pair, before we allocate the pair object, some common registers are already configured in "hal_init"
+    // if a light sleep happens and powers off the gdma module, those registers will get lost
+    // to work around it, we can acquire a power lock first, before any register configuration
+    sleep_retention_power_lock_acquire();
+#endif
 
     if (config->flags.reserve_sibling) {
         search_code = SEARCH_REQUEST_RX_CHANNEL | SEARCH_REQUEST_TX_CHANNEL; // search for a pair of channels
@@ -101,13 +105,13 @@ static esp_err_t do_allocate_gdma_channel(const gdma_channel_search_info_t *sear
 
     if (config->sibling_chan) {
         pair = config->sibling_chan->pair;
-        ESP_GOTO_ON_FALSE(pair, ESP_ERR_INVALID_ARG, err, TAG, "invalid sibling channel");
-        ESP_GOTO_ON_FALSE(config->sibling_chan->direction != config->direction, ESP_ERR_INVALID_ARG, err, TAG, "sibling channel should have a different direction");
         group = pair->group;
+        // Acquire reference early, before any additional error checks
         esp_os_enter_critical(&group->spinlock);
         group->pair_ref_counts[pair->pair_id]++; // channel obtains a reference to pair
         esp_os_exit_critical(&group->spinlock);
-        goto search_done; // skip the search path below if user has specify a sibling channel
+        // skip the search path below if user has specify a sibling channel
+        goto search_done;
     }
 
     int start_group_id = search_info->start_group_id;
@@ -129,17 +133,22 @@ static esp_err_t do_allocate_gdma_channel(const gdma_channel_search_info_t *sear
             esp_os_exit_critical(&pair->spinlock);
             // found a pair that satisfies the search condition
             if (search_code == 0) {
-                esp_os_enter_critical(&group->spinlock);
-                group->pair_ref_counts[pair->pair_id]++; // channel obtains a reference to pair
-                esp_os_exit_critical(&group->spinlock);
+                // gdma_acquire_pair_handle already increased pair ref count, no need to do it again
+                // pair is ready to use, don't release it
+                // however, we need to release the group reference acquired by gdma_acquire_group_handle
+                // because gdma_acquire_pair_handle already added its own group reference
+                gdma_release_group_handle(group);
+                break; // exit inner loop, will also exit outer loop due to search_code == 0
+            } else {
+                // not suitable pair, release it
+                gdma_release_pair_handle(pair);
+                pair = NULL;
             }
-            gdma_release_pair_handle(pair);
         } // loop used to search pair
-        gdma_release_group_handle(group);
-        // restore to initial state if no suitable channel slot is found
-        if (search_code) {
+        // Only release group if we didn't find a suitable pair in this group
+        if (search_code != 0) {
+            gdma_release_group_handle(group);
             group = NULL;
-            pair = NULL;
         }
     } // loop used to search group
     ESP_GOTO_ON_FALSE(search_code == 0, ESP_ERR_NOT_FOUND, err, TAG, "no free gdma channel, search code=%d", search_code);
@@ -170,6 +179,13 @@ search_done:
     // set 1 as default weight, can be overwritten by user
     gdma_set_weight(*ret_chan, 1);
 #endif
+
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_GDMA_SUPPORT_SLEEP_RETENTION
+    // set up the sleep retention link for the pair
+    gdma_acquire_sleep_retention(pair);
+    // release the helper power lock because we have finished setting up the sleep retention link
+    sleep_retention_power_lock_release();
+#endif
     (*ret_chan)->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
     ESP_LOGD(TAG, "new %s channel (%d,%d) at %p", (config->direction == GDMA_CHANNEL_DIRECTION_TX) ? "tx" : "rx",
              group->group_id, pair->pair_id, *ret_chan);
@@ -184,10 +200,15 @@ err:
     }
     if (pair) {
         gdma_release_pair_handle(pair);
-    }
-    if (group) {
+        // pair release will also release group if it's the last reference
+        // so we don't need to release group separately to avoid double-release
+    } else if (group) {
+        // only release group if pair wasn't allocated/released
         gdma_release_group_handle(group);
     }
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_GDMA_SUPPORT_SLEEP_RETENTION
+    sleep_retention_power_lock_release();
+#endif
     return ret;
 }
 
@@ -218,14 +239,6 @@ esp_err_t gdma_new_axi_channel(const gdma_channel_alloc_config_t *config, gdma_c
     return do_allocate_gdma_channel(&search_info, config, ret_chan);
 }
 #endif // SOC_HAS(AXI_GDMA)
-
-#if SOC_HAS(AHB_GDMA)
-esp_err_t gdma_new_channel(const gdma_channel_alloc_config_t *config, gdma_channel_handle_t *ret_chan)
-__attribute__((alias("gdma_new_ahb_channel")));
-#elif SOC_HAS(AXI_GDMA)
-esp_err_t gdma_new_channel(const gdma_channel_alloc_config_t *config, gdma_channel_handle_t *ret_chan)
-__attribute__((alias("gdma_new_axi_channel")));
-#endif
 
 esp_err_t gdma_del_channel(gdma_channel_handle_t dma_chan)
 {
@@ -613,14 +626,14 @@ static void gdma_release_group_handle(gdma_group_t *group)
         do_deinitialize = true;
         // deregister from the platform
         s_platform.groups[group_id] = NULL;
+        gdma_hal_deinit(&group->hal);
+        PERIPH_RCC_ATOMIC() {
+            gdma_ll_enable_bus_clock(group_id, false);
+        }
     }
     esp_os_exit_critical(&s_platform.spinlock);
 
     if (do_deinitialize) {
-        gdma_hal_deinit(&group->hal);
-        GDMA_RCC_ATOMIC() {
-            gdma_ll_enable_bus_clock(group_id, false);
-        }
         free(group);
         ESP_LOGD(TAG, "del group %d", group_id);
     }
@@ -640,18 +653,11 @@ static gdma_group_t *gdma_acquire_group_handle(int group_id, void (*hal_init)(gd
         new_group = true;
         group = pre_alloc_group;
         s_platform.groups[group_id] = group; // register to platform
-    } else {
-        group = s_platform.groups[group_id];
-    }
-    // someone acquired the group handle means we have a new object that refer to this group
-    s_platform.group_ref_counts[group_id]++;
-    esp_os_exit_critical(&s_platform.spinlock);
 
-    if (new_group) {
         group->group_id = group_id;
         group->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
         // enable APB to access GDMA registers
-        GDMA_RCC_ATOMIC() {
+        PERIPH_RCC_ATOMIC() {
             gdma_ll_enable_bus_clock(group_id, true);
             gdma_ll_reset_register(group_id);
         }
@@ -662,6 +668,14 @@ static gdma_group_t *gdma_acquire_group_handle(int group_id, void (*hal_init)(gd
 #endif
         };
         hal_init(&group->hal, &config);
+    } else {
+        group = s_platform.groups[group_id];
+    }
+    // someone acquired the group handle means we have a new object that refer to this group
+    s_platform.group_ref_counts[group_id]++;
+    esp_os_exit_critical(&s_platform.spinlock);
+
+    if (new_group) {
         ESP_LOGD(TAG, "new group (%d) at %p", group_id, group);
     } else {
         free(pre_alloc_group);
@@ -687,9 +701,6 @@ static void gdma_release_pair_handle(gdma_pair_t *pair)
 
     if (do_deinitialize) {
         free(pair);
-#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_GDMA_SUPPORT_SLEEP_RETENTION
-        gdma_sleep_retention_deinit(group->group_id, pair_id);
-#endif
         ESP_LOGD(TAG, "del pair (%d,%d)", group->group_id, pair_id);
         gdma_release_group_handle(group);
     }
@@ -708,6 +719,10 @@ static gdma_pair_t *gdma_acquire_pair_handle(gdma_group_t *group, int pair_id)
     if (!group->pairs[pair_id]) {
         new_pair = true;
         pair = pre_alloc_pair;
+        // initialize pair before registering to avoid accessing uninitialized pair
+        pair->group = group;
+        pair->pair_id = pair_id;
+        pair->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
         // register the pair to the group
         group->pairs[pair_id] = pair;
     } else {
@@ -717,23 +732,18 @@ static gdma_pair_t *gdma_acquire_pair_handle(gdma_group_t *group, int pair_id)
     group->pair_ref_counts[pair_id]++;
     esp_os_exit_critical(&group->spinlock);
 
+    // Update group reference count outside of group->spinlock to avoid deadlock
+    // This must be done after pair registration to ensure group remains valid
     if (new_pair) {
-        pair->group = group;
-        pair->pair_id = pair_id;
-        pair->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
-
         esp_os_enter_critical(&s_platform.spinlock);
-        // pair obtains a reference to group, so increase it
         s_platform.group_ref_counts[group->group_id]++;
         esp_os_exit_critical(&s_platform.spinlock);
 
-#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_GDMA_SUPPORT_SLEEP_RETENTION
-        gdma_sleep_retention_init(group->group_id, pair_id);
-#endif
         ESP_LOGD(TAG, "new pair (%d,%d) at %p", group->group_id, pair_id, pair);
     } else {
         free(pre_alloc_pair);
     }
+
 out:
     return pair;
 }
@@ -743,6 +753,7 @@ static esp_err_t gdma_del_tx_channel(gdma_channel_t *dma_channel)
     gdma_pair_t *pair = dma_channel->pair;
     gdma_group_t *group = pair->group;
     gdma_hal_context_t *hal = &group->hal;
+    // Store IDs early to avoid use-after-free
     int pair_id = pair->pair_id;
     int group_id = group->group_id;
     gdma_tx_channel_t *tx_chan = __containerof(dma_channel, gdma_tx_channel_t, base);
@@ -762,6 +773,11 @@ static esp_err_t gdma_del_tx_channel(gdma_channel_t *dma_channel)
 
     free(tx_chan);
     ESP_LOGD(TAG, "del tx channel (%d,%d)", group_id, pair_id);
+
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_GDMA_SUPPORT_SLEEP_RETENTION
+    // release sleep retention lock
+    gdma_release_sleep_retention(pair);
+#endif
     // channel has a reference on pair, release it now
     gdma_release_pair_handle(pair);
     return ESP_OK;
@@ -772,6 +788,7 @@ static esp_err_t gdma_del_rx_channel(gdma_channel_t *dma_channel)
     gdma_pair_t *pair = dma_channel->pair;
     gdma_group_t *group = pair->group;
     gdma_hal_context_t *hal = &group->hal;
+    // Store IDs early to avoid use-after-free
     int pair_id = pair->pair_id;
     int group_id = group->group_id;
     gdma_rx_channel_t *rx_chan = __containerof(dma_channel, gdma_rx_channel_t, base);
@@ -791,6 +808,12 @@ static esp_err_t gdma_del_rx_channel(gdma_channel_t *dma_channel)
 
     free(rx_chan);
     ESP_LOGD(TAG, "del rx channel (%d,%d)", group_id, pair_id);
+
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_GDMA_SUPPORT_SLEEP_RETENTION
+    // release sleep retention lock
+    gdma_release_sleep_retention(pair);
+#endif
+    // channel has a reference on pair, release it now
     gdma_release_pair_handle(pair);
     return ESP_OK;
 }
