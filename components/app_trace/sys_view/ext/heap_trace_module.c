@@ -51,7 +51,7 @@ esp_err_t esp_sysview_heap_trace_start(uint32_t tmo)
 esp_err_t esp_sysview_heap_trace_stop(void)
 {
     ESP_EARLY_LOGV(TAG, "%s", __func__);
-    SEGGER_RTT_ESP_Flush(0, ESP_APPTRACE_TMO_INFINITE);
+    SEGGER_RTT_ESP_Flush();
     return ESP_OK;
 }
 

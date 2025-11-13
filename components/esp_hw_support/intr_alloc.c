@@ -481,7 +481,7 @@ static void ESP_INTR_IRAM_ATTR shared_intr_isr(void *arg)
     esp_os_exit_critical_isr(&spinlock);
 }
 
-#if CONFIG_APPTRACE_SV_ENABLE
+#if CONFIG_ESP_TRACE_LIB_SEGGER_SYSVIEW
 //Common non-shared isr handler wrapper.
 static void ESP_INTR_IRAM_ATTR non_shared_intr_isr(void *arg)
 {
@@ -489,7 +489,7 @@ static void ESP_INTR_IRAM_ATTR non_shared_intr_isr(void *arg)
     esp_os_enter_critical_isr(&spinlock);
     traceISR_ENTER(ns_isr_arg->source + ETS_INTERNAL_INTR_SOURCE_OFF);
     // FIXME: can we call ISR and check os_task_switch_is_pended() after releasing spinlock?
-    // when CONFIG_APPTRACE_SV_ENABLE = 0 ISRs for non-shared IRQs are called without spinlock
+    // when CONFIG_ESP_TRACE_LIB_SEGGER_SYSVIEW = 0 ISRs for non-shared IRQs are called without spinlock
     ns_isr_arg->isr(ns_isr_arg->isr_arg);
     // check if we will return to scheduler or to interrupted task after ISR
     if (!os_task_switch_is_pended(esp_cpu_get_core_id())) {
@@ -631,7 +631,7 @@ esp_err_t esp_intr_alloc_intrstatus_bind(int source, int flags, uint32_t intrsta
         //Mark as unusable for other interrupt sources. This is ours now!
         vd->flags = VECDESC_FL_NONSHARED;
         if (handler) {
-#if CONFIG_APPTRACE_SV_ENABLE
+#if CONFIG_ESP_TRACE_LIB_SEGGER_SYSVIEW
             non_shared_isr_arg_t *ns_isr_arg = heap_caps_malloc(sizeof(non_shared_isr_arg_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
             if (!ns_isr_arg) {
                 esp_os_exit_critical(&spinlock);
@@ -831,7 +831,7 @@ static esp_err_t intr_free_for_current_cpu(intr_handle_t handle)
 
     if ((handle->vector_desc->flags & VECDESC_FL_NONSHARED) || free_shared_vector) {
         ESP_EARLY_LOGV(TAG, "esp_intr_free: Disabling int, killing handler");
-#if CONFIG_APPTRACE_SV_ENABLE
+#if CONFIG_ESP_TRACE_LIB_SEGGER_SYSVIEW
         if (!free_shared_vector) {
             void *isr_arg = esp_cpu_intr_get_handler_arg(handle->vector_desc->intno);
             if (isr_arg) {

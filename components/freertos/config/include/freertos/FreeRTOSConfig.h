@@ -35,7 +35,7 @@
 #endif
 
 /* apptrace module increases minimum stack usage */
-#if CONFIG_APPTRACE_ENABLE
+#if CONFIG_ESP_TRACE_TRANSPORT_APPTRACE
     #define STACK_OVERHEAD_APPTRACE    1280
 #else
     #define STACK_OVERHEAD_APPTRACE    0
@@ -232,10 +232,9 @@
  * Note: Include trace macros here and not above as trace macros are dependent on some of the FreeRTOS configs
  */
 #ifndef __ASSEMBLER__
-    #if CONFIG_SYSVIEW_ENABLE
-        #include "SEGGER_SYSVIEW_FreeRTOS.h"
-        #undef INLINE /* to avoid redefinition */
-    #endif /* CONFIG_SYSVIEW_ENABLE */
+    #if CONFIG_ESP_TRACE_ENABLE
+        #include "esp_trace_freertos.h"
+    #endif
 
     #if CONFIG_FREERTOS_SMP
 

@@ -75,7 +75,7 @@ Notes:
 **********************************************************************
 */
 
-#define SYSVIEW_FREERTOS_MAX_NOF_TASKS  CONFIG_APPTRACE_SV_MAX_TASKS
+#define SYSVIEW_FREERTOS_MAX_NOF_TASKS  CONFIG_SEGGER_SYSVIEW_MAX_TASKS
 
 /*********************************************************************
 *

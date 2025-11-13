@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,8 +7,10 @@
 #include "freertos/FreeRTOS.h"
 #include "esp_heap_trace.h"
 #include "esp_heap_caps.h"
-#if CONFIG_APPTRACE_SV_ENABLE
+#if CONFIG_ESP_TRACE_TRANSPORT_APPTRACE
 #include "esp_app_trace.h"
+#endif
+#if CONFIG_ESP_TRACE_LIB_SEGGER_SYSVIEW
 #include "esp_sysview_trace.h"
 #endif
 
@@ -16,7 +18,7 @@
 
 #if CONFIG_HEAP_TRACING_TOHOST
 
-#if !CONFIG_APPTRACE_SV_ENABLE
+#if !CONFIG_ESP_TRACE_LIB_SEGGER_SYSVIEW
 #error None of the heap tracing backends is enabled! You must enable SystemView compatible tracing to use this feature.
 #endif
 
@@ -32,7 +34,7 @@ esp_err_t heap_trace_init_tohost(void)
 
 esp_err_t heap_trace_start(heap_trace_mode_t mode_param)
 {
-#if CONFIG_APPTRACE_SV_ENABLE
+#if CONFIG_ESP_TRACE_LIB_SEGGER_SYSVIEW
     esp_err_t ret = esp_sysview_heap_trace_start((uint32_t) -1);
     if (ret != ESP_OK) {
         return ret;
@@ -45,7 +47,7 @@ esp_err_t heap_trace_start(heap_trace_mode_t mode_param)
 esp_err_t heap_trace_stop(void)
 {
     esp_err_t ret = ESP_ERR_NOT_SUPPORTED;
-#if CONFIG_APPTRACE_SV_ENABLE
+#if CONFIG_ESP_TRACE_LIB_SEGGER_SYSVIEW
     ret = esp_sysview_heap_trace_stop();
 #endif
     s_tracing = false;
@@ -88,7 +90,7 @@ static HEAP_IRAM_ATTR void record_allocation(const heap_trace_record_t *record)
     if (!s_tracing) {
         return;
     }
-#if CONFIG_APPTRACE_SV_ENABLE
+#if CONFIG_ESP_TRACE_LIB_SEGGER_SYSVIEW
     esp_sysview_heap_trace_alloc(record->address, record->size, record->alloced_by);
 #endif
 }
@@ -103,7 +105,7 @@ static HEAP_IRAM_ATTR void record_free(void *p, void **callers)
     if (!s_tracing) {
         return;
     }
-#if CONFIG_APPTRACE_SV_ENABLE
+#if CONFIG_ESP_TRACE_LIB_SEGGER_SYSVIEW
     esp_sysview_heap_trace_free(p, callers);
 #endif
 }

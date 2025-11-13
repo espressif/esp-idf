@@ -73,61 +73,44 @@ App 追踪
 配置更改
 ^^^^^^^^^^
 
-此前，当配置传输目标时，应用程序跟踪会自动启用。现在必须在配置任何目标前，通过 ``CONFIG_APPTRACE_ENABLE`` 选项显式启用应用程序跟踪功能。
+应用程序跟踪配置菜单已移动。之前位于 ``Component config`` > ``Application Level Tracing``，现在位于 ``Component config`` > ``ESP Trace Configuration``。
 
-如需启用应用程序跟踪，请在 menuconfig 中依次进入 "Component config" → "Application Level Tracing" → "Enable Application Level Tracing" 进行设置。
+此前，应用程序跟踪功能会在配置目标传输方式时自动启用。现在必须在配置任何目标传输方式前，通过选择跟踪传输方式显式启用应用程序跟踪功能。
+
+如需启用应用程序跟踪，请在 menuconfig 中依次进入 ``Component config`` > ``ESP Trace Configuration`` > ``Trace transport`` 并选择 ``ESP-IDF apptrace``。之后，可以在 ``Component config`` > ``ESP Trace Configuration`` > ``Application Level Tracing`` 中进行配置。
+
+如果要在独立模式下使用 apptrace 而不使用库（例如禁用 SEGGER SystemView 时），需要在 sdkconfig 文件中设置以下配置：
+
+.. code-block:: none
+
+    CONFIG_ESP_TRACE_ENABLE=y
+    CONFIG_ESP_TRACE_LIB_NONE=y
+    CONFIG_ESP_TRACE_TRANSPORT_APPTRACE=y
+
+这些配置也可以按上述说明通过 menuconfig 进行设置。
 
 已移除额外数据缓冲选项。不再支持 ``CONFIG_APPTRACE_PENDING_DATA_SIZE_MAX`` 配置项。
 
 已移除弃用的 ``ESP_APPTRACE_DEST_TRAX`` 枚举值。请改用 ``ESP_APPTRACE_DEST_JTAG``。
 
+组件依赖更改
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+应用程序现在需要 ``esp_trace`` 组件，而不是 ``app_trace``。请更新组件的 ``CMakeLists.txt`` 文件以反映此更改。
+
+``app_trace`` 组件现在是 ``esp_trace`` 的子组件，将在需要时自动包含。
+
 初始化流程更改
 ^^^^^^^^^^^^^^^^^^^
 
-如需在运行时覆盖默认配置，可以实现 ``esp_apptrace_get_user_params()`` 回调函数。系统提供了一个弱默认实现，返回 menuconfig 的默认配置（``APPTRACE_CONFIG_DEFAULT()``）。您的应用程序可以通过提供自己的配置来覆盖此默认实现。
-
-   .. code-block:: c
-
-       esp_apptrace_config_t esp_apptrace_get_user_params(void)
-       {
-           esp_apptrace_config_t config = APPTRACE_CONFIG_DEFAULT();
-
-           // 使用自定义值覆盖（UART 示例）
-           config.dest_cfg.uart.uart_num = UART_NUM_0;
-           config.dest_cfg.uart.baud_rate = 921600;
-           config.dest_cfg.uart.tx_pin_num = GPIO_NUM_17;
-           config.dest_cfg.uart.rx_pin_num = GPIO_NUM_16;
-
-           return config;
-       }
-
-   **重要提示：**
-
-   - 请 **勿** 在您的实现中添加 ``__attribute__((weak))``
-   - 您也可以使用特定目标的宏：``APPTRACE_JTAG_CONFIG_DEFAULT()`` 或 ``APPTRACE_UART_CONFIG_DEFAULT()``
+对于运行时配置覆盖，提供了新的回调系统。详细信息请参见 :doc:`应用程序跟踪文档 <../../../api-guides/app_trace>` 中关于 ``esp_apptrace_get_user_params()`` 和 ``esp_trace_get_user_params()`` 的说明。
 
 API 更改
 ^^^^^^^^^^^
 
 所有 apptrace API 中的目标参数已被移除。
 
-旧版本：
-
-.. code-block:: c
-
-    esp_apptrace_write(ESP_APPTRACE_DEST_JTAG, data, size, timeout);
-    esp_apptrace_read(ESP_APPTRACE_DEST_UART, buffer, &size, timeout);
-    esp_apptrace_flush(ESP_APPTRACE_DEST_JTAG, min_sz, timeout);
-
-更新为：
-
-.. code-block:: c
-
-    esp_apptrace_write(data, size, timeout);
-    esp_apptrace_read(buffer, &size, timeout);
-    esp_apptrace_flush(min_sz, timeout);
-
-目标现在在 menuconfig 中的 "Application Level Tracing" → "Data Destination" 下全局配置。
+默认目标现在在 menuconfig 中的 ``Component config`` > ``ESP Trace Configuration`` > ``Application Level Tracing`` 下配置，并且可以在运行时通过提供带有自定义跟踪配置的回调来更改。
 
 UART 目标配置已简化：
 
@@ -151,12 +134,12 @@ UART 目标配置已简化：
     CONFIG_APPTRACE_DEST_UART=y
     CONFIG_APPTRACE_DEST_UART_NUM=0  # 或 1、2，具体取决于目标芯片
 
-SystemView 的传输目标
-^^^^^^^^^^^^^^^^^^^^^^^
+SystemView 配置
+^^^^^^^^^^^^^^^^^^^^^^^^
 
-SystemView 的传输目标现在由与应用程序跟踪目标相同的配置控制。启用 SystemView 后，它将使用在 "Application Level Tracing" → "Data Destination" 下配置的目标传输方式。
+SystemView 配置已移至 menuconfig 中的新位置：``Component config`` > ``ESP Trace Configuration`` > ``Trace library`` > ``SEGGER SystemView``。
 
-这意味着如果同时启用了应用程序跟踪和 SystemView，它们将共享在 menuconfig 中配置的相同目标传输方式（JTAG 或 UART）。SystemView 将不再拥有独立的传输目标配置。
+SystemView 不再拥有独立的传输目标配置。它与应用程序跟踪传输方式（JTAG 或 UART）共享配置。
 
 FreeRTOS
 --------
@@ -249,7 +232,7 @@ OTA 更新
 
 ESP HTTPS OTA 的分段下载功能已移至配置选项下，以便在未使用分段下载时减少内存占用。
 
-如果要在 OTA 应用中使用分段下载功能，需要在 menuconfig 中启用组件级配置 :ref:`CONFIG_ESP_HTTPS_OTA_ENABLE_PARTIAL_DOWNLOAD` (``Component config`` → ``ESP HTTPS OTA`` → ``Enable partial HTTP download for OTA``)。
+如果要在 OTA 应用中使用分段下载功能，需要在 menuconfig 中启用组件级配置 :ref:`CONFIG_ESP_HTTPS_OTA_ENABLE_PARTIAL_DOWNLOAD` (``Component config`` > ``ESP HTTPS OTA`` > ``Enable partial HTTP download for OTA``)。
 
 已移除的废弃 API
 ^^^^^^^^^^^^^^^^^^^^

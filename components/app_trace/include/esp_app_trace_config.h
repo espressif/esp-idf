@@ -8,10 +8,12 @@
 
 #include "sdkconfig.h"
 
-/* Default configurations for runtime selection (CONFIG_APPTRACE_DEST_NONE)
- * These values are used when CONFIG_APPTRACE_DEST_NONE is selected in menuconfig.
- * To customize at runtime, implement esp_apptrace_get_user_params()
- * in your application. See esp_app_trace.h for details.
+/* Default configurations for runtime selection (APPTRACE_DEST_ALL)
+ * These values are used when building with both JTAG and UART enabled
+ * to allow runtime selection. You can switch between destinations
+ * via esp_apptrace_get_user_params(). If this function is
+ * not provided by the application, JTAG is used by default with the
+ * configuration defined below. See esp_app_trace.h for details.
  */
 
 #if !defined(CONFIG_APPTRACE_UART_TX_GPIO) || !defined(CONFIG_APPTRACE_UART_RX_GPIO)
@@ -20,10 +22,6 @@
 
 #ifndef CONFIG_APPTRACE_BUF_SIZE
 #define CONFIG_APPTRACE_BUF_SIZE 16384
-#endif
-
-#ifndef CONFIG_APPTRACE_UART_RX_BUFF_SIZE
-#define CONFIG_APPTRACE_UART_RX_BUFF_SIZE 128
 #endif
 
 #ifndef CONFIG_APPTRACE_UART_TX_BUFF_SIZE
@@ -52,10 +50,6 @@
 
 #ifndef CONFIG_APPTRACE_DEST_UART_NUM
 #define CONFIG_APPTRACE_DEST_UART_NUM 1
-#endif
-
-#ifndef CONFIG_APPTRACE_SV_DEST_CPU_0
-#define CONFIG_APPTRACE_SV_DEST_CPU_0 1
 #endif
 
 #endif /* ESP_APP_TRACE_CONFIG_H_ */

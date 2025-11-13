@@ -401,8 +401,8 @@ unsigned     SEGGER_RTT_PutCharSkipNoLock       (unsigned BufferIndex, char c);
 unsigned     SEGGER_RTT_GetAvailWriteSpace      (unsigned BufferIndex);
 unsigned     SEGGER_RTT_GetBytesInBuffer        (unsigned BufferIndex);
 
-void         SEGGER_RTT_ESP_FlushNoLock         (unsigned long min_sz, unsigned long tmo);
-void         SEGGER_RTT_ESP_Flush               (unsigned long min_sz, unsigned long tmo);
+void         SEGGER_RTT_ESP_FlushNoLock         (void);
+void         SEGGER_RTT_ESP_Flush               (void);
 //
 // Function macro for performance optimization
 //
