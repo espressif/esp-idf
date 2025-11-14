@@ -343,8 +343,16 @@ static int wpa3_parse_sae_commit(u8 *buf, u32 len, u16 status)
                 wpa_printf(MSG_ERROR, "Invalid SAE anti-clogging token container header");
                 return ESP_FAIL;
             }
+            if (len < 5) {
+                wpa_printf(MSG_ERROR, "Invalid SAE anti-clogging token length");
+                return ESP_FAIL;
+            }
             g_sae_token = wpabuf_alloc_copy(buf + 5, len - 5);
         } else {
+            if (len < 2) {
+                wpa_printf(MSG_ERROR, "Invalid SAE anti-clogging token length");
+                return ESP_FAIL;
+            }
             g_sae_token = wpabuf_alloc_copy(buf + 2, len - 2);
         }
         return ESP_OK;
