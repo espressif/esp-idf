@@ -27,12 +27,15 @@ const uint8_t *bt_mesh_fast_prov_dev_key_get(uint16_t dst)
 {
     const uint8_t *key = NULL;
 
+    BT_DBG("FastProvDevKeyGet, Dst 0x%04x", dst);
+
     if (!BLE_MESH_ADDR_IS_UNICAST(dst)) {
         BT_ERR("Invalid unicast address 0x%04x", dst);
         return NULL;
     }
 
     if (bt_mesh_is_provisioner_en() == false) {
+        BT_DBG("NodeDevKey");
         return bt_mesh.dev_key;
     }
 
@@ -42,9 +45,11 @@ const uint8_t *bt_mesh_fast_prov_dev_key_get(uint16_t dst)
      */
     key = bt_mesh_provisioner_dev_key_get(dst);
     if (key) {
+        BT_DBG("PvnrDevKey");
         return key;
     }
 
+    BT_DBG("NodeDevKeyFinal");
     return bt_mesh.dev_key;
 }
 
@@ -53,9 +58,12 @@ struct bt_mesh_subnet *bt_mesh_fast_prov_subnet_get(uint16_t net_idx)
     struct bt_mesh_subnet *sub = NULL;
     int i;
 
+    BT_DBG("FastProvSubnetGet, NetIdx 0x%04x", net_idx);
+
     for (i = 0; i < ARRAY_SIZE(bt_mesh.sub); i++) {
         sub = &bt_mesh.sub[i];
         if (sub->net_idx == net_idx) {
+            BT_DBG("NodeSub");
             return sub;
         }
     }
@@ -63,10 +71,12 @@ struct bt_mesh_subnet *bt_mesh_fast_prov_subnet_get(uint16_t net_idx)
     for (i = 0; i < ARRAY_SIZE(bt_mesh.p_sub); i++) {
         sub = bt_mesh.p_sub[i];
         if (sub && sub->net_idx == net_idx) {
+            BT_DBG("PvnrSub");
             return sub;
         }
     }
 
+    BT_DBG("NoSub");
     return NULL;
 }
 
@@ -75,10 +85,13 @@ struct bt_mesh_app_key *bt_mesh_fast_prov_app_key_find(uint16_t app_idx)
     struct bt_mesh_app_key *key = NULL;
     int i;
 
+    BT_DBG("FastProvAppKeyFind, AppIdx 0x%04x", app_idx);
+
     for (i = 0; i < ARRAY_SIZE(bt_mesh.app_keys); i++) {
         key = &bt_mesh.app_keys[i];
         if (key->net_idx != BLE_MESH_KEY_UNUSED &&
             key->app_idx == app_idx) {
+            BT_DBG("NodeAppKey");
             return key;
         }
     }
@@ -87,15 +100,19 @@ struct bt_mesh_app_key *bt_mesh_fast_prov_app_key_find(uint16_t app_idx)
         key = bt_mesh.p_app_keys[i];
         if (key && key->net_idx != BLE_MESH_KEY_UNUSED &&
             key->app_idx == app_idx) {
+            BT_DBG("PvnrAppKey");
             return key;
         }
     }
 
+    BT_DBG("NoAppKey");
     return NULL;
 }
 
 uint8_t bt_mesh_set_fast_prov_net_idx(uint16_t net_idx)
 {
+    BT_DBG("SetFastProvNetIdx, NetIdx 0x%04x", net_idx);
+
     /* Set net_idx for fast provisioning */
     bt_mesh_provisioner_set_fast_prov_net_idx(net_idx);
 
@@ -116,6 +133,8 @@ uint8_t bt_mesh_fast_prov_net_key_add(const uint8_t net_key[16])
     net_idx = bt_mesh_provisioner_get_fast_prov_net_idx();
     bt_mesh.p_net_idx_next = net_idx;
 
+    BT_DBG("FastProvNetKeyAdd, NetIdx 0x%04x", net_idx);
+
     err = bt_mesh_provisioner_local_net_key_add(net_key, &net_idx);
     if (err) {
         BT_ERR("Invalid NetKeyIndex 0x%04x", net_idx);
@@ -130,11 +149,15 @@ const uint8_t *bt_mesh_fast_prov_net_key_get(uint16_t net_idx)
 {
     struct bt_mesh_subnet *sub = NULL;
 
+    BT_DBG("FastProvNetKeyGet, NetIdx 0x%04x", net_idx);
+
     sub = bt_mesh_fast_prov_subnet_get(net_idx);
     if (!sub) {
         BT_ERR("Invalid NetKeyIndex 0x%04x", net_idx);
         return NULL;
     }
+
+    BT_DBG("KrFlag %u", sub->kr_flag);
 
     return (sub->kr_flag ? sub->keys[1].net : sub->keys[0].net);
 }
@@ -143,17 +166,23 @@ const uint8_t *bt_mesh_get_fast_prov_app_key(uint16_t net_idx, uint16_t app_idx)
 {
     struct bt_mesh_app_key *key = NULL;
 
+    BT_DBG("GetFastProvAppKey, NetIdx 0x%04x AppIdx 0x%04x", net_idx, app_idx);
+
     key = bt_mesh_fast_prov_app_key_find(app_idx);
     if (!key) {
         BT_ERR("Invalid AppKeyIndex 0x%04x", app_idx);
         return NULL;
     }
 
+    BT_DBG("KeyUpdated %u", key->updated);
+
     return (key->updated ? key->keys[1].val : key->keys[0].val);
 }
 
 uint8_t bt_mesh_set_fast_prov_action(uint8_t action)
 {
+    BT_DBG("SetFastProvAction, Action %u", action);
+
     if (!action || action > ACTION_EXIT) {
         return 0x01;
     }
@@ -168,9 +197,11 @@ uint8_t bt_mesh_set_fast_prov_action(uint8_t action)
         if (bt_mesh_secure_beacon_get() == BLE_MESH_SECURE_BEACON_ENABLED) {
             bt_mesh_secure_beacon_disable();
         }
+
         if (IS_ENABLED(CONFIG_BLE_MESH_PB_GATT)) {
             bt_mesh_proxy_client_prov_enable();
         }
+
         bt_mesh_provisioner_set_primary_elem_addr(bt_mesh_primary_addr());
         bt_mesh_provisioner_set_prov_bearer(BLE_MESH_PROV_ADV, false);
         bt_mesh_provisioner_fast_prov_enable(true);
@@ -179,11 +210,15 @@ uint8_t bt_mesh_set_fast_prov_action(uint8_t action)
         if (IS_ENABLED(CONFIG_BLE_MESH_PB_GATT)) {
             bt_mesh_proxy_client_prov_disable();
         }
+
         if (bt_mesh_secure_beacon_get() == BLE_MESH_SECURE_BEACON_ENABLED) {
             bt_mesh_secure_beacon_enable();
         }
+
         bt_mesh_atomic_and(bt_mesh.flags, ~(BIT(BLE_MESH_PROVISIONER) | BIT(BLE_MESH_VALID_PROV)));
+
         bt_mesh_provisioner_fast_prov_enable(false);
+
         if (action == ACTION_EXIT) {
             bt_mesh_provisioner_remove_node(NULL);
         }
@@ -191,4 +226,5 @@ uint8_t bt_mesh_set_fast_prov_action(uint8_t action)
 
     return 0x0;
 }
+
 #endif /* CONFIG_BLE_MESH_FAST_PROV */

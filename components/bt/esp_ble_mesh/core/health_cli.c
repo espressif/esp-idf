@@ -68,6 +68,8 @@ static void health_client_recv_status(struct bt_mesh_model *model,
     struct net_buf_simple buf = {0};
     uint8_t evt_type = 0xFF;
 
+    BT_DBG("HealthClientRecvStatus");
+
     if (!model || !ctx || !status || !len) {
         BT_ERR("%s, Invalid parameter", __func__);
         return;
@@ -83,6 +85,8 @@ static void health_client_recv_status(struct bt_mesh_model *model,
     if (!node) {
         BT_DBG("Unexpected Health Status 0x%04x", ctx->recv_op);
     } else {
+        BT_DBG("OpCode 0x%08lx RecvOp 0x%08lx", node->opcode, ctx->recv_op);
+
         switch (node->opcode) {
         case OP_HEALTH_FAULT_GET:
         case OP_HEALTH_PERIOD_GET:
@@ -131,9 +135,10 @@ static void health_fault_status(struct bt_mesh_model *model,
 {
     struct bt_mesh_health_fault_status status = {0};
 
-    BT_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
-           ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
-           bt_hex(buf->data, buf->len));
+    BT_DBG("HealthFaultStatus");
+    BT_DBG("NetIdx 0x%04x AppIdx 0x%04x Src 0x%04x",
+           ctx->net_idx, ctx->app_idx, ctx->addr);
+    BT_DBG("Len %u: %s", buf->len, bt_hex(buf->data, buf->len));
 
     status.test_id = net_buf_simple_pull_u8(buf);
     status.cid = net_buf_simple_pull_le16(buf);
@@ -154,9 +159,10 @@ static void health_current_status(struct bt_mesh_model *model,
 {
     struct bt_mesh_health_current_status status = {0};
 
-    BT_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
-           ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
-           bt_hex(buf->data, buf->len));
+    BT_DBG("HealthCurrentStatus");
+    BT_DBG("NetIdx 0x%04x AppIdx 0x%04x Src 0x%04x",
+           ctx->net_idx, ctx->app_idx, ctx->addr);
+    BT_DBG("Len %u: %s", buf->len, bt_hex(buf->data, buf->len));
 
     status.test_id = net_buf_simple_pull_u8(buf);
     status.cid = net_buf_simple_pull_le16(buf);
@@ -177,9 +183,10 @@ static void health_period_status(struct bt_mesh_model *model,
 {
     uint8_t status = 0U;
 
-    BT_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
-           ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
-           bt_hex(buf->data, buf->len));
+    BT_DBG("HealthPeriodStatus");
+    BT_DBG("NetIdx 0x%04x AppIdx 0x%04x Src 0x%04x",
+           ctx->net_idx, ctx->app_idx, ctx->addr);
+    BT_DBG("Len %u: %s", buf->len, bt_hex(buf->data, buf->len));
 
     status = net_buf_simple_pull_u8(buf);
 
@@ -192,9 +199,10 @@ static void health_attention_status(struct bt_mesh_model *model,
 {
     uint8_t status = 0U;
 
-    BT_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
-           ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
-           bt_hex(buf->data, buf->len));
+    BT_DBG("HealthAttentionStatus");
+    BT_DBG("NetIdx 0x%04x AppIdx 0x%04x Src 0x%04x",
+           ctx->net_idx, ctx->app_idx, ctx->addr);
+    BT_DBG("Len %u: %s", buf->len, bt_hex(buf->data, buf->len));
 
     status = net_buf_simple_pull_u8(buf);
 
@@ -213,6 +221,8 @@ int bt_mesh_health_attention_get(bt_mesh_client_common_param_t *param)
 {
     BLE_MESH_MODEL_BUF_DEFINE(msg, OP_ATTENTION_GET, 0);
 
+    BT_DBG("HealthAttentionGet");
+
     bt_mesh_model_msg_init(&msg, OP_ATTENTION_GET);
 
     return bt_mesh_client_send_msg(param, &msg, true, timeout_handler);
@@ -222,6 +232,8 @@ int bt_mesh_health_attention_set(bt_mesh_client_common_param_t *param,
                                  uint8_t attention, bool need_ack)
 {
     BLE_MESH_MODEL_BUF_DEFINE(msg, OP_ATTENTION_SET, 1);
+
+    BT_DBG("HealthAttentionSet, Attention 0x%02x NeedAck %u", attention, need_ack);
 
     bt_mesh_model_msg_init(&msg, need_ack ? OP_ATTENTION_SET : OP_ATTENTION_SET_UNREL);
     net_buf_simple_add_u8(&msg, attention);
@@ -233,6 +245,8 @@ int bt_mesh_health_period_get(bt_mesh_client_common_param_t *param)
 {
     BLE_MESH_MODEL_BUF_DEFINE(msg, OP_HEALTH_PERIOD_GET, 0);
 
+    BT_DBG("HealthPeriodGet");
+
     bt_mesh_model_msg_init(&msg, OP_HEALTH_PERIOD_GET);
 
     return bt_mesh_client_send_msg(param, &msg, true, timeout_handler);
@@ -242,6 +256,8 @@ int bt_mesh_health_period_set(bt_mesh_client_common_param_t *param,
                               uint8_t divisor, bool need_ack)
 {
     BLE_MESH_MODEL_BUF_DEFINE(msg, OP_HEALTH_PERIOD_SET, 1);
+
+    BT_DBG("HealthPeriodSet, Divisor 0x%02x NeedAck %u", divisor, need_ack);
 
     bt_mesh_model_msg_init(&msg, need_ack ? OP_HEALTH_PERIOD_SET : OP_HEALTH_PERIOD_SET_UNREL);
     net_buf_simple_add_u8(&msg, divisor);
@@ -253,6 +269,8 @@ int bt_mesh_health_fault_test(bt_mesh_client_common_param_t *param,
                               uint16_t cid, uint8_t test_id, bool need_ack)
 {
     BLE_MESH_MODEL_BUF_DEFINE(msg, OP_HEALTH_FAULT_TEST, 3);
+
+    BT_DBG("HealthFaultTest, CID 0x%04x TestID 0x%04x NeedAck %u", cid, test_id, need_ack);
 
     bt_mesh_model_msg_init(&msg, need_ack ? OP_HEALTH_FAULT_TEST : OP_HEALTH_FAULT_TEST_UNREL);
     net_buf_simple_add_u8(&msg, test_id);
@@ -266,6 +284,8 @@ int bt_mesh_health_fault_clear(bt_mesh_client_common_param_t *param,
 {
     BLE_MESH_MODEL_BUF_DEFINE(msg, OP_HEALTH_FAULT_CLEAR, 2);
 
+    BT_DBG("HealthFaultClear, CID 0x%04x NeedAck %u", cid, need_ack);
+
     bt_mesh_model_msg_init(&msg, need_ack ? OP_HEALTH_FAULT_CLEAR : OP_HEALTH_FAULT_CLEAR_UNREL);
     net_buf_simple_add_le16(&msg, cid);
 
@@ -275,6 +295,8 @@ int bt_mesh_health_fault_clear(bt_mesh_client_common_param_t *param,
 int bt_mesh_health_fault_get(bt_mesh_client_common_param_t *param, uint16_t cid)
 {
     BLE_MESH_MODEL_BUF_DEFINE(msg, OP_HEALTH_FAULT_GET, 2);
+
+    BT_DBG("HealthFaultGet, CID 0x%04x", cid);
 
     bt_mesh_model_msg_init(&msg, OP_HEALTH_FAULT_GET);
     net_buf_simple_add_le16(&msg, cid);
@@ -286,6 +308,8 @@ static int health_cli_init(struct bt_mesh_model *model)
 {
     health_internal_data_t *internal = NULL;
     bt_mesh_health_client_t *client = NULL;
+
+    BT_DBG("HealthCliInit");
 
     if (!model) {
         BT_ERR("Invalid Health Client model");
@@ -327,6 +351,8 @@ static int health_cli_init(struct bt_mesh_model *model)
 static int health_cli_deinit(struct bt_mesh_model *model)
 {
     bt_mesh_health_client_t *client = NULL;
+
+    BT_DBG("HealthCliDeinit");
 
     if (!model) {
         BT_ERR("Invalid Health Client model");
