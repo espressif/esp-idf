@@ -21,7 +21,7 @@
 #include "soc/soc_memory_layout.h"
 #include "hal/i2c_hal.h"
 #include "hal/gpio_hal.h"
-#include "soc/i2c_periph.h"
+#include "hal/i2c_periph.h"
 #include "driver/i2c_types_legacy.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_rom_gpio.h"

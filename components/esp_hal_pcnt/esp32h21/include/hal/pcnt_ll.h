@@ -1,16 +1,8 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
-/*******************************************************************************
- * NOTICE
- * The hal is not public api, don't use in application code.
- * See readme.md in hal/include/hal/readme.md
- ******************************************************************************/
-
-// The LL layer for ESP32-H2 PCNT register operations
 
 #pragma once
 
@@ -18,16 +10,17 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include "soc/pcnt_struct.h"
-#include "soc/chip_revision.h"
 #include "soc/pcr_struct.h"
 #include "hal/pcnt_types.h"
 #include "hal/misc.h"
 #include "hal/assert.h"
-#include "hal/efuse_hal.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+// Get PCNT attribute
+#define PCNT_LL_GET(attr)                   (PCNT_LL_ ## attr)
 
 #define PCNT_LL_GET_HW(num)      (((num) == 0) ? (&PCNT) : NULL)
 #define PCNT_LL_MAX_GLITCH_WIDTH 1023
@@ -45,13 +38,18 @@ typedef enum {
 } pcnt_ll_watch_event_id_t;
 
 typedef enum {
-    PCNT_LL_STEP_EVENT_REACH_LIMIT = PCNT_LL_WATCH_EVENT_MAX,
-    PCNT_LL_STEP_EVENT_REACH_INTERVAL
+    PCNT_LL_STEP_EVENT_REACH_INTERVAL_FORWARD = PCNT_LL_WATCH_EVENT_MAX,
+    PCNT_LL_STEP_EVENT_REACH_INTERVAL_BACKWARD,
 } pcnt_ll_step_event_id_t;
+
+// SoC-based capabilities
+#define PCNT_LL_INST_NUM                   1  // Number of PCNT instances
+#define PCNT_LL_UNITS_PER_INST             4  // Number of units in each PCNT instance
+#define PCNT_LL_CHANS_PER_UNIT             2  // Number of channels in each PCNT unit
+#define PCNT_LL_THRES_POINT_PER_UNIT       2  // Number of threshold points in each PCNT unit
 
 #define PCNT_LL_WATCH_EVENT_MASK          ((1 << PCNT_LL_WATCH_EVENT_MAX) - 1)
 #define PCNT_LL_UNIT_WATCH_EVENT(unit_id) (1 << (unit_id))
-#define PCNT_LL_STEP_NOTIFY_DIR_LIMIT     1
 #define PCNT_LL_CLOCK_SUPPORT_APB         1
 
 /**
@@ -78,11 +76,11 @@ static inline void pcnt_ll_set_clock_source(pcnt_dev_t *hw, pcnt_clock_source_t 
 static inline void pcnt_ll_set_edge_action(pcnt_dev_t *hw, uint32_t unit, uint32_t channel, pcnt_channel_edge_action_t pos_act, pcnt_channel_edge_action_t neg_act)
 {
     if (channel == 0) {
-        hw->conf_unit[unit].conf0.ch0_pos_mode = pos_act;
-        hw->conf_unit[unit].conf0.ch0_neg_mode = neg_act;
+        hw->conf_unit[unit].conf0.ch0_pos_mode_un = pos_act;
+        hw->conf_unit[unit].conf0.ch0_neg_mode_un = neg_act;
     } else {
-        hw->conf_unit[unit].conf0.ch1_pos_mode = pos_act;
-        hw->conf_unit[unit].conf0.ch1_neg_mode = neg_act;
+        hw->conf_unit[unit].conf0.ch1_pos_mode_un = pos_act;
+        hw->conf_unit[unit].conf0.ch1_neg_mode_un = neg_act;
     }
 }
 
@@ -98,11 +96,11 @@ static inline void pcnt_ll_set_edge_action(pcnt_dev_t *hw, uint32_t unit, uint32
 static inline void pcnt_ll_set_level_action(pcnt_dev_t *hw, uint32_t unit, uint32_t channel, pcnt_channel_level_action_t high_act, pcnt_channel_level_action_t low_act)
 {
     if (channel == 0) {
-        hw->conf_unit[unit].conf0.ch0_hctrl_mode = high_act;
-        hw->conf_unit[unit].conf0.ch0_lctrl_mode = low_act;
+        hw->conf_unit[unit].conf0.ch0_hctrl_mode_un = high_act;
+        hw->conf_unit[unit].conf0.ch0_lctrl_mode_un = low_act;
     } else {
-        hw->conf_unit[unit].conf0.ch1_hctrl_mode = high_act;
-        hw->conf_unit[unit].conf0.ch1_lctrl_mode = low_act;
+        hw->conf_unit[unit].conf0.ch1_hctrl_mode_un = high_act;
+        hw->conf_unit[unit].conf0.ch1_lctrl_mode_un = low_act;
     }
 }
 
@@ -119,7 +117,7 @@ static inline int pcnt_ll_get_count(pcnt_dev_t *hw, uint32_t unit)
     pcnt_un_cnt_reg_t cnt_reg;
     cnt_reg.val = hw->cnt_unit[unit].val;
 
-    int16_t value = cnt_reg.pulse_cnt;
+    int16_t value = cnt_reg.pulse_cnt_un;
     return value;
 }
 
@@ -184,22 +182,13 @@ static inline void pcnt_ll_enable_step_notify(pcnt_dev_t *hw, uint32_t unit, boo
  * @param direction PCNT step direction
  * @param value PCNT step value
  */
-static inline void pcnt_ll_set_step_value(pcnt_dev_t *hw, uint32_t unit, pcnt_step_direction_t direction, int value)
+static inline void pcnt_ll_set_step_value(pcnt_dev_t *hw, uint32_t unit, pcnt_step_direction_t direction, uint16_t value)
 {
-    (void)direction;
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->change_conf_unit[3 - unit], cnt_step, value);
-}
-
-/**
- * @brief Set PCNT step limit value
- *
- * @param hw Peripheral PCNT hardware instance address.
- * @param unit PCNT unit number
- * @param value PCNT step limit value
- */
-static inline void pcnt_ll_set_step_limit_value(pcnt_dev_t *hw, uint32_t unit, int value)
-{
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->change_conf_unit[3 - unit], cnt_step_lim, value);
+    if (direction == PCNT_STEP_FORWARD) {
+        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->conf_unit[unit].conf3, cnt_h_step_un, value);
+    } else {
+        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->conf_unit[unit].conf3, cnt_l_step_un, value);
+    }
 }
 
 /**
@@ -252,7 +241,7 @@ static inline void pcnt_ll_clear_intr_status(pcnt_dev_t *hw, uint32_t status)
  */
 static inline void pcnt_ll_enable_high_limit_event(pcnt_dev_t *hw, uint32_t unit, bool enable)
 {
-    hw->conf_unit[unit].conf0.thr_h_lim_en = enable;
+    hw->conf_unit[unit].conf0.thr_h_lim_en_un = enable;
 }
 
 /**
@@ -264,7 +253,7 @@ static inline void pcnt_ll_enable_high_limit_event(pcnt_dev_t *hw, uint32_t unit
  */
 static inline void pcnt_ll_enable_low_limit_event(pcnt_dev_t *hw, uint32_t unit, bool enable)
 {
-    hw->conf_unit[unit].conf0.thr_l_lim_en = enable;
+    hw->conf_unit[unit].conf0.thr_l_lim_en_un = enable;
 }
 
 /**
@@ -276,7 +265,7 @@ static inline void pcnt_ll_enable_low_limit_event(pcnt_dev_t *hw, uint32_t unit,
  */
 static inline void pcnt_ll_enable_zero_cross_event(pcnt_dev_t *hw, uint32_t unit, bool enable)
 {
-    hw->conf_unit[unit].conf0.thr_zero_en = enable;
+    hw->conf_unit[unit].conf0.thr_zero_en_un = enable;
 }
 
 /**
@@ -290,9 +279,9 @@ static inline void pcnt_ll_enable_zero_cross_event(pcnt_dev_t *hw, uint32_t unit
 static inline void pcnt_ll_enable_thres_event(pcnt_dev_t *hw, uint32_t unit, uint32_t thres, bool enable)
 {
     if (thres == 0) {
-        hw->conf_unit[unit].conf0.thr_thres0_en = enable;
+        hw->conf_unit[unit].conf0.thr_thres0_en_un = enable;
     } else {
-        hw->conf_unit[unit].conf0.thr_thres1_en = enable;
+        hw->conf_unit[unit].conf0.thr_thres1_en_un = enable;
     }
 }
 
@@ -319,7 +308,7 @@ static inline void pcnt_ll_set_high_limit_value(pcnt_dev_t *hw, uint32_t unit, i
     pcnt_un_conf2_reg_t conf2_reg;
     conf2_reg.val = hw->conf_unit[unit].conf2.val;
 
-    conf2_reg.cnt_h_lim = value;
+    conf2_reg.cnt_h_lim_un = value;
     hw->conf_unit[unit].conf2.val = conf2_reg.val;
 }
 
@@ -335,7 +324,7 @@ static inline void pcnt_ll_set_low_limit_value(pcnt_dev_t *hw, uint32_t unit, in
     pcnt_un_conf2_reg_t conf2_reg;
     conf2_reg.val = hw->conf_unit[unit].conf2.val;
 
-    conf2_reg.cnt_l_lim = value;
+    conf2_reg.cnt_l_lim_un = value;
     hw->conf_unit[unit].conf2.val = conf2_reg.val;
 }
 
@@ -353,9 +342,9 @@ static inline void pcnt_ll_set_thres_value(pcnt_dev_t *hw, uint32_t unit, uint32
     conf1_reg.val = hw->conf_unit[unit].conf1.val;
 
     if (thres == 0) {
-        conf1_reg.cnt_thres0 = value;
+        conf1_reg.cnt_thres0_un = value;
     } else {
-        conf1_reg.cnt_thres1 = value;
+        conf1_reg.cnt_thres1_un = value;
     }
     hw->conf_unit[unit].conf1.val = conf1_reg.val;
 }
@@ -372,7 +361,7 @@ static inline int pcnt_ll_get_high_limit_value(pcnt_dev_t *hw, uint32_t unit)
     pcnt_un_conf2_reg_t conf2_reg;
     conf2_reg.val = hw->conf_unit[unit].conf2.val;
 
-    int16_t value = conf2_reg.cnt_h_lim ;
+    int16_t value = conf2_reg.cnt_h_lim_un;
     return value;
 }
 
@@ -388,7 +377,7 @@ static inline int pcnt_ll_get_low_limit_value(pcnt_dev_t *hw, uint32_t unit)
     pcnt_un_conf2_reg_t conf2_reg;
     conf2_reg.val = hw->conf_unit[unit].conf2.val;
 
-    int16_t value = conf2_reg.cnt_l_lim ;
+    int16_t value = conf2_reg.cnt_l_lim_un ;
     return value;
 }
 
@@ -408,9 +397,9 @@ static inline int pcnt_ll_get_thres_value(pcnt_dev_t *hw, uint32_t unit, uint32_
     conf1_reg.val = hw->conf_unit[unit].conf1.val;
 
     if (thres == 0) {
-        value = conf1_reg.cnt_thres0 ;
+        value = conf1_reg.cnt_thres0_un ;
     } else {
-        value = conf1_reg.cnt_thres1 ;
+        value = conf1_reg.cnt_thres1_un ;
     }
     return value;
 }
@@ -463,7 +452,7 @@ static inline uint32_t pcnt_ll_get_event_status(pcnt_dev_t *hw, uint32_t unit)
  */
 static inline void pcnt_ll_set_glitch_filter_thres(pcnt_dev_t *hw, uint32_t unit, uint32_t filter_val)
 {
-    hw->conf_unit[unit].conf0.filter_thres = filter_val;
+    hw->conf_unit[unit].conf0.filter_thres_un = filter_val;
 }
 
 /**
@@ -475,7 +464,7 @@ static inline void pcnt_ll_set_glitch_filter_thres(pcnt_dev_t *hw, uint32_t unit
  */
 static inline uint32_t pcnt_ll_get_glitch_filter_thres(pcnt_dev_t *hw, uint32_t unit)
 {
-    return hw->conf_unit[unit].conf0.filter_thres ;
+    return hw->conf_unit[unit].conf0.filter_thres_un;
 }
 
 /**
@@ -487,7 +476,7 @@ static inline uint32_t pcnt_ll_get_glitch_filter_thres(pcnt_dev_t *hw, uint32_t 
  */
 static inline void pcnt_ll_enable_glitch_filter(pcnt_dev_t *hw, uint32_t unit, bool enable)
 {
-    hw->conf_unit[unit].conf0.filter_en = enable;
+    hw->conf_unit[unit].conf0.filter_en_un = enable;
 }
 
 /**
@@ -529,9 +518,8 @@ static inline void pcnt_ll_reset_register(int group_id)
 static inline bool pcnt_ll_is_step_notify_supported(int group_id)
 {
     (void)group_id;
-    return ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 102);
+    return true;
 }
-
 
 #ifdef __cplusplus
 }

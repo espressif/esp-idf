@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,17 +10,15 @@
  * See readme.md in hal/include/hal/readme.md
  ******************************************************************************/
 
-// The LL layer for ESP32 PCNT register operations
+// The LL layer for ESP32-P4 PCNT register operations
 
 #pragma once
 
 #include <limits.h>
 #include <stdlib.h>
 #include <stdbool.h>
-#include <soc/soc.h>
 #include "soc/pcnt_struct.h"
-#include "soc/dport_access.h"
-#include "soc/dport_reg.h"
+#include "soc/hp_sys_clkrst_struct.h"
 #include "hal/pcnt_types.h"
 #include "hal/misc.h"
 #include "hal/assert.h"
@@ -28,6 +26,9 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+// Get PCNT attribute
+#define PCNT_LL_GET(attr)                   (PCNT_LL_ ## attr)
 
 #define PCNT_LL_GET_HW(num)      (((num) == 0) ? (&PCNT) : NULL)
 #define PCNT_LL_MAX_GLITCH_WIDTH 1023
@@ -44,6 +45,12 @@ typedef enum {
     PCNT_LL_WATCH_EVENT_MAX
 } pcnt_ll_watch_event_id_t;
 
+// SoC-based capabilities
+#define PCNT_LL_INST_NUM                   1  // Number of PCNT instances
+#define PCNT_LL_UNITS_PER_INST             4  // Number of units in each PCNT instance
+#define PCNT_LL_CHANS_PER_UNIT             2  // Number of channels in each PCNT unit
+#define PCNT_LL_THRES_POINT_PER_UNIT       2  // Number of threshold points in each PCNT unit
+
 #define PCNT_LL_WATCH_EVENT_MASK          ((1 << PCNT_LL_WATCH_EVENT_MAX) - 1)
 #define PCNT_LL_UNIT_WATCH_EVENT(unit_id) (1 << (unit_id))
 #define PCNT_LL_CLOCK_SUPPORT_APB         1
@@ -54,11 +61,18 @@ typedef enum {
  * @param hw Peripheral PCNT hardware instance address.
  * @param clk_src Clock source
  */
-static inline void pcnt_ll_set_clock_source(pcnt_dev_t *hw, pcnt_clock_source_t clk_src)
+static inline void _pcnt_ll_set_clock_source(pcnt_dev_t *hw, pcnt_clock_source_t clk_src)
 {
     (void)hw;
     HAL_ASSERT(clk_src == PCNT_CLK_SRC_APB && "unsupported clock source");
 }
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define pcnt_ll_set_clock_source(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _pcnt_ll_set_clock_source(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Set PCNT channel edge action
@@ -110,10 +124,10 @@ static inline void pcnt_ll_set_level_action(pcnt_dev_t *hw, uint32_t unit, uint3
 __attribute__((always_inline))
 static inline int pcnt_ll_get_count(pcnt_dev_t *hw, uint32_t unit)
 {
-    typeof(hw->cnt_unit[unit]) cnt_reg;
+    pcnt_un_cnt_reg_t cnt_reg;
     cnt_reg.val = hw->cnt_unit[unit].val;
 
-    int16_t value = cnt_reg.cnt_val;
+    int16_t value = cnt_reg.pulse_cnt;
     return value;
 }
 
@@ -152,6 +166,48 @@ static inline void pcnt_ll_clear_count(pcnt_dev_t *hw, uint32_t unit)
 {
     hw->ctrl.val |= 1 << (2 * unit);
     hw->ctrl.val &= ~(1 << (2 * unit));
+}
+
+/**
+ * @brief Enable PCNT step comparator event
+ *
+ * @param hw Peripheral PCNT hardware instance address.
+ * @param unit PCNT unit number
+ * @param enable true to enable, false to disable
+ */
+static inline void pcnt_ll_enable_step_notify(pcnt_dev_t *hw, uint32_t unit, bool enable)
+{
+    if (enable) {
+        hw->ctrl.val |= 1 << (8 + unit);
+    } else {
+        hw->ctrl.val &= ~(1 << (8 + unit));
+    }
+}
+
+/**
+ * @brief Set PCNT step value
+ *
+ * @param hw Peripheral PCNT hardware instance address.
+ * @param unit PCNT unit number
+ * @param direction PCNT step direction
+ * @param value PCNT step value
+ */
+static inline void pcnt_ll_set_step_value(pcnt_dev_t *hw, uint32_t unit, pcnt_step_direction_t direction, int value)
+{
+    (void)direction;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->change_conf_unit[3 - unit], cnt_step, value);
+}
+
+/**
+ * @brief Set PCNT step limit value
+ *
+ * @param hw Peripheral PCNT hardware instance address.
+ * @param unit PCNT unit number
+ * @param value PCNT step limit value
+ */
+static inline void pcnt_ll_set_step_limit_value(pcnt_dev_t *hw, uint32_t unit, int value)
+{
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->change_conf_unit[3 - unit], cnt_step_lim, value);
 }
 
 /**
@@ -268,7 +324,7 @@ static inline void pcnt_ll_disable_all_events(pcnt_dev_t *hw, uint32_t unit)
  */
 static inline void pcnt_ll_set_high_limit_value(pcnt_dev_t *hw, uint32_t unit, int value)
 {
-    typeof(hw->conf_unit[unit].conf2) conf2_reg;
+    pcnt_un_conf2_reg_t conf2_reg;
     conf2_reg.val = hw->conf_unit[unit].conf2.val;
 
     conf2_reg.cnt_h_lim = value;
@@ -284,7 +340,7 @@ static inline void pcnt_ll_set_high_limit_value(pcnt_dev_t *hw, uint32_t unit, i
  */
 static inline void pcnt_ll_set_low_limit_value(pcnt_dev_t *hw, uint32_t unit, int value)
 {
-    typeof(hw->conf_unit[unit].conf2) conf2_reg;
+    pcnt_un_conf2_reg_t conf2_reg;
     conf2_reg.val = hw->conf_unit[unit].conf2.val;
 
     conf2_reg.cnt_l_lim = value;
@@ -301,7 +357,7 @@ static inline void pcnt_ll_set_low_limit_value(pcnt_dev_t *hw, uint32_t unit, in
  */
 static inline void pcnt_ll_set_thres_value(pcnt_dev_t *hw, uint32_t unit, uint32_t thres, int value)
 {
-    typeof(hw->conf_unit[unit].conf1) conf1_reg;
+    pcnt_un_conf1_reg_t conf1_reg;
     conf1_reg.val = hw->conf_unit[unit].conf1.val;
 
     if (thres == 0) {
@@ -321,10 +377,10 @@ static inline void pcnt_ll_set_thres_value(pcnt_dev_t *hw, uint32_t unit, uint32
  */
 static inline int pcnt_ll_get_high_limit_value(pcnt_dev_t *hw, uint32_t unit)
 {
-    typeof(hw->conf_unit[unit].conf2) conf2_reg;
+    pcnt_un_conf2_reg_t conf2_reg;
     conf2_reg.val = hw->conf_unit[unit].conf2.val;
 
-    int16_t value = conf2_reg.cnt_h_lim;
+    int16_t value = conf2_reg.cnt_h_lim ;
     return value;
 }
 
@@ -337,10 +393,10 @@ static inline int pcnt_ll_get_high_limit_value(pcnt_dev_t *hw, uint32_t unit)
  */
 static inline int pcnt_ll_get_low_limit_value(pcnt_dev_t *hw, uint32_t unit)
 {
-    typeof(hw->conf_unit[unit].conf2) conf2_reg;
+    pcnt_un_conf2_reg_t conf2_reg;
     conf2_reg.val = hw->conf_unit[unit].conf2.val;
 
-    int16_t value = conf2_reg.cnt_l_lim;
+    int16_t value = conf2_reg.cnt_l_lim ;
     return value;
 }
 
@@ -356,13 +412,13 @@ __attribute__((always_inline))
 static inline int pcnt_ll_get_thres_value(pcnt_dev_t *hw, uint32_t unit, uint32_t thres)
 {
     int16_t value;
-    typeof(hw->conf_unit[unit].conf1) conf1_reg;
+    pcnt_un_conf1_reg_t conf1_reg;
     conf1_reg.val = hw->conf_unit[unit].conf1.val;
 
     if (thres == 0) {
-        value = conf1_reg.cnt_thres0;
+        value = conf1_reg.cnt_thres0 ;
     } else {
-        value = conf1_reg.cnt_thres1;
+        value = conf1_reg.cnt_thres1 ;
     }
     return value;
 }
@@ -427,7 +483,7 @@ static inline void pcnt_ll_set_glitch_filter_thres(pcnt_dev_t *hw, uint32_t unit
  */
 static inline uint32_t pcnt_ll_get_glitch_filter_thres(pcnt_dev_t *hw, uint32_t unit)
 {
-    return hw->conf_unit[unit].conf0.filter_thres;
+    return hw->conf_unit[unit].conf0.filter_thres ;
 }
 
 /**
@@ -462,11 +518,7 @@ static inline volatile void *pcnt_ll_get_intr_status_reg(pcnt_dev_t *hw)
 static inline void pcnt_ll_enable_bus_clock(int group_id, bool enable)
 {
     (void)group_id;
-    if (enable) {
-        DPORT_SET_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, DPORT_PCNT_CLK_EN);
-    } else {
-        DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, DPORT_PCNT_CLK_EN);
-    }
+    HP_SYS_CLKRST.soc_clk_ctrl2.reg_pcnt_apb_clk_en = enable;
 }
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
@@ -482,8 +534,8 @@ static inline void pcnt_ll_enable_bus_clock(int group_id, bool enable)
 static inline void pcnt_ll_reset_register(int group_id)
 {
     (void)group_id;
-    DPORT_SET_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_PCNT_RST);
-    DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_PCNT_RST);
+    HP_SYS_CLKRST.hp_rst_en1.reg_rst_en_pcnt = 1;
+    HP_SYS_CLKRST.hp_rst_en1.reg_rst_en_pcnt = 0;
 }
 
 /// use a macro to wrap the function, force the caller to use it in a critical section

@@ -32,7 +32,7 @@
 #include "esp_private/i2s_platform.h"
 #if SOC_PCNT_SUPPORTED
 #include "driver/pulse_cnt.h"
-#include "soc/pcnt_periph.h"
+#include "hal/pcnt_periph.h"
 #endif
 
 #include "../../test_inc/test_i2s.h"
