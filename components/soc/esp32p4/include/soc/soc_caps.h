@@ -268,6 +268,11 @@
 // digital I/O pad powered by VDD3P3_CPU or VDD_SPI(GPIO_NUM_16~GPIO_NUM_54)
 #define SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK 0x007FFFFFFFFF0000ULL
 
+// Support to force hold all IOs
+#define SOC_GPIO_SUPPORT_FORCE_HOLD              (1)
+// Support to hold a single digital I/O when the digital domain is powered off
+#define SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP  (1)    // Supported only on ESP32P4 rev >= 3.0 (see DIG-399)
+
 // The Clock Out signal is route to the pin by GPIO matrix
 #define SOC_GPIO_CLOCKOUT_BY_GPIO_MATRIX         (1)
 #define SOC_GPIO_CLOCKOUT_CHANNEL_NUM            (2)
@@ -275,9 +280,6 @@
 
 #define SOC_DEBUG_PROBE_NUM_UNIT                 (1U)  // Number of debug probe units
 #define SOC_DEBUG_PROBE_MAX_OUTPUT_WIDTH         (16) // Maximum width of the debug probe output in each unit
-
-// Support to force hold all IOs
-#define SOC_GPIO_SUPPORT_FORCE_HOLD              (1)
 
 /*-------------------------- RTCIO CAPS --------------------------------------*/
 #define SOC_RTCIO_PIN_COUNT                 16
