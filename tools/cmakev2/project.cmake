@@ -752,16 +752,6 @@ macro(idf_project_default)
                            TARGET dfu)
         endif()
 
-        # FIXME: Dependencies should be specified within the components, not in the
-        # build system.
-        if(CONFIG_APP_BUILD_TYPE_APP_2NDBOOT)
-            add_dependencies(flash "partition_table_bin")
-        endif()
-
-        if(CONFIG_APP_BUILD_BOOTLOADER)
-            add_dependencies(flash "bootloader")
-        endif()
-
         idf_build_generate_flasher_args()
     endif()
 
