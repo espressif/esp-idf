@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -166,6 +166,14 @@ typedef enum {
     ISP_LL_LUT_LSC,    ///< LUT for LSC
     ISP_LL_LUT_DPC,    ///< LUT for DPC
 } isp_ll_lut_t;
+
+/**
+ * @brief ISP pipeline clock control mode
+ */
+typedef enum {
+    ISP_LL_PIPELINE_CLK_CTRL_AUTO,         ///< HW control, off when in frame interval
+    ISP_LL_PIPELINE_CLK_CTRL_ALWAYS_ON,    ///< Always on
+} isp_ll_pipeline_clk_ctrl_t;
 
 
 /*---------------------------------------------------------------
@@ -495,14 +503,14 @@ static inline void isp_ll_set_bayer_mode(isp_dev_t *hw, color_raw_element_order_
                       AF
 ---------------------------------------------------------------*/
 /**
- * @brief Enable / Disable AF clock
+ * @brief Set AF clock control mode
  *
  * @param[in] hw
- * @param[in] enable  Enable / Disable
+ * @param[in] mode    'isp_ll_pipeline_clk_ctrl_t`
  */
-static inline void isp_ll_af_clk_enable(isp_dev_t *hw, bool enable)
+static inline void isp_ll_af_set_clk_ctrl_mode(isp_dev_t *hw, isp_ll_pipeline_clk_ctrl_t mode)
 {
-    hw->clk_en.clk_af_force_on = enable;
+    hw->clk_en.clk_af_force_on = mode;
 }
 
 /**
@@ -730,14 +738,14 @@ static inline void isp_ll_af_env_detector_set_ratio(isp_dev_t *hw, uint32_t rati
                       BF
 ---------------------------------------------------------------*/
 /**
- * @brief Enable / Disable BF clock
+ * @brief Set BF clock control mode
  *
  * @param[in] hw      Hardware instance address
- * @param[in] enable  Enable / Disable
+ * @param[in] mode    'isp_ll_pipeline_clk_ctrl_t`
  */
-static inline void isp_ll_bf_clk_enable(isp_dev_t *hw, bool enable)
+static inline void isp_ll_bf_set_clk_ctrl_mode(isp_dev_t *hw, isp_ll_pipeline_clk_ctrl_t mode)
 {
-    hw->clk_en.clk_bf_force_on = enable;
+    hw->clk_en.clk_bf_force_on = mode;
 }
 
 /**
@@ -829,17 +837,121 @@ static inline void isp_ll_bf_set_template(isp_dev_t *hw, uint8_t template_arr[SO
 }
 
 /*---------------------------------------------------------------
-                      CCM
+                      BLC
 ---------------------------------------------------------------*/
 /**
- * @brief Enable / Disable CCM clock
+ * @brief Set BLC clock control mode
+ *
+ * @param[in] hw      Hardware instance address
+ * @param[in] mode    'isp_ll_pipeline_clk_ctrl_t`
+ */
+static inline void isp_ll_blc_set_clk_ctrl_mode(isp_dev_t *hw, isp_ll_pipeline_clk_ctrl_t mode)
+{
+    hw->clk_en.clk_blc_force_on = mode;
+}
+
+/**
+ * @brief Enable / Disable BLC
  *
  * @param[in] hw      Hardware instance address
  * @param[in] enable  Enable / Disable
  */
-static inline void isp_ll_ccm_clk_enable(isp_dev_t *hw, bool enable)
+static inline void isp_ll_blc_enable(isp_dev_t *hw, bool enable)
 {
-    hw->clk_en.clk_ccm_force_on = enable;
+    hw->cntl.blc_en = enable;
+}
+
+/**
+ * @brief Set BLC correction offset
+ *
+ * @param[in] hw                       Hardware instance address
+ * @param[in] top_left_chan_offset     Correction offset for top left channel of the raw Bayer image
+ * @param[in] top_right_chan_offset    Correction offset for top right channel of the raw Bayer image
+ * @param[in] bottom_left_chan_offset  Correction offset for bottom left channel of the raw Bayer image
+ * @param[in] bottom_right_chan_offset Correction offset for bottom right channel of the raw Bayer image
+ */
+static inline void isp_ll_blc_set_correction_offset(isp_dev_t *hw, uint32_t top_left_chan_offset, uint32_t top_right_chan_offset, uint32_t bottom_left_chan_offset, uint32_t bottom_right_chan_offset)
+{
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->blc_value, blc_r0_value, top_left_chan_offset);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->blc_value, blc_r1_value, top_right_chan_offset);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->blc_value, blc_r2_value, bottom_left_chan_offset);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->blc_value, blc_r3_value, bottom_right_chan_offset);
+}
+
+/**
+ * @brief Enable / Disable BLC stretch
+ *
+ * @param[in] hw      Hardware instance address
+ * @param[in] top_left_chan_stretch_en  Enable / Disable stretch for top left channel of the raw Bayer image
+ * @param[in] top_right_chan_stretch_en Enable / Disable stretch for top right channel of the raw Bayer image
+ * @param[in] bottom_left_chan_stretch_en Enable / Disable stretch for bottom left channel of the raw Bayer image
+ * @param[in] bottom_right_chan_stretch_en Enable / Disable stretch for bottom right channel of the raw Bayer image
+ */
+static inline void isp_ll_blc_enable_stretch(isp_dev_t *hw, bool top_left_chan_stretch_en, bool top_right_chan_stretch_en, bool bottom_left_chan_stretch_en, bool bottom_right_chan_stretch_en)
+{
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->blc_ctrl0, blc_r0_stretch, top_left_chan_stretch_en);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->blc_ctrl0, blc_r1_stretch, top_right_chan_stretch_en);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->blc_ctrl0, blc_r2_stretch, bottom_left_chan_stretch_en);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->blc_ctrl0, blc_r3_stretch, bottom_right_chan_stretch_en);
+}
+
+/**
+ * @brief Set BLC window
+ *
+ * @param[in] hw      Hardware instance address
+ * @param[in] x_start X start position
+ * @param[in] y_start Y start position
+ * @param[in] x_size  X size
+ * @param[in] y_size  Y size
+ */
+static inline void isp_ll_blc_set_window(isp_dev_t *hw, uint32_t x_start, uint32_t y_start, uint32_t x_size, uint32_t y_size)
+{
+    hw->blc_ctrl1.blc_window_top = y_start;
+    hw->blc_ctrl1.blc_window_left = x_start;
+    hw->blc_ctrl1.blc_window_vnum = y_size;
+    hw->blc_ctrl1.blc_window_hnum = x_size;
+}
+
+/**
+ * @brief Set BLC filter threshold
+ *
+ * @param[in] hw      Hardware instance address
+ * @param[in] top_left_chan_thresh  Filter threshold for top left channel of the raw Bayer image
+ * @param[in] top_right_chan_thresh Filter threshold for top right channel of the raw Bayer image
+ * @param[in] bottom_left_chan_thresh Filter threshold for bottom left channel of the raw Bayer image
+ * @param[in] bottom_right_chan_thresh Filter threshold for bottom right channel of the raw Bayer image
+ */
+static inline void isp_ll_blc_set_filter_threshold(isp_dev_t *hw, uint32_t top_left_chan_thresh, uint32_t top_right_chan_thresh, uint32_t bottom_left_chan_thresh, uint32_t bottom_right_chan_thresh)
+{
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->blc_ctrl2, blc_r0_th, top_left_chan_thresh);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->blc_ctrl2, blc_r1_th, top_right_chan_thresh);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->blc_ctrl2, blc_r2_th, bottom_left_chan_thresh);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->blc_ctrl2, blc_r3_th, bottom_right_chan_thresh);
+}
+
+/**
+ * @brief Enable / Disable BLC filter
+ *
+ * @param[in] hw      Hardware instance address
+ * @param[in] enable  Enable / Disable
+ */
+static inline void isp_ll_blc_enable_filter(isp_dev_t *hw, bool enable)
+{
+    hw->blc_ctrl1.blc_filter_en = enable;
+}
+
+/*---------------------------------------------------------------
+                      CCM
+---------------------------------------------------------------*/
+/**
+ * @brief Set CCM clock control mode
+ *
+ * @param[in] hw      Hardware instance address
+ * @param[in] mode    'isp_ll_pipeline_clk_ctrl_t`
+ */
+static inline void isp_ll_ccm_set_clk_ctrl_mode(isp_dev_t *hw, isp_ll_pipeline_clk_ctrl_t mode)
+{
+    hw->clk_en.clk_ccm_force_on = mode;
 }
 
 /**
@@ -876,14 +988,14 @@ static inline void isp_ll_ccm_set_matrix(isp_dev_t *hw, isp_ll_ccm_gain_t fixed_
                       Color
 ---------------------------------------------------------------*/
 /**
- * @brief Enable / Disable Color clock
+ * @brief Set Color clock control mode
  *
  * @param[in] hw      Hardware instance address
- * @param[in] enable  Enable / Disable
+ * @param[in] mode    'isp_ll_pipeline_clk_ctrl_t`
  */
-static inline void isp_ll_color_clk_enable(isp_dev_t *hw, bool enable)
+static inline void isp_ll_color_set_clk_ctrl_mode(isp_dev_t *hw, isp_ll_pipeline_clk_ctrl_t mode)
 {
-    hw->clk_en.clk_color_force_on = enable;
+    hw->clk_en.clk_color_force_on = mode;
 }
 
 /**
@@ -1071,14 +1183,14 @@ static inline void isp_ll_cam_enable(isp_dev_t *hw, bool enable)
 ---------------------------------------------------------------*/
 
 /**
- * @brief Enable / Disable AE clock
+ * @brief Set AE clock control mode
  *
  * @param[in] hw      Hardware instance address
- * @param[in] enable  Enable / Disable
+ * @param[in] mode    'isp_ll_pipeline_clk_ctrl_t`
  */
-static inline void isp_ll_ae_clk_enable(isp_dev_t *hw, bool enable)
+static inline void isp_ll_ae_set_clk_ctrl_mode(isp_dev_t *hw, isp_ll_pipeline_clk_ctrl_t mode)
 {
-    hw->clk_en.clk_ae_force_on = enable;
+    hw->clk_en.clk_ae_force_on = mode;
 }
 
 /**
@@ -1185,14 +1297,14 @@ static inline void isp_ll_ae_env_detector_set_period(isp_dev_t *hw, uint32_t per
                       LSC
 ---------------------------------------------------------------*/
 /**
- * @brief Enable / Disable LSC clock
+ * @brief Set LSC clock control mode
  *
  * @param[in] hw      Hardware instance address
- * @param[in] enable  Enable / Disable
+ * @param[in] mode    'isp_ll_pipeline_clk_ctrl_t`
  */
-static inline void isp_ll_lsc_clk_enable(isp_dev_t *hw, bool enable)
+static inline void isp_ll_lsc_set_clk_ctrl_mode(isp_dev_t *hw, isp_ll_pipeline_clk_ctrl_t mode)
 {
-    hw->clk_en.clk_lsc_force_on = enable;
+    hw->clk_en.clk_lsc_force_on = mode;
 }
 
 /**
@@ -1337,14 +1449,14 @@ static inline void isp_ll_clear_intr(isp_dev_t *hw, uint32_t mask)
                       AWB
 ---------------------------------------------------------------*/
 /**
- * @brief Enable / Disable AWB clock
+ * @brief Set AWB clock control mode
  *
  * @param[in] hw      Hardware instance address
- * @param[in] enable  Enable / Disable
+ * @param[in] mode    'isp_ll_pipeline_clk_ctrl_t`
  */
-static inline void isp_ll_awb_clk_enable(isp_dev_t *hw, bool enable)
+static inline void isp_ll_awb_set_clk_ctrl_mode(isp_dev_t *hw, isp_ll_pipeline_clk_ctrl_t mode)
 {
-    hw->clk_en.clk_awb_force_on = enable;
+    hw->clk_en.clk_awb_force_on = mode;
 }
 
 /**
@@ -1495,14 +1607,14 @@ static inline uint32_t isp_ll_awb_get_accumulated_b_value(isp_dev_t *hw)
                       Demosaic
 ---------------------------------------------------------------*/
 /**
- * @brief Enable / Disable demosaic clock
+ * @brief Set demosaic clock control mode
  *
  * @param[in] hw      Hardware instance address
- * @param[in] enable  Enable / Disable
+ * @param[in] mode    'isp_ll_pipeline_clk_ctrl_t`
  */
-static inline void isp_ll_demosaic_clk_enable(isp_dev_t *hw, bool enable)
+static inline void isp_ll_demosaic_set_clk_ctrl_mode(isp_dev_t *hw, isp_ll_pipeline_clk_ctrl_t mode)
 {
-    hw->clk_en.clk_demosaic_force_on = enable;
+    hw->clk_en.clk_demosaic_force_on = mode;
 }
 
 /**
@@ -1580,14 +1692,14 @@ static inline void isp_ll_demosaic_set_padding_line_tail_valid_end_pixel(isp_dev
                       Sharpen
 ---------------------------------------------------------------*/
 /**
- * @brief Enable / Disable sharpen clock
+ * @brief Set sharpen clock control mode
  *
  * @param[in] hw      Hardware instance address
- * @param[in] enable  Enable / Disable
+ * @param[in] mode    'isp_ll_pipeline_clk_ctrl_t`
  */
-static inline void isp_ll_sharp_clk_enable(isp_dev_t *hw, bool enable)
+static inline void isp_ll_sharp_set_clk_ctrl_mode(isp_dev_t *hw, isp_ll_pipeline_clk_ctrl_t mode)
 {
-    hw->clk_en.clk_sharp_force_on = enable;
+    hw->clk_en.clk_sharp_force_on = mode;
 }
 
 /**
@@ -1740,25 +1852,25 @@ static inline uint8_t isp_ll_sharp_get_high_freq_pixel_max(isp_dev_t *hw)
                       RGB/YUV
 ---------------------------------------------------------------*/
 /**
- * @brief Enable / Disable rgb2yuv clock
+ * @brief Set rgb2yuv clock control mode
  *
  * @param[in] hw      Hardware instance address
- * @param[in] enable  0: hw control; 1: always on
+ * @param[in] mode    'isp_ll_pipeline_clk_ctrl_t`
  */
-static inline void isp_ll_rgb2yuv_clk_enable(isp_dev_t *hw, bool enable)
+static inline void isp_ll_rgb2yuv_set_clk_ctrl_mode(isp_dev_t *hw, isp_ll_pipeline_clk_ctrl_t mode)
 {
-    hw->clk_en.clk_rgb2yuv_force_on = enable;
+    hw->clk_en.clk_rgb2yuv_force_on = mode;
 }
 
 /**
- * @brief Enable / Disable yuv2rgb clock
+ * @brief Set yuv2rgb clock control mode
  *
  * @param[in] hw      Hardware instance address
- * @param[in] enable  0: hw control; 1: always on
+ * @param[in] mode    'isp_ll_pipeline_clk_ctrl_t`
  */
-static inline void isp_ll_yuv2rgb_clk_enable(isp_dev_t *hw, bool enable)
+static inline void isp_ll_yuv2rgb_set_clk_ctrl_mode(isp_dev_t *hw, isp_ll_pipeline_clk_ctrl_t mode)
 {
-    hw->clk_en.clk_yuv2rgb_force_on = enable;
+    hw->clk_en.clk_yuv2rgb_force_on = mode;
 }
 
 /**
@@ -1868,14 +1980,14 @@ static inline void isp_ll_gamma_set_correction_curve(isp_dev_t *hw, color_compon
                       HIST
 ---------------------------------------------------------------*/
 /**
- * @brief enable histogram clock
+ * @brief Set histogram clock control mode
  *
  * @param[in] hw Hardware instance address
- * @param[in] enable true: enable the clock. false: disable the clock
+ * @param[in] mode    'isp_ll_pipeline_clk_ctrl_t`
 */
-static inline void isp_ll_hist_clk_enable(isp_dev_t *hw, bool enable)
+static inline void isp_ll_hist_set_clk_ctrl_mode(isp_dev_t *hw, isp_ll_pipeline_clk_ctrl_t mode)
 {
-    hw->clk_en.clk_hist_force_on = enable;
+    hw->clk_en.clk_hist_force_on = mode;
 }
 
 /**
