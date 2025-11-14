@@ -119,7 +119,6 @@ api-reference/peripherals/index.rst
 api-reference/peripherals/sdio_slave.rst
 api-reference/peripherals/temp_sensor.rst
 api-reference/peripherals/usb_device.rst
-api-reference/peripherals/mcpwm.rst
 api-reference/peripherals/usb_host.rst
 api-reference/peripherals/camera_driver.rst
 api-reference/peripherals/adc_oneshot.rst

@@ -7,7 +7,7 @@
 /*******************************************************************************
  * NOTICE
  * The hal is not public api, don't use in application code.
- * See readme.md in hal/include/hal/readme.md
+ * See readme.md in esp_hal_mcpwm/readme.md
  ******************************************************************************/
 
 #pragma once
