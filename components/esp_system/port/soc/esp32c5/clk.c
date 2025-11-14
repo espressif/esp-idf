@@ -209,6 +209,15 @@ static void select_rtc_slow_clk(soc_rtc_slow_clk_src_t rtc_slow_clk_src)
             rtc_clk_32k_enable(false);
             rtc_clk_32k_disable_external();
         }
+        // We have enabled all LP clock power in pmu_init, re-initialize the LP clock power based on the slow clock source after selection.
+        pmu_lp_power_t lp_clk_power = {
+            .xpd_xtal32k = (rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_XTAL32K) || (rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_OSC_SLOW),
+            .xpd_rc32k = 0,
+            .xpd_fosc = 1,
+            .pd_osc = 0
+        };
+        pmu_ll_lp_set_clk_power(&PMU, PMU_MODE_LP_ACTIVE, lp_clk_power.val);
+
         if (SLOW_CLK_CAL_CYCLES > 0) {
             /* TODO: 32k XTAL oscillator has some frequency drift at startup.
              * Improve calibration routine to wait until the frequency is stable.
