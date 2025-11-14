@@ -139,6 +139,10 @@ config SOC_TWAI_SUPPORTED
     bool
     default y
 
+config SOC_ETM_SUPPORTED
+    bool
+    default y
+
 config SOC_RMT_SUPPORTED
     bool
     default y
@@ -351,6 +355,10 @@ config SOC_AHB_GDMA_VERSION
     int
     default 1
 
+config SOC_GDMA_SUPPORT_ETM
+    bool
+    default y
+
 config SOC_GDMA_SUPPORT_SLEEP_RETENTION
     bool
     default y
@@ -364,6 +372,10 @@ config SOC_GPIO_PIN_COUNT
     default 26
 
 config SOC_GPIO_SUPPORT_PIN_HYS_FILTER
+    bool
+    default y
+
+config SOC_GPIO_SUPPORT_ETM
     bool
     default y
 
@@ -783,6 +795,10 @@ config SOC_SYSTIMER_ALARM_MISS_COMPENSATE
     bool
     default y
 
+config SOC_SYSTIMER_SUPPORT_ETM
+    bool
+    default y
+
 config SOC_LP_TIMER_BIT_WIDTH_LO
     int
     default 32
@@ -790,6 +806,10 @@ config SOC_LP_TIMER_BIT_WIDTH_LO
 config SOC_LP_TIMER_BIT_WIDTH_HI
     int
     default 16
+
+config SOC_TIMER_SUPPORT_ETM
+    bool
+    default y
 
 config SOC_TIMER_SUPPORT_SLEEP_RETENTION
     bool

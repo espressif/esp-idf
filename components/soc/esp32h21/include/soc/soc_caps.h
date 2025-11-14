@@ -75,7 +75,7 @@
 #define SOC_PCNT_SUPPORTED              1
 // #define SOC_MCPWM_SUPPORTED             1    //TODO: [ESP32H21] IDF-11601
 #define SOC_TWAI_SUPPORTED              1
-// #define SOC_ETM_SUPPORTED               1    //TODO: [ESP32H21] IDF-11576
+#define SOC_ETM_SUPPORTED               1
 // #define SOC_PARLIO_SUPPORTED            1    //TODO: [ESP32H21] IDF-11570, IDF-11572
 #define SOC_RMT_SUPPORTED               1
 #define SOC_AES_SUPPORTED               1
@@ -187,7 +187,7 @@
 
 /*-------------------------- GDMA CAPS -------------------------------------*/
 #define SOC_AHB_GDMA_VERSION                1U
-// #define SOC_GDMA_SUPPORT_ETM                1  // Support ETM submodule TODO: IDF-11604
+#define SOC_GDMA_SUPPORT_ETM                1
 #define SOC_GDMA_SUPPORT_SLEEP_RETENTION    1
 
 /*-------------------------- GPIO CAPS ---------------------------------------*/
@@ -199,7 +199,7 @@
 #define SOC_GPIO_SUPPORT_PIN_HYS_FILTER         1
 
 // GPIO peripheral has the ETM extension
-// #define SOC_GPIO_SUPPORT_ETM          1
+#define SOC_GPIO_SUPPORT_ETM          1
 
 // Target has no full LP IO subsystem, GPIO5~11 remain LP function (powered by VDD3V3_LP, and can be used as ext1 wakeup pins)
 // Digital IOs have their own registers to control pullup/down/capability
@@ -421,14 +421,14 @@
 #define SOC_SYSTIMER_SUPPORT_RC_FAST        1  // Systimer can use RC_FAST clock source
 #define SOC_SYSTIMER_INT_LEVEL              1  // Systimer peripheral uses level interrupt
 #define SOC_SYSTIMER_ALARM_MISS_COMPENSATE  1  // Systimer peripheral can generate interrupt immediately if t(target) > t(current)
-// #define SOC_SYSTIMER_SUPPORT_ETM            1  // Systimer comparator can generate ETM event
+#define SOC_SYSTIMER_SUPPORT_ETM            1  // Systimer comparator can generate ETM event
 
 /*-------------------------- LP_TIMER CAPS ----------------------------------*/
 #define SOC_LP_TIMER_BIT_WIDTH_LO           32 // Bit width of lp_timer low part
 #define SOC_LP_TIMER_BIT_WIDTH_HI           16 // Bit width of lp_timer high part
 
 /*--------------------------- TIMER GROUP CAPS ---------------------------------------*/
-// #define SOC_TIMER_SUPPORT_ETM             (1)    //TODO: [ESP32H21] IDF-11576
+#define SOC_TIMER_SUPPORT_ETM             (1)
 #define SOC_TIMER_SUPPORT_SLEEP_RETENTION (1)
 
 /*--------------------------- WATCHDOG CAPS ---------------------------------------*/

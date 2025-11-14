@@ -125,7 +125,6 @@ api-reference/peripherals/mcpwm.rst
 api-reference/peripherals/usb_host.rst
 api-reference/peripherals/camera_driver.rst
 api-reference/peripherals/adc_oneshot.rst
-api-reference/peripherals/etm.rst
 api-reference/peripherals/sdspi_share.rst
 api-reference/peripherals/ana_cmpr.rst
 api-reference/peripherals/i2c_slave_v1.rst
