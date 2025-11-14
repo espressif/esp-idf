@@ -307,10 +307,17 @@ menu "OpenThread"
                     Set the DNS server IPv4 address.
         endmenu
 
+        config OPENTHREAD_TIMING_OPTIMIZATION
+            bool "Enable timing optimization"
+            default n
+            help
+                Select this option to enable timing optimization for link metrics / CSL features.
+
         config OPENTHREAD_LINK_METRICS
             bool "Enable link metrics feature"
             default n
             select IEEE802154_TIMING_OPTIMIZATION if IEEE802154_ENABLED
+            select OPENTHREAD_TIMING_OPTIMIZATION
             help
                 Select this option to enable link metrics feature
 
@@ -331,6 +338,7 @@ menu "OpenThread"
             bool "Enable CSL feature"
             default n
             select IEEE802154_TIMING_OPTIMIZATION if IEEE802154_ENABLED
+            select OPENTHREAD_TIMING_OPTIMIZATION
             help
                 Select this option to enable CSL feature
         menu "CSL Configurations"
