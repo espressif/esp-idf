@@ -137,8 +137,10 @@ void IRAM_ATTR pau_regdma_trigger_extra_link_restore(void)
 }
 
 #if SOC_PAU_IN_TOP_DOMAIN
-void pau_regdma_enable_aon_link_entry(bool enable)
+bool IRAM_ATTR pau_regdma_enable_aon_link_entry(bool enable)
 {
+    bool origin_bypass_en = lp_sys_ll_get_pau_aon_bypass();
     lp_sys_ll_set_pau_aon_bypass(enable);
+    return origin_bypass_en;
 }
 #endif
