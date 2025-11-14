@@ -103,10 +103,13 @@ void app_main(void)
     ot_external_coexist_init();
 #endif
 
-    static esp_openthread_platform_config_t config = {
-        .radio_config = ESP_OPENTHREAD_DEFAULT_RADIO_CONFIG(),
-        .host_config = ESP_OPENTHREAD_DEFAULT_HOST_CONFIG(),
-        .port_config = ESP_OPENTHREAD_DEFAULT_PORT_CONFIG(),
+    static esp_openthread_config_t config = {
+        .netif_config = ESP_NETIF_DEFAULT_OPENTHREAD(),
+        .platform_config = {
+            .radio_config = ESP_OPENTHREAD_DEFAULT_RADIO_CONFIG(),
+            .host_config = ESP_OPENTHREAD_DEFAULT_HOST_CONFIG(),
+            .port_config = ESP_OPENTHREAD_DEFAULT_PORT_CONFIG(),
+        },
     };
 
     ESP_ERROR_CHECK(esp_openthread_start(&config));
