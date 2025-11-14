@@ -9,8 +9,3 @@ entries:
             app_trace_membufs_proto (noflash)
         if APPTRACE_DEST_UART = y || APPTRACE_DEST_ALL = y:
             port_uart (noflash)
-    if ESP_TRACE_LIB_SEGGER_SYSVIEW = y:
-        SEGGER_SYSVIEW (noflash)
-        SEGGER_RTT_esp (noflash)
-        SEGGER_SYSVIEW_Config_FreeRTOS (noflash)
-        SEGGER_SYSVIEW_FreeRTOS (noflash)

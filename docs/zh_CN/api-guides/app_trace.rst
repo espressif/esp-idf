@@ -400,7 +400,20 @@ ESP-IDF 中另一个基于应用层跟踪库的实用功能是系统级跟踪，
 如何使用
 """"""""
 
-若需使用这个功能，需要在 menuconfig 中通过 ``Component config`` > ``ESP Trace Configuration`` > ``Trace library`` > ``SEGGER SystemView`` 选项启用此功能。同一菜单栏下还有其它几个选项：
+SystemView 功能由托管组件 ``espressif/esp_sysview`` 提供。完成以下步骤后才会显示 SystemView 配置菜单：
+
+1. 在 ``idf_component.yml`` 中添加组件依赖：
+
+   .. code-block:: yaml
+
+       dependencies:
+         espressif/esp_sysview: ^1
+
+2. 在 menuconfig 中选择外部库：``Component config`` > ``ESP Trace Configuration`` > ``Trace library`` > ``External library from component registry``。
+
+之后，可通过 ``Component config`` > ``SEGGER SystemView Configuration`` 配置 SystemView。完整的最新使用指南，请参阅 `esp_sysview README <https://components.espressif.com/components/espressif/esp_sysview>`_。
+
+此配置菜单还包含以下选项：
 
 1. {IDF_TARGET_NAME} 用作 SystemView 时间戳源的定时器选择：（:ref:`CONFIG_ESP_TRACE_TIMESTAMP_SOURCE`）用于选择 SystemView 事件的时间戳源。在单核模式下，时间戳由以最大频率运行的 {IDF_TARGET_NAME} 内部周期计数器生成。（:ref:`CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ`）在双核模式下，使用外部定时器生成时间戳，其频率为 CPU 频率的 1/2。
 
@@ -513,7 +526,7 @@ Start 子命令语法：
 
     此命令将创建一个单独的跟踪文件，可以直接加载到 SystemView 3.60+ 中进行多核可视化。
 
-    **注意：** SystemView 3.60 之前的版本不支持多核跟踪。对于旧版本，当使用 JTAG 接口跟踪双核模式下的 {IDF_TARGET_NAME} 时会生成两个文件：一个用于 PRO CPU，另一个用于 APP CPU。用户可将每个文件载入不同的工具实例。使用 UART 进行跟踪时，用户可以在 menuconfig 中选择 ``Component config`` > ``ESP Trace Configuration`` > ``SEGGER SystemView`` 来指定需要跟踪的 CPU（Pro 或 App）。
+    **注意：** SystemView 3.60 之前的版本不支持多核跟踪。对于旧版本，当使用 JTAG 接口跟踪双核模式下的 {IDF_TARGET_NAME} 时会生成两个文件：一个用于 PRO CPU，另一个用于 APP CPU。用户可将每个文件载入不同的工具实例。使用 UART 进行跟踪时，在 menuconfig 中选择外部库后，用户可以选择 ``Component config`` > ``SEGGER SystemView Configuration`` 来指定需要跟踪的 CPU（Pro 或 App）。
 
     对于旧版本的 SystemView，在不同的实例中分别分析每个核的数据可能较为不便。另一个选择是使用名为 *Impulse* 的 Eclipse 插件，该插件可同时加载多个跟踪文件，实现在同一视图中检查来自两个核心的事件。与 SystemView 免费版相比，此插件还不受 100 万事件数量的限制。
 

@@ -400,7 +400,20 @@ Another useful ESP-IDF feature built on top of application tracing library is th
 How To Use It
 """""""""""""
 
-Support for this feature is enabled by ``Component config`` > ``ESP Trace Configuration`` > ``Trace library`` > ``SEGGER SystemView`` menuconfig option. There are several other options enabled under the same menu:
+SystemView support is provided by the managed component ``espressif/esp_sysview``. The SystemView menu becomes visible only after:
+
+1. Adding the component dependency in ``idf_component.yml``:
+
+   .. code-block:: yaml
+
+       dependencies:
+         espressif/esp_sysview: ^1
+
+2. Selecting the external library in menuconfig: ``Component config`` > ``ESP Trace Configuration`` > ``Trace library`` > ``External library from component registry``.
+
+After that, you can configure SystemView in ``Component config`` > ``SEGGER SystemView Configuration``. For full, up-to-date instructions, see the component README: `esp_sysview <https://components.espressif.com/components/espressif/esp_sysview>`_.
+
+There are several other options enabled under the same menu:
 
 1. {IDF_TARGET_NAME} timer to use as SystemView timestamp source: (:ref:`CONFIG_ESP_TRACE_TIMESTAMP_SOURCE`) selects the source of timestamps for SystemView events. In the single core mode, timestamps are generated using {IDF_TARGET_NAME} internal cycle counter running at maximum frequency. (:ref:`CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ`) In the dual-core mode, external timer is used to generate timestamps. It's frequency is 1/2 of the CPU frequency.
 
@@ -513,7 +526,7 @@ After trace data are collected, users can use a special tool to visualize the re
 
     This command will create a single trace file that can be loaded directly into SystemView 3.60+ for multi-core visualization.
 
-    **Note:** SystemView versions before 3.60 do not support multi-core tracing. For older versions, when tracing from {IDF_TARGET_NAME} with JTAG interfaces in the dual-core mode, two separate files are generated: one for PRO CPU and another for APP CPU. Users can load each file into separate instances of the tool. For tracing over UART, users can select ``Component config`` > ``ESP Trace Configuration`` > ``SEGGER SystemView`` in menuconfig to choose which CPU (Pro or App) has to be traced.
+    **Note:** SystemView versions before 3.60 do not support multi-core tracing. For older versions, when tracing from {IDF_TARGET_NAME} with JTAG interfaces in the dual-core mode, two separate files are generated: one for PRO CPU and another for APP CPU. Users can load each file into separate instances of the tool. For tracing over UART, after selecting the external library in menuconfig, users can select ``Component config`` > ``SEGGER SystemView Configuration`` to choose which CPU (Pro or App) has to be traced.
 
     For older SystemView versions, analyzing data for every core in separate instances can be awkward. An alternative is to use the Eclipse plugin called *Impulse*, which can load several trace files, making it possible to inspect events from both cores in one view. This plugin also has no limitation of 1,000,000 events as compared to the free version of SystemView.
 

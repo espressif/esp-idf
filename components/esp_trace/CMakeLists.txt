@@ -14,11 +14,6 @@ if(CONFIG_ESP_TRACE_ENABLE)
     if(CONFIG_ESP_TRACE_TRANSPORT_APPTRACE)
         list(APPEND srcs "adapters/transport/adapter_transport_apptrace.c")
     endif()
-
-    if(CONFIG_ESP_TRACE_LIB_SEGGER_SYSVIEW)
-        list(APPEND srcs "adapters/encoder/adapter_encoder_sysview.c")
-    endif()
-
 endif()
 
 set(includes
