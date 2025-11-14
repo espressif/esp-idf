@@ -821,6 +821,7 @@ tBTM_BLE_CONN_ST btm_ble_get_conn_st(void)
 *******************************************************************************/
 void btm_ble_set_conn_st(tBTM_BLE_CONN_ST new_st)
 {
+    BTM_TRACE_DEBUG("%s old=%u new=%u", __func__, btm_cb.ble_ctr_cb.conn_state, new_st);
     btm_cb.ble_ctr_cb.conn_state = new_st;
 
     if (new_st == BLE_BG_CONN || new_st == BLE_DIR_CONN) {
