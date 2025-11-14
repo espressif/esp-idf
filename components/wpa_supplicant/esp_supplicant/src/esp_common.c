@@ -169,6 +169,9 @@ static int handle_assoc_frame(u8 *frame, size_t len,
                               u8 *sender, int8_t rssi, u8 channel)
 {
     if (gWpaSm.key_mgmt == WPA_KEY_MGMT_FT_PSK || gWpaSm.key_mgmt == WPA_KEY_MGMT_FT_SAE) {
+        if (len < 6) { /* Cap info + status code */
+            return -1;
+        }
         if (gWpaSm.ft_protocol) {
             if (wpa_ft_validate_reassoc_resp(&gWpaSm, frame + 6, len - 6, sender)) {
                 wpa_sm_set_ft_params(&gWpaSm, NULL, 0);
