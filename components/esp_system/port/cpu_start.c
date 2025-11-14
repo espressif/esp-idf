@@ -321,7 +321,7 @@ static void start_other_core(void)
     }
 }
 
-#if !SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE && !CONFIG_IDF_TARGET_ESP32H4 // TODO IDF-12289
+#if !SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
 #if CONFIG_IDF_TARGET_ESP32
 static void restore_app_mmu_from_pro_mmu(void)
 {
@@ -466,7 +466,7 @@ FORCE_INLINE_ATTR IRAM_ATTR void ram_app_init(void)
 //Keep this static, the compiler will check output parameters are initialized.
 FORCE_INLINE_ATTR IRAM_ATTR void ext_mem_init(void)
 {
-#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE && !SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE && !CONFIG_IDF_TARGET_ESP32H4 // TODO IDF-12289
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE && !SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
     // It helps to fix missed cache settings for other cores. It happens when bootloader is unicore.
     do_multicore_settings();
 #endif

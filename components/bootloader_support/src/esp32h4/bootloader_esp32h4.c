@@ -108,7 +108,6 @@ static inline void bootloader_config_dcache(void)
 
 static inline void bootloader_config_icache1(void)
 {
-    // TODO: [ESP32H4] IDF-12289
 #if CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     REG_CLR_BIT(LP_AON_SRAM_USAGE_CONF_REG, LP_AON_ICACHE1_USAGE);
 #else

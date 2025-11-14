@@ -13,8 +13,6 @@
 extern "C" {
 #endif
 
-//TODO: [ESP32H4] IDF-12289 inherit from verification branch, need check
-
 /** \defgroup cache_apis, cache operation related apis
   * @brief cache apis
   */
