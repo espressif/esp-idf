@@ -75,6 +75,8 @@ btc_hd_cb_t btc_hd_cb = {0};
 
 typedef void (bt_hid_copy_cb_t)(btc_msg_t *msg, void *p_dest, void *p_src);
 
+static void btc_hd_cb_arg_deep_free(btc_msg_t *msg);
+
 static inline void btc_hd_cb_to_app(esp_hidd_cb_event_t event, esp_hidd_cb_param_t *param)
 {
     esp_hd_cb_t btc_hd_cb = (esp_hd_cb_t)btc_profile_cb_get(BTC_PID_HD);
@@ -705,7 +707,7 @@ static void btc_hd_virtual_cable_unplug(void)
     }
 }
 
-static void btc_hd_call_arg_deep_free(btc_msg_t *msg)
+void btc_hd_call_arg_deep_free(btc_msg_t *msg)
 {
     btc_hidd_args_t *arg = (btc_hidd_args_t *)msg->arg;
 
@@ -759,7 +761,7 @@ void btc_hd_call_handler(btc_msg_t *msg)
     btc_hd_call_arg_deep_free(msg);
 }
 
-void btc_hd_cb_arg_deep_free(btc_msg_t *msg)
+static void btc_hd_cb_arg_deep_free(btc_msg_t *msg)
 {
     tBTA_HD *arg = (tBTA_HD *)msg->arg;
 
