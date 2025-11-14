@@ -28,7 +28,30 @@
 #include "soc/dport_reg.h"
 
 #define TWAI_LL_GET_HW(controller_id) ((controller_id == 0) ? (&TWAI) : NULL)
-#define TWAI_LL_BRP_DIV_THRESH       128
+
+// When the bus-off condition is reached, the REC should be reset to 0 and frozen (via LOM) by the
+// driver's ISR. However on the ESP32, there is an edge case where the REC will increase before the
+// driver's ISR can respond in time (e.g., due to the rapid occurrence of bus errors), thus causing the
+// REC to be non-zero after bus-off. A non-zero REC can prevent bus-off recovery as the bus-off recovery
+// condition is that both TEC and REC become 0.
+#define TWAI_LL_HAS_BUSOFF_REC_ISSUE    1
+
+// On the ESP32, when a transmit interrupt occurs, and interrupt register is read on the same APB clock
+// cycle, the transmit interrupt could be lost.
+#define TWAI_LL_HAS_INTR_LOST_ISSUE     1
+
+// When in the listen only mode, the TWAI controller must not influence the TWAI bus (i.e., must not send
+// any dominant bits). However, while in listen only mode, the TWAI controller will still transmit dominant
+// bits when it detects an error (i.e., as part of an active error frame).
+#define TWAI_LL_HAS_LOM_DOM_ISSUE       1
+
+// On the ESP32, when the RX FIFO overruns and the RX message counter maxes out at 64 messages, the entire
+// RX FIFO is no longer recoverable.
+#define TWAI_LL_HAS_RX_FIFO_ISSUE       1
+
+// On the ESP32, when receiving a data or remote frame, if a bus error occurs in the data or CRC field,
+// the data field of the NEXT received frame could be invalid.
+#define TWAI_LL_HAS_RX_FRAME_ISSUE      1
 
 #ifdef __cplusplus
 extern "C" {
@@ -38,6 +61,7 @@ static uint32_t twai_ll_get_brp_max(void);
 /* ------------------------- Defines and Typedefs --------------------------- */
 #define TWAI_LL_BRP_MIN         2
 #define TWAI_LL_BRP_MAX         twai_ll_get_brp_max()   // max brp of esp32 is depends on chip version
+#define TWAI_LL_BRP_DIV_THRESH  128
 #define TWAI_LL_TSEG1_MIN       1
 #define TWAI_LL_TSEG2_MIN       1
 #define TWAI_LL_TSEG1_MAX       16  //the max register value

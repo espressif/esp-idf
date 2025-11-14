@@ -201,8 +201,11 @@ static void _node_isr_main(void *arg)
     twai_onchip_ctx_t *twai_ctx = arg;
     uint32_t events = twai_hal_get_events(twai_ctx->hal);    //Get the events that triggered the interrupt
 
-#if CONFIG_IDF_TARGET_ESP32 // only esp32 have this errata, TODO: IDF-13002 check errata runtime
+#if TWAI_LL_HAS_RX_FRAME_ISSUE || TWAI_LL_HAS_RX_FIFO_ISSUE
+    // Errata workaround: Reset the peripheral on detection of this errata condition.
+    // Note that if a frame is being sent on the bus during the reset, the message will be lost.
     if (events & TWAI_HAL_EVENT_NEED_PERIPH_RESET) {
+        ESP_EARLY_LOGD(TAG, "Triggered peripheral reset");
         twai_hal_prepare_for_reset(twai_ctx->hal);
         TWAI_RCC_ATOMIC() {
             twai_ll_reset_register(twai_ctx->ctrlr_id);
@@ -498,7 +501,7 @@ static esp_err_t _node_disable(twai_node_handle_t node)
     ESP_RETURN_ON_ERROR(esp_intr_disable(twai_ctx->intr_hdl), TAG, "disable interrupt failed");
     atomic_store(&twai_ctx->state, TWAI_ERROR_BUS_OFF);
     twai_hal_stop(twai_ctx->hal);
-#if CONFIG_IDF_TARGET_ESP32 // only esp32 have this errata, TODO: IDF-13002 check errata runtime
+#if TWAI_LL_HAS_RX_FRAME_ISSUE
     // when `disable` happens during hardware busy, the next RX frame is corrupted, a HW reset can fix it
     if (twai_hal_is_hw_busy(twai_ctx->hal)) {
         twai_hal_backup_config(twai_ctx->hal);

@@ -18,7 +18,7 @@ menu "ESP-Driver:TWAI Configurations"
     config TWAI_ISR_CACHE_SAFE
         bool "Allow TWAI ISR execute when cache disabled" if !SPI_FLASH_AUTO_SUSPEND
         select TWAI_ISR_IN_IRAM
-        select ESP_PERIPH_CTRL_FUNC_IN_IRAM if TWAI_ERRATA_FIX_RX_FRAME_INVALID || TWAI_ERRATA_FIX_RX_FIFO_CORRUPT
+        select ESP_PERIPH_CTRL_FUNC_IN_IRAM if IDF_TARGET_ESP32 #For errata workarounds
         default n
         help
             Allow TWAI works under Cache disabled (such as when writing to SPI Flash),
