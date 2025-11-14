@@ -156,7 +156,7 @@ systimer_hal_set_tick_rate_ops = 0x40002eac;
 /* Functions */
 sta_reset_beacon_timeout = 0x40003024;
 ieee80211_post_hmac_tx = 0x40003028;
-sta_rx_eapol = 0x4000302c;
+//sta_rx_eapol = 0x4000302c;
 /* Data (.data, .bss, .rodata) */
 len_dh_ie_ptr = 0x3fcdfa6c;
 g_authmode_threshold_failure_ptr = 0x3fcdfa68;
