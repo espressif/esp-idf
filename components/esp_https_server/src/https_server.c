@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,7 +23,9 @@ typedef struct httpd_ssl_transport_ctx {
     httpd_ssl_ctx_t *global_ctx;
 } httpd_ssl_transport_ctx_t;
 
+#ifdef CONFIG_ESP_HTTPS_SERVER_EVENTS
 ESP_EVENT_DEFINE_BASE(ESP_HTTPS_SERVER_EVENT);
+#endif
 
 #if CONFIG_ESP_HTTPS_SERVER_EVENT_POST_TIMEOUT == -1
 #define ESP_HTTPS_SERVER_EVENT_POST_TIMEOUT portMAX_DELAY
@@ -32,6 +34,7 @@ ESP_EVENT_DEFINE_BASE(ESP_HTTPS_SERVER_EVENT);
 #endif
 
 
+#ifdef CONFIG_ESP_HTTPS_SERVER_EVENTS
 static void http_dispatch_event_to_event_loop(int32_t event_id, const void* event_data, size_t event_data_size)
 {
     esp_err_t err = esp_event_post(ESP_HTTPS_SERVER_EVENT, event_id, event_data, event_data_size, ESP_HTTPS_SERVER_EVENT_POST_TIMEOUT);
@@ -39,6 +42,9 @@ static void http_dispatch_event_to_event_loop(int32_t event_id, const void* even
         ESP_LOGE(TAG, "Failed to post http_client event: %"PRId32", error: %s", event_id, esp_err_to_name(err));
     }
 }
+#else
+#define http_dispatch_event_to_event_loop(event_id, event_data, event_data_size) do {} while (0)
+#endif
 
 /**
  * SSL socket close handler

@@ -377,7 +377,9 @@ void httpd_sess_delete(struct httpd_data *hd, struct sock_db *session)
         close(session->fd);
     }
     hd->http_server_state = HTTP_SERVER_EVENT_DISCONNECTED;
+#ifdef CONFIG_HTTPD_ENABLE_EVENTS
     esp_http_server_dispatch_event(HTTP_SERVER_EVENT_DISCONNECTED, &session->fd, sizeof(int));
+#endif
 
     // clear all contexts
     httpd_sess_clear_ctx(session);

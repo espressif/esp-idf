@@ -410,7 +410,9 @@ static esp_err_t cb_headers_complete(http_parser *parser)
     ra->remaining_len = r->content_len;
     struct httpd_data *hd = (struct httpd_data *) r->handle;
     hd->http_server_state = HTTP_SERVER_EVENT_ON_HEADER;
+#ifdef CONFIG_HTTPD_ENABLE_EVENTS
     esp_http_server_dispatch_event(HTTP_SERVER_EVENT_ON_HEADER, &(ra->sd->fd), sizeof(int));
+#endif
     return ESP_OK;
 }
 

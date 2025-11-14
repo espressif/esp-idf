@@ -23,6 +23,7 @@ extern "C" {
 
 #define ESP_HTTPD_DEF_CTRL_PORT         (32768)    /*!< HTTP Server control socket port*/
 
+#ifdef CONFIG_HTTPD_ENABLE_EVENTS
 ESP_EVENT_DECLARE_BASE(ESP_HTTP_SERVER_EVENT);
 
 /**
@@ -45,6 +46,7 @@ typedef struct {
     int fd;         /*!< Session socket file descriptor */
     int data_len;   /*!< Data length */
 } esp_http_server_event_data;
+#endif
 
 /*
 note: esp_https_server.h includes a customized copy of this
