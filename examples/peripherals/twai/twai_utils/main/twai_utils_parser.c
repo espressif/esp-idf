@@ -188,24 +188,23 @@ int parse_classic_frame(const char *body, twai_frame_t *f)
     /* Handle data frame */
     f->header.rtr = false; // Ensure RTR flag is cleared.
 
+    if (((strlen(body) + 1) / 2) > TWAI_FRAME_MAX_LEN) {
+        return PARSE_OUT_OF_RANGE;
+    }
+
     int dl = parse_payload(body, f->buffer, TWAI_FRAME_MAX_LEN);
     if (dl < 0) {
         return dl;
     }
+    f->header.dlc = (uint8_t)dl;
+    f->buffer_len = dl;
 
     /* Check for optional _dlc suffix */
     const char *underscore = strchr(body, '_');
     if (underscore && underscore[1] != '\0') {
-        uint8_t dlc = (uint8_t)strtoul(underscore + 1, NULL, 16);
-        if (dlc <= TWAI_FRAME_MAX_LEN) {
-            f->header.dlc = dlc;
-        } else {
-            f->header.dlc = TWAI_FRAME_MAX_LEN;
-        }
-    } else {
-        f->header.dlc = (uint8_t)dl;
+        uint8_t arg_dlc = (uint8_t)strtoul(underscore + 1, NULL, 16);
+        f->header.dlc = (TWAI_FRAME_MAX_LEN < arg_dlc) ? TWAI_FRAME_MAX_LEN : arg_dlc;
     }
-    f->buffer_len = dl;
     return PARSE_OK;
 }
 
@@ -320,11 +319,10 @@ void format_twaidump_frame(timestamp_mode_t timestamp_mode, const twai_frame_t *
         pos += snprintf(output_line + pos, max_len - pos, "[R%d]", frame->header.dlc);
     } else {
         /* Data frame: add DLC and data bytes with spaces */
-        printf("frame->header.dlc: %d\n", frame->header.dlc);
         int actual_len = twaifd_dlc2len(frame->header.dlc);
         pos += snprintf(output_line + pos, max_len - pos, "[%d]", actual_len);
         for (int i = 0; i < actual_len && i < frame->buffer_len && pos < max_len - 4; i++) {
-            pos += snprintf(output_line + pos, max_len - pos, "  %02X", frame->buffer[i]);
+            pos += snprintf(output_line + pos, max_len - pos, " %02X", frame->buffer[i]);
         }
     }
 
