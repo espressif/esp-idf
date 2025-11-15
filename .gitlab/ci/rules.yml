@@ -150,7 +150,6 @@
   - "components/esp_coex/lib"
   - "components/lwip/lwip"
   - "components/mbedtls/mbedtls"
-  - "components/mqtt/esp-mqtt"
   - "components/openthread/lib"
   - "components/openthread/openthread"
   - "components/protobuf-c/protobuf-c"

@@ -53,8 +53,6 @@
 
 * :component_file:`SD/MMC 驱动程序 <sdmmc/sdmmc_cmd.c>` 派生自 `OpenBSD SD/MMC 驱动程序`_，版权归 2006 Uwe Stuehler 所有，并根据 BSD 许可证进行许可。
 
-* :component:`ESP-MQTT <mqtt>` 包 (contiki-mqtt)，版权归 2014 Stephen Robinson 和 MQTT-ESP - Tuan PM <tuanpm at live dot com> 所有，根据 :component_file:`LICENSE 文件 <mqtt/esp-mqtt/LICENSE>` 中描述的 Apache License 2.0 进行许可。
-
 * :component:`BLE Mesh <bt/esp_ble_mesh>` 改编自 Zephyr 项目，版权归 2017-2018 英特尔公司所有，并根据 Apache License 2.0 进行许可。
 
 * `mynewt-nimble`_，版权归 2015-2018 Apache 软件基金会所有，根据 :component_file:`LICENSE 文件 <bt/host/nimble/nimble/LICENSE>` 中描述的 Apache License 2.0 进行许可。
@@ -161,7 +159,6 @@ TJpgDec - Tiny JPEG 解压器 R0.01 (C) 2011 ChaN，是一个用于小型嵌入�
 .. _protobuf-c: https://github.com/protobuf-c/protobuf-c
 .. _Unity: https://github.com/ThrowTheSwitch/Unity
 .. _asio: https://github.com/chriskohlhoff/asio
-.. _mqtt: https://github.com/espressif/esp-mqtt
 .. _zephyr: https://github.com/zephyrproject-rtos/zephyr
 .. _mynewt-nimble: https://github.com/apache/mynewt-nimble
 .. _ESP-IDF 编程指南: https://docs.espressif.com/projects/esp-idf/zh_CN/latest/

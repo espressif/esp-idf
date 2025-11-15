@@ -105,3 +105,21 @@ Discussions
 ~~~~~~~~~~~
 
 * `Discussions for version v2 <https://github.com/espressif/esp-modbus/discussions>`__
+
+ESP-MQTT
+--------
+
+Breaking change: ESP-MQTT moved to a managed component and example set updated.
+
+- The ESP-MQTT component has been removed from ESP-IDF and is now a managed component: ``espressif/mqtt``.
+
+  - To add the component to an application, run ``idf.py add-dependency espressif/mqtt``.
+  - Include headers and APIs remain the same (``mqtt_client.h``), but the component is fetched via the Component Manager.
+
+- Example changes in ESP-IDF:
+
+  - Legacy MQTT TLS examples under ``examples/protocols/mqtt/ssl*`` were removed.
+  - New reference examples are available:
+
+    - ``examples/protocols/mqtt``: MQTT over TLS.
+    - ``examples/protocols/mqtt5``: MQTT v5.0 over TLS.

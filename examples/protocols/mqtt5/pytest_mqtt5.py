@@ -22,9 +22,9 @@ def test_examples_protocol_mqtt5(dut: Dut) -> None:
     # check and log bin size
     binary_file = os.path.join(dut.app.binary_path, 'mqtt5.bin')
     bin_size = os.path.getsize(binary_file)
-    logging.info('mqtt5_bin_size : {}KB'.format(bin_size // 1024))
+    logging.info(f'mqtt5_bin_size : {bin_size // 1024}KB')
     # check if connected or not
-    dut.expect_exact('MQTT_EVENT_CONNECTED', timeout=30)
+    dut.expect_exact('MQTT_EVENT_CONNECTED', timeout=60)
     # check log
     res = dut.expect(r'sent publish successful, msg_id=(\d+)[^\d]')
     msgid_pub1 = res.group(1).decode('utf8')
@@ -62,4 +62,3 @@ def test_examples_protocol_mqtt5(dut: Dut) -> None:
     assert msgid_unsubd == msgid_unsub
 
     dut.expect_exact('MQTT_EVENT_DISCONNECTED')
-    logging.info('MQTT5 pytest pass')
