@@ -413,6 +413,9 @@ IRAM_ATTR static void lcd_spi_pre_trans_cb(spi_transaction_t *trans)
     if (spi_panel_io->dc_gpio_num >= 0) { // set D/C line level if necessary
         // use ll function to speed up
         gpio_ll_set_level(&GPIO, spi_panel_io->dc_gpio_num, lcd_trans->flags.dc_gpio_level);
+
+        // ensure the D/C output is enabled
+        gpio_ll_output_enable(&GPIO, spi_panel_io->dc_gpio_num);
     }
 }
 
@@ -420,6 +423,12 @@ static void lcd_spi_post_trans_color_cb(spi_transaction_t *trans)
 {
     esp_lcd_panel_io_spi_t *spi_panel_io = trans->user;
     lcd_spi_trans_descriptor_t *lcd_trans = __containerof(trans, lcd_spi_trans_descriptor_t, base);
+
+    // disable the D/C output as we no longer need it
+    if (spi_panel_io->dc_gpio_num >= 0) {
+        gpio_ll_output_disable(&GPIO, spi_panel_io->dc_gpio_num);
+    }
+
     if (lcd_trans->flags.en_trans_done_cb) {
         if (spi_panel_io->on_color_trans_done) {
             spi_panel_io->on_color_trans_done(&spi_panel_io->base, NULL, spi_panel_io->user_ctx);
