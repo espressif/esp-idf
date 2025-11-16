@@ -18,7 +18,8 @@ extern "C" {
  * @brief Enable the TWAI node
  *
  * @param node Handle to the TWAI node
- * @return ESP_OK on success, error code otherwise
+ * @return  - ESP_OK: Success
+ *          - ESP_ERR_INVALID_STATE: Node already in enabled state
  */
 esp_err_t twai_node_enable(twai_node_handle_t node);
 
@@ -26,7 +27,8 @@ esp_err_t twai_node_enable(twai_node_handle_t node);
  * @brief Disable the TWAI node
  *
  * @param node Handle to the TWAI node
- * @return ESP_OK on success, error code otherwise
+ * @return  - ESP_OK: Success
+ *          - ESP_ERR_INVALID_STATE: Node not in enabled state
  */
 esp_err_t twai_node_disable(twai_node_handle_t node);
 
@@ -35,7 +37,8 @@ esp_err_t twai_node_disable(twai_node_handle_t node);
  * @note  Follow `on_state_change` callback or `twai_node_get_info` to know recover finish or not
  *
  * @param node Handle to the TWAI node
- * @return ESP_OK on success, error code otherwise
+ * @return  - ESP_OK: Success
+ *          - ESP_ERR_INVALID_STATE: Node not in bus-off state
  */
 esp_err_t twai_node_recover(twai_node_handle_t node);
 
@@ -43,7 +46,8 @@ esp_err_t twai_node_recover(twai_node_handle_t node);
  * @brief Delete the TWAI node and release resources
  *
  * @param node Handle to the TWAI node
- * @return ESP_OK on success, error code otherwise
+ * @return  - ESP_OK: Success
+ *          - ESP_ERR_INVALID_STATE: Node not in disabled state
  */
 esp_err_t twai_node_delete(twai_node_handle_t node);
 
@@ -75,7 +79,9 @@ esp_err_t twai_node_reconfig_timing(twai_node_handle_t node, const twai_timing_a
  * @param node Handle to the TWAI node
  * @param filter_id Index of the filter to configure
  * @param mask_cfg Pointer to the mask filter configuration
- * @return ESP_OK on success, error code otherwise
+ * @return  - ESP_OK: Success
+ *          - ESP_ERR_INVALID_ARG: Invalid argument
+ *          - ESP_ERR_INVALID_STATE: Node not in disabled state
  */
 esp_err_t twai_node_config_mask_filter(twai_node_handle_t node, uint8_t filter_id, const twai_mask_filter_config_t *mask_cfg);
 
@@ -85,7 +91,9 @@ esp_err_t twai_node_config_mask_filter(twai_node_handle_t node, uint8_t filter_i
  * @param node Handle to the TWAI node
  * @param filter_id Index of the filter to configure
  * @param range_cfg Pointer to the range filter configuration
- * @return ESP_OK on success, error code otherwise
+ * @return  - ESP_OK: Success
+ *          - ESP_ERR_INVALID_ARG: Invalid argument
+ *          - ESP_ERR_INVALID_STATE: Node not in disabled state
  */
 esp_err_t twai_node_config_range_filter(twai_node_handle_t node, uint8_t filter_id, const twai_range_filter_config_t *range_cfg);
 
@@ -107,7 +115,11 @@ esp_err_t twai_node_get_info(twai_node_handle_t node, twai_node_status_t *status
  * @param[in] node Handle to the TWAI node
  * @param[in] frame Pointer to the frame to transmit
  * @param[in] timeout_ms Maximum wait time if the transmission queue is full (milliseconds), -1 to wait forever
- * @return ESP_OK on success, error code otherwise
+ * @return  - ESP_OK: Success
+ *          - ESP_ERR_INVALID_ARG: Invalid argument
+ *          - ESP_ERR_INVALID_STATE: Node already in bus-off state
+ *          - ESP_ERR_NOT_SUPPORTED: Node is config as listen only
+ *          - ESP_ERR_TIMEOUT: Timeout to wait for queue space
  */
 esp_err_t twai_node_transmit(twai_node_handle_t node, const twai_frame_t *frame, int timeout_ms);
 
@@ -116,7 +128,9 @@ esp_err_t twai_node_transmit(twai_node_handle_t node, const twai_frame_t *frame,
  *
  * @param[in] node Handle to the TWAI node
  * @param[in] timeout_ms Maximum wait time for all pending transfers to finish (milliseconds), -1 to wait forever
- * @return ESP_OK on success, error code otherwise
+ * @return  - ESP_OK: Success
+ *          - ESP_ERR_INVALID_STATE: Node already in bus-off state
+ *          - ESP_ERR_TIMEOUT: Timeout
  */
 esp_err_t twai_node_transmit_wait_all_done(twai_node_handle_t node, int timeout_ms);
 
@@ -129,7 +143,8 @@ esp_err_t twai_node_transmit_wait_all_done(twai_node_handle_t node, int timeout_
  *
  * @param[in] node Handle to the TWAI node
  * @param[out] rx_frame Pointer to the frame store rx content
- * @return ESP_OK on success, error code otherwise
+ * @return  - ESP_OK: Success
+ *          - ESP_ERR_INVALID_STATE: Called from a task or from other callbacks except `rx_done_cb`
  */
 esp_err_t twai_node_receive_from_isr(twai_node_handle_t node, twai_frame_t *rx_frame);
 
