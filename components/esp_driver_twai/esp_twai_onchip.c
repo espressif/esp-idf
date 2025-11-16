@@ -615,23 +615,6 @@ static esp_err_t _node_queue_tx(twai_node_handle_t node, const twai_frame_t *fra
             ESP_RETURN_ON_FALSE(xQueueSend(twai_ctx->tx_mount_queue, &frame, ticks_to_wait), ESP_ERR_TIMEOUT, TAG, "tx queue full");
         }
 
-        // Second chance check for hardware availability
-        false_var = false;
-        if (atomic_compare_exchange_strong(&twai_ctx->hw_busy, &false_var, true)) {
-            BaseType_t dequeue_result;
-            if (is_isr_context) {
-                dequeue_result = xQueueReceiveFromISR(twai_ctx->tx_mount_queue, &twai_ctx->p_curr_tx, &yield_required);
-            } else {
-                dequeue_result = xQueueReceive(twai_ctx->tx_mount_queue, &twai_ctx->p_curr_tx, 0);
-            }
-
-            if (dequeue_result == pdTRUE) {
-                _node_start_trans(twai_ctx);
-            } else {
-                assert(false && "should always get frame at this moment");
-            }
-        }
-
         // Handle ISR yield if required
         if (is_isr_context && yield_required) {
             portYIELD_FROM_ISR();
