@@ -191,7 +191,8 @@ static ssize_t cdcacm_read(int fd, void *data, size_t size)
     } else {
         /* process pending interrupts before requesting available data */
         esp_usb_console_poll_interrupts();
-        size = MIN(size, cdcacm_data_length_in_buffer());
+        size_t available = cdcacm_data_length_in_buffer();
+        size = MIN(size, available);
     }
 
     while (received < size) {

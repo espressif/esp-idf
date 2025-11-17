@@ -1176,11 +1176,13 @@ uint32_t ledc_find_suitable_duty_resolution(uint32_t src_clk_freq, uint32_t time
 {
     // Highest resolution is calculated when LEDC_CLK_DIV = 1 (i.e. div_param = 1 << LEDC_LL_FRACTIONAL_BITS)
     uint32_t div = (src_clk_freq + timer_freq / 2) / timer_freq; // rounded
-    uint32_t duty_resolution = MIN(ilog2(div), SOC_LEDC_TIMER_BIT_WIDTH);
+    uint32_t ilog2_div = ilog2(div);
+    uint32_t duty_resolution = MIN(ilog2_div, SOC_LEDC_TIMER_BIT_WIDTH);
     uint32_t div_param = ledc_calculate_divisor(src_clk_freq, timer_freq, 1 << duty_resolution);
     if (LEDC_IS_DIV_INVALID(div_param)) {
         div = src_clk_freq / timer_freq; // truncated
-        duty_resolution = MIN(ilog2(div), SOC_LEDC_TIMER_BIT_WIDTH);
+        ilog2_div = ilog2(div);
+        duty_resolution = MIN(ilog2_div, SOC_LEDC_TIMER_BIT_WIDTH);
         div_param = ledc_calculate_divisor(src_clk_freq, timer_freq, 1 << duty_resolution);
         if (LEDC_IS_DIV_INVALID(div_param)) {
             duty_resolution = 0;

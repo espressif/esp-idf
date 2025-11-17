@@ -198,6 +198,7 @@ err:
     if (alloc_rx_channel) {
         free(alloc_rx_channel);
     }
+    // coverity[dead_error_condition] - defensive check for code maintainability
     if (pair) {
         gdma_release_pair_handle(pair);
         // pair release will also release group if it's the last reference

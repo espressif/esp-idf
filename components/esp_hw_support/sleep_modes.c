@@ -1578,9 +1578,9 @@ esp_err_t esp_light_sleep_start(void)
         *    min_protect(2);
         * 4. All the adjustment time which is s_config.sleep_time_adjustment below.
         */
+        uint32_t rtc_slowclk_us = rtc_time_slowclk_to_us(RTC_MODULE_SLEEP_PREPARE_CYCLES + RTC_CNTL_MIN_SLP_VAL_MIN, s_config.rtc_clk_cal_period);
         const uint32_t vddsdio_pd_sleep_duration = MAX(FLASH_PD_MIN_SLEEP_TIME_US,
-                        flash_enable_time_us + s_config.sleep_time_adjustment
-                        + rtc_time_slowclk_to_us(RTC_MODULE_SLEEP_PREPARE_CYCLES + RTC_CNTL_MIN_SLP_VAL_MIN, s_config.rtc_clk_cal_period));
+                        flash_enable_time_us + s_config.sleep_time_adjustment + rtc_slowclk_us);
 
         if (can_power_down_vddsdio(sleep_flags, vddsdio_pd_sleep_duration)) {
             if (s_config.sleep_time_overhead_out < flash_enable_time_us) {
