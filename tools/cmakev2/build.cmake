@@ -37,6 +37,10 @@ function(idf_build_set_property property value)
     set(multi_value)
     cmake_parse_arguments(ARG "${options}" "${one_value}" "${multi_value}" ${ARGN})
 
+    if("${property}" STREQUAL MINIMAL_BUILD)
+        idf_warn("Build property 'MINIMAL_BUILD' is obsolete and will be ignored")
+    endif()
+
     set(append)
     if(ARG_APPEND)
         set(append APPEND)
