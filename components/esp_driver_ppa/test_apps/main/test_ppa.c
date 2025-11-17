@@ -26,18 +26,11 @@ TEST_CASE("ppa_client_do_ppa_operation", "[PPA]")
 {
     const uint32_t w = 480;
     const uint32_t h = 480;
-    const uint32_t buf_1_color_type_id = COLOR_TYPE_ID(COLOR_SPACE_ARGB, COLOR_PIXEL_ARGB8888);
-    const uint32_t buf_2_color_type_id = COLOR_TYPE_ID(COLOR_SPACE_ARGB, COLOR_PIXEL_ARGB8888);
+    const esp_color_fourcc_t buf_1_color_type_id = ESP_COLOR_FOURCC_BGRA32;
+    const esp_color_fourcc_t buf_2_color_type_id = ESP_COLOR_FOURCC_BGRA32;
 
-    color_space_pixel_format_t buf_1_cm = {
-        .color_type_id = buf_1_color_type_id,
-    };
-    color_space_pixel_format_t buf_2_cm = {
-        .color_type_id = buf_2_color_type_id,
-    };
-
-    uint32_t buf_1_size = ALIGN_UP(w * h * color_hal_pixel_format_get_bit_depth(buf_1_cm) / 8, 64);
-    uint32_t buf_2_size = ALIGN_UP(w * h * color_hal_pixel_format_get_bit_depth(buf_2_cm) / 8, 64);
+    uint32_t buf_1_size = ALIGN_UP(w * h * color_hal_pixel_format_fourcc_get_bit_depth(buf_1_color_type_id) / 8, 64);
+    uint32_t buf_2_size = ALIGN_UP(w * h * color_hal_pixel_format_fourcc_get_bit_depth(buf_2_color_type_id) / 8, 64);
     uint8_t *buf_1 = heap_caps_aligned_calloc(4, buf_1_size, sizeof(uint8_t), MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA); // cache alignment is implicited by MALLOC_CAP_DMA
     TEST_ASSERT_NOT_NULL(buf_1);
     uint8_t *buf_2 = heap_caps_aligned_calloc(4, buf_2_size, sizeof(uint8_t), MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA);
@@ -169,18 +162,11 @@ TEST_CASE("ppa_pending_transactions_in_queue", "[PPA]")
     // A big picture block takes longer time to process, desired for this test case
     const uint32_t w = 1920;
     const uint32_t h = 1080;
-    const uint32_t buf_1_color_type_id = COLOR_TYPE_ID(COLOR_SPACE_ARGB, COLOR_PIXEL_ARGB8888);
-    const uint32_t buf_2_color_type_id = COLOR_TYPE_ID(COLOR_SPACE_YUV, COLOR_PIXEL_YUV420);
+    const esp_color_fourcc_t buf_1_color_type_id = ESP_COLOR_FOURCC_BGRA32;
+    const esp_color_fourcc_t buf_2_color_type_id = ESP_COLOR_FOURCC_OUYY_EVYY;
 
-    color_space_pixel_format_t buf_1_cm = {
-        .color_type_id = buf_1_color_type_id,
-    };
-    color_space_pixel_format_t buf_2_cm = {
-        .color_type_id = buf_2_color_type_id,
-    };
-
-    uint32_t buf_1_size = w * h * color_hal_pixel_format_get_bit_depth(buf_1_cm) / 8;
-    uint32_t buf_2_size = ALIGN_UP(w * h * color_hal_pixel_format_get_bit_depth(buf_2_cm) / 8, 64);
+    uint32_t buf_1_size = w * h * color_hal_pixel_format_fourcc_get_bit_depth(buf_1_color_type_id) / 8;
+    uint32_t buf_2_size = ALIGN_UP(w * h * color_hal_pixel_format_fourcc_get_bit_depth(buf_2_color_type_id) / 8, 64);
     uint8_t *buf_1 = heap_caps_aligned_calloc(4, buf_1_size, sizeof(uint8_t), MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA);
     TEST_ASSERT_NOT_NULL(buf_1);
     uint8_t *buf_2 = heap_caps_aligned_calloc(4, buf_2_size, sizeof(uint8_t), MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA);
@@ -279,10 +265,7 @@ TEST_CASE("ppa_srm_basic_data_correctness_check", "[PPA]")
     const float scale_x = 1.0;
     const float scale_y = 1.0;
 
-    color_space_pixel_format_t buf_cm = {
-        .color_type_id = cm,
-    };
-    const uint32_t buf_len = w * h * color_hal_pixel_format_get_bit_depth(buf_cm) / 8; // 32
+    const uint32_t buf_len = w * h * color_hal_pixel_format_fourcc_get_bit_depth((esp_color_fourcc_t)cm) / 8; // 32
     uint32_t out_buf_size = ALIGN_UP(buf_len, 64);
     uint8_t *out_buf = heap_caps_aligned_calloc(4, out_buf_size, sizeof(uint8_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT | MALLOC_CAP_DMA);
     TEST_ASSERT_NOT_NULL(out_buf);
@@ -402,14 +385,8 @@ TEST_CASE("ppa_blend_basic_data_correctness_check", "[PPA]")
     const ppa_blend_color_mode_t in_fg_cm = PPA_BLEND_COLOR_MODE_ARGB8888;
     const ppa_blend_color_mode_t out_cm = PPA_BLEND_COLOR_MODE_ARGB8888;
 
-    color_space_pixel_format_t bg_buf_cm = {
-        .color_type_id = in_bg_cm,
-    };
-    const uint32_t bg_buf_len __attribute__((unused)) = w * h * color_hal_pixel_format_get_bit_depth(bg_buf_cm) / 8; // 12
-    color_space_pixel_format_t fg_buf_cm = {
-        .color_type_id = in_fg_cm,
-    };
-    const uint32_t fg_buf_len __attribute__((unused)) = w * h * color_hal_pixel_format_get_bit_depth(fg_buf_cm) / 8; // 16
+    const uint32_t bg_buf_len __attribute__((unused)) = w * h * color_hal_pixel_format_fourcc_get_bit_depth((esp_color_fourcc_t)in_bg_cm) / 8; // 12
+    const uint32_t fg_buf_len __attribute__((unused)) = w * h * color_hal_pixel_format_fourcc_get_bit_depth((esp_color_fourcc_t)in_fg_cm) / 8; // 16
     const uint32_t out_buf_len = fg_buf_len; // 16
     // We will make the output write to the in_fg_buffer, therefore, it has cache line alignment requirement
     const uint32_t out_buf_size = 64;
@@ -517,11 +494,7 @@ TEST_CASE("ppa_fill_basic_data_correctness_check", "[PPA]")
     const ppa_fill_color_mode_t out_cm = PPA_FILL_COLOR_MODE_RGB565;
     const color_pixel_argb8888_data_t fill_color = {.a = 0x80, .r = 0xFF, .g = 0x55, .b = 0xAA};
 
-    color_space_pixel_format_t out_pixel_format = {
-        .color_type_id = out_cm,
-    };
-
-    uint32_t out_pixel_depth = color_hal_pixel_format_get_bit_depth(out_pixel_format); // bits
+    uint32_t out_pixel_depth = color_hal_pixel_format_fourcc_get_bit_depth((esp_color_fourcc_t)out_cm); // bits
     uint32_t out_buf_len = w * h * out_pixel_depth / 8;
     uint32_t out_buf_size = ALIGN_UP(out_buf_len, 64);
     uint8_t *out_buf = heap_caps_aligned_calloc(4, out_buf_size, sizeof(uint8_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT | MALLOC_CAP_DMA);
@@ -563,11 +536,10 @@ TEST_CASE("ppa_fill_basic_data_correctness_check", "[PPA]")
 
 #if !(CONFIG_IDF_TARGET_ESP32P4 && CONFIG_ESP32P4_SELECTS_REV_LESS_V3)
     // Test a yuv color fill
-    oper_config.out.fill_cm = PPA_FILL_COLOR_MODE_YUV422; // output YUV422 is with YVYU packed order
+    oper_config.out.fill_cm = PPA_FILL_COLOR_MODE_YUV422_UYVY; // output YUV422 is with UYVY packed order
     const color_macroblock_yuv_data_t fill_yuv_color = {.y = 0xFF, .u = 0x55, .v = 0xAA};
     oper_config.fill_yuv_color = fill_yuv_color;
-    out_pixel_format.color_type_id = PPA_FILL_COLOR_MODE_YUV422;
-    out_pixel_depth = color_hal_pixel_format_get_bit_depth(out_pixel_format); // bits
+    out_pixel_depth = color_hal_pixel_format_fourcc_get_bit_depth((esp_color_fourcc_t)PPA_FILL_COLOR_MODE_YUV422_UYVY); // bits
     TEST_ESP_OK(ppa_do_fill(ppa_client_handle, &oper_config));
 
     // Check result (2 pixels per macro pixel)
@@ -604,15 +576,8 @@ TEST_CASE("ppa_srm_performance", "[PPA]")
     const float scale_x = 1.0;
     const float scale_y = 1.0;
 
-    color_space_pixel_format_t in_pixel_format = {
-        .color_type_id = in_cm,
-    };
-    color_space_pixel_format_t out_pixel_format = {
-        .color_type_id = out_cm,
-    };
-
-    uint32_t in_buf_size = w * h * color_hal_pixel_format_get_bit_depth(in_pixel_format) / 8;
-    uint32_t out_buf_size = ALIGN_UP(w * h * color_hal_pixel_format_get_bit_depth(out_pixel_format) / 8, 64);
+    uint32_t in_buf_size = w * h * color_hal_pixel_format_fourcc_get_bit_depth((esp_color_fourcc_t)in_cm) / 8;
+    uint32_t out_buf_size = ALIGN_UP(w * h * color_hal_pixel_format_fourcc_get_bit_depth((esp_color_fourcc_t)out_cm) / 8, 64);
     uint8_t *out_buf = heap_caps_aligned_calloc(4, out_buf_size, sizeof(uint8_t), MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA);
     TEST_ASSERT_NOT_NULL(out_buf);
     uint8_t *in_buf = heap_caps_aligned_calloc(4, in_buf_size, sizeof(uint8_t), MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA);
@@ -690,19 +655,9 @@ TEST_CASE("ppa_blend_performance", "[PPA]")
     const ppa_blend_color_mode_t in_fg_cm = PPA_BLEND_COLOR_MODE_ARGB8888;
     const ppa_blend_color_mode_t out_cm = PPA_BLEND_COLOR_MODE_ARGB8888;
 
-    color_space_pixel_format_t in_bg_pixel_format = {
-        .color_type_id = in_bg_cm,
-    };
-    color_space_pixel_format_t in_fg_pixel_format = {
-        .color_type_id = in_fg_cm,
-    };
-    color_space_pixel_format_t out_pixel_format = {
-        .color_type_id = out_cm,
-    };
-
-    uint32_t in_bg_buf_size = w * h * color_hal_pixel_format_get_bit_depth(in_bg_pixel_format) / 8;
-    uint32_t in_fg_buf_size = w * h * color_hal_pixel_format_get_bit_depth(in_fg_pixel_format) / 8;
-    uint32_t out_buf_size = ALIGN_UP(w * h * color_hal_pixel_format_get_bit_depth(out_pixel_format) / 8, 64);
+    uint32_t in_bg_buf_size = w * h * color_hal_pixel_format_fourcc_get_bit_depth((esp_color_fourcc_t)in_bg_cm) / 8;
+    uint32_t in_fg_buf_size = w * h * color_hal_pixel_format_fourcc_get_bit_depth((esp_color_fourcc_t)in_fg_cm) / 8;
+    uint32_t out_buf_size = ALIGN_UP(w * h * color_hal_pixel_format_fourcc_get_bit_depth((esp_color_fourcc_t)out_cm) / 8, 64);
     uint8_t *out_buf = heap_caps_aligned_calloc(4, out_buf_size, sizeof(uint8_t), MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA);
     TEST_ASSERT_NOT_NULL(out_buf);
     uint8_t *in_bg_buf = heap_caps_aligned_calloc(4, in_bg_buf_size, sizeof(uint8_t), MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA);
@@ -788,11 +743,7 @@ TEST_CASE("ppa_fill_performance", "[PPA]")
     const uint32_t block_h = 480;
     const ppa_fill_color_mode_t out_cm = PPA_FILL_COLOR_MODE_RGB565;
 
-    color_space_pixel_format_t out_pixel_format = {
-        .color_type_id = out_cm,
-    };
-
-    uint32_t out_buf_size = ALIGN_UP(w * h * color_hal_pixel_format_get_bit_depth(out_pixel_format) / 8, 64);
+    uint32_t out_buf_size = ALIGN_UP(w * h * color_hal_pixel_format_fourcc_get_bit_depth((esp_color_fourcc_t)out_cm) / 8, 64);
     uint8_t *out_buf = heap_caps_aligned_calloc(4, out_buf_size, sizeof(uint8_t), MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA);
     TEST_ASSERT_NOT_NULL(out_buf);
 
@@ -850,15 +801,8 @@ TEST_CASE("ppa_srm_stress_test", "[PPA]")
     const float scale_x = 1.0;
     const float scale_y = 1.0;
 
-    color_space_pixel_format_t in_pixel_format = {
-        .color_type_id = in_cm,
-    };
-    color_space_pixel_format_t out_pixel_format = {
-        .color_type_id = out_cm,
-    };
-
-    uint32_t in_buf_size = w * h * color_hal_pixel_format_get_bit_depth(in_pixel_format) / 8;
-    uint32_t out_buf_size = ALIGN_UP(w * h * color_hal_pixel_format_get_bit_depth(out_pixel_format) / 8, 64);
+    uint32_t in_buf_size = w * h * color_hal_pixel_format_fourcc_get_bit_depth((esp_color_fourcc_t)in_cm) / 8;
+    uint32_t out_buf_size = ALIGN_UP(w * h * color_hal_pixel_format_fourcc_get_bit_depth((esp_color_fourcc_t)out_cm) / 8, 64);
     uint8_t *out_buf = heap_caps_aligned_calloc(4, out_buf_size, sizeof(uint8_t), MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA);
     TEST_ASSERT_NOT_NULL(out_buf);
     uint8_t *in_buf = heap_caps_aligned_calloc(4, in_buf_size, sizeof(uint8_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT | MALLOC_CAP_DMA);

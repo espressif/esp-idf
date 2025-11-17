@@ -16,26 +16,42 @@ extern "C" {
                       Four Character Code
 ---------------------------------------------------------------*/
 
+/**
+ * @brief Four Character Code type definition
+ */
+typedef uint32_t esp_color_fourcc_t;
+
 #define ESP_COLOR_FOURCC(a, b, c, d) ((uint32_t)(a) | ((uint32_t)(b) << 8) | ((uint32_t)(c) << 16) | ((uint32_t)(d) << 24))
 
 /**
- * RGB24
+ * BGRA32
  * Memory Layout:
  *            | bit7 - bit0 |
- *    Byte 2: |  B7  -  B0  |
+ *    Byte 3: |  A7  -  A0  |
+ *    Byte 2: |  R7  -  R0  |
  *    Byte 1: |  G7  -  G0  |
- *    Byte 0: |  R7  -  R0  |
+ *    Byte 0: |  B7  -  B0  |
  */
-#define ESP_COLOR_FOURCC_RGB24          ESP_COLOR_FOURCC('R', 'G', 'B', '3') /* 24 bpp RGB-8-8-8 */
+#define ESP_COLOR_FOURCC_BGRA32         ESP_COLOR_FOURCC('B', 'A', '2', '4') /* 32 bpp BGRA-8-8-8-8 */
 
 /**
- * RGB565_BE
+ * BGR24
+ * Memory Layout:
+ *            | bit7 - bit0 |
+ *    Byte 2: |  R7  -  R0  |
+ *    Byte 1: |  G7  -  G0  |
+ *    Byte 0: |  B7  -  B0  |
+ */
+#define ESP_COLOR_FOURCC_BGR24          ESP_COLOR_FOURCC('B', 'G', 'R', '3') /* 24 bpp BGR-8-8-8 */
+
+/**
+ * RGB565
  * Memory Layout:
  *            | bit7 bit6 bit5 bit4 bit3 bit2 bit1 bit0 |
- *    Byte 1: |  G2   G1   G0 | B4   B3   B2   B1   B0  |
- *    Byte 0: |  R4   R3   R2   R1   R0 | G5   G4   G3  |
+ *    Byte 1: |  R4   R3   R2   R1   R0 | G5   G4   G3  |
+ *    Byte 0: |  G2   G1   G0 | B4   B3   B2   B1   B0  |
  */
-#define ESP_COLOR_FOURCC_RGB16_BE       ESP_COLOR_FOURCC('R', 'G', 'B', 'B') /* 16 bpp RGB-5-6-5, big endian */
+#define ESP_COLOR_FOURCC_RGB16          ESP_COLOR_FOURCC('R', 'G', 'B', 'L') /* 16 bpp RGB-5-6-5, little endian */
 
 /**
  * Grey8
@@ -44,6 +60,22 @@ extern "C" {
  *    Byte 0: |  G7  -  G0  |
  */
 #define ESP_COLOR_FOURCC_GREY           ESP_COLOR_FOURCC('G', 'R', 'E', 'Y') /* 8 bpp Greyscale */
+
+/**
+ * ALPHA4 (Alpha 4 bits)
+ * Memory Layout:
+ *    Addr0  Addr1  Addr2  Addr3
+ *    A0A1   A2A3   A4A5   A6A7
+ */
+#define ESP_COLOR_FOURCC_ALPHA4         ESP_COLOR_FOURCC('A', 'L', 'P', '4') /* 4 bpp, an 4-bit alpha-only format */
+
+/**
+ * ALPHA8 (Alpha 8 bits)
+ * Memory Layout:
+ *    Addr0  Addr1  Addr2  Addr3
+ *    A0     A1     A2     A3
+ */
+#define ESP_COLOR_FOURCC_ALPHA8         ESP_COLOR_FOURCC('A', 'L', 'P', '8') /* 8 bpp, an 8-bit alpha-only format */
 
 /**
  * YUV444
@@ -75,9 +107,9 @@ extern "C" {
 /**
  * UYVY422
  * Memory Layout:
- *    +--+--+--+--+ +--+--+--+--+
- *    |U0|Y0|V0|Y1| |U2|Y2|V2|Y3|
- *    +--+--+--+--+ +--+--+--+--+
+ *                 +--+--+--+--+ +--+--+--+--+
+ *  (lowest byte)  |U0|Y0|V0|Y1| |U2|Y2|V2|Y3|
+ *                 +--+--+--+--+ +--+--+--+--+
  */
 #define ESP_COLOR_FOURCC_UYVY           ESP_COLOR_FOURCC('U', 'Y', 'V', 'Y') /* 16 bpp, UYVY 4:2:2 */
 
@@ -222,16 +254,6 @@ typedef enum {
     COLOR_COMPONENT_INVALID,    /*!< Invalid color component */
 } color_component_t;
 
-/**
- * @brief The order of the components per pack in the YUV422 format
- */
-typedef enum {
-    COLOR_YUV422_PACK_ORDER_YUYV, /*!< YUYV */
-    COLOR_YUV422_PACK_ORDER_YVYU, /*!< YVYU */
-    COLOR_YUV422_PACK_ORDER_UYVY, /*!< UYVY */
-    COLOR_YUV422_PACK_ORDER_VYUY, /*!< VYUY */
-} color_yuv422_pack_order_t;
-
 ///< The following values are deprecated, please use the FOURCC values instead, IDF-14284
 
 /*---------------------------------------------------------------
@@ -338,7 +360,6 @@ typedef union {
     };
     uint32_t color_type_id;                                    ///< Unique type of a certain color pixel format
 } color_space_pixel_format_t;
-
 
 #ifdef __cplusplus
 }

@@ -30,7 +30,7 @@ uint32_t color_hal_pixel_format_get_bit_depth(color_space_pixel_format_t color_t
  *
  * @return Number of bits per pixel
  */
-uint32_t color_hal_pixel_format_fourcc_get_bit_depth(uint32_t four_character_code);
+uint32_t color_hal_pixel_format_fourcc_get_bit_depth(esp_color_fourcc_t four_character_code);
 
 #ifdef __cplusplus
 }

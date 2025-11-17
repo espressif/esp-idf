@@ -439,7 +439,7 @@ static esp_err_t jpeg_dec_config_dma_descriptor(jpeg_decoder_handle_t decoder_en
     cfg_desc(decoder_engine, decoder_engine->txlink, JPEG_DMA2D_2D_DISABLE, DMA2D_DESCRIPTOR_BLOCK_RW_MODE_SINGLE, decoder_engine->header_info->buffer_left & JPEG_DMA2D_MAX_SIZE, decoder_engine->header_info->buffer_left & JPEG_DMA2D_MAX_SIZE, JPEG_DMA2D_EOF_NOT_LAST, 1, DMA2D_DESCRIPTOR_BUFFER_OWNER_DMA, (decoder_engine->header_info->buffer_left >> JPEG_DMA2D_1D_HIGH_14BIT), (decoder_engine->header_info->buffer_left >> JPEG_DMA2D_1D_HIGH_14BIT), decoder_engine->header_info->buffer_offset, NULL);
 
     // Configure rx link descriptor
-    cfg_desc(decoder_engine, decoder_engine->rxlink, JPEG_DMA2D_2D_ENABLE, DMA2D_DESCRIPTOR_BLOCK_RW_MODE_MULTIPLE, dma_vb, dma_hb, JPEG_DMA2D_EOF_NOT_LAST, dma2d_desc_pixel_format_to_pbyte_value_fourcc(decoder_engine->output_format), DMA2D_DESCRIPTOR_BUFFER_OWNER_DMA, decoder_engine->header_info->process_v, decoder_engine->header_info->process_h, decoder_engine->decoded_buf, NULL);
+    cfg_desc(decoder_engine, decoder_engine->rxlink, JPEG_DMA2D_2D_ENABLE, DMA2D_DESCRIPTOR_BLOCK_RW_MODE_MULTIPLE, dma_vb, dma_hb, JPEG_DMA2D_EOF_NOT_LAST, dma2d_desc_pixel_format_to_pbyte_value(decoder_engine->output_format), DMA2D_DESCRIPTOR_BUFFER_OWNER_DMA, decoder_engine->header_info->process_v, decoder_engine->header_info->process_h, decoder_engine->decoded_buf, NULL);
 
     return ESP_OK;
 }

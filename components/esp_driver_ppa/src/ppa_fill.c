@@ -32,10 +32,6 @@ bool ppa_fill_transaction_on_picked(uint32_t num_chans, const dma2d_trans_channe
     assert(dma2d_chans[0].dir == DMA2D_CHANNEL_DIRECTION_RX);
     dma2d_channel_handle_t dma2d_rx_chan = dma2d_chans[0].chan;
 
-    color_space_pixel_format_t out_pixel_format = {
-        .color_type_id = fill_trans_desc->out.fill_cm,
-    };
-
     // Fill 2D-DMA descriptors
     blend_engine->dma_rx_desc->vb_size = fill_trans_desc->fill_block_h;
     blend_engine->dma_rx_desc->hb_length = fill_trans_desc->fill_block_w;
@@ -45,7 +41,7 @@ bool ppa_fill_transaction_on_picked(uint32_t num_chans, const dma2d_trans_channe
     blend_engine->dma_rx_desc->owner = DMA2D_DESCRIPTOR_BUFFER_OWNER_DMA;
     blend_engine->dma_rx_desc->va_size = fill_trans_desc->out.pic_h;
     blend_engine->dma_rx_desc->ha_length = fill_trans_desc->out.pic_w;
-    blend_engine->dma_rx_desc->pbyte = dma2d_desc_pixel_format_to_pbyte_value(out_pixel_format);
+    blend_engine->dma_rx_desc->pbyte = dma2d_desc_pixel_format_to_pbyte_value((esp_color_fourcc_t)fill_trans_desc->out.fill_cm);
     blend_engine->dma_rx_desc->y = fill_trans_desc->out.block_offset_y;
     blend_engine->dma_rx_desc->x = fill_trans_desc->out.block_offset_x;
     blend_engine->dma_rx_desc->mode = DMA2D_DESCRIPTOR_BLOCK_RW_MODE_SINGLE;
@@ -104,14 +100,11 @@ esp_err_t ppa_do_fill(ppa_client_handle_t ppa_client, const ppa_fill_oper_config
     //                         config->out.block_offset_x % 2 == 0 && config->out.block_offset_y % 2 == 0,
     //                         ESP_ERR_INVALID_ARG, TAG, "YUV420 output does not support odd h/w/offset_x/offset_y");
     // } else
-    if (config->out.fill_cm == PPA_FILL_COLOR_MODE_YUV422) {
+    if (config->out.fill_cm == PPA_FILL_COLOR_MODE_YUV422_UYVY) {
         ESP_RETURN_ON_FALSE(config->out.pic_w % 2 == 0 && config->out.block_offset_x % 2 == 0,
                             ESP_ERR_INVALID_ARG, TAG, "YUV422 output does not support odd w/offset_x");
     }
-    color_space_pixel_format_t out_pixel_format = {
-        .color_type_id = config->out.fill_cm,
-    };
-    uint32_t out_pixel_depth = color_hal_pixel_format_get_bit_depth(out_pixel_format);
+    uint32_t out_pixel_depth = color_hal_pixel_format_fourcc_get_bit_depth((esp_color_fourcc_t)config->out.fill_cm);
     uint32_t out_pic_len = config->out.pic_w * config->out.pic_h * out_pixel_depth / 8;
     ESP_RETURN_ON_FALSE(out_pic_len <= config->out.buffer_size, ESP_ERR_INVALID_ARG, TAG, "out.pic_w/h mismatch with out.buffer_size");
     ESP_RETURN_ON_FALSE(config->fill_block_w <= (config->out.pic_w - config->out.block_offset_x) &&

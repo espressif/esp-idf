@@ -60,7 +60,7 @@ typedef struct {
     size_t dst_offset_y;      /*!< Copy action will start from this offset in destination buffer in the y direction, offset count in the number of pixels */
     size_t copy_size_x;       /*!< Copy size in the x direction, size count in the number of pixels */
     size_t copy_size_y;       /*!< Copy size in the y direction, size count in the number of pixels */
-    uint32_t pixel_format_fourcc_id; /*!< Pixel format unique ID */
+    esp_color_fourcc_t pixel_format_fourcc_id; /*!< Pixel format unique ID */
 } esp_async_fbcpy_trans_desc_t;
 
 /**

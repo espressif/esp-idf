@@ -41,10 +41,6 @@ bool ppa_srm_transaction_on_picked(uint32_t num_chans, const dma2d_trans_channel
     }
     assert(dma2d_tx_chan && dma2d_rx_chan);
 
-    color_space_pixel_format_t in_pixel_format = {
-        .color_type_id = srm_trans_desc->in.srm_cm,
-    };
-
     // Fill 2D-DMA descriptors
     srm_engine->dma_tx_desc->vb_size = srm_trans_desc->in.block_h;
     srm_engine->dma_tx_desc->hb_length = srm_trans_desc->in.block_w;
@@ -54,7 +50,7 @@ bool ppa_srm_transaction_on_picked(uint32_t num_chans, const dma2d_trans_channel
     srm_engine->dma_tx_desc->owner = DMA2D_DESCRIPTOR_BUFFER_OWNER_DMA;
     srm_engine->dma_tx_desc->va_size = srm_trans_desc->in.pic_h;
     srm_engine->dma_tx_desc->ha_length = srm_trans_desc->in.pic_w;
-    srm_engine->dma_tx_desc->pbyte = dma2d_desc_pixel_format_to_pbyte_value(in_pixel_format);
+    srm_engine->dma_tx_desc->pbyte = dma2d_desc_pixel_format_to_pbyte_value((esp_color_fourcc_t)srm_trans_desc->in.srm_cm);
     srm_engine->dma_tx_desc->y = srm_trans_desc->in.block_offset_y;
     srm_engine->dma_tx_desc->x = srm_trans_desc->in.block_offset_x;
     srm_engine->dma_tx_desc->mode = DMA2D_DESCRIPTOR_BLOCK_RW_MODE_SINGLE;
@@ -136,19 +132,16 @@ bool ppa_srm_transaction_on_picked(uint32_t num_chans, const dma2d_trans_channel
 
     // Configure PPA SRM engine
     ppa_ll_srm_set_rx_color_mode(platform->hal.dev, ppa_in_color_mode);
-    if (COLOR_SPACE_TYPE((uint32_t)ppa_in_color_mode) == COLOR_SPACE_YUV) {
+    if (PPA_IS_CM_YUV(ppa_in_color_mode)) {
         ppa_ll_srm_set_rx_yuv_range(platform->hal.dev, srm_trans_desc->in.yuv_range);
         ppa_ll_srm_set_rx_yuv2rgb_std(platform->hal.dev, srm_trans_desc->in.yuv_std);
-    }
-    if ((uint32_t)ppa_in_color_mode == COLOR_TYPE_ID(COLOR_SPACE_YUV, COLOR_PIXEL_YUV422)) {
-        ppa_ll_srm_set_rx_yuv422_pack_order(platform->hal.dev, srm_trans_desc->in.yuv422_pack_order);
     }
     ppa_ll_srm_enable_rx_byte_swap(platform->hal.dev, srm_trans_desc->byte_swap);
     ppa_ll_srm_enable_rx_rgb_swap(platform->hal.dev, srm_trans_desc->rgb_swap);
     ppa_ll_srm_configure_rx_alpha(platform->hal.dev, srm_trans_desc->alpha_update_mode, srm_trans_desc->alpha_value);
 
     ppa_ll_srm_set_tx_color_mode(platform->hal.dev, ppa_out_color_mode);
-    if (COLOR_SPACE_TYPE((uint32_t)ppa_out_color_mode) == COLOR_SPACE_YUV) {
+    if (PPA_IS_CM_YUV(ppa_out_color_mode)) {
         ppa_ll_srm_set_tx_yuv_range(platform->hal.dev, srm_trans_desc->out.yuv_range);
         ppa_ll_srm_set_tx_rgb2yuv_std(platform->hal.dev, srm_trans_desc->out.yuv_std);
     }
@@ -169,10 +162,7 @@ bool ppa_srm_transaction_on_picked(uint32_t num_chans, const dma2d_trans_channel
     h_in_left = (h_in_left == 0) ? h_mb : h_in_left;
     uint32_t h_left = h_in_left * srm_trans_desc->scale_y_int + h_in_left * srm_trans_desc->scale_y_frag / PPA_LL_SRM_SCALING_FRAG_MAX;
     const uint32_t dma2d_fifo_depth_bits = 12 * 128;
-    color_space_pixel_format_t out_pixel_format = {
-        .color_type_id = ppa_out_color_mode,
-    };
-    uint32_t out_pixel_depth = color_hal_pixel_format_get_bit_depth(out_pixel_format);
+    uint32_t out_pixel_depth = color_hal_pixel_format_fourcc_get_bit_depth((esp_color_fourcc_t)ppa_out_color_mode);
     bool bypass_mb_order = false;
     if (((w_out > w_divisor) || (srm_trans_desc->in.block_h > h_mb)) && // will be cut into more than one trans unit
             ((w_left * h_left * out_pixel_depth) < dma2d_fifo_depth_bits)
@@ -207,7 +197,7 @@ esp_err_t ppa_do_scale_rotate_mirror(ppa_client_handle_t ppa_client, const ppa_s
                             config->in.block_h % 2 == 0 && config->in.block_w % 2 == 0 &&
                             config->in.block_offset_x % 2 == 0 && config->in.block_offset_y % 2 == 0,
                             ESP_ERR_INVALID_ARG, TAG, "YUV420 input does not support odd h/w/offset_x/offset_y");
-    } else if (config->in.srm_cm == PPA_SRM_COLOR_MODE_YUV422) {
+    } else if (PPA_IS_CM_YUV422(config->in.srm_cm)) {
         ESP_RETURN_ON_FALSE(config->in.pic_w % 2 == 0 && config->in.block_w % 2 == 0 && config->in.block_offset_x % 2 == 0,
                             ESP_ERR_INVALID_ARG, TAG, "YUV422 input does not support odd w/offset_x");
     }
@@ -215,17 +205,14 @@ esp_err_t ppa_do_scale_rotate_mirror(ppa_client_handle_t ppa_client, const ppa_s
         ESP_RETURN_ON_FALSE(config->out.pic_h % 2 == 0 && config->out.pic_w % 2 == 0 &&
                             config->out.block_offset_x % 2 == 0 && config->out.block_offset_y % 2 == 0,
                             ESP_ERR_INVALID_ARG, TAG, "YUV420 output does not support odd h/w/offset_x/offset_y");
-    } else if (config->out.srm_cm == PPA_SRM_COLOR_MODE_YUV422) {
+    } else if (PPA_IS_CM_YUV422(config->out.srm_cm)) {
         ESP_RETURN_ON_FALSE(config->out.pic_w % 2 == 0 && config->out.block_offset_x % 2 == 0,
                             ESP_ERR_INVALID_ARG, TAG, "YUV422 output does not support odd w/offset_x");
     }
     ESP_RETURN_ON_FALSE(config->in.block_w <= (config->in.pic_w - config->in.block_offset_x) &&
                         config->in.block_h <= (config->in.pic_h - config->in.block_offset_y),
                         ESP_ERR_INVALID_ARG, TAG, "in.block_w/h + in.block_offset_x/y does not fit in the in pic");
-    color_space_pixel_format_t out_pixel_format = {
-        .color_type_id = config->out.srm_cm,
-    };
-    uint32_t out_pixel_depth = color_hal_pixel_format_get_bit_depth(out_pixel_format); // bits
+    uint32_t out_pixel_depth = color_hal_pixel_format_fourcc_get_bit_depth((esp_color_fourcc_t)config->out.srm_cm); // bits
     uint32_t out_pic_len = config->out.pic_w * config->out.pic_h * out_pixel_depth / 8;
     ESP_RETURN_ON_FALSE(out_pic_len <= config->out.buffer_size, ESP_ERR_INVALID_ARG, TAG, "out.pic_w/h mismatch with out.buffer_size");
     ESP_RETURN_ON_FALSE(config->scale_x < PPA_LL_SRM_SCALING_INT_MAX && config->scale_x >= (1.0 / PPA_LL_SRM_SCALING_FRAG_MAX) &&
@@ -261,10 +248,7 @@ esp_err_t ppa_do_scale_rotate_mirror(ppa_client_handle_t ppa_client, const ppa_s
 
     // Write back and invalidate necessary data (note that the window content is not continuous in the buffer)
     // Write back in_buffer extended window (alignment not necessary on C2M direction)
-    color_space_pixel_format_t in_pixel_format = {
-        .color_type_id = config->in.srm_cm,
-    };
-    uint32_t in_pixel_depth = color_hal_pixel_format_get_bit_depth(in_pixel_format); // bits
+    uint32_t in_pixel_depth = color_hal_pixel_format_fourcc_get_bit_depth((esp_color_fourcc_t)config->in.srm_cm); // bits
     uint32_t in_ext_window = (uint32_t)config->in.buffer + config->in.block_offset_y * config->in.pic_w * in_pixel_depth / 8;
     uint32_t in_ext_window_len = config->in.pic_w * config->in.block_h * in_pixel_depth / 8;
     esp_cache_msync((void *)in_ext_window, in_ext_window_len, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
@@ -295,7 +279,7 @@ esp_err_t ppa_do_scale_rotate_mirror(ppa_client_handle_t ppa_client, const ppa_s
         if (config->out.srm_cm == PPA_SRM_COLOR_MODE_YUV420) {
             srm_trans_desc->scale_x_frag = srm_trans_desc->scale_x_frag & ~1;
             srm_trans_desc->scale_y_frag = srm_trans_desc->scale_y_frag & ~1;
-        } else if (config->out.srm_cm == PPA_SRM_COLOR_MODE_YUV422) {
+        } else if (PPA_IS_CM_YUV422(config->out.srm_cm)) {
             srm_trans_desc->scale_x_frag = srm_trans_desc->scale_x_frag & ~1;
         }
         srm_trans_desc->alpha_value = new_alpha_value;
