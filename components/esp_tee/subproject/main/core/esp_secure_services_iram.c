@@ -18,6 +18,7 @@
 #include "hal/spi_flash_types.h"
 #include "spi_flash_chip_generic.h"
 #include "memspi_host_driver.h"
+#include "esp_private/mspi_timing_tuning.h"
 #include "esp_flash.h"
 #include "riscv/rv_utils.h"
 
@@ -417,4 +418,36 @@ esp_err_t _ss_spi_flash_chip_generic_config_host_io_mode(esp_flash_t *chip, uint
 {
     return spi_flash_chip_generic_config_host_io_mode(chip, flags);
 }
+
+#if CONFIG_IDF_TARGET_ESP32C5
+void _ss_mspi_timing_psram_tuning(void)
+{
+    mspi_timing_psram_tuning();
+}
+
+void _ss_mspi_timing_flash_tuning(void)
+{
+    mspi_timing_flash_tuning();
+}
+
+void _ss_mspi_timing_enter_low_speed_mode(bool control_spi1)
+{
+    mspi_timing_enter_low_speed_mode(control_spi1);
+}
+
+void _ss_mspi_timing_enter_high_speed_mode(bool control_spi1)
+{
+    mspi_timing_enter_high_speed_mode(control_spi1);
+}
+
+void _ss_mspi_timing_change_speed_mode_cache_safe(bool switch_down)
+{
+    mspi_timing_change_speed_mode_cache_safe(switch_down);
+}
+
+void _ss_spi_timing_get_flash_timing_param(spi_flash_hal_timing_config_t *out_timing_config)
+{
+    spi_timing_get_flash_timing_param(out_timing_config);
+}
+#endif
 #endif
