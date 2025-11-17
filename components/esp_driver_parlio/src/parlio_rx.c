@@ -67,7 +67,8 @@ typedef struct parlio_rx_unit_t {
     size_t                          dma_burst_size;         /*!< DMA burst size, in bytes */
     gdma_link_list_handle_t         dma_link;               /*!< DMA link list handle */
     uint32_t                        node_num;               /*!< The number of nodes in the DMA link list */
-    size_t                          dma_mem_align;          /*!< Alignment for DMA memory */
+    size_t                          int_mem_align;          /*!< Alignment for internal memory */
+    size_t                          ext_mem_align;          /*!< Alignment for external memory */
     uint32_t                        curr_node_id;           /*!< The index of the current node in the DMA link list */
     void                            *usr_recv_buf;          /*!< The point to the user's receiving buffer */
     /* Infinite transaction specific */
@@ -158,12 +159,12 @@ size_t parlio_rx_mount_transaction_buffer(parlio_rx_unit_handle_t rx_unit, parli
     /* Mount body buffer */
     size_t mount_size = 0;
     size_t offset = 0;
+    size_t rest_size = trans->aligned_payload.buf.body.length;
     for (int i = head_node_num; i < required_node_num - tail_node_num; i++) {
-        size_t rest_size = trans->aligned_payload.buf.body.length - offset;
         if (rest_size >= 2 * PARLIO_MAX_ALIGNED_DMA_BUF_SIZE) {
-            mount_size = PARLIO_RX_MOUNT_SIZE_CALC(trans->aligned_payload.buf.body.length, body_node_num, trans->alignment);
+            mount_size = PARLIO_MAX_ALIGNED_DMA_BUF_SIZE;
         } else if (rest_size <= PARLIO_MAX_ALIGNED_DMA_BUF_SIZE) {
-            mount_size = (required_node_num == 2) && (i == 0) ? PARLIO_RX_MOUNT_SIZE_CALC(rest_size, 2, trans->alignment) : rest_size;
+            mount_size = ((required_node_num - tail_node_num) == 2) && (i == 0) ? PARLIO_RX_MOUNT_SIZE_CALC(rest_size, 2, trans->alignment) : rest_size;
         } else {
             mount_size = PARLIO_RX_MOUNT_SIZE_CALC(rest_size, 2, trans->alignment);
         }
@@ -174,6 +175,7 @@ size_t parlio_rx_mount_transaction_buffer(parlio_rx_unit_handle_t rx_unit, parli
         mount_config[i].flags.mark_eof = false;
         mount_config[i].flags.mark_final = GDMA_FINAL_LINK_TO_DEFAULT;
         offset += mount_size;
+        rest_size -= mount_size;
     }
     /* Mount tail buffer */
     if (tail_node_num) {
@@ -376,7 +378,15 @@ static bool parlio_rx_default_desc_done_callback(gdma_channel_handle_t dma_chan,
     size_t finished_length = gdma_link_get_length(rx_unit->dma_link, rx_unit->curr_node_id);
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
     esp_err_t ret = ESP_OK;
-    ret = esp_cache_msync(finished_buffer, finished_length, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
+    size_t sync_size = finished_length;
+    /* The sych length should be the cache line size for the un-aligned head and tail part */
+    for (int i = 0; i < 2; i++) {
+        if (finished_buffer == rx_unit->stash_buf[i]) {
+            sync_size = rx_unit->int_mem_align;
+            break;
+        }
+    }
+    ret = esp_cache_msync(finished_buffer, sync_size, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
     if (ret != ESP_OK) {
         ESP_EARLY_LOGW(TAG, "failed to sync dma buffer from memory to cache");
     }
@@ -394,7 +404,9 @@ static bool parlio_rx_default_desc_done_callback(gdma_channel_handle_t dma_chan,
         memcpy(rx_unit->usr_recv_buf + rx_unit->curr_trans.recv_bytes, evt_data.data, evt_data.recv_bytes);
     } else {
         portENTER_CRITICAL_ISR(&s_rx_spinlock);
-        rx_unit->curr_trans.delimiter->under_using = false;
+        if (rx_unit->curr_trans.delimiter) {
+            rx_unit->curr_trans.delimiter->under_using = false;
+        }
         portEXIT_CRITICAL_ISR(&s_rx_spinlock);
     }
     /* Update received bytes */
@@ -415,7 +427,7 @@ static esp_err_t parlio_rx_create_dma_link(parlio_rx_unit_handle_t rx_unit, uint
     esp_err_t ret = ESP_OK;
 
     // calculated the total node number, add 2 for the aligned stash buffer
-    size_t tot_node_num = esp_dma_calculate_node_count(max_recv_size, rx_unit->dma_mem_align, PARLIO_DMA_DESCRIPTOR_BUFFER_MAX_SIZE) + 2;
+    size_t tot_node_num = esp_dma_calculate_node_count(max_recv_size, rx_unit->int_mem_align, PARLIO_DMA_DESCRIPTOR_BUFFER_MAX_SIZE) + 2;
     gdma_link_list_config_t dma_link_config = {
         .num_items = tot_node_num,
         .item_alignment = PARLIO_DMA_DESC_ALIGNMENT,
@@ -451,9 +463,16 @@ static esp_err_t parlio_rx_unit_init_dma(parlio_rx_unit_handle_t rx_unit, size_t
     rx_unit->dma_burst_size = dma_burst_size ? dma_burst_size : 16;
     gdma_transfer_config_t trans_cfg = {
         .max_data_burst_size = rx_unit->dma_burst_size, // Enable DMA burst transfer for better performance,
+        .access_ext_mem = true,
     };
     ESP_RETURN_ON_ERROR(gdma_config_transfer(rx_unit->dma_chan, &trans_cfg), TAG, "config DMA transfer failed");
-    ESP_RETURN_ON_ERROR(gdma_get_alignment_constraints(rx_unit->dma_chan, &rx_unit->dma_mem_align, NULL), TAG, "get alignment constraints failed");
+    ESP_RETURN_ON_ERROR(gdma_get_alignment_constraints(rx_unit->dma_chan, &rx_unit->int_mem_align, &rx_unit->ext_mem_align), TAG, "get alignment constraints failed");
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+    uint32_t cache_line_size = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA);
+    rx_unit->int_mem_align = rx_unit->int_mem_align > cache_line_size ? rx_unit->int_mem_align : cache_line_size;
+#endif
+    uint32_t ext_cache_line_size = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_DATA);
+    rx_unit->ext_mem_align = rx_unit->ext_mem_align > ext_cache_line_size ? rx_unit->ext_mem_align : ext_cache_line_size;
 
     /* Register callbacks */
     gdma_rx_event_callbacks_t cbs = {
@@ -635,7 +654,8 @@ esp_err_t parlio_new_rx_unit(const parlio_rx_unit_config_t *config, parlio_rx_un
     ESP_GOTO_ON_ERROR(parlio_rx_create_dma_link(unit, config->max_recv_size), err, TAG, "create dma link list failed");
 
     for (uint8_t i = 0; i < 2; i++) {
-        unit->stash_buf[i] = heap_caps_aligned_calloc(unit->dma_mem_align, 2, unit->dma_mem_align, PARLIO_MEM_ALLOC_CAPS | MALLOC_CAP_DMA);
+        uint32_t max_alignment = unit->int_mem_align > unit->ext_mem_align ? unit->int_mem_align : unit->ext_mem_align;
+        unit->stash_buf[i] = heap_caps_aligned_calloc(max_alignment, 2, max_alignment, PARLIO_MEM_ALLOC_CAPS | MALLOC_CAP_DMA);
         ESP_GOTO_ON_FALSE(unit->stash_buf[i], ESP_ERR_NO_MEM, err, TAG, "no memory for stash buffer");
     }
 
@@ -730,7 +750,7 @@ esp_err_t parlio_rx_unit_enable(parlio_rx_unit_handle_t rx_unit, bool reset_queu
         assert(res == pdTRUE);
 
         if (trans.flags.indirect_mount && trans.flags.infinite && rx_unit->dma_buf == NULL) {
-            rx_unit->dma_buf = heap_caps_aligned_calloc(rx_unit->dma_mem_align, 1, trans.aligned_payload.buf.body.length, PARLIO_DMA_MEM_ALLOC_CAPS);
+            rx_unit->dma_buf = heap_caps_aligned_calloc(rx_unit->int_mem_align, 1, trans.aligned_payload.buf.body.length, PARLIO_DMA_MEM_ALLOC_CAPS);
             ESP_GOTO_ON_FALSE(rx_unit->dma_buf, ESP_ERR_NO_MEM, err, TAG, "No memory for the internal DMA buffer");
             trans.aligned_payload.buf.body.aligned_buffer = rx_unit->dma_buf;
             trans.aligned_payload.buf.body.recovery_address = rx_unit->dma_buf;
@@ -957,16 +977,11 @@ esp_err_t parlio_rx_unit_receive(parlio_rx_unit_handle_t rx_unit,
     ESP_RETURN_ON_FALSE(rx_unit && payload && recv_cfg, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     ESP_RETURN_ON_FALSE(recv_cfg->delimiter, ESP_ERR_INVALID_ARG, TAG, "no delimiter specified");
     ESP_RETURN_ON_FALSE(payload_size <= rx_unit->max_recv_size, ESP_ERR_INVALID_ARG, TAG, "trans length too large");
-    size_t alignment = rx_unit->dma_mem_align;
+    size_t alignment = rx_unit->int_mem_align;
     if (recv_cfg->flags.partial_rx_en) {
         ESP_RETURN_ON_FALSE(payload_size >= 2 * alignment, ESP_ERR_INVALID_ARG, TAG, "The payload size should greater than %"PRIu32, 2 * alignment);
     }
 
-#if CONFIG_PARLIO_RX_ISR_CACHE_SAFE
-    ESP_RETURN_ON_FALSE(esp_ptr_internal(payload), ESP_ERR_INVALID_ARG, TAG, "payload not in internal RAM");
-#else
-    ESP_RETURN_ON_FALSE(recv_cfg->flags.indirect_mount || esp_ptr_internal(payload), ESP_ERR_INVALID_ARG, TAG, "payload not in internal RAM");
-#endif
     if (recv_cfg->delimiter->eof_data_len) {
         ESP_RETURN_ON_FALSE(payload_size >= recv_cfg->delimiter->eof_data_len, ESP_ERR_INVALID_ARG,
                             TAG, "payload size should be greater than eof_data_len");
@@ -1029,15 +1044,11 @@ esp_err_t parlio_rx_unit_receive_from_isr(parlio_rx_unit_handle_t rx_unit,
     PARLIO_RX_CHECK_ISR(payload_size <= rx_unit->max_recv_size, ESP_ERR_INVALID_ARG);
     // Can only be called from ISR
     PARLIO_RX_CHECK_ISR(xPortInIsrContext() == pdTRUE, ESP_ERR_INVALID_STATE);
-    size_t alignment = rx_unit->dma_mem_align;
+    size_t alignment = rx_unit->int_mem_align;
     if (recv_cfg->flags.partial_rx_en) {
         PARLIO_RX_CHECK_ISR(payload_size >= 2 * alignment, ESP_ERR_INVALID_ARG);
     }
-#if CONFIG_PARLIO_RX_ISR_CACHE_SAFE
-    PARLIO_RX_CHECK_ISR(esp_ptr_internal(payload), ESP_ERR_INVALID_ARG);
-#else
-    PARLIO_RX_CHECK_ISR(recv_cfg->flags.indirect_mount || esp_ptr_internal(payload), ESP_ERR_INVALID_ARG);
-#endif
+
     if (recv_cfg->delimiter->eof_data_len) {
         PARLIO_RX_CHECK_ISR(payload_size >= recv_cfg->delimiter->eof_data_len, ESP_ERR_INVALID_ARG);
     }
@@ -1126,4 +1137,53 @@ esp_err_t parlio_rx_unit_register_event_callbacks(parlio_rx_unit_handle_t rx_uni
 err:
     xSemaphoreGive(rx_unit->mutex);
     return ret;
+}
+
+esp_err_t parlio_rx_unit_trigger_fake_eof(parlio_rx_unit_handle_t rx_unit, bool *need_yield)
+{
+    ESP_RETURN_ON_FALSE_ISR(rx_unit, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+
+    int uint_id = rx_unit->base.unit_id;
+    parlio_unit_base_handle_t pair_tx_unit = rx_unit->base.group->tx_units[uint_id];
+    /* This function will reset the whole parlio module,
+       If the pair tx unit is in using,
+       the reset operation will affect the TX unit and lead to unknown behavior */
+    ESP_RETURN_ON_FALSE_ISR(!pair_tx_unit, ESP_ERR_INVALID_STATE, TAG, "can't be called when pair tx unit is in using");
+
+    /* Stop and reset the DMA channel first */
+    ESP_RETURN_ON_ERROR_ISR(gdma_stop(rx_unit->dma_chan), TAG, "stop DMA channel failed");
+    ESP_RETURN_ON_ERROR_ISR(gdma_reset(rx_unit->dma_chan), TAG, "reset DMA channel failed");
+
+    parlio_hal_context_t *hal = &rx_unit->base.group->hal;
+    portENTER_CRITICAL_SAFE(&s_rx_spinlock);
+    /* Save the current register values */
+    parl_io_dev_t save_curr_regs = *(parl_io_dev_t *)hal->regs;
+    /* Reset the hardware FSM of the parlio module */
+    PARLIO_RCC_ATOMIC() {
+        parlio_ll_reset_register(rx_unit->base.group->group_id);
+    }
+    /* Switch to the default clock source to ensure the register values can be written back successfully */
+    PARLIO_CLOCK_SRC_ATOMIC() {
+        parlio_ll_rx_set_clock_source(hal->regs, PARLIO_CLK_SRC_DEFAULT);
+    }
+    portEXIT_CRITICAL_SAFE(&s_rx_spinlock);
+    /* Restore the register values and clock source*/
+    memcpy(hal->regs, &save_curr_regs, sizeof(parl_io_dev_t));
+    parlio_ll_rx_update_config(hal->regs);
+    PARLIO_CLOCK_SRC_ATOMIC() {
+        parlio_ll_rx_set_clock_source(hal->regs, rx_unit->clk_src);
+    }
+
+    /* Force to trigger the EOF interrupt */
+    gdma_event_data_t event_data = {
+        .flags.normal_eof = 1
+    };
+    bool _need_yield = false;
+    _need_yield |= parlio_rx_default_desc_done_callback(rx_unit->dma_chan, &event_data, rx_unit);
+    _need_yield |= parlio_rx_default_eof_callback(rx_unit->dma_chan, &event_data, rx_unit);
+    if (need_yield) {
+        *need_yield |= _need_yield;
+    }
+
+    return ESP_OK;
 }
