@@ -154,6 +154,9 @@ void panic_print_isrcause(const void *f, int core)
         rsn = "Interrupt wdt timeout on CPU1";
         break;
 #endif
+    case ETS_ASSIST_DEBUG_INUM:
+        rsn = "Stack protection fault";
+        break;
     }
 
     panic_print_rsn(f, core, rsn);

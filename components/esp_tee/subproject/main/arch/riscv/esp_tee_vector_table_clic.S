@@ -9,9 +9,13 @@
 /* The system interrupts are not used for now, so trigger a panic every time one occurs. */
 #define _system_int_handler _tee_panic_handler
 
-    /* Handlers defined in the `vector.S` file, common to all RISC-V targets */
-    .global _tee_ns_intr_handler
-    .global _tee_panic_handler
+#define MEMPROT_ISR _tee_ns_intr_handler
+
+#if CONFIG_ESP_SYSTEM_HW_STACK_GUARD
+    #define ASTDBG_ISR _tee_panic_handler
+#else
+    #define ASTDBG_ISR _tee_ns_intr_handler
+#endif // CONFIG_ESP_SYSTEM_HW_STACK_GUARD
 
     .section .exception_vectors_table.text
 
@@ -32,7 +36,7 @@
     .type _vector_table, @function
     .balign 0x40
 _vector_table:
-    j _tee_panic_handler
+    j _tee_exception_handler
     .size _vector_table, .-_vector_table
 
 
@@ -94,10 +98,8 @@ _mtvt_table:
     .word _tee_ns_intr_handler      /* 39: Free interrupt number */
     .word _tee_panic_handler        /* 40: ETS_INT_WDT_INUM (+16) panic-interrupt (soc-level panic) */
     .word _tee_panic_handler        /* 41: ETS_CACHEERR_INUM (+16) panic-interrupt (soc-level panic) */
-    /* NOTE: Triggers panic irrespective of the Kconfig setting with ESP-TEE */
-    .word _tee_panic_handler        /* 42: ETS_MEMPROT_ERR_INUM (+16) handler (soc-level panic) */
-    /* TODO: [IDF-10770] Not supported yet with ESP-TEE */
-    .word _tee_panic_handler        /* 43: ETS_ASSIST_DEBUG_INUM (+16) handler (soc-level panic) */
+    .word MEMPROT_ISR               /* 42: ETS_MEMPROT_ERR_INUM (+16) handler (soc-level panic) */
+    .word ASTDBG_ISR                /* 43: ETS_ASSIST_DEBUG_INUM (+16) handler (soc-level panic) */
     .word _tee_ns_intr_handler      /* 44: ETS_IPC_ISR_INUM (+16) handler*/
     .word _tee_ns_intr_handler      /* 45: Free interrupt number */
     .word _tee_ns_intr_handler      /* 46: ESP-TEE: U-mode interrupt delegation entry */

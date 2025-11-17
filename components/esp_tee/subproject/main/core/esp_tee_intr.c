@@ -70,7 +70,7 @@ void esp_tee_route_intr_matrix(int cpu_no, uint32_t model_num, uint32_t intr_num
     ESP_LOGV(TAG, "Connected src %d to int %d (cpu %d)", model_num, intr_num, cpu_no);
 
 #if SOC_INT_CLIC_SUPPORTED
-    if (intr_num != ETS_T1_WDT_INUM && intr_num != ETS_CACHEERR_INUM) {
+    if (intr_num != ETS_T1_WDT_INUM && intr_num != ETS_CACHEERR_INUM && intr_num != ETS_ASSIST_DEBUG_INUM) {
         /* Configure interrupts to be visible in the TEE (M-mode) */
         REG_SET_BIT(DR_REG_INTMTX_BASE + 4 * model_num, BIT(8));
         /* Configure interrupts to be serviced in the REE (U-mode) */

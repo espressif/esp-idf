@@ -688,7 +688,11 @@ esp_err_t esp_tee_sec_storage_ecdsa_sign_pbkdf2(const esp_tee_sec_storage_pbkdf2
     }
 
     int cfg_key_id = (int)CONFIG_SECURE_TEE_PBKDF2_EFUSE_HMAC_KEY_ID;
-    if (cfg_key_id < 0 || cfg_key_id >= HMAC_KEY_MAX) {
+    /* Split the checks to keep Coverity happy */
+    if (cfg_key_id < 0) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (cfg_key_id >= HMAC_KEY_MAX) {
         return ESP_ERR_INVALID_ARG;
     }
 
