@@ -6,6 +6,7 @@ from typing import Tuple
 import pexpect
 import pytest
 from pytest_embedded_idf.dut import IdfDut
+
 # Case 1: SPP
 
 
@@ -15,7 +16,8 @@ from pytest_embedded_idf.dut import IdfDut
     [
         (
             2,
-            f'{os.path.join(os.path.dirname(__file__), "bt_spp_acceptor")}|{os.path.join(os.path.dirname(__file__), "bt_spp_initiator")}',
+            f'{os.path.join(os.path.dirname(__file__), "bt_spp_acceptor")}|'
+            f'{os.path.join(os.path.dirname(__file__), "bt_spp_initiator")}',
             'esp32|esp32',
             'y',
             'test',
@@ -49,7 +51,8 @@ def test_bt_spp_only(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> None:
     [
         (
             2,
-            f'{os.path.join(os.path.dirname(__file__), "bt_spp_vfs_acceptor")}|{os.path.join(os.path.dirname(__file__), "bt_spp_vfs_initiator")}',
+            f'{os.path.join(os.path.dirname(__file__), "bt_spp_vfs_acceptor")}|'
+            f'{os.path.join(os.path.dirname(__file__), "bt_spp_vfs_initiator")}',
             'esp32|esp32',
             'test',
         ),
@@ -77,7 +80,8 @@ def test_bt_spp_vfs(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> None:
     [
         (
             2,
-            f'{os.path.join(os.path.dirname(__file__), "a2dp_sink")}|{os.path.join(os.path.dirname(__file__), "a2dp_source")}',
+            f'{os.path.join(os.path.dirname(__file__), "a2dp_sink")}|'
+            f'{os.path.join(os.path.dirname(__file__), "a2dp_source")}',
             'esp32|esp32',
             'test',
         ),
@@ -157,7 +161,8 @@ def test_bt_hid(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> None:
     [
         (
             2,
-            f'{os.path.join(os.path.dirname(__file__), "bt_l2cap_server")}|{os.path.join(os.path.dirname(__file__), "bt_l2cap_client")}',
+            f'{os.path.join(os.path.dirname(__file__), "bt_l2cap_server")}|'
+            f'{os.path.join(os.path.dirname(__file__), "bt_l2cap_client")}',
             'esp32|esp32',
             'test',
         ),
@@ -169,8 +174,11 @@ def test_bt_l2cap(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> None:
     client = dut[1]
 
     server.expect_exact('ESP_BT_L2CAP_INIT_EVT: status:0', timeout=30)
-    server.expect_exact('ESP_BT_L2CAP_START_EVT: status:0', timeout=30)
-    server.expect_exact('ESP_SDP_CREATE_RECORD_COMP_EVT: status:0', timeout=30)
+    server.expect(
+        r'(?s)(ESP_BT_L2CAP_START_EVT: status:0.*ESP_SDP_CREATE_RECORD_COMP_EVT: status:0|'
+        r'ESP_SDP_CREATE_RECORD_COMP_EVT: status:0.*ESP_BT_L2CAP_START_EVT: status:0)',
+        timeout=30,
+    )
     client.expect_exact('ESP_BT_L2CAP_INIT_EVT: status:0', timeout=30)
     client.expect_exact('ESP_SDP_SEARCH_COMP_EVT: status:0', timeout=30)
     client.expect_exact('ESP_BT_L2CAP_OPEN_EVT: status:0', timeout=30)
