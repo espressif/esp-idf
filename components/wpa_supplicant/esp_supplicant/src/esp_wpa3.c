@@ -663,8 +663,6 @@ int wpa3_hostap_auth_init(void *data)
         return ESP_FAIL;
     }
 
-    struct hostapd_data *hapd = (struct hostapd_data *)data;
-    dl_list_init(&hapd->sae_commit_queue);
     return ESP_OK;
 }
 

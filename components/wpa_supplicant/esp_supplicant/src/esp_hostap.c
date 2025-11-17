@@ -229,6 +229,7 @@ void *hostap_init(void)
     }
 
 #ifdef CONFIG_SAE
+    dl_list_init(&hapd->sae_commit_queue);
     auth_conf->sae_require_mfp = 1;
 #endif /* CONFIG_SAE */
 
@@ -281,7 +282,7 @@ void hostapd_cleanup(struct hostapd_data *hapd)
 
     struct hostapd_sae_commit_queue *q, *tmp;
 
-    if (dl_list_empty(&hapd->sae_commit_queue)) {
+    if (!dl_list_empty(&hapd->sae_commit_queue)) {
         dl_list_for_each_safe(q, tmp, &hapd->sae_commit_queue,
                               struct hostapd_sae_commit_queue, list) {
             dl_list_del(&q->list);
