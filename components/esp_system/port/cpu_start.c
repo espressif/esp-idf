@@ -656,6 +656,10 @@ NOINLINE_ATTR static void system_early_init(const soc_reset_reason_t *rst_reas)
     REG_CLR_BIT(SYSTEM_CORE_1_CONTROL_0_REG, SYSTEM_CONTROL_CORE_1_RESETING);
 #endif
 #elif CONFIG_IDF_TARGET_ESP32P4
+#if CONFIG_ESP32P4_REV_MIN_FULL >= 300
+    // In single core mode, the CPU system should ignore the WFI state of core1 when entering WFI autoclock gating mode.
+    REG_CLR_BIT(HP_SYS_CLKRST_CPU_WAITI_CTRL0_REG, HP_SYS_CLKRST_REG_CORE1_WAITI_ICG_EN);
+#endif
     REG_CLR_BIT(HP_SYS_CLKRST_SOC_CLK_CTRL0_REG, HP_SYS_CLKRST_REG_CORE1_CPU_CLK_EN);
     REG_SET_BIT(HP_SYS_CLKRST_HP_RST_EN0_REG, HP_SYS_CLKRST_REG_RST_EN_CORE1_GLOBAL);
 #endif // CONFIG_IDF_TARGET_ESP32
