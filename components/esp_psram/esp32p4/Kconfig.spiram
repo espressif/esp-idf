@@ -30,8 +30,11 @@ menu "PSRAM config"
         help
             Select the speed for the PSRAM chip.
 
+        config SPIRAM_SPEED_250M
+            depends on !ESP32P4_SELECTS_REV_LESS_V3
+            bool "250MHz clock speed"
+
         config SPIRAM_SPEED_200M
-            depends on IDF_EXPERIMENTAL_FEATURES
             bool "200MHz clock speed"
 
         config SPIRAM_SPEED_80M
@@ -47,6 +50,7 @@ menu "PSRAM config"
         default 80 if SPIRAM_SPEED_80M
         default 100 if SPIRAM_SPEED_100M
         default 200 if SPIRAM_SPEED_200M
+        default 250 if SPIRAM_SPEED_250M
 
     config SPIRAM_FETCH_INSTRUCTIONS
         bool
