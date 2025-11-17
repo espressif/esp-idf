@@ -91,6 +91,7 @@ The following configuration options reduces the final binary size of almost any 
     - Setting :ref:`CONFIG_ESP_SYSTEM_PANIC` to ``Silent reboot`` saves a small amount of binary size, however this is **only** recommended if no one will use UART output to debug the device.
     :CONFIG_IDF_TARGET_ARCH_RISCV: - Setting :ref:`CONFIG_COMPILER_SAVE_RESTORE_LIBCALLS` reduces binary size by replacing inlined prologues/epilogues with library calls.
     - If the application binary uses only one of the security versions of the protocomm component, then the support for others can be disabled to save some code size. The support can be disabled through :ref:`CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_0`, :ref:`CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_1` or :ref:`CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_2` respectively.
+    :CONFIG_SOC_CPU_ZCMP_WORKAROUND: - Enable :ref:`CONFIG_COMPILER_ENABLE_RISCV_ZCMP` to reduce binary size by using compressed function prologues/epilogues. Read the :ref:`CONFIG_COMPILER_ENABLE_RISCV_ZCMP` notes carefully before enabling this option!
 
 .. note::
 
