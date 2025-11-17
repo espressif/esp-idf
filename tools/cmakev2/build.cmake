@@ -507,7 +507,9 @@ endfunction()
     ``executable`` argument, and link it to the library created with the
     component names provided in the ``COMPONENTS`` option. If the
     ``COMPONENTS`` option is not set, all discovered components are added to
-    the library.  Optinaly set the executable name and suffix.
+    the library.  Optionally set the executable name and suffix. The executable
+    library target name is added to the ``LIBRARY_INTERFACE`` executable
+    property.
 #]]
 function(idf_build_executable executable)
     set(options)
@@ -543,6 +545,8 @@ function(idf_build_executable executable)
     endif()
 
     target_link_libraries(${executable} PRIVATE ${library})
+
+    set_target_properties(${executable} PROPERTIES LIBRARY_INTERFACE ${library})
 endfunction()
 
 #[[
@@ -647,28 +651,34 @@ endfunction()
 
     .. code-block:: cmake
 
-        idf_build_generate_metadata(<executable>
+        idf_build_generate_metadata(<binary>
                                     [FILE <file>])
 
-    *executable[in]*
+    *binary[in]*
 
-        Executable target for which to generate a metadata file.
+        Binary target for which to generate a metadata file.
 
     *OUTPUT_FILE[in,opt]*
 
         Optional output file path for storing the metadata. If not provided,
         the default path ``<build>/project_description.json`` is used.
 
-    Generate metadata for the specified ``executable`` and store it in the
+    Generate metadata for the specified ``binary`` and store it in the
     specified ``FILE``. If no ``FILE`` is provided, the default location
     ``<build>/project_description.json`` will be used.
 #]]
-function(idf_build_generate_metadata executable)
+function(idf_build_generate_metadata binary)
     set(options)
     set(one_value OUTPUT_FILE)
     set(multi_value)
     cmake_parse_arguments(ARG "${options}" "${one_value}" "${multi_value}" ${ARGN})
 
+    # The EXECUTABLE_TARGET property is set by the idf_build_binary or
+    # the idf_sign_binary function.
+    get_target_property(executable "${binary}" EXECUTABLE_TARGET)
+    if(NOT executable)
+        idf_die("Binary target '${binary}' is missing 'EXECUTABLE_TARGET' property.")
+    endif()
     __get_executable_library_or_die(TARGET "${executable}" OUTPUT library)
 
     idf_build_get_property(PROJECT_NAME PROJECT_NAME)
@@ -679,9 +689,13 @@ function(idf_build_generate_metadata executable)
     idf_build_get_property(SDKCONFIG SDKCONFIG)
     idf_build_get_property(SDKCONFIG_DEFAULTS SDKCONFIG_DEFAULTS)
     set(PROJECT_EXECUTABLE "$<TARGET_FILE_NAME:${executable}>")
-    # The PROJECT_BIN executable property must be set by the idf_build_binary
-    # function.
-    get_target_property(PROJECT_BIN "${executable}" EXECUTABLE_BINARY)
+    # The BINARY_PATH property is set by the idf_build_binary or
+    # the idf_sign_binary function.
+    get_target_property(binary_path ${binary} BINARY_PATH)
+    if(NOT binary_path)
+        idf_die("Binary target '${binary}' is missing 'BINARY_PATH' property.")
+    endif()
+    get_filename_component(PROJECT_BIN "${binary_path}" NAME)
     if(NOT PROJECT_BIN)
         set(PROJECT_BIN "")
     endif()
@@ -767,8 +781,9 @@ endfunction()
     Create a binary image for the specified ``executable`` target and save it
     in the file specified with the ``OUTPUT_FILE`` option. A custom target
     named ``TARGET`` will be created for the generated binary image. The path
-    of the generated binary image will be also stored in the ``BINARY_PATH``
-    property of the ``TARGET``.
+    of the generated binary image will be stored in the ``BINARY_PATH``
+    property and the executable target in the ``EXECUTABLE_TARGET`` property of
+    the ``TARGET``.
 #]]
 function(idf_build_binary executable)
     set(options)
@@ -828,13 +843,13 @@ function(idf_build_binary executable)
     # Create a custom target to generate the binary file
     add_custom_target(${ARG_TARGET} DEPENDS "${ARG_OUTPUT_FILE}")
 
-    # The EXECUTABLE_BINARY property is used by idf_build_generate_metadata to
-    # store the name of the binary image.
-    set_target_properties(${executable} PROPERTIES EXECUTABLE_BINARY ${binary_name})
-
     # Store the path of the binary file in the BINARY_PATH property of the
     # custom binary target, which is used by the idf_flash_binary.
     set_target_properties(${ARG_TARGET} PROPERTIES BINARY_PATH ${ARG_OUTPUT_FILE})
+
+    # Store executable target name in the EXECUTABLE_TARGET property. This is used
+    # by the idf_build_generate_metadata function.
+    set_target_properties(${ARG_TARGET} PROPERTIES EXECUTABLE_TARGET ${executable})
 endfunction()
 
 #[[
@@ -870,9 +885,10 @@ endfunction()
 
     Sign binary image specified by ``binary`` target with ``KEYFILE`` and save
     it in the file specified with the  `OUTPUT_FILE` option. A custom target
-    named ``TARGET`` will be created for the signed binary image. The path of
-    the signed binary image will be also stored in the ``BINARY_PATH`` property
-    of the ``TARGET``.
+    named ``TARGET`` will be created for the signed binary image.  The path of
+    the signed binary image will be stored in the ``BINARY_PATH`` property and
+    the executable target in the ``EXECUTABLE_TARGET`` property of the
+    ``TARGET``.
 #]]
 function(idf_sign_binary binary)
     set(options)
@@ -936,6 +952,14 @@ function(idf_sign_binary binary)
     # Store the path of the binary file in the BINARY_PATH property of the
     # custom signed binary target, which is used by the idf_flash_binary.
     set_target_properties(${ARG_TARGET} PROPERTIES BINARY_PATH ${ARG_OUTPUT_FILE})
+
+    # Store executable target name in the EXECUTABLE_TARGET property. This is used
+    # by the idf_build_generate_metadata function.
+    get_target_property(executable "${binary}" EXECUTABLE_TARGET)
+    if(NOT executable)
+        idf_die("Binary target '${binary}' is missing 'EXECUTABLE_TARGET' property.")
+    endif()
+    set_target_properties(${ARG_TARGET} PROPERTIES EXECUTABLE_TARGET ${executable})
 endfunction()
 
 #[[
