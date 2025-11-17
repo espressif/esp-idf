@@ -472,7 +472,8 @@ void bt_mesh_generic_net_recv(struct net_buf_simple *data,
 static inline void bt_mesh_net_recv(struct net_buf_simple *data, int8_t rssi,
                                     enum bt_mesh_net_if net_if)
 {
-    struct bt_mesh_net_rx rx = { .ctx.recv_rssi = rssi };
+    struct bt_mesh_net_rx rx = {0};
+    rx.ctx.recv_rssi = rssi;
 #if CONFIG_BLE_MESH_EXT_ADV
     rx.ctx.enh.adv_cfg_used = false;
     rx.ctx.enh.ext_adv_cfg_used = false;
