@@ -1650,33 +1650,6 @@ static void gatts_proc_srv_chg_ind_ack(tGATT_TCB *p_tcb )
 
 /*******************************************************************************
 **
-** Function         gatts_chk_pending_ind
-**
-** Description      This function check any pending indication needs to be sent if
-**                  there is a pending indication then sent the indication
-**
-** Returns          void
-**
-*******************************************************************************/
-static void gatts_chk_pending_ind(tGATT_TCB *p_tcb )
-{
-#if (GATTS_INCLUDED == TRUE)
-    tGATT_VALUE *p_buf = (tGATT_VALUE *)fixed_queue_try_peek_first(p_tcb->pending_ind_q);
-    GATT_TRACE_DEBUG("gatts_chk_pending_ind");
-
-    if (p_buf ) {
-        GATTS_HandleValueIndication (p_buf->conn_id,
-                                     p_buf->handle,
-                                     p_buf->len,
-                                     p_buf->value);
-        osi_free(fixed_queue_try_remove_from_queue(p_tcb->pending_ind_q,
-                                                      p_buf));
-    }
-#endif  ///GATTS_INCLUDED == TRUE
-}
-
-/*******************************************************************************
-**
 ** Function         gatts_proc_ind_ack
 **
 ** Description      This function process the Indication ack
@@ -1701,7 +1674,6 @@ static BOOLEAN gatts_proc_ind_ack(tGATT_TCB *p_tcb, UINT16 ack_handle)
 #endif /* GATTS_ROBUST_CACHING_ENABLED */
     }
 
-    gatts_chk_pending_ind(p_tcb);
     return continue_processing;
 }
 
