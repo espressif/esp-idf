@@ -26,7 +26,7 @@ menu "PSRAM config"
 
     choice SPIRAM_SPEED
         prompt "Set PSRAM clock speed"
-        default SPIRAM_SPEED_20M
+        default SPIRAM_SPEED_200M
         help
             Select the speed for the PSRAM chip.
 
