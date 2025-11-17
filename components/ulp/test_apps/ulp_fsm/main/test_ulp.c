@@ -362,7 +362,7 @@ TEST_CASE("ULP FSM I_WR_REG instruction test", "[ulp]")
         TEST_ESP_OK(ulp_run(0));
 
         /* Wait for the ULP co-processor to finish up */
-        vTaskDelay(10 / portTICK_PERIOD_MS);
+        vTaskDelay(50 / portTICK_PERIOD_MS);
 
         /* Verify the test results */
         uint32_t clear = REG_READ(RTC_CNTL_STORE0_REG);
