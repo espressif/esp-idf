@@ -169,8 +169,11 @@ def test_bt_l2cap(app_path: str, dut: tuple[IdfDut, IdfDut]) -> None:
     client = dut[1]
 
     server.expect_exact('ESP_BT_L2CAP_INIT_EVT: status:0', timeout=30)
-    server.expect_exact('ESP_BT_L2CAP_START_EVT: status:0', timeout=30)
-    server.expect_exact('ESP_SDP_CREATE_RECORD_COMP_EVT: status:0', timeout=30)
+    server.expect(
+        r'(?s)(ESP_BT_L2CAP_START_EVT: status:0.*ESP_SDP_CREATE_RECORD_COMP_EVT: status:0|'
+        r'ESP_SDP_CREATE_RECORD_COMP_EVT: status:0.*ESP_BT_L2CAP_START_EVT: status:0)',
+        timeout=30,
+    )
     client.expect_exact('ESP_BT_L2CAP_INIT_EVT: status:0', timeout=30)
     client.expect_exact('ESP_SDP_SEARCH_COMP_EVT: status:0', timeout=30)
     client.expect_exact('ESP_BT_L2CAP_OPEN_EVT: status:0', timeout=30)
