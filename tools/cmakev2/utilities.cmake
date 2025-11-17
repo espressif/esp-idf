@@ -981,11 +981,12 @@ endfunction()
         Output variable to store the library interface target linked to the
         executable.
 
-    Search for the library interface target created with the
-    idf_build_library() function and linked to the executable, examine the
-    LINK_LIBRARIES for the executable and the LIBRARY_INTERFACES build
-    property, which stores all library interface targets created by the
-    idf_build_library() function.
+    Search for the library interface target in the LIBRARY_INTERFACE executable
+    property. If not found, search for the library interface target created with
+    the idf_build_library() function and linked to the executable. Examine the
+    LINK_LIBRARIES for the executable and the LIBRARY_INTERFACES build property,
+    which stores all library interface targets created by the idf_build_library()
+    function.
 #]]
 function(__get_executable_library_or_die)
     set(options)
@@ -1007,15 +1008,22 @@ function(__get_executable_library_or_die)
                 "but an 'EXECUTABLE' target type is expected.")
     endif()
 
-    set(library NOTFOUND)
-    get_target_property(targets "${ARG_TARGET}" LINK_LIBRARIES)
     idf_build_get_property(libraries LIBRARY_INTERFACES)
-    foreach(target IN LISTS targets)
-        if("${target}" IN_LIST libraries)
-            set(library "${target}")
-            break()
-        endif()
-    endforeach()
+    get_target_property(library "${ARG_TARGET}" LIBRARY_INTERFACE)
+    if(NOT "${library}" IN_LIST libraries)
+        # The library interface is not stored in the LIBRARY_INTERFACE
+        # executable property, so the executable was not created by the
+        # idf_build_executable function. Try searching for the library
+        # interface in the LINK_LIBRARIES property.
+        set(library NOTFOUND)
+        get_target_property(targets "${ARG_TARGET}" LINK_LIBRARIES)
+        foreach(target IN LISTS targets)
+            if("${target}" IN_LIST libraries)
+                set(library "${target}")
+                break()
+            endif()
+        endforeach()
+    endif()
 
     if("${library}" STREQUAL "NOTFOUND")
         idf_die("No library interface target linked to the '${ARG_TARGET}' executable")

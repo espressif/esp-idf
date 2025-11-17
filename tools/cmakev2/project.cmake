@@ -734,6 +734,7 @@ macro(idf_project_default)
                              TARGET app-flash
                              NAME "app"
                              FLASH)
+            idf_build_generate_metadata("${executable}_binary_signed")
         else()
             idf_build_binary("${executable}"
                              OUTPUT_FILE "${build_dir}/${executable}.bin"
@@ -750,6 +751,7 @@ macro(idf_project_default)
 
             idf_create_dfu("${executable}_binary"
                            TARGET dfu)
+            idf_build_generate_metadata("${executable}_binary")
         endif()
 
         idf_build_generate_flasher_args()
@@ -768,8 +770,6 @@ macro(idf_project_default)
     idf_create_uf2("${executable}"
                    TARGET uf2-app
                    APP_ONLY)
-
-    idf_build_generate_metadata("${executable}")
 
     unset(build_dir)
     unset(executable)
