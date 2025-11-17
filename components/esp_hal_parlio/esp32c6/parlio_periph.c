@@ -86,7 +86,7 @@ static const regdma_entries_config_t parlio_regs_retention[] = {
         .owner = ENTRY(0) | ENTRY(2)
     }, \
 };
-const parlio_reg_retention_info_t parlio_reg_retention_info[SOC_PARLIO_GROUPS] = {
+const parlio_reg_retention_info_t parlio_reg_retention_info[PARLIO_LL_GET(INST_NUM)] = {
     [0] = {
         .regdma_entry_array = parlio_regs_retention,
         .array_size = ARRAY_SIZE(parlio_regs_retention),

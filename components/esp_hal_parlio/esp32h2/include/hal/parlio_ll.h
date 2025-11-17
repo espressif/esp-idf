@@ -19,6 +19,14 @@
 #include "soc/parl_io_struct.h"
 #include "hal/parlio_types.h"
 
+#define PARLIO_LL_GET(attr)              (PARLIO_LL_ ## attr)
+#define PARLIO_LL_SUPPORT(feat)          (PARLIO_LL_SUPPORT_ ## feat)
+#define PARLIO_LL_INST_NUM               1   /*!< Number of parallel IO peripherals */
+#define PARLIO_LL_TX_UNITS_PER_INST      1   /*!< number of TX units in each instance */
+#define PARLIO_LL_RX_UNITS_PER_INST      1   /*!< number of RX units in each instance */
+#define PARLIO_LL_SUPPORT_RX_CLK_OUTPUT  1   /*!< Support output RX clock to a GPIO */
+#define PARLIO_LL_SUPPORT_TRANS_BIT_ALIGN 1   /*!< Support bit alignment in transaction */
+
 #define PARLIO_LL_RX_MAX_BYTES_PER_FRAME 0xFFFF
 #define PARLIO_LL_RX_MAX_CLK_INT_DIV     0x10000
 #define PARLIO_LL_RX_MAX_CLK_FRACT_DIV   0      // Not support fractional divider

@@ -268,14 +268,14 @@ static esp_err_t parlio_rx_unit_set_gpio(parlio_rx_unit_handle_t rx_unit, const 
     /* When the source clock comes from internal and supported to output the internal clock,
      * enable the gpio output direction and connect to the clock output signal */
     if (config->clk_out_gpio_num >= 0) {
-#if SOC_PARLIO_RX_CLK_SUPPORT_OUTPUT
+#if PARLIO_LL_SUPPORT(RX_CLK_OUTPUT)
         gpio_func_sel(config->clk_out_gpio_num, PIN_FUNC_GPIO);
         // connect the signal to the GPIO by matrix, it will also enable the output path properly
         esp_rom_gpio_connect_out_signal(config->clk_out_gpio_num,
                                         parlio_periph_signals.groups[group_id].rx_units[unit_id].clk_out_sig, false, false);
 #else
         ESP_RETURN_ON_FALSE(false, ESP_ERR_NOT_SUPPORTED, TAG, "this target not support to output the clock");
-#endif // SOC_PARLIO_RX_CLK_SUPPORT_OUTPUT
+#endif // PARLIO_LL_SUPPORT(RX_CLK_OUTPUT)
     }
 
     /* Initialize the valid GPIO as input */

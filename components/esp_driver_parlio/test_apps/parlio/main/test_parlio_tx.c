@@ -19,7 +19,7 @@
 TEST_CASE("parallel_tx_unit_install_uninstall", "[parlio_tx]")
 {
     printf("install tx units exhaustively\r\n");
-    parlio_tx_unit_handle_t units[SOC_PARLIO_GROUPS * SOC_PARLIO_TX_UNITS_PER_GROUP];
+    parlio_tx_unit_handle_t units[PARLIO_LL_GET(INST_NUM) * PARLIO_LL_GET(TX_UNITS_PER_INST)];
     int k = 0;
     parlio_tx_unit_config_t config = {
         .clk_src = PARLIO_CLK_SRC_DEFAULT,
@@ -31,8 +31,8 @@ TEST_CASE("parallel_tx_unit_install_uninstall", "[parlio_tx]")
         .max_transfer_size = 64,
         .valid_gpio_num = -1,
     };
-    for (int i = 0; i < SOC_PARLIO_GROUPS; i++) {
-        for (int j = 0; j < SOC_PARLIO_TX_UNITS_PER_GROUP; j++) {
+    for (int i = 0; i < PARLIO_LL_GET(INST_NUM); i++) {
+        for (int j = 0; j < PARLIO_LL_GET(TX_UNITS_PER_INST); j++) {
             TEST_ESP_OK(parlio_new_tx_unit(&config, &units[k++]));
         }
     }
@@ -649,7 +649,7 @@ TEST_CASE("parlio_tx_loop_transmission", "[parlio_tx]")
 }
 #endif  // SOC_PARLIO_TX_SUPPORT_LOOP_TRANSMISSION
 
-#if SOC_PARLIO_TX_SUPPORT_EOF_FROM_DMA
+#if PARLIO_LL_SUPPORT(TX_EOF_FROM_DMA)
 TEST_CASE("parlio_tx can transmit buffer larger than max_size decided by datalen_eof", "[parlio_tx]")
 {
     printf("install parlio tx unit\r\n");
@@ -695,4 +695,4 @@ TEST_CASE("parlio_tx can transmit buffer larger than max_size decided by datalen
     TEST_ESP_OK(parlio_del_tx_unit(tx_unit));
     free(buffer);
 }
-#endif // SOC_PARLIO_TX_SUPPORT_EOF_FROM_DMA
+#endif // PARLIO_LL_SUPPORT(TX_EOF_FROM_DMA)

@@ -321,7 +321,7 @@ TX 单元可以选择各种不同的时钟源，其中外部时钟源较为特�
 
     编写好比特调节器程序后，通过调用 :cpp:func:`parlio_tx_unit_decorate_bitscrambler` 启用比特调节器。并在 :cpp:member:`parlio_transmit_config_t::bitscrambler_program` 配置本次传输使用比特调节器程序的二进制文件。不同的传输事务可以使用不同的比特调节器程序。该二进制文件必须符合比特调节器的汇编语言规范，并且在运行时会被加载到比特调节器的指令存储器中。如何编写并编译比特调节器程序请参考 :doc:`比特调节器编程指南 </api-reference/peripherals/bitscrambler>`。
 
-    .. only:: not SOC_PARLIO_TX_SUPPORT_EOF_FROM_DMA
+    .. only:: esp32p4
 
         .. note::
 
