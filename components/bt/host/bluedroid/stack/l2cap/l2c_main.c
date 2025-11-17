@@ -877,13 +877,13 @@ void l2c_init (void)
 #endif
 
 
-
+#if (CLASSIC_BT_INCLUDED == TRUE)
 #ifdef L2CAP_DESIRED_LINK_ROLE
     l2cb.desire_role      = L2CAP_DESIRED_LINK_ROLE;
 #else
     l2cb.desire_role      = HCI_ROLE_SLAVE;
 #endif
-
+#endif // (CLASSIC_BT_INCLUDED == TRUE)
     /* Set the default idle timeout */
     l2cb.idle_timeout = L2CAP_LINK_INACTIVITY_TOUT;
 
