@@ -503,6 +503,16 @@ endfunction()
 
         Optional ``executable`` suffix.
 
+    *MAPFILE_TARGET[in,opt]*
+
+        Name of the target for the map file. If provided, the link map file is
+        generated for the specified executable, and the ``MAPFILE_TARGET``
+        target name is created for it. The ``MAPFILE_PATH`` property with the
+        link map file path is added to the ``MAPFILE_TARGET`` target. This can
+        be used for other targets that depend on the link map file. The link map file
+        is not generated on Darwin host, so the target ``MAPFILE_TARGET`` may not
+        be created if link map file is not generated.
+
     Create a new executable target using the name specified in the
     ``executable`` argument, and link it to the library created with the
     component names provided in the ``COMPONENTS`` option. If the
@@ -513,7 +523,7 @@ endfunction()
 #]]
 function(idf_build_executable executable)
     set(options)
-    set(one_value NAME SUFFIX)
+    set(one_value NAME SUFFIX MAPFILE_TARGET)
     set(multi_value COMPONENTS)
     cmake_parse_arguments(ARG "${options}" "${one_value}" "${multi_value}" ${ARGN})
 
@@ -536,15 +546,27 @@ function(idf_build_executable executable)
     endif()
     add_executable(${executable} "${executable_src}")
 
-    if(ARG_NAME)
-        set_target_properties(${executable} PROPERTIES OUTPUT_NAME ${ARG_NAME})
-    endif()
+    set_target_properties(${executable} PROPERTIES OUTPUT_NAME ${ARG_NAME})
 
     if(ARG_SUFFIX)
         set_target_properties(${executable} PROPERTIES SUFFIX ${ARG_SUFFIX})
     endif()
 
     target_link_libraries(${executable} PRIVATE ${library})
+
+    idf_build_get_property(linker_type LINKER_TYPE)
+    if(ARG_MAPFILE_TARGET AND "${linker_type}" STREQUAL "GNU")
+        set(mapfile "${CMAKE_BINARY_DIR}/${ARG_NAME}.map")
+        target_link_options(${executable} PRIVATE "LINKER:--Map=${mapfile}")
+        add_custom_command(
+            OUTPUT "${mapfile}"
+            DEPENDS ${executable}
+        )
+        add_custom_target(${ARG_MAPFILE_TARGET}
+            DEPENDS "${mapfile}"
+        )
+        set_target_properties(${ARG_MAPFILE_TARGET} PROPERTIES MAPFILE_PATH ${mapfile})
+    endif()
 
     set_target_properties(${executable} PROPERTIES LIBRARY_INTERFACE ${library})
 endfunction()
