@@ -1,0 +1,37 @@
+id: no-function-call-in-min-max
+message: "Avoid calling functions inside MIN/MAX macros"
+severity: error
+note: "MIN/MAX macros may evaluate arguments multiple times. Store function results in a variable first."
+language: C
+files:
+  - "components/**/*"
+ignores:
+  - "components/bt/**/*"
+  - "components/spiffs/**/*"
+rule:
+  kind: call_expression
+  pattern: $FUNC($ARG1, $ARG2)
+  any:
+    - has:
+        kind: call_expression
+        field: arguments
+        stopBy: end
+        position: 0
+        not:
+          has:
+            kind: identifier
+            regex: '^(MIN|MAX)$'
+            field: function
+    - has:
+        kind: call_expression
+        field: arguments
+        stopBy: end
+        position: 1
+        not:
+          has:
+            kind: identifier
+            regex: '^(MIN|MAX)$'
+            field: function
+constraints:
+  FUNC:
+    regex: '^(MIN|MAX)$'
