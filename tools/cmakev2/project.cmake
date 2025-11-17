@@ -747,6 +747,9 @@ macro(idf_project_default)
                              TARGET app-flash
                              NAME "app"
                              FLASH)
+
+            idf_create_dfu("${executable}_binary"
+                           TARGET dfu)
         endif()
 
         # FIXME: Dependencies should be specified within the components, not in the

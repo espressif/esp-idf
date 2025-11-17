@@ -34,6 +34,7 @@ include(project)
 include(manager)
 include(compat)
 include(ldgen)
+include(dfu)
 include(GetGitRevisionDescription)
 # For backward compatibility, since externalproject_add is used by
 # project_include.cmake in the bootloader component. The ExternalProject
