@@ -219,7 +219,8 @@ endfunction()
 #   idf.py confserver-fatfs
 function(test_executable)
     idf_build_executable(fatfs_example
-                         COMPONENTS fatfs_example)
+                         COMPONENTS fatfs_example
+                         MAPFILE_TARGET fatfs_example_mapfile)
     idf_build_binary(fatfs_example
                      TARGET fatfs_example_bin
                      OUTPUT_FILE fatfs_example.bin)
@@ -236,7 +237,8 @@ function(test_executable)
 
 
     idf_build_executable(hello_world_example
-                         COMPONENTS hello_world_example)
+                         COMPONENTS hello_world_example
+                         MAPFILE_TARGET hello_world_example_mapfile)
     idf_build_binary(hello_world_example
                      TARGET hello_world_example_bin
                      OUTPUT_FILE hello_world_example.bin)
