@@ -39,9 +39,9 @@ tools/test_apps/system/build_tests/trax_esp32s2:
 
 tools/test_apps/system/clang_build_test:
   enable:
-    - if: IDF_TARGET in ["esp32", "esp32s2", "esp32s3", "esp32c2", "esp32c3", "esp32c5", "esp32c6", "esp32h2", "esp32p4"]
+    - if: IDF_TARGET in ["esp32", "esp32s2", "esp32s3", "esp32c2", "esp32c3", "esp32c5", "esp32c6", "esp32h2"]
       temporary: true
-      reason: the other targets are not supported yet
+      reason: the other targets are not supported yet, esp32p4 # TODO: IDF-14355
 
 tools/test_apps/system/cxx_no_except:
   enable:
@@ -53,6 +53,10 @@ tools/test_apps/system/eh_frame:
   disable:
     - if: IDF_TARGET in ["esp32", "esp32s2", "esp32s3", "linux"]
       reason: Only relevant for riscv targets
+  disable_test:
+    - if: IDF_TARGET == "esp32p4"
+      temporary: true
+      reason: p4 rev3 migration # TODO: IDF-14424
 
 tools/test_apps/system/esp_intr_dump:
 
@@ -90,6 +94,10 @@ tools/test_apps/system/gdb_loadable_elf:
 tools/test_apps/system/init_array:
   enable:
     - if: INCLUDE_DEFAULT == 1 or IDF_TARGET == "linux"
+  disable_test:
+    - if: IDF_TARGET == "esp32p4"
+      temporary: true
+      reason: p4 rev3 migration # TODO: IDF-14425
   depends_components:
     - esp_system
   depends_filepatterns:
@@ -129,7 +137,15 @@ tools/test_apps/system/no_embedded_paths:
 
 tools/test_apps/system/panic:
   enable:
-    - if: INCLUDE_DEFAULT == 1 or IDF_TARGET in ["esp32p4", "esp32c61", "esp32h21"] # preview targets
+    - if: INCLUDE_DEFAULT == 1 or IDF_TARGET in ["esp32p4"] # preview targets
+  disable:
+    - if: IDF_TARGET == "esp32p4" # TODO: IDF-14348
+
+tools/test_apps/system/ram_loadable_app:
+  disable:
+    - if: IDF_TARGET == "esp32p4"
+      temporary: true
+      reason: p4 rev3 migration # TODO: IDF-14370
 
 tools/test_apps/system/rtc_mem_reserve:
   enable:

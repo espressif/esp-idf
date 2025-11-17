@@ -21,6 +21,7 @@ from pytest_embedded_idf.utils import soc_filtered_targets
     ],
     indirect=['config', 'target'],
 )
+@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration # TODO: IDF-14419')
 def test_esp_system(dut: Dut) -> None:
     # esp32p4 32MB PSRAM initialize in startup takes more than 30 sec
     dut.run_all_single_board_cases(timeout=60)
@@ -29,6 +30,7 @@ def test_esp_system(dut: Dut) -> None:
 @pytest.mark.generic
 @idf_parametrize('config', ['default'], indirect=['config'])
 @idf_parametrize('target', ['supported_targets'], indirect=['target'])
+@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration # TODO: IDF-14419')
 def test_stack_smash_protection(dut: Dut) -> None:
     dut.expect_exact('Press ENTER to see the list of tests')
     dut.write('"stack smashing protection"')

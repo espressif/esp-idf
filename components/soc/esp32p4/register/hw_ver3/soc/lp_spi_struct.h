@@ -813,245 +813,19 @@ typedef union {
 } lp_spi_sleep_conf1_reg_t;
 
 
-/** Group: LP SPI W0 REG */
-/** Type of spi_w0 register
+/** Group: LP SPI Wn REG */
+/** Type of spi_wn register
  *  SPI CPU-controlled buffer0
  */
 typedef union {
     struct {
-        /** reg_buf0 : R/W/SS; bitpos: [31:0]; default: 0;
+        /** reg_buf : R/W/SS; bitpos: [31:0]; default: 0;
          *  data buffer
          */
-        uint32_t reg_buf0:32;
+        uint32_t reg_buf:32;
     };
     uint32_t val;
-} lp_spi_w0_reg_t;
-
-
-/** Group: LP SPI W1 REG */
-/** Type of spi_w1 register
- *  SPI CPU-controlled buffer1
- */
-typedef union {
-    struct {
-        /** reg_buf1 : R/W/SS; bitpos: [31:0]; default: 0;
-         *  data buffer
-         */
-        uint32_t reg_buf1:32;
-    };
-    uint32_t val;
-} lp_spi_w1_reg_t;
-
-
-/** Group: LP SPI W2 REG */
-/** Type of spi_w2 register
- *  SPI CPU-controlled buffer2
- */
-typedef union {
-    struct {
-        /** reg_buf2 : R/W/SS; bitpos: [31:0]; default: 0;
-         *  data buffer
-         */
-        uint32_t reg_buf2:32;
-    };
-    uint32_t val;
-} lp_spi_w2_reg_t;
-
-
-/** Group: LP SPI W3 REG */
-/** Type of spi_w3 register
- *  SPI CPU-controlled buffer3
- */
-typedef union {
-    struct {
-        /** reg_buf3 : R/W/SS; bitpos: [31:0]; default: 0;
-         *  data buffer
-         */
-        uint32_t reg_buf3:32;
-    };
-    uint32_t val;
-} lp_spi_w3_reg_t;
-
-
-/** Group: LP SPI W4 REG */
-/** Type of spi_w4 register
- *  SPI CPU-controlled buffer4
- */
-typedef union {
-    struct {
-        /** reg_buf4 : R/W/SS; bitpos: [31:0]; default: 0;
-         *  data buffer
-         */
-        uint32_t reg_buf4:32;
-    };
-    uint32_t val;
-} lp_spi_w4_reg_t;
-
-
-/** Group: LP SPI W5 REG */
-/** Type of spi_w5 register
- *  SPI CPU-controlled buffer5
- */
-typedef union {
-    struct {
-        /** reg_buf5 : R/W/SS; bitpos: [31:0]; default: 0;
-         *  data buffer
-         */
-        uint32_t reg_buf5:32;
-    };
-    uint32_t val;
-} lp_spi_w5_reg_t;
-
-
-/** Group: LP SPI W6 REG */
-/** Type of spi_w6 register
- *  SPI CPU-controlled buffer6
- */
-typedef union {
-    struct {
-        /** reg_buf6 : R/W/SS; bitpos: [31:0]; default: 0;
-         *  data buffer
-         */
-        uint32_t reg_buf6:32;
-    };
-    uint32_t val;
-} lp_spi_w6_reg_t;
-
-
-/** Group: LP SPI W7 REG */
-/** Type of spi_w7 register
- *  SPI CPU-controlled buffer7
- */
-typedef union {
-    struct {
-        /** reg_buf7 : R/W/SS; bitpos: [31:0]; default: 0;
-         *  data buffer
-         */
-        uint32_t reg_buf7:32;
-    };
-    uint32_t val;
-} lp_spi_w7_reg_t;
-
-
-/** Group: LP SPI W8 REG */
-/** Type of spi_w8 register
- *  SPI CPU-controlled buffer8
- */
-typedef union {
-    struct {
-        /** reg_buf8 : R/W/SS; bitpos: [31:0]; default: 0;
-         *  data buffer
-         */
-        uint32_t reg_buf8:32;
-    };
-    uint32_t val;
-} lp_spi_w8_reg_t;
-
-
-/** Group: LP SPI W9 REG */
-/** Type of spi_w9 register
- *  SPI CPU-controlled buffer9
- */
-typedef union {
-    struct {
-        /** reg_buf9 : R/W/SS; bitpos: [31:0]; default: 0;
-         *  data buffer
-         */
-        uint32_t reg_buf9:32;
-    };
-    uint32_t val;
-} lp_spi_w9_reg_t;
-
-
-/** Group: LP SPI W10 REG */
-/** Type of spi_w10 register
- *  SPI CPU-controlled buffer10
- */
-typedef union {
-    struct {
-        /** reg_buf10 : R/W/SS; bitpos: [31:0]; default: 0;
-         *  data buffer
-         */
-        uint32_t reg_buf10:32;
-    };
-    uint32_t val;
-} lp_spi_w10_reg_t;
-
-
-/** Group: LP SPI W11 REG */
-/** Type of spi_w11 register
- *  SPI CPU-controlled buffer11
- */
-typedef union {
-    struct {
-        /** reg_buf11 : R/W/SS; bitpos: [31:0]; default: 0;
-         *  data buffer
-         */
-        uint32_t reg_buf11:32;
-    };
-    uint32_t val;
-} lp_spi_w11_reg_t;
-
-
-/** Group: LP SPI W12 REG */
-/** Type of spi_w12 register
- *  SPI CPU-controlled buffer12
- */
-typedef union {
-    struct {
-        /** reg_buf12 : R/W/SS; bitpos: [31:0]; default: 0;
-         *  data buffer
-         */
-        uint32_t reg_buf12:32;
-    };
-    uint32_t val;
-} lp_spi_w12_reg_t;
-
-
-/** Group: LP SPI W13 REG */
-/** Type of spi_w13 register
- *  SPI CPU-controlled buffer13
- */
-typedef union {
-    struct {
-        /** reg_buf13 : R/W/SS; bitpos: [31:0]; default: 0;
-         *  data buffer
-         */
-        uint32_t reg_buf13:32;
-    };
-    uint32_t val;
-} lp_spi_w13_reg_t;
-
-
-/** Group: LP SPI W14 REG */
-/** Type of spi_w14 register
- *  SPI CPU-controlled buffer14
- */
-typedef union {
-    struct {
-        /** reg_buf14 : R/W/SS; bitpos: [31:0]; default: 0;
-         *  data buffer
-         */
-        uint32_t reg_buf14:32;
-    };
-    uint32_t val;
-} lp_spi_w14_reg_t;
-
-
-/** Group: LP SPI W15 REG */
-/** Type of spi_w15 register
- *  SPI CPU-controlled buffer15
- */
-typedef union {
-    struct {
-        /** reg_buf15 : R/W/SS; bitpos: [31:0]; default: 0;
-         *  data buffer
-         */
-        uint32_t reg_buf15:32;
-    };
-    uint32_t val;
-} lp_spi_w15_reg_t;
-
+} lp_spi_wn_reg_t;
 
 /** Group: LP SPI SLAVE REG */
 /** Type of spi_slave register
@@ -1238,22 +1012,7 @@ typedef struct {
     volatile lp_spi_sleep_conf1_reg_t spi_sleep_conf1;
     volatile lp_spi_dma_int_set_reg_t spi_dma_int_set;
     uint32_t reserved_050[18];
-    volatile lp_spi_w0_reg_t spi_w0;
-    volatile lp_spi_w1_reg_t spi_w1;
-    volatile lp_spi_w2_reg_t spi_w2;
-    volatile lp_spi_w3_reg_t spi_w3;
-    volatile lp_spi_w4_reg_t spi_w4;
-    volatile lp_spi_w5_reg_t spi_w5;
-    volatile lp_spi_w6_reg_t spi_w6;
-    volatile lp_spi_w7_reg_t spi_w7;
-    volatile lp_spi_w8_reg_t spi_w8;
-    volatile lp_spi_w9_reg_t spi_w9;
-    volatile lp_spi_w10_reg_t spi_w10;
-    volatile lp_spi_w11_reg_t spi_w11;
-    volatile lp_spi_w12_reg_t spi_w12;
-    volatile lp_spi_w13_reg_t spi_w13;
-    volatile lp_spi_w14_reg_t spi_w14;
-    volatile lp_spi_w15_reg_t spi_w15;
+    volatile lp_spi_wn_reg_t data_buf[16];
     uint32_t reserved_0d8[2];
     volatile lp_spi_slave_reg_t spi_slave;
     volatile lp_spi_slave1_reg_t spi_slave1;
@@ -1263,12 +1022,12 @@ typedef struct {
     volatile lp_rnd_eco_cs_reg_t rnd_eco_cs;
     volatile lp_rnd_eco_low_reg_t rnd_eco_low;
     volatile lp_rnd_eco_high_reg_t rnd_eco_high;
-} lp_dev_t;
+} lp_spi_dev_t;
 
-extern lp_dev_t LP_SPI;
+extern lp_spi_dev_t LP_SPI;
 
 #ifndef __cplusplus
-_Static_assert(sizeof(lp_dev_t) == 0x100, "Invalid size of lp_dev_t structure");
+_Static_assert(sizeof(lp_spi_dev_t) == 0x100, "Invalid size of lp_spi_dev_t structure");
 #endif
 
 #ifdef __cplusplus

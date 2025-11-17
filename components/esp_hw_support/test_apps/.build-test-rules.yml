@@ -13,6 +13,10 @@ components/esp_hw_support/test_apps/dma:
 components/esp_hw_support/test_apps/dma2d:
   disable:
     - if: SOC_DMA2D_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET == "esp32p4"
+      temporary: true
+      reason: p4 rev3 migration # TODO: IDF-14471
   depends_filepatterns:
     - components/esp_hw_support/dma/**/*
   depends_components:
@@ -25,6 +29,9 @@ components/esp_hw_support/test_apps/host_test_linux:
 components/esp_hw_support/test_apps/mspi:
   disable:
     - if: IDF_TARGET not in ["esp32s3", "esp32p4"]
+    - if: IDF_TARGET == "esp32p4"
+      temporary: true
+      reason: p4 rev3 migration # TODO: IDF-14366
 
 components/esp_hw_support/test_apps/mspi_psram_with_dfs:
   disable:
@@ -37,6 +44,10 @@ components/esp_hw_support/test_apps/rtc_8md256:
 components/esp_hw_support/test_apps/rtc_clk:
   disable:
     - if: SOC_CLK_TREE_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET == "esp32p4"
+      temporary: true
+      reason: p4 rev3 migration # TODO: IDF-14441
 
 components/esp_hw_support/test_apps/rtc_power_modes:
   enable:
@@ -65,11 +76,14 @@ components/esp_hw_support/test_apps/usb_phy:
 components/esp_hw_support/test_apps/vad_wakeup:
   disable:
     - if: SOC_LP_VAD_SUPPORTED != 1
+    - if: IDF_TARGET == "esp32p4"
+      temporary: true
+      reason: p4 rev3 migration # TODO: IDF-14368
 
 components/esp_hw_support/test_apps/wakeup_tests:
   enable:
     - if: SOC_DEEP_SLEEP_SUPPORTED == 1 and SOC_LIGHT_SLEEP_SUPPORTED == 1
   disable_test:
-    - if: IDF_TARGET in ["esp32c61", "esp32h21", "esp32h4"]
+    - if: IDF_TARGET in ["esp32c61", "esp32h21", "esp32h4", "esp32p4"]
       temporary: true
-      reason: lack of runners
+      reason: lack of runners # TODO: IDF-14400
