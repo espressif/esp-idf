@@ -2136,6 +2136,7 @@ void BTM_Recovery_Pre_State(void)
 {
 #if ((BLE_42_ADV_EN == TRUE) || (BLE_42_SCAN_EN == TRUE))
     tBTM_BLE_INQ_CB *ble_inq_cb = &btm_cb.ble_ctr_cb.inq_var;
+    BTM_TRACE_DEBUG("%s state=0x%x", __func__, ble_inq_cb->state);
 #endif // #if ((BLE_42_ADV_EN == TRUE) || (BLE_42_SCAN_EN == TRUE))
 #if (BLE_42_ADV_EN == TRUE)
     if (ble_inq_cb->state & BTM_BLE_ADVERTISING) {

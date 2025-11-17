@@ -327,6 +327,8 @@ void bta_gattc_clcb_dealloc_by_conn_id(UINT16 conn_id)
 {
     tBTA_GATTC_CLCB *p_clcb = bta_gattc_find_clcb_by_conn_id(conn_id);
 
+    APPL_TRACE_DEBUG("%s conn_id=%u p_clcb=%p", __func__, conn_id, p_clcb);
+
     if (p_clcb) {
         tBTA_GATTC_RCB      *p_clreg = p_clcb->p_rcb;
         bta_gattc_clcb_dealloc(p_clcb);
@@ -523,8 +525,7 @@ BOOLEAN bta_gattc_enqueue(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
                 cmd_data->api_write.p_value = (UINT8 *)(cmd_data + 1);
 			    memcpy(cmd_data->api_write.p_value, p_data->api_write.p_value, len);
             } else {
-                APPL_TRACE_ERROR("%s(), line = %d, alloc fail, size %d,no memory. free=%d, largest_block=%d", __func__, __LINE__,
-                                heap_caps_get_free_size(MALLOC_CAP_DEFAULT), heap_caps_get_largest_free_block(MALLOC_CAP_DEFAULT));
+                APPL_TRACE_ERROR("%s(), line = %d, alloc fail, no memory.", __func__, __LINE__);
                 return FALSE;
             }
         } else {

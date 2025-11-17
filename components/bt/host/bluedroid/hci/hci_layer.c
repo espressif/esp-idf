@@ -51,6 +51,10 @@
 
 #define HCI_DOWNSTREAM_DATA_QUEUE_IDX   (0)
 
+#ifndef MIN
+#define MIN(a,b) (((a)<(b))?(a):(b))
+#endif
+
 typedef struct {
     bool timer_is_set;
     osi_alarm_t *command_response_timer;
@@ -707,3 +711,27 @@ const char *hci_status_code_to_string(uint8_t status)
     }
 }
 #endif
+
+const char *bt_hex2str(const void *buf, size_t len)
+{
+    static const char hex[] = "0123456789abcdef";
+    static char str[129];
+    const uint8_t *b = buf;
+    size_t i;
+
+    len = MIN(len, (sizeof(str) - 1) / 2);
+
+    for (i = 0; i < len; i++) {
+        str[i * 2] = hex[b[i] >> 4];
+        str[i * 2 + 1] = hex[b[i] & 0xf];
+    }
+
+    str[i * 2] = '\0';
+
+    return str;
+}
+
+int get_hci_work_queue_size(int wq_idx)
+{
+    return osi_thread_queue_wait_size(hci_host_thread, wq_idx);
+}
