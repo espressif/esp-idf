@@ -286,6 +286,7 @@ pytest_buildv2_system:
       test_common.py
       test_components.py
       test_cmake.py
+      test_idf_extension.py
 
 pytest_build_system_macos:
   extends:
