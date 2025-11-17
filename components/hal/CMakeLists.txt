@@ -3,7 +3,7 @@ idf_build_get_property(esp_tee_build ESP_TEE_BUILD)
 
 set(srcs "hal_utils.c")
 set(includes "platform_port/include")
-set(requires soc esp_rom)
+set(requires)
 
 if(${target} STREQUAL "esp32")
     # TODO: IDF-14079 remove this dependency when ADC hal is graduated from the common hal component

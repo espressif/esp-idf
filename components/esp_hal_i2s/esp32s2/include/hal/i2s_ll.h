@@ -16,7 +16,6 @@
 
 #include <stdbool.h>
 #include "hal/misc.h"
-#include "hal/i2s_periph.h"
 #include "soc/i2s_struct.h"
 #include "soc/system_reg.h"
 #include "soc/dport_access.h"

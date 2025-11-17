@@ -16,8 +16,8 @@ static const char *TAG = "i2s_platform";
  */
 i2s_platform_t g_i2s = {
     .spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED,
-    .controller[0 ...(SOC_I2S_ATTR(INST_NUM) - 1)] = NULL,  // groups will be lazy installed
-    .comp_name[0 ...(SOC_I2S_ATTR(INST_NUM) - 1)] = NULL,
+    .controller[0 ...(I2S_LL_GET(INST_NUM) - 1)] = NULL,  // groups will be lazy installed
+    .comp_name[0 ...(I2S_LL_GET(INST_NUM) - 1)] = NULL,
 #if SOC_LP_I2S_SUPPORTED
     .lp_controller[0 ...(SOC_LP_I2S_NUM - 1)] = NULL,
     .lp_comp_name[0 ...(SOC_LP_I2S_NUM - 1)] = NULL,
@@ -34,7 +34,7 @@ esp_err_t i2s_platform_acquire_occupation(i2s_ctlr_t type, int id, const char *c
 {
     esp_err_t ret = ESP_OK;
     const char *occupied_comp = NULL;
-    ESP_RETURN_ON_FALSE(id < SOC_I2S_ATTR(INST_NUM), ESP_ERR_INVALID_ARG, TAG, "invalid i2s port id");
+    ESP_RETURN_ON_FALSE(id < I2S_LL_GET(INST_NUM), ESP_ERR_INVALID_ARG, TAG, "invalid i2s port id");
 
     if (type == I2S_CTLR_HP) {
         portENTER_CRITICAL(&g_i2s.spinlock);
@@ -79,7 +79,7 @@ esp_err_t i2s_platform_acquire_occupation(i2s_ctlr_t type, int id, const char *c
 esp_err_t i2s_platform_release_occupation(i2s_ctlr_t type, int id)
 {
     esp_err_t ret = ESP_OK;
-    ESP_RETURN_ON_FALSE(id < SOC_I2S_ATTR(INST_NUM), ESP_ERR_INVALID_ARG, TAG, "invalid i2s port id");
+    ESP_RETURN_ON_FALSE(id < I2S_LL_GET(INST_NUM), ESP_ERR_INVALID_ARG, TAG, "invalid i2s port id");
 
     if (type == I2S_CTLR_HP) {
         portENTER_CRITICAL(&g_i2s.spinlock);

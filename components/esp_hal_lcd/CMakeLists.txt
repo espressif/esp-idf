@@ -28,4 +28,5 @@ endif()
 
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS ${public_include}
-                       REQUIRES soc hal esp_hal_i2s)
+                       PRIV_REQUIRES esp_hal_i2s
+                       REQUIRES soc hal)

@@ -15,7 +15,6 @@
 #include <stdbool.h>
 #include "hal/misc.h"
 #include "hal/assert.h"
-#include "hal/i2s_periph.h"
 #include "soc/i2s_struct.h"
 #include "soc/pcr_struct.h"
 #include "soc/soc_etm_source.h"
@@ -23,6 +22,7 @@
 #include "hal/hal_utils.h"
 
 #define I2S_LL_GET(_attr)       I2S_LL_ ## _attr
+#define I2S_LL_INST_NUM         1
 
 #ifdef __cplusplus
 extern "C" {
@@ -41,7 +41,7 @@ extern "C" {
 #define I2S_LL_SUPPORT_XTAL        1    // Support XTAL as I2S clock source
 
 #define I2S_LL_ETM_EVENT_TABLE(i2s_port, chan_dir, event)  \
-    (uint32_t[SOC_I2S_ATTR(INST_NUM)][2][I2S_ETM_EVENT_MAX]){{  \
+    (uint32_t[I2S_LL_GET(INST_NUM)][2][I2S_ETM_EVENT_MAX]){{  \
                                           [I2S_DIR_RX - 1] = {  \
                                               [I2S_ETM_EVENT_DONE] = I2S_EVT_RX_DONE, \
                                               [I2S_ETM_EVENT_REACH_THRESH] = I2S_EVT_X_WORDS_RECEIVED,  \
@@ -52,7 +52,7 @@ extern "C" {
                                           }}}[i2s_port][(chan_dir) - 1][event]
 
 #define I2S_LL_ETM_TASK_TABLE(i2s_port, chan_dir, task)  \
-    (uint32_t[SOC_I2S_ATTR(INST_NUM)][2][I2S_ETM_TASK_MAX]){{  \
+    (uint32_t[I2S_LL_GET(INST_NUM)][2][I2S_ETM_TASK_MAX]){{  \
                                          [I2S_DIR_RX - 1] = {  \
                                              [I2S_ETM_TASK_START] = I2S_TASK_START_RX, \
                                              [I2S_ETM_TASK_STOP] = I2S_TASK_STOP_RX, \
