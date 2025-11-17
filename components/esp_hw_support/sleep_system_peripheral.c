@@ -12,6 +12,9 @@
 #include "soc/system_periph_retention.h"
 #include "soc/uart_periph.h"
 #include "hal/timer_ll.h"
+#if SOC_HAS(I2S)
+#include "hal/i2s_ll.h"
+#endif
 
 #include "esp_sleep.h"
 #include "esp_log.h"
@@ -239,10 +242,10 @@ bool peripheral_domain_pd_allowed(void)
 
 #if SOC_HAS(PAU)
     mask.bitmap[SLEEP_RETENTION_MODULE_I2S0 >> 5] |= BIT(SLEEP_RETENTION_MODULE_I2S0 % 32);
-# if (SOC_MODULE_ATTR(I2S, INST_NUM) > 1)
+# if (I2S_LL_GET(INST_NUM) > 1)
     mask.bitmap[SLEEP_RETENTION_MODULE_I2S1 >> 5] |= BIT(SLEEP_RETENTION_MODULE_I2S1 % 32);
 # endif
-# if (SOC_MODULE_ATTR(I2S, INST_NUM) > 2)
+# if (I2S_LL_GET(INST_NUM) > 2)
     mask.bitmap[SLEEP_RETENTION_MODULE_I2S2 >> 5] |= BIT(SLEEP_RETENTION_MODULE_I2S2 % 32);
 # endif
 #endif /* SOC_HAS(PAU) */

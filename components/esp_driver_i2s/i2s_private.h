@@ -14,6 +14,7 @@
 #include "soc/lldesc.h"
 #include "soc/soc_caps.h"
 #include "soc/soc_caps_full.h"
+#include "hal/i2s_periph.h"
 #include "hal/i2s_hal.h"
 #include "hal/lp_i2s_hal.h"
 #if SOC_LP_I2S_SUPPORTED
@@ -224,11 +225,11 @@ struct lp_i2s_channel_obj_t {
  */
 typedef struct {
     portMUX_TYPE            spinlock;                          /*!< Platform level lock */
-    i2s_controller_t        *controller[SOC_I2S_ATTR(INST_NUM)];          /*!< Controller object */
-    const char              *comp_name[SOC_I2S_ATTR(INST_NUM)];           /*!< The component name that occupied i2s controller */
+    i2s_controller_t        *controller[I2S_LL_GET(INST_NUM)];          /*!< Controller object */
+    const char              *comp_name[I2S_LL_GET(INST_NUM)];           /*!< The component name that occupied i2s controller */
 #if SOC_LP_I2S_SUPPORTED
     lp_i2s_controller_t     *lp_controller[SOC_LP_I2S_NUM];    /*!< LP controller object*/
-    const char              *lp_comp_name[SOC_I2S_ATTR(INST_NUM)];        /*!< The component name that occupied lp i2s controller */
+    const char              *lp_comp_name[I2S_LL_GET(INST_NUM)];        /*!< The component name that occupied lp i2s controller */
 #endif
 } i2s_platform_t;
 

@@ -15,13 +15,13 @@
 #include <stdbool.h>
 #include "hal/misc.h"
 #include "hal/assert.h"
-#include "hal/i2s_periph.h"
 #include "soc/i2s_struct.h"
 #include "soc/system_struct.h"
 #include "hal/i2s_types.h"
 #include "hal/hal_utils.h"
 
 #define I2S_LL_GET(_attr)       I2S_LL_ ## _attr
+#define I2S_LL_INST_NUM         1
 
 #ifdef __cplusplus
 extern "C" {

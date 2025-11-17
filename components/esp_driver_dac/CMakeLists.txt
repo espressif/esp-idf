@@ -6,7 +6,7 @@ set(priv_req esp_pm esp_driver_gpio)
 if(${target} STREQUAL "linux")
     return() # This component is not supported by the POSIX/Linux simulator
 elseif(${target} STREQUAL "esp32")
-    list(APPEND priv_req esp_driver_i2s esp_hal_i2s)
+    list(APPEND priv_req esp_driver_i2s)
 elseif(${target} STREQUAL "esp32s2")
     list(APPEND priv_req esp_driver_spi)
 endif()

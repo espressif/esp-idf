@@ -17,9 +17,8 @@
 #if SOC_HAS(I2S)
 #include "soc/i2s_struct.h"
 #include "soc/i2s_reg.h"
+#include "hal/i2s_ll.h"
 #endif
-
-#define SOC_I2S_ATTR(_attr)                       SOC_MODULE_ATTR(I2S, _attr)
 
 #ifdef __cplusplus
 extern "C" {
@@ -60,7 +59,7 @@ typedef struct {
     const uint8_t irq;
 } i2s_signal_conn_t;
 
-extern const i2s_signal_conn_t i2s_periph_signal[SOC_I2S_ATTR(INST_NUM)];
+extern const i2s_signal_conn_t i2s_periph_signal[I2S_LL_GET(INST_NUM)];
 
 #if SOC_LP_I2S_SUPPORTED
 extern const i2s_signal_conn_t lp_i2s_periph_signal[SOC_LP_I2S_NUM];
@@ -73,7 +72,7 @@ typedef struct {
     uint32_t array_size;
 } i2s_reg_retention_info_t;
 
-extern const i2s_reg_retention_info_t i2s_reg_retention_info[SOC_I2S_ATTR(INST_NUM)];
+extern const i2s_reg_retention_info_t i2s_reg_retention_info[I2S_LL_GET(INST_NUM)];
 #endif  // SOC_HAS(PAU)
 #endif  // SOC_HAS(I2S)
 

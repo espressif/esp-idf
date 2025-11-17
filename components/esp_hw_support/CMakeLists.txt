@@ -75,7 +75,10 @@ if(NOT non_os_build)
                               esp_timer
                               esp_pm)
 
-    list(APPEND priv_requires esp_mm esp_hal_mspi)
+    list(APPEND priv_requires esp_mm
+                              esp_hal_mspi
+                              esp_hal_i2s  # required by `sleep_system_peripheral.c`
+    )
 
     if(CONFIG_IDF_TARGET_ESP32 OR CONFIG_IDF_TARGET_ESP32S2)
         list(APPEND srcs "rtc_wdt.c")
