@@ -1874,6 +1874,7 @@ int bt_mesh_gattc_conn_create(const bt_mesh_addr_t *addr, uint16_t service_uuid)
     BTA_GATTC_Enh_Open(bt_mesh_gattc_if, bt_mesh_gattc_info[i].addr.val,
                        bt_mesh_gattc_info[i].addr.type, true,
                        BTA_GATT_TRANSPORT_LE, TRUE, BLE_ADDR_UNKNOWN_TYPE,
+                       false, 0xFF, 0xFF,
                        BTA_BLE_PHY_1M_MASK, &conn_1m_param, NULL, NULL);
 #else /* CONFIG_BLE_MESH_USE_BLE_50 */
     /* Min_interval: 15ms
@@ -1889,6 +1890,7 @@ int bt_mesh_gattc_conn_create(const bt_mesh_addr_t *addr, uint16_t service_uuid)
     BTA_GATTC_Enh_Open(bt_mesh_gattc_if, bt_mesh_gattc_info[i].addr.val,
                        bt_mesh_gattc_info[i].addr.type, true,
                        BTA_GATT_TRANSPORT_LE, FALSE, BLE_ADDR_UNKNOWN_TYPE,
+                       false, 0xFF, 0xFF,
                        BTA_BLE_PHY_1M_MASK, &conn_1m_param, NULL, NULL);
 #endif /* CONFIG_BLE_MESH_USE_BLE_50 */
 

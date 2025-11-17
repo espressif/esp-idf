@@ -344,6 +344,25 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
     bta_dm_ble_set_host_feature,   /* BTA_DM_API_SET_HOST_FEATURE_EVT */
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
+#if (BT_BLE_FEAT_PAWR_EN == TRUE)
+    bta_dm_api_set_periodic_adv_subevt_data,   /* BTA_DM_API_SET_PA_SUBEVT_DATA */
+    bta_dm_api_set_periodic_adv_response_data, /* BTA_DM_API_SET_PA_RSP_DATA */
+    bta_dm_api_set_periodic_sync_subevt,       /* BTA_DM_API_SET_PA_SYNC_SUBEVT */
+#endif // #if (BT_BLE_FEAT_PAWR_EN == TRUE)
+#if (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
+    bta_dm_api_cs_read_local_supported_caps,          /* BTA_DM_API_CS_READ_LOCAL_SUPPORTED_CAPS */
+    bta_dm_api_cs_read_remote_supported_caps,         /* BTA_DM_API_CS_READ_REMOTE_SUPPORTED_CAPS */
+    bta_dm_api_cs_write_cached_remote_supported_caps, /* BTA_DM_API_CS_WRITE_CACHED_REMOTE_SUPPORTED_CAPS */
+    bta_dm_api_cs_security_enable,                    /* BTA_DM_API_CS_SECURITY_ENABLE */
+    bta_dm_api_cs_set_default_settings,               /* BTA_DM_API_CS_SET_DEFAULT_SETTINGS */
+    bta_dm_api_cs_read_remote_fae_table,              /* BTA_DM_API_CS_READ_REMOTE_FAE_TABLE */
+    bta_dm_api_cs_write_cached_remote_fae_table,      /* BTA_DM_API_CS_WRITE_CACHED_REMOTE_FAE_TABLE */
+    bta_dm_api_cs_create_config,                      /* BTA_DM_API_CS_CREATE_CONFIG */
+    bta_dm_api_cs_remove_config,                      /* BTA_DM_API_CS_REMOVE_CONFIG */
+    bta_dm_api_cs_set_channel_classification,         /* BTA_DM_API_CS_SET_CAHNNEL_CLASSIFICATION */
+    bta_dm_api_cs_set_procedure_params,               /* BTA_DM_API_CS_SET_PROCEDURE_PARAMS */
+    bta_dm_api_cs_procedure_enable,                   /* BTA_DM_API_CS_PROCEDURE_ENABLE */
+#endif // (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
 };
 
 

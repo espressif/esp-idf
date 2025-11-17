@@ -256,6 +256,12 @@ tGATT_STATUS gap_read_attr_value (UINT16 handle, tGATT_VALUE *p_value, BOOLEAN i
                 UINT8_TO_STREAM(p, p_db_attr->attr_value.addr_resolution);
                 p_value->len = 1;
                 break;
+#if (BT_GATTS_SECURITY_LEVELS_CHAR == TRUE)
+            case GATT_UUID_GAP_GATT_SECURITY_LEVELS:
+                UINT16_TO_STREAM(p, p_db_attr->attr_value.security_level);
+                p_value->len = 2;
+                break;
+#endif // (BT_GATTS_SECURITY_LEVELS_CHAR == TRUE)
             }
             return GATT_SUCCESS;
         }
@@ -464,6 +470,17 @@ void gap_attr_db_init(void)
     p_db_attr->attr_value.addr_resolution = 0;
     p_db_attr++;
 
+#if (BT_GATTS_SECURITY_LEVELS_CHAR == TRUE)
+    /* Add LE Security Levels Characteristic */
+    uuid.len = LEN_UUID_16;
+    uuid.uu.uuid16 = p_db_attr->uuid = GATT_UUID_GAP_GATT_SECURITY_LEVELS;
+    p_db_attr->handle = GATTS_AddCharacteristic(service_handle, &uuid,
+                        GATT_PERM_READ, GATT_CHAR_PROP_BIT_READ,
+                        NULL, NULL);
+    p_db_attr->attr_value.security_level = 0x0101;
+    p_db_attr++;
+#endif // (BT_GATTS_SECURITY_LEVELS_CHAR == TRUE)
+
     /* start service now */
     memset (&app_uuid.uu.uuid128, 0x81, LEN_UUID_128);
 
@@ -516,6 +533,12 @@ void GAP_BleAttrDBUpdate(UINT16 attr_uuid, tGAP_BLE_ATTR_VALUE *p_value)
             case GATT_UUID_GAP_CENTRAL_ADDR_RESOL:
                 p_db_attr->attr_value.addr_resolution = p_value->addr_resolution;
                 break;
+
+#if (BT_GATTS_SECURITY_LEVELS_CHAR == TRUE)
+            case GATT_UUID_GAP_GATT_SECURITY_LEVELS:
+                p_db_attr->attr_value.security_level = p_value->security_level;
+                break;
+#endif // (BT_GATTS_SECURITY_LEVELS_CHAR == TRUE)
 
             }
             break;
@@ -728,7 +751,7 @@ BOOLEAN gap_ble_accept_cl_operation(BD_ADDR peer_bda, UINT16 uuid, tGAP_BLE_CMPL
     }
 
     /* hold the link here */
-    if (!GATT_Connect(gap_cb.gatt_if, p_clcb->bda, BLE_ADDR_UNKNOWN_TYPE, TRUE, BT_TRANSPORT_LE, FALSE)) {
+    if (!GATT_Connect(gap_cb.gatt_if, p_clcb->bda, BLE_ADDR_UNKNOWN_TYPE, TRUE, BT_TRANSPORT_LE, FALSE, FALSE, 0xFF, 0xFF)) {
         return started;
     }
 

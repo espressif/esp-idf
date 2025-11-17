@@ -401,7 +401,18 @@ tBTM_STATUS BTM_BleSetExtendedAdvParams(UINT8 instance, tBTM_BLE_GAP_EXT_ADV_PAR
 #else
     btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type = params->own_addr_type;
 #endif
-
+#if (BT_BLE_FEAT_ADV_CODING_SELECTION == TRUE)
+    if ((err = btsnd_hcic_ble_set_ext_adv_params_v2(instance, params->type, params->interval_min, params->interval_max,
+                                      params->channel_map, params->own_addr_type, params->peer_addr_type,
+                                      params->peer_addr, params->filter_policy, params->tx_power,
+                                      params->primary_phy, params->max_skip,
+                                      params->secondary_phy, params->sid, params->scan_req_notif,
+                                      params->primary_adv_phy_options, params->secondary_adv_phy_options)) != HCI_SUCCESS) {
+        BTM_TRACE_ERROR("LE EA SetParams: cmd err=0x%x", err);
+        status = BTM_HCI_ERROR | err;
+        goto end;
+    }
+#else
     if ((err = btsnd_hcic_ble_set_ext_adv_params(instance, params->type, params->interval_min, params->interval_max,
                                       params->channel_map, params->own_addr_type, params->peer_addr_type,
                                       params->peer_addr, params->filter_policy, params->tx_power,
@@ -411,6 +422,7 @@ tBTM_STATUS BTM_BleSetExtendedAdvParams(UINT8 instance, tBTM_BLE_GAP_EXT_ADV_PAR
         status = BTM_HCI_ERROR | err;
         goto end;
     }
+#endif // (BT_BLE_FEAT_ADV_CODING_SELECTION == TRUE)
 
     extend_adv_cb.inst[instance].configured = true;
 
@@ -692,7 +704,6 @@ tBTM_STATUS BTM_BlePeriodicAdvSetParams(UINT8 instance, tBTM_BLE_Periodic_Adv_Pa
     tBTM_STATUS status = BTM_SUCCESS;
     tHCI_STATUS err = HCI_SUCCESS;
     tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
-    //ext_adv_flag = true;
 
     if (instance >= MAX_BLE_ADV_INSTANCE) {
         status = BTM_ILLEGAL_VALUE;
@@ -710,11 +721,20 @@ tBTM_STATUS BTM_BlePeriodicAdvSetParams(UINT8 instance, tBTM_BLE_Periodic_Adv_Pa
         goto end;
     }
 
-    if ((err= btsnd_hcic_ble_set_periodic_adv_params(instance, params->interval_min,
+#if (BT_BLE_FEAT_PAWR_EN == TRUE)
+    if ((err = btsnd_hcic_ble_set_periodic_adv_params_v2(instance, params->interval_min, params->interval_max,
+                                                params->properties, params->num_subevents, params->subevent_interval,
+                                                params->rsp_slot_delay, params->rsp_slot_spacing, params->num_rsp_slots)) != HCI_SUCCESS) {
+        BTM_TRACE_ERROR("LE PA SetParams_V2: cmd err=0x%x", err);
+        status = BTM_HCI_ERROR | err;
+    }
+#else
+    if ((err = btsnd_hcic_ble_set_periodic_adv_params(instance, params->interval_min,
                                                params->interval_max, params->properties)) != HCI_SUCCESS) {
         BTM_TRACE_ERROR("LE PA SetParams: cmd err=0x%x", err);
         status = BTM_HCI_ERROR | err;
     }
+#endif // (BT_BLE_FEAT_PAWR_EN == TRUE)
 
 end:
 
@@ -1735,3 +1755,352 @@ tBTM_STATUS BTM_BleSetHostFeature(uint16_t bit_num, uint8_t bit_val)
     return status;
 }
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
+
+#if (BT_BLE_FEAT_PAWR_EN == TRUE)
+void BTM_BleSetPaSubeventData(UINT8 adv_handle, UINT8 num_subevents_with_data, uint8_t *subevent_params)
+{
+    tBTM_STATUS status = BTM_SUCCESS;
+    tHCI_STATUS err = HCI_SUCCESS;
+    tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
+
+    if ((err = btsnd_hcic_ble_set_periodic_adv_subevt_data(adv_handle, num_subevents_with_data, (ble_subevent_params *)subevent_params)) != HCI_SUCCESS) {
+        BTM_TRACE_ERROR("%s cmd err = 0x%x", __func__, err);
+        status = BTM_HCI_ERROR | err;
+    }
+
+    cb_params.pa_subevt_data_evt.status = status;
+    cb_params.pa_subevt_data_evt.adv_handle = adv_handle;
+
+    BTM_ExtBleCallbackTrigger(BTM_BLE_GAP_SET_PERIODIC_ADV_SUBEVT_DATA_EVT, &cb_params);
+}
+
+void BTM_BleSetPaResponseData(UINT16 sync_handle, UINT16 req_evt, UINT8 req_subevt, UINT8 rsp_subevt, UINT8 rsp_slot, UINT8 rsp_data_len, UINT8 *rsp_data)
+{
+    tBTM_STATUS status = BTM_SUCCESS;
+    tHCI_STATUS err = HCI_SUCCESS;
+    tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
+
+    if ((err = btsnd_hcic_ble_set_periodic_adv_rsp_data(sync_handle, req_evt, req_subevt, rsp_subevt, rsp_slot, rsp_data_len, rsp_data)) != HCI_SUCCESS) {
+        BTM_TRACE_ERROR("%s cmd err = 0x%x", __func__, err);
+        status = BTM_HCI_ERROR | err;
+    }
+
+    cb_params.pa_rsp_data_evt.status = status;
+    cb_params.pa_rsp_data_evt.sync_handle = sync_handle;
+
+    BTM_ExtBleCallbackTrigger(BTM_BLE_GAP_SET_PERIODIC_ADV_RESPONSE_DATA_EVT, &cb_params);
+}
+
+void BTM_BleSetPaSyncSubevt(UINT16 sync_handle, UINT16 periodic_adv_properties, UINT8 num_subevents_to_sync, UINT8 *subevt)
+{
+    tBTM_STATUS status = BTM_SUCCESS;
+    tHCI_STATUS err = HCI_SUCCESS;
+    tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
+
+    if ((err = btsnd_hcic_ble_set_periodic_sync_subevt(sync_handle, periodic_adv_properties, num_subevents_to_sync, subevt)) != HCI_SUCCESS) {
+        BTM_TRACE_ERROR("%s cmd err = 0x%x", __func__, err);
+        status = BTM_HCI_ERROR | err;
+    }
+
+    cb_params.pa_sync_subevt_evt.status = status;
+    cb_params.pa_sync_subevt_evt.sync_handle = sync_handle;
+
+    BTM_ExtBleCallbackTrigger(BTM_BLE_GAP_SET_PERIODIC_SYNC_SUBEVT_EVT, &cb_params);
+}
+
+void btm_ble_pa_subevt_data_req_evt(tBTM_BLE_PA_SUBEVT_DATA_REQ_EVT *params)
+{
+    BTM_ExtBleCallbackTrigger(BTM_BLE_GAP_PERIODIC_ADV_SUBEVT_DATA_REQUEST_EVT, (tBTM_BLE_5_GAP_CB_PARAMS *)params);
+}
+
+void btm_ble_pa_rsp_rpt_evt(tBTM_BLE_PA_RSP_REPORT_EVT *params)
+{
+    BTM_ExtBleCallbackTrigger(BTM_BLE_GAP_PERIODIC_ADV_RESPONSE_REPORT_EVT, (tBTM_BLE_5_GAP_CB_PARAMS *)params);
+}
+
+#endif // #if (BT_BLE_FEAT_PAWR_EN == TRUE)
+
+#if (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
+void BTM_BleCSReadLocalSuppCaps(void)
+{
+    btsnd_hcic_ble_cs_read_local_supported_caps();
+}
+
+void btm_ble_cs_read_local_supp_caps_cmpl_evt(uint8_t *p)
+{
+    tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
+
+    STREAM_TO_UINT8(cb_params.cs_read_local_supp_caps.status, p);
+    if (cb_params.cs_read_local_supp_caps.status != HCI_SUCCESS) {
+        BTM_TRACE_ERROR("%s cmd err = 0x%x", __func__, cb_params.cs_read_local_supp_caps.status);
+        cb_params.cs_read_local_supp_caps.status |= BTM_HCI_ERROR;
+        goto _error;
+    }
+
+    STREAM_TO_UINT16(cb_params.cs_read_local_supp_caps.conn_handle, p);
+    STREAM_TO_UINT8(cb_params.cs_read_local_supp_caps.num_config_supported, p);
+    STREAM_TO_UINT16(cb_params.cs_read_local_supp_caps.max_consecutive_proc_supported, p);
+    STREAM_TO_UINT8(cb_params.cs_read_local_supp_caps.num_ant_supported, p);
+    STREAM_TO_UINT8(cb_params.cs_read_local_supp_caps.max_ant_paths_supported, p);
+    STREAM_TO_UINT8(cb_params.cs_read_local_supp_caps.roles_supported, p);
+    STREAM_TO_UINT8(cb_params.cs_read_local_supp_caps.modes_supported, p);
+    STREAM_TO_UINT8(cb_params.cs_read_local_supp_caps.rtt_capability, p);
+    STREAM_TO_UINT8(cb_params.cs_read_local_supp_caps.rtt_aa_only_n, p);
+    STREAM_TO_UINT8(cb_params.cs_read_local_supp_caps.rtt_sounding_n, p);
+    STREAM_TO_UINT8(cb_params.cs_read_local_supp_caps.rtt_random_payload_n, p);
+    STREAM_TO_UINT16(cb_params.cs_read_local_supp_caps.NADM_sounding_capability, p);
+    STREAM_TO_UINT16(cb_params.cs_read_local_supp_caps.NADM_random_capability, p);
+    STREAM_TO_UINT8(cb_params.cs_read_local_supp_caps.cs_sync_phys_supported, p);
+    STREAM_TO_UINT16(cb_params.cs_read_local_supp_caps.subfeatures_supported, p);
+    STREAM_TO_UINT16(cb_params.cs_read_local_supp_caps.T_IP1_times_supported, p);
+    STREAM_TO_UINT16(cb_params.cs_read_local_supp_caps.T_IP2_times_supported, p);
+    STREAM_TO_UINT16(cb_params.cs_read_local_supp_caps.T_FCS_times_supported, p);
+    STREAM_TO_UINT16(cb_params.cs_read_local_supp_caps.T_PM_times_supported, p);
+    STREAM_TO_UINT8(cb_params.cs_read_local_supp_caps.T_SW_times_supported, p);
+    STREAM_TO_UINT8(cb_params.cs_read_local_supp_caps.TX_SNR_capability, p);
+
+_error:
+
+    BTM_ExtBleCallbackTrigger(BTM_BLE_GAP_CS_READ_LOCAL_SUPP_CAPS_EVT, &cb_params);
+}
+
+void BTM_BleCSReadRemoteSuppCaps(UINT16 conn_handle)
+{
+    btsnd_hcic_ble_cs_read_remote_supported_capabilities(conn_handle);
+}
+
+void btm_ble_cs_read_remote_supp_caps_cmd_status(UINT8 status)
+{
+    if (status != HCI_SUCCESS) {
+        tBTM_BLE_CS_READ_REMOTE_SUPP_CAPS_CMPL_EVT cs_read_remote_supp_caps = {0};
+        cs_read_remote_supp_caps.status = (status | BTM_HCI_ERROR);
+
+        BTM_ExtBleCallbackTrigger(BTM_BLE_GAP_CS_READ_REMOTE_SUPP_CAPS_CMPL_EVT, (tBTM_BLE_5_GAP_CB_PARAMS *)&cs_read_remote_supp_caps);
+    }
+}
+
+void BTM_BleGapWriteCachedRemoteSupportedCaps(UINT16 conn_handle, UINT8 num_config_supported, UINT16 max_consecutive_proc_supported,
+                                                UINT8 num_ant_supported, UINT8 max_ant_paths_supported, UINT8 roles_supported,
+                                                UINT8 modes_supported, UINT8 rtt_capability, UINT8 rtt_aa_only_n,
+                                                UINT8 rtt_sounding_n, UINT8 rtt_random_payload_n, UINT16 NADM_sounding_capability,
+                                                UINT16 NADM_random_capability, UINT8  cs_sync_phys_supported, UINT16 subfeatures_supported,
+                                                UINT16 T_IP1_times_supported, UINT16 T_IP2_times_supported, UINT16 T_FCS_times_supported,
+                                                UINT16 T_PM_times_supported, UINT8 T_SW_times_supported, UINT8 TX_SNR_capability)
+{
+    tBTM_STATUS status = BTM_SUCCESS;
+    tHCI_STATUS err = HCI_SUCCESS;
+    tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
+
+    if ((err = btsnd_hcic_ble_cs_write_cached_remote_supported_capabilities(conn_handle, num_config_supported, max_consecutive_proc_supported,
+                                                num_ant_supported, max_ant_paths_supported, roles_supported,
+                                                modes_supported, rtt_capability, rtt_aa_only_n,
+                                                rtt_sounding_n, rtt_random_payload_n, NADM_sounding_capability,
+                                                NADM_random_capability, cs_sync_phys_supported, subfeatures_supported,
+                                                T_IP1_times_supported, T_IP2_times_supported, T_FCS_times_supported,
+                                                T_PM_times_supported, T_SW_times_supported, TX_SNR_capability)) != HCI_SUCCESS) {
+        BTM_TRACE_ERROR("cs write cached remote support caps, cmd err=0x%x", err);
+        status = BTM_HCI_ERROR | err;
+    }
+
+    cb_params.cs_write_cached_remote_supp_caps.status = status;
+    cb_params.cs_write_cached_remote_supp_caps.conn_handle = conn_handle;
+    BTM_ExtBleCallbackTrigger(BTM_BLE_GAP_CS_WRITE_CACHED_REMOTE_SUPP_CAPS_EVT, &cb_params);
+}
+
+void BTM_BleGapCsSecurityEnable(UINT16 conn_handle)
+{
+    btsnd_hcic_ble_cs_security_enable(conn_handle);
+}
+
+void btm_ble_cs_security_enable_cmd_status(UINT8 status)
+{
+    tBTM_BLE_CS_SEC_ENABLE_CMPL_EVT cs_security_enable = {0};
+    if (status != HCI_SUCCESS) {
+        cs_security_enable.status = (status | BTM_HCI_ERROR);
+        BTM_ExtBleCallbackTrigger(BTM_BLE_GAP_CS_SECURITY_ENABLE_CMPL_EVT, (tBTM_BLE_5_GAP_CB_PARAMS *)&cs_security_enable);
+    }
+}
+
+void BTM_BleGapCsSetDefaultSetting(UINT16 conn_handle, UINT8 role_enable, UINT8 cs_sync_ant_selection, INT8 max_tx_power)
+{
+    tBTM_STATUS status = BTM_SUCCESS;
+    tHCI_STATUS err = HCI_SUCCESS;
+    tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
+
+    if ((err = btsnd_hcic_ble_cs_set_default_settings(conn_handle, role_enable, cs_sync_ant_selection, max_tx_power)) != HCI_SUCCESS) {
+        BTM_TRACE_ERROR("cs set default setting, cmd err=0x%x", err);
+        status = BTM_HCI_ERROR | err;
+    }
+
+    cb_params.cs_set_default_settings.status = status;
+    cb_params.cs_set_default_settings.conn_handle = conn_handle;
+    BTM_ExtBleCallbackTrigger(BTM_BLE_GAP_CS_SET_DEFAULT_SETTINGS_EVT, &cb_params);
+}
+
+void BTM_BleGapCsReadRemoteFaeTable(UINT16 conn_handle)
+{
+    btsnd_hcic_ble_cs_read_remote_fae_table(conn_handle);
+}
+
+void btm_ble_cs_read_remote_fae_table_cmd_status(UINT8 status)
+{
+    tBTM_BLE_CS_READ_REMOTE_FAE_TAB_CMPL_EVT cs_read_remote_fae_tab = {0};
+    if (status != HCI_SUCCESS) {
+        cs_read_remote_fae_tab.status = (status | BTM_HCI_ERROR);
+        BTM_ExtBleCallbackTrigger(BTM_BLE_GAP_CS_READ_REMOTE_FAE_TABLE_CMPL_EVT, (tBTM_BLE_5_GAP_CB_PARAMS *)&cs_read_remote_fae_tab);
+    }
+}
+
+void BTM_BleGapWriteCachedRemoteFaeTable(UINT16 conn_handle, UINT8 *remote_fae_table)
+{
+    tBTM_STATUS status = BTM_SUCCESS;
+    tHCI_STATUS err = HCI_SUCCESS;
+    tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
+
+    if ((err = btsnd_hcic_ble_cs_write_cached_remote_fae_table(conn_handle, remote_fae_table)) != HCI_SUCCESS) {
+        BTM_TRACE_ERROR("cs write cached remote fae tab, cmd err=0x%x", err);
+        status = BTM_HCI_ERROR | err;
+    }
+
+    cb_params.cs_write_cached_remote_fae_tab.status = status;
+    cb_params.cs_write_cached_remote_fae_tab.conn_handle = conn_handle;
+    BTM_ExtBleCallbackTrigger(BTM_BLE_GAP_CS_WRITE_CACHED_REMOTE_FAE_TAB_EVT, &cb_params);
+}
+
+void BTM_BleGapCsCreateConfig(UINT16 conn_handle, UINT8 config_id, UINT8 create_context,
+                                UINT8 main_mode_type, UINT8 sub_mode_type, UINT8 min_main_mode_steps,
+                                UINT8 max_main_mode_steps, UINT8 main_mode_repetition, UINT8 mode_0_steps,
+                                UINT8 role, UINT8 rtt_type, UINT8 cs_sync_phy, UINT8 *channel_map,
+                                UINT8 channel_map_repetition, UINT8 channel_selection_type, UINT8 ch3c_shape,
+                                UINT8 ch3c_jump,UINT8 reserved)
+{
+    btsnd_hcic_ble_cs_create_config(conn_handle, config_id, create_context,
+                                main_mode_type, sub_mode_type, min_main_mode_steps,
+                                max_main_mode_steps, main_mode_repetition, mode_0_steps,
+                                role, rtt_type, cs_sync_phy, channel_map,
+                                channel_map_repetition, channel_selection_type, ch3c_shape,
+                                ch3c_jump, reserved);
+}
+
+void BTM_BleGapCsRemoveConfig(UINT16 conn_handle, UINT8 config_id)
+{
+    btsnd_hcic_ble_cs_remove_config(conn_handle, config_id);
+}
+
+void btm_ble_cs_update_config_cmd_status(UINT8 status, BOOLEAN create)
+{
+    tBTM_BLE_CS_CONFIG_CMPL_EVT config_cmpl = {0};
+    if (status != HCI_SUCCESS) {
+        config_cmpl.status = (status | BTM_HCI_ERROR);
+        config_cmpl.action = (create? 0x01:0x00);
+        BTM_ExtBleCallbackTrigger(BTM_BLE_GAP_CS_CONFIG_CMPL_EVT, (tBTM_BLE_5_GAP_CB_PARAMS *)&config_cmpl);
+    }
+}
+
+void BTM_BleGapCsSetChannelClass(UINT8 *channel_class)
+{
+    tBTM_STATUS status = BTM_SUCCESS;
+    tHCI_STATUS err = HCI_SUCCESS;
+    tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
+
+    if ((err = btsnd_hcic_ble_cs_set_channel_classification(channel_class)) != HCI_SUCCESS) {
+        BTM_TRACE_ERROR("cs set channel class, cmd err=0x%x", err);
+        status = BTM_HCI_ERROR | err;
+    }
+
+    cb_params.status = status;
+    BTM_ExtBleCallbackTrigger(BTM_BLE_GAP_CS_SET_CHANNEL_CLASS_CMPL_EVT, &cb_params);
+}
+
+void BTM_BleGapCsSetProcPatams(UINT16 conn_handle, UINT8 config_id, UINT16 max_procedure_len,
+                                UINT16 min_procedure_interval, UINT16 max_procedure_interval,
+                                UINT16 max_procedure_count, UINT32 min_subevent_len,
+                                UINT32 max_subevent_len, UINT8 tone_ant_config_selection,
+                                UINT8 phy, UINT8 tx_power_delta, UINT8 preferred_peer_antenna,
+                                UINT8 SNR_control_initiator, UINT8 SNR_control_reflector)
+{
+    tBTM_STATUS status = BTM_SUCCESS;
+    tHCI_STATUS err = HCI_SUCCESS;
+    tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
+
+    if ((err = btsnd_hcic_ble_cs_set_procedure_params(conn_handle, config_id, max_procedure_len,
+                                min_procedure_interval, max_procedure_interval,
+                                max_procedure_count, min_subevent_len,
+                                max_subevent_len, tone_ant_config_selection,
+                                phy, tx_power_delta, preferred_peer_antenna,
+                                SNR_control_initiator, SNR_control_reflector)) != HCI_SUCCESS) {
+        BTM_TRACE_ERROR("cs set procedure params, cmd err=0x%x", err);
+        status = BTM_HCI_ERROR | err;
+    }
+
+    cb_params.cs_set_proc_params.status = status;
+    cb_params.cs_set_proc_params.conn_handle = conn_handle;
+    BTM_ExtBleCallbackTrigger(BTM_BLE_GAP_CS_PROC_PARAMS_CMPL_EVT, &cb_params);
+}
+
+void BTM_BleGapCsProcEnable(UINT16 conn_handle, UINT8 config_id, UINT8 enable)
+{
+    btsnd_hcic_ble_cs_procedure_enable(conn_handle, config_id, enable);
+}
+
+void btm_ble_cs_read_remote_supp_caps_cmpl_evt(tBTM_BLE_CS_READ_REMOTE_SUPP_CAPS_CMPL_EVT *cs_read_remote_supp_caps)
+{
+    if (cs_read_remote_supp_caps->status != HCI_SUCCESS) {
+        BTM_TRACE_ERROR("%s cmd err = 0x%x", __func__, cs_read_remote_supp_caps->status);
+        cs_read_remote_supp_caps->status |= BTM_HCI_ERROR;
+    }
+
+    BTM_ExtBleCallbackTrigger(BTM_BLE_GAP_CS_READ_REMOTE_SUPP_CAPS_CMPL_EVT, (tBTM_BLE_5_GAP_CB_PARAMS *)cs_read_remote_supp_caps);
+}
+
+void btm_ble_cs_read_remote_fae_tab_cmpl_evt(tBTM_BLE_CS_READ_REMOTE_FAE_TAB_CMPL_EVT *cs_read_remote_fae_tab)
+{
+    if (cs_read_remote_fae_tab->status != HCI_SUCCESS) {
+        BTM_TRACE_ERROR("%s cmd err = 0x%x", __func__, cs_read_remote_fae_tab->status);
+        cs_read_remote_fae_tab->status |= BTM_HCI_ERROR;
+    }
+
+    BTM_ExtBleCallbackTrigger(BTM_BLE_GAP_CS_READ_REMOTE_FAE_TABLE_CMPL_EVT, (tBTM_BLE_5_GAP_CB_PARAMS *)cs_read_remote_fae_tab);
+}
+
+void btm_ble_cs_securuty_enable_cmpl_evt(tBTM_BLE_CS_SEC_ENABLE_CMPL_EVT *cs_security_enable)
+{
+    if (cs_security_enable->status != HCI_SUCCESS) {
+        BTM_TRACE_ERROR("%s cmd err = 0x%x", __func__, cs_security_enable->status);
+        cs_security_enable->status |= BTM_HCI_ERROR;
+    }
+
+    BTM_ExtBleCallbackTrigger(BTM_BLE_GAP_CS_SECURITY_ENABLE_CMPL_EVT, (tBTM_BLE_5_GAP_CB_PARAMS *)cs_security_enable);
+}
+
+void btm_ble_cs_config_cmpl_evt(tBTM_BLE_CS_CONFIG_CMPL_EVT *config_cmpl)
+{
+    if (config_cmpl->status != HCI_SUCCESS) {
+        BTM_TRACE_ERROR("%s cmd err = 0x%x", __func__, config_cmpl->status);
+        config_cmpl->status |= BTM_HCI_ERROR;
+    }
+
+    BTM_ExtBleCallbackTrigger(BTM_BLE_GAP_CS_CONFIG_CMPL_EVT, (tBTM_BLE_5_GAP_CB_PARAMS *)config_cmpl);
+}
+
+void btm_ble_cs_proc_enable_cmpl_evt(tBTM_BLE_CS_PROC_ENABLE_CMPL_EVT *proc_en)
+{
+    if (proc_en->status != HCI_SUCCESS) {
+        BTM_TRACE_ERROR("%s cmd err = 0x%x", __func__, proc_en->status);
+        proc_en->status |= BTM_HCI_ERROR;
+    }
+
+    BTM_ExtBleCallbackTrigger(BTM_BLE_GAP_CS_PROC_ENABLE_CMPL_EVT, (tBTM_BLE_5_GAP_CB_PARAMS *)proc_en);
+}
+
+void btm_ble_cs_subevt_result_evt(tBTM_BLE_CS_SUBEVT_RESULT_CMPL_EVT *subevt_result)
+{
+    BTM_ExtBleCallbackTrigger(BTM_BLE_GAP_CS_SUBEVENT_RESULT_EVT, (tBTM_BLE_5_GAP_CB_PARAMS *)subevt_result);
+}
+
+void btm_ble_cs_subevt_continue_result_evt(tBTM_BLE_CS_SUBEVT_RESULT_CONTINUE_EVT *subevt_result_continue)
+{
+    BTM_ExtBleCallbackTrigger(BTM_BLE_GAP_CS_SUBEVENT_RESULT_CONTINUE_EVT, (tBTM_BLE_5_GAP_CB_PARAMS *)subevt_result_continue);
+}
+
+#endif // (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
