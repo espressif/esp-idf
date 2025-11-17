@@ -354,6 +354,7 @@
 #define SOC_ISP_DVP_SUPPORTED                    1
 #define SOC_ISP_LSC_SUPPORTED                    1
 #define SOC_ISP_SHARPEN_SUPPORTED                1
+#define SOC_ISP_WBG_SUPPORTED                    1
 #define SOC_ISP_SHARE_CSI_BRG                    1
 
 #define SOC_ISP_NUMS                             1U
@@ -363,6 +364,8 @@
 #define SOC_ISP_AE_BLOCK_Y_NUMS                  5
 #define SOC_ISP_AF_CTLR_NUMS                     1U
 #define SOC_ISP_AF_WINDOW_NUMS                   3
+#define SOC_ISP_AWB_WINDOW_X_NUMS                5
+#define SOC_ISP_AWB_WINDOW_Y_NUMS                5
 #define SOC_ISP_BF_TEMPLATE_X_NUMS               3
 #define SOC_ISP_BF_TEMPLATE_Y_NUMS               3
 #define SOC_ISP_CCM_DIMENSION                    3

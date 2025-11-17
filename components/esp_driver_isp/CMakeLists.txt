@@ -42,6 +42,10 @@ if(CONFIG_SOC_ISP_LSC_SUPPORTED)
     list(APPEND srcs "src/isp_lsc.c")
 endif()
 
+if(CONFIG_SOC_ISP_WBG_SUPPORTED)
+    list(APPEND srcs "src/isp_wbg.c")
+endif()
+
 if(NOT ${target} STREQUAL "linux")
     list(APPEND requires esp_mm)
 endif()

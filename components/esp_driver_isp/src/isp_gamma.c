@@ -58,6 +58,8 @@ esp_err_t esp_isp_gamma_configure(isp_proc_handle_t proc, color_component_t comp
 esp_err_t esp_isp_gamma_enable(isp_proc_handle_t proc)
 {
     ESP_RETURN_ON_FALSE(proc, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
+    isp_fsm_t expected_fsm = ISP_FSM_INIT;
+    ESP_RETURN_ON_FALSE(atomic_compare_exchange_strong(&proc->gamma_fsm, &expected_fsm, ISP_FSM_ENABLE), ESP_ERR_INVALID_STATE, TAG, "gamma is enabled already");
 
     portENTER_CRITICAL(&proc->spinlock);
     isp_ll_gamma_enable(proc->hal.hw, true);
@@ -69,6 +71,8 @@ esp_err_t esp_isp_gamma_enable(isp_proc_handle_t proc)
 esp_err_t esp_isp_gamma_disable(isp_proc_handle_t proc)
 {
     ESP_RETURN_ON_FALSE(proc, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
+    isp_fsm_t expected_fsm = ISP_FSM_ENABLE;
+    ESP_RETURN_ON_FALSE(atomic_compare_exchange_strong(&proc->gamma_fsm, &expected_fsm, ISP_FSM_INIT), ESP_ERR_INVALID_STATE, TAG, "gamma is disabled already");
 
     portENTER_CRITICAL(&proc->spinlock);
     isp_ll_gamma_enable(proc->hal.hw, false);
