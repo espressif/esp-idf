@@ -520,14 +520,14 @@ static void parlio_tx_do_transaction(parlio_tx_unit_t *tx_unit, parlio_tx_trans_
         }
     } else {
         // non-loop transmission
-#if SOC_PARLIO_TX_SUPPORT_EOF_FROM_DMA
+#if PARLIO_LL_SUPPORT(TX_EOF_FROM_DMA)
         // for DMA EOF supported target, we need to set the EOF condition to DMA EOF
         parlio_ll_tx_set_eof_condition(hal->regs, PARLIO_LL_TX_EOF_COND_DMA_EOF);
 #else
         // for DMA EOF not supported target, we need to set the bit length to the configured bit lens
         parlio_ll_tx_set_eof_condition(hal->regs, PARLIO_LL_TX_EOF_COND_DATA_LEN);
         parlio_ll_tx_set_trans_bit_len(hal->regs, t->payload_bits);
-#endif // SOC_PARLIO_TX_SUPPORT_EOF_FROM_DMA
+#endif // PARLIO_LL_SUPPORT(TX_EOF_FROM_DMA)
     }
 
     if (tx_unit->bs_handle) {
@@ -641,9 +641,9 @@ esp_err_t parlio_tx_unit_transmit(parlio_tx_unit_handle_t tx_unit, const void *p
     ESP_RETURN_ON_FALSE(tx_unit && payload && payload_bits, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     ESP_RETURN_ON_FALSE((payload_bits % tx_unit->data_width) == 0, ESP_ERR_INVALID_ARG, TAG, "payload bit length must align to bus width");
     ESP_RETURN_ON_FALSE(payload_bits <= tx_unit->max_transfer_bits, ESP_ERR_INVALID_ARG, TAG, "payload bit length too large");
-#if !SOC_PARLIO_TRANS_BIT_ALIGN
+#if !PARLIO_LL_SUPPORT(TRANS_BIT_ALIGN)
     ESP_RETURN_ON_FALSE((payload_bits % 8) == 0, ESP_ERR_INVALID_ARG, TAG, "payload bit length must be multiple of 8");
-#endif // !SOC_PARLIO_TRANS_BIT_ALIGN
+#endif // !PARLIO_LL_SUPPORT(TRANS_BIT_ALIGN)
 
 #if SOC_PARLIO_TX_SUPPORT_LOOP_TRANSMISSION
     if (config->flags.loop_transmission) {
@@ -654,13 +654,13 @@ esp_err_t parlio_tx_unit_transmit(parlio_tx_unit_handle_t tx_unit, const void *p
     ESP_RETURN_ON_FALSE(config->flags.loop_transmission == false, ESP_ERR_NOT_SUPPORTED, TAG, "loop transmission is not supported on this chip");
 #endif
 
-#if !SOC_PARLIO_TX_SUPPORT_EOF_FROM_DMA
+#if !PARLIO_LL_SUPPORT(TX_EOF_FROM_DMA)
     // check the max payload size if it's not a loop transmission and the DMA EOF is not supported
     if (!config->flags.loop_transmission) {
         ESP_RETURN_ON_FALSE(tx_unit->max_transfer_bits <= PARLIO_LL_TX_MAX_BITS_PER_FRAME,
                             ESP_ERR_INVALID_ARG, TAG, "invalid transfer size, max transfer size should be less than %d", PARLIO_LL_TX_MAX_BITS_PER_FRAME / 8);
     }
-#endif // !SOC_PARLIO_TX_SUPPORT_EOF_FROM_DMA
+#endif // !PARLIO_LL_SUPPORT(TX_EOF_FROM_DMA)
 
     size_t alignment = esp_ptr_external_ram(payload) ? tx_unit->ext_mem_align : tx_unit->int_mem_align;
     // check alignment

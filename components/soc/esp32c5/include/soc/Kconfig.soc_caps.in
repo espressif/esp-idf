@@ -899,18 +899,6 @@ config SOC_MCPWM_SUPPORT_SLEEP_RETENTION
     bool
     default y
 
-config SOC_PARLIO_GROUPS
-    int
-    default 1
-
-config SOC_PARLIO_TX_UNITS_PER_GROUP
-    int
-    default 1
-
-config SOC_PARLIO_RX_UNITS_PER_GROUP
-    int
-    default 1
-
 config SOC_PARLIO_TX_UNIT_MAX_DATA_WIDTH
     int
     default 8
@@ -927,19 +915,7 @@ config SOC_PARLIO_RX_CLK_SUPPORT_GATING
     bool
     default y
 
-config SOC_PARLIO_RX_CLK_SUPPORT_OUTPUT
-    bool
-    default y
-
-config SOC_PARLIO_TRANS_BIT_ALIGN
-    bool
-    default y
-
 config SOC_PARLIO_TX_SUPPORT_LOOP_TRANSMISSION
-    bool
-    default y
-
-config SOC_PARLIO_TX_SUPPORT_EOF_FROM_DMA
     bool
     default y
 

@@ -345,9 +345,6 @@
 // #define SOC_USB_SERIAL_JTAG_SUPPORT_LIGHT_SLEEP     (1)     /*!< Support to maintain minimum usb communication during light sleep */ // TODO: IDF-6395
 
 /*-------------------------- PARLIO CAPS --------------------------------------*/
-// #define SOC_PARLIO_GROUPS                    1U  /*!< Number of parallel IO peripherals */
-// #define SOC_PARLIO_TX_UNITS_PER_GROUP        1U  /*!< number of TX units in each group */
-// #define SOC_PARLIO_RX_UNITS_PER_GROUP        1U  /*!< number of RX units in each group */
 // #define SOC_PARLIO_TX_UNIT_MAX_DATA_WIDTH    8   /*!< Number of data lines of the TX unit */
 // #define SOC_PARLIO_RX_UNIT_MAX_DATA_WIDTH    8   /*!< Number of data lines of the RX unit */
 
