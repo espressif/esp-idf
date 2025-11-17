@@ -596,6 +596,7 @@ macro(idf_project_init)
             idf_die("sdkconfig.cmake file not found.")
         endif()
         include("${sdkconfig_cmake}")
+        unset(sdkconfig_cmake)
 
         # Initialize the target architecture based on the configuration
         # Ensure this is done after including the sdkconfig.
@@ -636,6 +637,7 @@ macro(idf_project_init)
                 idf_component_include("${component_name}")
             endforeach()
         endif()
+        unset(include_all_components)
 
         idf_build_set_property(__PROJECT_INITIALIZED YES)
     endif()
