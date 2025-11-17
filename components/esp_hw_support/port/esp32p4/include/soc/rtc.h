@@ -108,8 +108,13 @@ set sleep_init default param
 #define PVT_TARGET          0x7d00
 #define PVT_CLK_DIV         1
 #define PVT_EDG_MODE        1
+#if CONFIG_ESP32P4_SELECTS_REV_LESS_V3
 #define PVT_DELAY_NUM_HIGH  164
 #define PVT_DELAY_NUM_LOW   157
+#else
+#define PVT_DELAY_NUM_HIGH  160
+#define PVT_DELAY_NUM_LOW   153
+#endif
 
 /**
  * @brief Initialize PVT related parameters
