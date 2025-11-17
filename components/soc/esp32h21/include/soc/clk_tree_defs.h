@@ -188,6 +188,39 @@ typedef enum {
 #endif
 } soc_periph_gptimer_clk_src_t;
 
+//////////////////////////////////////////////////SDM///////////////////////////////////////////////////////////////////
+
+/**
+ * @brief Array initializer for all supported clock sources of SDM
+ */
+#define SOC_SDM_CLKS {SOC_MOD_CLK_PLL_F48M, SOC_MOD_CLK_XTAL}
+
+/**
+ * @brief Sigma Delta Modulator clock source
+ */
+typedef enum {
+    SDM_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,                        /*!< Select XTAL clock as the source clock */
+    SDM_CLK_SRC_PLL_F48M = SOC_MOD_CLK_PLL_F48M,                /*!< Select PLL_F48M clock as the source clock */
+    SDM_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F48M,                 /*!< Select PLL_F48M as the default clock choice */
+} soc_periph_sdm_clk_src_t;
+
+//////////////////////////////////////////////////GPIO Glitch Filter////////////////////////////////////////////////////
+
+/**
+ * @brief Array initializer for all supported clock sources of Glitch Filter
+ */
+#define SOC_GLITCH_FILTER_CLKS {SOC_MOD_CLK_PLL_F48M, SOC_MOD_CLK_XTAL}
+
+/**
+ * @brief Glitch filter clock source
+ */
+
+typedef enum {
+    GLITCH_FILTER_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,         /*!< Select XTAL clock as the source clock */
+    GLITCH_FILTER_CLK_SRC_PLL_F48M = SOC_MOD_CLK_PLL_F48M, /*!< Select PLL_F48M clock as the source clock */
+    GLITCH_FILTER_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F48M,  /*!< Select PLL_F48M clock as the default clock choice */
+} soc_periph_glitch_filter_clk_src_t;
+
 //////////////////////////////////////////////////RMT///////////////////////////////////////////////////////////////////
 
 /**
