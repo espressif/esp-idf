@@ -913,18 +913,6 @@ typedef UINT8   tBTM_BLE_CONN_TYPE;
 #define ADV_INFO_PRESENT        0x00
 #define NO_ADV_INFO_PRESENT     0x01
 
-#define BTM_BLE_MULTI_ADV_INVALID   0
-
-#define BTM_BLE_BATCH_SCAN_ENABLE_EVT     1
-#define BTM_BLE_BATCH_SCAN_CFG_STRG_EVT   2
-#define BTM_BLE_BATCH_SCAN_READ_REPTS_EVT 3
-#define BTM_BLE_BATCH_SCAN_THR_EVT        4
-#define BTM_BLE_BATCH_SCAN_PARAM_EVT      5
-#define BTM_BLE_BATCH_SCAN_DISABLE_EVT    6
-
-typedef UINT8 tBTM_BLE_BATCH_SCAN_EVT;
-
-
 typedef BOOLEAN (tBTM_BLE_SEL_CBACK)(BD_ADDR random_bda,     UINT8 *p_remote_name);
 
 /* callback function for SMP signing algorithm, signed data in little endian order with tlen bits long */
@@ -935,8 +923,6 @@ typedef void (tBTM_BLE_RANDOM_SET_CBACK) (BD_ADDR random_bda);
 
 typedef void (tBTM_BLE_SCAN_REQ_CBACK)(BD_ADDR remote_bda, tBLE_ADDR_TYPE addr_type, UINT8 adv_evt);
 typedef void (*tBLE_SCAN_PARAM_SETUP_CBACK)(tGATT_IF client_if, tBTM_STATUS status);
-
-tBTM_BLE_SCAN_SETUP_CBACK bta_ble_scan_setup_cb;
 
 typedef void (tBTM_START_ADV_CMPL_CBACK) (UINT8 status);
 typedef void (tBTM_START_STOP_ADV_CMPL_CBACK) (UINT8 status);
