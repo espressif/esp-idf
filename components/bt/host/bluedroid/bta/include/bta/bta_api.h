@@ -293,9 +293,6 @@ typedef struct {
     BOOLEAN             report_dup;     /* report duplicated inquiry response with higher RSSI value */
     tBTA_DM_INQ_FILT    filter_type;    /* Filter condition type. */
     tBTA_DM_INQ_COND    filter_cond;    /* Filter condition data. */
-#if (defined(BTA_HOST_INTERLEAVE_SEARCH) && BTA_HOST_INTERLEAVE_SEARCH == TRUE)
-    UINT8               intl_duration[4];/*duration array storing the interleave scan's time portions*/
-#endif
 } tBTA_DM_INQ;
 
 /* Config EIR callback */
