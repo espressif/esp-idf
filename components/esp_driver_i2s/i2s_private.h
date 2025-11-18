@@ -135,6 +135,7 @@ struct i2s_channel_obj_t {
     /* Stored configurations */
     int                     intr_prio_flags;/*!< i2s interrupt priority flags */
     void                    *mode_info;     /*!< Slot, clock and gpio information of each mode */
+    bool                    full_duplex_slave; /*!< whether the channel is forced to switch to slave role for full duplex */
 #if SOC_I2S_SUPPORTS_APLL
     bool                    apll_en;        /*!< Flag of whether APLL enabled */
 #endif
