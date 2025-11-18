@@ -1076,8 +1076,8 @@ esp_err_t uart_param_config(uart_port_t uart_num, const uart_config_t *uart_conf
     uint32_t sclk_freq;
     ESP_RETURN_ON_ERROR(esp_clk_tree_src_get_freq_hz(uart_sclk_sel, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &sclk_freq), UART_TAG, "invalid src_clk");
 
-    // Enable the newly selected clock source.
-    ESP_RETURN_ON_ERROR(esp_clk_tree_enable_src(uart_sclk_sel, true), UART_TAG, "clock source enable failed");
+    // Enable the newly selected clock source
+    esp_clk_tree_enable_src(uart_sclk_sel, true);
 #if SOC_UART_SUPPORT_RTC_CLK
     if (uart_sclk_sel == (soc_module_clk_t)UART_SCLK_RTC) {
         periph_rtc_dig_clk8m_enable();
@@ -1086,8 +1086,6 @@ esp_err_t uart_param_config(uart_port_t uart_num, const uart_config_t *uart_conf
 
     bool success = false;
     UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
-    soc_module_clk_t uart_old_sclk_sel = uart_context[uart_num].sclk_sel;
-    uart_context[uart_num].sclk_sel = uart_sclk_sel;
     uart_hal_init(&(uart_context[uart_num].hal), uart_num);
     if (uart_num < SOC_UART_HP_NUM) {
         HP_UART_SRC_CLK_ATOMIC() {
@@ -1103,7 +1101,6 @@ esp_err_t uart_param_config(uart_port_t uart_num, const uart_config_t *uart_conf
         success = lp_uart_ll_set_baudrate(uart_context[uart_num].hal.dev, uart_config->baud_rate, sclk_freq);
     }
 #endif
-    // Disable the previously selected clock source
     uart_hal_set_parity(&(uart_context[uart_num].hal), uart_config->parity);
     uart_hal_set_data_bit_num(&(uart_context[uart_num].hal), uart_config->data_bits);
     uart_hal_set_stop_bits(&(uart_context[uart_num].hal), uart_config->stop_bits);
@@ -1112,8 +1109,18 @@ esp_err_t uart_param_config(uart_port_t uart_num, const uart_config_t *uart_conf
     UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
     uart_hal_rxfifo_rst(&(uart_context[uart_num].hal));
     uart_hal_txfifo_rst(&(uart_context[uart_num].hal));
-    ESP_RETURN_ON_ERROR(esp_clk_tree_enable_src(uart_old_sclk_sel, false), UART_TAG, "clock source disable failed");
-    ESP_RETURN_ON_FALSE(success, ESP_FAIL, UART_TAG, "baud rate unachievable");
+    // Disable the previously selected clock source, and update the new source in context
+    soc_module_clk_t uart_old_sclk_sel = uart_context[uart_num].sclk_sel;
+    esp_clk_tree_enable_src(uart_old_sclk_sel, false);
+    if (success) {
+        uart_context[uart_num].sclk_sel = uart_sclk_sel;
+    } else {
+        uart_context[uart_num].sclk_sel = -1;
+        esp_clk_tree_enable_src(uart_sclk_sel, false);
+        ESP_LOGE(UART_TAG, "baud rate unachievable");
+        return ESP_FAIL;
+    }
+
 #if SOC_UART_SUPPORT_SLEEP_RETENTION && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
     // Create sleep retention link if desired
     if (uart_num != CONFIG_ESP_CONSOLE_UART_NUM && uart_num < SOC_UART_HP_NUM) {
@@ -1638,7 +1645,8 @@ static int uart_tx_all(uart_port_t uart_num, const char *src, size_t size, bool 
         }
         xRingbufferSend(p_uart_obj[uart_num]->tx_ring_buf, (void *) &evt, sizeof(uart_tx_data_t), portMAX_DELAY);
         while (size > 0) {
-            size_t send_size = MIN(size, xRingbufferGetCurFreeSize(p_uart_obj[uart_num]->tx_ring_buf));
+            size_t free_size = xRingbufferGetCurFreeSize(p_uart_obj[uart_num]->tx_ring_buf);
+            size_t send_size = MIN(size, free_size);
             if (send_size > 0) {
                 xRingbufferSend(p_uart_obj[uart_num]->tx_ring_buf, (void *)(src + offset), send_size, portMAX_DELAY);
                 size -= send_size;
@@ -2047,6 +2055,36 @@ esp_err_t uart_driver_install(uart_port_t uart_num, int rx_buffer_size, int tx_b
                          &p_uart_obj[uart_num]->intr_handle);
     ESP_GOTO_ON_ERROR(ret, err, UART_TAG, "Could not allocate an interrupt for UART");
 
+    // Make sure uart sclk at least exist first (following code touchs hardware, and requires sclk to be enabled)
+    if (uart_context[uart_num].sclk_sel == -1 && uart_num != CONFIG_ESP_CONSOLE_UART_NUM) {
+        // set to a default clock source
+        soc_module_clk_t default_sclk = -1;
+        if (uart_num < SOC_UART_HP_NUM) {
+            default_sclk = UART_SCLK_DEFAULT;
+        }
+#if (SOC_UART_LP_NUM >= 1)
+        else {
+            default_sclk = LP_UART_SCLK_DEFAULT;
+        }
+#endif
+        esp_clk_tree_enable_src(default_sclk, true);
+        UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
+        if (uart_num < SOC_UART_HP_NUM) {
+            HP_UART_SRC_CLK_ATOMIC() {
+                uart_hal_set_sclk(&(uart_context[uart_num].hal), default_sclk);
+            }
+        }
+#if (SOC_UART_LP_NUM >= 1)
+        else {
+            LP_UART_SRC_CLK_ATOMIC() {
+                lp_uart_ll_set_source_clk(uart_context[uart_num].hal.dev, (soc_periph_lp_uart_clk_src_t)default_sclk);
+            }
+        }
+#endif
+        uart_context[uart_num].sclk_sel = default_sclk;
+        UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
+    }
+
     uart_intr_config_t uart_intr = {
         .intr_enable_mask = UART_INTR_CONFIG_FLAG,
         .rxfifo_full_thresh = UART_THRESHOLD_NUM(uart_num, UART_FULL_THRESH_DEFAULT),
@@ -2081,14 +2119,15 @@ esp_err_t uart_driver_delete(uart_port_t uart_num)
     uart_free_driver_obj(p_uart_obj[uart_num]);
     p_uart_obj[uart_num] = NULL;
 
-    ESP_RETURN_ON_ERROR(esp_clk_tree_enable_src(uart_context[uart_num].sclk_sel, false), UART_TAG, "clock source disable failed");
+    if (uart_num != CONFIG_ESP_CONSOLE_UART_NUM) {
+        esp_clk_tree_enable_src(uart_context[uart_num].sclk_sel, false);
 #if SOC_UART_SUPPORT_RTC_CLK
-    soc_module_clk_t sclk = 0;
-    uart_hal_get_sclk(&(uart_context[uart_num].hal), &sclk);
-    if (sclk == (soc_module_clk_t)UART_SCLK_RTC) {
-        periph_rtc_dig_clk8m_disable();
-    }
+        if (uart_context[uart_num].sclk_sel == (soc_module_clk_t)UART_SCLK_RTC) {
+            periph_rtc_dig_clk8m_disable();
+        }
 #endif
+        uart_context[uart_num].sclk_sel = -1;
+    }
 
 #if SOC_UART_SUPPORT_SLEEP_RETENTION && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
     // Free sleep retention link for HP UART
@@ -2290,7 +2329,7 @@ esp_err_t uart_detect_bitrate_start(uart_port_t uart_num, const uart_bitrate_det
         uart_sclk_sel = (soc_module_clk_t)((config->source_clk) ? config->source_clk : UART_SCLK_DEFAULT); // if no specifying the clock source (soc_module_clk_t starts from 1), then just use the default clock
         uint32_t sclk_freq = 0;
         ESP_GOTO_ON_ERROR(esp_clk_tree_src_get_freq_hz(uart_sclk_sel, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &sclk_freq), err, UART_TAG, "invalid source_clk");
-        ESP_GOTO_ON_ERROR(esp_clk_tree_enable_src(uart_sclk_sel, true), err, UART_TAG, "clock source enable failed");
+        esp_clk_tree_enable_src(uart_sclk_sel, true);
 #if SOC_UART_SUPPORT_RTC_CLK
         if (uart_sclk_sel == (soc_module_clk_t)UART_SCLK_RTC) {
             periph_rtc_dig_clk8m_enable();
@@ -2300,6 +2339,7 @@ esp_err_t uart_detect_bitrate_start(uart_port_t uart_num, const uart_bitrate_det
             uart_hal_set_sclk(&(uart_context[uart_num].hal), uart_sclk_sel);
             uart_hal_set_baudrate(&(uart_context[uart_num].hal), 57600, sclk_freq); // set to any baudrate
         }
+        uart_context[uart_num].sclk_sel = uart_sclk_sel;
         _uart_set_pin6(uart_num, UART_PIN_NO_CHANGE, config->rx_io_num, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
     } else if (config != NULL) {
         ESP_LOGW(UART_TAG, "unable to re-configure for an acquired port, ignoring the new config");
@@ -2352,7 +2392,7 @@ esp_err_t uart_detect_bitrate_stop(uart_port_t uart_num, bool deinit, uart_bitra
 
     if (deinit) { // release the port
         uart_release_pin(uart_num, true, true, true, true, true, true);
-        ESP_RETURN_ON_ERROR(esp_clk_tree_enable_src(uart_context[uart_num].sclk_sel, false), UART_TAG, "clock source disable failed");
+        esp_clk_tree_enable_src(uart_context[uart_num].sclk_sel, false);
 #if SOC_UART_SUPPORT_RTC_CLK
         if (src_clk == (soc_module_clk_t)UART_SCLK_RTC) {
             periph_rtc_dig_clk8m_disable();

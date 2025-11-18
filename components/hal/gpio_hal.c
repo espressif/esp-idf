@@ -42,8 +42,8 @@ void gpio_hal_iomux_in(gpio_hal_context_t *hal, uint32_t gpio_num, int func, uin
 
 void gpio_hal_iomux_out(gpio_hal_context_t *hal, uint32_t gpio_num, int func)
 {
-    gpio_ll_set_output_enable_ctrl(hal->dev, gpio_num, true, false);
     gpio_ll_func_sel(hal->dev, gpio_num, func);
+    // as long as the func sel is not GPIO, the oe can only be controlled by the peripheral
 }
 
 void gpio_hal_matrix_in(gpio_hal_context_t *hal, uint32_t gpio_num, uint32_t signal_idx, bool in_inv)
