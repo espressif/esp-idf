@@ -53,11 +53,11 @@ void IRAM_ATTR esp_system_reset_modules_on_exit(void)
         }
     }
     if (dma2d_ll_is_bus_clock_enabled(0)) {
-        for (int i = 0; i < SOC_DMA2D_RX_CHANNELS_PER_GROUP; i++) {
+        for (int i = 0; i < DMA2D_LL_RX_CHANNELS_PER_GROUP; i++) {
             dma2d_ll_rx_abort(DMA2D_LL_GET_HW(0), i, true);
             while (!dma2d_ll_rx_is_reset_avail(DMA2D_LL_GET_HW(0), i));
         }
-        for (int i = 0; i < SOC_DMA2D_TX_CHANNELS_PER_GROUP; i++) {
+        for (int i = 0; i < DMA2D_LL_TX_CHANNELS_PER_GROUP; i++) {
             dma2d_ll_tx_abort(DMA2D_LL_GET_HW(0), i, true);
             while (!dma2d_ll_tx_is_reset_avail(DMA2D_LL_GET_HW(0), i));
         }

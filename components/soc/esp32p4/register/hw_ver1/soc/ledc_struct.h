@@ -106,10 +106,10 @@ typedef union {
  */
 typedef union {
     struct {
-        /** duty_ch0_r : RO; bitpos: [24:0]; default: 0;
+        /** duty_r : RO; bitpos: [24:0]; default: 0;
          *  Represents the current duty of output signal on channel n.
          */
-        uint32_t duty:25;
+        uint32_t duty_r:25;
         uint32_t reserved_25:7;
     };
     uint32_t val;
@@ -577,20 +577,20 @@ typedef union {
  */
 typedef union {
     struct {
-        /** ch0_gamma_entry_num : R/W; bitpos: [4:0]; default: 0;
+        /** gamma_entry_num : R/W; bitpos: [4:0]; default: 0;
          *  Configures the number of duty cycle fading rages for LEDC chn.
          */
-        uint32_t ch0_gamma_entry_num:5;
-        /** ch0_gamma_pause : WT; bitpos: [5]; default: 0;
+        uint32_t gamma_entry_num:5;
+        /** gamma_pause : WT; bitpos: [5]; default: 0;
          *  Configures whether or not to pause duty cycle fading of LEDC chn.\\0: Invalid. No
          *  effect\\1: Pause
          */
-        uint32_t ch0_gamma_pause:1;
-        /** ch0_gamma_resume : WT; bitpos: [6]; default: 0;
+        uint32_t gamma_pause:1;
+        /** gamma_resume : WT; bitpos: [6]; default: 0;
          *  Configures whether or nor to resume duty cycle fading of LEDC chn.\\0: Invalid. No
          *  effect\\1: Resume
          */
-        uint32_t ch0_gamma_resume:1;
+        uint32_t gamma_resume:1;
         uint32_t reserved_7:25;
     };
     uint32_t val;
