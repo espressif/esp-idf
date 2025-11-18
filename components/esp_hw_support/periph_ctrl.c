@@ -8,6 +8,7 @@
 #include "esp_attr.h"
 #include "esp_private/periph_ctrl.h"
 #include "soc/soc_caps.h"
+#include "esp_log.h"
 
 #if SOC_MODEM_CLOCK_IS_INDEPENDENT
 #include "esp_private/esp_modem_clock.h"
@@ -201,5 +202,24 @@ IRAM_ATTR void phy_module_disable(void)
 #endif
     portEXIT_CRITICAL_SAFE(&periph_spinlock);
 #endif
+}
+
+IRAM_ATTR bool phy_module_has_clock_bits(uint32_t mask)
+{
+    uint32_t val = 0;
+#if SOC_MODEM_CLOCK_IS_INDEPENDENT
+    val = modem_clock_module_bits_get(PERIPH_PHY_MODULE);
+#else
+#if SOC_WIFI_SUPPORTED || SOC_BT_SUPPORTED
+    val = DPORT_REG_READ(periph_ll_get_clk_en_reg(PERIPH_WIFI_BT_COMMON_MODULE));
+#else
+    return true;
+#endif
+#endif
+    if ((val & mask) != mask) {
+        ESP_LOGW("periph_ctrl", "phy module clock bits 0x%"PRIx32", required 0x%"PRIx32, val, mask);
+        return false;
+    }
+    return true;
 }
 #endif  //#if SOC_BT_SUPPORTED || SOC_WIFI_SUPPORTED || SOC_IEEE802154_SUPPORTED
