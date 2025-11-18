@@ -719,6 +719,10 @@ config SOC_LEDC_SUPPORT_ETM
     bool
     default y
 
+config SOC_GP_LDO_NUM_UNITS
+    int
+    default 1
+
 config SOC_RMT_MEM_WORDS_PER_CHANNEL
     int
     default 48

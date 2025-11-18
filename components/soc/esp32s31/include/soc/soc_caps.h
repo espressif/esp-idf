@@ -276,6 +276,9 @@
 #define SOC_LEDC_SUPPORT_SLEEP_RETENTION    (1)
 #define SOC_LEDC_SUPPORT_ETM                (1)
 
+/*-------------------------- LDO CAPS ----------------------------------------*/
+#define SOC_GP_LDO_NUM_UNITS                1U    // Number of general purpose LDO units
+
 /*--------------------------- RMT CAPS ---------------------------------------*/
 #define SOC_RMT_MEM_WORDS_PER_CHANNEL         48 /*!< Each channel owns 48 words memory (1 word = 4 Bytes) */
 #define SOC_RMT_SUPPORT_RX_PINGPONG           1  /*!< Support Ping-Pong mode on RX path */

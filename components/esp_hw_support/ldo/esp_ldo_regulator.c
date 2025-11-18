@@ -33,8 +33,8 @@ static const uint32_t s_ldo_channel_adjustable_mask = LDO_LL_ADJUSTABLE_CHAN_MAS
 
 // Allocate LDO channel memory statically
 // LDO is a fundamental module and should be usable even without a heap allocator
-static ldo_regulator_channel_t s_ldo_channels[LDO_LL_NUM_UNITS] = {
-    [0 ... LDO_LL_NUM_UNITS - 1] = {
+static ldo_regulator_channel_t s_ldo_channels[SOC_GP_LDO_NUM_UNITS] = {
+    [0 ... SOC_GP_LDO_NUM_UNITS - 1] = {
         .chan_id = -1,
         .voltage_mv = 0,
         .ref_cnt = 0,
@@ -178,7 +178,7 @@ esp_err_t esp_ldo_dump(FILE *stream)
     char line[100];
     fprintf(stream, "ESP LDO Channel State:\n");
     fprintf(stream, "%-5s %-5s %-10s %-12s %-5s\n", "Index", "ID", "ref_cnt", "voltage_mv", "adjustable");
-    for (int i = 0; i < LDO_LL_NUM_UNITS; i++) {
+    for (int i = 0; i < SOC_GP_LDO_NUM_UNITS; i++) {
         char *buf = line;
         size_t len = sizeof(line);
         memset(line, 0x0, len);
