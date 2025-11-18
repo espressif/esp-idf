@@ -87,15 +87,14 @@ ESP_SYSTEM_INIT_FN(nvs_sec_provider_register_flash_enc_scheme, SECONDARY, BIT(0)
 
     nvs_sec_config_flash_enc_t sec_scheme_cfg = NVS_SEC_PROVIDER_CFG_FLASH_ENC_DEFAULT();
 
-     /*
+    /*
      * This checks partition with subtype nvs_keys from partition table, if NVS Encryption is enabled
-     * and "nvs_keys" do not exist in partition table, then execution gets aborted. To fix the problem,
+     * and "nvs_keys" do not exist in partition table, then warning message is printed. To fix the problem,
      * please introduce partition with subtype "nvs_keys" in the partition table.
      */
 
     if (sec_scheme_cfg.nvs_keys_part == NULL) {
-        ESP_EARLY_LOGE(TAG, "partition with subtype \"nvs_keys\" not found");
-        return ESP_FAIL;
+        ESP_EARLY_LOGW(TAG, "Partition with subtype \"nvs_keys\" not found");
     }
 
     nvs_sec_scheme_t *sec_scheme_handle_out = NULL;
