@@ -29,7 +29,7 @@ The Host Library has the following features:
 
 .. list::
 
-    :esp32s2 or esp32s3: - Supports Full Speed (FS) and Low Speed (LS) Devices.
+    :esp32s2 or esp32s3 or esp32h4: - Supports Full Speed (FS) and Low Speed (LS) Devices.
     :esp32p4: - Supports High Speed (HS), Full Speed (FS) and Low Speed (LS) Devices.
     - Supports all four transfer types: Control, Bulk, Interrupt, and Isochronous.
     :esp32p4: - Supports High-Bandwidth Isochronous endpoints.
