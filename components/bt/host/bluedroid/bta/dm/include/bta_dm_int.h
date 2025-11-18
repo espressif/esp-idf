@@ -2036,9 +2036,6 @@ typedef struct {
     tBTA_DM_SEC_CBACK           *p_sec_cback;
 #if ((defined BLE_INCLUDED) && (BLE_INCLUDED == TRUE))
     tBTA_BLE_SCAN_SETUP_CBACK   *p_setup_cback;
-    tBTA_DM_BLE_PF_CFG_CBACK     *p_scan_filt_cfg_cback;
-    tBTA_DM_BLE_PF_STATUS_CBACK  *p_scan_filt_status_cback;
-    tBTA_DM_BLE_PF_PARAM_CBACK   *p_scan_filt_param_cback;
 #if (BLE_HOST_ENERGY_INFO_EN == TRUE)
     tBTA_BLE_ENERGY_INFO_CBACK   *p_energy_info_cback;
 #endif // #if (BLE_HOST_ENERGY_INFO_EN == TRUE)

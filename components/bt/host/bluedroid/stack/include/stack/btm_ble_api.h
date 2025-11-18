@@ -394,17 +394,8 @@ typedef UINT8 tBTM_BLE_ADV_TX_POWER;
 
 /* adv tx power in dBm */
 typedef struct {
-    UINT8 rpa_offloading;
-    UINT16 tot_scan_results_strg;
-    UINT8 max_irk_list_sz;
-    UINT8 filter_support;
-    UINT8 max_filter;
-    UINT8 energy_support;
     BOOLEAN values_read;
-    UINT16 version_supported;
-    UINT16 total_trackable_advertisers;
     UINT8 extended_scan_support;
-    UINT8 debug_logging_supported;
 } tBTM_BLE_VSC_CB;
 
 /* slave preferred connection interval range */
@@ -948,7 +939,6 @@ typedef struct {
 } tBTM_BLE_ENERGY_INFO_CB;
 
 typedef BOOLEAN (tBTM_BLE_SEL_CBACK)(BD_ADDR random_bda,     UINT8 *p_remote_name);
-typedef void (tBTM_BLE_CTRL_FEATURES_CBACK)(tBTM_STATUS status);
 
 /* callback function for SMP signing algorithm, signed data in little endian order with tlen bits long */
 typedef void (tBTM_BLE_SIGN_CBACK)(void *p_ref_data, UINT8 *p_signing_data);
@@ -2671,20 +2661,6 @@ void BTM_BleSetPrefConnParams (BD_ADDR bd_addr,
 *******************************************************************************/
 //extern
 void BTM_BleSetConnScanParams (UINT32 scan_interval, UINT32 scan_window);
-
-/******************************************************************************
-**
-** Function         BTM_BleReadControllerFeatures
-**
-** Description      Reads BLE specific controller features
-**
-** Parameters:      tBTM_BLE_CTRL_FEATURES_CBACK : Callback to notify when features are read
-**
-** Returns          void
-**
-*******************************************************************************/
-//extern
-void BTM_BleReadControllerFeatures(tBTM_BLE_CTRL_FEATURES_CBACK  *p_vsc_cback);
 
 /*******************************************************************************
 **

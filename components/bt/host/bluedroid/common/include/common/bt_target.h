@@ -1587,14 +1587,6 @@
 #define BLE_LOCAL_PRIVACY_ENABLED         TRUE
 #endif
 
-/*
- * Toggles support for vendor specific extensions such as RPA offloading,
- * feature discovery, multi-adv etc.
- */
-#ifndef BLE_VND_INCLUDED
-#define BLE_VND_INCLUDED        FALSE
-#endif
-
 #ifndef BTM_BLE_ADV_TX_POWER
 #ifdef CONFIG_IDF_TARGET_ESP32
 #define BTM_BLE_ADV_TX_POWER {-12, -9, -6, -3, 0, 3, 6, 9}

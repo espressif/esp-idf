@@ -66,10 +66,6 @@ static tBTM_BLE_VSC_CB *cmn_ble_gap_vsc_cb_ptr;
 #define cmn_ble_gap_vsc_cb (*cmn_ble_gap_vsc_cb_ptr)
 #endif
 
-#if BLE_VND_INCLUDED == TRUE
-static tBTM_BLE_CTRL_FEATURES_CBACK    *p_ctrl_le_feature_rd_cmpl_cback = NULL;
-#endif
-
 tBTM_CallbackFunc conn_callback_func;
 // BLE vendor HCI event callback
 #if (BLE_VENDOR_HCI_EN == TRUE)
@@ -716,78 +712,6 @@ tBTM_STATUS BTM_BleBroadcast(BOOLEAN start, tBTM_START_STOP_ADV_CMPL_CBACK  *p_s
     return status;
 }
 #endif // #if (BLE_42_ADV_EN == TRUE)
-#if BLE_VND_INCLUDED == TRUE
-/*******************************************************************************
-**
-** Function         btm_vsc_brcm_features_complete
-**
-** Description      Command Complete callback for HCI_BLE_VENDOR_CAP_OCF
-**
-** Returns          void
-**
-*******************************************************************************/
-static void btm_ble_vendor_capability_vsc_cmpl_cback (tBTM_VSC_CMPL *p_vcs_cplt_params)
-{
-    UINT8 status = 0xFF;
-    UINT8 *p;
-
-    BTM_TRACE_DEBUG("%s", __func__);
-
-    /* Check status of command complete event */
-    if ((p_vcs_cplt_params->opcode == HCI_BLE_VENDOR_CAP_OCF) &&
-            (p_vcs_cplt_params->param_len > 0)) {
-        p = p_vcs_cplt_params->p_param_buf;
-        STREAM_TO_UINT8(status, p);
-    }
-
-    if (status == HCI_SUCCESS) {
-        STREAM_TO_UINT8(btm_cb.cmn_ble_vsc_cb.adv_inst_max, p);
-        STREAM_TO_UINT8(btm_cb.cmn_ble_vsc_cb.rpa_offloading, p);
-        STREAM_TO_UINT16(btm_cb.cmn_ble_vsc_cb.tot_scan_results_strg, p);
-        STREAM_TO_UINT8(btm_cb.cmn_ble_vsc_cb.max_irk_list_sz, p);
-        STREAM_TO_UINT8(btm_cb.cmn_ble_vsc_cb.filter_support, p);
-        STREAM_TO_UINT8(btm_cb.cmn_ble_vsc_cb.max_filter, p);
-        STREAM_TO_UINT8(btm_cb.cmn_ble_vsc_cb.energy_support, p);
-
-        if (p_vcs_cplt_params->param_len > BTM_VSC_CHIP_CAPABILITY_RSP_LEN_L_RELEASE) {
-            STREAM_TO_UINT16(btm_cb.cmn_ble_vsc_cb.version_supported, p);
-        } else {
-            btm_cb.cmn_ble_vsc_cb.version_supported = BTM_VSC_CHIP_CAPABILITY_L_VERSION;
-        }
-
-        if (btm_cb.cmn_ble_vsc_cb.version_supported >= BTM_VSC_CHIP_CAPABILITY_M_VERSION) {
-            STREAM_TO_UINT16(btm_cb.cmn_ble_vsc_cb.total_trackable_advertisers, p);
-            STREAM_TO_UINT16(btm_cb.cmn_ble_vsc_cb.extended_scan_support, p);
-            STREAM_TO_UINT16(btm_cb.cmn_ble_vsc_cb.debug_logging_supported, p);
-        }
-        btm_cb.cmn_ble_vsc_cb.values_read = TRUE;
-    }
-
-    BTM_TRACE_DEBUG("%s: stat=%d, irk=%d, ADV ins:%d, rpa=%d, ener=%d, ext_scan=%d",
-                    __func__, status, btm_cb.cmn_ble_vsc_cb.max_irk_list_sz,
-                    btm_cb.cmn_ble_vsc_cb.adv_inst_max, btm_cb.cmn_ble_vsc_cb.rpa_offloading,
-                    btm_cb.cmn_ble_vsc_cb.energy_support, btm_cb.cmn_ble_vsc_cb.extended_scan_support);
-    if (btm_cb.cmn_ble_vsc_cb.max_filter > 0) {
-        btm_ble_adv_filter_init();
-    }
-
-#if (defined BLE_PRIVACY_SPT && BLE_PRIVACY_SPT == TRUE)
-    /* VS capability included and non-4.2 device */
-    if (btm_cb.cmn_ble_vsc_cb.max_irk_list_sz > 0 &&
-            controller_get_interface()->get_ble_resolving_list_max_size() == 0) {
-        btm_ble_resolving_list_init(btm_cb.cmn_ble_vsc_cb.max_irk_list_sz);
-    }
-#endif
-
-    if (btm_cb.cmn_ble_vsc_cb.tot_scan_results_strg > 0) {
-        btm_ble_batchscan_init();
-    }
-
-    if (p_ctrl_le_feature_rd_cmpl_cback != NULL) {
-        p_ctrl_le_feature_rd_cmpl_cback(status);
-    }
-}
-#endif
 
 /*******************************************************************************
 **
@@ -807,40 +731,6 @@ extern void BTM_BleGetVendorCapabilities(tBTM_BLE_VSC_CB *p_cmn_vsc_cb)
     if (NULL != p_cmn_vsc_cb) {
         *p_cmn_vsc_cb = btm_cb.cmn_ble_vsc_cb;
     }
-}
-
-/******************************************************************************
-**
-** Function         BTM_BleReadControllerFeatures
-**
-** Description      Reads BLE specific controller features
-**
-** Parameters:      tBTM_BLE_CTRL_FEATURES_CBACK : Callback to notify when features are read
-**
-** Returns          void
-**
-*******************************************************************************/
-extern void BTM_BleReadControllerFeatures(tBTM_BLE_CTRL_FEATURES_CBACK  *p_vsc_cback)
-{
-    if (TRUE == btm_cb.cmn_ble_vsc_cb.values_read) {
-        return;
-    }
-
-#if BLE_VND_INCLUDED == TRUE
-    BTM_TRACE_DEBUG("BTM_BleReadControllerFeatures");
-
-    p_ctrl_le_feature_rd_cmpl_cback = p_vsc_cback;
-    if ( BTM_VendorSpecificCommand (HCI_BLE_VENDOR_CAP_OCF,
-                                    0,
-                                    NULL,
-                                    btm_ble_vendor_capability_vsc_cmpl_cback)
-            != BTM_CMD_STARTED) {
-        BTM_TRACE_ERROR("LE Get_Vendor Capabilities Command Failed.");
-    }
-#else
-    UNUSED(p_vsc_cback);
-#endif
-    return ;
 }
 
 void BTM_VendorHciEchoCmdCallback(tBTM_VSC_CMPL *p1)
@@ -4579,9 +4469,7 @@ void btm_ble_init (void)
     assert(p_cb->adv_rpt_ready != NULL);
     osi_event_bind(p_cb->adv_rpt_ready, btu_get_current_thread(), 0);
 #endif // #if (BLE_42_SCAN_EN == TRUE)
-#if BLE_VND_INCLUDED == FALSE
 
-#endif
 #if (BLE_VENDOR_HCI_EN == TRUE)
     BTM_RegisterForVSEvents(btm_ble_vs_evt_callback, TRUE);
 #endif // #if (BLE_VENDOR_HCI_EN == TRUE)
