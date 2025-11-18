@@ -28,7 +28,7 @@
       - "**/build*/build_log.txt"
       # keep the size info to help track the binary size
       - size_info.txt
-      - "**/build*/size.json"
+      - "**/build*/size*.json"
     expire_in: 1 week
     when: always
   variables:
@@ -62,7 +62,7 @@
     paths:
       - log_template_app/*
       - size_info.txt
-      - build_template_app/**/size.json
+      - build_template_app/**/size*.json
     expire_in: 1 week
     when: always
   script:

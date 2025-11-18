@@ -101,5 +101,5 @@ patterns = [
 bucket = "longterm"
 if_clause = '"$CI_COMMIT_REF_NAME" == "master"'
 patterns = [
-    '**/build*/size.json',
+    '**/build*/size*.json',
 ]
