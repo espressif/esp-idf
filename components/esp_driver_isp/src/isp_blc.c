@@ -58,6 +58,9 @@ esp_err_t esp_isp_blc_configure(isp_proc_handle_t isp_proc, const esp_isp_blc_co
     // Configure stretch enable for each channel
     isp_ll_blc_enable_stretch(isp_proc->hal.hw, config->stretch.top_left_chan_stretch_en, config->stretch.top_right_chan_stretch_en, config->stretch.bottom_left_chan_stretch_en, config->stretch.bottom_right_chan_stretch_en);
 
+    bool valid = isp_ll_shadow_update_blc(isp_proc->hal.hw);
+    ESP_RETURN_ON_FALSE_ISR(valid, ESP_ERR_INVALID_STATE, TAG, "failed to update blc shadow register");
+
     return ESP_OK;
 }
 
