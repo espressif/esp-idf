@@ -573,25 +573,12 @@ enum {
     BTA_DM_BLE_SCAN_COND_DELETE,
     BTA_DM_BLE_SCAN_COND_CLEAR = 2
 };
-typedef UINT8 tBTA_DM_BLE_SCAN_COND_OP;
 
 /* ADV payload filtering vendor specific call event */
 enum {
     BTA_BLE_SCAN_PF_ENABLE_EVT = 7,
     BTA_BLE_SCAN_PF_COND_EVT
 };
-
-/* filter selection bit index  */
-#define BTA_DM_BLE_PF_ADDR_FILTER          BTM_BLE_PF_ADDR_FILTER
-#define BTA_DM_BLE_PF_SRVC_DATA            BTM_BLE_PF_SRVC_DATA
-#define BTA_DM_BLE_PF_SRVC_UUID            BTM_BLE_PF_SRVC_UUID
-#define BTA_DM_BLE_PF_SRVC_SOL_UUID        BTM_BLE_PF_SRVC_SOL_UUID
-#define BTA_DM_BLE_PF_LOCAL_NAME           BTM_BLE_PF_LOCAL_NAME
-#define BTA_DM_BLE_PF_MANU_DATA            BTM_BLE_PF_MANU_DATA
-#define BTA_DM_BLE_PF_SRVC_DATA_PATTERN    BTM_BLE_PF_SRVC_DATA_PATTERN
-#define BTA_DM_BLE_PF_TYPE_ALL             BTM_BLE_PF_TYPE_ALL
-#define BTA_DM_BLE_PF_TYPE_MAX             BTM_BLE_PF_TYPE_MAX
-typedef UINT8   tBTA_DM_BLE_PF_COND_TYPE;
 
 typedef union {
     UINT16              uuid16_mask;
@@ -627,18 +614,6 @@ typedef struct {
     UINT8                   *p_pattern_mask; /* Service data matching mask, same length
                                                 as data pattern, set to all 0xff, match exact data */
 } tBTA_DM_BLE_PF_SRVC_PATTERN_COND;
-
-typedef union {
-    tBLE_BD_ADDR                            target_addr;
-    tBTA_DM_BLE_PF_LOCAL_NAME_COND             local_name; /* local name filtering */
-    tBTA_DM_BLE_PF_MANU_COND                   manu_data;  /* manufacturer data filtering */
-    tBTA_DM_BLE_PF_UUID_COND                   srvc_uuid;  /* service UUID filtering */
-    tBTA_DM_BLE_PF_UUID_COND                   solicitate_uuid;   /* solicited service UUID filtering */
-    tBTA_DM_BLE_PF_SRVC_PATTERN_COND           srvc_data;      /* service data pattern */
-} tBTA_DM_BLE_PF_COND_PARAM;
-
-typedef UINT8 tBTA_DM_BLE_PF_FILT_INDEX;
-typedef UINT8 tBTA_DM_BLE_PF_AVBL_SPACE;
 
 typedef INT8 tBTA_DM_RSSI_VALUE;
 typedef UINT8 tBTA_DM_LINK_QUALITY_VALUE;
@@ -1048,64 +1023,6 @@ typedef union {
 typedef void (tBTA_DM_SEC_CBACK)(tBTA_DM_SEC_EVT event, tBTA_DM_SEC *p_data);
 
 typedef UINT32 tBTA_DM_BLE_REF_VALUE;
-
-#define BTA_DM_BLE_PF_ENABLE_EVT       BTM_BLE_PF_ENABLE
-#define BTA_DM_BLE_PF_CONFIG_EVT       BTM_BLE_PF_CONFIG
-typedef UINT8 tBTA_DM_BLE_PF_EVT;
-
-#define BTA_DM_BLE_PF_ENABLE       1
-#define BTA_DM_BLE_PF_CONFIG       2
-typedef UINT8 tBTA_DM_BLE_PF_ACTION;
-
-/* Config callback */
-typedef void (tBTA_DM_BLE_PF_CFG_CBACK) (tBTA_DM_BLE_PF_ACTION action,
-        tBTA_DM_BLE_PF_COND_TYPE cfg_cond,
-        tBTA_DM_BLE_PF_AVBL_SPACE avbl_space, tBTA_STATUS status,
-        tBTA_DM_BLE_REF_VALUE ref_value);
-/* Param callback */
-typedef void (tBTA_DM_BLE_PF_PARAM_CBACK) (UINT8 action_type, tBTA_DM_BLE_PF_AVBL_SPACE avbl_space,
-        tBTA_DM_BLE_REF_VALUE ref_value, tBTA_STATUS status);
-
-/* Status callback */
-typedef void (tBTA_DM_BLE_PF_STATUS_CBACK) (UINT8 action, tBTA_STATUS status,
-        tBTA_DM_BLE_REF_VALUE ref_value);
-
-
-#define BTA_DM_BLE_PF_BRDCAST_ADDR_FILT  1
-#define BTA_DM_BLE_PF_SERV_DATA_CHG_FILT 2
-#define BTA_DM_BLE_PF_SERV_UUID          4
-#define BTA_DM_BLE_PF_SERV_SOLC_UUID     8
-#define BTA_DM_BLE_PF_LOC_NAME_CHECK    16
-#define BTA_DM_BLE_PF_MANUF_NAME_CHECK  32
-#define BTA_DM_BLE_PF_SERV_DATA_CHECK   64
-typedef UINT16 tBTA_DM_BLE_PF_FEAT_SEL;
-
-#define BTA_DM_BLE_PF_LIST_LOGIC_OR   1
-#define BTA_DM_BLE_PF_LIST_LOGIC_AND  2
-typedef UINT16 tBTA_DM_BLE_PF_LIST_LOGIC_TYPE;
-
-#define BTA_DM_BLE_PF_FILT_LOGIC_OR   0
-#define BTA_DM_BLE_PF_FILT_LOGIC_AND  1
-typedef UINT16 tBTA_DM_BLE_PF_FILT_LOGIC_TYPE;
-
-typedef UINT8  tBTA_DM_BLE_PF_RSSI_THRESHOLD;
-typedef UINT8  tBTA_DM_BLE_PF_DELIVERY_MODE;
-typedef UINT16 tBTA_DM_BLE_PF_TIMEOUT;
-typedef UINT8  tBTA_DM_BLE_PF_TIMEOUT_CNT;
-typedef UINT16 tBTA_DM_BLE_PF_ADV_TRACK_ENTRIES;
-
-typedef struct {
-    tBTA_DM_BLE_PF_FEAT_SEL feat_seln;
-    tBTA_DM_BLE_PF_LIST_LOGIC_TYPE list_logic_type;
-    tBTA_DM_BLE_PF_FILT_LOGIC_TYPE filt_logic_type;
-    tBTA_DM_BLE_PF_RSSI_THRESHOLD  rssi_high_thres;
-    tBTA_DM_BLE_PF_RSSI_THRESHOLD  rssi_low_thres;
-    tBTA_DM_BLE_PF_DELIVERY_MODE dely_mode;
-    tBTA_DM_BLE_PF_TIMEOUT found_timeout;
-    tBTA_DM_BLE_PF_TIMEOUT lost_timeout;
-    tBTA_DM_BLE_PF_TIMEOUT_CNT found_timeout_cnt;
-    tBTA_DM_BLE_PF_ADV_TRACK_ENTRIES num_of_tracking_entries;
-} tBTA_DM_BLE_PF_FILT_PARAMS;
 
 /* Search callback events */
 #define BTA_DM_INQ_RES_EVT              0       /* Inquiry result for a peer device. */
@@ -3210,71 +3127,6 @@ extern void BTA_DmBleReadScanReports(tBTA_BLE_BATCH_SCAN_MODE scan_type,
 **
 *******************************************************************************/
 extern void BTA_DmBleDisableBatchScan(tBTA_DM_BLE_REF_VALUE ref_value);
-
-/*******************************************************************************
-**
-** Function         BTA_DmEnableScanFilter
-**
-** Description      This function is called to enable the adv data payload filter
-**
-** Parameters       action - enable or disable the APCF feature
-**                  p_cmpl_cback - Command completed callback
-**                  ref_value - Reference value
-**
-** Returns          void
-**
-*******************************************************************************/
-extern void BTA_DmEnableScanFilter(UINT8 action,
-                                   tBTA_DM_BLE_PF_STATUS_CBACK *p_cmpl_cback,
-                                   tBTA_DM_BLE_REF_VALUE ref_value);
-
-/*******************************************************************************
-**
-** Function         BTA_DmBleScanFilterSetup
-**
-** Description      This function is called to setup the filter params
-**
-** Parameters       p_target: enable the filter condition on a target device; if NULL
-**                  filt_index - Filter index
-**                  p_filt_params -Filter parameters
-**                  ref_value - Reference value
-**                  action - Add, delete or clear
-**                  p_cmpl_back - Command completed callback
-**
-** Returns          void
-**
-*******************************************************************************/
-extern void BTA_DmBleScanFilterSetup(UINT8 action,
-                                     tBTA_DM_BLE_PF_FILT_INDEX filt_index,
-                                     tBTA_DM_BLE_PF_FILT_PARAMS *p_filt_params,
-                                     tBLE_BD_ADDR *p_target,
-                                     tBTA_DM_BLE_PF_PARAM_CBACK *p_cmpl_cback,
-                                     tBTA_DM_BLE_REF_VALUE ref_value);
-
-/*******************************************************************************
-**
-** Function         BTA_DmBleCfgFilterCondition
-**
-** Description      This function is called to configure the adv data payload filter
-**                  condition.
-**
-** Parameters       action: to read/write/clear
-**                  cond_type: filter condition type
-**                  filt_index - Filter index
-**                  p_cond: filter condition parameter
-**                  p_cmpl_back - Command completed callback
-**                  ref_value - Reference value
-**
-** Returns          void
-**
-*******************************************************************************/
-extern void BTA_DmBleCfgFilterCondition(tBTA_DM_BLE_SCAN_COND_OP action,
-                                        tBTA_DM_BLE_PF_COND_TYPE cond_type,
-                                        tBTA_DM_BLE_PF_FILT_INDEX filt_index,
-                                        tBTA_DM_BLE_PF_COND_PARAM *p_cond,
-                                        tBTA_DM_BLE_PF_CFG_CBACK *p_cmpl_cback,
-                                        tBTA_DM_BLE_REF_VALUE ref_value);
-
 
 #if (BLE_HOST_ENERGY_INFO_EN == TRUE)
 /*******************************************************************************
