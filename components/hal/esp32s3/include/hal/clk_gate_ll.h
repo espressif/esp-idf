@@ -83,6 +83,7 @@ static inline uint32_t periph_ll_get_clk_en_reg(shared_periph_module_t periph)
     case PERIPH_WIFI_MODULE:
     case PERIPH_BT_MODULE:
     case PERIPH_WIFI_BT_COMMON_MODULE:
+        return SYSTEM_WIFI_CLK_EN_REG;
     case PERIPH_UART2_MODULE:
     case PERIPH_LCD_CAM_MODULE:
         return SYSTEM_PERIP_CLK_EN1_REG;
