@@ -16,7 +16,6 @@
 extern "C" {
 #endif
 
-#define LDO_LL_NUM_UNITS                    1    // Number of LDO units
 #define LDO_LL_ADJUSTABLE_CHAN_MASK         0x01 // all the channels are adjustable by setting "mul" and "dref" registers
 
 #define LDO_LL_RECOMMEND_MAX_VOLTAGE_MV     2700
@@ -46,7 +45,7 @@ typedef enum {
 __attribute__((always_inline))
 static inline bool ldo_ll_is_valid_ldo_channel(int ldo_chan)
 {
-    return (ldo_chan > 0) && (ldo_chan <= LDO_LL_NUM_UNITS);
+    return (ldo_chan > 0) && (ldo_chan <= 1);
 }
 
 /**
