@@ -22,7 +22,7 @@
 #include "lvgl.h"
 #include "esp_lcd_ili9881c.h"
 #include "esp_lcd_ek79007.h"
-#include "esp_efuse.h"
+#include "esp_flash_encrypt.h"
 
 static const char *TAG = "example";
 
@@ -297,7 +297,7 @@ void app_main(void)
 
     size_t alignment = 1;
 #if CONFIG_EXAMPLE_USE_DMA2D_COPY_FRAME
-    if (esp_efuse_is_flash_encryption_enabled()) {
+    if (esp_flash_encryption_enabled()) {
         alignment = SOC_GDMA_EXT_MEM_ENC_ALIGNMENT;
         if (EXAMPLE_MIPI_DSI_LCD_H_RES % alignment != 0) {
             ESP_LOGW(TAG, "EXAMPLE_MIPI_DSI_LCD_H_RES is not aligned to %d, may cause MSPI error", alignment);
@@ -321,7 +321,7 @@ void app_main(void)
 #if CONFIG_EXAMPLE_USE_DMA2D_COPY_FRAME
     // If flash encryption is enabled, DMA2D requires the flush buffer address and size to be aligned to 16 bytes.
     // We need to round the flush area to the multiple of 16.
-    if (esp_efuse_is_flash_encryption_enabled()) {
+    if (esp_flash_encryption_enabled()) {
         ESP_LOGI(TAG, "Register event callback for LVGL flush area rounding");
         lv_display_add_event_cb(display, example_rounder_flush_area_cb, LV_EVENT_INVALIDATE_AREA, NULL);
     }
