@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <unistd.h>
 #include <time.h>
 #include <sys/time.h>
 #include <sys/param.h>
@@ -398,6 +399,29 @@ TEST_CASE("esp_timer with SKIP_UNHANDLED_EVENTS does not wake up CPU from sleep"
     TEST_ESP_OK(esp_timer_stop(periodic_timer));
     TEST_ESP_OK(esp_timer_dump(stdout));
     TEST_ESP_OK(esp_timer_delete(periodic_timer));
+}
+
+TEST_CASE("Test USJ printing doesn't block CPU on chip wake-up", "[pm]")
+{
+    light_sleep_enable();
+    fflush(stdout);
+    fsync(fileno(stdout));
+    int64_t printing_time_cost_us = 0, time_end, time_start;
+
+    for (int i = 0; i < 20; ++i)
+    {
+        time_start = esp_timer_get_time();
+        printf("Dummy print %02d\n", i);
+        fflush(stdout);
+        fsync(fileno(stdout));
+        time_end = esp_timer_get_time();
+        printing_time_cost_us += time_end - time_start;
+        vTaskDelay(10);
+    }
+    int32_t avg_cost = (int32_t)(printing_time_cost_us / 20);
+    printf("Average cost per print %ld\n", avg_cost);
+    TEST_ASSERT_LESS_THAN(5000, avg_cost);
+    light_sleep_disable();
 }
 
 #endif // CONFIG_FREERTOS_USE_TICKLESS_IDLE
