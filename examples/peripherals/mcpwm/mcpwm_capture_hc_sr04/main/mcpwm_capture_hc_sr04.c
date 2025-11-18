@@ -7,7 +7,6 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_log.h"
-#include "esp_private/esp_clk.h"
 #include "driver/mcpwm_cap.h"
 #include "driver/gpio.h"
 
@@ -99,13 +98,16 @@ void app_main(void)
     ESP_ERROR_CHECK(mcpwm_capture_timer_enable(cap_timer));
     ESP_ERROR_CHECK(mcpwm_capture_timer_start(cap_timer));
 
+    uint32_t cap_timer_resolution;
+    ESP_ERROR_CHECK(mcpwm_capture_timer_get_resolution(cap_timer, &cap_timer_resolution));
+
     uint32_t tof_ticks;
     while (1) {
         // trigger the sensor to start a new sample
         gen_trig_output();
         // wait for echo done signal
         if (xTaskNotifyWait(0x00, ULONG_MAX, &tof_ticks, pdMS_TO_TICKS(1000)) == pdTRUE) {
-            float pulse_width_us = tof_ticks * (1000000.0 / esp_clk_apb_freq());
+            float pulse_width_us = tof_ticks * (1000000.0 / cap_timer_resolution);
             if (pulse_width_us > 35000) {
                 // out of range
                 continue;

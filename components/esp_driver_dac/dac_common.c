@@ -28,8 +28,6 @@ static dac_channel_info_t s_dac_chan[SOC_DAC_CHAN_NUM] = {
         .mode = NULL,
     }
 };
-/* Global dac spin lock for the whole DAC driver */
-portMUX_TYPE dac_spinlock = portMUX_INITIALIZER_UNLOCKED;
 
 static const char *TAG = "dac_common";
 
