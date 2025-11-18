@@ -8,7 +8,7 @@
 
 #include <stdint.h>
 #include "soc/interrupts.h"
-#include "soc/soc_caps_full.h"
+#include "soc/soc_caps.h"
 
 #ifdef __cplusplus
 extern "C" {

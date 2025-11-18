@@ -8,7 +8,6 @@
 #include "soc/soc.h"
 #include "soc/interrupts.h"
 #include "soc/soc_caps.h"
-#include "soc/soc_caps_full.h"
 #include "soc/regdma.h"
 #if SOC_HAS(PAU)
 #include "soc/retention_periph_defs.h"

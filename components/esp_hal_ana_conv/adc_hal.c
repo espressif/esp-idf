@@ -8,7 +8,7 @@
 #include "hal/adc_hal.h"
 #include "hal/assert.h"
 #include "soc/lldesc.h"
-#include "soc/soc_caps_full.h"
+#include "soc/soc_caps.h"
 
 #if SOC_IS(ESP32)
 //ADC utilises I2S0 DMA on ESP32

@@ -13,7 +13,6 @@
 #include "freertos/queue.h"
 #include "soc/lldesc.h"
 #include "soc/soc_caps.h"
-#include "soc/soc_caps_full.h"
 #include "hal/i2s_periph.h"
 #include "hal/i2s_hal.h"
 #include "hal/lp_i2s_hal.h"

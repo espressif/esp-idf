@@ -8,7 +8,7 @@
 #include <string.h>
 
 #include "sdkconfig.h"
-#include "soc/soc_caps_full.h"
+#include "soc/soc_caps.h"
 #include "soc/system_periph_retention.h"
 #include "soc/uart_periph.h"
 #include "hal/timer_ll.h"
