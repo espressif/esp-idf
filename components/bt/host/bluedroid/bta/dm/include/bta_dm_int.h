@@ -184,10 +184,6 @@ enum {
 #if (BLE_HOST_SETUP_STORAGE_EN == TRUE)
     BTA_DM_API_BLE_SETUP_STORAGE_EVT,
 #endif // #if (BLE_HOST_SETUP_STORAGE_EN == TRUE)
-#if (BLE_HOST_BATCH_SCAN_EN == TRUE)
-    BTA_DM_API_BLE_ENABLE_BATCH_SCAN_EVT,
-    BTA_DM_API_BLE_DISABLE_BATCH_SCAN_EVT,
-#endif // #if (BLE_HOST_BATCH_SCAN_EN == TRUE)
 
 #if (BLE_HOST_ENERGY_INFO_EN == TRUE)
     BTA_DM_API_BLE_ENERGY_INFO_EVT,
@@ -988,23 +984,6 @@ typedef struct {
     tBTA_DM_BLE_REF_VALUE    ref_value;
 } tBTA_DM_API_SET_STORAGE_CONFIG;
 #endif // #if (BLE_HOST_SETUP_STORAGE_EN == TRUE)
-
-#if (BLE_HOST_BATCH_SCAN_EN == TRUE)
-typedef struct {
-    BT_HDR                  hdr;
-    tBTA_BLE_BATCH_SCAN_MODE  scan_mode;
-    UINT32                  scan_int;
-    UINT32                  scan_window;
-    tBTA_BLE_DISCARD_RULE   discard_rule;
-    tBLE_ADDR_TYPE          addr_type;
-    tBTA_DM_BLE_REF_VALUE   ref_value;
-} tBTA_DM_API_ENABLE_SCAN;
-
-typedef struct {
-    BT_HDR                  hdr;
-    tBTA_DM_BLE_REF_VALUE    ref_value;
-} tBTA_DM_API_DISABLE_SCAN;
-#endif // #if (BLE_HOST_BATCH_SCAN_EN == TRUE)
 
 #if (BLE_HOST_ENERGY_INFO_EN == TRUE)
 typedef struct {
@@ -1875,12 +1854,7 @@ typedef union {
 #if (BLE_HOST_SETUP_STORAGE_EN == TRUE)
     tBTA_DM_API_SET_STORAGE_CONFIG      ble_set_storage;
 #endif // #if (BLE_HOST_SETUP_STORAGE_EN == TRUE)
-#if (BLE_HOST_BATCH_SCAN_EN == TRUE)
-    tBTA_DM_API_ENABLE_SCAN             ble_enable_scan;
-#endif // #if (BLE_HOST_BATCH_SCAN_EN == TRUE)
-#if (BLE_HOST_BATCH_SCAN_EN == TRUE)
-    tBTA_DM_API_DISABLE_SCAN            ble_disable_scan;
-#endif // #if (BLE_HOST_BATCH_SCAN_EN == TRUE)
+
 #if (BLE_HOST_ENERGY_INFO_EN == TRUE)
     tBTA_DM_API_ENERGY_INFO             ble_energy_info;
 #endif // #if (BLE_HOST_ENERGY_INFO_EN == TRUE)
