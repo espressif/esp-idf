@@ -50,6 +50,7 @@ typedef struct {
     bool connected;
     bool is_server;
     bool is_writing;
+    bool create_spp_record;
     uint8_t serial;
     uint8_t scn;
     uint8_t max_session;
@@ -143,6 +144,7 @@ static spp_slot_t *spp_malloc_slot(void)
             (*slot)->rfc_port_handle = 0;
             (*slot)->fd = -1;
             (*slot)->connected = false;
+            (*slot)->create_spp_record = false;
             (*slot)->is_server = false;
             (*slot)->mtu = 0;
             (*slot)->credit_rx = BTA_JV_MAX_CREDIT_NUM;
@@ -378,6 +380,7 @@ static void *btc_spp_rfcomm_inter_cb(tBTA_JV_EVT event, tBTA_JV *p_data, void *u
             strcpy(slot_new->service_name, slot->service_name);
             slot_new->sdp_handle = slot->sdp_handle;
             slot_new->mtu = p_data->rfc_srv_open.peer_mtu;
+            slot_new->create_spp_record = slot->create_spp_record;
             slot_new->rfc_handle = p_data->rfc_srv_open.handle;
             slot_new->rfc_port_handle = BTA_JvRfcommGetPortHdl(slot_new->rfc_handle);
             BTA_JvSetPmProfile(p_data->rfc_srv_open.handle, BTA_JV_PM_ALL, BTA_JV_CONN_OPEN);
@@ -482,7 +485,14 @@ static void btc_spp_dm_inter_cb(tBTA_JV_EVT event, tBTA_JV *p_data, void *user_d
         }
 
         slot->scn = p_data->scn;
-        BTA_JvCreateRecordByUser(slot->service_name, slot->scn, (void *)slot->id);
+        if (slot->create_spp_record) {
+            BTA_JvCreateRecordByUser(slot->service_name, slot->scn, (void *)slot->id);
+        } else {
+            slot->sdp_handle = 0xffff;
+            BTA_JvRfcommStartServer(slot->security, slot->role, slot->scn,
+                                    slot->max_session, (tBTA_JV_RFCOMM_CBACK *)btc_spp_rfcomm_inter_cb, (void *)slot->id);
+        }
+
         osi_mutex_unlock(&spp_local_param.spp_slot_mutex);
         break;
     case BTA_JV_CREATE_RECORD_EVT:
@@ -748,6 +758,7 @@ static void btc_spp_start_srv(btc_spp_args_t *arg)
          * make this slot become a listening slot
          */
         slot->is_server = true;
+        slot->create_spp_record = arg->start_srv.create_spp_record;
         slot->security = arg->start_srv.sec_mask;
         slot->role = arg->start_srv.role;
         slot->scn = arg->start_srv.local_scn;
@@ -832,7 +843,7 @@ static void btc_spp_stop_srv(btc_spp_args_t *arg)
                 if (spp_local_param.spp_slots[i] != NULL && spp_local_param.spp_slots[i]->is_server &&
                     spp_local_param.spp_slots[i]->sdp_handle > 0 &&
                     spp_local_param.spp_slots[i]->scn == srv_scn_arr[j]) {
-                    if (spp_local_param.spp_slots[i]->sdp_handle > 0) {
+                    if (spp_local_param.spp_slots[i]->sdp_handle > 0 && spp_local_param.spp_slots[i]->create_spp_record) {
                         BTA_JvDeleteRecord(spp_local_param.spp_slots[i]->sdp_handle);
                     }
 
