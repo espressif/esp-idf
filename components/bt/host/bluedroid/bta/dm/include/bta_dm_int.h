@@ -166,9 +166,6 @@ enum {
     BTA_DM_API_BLE_SETUP_STORAGE_EVT,
 #endif // #if (BLE_HOST_SETUP_STORAGE_EN == TRUE)
 
-#if (BLE_HOST_ENERGY_INFO_EN == TRUE)
-    BTA_DM_API_BLE_ENERGY_INFO_EVT,
-#endif // #if (BLE_HOST_ENERGY_INFO_EN == TRUE)
     BTA_DM_API_BLE_DISCONNECT_EVT,
 
 #endif
@@ -956,13 +953,6 @@ typedef struct {
     tBTA_DM_BLE_REF_VALUE    ref_value;
 } tBTA_DM_API_SET_STORAGE_CONFIG;
 #endif // #if (BLE_HOST_SETUP_STORAGE_EN == TRUE)
-
-#if (BLE_HOST_ENERGY_INFO_EN == TRUE)
-typedef struct {
-    BT_HDR                  hdr;
-    tBTA_BLE_ENERGY_INFO_CBACK *p_energy_info_cback;
-} tBTA_DM_API_ENERGY_INFO;
-#endif // #if (BLE_HOST_ENERGY_INFO_EN == TRUE)
 
 typedef struct {
     BT_HDR      hdr;
@@ -1786,10 +1776,6 @@ typedef union {
 #if (BLE_HOST_SETUP_STORAGE_EN == TRUE)
     tBTA_DM_API_SET_STORAGE_CONFIG      ble_set_storage;
 #endif // #if (BLE_HOST_SETUP_STORAGE_EN == TRUE)
-
-#if (BLE_HOST_ENERGY_INFO_EN == TRUE)
-    tBTA_DM_API_ENERGY_INFO             ble_energy_info;
-#endif // #if (BLE_HOST_ENERGY_INFO_EN == TRUE)
     tBTA_DM_API_BLE_DISCONNECT          ble_disconnect;
     tBTA_DM_API_UPDATE_DUPLICATE_EXCEPTIONAL_LIST ble_duplicate_exceptional_list;
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
@@ -2036,9 +2022,6 @@ typedef struct {
     tBTA_DM_SEC_CBACK           *p_sec_cback;
 #if ((defined BLE_INCLUDED) && (BLE_INCLUDED == TRUE))
     tBTA_BLE_SCAN_SETUP_CBACK   *p_setup_cback;
-#if (BLE_HOST_ENERGY_INFO_EN == TRUE)
-    tBTA_BLE_ENERGY_INFO_CBACK   *p_energy_info_cback;
-#endif // #if (BLE_HOST_ENERGY_INFO_EN == TRUE)
 #endif
     UINT16                      state;
     BOOLEAN                     disabling;
@@ -2396,11 +2379,6 @@ extern void bta_dm_ble_setup_storage(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_enable_batch_scan(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_disable_batch_scan(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_read_scan_reports(tBTA_DM_MSG *p_data);
-
-
-#if (BLE_HOST_ENERGY_INFO_EN == TRUE)
-extern void bta_dm_ble_get_energy_info(tBTA_DM_MSG *p_data);
-#endif // #if (BLE_HOST_ENERGY_INFO_EN == TRUE)
 
 #endif
 extern void bta_dm_set_encryption(tBTA_DM_MSG *p_data);

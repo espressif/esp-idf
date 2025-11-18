@@ -924,19 +924,6 @@ typedef UINT8   tBTM_BLE_CONN_TYPE;
 
 typedef UINT8 tBTM_BLE_BATCH_SCAN_EVT;
 
-typedef UINT32 tBTM_BLE_TX_TIME_MS;
-typedef UINT32 tBTM_BLE_RX_TIME_MS;
-typedef UINT32 tBTM_BLE_IDLE_TIME_MS;
-typedef UINT32 tBTM_BLE_ENERGY_USED;
-
-typedef void (tBTM_BLE_ENERGY_INFO_CBACK)(tBTM_BLE_TX_TIME_MS tx_time, tBTM_BLE_RX_TIME_MS rx_time,
-        tBTM_BLE_IDLE_TIME_MS idle_time,
-        tBTM_BLE_ENERGY_USED  energy_used,
-        tBTM_STATUS status);
-
-typedef struct {
-    tBTM_BLE_ENERGY_INFO_CBACK *p_ener_cback;
-} tBTM_BLE_ENERGY_INFO_CB;
 
 typedef BOOLEAN (tBTM_BLE_SEL_CBACK)(BD_ADDR random_bda,     UINT8 *p_remote_name);
 
@@ -3104,20 +3091,6 @@ tBTM_STATUS BTM_BleCfgFilterCondition(tBTM_BLE_SCAN_COND_OP action,
 tBTM_STATUS BTM_BleEnableDisableFilterFeature(UINT8 enable,
         tBTM_BLE_PF_STATUS_CBACK *p_stat_cback,
         tBTM_BLE_REF_VALUE ref_value);
-
-/*******************************************************************************
-**
-** Function         BTM_BleGetEnergyInfo
-**
-** Description      This function obtains the energy info
-**
-** Parameters       p_ener_cback - Callback pointer
-**
-** Returns          status
-**
-*******************************************************************************/
-//extern
-tBTM_STATUS BTM_BleGetEnergyInfo(tBTM_BLE_ENERGY_INFO_CBACK *p_ener_cback);
 
 /*******************************************************************************
 **

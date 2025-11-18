@@ -2078,34 +2078,6 @@ void BTA_DmBleSetKeyMaterial(const uint8_t *session_key, const uint8_t *iv)
 }
 #endif
 
-#if (BLE_HOST_ENERGY_INFO_EN == TRUE)
-/*******************************************************************************
-**
-** Function         BTA_DmBleGetEnergyInfo
-**
-** Description      This function is called to obtain the energy info
-**
-** Parameters       p_cmpl_cback - Command complete callback
-**
-** Returns          void
-**
-*******************************************************************************/
-void BTA_DmBleGetEnergyInfo(tBTA_BLE_ENERGY_INFO_CBACK *p_cmpl_cback)
-{
-    tBTA_DM_API_ENERGY_INFO *p_msg;
-    APPL_TRACE_API ("BTA_DmBleGetEnergyInfo");
-
-    UINT16  len = sizeof(tBTA_DM_API_ENERGY_INFO) + sizeof(tBLE_BD_ADDR);
-
-    if ((p_msg = (tBTA_DM_API_ENERGY_INFO *) osi_malloc(len)) != NULL) {
-        memset (p_msg, 0, len);
-        p_msg->hdr.event        = BTA_DM_API_BLE_ENERGY_INFO_EVT;
-        p_msg->p_energy_info_cback = p_cmpl_cback;
-        bta_sys_sendmsg(p_msg);
-    }
-}
-#endif // #if (BLE_HOST_ENERGY_INFO_EN == TRUE)
-
 /*******************************************************************************
 **
 ** Function         BTA_DmBleUpdateConnectionParams
