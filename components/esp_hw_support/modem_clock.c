@@ -465,7 +465,7 @@ void modem_clock_select_lp_clock_source(shared_periph_module_t module, modem_clo
         modem_clock_hal_deselect_all_coex_lpclk_source(MODEM_CLOCK_instance()->hal);
         modem_clock_hal_select_coex_lpclk_source(MODEM_CLOCK_instance()->hal, src);
         modem_lpcon_ll_set_coex_lpclk_divisor_value(MODEM_CLOCK_instance()->hal->lpcon_dev, divider);
-        // modem_lpcon_ll_enable_coex_clock(MODEM_CLOCK_instance()->hal->lpcon_dev, true); // TODO: IDF-5727
+        // modem_lpcon_ll_enable_coex_clock(MODEM_CLOCK_instance()->hal->lpcon_dev, true); // TODO: IDF-14964
         break;
     default:
         break;
@@ -534,7 +534,7 @@ void modem_clock_deselect_lp_clock_source(shared_periph_module_t module)
 #endif // SOC_BT_SUPPORTED
     case PERIPH_COEX_MODULE:
         modem_clock_hal_deselect_all_coex_lpclk_source(MODEM_CLOCK_instance()->hal);
-        // modem_lpcon_ll_enable_coex_clock(MODEM_CLOCK_instance()->hal->lpcon_dev, false); // TODO: IDF-5727
+        // modem_lpcon_ll_enable_coex_clock(MODEM_CLOCK_instance()->hal->lpcon_dev, false); // TODO: IDF-14964
         break;
     default:
         break;

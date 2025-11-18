@@ -103,7 +103,7 @@ esp_err_t ulp_riscv_config_and_run(ulp_riscv_cfg_t* cfg)
     /* Reset COCPU when power on. */
     SET_PERI_REG_MASK(RTC_CNTL_COCPU_CTRL_REG, RTC_CNTL_COCPU_SHUT_RESET_EN);
 
-    /* The coprocessor cpu trap signal doesnt have a stable reset value,
+    /* The coprocessor cpu trap signal doesn't have a stable reset value,
       force ULP-RISC-V clock on to stop RTC_COCPU_TRAP_TRIG_EN from waking the CPU*/
     SET_PERI_REG_MASK(RTC_CNTL_COCPU_CTRL_REG, RTC_CNTL_COCPU_CLK_FO);
 
@@ -123,7 +123,7 @@ esp_err_t ulp_riscv_config_and_run(ulp_riscv_cfg_t* cfg)
     /* Reset COCPU when power on. */
     SET_PERI_REG_MASK(RTC_CNTL_COCPU_CTRL_REG, RTC_CNTL_COCPU_SHUT_RESET_EN);
 
-    /* The coprocessor cpu trap signal doesnt have a stable reset value,
+    /* The coprocessor cpu trap signal doesn't have a stable reset value,
       force ULP-RISC-V clock on to stop RTC_COCPU_TRAP_TRIG_EN from waking the CPU*/
     SET_PERI_REG_MASK(RTC_CNTL_COCPU_CTRL_REG, RTC_CNTL_COCPU_CLK_FO);
 
@@ -131,13 +131,6 @@ esp_err_t ulp_riscv_config_and_run(ulp_riscv_cfg_t* cfg)
     CLEAR_PERI_REG_MASK(RTC_CNTL_ULP_CP_TIMER_REG, RTC_CNTL_ULP_CP_SLP_TIMER_EN);
     /* wait for at least 1 RTC_SLOW_CLK cycle */
     esp_rom_delay_us(20);
-
-    /* We do not select RISC-V as the Coprocessor here as this could lead to a hang
-     * in the main CPU. Instead, we reset RTC_CNTL_COCPU_SEL after we have enabled the ULP timer.
-     *
-     * IDF-4510
-     */
-    //CLEAR_PERI_REG_MASK(RTC_CNTL_COCPU_CTRL_REG, RTC_CNTL_COCPU_SEL);
 
     /* Select ULP-RISC-V to send the DONE signal */
     SET_PERI_REG_MASK(RTC_CNTL_COCPU_CTRL_REG, RTC_CNTL_COCPU_DONE_FORCE);

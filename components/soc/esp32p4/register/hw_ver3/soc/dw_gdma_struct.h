@@ -10,8 +10,6 @@
 extern "C" {
 #endif
 
-// TODO: IDF-13429
-
 /** Group: Version Register */
 /** Type of id0 register
  *  NA

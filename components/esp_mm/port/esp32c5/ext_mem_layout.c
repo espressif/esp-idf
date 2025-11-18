@@ -39,7 +39,6 @@
  * The start addresses in this list should always be sorted from low to high, as MMU driver will need to
  * coalesce adjacent regions
  */
-// TODO: [ESP32C5] IDF-8658
 const mmu_mem_region_t g_mmu_mem_regions[SOC_MMU_LINEAR_ADDRESS_REGION_NUM] = {
     [0] = {
         .start = MMU_IRAM0_LINEAR_ADDRESS_LOW,

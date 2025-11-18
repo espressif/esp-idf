@@ -1,5 +1,0 @@
-# sdkconfig replacement configurations for deprecated options formatted as
-# CONFIG_DEPRECATED_OPTION CONFIG_NEW_OPTION
-
-CONFIG_ADC2_DISABLE_DAC     CONFIG_ADC_DISABLE_DAC
-CONFIG_MCPWM_ISR_IN_IRAM    CONFIG_MCPWM_ISR_IRAM_SAFE

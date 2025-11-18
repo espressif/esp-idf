@@ -432,7 +432,7 @@ static void print_rsa_details(mbedtls_rsa_context *rsa)
 }
 #endif
 
-#if CONFIG_FREERTOS_SMP // IDF-5260
+#if CONFIG_FREERTOS_SMP // IDF-5826
 TEST_CASE("test performance RSA key operations", "[bignum][timeout=60]")
 #else
 TEST_CASE("test performance RSA key operations", "[bignum]")
@@ -455,7 +455,7 @@ TEST_CASE("test performance RSA key operations", "[bignum]")
     }
 }
 
-#if CONFIG_FREERTOS_SMP // IDF-5260
+#if CONFIG_FREERTOS_SMP // IDF-5826
 TEST_CASE("test RSA-3072 calculations", "[bignum][timeout=60]")
 #else
 TEST_CASE("test RSA-3072 calculations", "[bignum]")
@@ -465,7 +465,7 @@ TEST_CASE("test RSA-3072 calculations", "[bignum]")
     rsa_key_operations(3072, false, false);
 }
 
-#if CONFIG_FREERTOS_SMP // IDF-5260
+#if CONFIG_FREERTOS_SMP // IDF-5826
 TEST_CASE("test RSA-2048 calculations", "[bignum][timeout=60]")
 #else
 TEST_CASE("test RSA-2048 calculations", "[bignum]")
@@ -475,7 +475,7 @@ TEST_CASE("test RSA-2048 calculations", "[bignum]")
     rsa_key_operations(2048, false, false);
 }
 
-#if CONFIG_FREERTOS_SMP // IDF-5260
+#if CONFIG_FREERTOS_SMP // IDF-5826
 TEST_CASE("test RSA-4096 calculations", "[bignum][timeout=60]")
 #else
 TEST_CASE("test RSA-4096 calculations", "[bignum]")

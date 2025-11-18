@@ -55,7 +55,7 @@
 #define SOC_GPSPI_SUPPORTED             1
 #define SOC_LEDC_SUPPORTED              1
 #define SOC_I2C_SUPPORTED               1
-#define SOC_SYSTIMER_SUPPORTED          1     // TODO: [ESP32C5] IDF-8707
+#define SOC_SYSTIMER_SUPPORTED          1
 #define SOC_SUPPORT_COEXISTENCE         1
 #define SOC_AES_SUPPORTED               1
 #define SOC_MPI_SUPPORTED               1
@@ -438,7 +438,6 @@
 #define SOC_MEMSPI_SRC_FREQ_20M_SUPPORTED         1
 
 /*-------------------------- SYSTIMER CAPS ----------------------------------*/
-// TODO: [ESP32C5] IDF-8707
 #define SOC_SYSTIMER_COUNTER_NUM            2  // Number of counter units
 #define SOC_SYSTIMER_ALARM_NUM              3  // Number of alarm units
 #define SOC_SYSTIMER_BIT_WIDTH_LO           32 // Bit width of systimer low part

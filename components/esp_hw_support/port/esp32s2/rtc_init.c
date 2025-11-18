@@ -164,7 +164,7 @@ void rtc_init(rtc_config_t cfg)
 
 #if !CONFIG_IDF_ENV_FPGA
     if (cfg.cali_ocode) {
-        uint32_t rtc_calib_version = efuse_ll_get_blk_version_minor(); // IDF-5366
+        uint32_t rtc_calib_version = efuse_ll_get_blk_version_minor();
         if (rtc_calib_version == 2) {
             set_ocode_by_efuse(rtc_calib_version);
         } else {

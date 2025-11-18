@@ -161,7 +161,7 @@ typedef enum {
 /**
  * @brief Type of SYSTIMER clock source
  */
-typedef enum {  // TODO: [ESP32C5] IDF-8676 (inherit from C6)
+typedef enum {
     SYSTIMER_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,       /*!< SYSTIMER source clock is XTAL */
     SYSTIMER_CLK_SRC_RC_FAST = SOC_MOD_CLK_RC_FAST, /*!< SYSTIMER source clock is RC_FAST */
     SYSTIMER_CLK_SRC_DEFAULT = SOC_MOD_CLK_XTAL,    /*!< SYSTIMER source clock default choice is XTAL */
@@ -360,7 +360,7 @@ typedef enum {
 /**
  * @brief Type of LP_I2C clock source.
  */
-typedef enum {  // TODO: [ESP32C5] IDF-8695 (inherit from C6)
+typedef enum {
     LP_I2C_SCLK_LP_FAST = SOC_MOD_CLK_RC_FAST,                 /*!< LP_I2C source clock is RC_FAST */
     LP_I2C_SCLK_XTAL_D2 = SOC_MOD_CLK_XTAL_D2,                  /*!< LP_I2C source clock is XTAL_D2 */
     LP_I2C_SCLK_DEFAULT = SOC_MOD_CLK_RC_FAST,                 /*!< LP_I2C source clock default choice is RC_FAST */

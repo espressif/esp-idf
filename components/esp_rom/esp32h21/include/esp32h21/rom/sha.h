@@ -9,8 +9,6 @@
 #include <stdbool.h>
 #include "ets_sys.h"
 
-//TODO: [ESP32H21] IDF-11501
-
 #ifdef __cplusplus
 extern "C" {
 #endif

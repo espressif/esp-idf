@@ -271,8 +271,7 @@ typedef enum {
     SPI_CLK_SRC_XTAL     = SOC_MOD_CLK_XTAL,        /*!< Select XTAL as SPI source clock */
     SPI_CLK_SRC_RC_FAST  = SOC_MOD_CLK_RC_FAST,     /*!< Select RC_FAST_20M as SPI source clock */
     SPI_CLK_SRC_SPLL     = SOC_MOD_CLK_SPLL,        /*!< Select SPLL as SPI source clock */
-    // TODO: IDF-8313, use PLL as default
-    SPI_CLK_SRC_DEFAULT  = SOC_MOD_CLK_XTAL,        /*!< Select XTAL as default source clock */
+    SPI_CLK_SRC_DEFAULT  = SOC_MOD_CLK_SPLL,        /*!< Select XTAL as default source clock */
 } soc_periph_spi_clk_src_t;
 
 /////////////////////////////////////////////////FLASH////////////////////////////////////////////////////////////////////

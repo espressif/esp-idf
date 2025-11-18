@@ -134,14 +134,6 @@ void esp_restart_noos(void)
     // Disable cache
     Cache_Disable_Cache();
 
-    //TODO: [ESP32C61] IDF-9553, inherit from verify code
-    // Reset wifi/bluetooth/ethernet/sdio (bb/mac)
-    // Moved to module internal
-    // SET_PERI_REG_MASK(SYSTEM_CORE_RST_EN_REG,
-    //                   SYSTEM_SDIO_RST |                              // SDIO_HINF_HINF_SDIO_RST?
-    //                   SYSTEM_EMAC_RST | SYSTEM_MACPWR_RST |          // TODO: IDF-5325 (ethernet)
-    // REG_WRITE(SYSTEM_CORE_RST_EN_REG, 0);
-
     esp_system_reset_modules_on_exit();
 
     // Set CPU back to XTAL source, same as hard reset, but keep BBPLL on so that USB Serial JTAG can log at 1st stage bootloader.

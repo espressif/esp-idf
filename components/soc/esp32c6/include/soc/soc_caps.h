@@ -168,7 +168,6 @@
 // DIG-694: misaligned access across PMP regions must be spaced at least by two instructions
 #define SOC_CPU_MISALIGNED_ACCESS_ON_PMP_MISMATCH_ISSUE 1
 
-// TODO: IDF-5360 (Copy from esp32c3, need check)
 /*-------------------------- DIGITAL SIGNATURE CAPS ----------------------------------------*/
 /** The maximum length of a Digital Signature in bits. */
 #define SOC_DS_SIGNATURE_MAX_BIT_LEN (3072)
@@ -337,7 +336,6 @@
 /*--------------------------- RSA CAPS ---------------------------------------*/
 #define SOC_RSA_MAX_BIT_LEN    (3072)
 
-// TODO: IDF-5353 (Copy from esp32c3, need check)
 /*--------------------------- SHA CAPS ---------------------------------------*/
 
 /* Max amount of bytes in a single DMA operation is 4095,
@@ -465,8 +463,6 @@
 /*--------------------------- UHCI CAPS -------------------------------------*/
 #define SOC_UHCI_NUM               (1UL)
 
-// TODO: IDF-5679 (Copy from esp32c3, need check)
-
 /*-------------------------- COEXISTENCE HARDWARE PTI CAPS -------------------------------*/
 #define SOC_COEX_HW_PTI                 (1)
 
@@ -477,14 +473,12 @@
 /*--------------- PHY REGISTER AND MEMORY SIZE CAPS --------------------------*/
 #define SOC_PHY_DIG_REGS_MEM_SIZE       (21*4)
 
-// TODO: IDF-5679 (Copy from esp32c3, need check)
 /*--------------- WIFI LIGHT SLEEP CLOCK WIDTH CAPS --------------------------*/
 #define SOC_WIFI_LIGHT_SLEEP_CLK_WIDTH  (12)
 
 /*-------------------------- RTC MEM CAPS ----------------------------*/
 #define SOC_RTC_MEM_SUPPORT_SPEED_MODE_SWITCH           1
 
-// TODO: IDF-5351 (Copy from esp32c3, need check)
 /*-------------------------- Power Management CAPS ----------------------------*/
 #define SOC_PM_SUPPORT_WIFI_WAKEUP      (1)
 #define SOC_PM_SUPPORT_BEACON_WAKEUP    (1)

@@ -41,7 +41,6 @@ void esp_system_reset_modules_on_exit(void)
         }
     }
 
-    // TODO: IDF-8845
 #if SOC_MODEM_CLOCK_SUPPORTED
     modem_syscon_ll_reset_all(&MODEM_SYSCON);
     modem_lpcon_ll_reset_all(&MODEM_LPCON);
@@ -134,13 +133,6 @@ void esp_restart_noos(void)
 
     // Disable cache
     Cache_Disable_Cache();
-
-    // Reset wifi/bluetooth/ethernet/sdio (bb/mac)
-    // Moved to module internal
-    // SET_PERI_REG_MASK(SYSTEM_CORE_RST_EN_REG,
-    //                   SYSTEM_SDIO_RST |                              // SDIO_HINF_HINF_SDIO_RST?
-    //                   SYSTEM_EMAC_RST | SYSTEM_MACPWR_RST |          // TODO: IDF-5325 (ethernet)
-    // REG_WRITE(SYSTEM_CORE_RST_EN_REG, 0);
 
     esp_system_reset_modules_on_exit();
 

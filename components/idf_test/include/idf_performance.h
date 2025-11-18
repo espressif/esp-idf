@@ -24,7 +24,7 @@
 
 /* Due to code size & linker layout differences interacting with cache, VFS
    microbenchmark currently runs slower with PSRAM enabled. */
-#if !CONFIG_FREERTOS_SMP // IDF-5224
+#if !CONFIG_FREERTOS_SMP // IDF-5826
 #ifndef IDF_PERFORMANCE_MAX_VFS_OPEN_WRITE_CLOSE_TIME
 #define IDF_PERFORMANCE_MAX_VFS_OPEN_WRITE_CLOSE_TIME                           20000
 #endif
@@ -83,7 +83,7 @@
 
 
 // events dispatched per second by event loop library
-#if !CONFIG_FREERTOS_SMP // IDF-5112
+#if !CONFIG_FREERTOS_SMP // IDF-5826
 #if CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ < 100 // Allowing lesser event dispatch performance for slower CPU frequency chips
 #ifndef IDF_PERFORMANCE_MIN_EVENT_DISPATCH
 #define IDF_PERFORMANCE_MIN_EVENT_DISPATCH                                      11000

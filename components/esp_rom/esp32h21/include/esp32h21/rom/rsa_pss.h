@@ -10,8 +10,6 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-//TODO: [ESP32H21] IDF-11498
-
 #ifdef __cplusplus
 extern "C" {
 #endif

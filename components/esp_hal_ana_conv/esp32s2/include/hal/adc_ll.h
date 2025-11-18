@@ -208,7 +208,6 @@ static inline void adc_ll_digi_convert_limit_enable(bool enable)
  * Set adc conversion mode for digital controller.
  *
  * @param mode Conversion mode select.
- * TODO IDF-3610
  */
 static inline void adc_ll_digi_set_convert_mode(adc_ll_digi_convert_mode_t mode)
 {

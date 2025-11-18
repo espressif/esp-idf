@@ -16,8 +16,6 @@
 #include "hal/efuse_hal.h"
 #include "esp_fault.h"
 
-// TODO: [ESP32C61] IDF-9265, inherit from c6
-
 #ifdef __cplusplus
 extern "C" {
 #endif

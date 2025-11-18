@@ -142,7 +142,7 @@ typedef void (*flash_test_func_t)(const esp_partition_t *part);
 #define TEST_CASE_MULTI_FLASH   TEST_CASE_MULTI_FLASH_IGNORE
 #define TEST_CASE_MULTI_FLASH_LONG   TEST_CASE_MULTI_FLASH_IGNORE
 #else
-#if CONFIG_FREERTOS_SMP // IDF-5260
+#if CONFIG_FREERTOS_SMP // IDF-5826
 #define TEST_CASE_MULTI_FLASH(STR, FUNC_TO_RUN) \
     TEST_CASE(STR", "TEST_CHIP_NUM_STR" chips", "[esp_flash_multi][test_env=UT_T1_ESP_FLASH][timeout=60]") {flash_test_func(FUNC_TO_RUN, TEST_CONFIG_NUM);}
 #else

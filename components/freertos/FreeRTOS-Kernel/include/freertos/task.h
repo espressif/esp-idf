@@ -204,7 +204,6 @@ typedef enum
  * \ingroup Tasks
  */
 #define tskNO_AFFINITY      ( ( BaseType_t ) 0x7FFFFFFF )
-/* Todo: Update tskNO_AFFINITY value to -1 (IDF-7908) */
 
 /**
  * Macro to check if an xCoreID value is valid
