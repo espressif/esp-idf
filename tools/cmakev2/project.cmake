@@ -773,6 +773,12 @@ macro(idf_project_default)
 
     idf_create_save_defconfig()
 
+    idf_create_uf2("${executable}"
+                   TARGET uf2)
+    idf_create_uf2("${executable}"
+                   TARGET uf2-app
+                   APP_ONLY)
+
     idf_build_generate_metadata("${executable}")
 
     unset(build_dir)
