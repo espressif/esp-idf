@@ -169,9 +169,6 @@ enum {
     BTA_DM_API_BLE_DISCONNECT_EVT,
 
 #endif
-#if (BLE_HOST_REMOVE_ALL_ACL_EN == TRUE)
-    BTA_DM_API_REMOVE_ALL_ACL_EVT,
-#endif // #if (BLE_HOST_REMOVE_ALL_ACL_EN == TRUE)
     BTA_DM_API_REMOVE_DEVICE_EVT,
     BTA_DM_API_BLE_SET_CHANNELS_EVT,
     BTA_DM_API_UPDATE_WHITE_LIST_EVT,
@@ -1229,15 +1226,6 @@ typedef struct {
 } tBTA_DM_API_REMOVE_ACL;
 #endif // #if (BLE_HOST_REMOVE_AN_ACL_EN == TRUE)
 
-#if (BLE_HOST_REMOVE_ALL_ACL_EN == TRUE)
-/* data type for BTA_DM_API_REMOVE_ALL_ACL_EVT */
-typedef struct {
-    BT_HDR      hdr;
-    tBTA_DM_LINK_TYPE link_type;
-
-} tBTA_DM_API_REMOVE_ALL_ACL;
-#endif // #if (BLE_HOST_REMOVE_ALL_ACL_EN == TRUE)
-
 typedef struct {
     BT_HDR      hdr;
     BD_ADDR     bd_addr;
@@ -1813,9 +1801,6 @@ typedef union {
 #if (BLE_HOST_REMOVE_AN_ACL_EN == TRUE)
     tBTA_DM_API_REMOVE_ACL              remove_acl;
 #endif // #if (BLE_HOST_REMOVE_AN_ACL_EN == TRUE)
-#if (BLE_HOST_REMOVE_ALL_ACL_EN == TRUE)
-    tBTA_DM_API_REMOVE_ALL_ACL          remove_all_acl;
-#endif // #if (BLE_HOST_REMOVE_ALL_ACL_EN == TRUE)
 
 #if (BLE_FEAT_ISO_EN == TRUE)
 #if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
@@ -2423,7 +2408,6 @@ extern void bta_dm_disable_test_mode(tBTA_DM_MSG *p_data);
 extern void bta_dm_execute_callback(tBTA_DM_MSG *p_data);
 
 
-extern void bta_dm_remove_all_acl(tBTA_DM_MSG *p_data);
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
 extern void bta_dm_ble_gap_read_phy(tBTA_DM_MSG *p_data);
 
