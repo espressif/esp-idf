@@ -407,6 +407,29 @@ void IRAM_ATTR modem_clock_module_disable(shared_periph_module_t module)
     modem_clock_device_disable(MODEM_CLOCK_instance(), deps);
 }
 
+uint32_t IRAM_ATTR modem_clock_module_bits_get(shared_periph_module_t module)
+{
+    assert(IS_MODEM_MODULE(module));
+    uint32_t val = 0;
+    switch (module)
+    {
+#if SOC_WIFI_SUPPORTED
+        case PERIPH_WIFI_MODULE:
+#endif
+#if SOC_BT_SUPPORTED
+        case PERIPH_BT_MODULE:
+#endif
+#if SOC_IEEE802154_SUPPORTED
+        case PERIPH_IEEE802154_MODULE:
+#endif
+        case PERIPH_PHY_MODULE:
+            val = modem_syscon_ll_clk_conf1_get(MODEM_CLOCK_instance()->hal->syscon_dev);
+        default:
+            break;
+    }
+    return val;
+}
+
 void modem_clock_deselect_all_module_lp_clock_source(void)
 {
 #if SOC_WIFI_SUPPORTED
