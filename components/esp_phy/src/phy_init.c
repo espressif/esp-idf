@@ -49,6 +49,12 @@
 #include "esp_private/sleep_modem.h"
 #endif
 #include "hal/efuse_hal.h"
+#include "phy_init_deps.h"
+
+#ifndef PHY_INIT_MODEM_CLOCK_REQUIRED_BITS
+#warning "PHY_INIT_MODEM_CLOCK_REQUIRED_BITS not defined; using default value 0"
+#define PHY_INIT_MODEM_CLOCK_REQUIRED_BITS 0
+#endif
 
 #if CONFIG_IDF_TARGET_ESP32
 extern wifi_mac_time_update_cb_t s_wifi_mac_time_update_cb;
@@ -302,6 +308,7 @@ void esp_phy_enable(esp_phy_modem_t modem)
 #endif
         esp_phy_common_clock_enable();
         phy_module_enable();
+        assert(phy_module_has_clock_bits(PHY_INIT_MODEM_CLOCK_REQUIRED_BITS));
         if (s_is_phy_calibrated == false) {
             esp_phy_load_cal_and_init();
             s_is_phy_calibrated = true;

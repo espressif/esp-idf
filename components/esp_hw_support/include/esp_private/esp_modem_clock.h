@@ -63,6 +63,18 @@ void modem_clock_module_enable(periph_module_t module);
 void modem_clock_module_disable(periph_module_t module);
 
 /**
+ * @brief Gets the clock bitmask associated with the specified modem module.
+ *
+ * This function returns the complete set of clock-enable bits that correspond
+ * to @p module.
+ *
+ * @param module  Target shared peripheral clock module.
+ *
+ * @return Bitmask of clock-enable bits for the given module.
+ */
+uint32_t modem_clock_module_bits_get(periph_module_t module);
+
+/**
  * @brief Reset the mac of modem module
  *
  * @param module  modem module, must be one of

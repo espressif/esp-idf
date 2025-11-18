@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -291,6 +291,12 @@ static inline void modem_syscon_ll_clk_conf1_configure(modem_syscon_dev_t *hw, b
     } else {
         hw->clk_conf1.val = hw->clk_conf1.val & ~mask;
     }
+}
+
+__attribute__((always_inline))
+static inline uint32_t modem_syscon_ll_clk_conf1_get(modem_syscon_dev_t *hw)
+{
+    return hw->clk_conf1.val;
 }
 
 __attribute__((always_inline))
