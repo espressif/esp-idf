@@ -1175,31 +1175,6 @@ tBTA_STATUS BTA_DmRemoveLocalDiRecord(UINT32 handle)
 }
 #endif  ///SDP_INCLUDED == TRUE
 
-#if (BLE_HOST_EXECUTE_CBACK_EN == TRUE)
-/*******************************************************************************
-**
-** Function         bta_dmexecutecallback
-**
-** Description      This function will request BTA to execute a call back in the context of BTU task
-**                  This API was named in lower case because it is only intended
-**                  for the internal customers(like BTIF).
-**
-** Returns          void
-**
-*******************************************************************************/
-void bta_dmexecutecallback (tBTA_DM_EXEC_CBACK *p_callback, void *p_param)
-{
-    tBTA_DM_API_EXECUTE_CBACK *p_msg;
-
-    if ((p_msg = (tBTA_DM_API_EXECUTE_CBACK *) osi_malloc(sizeof(tBTA_DM_API_EXECUTE_CBACK))) != NULL) {
-        p_msg->hdr.event = BTA_DM_API_EXECUTE_CBACK_EVT;
-        p_msg->p_param = p_param;
-        p_msg->p_exec_cback = p_callback;
-        bta_sys_sendmsg(p_msg);
-    }
-}
-#endif // #if (BLE_HOST_EXECUTE_CBACK_EN == TRUE)
-
 /*******************************************************************************
 **
 ** Function         BTA_DmAddBleKey
