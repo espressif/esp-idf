@@ -1128,7 +1128,9 @@ static void btu_hcif_esco_connection_chg_evt (UINT8 *p)
 static void btu_hcif_hdl_command_complete (UINT16 opcode, UINT8 *p, UINT16 evt_len,
         void *p_cplt_cback)
 {
+#if (BLE_INCLUDED == TRUE)
     uint8_t status;
+#endif // (BLE_INCLUDED == TRUE)
     switch (opcode) {
 #if (CLASSIC_BT_INCLUDED == TRUE)
     case HCI_INQUIRY_CANCEL:
@@ -1395,10 +1397,6 @@ static void btu_hcif_hdl_command_complete (UINT16 opcode, UINT8 *p, UINT16 evt_l
         if ((opcode & HCI_GRP_VENDOR_SPECIFIC) == HCI_GRP_VENDOR_SPECIFIC) {
             btm_vsc_complete (p, opcode, evt_len, (tBTM_CMPL_CB *)p_cplt_cback);
         }
-        STREAM_TO_UINT8  (status, p);
-        if(status != HCI_SUCCESS) {
-            HCI_TRACE_ERROR("CC evt: op=0x%x, status=0x%x", opcode, status);
-        }
         break;
     }
     }
@@ -1420,6 +1418,10 @@ static void btu_hcif_command_complete_evt_on_task(BT_HDR *event)
     command_opcode_t opcode;
     uint8_t *stream = hack->response->data + hack->response->offset + 3; // 2 to skip the event headers, 1 to skip the command credits
     STREAM_TO_UINT16(opcode, stream);
+
+    if (*stream != HCI_SUCCESS) {
+        HCI_TRACE_WARNING("opcode=0x%04x, status= %02x: %s", opcode, *stream, hci_status_code_to_string(*stream));
+    }
 
     btu_hcif_hdl_command_complete(
         opcode,
@@ -1506,7 +1508,7 @@ static void btu_hcif_hdl_command_status (UINT16 opcode, UINT8 status, UINT8 *p_c
         void *p_vsc_status_cback)
 {
     if (status != HCI_SUCCESS){
-        HCI_TRACE_WARNING("%s,opcode:0x%04x,status:0x%02x", __func__, opcode,status);
+        HCI_TRACE_WARNING("opcode=0x%04x, status= %02x: %s", opcode, status, hci_status_code_to_string(status));
     }
     BD_ADDR         bd_addr;
     UINT16          handle;

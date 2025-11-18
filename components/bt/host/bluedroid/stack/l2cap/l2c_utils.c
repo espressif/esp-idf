@@ -345,6 +345,15 @@ uint8_t l2cu_ble_plcb_active_count(void)
     for (p_node = list_begin(l2cb.p_lcb_pool); p_node; p_node = list_next(p_node)) {
         p_lcb = list_node(p_node);
         if (p_lcb && p_lcb->in_use && p_lcb->transport == BT_TRANSPORT_LE) {
+            L2CAP_TRACE_DEBUG("%s LE PLCB active #%d: remote_addr=%02X:%02X:%02X:%02X:%02X:%02X",
+                              __func__,
+                              active_count,
+                              p_lcb->remote_bd_addr[0],
+                              p_lcb->remote_bd_addr[1],
+                              p_lcb->remote_bd_addr[2],
+                              p_lcb->remote_bd_addr[3],
+                              p_lcb->remote_bd_addr[4],
+                              p_lcb->remote_bd_addr[5]);
             active_count ++;
         }
     }

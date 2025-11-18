@@ -1390,6 +1390,12 @@ uint8_t btm_ble_ext_adv_active_count(void)
 
     for (uint8_t i = 0; i < MAX_BLE_ADV_INSTANCE; i++) {
         if (adv_record[i].enabled == true) {
+            BTM_TRACE_DEBUG("%s EXT ADV active #%d: instance=%d, duration=%d, max_events=%d",
+                            __func__,
+                            count,
+                            adv_record[i].instance,
+                            adv_record[i].duration,
+                            adv_record[i].max_events);
             count++;
         }
     }
