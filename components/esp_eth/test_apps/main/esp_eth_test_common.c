@@ -14,6 +14,9 @@
 #endif // CONFIG_TARGET_USE_SPI_ETHERNET
 #include "sdkconfig.h"
 #include "esp_eth_test_common.h"
+#if CONFIG_TARGET_ETH_PHY_DEVICE_LAN8720
+#include "esp_eth_phy_lan87xx.h"
+#endif // CONFIG_TARGET_ETH_PHY_DEVICE_LAN8720
 
 #if CONFIG_TARGET_USE_SPI_ETHERNET
 #define DEFAULT_TARGET_SPI_HOST 1
