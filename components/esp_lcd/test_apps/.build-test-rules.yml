@@ -34,7 +34,7 @@ components/esp_lcd/test_apps/mipi_dsi_lcd:
   depends_components:
     - esp_lcd
   disable:
-    - if: SOC_LCD_MIPI_DSI_SUPPORTED != 1
+    - if: SOC_MIPI_DSI_SUPPORTED != 1
   disable_test:
     - if: IDF_TARGET == "esp32p4"
       temporary: true
