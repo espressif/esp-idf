@@ -2195,40 +2195,6 @@ void BTA_DmSetEncryption(BD_ADDR bd_addr, tBTA_TRANSPORT transport, tBTA_DM_ENCR
 }
 #endif  ///SMP_INCLUDED == TRUE
 
-#if (BLE_HOST_REMOVE_AN_ACL_EN == TRUE)
-/*******************************************************************************
-**
-** Function         BTA_DmCloseACL
-**
-** Description      This function force to close an ACL connection and remove the
-**                  device from the security database list of known devices.
-**
-** Parameters:      bd_addr       - Address of the peer device
-**                  remove_dev    - remove device or not after link down
-**
-** Returns          void
-**
-*******************************************************************************/
-void BTA_DmCloseACL(BD_ADDR bd_addr, BOOLEAN remove_dev, tBTA_TRANSPORT transport)
-{
-    tBTA_DM_API_REMOVE_ACL   *p_msg;
-
-    APPL_TRACE_API("BTA_DmCloseACL");
-
-    if ((p_msg = (tBTA_DM_API_REMOVE_ACL *) osi_malloc(sizeof(tBTA_DM_API_REMOVE_ACL))) != NULL) {
-        memset(p_msg, 0, sizeof(tBTA_DM_API_REMOVE_ACL));
-
-        p_msg->hdr.event = BTA_DM_API_REMOVE_ACL_EVT;
-
-        memcpy(p_msg->bd_addr, bd_addr, BD_ADDR_LEN);
-        p_msg->remove_dev      = remove_dev;
-        p_msg->transport       = transport;
-
-        bta_sys_sendmsg(p_msg);
-    }
-}
-#endif // #if (BLE_HOST_REMOVE_AN_ACL_EN == TRUE)
-
 #if BLE_INCLUDED == TRUE
 
 #if (BLE_42_SCAN_EN == TRUE)
