@@ -217,7 +217,8 @@ static void* get_buffer_malloc(void* arg, size_t reqest_size, size_t* out_size)
     unsigned retries = 5;
     size_t read_chunk_size = reqest_size;
     while(ret == NULL && retries--) {
-        read_chunk_size = MIN(read_chunk_size, heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT));
+        size_t largest_free = heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+        read_chunk_size = MIN(read_chunk_size, largest_free);
         read_chunk_size = (read_chunk_size + 3) & ~3;
         ret = heap_caps_malloc(read_chunk_size, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     }

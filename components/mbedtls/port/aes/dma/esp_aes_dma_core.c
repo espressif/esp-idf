@@ -244,8 +244,10 @@ static int esp_aes_process_dma_ext_ram(esp_aes_context *ctx, const unsigned char
 #ifdef SOC_GDMA_EXT_MEM_ENC_ALIGNMENT
     if (efuse_hal_flash_encryption_enabled()) {
         if (esp_ptr_external_ram(input) || esp_ptr_external_ram(output) || esp_ptr_in_drom(input) || esp_ptr_in_drom(output)) {
-            input_alignment = MAX(get_cache_line_size(input), SOC_GDMA_EXT_MEM_ENC_ALIGNMENT);
-            output_alignment = MAX(get_cache_line_size(output), SOC_GDMA_EXT_MEM_ENC_ALIGNMENT);
+            size_t input_cache_line_size = get_cache_line_size(input);
+            size_t output_cache_line_size = get_cache_line_size(output);
+            input_alignment = MAX(input_cache_line_size, SOC_GDMA_EXT_MEM_ENC_ALIGNMENT);
+            output_alignment = MAX(output_cache_line_size, SOC_GDMA_EXT_MEM_ENC_ALIGNMENT);
 
             input_heap_caps = MALLOC_CAP_8BIT | (esp_ptr_external_ram(input) ? MALLOC_CAP_SPIRAM : MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
             output_heap_caps = MALLOC_CAP_8BIT | (esp_ptr_external_ram(output) ? MALLOC_CAP_SPIRAM : MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);

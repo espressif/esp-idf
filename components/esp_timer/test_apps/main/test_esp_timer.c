@@ -457,7 +457,8 @@ static void timer_test_monotonic_values_task(void* arg)
             state->pass = false;
         }
         state->avg_diff += diff;
-        state->max_error = MAX(state->max_error, llabs(diff));
+        int64_t abs_diff = llabs(diff);
+        state->max_error = MAX(state->max_error, abs_diff);
         state->test_cnt++;
     }
     state->avg_diff /= state->test_cnt;
