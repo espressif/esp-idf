@@ -76,10 +76,9 @@ static bool esp_clk_tree_initialized = false;
 void esp_clk_tree_initialize(void)
 {
     soc_reset_reason_t rst_reason = esp_rom_get_reset_reason(0);
-    if (((rst_reason == RESET_REASON_CPU0_MWDT0) || (rst_reason == RESET_REASON_CPU0_MWDT1)         \
+    if ((rst_reason == RESET_REASON_CPU0_MWDT0) || (rst_reason == RESET_REASON_CPU0_MWDT1)          \
             || (rst_reason == RESET_REASON_CPU0_SW) || (rst_reason == RESET_REASON_CPU0_RTC_WDT)    \
-            || (rst_reason == RESET_REASON_CPU0_JTAG) || (rst_reason == RESET_REASON_CPU0_LOCKUP))  \
-            && (REG_READ(RTC_CLK_SRC_REF_CNT_ARRAY_REG) == (uint32_t)s_pll_src_cg_ref_cnt)) {
+            || (rst_reason == RESET_REASON_CPU0_JTAG) || (rst_reason == RESET_REASON_CPU0_LOCKUP)) {
         esp_clk_tree_initialized = true;
         return;
     }
