@@ -24,22 +24,22 @@ def test_examples_sd_card_sdspi(dut: Dut) -> None:
     speed = dut.expect(re.compile(rb'Speed: (\S+)'), timeout=20).group(1).decode()
     size = dut.expect(re.compile(rb'Size: (\S+)'), timeout=20).group(1).decode()
 
-    logging.info('Card {} {} {}MHz {} found'.format(name, _type, speed, size))
+    logging.info(f'Card {name} {_type} {speed}MHz {size} found')
 
     message_list1 = (
         'Opening file /sdcard/hello.txt',
         'File written',
         'Renaming file /sdcard/hello.txt to /sdcard/foo.txt',
         'Reading file /sdcard/foo.txt',
-        "Read from file: 'Hello {}!'".format(name),
+        f"Read from file: 'Hello {name}!'",
     )
-    sd_card_format = re.compile(str.encode('Formatting card, allocation unit size=\\S+'))
+    sd_card_format = re.compile(str.encode('formatting drive, allocation unit size=\\S+'))
     message_list2 = (
         "file doesn't exist, formatting done",
         'Opening file /sdcard/nihao.txt',
         'File written',
         'Reading file /sdcard/nihao.txt',
-        "Read from file: 'Nihao {}!'".format(name),
+        f"Read from file: 'Nihao {name}!'",
         'Card unmounted',
     )
 
