@@ -1,6 +1,5 @@
 # SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
-
 import pytest
 from pytest_embedded.dut import Dut
 
@@ -19,6 +18,6 @@ def test_rotary_encoder(dut: Dut) -> None:
     dut.expect_exact('add watch points and register callbacks')
     dut.expect_exact('clear pcnt unit')
     dut.expect_exact('start pcnt unit')
-    res = dut.expect(r'Pulse count: (\d+)')
+    res = dut.expect(r'(?:Pulse count|Watch point event, count): (-?\d+)')
     count_val = res.group(1).decode('utf8')
     assert -100 <= int(count_val) <= 100
