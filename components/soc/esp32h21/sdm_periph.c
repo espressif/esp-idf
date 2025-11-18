@@ -30,12 +30,12 @@ const soc_sdm_signal_desc_t soc_sdm_signals[1] = {
 
 /**
  * @brief Registers in retention context:
- *        GPIO_EXT_SIGMADELTA[x]_REG
  *        GPIO_EXT_SIGMADELTA_MISC_REG
+ *        GPIO_EXT_SIGMADELTA[x]_REG
  */
 #define GPIO_EXT_RETENTION_REGS_CNT 5
-#define GPIO_EXT_RETENTION_REGS_BASE (DR_REG_GPIO_EXT_BASE + 0x0)
-static const uint32_t gpio_ext_regs_map[4] = {0x20f, 0x0, 0x0, 0x0};
+#define GPIO_EXT_RETENTION_REGS_BASE (DR_REG_GPIO_EXT_BASE + 0x4)
+static const uint32_t gpio_ext_regs_map[4] = {0x1f, 0x0, 0x0, 0x0};
 static const regdma_entries_config_t gpio_ext_regdma_entries[] = {
     // backup stage: save configuration and status registers
     // restore stage: restore the configuration and status registers

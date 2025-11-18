@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,7 +11,7 @@
 const soc_mcpwm_signal_desc_t soc_mcpwm_signals[1] = {
     {
         .module_name = "MCPWM0",
-        .irq_id = ETS_MCPWM0_INTR_SOURCE,
+        .irq_id = ETS_PWM_INTR_SOURCE,
         .operators = {
             [0] = {
                 .generators = {

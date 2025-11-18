@@ -4,12 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/*******************************************************************************
- * NOTICE
- * The hal is not public api, don't use in application code.
- * See readme.md in hal/include/hal/readme.md
- ******************************************************************************/
-
 // The LL layer for ESP32 MCPWM register operations
 
 #pragma once
