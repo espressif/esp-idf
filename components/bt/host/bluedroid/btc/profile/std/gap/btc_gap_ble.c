@@ -61,6 +61,7 @@ static inline void btc_gap_ble_cb_to_app(esp_gap_ble_cb_event_t event, esp_ble_g
     esp_gap_ble_cb_t btc_gap_ble_cb = (esp_gap_ble_cb_t)btc_profile_cb_get(BTC_PID_GAP_BLE);
     if (btc_gap_ble_cb) {
         btc_gap_ble_cb(event, param);
+        BTC_TRACE_DEBUG("btc_gap_ble_cb_to_app, event=%d", event);
     }
 }
 
@@ -1768,6 +1769,8 @@ void btc_gap_ble_cb_handler(btc_msg_t *msg)
 {
     esp_ble_gap_cb_param_t *param = (esp_ble_gap_cb_param_t *)msg->arg;
 
+    BTC_TRACE_DEBUG("%s act %d", __func__, msg->act);
+
     if (msg->act < ESP_GAP_BLE_EVT_MAX) {
         btc_gap_ble_cb_to_app(msg->act, param);
     } else {
@@ -2177,7 +2180,7 @@ void btc_gap_ble_call_handler(btc_msg_t *msg)
     btc_ble_5_gap_args_t *arg_5 = (btc_ble_5_gap_args_t *)msg->arg;
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 
-    BTC_TRACE_DEBUG("%s act %d\n", __FUNCTION__, msg->act);
+    BTC_TRACE_DEBUG("%s act %d", __func__, msg->act);
 
     switch (msg->act) {
 #if (BLE_42_FEATURE_SUPPORT == TRUE)
