@@ -205,9 +205,7 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
 #if (BLE_HOST_READ_SCAN_REPORTS_EN == TRUE)
     bta_dm_ble_read_scan_reports,           /* BTA_DM_API_BLE_READ_SCAN_REPORTS_EVT */
 #endif // #if (BLE_HOST_READ_SCAN_REPORTS_EN == TRUE)
-#if (BLE_HOST_TRACK_ADVERTISER_EN == TRUE)
-    bta_dm_ble_track_advertiser,            /* BTA_DM_API_BLE_TRACK_ADVERTISER_EVT */
-#endif // #if (BLE_HOST_TRACK_ADVERTISER_EN == TRUE)
+
 #if (BLE_HOST_ENERGY_INFO_EN == TRUE)
     bta_dm_ble_get_energy_info,             /* BTA_DM_API_BLE_ENERGY_INFO_EVT */
 #endif // #if (BLE_HOST_ENERGY_INFO_EN == TRUE)

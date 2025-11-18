@@ -540,9 +540,6 @@ enum {
 };
 typedef tBTM_BLE_BATCH_SCAN_EVT tBTA_BLE_BATCH_SCAN_EVT;
 
-#if (BLE_HOST_TRACK_ADVERTISER_EN == TRUE)
-typedef tBTM_BLE_TRACK_ADV_ACTION tBTA_BLE_TRACK_ADV_ACTION;
-#endif // #if (BLE_HOST_TRACK_ADVERTISER_EN == TRUE)
 // #endif
 
 /* BLE customer specific feature function type definitions */
@@ -1307,9 +1304,6 @@ typedef UINT8 tBTA_DM_BLE_ADV_STATE;
 typedef UINT8 tBTA_DM_BLE_ADV_INFO_PRESENT;
 typedef UINT8 tBTA_DM_BLE_RSSI_VALUE;
 typedef UINT16 tBTA_DM_BLE_ADV_INFO_TIMESTAMP;
-#if (BLE_HOST_TRACK_ADVERTISER_EN == TRUE)
-typedef tBTM_BLE_TRACK_ADV_DATA tBTA_DM_BLE_TRACK_ADV_DATA;
-#endif // #if (BLE_HOST_TRACK_ADVERTISER_EN == TRUE)
 
 typedef void (tBTA_BLE_SCAN_THRESHOLD_CBACK)(tBTA_DM_BLE_REF_VALUE ref_value);
 
@@ -1326,14 +1320,6 @@ typedef void (tBTA_START_STOP_SCAN_CMPL_CBACK) (tBTA_STATUS status);
 typedef void (tBTA_START_STOP_ADV_CMPL_CBACK) (tBTA_STATUS status);
 
 typedef void (tBTA_CLEAR_ADV_CMPL_CBACK) (tBTA_STATUS status);
-
-#if (BLE_HOST_TRACK_ADVERTISER_EN == TRUE)
-typedef void (tBTA_BLE_TRACK_ADV_CMPL_CBACK)(int action, tBTA_STATUS status,
-        tBTA_DM_BLE_PF_AVBL_SPACE avbl_space,
-        tBTA_DM_BLE_REF_VALUE ref_value);
-
-typedef void (tBTA_BLE_TRACK_ADV_CBACK)(tBTA_DM_BLE_TRACK_ADV_DATA *p_adv_data);
-#endif  // #if (BLE_HOST_TRACK_ADVERTISER_EN == TRUE)
 
 #if (BLE_HOST_ENERGY_INFO_EN == TRUE)
 typedef void (tBTA_BLE_ENERGY_INFO_CBACK)(tBTA_DM_BLE_TX_TIME_MS tx_time,
@@ -3292,22 +3278,6 @@ extern void BTA_DmBleCfgFilterCondition(tBTA_DM_BLE_SCAN_COND_OP action,
                                         tBTA_DM_BLE_PF_CFG_CBACK *p_cmpl_cback,
                                         tBTA_DM_BLE_REF_VALUE ref_value);
 
-#if (BLE_HOST_TRACK_ADVERTISER_EN == TRUE)
-/*******************************************************************************
-**
-** Function         BTA_DmBleTrackAdvertiser
-**
-** Description      This function is called to track the advertiser
-**
-** Parameters    ref_value - Reference value
-**               p_track_adv_cback - ADV callback
-**
-** Returns          None
-**
-*******************************************************************************/
-extern void BTA_DmBleTrackAdvertiser(tBTA_DM_BLE_REF_VALUE ref_value,
-                                     tBTA_BLE_TRACK_ADV_CBACK *p_track_adv_cback);
-#endif // #if (BLE_HOST_TRACK_ADVERTISER_EN == TRUE)
 
 #if (BLE_HOST_ENERGY_INFO_EN == TRUE)
 /*******************************************************************************

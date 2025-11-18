@@ -191,9 +191,7 @@ enum {
 #if (BLE_HOST_READ_SCAN_REPORTS_EN == TRUE)
     BTA_DM_API_BLE_READ_SCAN_REPORTS_EVT,
 #endif // #if (BLE_HOST_READ_SCAN_REPORTS_EN == TRUE)
-#if (BLE_HOST_TRACK_ADVERTISER_EN == TRUE)
-    BTA_DM_API_BLE_TRACK_ADVERTISER_EVT,
-#endif // #if (BLE_HOST_TRACK_ADVERTISER_EN == TRUE)
+
 #if (BLE_HOST_ENERGY_INFO_EN == TRUE)
     BTA_DM_API_BLE_ENERGY_INFO_EVT,
 #endif // #if (BLE_HOST_ENERGY_INFO_EN == TRUE)
@@ -1019,13 +1017,6 @@ typedef struct {
 } tBTA_DM_API_READ_SCAN_REPORTS;
 #endif // #if (BLE_HOST_READ_SCAN_REPORTS_EN == TRUE)
 
-#if (BLE_HOST_TRACK_ADVERTISER_EN == TRUE)
-typedef struct {
-    BT_HDR                  hdr;
-    tBTA_DM_BLE_REF_VALUE ref_value;
-    tBTA_BLE_TRACK_ADV_CBACK *p_track_adv_cback;
-} tBTA_DM_API_TRACK_ADVERTISER;
-#endif // #if (BLE_HOST_TRACK_ADVERTISER_EN == TRUE)
 
 #if (BLE_HOST_ENERGY_INFO_EN == TRUE)
 typedef struct {
@@ -1905,9 +1896,6 @@ typedef union {
 #if (BLE_HOST_BATCH_SCAN_EN == TRUE)
     tBTA_DM_API_DISABLE_SCAN            ble_disable_scan;
 #endif // #if (BLE_HOST_BATCH_SCAN_EN == TRUE)
-#if (BLE_HOST_TRACK_ADVERTISER_EN == TRUE)
-    tBTA_DM_API_TRACK_ADVERTISER        ble_track_advert;
-#endif // #if (BLE_HOST_TRACK_ADVERTISER_EN == TRUE)
 #if (BLE_HOST_ENERGY_INFO_EN == TRUE)
     tBTA_DM_API_ENERGY_INFO             ble_energy_info;
 #endif // #if (BLE_HOST_ENERGY_INFO_EN == TRUE)
@@ -2532,9 +2520,6 @@ extern void bta_dm_ble_enable_batch_scan(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_disable_batch_scan(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_read_scan_reports(tBTA_DM_MSG *p_data);
 
-#if (BLE_HOST_TRACK_ADVERTISER_EN == TRUE)
-extern void bta_dm_ble_track_advertiser(tBTA_DM_MSG *p_data);
-#endif // #if (BLE_HOST_TRACK_ADVERTISER_EN == TRUE)
 
 #if (BLE_HOST_ENERGY_INFO_EN == TRUE)
 extern void bta_dm_ble_get_energy_info(tBTA_DM_MSG *p_data);
