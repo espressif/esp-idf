@@ -998,18 +998,6 @@ void bta_dm_clear_white_list(tBTA_DM_MSG *p_data)
     BTM_BleClearWhitelist(p_data->white_list.update_wl_cb);
 #endif
 }
-#if (BLE_HOST_READ_TX_POWER_EN == TRUE)
-void bta_dm_ble_read_adv_tx_power(tBTA_DM_MSG *p_data)
-{
-#if (BLE_INCLUDED == TRUE)
-    if (p_data->read_tx_power.read_tx_power_cb != NULL) {
-        BTM_BleReadAdvTxPower(p_data->read_tx_power.read_tx_power_cb);
-    } else {
-        APPL_TRACE_ERROR("%s(), the callback function can't be NULL.", __func__);
-    }
-#endif  ///BLE_INCLUDED == TRUE
-}
-#endif // #if (BLE_HOST_READ_TX_POWER_EN == TRUE)
 
 void bta_dm_read_rssi(tBTA_DM_MSG *p_data)
 {

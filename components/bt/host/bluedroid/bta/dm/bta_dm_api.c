@@ -493,18 +493,6 @@ void BTA_DmClearWhiteList(tBTA_UPDATE_WHITELIST_CBACK *update_wl_cb)
     }
 }
 
-#if (BLE_HOST_READ_TX_POWER_EN == TRUE)
-void BTA_DmBleReadAdvTxPower(tBTA_CMPL_CB *cmpl_cb)
-{
-    tBTA_DM_API_READ_ADV_TX_POWER *p_msg;
-    if ((p_msg = (tBTA_DM_API_READ_ADV_TX_POWER *)osi_malloc(sizeof(tBTA_DM_API_READ_ADV_TX_POWER))) != NULL) {
-        p_msg->hdr.event = BTA_DM_API_BLE_READ_ADV_TX_POWER_EVT;
-        p_msg->read_tx_power_cb = cmpl_cb;
-        bta_sys_sendmsg(p_msg);
-    }
-}
-#endif // BLE_HOST_READ_TX_POWER_EN
-
 void BTA_DmBleReadChannelMap(BD_ADDR remote_device, tBTA_CMPL_CB *p_callback)
 {
     if (!remote_device || !p_callback) {

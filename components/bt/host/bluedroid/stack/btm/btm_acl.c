@@ -2087,65 +2087,6 @@ tBTM_STATUS BTM_ReadLinkQuality (BD_ADDR remote_bda, tBTM_CMPL_CB *p_cb)
     return (BTM_UNKNOWN_ADDR);
 }
 
-#if (BLE_HOST_READ_TX_POWER_EN == TRUE)
-/*******************************************************************************
-**
-** Function         BTM_ReadTxPower
-**
-** Description      This function is called to read the current
-**                  TX power of the connection. The tx power level results
-**                  are returned in the callback.
-**                  (tBTM_RSSI_RESULTS)
-**
-** Returns          BTM_CMD_STARTED if successfully initiated or error code
-**
-*******************************************************************************/
-tBTM_STATUS BTM_ReadTxPower (BD_ADDR remote_bda, tBT_TRANSPORT transport, tBTM_CMPL_CB *p_cb)
-{
-    tACL_CONN   *p;
-    BOOLEAN     ret;
-#define BTM_READ_RSSI_TYPE_CUR  0x00
-#define BTM_READ_RSSI_TYPE_MAX  0X01
-
-    BTM_TRACE_API ("BTM_ReadTxPower: RemBdAddr: %02x%02x%02x%02x%02x%02x\n",
-                   remote_bda[0], remote_bda[1], remote_bda[2],
-                   remote_bda[3], remote_bda[4], remote_bda[5]);
-
-    /* If someone already waiting on the version, do not allow another */
-    if (btm_cb.devcb.p_tx_power_cmpl_cb) {
-        return (BTM_BUSY);
-    }
-
-    p = btm_bda_to_acl(remote_bda, transport);
-    if (p != (tACL_CONN *)NULL) {
-        btu_start_timer (&btm_cb.devcb.tx_power_timer, BTU_TTYPE_BTM_ACL,
-                         BTM_DEV_REPLY_TIMEOUT);
-
-        btm_cb.devcb.p_tx_power_cmpl_cb = p_cb;
-
-#if BLE_INCLUDED == TRUE
-        if (p->transport == BT_TRANSPORT_LE) {
-            memcpy(btm_cb.devcb.read_tx_pwr_addr, remote_bda, BD_ADDR_LEN);
-            ret = btsnd_hcic_ble_read_adv_chnl_tx_power();
-        } else
-#endif
-        {
-            ret = btsnd_hcic_read_tx_power (p->hci_handle, BTM_READ_RSSI_TYPE_CUR);
-        }
-        if (!ret) {
-            btm_cb.devcb.p_tx_power_cmpl_cb = NULL;
-            btu_stop_timer (&btm_cb.devcb.tx_power_timer);
-            return (BTM_NO_RESOURCES);
-        } else {
-            return (BTM_CMD_STARTED);
-        }
-    }
-
-    /* If here, no BD Addr found */
-    return (BTM_UNKNOWN_ADDR);
-}
-#endif // #if (BLE_HOST_READ_TX_POWER_EN == TRUE)
-
 tBTM_STATUS BTM_SetAclPktTypes(BD_ADDR remote_bda, UINT16 pkt_types, tBTM_CMPL_CB *p_cb)
 {
 #if CLASSIC_BT_INCLUDED == TRUE
@@ -2259,35 +2200,6 @@ tBTM_STATUS BTM_ReadChannelMap(BD_ADDR remote_bda, tBTM_CMPL_CB *p_cb)
     return BTM_UNKNOWN_ADDR;
 }
 
-#if (BLE_HOST_READ_TX_POWER_EN == TRUE)
-tBTM_STATUS BTM_BleReadAdvTxPower(tBTM_CMPL_CB *p_cb)
-{
-    BOOLEAN ret;
-    tBTM_TX_POWER_RESULTS result;
-    /* If someone already waiting on the version, do not allow another */
-    if (btm_cb.devcb.p_tx_power_cmpl_cb) {
-        result.status = BTM_BUSY;
-        (*p_cb)(&result);
-        return (BTM_BUSY);
-    }
-
-    btm_cb.devcb.p_tx_power_cmpl_cb = p_cb;
-    btu_start_timer (&btm_cb.devcb.tx_power_timer, BTU_TTYPE_BTM_ACL,
-                         BTM_DEV_REPLY_TIMEOUT);
-    ret = btsnd_hcic_ble_read_adv_chnl_tx_power();
-
-    if(!ret) {
-        btm_cb.devcb.p_tx_power_cmpl_cb = NULL;
-        btu_stop_timer (&btm_cb.devcb.tx_power_timer);
-        result.status = BTM_NO_RESOURCES;
-        (*p_cb)(&result);
-        return (BTM_NO_RESOURCES);
-    } else {
-        return BTM_CMD_STARTED;
-    }
-}
-#endif // #if (BLE_HOST_READ_TX_POWER_EN == TRUE)
-
 void BTM_BleGetWhiteListSize(uint16_t *length)
 {
     tBTM_BLE_CB *p_cb = &btm_cb.ble_ctr_cb;
@@ -2310,62 +2222,6 @@ void BTM_BleGetPeriodicAdvListSize(uint8_t *size)
 #endif  //#if (BLE_50_EXTEND_SYNC_EN == TRUE)
 
 #endif  ///BLE_INCLUDED == TRUE
-
-#if (BLE_HOST_READ_TX_POWER_EN == TRUE)
-/*******************************************************************************
-**
-** Function         btm_read_tx_power_complete
-**
-** Description      This function is called when the command complete message
-**                  is received from the HCI for the read tx power request.
-**
-** Returns          void
-**
-*******************************************************************************/
-void btm_read_tx_power_complete (UINT8 *p, BOOLEAN is_ble)
-{
-    tBTM_CMPL_CB            *p_cb = btm_cb.devcb.p_tx_power_cmpl_cb;
-    tBTM_TX_POWER_RESULTS   results;
-    UINT16                   handle;
-    tACL_CONN               *p_acl_cb = NULL;
-    BTM_TRACE_DEBUG ("btm_read_tx_power_complete\n");
-    btu_stop_timer (&btm_cb.devcb.tx_power_timer);
-
-    /* If there was a callback registered for read rssi, call it */
-    btm_cb.devcb.p_tx_power_cmpl_cb = NULL;
-
-    if (p_cb) {
-        STREAM_TO_UINT8  (results.hci_status, p);
-
-        if (results.hci_status == HCI_SUCCESS) {
-            results.status = BTM_SUCCESS;
-
-            if (!is_ble) {
-                STREAM_TO_UINT16 (handle, p);
-                STREAM_TO_UINT8 (results.tx_power, p);
-
-                /* Search through the list of active channels for the correct BD Addr */
-		p_acl_cb = btm_handle_to_acl(handle);
-		if (p_acl_cb) {
-		    memcpy (results.rem_bda, p_acl_cb->remote_addr, BD_ADDR_LEN);
-		}
-            }
-#if BLE_INCLUDED == TRUE
-            else {
-                STREAM_TO_UINT8 (results.tx_power, p);
-                memcpy(results.rem_bda, btm_cb.devcb.read_tx_pwr_addr, BD_ADDR_LEN);
-            }
-#endif
-            BTM_TRACE_DEBUG ("BTM TX power Complete: tx_power %d, hci status 0x%02x\n",
-                             results.tx_power, results.hci_status);
-        } else {
-            results.status = BTM_ERR_PROCESSING;
-        }
-
-        (*p_cb)(&results);
-    }
-}
-#endif // #if (BLE_HOST_READ_TX_POWER_EN == TRUE)
 
 /*******************************************************************************
 **

@@ -221,11 +221,6 @@ tBTM_CMPL_CB        *p_switch_role_cb;  /* Callback function to be called when  
 /* requested switch role is completed   */
 #endif // (CLASSIC_BT_INCLUDED == TRUE)
 
-#if (BLE_HOST_READ_TX_POWER_EN == TRUE)
-TIMER_LIST_ENT       tx_power_timer;
-tBTM_CMPL_CB        *p_tx_power_cmpl_cb;/* Callback function to be called       */
-#endif // #if (BLE_HOST_READ_TX_POWER_EN == TRUE)
-
 #if CLASSIC_BT_INCLUDED == TRUE
 TIMER_LIST_ENT       afh_channels_timer;
 tBTM_CMPL_CB        *p_afh_channels_cmpl_cb; /* Callback function to be called  When */
