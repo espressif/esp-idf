@@ -139,7 +139,7 @@ TEST_CASE_MULTIPLE_STAGES("OTA update of partition_table via primary partition",
 
 TEST_CASE("OTA update of NVS partition", "[nvs_ota]")
 {
-    // intilaize "nvs" partition and define a var (magic_value).
+    // initialize "nvs" partition and define a var (magic_value).
     TEST_ESP_OK(nvs_flash_erase());
     TEST_ESP_OK(nvs_flash_init());
     nvs_handle_t my_handle;
@@ -220,7 +220,7 @@ TEST_CASE_MULTIPLE_STAGES("OTA update of partition_table via a free ota partitio
 
 TEST_CASE("OTA update of NVS partition via a free ota partition", "[nvs_ota]")
 {
-    // intilaize "nvs" partition and define a var (magic_value).
+    // initialize "nvs" partition and define a var (magic_value).
     const esp_partition_t *nvs_part = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_NVS, "nvs");
     TEST_ESP_OK(nvs_flash_erase());
     TEST_ESP_OK(nvs_flash_init());
