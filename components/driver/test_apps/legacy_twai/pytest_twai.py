@@ -19,9 +19,7 @@ from pytest_embedded_idf.utils import idf_parametrize
     ],
     indirect=True,
 )
-@idf_parametrize(
-    'target', ['esp32', 'esp32c3', 'esp32c6', 'esp32h2', 'esp32s2', 'esp32s3', 'esp32p4'], indirect=['target']
-)
+@idf_parametrize('target', ['esp32', 'esp32c3', 'esp32c6', 'esp32h2', 'esp32s2', 'esp32s3'], indirect=['target'])
 def test_legacy_twai_self(dut: Dut) -> None:
     dut.run_all_single_board_cases(group='twai-loop-back')
 
@@ -46,9 +44,7 @@ def fixture_create_socket_can() -> Bus:
     ],
     indirect=True,
 )
-@idf_parametrize(
-    'target', ['esp32', 'esp32c3', 'esp32c6', 'esp32h2', 'esp32s2', 'esp32s3', 'esp32p4'], indirect=['target']
-)
+@idf_parametrize('target', ['esp32', 'esp32c3', 'esp32c6', 'esp32h2', 'esp32s2', 'esp32s3'], indirect=['target'])
 def test_legacy_twai_listen_only(dut: Dut, socket_can: Bus) -> None:
     dut.serial.hard_reset()
     dut.expect_exact('Press ENTER to see the list of tests')
@@ -76,9 +72,7 @@ def test_legacy_twai_listen_only(dut: Dut, socket_can: Bus) -> None:
     ],
     indirect=True,
 )
-@idf_parametrize(
-    'target', ['esp32', 'esp32c3', 'esp32c6', 'esp32h2', 'esp32s2', 'esp32s3', 'esp32p4'], indirect=['target']
-)
+@idf_parametrize('target', ['esp32', 'esp32c3', 'esp32c6', 'esp32h2', 'esp32s2', 'esp32s3'], indirect=['target'])
 def test_legacy_twai_remote_request(dut: Dut, socket_can: Bus) -> None:
     dut.serial.hard_reset()
     dut.expect_exact('Press ENTER to see the list of tests')

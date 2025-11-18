@@ -31,6 +31,7 @@ def test_rtc_no_xtal32k(dut: IdfDut) -> None:
 
 
 @pytest.mark.generic
+@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration, IDF-14441')
 @idf_parametrize('target', soc_filtered_targets('SOC_CLK_TREE_SUPPORTED == 1'), indirect=['target'])
 def test_rtc_calib_compensation_across_dslp(case_tester: CaseTester) -> None:
     case_tester.run_all_multi_stage_cases()

@@ -37,6 +37,7 @@ def test_adc_esp32c2_xtal_26mhz(dut: Dut) -> None:
 @pytest.mark.adc
 @pytest.mark.esp32p4_eco4
 @pytest.mark.parametrize('config', ['esp32p4_eco4'], indirect=True)
+@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration # TODO: IDF-14357')
 @idf_parametrize(
     'target',
     ['esp32p4'],

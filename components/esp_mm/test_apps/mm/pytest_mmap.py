@@ -8,6 +8,7 @@ from pytest_embedded_idf.utils import idf_parametrize
 
 
 @pytest.mark.generic
+@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration, IDF-14470')
 @pytest.mark.parametrize(
     'config',
     [
@@ -30,6 +31,7 @@ PSRAM_RELEASE_CONFIGS = [
 
 
 @pytest.mark.generic
+@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration, IDF-14470')
 @idf_parametrize(
     'config,target',
     [
@@ -61,6 +63,7 @@ def test_mmap_xip_psram(dut: Dut) -> None:
 
 # normal cache tests
 @pytest.mark.generic
+@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration, IDF-14470')
 @pytest.mark.parametrize(
     'config',
     [

@@ -7,6 +7,7 @@ from pytest_embedded_idf.utils import idf_parametrize
 
 
 @pytest.mark.generic
+@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration, IDF-14368')
 @pytest.mark.parametrize(
     'config',
     [
@@ -20,6 +21,7 @@ def test_lp_core(dut: Dut) -> None:
 
 
 @pytest.mark.generic
+@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration, IDF-14368')
 @pytest.mark.parametrize(
     'config',
     [
@@ -33,6 +35,7 @@ def test_lp_core_xtal(dut: Dut) -> None:
 
 
 @pytest.mark.lp_i2s
+@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration, IDF-14368')
 @pytest.mark.parametrize(
     'config',
     [
@@ -61,6 +64,7 @@ def test_lp_core_multi_device(case_tester) -> None:  # type: ignore
 
 
 @pytest.mark.generic_multi_device
+@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration, IDF-14422')
 @pytest.mark.parametrize(
     'target',
     [

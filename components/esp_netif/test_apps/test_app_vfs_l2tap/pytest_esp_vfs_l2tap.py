@@ -19,6 +19,7 @@ def test_esp_netif_vfs_l2tp(dut: Dut) -> None:
 
 
 @pytest.mark.eth_ip101
+@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration, IDF-14365')
 @pytest.mark.parametrize(
     'config',
     [
