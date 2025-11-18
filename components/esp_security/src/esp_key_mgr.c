@@ -38,13 +38,10 @@ static _lock_t s_key_mgr_psram_key_lock;
 static void esp_key_mgr_acquire_key_lock(esp_key_mgr_key_type_t key_type)
 {
     switch (key_type) {
-    case ESP_KEY_MGR_ECDSA_192_KEY:
-    case ESP_KEY_MGR_ECDSA_256_KEY:
-    case ESP_KEY_MGR_ECDSA_384_KEY:
+    case ESP_KEY_MGR_ECDSA_KEY:
         _lock_acquire(&s_key_mgr_ecdsa_key_lock);
         break;
-    case ESP_KEY_MGR_XTS_AES_128_KEY:
-    case ESP_KEY_MGR_XTS_AES_256_KEY:
+    case ESP_KEY_MGR_FLASH_XTS_AES_KEY:
         _lock_acquire(&s_key_mgr_xts_aes_key_lock);
         break;
     case ESP_KEY_MGR_HMAC_KEY:
@@ -53,8 +50,7 @@ static void esp_key_mgr_acquire_key_lock(esp_key_mgr_key_type_t key_type)
     case ESP_KEY_MGR_DS_KEY:
         _lock_acquire(&s_key_mgr_ds_key_lock);
         break;
-    case ESP_KEY_MGR_PSRAM_128_KEY:
-    case ESP_KEY_MGR_PSRAM_256_KEY:
+    case ESP_KEY_MGR_PSRAM_XTS_AES_KEY:
         _lock_acquire(&s_key_mgr_psram_key_lock);
         break;
     default:
@@ -67,13 +63,10 @@ static void esp_key_mgr_acquire_key_lock(esp_key_mgr_key_type_t key_type)
 static void esp_key_mgr_release_key_lock(esp_key_mgr_key_type_t key_type)
 {
     switch (key_type) {
-    case ESP_KEY_MGR_ECDSA_192_KEY:
-    case ESP_KEY_MGR_ECDSA_256_KEY:
-    case ESP_KEY_MGR_ECDSA_384_KEY:
+    case ESP_KEY_MGR_ECDSA_KEY:
         _lock_release(&s_key_mgr_ecdsa_key_lock);
         break;
-    case ESP_KEY_MGR_XTS_AES_128_KEY:
-    case ESP_KEY_MGR_XTS_AES_256_KEY:
+    case ESP_KEY_MGR_FLASH_XTS_AES_KEY:
         _lock_release(&s_key_mgr_xts_aes_key_lock);
         break;
     case ESP_KEY_MGR_HMAC_KEY:
@@ -82,8 +75,7 @@ static void esp_key_mgr_release_key_lock(esp_key_mgr_key_type_t key_type)
     case ESP_KEY_MGR_DS_KEY:
         _lock_release(&s_key_mgr_ds_key_lock);
         break;
-    case ESP_KEY_MGR_PSRAM_128_KEY:
-    case ESP_KEY_MGR_PSRAM_256_KEY:
+    case ESP_KEY_MGR_PSRAM_XTS_AES_KEY:
         _lock_release(&s_key_mgr_psram_key_lock);
         break;
     default:
@@ -96,15 +88,11 @@ static void esp_key_mgr_release_key_lock(esp_key_mgr_key_type_t key_type)
 static void esp_key_mgr_acquire_key_lock(esp_key_mgr_key_type_t key_type)
 {
     switch (key_type) {
-    case ESP_KEY_MGR_ECDSA_192_KEY:
-    case ESP_KEY_MGR_ECDSA_256_KEY:
-    case ESP_KEY_MGR_ECDSA_384_KEY:
-    case ESP_KEY_MGR_XTS_AES_128_KEY:
-    case ESP_KEY_MGR_XTS_AES_256_KEY:
+    case ESP_KEY_MGR_ECDSA_KEY:
+    case ESP_KEY_MGR_FLASH_XTS_AES_KEY:
     case ESP_KEY_MGR_HMAC_KEY:
     case ESP_KEY_MGR_DS_KEY:
-    case ESP_KEY_MGR_PSRAM_128_KEY:
-    case ESP_KEY_MGR_PSRAM_256_KEY:
+    case ESP_KEY_MGR_PSRAM_XTS_AES_KEY:
         break;
     default:
         ESP_LOGE(TAG, "Invalid key type");
@@ -116,15 +104,11 @@ static void esp_key_mgr_acquire_key_lock(esp_key_mgr_key_type_t key_type)
 static void esp_key_mgr_release_key_lock(esp_key_mgr_key_type_t key_type)
 {
     switch (key_type) {
-    case ESP_KEY_MGR_ECDSA_192_KEY:
-    case ESP_KEY_MGR_ECDSA_256_KEY:
-    case ESP_KEY_MGR_ECDSA_384_KEY:
-    case ESP_KEY_MGR_XTS_AES_128_KEY:
-    case ESP_KEY_MGR_XTS_AES_256_KEY:
+    case ESP_KEY_MGR_ECDSA_KEY:
+    case ESP_KEY_MGR_FLASH_XTS_AES_KEY:
     case ESP_KEY_MGR_HMAC_KEY:
     case ESP_KEY_MGR_DS_KEY:
-    case ESP_KEY_MGR_PSRAM_128_KEY:
-    case ESP_KEY_MGR_PSRAM_256_KEY:
+    case ESP_KEY_MGR_PSRAM_XTS_AES_KEY:
         break;
     default:
         ESP_LOGE(TAG, "Invalid key type");
@@ -158,25 +142,82 @@ static void esp_key_mgr_release_hardware(bool deployment_mode)
     esp_crypto_key_mgr_enable_periph_clk(false);
 }
 
-static esp_key_mgr_key_purpose_t get_key_purpose(esp_key_mgr_key_type_t key_type)
+/**
+ * @brief Check if a key purpose requires a secondary deployment stage
+ *
+ * Multi-part keys (256-bit XTS-AES and 384-bit ECDSA) require two deployment stages.
+ * This function identifies the primary purposes that need a follow-up secondary deployment.
+ *
+ * @param purpose Key purpose to check
+ * @return true if this purpose requires a secondary deployment, false otherwise
+ */
+static inline bool is_multi_stage_key_purpose(esp_key_mgr_key_purpose_t purpose)
+{
+    return (purpose == ESP_KEY_MGR_KEY_PURPOSE_FLASH_256_1 ||
+            purpose == ESP_KEY_MGR_KEY_PURPOSE_PSRAM_256_1 ||
+            purpose == ESP_KEY_MGR_KEY_PURPOSE_ECDSA_384_H);
+}
+
+/**
+ * @brief Get the secondary key purpose for a given primary purpose
+ *
+ * @param primary_purpose The primary key purpose
+ * @return The corresponding secondary purpose, or ESP_KEY_MGR_KEY_PURPOSE_INVALID if not applicable
+ */
+static inline esp_key_mgr_key_purpose_t get_secondary_key_purpose(esp_key_mgr_key_purpose_t primary_purpose)
+{
+    switch (primary_purpose) {
+    case ESP_KEY_MGR_KEY_PURPOSE_FLASH_256_1:
+        return ESP_KEY_MGR_KEY_PURPOSE_FLASH_256_2;
+    case ESP_KEY_MGR_KEY_PURPOSE_PSRAM_256_1:
+        return ESP_KEY_MGR_KEY_PURPOSE_PSRAM_256_2;
+    case ESP_KEY_MGR_KEY_PURPOSE_ECDSA_384_H:
+        return ESP_KEY_MGR_KEY_PURPOSE_ECDSA_384_L;
+    default:
+        return ESP_KEY_MGR_KEY_PURPOSE_INVALID;
+    }
+}
+
+static esp_key_mgr_key_purpose_t get_key_purpose(const esp_key_mgr_key_type_t key_type, const esp_key_mgr_key_len_t key_len)
 {
     switch (key_type) {
-    case ESP_KEY_MGR_ECDSA_192_KEY:
-        return ESP_KEY_MGR_KEY_PURPOSE_ECDSA_192;
-    case ESP_KEY_MGR_ECDSA_256_KEY:
-        return ESP_KEY_MGR_KEY_PURPOSE_ECDSA_256;
-    case ESP_KEY_MGR_XTS_AES_128_KEY:
-        return ESP_KEY_MGR_KEY_PURPOSE_XTS_AES_128;
-    case ESP_KEY_MGR_XTS_AES_256_KEY:
-        return ESP_KEY_MGR_KEY_PURPOSE_XTS_AES_256_1;
+    case ESP_KEY_MGR_ECDSA_KEY:
+        switch (key_len) {
+        case ESP_KEY_MGR_ECDSA_LEN_192:
+            return ESP_KEY_MGR_KEY_PURPOSE_ECDSA_192;
+        case ESP_KEY_MGR_ECDSA_LEN_256:
+            return ESP_KEY_MGR_KEY_PURPOSE_ECDSA_256;
+        case ESP_KEY_MGR_ECDSA_LEN_384:
+            return ESP_KEY_MGR_KEY_PURPOSE_ECDSA_384_H;
+        default:
+            return ESP_KEY_MGR_KEY_PURPOSE_INVALID;
+        }
+
+    case ESP_KEY_MGR_FLASH_XTS_AES_KEY:
+        switch (key_len) {
+        case ESP_KEY_MGR_XTS_AES_LEN_128:
+            return ESP_KEY_MGR_KEY_PURPOSE_FLASH_128;
+        case ESP_KEY_MGR_XTS_AES_LEN_256:
+            return ESP_KEY_MGR_KEY_PURPOSE_FLASH_256_1;
+        default:
+            return ESP_KEY_MGR_KEY_PURPOSE_INVALID;
+        }
+
     case ESP_KEY_MGR_HMAC_KEY:
         return ESP_KEY_MGR_KEY_PURPOSE_HMAC;
+
     case ESP_KEY_MGR_DS_KEY:
         return ESP_KEY_MGR_KEY_PURPOSE_DS;
-    case ESP_KEY_MGR_PSRAM_128_KEY:
-        return ESP_KEY_MGR_KEY_PURPOSE_PSRAM_128;
-    case ESP_KEY_MGR_PSRAM_256_KEY:
-        return ESP_KEY_MGR_KEY_PURPOSE_PSRAM_256_1;
+
+    case ESP_KEY_MGR_PSRAM_XTS_AES_KEY:
+        switch (key_len) {
+        case ESP_KEY_MGR_XTS_AES_LEN_128:
+            return ESP_KEY_MGR_KEY_PURPOSE_PSRAM_128;
+        case ESP_KEY_MGR_XTS_AES_LEN_256:
+            return ESP_KEY_MGR_KEY_PURPOSE_PSRAM_256_1;
+        default:
+            return ESP_KEY_MGR_KEY_PURPOSE_INVALID;
+        }
     default:
         return ESP_KEY_MGR_KEY_PURPOSE_INVALID;
     }
@@ -309,7 +350,7 @@ static esp_err_t key_mgr_deploy_key_aes_mode(aes_deploy_config_t *config)
     key_mgr_wait_for_state(ESP_KEY_MGR_STATE_IDLE);
 
     if ((!key_mgr_hal_is_huk_valid()) || (!config->huk_deployed)) {
-        // For purpose ESP_KEY_MGR_KEY_PURPOSE_XTS_AES_256_2 or ESP_KEY_MGR_KEY_PURPOSE_PSRAM_256_2 this part shall be already executed
+        // For purpose ESP_KEY_MGR_KEY_PURPOSE_FLASH_256_2 or ESP_KEY_MGR_KEY_PURPOSE_PSRAM_256_2 this part shall be already executed
         huk_deploy_config_t huk_deploy_config = {
             .use_pre_generated_huk_info = config->key_config->use_pre_generated_huk_info,
             .pre_generated_huk_info = &config->key_config->huk_info,
@@ -324,10 +365,7 @@ static esp_err_t key_mgr_deploy_key_aes_mode(aes_deploy_config_t *config)
         ESP_LOGD(TAG, "HUK deployed successfully");
     }
 
-    uint8_t key_recovery_info_index = 0;
-    if (config->key_purpose == ESP_KEY_MGR_KEY_PURPOSE_XTS_AES_256_2 || config->key_purpose == ESP_KEY_MGR_KEY_PURPOSE_PSRAM_256_2) {
-        key_recovery_info_index = 1;
-    }
+    uint8_t key_recovery_info_index = is_multi_stage_key_purpose(config->key_purpose) ? 0 : 1;
 
     uint8_t *key_recovery_info = config->key_info->key_info[key_recovery_info_index].info;
 
@@ -339,12 +377,11 @@ static esp_err_t key_mgr_deploy_key_aes_mode(aes_deploy_config_t *config)
     key_mgr_hal_set_key_purpose(config->key_purpose);
 
     // Set key length for XTS-AES key
-    esp_key_mgr_key_type_t key_type = (esp_key_mgr_key_type_t) config->key_config->key_type;
+    esp_key_mgr_key_type_t key_type = config->key_config->key_type;
+    esp_key_mgr_key_len_t key_len = config->key_config->key_len;
 
-    if (key_type == ESP_KEY_MGR_XTS_AES_128_KEY || key_type == ESP_KEY_MGR_PSRAM_128_KEY) {
-        key_mgr_hal_set_xts_aes_key_len(key_type, ESP_KEY_MGR_XTS_AES_LEN_256);
-    } else if (key_type == ESP_KEY_MGR_XTS_AES_256_KEY || key_type == ESP_KEY_MGR_PSRAM_256_KEY) {
-        key_mgr_hal_set_xts_aes_key_len(key_type, ESP_KEY_MGR_XTS_AES_LEN_512);
+    if (key_type == ESP_KEY_MGR_FLASH_XTS_AES_KEY || key_type == ESP_KEY_MGR_PSRAM_XTS_AES_KEY) {
+        key_mgr_hal_set_xts_aes_key_len(key_type, key_len);
     }
 
     if (config->key_config->use_pre_generated_sw_init_key) {
@@ -375,8 +412,11 @@ static esp_err_t key_mgr_deploy_key_aes_mode(aes_deploy_config_t *config)
 
     key_mgr_hal_read_public_info(key_recovery_info, KEY_MGR_KEY_RECOVERY_INFO_SIZE);
 
-    if (config->key_purpose != ESP_KEY_MGR_KEY_PURPOSE_XTS_AES_256_1 && config->key_purpose != ESP_KEY_MGR_KEY_PURPOSE_PSRAM_256_1) {
-        if (!key_mgr_hal_is_key_deployment_valid(key_type)) {
+    // Check if key deployment validation should be skipped for this purpose
+    // Primary purposes in multi-stage deployments skip validation after the first stage
+    // because the key is not yet completely deployed.
+    if (!is_multi_stage_key_purpose(config->key_purpose)) {
+        if (!key_mgr_hal_is_key_deployment_valid(key_type, key_len)) {
             ESP_LOGE(TAG, "Key deployment is not valid");
             return ESP_FAIL;
         }
@@ -389,6 +429,8 @@ static esp_err_t key_mgr_deploy_key_aes_mode(aes_deploy_config_t *config)
 
     config->key_info->key_info[key_recovery_info_index].crc = esp_rom_crc32_le(0, key_recovery_info, KEY_MGR_KEY_RECOVERY_INFO_SIZE);
     config->key_info->key_type = key_type;
+    config->key_info->key_len = key_len;
+    config->key_info->key_deployment_mode = ESP_KEY_MGR_KEYGEN_MODE_AES;
     config->key_info->magic = KEY_HUK_SECTOR_MAGIC;
 
     return ESP_OK;
@@ -408,7 +450,7 @@ esp_err_t esp_key_mgr_deploy_key_in_aes_mode(const esp_key_mgr_aes_key_config_t 
         .k1_encrypted = key_config->k1_encrypted[0],
     };
 
-    aes_deploy_config.key_purpose = get_key_purpose(key_config->key_type);
+    aes_deploy_config.key_purpose = get_key_purpose(key_config->key_type, key_config->key_len);
     if (aes_deploy_config.key_purpose == ESP_KEY_MGR_KEY_PURPOSE_INVALID) {
         ESP_LOGE(TAG, "Invalid key type");
         return ESP_ERR_INVALID_ARG;
@@ -424,8 +466,8 @@ esp_err_t esp_key_mgr_deploy_key_in_aes_mode(const esp_key_mgr_aes_key_config_t 
 
     aes_deploy_config.huk_deployed = true;
 
-    if (key_config->key_type == ESP_KEY_MGR_XTS_AES_256_KEY || key_config->key_type == ESP_KEY_MGR_PSRAM_256_KEY) {
-        aes_deploy_config.key_purpose = key_config->key_type == ESP_KEY_MGR_XTS_AES_256_KEY ? ESP_KEY_MGR_KEY_PURPOSE_XTS_AES_256_2 : ESP_KEY_MGR_KEY_PURPOSE_PSRAM_256_2;
+    if (is_multi_stage_key_purpose(aes_deploy_config.key_purpose)) {
+        aes_deploy_config.key_purpose = get_secondary_key_purpose(aes_deploy_config.key_purpose);
         aes_deploy_config.k1_encrypted = key_config->k1_encrypted[1];
         esp_ret = key_mgr_deploy_key_aes_mode(&aes_deploy_config);
         if (esp_ret != ESP_OK) {
@@ -473,11 +515,11 @@ static esp_err_t key_mgr_recover_key(key_recovery_config_t *config)
     key_mgr_hal_set_key_generator_mode(ESP_KEY_MGR_KEYGEN_MODE_RECOVER);
 
     // Set XTS-AES key length
-    esp_key_mgr_key_type_t key_type = (esp_key_mgr_key_type_t) config->key_recovery_info->key_type;
-    if (key_type == ESP_KEY_MGR_XTS_AES_128_KEY || key_type == ESP_KEY_MGR_PSRAM_128_KEY) {
-        key_mgr_hal_set_xts_aes_key_len(key_type, ESP_KEY_MGR_XTS_AES_LEN_256);
-    } else if (key_type == ESP_KEY_MGR_XTS_AES_256_KEY || key_type == ESP_KEY_MGR_PSRAM_256_KEY) {
-        key_mgr_hal_set_xts_aes_key_len(key_type, ESP_KEY_MGR_XTS_AES_LEN_512);
+    esp_key_mgr_key_type_t key_type = config->key_recovery_info->key_type;
+    esp_key_mgr_key_len_t key_len = config->key_recovery_info->key_len;
+
+    if (key_type == ESP_KEY_MGR_FLASH_XTS_AES_KEY || key_type == ESP_KEY_MGR_PSRAM_XTS_AES_KEY) {
+        key_mgr_hal_set_xts_aes_key_len(key_type, key_len);
     }
 
     key_mgr_hal_set_key_purpose(config->key_purpose);
@@ -486,26 +528,22 @@ static esp_err_t key_mgr_recover_key(key_recovery_config_t *config)
 
     key_mgr_wait_for_state(ESP_KEY_MGR_STATE_LOAD);
 
-    if (config->key_purpose == ESP_KEY_MGR_KEY_PURPOSE_XTS_AES_256_2 || config->key_purpose == ESP_KEY_MGR_KEY_PURPOSE_PSRAM_256_2) {
-        if (!check_key_info_validity(&config->key_recovery_info->key_info[1])) {
-            ESP_LOGE(TAG, "Key info not valid");
-            return ESP_FAIL;
-        }
-        key_mgr_hal_write_assist_info(config->key_recovery_info->key_info[1].info, KEY_MGR_KEY_RECOVERY_INFO_SIZE);
-    } else {
-        if (!check_key_info_validity(&config->key_recovery_info->key_info[0])) {
-            ESP_LOGE(TAG, "Key info not valid");
-            return ESP_FAIL;
-        }
-        key_mgr_hal_write_assist_info(config->key_recovery_info->key_info[0].info, KEY_MGR_KEY_RECOVERY_INFO_SIZE);
+    uint8_t key_recovery_info_index = is_multi_stage_key_purpose(config->key_purpose) ? 0 : 1;
+
+    if (!check_key_info_validity(&config->key_recovery_info->key_info[key_recovery_info_index])) {
+        ESP_LOGE(TAG, "Key info not valid");
+        return ESP_FAIL;
     }
 
+    key_mgr_hal_write_assist_info(config->key_recovery_info->key_info[key_recovery_info_index].info, KEY_MGR_KEY_RECOVERY_INFO_SIZE);
     key_mgr_hal_continue();
     key_mgr_wait_for_state(ESP_KEY_MGR_STATE_GAIN);
 
-    // TODO: Maybe need to extend this to ECDSA_384_L and ECDSA_384_H (IDF-14120)
-    if (config->key_purpose != ESP_KEY_MGR_KEY_PURPOSE_XTS_AES_256_1 && config->key_purpose != ESP_KEY_MGR_KEY_PURPOSE_PSRAM_256_1) {
-        if (!key_mgr_hal_is_key_deployment_valid(key_type)) {
+    // Check if key deployment validation should be skipped for this purpose
+    // Primary purposes in multi-stage deployments skip validation after the first stage
+    // because the key is not yet completely deployed.
+    if (!is_multi_stage_key_purpose(config->key_purpose)) {
+        if (!key_mgr_hal_is_key_deployment_valid(key_type, key_len)) {
             ESP_LOGD(TAG, "Key deployment is not valid");
             return ESP_FAIL;
         }
@@ -531,7 +569,7 @@ esp_err_t esp_key_mgr_activate_key(esp_key_mgr_key_recovery_info_t *key_recovery
         .key_recovery_info = key_recovery_info,
     };
 
-    key_recovery_config.key_purpose = get_key_purpose(key_type);
+    key_recovery_config.key_purpose = get_key_purpose(key_type, key_recovery_info->key_len);
     if (key_recovery_config.key_purpose == ESP_KEY_MGR_KEY_PURPOSE_INVALID) {
         ESP_LOGE(TAG, "Invalid key type");
         return ESP_ERR_INVALID_ARG;
@@ -548,8 +586,8 @@ esp_err_t esp_key_mgr_activate_key(esp_key_mgr_key_recovery_info_t *key_recovery
         goto cleanup;
     }
 
-    if (key_type == ESP_KEY_MGR_XTS_AES_256_KEY || key_type == ESP_KEY_MGR_PSRAM_256_KEY) {
-        key_recovery_config.key_purpose = key_type == ESP_KEY_MGR_XTS_AES_256_KEY ? ESP_KEY_MGR_KEY_PURPOSE_XTS_AES_256_2 : ESP_KEY_MGR_KEY_PURPOSE_PSRAM_256_2;
+    if (is_multi_stage_key_purpose(key_recovery_config.key_purpose)) {
+        key_recovery_config.key_purpose = get_secondary_key_purpose(key_recovery_config.key_purpose);
         esp_ret = key_mgr_recover_key(&key_recovery_config);
         if (esp_ret != ESP_OK) {
             ESP_LOGE(TAG, "Failed to recover key");
@@ -593,7 +631,7 @@ static esp_err_t key_mgr_deploy_key_ecdh0_mode(ecdh0_deploy_config_t *config)
     key_mgr_wait_for_state(ESP_KEY_MGR_STATE_IDLE);
 
     if ((!key_mgr_hal_is_huk_valid()) || (!config->huk_deployed)) {
-        // For purpose ESP_KEY_MGR_KEY_PURPOSE_XTS_AES_256_2 or ESP_KEY_MGR_KEY_PURPOSE_PSRAM_256_2 this part shall be already executed
+        // For purpose ESP_KEY_MGR_KEY_PURPOSE_FLASH_256_2 or ESP_KEY_MGR_KEY_PURPOSE_PSRAM_256_2 this part shall be already executed
         huk_deploy_config_t huk_deploy_config = {
             .use_pre_generated_huk_info = config->key_config->use_pre_generated_huk_info,
             .pre_generated_huk_info = &config->key_config->huk_info,
@@ -608,10 +646,7 @@ static esp_err_t key_mgr_deploy_key_ecdh0_mode(ecdh0_deploy_config_t *config)
         ESP_LOGD(TAG, "HUK deployed successfully");
     }
 
-    uint8_t key_recovery_info_index = 0;
-    if (config->key_purpose == ESP_KEY_MGR_KEY_PURPOSE_XTS_AES_256_2 || config->key_purpose == ESP_KEY_MGR_KEY_PURPOSE_PSRAM_256_2) {
-        key_recovery_info_index = 1;
-    }
+    uint8_t key_recovery_info_index = is_multi_stage_key_purpose(config->key_purpose) ? 0 : 1;
 
     uint8_t *key_recovery_info = config->key_info->key_info[key_recovery_info_index].info;
 
@@ -623,12 +658,11 @@ static esp_err_t key_mgr_deploy_key_ecdh0_mode(ecdh0_deploy_config_t *config)
     key_mgr_hal_set_key_purpose(config->key_purpose);
 
     // Set XTS-AES key length
-    esp_key_mgr_key_type_t key_type = (esp_key_mgr_key_type_t) config->key_config->key_type;
+    esp_key_mgr_key_type_t key_type = config->key_config->key_type;
+    esp_key_mgr_key_len_t key_len = config->key_config->key_len;
 
-    if (key_type == ESP_KEY_MGR_XTS_AES_128_KEY || key_type == ESP_KEY_MGR_PSRAM_128_KEY) {
-        key_mgr_hal_set_xts_aes_key_len(key_type, ESP_KEY_MGR_XTS_AES_LEN_256);
-    } else if (key_type == ESP_KEY_MGR_XTS_AES_256_KEY || key_type == ESP_KEY_MGR_PSRAM_256_KEY) {
-        key_mgr_hal_set_xts_aes_key_len(key_type, ESP_KEY_MGR_XTS_AES_LEN_512);
+    if (key_type == ESP_KEY_MGR_FLASH_XTS_AES_KEY || key_type == ESP_KEY_MGR_PSRAM_XTS_AES_KEY) {
+        key_mgr_hal_set_xts_aes_key_len(key_type, key_len);
     }
 
     key_mgr_hal_start();
@@ -647,8 +681,11 @@ static esp_err_t key_mgr_deploy_key_ecdh0_mode(ecdh0_deploy_config_t *config)
     key_mgr_hal_read_public_info(key_recovery_info, KEY_MGR_KEY_RECOVERY_INFO_SIZE);
     key_mgr_hal_read_assist_info(config->ecdh0_key_info);
 
-    if (config->key_purpose != ESP_KEY_MGR_KEY_PURPOSE_XTS_AES_256_1 && config->key_purpose != ESP_KEY_MGR_KEY_PURPOSE_PSRAM_256_1) {
-        if (!key_mgr_hal_is_key_deployment_valid(key_type)) {
+    // Check if key deployment validation should be skipped for this purpose
+    // Primary purposes in multi-stage deployments skip validation after the first stage
+    // because the key is not yet completely deployed.
+    if (!is_multi_stage_key_purpose(config->key_purpose)) {
+        if (!key_mgr_hal_is_key_deployment_valid(key_type, key_len)) {
             ESP_LOGE(TAG, "Key deployment is not valid");
             return ESP_FAIL;
         }
@@ -661,6 +698,8 @@ static esp_err_t key_mgr_deploy_key_ecdh0_mode(ecdh0_deploy_config_t *config)
 
     config->key_info->key_info[key_recovery_info_index].crc = esp_rom_crc32_le(0, key_recovery_info, KEY_MGR_KEY_RECOVERY_INFO_SIZE);
     config->key_info->key_type = key_type;
+    config->key_info->key_len = key_len;
+    config->key_info->key_deployment_mode = ESP_KEY_MGR_KEYGEN_MODE_ECDH0;
     config->key_info->magic = KEY_HUK_SECTOR_MAGIC;
 
     return ESP_OK;
@@ -675,8 +714,6 @@ esp_err_t esp_key_mgr_deploy_key_in_ecdh0_mode(const esp_key_mgr_ecdh0_key_confi
 
     ESP_LOGD(TAG, "Key Deployment in ECDH0 mode");
 
-    esp_key_mgr_key_type_t key_type = key_config->key_type;
-
     ecdh0_deploy_config_t ecdh0_deploy_config = {
         .key_config = key_config,
         .key_info = key_info,
@@ -684,7 +721,7 @@ esp_err_t esp_key_mgr_deploy_key_in_ecdh0_mode(const esp_key_mgr_ecdh0_key_confi
         .ecdh0_key_info = ecdh0_key_info->k2_G[0],
     };
 
-    ecdh0_deploy_config.key_purpose = get_key_purpose(key_config->key_type);
+    ecdh0_deploy_config.key_purpose = get_key_purpose(key_config->key_type, key_config->key_len);
     if (ecdh0_deploy_config.key_purpose == ESP_KEY_MGR_KEY_PURPOSE_INVALID) {
         ESP_LOGE(TAG, "Invalid key type");
         return ESP_ERR_INVALID_ARG;
@@ -700,8 +737,8 @@ esp_err_t esp_key_mgr_deploy_key_in_ecdh0_mode(const esp_key_mgr_ecdh0_key_confi
 
     ecdh0_deploy_config.huk_deployed = true;
 
-    if (key_type == ESP_KEY_MGR_XTS_AES_256_KEY || key_type == ESP_KEY_MGR_PSRAM_256_KEY) {
-        ecdh0_deploy_config.key_purpose = key_type == ESP_KEY_MGR_XTS_AES_256_KEY ? ESP_KEY_MGR_KEY_PURPOSE_XTS_AES_256_2 : ESP_KEY_MGR_KEY_PURPOSE_PSRAM_256_2;
+    if (is_multi_stage_key_purpose(ecdh0_deploy_config.key_purpose)) {
+        ecdh0_deploy_config.key_purpose = get_secondary_key_purpose(ecdh0_deploy_config.key_purpose);
         ecdh0_deploy_config.k1_G = key_config->k1_G[1];
         ecdh0_deploy_config.ecdh0_key_info = ecdh0_key_info->k2_G[1];
         esp_ret = key_mgr_deploy_key_ecdh0_mode(&ecdh0_deploy_config);
@@ -712,7 +749,7 @@ esp_err_t esp_key_mgr_deploy_key_in_ecdh0_mode(const esp_key_mgr_ecdh0_key_confi
     }
 
     // Set the Key Manager Static Register to use own key for the respective key type
-    key_mgr_hal_set_key_usage(key_type, ESP_KEY_MGR_USE_OWN_KEY);
+    key_mgr_hal_set_key_usage(key_config->key_type, ESP_KEY_MGR_USE_OWN_KEY);
 
 cleanup:
     esp_key_mgr_release_hardware(true);
@@ -732,7 +769,7 @@ static esp_err_t key_mgr_deploy_key_random_mode(random_deploy_config_t *config)
     key_mgr_wait_for_state(ESP_KEY_MGR_STATE_IDLE);
 
     if ((!key_mgr_hal_is_huk_valid()) || (!config->huk_deployed)) {
-        // For purpose ESP_KEY_MGR_KEY_PURPOSE_XTS_AES_256_2 or ESP_KEY_MGR_KEY_PURPOSE_PSRAM_256_2 this part shall be already executed
+        // For purpose ESP_KEY_MGR_KEY_PURPOSE_FLASH_256_2 or ESP_KEY_MGR_KEY_PURPOSE_PSRAM_256_2 this part shall be already executed
         huk_deploy_config_t huk_deploy_config = {
             .use_pre_generated_huk_info = config->key_config->use_pre_generated_huk_info,
             .pre_generated_huk_info = &config->key_config->huk_info,
@@ -746,10 +783,7 @@ static esp_err_t key_mgr_deploy_key_random_mode(random_deploy_config_t *config)
         ESP_LOGD(TAG, "HUK deployed successfully");
     }
 
-    uint8_t key_recovery_info_index = 0;
-    if (config->key_purpose == ESP_KEY_MGR_KEY_PURPOSE_XTS_AES_256_2 || config->key_purpose == ESP_KEY_MGR_KEY_PURPOSE_PSRAM_256_2) {
-        key_recovery_info_index = 1;
-    }
+    uint8_t key_recovery_info_index = is_multi_stage_key_purpose(config->key_purpose) ? 0 : 1;
 
     uint8_t *key_recovery_info = config->key_info->key_info[key_recovery_info_index].info;
 
@@ -760,11 +794,11 @@ static esp_err_t key_mgr_deploy_key_random_mode(random_deploy_config_t *config)
     key_mgr_hal_set_key_purpose(config->key_purpose);
 
     // Set XTS-AES key length
-    esp_key_mgr_key_type_t key_type = (esp_key_mgr_key_type_t) config->key_config->key_type;
-    if (key_type == ESP_KEY_MGR_XTS_AES_128_KEY || key_type == ESP_KEY_MGR_PSRAM_128_KEY) {
-        key_mgr_hal_set_xts_aes_key_len(key_type, ESP_KEY_MGR_XTS_AES_LEN_256);
-    } else if (key_type == ESP_KEY_MGR_XTS_AES_256_KEY || key_type == ESP_KEY_MGR_PSRAM_256_KEY) {
-        key_mgr_hal_set_xts_aes_key_len(key_type, ESP_KEY_MGR_XTS_AES_LEN_512);
+    esp_key_mgr_key_type_t key_type = config->key_config->key_type;
+    esp_key_mgr_key_len_t key_len = config->key_config->key_len;
+
+    if (key_type == ESP_KEY_MGR_FLASH_XTS_AES_KEY || key_type == ESP_KEY_MGR_PSRAM_XTS_AES_KEY) {
+        key_mgr_hal_set_xts_aes_key_len(key_type, key_len);
     }
 
     key_mgr_hal_start();
@@ -777,8 +811,11 @@ static esp_err_t key_mgr_deploy_key_random_mode(random_deploy_config_t *config)
     key_mgr_wait_for_state(ESP_KEY_MGR_STATE_GAIN);
     key_mgr_hal_read_public_info(key_recovery_info, KEY_MGR_KEY_RECOVERY_INFO_SIZE);
 
-    if (config->key_purpose != ESP_KEY_MGR_KEY_PURPOSE_XTS_AES_256_1 && config->key_purpose != ESP_KEY_MGR_KEY_PURPOSE_PSRAM_256_1) {
-        if (!key_mgr_hal_is_key_deployment_valid(key_type)) {
+    // Check if key deployment validation should be skipped for this purpose
+    // Primary purposes in multi-stage deployments skip validation after the first stage
+    // because the key is not yet completely deployed.
+    if (!is_multi_stage_key_purpose(config->key_purpose)) {
+        if (!key_mgr_hal_is_key_deployment_valid(key_type, key_len)) {
             ESP_LOGE(TAG, "Key deployment is not valid");
             return ESP_FAIL;
         }
@@ -791,6 +828,8 @@ static esp_err_t key_mgr_deploy_key_random_mode(random_deploy_config_t *config)
 
     config->key_info->key_info[key_recovery_info_index].crc = esp_rom_crc32_le(0, key_recovery_info, KEY_MGR_KEY_RECOVERY_INFO_SIZE);
     config->key_info->key_type = key_type;
+    config->key_info->key_len = key_len;
+    config->key_info->key_deployment_mode = ESP_KEY_MGR_KEYGEN_MODE_RANDOM;
     config->key_info->magic = KEY_HUK_SECTOR_MAGIC;
 
     return ESP_OK;
@@ -809,7 +848,7 @@ esp_err_t esp_key_mgr_deploy_key_in_random_mode(const esp_key_mgr_random_key_con
         .key_info = key_recovery_info,
     };
 
-    random_deploy_config.key_purpose = get_key_purpose(key_config->key_type);
+    random_deploy_config.key_purpose = get_key_purpose(key_config->key_type, key_config->key_len);
     if (random_deploy_config.key_purpose == ESP_KEY_MGR_KEY_PURPOSE_INVALID) {
         ESP_LOGE(TAG, "Invalid key type");
         return ESP_ERR_INVALID_ARG;
@@ -825,8 +864,8 @@ esp_err_t esp_key_mgr_deploy_key_in_random_mode(const esp_key_mgr_random_key_con
 
     random_deploy_config.huk_deployed = true;
 
-    if (key_config->key_type == ESP_KEY_MGR_XTS_AES_256_KEY || key_config->key_type == ESP_KEY_MGR_PSRAM_256_KEY) {
-        random_deploy_config.key_purpose = key_config->key_type == ESP_KEY_MGR_XTS_AES_256_KEY ? ESP_KEY_MGR_KEY_PURPOSE_XTS_AES_256_2 : ESP_KEY_MGR_KEY_PURPOSE_PSRAM_256_2;
+    if (is_multi_stage_key_purpose(random_deploy_config.key_purpose)) {
+        random_deploy_config.key_purpose = get_secondary_key_purpose(random_deploy_config.key_purpose);
         esp_ret = key_mgr_deploy_key_random_mode(&random_deploy_config);
         if (esp_ret != ESP_OK) {
             ESP_LOGE(TAG, "Key deployment in Random mode failed");

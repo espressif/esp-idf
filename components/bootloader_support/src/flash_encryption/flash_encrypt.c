@@ -151,14 +151,19 @@ static esp_err_t key_manager_read_key_recovery_info(esp_key_mgr_key_recovery_inf
             continue;
         }
 
+        if (key_recovery_info->key_type != ESP_KEY_MGR_FLASH_XTS_AES_KEY) {
+            ESP_LOGD(TAG, "Key Manager sector %d has incorrect key type %d", i, key_recovery_info->key_type);
+            continue;
+        }
+
 #if CONFIG_SECURE_FLASH_ENCRYPTION_AES256
-        if (key_recovery_info->key_type != ESP_KEY_MGR_XTS_AES_256_KEY) {
-            ESP_LOGD(TAG, "Key Manager sector %d has incorrect key type", i);
+        if (key_recovery_info->key_len != ESP_KEY_MGR_XTS_AES_LEN_256) {
+            ESP_LOGD(TAG, "Key Manager sector %d has incorrect key length %d", i, key_recovery_info->key_len);
             continue;
         }
 #else
-        if (key_recovery_info->key_type != ESP_KEY_MGR_XTS_AES_128_KEY) {
-            ESP_LOGD(TAG, "Key Manager sector %d has incorrect key type", i);
+        if (key_recovery_info->key_len != ESP_KEY_MGR_XTS_AES_LEN_128) {
+            ESP_LOGD(TAG, "Key Manager sector %d has incorrect key length %d", i, key_recovery_info->key_len);
             continue;
         }
 #endif
@@ -201,10 +206,12 @@ static esp_err_t key_manager_generate_key(esp_key_mgr_key_recovery_info_t *key_r
     esp_key_mgr_random_key_config_t key_config;
     memset(&key_config, 0, sizeof(esp_key_mgr_random_key_config_t));
 
+    key_config.key_type = ESP_KEY_MGR_FLASH_XTS_AES_KEY;
+
 #if CONFIG_SECURE_FLASH_ENCRYPTION_AES256
-    key_config.key_type = ESP_KEY_MGR_XTS_AES_256_KEY;
+    key_config.key_len = ESP_KEY_MGR_XTS_AES_LEN_256;
 #else
-    key_config.key_type = ESP_KEY_MGR_XTS_AES_128_KEY;
+    key_config.key_len = ESP_KEY_MGR_XTS_AES_LEN_128;
 #endif
 
     // Generate a new key and load it into Key Manager

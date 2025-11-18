@@ -77,7 +77,7 @@ esp_err_t esp_flash_encryption_use_efuse_key(void)
     esp_crypto_key_mgr_enable_periph_clk(true);
 
     // Force Key Manager to use eFuse key for XTS-AES operation
-    key_mgr_hal_set_key_usage(ESP_KEY_MGR_XTS_AES_128_KEY, ESP_KEY_MGR_USE_EFUSE_KEY);
+    key_mgr_hal_set_key_usage(ESP_KEY_MGR_FLASH_XTS_AES_KEY, ESP_KEY_MGR_USE_EFUSE_KEY);
 
     return ESP_OK;
 }

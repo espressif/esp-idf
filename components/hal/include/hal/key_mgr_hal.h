@@ -57,7 +57,7 @@ bool key_mgr_hal_is_result_success(void);
  * @return  1 for Success
  *          0 for failure
  */
-bool key_mgr_hal_is_key_deployment_valid(const esp_key_mgr_key_type_t key_type);
+bool key_mgr_hal_is_key_deployment_valid(const esp_key_mgr_key_type_t key_type, const esp_key_mgr_key_len_t key_len);
 
 /**
  * @brief Check if the HUK is valid or not
@@ -112,10 +112,10 @@ void key_mgr_hal_write_public_info(const uint8_t *public_info_buf, const size_t 
 void key_mgr_hal_read_public_info(uint8_t *public_info_buf, const size_t read_len);
 
 /* @brief Set the XTS-AES key length for the Key Manager */
-void key_mgr_hal_set_xts_aes_key_len(const esp_key_mgr_key_type_t key_type, const esp_key_mgr_xts_aes_key_len_t key_len);
+void key_mgr_hal_set_xts_aes_key_len(const esp_key_mgr_key_type_t key_type, const esp_key_mgr_key_len_t key_len);
 
 /* @brief Get the XTS-AES key length for the Key Manager */
-esp_key_mgr_xts_aes_key_len_t key_mgr_hal_get_xts_aes_key_len(const esp_key_mgr_key_type_t key_type);
+esp_key_mgr_key_len_t key_mgr_hal_get_xts_aes_key_len(const esp_key_mgr_key_type_t key_type);
 
 /**
  * @brief Read state of Key Manager

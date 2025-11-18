@@ -147,7 +147,8 @@ TEST_CASE("Key Manager AES mode: XTS-AES-128 key deployment", "[hw_crypto] [key_
     memcpy(key_config->k1_encrypted, (uint8_t*) k1_encrypt, KEY_MGR_K1_ENCRYPTED_SIZE);
     memcpy(key_config->sw_init_key, (uint8_t*) init_key, KEY_MGR_SW_INIT_KEY_SIZE);
     key_config->use_pre_generated_sw_init_key = 1;
-    key_config->key_type = ESP_KEY_MGR_XTS_AES_128_KEY;
+    key_config->key_type = ESP_KEY_MGR_FLASH_XTS_AES_KEY;
+    key_config->key_len = ESP_KEY_MGR_XTS_AES_LEN_128;
 
     esp_key_mgr_key_recovery_info_t *key_recovery_info = calloc(1, sizeof(esp_key_mgr_key_recovery_info_t));
     TEST_ASSERT_NOT_NULL(key_recovery_info);
@@ -167,7 +168,8 @@ TEST_CASE("Key Manager ECDH0 mode: XTS-AES-128 key deployment", "[hw_crypto] [ke
     TEST_ASSERT_NOT_NULL(key_config);
 
     memcpy(key_config->k1_G, (uint8_t*) k1_G, KEY_MGR_ECDH0_INFO_SIZE);
-    key_config->key_type = ESP_KEY_MGR_XTS_AES_128_KEY;
+    key_config->key_type = ESP_KEY_MGR_FLASH_XTS_AES_KEY;
+    key_config->key_len = ESP_KEY_MGR_XTS_AES_LEN_128;
 
     esp_key_mgr_key_recovery_info_t *key_recovery_info = calloc(1, sizeof(esp_key_mgr_key_recovery_info_t));
     TEST_ASSERT_NOT_NULL(key_recovery_info);
@@ -190,7 +192,8 @@ TEST_CASE("Key Manager Random mode: XTS-AES-128 key deployment", "[hw_crypto] [k
     esp_key_mgr_random_key_config_t *key_config = calloc(1, sizeof(esp_key_mgr_random_key_config_t));
     TEST_ASSERT_NOT_NULL(key_config);
 
-    key_config->key_type = ESP_KEY_MGR_XTS_AES_128_KEY;
+    key_config->key_type = ESP_KEY_MGR_FLASH_XTS_AES_KEY;
+    key_config->key_len = ESP_KEY_MGR_XTS_AES_LEN_128;
 
     esp_key_mgr_key_recovery_info_t *key_recovery_info = calloc(1, sizeof(esp_key_mgr_key_recovery_info_t));
     TEST_ASSERT_NOT_NULL(key_recovery_info);
@@ -211,7 +214,8 @@ TEST_CASE("Key Manager random mode: ECDSA key deployment", "[hw_crypto] [key_mgr
     esp_key_mgr_random_key_config_t *key_config = calloc(1, sizeof(esp_key_mgr_random_key_config_t));
     TEST_ASSERT_NOT_NULL(key_config);
 
-    key_config->key_type = ESP_KEY_MGR_ECDSA_256_KEY;
+    key_config->key_type = ESP_KEY_MGR_ECDSA_KEY;
+    key_config->key_len = ESP_KEY_MGR_ECDSA_LEN_256;
 
     esp_key_mgr_key_recovery_info_t *key_recovery_info = calloc(1, sizeof(esp_key_mgr_key_recovery_info_t));
     TEST_ASSERT_NOT_NULL(key_recovery_info);
