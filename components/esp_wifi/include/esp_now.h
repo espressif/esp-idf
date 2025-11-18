@@ -15,23 +15,6 @@
 extern "C" {
 #endif
 
-/** \defgroup WiFi_APIs WiFi Related APIs
-  * @brief WiFi APIs
-  */
-
-/** @addtogroup WiFi_APIs
-  * @{
-  */
-
-/** \defgroup ESPNOW_APIs  ESPNOW APIs
-  * @brief ESP32 ESPNOW APIs
-  *
-  */
-
-/** @addtogroup ESPNOW_APIs
-  * @{
-  */
-
 #define ESP_ERR_ESPNOW_BASE         (ESP_ERR_WIFI_BASE + 100) /*!< ESPNOW error number base. */
 #define ESP_ERR_ESPNOW_NOT_INIT     (ESP_ERR_ESPNOW_BASE + 1) /*!< ESPNOW is not initialized. */
 #define ESP_ERR_ESPNOW_ARG          (ESP_ERR_ESPNOW_BASE + 2) /*!< Invalid argument */
@@ -425,14 +408,6 @@ esp_err_t esp_now_switch_channel_tx(esp_now_switch_channel_t *config);
   *          - ESP_FAIL: failed to perform roc operation
   */
 esp_err_t esp_now_remain_on_channel(esp_now_remain_on_channel_t *config);
-
-/**
-  * @}
-  */
-
-/**
-  * @}
-  */
 
 #ifdef __cplusplus
 }
