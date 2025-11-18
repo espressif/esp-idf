@@ -84,7 +84,7 @@ static void * intpri_sleep_frame_init(void)
         { .start = CPU_DOMAIN_DEV_START_ADDR2, .end = CPU_DOMAIN_DEV_END_ADDR2 },
     };
     static DRAM_ATTR uint8_t sleep_frame[CPU_DOMAIN_DEV_TOTAL_SZ(3)] __attribute__((aligned(4)));
-    return cpu_domain_dev_sleep_frame_alloc_and_init(regions, sizeof(regions) / sizeof(regions[0]), sleep_frame);
+    return cpu_domain_dev_sleep_frame_init(regions, sizeof(regions) / sizeof(regions[0]), sleep_frame);
 }
 
 #undef CPU_DOMAIN_DEV_START_ADDR0
@@ -99,7 +99,7 @@ static void * cache_sleep_frame_init(void)
         { .start = CPU_DOMAIN_DEV_START_ADDR0, .end = CPU_DOMAIN_DEV_END_ADDR0 }
     };
     static DRAM_ATTR uint8_t sleep_frame[CPU_DOMAIN_DEV_TOTAL_SZ(1)] __attribute__((aligned(4)));
-    return cpu_domain_dev_sleep_frame_alloc_and_init(regions, sizeof(regions) / sizeof(regions[0]), sleep_frame);
+    return cpu_domain_dev_sleep_frame_init(regions, sizeof(regions) / sizeof(regions[0]), sleep_frame);
 }
 
 #undef CPU_DOMAIN_DEV_START_ADDR0
@@ -129,7 +129,7 @@ static void * plic_sleep_frame_init(void)
         { .start = PLIC_UXINT_CONF_REG,   .end = PLIC_UXINT_CONF_REG + 4  }
     };
     static DRAM_ATTR uint8_t sleep_frame[CPU_DOMAIN_DEV_TOTAL_SZ(4)] __attribute__((aligned(4)));
-    return cpu_domain_dev_sleep_frame_alloc_and_init(regions, sizeof(regions) / sizeof(regions[0]), sleep_frame);
+    return cpu_domain_dev_sleep_frame_init(regions, sizeof(regions) / sizeof(regions[0]), sleep_frame);
 }
 
 esp_err_t esp_sleep_cpu_retention_init_impl(sleep_cpu_retention_t *sleep_cpu_retention_ptr)
@@ -175,9 +175,6 @@ esp_err_t esp_sleep_cpu_retention_deinit_impl(sleep_cpu_retention_t *sleep_cpu_r
     }
     if (sleep_cpu_retention_ptr->retent.plic_frame) {
         sleep_cpu_retention_ptr->retent.plic_frame = NULL;
-    }
-    if (sleep_cpu_retention_ptr->retent.clint_frame) {
-        sleep_cpu_retention_ptr->retent.clint_frame = NULL;
     }
     return ESP_OK;
 }
