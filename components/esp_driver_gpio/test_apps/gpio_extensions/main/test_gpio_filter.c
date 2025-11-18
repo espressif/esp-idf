@@ -12,7 +12,7 @@
 #include "unity.h"
 #include "driver/gpio_filter.h"
 #include "driver/dedic_gpio.h"
-#include "soc/soc_caps_full.h"
+#include "soc/soc_caps.h"
 
 #if CONFIG_IDF_TARGET_ESP32P4
 #define TEST_FILTER_GPIO 20

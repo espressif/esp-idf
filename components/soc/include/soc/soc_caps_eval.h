@@ -10,7 +10,7 @@
  * SOC Capability evaluation helpers
  *
  * These macros provide a standardized way to query SOC capabilities without directly
- * accessing internal implementation macros in soc_caps_full.h and public macros in soc_caps.h.
+ * accessing the macros in soc_caps.h.
  *
  * The main categories of macros are:
  * - SOC_IS : Check if the SOC is a specific target (e.g., SOC_IS(ESP32S3))

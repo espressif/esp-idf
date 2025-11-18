@@ -21,7 +21,6 @@
 #include "hal/assert.h"
 #include "hal/touch_sensor_periph.h"
 #include "soc/soc_caps.h"
-#include "soc/soc_caps_full.h"
 #include "soc/sens_struct.h"
 #include "soc/rtc_cntl_struct.h"
 #include "soc/rtc_io_struct.h"

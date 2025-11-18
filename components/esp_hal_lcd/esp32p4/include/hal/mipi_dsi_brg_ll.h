@@ -130,7 +130,8 @@ static inline void mipi_dsi_brg_ll_set_empty_threshold(dsi_brg_dev_t *dev, uint3
  */
 static inline void mipi_dsi_brg_ll_set_num_pixel_bits(dsi_brg_dev_t *dev, uint32_t num_pixel_bits)
 {
-    dev->raw_num_cfg.raw_num_total = num_pixel_bits / 64;
+    dev->raw_num_cfg.raw_num_total = (num_pixel_bits + 63) / 64;
+    dev->raw_num_cfg.unalign_64bit_en = (num_pixel_bits % 64) ? 1 : 0;
     // reload the value into internal counter
     dev->raw_num_cfg.raw_num_total_set = 1;
 }

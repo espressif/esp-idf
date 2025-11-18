@@ -24,7 +24,6 @@
 #include "soc/touch_struct.h"
 #include "soc/pmu_struct.h"
 #include "soc/soc_caps.h"
-#include "soc/soc_caps_full.h"
 #include "hal/touch_sens_types.h"
 #include "hal/config.h"
 

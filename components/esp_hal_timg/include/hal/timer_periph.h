@@ -10,7 +10,7 @@
 #include <stddef.h>
 #include "soc/timer_group_reg.h"
 #include "soc/timer_group_struct.h"
-#include "soc/soc_caps_full.h"
+#include "soc/soc_caps.h"
 #include "soc/periph_defs.h"
 #include "soc/regdma.h"
 #include "hal/timer_ll.h"

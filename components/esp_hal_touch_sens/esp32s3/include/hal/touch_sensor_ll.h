@@ -24,7 +24,6 @@
 #include "soc/rtc_io_struct.h"
 #include "soc/sens_struct.h"
 #include "soc/soc_caps.h"
-#include "soc/soc_caps_full.h"
 #include "hal/touch_sens_types.h"
 
 #define TOUCH_LL_GET(_attr)  TOUCH_LL_ ## _attr

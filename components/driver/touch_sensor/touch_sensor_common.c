@@ -11,7 +11,7 @@
 #include "esp_log.h"
 #include "sys/lock.h"
 #include "soc/soc_pins.h"
-#include "soc/soc_caps_full.h"
+#include "soc/soc_caps.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "freertos/timers.h"
