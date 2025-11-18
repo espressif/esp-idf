@@ -765,6 +765,11 @@ function(__project_default)
     idf_create_uf2("${executable}"
                    TARGET uf2-app
                    APP_ONLY)
+
+    if(TARGET "${executable}_mapfile")
+        idf_create_size_report("${executable}_mapfile"
+                               TARGET size)
+    endif()
 endfunction()
 
 #[[api

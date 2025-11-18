@@ -235,6 +235,11 @@ function(test_executable)
     idf_create_confserver(fatfs_example
                           TARGET confserver-fatfs)
 
+    if(TARGET fatfs_example_mapfile)
+        idf_create_size_report(fatfs_example_mapfile
+                               TARGET fatfs-size)
+    endif()
+
 
     idf_build_executable(hello_world_example
                          COMPONENTS hello_world_example
@@ -252,6 +257,11 @@ function(test_executable)
                                 OUTPUT_FILE project_description_hello_world.json)
     idf_create_confserver(hello_world_example
                           TARGET confserver-hello_world)
+
+    if(TARGET hello_world_example_mapfile)
+        idf_create_size_report(hello_world_example_mapfile
+                               TARGET hello-size)
+    endif()
 endfunction()
 
 # Run tests
