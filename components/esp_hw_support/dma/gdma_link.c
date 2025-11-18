@@ -6,6 +6,8 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
+#include <inttypes.h>
 #include <sys/cdefs.h>
 #include "soc/soc_caps.h"
 #include "esp_log.h"
@@ -74,6 +76,8 @@ esp_err_t gdma_new_link_list(const gdma_link_list_config_t *config, gdma_link_li
     size_t item_alignment = config->item_alignment ? config->item_alignment : 4;
     // each list item should align to the specified alignment
     size_t item_size = ALIGN_UP(sizeof(gdma_link_list_item_t), item_alignment);
+    // guard against overflow when calculating total bytes for descriptors
+    ESP_GOTO_ON_FALSE(num_items <= SIZE_MAX / item_size, ESP_ERR_INVALID_SIZE, err, TAG, "list too big");
 
     uint32_t list_items_mem_caps = MALLOC_CAP_8BIT | MALLOC_CAP_DMA;
     if (config->flags.items_in_ext_mem) {
@@ -130,14 +134,13 @@ esp_err_t gdma_del_link_list(gdma_link_list_handle_t list)
 
 esp_err_t gdma_link_mount_buffers(gdma_link_list_handle_t list, int start_item_index, const gdma_buffer_mount_config_t *buf_config_array, size_t num_buf, int *end_item_index)
 {
-    if(!list || !buf_config_array || !num_buf) {
+    if (!list || !buf_config_array || !num_buf) {
         return ESP_ERR_INVALID_ARG;
     }
     size_t item_size = list->item_size;
     uint32_t list_item_capacity = list->num_items;
     // ensure the start_item_index is between 0 and `list_item_capacity - 1`
     start_item_index = (start_item_index % list_item_capacity + list_item_capacity) % list_item_capacity;
-    uint32_t begin_item_idx = start_item_index;
     gdma_link_list_item_t *lli_nc = NULL;
 
     uint32_t num_items_avail = 0;
@@ -147,6 +150,9 @@ esp_err_t gdma_link_mount_buffers(gdma_link_list_handle_t list, int start_item_i
             lli_nc = (gdma_link_list_item_t *)(list->items_nc + (i + start_item_index) % list_item_capacity * item_size);
             if (lli_nc->dw0.owner == GDMA_LLI_OWNER_CPU) {
                 num_items_avail++;
+            } else {
+                // if the DMA descriptor "write back" feature is not enabled, descriptor is always owned by DMA after being used
+                break;
             }
         }
     } else {
@@ -154,31 +160,36 @@ esp_err_t gdma_link_mount_buffers(gdma_link_list_handle_t list, int start_item_i
     }
 
     // check alignment and length for each buffer
+    uint32_t remaining = num_items_avail;
     for (size_t bi = 0; bi < num_buf; bi++) {
         const gdma_buffer_mount_config_t *config = &buf_config_array[bi];
         uint8_t *buf = (uint8_t *)config->buffer;
         size_t len = config->length;
+        // zero-length/NULL buffers don't consume a slot in pre-check
+        if (len == 0 || buf == NULL) {
+            continue;
+        }
         size_t buffer_alignment = config->buffer_alignment;
         if (buffer_alignment == 0) {
             buffer_alignment = 1;
         }
-        // check the buffer alignment
-        ESP_RETURN_ON_FALSE_ISR((buffer_alignment & (buffer_alignment - 1)) == 0, ESP_ERR_INVALID_ARG, TAG, "invalid buffer alignment: %"PRIu32"", buffer_alignment);
+        // alignment must be a power of 2
+        ESP_RETURN_ON_FALSE_ISR((buffer_alignment & (buffer_alignment - 1)) == 0, ESP_ERR_INVALID_ARG, TAG, "align err idx=%"PRIu32" align=%"PRIu32, bi, buffer_alignment);
         size_t max_buffer_mount_length = ALIGN_DOWN(GDMA_MAX_BUFFER_SIZE_PER_LINK_ITEM, buffer_alignment);
         if (!config->flags.bypass_buffer_align_check) {
-            ESP_RETURN_ON_FALSE_ISR(((uintptr_t)buf & (buffer_alignment - 1)) == 0, ESP_ERR_INVALID_ARG, TAG, "buffer not aligned to %"PRIu32"", buffer_alignment);
+            ESP_RETURN_ON_FALSE_ISR(((uintptr_t)buf & (buffer_alignment - 1)) == 0, ESP_ERR_INVALID_ARG, TAG, "buf misalign idx=%"PRIu32" align=%"PRIu32, bi, buffer_alignment);
         }
-        uint32_t num_items_need = (len + max_buffer_mount_length - 1) / max_buffer_mount_length;
-        // check if there are enough link list items
-        ESP_RETURN_ON_FALSE_ISR((begin_item_idx + num_items_need) <= (start_item_index + num_items_avail), ESP_ERR_INVALID_ARG, TAG, "no more space for buffer mounting");
-        begin_item_idx += num_items_need;
+        size_t num_items_need = (len + max_buffer_mount_length - 1) / max_buffer_mount_length;
+        ESP_RETURN_ON_FALSE_ISR(num_items_need <= remaining, ESP_ERR_INVALID_ARG, TAG,
+                                "lli full start=%d need=%"PRIu32" avail=%"PRIu32, start_item_index, num_items_need, remaining);
+        remaining -= num_items_need;
     }
 
     // link_nodes[start_item_index-1] --> link_nodes[start_item_index]
     lli_nc = (gdma_link_list_item_t *)(list->items_nc + (start_item_index + list_item_capacity - 1) % list_item_capacity * item_size);
     lli_nc->next = (gdma_link_list_item_t *)(list->items + start_item_index * item_size);
 
-    begin_item_idx = start_item_index;
+    int begin_item_idx = start_item_index;
     for (size_t bi = 0; bi < num_buf; bi++) {
         const gdma_buffer_mount_config_t *config = &buf_config_array[bi];
         uint8_t *buf = (uint8_t *)config->buffer;
@@ -188,13 +199,16 @@ esp_err_t gdma_link_mount_buffers(gdma_link_list_handle_t list, int start_item_i
             buffer_alignment = 1;
         }
         size_t max_buffer_mount_length = ALIGN_DOWN(GDMA_MAX_BUFFER_SIZE_PER_LINK_ITEM, buffer_alignment);
-        // skip zero-length buffer
+        // skip zero-length buffer but scrub any stale descriptor to keep ring clean; no slot consumption
         if (len == 0 || buf == NULL) {
+            lli_nc = (gdma_link_list_item_t *)(list->items_nc + begin_item_idx % list_item_capacity * item_size);
+            // reset the descriptor, especially the owner and next fields
+            memset(lli_nc, 0, item_size);
             continue;
         }
-        uint32_t num_items_need = (len + max_buffer_mount_length - 1) / max_buffer_mount_length;
+        size_t num_items_need = (len + max_buffer_mount_length - 1) / max_buffer_mount_length;
         // mount the buffer to the link list
-        for (int i = 0; i < num_items_need; i++) {
+        for (size_t i = 0; i < num_items_need; i++) {
             lli_nc = (gdma_link_list_item_t *)(list->items_nc + (i + begin_item_idx) % list_item_capacity * item_size);
             lli_nc->buffer = buf;
             lli_nc->dw0.length = len > max_buffer_mount_length ? max_buffer_mount_length : len;
@@ -206,20 +220,22 @@ esp_err_t gdma_link_mount_buffers(gdma_link_list_handle_t list, int start_item_i
             if (i == num_items_need - 1) {
                 // mark the final node
                 switch (config->flags.mark_final) {
-                    case GDMA_FINAL_LINK_TO_NULL:
-                        lli_nc->next = NULL;
-                        break;
-                    case GDMA_FINAL_LINK_TO_HEAD:
-                        lli_nc->next = (gdma_link_list_item_t *)(list->items);
-                        break;
-                    case GDMA_FINAL_LINK_TO_START:
-                        lli_nc->next = (gdma_link_list_item_t *)(list->items + start_item_index * item_size);
-                        break;
-                    default:
-                        lli_nc->next = (gdma_link_list_item_t *)(list->items + (i + begin_item_idx + 1) % list_item_capacity * item_size);
-                        break;
+                case GDMA_FINAL_LINK_TO_NULL:
+                    lli_nc->next = NULL;
+                    break;
+                case GDMA_FINAL_LINK_TO_HEAD:
+                    lli_nc->next = (gdma_link_list_item_t *)(list->items);
+                    break;
+                case GDMA_FINAL_LINK_TO_START:
+                    lli_nc->next = (gdma_link_list_item_t *)(list->items + start_item_index * item_size);
+                    break;
+                default:
+                    // DMA expects cached addresses in `next`
+                    lli_nc->next = (gdma_link_list_item_t *)(list->items + (i + begin_item_idx + 1) % list_item_capacity * item_size);
+                    break;
                 }
             } else {
+                // DMA expects cached addresses in `next`
                 lli_nc->next = (gdma_link_list_item_t *)(list->items + (i + begin_item_idx + 1) % list_item_capacity * item_size);
             }
             lli_nc->dw0.owner = GDMA_LLI_OWNER_DMA;
@@ -246,7 +262,7 @@ uintptr_t gdma_link_get_head_addr(gdma_link_list_handle_t list)
 
 esp_err_t gdma_link_concat(gdma_link_list_handle_t first_link, int first_link_item_index, gdma_link_list_handle_t second_link, int second_link_item_index)
 {
-    if(!first_link) {
+    if (!first_link) {
         return ESP_ERR_INVALID_ARG;
     }
     gdma_link_list_item_t *lli_nc = NULL;
@@ -281,7 +297,7 @@ esp_err_t gdma_link_set_owner(gdma_link_list_handle_t list, int item_index, gdma
 
 esp_err_t gdma_link_get_owner(gdma_link_list_handle_t list, int item_index, gdma_lli_owner_t *owner)
 {
-    if(!list || !owner) {
+    if (!list || !owner) {
         return ESP_ERR_INVALID_ARG;
     }
     int num_items = list->num_items;
@@ -339,7 +355,7 @@ size_t gdma_link_get_length(gdma_link_list_handle_t list, int item_index)
 
 esp_err_t gdma_link_set_length(gdma_link_list_handle_t list, int item_index, size_t length)
 {
-    if(!list) {
+    if (!list) {
         return ESP_ERR_INVALID_ARG;
     }
     int num_items = list->num_items;
