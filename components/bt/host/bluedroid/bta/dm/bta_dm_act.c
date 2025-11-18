@@ -4649,40 +4649,6 @@ void bta_dm_eir_update_uuid(tBT_UUID uuid, BOOLEAN adding)
 }
 #endif
 
-#if (BLE_HOST_ENABLE_TEST_MODE_EN == TRUE)
-/*******************************************************************************
-**
-** Function         bta_dm_enable_test_mode
-**
-** Description      enable test mode
-**
-**
-** Returns          void
-**
-*******************************************************************************/
-void bta_dm_enable_test_mode(tBTA_DM_MSG *p_data)
-{
-    UNUSED(p_data);
-    BTM_EnableTestMode();
-}
-
-/*******************************************************************************
-**
-** Function         bta_dm_disable_test_mode
-**
-** Description      disable test mode
-**
-**
-** Returns          void
-**
-*******************************************************************************/
-void bta_dm_disable_test_mode(tBTA_DM_MSG *p_data)
-{
-    UNUSED(p_data);
-    BTM_DeviceReset(NULL);
-}
-#endif // #if (BLE_HOST_ENABLE_TEST_MODE_EN == TRUE)
-
 #if (BLE_HOST_EXECUTE_CBACK_EN == TRUE)
 /*******************************************************************************
 **
