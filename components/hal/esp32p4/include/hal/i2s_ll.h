@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -206,7 +206,7 @@ static inline void i2s_ll_rx_disable_clock(i2s_dev_t *hw)
  *
  * @param hw Peripheral I2S hardware instance address.
  */
-static inline void i2s_ll_mclk_bind_to_tx_clk(i2s_dev_t *hw)
+static inline void _i2s_ll_mclk_bind_to_tx_clk(i2s_dev_t *hw)
 {
     // Note: this function involves HP_SYS_CLKRST register which is shared with other peripherals, need lock in upper layer
     switch (I2S_LL_GET_ID(hw)) {
@@ -222,12 +222,16 @@ static inline void i2s_ll_mclk_bind_to_tx_clk(i2s_dev_t *hw)
     }
 }
 
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define i2s_ll_mclk_bind_to_tx_clk(...) (void)__DECLARE_RCC_ATOMIC_ENV; _i2s_ll_mclk_bind_to_tx_clk(__VA_ARGS__)
+
 /**
  * @brief I2S mclk use rx module clock
  *
  * @param hw Peripheral I2S hardware instance address.
  */
-static inline void i2s_ll_mclk_bind_to_rx_clk(i2s_dev_t *hw)
+static inline void _i2s_ll_mclk_bind_to_rx_clk(i2s_dev_t *hw)
 {
     // Note: this function involves HP_SYS_CLKRST register which is shared with other peripherals, need lock in upper layer
     switch (I2S_LL_GET_ID(hw)) {
@@ -242,6 +246,10 @@ static inline void i2s_ll_mclk_bind_to_rx_clk(i2s_dev_t *hw)
             return;
     }
 }
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define i2s_ll_mclk_bind_to_rx_clk(...) (void)__DECLARE_RCC_ATOMIC_ENV; _i2s_ll_mclk_bind_to_rx_clk(__VA_ARGS__)
 
 /**
  * @brief Enable I2S TX slave mode
