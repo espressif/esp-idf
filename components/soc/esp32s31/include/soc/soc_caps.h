@@ -51,20 +51,18 @@
 #define SOC_USB_OTG_SUPPORTED           1
 #define SOC_TEMP_SENSOR_SUPPORTED       1
 #define SOC_USB_SERIAL_JTAG_SUPPORTED   1
-// #define SOC_TEMP_SENSOR_SUPPORTED       1      // TODO: [ESP32S31] IDF-14799
 // #define SOC_SUPPORTS_SECURE_DL_MODE     1      // TODO: [ESP32S31] IDF-14629
 #define SOC_ULP_SUPPORTED               1
 #define SOC_LP_CORE_SUPPORTED           1
 #define SOC_EFUSE_KEY_PURPOSE_FIELD     1
 #define SOC_EFUSE_SUPPORTED             1
 #define SOC_RTC_FAST_MEM_SUPPORTED      1
-#define SOC_RTC_MEM_SUPPORTED           1      // TODO: [ESP32S31] IDF-14645
+#define SOC_RTC_MEM_SUPPORTED           1
 #define SOC_RMT_SUPPORTED               1
 #define SOC_I2S_SUPPORTED               1
 #define SOC_SDM_SUPPORTED               1
 #define SOC_GPSPI_SUPPORTED             1
 #define SOC_LEDC_SUPPORTED              1
-// #define SOC_ISP_SUPPORTED               1      // TODO: [ESP32S31] IDF-14769
 #define SOC_I2C_SUPPORTED               1
 #define SOC_SYSTIMER_SUPPORTED          1
 #define SOC_AES_SUPPORTED               1
@@ -96,10 +94,10 @@
 #define SOC_DEBUG_PROBE_SUPPORTED       1
 #define SOC_WDT_SUPPORTED               1
 #define SOC_RTC_WDT_SUPPORTED           1
-#define SOC_SPI_FLASH_SUPPORTED         1         // TODO: [ESP32S31] IDF-14777
+#define SOC_SPI_FLASH_SUPPORTED         1
 #define SOC_SPI_FLASH_HAS_DEDICATED_LDO 1
 #define SOC_TOUCH_SENSOR_SUPPORTED      1
-#define SOC_GP_LDO_SUPPORTED            1 // General purpose LDO
+#define SOC_GP_LDO_SUPPORTED            1
 #define SOC_RNG_SUPPORTED               1
 #define SOC_PPA_SUPPORTED               1
 #define SOC_LIGHT_SLEEP_SUPPORTED       1

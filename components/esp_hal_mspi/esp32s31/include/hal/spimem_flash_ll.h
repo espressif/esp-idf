@@ -37,8 +37,6 @@
 extern "C" {
 #endif
 
-//TODO: ["ESP32S31"] IDF-14777
-
 #define spimem_flash_ll_get_hw(host_id)  (((host_id)==SPI1_HOST ?  &SPIMEM1 : NULL ))
 #define spimem_flash_ll_hw_get_id(dev)   ((dev) == (void*)&SPIMEM1? SPI1_HOST: -1)
 
