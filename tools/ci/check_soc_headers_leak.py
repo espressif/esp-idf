@@ -19,7 +19,6 @@ allowed_soc_headers = (
     'soc/reg_base.h',
     'soc/clk_tree_defs.h',
     'soc/uart_channel.h',
-    'soc/bitscrambler_peri_select.h',
 )
 
 include_header_pattern = re.compile(r'[\s]*#[\s]*include ["<](.*)[">].*')
@@ -33,7 +32,7 @@ class PublicAPIVisits:
         self._idf_path = idf_path
 
     def __iter__(self) -> typing.Generator:
-        with open(self.doxyfile_path, 'r', encoding='utf8') as f:
+        with open(self.doxyfile_path, encoding='utf8') as f:
             for line in f:
                 line = line.strip()
                 if line.startswith('$(PROJECT_PATH)'):
@@ -48,10 +47,10 @@ def check_soc_not_in(
     idf_path: str,
     target: str,
     doxyfile_path: str,
-    violation_dict: typing.Dict[str, set],
+    violation_dict: dict[str, set],
 ) -> None:
     for file_path in PublicAPIVisits(os.path.join(idf_path, doxyfile_path), idf_path, target):
-        with open(file_path, 'r', encoding='utf8') as f:
+        with open(file_path, encoding='utf8') as f:
             for line in f:
                 match_data = re.match(include_header_pattern, line)
                 if match_data:
@@ -82,7 +81,7 @@ def main() -> None:
         print('No targets found', file=sys.stderr)
         sys.exit(1)
 
-    soc_violation_dict: typing.Dict[str, set] = {}
+    soc_violation_dict: dict[str, set] = {}
     for target in targets:
         check_soc_not_in(
             idf_path,

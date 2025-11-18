@@ -39,7 +39,7 @@ INPUT += \
     $(PROJECT_PATH)/components/hal/include/hal/ppa_types.h \
     $(PROJECT_PATH)/components/sdmmc/include/sd_pwr_ctrl.h \
     $(PROJECT_PATH)/components/sdmmc/include/sd_pwr_ctrl_by_on_chip_ldo.h \
-    $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/include/soc/bitscrambler_peri_select.h \
+    $(PROJECT_PATH)/components/esp_hal_dma/esp32p4/include/hal/bitscrambler_peri_select.h \
     $(PROJECT_PATH)/components/ulp/lp_core/include/lp_core_etm.h \
     $(PROJECT_PATH)/components/ulp/lp_core/include/lp_core_i2c.h \
     $(PROJECT_PATH)/components/ulp/lp_core/include/lp_core_spi.h \

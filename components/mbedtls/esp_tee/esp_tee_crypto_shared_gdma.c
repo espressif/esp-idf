@@ -10,8 +10,6 @@
 #include "mbedtls/aes.h"
 #include "esp_crypto_dma.h"
 
-#include "hal/gdma_types.h"
-#include "soc/gdma_channel.h"
 #include "soc/soc_caps.h"
 
 #include "esp_tee_crypto_shared_gdma.h"

@@ -26,7 +26,6 @@
 #include "esp_check.h"
 #include "esp_err.h"
 #include "soc/soc_caps.h"
-#include "soc/gdma_channel.h"
 #include "soc/rmt_periph.h"
 #include "hal/rmt_types.h"
 #include "hal/rmt_hal.h"
