@@ -183,9 +183,6 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
 #endif // #if (BLE_HOST_SETUP_STORAGE_EN == TRUE)
     bta_dm_ble_disconnect,                  /* BTA_DM_API_BLE_DISCONNECT_EVT */
 #endif
-#if (BLE_HOST_EXECUTE_CBACK_EN == TRUE)
-    bta_dm_execute_callback,                /* BTA_DM_API_EXECUTE_CBACK_EVT */
-#endif // #if (BLE_HOST_EXECUTE_CBACK_EN == TRUE)
 #if (BLE_HOST_REMOVE_ALL_ACL_EN == TRUE)
     bta_dm_remove_all_acl,                  /* BTA_DM_API_REMOVE_ALL_ACL_EVT */
 #endif // #if (BLE_HOST_REMOVE_ALL_ACL_EN == TRUE)
