@@ -111,3 +111,5 @@ int hci_adv_credits_force_release(uint16_t num);
 #endif
 
 #endif /* _HCI_LAYER_H_ */
+
+const char *hci_status_code_to_string(uint8_t status);
