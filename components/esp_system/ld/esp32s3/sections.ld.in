@@ -26,6 +26,10 @@ SECTIONS
 
     mapping[rtc_text]
 
+    /* mutable libs begin */
+    mutable[rtc_text]
+    /* mutable libs end */
+
     *rtc_wake_stub*.*(.literal .text .literal.* .text.*)
     *(.rtc_text_end_test)
 
@@ -49,6 +53,10 @@ SECTIONS
 
     mapping[rtc_force_fast]
 
+    /* mutable libs begin */
+    mutable[rtc_force_fast]
+    /* mutable libs end */
+
     *(.rtc.force_fast .rtc.force_fast.*)
 
     ALIGNED_SYMBOL(4, _rtc_force_fast_end)
@@ -68,6 +76,10 @@ SECTIONS
 
     mapping[rtc_data]
 
+    /* mutable libs begin */
+    mutable[rtc_data]
+    /* mutable libs end */
+
     *rtc_wake_stub*.*(.data .rodata .data.* .rodata.*)
 
     _rtc_data_end = ABSOLUTE(.);
@@ -82,6 +94,10 @@ SECTIONS
     *rtc_wake_stub*.*(COMMON)
 
     mapping[rtc_bss]
+
+    /* mutable libs begin */
+    mutable[rtc_bss]
+    /* mutable libs end */
 
     _rtc_bss_end = ABSOLUTE(.);
   } > rtc_data_location
@@ -197,6 +213,11 @@ SECTIONS
 
     mapping[iram0_text]
 
+    /* mutable libs begin */
+    mutable[iram0_text]
+    FAST_REFLASHING_PADDING;
+    /* mutable libs end */
+
   } > iram0_0_seg
 
   /**
@@ -220,6 +241,11 @@ SECTIONS
     *(.jcr)
 
     mapping[dram0_data]
+
+    /* mutable libs begin */
+    mutable[dram0_data]
+    FAST_REFLASHING_PADDING;
+    /* mutable libs end */
 
     _data_end = ABSOLUTE(.);
   } > dram0_0_seg
@@ -250,6 +276,10 @@ SECTIONS
      */
     mapping[dram0_bss]
 
+    /* mutable libs begin */
+    mutable[dram0_bss]
+    /* mutable libs end */
+
     ALIGNED_SYMBOL(8, _bss_end)
   } > dram0_0_seg
 
@@ -267,6 +297,11 @@ SECTIONS
     _text_start = ABSOLUTE(.);
 
     mapping[flash_text]
+
+    /* mutable libs begin */
+    mutable[flash_text]
+    FAST_REFLASHING_PADDING;
+    /* mutable libs end */
 
     *(.stub)
     *(.gnu.warning)
@@ -391,6 +426,11 @@ SECTIONS
     KEEP (*(SORT_BY_INIT_PRIORITY(.esp_system_init_fn.*)))
     _esp_system_init_fn_array_end = ABSOLUTE(.);
 
+    /* mutable libs begin */
+    mutable[flash_rodata]
+    FAST_REFLASHING_PADDING;
+    /* mutable libs end */
+
     _rodata_end = ABSOLUTE(.);
 
     /* Literals are also RO data. */
@@ -425,6 +465,10 @@ SECTIONS
     _rodata_reserved_end = ABSOLUTE(.);
 
     mapping[rodata_noload]
+
+    /* mutable libs begin */
+    mutable[rodata_noload]
+    /* mutable libs end */
   } > default_rodata_seg
 
   /**
@@ -445,6 +489,10 @@ SECTIONS
     _ext_ram_bss_start = ABSOLUTE(.);
 
     mapping[extern_ram]
+
+    /* mutable libs begin */
+    mutable[extern_ram]
+    /* mutable libs end */
 
     ALIGNED_SYMBOL(4, _ext_ram_bss_end)
   } > extern_ram_seg
@@ -484,6 +532,10 @@ SECTIONS
 
     mapping[iram0_data]
 
+    /* mutable libs begin */
+    mutable[iram0_data]
+    /* mutable libs end */
+
     ALIGNED_SYMBOL(4, _iram_data_end)
   } > iram0_0_seg
 
@@ -492,6 +544,10 @@ SECTIONS
     ALIGNED_SYMBOL(4, _iram_bss_start)
 
     mapping[iram0_bss]
+
+    /* mutable libs begin */
+    mutable[iram0_bss]
+    /* mutable libs end */
 
     _iram_bss_end = ABSOLUTE(.);
     ALIGNED_SYMBOL(4, _iram_end)

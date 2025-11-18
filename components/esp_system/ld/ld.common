@@ -94,3 +94,23 @@ ASSERT((ADDR(NEXT_SECTION) == ADDR(PREV_SECTION) + SIZEOF(PREV_SECTION)), \
 #else
 #define SECTION_AFTER_FLASH_RODATA .flash.tdata
 #endif
+
+/*
+ * FAST_REFLASHING_PADDING
+ *
+ * Aligns the current location (.) to CONFIG_ESPTOOLPY_FAST_REFLASHING_PADDING.
+ * If more than half of the alignment block is already consumed,
+ * extra padding is applied to skip to the next boundary.
+ * For example, if the current location (.) is 0x1900 and the padding is 4 KB,
+ * the location will be moved to 0x3000 instead of 0x2000 because less than
+ * half of the current 4 KB block remains (0x2000 - 0x1900 < 2 KB).
+ */
+#if CONFIG_ESPTOOLPY_FAST_REFLASHING
+#define FAST_REFLASHING_PADDING \
+  . = ALIGN((. + ( \
+    (CONFIG_ESPTOOLPY_FAST_REFLASHING_PADDING - (ALIGN(CONFIG_ESPTOOLPY_FAST_REFLASHING_PADDING) - .)) + \
+    (CONFIG_ESPTOOLPY_FAST_REFLASHING_PADDING / 2) \
+  )), CONFIG_ESPTOOLPY_FAST_REFLASHING_PADDING)
+#else
+#define FAST_REFLASHING_PADDING
+#endif

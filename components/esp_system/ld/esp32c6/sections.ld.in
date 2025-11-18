@@ -28,6 +28,10 @@ SECTIONS
 
     mapping[rtc_text]
 
+    /* mutable libs begin */
+    mutable[rtc_text]
+    /* mutable libs end */
+
     *rtc_wake_stub*.*(.text .text.*)
     *(.rtc_text_end_test)
 
@@ -48,6 +52,10 @@ SECTIONS
 
     mapping[rtc_force_fast]
 
+    /* mutable libs begin */
+    mutable[rtc_force_fast]
+    /* mutable libs end */
+
     *(.rtc.force_fast .rtc.force_fast.*)
 
     ALIGNED_SYMBOL(4, _rtc_force_fast_end)
@@ -65,6 +73,10 @@ SECTIONS
 
     mapping[rtc_data]
 
+    /* mutable libs begin */
+    mutable[rtc_data]
+    /* mutable libs end */
+
     *rtc_wake_stub*.*(.data .rodata .data.* .rodata.* .srodata.*)
 
     _rtc_data_end = ABSOLUTE(.);
@@ -79,6 +91,10 @@ SECTIONS
     *rtc_wake_stub*.*(COMMON)
 
     mapping[rtc_bss]
+
+    /* mutable libs begin */
+    mutable[rtc_bss]
+    /* mutable libs end */
 
     _rtc_bss_end = ABSOLUTE(.);
   } > lp_ram_seg
@@ -192,6 +208,11 @@ SECTIONS
 
     mapping[iram0_text]
 
+    /* mutable libs begin */
+    mutable[iram0_text]
+    FAST_REFLASHING_PADDING;
+    /* mutable libs end */
+
   } > sram_seg
 
   /* Marks the end of IRAM code segment */
@@ -209,6 +230,10 @@ SECTIONS
 
     mapping[iram0_data]
 
+    /* mutable libs begin */
+    mutable[iram0_data]
+    /* mutable libs end */
+
     _iram_data_end = ABSOLUTE(.);
   } > sram_seg
 
@@ -217,6 +242,10 @@ SECTIONS
     ALIGNED_SYMBOL(16, _iram_bss_start)
 
     mapping[iram0_bss]
+
+    /* mutable libs begin */
+    mutable[iram0_bss]
+    /* mutable libs end */
 
     _iram_bss_end = ABSOLUTE(.);
 
@@ -236,6 +265,11 @@ SECTIONS
     *(.jcr)
 
     mapping[dram0_data]
+
+    /* mutable libs begin */
+    mutable[dram0_data]
+    FAST_REFLASHING_PADDING;
+    /* mutable libs end */
 
     _data_end = ABSOLUTE(.);
   } > sram_seg
@@ -266,6 +300,10 @@ SECTIONS
      */
     mapping[dram0_bss]
 
+    /* mutable libs begin */
+    mutable[dram0_bss]
+    /* mutable libs end */
+
     ALIGNED_SYMBOL(8, _bss_end)
   } > sram_seg
 
@@ -280,6 +318,11 @@ SECTIONS
     _text_start = ABSOLUTE(.);
 
     mapping[flash_text]
+
+    /* mutable libs begin */
+    mutable[flash_text]
+    FAST_REFLASHING_PADDING;
+    /* mutable libs end */
 
     *(.stub)
     *(.gnu.linkonce.t.*)
@@ -383,6 +426,11 @@ SECTIONS
     KEEP (*(SORT_BY_INIT_PRIORITY(.esp_system_init_fn.*)))
     _esp_system_init_fn_array_end = ABSOLUTE(.);
 
+    /* mutable libs begin */
+    mutable[flash_rodata]
+    FAST_REFLASHING_PADDING;
+    /* mutable libs end */
+
     _rodata_end = ABSOLUTE(.);
     . = ALIGN(ALIGNOF(SECTION_AFTER_FLASH_RODATA));
   } > default_rodata_seg
@@ -454,6 +502,10 @@ SECTIONS
     _rodata_reserved_end = ADDR(.flash.tbss);
 
     mapping[rodata_noload]
+
+    /* mutable libs begin */
+    mutable[rodata_noload]
+    /* mutable libs end */
   } > default_rodata_seg
 
   /* Marks the end of data, bss and possibly rodata */

@@ -159,6 +159,10 @@ if(CONFIG_COMPILER_NO_MERGE_CONSTANTS)
     list(APPEND compile_options "-fno-merge-constants")
 endif()
 
+if(CONFIG_COMPILER_ENABLE_TEXT_SECTION_LITERALS)
+    list(APPEND compile_options "-mtext-section-literals")
+endif()
+
 if(CONFIG_COMPILER_STACK_CHECK_MODE_NORM)
     list(APPEND compile_options "-fstack-protector")
 elseif(CONFIG_COMPILER_STACK_CHECK_MODE_STRONG)

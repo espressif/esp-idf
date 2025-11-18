@@ -576,6 +576,20 @@ mainmenu "Espressif IoT Development Framework Configuration"
                 distribution is more uniform across libraries. On downside, it may increase
                 the binary size and hence should be used during development phase only.
 
+        config COMPILER_ENABLE_TEXT_SECTION_LITERALS
+            bool
+            depends on IDF_TOOLCHAIN_GCC
+            depends on IDF_TARGET_ARCH_XTENSA
+            default y if ESPTOOLPY_FAST_REFLASHING
+            help
+                Intersperse Xtensa literals within the text section to keep
+                them as close as possible to their references. This prevents
+                literals from being placed into a separate section in the
+                output file and prevents the linker from combining literal
+                pools from different object files. Enabling this is necessary
+                for fast reflashing to prevent mixing code from mutable and
+                immutable libraries.
+
         config COMPILER_WARN_WRITE_STRINGS
             bool "Enable -Wwrite-strings warning flag"
             default "n"
@@ -784,3 +798,4 @@ mainmenu "Espressif IoT Development Framework Configuration"
             - CONFIG_GDMA_ENABLE_WEIGHTED_ARBITRATION
             - CONFIG_I3C_MASTER_ENABLED
             - CONFIG_MBEDTLS_ESP_IDF_USE_PSA_CRYPTO
+            - CONFIG_ESPTOOLPY_FAST_REFLASHING
