@@ -90,6 +90,7 @@ struct i2s_channel_obj_t {
     i2s_state_t             state;          /*!< i2s driver state. Ensuring the driver working in a correct sequence */
     /* Stored configurations */
     void                    *mode_info;     /*!< Slot, clock and gpio information of each mode */
+    bool                    full_duplex_slave; /*!< whether the channel is forced to switch to slave role for full duplex */
 #if SOC_I2S_SUPPORTS_APLL
     bool                    apll_en;        /*!< Flag of wether APLL enabled */
 #endif
