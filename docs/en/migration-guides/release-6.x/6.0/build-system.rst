@@ -78,7 +78,7 @@ Replace ``PRIO`` with an integer value. Lower values are executed earlier. This 
 Changes in Configuration Files Syntax
 -------------------------------------
 
-ESP-IDF v6 uses esp-idf-kconfig v3, which introduces several changes in the configuration (``Kconfig``) files. For the full list of changes, please refer to the `esp-idf-kconfig migration guide from v2.x to v3.x <https://docs.espressif.com/projects/esp-idf-kconfig/en/latest/developer-guide/migration-guide.html>`_.
+ESP-IDF v6 uses esp-idf-kconfig v3, which introduces several changes in the configuration (``Kconfig``) files. For the full list of changes, please refer to the `Migration Guide From esp-idf-kconfig v2.x to v3.x <https://docs.espressif.com/projects/esp-idf-kconfig/en/latest/developer-guide/migration-guide.html>`_.
 
 Compiler Options
 ----------------

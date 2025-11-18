@@ -518,6 +518,7 @@ After calling :cpp:func:`esp_isp_bf_configure`, you need to enable the ISP BF co
 
 Calling :cpp:func:`esp_isp_bf_disable` does the opposite, that is, put the driver back to the **init** state.
 
+
 .. _isp-blc:
 
 ISP BLC Controller
