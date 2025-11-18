@@ -1,0 +1,667 @@
+/**
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ *
+ *  SPDX-License-Identifier: Apache-2.0
+ */
+#pragma once
+
+#include <stdint.h>
+#include "soc/soc.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/** CNNT_SYS_VER_DATE_REG register
+ *  NA
+ */
+#define CNNT_SYS_VER_DATE_REG (DR_REG_CNNT_BASE + 0x0)
+/** CNNT_SYS_VER_DATE : R/W; bitpos: [31:0]; default: 539298086;
+ *  NA
+ */
+#define CNNT_SYS_VER_DATE    0xFFFFFFFFU
+#define CNNT_SYS_VER_DATE_M  (CNNT_SYS_VER_DATE_V << CNNT_SYS_VER_DATE_S)
+#define CNNT_SYS_VER_DATE_V  0xFFFFFFFFU
+#define CNNT_SYS_VER_DATE_S  0
+
+/** CNNT_CLK_EN_REG register
+ *  NA
+ */
+#define CNNT_CLK_EN_REG (DR_REG_CNNT_BASE + 0x4)
+/** CNNT_SYS_DATE : R/W; bitpos: [30:0]; default: 38826240;
+ *  need_des
+ */
+#define CNNT_SYS_DATE    0x7FFFFFFFU
+#define CNNT_SYS_DATE_M  (CNNT_SYS_DATE_V << CNNT_SYS_DATE_S)
+#define CNNT_SYS_DATE_V  0x7FFFFFFFU
+#define CNNT_SYS_DATE_S  0
+/** CNNT_SYS_CLK_EN : R/W; bitpos: [31]; default: 0;
+ *  NA
+ */
+#define CNNT_SYS_CLK_EN    (BIT(31))
+#define CNNT_SYS_CLK_EN_M  (CNNT_SYS_CLK_EN_V << CNNT_SYS_CLK_EN_S)
+#define CNNT_SYS_CLK_EN_V  0x00000001U
+#define CNNT_SYS_CLK_EN_S  31
+
+/** CNNT_SYS_SDMMC_MEM_LP_CTRL_REG register
+ *  HP CORE0 & HP CORE1 memory power control register
+ */
+#define CNNT_SYS_SDMMC_MEM_LP_CTRL_REG (DR_REG_CNNT_BASE + 0x10)
+/** CNNT_SYS_SDMMC_MEM_LP_MODE : R/W; bitpos: [1:0]; default: 2;
+ *  Configures sdmmc memory low power mode in low power stage.
+ *  0: deep sleep
+ *  1: light sleep
+ *  2(default): shut down
+ *  3: disable low power stage
+ */
+#define CNNT_SYS_SDMMC_MEM_LP_MODE    0x00000003U
+#define CNNT_SYS_SDMMC_MEM_LP_MODE_M  (CNNT_SYS_SDMMC_MEM_LP_MODE_V << CNNT_SYS_SDMMC_MEM_LP_MODE_S)
+#define CNNT_SYS_SDMMC_MEM_LP_MODE_V  0x00000003U
+#define CNNT_SYS_SDMMC_MEM_LP_MODE_S  0
+/** CNNT_SYS_SDMMC_MEM_LP_EN : R/W; bitpos: [2]; default: 1;
+ *  Set this bit to power down sdmmc memory.
+ */
+#define CNNT_SYS_SDMMC_MEM_LP_EN    (BIT(2))
+#define CNNT_SYS_SDMMC_MEM_LP_EN_M  (CNNT_SYS_SDMMC_MEM_LP_EN_V << CNNT_SYS_SDMMC_MEM_LP_EN_S)
+#define CNNT_SYS_SDMMC_MEM_LP_EN_V  0x00000001U
+#define CNNT_SYS_SDMMC_MEM_LP_EN_S  2
+/** CNNT_SYS_SDMMC_MEM_LP_FORCE_CTRL : R/W; bitpos: [3]; default: 0;
+ *  Set this bit to force software control sdmmc memory, disable hardware control.
+ */
+#define CNNT_SYS_SDMMC_MEM_LP_FORCE_CTRL    (BIT(3))
+#define CNNT_SYS_SDMMC_MEM_LP_FORCE_CTRL_M  (CNNT_SYS_SDMMC_MEM_LP_FORCE_CTRL_V << CNNT_SYS_SDMMC_MEM_LP_FORCE_CTRL_S)
+#define CNNT_SYS_SDMMC_MEM_LP_FORCE_CTRL_V  0x00000001U
+#define CNNT_SYS_SDMMC_MEM_LP_FORCE_CTRL_S  3
+
+/** CNNT_SYS_USB_OTGHS_MEM_LP_CTRL_REG register
+ *  HP CORE0 & HP CORE1 memory power control register
+ */
+#define CNNT_SYS_USB_OTGHS_MEM_LP_CTRL_REG (DR_REG_CNNT_BASE + 0x14)
+/** CNNT_SYS_USB_OTGHS_MEM_LP_MODE : R/W; bitpos: [1:0]; default: 2;
+ *  Configures usb_otghs memory low power mode in low power stage.
+ *  0: deep sleep
+ *  1: light sleep
+ *  2(default): shut down
+ *  3: disable low power stage
+ */
+#define CNNT_SYS_USB_OTGHS_MEM_LP_MODE    0x00000003U
+#define CNNT_SYS_USB_OTGHS_MEM_LP_MODE_M  (CNNT_SYS_USB_OTGHS_MEM_LP_MODE_V << CNNT_SYS_USB_OTGHS_MEM_LP_MODE_S)
+#define CNNT_SYS_USB_OTGHS_MEM_LP_MODE_V  0x00000003U
+#define CNNT_SYS_USB_OTGHS_MEM_LP_MODE_S  0
+/** CNNT_SYS_USB_OTGHS_MEM_LP_EN : R/W; bitpos: [2]; default: 0;
+ *  Set this bit to power down usb_otghs memory.
+ */
+#define CNNT_SYS_USB_OTGHS_MEM_LP_EN    (BIT(2))
+#define CNNT_SYS_USB_OTGHS_MEM_LP_EN_M  (CNNT_SYS_USB_OTGHS_MEM_LP_EN_V << CNNT_SYS_USB_OTGHS_MEM_LP_EN_S)
+#define CNNT_SYS_USB_OTGHS_MEM_LP_EN_V  0x00000001U
+#define CNNT_SYS_USB_OTGHS_MEM_LP_EN_S  2
+/** CNNT_SYS_USB_OTGHS_MEM_LP_FORCE_CTRL : R/W; bitpos: [3]; default: 0;
+ *  Set this bit to force software control usb_otghs memory, disable hardware control.
+ */
+#define CNNT_SYS_USB_OTGHS_MEM_LP_FORCE_CTRL    (BIT(3))
+#define CNNT_SYS_USB_OTGHS_MEM_LP_FORCE_CTRL_M  (CNNT_SYS_USB_OTGHS_MEM_LP_FORCE_CTRL_V << CNNT_SYS_USB_OTGHS_MEM_LP_FORCE_CTRL_S)
+#define CNNT_SYS_USB_OTGHS_MEM_LP_FORCE_CTRL_V  0x00000001U
+#define CNNT_SYS_USB_OTGHS_MEM_LP_FORCE_CTRL_S  3
+
+/** CNNT_SYS_USB_DEVICE_MEM_LP_CTRL_REG register
+ *  HP CORE0 & HP CORE1 memory power control register
+ */
+#define CNNT_SYS_USB_DEVICE_MEM_LP_CTRL_REG (DR_REG_CNNT_BASE + 0x18)
+/** CNNT_SYS_USB_DEVICE_MEM_LP_MODE : R/W; bitpos: [1:0]; default: 2;
+ *  Configures usb_device memory low power mode in low power stage.
+ *  0: deep sleep
+ *  1: light sleep
+ *  2(default): shut down
+ *  3: disable low power stage
+ */
+#define CNNT_SYS_USB_DEVICE_MEM_LP_MODE    0x00000003U
+#define CNNT_SYS_USB_DEVICE_MEM_LP_MODE_M  (CNNT_SYS_USB_DEVICE_MEM_LP_MODE_V << CNNT_SYS_USB_DEVICE_MEM_LP_MODE_S)
+#define CNNT_SYS_USB_DEVICE_MEM_LP_MODE_V  0x00000003U
+#define CNNT_SYS_USB_DEVICE_MEM_LP_MODE_S  0
+/** CNNT_SYS_USB_DEVICE_MEM_LP_EN : R/W; bitpos: [2]; default: 0;
+ *  Set this bit to power down usb_device memory.
+ */
+#define CNNT_SYS_USB_DEVICE_MEM_LP_EN    (BIT(2))
+#define CNNT_SYS_USB_DEVICE_MEM_LP_EN_M  (CNNT_SYS_USB_DEVICE_MEM_LP_EN_V << CNNT_SYS_USB_DEVICE_MEM_LP_EN_S)
+#define CNNT_SYS_USB_DEVICE_MEM_LP_EN_V  0x00000001U
+#define CNNT_SYS_USB_DEVICE_MEM_LP_EN_S  2
+/** CNNT_SYS_USB_DEVICE_MEM_LP_FORCE_CTRL : R/W; bitpos: [3]; default: 0;
+ *  Set this bit to force software control usb_device (serial jtag) memory, disable
+ *  hardware control.
+ */
+#define CNNT_SYS_USB_DEVICE_MEM_LP_FORCE_CTRL    (BIT(3))
+#define CNNT_SYS_USB_DEVICE_MEM_LP_FORCE_CTRL_M  (CNNT_SYS_USB_DEVICE_MEM_LP_FORCE_CTRL_V << CNNT_SYS_USB_DEVICE_MEM_LP_FORCE_CTRL_S)
+#define CNNT_SYS_USB_DEVICE_MEM_LP_FORCE_CTRL_V  0x00000001U
+#define CNNT_SYS_USB_DEVICE_MEM_LP_FORCE_CTRL_S  3
+
+/** CNNT_SYS_GMAC_MEM_LP_CTRL_REG register
+ *  HP CORE0 & HP CORE1 memory power control register
+ */
+#define CNNT_SYS_GMAC_MEM_LP_CTRL_REG (DR_REG_CNNT_BASE + 0x1c)
+/** CNNT_SYS_GMAC_MEM_LP_MODE : R/W; bitpos: [1:0]; default: 2;
+ *  Configures gmac memory low power mode in low power stage.
+ *  0: deep sleep
+ *  1: light sleep
+ *  2(default): shut down
+ *  3: disable low power stage
+ */
+#define CNNT_SYS_GMAC_MEM_LP_MODE    0x00000003U
+#define CNNT_SYS_GMAC_MEM_LP_MODE_M  (CNNT_SYS_GMAC_MEM_LP_MODE_V << CNNT_SYS_GMAC_MEM_LP_MODE_S)
+#define CNNT_SYS_GMAC_MEM_LP_MODE_V  0x00000003U
+#define CNNT_SYS_GMAC_MEM_LP_MODE_S  0
+/** CNNT_SYS_GMAC_MEM_LP_EN : R/W; bitpos: [2]; default: 1;
+ *  Set this bit to power down gmac memory.
+ */
+#define CNNT_SYS_GMAC_MEM_LP_EN    (BIT(2))
+#define CNNT_SYS_GMAC_MEM_LP_EN_M  (CNNT_SYS_GMAC_MEM_LP_EN_V << CNNT_SYS_GMAC_MEM_LP_EN_S)
+#define CNNT_SYS_GMAC_MEM_LP_EN_V  0x00000001U
+#define CNNT_SYS_GMAC_MEM_LP_EN_S  2
+/** CNNT_SYS_GMAC_MEM_LP_FORCE_CTRL : R/W; bitpos: [3]; default: 0;
+ *  Set this bit to force software control gmac memory, disable hardware control.
+ */
+#define CNNT_SYS_GMAC_MEM_LP_FORCE_CTRL    (BIT(3))
+#define CNNT_SYS_GMAC_MEM_LP_FORCE_CTRL_M  (CNNT_SYS_GMAC_MEM_LP_FORCE_CTRL_V << CNNT_SYS_GMAC_MEM_LP_FORCE_CTRL_S)
+#define CNNT_SYS_GMAC_MEM_LP_FORCE_CTRL_V  0x00000001U
+#define CNNT_SYS_GMAC_MEM_LP_FORCE_CTRL_S  3
+
+/** CNNT_SYS_SPRF_MEM_AUX_CTRL_REG register
+ *  need_des
+ */
+#define CNNT_SYS_SPRF_MEM_AUX_CTRL_REG (DR_REG_CNNT_BASE + 0x20)
+/** CNNT_SYS_SPRF_MEM_AUX_CTRL : R/W; bitpos: [31:0]; default: 8304;
+ *  need_des
+ */
+#define CNNT_SYS_SPRF_MEM_AUX_CTRL    0xFFFFFFFFU
+#define CNNT_SYS_SPRF_MEM_AUX_CTRL_M  (CNNT_SYS_SPRF_MEM_AUX_CTRL_V << CNNT_SYS_SPRF_MEM_AUX_CTRL_S)
+#define CNNT_SYS_SPRF_MEM_AUX_CTRL_V  0xFFFFFFFFU
+#define CNNT_SYS_SPRF_MEM_AUX_CTRL_S  0
+
+/** CNNT_SYS_SDPRF_MEM_AUX_CTRL_REG register
+ *  need_des
+ */
+#define CNNT_SYS_SDPRF_MEM_AUX_CTRL_REG (DR_REG_CNNT_BASE + 0x24)
+/** CNNT_SYS_SDPRF_MEM_AUX_CTRL : R/W; bitpos: [31:0]; default: 8304;
+ *  need_des
+ */
+#define CNNT_SYS_SDPRF_MEM_AUX_CTRL    0xFFFFFFFFU
+#define CNNT_SYS_SDPRF_MEM_AUX_CTRL_M  (CNNT_SYS_SDPRF_MEM_AUX_CTRL_V << CNNT_SYS_SDPRF_MEM_AUX_CTRL_S)
+#define CNNT_SYS_SDPRF_MEM_AUX_CTRL_V  0xFFFFFFFFU
+#define CNNT_SYS_SDPRF_MEM_AUX_CTRL_S  0
+
+/** CNNT_SYS_HP_PAD_ULPI_CTRL_REG register
+ *  HP Clock Control Register.
+ */
+#define CNNT_SYS_HP_PAD_ULPI_CTRL_REG (DR_REG_CNNT_BASE + 0x28)
+/** CNNT_SYS_HP_PAD_ULPI_CLK_OUT_INV_EN : R/W; bitpos: [30]; default: 0;
+ *  PAD ULPI Clock output inv Enable, valid only when CNNT_SYS_HP_PAD_ULPI_CLK_OUT_EN
+ *  is 1.
+ */
+#define CNNT_SYS_HP_PAD_ULPI_CLK_OUT_INV_EN    (BIT(30))
+#define CNNT_SYS_HP_PAD_ULPI_CLK_OUT_INV_EN_M  (CNNT_SYS_HP_PAD_ULPI_CLK_OUT_INV_EN_V << CNNT_SYS_HP_PAD_ULPI_CLK_OUT_INV_EN_S)
+#define CNNT_SYS_HP_PAD_ULPI_CLK_OUT_INV_EN_V  0x00000001U
+#define CNNT_SYS_HP_PAD_ULPI_CLK_OUT_INV_EN_S  30
+/** CNNT_SYS_HP_PAD_ULPI_CLK_OUT_EN : R/W; bitpos: [31]; default: 0;
+ *  PAD ULPI Clock output Enable. 0: pad_ulpi_clk is used as input clk, 1: pad_ulpi_clk
+ *  is used as output clk
+ */
+#define CNNT_SYS_HP_PAD_ULPI_CLK_OUT_EN    (BIT(31))
+#define CNNT_SYS_HP_PAD_ULPI_CLK_OUT_EN_M  (CNNT_SYS_HP_PAD_ULPI_CLK_OUT_EN_V << CNNT_SYS_HP_PAD_ULPI_CLK_OUT_EN_S)
+#define CNNT_SYS_HP_PAD_ULPI_CLK_OUT_EN_V  0x00000001U
+#define CNNT_SYS_HP_PAD_ULPI_CLK_OUT_EN_S  31
+
+/** CNNT_SYS_USB_CLK_CTRL_REG register
+ *  HP USB Clock Reset Control Register.
+ */
+#define CNNT_SYS_USB_CLK_CTRL_REG (DR_REG_CNNT_BASE + 0x2c)
+/** CNNT_SYS_USB_48M_DIV_NUM : R/W; bitpos: [15:8]; default: 9;
+ *  usb 480m to 25m divide number.
+ */
+#define CNNT_SYS_USB_48M_DIV_NUM    0x000000FFU
+#define CNNT_SYS_USB_48M_DIV_NUM_M  (CNNT_SYS_USB_48M_DIV_NUM_V << CNNT_SYS_USB_48M_DIV_NUM_S)
+#define CNNT_SYS_USB_48M_DIV_NUM_V  0x000000FFU
+#define CNNT_SYS_USB_48M_DIV_NUM_S  8
+/** CNNT_SYS_USB_25M_DIV_NUM : R/W; bitpos: [23:16]; default: 19;
+ *  usb 500m to 25m divide number.
+ */
+#define CNNT_SYS_USB_25M_DIV_NUM    0x000000FFU
+#define CNNT_SYS_USB_25M_DIV_NUM_M  (CNNT_SYS_USB_25M_DIV_NUM_V << CNNT_SYS_USB_25M_DIV_NUM_S)
+#define CNNT_SYS_USB_25M_DIV_NUM_V  0x000000FFU
+#define CNNT_SYS_USB_25M_DIV_NUM_S  16
+/** CNNT_SYS_USB_12M_DIV_NUM : R/W; bitpos: [31:24]; default: 39;
+ *  usb 480m to 12m divide number.
+ */
+#define CNNT_SYS_USB_12M_DIV_NUM    0x000000FFU
+#define CNNT_SYS_USB_12M_DIV_NUM_M  (CNNT_SYS_USB_12M_DIV_NUM_V << CNNT_SYS_USB_12M_DIV_NUM_S)
+#define CNNT_SYS_USB_12M_DIV_NUM_V  0x000000FFU
+#define CNNT_SYS_USB_12M_DIV_NUM_S  24
+
+/** CNNT_SYS_USB_OTG20_CTRL_REG register
+ *  HP USB Clock Reset Control Register.
+ */
+#define CNNT_SYS_USB_OTG20_CTRL_REG (DR_REG_CNNT_BASE + 0x30)
+/** CNNT_SYS_USB_OTG20_UTMIFS_CLK_EN : R/W; bitpos: [23]; default: 1;
+ *  usb otg20 utmifs clk enable.
+ */
+#define CNNT_SYS_USB_OTG20_UTMIFS_CLK_EN    (BIT(23))
+#define CNNT_SYS_USB_OTG20_UTMIFS_CLK_EN_M  (CNNT_SYS_USB_OTG20_UTMIFS_CLK_EN_V << CNNT_SYS_USB_OTG20_UTMIFS_CLK_EN_S)
+#define CNNT_SYS_USB_OTG20_UTMIFS_CLK_EN_V  0x00000001U
+#define CNNT_SYS_USB_OTG20_UTMIFS_CLK_EN_S  23
+/** CNNT_SYS_USB_OTG20_ULPI_CLK_EN : R/W; bitpos: [24]; default: 0;
+ *  usb otg20 ulpi clk enable.
+ */
+#define CNNT_SYS_USB_OTG20_ULPI_CLK_EN    (BIT(24))
+#define CNNT_SYS_USB_OTG20_ULPI_CLK_EN_M  (CNNT_SYS_USB_OTG20_ULPI_CLK_EN_V << CNNT_SYS_USB_OTG20_ULPI_CLK_EN_S)
+#define CNNT_SYS_USB_OTG20_ULPI_CLK_EN_V  0x00000001U
+#define CNNT_SYS_USB_OTG20_ULPI_CLK_EN_S  24
+/** CNNT_SYS_USB_OTG20_PHYREF_CLK_SRC_SEL : R/W; bitpos: [26:25]; default: 0;
+ *  usb otg20 hs phy src sel. 2''d0: 12m, 2''d1: 25m, 2''d2: pad_hsphy_refclk.'
+ */
+#define CNNT_SYS_USB_OTG20_PHYREF_CLK_SRC_SEL    0x00000003U
+#define CNNT_SYS_USB_OTG20_PHYREF_CLK_SRC_SEL_M  (CNNT_SYS_USB_OTG20_PHYREF_CLK_SRC_SEL_V << CNNT_SYS_USB_OTG20_PHYREF_CLK_SRC_SEL_S)
+#define CNNT_SYS_USB_OTG20_PHYREF_CLK_SRC_SEL_V  0x00000003U
+#define CNNT_SYS_USB_OTG20_PHYREF_CLK_SRC_SEL_S  25
+/** CNNT_SYS_USB_OTG20_PHYREF_CLK_EN : R/W; bitpos: [27]; default: 0;
+ *  usb otg20 hs phy refclk enable.
+ */
+#define CNNT_SYS_USB_OTG20_PHYREF_CLK_EN    (BIT(27))
+#define CNNT_SYS_USB_OTG20_PHYREF_CLK_EN_M  (CNNT_SYS_USB_OTG20_PHYREF_CLK_EN_V << CNNT_SYS_USB_OTG20_PHYREF_CLK_EN_S)
+#define CNNT_SYS_USB_OTG20_PHYREF_CLK_EN_V  0x00000001U
+#define CNNT_SYS_USB_OTG20_PHYREF_CLK_EN_S  27
+/** CNNT_SYS_USB_OTG20_PHY_RST_EN : R/W; bitpos: [29]; default: 1;
+ *  usb otg20 phy reset en
+ */
+#define CNNT_SYS_USB_OTG20_PHY_RST_EN    (BIT(29))
+#define CNNT_SYS_USB_OTG20_PHY_RST_EN_M  (CNNT_SYS_USB_OTG20_PHY_RST_EN_V << CNNT_SYS_USB_OTG20_PHY_RST_EN_S)
+#define CNNT_SYS_USB_OTG20_PHY_RST_EN_V  0x00000001U
+#define CNNT_SYS_USB_OTG20_PHY_RST_EN_S  29
+/** CNNT_SYS_USB_OTG20_AHB_RST_EN : R/W; bitpos: [30]; default: 1;
+ *  usb otg20 ahb reset en
+ */
+#define CNNT_SYS_USB_OTG20_AHB_RST_EN    (BIT(30))
+#define CNNT_SYS_USB_OTG20_AHB_RST_EN_M  (CNNT_SYS_USB_OTG20_AHB_RST_EN_V << CNNT_SYS_USB_OTG20_AHB_RST_EN_S)
+#define CNNT_SYS_USB_OTG20_AHB_RST_EN_V  0x00000001U
+#define CNNT_SYS_USB_OTG20_AHB_RST_EN_S  30
+/** CNNT_SYS_USB_OTG20_APB_RST_EN : R/W; bitpos: [31]; default: 1;
+ *  usb otg20 apb reset en
+ */
+#define CNNT_SYS_USB_OTG20_APB_RST_EN    (BIT(31))
+#define CNNT_SYS_USB_OTG20_APB_RST_EN_M  (CNNT_SYS_USB_OTG20_APB_RST_EN_V << CNNT_SYS_USB_OTG20_APB_RST_EN_S)
+#define CNNT_SYS_USB_OTG20_APB_RST_EN_V  0x00000001U
+#define CNNT_SYS_USB_OTG20_APB_RST_EN_S  31
+
+/** CNNT_SYS_HP_USB_DEVICE_CTRL_REG register
+ *  HP USB Clock Reset Control Register.
+ */
+#define CNNT_SYS_HP_USB_DEVICE_CTRL_REG (DR_REG_CNNT_BASE + 0x34)
+/** CNNT_SYS_USB_DEVICE_48M_CLK_EN : R/W; bitpos: [30]; default: 1;
+ *  usb device fs phy clock enable.
+ */
+#define CNNT_SYS_USB_DEVICE_48M_CLK_EN    (BIT(30))
+#define CNNT_SYS_USB_DEVICE_48M_CLK_EN_M  (CNNT_SYS_USB_DEVICE_48M_CLK_EN_V << CNNT_SYS_USB_DEVICE_48M_CLK_EN_S)
+#define CNNT_SYS_USB_DEVICE_48M_CLK_EN_V  0x00000001U
+#define CNNT_SYS_USB_DEVICE_48M_CLK_EN_S  30
+/** CNNT_SYS_USB_DEVICE_RST_EN : R/W; bitpos: [31]; default: 0;
+ *  usb device reset en
+ */
+#define CNNT_SYS_USB_DEVICE_RST_EN    (BIT(31))
+#define CNNT_SYS_USB_DEVICE_RST_EN_M  (CNNT_SYS_USB_DEVICE_RST_EN_V << CNNT_SYS_USB_DEVICE_RST_EN_S)
+#define CNNT_SYS_USB_DEVICE_RST_EN_V  0x00000001U
+#define CNNT_SYS_USB_DEVICE_RST_EN_S  31
+
+/** CNNT_SYS_HP_SDMMC_CTRL_REG register
+ *  need_des
+ */
+#define CNNT_SYS_HP_SDMMC_CTRL_REG (DR_REG_CNNT_BASE + 0x38)
+/** CNNT_SYS_SDMMC_AHB2AXI_POST_WRITE_EN : R/W; bitpos: [29]; default: 0;
+ *  this reg is used to enable the post_write function of the ahb2axi bridge for sdmmc
+ */
+#define CNNT_SYS_SDMMC_AHB2AXI_POST_WRITE_EN    (BIT(29))
+#define CNNT_SYS_SDMMC_AHB2AXI_POST_WRITE_EN_M  (CNNT_SYS_SDMMC_AHB2AXI_POST_WRITE_EN_V << CNNT_SYS_SDMMC_AHB2AXI_POST_WRITE_EN_S)
+#define CNNT_SYS_SDMMC_AHB2AXI_POST_WRITE_EN_V  0x00000001U
+#define CNNT_SYS_SDMMC_AHB2AXI_POST_WRITE_EN_S  29
+/** CNNT_SYS_SDMMC_RST_EN : R/W; bitpos: [30]; default: 0;
+ *  hp sdmmc reset en
+ */
+#define CNNT_SYS_SDMMC_RST_EN    (BIT(30))
+#define CNNT_SYS_SDMMC_RST_EN_M  (CNNT_SYS_SDMMC_RST_EN_V << CNNT_SYS_SDMMC_RST_EN_S)
+#define CNNT_SYS_SDMMC_RST_EN_V  0x00000001U
+#define CNNT_SYS_SDMMC_RST_EN_S  30
+/** CNNT_SYS_SDMMC_FORCE_NORST : R/W; bitpos: [31]; default: 0;
+ *  hp sdmmc force norst
+ */
+#define CNNT_SYS_SDMMC_FORCE_NORST    (BIT(31))
+#define CNNT_SYS_SDMMC_FORCE_NORST_M  (CNNT_SYS_SDMMC_FORCE_NORST_V << CNNT_SYS_SDMMC_FORCE_NORST_S)
+#define CNNT_SYS_SDMMC_FORCE_NORST_V  0x00000001U
+#define CNNT_SYS_SDMMC_FORCE_NORST_S  31
+
+/** CNNT_SYS_HP_EMAC_CTRL_REG register
+ *  need_des
+ */
+#define CNNT_SYS_HP_EMAC_CTRL_REG (DR_REG_CNNT_BASE + 0x3c)
+/** CNNT_SYS_EMAC_USELESS_CLK_EN : R/W; bitpos: [0]; default: 0;
+ *  need_des
+ */
+#define CNNT_SYS_EMAC_USELESS_CLK_EN    (BIT(0))
+#define CNNT_SYS_EMAC_USELESS_CLK_EN_M  (CNNT_SYS_EMAC_USELESS_CLK_EN_V << CNNT_SYS_EMAC_USELESS_CLK_EN_S)
+#define CNNT_SYS_EMAC_USELESS_CLK_EN_V  0x00000001U
+#define CNNT_SYS_EMAC_USELESS_CLK_EN_S  0
+/** CNNT_SYS_EMAC_RST_EN : R/W; bitpos: [1]; default: 0;
+ *  need_des
+ */
+#define CNNT_SYS_EMAC_RST_EN    (BIT(1))
+#define CNNT_SYS_EMAC_RST_EN_M  (CNNT_SYS_EMAC_RST_EN_V << CNNT_SYS_EMAC_RST_EN_S)
+#define CNNT_SYS_EMAC_RST_EN_V  0x00000001U
+#define CNNT_SYS_EMAC_RST_EN_S  1
+/** CNNT_SYS_EMAC_FORCE_NORST : R/W; bitpos: [2]; default: 0;
+ *  need_des
+ */
+#define CNNT_SYS_EMAC_FORCE_NORST    (BIT(2))
+#define CNNT_SYS_EMAC_FORCE_NORST_M  (CNNT_SYS_EMAC_FORCE_NORST_V << CNNT_SYS_EMAC_FORCE_NORST_S)
+#define CNNT_SYS_EMAC_FORCE_NORST_V  0x00000001U
+#define CNNT_SYS_EMAC_FORCE_NORST_S  2
+
+/** CNNT_SYS_HP_EMAC_REF_CTRL_REG register
+ *  need_des
+ */
+#define CNNT_SYS_HP_EMAC_REF_CTRL_REG (DR_REG_CNNT_BASE + 0x40)
+/** CNNT_SYS_EMAC_REF_CLK_SEL : R/W; bitpos: [1:0]; default: 0;
+ *  select emac reference clock source. 0: mpll 500MHz, 1: cpll 300MHz.
+ */
+#define CNNT_SYS_EMAC_REF_CLK_SEL    0x00000003U
+#define CNNT_SYS_EMAC_REF_CLK_SEL_M  (CNNT_SYS_EMAC_REF_CLK_SEL_V << CNNT_SYS_EMAC_REF_CLK_SEL_S)
+#define CNNT_SYS_EMAC_REF_CLK_SEL_V  0x00000003U
+#define CNNT_SYS_EMAC_REF_CLK_SEL_S  0
+/** CNNT_SYS_EMAC_REF_CLK_EN : R/W; bitpos: [2]; default: 0;
+ *  Set as 1 to enable emac reference clock source selection
+ */
+#define CNNT_SYS_EMAC_REF_CLK_EN    (BIT(2))
+#define CNNT_SYS_EMAC_REF_CLK_EN_M  (CNNT_SYS_EMAC_REF_CLK_EN_V << CNNT_SYS_EMAC_REF_CLK_EN_S)
+#define CNNT_SYS_EMAC_REF_CLK_EN_V  0x00000001U
+#define CNNT_SYS_EMAC_REF_CLK_EN_S  2
+/** CNNT_SYS_EMAC_REF_50M_PAD_OUT_CLK_EN : R/W; bitpos: [3]; default: 0;
+ *  need_des
+ */
+#define CNNT_SYS_EMAC_REF_50M_PAD_OUT_CLK_EN    (BIT(3))
+#define CNNT_SYS_EMAC_REF_50M_PAD_OUT_CLK_EN_M  (CNNT_SYS_EMAC_REF_50M_PAD_OUT_CLK_EN_V << CNNT_SYS_EMAC_REF_50M_PAD_OUT_CLK_EN_S)
+#define CNNT_SYS_EMAC_REF_50M_PAD_OUT_CLK_EN_V  0x00000001U
+#define CNNT_SYS_EMAC_REF_50M_PAD_OUT_CLK_EN_S  3
+/** CNNT_SYS_EMAC_REF_CLK_DIV_NUM : R/W; bitpos: [15:8]; default: 0;
+ *  Divide number of the divider which is used to divide reference clock source.
+ */
+#define CNNT_SYS_EMAC_REF_CLK_DIV_NUM    0x000000FFU
+#define CNNT_SYS_EMAC_REF_CLK_DIV_NUM_M  (CNNT_SYS_EMAC_REF_CLK_DIV_NUM_V << CNNT_SYS_EMAC_REF_CLK_DIV_NUM_S)
+#define CNNT_SYS_EMAC_REF_CLK_DIV_NUM_V  0x000000FFU
+#define CNNT_SYS_EMAC_REF_CLK_DIV_NUM_S  8
+
+/** CNNT_SYS_HP_EMAC_RMII_PAD_CTRL_REG register
+ *  need_des
+ */
+#define CNNT_SYS_HP_EMAC_RMII_PAD_CTRL_REG (DR_REG_CNNT_BASE + 0x44)
+/** CNNT_SYS_EMAC_RMII_PAD_CLK_EN : R/W; bitpos: [1]; default: 0;
+ *  need_des
+ */
+#define CNNT_SYS_EMAC_RMII_PAD_CLK_EN    (BIT(1))
+#define CNNT_SYS_EMAC_RMII_PAD_CLK_EN_M  (CNNT_SYS_EMAC_RMII_PAD_CLK_EN_V << CNNT_SYS_EMAC_RMII_PAD_CLK_EN_S)
+#define CNNT_SYS_EMAC_RMII_PAD_CLK_EN_V  0x00000001U
+#define CNNT_SYS_EMAC_RMII_PAD_CLK_EN_S  1
+/** CNNT_SYS_EMAC_RMII_PAD_CLK_INV_EN : R/W; bitpos: [2]; default: 0;
+ *  need_des
+ */
+#define CNNT_SYS_EMAC_RMII_PAD_CLK_INV_EN    (BIT(2))
+#define CNNT_SYS_EMAC_RMII_PAD_CLK_INV_EN_M  (CNNT_SYS_EMAC_RMII_PAD_CLK_INV_EN_V << CNNT_SYS_EMAC_RMII_PAD_CLK_INV_EN_S)
+#define CNNT_SYS_EMAC_RMII_PAD_CLK_INV_EN_V  0x00000001U
+#define CNNT_SYS_EMAC_RMII_PAD_CLK_INV_EN_S  2
+
+/** CNNT_SYS_HP_EMAC_RMII_CTRL_REG register
+ *  need_des
+ */
+#define CNNT_SYS_HP_EMAC_RMII_CTRL_REG (DR_REG_CNNT_BASE + 0x48)
+/** CNNT_SYS_EMAC_RMII_CLK_SEL : R/W; bitpos: [0]; default: 0;
+ *  need_des
+ */
+#define CNNT_SYS_EMAC_RMII_CLK_SEL    (BIT(0))
+#define CNNT_SYS_EMAC_RMII_CLK_SEL_M  (CNNT_SYS_EMAC_RMII_CLK_SEL_V << CNNT_SYS_EMAC_RMII_CLK_SEL_S)
+#define CNNT_SYS_EMAC_RMII_CLK_SEL_V  0x00000001U
+#define CNNT_SYS_EMAC_RMII_CLK_SEL_S  0
+/** CNNT_SYS_EMAC_RMII_CLK_EN : R/W; bitpos: [1]; default: 0;
+ *  need_des
+ */
+#define CNNT_SYS_EMAC_RMII_CLK_EN    (BIT(1))
+#define CNNT_SYS_EMAC_RMII_CLK_EN_M  (CNNT_SYS_EMAC_RMII_CLK_EN_V << CNNT_SYS_EMAC_RMII_CLK_EN_S)
+#define CNNT_SYS_EMAC_RMII_CLK_EN_V  0x00000001U
+#define CNNT_SYS_EMAC_RMII_CLK_EN_S  1
+/** CNNT_SYS_EMAC_RMII_PAD_OUT_CLK_EN : R/W; bitpos: [2]; default: 0;
+ *  need_des
+ */
+#define CNNT_SYS_EMAC_RMII_PAD_OUT_CLK_EN    (BIT(2))
+#define CNNT_SYS_EMAC_RMII_PAD_OUT_CLK_EN_M  (CNNT_SYS_EMAC_RMII_PAD_OUT_CLK_EN_V << CNNT_SYS_EMAC_RMII_PAD_OUT_CLK_EN_S)
+#define CNNT_SYS_EMAC_RMII_PAD_OUT_CLK_EN_V  0x00000001U
+#define CNNT_SYS_EMAC_RMII_PAD_OUT_CLK_EN_S  2
+/** CNNT_SYS_EMAC_RXTX_CLK_DIV_NUM : R/W; bitpos: [12:8]; default: 0;
+ *  need_des
+ */
+#define CNNT_SYS_EMAC_RXTX_CLK_DIV_NUM    0x0000001FU
+#define CNNT_SYS_EMAC_RXTX_CLK_DIV_NUM_M  (CNNT_SYS_EMAC_RXTX_CLK_DIV_NUM_V << CNNT_SYS_EMAC_RXTX_CLK_DIV_NUM_S)
+#define CNNT_SYS_EMAC_RXTX_CLK_DIV_NUM_V  0x0000001FU
+#define CNNT_SYS_EMAC_RXTX_CLK_DIV_NUM_S  8
+
+/** CNNT_SYS_HP_EMAC_RX_CTRL_REG register
+ *  need_des
+ */
+#define CNNT_SYS_HP_EMAC_RX_CTRL_REG (DR_REG_CNNT_BASE + 0x4c)
+/** CNNT_SYS_EMAC_RX_PAD_CLK_EN : R/W; bitpos: [0]; default: 0;
+ *  need_des
+ */
+#define CNNT_SYS_EMAC_RX_PAD_CLK_EN    (BIT(0))
+#define CNNT_SYS_EMAC_RX_PAD_CLK_EN_M  (CNNT_SYS_EMAC_RX_PAD_CLK_EN_V << CNNT_SYS_EMAC_RX_PAD_CLK_EN_S)
+#define CNNT_SYS_EMAC_RX_PAD_CLK_EN_V  0x00000001U
+#define CNNT_SYS_EMAC_RX_PAD_CLK_EN_S  0
+/** CNNT_SYS_EMAC_RX_PAD_CLK_INV_EN : R/W; bitpos: [1]; default: 0;
+ *  need_des
+ */
+#define CNNT_SYS_EMAC_RX_PAD_CLK_INV_EN    (BIT(1))
+#define CNNT_SYS_EMAC_RX_PAD_CLK_INV_EN_M  (CNNT_SYS_EMAC_RX_PAD_CLK_INV_EN_V << CNNT_SYS_EMAC_RX_PAD_CLK_INV_EN_S)
+#define CNNT_SYS_EMAC_RX_PAD_CLK_INV_EN_V  0x00000001U
+#define CNNT_SYS_EMAC_RX_PAD_CLK_INV_EN_S  1
+/** CNNT_SYS_EMAC_RX_CLK_SEL : R/W; bitpos: [2]; default: 0;
+ *  need_des
+ */
+#define CNNT_SYS_EMAC_RX_CLK_SEL    (BIT(2))
+#define CNNT_SYS_EMAC_RX_CLK_SEL_M  (CNNT_SYS_EMAC_RX_CLK_SEL_V << CNNT_SYS_EMAC_RX_CLK_SEL_S)
+#define CNNT_SYS_EMAC_RX_CLK_SEL_V  0x00000001U
+#define CNNT_SYS_EMAC_RX_CLK_SEL_S  2
+/** CNNT_SYS_EMAC_RX_180_CLK_EN : R/W; bitpos: [3]; default: 0;
+ *  need_des
+ */
+#define CNNT_SYS_EMAC_RX_180_CLK_EN    (BIT(3))
+#define CNNT_SYS_EMAC_RX_180_CLK_EN_M  (CNNT_SYS_EMAC_RX_180_CLK_EN_V << CNNT_SYS_EMAC_RX_180_CLK_EN_S)
+#define CNNT_SYS_EMAC_RX_180_CLK_EN_V  0x00000001U
+#define CNNT_SYS_EMAC_RX_180_CLK_EN_S  3
+
+/** CNNT_SYS_HP_EMAC_TX_CTRL_REG register
+ *  need_des
+ */
+#define CNNT_SYS_HP_EMAC_TX_CTRL_REG (DR_REG_CNNT_BASE + 0x50)
+/** CNNT_SYS_EMAC_TX_PAD_CLK_EN : R/W; bitpos: [0]; default: 0;
+ *  need_des
+ */
+#define CNNT_SYS_EMAC_TX_PAD_CLK_EN    (BIT(0))
+#define CNNT_SYS_EMAC_TX_PAD_CLK_EN_M  (CNNT_SYS_EMAC_TX_PAD_CLK_EN_V << CNNT_SYS_EMAC_TX_PAD_CLK_EN_S)
+#define CNNT_SYS_EMAC_TX_PAD_CLK_EN_V  0x00000001U
+#define CNNT_SYS_EMAC_TX_PAD_CLK_EN_S  0
+/** CNNT_SYS_EMAC_TX_PAD_CLK_INV_EN : R/W; bitpos: [1]; default: 0;
+ *  need_des
+ */
+#define CNNT_SYS_EMAC_TX_PAD_CLK_INV_EN    (BIT(1))
+#define CNNT_SYS_EMAC_TX_PAD_CLK_INV_EN_M  (CNNT_SYS_EMAC_TX_PAD_CLK_INV_EN_V << CNNT_SYS_EMAC_TX_PAD_CLK_INV_EN_S)
+#define CNNT_SYS_EMAC_TX_PAD_CLK_INV_EN_V  0x00000001U
+#define CNNT_SYS_EMAC_TX_PAD_CLK_INV_EN_S  1
+/** CNNT_SYS_EMAC_TX_CLK_SEL : R/W; bitpos: [2]; default: 0;
+ *  need_des
+ */
+#define CNNT_SYS_EMAC_TX_CLK_SEL    (BIT(2))
+#define CNNT_SYS_EMAC_TX_CLK_SEL_M  (CNNT_SYS_EMAC_TX_CLK_SEL_V << CNNT_SYS_EMAC_TX_CLK_SEL_S)
+#define CNNT_SYS_EMAC_TX_CLK_SEL_V  0x00000001U
+#define CNNT_SYS_EMAC_TX_CLK_SEL_S  2
+/** CNNT_SYS_EMAC_TX_180_CLK_EN : R/W; bitpos: [3]; default: 0;
+ *  need_des
+ */
+#define CNNT_SYS_EMAC_TX_180_CLK_EN    (BIT(3))
+#define CNNT_SYS_EMAC_TX_180_CLK_EN_M  (CNNT_SYS_EMAC_TX_180_CLK_EN_V << CNNT_SYS_EMAC_TX_180_CLK_EN_S)
+#define CNNT_SYS_EMAC_TX_180_CLK_EN_V  0x00000001U
+#define CNNT_SYS_EMAC_TX_180_CLK_EN_S  3
+
+/** CNNT_SYS_HP_EMAC_PTP_CTRL_REG register
+ *  need_des
+ */
+#define CNNT_SYS_HP_EMAC_PTP_CTRL_REG (DR_REG_CNNT_BASE + 0x54)
+/** CNNT_SYS_EMAC_PTP_REF_CLK_EN : R/W; bitpos: [0]; default: 0;
+ *  Set as 1 to enable emac PTP clock source selection.
+ */
+#define CNNT_SYS_EMAC_PTP_REF_CLK_EN    (BIT(0))
+#define CNNT_SYS_EMAC_PTP_REF_CLK_EN_M  (CNNT_SYS_EMAC_PTP_REF_CLK_EN_V << CNNT_SYS_EMAC_PTP_REF_CLK_EN_S)
+#define CNNT_SYS_EMAC_PTP_REF_CLK_EN_V  0x00000001U
+#define CNNT_SYS_EMAC_PTP_REF_CLK_EN_S  0
+/** CNNT_SYS_EMAC_PTP_REF_CLK_SEL : R/W; bitpos: [1]; default: 0;
+ *  select emac PTP clock source. 0: xtal clock, 1: 80MHz internal clock.
+ */
+#define CNNT_SYS_EMAC_PTP_REF_CLK_SEL    (BIT(1))
+#define CNNT_SYS_EMAC_PTP_REF_CLK_SEL_M  (CNNT_SYS_EMAC_PTP_REF_CLK_SEL_V << CNNT_SYS_EMAC_PTP_REF_CLK_SEL_S)
+#define CNNT_SYS_EMAC_PTP_REF_CLK_SEL_V  0x00000001U
+#define CNNT_SYS_EMAC_PTP_REF_CLK_SEL_S  1
+
+/** CNNT_SYS_CNNT_IOMUX_CTRL0_REG register
+ *  need_des
+ */
+#define CNNT_SYS_CNNT_IOMUX_CTRL0_REG (DR_REG_CNNT_BASE + 0x58)
+/** CNNT_SYS_REG_CNNT_IOMUX_APB_RST_EN : R/W; bitpos: [0]; default: 0;
+ *  cnnt_iomux rst en
+ */
+#define CNNT_SYS_REG_CNNT_IOMUX_APB_RST_EN    (BIT(0))
+#define CNNT_SYS_REG_CNNT_IOMUX_APB_RST_EN_M  (CNNT_SYS_REG_CNNT_IOMUX_APB_RST_EN_V << CNNT_SYS_REG_CNNT_IOMUX_APB_RST_EN_S)
+#define CNNT_SYS_REG_CNNT_IOMUX_APB_RST_EN_V  0x00000001U
+#define CNNT_SYS_REG_CNNT_IOMUX_APB_RST_EN_S  0
+
+/** CNNT_SYS_SPRAM_MEM_AUX_CTRL_REG register
+ *  need_des
+ */
+#define CNNT_SYS_SPRAM_MEM_AUX_CTRL_REG (DR_REG_CNNT_BASE + 0x5c)
+/** CNNT_SYS_SPRAM_MEM_AUX_CTRL : R/W; bitpos: [31:0]; default: 8304;
+ *  need_des
+ */
+#define CNNT_SYS_SPRAM_MEM_AUX_CTRL    0xFFFFFFFFU
+#define CNNT_SYS_SPRAM_MEM_AUX_CTRL_M  (CNNT_SYS_SPRAM_MEM_AUX_CTRL_V << CNNT_SYS_SPRAM_MEM_AUX_CTRL_S)
+#define CNNT_SYS_SPRAM_MEM_AUX_CTRL_V  0xFFFFFFFFU
+#define CNNT_SYS_SPRAM_MEM_AUX_CTRL_S  0
+
+/** CNNT_SYS_GMAC_CTRL0_REG register
+ *  N/A
+ */
+#define CNNT_SYS_GMAC_CTRL0_REG (DR_REG_CNNT_BASE + 0x60)
+/** CNNT_SYS_PTP_PPS : RO; bitpos: [0]; default: 0;
+ *  N/A
+ */
+#define CNNT_SYS_PTP_PPS    (BIT(0))
+#define CNNT_SYS_PTP_PPS_M  (CNNT_SYS_PTP_PPS_V << CNNT_SYS_PTP_PPS_S)
+#define CNNT_SYS_PTP_PPS_V  0x00000001U
+#define CNNT_SYS_PTP_PPS_S  0
+/** CNNT_SYS_SBD_FLOWCTRL : R/W; bitpos: [1]; default: 0;
+ *  N/A
+ */
+#define CNNT_SYS_SBD_FLOWCTRL    (BIT(1))
+#define CNNT_SYS_SBD_FLOWCTRL_M  (CNNT_SYS_SBD_FLOWCTRL_V << CNNT_SYS_SBD_FLOWCTRL_S)
+#define CNNT_SYS_SBD_FLOWCTRL_V  0x00000001U
+#define CNNT_SYS_SBD_FLOWCTRL_S  1
+/** CNNT_SYS_PHY_INTF_SEL : R/W; bitpos: [4:2]; default: 0;
+ *  N/A
+ */
+#define CNNT_SYS_PHY_INTF_SEL    0x00000007U
+#define CNNT_SYS_PHY_INTF_SEL_M  (CNNT_SYS_PHY_INTF_SEL_V << CNNT_SYS_PHY_INTF_SEL_S)
+#define CNNT_SYS_PHY_INTF_SEL_V  0x00000007U
+#define CNNT_SYS_PHY_INTF_SEL_S  2
+/** CNNT_SYS_GMAC_MEM_CLK_FORCE_ON : R/W; bitpos: [5]; default: 0;
+ *  N/A
+ */
+#define CNNT_SYS_GMAC_MEM_CLK_FORCE_ON    (BIT(5))
+#define CNNT_SYS_GMAC_MEM_CLK_FORCE_ON_M  (CNNT_SYS_GMAC_MEM_CLK_FORCE_ON_V << CNNT_SYS_GMAC_MEM_CLK_FORCE_ON_S)
+#define CNNT_SYS_GMAC_MEM_CLK_FORCE_ON_V  0x00000001U
+#define CNNT_SYS_GMAC_MEM_CLK_FORCE_ON_S  5
+/** CNNT_SYS_GMAC_RST_CLK_TX_N : RO; bitpos: [6]; default: 0;
+ *  N/A
+ */
+#define CNNT_SYS_GMAC_RST_CLK_TX_N    (BIT(6))
+#define CNNT_SYS_GMAC_RST_CLK_TX_N_M  (CNNT_SYS_GMAC_RST_CLK_TX_N_V << CNNT_SYS_GMAC_RST_CLK_TX_N_S)
+#define CNNT_SYS_GMAC_RST_CLK_TX_N_V  0x00000001U
+#define CNNT_SYS_GMAC_RST_CLK_TX_N_S  6
+/** CNNT_SYS_GMAC_RST_CLK_RX_N : RO; bitpos: [7]; default: 0;
+ *  N/A
+ */
+#define CNNT_SYS_GMAC_RST_CLK_RX_N    (BIT(7))
+#define CNNT_SYS_GMAC_RST_CLK_RX_N_M  (CNNT_SYS_GMAC_RST_CLK_RX_N_V << CNNT_SYS_GMAC_RST_CLK_RX_N_S)
+#define CNNT_SYS_GMAC_RST_CLK_RX_N_V  0x00000001U
+#define CNNT_SYS_GMAC_RST_CLK_RX_N_S  7
+/** CNNT_SYS_GMAC_CACTIVE : RO; bitpos: [8]; default: 0;
+ *  this signal indicates that the GMAC-AXI requires its clock signal , 1 : required ,0
+ *  : not required
+ */
+#define CNNT_SYS_GMAC_CACTIVE    (BIT(8))
+#define CNNT_SYS_GMAC_CACTIVE_M  (CNNT_SYS_GMAC_CACTIVE_V << CNNT_SYS_GMAC_CACTIVE_S)
+#define CNNT_SYS_GMAC_CACTIVE_V  0x00000001U
+#define CNNT_SYS_GMAC_CACTIVE_S  8
+/** CNNT_SYS_GMAC_CSYSACK : RO; bitpos: [9]; default: 0;
+ *  this signal is the acknowledgement from the GMAC-AXI to the system for low-power
+ *  request ,active high
+ */
+#define CNNT_SYS_GMAC_CSYSACK    (BIT(9))
+#define CNNT_SYS_GMAC_CSYSACK_M  (CNNT_SYS_GMAC_CSYSACK_V << CNNT_SYS_GMAC_CSYSACK_S)
+#define CNNT_SYS_GMAC_CSYSACK_V  0x00000001U
+#define CNNT_SYS_GMAC_CSYSACK_S  9
+/** CNNT_SYS_GMAC_CSYSREQ : R/W; bitpos: [10]; default: 0;
+ *  clock controller system low-power request , when asserted low ,indicates the
+ *  controller hs requested the GMAX-AXI to enter a lowpower state
+ */
+#define CNNT_SYS_GMAC_CSYSREQ    (BIT(10))
+#define CNNT_SYS_GMAC_CSYSREQ_M  (CNNT_SYS_GMAC_CSYSREQ_V << CNNT_SYS_GMAC_CSYSREQ_S)
+#define CNNT_SYS_GMAC_CSYSREQ_V  0x00000001U
+#define CNNT_SYS_GMAC_CSYSREQ_S  10
+/** CNNT_SYS_GMAC_APB_POSTW_EN : R/W; bitpos: [11]; default: 0;
+ *  N/A
+ */
+#define CNNT_SYS_GMAC_APB_POSTW_EN    (BIT(11))
+#define CNNT_SYS_GMAC_APB_POSTW_EN_M  (CNNT_SYS_GMAC_APB_POSTW_EN_V << CNNT_SYS_GMAC_APB_POSTW_EN_S)
+#define CNNT_SYS_GMAC_APB_POSTW_EN_V  0x00000001U
+#define CNNT_SYS_GMAC_APB_POSTW_EN_S  11
+/** CNNT_SYS_GMAC_MEM_PRDYN : RO; bitpos: [12]; default: 1;
+ *  record memory power status
+ */
+#define CNNT_SYS_GMAC_MEM_PRDYN    (BIT(12))
+#define CNNT_SYS_GMAC_MEM_PRDYN_M  (CNNT_SYS_GMAC_MEM_PRDYN_V << CNNT_SYS_GMAC_MEM_PRDYN_S)
+#define CNNT_SYS_GMAC_MEM_PRDYN_V  0x00000001U
+#define CNNT_SYS_GMAC_MEM_PRDYN_S  12
+
+/** CNNT_SYS_GMAC_CTRL1_REG register
+ *  N/A
+ */
+#define CNNT_SYS_GMAC_CTRL1_REG (DR_REG_CNNT_BASE + 0x64)
+/** CNNT_SYS_PTP_TIMESTAMP_L : RO; bitpos: [31:0]; default: 0;
+ *  N/A
+ */
+#define CNNT_SYS_PTP_TIMESTAMP_L    0xFFFFFFFFU
+#define CNNT_SYS_PTP_TIMESTAMP_L_M  (CNNT_SYS_PTP_TIMESTAMP_L_V << CNNT_SYS_PTP_TIMESTAMP_L_S)
+#define CNNT_SYS_PTP_TIMESTAMP_L_V  0xFFFFFFFFU
+#define CNNT_SYS_PTP_TIMESTAMP_L_S  0
+
+/** CNNT_SYS_GMAC_CTRL2_REG register
+ *  N/A
+ */
+#define CNNT_SYS_GMAC_CTRL2_REG (DR_REG_CNNT_BASE + 0x68)
+/** CNNT_SYS_PTP_TIMESTAMP_H : RO; bitpos: [31:0]; default: 0;
+ *  N/A
+ */
+#define CNNT_SYS_PTP_TIMESTAMP_H    0xFFFFFFFFU
+#define CNNT_SYS_PTP_TIMESTAMP_H_M  (CNNT_SYS_PTP_TIMESTAMP_H_V << CNNT_SYS_PTP_TIMESTAMP_H_S)
+#define CNNT_SYS_PTP_TIMESTAMP_H_V  0xFFFFFFFFU
+#define CNNT_SYS_PTP_TIMESTAMP_H_S  0
+
+#ifdef __cplusplus
+}
+#endif

@@ -1,0 +1,896 @@
+/**
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ *
+ *  SPDX-License-Identifier: Apache-2.0
+ */
+#pragma once
+
+#include <stdint.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/** Group: Region filter enable register */
+/** Type of region_filter_en register
+ *  Region filter enable register
+ */
+typedef union {
+    struct {
+        /** region_filter_en : R/W; bitpos: [15:0]; default: 1;
+         *  Configure bit $n (0-15) to enable region $n.
+         *  0: disable
+         *  1: enable
+         */
+        uint32_t region_filter_en:16;
+        uint32_t reserved_16:16;
+    };
+    uint32_t val;
+} hp_apm_region_filter_en_reg_t;
+
+
+/** Group: Region address register */
+/** Type of regionn_addr_start register
+ *  Region address register
+ */
+typedef union {
+    struct {
+        /** regionn_addr_start : R/W; bitpos: [31:0]; default: 0;
+         *  Configures start address of region n.
+         */
+        uint32_t regionn_addr_start:32;
+    };
+    uint32_t val;
+} hp_apm_regionn_addr_start_reg_t;
+
+/** Type of regionn_addr_end register
+ *  Region address register
+ */
+typedef union {
+    struct {
+        /** regionn_addr_end : R/W; bitpos: [31:0]; default: 4294967295;
+         *  Configures end address of region n.
+         */
+        uint32_t regionn_addr_end:32;
+    };
+    uint32_t val;
+} hp_apm_regionn_addr_end_reg_t;
+
+
+/** Group: Region access authority attribute register */
+/** Type of regionn_attr register
+ *  Region access authority attribute register
+ */
+typedef union {
+    struct {
+        /** regionn_r0_x : R/W; bitpos: [0]; default: 0;
+         *  Configures the execution authority of REE_MODE 0 in region n.
+         */
+        uint32_t regionn_r0_x:1;
+        /** regionn_r0_w : R/W; bitpos: [1]; default: 0;
+         *  Configures the write authority of REE_MODE 0 in region n.
+         */
+        uint32_t regionn_r0_w:1;
+        /** regionn_r0_r : R/W; bitpos: [2]; default: 0;
+         *  Configures the read authority of REE_MODE 0 in region n.
+         */
+        uint32_t regionn_r0_r:1;
+        uint32_t reserved_3:1;
+        /** regionn_r1_x : R/W; bitpos: [4]; default: 0;
+         *  Configures the execution authority of REE_MODE 1 in region n.
+         */
+        uint32_t regionn_r1_x:1;
+        /** regionn_r1_w : R/W; bitpos: [5]; default: 0;
+         *  Configures the write authority of REE_MODE 1 in region n.
+         */
+        uint32_t regionn_r1_w:1;
+        /** regionn_r1_r : R/W; bitpos: [6]; default: 0;
+         *  Configures the read authority of REE_MODE 1 in region n.
+         */
+        uint32_t regionn_r1_r:1;
+        uint32_t reserved_7:1;
+        /** regionn_r2_x : R/W; bitpos: [8]; default: 0;
+         *  Configures the execution authority of REE_MODE 2 in region n.
+         */
+        uint32_t regionn_r2_x:1;
+        /** regionn_r2_w : R/W; bitpos: [9]; default: 0;
+         *  Configures the write authority of REE_MODE 2 in region n.
+         */
+        uint32_t regionn_r2_w:1;
+        /** regionn_r2_r : R/W; bitpos: [10]; default: 0;
+         *  Configures the read authority of REE_MODE 2 in region n.
+         */
+        uint32_t regionn_r2_r:1;
+        uint32_t reserved_11:1;
+        /** regionn_tee_x : R/W; bitpos: [12]; default: 1;
+         *  Configures the execution authority of TEE_MODE in region n.
+         */
+        uint32_t regionn_tee_x:1;
+        /** regionn_tee_w : R/W; bitpos: [13]; default: 1;
+         *  Configures the write authority of TEE_MODE in region n.
+         */
+        uint32_t regionn_tee_w:1;
+        /** regionn_tee_r : R/W; bitpos: [14]; default: 1;
+         *  Configures the read authority of TEE_MODE in region n.
+         */
+        uint32_t regionn_tee_r:1;
+        uint32_t reserved_15:1;
+        /** regionn_lock : R/W; bitpos: [16]; default: 0;
+         *  Set 1 to lock region0 configuration
+         */
+        uint32_t regionn_lock:1;
+        uint32_t reserved_17:15;
+    };
+    uint32_t val;
+} hp_apm_regionn_attr_reg_t;
+
+
+/** Group: function control register */
+/** Type of func_ctrl register
+ *  APM function control register
+ */
+typedef union {
+    struct {
+        /** m0_func_en : R/W; bitpos: [0]; default: 1;
+         *  PMS M0 function enable
+         */
+        uint32_t m0_func_en:1;
+        /** m1_func_en : R/W; bitpos: [1]; default: 1;
+         *  PMS M1 function enable
+         */
+        uint32_t m1_func_en:1;
+        /** m2_func_en : R/W; bitpos: [2]; default: 1;
+         *  PMS M2 function enable
+         */
+        uint32_t m2_func_en:1;
+        /** m3_func_en : R/W; bitpos: [3]; default: 1;
+         *  PMS M3 function enable
+         */
+        uint32_t m3_func_en:1;
+        /** m4_func_en : R/W; bitpos: [4]; default: 1;
+         *  PMS M4 function enable
+         */
+        uint32_t m4_func_en:1;
+        /** m5_func_en : R/W; bitpos: [5]; default: 1;
+         *  PMS M5 function enable
+         */
+        uint32_t m5_func_en:1;
+        /** m6_func_en : R/W; bitpos: [6]; default: 1;
+         *  PMS M6 function enable
+         */
+        uint32_t m6_func_en:1;
+        uint32_t reserved_7:25;
+    };
+    uint32_t val;
+} hp_apm_func_ctrl_reg_t;
+
+
+/** Group: M0 status register */
+/** Type of m0_status register
+ *  M0 status register
+ */
+typedef union {
+    struct {
+        /** m0_exception_status : RO; bitpos: [1:0]; default: 0;
+         *  Represents exception status.
+         *  bit0: 1 represents authority_exception
+         *  bit1: 1 represents space_exception
+         */
+        uint32_t m0_exception_status:2;
+        uint32_t reserved_2:30;
+    };
+    uint32_t val;
+} hp_apm_m0_status_reg_t;
+
+
+/** Group: M0 status clear register */
+/** Type of m0_status_clr register
+ *  M0 status clear register
+ */
+typedef union {
+    struct {
+        /** m0_exception_status_clr : WT; bitpos: [0]; default: 0;
+         *  Configures to clear exception status.
+         */
+        uint32_t m0_exception_status_clr:1;
+        uint32_t reserved_1:31;
+    };
+    uint32_t val;
+} hp_apm_m0_status_clr_reg_t;
+
+
+/** Group: M0 exception_info0 register */
+/** Type of m0_exception_info0 register
+ *  M0 exception_info0 register
+ */
+typedef union {
+    struct {
+        /** m0_exception_region : RO; bitpos: [15:0]; default: 0;
+         *  Represents exception region.
+         */
+        uint32_t m0_exception_region:16;
+        /** m0_exception_mode : RO; bitpos: [17:16]; default: 0;
+         *  Represents exception mode.
+         */
+        uint32_t m0_exception_mode:2;
+        /** m0_exception_id : RO; bitpos: [23:18]; default: 0;
+         *  Represents exception id information.
+         */
+        uint32_t m0_exception_id:6;
+        uint32_t reserved_24:8;
+    };
+    uint32_t val;
+} hp_apm_m0_exception_info0_reg_t;
+
+
+/** Group: M0 exception_info1 register */
+/** Type of m0_exception_info1 register
+ *  M0 exception_info1 register
+ */
+typedef union {
+    struct {
+        /** m0_exception_addr : RO; bitpos: [31:0]; default: 0;
+         *  Represents exception addr.
+         */
+        uint32_t m0_exception_addr:32;
+    };
+    uint32_t val;
+} hp_apm_m0_exception_info1_reg_t;
+
+
+/** Group: M1 status register */
+/** Type of m1_status register
+ *  M1 status register
+ */
+typedef union {
+    struct {
+        /** m1_exception_status : RO; bitpos: [1:0]; default: 0;
+         *  Represents exception status.
+         *  bit0: 1 represents authority_exception
+         *  bit1: 1 represents space_exception
+         */
+        uint32_t m1_exception_status:2;
+        uint32_t reserved_2:30;
+    };
+    uint32_t val;
+} hp_apm_m1_status_reg_t;
+
+
+/** Group: M1 status clear register */
+/** Type of m1_status_clr register
+ *  M1 status clear register
+ */
+typedef union {
+    struct {
+        /** m1_exception_status_clr : WT; bitpos: [0]; default: 0;
+         *  Configures to clear exception status.
+         */
+        uint32_t m1_exception_status_clr:1;
+        uint32_t reserved_1:31;
+    };
+    uint32_t val;
+} hp_apm_m1_status_clr_reg_t;
+
+
+/** Group: M1 exception_info0 register */
+/** Type of m1_exception_info0 register
+ *  M1 exception_info0 register
+ */
+typedef union {
+    struct {
+        /** m1_exception_region : RO; bitpos: [15:0]; default: 0;
+         *  Represents exception region.
+         */
+        uint32_t m1_exception_region:16;
+        /** m1_exception_mode : RO; bitpos: [17:16]; default: 0;
+         *  Represents exception mode.
+         */
+        uint32_t m1_exception_mode:2;
+        /** m1_exception_id : RO; bitpos: [23:18]; default: 0;
+         *  Represents exception id information.
+         */
+        uint32_t m1_exception_id:6;
+        uint32_t reserved_24:8;
+    };
+    uint32_t val;
+} hp_apm_m1_exception_info0_reg_t;
+
+
+/** Group: M1 exception_info1 register */
+/** Type of m1_exception_info1 register
+ *  M1 exception_info1 register
+ */
+typedef union {
+    struct {
+        /** m1_exception_addr : RO; bitpos: [31:0]; default: 0;
+         *  Represents exception addr.
+         */
+        uint32_t m1_exception_addr:32;
+    };
+    uint32_t val;
+} hp_apm_m1_exception_info1_reg_t;
+
+
+/** Group: M2 status register */
+/** Type of m2_status register
+ *  M2 status register
+ */
+typedef union {
+    struct {
+        /** m2_exception_status : RO; bitpos: [1:0]; default: 0;
+         *  Represents exception status.
+         *  bit0: 1 represents authority_exception
+         *  bit1: 1 represents space_exception
+         */
+        uint32_t m2_exception_status:2;
+        uint32_t reserved_2:30;
+    };
+    uint32_t val;
+} hp_apm_m2_status_reg_t;
+
+
+/** Group: M2 status clear register */
+/** Type of m2_status_clr register
+ *  M2 status clear register
+ */
+typedef union {
+    struct {
+        /** m2_exception_status_clr : WT; bitpos: [0]; default: 0;
+         *  Configures to clear exception status.
+         */
+        uint32_t m2_exception_status_clr:1;
+        uint32_t reserved_1:31;
+    };
+    uint32_t val;
+} hp_apm_m2_status_clr_reg_t;
+
+
+/** Group: M2 exception_info0 register */
+/** Type of m2_exception_info0 register
+ *  M2 exception_info0 register
+ */
+typedef union {
+    struct {
+        /** m2_exception_region : RO; bitpos: [15:0]; default: 0;
+         *  Represents exception region.
+         */
+        uint32_t m2_exception_region:16;
+        /** m2_exception_mode : RO; bitpos: [17:16]; default: 0;
+         *  Represents exception mode.
+         */
+        uint32_t m2_exception_mode:2;
+        /** m2_exception_id : RO; bitpos: [23:18]; default: 0;
+         *  Represents exception id information.
+         */
+        uint32_t m2_exception_id:6;
+        uint32_t reserved_24:8;
+    };
+    uint32_t val;
+} hp_apm_m2_exception_info0_reg_t;
+
+
+/** Group: M2 exception_info1 register */
+/** Type of m2_exception_info1 register
+ *  M2 exception_info1 register
+ */
+typedef union {
+    struct {
+        /** m2_exception_addr : RO; bitpos: [31:0]; default: 0;
+         *  Represents exception addr.
+         */
+        uint32_t m2_exception_addr:32;
+    };
+    uint32_t val;
+} hp_apm_m2_exception_info1_reg_t;
+
+
+/** Group: M3 status register */
+/** Type of m3_status register
+ *  M3 status register
+ */
+typedef union {
+    struct {
+        /** m3_exception_status : RO; bitpos: [1:0]; default: 0;
+         *  Represents exception status.
+         *  bit0: 1 represents authority_exception
+         *  bit1: 1 represents space_exception
+         */
+        uint32_t m3_exception_status:2;
+        uint32_t reserved_2:30;
+    };
+    uint32_t val;
+} hp_apm_m3_status_reg_t;
+
+
+/** Group: M3 status clear register */
+/** Type of m3_status_clr register
+ *  M3 status clear register
+ */
+typedef union {
+    struct {
+        /** m3_exception_status_clr : WT; bitpos: [0]; default: 0;
+         *  Configures to clear exception status.
+         */
+        uint32_t m3_exception_status_clr:1;
+        uint32_t reserved_1:31;
+    };
+    uint32_t val;
+} hp_apm_m3_status_clr_reg_t;
+
+
+/** Group: M3 exception_info0 register */
+/** Type of m3_exception_info0 register
+ *  M3 exception_info0 register
+ */
+typedef union {
+    struct {
+        /** m3_exception_region : RO; bitpos: [15:0]; default: 0;
+         *  Represents exception region.
+         */
+        uint32_t m3_exception_region:16;
+        /** m3_exception_mode : RO; bitpos: [17:16]; default: 0;
+         *  Represents exception mode.
+         */
+        uint32_t m3_exception_mode:2;
+        /** m3_exception_id : RO; bitpos: [23:18]; default: 0;
+         *  Represents exception id information.
+         */
+        uint32_t m3_exception_id:6;
+        uint32_t reserved_24:8;
+    };
+    uint32_t val;
+} hp_apm_m3_exception_info0_reg_t;
+
+
+/** Group: M3 exception_info1 register */
+/** Type of m3_exception_info1 register
+ *  M3 exception_info1 register
+ */
+typedef union {
+    struct {
+        /** m3_exception_addr : RO; bitpos: [31:0]; default: 0;
+         *  Represents exception addr.
+         */
+        uint32_t m3_exception_addr:32;
+    };
+    uint32_t val;
+} hp_apm_m3_exception_info1_reg_t;
+
+
+/** Group: M4 status register */
+/** Type of m4_status register
+ *  M4 status register
+ */
+typedef union {
+    struct {
+        /** m4_exception_status : RO; bitpos: [1:0]; default: 0;
+         *  Represents exception status.
+         *  bit0: 1 represents authority_exception
+         *  bit1: 1 represents space_exception
+         */
+        uint32_t m4_exception_status:2;
+        uint32_t reserved_2:30;
+    };
+    uint32_t val;
+} hp_apm_m4_status_reg_t;
+
+
+/** Group: M4 status clear register */
+/** Type of m4_status_clr register
+ *  M4 status clear register
+ */
+typedef union {
+    struct {
+        /** m4_exception_status_clr : WT; bitpos: [0]; default: 0;
+         *  Configures to clear exception status.
+         */
+        uint32_t m4_exception_status_clr:1;
+        uint32_t reserved_1:31;
+    };
+    uint32_t val;
+} hp_apm_m4_status_clr_reg_t;
+
+
+/** Group: M4 exception_info0 register */
+/** Type of m4_exception_info0 register
+ *  M4 exception_info0 register
+ */
+typedef union {
+    struct {
+        /** m4_exception_region : RO; bitpos: [15:0]; default: 0;
+         *  Represents exception region.
+         */
+        uint32_t m4_exception_region:16;
+        /** m4_exception_mode : RO; bitpos: [17:16]; default: 0;
+         *  Represents exception mode.
+         */
+        uint32_t m4_exception_mode:2;
+        /** m4_exception_id : RO; bitpos: [23:18]; default: 0;
+         *  Represents exception id information.
+         */
+        uint32_t m4_exception_id:6;
+        uint32_t reserved_24:8;
+    };
+    uint32_t val;
+} hp_apm_m4_exception_info0_reg_t;
+
+
+/** Group: M4 exception_info1 register */
+/** Type of m4_exception_info1 register
+ *  M4 exception_info1 register
+ */
+typedef union {
+    struct {
+        /** m4_exception_addr : RO; bitpos: [31:0]; default: 0;
+         *  Represents exception addr.
+         */
+        uint32_t m4_exception_addr:32;
+    };
+    uint32_t val;
+} hp_apm_m4_exception_info1_reg_t;
+
+
+/** Group: M5 status register */
+/** Type of m5_status register
+ *  M5 status register
+ */
+typedef union {
+    struct {
+        /** m5_exception_status : RO; bitpos: [1:0]; default: 0;
+         *  Represents exception status.
+         *  bit0: 1 represents authority_exception
+         *  bit1: 1 represents space_exception
+         */
+        uint32_t m5_exception_status:2;
+        uint32_t reserved_2:30;
+    };
+    uint32_t val;
+} hp_apm_m5_status_reg_t;
+
+
+/** Group: M5 status clear register */
+/** Type of m5_status_clr register
+ *  M5 status clear register
+ */
+typedef union {
+    struct {
+        /** m5_exception_status_clr : WT; bitpos: [0]; default: 0;
+         *  Configures to clear exception status.
+         */
+        uint32_t m5_exception_status_clr:1;
+        uint32_t reserved_1:31;
+    };
+    uint32_t val;
+} hp_apm_m5_status_clr_reg_t;
+
+
+/** Group: M5 exception_info0 register */
+/** Type of m5_exception_info0 register
+ *  M5 exception_info0 register
+ */
+typedef union {
+    struct {
+        /** m5_exception_region : RO; bitpos: [15:0]; default: 0;
+         *  Represents exception region.
+         */
+        uint32_t m5_exception_region:16;
+        /** m5_exception_mode : RO; bitpos: [17:16]; default: 0;
+         *  Represents exception mode.
+         */
+        uint32_t m5_exception_mode:2;
+        /** m5_exception_id : RO; bitpos: [24:18]; default: 0;
+         *  Represents exception id information.
+         */
+        uint32_t m5_exception_id:7;
+        uint32_t reserved_25:7;
+    };
+    uint32_t val;
+} hp_apm_m5_exception_info0_reg_t;
+
+
+/** Group: M5 exception_info1 register */
+/** Type of m5_exception_info1 register
+ *  M5 exception_info1 register
+ */
+typedef union {
+    struct {
+        /** m5_exception_addr : RO; bitpos: [31:0]; default: 0;
+         *  Represents exception addr.
+         */
+        uint32_t m5_exception_addr:32;
+    };
+    uint32_t val;
+} hp_apm_m5_exception_info1_reg_t;
+
+
+/** Group: M6 status register */
+/** Type of m6_status register
+ *  M6 status register
+ */
+typedef union {
+    struct {
+        /** m6_exception_status : RO; bitpos: [1:0]; default: 0;
+         *  Represents exception status.
+         *  bit0: 1 represents authority_exception
+         *  bit1: 1 represents space_exception
+         */
+        uint32_t m6_exception_status:2;
+        uint32_t reserved_2:30;
+    };
+    uint32_t val;
+} hp_apm_m6_status_reg_t;
+
+
+/** Group: M6 status clear register */
+/** Type of m6_status_clr register
+ *  M6 status clear register
+ */
+typedef union {
+    struct {
+        /** m6_exception_status_clr : WT; bitpos: [0]; default: 0;
+         *  Configures to clear exception status.
+         */
+        uint32_t m6_exception_status_clr:1;
+        uint32_t reserved_1:31;
+    };
+    uint32_t val;
+} hp_apm_m6_status_clr_reg_t;
+
+
+/** Group: M6 exception_info0 register */
+/** Type of m6_exception_info0 register
+ *  M6 exception_info0 register
+ */
+typedef union {
+    struct {
+        /** m6_exception_region : RO; bitpos: [15:0]; default: 0;
+         *  Represents exception region.
+         */
+        uint32_t m6_exception_region:16;
+        /** m6_exception_mode : RO; bitpos: [17:16]; default: 0;
+         *  Represents exception mode.
+         */
+        uint32_t m6_exception_mode:2;
+        /** m6_exception_id : RO; bitpos: [24:18]; default: 0;
+         *  Represents exception id information.
+         */
+        uint32_t m6_exception_id:7;
+        uint32_t reserved_25:7;
+    };
+    uint32_t val;
+} hp_apm_m6_exception_info0_reg_t;
+
+
+/** Group: M6 exception_info1 register */
+/** Type of m6_exception_info1 register
+ *  M6 exception_info1 register
+ */
+typedef union {
+    struct {
+        /** m6_exception_addr : RO; bitpos: [31:0]; default: 0;
+         *  Represents exception addr.
+         */
+        uint32_t m6_exception_addr:32;
+    };
+    uint32_t val;
+} hp_apm_m6_exception_info1_reg_t;
+
+
+/** Group: APM interrupt enable register */
+/** Type of int_en register
+ *  APM interrupt enable register
+ */
+typedef union {
+    struct {
+        /** m0_apm_int_en : R/W; bitpos: [0]; default: 0;
+         *  Configures to enable APM M0 interrupt.
+         *  0: disable
+         *  1: enable
+         */
+        uint32_t m0_apm_int_en:1;
+        /** m1_apm_int_en : R/W; bitpos: [1]; default: 0;
+         *  Configures to enable APM M1 interrupt.
+         *  0: disable
+         *  1: enable
+         */
+        uint32_t m1_apm_int_en:1;
+        /** m2_apm_int_en : R/W; bitpos: [2]; default: 0;
+         *  Configures to enable APM M2 interrupt.
+         *  0: disable
+         *  1: enable
+         */
+        uint32_t m2_apm_int_en:1;
+        /** m3_apm_int_en : R/W; bitpos: [3]; default: 0;
+         *  Configures to enable APM M3 interrupt.
+         *  0: disable
+         *  1: enable
+         */
+        uint32_t m3_apm_int_en:1;
+        /** m4_apm_int_en : R/W; bitpos: [4]; default: 0;
+         *  Configures to enable APM M4 interrupt.
+         *  0: disable
+         *  1: enable
+         */
+        uint32_t m4_apm_int_en:1;
+        /** m5_apm_int_en : R/W; bitpos: [5]; default: 0;
+         *  Configures to enable APM M5 interrupt.
+         *  0: disable
+         *  1: enable
+         */
+        uint32_t m5_apm_int_en:1;
+        /** m6_apm_int_en : R/W; bitpos: [6]; default: 0;
+         *  Configures to enable APM M6 interrupt.
+         *  0: disable
+         *  1: enable
+         */
+        uint32_t m6_apm_int_en:1;
+        uint32_t reserved_7:25;
+    };
+    uint32_t val;
+} hp_apm_int_en_reg_t;
+
+/** Type of bus_err_conf register
+ *  APM interrupt enable register
+ */
+typedef union {
+    struct {
+        /** bus_err_resp_en : R/W; bitpos: [0]; default: 0;
+         *  Configures whether return error response to cpu when access blocked
+         *  0: disable error response
+         *  1: enable error response
+         */
+        uint32_t bus_err_resp_en:1;
+        uint32_t reserved_1:31;
+    };
+    uint32_t val;
+} hp_apm_bus_err_conf_reg_t;
+
+
+/** Group: APM transmission config register */
+/** Type of axi_block_en register
+ *  M6 status clear register
+ */
+typedef union {
+    struct {
+        /** axi_block_en : R/W; bitpos: [0]; default: 1;
+         *  Configures to if block transmission when get exceltion.
+         *  0: transparent transmission to slave
+         *  1: don't transparent transmission to slave
+         */
+        uint32_t axi_block_en:1;
+        uint32_t reserved_1:31;
+    };
+    uint32_t val;
+} hp_apm_axi_block_en_reg_t;
+
+
+/** Group: Clock gating register */
+/** Type of clock_gate register
+ *  Clock gating register
+ */
+typedef union {
+    struct {
+        /** clk_en : R/W; bitpos: [0]; default: 1;
+         *  Configures whether to keep the clock always on.
+         *  0: enable automatic clock gating
+         *  1: keep the clock always on
+         */
+        uint32_t clk_en:1;
+        uint32_t reserved_1:31;
+    };
+    uint32_t val;
+} hp_apm_clock_gate_reg_t;
+
+
+/** Group: Version control register */
+/** Type of date register
+ *  Version control register
+ */
+typedef union {
+    struct {
+        /** date : R/W; bitpos: [27:0]; default: 38822496;
+         *  Version control register.
+         */
+        uint32_t date:28;
+        uint32_t reserved_28:4;
+    };
+    uint32_t val;
+} hp_apm_date_reg_t;
+
+
+typedef struct {
+    volatile hp_apm_region_filter_en_reg_t region_filter_en;
+    volatile hp_apm_regionn_addr_start_reg_t region0_addr_start;
+    volatile hp_apm_regionn_addr_end_reg_t region0_addr_end;
+    volatile hp_apm_regionn_attr_reg_t region0_attr;
+    volatile hp_apm_regionn_addr_start_reg_t region1_addr_start;
+    volatile hp_apm_regionn_addr_end_reg_t region1_addr_end;
+    volatile hp_apm_regionn_attr_reg_t region1_attr;
+    volatile hp_apm_regionn_addr_start_reg_t region2_addr_start;
+    volatile hp_apm_regionn_addr_end_reg_t region2_addr_end;
+    volatile hp_apm_regionn_attr_reg_t region2_attr;
+    volatile hp_apm_regionn_addr_start_reg_t region3_addr_start;
+    volatile hp_apm_regionn_addr_end_reg_t region3_addr_end;
+    volatile hp_apm_regionn_attr_reg_t region3_attr;
+    volatile hp_apm_regionn_addr_start_reg_t region4_addr_start;
+    volatile hp_apm_regionn_addr_end_reg_t region4_addr_end;
+    volatile hp_apm_regionn_attr_reg_t region4_attr;
+    volatile hp_apm_regionn_addr_start_reg_t region5_addr_start;
+    volatile hp_apm_regionn_addr_end_reg_t region5_addr_end;
+    volatile hp_apm_regionn_attr_reg_t region5_attr;
+    volatile hp_apm_regionn_addr_start_reg_t region6_addr_start;
+    volatile hp_apm_regionn_addr_end_reg_t region6_addr_end;
+    volatile hp_apm_regionn_attr_reg_t region6_attr;
+    volatile hp_apm_regionn_addr_start_reg_t region7_addr_start;
+    volatile hp_apm_regionn_addr_end_reg_t region7_addr_end;
+    volatile hp_apm_regionn_attr_reg_t region7_attr;
+    volatile hp_apm_regionn_addr_start_reg_t region8_addr_start;
+    volatile hp_apm_regionn_addr_end_reg_t region8_addr_end;
+    volatile hp_apm_regionn_attr_reg_t region8_attr;
+    volatile hp_apm_regionn_addr_start_reg_t region9_addr_start;
+    volatile hp_apm_regionn_addr_end_reg_t region9_addr_end;
+    volatile hp_apm_regionn_attr_reg_t region9_attr;
+    volatile hp_apm_regionn_addr_start_reg_t region10_addr_start;
+    volatile hp_apm_regionn_addr_end_reg_t region10_addr_end;
+    volatile hp_apm_regionn_attr_reg_t region10_attr;
+    volatile hp_apm_regionn_addr_start_reg_t region11_addr_start;
+    volatile hp_apm_regionn_addr_end_reg_t region11_addr_end;
+    volatile hp_apm_regionn_attr_reg_t region11_attr;
+    volatile hp_apm_regionn_addr_start_reg_t region12_addr_start;
+    volatile hp_apm_regionn_addr_end_reg_t region12_addr_end;
+    volatile hp_apm_regionn_attr_reg_t region12_attr;
+    volatile hp_apm_regionn_addr_start_reg_t region13_addr_start;
+    volatile hp_apm_regionn_addr_end_reg_t region13_addr_end;
+    volatile hp_apm_regionn_attr_reg_t region13_attr;
+    volatile hp_apm_regionn_addr_start_reg_t region14_addr_start;
+    volatile hp_apm_regionn_addr_end_reg_t region14_addr_end;
+    volatile hp_apm_regionn_attr_reg_t region14_attr;
+    volatile hp_apm_regionn_addr_start_reg_t region15_addr_start;
+    volatile hp_apm_regionn_addr_end_reg_t region15_addr_end;
+    volatile hp_apm_regionn_attr_reg_t region15_attr;
+    volatile hp_apm_func_ctrl_reg_t func_ctrl;
+    volatile hp_apm_m0_status_reg_t m0_status;
+    volatile hp_apm_m0_status_clr_reg_t m0_status_clr;
+    volatile hp_apm_m0_exception_info0_reg_t m0_exception_info0;
+    volatile hp_apm_m0_exception_info1_reg_t m0_exception_info1;
+    volatile hp_apm_m1_status_reg_t m1_status;
+    volatile hp_apm_m1_status_clr_reg_t m1_status_clr;
+    volatile hp_apm_m1_exception_info0_reg_t m1_exception_info0;
+    volatile hp_apm_m1_exception_info1_reg_t m1_exception_info1;
+    volatile hp_apm_m2_status_reg_t m2_status;
+    volatile hp_apm_m2_status_clr_reg_t m2_status_clr;
+    volatile hp_apm_m2_exception_info0_reg_t m2_exception_info0;
+    volatile hp_apm_m2_exception_info1_reg_t m2_exception_info1;
+    volatile hp_apm_m3_status_reg_t m3_status;
+    volatile hp_apm_m3_status_clr_reg_t m3_status_clr;
+    volatile hp_apm_m3_exception_info0_reg_t m3_exception_info0;
+    volatile hp_apm_m3_exception_info1_reg_t m3_exception_info1;
+    volatile hp_apm_m4_status_reg_t m4_status;
+    volatile hp_apm_m4_status_clr_reg_t m4_status_clr;
+    volatile hp_apm_m4_exception_info0_reg_t m4_exception_info0;
+    volatile hp_apm_m4_exception_info1_reg_t m4_exception_info1;
+    volatile hp_apm_m5_status_reg_t m5_status;
+    volatile hp_apm_m5_status_clr_reg_t m5_status_clr;
+    volatile hp_apm_m5_exception_info0_reg_t m5_exception_info0;
+    volatile hp_apm_m5_exception_info1_reg_t m5_exception_info1;
+    uint32_t reserved_128;
+    volatile hp_apm_m6_status_reg_t m6_status;
+    volatile hp_apm_m6_status_clr_reg_t m6_status_clr;
+    volatile hp_apm_m6_exception_info0_reg_t m6_exception_info0;
+    volatile hp_apm_m6_exception_info1_reg_t m6_exception_info1;
+    uint32_t reserved_13c[4];
+    volatile hp_apm_int_en_reg_t int_en;
+    volatile hp_apm_axi_block_en_reg_t axi_block_en;
+    volatile hp_apm_bus_err_conf_reg_t bus_err_conf;
+    uint32_t reserved_158[168];
+    volatile hp_apm_clock_gate_reg_t clock_gate;
+    volatile hp_apm_date_reg_t date;
+} hp_apm_dev_t;
+
+
+#ifndef __cplusplus
+_Static_assert(sizeof(hp_apm_dev_t) == 0x400, "Invalid size of hp_apm_dev_t structure");
+#endif
+
+#ifdef __cplusplus
+}
+#endif
