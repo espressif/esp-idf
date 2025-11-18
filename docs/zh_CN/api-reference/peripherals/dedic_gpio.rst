@@ -146,7 +146,7 @@ GPIO 捆绑包操作
     * :example:`peripherals/dedicated_gpio/soft_i2c` 演示了如何配置和使用专用/快速 GPIO 来模拟 I2C 主机设备、执行总线上的读写操作、以及通过将某些函数放在 IRAM 中来满足严格的时序要求。
     * :example:`peripherals/dedicated_gpio/soft_uart` 演示了如何使用专用/快速 GPIO 在 {IDF_TARGET_NAME} 上模拟 UART 总线。可以通过 TX 管脚和 RX 管脚在 UART 总线上发送和接收字符，还可以通过 `menuconfig` 来调整波特率和其他配置。
 
-    .. only:: esp32c2 or esp32c3 or esp32c6 or esp32h2 or esp32p4
+    .. only:: CONFIG_IDF_TARGET_ARCH_RISCV
 
         * :example:`peripherals/dedicated_gpio/soft_spi` 演示了如何配置和使用专用/快速 GPIO，在 {IDF_TARGET_NAME} 上模拟全双工 SPI 总线。
 

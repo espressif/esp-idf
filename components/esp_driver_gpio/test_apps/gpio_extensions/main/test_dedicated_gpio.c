@@ -136,6 +136,8 @@ TEST_CASE("Dedicated_GPIO_run_on_multiple_CPU_cores", "[dedic_gpio]")
     for (int i = 0; i < SOC_CPU_CORES_NUM; i++) {
 #if CONFIG_IDF_TARGET_ESP32P4
         int start_gpio = i * TEST_GPIO_GROUP_SIZE + 20;
+#elif CONFIG_IDF_TARGET_ESP32H4
+        int start_gpio = i * TEST_GPIO_GROUP_SIZE + 13;
 #else
         int start_gpio = i * TEST_GPIO_GROUP_SIZE;
 #endif
