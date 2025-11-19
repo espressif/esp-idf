@@ -55,6 +55,16 @@ static void esp_key_mgr_init(void)
 
 ESP_SYSTEM_INIT_FN(esp_security_init, SECONDARY, BIT(0), 103)
 {
+#if CONFIG_IDF_TARGET_ESP32C5
+    // Check for unsupported configuration: flash encryption with CPU frequency > 160MHz
+    // Manual encrypted flash writes are not stable at higher CPU clock.
+    // Please refer to the ESP32-C5 SoC Errata document for more details.
+    if (efuse_hal_flash_encryption_enabled() && CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ > 160) {
+        ESP_EARLY_LOGE(TAG, "Flash encryption with CPU frequency > 160MHz is not supported. Please reconfigure the CPU frequency.");
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+#endif
+
     esp_crypto_clk_init();
 
 #if SOC_KEY_MANAGER_SUPPORT_KEY_DEPLOYMENT
@@ -94,7 +104,7 @@ ESP_SYSTEM_INIT_FN(esp_security_init, SECONDARY, BIT(0), 103)
 #if CONFIG_SECURE_BOOT_V2_ENABLED
 // H2, H21
 #if SOC_ECDSA_P192_CURVE_DEFAULT_DISABLED
-    // Also write protects the ECDSA_CURVE_MODE efuse bit.
+    // Also write protects the ECC_FORCE_CONST_TIME efuse bit.
     if (ecdsa_ll_is_configurable_curve_supported()) {
         err = esp_efuse_write_field_bit(ESP_EFUSE_WR_DIS_ECDSA_CURVE_MODE);
         if (err != ESP_OK) {
@@ -106,10 +116,13 @@ ESP_SYSTEM_INIT_FN(esp_security_init, SECONDARY, BIT(0), 103)
 
 #if !CONFIG_SECURE_BOOT_SKIP_WRITE_PROTECTION_SCA
 // C5
-#if SOC_ECDSA_SUPPORT_CURVE_P384 && !CONFIG_SECURE_BOOT_ECDSA_KEY_LEN_384_BITS
+#if SOC_ECDSA_SUPPORT_CURVE_P384 && !CONFIG_SECURE_BOOT_ECDSA_KEY_LEN_384_BITS && !CONFIG_IDF_TARGET_ESP32P4
     // Since SECURE_BOOT_SHA384_EN, XTS_DPA_PSEUDO_LEVEL, and ECC_FORCE_CONST_TIME share the
     // same write-protection bit, these efuses should only be write-protected after all of
     // them have been programmed.
+    // Note: ESP32-P4 lacks WR_DIS_SECURE_BOOT_SHA384_EN bit, so it relies on software protection
+    // in the efuse write APIs (see esp_efuse_api.c) to prevent unauthorized programming of
+    // SECURE_BOOT_SHA384_EN when Secure Boot using SHA-256 is enabled.
     err = esp_efuse_write_field_bit(ESP_EFUSE_WR_DIS_SECURE_BOOT_SHA384_EN);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to write protect the SECURE_BOOT_SHA384_EN efuse bit.");

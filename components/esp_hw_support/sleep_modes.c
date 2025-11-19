@@ -23,6 +23,7 @@
 #include "soc/rtc.h"
 #include "esp_private/sleep_event.h"
 #include "esp_private/system_internal.h"
+#include "esp_private/sleep_retention.h"
 #include "esp_private/io_mux.h"
 #include "esp_private/critical_section.h"
 #include "esp_log.h"
@@ -78,6 +79,7 @@
 #include "esp_private/sleep_console.h"
 #include "esp_private/sleep_cpu.h"
 #include "esp_private/sleep_modem.h"
+#include "esp_private/sleep_flash.h"
 #include "esp_private/sleep_usb.h"
 #include "esp_private/esp_clk.h"
 #include "esp_private/esp_task_wdt.h"
@@ -905,7 +907,7 @@ static esp_err_t FORCE_IRAM_ATTR esp_sleep_start_safe(uint32_t sleep_flags, uint
     }
 #endif
     if (deep_sleep) {
-#if SOC_GPIO_SUPPORT_HOLD_IO_IN_DSLP && !SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP
+#if !SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP
         esp_sleep_isolate_digital_gpio();
 #endif
 
@@ -959,9 +961,14 @@ static esp_err_t FORCE_IRAM_ATTR esp_sleep_start_safe(uint32_t sleep_flags, uint
         }
 #endif
 
-#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_PM_MMU_TABLE_RETENTION_WHEN_TOP_PD
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
         if (sleep_flags & PMU_SLEEP_PD_TOP) {
+#if SOC_PM_MMU_TABLE_RETENTION_WHEN_TOP_PD
             esp_sleep_mmu_retention(true);
+#endif
+#if CONFIG_IDF_TARGET_ESP32P4 && (CONFIG_ESP_REV_MIN_FULL == 300)
+            sleep_retention_do_extra_retention(true);
+#endif
         }
 #endif
 
@@ -984,9 +991,15 @@ static esp_err_t FORCE_IRAM_ATTR esp_sleep_start_safe(uint32_t sleep_flags, uint
         result = call_rtc_sleep_start(reject_triggers, config->lslp_mem_inf_fpu, deep_sleep);
 #endif
 
-#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_PM_MMU_TABLE_RETENTION_WHEN_TOP_PD
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
         if (sleep_flags & PMU_SLEEP_PD_TOP) {
+#if SOC_PM_MMU_TABLE_RETENTION_WHEN_TOP_PD
             esp_sleep_mmu_retention(false);
+#endif
+#if CONFIG_IDF_TARGET_ESP32P4 && (CONFIG_ESP_REV_MIN_FULL == 300)
+            sleep_flash_p4_rev3_workaround();
+            sleep_retention_do_extra_retention(false);
+#endif
         }
 #endif
 

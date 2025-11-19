@@ -33,13 +33,6 @@ config BT_BTU_TASK_STACK_SIZE
     help
         This select btu task stack size
 
-config BT_BLUEDROID_MEM_DEBUG
-    bool "Bluedroid memory debug"
-    depends on BT_BLUEDROID_ENABLED
-    default n
-    help
-        Bluedroid memory debug
-
 config BT_BLUEDROID_ESP_COEX_VSC
     bool "Enable Espressif Vendor-specific HCI commands for coexist status configuration"
     depends on BT_BLUEDROID_ENABLED
@@ -365,6 +358,13 @@ config BT_GATTS_APPEARANCE_WRITABLE
     help
         Enabling this option allows remote GATT clients to write appearance
 
+config BT_GATTS_SECURITY_LEVELS_CHAR
+    bool "Enable LE GATT Security Levels Characteristic"
+    depends on BT_GATTS_ENABLE
+    default n
+    help
+        Enable LE GATT Security Levels Characteristic
+
 menuconfig BT_GATTC_ENABLE
     bool "Include GATT client module(GATTC)"
     depends on BT_BLE_ENABLED
@@ -461,6 +461,40 @@ config BT_BLE_RPA_SUPPORTED
 
         For other BLE chips, devices support network privacy mode and device privacy mode,
         users can switch the two modes according to their own needs. So this option is enabled by default.
+
+menu "Bluedroid debug option"
+    config BT_BLUEDROID_MEM_DEBUG
+        bool "Bluedroid memory debug"
+        depends on BT_BLUEDROID_ENABLED
+        default n
+        help
+            Bluedroid memory debug
+
+    config BT_BLUEDROID_THREAD_DEBUG
+        bool "Bluedroid thread debug"
+        depends on BT_BLUEDROID_ENABLED
+        default n
+        help
+            Enable Bluedroid thread debug mode.
+            Used to debug whether the thread is blocked and
+            dump information about the thread’s related work queue.
+
+    config BT_BLUEDROID_THREAD_BLOCK_TIME
+        int "OSI thread block time (in ms)"
+        depends on BT_BLUEDROID_THREAD_DEBUG
+        default 1000
+        help
+            Indicates how long it takes for the thread to execute an item
+            before it is considered blocked.
+
+    config BT_BLUEDROID_THREAD_BLOCK_MSG
+        int "OSI thread block message count"
+        depends on BT_BLUEDROID_THREAD_DEBUG
+        default 50
+        help
+            Indicates how many messages are added to the queue
+            while the threadis executing an item before it is considered blocked.
+endmenu #BT debug option
 
 config BT_STACK_NO_LOG
     bool "Disable BT debug logs (minimize bin size)"
@@ -1290,7 +1324,7 @@ config BT_BLE_RPA_TIMEOUT
         Default is 900 s (15 minutes). Range is 1 s to 1 hour (3600 s).
 
 menuconfig BT_BLE_50_FEATURES_SUPPORTED
-    bool "Enable BLE 5.0 features(please disable BLE 4.2 if enable BLE 5.0)"
+    bool "Enable BLE 5.0 and above features(please disable BLE 4.2 if enable BLE 5.0)"
     depends on (BT_BLE_ENABLED && ((BT_CONTROLLER_ENABLED && SOC_BLE_50_SUPPORTED) || BT_CONTROLLER_DISABLED))
     default y
     help
@@ -1353,37 +1387,6 @@ config BT_BLE_FEAT_CREATE_SYNC_ENH
     default n
     help
         Enable the create sync enhancements
-
-menuconfig BT_BLE_42_FEATURES_SUPPORTED
-    bool "Enable BLE 4.2 features(please disable BLE 5.0 if enable BLE 4.2)"
-    depends on BT_BLE_ENABLED
-    default y if IDF_TARGET_ESP32
-    default n
-    help
-        This enables BLE 4.2 features.
-        This option is universally supported by all ESP chips with BLE capabilities.
-        BLE 4.2 and BLE 5.0 cannot be used simultaneously.
-
-config BT_BLE_42_DTM_TEST_EN
-    bool "Enable BLE 4.2 DTM test"
-    depends on BT_BLE_42_FEATURES_SUPPORTED
-    default y
-    help
-        This enables BLE 4.2 direct test mode
-
-config BT_BLE_42_ADV_EN
-    bool "Enable BLE 4.2 advertising"
-    depends on BT_BLE_42_FEATURES_SUPPORTED
-    default y
-    help
-        This enables BLE v4.2 advertising
-
-config BT_BLE_42_SCAN_EN
-    bool "Enable BLE 4.2 scan"
-    depends on BT_BLE_42_FEATURES_SUPPORTED
-    default y
-    help
-        This enables BLE v4.2 scan
 
 menuconfig BT_BLE_FEAT_ISO_EN
     bool "Enable BLE 5.2 iso feature"
@@ -1496,6 +1499,58 @@ config BT_BLE_FEAT_CONN_SUBRATING
     default n
     help
         Enable BLE connection subrating feature
+
+config BT_BLE_FEAT_PAWR_EN
+    bool "Enable Periodic Advertisement with Response(PAwR)"
+    depends on (BT_BLE_50_FEATURES_SUPPORTED && ((BT_CONTROLLER_ENABLED && SOC_BLE_PAWR_SUPPORTED) || BT_CONTROLLER_DISABLED)) # NOERROR
+    default n
+    help
+        Enable BLE Periodic Advertisement with Response(PAwR) feature
+
+config BT_BLE_FEAT_ADV_CODING_SELECTION
+    bool "Enable Advertising Coding Selection"
+    depends on (BT_BLE_50_FEATURES_SUPPORTED && ((BT_CONTROLLER_ENABLED && SOC_BLE_ADV_CODING_SELECT_SUPPORTED) || BT_CONTROLLER_DISABLED)) # NOERROR
+    default n
+    help
+        Enable Advertising Coding Selection
+
+config BT_BLE_FEAT_CHANNEL_SOUNDING
+    bool "Enable BLE channel sounding"
+    depends on (BT_BLE_50_FEATURES_SUPPORTED && ((BT_CONTROLLER_ENABLED && SOC_BLE_CHANNEL_SOUNDING_SUPPORTED) || BT_CONTROLLER_DISABLED)) # NOERROR
+    default n
+    help
+        Enable BLE channel sounding
+
+menuconfig BT_BLE_42_FEATURES_SUPPORTED
+    bool "Enable BLE 4.2 features(please disable BLE 5.0 if enable BLE 4.2)"
+    depends on BT_BLE_ENABLED
+    default y if IDF_TARGET_ESP32
+    default n
+    help
+        This enables BLE 4.2 features.
+        This option is universally supported by all ESP chips with BLE capabilities.
+        BLE 4.2 and BLE 5.0 cannot be used simultaneously.
+
+config BT_BLE_42_DTM_TEST_EN
+    bool "Enable BLE 4.2 DTM test"
+    depends on BT_BLE_42_FEATURES_SUPPORTED
+    default y
+    help
+        This enables BLE 4.2 direct test mode
+
+config BT_BLE_42_ADV_EN
+    bool "Enable BLE 4.2 advertising"
+    depends on BT_BLE_42_FEATURES_SUPPORTED
+    default y
+    help
+        This enables BLE v4.2 advertising
+
+config BT_BLE_42_SCAN_EN
+    bool "Enable BLE 4.2 scan"
+    depends on BT_BLE_42_FEATURES_SUPPORTED
+    default y
+    help
+        This enables BLE v4.2 scan
 
 config BT_BLE_VENDOR_HCI_EN
     bool "Enable BLE Vendor HCI command and event"

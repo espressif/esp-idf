@@ -132,7 +132,6 @@ ESP-IDF 包含一系列堆 API，可以在运行时测量空闲堆内存，请�
    :SOC_BT_SUPPORTED: - :doc:`/api-reference/bluetooth/nimble/index` 的栈内存大小为 :ref:`CONFIG_BT_NIMBLE_HOST_TASK_STACK_SIZE`。
    - 以太网驱动程序会创建任务，用于使 MAC 接收以太网帧，在默认配置 ``ETH_MAC_DEFAULT_CONFIG`` 下，任务栈内存大小为 4 KB。在初始化以太网 MAC 时，传递自定义 :cpp:class:`eth_mac_config_t` 结构体可以更改此设置。
    - FreeRTOS 空闲任务栈内存大小由 :ref:`CONFIG_FREERTOS_IDLE_TASK_STACKSIZE` 配置。
-   - 使用 :doc:`/api-reference/protocols/mqtt` 组件时会创建一个任务，其栈内存大小由 :ref:`CONFIG_MQTT_TASK_STACK_SIZE` 配置。MQTT 栈内存大小也可以使用 :cpp:class:`esp_mqtt_client_config_t` 结构体中的 ``task_stack`` 字段配置。
    - 有关使用 ``mDNS`` 时内存优化的详细信息，请参阅 `优化内存使用 <https://docs.espressif.com/projects/esp-protocols/mdns/docs/latest/en/index.html#minimizing-ram-usage>`__。
 
 .. note::

@@ -8,9 +8,4 @@ To build and run this test app for app_trace related tests:
 IDF_TARGET=esp32 idf.py @app_trace build flash monitor
 ```
 
-To build and run this test app for SystemView related tests:
-```bash
-IDF_TARGET=esp32 idf.py @sysview build flash monitor
-```
-
-`@app_trace` and `@sysview` arguments apply additional `idf.py` options, from [app_trace](app_trace) and [sysview](sysview) files.
+`@app_trace` argument apply additional `idf.py` options, from [app_trace](app_trace) and file.

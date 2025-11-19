@@ -9,7 +9,7 @@ if(${target} STREQUAL "linux")
     return()
 endif()
 
-set(requires esp_hal_dma)
+set(requires esp_hal_dma esp_hal_usb)
 # only esp_hw_support/adc_share_hw_ctrl.c requires efuse component
 set(priv_requires efuse spi_flash bootloader_support esp_hal_wdt)
 
@@ -64,6 +64,7 @@ if(NOT non_os_build)
         list(APPEND srcs "sleep_modem.c"
                          "sleep_modes.c"
                          "sleep_console.c"
+                         "sleep_mspi.c"
                          "sleep_usb.c"
                          "sleep_gpio.c"
                          "sleep_event.c"
@@ -175,7 +176,20 @@ if(NOT non_os_build)
 else()
     if(ESP_TEE_BUILD)
         list(APPEND srcs "esp_clk.c" "hw_random.c")
+        if(CONFIG_SECURE_TEE_EXT_FLASH_MEMPROT_SPI1)
+            list(APPEND srcs "mspi_timing_tuning/mspi_timing_tuning.c")
+            if(CONFIG_SOC_MEMSPI_TIMING_TUNING_BY_MSPI_DELAY)
+                list(APPEND srcs "mspi_timing_tuning/tuning_scheme_impl/mspi_timing_by_mspi_delay.c")
+            endif()
+            if(CONFIG_SOC_MEMSPI_TIMING_TUNING_BY_DQS)
+                list(APPEND srcs "mspi_timing_tuning/tuning_scheme_impl/mspi_timing_by_dqs.c")
+            endif()
+            if(CONFIG_SOC_MEMSPI_TIMING_TUNING_BY_FLASH_DELAY)
+                list(APPEND srcs "mspi_timing_tuning/tuning_scheme_impl/mspi_timing_by_flash_delay.c")
+            endif()
+        endif()
     endif()
+
     # Requires "_esp_error_check_failed()" function
     list(APPEND priv_requires "esp_system")
 endif()

@@ -627,7 +627,7 @@ config SOC_GDMA_SUPPORT_SLEEP_RETENTION
     bool
     default y
 
-config SOC_AXI_DMA_EXT_MEM_ENC_ALIGNMENT
+config SOC_GDMA_EXT_MEM_ENC_ALIGNMENT
     int
     default 16
 
@@ -695,6 +695,14 @@ config SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK
     hex
     default 0x007FFFFFFFFF0000
 
+config SOC_GPIO_SUPPORT_FORCE_HOLD
+    bool
+    default y
+
+config SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP
+    bool
+    default y
+
 config SOC_GPIO_CLOCKOUT_BY_GPIO_MATRIX
     bool
     default y
@@ -714,10 +722,6 @@ config SOC_DEBUG_PROBE_NUM_UNIT
 config SOC_DEBUG_PROBE_MAX_OUTPUT_WIDTH
     int
     default 16
-
-config SOC_GPIO_SUPPORT_FORCE_HOLD
-    bool
-    default y
 
 config SOC_RTCIO_PIN_COUNT
     int
@@ -916,6 +920,10 @@ config SOC_ISP_LSC_SUPPORTED
     default y
 
 config SOC_ISP_SHARPEN_SUPPORTED
+    bool
+    default y
+
+config SOC_ISP_WBG_SUPPORTED
     bool
     default y
 
@@ -1368,6 +1376,14 @@ config SOC_SHA_SUPPORT_SHA512_256
     default y
 
 config SOC_SHA_SUPPORT_SHA512_T
+    bool
+    default y
+
+config SOC_ECC_CONSTANT_TIME_POINT_MUL
+    bool
+    default y
+
+config SOC_ECC_SUPPORT_CURVE_P384
     bool
     default y
 

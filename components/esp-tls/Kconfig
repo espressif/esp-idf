@@ -26,7 +26,7 @@ menu "ESP-TLS"
 
     config ESP_TLS_USE_DS_PERIPHERAL
         bool "Use Digital Signature (DS) Peripheral with ESP-TLS"
-        depends on ESP_TLS_USING_MBEDTLS && SOC_DIG_SIGN_SUPPORTED
+        depends on ESP_TLS_USING_MBEDTLS && SOC_DIG_SIGN_SUPPORTED && MBEDTLS_PK_RSA_ALT_SUPPORT
         default y
         help
             Enable use of the Digital Signature Peripheral for ESP-TLS.The DS peripheral

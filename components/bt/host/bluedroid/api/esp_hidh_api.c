@@ -117,7 +117,7 @@ esp_err_t esp_bt_hid_host_set_info(esp_bd_addr_t bd_addr, esp_hidh_hid_info_t *h
     arg.set_info.hid_info = hid_info;
 
     bt_status_t stat = btc_transfer_context(&msg, &arg, sizeof(btc_hidh_args_t),
-                                                btc_hh_arg_deep_copy, btc_hh_cb_arg_deep_free);
+                                                btc_hh_arg_deep_copy, btc_hh_call_arg_deep_free);
     return (stat == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 
@@ -224,7 +224,7 @@ esp_err_t esp_bt_hid_host_set_report(esp_bd_addr_t bd_addr, esp_hidh_report_type
     arg.set_report.report = report;
 
     bt_status_t stat = btc_transfer_context(&msg, &arg, sizeof(btc_hidh_args_t),
-                                                btc_hh_arg_deep_copy, btc_hh_cb_arg_deep_free);
+                                                btc_hh_arg_deep_copy, btc_hh_call_arg_deep_free);
     return (stat == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 
@@ -243,7 +243,7 @@ esp_err_t esp_bt_hid_host_send_data(esp_bd_addr_t bd_addr, uint8_t *data, size_t
     arg.send_data.data = data;
 
     bt_status_t stat = btc_transfer_context(&msg, &arg, sizeof(btc_hidh_args_t),
-                                                btc_hh_arg_deep_copy, btc_hh_cb_arg_deep_free);
+                                                btc_hh_arg_deep_copy, btc_hh_call_arg_deep_free);
     return (stat == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 

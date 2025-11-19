@@ -40,6 +40,7 @@ entries:
         rtc_sleep:rtc_sleep_pu (noflash)
     if SOC_PMU_SUPPORTED = y && SOC_LIGHT_SLEEP_SUPPORTED = y:
         pmu_sleep (noflash)
+        sleep_mspi (noflash)
         if SPIRAM_FLASH_LOAD_TO_PSRAM = y:
             pmu_init (noflash)
             pmu_param (noflash)

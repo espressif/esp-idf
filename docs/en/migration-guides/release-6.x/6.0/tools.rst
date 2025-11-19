@@ -57,7 +57,7 @@ This affects ESP-IDF users who use system-provided CMake and custom CMake.
 Unit-Test-App
 -------------
 
-The legacy unit-test-app has been moved out of ESP-IDF repository as no ESP-IDF component longer uses it for running tests. It is now available at the `component registry <https://components.espressif.com/components/espressif/unit-test-app>`_ and a test app can be created using the ``idf.py create-project-from-example`` command:
+The legacy unit-test-app has been moved out of ESP-IDF repository as it is no longer used by any ESP-IDF component for running tests. It is now available at `The ESP Component Registry <https://components.espressif.com/components/espressif/unit-test-app>`__ and a test app can be created using the ``idf.py create-project-from-example`` command:
 
 .. code-block:: bash
 
@@ -66,7 +66,7 @@ The legacy unit-test-app has been moved out of ESP-IDF repository as no ESP-IDF 
 Catch
 -----
 
-The header-only copy of Catch2 unit testing library previously located in tools/catch directory has been removed. To continue using Catch2 in your project, migrate to Catch2 3.x, available from the `ESP component registry <https://components.espressif.com/components/espressif/catch2>`_. For an example of migrating from Catch2 2.x to Catch2 3.x, see commit 79a2c15477dc327550ff46a64ee0f8b4679cc417.
+The header-only copy of Catch2 unit testing library previously located in tools/catch directory has been removed. To continue using Catch2 in your project, migrate to Catch2 3.x, available from `The ESP Component Registry <https://components.espressif.com/components/espressif/catch2>`__. For an example of migrating from Catch2 2.x to Catch2 3.x, see commit 79a2c15477dc327550ff46a64ee0f8b4679cc417.
 
 Dropped ``idf.py size --legacy`` option
 ---------------------------------------
@@ -98,4 +98,3 @@ The ``--format json`` option has been replaced with ``--format json2``. The ``js
                 }
             ]
         }
-

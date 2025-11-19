@@ -177,5 +177,11 @@ if(CONFIG_APP_BUILD_GENERATE_BINARIES AND CONFIG_APP_BUILD_TYPE_APP_2NDBOOT)
 
     # Add partition table as a dependency to the flash target
     add_dependencies(flash partition_table_bin)
+
+    if(CONFIG_SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT)
+        # Also add partition table as a dependency to the encrypted-flash target
+        add_dependencies(encrypted-flash partition_table_bin)
+    endif()
+
     add_deprecated_target_alias(partition_table-flash partition-table-flash)
 endif()

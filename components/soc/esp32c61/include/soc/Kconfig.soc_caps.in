@@ -395,6 +395,10 @@ config SOC_GDMA_SUPPORT_WEIGHTED_ARBITRATION
     bool
     default y
 
+config SOC_GDMA_EXT_MEM_ENC_ALIGNMENT
+    int
+    default 16
+
 config SOC_ETM_SUPPORT_SLEEP_RETENTION
     bool
     default y
@@ -452,10 +456,6 @@ config SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK
     default 0x3FFFFF80
 
 config SOC_GPIO_SUPPORT_FORCE_HOLD
-    bool
-    default y
-
-config SOC_GPIO_SUPPORT_HOLD_IO_IN_DSLP
     bool
     default y
 

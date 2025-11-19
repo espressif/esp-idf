@@ -203,6 +203,7 @@
 #define SOC_GDMA_SUPPORT_ETM            1
 #define SOC_GDMA_SUPPORT_SLEEP_RETENTION    1
 #define SOC_GDMA_SUPPORT_WEIGHTED_ARBITRATION   1
+#define SOC_GDMA_EXT_MEM_ENC_ALIGNMENT   (16)
 
 /*-------------------------- GPIO CAPS ---------------------------------------*/
 // ESP32-C5 has 1 GPIO peripheral
@@ -237,8 +238,6 @@
 
 // Support to force hold all IOs
 #define SOC_GPIO_SUPPORT_FORCE_HOLD              (1)
-// LP_IOs and DIG_IOs can be hold during deep sleep and after waking up
-#define SOC_GPIO_SUPPORT_HOLD_IO_IN_DSLP (1)
 // Support to hold a single digital I/O when the digital domain is powered off
 #define SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP  (1)
 
@@ -411,6 +410,7 @@
 
 /*--------------------------- ECC CAPS ---------------------------------------*/
 #define SOC_ECC_CONSTANT_TIME_POINT_MUL           1
+#define SOC_ECC_SUPPORT_CURVE_P384      (1)
 
 /*--------------------------- ECDSA CAPS ---------------------------------------*/
 #define SOC_ECDSA_SUPPORT_EXPORT_PUBKEY     (1)

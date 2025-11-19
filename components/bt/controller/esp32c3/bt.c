@@ -241,7 +241,12 @@ struct osi_funcs_t {
 };
 
 #if CONFIG_BT_CTRL_LE_LOG_EN
-typedef void (*interface_func_t) (uint32_t len, const uint8_t*addr, bool end);
+typedef void (*interface_func_t) (uint32_t len, const uint8_t *addr, uint32_t len_append, const uint8_t *addr_append, uint32_t flag);
+
+enum {
+    BLE_LOG_INTERFACE_FLAG_CONTINUE = 0,
+    BLE_LOG_INTERFACE_FLAG_END,
+};
 #endif // CONFIG_BT_CTRL_LE_LOG_EN
 
 /* External functions or values
@@ -304,11 +309,14 @@ extern void btdm_aa_check_enhance_enable(void);
 
 /* BLE Log module */
 #if CONFIG_BT_CTRL_LE_LOG_EN
+extern int r_ble_log_init_simple(interface_func_t interface, void *handler);
+extern void r_ble_log_deinit_simple(void);
 extern int r_ble_log_init_async(interface_func_t bt_controller_log_interface, bool task_create, uint8_t buffers, uint32_t *bufs_size);
 extern int r_ble_log_deinit_async(void);
 extern void r_ble_log_async_select_dump_buffers(uint8_t buffers);
 extern void r_ble_log_async_output_dump_all(bool output);
 extern void esp_panic_handler_feed_wdts(void);
+extern int r_ble_log_ctrl_level_and_mod(uint8_t level, uint32_t mod_en);
 #endif // CONFIG_BT_CTRL_LE_LOG_EN
 #if (CONFIG_BT_BLUEDROID_ENABLED || CONFIG_BT_NIMBLE_ENABLED)
 extern void scan_stack_enableAdvFlowCtrlVsCmd(bool en);
@@ -399,12 +407,13 @@ static esp_err_t try_heap_caps_add_region(intptr_t start, intptr_t end);
 static void bt_controller_deinit_internal(void);
 
 #if CONFIG_BT_CTRL_LE_LOG_EN
-static void esp_bt_controller_log_interface(uint32_t len, const uint8_t *addr, bool end);
+#if !CONFIG_BT_CTRL_LE_LOG_MODE_BLE_LOG_V2
 #if CONFIG_BT_CTRL_LE_LOG_STORAGE_EN
 void esp_bt_read_ctrl_log_from_flash(bool output);
 static int esp_bt_controller_log_storage(uint32_t len, const uint8_t *addr, bool end);
 static void esp_bt_ctrl_log_partition_get_and_erase_first_block(void);
-#endif // #if CONFIG_BT_CTRL_LE_LOG_STORAGE_EN
+#endif // CONFIG_BT_CTRL_LE_LOG_STORAGE_EN
+#endif // !CONFIG_BT_CTRL_LE_LOG_MODE_BLE_LOG_V2
 #endif // CONFIG_BT_CTRL_LE_LOG_EN
 
 /* Local variable definition
@@ -538,18 +547,14 @@ static bool is_filled = false;
 #endif // CONFIG_BT_CTRL_LE_LOG_STORAGE_EN
 
 #if CONFIG_BT_CTRL_LE_LOG_MODE_BLE_LOG_V2
-static IRAM_ATTR void esp_bt_controller_log_interface(uint32_t len, const uint8_t *addr, bool end)
-{
-    ble_log_write_hex_ll(len, addr, 0, NULL, 0);
-}
-
 void esp_ble_controller_log_dump_all(bool output)
 {
     ble_log_dump_to_console();
 }
 #else /* !CONFIG_BT_CTRL_LE_LOG_MODE_BLE_LOG_V2 */
-static void esp_bt_controller_log_interface(uint32_t len, const uint8_t *addr, bool end)
+static void esp_bt_controller_log_interface(uint32_t len, const uint8_t *addr, uint32_t len_append, const uint8_t *addr_append, uint32_t flag)
 {
+    bool end = (flag & BIT(BLE_LOG_INTERFACE_FLAG_END));
     if (log_output_mode == LOG_STORAGE_TO_FLASH) {
 #if CONFIG_BT_CTRL_LE_LOG_STORAGE_EN
         esp_bt_controller_log_storage(len, addr, end);
@@ -558,23 +563,18 @@ static void esp_bt_controller_log_interface(uint32_t len, const uint8_t *addr, b
         portMUX_TYPE spinlock = portMUX_INITIALIZER_UNLOCKED;
         portENTER_CRITICAL_SAFE(&spinlock);
         esp_panic_handler_feed_wdts();
-        for (int i = 0; i < len; i++) {
-            esp_rom_printf("%02x ", addr[i]);
-        }
 
-        if (end) {
-            esp_rom_printf("\n");
+        if (len && addr) {
+            for (int i = 0; i < len; i++) { esp_rom_printf("%02x ", addr[i]); }
         }
+        if (len_append && addr_append) {
+            for (int i = 0; i < len_append; i++) { esp_rom_printf("%02x ", addr_append[i]); }
+        }
+        if (end) { esp_rom_printf("\n"); }
+
         portEXIT_CRITICAL_SAFE(&spinlock);
     }
 }
-
-#if CONFIG_BT_CTRL_LE_LOG_SPI_OUT_EN
-static IRAM_ATTR void esp_bt_controller_spi_log_interface(uint32_t len, const uint8_t *addr, bool end)
-{
-    ble_log_spi_out_ll_write(len, addr, 0, NULL, 0);
-}
-#endif // CONFIG_BT_CTRL_LE_LOG_SPI_OUT_EN
 
 void esp_ble_controller_log_dump_all(bool output)
 {
@@ -612,16 +612,13 @@ esp_err_t esp_bt_controller_log_init(uint8_t log_output_mode)
     }
 
     esp_err_t ret = ESP_OK;
-    uint8_t buffers = 0;
 
-#if CONFIG_BT_CTRL_LE_LOG_EN
-    buffers |= ESP_BLE_LOG_BUF_CONTROLLER;
-#endif // CONFIG_BT_CTRL_LE_LOG_EN
-#if CONFIG_BT_CTRL_LE_HCI_LOG_EN
-    buffers |= ESP_BLE_LOG_BUF_HCI;
-#endif // CONFIG_BT_CTRL_LE_HCI_LOG_EN
+    ret = r_ble_log_init_simple(ble_log_write_hex_ll, NULL);
+    if (ret != ESP_OK) {
+        return ret;
+    }
 
-    ret = r_ble_log_init_async(esp_bt_controller_log_interface, true, buffers, (uint32_t *)log_bufs_size);
+    ret = r_ble_log_ctrl_level_and_mod(BLE_LOG_LEVEL, BLE_LOG_MODE_EN);
     if (ret == ESP_OK) {
         log_is_inited = true;
     }
@@ -664,7 +661,7 @@ esp_err_t esp_bt_controller_log_init(uint8_t log_output_mode)
         case LOG_SPI_OUT:
             task_create = true;
 #if CONFIG_BT_CTRL_LE_LOG_SPI_OUT_EN
-            bt_controller_log_interface = esp_bt_controller_spi_log_interface;
+            bt_controller_log_interface = ble_log_spi_out_ll_write;
 #endif // CONFIG_BT_CTRL_LE_LOG_SPI_OUT_EN
             break;
         default:
@@ -672,6 +669,11 @@ esp_err_t esp_bt_controller_log_init(uint8_t log_output_mode)
     }
 
     ret = r_ble_log_init_async(bt_controller_log_interface, task_create, buffers, (uint32_t *)log_bufs_size);
+    if (ret != ESP_OK) {
+        return ret;
+    }
+
+    ret = r_ble_log_ctrl_level_and_mod(BLE_LOG_LEVEL, BLE_LOG_MODE_EN);
     if (ret == ESP_OK) {
         log_is_inited = true;
     }

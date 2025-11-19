@@ -3,8 +3,8 @@ USB Device Stack
 
 :link_to_translation:`zh_CN:[中文]`
 
-{IDF_TARGET_USB_DP_GPIO_NUM:default="20"}
-{IDF_TARGET_USB_DM_GPIO_NUM:default="19"}
+{IDF_TARGET_USB_DP_GPIO_NUM:default="20", esp32h4="22"}
+{IDF_TARGET_USB_DM_GPIO_NUM:default="19", esp32h4="21"}
 {IDF_TARGET_USB_EP_NUM: default="6", esp32p4="15"}
 {IDF_TARGET_USB_EP_NUM_INOUT:default="5", esp32p4="8"}
 {IDF_TARGET_USB_EP_NUM_IN:default="1", esp32p4="7"}
@@ -34,7 +34,7 @@ Features
 Hardware Connection
 -------------------
 
-.. only:: esp32s2 or esp32s3
+.. only:: esp32s2 or esp32s3 or esp32h4
 
     The {IDF_TARGET_NAME} routes the USB D+ and D- signals to GPIOs {IDF_TARGET_USB_DP_GPIO_NUM} and {IDF_TARGET_USB_DM_GPIO_NUM} respectively. For USB device functionality, these GPIOs should be connected to the bus in some way (e.g., via a Micro-B port, USB-C port, or directly to standard-A plug).
 
@@ -47,7 +47,7 @@ Hardware Connection
     :alt: Connection of an USB GPIOs directly to a USB standard-A plug
     :figclass: align-center
 
-.. only:: esp32s2 or esp32s3
+.. only:: esp32s2 or esp32s3 or esp32h4
 
     .. note::
 
@@ -406,7 +406,7 @@ This approach ensures that USB transactions remain fast while avoiding potential
 
     .. note::
 
-        SD card support is not available for ESP32-S2 in MSC device mode.
+        SD card support is not available for {IDF_TARGET_NAME} in MSC device mode.
 
     **SPI Flash Performance:**
 
@@ -422,6 +422,27 @@ This approach ensures that USB transactions remain fast while avoiding potential
 
         * - 8192 B
           - 21.54 KB/s
+
+.. only:: esp32h4
+
+    .. note::
+
+        SD card support is not available for {IDF_TARGET_NAME} in MSC device mode.
+
+    **SPI Flash Performance:**
+
+    .. list-table::
+        :header-rows: 1
+        :widths: 20 20
+
+        * - FIFO Size
+          - Write Speed
+
+        * - 512 B
+          - 4.48 KB/s
+
+        * - 8192 B
+          - 22.33 KB/s
 
 Performance Limitations:
 
@@ -444,6 +465,6 @@ The examples can be found in the directory :example:`peripherals/usb/device`.
 - :example:`peripherals/usb/device/tusb_msc` demonstrates how to use the USB capabilities to create a Mass Storage Device that can be recognized by USB-hosts, allowing access to its internal data storage, with support for SPI Flash and SD MMC Card storage media.
 - :example:`peripherals/usb/device/tusb_composite_msc_serialdevice` demonstrates how to set up {IDF_TARGET_NAME} to function simultaneously as both a USB Serial Device and an MSC device (SPI-Flash as the storage media) using the TinyUSB component.
 
-.. only:: not esp32p4
+.. only:: not esp32p4 and not esp32h4
 
   - :example:`peripherals/usb/device/tusb_ncm` demonstrates how to transmit Wi-Fi data to a Linux or Windows host via USB using the Network Control Model (NCM), a sub-class of Communication Device Class (CDC) USB Device for Ethernet-over-USB applications, with the help of a TinyUSB component.

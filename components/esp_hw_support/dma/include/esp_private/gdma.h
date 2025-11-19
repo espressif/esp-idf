@@ -52,7 +52,7 @@ typedef struct {
 
 /**
  * @brief Type of GDMA event callback
- * @param dma_chan GDMA channel handle, created from `gdma_new_channel`
+ * @param dma_chan GDMA channel handle, created from `gdma_new_ahb_channel/gdma_new_axi_channel`
  * @param event_data GDMA event data. Different event share the same data structure, but the caller may only use a few or none of the data members.
  * @param user_data User registered data from `gdma_register_tx_event_callbacks` or `gdma_register_rx_event_callbacks`
  *
@@ -146,7 +146,7 @@ esp_err_t gdma_new_axi_channel(const gdma_channel_alloc_config_t *config, gdma_c
  * @note Suggest to use helper macro `GDMA_MAKE_TRIGGER` to construct parameter `trig_periph`. e.g. GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_SHA,0)
  * @note Connecting to a peripheral will also reset the DMA FIFO and FSM automatically
  *
- * @param[in] dma_chan GDMA channel handle, allocated by `gdma_new_channel`
+ * @param[in] dma_chan GDMA channel handle, allocated by `gdma_new_ahb_channel/gdma_new_axi_channel`
  * @param[in] trig_periph GDMA trigger peripheral
  * @return
  *      - ESP_OK: Connect GDMA channel successfully
@@ -159,7 +159,7 @@ esp_err_t gdma_connect(gdma_channel_handle_t dma_chan, gdma_trigger_t trig_perip
 /**
  * @brief Disconnect GMA channel from peripheral
  *
- * @param[in] dma_chan GDMA channel handle, allocated by `gdma_new_channel`
+ * @param[in] dma_chan GDMA channel handle, allocated by `gdma_new_ahb_channel/gdma_new_axi_channel`
  * @return
  *      - ESP_OK: Disconnect GDMA channel successfully
  *      - ESP_ERR_INVALID_ARG: Disconnect GDMA channel failed because of invalid argument
@@ -184,7 +184,7 @@ typedef struct {
  * @note It's highly recommended to enable the burst mode and set proper burst size for the DMA channel,
  *       which can improve the performance in accessing external memory by a lot.
  *
- * @param[in] chan DMA channel handle, allocated by `gdma_new_channel`
+ * @param[in] chan DMA channel handle, allocated by `gdma_new_ahb_channel/gdma_new_axi_channel`
  * @param[in] config Transfer configurations
  * @return
  *      - ESP_OK: Configure DMA transfer parameters successfully
@@ -202,7 +202,7 @@ esp_err_t gdma_config_transfer(gdma_channel_handle_t dma_chan, const gdma_transf
  * @note The returned alignment doesn't take the cache line size into account, if you want to do aligned memory allocation,
  *       you should align the buffer size to the cache line size by yourself if the DMA buffer is behind a cache.
  *
- * @param[in] dma_chan GDMA channel handle, allocated by `gdma_new_channel`
+ * @param[in] dma_chan GDMA channel handle, allocated by `gdma_new_ahb_channel/gdma_new_axi_channel`
  * @param[out] int_mem_alignment Internal memory alignment
  * @param[out] ext_mem_alignment External memory alignment
  * @return
@@ -215,7 +215,7 @@ esp_err_t gdma_get_alignment_constraints(gdma_channel_handle_t dma_chan, size_t 
 /**
  * @brief Apply channel strategy for GDMA channel
  *
- * @param[in] dma_chan GDMA channel handle, allocated by `gdma_new_channel`
+ * @param[in] dma_chan GDMA channel handle, allocated by `gdma_new_ahb_channel/gdma_new_axi_channel`
  * @param[in] config Configuration of GDMA channel strategy
  *      - ESP_OK: Apply channel strategy successfully
  *      - ESP_ERR_INVALID_ARG: Apply channel strategy failed because of invalid argument
@@ -228,7 +228,7 @@ esp_err_t gdma_apply_strategy(gdma_channel_handle_t dma_chan, const gdma_strateg
  *
  * @note By default, all GDMA channels are with the same priority: 0. Channels with the same priority are served in round-robin manner.
  *
- * @param[in] dma_chan GDMA channel handle, allocated by `gdma_new_channel`
+ * @param[in] dma_chan GDMA channel handle, allocated by `gdma_new_ahb_channel/gdma_new_axi_channel`
  * @param[in] priority Priority of GDMA channel, higher value means higher priority
  * @return
  *      - ESP_OK: Set GDMA channel priority successfully
@@ -239,9 +239,9 @@ esp_err_t gdma_set_priority(gdma_channel_handle_t dma_chan, uint32_t priority);
 
 /**
  * @brief Delete GDMA channel
- * @note If you call `gdma_new_channel` several times for a same peripheral, make sure you call this API the same times.
+ * @note If you call `gdma_new_ahb_channel/gdma_new_axi_channel` several times for a same peripheral, make sure you call this API the same times.
  *
- * @param[in] dma_chan GDMA channel handle, allocated by `gdma_new_channel`
+ * @param[in] dma_chan GDMA channel handle, allocated by `gdma_new_ahb_channel/gdma_new_axi_channel`
  * @return
  *      - ESP_OK: Delete GDMA channel successfully
  *      - ESP_ERR_INVALID_ARG: Delete GDMA channel failed because of invalid argument
@@ -255,7 +255,7 @@ esp_err_t gdma_del_channel(gdma_channel_handle_t dma_chan);
  * @note This API breaks the encapsulation of GDMA Channel Object.
  *       With the returned group/channel ID, you can even bypass all other GDMA driver API and access Low Level API directly.
  *
- * @param[in] dma_chan GDMA channel handle, allocated by `gdma_new_channel`
+ * @param[in] dma_chan GDMA channel handle, allocated by `gdma_new_ahb_channel/gdma_new_axi_channel`
  * @param[out] group_id Returned group ID
  * @param[out] channel_id Returned channel ID
  * @return
@@ -271,7 +271,7 @@ esp_err_t gdma_get_group_channel_id(gdma_channel_handle_t dma_chan, int *group_i
  * @brief Set GDMA event callbacks for TX channel
  * @note This API will install GDMA interrupt service for the channel internally
  *
- * @param[in] dma_chan GDMA channel handle, allocated by `gdma_new_channel`
+ * @param[in] dma_chan GDMA channel handle, allocated by `gdma_new_ahb_channel/gdma_new_axi_channel`
  * @param[in] cbs Group of callback functions
  * @param[in] user_data User data, which will be passed to callback functions directly
  * @return
@@ -285,7 +285,7 @@ esp_err_t gdma_register_tx_event_callbacks(gdma_channel_handle_t dma_chan, gdma_
  * @brief Set GDMA event callbacks for RX channel
  * @note This API will install GDMA interrupt service for the channel internally
  *
- * @param[in] dma_chan GDMA channel handle, allocated by `gdma_new_channel`
+ * @param[in] dma_chan GDMA channel handle, allocated by `gdma_new_ahb_channel/gdma_new_axi_channel`
  * @param[in] cbs Group of callback functions
  * @param[in] user_data User data, which will be passed to callback functions directly
  * @return
@@ -301,7 +301,7 @@ esp_err_t gdma_register_rx_event_callbacks(gdma_channel_handle_t dma_chan, gdma_
  * @note This function is allowed to run within ISR context
  * @note This function is also allowed to run when Cache is disabled, if `CONFIG_GDMA_CTRL_FUNC_IN_IRAM` is enabled
  *
- * @param[in] dma_chan GDMA channel handle, allocated by `gdma_new_channel`
+ * @param[in] dma_chan GDMA channel handle, allocated by `gdma_new_ahb_channel/gdma_new_axi_channel`
  * @param[in] desc_base_addr Base address of descriptors (usually the descriptors are chained into a link or ring)
  * @return
  *      - ESP_OK: Start DMA engine successfully
@@ -317,7 +317,7 @@ esp_err_t gdma_start(gdma_channel_handle_t dma_chan, intptr_t desc_base_addr);
  * @note This function is allowed to run within ISR context
  * @note This function is also allowed to run when Cache is disabled, if `CONFIG_GDMA_CTRL_FUNC_IN_IRAM` is enabled
  *
- * @param[in] dma_chan GDMA channel handle, allocated by `gdma_new_channel`
+ * @param[in] dma_chan GDMA channel handle, allocated by `gdma_new_ahb_channel/gdma_new_axi_channel`
  * @return
  *      - ESP_OK: Stop DMA engine successfully
  *      - ESP_ERR_INVALID_ARG: Stop DMA engine failed because of invalid argument
@@ -333,7 +333,7 @@ esp_err_t gdma_stop(gdma_channel_handle_t dma_chan);
  * @note This function is also allowed to run when Cache is disabled, if `CONFIG_GDMA_CTRL_FUNC_IN_IRAM` is enabled
  * @note This API could also resume a paused DMA engine, make sure new descriptors have been appended to the descriptor chain before calling it.
  *
- * @param[in] dma_chan GDMA channel handle, allocated by `gdma_new_channel`
+ * @param[in] dma_chan GDMA channel handle, allocated by `gdma_new_ahb_channel/gdma_new_axi_channel`
  * @return
  *      - ESP_OK: Send append command to DMA engine successfully
  *      - ESP_ERR_INVALID_ARG: Send append command to DMA engine failed because of invalid argument
@@ -348,7 +348,7 @@ esp_err_t gdma_append(gdma_channel_handle_t dma_chan);
  * @note This function is also allowed to run when Cache is disabled, if `CONFIG_GDMA_CTRL_FUNC_IN_IRAM` is enabled
  * @note Resetting a DMA channel won't break the connection with the target peripheral
  *
- * @param[in] dma_chan GDMA channel handle, allocated by `gdma_new_channel`
+ * @param[in] dma_chan GDMA channel handle, allocated by `gdma_new_ahb_channel/gdma_new_axi_channel`
  * @return
  *      - ESP_OK: DMA channel reset successfully
  *      - ESP_ERR_INVALID_ARG: DMA channel reset failed due to invalid arguments
@@ -369,7 +369,7 @@ typedef struct {
  *
  * @note The created ETM event object can be deleted later by calling `esp_etm_del_event`
  *
- * @param[in] dma_chan GDMA channel handle, allocated by `gdma_new_channel`
+ * @param[in] dma_chan GDMA channel handle, allocated by `gdma_new_ahb_channel/gdma_new_axi_channel`
  * @param[in] config GDMA ETM event configuration
  * @param[out] out_event Returned ETM event handle
  * @return
@@ -393,7 +393,7 @@ typedef struct {
  * @note The created ETM task object can be deleted later by calling `esp_etm_del_task`
  * @note If the GDMA task (e.g. start/stop) is controlled by ETM, then you can't use `gdma_start`/`gdma_stop` to control it.
  *
- * @param[in] dma_chan GDMA channel handle, allocated by `gdma_new_channel`
+ * @param[in] dma_chan GDMA channel handle, allocated by `gdma_new_ahb_channel/gdma_new_axi_channel`
  * @param[in] config GDMA ETM task configuration
  * @param[out] out_task Returned ETM task handle
  * @return
@@ -412,7 +412,7 @@ esp_err_t gdma_new_etm_task(gdma_channel_handle_t dma_chan, const gdma_etm_task_
  *       which can bring conflict if the peripheral is also using the same trigger ID. This function can return the free IDs
  *       for memory copy, at the runtime.
  *
- * @param[in] dma_chan GDMA channel handle, allocated by `gdma_new_channel`
+ * @param[in] dma_chan GDMA channel handle, allocated by `gdma_new_ahb_channel/gdma_new_axi_channel`
  * @param[out] mask Returned mask of free M2M trigger IDs
  * @return
  *      - ESP_OK: Get free M2M trigger IDs successfully
@@ -438,7 +438,7 @@ typedef struct {
  * @note This function must be called before `gdma_start`.
  * @note The CRC Calculator will reset itself automatically if the DMA stops and starts again.
  *
- * @param[in] dma_chan GDMA channel handle, allocated by `gdma_new_channel`
+ * @param[in] dma_chan GDMA channel handle, allocated by `gdma_new_ahb_channel/gdma_new_axi_channel`
  * @param[in] config CRC Calculator configuration
  * @return
  *      - ESP_OK: Configure CRC Calculator successfully
@@ -452,7 +452,7 @@ esp_err_t gdma_config_crc_calculator(gdma_channel_handle_t dma_chan, const gdma_
  *
  * @note You need to call this function before a new DMA transaction starts, otherwise the CRC results may be overridden.
  *
- * @param[in] dma_chan GDMA channel handle, allocated by `gdma_new_channel`
+ * @param[in] dma_chan GDMA channel handle, allocated by `gdma_new_ahb_channel/gdma_new_axi_channel`
  * @param[out] result Returned CRC result
  * @return
  *      - ESP_OK: Get CRC result successfully
@@ -474,7 +474,7 @@ esp_err_t gdma_crc_get_result(gdma_channel_handle_t dma_chan, uint32_t *result);
  * @note Weighted arbitration is different from priority arbitration. "Weight" is used after comparing "priority"
  *       After the priority comparison, then arbitrator checks whether there are still unused tokens in the channel.
  *
- * @param[in] dma_chan GDMA channel handle, allocated by `gdma_new_channel`
+ * @param[in] dma_chan GDMA channel handle, allocated by `gdma_new_ahb_channel/gdma_new_axi_channel`
  * @param[in] weight Weight of GDMA channel, higher value means higher priority in weighted arbitration.
  * @return
  *      - ESP_OK: Set GDMA channel weight successfully

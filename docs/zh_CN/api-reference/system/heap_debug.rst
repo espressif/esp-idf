@@ -571,8 +571,8 @@ ESP-IDF 集成了用于请求 :ref:`堆内存信息 <heap-information>`、:ref:`
 确定存在泄漏的代码后，请执行以下步骤：
 
 - 在项目配置菜单中，前往 ``Component config`` > ``Heap Memory Debugging`` > :ref:`CONFIG_HEAP_TRACING_DEST` 并选择 ``Host-Based``。
-- 在项目配置菜单中，前往 ``Component config`` > ``Application Level Tracing`` > ``Enable Application Level Tracing`` > ``Data Destination`` :ref:`CONFIG_APPTRACE_DESTINATION` 并选择 ``JTAG``。
-- 在项目配置菜单中，前往 ``Component config`` > ``Application Level Tracing`` > ``FreeRTOS SystemView Tracing`` 并启用 :ref:`CONFIG_APPTRACE_SV_ENABLE`。
+- 在项目配置菜单中，前往 ``Component config`` > ``ESP Trace Configuration`` > ``Application Level Tracing`` > ``Data Destination`` :ref:`CONFIG_APPTRACE_DESTINATION` 并选择 ``JTAG``。
+- 在项目配置菜单中，前往 ``Component config`` > ``ESP Trace Configuration`` > ``Trace library`` 并选择 ``SEGGER SystemView``。
 - 在程序早期，调用函数 :cpp:func:`heap_trace_init_tohost`，初始化 JTAG 堆内存跟踪模块。
 - 在有内存泄漏之嫌的代码块前，调用函数 :cpp:func:`heap_trace_start` 开始记录系统中的内存分配和释放操作。
 

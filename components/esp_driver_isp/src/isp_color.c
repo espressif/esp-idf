@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -43,16 +43,19 @@ esp_err_t esp_isp_color_configure(isp_proc_handle_t proc, const esp_isp_color_co
         isp_hal_color_config(&(proc->hal), NULL);
     }
 
+    bool valid = isp_ll_shadow_update_color(proc->hal.hw);
+    ESP_RETURN_ON_FALSE_ISR(valid, ESP_ERR_INVALID_STATE, TAG, "failed to update color shadow register");
+
     return ESP_OK;
 }
 
 esp_err_t esp_isp_color_enable(isp_proc_handle_t proc)
 {
     ESP_RETURN_ON_FALSE(proc, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
-    ESP_RETURN_ON_FALSE(proc->color_fsm == ISP_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "color is enabled already");
+    isp_fsm_t expected_fsm = ISP_FSM_INIT;
+    ESP_RETURN_ON_FALSE(atomic_compare_exchange_strong(&proc->color_fsm, &expected_fsm, ISP_FSM_ENABLE), ESP_ERR_INVALID_STATE, TAG, "color is enabled already");
 
     isp_ll_color_enable(proc->hal.hw, true);
-    proc->color_fsm = ISP_FSM_ENABLE;
 
     return ESP_OK;
 }
@@ -60,10 +63,10 @@ esp_err_t esp_isp_color_enable(isp_proc_handle_t proc)
 esp_err_t esp_isp_color_disable(isp_proc_handle_t proc)
 {
     ESP_RETURN_ON_FALSE(proc, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
-    ESP_RETURN_ON_FALSE(proc->color_fsm == ISP_FSM_ENABLE, ESP_ERR_INVALID_STATE, TAG, "color isn't enabled yet");
+    isp_fsm_t expected_fsm = ISP_FSM_ENABLE;
+    ESP_RETURN_ON_FALSE(atomic_compare_exchange_strong(&proc->color_fsm, &expected_fsm, ISP_FSM_INIT), ESP_ERR_INVALID_STATE, TAG, "color isn't enabled yet");
 
     isp_ll_color_enable(proc->hal.hw, false);
-    proc->color_fsm = ISP_FSM_INIT;
 
     return ESP_OK;
 }

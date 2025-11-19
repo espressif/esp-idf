@@ -61,6 +61,16 @@
 #define HEAP_MEMORY_DEBUG   FALSE
 #endif
 
+#if UC_BT_BLUEDROID_THREAD_DEBUG
+#define OSI_THREAD_DEBUG    TRUE
+#else
+#define OSI_THREAD_DEBUG    FALSE
+#endif
+
+#define OSI_THREAD_BLOCK_TIME UC_BT_BLUEDROID_THREAD_BLOCK_TIME
+
+#define OSI_THREAD_BLOCK_MSG UC_BT_BLUEDROID_THREAD_BLOCK_MSG
+
 #ifndef BT_BLE_DYNAMIC_ENV_MEMORY
 #define BT_BLE_DYNAMIC_ENV_MEMORY  FALSE
 #endif
@@ -240,6 +250,7 @@ typedef uint64_t UINT64;
 typedef bool BOOLEAN;
 /* Maximum UUID size - 16 bytes, and structure to hold any type of UUID. */
 #define MAX_UUID_SIZE              16
+#define MAX_UUID_NUM               32
 
 typedef struct {
 #define LEN_UUID_16     2

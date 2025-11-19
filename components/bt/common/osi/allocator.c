@@ -216,7 +216,9 @@ void *osi_malloc_func(size_t size)
     void *p = osi_malloc_base(size);
 
     if (size != 0 && p == NULL) {
-        OSI_TRACE_ERROR("malloc failed (caller=%p size=%u)\n", __builtin_return_address(0), size);
+        OSI_TRACE_ERROR("malloc failed (caller=%p size=%u)", __builtin_return_address(0), size);
+        OSI_TRACE_ERROR("heap info: free=%d, largest_block=%d",
+            heap_caps_get_free_size(MALLOC_CAP_DEFAULT), heap_caps_get_largest_free_block(MALLOC_CAP_DEFAULT));
 #if HEAP_ALLOCATION_FAILS_ABORT
         assert(0);
 #endif
@@ -230,7 +232,9 @@ void *osi_calloc_func(size_t size)
     void *p = osi_calloc_base(size);
 
     if (size != 0 && p == NULL) {
-        OSI_TRACE_ERROR("calloc failed (caller=%p size=%u)\n", __builtin_return_address(0), size);
+        OSI_TRACE_ERROR("calloc failed (caller=%p size=%u)", __builtin_return_address(0), size);
+        OSI_TRACE_ERROR("heap info: free=%d, largest_block=%d",
+            heap_caps_get_free_size(MALLOC_CAP_DEFAULT), heap_caps_get_largest_free_block(MALLOC_CAP_DEFAULT));
 #if HEAP_ALLOCATION_FAILS_ABORT
         assert(0);
 #endif
@@ -241,8 +245,5 @@ void *osi_calloc_func(size_t size)
 
 void osi_free_func(void *ptr)
 {
-#if HEAP_MEMORY_DEBUG
-    osi_mem_dbg_clean(ptr, __func__, __LINE__);
-#endif
-    free(ptr);
+    osi_free(ptr);
 }

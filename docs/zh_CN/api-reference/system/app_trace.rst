@@ -25,4 +25,3 @@ API 参考
 -------------
 
 .. include-build-file:: inc/esp_app_trace.inc
-.. include-build-file:: inc/esp_sysview_trace.inc

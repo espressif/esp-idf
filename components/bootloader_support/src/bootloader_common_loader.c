@@ -263,7 +263,11 @@ rtc_retain_mem_t* bootloader_common_get_rtc_retain_mem(void)
 #ifdef BOOTLOADER_BUILD
 
 #if ESP_ROM_HAS_LP_ROM
+#if CONFIG_IDF_TARGET_ESP32P4
+    #define RTC_RETAIN_MEM_ADDR (SOC_RTC_DRAM_LOW + CONFIG_P4_REV3_MSPI_WORKAROUND_SIZE)
+#else
     #define RTC_RETAIN_MEM_ADDR (SOC_RTC_DRAM_LOW)
+#endif
 #else
     /* Since the structure containing the retain_mem_t is aligned on 8 by the linker, make sure we align this
      * structure size here too */

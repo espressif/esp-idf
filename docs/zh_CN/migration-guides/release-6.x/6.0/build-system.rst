@@ -79,3 +79,8 @@
 ------------------
 
 ESP-IDF v6 使用了 esp-idf-kconfig v3，对配置文件 ``Kconfig`` 的语法进行了若干变更。完整变更列表请参阅 `Migration Guide From esp-idf-kconfig v2.x to v3.x <https://docs.espressif.com/projects/esp-idf-kconfig/en/latest/developer-guide/migration-guide.html>`_。
+
+编译器选项
+----------
+
+默认的编译器警告将被视为报错。配置选项 :ref:`CONFIG_COMPILER_DISABLE_DEFAULT_ERRORS` 已被更改为 N。

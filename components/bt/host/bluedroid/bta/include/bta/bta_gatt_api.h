@@ -39,8 +39,10 @@
 #endif
 
 
+#if (APPL_INITIAL_TRACE_LEVEL >= BT_TRACE_LEVEL_DEBUG)
 #ifndef     BTA_GATT_DEBUG
 #define     BTA_GATT_DEBUG       FALSE
+#endif
 #endif
 
 typedef enum {
@@ -817,6 +819,7 @@ extern void BTA_GATTC_AppDeregister (tBTA_GATTC_IF client_if);
 *******************************************************************************/
 extern void BTA_GATTC_Enh_Open(tBTA_GATTC_IF client_if, BD_ADDR remote_bda, tBTA_ADDR_TYPE remote_addr_type,
                     BOOLEAN is_direct, tBTA_GATT_TRANSPORT transport, BOOLEAN is_aux, tBTA_ADDR_TYPE own_addr_type,
+                    BOOLEAN is_pawr_synced, UINT8 adv_handle, UINT8 subevent,
                     UINT8 phy_mask, tBTA_BLE_CONN_PARAMS *phy_1m_conn_params, tBTA_BLE_CONN_PARAMS *phy_2m_conn_params,
                     tBTA_BLE_CONN_PARAMS *phy_coded_conn_params);
 

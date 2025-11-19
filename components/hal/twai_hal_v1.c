@@ -5,8 +5,8 @@
  */
 
 #include <stddef.h>
-#include "sdkconfig.h"
 #include "esp_compiler.h"
+#include "hal/log.h"
 #include "hal/twai_hal.h"
 #include "hal/twai_ll.h"
 #include "soc/soc_caps.h"
@@ -16,7 +16,8 @@
 #define TWAI_HAL_INIT_REC    0
 #define TWAI_HAL_INIT_EWL    96
 
-#if CONFIG_IDF_TARGET_ESP32 // only esp32 have this errata, TODO: IDF-13002 check errata runtime
+#if TWAI_LL_HAS_RX_FRAME_ISSUE || TWAI_LL_HAS_RX_FIFO_ISSUE
+// context for errata workarounds
 typedef struct twai_hal_errata_ctx_t {
     twai_hal_frame_t tx_frame_save;
     twai_ll_reg_save_t reg_save;
@@ -25,7 +26,7 @@ typedef struct twai_hal_errata_ctx_t {
 #endif
 
 size_t twai_hal_get_mem_requirment(void) {
-#if CONFIG_IDF_TARGET_ESP32 // only esp32 have this errata, TODO: IDF-13002 check errata runtime
+#if TWAI_LL_HAS_RX_FRAME_ISSUE || TWAI_LL_HAS_RX_FIFO_ISSUE
     return sizeof(twai_hal_context_t) + sizeof(twai_hal_errata_ctx_t);
 #else
     return sizeof(twai_hal_context_t);
@@ -48,7 +49,7 @@ bool twai_hal_init(twai_hal_context_t *hal_ctx, const twai_hal_config_t *config)
     if (!twai_ll_is_in_reset_mode(hal_ctx->dev)) {    //Must enter reset mode to write to config registers
         return false;
     }
-#if CONFIG_IDF_TARGET_ESP32 // only esp32 have this errata, TODO: IDF-13002 check errata runtime
+#if TWAI_LL_HAS_RX_FRAME_ISSUE || TWAI_LL_HAS_RX_FIFO_ISSUE
     hal_ctx->errata_ctx = (twai_hal_errata_ctx_t *)(hal_ctx + 1);   //errata context is place at end of hal_ctx
 #endif
 #if SOC_TWAI_SUPPORT_MULTI_ADDRESS_LAYOUT
@@ -143,12 +144,10 @@ void twai_hal_start(twai_hal_context_t *hal_ctx)
     twai_ll_set_mode(hal_ctx->dev, hal_ctx->enable_listen_only, hal_ctx->enable_self_test, hal_ctx->enable_loopback);
     //Clear the TEC and REC
     twai_ll_set_tec(hal_ctx->dev, 0);
-#ifdef CONFIG_TWAI_ERRATA_FIX_LISTEN_ONLY_DOM
-    /*
-    Errata workaround: Prevent transmission of dominant error frame while in listen only mode by setting REC to 128
-    before exiting reset mode. This forces the controller to be error passive (thus only transmits recessive bits).
-    The TEC/REC remain frozen in listen only mode thus ensuring we remain error passive.
-    */
+#if TWAI_LL_HAS_LOM_DOM_ISSUE
+    // Errata workaround: Prevent transmission of dominant error frame while in listen only mode by setting REC to 128
+    // before exiting reset mode. This forces the controller to be error passive (thus only transmits recessive bits).
+    // The TEC/REC remain frozen in listen only mode thus ensuring we remain error passive.
     if (hal_ctx->enable_listen_only) {
         twai_ll_set_rec(hal_ctx->dev, 128);
     } else
@@ -179,7 +178,7 @@ void twai_hal_start_bus_recovery(twai_hal_context_t *hal_ctx)
 
 /* ------------------------------------ IRAM Content ------------------------------------ */
 
-#ifdef CONFIG_TWAI_ERRATA_FIX_RX_FIFO_CORRUPT
+#if TWAI_LL_HAS_RX_FIFO_ISSUE
 //Errata condition occurs at 64 messages. Threshold set to 62 to prevent the chance of failing to detect errata condition.
 #define TWAI_RX_FIFO_CORRUPT_THRESH     62
 #endif
@@ -231,7 +230,8 @@ static inline uint32_t twai_hal_decode_interrupt(twai_hal_context_t *hal_ctx)
         TWAI_HAL_SET_BITS(events, TWAI_HAL_EVENT_RX_BUFF_FRAME);
     }
     //Transmit interrupt set whenever TX buffer becomes free
-#ifdef CONFIG_TWAI_ERRATA_FIX_TX_INTR_LOST
+#if TWAI_LL_HAS_INTR_LOST_ISSUE
+    // Errata workaround: Check the transmit buffer status bit to recover any lost transmit interrupt.
     if ((interrupts & TWAI_LL_INTR_TI || hal_ctx->state_flags & TWAI_HAL_STATE_FLAG_TX_BUFF_OCCUPIED) && status & TWAI_LL_STATUS_TBS) {
 #else
     if (interrupts & TWAI_LL_INTR_TI) {
@@ -270,7 +270,7 @@ uint32_t twai_hal_get_events(twai_hal_context_t *hal_ctx)
 
     //Handle low latency events
     if (events & TWAI_HAL_EVENT_BUS_OFF) {
-#ifdef CONFIG_TWAI_ERRATA_FIX_BUS_OFF_REC
+#if TWAI_LL_HAS_BUSOFF_REC_ISSUE
         //Errata workaround: Force REC to 0 by re-triggering bus-off (by setting TEC to 0 then 255)
         twai_ll_set_tec(hal_ctx->dev, 0);
         twai_ll_set_tec(hal_ctx->dev, 255);
@@ -289,25 +289,27 @@ uint32_t twai_hal_get_events(twai_hal_context_t *hal_ctx)
             .ack_err = (type == TWAI_LL_ERR_OTHER) && (seg == TWAI_LL_ERR_SEG_ACK_SLOT),
         };
         hal_ctx->errors = errors;
-#ifdef CONFIG_TWAI_ERRATA_FIX_RX_FRAME_INVALID
+#if TWAI_LL_HAS_RX_FRAME_ISSUE
         //Check for errata condition (RX message has bus error at particular segments)
         if (dir == TWAI_LL_ERR_DIR_RX &&
             ((seg == TWAI_LL_ERR_SEG_DATA || seg == TWAI_LL_ERR_SEG_CRC_SEQ) ||
              (seg == TWAI_LL_ERR_SEG_ACK_DELIM && type == TWAI_LL_ERR_OTHER))) {
             TWAI_HAL_SET_BITS(events, TWAI_HAL_EVENT_NEED_PERIPH_RESET);
+            HAL_LOGD("TWAI_HAL", "RX frame invalid detected");
         }
 #endif
     }
     if (events & TWAI_HAL_EVENT_ARB_LOST) {
         twai_ll_clear_arb_lost_cap(hal_ctx->dev);
     }
-#ifdef CONFIG_TWAI_ERRATA_FIX_RX_FIFO_CORRUPT
+#if TWAI_LL_HAS_RX_FIFO_ISSUE
     //Check for errata condition (rx_msg_count >= corruption_threshold)
     if (events & TWAI_HAL_EVENT_RX_BUFF_FRAME && twai_ll_get_rx_msg_count(hal_ctx->dev) >= TWAI_RX_FIFO_CORRUPT_THRESH) {
         TWAI_HAL_SET_BITS(events, TWAI_HAL_EVENT_NEED_PERIPH_RESET);
+        HAL_LOGD("TWAI_HAL", "RX FIFO corruption detected");
     }
 #endif
-#if defined(CONFIG_TWAI_ERRATA_FIX_RX_FRAME_INVALID) || defined(CONFIG_TWAI_ERRATA_FIX_RX_FIFO_CORRUPT)
+#if TWAI_LL_HAS_RX_FRAME_ISSUE || TWAI_LL_HAS_RX_FIFO_ISSUE
     if (events & TWAI_HAL_EVENT_NEED_PERIPH_RESET) {
         //A peripheral reset will invalidate an RX event;
         TWAI_HAL_CLEAR_BITS(events, (TWAI_HAL_EVENT_RX_BUFF_FRAME));
@@ -316,7 +318,7 @@ uint32_t twai_hal_get_events(twai_hal_context_t *hal_ctx)
     return events;
 }
 
-#if CONFIG_IDF_TARGET_ESP32 // only esp32 have this errata, TODO: IDF-13002 check errata runtime
+#if TWAI_LL_HAS_RX_FRAME_ISSUE || TWAI_LL_HAS_RX_FIFO_ISSUE
 bool twai_hal_is_hw_busy(twai_hal_context_t *hal_ctx)
 {
     return (TWAI_LL_STATUS_TS | TWAI_LL_STATUS_RS) & twai_ll_get_status(hal_ctx->dev);
@@ -365,7 +367,7 @@ void twai_hal_recover_from_reset(twai_hal_context_t *hal_ctx)
         TWAI_HAL_CLEAR_BITS(hal_ctx->state_flags, TWAI_HAL_STATE_FLAG_TX_NEED_RETRY);
     }
 }
-#endif // CONFIG_IDF_TARGET_ESP32
+#endif // TWAI_LL_HAS_RX_FRAME_ISSUE || TWAI_LL_HAS_RX_FIFO_ISSUE
 
 void twai_hal_format_frame(const twai_hal_trans_desc_t *trans_desc, twai_hal_frame_t *frame)
 {
@@ -405,7 +407,7 @@ void twai_hal_set_tx_buffer_and_transmit(twai_hal_context_t *hal_ctx, twai_hal_f
         twai_ll_set_cmd_tx(hal_ctx->dev);
     }
     TWAI_HAL_SET_BITS(hal_ctx->state_flags, TWAI_HAL_STATE_FLAG_TX_BUFF_OCCUPIED);
-#if defined(CONFIG_TWAI_ERRATA_FIX_RX_FRAME_INVALID) || defined(CONFIG_TWAI_ERRATA_FIX_RX_FIFO_CORRUPT)
+#if TWAI_LL_HAS_RX_FRAME_ISSUE || TWAI_LL_HAS_RX_FIFO_ISSUE
     if (&hal_ctx->errata_ctx->tx_frame_save == tx_frame) {
         return;
     }
@@ -413,7 +415,7 @@ void twai_hal_set_tx_buffer_and_transmit(twai_hal_context_t *hal_ctx, twai_hal_f
     ESP_COMPILER_DIAGNOSTIC_PUSH_IGNORE("-Wanalyzer-overlapping-buffers") // TODO IDF-11085
     memcpy(&hal_ctx->errata_ctx->tx_frame_save, tx_frame, sizeof(twai_hal_frame_t));
     ESP_COMPILER_DIAGNOSTIC_POP("-Wanalyzer-overlapping-buffers")
-#endif  //defined(CONFIG_TWAI_ERRATA_FIX_RX_FRAME_INVALID) || defined(CONFIG_TWAI_ERRATA_FIX_RX_FIFO_CORRUPT)
+#endif  //TWAI_LL_HAS_RX_FRAME_ISSUE || TWAI_LL_HAS_RX_FIFO_ISSUE
 }
 
 uint32_t twai_hal_get_rx_msg_count(twai_hal_context_t *hal_ctx)

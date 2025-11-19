@@ -392,7 +392,7 @@ Application Examples
     - :example:`system/ulp/lp_core/lp_uart/lp_uart_echo` reads data written to a serial console and echoes it back. This example demonstrates the usage of the LP UART driver running on the LP core.
     - :example:`system/ulp/lp_core/lp_uart/lp_uart_print` shows how to print various statements from a program running on the LP core.
     - :example:`system/ulp/lp_core/lp_uart/lp_uart_char_seq_wakeup` shows how to trigger a wakeup using the LP UART specific character sequence wakeup mode.
-    - :example:`system/ulp/lp_core/lp_mailbox` shows how to use the mailbox for both synchronous and asynchronous communication between the HP and LP cores. Depending on the target, the implementation may use the hardware mailbox controller (if available) or a pure software implementation based on software interrupts.
+    - :example:`system/ulp/lp_core/lp_mailbox` shows how to use the mailbox for both synchronous and asynchronous communication between the HP and LP cores. Depending on the target, the implementation may use the hardware mailbox controller (if available) or a software-only implementation using interrupts.
     - :example:`system/ulp/lp_core/interrupt` shows how to register an interrupt handler on the LP core to receive an interrupt triggered by the main CPU.
     - :example:`system/ulp/lp_core/gpio_intr_pulse_counter` shows how to use GPIO interrupts to count pulses while the main CPU is in Deep-sleep mode.
     - :example:`system/ulp/lp_core/build_system/` demonstrates how to include custom ``CMakeLists.txt`` file for the ULP app.

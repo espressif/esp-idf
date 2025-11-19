@@ -220,7 +220,8 @@ void gatt_free(void)
 ** Returns          TRUE if connection is started, otherwise return FALSE.
 **
 *******************************************************************************/
-BOOLEAN gatt_connect (BD_ADDR rem_bda, tBLE_ADDR_TYPE bd_addr_type, tGATT_TCB *p_tcb, tBT_TRANSPORT transport, BOOLEAN is_aux)
+BOOLEAN gatt_connect (BD_ADDR rem_bda, tBLE_ADDR_TYPE bd_addr_type, tGATT_TCB *p_tcb, tBT_TRANSPORT transport, BOOLEAN is_aux,
+                        BOOLEAN is_pawr_synced, UINT8 adv_handle, UINT8 subevent)
 {
     BOOLEAN             gatt_ret = FALSE;
 
@@ -230,7 +231,7 @@ BOOLEAN gatt_connect (BD_ADDR rem_bda, tBLE_ADDR_TYPE bd_addr_type, tGATT_TCB *p
 
     if (transport == BT_TRANSPORT_LE) {
         p_tcb->att_lcid = L2CAP_ATT_CID;
-        gatt_ret = L2CA_ConnectFixedChnl (L2CAP_ATT_CID, rem_bda, bd_addr_type, is_aux);
+        gatt_ret = L2CA_ConnectFixedChnl (L2CAP_ATT_CID, rem_bda, bd_addr_type, is_aux, is_pawr_synced, adv_handle, subevent);
 #if (CLASSIC_BT_GATT_INCLUDED == TRUE)
     } else {
         if ((p_tcb->att_lcid = L2CA_ConnectReq(BT_PSM_ATT, rem_bda)) != 0) {
@@ -376,7 +377,8 @@ void gatt_update_app_use_link_flag (tGATT_IF gatt_if, tGATT_TCB *p_tcb, BOOLEAN 
 **
 *******************************************************************************/
 BOOLEAN gatt_act_connect (tGATT_REG *p_reg, BD_ADDR bd_addr,
-                                    tBLE_ADDR_TYPE bd_addr_type, tBT_TRANSPORT transport, BOOLEAN is_aux)
+                                    tBLE_ADDR_TYPE bd_addr_type, tBT_TRANSPORT transport, BOOLEAN is_aux,
+                                    BOOLEAN is_pawr_synced, UINT8 adv_handle, UINT8 subevent)
 {
     BOOLEAN     ret = FALSE;
     tGATT_TCB   *p_tcb;
@@ -389,7 +391,7 @@ BOOLEAN gatt_act_connect (tGATT_REG *p_reg, BD_ADDR bd_addr,
         /* before link down, another app try to open a GATT connection */
         if (st == GATT_CH_OPEN &&  gatt_num_apps_hold_link(p_tcb) == 0 &&
                 transport == BT_TRANSPORT_LE ) {
-            if (!gatt_connect(bd_addr, bd_addr_type, p_tcb, transport, is_aux)) {
+            if (!gatt_connect(bd_addr, bd_addr_type, p_tcb, transport, is_aux, is_pawr_synced, adv_handle, subevent)) {
                 ret = FALSE;
             }
         } else if (st == GATT_CH_CLOSING) {
@@ -400,7 +402,7 @@ BOOLEAN gatt_act_connect (tGATT_REG *p_reg, BD_ADDR bd_addr,
         }
     } else {
         if ((p_tcb = gatt_allocate_tcb_by_bdaddr(bd_addr, transport)) != NULL) {
-            if (!gatt_connect(bd_addr, bd_addr_type, p_tcb, transport, is_aux)) {
+            if (!gatt_connect(bd_addr, bd_addr_type, p_tcb, transport, is_aux, is_pawr_synced, adv_handle, subevent)) {
                 GATT_TRACE_ERROR("gatt_connect failed");
 
                 // code enter here if create connection failed. if disconnect after connection, code will not enter here
@@ -995,6 +997,7 @@ void gatt_data_process (tGATT_TCB *p_tcb, BT_HDR *p_buf)
         pseudo_op_code = op_code & (~GATT_WRITE_CMD_MASK);
 
         if (pseudo_op_code < GATT_OP_CODE_MAX) {
+            GATT_TRACE_DEBUG("%s opcode=%x msg_len=%u", __func__, op_code, msg_len);
             if (op_code == GATT_SIGN_CMD_WRITE) {
 #if (SMP_INCLUDED == TRUE)
                 gatt_verify_signature(p_tcb, p_buf);
@@ -1220,7 +1223,6 @@ tGATT_CH_STATE gatt_get_ch_state(tGATT_TCB *p_tcb)
 {
     tGATT_CH_STATE ch_state = GATT_CH_CLOSE;
     if (p_tcb) {
-        GATT_TRACE_DEBUG ("gatt_get_ch_state: ch_state=%d", p_tcb->ch_state);
         ch_state = p_tcb->ch_state;
     }
     return ch_state;
@@ -1233,6 +1235,7 @@ uint16_t gatt_get_local_mtu(void)
 
 void gatt_set_local_mtu(uint16_t mtu)
 {
+    GATT_TRACE_DEBUG("%s mtu=%u", __func__, mtu);
     gatt_default.local_mtu = mtu;
 }
 

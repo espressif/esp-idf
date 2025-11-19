@@ -52,6 +52,8 @@
 #define GATT_UUID_GAP_PREF_CONN_PARAM    0x2A04
 #define GATT_UUID_GAP_CENTRAL_ADDR_RESOL 0x2AA6
 
+#define GATT_UUID_GAP_GATT_SECURITY_LEVELS 0x2BF5
+
 /* Attribute Profile Attribute UUID */
 #define GATT_UUID_GATT_SRV_CHGD          0x2A05
 /* Attribute Protocol Test */
@@ -81,7 +83,7 @@
 #define GATT_UUID_GM_CONTROL_POINT      0x2A52
 #define GATT_UUID_GM_FEATURE            0x2A51
 
-/* device infor characteristic */
+/* device information characteristic */
 #define GATT_UUID_SYSTEM_ID             0x2A23
 #define GATT_UUID_MODEL_NUMBER_STR      0x2A24
 #define GATT_UUID_SERIAL_NUMBER_STR     0x2A25

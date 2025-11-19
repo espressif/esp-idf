@@ -6,7 +6,7 @@ set(includes "include" "${target}/include")
 
 if(esp_tee_build)
     if(CONFIG_SECURE_TEE_EXT_FLASH_MEMPROT_SPI1)
-        list(APPEND srcs "spi_flash_hal.c")
+        list(APPEND srcs "spi_flash_hal.c" "spi_flash_hal_iram.c")
     endif()
 elseif(NOT BOOTLOADER_BUILD)
     if(NOT CONFIG_APP_BUILD_TYPE_PURE_RAM_APP)

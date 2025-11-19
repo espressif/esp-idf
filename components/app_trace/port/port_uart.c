@@ -286,10 +286,9 @@ static void esp_apptrace_uart_down_buffer_config(void *hw_data, uint8_t *buf, ui
 {
     esp_apptrace_uart_data_t *uart_data = hw_data;
 
-    uart_data->down_buffer = (uint8_t *)malloc(size);
-    if (uart_data->down_buffer == NULL) {
-        assert(false && "Failed to allocate apptrace uart down buffer!");
-    }
+    assert(buf != NULL && "Down buffer cannot be NULL");
+
+    uart_data->down_buffer = buf;
     uart_data->down_buffer_size = size;
 }
 

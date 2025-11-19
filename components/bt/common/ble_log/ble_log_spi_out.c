@@ -41,7 +41,14 @@
 #define SPI_OUT_LOG_STR_BUF_SIZE                (100)
 #define SPI_OUT_MALLOC(size)                    heap_caps_malloc(size, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
 #define SPI_OUT_TASK_PRIORITY                   (ESP_TASK_PRIO_MAX - 1)
+
+#if CONFIG_IDF_TARGET_ARCH_RISCV
 #define SPI_OUT_TASK_STACK_SIZE                 (1024)
+#elif CONFIG_IDF_TARGET_ARCH_XTENSA
+#define SPI_OUT_TASK_STACK_SIZE                 (2048)
+#else
+static_assert(false, "BLE Log SPI Out: Unsupported target architecture");
+#endif /* CONFIG_IDF_TARGET_ARCH_RISCV */
 
 #if SPI_OUT_TS_SYNC_ENABLED
 #define SPI_OUT_TS_SYNC_TIMEOUT_MS              (1000)
@@ -247,9 +254,9 @@ extern uint32_t r_ble_lll_timer_current_tick_get(void);
 #elif defined(CONFIG_IDF_TARGET_ESP32C2)
 extern uint32_t r_os_cputime_get32(void);
 #define SPI_OUT_GET_LC_TIME r_os_cputime_get32()
-// #elif defined(CONFIG_IDF_TARGET_ESP32C3) || defined(CONFIG_IDF_TARGET_ESP32S3)
-// extern uint32_t lld_read_clock_us(void);
-// #define SPI_OUT_GET_LC_TIME lld_read_clock_us()
+#elif defined(CONFIG_IDF_TARGET_ESP32C3) || defined(CONFIG_IDF_TARGET_ESP32S3)
+extern uint32_t lld_read_clock_us(void);
+#define SPI_OUT_GET_LC_TIME lld_read_clock_us()
 #else
 #define SPI_OUT_GET_LC_TIME esp_timer_get_time()
 #endif
@@ -1365,12 +1372,13 @@ int ble_log_spi_out_hci_write(uint8_t source, const uint8_t *addr, uint16_t len)
         return -1;
     }
 
-    if (source == BLE_LOG_SPI_OUT_SOURCE_HCI_UPSTREAM) {
 #if SPI_OUT_LL_ENABLED
+    if (source == BLE_LOG_SPI_OUT_SOURCE_HCI_UPSTREAM) {
         ble_log_spi_out_ll_write(len, addr, 0, NULL, BIT(LL_LOG_FLAG_HCI_UPSTREAM));
-#endif // SPI_OUT_LL_ENABLED
     }
-    if (source == BLE_LOG_SPI_OUT_SOURCE_HCI_DOWNSTREAM) {
+    if (source == BLE_LOG_SPI_OUT_SOURCE_HCI_DOWNSTREAM)
+#endif /* SPI_OUT_LL_ENABLED */
+    {
         spi_out_log_cb_t *log_cb;
         bool fallback = false;
         if (!spi_out_get_task_mapping(LOG_MODULE_TASK_MAP(hci),

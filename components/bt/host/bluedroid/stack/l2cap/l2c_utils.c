@@ -25,7 +25,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "osi/allocator.h"
 #include "device/controller.h"
 #include "stack/bt_types.h"
 #include "stack/hcimsgs.h"
@@ -36,6 +35,7 @@
 #include "stack/btm_api.h"
 #include "btm_int.h"
 #include "stack/hcidefs.h"
+#include "bt_common.h"
 #include "osi/allocator.h"
 #include "osi/list.h"
 
@@ -157,6 +157,9 @@ void l2cu_update_lcb_4_bonding (BD_ADDR p_bd_addr, BOOLEAN is_bonding)
 void l2cu_release_lcb (tL2C_LCB *p_lcb)
 {
     tL2C_CCB    *p_ccb;
+
+    L2CAP_TRACE_DEBUG("%s handle=%u bda="MACSTR"",
+        __func__, p_lcb->handle, MAC2STR(p_lcb->remote_bd_addr));
 
     p_lcb->in_use     = FALSE;
     p_lcb->is_bonding = FALSE;

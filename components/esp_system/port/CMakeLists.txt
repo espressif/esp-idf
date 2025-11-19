@@ -6,6 +6,10 @@ endif()
 
 target_include_directories(${COMPONENT_LIB} PRIVATE ${INCLUDE_FILES} include/private)
 
+if(CONFIG_ESP32P4_SELECTS_REV_LESS_V3 AND CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ_400)
+    message(WARNING "400 MHz CPU frequency is not guaranteed to work on all chips with revision prior to rev 3!")
+endif()
+
 set(srcs "cpu_start.c" "panic_handler.c" "esp_system_chip.c")
 
 if(NOT CONFIG_APP_BUILD_TYPE_PURE_RAM_APP)

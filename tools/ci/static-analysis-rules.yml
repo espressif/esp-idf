@@ -20,7 +20,6 @@ skip:
   - "components/esp_wifi/lib_esp32"
   - "components/lwip/lwip"
   - "components/mbedtls/mbedtls"
-  - "components/mqtt/esp-mqtt"
   - "components/openthread/lib"
   - "components/openthread/openthread"
   - "components/protobuf-c/protobuf-c"

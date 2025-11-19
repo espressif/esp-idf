@@ -111,10 +111,6 @@ esp_err_t esp_isp_new_awb_controller(isp_proc_handle_t isp_proc, const esp_isp_a
     isp_ll_awb_enable(isp_proc->hal.hw, false);
     isp_ll_awb_set_clk_ctrl_mode(isp_proc->hal.hw, ISP_LL_PIPELINE_CLK_CTRL_AUTO);
     isp_ll_awb_enable_algorithm_mode(isp_proc->hal.hw, true);
-#if !CONFIG_ESP32P4_SELECTS_REV_LESS_V3
-    isp_ll_awb_set_wb_gain_clk_ctrl_mode(isp_proc->hal.hw, ISP_LL_PIPELINE_CLK_CTRL_AUTO);
-    isp_ll_awb_enable_wb_gain(isp_proc->hal.hw, true);
-#endif
     ESP_GOTO_ON_ERROR(s_esp_isp_awb_config_hardware(isp_proc, awb_cfg), err2, TAG, "configure awb hardware failed");
 
     *ret_hdl = awb_ctlr;
@@ -139,9 +135,6 @@ esp_err_t esp_isp_del_awb_controller(isp_awb_ctlr_t awb_ctlr)
     s_isp_declaim_awb_controller(awb_ctlr);
 
     isp_ll_awb_enable_algorithm_mode(awb_ctlr->isp_proc->hal.hw, false);
-#if !CONFIG_ESP32P4_SELECTS_REV_LESS_V3
-    isp_ll_awb_enable_wb_gain(awb_ctlr->isp_proc->hal.hw, false);
-#endif
     s_isp_awb_free_controller(awb_ctlr);
 
     return ESP_OK;
@@ -227,17 +220,6 @@ esp_err_t esp_isp_awb_controller_stop_continuous_statistics(isp_awb_ctlr_t awb_c
 
     return ESP_OK;
 }
-
-#if !CONFIG_ESP32P4_SELECTS_REV_LESS_V3
-esp_err_t esp_isp_awb_controller_set_wb_gain(isp_awb_ctlr_t awb_ctlr, isp_awb_gain_t gain)
-{
-    ESP_RETURN_ON_FALSE(awb_ctlr, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
-    ESP_RETURN_ON_FALSE(atomic_load(&awb_ctlr->fsm) != ISP_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "controller not in init state");
-    isp_ll_awb_set_wb_gain(awb_ctlr->isp_proc->hal.hw, gain);
-
-    return ESP_OK;
-}
-#endif  //#if !CONFIG_ESP32P4_SELECTS_REV_LESS_V3
 
 /*---------------------------------------------------------------
                       INTR

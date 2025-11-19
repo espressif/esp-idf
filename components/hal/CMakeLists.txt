@@ -129,7 +129,7 @@ elseif(NOT BOOTLOADER_BUILD)
     endif()
 
     if(CONFIG_SOC_ETM_SUPPORTED)
-        list(APPEND srcs "etm_hal.c")
+        list(APPEND srcs "etm_hal.c" "${target}/etm_periph.c")
     endif()
 
     if(CONFIG_SOC_PARLIO_SUPPORTED)
@@ -233,16 +233,6 @@ elseif(NOT BOOTLOADER_BUILD)
 
     if(CONFIG_SOC_USB_SERIAL_JTAG_SUPPORTED)
         list(APPEND srcs "usb_serial_jtag_hal.c")
-    endif()
-
-    if(CONFIG_SOC_USB_UTMI_PHY_NUM GREATER 0)
-        list(APPEND srcs "usb_utmi_hal.c")
-    endif()
-
-    if(CONFIG_SOC_USB_OTG_SUPPORTED)
-        list(APPEND srcs
-                    "usb_dwc_hal.c"
-                    "usb_wrap_hal.c")
     endif()
 
     if(CONFIG_SOC_TOUCH_SENSOR_SUPPORTED)

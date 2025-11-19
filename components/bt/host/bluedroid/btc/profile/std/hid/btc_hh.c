@@ -64,6 +64,8 @@ static bdstr_t bdstr;
 #define is_hidh_init() (btc_hh_cb.status > BTC_HH_DISABLED)
 #define BTC_TIMEOUT_VUP_MS (3 * 1000)
 
+static void btc_hh_cb_arg_deep_free(btc_msg_t *msg);
+
 static inline void btc_hh_cb_to_app(esp_hidh_cb_event_t event, esp_hidh_cb_param_t *param)
 {
     esp_hh_cb_t btc_hh_cb = (esp_hh_cb_t)btc_profile_cb_get(BTC_PID_HH);
@@ -1097,7 +1099,7 @@ static void btc_hh_set_idle_time(btc_hidh_args_t *arg)
     }
 }
 
-static void btc_hh_call_arg_deep_free(btc_msg_t *msg)
+void btc_hh_call_arg_deep_free(btc_msg_t *msg)
 {
     btc_hidh_args_t *arg = (btc_hidh_args_t *)msg->arg;
 
@@ -1168,7 +1170,7 @@ void btc_hh_call_handler(btc_msg_t *msg)
     btc_hh_call_arg_deep_free(msg);
 }
 
-void btc_hh_cb_arg_deep_free(btc_msg_t *msg)
+static void btc_hh_cb_arg_deep_free(btc_msg_t *msg)
 {
     tBTA_HH *arg = (tBTA_HH *)msg->arg;
 

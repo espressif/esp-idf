@@ -23,7 +23,7 @@ entries:
         twai_hal_v1: twai_hal_check_state_flags (noflash)
         twai_hal_v1: twai_hal_clear_rx_fifo_overrun (noflash)
 
-        if TWAI_ERRATA_FIX_RX_FRAME_INVALID = y || TWAI_ERRATA_FIX_RX_FIFO_CORRUPT = y:
+        if IDF_TARGET_ESP32 = y:    #For errata workarounds
             twai_hal_v1: twai_hal_prepare_for_reset (noflash)
             twai_hal_v1: twai_hal_recover_from_reset (noflash)
             twai_hal_v1: twai_hal_backup_config (noflash)

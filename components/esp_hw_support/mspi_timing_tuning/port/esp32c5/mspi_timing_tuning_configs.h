@@ -28,10 +28,7 @@
 #define MSPI_TIMING_FLASH_MODULE_CLOCK               120
 #endif
 //------------------------------------FLASH Needs Tuning or not-------------------------------------//
-/* TODO: [ESP-TEE | IDF-10425] The SPI1 controller is protected by APM when ESP-TEE is enabled.
- * MSPI tuning requires access to this controller, so it is currently disabled.
- */
-#if MSPI_TIMING_FLASH_STR_MODE && !CONFIG_SECURE_ENABLE_TEE
+#if MSPI_TIMING_FLASH_STR_MODE
 #define MSPI_TIMING_FLASH_NEEDS_TUNING               (MSPI_TIMING_FLASH_MODULE_CLOCK > 40)
 #endif
 
@@ -43,26 +40,40 @@
 #define MSPI_TIMING_PSRAM_MODULE_CLOCK               40
 #elif CONFIG_SPIRAM_SPEED_80M
 #define MSPI_TIMING_PSRAM_MODULE_CLOCK               80
+#else //CONFIG_SPIRAM_SPEED_120M
+#define MSPI_TIMING_PSRAM_MODULE_CLOCK               120
 #endif
 #else   //Disable PSRAM
 #define MSPI_TIMING_PSRAM_MODULE_CLOCK               10      //Define this to 10MHz
 #endif
 //------------------------------------PSRAM Needs Tuning or not-------------------------------------//
-/* TODO: [ESP-TEE | IDF-10425] */
-#if MSPI_TIMING_PSRAM_STR_MODE && !CONFIG_SECURE_ENABLE_TEE
+#if MSPI_TIMING_PSRAM_STR_MODE
 #define MSPI_TIMING_PSRAM_NEEDS_TUNING               (MSPI_TIMING_PSRAM_MODULE_CLOCK > 40)
 #endif
 
-///////////////////////////////////// FLASH/PSRAM CORE CLOCK /////////////////////////////////////
-#if ((CONFIG_ESPTOOLPY_FLASHFREQ_80M && !CONFIG_SPIRAM) || (CONFIG_ESPTOOLPY_FLASHFREQ_80M && CONFIG_SPIRAM_SPEED_80M))
+///////////////////////////////////// FLASH CORE CLOCK /////////////////////////////////////
+//FLASH 80M
+#if CONFIG_ESPTOOLPY_FLASHFREQ_80M
 #define MSPI_TIMING_FLASH_EXPECTED_CORE_CLK_MHZ      80
-#define MSPI_TIMING_PSRAM_EXPECTED_CORE_CLK_MHZ      80
 #define MSPI_TIMING_FLASH_CONSECUTIVE_LEN_MAX        6
-#else
-#define MSPI_TIMING_FLASH_EXPECTED_CORE_CLK_MHZ      240
-#define MSPI_TIMING_PSRAM_EXPECTED_CORE_CLK_MHZ      240
+#endif
+
+//FLASH 120M
+#if CONFIG_ESPTOOLPY_FLASHFREQ_120M
+#define MSPI_TIMING_FLASH_EXPECTED_CORE_CLK_MHZ      120
 #define MSPI_TIMING_FLASH_CONSECUTIVE_LEN_MAX        4
 #endif
+
+///////////////////////////////////// PSRAM CORE CLOCK /////////////////////////////////////
+//PSRAM 80M
+#if CONFIG_SPIRAM_SPEED_80M
+#define MSPI_TIMING_PSRAM_EXPECTED_CORE_CLK_MHZ      80
+#endif
+
+//PSRAM 120M
+#if CONFIG_SPIRAM_SPEED_120M
+#define MSPI_TIMING_PSRAM_EXPECTED_CORE_CLK_MHZ      120
+#endif  //PSRAM 120M DTR
 
 //------------------------------------------Determine the Core Clock-----------------------------------------------//
 /**
@@ -105,10 +116,10 @@ ESP_STATIC_ASSERT(MSPI_TIMING_PSRAM_EXPECTED_CORE_CLK_MHZ % MSPI_TIMING_FLASH_MO
 /**
  * Timing Tuning Parameters
  */
-//FLASH: core clock 240M, module clock 120M, STR mode
-#define MSPI_TIMING_FLASH_CONFIG_TABLE_CORE_CLK_240M_MODULE_CLK_120M_STR_MODE         {{2, 0, 1}, {0, 0, 0}, {2, 2, 2}, {2, 1, 2}, {2, 0, 2}, {0, 0, 1}, {2, 2, 3}, {2, 1, 3}, {2, 0, 3}, {0, 0, 2}, {2, 2, 4}, {2, 1, 4}}
-#define MSPI_TIMING_FLASH_CONFIG_NUM_CORE_CLK_240M_MODULE_CLK_120M_STR_MODE           12
-#define MSPI_TIMING_FLASH_DEFAULT_CONFIG_ID_CORE_CLK_240M_MODULE_CLK_120M_STR_MODE    4
+//FLASH: core clock 120M, module clock 120M, STR mode
+#define MSPI_TIMING_FLASH_CONFIG_TABLE_CORE_CLK_120M_MODULE_CLK_120M_STR_MODE         {{2, 0, 1}, {0, 0, 0}, {2, 2, 2}, {2, 1, 2}, {2, 0, 2}, {0, 0, 1}, {2, 2, 3}, {2, 1, 3}, {2, 0, 3}, {0, 0, 2}, {2, 2, 4}, {2, 1, 4}}
+#define MSPI_TIMING_FLASH_CONFIG_NUM_CORE_CLK_120M_MODULE_CLK_120M_STR_MODE           12
+#define MSPI_TIMING_FLASH_DEFAULT_CONFIG_ID_CORE_CLK_120M_MODULE_CLK_120M_STR_MODE    4
 
 //FLASH: core clock 240M, module clock 80M, STR mode
 #define MSPI_TIMING_FLASH_CONFIG_TABLE_CORE_CLK_240M_MODULE_CLK_80M_STR_MODE          {{2, 2, 1}, {2, 1, 1}, {2, 0, 1}, {0, 0, 0}, {3, 1, 2}, {2, 3, 2}, {2, 2, 2}, {2, 1, 2}, {2, 0, 2}, {0, 0, 1}, {3, 1, 3}, {2, 3, 3}, {2, 2, 3}, {2, 1, 3}}
@@ -120,10 +131,10 @@ ESP_STATIC_ASSERT(MSPI_TIMING_PSRAM_EXPECTED_CORE_CLK_MHZ % MSPI_TIMING_FLASH_MO
 #define MSPI_TIMING_FLASH_CONFIG_NUM_CORE_CLK_80M_MODULE_CLK_80M_STR_MODE             14
 #define MSPI_TIMING_FLASH_DEFAULT_CONFIG_ID_CORE_CLK_80M_MODULE_CLK_80M_STR_MODE      4
 
-//PSRAM: core clock 240M, module clock 120M, STR mode
-#define MSPI_TIMING_PSRAM_CONFIG_TABLE_CORE_CLK_240M_MODULE_CLK_120M_STR_MODE         {{2, 0, 1}, {0, 0, 0}, {2, 2, 2}, {2, 1, 2}, {2, 0, 2}, {0, 0, 1}, {2, 2, 3}, {2, 1, 3}, {2, 0, 3}, {0, 0, 2}, {2, 2, 4}, {2, 1, 4}}
-#define MSPI_TIMING_PSRAM_CONFIG_NUM_CORE_CLK_240M_MODULE_CLK_120M_STR_MODE           12
-#define MSPI_TIMING_PSRAM_DEFAULT_CONFIG_ID_CORE_CLK_240M_MODULE_CLK_120M_STR_MODE    4
+//PSRAM: core clock 120M, module clock 120M, STR mode
+#define MSPI_TIMING_PSRAM_CONFIG_TABLE_CORE_CLK_120M_MODULE_CLK_120M_STR_MODE         {{2, 0, 1}, {0, 0, 0}, {2, 2, 2}, {2, 1, 2}, {2, 0, 2}, {0, 0, 1}, {2, 2, 3}, {2, 1, 3}, {2, 0, 3}, {0, 0, 2}, {2, 2, 4}, {2, 1, 4}}
+#define MSPI_TIMING_PSRAM_CONFIG_NUM_CORE_CLK_120M_MODULE_CLK_120M_STR_MODE           12
+#define MSPI_TIMING_PSRAM_DEFAULT_CONFIG_ID_CORE_CLK_120M_MODULE_CLK_120M_STR_MODE    4
 
 //PSRAM: core clock 240M, module clock 80M, STR mode
 #define MSPI_TIMING_PSRAM_CONFIG_TABLE_CORE_CLK_240M_MODULE_CLK_80M_STR_MODE          {{2, 2, 1}, {2, 1, 1}, {2, 0, 1}, {0, 0, 0}, {3, 1, 2}, {2, 3, 2}, {2, 2, 2}, {2, 1, 2}, {2, 0, 2}, {0, 0, 1}, {3, 1, 3}, {2, 3, 3}, {2, 2, 3}, {2, 1, 3}}

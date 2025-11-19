@@ -399,7 +399,7 @@ ISP AE 控制器
 
 .. code-block:: c
 
-     esp_isp_ae_config_t ae_config = {
+    esp_isp_ae_config_t ae_config = {
         .sample_point = ISP_AE_SAMPLE_POINT_AFTER_DEMOSAIC,
     };
     isp_ae_ctlr_t ae_ctlr = NULL;
@@ -724,7 +724,7 @@ ISP 去马赛克控制器
         ...
     };
 
-    ESP_ERROR_CHECK(esp_isp_demosaic_configure(isp_proc, &sharpen_config));
+    ESP_ERROR_CHECK(esp_isp_demosaic_configure(isp_proc, &demosaic_config));
     ESP_ERROR_CHECK(esp_isp_demosaic_enable(isp_proc));
 
 调用 :cpp:func:`esp_isp_demosaic_configure` 后，需要通过调用 :cpp:func:`esp_isp_demosaic_enable` 来启用 ISP 去马赛克控制器。此函数：

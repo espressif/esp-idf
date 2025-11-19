@@ -37,18 +37,9 @@
 #include "esp_core_dump.h"
 #endif
 
-#if CONFIG_APPTRACE_ENABLE
-#include "esp_app_trace.h"
-#if CONFIG_APPTRACE_SV_ENABLE
-#include "SEGGER_RTT.h"
+#if CONFIG_ESP_TRACE_ENABLE
+#include "esp_trace.h"
 #endif
-
-#if CONFIG_APPTRACE_ONPANIC_HOST_FLUSH_TMO == -1
-#define APPTRACE_ONPANIC_HOST_FLUSH_TMO   ESP_APPTRACE_TMO_INFINITE
-#else
-#define APPTRACE_ONPANIC_HOST_FLUSH_TMO   (1000*CONFIG_APPTRACE_ONPANIC_HOST_FLUSH_TMO)
-#endif
-#endif // CONFIG_APPTRACE_ENABLE
 
 #if !CONFIG_ESP_SYSTEM_PANIC_SILENT_REBOOT
 #include "hal/uart_hal.h"
@@ -367,12 +358,9 @@ void esp_panic_handler(panic_info_t *info)
         panic_print_str("Setting breakpoint at 0x");
         panic_print_hex((uint32_t)info->addr);
         panic_print_str(" and returning...\r\n");
-#if CONFIG_APPTRACE_ENABLE
-#if CONFIG_APPTRACE_SV_ENABLE
-        SEGGER_RTT_ESP_FlushNoLock(CONFIG_APPTRACE_POSTMORTEM_FLUSH_THRESH, APPTRACE_ONPANIC_HOST_FLUSH_TMO);
-#else
-        esp_apptrace_flush_nolock(CONFIG_APPTRACE_POSTMORTEM_FLUSH_THRESH, APPTRACE_ONPANIC_HOST_FLUSH_TMO);
-#endif
+
+#if CONFIG_ESP_TRACE_ENABLE
+        esp_trace_panic_handler(info);
 #endif
 
         disable_all_wdts();
@@ -408,14 +396,10 @@ void esp_panic_handler(panic_info_t *info)
 
     panic_print_str("\r\n");
 
-#if CONFIG_APPTRACE_ENABLE
+#if CONFIG_ESP_TRACE_ENABLE
     esp_panic_handler_feed_wdts();
-#if CONFIG_APPTRACE_SV_ENABLE
-    SEGGER_RTT_ESP_FlushNoLock(CONFIG_APPTRACE_POSTMORTEM_FLUSH_THRESH, APPTRACE_ONPANIC_HOST_FLUSH_TMO);
-#else
-    esp_apptrace_flush_nolock(CONFIG_APPTRACE_POSTMORTEM_FLUSH_THRESH, APPTRACE_ONPANIC_HOST_FLUSH_TMO);
+    esp_trace_panic_handler(info);
 #endif
-#endif // CONFIG_APPTRACE_ENABLE
 
 #if CONFIG_ESP_COREDUMP_ENABLE
     esp_panic_handler_feed_wdts();
@@ -479,12 +463,8 @@ void __attribute__((noreturn, no_sanitize_undefined)) panic_abort(const char *de
     g_panic_abort = true;
     g_panic_abort_details = (char *) details;
 
-#if CONFIG_APPTRACE_ENABLE
-#if CONFIG_APPTRACE_SV_ENABLE
-    SEGGER_RTT_ESP_FlushNoLock(CONFIG_APPTRACE_POSTMORTEM_FLUSH_THRESH, APPTRACE_ONPANIC_HOST_FLUSH_TMO);
-#else
-    esp_apptrace_flush_nolock(CONFIG_APPTRACE_POSTMORTEM_FLUSH_THRESH, APPTRACE_ONPANIC_HOST_FLUSH_TMO);
-#endif
+#if CONFIG_ESP_TRACE_ENABLE
+    esp_trace_panic_handler(NULL);
 #endif
 
 #ifdef __XTENSA__

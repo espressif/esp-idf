@@ -32,7 +32,7 @@ extern const regdma_entries_config_t intr_matrix_regs_retention[INT_MTX_RETENTIO
  * This is an internal function of the sleep retention driver, and is not
  * useful for external use.
  */
-#define CACHE_RETENTION_LINK_LEN 10
+#define CACHE_RETENTION_LINK_LEN 12
 extern const regdma_entries_config_t cache_regs_retention[CACHE_RETENTION_LINK_LEN];
 
 /**

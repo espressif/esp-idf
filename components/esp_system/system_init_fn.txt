@@ -91,9 +91,11 @@ SECONDARY: 106: sleep_clock_startup_init in components/esp_hw_support/lowpower/p
 SECONDARY: 107: sleep_sys_periph_startup_init in components/esp_hw_support/sleep_system_peripheral.c on BIT(0)
 SECONDARY: 108: sleep_mmu_startup_init in components/esp_hw_support/lowpower/port/esp32c5/sleep_mmu.c on BIT(0)
 
-# app_trace has to be initialized before systemview
+# app_trace doesn't have init dependencies
 SECONDARY: 115: apptrace_early_init in components/app_trace/app_trace.c on ESP_SYSTEM_INIT_ALL_CORES
-SECONDARY: 120: sysview_early_init in components/app_trace/sys_view/esp/SEGGER_RTT_esp.c on BIT(0)
+
+# esp_trace doesn't have init dependencies
+SECONDARY: 120: esp_trace_early_init in components/esp_trace/src/core/esp_trace_core.c on ESP_SYSTEM_INIT_ALL_CORES
 
 # coredump doesn't have init dependencies
 SECONDARY: 130: init_coredump in components/espcoredump/src/core_dump_init.c on BIT(0)
