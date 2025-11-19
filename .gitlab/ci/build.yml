@@ -1,49 +1,14 @@
 .build_template:
   stage: build
   extends:
+    - .before_script:build
     - .after_script:build
   image: $ESP_ENV_IMAGE
   tags: [build, shiny]
   variables:
     # Enable ccache for all build jobs. See configure_ci_environment.sh for more ccache related settings.
     IDF_CCACHE_ENABLE: "1"
-  dependencies: []
-
-.build_cmake_clang_template:
-  extends:
-    - .build_template
-    - .before_script:build
-    - .after_script:build
   dependencies: # set dependencies to null to avoid missing artifacts issue
-  needs:
-    - job: fast_template_app
-      artifacts: false
-    - pipeline_variables
-  artifacts:
-    paths:
-      # The other artifacts patterns are defined under .idf_ci.toml
-      # Now we're uploading/downloading the binary files from our internal storage server
-      #
-      # keep the log file to help debug
-      - "**/build*/build_log.txt"
-      # keep the size info to help track the binary size
-      - size_info.txt
-      - "**/build*/size*.json"
-    expire_in: 1 week
-    when: always
-  variables:
-    IDF_TOOLCHAIN: clang
-    TEST_BUILD_OPTS_EXTRA: ""
-  script:
-    # CI specific options start from "--parallel-count xxx". could ignore when running locally
-    - run_cmd idf-build-apps build
-      -p tools/test_apps/system/clang_build_test
-      -t $IDF_TARGET
-      --parallel-count ${CI_NODE_TOTAL:-1}
-      --parallel-index ${CI_NODE_INDEX:-1}
-      --modified-components ${MR_MODIFIED_COMPONENTS}
-      --modified-files ${MR_MODIFIED_FILES}
-      $TEST_BUILD_OPTS_EXTRA
 
 ######################
 # build_template_app #
@@ -51,7 +16,6 @@
 .build_template_app_template:
   extends:
     - .build_template
-    - .before_script:build
   variables:
     LOG_PATH: "${CI_PROJECT_DIR}/log_template_app"
     BUILD_PATH: "${CI_PROJECT_DIR}/build_template_app"
@@ -107,30 +71,48 @@ gcc_static_analyzer:
 ########################################
 # Clang Build Apps Without Tests Cases #
 ########################################
-build_clang_test_apps_esp32:
+.build_cmake_clang_template:
   extends:
-    - .build_cmake_clang_template
+    - .build_template
     - .rules:build
+  needs:
+    - job: fast_template_app
+      artifacts: false
+    - pipeline_variables
+  artifacts:
+    paths:
+      # The other artifacts patterns are defined under .idf_ci.toml
+      # Now we're uploading/downloading the binary files from our internal storage server
+      #
+      # keep the log file to help debug
+      - "**/build*/build_log.txt"
+      # keep the size info to help track the binary size
+      - size_info.txt
+      - "**/build*/size*.json"
+    expire_in: 1 week
+    when: always
   variables:
-    IDF_TARGET: esp32
+    IDF_TOOLCHAIN: clang
+    TEST_BUILD_OPTS_EXTRA: ""
+  script:
+    # CI specific options start from "--parallel-count xxx". could ignore when running locally
+    - run_cmd idf-build-apps build
+      -p tools/test_apps/system/clang_build_test
+      -t $IDF_TARGET
+      --parallel-count ${CI_NODE_TOTAL:-1}
+      --parallel-index ${CI_NODE_INDEX:-1}
+      --modified-components ${MR_MODIFIED_COMPONENTS}
+      --modified-files ${MR_MODIFIED_FILES}
+      $TEST_BUILD_OPTS_EXTRA
 
-build_clang_test_apps_esp32s2:
-  extends:
-    - .build_cmake_clang_template
-    - .rules:build
-  variables:
-    IDF_TARGET: esp32s2
+build_clang_test_apps_xtensa:
+  extends: .build_cmake_clang_template
+  parallel:
+    matrix:
+      - IDF_TARGET: [esp32, esp32s2, esp32s3]
 
-build_clang_test_apps_esp32s3:
-  extends:
-    - .build_cmake_clang_template
-    - .rules:build
-  variables:
-    IDF_TARGET: esp32s3
-
-.build_clang_test_apps_riscv:
-  extends:
-    - .build_cmake_clang_template
+build_clang_test_apps_riscv:
+  extends: .build_cmake_clang_template
   variables:
     # https://reviews.llvm.org/D90108.
     # GNU 'as' lets .weak override .globl since binutils-gdb
@@ -138,48 +120,9 @@ build_clang_test_apps_esp32s3:
     # while MC lets the last directive win (PR38921).
     # For RISCV chips we use integrated assembler by default, so suppress this warning to pass CI pipeline.
     TEST_BUILD_OPTS_EXTRA: "--ignore-warning-str 'changed binding to STB_WEAK'"
-
-build_clang_test_apps_esp32c3:
-  extends:
-    - .build_clang_test_apps_riscv
-    - .rules:build
-  variables:
-    IDF_TARGET: esp32c3
-
-build_clang_test_apps_esp32c2:
-  extends:
-    - .build_clang_test_apps_riscv
-    - .rules:build
-  variables:
-    IDF_TARGET: esp32c2
-
-build_clang_test_apps_esp32c6:
-  extends:
-    - .build_clang_test_apps_riscv
-    - .rules:build
-  variables:
-    IDF_TARGET: esp32c6
-
-build_clang_test_apps_esp32c5:
-  extends:
-    - .build_clang_test_apps_riscv
-    - .rules:build
-  variables:
-    IDF_TARGET: esp32c5
-
-build_clang_test_apps_esp32h2:
-  extends:
-    - .build_clang_test_apps_riscv
-    - .rules:build
-  variables:
-    IDF_TARGET: esp32h2
-
-build_clang_test_apps_esp32p4:
-  extends:
-    - .build_clang_test_apps_riscv
-    - .rules:build
-  variables:
-    IDF_TARGET: esp32p4
+  parallel:
+    matrix:
+      - IDF_TARGET: [esp32c3, esp32c2, esp32c6, esp32c5, esp32h2, esp32p4]
 
 ######################
 # Build System Tests #
