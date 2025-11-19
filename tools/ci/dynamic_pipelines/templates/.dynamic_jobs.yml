@@ -7,7 +7,7 @@
 .dynamic_build_template:
   extends:
     - .before_script:build
-    - .after_script:build:ccache-show-stats:upload-failed-job-logs
+    - .after_script:build
   image: $ESP_ENV_IMAGE
   tags: [build, shiny]
   stage: build

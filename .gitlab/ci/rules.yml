@@ -59,9 +59,6 @@
 .patterns-build_system_win: &patterns-build_system_win
   - "tools/test_build_system/**/*"
 
-.patterns-build_macos: &patterns-build_macos
-  - "tools/ci/test_configure_ci_environment.sh"
-
 .patterns-build_check: &patterns-build_check
   - "tools/test_build_system/**/*"
   - "tools/ci/test_configure_ci_environment.sh"

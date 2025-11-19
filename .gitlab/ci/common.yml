@@ -224,7 +224,9 @@ variables:
 
 .show_ccache_statistics: &show_ccache_statistics |
   # Show ccache statistics if enabled globally
+  section_start "ccache_show_stats" "Show ccache statistics"
   test "$CI_CCACHE_STATS" == 1 && test -n "$(which ccache)" && ccache --show-stats -vv || true
+  section_end "ccache_show_stats"
 
 .upload_failed_job_log_artifacts: &upload_failed_job_log_artifacts |
   if [ $CI_JOB_STATUS = "failed" ]; then
@@ -244,19 +246,10 @@ variables:
     - export EXTRA_CFLAGS=${PEDANTIC_CFLAGS}
     - export EXTRA_CXXFLAGS=${PEDANTIC_CXXFLAGS}
 
-.after_script:build:ccache-show-stats:
+.after_script:build:
   after_script:
     - source tools/ci/utils.sh
-    - section_start "ccache_show_stats" "Show ccache statistics"
     - *show_ccache_statistics
-    - section_end "ccache_show_stats"
-
-.after_script:build:ccache-show-stats:upload-failed-job-logs:
-  after_script:
-    - source tools/ci/utils.sh
-    - section_start "ccache_show_stats" "Show ccache statistics"
-    - *show_ccache_statistics
-    - section_end "ccache_show_stats"
     - *upload_failed_job_log_artifacts
 
 ##############################

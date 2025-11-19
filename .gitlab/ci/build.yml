@@ -1,7 +1,7 @@
 .build_template:
   stage: build
   extends:
-    - .after_script:build:ccache-show-stats:upload-failed-job-logs
+    - .after_script:build
   image: $ESP_ENV_IMAGE
   tags: [build, shiny]
   variables:
@@ -13,7 +13,7 @@
   extends:
     - .build_template
     - .before_script:build
-    - .after_script:build:ccache-show-stats
+    - .after_script:build
   dependencies: # set dependencies to null to avoid missing artifacts issue
   needs:
     - job: fast_template_app
