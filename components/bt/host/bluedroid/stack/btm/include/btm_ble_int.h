@@ -332,11 +332,8 @@ typedef struct {
     *****************************************************/
     tBTM_BLE_INQ_CB inq_var;
 
-    /* observer callback and timer */
-    tBTM_INQ_RESULTS_CB *p_obs_results_cb;
-    tBTM_CMPL_CB *p_obs_cmpl_cb;
+    // /* observer callback and timer */
     tBTM_INQ_DIS_CB *p_obs_discard_cb;
-    TIMER_LIST_ENT obs_timer_ent;
 
     /* scan callback and timer */
     tBTM_INQ_RESULTS_CB *p_scan_results_cb;
@@ -406,12 +403,10 @@ BOOLEAN btm_ble_cancel_remote_name(BD_ADDR remote_bda);
 
 tBTM_STATUS btm_ble_set_discoverability(UINT16 combined_mode);
 tBTM_STATUS btm_ble_set_connectability(UINT16 combined_mode);
-tBTM_STATUS btm_ble_start_inquiry (UINT8 mode, UINT8   duration);
 void btm_ble_stop_scan(void);
 void btm_clear_all_pending_le_entry(void);
 
 BOOLEAN btm_ble_send_extended_scan_params(UINT8 scan_type, UINT32 scan_int, UINT32 scan_win, UINT8 addr_type_own, UINT8 scan_filter_policy);
-void btm_ble_stop_inquiry(void);
 void btm_ble_init (void);
 void btm_ble_free (void);
 void btm_ble_connected (UINT8 *bda, UINT16 handle, UINT8 enc_mode, UINT8 role, tBLE_ADDR_TYPE addr_type, BOOLEAN addr_matched);
