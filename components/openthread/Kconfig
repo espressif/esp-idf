@@ -430,7 +430,7 @@ menu "OpenThread"
 
             config OPENTHREAD_PLATFORM_MSGPOOL_MANAGEMENT
                 bool 'Allocate message pool buffer from PSRAM'
-                default n
+                default y
                 help
                     If enabled, the message pool is managed by platform defined logic.
         endmenu
@@ -464,7 +464,8 @@ menu "OpenThread"
 
             config OPENTHREAD_NUM_MESSAGE_BUFFERS
                 int "The number of openthread message buffers"
-                default 65
+                default 65 if !OPENTHREAD_PLATFORM_MSGPOOL_MANAGEMENT
+                default 1024 if OPENTHREAD_PLATFORM_MSGPOOL_MANAGEMENT
 
             config OPENTHREAD_XTAL_ACCURACY
                 int "The accuracy of the XTAL"
