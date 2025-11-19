@@ -75,8 +75,3 @@ void ledc_hal_clear_fade_end_intr_status(ledc_hal_context_t *hal, ledc_channel_t
 {
     ledc_ll_clear_fade_end_intr_status(hal->dev, hal->speed_mode, channel_num);
 }
-
-volatile void* ledc_hal_get_fade_end_intr_addr(ledc_hal_context_t *hal)
-{
-    return ledc_ll_get_fade_end_intr_addr(hal->dev);
-}
