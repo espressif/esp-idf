@@ -9,7 +9,6 @@
     - build_system
     - downloadable-tools
   included_in:
-    - build:target_test
     - build:check
 
 # -------------------
@@ -41,8 +40,6 @@
 "patterns:template-app":
   patterns:
     - build_template-app
-  included_in:
-    - build:target_test
 
 "patterns:build-check":
   patterns:

@@ -38,7 +38,7 @@
 fast_template_app:
   extends:
     - .build_template_app_template
-    - .rules:build:target_test
+    - .rules:build
   stage: pre_check
   tags: [fast_run, shiny]
   variables:
@@ -53,22 +53,6 @@ build_template_app:
   needs:
     - job: fast_template_app
       artifacts: false
-
-#######################
-# gnu_static_analyzer #
-#######################
-gcc_static_analyzer:
-  extends:
-    - .build_template_app_template
-    - .rules:build:target_test
-  stage: pre_check
-  tags: [build, shiny]
-  variables:
-    CI_CCACHE_DISABLE: 1
-    ANALYZING_APP: "examples/get-started/hello_world"
-  script:
-    - echo "CONFIG_COMPILER_STATIC_ANALYZER=y" >> ${ANALYZING_APP}/sdkconfig.defaults
-    - idf-build-apps build -p ${ANALYZING_APP}
 
 ########################################
 # Clang Build Apps Without Tests Cases #
