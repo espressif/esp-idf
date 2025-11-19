@@ -2830,53 +2830,6 @@ tGATT_PENDING_ENC_CLCB *gatt_add_pending_enc_channel_clcb(tGATT_TCB *p_tcb, tGAT
     return p_buf;
 }
 #endif // (SMP_INCLUDED == TRUE)
-/*******************************************************************************
-**
-** Function     gatt_update_listen_mode
-**
-** Description  update peripheral role listening mode
-**
-** Returns    Pointer to the new service start buffer, NULL no buffer available
-**
-*******************************************************************************/
-BOOLEAN gatt_update_listen_mode(void)
-{
-    UINT8           ii = 0;
-    tGATT_REG       *p_reg = &gatt_cb.cl_rcb[0];
-    UINT8           listening = 0;
-    UINT16          connectability, window, interval;
-    BOOLEAN         rt = TRUE;
-
-    for (; ii < GATT_MAX_APPS; ii ++, p_reg ++) {
-        if ( p_reg->in_use && p_reg->listening > listening) {
-            listening = p_reg->listening;
-        }
-    }
-
-    if (listening == GATT_LISTEN_TO_ALL ||
-            listening == GATT_LISTEN_TO_NONE) {
-        BTM_BleUpdateAdvFilterPolicy (AP_SCAN_CONN_ALL);
-    } else {
-        BTM_BleUpdateAdvFilterPolicy (AP_SCAN_CONN_WL);
-    }
-
-    if (rt) {
-        connectability = BTM_ReadConnectability (&window, &interval);
-
-        if (listening != GATT_LISTEN_TO_NONE) {
-            connectability |= BTM_BLE_CONNECTABLE;
-        } else {
-            if ((connectability & BTM_BLE_CONNECTABLE) == 0) {
-                connectability &= ~BTM_BLE_CONNECTABLE;
-            }
-        }
-        /* turning on the adv now */
-        btm_ble_set_connectability(connectability);
-    }
-
-    return rt;
-
-}
 
 char *gatt_uuid_to_str(const tBT_UUID *uuid)
 {

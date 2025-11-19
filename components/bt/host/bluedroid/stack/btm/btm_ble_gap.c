@@ -381,68 +381,6 @@ void BTM_BleClearWhitelist(tBTM_UPDATE_WHITELIST_CBACK *update_wl_cb)
 
 /*******************************************************************************
 **
-** Function         BTM_BleUpdateAdvFilterPolicy
-**
-** Description      This function update the filter policy of advertiser.
-**
-** Parameter        adv_policy: advertising filter policy
-**
-** Return           void
-*******************************************************************************/
-void BTM_BleUpdateAdvFilterPolicy(tBTM_BLE_AFP adv_policy)
-{
-    tBTM_BLE_INQ_CB *p_cb = &btm_cb.ble_ctr_cb.inq_var;
-    tBLE_ADDR_TYPE   init_addr_type = BLE_ADDR_PUBLIC;
-    BD_ADDR          p_addr_ptr = {0};
-    UINT8            adv_mode = p_cb->adv_mode;
-
-    BTM_TRACE_EVENT ("BTM_BleUpdateAdvFilterPolicy\n");
-
-    if (!controller_get_interface()->supports_ble()) {
-        return;
-    }
-
-    if (p_cb->afp != adv_policy) {
-        p_cb->afp = adv_policy;
-
-#if (BLE_42_ADV_EN == TRUE)
-        /* if adv active, stop and restart */
-        btm_ble_stop_adv ();
-#endif // #if (BLE_42_ADV_EN == TRUE)
-
-        if (p_cb->connectable_mode & BTM_BLE_CONNECTABLE) {
-            p_cb->evt_type = btm_set_conn_mode_adv_init_addr(p_cb, p_addr_ptr, &init_addr_type,
-                             &p_cb->adv_addr_type);
-        }
-
-        uint8_t null_addr[BD_ADDR_LEN] = {0};
-        if ((p_cb->evt_type == 0x01 || p_cb->evt_type == 0x04) && memcmp(p_addr_ptr, null_addr, BD_ADDR_LEN) == 0) {
-            /* directed advertising */
-            return;
-        }
-
-        btsnd_hcic_ble_write_adv_params ((UINT16)(p_cb->adv_interval_min ? p_cb->adv_interval_min :
-                                         BTM_BLE_GAP_ADV_SLOW_INT),
-                                         (UINT16)(p_cb->adv_interval_max ? p_cb->adv_interval_max :
-                                                 BTM_BLE_GAP_ADV_SLOW_INT),
-                                         p_cb->evt_type,
-                                         p_cb->adv_addr_type,
-                                         init_addr_type,
-                                         p_addr_ptr,
-                                         p_cb->adv_chnl_map,
-                                         p_cb->afp);
-
-        if (adv_mode == BTM_BLE_ADV_ENABLE) {
-#if (BLE_42_ADV_EN == TRUE)
-            btm_ble_start_adv ();
-#endif // #if (BLE_42_ADV_EN == TRUE)
-        }
-
-    }
-}
-
-/*******************************************************************************
-**
 ** Function         btm_ble_send_extended_scan_params
 **
 ** Description      This function sends out the extended scan parameters command to the controller

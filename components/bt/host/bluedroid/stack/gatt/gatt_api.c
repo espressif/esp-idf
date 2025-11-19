@@ -1394,10 +1394,6 @@ void GATT_Deregister (tGATT_IF gatt_if)
 #if (tGATT_BG_CONN_DEV == TRUE)
     gatt_deregister_bgdev_list(gatt_if);
 #endif // #if (tGATT_BG_CONN_DEV == TRUE)
-    /* update the listen mode */
-#if (defined(BLE_PERIPHERAL_MODE_SUPPORT) && (BLE_PERIPHERAL_MODE_SUPPORT == TRUE))
-    GATT_Listen(gatt_if, FALSE, NULL);
-#endif
 
     memset (p_reg, 0, sizeof(tGATT_REG));
 }
@@ -1701,45 +1697,6 @@ BOOLEAN GATT_GetConnIdIfConnected(tGATT_IF gatt_if, BD_ADDR bd_addr, UINT16 *p_c
 
     GATT_TRACE_API ("GATT_GetConnIdIfConnected status=%d\n", status);
     return status;
-}
-
-
-/*******************************************************************************
-**
-** Function         GATT_Listen
-**
-** Description      This function start or stop LE advertisement and listen for
-**                  connection.
-**
-** Parameters       gatt_if: application interface
-**                  p_bd_addr: listen for specific address connection, or NULL for
-**                             listen to all device connection.
-**                  start: start or stop listening.
-**
-** Returns          TRUE if advertisement is started; FALSE if adv start failure.
-**
-*******************************************************************************/
-BOOLEAN GATT_Listen (tGATT_IF gatt_if, BOOLEAN start, BD_ADDR_PTR bd_addr)
-{
-    tGATT_REG    *p_reg;
-
-    GATT_TRACE_API ("GATT_Listen gatt_if=%d", gatt_if);
-
-    /* Make sure app is registered */
-    if ((p_reg = gatt_get_regcb(gatt_if)) == NULL) {
-        GATT_TRACE_ERROR("GATT_Listen - gatt_if =%d is not registered", gatt_if);
-        return (FALSE);
-    }
-
-    if (bd_addr != NULL) {
-#if (tGATT_BG_CONN_DEV == TRUE)
-        gatt_update_auto_connect_dev(gatt_if, start, bd_addr, FALSE);
-#endif // #if (tGATT_BG_CONN_DEV == TRUE)
-    } else {
-        p_reg->listening = start ? GATT_LISTEN_TO_ALL : GATT_LISTEN_TO_NONE;
-    }
-
-    return gatt_update_listen_mode();
 }
 
 #if (GATTS_INCLUDED == TRUE)
