@@ -747,6 +747,9 @@ macro(idf_project_default)
                              TARGET app-flash
                              NAME "app"
                              FLASH)
+
+            idf_create_dfu("${executable}_binary"
+                           TARGET dfu)
         endif()
 
         # FIXME: Dependencies should be specified within the components, not in the
@@ -769,6 +772,12 @@ macro(idf_project_default)
                           TARGET confserver)
 
     idf_create_save_defconfig()
+
+    idf_create_uf2("${executable}"
+                   TARGET uf2)
+    idf_create_uf2("${executable}"
+                   TARGET uf2-app
+                   APP_ONLY)
 
     idf_build_generate_metadata("${executable}")
 

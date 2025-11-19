@@ -172,7 +172,6 @@ def test_build_fail_on_build_time(idf_py: IdfPyFunc, test_app_copy: Path) -> Non
     idf_py('build')
 
 
-@pytest.mark.buildv2_skip('dfu target not yet added in buildv2')
 @pytest.mark.usefixtures('test_app_copy')
 def test_build_dfu(idf_py: IdfPyFunc) -> None:
     logging.info('DFU build works')
@@ -188,7 +187,6 @@ def test_build_dfu(idf_py: IdfPyFunc) -> None:
     assert_built(BOOTLOADER_BINS + APP_BINS + PARTITION_BIN + ['build/dfu.bin'])
 
 
-@pytest.mark.buildv2_skip('uf2 target not yet added in buildv2')
 @pytest.mark.usefixtures('test_app_copy')
 def test_build_uf2(idf_py: IdfPyFunc) -> None:
     logging.info('UF2 build works')

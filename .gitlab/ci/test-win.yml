@@ -178,3 +178,5 @@ pytest_buildv2_system_win:
       test_common.py
       test_components.py
       test_cmake.py
+      test_idf_extension.py
+      test_rebuild.py
