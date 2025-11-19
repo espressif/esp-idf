@@ -137,16 +137,11 @@ void btm_update_scanner_filter_policy(tBTM_BLE_SFP scan_policy)
     p_inq->sfp = scan_policy;
     p_inq->scan_type = p_inq->scan_type == BTM_BLE_SCAN_MODE_NONE ? BTM_BLE_SCAN_MODE_ACTI : p_inq->scan_type;
 
-    if (btm_cb.cmn_ble_vsc_cb.extended_scan_support == 0) {
-        btsnd_hcic_ble_set_scan_params(p_inq->scan_type, (UINT16)scan_interval,
-                                       (UINT16)scan_window,
-                                       btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type,
-                                       scan_policy);
-    } else {
-        btm_ble_send_extended_scan_params(p_inq->scan_type, scan_interval, scan_window,
-                                          btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type,
-                                          scan_policy);
-    }
+    
+    btsnd_hcic_ble_set_scan_params(p_inq->scan_type, (UINT16)scan_interval,
+                                    (UINT16)scan_window,
+                                    btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type,
+                                    scan_policy);
 }
 /*******************************************************************************
 **
@@ -604,23 +599,13 @@ BOOLEAN btm_ble_start_select_conn(BOOLEAN start, tBTM_BLE_SEL_CBACK *p_select_cb
             btm_cb.ble_ctr_cb.inq_var.scan_type = BTM_BLE_SCAN_MODE_PASS;
 
             /* Process advertising packets only from devices in the white list */
-            if (btm_cb.cmn_ble_vsc_cb.extended_scan_support == 0) {
-                /* use passive scan by default */
-                if (!btsnd_hcic_ble_set_scan_params(BTM_BLE_SCAN_MODE_PASS,
-                                                    scan_int,
-                                                    scan_win,
-                                                    p_cb->addr_mgnt_cb.own_addr_type,
-                                                    SP_ADV_WL)) {
-                    return FALSE;
-                }
-            } else {
-                if (!btm_ble_send_extended_scan_params(BTM_BLE_SCAN_MODE_PASS,
-                                                       scan_int,
-                                                       scan_win,
-                                                       p_cb->addr_mgnt_cb.own_addr_type,
-                                                       SP_ADV_WL)) {
-                    return FALSE;
-                }
+            /* use passive scan by default */
+            if (!btsnd_hcic_ble_set_scan_params(BTM_BLE_SCAN_MODE_PASS,
+                                                scan_int,
+                                                scan_win,
+                                                p_cb->addr_mgnt_cb.own_addr_type,
+                                                SP_ADV_WL)) {
+                return FALSE;
             }
 
             if (!btm_ble_topology_check(BTM_BLE_STATE_PASSIVE_SCAN)) {

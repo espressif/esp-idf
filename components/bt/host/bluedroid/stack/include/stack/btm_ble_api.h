@@ -122,8 +122,6 @@ typedef UINT8   tBTM_BLE_SFP;
 #define BTM_BLE_SCAN_INT_MAX            0x4000
 #define BTM_BLE_SCAN_WIN_MIN            0x0004
 #define BTM_BLE_SCAN_WIN_MAX            0x4000
-#define BTM_BLE_EXT_SCAN_INT_MAX        0x00FFFFFF
-#define BTM_BLE_EXT_SCAN_WIN_MAX        0xFFFF
 #define BTM_BLE_CONN_INT_MIN            0x0006
 #define BTM_BLE_CONN_INT_MAX            0x0C80
 #define BTM_BLE_CONN_LATENCY_MAX        499
@@ -386,10 +384,7 @@ typedef UINT8   tBTM_BLE_AD_TYPE;
 typedef UINT8 tBTM_BLE_ADV_TX_POWER;
 
 /* adv tx power in dBm */
-typedef struct {
-    BOOLEAN values_read;
-    UINT8 extended_scan_support;
-} tBTM_BLE_VSC_CB;
+
 
 /* slave preferred connection interval range */
 typedef struct {
@@ -2096,20 +2091,6 @@ tBTM_STATUS BTM_BleSetScanFilterParams(tGATT_IF client_if, UINT32 scan_interval,
                                     tBLE_SCAN_MODE scan_mode, UINT8 addr_type_own, UINT8 scan_duplicate_filter, tBTM_BLE_SFP scan_filter_policy,
                                     tBLE_SCAN_PARAM_SETUP_CBACK scan_setup_status_cback);
 
-
-/*******************************************************************************
-**
-** Function         BTM_BleGetVendorCapabilities
-**
-** Description      This function reads local LE features
-**
-** Parameters       p_cmn_vsc_cb : Locala LE capability structure
-**
-** Returns          void
-**
-*******************************************************************************/
-//extern
-void BTM_BleGetVendorCapabilities(tBTM_BLE_VSC_CB *p_cmn_vsc_cb);
 
 /*******************************************************************************
 **
