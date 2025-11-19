@@ -135,7 +135,7 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
     bta_dm_ble_passkey_reply,               /*  BTA_DM_API_BLE_PASSKEY_REPLY_EVT    */
     bta_dm_ble_set_static_passkey,          /* BTA_DM_API_BLE_SET_STATIC_PASSKEY_EVT */
     bta_dm_ble_confirm_reply,               /*  BTA_DM_API_BLE_CONFIRM_REPLY_EVT    */
-    bta_dm_security_grant,
+    bta_dm_security_grant,                  /* BTA_DM_API_BLE_SEC_GRANT_EVT */
 #endif  ///SMP_INCLUDED == TRUE
     bta_dm_ble_set_bg_conn_type,
     bta_dm_ble_set_conn_params,             /* BTA_DM_API_BLE_CONN_PARAM_EVT */
@@ -146,15 +146,8 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
     bta_dm_ble_scan,                        /* BTA_DM_API_BLE_SCAN_EVT */
 #endif // #if (BLE_42_SCAN_EN == TRUE)
     bta_dm_ble_update_conn_params,          /* BTA_DM_API_UPDATE_CONN_PARAM_EVT */
-    /* This handler function added by
-       Yulong at 2016/9/9 to support the
-       random address setting for the APP */
     bta_dm_ble_set_rand_address,            /* BTA_DM_API_SET_RAND_ADDR_EVT*/
     bta_dm_ble_clear_rand_address,          /* BTA_DM_API_CLEAR_RAND_ADDR_EVT */
-    /* This handler function added by
-       Yulong at 2016/10/19 to support
-       stop the ble advertising setting
-       by the APP */
 #if BLE_PRIVACY_SPT == TRUE
     bta_dm_ble_config_local_privacy,        /* BTA_DM_API_LOCAL_PRIVACY_EVT */
 #endif
