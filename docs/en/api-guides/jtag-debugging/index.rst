@@ -28,7 +28,7 @@ The document is structured as follows:
 :ref:`jtag-debugging-examples`
     If you are not familiar with GDB, check this section for debugging examples provided from :ref:`jtag-debugging-examples-eclipse` as well as from :ref:`jtag-debugging-examples-command-line`.
 :ref:`jtag-debugging-building-openocd`
-    Reference to OpenOCD build workflow for building from sources.
+    Reference for OpenOCD build workflow when building from sources.
 :ref:`jtag-debugging-tips-and-quirks`
     This section provides collection of tips and quirks related to JTAG debugging of {IDF_TARGET_NAME} with OpenOCD and GDB.
 
@@ -234,16 +234,16 @@ OpenOCD flashing command ``program_esp`` has the following format:
  - ``restore_clock`` - Optional. Restore clock frequency to its initial value after programming. Disabled by default.
  - ``skip_loaded`` - Optional. Skip flashing if the binary is already loaded. Disabled by default.
 
-Alternative Method: Using program_esp_bins
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Alternative Method: Using ``program_esp_bins``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 For convenience when working with ESP-IDF projects, OpenOCD provides an alternative command ``program_esp_bins`` that can flash multiple binaries in a single command by reading the build configuration from the ``flasher_args.json`` file generated during the ESP-IDF build process.
 
-This method is particularly useful because:
+This method is particularly useful because it:
 
-* It automatically reads all the binary files and their flash addresses from the build output
-* It handles encrypted partitions automatically based on the project configuration
-* It eliminates the need to manually specify addresses for each binary (bootloader, partition table, application, etc.)
+* Automatically reads all the binary files and their flash addresses from the build output.
+* Handles encrypted partitions automatically based on the project configuration.
+* Eliminates the need to manually specify addresses for each binary (bootloader, partition table, application, etc.).
 
 Basic usage:
 
@@ -312,7 +312,7 @@ Building OpenOCD from Sources
 
 The examples in this document use the pre-built OpenOCD binary distribution described in section :ref:`jtag-debugging-setup-openocd`.
 
-If you need to build OpenOCD from sources for custom requirements, please refer to the `OpenOCD build workflow <https://github.com/espressif/openocd-esp32/blob/master/.github/workflows/build_openocd.yml>`_ which demonstrates how OpenOCD is built for different platforms (Windows, Linux, macOS).
+If you need to build OpenOCD from sources for custom requirements, please refer to the `OpenOCD build workflow <https://github.com/espressif/openocd-esp32/blob/master/.github/workflows/build_openocd.yml>`_, which demonstrates how OpenOCD is built for different platforms (Windows, Linux, macOS).
 
 .. _jtag-debugging-tips-and-quirks:
 
