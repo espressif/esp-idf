@@ -474,7 +474,7 @@ void bt_mesh_ble_ext_adv_report(struct ble_gap_ext_disc_desc *desc)
 
         /* Here, only a shallow copy needs to be implemented;
          * deep copying behavior occurs in btc_ble_mesh_ble_copy_req_data. */
-        adv_rpt.data                = desc->length_data ? desc->data : NULL;
+        adv_rpt.data                = desc->length_data ? (uint8_t *)desc->data : NULL;
 
         adv_rpt.event_type          = desc->props;
         adv_rpt.addr_type           = desc->addr.type;
