@@ -191,6 +191,17 @@ baseline_manifest_sha:
     expire_in: 1 week
     when: always
 
+gcc_static_analyzer:
+  extends:
+    - .pre_check_template
+    - .rules:build
+  variables:
+    CI_CCACHE_DISABLE: 1
+    ANALYZING_APP: "examples/get-started/hello_world"
+  script:
+    - echo "CONFIG_COMPILER_STATIC_ANALYZER=y" >> ${ANALYZING_APP}/sdkconfig.defaults
+    - idf-build-apps build -p ${ANALYZING_APP}
+
 redundant_pass_job:
   extends:
     - .pre_check_template
