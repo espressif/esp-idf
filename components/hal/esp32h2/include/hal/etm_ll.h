@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +13,15 @@
 #include "hal/misc.h"
 #include "soc/soc_etm_struct.h"
 #include "soc/pcr_struct.h"
+
+#define ETM_LL_GET(_attr) ETM_LL_ ## _attr
+#define ETM_LL_SUPPORT(_feat) ETM_LL_SUPPORT_ ## _feat
+
+// Number of ETM instances
+#define ETM_LL_INST_NUM 1
+
+// Number of channels in each ETM instance
+#define ETM_LL_CHANS_PER_INST 50
 
 #ifdef __cplusplus
 extern "C" {

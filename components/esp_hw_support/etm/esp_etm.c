@@ -16,7 +16,7 @@
 #endif
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "soc/etm_periph.h"
+#include "hal/etm_periph.h"
 #include "esp_log.h"
 #include "esp_check.h"
 #include "esp_heap_caps.h"
@@ -46,16 +46,16 @@ typedef struct etm_group_t etm_group_t;
 typedef struct esp_etm_channel_t esp_etm_channel_t;
 
 struct etm_platform_t {
-    _lock_t mutex;                                // platform level mutex lock
-    etm_group_t *groups[SOC_ETM_ATTR(INST_NUM)];  // etm group pool
-    int group_ref_counts[SOC_ETM_ATTR(INST_NUM)]; // reference count used to protect group install/uninstall
+    _lock_t mutex;                              // platform level mutex lock
+    etm_group_t *groups[ETM_LL_GET(INST_NUM)];  // etm group pool
+    int group_ref_counts[ETM_LL_GET(INST_NUM)]; // reference count used to protect group install/uninstall
 };
 
 struct etm_group_t {
     int group_id;          // hardware group id
     etm_hal_context_t hal; // hardware abstraction layer context
     portMUX_TYPE spinlock; // to protect per-group light weight resource access
-    esp_etm_channel_t *chans[SOC_ETM_ATTR(CHANS_PER_INST)]; // array of channels in the group
+    esp_etm_channel_t *chans[ETM_LL_GET(CHANS_PER_INST)]; // array of channels in the group
 };
 
 typedef enum {
@@ -198,12 +198,12 @@ static esp_err_t etm_chan_register_to_group(esp_etm_channel_t *chan)
 {
     etm_group_t *group = NULL;
     int chan_id = -1;
-    for (int i = 0; i < SOC_ETM_ATTR(INST_NUM); i++) {
+    for (int i = 0; i < ETM_LL_GET(INST_NUM); i++) {
         group = etm_acquire_group_handle(i);
         ESP_RETURN_ON_FALSE(group, ESP_ERR_NO_MEM, TAG, "no mem for group (%d)", i);
         // loop to search free channel in the group
         esp_os_enter_critical(&group->spinlock);
-        for (int j = 0; j < SOC_ETM_ATTR(CHANS_PER_INST); j++) {
+        for (int j = 0; j < ETM_LL_GET(CHANS_PER_INST); j++) {
             if (!group->chans[j]) {
                 chan_id = j;
                 group->chans[j] = chan;
@@ -405,11 +405,11 @@ esp_err_t esp_etm_dump(FILE *out_stream)
     fprintf(out_stream, "===========ETM Dump Start==========\r\n");
     char line[80];
     size_t len = sizeof(line);
-    for (int i = 0; i < SOC_ETM_ATTR(INST_NUM); i++) {
+    for (int i = 0; i < ETM_LL_GET(INST_NUM); i++) {
         group = etm_acquire_group_handle(i);
         ESP_RETURN_ON_FALSE(group, ESP_ERR_NO_MEM, TAG, "no mem for group (%d)", i);
         etm_hal_context_t *hal = &group->hal;
-        for (int j = 0; j < SOC_ETM_ATTR(CHANS_PER_INST); j++) {
+        for (int j = 0; j < ETM_LL_GET(CHANS_PER_INST); j++) {
             bool print_line = true;
             esp_os_enter_critical(&group->spinlock);
             etm_chan = group->chans[j];
