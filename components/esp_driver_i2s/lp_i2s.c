@@ -28,7 +28,7 @@
 #include "esp_private/i2s_platform.h"
 #include "esp_private/lp_i2s_private.h"
 #include "i2s_private.h"
-#include "soc/i2s_periph.h"
+#include "hal/i2s_periph.h"
 
 #define LP_I2S_MEM_ALLOC_CAPS      (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
 

@@ -101,10 +101,6 @@ if(CONFIG_SOC_ISP_SUPPORTED)
     list(APPEND srcs "${target}/isp_periph.c")
 endif()
 
-if(CONFIG_SOC_I2S_SUPPORTED)
-    list(APPEND srcs "${target_folder}/i2s_periph.c")
-endif()
-
 if(CONFIG_SOC_I3C_MASTER_SUPPORTED)
     list(APPEND srcs "${target_folder}/i3c_master_periph.c")
 endif()

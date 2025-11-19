@@ -20,7 +20,7 @@
 #include "unity.h"
 #include "math.h"
 #include "esp_rom_gpio.h"
-#include "soc/i2s_periph.h"
+#include "hal/i2s_periph.h"
 #include "driver/i2s_std.h"
 #if SOC_I2S_SUPPORTS_PDM
 #include "driver/i2s_pdm.h"
@@ -55,7 +55,7 @@ static void i2s_test_io_config(int mode)
     gpio_set_direction(DATA_OUT_IO, GPIO_MODE_INPUT_OUTPUT);
 
     switch (mode) {
-#if SOC_I2S_ATTR(INST_NUM) > 1
+#if I2S_LL_GET(INST_NUM) > 1
     case I2S_TEST_MODE_SLAVE_TO_MASTER: {
         esp_rom_gpio_connect_out_signal(MASTER_BCK_IO, i2s_periph_signal[0].m_rx_bck_sig, 0, 0);
         esp_rom_gpio_connect_in_signal(MASTER_BCK_IO, i2s_periph_signal[1].s_tx_bck_sig, 0);
@@ -169,14 +169,14 @@ TEST_CASE("I2S_basic_channel_allocation_reconfig_deleting_test", "[i2s]")
 
     /* Exhaust test */
     std_cfg.gpio_cfg.mclk = -1;
-    i2s_chan_handle_t tx_ex[SOC_I2S_ATTR(INST_NUM)] = {};
-    for (int i = 0; i < SOC_I2S_ATTR(INST_NUM); i++) {
+    i2s_chan_handle_t tx_ex[I2S_LL_GET(INST_NUM)] = {};
+    for (int i = 0; i < I2S_LL_GET(INST_NUM); i++) {
         TEST_ESP_OK(i2s_new_channel(&chan_cfg, &tx_ex[i], NULL));
         TEST_ESP_OK(i2s_channel_init_std_mode(tx_ex[i], &std_cfg));
         TEST_ESP_OK(i2s_channel_enable(tx_ex[i]));
     }
     TEST_ESP_ERR(ESP_ERR_NOT_FOUND, i2s_new_channel(&chan_cfg, &tx_handle, NULL));
-    for (int i = 0; i < SOC_I2S_ATTR(INST_NUM); i++) {
+    for (int i = 0; i < I2S_LL_GET(INST_NUM); i++) {
         TEST_ESP_OK(i2s_channel_disable(tx_ex[i]));
         TEST_ESP_OK(i2s_del_channel(tx_ex[i]));
     }
@@ -741,7 +741,7 @@ TEST_CASE("I2S_loopback_test", "[i2s]")
     TEST_ESP_OK(i2s_del_channel(rx_handle));
 }
 
-#if SOC_I2S_ATTR(INST_NUM) > 1 && !CONFIG_ESP32P4_SELECTS_REV_LESS_V3
+#if I2S_LL_GET(INST_NUM) > 1 && !CONFIG_ESP32P4_SELECTS_REV_LESS_V3
 TEST_CASE("I2S_master_write_slave_read_test", "[i2s]")
 {
     i2s_chan_handle_t tx_handle;

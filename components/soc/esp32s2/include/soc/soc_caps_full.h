@@ -17,9 +17,5 @@
 #define _SOC_CAPS_DEDIC_GPIO_OUT_CHANS_PER_CPU     8 /*!< 8 outward channels on each CPU core */
 #define _SOC_CAPS_DEDIC_GPIO_IN_CHANS_PER_CPU      8 /*!< 8 inward channels on each CPU core */
 
-/*------------------------------- I2S ---------------------------------------*/
-// helper macros to access module attributes
-#define _SOC_CAPS_I2S_INST_NUM                    1  // Number of I2S instances
-
 /*------------------------------- Touch Sensor ------------------------------------*/
 #define _SOC_CAPS_TOUCH_CHAN_NUM                  15  // Number of touch sensor channels

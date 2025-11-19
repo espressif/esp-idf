@@ -3,6 +3,12 @@ idf_build_get_property(esp_tee_build ESP_TEE_BUILD)
 
 set(srcs "hal_utils.c")
 set(includes "platform_port/include")
+set(requires)
+
+if(${target} STREQUAL "esp32")
+    # TODO: IDF-14079 remove this dependency when ADC hal is graduated from the common hal component
+    list(APPEND requires esp_hal_i2s)
+endif()
 
 # target specific include must be added before the generic one
 # because of the "include_next" directive used by the efuse_hal.h
@@ -103,10 +109,6 @@ elseif(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "isp_hal.c")
     endif()
 
-    if(CONFIG_SOC_LP_I2S_SUPPORTED)
-        list(APPEND srcs "lp_i2s_hal.c")
-    endif()
-
     if(CONFIG_SOC_RMT_SUPPORTED)
         list(APPEND srcs "rmt_hal.c")
     endif()
@@ -121,10 +123,6 @@ elseif(NOT BOOTLOADER_BUILD)
         else()
             list(APPEND srcs "twai_hal_v1.c")
         endif()
-    endif()
-
-    if(CONFIG_SOC_I2S_SUPPORTED)
-        list(APPEND srcs "i2s_hal.c")
     endif()
 
     if(CONFIG_SOC_SDM_SUPPORTED)
@@ -261,7 +259,7 @@ endif()
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS ${includes}
                        PRIV_INCLUDE_DIRS ${priv_include}
-                       REQUIRES soc esp_rom
+                       REQUIRES ${requires}
                        LDFRAGMENTS linker.lf)
 
 if(CONFIG_HAL_DEFAULT_ASSERTION_LEVEL EQUAL 1)
