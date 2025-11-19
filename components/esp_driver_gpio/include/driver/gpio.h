@@ -385,22 +385,24 @@ esp_err_t gpio_get_drive_capability(gpio_num_t gpio_num, gpio_drive_cap_t *stren
   * signal or the IO MUX/GPIO configuration is modified (including input enable, output enable, output value,
   * function, and drive strength values). This function can be used to retain the state of GPIOs when the power
   * domain of where GPIO/IOMUX belongs to becomes off. For example, chip or system is reset (e.g. watchdog
-  * time-out, deep-sleep events are triggered), or peripheral power-down in light-sleep.
+  * time-out, Deep-sleep events are triggered), or peripheral power-down in Light-sleep.
   *
   * This function works in both input and output modes, and only applicable to output-capable GPIOs.
   * If this function is enabled:
   *   in output mode: the output level of the GPIO will be locked and can not be changed.
   *   in input mode: the input read value can still reflect the changes of the input signal.
   *
+  * Power down or call `gpio_hold_dis` will disable this function.
+  *
   * Please be aware that,
   *
-  * On ESP32P4, the states of IOs can not be hold after waking up from Deep-sleep.
+  * 1. USB pads cannot hold at low level after waking up from Deep-sleep. The USB related registers are reset, so the USB pull-up is back.
   *
-  * Additionally, on ESP32/S2/C3/S3/C2, this function cannot be used to hold the state of a digital GPIO during Deep-sleep.
+  * 2. For ESP32-P4 rev < 3.0, the states of IOs can not be hold after waking up from Deep-sleep.
+  *
+  * 3. For ESP32/S2/C3/S3/C2, this function cannot be used to hold the state of a digital GPIO during Deep-sleep.
   * Even if this function is enabled, the digital GPIO will be reset to its default state when the chip wakes up from
   * Deep-sleep. If you want to hold the state of a digital GPIO during Deep-sleep, please call `gpio_deep_sleep_hold_en`.
-  *
-  * Power down or call `gpio_hold_dis` will disable this function.
   *
   * @param gpio_num GPIO number, only support output-capable GPIOs
   *
@@ -429,7 +431,7 @@ esp_err_t gpio_hold_en(gpio_num_t gpio_num);
   */
 esp_err_t gpio_hold_dis(gpio_num_t gpio_num);
 
-#if SOC_GPIO_SUPPORT_HOLD_IO_IN_DSLP && !SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP
+#if !SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP
 /**
   * @brief Enable all digital gpio pads hold function during Deep-sleep.
   *
@@ -453,7 +455,7 @@ void gpio_deep_sleep_hold_en(void);
   * @brief Disable all digital gpio pads hold function during Deep-sleep.
   */
 void gpio_deep_sleep_hold_dis(void);
-#endif //SOC_GPIO_SUPPORT_HOLD_IO_IN_DSLP && !SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP
+#endif //!SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP
 
 /**
   * @brief Set pad input to a peripheral signal through the IOMUX.
