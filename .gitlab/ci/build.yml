@@ -344,7 +344,11 @@ generate_build_child_pipeline:
     expire_in: 1 week
     when: always
   script:
-    - run_cmd python tools/ci/dynamic_pipelines/scripts/generate_build_child_pipeline.py
+    - run_cmd idf-ci --debug gitlab build-child-pipeline
+      -p components
+      -p examples
+      -p tools/test_apps
+      --modified-files $MR_MODIFIED_FILES
 
 build_child_pipeline:
   stage: build
