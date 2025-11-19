@@ -1,0 +1,134 @@
+/**
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ *
+ *  SPDX-License-Identifier: Apache-2.0
+ */
+#pragma once
+
+#include <stdint.h>
+#include "soc/soc.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/** ICM_VER_DATE_REG register
+ *  NA
+ */
+#define ICM_VER_DATE_REG (DR_REG_ICM_BASE + 0x0)
+/** ICM_REG_VER_DATE : R/W; bitpos: [31:0]; default: 539296517;
+ *  NA
+ */
+#define ICM_REG_VER_DATE    0xFFFFFFFFU
+#define ICM_REG_VER_DATE_M  (ICM_REG_VER_DATE_V << ICM_REG_VER_DATE_S)
+#define ICM_REG_VER_DATE_V  0xFFFFFFFFU
+#define ICM_REG_VER_DATE_S  0
+
+/** ICM_CLK_EN_REG register
+ *  NA
+ */
+#define ICM_CLK_EN_REG (DR_REG_ICM_BASE + 0x4)
+/** ICM_REG_CLK_EN : R/W; bitpos: [0]; default: 0;
+ *  NA
+ */
+#define ICM_REG_CLK_EN    (BIT(0))
+#define ICM_REG_CLK_EN_M  (ICM_REG_CLK_EN_V << ICM_REG_CLK_EN_S)
+#define ICM_REG_CLK_EN_V  0x00000001U
+#define ICM_REG_CLK_EN_S  0
+
+/** ICM_MST_ARQOS_REG0_REG register
+ *  NA
+ */
+#define ICM_MST_ARQOS_REG0_REG (DR_REG_ICM_BASE + 0x28)
+/** ICM_REG_CPU_ARQOS : R/W; bitpos: [3:0]; default: 0;
+ *  NA
+ */
+#define ICM_REG_CPU_ARQOS    0x0000000FU
+#define ICM_REG_CPU_ARQOS_M  (ICM_REG_CPU_ARQOS_V << ICM_REG_CPU_ARQOS_S)
+#define ICM_REG_CPU_ARQOS_V  0x0000000FU
+#define ICM_REG_CPU_ARQOS_S  0
+/** ICM_REG_CACHE_ARQOS : R/W; bitpos: [7:4]; default: 0;
+ *  NA
+ */
+#define ICM_REG_CACHE_ARQOS    0x0000000FU
+#define ICM_REG_CACHE_ARQOS_M  (ICM_REG_CACHE_ARQOS_V << ICM_REG_CACHE_ARQOS_S)
+#define ICM_REG_CACHE_ARQOS_V  0x0000000FU
+#define ICM_REG_CACHE_ARQOS_S  4
+/** ICM_REG_DMA2D_ARQOS : R/W; bitpos: [11:8]; default: 0;
+ *  NA
+ */
+#define ICM_REG_DMA2D_ARQOS    0x0000000FU
+#define ICM_REG_DMA2D_ARQOS_M  (ICM_REG_DMA2D_ARQOS_V << ICM_REG_DMA2D_ARQOS_S)
+#define ICM_REG_DMA2D_ARQOS_V  0x0000000FU
+#define ICM_REG_DMA2D_ARQOS_S  8
+/** ICM_REG_AXI_PDMA_INT_ARQOS : R/W; bitpos: [15:12]; default: 0;
+ *  NA
+ */
+#define ICM_REG_AXI_PDMA_INT_ARQOS    0x0000000FU
+#define ICM_REG_AXI_PDMA_INT_ARQOS_M  (ICM_REG_AXI_PDMA_INT_ARQOS_V << ICM_REG_AXI_PDMA_INT_ARQOS_S)
+#define ICM_REG_AXI_PDMA_INT_ARQOS_V  0x0000000FU
+#define ICM_REG_AXI_PDMA_INT_ARQOS_S  12
+/** ICM_REG_GMAC_ARQOS : R/W; bitpos: [19:16]; default: 0;
+ *  NA
+ */
+#define ICM_REG_GMAC_ARQOS    0x0000000FU
+#define ICM_REG_GMAC_ARQOS_M  (ICM_REG_GMAC_ARQOS_V << ICM_REG_GMAC_ARQOS_S)
+#define ICM_REG_GMAC_ARQOS_V  0x0000000FU
+#define ICM_REG_GMAC_ARQOS_S  16
+/** ICM_REG_AXI_SDMMC_INT_ARQOS : R/W; bitpos: [23:20]; default: 0;
+ *  NA
+ */
+#define ICM_REG_AXI_SDMMC_INT_ARQOS    0x0000000FU
+#define ICM_REG_AXI_SDMMC_INT_ARQOS_M  (ICM_REG_AXI_SDMMC_INT_ARQOS_V << ICM_REG_AXI_SDMMC_INT_ARQOS_S)
+#define ICM_REG_AXI_SDMMC_INT_ARQOS_V  0x0000000FU
+#define ICM_REG_AXI_SDMMC_INT_ARQOS_S  20
+
+/** ICM_MST_AWQOS_REG0_REG register
+ *  NA
+ */
+#define ICM_MST_AWQOS_REG0_REG (DR_REG_ICM_BASE + 0x30)
+/** ICM_REG_CPU_AWQOS : R/W; bitpos: [3:0]; default: 0;
+ *  NA
+ */
+#define ICM_REG_CPU_AWQOS    0x0000000FU
+#define ICM_REG_CPU_AWQOS_M  (ICM_REG_CPU_AWQOS_V << ICM_REG_CPU_AWQOS_S)
+#define ICM_REG_CPU_AWQOS_V  0x0000000FU
+#define ICM_REG_CPU_AWQOS_S  0
+/** ICM_REG_CACHE_AWQOS : R/W; bitpos: [7:4]; default: 0;
+ *  NA
+ */
+#define ICM_REG_CACHE_AWQOS    0x0000000FU
+#define ICM_REG_CACHE_AWQOS_M  (ICM_REG_CACHE_AWQOS_V << ICM_REG_CACHE_AWQOS_S)
+#define ICM_REG_CACHE_AWQOS_V  0x0000000FU
+#define ICM_REG_CACHE_AWQOS_S  4
+/** ICM_REG_DMA2D_AWQOS : R/W; bitpos: [11:8]; default: 0;
+ *  NA
+ */
+#define ICM_REG_DMA2D_AWQOS    0x0000000FU
+#define ICM_REG_DMA2D_AWQOS_M  (ICM_REG_DMA2D_AWQOS_V << ICM_REG_DMA2D_AWQOS_S)
+#define ICM_REG_DMA2D_AWQOS_V  0x0000000FU
+#define ICM_REG_DMA2D_AWQOS_S  8
+/** ICM_REG_PDMA_INT_AWQOS : R/W; bitpos: [15:12]; default: 0;
+ *  NA
+ */
+#define ICM_REG_PDMA_INT_AWQOS    0x0000000FU
+#define ICM_REG_PDMA_INT_AWQOS_M  (ICM_REG_PDMA_INT_AWQOS_V << ICM_REG_PDMA_INT_AWQOS_S)
+#define ICM_REG_PDMA_INT_AWQOS_V  0x0000000FU
+#define ICM_REG_PDMA_INT_AWQOS_S  12
+/** ICM_REG_GMAC_AWQOS : R/W; bitpos: [19:16]; default: 0;
+ *  NA
+ */
+#define ICM_REG_GMAC_AWQOS    0x0000000FU
+#define ICM_REG_GMAC_AWQOS_M  (ICM_REG_GMAC_AWQOS_V << ICM_REG_GMAC_AWQOS_S)
+#define ICM_REG_GMAC_AWQOS_V  0x0000000FU
+#define ICM_REG_GMAC_AWQOS_S  16
+/** ICM_REG_AXI_SDMMC_INT_AWQOS : R/W; bitpos: [23:20]; default: 0;
+ *  NA
+ */
+#define ICM_REG_AXI_SDMMC_INT_AWQOS    0x0000000FU
+#define ICM_REG_AXI_SDMMC_INT_AWQOS_M  (ICM_REG_AXI_SDMMC_INT_AWQOS_V << ICM_REG_AXI_SDMMC_INT_AWQOS_S)
+#define ICM_REG_AXI_SDMMC_INT_AWQOS_V  0x0000000FU
+#define ICM_REG_AXI_SDMMC_INT_AWQOS_S  20
+
+#ifdef __cplusplus
+}
+#endif
