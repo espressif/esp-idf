@@ -410,14 +410,6 @@ void ledc_hal_get_fade_end_intr_status(ledc_hal_context_t *hal, uint32_t *intr_s
 void ledc_hal_clear_fade_end_intr_status(ledc_hal_context_t *hal, ledc_channel_t channel_num);
 
 /**
- * @brief Get the address of the fade end interrupt status register.
- *
- * @param hal Context of the HAL layer
- * @return Pointer to the fade end interrupt status register.
- */
-volatile void* ledc_hal_get_fade_end_intr_addr(ledc_hal_context_t *hal);
-
-/**
  * @brief Get clock config of LEDC timer
  *
  * @param hal Context of the HAL layer
@@ -427,6 +419,17 @@ volatile void* ledc_hal_get_fade_end_intr_addr(ledc_hal_context_t *hal);
  * @return None
  */
 void ledc_hal_get_clk_cfg(ledc_hal_context_t *hal, ledc_timer_t timer_sel, ledc_clk_cfg_t *clk_cfg);
+
+/**
+ * @brief Get the address of the fade end interrupt status register.
+ *
+ * @param hal Context of the HAL layer
+ * @return Pointer to the fade end interrupt status register.
+ */
+static inline volatile void* ledc_hal_get_fade_end_intr_addr(ledc_hal_context_t *hal)
+{
+    return ledc_ll_get_fade_end_intr_addr(hal->dev);
+}
 
 #endif  //#if SOC_LEDC_SUPPORTED
 

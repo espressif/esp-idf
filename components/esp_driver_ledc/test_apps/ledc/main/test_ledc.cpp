@@ -273,6 +273,48 @@ TEST_CASE("LEDC fade with step", "[ledc]")
     fade_teardown();
 }
 
+#if SOC_LEDC_SUPPORT_HS_MODE
+TEST_CASE("LEDC fade install with low speed mode only", "[ledc]")
+{
+    // This test verifies that ledc_fade_func_install works correctly when only
+    // LEDC_LOW_SPEED_MODE is initialized, without initializing LEDC_HIGH_SPEED_MODE.
+    // This tests the fix for NULL pointer dereference issue.
+
+    // Only initialize low speed mode, do NOT initialize high speed mode
+    ledc_channel_config_t ledc_ch_config = initialize_channel_config();
+    ledc_ch_config.speed_mode = LEDC_LOW_SPEED_MODE;
+    ledc_ch_config.duty = 0;
+    ledc_ch_config.channel = LEDC_CHANNEL_0;
+    ledc_ch_config.timer_sel = LEDC_TIMER_0;
+
+    ledc_timer_config_t ledc_time_config = create_default_timer_config();
+    ledc_time_config.speed_mode = LEDC_LOW_SPEED_MODE;
+    ledc_time_config.timer_num = LEDC_TIMER_0;
+
+    // Initialize only low speed mode
+    TEST_ESP_OK(ledc_channel_config(&ledc_ch_config));
+    TEST_ESP_OK(ledc_timer_config(&ledc_time_config));
+    vTaskDelay(5 / portTICK_PERIOD_MS);
+    TEST_ESP_OK(ledc_fade_func_install(0));
+
+    // Verify that fade functionality works correctly with low speed mode
+    TEST_ESP_OK(ledc_set_fade_with_time(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, 4000, 200));
+    TEST_ESP_OK(ledc_fade_start(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, LEDC_FADE_WAIT_DONE));
+    TEST_ASSERT_EQUAL_INT32(4000, ledc_get_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0));
+
+    // Test fade down
+    TEST_ESP_OK(ledc_set_fade_with_time(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, 0, 200));
+    TEST_ESP_OK(ledc_fade_start(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, LEDC_FADE_WAIT_DONE));
+    TEST_ASSERT_EQUAL_INT32(0, ledc_get_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0));
+
+    // Cleanup
+    ledc_fade_func_uninstall();
+
+    ledc_ch_config.deconfigure = true;
+    TEST_ESP_OK(ledc_channel_config(&ledc_ch_config));
+}
+#endif // SOC_LEDC_SUPPORT_HS_MODE
+
 TEST_CASE("LEDC fast switching duty with fade_wait_done", "[ledc]")
 {
     const ledc_mode_t test_speed_mode = TEST_SPEED_MODE;
