@@ -92,6 +92,23 @@ Light-sleep duration is chosen to wake up the chip before the nearest event (tas
 
 To skip unnecessary wake-up, you can consider initializing an ``esp_timer`` with the ``skip_unhandled_events`` option as ``true``. Timers with this flag will not wake up the system and it helps to reduce consumption.
 
+Debugging and Profiling
+-----------------------
+
+The power management subsystem provides several functions to help debug and profile power management lock usage in applications:
+
+- :cpp:func:`esp_pm_dump_locks` - Dumps a list of all currently created locks to a specified stream, showing their types, names, and current acquisition status.
+- :cpp:func:`esp_pm_get_lock_stats_all` - Retrieves statistics for all PM lock types, including the number of locks created and the number currently acquired.
+- :cpp:func:`esp_pm_lock_get_stats` - Gets detailed statistics for a specific lock instance, including acquisition count and (if profiling is enabled) the number of times taken and total time held.
+
+These functions are particularly useful for:
+
+1. Identifying leaks where locks are acquired but never released
+2. Understanding which components are preventing power savings
+3. Optimizing power consumption by analyzing lock usage patterns
+4. Debugging issues related to lock management in applications
+
+To enable profiling features (timing information for individual locks), enable the :ref:`CONFIG_PM_PROFILING` option in menuconfig.
 
 Dynamic Frequency Scaling and Peripheral Drivers
 ------------------------------------------------

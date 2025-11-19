@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -42,6 +42,154 @@
 TEST_CASE("Can dump power management lock stats", "[pm]")
 {
     esp_pm_dump_locks(stdout);
+}
+
+TEST_CASE("Test get PM lock statistics API", "[pm]")
+{
+#ifdef CONFIG_PM_ENABLE
+    esp_pm_lock_stats_t init_stats[ESP_PM_LOCK_MAX], stats[ESP_PM_LOCK_MAX];
+
+    // Get initial stats
+    TEST_ESP_OK(esp_pm_get_lock_stats_all(init_stats));
+
+    // Create a few locks of different types
+    esp_pm_lock_handle_t lock1, lock2, lock3;
+    TEST_ESP_OK(esp_pm_lock_create(ESP_PM_CPU_FREQ_MAX, 0, "cpu_lock", &lock1));
+    TEST_ESP_OK(esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "apb_lock", &lock2));
+    TEST_ESP_OK(esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, "sleep_lock", &lock3));
+
+    // Check stats after creating locks
+    TEST_ESP_OK(esp_pm_get_lock_stats_all(stats));
+    TEST_ASSERT_EQUAL(1, stats[ESP_PM_CPU_FREQ_MAX].created - init_stats[ESP_PM_CPU_FREQ_MAX].created);
+    TEST_ASSERT_EQUAL(1, stats[ESP_PM_APB_FREQ_MAX].created - init_stats[ESP_PM_APB_FREQ_MAX].created);
+    TEST_ASSERT_EQUAL(1, stats[ESP_PM_NO_LIGHT_SLEEP].created - init_stats[ESP_PM_NO_LIGHT_SLEEP].created);
+
+    // Acquire locks multiple times
+    TEST_ESP_OK(esp_pm_lock_acquire(lock1));
+    TEST_ESP_OK(esp_pm_lock_acquire(lock1)); // Acquire again (recursive)
+    TEST_ESP_OK(esp_pm_lock_acquire(lock2));
+
+    // Check stats after acquiring locks
+    TEST_ESP_OK(esp_pm_get_lock_stats_all(stats));
+    // Count total held locks (sum of all lock counts)
+    TEST_ASSERT_EQUAL(2, stats[ESP_PM_CPU_FREQ_MAX].acquired - init_stats[ESP_PM_CPU_FREQ_MAX].acquired); // lock1 acquired twice
+    TEST_ASSERT_EQUAL(1, stats[ESP_PM_APB_FREQ_MAX].acquired - init_stats[ESP_PM_APB_FREQ_MAX].acquired); // lock2 acquired once
+
+    // Release locks
+    TEST_ESP_OK(esp_pm_lock_release(lock1));
+    TEST_ESP_OK(esp_pm_lock_release(lock1)); // Release second acquisition
+    TEST_ESP_OK(esp_pm_lock_release(lock2));
+
+    // Delete locks
+    TEST_ESP_OK(esp_pm_lock_delete(lock1));
+    TEST_ESP_OK(esp_pm_lock_delete(lock2));
+    TEST_ESP_OK(esp_pm_lock_delete(lock3));
+
+    // Check stats after deleting locks
+    TEST_ESP_OK(esp_pm_get_lock_stats_all(stats));
+    TEST_ASSERT_EQUAL(0, stats[ESP_PM_CPU_FREQ_MAX].created - init_stats[ESP_PM_CPU_FREQ_MAX].created);
+    TEST_ASSERT_EQUAL(0, stats[ESP_PM_APB_FREQ_MAX].created - init_stats[ESP_PM_APB_FREQ_MAX].created);
+    TEST_ASSERT_EQUAL(0, stats[ESP_PM_NO_LIGHT_SLEEP].created - init_stats[ESP_PM_NO_LIGHT_SLEEP].created);
+
+    // Test error cases
+    // NULL stats pointer
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_pm_get_lock_stats_all(NULL));
+#else
+    // When PM is not enabled, function should return ESP_ERR_NOT_SUPPORTED
+    esp_pm_lock_stats_t stats[ESP_PM_LOCK_MAX];
+    TEST_ASSERT_EQUAL(ESP_ERR_NOT_SUPPORTED, esp_pm_get_lock_stats_all(stats));
+#endif
+}
+
+TEST_CASE("Test get PM lock instance statistics API", "[pm]")
+{
+#ifdef CONFIG_PM_ENABLE
+    // Create a lock
+    esp_pm_lock_handle_t lock;
+    TEST_ESP_OK(esp_pm_lock_create(ESP_PM_CPU_FREQ_MAX, 0, "test_lock", &lock));
+
+    // Get initial stats for the lock
+    esp_pm_lock_instance_stats_t lock_stats;
+    TEST_ESP_OK(esp_pm_lock_get_stats(lock, &lock_stats));
+    TEST_ASSERT_EQUAL(0, lock_stats.acquired);
+
+#if CONFIG_PM_PROFILING
+    TEST_ASSERT_EQUAL(0, lock_stats.times_taken);
+    TEST_ASSERT_EQUAL(0, lock_stats.time_held);
+#endif
+
+    // Acquire the lock multiple times
+    TEST_ESP_OK(esp_pm_lock_acquire(lock));
+    TEST_ESP_OK(esp_pm_lock_acquire(lock));
+    TEST_ESP_OK(esp_pm_lock_acquire(lock));
+
+    // Get stats again
+    TEST_ESP_OK(esp_pm_lock_get_stats(lock, &lock_stats));
+    TEST_ASSERT_EQUAL(3, lock_stats.acquired);
+
+#if CONFIG_PM_PROFILING
+    TEST_ASSERT_EQUAL(1, lock_stats.times_taken);
+    // The time_held should be greater than 0 if the lock is currently held
+    // We can't predict the exact value, so we just check that it's non-negative
+    TEST_ASSERT_GREATER_OR_EQUAL(0, lock_stats.time_held);
+
+    // Store the time_held value for later comparison
+    int32_t first_time_held = (int32_t)lock_stats.time_held;
+    int64_t start_time = esp_timer_get_time();
+    // Delay for a short period to increase the held time
+    vTaskDelay(100 / portTICK_PERIOD_MS);
+    int64_t end_time = esp_timer_get_time();
+    uint32_t expected_time_held = first_time_held + (uint32_t)(end_time - start_time);
+
+    // Get stats again to check that time_held has increased
+    TEST_ESP_OK(esp_pm_lock_get_stats(lock, &lock_stats));
+    TEST_ASSERT_GREATER_THAN(first_time_held, lock_stats.time_held);
+
+    // Check that time_held is within a reasonable range using TEST_ASSERT_UINT64_WITHIN
+    TEST_ASSERT_UINT32_WITHIN(10000, (uint32_t)expected_time_held, (uint32_t)lock_stats.time_held); // Allow 10ms tolerance
+#endif
+
+    // Release the lock once
+    TEST_ESP_OK(esp_pm_lock_release(lock));
+
+    // Get stats again
+    TEST_ESP_OK(esp_pm_lock_get_stats(lock, &lock_stats));
+    TEST_ASSERT_EQUAL(2, lock_stats.acquired);
+
+    // Release remaining locks
+    TEST_ESP_OK(esp_pm_lock_release(lock));
+    TEST_ESP_OK(esp_pm_lock_release(lock));
+
+#if CONFIG_PM_PROFILING
+    // After releasing all locks, get stats to check time_held is updated correctly
+    TEST_ESP_OK(esp_pm_lock_get_stats(lock, &lock_stats));
+    TEST_ASSERT_EQUAL(0, lock_stats.acquired);
+
+    // Store the time_held value after releasing all locks
+    int64_t time_after_release = lock_stats.time_held;
+
+    // Delay for a short period
+    vTaskDelay(100 / portTICK_PERIOD_MS);
+
+    // Get stats again - time_held should not change since lock is not held
+    TEST_ESP_OK(esp_pm_lock_get_stats(lock, &lock_stats));
+    TEST_ASSERT_EQUAL(time_after_release, lock_stats.time_held);
+#endif
+
+    // Test error cases
+    // NULL handle
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_pm_lock_get_stats(NULL, &lock_stats));
+    // NULL stats pointer
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_pm_lock_get_stats(lock, NULL));
+
+    // Clean up
+    TEST_ESP_OK(esp_pm_lock_delete(lock));
+#else
+    // When PM is not enabled, function should return ESP_ERR_NOT_SUPPORTED
+    esp_pm_lock_handle_t lock;
+    esp_pm_lock_instance_stats_t lock_stats;
+    TEST_ASSERT_EQUAL(ESP_ERR_NOT_SUPPORTED, esp_pm_lock_get_stats(lock, &lock_stats));
+#endif
 }
 
 #ifdef CONFIG_PM_ENABLE
