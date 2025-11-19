@@ -1482,38 +1482,6 @@ tBTM_STATUS BTM_BleStartAdv(void)
     return status;
 }
 #endif // #if (BLE_42_ADV_EN == TRUE)
-/*******************************************************************************
-**
-** Function         BTM_BleReadAdvParams
-**
-** Description      This function is called to set advertising parameters.
-**
-** Parameters       adv_int_min: minimum advertising interval
-**                  adv_int_max: maximum advertising interval
-**                  p_dir_bda: connectable direct initiator's LE device address
-**                  chnl_map: advertising channel map.
-**
-** Returns          void
-**
-*******************************************************************************/
-void BTM_BleReadAdvParams (UINT16 *adv_int_min, UINT16 *adv_int_max,
-                           tBLE_BD_ADDR *p_dir_bda, tBTM_BLE_ADV_CHNL_MAP *p_chnl_map)
-{
-    tBTM_BLE_INQ_CB *p_cb = &btm_cb.ble_ctr_cb.inq_var;
-
-    BTM_TRACE_EVENT ("BTM_BleReadAdvParams ");
-    if (!controller_get_interface()->supports_ble()) {
-        return ;
-    }
-
-    *adv_int_min = p_cb->adv_interval_min;
-    *adv_int_max = p_cb->adv_interval_max;
-    *p_chnl_map = p_cb->adv_chnl_map;
-
-    if (p_dir_bda != NULL) {
-        memcpy(p_dir_bda, &p_cb->direct_bda, sizeof(tBLE_BD_ADDR));
-    }
-}
 
 #if (BLE_42_SCAN_EN == TRUE)
 tBTM_STATUS BTM_BleSetScanFilterParams(tGATT_IF client_if, UINT32 scan_interval, UINT32 scan_window,

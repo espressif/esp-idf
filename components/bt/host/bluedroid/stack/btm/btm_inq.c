@@ -1124,6 +1124,7 @@ tBTM_STATUS BTM_ClearInqDb (BD_ADDR p_bda)
     return (BTM_SUCCESS);
 }
 
+#if (CLASSIC_BT_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         BTM_ReadInquiryRspTxPower
@@ -1154,6 +1155,7 @@ tBTM_STATUS BTM_ReadInquiryRspTxPower (tBTM_CMPL_CB *p_cb)
         return (BTM_CMD_STARTED);
     }
 }
+#endif // (CLASSIC_BT_INCLUDED == TRUE)
 
 /*********************************************************************************
 **********************************************************************************

@@ -2076,24 +2076,6 @@ void BTM_BleClearRandAddress(void);
 
 /*******************************************************************************
 **
-** Function         BTM_BleSetAdvParams
-**
-** Description      This function is called to set advertising parameters.
-**
-** Parameters       adv_int_min: minimum advertising interval
-**                  adv_int_max: maximum advertising interval
-**                  p_dir_bda: connectable direct initiator's LE device address
-**                  chnl_map: advertising channel map.
-**
-** Returns          void
-**
-*******************************************************************************/
-//extern
-void BTM_BleReadAdvParams (UINT16 *adv_int_min, UINT16 *adv_int_max,
-                           tBLE_BD_ADDR *p_dir_bda, tBTM_BLE_ADV_CHNL_MAP *p_chnl_map);
-
-/*******************************************************************************
-**
 ** Function         BTM_BleSetScanFilterParams
 **
 ** Description      This function is called to set Scan Filter & parameters.

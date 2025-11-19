@@ -2044,6 +2044,7 @@ tBTM_STATUS BTM_ReadRSSI (BD_ADDR remote_bda, tBT_TRANSPORT transport, tBTM_CMPL
     return (BTM_UNKNOWN_ADDR);
 }
 
+#if (CLASSIC_BT_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         BTM_ReadLinkQuality
@@ -2127,7 +2128,6 @@ tBTM_STATUS BTM_SetAclPktTypes(BD_ADDR remote_bda, UINT16 pkt_types, tBTM_CMPL_C
 
 void btm_acl_pkt_types_changed(UINT8 status, UINT16 handle, UINT16 pkt_types)
 {
-#if CLASSIC_BT_INCLUDED == TRUE
     BTM_TRACE_DEBUG ("btm_acl_pkt_types_changed\n");
     tACL_CONN *conn = NULL;
     tBTM_SET_ACL_PKT_TYPES_RESULTS results;
@@ -2148,8 +2148,8 @@ void btm_acl_pkt_types_changed(UINT8 status, UINT16 handle, UINT16 pkt_types)
         }
         btm_cb.devcb.p_set_acl_pkt_types_cmpl_cb = NULL;
     }
-#endif
 }
+#endif // (CLASSIC_BT_INCLUDED == TRUE)
 
 #if (BLE_INCLUDED == TRUE)
 
@@ -2326,6 +2326,7 @@ void btm_read_rssi_complete (UINT8 *p)
     }
 }
 
+#if (CLASSIC_BT_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         btm_read_link_quality_complete
@@ -2372,6 +2373,7 @@ void btm_read_link_quality_complete (UINT8 *p)
         (*p_cb)(&results);
     }
 }
+#endif // (CLASSIC_BT_INCLUDED == TRUE)
 
 /*******************************************************************************
 **
