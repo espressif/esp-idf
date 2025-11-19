@@ -59,7 +59,7 @@
     hint: "'esp_secure_boot_verify_rsa_signature_block()' has been made private and is no longer available."
 
 -
-    re: "error: implicit declaration of function '{}'"
+    re: "error: (implicit declaration of function|use of undeclared identifier) '{}'"
     hint: '{0}.h header file is not included by esp_system.h anymore. It shall then be manually included with #include "{0}.h"'
     variables:
         -

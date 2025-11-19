@@ -46,3 +46,4 @@ warning: unknown kconfig symbol 'ETHERNET_MDC_GPIO' assigned to '23' in .*/examp
 warning: unknown kconfig symbol 'ETHERNET_MDIO_GPIO' assigned to '18' in .*/examples/protocols/esp_http_client/sdkconfig.ci.*
 warning: unknown kconfig symbol 'ETHERNET_PHY_RST_GPIO' assigned to '5' in .*/examples/protocols/esp_http_client/sdkconfig.ci.*
 warning: unknown kconfig symbol 'ETHERNET_PHY_ADDR' assigned to '1' in .*/examples/protocols/esp_http_client/sdkconfig.ci.*
+warning: \S+ changed binding to STB_WEAK

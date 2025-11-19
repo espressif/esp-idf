@@ -155,6 +155,9 @@ if(CMAKE_C_COMPILER_ID MATCHES "Clang")
         # warning: implicit truncation from 'int' to a one-bit wide bit-field changes value from 1 to -1
         list(APPEND compile_options "-Wno-single-bit-bitfield-constant-conversion")
     endif()
+    # warning: initializer overrides prior initialization of this subobject
+    # in esp32c61 pmu_param.c when static unions are initialized (e.g. in pmu_hp_system_analog_param_default)
+    list(APPEND compile_options "-Wno-initializer-overrides")
 endif()
 # More warnings may exist in unit tests and example projects.
 

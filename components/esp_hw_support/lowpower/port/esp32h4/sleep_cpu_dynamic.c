@@ -74,7 +74,7 @@ static inline void * cpu_domain_clic_sleep_frame_alloc_and_init(uint8_t core_id)
 }
 
 #if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU && !CONFIG_FREERTOS_UNICORE
-esp_err_t esp_sleep_cpu_retention_init_impl(sleep_cpu_retention_t *sleep_cpu_retention_ptr, smp_retention_state_t *s_smp_retention_state)
+esp_err_t esp_sleep_cpu_retention_init_impl(sleep_cpu_retention_t *sleep_cpu_retention_ptr, _Atomic(smp_retention_state_t) *s_smp_retention_state)
 {
     for (uint8_t core_id = 0; core_id < portNUM_PROCESSORS; ++core_id) {
         if (sleep_cpu_retention_ptr->retent.critical_frame[core_id] == NULL) {

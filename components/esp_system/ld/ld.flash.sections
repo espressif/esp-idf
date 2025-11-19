@@ -148,6 +148,7 @@
   .eh_frame_hdr :
   {
     ALIGNED_SYMBOL(4, __eh_frame_hdr)
+    ALIGNED_SYMBOL(4, __eh_frame_hdr_start)
 
     KEEP (*(.eh_frame_hdr))
 
@@ -160,6 +161,7 @@
   .eh_frame :
   {
     ALIGNED_SYMBOL(4, __eh_frame)
+    ALIGNED_SYMBOL(4, __eh_frame_start)
 
     KEEP (*(.eh_frame))
 
