@@ -28,7 +28,7 @@ The document is structured as follows:
 :ref:`jtag-debugging-examples`
     If you are not familiar with GDB, check this section for debugging examples provided from :ref:`jtag-debugging-examples-eclipse` as well as from :ref:`jtag-debugging-examples-command-line`.
 :ref:`jtag-debugging-building-openocd`
-    Procedure to build OpenOCD from sources for :doc:`Windows <building-openocd-windows>`, :doc:`Linux <building-openocd-linux>` and :doc:`macOS <building-openocd-macos>` operating systems.
+    Reference for OpenOCD build workflow when building from sources.
 :ref:`jtag-debugging-tips-and-quirks`
     This section provides collection of tips and quirks related to JTAG debugging of {IDF_TARGET_NAME} with OpenOCD and GDB.
 
@@ -221,7 +221,7 @@ Another option is to write application image to flash using OpenOCD via JTAG wit
 
 OpenOCD flashing command ``program_esp`` has the following format:
 
-``program_esp <image_file> <offset> [verify] [reset] [exit] [compress] [encrypt]``
+``program_esp <image_file> <offset> [verify] [reset] [exit] [compress] [encrypt] [no_clock_boost] [restore_clock] [skip_loaded]``
 
  - ``image_file`` - Path to program image file.
  - ``offset`` - Offset in flash bank to write image.
@@ -232,9 +232,37 @@ OpenOCD flashing command ``program_esp`` has the following format:
  - ``encrypt`` - Optional. Encrypt binary before writing to flash. Same functionality with ``idf.py encrypted-flash``
  - ``no_clock_boost`` - Optional. Disable setting target clock frequency to its maximum possible value before programming. Clock boost is enabled by default.
  - ``restore_clock`` - Optional. Restore clock frequency to its initial value after programming. Disabled by default.
+ - ``skip_loaded`` - Optional. Skip flashing if the binary is already loaded. Disabled by default.
+
+Alternative Method: Using ``program_esp_bins``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+For convenience when working with ESP-IDF projects, OpenOCD provides an alternative command ``program_esp_bins`` that can flash multiple binaries in a single command by reading the build configuration from the ``flasher_args.json`` file generated during the ESP-IDF build process.
+
+This method is particularly useful because it:
+
+* Automatically reads all the binary files and their flash addresses from the build output.
+* Handles encrypted partitions automatically based on the project configuration.
+* Eliminates the need to manually specify addresses for each binary (bootloader, partition table, application, etc.).
+
+Basic usage:
+
+.. code-block:: bash
+
+    openocd -f board/esp32-wrover-kit-3.3v.cfg -c "program_esp_bins build flasher_args.json verify exit"
+
+Command Format
+""""""""""""""
+
+The OpenOCD flashing command ``program_esp_bins`` has the following format:
+
+``program_esp_bins <build_dir> <json_file> [verify] [reset] [exit] [compress] [no_clock_boost] [restore_clock] [skip_loaded]``
+
+ - ``build_dir`` - Path to the build directory containing the ``flasher_args.json`` file.
+ - ``json_file`` - Name of the JSON file containing flash configuration (typically ``flasher_args.json``).
+ - Other optional parameters work the same as ``program_esp`` command. See :ref:`jtag-upload-app-debug` section for details.
 
 You are now ready to start application debugging. Follow the steps described in the section below.
-
 
 .. _jtag-debugging-launching-debugger:
 
@@ -282,42 +310,9 @@ Before proceeding to examples, set up your {IDF_TARGET_NAME} target and load it 
 Building OpenOCD from Sources
 -----------------------------
 
-Please refer to separate documents listed below, that describe build process.
+The examples in this document use the pre-built OpenOCD binary distribution described in section :ref:`jtag-debugging-setup-openocd`.
 
-.. toctree::
-    :maxdepth: 1
-
-    Windows <building-openocd-windows>
-    Linux <building-openocd-linux>
-    macOS <building-openocd-macos>
-
-The examples of invoking OpenOCD in this document assume using pre-built binary distribution described in section :ref:`jtag-debugging-setup-openocd`.
-
-To use binaries build locally from sources, change the path to OpenOCD executable to ``src/openocd`` and set the ``OPENOCD_SCRIPTS`` environment variable so that OpenOCD can find the configuration files. For Linux and macOS:
-
-.. code-block:: bash
-
-    cd ~/esp/openocd-esp32
-    export OPENOCD_SCRIPTS=$PWD/tcl
-
-For Windows:
-
-.. code-block:: batch
-
-    cd %USERPROFILE%\esp\openocd-esp32
-    set "OPENOCD_SCRIPTS=%CD%\tcl"
-
-Example of invoking OpenOCD build locally from sources, for Linux and macOS:
-
-.. include:: {IDF_TARGET_PATH_NAME}.inc
-   :start-after: run-openocd-src-linux
-   :end-before: ---
-
-and Windows:
-
-.. include:: {IDF_TARGET_PATH_NAME}.inc
-   :start-after: run-openocd-src-win
-   :end-before: ---
+If you need to build OpenOCD from sources for custom requirements, please refer to the `OpenOCD build workflow <https://github.com/espressif/openocd-esp32/blob/master/.github/workflows/build_openocd.yml>`_, which demonstrates how OpenOCD is built for different platforms (Windows, Linux, macOS).
 
 .. _jtag-debugging-tips-and-quirks:
 
