@@ -390,7 +390,7 @@ ISP AE 控制器
 
 使用单次 AE 数据统计时，需要禁用连续 AE 模式，否则结果可能会被环境检测器覆盖。完成单次操作后，请重新启动连续模式。
 
-除了上述单次统计 API 外，ISP AE 驱动程序还可以连续获取 AE 统计信息。调用 :cpp:member:`esp_isp_ae_env_detector_evt_cbs_t::on_env_statistics_done` 可启动连续统计，调用 :cpp:member:`esp_isp_ae_env_detector_evt_cbs_t::on_env_change` 可停止统计。
+除了上述单次统计 API 外，ISP AE 驱动程序还可以连续获取 AE 统计信息。调用 :cpp:func:`esp_isp_ae_controller_start_continuous_statistics` 可启动连续统计，调用 :cpp:func:`esp_isp_ae_controller_stop_continuous_statistics` 可停止统计。
 
 若想启用连续统计，需要先注册回调函数 :cpp:member:`esp_isp_ae_env_detector_evt_cbs_t::on_env_statistics_done` 或 :cpp:member:`esp_isp_ae_env_detector_evt_cbs_t::on_env_change` 以获取统计数据。有关如何注册回调函数，请参见 :ref:`isp-callback`。
 
