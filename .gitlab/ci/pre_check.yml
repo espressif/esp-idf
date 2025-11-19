@@ -202,13 +202,13 @@ gcc_static_analyzer:
     - echo "CONFIG_COMPILER_STATIC_ANALYZER=y" >> ${ANALYZING_APP}/sdkconfig.defaults
     - idf-build-apps build -p ${ANALYZING_APP}
 
-redundant_pass_job:
+retry_failed_jobs:
   extends:
     - .pre_check_template
+    - .rules:dev-push
   tags: [shiny, fast_run]
-  cache: []
-  variables:
-    GIT_STRATEGY: none
-  before_script: []
+  allow_failure: true
   script:
-    - echo "This job is redundant to ensure the 'retry_failed_jobs' job can exist and not be skipped"
+    - echo "Retrieving and retrying all failed jobs for the pipeline..."
+    - python tools/ci/python_packages/gitlab_api.py retry_failed_jobs $CI_MERGE_REQUEST_PROJECT_ID --pipeline_id $CI_PIPELINE_ID
+  when: manual

@@ -12,7 +12,6 @@ stages:
   - test_deploy
   - deploy
   - post_deploy
-  - retry_failed_jobs
 
 variables:
 # System environment
