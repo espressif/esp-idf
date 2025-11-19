@@ -90,6 +90,21 @@ function(__init_project_configuration)
     idf_build_get_property(project_dir PROJECT_DIR)
     idf_build_get_property(project_name PROJECT_NAME)
 
+    # Set the LINKER_TYPE build property. Different linkers may have varying
+    # options, so it's important to identify the linker type to configure the
+    # options correctly. Currently, LINKER_TYPE is used to set the appropriate
+    # linker options for linking the entire archive, which differs between the
+    # GNU and Apple linkers when building on the host.
+    if(CONFIG_IDF_TARGET_LINUX AND CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
+        # Compiling for the host, and the host is macOS, so the linker is Darwin LD.
+        # Note, when adding support for Clang and LLD based toolchain this check will
+        # need to be modified.
+        set(linker_type "Darwin")
+    else()
+        set(linker_type "GNU")
+    endif()
+    idf_build_set_property(LINKER_TYPE "${linker_type}")
+
     list(APPEND compile_definitions "_GLIBCXX_USE_POSIX_SEMAPHORE"  # These two lines enable libstd++ to use
                                     "_GLIBCXX_HAVE_POSIX_SEMAPHORE" # posix-semaphores from components/pthread
                                     "_GNU_SOURCE")
@@ -407,16 +422,13 @@ function(__init_project_configuration)
         list(APPEND link_options "-specs=picolibc.specs")
     endif()
 
-    if(CMAKE_C_COMPILER_ID MATCHES "GNU")
-        set(mapfile "${build_dir}/${project_name}.map")
+    if("${linker_type}" STREQUAL "GNU")
         set(target_upper "${idf_target}")
         string(TOUPPER ${target_upper} target_upper)
         # Add cross-reference table to the map file
         list(APPEND link_options "-Wl,--cref")
         # Add this symbol as a hint for esp_idf_size to guess the target name
         list(APPEND link_options "-Wl,--defsym=IDF_TARGET_${target_upper}=0")
-        # Enable map file output
-        list(APPEND link_options "-Wl,--Map=${mapfile}")
         # Check if linker supports --no-warn-rwx-segments
         execute_process(COMMAND ${CMAKE_LINKER} "--no-warn-rwx-segments" "--version"
             RESULT_VARIABLE result
@@ -486,21 +498,6 @@ function(__init_project_configuration)
     idf_build_set_property(ASM_COMPILE_OPTIONS "${asm_compile_options}" APPEND)
     idf_build_set_property(COMPILE_DEFINITIONS "${compile_definitions}" APPEND)
     idf_build_set_property(LINK_OPTIONS "${link_options}" APPEND)
-
-    # Set the LINKER_TYPE build property. Different linkers may have varying
-    # options, so it's important to identify the linker type to configure the
-    # options correctly. Currently, LINKER_TYPE is used to set the appropriate
-    # linker options for linking the entire archive, which differs between the
-    # GNU and Apple linkers when building on the host.
-    if(CONFIG_IDF_TARGET_LINUX AND CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
-        # Compiling for the host, and the host is macOS, so the linker is Darwin LD.
-        # Note, when adding support for Clang and LLD based toolchain this check will
-        # need to be modified.
-        set(linker_type "Darwin")
-    else()
-        set(linker_type "GNU")
-    endif()
-    idf_build_set_property(LINKER_TYPE "${linker_type}")
 endfunction()
 
 #[[
@@ -599,6 +596,7 @@ macro(idf_project_init)
             idf_die("sdkconfig.cmake file not found.")
         endif()
         include("${sdkconfig_cmake}")
+        unset(sdkconfig_cmake)
 
         # Initialize the target architecture based on the configuration
         # Ensure this is done after including the sdkconfig.
@@ -639,6 +637,7 @@ macro(idf_project_init)
                 idf_component_include("${component_name}")
             endforeach()
         endif()
+        unset(include_all_components)
 
         idf_build_set_property(__PROJECT_INITIALIZED YES)
     endif()
@@ -694,26 +693,22 @@ function(idf_build_generate_flasher_args)
                  INPUT "${build_dir}/flasher_args.json.in")
 endfunction()
 
-#[[api
-.. cmakev2:macro:: idf_project_default
+#[[
+.. cmakev2:macro:: __project_default
 
     .. code-block:: cmake
 
-        idf_project_default()
+        __project_default()
 
-    Create a default project executable based on the main component and its
-    transitive dependencies. The executable name is derived from the
-    ``PROJECT_NAME`` variable, which by default uses the ``CMAKE_PROJECT_NAME``
-    value specified in the CMake's ``project()`` call.
-
-    Generate the binary image for the executable, signed or unsigned based on
-    the configuration, and add flash targets for it.
+    Helper function implementing the main idf_project_default macro
+    functionality, preventing global variable scope pollution.
 #]]
-macro(idf_project_default)
-    idf_project_init()
+function(__project_default)
     idf_build_get_property(build_dir BUILD_DIR)
     idf_build_get_property(executable PROJECT_NAME)
-    idf_build_executable("${executable}" COMPONENTS main SUFFIX ".elf")
+    idf_build_executable("${executable}"
+                         COMPONENTS main
+                         MAPFILE_TARGET "${executable}_mapfile")
 
     if(CONFIG_APP_BUILD_GENERATE_BINARIES)
         # Is it possible to have a configuration where
@@ -734,6 +729,7 @@ macro(idf_project_default)
                              TARGET app-flash
                              NAME "app"
                              FLASH)
+            idf_build_generate_metadata("${executable}_binary_signed")
         else()
             idf_build_binary("${executable}"
                              OUTPUT_FILE "${build_dir}/${executable}.bin"
@@ -750,16 +746,7 @@ macro(idf_project_default)
 
             idf_create_dfu("${executable}_binary"
                            TARGET dfu)
-        endif()
-
-        # FIXME: Dependencies should be specified within the components, not in the
-        # build system.
-        if(CONFIG_APP_BUILD_TYPE_APP_2NDBOOT)
-            add_dependencies(flash "partition_table_bin")
-        endif()
-
-        if(CONFIG_APP_BUILD_BOOTLOADER)
-            add_dependencies(flash "bootloader")
+            idf_build_generate_metadata("${executable}_binary")
         endif()
 
         idf_build_generate_flasher_args()
@@ -779,8 +766,33 @@ macro(idf_project_default)
                    TARGET uf2-app
                    APP_ONLY)
 
-    idf_build_generate_metadata("${executable}")
+    if(TARGET "${executable}_mapfile")
+        idf_create_size_report("${executable}_mapfile"
+                               TARGET size)
+    endif()
+endfunction()
 
-    unset(build_dir)
-    unset(executable)
+#[[api
+.. cmakev2:macro:: idf_project_default
+
+    .. code-block:: cmake
+
+        idf_project_default()
+
+    Create a default project executable based on the main component and its
+    transitive dependencies. The executable name is derived from the
+    ``PROJECT_NAME`` variable, which by default uses the ``CMAKE_PROJECT_NAME``
+    value specified in the CMake's ``project()`` call.
+
+    Generate the binary image for the executable, signed or unsigned based on
+    the configuration, and add flash targets for it.
+#]]
+macro(idf_project_default)
+    idf_project_init()
+    # Only the idf_project_init macro needs be called within the global scope,
+    # as it includes the project_include.cmake files and the cmake version of
+    # the configuration. The remaining functionality of the idf_project_default
+    # macro is implemented in a __project_default helper function to avoid
+    # polluting the global variable space.
+    __project_default()
 endmacro()
