@@ -379,45 +379,6 @@ void BTM_BleClearWhitelist(tBTM_UPDATE_WHITELIST_CBACK *update_wl_cb)
    btm_ble_clear_white_list(update_wl_cb);
 }
 
-/*******************************************************************************
-**
-** Function         btm_ble_send_extended_scan_params
-**
-** Description      This function sends out the extended scan parameters command to the controller
-**
-** Parameters       scan_type - Scan type
-**                  scan_int - Scan interval
-**                  scan_win - Scan window
-**                  addr_type_own - Own address type
-**                  scan_filter_policy - Scan filter policy
-**
-** Returns          TRUE or FALSE
-**
-*******************************************************************************/
-BOOLEAN btm_ble_send_extended_scan_params(UINT8 scan_type, UINT32 scan_int,
-        UINT32 scan_win, UINT8 addr_type_own,
-        UINT8 scan_filter_policy)
-{
-    UINT8 scan_param[HCIC_PARAM_SIZE_BLE_WRITE_EXTENDED_SCAN_PARAM];
-    UINT8 *pp_scan = scan_param;
-
-    memset(scan_param, 0, HCIC_PARAM_SIZE_BLE_WRITE_EXTENDED_SCAN_PARAM);
-
-    UINT8_TO_STREAM(pp_scan, scan_type);
-    UINT32_TO_STREAM(pp_scan, scan_int);
-    UINT32_TO_STREAM(pp_scan, scan_win);
-    UINT8_TO_STREAM(pp_scan, addr_type_own);
-    UINT8_TO_STREAM(pp_scan, scan_filter_policy);
-
-    BTM_TRACE_DEBUG("%s, %d, %d", __func__, scan_int, scan_win);
-    if ((BTM_VendorSpecificCommand(HCI_BLE_EXTENDED_SCAN_PARAMS_OCF,
-                                   HCIC_PARAM_SIZE_BLE_WRITE_EXTENDED_SCAN_PARAM, scan_param, NULL)) != BTM_SUCCESS) {
-        BTM_TRACE_ERROR("%s error sending extended scan parameters", __func__);
-        return FALSE;
-    }
-    return TRUE;
-}
-
 #if (BLE_42_SCAN_EN == TRUE)
 /*******************************************************************************
 **
@@ -513,9 +474,9 @@ tBTM_STATUS BTM_BleScan(BOOLEAN start, UINT32 duration,
 tBTM_STATUS BTM_BleBroadcast(BOOLEAN start, tBTM_START_STOP_ADV_CMPL_CBACK  *p_stop_adv_cback)
 {
     tBTM_STATUS status = BTM_NO_RESOURCES;
-    tBTM_LE_RANDOM_CB *p_addr_cb = &btm_cb.ble_ctr_cb.addr_mgnt_cb;
+    // tBTM_LE_RANDOM_CB *p_addr_cb = &btm_cb.ble_ctr_cb.addr_mgnt_cb;
     tBTM_BLE_INQ_CB *p_cb = &btm_cb.ble_ctr_cb.inq_var;
-    UINT8 evt_type = p_cb->scan_rsp ? BTM_BLE_DISCOVER_EVT : BTM_BLE_NON_CONNECT_EVT;
+    //UINT8 evt_type = p_cb->scan_rsp ? BTM_BLE_DISCOVER_EVT : BTM_BLE_NON_CONNECT_EVT;
 
     if (!controller_get_interface()->supports_ble()) {
         return BTM_ILLEGAL_VALUE;
@@ -561,26 +522,6 @@ tBTM_STATUS BTM_BleBroadcast(BOOLEAN start, tBTM_START_STOP_ADV_CMPL_CBACK  *p_s
     return status;
 }
 #endif // #if (BLE_42_ADV_EN == TRUE)
-
-/*******************************************************************************
-**
-** Function         BTM_BleGetVendorCapabilities
-**
-** Description      This function reads local LE features
-**
-** Parameters       p_cmn_vsc_cb : Locala LE capability structure
-**
-** Returns          void
-**
-*******************************************************************************/
-extern void BTM_BleGetVendorCapabilities(tBTM_BLE_VSC_CB *p_cmn_vsc_cb)
-{
-    BTM_TRACE_DEBUG("BTM_BleGetVendorCapabilities");
-
-    if (NULL != p_cmn_vsc_cb) {
-        *p_cmn_vsc_cb = btm_cb.cmn_ble_vsc_cb;
-    }
-}
 
 void BTM_VendorHciEchoCmdCallback(tBTM_VSC_CMPL *p1)
 {
@@ -1349,15 +1290,10 @@ tBTM_STATUS BTM_BleSetScanFilterParams(tGATT_IF client_if, UINT32 scan_interval,
     if (BTM_BleUpdateOwnType(&addr_type_own, NULL) != 0) {
         return BTM_ILLEGAL_VALUE;
     }
-    /* If not supporting extended scan support, use the older range for checking */
-    if (btm_cb.cmn_ble_vsc_cb.extended_scan_support == 0) {
-        max_scan_interval = BTM_BLE_SCAN_INT_MAX;
-        max_scan_window = BTM_BLE_SCAN_WIN_MAX;
-    } else {
-        /* If supporting extended scan support, use the new extended range for checking */
-        max_scan_interval = BTM_BLE_EXT_SCAN_INT_MAX;
-        max_scan_window = BTM_BLE_EXT_SCAN_WIN_MAX;
-    }
+    
+    max_scan_interval = BTM_BLE_SCAN_INT_MAX;
+    max_scan_window = BTM_BLE_SCAN_WIN_MAX;
+    
 
     osi_mutex_lock(&scan_param_lock, OSI_MUTEX_MAX_TIMEOUT);
 
@@ -4064,8 +4000,6 @@ void btm_ble_init (void)
     btu_free_timer(&p_cb->scan_timer_ent);
     btu_free_timer(&p_cb->inq_var.fast_adv_timer);
     memset(p_cb, 0, sizeof(tBTM_BLE_CB));
-    memset(&(btm_cb.cmn_ble_vsc_cb), 0 , sizeof(tBTM_BLE_VSC_CB));
-    btm_cb.cmn_ble_vsc_cb.values_read = FALSE;
     p_cb->cur_states       = 0;
 
     p_cb->conn_pending_q = fixed_queue_new(QUEUE_SIZE_MAX);
