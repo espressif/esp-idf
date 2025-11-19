@@ -321,9 +321,7 @@ test_pytest_linux:
 test_pytest_macos:
   extends:
     - .host_test_template
-    - .before_script:build:macos
-  tags:
-    - macos
+    - .brew-macos-settings
   artifacts:
     paths:
       - XUNIT_RESULT.xml
@@ -331,12 +329,6 @@ test_pytest_macos:
       - "**/build*/build_log.txt"
     reports:
       junit: XUNIT_RESULT.xml
-  variables:
-    PYENV_VERSION: "3.10"
-    # Workaround for a bug in Parallels executor where CI_PROJECT_DIR is not an absolute path,
-    # but a relative path to the build directory (builds/espressif/esp-idf instead of ~/builds/espressif/esp-idf.
-    # GitLab sets the project dir to this template `<builds_dir>/<namespace>/<project_name>`
-    IDF_PATH: "/Users/espressif/builds/espressif/esp-idf"
   script:
     - run_cmd idf-ci build run
       -p components -p examples -p tools/test_apps
