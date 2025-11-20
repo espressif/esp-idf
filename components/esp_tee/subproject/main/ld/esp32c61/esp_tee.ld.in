@@ -35,7 +35,7 @@
 PROVIDE ( esp_tee_app_config        = SRAM_REE_SEG_START + 0x2b0 );
 PROVIDE ( GDMA                      = 0x60080000 );
 
-/* SPI Flash functions required from the ROM (refer esp32c5.rom.spiflash.ld) */
+/* SPI Flash functions required from the ROM (refer esp32c61.rom.spiflash.ld) */
 PROVIDE ( spi_flash_check_and_flush_cache            = 0x40000230 );
 PROVIDE ( spi_flash_chip_generic_config_host_io_mode = 0x400002d4 );
 PROVIDE ( memspi_host_flush_cache                    = 0x40000318 );

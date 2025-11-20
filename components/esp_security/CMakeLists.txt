@@ -32,9 +32,16 @@ if(NOT non_os_build)
     list(APPEND srcs "src/esp_crypto_lock.c" "src/esp_crypto_periph_clk.c")
     list(APPEND priv_requires efuse esp_system esp_timer)
 elseif(esp_tee_build)
-    list(APPEND srcs "src/esp_crypto_lock.c" "src/esp_crypto_periph_clk.c"
-                     "src/esp_hmac.c" "src/esp_ds.c")
+    list(APPEND srcs "src/esp_crypto_lock.c" "src/esp_crypto_periph_clk.c")
     list(APPEND includes "src/${IDF_TARGET}")
+
+    if(CONFIG_SOC_HMAC_SUPPORTED)
+        list(APPEND srcs "src/esp_hmac.c")
+    endif()
+
+    if(CONFIG_SOC_DIG_SIGN_SUPPORTED)
+        list(APPEND srcs "src/esp_ds.c")
+    endif()
 endif()
 
 idf_component_register(SRCS ${srcs}

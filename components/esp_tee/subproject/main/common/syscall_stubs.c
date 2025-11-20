@@ -130,7 +130,7 @@ int __cxa_thread_atexit(void (*func)(void *), void *arg, void *dso)
     return 0;
 }
 
-#if CONFIG_IDF_TARGET_ESP32H2
+#if CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32C61
 void *_sbrk(ptrdiff_t incr)
 {
     return (void *) -1;

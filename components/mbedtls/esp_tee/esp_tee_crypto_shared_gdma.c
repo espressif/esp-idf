@@ -11,8 +11,6 @@
 #include "esp_crypto_dma.h"
 
 #include "hal/gdma_types.h"
-#include "hal/aes_hal.h"
-
 #include "soc/gdma_channel.h"
 #include "soc/soc_caps.h"
 
@@ -86,11 +84,18 @@ static void crypto_shared_gdma_init(void)
 esp_err_t esp_tee_crypto_shared_gdma_start(const crypto_dma_desc_t *input, const crypto_dma_desc_t *output, gdma_trigger_peripheral_t periph)
 {
     int periph_inst_id = SOC_GDMA_TRIG_PERIPH_M2M0;
-    if (periph == GDMA_TRIG_PERIPH_SHA) {
+    switch (periph) {
+#if SOC_SHA_SUPPORTED
+    case GDMA_TRIG_PERIPH_SHA:
         periph_inst_id = SOC_GDMA_TRIG_PERIPH_SHA0;
-    } else if (periph == GDMA_TRIG_PERIPH_AES) {
+        break;
+#endif
+#if SOC_AES_SUPPORTED
+    case GDMA_TRIG_PERIPH_AES:
         periph_inst_id = SOC_GDMA_TRIG_PERIPH_AES0;
-    } else {
+        break;
+#endif
+    default:
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -133,6 +138,7 @@ void esp_tee_crypto_shared_gdma_free(void)
 
 /* ---------------------------------------------- DMA Implementations: AES ------------------------------------------------- */
 
+#if SOC_AES_SUPPORTED
 esp_err_t esp_aes_dma_start(const crypto_dma_desc_t *input, const crypto_dma_desc_t *output)
 {
     return esp_tee_crypto_shared_gdma_start(input, output, GDMA_TRIG_PERIPH_AES);
@@ -142,10 +148,13 @@ bool esp_aes_dma_done(const crypto_dma_desc_t *output)
 {
     return (output->dw0.owner == 0);
 }
+#endif
 
 /* ---------------------------------------------- DMA Implementations: SHA ------------------------------------------------- */
 
+#if SOC_SHA_SUPPORTED
 esp_err_t esp_sha_dma_start(const crypto_dma_desc_t *input)
 {
     return esp_tee_crypto_shared_gdma_start(input, NULL, GDMA_TRIG_PERIPH_SHA);
 }
+#endif
