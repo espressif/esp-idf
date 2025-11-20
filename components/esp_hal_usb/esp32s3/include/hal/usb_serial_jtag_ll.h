@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,7 +8,8 @@
 
 #include <stdbool.h>
 #include "esp_attr.h"
-#include "soc/pcr_struct.h"
+#include "soc/system_struct.h"
+#include "soc/rtc_cntl_struct.h"
 #include "soc/usb_serial_jtag_reg.h"
 #include "soc/usb_serial_jtag_struct.h"
 #include "hal/usb_serial_jtag_types.h"
@@ -17,6 +18,7 @@
 /* ----------------------------- Macros & Types ----------------------------- */
 
 #define USB_SERIAL_JTAG_LL_INTR_MASK            (0x7ffff)   // All interrupts mask
+#define USB_SERIAL_JTAG_LL_EXT_PHY_SUPPORTED    1   // Can route to an external FSLS PHY
 #define USB_SERIAL_JTAG_LL_PHY_DEPENDS_ON_BBPLL (1)
 
 // Define USB_SERIAL_JTAG interrupts
@@ -29,8 +31,7 @@ typedef enum {
     USB_SERIAL_JTAG_INTR_TOKEN_REC_IN_EP1       = (1 << 8),
     USB_SERIAL_JTAG_INTR_BUS_RESET              = (1 << 9),
     USB_SERIAL_JTAG_INTR_EP1_ZERO_PAYLOAD       = (1 << 10),
-} usb_serial_jtag_ll_intr_t;
-
+} usb_serial_jtag_intr_t;
 
 #ifdef __cplusplus
 extern "C" {
@@ -112,11 +113,13 @@ static inline uint32_t usb_serial_jtag_ll_get_intr_ena_status(void)
  *
  * @return amount of bytes read
  */
-static inline int usb_serial_jtag_ll_read_rxfifo(uint8_t *buf, uint32_t rd_len)
+static inline uint32_t usb_serial_jtag_ll_read_rxfifo(uint8_t *buf, uint32_t rd_len)
 {
-    int i;
-    for (i = 0; i < (int)rd_len; i++) {
-        if (!USB_SERIAL_JTAG.ep1_conf.serial_out_ep_data_avail) break;
+    uint32_t i;
+    for (i = 0; i < rd_len; i++) {
+        if (!USB_SERIAL_JTAG.ep1_conf.serial_out_ep_data_avail) {
+            break;
+        }
         buf[i] = USB_SERIAL_JTAG.ep1.rdwr_byte;
     }
     return i;
@@ -131,11 +134,13 @@ static inline int usb_serial_jtag_ll_read_rxfifo(uint8_t *buf, uint32_t rd_len)
  *
  * @return Amount of bytes actually written. May be less than wr_len.
  */
-static inline int usb_serial_jtag_ll_write_txfifo(const uint8_t *buf, uint32_t wr_len)
+static inline uint32_t usb_serial_jtag_ll_write_txfifo(const uint8_t *buf, uint32_t wr_len)
 {
-    int i;
-    for (i = 0; i < (int)wr_len; i++) {
-        if (!USB_SERIAL_JTAG.ep1_conf.serial_in_ep_data_free) break;
+    uint32_t i;
+    for (i = 0; i < wr_len; i++) {
+        if (!USB_SERIAL_JTAG.ep1_conf.serial_in_ep_data_free) {
+            break;
+        }
         USB_SERIAL_JTAG.ep1.rdwr_byte = buf[i];
     }
     return i;
@@ -178,7 +183,7 @@ static inline int usb_serial_jtag_ll_txfifo_writable(void)
  */
 static inline void usb_serial_jtag_ll_txfifo_flush(void)
 {
-    USB_SERIAL_JTAG.ep1_conf.wr_done=1;
+    USB_SERIAL_JTAG.ep1_conf.wr_done = 1;
 }
 
 /**
@@ -197,18 +202,21 @@ FORCE_INLINE_ATTR void usb_serial_jtag_ll_phy_enable_jtag_bridge(bool enable)
 /* ---------------------------- USB PHY Control  ---------------------------- */
 
 /**
- * @brief Sets PHY defaults
+ * @brief Sets whether the USJ's FSLS PHY interface routes to an internal or external PHY
  *
- * Some PHY register fields/features of the USJ are redundant on the ESP32-C6.
- * This function those fields are set to the appropriate default values.
- *
- * @param hw Start address of the USB Wrap registers
+ * @param enable Enables external PHY, internal otherwise
  */
-FORCE_INLINE_ATTR void usb_serial_jtag_ll_phy_set_defaults(void)
+FORCE_INLINE_ATTR void usb_serial_jtag_ll_phy_enable_external(bool enable)
 {
-    // External FSLS PHY is not supported
-    USB_SERIAL_JTAG.conf0.phy_sel = 0;
-    USB_SERIAL_JTAG.conf0.usb_pad_enable = 1;
+    USB_SERIAL_JTAG.conf0.phy_sel = enable;
+    // Enable SW control of muxing USB OTG vs USJ to the internal USB FSLS PHY
+    RTCCNTL.usb_conf.sw_hw_usb_phy_sel = 1;
+    /*
+    For 'sw_usb_phy_sel':
+    0 - Internal USB FSLS PHY is mapped to the USJ. USB Wrap mapped to external PHY
+    1 - Internal USB FSLS PHY is mapped to the USB Wrap. USJ mapped to external PHY
+    */
+    RTCCNTL.usb_conf.sw_usb_phy_sel = enable;
 }
 
 /**
@@ -300,6 +308,16 @@ FORCE_INLINE_ATTR void usb_serial_jtag_ll_phy_enable_pad(bool enable)
     USB_SERIAL_JTAG.conf0.usb_pad_enable = enable;
 }
 
+/**
+ * @brief Set USB FSLS PHY TX output clock edge
+ *
+ * @param clk_neg_edge True if TX output at negedge, posedge otherwise
+ */
+FORCE_INLINE_ATTR void usb_serial_jtag_ll_phy_set_tx_edge(bool clk_neg_edge)
+{
+    USB_SERIAL_JTAG.conf0.phy_tx_edge_sel = clk_neg_edge;
+}
+
 /* ----------------------------- RCC Functions  ----------------------------- */
 
 /**
@@ -308,17 +326,29 @@ FORCE_INLINE_ATTR void usb_serial_jtag_ll_phy_enable_pad(bool enable)
  */
 FORCE_INLINE_ATTR void usb_serial_jtag_ll_enable_bus_clock(bool clk_en)
 {
-    PCR.usb_device_conf.usb_device_clk_en = clk_en;
+    SYSTEM.perip_clk_en1.usb_device_clk_en = clk_en;
 }
+
+// SYSTEM.perip_clk_enx are shared registers, so this function must be used in an atomic way
+#define usb_serial_jtag_ll_enable_bus_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        usb_serial_jtag_ll_enable_bus_clock(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Reset the USJ module
  */
 FORCE_INLINE_ATTR void usb_serial_jtag_ll_reset_register(void)
 {
-    PCR.usb_device_conf.usb_device_rst_en = 1;
-    PCR.usb_device_conf.usb_device_rst_en = 0;
+    SYSTEM.perip_rst_en1.usb_device_rst = 1;
+    SYSTEM.perip_rst_en1.usb_device_rst = 0;
 }
+
+// SYSTEM.perip_clk_enx are shared registers, so this function must be used in an atomic way
+#define usb_serial_jtag_ll_reset_register(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        usb_serial_jtag_ll_reset_register(__VA_ARGS__); \
+    } while(0)
 
 /**
  * Get the enable status of the USJ module
@@ -327,8 +357,14 @@ FORCE_INLINE_ATTR void usb_serial_jtag_ll_reset_register(void)
  */
 FORCE_INLINE_ATTR bool usb_serial_jtag_ll_module_is_enabled(void)
 {
-    return (PCR.usb_device_conf.usb_device_clk_en && !PCR.usb_device_conf.usb_device_rst_en);
+    return (SYSTEM.perip_clk_en1.usb_device_clk_en && !SYSTEM.perip_rst_en1.usb_device_rst);
 }
+
+// SYSTEM.perip_clk_enx are shared registers, so this function must be used in an atomic way
+#define usb_serial_jtag_ll_module_is_enabled(...) ({    \
+    (void)__DECLARE_RCC_ATOMIC_ENV;                     \
+    usb_serial_jtag_ll_module_is_enabled(__VA_ARGS__);  \
+})
 
 #ifdef __cplusplus
 }

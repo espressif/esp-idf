@@ -19,18 +19,16 @@ The USB HAL is structured in two main sub-layers:
 
 This HAL supports various USB controller and PHY types depending on the ESP chip:
 
-- **USB-DWC (DesignWare USB Controller)**: The main USB OTG controller available on:
-  - ESP32-S2
-  - ESP32-S3
-  - ESP32-H4
-  - ESP32-P4
+- **USB-DWC (DesignWare USB Controller)**: The main USB OTG controller supporting USB Host and Device modes
+
+- **USB Serial JTAG**: A special USB peripheral that combines USB CDC-ACM functionality with JTAG debugging capabilities
 
 - **USB WRAP**: A wrapper/peripheral controller that provides additional USB functionality and GPIO matrix integration
 
 - **USB PHY Types**:
   - **FSLS (Full Speed/Low Speed) Internal PHY**: Built-in PHY supporting USB Full Speed and Low Speed operation
   - **FSLS External PHY**: Support for external FSLS PHY via GPIO matrix
-  - **UTMI PHY**: UTMI+ compliant PHY interface (available on ESP32-P4)
+  - **UTMI PHY**: UTMI+ compliant PHY interface for High Speed USB support
 
 ## Features
 
