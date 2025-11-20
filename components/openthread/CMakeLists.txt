@@ -196,6 +196,11 @@ if(CONFIG_OPENTHREAD_ENABLED)
             "src/port/esp_openthread_messagepool.c")
     endif()
 
+    if(NOT CONFIG_OPENTHREAD_RCP_SPINEL_CONSOLE)
+        list(APPEND exclude_srcs
+            "src/ncp/esp_openthread_ncp_console.cpp")
+    endif()
+
     if(CONFIG_OPENTHREAD_FTD)
         set(device_type "OPENTHREAD_FTD=1")
     elseif(CONFIG_OPENTHREAD_MTD)
