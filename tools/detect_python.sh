@@ -19,7 +19,7 @@ python3.11
 python3.12
 python3.13"
 
-if [ -n "$ESP_PYTHON_CUSTOM" ]; then
+if [ -n "${ESP_PYTHON_CUSTOM:-}" ]; then
     echo "Reading ESP_PYTHON_CUSTOM from environment: \"$ESP_PYTHON_CUSTOM\""
     PYTHON_CANDIDATES="$ESP_PYTHON_CUSTOM"
 fi
@@ -39,7 +39,7 @@ EOF
 
 unset PYTHON_CANDIDATES
 
-if [ -z "$ESP_PYTHON" ]; then
+if [ -z "${ESP_PYTHON:-}" ]; then
     echo "Python ${OLDEST_PYTHON_SUPPORTED_MAJOR}.${OLDEST_PYTHON_SUPPORTED_MINOR}+ is not installed! Please see the documentation for how to install it." >&2
     return 1
 fi
@@ -47,4 +47,4 @@ echo "\"$ESP_PYTHON\" has been detected"
 export ESP_PYTHON
 
 }
-detect_python
+detect_python # Make sure at last line call function, because outside caller need its return value

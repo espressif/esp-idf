@@ -34,4 +34,4 @@ echo "$ESP_PYTHON has been detected"
 set -x ESP_PYTHON "$ESP_PYTHON"
 
 end
-detect_python
+detect_python # Make sure at last line call function, because outside caller need its return value
