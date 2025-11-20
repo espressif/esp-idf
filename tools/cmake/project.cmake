@@ -465,14 +465,6 @@ function(__project_init components_var test_components_var)
             __project_component_dir("${CMAKE_CURRENT_LIST_DIR}/main" "project_components")
         endif()
 
-        paths_with_spaces_to_list(EXTRA_COMPONENT_DIRS)
-        foreach(component_dir ${EXTRA_COMPONENT_DIRS})
-            get_filename_component(component_abs_path ${component_dir} ABSOLUTE)
-            if(NOT EXISTS ${component_abs_path})
-                message(FATAL_ERROR "Directory specified in EXTRA_COMPONENT_DIRS doesn't exist: ${component_abs_path}")
-            endif()
-            __project_component_dir("${component_dir}" "project_extra_components")
-        endforeach()
 
         # Look for components in the usual places: CMAKE_CURRENT_LIST_DIR/main,
         # extra component dirs, and CMAKE_CURRENT_LIST_DIR/components
