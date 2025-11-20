@@ -9,7 +9,7 @@ if test -z "$ESP_PYTHON_CUSTOM"
     set PYTHON_CANDIDATES python3 python python3.10 python3.11 python3.12 python3.13
 else
     echo "Reading ESP_PYTHON_CUSTOM from environment: \"$ESP_PYTHON_CUSTOM\""
-    set PYTHON_CANDIDATES $ESP_PYTHON_CUSTOM
+    set PYTHON_CANDIDATES "$ESP_PYTHON_CUSTOM"
 end
 
 for p_cmd in $PYTHON_CANDIDATES
@@ -19,7 +19,7 @@ for p_cmd in $PYTHON_CANDIDATES
     $p_cmd -c "import sys; exit(1) if sys.version_info.major < int(\"$OLDEST_PYTHON_SUPPORTED_MAJOR\") else exit(0);"; or continue
     $p_cmd -c "import sys; exit(1) if sys.version_info.minor < int(\"$OLDEST_PYTHON_SUPPORTED_MINOR\") else exit(0);"; or continue
 
-    set ESP_PYTHON $p_cmd
+    set ESP_PYTHON "$p_cmd"
     break
 end
 set -e PYTHON_CANDIDATES
@@ -29,4 +29,4 @@ test -n "$ESP_PYTHON"; or exit 1
 
 $ESP_PYTHON --version
 echo "$ESP_PYTHON has been detected"
-set -x ESP_PYTHON $ESP_PYTHON
+set -x ESP_PYTHON "$ESP_PYTHON"
