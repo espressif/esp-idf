@@ -166,6 +166,7 @@
 /docs/                                      @esp-idf-codeowners/docs
 /docs/docs_not_updated/                     @esp-idf-codeowners/all-maintainers
 /docs/**/api-guides/tools/                  @esp-idf-codeowners/tools
+/docs/**/api-guides/kconfig/                @esp-idf-codeowners/tools
 /docs/en/api-guides/core_dump.rst           @esp-idf-codeowners/debugging
 /docs/**/api-guides/wifi*                   @esp-idf-codeowners/wifi
 /docs/**/api-guides/esp-wifi-mesh.rst       @esp-idf-codeowners/wifi
