@@ -44,9 +44,8 @@ typedef struct {
 
 typedef struct {
     spi_host_device_t host_id;
-    spi_bus_config_t bus_config;
     int cs_io_num;
-    uint64_t gpio_reserve;
+    spi_bus_attr_t* bus_attr;
     _Atomic spi_bus_fsm_t fsm;
     spi_dma_ctx_t   *dma_ctx;
     uint16_t internal_mem_align_size;
@@ -129,7 +128,7 @@ esp_err_t spi_slave_hd_init(spi_host_device_t host_id, const spi_bus_config_t *b
     host->int_spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
     host->append_mode = append_mode;
     atomic_store(&host->fsm, SPI_BUS_FSM_ENABLED);
-    memcpy(&host->bus_config, bus_config, sizeof(spi_bus_config_t));
+    host->bus_attr = (spi_bus_attr_t *)spi_bus_get_attr(host_id);
     host->cs_io_num = config->spics_io_num;
 
     ret = spicommon_dma_chan_alloc(host_id, config->dma_chan, &host->dma_ctx);
@@ -172,11 +171,12 @@ esp_err_t spi_slave_hd_init(spi_host_device_t host_id, const spi_bus_config_t *b
     host->internal_mem_align_size = 4;
 #endif
 
-    ret = spicommon_bus_initialize_io(host_id, bus_config, SPICOMMON_BUSFLAG_SLAVE | bus_config->flags, &host->flags, &host->gpio_reserve);
+    ret = spicommon_bus_initialize_io(host_id, bus_config, SPICOMMON_BUSFLAG_SLAVE | bus_config->flags, NULL, NULL);
     if (ret != ESP_OK) {
         goto cleanup;
     }
-    spicommon_cs_initialize(host_id, config->spics_io_num, 0, !(bus_config->flags & SPICOMMON_BUSFLAG_NATIVE_PINS), &host->gpio_reserve);
+    spicommon_cs_initialize(host_id, config->spics_io_num, 0, !(bus_config->flags & SPICOMMON_BUSFLAG_NATIVE_PINS), NULL);
+    host->flags = host->bus_attr->flags; // This flag MUST be set after spicommon_bus_initialize_io is called
 
     spi_slave_hd_hal_config_t hal_config = {
         .host_id = host_id,
@@ -349,8 +349,8 @@ esp_err_t spi_slave_hd_deinit(spi_host_device_t host_id)
     }
 #endif
 
-    spicommon_bus_free_io_cfg(&host->bus_config, &host->gpio_reserve);
-    spicommon_cs_free_io(host->cs_io_num, &host->gpio_reserve);
+    spicommon_bus_free_io_cfg(&host->bus_attr->bus_cfg, &host->bus_attr->gpio_reserve);
+    spicommon_cs_free_io(host->cs_io_num, &host->bus_attr->gpio_reserve);
     spicommon_bus_free(host_id);
     free(host->dma_ctx->dmadesc_tx);
     free(host->dma_ctx->dmadesc_rx);
