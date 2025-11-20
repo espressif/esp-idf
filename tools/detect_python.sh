@@ -7,6 +7,8 @@
 # 2. If required version of python is found it is assigned to environmental variable `ESP_PYTHON`
 # 3. If required version of python is not found, script will fail
 
+detect_python () {
+
 OLDEST_PYTHON_SUPPORTED_MAJOR=3
 OLDEST_PYTHON_SUPPORTED_MINOR=10
 
@@ -39,7 +41,10 @@ unset PYTHON_CANDIDATES
 
 if [ -z "$ESP_PYTHON" ]; then
     echo "Python ${OLDEST_PYTHON_SUPPORTED_MAJOR}.${OLDEST_PYTHON_SUPPORTED_MINOR}+ is not installed! Please see the documentation for how to install it." >&2
-    exit 1
+    return 1
 fi
 echo "\"$ESP_PYTHON\" has been detected"
 export ESP_PYTHON
+
+}
+detect_python

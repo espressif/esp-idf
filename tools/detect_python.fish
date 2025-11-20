@@ -2,6 +2,8 @@
 #
 # This is a port of detect_python.sh. More information are provided there.
 
+function detect_python
+
 set OLDEST_PYTHON_SUPPORTED_MAJOR 3
 set OLDEST_PYTHON_SUPPORTED_MINOR 10
 
@@ -25,8 +27,11 @@ end
 set -e PYTHON_CANDIDATES
 
 test -n "$ESP_PYTHON"; or echo "Python $OLDEST_PYTHON_SUPPORTED_MAJOR.$OLDEST_PYTHON_SUPPORTED_MINOR+ is not installed! Please see the documentation for how to install it." >&2
-test -n "$ESP_PYTHON"; or exit 1
+test -n "$ESP_PYTHON"; or return 1
 
 $ESP_PYTHON --version
 echo "$ESP_PYTHON has been detected"
 set -x ESP_PYTHON "$ESP_PYTHON"
+
+end
+detect_python
