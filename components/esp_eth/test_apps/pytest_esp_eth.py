@@ -31,16 +31,18 @@ class EthTestIntf:
         netifs.sort(reverse=True)
         logging.info('detected interfaces: %s', str(netifs))
 
-        for netif in netifs:
-            # if no interface defined, try to find it automatically
-            if my_if == '':
-                if netif.find('eth') == 0 or netif.find('enp') == 0 or netif.find('eno') == 0:
-                    self.target_if = netif
-                    break
+        if my_if == '':
+            if 'dut_p1' in netifs:
+                self.target_if = 'dut_p1'
             else:
-                if netif.find(my_if) == 0:
-                    self.target_if = my_if
-                    break
+                for netif in netifs:
+                    # if no interface defined, try to find it automatically
+                    if netif.find('eth') == 0 or netif.find('enp') == 0 or netif.find('eno') == 0:
+                        self.target_if = netif
+                        break
+        elif my_if in netifs:
+            self.target_if = my_if
+
         if self.target_if == '':
             raise RuntimeError('network interface not found')
         logging.info('Use %s for testing', self.target_if)
@@ -132,8 +134,8 @@ def ethernet_int_emac_test(dut: IdfDut) -> None:
     dut.run_all_single_board_cases(group='esp_emac', timeout=240)
 
 
-def ethernet_l2_test(dut: IdfDut) -> None:
-    target_if = EthTestIntf(ETH_TYPE)
+def ethernet_l2_test(dut: IdfDut, test_if: str = '') -> None:
+    target_if = EthTestIntf(ETH_TYPE, test_if)
 
     dut.expect_exact('Press ENTER to see the list of tests')
     dut.write('\n')
