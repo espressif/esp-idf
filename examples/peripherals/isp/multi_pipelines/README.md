@@ -16,6 +16,9 @@ This example demonstrates how to use the ISP (image signal processor) to work wi
 - ISP GAMMA feature
 - ISP Color feature
 - ISP LSC feature
+- ISP Crop feature (need to enable in `idf.py menuconfig`)
+
+Additionally, this example also implements **Dual Frame Buffer (Ping-Pong Buffering)**, which eliminates screen tearing for smooth video display
 
 ## Usage
 
@@ -121,6 +124,21 @@ Remember to select the LCD screen model and set corresponding correct horizontal
 
 Available options for the camera sensor output horizontal/vertical resolution can be seen in ``menuconfig`` > ``Example Configuration``. Note that the horizontal resolution for the camera should be the same as the LCD screen horizontal resolution.
 
+#### Optional: Image Cropping Configuration
+
+This example supports optional image cropping, which allows you to capture and display a specific region of the camera output. To enable this feature:
+
+1. Navigate to `menuconfig` > `Example Configuration`
+2. Enable `Enable ISP Image Cropping`
+3. Configure the crop region:
+   - `ISP Crop Top-Left Horizontal`: X coordinate of top-left corner
+   - `ISP Crop Top-Left Vertical`: Y coordinate of top-left corner
+   - `ISP Crop Bottom-Right Horizontal`: X coordinate of bottom-right corner
+   - `ISP Crop Bottom-Right Vertical`: Y coordinate of bottom-right corner
+
+**Note**: When cropping is enabled:
+- The cropped image maintains its relative position on the screen
+- A dedicated frame processing task handles the image transformation
 
 ### Build and Flash
 
@@ -142,15 +160,23 @@ To exit the serial monitor, use `Ctrl` + `]`.
 If you see the following console output, your example should be running correctly:
 
 ```
-I (1085) main_task: Calling app_main()
-I (1095) ili9881c: ID1: 0x98, ID2: 0x81, ID3: 0x5c
-I (1125) gpio: GPIO[31]| InputEn: 1| OutputEn: 1| OpenDrain: 1| Pullup: 1| Pulldown: 0| Intr:0
-I (1125) gpio: GPIO[34]| InputEn: 1| OutputEn: 1| OpenDrain: 1| Pullup: 1| Pulldown: 0| Intr:0
-I (1295) ov5647: Detected Camera sensor PID=0x5647 with index 0
-I (1305) cam_dsi: fmt[0].name:MIPI_2lane_24Minput_RAW8_800x1280_50fps
-I (1305) cam_dsi: fmt[1].name:MIPI_2lane_24Minput_RAW8_800x640_50fps
-I (1315) cam_dsi: fmt[2].name:MIPI_2lane_24Minput_RAW8_800x800_50fps
-I (1355) cam_dsi: Format in use:MIPI_2lane_24Minput_RAW8_800x640_50fps
+I (1425) main_task: Calling app_main()
+I (1425) example_dsi_init: Allocating DSI resources with 2 frame buffer(s)
+I (1485) example_dsi_init: Frame buffer[0] allocated at: 0x48000a40
+I (1485) example_dsi_init: Frame buffer[1] allocated at: 0x481f4a80
+I (1485) isp_dsi: Original CSI resolution: 800x640
+I (1485) isp_dsi: Display resolution: 800x640, bits per pixel: 16
+I (1495) isp_dsi: frame_buffer_size: 2048000
+I (1495) isp_dsi: Frame buffers: fb0=0x48000a40, fb1=0x481f4a80
+I (1515) ov5647: Detected Camera sensor PID=0x5647
+I (1535) sensor_init: fmt[0].name:MIPI_2lane_24Minput_RAW8_800x1280_50fps
+I (1535) sensor_init: fmt[1].name:MIPI_2lane_24Minput_RAW8_800x640_50fps
+I (1535) sensor_init: fmt[2].name:MIPI_2lane_24Minput_RAW8_800x800_50fps
+I (1535) sensor_init: fmt[3].name:MIPI_2lane_24Minput_RAW10_1920x1080_30fps
+I (1545) sensor_init: fmt[4].name:MIPI_2lane_24Minput_RAW10_1280x960_binning_45fps
+I (2025) sensor_init: Format in use:MIPI_2lane_24Minput_RAW8_800x640_50fps
+I (2045) isp_dsi: ISP Crop not configured
+I (2105) ili9881c: ID1: 0x98, ID2: 0x81, ID3: 0x5c
 ```
 
 Below picture is from the video stream of OV5647 and ILI9881C. The camera module is auto-focused and calibrated by ESP on-chip ISP hardware. The edge is over-sharpened as example code configured.
