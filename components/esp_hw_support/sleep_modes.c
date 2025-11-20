@@ -950,9 +950,7 @@ static esp_err_t FORCE_IRAM_ATTR esp_sleep_start_safe(uint32_t sleep_flags, uint
         if(!(sleep_flags & RTC_SLEEP_PD_VDDSDIO) && (sleep_flags & PMU_SLEEP_PD_TOP)) {
 #if CONFIG_ESP_SLEEP_FLASH_LEAKAGE_WORKAROUND
             /* Cache suspend also means SPI bus IDLE, then we can hold SPI CS pin safely */
-#if !CONFIG_IDF_TARGET_ESP32H2 // ESP32H2 TODO IDF-7359
             gpio_ll_hold_en(&GPIO, MSPI_IOMUX_PIN_NUM_CS0);
-#endif
 #endif
 #if CONFIG_ESP_SLEEP_PSRAM_LEAKAGE_WORKAROUND && CONFIG_SPIRAM
             /* Cache suspend also means SPI bus IDLE, then we can hold SPI CS pin safely */
@@ -1007,9 +1005,7 @@ static esp_err_t FORCE_IRAM_ATTR esp_sleep_start_safe(uint32_t sleep_flags, uint
         /* Unhold the SPI CS pin */
         if(!(sleep_flags & RTC_SLEEP_PD_VDDSDIO) && (sleep_flags & PMU_SLEEP_PD_TOP)) {
 #if CONFIG_ESP_SLEEP_FLASH_LEAKAGE_WORKAROUND
-#if !CONFIG_IDF_TARGET_ESP32H2 // ESP32H2 TODO IDF-7359
             gpio_ll_hold_dis(&GPIO, MSPI_IOMUX_PIN_NUM_CS0);
-#endif
 #endif
 #if CONFIG_ESP_SLEEP_PSRAM_LEAKAGE_WORKAROUND && CONFIG_SPIRAM
             gpio_ll_hold_dis(&GPIO, MSPI_IOMUX_PIN_NUM_CS1);
