@@ -10,7 +10,7 @@ components/driver/test_apps/legacy_i2c_driver:
 
 components/driver/test_apps/legacy_twai:
   disable:
-    - if: SOC_TWAI_SUPPORTED != 1 or SOC_TWAI_SUPPORT_FD == 1
+    - if: SOC_TWAI_SUPPORTED != 1 or SOC_TWAI_FD_SUPPORTED == 1
       reason: legacy driver doesn't support FD
     - if: IDF_TARGET == "esp32p4"
       temporary: true

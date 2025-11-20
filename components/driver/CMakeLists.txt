@@ -32,7 +32,7 @@ endif()
 
 # TWAI related source files
 # TWAIFD is not supported by the legacy driver
-if(CONFIG_SOC_TWAI_SUPPORTED AND NOT CONFIG_SOC_TWAI_SUPPORT_FD)
+if(CONFIG_SOC_TWAI_SUPPORTED AND NOT CONFIG_SOC_TWAI_FD_SUPPORTED)
     list(APPEND srcs "twai/twai.c")
     list(APPEND ldfragments "twai/linker.lf")
 endif()
@@ -45,7 +45,7 @@ else()
     idf_component_register(SRCS "${srcs}"
                            INCLUDE_DIRS ${includes}
                            PRIV_REQUIRES esp_timer esp_mm esp_driver_gpio esp_ringbuf esp_pm
-                           REQUIRES freertos soc hal esp_hw_support esp_hal_i2c
+                           REQUIRES esp_hal_i2c esp_hal_twai
                            LDFRAGMENTS ${ldfragments}
                           )
 endif()
