@@ -764,10 +764,12 @@ void bta_gattc_conn(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
     }
 
     if (p_clcb->p_rcb) {
+#if (CLASSIC_BT_INCLUDED == TRUE)
         /* there is no RM for GATT */
         if (p_clcb->transport == BTA_TRANSPORT_BR_EDR) {
             bta_sys_conn_open(BTA_ID_GATTC, BTA_ALL_APP_ID, p_clcb->bda);
         }
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
         tBTA_GATT_STATUS status = BTA_GATT_OK;
         if (p_data && p_data->int_conn.already_connect) {
             //clear already_connect
@@ -870,11 +872,11 @@ void bta_gattc_close(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
     cb_data.close.reason    = p_clcb->reason;
     cb_data.close.status    = p_clcb->status;
     bdcpy(cb_data.close.remote_bda, p_clcb->bda);
-
+#if (CLASSIC_BT_INCLUDED == TRUE)
     if (p_clcb->transport == BTA_TRANSPORT_BR_EDR) {
         bta_sys_conn_close( BTA_ID_GATTC , BTA_ALL_APP_ID, p_clcb->bda);
     }
-
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
     if (p_data->hdr.event == BTA_GATTC_API_CLOSE_EVT) {
         cb_data.close.status = GATT_Disconnect(p_data->hdr.layer_specific);
     } else if (p_data->hdr.event == BTA_GATTC_INT_DISCONN_EVT) {
@@ -1338,11 +1340,13 @@ void bta_gattc_confirm(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
         != GATT_SUCCESS) {
             APPL_TRACE_ERROR("bta_gattc_confirm to handle [0x%04x] failed", handle);
     } else {
+#if (CLASSIC_BT_INCLUDED == TRUE)
         /* if over BR_EDR, inform PM for mode change */
         if (p_clcb->transport == BTA_TRANSPORT_BR_EDR) {
             bta_sys_busy(BTA_ID_GATTC, BTA_ALL_APP_ID, p_clcb->bda);
             bta_sys_idle(BTA_ID_GATTC, BTA_ALL_APP_ID, p_clcb->bda);
         }
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
     }
 }
 /*******************************************************************************
@@ -2202,13 +2206,13 @@ static void  bta_gattc_cmpl_cback(UINT16 conn_id, tGATTC_OPTYPE op, tGATT_STATUS
         APPL_TRACE_ERROR("bta_gattc_cmpl_cback unknown conn_id =  %d, ignore data", conn_id);
         return;
     }
-
+#if (CLASSIC_BT_INCLUDED == TRUE)
     /* if over BR_EDR, inform PM for mode change */
     if (p_clcb->transport == BTA_TRANSPORT_BR_EDR) {
         bta_sys_busy(BTA_ID_GATTC, BTA_ALL_APP_ID, p_clcb->bda);
         bta_sys_idle(BTA_ID_GATTC, BTA_ALL_APP_ID, p_clcb->bda);
     }
-
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
     bta_gattc_cmpl_sendmsg(conn_id, op, status, p_data);
 }
 
