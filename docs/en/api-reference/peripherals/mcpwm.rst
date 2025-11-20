@@ -78,8 +78,8 @@ You can allocate a MCPWM timer object by calling :cpp:func:`mcpwm_new_timer` fun
 - :cpp:member:`mcpwm_timer_config_t::resolution_hz` sets the expected resolution of the timer. The driver internally sets a proper divider based on the clock source and the resolution.
 - :cpp:member:`mcpwm_timer_config_t::count_mode` sets the count mode of the timer.
 - :cpp:member:`mcpwm_timer_config_t::period_ticks` sets the period of the timer, in ticks (the tick resolution is set in the :cpp:member:`mcpwm_timer_config_t::resolution_hz`).
-- :cpp:member:`mcpwm_timer_config_t::update_period_on_empty` sets whether to update the period value when the timer counts to zero.
-- :cpp:member:`mcpwm_timer_config_t::update_period_on_sync` sets whether to update the period value when the timer takes a sync signal.
+- :cpp:member:`mcpwm_timer_config_t::flags::update_period_on_empty` sets whether to update the period value when the timer counts to zero.
+- :cpp:member:`mcpwm_timer_config_t::flags::update_period_on_sync` sets whether to update the period value when the timer takes a sync signal.
 
 The :cpp:func:`mcpwm_new_timer` will return a pointer to the allocated timer object if the allocation succeeds. Otherwise, it will return an error code. Specifically, when there are no more free timers in the MCPWM group, this function will return the :c:macro:`ESP_ERR_NOT_FOUND` error. [1]_
 
@@ -96,12 +96,12 @@ You can allocate a MCPWM operator object by calling :cpp:func:`mcpwm_new_operato
 
 - :cpp:member:`mcpwm_operator_config_t::group_id` specifies the MCPWM group ID. The ID should belong to [0, ``MCPWM_GROUP_NUM`` - 1] range, where ``MCPWM_GROUP_NUM`` is the number of MCPWM groups available on the chip. Please note, operators located in different groups are totally independent.
 - :cpp:member:`mcpwm_operator_config_t::intr_priority` sets the priority of the interrupt. If it is set to ``0``, the driver will allocate an interrupt with a default priority. Otherwise, the driver will use the given priority.
-- :cpp:member:`mcpwm_operator_config_t::update_gen_action_on_tez` sets whether to update the generator action when the timer counts to zero. Here and below, the timer refers to the one that is connected to the operator by :cpp:func:`mcpwm_operator_connect_timer`.
-- :cpp:member:`mcpwm_operator_config_t::update_gen_action_on_tep` sets whether to update the generator action when the timer counts to peak.
-- :cpp:member:`mcpwm_operator_config_t::update_gen_action_on_sync` sets whether to update the generator action when the timer takes a sync signal.
-- :cpp:member:`mcpwm_operator_config_t::update_dead_time_on_tez` sets whether to update the dead time when the timer counts to zero.
-- :cpp:member:`mcpwm_operator_config_t::update_dead_time_on_tep` sets whether to update the dead time when the timer counts to the peak.
-- :cpp:member:`mcpwm_operator_config_t::update_dead_time_on_sync` sets whether to update the dead time when the timer takes a sync signal.
+- :cpp:member:`mcpwm_operator_config_t::flags::update_gen_action_on_tez` sets whether to update the generator action when the timer counts to zero. Here and below, the timer refers to the one that is connected to the operator by :cpp:func:`mcpwm_operator_connect_timer`.
+- :cpp:member:`mcpwm_operator_config_t::flags::update_gen_action_on_tep` sets whether to update the generator action when the timer counts to peak.
+- :cpp:member:`mcpwm_operator_config_t::flags::update_gen_action_on_sync` sets whether to update the generator action when the timer takes a sync signal.
+- :cpp:member:`mcpwm_operator_config_t::flags::update_dead_time_on_tez` sets whether to update the dead time when the timer counts to zero.
+- :cpp:member:`mcpwm_operator_config_t::flags::update_dead_time_on_tep` sets whether to update the dead time when the timer counts to the peak.
+- :cpp:member:`mcpwm_operator_config_t::flags::update_dead_time_on_sync` sets whether to update the dead time when the timer takes a sync signal.
 
 The :cpp:func:`mcpwm_new_operator` will return a pointer to the allocated operator object if the allocation succeeds. Otherwise, it will return an error code. Specifically, when there are no more free operators in the MCPWM group, this function will return the :c:macro:`ESP_ERR_NOT_FOUND` error. [1]_
 
@@ -113,9 +113,9 @@ MCPWM Comparators
 You can allocate a MCPWM comparator object by calling the :cpp:func:`mcpwm_new_comparator` function, with a MCPWM operator handle and configuration structure :cpp:type:`mcpwm_comparator_config_t` as the parameter. The operator handle is created by :cpp:func:`mcpwm_new_operator`. The configuration structure is defined as:
 
 - :cpp:member:`mcpwm_comparator_config_t::intr_priority` sets the priority of the interrupt. If it is set to ``0``, the driver will allocate an interrupt with a default priority. Otherwise, the driver will use the given priority.
-- :cpp:member:`mcpwm_comparator_config_t::update_cmp_on_tez` sets whether to update the compare threshold when the timer counts to zero.
-- :cpp:member:`mcpwm_comparator_config_t::update_cmp_on_tep` sets whether to update the compare threshold when the timer counts to the peak.
-- :cpp:member:`mcpwm_comparator_config_t::update_cmp_on_sync` sets whether to update the compare threshold when the timer takes a sync signal.
+- :cpp:member:`mcpwm_comparator_config_t::flags::update_cmp_on_tez` sets whether to update the compare threshold when the timer counts to zero.
+- :cpp:member:`mcpwm_comparator_config_t::flags::update_cmp_on_tep` sets whether to update the compare threshold when the timer counts to the peak.
+- :cpp:member:`mcpwm_comparator_config_t::flags::update_cmp_on_sync` sets whether to update the compare threshold when the timer takes a sync signal.
 
 The :cpp:func:`mcpwm_new_comparator` will return a pointer to the allocated comparator object if the allocation succeeds. Otherwise, it will return an error code. Specifically, when there are no more free comparators in the MCPWM operator, this function will return the :c:macro:`ESP_ERR_NOT_FOUND` error. [1]_
 
@@ -131,7 +131,7 @@ MCPWM Generators
 You can allocate a MCPWM generator object by calling the :cpp:func:`mcpwm_new_generator` function, with a MCPWM operator handle and configuration structure :cpp:type:`mcpwm_generator_config_t` as the parameter. The operator handle is created by :cpp:func:`mcpwm_new_operator`. The configuration structure is defined as:
 
 - :cpp:member:`mcpwm_generator_config_t::gen_gpio_num` sets the GPIO number used by the generator.
-- :cpp:member:`mcpwm_generator_config_t::invert_pwm` sets whether to invert the PWM signal.
+- :cpp:member:`mcpwm_generator_config_t::flags::invert_pwm` sets whether to invert the PWM signal.
 - :cpp:member:`mcpwm_generator_config_t::pull_up` and :cpp:member:`mcpwm_generator_config_t::pull_down` controls whether to enable the internal pull-up and pull-down resistors accordingly.
 
 The :cpp:func:`mcpwm_new_generator` will return a pointer to the allocated generator object if the allocation succeeds. Otherwise, it will return an error code. Specifically, when there are no more free generators in the MCPWM operator, this function will return the :c:macro:`ESP_ERR_NOT_FOUND` error. [1]_
@@ -148,7 +148,7 @@ To allocate a GPIO fault object, you can call the :cpp:func:`mcpwm_new_gpio_faul
 - :cpp:member:`mcpwm_gpio_fault_config_t::group_id` sets the MCPWM group ID. The ID should belong to [0, ``MCPWM_GROUP_NUM`` - 1] range, where ``MCPWM_GROUP_NUM`` is the number of MCPWM groups available on the chip. Please note, GPIO faults located in different groups are totally independent, i.e., GPIO faults in group 0 can not be detected by the operator in group 1.
 - :cpp:member:`mcpwm_gpio_fault_config_t::intr_priority` sets the priority of the interrupt. If it is set to ``0``, the driver will allocate an interrupt with a default priority. Otherwise, the driver will use the given priority.
 - :cpp:member:`mcpwm_gpio_fault_config_t::gpio_num` sets the GPIO number used by the fault.
-- :cpp:member:`mcpwm_gpio_fault_config_t::active_level` sets the active level of the fault signal.
+- :cpp:member:`mcpwm_gpio_fault_config_t::flags::active_level` sets the active level of the fault signal.
 - :cpp:member:`mcpwm_gpio_fault_config_t::pull_up` and :cpp:member:`mcpwm_gpio_fault_config_t::pull_down` set whether to pull up and/or pull down the GPIO internally.
 
 The :cpp:func:`mcpwm_new_gpio_fault` will return a pointer to the allocated fault object if the allocation succeeds. Otherwise, it will return an error code. Specifically, when there are no more free GPIO faults in the MCPWM group, this function will return the :c:macro:`ESP_ERR_NOT_FOUND` error. [1]_
@@ -168,7 +168,7 @@ To allocate a GPIO sync source, you can call the :cpp:func:`mcpwm_new_gpio_sync_
 
 - :cpp:member:`mcpwm_gpio_sync_src_config_t::group_id` sets the MCPWM group ID. The ID should belong to [0, ``MCPWM_GROUP_NUM`` - 1] range, where ``MCPWM_GROUP_NUM`` is the number of MCPWM groups available on the chip. Please note, the GPIO sync sources located in different groups are totally independent, i.e., GPIO sync source in group 0 can not be detected by the timers in group 1.
 - :cpp:member:`mcpwm_gpio_sync_src_config_t::gpio_num` sets the GPIO number used by the sync source.
-- :cpp:member:`mcpwm_gpio_sync_src_config_t::active_neg` sets whether the sync signal is active on falling edges.
+- :cpp:member:`mcpwm_gpio_sync_src_config_t::flags::active_neg` sets whether the sync signal is active on falling edges.
 - :cpp:member:`mcpwm_gpio_sync_src_config_t::pull_up` and :cpp:member:`mcpwm_gpio_sync_src_config_t::pull_down` set whether to pull up and/or pull down the GPIO internally.
 
 The :cpp:func:`mcpwm_new_gpio_sync_src` will return a pointer to the allocated sync source object if the allocation succeeds. Otherwise, it will return an error code. Specifically, when there are no more free GPIO sync sources in the MCPWM group, this function will return the :c:macro:`ESP_ERR_NOT_FOUND` error. [1]_
@@ -242,7 +242,7 @@ Timer Operations and Events
 Update Period
 ~~~~~~~~~~~~~
 
-The timer period is initialized by the :cpp:member:`mcpwm_timer_config_t::period_ticks` parameter in :cpp:type:`mcpwm_timer_config_t`. You can update the period at runtime by calling :cpp:func:`mcpwm_timer_set_period` function. The new period will take effect based on how you set the :cpp:member:`mcpwm_timer_config_t::update_period_on_empty` and :cpp:member:`mcpwm_timer_config_t::update_period_on_sync` parameters in :cpp:type:`mcpwm_timer_config_t`. If none of them are set, the timer period will take effect immediately.
+The timer period is initialized by the :cpp:member:`mcpwm_timer_config_t::period_ticks` parameter in :cpp:type:`mcpwm_timer_config_t`. You can update the period at runtime by calling :cpp:func:`mcpwm_timer_set_period` function. The new period will take effect based on how you set the :cpp:member:`mcpwm_timer_config_t::flags::update_period_on_empty` and :cpp:member:`mcpwm_timer_config_t::flags::update_period_on_sync` parameters in :cpp:type:`mcpwm_timer_config_t`. If none of them are set, the timer period will take effect immediately.
 
 Register Timer Event Callbacks
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -310,7 +310,7 @@ Set Compare Value
 
 You can set the compare value for the MCPWM comparator at runtime by calling :cpp:func:`mcpwm_comparator_set_compare_value`. There are a few points to note:
 
-- A new compare value might not take effect immediately. The update time for the compare value is set by :cpp:member:`mcpwm_comparator_config_t::update_cmp_on_tez` or :cpp:member:`mcpwm_comparator_config_t::update_cmp_on_tep` or :cpp:member:`mcpwm_comparator_config_t::update_cmp_on_sync`.
+- A new compare value might not take effect immediately. The update time for the compare value is set by :cpp:member:`mcpwm_comparator_config_t::flags::update_cmp_on_tez` or :cpp:member:`mcpwm_comparator_config_t::flags::update_cmp_on_tep` or :cpp:member:`mcpwm_comparator_config_t::flags::update_cmp_on_sync`.
 - Make sure the operator has connected to one MCPWM timer already by :cpp:func:`mcpwm_operator_connect_timer`. Otherwise, it will return the error code :c:macro:`ESP_ERR_INVALID_STATE`.
 - The compare value should not exceed the timer's count peak, otherwise, the compare event will never get triggered.
 
@@ -983,7 +983,7 @@ Likewise, whenever the driver creates an MCPWM capture timer instance, the drive
 
     {IDF_TARGET_NAME} supports to retain the MCPWM register context before entering **Light-sleep** and restore them after woke up. Which means you don't have to re-init the MCPWM driver after the **Light-sleep**.
 
-    This feature can be enabled by setting the flag :cpp:member:`mcpwm_timer_config_t::allow_pd` or :cpp:member:`mcpwm_capture_timer_config_t::allow_pd`. It will allow the system to power down the MCPWM in Light-sleep, meanwhile save the MCPWM register context. It can help to save more power consumption with some extra cost of the memory.
+    This feature can be enabled by setting the flag :cpp:member:`mcpwm_timer_config_t::flags::allow_pd` or :cpp:member:`mcpwm_capture_timer_config_t::flags::allow_pd`. It will allow the system to power down the MCPWM in Light-sleep, meanwhile save the MCPWM register context. It can help to save more power consumption with some extra cost of the memory.
 
 .. _mcpwm-resolution-config:
 

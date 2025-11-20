@@ -78,8 +78,8 @@ MCPWM 定时器
 - :cpp:member:`mcpwm_timer_config_t::resolution_hz` 设置定时器的预期分辨率。内部驱动将根据时钟源和分辨率设置合适的分频器。
 - :cpp:member:`mcpwm_timer_config_t::count_mode` 设置定时器的计数模式。
 - :cpp:member:`mcpwm_timer_config_t::period_ticks` 设置定时器的周期，以 Tick 为单位（通过 :cpp:member:`mcpwm_timer_config_t::resolution_hz` 设置 Tick 分辨率）。
-- :cpp:member:`mcpwm_timer_config_t::update_period_on_empty` 设置当定时器计数为零时是否更新周期值。
-- :cpp:member:`mcpwm_timer_config_t::update_period_on_sync` 设置当定时器接收同步信号时是否更新周期值。
+- :cpp:member:`mcpwm_timer_config_t::flags::update_period_on_empty` 设置当定时器计数为零时是否更新周期值。
+- :cpp:member:`mcpwm_timer_config_t::flags::update_period_on_sync` 设置当定时器接收同步信号时是否更新周期值。
 
 分配成功后，:cpp:func:`mcpwm_new_timer` 将返回一个指向已分配定时器的指针。否则，函数将返回错误代码。具体来说，当 MCPWM 组中没有空闲定时器时，将返回 :c:macro:`ESP_ERR_NOT_FOUND` 错误。[1]_
 
@@ -96,12 +96,12 @@ MCPWM 操作器
 
 - :cpp:member:`mcpwm_operator_config_t::group_id` 指定 MCPWM 组 ID，范围为 [0, ``MCPWM_GROUP_NUM`` - 1]，其中 ``MCPWM_GROUP_NUM`` 是芯片上可用的 MCPWM 组数量。需注意，位于不同组的操作器彼此独立。
 - :cpp:member:`mcpwm_operator_config_t::intr_priority` 设置中断的优先级。如果设置为 ``0``，则会分配一个默认优先级的中断，否则会使用指定的优先级。
-- :cpp:member:`mcpwm_operator_config_t::update_gen_action_on_tez` 设置是否在定时器计数为零时更新生成器操作。此处及下文提到的定时器指通过 :cpp:func:`mcpwm_operator_connect_timer` 连接到操作器的定时器。
-- :cpp:member:`mcpwm_operator_config_t::update_gen_action_on_tep` 设置当定时器计数达到峰值时是否更新生成器操作。
-- :cpp:member:`mcpwm_operator_config_t::update_gen_action_on_sync` 设置当定时器接收同步信号时是否更新生成器操作。
-- :cpp:member:`mcpwm_operator_config_t::update_dead_time_on_tez` 设置当定时器计数为零时是否更新死区时间。
-- :cpp:member:`mcpwm_operator_config_t::update_dead_time_on_tep` 设置当定时器计数达到峰值时是否更新死区时间。
-- :cpp:member:`mcpwm_operator_config_t::update_dead_time_on_sync` 设置当定时器接收同步信号时是否更新死区时间。
+- :cpp:member:`mcpwm_operator_config_t::flags::update_gen_action_on_tez` 设置是否在定时器计数为零时更新生成器操作。此处及下文提到的定时器指通过 :cpp:func:`mcpwm_operator_connect_timer` 连接到操作器的定时器。
+- :cpp:member:`mcpwm_operator_config_t::flags::update_gen_action_on_tep` 设置当定时器计数达到峰值时是否更新生成器操作。
+- :cpp:member:`mcpwm_operator_config_t::flags::update_gen_action_on_sync` 设置当定时器接收同步信号时是否更新生成器操作。
+- :cpp:member:`mcpwm_operator_config_t::flags::update_dead_time_on_tez` 设置当定时器计数为零时是否更新死区时间。
+- :cpp:member:`mcpwm_operator_config_t::flags::update_dead_time_on_tep` 设置当定时器计数达到峰值时是否更新死区时间。
+- :cpp:member:`mcpwm_operator_config_t::flags::update_dead_time_on_sync` 设置当定时器接收同步信号时是否更新死区时间。
 
 分配成功后，:cpp:func:`mcpwm_new_operator` 将返回一个指向已分配操作器的指针。否则，函数将返回错误代码。具体来说，当 MCPWM 组中没有空闲操作器时，将返回 :c:macro:`ESP_ERR_NOT_FOUND` 错误。[1]_
 
@@ -113,9 +113,9 @@ MCPWM 比较器
 调用 :cpp:func:`mcpwm_new_comparator` 函数，以一个 MCPWM 操作器句柄和配置结构体 :cpp:type:`mcpwm_comparator_config_t` 为参数，分配一个 MCPWM 比较器为对象。操作器句柄由 :cpp:func:`mcpwm_new_operator` 生成，结构体定义为：
 
 - :cpp:member:`mcpwm_comparator_config_t::intr_priority` 设置中断的优先级。如果设置为 ``0``，则会分配一个默认优先级的中断，否则会使用指定的优先级。
-- :cpp:member:`mcpwm_comparator_config_t::update_cmp_on_tez` 设置当定时器计数为零时是否更新比较阈值。
-- :cpp:member:`mcpwm_comparator_config_t::update_cmp_on_tep` 设置当定时器计数达到峰值时是否更新比较阈值。
-- :cpp:member:`mcpwm_comparator_config_t::update_cmp_on_sync` 设置当定时器接收同步信号时是否更新比较阈值。
+- :cpp:member:`mcpwm_comparator_config_t::flags::update_cmp_on_tez` 设置当定时器计数为零时是否更新比较阈值。
+- :cpp:member:`mcpwm_comparator_config_t::flags::update_cmp_on_tep` 设置当定时器计数达到峰值时是否更新比较阈值。
+- :cpp:member:`mcpwm_comparator_config_t::flags::update_cmp_on_sync` 设置当定时器接收同步信号时是否更新比较阈值。
 
 分配成功后，:cpp:func:`mcpwm_new_comparator` 将返回一个指向已分配比较器的指针。否则，函数将返回错误代码。具体来说，当 MCPWM 操作器中没有空闲比较器时，将返回 :c:macro:`ESP_ERR_NOT_FOUND` 错误。[1]_
 
@@ -131,7 +131,7 @@ MCPWM 生成器
 调用 :cpp:func:`mcpwm_new_generator` 函数，以一个 MCPWM 操作器句柄和配置结构体 :cpp:type:`mcpwm_generator_config_t` 为参数，分配一个 MCPWM 生成器为对象。操作器句柄由 :cpp:func:`mcpwm_new_operator` 生成，结构体定义为：
 
 - :cpp:member:`mcpwm_generator_config_t::gen_gpio_num` 设置生成器使用的 GPIO 编号。
-- :cpp:member:`mcpwm_generator_config_t::invert_pwm` 设置是否反相 PWM 信号。
+- :cpp:member:`mcpwm_generator_config_t::flags::invert_pwm` 设置是否反相 PWM 信号。
 - :cpp:member:`mcpwm_generator_config_t::pull_up` 和 :cpp:member:`mcpwm_generator_config_t::pull_down` 用来设置是否启用内部上下拉电阻。
 
 分配成功后，:cpp:func:`mcpwm_new_generator` 将返回一个指向已分配生成器的指针。否则，函数将返回错误代码。具体来说，当 MCPWM 操作器中没有空闲生成器时，将返回 :c:macro:`ESP_ERR_NOT_FOUND` 错误。[1]_
@@ -148,7 +148,7 @@ MCPWM 故障分为两种类型：来自 GPIO 的故障信号和软件故障。
 - :cpp:member:`mcpwm_gpio_fault_config_t::group_id` 设置 MCPWM 组 ID，范围为 [0, ``MCPWM_GROUP_NUM`` - 1]，其中 ``MCPWM_GROUP_NUM`` 是芯片上可用的 MCPWM 组数量。需注意，位于不同组的 GPIO 故障彼此独立，也就是说，1 组的操作器无法检测到 0 组的 GPIO 故障。
 - :cpp:member:`mcpwm_gpio_fault_config_t::intr_priority` 设置中断的优先级。如果设置为 ``0``，则会分配一个默认优先级的中断，否则会使用指定的优先级。
 - :cpp:member:`mcpwm_gpio_fault_config_t::gpio_num` 设置故障所使用的 GPIO 编号。
-- :cpp:member:`mcpwm_gpio_fault_config_t::active_level` 设置故障信号的有效电平。
+- :cpp:member:`mcpwm_gpio_fault_config_t::flags::active_level` 设置故障信号的有效电平。
 - :cpp:member:`mcpwm_gpio_fault_config_t::pull_up` 和 :cpp:member:`mcpwm_gpio_fault_config_t::pull_down` 设置是否在内部拉高和/或拉低 GPIO。
 
 分配成功后，:cpp:func:`mcpwm_new_gpio_fault` 将返回一个指向已分配故障的指针。否则，函数将返回错误代码。具体来说，当指定 MCPWM 组中没有空闲 GPIO 故障时，将返回 :c:macro:`ESP_ERR_NOT_FOUND` 错误。[1]_
@@ -168,7 +168,7 @@ MCPWM 同步源
 
 - :cpp:member:`mcpwm_gpio_sync_src_config_t::group_id` 指定 MCPWM 组 ID，范围为 [0, ``MCPWM_GROUP_NUM`` - 1]，其中 ``MCPWM_GROUP_NUM`` 是芯片上可用的 MCPWM 组数量。需注意，位于不同组的 GPIO 同步源彼此独立，也就是说，1 组的定时器无法检测到 0 组的 GPIO 同步源。
 - :cpp:member:`mcpwm_gpio_sync_src_config_t::gpio_num` 设置同步源使用的 GPIO 编号。
-- :cpp:member:`mcpwm_gpio_sync_src_config_t::active_neg` 设置同步信号在下降沿是否有效。
+- :cpp:member:`mcpwm_gpio_sync_src_config_t::flags::active_neg` 设置同步信号在下降沿是否有效。
 - :cpp:member:`mcpwm_gpio_sync_src_config_t::pull_up` 和 :cpp:member:`mcpwm_gpio_sync_src_config_t::pull_down` 设置是否在内部拉高和/或拉低 GPIO。
 
 分配成功后，:cpp:func:`mcpwm_new_gpio_sync_src` 将返回一个指向已分配同步源的指针。否则，函数将返回错误代码。具体来说，当 MCPWM 组中没有空闲 GPIO 时钟源时，将返回 :c:macro:`ESP_ERR_NOT_FOUND` 错误。[1]_
@@ -242,7 +242,7 @@ MCPWM 允许为 定时器、操作器、比较器、故障以及捕获事件分�
 更新定时器周期
 ~~~~~~~~~~~~~~
 
-定时器周期在创建定时器时就已经通过 :cpp:member:`mcpwm_timer_config_t::period_ticks` 被初始化过了。你还可以在运行期间，调用 :cpp:func:`mcpwm_timer_set_period` 函数来更新定时周期。新周期的生效时机由 :cpp:member:`mcpwm_timer_config_t::update_period_on_empty` 和 :cpp:member:`mcpwm_timer_config_t::update_period_on_sync` 共同决定。如果他们两个参数都是 ``false``， 那么新的定时周期会立即生效。
+定时器周期在创建定时器时就已经通过 :cpp:member:`mcpwm_timer_config_t::period_ticks` 被初始化过了。你还可以在运行期间，调用 :cpp:func:`mcpwm_timer_set_period` 函数来更新定时周期。新周期的生效时机由 :cpp:member:`mcpwm_timer_config_t::flags::update_period_on_empty` 和 :cpp:member:`mcpwm_timer_config_t::flags::update_period_on_sync` 共同决定。如果他们两个参数都是 ``false``， 那么新的定时周期会立即生效。
 
 注册定时器事件回调
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -310,7 +310,7 @@ MCPWM 比较器可以在定时器计数器等于比较值时发送通知。若�
 
 运行 MCPWM 比较器时，可以调用 :cpp:func:`mcpwm_comparator_set_compare_value` 设置比较值。需注意以下几点：
 
-- 重新设置的比较值可能不会立即生效。比较值的更新时间通过 :cpp:member:`mcpwm_comparator_config_t::update_cmp_on_tez` 或 :cpp:member:`mcpwm_comparator_config_t::update_cmp_on_tep` 或 :cpp:member:`mcpwm_comparator_config_t::update_cmp_on_sync` 配置。
+- 重新设置的比较值可能不会立即生效。比较值的更新时间通过 :cpp:member:`mcpwm_comparator_config_t::flags::update_cmp_on_tez` 或 :cpp:member:`mcpwm_comparator_config_t::flags::update_cmp_on_tep` 或 :cpp:member:`mcpwm_comparator_config_t::flags::update_cmp_on_sync` 配置。
 - 请确保已经预先调用 :cpp:func:`mcpwm_operator_connect_timer` 将操作器连接至 MCPWM 定时器。否则，将返回 :c:macro:`ESP_ERR_INVALID_STATE` 错误。
 - 比较值不应超过定时器的计数峰值。否则，将无法触发比较事件。
 
@@ -983,7 +983,7 @@ MCPWM 捕获通道支持在信号上检测到有效边沿时发送通知。须�
 
     {IDF_TARGET_NAME} 支持在进入 **Light-sleep** 之前保留 MCPWM 寄存器中的内容，并在唤醒后恢复。也就是说程序不需要在 **Light-sleep** 唤醒后重新配置 MCPWM。
 
-    该特性可以通过置位配置中的 :cpp:member:`mcpwm_timer_config_t::allow_pd` 或 :cpp:member:`mcpwm_capture_timer_config_t::allow_pd` 标志位启用。启用后驱动允许系统在 Light-sleep 时对 MCPWM 掉电，同时保存 MCPWM 的寄存器内容。它可以帮助降低 Light-sleep 时的功耗，但需要花费一些额外的存储来保存寄存器的配置。
+    该特性可以通过置位配置中的 :cpp:member:`mcpwm_timer_config_t::flags::allow_pd` 或 :cpp:member:`mcpwm_capture_timer_config_t::flags::allow_pd` 标志位启用。启用后驱动允许系统在 Light-sleep 时对 MCPWM 掉电，同时保存 MCPWM 的寄存器内容。它可以帮助降低 Light-sleep 时的功耗，但需要花费一些额外的存储来保存寄存器的配置。
 
 .. _mcpwm-resolution-config:
 

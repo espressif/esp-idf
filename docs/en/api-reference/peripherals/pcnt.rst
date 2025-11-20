@@ -51,9 +51,9 @@ To install a PCNT unit, there is a configuration structure that needs to be give
 .. list::
 
     -  :cpp:member:`pcnt_unit_config_t::low_limit` and :cpp:member:`pcnt_unit_config_t::high_limit` specify the range for the internal hardware counter. The counter will reset to zero automatically when it crosses either the high or low limit.
-    -  :cpp:member:`pcnt_unit_config_t::accum_count` sets whether to create an internal accumulator for the counter. This is helpful when you want to extend the counter's width, which by default is 16 bit at most, defined in the hardware. See also :ref:`pcnt-compensate-overflow-loss` for how to use this feature to compensate the overflow loss.
-    :SOC_PCNT_SUPPORT_STEP_NOTIFY: -  :cpp:member:`pcnt_unit_config_t::en_step_notify_up` Configure whether to enable watch step to count in the positive direction.
-    :SOC_PCNT_SUPPORT_STEP_NOTIFY: -  :cpp:member:`pcnt_unit_config_t::en_step_notify_down` Configure whether to enable watch step to count in the negative direction.
+    -  :cpp:member:`pcnt_unit_config_t::flags::accum_count` sets whether to create an internal accumulator for the counter. This is helpful when you want to extend the counter's width, which by default is 16 bit at most, defined in the hardware. See also :ref:`pcnt-compensate-overflow-loss` for how to use this feature to compensate the overflow loss.
+    :SOC_PCNT_SUPPORT_STEP_NOTIFY: -  :cpp:member:`pcnt_unit_config_t::flags::en_step_notify_up` Configure whether to enable watch step to count in the positive direction.
+    :SOC_PCNT_SUPPORT_STEP_NOTIFY: -  :cpp:member:`pcnt_unit_config_t::flags::en_step_notify_down` Configure whether to enable watch step to count in the negative direction.
     -  :cpp:member:`pcnt_unit_config_t::intr_priority` sets the priority of the interrupt. If it is set to ``0``, the driver will allocate an interrupt with a default priority. Otherwise, the driver will use the given priority.
 
 .. note::
@@ -85,8 +85,8 @@ Install PCNT Channel
 To install a PCNT channel, you must initialize a :cpp:type:`pcnt_chan_config_t` structure in advance, and then call :cpp:func:`pcnt_new_channel`. The configuration fields of the :cpp:type:`pcnt_chan_config_t` structure are described below:
 
 - :cpp:member:`pcnt_chan_config_t::edge_gpio_num` and :cpp:member:`pcnt_chan_config_t::level_gpio_num` specify the GPIO numbers used by **edge** type signal and **level** type signal. Please note, either of them can be assigned to ``-1`` if it is not actually used, and thus it will become a **virtual IO**. For some simple pulse counting applications where one of the level/edge signals is fixed (i.e., never changes), you can reclaim a GPIO by setting the signal as a virtual IO on channel allocation. Setting the level/edge signal as a virtual IO causes that signal to be internally routed to a fixed High/Low logic level, thus allowing you to save a GPIO for other purposes.
-- :cpp:member:`pcnt_chan_config_t::virt_edge_io_level` and :cpp:member:`pcnt_chan_config_t::virt_level_io_level` specify the virtual IO level for **edge** and **level** input signal, to ensure a deterministic state for such control signal. Please note, they are only valid when either :cpp:member:`pcnt_chan_config_t::edge_gpio_num` or :cpp:member:`pcnt_chan_config_t::level_gpio_num` is assigned to ``-1``.
-- :cpp:member:`pcnt_chan_config_t::invert_edge_input` and :cpp:member:`pcnt_chan_config_t::invert_level_input` are used to decide whether to invert the input signals before they going into PCNT hardware. The invert is done by GPIO matrix instead of PCNT hardware.
+- :cpp:member:`pcnt_chan_config_t::flags::virt_edge_io_level` and :cpp:member:`pcnt_chan_config_t::flags::virt_level_io_level` specify the virtual IO level for **edge** and **level** input signal, to ensure a deterministic state for such control signal. Please note, they are only valid when either :cpp:member:`pcnt_chan_config_t::edge_gpio_num` or :cpp:member:`pcnt_chan_config_t::level_gpio_num` is assigned to ``-1``.
+- :cpp:member:`pcnt_chan_config_t::flags::invert_edge_input` and :cpp:member:`pcnt_chan_config_t::flags::invert_level_input` are used to decide whether to invert the input signals before they going into PCNT hardware. The invert is done by GPIO matrix instead of PCNT hardware.
 
 Channel allocating and initialization is done by calling a function :cpp:func:`pcnt_new_channel` with the above :cpp:type:`pcnt_chan_config_t` as an input parameter plus a PCNT unit handle returned from :cpp:func:`pcnt_new_unit`. This function will return a PCNT channel handle if it runs correctly. Specifically, when there are no more free PCNT channel within the unit (i.e., channel resources have been used up), then this function will return :c:macro:`ESP_ERR_NOT_FOUND` error. Note that, when install a PCNT channel for a specific unit, one should ensure the unit is in the init state, otherwise this function will return :c:macro:`ESP_ERR_INVALID_STATE` error.
 
@@ -156,7 +156,7 @@ It is recommended to remove the unused watch point by :cpp:func:`pcnt_unit_remov
     Watch Step
     ^^^^^^^^^^^
 
-    PCNT unit can be configured to watch a specific value increment (can be positive or negative) that you are interested in. The function of watching value increment is also called **Watch Step**. To install watch step requires enabling :cpp:member:`pcnt_unit_config_t::en_step_notify_up` or :cpp:member:`pcnt_unit_config_t::en_step_notify_down`. The step interval itself can not exceed the range set in :cpp:type:`pcnt_unit_config_t` by :cpp:member:`pcnt_unit_config_t::low_limit` and :cpp:member:`pcnt_unit_config_t::high_limit`.When the counter increment reaches step interval, a watch event will be triggered and notify you by interrupt if any watch event callback has ever registered in :cpp:func:`pcnt_unit_register_event_callbacks`. See :ref:`pcnt-register-event-callbacks` for how to register event callbacks.
+    PCNT unit can be configured to watch a specific value increment (can be positive or negative) that you are interested in. The function of watching value increment is also called **Watch Step**. To install watch step requires enabling :cpp:member:`pcnt_unit_config_t::flags::en_step_notify_up` or :cpp:member:`pcnt_unit_config_t::flags::en_step_notify_down`. The step interval itself can not exceed the range set in :cpp:type:`pcnt_unit_config_t` by :cpp:member:`pcnt_unit_config_t::low_limit` and :cpp:member:`pcnt_unit_config_t::high_limit`.When the counter increment reaches step interval, a watch event will be triggered and notify you by interrupt if any watch event callback has ever registered in :cpp:func:`pcnt_unit_register_event_callbacks`. See :ref:`pcnt-register-event-callbacks` for how to register event callbacks.
 
     The watch step can be added and removed by :cpp:func:`pcnt_unit_add_watch_step` and :cpp:func:`pcnt_unit_remove_watch_step`. The parameter ``step_interval`` can be positive(step forward, e.g., [N]->[N+1]->[N+2]->...) or negative(step backward, e.g., [N]->[N-1]->[N-2]->...). The same direction can only add one watch step, otherwise it will return error :c:macro:`ESP_ERR_INVALID_STATE`.
 
@@ -253,7 +253,7 @@ This function should be called when the unit is in the init state. Otherwise, it
     The PCNT unit can receive a clear signal from the GPIO. The parameters that can be configured for the clear signal are listed in :cpp:type:`pcnt_clear_signal_config_t`:
 
         -  :cpp:member:`pcnt_clear_signal_config_t::clear_signal_gpio_num` specify the GPIO numbers used by **clear** signal. The default active level is high, and the input mode is pull-down enabled.
-        -  :cpp:member:`pcnt_clear_signal_config_t::invert_clear_signal` is used to decide whether to invert the input signal before it going into PCNT hardware. The invert is done by GPIO matrix instead of PCNT hardware. The input mode is pull-up enabled when the input signal is inverted.
+        -  :cpp:member:`pcnt_clear_signal_config_t::flags::invert_clear_signal` is used to decide whether to invert the input signal before it going into PCNT hardware. The invert is done by GPIO matrix instead of PCNT hardware. The input mode is pull-up enabled when the input signal is inverted.
 
     This signal acts in the same way as calling :cpp:func:`pcnt_unit_clear_count`, but is not subject to software latency, and is suitable for use in situations with low latency requirements. Also please note, the flip frequency of this signal can not be too high.
 
@@ -321,7 +321,7 @@ The internal hardware counter will be cleared to zero automatically when it reac
 
 .. list::
 
-    1. Enable :cpp:member:`pcnt_unit_config_t::accum_count` when installing the PCNT unit.
+    1. Enable :cpp:member:`pcnt_unit_config_t::flags::accum_count` when installing the PCNT unit.
     2. Add the high/low limit as the :ref:`pcnt-watch-points`.
     3. Now, the returned count value from the :cpp:func:`pcnt_unit_get_count` function not only reflects the hardware's count value, but also accumulates the high/low overflow loss to it.
 
