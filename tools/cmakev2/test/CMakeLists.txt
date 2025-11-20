@@ -219,7 +219,8 @@ endfunction()
 #   idf.py confserver-fatfs
 function(test_executable)
     idf_build_executable(fatfs_example
-                         COMPONENTS fatfs_example)
+                         COMPONENTS fatfs_example
+                         MAPFILE_TARGET fatfs_example_mapfile)
     idf_build_binary(fatfs_example
                      TARGET fatfs_example_bin
                      OUTPUT_FILE fatfs_example.bin)
@@ -229,14 +230,20 @@ function(test_executable)
                      NAME fatfs_example)
     idf_create_menuconfig(fatfs_example
                           TARGET menuconfig-fatfs)
-    idf_build_generate_metadata(fatfs_example
+    idf_build_generate_metadata(fatfs_example_bin
                                 OUTPUT_FILE project_description_fatfs.json)
     idf_create_confserver(fatfs_example
                           TARGET confserver-fatfs)
 
+    if(TARGET fatfs_example_mapfile)
+        idf_create_size_report(fatfs_example_mapfile
+                               TARGET fatfs-size)
+    endif()
+
 
     idf_build_executable(hello_world_example
-                         COMPONENTS hello_world_example)
+                         COMPONENTS hello_world_example
+                         MAPFILE_TARGET hello_world_example_mapfile)
     idf_build_binary(hello_world_example
                      TARGET hello_world_example_bin
                      OUTPUT_FILE hello_world_example.bin)
@@ -246,10 +253,15 @@ function(test_executable)
                      NAME hello_world_example)
     idf_create_menuconfig(hello_world_example
                           TARGET menuconfig-hello_world)
-    idf_build_generate_metadata(hello_world_example
+    idf_build_generate_metadata(hello_world_example_bin
                                 OUTPUT_FILE project_description_hello_world.json)
     idf_create_confserver(hello_world_example
                           TARGET confserver-hello_world)
+
+    if(TARGET hello_world_example_mapfile)
+        idf_create_size_report(hello_world_example_mapfile
+                               TARGET hello-size)
+    endif()
 endfunction()
 
 # Run tests
