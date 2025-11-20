@@ -30,7 +30,7 @@ while IFS= read -r p_cmd; do
     "$p_cmd" -c "import sys; exit(1) if sys.version_info.major < int(\"$OLDEST_PYTHON_SUPPORTED_MAJOR\") else exit(0);" || continue
     "$p_cmd" -c "import sys; exit(1) if sys.version_info.minor < int(\"$OLDEST_PYTHON_SUPPORTED_MINOR\") else exit(0);" || continue
 
-    export ESP_PYTHON="$p_cmd"
+    ESP_PYTHON="$p_cmd"
     break
 done << EOF
 $PYTHON_CANDIDATES
@@ -43,3 +43,4 @@ if [ -z "$ESP_PYTHON" ]; then
     exit 1
 fi
 echo "\"$ESP_PYTHON\" has been detected"
+export ESP_PYTHON
