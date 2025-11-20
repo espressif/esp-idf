@@ -18,8 +18,10 @@
  ***************************************/
 
 /* Functions */
-systimer_hal_init = 0x4000036c;
-systimer_hal_deinit = 0x40000370;
+/* The following ROM functions are commented out because they're patched in the esp_rom_systimer.c */
+/* systimer_hal_init = 0x4000036c; */
+/* systimer_hal_deinit = 0x40000370; */
+
 systimer_hal_set_tick_rate_ops = 0x40000374;
 systimer_hal_get_counter_value = 0x40000378;
 systimer_hal_get_time = 0x4000037c;
