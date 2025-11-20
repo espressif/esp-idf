@@ -192,10 +192,10 @@
 /**
  * @def OPENTHREAD_CONFIG_LOG_OUTPUT
  *
- * The ESP-IDF platform provides an otPlatLog() function.
+ * Use app log for RCP to transmit logs to host via Spinel.
  */
 #ifndef OPENTHREAD_CONFIG_LOG_OUTPUT
-#define OPENTHREAD_CONFIG_LOG_OUTPUT OPENTHREAD_CONFIG_LOG_OUTPUT_PLATFORM_DEFINED
+#define OPENTHREAD_CONFIG_LOG_OUTPUT OPENTHREAD_CONFIG_LOG_OUTPUT_APP
 #endif
 
 /**
