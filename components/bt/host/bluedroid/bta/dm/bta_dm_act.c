@@ -133,9 +133,11 @@ extern tBTA_DM_CONTRL_STATE bta_dm_pm_obtain_controller_state(void);
 static BOOLEAN bta_dm_remove_sec_dev_entry(BD_ADDR remote_bd_addr);
 #endif  ///SMP_INCLUDED == TRUE
 #if (BLE_INCLUDED == TRUE)
+#if (BLE_42_SCAN_EN == TRUE)
 static void bta_dm_scan_results_cb(tBTM_INQ_RESULTS *p_inq, UINT8 *p_eir);
 static void bta_dm_scan_cmpl_cb(void *p_result);
 static void bta_dm_scan_discard_cb (uint32_t num_dis);
+#endif // (BLE_42_SCAN_EN == TRUE)
 #endif  ///BLE_INCLUDED == TRUE
 
 #if (CLASSIC_BT_INCLUDED == TRUE)
@@ -5242,6 +5244,7 @@ void bta_dm_ble_set_key_material (tBTA_DM_MSG *p_data)
 }
 #endif
 
+#if (BLE_42_SCAN_EN == TRUE)
 /*******************************************************************************
 **
 ** Function         bta_dm_ble_scan
@@ -5285,6 +5288,7 @@ void bta_dm_ble_scan (tBTA_DM_MSG *p_data)
         btm_ble_clear_topology_mask(BTM_BLE_STATE_PASSIVE_SCAN_BIT);
     }
 }
+#endif // (BLE_42_SCAN_EN == TRUE)
 
 #if (BLE_42_ADV_EN == TRUE)
 /*******************************************************************************
