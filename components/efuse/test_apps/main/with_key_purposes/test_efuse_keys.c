@@ -127,7 +127,7 @@ static esp_err_t s_check_key(esp_efuse_block_t num_key, void* wr_key)
     TEST_ASSERT_EQUAL(purpose, esp_efuse_get_key_purpose(num_key));
     esp_efuse_purpose_t purpose2 = 0;
     const esp_efuse_desc_t** key_purpose = esp_efuse_get_purpose_field(num_key);
-    TEST_ESP_OK(esp_efuse_read_field_blob(key_purpose, &purpose2, key_purpose[0]->bit_count));
+    TEST_ESP_OK(esp_efuse_read_field_blob(key_purpose, &purpose2, esp_efuse_get_field_size(key_purpose)));
     TEST_ASSERT_EQUAL(purpose, purpose2);
     TEST_ASSERT_TRUE(esp_efuse_get_keypurpose_dis_write(num_key));
     return ESP_OK;
