@@ -46,7 +46,7 @@ def verify_att_token_signature(att_tk: str) -> Any:
 
 
 @pytest.mark.generic
-@idf_parametrize('target', ['esp32c6'], indirect=['target'])
+@idf_parametrize('target', ['supported_targets'], indirect=['target'])
 def test_example_tee_attestation(dut: Dut) -> None:
     # Erase the TEE secure_storage partition
     dut.serial.erase_partition('secure_storage')
