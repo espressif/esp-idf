@@ -219,6 +219,12 @@ menu "Hardware Settings"
 
     menu "RTC Clock Config"
         orsource "./port/$IDF_TARGET/Kconfig.rtc"
+
+        config RTC_CLK_FUNC_IN_IRAM
+            bool "Place RTC clock module functions into IRAM"
+            default y
+            help
+                Place RTC clock module (all rtc clock functions and const data) into IRAM.
     endmenu
 
     menu "Peripheral Control"
