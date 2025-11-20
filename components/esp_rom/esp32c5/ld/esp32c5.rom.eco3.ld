@@ -3,10 +3,9 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-/*
-ESP32C5 ECO3 ROM address table
-Version 3 API's imported from the ROM
-*/
+/***************************************
+ eco3 fixed
+ ***************************************/
 
 coex_core_timer_idx_get = 0x40000aec;
 coex_status_get = 0x40000b0c;
@@ -304,3 +303,97 @@ ppProcessLifeTime = 0x40000ee4;
 rcGetSched = 0x40000f40;
 wDev_ProcessRxSucData = 0x40000fe0;
 esp_test_tx_process_complete = 0x40001030;
+
+/***************************************
+ eco3 newly added
+ ***************************************/
+
+/* Data (.data, .bss, .rodata) */
+s_offchan_tx_progress_in_ptr = 0x4085fc5c;
+s_phy_get_max_pwr_new_ptr = 0x4085fc58;
+
+/* Functions */
+phy_get_index_pwr = 0x400015dc;
+phy_get_pwr_by_rate = 0x400015e0;
+phy_set_adc_rand = 0x400015e4;
+phy_get_interp_data = 0x400015e8;
+phy_pbus_print = 0x400015ec;
+phy_internal_delay = 0x400015f0;
+phy_ftm_comp = 0x400015f4;
+phy_11p_set = 0x400015f8;
+phy_freq_mem_backup = 0x400015fc;
+phy_get_cca = 0x40001600;
+phy_set_cca_cnt = 0x40001604;
+phy_get_cca_cnt = 0x40001608;
+phy_get_noise_floor = 0x4000160c;
+phy_get_rssi = 0x40001610;
+phy_rxevm_reset_mem = 0x40001614;
+phy_rxevm_init_cfg = 0x40001618;
+phy_freq_reg_init = 0x4000161c;
+phy_freq_mem_data = 0x40001620;
+phy_set_freq_sw_start = 0x40001624;
+phy_freq_mem_change_5g_ = 0x40001628;
+phy_i2c_bbpll_set = 0x4000162c;
+phy_i2c_master_mem_txcap = 0x40001630;
+phy_get_xtal_code = 0x40001634;
+phy_get_dcap_degen = 0x40001638;
+phy_get_vco_init = 0x4000163c;
+phy_get_tcode = 0x40001640;
+phy_get_tm7 = 0x40001644;
+phy_get_dreg_1p1 = 0x40001648;
+phy_set_freq_i2c_ = 0x4000164c;
+phy_tatget_pwr_band = 0x40001650;
+phy_band_i2c_set = 0x40001654;
+phy_band_change = 0x40001658;
+phy_close_fe_bb_clk = 0x4000165c;
+phy_reg_init = 0x40001660;
+phy_xpd_rf = 0x40001664;
+phy_pbus_rd_addr = 0x40001668;
+phy_rx_loop_cap_set = 0x4000166c;
+phy_pbus_xpd_dpd_path = 0x40001670;
+phy_rx_filter_mode = 0x40001674;
+phy_dac_scale_set = 0x40001678;
+phy_bbpll_recal = 0x4000167c;
+bb_agc_reg_update = 0x40001680;
+phy_bb_dcmem_clr = 0x40001684;
+phy_txgain_comp_pacfg = 0x40001688;
+phy_i2c_txrate_init = 0x4000168c;
+phy_iq_swap_set = 0x40001690;
+phy_bb_fsm_rst = 0x40001694;
+phy_lltf_mask_en = 0x40001698;
+phy_magtrk_scale_set = 0x4000169c;
+phy_cfg_tx_magtrk = 0x400016a0;
+phy_tx_magtrk_init = 0x400016a4;
+phy_restart_cal = 0x400016a8;
+phy_reset_ckgen = 0x400016ac;
+phy_write_rfpll_sdm = 0x400016b0;
+phy_rfpll_set_freq = 0x400016b4;
+phy_set_rf_freq_offset = 0x400016b8;
+phy_i2c_sdm_en = 0x400016bc;
+phy_freq_cal_test = 0x400016c0;
+phy_set_rfpll_freq = 0x400016c4;
+phy_set_channel_rfpll_freq_ = 0x400016c8;
+phy_read_pll_cap = 0x400016cc;
+phy_set_chan_misc = 0x400016d0;
+phy_chip_set_chan_offset = 0x400016d4;
+phy_chip_set_chan_ana = 0x400016d8;
+phy_freq_set_reg = 0x400016dc;
+phy_rfrx_rxdc_cal = 0x400016e0;
+phy_linear_to_db_64bits = 0x400016e4;
+phy_get_iq_est_snr = 0x400016e8;
+phy_get_loop_snr = 0x400016ec;
+phy_get_rx_sig_pwr = 0x400016f0;
+phy_adc_rate_cal_rxdc = 0x400016f4;
+phy_set_iqcal_ckgen_code = 0x400016f8;
+phy_dpd_rxdc_cal = 0x400016fc;
+phy_txpwr_correct = 0x40001700;
+phy_txpwr_cal_track = 0x40001704;
+phy_bt_track_tx_power = 0x40001708;
+phy_wifi_track_tx_power = 0x4000170c;
+phy_txpwr_track_slow = 0x40001710;
+phy_set_tsens_pwr = 0x40001714;
+phy_bt_tx_gain_set = 0x40001718;
+phy_get_chan_power_offset = 0x4000171c;
+phy_chan_vs_index = 0x40001720;
+phy_get_txiq_dcode_offset_ = 0x40001724;
+phy_get_txiq_set = 0x40001728;
