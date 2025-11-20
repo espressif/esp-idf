@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "soc/parlio_periph.h"
+#include "hal/parlio_periph.h"
 #include "soc/gpio_sig_map.h"
 
 const parlio_signal_conn_t parlio_periph_signals = {
@@ -88,7 +88,7 @@ static const regdma_entries_config_t parlio_regs_retention[] = {
         .owner = ENTRY(0)
     },
 };
-const parlio_reg_retention_info_t parlio_reg_retention_info[SOC_PARLIO_GROUPS] = {
+const parlio_reg_retention_info_t parlio_reg_retention_info[PARLIO_LL_GET(INST_NUM)] = {
     [0] = {
         .regdma_entry_array = parlio_regs_retention,
         .array_size = ARRAY_SIZE(parlio_regs_retention),

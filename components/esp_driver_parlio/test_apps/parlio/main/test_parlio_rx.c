@@ -20,7 +20,8 @@
 #include "hal/cache_ll.h"
 #include "soc/soc_caps.h"
 #include "soc/spi_periph.h"
-#include "soc/parlio_periph.h"
+#include "hal/parlio_periph.h"
+#include "hal/parlio_ll.h"
 #include "esp_attr.h"
 #include "test_board.h"
 #include "esp_private/parlio_rx_private.h"
@@ -29,7 +30,7 @@
 #define TEST_I2S_PORT   I2S_NUM_0
 #define TEST_VALID_SIG  (PARLIO_RX_UNIT_MAX_DATA_WIDTH - 1)
 
-#if SOC_PARLIO_RX_CLK_SUPPORT_OUTPUT
+#if PARLIO_LL_SUPPORT(RX_CLK_OUTPUT)
 #define TEST_OUTPUT_CLK_PIN     TEST_CLK_GPIO
 #else
 #define TEST_OUTPUT_CLK_PIN     -1
@@ -399,11 +400,11 @@ TEST_CASE("parallel_rx_unit_pulse_delimiter_test_via_i2s", "[parlio_rx]")
 TEST_CASE("parallel_rx_unit_install_uninstall", "[parlio_rx]")
 {
     printf("install rx units exhaustively\r\n");
-    parlio_rx_unit_handle_t units[SOC_PARLIO_GROUPS * SOC_PARLIO_RX_UNITS_PER_GROUP];
+    parlio_rx_unit_handle_t units[PARLIO_LL_GET(INST_NUM) * PARLIO_LL_GET(RX_UNITS_PER_INST)];
     int k = 0;
     parlio_rx_unit_config_t config = TEST_DEFAULT_UNIT_CONFIG(PARLIO_CLK_SRC_DEFAULT, 1000000);
-    for (int i = 0; i < SOC_PARLIO_GROUPS; i++) {
-        for (int j = 0; j < SOC_PARLIO_RX_UNITS_PER_GROUP; j++) {
+    for (int i = 0; i < PARLIO_LL_GET(INST_NUM); i++) {
+        for (int j = 0; j < PARLIO_LL_GET(RX_UNITS_PER_INST); j++) {
             TEST_ESP_OK(parlio_new_rx_unit(&config, &units[k++]));
         }
     }
@@ -421,7 +422,7 @@ TEST_CASE("parallel_rx_unit_install_uninstall", "[parlio_rx]")
     // clock from internal
     config.clk_src = PARLIO_CLK_SRC_DEFAULT;
     config.clk_out_gpio_num = TEST_CLK_GPIO;
-#if SOC_PARLIO_RX_CLK_SUPPORT_OUTPUT
+#if PARLIO_LL_SUPPORT(RX_CLK_OUTPUT)
     TEST_ESP_OK(parlio_new_rx_unit(&config, &units[0]));
     TEST_ESP_OK(parlio_del_rx_unit(units[0]));
 #else

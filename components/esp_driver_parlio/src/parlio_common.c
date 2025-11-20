@@ -11,8 +11,8 @@
 
 typedef struct parlio_platform_t {
     _lock_t mutex;                             // platform level mutex lock
-    parlio_group_t *groups[SOC_PARLIO_GROUPS]; // array of parallel IO group instances
-    int group_ref_counts[SOC_PARLIO_GROUPS];   // reference count used to protect group install/uninstall
+    parlio_group_t *groups[PARLIO_LL_GET(INST_NUM)]; // array of parallel IO group instances
+    int group_ref_counts[PARLIO_LL_GET(INST_NUM)];   // reference count used to protect group install/uninstall
 } parlio_platform_t;
 
 static parlio_platform_t s_platform; // singleton platform
@@ -110,12 +110,12 @@ esp_err_t parlio_register_unit_to_group(parlio_unit_base_handle_t unit)
 {
     parlio_group_t *group = NULL;
     int unit_id = -1;
-    for (int i = 0; i < SOC_PARLIO_GROUPS; i++) {
+    for (int i = 0; i < PARLIO_LL_GET(INST_NUM); i++) {
         group = parlio_acquire_group_handle(i);
         ESP_RETURN_ON_FALSE(group, ESP_ERR_NO_MEM, TAG, "no memory for group (%d)", i);
         portENTER_CRITICAL(&group->spinlock);
         if (unit->dir == PARLIO_DIR_TX) {
-            for (int j = 0; j < SOC_PARLIO_TX_UNITS_PER_GROUP; j++) {
+            for (int j = 0; j < PARLIO_LL_GET(TX_UNITS_PER_INST); j++) {
                 if (!group->tx_units[j]) {
                     group->tx_units[j] = unit;
                     unit_id = j;
@@ -123,7 +123,7 @@ esp_err_t parlio_register_unit_to_group(parlio_unit_base_handle_t unit)
                 }
             }
         } else {
-            for (int j = 0; j < SOC_PARLIO_RX_UNITS_PER_GROUP; j++) {
+            for (int j = 0; j < PARLIO_LL_GET(RX_UNITS_PER_INST); j++) {
                 if (!group->rx_units[j]) {
                     group->rx_units[j] = unit;
                     unit_id = j;

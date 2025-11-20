@@ -168,6 +168,7 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_hal_i2s/include/hal/i2s_types.h \
     $(PROJECT_PATH)/components/esp_hal_jpeg/include/hal/jpeg_types.h \
     $(PROJECT_PATH)/components/esp_hal_lcd/include/hal/lcd_types.h \
+    $(PROJECT_PATH)/components/esp_hal_parlio/include/hal/parlio_types.h \
     $(PROJECT_PATH)/components/esp_hal_mspi/include/hal/esp_flash_err.h \
     $(PROJECT_PATH)/components/esp_hal_mspi/include/hal/spi_flash_types.h \
     $(PROJECT_PATH)/components/esp_http_client/include/esp_http_client.h \
@@ -260,7 +261,6 @@ INPUT = \
     $(PROJECT_PATH)/components/hal/include/hal/gpio_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/ledc_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/mcpwm_types.h \
-    $(PROJECT_PATH)/components/hal/include/hal/parlio_types.h \
     $(PROJECT_PATH)/components/esp_hal_pcnt/include/hal/pcnt_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/rmt_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/rtc_io_types.h \
