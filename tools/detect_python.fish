@@ -5,13 +5,12 @@
 set OLDEST_PYTHON_SUPPORTED_MAJOR 3
 set OLDEST_PYTHON_SUPPORTED_MINOR 10
 
-if test -z "$ESP_PYTHON"
+if test -z "$ESP_PYTHON_CUSTOM"
     set PYTHON_CANDIDATES python3 python python3.10 python3.11 python3.12 python3.13
 else
-    echo "Reading ESP_PYTHON from environment: \"$ESP_PYTHON\""
-    set PYTHON_CANDIDATES $ESP_PYTHON
+    echo "Reading ESP_PYTHON_CUSTOM from environment: \"$ESP_PYTHON_CUSTOM\""
+    set PYTHON_CANDIDATES $ESP_PYTHON_CUSTOM
 end
-set -e ESP_PYTHON  # Unset it. Will assign after candidate check
 
 for p_cmd in $PYTHON_CANDIDATES
     $p_cmd --version >/dev/null 2>&1; or continue

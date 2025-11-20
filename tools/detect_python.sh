@@ -3,7 +3,7 @@
 # This is a helper script for detecting Python executables in the PATH. It is intended to be used for determining
 # which Python should be used with idf_tools.py for installing tools and exporting environment variables.
 #
-# 1. If environment variable ESP_PYTHON already set, script uses that python binary, otherwise, looks for python version same or greater than minimal required version on path
+# 1. If environment variable ESP_PYTHON_CUSTOM already set, script uses that python binary, otherwise, looks for python version same or greater than minimal required version on path
 # 2. If required version of python is found it is assigned to environmental variable `ESP_PYTHON`
 # 3. If required version of python is not found, script will fail
 
@@ -17,11 +17,10 @@ python3.11
 python3.12
 python3.13"
 
-if [ -n "$ESP_PYTHON" ]; then
-    echo "Reading ESP_PYTHON from environment: \"$ESP_PYTHON\""
-    PYTHON_CANDIDATES="$ESP_PYTHON"
+if [ -n "$ESP_PYTHON_CUSTOM" ]; then
+    echo "Reading ESP_PYTHON_CUSTOM from environment: \"$ESP_PYTHON_CUSTOM\""
+    PYTHON_CANDIDATES="$ESP_PYTHON_CUSTOM"
 fi
-ESP_PYTHON=  # Unset it. Will assign after candidate check
 
 while IFS= read -r p_cmd; do
     "$p_cmd" --version >/dev/null 2>&1 || continue
