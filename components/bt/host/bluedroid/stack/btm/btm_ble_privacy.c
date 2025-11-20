@@ -718,11 +718,11 @@ BOOLEAN btm_ble_suspend_resolving_list_activity(void)
         btm_ble_stop_scan();
         p_ble_cb->suspended_rl_state |= BTM_BLE_RL_SCAN;
     }
-#if (tGATT_BG_CONN_DEV == TRUE)
+#if (GATT_BG_CONN_DEV == TRUE)
     if (btm_ble_suspend_bg_conn()) {
         p_ble_cb->suspended_rl_state |= BTM_BLE_RL_INIT;
     }
-#endif // #if (tGATT_BG_CONN_DEV == TRUE)
+#endif // #if (GATT_BG_CONN_DEV == TRUE)
     return TRUE;
 }
 
@@ -750,11 +750,11 @@ void btm_ble_resume_resolving_list_activity(void)
         btm_ble_start_scan();
     }
 #endif // #if (BLE_42_SCAN_EN == TRUE)
-#if (tGATT_BG_CONN_DEV == TRUE)
+#if (GATT_BG_CONN_DEV == TRUE)
     if  (p_ble_cb->suspended_rl_state & BTM_BLE_RL_INIT) {
         btm_ble_resume_bg_conn();
     }
-#endif // #if (tGATT_BG_CONN_DEV == TRUE)
+#endif // #if (GATT_BG_CONN_DEV == TRUE)
     p_ble_cb->suspended_rl_state = BTM_BLE_RL_IDLE;
 }
 
