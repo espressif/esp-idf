@@ -728,11 +728,13 @@ esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_conf
 #endif //SOC_SPI_SUPPORT_OCT
     }
 
+    if (bus_ctx[host]) {
+        bus_ctx[host]->bus_attr.bus_cfg = *bus_config;
+        bus_ctx[host]->bus_attr.flags = temp_flag;
+        bus_ctx[host]->bus_attr.gpio_reserve = gpio_reserv;
+    }
     if (flags_o) {
         *flags_o = temp_flag;
-    }
-    if (io_reserved) {
-        *io_reserved |= gpio_reserv;
     }
     return ESP_OK;
 }
@@ -777,9 +779,7 @@ void spicommon_cs_initialize(spi_host_device_t host, int cs_io_num, int cs_id, i
         }
         gpio_func_sel(cs_io_num, PIN_FUNC_GPIO);
     }
-    if (io_reserved) {
-        *io_reserved |= out_mask;
-    }
+    bus_ctx[host]->bus_attr.gpio_reserve |= out_mask;
 }
 
 void spicommon_cs_free_io(int cs_gpio_num, uint64_t *io_reserved)
@@ -828,10 +828,8 @@ esp_err_t spi_bus_initialize(spi_host_device_t host_id, const spi_bus_config_t *
 #endif
 
     ESP_RETURN_ON_ERROR(spicommon_bus_alloc(host_id, "spi master"), SPI_TAG, "alloc host failed");
-    spi_bus_attr_t *bus_attr = (spi_bus_attr_t *)spi_bus_get_attr(host_id);
-    spicommon_bus_context_t *ctx = __containerof(bus_attr, spicommon_bus_context_t, bus_attr);
-    assert(bus_attr && ctx);  //coverity check
-    bus_attr->bus_cfg = *bus_config;
+    spicommon_bus_context_t *ctx = bus_ctx[host_id];
+    spi_bus_attr_t *bus_attr = &ctx->bus_attr;
 
     bus_attr->dma_enabled = (dma_chan != SPI_DMA_DISABLED);
     bus_attr->max_transfer_sz = SOC_SPI_MAXIMUM_BUFFER_SIZE;
@@ -872,7 +870,7 @@ esp_err_t spi_bus_initialize(spi_host_device_t host_id, const spi_bus_config_t *
 
     _lock_acquire(&ctx->mutex);
     if (sleep_retention_module_init(spi_reg_retention_info[host_id - 1].module_id, &init_param) == ESP_OK) {
-        if ((bus_attr->bus_cfg.flags & SPICOMMON_BUSFLAG_SLP_ALLOW_PD) && (sleep_retention_module_allocate(spi_reg_retention_info[host_id - 1].module_id) != ESP_OK)) {
+        if ((bus_config->flags & SPICOMMON_BUSFLAG_SLP_ALLOW_PD) && (sleep_retention_module_allocate(spi_reg_retention_info[host_id - 1].module_id) != ESP_OK)) {
             // even though the sleep retention create failed, SPI driver should still work, so just warning here
             ESP_LOGW(SPI_TAG, "alloc sleep recover failed, peripherals may hold power on");
         }
@@ -882,7 +880,7 @@ esp_err_t spi_bus_initialize(spi_host_device_t host_id, const spi_bus_config_t *
     }
     _lock_release(&ctx->mutex);
 #else
-    if (bus_attr->bus_cfg.flags & SPICOMMON_BUSFLAG_SLP_ALLOW_PD) {
+    if (bus_config->flags & SPICOMMON_BUSFLAG_SLP_ALLOW_PD) {
         ESP_LOGE(SPI_TAG, "power down peripheral in sleep is not enabled or not supported on your target");
     }
 #endif  // SOC_SPI_SUPPORT_SLEEP_RETENTION
@@ -901,7 +899,7 @@ esp_err_t spi_bus_initialize(spi_host_device_t host_id, const spi_bus_config_t *
     }
 #endif //CONFIG_PM_ENABLE
 
-    err = spicommon_bus_initialize_io(host_id, bus_config, SPICOMMON_BUSFLAG_MASTER | bus_config->flags, &bus_attr->flags, &bus_attr->gpio_reserve);
+    err = spicommon_bus_initialize_io(host_id, bus_config, SPICOMMON_BUSFLAG_MASTER | bus_config->flags, NULL, NULL);
     if (err != ESP_OK) {
         goto cleanup;
     }
@@ -929,10 +927,16 @@ cleanup:
 
 void *spi_bus_dma_memory_alloc(spi_host_device_t host_id, size_t size, uint32_t extra_heap_caps)
 {
-    // As don't know the buffer will used for TX or RX, so use the max alignment requirement
-    size_t alignment = (extra_heap_caps & MALLOC_CAP_SPIRAM) ? \
-                       MAX(bus_ctx[host_id]->dma_ctx->dma_align_tx_ext, bus_ctx[host_id]->dma_ctx->dma_align_rx_ext) : \
-                       MAX(bus_ctx[host_id]->dma_ctx->dma_align_tx_int, bus_ctx[host_id]->dma_ctx->dma_align_rx_int);
+    SPI_CHECK(bus_ctx[host_id], "SPI %d not initialized", NULL, host_id + 1);
+
+    size_t alignment = 16;
+    // detailed alignment requirement is not available for slave bus, so use 16 bytes as default
+    if (bus_ctx[host_id]->bus_attr.flags & SPICOMMON_BUSFLAG_MASTER) {
+        // As don't know the buffer will used for TX or RX, so use the max alignment requirement
+        alignment = (extra_heap_caps & MALLOC_CAP_SPIRAM) ? \
+                    MAX(bus_ctx[host_id]->dma_ctx->dma_align_tx_ext, bus_ctx[host_id]->dma_ctx->dma_align_rx_ext) : \
+                    MAX(bus_ctx[host_id]->dma_ctx->dma_align_tx_int, bus_ctx[host_id]->dma_ctx->dma_align_rx_int);
+    }
     return heap_caps_aligned_calloc(alignment, 1, size, extra_heap_caps | MALLOC_CAP_DMA);
 }
 

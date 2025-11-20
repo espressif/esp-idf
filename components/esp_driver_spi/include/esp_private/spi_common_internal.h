@@ -54,7 +54,7 @@ typedef enum {
 typedef struct {
     spi_bus_config_t bus_cfg;           ///< Config used to initialize the bus
     uint64_t gpio_reserve;              ///< reserved output gpio bit mask
-    uint32_t flags;                     ///< Flags (attributes) of the bus
+    uint32_t flags;                     ///< Flags (SPICOMMON_BUSFLAG_* flag combination of bus abilities) of the bus
     int max_transfer_sz;                ///< Maximum length of bytes available to send
     bool dma_enabled;                   ///< To enable DMA or not
     size_t cache_align_int;             ///< Internal memory align byte requirement
@@ -179,12 +179,11 @@ esp_err_t spicommon_dma_chan_free(spi_dma_ctx_t *dma_ctx);
  *              - ``SPICOMMON_BUSFLAG_QUAD``: Combination of ``SPICOMMON_BUSFLAG_DUAL`` and ``SPICOMMON_BUSFLAG_WPHD``.
  *              - ``SPICOMMON_BUSFLAG_IO4_IO7``: The bus has spi data4 ~ spi data7 connected.
  *              - ``SPICOMMON_BUSFLAG_OCTAL``: Combination of ``SPICOMMON_BUSFLAG_QUAL`` and ``SPICOMMON_BUSFLAG_IO4_IO7``.
- * @param[out] io_reserved Output the reserved gpio map
  * @return
  *         - ESP_ERR_INVALID_ARG   if parameter is invalid
  *         - ESP_OK                on success
  */
-esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_config_t *bus_config, uint32_t flags, uint32_t *flags_o,  uint64_t *io_reserved);
+esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_config_t *bus_config, uint32_t flags, uint32_t *flags_o, uint64_t *io_reserved);
 
 /**
  * @brief Free the IO used by a SPI peripheral
@@ -206,7 +205,6 @@ esp_err_t spicommon_bus_free_io_cfg(const spi_bus_config_t *bus_cfg, uint64_t *i
  * @param cs_id Hardware CS id to route
  * @param force_gpio_matrix If true, CS will always be routed through the GPIO matrix. If false,
  *                          if the GPIO number allows it, the routing will happen through the IO_mux.
- * @param[out] io_reserved Output the reserved gpio map
  */
 void spicommon_cs_initialize(spi_host_device_t host, int cs_io_num, int cs_id, int force_gpio_matrix, uint64_t *io_reserved);
 
