@@ -1,12 +1,14 @@
 menu "Power Management"
 
     config PM_SLEEP_FUNC_IN_IRAM
-        bool "Place Power Management module functions in IRAM" if IDF_TARGET_ESP32C2
-        default y
+        bool "Place Power Management module functions in IRAM"
+        default n
         select PM_SLP_IRAM_OPT if SOC_LIGHT_SLEEP_SUPPORTED
         select PM_RTOS_IDLE_OPT if FREERTOS_USE_TICKLESS_IDLE
         select ESP_PERIPH_CTRL_FUNC_IN_IRAM
         select ESP_REGI2C_CTRL_FUNC_IN_IRAM
+        select RTC_CLK_FUNC_IN_IRAM
+        select RTC_TIME_FUNC_IN_IRAM
 
 
     config PM_ENABLE
