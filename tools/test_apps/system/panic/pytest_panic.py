@@ -412,6 +412,7 @@ def test_instr_fetch_prohibited(dut: PanicTestDut, config: str, test_func_name: 
 
 @pytest.mark.generic
 @idf_parametrize('config, target', CONFIGS, indirect=['config', 'target'])
+@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration, IDF-14348')
 def test_illegal_instruction(dut: PanicTestDut, config: str, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
     if dut.is_xtensa:
