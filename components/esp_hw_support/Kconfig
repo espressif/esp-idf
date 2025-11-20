@@ -224,6 +224,12 @@ menu "Hardware Settings"
             default y
             help
                 Place RTC clock module (all rtc clock functions and const data) into IRAM.
+
+        config RTC_TIME_FUNC_IN_IRAM
+            bool "Place RTC time module functions into IRAM"
+            default y
+            help
+                Place RTC time module (all rtc clock functions) into IRAM.
     endmenu
 
     menu "Peripheral Control"
