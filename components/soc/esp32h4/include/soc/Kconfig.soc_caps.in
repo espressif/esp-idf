@@ -3,6 +3,10 @@
 # using gen_soc_caps_kconfig.py, do not edit manually
 #####################################################
 
+config SOC_DEDICATED_GPIO_SUPPORTED
+    bool
+    default y
+
 config SOC_UART_SUPPORTED
     bool
     default y
@@ -314,6 +318,14 @@ config SOC_GPIO_IN_RANGE_MAX
 config SOC_GPIO_OUT_RANGE_MAX
     int
     default 39
+
+config SOC_GPIO_SUPPORT_PIN_GLITCH_FILTER
+    bool
+    default y
+
+config SOC_GPIO_FLEX_GLITCH_FILTER_NUM
+    int
+    default 8
 
 config SOC_GPIO_SUPPORT_ETM
     bool

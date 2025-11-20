@@ -33,7 +33,7 @@
 /*-------------------------- COMMON CAPS ---------------------------------------*/
 // #define SOC_ADC_SUPPORTED               1    // TODO: [ESP32H4] IDF-12368 IDF-12370
 // #define SOC_ANA_CMPR_SUPPORTED          1    // TODO: [ESP32H4] IDF-12395 big change!!
-// #define SOC_DEDICATED_GPIO_SUPPORTED    1    // TODO: [ESP32H4] IDF-12401
+#define SOC_DEDICATED_GPIO_SUPPORTED    1
 #define SOC_UART_SUPPORTED              1
 #define SOC_GDMA_SUPPORTED              1
 #define SOC_AHB_GDMA_SUPPORTED          1
@@ -207,8 +207,8 @@
 #define SOC_GPIO_VALID_GPIO_MASK            ((1ULL<<SOC_GPIO_PIN_COUNT) - 1)
 #define SOC_GPIO_VALID_OUTPUT_GPIO_MASK     SOC_GPIO_VALID_GPIO_MASK
 
-// #define SOC_GPIO_SUPPORT_PIN_GLITCH_FILTER 1  // TODO: [ESP32H4] IDF-12391
-// #define SOC_GPIO_FLEX_GLITCH_FILTER_NUM    8  // TODO: [ESP32H4] IDF-12391
+#define SOC_GPIO_SUPPORT_PIN_GLITCH_FILTER 1
+#define SOC_GPIO_FLEX_GLITCH_FILTER_NUM    8
 
 // GPIO peripheral has the ETM extension
 #define SOC_GPIO_SUPPORT_ETM          1
