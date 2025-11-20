@@ -5314,6 +5314,7 @@ void bta_dm_ble_set_adv_params_all  (tBTA_DM_MSG *p_data)
 }
 #endif // #if (BLE_42_ADV_EN == TRUE)
 
+#if ((BLE_42_SCAN_EN == TRUE) || (BLE_50_EXTEND_SCAN_EN == TRUE))
 /*******************************************************************************
 **
 ** Function         bta_dm_ble_update_duplicate_exceptional_list
@@ -5329,6 +5330,7 @@ void bta_dm_ble_update_duplicate_exceptional_list(tBTA_DM_MSG *p_data)
                                           p_data->ble_duplicate_exceptional_list.device_info,
                                           p_data->ble_duplicate_exceptional_list.exceptional_list_cb);
 }
+#endif // ((BLE_42_SCAN_EN == TRUE) || (BLE_50_EXTEND_SCAN_EN == TRUE))
 
 #if (BLE_42_ADV_EN == TRUE)
 /*******************************************************************************
