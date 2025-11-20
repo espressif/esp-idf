@@ -7,6 +7,7 @@
 #include "sdkconfig.h"
 #include "esp_ieee802154.h"
 #include "esp_openthread_ncp.h"
+#include "esp_spinel_ncp_vendor_macro.h"
 #include "ncp_base.hpp"
 
 #if (CONFIG_ESP_COEX_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE)
