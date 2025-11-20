@@ -1391,9 +1391,9 @@ void GATT_Deregister (tGATT_IF gatt_if)
             }
         }
     }
-#if (tGATT_BG_CONN_DEV == TRUE)
+#if (GATT_BG_CONN_DEV == TRUE)
     gatt_deregister_bgdev_list(gatt_if);
-#endif // #if (tGATT_BG_CONN_DEV == TRUE)
+#endif // #if (GATT_BG_CONN_DEV == TRUE)
 
     memset (p_reg, 0, sizeof(tGATT_REG));
 }
@@ -1469,11 +1469,11 @@ BOOLEAN GATT_Connect (tGATT_IF gatt_if, BD_ADDR bd_addr, tBLE_ADDR_TYPE bd_addr_
     if (is_direct) {
         status = gatt_act_connect (p_reg, bd_addr, bd_addr_type, transport, is_aux, is_pawr_synced, adv_handle, subevent);
     } else {
-#if (tGATT_BG_CONN_DEV == TRUE)
+#if (GATT_BG_CONN_DEV == TRUE)
         if (transport == BT_TRANSPORT_LE) {
             status = gatt_update_auto_connect_dev(gatt_if, TRUE, bd_addr, TRUE);
         } else
-#endif // #if (tGATT_BG_CONN_DEV == TRUE)
+#endif // #if (GATT_BG_CONN_DEV == TRUE)
         {
             GATT_TRACE_ERROR("Unsupported transport for background connection");
         }
@@ -1531,7 +1531,7 @@ BOOLEAN GATT_CancelConnect (tGATT_IF gatt_if, BD_ADDR bd_addr, BOOLEAN is_direct
             status = gatt_cancel_open(gatt_if, bd_addr);
         }
     } else {
-#if (tGATT_BG_CONN_DEV == TRUE)
+#if (GATT_BG_CONN_DEV == TRUE)
         if (!gatt_if) {
             if (gatt_get_num_apps_for_bg_dev(bd_addr)) {
                 while (gatt_find_app_for_bg_dev(bd_addr, &temp_gatt_if)) {
@@ -1544,7 +1544,7 @@ BOOLEAN GATT_CancelConnect (tGATT_IF gatt_if, BD_ADDR bd_addr, BOOLEAN is_direct
         } else {
             status = gatt_remove_bg_dev_for_app(gatt_if, bd_addr);
         }
-#endif // #if (tGATT_BG_CONN_DEV == TRUE)
+#endif // #if (GATT_BG_CONN_DEV == TRUE)
     }
 
     return status;

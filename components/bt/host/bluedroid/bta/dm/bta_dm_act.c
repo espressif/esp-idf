@@ -599,7 +599,9 @@ void bta_dm_disable (tBTA_DM_MSG *p_data)
 #endif
 
 #if BLE_INCLUDED == TRUE && BTA_GATT_INCLUDED == TRUE
+#if (GATT_BG_CONN_DEV == TRUE)
     BTM_BleClearBgConnDev();
+#endif // (GATT_BG_CONN_DEV == TRUE)
 #endif
 
     if (BTM_GetNumAclLinks() == 0) {

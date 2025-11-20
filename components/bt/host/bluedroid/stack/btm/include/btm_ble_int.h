@@ -464,11 +464,11 @@ void btm_ble_remove_from_white_list_complete(UINT8 *p, UINT16 evt_len);
 void btm_ble_clear_white_list_complete(UINT8 *p, UINT16 evt_len);
 void btm_ble_white_list_init(UINT8 white_list_size);
 
-#if (tGATT_BG_CONN_DEV == TRUE)
+#if (GATT_BG_CONN_DEV == TRUE)
 /* background connection function */
 BOOLEAN btm_ble_suspend_bg_conn(void);
 BOOLEAN btm_ble_resume_bg_conn(void);
-#endif // #if (tGATT_BG_CONN_DEV == TRUE)
+#endif // #if (GATT_BG_CONN_DEV == TRUE)
 
 void btm_ble_initiate_select_conn(BD_ADDR bda);
 BOOLEAN btm_ble_start_auto_conn(BOOLEAN start);
