@@ -236,7 +236,7 @@ menu "Hardware Settings"
     menu "Peripheral Control"
         config ESP_PERIPH_CTRL_FUNC_IN_IRAM
             bool "Place peripheral control functions into IRAM"
-            default n
+            default y
             help
                 Place peripheral control functions (e.g. periph_module_reset) into IRAM,
                 so that these functions can be IRAM-safe and able to be called in the other IRAM interrupt context.
