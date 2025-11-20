@@ -11,6 +11,9 @@
 extern "C" {
 #endif
 
+// MCPWM base address macro for multi-group support
+#define DR_REG_MCPWM_BASE(i)     (DR_REG_MCPWM0_BASE + (i) * 0x1000)
+
 /** MCPWM_TIMER0_CFG0_REG register
  *  PWM timer0 period and update method configuration register.
  */

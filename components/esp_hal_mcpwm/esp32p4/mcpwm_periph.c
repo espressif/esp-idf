@@ -153,7 +153,6 @@ const soc_mcpwm_signal_desc_t soc_mcpwm_signals[2] = {
 #if SOC_MCPWM_SUPPORT_SLEEP_RETENTION
 /**
  * MCPWM Registers to be saved during sleep retention
- * - Clk Configuration registers, e.g.: MCPWM_CLK_CFG_REG
  * - Timer Configuration registers, e.g.: MCPWM_TIMER_SYNCI_CFG_REG, MCPWM_TIMER0_CFG0_REG, MCPWM_TIMER0_CFG1_REG, MCPWM_TIMER0_CFG1_REG
  * - Operator Configuration registers, e.g.: MCPWM_OPERATOR_TIMERSEL_REG
  *   |- Generator Configuration registers, e.g.: MCPWM_GEN0_STMP_CFG_REG, MCPWM_GEN0_TSTMP_A_REG, MCPWM_GEN0_TSTMP_B_REG, MCPWM_GEN0_CFG0_REG, MCPWM_GEN0_FORCE_REG, MCPWM_GEN0_A_REG, MCPWM_GEN0_B_REG
@@ -165,9 +164,9 @@ const soc_mcpwm_signal_desc_t soc_mcpwm_signals[2] = {
  * - ETM Configurations, e.g.: MCPWM_EVT_EN_REG, MCPWM_TASK_EN_REG
  * - Misc Configurations, e.g.: MCPWM_UPDATE_CFG_REG
 */
-#define MCPWM_RETENTION_REGS_CNT 68
-#define MCPWM_RETENTION_REGS_BASE(i) REG_MCPWM_BASE(i)
-static const uint32_t mcpwm_regs_map[4] = {0xefffeeef, 0x7efffbff, 0x1ff18, 0x0};
+#define MCPWM_RETENTION_REGS_CNT 67
+#define MCPWM_RETENTION_REGS_BASE(i) (REG_MCPWM_BASE(i) + 0x4)
+static const uint32_t mcpwm_regs_map[4] = {0xf7fff777, 0x3f7ffdff, 0xff8c, 0x0};
 #define MCPWM_SLEEP_RETENTION_ENTRIES(mcpwm_port) {  \
     /* backup stage: save configuration registers \
        restore stage: restore the configuration registers */ \
