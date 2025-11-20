@@ -69,7 +69,9 @@ static tBTM_BLE_VENDOR_HCI_EVT_CBACK *ble_vs_evt_callback = NULL;
 **  Local functions
 *******************************************************************************/
 static void btm_ble_update_adv_flag(UINT8 flag);
+#if (BLE_42_SCAN_EN == TRUE)
 static void btm_ble_process_adv_pkt_cont(BD_ADDR bda, UINT8 addr_type, UINT8 evt_type, UINT8 *p);
+#endif // (BLE_42_SCAN_EN == TRUE)
 
 UINT8 *btm_ble_build_adv_data(tBTM_BLE_AD_MASK *p_data_mask, UINT8 **p_dst,
                               tBTM_BLE_ADV_DATA *p_data);
@@ -414,7 +416,9 @@ tBTM_STATUS BTM_BleScan(BOOLEAN start, UINT32 duration,
 
         btm_cb.ble_ctr_cb.p_scan_results_cb = p_results_cb;
         btm_cb.ble_ctr_cb.p_scan_cmpl_cb = p_cmpl_cb;
+#if (BLE_ADV_REPORT_FLOW_CONTROL == TRUE)
         btm_cb.ble_ctr_cb.p_obs_discard_cb = p_discard_cb;
+#endif // (BLE_ADV_REPORT_FLOW_CONTROL == TRUE)
         status = BTM_CMD_STARTED;
 
         /* scan is not started */
@@ -3081,7 +3085,6 @@ static void btm_adv_pkt_handler(void *arg)
     UNUSED(hci_evt_code);
     UNUSED(hci_evt_len);
 }
-#endif // #if (BLE_42_SCAN_EN == TRUE)
 
 /*******************************************************************************
 **
@@ -3349,7 +3352,7 @@ void btm_ble_process_direct_adv_pkt(UINT8 *p)
     // TODO
 }
 
-#if (BLE_42_SCAN_EN == TRUE)
+
 /*******************************************************************************
 **
 ** Function         btm_ble_start_scan
@@ -4031,8 +4034,9 @@ void btm_ble_init (void)
     BTM_TRACE_DEBUG("%s", __func__);
 
     tBTM_BLE_CB *p_cb = &btm_cb.ble_ctr_cb;
-
+#if (BLE_42_SCAN_EN == TRUE)
     btu_free_timer(&p_cb->scan_timer_ent);
+#endif // (BLE_42_SCAN_EN == TRUE)
     btu_free_timer(&p_cb->inq_var.fast_adv_timer);
     memset(p_cb, 0, sizeof(tBTM_BLE_CB));
 #if (BLE_TOPOLOGY_CHECK == TRUE)
