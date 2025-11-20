@@ -169,7 +169,9 @@ enum {
     BTA_DM_API_CLEAR_WHITE_LIST_EVT,
     BTA_DM_API_READ_RSSI_EVT,
 #if BLE_INCLUDED == TRUE
+#if ((BLE_42_SCAN_EN == TRUE) || (BLE_50_EXTEND_SCAN_EN == TRUE))
     BTA_DM_API_UPDATE_DUPLICATE_EXCEPTIONAL_LIST_EVT,
+#endif // ((BLE_42_SCAN_EN == TRUE) || (BLE_50_EXTEND_SCAN_EN == TRUE))
 #endif
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
     BTA_DM_API_READ_PHY_EVT,
@@ -433,6 +435,7 @@ typedef struct {
     tBTA_UPDATE_WHITELIST_CBACK *update_wl_cb;
 }tBTA_DM_API_UPDATE_WHITE_LIST;
 
+#if ((BLE_42_SCAN_EN == TRUE) || (BLE_50_EXTEND_SCAN_EN == TRUE))
 typedef struct {
     BT_HDR    hdr;
     UINT8     subcode;
@@ -440,6 +443,7 @@ typedef struct {
     BD_ADDR   device_info;
     tBTA_UPDATE_DUPLICATE_EXCEPTIONAL_LIST_CMPL_CBACK *exceptional_list_cb;
 }tBTA_DM_API_UPDATE_DUPLICATE_EXCEPTIONAL_LIST;
+#endif // ((BLE_42_SCAN_EN == TRUE) || (BLE_50_EXTEND_SCAN_EN == TRUE))
 
 #endif  ///BLE_INCLUDED == TRUE
 

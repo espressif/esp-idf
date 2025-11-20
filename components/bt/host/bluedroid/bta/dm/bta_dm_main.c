@@ -176,7 +176,9 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
     bta_dm_clear_white_list,                /* BTA_DM_API_CLEAR_WHITE_LIST_EVT */
     bta_dm_read_rssi,                       /* BTA_DM_API_READ_RSSI_EVT */
 #if BLE_INCLUDED == TRUE
+#if ((BLE_42_SCAN_EN == TRUE) || (BLE_50_EXTEND_SCAN_EN == TRUE))
     bta_dm_ble_update_duplicate_exceptional_list,/* BTA_DM_API_UPDATE_DUPLICATE_EXCEPTIONAL_LIST_EVT */
+#endif // ((BLE_42_SCAN_EN == TRUE) || (BLE_50_EXTEND_SCAN_EN == TRUE))
 #endif
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
     bta_dm_ble_gap_read_phy,                /* BTA_DM_API_READ_PHY_EVT */
