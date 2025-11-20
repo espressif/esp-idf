@@ -154,9 +154,8 @@
 #define XTAL32K_P_GPIO_NUM 15
 #define XTAL32K_N_GPIO_NUM 16
 
-#define MAX_RTC_GPIO_NUM 21
-#define MAX_PAD_GPIO_NUM 48
-#define MAX_GPIO_NUM    53
+#define MAX_RTC_GPIO_NUM    21
+
 
 #define REG_IO_MUX_BASE DR_REG_IO_MUX_BASE
 #define PIN_CTRL                          (REG_IO_MUX_BASE +0x00)

@@ -338,7 +338,7 @@ __attribute__((always_inline))
 static inline void gpio_ll_set_level(gpio_dev_t *hw, uint32_t gpio_num, uint32_t level)
 {
 #if HAL_CONFIG(GPIO_USE_ROM_API)
-    gpio_set_output_level(gpio_num, level);
+    rom_gpio_set_output_level(gpio_num, level);
 #else
     if (level) {
         hw->out_w1ts.val = 1 << gpio_num;
@@ -364,7 +364,7 @@ __attribute__((always_inline))
 static inline int gpio_ll_get_level(gpio_dev_t *hw, uint32_t gpio_num)
 {
 #if HAL_CONFIG(GPIO_USE_ROM_API)
-    return gpio_get_input_level(gpio_num);
+    return rom_gpio_get_input_level(gpio_num);
 #else
     return (hw->in.in_data_next >> gpio_num) & 0x1;
 #endif

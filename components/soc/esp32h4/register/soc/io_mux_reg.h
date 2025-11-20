@@ -138,8 +138,7 @@ extern "C" {
 #define USB_OTG_INT_PHY_DP_GPIO_NUM     USB_INT_PHY1_DP_GPIO_NUM
 
 #define MAX_RTC_GPIO_NUM              5
-#define MAX_PAD_GPIO_NUM             39
-#define MAX_GPIO_NUM                 39
+
 
 #define REG_IO_MUX_BASE                             DR_REG_IO_MUX_BASE
 // definitions above are inherited from previous version of code, should double check

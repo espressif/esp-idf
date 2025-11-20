@@ -579,14 +579,14 @@ esp_err_t gpio_isr_handler_remove(gpio_num_t gpio_num)
     return ESP_OK;
 }
 
-void gpio_uninstall_isr_service(void)
+esp_err_t gpio_uninstall_isr_service(void)
 {
     gpio_isr_func_t *gpio_isr_func_free = NULL;
     gpio_isr_handle_t gpio_isr_handle_free = NULL;
     portENTER_CRITICAL(&gpio_context.gpio_spinlock);
     if (gpio_context.gpio_isr_func == NULL) {
         portEXIT_CRITICAL(&gpio_context.gpio_spinlock);
-        return;
+        return ESP_OK;
     }
     gpio_isr_func_free = gpio_context.gpio_isr_func;
     gpio_context.gpio_isr_func = NULL;
@@ -596,7 +596,7 @@ void gpio_uninstall_isr_service(void)
     portEXIT_CRITICAL(&gpio_context.gpio_spinlock);
     esp_intr_free(gpio_isr_handle_free);
     free(gpio_isr_func_free);
-    return;
+    return ESP_OK;
 }
 
 static void gpio_isr_register_on_core_static(void *param)
