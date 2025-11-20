@@ -399,6 +399,7 @@ variables:
     - *common-before_scripts
     - *setup_tools_and_idf_python_venv
   after_script: []  # ccache now is disabled for macos brew runners
+  timeout: 30m
 
 #############
 # `default` #
