@@ -4,7 +4,7 @@ if(CONFIG_SOC_TWAI_SUPPORTED)
     list(APPEND srcs "test_twai_common.cpp" "test_twai_network.cpp")
 endif()
 
-if(CONFIG_SOC_TWAI_SUPPORT_FD)
+if(CONFIG_SOC_TWAI_FD_SUPPORTED)
     list(APPEND srcs "test_twai_fd.cpp")
 endif()
 

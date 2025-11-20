@@ -477,7 +477,7 @@ def test_twai_utils_send_various_frames(twai: TwaiTestHelper) -> None:
 
 
 @pytest.mark.generic
-@idf_parametrize('target', soc_filtered_targets('SOC_TWAI_SUPPORT_FD == 1'), indirect=['target'])
+@idf_parametrize('target', soc_filtered_targets('SOC_TWAI_FD_SUPPORTED == 1'), indirect=['target'])
 def test_twai_utils_fd_frames(twai: TwaiTestHelper) -> None:
     with twai.session():
         FD_FRAMES = [

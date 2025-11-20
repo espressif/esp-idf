@@ -15,11 +15,11 @@ Overview
 
 TWAI is a highly reliable, multi-master, real-time, serial asynchronous communication protocol designed for automotive and industrial applications. It is compatible with the frame structure defined in the ISO 11898-1 standard and supports both standard frames with 11-bit identifiers and extended frames with 29-bit identifiers. The protocol supports message prioritization with lossless arbitration, automatic retransmission, and fault confinement mechanisms. The {IDF_TARGET_NAME} includes {IDF_TARGET_CONFIG_SOC_TWAI_CONTROLLER_NUM} TWAI controllers, allowing for the creation of {IDF_TARGET_CONFIG_SOC_TWAI_CONTROLLER_NUM} driver instances.
 
-.. only:: SOC_TWAI_SUPPORT_FD
+.. only:: SOC_TWAI_FD_SUPPORTED
 
     The TWAI controllers on the {IDF_TARGET_NAME} also compatible with FD format (a.k.a. CAN FD) frames defined in ISO 11898-1, and can transmit and receive both classic and FD format frames.
 
-.. only:: not SOC_TWAI_SUPPORT_FD
+.. only:: not SOC_TWAI_FD_SUPPORTED
 
     The TWAI controllers on the {IDF_TARGET_NAME} are **not compatible with FD format frames and will interpret such frames as errors.**
 
@@ -277,7 +277,7 @@ The following code demonstrates how to calculate the MASK and configure a filter
     };
     ESP_ERROR_CHECK(twai_node_config_mask_filter(node_hdl, 0, &mfilter_cfg));   // Configure on filter 0
 
-.. only:: not SOC_TWAI_SUPPORT_FD
+.. only:: not SOC_TWAI_FD_SUPPORTED
 
     Dual Filter Mode
     ^^^^^^^^^^^^^^^^
@@ -291,7 +291,7 @@ The following code demonstrates how to calculate the MASK and configure a filter
         twai_mask_filter_config_t dual_config = twai_make_dual_filter(0x020, 0x7f0, 0x013, 0x7f8, false); // id1, mask1, id2, mask2, no extend ID
         ESP_ERROR_CHECK(twai_node_config_mask_filter(node_hdl, 0, &dual_config));
 
-.. only:: SOC_TWAI_SUPPORT_FD
+.. only:: SOC_TWAI_FD_SUPPORTED
 
     Range Filter
     ^^^^^^^^^^^^

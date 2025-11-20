@@ -1754,7 +1754,7 @@ typedef union twaifd_frame_buffer_t {
             struct {
                 uint32_t dlc: 4;            // Data length code (0-15)
                 uint32_t reserved4: 1;      // Reserved bit
-                uint32_t rtr: 1;            // Remote transmission request
+                uint32_t rtr: 1;            // Remote transmission request. Note there are no remote frames in CAN FD protocol
                 uint32_t ide: 1;            // Identifier extension bit
                 uint32_t fdf: 1;            // Flexible data-rate format bit
                 uint32_t reserved8: 1;      // Reserved bit
@@ -1824,7 +1824,7 @@ typedef struct twaifd_dev_t {
     volatile twaifd_timestamp_low_reg_t timestamp_low;
     volatile twaifd_timestamp_high_reg_t timestamp_high;
     uint32_t reserved_09c[25];
-    volatile twaifd_frame_mem_t txt_mem_cell[8];
+    volatile twaifd_frame_mem_t txt_mem_cell[8]; // only 4 are actively used
     uint32_t reserved_900[437];
     volatile twaifd_timer_clk_en_reg_t timer_clk_en;
     volatile twaifd_timer_int_raw_reg_t timer_int_raw;

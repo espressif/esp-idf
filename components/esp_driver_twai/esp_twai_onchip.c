@@ -9,6 +9,11 @@
 #include "esp_private/twai_interface.h"
 #include "esp_private/twai_utils.h"
 #include "twai_private.h"
+#include "hal/twai_periph.h"
+#include "hal/twai_hal.h"
+#if SOC_HAS(TWAI_FD)
+#include "hal/twaifd_ll.h"
+#endif
 
 #if !SOC_RCC_IS_INDEPENDENT
 #define TWAI_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
@@ -22,26 +27,6 @@
 #define TWAI_PERI_ATOMIC()
 #endif
 
-#if SOC_TWAI_SUPPORT_FD
-#include "hal/twaifd_ll.h"
-static void _twai_rcc_clock_ctrl(uint8_t ctrlr_id, bool enable)
-{
-    TWAI_RCC_ATOMIC() {
-        twaifd_ll_enable_bus_clock(ctrlr_id, enable);
-        twaifd_ll_reset_register(ctrlr_id);
-    }
-    TWAI_PERI_ATOMIC() {
-        twaifd_ll_enable_clock(ctrlr_id, enable);
-    }
-}
-static void _twai_rcc_clock_sel(uint8_t ctrlr_id, twai_clock_source_t clock)
-{
-    TWAI_PERI_ATOMIC() {
-        twaifd_ll_set_clock_source(ctrlr_id, clock);
-    }
-}
-#else
-#include "hal/twai_ll.h"
 static void _twai_rcc_clock_ctrl(uint8_t ctrlr_id, bool enable)
 {
     TWAI_RCC_ATOMIC() {
@@ -58,7 +43,6 @@ static void _twai_rcc_clock_sel(uint8_t ctrlr_id, twai_clock_source_t clock)
         twai_ll_set_clock_source(ctrlr_id, clock);
     }
 }
-#endif //SOC_TWAI_SUPPORT_FD
 
 #define TWAI_IDLE_EVENT_BIT BIT0    //event used for tx_wait_all_done
 
@@ -254,7 +238,7 @@ static void _node_isr_main(void *arg)
     if (events & TWAI_HAL_EVENT_RX_BUFF_FRAME) {
         while (twai_hal_get_rx_msg_count(twai_ctx->hal)) {
             if (twai_hal_read_rx_fifo(twai_ctx->hal, &twai_ctx->rcv_buff)) {
-#if !SOC_TWAI_SUPPORT_FD
+#if !SOC_HAS(TWAI_FD)
                 // the legacy hardware filter don't support split frame format std/ext in filter, check in software
                 if (!twai_hal_soft_filter_check_msg(twai_ctx->hal, &twai_ctx->rcv_buff)) {
                     continue;   // soft filter to check if id type match the filter config
@@ -267,7 +251,7 @@ static void _node_isr_main(void *arg)
                     atomic_store(&twai_ctx->rx_isr, false);
                 }
             } else {    // failed to read from RX fifo because message is overrun
-#if !SOC_TWAI_SUPPORTS_RX_STATUS
+#if !TWAI_LL_SUPPORT(RX_STATUS)
                 twai_hal_clear_rx_fifo_overrun(twai_ctx->hal);
                 break;
 #endif
@@ -415,7 +399,7 @@ static esp_err_t _node_set_bit_timing(twai_node_handle_t node, const twai_timing
     if (timing) {
         twai_hal_configure_timing(twai_ctx->hal, timing);
     }
-#if SOC_TWAI_SUPPORT_FD
+#if SOC_HAS(TWAI_FD)
     if (timing_fd) {
         twai_ctx->valid_fd_timing = true;
         twai_hal_configure_timing_fd(twai_ctx->hal, timing_fd);
@@ -428,7 +412,7 @@ static esp_err_t _node_set_bit_timing(twai_node_handle_t node, const twai_timing
 static esp_err_t _node_calc_set_bit_timing(twai_node_handle_t node, twai_clock_source_t clk_src, const twai_timing_basic_config_t *timing, const twai_timing_basic_config_t *timing_fd)
 {
     ESP_RETURN_ON_FALSE(timing->bitrate, ESP_ERR_INVALID_ARG, TAG, "classic timing config is required");
-#if !SOC_TWAI_SUPPORT_FD
+#if !SOC_HAS(TWAI_FD)
     ESP_RETURN_ON_FALSE((!timing_fd->bitrate) || (timing_fd->bitrate == timing->bitrate), ESP_ERR_INVALID_ARG, TAG, "FD stage bitrate is not supported");
 #endif
     twai_clock_source_t root_clock_src = clk_src ? clk_src : TWAI_CLK_SRC_DEFAULT;
@@ -452,7 +436,7 @@ static esp_err_t _node_calc_set_bit_timing(twai_node_handle_t node, twai_clock_s
     if (timing->bitrate != real_baud) {
         ESP_LOGW(TAG, "bitrate precision loss, adjust from %ld to %ld", timing->bitrate, real_baud);
     }
-#if SOC_TWAI_SUPPORT_FD
+#if SOC_HAS(TWAI_FD)
     twai_timing_advanced_config_t timing_adv_fd = { .clk_src = root_clock_src, };
     if (timing_fd->bitrate) {
         real_baud = twai_node_timing_calc_param(source_freq, timing_fd, &hw_const, &timing_adv_fd);
@@ -528,13 +512,13 @@ static esp_err_t _node_config_mask_filter(twai_node_handle_t node, uint8_t filte
     uint32_t id = mask_cfg->num_of_ids ? mask_cfg->id_list[0] : mask_cfg->id;
     bool full_close = (mask_cfg->mask == UINT32_MAX) && (id == UINT32_MAX);
     ESP_RETURN_ON_FALSE(full_close || mask_cfg->dual_filter || mask_cfg->is_ext || !((mask_cfg->mask | id) & ~TWAI_STD_ID_MASK), ESP_ERR_INVALID_ARG, TAG, "std_id only (is_ext=0) but valid id/mask larger than 11 bits");
-#if SOC_TWAI_SUPPORT_FD
+#if SOC_HAS(TWAI_FD)
     // FD targets don't support Dual filter
     ESP_RETURN_ON_FALSE(!mask_cfg->dual_filter, ESP_ERR_NOT_SUPPORTED, TAG, "The target don't support Dual Filter");
 #endif
     ESP_RETURN_ON_FALSE(atomic_load(&twai_ctx->state) == TWAI_ERROR_BUS_OFF, ESP_ERR_INVALID_STATE, TAG, "filter config must do when node stopped");
 
-    twai_hal_configure_filter(twai_ctx->hal, filter_id, mask_cfg);
+    twai_hal_configure_mask_filter(twai_ctx->hal, filter_id, mask_cfg);
     return ESP_OK;
 }
 
@@ -587,7 +571,7 @@ static esp_err_t _node_queue_tx(twai_node_handle_t node, const twai_frame_t *fra
     if (frame->header.dlc && frame->buffer_len) {
         ESP_RETURN_ON_FALSE_ISR(frame->header.dlc == twaifd_len2dlc(frame->buffer_len), ESP_ERR_INVALID_ARG, TAG, "unmatched dlc and buffer_len");
     }
-#if !SOC_TWAI_SUPPORT_FD
+#if !SOC_HAS(TWAI_FD)
     ESP_RETURN_ON_FALSE_ISR(!frame->header.fdf || frame->buffer_len <= TWAI_FRAME_MAX_LEN, ESP_ERR_INVALID_ARG, TAG, "fdf flag or buffer_len not supported");
 #endif
     ESP_RETURN_ON_FALSE_ISR((frame->header.dlc <= TWAIFD_FRAME_MAX_DLC) && \
@@ -714,13 +698,13 @@ esp_err_t twai_new_node_onchip(const twai_onchip_node_config_t *node_config, twa
     // Configure GPIO
     ESP_GOTO_ON_ERROR(_node_config_io(node, node_config), err, TAG, "gpio config failed");
 #if CONFIG_PM_ENABLE
-#if SOC_TWAI_CLK_SUPPORT_APB
+#if TWAI_LL_SUPPORT(APB_CLK)
     // DFS can change APB frequency. So add lock to prevent sleep and APB freq from changing
     ESP_GOTO_ON_ERROR(esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, twai_periph_signals[ctrlr_id].module_name, &node->pm_lock), err, TAG, "init power manager failed");
 #else // XTAL
     // XTAL freq can be closed in light sleep, so we need to create a lock to prevent light sleep
     ESP_GOTO_ON_ERROR(esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, twai_periph_signals[ctrlr_id].module_name, &node->pm_lock), err, TAG, "init power manager failed");
-#endif //SOC_TWAI_CLK_SUPPORT_APB
+#endif //TWAI_LL_SUPPORT(APB_CLK)
 #endif //CONFIG_PM_ENABLE
 
     node->api_base.enable = _node_enable;

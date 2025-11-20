@@ -15,11 +15,11 @@
 
 TWAI 是一种适用于汽车和工业应用的高可靠性的多主机实时串行异步通信协议。它兼容 ISO11898-1 标准定义的帧结构，可以支持 11 位 ID 的标准帧和 29 位 ID 的扩展帧。支持报文优先级和无损仲裁，支持自动重传和故障自动隔离机制。{IDF_TARGET_NAME} 包含 {IDF_TARGET_CONFIG_SOC_TWAI_CONTROLLER_NUM} 个 TWAI 控制器，可以创建 {IDF_TARGET_CONFIG_SOC_TWAI_CONTROLLER_NUM} 个驱动实例。
 
-.. only:: SOC_TWAI_SUPPORT_FD
+.. only:: SOC_TWAI_FD_SUPPORTED
 
     {IDF_TARGET_NAME} TWAI 控制器兼容 ISO11898-1 FD (a.k.a. CAN FD) 格式帧，可以发送和接收经典格式和 FD 格式帧。
 
-.. only:: not SOC_TWAI_SUPPORT_FD
+.. only:: not SOC_TWAI_FD_SUPPORTED
 
     {IDF_TARGET_NAME} TWAI 控制器 **不兼容 ISO11898-1 FD 格式帧，并会将这些帧解析为错误。**
 
@@ -277,7 +277,7 @@ TWAI 控制器硬件可以根据 ID 对报文进行过滤，从而减少软硬�
     };
     ESP_ERROR_CHECK(twai_node_config_mask_filter(node_hdl, 0, &mfilter_cfg));   //配置过滤器0
 
-.. only:: not SOC_TWAI_SUPPORT_FD
+.. only:: not SOC_TWAI_FD_SUPPORTED
 
     双过滤器模式
     ^^^^^^^^^^^^
@@ -291,7 +291,7 @@ TWAI 控制器硬件可以根据 ID 对报文进行过滤，从而减少软硬�
         twai_mask_filter_config_t dual_config = twai_make_dual_filter(0x020, 0x7f0, 0x013, 0x7f8, false); // id1, mask1, id2, mask2, 不接收扩展ID
         ESP_ERROR_CHECK(twai_node_config_mask_filter(node_hdl, 0, &dual_config));
 
-.. only:: SOC_TWAI_SUPPORT_FD
+.. only:: SOC_TWAI_FD_SUPPORTED
 
     范围过滤器
     ^^^^^^^^^^

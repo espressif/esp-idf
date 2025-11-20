@@ -388,8 +388,6 @@ static int twai_dump_handler(int argc, char **argv)
         ret = twai_node_disable(controller->node_handle);
         ESP_RETURN_ON_ERROR(ret, TAG, "Failed to disable TWAI node%d for filter configuration: %s", controller_id, esp_err_to_name(ret));
 
-        ret = (SOC_TWAI_MASK_FILTER_NUM > 0) ? ESP_OK : ESP_ERR_INVALID_STATE;
-        ESP_RETURN_ON_ERROR(ret, TAG, "TWAI%d does not support %d mask filters", controller_id, SOC_TWAI_MASK_FILTER_NUM);
         if (mask_count > 0) {
             for (int i = 0; i < mask_count; i++) {
                 ret = twai_node_config_mask_filter(controller->node_handle, i,

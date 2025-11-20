@@ -17,7 +17,7 @@
 #include "freertos/FreeRTOS.h"
 #include "esp_twai.h"
 #include "esp_twai_onchip.h"
-#include "soc/twai_periph.h"
+#include "hal/twai_periph.h"
 #include "esp_private/gpio.h"
 #include "driver/uart.h" // for baudrate detection
 
@@ -340,7 +340,7 @@ TEST_CASE("twai mask filter (loopback)", "[twai]")
 }
 
 //------------------ Dual Filter Test -------------------//
-#if !SOC_TWAI_SUPPORT_FD
+#if !SOC_HAS(TWAI_FD)
 static IRAM_ATTR bool test_dual_filter_rx_done_cb(twai_node_handle_t handle, const twai_rx_done_event_data_t *edata, void *user_ctx)
 {
     uint8_t *test_ctrl = (uint8_t *)user_ctx;
@@ -547,7 +547,7 @@ TEST_CASE("twai bus off recovery (loopback)", "[twai]")
     }
 
     // recover node
-#if SOC_TWAI_SUPPORT_FD
+#if SOC_HAS(TWAI_FD)
     TEST_ASSERT_GREATER_THAN(200, node_status.tx_error_count);
 #else
     TEST_ASSERT_EQUAL(128, node_status.tx_error_count); // TEC become 128 when bus off on legacy chips

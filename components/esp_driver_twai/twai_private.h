@@ -25,8 +25,6 @@
 #include "esp_check.h"
 #include "esp_err.h"
 #include "soc/soc_caps.h"
-#include "soc/twai_periph.h"
-#include "hal/twai_hal.h"
 #include "esp_intr_alloc.h"
 #include "esp_heap_caps.h"
 #include "esp_clk_tree.h"

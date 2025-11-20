@@ -5,7 +5,7 @@ menu "TWAI Configuration"
 
     config EXAMPLE_ENABLE_TWAI_FD
         bool "Enable TWAI-FD Support"
-        depends on SOC_TWAI_SUPPORT_FD
+        depends on SOC_TWAI_FD_SUPPORTED
         default false
         help
             Enable TWAI-FD (Flexible Data-rate) support.
