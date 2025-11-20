@@ -31,7 +31,7 @@ test -n "$ESP_PYTHON"; or return 1
 
 $ESP_PYTHON --version
 echo "$ESP_PYTHON has been detected"
-set -x ESP_PYTHON "$ESP_PYTHON"
+set -gx ESP_PYTHON "$ESP_PYTHON"
 
 end
 detect_python # Make sure at last line call function, because outside caller need its return value
