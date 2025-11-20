@@ -750,7 +750,7 @@ void bta_sys_set_trace_level(UINT8 level)
 {
     appl_trace_level = level;
 }
-
+#if (CLASSIC_BT_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         bta_sys_get_sys_features
@@ -764,3 +764,4 @@ UINT16 bta_sys_get_sys_features (void)
 {
     return bta_sys_cb.sys_features;
 }
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
