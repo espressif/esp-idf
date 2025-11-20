@@ -65,6 +65,12 @@ tools/test_apps/system/gdb_loadable_elf:
       temporary: true
       reason: target esp32c6, esp32h2 is not supported yet
 
+tools/test_apps/system/gdbstub_runtime:
+  disable_test:
+    - if: IDF_TARGET == "esp32p4"
+      temporary: true
+      reason: p4 rev3 migration # TODO: IDF-13142
+
 tools/test_apps/system/log:
   disable_test:
     - if: IDF_TARGET not in ["esp32", "esp32c3"]

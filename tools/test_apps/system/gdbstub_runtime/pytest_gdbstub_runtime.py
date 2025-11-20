@@ -41,6 +41,7 @@ def run_and_break(dut: PanicTestDut, cmd: str) -> Dict[Any, Any]:
 
 @pytest.mark.generic
 @idf_parametrize('target', ['esp32p4'], indirect=['target'])
+@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration, IDF-13142')
 def test_hwloop_jump(dut: PanicTestDut) -> None:
     start_gdb(dut)
 
@@ -100,6 +101,7 @@ def test_hwloop_jump(dut: PanicTestDut) -> None:
 
 @pytest.mark.generic
 @idf_parametrize('target', ['supported_targets'], indirect=['target'])
+@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration, IDF-13142')
 def test_gdbstub_runtime(dut: PanicTestDut) -> None:
     start_gdb(dut)
 
@@ -202,7 +204,9 @@ def test_gdbstub_runtime(dut: PanicTestDut) -> None:
 
 
 @pytest.mark.generic
-@pytest.mark.temp_skip_ci(targets=['esp32', 'esp32s2', 'esp32s3'], reason='fix IDF-7927')
+@pytest.mark.temp_skip_ci(
+    targets=['esp32', 'esp32s2', 'esp32s3', 'esp32p4'], reason='fix IDF-7927, p4 rev3 migration, IDF-13142'
+)
 @idf_parametrize('target', ['esp32', 'esp32s2', 'esp32s3'], indirect=['target'])
 def test_gdbstub_runtime_xtensa_stepping_bug(dut: PanicTestDut) -> None:
     start_gdb(dut)
