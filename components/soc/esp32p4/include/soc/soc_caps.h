@@ -666,6 +666,7 @@
 #define SOC_FLASH_ENCRYPTION_XTS_AES_OPTIONS 1
 #define SOC_FLASH_ENCRYPTION_XTS_AES_128    1  /* SOC_EFUSE_XTS_AES_KEY_128 (1) || SOC_KEY_MANAGER_FE_KEY_DEPLOY_XTS_AES_128 (1) */
 #define SOC_FLASH_ENCRYPTION_XTS_AES_256    1  /* SOC_EFUSE_XTS_AES_KEY_256 (1) || SOC_KEY_MANAGER_FE_KEY_DEPLOY_XTS_AES_256 (1) */
+
 /*-------------------------- MEMPROT CAPS ------------------------------------*/
 
 /*-------------------------- UART CAPS ---------------------------------------*/
