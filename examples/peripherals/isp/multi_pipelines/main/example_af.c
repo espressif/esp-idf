@@ -187,8 +187,7 @@ static void example_af_task(void *arg)
 }
 
 esp_err_t example_isp_af_init(isp_proc_handle_t isp_proc,
-                              esp_sccb_io_handle_t dw9714_io_handle,
-                              const example_isp_af_config_t *config)
+                              esp_sccb_io_handle_t dw9714_io_handle)
 {
     if (isp_proc == NULL || dw9714_io_handle == NULL) {
         ESP_LOGE(TAG, "Invalid arguments");

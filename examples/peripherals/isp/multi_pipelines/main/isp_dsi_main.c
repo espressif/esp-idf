@@ -26,6 +26,7 @@
 // Include modular ISP components
 #include "example_buffer.h"
 #include "example_af.h"
+#include "example_awb.h"
 #include "example_pipelines.h"
 #ifdef CONFIG_EXAMPLE_ISP_CROP_ENABLE
 #include "example_crop.h"
@@ -222,8 +223,23 @@ void app_main(void)
         return;
     }
 
+#if CONFIG_ESP32P4_REV_MIN_FULL >= 300
+    //---------------White Balance Init------------------//
+    ret = example_isp_awb_init(isp_proc);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "AWB init fail[%d]", ret);
+        return;
+    }
+
+    ret = example_isp_awb_start(isp_proc);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "AWB enable fail[%d]", ret);
+        return;
+    }
+#endif /* CONFIG_ESP32P4_REV_MIN_FULL >= 300 */
+
     //---------------AF Init and Start------------------//
-    ret = example_isp_af_init(isp_proc, dw9714_io_handle, NULL);
+    ret = example_isp_af_init(isp_proc, dw9714_io_handle);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "AF init fail[%d]", ret);
         return;
