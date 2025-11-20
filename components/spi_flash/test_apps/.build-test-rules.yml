@@ -55,6 +55,7 @@ components/spi_flash/test_apps/flash_mmap:
     - if: CONFIG_NAME == "xip_psram_with_rom_impl" and SOC_SPIRAM_XIP_SUPPORTED == 1 and IDF_TARGET != "esp32s2"
   disable:
     - if: IDF_TARGET == "esp32c61" and CONFIG_NAME == "xip_psram_with_rom_impl"
+    - if: IDF_TARGET == "esp32s31" # TODO: IDF-14669
       temporary: true
       reason: not supported yet  # TODO: [ESP32C61] IDF-12784
 
