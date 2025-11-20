@@ -1,4 +1,4 @@
 dependencies:
   pcap: "^1.0.0"
   espressif/ethernet_init:
-    version: "1.0.0"
+    version: "~1.2.0"

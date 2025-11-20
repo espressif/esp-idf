@@ -4,6 +4,7 @@
   depends_components:
     - ieee802154
     - openthread
+    - protocol_examples_common
   depends_filepatterns:
     - examples/zigbee/light_sample/**/*
 

@@ -60,6 +60,7 @@ examples/security/tee/tee_secure_ota:
     - if: IDF_TARGET not in ["esp32c6", "esp32c5", "esp32c61"]
   depends_components:
     - esp_tee
+    - protocol_examples_common
   depends_filepatterns:
     - examples/security/tee/tee_secure_ota/**/*
 

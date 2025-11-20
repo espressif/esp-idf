@@ -116,6 +116,7 @@ examples/peripherals/i2c/i2c_slave_network_sensor:
     - if: SOC_I2C_SLAVE_CAN_GET_STRETCH_CAUSE != 1 or (SOC_WIFI_SUPPORTED != 1 and SOC_EMAC_SUPPORTED != 1)
   depends_components:
     - esp_driver_i2c
+    - protocol_examples_common
 
 examples/peripherals/i2c/i2c_tools:
   disable:
@@ -358,6 +359,7 @@ examples/peripherals/parlio/parlio_rx:
     - if: SOC_PARLIO_SUPPORTED != 1
   depends_components:
     - esp_driver_parlio
+    - protocol_examples_common
 
 examples/peripherals/parlio/parlio_tx/advanced_rgb_led_matrix:
   disable:
