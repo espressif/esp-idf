@@ -123,7 +123,9 @@ enum {
     BTA_DM_API_BLE_CONFIRM_REPLY_EVT,
     BTA_DM_API_BLE_SEC_GRANT_EVT,
 #endif  ///SMP_INCLUDED == TRUE
+#if (BLE_GATT_BGCONN == TRUE)
     BTA_DM_API_BLE_SET_BG_CONN_TYPE,
+#endif // (BLE_GATT_BGCONN == TRUE)
     BTA_DM_API_BLE_CONN_PARAM_EVT,
     /*******This event added by Yulong at 2016/10/25 to
     support the scan filter setting for the APP******/

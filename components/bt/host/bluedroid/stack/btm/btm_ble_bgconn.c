@@ -39,9 +39,10 @@
 #endif
 
 #if (BLE_INCLUDED == TRUE)
-
 static void btm_suspend_wl_activity(tBTM_BLE_WL_STATE wl_state);
 static void btm_wl_update_to_controller(void);
+
+#if (BLE_GATT_BGCONN == TRUE)
 
 // Unfortunately (for now?) we have to maintain a copy of the device whitelist
 // on the host to determine if a device is pending to be connected or not. This
@@ -118,6 +119,7 @@ static bool background_connections_pending(void)
     }
     return pending_connections;
 }
+#endif // (BLE_GATT_BGCONN == TRUE)
 
 /*******************************************************************************
 **
@@ -335,6 +337,7 @@ BOOLEAN btm_update_dev_to_white_list(BOOLEAN to_add, BD_ADDR bd_addr, tBLE_ADDR_
         return FALSE;
     }
 
+#if (BLE_GATT_BGCONN == TRUE)
     if (to_add) {
         /* added the bd_addr to the connection hash map queue */
         if(!background_connection_add((bt_bdaddr_t *)bd_addr)) {
@@ -354,6 +357,7 @@ BOOLEAN btm_update_dev_to_white_list(BOOLEAN to_add, BD_ADDR bd_addr, tBLE_ADDR_
             return TRUE;
         }
     }
+#endif // (BLE_GATT_BGCONN == TRUE)
 
     if (update_wl_cb){
         //save add whitelist complete callback
@@ -381,7 +385,10 @@ void btm_ble_clear_white_list (tBTM_UPDATE_WHITELIST_CBACK *update_wl_cb)
 
     BTM_TRACE_EVENT ("btm_ble_clear_white_list");
     btsnd_hcic_ble_clear_white_list();
+
+#if (BLE_GATT_BGCONN == TRUE)
     background_connections_clear();
+#endif // (BLE_GATT_BGCONN == TRUE)
 
     if (update_wl_cb) {
         p_cb->update_wl_cb = update_wl_cb;
@@ -488,6 +495,7 @@ void btm_ble_remove_from_white_list_complete(UINT8 *p, UINT16 evt_len)
     }
 }
 
+#if (BLE_GATT_BGCONN == TRUE)
 /*******************************************************************************
 **
 ** Function         btm_ble_start_auto_conn
@@ -660,6 +668,8 @@ void btm_ble_initiate_select_conn(BD_ADDR bda)
         BTM_TRACE_ERROR("btm_ble_initiate_select_conn failed");
     }
 }
+#endif // (BLE_GATT_BGCONN == TRUE)
+
 #if (GATT_BG_CONN_DEV == TRUE)
 /*******************************************************************************
 **
@@ -698,12 +708,15 @@ BOOLEAN btm_ble_suspend_bg_conn(void)
 *******************************************************************************/
 static void btm_suspend_wl_activity(tBTM_BLE_WL_STATE wl_state)
 {
+#if (BLE_GATT_BGCONN == TRUE)
     if (wl_state & BTM_BLE_WL_INIT) {
         btm_ble_start_auto_conn(FALSE);
     }
     if (wl_state & BTM_BLE_WL_SCAN) {
         btm_ble_start_select_conn(FALSE, NULL);
     }
+#endif // (BLE_GATT_BGCONN == TRUE)
+
 #if (BLE_42_ADV_EN == TRUE)
     if (wl_state & BTM_BLE_WL_ADV) {
         btm_ble_stop_adv();
