@@ -956,6 +956,7 @@ BOOLEAN BTM_BleLocalPrivacyEnabled(void)
 #endif
 }
 
+#if (BLE_GATT_BGCONN == TRUE)
 /*******************************************************************************
 **
 ** Function         BTM_BleSetBgConnType
@@ -1014,6 +1015,7 @@ BOOLEAN BTM_BleSetBgConnType(tBTM_BLE_CONN_TYPE   bg_conn_type,
     }
     return started;
 }
+#endif // (BLE_GATT_BGCONN == TRUE)
 
 #if (GATT_BG_CONN_DEV == TRUE)
 /*******************************************************************************
@@ -2987,6 +2989,7 @@ void btm_clear_all_pending_le_entry(void)
     }
 }
 
+#if (BLE_GATT_BGCONN == TRUE)
 /*******************************************************************************
 **
 ** Function         btm_send_sel_conn_callback
@@ -3030,6 +3033,7 @@ void btm_send_sel_conn_callback(BD_ADDR remote_bda, UINT8 evt_type, UINT8 *p_dat
         btm_ble_initiate_select_conn(remote_bda);
     }
 }
+#endif // #if (BLE_GATT_BGCONN == TRUE)
 
 #if (BLE_42_SCAN_EN == TRUE)
 static void btm_adv_pkt_handler(void *arg)
@@ -3187,10 +3191,13 @@ static void btm_ble_process_last_adv_pkt(void)
                  __func__);
         return;
     }
+#if (BLE_GATT_BGCONN == TRUE)
     /* background connection in selective connection mode */
     if (btm_cb.ble_ctr_cb.bg_conn_type == BTM_BLE_CONN_SELECTIVE) {
         //do nothing
-    } else {
+    } else
+#endif // (BLE_GATT_BGCONN == TRUE)
+    {
         if (p_scan_results_cb && (result & BTM_BLE_DISCO_RESULT)) {
             (p_scan_results_cb)((tBTM_INQ_RESULTS *) &p_i->inq_info.results, p_le_inq_cb->adv_data_cache);
             p_le_inq_cb->adv_len = 0;
@@ -3298,6 +3305,7 @@ static void btm_ble_process_adv_pkt_cont(BD_ADDR bda, UINT8 addr_type, UINT8 evt
             btm_acl_update_busy_level (BTM_BLI_INQ_DONE_EVT);
         }
     }
+#if (BLE_GATT_BGCONN == TRUE)
     /* background connection in selective connection mode */
     if (btm_cb.ble_ctr_cb.bg_conn_type == BTM_BLE_CONN_SELECTIVE) {
         if (result & BTM_BLE_SEL_CONN_RESULT) {
@@ -3305,7 +3313,9 @@ static void btm_ble_process_adv_pkt_cont(BD_ADDR bda, UINT8 addr_type, UINT8 evt
         } else {
             BTM_TRACE_DEBUG("None LE device, can not initiate selective connection\n");
         }
-    } else {
+    } else
+#endif // (BLE_GATT_BGCONN == TRUE)
+    {
         if (p_scan_results_cb && (result & BTM_BLE_DISCO_RESULT)) {
             (p_scan_results_cb)((tBTM_INQ_RESULTS *) &p_i->inq_info.results, p_le_inq_cb->adv_data_cache);
             p_le_inq_cb->adv_len = 0;

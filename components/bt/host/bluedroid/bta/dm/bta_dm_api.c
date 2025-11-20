@@ -1647,6 +1647,8 @@ extern void BTA_DmBleAdvStop (BOOLEAN start, tBTA_START_STOP_ADV_CMPL_CBACK *p_s
 #endif // #if (BLE_42_ADV_EN == TRUE)
 
 #endif
+
+#if (BLE_GATT_BGCONN == TRUE)
 /*******************************************************************************
 **
 ** Function         BTA_DmBleSetBgConnType
@@ -1677,6 +1679,7 @@ void BTA_DmBleSetBgConnType(tBTA_DM_BLE_CONN_TYPE bg_conn_type, tBTA_DM_BLE_SEL_
     }
 #endif
 }
+#endif// (BLE_GATT_BGCONN == TRUE)
 
 /*******************************************************************************
 **
