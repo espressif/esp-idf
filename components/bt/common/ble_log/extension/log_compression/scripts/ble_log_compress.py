@@ -19,6 +19,7 @@ This script processes Bluetooth source files to compress logging statements.
 
 import argparse
 import enum
+import importlib.util
 import logging
 import os
 import re
@@ -33,6 +34,7 @@ from typing import Dict
 from typing import List
 from typing import Tuple
 from typing import Union
+from typing import cast
 
 import tree_sitter_c as tsc
 import yaml
@@ -72,10 +74,16 @@ CLANG_PARSER: Union[Parser, None] = None
 SOURCE_ENUM_MAP = {
     'BLE_HOST': 0,
     'BLE_MESH': 1,
+    'BLE_MESH_LIB': 2,
 }
 
 # Functions that require hex formatting
-HEX_FUNCTIONS = ['bt_hex']  # Used in Mesh and Audio modules
+HEX_FUNCTIONS = {
+    # func_name: (arg_cnt, buf_idx, buf_len)
+    # Negative buf_len indicates constant buffer size
+    'bt_hex': (2, 0, 1),  # Used in Mesh and Audio modules
+    'MAC2STR': (1, 0, -6),  # Used in Bluedroid Host
+}
 
 # C keywords to exclude from function names
 C_KEYWORDS = {
@@ -117,15 +125,6 @@ FUNC_MACROS = {'__func__', '__FUNCTION__'}
 
 LINE_MACROS = {
     '__LINE__',
-}
-
-BLUEDROID_LOG_MODE_LEVEL_GET = {
-    'BTM': 'btm_cb.trace_level',
-    'L2CAP': 'l2cb.l2cap_trace_level',
-    'GAP': 'gap_cb.trace_level',
-    'GATT': 'gatt_cb.trace_level',
-    'SMP': 'smp_cb.trace_level',
-    'APPL': 'appl_trace_level',
 }
 
 
@@ -174,11 +173,12 @@ class LogCompressor:
     """Main class for BLE log compression."""
 
     def __init__(self) -> None:
-        self.bt_component_path = Path()
+        self.code_base_path = Path()
         self.build_dir = Path()
         self.bt_compressed_srcs_path = Path()
         self.config: dict[str, Any] = {}
         self.module_info: dict[str, Any] = {}
+        self.module_mod: dict[str, Any] = {}
 
     def init_parser(self) -> Parser:
         """Initialize tree-sitter parser for C."""
@@ -371,15 +371,20 @@ class LogCompressor:
             if (
                 arg_node.type == 'call_expression'
                 and arg_node.child_by_field_name('function')
-                and arg_node.child_by_field_name('function').text.decode('utf-8') in HEX_FUNCTIONS
+                and arg_node.child_by_field_name('function').text.decode('utf-8') in HEX_FUNCTIONS.keys()
             ):
                 # Extract arguments of the hex function
+                hex_func_name = arg_node.child_by_field_name('function').text.decode('utf-8')
                 hex_args = arg_node.child_by_field_name('arguments')
-                if hex_args and hex_args.named_child_count >= 2:
-                    buf_node = hex_args.named_children[0]
-                    len_node = hex_args.named_children[1]
+                hex_func_info = HEX_FUNCTIONS[hex_func_name]
+                if hex_args and hex_args.named_child_count == hex_func_info[0]:
+                    buf_node = hex_args.named_children[hex_func_info[1]].text.decode('utf-8')
+                    if hex_func_info[2] < 0:
+                        len_node = abs(hex_func_info[2])
+                    else:
+                        len_node = hex_args.named_children[hex_func_info[2]].text.decode('utf-8')
                     token_list = list(token)
-                    token_list[6] = f'@hex_func@{buf_node.text.decode("utf-8")}@{len_node.text.decode("utf-8")}'
+                    token_list[6] = f'@hex_func@{buf_node}@{len_node}'
                     tokens[tokens_tuple_map[i]] = tuple(token_list)
 
         log_info['argu_tokens'] = tokens
@@ -419,7 +424,7 @@ class LogCompressor:
         if (
             node.type == 'call_expression'
             and node.child_by_field_name('function')
-            and node.child_by_field_name('function').text.decode('utf-8') in HEX_FUNCTIONS
+            and node.child_by_field_name('function').text.decode('utf-8') in HEX_FUNCTIONS.keys()
         ):
             return True
 
@@ -460,53 +465,6 @@ class LogCompressor:
             Macro definition string
         """
         if not log_idx:
-            return ''
-
-        def generate_mesh_log_prefix(source: str, tag: str, print_statm: str) -> str:
-            level = tag.split('_')[-1]
-            mod = tag.split('_')[0]
-            if level == 'ERR':
-                level = 'ERROR'
-                log_level = 'BLE_MESH_LOG_LEVEL_ERROR'
-            elif level == 'WARN':
-                level = 'WARN'
-                log_level = 'BLE_MESH_LOG_LEVEL_WARN'
-            elif level == 'INFO':
-                level = 'INFO'
-                log_level = 'BLE_MESH_LOG_LEVEL_INFO'
-            elif level == 'DBG':
-                level = 'DEBUG'
-                log_level = 'BLE_MESH_LOG_LEVEL_DEBUG'
-            else:
-                LOGGER.error(f'Invalid log level {level}')
-                return ''
-            if mod == 'NET':
-                used_log_levl = 'BLE_MESH_NET_BUF_LOG_LEVEL'
-                used_log_mod = 'BLE_MESH_NET_BUF'
-            else:
-                used_log_levl = 'BLE_MESH_LOG_LEVEL'
-                used_log_mod = 'BLE_MESH'
-            return (
-                f'{{do {{ if (({used_log_levl} >= {log_level}) &&'
-                f' BLE_MESH_LOG_LEVEL_CHECK({used_log_mod}, {level})) {print_statm};}} while (0);}}\\\n'
-            )
-
-        def generate_bluedroid_log_prefix(source: str, tag: str, print_statm: str) -> str:
-            tag_info = tag.split('_')
-            mod = tag_info[0]
-
-            return (
-                f'{{if ({BLUEDROID_LOG_MODE_LEVEL_GET[mod]} >= BT_TRACE_LEVEL_{tag_info[-1]} &&'
-                f' BT_LOG_LEVEL_CHECK({mod}, {tag_info[-1]})) {print_statm};}}\\\n'
-            )
-
-        def generate_log_lvl_prefix(source: str, tag: str, print_statm: str) -> str:
-            if source == 'BLE_MESH':
-                return '    ' + generate_mesh_log_prefix(source, tag, print_statm)
-            elif source == 'BLE_HOST':  # only bluedroid host supported for now
-                return '    ' + generate_bluedroid_log_prefix(source, tag, print_statm)
-            else:
-                LOGGER.error(f'Unknown source {source}')
             return ''
 
         source_value = SOURCE_ENUM_MAP.get(source.upper())
@@ -551,41 +509,22 @@ class LogCompressor:
                 else:
                     sizes.append(f'{int(ARG_SIZE_TYPE.U32)}')
 
-            if arg_count > 0:
-                size_str = ', '.join(sizes)
-                arg_str = ', '.join(arguments).replace('\n', '')
-                macro += generate_log_lvl_prefix(
-                    source,
-                    tag,
-                    (f'BLE_LOG_COMPRESSED_HEX_PRINT({source_value}, {log_idx}, {arg_count}, {size_str}, {arg_str})'),
-                )
+            stmt = self.module_mod[source].gen_compressed_stmt(
+                log_idx,
+                source_value,
+                tag,
+                log_info['arguments'][0],
+                [{'name': arg, 'size_type': size_type} for arg, size_type in zip(arguments, sizes)],
+                [
+                    {
+                        'buffer': hex_str.split('@')[2],
+                        'length': hex_str.split('@')[3],
+                    }
+                    for hex_str in hex_func
+                ],
+            )
+            macro += cast(str, stmt)
 
-                for idx, item in enumerate(hex_func):
-                    # hex_func format: @hex_func@buf@len
-                    parts = item.split('@')
-                    if len(parts) >= 4:
-                        buf = parts[2]
-                        buf_len = parts[3]
-                        macro += generate_log_lvl_prefix(
-                            source,
-                            tag,
-                            (f'BLE_LOG_COMPRESSED_HEX_PRINT_BUF({source_value}, {log_idx}, {idx}, {buf}, {buf_len})'),
-                        )
-            else:
-                macro += generate_log_lvl_prefix(
-                    source, tag, f'BLE_LOG_COMPRESSED_HEX_PRINT_WITH_ZERO_ARGUMENTS({source_value}, {log_idx})'
-                )
-                for idx, item in enumerate(hex_func):
-                    # hex_func format: @hex_func@buf@len
-                    parts = item.split('@')
-                    if len(parts) >= 4:
-                        buf = parts[2]
-                        buf_len = parts[3]
-                        macro += generate_log_lvl_prefix(
-                            source,
-                            tag,
-                            (f'BLE_LOG_COMPRESSED_HEX_PRINT_BUF({source_value}, {log_idx}, {idx}, {buf}, {buf_len})'),
-                        )
             if (
                 'tags_with_preserve' in self.module_info[source]
                 and tag in self.module_info[source]['tags_with_preserve']
@@ -593,8 +532,7 @@ class LogCompressor:
                 macro += f'    {tag}(fmt, ##__VA_ARGS__);\\\n'
         else:
             # Non-hexified log
-            print_fmt = print_fmt or 'NULL'
-            macro += f'    BLE_LOG_COMPRESSED_PRINT({source_value}, {log_idx}, "{print_fmt}", ##__VA_ARGS__); \\\n'
+            raise ValueError('Hexify convert failed')
 
         macro += '}\n'
         return macro
@@ -716,7 +654,7 @@ class LogCompressor:
             total_cnt = 0
             for src in srcs:
                 if pattern.match(src):
-                    src_path = self.bt_component_path / src
+                    src_path = self.code_base_path / src
                     dest_path = self.bt_compressed_srcs_path / src
                     temp_path = f'{dest_path}.tmp'
                     total_cnt += 1
@@ -754,7 +692,7 @@ class LogCompressor:
             module: Module name
             macros: List of (log_id, macro_definition)
         """
-        # header_path = self.bt_component_path / self.module_info[module]['log_index_path']
+        # header_path = self.code_base_path / self.module_info[module]['log_index_path']
         header_path = self.build_dir / Path('ble_log') / Path('include') / self.module_info[module]['log_index_file']
         # Create directory if needed
         header_path.parent.mkdir(parents=True, exist_ok=True)
@@ -764,8 +702,7 @@ class LogCompressor:
             return
         elif update_state == self.db_manager.SOURCE_LOG_UPDATE_FULL:
             # Header template
-            header_content = (
-                textwrap.dedent(f"""
+            header_content = textwrap.dedent(f"""
                /*
                 * SPDX-FileCopyrightText: {datetime.now().year} Espressif Systems (Shanghai) CO LTD
                 *
@@ -778,22 +715,11 @@ class LogCompressor:
                 #include <stddef.h>
                 #include <stdlib.h>
 
-                // Compression function declarations
-                extern int ble_log_compressed_hex_print
-                        (uint32_t source, uint32_t log_index, size_t args_size_cnt, ...);
-                extern int ble_log_compressed_hex_print_buf
-                        (uint8_t source, uint32_t log_index, uint8_t buf_idx, const uint8_t *buf, size_t len);
-
-                // Compression macros
-                #define BLE_LOG_COMPRESSED_HEX_PRINT(source, log_index, args_cnt, ...) \\
-                            ble_log_compressed_hex_print(source, log_index, args_cnt, ##__VA_ARGS__)
-                #define BLE_LOG_COMPRESSED_HEX_PRINT_BUF(source, log_index, buf_idx, buf, len) \\
-                            ble_log_compressed_hex_print_buf(source, log_index, buf_idx, (const uint8_t *)buf, len)
-                #define BLE_LOG_COMPRESSED_HEX_PRINT_WITH_ZERO_ARGUMENTS(source, log_index) \\
-                            ble_log_compressed_hex_print(source, log_index, 0)
                 """).strip()
-                + '\n\n'
-            )
+
+            header_content += self.module_mod[module].gen_header_head()
+            header_content += '\n\n'
+
             # Add sorted macros
             for log_id, macro_def in sorted(macros, key=lambda x: x[0]):
                 header_content += macro_def + '\n'
@@ -852,6 +778,14 @@ class LogCompressor:
         for module in module_names:
             if module in modules:
                 self.module_info[module] = modules[module]
+                module_script_path = self.module_info[module]['script']
+                spec = self.module_mod[module] = importlib.util.spec_from_file_location(module, module_script_path)
+                if spec and spec.loader:
+                    self.module_mod[module] = importlib.util.module_from_spec(spec)
+                    spec.loader.exec_module(self.module_mod[module])
+                else:
+                    LOGGER.error(f"Failed to load module '{module}' script")
+                    raise ImportError(' Failed to load module script')
                 print(f'Found module {module} for compression\n', flush=True, end='', file=sys.stdout)
             else:
                 LOGGER.warning(f"Skipping module '{module}' - config not found")
@@ -863,7 +797,7 @@ class LogCompressor:
 
         compress_parser = subparsers.add_parser('compress')
         compress_parser.add_argument('--srcs', required=True, help='Semicolon-separated source file paths')
-        compress_parser.add_argument('--bt_path', required=True, help='Bluetooth component root path')
+        compress_parser.add_argument('--code_base_path', required=True, help='Component base path')
         compress_parser.add_argument('--module', required=True, help='Semicolon-separated module names')
         compress_parser.add_argument('--build_path', required=True, help='Build output directory')
         compress_parser.add_argument('--compressed_srcs_path', required=True, help='Directory for processed sources')
@@ -871,7 +805,7 @@ class LogCompressor:
         args = parser.parse_args()
 
         # Setup paths
-        self.bt_component_path = Path(args.bt_path)
+        self.code_base_path = Path(args.code_base_path)
         self.build_dir = Path(args.build_path)
         self.bt_compressed_srcs_path = Path(args.compressed_srcs_path)
 
@@ -947,7 +881,7 @@ class LogCompressor:
         # Mark files as processed
         for module, info in self.module_info.items():
             for temp_path in info['files_to_process']:
-                src_path = self.bt_component_path / os.path.relpath(temp_path[:-4], self.bt_compressed_srcs_path)
+                src_path = self.code_base_path / os.path.relpath(temp_path[:-4], self.bt_compressed_srcs_path)
                 db_manager.mark_file_processed(module, src_path, temp_path)
         for root, _, files in os.walk(self.bt_compressed_srcs_path):
             for name in files:
