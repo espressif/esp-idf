@@ -495,7 +495,7 @@ tBTM_STATUS BTM_BleBroadcast(BOOLEAN start, tBTM_START_STOP_ADV_CMPL_CBACK  *p_s
 #endif
 
     if (start) {
-// "start" should not be ture
+// "start" should not be true
 #if (0)
         /* update adv params */
         if (!btsnd_hcic_ble_write_adv_params ((UINT16)(p_cb->adv_interval_min ? p_cb->adv_interval_min :
@@ -902,6 +902,7 @@ void BTM_BleConfigConnParams(uint16_t int_min, uint16_t int_max, uint16_t latenc
 }
 
 #if BLE_PRIVACY_SPT == TRUE
+#if (BLE_42_SCAN_EN == TRUE)
 /*******************************************************************************
 **
 ** Function         btm_ble_resolve_random_addr_on_adv
@@ -942,6 +943,7 @@ static void btm_ble_resolve_random_addr_on_adv(void *p_rec, void *p)
 
     return;
 }
+#endif // #if (BLE_42_SCAN_EN == TRUE)
 #endif
 
 /*******************************************************************************
@@ -1301,10 +1303,10 @@ tBTM_STATUS BTM_BleSetScanFilterParams(tGATT_IF client_if, UINT32 scan_interval,
     if (BTM_BleUpdateOwnType(&addr_type_own, NULL) != 0) {
         return BTM_ILLEGAL_VALUE;
     }
-    
+
     max_scan_interval = BTM_BLE_SCAN_INT_MAX;
     max_scan_window = BTM_BLE_SCAN_WIN_MAX;
-    
+
 
     osi_mutex_lock(&scan_param_lock, OSI_MUTEX_MAX_TIMEOUT);
 

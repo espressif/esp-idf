@@ -168,6 +168,7 @@ uint32_t btc_get_ble_status(void)
         status |= BIT(BTC_BLE_STATUS_CONN);
     }
 
+#if ((SMP_INCLUDED == TRUE) || (BLE_PRIVACY_SPT == TRUE))
     // Address resolve status
     extern uint8_t btm_get_ble_addr_resolve_disable_status(void);
     uint8_t addr_resolve_disable = btm_get_ble_addr_resolve_disable_status();
@@ -175,6 +176,7 @@ uint32_t btc_get_ble_status(void)
         BTC_TRACE_WARNING("%s address resolve disabled", __func__);
         status |= BIT(BTC_BLE_STATUS_ADDR_RESOLVE_DISABLE);
     }
+#endif // #if ((SMP_INCLUDED == TRUE) || (BLE_PRIVACY_SPT == TRUE))
 
 #if (SMP_INCLUDED == TRUE)
     // Number of recorded devices

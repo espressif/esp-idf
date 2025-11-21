@@ -2183,6 +2183,8 @@ void btm_inq_rmt_name_failed (void)
     btm_sec_rmt_name_request_complete (NULL, NULL, HCI_ERR_UNSPECIFIED);
 #endif  ///SMP_INCLUDED == TRUE
 }
+
+#if (CLASSIC_BT_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         btm_read_linq_tx_power_complete
@@ -2218,6 +2220,7 @@ void btm_read_linq_tx_power_complete(UINT8 *p)
     }
 
 }
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         BTM_WriteEIR

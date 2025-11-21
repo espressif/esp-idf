@@ -1184,6 +1184,11 @@ typedef void (tBTA_DM_ENCRYPT_CBACK) (BD_ADDR bd_addr, tBTA_TRANSPORT transport,
 #define BTA_DM_BLE_SEC_MITM         BTM_BLE_SEC_ENCRYPT_MITM
 typedef tBTM_BLE_SEC_ACT            tBTA_DM_BLE_SEC_ACT;
 
+#define BTA_DM_CONTRL_UNKNOWN 0       /* Unknown state */
+#define BTA_DM_CONTRL_ACTIVE  1       /* ACL link on, SCO link ongoing, sniff mode */
+#define BTA_DM_CONTRL_SCAN    2       /* Scan state - paging/inquiry/trying to connect*/
+#define BTA_DM_CONTRL_IDLE    3       /* Idle state - page scan, LE advt, inquiry scan */
+
 typedef UINT8 tBTA_DM_CONTRL_STATE;
 
 typedef UINT8 tBTA_DM_BLE_ADV_STATE;

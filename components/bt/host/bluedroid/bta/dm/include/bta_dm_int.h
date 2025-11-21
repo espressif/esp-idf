@@ -1597,12 +1597,14 @@ typedef union {
     tBTA_DM_API_CFG_COEX_STATUS cfg_coex_status;
 #endif
     tBTA_DM_API_SEND_VENDOR_HCI_CMD vendor_hci_cmd;
+#if CLASSIC_BT_INCLUDED
     tBTA_DM_API_CONFIG_EIR config_eir;
 
     tBTA_DM_API_SET_AFH_CHANNELS set_afh_channels;
     tBTA_DM_API_PAGE_TO_SET set_page_timeout;
     tBTA_DM_API_PAGE_TO_GET get_page_timeout;
     tBTA_DM_API_SET_ACL_PKT_TYPES set_acl_pkt_types;
+#endif /* CLASSIC_BT_INCLUDED */
 #if (SDP_INCLUDED == TRUE)
     tBTA_DM_API_GET_REMOTE_NAME  get_rmt_name;
 #endif

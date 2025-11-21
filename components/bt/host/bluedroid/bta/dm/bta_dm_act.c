@@ -488,7 +488,9 @@ static void bta_dm_sys_hw_cback( tBTA_SYS_HW_EVT status )
 #endif
         /* hw is ready, go on with BTA DM initialization */
         memset(&bta_dm_search_cb, 0x00, sizeof(bta_dm_search_cb));
+#if (CLASSIC_BT_INCLUDED == TRUE)
         memset(&bta_dm_conn_srvcs, 0x00, sizeof(bta_dm_conn_srvcs));
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
 #if (CLASSIC_BT_INCLUDED == TRUE)
         memset(&bta_dm_di_cb, 0, sizeof(tBTA_DM_DI_CB));
 #endif // #if (CLASSIC_BT_INCLUDED == TRUE)
