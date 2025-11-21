@@ -57,6 +57,8 @@
 
 #if CONFIG_SPIRAM_SPEED_80M
 #define AP_HEX_PSRAM_MPLL_DEFAULT_FREQ_MHZ 320
+#elif CONFIG_SPIRAM_SPEED_250M
+#define AP_HEX_PSRAM_MPLL_DEFAULT_FREQ_MHZ 500
 #else
 #define AP_HEX_PSRAM_MPLL_DEFAULT_FREQ_MHZ 400
 #endif
@@ -466,13 +468,6 @@ esp_err_t esp_psram_impl_enable(void)
                    mode_reg.mr2.density == 0x5 ? PSRAM_SIZE_16MB :
                    mode_reg.mr2.density == 0x7 ? PSRAM_SIZE_32MB :
                    mode_reg.mr2.density == 0x6 ? PSRAM_SIZE_64MB : 0;
-
-#if CONFIG_SPIRAM_SPEED_250M
-    if (mode_reg.mr2.density == 0x7) {
-        ESP_EARLY_LOGE(TAG, "PSRAM Not support 250MHz speed");
-        return ESP_ERR_NOT_SUPPORTED;
-    }
-#endif
 
     s_config_mspi_for_psram();
     mspi_timing_psram_tuning();
