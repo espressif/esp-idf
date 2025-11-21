@@ -1700,6 +1700,9 @@ tBTM_STATUS btm_ble_start_encrypt(BD_ADDR bda, BOOLEAN use_stk, BT_OCTET16 stk)
 #if (SMP_INCLUDED == TRUE)
 void btm_ble_link_encrypted(BD_ADDR bd_addr, UINT8 encr_enable)
 {
+#if BLE_INCLUDED == TRUE
+    l2cble_notify_le_connection(bd_addr);
+#endif // BLE_INCLUDED == TRUE
     tBTM_SEC_DEV_REC    *p_dev_rec = btm_find_dev (bd_addr);
     BOOLEAN             enc_cback;
 
