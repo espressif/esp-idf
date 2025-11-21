@@ -403,20 +403,12 @@ SECTIONS
      * C++ constructor tables.
      *
      * Excluding crtbegin.o/crtend.o since IDF doesn't use the toolchain crt.
-     *
-     * RISC-V gcc is configured with --enable-initfini-array so it emits
-     * .init_array section instead. But the init_priority sections will be
-     * sorted for iteration in ascending order during startup.
-     * The rest of the init_array sections is sorted for iteration in descending
-     * order during startup, however. Hence a different section is generated for
-     * the init_priority functions which is iterated in ascending order during
-     * startup. The corresponding code can be found in startup.c.
      */
-    ALIGNED_SYMBOL(4, __init_priority_array_start)
-    KEEP (*(EXCLUDE_FILE (*crtend.* *crtbegin.*) .init_array.*))
-    __init_priority_array_end = ABSOLUTE(.);
-
+    ALIGNED_SYMBOL(4, __preinit_array_start)
+    KEEP (*(.preinit_array))
+    __preinit_array_end = ABSOLUTE(.);
     ALIGNED_SYMBOL(4, __init_array_start)
+    KEEP (*(SORT_BY_INIT_PRIORITY(EXCLUDE_FILE (*crtend.* *crtbegin.*) .init_array.*)))
     KEEP (*(EXCLUDE_FILE (*crtend.* *crtbegin.*) .init_array))
     __init_array_end = ABSOLUTE(.);
 

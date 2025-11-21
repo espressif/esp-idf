@@ -94,10 +94,6 @@ tools/test_apps/system/gdb_loadable_elf:
 tools/test_apps/system/init_array:
   enable:
     - if: INCLUDE_DEFAULT == 1 or IDF_TARGET == "linux"
-  disable_test:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: p4 rev3 migration # TODO: IDF-14425
   depends_components:
     - esp_system
   depends_filepatterns:
