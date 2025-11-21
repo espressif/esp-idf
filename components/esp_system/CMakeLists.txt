@@ -87,6 +87,7 @@ else()
                                     esp_hal_emac
                                     esp_hal_pcnt
                                     esp_hal_parlio
+                                    esp_hal_cam
                         LDFRAGMENTS "linker.lf" "app.lf")
     add_subdirectory(port)
 

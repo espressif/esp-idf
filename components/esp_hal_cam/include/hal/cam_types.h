@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,14 +13,6 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
-
-#if SOC_LCDCAM_CAM_DATA_WIDTH_MAX
-#define CAP_DVP_PERIPH_NUM      SOC_LCDCAM_CAM_PERIPH_NUM   /*!< DVP port number */
-#define CAM_DVP_DATA_SIG_NUM    SOC_LCDCAM_CAM_DATA_WIDTH_MAX   /*!< DVP data bus width of CAM */
-#else
-#define CAP_DVP_PERIPH_NUM      0                           /*!< Default value */
-#define CAM_DVP_DATA_SIG_NUM    0                           /*!< Default value */
 #endif
 
 #if SOC_LCDCAM_CAM_SUPPORTED

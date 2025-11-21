@@ -8,7 +8,7 @@
 #include "hal/cam_hal.h"
 #include "hal/color_types.h"
 #include "soc/soc_caps.h"
-#include "soc/cam_periph.h"
+#include "hal/cam_periph.h"
 
 /**
  * @brief Default format conversion configuration
@@ -147,7 +147,7 @@ void cam_hal_stop_streaming(cam_hal_context_t *hal)
  * @param config Color conversion configuration. If NULL, default config is used.
  */
 void cam_hal_color_format_convert(cam_hal_context_t *hal,
-                                 const cam_ctlr_format_conv_config_t *config)
+                                  const cam_ctlr_format_conv_config_t *config)
 {
     // Use provided config or default
     const cam_ctlr_format_conv_config_t *cfg = config;

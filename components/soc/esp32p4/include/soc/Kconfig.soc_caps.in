@@ -2031,14 +2031,6 @@ config SOC_LCDCAM_CAM_SUPPORT_RGB_YUV_CONV
     bool
     default y
 
-config SOC_LCDCAM_CAM_PERIPH_NUM
-    int
-    default 1
-
-config SOC_LCDCAM_CAM_DATA_WIDTH_MAX
-    int
-    default 16
-
 config SOC_I3C_MASTER_PERIPH_NUM
     bool
     default y

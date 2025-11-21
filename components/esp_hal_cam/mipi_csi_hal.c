@@ -7,7 +7,7 @@
 #include "hal/log.h"
 #include "hal/mipi_csi_hal.h"
 #include "hal/mipi_csi_ll.h"
-#include "soc/mipi_csi_periph.h"
+#include "hal/mipi_csi_periph.h"
 
 #define MHZ (1000 * 1000)
 

@@ -18,7 +18,7 @@
 #include "esp_log.h"
 #include "esp_check.h"
 #include "esp_clk_tree.h"
-#include "soc/cam_periph.h"
+#include "hal/cam_periph.h"
 #include "soc/soc_caps.h"
 #include "esp_cam_ctlr_dvp_cam.h"
 #include "esp_private/esp_cam_dvp.h"
@@ -41,6 +41,14 @@
 #define DVP_CAM_CLK_ATOMIC()                PERIPH_RCC_ATOMIC()
 #else
 #define DVP_CAM_CLK_ATOMIC()
+#endif
+
+#if CAM_LL_DATA_WIDTH_MAX
+#define CAP_DVP_PERIPH_NUM      CAM_LL_PERIPH_NUM           /*!< DVP port number */
+#define CAM_DVP_DATA_SIG_NUM    CAM_LL_DATA_WIDTH_MAX       /*!< DVP data bus width of CAM */
+#else
+#define CAP_DVP_PERIPH_NUM      0                           /*!< Default value */
+#define CAM_DVP_DATA_SIG_NUM    0                           /*!< Default value */
 #endif
 
 #define ALIGN_UP_BY(num, align) ((align) == 0 ? (num) : (((num) + ((align) - 1)) & ~((align) - 1)))
