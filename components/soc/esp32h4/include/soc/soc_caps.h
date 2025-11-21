@@ -61,7 +61,7 @@
 #define SOC_GPSPI_SUPPORTED             1
 #define SOC_LEDC_SUPPORTED              1
 #define SOC_I2C_SUPPORTED               1
-#define SOC_SYSTIMER_SUPPORTED          1       // TODO: [ESP32H4] IDF-12375 IDF-12377
+#define SOC_SYSTIMER_SUPPORTED          1
 // #define SOC_SUPPORT_COEXISTENCE         1    // TODO: [ESP32H4] IDF-12251 IDF-12252 IDF-12253
 // #define SOC_AES_SUPPORTED               0    // TODO: [ESP32H4] IDF-12266
 // #define SOC_SHA_SUPPORTED               1    // TODO: [ESP32H4] IDF-12263
