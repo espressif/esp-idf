@@ -75,7 +75,9 @@ void btm_acl_init (void)
     btm_cb.p_bl_changed_cb         = NULL;
 #endif
     btm_cb.p_acl_db_list = list_new(osi_free_func);
+#if (CLASSIC_BT_INCLUDED == TRUE)
     btm_cb.p_pm_mode_db_list = list_new(osi_free_func);
+#endif// #if (CLASSIC_BT_INCLUDED == TRUE)
 
     /* Initialize nonzero defaults */
     btm_cb.btm_def_link_super_tout = HCI_DEFAULT_INACT_TOUT;
@@ -296,12 +298,14 @@ void btm_acl_created (BD_ADDR bda, DEV_CLASS dc, UINT8 bdn[BTM_MAX_REM_BD_NAME_L
 #endif
 #if (CLASSIC_BT_INCLUDED == TRUE)
             p->switch_role_state = BTM_ACL_SWKEY_STATE_IDLE;
-#endif // (CLASSIC_BT_INCLUDED == TRUE)
+
 
             p->p_pm_mode_db = btm_pm_sm_alloc();
+
 #if BTM_PM_DEBUG == TRUE
             BTM_TRACE_DEBUG( "btm_pm_sm_alloc handle:%d st:%d", hci_handle, p->p_pm_mode_db->state);
 #endif  // BTM_PM_DEBUG
+#endif // (CLASSIC_BT_INCLUDED == TRUE)
 
 #if (CLASSIC_BT_INCLUDED == TRUE)
             btm_sec_update_legacy_auth_state(p, BTM_ACL_LEGACY_AUTH_NONE);
@@ -491,8 +495,9 @@ void btm_acl_removed (BD_ADDR bda, tBT_TRANSPORT transport)
 
         }
 #endif
-
+#if (CLASSIC_BT_INCLUDED == TRUE)
         list_remove(btm_cb.p_pm_mode_db_list, p->p_pm_mode_db);
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
         /* Clear the ACL connection data */
         memset(p, 0, sizeof(tACL_CONN));
 	if (list_remove(btm_cb.p_acl_db_list, p)) {
@@ -2228,6 +2233,7 @@ void BTM_BleGetPeriodicAdvListSize(uint8_t *size)
 
 #endif  ///BLE_INCLUDED == TRUE
 
+#if BLE_INCLUDED == TRUE
 /*******************************************************************************
 **
 ** Function         btm_read_channel_map_complete
@@ -2282,7 +2288,7 @@ void btm_read_channel_map_complete(UINT8 *p)
         (*p_cb)(&results);
     }
 }
-
+#endif // #if BLE_INCLUDED == TRUE
 
 /*******************************************************************************
 **
@@ -2686,7 +2692,9 @@ void btm_acl_chk_peer_pkt_type_support (tACL_CONN *p, UINT16 *p_pkt_type)
 void btm_acl_free(void)
 {
     list_free(btm_cb.p_acl_db_list);
+#if (CLASSIC_BT_INCLUDED == TRUE)
     list_free(btm_cb.p_pm_mode_db_list);
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
 }
 
 /*******************************************************************************

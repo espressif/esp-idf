@@ -573,8 +573,8 @@ typedef struct {
 #endif // (GATTC_INCLUDED == TRUE)
 #if (GATTS_INCLUDED == TRUE)
     UINT8               srv_chg_mode;   /* internal use: service change mode */
-#endif // (GATTS_INCLUDED == TRUE)
     tGATTS_RSP          rsp;            /* use to read internal service attribute */
+#endif // (GATTS_INCLUDED == TRUE)
 } tGATT_CB;
 
 typedef struct{

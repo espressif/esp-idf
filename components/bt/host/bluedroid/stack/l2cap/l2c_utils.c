@@ -113,8 +113,10 @@ tL2C_LCB *l2cu_allocate_lcb (BD_ADDR p_bd_addr, BOOLEAN is_bonding, tBT_TRANSPOR
             } else
 #endif
             {
+#if (CLASSIC_BT_INCLUDED == TRUE)
                 l2cb.num_links_active++;
                 l2c_link_adjust_allocation();
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
             }
             p_lcb->link_xmit_data_q = list_new(NULL);
             return (p_lcb);
@@ -261,11 +263,13 @@ void l2cu_release_lcb (tL2C_LCB *p_lcb)
     } else
 #endif
     {
+#if (CLASSIC_BT_INCLUDED == TRUE)
         if (l2cb.num_links_active >= 1) {
             l2cb.num_links_active--;
         }
 
         l2c_link_adjust_allocation();
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
     }
 
     /* Check for ping outstanding */
@@ -1799,6 +1803,7 @@ tL2C_CCB *l2cu_find_ccb_by_remote_cid (tL2C_LCB *p_lcb, UINT16 remote_cid)
     return (NULL);
 }
 
+#if (CLASSIC_BT_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         l2cu_allocate_rcb
@@ -1828,6 +1833,7 @@ tL2C_RCB *l2cu_allocate_rcb (UINT16 psm)
     /* If here, no free RCB found */
     return (NULL);
 }
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
 
 #if (BLE_INCLUDED == TRUE)
 /*******************************************************************************
@@ -1907,7 +1913,7 @@ void l2cu_disconnect_chnl (tL2C_CCB *p_ccb)
     }
 }
 
-
+#if (CLASSIC_BT_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         l2cu_find_rcb_by_psm
@@ -1932,6 +1938,7 @@ tL2C_RCB *l2cu_find_rcb_by_psm (UINT16 psm)
     /* If here, no match found */
     return (NULL);
 }
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
 
 #if (BLE_INCLUDED == TRUE)
 /*******************************************************************************

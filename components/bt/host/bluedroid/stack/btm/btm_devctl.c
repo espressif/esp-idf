@@ -183,8 +183,9 @@ static void reset_complete(void)
 #endif // #if (GATT_BG_CONN_DEV == TRUE)
 
 #endif
-
+#if (CLASSIC_BT_INCLUDED == TRUE)
     btm_pm_reset();
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
 
     l2c_link_processs_num_bufs(controller->get_acl_buffer_count_classic());
 #if BTM_SCO_HCI_INCLUDED == TRUE

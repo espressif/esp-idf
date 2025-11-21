@@ -231,13 +231,15 @@ typedef union {
         esp_bd_addr_t remote_bda;
         esp_ble_wl_addr_type_t wl_addr_type;
     } update_white_list;
-#if (BLE_42_FEATURE_SUPPORT == TRUE)
+#if ((BLE_42_SCAN_EN == TRUE) || (BLE_50_EXTEND_SCAN_EN == TRUE))
     //BTC_GAP_BLE_UPDATE_DUPLICATE_SCAN_EXCEPTIONAL_LIST
     struct update_duplicate_exceptional_list_args {
         uint8_t  subcode;
         uint32_t  info_type;
         esp_duplicate_info_t device_info;
     } update_duplicate_exceptional_list;
+#endif // ((BLE_42_SCAN_EN == TRUE) || (BLE_50_EXTEND_SCAN_EN == TRUE))
+#if (BLE_42_FEATURE_SUPPORT == TRUE)
     //BTC_GAP_BLE_ACT_SET_CONN_PARAMS
     struct set_conn_params_args {
         esp_bd_addr_t bd_addr;

@@ -199,17 +199,20 @@ tBTM_CMPL_CB        *p_rln_cmpl_cb;     /* Callback function to be called when  
 TIMER_LIST_ENT       rssi_timer;
 tBTM_CMPL_CB        *p_rssi_cmpl_cb;    /* Callback function to be called when  */
 /* read rssi function completes         */
-
+#if BLE_INCLUDED == TRUE
 tBTM_CMPL_CB        *p_ble_ch_map_cmpl_cb; /* Callback function to be called when */
+#endif // #if BLE_INCLUDED == TRUE
 /* read channel map function completes */
 #if (CLASSIC_BT_INCLUDED == TRUE)
 TIMER_LIST_ENT       lnk_quality_timer;
 tBTM_CMPL_CB        *p_lnk_qual_cmpl_cb;/* Callback function to be called when  */
 #endif // (CLASSIC_BT_INCLUDED == TRUE)
 
+#if (CLASSIC_BT_INCLUDED == TRUE)
 /* read link quality function completes */
 TIMER_LIST_ENT       txpwer_timer;
 tBTM_CMPL_CB        *p_txpwer_cmpl_cb;    /* Callback function to be called when  */
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
 
 /* read inq tx power function completes  */
 #if (CLASSIC_BT_INCLUDED == TRUE)
@@ -274,10 +277,11 @@ UINT32                  test_local_sign_cntr;
 #endif
 
 #endif  /* BLE_INCLUDED */
-
 tBTM_IO_CAP          loc_io_caps;       /* IO capability of the local device */
+#if (SMP_INCLUDED == TRUE)
 tBTM_AUTH_REQ        loc_auth_req;      /* the auth_req flag  */
 BOOLEAN              secure_connections_only;    /* Rejects service level 0 connections if */
+#endif // #if (SMP_INCLUDED == TRUE)
 /* itself or peer device doesn't support */
 /* secure connections */
 } tBTM_DEVCB;
@@ -880,11 +884,12 @@ typedef struct {
     /****************************************************
     **      Power Management
     ****************************************************/
+#if (CLASSIC_BT_INCLUDED == TRUE)
     list_t      *p_pm_mode_db_list;
     tBTM_PM_RCB pm_reg_db[BTM_MAX_PM_RECORDS + 1]; /* per application/module */
     UINT16      pm_pend_link_hdl;  /* the index of acl_db, which has a pending PM cmd */
     UINT8       pm_pend_id;        /* the id pf the module, which has a pending PM cmd */
-
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
     /*****************************************************
     **      Device control
     *****************************************************/
@@ -924,7 +929,7 @@ typedef struct {
 #if BTM_SCO_INCLUDED == TRUE
     tSCO_CB             sco_cb;
 #endif
-
+#if (SMP_INCLUDED == TRUE)
     /*****************************************************
     **      Security Management
     *****************************************************/
@@ -933,18 +938,22 @@ typedef struct {
 #define BTM_SEC_MAX_RMT_NAME_CALLBACKS  2
 
     tBTM_RMT_NAME_CALLBACK  *p_rmt_name_callback[BTM_SEC_MAX_RMT_NAME_CALLBACKS];
+#endif // #if (SMP_INCLUDED == TRUE)
 #if (SMP_INCLUDED == TRUE)
     tBTM_SEC_DEV_REC        *p_collided_dev_rec;
 #endif  ///SMP_INCLUDED == TRUE
+    UINT8                    security_mode;
+    UINT32                   dev_rec_count;      /* Counter used for device record timestamp */
+#if (SMP_INCLUDED == TRUE)
     TIMER_LIST_ENT           sec_collision_tle;
     UINT32                   collision_start_time;
     UINT32                   max_collision_delay;
-    UINT32                   dev_rec_count;      /* Counter used for device record timestamp */
-    UINT8                    security_mode;
     BOOLEAN                  pairing_disabled;
     BOOLEAN                  connect_only_paired;
     BOOLEAN                  security_mode_changed;  /* mode changed during bonding */
     BOOLEAN                  sec_req_pending;       /*   TRUE if a request is pending */
+#endif // #if (SMP_INCLUDED == TRUE)
+
 #if (CLASSIC_BT_INCLUDED == TRUE)
     BOOLEAN                  pin_type_changed;       /* pin type changed during bonding */
 #endif  ///CLASSIC_BT_INCLUDED == TRUE
@@ -961,10 +970,12 @@ typedef struct {
     UINT8                    disc_reason;   /* for legacy devices */
     UINT16                   disc_handle;   /* for legacy devices */
 #endif  ///CLASSIC_BT_INCLUDED == TRUE
+#if (SMP_INCLUDED == TRUE)
     tBTM_PAIRING_STATE       pairing_state; /* The current pairing state    */
     UINT8                    pairing_flags; /* The current pairing flags    */
     BD_ADDR                  pairing_bda;   /* The device currently pairing */
     TIMER_LIST_ENT           pairing_tle;   /* Timer for pairing process    */
+#endif // #if (SMP_INCLUDED == TRUE)
 
 #endif  ///SMP_INCLUDED == TRUE
 #if SMP_INCLUDED == TRUE || CLASSIC_BT_INCLUDED == TRUE
