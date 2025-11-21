@@ -15,6 +15,7 @@ from pytest_embedded_idf.utils import soc_filtered_targets
     ],
     indirect=True,
 )
+@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration # TODO: IDF-14395')
 @idf_parametrize('target', ['supported_targets'], indirect=['target'])
 def test_i2c(dut: Dut) -> None:
     dut.run_all_single_board_cases()

@@ -18,15 +18,27 @@ components/esp_driver_spi/test_apps/master:
 components/esp_driver_spi/test_apps/param:
   disable:
     - if: SOC_GPSPI_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET in ["esp32h21", "esp32p4"]
+      temporary: true
+      reason: p4 rev3 migration # TODO: IDF-14399
   <<: *spi_depends_default
 
 components/esp_driver_spi/test_apps/slave:
   disable:
     - if: SOC_GPSPI_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET in ["esp32h21", "esp32p4"]
+      temporary: true
+      reason: p4 rev3 migration # TODO: IDF-14399
   <<: *spi_depends_default
 
 components/esp_driver_spi/test_apps/slave_hd:
   disable:
     - if: SOC_GPSPI_SUPPORTED != 1
     - if: SOC_SPI_SUPPORT_SLAVE_HD_VER2 != 1
+  disable_test:
+    - if: IDF_TARGET in ["esp32h21", "esp32p4", "esp32c61"]
+      temporary: true
+      reason: p4 rev3 migration # TODO: IDF-14399
   <<: *spi_depends_default

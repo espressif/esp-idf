@@ -6,6 +6,7 @@ from pytest_embedded_idf.utils import idf_parametrize
 
 @pytest.mark.generic
 @pytest.mark.parametrize('config', ['release', 'iram_safe'], indirect=True)
+@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration # TODO: IDF-14399')
 @idf_parametrize('target', ['supported_targets'], indirect=['target'])
 def test_slave_single_dev(case_tester) -> None:  # type: ignore
     case_tester.run_all_normal_cases(reset=True)
