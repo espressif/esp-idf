@@ -370,6 +370,27 @@ mainmenu "Espressif IoT Development Framework Configuration"
 
         endchoice
 
+        config COMPILER_ENABLE_RISCV_ZCMP
+            bool "Enable RISCV ZCMP extension"
+            depends on SOC_CPU_ZCMP_WORKAROUND
+            default n
+            help
+                Enable the RISC-V ZCMP (Compressed Macro) extension to reduce binary size
+                by optimizing function prologue and epilogue sequences.
+
+                Note: Due to a hardware issue on some ESP32 chips (e.g., ESP32C5, ESP32C61,
+                ESP32H4), executing "cm.push" may re-enable interrupts even when global
+                interrupts are disabled (mstatus.mie = 0). This can cause unexpected interrupts
+                during CPU retention or within critical sections.
+
+                Workarounds are implemented in the IDF codebase. However, if user code
+                directly disables interrupts, additional actions may be required. Refer
+                to code examples under the SOC_CPU_ZCMP_WORKAROUND macro, or disable
+                the ZCMP extension for source files that contain functions which may
+                execute while mstatus.mie = 0.
+
+                Even with these workarounds, the issue may still affect dual-core variants.
+
         choice COMPILER_OPTIMIZATION_ASSERTION_LEVEL
             prompt "Assertion level"
             default COMPILER_OPTIMIZATION_ASSERTIONS_ENABLE

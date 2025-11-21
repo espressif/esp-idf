@@ -150,6 +150,8 @@
 #define SOC_CPU_HAS_LOCKUP_RESET        1
 
 #define SOC_CPU_ZCMP_WORKAROUND         1
+#define SOC_CPU_ZCMP_PUSH_REVERSED      1
+#define SOC_CPU_ZCMP_POPRET_ISSUE       1
 
 /*-------------------------- DMA Common CAPS ----------------------------------------*/
 #define SOC_DMA_CAN_ACCESS_FLASH 1 /*!< DMA can access Flash memory */

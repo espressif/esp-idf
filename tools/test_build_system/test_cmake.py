@@ -52,6 +52,58 @@ def test_build_custom_cmake_project_host() -> None:
 
 
 @pytest.mark.buildv2_skip('import_lib example uses cmakev1, not yet updated for buildv2 (IDF-14185)')
+def test_build_cmake_library_with_toolchain_flags(test_app_copy: Path) -> None:
+    logging.info('Building a project with CMake library imported with modified toolchain flags')
+    idf_path = Path(os.environ['IDF_PATH'])
+    # Enable Picolibc to verify that all flags are passed correctly to the external project.
+    # In case something is missing, the build will fail on linking stage.
+    # Note: To enable Picolibc, IDF_EXPERIMENTAL_FEATURES must also be set for now.
+    (test_app_copy / 'sdkconfig.defaults').write_text(
+        '\n'.join(['CONFIG_IDF_EXPERIMENTAL_FEATURES=y', 'CONFIG_LIBC_PICOLIBC=y'])
+    )
+
+    import_lib_path = idf_path / 'examples' / 'build_system' / 'cmake' / 'import_lib'
+    run_cmake_and_build(
+        str(import_lib_path),
+        '-G',
+        'Ninja',
+        f'-DSDKCONFIG_DEFAULTS={import_lib_path / "sdkconfig.defaults"};{test_app_copy / "sdkconfig.defaults"}',
+    )
+
+
+def check_flag_in_compile_commands(build_dir: Path, flag_to_find: str) -> None:
+    with open(build_dir / 'build' / 'compile_commands.json', encoding='utf-8') as f:
+        compile_commands = json.load(f)
+        # check if compile_commands is an array
+        if not isinstance(compile_commands, list):
+            assert False, f'compile_commands is not a list: {compile_commands}'
+        assert len(compile_commands) != 0, 'compile_commands is empty'
+        for entry in compile_commands:
+            command = entry['command']
+            assert isinstance(command, str), f'command is not a string: {command}'
+            flag_is_found = flag_to_find in command
+            if flag_is_found:
+                continue  # Flag found in command, no need to check response files
+            # check if command contains response file paths starts with @
+            response_file_paths = re.findall(r'@([^\s]+)', command)
+            for response_file_path in response_file_paths:
+                # check if the flag file contains flag_to_find
+                try:
+                    # Strip surrounding quotes and normalize the path
+                    response_file_path = response_file_path.strip('"\'\\')
+                    response_file_path = Path(response_file_path).resolve()
+                    with open(response_file_path, encoding='utf-8') as f:
+                        flags = f.read()
+                        if flag_to_find in flags:
+                            flag_is_found = True
+                            break
+                except FileNotFoundError:
+                    assert False, f'{response_file_path} does not exist'
+            if not flag_is_found:
+                assert False, f'{flag_to_find} not found in {command}'
+
+
+@pytest.mark.buildv2_skip('import_lib example uses cmakev1, not yet updated for buildv2 (IDF-14185)')
 def test_build_cmake_library_psram_workaround(test_app_copy: Path) -> None:
     logging.info(
         'Building a project with CMake library imported and PSRAM workaround, all files compile with workaround'
@@ -67,13 +119,7 @@ def test_build_cmake_library_psram_workaround(test_app_copy: Path) -> None:
         '-DSDKCONFIG_DEFAULTS={}'.format(test_app_copy / 'sdkconfig.defaults'),
         str(idf_path / 'examples' / 'build_system' / 'cmake' / 'import_lib'),
     )
-    with open((test_app_copy / 'build' / 'compile_commands.json'), encoding='utf-8') as f:
-        data = f.read()
-        res = re.findall(r'.*\"command\".*', data)
-        for r in res:
-            assert 'mfix-esp32-psram-cache-issue' in r, (
-                'All commands in compile_commands.json should use PSRAM cache workaround'
-            )
+    check_flag_in_compile_commands(test_app_copy, '-mfix-esp32-psram-cache-issue')
 
 
 def test_build_cmake_library_psram_strategies(idf_py: IdfPyFunc, test_app_copy: Path) -> None:
@@ -97,13 +143,7 @@ def test_build_cmake_library_psram_strategies(idf_py: IdfPyFunc, test_app_copy: 
             )
         )
         idf_py('reconfigure')
-        with open((test_app_copy / 'build' / 'compile_commands.json'), encoding='utf-8') as f:
-            data = f.read()
-            res = re.findall(r'.*\"command\".*', data)
-            for r in res:
-                assert f'mfix-esp32-psram-cache-strategy={strategy.lower()}' in r, (
-                    'All commands in compile_commands.json should use PSRAM cache workaround strategy'
-                )
+        check_flag_in_compile_commands(test_app_copy, f'-mfix-esp32-psram-cache-strategy={strategy.lower()}')
         (test_app_copy / 'sdkconfig').unlink()
 
 
