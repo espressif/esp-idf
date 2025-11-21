@@ -113,6 +113,7 @@ TEST_CASE("see if fsync appears to work", "[usb_serial_jtag]")
     start_us = esp_timer_get_time();
     fsync(0);
     end_us = esp_timer_get_time();
+    vTaskDelay(pdMS_TO_TICKS(500));
     printf("With data in queue: %d us\n", (int)(end_us - start_us));
     TEST_ASSERT_GREATER_THAN_INT(1000, end_us - start_us);
     TEST_ASSERT_LESS_THAN_INT(45000, end_us - start_us); //50ms means fsync hit a timeout
