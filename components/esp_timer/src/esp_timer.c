@@ -161,7 +161,8 @@ esp_err_t ESP_TIMER_IRAM_ATTR esp_timer_restart(esp_timer_handle_t timer, uint64
          * - if the alarm was a one-shot one, i.e. `period` is 0, it remains non-periodic. */
         if (period != 0) {
             /* Remove function got rid of the alarm and period fields, restore them */
-            const uint64_t new_period = MAX(timeout_us, esp_timer_impl_get_min_period_us());
+            const uint64_t min_period = esp_timer_impl_get_min_period_us();
+            const uint64_t new_period = MAX(timeout_us, min_period);
             timer->alarm = now + new_period;
             timer->period = new_period;
         } else {
@@ -218,7 +219,8 @@ esp_err_t ESP_TIMER_IRAM_ATTR esp_timer_start_periodic(esp_timer_handle_t timer,
     if (!is_initialized()) {
         return ESP_ERR_INVALID_STATE;
     }
-    period_us = MAX(period_us, esp_timer_impl_get_min_period_us());
+    uint64_t min_period = esp_timer_impl_get_min_period_us();
+    period_us = MAX(period_us, min_period);
     int64_t alarm = esp_timer_get_time() + period_us;
     esp_timer_dispatch_t dispatch_method = timer->flags & FL_ISR_DISPATCH_METHOD;
     esp_err_t err;

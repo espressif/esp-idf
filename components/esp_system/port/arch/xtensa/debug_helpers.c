@@ -192,7 +192,8 @@ esp_err_t ESP_SYSTEM_IRAM_ATTR esp_backtrace_print_all_tasks(int depth)
                             &ctrl.cur_tasks[core_id].next_pc);
 
     // Get snapshot of all tasks in the system
-    const UBaseType_t num_snapshots = MIN(num_tasks, uxTaskGetSnapshotAll(task_snapshots, num_tasks, NULL));
+    UBaseType_t snapshot_count = uxTaskGetSnapshotAll(task_snapshots, num_tasks, NULL);
+    const UBaseType_t num_snapshots = MIN(num_tasks, snapshot_count);
     // Print the backtrace of every task in the system
     for (UBaseType_t task_idx = 0; task_idx < num_snapshots; task_idx++) {
         bool cur_running = false;

@@ -44,7 +44,8 @@ void esp_efuse_reset(void)
 uint32_t esp_efuse_read_secure_version(void)
 {
     uint32_t secure_version = 0;
-    size_t size = MIN(APP_SEC_VER_SIZE_EFUSE_FIELD, esp_efuse_get_field_size(ESP_EFUSE_SECURE_VERSION));
+    size_t field_size = esp_efuse_get_field_size(ESP_EFUSE_SECURE_VERSION);
+    size_t size = MIN(APP_SEC_VER_SIZE_EFUSE_FIELD, field_size);
     esp_efuse_read_field_blob(ESP_EFUSE_SECURE_VERSION, &secure_version, size);
     return __builtin_popcount(secure_version & ((1ULL << size) - 1));
 }
@@ -66,7 +67,8 @@ bool esp_efuse_check_secure_version(uint32_t secure_version)
 
 esp_err_t esp_efuse_update_secure_version(uint32_t secure_version)
 {
-    size_t size = MIN(APP_SEC_VER_SIZE_EFUSE_FIELD, esp_efuse_get_field_size(ESP_EFUSE_SECURE_VERSION));
+    size_t field_size = esp_efuse_get_field_size(ESP_EFUSE_SECURE_VERSION);
+    size_t size = MIN(APP_SEC_VER_SIZE_EFUSE_FIELD, field_size);
     if (size < secure_version) {
         ESP_LOGE(TAG, "Max secure version is %u. Given %"PRIu32" version can not be written.", (unsigned)size, secure_version);
         return ESP_ERR_INVALID_ARG;

@@ -190,7 +190,8 @@ static bool s_i2c_write_command(i2c_master_bus_handle_t i2c_master, i2c_operatio
     uint8_t data_fill = 0;
 
     // data_fill refers to the length to fill the data
-    data_fill = MIN(remaining_bytes, I2C_FIFO_LEN(i2c_master->base->port_num) - *address_fill);
+    uint32_t fifo_len = I2C_FIFO_LEN(i2c_master->base->port_num);
+    data_fill = MIN(remaining_bytes, fifo_len - *address_fill);
     write_pr = i2c_operation->data + i2c_operation->bytes_used;
     i2c_operation->bytes_used += data_fill;
     hw_cmd.byte_num = data_fill + *address_fill;
@@ -286,7 +287,8 @@ static bool s_i2c_read_command(i2c_master_bus_handle_t i2c_master, i2c_operation
     i2c_bus_handle_t handle = i2c_master->base;
     i2c_ll_hw_cmd_t hw_cmd = i2c_operation->hw_cmd;
 
-    *fifo_fill = MIN(remaining_bytes, I2C_FIFO_LEN(i2c_master->base->port_num) - i2c_master->read_len_static);
+    uint32_t fifo_len = I2C_FIFO_LEN(i2c_master->base->port_num);
+    *fifo_fill = MIN(remaining_bytes, fifo_len - i2c_master->read_len_static);
     i2c_master->rx_cnt = *fifo_fill;
     hw_cmd.byte_num = *fifo_fill;
 
