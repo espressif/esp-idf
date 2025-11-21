@@ -7,7 +7,6 @@ from pytest_embedded_idf.utils import idf_parametrize
 
 @pytest.mark.generic
 @idf_parametrize('target', ['supported_targets'], indirect=['target'])
-@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration # TODO: IDF-14402')
 def test_examples_cpp_exceptions(dut: IdfDut) -> None:
     lines = [
         'app_main starting',
