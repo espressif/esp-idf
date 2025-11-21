@@ -74,6 +74,7 @@ Other Peripheral Events
     :SOC_ANA_CMPR_SUPPORT_ETM: - Refer to :doc:`/api-reference/peripherals/ana_cmpr` for how to get the ETM event handle from analog comparator.
     :SOC_TEMPERATURE_SENSOR_SUPPORT_ETM: - Refer to :doc:`/api-reference/peripherals/temp_sensor` for how to get the ETM event handle from temperature sensor.
     :SOC_I2S_SUPPORTS_ETM:  - Refer to :doc:`/api-reference/peripherals/i2s` for how to get the ETM event handle from I2S.
+    :SOC_LEDC_SUPPORT_ETM:  - Refer to :doc:`/api-reference/peripherals/ledc` for how to get the ETM event handle from LEDC.
 
 .. _etm-task:
 
@@ -101,6 +102,7 @@ Other Peripheral Tasks
     :SOC_TIMER_SUPPORT_ETM: - Refer to :ref:`gptimer-etm-event-and-task` for how to get the ETM task handle from GPTimer.
     :SOC_TEMPERATURE_SENSOR_SUPPORT_ETM: - Refer to :doc:`/api-reference/peripherals/temp_sensor` for how to get the ETM task handle from temperature sensor.
     :SOC_I2S_SUPPORTS_ETM:  - Refer to :doc:`/api-reference/peripherals/i2s` for how to get the ETM task handle from I2S.
+    :SOC_LEDC_SUPPORT_ETM:  - Refer to :doc:`/api-reference/peripherals/ledc` for how to get the ETM task handle from LEDC.
 
 .. _etm-channel-control:
 

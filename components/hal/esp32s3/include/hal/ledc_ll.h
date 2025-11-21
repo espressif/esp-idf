@@ -21,10 +21,13 @@ extern "C" {
 
 #define LEDC_LL_GET_HW()           &LEDC
 
+#define LEDC_LL_CHANNEL_SUPPORT_OVF_CNT     1
+
 #define LEDC_LL_DUTY_NUM_MAX       (LEDC_DUTY_NUM_LSCH0_V)
 #define LEDC_LL_DUTY_CYCLE_MAX     (LEDC_DUTY_CYCLE_LSCH0_V)
 #define LEDC_LL_DUTY_SCALE_MAX     (LEDC_DUTY_SCALE_LSCH0_V)
 #define LEDC_LL_HPOINT_VAL_MAX     (LEDC_HPOINT_LSCH0_V)
+#define LEDC_LL_OVF_CNT_MAX        (LEDC_OVF_NUM_LSCH0_V + 1)
 #define LEDC_LL_FRACTIONAL_BITS    (8)
 #define LEDC_LL_FRACTIONAL_MAX     ((1 << LEDC_LL_FRACTIONAL_BITS) - 1)
 
@@ -587,6 +590,51 @@ static inline void ledc_ll_bind_channel_timer(ledc_dev_t *hw, ledc_mode_t speed_
 static inline void ledc_ll_get_channel_timer(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_channel_t channel_num, ledc_timer_t *timer_sel)
 {
     *timer_sel = (ledc_timer_t)(hw->channel_group[speed_mode].channel[channel_num].conf0.timer_sel);
+}
+
+/**
+ * @brief Enable or disable the timer overflow counter for the specified channel
+ *
+ * @param hw Beginning address of the peripheral registers
+ * @param speed_mode LEDC speed_mode, low-speed mode only
+ * @param channel LEDC channel index (0-7), select from ledc_channel_t
+ * @param enable True to enable; false to disable
+ *
+ * @return None
+ */
+static inline void ledc_ll_channel_enable_timer_ovt_cnt(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_channel_t channel, bool enable)
+{
+    hw->channel_group[speed_mode].channel[channel].conf0.ovf_cnt_en = enable;
+}
+
+/**
+ * @brief Set the maximum timer overflow count for the specified channel
+ *
+ * @param hw Beginning address of the peripheral registers
+ * @param speed_mode LEDC speed_mode, low-speed mode only
+ * @param channel LEDC channel index (0-7), select from ledc_channel_t
+ * @param max_ovf_cnt The maximum timer overflow count
+ *
+ * @return None
+ */
+static inline void ledc_ll_channel_set_maximum_timer_ovf_cnt(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_channel_t channel, uint32_t max_ovf_cnt)
+{
+    HAL_ASSERT(max_ovf_cnt > 0 && max_ovf_cnt <= LEDC_LL_OVF_CNT_MAX);
+    hw->channel_group[speed_mode].channel[channel].conf0.ovf_num = max_ovf_cnt - 1;
+}
+
+/**
+ * @brief Reset the timer overflow counter for the specified channel
+ *
+ * @param hw Beginning address of the peripheral registers
+ * @param speed_mode LEDC speed_mode, low-speed mode only
+ * @param channel LEDC channel index (0-7), select from ledc_channel_t
+ *
+ * @return None
+ */
+static inline void ledc_ll_channel_reset_timer_ovf_cnt(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_channel_t channel)
+{
+    hw->channel_group[speed_mode].channel[channel].conf0.ovf_cnt_rst = 1;
 }
 
 #ifdef __cplusplus

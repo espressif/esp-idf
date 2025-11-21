@@ -277,6 +277,7 @@ static IRAM_ATTR esp_err_t ledc_duty_config(ledc_mode_t speed_mode, ledc_channel
     // Clear left-off LEDC gamma ram registers, random data in ram could cause output waveform error
     ledc_hal_clear_left_off_fade_param(&(p_ledc_obj[speed_mode]->ledc_hal), channel, 1);
 #endif
+    ESP_EARLY_LOGD(LEDC_TAG, "duty_config: duty-%d, dir-%d, cycle-%d, scale-%d, step-%d", duty_val, duty_direction, duty_cycle, duty_scale, duty_num);
     return ESP_OK;
 }
 
@@ -391,6 +392,21 @@ esp_err_t ledc_timer_resume(ledc_mode_t speed_mode, ledc_timer_t timer_sel)
     portEXIT_CRITICAL(&ledc_spinlock);
     return ESP_OK;
 }
+
+#if SOC_LEDC_SUPPORT_ETM
+esp_err_t ledc_channel_configure_maximum_timer_ovf_cnt(ledc_mode_t speed_mode, ledc_channel_t channel, uint32_t max_ovf_cnt)
+{
+    LEDC_ARG_CHECK(speed_mode < LEDC_SPEED_MODE_MAX, "speed_mode");
+    LEDC_ARG_CHECK(channel < LEDC_CHANNEL_MAX, "channel");
+    LEDC_ARG_CHECK(max_ovf_cnt <= LEDC_LL_OVF_CNT_MAX, "max_ovf_cnt");
+    LEDC_CHECK(p_ledc_obj[speed_mode] != NULL, LEDC_NOT_INIT, ESP_ERR_INVALID_STATE);
+
+    ledc_hal_channel_configure_maximum_timer_ovf_cnt(&(p_ledc_obj[speed_mode]->ledc_hal), channel, max_ovf_cnt);
+    ledc_ls_channel_update(speed_mode, channel);
+
+    return ESP_OK;
+}
+#endif
 
 esp_err_t ledc_isr_register(void (*fn)(void *), void *arg, int intr_alloc_flags, ledc_isr_handle_t *handle)
 {

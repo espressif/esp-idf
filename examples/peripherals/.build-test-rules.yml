@@ -272,6 +272,12 @@ examples/peripherals/ledc:
   depends_components:
     - esp_driver_ledc
 
+examples/peripherals/ledc/ledc_dimmer:
+  disable:
+    - if: SOC_ETM_SUPPORTED != 1 or SOC_LEDC_SUPPORT_ETM != 1
+  depends_components:
+    - esp_driver_ledc
+
 examples/peripherals/ledc/ledc_gamma_curve_fade:
   disable:
     - if: SOC_LEDC_SUPPORTED != 1 or SOC_LEDC_GAMMA_CURVE_FADE_SUPPORTED != 1
