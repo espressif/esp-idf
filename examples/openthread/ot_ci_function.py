@@ -137,11 +137,15 @@ def joinThreadNetwork(dut: IdfDut, thread: thread_parameter) -> None:
 
 
 def wait_for_join(dut: IdfDut, role: str) -> bool:
+    clean_buffer(dut)
     for _ in range(1, 30):
-        if getDeviceRole(dut) == role:
-            wait(dut, 5)
+        time.sleep(1)
+        execute_command(dut, 'state')
+        try:
+            dut.expect(re.compile(role), timeout=5)
             return True
-        wait(dut, 1)
+        except Exception:
+            continue
     return False
 
 

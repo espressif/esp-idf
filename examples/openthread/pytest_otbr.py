@@ -229,11 +229,14 @@ def test_Bidirectional_IPv6_connectivity(Init_interface: bool, dut: tuple[IdfDut
         onlinkprefix = ocf.get_onlinkprefix(br)
         pattern = rf'\W+({onlinkprefix}(?:\w+:){{3}}\w+)\W+'
         host_global_unicast_addr = re.findall(pattern, out_str)
+        logging.info(f'host_global_unicast_addr: {host_global_unicast_addr}')
+        if host_global_unicast_addr is None:
+            raise Exception(f'onlinkprefix: {onlinkprefix}, host_global_unicast_addr: {host_global_unicast_addr}')
         rx_nums = 0
         for ip_addr in host_global_unicast_addr:
             txrx_nums = ocf.ot_ping(cli, str(ip_addr), count=10)
             rx_nums = rx_nums + int(txrx_nums[1])
-        logging.debug(f'rx_nums: {rx_nums}')
+        logging.info(f'rx_nums: {rx_nums}')
         assert rx_nums != 0
     finally:
         ocf.stop_thread(cli)
