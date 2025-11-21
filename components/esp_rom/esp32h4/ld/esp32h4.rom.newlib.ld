@@ -6,7 +6,7 @@
 /* ROM function interface esp32h4.rom.newlib.ld for esp32h4
  *
  *
- * Generated from ../../rom/target/esp32h4/interface-esp32h4.yml md5sum c9db9928804fe99070d282b058ff3c65
+ * Generated from ../../rom/target/esp32h4/interface-esp32h4.yml md5sum bb9ee317148d3c5b10610936a3675a65
  *
  * Compatible with ROM where ECO version equal or greater to 0.
  *
