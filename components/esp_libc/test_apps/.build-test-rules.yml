@@ -1,11 +1,5 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
-components/esp_libc/test_apps/newlib:
-  disable_test:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: p4 rev3 migration # TODO: IDF-14415
-
 components/esp_libc/test_apps/no_rvfplib:
   disable:
     - if: ESP_ROM_HAS_RVFPLIB != 1
