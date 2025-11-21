@@ -122,100 +122,13 @@ menu "Example Connection Configuration"
         default y if !EXAMPLE_CONNECT_WIFI && !EXAMPLE_CONNECT_THREAD
         help
             Protocol examples can use Wi-Fi, Ethernet and/or Thread to connect to the network.
-            Choose this option to connect with Ethernet
+            Choose this option to enable connection with Ethernet.
+            Go to `Top -> Ethernet Configuration` to configure the Ethernet interface.
 
-    if EXAMPLE_CONNECT_ETHERNET
-        config EXAMPLE_ETHERNET_EMAC_TASK_STACK_SIZE
-            int "emac_rx task stack size"
-            default 2048
-            help
-                This set stack size for emac_rx task
-
-        config EXAMPLE_USE_SPI_ETHERNET
-            bool
-
-        choice EXAMPLE_ETHERNET_TYPE
-            prompt "Ethernet Type"
-            default EXAMPLE_USE_INTERNAL_ETHERNET if SOC_EMAC_SUPPORTED
-            default EXAMPLE_USE_DUMMY
-            help
-                Select which kind of Ethernet will be used in the example.
-
-            config EXAMPLE_USE_INTERNAL_ETHERNET
-                depends on SOC_EMAC_SUPPORTED
-                select ETH_USE_ESP32_EMAC
-                bool "Internal EMAC"
-                help
-                    Select internal Ethernet MAC controller.
-
-            config EXAMPLE_USE_DUMMY
-                bool "DUMMY Module"
-                select ETH_USE_SPI_ETHERNET
-                help
-                    Dummy option to just to pass builds, will be fixed by IDF-14059
-
-            config EXAMPLE_USE_OPENETH
-                bool "OpenCores Ethernet MAC (EXPERIMENTAL)"
-                select ETH_USE_OPENETH
-                help
-                    When this option is enabled, the example is built with support for
-                    OpenCores Ethernet MAC, which allows testing the example in QEMU.
-                    Note that this option is used for internal testing purposes, and
-                    not officially supported. Examples built with this option enabled
-                    will not run on a real ESP32 chip.
-
-        endchoice # EXAMPLE_ETHERNET_TYPE
-
-        if EXAMPLE_USE_INTERNAL_ETHERNET
-            choice EXAMPLE_ETH_PHY_MODEL
-                prompt "Ethernet PHY Device"
-                default EXAMPLE_ETH_PHY_GENERIC
-                help
-                    Select the Ethernet PHY device to use in the example.
-
-                config EXAMPLE_ETH_PHY_GENERIC
-                    bool "Generic 802.3 PHY"
-                    help
-                        Any Ethernet PHY chip compliant with IEEE 802.3 can be used. However, while
-                        basic functionality should always work, some specific features might be limited,
-                        even if the PHY meets IEEE 802.3 standard. A typical example is loopback
-                        functionality, where certain PHYs may require setting a specific speed mode to
-                        operate correctly.
-            endchoice
-
-            config EXAMPLE_ETH_MDC_GPIO
-                int "SMI MDC GPIO number"
-                range ENV_GPIO_RANGE_MIN ENV_GPIO_OUT_RANGE_MAX
-                default 23 if IDF_TARGET_ESP32
-                default 31 if IDF_TARGET_ESP32P4
-                help
-                    Set the GPIO number used by SMI MDC.
-
-            config EXAMPLE_ETH_MDIO_GPIO
-                int "SMI MDIO GPIO number"
-                range ENV_GPIO_RANGE_MIN ENV_GPIO_OUT_RANGE_MAX
-                default 18 if IDF_TARGET_ESP32
-                default 52 if IDF_TARGET_ESP32P4
-                help
-                    Set the GPIO number used by SMI MDIO.
-        endif
-
-        config EXAMPLE_ETH_PHY_RST_GPIO
-            int "PHY Reset GPIO number"
-            range -1 ENV_GPIO_OUT_RANGE_MAX
-            default 51 if IDF_TARGET_ESP32P4
-            default 5
-            help
-                Set the GPIO number used to reset PHY chip.
-                Set to -1 to disable PHY chip hardware reset.
-
-        config EXAMPLE_ETH_PHY_ADDR
-            int "PHY Address"
-            range 0 31 if EXAMPLE_USE_INTERNAL_ETHERNET
-            default 1
-            help
-                Set PHY address according your board schematic.
-    endif # EXAMPLE_CONNECT_ETHERNET
+    config EXAMPLE_DISABLE_ETHERNET_CONFIG
+        bool
+        select ETHERNET_INIT_OVERRIDE_DISABLE
+        default y if !EXAMPLE_CONNECT_ETHERNET
 
     config EXAMPLE_CONNECT_PPP
         bool "connect using Point to Point interface"

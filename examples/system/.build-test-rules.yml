@@ -210,6 +210,7 @@ examples/system/ota/partitions_ota:
     - esp_wifi
     - esp_phy
     - mbedtls
+    - protocol_examples_common
 
 examples/system/ota/simple_ota_example:
   disable:
@@ -230,6 +231,7 @@ examples/system/ota/simple_ota_example:
     - esp_wifi
     - esp_phy
     - mbedtls
+    - protocol_examples_common
 
 examples/system/perfmon:
   enable:
