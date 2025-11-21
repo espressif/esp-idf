@@ -43,7 +43,9 @@ const esp_efuse_keys_t s_table[EFUSE_BLK_KEY_MAX - EFUSE_BLK_KEY0] = {
     {ESP_EFUSE_KEY2, ESP_EFUSE_KEY_PURPOSE_2, ESP_EFUSE_RD_DIS_KEY2, ESP_EFUSE_WR_DIS_KEY2, ESP_EFUSE_WR_DIS_KEY2_PURPOSE},
     {ESP_EFUSE_KEY3, ESP_EFUSE_KEY_PURPOSE_3, ESP_EFUSE_RD_DIS_KEY3, ESP_EFUSE_WR_DIS_KEY3, ESP_EFUSE_WR_DIS_KEY3_PURPOSE},
     {ESP_EFUSE_KEY4, ESP_EFUSE_KEY_PURPOSE_4, ESP_EFUSE_RD_DIS_KEY4, ESP_EFUSE_WR_DIS_KEY4, ESP_EFUSE_WR_DIS_KEY4_PURPOSE},
+#if !CONFIG_IDF_TARGET_ESP32S31 // TODO: [ESP32S31] IDF-14688
     {ESP_EFUSE_KEY5, ESP_EFUSE_KEY_PURPOSE_5, ESP_EFUSE_RD_DIS_KEY5, ESP_EFUSE_WR_DIS_KEY5, ESP_EFUSE_WR_DIS_KEY5_PURPOSE},
+#endif
 #if 0
     {ESP_EFUSE_KEY6, ESP_EFUSE_KEY_PURPOSE_6, ESP_EFUSE_RD_DIS_KEY6, ESP_EFUSE_WR_DIS_KEY6, ESP_EFUSE_WR_DIS_KEY6_PURPOSE},
 #endif
@@ -76,6 +78,7 @@ bool esp_efuse_block_is_empty(esp_efuse_block_t block)
     return false;
 }
 
+#if !CONFIG_IDF_TARGET_ESP32S31 // TODO: [ESP32S31] IDF-14688
 // Sets a write protection for the whole block.
 esp_err_t esp_efuse_set_write_protect(esp_efuse_block_t blk)
 {
@@ -108,6 +111,7 @@ esp_err_t esp_efuse_set_read_protect(esp_efuse_block_t blk)
 
 }
 
+#endif
 // get efuse coding_scheme.
 esp_efuse_coding_scheme_t esp_efuse_get_coding_scheme(esp_efuse_block_t blk)
 {
