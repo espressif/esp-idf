@@ -481,12 +481,12 @@ static inline void ieee802154_ll_clear_debug_cnt(uint32_t clear_bits)
 
 static inline uint32_t ieee802154_ll_get_sfd_timeout_cnt(void)
 {
-    return IEEE802154.debug_sfd_timeout_cnt;
+    return IEEE802154.debug_sfd_timeout_cnt.sfd_timeout_cnt;
 }
 
 static inline uint32_t ieee802154_ll_get_crc_error_cnt(void)
 {
-    return IEEE802154.debug_crc_error_cnt;
+    return IEEE802154.debug_crc_error_cnt.crc_error_cnt;
 }
 
 static inline uint32_t ieee802154_ll_get_ed_abort_cnt(void)
