@@ -53,10 +53,6 @@ tools/test_apps/system/eh_frame:
   disable:
     - if: IDF_TARGET in ["esp32", "esp32s2", "esp32s3", "linux"]
       reason: Only relevant for riscv targets
-  disable_test:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: p4 rev3 migration # TODO: IDF-14424
 
 tools/test_apps/system/esp_intr_dump:
 
