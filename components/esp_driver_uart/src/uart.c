@@ -85,8 +85,8 @@ static const char *UART_TAG = "uart";
                             | (UART_INTR_RXFIFO_TOUT) \
                             | (UART_INTR_RXFIFO_OVF) \
                             | (UART_INTR_BRK_DET) \
-                            | (UART_INTR_PARITY_ERR)) \
-                            | (UART_INTR_WAKEUP)
+                            | (UART_INTR_PARITY_ERR) \
+                            | (UART_INTR_WAKEUP))
 #else
 #define UART_INTR_CONFIG_FLAG ((UART_INTR_RXFIFO_FULL) \
                             | (UART_INTR_RXFIFO_TOUT) \
