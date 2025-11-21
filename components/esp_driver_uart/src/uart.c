@@ -2398,12 +2398,15 @@ esp_err_t uart_detect_bitrate_stop(uart_port_t uart_num, bool deinit, uart_bitra
 
     if (deinit) { // release the port
         uart_release_pin(uart_num, true, true, true, true, true, true);
-        esp_clk_tree_enable_src(uart_context[uart_num].sclk_sel, false);
+        if (uart_num != CONFIG_ESP_CONSOLE_UART_NUM) {
+            esp_clk_tree_enable_src(uart_context[uart_num].sclk_sel, false);
 #if SOC_UART_SUPPORT_RTC_CLK
-        if (src_clk == (soc_module_clk_t)UART_SCLK_RTC) {
-            periph_rtc_dig_clk8m_disable();
-        }
+            if (src_clk == (soc_module_clk_t)UART_SCLK_RTC) {
+                periph_rtc_dig_clk8m_disable();
+            }
 #endif
+            uart_context[uart_num].sclk_sel = -1;
+        }
         uart_module_disable(uart_num);
     }
     return ret;
