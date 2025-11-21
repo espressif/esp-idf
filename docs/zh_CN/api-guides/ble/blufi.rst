@@ -14,13 +14,9 @@ BluFi 流程的关键部分包括数据的分片、加密以及校验和验证�
 
 .. note::
 
-   **BluFi 目前处于维护模式，不再规划新功能。**
+   **BluFi 目前处于维护模式，暂不计划增加新功能。**
 
-   对于新项目或新增 Wi-Fi 配网的场景，建议使用 network_provisioning 组件
-
-   (`network_provisioning <https://github.com/espressif/idf-extra-components/tree/master/network_provisioning>`_)
-
-   来实现现代化、安全且有持续维护的解决方案。
+   对于新项目或需要添加 Wi-Fi 配网功能的场景，建议使用 `network_provisioning`_ 组件。该组件更加现代、安全，并且仍在积极维护中。
 
 
 快速入门
@@ -675,64 +671,46 @@ ACK 帧格式 (8 bit)：
 
    应用层需向 BluFi 注册以下几个与安全相关的函数：
 
-.. code-block:: c
+   .. code-block:: c
 
-   typedef void (*esp_blufi_negotiate_data_handler_t)(uint8_t *data, int len, uint8_t **output_data, int *output_len, bool *need_free)
+       typedef void (*esp_blufi_negotiate_data_handler_t)(uint8_t *data, int len, uint8_t **output_data, int *output_len, bool *need_free)
 
-该函数用来接收协商期间的正常数据 (normal data)。数据处理完成后，需要将待发送的数据使用 output_data 和 output_len 传出。
+   该函数用来接收协商期间的正常数据 (normal data)。数据处理完成后，需要将待发送的数据使用 output_data 和 output_len 传出。
 
-BluFi 会在调用完 Negotiate_data_handler 后，发送 Negotiate_data_handler 传出的 output_data。
+   BluFi 会在调用完 Negotiate_data_handler 后，发送 Negotiate_data_handler 传出的 output_data。
 
-这里的两个 “*” 是因为需要发出去的数据长度未知，所以需要函数自行分配 (malloc) 或者指向全局变量，并告知是否需要通过 NEED_FREE 释放内存。
-
-.. code-block:: c
-
-   typedef int (* esp_blufi_encrypt_func_t)(uint8_t iv8, uint8_t *crypt_data, int crypt_len)
-
-加密和解密的数据长度必须一致。其中 IV8 为帧的 8 位序列，可作为 IV 的某 8 个位来使用。
-
-.. code-block:: c
-
-   typedef int (* esp_blufi_decrypt_func_t)(uint8_t iv8, uint8_t *crypt_data, int crypt_len)
-
-加密和解密的数据长度必须一致。其中 IV8 为帧的 8 位序列，可作为 IV 的某 8 个位来使用。
-
-.. code-block:: c
-
-   typedef uint16_t (*esp_blufi_checksum_func_t)(uint8_t iv8, uint8_t *data, int len)
-
-该函数用来进行校验，返回值为校验的值。BluFi 会使用该函数返回值与帧的校验值进行比较。
-
-5. BLE SMP Encryption for Blufi
-
-在 Wi-Fi 配网之前，可以使用 BLE SMP 配对建立安全连接，使配网过程更安全。
-
-此功能可通过配置选项启用或禁用：
-
-.. code-block:: c
-
-   CONFIG_EXAMPLE_BLUFI_BLE_SMP_ENABLE
-
-如果启用该选项，ESP32 设备在连接成功后会发起配对请求。仅在配对成功后，设备才可继续进行 Wi-Fi 配网。
-
-目前 BLE SMP 配对 **仅支持 Bluedroid 主机**。
-
-6. 实现更强的安全性
-
-示例中的默认加密/解密逻辑仅用于演示目的。
-
-如果需要更高等级的安全性，可以考虑以下方法：
-
-1. **自定义安全回调** – 通过自定义 BluFi 框架中的安全回调函数，实现自己的加密、解密、认证以及校验算法：
+   这里的两个 ``*`` 是因为需要发出去的数据长度未知，所以需要函数自行分配 (malloc) 或者指向全局变量，并告知是否需要通过 NEED_FREE 释放内存。
 
    .. code-block:: c
 
-      esp_err_t esp_blufi_register_callbacks(esp_blufi_callbacks_t *callbacks);
+       typedef int (* esp_blufi_encrypt_func_t)(uint8_t iv8, uint8_t *crypt_data, int crypt_len)
 
-2. **Network Provisioning 组件（推荐使用）** – 或者可以使用 ESP-IDF 提供的 network_provisioning 组件，实现安全、可直接使用的配网解决方案：
+   加密和解密的数据长度必须一致。其中 IV8 为帧的 8 位序列，可作为 IV 的某 8 个位来使用。
 
-   `network_provisioning <https://github.com/espressif/idf-extra-components/tree/master/network_provisioning>`_
+   .. code-block:: c
 
+       typedef int (* esp_blufi_decrypt_func_t)(uint8_t iv8, uint8_t *crypt_data, int crypt_len)
+
+   加密和解密的数据长度必须一致。其中 IV8 为帧的 8 位序列，可作为 IV 的某 8 个位来使用。
+
+   .. code-block:: c
+
+       typedef uint16_t (*esp_blufi_checksum_func_t)(uint8_t iv8, uint8_t *data, int len)
+
+   该函数用来进行校验，返回值为校验的值。BluFi 会使用该函数返回值与帧的校验值进行比较。
+
+
+5. 实现更强的安全性
+
+   示例中的默认加密、解密逻辑仅用于演示目的。如果你的应用需要更高的安全保障，可选择以下任一方法：
+
+   - **自定义安全回调**：通过改写 BluFi 框架中的安全回调函数，自定义加密、解密、认证以及校验算法：
+
+   .. code-block:: c
+
+       esp_err_t esp_blufi_register_callbacks(esp_blufi_callbacks_t *callbacks);
+
+   - **网络配网组件（推荐使用）**：使用 ESP-IDF 提供的 `network_provisioning`_ 组件，实现安全、可直接使用的配网解决方案。
 
 
 GATT 相关说明
@@ -746,3 +724,6 @@ BluFi Service UUID： 0xFFFF，16 bit
 BluFi（手机 > {IDF_TARGET_NAME}）特性：0xFF01，主要权限：可写
 
 BluFi（{IDF_TARGET_NAME} > 手机）特性：0xFF02，主要权限：可读可通知
+
+
+.. _network_provisioning: https://github.com/espressif/idf-extra-components/tree/master/network_provisioning
