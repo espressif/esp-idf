@@ -211,6 +211,7 @@
 
 #define SOC_CPU_HAS_ZC_EXTENSIONS       1
 
+#define SOC_CPU_ZCMP_WORKAROUND         1
 #define SOC_CPU_ZCMP_PUSH_REVERSED      1
 #define SOC_CPU_ZCMP_POPRET_ISSUE       1
 
