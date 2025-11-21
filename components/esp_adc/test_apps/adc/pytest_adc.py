@@ -12,6 +12,7 @@ from pytest_embedded_idf.utils import idf_parametrize
     ['esp32', 'esp32s2', 'esp32s3', 'esp32c3', 'esp32c6', 'esp32h2', 'esp32c5', 'esp32p4', 'esp32c61'],
     indirect=['target'],
 )
+@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration # TODO: IDF-14357')
 def test_adc(dut: Dut) -> None:
     dut.run_all_single_board_cases(timeout=120, reset=True)
 
@@ -29,4 +30,17 @@ def test_adc(dut: Dut) -> None:
 )
 @idf_parametrize('target', ['esp32c2'], indirect=['target'])
 def test_adc_esp32c2_xtal_26mhz(dut: Dut) -> None:
+    dut.run_all_single_board_cases(timeout=120, reset=True)
+
+
+# P4 REV2 adc
+@pytest.mark.adc
+@pytest.mark.esp32p4_eco4
+@pytest.mark.parametrize('config', ['esp32p4_eco4'], indirect=True)
+@idf_parametrize(
+    'target',
+    ['esp32p4'],
+    indirect=['target'],
+)
+def test_adc_p4_rev2(dut: Dut) -> None:
     dut.run_all_single_board_cases(timeout=120, reset=True)

@@ -142,15 +142,22 @@ REGION_ALIAS("rtc_reserved_seg", lp_reserved_seg );
 #if CONFIG_APP_BUILD_USE_FLASH_SECTIONS
   REGION_ALIAS("text_seg_low", irom_seg);
 #else
+#if CONFIG_ESP32P4_SELECTS_REV_LESS_V3
   REGION_ALIAS("text_seg_low", sram_low);
-  REGION_ALIAS("text_seg_high", sram_high);
+#else
+  REGION_ALIAS("text_seg_low", sram_seg);
+#endif //CONFIG_ESP32P4_SELECTS_REV_LESS_V3
 #endif // CONFIG_APP_BUILD_USE_FLASH_SECTIONS
 
 #if CONFIG_APP_BUILD_USE_FLASH_SECTIONS
   REGION_ALIAS("rodata_seg_low", drom_seg);
 #else
+#if CONFIG_ESP32P4_SELECTS_REV_LESS_V3
   REGION_ALIAS("rodata_seg_low", sram_low);
   REGION_ALIAS("rodata_seg_high", sram_high);
+#else
+  REGION_ALIAS("rodata_seg_low", sram_seg);
+#endif //CONFIG_ESP32P4_SELECTS_REV_LESS_V3
 #endif // CONFIG_APP_BUILD_USE_FLASH_SECTIONS
 
 #if CONFIG_SPIRAM_XIP_FROM_PSRAM

@@ -4,3 +4,7 @@ components/esp_timer/test_apps:
   disable:
     - if: CONFIG_NAME == "dfs" and SOC_CLK_XTAL32K_SUPPORTED != 1
       reason: The test requires the XTAL32K clock to measure the esp_timer timing accuracy
+  disable_test:
+    - if: IDF_TARGET == "esp32p4"
+      temporary: true
+      reason: p4 rev3 migration # TODO: IDF-14420

@@ -2,6 +2,10 @@ components/esp_driver_sdio/test_apps/sdio/sdio_common_tests/host_sdmmc:
   enable:
     - if: IDF_TARGET in ["esp32", "esp32p4"]
       reason: runners use ESP32 / ESP32P4 SDMMC as host
+  disable:
+    - if: IDF_TARGET == "esp32p4"
+      temporary: true
+      reason: p4 rev3 migration # TODO: IDF-14359
   depends_components:
     - sdmmc
     - esp_driver_sdmmc
