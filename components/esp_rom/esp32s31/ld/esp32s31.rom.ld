@@ -16,7 +16,7 @@
 /***************************************
  Group common
  ***************************************/
-// TODO: Update after ROM is freezed IDF-14687
+/* TODO: Update after ROM is freezed IDF-14687 */
 /* Functions */
 rtc_get_reset_reason = 0x2f800018;
 rtc_get_wakeup_cause = 0x2f80001c;
