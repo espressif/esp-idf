@@ -110,7 +110,7 @@ def generate_jobs_report(args: argparse.Namespace) -> None:
     report_generator = JobReportGenerator(
         args.project_id, args.mr_iid, args.pipeline_id, args.job_id, args.commit_id, args.local_commit_id, jobs=jobs
     )
-    report_generator.post_report(print_retry_jobs_message=any(job.is_failed for job in jobs))
+    report_generator.post_report()
 
     if GitlabEnvVars().IDF_CI_IS_DEBUG_PIPELINE:
         print('Debug pipeline detected, exit non-zero to fail the pipeline in order to block merge')

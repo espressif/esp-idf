@@ -1,20 +1,66 @@
 .build_template:
   stage: build
   extends:
-    - .after_script:build:ccache-show-stats:upload-failed-job-logs
+    - .before_script:build
+    - .after_script:build
   image: $ESP_ENV_IMAGE
   tags: [build, shiny]
   variables:
     # Enable ccache for all build jobs. See configure_ci_environment.sh for more ccache related settings.
     IDF_CCACHE_ENABLE: "1"
-  dependencies: []
+  dependencies: # set dependencies to null to avoid missing artifacts issue
 
+######################
+# build_template_app #
+######################
+.build_template_app_template:
+  extends:
+    - .build_template
+  artifacts:
+    paths:
+      - log_template_app/*
+      - size_info.txt
+      - build_template_app/**/size*.json
+    expire_in: 1 week
+    when: always
+  script:
+    # Set the variable for 'esp-idf-template' testing
+    - ESP_IDF_TEMPLATE_GIT=${ESP_IDF_TEMPLATE_GIT:-"https://github.com/espressif/esp-idf-template.git"}
+    - retry_failed git clone ${ESP_IDF_TEMPLATE_GIT}
+    # Try to use the same branch name for esp-idf-template that we're
+    # using on esp-idf. If it doesn't exist then just stick to the default branch
+    - python $CHECKOUT_REF_SCRIPT esp-idf-template esp-idf-template
+    - export PATH="$IDF_PATH/tools:$PATH"
+    # Only do the default cmake build for each target, remaining part are done in the build_template_app job
+    - tools/ci/build_template_app.sh ${BUILD_COMMAND_ARGS}
+
+# Build at least one project for each target at earliest stage to reduce build cost for obvious failing commits
+fast_template_app:
+  extends:
+    - .build_template_app_template
+    - .rules:build
+  stage: pre_check
+  tags: [fast_run, shiny]
+  variables:
+    BUILD_COMMAND_ARGS: "-p"
+
+# This job builds template app with permutations of targets and optimization levels
+build_template_app:
+  extends:
+    - .build_template_app_template
+    - .rules:build
+  stage: host_test
+  needs:
+    - job: fast_template_app
+      artifacts: false
+
+########################################
+# Clang Build Apps Without Tests Cases #
+########################################
 .build_cmake_clang_template:
   extends:
     - .build_template
-    - .before_script:build
-    - .after_script:build:ccache-show-stats
-  dependencies: # set dependencies to null to avoid missing artifacts issue
+    - .rules:build
   needs:
     - job: fast_template_app
       artifacts: false
@@ -45,92 +91,14 @@
       --modified-files ${MR_MODIFIED_FILES}
       $TEST_BUILD_OPTS_EXTRA
 
-######################
-# build_template_app #
-######################
-.build_template_app_template:
-  extends:
-    - .build_template
-    - .before_script:build
-  variables:
-    LOG_PATH: "${CI_PROJECT_DIR}/log_template_app"
-    BUILD_PATH: "${CI_PROJECT_DIR}/build_template_app"
-    BUILD_DIR: "${BUILD_PATH}/@t/@w"
-    BUILD_LOG_CMAKE: "${LOG_PATH}/cmake_@t_@w.txt"
-    BUILD_COMMAND_ARGS: ""
-  artifacts:
-    paths:
-      - log_template_app/*
-      - size_info.txt
-      - build_template_app/**/size*.json
-    expire_in: 1 week
-    when: always
-  script:
-    # Set the variable for 'esp-idf-template' testing
-    - ESP_IDF_TEMPLATE_GIT=${ESP_IDF_TEMPLATE_GIT:-"https://github.com/espressif/esp-idf-template.git"}
-    - retry_failed git clone ${ESP_IDF_TEMPLATE_GIT}
-    # Try to use the same branch name for esp-idf-template that we're
-    # using on esp-idf. If it doesn't exist then just stick to the default branch
-    - python $CHECKOUT_REF_SCRIPT esp-idf-template esp-idf-template
-    - export PATH="$IDF_PATH/tools:$PATH"
-    # Only do the default cmake build for each target, remaining part are done in the build_template_app job
-    - tools/ci/build_template_app.sh ${BUILD_COMMAND_ARGS}
+build_clang_test_apps_xtensa:
+  extends: .build_cmake_clang_template
+  parallel:
+    matrix:
+      - IDF_TARGET: [esp32, esp32s2, esp32s3]
 
-# build-related-pre-check-jobs ------------------------------------------------
-# Build at least one project for each target at earliest stage to reduce build cost for obvious failing commits
-fast_template_app:
-  extends:
-    - .build_template_app_template
-    - .rules:build:target_test
-  stage: pre_check
-  tags: [fast_run, shiny]
-  variables:
-    BUILD_COMMAND_ARGS: "-p"
-#------------------------------------------------------------------------------
-
-#######################
-# gnu_static_analyzer #
-#######################
-gcc_static_analyzer:
-  extends:
-    - .build_template_app_template
-    - .rules:build:target_test
-  stage: pre_check
-  tags: [build, shiny]
-  variables:
-    CI_CCACHE_DISABLE: 1
-    ANALYZING_APP: "examples/get-started/hello_world"
-  script:
-    - echo "CONFIG_COMPILER_STATIC_ANALYZER=y" >> ${ANALYZING_APP}/sdkconfig.defaults
-    - idf-build-apps build -p ${ANALYZING_APP}
-
-########################################
-# Clang Build Apps Without Tests Cases #
-########################################
-build_clang_test_apps_esp32:
-  extends:
-    - .build_cmake_clang_template
-    - .rules:build
-  variables:
-    IDF_TARGET: esp32
-
-build_clang_test_apps_esp32s2:
-  extends:
-    - .build_cmake_clang_template
-    - .rules:build
-  variables:
-    IDF_TARGET: esp32s2
-
-build_clang_test_apps_esp32s3:
-  extends:
-    - .build_cmake_clang_template
-    - .rules:build
-  variables:
-    IDF_TARGET: esp32s3
-
-.build_clang_test_apps_riscv:
-  extends:
-    - .build_cmake_clang_template
+build_clang_test_apps_riscv:
+  extends: .build_cmake_clang_template
   variables:
     # https://reviews.llvm.org/D90108.
     # GNU 'as' lets .weak override .globl since binutils-gdb
@@ -138,191 +106,9 @@ build_clang_test_apps_esp32s3:
     # while MC lets the last directive win (PR38921).
     # For RISCV chips we use integrated assembler by default, so suppress this warning to pass CI pipeline.
     TEST_BUILD_OPTS_EXTRA: "--ignore-warning-str 'changed binding to STB_WEAK'"
-
-build_clang_test_apps_esp32c3:
-  extends:
-    - .build_clang_test_apps_riscv
-    - .rules:build
-  variables:
-    IDF_TARGET: esp32c3
-
-build_clang_test_apps_esp32c2:
-  extends:
-    - .build_clang_test_apps_riscv
-    - .rules:build
-  variables:
-    IDF_TARGET: esp32c2
-
-build_clang_test_apps_esp32c6:
-  extends:
-    - .build_clang_test_apps_riscv
-    - .rules:build
-  variables:
-    IDF_TARGET: esp32c6
-
-build_clang_test_apps_esp32c5:
-  extends:
-    - .build_clang_test_apps_riscv
-    - .rules:build
-  variables:
-    IDF_TARGET: esp32c5
-
-build_clang_test_apps_esp32h2:
-  extends:
-    - .build_clang_test_apps_riscv
-    - .rules:build
-  variables:
-    IDF_TARGET: esp32h2
-
-build_clang_test_apps_esp32p4:
-  extends:
-    - .build_clang_test_apps_riscv
-    - .rules:build
-  variables:
-    IDF_TARGET: esp32p4
-
-######################
-# Build System Tests #
-######################
-.test_build_system_template:
-  stage: host_test
-  extends:
-    - .build_template
-    - .rules:build:check
-  dependencies: # set dependencies to null to avoid missing artifacts issue
-  needs:
-    - job: fast_template_app
-      artifacts: false
-      optional: true
-  artifacts:
-    reports:
-      junit: XUNIT_RESULT.xml
-    paths:
-      - XUNIT_RESULT.xml
-      - test_build_system
-    expire_in: 1 week
-    when: always
-  script:
-    - ${IDF_PATH}/tools/ci/test_configure_ci_environment.sh
-    - cd ${IDF_PATH}/tools/test_build_system
-    - run_cmd idf-ci gitlab download-known-failure-cases-file ${KNOWN_FAILURE_CASES_FILE_NAME}
-    - pytest
-      --cleanup-idf-copy
-      --parallel-count ${CI_NODE_TOTAL:-1}
-      --parallel-index ${CI_NODE_INDEX:-1}
-      --work-dir ${CI_PROJECT_DIR}/test_build_system
-      --junitxml ${CI_PROJECT_DIR}/XUNIT_RESULT.xml
-      --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}
-
-.test_build_system_minimal_cmake_template:
-  extends: .test_build_system_template
-  variables:
-    INSTALL_EXTRA_TOOLS: cmake@3.22.1
-  script:
-    - MINIMAL_SUPPORTED_CMAKE_VERSION=$(echo "${INSTALL_EXTRA_TOOLS}" | sed -n 's/.*cmake@\([0-9.]*\).*/\1/p')
-    - export PATH=$(echo "$PATH" | sed -E "s|/tools/cmake/[0-9.]+|/tools/cmake/${MINIMAL_SUPPORTED_CMAKE_VERSION}|")
-    - ACTUAL_CMAKE_VERSION=$(cmake --version | head -n1 | awk '{print $3}')
-    - |
-      if [ "${ACTUAL_CMAKE_VERSION}" != "${MINIMAL_SUPPORTED_CMAKE_VERSION}" ]; then
-        echo "ERROR: Wrong minimal CMake version! Detected: ${ACTUAL_CMAKE_VERSION}, but should be: ${MINIMAL_SUPPORTED_CMAKE_VERSION}"
-        exit 1
-      fi
-    - ${IDF_PATH}/tools/ci/test_configure_ci_environment.sh
-    - cd ${IDF_PATH}/tools/test_build_system
-    - run_cmd idf-ci gitlab download-known-failure-cases-file ${KNOWN_FAILURE_CASES_FILE_NAME}
-    - pytest
-      -k cmake
-      --cleanup-idf-copy
-      --parallel-count ${CI_NODE_TOTAL:-1}
-      --parallel-index ${CI_NODE_INDEX:-1}
-      --work-dir ${CI_PROJECT_DIR}/test_build_system
-      --junitxml ${CI_PROJECT_DIR}/XUNIT_RESULT.xml
-      --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}
-
-pytest_build_system:
-  extends: .test_build_system_template
-  parallel: 3
-
-pytest_buildv2_system:
-  extends:
-    - .test_build_system_template
-    - .rules:labels:buildv2
-  parallel: 3
-  script:
-    - ${IDF_PATH}/tools/ci/test_configure_ci_environment.sh
-    - cd ${IDF_PATH}/tools/test_build_system
-    - run_cmd idf-ci gitlab download-known-failure-cases-file ${KNOWN_FAILURE_CASES_FILE_NAME}
-    - pytest
-      --buildv2
-      --cleanup-idf-copy
-      --parallel-count ${CI_NODE_TOTAL:-1}
-      --parallel-index ${CI_NODE_INDEX:-1}
-      --work-dir ${CI_PROJECT_DIR}/test_build_system
-      --junitxml ${CI_PROJECT_DIR}/XUNIT_RESULT.xml
-      --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}
-      --
-      test_non_default_target.py
-      test_component_manager.py
-      test_build.py
-      test_bootloader.py
-      test_git.py
-      test_kconfig.py
-      test_partition.py
-      test_reproducible_build.py
-      test_sdkconfig.py
-      test_versions.py
-      test_common.py
-      test_components.py
-      test_cmake.py
-      test_idf_extension.py
-      test_rebuild.py
-
-pytest_build_system_macos:
-  extends:
-    - .test_build_system_template
-    - .brew-macos-settings
-    - .rules:build:macos
-  parallel: 3
-
-pytest_build_system_minimal_cmake:
-  extends: .test_build_system_minimal_cmake_template
-
-pytest_build_system_macos_minimal_cmake:
-  extends:
-    - .test_build_system_minimal_cmake_template
-    - .brew-macos-settings
-    - .rules:build:macos
-  variables:
-    INSTALL_EXTRA_TOOLS: ninja cmake@3.22.1
-
-build_docker:
-  extends:
-    - .before_script:minimal
-    - .rules:build:docker
-  stage: host_test
-  needs: []
-  image: espressif/docker-builder:1
-  tags: [shiny, dind]
-  variables:
-    DOCKER_TMP_IMAGE_NAME: "idf_tmp_image"
-  script:
-    - export DOCKER_BUILD_ARGS="--build-arg IDF_CLONE_URL=${CI_REPOSITORY_URL} --build-arg IDF_CLONE_BRANCH_OR_TAG=${CI_COMMIT_REF_NAME} --build-arg IDF_CHECKOUT_REF=${CI_COMMIT_TAG:-$CI_COMMIT_SHA} --build-arg IDF_CLONE_SHALLOW=1 --build-arg IDF_GITHUB_ASSETS=${INTERNAL_GITHUB_ASSETS}"
-    - docker build --tag ${DOCKER_TMP_IMAGE_NAME} ${DOCKER_BUILD_ARGS} tools/docker/
-    # We can't mount $PWD/examples/get-started/blink into the container, see https://gitlab.com/gitlab-org/gitlab-ce/issues/41227.
-    # The workaround mentioned there works, but leaves around directories which need to be cleaned up manually.
-    # Therefore, build a copy of the example located inside the container.
-    - docker run --rm --workdir /opt/esp/idf/examples/get-started/blink ${DOCKER_TMP_IMAGE_NAME} idf.py build
-
-# This job builds template app with permutations of targets and optimization levels
-build_template_app:
-  extends:
-    - .build_template_app_template
-    - .rules:build
-  stage: host_test
-  dependencies: # set dependencies to null to avoid missing artifacts issue
-  needs:
-    - job: fast_template_app
-      artifacts: false
+  parallel:
+    matrix:
+      - IDF_TARGET: [esp32c3, esp32c2, esp32c6, esp32c5, esp32h2, esp32p4]
 
 ####################
 # Dynamic Pipeline #
@@ -344,7 +130,11 @@ generate_build_child_pipeline:
     expire_in: 1 week
     when: always
   script:
-    - run_cmd python tools/ci/dynamic_pipelines/scripts/generate_build_child_pipeline.py
+    - run_cmd idf-ci --debug gitlab build-child-pipeline
+      -p components
+      -p examples
+      -p tools/test_apps
+      --modified-files $MR_MODIFIED_FILES
 
 build_child_pipeline:
   stage: build

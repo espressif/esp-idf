@@ -6,13 +6,16 @@
   dependencies: # set dependencies to null to avoid missing artifacts issue
   # run host_test jobs immediately, only after upload cache
   needs:
+    - pipeline_variables
     - job: upload-pip-cache
       optional: true
       artifacts: false
     - job: upload-submodules-cache
       optional: true
       artifacts: false
-    - pipeline_variables
+    - job: fast_template_app
+      optional: true
+      artifacts: false
   artifacts:
     expire_in: 1 week
     when: always
@@ -52,14 +55,14 @@ test_partition_table_on_host:
   extends: .host_test_template
   script:
     - cd components/partition_table/test_gen_esp32part_host
-    - ./gen_esp32part_tests.py
+    - pytest_for_ut ./gen_esp32part_tests.py
 
 test_ldgen_on_host:
   extends: .host_test_template
   script:
     - cd tools/ldgen/test
     - export PYTHONPATH=$PYTHONPATH:..
-    - python -m unittest
+    - pytest_for_ut .
   variables:
     LC_ALL: C.UTF-8
 
@@ -67,21 +70,19 @@ test_spiffs_on_host:
   extends: .host_test_template
   script:
     - cd components/spiffs/test_spiffsgen/
-    - ./test_spiffsgen.py
+    - pytest_for_ut ./test_spiffsgen.py
 
 test_fatfsgen_on_host:
   extends: .host_test_template
   script:
     - cd components/fatfs/test_fatfsgen/
-    - ./test_fatfsgen.py
-    - ./test_wl_fatfsgen.py
-    - ./test_fatfsparse.py
+    - pytest_for_ut ./test_fatfsgen.py ./test_wl_fatfsgen.py ./test_fatfsparse.py
 
 test_certificate_bundle_on_host:
   extends: .host_test_template
   script:
     - cd components/mbedtls/esp_crt_bundle/test_gen_crt_bundle/
-    - ./test_gen_crt_bundle.py
+    - pytest_for_ut ./test_gen_crt_bundle.py
 
 # Test for create virtualenv. It must be invoked from Python, not from virtualenv.
 # Use docker image system python without any extra dependencies
@@ -104,15 +105,17 @@ test_cli_installer:
     - python3 ${IDF_PATH}/tools/idf_tools.py download required qemu-riscv32 qemu-xtensa cmake cmake@3.22.1
     - cd ${IDF_PATH}/tools/test_idf_tools
     - python3 -m pip install jsonschema
+    # Testing with system python3, so don't use any third-party packages
     - python3 ./test_idf_tools.py -v
     - python3 ./test_idf_tools_python_env.py
     # It runs at the end because it modifies dependencies
     - IDF_TEST_MAY_BREAK_DEPENDENCIES=1 python3 ./test_idf_tools.py -v TestSystemDependencies.test_commands_when_nodeps
 
-.test_efuse_table_on_host_template:
+test_efuse_table_on_host:
   extends: .host_test_template
-  variables:
-    IDF_TARGET: "esp32"
+  parallel:
+    matrix:
+      - IDF_TARGET: [esp32, esp32s2, esp32c3, esp32s3, esp32c2, esp32c6, esp32h2, esp32p4, esp32c5, esp32c61]
   artifacts:
     when: on_failure
     paths:
@@ -122,35 +125,7 @@ test_cli_installer:
     - ./efuse_table_gen.py -t "${IDF_TARGET}" ${IDF_PATH}/components/efuse/${IDF_TARGET}/esp_efuse_table.csv
     - git diff --exit-code -- ${IDF_TARGET}/esp_efuse_table.c || { echo 'Differences found for ${IDF_TARGET} target. Please run idf.py efuse-common-table and commit the changes.'; exit 1; }
     - cd ${IDF_PATH}/components/efuse/test_efuse_host
-    - ./efuse_tests.py
-
-test_efuse_table_on_host_esp32:
-  extends: .test_efuse_table_on_host_template
-
-test_efuse_table_on_host_esp32s2:
-  extends: .test_efuse_table_on_host_template
-  variables:
-    IDF_TARGET: esp32s2
-
-test_efuse_table_on_host_esp32s3:
-  extends: .test_efuse_table_on_host_template
-  variables:
-    IDF_TARGET: esp32s3
-
-test_efuse_table_on_host_esp32c3:
-  extends: .test_efuse_table_on_host_template
-  variables:
-    IDF_TARGET: esp32c3
-
-test_efuse_table_on_host_esp32h2:
-  extends: .test_efuse_table_on_host_template
-  variables:
-    IDF_TARGET: esp32h2
-
-test_efuse_table_on_host_esp32c6:
-  extends: .test_efuse_table_on_host_template
-  variables:
-    IDF_TARGET: esp32c6
+    - pytest_for_ut ./efuse_tests.py
 
 test_logtrace_proc:
   extends: .host_test_template
@@ -217,7 +192,7 @@ test_split_path_by_spaces:
   extends: .host_test_template
   script:
     - cd ${IDF_PATH}/tools
-    - python -m unittest split_paths_by_spaces.py
+    - pytest_for_ut ./split_paths_by_spaces.py
 
 test_transport_on_host:
   extends: .host_test_template
@@ -256,8 +231,78 @@ test_gen_soc_caps_kconfig:
   extends: .host_test_template
   script:
     - cd ${IDF_PATH}/tools/gen_soc_caps_kconfig/
-    - ./test/test_gen_soc_caps_kconfig.py
+    - pytest_for_ut ./test/test_gen_soc_caps_kconfig.py
 
+test_idf_build_apps_load_soc_caps:
+  extends: .host_test_template
+  script:
+    - cd tools/ci
+    - pytest_for_ut ./test_soc_headers_load_in_idf_build_apps.py
+
+test_nvs_gen_check:
+  extends: .host_test_template
+  artifacts:
+    paths:
+      - XUNIT_RESULT.xml
+      - components/nvs_flash/nvs_partition_tool
+    reports:
+      junit: XUNIT_RESULT.xml
+  variables:
+    LC_ALL: C.UTF-8
+  script:
+    - cd ${IDF_PATH}/components/nvs_flash/nvs_partition_tool
+    - pytest_for_ut test_nvs_gen_check.py
+
+test_esp_rom:
+  extends: .host_test_template
+  artifacts:
+    paths:
+      - XUNIT_RESULT.xml
+    reports:
+      junit: XUNIT_RESULT.xml
+  script:
+    - cd ${IDF_PATH}/components/esp_rom/
+    - pytest_for_ut test_esp_rom.py
+
+make_sure_soc_caps_compatible_in_idf_build_apps:
+    extends:
+      - .host_test_template
+      - .rules:dev-push
+    artifacts:
+      paths:
+        - new.json
+        - base.json
+      when: always
+    when: manual
+    script:
+      - python tools/ci/idf_build_apps_dump_soc_caps.py new.json
+      - git fetch --depth=1 origin $CI_MERGE_REQUEST_DIFF_BASE_SHA
+      - git checkout -f $CI_MERGE_REQUEST_DIFF_BASE_SHA
+      - git checkout $CI_COMMIT_SHA -- tools/ci/idf_build_apps_dump_soc_caps.py
+      - python tools/ci/idf_build_apps_dump_soc_caps.py base.json
+      - diff new.json base.json
+
+build_docker:
+  extends:
+    - .before_script:minimal
+    - .rules:build:docker
+  stage: host_test
+  needs: []
+  image: espressif/docker-builder:1
+  tags: [shiny, dind]
+  variables:
+    DOCKER_TMP_IMAGE_NAME: "idf_tmp_image"
+  script:
+    - export DOCKER_BUILD_ARGS="--build-arg IDF_CLONE_URL=${CI_REPOSITORY_URL} --build-arg IDF_CLONE_BRANCH_OR_TAG=${CI_COMMIT_REF_NAME} --build-arg IDF_CHECKOUT_REF=${CI_COMMIT_TAG:-$CI_COMMIT_SHA} --build-arg IDF_CLONE_SHALLOW=1 --build-arg IDF_GITHUB_ASSETS=${INTERNAL_GITHUB_ASSETS}"
+    - docker build --tag ${DOCKER_TMP_IMAGE_NAME} ${DOCKER_BUILD_ARGS} tools/docker/
+    # We can't mount $PWD/examples/get-started/blink into the container, see https://gitlab.com/gitlab-org/gitlab-ce/issues/41227.
+    # The workaround mentioned there works, but leaves around directories which need to be cleaned up manually.
+    # Therefore, build a copy of the example located inside the container.
+    - docker run --rm --workdir /opt/esp/idf/examples/get-started/blink ${DOCKER_TMP_IMAGE_NAME} idf.py build
+
+############################
+# Host test with test apps #
+############################
 test_pytest_qemu:
   extends:
     - .host_test_template
@@ -344,50 +389,116 @@ test_pytest_macos:
       --junitxml=XUNIT_RESULT.xml
       --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}
 
-test_idf_build_apps_load_soc_caps:
-  extends: .host_test_template
-  script:
-    - python tools/ci/check_soc_headers_load_in_idf_build_apps.py
-
-test_nvs_gen_check:
-  extends: .host_test_template
+######################
+# Build System Tests #
+######################
+.test_build_system_template:
+  stage: host_test
+  extends:
+    - .build_template
+    - .rules:build:check
+  dependencies: # set dependencies to null to avoid missing artifacts issue
+  needs:
+    - job: fast_template_app
+      artifacts: false
+      optional: true
   artifacts:
-    paths:
-      - XUNIT_RESULT.xml
-      - components/nvs_flash/nvs_partition_tool
     reports:
       junit: XUNIT_RESULT.xml
+    paths:
+      - XUNIT_RESULT.xml
+      - test_build_system
+    expire_in: 1 week
+    when: always
+  script:
+    - ${IDF_PATH}/tools/ci/test_configure_ci_environment.sh
+    - cd ${IDF_PATH}/tools/test_build_system
+    - run_cmd idf-ci gitlab download-known-failure-cases-file ${KNOWN_FAILURE_CASES_FILE_NAME}
+    - pytest
+      --cleanup-idf-copy
+      --parallel-count ${CI_NODE_TOTAL:-1}
+      --parallel-index ${CI_NODE_INDEX:-1}
+      --work-dir ${CI_PROJECT_DIR}/test_build_system
+      --junitxml ${CI_PROJECT_DIR}/XUNIT_RESULT.xml
+      --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}
+
+.test_build_system_minimal_cmake_template:
+  extends: .test_build_system_template
   variables:
-    LC_ALL: C.UTF-8
+    INSTALL_EXTRA_TOOLS: cmake@3.22.1
   script:
-    - cd ${IDF_PATH}/components/nvs_flash/nvs_partition_tool
-    - pytest --noconftest test_nvs_gen_check.py --junitxml=XUNIT_RESULT.xml
+    - MINIMAL_SUPPORTED_CMAKE_VERSION=$(echo "${INSTALL_EXTRA_TOOLS}" | sed -n 's/.*cmake@\([0-9.]*\).*/\1/p')
+    - export PATH=$(echo "$PATH" | sed -E "s|/tools/cmake/[0-9.]+|/tools/cmake/${MINIMAL_SUPPORTED_CMAKE_VERSION}|")
+    - ACTUAL_CMAKE_VERSION=$(cmake --version | head -n1 | awk '{print $3}')
+    - |
+      if [ "${ACTUAL_CMAKE_VERSION}" != "${MINIMAL_SUPPORTED_CMAKE_VERSION}" ]; then
+        echo "ERROR: Wrong minimal CMake version! Detected: ${ACTUAL_CMAKE_VERSION}, but should be: ${MINIMAL_SUPPORTED_CMAKE_VERSION}"
+        exit 1
+      fi
+    - ${IDF_PATH}/tools/ci/test_configure_ci_environment.sh
+    - cd ${IDF_PATH}/tools/test_build_system
+    - run_cmd idf-ci gitlab download-known-failure-cases-file ${KNOWN_FAILURE_CASES_FILE_NAME}
+    - pytest
+      -k cmake
+      --cleanup-idf-copy
+      --parallel-count ${CI_NODE_TOTAL:-1}
+      --parallel-index ${CI_NODE_INDEX:-1}
+      --work-dir ${CI_PROJECT_DIR}/test_build_system
+      --junitxml ${CI_PROJECT_DIR}/XUNIT_RESULT.xml
+      --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}
 
-test_esp_rom:
-  extends: .host_test_template
-  artifacts:
-    paths:
-      - XUNIT_RESULT.xml
-    reports:
-      junit: XUNIT_RESULT.xml
+pytest_build_system:
+  extends: .test_build_system_template
+  parallel: 3
+
+pytest_buildv2_system:
+  extends:
+    - .test_build_system_template
+    - .rules:labels:buildv2
+  parallel: 3
   script:
-    - cd ${IDF_PATH}/components/esp_rom/
-    - pytest --noconftest test_esp_rom.py --junitxml=XUNIT_RESULT.xml
+    - ${IDF_PATH}/tools/ci/test_configure_ci_environment.sh
+    - cd ${IDF_PATH}/tools/test_build_system
+    - run_cmd idf-ci gitlab download-known-failure-cases-file ${KNOWN_FAILURE_CASES_FILE_NAME}
+    - pytest
+      --buildv2
+      --cleanup-idf-copy
+      --parallel-count ${CI_NODE_TOTAL:-1}
+      --parallel-index ${CI_NODE_INDEX:-1}
+      --work-dir ${CI_PROJECT_DIR}/test_build_system
+      --junitxml ${CI_PROJECT_DIR}/XUNIT_RESULT.xml
+      --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}
+      --
+      test_non_default_target.py
+      test_component_manager.py
+      test_build.py
+      test_bootloader.py
+      test_git.py
+      test_kconfig.py
+      test_partition.py
+      test_reproducible_build.py
+      test_sdkconfig.py
+      test_versions.py
+      test_common.py
+      test_components.py
+      test_cmake.py
+      test_idf_extension.py
+      test_rebuild.py
 
-make_sure_soc_caps_compatible_in_idf_build_apps:
-    extends:
-      - .host_test_template
-      - .rules:dev-push
-    artifacts:
-      paths:
-        - new.json
-        - base.json
-      when: always
-    when: manual
-    script:
-      - python tools/ci/idf_build_apps_dump_soc_caps.py new.json
-      - git fetch --depth=1 origin $CI_MERGE_REQUEST_DIFF_BASE_SHA
-      - git checkout -f $CI_MERGE_REQUEST_DIFF_BASE_SHA
-      - git checkout $CI_COMMIT_SHA -- tools/ci/idf_build_apps_dump_soc_caps.py
-      - python tools/ci/idf_build_apps_dump_soc_caps.py base.json
-      - diff new.json base.json
+pytest_build_system_macos:
+  extends:
+    - .test_build_system_template
+    - .brew-macos-settings
+    - .rules:build:macos
+  parallel: 3
+
+pytest_build_system_minimal_cmake:
+  extends: .test_build_system_minimal_cmake_template
+
+pytest_build_system_macos_minimal_cmake:
+  extends:
+    - .test_build_system_minimal_cmake_template
+    - .brew-macos-settings
+    - .rules:build:macos
+  variables:
+    INSTALL_EXTRA_TOOLS: ninja cmake@3.22.1
