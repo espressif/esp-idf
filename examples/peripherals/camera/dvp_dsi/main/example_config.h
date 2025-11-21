@@ -38,7 +38,6 @@ extern "C" {
 #define EXAMPLE_DVP_CAM_HSYNC_IO           (-1)
 
 #else
-
 #define EXAMPLE_DVP_CAM_SCCB_SCL_IO        (33)
 #define EXAMPLE_DVP_CAM_SCCB_SDA_IO        (32)
 
