@@ -66,30 +66,51 @@ static void trel_browse_notifier(mdns_result_t *result)
     while (result) {
         if (result->addr && result->addr->addr.type == IPADDR_TYPE_V6) {
             otPlatTrelPeerInfo info;
-            uint8_t trel_txt[1024] = {0};
-            uint16_t trel_txt_len = 0;
-            size_t index = 0;
-            while (index < result->txt_count) {
-                trel_txt[trel_txt_len++] = strlen(result->txt[index].key) + result->txt_value_len[index] + 1;
-                memcpy((trel_txt + trel_txt_len), (void *)result->txt[index].key, strlen(result->txt[index].key));
-                trel_txt_len += (strlen(result->txt[index].key));
-                trel_txt[trel_txt_len++] = '=';
-                memcpy((trel_txt + trel_txt_len), (void *)result->txt[index].value, result->txt_value_len[index]);
-                trel_txt_len += result->txt_value_len[index];
-                index++;
-            }
+            uint8_t *trel_txt = NULL;
+            size_t trel_txt_len = 0;
+
             if (!s_trel_netif) {
                 s_trel_netif = result->esp_netif;
+            } else if (s_trel_netif != result->esp_netif) {
+                result = result->next;
+                continue;
+            }
+
+            for (size_t index = 0; index < result->txt_count; index++) {
+                size_t key_len = strlen(result->txt[index].key);
+                size_t value_len = result->txt_value_len[index];
+                trel_txt_len += 1 + key_len + 1 + value_len; // txt_len + key + `=` + value
+            }
+
+            if (trel_txt_len == 0) {
+                result = result->next;
+                continue;
+            }
+            trel_txt = malloc(trel_txt_len);
+            ESP_RETURN_ON_FALSE(trel_txt != NULL, , OT_PLAT_LOG_TAG, "Failed to malloc buffer for TREL TXT");
+
+            size_t offset = 0;
+            for (size_t index = 0; index < result->txt_count; index++) {
+                size_t key_len = strlen(result->txt[index].key);
+                size_t value_len = result->txt_value_len[index];
+
+                trel_txt[offset++] = key_len + value_len + 1;
+                memcpy(trel_txt + offset, result->txt[index].key, key_len);
+                offset += key_len;
+                trel_txt[offset++] = '=';
+                memcpy(trel_txt + offset, result->txt[index].value, value_len);
+                offset += value_len;
             }
             info.mTxtData = trel_txt;
             info.mTxtLength = trel_txt_len;
             info.mSockAddr.mPort = result->port;
             memcpy(info.mSockAddr.mAddress.mFields.m32, result->addr->addr.u_addr.ip6.addr, OT_IP6_ADDRESS_SIZE);
             info.mRemoved = (result->ttl == 0);
-            ESP_LOGI(OT_PLAT_LOG_TAG, "%s TREL peer: address: %s, port:%d", info.mRemoved ? "Remove" : "Found", ip6addr_ntoa(((ip6_addr_t*)(&result->addr->addr.u_addr.ip6))), info.mSockAddr.mPort);
+            ESP_LOGI(OT_PLAT_LOG_TAG, "%s TREL peer: address: %s, port:%d", info.mRemoved ? "Remove" : "Found", ip6addr_ntoa((ip6_addr_t*)(&result->addr->addr.u_addr.ip6)), info.mSockAddr.mPort);
             esp_openthread_task_switching_lock_acquire(portMAX_DELAY);
             otPlatTrelHandleDiscoveredPeerInfo(esp_openthread_get_instance(), &info);
             esp_openthread_task_switching_lock_release();
+            free(trel_txt);
         }
         result = result->next;
     }
