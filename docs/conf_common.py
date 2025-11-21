@@ -317,7 +317,7 @@ ESP32C6_DOCS = [
     'api-guides/phy.rst',
 ] + ESP_TEE_DOCS
 
-ESP32H2_DOCS = ['api-guides/RF_calibration.rst', 'api-guides/phy.rst']
+ESP32H2_DOCS = ['api-guides/RF_calibration.rst', 'api-guides/phy.rst'] + ESP_TEE_DOCS
 
 ESP32H4_DOCS = [
     'api-reference/system/ipc.rst',
@@ -490,6 +490,9 @@ idf_build_system = {
 # Please update following list to enable Qemu doc guide (and cross references) for a new target
 QEMU_TARGETS = ['esp32', 'esp32c3', 'esp32s3']
 
+# Please update following list to enable ESP-TEE doc guide (and cross references) for a new target
+ESP_TEE_TARGETS = ['esp32c6', 'esp32h2', 'esp32c5', 'esp32c61']
+
 
 # Callback function for user setup that needs be done after `config-init`-event
 # config.idf_target is not available at the initial config stage
@@ -502,6 +505,9 @@ def conf_setup(app, config):
 
     if config.idf_target in QEMU_TARGETS:
         app.tags.add('TARGET_SUPPORT_QEMU')
+
+    if config.idf_target in ESP_TEE_TARGETS:
+        app.tags.add('TARGET_SUPPORT_ESP_TEE')
 
     try:
         with open(add_warnings_file) as warning_file:
