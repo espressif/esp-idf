@@ -32,6 +32,8 @@
 #include "stack/btm_api.h"
 #include "osi/allocator.h"
 
+#if (CLASSIC_BT_INCLUDED == TRUE)
+
 #if BTA_DYNAMIC_MEMORY == FALSE
 tBTA_DM_CONNECTED_SRVCS  bta_dm_conn_srvcs;
 #else
@@ -1171,3 +1173,5 @@ tBTA_DM_CONTRL_STATE bta_dm_pm_obtain_controller_state(void)
 }
 
 #endif
+
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)

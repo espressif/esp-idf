@@ -139,7 +139,7 @@ void btm_update_scanner_filter_policy(tBTM_BLE_SFP scan_policy)
     p_inq->sfp = scan_policy;
     p_inq->scan_type = p_inq->scan_type == BTM_BLE_SCAN_MODE_NONE ? BTM_BLE_SCAN_MODE_ACTI : p_inq->scan_type;
 
-    
+
     btsnd_hcic_ble_set_scan_params(p_inq->scan_type, (UINT16)scan_interval,
                                     (UINT16)scan_window,
                                     btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type,

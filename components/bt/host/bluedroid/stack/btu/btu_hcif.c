@@ -1226,7 +1226,9 @@ static void btu_hcif_hdl_command_complete (UINT16 opcode, UINT8 *p, UINT16 evt_l
         btm_read_rssi_complete (p, evt_len);
         break;
     case HCI_BLE_READ_CHNL_MAP:
+#if BLE_INCLUDED == TRUE
         btm_read_channel_map_complete (p);
+#endif // #if BLE_INCLUDED == TRUE
         break;
     case HCI_READ_TRANSMIT_POWER_LEVEL:
         break;
