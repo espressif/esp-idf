@@ -127,7 +127,6 @@ typedef struct {
     };
     ppa_color_range_t yuv_range;            /*!< When the color mode is any YUV color space, this field is to describe its color range */
     ppa_color_conv_std_rgb_yuv_t yuv_std;   /*!< When the color mode is any YUV color space, this field is to describe its YUV<->RGB conversion standard */
-    color_yuv422_pack_order_t yuv422_pack_order; /*!< When the color mode is YUV422, this field is to describe its data pack order */
 } ppa_in_pic_blk_config_t;
 
 /**
