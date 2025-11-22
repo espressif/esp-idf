@@ -144,9 +144,6 @@ bool ppa_blend_transaction_on_picked(uint32_t num_chans, const dma2d_trans_chann
         ppa_ll_blend_set_rx_bg_yuv_range(platform->hal.dev, blend_trans_desc->in_bg.yuv_range);
         ppa_ll_blend_set_rx_bg_yuv2rgb_std(platform->hal.dev, blend_trans_desc->in_bg.yuv_std);
     }
-    if ((uint32_t)blend_trans_desc->in_bg.blend_cm == PPA_BLEND_COLOR_MODE_YUV422) {
-        ppa_ll_blend_set_rx_bg_yuv422_pack_order(platform->hal.dev, blend_trans_desc->in_bg.yuv422_pack_order);
-    }
     ppa_ll_blend_enable_rx_bg_byte_swap(platform->hal.dev, blend_trans_desc->bg_byte_swap);
     ppa_ll_blend_enable_rx_bg_rgb_swap(platform->hal.dev, blend_trans_desc->bg_rgb_swap);
     ppa_ll_blend_configure_rx_bg_alpha(platform->hal.dev, blend_trans_desc->bg_alpha_update_mode, blend_trans_desc->bg_alpha_value);
@@ -201,7 +198,7 @@ esp_err_t ppa_do_blend(ppa_client_handle_t ppa_client, const ppa_blend_oper_conf
                             config->in_bg.block_h % 2 == 0 && config->in_bg.block_w % 2 == 0 &&
                             config->in_bg.block_offset_x % 2 == 0 && config->in_bg.block_offset_y % 2 == 0,
                             ESP_ERR_INVALID_ARG, TAG, "YUV420 input does not support odd h/w/offset_x/offset_y");
-    } else if (config->in_bg.blend_cm == PPA_BLEND_COLOR_MODE_YUV422) {
+    } else if (PPA_IS_CM_YUV422(config->in_bg.blend_cm)) {
         ESP_RETURN_ON_FALSE(config->in_bg.pic_w % 2 == 0 && config->in_bg.block_w % 2 == 0 && config->in_bg.block_offset_x % 2 == 0,
                             ESP_ERR_INVALID_ARG, TAG, "YUV422 input does not support odd w/offset_x");
     }
@@ -218,7 +215,7 @@ esp_err_t ppa_do_blend(ppa_client_handle_t ppa_client, const ppa_blend_oper_conf
         ESP_RETURN_ON_FALSE(config->out.pic_h % 2 == 0 && config->out.pic_w % 2 == 0 &&
                             config->out.block_offset_x % 2 == 0 && config->out.block_offset_y % 2 == 0,
                             ESP_ERR_INVALID_ARG, TAG, "YUV420 output does not support odd h/w/offset_x/offset_y");
-    } else if (config->out.blend_cm == PPA_BLEND_COLOR_MODE_YUV422) {
+    } else if (PPA_IS_CM_YUV422(config->out.blend_cm)) {
         ESP_RETURN_ON_FALSE(config->out.pic_w % 2 == 0 && config->out.block_offset_x % 2 == 0,
                             ESP_ERR_INVALID_ARG, TAG, "YUV422 output does not support odd w/offset_x");
     }

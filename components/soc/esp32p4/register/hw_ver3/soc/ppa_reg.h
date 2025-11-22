@@ -287,7 +287,7 @@ extern "C" {
 #define PPA_RGB2YUV_PROTOCOL_V  0x00000001U
 #define PPA_RGB2YUV_PROTOCOL_S  11
 /** PPA_YUV422_RX_BYTE_ORDER : R/W; bitpos: [13:12]; default: 0;
- *  YUV422 input byte order when reg_sr_rx_cm is 4'd9. 0: YVYU, 1:YUYV, 2: VYUY, 3: UYVY
+ *  YUV422 input byte order when reg_sr_rx_cm is 4'd9. 0: YVYU, 1:YUYV, 2: VYUY, 3: UYVY (high addr -> low addr)
  */
 #define PPA_YUV422_RX_BYTE_ORDER    0x00000003U
 #define PPA_YUV422_RX_BYTE_ORDER_M  (PPA_YUV422_RX_BYTE_ORDER_V << PPA_YUV422_RX_BYTE_ORDER_S)
@@ -351,7 +351,7 @@ extern "C" {
 #define PPA_BLEND_TX_RGB2YUV_PROTOCOL_V  0x00000001U
 #define PPA_BLEND_TX_RGB2YUV_PROTOCOL_S  15
 /** PPA_BLEND0_RX_YUV422_BYTE_ORDER : R/W; bitpos: [17:16]; default: 0;
- *  YUV422 input byte order when reg_sr_rx_cm is 4'd9. 0: YVYU, 1:YUYV, 2: VYUY, 3: UYVY
+ *  YUV422 input byte order when reg_sr_rx_cm is 4'd9. 0: YVYU, 1:YUYV, 2: VYUY, 3: UYVY (high addr -> low addr)
  */
 #define PPA_BLEND0_RX_YUV422_BYTE_ORDER    0x00000003U
 #define PPA_BLEND0_RX_YUV422_BYTE_ORDER_M  (PPA_BLEND0_RX_YUV422_BYTE_ORDER_V << PPA_BLEND0_RX_YUV422_BYTE_ORDER_S)

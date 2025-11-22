@@ -34,6 +34,10 @@ extern "C" {
             ESP_RETURN_ON_FALSE(COLOR_SPACE_TYPE(color_type_id) == COLOR_SPACE_ARGB || COLOR_SPACE_TYPE(color_type_id) == COLOR_SPACE_RGB, \
                                 ESP_ERR_INVALID_ARG, TAG, str "_cm does not support rgb_swap");
 
+#define PPA_IS_CM_YUV422(color_type_id) \
+            (color_type_id == COLOR_TYPE_ID(COLOR_SPACE_YUV, COLOR_PIXEL_UYVY422) || color_type_id == COLOR_TYPE_ID(COLOR_SPACE_YUV, COLOR_PIXEL_VYUY422) || \
+             color_type_id == COLOR_TYPE_ID(COLOR_SPACE_YUV, COLOR_PIXEL_YUYV422) || color_type_id == COLOR_TYPE_ID(COLOR_SPACE_YUV, COLOR_PIXEL_YVYU422))
+
 #define PPA_ALIGN_UP(num, align)    (((num) + ((align) - 1)) & ~((align) - 1))
 #define PPA_ALIGN_DOWN(num, align)  ((num) & ~((align) - 1))
 
