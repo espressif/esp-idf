@@ -12,6 +12,12 @@ Fragmenting, data encryption, and checksum verification in the BluFi layer are t
 
 You can customize symmetric encryption, asymmetric encryption, and checksum support customization. Here we use the DH algorithm for key negotiation, 128-AES algorithm for data encryption, and CRC16 algorithm for checksum verification.
 
+.. note::
+
+   **BluFi is currently in maintenance mode, and no new features are planned.**
+
+   For new projects or when adding Wi-Fi provisioning, we recommend using the `network_provisioning`_ component, which offers a modern, secure, and actively maintained solution.
+
 
 Getting Started
 ---------------
@@ -665,43 +671,46 @@ The Security Implementation of {IDF_TARGET_NAME}
 
    The application layer needs to register several security-related functions to BluFi:
 
-.. code-block:: c
+   .. code-block:: c
 
-   typedef void (*esp_blufi_negotiate_data_handler_t)(uint8_t *data, int len, uint8_t **output_data, int *output_len, bool *need_free)
+       typedef void (*esp_blufi_negotiate_data_handler_t)(uint8_t *data, int len, uint8_t **output_data, int *output_len, bool *need_free)
 
-This function is for {IDF_TARGET_NAME} to receive normal data during negotiation. After processing is completed, the data will be transmitted using Output_data and Output_len.
+   This function is for {IDF_TARGET_NAME} to receive normal data during negotiation. After processing is completed, the data will be transmitted using Output_data and Output_len.
 
-BluFi will send output_data from Negotiate_data_handler after Negotiate_data_handler is called.
+   BluFi will send output_data from Negotiate_data_handler after Negotiate_data_handler is called.
 
-Here are two "*", which means the length of the data to be emitted is unknown. Therefore, it requires the function to allocate itself (malloc) or point to the global variable to inform whether the memory needs to be freed by NEED_FREE.
+   Here are two ``*``, which means the length of the data to be emitted is unknown. Therefore, it requires the function to allocate itself (malloc) or point to the global variable to inform whether the memory needs to be freed by NEED_FREE.
 
-.. code-block:: c
+   .. code-block:: c
 
-   typedef int (* esp_blufi_encrypt_func_t)(uint8_t iv8, uint8_t *crypt_data, int crypt_len)
+       typedef int (* esp_blufi_encrypt_func_t)(uint8_t iv8, uint8_t *crypt_data, int crypt_len)
 
-The data to be encrypted and decrypted must be in the same length. The IV8 is an 8-bit sequence value of frames, which can be used as a 8-bit of IV.
+   The data to be encrypted and decrypted must be in the same length. The IV8 is an 8-bit sequence value of frames, which can be used as a 8-bit of IV.
 
-.. code-block:: c
+   .. code-block:: c
 
-   typedef int (* esp_blufi_decrypt_func_t)(uint8_t iv8, uint8_t *crypt_data, int crypt_len)
+       typedef int (* esp_blufi_decrypt_func_t)(uint8_t iv8, uint8_t *crypt_data, int crypt_len)
 
-The data to be encrypted and decrypted must be in the same length. The IV8 is an 8-bit sequence value of frames, which can be used as an 8-bit of IV.
+   The data to be encrypted and decrypted must be in the same length. The IV8 is an 8-bit sequence value of frames, which can be used as an 8-bit of IV.
 
-.. code-block:: c
+   .. code-block:: c
 
-   typedef uint16_t (*esp_blufi_checksum_func_t)(uint8_t iv8, uint8_t *data, int len)
+       typedef uint16_t (*esp_blufi_checksum_func_t)(uint8_t iv8, uint8_t *data, int len)
 
-This function is used to compute CheckSum and return a value of CheckSum. BluFi uses the returned value to compare the CheckSum of the frame.
+   This function is used to compute CheckSum and return a value of CheckSum. BluFi uses the returned value to compare the CheckSum of the frame.
+
 
 5. Implementing Stronger Security
 
-The default encryption/decryption logic in this example is intended for demonstration purposes only.
+   The default encryption and decryption logic in this example is intended for demonstration purposes only. If your application requires stronger security guarantees, consider one of the following approaches:
 
-If you require a higher level of security, it is recommended to implement your own encryption, decryption, authentication, and checksum algorithms by customizing the security callbacks in the BluFi framework.
+   - **Custom Security Callbacks**: Implement your own encryption, decryption, authentication, and checksum algorithms by defining custom security callbacks in the Blufi framework:
 
-.. code-block:: c
+   .. code-block:: c
 
-   esp_err_t esp_blufi_register_callbacks(esp_blufi_callbacks_t *callbacks)
+       esp_err_t esp_blufi_register_callbacks(esp_blufi_callbacks_t *callbacks);
+
+   - **Network Provisioning Component (recommended)**: For a more robust, secure, and production-ready provisioning solution, consider using the `network_provisioning`_ component.
 
 
 GATT Related Instructions
@@ -715,3 +724,6 @@ BluFi Service UUID: 0xFFFF, 16 bit
 BluFi (the mobile > {IDF_TARGET_NAME}): 0xFF01, writable
 
 Blufi ({IDF_TARGET_NAME} > the mobile phone): 0xFF02, readable and callable
+
+
+.. _network_provisioning: https://github.com/espressif/idf-extra-components/tree/master/network_provisioning

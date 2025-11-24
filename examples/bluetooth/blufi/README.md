@@ -82,3 +82,9 @@ I (1198) BLUFI_EXAMPLE: BLUFI init finish
 ## Troubleshooting
 
 For any technical queries, please open an [issue](https://github.com/espressif/esp-idf/issues) on GitHub. We will get back to you soon.
+
+## Note
+BluFi is currently in maintenance mode, and no new features are planned.
+
+For new projects or when adding network_provisioning, we recommend using the [network_provisioning](https://github.com/espressif/idf-extra-components/tree/master/network_provisioning).
+
