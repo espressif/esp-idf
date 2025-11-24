@@ -214,18 +214,6 @@ build_clang_test_apps_esp32p4:
       --junitxml ${CI_PROJECT_DIR}/XUNIT_RESULT.xml
       --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}
 
-.test_build_system_macos_template_extension:
-  tags:
-    - macos
-  variables:
-    PYENV_VERSION: "3.10"
-    # CCACHE_DIR: "/cache/idf_ccache". On macOS, you cannot write to this folder due to insufficient permissions.
-    CCACHE_DIR: "" # ccache will use "$HOME/Library/Caches/ccache".
-    # Workaround for a bug in Parallels executor where CI_PROJECT_DIR is not an absolute path,
-    # but a relative path to the build directory (builds/espressif/esp-idf instead of ~/builds/espressif/esp-idf.
-    # GitLab sets the project dir to this template `<builds_dir>/<namespace>/<project_name>`
-    IDF_PATH: "/Users/espressif/builds/espressif/esp-idf"
-
 .test_build_system_minimal_cmake_template:
   extends: .test_build_system_template
   variables:
@@ -292,9 +280,7 @@ pytest_buildv2_system:
 pytest_build_system_macos:
   extends:
     - .test_build_system_template
-    - .test_build_system_macos_template_extension
-    - .before_script:build:macos
-    - .after_script:build:macos:upload-failed-job-logs:ccache-show-stats
+    - .brew-macos-settings
     - .rules:build:macos
   parallel: 3
 
@@ -304,9 +290,7 @@ pytest_build_system_minimal_cmake:
 pytest_build_system_macos_minimal_cmake:
   extends:
     - .test_build_system_minimal_cmake_template
-    - .test_build_system_macos_template_extension
-    - .before_script:build:macos
-    - .after_script:build:macos:upload-failed-job-logs:ccache-show-stats
+    - .brew-macos-settings
     - .rules:build:macos
   variables:
     INSTALL_EXTRA_TOOLS: ninja cmake@3.22.1
