@@ -364,6 +364,29 @@ function(idf_build_library library)
         idf_library_set_property("${library}" __LDGEN_FRAGMENT_FILES "${ldfragments}" APPEND)
     endforeach()
 
+    # Collect the filenames of project component archives, which are considered
+    # mutable, in the __LDGEN_MUTABLE_LIBS library property. These libraries
+    # are placed by ldgen into a separate location in the linker script,
+    # enabling the fast reflashing feature.
+    foreach(component_interface IN LISTS component_interfaces_linked)
+        idf_component_get_property(component_source "${component_interface}" COMPONENT_SOURCE)
+        idf_component_get_property(component_target "${component_interface}" COMPONENT_TARGET)
+        idf_component_get_property(component_type "${component_interface}" COMPONENT_TYPE)
+
+        if("${component_type}" STREQUAL "CONFIG_ONLY")
+            # Configuration only component interface target without a library.
+            continue()
+        endif()
+
+        if(NOT "${component_source}" STREQUAL "project_components")
+            # Add only project components as mutable.
+            continue()
+        endif()
+
+        idf_library_set_property("${library}" __LDGEN_MUTABLE_LIBS
+            "$<TARGET_LINKER_FILE_NAME:${component_target}>" APPEND)
+    endforeach()
+
     # Collect archive files from all targets linked to the library interface
     # and store them in the __LDGEN_DEPENDS and __LDGEN_LIBRARIES library
     # properties. These properties are used by ldgen to generate linker scripts
