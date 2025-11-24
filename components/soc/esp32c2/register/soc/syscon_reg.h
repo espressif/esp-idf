@@ -178,8 +178,10 @@ extern "C" {
 #define SYSTEM_WIFI_CLK_BT_EN_S  0
 /* Mask for clock bits used by both WIFI and Bluetooth, 0, 1, 2, 3, 7, 8, 9, 10, 19, 20, 21, 22, 23 */
 #define SYSTEM_WIFI_CLK_WIFI_BT_COMMON_M 0x78078F
-/* Mask for clock bits used by phy calibration, bit 22, 29, 30, 31 */
-#define SYSTEM_WIFI_CLK_PHY_EN_M    0xE0400000
+/* Mask for clock bits used by phy calibration, bit 22, 30, 31 */
+#define SYSTEM_WIFI_CLK_PHY_EN_M    0xC0400000
+/* Mask for clock bits used by coex, bit 29 */
+#define SYSTEM_WIFI_CLK_COEX_EN_M    0x20000000
 
 /* Digital team to check */
 //bluetooth baseband bit11
