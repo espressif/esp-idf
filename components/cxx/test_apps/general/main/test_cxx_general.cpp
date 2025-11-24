@@ -15,6 +15,7 @@
 #include "unity_test_utils.h"
 #include "soc/soc.h"
 #include <chrono>
+#include <shared_mutex>
 #include <thread>
 #include "esp_timer.h"
 
@@ -341,6 +342,25 @@ TEST_CASE("test std::this_thread::sleep_for basic functionality", "[misc]")
     elapsed_us = end - start;
     printf("long sleep: %lld us\n", elapsed_us);
     TEST_ASSERT_GREATER_OR_EQUAL(long_sleep.count(), elapsed_us);
+}
+
+TEST_CASE("test std::shared_mutex memory leaks", "[misc]")
+{
+    /* TODO IDF-14862:
+     * check if PTHREAD_RWLOCK_INITIALIZER is still defined to not break user's code
+     */
+    pthread_rwlock_t m = PTHREAD_RWLOCK_INITIALIZER;
+    TEST_ASSERT_NOT_EQUAL_UINT(NULL, m);
+
+    std::shared_mutex* mutex_not_initialized = new std::shared_mutex();
+    delete mutex_not_initialized;
+
+    /* A locked mutex can't be destroyed, don't test it here */
+
+    std::shared_mutex* mutex_unlocked = new std::shared_mutex();
+    mutex_unlocked->lock();
+    mutex_unlocked->unlock();
+    delete mutex_unlocked;
 }
 
 extern "C" void app_main(void)
