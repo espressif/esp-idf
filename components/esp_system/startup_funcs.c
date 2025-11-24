@@ -17,6 +17,7 @@
 #include "esp_private/cache_utils.h"
 #include "spi_flash_mmap.h"
 #include "esp_flash_internal.h"
+#include "esp_private/mspi_intr.h"
 #include "esp_newlib.h"
 #include "esp_xt_wdt.h"
 #include "esp_cpu.h"
@@ -25,6 +26,7 @@
 #include "hal/wdt_hal.h"
 #include "hal/uart_types.h"
 #include "hal/uart_ll.h"
+#include "hal/mspi_ll.h"
 #include "freertos/FreeRTOS.h"
 
 #if CONFIG_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE
@@ -73,7 +75,7 @@ ESP_SYSTEM_INIT_FN(init_show_cpu_freq, CORE, BIT(0), 10)
  * as it is a critical module for device functioning.
  */
 #if SOC_BOD_SUPPORTED && !CONFIG_SECURE_ENABLE_TEE
-ESP_SYSTEM_INIT_FN(init_brownout, CORE, BIT(0), 104)
+ESP_SYSTEM_INIT_FN(init_brownout, CORE, BIT(0), 105)
 {
     // [refactor-todo] leads to call chain rtc_is_register (driver) -> esp_intr_alloc (esp32/esp32s2) ->
     // malloc (esp_libc) -> heap_caps_malloc (heap), so heap must be at least initialized
@@ -98,7 +100,7 @@ ESP_SYSTEM_INIT_FN(init_brownout, CORE, BIT(0), 104)
 }
 #endif
 
-ESP_SYSTEM_INIT_FN(init_newlib_time, CORE, BIT(0), 105)
+ESP_SYSTEM_INIT_FN(init_newlib_time, CORE, BIT(0), 106)
 {
     esp_libc_time_init();
     return ESP_OK;
@@ -123,6 +125,13 @@ ESP_SYSTEM_INIT_FN(init_flash, CORE, BIT(0), 130)
 #if CONFIG_PM_WORKAROUND_FREQ_LIMIT_ENABLED
     esp_pm_flash_freq_limit_init();
 #endif // CONFIG_PM_WORKAROUND_FREQ_LIMIT_ENABLED
+
+    // Register MSPI Flash interrupt
+#if MSPI_LL_INTR_EVENT_SUPPORTED && MSPI_LL_INTR_SHARED
+    esp_mspi_register_isr(NULL);
+#endif
+    //else register flash standalone ISR to deal with CPU / API flash access
+
     return ESP_OK;
 }
 #endif // !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP

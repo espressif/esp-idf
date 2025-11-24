@@ -42,13 +42,15 @@ CORE: 101: esp_timer_init_nonos in components/esp_timer/src/esp_timer_init.c on 
 
 CORE: 102: init_libc in components/esp_libc/src/init.c on BIT(0)
 
-# Add the psram to heap, psram vaddr region is reserved when initialising the heap, after
-# psram is initialised (and necessary reservation for psram usage), the rest of the psram
-# will be added to the heap
-CORE: 103: add_psram_to_heap in components/esp_psram/system_layer/esp_psram.c on BIT(0)
+# PSRAM core stage init, including
+# - Add the psram to heap, psram vaddr region is reserved when initialising the heap, after
+#   psram is initialised (and necessary reservation for psram usage), the rest of the psram
+#   will be added to the heap
+# - Register PSRAM ISR routine
+CORE: 103: psram_core_stage_init in components/esp_psram/system_layer/esp_psram.c on BIT(0)
 
-CORE: 104: init_brownout in components/esp_system/startup_funcs.c on BIT(0)
-CORE: 105: init_newlib_time in components/esp_system/startup_funcs.c on BIT(0)
+CORE: 105: init_brownout in components/esp_system/startup_funcs.c on BIT(0)
+CORE: 106: init_newlib_time in components/esp_system/startup_funcs.c on BIT(0)
 
 # Peripheral-specific implementation operators should be filled first
 # Then register vfs console, and follow by esp_libc stdio initialization
@@ -127,7 +129,7 @@ SECONDARY: 230: usb_serial_jtag_conn_status_init in components/esp_driver_usb_se
 
 # psram adjust timing point need a separate task which should be created at startup.
 # Valid only `CONFIG_SPIRAM_TIMING_TUNING_POINT_VIA_TEMPERATURE_SENSOR` is enabled.
-SECONDARY: 240: psram_adjust_timing_point_via_temperature in components/esp_hw_support/mspi_timing_tuning/port/esp32s3/mspi_timing_by_mspi_delay.c on BIT(0)
+SECONDARY: 240: psram_adjust_timing_point_via_temperature in components/esp_hw_support/mspi/mspi_timing_tuning/port/esp32s3/mspi_timing_by_mspi_delay.c on BIT(0)
 
 # Has to be the last step!
 # Now that the application is about to start, disable boot watchdog

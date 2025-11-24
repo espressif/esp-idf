@@ -17,3 +17,5 @@
  */
 
 //For compatibility
+#define MSPI_LL_PERIPH_NUM                            2
+#define MSPI_LL_INTR_SHARED                           1

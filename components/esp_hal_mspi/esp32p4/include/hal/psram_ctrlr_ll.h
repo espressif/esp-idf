@@ -33,12 +33,31 @@ extern "C" {
 
 #define PSRAM_CTRLR_LL_MSPI_ID_2            2
 #define PSRAM_CTRLR_LL_MSPI_ID_3            3
+#define PSRAM_CTRLR_LL_MSPI_ID_SYSTEM       PSRAM_CTRLR_LL_MSPI_ID_2
+#define PSRAM_CTRLR_LL_MSPI_ID_PERI         PSRAM_CTRLR_LL_MSPI_ID_3
 
 #define PSRAM_CTRLR_LL_PMS_REGION_NUMS      4
 #define PSRAM_CTRLR_LL_PMS_ATTR_WRITABLE    (1<<0)
 #define PSRAM_CTRLR_LL_PMS_ATTR_READABLE    (1<<1)
 
 #define PSRAM_CTRLR_LL_FIFO_MAX_BYTES       64
+
+#define PSRAM_CTRLR_LL_THRESH_INT_SUPPORTED      1
+#define PSRAM_CTRLR_LL_PMS_INT_SUPPORTED         1
+#define PSRAM_CTRLR_LL_EVENT_SLV_ST_END          (1<<3)
+#define PSRAM_CTRLR_LL_EVENT_MST_ST_END          (1<<4)
+#define PSRAM_CTRLR_LL_EVENT_ECC_ERR             (1<<5)
+#define PSRAM_CTRLR_LL_EVENT_PMS_REJECT          (1<<6)
+#define PSRAM_CTRLR_LL_EVENT_AXI_RADDR_ERR       (1<<7)
+#define PSRAM_CTRLR_LL_EVENT_AXI_WR_FLASH_ERR    (1<<8)
+#define PSRAM_CTRLR_LL_EVENT_AXI_WADDR_ERR       (1<<9)
+#define PSRAM_CTRLR_LL_EVENT_RX_TRANS_OVF        (1<<26)
+#define PSRAM_CTRLR_LL_EVENT_TX_TRANS_UDF        (1<<27)
+#define PSRAM_CTRLR_LL_EVENT_MASK                (PSRAM_CTRLR_LL_EVENT_ECC_ERR | PSRAM_CTRLR_LL_EVENT_PMS_REJECT | PSRAM_CTRLR_LL_EVENT_AXI_RADDR_ERR | \
+                                                 PSRAM_CTRLR_LL_EVENT_AXI_WR_FLASH_ERR | PSRAM_CTRLR_LL_EVENT_AXI_WADDR_ERR | PSRAM_CTRLR_LL_EVENT_RX_TRANS_OVF | \
+                                                 PSRAM_CTRLR_LL_EVENT_TX_TRANS_UDF)
+
+#define PSRAM_CTRLR_LL_INTR_EVENT_SUPPORTED      1
 
 /**
  * @brief Set PSRAM write cmd
@@ -827,6 +846,46 @@ static inline void psram_ctrlr_ll_wait_all_transaction_done(void)
     while (SPIMEM2.smem_axi_addr_ctrl.val != ALL_TRANSACTION_DONE) {
         ;
     }
+}
+
+/**
+ * @brief Enable/Disable PSRAM controller interrupt
+ *
+ * @param mspi_id     mspi_id
+ * @param intr_mask   interrupt mask
+ * @param enable      enable / disable
+ */
+__attribute__((always_inline))
+static inline void psram_ctrlr_ll_enable_intr(uint32_t mspi_id, uint32_t intr_mask, bool enable)
+{
+    if (enable) {
+        SPIMEM2.mem_int_ena.val |= intr_mask;
+    } else {
+        SPIMEM2.mem_int_ena.val &= ~intr_mask;
+    }
+}
+
+/**
+ * @brief Clear PSRAM controller interrupt
+ *
+ * @param mspi_id     mspi_id
+ * @param intr_mask   interrupt mask
+ */
+__attribute__((always_inline))
+static inline void psram_ctrlr_ll_clear_intr(uint32_t mspi_id, uint32_t intr_mask)
+{
+    SPIMEM2.mem_int_clr.val = intr_mask;
+}
+
+/**
+ * @brief Get PSRAM controller interrupt raw
+ *
+ * @param mspi_id     mspi_id
+ */
+__attribute__((always_inline))
+static inline uint32_t psram_ctrlr_ll_get_intr_raw(uint32_t mspi_id)
+{
+    return SPIMEM2.mem_int_raw.val;
 }
 
 /**
