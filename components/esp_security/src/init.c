@@ -48,7 +48,7 @@ static void esp_key_mgr_init(void)
         };
 
         // Force Key Manager to use eFuse key by-default for an XTS-AES operation.
-        key_mgr_ll_set_key_usage(ESP_KEY_MGR_XTS_AES_128_KEY, ESP_KEY_MGR_USE_EFUSE_KEY);
+        key_mgr_ll_set_key_usage(ESP_KEY_MGR_FLASH_XTS_AES_KEY, ESP_KEY_MGR_USE_EFUSE_KEY);
     }
 }
 #endif /* SOC_KEY_MANAGER_SUPPORT_KEY_DEPLOYMENT */

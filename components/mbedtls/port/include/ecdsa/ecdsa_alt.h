@@ -30,19 +30,15 @@ typedef struct {
     mbedtls_ecp_group_id grp_id;            /*!< MbedTLS ECP group identifier */
     union {
         uint8_t efuse_block;                /*!< EFuse block id for ECDSA private key */
+#if CONFIG_MBEDTLS_TEE_SEC_STG_ECDSA_SIGN
         const char *tee_key_id;             /*!< TEE secure storage key id for ECDSA private key */
-    };                                      /*!< Union to hold either EFuse block id or TEE secure storage key id for ECDSA private key */
+#endif
+        bool use_km_key;                    /*!< Use key deployed in the key manager for ECDSA operation. Note: The key must be already deployed by the application and it must be activated for the lifetime of this context */
+    };                                      /*!< Union to hold either EFuse block id or TEE secure storage key id or use key deployed in the key manager for ECDSA operation for ECDSA private key */
 #if SOC_ECDSA_SUPPORT_EXPORT_PUBKEY || CONFIG_MBEDTLS_TEE_SEC_STG_ECDSA_SIGN
     bool load_pubkey;                       /*!< Export ECDSA public key from the hardware */
-
 #endif
-    bool use_km_key;                        /*!< Use key deployed in the key manager for ECDSA operation.
-                                                 Note: The key must be already deployed by the application and it must be activated for the lifetime of this context */
-#if CONFIG_MBEDTLS_TEE_SEC_STG_ECDSA_SIGN
-    bool use_tee_sec_stg_key;               /*!< Use key deployed in the TEE secure storage for ECDSA operation.
-                                                 Note: The key must be already deployed by the application and it must be activated for the lifetime of this context */
-#endif
-} esp_ecdsa_pk_conf_t;  //TODO: IDF-9008 (Add a config to select the ecdsa key from the key manager peripheral)
+} esp_ecdsa_pk_conf_t;
 
 #if SOC_ECDSA_SUPPORT_EXPORT_PUBKEY || __DOXYGEN__
 

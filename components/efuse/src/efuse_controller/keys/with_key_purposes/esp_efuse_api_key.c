@@ -286,7 +286,7 @@ esp_err_t esp_efuse_write_key(esp_efuse_block_t block, esp_efuse_purpose_t purpo
 
 #if SOC_EFUSE_BLOCK9_KEY_PURPOSE_QUIRK
         if (block == EFUSE_BLK9 && (
-#if SOC_FLASH_ENCRYPTION_XTS_AES_256
+#if SOC_EFUSE_XTS_AES_KEY_256
             purpose == ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_1 ||
             purpose == ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_2 ||
 #endif
@@ -301,10 +301,10 @@ esp_err_t esp_efuse_write_key(esp_efuse_block_t block, esp_efuse_purpose_t purpo
 #endif // SOC_EFUSE_BLOCK9_KEY_PURPOSE_QUIRK
 
         if (purpose == ESP_EFUSE_KEY_PURPOSE_XTS_AES_128_KEY ||
-#ifdef SOC_FLASH_ENCRYPTION_XTS_AES_256
+#ifdef SOC_EFUSE_XTS_AES_KEY_256
             purpose == ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_1 ||
             purpose == ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_2 ||
-#endif //#ifdef SOC_EFUSE_SUPPORT_XTS_AES_256_KEYS
+#endif //#ifdef SOC_EFUSE_XTS_AES_KEY_256
 #if SOC_EFUSE_ECDSA_KEY
             purpose == ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY ||
 #endif

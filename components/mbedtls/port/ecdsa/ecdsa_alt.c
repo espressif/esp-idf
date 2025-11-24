@@ -595,7 +595,7 @@ int esp_ecdsa_tee_set_pk_context(mbedtls_pk_context *key_ctx, esp_ecdsa_pk_conf_
         return ret;
     }
 
-    if (!conf->use_tee_sec_stg_key) {
+    if (!conf->tee_key_id) {
         ESP_LOGE(TAG, "Invalid esp_ecdsa_pk_conf_t configuration");
         return ret;
     }

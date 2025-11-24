@@ -480,7 +480,6 @@ static void test_ecdsa_sign(mbedtls_ecp_group_id gid)
         .grp_id = gid,
         .tee_key_id = key_id,
         .load_pubkey = true,
-        .use_tee_sec_stg_key = true,
     };
     TEST_ASSERT_EQUAL(0, esp_ecdsa_tee_set_pk_context(&key_ctx, &conf));
 

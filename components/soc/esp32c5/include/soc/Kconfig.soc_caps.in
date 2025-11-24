@@ -1291,6 +1291,10 @@ config SOC_EFUSE_ECDSA_KEY_P384
     bool
     default y
 
+config SOC_EFUSE_XTS_AES_KEY_128
+    bool
+    default y
+
 config SOC_HUK_MEM_NEEDS_RECHARGE
     bool
     default y
@@ -1351,7 +1355,15 @@ config SOC_FLASH_ENCRYPTION_XTS_AES
     bool
     default y
 
+config SOC_FLASH_ENCRYPTION_XTS_AES_OPTIONS
+    bool
+    default y
+
 config SOC_FLASH_ENCRYPTION_XTS_AES_128
+    bool
+    default y
+
+config SOC_FLASH_ENCRYPTION_XTS_AES_256
     bool
     default y
 
