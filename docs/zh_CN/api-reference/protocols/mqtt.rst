@@ -4,7 +4,7 @@ ESP-MQTT
 :link_to_translation:`en:[English]`
 
 概述
---------
+----
 
 ESP-MQTT 是 `MQTT <https://mqtt.org/>`__ 协议客户端的实现，属于轻量级发布/订阅消息协议。ESP-MQTT 现已支持 `MQTT v5.0 <https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html>`__。
 
@@ -15,14 +15,14 @@ ESP-MQTT 是 `MQTT <https://mqtt.org/>`__ 协议客户端的实现，属于轻�
 如需在项目中添加 ESP-MQTT 组件，请运行 ``idf.py add-dependency espressif/mqtt``。
 
 托管文档
----------------------
+--------
 
 文档链接如下：
 
 * `esp-mqtt 文档 <https://docs.espressif.com/projects/esp-mqtt/zh_CN/latest/>`__
 
 应用示例
---------------------
+--------
 
 ESP-IDF 中提供了两个参考示例：
 
@@ -38,4 +38,3 @@ ESP-IDF 中提供了两个参考示例：
   - 默认代理地址指向 ``mqtts://test.mosquitto.org:8886``。
 
 如需更多传输模式（TCP、WS/WSS、双向认证等）的示例，请参考 `espressif/mqtt 组件仓库 <https://components.espressif.com/components/espressif/mqtt>`__。
-
