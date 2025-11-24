@@ -9,21 +9,9 @@ from pytest_embedded_idf.utils import idf_parametrize
 @idf_parametrize(
     'config,target,markers',
     [
-        (
-            'default',
-            'supported_targets',
-            (pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration # TODO: IDF-14421'),),
-        ),
-        (
-            'freertos_options',
-            'supported_targets',
-            (pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration # TODO: IDF-14421'),),
-        ),
-        (
-            'tickless_idle',
-            'supported_targets',
-            (pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration # TODO: IDF-14421'),),
-        ),
+        ('default', 'supported_targets'),
+        ('freertos_options', 'supported_targets'),
+        ('tickless_idle', 'supported_targets'),
         ('psram', 'esp32'),
         ('psram', 'esp32c5'),
         ('psram', 'esp32p4'),
@@ -64,7 +52,6 @@ def test_freertos_flash_auto_suspend(dut: Dut) -> None:
 @pytest.mark.generic
 @pytest.mark.parametrize('config', ['freertos_options'], indirect=True)
 @idf_parametrize('target', ['supported_targets'], indirect=['target'])
-@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration # TODO: IDF-14421')
 def test_task_notify_too_high_index_fails(dut: Dut) -> None:
     dut.expect_exact('Press ENTER to see the list of tests.')
     dut.write('"Notify too high index fails"')
@@ -76,7 +63,6 @@ def test_task_notify_too_high_index_fails(dut: Dut) -> None:
 @pytest.mark.generic
 @pytest.mark.parametrize('config', ['freertos_options'], indirect=True)
 @idf_parametrize('target', ['supported_targets'], indirect=['target'])
-@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration # TODO: IDF-14421')
 def test_task_notify_wait_too_high_index_fails(dut: Dut) -> None:
     dut.expect_exact('Press ENTER to see the list of tests.')
     dut.write('"Notify Wait too high index fails"')
@@ -88,7 +74,6 @@ def test_task_notify_wait_too_high_index_fails(dut: Dut) -> None:
 @pytest.mark.generic
 @pytest.mark.parametrize('config', ['default'], indirect=True)
 @idf_parametrize('target', ['supported_targets'], indirect=['target'])
-@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration # TODO: IDF-14421')
 def test_port_must_assert_in_isr(dut: Dut) -> None:
     dut.expect_exact('Press ENTER to see the list of tests.')
     dut.write('"port must assert if in ISR context"')
