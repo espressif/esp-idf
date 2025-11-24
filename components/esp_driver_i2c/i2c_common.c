@@ -23,7 +23,7 @@
 #include "i2c_private.h"
 #include "driver/gpio.h"
 #include "soc/clk_tree_defs.h"
-#include "soc/i2c_periph.h"
+#include "hal/i2c_periph.h"
 #include "esp_clk_tree.h"
 #include "clk_ctrl_os.h"
 #include "esp_private/gpio.h"

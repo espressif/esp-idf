@@ -12,7 +12,7 @@
 #include "soc/soc_caps.h"
 #include "hal/misc.h"
 #include "hal/assert.h"
-#include "soc/i2c_periph.h"
+#include "hal/i2c_periph.h"
 #include "soc/soc_caps.h"
 #include "soc/i2c_struct.h"
 #include "soc/pcr_struct.h"

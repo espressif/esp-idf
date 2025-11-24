@@ -21,7 +21,7 @@
 #include "esp_pm.h"
 #include "esp_rom_gpio.h"
 #include "soc/soc_caps.h"
-#include "soc/pcnt_periph.h"
+#include "hal/pcnt_periph.h"
 #include "soc/gpio_pins.h"
 #include "hal/pcnt_hal.h"
 #include "hal/pcnt_ll.h"
@@ -75,8 +75,8 @@ typedef struct pcnt_chan_t pcnt_chan_t;
 
 struct pcnt_platform_t {
     _lock_t mutex;                         // platform level mutex lock
-    pcnt_group_t *groups[SOC_PCNT_ATTR(INST_NUM)]; // pcnt group pool
-    int group_ref_counts[SOC_PCNT_ATTR(INST_NUM)]; // reference count used to protect group install/uninstall
+    pcnt_group_t *groups[PCNT_LL_GET(INST_NUM)]; // pcnt group pool
+    int group_ref_counts[PCNT_LL_GET(INST_NUM)]; // reference count used to protect group install/uninstall
 };
 
 struct pcnt_group_t {
@@ -85,7 +85,7 @@ struct pcnt_group_t {
     pcnt_clock_source_t clk_src; // PCNT clock source
     portMUX_TYPE spinlock; // to protect per-group register level concurrent access
     pcnt_hal_context_t hal;
-    pcnt_unit_t *units[SOC_PCNT_ATTR(UNITS_PER_INST)]; // array of PCNT units
+    pcnt_unit_t *units[PCNT_LL_GET(UNITS_PER_INST)]; // array of PCNT units
 #if CONFIG_PM_ENABLE
     esp_pm_lock_handle_t pm_lock;  // power management lock
 #endif
@@ -120,7 +120,7 @@ struct pcnt_unit_t {
     int clear_signal_gpio_num;                            // which gpio clear signal input
     int accum_value;                                      // accumulated count value
     pcnt_step_interval_t step_info;                       // step interval info
-    pcnt_chan_t *channels[SOC_PCNT_ATTR(CHANS_PER_UNIT)];    // array of PCNT channels
+    pcnt_chan_t *channels[PCNT_LL_GET(CHANS_PER_UNIT)];    // array of PCNT channels
     pcnt_watch_point_t watchers[PCNT_LL_WATCH_EVENT_MAX]; // array of PCNT watchers
     intr_handle_t intr;                                   // interrupt handle
     pcnt_unit_fsm_t fsm;      // record PCNT unit's driver state
@@ -154,12 +154,12 @@ static esp_err_t pcnt_register_to_group(pcnt_unit_t *unit)
 {
     pcnt_group_t *group = NULL;
     int unit_id = -1;
-    for (int i = 0; i < SOC_PCNT_ATTR(INST_NUM); i++) {
+    for (int i = 0; i < PCNT_LL_GET(INST_NUM); i++) {
         group = pcnt_acquire_group_handle(i);
         ESP_RETURN_ON_FALSE(group, ESP_ERR_NO_MEM, TAG, "no mem for group (%d)", i);
         // loop to search free unit in the group
         portENTER_CRITICAL(&group->spinlock);
-        for (int j = 0; j < SOC_PCNT_ATTR(UNITS_PER_INST); j++) {
+        for (int j = 0; j < PCNT_LL_GET(UNITS_PER_INST); j++) {
             if (!group->units[j]) {
                 unit_id = j;
                 group->units[j] = unit;
@@ -324,7 +324,7 @@ esp_err_t pcnt_del_unit(pcnt_unit_handle_t unit)
     int group_id = group->group_id;
     int unit_id = unit->unit_id;
 
-    for (int i = 0; i < SOC_PCNT_ATTR(CHANS_PER_UNIT); i++) {
+    for (int i = 0; i < PCNT_LL_GET(CHANS_PER_UNIT); i++) {
         ESP_RETURN_ON_FALSE(!unit->channels[i], ESP_ERR_INVALID_STATE, TAG, "channel %d still in working", i);
     }
 
@@ -607,7 +607,7 @@ esp_err_t pcnt_unit_add_watch_point(pcnt_unit_handle_t unit, int watch_point)
     }
     // other threshold watch point
     else {
-        int thres_num = SOC_PCNT_ATTR(THRES_POINT_PER_UNIT) - 1;
+        int thres_num = PCNT_LL_GET(THRES_POINT_PER_UNIT) - 1;
         switch (thres_num) {
         case 1:
             if (unit->watchers[PCNT_LL_WATCH_EVENT_THRES1].event_id == PCNT_LL_WATCH_EVENT_INVALID) {
@@ -794,7 +794,7 @@ esp_err_t pcnt_new_channel(pcnt_unit_handle_t unit, const pcnt_chan_config_t *co
     // search for a free channel
     int channel_id = -1;
     portENTER_CRITICAL(&unit->spinlock);
-    for (int i = 0; i < SOC_PCNT_ATTR(CHANS_PER_UNIT); i++) {
+    for (int i = 0; i < PCNT_LL_GET(CHANS_PER_UNIT); i++) {
         if (!unit->channels[i]) {
             channel_id = i;
             unit->channels[channel_id] = channel;

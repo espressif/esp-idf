@@ -4,9 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "soc/pcnt_periph.h"
+#include "hal/pcnt_periph.h"
 #include "soc/gpio_sig_map.h"
-#include "soc/pcnt_reg.h"
 
 const soc_pcnt_signal_desc_t soc_pcnt_signals[1] = {
     [0] = {

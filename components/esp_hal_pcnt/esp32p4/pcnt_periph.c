@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "soc/pcnt_periph.h"
+#include "hal/pcnt_periph.h"
 #include "soc/gpio_sig_map.h"
 #include "soc/pcnt_reg.h"
 
