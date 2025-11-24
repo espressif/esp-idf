@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -40,7 +40,12 @@ static IRAM_ATTR void adc_dma_intr_handler(void *arg)
 
 esp_err_t adc_dma_intr_event_init(adc_continuous_ctx_t *adc_ctx)
 {
-    return (esp_intr_alloc(spicommon_irqdma_source_for_host(ADC_DMA_SPI_HOST), ESP_INTR_FLAG_IRAM, adc_dma_intr_handler,
+    int intr_flags = ESP_INTR_FLAG_LOWMED | ESP_INTR_FLAG_SHARED;
+#if CONFIG_ADC_CONTINUOUS_ISR_IRAM_SAFE
+    intr_flags |= ESP_INTR_FLAG_IRAM;
+#endif
+
+    return (esp_intr_alloc(spicommon_irqdma_source_for_host(ADC_DMA_SPI_HOST), intr_flags, adc_dma_intr_handler,
                            (void *)adc_ctx, &adc_ctx->adc_dma.dma_intr_hdl));
 }
 
