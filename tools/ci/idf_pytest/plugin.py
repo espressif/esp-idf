@@ -326,7 +326,7 @@ class IdfPytestEmbedded:
                     res.extend(
                         [
                             ChildCase(
-                                format_case_id(target, config, case.name + f' {i}', is_qemu=is_qemu),
+                                format_case_id(target, config, case.name, is_qemu=is_qemu),
                                 self.UNITY_RESULT_MAPPINGS[case.result],
                             )
                             for case in _dut.testsuite.testcases
