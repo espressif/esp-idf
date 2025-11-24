@@ -39,7 +39,6 @@ available_rtcio_nums = {
 
 
 @pytest.mark.generic_multi_device
-@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration # TODO: IDF-14400')
 @pytest.mark.parametrize('count', [2], indirect=True)
 @pytest.mark.parametrize('config', TEST_CONFIGS, indirect=True)
 @idf_parametrize(
@@ -97,7 +96,6 @@ def test_ext1_deepsleep(dut: tuple[IdfDut, IdfDut]) -> None:
 @pytest.mark.generic_multi_device
 @pytest.mark.parametrize('count', [2], indirect=True)
 @pytest.mark.parametrize('config', TEST_CONFIGS, indirect=True)
-@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration # TODO: IDF-14400')
 @idf_parametrize('target', ['esp32c2', 'esp32c3', 'esp32c6', 'esp32p4', 'esp32c5'], indirect=['target'])
 def test_rtcio_deepsleep(dut: tuple[IdfDut, IdfDut]) -> None:
     wakee = dut[0]
@@ -143,7 +141,6 @@ def test_rtcio_deepsleep(dut: tuple[IdfDut, IdfDut]) -> None:
 @pytest.mark.generic_multi_device
 @pytest.mark.parametrize('count', [2], indirect=True)
 @pytest.mark.parametrize('config', TEST_CONFIGS, indirect=True)
-@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration # TODO: IDF-14400')
 @idf_parametrize('target', ['supported_targets'], indirect=['target'])
 def test_gpio_wakeup_enable_lightsleep(dut: tuple[IdfDut, IdfDut]) -> None:
     wakee = dut[0]
