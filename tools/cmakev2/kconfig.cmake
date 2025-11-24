@@ -69,6 +69,69 @@ function(__init_kconfig)
 endfunction()
 
 #[[
+.. cmakev2:function:: __should_generate_sdkconfig
+
+    .. code-block:: cmake
+
+        __should_generate_sdkconfig(OUTPUT <variable>)
+
+    *OUTPUT[out]*
+
+        The output variable will contain ``YES`` or ``NO`` depending on whether
+        the sdkconfig should be generated.
+
+    Check if any new ``Kconfig``, ``Kconfig.projbuild``, or
+    ``sdkconfig.rename`` files have been added. If so, store ``YES`` in the
+    ``OUTPUT`` variable; otherwise, store ``NO``. The
+    ``__generate_sdkconfig()`` function can be called multiple times, such as
+    when the initial sdkconfig is generated at the start of the build process
+    and later after additional components are fetched by the component manager.
+    There might be no components fetched by the component manager, for example,
+    in the hello_world example, or the downloaded components may not contain
+    any configuration files. In such cases, there is no need to regenerate the
+    sdkconfig. This helper function stores the list of configuration files in
+    the ``__PREV_KCONFIGS``, ``__PREV_KCONFIG_PROJBUILDS``, and
+    ``__PREV_SDKCONFIG_RENAMES`` build properties at its end, and at the
+    beginning, it compares them with the current lists of configuration files.
+#]]
+function(__should_generate_sdkconfig)
+    set(options)
+    set(one_value OUTPUT)
+    set(multi_value)
+    cmake_parse_arguments(ARG "${options}" "${one_value}" "${multi_value}" ${ARGN})
+
+    if(NOT DEFINED ARG_OUTPUT)
+        idf_die("OUTPUT option is required")
+    endif()
+
+    idf_build_get_property(kconfigs __KCONFIGS)
+    idf_build_get_property(projbuilds __KCONFIG_PROJBUILDS)
+    idf_build_get_property(renames __SDKCONFIG_RENAMES)
+    list(SORT kconfigs)
+    list(SORT projbuilds)
+    list(SORT renames)
+
+    idf_build_get_property(prev_kconfigs __PREV_KCONFIGS)
+    idf_build_get_property(prev_projbuilds __PREV_KCONFIG_PROJBUILDS)
+    idf_build_get_property(prev_renames __PREV_SDKCONFIG_RENAMES)
+    list(SORT prev_kconfigs)
+    list(SORT prev_projbuilds)
+    list(SORT prev_renames)
+
+    idf_build_set_property(__PREV_KCONFIGS "${kconfigs}")
+    idf_build_set_property(__PREV_KCONFIG_PROJBUILDS "${projbuilds}")
+    idf_build_set_property(__PREV_SDKCONFIG_RENAMES "${renames}")
+
+    if("${kconfigs}" STREQUAL "${prev_kconfigs}"
+            AND "${projbuilds}" STREQUAL "${prev_projbuilds}"
+            AND "${renames}" STREQUAL "${prev_renames}")
+        set(${ARG_OUTPUT}  NO PARENT_SCOPE)
+    else()
+        set(${ARG_OUTPUT}  YES PARENT_SCOPE)
+    endif()
+endfunction()
+
+#[[
     __generate_sdkconfig()
 
     This function performs the complete Kconfig generation process:
@@ -78,13 +141,20 @@ endfunction()
     4. Generate all output files (sdkconfig.h, sdkconfig.cmake, etc.)
 #]]
 function(__generate_sdkconfig)
-    idf_msg("Generating sdkconfig configuration...")
-
     # Collect Kconfig files from discovered components
     __consolidate_component_kconfig_files()
 
     # Collect Kconfig files from bootloader components
     __collect_kconfig_files_from_bootloader_components()
+
+    # Check if sdkconfig needs to be generated
+    __should_generate_sdkconfig(OUTPUT generate)
+    if(NOT generate)
+        idf_dbg("Configuration files have not changed, skipping sdkconfig generation.")
+        return()
+    endif()
+
+    idf_msg("Generating sdkconfig configuration...")
 
     # Prepare Kconfig environment using collected files
     __setup_kconfig_environment()
@@ -622,7 +692,6 @@ endfunction()
 function(__run_kconfgen)
     idf_build_get_property(base_kconfgen_cmd __BASE_KCONFGEN_CMD)
     idf_build_get_property(kconfgen_outputs_cmd __KCONFGEN_OUTPUTS_CMD)
-    idf_build_get_property(sdkconfig SDKCONFIG)
     idf_build_get_property(config_env_path __CONFIG_ENV_PATH)
 
     # Create full command with output file paths
