@@ -83,6 +83,17 @@ function(__ldgen_process_template)
         idf_msg("Mapping check enabled in ldgen")
     endif()
 
+    if(CONFIG_ESPTOOLPY_FAST_REFLASHING)
+        # Create a file containing a list of mutable libraries used by ldgen
+        # for fast reflashing.
+        idf_library_get_property(ldgen_mutable_libs "${ARG_LIBRARY}" __LDGEN_MUTABLE_LIBS)
+        set(mutable_libs_path "${build_dir}/ldgen_mutable_libraries${ARG_SUFFIX}")
+        list(JOIN ldgen_mutable_libs "\n" ldgen_mutable_libs_str)
+        file(GENERATE OUTPUT "${mutable_libs_path}"
+            CONTENT "${ldgen_mutable_libs_str}")
+        set(mutable_libs_option "--mutable-libraries-file" "${mutable_libs_path}")
+    endif()
+
     add_custom_command(
         OUTPUT "${ARG_OUTPUT}"
         COMMAND ${python} "${idf_path}/tools/ldgen/ldgen.py"
@@ -96,6 +107,7 @@ function(__ldgen_process_template)
         --libraries-file "${build_dir}/ldgen_libraries${ARG_SUFFIX}"
         --objdump   "${CMAKE_OBJDUMP}"
         ${ldgen_check}
+        ${mutable_libs_option}
         DEPENDS     ${ARG_TEMPLATE} ${ldgen_fragment_files} ${ldgen_depends} ${sdkconfig}
         VERBATIM
     )
