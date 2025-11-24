@@ -994,6 +994,9 @@ static esp_err_t FORCE_IRAM_ATTR esp_sleep_start_safe(uint32_t sleep_flags, uint
 #if SOC_PM_MMU_TABLE_RETENTION_WHEN_TOP_PD
             esp_sleep_mmu_retention(false);
 #endif
+#if SOC_PM_RETENTION_SW_TRIGGER_REGDMA
+            sleep_retention_do_system_retention(false);
+#endif
 #if CONFIG_IDF_TARGET_ESP32P4 && (CONFIG_ESP_REV_MIN_FULL == 300)
             sleep_flash_p4_rev3_workaround();
             sleep_retention_do_extra_retention(false);
@@ -1224,11 +1227,6 @@ static esp_err_t SLEEP_FN_ATTR esp_sleep_start(uint32_t sleep_flags, uint32_t cl
             cache_ll_invalidate_all(CACHE_LL_LEVEL_ALL, CACHE_TYPE_ALL, CACHE_LL_ID_ALL);
 #endif
             s_config.ccount_ticks_record = esp_cpu_get_cycle_count();
-#if SOC_PM_RETENTION_SW_TRIGGER_REGDMA
-            if (sleep_flags & PMU_SLEEP_PD_TOP) {
-                sleep_retention_do_system_retention(false);
-            }
-#endif
         }
         misc_modules_wake_prepare(sleep_flags);
     }
