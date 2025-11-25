@@ -13,7 +13,8 @@ entries:
     cpu: esp_cpu_compare_and_set (noflash)
     esp_memory_utils (noflash)
     clk_utils (noflash)
-    if PM_SLP_IRAM_OPT = y:
+    # TODO: PM-630
+    if IDF_TARGET_ESP32S31 != y:
         esp_clk_tree: esp_clk_tree_enable_src (noflash)
         esp_clk_tree: esp_clk_tree_enable_power (noflash)
         esp_clk_tree: esp_clk_tree_is_power_on (noflash)
