@@ -255,6 +255,8 @@ static void s_i2s_channel_try_to_constitude_tdm_duplex(i2s_chan_handle_t handle,
             if (memcmp(another_handle->mode_info, &curr_cfg, sizeof(i2s_tdm_config_t)) == 0) {
                 handle->controller->full_duplex = true;
                 ESP_LOGD(TAG, "Constitude full-duplex on port %d", handle->controller->id);
+            } else {
+                ESP_LOGD(TAG, "TX & RX on I2S%d are simplex", handle->controller->id);
             }
         }
         /* Switch to the slave role if needed */
