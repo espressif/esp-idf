@@ -67,7 +67,7 @@ tools/test_apps/system/flash_auto_suspend_iram_reduction:
 
 tools/test_apps/system/g0_components:
   enable:
-    - if: INCLUDE_DEFAULT == 1 or IDF_TARGET in ["esp32c5", "esp32c61", "esp32h21", "esp32h4"] # preview targets
+    - if: INCLUDE_DEFAULT == 1 or IDF_TARGET in ["esp32h21", "esp32h4", "esp32s31"] # preview targets
 
 tools/test_apps/system/g1_components:
 
