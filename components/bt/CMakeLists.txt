@@ -983,7 +983,7 @@ set(bt_priv_requires
 )
 
 if(CONFIG_BLE_COMPRESSED_LOG_ENABLE)
-    set(BT_ROOT_PATH "${CMAKE_CURRENT_SOURCE_DIR}")
+    set(CODE_BASE_PATH "${CMAKE_CURRENT_SOURCE_DIR}")
     # When log compression is enabled, selected logs are replaced
     # by auto-generated macros that emit pre-encoded data.
     # This eliminates the original format strings, reducing firmware size and
