@@ -1211,13 +1211,10 @@ static esp_err_t SLEEP_FN_ATTR esp_sleep_start(uint32_t sleep_flags, uint32_t cl
 
     if (!deep_sleep) {
         if (result == ESP_OK) {
-#if !CONFIG_PM_SLP_IRAM_OPT && !CONFIG_IDF_TARGET_ESP32
+#if !CONFIG_PM_SLP_IRAM_OPT && !(CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32P4)
 #if CONFIG_SPIRAM
-# if CONFIG_IDF_TARGET_ESP32P4
-            cache_ll_writeback_all(CACHE_LL_LEVEL_ALL, CACHE_TYPE_DATA, CACHE_LL_ID_ALL);
-# else
+            // TODO: PM-651
             Cache_WriteBack_All();
-# endif
 #endif
             /* When the IRAM optimization for the sleep flow is disabled, all
              * cache contents are forcibly invalidated before exiting the sleep
