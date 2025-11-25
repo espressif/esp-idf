@@ -145,6 +145,19 @@ esp_flash_t *esp_flash_default_chip = NULL;
 #endif //!CONFIG_SPI_FLASH_AUTO_SUSPEND
 #endif // Other target
 
+// Dynamic flash configuration is only needed when:
+// 1. Frequency limit workaround is enabled (CONFIG_SPI_FLASH_FREQ_LIMIT_C5_240MHZ)
+// 2. Flash frequency requires timing tuning (80MHz or 120MHz, i.e., > 40MHz)
+// 3. CPU frequency reduction will trigger MSPI timing tuning to enter low speed mode
+//    This happens when: SOC_SPI_MEM_PSRAM_FREQ_AXI_CONSTRAINED && CONFIG_SPIRAM &&
+//                      (target_cpu_freq < CONFIG_SPIRAM_SPEED)
+//    Note: The runtime check for CPU freq < PSRAM speed is done in clk_utils.c,
+//          which calls mspi_timing_change_speed_mode_cache_safe(true) to enter low speed mode.
+//    For ESP32-C5, if PSRAM is enabled and CPU freq < PSRAM speed, timing tuning will be disabled.
+#define C5_NEEDS_DYNAMIC_CONFIG (CONFIG_SPI_FLASH_FREQ_LIMIT_C5_240MHZ  && CONFIG_SPIRAM && \
+                                (CONFIG_ESPTOOLPY_FLASHFREQ_80M || CONFIG_ESPTOOLPY_FLASHFREQ_120M))
+
+
 static IRAM_ATTR NOINLINE_ATTR void cs_initialize(esp_flash_t *chip, const esp_flash_spi_device_config_t *config, bool cs_use_iomux, int cs_id)
 {
     //Not using spicommon_cs_initialize since we don't want to put the whole
@@ -160,7 +173,7 @@ static IRAM_ATTR NOINLINE_ATTR void cs_initialize(esp_flash_t *chip, const esp_f
 
     //To avoid the panic caused by flash data line conflicts during cs line
     //initialization, disable the cache temporarily
-    chip->os_func->start(chip->os_func_data);
+    chip->os_func->start(chip->os_func_data, 0);
     gpio_hal_input_enable(&gpio_hal, cs_io_num);
     if (cs_use_iomux) {
         gpio_hal_func_sel(&gpio_hal, cs_io_num, spics_func);
@@ -549,6 +562,16 @@ esp_err_t esp_flash_init_default_chip(void)
     if (err != ESP_OK) {
         return err;
     }
+#if C5_NEEDS_DYNAMIC_CONFIG
+    err = memspi_host_init_c5_dynamic_config(&esp_flash_default_host);
+    if (err != ESP_OK) {
+        return err;
+    }
+#endif
+
+#if CONFIG_SPI_FLASH_ROM_IMPL
+    esp_flash_rom_api_funcs_init();
+#endif // CONFIG_SPI_FLASH_ROM_IMPL
 
     // ROM TODO: account for non-standard default pins in efuse
     // ROM TODO: to account for chips which are slow to power on, maybe keep probing in a loop here
@@ -610,6 +633,7 @@ esp_err_t esp_flash_app_init(void)
 
     spi_flash_init_lock();
     spi_flash_guard_set(&g_flash_guard_default_ops);
+
 #if CONFIG_SPI_FLASH_ENABLE_COUNTERS
     esp_flash_reset_counters();
 #endif

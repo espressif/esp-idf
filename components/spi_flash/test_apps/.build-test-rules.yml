@@ -24,6 +24,15 @@ components/spi_flash/test_apps/esp_flash_blockdev:
   depends_components:
     - spi_flash
 
+components/spi_flash/test_apps/esp_flash_freq_limit:
+  enable:
+    - if: IDF_TARGET == "esp32c5"
+  depends_components:
+    - spi_flash
+    - esp_pm
+    - esp_driver_gptimer
+    - esp_hw_support
+
 components/spi_flash/test_apps/esp_flash_stress:
   disable:
     - if: IDF_TARGET in ["esp32s31"]

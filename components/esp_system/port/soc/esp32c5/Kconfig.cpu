@@ -20,6 +20,13 @@ choice ESP_DEFAULT_CPU_FREQ_MHZ
         # Please see SoC Errata document for details.
         depends on !SECURE_FLASH_ENC_ENABLED
         bool "240 MHz"
+        help
+            When 240MHz is selected, esp_flash_write_encrypted() will automatically limit CPU frequency during
+            execution:
+            - v1.2 and above chips: limited to 160MHz
+            - v1.0 and below chips: limited to 80MHz
+            When 160MHz or lower is selected, no frequency limiting occurs during encrypted writes. Please refer to
+            the ESP32-C5 SoC Errata document for more details.
 endchoice
 
 config ESP_DEFAULT_CPU_FREQ_MHZ
