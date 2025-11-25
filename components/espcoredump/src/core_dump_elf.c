@@ -11,7 +11,6 @@
 #include "esp_flash_encrypt.h"
 #include "core_dump_checksum.h"
 #include "esp_core_dump_port.h"
-#include "esp_core_dump_port_impl.h"
 #include "esp_core_dump_common.h"
 #include "hal/efuse_hal.h"
 #include "esp_task_wdt.h"
