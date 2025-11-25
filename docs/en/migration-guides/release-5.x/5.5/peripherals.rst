@@ -59,3 +59,8 @@ Peripherals
 
     - The new and legacy drivers are not compatible and must not be used together. Mixing them will trigger warnings during startup, and may even cause crashes and system reboots. To suppress this compatibility check, you may enable the configuration option :ref:`CONFIG_TWAI_SKIP_LEGACY_CONFLICT_CHECK`.
     - The legacy driver will no longer receive new features, such as TWAI FD (Flexible Data-rate) support.
+
+SPI Flash Driver
+----------------
+
+- New argument ``flags`` is added to ``esp_flash_os_functions_t::start``. Caller and implementer should handle this argument properly.

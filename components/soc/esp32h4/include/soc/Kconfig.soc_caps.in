@@ -267,6 +267,10 @@ config SOC_SPI_MEM_SUPPORT_WRAP
     bool
     default y
 
+config SOC_SPI_MEM_PSRAM_FREQ_AXI_CONSTRAINED
+    bool
+    default y
+
 config SOC_MEMSPI_SRC_FREQ_64M_SUPPORTED
     bool
     default y
