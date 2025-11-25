@@ -5,17 +5,10 @@ components/ulp/test_apps/lp_core/lp_core_basic_tests:
     - if: SOC_LP_CORE_SUPPORTED != 1
     - if: CONFIG_NAME == "xtal" and SOC_CLK_LP_FAST_SUPPORT_XTAL != 1
     - if: CONFIG_NAME == "lp_vad" and SOC_LP_VAD_SUPPORTED != 1
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: p4 rev3 migration # TODO: IDF-14368
 
 components/ulp/test_apps/lp_core/lp_core_hp_uart:
   disable:
     - if: SOC_LP_CORE_SUPPORTED != 1
-  disable_test:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: p4 rev3 migration # TODO: IDF-14422
 
 components/ulp/test_apps/ulp_fsm:
   enable:

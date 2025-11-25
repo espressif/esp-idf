@@ -1,9 +1,6 @@
 components/esp_driver_sdspi/test_apps/sdspi:
   disable:
     - if: SOC_GPSPI_SUPPORTED != 1
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: p4 rev3 migration # TODO: IDF-14363
   disable_test:
     - if: IDF_TARGET not in ["esp32", "esp32s3", "esp32c3", "esp32c5", "esp32p4"]
       reason: needs special runner, select few typical targets for testing

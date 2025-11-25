@@ -20,6 +20,5 @@ from pytest_embedded_idf.utils import idf_parametrize
     ],
     indirect=['config', 'target'],
 )
-@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration # TODO: IDF-14415')
 def test_newlib(dut: Dut) -> None:
     dut.run_all_single_board_cases()

@@ -18,7 +18,7 @@ from pytest_embedded_idf.utils import idf_parametrize
     ],
     indirect=True,
 )
-@idf_parametrize('target', ['esp32s3'], indirect=['target'])
+@idf_parametrize('target', ['esp32s3', 'esp32p4'], indirect=['target'])
 def test_examples_sd_card_sdmmc(dut: Dut) -> None:
     dut.expect('example: Initializing eMMC', timeout=20)
     dut.expect('example: Using SDMMC peripheral', timeout=10)
