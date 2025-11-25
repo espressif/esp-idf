@@ -95,7 +95,7 @@ static esp_err_t parlio_tx_unit_configure_gpio(parlio_tx_unit_t *tx_unit, const 
             gpio_func_sel(config->data_gpio_nums[i], PIN_FUNC_GPIO);
             // connect the signal to the GPIO by matrix, it will also enable the output path properly
             esp_rom_gpio_connect_out_signal(config->data_gpio_nums[i],
-                                            parlio_periph_signals.groups[group_id].tx_units[unit_id].data_sigs[i], false, false);
+                                            soc_parlio_signals[group_id].tx_units[unit_id].data_sigs[i], false, false);
             tx_unit->data_gpio_nums[i] = config->data_gpio_nums[i];
         }
     }
@@ -108,13 +108,13 @@ static esp_err_t parlio_tx_unit_configure_gpio(parlio_tx_unit_t *tx_unit, const 
         // Note: the default value of CS signal is low, so we need to invert the CS to keep compatible with the default value
         // connect the signal to the GPIO by matrix, it will also enable the output path properly
         esp_rom_gpio_connect_out_signal(config->valid_gpio_num,
-                                        parlio_periph_signals.groups[group_id].tx_units[unit_id].cs_sig,
+                                        soc_parlio_signals[group_id].tx_units[unit_id].cs_sig,
                                         !config->flags.invert_valid_out, false);
 #else
         // connect the signal to the GPIO by matrix, it will also enable the output path properly
         // Note: the valid signal will override TXD[PARLIO_LL_TX_DATA_LINE_AS_VALID_SIG]
         esp_rom_gpio_connect_out_signal(config->valid_gpio_num,
-                                        parlio_periph_signals.groups[group_id].tx_units[unit_id].data_sigs[PARLIO_LL_TX_DATA_LINE_AS_VALID_SIG],
+                                        soc_parlio_signals[group_id].tx_units[unit_id].data_sigs[PARLIO_LL_TX_DATA_LINE_AS_VALID_SIG],
                                         config->flags.invert_valid_out, false);
 #endif // !PARLIO_LL_TX_DATA_LINE_AS_VALID_SIG
         tx_unit->valid_gpio_num = config->valid_gpio_num;
@@ -123,13 +123,13 @@ static esp_err_t parlio_tx_unit_configure_gpio(parlio_tx_unit_t *tx_unit, const 
         gpio_func_sel(config->clk_out_gpio_num, PIN_FUNC_GPIO);
         // connect the signal to the GPIO by matrix, it will also enable the output path properly
         esp_rom_gpio_connect_out_signal(config->clk_out_gpio_num,
-                                        parlio_periph_signals.groups[group_id].tx_units[unit_id].clk_out_sig, false, false);
+                                        soc_parlio_signals[group_id].tx_units[unit_id].clk_out_sig, false, false);
         tx_unit->clk_out_gpio_num = config->clk_out_gpio_num;
     }
     if (config->clk_in_gpio_num >= 0) {
         gpio_input_enable(config->clk_in_gpio_num);
         esp_rom_gpio_connect_in_signal(config->clk_in_gpio_num,
-                                       parlio_periph_signals.groups[group_id].tx_units[unit_id].clk_in_sig, false);
+                                       soc_parlio_signals[group_id].tx_units[unit_id].clk_in_sig, false);
         tx_unit->clk_in_gpio_num = config->clk_in_gpio_num;
     }
     return ESP_OK;
@@ -215,7 +215,7 @@ static esp_err_t parlio_select_periph_clock(parlio_tx_unit_t *tx_unit, const par
         // use CPU_MAX lock to ensure PSRAM bandwidth and usability during DFS
         lock_type = ESP_PM_CPU_FREQ_MAX;
 #endif
-        esp_err_t ret  = esp_pm_lock_create(lock_type, 0, parlio_periph_signals.groups[tx_unit->base.group->group_id].module_name, &tx_unit->pm_lock);
+        esp_err_t ret  = esp_pm_lock_create(lock_type, 0, soc_parlio_signals[tx_unit->base.group->group_id].module_name, &tx_unit->pm_lock);
         ESP_RETURN_ON_ERROR(ret, TAG, "create pm lock failed");
     }
 #endif
@@ -296,7 +296,7 @@ esp_err_t parlio_new_tx_unit(const parlio_tx_unit_config_t *config, parlio_tx_un
 
     // install interrupt service
     int isr_flags = PARLIO_TX_INTR_ALLOC_FLAG;
-    ret = esp_intr_alloc_intrstatus(parlio_periph_signals.groups[group->group_id].tx_irq_id, isr_flags,
+    ret = esp_intr_alloc_intrstatus(soc_parlio_signals[group->group_id].tx_irq_id, isr_flags,
                                     (uint32_t)parlio_ll_get_interrupt_status_reg(hal->regs),
                                     PARLIO_LL_EVENT_TX_MASK, parlio_tx_default_isr, unit, &unit->intr);
     ESP_GOTO_ON_ERROR(ret, err, TAG, "install interrupt failed");
@@ -390,7 +390,7 @@ esp_err_t parlio_del_tx_unit(parlio_tx_unit_handle_t unit)
     }
     if (unit->clk_in_gpio_num >= 0) {
         esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ZERO_INPUT,
-                                       parlio_periph_signals.groups[unit->base.group->group_id].tx_units[unit->base.unit_id].clk_in_sig,
+                                       soc_parlio_signals[unit->base.group->group_id].tx_units[unit->base.unit_id].clk_in_sig,
                                        false);
     }
     return parlio_destroy_tx_unit(unit);
