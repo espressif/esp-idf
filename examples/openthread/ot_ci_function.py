@@ -204,8 +204,9 @@ def reset_thread(dut: IdfDut) -> None:
 
 def hardreset_dut(dut: IdfDut) -> None:
     dut.serial.hard_reset()
-    time.sleep(5)
+    dut.expect('OpenThread attached to netif', timeout=20)
     execute_command(dut, 'factoryreset')
+    dut.expect('OpenThread attached to netif', timeout=20)
 
 
 # get the mleid address of the thread
