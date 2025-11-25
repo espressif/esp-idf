@@ -11,7 +11,7 @@
 #include "esp_log.h"
 #include "ccomp_timer.h"
 #include "esp_heap_caps.h"
-#include "idf_performance.h"
+#include "crypto_performance.h"
 #include "esp_private/esp_clk.h"
 #include "spi_flash_mmap.h"
 

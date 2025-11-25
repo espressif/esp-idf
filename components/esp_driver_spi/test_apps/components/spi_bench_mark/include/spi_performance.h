@@ -6,6 +6,8 @@
 
 #pragma once
 
+#include "sdkconfig.h"
+
 #if CONFIG_IDF_TARGET_ESP32
 #define IDF_TARGET_MAX_SPI_CLK_FREQ                 16*1000*1000
 #define IDF_TARGET_MAX_TRANS_TIME_POLL_DMA          15

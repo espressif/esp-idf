@@ -13,7 +13,7 @@
 #include "esp_timer.h"
 #include "esp_timer_impl.h"
 #include "unity.h"
-#include "soc/timer_group_reg.h"
+#include "soc/soc_caps.h"
 #include "esp_heap_caps.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -21,6 +21,8 @@
 #include "test_utils.h"
 #include "esp_freertos_hooks.h"
 #include "esp_rom_sys.h"
+/* include performance pass standards header file */
+#include "esp_timer_performance.h"
 
 #define SEC  (1000000)
 

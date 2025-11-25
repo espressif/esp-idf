@@ -29,6 +29,7 @@
 #include "unity_test_utils_memory.h"
 
 #include "test_utils.h"
+#include "event_performance.h"
 
 static const char* TAG = "test_event";
 
@@ -236,7 +237,7 @@ TEST_CASE("can exit running loop at approximately the set amount of time", "[eve
 TEST_CASE("can register/unregister handlers simultaneously", "[event]")
 {
     /* this test aims to verify that the event handlers list remains consistent despite
-     * simultaneous access by differenct tasks */
+     * simultaneous access by different tasks */
 
     const char* base = "base";
     int32_t id = 0;
@@ -358,7 +359,7 @@ TEST_CASE("can post and run events simultaneously", "[event]")
 {
     /* this test aims to verify that:
      *  - multiple tasks can post to the queue simultaneously
-     *  - handlers recieve the appropriate handler arg and associated event data */
+     *  - handlers receive the appropriate handler arg and associated event data */
 
     esp_event_loop_handle_t loop;
 
@@ -433,7 +434,7 @@ TEST_CASE("can post and run events simultaneously with instances", "[event]")
 {
     /* this test aims to verify that:
      *  - multiple tasks can post to the queue simultaneously
-     *  - handlers recieve the appropriate handler arg and associated event data */
+     *  - handlers receive the appropriate handler arg and associated event data */
 
     esp_event_loop_handle_t loop;
 

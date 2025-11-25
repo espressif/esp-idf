@@ -11,6 +11,7 @@
 #include "esp_log.h"
 #include "esp_err.h"
 #include "esp_cpu.h"
+#include "esp_heap_caps.h"
 #include "hal/adc_periph.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -18,7 +19,7 @@
 #include "esp_adc/adc_continuous.h"
 #include "esp_adc/adc_filter.h"
 #include "test_common_adc.h"
-#include "idf_performance.h"
+#include "adc_performance.h"
 
 __attribute__((unused)) static const char *TAG = "TEST_ADC";
 

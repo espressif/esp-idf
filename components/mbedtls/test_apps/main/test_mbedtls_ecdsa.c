@@ -24,6 +24,7 @@
 #include "ccomp_timer.h"
 #include "unity.h"
 #include "esp_heap_caps.h"
+#include "crypto_performance.h"
 
 #include "ecdsa/ecdsa_alt.h"
 #if SOC_KEY_MANAGER_SUPPORTED

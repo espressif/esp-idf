@@ -16,7 +16,7 @@
 #include "test_utils.h"
 #include "ccomp_timer.h"
 #include "test_mbedtls_utils.h"
-#include "psa/crypto.h"
+#include "crypto_performance.h"
 
 #include "psa/crypto.h"
 

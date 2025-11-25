@@ -16,6 +16,7 @@
 #include "esp_heap_caps.h"
 #include "test_utils.h"
 #include "ccomp_timer.h"
+#include "crypto_performance.h"
 
 #if CONFIG_MBEDTLS_HARDWARE_AES
 TEST_CASE("mbedtls AES performance", "[aes][timeout=60]")
