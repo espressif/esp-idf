@@ -1451,6 +1451,10 @@ config SOC_WIFI_WAPI_SUPPORT
     bool
     default y
 
+config SOC_WIFI_TXOP_SUPPORT
+    bool
+    default y
+
 config SOC_WIFI_CSI_SUPPORT
     bool
     default y
