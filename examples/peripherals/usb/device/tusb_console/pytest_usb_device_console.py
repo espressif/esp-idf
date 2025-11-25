@@ -12,7 +12,6 @@ from serial.tools.list_ports import comports
 @pytest.mark.temp_skip_ci(targets=['esp32s3'], reason='lack of runners with usb_device tag')
 @pytest.mark.usb_device
 @idf_parametrize('target', ['esp32s2', 'esp32s3', 'esp32p4'], indirect=['target'])
-@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration # TODO: IDF-14369')
 def test_usb_device_console_example(dut: Dut) -> None:
     dut.expect_exact('USB initialization DONE')
     dut.expect_exact('example: log -> UART')
