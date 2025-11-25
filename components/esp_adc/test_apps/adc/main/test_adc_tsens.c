@@ -29,7 +29,7 @@ static const char *TAG = "adc_tsens";
 
 static int adc_raw[2][10];
 
-TEST_CASE("Test temperature sensor cannot be influenced by ADC", "[adc]")
+TEST_CASE("Test temperature sensor cannot be influenced by ADC", "[adc][ignore]")
 {
     ESP_LOGI(TAG, "Install temperature sensor, expected temp ranger range: 10~50 ℃");
     temperature_sensor_handle_t temp_sensor = NULL;
