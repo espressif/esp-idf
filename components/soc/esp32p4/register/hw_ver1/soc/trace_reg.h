@@ -11,6 +11,8 @@
 extern "C" {
 #endif
 
+#define REG_TRACE_BASE(i)                       (DR_REG_TRACE_BASE + (i) * 0x1000)
+
 /** TRACE_MEM_START_ADDR_REG register
  *  mem start addr
  */

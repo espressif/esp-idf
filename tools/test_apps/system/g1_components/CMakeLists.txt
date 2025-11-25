@@ -13,16 +13,10 @@ set(esp_hal_components
     esp_hal_cam
     esp_hal_dma
     esp_hal_gpio
-    esp_hal_i2c
     esp_hal_i2s
-    esp_hal_lcd
-    esp_hal_mcpwm
     esp_hal_mspi
-    esp_hal_parlio
-    esp_hal_pcnt
     esp_hal_timg
     esp_hal_touch_sens
-    esp_hal_twai
     esp_hal_usb
     esp_hal_wdt
 )
