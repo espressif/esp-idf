@@ -14,7 +14,7 @@ extern "C" {
 /** RNG_CFG_REG register
  *  configure rng register
  */
-#define RNG_CFG_REG (DR_REG_RNG_BASE + 0x0)
+#define RNG_CFG_REG (DR_REG_LP_TRNG_BASE + 0x0)
 /** RNG_SAMPLE_ENABLE : R/W; bitpos: [0]; default: 0;
  *  enable rng RO
  *  1: enable RO
@@ -49,7 +49,7 @@ extern "C" {
 /** RNG_DATA_REG register
  *  RNG result register
  */
-#define RNG_DATA_REG (DR_REG_RNG_BASE + 0x4)
+#define RNG_DATA_REG (DR_REG_LP_TRNG_BASE + 0x4)
 /** RNG_DATA : RO; bitpos: [31:0]; default: 0;
  *  get rng data
  */
@@ -61,7 +61,7 @@ extern "C" {
 /** RNG_RSTN_REG register
  *  rng rstn register
  */
-#define RNG_RSTN_REG (DR_REG_RNG_BASE + 0x8)
+#define RNG_RSTN_REG (DR_REG_LP_TRNG_BASE + 0x8)
 /** RNG_RSTN : R/W; bitpos: [0]; default: 1;
  *  enable rng system reset: 1: not reset, 0: reset
  */
@@ -73,7 +73,7 @@ extern "C" {
 /** RNG_DATE_REG register
  *  need_des
  */
-#define RNG_DATE_REG (DR_REG_RNG_BASE + 0xc)
+#define RNG_DATE_REG (DR_REG_LP_TRNG_BASE + 0xc)
 /** RNG_DATE : R/W; bitpos: [30:0]; default: 2425091;
  *  need_des
  */
