@@ -27,7 +27,6 @@
 #include "freertos/queue.h"
 #include "freertos/idf_additions.h"
 #include "soc/soc_caps.h"
-#include "soc/gdma_channel.h"
 #include "hal/parlio_periph.h"
 #include "hal/parlio_types.h"
 #include "hal/parlio_hal.h"

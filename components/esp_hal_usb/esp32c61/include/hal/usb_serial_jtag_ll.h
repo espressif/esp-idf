@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -115,7 +115,9 @@ static inline int usb_serial_jtag_ll_read_rxfifo(uint8_t *buf, uint32_t rd_len)
 {
     int i;
     for (i = 0; i < (int)rd_len; i++) {
-        if (!USB_SERIAL_JTAG.ep1_conf.serial_out_ep_data_avail) break;
+        if (!USB_SERIAL_JTAG.ep1_conf.serial_out_ep_data_avail) {
+            break;
+        }
         buf[i] = USB_SERIAL_JTAG.ep1.val;
     }
     return i;
@@ -134,7 +136,9 @@ static inline int usb_serial_jtag_ll_write_txfifo(const uint8_t *buf, uint32_t w
 {
     int i;
     for (i = 0; i < (int)wr_len; i++) {
-        if (!USB_SERIAL_JTAG.ep1_conf.serial_in_ep_data_free) break;
+        if (!USB_SERIAL_JTAG.ep1_conf.serial_in_ep_data_free) {
+            break;
+        }
         USB_SERIAL_JTAG.ep1.val = buf[i];
     }
     return i;
@@ -177,7 +181,7 @@ static inline int usb_serial_jtag_ll_txfifo_writable(void)
  */
 static inline void usb_serial_jtag_ll_txfifo_flush(void)
 {
-    USB_SERIAL_JTAG.ep1_conf.wr_done=1;
+    USB_SERIAL_JTAG.ep1_conf.wr_done = 1;
 }
 
 /**
@@ -198,7 +202,7 @@ FORCE_INLINE_ATTR void usb_serial_jtag_ll_phy_enable_jtag_bridge(bool enable)
 /**
  * @brief Sets PHY defaults
  *
- * Some PHY register fields/features of the USJ are redundant on the ESP32-C5.
+ * Some PHY register fields/features of the USJ are redundant on the ESP32-C61.
  * This function those fields are set to the appropriate default values.
  *
  * @param hw Start address of the USB Wrap registers
@@ -327,25 +331,6 @@ FORCE_INLINE_ATTR void usb_serial_jtag_ll_reset_register(void)
 FORCE_INLINE_ATTR bool usb_serial_jtag_ll_module_is_enabled(void)
 {
     return (PCR.usb_device_conf.usb_device_clk_en && !PCR.usb_device_conf.usb_device_rst_en);
-}
-
-/* ---------------------------- USB MEM Control  ---------------------------- */
-/**
- * @brief Power down the power USJ mem.
- * @param clk_en True if power down the USJ mem.
- */
-FORCE_INLINE_ATTR void usb_serial_jtag_ll_set_mem_pd(bool pd)
-{
-    USB_SERIAL_JTAG.mem_conf.usb_mem_pd = pd;
-}
-
-/**
- * @brief Enable the mem clock for USJ module
- * @param clk_en True if enable the clock of USJ module mem.
- */
-FORCE_INLINE_ATTR void usb_serial_jtag_ll_enable_mem_clock(bool clk_en)
-{
-    USB_SERIAL_JTAG.mem_conf.usb_mem_clk_en = clk_en;
 }
 
 #ifdef __cplusplus

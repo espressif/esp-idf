@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
 #pragma once
 
 #include <limits.h>
@@ -29,7 +28,7 @@ extern "C" {
  *
  * @param hw BitScrambler hardware instance address.
  * @param dir Direction, BITSCRAMBLER_DIR_TX or BITSCRAMBLER_DIR_RX
- * @param peri Peripheral to select, should pick the value from soc/bitscrambler_peri_select.h
+ * @param peri Peripheral to select, should pick the value from bitscrambler_peri_select.h
  */
 static inline void bitscrambler_ll_select_peripheral(bitscrambler_dev_t *hw, bitscrambler_direction_t dir, int peri)
 {
@@ -61,7 +60,6 @@ static inline void bitscrambler_ll_disable(bitscrambler_dev_t *hw, bitscrambler_
 {
     hw->ctrl[dir].ena = 0;
 }
-
 
 /**
  * @brief Write a word to the instruction memory

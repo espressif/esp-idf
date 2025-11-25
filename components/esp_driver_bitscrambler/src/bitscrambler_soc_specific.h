@@ -6,7 +6,7 @@
 #pragma once
 
 #include "esp_private/gdma.h"
-#include "soc/bitscrambler_peri_select.h"
+#include "hal/bitscrambler_peri_select.h"
 
 #ifdef __cplusplus
 extern "C" {

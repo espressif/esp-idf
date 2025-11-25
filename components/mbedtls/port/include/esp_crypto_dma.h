@@ -6,11 +6,11 @@
 
 #pragma once
 
-#include "hal/dma_types.h"
 #include "soc/soc_caps.h"
+#include "hal/dma_types.h"
+#include "hal/gdma_types.h"
 
 #if SOC_GDMA_SUPPORTED
-#include "soc/gdma_channel.h"
 #include "hal/gdma_ll.h"
 #endif /* SOC_GDMA_SUPPORTED */
 

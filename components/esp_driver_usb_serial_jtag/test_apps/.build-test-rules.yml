@@ -14,6 +14,7 @@ components/esp_driver_usb_serial_jtag/test_apps/usb_serial_jtag:
     - vfs
     - esp_driver_gpio
     - esp_driver_usb_serial_jtag
+    - esp_hal_usb
 
 components/esp_driver_usb_serial_jtag/test_apps/usb_serial_jtag_vfs:
   disable:
@@ -28,3 +29,4 @@ components/esp_driver_usb_serial_jtag/test_apps/usb_serial_jtag_vfs:
   depends_components:
     - vfs
     - esp_driver_usb_serial_jtag
+    - esp_hal_usb

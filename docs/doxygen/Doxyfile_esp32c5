@@ -1,7 +1,7 @@
 INPUT += \
         $(PROJECT_PATH)/components/esp_driver_bitscrambler/include/driver/bitscrambler.h \
         $(PROJECT_PATH)/components/esp_driver_bitscrambler/include/driver/bitscrambler_loopback.h \
-        $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/include/soc/bitscrambler_peri_select.h \
+        $(PROJECT_PATH)/components/esp_hal_dma/esp32c5/include/hal/bitscrambler_peri_select.h \
         $(PROJECT_PATH)/components/ulp/lp_core/include/lp_core_i2c.h \
         $(PROJECT_PATH)/components/ulp/lp_core/include/lp_core_uart.h \
         $(PROJECT_PATH)/components/ulp/lp_core/include/lp_core_etm.h \

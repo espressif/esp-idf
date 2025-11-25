@@ -1,10 +1,14 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #pragma once
+
+#if __has_include("hal/gdma_channel.h")
+#include "hal/gdma_channel.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
