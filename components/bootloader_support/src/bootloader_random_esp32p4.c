@@ -8,10 +8,15 @@
 #include "hal/regi2c_ctrl_ll.h"
 #include "hal/adc_ll.h"
 #include "hal/adc_types.h"
+#include "hal/config.h"
 
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/adc_share_hw_ctrl.h"
 #include "esp_private/sar_periph_ctrl.h"
+
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+#include "hal/trng_ll.h"
+#endif
 
 #define I2C_SAR_ADC_INIT_CODE_VAL       2166
 #define ADC_RNG_CLKM_DIV_NUM            0
@@ -60,6 +65,9 @@ void bootloader_random_enable(void)
     adc_ll_digi_set_clk_div(15);
     adc_ll_digi_set_trigger_interval(100);
     adc_ll_digi_trigger_enable();
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+    trng_ll_enable();
+#endif
 }
 
 void bootloader_random_disable(void)
@@ -80,4 +88,8 @@ void bootloader_random_disable(void)
     adc_ll_digi_clk_sel(ADC_DIGI_CLK_SRC_XTAL);
 
     adc_ll_set_controller(ADC_UNIT_1, ADC_LL_CTRL_ULP);
+
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+    trng_ll_disable();
+#endif
 }
