@@ -60,6 +60,14 @@ examples/system/efuse:
     - efuse
     - bootloader_support
 
+examples/system/esp_event/default_event_loop:
+  depends_components:
+    - esp_event
+
+examples/system/esp_event/user_event_loops:
+  depends_components:
+    - esp_event
+
 examples/system/esp_timer:
   depends_components:
     - esp_timer
