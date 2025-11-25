@@ -5,7 +5,7 @@ menu "Event Loop Library"
         default n
         help
             Enables collections of statistics in the event loop library such as the number of events posted
-            to/recieved by an event loop, number of callbacks involved, number of events dropped to to a full event
+            to/received by an event loop, number of callbacks involved, number of events dropped to to a full event
             loop queue, run time of event handlers, and number of times/run time of each event handler.
 
     config ESP_EVENT_POST_FROM_ISR
@@ -13,6 +13,28 @@ menu "Event Loop Library"
         default y
         help
             Enable posting events from interrupt handlers.
+
+    config ESP_EVENT_POST_FROM_ISR_SIZE
+        int "Max size of data from events (bytes)"
+        default 4
+        depends on ESP_EVENT_POST_FROM_ISR
+        range 4 256
+        help
+            Maximum size (in bytes) of event data that will be kept in the inline event
+            storage.
+
+            When ESP_EVENT_POST_FROM_ISR is enabled, event data with size less
+            than or equal to this value is copied into the fixed-size inline storage.
+            If event's data is larger than this limit, a heap allocation is performed
+            and the data is copied into the allocated buffer before posting.
+
+            When ESP_EVENT_POST_FROM_ISR is disabled, event data is always
+            copied to a heap-allocated buffer to ensure the data remains valid until the
+            event is processed.
+
+            Choose this value to trade static RAM footprint of the inline storage
+            against the frequency of heap allocations: smaller values reduce static
+            memory usage; larger values reduce heap allocations and fragmentation.
 
     config ESP_EVENT_POST_FROM_IRAM_ISR
         bool "Support posting events from ISRs placed in IRAM"
