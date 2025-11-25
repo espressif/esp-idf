@@ -13,8 +13,7 @@ entries:
     cpu: esp_cpu_compare_and_set (noflash)
     esp_memory_utils (noflash)
     clk_utils (noflash)
-    if PM_SLP_IRAM_OPT = y:
-        esp_clk_tree: esp_clk_tree_enable_src (noflash)
+    esp_clk_tree: esp_clk_tree_enable_src (noflash)
     if RTC_CLK_FUNC_IN_IRAM = y:
         rtc_clk (noflash)
     if IDF_TARGET_ESP32 = y:
