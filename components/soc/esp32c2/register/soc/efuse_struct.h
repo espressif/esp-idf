@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0 OR MIT
  */
@@ -493,10 +493,22 @@ typedef union {
  */
 typedef union {
     struct {
-        /** blk2_reserved_data_1 : RO; bitpos: [31:0]; default: 0;
-         *  Store the bit [21:52] of block2 reserved data.
+        /** reserved_2_224 : R; bitpos: [23:0]; default: 0;
+         *  reserved
          */
-        uint32_t blk2_reserved_data_1:32;
+        uint32_t reserved_2_224:24;
+        /** flash_vendor : R; bitpos: [26:24]; default: 0;
+         *  Flash vendor
+         */
+        uint32_t flash_vendor:3;
+        /** flash_temp : R; bitpos: [28:27]; default: 0;
+         *  Flash temperature rating
+         */
+        uint32_t flash_temp:2;
+        /** flash_cap : R; bitpos: [31:29]; default: 0;
+         *  Flash capacity
+         */
+        uint32_t flash_cap:3;
     };
     uint32_t val;
 } efuse_rd_blk2_data7_reg_t;

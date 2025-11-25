@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0 OR MIT
  */
@@ -596,13 +596,34 @@ extern "C" {
  *  Register 7 of BLOCK2.
  */
 #define EFUSE_RD_BLK2_DATA7_REG (DR_REG_EFUSE_BASE + 0x5c)
-/** EFUSE_BLK2_RESERVED_DATA_1 : RO; bitpos: [31:0]; default: 0;
- *  Store the bit [21:52] of block2 reserved data.
+/** EFUSE_RESERVED_2_224 : R; bitpos: [23:0]; default: 0;
+ *  reserved
  */
-#define EFUSE_BLK2_RESERVED_DATA_1    0xFFFFFFFFU
-#define EFUSE_BLK2_RESERVED_DATA_1_M  (EFUSE_BLK2_RESERVED_DATA_1_V << EFUSE_BLK2_RESERVED_DATA_1_S)
-#define EFUSE_BLK2_RESERVED_DATA_1_V  0xFFFFFFFFU
-#define EFUSE_BLK2_RESERVED_DATA_1_S  0
+#define EFUSE_RESERVED_2_224    0x00FFFFFFU
+#define EFUSE_RESERVED_2_224_M  (EFUSE_RESERVED_2_224_V << EFUSE_RESERVED_2_224_S)
+#define EFUSE_RESERVED_2_224_V  0x00FFFFFFU
+#define EFUSE_RESERVED_2_224_S  0
+/** EFUSE_FLASH_VENDOR : R; bitpos: [26:24]; default: 0;
+ *  Flash vendor
+ */
+#define EFUSE_FLASH_VENDOR    0x00000007U
+#define EFUSE_FLASH_VENDOR_M  (EFUSE_FLASH_VENDOR_V << EFUSE_FLASH_VENDOR_S)
+#define EFUSE_FLASH_VENDOR_V  0x00000007U
+#define EFUSE_FLASH_VENDOR_S  24
+/** EFUSE_FLASH_TEMP : R; bitpos: [28:27]; default: 0;
+ *  Flash temperature rating
+ */
+#define EFUSE_FLASH_TEMP    0x00000003U
+#define EFUSE_FLASH_TEMP_M  (EFUSE_FLASH_TEMP_V << EFUSE_FLASH_TEMP_S)
+#define EFUSE_FLASH_TEMP_V  0x00000003U
+#define EFUSE_FLASH_TEMP_S  27
+/** EFUSE_FLASH_CAP : R; bitpos: [31:29]; default: 0;
+ *  Flash capacity
+ */
+#define EFUSE_FLASH_CAP    0x00000007U
+#define EFUSE_FLASH_CAP_M  (EFUSE_FLASH_CAP_V << EFUSE_FLASH_CAP_S)
+#define EFUSE_FLASH_CAP_V  0x00000007U
+#define EFUSE_FLASH_CAP_S  29
 
 /** EFUSE_RD_BLK3_DATA0_REG register
  *  Register 0 of BLOCK3.

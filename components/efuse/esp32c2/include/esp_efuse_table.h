@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,7 +10,7 @@ extern "C" {
 
 #include "esp_efuse.h"
 
-// md5_digest_table 439495cbc35dc68d7566e05ac3dbb248
+// md5_digest_table 066deaa9a981a1c5cd33c78803ad1d45
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -64,6 +64,9 @@ extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_RTC_LDO_SLP_DBIAS31[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_RTC_LDO_ACT_DBIAS31[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_RTC_LDO_ACT_DBIAS13[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC_CALIBRATION_3[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_FLASH_VENDOR[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_FLASH_TEMP[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_FLASH_CAP[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_BLOCK_KEY0[];
 #define ESP_EFUSE_WR_DIS_KEY0 ESP_EFUSE_WR_DIS_BLOCK_KEY0
 extern const esp_efuse_desc_t* ESP_EFUSE_RD_DIS[];
@@ -116,6 +119,9 @@ extern const esp_efuse_desc_t* ESP_EFUSE_RTC_LDO_SLP_DBIAS31[];
 extern const esp_efuse_desc_t* ESP_EFUSE_RTC_LDO_ACT_DBIAS31[];
 extern const esp_efuse_desc_t* ESP_EFUSE_RTC_LDO_ACT_DBIAS13[];
 extern const esp_efuse_desc_t* ESP_EFUSE_ADC_CALIBRATION_3[];
+extern const esp_efuse_desc_t* ESP_EFUSE_FLASH_VENDOR[];
+extern const esp_efuse_desc_t* ESP_EFUSE_FLASH_TEMP[];
+extern const esp_efuse_desc_t* ESP_EFUSE_FLASH_CAP[];
 extern const esp_efuse_desc_t* ESP_EFUSE_KEY0[];
 #define ESP_EFUSE_BLOCK_KEY0 ESP_EFUSE_KEY0
 extern const esp_efuse_desc_t* ESP_EFUSE_KEY0_FE_256BIT[];
