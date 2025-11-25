@@ -474,6 +474,11 @@ void mspi_timing_psram_tuning(void)
 /*------------------------------------------------------------------------------
  * APIs to make SPI0 (and SPI1) FLASH work for high/low freq
  *----------------------------------------------------------------------------*/
+uint32_t mspi_timing_get_psram_low_speed_freq_mhz(void)
+{
+    return 20;
+}
+
 void mspi_timing_enter_low_speed_mode(bool control_spi1)
 {
 #if SOC_MEMSPI_FLASH_CLK_SRC_IS_INDEPENDENT
@@ -497,14 +502,14 @@ void mspi_timing_enter_low_speed_mode(bool control_spi1)
      * Should be extended to other no-timing-tuning chips if needed. e.g.:
      * we still need to turn down Flash / PSRAM clock speed at a certain period of time
      */
-    mspi_timing_config_set_flash_clock(20, MSPI_TIMING_SPEED_MODE_LOW_PERF, control_spi1);
-    mspi_timing_config_set_psram_clock(20, MSPI_TIMING_SPEED_MODE_LOW_PERF, control_spi1);
-#endif  //#if SOC_SPI_MEM_SUPPORT_TIMING_TUNING
-
+    uint32_t low_speed_freq_mhz = mspi_timing_get_psram_low_speed_freq_mhz();
+    mspi_timing_config_set_flash_clock(low_speed_freq_mhz, MSPI_TIMING_SPEED_MODE_LOW_PERF, control_spi1);
+    mspi_timing_config_set_psram_clock(low_speed_freq_mhz, MSPI_TIMING_SPEED_MODE_LOW_PERF, control_spi1);
 #if MSPI_TIMING_FLASH_NEEDS_TUNING || MSPI_TIMING_PSRAM_NEEDS_TUNING
     mspi_timing_flash_config_clear_tuning_regs(control_spi1);
     mspi_timing_psram_config_clear_tuning_regs(control_spi1);
 #endif  //#if MSPI_TIMING_FLASH_NEEDS_TUNING || MSPI_TIMING_PSRAM_NEEDS_TUNING
+#endif  //#if SOC_SPI_MEM_SUPPORT_TIMING_TUNING
 }
 
 /**
