@@ -91,6 +91,7 @@ struct i2s_channel_obj_t {
     /* Stored configurations */
     void                    *mode_info;     /*!< Slot, clock and gpio information of each mode */
     bool                    full_duplex_slave; /*!< whether the channel is forced to switch to slave role for full duplex */
+    bool                    is_port_auto;   /*!< Whether the port is auto-assigned */
 #if SOC_I2S_SUPPORTS_APLL
     bool                    apll_en;        /*!< Flag of wether APLL enabled */
 #endif
@@ -214,6 +215,19 @@ esp_err_t i2s_check_set_mclk(i2s_port_t id, gpio_num_t gpio_num, bool is_apll, b
  * @param in_sig_idx    Data in signal index
  */
 void i2s_gpio_loopback_set(gpio_num_t gpio, uint32_t out_sig_idx, uint32_t in_sig_idx);
+
+#if SOC_I2S_HW_VERSION_1
+/**
+ * @brief Change the port of the I2S channel
+ *
+ * @param handle        I2S channel handle
+ * @param id            I2S port id
+ * @return
+ *      - ESP_OK                Change port success
+ *      - ESP_ERR_NOT_FOUND     No available I2S port found
+ */
+esp_err_t i2s_channel_change_port(i2s_chan_handle_t handle, int id);
+#endif
 
 #ifdef __cplusplus
 }
