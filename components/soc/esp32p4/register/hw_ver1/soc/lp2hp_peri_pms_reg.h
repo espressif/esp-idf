@@ -350,16 +350,16 @@ extern "C" {
 #define PMS_LP_MM_HP_RMT_ALLOW_M  (PMS_LP_MM_HP_RMT_ALLOW_V << PMS_LP_MM_HP_RMT_ALLOW_S)
 #define PMS_LP_MM_HP_RMT_ALLOW_V  0x00000001U
 #define PMS_LP_MM_HP_RMT_ALLOW_S  22
-/** PMS_LP_MM_HP_BITSRAMBLER_ALLOW : R/W; bitpos: [23]; default: 1;
+/** PMS_LP_MM_HP_BITSCRAMBLER_ALLOW : R/W; bitpos: [23]; default: 1;
  *  Configures whether the LP CPU in machine mode has permission to access HP bit
  *  scrambler.
  *  0: Not allowed
  *  1: Allowed
  */
-#define PMS_LP_MM_HP_BITSRAMBLER_ALLOW    (BIT(23))
-#define PMS_LP_MM_HP_BITSRAMBLER_ALLOW_M  (PMS_LP_MM_HP_BITSRAMBLER_ALLOW_V << PMS_LP_MM_HP_BITSRAMBLER_ALLOW_S)
-#define PMS_LP_MM_HP_BITSRAMBLER_ALLOW_V  0x00000001U
-#define PMS_LP_MM_HP_BITSRAMBLER_ALLOW_S  23
+#define PMS_LP_MM_HP_BITSCRAMBLER_ALLOW    (BIT(23))
+#define PMS_LP_MM_HP_BITSCRAMBLER_ALLOW_M  (PMS_LP_MM_HP_BITSCRAMBLER_ALLOW_V << PMS_LP_MM_HP_BITSCRAMBLER_ALLOW_S)
+#define PMS_LP_MM_HP_BITSCRAMBLER_ALLOW_V  0x00000001U
+#define PMS_LP_MM_HP_BITSCRAMBLER_ALLOW_S  23
 /** PMS_LP_MM_HP_AXI_ICM_ALLOW : R/W; bitpos: [24]; default: 1;
  *  Configures whether the LP CPU in machine mode has permission to access HP AXI ICM.
  *  0: Not allowed

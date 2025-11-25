@@ -27,38 +27,9 @@
 #if SOC_MODEM_CLOCK_SUPPORTED
 #include "hal/modem_lpcon_ll.h"
 #endif
-#include "hal/adc_ll.h"
-#include "hal/aes_ll.h"
-#include "hal/assist_debug_ll.h"
 #include "hal/apm_ll.h"
 #include "hal/clk_gate_ll.h"
 #include "hal/clk_tree_ll.h"
-#include "hal/ds_ll.h"
-#include "hal/ecc_ll.h"
-#include "hal/etm_ll.h"
-#include "hal/gdma_ll.h"
-#include "hal/hmac_ll.h"
-#include "hal/i2c_ll.h"
-#include "hal/i2s_ll.h"
-#include "hal/ledc_ll.h"
-#include "hal/lp_core_ll.h"
-#include "hal/lp_clkrst_ll.h"
-#include "hal/mcpwm_ll.h"
-#include "hal/mpi_ll.h"
-#include "hal/mspi_ll.h"
-#include "hal/parlio_ll.h"
-#include "hal/pau_ll.h"
-#include "hal/pcnt_ll.h"
-#include "hal/rmt_ll.h"
-#include "hal/rtc_io_ll.h"
-#include "hal/sha_ll.h"
-#include "hal/spi_ll.h"
-#include "hal/temperature_sensor_ll.h"
-#include "hal/timer_ll.h"
-#include "hal/twai_ll.h"
-#include "hal/uart_ll.h"
-#include "hal/uhci_ll.h"
-#include "hal/usb_serial_jtag_ll.h"
 #include "esp_private/esp_sleep_internal.h"
 #include "esp_private/esp_modem_clock.h"
 #include "esp_private/periph_ctrl.h"
@@ -269,103 +240,23 @@ __attribute__((weak)) void esp_perip_clk_init(void)
     clk_ll_soc_root_clk_auto_gating_bypass(true);
 
     soc_reset_reason_t rst_reason = esp_rom_get_reset_reason(0);
-    if ((rst_reason != RESET_REASON_CPU0_MWDT0) && (rst_reason != RESET_REASON_CPU0_MWDT1)          \
-            && (rst_reason != RESET_REASON_CPU0_SW) && (rst_reason != RESET_REASON_CPU0_RTC_WDT)    \
-            && (rst_reason != RESET_REASON_CPU0_JTAG) && (rst_reason != RESET_REASON_CPU0_LOCKUP)) {
+    periph_ll_clk_gate_config_t clk_gate_config = {0};
+
 #if CONFIG_ESP_CONSOLE_UART_NUM != 0
-        uart_ll_enable_bus_clock(UART_NUM_0, false);
-        uart_ll_sclk_disable(&UART0);
-#elif CONFIG_ESP_CONSOLE_UART_NUM != 1
-        uart_ll_sclk_disable(&UART1);
-        uart_ll_enable_bus_clock(UART_NUM_1, false);
+    clk_gate_config.disable_uart0_clk = true;
 #endif
-        i2c_ll_enable_bus_clock(0, false);
-        i2c_ll_enable_controller_clock(&I2C0, false);
-        rmt_ll_enable_bus_clock(0, false);
-        rmt_ll_enable_group_clock(0, false);
-        ledc_ll_enable_clock(&LEDC, false);
-        ledc_ll_enable_bus_clock(false);
-        clk_ll_enable_timergroup_rtc_calibration_clock(false);
-        timer_ll_enable_clock(0, 0, false);
-        timer_ll_enable_clock(1, 0, false);
-        _timg_ll_enable_bus_clock(0, false);
-        _timg_ll_enable_bus_clock(1, false);
-        twai_ll_enable_clock(0, false);
-        twai_ll_enable_bus_clock(0, false);
-        twai_ll_enable_clock(1, false);
-        twai_ll_enable_bus_clock(1, false);
-        i2s_ll_enable_bus_clock(0, false);
-        i2s_ll_tx_disable_clock(&I2S0);
-        i2s_ll_rx_disable_clock(&I2S0);
-        adc_ll_enable_bus_clock(false);
-        pcnt_ll_enable_bus_clock(0, false);
-        etm_ll_enable_bus_clock(0, false);
-        mcpwm_ll_enable_bus_clock(0, false);
-        mcpwm_ll_group_enable_clock(0, false);
-        parlio_ll_rx_enable_clock(&PARL_IO, false);
-        parlio_ll_tx_enable_clock(&PARL_IO, false);
-        parlio_ll_enable_bus_clock(0, false);
-        ahb_dma_ll_force_enable_reg_clock(&AHB_DMA, false);
-        _gdma_ll_enable_bus_clock(0, false);
+#if CONFIG_ESP_CONSOLE_UART_NUM != 1
+    clk_gate_config.disable_uart1_clk = true;
+#endif
 #if CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
-        mspi_timing_ll_enable_core_clock(0, false);
+    clk_gate_config.disable_mspi_flash_clk = true;
 #endif
-        spi_ll_enable_bus_clock(SPI2_HOST, false);
-        temperature_sensor_ll_bus_clk_enable(false);
-        pau_ll_enable_bus_clock(false);
-#if !CONFIG_ESP_SYSTEM_HW_PC_RECORD
-        /* Disable ASSIST Debug module clock if PC recoreding function is not used,
-         * if stack guard function needs it, it will be re-enabled at esp_hw_stack_guard_init */
-        assist_debug_ll_enable_bus_clock(false);
-#endif
-        mpi_ll_enable_bus_clock(false);
 #if !CONFIG_SECURE_ENABLE_TEE
-        aes_ll_enable_bus_clock(false);
-        sha_ll_enable_bus_clock(false);
-        ecc_ll_enable_bus_clock(false);
-        hmac_ll_enable_bus_clock(false);
-        ds_ll_enable_bus_clock(false);
-        apm_ll_hp_tee_enable_clk_gating(true);
-        apm_ll_lp_tee_enable_clk_gating(true);
-        apm_ll_hp_apm_enable_ctrl_clk_gating(true);
-        apm_ll_cpu_apm_enable_ctrl_clk_gating(true);
+    clk_gate_config.disable_crypto_periph_clk = true;
 #endif
-        uhci_ll_enable_bus_clock(0, false);
-
-        // TODO: Replace with hal implementation
-        REG_CLR_BIT(PCR_TRACE_CONF_REG, PCR_TRACE_CLK_EN);
-        REG_CLR_BIT(PCR_TCM_MEM_MONITOR_CONF_REG, PCR_TCM_MEM_MONITOR_CLK_EN);
-        REG_CLR_BIT(PCR_PSRAM_MEM_MONITOR_CONF_REG, PCR_PSRAM_MEM_MONITOR_CLK_EN);
-        REG_CLR_BIT(PCR_PVT_MONITOR_CONF_REG, PCR_PVT_MONITOR_CLK_EN);
-        REG_CLR_BIT(PCR_PVT_MONITOR_FUNC_CLK_CONF_REG, PCR_PVT_MONITOR_FUNC_CLK_EN);
-        WRITE_PERI_REG(PCR_CTRL_CLK_OUT_EN_REG, 0);
-
 #if !CONFIG_USJ_ENABLE_USB_SERIAL_JTAG && !CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG_ENABLED
-        // Disable USB-Serial-JTAG clock and it's pad if not used
-        usb_serial_jtag_ll_phy_enable_pad(false);
-        usb_serial_jtag_ll_enable_bus_clock(false);
-        usb_serial_jtag_ll_enable_mem_clock(false);
-        usb_serial_jtag_ll_set_mem_pd(true);
+    clk_gate_config.disable_usb_serial_jtag = true;
 #endif
-    }
 
-    if ((rst_reason == RESET_REASON_CHIP_POWER_ON) || (rst_reason == RESET_REASON_CHIP_BROWN_OUT)       \
-            || (rst_reason == RESET_REASON_SYS_RTC_WDT) || (rst_reason == RESET_REASON_SYS_SUPER_WDT)   \
-            || (rst_reason == RESET_REASON_CORE_PWR_GLITCH)) {
-        _lp_i2c_ll_enable_bus_clock(0, false);
-        lp_uart_ll_sclk_disable(0);
-        _lp_uart_ll_enable_bus_clock(0, false);
-        _lp_core_ll_enable_bus_clock(false);
-        _rtcio_ll_enable_io_clock(false);
-        _lp_clkrst_ll_enable_rng_clock(false);
-        _lp_clkrst_ll_enable_otp_dbg_clock(false);
-        _lp_clkrst_ll_enable_lp_ana_i2c_clock(false);
-        _lp_clkrst_ll_enable_lp_ext_i2c_clock(false);
-
-#if !CONFIG_SECURE_ENABLE_TEE
-        apm_ll_lp_apm_enable_ctrl_clk_gating(true);
-        apm_ll_lp_apm0_enable_ctrl_clk_gating(true);
-#endif
-        WRITE_PERI_REG(LP_CLKRST_LP_CLK_PO_EN_REG, 0);
-    }
+    periph_ll_clk_gate_set_default(rst_reason, &clk_gate_config);
 }
