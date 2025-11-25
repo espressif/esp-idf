@@ -341,6 +341,7 @@
 #define SOC_SPI_MEM_SUPPORT_WRAP                          (1)
 #define SOC_SPI_MEM_SUPPORT_TIMING_TUNING                 (1)
 #define SOC_SPI_MEM_SUPPORT_TSUS_TRES_SEPERATE_CTR        (1)
+#define SOC_SPI_MEM_PSRAM_FREQ_AXI_CONSTRAINED            (1)
 #define SOC_MEMSPI_TIMING_TUNING_BY_MSPI_DELAY            (1)
 
 #define SOC_MEMSPI_SRC_FREQ_80M_SUPPORTED         1

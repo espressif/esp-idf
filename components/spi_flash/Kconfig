@@ -458,4 +458,11 @@ menu "SPI Flash driver"
             application is not using flash encryption feature and is in need of some additional
             memory from IRAM region (~1KB) then this config can be disabled.
 
+    config SPI_FLASH_FREQ_LIMIT_C5_240MHZ
+        bool
+        default y if IDF_TARGET_ESP32C5 && ESP_DEFAULT_CPU_FREQ_MHZ_240
+        help
+            Enable frequency limit workaround for encrypted flash writes on ESP32-C5 at 240MHz default CPU frequency.
+            This is an internal configuration, automatically set based on target chip and CPU frequency.
+
 endmenu
