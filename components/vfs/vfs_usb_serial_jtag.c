@@ -144,6 +144,10 @@ static int usb_serial_jtag_rx_char(int fd)
 
 static ssize_t usb_serial_jtag_write(int fd, const void * data, size_t size)
 {
+    if (!usb_serial_jtag_is_connected()) {
+        // TODO: IDF-14303
+        return -1;
+    }
     const char *data_c = (const char *)data;
     /*  Even though newlib does stream locking on each individual stream, we need
      *  a dedicated lock if two streams (stdout and stderr) point to the
@@ -189,6 +193,10 @@ static void usb_serial_jtag_return_char(int fd, int c)
 
 static ssize_t usb_serial_jtag_read(int fd, void* data, size_t size)
 {
+    if (!usb_serial_jtag_is_connected()) {
+        // TODO: IDF-14303
+        return -1;
+    }
     char *data_c = (char *) data;
     size_t received = 0;
     _lock_acquire_recursive(&s_ctx.read_lock);
@@ -264,6 +272,10 @@ static int usb_serial_jtag_fcntl(int fd, int cmd, int arg)
 
 static int usb_serial_jtag_fsync(int fd)
 {
+    if (!usb_serial_jtag_is_connected()) {
+        // TODO: IDF-14303
+        return -1;
+    }
     _lock_acquire_recursive(&s_ctx.write_lock);
     usb_serial_jtag_ll_txfifo_flush();
     //Wait for the host to have picked up the buffer, but honour the timeout in
