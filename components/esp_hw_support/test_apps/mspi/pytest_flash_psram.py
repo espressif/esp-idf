@@ -58,7 +58,6 @@ def test_flash4_psram4(dut: IdfDut) -> None:
     indirect=True,
 )
 @idf_parametrize('target', ['esp32p4'], indirect=['target'])
-@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration')
 def test_flash_psram_esp32p4(dut: IdfDut) -> None:
     dut.run_all_single_board_cases()
 

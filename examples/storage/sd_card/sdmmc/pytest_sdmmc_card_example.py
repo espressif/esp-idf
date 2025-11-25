@@ -9,7 +9,7 @@ from pytest_embedded_idf.utils import idf_parametrize
 
 
 @pytest.mark.sdcard_sdmode
-@idf_parametrize('target', ['esp32'], indirect=['target'])
+@idf_parametrize('target', ['esp32', 'esp32p4'], indirect=['target'])
 def test_examples_sd_card_sdmmc(dut: Dut) -> None:
     dut.expect('example: Initializing SD card', timeout=20)
     dut.expect('example: Using SDMMC peripheral', timeout=10)
@@ -23,14 +23,14 @@ def test_examples_sd_card_sdmmc(dut: Dut) -> None:
     speed = dut.expect(re.compile(rb'Speed: (\S+)'), timeout=10).group(1).decode()
     size = dut.expect(re.compile(rb'Size: (\S+)'), timeout=10).group(1).decode()
 
-    logging.info('Card {} {} {}MHz {} found'.format(name, _type, speed, size))
+    logging.info(f'Card {name} {_type} {speed}MHz {size} found')
 
     message_list1 = (
         'Opening file /sdcard/hello.txt',
         'File written',
         'Renaming file /sdcard/hello.txt to /sdcard/foo.txt',
         'Reading file /sdcard/foo.txt',
-        "Read from file: 'Hello {}!'".format(name),
+        f"Read from file: 'Hello {name}!'",
     )
     sd_card_format = re.compile(str.encode('Formatting card, allocation unit size=\\S+'))
     message_list2 = (
@@ -38,7 +38,7 @@ def test_examples_sd_card_sdmmc(dut: Dut) -> None:
         'Opening file /sdcard/nihao.txt',
         'File written',
         'Reading file /sdcard/nihao.txt',
-        "Read from file: 'Nihao {}!'".format(name),
+        f"Read from file: 'Nihao {name}!'",
         'Card unmounted',
     )
 

@@ -9,10 +9,6 @@
 components/esp_driver_spi/test_apps/master:
   disable:
     - if: SOC_GPSPI_SUPPORTED != 1
-  disable_test:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: p4 rev3 migration # TODO: IDF-14399
   <<: *spi_depends_default
 
 components/esp_driver_spi/test_apps/param:

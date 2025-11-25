@@ -12,7 +12,7 @@ components/esp_driver_i2s/test_apps/i2s_multi_dev:
     - if: SOC_I2S_SUPPORTED != 1
     - if: SOC_I2S_HW_VERSION_2 != 1
   disable_test:
-    - if: IDF_TARGET in ["esp32c61", "esp32p4"]  # TODO: [ESP32C61] IDF-11442, TODO: IDF-14396
+    - if: IDF_TARGET in ["esp32c61"]  # TODO: [ESP32C61] IDF-11442
       temporary: true
       reason: lack of runners
   depends_components:
