@@ -995,6 +995,7 @@ void gatt_data_process (tGATT_TCB *p_tcb, BT_HDR *p_buf)
         pseudo_op_code = op_code & (~GATT_WRITE_CMD_MASK);
 
         if (pseudo_op_code < GATT_OP_CODE_MAX) {
+            GATT_TRACE_DEBUG("%s opcode=%x msg_len=%u", __func__, op_code, msg_len);
             if (op_code == GATT_SIGN_CMD_WRITE) {
 #if (SMP_INCLUDED == TRUE)
                 gatt_verify_signature(p_tcb, p_buf);
@@ -1220,7 +1221,6 @@ tGATT_CH_STATE gatt_get_ch_state(tGATT_TCB *p_tcb)
 {
     tGATT_CH_STATE ch_state = GATT_CH_CLOSE;
     if (p_tcb) {
-        GATT_TRACE_DEBUG ("gatt_get_ch_state: ch_state=%d", p_tcb->ch_state);
         ch_state = p_tcb->ch_state;
     }
     return ch_state;
@@ -1233,6 +1233,7 @@ uint16_t gatt_get_local_mtu(void)
 
 void gatt_set_local_mtu(uint16_t mtu)
 {
+    GATT_TRACE_DEBUG("%s mtu=%u", __func__, mtu);
     gatt_default.local_mtu = mtu;
 }
 

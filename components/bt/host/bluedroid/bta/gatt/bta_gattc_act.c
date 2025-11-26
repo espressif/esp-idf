@@ -727,6 +727,7 @@ void bta_gattc_conn(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
 #if (GATTC_CACHE_NVS == TRUE)
             p_clcb->p_srcb->state = BTA_GATTC_SERV_LOAD;
             if (bta_gattc_cache_load(p_clcb)) {
+                APPL_TRACE_DEBUG("%s found gattc cache", __func__);
                 p_clcb->p_srcb->state = BTA_GATTC_SERV_IDLE;
                 bta_gattc_reset_discover_st(p_clcb->p_srcb, BTA_GATT_OK);
                 //register service change
@@ -734,6 +735,7 @@ void bta_gattc_conn(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
             } else
 #endif
             { /* cache is building */
+                APPL_TRACE_DEBUG("%s cache not found, start discovery %u", __func__, bta_gattc_cb.auto_disc);
                 if (bta_gattc_cb.auto_disc) {
                     p_clcb->p_srcb->state = BTA_GATTC_SERV_DISC;
                     /* cache load failure, start discovery */
@@ -1847,6 +1849,8 @@ void bta_gattc_process_api_refresh(tBTA_GATTC_CB *p_cb, tBTA_GATTC_DATA *p_msg)
     UINT8           i;
     UNUSED(p_cb);
 
+    APPL_TRACE_DEBUG("%s", __func__);
+
     if (p_srvc_cb != NULL) {
         /* try to find a CLCB */
         if (p_srvc_cb->connected && p_srvc_cb->num_clcb != 0) {
@@ -1964,6 +1968,8 @@ void bta_gattc_process_api_cache_clean(tBTA_GATTC_CB *p_cb, tBTA_GATTC_DATA *p_m
 {
     tBTA_GATTC_SERV *p_srvc_cb = bta_gattc_find_srvr_cache(p_msg->api_clean.remote_bda);
     UNUSED(p_cb);
+
+    APPL_TRACE_DEBUG("%s", __func__);
 
     if (p_srvc_cb != NULL && p_srvc_cb->p_srvc_cache != NULL) {
         //mark it and delete the cache */
