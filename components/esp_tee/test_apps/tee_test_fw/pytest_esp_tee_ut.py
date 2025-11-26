@@ -39,6 +39,7 @@ TEE_VIOLATION_TEST_EXC_RSN: dict[str, str] = {
     ('IRAM-W2'): 'Store access fault',
     ('DRAM-X1'): 'Instruction access fault',
     ('DRAM-X2'): 'Instruction access fault',
+    ('Illegal Instruction'): 'Illegal instruction',
 }
 
 REE_ISOLATION_TEST_EXC_RSN: dict[str, str] = {
@@ -133,19 +134,6 @@ def test_esp_tee_apm_violation(dut: IdfDut) -> None:
     CONFIG_DEFAULT,
     indirect=['config', 'target'],
 )
-def test_esp_tee_illegal_instruction(dut: IdfDut) -> None:
-    dut.expect_exact('Press ENTER to see the list of tests')
-    dut.write('"Test TEE-TEE violation: Illegal Instruction"')
-    exc = dut.expect(r'Core ([01]) panic\'ed \(([^)]+)\)', timeout=30).group(2).decode()
-    if exc != 'Illegal instruction':
-        raise RuntimeError('Incorrect exception received!')
-
-
-@idf_parametrize(
-    'config, target, markers',
-    CONFIG_DEFAULT,
-    indirect=['config', 'target'],
-)
 def test_esp_tee_violation_checks(dut: IdfDut) -> None:
     checks_list = TEE_VIOLATION_TEST_EXC_RSN
     for test, expected_exc in checks_list.items():
@@ -181,6 +169,23 @@ def test_esp_tee_isolation_checks(dut: IdfDut) -> None:
         if actual_exc != expected_exc:
             raise RuntimeError('Incorrect exception received!')
         dut.expect('Origin: U-mode')
+
+
+@idf_parametrize(
+    'config, target, markers',
+    CONFIG_DEFAULT,
+    indirect=['config', 'target'],
+)
+def test_esp_tee_stack_smashing(dut: IdfDut) -> None:
+    for env in ('REE', 'TEE'):
+        for case in ('overflow', 'underflow'):
+            dut.expect_exact('Press ENTER to see the list of tests')
+            dut.write(f'"Test {env} stack {case}"')
+
+            match = dut.expect(r"Core ([01]) panic'ed \(([^)]+)\)", timeout=30)
+            exc = match.group(2).decode()
+            if exc != 'Stack protection fault':
+                raise RuntimeError('Incorrect exception received!')
 
 
 # ---------------- TEE Flash Protection Tests ----------------
