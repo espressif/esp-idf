@@ -127,7 +127,7 @@ variables:
 
   # download constraint file for dev
   if [[ -n "$CI_PYTHON_CONSTRAINT_BRANCH" ]]; then
-    wget -O /tmp/constraint.txt --header="Authorization:Bearer ${ESPCI_TOKEN}" ${GITLAB_HTTP_SERVER}/api/v4/projects/2581/repository/files/${CI_PYTHON_CONSTRAINT_FILE}/raw?ref=${CI_PYTHON_CONSTRAINT_BRANCH}
+        wget -O /tmp/constraint.txt --header="Authorization:Bearer ${ESPCI_TOKEN}" "${GITLAB_HTTP_SERVER}/api/v4/projects/2581/repository/files/${CI_PYTHON_CONSTRAINT_FILE}/raw?ref=${CI_PYTHON_CONSTRAINT_BRANCH}"
     mkdir -p ~/.espressif
     mv /tmp/constraint.txt ~/.espressif/${CI_PYTHON_CONSTRAINT_FILE}
   fi
@@ -163,6 +163,15 @@ variables:
   section_start "source_export" "Source export.sh"
   source ./export.sh
   section_end "source_export"
+
+  # Eager upgrade of CI dependencies
+  # Done after sourcing export.sh so that we could easily invoke the right pip
+  section_start "upgrade_ci_dependencies" "Upgrading CI dependencies"
+  pip install --upgrade --upgrade-strategy=eager -r $IDF_PATH/tools/requirements/requirements.ci.txt -c ~/.espressif/${CI_PYTHON_CONSTRAINT_FILE}
+  if [[ "${CI_JOB_STAGE}" == "target_test" ]]; then
+    pip install --upgrade --upgrade-strategy=eager -r $IDF_PATH/tools/requirements/requirements.test-specific.txt -c ~/.espressif/${CI_PYTHON_CONSTRAINT_FILE}
+  fi
+  section_end "upgrade_ci_dependencies"
 
   REEXPORT_NEEDED=0
   if [[ ! -z "$INSTALL_EXTRA_TOOLS" ]]; then
