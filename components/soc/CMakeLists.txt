@@ -64,10 +64,6 @@ if(target STREQUAL "esp32")
     list(APPEND srcs "${target_folder}/dport_access.c")
 endif()
 
-if(CONFIG_SOC_ADC_SUPPORTED)
-    list(APPEND srcs "${target_folder}/adc_periph.c")
-endif()
-
 if(CONFIG_SOC_DEBUG_PROBE_SUPPORTED)
     list(APPEND srcs "${target_folder}/debug_probe_periph.c")
 endif()
@@ -112,10 +108,6 @@ if(CONFIG_SOC_IEEE802154_SUPPORTED)
     if(NOT target STREQUAL "esp32h4")
         list(APPEND srcs "${target_folder}/ieee802154_periph.c")
     endif()
-endif()
-
-if(CONFIG_SOC_DAC_SUPPORTED)
-    list(APPEND srcs "${target_folder}/dac_periph.c")
 endif()
 
 if(CONFIG_SOC_SDIO_SLAVE_SUPPORTED)

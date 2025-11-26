@@ -141,4 +141,4 @@ API Reference
 .. include-build-file:: inc/dac_cosine.inc
 .. include-build-file:: inc/dac_continuous.inc
 .. include-build-file:: inc/components/esp_driver_dac/include/driver/dac_types.inc
-.. include-build-file:: inc/components/hal/include/hal/dac_types.inc
+.. include-build-file:: inc/components/esp_hal_ana_conv/include/hal/dac_types.inc

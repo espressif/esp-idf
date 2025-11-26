@@ -10,7 +10,7 @@
 #include "lp_core_test_app_adc.h"
 #include "ulp_lp_core.h"
 #include "ulp_lp_core_lp_adc_shared.h"
-#include "soc/adc_periph.h"
+#include "hal/adc_periph.h"
 #include "driver/gpio.h"
 #include "driver/rtc_io.h"
 #include "driver/temperature_sensor.h"

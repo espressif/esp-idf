@@ -30,7 +30,7 @@
 #include "hal/adc_types.h"
 #include "hal/adc_oneshot_hal.h"
 #include "hal/adc_ll.h"
-#include "soc/adc_periph.h"
+#include "hal/adc_periph.h"
 #include "soc/soc_caps.h"
 
 #if CONFIG_ADC_ONESHOT_CTRL_FUNC_IN_IRAM

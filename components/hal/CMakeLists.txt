@@ -5,11 +5,6 @@ set(srcs "hal_utils.c")
 set(includes "platform_port/include")
 set(requires)
 
-if(${target} STREQUAL "esp32")
-    # TODO: IDF-14079 remove this dependency when ADC hal is graduated from the common hal component
-    list(APPEND requires esp_hal_i2s)
-endif()
-
 # target specific include must be added before the generic one
 # because of the "include_next" directive used by the efuse_hal.h
 list(APPEND includes "${target}/include")
@@ -119,14 +114,6 @@ elseif(NOT BOOTLOADER_BUILD)
 
     if(CONFIG_SOC_ETM_SUPPORTED)
         list(APPEND srcs "etm_hal.c" "${target}/etm_periph.c")
-    endif()
-
-    if(CONFIG_SOC_ADC_SUPPORTED)
-        list(APPEND srcs "adc_hal_common.c" "adc_oneshot_hal.c")
-
-        if(CONFIG_SOC_ADC_DMA_SUPPORTED)
-            list(APPEND srcs "adc_hal.c")
-        endif()
     endif()
 
     if(CONFIG_SOC_ECC_SUPPORTED)
