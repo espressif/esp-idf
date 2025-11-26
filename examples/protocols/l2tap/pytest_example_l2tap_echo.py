@@ -20,18 +20,26 @@ ETH_TYPE_3 = 0x2223
 
 @contextlib.contextmanager
 def configure_eth_if(eth_type: int, target_if: str = '') -> Iterator[socket.socket]:
+    # try to determine which interface to use
+    netifs = os.listdir('/sys/class/net/')
+    # order matters - ETH NIC with the highest number is connected to DUT on CI runner
+    netifs.sort(reverse=True)
+    logging.info('detected interfaces: %s', str(netifs))
+
     if target_if == '':
-        # try to determine which interface to use
-        netifs = os.listdir('/sys/class/net/')
-        # order matters - ETH NIC with the highest number is connected to DUT on CI runner
-        netifs.sort(reverse=True)
-        logging.info('detected interfaces: %s', str(netifs))
-        for netif in netifs:
-            if netif.find('eth') == 0 or netif.find('enx') == 0 or netif.find('enp') == 0 or netif.find('eno') == 0:
-                target_if = netif
-                break
-        if target_if == '':
-            raise Exception('no network interface found')
+        if 'dut_p1' in netifs:
+            target_if = 'dut_p1'
+        else:
+            for netif in netifs:
+                # if no interface defined, try to find it automatically
+                if netif.find('eth') == 0 or netif.find('enp') == 0 or netif.find('eno') == 0:
+                    target_if = netif
+                    break
+    elif target_if not in netifs:
+        target_if = ''
+
+    if target_if == '':
+        raise RuntimeError('network interface not found')
     logging.info('Use %s for testing', target_if)
 
     so = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.htons(eth_type))
@@ -76,7 +84,7 @@ def recv_eth_frame(eth_type: int, eth_if: str = '') -> str:
     return str(eth_frame.load.decode().rstrip('\x00'))
 
 
-def actual_test(dut: Dut) -> None:
+def actual_test(dut: Dut, test_if: str = '') -> None:
     # Get DUT's MAC address
     res = dut.expect(
         r'([\s\S]*)'
@@ -85,17 +93,17 @@ def actual_test(dut: Dut) -> None:
     dut_mac = res.group(2)
 
     # Receive "ESP32 Hello frame"
-    recv_eth_frame(ETH_TYPE_3)
+    recv_eth_frame(ETH_TYPE_3, test_if)
 
     # Sent a message and receive its echo
     message = 'ESP32 test message with EthType ' + hex(ETH_TYPE_1)
-    echoed = send_recv_eth_frame(message, ETH_TYPE_1, dut_mac)
+    echoed = send_recv_eth_frame(message, ETH_TYPE_1, dut_mac, test_if)
     if echoed == message:
         logging.info('PASS')
     else:
         raise Exception('Echoed message does not match!')
     message = 'ESP32 test message with EthType ' + hex(ETH_TYPE_2)
-    echoed = send_recv_eth_frame(message, ETH_TYPE_2, dut_mac)
+    echoed = send_recv_eth_frame(message, ETH_TYPE_2, dut_mac, test_if)
     if echoed == message:
         logging.info('PASS')
     else:
