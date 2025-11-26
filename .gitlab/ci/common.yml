@@ -164,6 +164,15 @@ variables:
   source ./export.sh
   section_end "source_export"
 
+  # Eager upgrade of CI dependencies
+  # Done after sourcing export.sh so that we could easily invoke the right pip
+  section_start "upgrade_ci_dependencies" "Upgrading CI dependencies"
+  pip install --upgrade --upgrade-strategy=eager -r $IDF_PATH/tools/requirements/requirements.ci.txt -c ~/.espressif/${CI_PYTHON_CONSTRAINT_FILE}
+  if [[ "${CI_JOB_STAGE}" == "target_test" ]]; then
+    pip install --upgrade --upgrade-strategy=eager -r $IDF_PATH/tools/requirements/requirements.test-specific.txt -c ~/.espressif/${CI_PYTHON_CONSTRAINT_FILE}
+  fi
+  section_end "upgrade_ci_dependencies"
+
   REEXPORT_NEEDED=0
   if [[ ! -z "$INSTALL_EXTRA_TOOLS" ]]; then
     section_start "installing_optional_tools" "Install optional tools ${INSTALL_EXTRA_TOOLS}"
