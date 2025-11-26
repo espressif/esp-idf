@@ -191,13 +191,24 @@ baseline_manifest_sha:
     expire_in: 1 week
     when: always
 
-redundant_pass_job:
+gcc_static_analyzer:
   extends:
     - .pre_check_template
-  tags: [shiny, fast_run]
-  cache: []
+    - .rules:build
   variables:
-    GIT_STRATEGY: none
-  before_script: []
+    CI_CCACHE_DISABLE: 1
+    ANALYZING_APP: "examples/get-started/hello_world"
   script:
-    - echo "This job is redundant to ensure the 'retry_failed_jobs' job can exist and not be skipped"
+    - echo "CONFIG_COMPILER_STATIC_ANALYZER=y" >> ${ANALYZING_APP}/sdkconfig.defaults
+    - idf-build-apps build -p ${ANALYZING_APP}
+
+retry_failed_jobs:
+  extends:
+    - .pre_check_template
+    - .rules:dev-push
+  tags: [shiny, fast_run]
+  allow_failure: true
+  script:
+    - echo "Retrieving and retrying all failed jobs for the pipeline..."
+    - python tools/ci/python_packages/gitlab_api.py retry_failed_jobs $CI_MERGE_REQUEST_PROJECT_ID --pipeline_id $CI_PIPELINE_ID
+  when: manual

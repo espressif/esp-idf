@@ -19,16 +19,12 @@ from .constants import COMMENT_START_MARKER
 from .constants import CSS_STYLES_FILEPATH
 from .constants import JS_SCRIPTS_FILEPATH
 from .constants import REPORT_TEMPLATE_FILEPATH
-from .constants import RETRY_JOB_PICTURE_LINK
-from .constants import RETRY_JOB_PICTURE_PATH
-from .constants import RETRY_JOB_TITLE
 from .constants import SIZE_DIFFERENCE_BYTES_THRESHOLD
 from .constants import TOP_N_APPS_BY_SIZE_DIFF
 from .models import GitlabJob
 from .models import TestCase
 from .utils import format_permalink
 from .utils import get_artifacts_url
-from .utils import get_repository_file_url
 from .utils import is_url
 
 
@@ -286,24 +282,12 @@ class ReportGenerator:
 
         return comment
 
-    def _update_mr_comment(self, comment: str, print_retry_jobs_message: bool) -> None:
-        retry_job_picture_comment = (f'{RETRY_JOB_TITLE}\n\n{RETRY_JOB_PICTURE_LINK}').format(
-            pic_url=get_repository_file_url(RETRY_JOB_PICTURE_PATH)
-        )
-        del_retry_job_pic_pattern = re.escape(RETRY_JOB_TITLE) + r'.*?' + re.escape(f'{RETRY_JOB_PICTURE_PATH})')
-
+    def _update_mr_comment(self, comment: str) -> None:
         new_comment = f'{COMMENT_START_MARKER}\n\n{comment}'
-        if print_retry_jobs_message:
-            new_comment += retry_job_picture_comment
 
         for note in self.mr.notes.list(iterator=True):
             if note.body.startswith(COMMENT_START_MARKER):
                 updated_str = self._get_updated_comment(note.body, comment)
-
-                # Add retry job message only if any job has failed
-                if print_retry_jobs_message:
-                    updated_str = re.sub(del_retry_job_pic_pattern, '', updated_str, flags=re.DOTALL)
-                    updated_str += retry_job_picture_comment
 
                 note.body = updated_str
                 try:
@@ -321,7 +305,7 @@ class ReportGenerator:
             updated_str = f'{existing_comment.strip()}\n\n{new_comment}'
         return updated_str
 
-    def post_report(self, print_retry_jobs_message: bool = False) -> None:
+    def post_report(self) -> None:
         comment = self._generate_comment()
 
         print(comment)
@@ -330,7 +314,7 @@ class ReportGenerator:
             print('No MR found, skip posting comment')
             return
 
-        self._update_mr_comment(comment, print_retry_jobs_message=print_retry_jobs_message)
+        self._update_mr_comment(comment)
 
 
 class BuildReportGenerator(ReportGenerator):

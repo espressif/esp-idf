@@ -41,9 +41,6 @@
   - "tools/idf_tools.py"
   - "tools/tools.json"
 
-.patterns-build_template-app: &patterns-build_template-app
-  - "tools/ci/build_template_app.sh"
-
 .patterns-build_system: &patterns-build_system
   - "tools/cmake/**/*"
   - "tools/cmakev2/**/*"
@@ -54,13 +51,11 @@
   - "tools/ci/ignore_build_warnings.txt"
   - "tools/ci/test_build_system*.sh"
   - "tools/ci/test_build_system*.py"
+  - "tools/ci/build_template_app.sh"
   - "tools/test_build_system/**/*"
 
 .patterns-build_system_win: &patterns-build_system_win
   - "tools/test_build_system/**/*"
-
-.patterns-build_macos: &patterns-build_macos
-  - "tools/ci/test_configure_ci_environment.sh"
 
 .patterns-build_check: &patterns-build_check
   - "tools/test_build_system/**/*"
@@ -133,6 +128,8 @@
 
   - "tools/bsasm.py"
   - "tools/test_bsasm/**/*"
+
+  - "tools/ci/test_soc_headers_load_in_idf_build_apps.py"
 
 .patterns-docker: &patterns-docker
   - "tools/docker/**/*"
@@ -350,21 +347,6 @@
     - <<: *if-protected-check
     - <<: *if-label-macos
     - <<: *if-label-macos_test
-
-.rules:build:target_test:
-  rules:
-    - <<: *if-revert-branch
-      when: never
-    - <<: *if-protected-check
-    - <<: *if-label-build
-    - <<: *if-dev-push
-      changes: *patterns-build_components
-    - <<: *if-dev-push
-      changes: *patterns-build_system
-    - <<: *if-dev-push
-      changes: *patterns-build_template-app
-    - <<: *if-dev-push
-      changes: *patterns-downloadable-tools
 
 .rules:labels:buildv2:
   rules:

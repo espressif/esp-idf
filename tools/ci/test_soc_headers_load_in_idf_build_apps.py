@@ -13,7 +13,8 @@ class TestLoadSocHeaders(unittest.TestCase):
     def test_targets(self) -> None:
         sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-        from idf_py_actions.constants import PREVIEW_TARGETS, SUPPORTED_TARGETS
+        from idf_py_actions.constants import PREVIEW_TARGETS
+        from idf_py_actions.constants import SUPPORTED_TARGETS
 
         self.assertEqual(IBA_PREVIEW_TARGETS, PREVIEW_TARGETS)
         self.assertEqual(IBA_SUPPORTED_TARGETS, SUPPORTED_TARGETS)
