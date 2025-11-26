@@ -11,7 +11,7 @@
 #include "esp_log.h"
 #include "esp_err.h"
 #include "esp_cpu.h"
-#include "soc/adc_periph.h"
+#include "hal/adc_periph.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_adc/adc_oneshot.h"

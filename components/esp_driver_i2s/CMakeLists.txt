@@ -6,6 +6,12 @@ endif()
 
 set(srcs)
 set(include "include")
+set(priv_requires esp_driver_gpio esp_pm esp_mm)
+
+if(${target} STREQUAL "esp32")
+    # ADC on esp32 is routed to I2S0, I2S driver needs to operate ADC to ensure the I2S function.
+    list(APPEND priv_requires esp_hal_ana_conv)
+endif()
 
 # I2S related source files
 if(CONFIG_SOC_I2S_SUPPORTED)
@@ -36,7 +42,7 @@ endif()
 
 idf_component_register(SRCS ${srcs}
                     INCLUDE_DIRS ${include}
-                    PRIV_REQUIRES esp_driver_gpio esp_pm esp_mm
+                    PRIV_REQUIRES ${priv_requires}
                     REQUIRES esp_hal_i2s
                     LDFRAGMENTS linker.lf
                     )

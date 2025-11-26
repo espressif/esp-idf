@@ -239,3 +239,6 @@ if(${target} STREQUAL "esp32p4")
     # for mipi_csi_share_hw_ctrl.c
     idf_component_optional_requires(PRIVATE esp_hal_cam)
 endif()
+
+# Required in `adc_share_hw_ctrl.h`
+idf_component_optional_requires(PUBLIC esp_hal_ana_conv)
