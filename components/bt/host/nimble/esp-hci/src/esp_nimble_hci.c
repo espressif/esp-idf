@@ -96,7 +96,11 @@ int ble_hci_trans_hs_cmd_tx(uint8_t *cmd)
         rc = BLE_HS_ETIMEOUT_HCI;
     }
 
+#if MYNEWT_VAL(MP_RUNTIME_ALLOC)
+    ble_transport_free(BLE_HCI_CMD, cmd);
+#else
     ble_transport_free(cmd);
+#endif
     return rc;
 }
 
