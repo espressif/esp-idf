@@ -215,6 +215,9 @@ static esp_err_t uart_create_sleep_retention_link_cb(void *arg);
 
 static bool uart_module_enable(uart_port_t uart_num)
 {
+    if (uart_num >= UART_NUM_MAX) {
+        return false;
+    }
     bool newly_enabled = false;
     _lock_acquire(&(uart_context[uart_num].mutex));
     if (uart_context[uart_num].hw_enabled != true) {

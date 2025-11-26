@@ -6,6 +6,7 @@
 
 #include "soc/gpio_periph.h"
 #include "esp_assert.h"
+#include "soc/io_mux_reg.h"
 
 const uint32_t GPIO_PIN_MUX_REG[] = {
     IO_MUX_GPIO0_REG,

@@ -58,5 +58,7 @@ int bootloader_clock_get_rated_freq_mhz(void)
 #elif CONFIG_IDF_TARGET_ESP32S3
     return 240;
 
+#elif CONFIG_IDF_TARGET_ESP32S31
+    return 300;
 #endif
 }
