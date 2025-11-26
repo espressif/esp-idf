@@ -93,7 +93,6 @@ examples/bluetooth/blufi:
   depends_components+:
     - esp_console
     - esp_wifi
-    - esp_event
 
 examples/bluetooth/esp_ble_mesh:
   <<: *bt_default_depends
@@ -284,7 +283,6 @@ examples/bluetooth/nimble/blecent:
   disable:
     - if: SOC_BLE_SUPPORTED != 1
   depends_components+:
-    - esp_event
     - esp_coex
     - esp_pm
   depends_filepatterns:
@@ -308,7 +306,6 @@ examples/bluetooth/nimble/bleprph_wifi_coex:
     - if: SOC_BLE_SUPPORTED != 1
     - if: SOC_WIFI_SUPPORTED != 1
   depends_components+:
-    - esp_event
     - esp_hid
     - esp_wifi
     - esp_coex
@@ -328,7 +325,6 @@ examples/bluetooth/nimble/power_save:
   disable:
     - if: SOC_BLE_SUPPORTED != 1
   depends_components+:
-    - esp_event
     - esp_coex
     - esp_pm
   depends_filepatterns:

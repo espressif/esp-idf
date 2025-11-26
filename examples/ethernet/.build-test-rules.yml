@@ -9,7 +9,6 @@ examples/ethernet/basic:
     - esp_eth
     - esp_netif
     - lwip
-    - esp_event
     - esp_driver_gpio
 
 examples/ethernet/iperf:
@@ -24,7 +23,6 @@ examples/ethernet/iperf:
     - esp_eth
     - esp_netif
     - lwip
-    - esp_event
     - console
     - esp_driver_gpio
     - esp_driver_spi
