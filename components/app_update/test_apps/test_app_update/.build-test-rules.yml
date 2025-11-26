@@ -22,3 +22,7 @@ components/app_update/test_apps:
     - if: CONFIG_NAME == "recovery_bootloader" and SOC_RECOVERY_BOOTLOADER_SUPPORTED == 1 and IDF_TARGET == "esp32c61"
       temporary: true
       reason: lack of runners  # TODO: [ESP32C61] IDF-13165
+  depends_components:
+    - app_update
+    - bootloader_support
+    - esp_partitions
