@@ -18,6 +18,11 @@ extern "C" {
 
 esp_err_t esp_ble_hidd_dev_init(esp_hidd_dev_t *dev, const esp_hid_device_config_t *config, esp_event_handler_t callback);
 
+// Multi-connection management functions
+esp_err_t esp_ble_hidd_dev_set_active_conn(void *devp, uint16_t conn_id);
+esp_err_t esp_ble_hidd_dev_get_connections(void *devp, esp_hidd_conn_info_t *conn_list, size_t max_count, size_t *count);
+esp_err_t esp_ble_hidd_dev_set_broadcast_mode(void *devp, bool enable);
+
 #endif /* CONFIG_GATTS_ENABLE */
 
 #ifdef __cplusplus

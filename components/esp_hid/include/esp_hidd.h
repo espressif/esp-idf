@@ -221,6 +221,45 @@ esp_err_t esp_hidd_dev_event_handler_register(esp_hidd_dev_t *dev, esp_event_han
  */
 esp_err_t esp_hidd_dev_event_handler_unregister(esp_hidd_dev_t *dev, esp_event_handler_t callback, esp_hidd_event_t event);
 
+/**
+ * @brief Connection information structure for querying connections
+ */
+typedef struct {
+    uint16_t conn_id;                           /*!< Connection ID */
+    uint8_t remote_bda[6];                      /*!< Remote device address */
+} esp_hidd_conn_info_t;
+
+/**
+ * @brief Set the active connection for unicast mode
+ * @param dev       : pointer to the device
+ * @param conn_id   : connection ID to set as active (sends to this connection only)
+ *
+ * @return: ESP_OK on success, ESP_ERR_NOT_FOUND if connection not found
+ * @note: This disables broadcast mode automatically
+ */
+esp_err_t esp_hidd_dev_set_active_conn(esp_hidd_dev_t *dev, uint16_t conn_id);
+
+/**
+ * @brief Query all active connections
+ * @param dev           : pointer to the device
+ * @param conn_list     : pointer to array to store connection info
+ * @param max_count     : maximum number of connections that can be stored
+ * @param[out] count    : actual number of connections returned
+ *
+ * @return: ESP_OK on success
+ */
+esp_err_t esp_hidd_dev_get_connections(esp_hidd_dev_t *dev, esp_hidd_conn_info_t *conn_list, size_t max_count, size_t *count);
+
+/**
+ * @brief Enable or disable broadcast mode
+ * @param dev       : pointer to the device
+ * @param enable    : true to broadcast to all connections, false for unicast to active connection
+ *
+ * @return: ESP_OK on success
+ * @note: In broadcast mode, all connected devices receive the events
+ */
+esp_err_t esp_hidd_dev_set_broadcast_mode(esp_hidd_dev_t *dev, bool enable);
+
 #ifdef __cplusplus
 }
 #endif
