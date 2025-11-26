@@ -218,7 +218,7 @@ static inline bool ppa_ll_srm_is_color_mode_supported(ppa_srm_color_mode_t color
     case PPA_SRM_COLOR_MODE_RGB888:
     case PPA_SRM_COLOR_MODE_RGB565:
     case PPA_SRM_COLOR_MODE_YUV420:
-    case PPA_SRM_COLOR_MODE_YUV444: // YUV444 not supported by PPA hardware, but can be converted by 2D-DMA before/after PPA
+    case PPA_SRM_COLOR_MODE_YUV444: // YUV444 not supported by PPA hardware, but can be converted by 2D-DMA before PPA, and not supported as output color mode
 #if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
     case PPA_SRM_COLOR_MODE_YUV422:
     case PPA_SRM_COLOR_MODE_GRAY8:
@@ -583,6 +583,17 @@ static inline void ppa_ll_srm_get_dma_dscr_port_mode_block_size(ppa_dev_t *dev, 
         *block_h = 0;
         *block_v = 0;
     }
+}
+
+/**
+ * @brief Whether to bypass the macro block order function in PPA SRM
+ *
+ * @param dev Peripheral instance address
+ * @param enable True to bypass; False to not bypass
+ */
+static inline void ppa_ll_srm_bypass_mb_order(ppa_dev_t *dev, bool enable)
+{
+    dev->sr_byte_order.sr_macro_bk_ro_bypass = enable;
 }
 
 //////////////////////////////////// Blending ////////////////////////////////////////
