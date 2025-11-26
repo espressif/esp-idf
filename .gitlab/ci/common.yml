@@ -127,7 +127,7 @@ variables:
 
   # download constraint file for dev
   if [[ -n "$CI_PYTHON_CONSTRAINT_BRANCH" ]]; then
-    wget -O /tmp/constraint.txt --header="Authorization:Bearer ${ESPCI_TOKEN}" ${GITLAB_HTTP_SERVER}/api/v4/projects/2581/repository/files/${CI_PYTHON_CONSTRAINT_FILE}/raw?ref=${CI_PYTHON_CONSTRAINT_BRANCH}
+        wget -O /tmp/constraint.txt --header="Authorization:Bearer ${ESPCI_TOKEN}" "${GITLAB_HTTP_SERVER}/api/v4/projects/2581/repository/files/${CI_PYTHON_CONSTRAINT_FILE}/raw?ref=${CI_PYTHON_CONSTRAINT_BRANCH}"
     mkdir -p ~/.espressif
     mv /tmp/constraint.txt ~/.espressif/${CI_PYTHON_CONSTRAINT_FILE}
   fi
