@@ -413,8 +413,22 @@ typedef volatile struct esp_ieee802154_s {
     uint32_t security_key2; //0x13c
     uint32_t security_key3; //0x140
 
-    uint32_t debug_sfd_timeout_cnt; //0x144
-    uint32_t debug_crc_error_cnt; //0x148
+    union {
+        struct {
+            uint32_t sfd_timeout_cnt: 16;
+            uint32_t reserved16: 16;
+        };
+        uint32_t val;
+    } debug_sfd_timeout_cnt; //0x144
+
+    union {
+        struct {
+            uint32_t crc_error_cnt: 16;
+            uint32_t reserved16: 16;
+        };
+        uint32_t val;
+    } debug_crc_error_cnt; //0x148
+
     uint32_t debug_ed_abort_cnt; //0x14c
     uint32_t debug_cca_fail_cnt; //0x150
     uint32_t debug_rx_filter_fail_cnt;  //0x154

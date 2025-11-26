@@ -1,1 +1,3 @@
 INPUT += \
+    $(PROJECT_PATH)/components/esp_phy/include/esp_phy_init.h \
+    $(PROJECT_PATH)/components/esp_phy/include/esp_phy_cert_test.h \

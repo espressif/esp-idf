@@ -78,3 +78,5 @@
 #define DR_REG_I2C_ANA_MST_BASE                   0x600CF800 // (DR_REG_MODEM_PWR_BASE + 0x2800)
 
 #define DR_REG_CLINT_M_BASE                       0x20000000    // TODO: [ESP32H4] IDF-12303 inherit from verify code, need check
+
+#define IEEE802154_REG_BASE                       0x600C3000

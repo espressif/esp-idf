@@ -321,6 +321,8 @@ ESP32H2_DOCS = ['api-guides/RF_calibration.rst', 'api-guides/phy.rst']
 
 ESP32H4_DOCS = [
     'api-reference/system/ipc.rst',
+    'api-guides/RF_calibration.rst',
+    'api-guides/phy.rst',
 ]
 
 ESP32P4_DOCS = [

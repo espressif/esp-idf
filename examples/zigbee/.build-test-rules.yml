@@ -16,7 +16,7 @@ examples/zigbee/esp_zigbee_gateway:
 
 examples/zigbee/light_sample:
   enable:
-    - if: SOC_IEEE802154_SUPPORTED == 1
+    - if: SOC_IEEE802154_SUPPORTED == 1 and IDF_TARGET not in ["esp32h4"]
   disable_test:
     - if: IDF_TARGET != "esp32h2"
       temporary: true

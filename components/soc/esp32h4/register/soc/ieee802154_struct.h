@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -34,7 +34,7 @@ typedef volatile struct esp_ieee802154_s {
             uint32_t reserved8: 3;
             uint32_t version_filter_dis: 1;
             uint32_t pending_enhance: 1;
-            uint32_t reserved13: 1;
+            uint32_t tx_wait_ack_timeout_en: 1;
             uint32_t filter_enhance_dis: 1;
             uint32_t reserved15: 1;
             uint32_t coex_arb_delay: 8;
@@ -70,16 +70,24 @@ typedef volatile struct esp_ieee802154_s {
 
     union {
         struct {
-            uint32_t freq:        7;
-            uint32_t reserved7:  25;
+            uint32_t freq:        8;
+            uint32_t sec_ch_freq:        8;
+            uint32_t rx_multi_ch_en: 1;
+            uint32_t rx_wait_premable_time: 7;
+            uint32_t rx_preamble_pattern_sel: 2;
+            uint32_t pri_ch_i2c_sel: 1;
+            uint32_t sec_ch_i2c_sel: 1;
+            uint32_t fast_freqhop_en: 1;
+            uint32_t reserved29:  3;
         };
         uint32_t val;
     } channel; //0x48
 
     union {
         struct {
-            uint32_t power:        5;
-            uint32_t reserved5:  27;
+            uint32_t power:        8;
+            uint32_t central_frequency: 8;
+            uint32_t reserved16:  16;
         };
         uint32_t val;
     } txpower; //0x4c
@@ -110,7 +118,8 @@ typedef volatile struct esp_ieee802154_s {
     union {
         struct {
             uint32_t sifs:        8;
-            uint32_t reserved8: 8;
+            uint32_t rx_wait_symdec_on_time: 7;
+            uint32_t rx_wait_symdec_on_ena:  1;
             uint32_t lifs: 10;
             uint32_t reserved26: 6;
         };
@@ -160,10 +169,12 @@ typedef volatile struct esp_ieee802154_s {
 
     union {
         struct {
-            uint32_t pti: 4;
-            uint32_t hw_ack_pti: 4;
+            uint32_t pti: 5;
+            uint32_t hw_ack_pti: 5;
             uint32_t close_rf_sel: 1;
-            uint32_t reserved9: 23;
+            uint32_t ant_mode:3;
+            uint32_t hw_tx_ack_ant_mode:3;
+            uint32_t reserved17: 15;
         };
         uint32_t val;
     } pti; //0x70
@@ -186,7 +197,7 @@ typedef volatile struct esp_ieee802154_s {
             uint32_t rx_abort_reason: 5;
             uint32_t reserved9: 7;
             uint32_t rx_state: 3;
-            uint32_t reserved19: 1;
+            uint32_t cur_ch_index: 1;
             uint32_t preamble_match: 1;
             uint32_t sfd_match: 1;
             uint32_t reserved22: 10;
@@ -265,10 +276,10 @@ typedef volatile struct esp_ieee802154_s {
 
     union {
         struct {
-            uint32_t tx_path_delay: 6;
-            uint32_t reserved6: 10;
-            uint32_t rx_path_delay: 6;
-            uint32_t reserved624: 10;
+            uint32_t tx_path_delay: 7;
+            uint32_t reserved7: 9;
+            uint32_t rx_path_delay: 7;
+            uint32_t reserved23: 9;
         };
         uint32_t val;
     } txrx_path_delay; //0xc8
@@ -279,7 +290,7 @@ typedef volatile struct esp_ieee802154_s {
     union {
         struct {
             uint32_t txdma_water_level: 3;
-            uint32_t reserved3: 1;
+            uint32_t reg_txdma_len_err_flush: 1;
             uint32_t txdma_fill_entry: 3;
             uint32_t reserved7: 9;
             uint32_t txdma_ctrl_state: 5;
@@ -304,7 +315,9 @@ typedef volatile struct esp_ieee802154_s {
             uint32_t reserved21: 3;
             uint32_t rxdma_append_lqi: 1;
             uint32_t rxdma_append_freq_offset: 1;
-            uint32_t reserved26: 6;
+            uint32_t reg_rxdma_freq_offset_is_rxfilter_info: 1;
+            uint32_t reserved27: 5;
+
         };
         uint32_t val;
     } dma_rx_cfg; //0xe4
@@ -321,7 +334,9 @@ typedef volatile struct esp_ieee802154_s {
     union {
         struct {
             uint32_t delay: 10;
-            uint32_t reserved10: 22;
+            uint32_t delay_multi_ch: 10;
+            uint32_t delay_fast_freqhop:10;
+            uint32_t reserved30: 2;
         };
         uint32_t val;
     } pa_on_delay; //0x100
@@ -329,7 +344,8 @@ typedef volatile struct esp_ieee802154_s {
     union {
         struct {
             uint32_t delay: 10;
-            uint32_t reserved10: 22;
+            uint32_t tx_start_delay:10;
+            uint32_t reserved20: 12;
         };
         uint32_t val;
     } tx_on_delay; //0x104
@@ -353,7 +369,8 @@ typedef volatile struct esp_ieee802154_s {
     union {
         struct {
             uint32_t delay: 11;
-            uint32_t reserved11: 21;
+            uint32_t rxon_delay_multi_ch: 11;
+            uint32_t rxon_delay_fast_freqhop: 10;
         };
         uint32_t val;
     } rx_on_delay; //0x110
@@ -416,19 +433,17 @@ typedef volatile struct esp_ieee802154_s {
     union {
         struct {
             uint32_t sfd_timeout_cnt: 16;
-            uint32_t reserved16: 16;
+            uint32_t rx_filter_not_work_cnt: 16;
         };
         uint32_t val;
     } debug_sfd_timeout_cnt; //0x144
-
     union {
         struct {
             uint32_t crc_error_cnt: 16;
-            uint32_t reserved16: 16;
+            uint32_t rx_preamble_detect_err_cnt: 16;
         };
         uint32_t val;
     } debug_crc_error_cnt; //0x148
-
     uint32_t debug_ed_abort_cnt; //0x14c
     uint32_t debug_cca_fail_cnt; //0x150
     uint32_t debug_rx_filter_fail_cnt;  //0x154
@@ -460,12 +475,16 @@ typedef volatile struct esp_ieee802154_s {
             uint32_t debug_rx_filter_fail_cnt: 1;
             uint32_t debug_crc_error_cnt: 1;
             uint32_t debug_sfd_timeout_cnt: 1;
-            uint32_t reserved15: 17;
+            uint32_t rx_filter_not_work_cnt_clear: 1;
+            uint32_t rx_preamble_detect_err_cnt_clear: 1;
+            uint32_t reserved17: 15;
         };
         uint32_t val;
     } debug_cnt_clr; //0x180
 
-    uint32_t i154_version; //0x184
+    uint32_t debug_sel_cfg0; //0x184
+    uint32_t debug_sel_cfg1; //0x188
+    uint32_t i154_version; //0x18c
 
 } esp_ieee802154_t;
 

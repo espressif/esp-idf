@@ -44,7 +44,9 @@
 #define SOC_ETM_SUPPORTED               1
 // #define SOC_PARLIO_SUPPORTED            1    // TODO: [ESP32H4] IDF-12345 IDF-12347
 // #define SOC_BT_SUPPORTED                1
-// #define SOC_IEEE802154_SUPPORTED        1
+#define SOC_IEEE802154_BLE_ONLY         1
+#define SOC_PHY_SUPPORTED               1
+#define SOC_IEEE802154_SUPPORTED        1
 #define SOC_ASYNC_MEMCPY_SUPPORTED      1
 #define SOC_USB_OTG_SUPPORTED           1
 #define SOC_USB_SERIAL_JTAG_SUPPORTED   1
