@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -547,6 +547,7 @@ static int simple_ble_start(const simple_ble_cfg_t *cfg)
     ble_hs_cfg.sm_our_key_dist = BLE_SM_PAIR_KEY_DIST_ENC | BLE_SM_PAIR_KEY_DIST_ID;
     ble_hs_cfg.sm_their_key_dist = BLE_SM_PAIR_KEY_DIST_ENC | BLE_SM_PAIR_KEY_DIST_ID;
 
+#if MYNEWT_VAL(BLE_GATTS)
     rc = gatt_svr_init(cfg);
     if (rc != 0) {
         ESP_LOGE(TAG, "Error initializing GATT server");
@@ -565,6 +566,7 @@ static int simple_ble_start(const simple_ble_cfg_t *cfg)
         resp_data.name_len = strlen(ble_svc_gap_device_name());
         resp_data.name_is_complete = 1;
     }
+#endif
 
     /* Set manufacturer data if protocomm_ble_mfg_data points to valid data */
     if (protocomm_ble_mfg_data != NULL) {
