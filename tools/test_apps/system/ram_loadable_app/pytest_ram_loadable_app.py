@@ -43,6 +43,7 @@ def test_ram_loadable_app(dut: IdfDut) -> None:
 
 # Tests with ram_app runners
 @pytest.mark.ram_app
+@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration, IDF-14370')
 @pytest.mark.parametrize(
     'config',
     [
@@ -57,6 +58,7 @@ def test_ram_loadable_app_with_ram_app_runner(dut: IdfDut) -> None:
 
 
 @pytest.mark.ram_app
+@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration, IDF-14370')
 @pytest.mark.parametrize(
     'config',
     [

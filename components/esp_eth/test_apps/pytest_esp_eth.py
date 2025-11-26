@@ -49,7 +49,7 @@ class EthTestIntf(object):
     def configure_eth_if(self, eth_type: int = 0) -> Iterator[socket.socket]:
         if eth_type == 0:
             eth_type = self.eth_type
-        so = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.htons(eth_type))
+        so = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.htons(eth_type))  # type: ignore[attr-defined]
         so.bind((self.target_if, 0))
         try:
             yield so
@@ -288,6 +288,7 @@ def test_esp_eth_ip101(dut: IdfDut) -> None:
 
 # ----------- IP101 ESP32P4 -----------
 @pytest.mark.eth_ip101
+@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration, IDF-14365')
 @pytest.mark.parametrize(
     'config',
     [
@@ -303,6 +304,7 @@ def test_esp32p4_ethernet(dut: IdfDut) -> None:
 
 
 @pytest.mark.eth_ip101
+@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration, IDF-14365')
 @pytest.mark.parametrize(
     'config',
     [
@@ -318,6 +320,7 @@ def test_esp32p4_emac(dut: IdfDut) -> None:
 
 
 @pytest.mark.eth_ip101
+@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration, IDF-14365')
 @pytest.mark.parametrize(
     'config',
     [

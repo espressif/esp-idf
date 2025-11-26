@@ -3,10 +3,12 @@
 import pytest
 from pytest_embedded import Dut
 from pytest_embedded_idf.utils import idf_parametrize
+
 # normal mmu tests
 
 
 @pytest.mark.generic
+@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration, IDF-14470')
 @pytest.mark.parametrize(
     'config',
     [
@@ -29,6 +31,7 @@ PSRAM_RELEASE_CONFIGS = [
 
 
 @pytest.mark.generic
+@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration, IDF-14470')
 @idf_parametrize(
     'config,target',
     [
@@ -60,6 +63,7 @@ def test_mmap_xip_psram(dut: Dut) -> None:
 
 # normal cache tests
 @pytest.mark.generic
+@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration, IDF-14470')
 @pytest.mark.parametrize(
     'config',
     [
@@ -84,6 +88,7 @@ def test_cache(dut: Dut) -> None:
     ],
     indirect=['config', 'target'],
 )
+@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='h4 rev3 migration # TODO: IDF-14470')
 def test_cache_psram(dut: Dut) -> None:
     dut.run_all_single_board_cases(group='cache')
 

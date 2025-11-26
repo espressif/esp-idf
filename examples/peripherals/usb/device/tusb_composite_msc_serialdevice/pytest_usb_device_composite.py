@@ -9,7 +9,9 @@ from serial import Serial
 from serial.tools.list_ports import comports
 
 
-@pytest.mark.temp_skip_ci(targets=['esp32s3'], reason='lack of runners with usb_device tag')
+@pytest.mark.temp_skip_ci(
+    targets=['esp32s3', 'esp32p4'], reason='lack of runners with usb_device tag, p4 rev3 migration # TODO: IDF-14369'
+)
 @pytest.mark.usb_device
 @idf_parametrize('target', ['esp32s2', 'esp32s3', 'esp32p4'], indirect=['target'])
 def test_usb_composite_device_serial_example(dut: Dut) -> None:
@@ -23,7 +25,7 @@ def test_usb_composite_device_serial_example(dut: Dut) -> None:
     for port, _, hwid in ports:
         if '303A:4001' in hwid:
             with Serial(port) as s:
-                s.write('text\r\n'.encode())  # Write dummy text to COM port
+                s.write(b'text\r\n')  # Write dummy text to COM port
                 dut.expect_exact('Data from channel 0:')  # Check ESP log
                 dut.expect_exact('|text..|')
                 res = s.readline()  # Check COM echo

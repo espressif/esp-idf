@@ -5,6 +5,7 @@ from pytest_embedded_idf.utils import idf_parametrize
 
 
 @pytest.mark.generic
+@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration # TODO: IDF-14399')
 @idf_parametrize('target', ['supported_targets'], indirect=['target'])
 def test_param_single_dev(case_tester) -> None:  # type: ignore
     case_tester.run_all_normal_cases(reset=True)
@@ -13,5 +14,6 @@ def test_param_single_dev(case_tester) -> None:  # type: ignore
 @pytest.mark.generic_multi_device
 @pytest.mark.parametrize('count', [2], indirect=True)
 @idf_parametrize('target', ['supported_targets'], indirect=['target'])
+@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration # TODO: IDF-14399')
 def test_param_multi_dev(case_tester) -> None:  # type: ignore
     case_tester.run_all_multi_dev_cases(reset=True)

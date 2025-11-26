@@ -7,6 +7,7 @@ from pytest_embedded_idf.utils import idf_parametrize
 
 @pytest.mark.generic
 @idf_parametrize('target', ['supported_targets'], indirect=['target'])
+@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration # TODO: IDF-14402')
 def test_cpp_rtti_example(dut: IdfDut) -> None:
     dut.expect_exact('Type name of std::cout is: std::ostream')
     dut.expect_exact('Type name of std::cin is: std::istream')

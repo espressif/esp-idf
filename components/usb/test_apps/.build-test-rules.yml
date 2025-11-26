@@ -4,9 +4,9 @@ components/usb/test_apps:
   enable:
     - if: SOC_USB_OTG_SUPPORTED == 1
   disable_test:
-    - if: IDF_TARGET not in ["esp32s3", "esp32p4"]
+    - if: IDF_TARGET not in ["esp32s3"]
       temporary: true
-      reason: lack of runners with usb_host_flash_disk tag
+      reason: lack of runners with usb_host_flash_disk tag, p4 rev3 migration, IDF-14832
   depends_components:
     - usb
   depends_filepatterns:

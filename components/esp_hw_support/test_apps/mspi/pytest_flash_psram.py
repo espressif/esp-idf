@@ -49,6 +49,7 @@ def test_flash4_psram4(dut: IdfDut) -> None:
 
 
 @pytest.mark.flash_120m
+@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration, IDF-14366')
 @pytest.mark.parametrize(
     'config',
     [

@@ -1,5 +1,12 @@
 # SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
+import os
+import subprocess
+
+import pytest
+from common_test_methods import get_host_ip4_by_dest_ip
+from idf_iperf_test_util import IperfUtility
+from pytest_embedded import Dut
 from pytest_embedded_idf.utils import idf_parametrize
 
 """
@@ -10,16 +17,12 @@ This test case might have problem running on Windows:
 - use `sudo killall iperf` to force kill iperf, didn't implement windows version
 
 """
-import os
-import subprocess
-
-import pytest
-from common_test_methods import get_host_ip4_by_dest_ip
-from idf_iperf_test_util import IperfUtility
-from pytest_embedded import Dut
 
 try:
-    from typing import Any, Callable, Tuple, Optional
+    from typing import Any
+    from typing import Callable
+    from typing import Optional
+    from typing import Tuple
 except ImportError:
     # Only used for type annotations
     pass
@@ -132,6 +135,7 @@ def test_esp_eth_iperf_ip101(
 
 
 @pytest.mark.eth_ip101
+@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration, IDF-14365')
 @pytest.mark.parametrize(
     'config',
     [

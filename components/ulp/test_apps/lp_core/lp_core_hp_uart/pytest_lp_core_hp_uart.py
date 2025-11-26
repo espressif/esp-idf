@@ -7,6 +7,7 @@ from pytest_embedded_idf.utils import idf_parametrize
 
 @pytest.mark.generic
 @idf_parametrize('target', ['esp32c5', 'esp32c6', 'esp32p4'], indirect=['target'])
+@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration # TODO: IDF-14422')
 def test_lp_core_hp_uart_print(dut: Dut) -> None:
     dut.expect_exact('Press ENTER to see the list of tests')
     dut.write('"lp-print can output to hp-uart"')
@@ -17,6 +18,7 @@ def test_lp_core_hp_uart_print(dut: Dut) -> None:
 
 @pytest.mark.generic
 @idf_parametrize('target', ['esp32c5', 'esp32c6', 'esp32p4'], indirect=['target'])
+@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration # TODO: IDF-14422')
 def test_lp_core_panic(dut: Dut) -> None:
     dut.expect_exact('Press ENTER to see the list of tests')
     dut.write('"LP-Core panic"')
@@ -28,6 +30,7 @@ def test_lp_core_panic(dut: Dut) -> None:
 
 @pytest.mark.generic
 @idf_parametrize('target', ['esp32c5', 'esp32c6', 'esp32p4'], indirect=['target'])
+@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration # TODO: IDF-14422')
 def test_lp_core_shared_mem(dut: Dut) -> None:
     dut.expect_exact('Press ENTER to see the list of tests')
     dut.write('"LP-Core Shared-mem"')
@@ -46,6 +49,7 @@ def test_lp_core_shared_mem(dut: Dut) -> None:
 
 @pytest.mark.generic
 @idf_parametrize('target', ['esp32p4'], indirect=['target'])
+@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration # TODO: IDF-14422')
 def test_lp_core_lp_rom(dut: Dut) -> None:
     dut.expect_exact('Press ENTER to see the list of tests')
     dut.write('"LP-Core LP-ROM"')

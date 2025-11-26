@@ -21,6 +21,9 @@ components/driver/test_apps/legacy_adc_driver:
     - if: IDF_TARGET == "esp32c61"
       temporary: true
       reason: lack of runners
+    - if: IDF_TARGET == "esp32p4"
+      temporary: true
+      reason: p4 rev3 migration # TODO: IDF-14357
   depends_components:
     - efuse
     - esp_driver_i2s
@@ -57,6 +60,10 @@ components/driver/test_apps/legacy_rmt_driver:
 components/driver/test_apps/legacy_rtc_temp_driver:
   disable:
     - if: SOC_TEMP_SENSOR_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET == "esp32p4"
+      temporary: true
+      reason: p4 rev3 migration # TODO: IDF-14834
 
 components/driver/test_apps/legacy_sigma_delta_driver:
   disable:
@@ -76,6 +83,9 @@ components/driver/test_apps/legacy_twai:
   disable:
     - if: SOC_TWAI_SUPPORTED != 1 or SOC_TWAI_SUPPORT_FD == 1
       reason: legacy driver doesn't support FD
+    - if: IDF_TARGET == "esp32p4"
+      temporary: true
+      reason: p4 rev3 migration # TODO: IDF-14393
   depends_filepatterns:
     - components/driver/twai/**/*
   depends_components:

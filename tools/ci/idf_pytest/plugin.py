@@ -25,12 +25,12 @@ from pytest_embedded.utils import to_list
 from pytest_ignore_test_results.ignore_results import ChildCase
 from pytest_ignore_test_results.ignore_results import ChildCasesStashKey
 
-from .constants import CollectMode
 from .constants import DEFAULT_SDKCONFIG
 from .constants import PREVIEW_TARGETS
+from .constants import SUPPORTED_TARGETS
+from .constants import CollectMode
 from .constants import PytestApp
 from .constants import PytestCase
-from .constants import SUPPORTED_TARGETS
 from .utils import comma_sep_str_to_list
 from .utils import format_case_id
 from .utils import merge_junit_files
@@ -82,7 +82,11 @@ class IdfPytestEmbedded:
         self._single_target_duplicate_mode = single_target_duplicate_mode
 
         self.apps_list = (
-            [os.path.join(idf_relpath(app.app_dir), app.build_dir) for app in apps if app.build_status == BuildStatus.SUCCESS]
+            [
+                os.path.join(idf_relpath(app.app_dir), app.build_dir)
+                for app in apps
+                if app.build_status == BuildStatus.SUCCESS
+            ]
             if apps is not None
             else None
         )
@@ -137,7 +141,7 @@ class IdfPytestEmbedded:
         return PytestCase(
             apps=[PytestApp(app_paths[i], targets[i], configs[i]) for i in range(count)],
             item=item,
-            multi_dut_without_param=multi_dut_without_param
+            multi_dut_without_param=multi_dut_without_param,
         )
 
     def pytest_collectstart(self) -> None:
@@ -270,9 +274,10 @@ class IdfPytestEmbedded:
                 case = item_to_case_dict[item]
                 target = self.get_param(item, 'target', None)
                 if (
-                    not case.is_single_dut_test_case and
-                    target is not None and
-                    target not in case.skip_targets
+                    not case.is_single_dut_test_case
+                    and target is not None
+                    and target not in case.skip_targets
+                    and not any([_t in target for _t in case.skip_targets if '|' not in _t])
                 ):
                     filtered_items.append(item)
             items[:] = filtered_items
