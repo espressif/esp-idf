@@ -15,6 +15,5 @@ from pytest_embedded_idf.utils import soc_filtered_targets
     indirect=True,
 )
 @idf_parametrize('target', soc_filtered_targets('SOC_DMA2D_SUPPORTED == 1'), indirect=['target'])
-@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration # TODO: IDF-14471')
 def test_dma2d(dut: Dut) -> None:
     dut.run_all_single_board_cases()
