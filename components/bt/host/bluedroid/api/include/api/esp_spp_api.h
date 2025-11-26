@@ -74,13 +74,24 @@ typedef enum {
 } esp_spp_mode_t;
 
 /**
- * @brief SPP configuration parameters
+ * @brief SPP initialization configuration parameters.
  */
 typedef struct {
     esp_spp_mode_t mode;                  /*!< Choose the mode of SPP, ESP_SPP_MODE_CB or ESP_SPP_MODE_VFS. */
     bool enable_l2cap_ertm;               /*!< Enable/disable Logical Link Control and Adaptation Layer Protocol enhanced retransmission mode. */
     uint16_t tx_buffer_size;              /*!< Tx buffer size for a new SPP channel. A smaller setting can save memory, but may incur a decrease in throughput. Only for ESP_SPP_MODE_VFS mode. */
 } esp_spp_cfg_t;
+
+/**
+ * @brief SPP start server configuration parameters.
+ */
+typedef struct {
+    uint8_t local_scn;                     /*!< The specific channel you want to get. If channel is 0, means get any channel. */
+    bool create_spp_record;                /*!< Specifies whether to create the SPP record */
+    esp_spp_sec_t sec_mask;                /*!< Security Setting Mask. Suggest to use ESP_SPP_SEC_NONE, ESP_SPP_SEC_AUTHORIZE or ESP_SPP_SEC_AUTHENTICATE only */
+    esp_spp_role_t role;                   /*!< Master or slave. */
+    const char *name;                      /*!< Server's name. */
+} esp_spp_start_srv_cfg_t;
 
 /**
  * @brief SPP callback function events
@@ -353,6 +364,19 @@ esp_err_t esp_spp_disconnect(uint32_t handle);
  *              - other: failed
  */
 esp_err_t esp_spp_start_srv(esp_spp_sec_t sec_mask, esp_spp_role_t role, uint8_t local_scn, const char *name);
+
+/**
+ * @brief       This function is similar to `esp_spp_start_srv`.
+ *              The only difference is that it adds a parameter to specify whether to create the SPP record.
+ * @note        If the SPP record is not created, it is suggested to use it together with the SDP API.
+ *
+ * @param[in]   cfg:          Configuration parameters for starting the server.
+ *
+ * @return
+ *              - ESP_OK: success
+ *              - other: failed
+ */
+esp_err_t esp_spp_start_srv_with_cfg(const esp_spp_start_srv_cfg_t *cfg);
 
 /**
  * @brief       This function stops all SPP servers.
