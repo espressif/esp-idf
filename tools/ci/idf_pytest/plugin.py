@@ -20,6 +20,7 @@ from pytest_embedded.utils import find_by_suffix
 from pytest_ignore_test_results.ignore_results import ChildCase
 from pytest_ignore_test_results.ignore_results import ChildCasesStashKey
 
+from .constants import ECO_MARKERS
 from .utils import format_case_id
 from .utils import merge_junit_files
 from .utils import normalize_testcase_file_path
@@ -163,6 +164,12 @@ class IdfLocalPlugin:
             # add 'xtal_40mhz' tag as a default tag for esp32c2 target
             if 'esp32c2' in case.targets and 'xtal_26mhz' not in case.all_markers:
                 item.add_marker('xtal_40mhz')
+
+            for eco_marker in ECO_MARKERS:
+                if eco_marker in case.all_markers:
+                    break
+            else:
+                item.add_marker('eco_default')
 
             if 'host_test' in case.all_markers:
                 item.add_marker('skip_app_downloader')  # host_test jobs will build the apps itself

@@ -4,8 +4,6 @@
 Pytest Related Constants. Don't import third-party packages here.
 """
 
-import typing as t
-
 SUPPORTED_TARGETS = [
     'esp32',
     'esp32s2',
@@ -18,11 +16,18 @@ SUPPORTED_TARGETS = [
     'esp32c5',
     'esp32c61',
 ]
-PREVIEW_TARGETS: t.List[str] = []  # this PREVIEW_TARGETS excludes 'linux' target
+PREVIEW_TARGETS: list[str] = []  # this PREVIEW_TARGETS excludes 'linux' target
 
 DEFAULT_LOGDIR = 'pytest-embedded'
 
 # by default the timeout is 1h, for some special cases we need to extend it
 TIMEOUT_4H_MARKERS = [
     'ethernet_stress',
+]
+
+ECO_MARKERS = [
+    'esp32eco3',
+    'esp32c2eco4',
+    'esp32c3eco7',
+    'esp32p4_eco4',
 ]
