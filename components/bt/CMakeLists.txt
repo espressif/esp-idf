@@ -676,6 +676,10 @@ if(CONFIG_BT_ENABLED)
                 "porting/transport/src/hci_transport.c"
         )
 
+        list(APPEND include_dirs
+            host/nimble/port/include
+        )
+
         if(CONFIG_BT_CONTROLLER_DISABLED)
             list(APPEND srcs
                 "host/nimble/nimble/porting/nimble/src/hal_uart.c"
