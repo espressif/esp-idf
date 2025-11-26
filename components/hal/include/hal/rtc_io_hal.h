@@ -34,6 +34,8 @@ extern "C" {
 #if SOC_LP_IO_CLOCK_IS_INDEPENDENT
 /**
  * Enable rtcio module clock.
+ *
+ * @param enable True to enable the clock, false to disable.
  */
 #define rtcio_hal_enable_io_clock(enable) rtcio_ll_enable_io_clock(enable)
 #endif
@@ -188,7 +190,7 @@ void rtcio_hal_set_direction_in_sleep(int rtcio_num, rtc_gpio_mode_t mode);
  *
  * @param rtcio_num The index of rtcio. 0 ~ SOC_RTCIO_PIN_COUNT.
  * @param signal_idx LP peripheral signal index.
- * @param inv inv True to invert input signal; False then no invert.
+ * @param inv True to invert input signal; False then no invert.
  */
 #define rtcio_hal_matrix_in(rtcio_num, signal_idx, inv) rtcio_ll_matrix_in(rtcio_num, signal_idx, inv)
 
@@ -234,8 +236,6 @@ void rtcio_hal_set_direction_in_sleep(int rtcio_num, rtc_gpio_mode_t mode);
  * input/output enable, input/output value, function, drive strength values.
  * This function is useful when going into light or deep sleep mode to prevent
  * the pin configuration from changing.
- *
- * @param rtcio_num The index of rtcio. 0 ~ SOC_RTCIO_PIN_COUNT.
  */
 #define rtcio_hal_hold_all() rtcio_ll_force_hold_all()
 
@@ -243,7 +243,6 @@ void rtcio_hal_set_direction_in_sleep(int rtcio_num, rtc_gpio_mode_t mode);
  * Disable hold function on all RTC IO pads.
  *
  * @note If disable the pad hold, the status of pad maybe changed in sleep mode.
- * @param rtcio_num The index of rtcio. 0 ~ SOC_RTCIO_PIN_COUNT.
  */
 #define rtcio_hal_unhold_all() rtcio_ll_force_unhold_all()
 #endif // SOC_RTCIO_HOLD_SUPPORTED
@@ -269,7 +268,7 @@ void rtcio_hal_set_direction_in_sleep(int rtcio_num, rtc_gpio_mode_t mode);
  * Set specific logic level on an RTC IO pin as a ext0 wakeup trigger.
  *
  * @param rtcio_num The index of rtcio. 0 ~ SOC_RTCIO_PIN_COUNT.
- * @param level Logic level (0)
+ * @param level Logic level (0: low level trigger, 1: high level trigger)
  */
 #define rtcio_hal_ext0_set_wakeup_pin(rtcio_num, level)     rtcio_ll_ext0_set_wakeup_pin(rtcio_num, level)
 
@@ -290,7 +289,7 @@ void rtcio_hal_set_direction_in_sleep(int rtcio_num, rtc_gpio_mode_t mode);
  *
  * @param rtcio_num The index of rtcio. 0 ~ SOC_RTCIO_PIN_COUNT.
  */
-void rtcio_hal_isolate(int rtc_num);
+void rtcio_hal_isolate(int rtcio_num);
 
 #endif
 
@@ -307,7 +306,6 @@ void rtcio_hal_isolate(int rtc_num);
 /**
  * @brief Get the status of whether an IO is used for sleep wake-up.
  *
- * @param hw Peripheral GPIO hardware instance address.
  * @param rtcio_num The index of rtcio. 0 ~ SOC_RTCIO_PIN_COUNT.
  * @return True if the pin is enabled to wake up from deep-sleep
  */
