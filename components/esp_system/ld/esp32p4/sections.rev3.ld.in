@@ -407,8 +407,14 @@ SECTIONS
     ALIGNED_SYMBOL(4, __preinit_array_start)
     KEEP (*(.preinit_array))
     __preinit_array_end = ABSOLUTE(.);
-    ALIGNED_SYMBOL(4, __init_array_start)
+
+    . = ALIGN(4);
+    PROVIDE(__init_priority_array_start = ABSOLUTE(.));
     KEEP (*(SORT_BY_INIT_PRIORITY(EXCLUDE_FILE (*crtend.* *crtbegin.*) .init_array.*)))
+    . = ALIGN(4);
+    PROVIDE(__init_priority_array_end = ABSOLUTE(.));
+
+    ALIGNED_SYMBOL(4, __init_array_start)
     KEEP (*(EXCLUDE_FILE (*crtend.* *crtbegin.*) .init_array))
     __init_array_end = ABSOLUTE(.);
 
