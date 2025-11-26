@@ -73,10 +73,10 @@ typedef union {
  */
 typedef union {
     struct {
-        /** continue : WO; bitpos: [0]; default: 0;
+        /** ctn : WO; bitpos: [0]; default: 0;
          *  Write 1 to continue Typical SHA calculation.
          */
-        uint32_t continue:1;
+        uint32_t ctn:1;
         uint32_t reserved_1:31;
     };
     uint32_t val;
@@ -140,19 +140,19 @@ typedef union {
 
 
 /** Group: Configuration Register */
-/** Type of 3_shake_length register
+/** Type of shake_length_3 register
  *  DMA configuration register 3.
  */
 typedef union {
     struct {
-        /** 3_shake_length : R/W; bitpos: [20:0]; default: 50;
+        /** shake_length_3 : R/W; bitpos: [20:0]; default: 50;
          *  SHAKE output hash word length
          */
-        uint32_t 3_shake_length:21;
+        uint32_t shake_length_3:21;
         uint32_t reserved_21:11;
     };
     uint32_t val;
-} sha_3_shake_length_reg_t;
+} sha_shake_length_3_reg_t;
 
 
 /** Group: Status Registers */
@@ -244,7 +244,7 @@ typedef struct {
     uint32_t reserved_004[2];
     volatile sha_dma_block_num_reg_t dma_block_num;
     volatile sha_start_reg_t start;
-    volatile sha_continue_reg_t continue;
+    volatile sha_continue_reg_t ctn;
     volatile sha_busy_reg_t busy;
     volatile sha_dma_start_reg_t dma_start;
     volatile sha_dma_continue_reg_t dma_continue;
@@ -254,12 +254,12 @@ typedef struct {
     volatile sha_dma_rx_reset_reg_t dma_rx_reset;
     volatile sha_dma_tx_reset_reg_t dma_tx_reset;
     volatile sha_free_reg_t free;
-    volatile sha_3_shake_length_reg_t 3_shake_length;
-    volatile uint32_t 2_sm_3_h[16];
-    volatile uint32_t 2_sm_3_m[32];
-    volatile uint32_t 3_h[50];
+    volatile sha_shake_length_3_reg_t shake_length_3;
+    volatile uint32_t sm_2_h_3[16];
+    volatile uint32_t sm_2_m_3[32];
+    volatile uint32_t h_3[50];
     uint32_t reserved_1c8[14];
-    volatile uint32_t 3_m[50];
+    volatile uint32_t m_3[50];
 } sha_dev_t;
 
 

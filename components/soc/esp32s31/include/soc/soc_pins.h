@@ -14,4 +14,3 @@
 
 #include "soc/gpio_pins.h"
 #include "soc/spi_pins.h"
-#include "soc/sdmmc_pins.h"

@@ -184,7 +184,7 @@ typedef struct {
     volatile ds_query_busy_reg_t query_busy;
     volatile ds_query_key_wrong_reg_t query_key_wrong;
     volatile ds_query_check_reg_t query_check;
-    volatile ds_static_reg_t static;
+    volatile ds_static_reg_t sta;
     uint32_t reserved_e1c;
     volatile ds_date_reg_t date;
     volatile ds_timeout_limit_reg_t timeout_limit;
