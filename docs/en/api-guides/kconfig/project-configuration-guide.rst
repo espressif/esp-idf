@@ -8,6 +8,7 @@ This guide is intended to describe three aspects of project configuration in ESP
 - How the configuration can be edited (``idf.py menuconfig`` and configuration via plugins)
 - How to use configuration values in C code and CMake
 - How to define new configuration options for the project
+- What is configuration report and how to understand it
 
 .. _project-configuration-menu:
 
@@ -105,3 +106,82 @@ Defining New Configuration Options for the Project
 
 Some applications can get very complex and require a lot of configuration options. In such cases, it is useful to define new configuration options for the project. Similar to components, the application can have its own configuration options. These options are defined in the  ``Kconfig`` or ``Kconfig.projbuild`` file in the ``main`` folder of the project. The process is the same as :ref:`defining new configuration options for components <component-configuration-guide>`, only with **different location** location of the ``Kconfig`` or ``Kconfig.projbuild`` file (``main`` instead of the root folder).
 
+
+.. _configuration-report:
+
+Configuration Report
+--------------------
+
+The configuration report is a semi-structured text designed to provide a unified overview of the project's configuration issues, if any. The report helps debug configuration-related issues by aggregating all messages, warnings, and errors related to the project's configuration. This report is automatically printed in the console whenever the project configuration is (re)built; typically during the first build of the project or when ``idf.py menuconfig`` command is run.
+
+The configuration report consists of a header with general information (parser version, verbosity, status) and zero or more report areas. Each report area groups together messages related to a specific issue. For a more verbose output, set ``KCONFIG_REPORT_VERBOSITY`` environment variable to ``verbose`` before build or ``idf.py menuconfig`` command.
+
+Example of a configuration report (actual output is colored):
+
+.. code-block:: console
+
+    Configuration report
+    --------------------
+    Parser Version: 1
+    Verbosity: default
+    Status: Finished with notifications
+
+    Multiple Symbol/Choice Definitions
+    ----------------------------------
+
+    SYMBOL_NAME
+        path/to/first/Kconfig_with_definition:line_number
+        path/to/second/Kconfig_with_definition:line_number
+
+    ANOTHER_SYMBOL_NAME
+        another/path/to/first/Kconfig_with_definition:line_number
+        another/path/to/second/Kconfig_with_definition:line_number
+
+How to Generate the Configuration Report in JSON Format
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The configuration report can be generated in JSON format using the ``idf.py config-report`` command. This command will generate a JSON file with the project configuration report in the ``build/config`` directory with the name ``kconfig_parse_report.json``.
+
+.. code-block:: console
+
+    idf.py config-report
+
+.. warning::
+
+    The JSON file structure is in the experimental stage and may change in the future.
+
+The JSON file contains two main sections: ``header`` and ``areas``:
+
+* ``header``: contains the general information about the configuration report: report type, Kconfig parser version, verbosity, status, number of unique symbols, defaults policy.
+* ``areas``: contains the list of report areas. Each area contains errors, warnings and info messages related to the specific area (e.g. configuration options defined in multiple places etc.). The full list of areas is defined in the `esp-idf-kconfig Documentation <https://docs.espressif.com/projects/esp-idf-kconfig/en/latest/kconfiglib/configuration-report.html>`_.
+
+Example of a JSON file:
+
+.. code-block:: json
+
+    {
+        "header": {
+            "report_type": "kconfig",
+            "parser_version": "1",
+            "verbosity": "default",
+            "status": "Finished with notifications",
+            "number_of_unique_symbols": 100,
+            "defaults_policy": "sdkconfig"
+        },
+        "areas": [
+            {
+                "title": "Multiple Symbol/Choice Definitions",
+                "severity": "Info",
+                "data": {
+                    "EXAMPLE_SYMBOL_NAME": [
+                        "path/to/Kconfig:42",
+                        "path/to/another/Kconfig:32"
+                    ]
+                }
+            }
+        ]
+    }
+
+.. note::
+
+    Detailed information about the configuration report can be found in the `esp-idf-kconfig Documentation <https://docs.espressif.com/projects/esp-idf-kconfig/en/latest/kconfiglib/configuration-report.html>`_.
