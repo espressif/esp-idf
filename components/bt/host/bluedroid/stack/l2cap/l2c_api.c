@@ -215,7 +215,7 @@ UINT16 L2CA_ConnectReq (UINT16 psm, BD_ADDR p_bd_addr)
 **
 **  Parameters:       PSM: L2CAP PSM for the connection
 **                    BD address of the peer
-**                   Enhaced retransmission mode configurations
+**                   Enhanced retransmission mode configurations
 
 ** Returns          the CID of the connection, or 0 if it failed to start
 **
@@ -760,7 +760,7 @@ bool L2CA_GetIdentifiers(uint16_t lcid, uint16_t *rcid, uint16_t *handle)
 **
 ** NOTE             This timeout takes effect after at least 1 channel has been
 **                  established and removed. L2CAP maintains its own timer from
-**                  whan a connection is established till the first channel is
+**                  when a connection is established till the first channel is
 **                  set up.
 *******************************************************************************/
 BOOLEAN L2CA_SetIdleTimeout (UINT16 cid, UINT16 timeout, BOOLEAN is_global)
@@ -1900,6 +1900,8 @@ BOOLEAN L2CA_RemoveFixedChnl (UINT16 fixed_cid, BD_ADDR rem_bda)
     tL2C_LCB    *p_lcb;
     tL2C_CCB    *p_ccb;
     tBT_TRANSPORT   transport = BT_TRANSPORT_BR_EDR;
+
+    L2CAP_TRACE_DEBUG("%s cid=%04x bda="MACSTR"", __func__, fixed_cid, MAC2STR(rem_bda));
 
     /* Check CID is valid and registered */
     if ( (fixed_cid < L2CAP_FIRST_FIXED_CHNL) || (fixed_cid > L2CAP_LAST_FIXED_CHNL)
