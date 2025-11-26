@@ -91,6 +91,7 @@ ESP-IDF 构建系统会编译项目和 ESP-IDF 中所有源文件，但只有程
     - 将 :ref:`CONFIG_ESP_SYSTEM_PANIC` 设置为 ``Silent reboot`` 可以减小一小部分二进制文件的大小，但此操作 **仅** 建议在没有任何开发者使用 UART 输出来调试设备时进行。
     :CONFIG_IDF_TARGET_ARCH_RISCV: - 设置 :ref:`CONFIG_COMPILER_SAVE_RESTORE_LIBCALLS` 以库调用替代内联的入口/出口代码，可以减小二进制文件的大小。
     - 如果应用程序的二进制文件只使用 protocomm 组件的某个安全版本，取消对其他版本的支持可以减小部分代码大小。请通过 :ref:`CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_0`、:ref:`CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_1` 或者 :ref:`CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_2` 方式，取消对应版本的支持。
+    :CONFIG_SOC_CPU_ZCMP_WORKAROUND: - 启用 :ref:`CONFIG_COMPILER_ENABLE_RISCV_ZCMP`，通过使用压缩的函数序言/尾声来减少二进制文件大小。在启用此选项前，请务必仔细阅读 :ref:`CONFIG_COMPILER_ENABLE_RISCV_ZCMP` 的说明。
 
 .. note::
 
