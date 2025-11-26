@@ -213,23 +213,18 @@ static inline esp_key_mgr_key_usage_t key_mgr_ll_get_key_usage(esp_key_mgr_key_t
     switch (key_type) {
         case ESP_KEY_MGR_ECDSA_KEY:
             return (esp_key_mgr_key_usage_t) (REG_GET_BIT(KEYMNG_STATIC_REG, KEYMNG_USE_EFUSE_KEY_ECDSA));
-            break;
 
         case ESP_KEY_MGR_FLASH_XTS_AES_KEY:
             return (esp_key_mgr_key_usage_t) (REG_GET_BIT(KEYMNG_STATIC_REG, KEYMNG_USE_EFUSE_KEY_FLASH));
-            break;
 
         case ESP_KEY_MGR_HMAC_KEY:
             return (esp_key_mgr_key_usage_t) (REG_GET_BIT(KEYMNG_STATIC_REG, KEYMNG_USE_EFUSE_KEY_HMAC));
-            break;
 
         case ESP_KEY_MGR_DS_KEY:
             return (esp_key_mgr_key_usage_t) (REG_GET_BIT(KEYMNG_STATIC_REG, KEYMNG_USE_EFUSE_KEY_DS));
-            break;
 
         case ESP_KEY_MGR_PSRAM_XTS_AES_KEY:
             return (esp_key_mgr_key_usage_t) (REG_GET_BIT(KEYMNG_STATIC_REG, KEYMNG_USE_EFUSE_KEY_PSRAM));
-            break;
 
         default:
             HAL_ASSERT(false && "Unsupported key type");
@@ -334,16 +329,12 @@ static inline bool key_mgr_ll_is_key_deployment_valid(const esp_key_mgr_key_type
                     HAL_ASSERT(false && "Unsupported key type");
                     return 0;
             }
-            return REG_GET_FIELD(KEYMNG_KEY_VLD_REG, KEYMNG_KEY_FLASH_VLD);
-            break;
 
         case ESP_KEY_MGR_HMAC_KEY:
             return REG_GET_FIELD(KEYMNG_KEY_VLD_REG, KEYMNG_KEY_HMAC_VLD);
-            break;
 
         case ESP_KEY_MGR_DS_KEY:
             return REG_GET_FIELD(KEYMNG_KEY_VLD_REG, KEYMNG_KEY_DS_VLD);
-            break;
 
         case ESP_KEY_MGR_PSRAM_XTS_AES_KEY:
             switch (key_len) {
