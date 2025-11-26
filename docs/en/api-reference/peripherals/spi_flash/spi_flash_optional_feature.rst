@@ -11,6 +11,8 @@ Some features are not supported on all ESP chips and flash chips. You can check 
 
 - :ref:`high-performance-mode`
 
+- :ref:`deep-power-down-mode`
+
 - :ref:`32-bit-flash-doc`
 
 - :ref:`oct-flash-doc`
@@ -137,6 +139,18 @@ The support for ESP32-S2, ESP32-C3, ESP32-C6, ESP32-H2, and ESP32-P4 may be adde
     3. XM25QH64C (ID: 0x204017)
     4. XM25QH128C (ID: 0x204018)
 
+.. _deep-power-down-mode:
+
+SPI Flash Deep Power-Down Mode
+-------------------------------
+
+Currently, only ESP32-H21, ESP32-H4 and ESP32-P4(version less v3) support this feature.
+
+This feature is not yet supported on other ESP32 series chips. If you have this requirement, you may submit a request to Espressif Systems officially.
+
+Deep Power-Down (DPD) mode is a power-saving mode supported by most SPI flash chips. Compared to the standby mode (where the chip select signal remains asserted), SPI flash consumes significantly less power in DPD mode—typically reducing current by 10 µA or more.
+
+If you plan to use a customized SPI flash model, or if you use other ESP32-series chips, please make sure to consult the corresponding SPI flash datasheet or contact Espressif directly.
 
 .. _32-bit-flash-doc:
 

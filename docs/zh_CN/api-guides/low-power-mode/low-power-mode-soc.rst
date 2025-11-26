@@ -385,6 +385,9 @@ Light-sleep 模式配置
    * - 在 light sleep 状态关闭 flash 供电 (:ref:`CONFIG_ESP_SLEEP_POWER_DOWN_FLASH`)
      - OFF
 
+   * - 在 light sleep 状态配置 flash 进入 deep power-down 模式 (:ref:`CONFIG_ESP_SLEEP_SET_FLASH_DPD`)
+     - OFF
+
    * - ``max_freq_mhz``
      - {IDF_TARGET_NAME} 支持的最大 CPU 频率
 
@@ -442,6 +445,9 @@ Light-sleep 模式配置
    * - 在 light sleep 状态关闭 flash 供电 (:ref:`CONFIG_ESP_SLEEP_POWER_DOWN_FLASH`)
      - OFF
 
+   * - 在 light sleep 状态配置 flash 进入 deep power-down 模式 (:ref:`CONFIG_ESP_SLEEP_SET_FLASH_DPD`)
+     - OFF
+
    * - ``max_freq_mhz``
      - {IDF_TARGET_NAME} 支持的最大 CPU 频率
 
@@ -494,6 +500,9 @@ Light-sleep 模式配置
      - ON
 
    * - 在 light sleep 状态关闭 flash 供电 (:ref:`CONFIG_ESP_SLEEP_POWER_DOWN_FLASH`)
+     - OFF
+
+   * - 在 light sleep 状态配置 flash 进入 deep power-down 模式 (:ref:`CONFIG_ESP_SLEEP_SET_FLASH_DPD`)
      - OFF
 
    * - ``max_freq_mhz``
@@ -587,6 +596,9 @@ Light-sleep 模式配置
      - ON
 
    * - 在 light sleep 状态关闭 flash 供电 (:ref:`CONFIG_ESP_SLEEP_POWER_DOWN_FLASH`)
+     - OFF
+
+   * - 在 light sleep 状态配置 flash 进入 deep power-down 模式 (:ref:`CONFIG_ESP_SLEEP_SET_FLASH_DPD`)
      - OFF
 
    * - ``max_freq_mhz``

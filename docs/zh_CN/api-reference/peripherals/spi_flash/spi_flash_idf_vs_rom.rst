@@ -24,6 +24,7 @@ ESP-IDF 支持但不包含在芯片 ROM 中的功能
     - :ref:`CONFIG_SPI_FLASH_DANGEROUS_WRITE`，启用此选项会检查是否对某些受保护的区域（如引导加载程序、分区表或应用程序本身）进行了 flash 编程。
     - :ref:`CONFIG_SPI_FLASH_ENABLE_COUNTERS`，启用此选项以收集 ESP-IDF SPI flash 驱动程序 API 的性能数据。
     - :ref:`CONFIG_SPI_FLASH_AUTO_SUSPEND`，启用此选项可在 flash 短时操作时自动挂起或恢复 flash 长时操作。请注意，此功能为可选功能，详情请参阅 :ref:`auto-suspend-intro`。
+    - :ref:`CONFIG_ESP_SLEEP_SET_FLASH_DPD`，启用此选项可在休眠时配置 flash 进入 deep power-down 模式以降低功耗。请注意，此功能为可选功能，详情请参阅 :ref:`deep-power-down-mode`。
     :ESP_ROM_HAS_SPI_FLASH_MMAP and SOC_SPIRAM_XIP_SUPPORTED and not esp32s3: - :ref:`CONFIG_SPIRAM_XIP_FROM_PSRAM`，启用该选项后，可将外部 PSRAM 用作指令 cache 和只读数据 cache。但请注意，ROM 中的某些函数不支持此用法，而 ESP-IDF 提供了这些 ROM 函数的替代版本。
     :esp32s3: - 启用 :ref:`CONFIG_SPIRAM_FETCH_INSTRUCTIONS` 和 :ref:`CONFIG_SPIRAM_RODATA` 后，可将外部 PSRAM 用作指令 cache 和只读数据 cache。但请注意，ROM 中的某些函数不支持此用法，而 ESP-IDF 提供了这些 ROM 函数的替代版本。
 

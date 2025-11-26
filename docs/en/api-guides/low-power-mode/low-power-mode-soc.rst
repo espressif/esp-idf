@@ -385,6 +385,9 @@ Recommended Configuration
    * - Power down flash in light sleep (:ref:`CONFIG_ESP_SLEEP_POWER_DOWN_FLASH`)
      - OFF
 
+   * - Set flash into deep power-down mode in light sleep (:ref:`CONFIG_ESP_SLEEP_SET_FLASH_DPD`)
+     - OFF
+
    * - ``max_freq_mhz``
      - The maximum CPU frequency supported by {IDF_TARGET_NAME}
 
@@ -442,6 +445,9 @@ Recommended Configuration
    * - Power down flash in light sleep (:ref:`CONFIG_ESP_SLEEP_POWER_DOWN_FLASH`)
      - OFF
 
+   * - Set flash into deep power-down mode in light sleep (:ref:`CONFIG_ESP_SLEEP_SET_FLASH_DPD`)
+     - OFF
+
    * - ``max_freq_mhz``
      - The maximum CPU frequency supported by {IDF_TARGET_NAME}
 
@@ -494,6 +500,9 @@ Recommended Configuration
      - ON
 
    * - Power down flash in light sleep (:ref:`CONFIG_ESP_SLEEP_POWER_DOWN_FLASH`)
+     - OFF
+
+   * - Set flash into deep power-down mode in light sleep (:ref:`CONFIG_ESP_SLEEP_SET_FLASH_DPD`)
      - OFF
 
    * - ``max_freq_mhz``
@@ -587,6 +596,9 @@ Recommended Configuration
      - ON
 
    * - Power down flash in light sleep (:ref:`CONFIG_ESP_SLEEP_POWER_DOWN_FLASH`)
+     - OFF
+
+   * - Set flash into deep power-down mode in light sleep (:ref:`CONFIG_ESP_SLEEP_SET_FLASH_DPD`)
      - OFF
 
    * - ``max_freq_mhz``
