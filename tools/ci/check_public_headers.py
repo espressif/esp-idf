@@ -11,6 +11,7 @@ import json
 import os
 import queue
 import re
+import shutil
 import subprocess
 import tempfile
 from threading import Event
@@ -88,7 +89,7 @@ class PublicHeaderChecker:
         if self.verbose or debug:
             print(message)
 
-    def __init__(self, verbose: bool = False, jobs: int = 1, prefix: str | None = None) -> None:
+    def __init__(self, libc_type: str, verbose: bool = False, jobs: int = 1, prefix: str | None = None) -> None:
         self.gcc = f'{prefix}gcc'
         self.gpp = f'{prefix}g++'
         self.verbose = verbose
@@ -122,6 +123,7 @@ class PublicHeaderChecker:
         self.check_threads: list[Thread] = []
         self.stdc = '--std=c99'
         self.stdcpp = '--std=c++17'
+        self.libc_type = libc_type
 
         self.job_queue: queue.Queue = queue.Queue()
         self.failed_queue: queue.Queue = queue.Queue()
@@ -131,6 +133,7 @@ class PublicHeaderChecker:
         if idf_path is None:
             raise RuntimeError("Environment variable 'IDF_PATH' wasn't set.")
         self.idf_path = idf_path
+        self.build_dir = tempfile.mkdtemp()
 
     def __enter__(self) -> 'PublicHeaderChecker':
         for i in range(self.jobs):
@@ -143,6 +146,7 @@ class PublicHeaderChecker:
         self.terminate.set()
         for t in self.check_threads:
             t.join()
+        shutil.rmtree(self.build_dir)
 
     # thread function process incoming header file from a queue
     def check_headers(self, num: int) -> None:
@@ -175,14 +179,33 @@ class PublicHeaderChecker:
     # - Compile the header with both C and C++ compiler
     def check_one_header(self, header: str, num: int) -> None:
         self.preprocess_one_header(header, num)
-        self.compile_one_header_with(self.gcc, self.stdc, header)
-        self.compile_one_header_with(self.gpp, self.stdcpp, header)
+        temp_file = tempfile.NamedTemporaryFile(mode='w', suffix='.c', dir=self.build_dir, delete=False)
+        compile_file = temp_file.name
+        with temp_file:
+            # There can not `-include {header}` be used because in this case system headers
+            # which are overridden in ESP-IDF have wrong include_next behavior.
+            # This happens because file was already included but search paths are:
+            #   - components/esp_libc/platform_include
+            #   - toolchain_system_include_path
+            # So, when checking headers from platform_include directory,
+            # they will not include system headers by include_next.
+            # To fix this, header is included to the source file.
+            if 'platform_include' in header:
+                sys_header = header.split('platform_include/')[1]
+                temp_file.write(f'#include <{sys_header}>\n')
+            else:
+                temp_file.write(f'#include "{header}"\n')
+            temp_file.write(f'#include "{self.main_c}"\n')
+        self.compile_one_header_with(self.gcc, self.stdc, header, compile_file)
+        self.compile_one_header_with(self.gpp, self.stdcpp, header, compile_file)
 
     # Checks if the header contains some assembly code and whether it is compilable
-    def compile_one_header_with(self, compiler: str, std_flags: str, header: str) -> None:
-        rc, out, err, cmd = exec_cmd(
-            [compiler, std_flags, '-S', '-o-', '-include', header, self.main_c] + self.include_dir_flags
-        )
+    def compile_one_header_with(self, compiler: str, std_flags: str, header: str, compile_file: str) -> None:
+        cmd_list = [compiler, std_flags, '-S', '-o-', compile_file] + self.include_dir_flags
+        if self.libc_type == 'picolibc':
+            cmd_list.append('-specs=picolibc.specs')
+
+        rc, out, err, cmd = exec_cmd(cmd_list)
         if rc == 0:
             if not re.sub(self.assembly_nocode, '', out, flags=re.M).isspace():
                 raise HeaderFailedContainsCode()
@@ -221,6 +244,9 @@ class PublicHeaderChecker:
             header,
             self.main_c,
         ] + self.include_dir_flags
+        if self.libc_type == 'picolibc':
+            all_compilation_flags.append('-specs=picolibc.specs')
+
         # just strip comments to check for CONFIG_... macros or static asserts
         rc, out, err, _ = exec_cmd([self.gcc, '-fpreprocessed', '-dD', '-P', '-E', header] + self.include_dir_flags)
         # we ignore the rc here, as the `-fpreprocessed` flag expects the file to have macros already expanded,
@@ -311,14 +337,17 @@ class PublicHeaderChecker:
     def list_public_headers(self, ignore_dirs: list, ignore_files: list | set, only_dir: str | None = None) -> None:
         idf_path = self.idf_path
         project_dir = os.path.join(idf_path, 'examples', 'get-started', 'blink')
-        build_dir = tempfile.mkdtemp()
-        sdkconfig = os.path.join(build_dir, 'sdkconfig')
+        sdkconfig = os.path.join(self.build_dir, 'sdkconfig')
+        if self.libc_type == 'newlib':
+            with open(sdkconfig, 'w') as f:
+                f.write('CONFIG_LIBC_NEWLIB=y\n')
         try:
             os.unlink(os.path.join(project_dir, 'sdkconfig'))
         except FileNotFoundError:
             pass
         subprocess.check_call(
-            ['idf.py', '-B', build_dir, f'-DSDKCONFIG={sdkconfig}', '-DCOMPONENTS=', 'reconfigure'], cwd=project_dir
+            ['idf.py', '-B', self.build_dir, f'-DSDKCONFIG={sdkconfig}', '-DCOMPONENTS=', 'reconfigure'],
+            cwd=project_dir,
         )
 
         def get_std(json: list, extension: str) -> str:
@@ -326,7 +355,7 @@ class PublicHeaderChecker:
             command = [c for c in j if c['file'].endswith('.' + extension) and '-std=' in c['command']][0]
             return str([s for s in command['command'].split() if 'std=' in s][0])  # grab the std flag
 
-        build_commands_json = os.path.join(build_dir, 'compile_commands.json')
+        build_commands_json = os.path.join(self.build_dir, 'compile_commands.json')
         with open(build_commands_json, encoding='utf-8') as f:
             j = json.load(f)
             self.stdc = get_std(j, 'c')
@@ -344,13 +373,13 @@ class PublicHeaderChecker:
                 include_dir_flags.append(
                     item.replace('\\', '')
                 )  # removes escaped quotes, eg: -DMBEDTLS_CONFIG_FILE=\\\"mbedtls/esp_config.h\\\"
-        include_dir_flags.append('-I' + os.path.join(build_dir, 'config'))
+        include_dir_flags.append('-I' + os.path.join(self.build_dir, 'config'))
         include_dir_flags.append('-DCI_HEADER_CHECK')
-        sdkconfig_h = os.path.join(build_dir, 'config', 'sdkconfig.h')
+        sdkconfig_h = os.path.join(self.build_dir, 'config', 'sdkconfig.h')
         # prepares a main_c file for easier sdkconfig checks and avoid compilers warning when compiling headers directly
         with open(sdkconfig_h, 'a') as f:
             f.write('#define IDF_SDKCONFIG_INCLUDED')
-        main_c = os.path.join(build_dir, 'compile.c')
+        main_c = os.path.join(self.build_dir, 'compile.c')
         with open(main_c, 'w') as f:
             f.write(
                 '#if defined(IDF_CHECK_SDKCONFIG_INCLUDED) && ! defined(IDF_SDKCONFIG_INCLUDED)\n'
@@ -435,6 +464,9 @@ def check_all_headers() -> None:
         '--exclude-file', '-e', help='exception file', default='check_public_headers_exceptions.txt', type=str
     )
     parser.add_argument('--only-dir', '-d', help='reduce the analysis to this directory only', default=None, type=str)
+    parser.add_argument(
+        '--libc-type', '-l', help='type of libc to use', default='picolibc', choices=['picolibc', 'newlib'], type=str
+    )
     args = parser.parse_args()
 
     # process excluded files and dirs
@@ -452,7 +484,7 @@ def check_all_headers() -> None:
             ignore_files.append(line)
 
     # start header check
-    with PublicHeaderChecker(args.verbose, args.jobs, args.prefix) as header_check:
+    with PublicHeaderChecker(args.libc_type, args.verbose, args.jobs, args.prefix) as header_check:
         header_check.list_public_headers(ignore_dirs, ignore_files, only_dir=args.only_dir)
         try:
             header_check.join()
