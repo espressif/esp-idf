@@ -167,7 +167,7 @@ list(APPEND mbedtls_targets everest p256m)
 set(mbedtls_target_sources "${COMPONENT_DIR}/port/mbedtls_debug.c"
                            "${COMPONENT_DIR}/port/esp_platform_time.c")
 
-if(CONFIG_MBEDTLS_ESP_IDF_USE_PSA_CRYPTO)
+if(CONFIG_MBEDTLS_VER_4_X_SUPPORT)
     list(APPEND mbedtls_target_sources "${COMPONENT_DIR}/port/esp_psa_crypto_init.c")
 endif()
 

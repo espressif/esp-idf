@@ -74,7 +74,7 @@ menu "HTTP Server"
             to the WebSocket protocol.
 
     config HTTPD_SERVER_PSA_CRYPTO_MIGRATE
-        depends on MBEDTLS_ESP_IDF_USE_PSA_CRYPTO
+        depends on MBEDTLS_VER_4_X_SUPPORT
         bool "Migrate ESP HTTP Server to use PSA Crypto"
         default y
         help

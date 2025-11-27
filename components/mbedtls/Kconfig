@@ -2,10 +2,9 @@ menu "mbedTLS"
 
     menu "Core Configuration"
 
-        config MBEDTLS_ESP_IDF_USE_PSA_CRYPTO
-            depends on IDF_EXPERIMENTAL_FEATURES
+        config MBEDTLS_VER_4_X_SUPPORT
             bool "Enable the Platform Security Architecture (PSA) cryptography API for ESP-IDF"
-            default y
+            default n
             help
                 Enable the Platform Security Architecture (PSA) cryptography API for ESP-IDF.
                 This option migrates from mbedtls API to PSA Crypto API. This increases code size.
@@ -1785,7 +1784,7 @@ menu "mbedTLS"
 
     config MBEDTLS_USE_CRYPTO_ROM_IMPL_BOOTLOADER
         bool "Use ROM implementation of the crypto algorithm in the bootloader"
-        depends on ESP_ROM_HAS_MBEDTLS_CRYPTO_LIB
+        depends on ESP_ROM_HAS_MBEDTLS_CRYPTO_LIB && !MBEDTLS_VER_4_X_SUPPORT
         default "n"
         select MBEDTLS_AES_C
         help
@@ -1796,7 +1795,7 @@ menu "mbedTLS"
 
     config MBEDTLS_USE_CRYPTO_ROM_IMPL
         bool "Use ROM implementation of the crypto algorithm"
-        depends on ESP_ROM_HAS_MBEDTLS_CRYPTO_LIB
+        depends on ESP_ROM_HAS_MBEDTLS_CRYPTO_LIB && !MBEDTLS_VER_4_X_SUPPORT
         default "n"
         select MBEDTLS_SHA512_C
         select MBEDTLS_AES_C
