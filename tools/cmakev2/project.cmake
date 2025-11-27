@@ -770,6 +770,8 @@ function(__project_default)
         idf_create_size_report("${executable}_mapfile"
                                TARGET size)
     endif()
+
+    idf_build_generate_depgraph("${executable}")
 endfunction()
 
 #[[api

@@ -15,6 +15,8 @@ add_custom_target(flash)
 
 idf_project_init()
 
+idf_build_set_property(__BUILD_COMPONENT_DEPGRAPH_ENABLED 1)
+
 # Test component priority
 function(test_component_priority)
     # Set the idf component to be replaced with a testing component of higher
@@ -232,6 +234,8 @@ function(test_executable)
                           TARGET menuconfig-fatfs)
     idf_build_generate_metadata(fatfs_example_bin
                                 OUTPUT_FILE project_description_fatfs.json)
+    idf_build_generate_depgraph(fatfs_example
+                                OUTPUT_FILE component_deps_fatfs.dot)
     idf_create_confserver(fatfs_example
                           TARGET confserver-fatfs)
 
@@ -255,6 +259,8 @@ function(test_executable)
                           TARGET menuconfig-hello_world)
     idf_build_generate_metadata(hello_world_example_bin
                                 OUTPUT_FILE project_description_hello_world.json)
+    idf_build_generate_depgraph(hello_world_example
+                                OUTPUT_FILE component_deps_hello_world.dot)
     idf_create_confserver(hello_world_example
                           TARGET confserver-hello_world)
 
