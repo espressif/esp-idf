@@ -6,6 +6,7 @@
 #include <string.h>
 
 #include "esp_err.h"
+#include "soc/soc_caps.h"
 
 #include "mbedtls/aes.h"
 #include "esp_crypto_dma.h"
@@ -49,6 +50,10 @@
 #define dma_ll_rx_stop                      DMA_LL_FUNC(rx_stop)
 #define dma_ll_tx_set_priority              DMA_LL_FUNC(tx_set_priority)
 #define dma_ll_rx_set_priority              DMA_LL_FUNC(rx_set_priority)
+#if SOC_AHB_GDMA_VERSION == 2
+#define dma_ll_tx_set_burst_size            DMA_LL_FUNC(tx_set_burst_size)
+#define dma_ll_rx_set_burst_size            DMA_LL_FUNC(rx_set_burst_size)
+#endif
 
 /*
  * NOTE: [ESP-TEE] This is a low-level (LL), non-OS version of
@@ -66,10 +71,16 @@ static void crypto_shared_gdma_init(void)
     dma_ll_force_enable_reg_clock(&DMA_DEV, true);
 
     // setting the transfer ability
+#if SOC_AHB_GDMA_VERSION == 2
+    dma_ll_rx_enable_data_burst(&DMA_DEV, TEE_CRYPTO_GDMA_CH, true);
+    dma_ll_tx_set_burst_size(&DMA_DEV, TEE_CRYPTO_GDMA_CH, 16);
+    dma_ll_tx_set_burst_size(&DMA_DEV, TEE_CRYPTO_GDMA_CH, 16);
+#else
+    dma_ll_rx_enable_data_burst(&DMA_DEV, TEE_CRYPTO_GDMA_CH, false);
+#endif
+
     dma_ll_tx_enable_data_burst(&DMA_DEV, TEE_CRYPTO_GDMA_CH, true);
     dma_ll_tx_enable_descriptor_burst(&DMA_DEV, TEE_CRYPTO_GDMA_CH, true);
-
-    dma_ll_rx_enable_data_burst(&DMA_DEV, TEE_CRYPTO_GDMA_CH, false);
     dma_ll_rx_enable_descriptor_burst(&DMA_DEV, TEE_CRYPTO_GDMA_CH, true);
 
     dma_ll_tx_reset_channel(&DMA_DEV, TEE_CRYPTO_GDMA_CH);
