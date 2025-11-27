@@ -689,7 +689,7 @@ The details about NVS encryption and related schemes can be found at :doc:`NVS E
 
         * CSV file name - In this case, ``sample_singlepage_blob.csv`` is the CSV file which contains the NVS data. Please replace this with the file you wish to choose.
 
-        * NVS partition size - This is the size at which that NVS partition shall be stored in the flash of {IDF_TARGET_NAME}. The size of your NVS partition can be found by executing ``idf.py partition-table`` in the projtect directory. Please update the sample value of ``0x3000`` in the above-provided command to the correct size.
+        * NVS partition size - This is the size of the NVS partition in bytes. Please update the sample value of ``0x3000`` in the above-provided command to the correct size of your NVS partition.
 
     4. Configure the project
 
@@ -738,7 +738,7 @@ In this case we generate NVS Encryption keys on a host. This key is then flashed
 
     * CSV file name - In this case `sample_singlepage_blob.csv` is the CSV file which contains the NVS data. Please replace it with the file you wish to choose.
 
-    * NVS partition size - This is the size at which the NVS partition shall be stored in the flash of {IDF_TARGET_NAME}. The size of your NVS partition can be found by executing ``idf.py partition-table`` in the projtect directory. Please update the sample value of ``0x3000`` in the above-provided command to the correct size.
+    * NVS partition size - This is the size of the NVS partition in bytes. Please update the sample value of ``0x3000`` in the above-provided command to the correct size of your NVS partition.
 
 3. Configure the project
 
