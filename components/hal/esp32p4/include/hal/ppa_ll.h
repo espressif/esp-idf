@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -200,6 +200,38 @@ static inline void ppa_ll_srm_start(ppa_dev_t *dev)
 }
 
 /**
+ * @brief Set PPA SRM input side YUV422 data format packing order
+ *
+ * @param dev Peripheral instance address
+ * @param color_mode One of the values in ppa_srm_color_mode_t
+ */
+static inline void ppa_ll_srm_set_rx_yuv422_pack_order(ppa_dev_t *dev, ppa_srm_color_mode_t color_mode)
+{
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+    switch (color_mode) {
+    case PPA_SRM_COLOR_MODE_YUV422_YVYU:
+        dev->sr_color_mode.yuv422_rx_byte_order = 3;
+        break;
+    case PPA_SRM_COLOR_MODE_YUV422_YUYV:
+        dev->sr_color_mode.yuv422_rx_byte_order = 2;
+        break;
+    case PPA_SRM_COLOR_MODE_YUV422_VYUY:
+        dev->sr_color_mode.yuv422_rx_byte_order = 1;
+        break;
+    case PPA_SRM_COLOR_MODE_YUV422_UYVY:
+        dev->sr_color_mode.yuv422_rx_byte_order = 0;
+        break;
+    default:
+        // Unsupported YUV422 pack order
+        abort();
+    }
+#else
+    // YUV422 not supported by PPA SRM hardware before P4 ECO5
+    abort();
+#endif
+}
+
+/**
  * @brief Check if the given color mode is supported by PPA SRM engine
  *
  * @param color_mode One of the values in ppa_srm_color_mode_t
@@ -214,7 +246,10 @@ static inline bool ppa_ll_srm_is_color_mode_supported(ppa_srm_color_mode_t color
     case PPA_SRM_COLOR_MODE_YUV420:
     case PPA_SRM_COLOR_MODE_YUV444: // YUV444 not supported by PPA hardware, but can be converted by 2D-DMA before/after PPA
 #if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
-    case PPA_SRM_COLOR_MODE_YUV422:
+    case PPA_SRM_COLOR_MODE_YUV422_UYVY:
+    case PPA_SRM_COLOR_MODE_YUV422_VYUY:
+    case PPA_SRM_COLOR_MODE_YUV422_YUYV:
+    case PPA_SRM_COLOR_MODE_YUV422_YVYU:
     case PPA_SRM_COLOR_MODE_GRAY8:
 #endif
         return true;
@@ -232,6 +267,7 @@ static inline bool ppa_ll_srm_is_color_mode_supported(ppa_srm_color_mode_t color
 static inline void ppa_ll_srm_set_rx_color_mode(ppa_dev_t *dev, ppa_srm_color_mode_t color_mode)
 {
     uint32_t val = 0;
+    bool is_yuv422 __attribute__ ((unused)) = false;
     switch (color_mode) {
     case PPA_SRM_COLOR_MODE_ARGB8888:
         val = 0;
@@ -246,8 +282,12 @@ static inline void ppa_ll_srm_set_rx_color_mode(ppa_dev_t *dev, ppa_srm_color_mo
         val = 8;
         break;
 #if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
-    case PPA_SRM_COLOR_MODE_YUV422:
+    case PPA_SRM_COLOR_MODE_YUV422_UYVY:
+    case PPA_SRM_COLOR_MODE_YUV422_VYUY:
+    case PPA_SRM_COLOR_MODE_YUV422_YUYV:
+    case PPA_SRM_COLOR_MODE_YUV422_YVYU:
         val = 9;
+        is_yuv422 = true;
         break;
     case PPA_SRM_COLOR_MODE_GRAY8:
         val = 12;
@@ -258,6 +298,13 @@ static inline void ppa_ll_srm_set_rx_color_mode(ppa_dev_t *dev, ppa_srm_color_mo
         abort();
     }
     dev->sr_color_mode.sr_rx_cm = val;
+
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+    // set YUV422 packing order
+    if (is_yuv422) {
+        ppa_ll_srm_set_rx_yuv422_pack_order(dev, color_mode);
+    }
+#endif
 }
 
 /**
@@ -283,7 +330,7 @@ static inline void ppa_ll_srm_set_tx_color_mode(ppa_dev_t *dev, ppa_srm_color_mo
         val = 8;
         break;
 #if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
-    case PPA_SRM_COLOR_MODE_YUV422:
+    case PPA_SRM_COLOR_MODE_YUV422_UYVY:
         val = 9;
         break;
     case PPA_SRM_COLOR_MODE_GRAY8:
@@ -379,38 +426,6 @@ static inline void ppa_ll_srm_set_tx_yuv_range(ppa_dev_t *dev, ppa_color_range_t
         // Unsupported color range
         abort();
     }
-}
-
-/**
- * @brief Set PPA SRM input side YUV422 data format packing order
- *
- * @param dev Peripheral instance address
- * @param pack_order One of the pack order options in color_yuv422_pack_order_t
- */
-static inline void ppa_ll_srm_set_rx_yuv422_pack_order(ppa_dev_t *dev, color_yuv422_pack_order_t pack_order)
-{
-#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
-    switch (pack_order) {
-    case COLOR_YUV422_PACK_ORDER_YVYU:
-        dev->sr_color_mode.yuv422_rx_byte_order = 0;
-        break;
-    case COLOR_YUV422_PACK_ORDER_YUYV:
-        dev->sr_color_mode.yuv422_rx_byte_order = 1;
-        break;
-    case COLOR_YUV422_PACK_ORDER_VYUY:
-        dev->sr_color_mode.yuv422_rx_byte_order = 2;
-        break;
-    case COLOR_YUV422_PACK_ORDER_UYVY:
-        dev->sr_color_mode.yuv422_rx_byte_order = 3;
-        break;
-    default:
-        // Unsupported YUV422 pack order
-        abort();
-    }
-#else
-    // YUV422 not supported by PPA SRM hardware before P4 ECO5
-    abort();
-#endif
 }
 
 /**
@@ -537,7 +552,10 @@ static inline void ppa_ll_srm_get_dma_dscr_port_mode_block_size(ppa_dev_t *dev, 
             *block_h = 20;
             *block_v = 18;
             break;
-        case PPA_SRM_COLOR_MODE_YUV422:
+        case PPA_SRM_COLOR_MODE_YUV422_UYVY:
+        case PPA_SRM_COLOR_MODE_YUV422_VYUY:
+        case PPA_SRM_COLOR_MODE_YUV422_YUYV:
+        case PPA_SRM_COLOR_MODE_YUV422_YVYU:
             *block_h = 20;
             *block_v = 20;
             break;
@@ -561,7 +579,10 @@ static inline void ppa_ll_srm_get_dma_dscr_port_mode_block_size(ppa_dev_t *dev, 
             *block_h = 36;
             *block_v = 34;
             break;
-        case PPA_SRM_COLOR_MODE_YUV422:
+        case PPA_SRM_COLOR_MODE_YUV422_UYVY:
+        case PPA_SRM_COLOR_MODE_YUV422_VYUY:
+        case PPA_SRM_COLOR_MODE_YUV422_YUYV:
+        case PPA_SRM_COLOR_MODE_YUV422_YVYU:
             *block_h = 36;
             *block_v = 36;
             break;
@@ -629,6 +650,38 @@ static inline void ppa_ll_blend_start(ppa_dev_t *dev, ppa_ll_blend_trans_mode_t 
 }
 
 /**
+ * @brief Set PPA blending source image background YUV422 data format packing order
+ *
+ * @param dev Peripheral instance address
+ * @param color_mode One of the values in ppa_blend_color_mode_t
+ */
+static inline void ppa_ll_blend_set_rx_bg_yuv422_pack_order(ppa_dev_t *dev, ppa_blend_color_mode_t color_mode)
+{
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+    switch (color_mode) {
+    case PPA_BLEND_COLOR_MODE_YUV422_YVYU:
+        dev->blend_color_mode.blend0_rx_yuv422_byte_order = 3;
+        break;
+    case PPA_BLEND_COLOR_MODE_YUV422_YUYV:
+        dev->blend_color_mode.blend0_rx_yuv422_byte_order = 2;
+        break;
+    case PPA_BLEND_COLOR_MODE_YUV422_VYUY:
+        dev->blend_color_mode.blend0_rx_yuv422_byte_order = 1;
+        break;
+    case PPA_BLEND_COLOR_MODE_YUV422_UYVY:
+        dev->blend_color_mode.blend0_rx_yuv422_byte_order = 0;
+        break;
+    default:
+        // Unsupported YUV422 pack order
+        abort();
+    }
+#else
+    // YUV422 not supported by PPA blending hardware before P4 ECO5
+    abort();
+#endif
+}
+
+/**
  * @brief Check if the given color mode is supported by PPA blending engine
  *
  * @param color_mode One of the values in ppa_blend_color_mode_t
@@ -646,7 +699,10 @@ static inline bool ppa_ll_blend_is_color_mode_supported(ppa_blend_color_mode_t c
     // case PPA_BLEND_COLOR_MODE_L4:
 #if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
     case PPA_BLEND_COLOR_MODE_YUV420:
-    case PPA_BLEND_COLOR_MODE_YUV422:
+    case PPA_BLEND_COLOR_MODE_YUV422_UYVY:
+    case PPA_BLEND_COLOR_MODE_YUV422_VYUY:
+    case PPA_BLEND_COLOR_MODE_YUV422_YUYV:
+    case PPA_BLEND_COLOR_MODE_YUV422_YVYU:
     case PPA_BLEND_COLOR_MODE_GRAY8:
 #endif
         return true;
@@ -664,6 +720,7 @@ static inline bool ppa_ll_blend_is_color_mode_supported(ppa_blend_color_mode_t c
 static inline void ppa_ll_blend_set_rx_bg_color_mode(ppa_dev_t *dev, ppa_blend_color_mode_t color_mode)
 {
     uint32_t val = 0;
+    bool is_yuv422 __attribute__ ((unused)) = false;
     switch (color_mode) {
     case PPA_BLEND_COLOR_MODE_ARGB8888:
         val = 0;
@@ -684,8 +741,12 @@ static inline void ppa_ll_blend_set_rx_bg_color_mode(ppa_dev_t *dev, ppa_blend_c
     case PPA_BLEND_COLOR_MODE_YUV420:
         val = 8;
         break;
-    case PPA_BLEND_COLOR_MODE_YUV422:
+    case PPA_BLEND_COLOR_MODE_YUV422_UYVY:
+    case PPA_BLEND_COLOR_MODE_YUV422_VYUY:
+    case PPA_BLEND_COLOR_MODE_YUV422_YUYV:
+    case PPA_BLEND_COLOR_MODE_YUV422_YVYU:
         val = 9;
+        is_yuv422 = true;
         break;
     case PPA_BLEND_COLOR_MODE_GRAY8:
         val = 12;
@@ -696,6 +757,13 @@ static inline void ppa_ll_blend_set_rx_bg_color_mode(ppa_dev_t *dev, ppa_blend_c
         abort();
     }
     dev->blend_color_mode.blend0_rx_cm = val;
+
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+    // set YUV422 packing order
+    if (is_yuv422) {
+        ppa_ll_blend_set_rx_bg_yuv422_pack_order(dev, color_mode);
+    }
+#endif
 }
 
 /**
@@ -759,7 +827,7 @@ static inline void ppa_ll_blend_set_tx_color_mode(ppa_dev_t *dev, ppa_blend_colo
     case PPA_BLEND_COLOR_MODE_YUV420:
         val = 8;
         break;
-    case PPA_BLEND_COLOR_MODE_YUV422:
+    case PPA_BLEND_COLOR_MODE_YUV422_UYVY:
         val = 9;
         break;
     case PPA_BLEND_COLOR_MODE_GRAY8:
@@ -873,38 +941,6 @@ static inline void ppa_ll_blend_set_tx_yuv_range(ppa_dev_t *dev, ppa_color_range
     }
 #else
     // YUV not supported by PPA blending hardware before P4 ECO5
-    abort();
-#endif
-}
-
-/**
- * @brief Set PPA blending source image background YUV422 data format packing order
- *
- * @param dev Peripheral instance address
- * @param pack_order One of the pack order options in color_yuv422_pack_order_t
- */
-static inline void ppa_ll_blend_set_rx_bg_yuv422_pack_order(ppa_dev_t *dev, color_yuv422_pack_order_t pack_order)
-{
-#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
-    switch (pack_order) {
-    case COLOR_YUV422_PACK_ORDER_YVYU:
-        dev->blend_color_mode.blend0_rx_yuv422_byte_order = 0;
-        break;
-    case COLOR_YUV422_PACK_ORDER_YUYV:
-        dev->blend_color_mode.blend0_rx_yuv422_byte_order = 1;
-        break;
-    case COLOR_YUV422_PACK_ORDER_VYUY:
-        dev->blend_color_mode.blend0_rx_yuv422_byte_order = 2;
-        break;
-    case COLOR_YUV422_PACK_ORDER_UYVY:
-        dev->blend_color_mode.blend0_rx_yuv422_byte_order = 3;
-        break;
-    default:
-        // Unsupported YUV422 pack order
-        abort();
-    }
-#else
-    // YUV422 not supported by PPA blending hardware before P4 ECO5
     abort();
 #endif
 }
@@ -1052,7 +1088,7 @@ static inline void ppa_ll_blend_configure_filling_block(ppa_dev_t *dev, ppa_fill
     case PPA_FILL_COLOR_MODE_GRAY8:
         fill_color_data = *(uint32_t *)data;
         break;
-    case PPA_FILL_COLOR_MODE_YUV422: {
+    case PPA_FILL_COLOR_MODE_YUV422_UYVY: {
         color_macroblock_yuv_data_t *yuv_data = (color_macroblock_yuv_data_t *)data;
         fill_color_data = ((yuv_data->y) << 24) | ((yuv_data->v) << 16) | ((yuv_data->y) << 8) | (yuv_data->u);
         break;
