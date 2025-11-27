@@ -307,10 +307,6 @@ examples/system/task_watchdog:
 examples/system/ulp/lp_core/build_system:
   enable:
     - if: SOC_LP_CORE_SUPPORTED == 1
-  disable_test:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: p4 rev3 migration # TODO: IDF-14422
   depends_components:
     - ulp
 
@@ -331,10 +327,6 @@ examples/system/ulp/lp_core/gpio:
 examples/system/ulp/lp_core/gpio_intr_pulse_counter:
   enable:
     - if: (SOC_LP_CORE_SUPPORTED == 1) and (SOC_ULP_LP_UART_SUPPORTED == 1 and SOC_DEEP_SLEEP_SUPPORTED == 1)
-  disable_test:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: p4 rev3 migration # TODO: IDF-14422
   depends_components:
     - ulp
 
@@ -347,20 +339,12 @@ examples/system/ulp/lp_core/gpio_wakeup:
 examples/system/ulp/lp_core/inter_cpu_critical_section/:
   enable:
     - if: SOC_LP_CORE_SUPPORTED == 1
-  disable_test:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: p4 rev3 migration # TODO: IDF-14422
   depends_components:
     - ulp
 
 examples/system/ulp/lp_core/interrupt:
   enable:
     - if: SOC_LP_CORE_SUPPORTED == 1
-  disable_test:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: p4 rev3 migration # TODO: IDF-14422
   depends_components:
     - ulp
 
@@ -379,10 +363,6 @@ examples/system/ulp/lp_core/lp_i2c:
 examples/system/ulp/lp_core/lp_mailbox:
   enable:
     - if: SOC_LP_CORE_SUPPORTED == 1
-  disable_test:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: p4 rev3 migration # TODO: IDF-14422
   depends_components:
     - ulp
 

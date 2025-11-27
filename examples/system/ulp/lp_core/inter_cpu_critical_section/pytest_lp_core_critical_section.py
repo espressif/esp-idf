@@ -16,7 +16,6 @@ def test_lp_core_critical_section_main_1_task(dut: Dut) -> None:
 
 @pytest.mark.generic
 @idf_parametrize('target', ['esp32p4'], indirect=['target'])
-@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration # TODO: IDF-14422')
 def test_lp_core_critical_section_main_2_tasks(dut: Dut) -> None:
     dut.expect("LP CPU's increment starts, shared counter = 0")
     dut.expect(r'core 0 started, cnt = \d+')

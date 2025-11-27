@@ -11,6 +11,7 @@
 #include "soc/efuse_periph.h"
 #include "hal/assert.h"
 #include "rom/efuse.h"
+#include "hal/config.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -24,6 +25,25 @@ typedef enum {
     EFUSE_CONTROLLER_STATE_BLK0_CRC_CHECK   = 4,    ///< efuse_controllerid is on checking block0 crc state.
     EFUSE_CONTROLLER_STATE_READ_RS_BLK      = 5,    ///< efuse_controllerid is on reading RS block state.
 } efuse_controller_state_t;
+
+/* Revision-aware eFuse feature macros
+ *
+ * These macros indicate whether an eFuse feature is available given the
+ * configured minimum supported chip revision (HAL_CONFIG(CHIP_SUPPORT_MIN_REV)).
+ * Use them when a feature's presence depends on the chosen minimum revision.
+ *
+ * Note: SOC_* capability macros describe silicon capabilities; these
+ * EFUSE_LL_HAS_* macros reflect availability relative to the configured min revision.
+ * If a feature is present in silicon and does not depend on the chip revision,
+ * then add SOC_* macro in soc_caps.h instead.
+ */
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+// Rev 3.00+: key_purpose fields expanded from 4 to 5 bits, enabling additional key types.
+#define EFUSE_LL_HAS_ECDSA_KEY_P192    (1)
+#define EFUSE_LL_HAS_ECDSA_KEY_P384    (1)
+#define EFUSE_LL_HAS_PSRAM_ENCRYPTION_XTS_AES_128  (1)
+#define EFUSE_LL_HAS_PSRAM_ENCRYPTION_XTS_AES_256  (1)
+#endif
 
 // Always inline these functions even no gcc optimization is applied.
 
@@ -90,7 +110,6 @@ __attribute__((always_inline)) static inline uint32_t efuse_ll_get_chip_ver_pkg(
 {
     return EFUSE.rd_mac_sys_2.pkg_version;
 }
-
 
 /******************* eFuse control functions *************************/
 
