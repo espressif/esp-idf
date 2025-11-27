@@ -21,8 +21,21 @@
 #include "esp_private/partition_linux.h"
 #include "esp_log.h"
 #include "spi_flash_mmap.h"
+#include <dlfcn.h>
 
 ESP_LOG_ATTR_TAG(TAG, "linux_spiflash");
+
+typedef int (*ftruncate_func_t)(int fd, off_t length);
+static ftruncate_func_t __orig_ftruncate = NULL;
+
+void __attribute__((constructor)) init_orig_funcs(void)
+{
+    __orig_ftruncate = (ftruncate_func_t) dlsym(RTLD_NEXT, "ftruncate");
+    if (__orig_ftruncate == NULL) {
+        ESP_LOGE(TAG, "Failed to load original ftruncate function: %s", dlerror());
+        abort();
+    }
+}
 
 static void *s_spiflash_mem_file_buf = NULL;
 static int s_spiflash_mem_file_fd = -1;
@@ -268,7 +281,7 @@ esp_err_t esp_partition_file_mmap(const uint8_t **part_desc_addr_start)
 
         do {
             // resize file
-            if (ftruncate(s_spiflash_mem_file_fd, s_esp_partition_file_mmap_ctrl_act.flash_file_size) != 0) {
+            if (__orig_ftruncate && __orig_ftruncate(s_spiflash_mem_file_fd, s_esp_partition_file_mmap_ctrl_act.flash_file_size) != 0) {
                 ESP_LOGE(TAG, "Failed to set size of SPI FLASH memory emulation file %s: %s", s_esp_partition_file_mmap_ctrl_act.flash_file_name, strerror(errno));
                 ret = ESP_ERR_INVALID_SIZE;
                 break;

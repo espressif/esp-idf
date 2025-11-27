@@ -375,7 +375,7 @@
 /* Some memory allocation functions are declared here in addition to ff.h, so that
    they can be used also by external code when LFN feature is disabled.
  */
-void* ff_memalloc (unsigned msize);
+void* ff_memalloc (size_t msize);
 void ff_memfree(void*);
 
 /* Redefine names of disk IO functions to prevent name collisions */

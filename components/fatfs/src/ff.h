@@ -47,7 +47,7 @@ typedef unsigned __int64 QWORD;
 #elif (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L) || defined(__cplusplus)	/* C99 or later */
 #define FF_INTDEF 2
 #include <stdint.h>
-typedef unsigned int	UINT;	/* int must be 16-bit or 32-bit */
+typedef size_t	UINT;	/* int must be 16-bit or 32-bit or 64 bit (Linux)  */
 typedef unsigned char	BYTE;	/* char must be 8-bit */
 typedef uint16_t		WORD;	/* 16-bit unsigned */
 typedef uint32_t		DWORD;	/* 32-bit unsigned */

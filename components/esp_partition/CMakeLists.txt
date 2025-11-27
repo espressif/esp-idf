@@ -56,6 +56,7 @@ else()
     if(${target} STREQUAL "linux")
         # set BUILD_DIR because partition_linux.c uses a file created in the build directory
         target_compile_definitions(${COMPONENT_LIB} PRIVATE "BUILD_DIR=\"${build_dir}\"")
+        target_link_libraries(${COMPONENT_LIB} PRIVATE dl)
     endif()
 
     if(CMAKE_C_COMPILER_ID MATCHES "GNU")

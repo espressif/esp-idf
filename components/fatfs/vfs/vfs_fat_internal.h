@@ -9,7 +9,9 @@
 #include "esp_vfs_fat.h"
 #include "diskio_impl.h"
 #include "esp_partition.h"
+#ifndef CONFIG_IDF_TARGET_LINUX
 #include "sdmmc_cmd.h"
+#endif
 #include <sys/param.h>
 #include <stddef.h>
 
@@ -23,15 +25,6 @@ typedef struct vfs_fat_spiflash_ctx_t {
     vfs_fat_x_ctx_flags_t flags;                //Flags
 } vfs_fat_spiflash_ctx_t;
 
-typedef struct vfs_fat_sd_ctx_t {
-    BYTE pdrv;                                  //Drive number that is mounted
-    esp_vfs_fat_mount_config_t mount_config;    //Mount configuration
-    FATFS *fs;                                  //FAT structure pointer that is registered
-    sdmmc_card_t *card;                         //Card info
-    char *base_path;                            //Path where partition is registered
-    vfs_fat_x_ctx_flags_t flags;                //Flags
-} vfs_fat_sd_ctx_t;
-
 static inline size_t esp_vfs_fat_get_allocation_unit_size(
         size_t sector_size, size_t requested_size)
 {
@@ -42,6 +35,16 @@ static inline size_t esp_vfs_fat_get_allocation_unit_size(
     alloc_unit_size = MIN(alloc_unit_size, max_size);
     return alloc_unit_size;
 }
+
+#ifndef CONFIG_IDF_TARGET_LINUX
+typedef struct vfs_fat_sd_ctx_t {
+    BYTE pdrv;                                  //Drive number that is mounted
+    esp_vfs_fat_mount_config_t mount_config;    //Mount configuration
+    FATFS *fs;                                  //FAT structure pointer that is registered
+    sdmmc_card_t *card;                         //Card info
+    char *base_path;                            //Path where partition is registered
+    vfs_fat_x_ctx_flags_t flags;                //Flags
+} vfs_fat_sd_ctx_t;
 
 vfs_fat_spiflash_ctx_t* get_vfs_fat_spiflash_ctx(wl_handle_t wlhandle);
 vfs_fat_sd_ctx_t* get_vfs_fat_get_sd_ctx(const sdmmc_card_t *card);
@@ -130,3 +133,4 @@ esp_err_t esp_vfs_fat_format_drive(uint8_t ldrv, const esp_vfs_fat_mount_config_
  *      - ESP_FAIL if f_fdisk failed
  */
 esp_err_t esp_vfs_fat_partition_drive(uint8_t pdrv, const esp_vfs_fat_drive_divide_arr_t drive_divide);
+#endif

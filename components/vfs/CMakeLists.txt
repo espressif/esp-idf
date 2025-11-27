@@ -2,8 +2,22 @@ idf_build_get_property(target IDF_TARGET)
 
 # On Linux, we only support a few features, hence this simple component registration
 if(${target} STREQUAL "linux")
-    idf_component_register(SRCS "vfs_eventfd_linux.c"
-                           INCLUDE_DIRS "include")
+
+    list(APPEND inc include)
+    if(CONFIG_VFS_SUPPORT_IO)
+        list(APPEND inc linux_include)
+        list(APPEND priv_inc private_include)
+        list(APPEND srcs "vfs_linux.c" "vfs.c")
+    endif()
+
+    if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Linux")
+        list(APPEND srcs "vfs_eventfd_linux.c")
+    endif()
+
+    idf_component_register(SRCS ${srcs}
+                           LDFRAGMENTS "linker.lf"
+                           INCLUDE_DIRS ${inc}
+                           PRIV_INCLUDE_DIRS ${priv_inc})
     return()
 endif()
 

@@ -7,8 +7,10 @@
 #pragma once
 #include <stddef.h>
 #include "esp_err.h"
+#ifndef CONFIG_IDF_TARGET_LINUX
 #include "sd_protocol_types.h"
 #include "driver/sdspi_host.h"
+#endif
 #include "ff.h"
 #include "wear_levelling.h"
 
@@ -145,6 +147,7 @@ typedef struct {
 // Compatibility definition
 typedef esp_vfs_fat_mount_config_t esp_vfs_fat_sdmmc_mount_config_t;
 
+#ifndef CONFIG_IDF_TARGET_LINUX
 /**
  * @brief Convenience function to get FAT filesystem on SD card registered in VFS
  *
@@ -277,6 +280,7 @@ esp_err_t esp_vfs_fat_sdcard_format_cfg(const char *base_path, sdmmc_card_t *car
  *        - ESP_FAIL: fail to format it, or fail to mount back
  */
 esp_err_t esp_vfs_fat_sdcard_format(const char *base_path, sdmmc_card_t *card);
+#endif
 
 /**
  * @brief Convenience function to initialize FAT filesystem in SPI flash and register it in VFS
@@ -410,6 +414,7 @@ esp_err_t esp_vfs_fat_spiflash_unmount_ro(const char* base_path, const char* par
  *      - ESP_ERR_INVALID_STATE if partition not found
  *      - ESP_FAIL if another FRESULT error (saved in errno)
  */
+
 esp_err_t esp_vfs_fat_info(const char* base_path, uint64_t* out_total_bytes, uint64_t* out_free_bytes);
 
 /**
@@ -444,6 +449,7 @@ esp_err_t esp_vfs_fat_create_contiguous_file(const char* base_path, const char* 
  */
 esp_err_t esp_vfs_fat_test_contiguous_file(const char* base_path, const char* full_path, bool* is_contiguous);
 
+#ifndef CONFIG_IDF_TARGET_LINUX
 /** @cond */
 /**
  * @deprecated Please use `esp_vfs_fat_register_cfg` instead
@@ -481,6 +487,7 @@ esp_err_t esp_vfs_fat_rawflash_unmount(const char* base_path, const char* partit
     __attribute__((deprecated("esp_vfs_fat_rawflash_unmount is deprecated, please use esp_vfs_fat_spiflash_unmount_ro instead")));
 /** @endcond */
 
+#endif
 #ifdef __cplusplus
 }
 #endif
