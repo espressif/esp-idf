@@ -673,7 +673,7 @@ Secure Boot v2 指南
 
         * CSV 文件名 - 此命令中，``sample_singlepage_blob.csv`` 是指包含 NVS 数据的 CSV 文件，请将其替换为所选择的文件。
 
-        * NVS 分区大小 - 这是 {IDF_TARGET_NAME} flash 中存储 NVS 分区的大小。通过在项目目录下执行 ``idf.py partition-table`` 命令，可以找到 NVS 分区大小。请将上述命令中的示例值 ``0x3000`` 调整为正确的大小。
+        * NVS 分区大小 - 这是 NVS 分区的大小（以字节为单位）。请将上述命令中的示例值 ``0x3000`` 更新为你实际 NVS 分区的正确大小。
 
     4. 配置项目
 
@@ -722,7 +722,7 @@ Secure Boot v2 指南
 
     * CSV 文件名 - 上述命名中的 `sample_singlepage_blob.csv` 是指包含 NVS 数据的 CSV 文件，请将其替换为所选文件。
 
-    * NVS 分区大小 - 这是 NVS 分区在 {IDF_TARGET_NAME} 的 flash 中存储时的偏移大小。在项目目录中执行 ``idf.py partition-table`` 命令，可以找到 NVS 分区的大小。请将上述命令中的示例值 ``0x3000`` 替换为正确的大小。
+    * NVS 分区大小 - 这是 NVS 分区的大小（以字节为单位）。请将上述命令中的示例值 ``0x3000`` 更新为你实际 NVS 分区的正确大小。
 
 3. 配置项目
 
