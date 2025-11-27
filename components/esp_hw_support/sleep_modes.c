@@ -164,6 +164,10 @@
 #elif CONFIG_IDF_TARGET_ESP32S3
 #define DEFAULT_SLEEP_OUT_OVERHEAD_US       (382)
 #define DEFAULT_HARDWARE_OUT_OVERHEAD_US    (133)
+# if !CONFIG_PM_SLP_IRAM_OPT
+  #undef DEFAULT_SLEEP_OUT_OVERHEAD_US
+  #define DEFAULT_SLEEP_OUT_OVERHEAD_US     (8628)
+# endif
 #elif CONFIG_IDF_TARGET_ESP32C3
 #define DEFAULT_SLEEP_OUT_OVERHEAD_US       (105)
 #define DEFAULT_HARDWARE_OUT_OVERHEAD_US    (37)
@@ -1163,6 +1167,7 @@ static esp_err_t SLEEP_FN_ATTR esp_sleep_start(uint32_t sleep_flags, uint32_t cl
 
     if (!deep_sleep) {
         if (result == ESP_OK) {
+            s_config.ccount_ticks_record = esp_cpu_get_cycle_count();
 #if !CONFIG_PM_SLP_IRAM_OPT && !(CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32P4)
 #if CONFIG_SPIRAM
             // TODO: PM-651
@@ -1175,7 +1180,6 @@ static esp_err_t SLEEP_FN_ATTR esp_sleep_start(uint32_t sleep_flags, uint32_t cl
              * dynamically calculate the sleep adjustment time. */
             cache_ll_invalidate_all(CACHE_LL_LEVEL_ALL, CACHE_TYPE_ALL, CACHE_LL_ID_ALL);
 #endif
-            s_config.ccount_ticks_record = esp_cpu_get_cycle_count();
         }
         misc_modules_wake_prepare(sleep_flags);
     }
