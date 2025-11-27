@@ -637,7 +637,7 @@ TEST_CASE("heap utilization", "[ethernet_l2]")
 }
 
 #define FORMAT_MAC(mac_addr, a, b, c, d, e, f) do { mac_addr[0] = a; mac_addr[1] = b; mac_addr[2] = c; mac_addr[3] = d; mac_addr[4] = e; mac_addr[5] = f; } while(0)
-TEST_CASE("w5500_multicast_filter", "[ethernet_l2]")
+TEST_CASE("multicast_filter", "[ethernet_l2]")
 {
     esp_eth_mac_t *mac = mac_init(NULL, NULL);
     TEST_ASSERT_NOT_NULL(mac);
