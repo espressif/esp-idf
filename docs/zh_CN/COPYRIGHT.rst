@@ -158,7 +158,6 @@ TJpgDec - Tiny JPEG 解压器 R0.01 (C) 2011 ChaN，是一个用于小型嵌入�
 .. _CMock: https://github.com/ThrowTheSwitch/CMock
 .. _protobuf-c: https://github.com/protobuf-c/protobuf-c
 .. _Unity: https://github.com/ThrowTheSwitch/Unity
-.. _asio: https://github.com/chriskohlhoff/asio
 .. _zephyr: https://github.com/zephyrproject-rtos/zephyr
 .. _mynewt-nimble: https://github.com/apache/mynewt-nimble
 .. _ESP-IDF 编程指南: https://docs.espressif.com/projects/esp-idf/zh_CN/latest/
