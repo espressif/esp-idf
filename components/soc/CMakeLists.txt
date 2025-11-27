@@ -116,10 +116,6 @@ if(CONFIG_SOC_TEMP_SENSOR_SUPPORTED)
     list(APPEND srcs "${target_folder}/temperature_sensor_periph.c")
 endif()
 
-if(CONFIG_SOC_MIPI_CSI_SUPPORTED)
-    list(APPEND srcs "${target_folder}/mipi_csi_periph.c")
-endif()
-
 if(CONFIG_SOC_PARLIO_SUPPORTED)
     list(APPEND srcs "${target_folder}/parlio_periph.c")
 endif()
@@ -160,10 +156,6 @@ endif()
 
 if(CONFIG_SOC_PAU_SUPPORTED AND CONFIG_SOC_LIGHT_SLEEP_SUPPORTED AND CONFIG_SOC_PM_SUPPORT_TOP_PD)
     list(APPEND srcs "${target_folder}/system_retention_periph.c")
-endif()
-
-if(CONFIG_SOC_LCDCAM_CAM_SUPPORTED)
-    list(APPEND srcs "${target_folder}/cam_periph.c")
 endif()
 
 if(CONFIG_SOC_BOD_SUPPORTED)

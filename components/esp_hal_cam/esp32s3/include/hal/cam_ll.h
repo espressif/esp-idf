@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,7 +9,7 @@
 #include "hal/misc.h"
 #include "hal/assert.h"
 #include "soc/lcd_cam_struct.h"
-#include "soc/hp_sys_clkrst_struct.h"
+#include "soc/system_struct.h"
 #include "hal/cam_types.h"
 
 #ifdef __cplusplus
@@ -20,6 +20,8 @@ extern "C" {
 
 #define CAM_LL_CLK_FRAC_DIV_N_MAX  256 // CAM_CLK = CAM_CLK_S / (N + b/a), the N register is 8 bit-width
 #define CAM_LL_CLK_FRAC_DIV_AB_MAX 64  // CAM_CLK = CAM_CLK_S / (N + b/a), the a/b register is 6 bit-width
+#define CAM_LL_PERIPH_NUM          (1U)
+#define CAM_LL_DATA_WIDTH_MAX      (16U)
 
 /**
  * @brief Enable the bus clock for CAM module
@@ -30,9 +32,8 @@ extern "C" {
 static inline void cam_ll_enable_bus_clock(int group_id, bool en)
 {
     (void)group_id;
-    HP_SYS_CLKRST.soc_clk_ctrl3.reg_lcdcam_apb_clk_en = en;
+    SYSTEM.perip_clk_en1.lcd_cam_clk_en = en;
 }
-
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_RC_ATOMIC_ENV variable in advance
 #define cam_ll_enable_bus_clock(...) do { \
@@ -48,8 +49,8 @@ static inline void cam_ll_enable_bus_clock(int group_id, bool en)
 static inline void cam_ll_reset_register(int group_id)
 {
     (void)group_id;
-    HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_lcdcam = 1;
-    HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_lcdcam = 0;
+    SYSTEM.perip_rst_en1.lcd_cam_rst = 1;
+    SYSTEM.perip_rst_en1.lcd_cam_rst = 0;
 }
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
@@ -67,33 +68,10 @@ static inline void cam_ll_reset_register(int group_id)
  */
 static inline void cam_ll_enable_clk(int group_id, bool en)
 {
-    HP_SYS_CLKRST.peri_clk_ctrl119.reg_cam_clk_en = en;
-}
-
-/// use a macro to wrap the function, force the caller to use it in a critical section
-/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define cam_ll_enable_clk(...) do { \
-        (void)__DECLARE_RCC_ATOMIC_ENV; \
-        cam_ll_enable_clk(__VA_ARGS__); \
-    } while(0)
-
-/**
- * @brief Get the clock status for the CAM module
- *
- * @return True when enabled, false when disabled
- */
-static inline bool cam_ll_get_clk_status(int group_id)
-{
     (void)group_id;
-    return HP_SYS_CLKRST.peri_clk_ctrl119.reg_cam_clk_en;
+    (void)en;
+    //For compatibility
 }
-
-/// use a macro to wrap the function, force the caller to use it in a critical section
-/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define cam_ll_get_clk_status(...) do { \
-        (void)__DECLARE_RCC_ATOMIC_ENV; \
-        cam_ll_get_clk_status(__VA_ARGS__); \
-    } while(0)
 
 /**
  * @brief Select clock source for CAM peripheral
@@ -105,26 +83,21 @@ static inline void cam_ll_select_clk_src(int group_id, cam_clock_source_t src)
 {
     switch (src) {
     case CAM_CLK_SRC_XTAL:
-        HP_SYS_CLKRST.peri_clk_ctrl119.reg_cam_clk_src_sel = 0;
+        LCD_CAM.cam_ctrl.cam_clk_sel = 1;
+        break;
+    case CAM_CLK_SRC_PLL240M:
+        LCD_CAM.cam_ctrl.cam_clk_sel = 2;
         break;
     case CAM_CLK_SRC_PLL160M:
-        HP_SYS_CLKRST.peri_clk_ctrl119.reg_cam_clk_src_sel = 1;
-        break;
-    case CAM_CLK_SRC_APLL:
-        HP_SYS_CLKRST.peri_clk_ctrl119.reg_cam_clk_src_sel = 2;
+        LCD_CAM.cam_ctrl.cam_clk_sel = 3;
         break;
     default:
+        // disable LCD clock source
+        LCD_CAM.cam_ctrl.cam_clk_sel = 0;
         HAL_ASSERT(false);
         break;
     }
 }
-
-/// use a macro to wrap the function, force the caller to use it in a critical section
-/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define cam_ll_select_clk_src(...) do { \
-        (void)__DECLARE_RCC_ATOMIC_ENV; \
-        cam_ll_select_clk_src(__VA_ARGS__); \
-    } while(0)
 
 /**
  * @brief  Get the CAM source clock type
@@ -134,15 +107,15 @@ static inline void cam_ll_select_clk_src(int group_id, cam_clock_source_t src)
  */
 static inline void cam_ll_get_clk_src(lcd_cam_dev_t *dev, cam_clock_source_t *src)
 {
-    switch (HP_SYS_CLKRST.peri_clk_ctrl119.reg_cam_clk_src_sel) {
-    case 0:
+    switch (LCD_CAM.cam_ctrl.cam_clk_sel) {
+    case 1:
         *src = CAM_CLK_SRC_XTAL;
         break;
-    case 1:
-        *src = CAM_CLK_SRC_PLL160M;
-        break;
     case 2:
-        *src = CAM_CLK_SRC_APLL;
+        *src = CAM_CLK_SRC_PLL240M;
+        break;
+    case 3:
+        *src = CAM_CLK_SRC_PLL160M;
         break;
     default:
         HAL_ASSERT(false);
@@ -161,20 +134,12 @@ static inline void cam_ll_get_clk_src(lcd_cam_dev_t *dev, cam_clock_source_t *sr
 __attribute__((always_inline))
 static inline void cam_ll_set_group_clock_coeff(int group_id, int div_num, int div_a, int div_b)
 {
-    // cam_clk = module_clock_src / (div_num + div_b / div_a)
     HAL_ASSERT(div_num >= 2 && div_num < CAM_LL_CLK_FRAC_DIV_N_MAX);
 
-    HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl120, reg_cam_clk_div_num, div_num);
-    HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl120, reg_cam_clk_div_denominator, div_a);
-    HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl120, reg_cam_clk_div_numerator, div_b);
+    LCD_CAM.cam_ctrl.cam_clkm_div_num = div_num;
+    LCD_CAM.cam_ctrl.cam_clkm_div_a = div_a;
+    LCD_CAM.cam_ctrl.cam_clkm_div_b = div_b;
 }
-
-/// use a macro to wrap the function, force the caller to use it in a critical section
-/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define cam_ll_set_group_clock_coeff(...) do { \
-        (void)__DECLARE_RCC_ATOMIC_ENV; \
-        cam_ll_set_group_clock_coeff(__VA_ARGS__); \
-    } while(0)
 
 /**
  * @brief Enable stop signal for CAM peripheral
@@ -239,7 +204,7 @@ static inline void cam_ll_enable_8bits_data_invert(lcd_cam_dev_t *dev, bool en)
  */
 static inline void cam_ll_enable_rgb_yuv_convert(lcd_cam_dev_t *dev, bool en)
 {
-    dev->cam_rgb_yuv.cam_conv_enable = en;
+    dev->cam_rgb_yuv.cam_conv_bypass = en;
 }
 
 /**
@@ -529,7 +494,7 @@ static inline void cam_ll_set_data_wire_width(lcd_cam_dev_t *dev, uint32_t width
 __attribute__((always_inline))
 static inline void cam_ll_start(lcd_cam_dev_t *dev)
 {
-    dev->cam_ctrl.cam_update_reg = 1;
+    dev->cam_ctrl.cam_update = 1;
     dev->cam_ctrl1.cam_start = 1;
 }
 
@@ -542,7 +507,7 @@ __attribute__((always_inline))
 static inline void cam_ll_stop(lcd_cam_dev_t *dev)
 {
     dev->cam_ctrl1.cam_start = 0;
-    dev->cam_ctrl.cam_update_reg = 1; // self clear
+    dev->cam_ctrl.cam_update = 1; // self clear
 }
 
 /**

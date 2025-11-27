@@ -17,16 +17,18 @@
 extern "C" {
 #endif
 
+#define ESP_CAM_CTLR_DVP_DATA_SIG_NUM 16
+
 /**
  * @brief ESP CAM DVP pins configuration
  */
 typedef struct esp_cam_ctlr_dvp_pin_config {
-    cam_ctlr_data_width_t data_width;           /*!< Number of data lines */
-    gpio_num_t data_io[CAM_DVP_DATA_SIG_NUM];   /*!< DVP data pin number */
-    gpio_num_t vsync_io;                        /*!< DVP V-Sync pin number */
-    gpio_num_t de_io;                           /*!< DVP DE pin number */
-    gpio_num_t pclk_io;                         /*!< DVP PCLK input pin number, clock is from camera sensor */
-    gpio_num_t xclk_io;                         /*!< DVP output clock pin number, if using external XTAL, set xclk_io = GPIO_NUM_NC */
+    cam_ctlr_data_width_t data_width;                    /*!< Number of data lines */
+    gpio_num_t data_io[ESP_CAM_CTLR_DVP_DATA_SIG_NUM];   /*!< DVP data pin number */
+    gpio_num_t vsync_io;                                 /*!< DVP V-Sync pin number */
+    gpio_num_t de_io;                                    /*!< DVP DE pin number */
+    gpio_num_t pclk_io;                                  /*!< DVP PCLK input pin number, clock is from camera sensor */
+    gpio_num_t xclk_io;                                  /*!< DVP output clock pin number, if using external XTAL, set xclk_io = GPIO_NUM_NC */
 } esp_cam_ctlr_dvp_pin_config_t;
 
 /**

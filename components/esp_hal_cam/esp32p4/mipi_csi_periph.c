@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "soc/mipi_csi_periph.h"
+#include "hal/mipi_csi_periph.h"
 
 const soc_mipi_csi_phy_pll_freq_range_t soc_mipi_csi_phy_pll_ranges[] = {
     {90, 99, 0x00},     // [90,100) Mbps
