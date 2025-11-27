@@ -508,9 +508,10 @@ static void hci_hal_h4_hdl_rx_packet(BT_HDR *packet)
         STREAM_TO_UINT8(length, stream);
     }
 
-    if ((length + hdr_size) != packet->len) {
-        HCI_TRACE_ERROR("Wrong packet length type=%d hdr_len=%d pd_len=%d "
-                  "pkt_len=%d", type, hdr_size, length, packet->len);
+    // Prevents integer wrap-around when calculating (length + hdr_size).
+    if (length != (packet->len - hdr_size)) {
+        HCI_TRACE_ERROR("%s: SECURITY: parameter length (%d) exceeds packet bounds (%d)",
+                        __func__, length, packet->len - hdr_size);
         osi_free(packet);
         return;
     }
