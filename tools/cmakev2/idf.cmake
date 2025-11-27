@@ -27,6 +27,11 @@ include(${CMAKE_CURRENT_LIST_DIR}/../cmake/gdbinit.cmake)
 # project_description.json.
 include(${CMAKE_CURRENT_LIST_DIR}/../cmake/openocd.cmake)
 
+# The depgraph.cmake file from cmakev1 contains helper functions for generating
+# a component dependency graph. Let's reuse these functions in the
+# idf_build_generate_depgraph function.
+include(${CMAKE_CURRENT_LIST_DIR}/../cmake/depgraph.cmake)
+
 include(component)
 include(build)
 include(kconfig)
