@@ -15,11 +15,11 @@
 #define IDF_PERFORMANCE_MAX_TIME_SHA512_32KB                                    900
 
 #define IDF_PERFORMANCE_MAX_RSA_2048KEY_PUBLIC_OP                               18000
-#define IDF_PERFORMANCE_MAX_RSA_2048KEY_PRIVATE_OP                              490000
+#define IDF_PERFORMANCE_MAX_RSA_2048KEY_PRIVATE_OP                              700000
 #define IDF_PERFORMANCE_MAX_RSA_3072KEY_PUBLIC_OP                               45000
 #define IDF_PERFORMANCE_MAX_RSA_3072KEY_PRIVATE_OP                              1300000
 #define IDF_PERFORMANCE_MAX_RSA_4096KEY_PUBLIC_OP                               80000
-#define IDF_PERFORMANCE_MAX_RSA_4096KEY_PRIVATE_OP                              2500000
+#define IDF_PERFORMANCE_MAX_RSA_4096KEY_PRIVATE_OP                              3500000
 
 #define IDF_PERFORMANCE_MAX_SPI_CLK_FREQ                                        40*1000*1000
 #define IDF_PERFORMANCE_MAX_SPI_PER_TRANS_POLLING                               15
