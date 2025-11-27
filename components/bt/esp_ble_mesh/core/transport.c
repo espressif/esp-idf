@@ -2105,9 +2105,9 @@ void bt_mesh_trans_init(void)
 #if CONFIG_BLE_MESH_LONG_PACKET
     for (i = 0; i < ARRAY_SIZE(ext_seg_rx); i++) {
         k_delayed_work_init(&ext_seg_rx[i].ack_timer, seg_ack);
-        ext_seg_rx[i].buf.size = CONFIG_BLE_MESH_LONG_PACKET_ADV_LEN;
+        ext_seg_rx[i].buf.size = BLE_MESH_EXT_RX_SDU_MAX;
         ext_seg_rx[i].buf.__buf = (ext_seg_rx_buf_data +
-                                (i * CONFIG_BLE_MESH_LONG_PACKET_ADV_LEN));
+                                (i * BLE_MESH_EXT_RX_SDU_MAX));
         ext_seg_rx[i].buf.data = ext_seg_rx[i].buf.__buf;
     }
 #endif
