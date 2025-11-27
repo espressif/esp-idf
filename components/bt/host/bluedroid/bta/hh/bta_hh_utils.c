@@ -263,6 +263,18 @@ void bta_hh_parse_keybd_rpt(tBTA_HH_BOOT_RPT *p_kb_data, UINT8 *p_report,
     UINT16       xx, yy, key_idx = 0;
     UINT8        this_report[BTA_HH_MAX_RPT_CHARS];
 
+    /* Validate report length before processing */
+    if (report_len > BTA_HH_MAX_RPT_CHARS) {
+        APPL_TRACE_ERROR("HID report length exceeds maximum: %u > %u",
+                        report_len, BTA_HH_MAX_RPT_CHARS);
+        return;
+    }
+
+    if (report_len == 0 || p_report == NULL) {
+        APPL_TRACE_ERROR("Invalid HID report data");
+        return;
+    }
+
 #if BTA_HH_DEBUG
     APPL_TRACE_DEBUG("bta_hh_parse_keybd_rpt:  (report=%p, report_len=%d) called",
                      p_report, report_len);
@@ -463,7 +475,7 @@ void bta_hh_cleanup_disable(tBTA_HH_STATUS status)
 
     if (bta_hh_cb.p_cback) {
         (*bta_hh_cb.p_cback)(BTA_HH_DISABLE_EVT, (tBTA_HH*)&status);
-        /* all connections are down, no waiting for diconnect */
+        /* all connections are down, no waiting for disconnect */
         memset(&bta_hh_cb, 0, sizeof(tBTA_HH_CB));
     }
 }
