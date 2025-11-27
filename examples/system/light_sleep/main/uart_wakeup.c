@@ -14,11 +14,17 @@
 #include "driver/uart_wakeup.h"
 #include "sdkconfig.h"
 
-#define EXAMPLE_UART_NUM        0
+#define EXAMPLE_UART_NUM        CONFIG_ESP_CONSOLE_UART_NUM
 /* Notice that ESP32 has to use the iomux input to configure uart as wakeup source
  * Please use 'UxRXD_GPIO_NUM' as uart rx pin. No limitation to the other target */
 #define EXAMPLE_UART_TX_IO_NUM  U0TXD_GPIO_NUM
 #define EXAMPLE_UART_RX_IO_NUM  U0RXD_GPIO_NUM
+
+#if CONFIG_ESP_CONSOLE_UART
+#define EXAMPLE_UART_BAUDRATE  CONFIG_ESP_CONSOLE_UART_BAUDRATE
+#else
+#define EXAMPLE_UART_BAUDRATE  115200
+#endif
 
 #define EXAMPLE_UART_WAKEUP_EDGE_THRESHOLD   3
 #define EXAMPLE_UART_WAKEUP_FIFO_THRESHOLD   8
@@ -103,7 +109,7 @@ static void uart_wakeup_task(void *arg)
 static void uart_initialization(void)
 {
     uart_config_t uart_cfg = {
-        .baud_rate  = CONFIG_ESP_CONSOLE_UART_BAUDRATE,
+        .baud_rate  = EXAMPLE_UART_BAUDRATE,
         .data_bits  = UART_DATA_8_BITS,
         .parity     = UART_PARITY_DISABLE,
         .stop_bits  = UART_STOP_BITS_1,

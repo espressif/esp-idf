@@ -59,6 +59,11 @@ typedef enum {
     COLOR_PIXEL_YUV422,    ///< 16 bits, 8-bit Y per pixel, 8-bit U and V per two pixels
     COLOR_PIXEL_YUV420,    ///< 12 bits, 8-bit Y per pixel, 8-bit U and V per four pixels
     COLOR_PIXEL_YUV411,    ///< 12 bits, 8-bit Y per pixel, 8-bit U and V per four pixels
+
+    COLOR_PIXEL_UYVY422,  ///< 16 bits, 8-bit Y per pixel, 8-bit U and V per two pixels w/ (lowest byte) U0-Y0-V0-Y1 (highest byte) pack order
+    COLOR_PIXEL_VYUY422,  ///< 16 bits, 8-bit Y per pixel, 8-bit U and V per two pixels w/ (lowest byte) V0-Y0-U0-Y1 (highest byte) pack order
+    COLOR_PIXEL_YUYV422,  ///< 16 bits, 8-bit Y per pixel, 8-bit U and V per two pixels w/ (lowest byte) Y0-U0-Y1-V0 (highest byte) pack order
+    COLOR_PIXEL_YVYU422,  ///< 16 bits, 8-bit Y per pixel, 8-bit U and V per two pixels w/ (lowest byte) Y0-V0-Y1-U0 (highest byte) pack order
 } color_pixel_yuv_format_t;
 
 /**

@@ -562,10 +562,10 @@ TEST_CASE("ppa_fill_basic_data_correctness_check", "[PPA]")
 
 #if !(CONFIG_IDF_TARGET_ESP32P4 && CONFIG_ESP32P4_SELECTS_REV_LESS_V3)
     // Test a yuv color fill
-    oper_config.out.fill_cm = PPA_FILL_COLOR_MODE_YUV422; // output YUV422 is with YVYU packed order
+    oper_config.out.fill_cm = PPA_FILL_COLOR_MODE_YUV422_UYVY; // output YUV422 is with UYVY packed order
     const color_macroblock_yuv_data_t fill_yuv_color = {.y = 0xFF, .u = 0x55, .v = 0xAA};
     oper_config.fill_yuv_color = fill_yuv_color;
-    out_pixel_format.color_type_id = PPA_FILL_COLOR_MODE_YUV422;
+    out_pixel_format.color_type_id = PPA_FILL_COLOR_MODE_YUV422_UYVY;
     out_pixel_depth = color_hal_pixel_format_get_bit_depth(out_pixel_format); // bits
     TEST_ESP_OK(ppa_do_fill(ppa_client_handle, &oper_config));
 

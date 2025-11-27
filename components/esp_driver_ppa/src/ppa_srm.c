@@ -147,9 +147,6 @@ bool ppa_srm_transaction_on_picked(uint32_t num_chans, const dma2d_trans_channel
         ppa_ll_srm_set_rx_yuv_range(platform->hal.dev, srm_trans_desc->in.yuv_range);
         ppa_ll_srm_set_rx_yuv2rgb_std(platform->hal.dev, srm_trans_desc->in.yuv_std);
     }
-    if ((uint32_t)ppa_in_color_mode == COLOR_TYPE_ID(COLOR_SPACE_YUV, COLOR_PIXEL_YUV422)) {
-        ppa_ll_srm_set_rx_yuv422_pack_order(platform->hal.dev, srm_trans_desc->in.yuv422_pack_order);
-    }
     ppa_ll_srm_enable_rx_byte_swap(platform->hal.dev, srm_trans_desc->byte_swap);
     ppa_ll_srm_enable_rx_rgb_swap(platform->hal.dev, srm_trans_desc->rgb_swap);
     ppa_ll_srm_configure_rx_alpha(platform->hal.dev, srm_trans_desc->alpha_update_mode, srm_trans_desc->alpha_value);
@@ -190,7 +187,7 @@ esp_err_t ppa_do_scale_rotate_mirror(ppa_client_handle_t ppa_client, const ppa_s
                             config->in.block_h % 2 == 0 && config->in.block_w % 2 == 0 &&
                             config->in.block_offset_x % 2 == 0 && config->in.block_offset_y % 2 == 0,
                             ESP_ERR_INVALID_ARG, TAG, "YUV420 input does not support odd h/w/offset_x/offset_y");
-    } else if (config->in.srm_cm == PPA_SRM_COLOR_MODE_YUV422) {
+    } else if (PPA_IS_CM_YUV422(config->in.srm_cm)) {
         ESP_RETURN_ON_FALSE(config->in.pic_w % 2 == 0 && config->in.block_w % 2 == 0 && config->in.block_offset_x % 2 == 0,
                             ESP_ERR_INVALID_ARG, TAG, "YUV422 input does not support odd w/offset_x");
     }
@@ -198,7 +195,7 @@ esp_err_t ppa_do_scale_rotate_mirror(ppa_client_handle_t ppa_client, const ppa_s
         ESP_RETURN_ON_FALSE(config->out.pic_h % 2 == 0 && config->out.pic_w % 2 == 0 &&
                             config->out.block_offset_x % 2 == 0 && config->out.block_offset_y % 2 == 0,
                             ESP_ERR_INVALID_ARG, TAG, "YUV420 output does not support odd h/w/offset_x/offset_y");
-    } else if (config->out.srm_cm == PPA_SRM_COLOR_MODE_YUV422) {
+    } else if (PPA_IS_CM_YUV422(config->out.srm_cm)) {
         ESP_RETURN_ON_FALSE(config->out.pic_w % 2 == 0 && config->out.block_offset_x % 2 == 0,
                             ESP_ERR_INVALID_ARG, TAG, "YUV422 output does not support odd w/offset_x");
     }
@@ -278,7 +275,7 @@ esp_err_t ppa_do_scale_rotate_mirror(ppa_client_handle_t ppa_client, const ppa_s
         if (config->out.srm_cm == PPA_SRM_COLOR_MODE_YUV420) {
             srm_trans_desc->scale_x_frag = srm_trans_desc->scale_x_frag & ~1;
             srm_trans_desc->scale_y_frag = srm_trans_desc->scale_y_frag & ~1;
-        } else if (config->out.srm_cm == PPA_SRM_COLOR_MODE_YUV422) {
+        } else if (PPA_IS_CM_YUV422(config->out.srm_cm)) {
             srm_trans_desc->scale_x_frag = srm_trans_desc->scale_x_frag & ~1;
         }
         srm_trans_desc->alpha_value = new_alpha_value;

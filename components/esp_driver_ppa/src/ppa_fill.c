@@ -104,7 +104,7 @@ esp_err_t ppa_do_fill(ppa_client_handle_t ppa_client, const ppa_fill_oper_config
     //                         config->out.block_offset_x % 2 == 0 && config->out.block_offset_y % 2 == 0,
     //                         ESP_ERR_INVALID_ARG, TAG, "YUV420 output does not support odd h/w/offset_x/offset_y");
     // } else
-    if (config->out.fill_cm == PPA_FILL_COLOR_MODE_YUV422) {
+    if (config->out.fill_cm == PPA_FILL_COLOR_MODE_YUV422_UYVY) {
         ESP_RETURN_ON_FALSE(config->out.pic_w % 2 == 0 && config->out.block_offset_x % 2 == 0,
                             ESP_ERR_INVALID_ARG, TAG, "YUV422 output does not support odd w/offset_x");
     }
