@@ -231,7 +231,11 @@ def test_Bidirectional_IPv6_connectivity(Init_interface:bool, dut: Tuple[IdfDut,
         out_bytes = subprocess.check_output(command, shell=True, timeout=5)
         out_str = out_bytes.decode('utf-8')
         onlinkprefix = ocf.get_onlinkprefix(br)
-        host_global_unicast_addr = re.findall(r'\W+(%s(?:\w+:){3}\w+)\W+' % onlinkprefix, str(out_str))
+        pattern = rf'\W+({onlinkprefix}(?:\w+:){{3}}\w+)\W+'
+        host_global_unicast_addr = re.findall(pattern, out_str)
+        print(f'host_global_unicast_addr: {host_global_unicast_addr}')
+        if host_global_unicast_addr is None:
+            raise Exception(f'onlinkprefix: {onlinkprefix}, host_global_unicast_addr: {host_global_unicast_addr}')
         rx_nums = 0
         for ip_addr in host_global_unicast_addr:
             txrx_nums = ocf.ot_ping(cli, str(ip_addr), count=10)
