@@ -241,7 +241,7 @@ void BTA_GATTS_AddCharacteristic (UINT16 service_id,  const tBT_UUID  * p_char_u
             p_buf->attr_val.attr_max_len = attr_val->attr_max_len;
             p_buf->attr_val.attr_val = (uint8_t *)osi_malloc(len);
             if(p_buf->attr_val.attr_val != NULL){
-                memcpy(p_buf->attr_val.attr_val, attr_val->attr_val, attr_val->attr_len);
+                memcpy(p_buf->attr_val.attr_val, attr_val->attr_val, len);
             }
         }
 
@@ -411,6 +411,14 @@ void BTA_GATTS_StopService(UINT16 service_id)
 void BTA_GATTS_HandleValueIndication (UINT16 conn_id, UINT16 attr_id, UINT16 data_len,
                                       UINT8 *p_data, BOOLEAN need_confirm)
 {
+
+    /* Validate data length against buffer size */
+    if (data_len > BTA_GATT_MAX_ATTR_LEN) {
+        APPL_TRACE_ERROR("GATT indication data too large: %u > %u",
+                    data_len, BTA_GATT_MAX_ATTR_LEN);
+        return;
+    }
+
     tBTA_GATTS_API_INDICATION  *p_buf;
     UINT16  len = sizeof(tBTA_GATTS_API_INDICATION);
 
