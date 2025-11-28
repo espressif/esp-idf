@@ -1704,61 +1704,174 @@ int uart_write_bytes_with_break(uart_port_t uart_num, const void *src, size_t si
 
 static bool uart_check_buf_full(uart_port_t uart_num)
 {
-    if (p_uart_obj[uart_num]->rx_buffer_full_flg) {
-        BaseType_t res = xRingbufferSend(p_uart_obj[uart_num]->rx_ring_buf, p_uart_obj[uart_num]->rx_data_buf, p_uart_obj[uart_num]->rx_stash_len, 0);
+    uart_obj_t* const p_uart = p_uart_obj[uart_num];
+    if (p_uart->rx_buffer_full_flg && p_uart->rx_buffered_len == 0 /* preliminary check only */) {
+        BaseType_t res = xRingbufferSend(p_uart->rx_ring_buf, p_uart->rx_data_buf, p_uart->rx_stash_len, 1);
         if (res == pdTRUE) {
             UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
-            p_uart_obj[uart_num]->rx_buffered_len += p_uart_obj[uart_num]->rx_stash_len;
-            p_uart_obj[uart_num]->rx_buffer_full_flg = false;
+            p_uart->rx_buffered_len += p_uart->rx_stash_len;
+            p_uart->rx_buffer_full_flg = false;
             UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
             /* Only re-activate UART_INTR_RXFIFO_TOUT or UART_INTR_RXFIFO_FULL
              * interrupts if they were NOT explicitly disabled by the user. */
-            uart_reenable_intr_mask(p_uart_obj[uart_num]->uart_num, UART_INTR_RXFIFO_TOUT | UART_INTR_RXFIFO_FULL);
+            uart_reenable_intr_mask(p_uart->uart_num, UART_INTR_RXFIFO_TOUT | UART_INTR_RXFIFO_FULL);
             return true;
         }
     }
     return false;
 }
 
-int uart_read_bytes(uart_port_t uart_num, void *buf, uint32_t length, TickType_t ticks_to_wait)
-{
-    ESP_RETURN_ON_FALSE((uart_num < UART_NUM_MAX), (-1), UART_TAG, "uart_num error");
-    ESP_RETURN_ON_FALSE((buf), (-1), UART_TAG, "uart data null");
-    ESP_RETURN_ON_FALSE((p_uart_obj[uart_num]), (-1), UART_TAG, "uart driver error");
-    uint8_t *data = NULL;
-    size_t size = 0;
-    size_t copy_len = 0;
-    if (xSemaphoreTake(p_uart_obj[uart_num]->rx_mux, (TickType_t)ticks_to_wait) != pdTRUE) {
-        return -1;
-    }
-    while (length) {
-        data = (uint8_t *) xRingbufferReceiveUpTo(p_uart_obj[uart_num]->rx_ring_buf, &size, (TickType_t) ticks_to_wait, length);
-        if (!data) {
-            // When using dual cores, `rx_buffer_full_flg` may read and write on different cores at same time,
-            // which may lose synchronization. So we also need to call `uart_check_buf_full` once when ringbuffer is empty
-            // to solve the possible asynchronous issues.
-            if (uart_check_buf_full(uart_num)) {
-                // This condition will never be true if `uart_read_bytes`
-                // and `uart_rx_intr_handler_default` are scheduled on the same core.
-                continue;
-            } else {
-                // Timeout while not fetched all requested length
-                break;
-            }
+/**
+ * @brief Given a start time and a duration, both in ticks, calculates how many ticks
+ * are currently left until the point in time of <tt>tStart + max_wait</tt>
+ *
+ * @param tStart start of the waiting period
+ * @param max_wait time from \p tStart until the end of the waiting period
+ * @return Number of ticks left until the end of the waiting period; \c 0 if the period
+ * already ended; returns \c portMAX_DELAY if \p max_wait is \c portMAX_DELAY ,
+ * independent of how many ticks have already elapsed since \p tStart .
+ */
+static TickType_t get_ticks_left(const TickType_t tStart, const TickType_t max_wait) {
+    if(max_wait == portMAX_DELAY) {
+        return max_wait;
+    } else {
+        const TickType_t elapsed = xTaskGetTickCount() - tStart;
+        if(max_wait > elapsed) {
+            return max_wait - elapsed;
+        } else {
+            return 0;
         }
-        memcpy((uint8_t *)buf + copy_len, data, size);
+    }
+}
+
+/**
+ * @brief Polls the RX ringbuffer for data, retrieving up to \p length bytes from it.
+ * Waits up to \p ticks_to_wait for data to be available but returns as soon as \e any
+ * data was read from the buffer.
+ * Does \e not take/give the \c rx_mux, so should not be called directly from user code.
+ *
+ * @param uart_num UART port number, the max port number is (UART_NUM_MAX -1).
+ * @param buf     pointer to the buffer.
+ * @param length  data length
+ * @param ticks_to_wait sTimeout, count in RTOS ticks
+ * @return number of bytes read (>= 0)
+ */
+static size_t uart_poll_rx_buffer(uart_port_t uart_num, void *buf, uint32_t length, const TickType_t ticks_to_wait) {
+
+    size_t size = 0;
+    RingbufHandle_t rx_ring_buf = p_uart_obj[uart_num]->rx_ring_buf;
+
+    uint8_t* const data = (uint8_t *) xRingbufferReceiveUpTo(rx_ring_buf, &size, ticks_to_wait, length);
+
+    if(data) {
+        memcpy(buf, data, size);
+
         UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
         p_uart_obj[uart_num]->rx_buffered_len -= size;
         uart_pattern_queue_update(uart_num, size);
         UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
-        copy_len += size;
-        length -= size;
-        vRingbufferReturnItem(p_uart_obj[uart_num]->rx_ring_buf, data);
+
+        vRingbufferReturnItem(rx_ring_buf, data);
+
+        // We may have removed enough data from the ringbuffer to now be able to empty the ISR's stash into it.
         uart_check_buf_full(uart_num);
     }
 
-    xSemaphoreGive(p_uart_obj[uart_num]->rx_mux);
-    return copy_len;
+    return size;
+
+}
+
+int uart_read_bytes_partial(const uart_port_t uart_num, void* const buf, const uint32_t max_length, const TickType_t ticks_to_wait) {
+    ESP_RETURN_ON_FALSE((uart_num < UART_NUM_MAX), (-1), UART_TAG, "uart_num error");
+    ESP_RETURN_ON_FALSE((buf || (max_length == 0)), (-1), UART_TAG, "uart data null");
+
+    uart_obj_t* const p_uart = p_uart_obj[uart_num];    
+
+    ESP_RETURN_ON_FALSE((p_uart), (-1), UART_TAG, "uart driver error");
+
+    if(unlikely( max_length == 0 )) {
+        // No data requested, no data returned.
+        return 0;
+    }    
+
+    const TickType_t tStart = xTaskGetTickCount();
+    SemaphoreHandle_t rx_mux = p_uart->rx_mux;    
+
+    if (unlikely( xSemaphoreTake(rx_mux, ticks_to_wait) == pdFALSE )) {
+        return 0;
+    }
+
+    uint8_t* const pout = (uint8_t*)buf;
+    uint32_t bytes_left = max_length;    
+
+    const TickType_t ticks_left = get_ticks_left(tStart, ticks_to_wait);
+
+    size_t read = uart_poll_rx_buffer(uart_num, pout, bytes_left, ticks_left);
+
+    bytes_left -= read;
+
+    if(read != 0) {
+        /*
+        At this point, even if bytes_left != 0, the rx buffer may not be empty yet.
+        (We don't get all data in one poll if&when the data wraps around in the ringbuffer.)
+        */
+        if(bytes_left != 0) {
+            // Still room for more.
+            // Try one more time, but this time do not wait if no data is available.
+            read = uart_poll_rx_buffer(uart_num, pout + read, bytes_left, 0);
+            bytes_left -= read;
+        }
+
+        // Now, if bytes_left != 0, we definitely emptied the rx buffer.        
+    }
+
+    xSemaphoreGive(rx_mux);
+
+    return max_length - bytes_left;
+}
+
+int uart_read_bytes(const uart_port_t uart_num, void* const buf, const uint32_t length, const TickType_t ticks_to_wait)
+{
+    ESP_RETURN_ON_FALSE((uart_num < UART_NUM_MAX), (-1), UART_TAG, "uart_num error");
+    ESP_RETURN_ON_FALSE((buf || (length == 0)), (-1), UART_TAG, "uart data null");
+
+    uart_obj_t* const p_uart = p_uart_obj[uart_num];
+
+    ESP_RETURN_ON_FALSE((p_uart), (-1), UART_TAG, "uart driver error");
+
+    if(unlikely( length == 0 )) {
+        // No data requested, no data returned.
+        return 0;
+    }
+
+    const TickType_t tStart = xTaskGetTickCount();
+    SemaphoreHandle_t rx_mux = p_uart->rx_mux;
+
+    if (unlikely( xSemaphoreTake(rx_mux, ticks_to_wait) == pdFALSE )) {
+        return 0;
+    }
+
+    uint8_t* pout = (uint8_t*)buf;
+    uint32_t bytes_left = length;
+    size_t read;
+    do {
+
+        /* If 0 ticks left, we still poll the RX buffer one (more) time for any data
+           that is immediately available.
+        */
+        const TickType_t ticks_left = get_ticks_left(tStart, ticks_to_wait);
+
+        // Returns 0 upon timeout:
+        read = uart_poll_rx_buffer(uart_num, pout, bytes_left, ticks_left);
+
+        bytes_left -= read;
+        pout += read;
+
+    } while( read != 0 && bytes_left != 0 ); // 0 bytes read means we timed out
+
+    xSemaphoreGive(rx_mux);
+
+    return length - bytes_left;
 }
 
 esp_err_t uart_get_buffered_data_len(uart_port_t uart_num, size_t *size)
