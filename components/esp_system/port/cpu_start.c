@@ -634,6 +634,22 @@ MSPI_INIT_ATTR void mspi_init(void)
     }
 #endif
 }
+
+#if CONFIG_IDF_TARGET_ESP32
+#if !CONFIG_SPIRAM_BOOT_HW_INIT
+/*
+ * Adjust flash configuration. This must be placed in IRAM because running from flash,
+ * while it is being reconfigured, will result in corrupt data being read.
+ */
+NOINLINE_ATTR IRAM_ATTR static void configure_flash(esp_image_header_t *fhdr)
+{
+    bootloader_flash_gpio_config(fhdr);
+    bootloader_flash_dummy_config(fhdr);
+    bootloader_flash_clock_config(fhdr);
+    bootloader_flash_cs_timing_config();
+}
+#endif // !CONFIG_SPIRAM_BOOT_HW_INIT
+#endif // CONFIG_IDF_TARGET_ESP32
 #endif // !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
 
 /*
@@ -874,10 +890,7 @@ NOINLINE_ATTR static void system_early_init(const soc_reset_reason_t *rst_reas)
 #if CONFIG_IDF_TARGET_ESP32
 #if !CONFIG_SPIRAM_BOOT_HW_INIT
     // If psram is uninitialized, we need to improve some flash configuration.
-    bootloader_flash_clock_config(&fhdr);
-    bootloader_flash_gpio_config(&fhdr);
-    bootloader_flash_dummy_config(&fhdr);
-    bootloader_flash_cs_timing_config();
+    configure_flash(&fhdr);
 #endif //!CONFIG_SPIRAM_BOOT_HW_INIT
 #endif //CONFIG_IDF_TARGET_ESP32
 
