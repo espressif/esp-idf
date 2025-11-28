@@ -114,7 +114,11 @@ static const char *TAG = "esp-tls";
 
 static esp_err_t create_ssl_handle(const char *hostname, size_t hostlen, const void *cfg, esp_tls_t *tls)
 {
+#if defined(ESP_IDF_VERSION) && (ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 3, 0))
     return _esp_create_ssl_handle(hostname, hostlen, cfg, tls, NULL);
+#else
+    return _esp_create_ssl_handle(hostname, hostlen, cfg, tls);
+#endif
 }
 
 static esp_err_t esp_tls_handshake(esp_tls_t *tls, const esp_tls_cfg_t *cfg)
@@ -134,7 +138,7 @@ static ssize_t tcp_write(esp_tls_t *tls, const char *data, size_t datalen)
 
 ssize_t esp_tls_conn_read(esp_tls_t *tls, void  *data, size_t datalen)
 {
-    if (!tls) {
+    if (!tls || !data) {
         return -1;
     }
     return tls->read(tls, (char *)data, datalen);
@@ -461,7 +465,10 @@ err:
 
 static int esp_tls_low_level_conn(const char *hostname, int hostlen, int port, const esp_tls_cfg_t *cfg, esp_tls_t *tls)
 {
-
+    if (!tls) {
+        ESP_LOGE(TAG, "empty esp_tls parameter");
+        return -1;
+    }
     esp_err_t esp_ret;
     /* These states are used to keep a tab on connection progress in case of non-blocking connect,
     and in case of blocking connect these cases will get executed one after the other */
@@ -737,11 +744,17 @@ int esp_tls_server_session_create(esp_tls_cfg_server_t *cfg, int sockfd, esp_tls
 /**
  * @brief      Close the server side TLS/SSL connection and free any allocated resources.
  */
+#ifdef CONFIG_ESP_TLS_USING_WOLFSSL
+int esp_tls_server_session_delete(esp_tls_t *tls)
+    {
+        return _esp_tls_server_session_delete(tls);
+    }
+#else
 void esp_tls_server_session_delete(esp_tls_t *tls)
 {
     return _esp_tls_server_session_delete(tls);
 }
-
+#endif
 ssize_t esp_tls_get_bytes_avail(esp_tls_t *tls)
 {
     return _esp_tls_get_bytes_avail(tls);
