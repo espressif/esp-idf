@@ -44,6 +44,7 @@ static bool s_rf_closed = true;
 #define CCA_DETECTION_TIME 8
 
 extern void ieee802154_txon_delay_set(void);
+extern uint32_t bt_bb_get_cur_rx_info(void);
 
 IEEE802154_STATIC volatile ieee802154_state_t s_ieee802154_state;
 static uint8_t *s_tx_frame = NULL;
@@ -167,7 +168,7 @@ static IEEE802154_NOINLINE void ieee802154_rx_frame_info_update(void)
 
 int8_t ieee802154_get_recent_rssi(void)
 {
-    return s_rx_frame_info[s_recent_rx_frame_info_index].rssi;
+    return (int8_t)(bt_bb_get_cur_rx_info() & 0xff);
 }
 
 uint8_t ieee802154_get_recent_lqi(void)

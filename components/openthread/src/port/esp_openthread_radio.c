@@ -661,8 +661,8 @@ esp_err_t IRAM_ATTR esp_ieee802154_enh_ack_generator(uint8_t *frame, esp_ieee802
 
 #if OPENTHREAD_CONFIG_MLE_LINK_METRICS_SUBJECT_ENABLE
     otMacFrameGetSrcAddr(&ot_frame, &mac_addr);
-    link_metrics_data_len = otLinkMetricsEnhAckGenData(&mac_addr, esp_ieee802154_get_recent_lqi(),
-                                        esp_ieee802154_get_recent_rssi(), link_metrics_data);
+    link_metrics_data_len = otLinkMetricsEnhAckGenData(&mac_addr, frame_info->lqi,
+                                        frame_info->rssi, link_metrics_data);
     if (link_metrics_data_len > 0) {
         offset += otMacFrameGenerateEnhAckProbingIe(ack_ie_data, link_metrics_data, link_metrics_data_len);
     }
