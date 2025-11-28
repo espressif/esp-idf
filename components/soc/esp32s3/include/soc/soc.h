@@ -32,7 +32,7 @@
 #define UART_FIFO_AHB_REG(i)    (REG_UART_AHB_BASE(i) + 0x0)
 #define REG_TIMG_BASE(i)        (DR_REG_TIMERGROUP0_BASE + (i)*0x1000)
 #define REG_SPI_MEM_BASE(i)     (DR_REG_SPI0_BASE - (i) * 0x1000)
-#define REG_SPI_BASE(i)         (((i)>=2) ? (DR_REG_SPI2_BASE + (i-2) * 0x1000) : (0))    // GPSPI2 and GPSPI3
+#define REG_SPI_BASE(i)         (((i)==2) ? (DR_REG_SPI2_BASE) : (DR_REG_SPI0_BASE - ((i) * 0x1000))) // GPSPI2 and GPSPI3
 #define REG_I2C_BASE(i)         (DR_REG_I2C_EXT_BASE + (i) * 0x14000 )
 
 //Convenient way to replace the register ops when ulp riscv projects

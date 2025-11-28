@@ -1,0 +1,27 @@
+{
+  "name": "framework-espidf",
+  "version": "3.60000",
+  "description": "Espressif IoT Development Framework. Tasmota framework for ESP32 chip",
+  "keywords": [
+    "framework",
+    "esp32",
+    "esp32s2",
+    "esp32s3",
+    "esp32c2", 
+    "esp32c3",
+    "esp32c5",
+    "esp32c6",
+    "esp32c61",
+    "esp32h2",
+    "esp32h21",
+    "esp32h4",
+    "esp32p4",
+    "espressif"
+  ],
+  "homepage": "https://docs.espressif.com/projects/esp-idf/en/latest/esp32/",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tasmota/esp-idf"
+  }
+}

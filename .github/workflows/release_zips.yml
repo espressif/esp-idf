@@ -1,4 +1,4 @@
-name: Create zip file with recursive source clone for release
+name: Create tar.xz archive with recursive source clone for release
 
 on:
   push:
@@ -7,12 +7,11 @@ on:
 
 jobs:
   release_zips:
-    name: Create release zip file
-    runs-on: ubuntu-24.04
+    name: Create release tar.xz archive
+    runs-on: ubuntu-latest
     steps:
-      - name: Create a recursive clone source zip
-        uses: espressif/release-zips-action@v1
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          release_project_name: ESP-IDF
-          git_extra_args: --shallow-since="1 year ago"
+      - name: Create a recursive clone source and stripped archive
+        uses: Jason2866/github-actions/release_zips@tar_xz
+        env:
+            RELEASE_PROJECT_NAME: ESP-IDF
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

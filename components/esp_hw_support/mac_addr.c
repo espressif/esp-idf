@@ -287,6 +287,8 @@ static esp_err_t get_efuse_factory_mac(uint8_t *mac)
         uint32_t mac_low = ((uint32_t)mac[2] << 24) | ((uint32_t)mac[3] << 16) | ((uint32_t)mac[4] << 8) | mac[5];
         if (((mac_high & 0xFFFF) == 0x18fe) && (mac_low >= 0x346a85c7) && (mac_low <= 0x346a85f8)) {
             return ESP_OK;
+        } else if (esp_efuse_get_pkg_ver() ==  3) {
+            return ESP_OK;  // override for Xiaomi SOC's and maybe others too
         } else {
             ESP_LOGE(TAG, "Base MAC address from BLK0 of EFUSE CRC error, efuse_crc = 0x%02x; calc_crc = 0x%02x", efuse_crc, calc_crc);
 #ifdef CONFIG_ESP_MAC_IGNORE_MAC_CRC_ERROR

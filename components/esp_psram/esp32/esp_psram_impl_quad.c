@@ -905,7 +905,7 @@ esp_err_t IRAM_ATTR esp_psram_impl_enable(void)   //psram init
         psram_io.psram_cs_io  = D0WDR2_V3_PSRAM_CS_IO;
     } else {
         ESP_EARLY_LOGE(TAG, "Not a valid or known package id: %" PRIu32, pkg_ver);
-        abort();
+        return ESP_FAIL;
     }
     s_psram_cs_io = psram_io.psram_cs_io;
 

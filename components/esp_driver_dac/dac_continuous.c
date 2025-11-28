@@ -555,16 +555,17 @@ static esp_err_t s_dac_wait_to_load_dma_data(dac_continuous_handle_t handle, uin
         DAC_STAILQ_REMOVE(&handle->head, desc, lldesc_s, qe);
     }
 
-    static bool split_flag = false;
+    // TASMOTA: remove split because it does some harm and I'm not sure why it was there in the first place. No such code in 4.x
+    // static bool split_flag = false;
     uint8_t *dma_buf = (uint8_t *)desc->buf;
-    if (buf_size * DAC_16BIT_ALIGN_COEFF < 2 * handle->cfg.buf_size) {
-        if (!split_flag) {
-            buf_size >>= 1;
-            split_flag = true;
-        } else {
-            split_flag = false;
-        }
-    }
+    // if (buf_size * DAC_16BIT_ALIGN_COEFF < 2 * handle->cfg.buf_size) {
+    //     if (!split_flag) {
+    //         buf_size >>= 1;
+    //         split_flag = true;
+    //     } else {
+    //         split_flag = false;
+    //     }
+    // }
     size_t load_bytes = s_dac_load_data_into_buf(handle, dma_buf, handle->cfg.buf_size, buf, buf_size);
     lldesc_config(desc, LLDESC_HW_OWNED, 1, 0, load_bytes);
     desc->size = load_bytes;

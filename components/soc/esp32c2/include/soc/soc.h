@@ -29,7 +29,7 @@
 #define UART_FIFO_AHB_REG(i)                    (REG_UART_AHB_BASE(i) + 0x0)
 #define REG_TIMG_BASE(i)                        (DR_REG_TIMERGROUP0_BASE + (i)*0x1000)
 #define REG_SPI_MEM_BASE(i)                     (DR_REG_SPI0_BASE - (i) * 0x1000)
-#define REG_SPI_BASE(i)                         (((i)==2) ? (DR_REG_SPI2_BASE) : (0))   // only one GPSPI
+#define REG_SPI_BASE(i)                         (((i)==2) ? (DR_REG_SPI2_BASE) : (DR_REG_SPI0_BASE - ((i) * 0x1000))) // only one GPSPI
 #define REG_I2C_BASE(i)                         (DR_REG_I2C_EXT_BASE + (i) * 0x14000 )
 
 //Registers Operation {{
