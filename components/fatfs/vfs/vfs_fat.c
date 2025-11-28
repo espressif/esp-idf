@@ -491,14 +491,17 @@ static ssize_t vfs_fat_read(void* ctx, int fd, void * dst, size_t size)
     vfs_fat_ctx_t* fat_ctx = (vfs_fat_ctx_t*) ctx;
     FIL* file = &fat_ctx->files[fd];
     UINT read = 0;
+    _lock_acquire(&fat_ctx->lock);
     FRESULT res = f_read(file, dst, size, &read);
     if (res != FR_OK) {
         ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);
         errno = fresult_to_errno(res);
         if (read == 0) {
+            _lock_release(&fat_ctx->lock);
             return -1;
         }
     }
+    _lock_release(&fat_ctx->lock);
     return read;
 }
 
@@ -602,7 +605,9 @@ static int vfs_fat_fsync(void* ctx, int fd)
 {
     vfs_fat_ctx_t* fat_ctx = (vfs_fat_ctx_t*) ctx;
     FIL* file = &fat_ctx->files[fd];
+    _lock_acquire(&fat_ctx->lock);
     FRESULT res = f_sync(file);
+    _lock_release(&fat_ctx->lock);
     int rc = 0;
     if (res != FR_OK) {
         ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);
@@ -639,6 +644,7 @@ static off_t vfs_fat_lseek(void* ctx, int fd, off_t offset, int mode)
 {
     vfs_fat_ctx_t* fat_ctx = (vfs_fat_ctx_t*) ctx;
     FIL* file = &fat_ctx->files[fd];
+    _lock_acquire(&fat_ctx->lock);
     off_t new_pos;
     if (mode == SEEK_SET) {
         new_pos = offset;
@@ -650,6 +656,7 @@ static off_t vfs_fat_lseek(void* ctx, int fd, off_t offset, int mode)
         new_pos = size + offset;
     } else {
         errno = EINVAL;
+        _lock_release(&fat_ctx->lock);
         return -1;
     }
 
@@ -662,8 +669,10 @@ static off_t vfs_fat_lseek(void* ctx, int fd, off_t offset, int mode)
     if (res != FR_OK) {
         ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);
         errno = fresult_to_errno(res);
+        _lock_release(&fat_ctx->lock);
         return -1;
     }
+    _lock_release(&fat_ctx->lock);
     return new_pos;
 }
 
@@ -671,6 +680,7 @@ static int vfs_fat_fstat(void* ctx, int fd, struct stat * st)
 {
     vfs_fat_ctx_t* fat_ctx = (vfs_fat_ctx_t*) ctx;
     FIL* file = &fat_ctx->files[fd];
+    _lock_acquire(&fat_ctx->lock);
     memset(st, 0, sizeof(*st));
     st->st_size = f_size(file);
     st->st_mode = S_IRWXU | S_IRWXG | S_IRWXO | S_IFREG;
@@ -678,27 +688,36 @@ static int vfs_fat_fstat(void* ctx, int fd, struct stat * st)
     st->st_atime = 0;
     st->st_ctime = 0;
     st->st_blksize = CONFIG_FATFS_VFS_FSTAT_BLKSIZE;
+    _lock_release(&fat_ctx->lock);
     return 0;
 }
 
 static int vfs_fat_fcntl(void* ctx, int fd, int cmd, int arg)
 {
     vfs_fat_ctx_t* fat_ctx = (vfs_fat_ctx_t*) ctx;
+    _lock_acquire(&fat_ctx->lock);
+    int result;
     switch (cmd) {
         case F_GETFL:
-            return fat_ctx->flags[fd];
+            result = fat_ctx->flags[fd];
+            break;
         case F_SETFL:
             fat_ctx->flags[fd] = arg;
-            return 0;
+            result = 0;
+            break;
         // no-ops:
         case F_SETLK:
         case F_SETLKW:
         case F_GETLK:
-            return 0;
+            result = 0;
+            break;
         default:
             errno = EINVAL;
-            return -1;
+            result = -1;
+            break;
     }
+    _lock_release(&fat_ctx->lock);
+    return result;
 }
 
 #ifdef CONFIG_VFS_SUPPORT_DIR
