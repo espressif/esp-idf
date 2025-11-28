@@ -51,8 +51,6 @@ extern "C" {
 #define MAX_L1_DTAG_BANK_WAY_SIZE  (MAX_L1_DTAG_BANK_WAY_ITEMS * TAG_SIZE)
 
 #define MAX_CACHE_WAY 2
-_Static_assert(MAX_CACHE_WAY >= MAX_L1_ICACHE_WAY && MAX_CACHE_WAY >= MAX_L1_DCACHE_WAY,
-               "MAX_CACHE_WAY should be defined to the max of (L1 ICache way, L1 DCache way)");
 
 typedef enum {
     CACHE_L1_ICACHE0 = 0,

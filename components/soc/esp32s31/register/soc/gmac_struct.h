@@ -128,7 +128,7 @@ typedef union {
          *  not applicable if the MAC is operating in the fullduplex mode This bit is reserved
          *  _RO with default value_ if the MAC is configured for the fullduplexonly operation
          */
-        uint32_t do:1;
+        uint32_t dro:1;
         /** fes : R/W; bitpos: [14]; default: 0;
          *  Speed This bit selects the speed in the MII, RMII, SMII, RGMII, SGMII, or RevMII
          *  interface: 0: 10 Mbps 1: 100 Mbps This bit is reserved _RO_ by default and is
@@ -1469,11 +1469,11 @@ typedef union {
          */
         uint32_t ran:1;
         uint32_t reserved_10:2;
-        /** and : R/W; bitpos: [12]; default: 0;
+        /** auto_negotiation : R/W; bitpos: [12]; default: 0;
          *  AutoNegotiation Enable When set, this bit enables the MAC to perform
          *  autonegotiation with the link partner Clearing this bit disables the autonegotiation
          */
-        uint32_t and:1;
+        uint32_t auto_negotiation:1;
         uint32_t reserved_13:1;
         /** ele : R/W; bitpos: [14]; default: 0;
          *  External Loopback Enable When set, this bit causes the PHY to loopback the transmit

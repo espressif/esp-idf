@@ -37,6 +37,7 @@ check_public_headers:
     - IDF_TARGET=esp32c61 python tools/ci/check_public_headers.py --jobs 4 --prefix riscv32-esp-elf-
     - IDF_TARGET=esp32h21 python tools/ci/check_public_headers.py --jobs 4 --prefix riscv32-esp-elf-
     - IDF_TARGET=esp32h4 python tools/ci/check_public_headers.py --jobs 4 --prefix riscv32-esp-elf-
+    - IDF_TARGET=esp32s31 python tools/ci/check_public_headers.py --jobs 4 --prefix riscv32-esp-elf-
 
 test_nvs_coverage:
   extends:

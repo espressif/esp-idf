@@ -662,7 +662,7 @@ static inline __attribute__((always_inline)) void clk_ll_rtc_slow_set_src(soc_rt
 static inline __attribute__((always_inline)) soc_rtc_slow_clk_src_t clk_ll_rtc_slow_get_src(void)
 {
     // TODO: [ESP32S31] IDF-14733
-    return 0;
+    return SOC_RTC_SLOW_CLK_SRC_RC_SLOW;
 }
 
 /**
@@ -683,7 +683,7 @@ static inline __attribute__((always_inline)) void clk_ll_lp_pll_set_src(soc_lp_p
 static inline __attribute__((always_inline)) soc_lp_pll_clk_src_t clk_ll_lp_pll_get_src(void)
 {
     // TODO: [ESP32S31] IDF-14733
-    return 0;
+    return SOC_LP_PLL_CLK_SRC_RC32K;
 }
 
 /**
@@ -716,7 +716,7 @@ static inline __attribute__((always_inline)) void clk_ll_rtc_fast_set_src(soc_rt
 static inline __attribute__((always_inline)) soc_rtc_fast_clk_src_t clk_ll_rtc_fast_get_src(void)
 {
     // TODO: [ESP32S31] IDF-14733
-    return 0;
+    return SOC_RTC_FAST_CLK_SRC_RC_FAST;
 }
 
 /**

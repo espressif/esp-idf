@@ -31,6 +31,14 @@ config SOC_XTAL_SUPPORT_40M
     bool
     default y
 
+config SOC_ADC_MAX_CHANNEL_NUM
+    int
+    default 10
+
+config SOC_ADC_PERIPH_NUM
+    int
+    default 2
+
 config SOC_SHARED_IDCACHE_SUPPORTED
     bool
     default y

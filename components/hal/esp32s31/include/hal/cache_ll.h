@@ -955,7 +955,7 @@ __attribute__((always_inline))
 static inline cache_bus_mask_t cache_ll_l2_get_bus(uint32_t cache_id, uint32_t vaddr_start, uint32_t len)
 {
     //not used, for compatibility
-    return 0;
+    return CACHE_BUS_IBUS0;
 }
 
 /**
@@ -1071,7 +1071,7 @@ static inline uint32_t cache_ll_l2_get_access_error_intr_status(uint32_t cache_i
 __attribute__((always_inline))
 static inline cache_bus_mask_t cache_ll_l1_get_enabled_bus(uint32_t cache_id)
 {
-    return 0;
+    return CACHE_BUS_IBUS0;
 }
 
 #ifdef __cplusplus

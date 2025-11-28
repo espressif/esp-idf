@@ -7,6 +7,10 @@
 #ifndef _ROM_GPIO_H_
 #define _ROM_GPIO_H_
 
+#include <stdint.h>
+#include <stdbool.h>
+#include "soc/gpio_reg.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif

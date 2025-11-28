@@ -96,6 +96,11 @@
 /*-------------------------- XTAL CAPS ---------------------------------------*/
 #define SOC_XTAL_SUPPORT_40M            1
 
+/*-------------------------- ADC CAPS ----------------------------------------*/
+/*!< SAR ADC Module*/
+#define SOC_ADC_MAX_CHANNEL_NUM                 (10)
+#define SOC_ADC_PERIPH_NUM                      (2)
+
 /*-------------------------- CACHE CAPS --------------------------------------*/
 // TODO: [ESP32S31] IDF-14651
 #define SOC_SHARED_IDCACHE_SUPPORTED            1   //Shared Cache for both instructions and data
