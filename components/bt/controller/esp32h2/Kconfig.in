@@ -573,7 +573,7 @@ config BT_LE_LL_PEER_SCA
 config BT_LE_MAX_CONNECTIONS
     int "Maximum number of concurrent connections"
     depends on !BT_NIMBLE_ENABLED
-    range 1 35
+    range 1 70
     default 3
     help
         Defines maximum number of concurrent BLE connections. For ESP32, user
