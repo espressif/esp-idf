@@ -353,6 +353,14 @@ Driver Usage
 
 The example code for the SPI Master driver can be found in the :example:`peripherals/spi_master` directory of ESP-IDF examples.
 
+.. only:: SOC_PSRAM_DMA_CAPABLE
+
+    Transactions with Data on PSRAM
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    {IDF_TARGET_NAME} supports GPSPI Master with DMA transferring data from/to PSRAM directly without extra internal copy process, which saves memory, by adding :c:macro:`SPI_TRANS_DMA_USE_PSRAM` flag to the transaction.
+
+    Note that this feature shares bandwidth (bus frequency * bus bits width) with MSPI bus, so GPSPI transfer bandwidth should be less than PSRAM bandwidth, **otherwise transmission data may be lost**. You can check the return value or :c:macro:`SPI_TRANS_DMA_RX_FAIL` and :c:macro:`SPI_TRANS_DMA_TX_FAIL` flags after the transaction is finished to check if error occurs during the transmission. If the transaction returns :c:macro:`ESP_ERR_INVALID_STATE` error, the transaction fails.
 
 Transactions with Data Not Exceeding 32 Bits
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

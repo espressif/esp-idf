@@ -27,6 +27,18 @@ void spi_dma_enable_burst(spi_dma_chan_handle_t chan_handle, bool data_burst, bo
     }
 }
 
+void spi_dma_get_alignment_constraints(spi_dma_chan_handle_t chan_handle, size_t *internal_size, size_t *external_size)
+{
+    spi_dma_dev_t *spi_dma = SPI_LL_GET_HW(chan_handle.host_id);
+
+    if (chan_handle.dir == DMA_CHANNEL_DIRECTION_TX) {
+        *internal_size = 1; // TX don't need to follow dma alignment in driver design
+        *external_size = 1;
+    } else {
+        spi_dma_ll_get_rx_alignment_require(spi_dma, (uint32_t *)internal_size, (uint32_t *)external_size);
+    }
+}
+
 #if SOC_SPI_SUPPORT_SLAVE_HD_VER2
 void spi_dma_append(spi_dma_chan_handle_t chan_handle)
 {

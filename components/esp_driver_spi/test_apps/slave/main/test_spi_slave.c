@@ -130,6 +130,53 @@ TEST_CASE("test fullduplex slave with only RX direction", "[spi]")
     ESP_LOGI(SLAVE_TAG, "test passed.");
 }
 
+TEST_CASE("test fullduplex slave with only TX direction", "[spi]")
+{
+    custom_setup();
+
+    memcpy(slave_txbuf, slave_send, sizeof(slave_send));
+
+    for (int i = 0; i < 4; i ++) {
+        //slave send
+        spi_slave_transaction_t slave_t;
+        spi_slave_transaction_t *out;
+        memset(&slave_t, 0, sizeof(spi_slave_transaction_t));
+        slave_t.length = 8 * 32;
+        slave_t.tx_buffer = slave_txbuf;
+        slave_t.rx_buffer = NULL;
+        slave_t.flags |= SPI_SLAVE_TRANS_DMA_BUFFER_ALIGN_AUTO;
+
+        // Colorize RX buffer with known pattern
+        memset(master_rxbuf, 0x66, sizeof(master_rxbuf));
+
+        TEST_ESP_OK(spi_slave_queue_trans(TEST_SLAVE_HOST, &slave_t, portMAX_DELAY));
+
+        //send
+        spi_transaction_t t = {};
+        t.length = 32 * (i + 1);
+        if (t.length != 0) {
+            t.tx_buffer = NULL;
+            t.rx_buffer = master_rxbuf;
+        }
+        spi_device_transmit(spi, &t);
+
+        //wait for end
+        TEST_ESP_OK(spi_slave_get_trans_result(TEST_SLAVE_HOST, &out, portMAX_DELAY));
+
+        //show result
+        ESP_LOGI(SLAVE_TAG, "trans_len: %d", slave_t.trans_len);
+        ESP_LOG_BUFFER_HEX("master rx", t.rx_buffer, t.length / 8);
+        ESP_LOG_BUFFER_HEX("slave tx", slave_t.tx_buffer, (slave_t.trans_len + 7) / 8);
+
+        TEST_ASSERT_EQUAL_HEX8_ARRAY(slave_t.tx_buffer, t.rx_buffer, t.length / 8);
+        TEST_ASSERT_EQUAL(t.length, slave_t.trans_len);
+    }
+
+    custom_teardown();
+
+    ESP_LOGI(SLAVE_TAG, "test passed.");
+}
+
 #define TEST_SLV_RX_BUF_LEN     15
 TEST_CASE("Test slave rx no_dma overwrite when length below/over config", "[spi]")
 {
@@ -202,53 +249,6 @@ TEST_CASE("Test slave rx no_dma overwrite when length below/over config", "[spi]
     TEST_ESP_OK(spi_bus_remove_device(spidev0));
     TEST_ESP_OK(spi_bus_free(TEST_SPI_HOST));
 }
-
-TEST_CASE("test fullduplex slave with only TX direction", "[spi]")
-{
-    custom_setup();
-
-    memcpy(slave_txbuf, slave_send, sizeof(slave_send));
-
-    for (int i = 0; i < 4; i ++) {
-        //slave send
-        spi_slave_transaction_t slave_t;
-        spi_slave_transaction_t *out;
-        memset(&slave_t, 0, sizeof(spi_slave_transaction_t));
-        slave_t.length = 8 * 32;
-        slave_t.tx_buffer = slave_txbuf;
-        slave_t.rx_buffer = NULL;
-        slave_t.flags |= SPI_SLAVE_TRANS_DMA_BUFFER_ALIGN_AUTO;
-
-        // Colorize RX buffer with known pattern
-        memset(master_rxbuf, 0x66, sizeof(master_rxbuf));
-
-        TEST_ESP_OK(spi_slave_queue_trans(TEST_SLAVE_HOST, &slave_t, portMAX_DELAY));
-
-        //send
-        spi_transaction_t t = {};
-        t.length = 32 * (i + 1);
-        if (t.length != 0) {
-            t.tx_buffer = NULL;
-            t.rx_buffer = master_rxbuf;
-        }
-        spi_device_transmit(spi, &t);
-
-        //wait for end
-        TEST_ESP_OK(spi_slave_get_trans_result(TEST_SLAVE_HOST, &out, portMAX_DELAY));
-
-        //show result
-        ESP_LOGI(SLAVE_TAG, "trans_len: %d", slave_t.trans_len);
-        ESP_LOG_BUFFER_HEX("master rx", t.rx_buffer, t.length / 8);
-        ESP_LOG_BUFFER_HEX("slave tx", slave_t.tx_buffer, (slave_t.trans_len + 7) / 8);
-
-        TEST_ASSERT_EQUAL_HEX8_ARRAY(slave_t.tx_buffer, t.rx_buffer, t.length / 8);
-        TEST_ASSERT_EQUAL(t.length, slave_t.trans_len);
-    }
-
-    custom_teardown();
-
-    ESP_LOGI(SLAVE_TAG, "test passed.");
-}
 #endif // !CONFIG_SPIRAM
 #endif // #if (TEST_SPI_PERIPH_NUM >= 2)
 
@@ -312,6 +312,7 @@ static void test_slave_iram_master_normal(void)
 
     spi_device_handle_t dev_handle = {0};
     spi_device_interface_config_t devcfg = SPI_DEVICE_TEST_DEFAULT_CONFIG();
+    devcfg.cs_ena_pretrans = 1;
     TEST_ESP_OK(spi_bus_add_device(TEST_SPI_HOST, &devcfg, &dev_handle));
 
     uint8_t *master_send = heap_caps_malloc(TEST_BUFFER_SZ, MALLOC_CAP_DMA);

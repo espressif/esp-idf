@@ -231,6 +231,23 @@ void spi_hal_user_start(const spi_hal_context_t *hal);
 bool spi_hal_usr_is_done(const spi_hal_context_t *hal);
 
 /**
+ * Get SPI interrupt bits status by mask
+ *
+ * @param hal Context of the HAL layer.
+ * @param mask Mask of the interrupt bits to check.
+ * @return True if the masked interrupts are set, false otherwise.
+ */
+bool spi_hal_get_intr_mask(spi_hal_context_t *hal, uint32_t mask);
+
+/**
+ * Clear SPI interrupt bits by mask
+ *
+ * @param hal Context of the HAL layer.
+ * @param mask Mask of the interrupt bits to clear.
+ */
+void spi_hal_clear_intr_mask(spi_hal_context_t *hal, uint32_t mask);
+
+/**
  * Setup transaction operations, write tx buffer to HW registers
  *
  * @param hal       Context of the HAL layer.
@@ -331,16 +348,6 @@ void spi_hal_sct_deinit(spi_hal_context_t *hal);
  * Set conf_bitslen to HW for sct.
  */
 void spi_hal_sct_set_conf_bits_len(spi_hal_context_t *hal, uint32_t conf_len);
-
-/**
- * Clear SPI interrupt bits by mask
- */
-void spi_hal_clear_intr_mask(spi_hal_context_t *hal, uint32_t mask);
-
-/**
- * Get SPI interrupt bits status by mask
- */
-bool spi_hal_get_intr_mask(spi_hal_context_t *hal, uint32_t mask);
 
 /**
  * Set conf_bitslen base to HW for sct, only supported on s2.

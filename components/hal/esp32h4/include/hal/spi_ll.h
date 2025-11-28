@@ -55,6 +55,8 @@ typedef spi_dev_t spi_dma_dev_t;
 // Type definition of all supported interrupts
 typedef enum {
     SPI_LL_INTR_TRANS_DONE =    BIT(0),     ///< A transaction has done
+    SPI_LL_INTR_IN_FULL =       BIT(4),     ///< DMA in_full error happened
+    SPI_LL_INTR_OUT_EMPTY =     BIT(5),     ///< DMA out_empty error happened
     SPI_LL_INTR_RDBUF =         BIT(6),     ///< Has received RDBUF command. Only available in slave HD.
     SPI_LL_INTR_WRBUF =         BIT(7),     ///< Has received WRBUF command. Only available in slave HD.
     SPI_LL_INTR_RDDMA =         BIT(8),     ///< Has received RDDMA command. Only available in slave HD.
@@ -1120,16 +1122,18 @@ static inline uint32_t spi_ll_slave_get_rcv_bitlen(spi_dev_t *hw)
 //helper macros to generate code for each interrupts
 #define FOR_EACH_ITEM(op, list) do { list(op) } while(0)
 #define INTR_LIST(item)    \
-    item(SPI_LL_INTR_TRANS_DONE,    dma_int_ena.trans_done_int_ena,         dma_int_raw.trans_done_int_raw,         dma_int_clr.trans_done_int_clr,            dma_int_set.trans_done_int_set) \
-    item(SPI_LL_INTR_RDBUF,         dma_int_ena.slv_rd_buf_done_int_ena,    dma_int_raw.slv_rd_buf_done_int_raw,    dma_int_clr.slv_rd_buf_done_int_clr,       dma_int_set.slv_rd_buf_done_int_set) \
-    item(SPI_LL_INTR_WRBUF,         dma_int_ena.slv_wr_buf_done_int_ena,    dma_int_raw.slv_wr_buf_done_int_raw,    dma_int_clr.slv_wr_buf_done_int_clr,       dma_int_set.slv_wr_buf_done_int_set) \
-    item(SPI_LL_INTR_RDDMA,         dma_int_ena.slv_rd_dma_done_int_ena,    dma_int_raw.slv_rd_dma_done_int_raw,    dma_int_clr.slv_rd_dma_done_int_clr,       dma_int_set.slv_rd_dma_done_int_set) \
-    item(SPI_LL_INTR_WRDMA,         dma_int_ena.slv_wr_dma_done_int_ena,    dma_int_raw.slv_wr_dma_done_int_raw,    dma_int_clr.slv_wr_dma_done_int_clr,       dma_int_set.slv_wr_dma_done_int_set) \
-    item(SPI_LL_INTR_SEG_DONE,      dma_int_ena.dma_seg_trans_done_int_ena, dma_int_raw.dma_seg_trans_done_int_raw, dma_int_clr.dma_seg_trans_done_int_clr,    dma_int_set.dma_seg_trans_done_int_set) \
-    item(SPI_LL_INTR_CMD7,          dma_int_ena.slv_cmd7_int_ena,           dma_int_raw.slv_cmd7_int_raw,           dma_int_clr.slv_cmd7_int_clr,              dma_int_set.slv_cmd7_int_set) \
-    item(SPI_LL_INTR_CMD8,          dma_int_ena.slv_cmd8_int_ena,           dma_int_raw.slv_cmd8_int_raw,           dma_int_clr.slv_cmd8_int_clr,              dma_int_set.slv_cmd8_int_set) \
-    item(SPI_LL_INTR_CMD9,          dma_int_ena.slv_cmd9_int_ena,           dma_int_raw.slv_cmd9_int_raw,           dma_int_clr.slv_cmd9_int_clr,              dma_int_set.slv_cmd9_int_set) \
-    item(SPI_LL_INTR_CMDA,          dma_int_ena.slv_cmda_int_ena,           dma_int_raw.slv_cmda_int_raw,           dma_int_clr.slv_cmda_int_clr,              dma_int_set.slv_cmda_int_set)
+    item(SPI_LL_INTR_TRANS_DONE,    dma_int_ena.trans_done_int_ena,             dma_int_raw.trans_done_int_raw,             dma_int_clr.trans_done_int_clr,             dma_int_set.trans_done_int_set) \
+    item(SPI_LL_INTR_IN_FULL,       dma_int_ena.dma_infifo_full_err_int_ena,    dma_int_raw.dma_infifo_full_err_int_raw,    dma_int_clr.dma_infifo_full_err_int_clr,    dma_int_set.dma_infifo_full_err_int_set) \
+    item(SPI_LL_INTR_OUT_EMPTY,     dma_int_ena.dma_outfifo_empty_err_int_ena,  dma_int_raw.dma_outfifo_empty_err_int_raw,  dma_int_clr.dma_outfifo_empty_err_int_clr,  dma_int_set.dma_outfifo_empty_err_int_set) \
+    item(SPI_LL_INTR_RDBUF,         dma_int_ena.slv_rd_buf_done_int_ena,        dma_int_raw.slv_rd_buf_done_int_raw,        dma_int_clr.slv_rd_buf_done_int_clr,        dma_int_set.slv_rd_buf_done_int_set) \
+    item(SPI_LL_INTR_WRBUF,         dma_int_ena.slv_wr_buf_done_int_ena,        dma_int_raw.slv_wr_buf_done_int_raw,        dma_int_clr.slv_wr_buf_done_int_clr,        dma_int_set.slv_wr_buf_done_int_set) \
+    item(SPI_LL_INTR_RDDMA,         dma_int_ena.slv_rd_dma_done_int_ena,        dma_int_raw.slv_rd_dma_done_int_raw,        dma_int_clr.slv_rd_dma_done_int_clr,        dma_int_set.slv_rd_dma_done_int_set) \
+    item(SPI_LL_INTR_WRDMA,         dma_int_ena.slv_wr_dma_done_int_ena,        dma_int_raw.slv_wr_dma_done_int_raw,        dma_int_clr.slv_wr_dma_done_int_clr,        dma_int_set.slv_wr_dma_done_int_set) \
+    item(SPI_LL_INTR_SEG_DONE,      dma_int_ena.dma_seg_trans_done_int_ena,     dma_int_raw.dma_seg_trans_done_int_raw,     dma_int_clr.dma_seg_trans_done_int_clr,     dma_int_set.dma_seg_trans_done_int_set) \
+    item(SPI_LL_INTR_CMD7,          dma_int_ena.slv_cmd7_int_ena,               dma_int_raw.slv_cmd7_int_raw,               dma_int_clr.slv_cmd7_int_clr,               dma_int_set.slv_cmd7_int_set) \
+    item(SPI_LL_INTR_CMD8,          dma_int_ena.slv_cmd8_int_ena,               dma_int_raw.slv_cmd8_int_raw,               dma_int_clr.slv_cmd8_int_clr,               dma_int_set.slv_cmd8_int_set) \
+    item(SPI_LL_INTR_CMD9,          dma_int_ena.slv_cmd9_int_ena,               dma_int_raw.slv_cmd9_int_raw,               dma_int_clr.slv_cmd9_int_clr,               dma_int_set.slv_cmd9_int_set) \
+    item(SPI_LL_INTR_CMDA,          dma_int_ena.slv_cmda_int_ena,               dma_int_raw.slv_cmda_int_raw,               dma_int_clr.slv_cmda_int_clr,               dma_int_set.slv_cmda_int_set)
 
 
 static inline void spi_ll_enable_intr(spi_dev_t *hw, spi_ll_intr_t intr_mask)

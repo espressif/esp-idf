@@ -1376,6 +1376,20 @@ static inline uint32_t spi_dma_ll_get_in_suc_eof_desc_addr(spi_dma_dev_t *dma_in
     return dma_in->dma_in_suc_eof_des_addr;
 }
 
+/**
+ * Get the DMA RX alignment requirements
+ *
+ * @param dma_dev Beginning address of the DMA peripheral registers.
+ * @param internal_size The internal memory alignment requirements.
+ * @param external_size The external memory alignment requirements.
+ */
+static inline void spi_dma_ll_get_rx_alignment_require(spi_dma_dev_t *dma_dev, uint32_t *internal_size, uint32_t *external_size)
+{
+    *internal_size = 4;
+    // SPI2 supports external memory, SPI3 does not
+    *external_size = (dma_dev == &GPSPI2) ? 16 << dma_dev->dma_conf.ext_mem_bk_size : UINT32_MAX;
+}
+
 //---------------------------------------------------TX-------------------------------------------------//
 /**
  * Reset TX DMA which transmits the data from RAM to a peripheral.
