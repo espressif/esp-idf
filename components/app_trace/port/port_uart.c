@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -295,10 +295,9 @@ static esp_err_t esp_apptrace_uart_up_buffer_put(esp_apptrace_uart_data_t *hw_da
 
 static void esp_apptrace_uart_down_buffer_config(esp_apptrace_uart_data_t *hw_data, uint8_t *buf, uint32_t size)
 {
-    hw_data->down_buffer = (uint8_t *)malloc(size);
-    if (hw_data->down_buffer == NULL){
-        assert(false && "Failed to allocate apptrace uart down buffer!");
-    }
+    assert(buf != NULL && "Down buffer cannot be NULL");
+
+    hw_data->down_buffer = buf;
     hw_data->down_buffer_size = size;
 }
 
