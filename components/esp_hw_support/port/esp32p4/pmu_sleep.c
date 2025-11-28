@@ -176,7 +176,11 @@ const pmu_sleep_config_t* pmu_sleep_config_default(
         config->digital = digital_default;
 
         pmu_sleep_analog_config_t analog_default = PMU_SLEEP_ANALOG_DSLP_CONFIG_DEFAULT(sleep_flags);
-        analog_default.hp_sys.analog.xpd_0p1a = 0;
+        if (sleep_flags & PMU_SLEEP_PD_VDDSDIO) {
+            analog_default.hp_sys.analog.xpd_0p1a = 0;
+        } else {
+            analog_default.hp_sys.analog.xpd_0p1a = 1;
+        }
         config->analog = analog_default;
 
         if (sleep_flags & RTC_SLEEP_POWER_BY_VBAT) {
@@ -296,7 +300,7 @@ static void pmu_sleep_analog_init(pmu_context_t *ctx, const pmu_sleep_analog_con
     pmu_ll_hp_set_regulator_sleep_memory_xpd  (ctx->hal->dev, HP(SLEEP), analog->hp_sys.analog.slp_mem_xpd);
     pmu_ll_hp_set_regulator_sleep_logic_xpd   (ctx->hal->dev, HP(SLEEP), analog->hp_sys.analog.slp_logic_xpd);
     pmu_ll_hp_set_regulator_xpd               (ctx->hal->dev, HP(SLEEP), analog->hp_sys.analog.xpd);
-    if (ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 100)) {
+    if (ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 300)) {
         pmu_ll_hp_enable_sleep_flash_ldo_channel(ctx->hal->dev, analog->hp_sys.analog.xpd_0p1a);
     }
     pmu_ll_hp_set_regulator_sleep_logic_dbias (ctx->hal->dev, HP(SLEEP), analog->hp_sys.analog.slp_logic_dbias);

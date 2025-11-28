@@ -219,6 +219,7 @@ menu "Hardware Settings"
             bool "Set SPI flash to deep power-down mode in light sleep"
             depends on (!APP_BUILD_TYPE_PURE_RAM_APP && !ESP_SLEEP_POWER_DOWN_FLASH && !SPI_FLASH_ROM_IMPL)
             default y if (IDF_TARGET_ESP32H4 || IDF_TARGET_ESP32H21)
+            default y if (IDF_TARGET_ESP32P4 && ESP32P4_SELECTS_REV_LESS_V3)
             default n
             help
                 Deep Power-Down mode is a power mode supported by most SPI Flash, SPI Flash has better power
@@ -236,7 +237,7 @@ menu "Hardware Settings"
         config ESP_SLEEP_SPI_FLASH_ENTER_DPD_MODE_DELAY
             int "SPI Flash enter deep power-down time delay (in us)"
             depends on ESP_SLEEP_SET_FLASH_DPD
-            default 20
+            default 25
             range 0 100
             help
                 When used to set the SPI Flash to enter the Deep Power-Down mode, the command is issued by driving

@@ -26,6 +26,7 @@
 #include "esp_private/sleep_retention.h"
 #include "esp_private/io_mux.h"
 #include "esp_private/critical_section.h"
+#include "esp_private/spi_flash_os.h"
 #include "esp_log.h"
 #include "esp_newlib.h"
 #include "esp_timer.h"
@@ -911,6 +912,14 @@ static esp_err_t FORCE_IRAM_ATTR esp_sleep_start_safe(uint32_t sleep_flags, uint
         esp_sleep_isolate_digital_gpio();
 #endif
 
+#if CONFIG_IDF_TARGET_ESP32P4 && CONFIG_ESP_SLEEP_SET_FLASH_DPD
+    if ((sleep_flags & RTC_SLEEP_FLASH_DPD) && (!ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 300))) {
+        /* Switch Flash from standby mode to deep powerdown mode */
+        /* During bootloader phase following wakeup from deepsleep, flash will exit dpd mode */
+        spi_flash_enable_deep_power_down_mode(true);
+    }
+#endif
+
 #if ESP_ROM_SUPPORT_DEEP_SLEEP_WAKEUP_STUB && SOC_DEEP_SLEEP_SUPPORTED
 #if SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY
         esp_set_deep_sleep_wake_stub_default_entry();
@@ -943,21 +952,28 @@ static esp_err_t FORCE_IRAM_ATTR esp_sleep_start_safe(uint32_t sleep_flags, uint
         suspend_timers(sleep_flags);
         /* Cache Suspend 1: will wait cache idle in cache suspend */
         suspend_cache();
-        /* On esp32c6, only the lp_aon pad hold function can only hold the GPIO state in the active mode.
-           In order to avoid the leakage of the SPI cs pin, hold it here */
-
+        if (!(sleep_flags & RTC_SLEEP_PD_VDDSDIO)) {
+#if CONFIG_ESP_SLEEP_SET_FLASH_DPD
+            if (sleep_flags & RTC_SLEEP_FLASH_DPD) {
+                /* Switch Flash from standby mode to deep powerdown mode */
+                spi_flash_enable_deep_power_down_mode(true);
+            }
+#endif
 #if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
-        if(!(sleep_flags & RTC_SLEEP_PD_VDDSDIO) && (sleep_flags & PMU_SLEEP_PD_TOP)) {
+            /* On esp32c6, only the lp_aon pad hold function can only hold the GPIO state in the active mode.
+            In order to avoid the leakage of the SPI cs pin, hold it here */
+            if(sleep_flags & PMU_SLEEP_PD_TOP) {
 #if CONFIG_ESP_SLEEP_FLASH_LEAKAGE_WORKAROUND
-            /* Cache suspend also means SPI bus IDLE, then we can hold SPI CS pin safely */
-            gpio_ll_hold_en(&GPIO, MSPI_IOMUX_PIN_NUM_CS0);
+                /* Cache suspend also means SPI bus IDLE, then we can hold SPI CS pin safely */
+                gpio_ll_hold_en(&GPIO, MSPI_IOMUX_PIN_NUM_CS0);
 #endif
 #if CONFIG_ESP_SLEEP_PSRAM_LEAKAGE_WORKAROUND && CONFIG_SPIRAM
-            /* Cache suspend also means SPI bus IDLE, then we can hold SPI CS pin safely */
-            gpio_ll_hold_en(&GPIO, MSPI_IOMUX_PIN_NUM_CS1);
+                /* Cache suspend also means SPI bus IDLE, then we can hold SPI CS pin safely */
+                gpio_ll_hold_en(&GPIO, MSPI_IOMUX_PIN_NUM_CS1);
+#endif
+            }
 #endif
         }
-#endif
 
 #if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
         if (sleep_flags & PMU_SLEEP_PD_TOP) {
@@ -1408,6 +1424,13 @@ static SLEEP_FN_ATTR esp_err_t esp_light_sleep_inner(uint32_t sleep_flags, uint3
 #endif
         // Wait for the flash chip to start up
         esp_rom_delay_us(flash_enable_time_us);
+    } else {
+#if CONFIG_ESP_SLEEP_SET_FLASH_DPD
+        if (sleep_flags & RTC_SLEEP_FLASH_DPD) {
+            //Release Flash out from deep powerdown mode
+            spi_flash_enable_deep_power_down_mode(false);
+        }
+#endif
     }
 
 #if CONFIG_ESP_SLEEP_CACHE_SAFE_ASSERTION
@@ -1592,6 +1615,23 @@ esp_err_t esp_light_sleep_start(void)
                 s_config.sleep_time_adjustment -= flash_enable_time_us;
             }
         }
+    } else if (!(sleep_flags & RTC_SLEEP_PD_VDDSDIO)) {
+#if CONFIG_ESP_SLEEP_SET_FLASH_DPD
+        const uint32_t flash_enable_dpd_us = spi_flash_dpd_get_enter_duration() + spi_flash_dpd_get_exit_duration();
+        if (s_config.sleep_duration > flash_enable_dpd_us) {
+            if (s_config.sleep_time_overhead_out < flash_enable_dpd_us) {
+                s_config.sleep_time_adjustment += flash_enable_dpd_us;
+            }
+        } else {
+            /**
+             * Minimum sleep time is not enough, then reject flash enter deep power-down mode
+             */
+            sleep_flags &= ~RTC_SLEEP_FLASH_DPD;
+            if (s_config.sleep_time_overhead_out > flash_enable_dpd_us) {
+                s_config.sleep_time_adjustment -= flash_enable_dpd_us;
+            }
+        }
+#endif
     }
 
     periph_inform_out_light_sleep_overhead(s_config.sleep_time_adjustment - sleep_time_overhead_in);
@@ -2758,11 +2798,6 @@ static SLEEP_FN_ATTR uint32_t get_power_down_flags(void)
 #ifndef CONFIG_ESP_SLEEP_POWER_DOWN_FLASH
         s_config.domain[ESP_PD_DOMAIN_VDDSDIO].pd_option = ESP_PD_OPTION_ON;
 #endif
-#if CONFIG_IDF_TARGET_ESP32P4
-        if (!ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 100)) {
-            s_config.domain[ESP_PD_DOMAIN_VDDSDIO].pd_option = ESP_PD_OPTION_ON;
-        }
-#endif
     }
 #endif
 
@@ -2850,8 +2885,15 @@ static SLEEP_FN_ATTR uint32_t get_power_down_flags(void)
     }
 #endif
 
+#if CONFIG_ESP_SLEEP_SET_FLASH_DPD
+    if (!(pd_flags & RTC_SLEEP_PD_VDDSDIO)) {
+        // Flash power domain will disable DPD mode.
+        pd_flags |= RTC_SLEEP_FLASH_DPD;
+    }
+#endif
+
 #if CONFIG_IDF_TARGET_ESP32P4
-    if (!ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 100)) {
+    if (!ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 300)) {
         if (pd_flags & RTC_SLEEP_PD_VDDSDIO) {
             ESP_LOGE(TAG, "ESP32P4 chips lower than v1.0 are not allowed to power down the Flash");
         }
@@ -2933,6 +2975,11 @@ static SLEEP_FN_ATTR uint32_t get_sleep_flags(uint32_t sleep_flags, bool deepsle
        triggering the EFUSE_CRC reset, so disable the power-down of this power domain on lightsleep for ECO0 version. */
     if (!ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 1)) {
         sleep_flags &= ~RTC_SLEEP_PD_RTC_PERIPH;
+    }
+    /* The LDO VO1 channel that powers the Flash on esp32p4(<v3) has leakage voltage during deepsleep,
+    which may cause the Flash to enter an abnormal state, so disable Flash power-down feature on esp32p4(<v3). */
+    if (!ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 300)) {
+        sleep_flags &= ~RTC_SLEEP_PD_VDDSDIO;
     }
 #endif
 
