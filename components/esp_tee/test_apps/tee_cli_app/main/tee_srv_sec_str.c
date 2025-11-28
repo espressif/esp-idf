@@ -5,6 +5,7 @@
  */
 #include <string.h>
 
+#include "soc/soc_caps.h"
 #include "esp_event.h"
 #include "esp_log.h"
 
@@ -22,7 +23,11 @@
 #include "example_tee_srv.h"
 
 #define SHA256_DIGEST_SZ         (32)
-#define ECDSA_SECP256R1_KEY_LEN  (32)
+#if SOC_ECDSA_SUPPORT_CURVE_P384
+#define MAX_ECDSA_KEY_LEN        (48)
+#else
+#define MAX_ECDSA_KEY_LEN        (32)
+#endif
 
 #define AES256_GCM_TAG_LEN       (16)
 #define MAX_AES_PLAINTEXT_LEN    (256)
@@ -290,7 +295,7 @@ static int tee_sec_stg_sign(int argc, char **argv)
         goto exit;
     }
 
-    size_t sign_hexstr_len = (ECDSA_SECP256R1_KEY_LEN * 2) * 2 + 1;
+    size_t sign_hexstr_len = (MAX_ECDSA_KEY_LEN * 2) * 2 + 1;
     char *sign_hexstr = calloc(sign_hexstr_len, sizeof(char));
     if (sign_hexstr == NULL) {
         err = ESP_ERR_NO_MEM;
@@ -308,7 +313,7 @@ static int tee_sec_stg_sign(int argc, char **argv)
         goto exit;
     }
 
-    size_t pubkey_hexstr_len = (ECDSA_SECP256R1_KEY_LEN * 2) * 2 + 1;
+    size_t pubkey_hexstr_len = (MAX_ECDSA_KEY_LEN * 2) * 2 + 1;
     char *pubkey_hexstr = calloc(pubkey_hexstr_len, sizeof(char));
     if (pubkey_hexstr == NULL) {
         err = ESP_ERR_NO_MEM;

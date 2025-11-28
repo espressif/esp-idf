@@ -12,6 +12,7 @@
 #include "mbedtls/ecp.h"
 #include "mbedtls/ecdsa.h"
 #include "mbedtls/sha256.h"
+#include "mbedtls/sha512.h"
 #include "ecdsa/ecdsa_alt.h"
 
 #include "esp_tee.h"
@@ -30,7 +31,9 @@
    error hex value (mbedTLS uses -N for error codes) */
 #define TEST_ASSERT_MBEDTLS_OK(X)  TEST_ASSERT_EQUAL_HEX32(0, -(X))
 
+#define SHA384_DIGEST_SZ         (48)
 #define SHA256_DIGEST_SZ         (32)
+#define ECDSA_SECP384R1_KEY_LEN  (48)
 #define ECDSA_SECP256R1_KEY_LEN  (32)
 #define ECDSA_SECP192R1_KEY_LEN  (24)
 
@@ -41,10 +44,13 @@
 
 static const char *TAG = "test_esp_tee_sec_storage";
 
-int verify_ecdsa_sign(const uint8_t *digest, size_t len, const esp_tee_sec_storage_ecdsa_pubkey_t *pubkey, const esp_tee_sec_storage_ecdsa_sign_t *sign, bool is_crv_p192)
+int verify_ecdsa_sign(const esp_tee_sec_storage_type_t key_type, const uint8_t *digest, size_t len, const esp_tee_sec_storage_ecdsa_pubkey_t *pubkey, const esp_tee_sec_storage_ecdsa_sign_t *sign)
 {
 #if !CONFIG_SECURE_TEE_SEC_STG_SUPPORT_SECP192R1_SIGN
-    TEST_ASSERT_FALSE(is_crv_p192);
+    TEST_ASSERT_FALSE(key_type == ESP_SEC_STG_KEY_ECDSA_SECP192R1);
+#endif
+#if SOC_ECDSA_SUPPORT_CURVE_P384 && !CONFIG_SECURE_TEE_SEC_STG_SUPPORT_SECP384R1_SIGN
+    TEST_ASSERT_FALSE(key_type == ESP_SEC_STG_KEY_ECDSA_SECP384R1);
 #endif
 
     TEST_ASSERT_NOT_NULL(pubkey);
@@ -59,9 +65,25 @@ int verify_ecdsa_sign(const uint8_t *digest, size_t len, const esp_tee_sec_stora
     mbedtls_ecdsa_context ecdsa_context;
     mbedtls_ecdsa_init(&ecdsa_context);
 
-    mbedtls_ecp_group_id curve_id = MBEDTLS_ECP_DP_SECP256R1;
-    if (is_crv_p192) {
+    mbedtls_ecp_group_id curve_id = MBEDTLS_ECP_DP_NONE;
+
+    switch (key_type) {
+    case ESP_SEC_STG_KEY_ECDSA_SECP256R1:
+        curve_id = MBEDTLS_ECP_DP_SECP256R1;
+        break;
+#if CONFIG_SECURE_TEE_SEC_STG_SUPPORT_SECP192R1_SIGN
+    case ESP_SEC_STG_KEY_ECDSA_SECP192R1:
         curve_id = MBEDTLS_ECP_DP_SECP192R1;
+        break;
+#endif
+#if CONFIG_SECURE_TEE_SEC_STG_SUPPORT_SECP384R1_SIGN
+    case ESP_SEC_STG_KEY_ECDSA_SECP384R1:
+        curve_id = MBEDTLS_ECP_DP_SECP384R1;
+        break;
+#endif
+    default:
+        ESP_LOGE(TAG, "Unsupported key type: %d", key_type);
+        return -1;
     }
 
     TEST_ASSERT_MBEDTLS_OK(mbedtls_ecp_group_load(&ecdsa_context.MBEDTLS_PRIVATE(grp), curve_id));
@@ -113,7 +135,7 @@ TEST_CASE("Test TEE Secure Storage - Sign-verify (ecdsa_secp256r1)", "[sec_stora
         esp_tee_sec_storage_ecdsa_pubkey_t pubkey = {};
         TEST_ESP_OK(esp_tee_sec_storage_ecdsa_get_pubkey(&key_cfg, &pubkey));
 
-        TEST_ESP_OK(verify_ecdsa_sign(msg_digest, sizeof(msg_digest), &pubkey, &sign, false));
+        TEST_ESP_OK(verify_ecdsa_sign(key_cfg.type, msg_digest, sizeof(msg_digest), &pubkey, &sign));
 
         TEST_ESP_OK(esp_tee_sec_storage_clear_key(key_cfg.id));
     }
@@ -152,7 +174,47 @@ TEST_CASE("Test TEE Secure Storage - Sign-verify (ecdsa_secp192r1)", "[sec_stora
         esp_tee_sec_storage_ecdsa_pubkey_t pubkey = {};
         TEST_ESP_OK(esp_tee_sec_storage_ecdsa_get_pubkey(&key_cfg, &pubkey));
 
-        TEST_ESP_OK(verify_ecdsa_sign(msg_digest, sizeof(msg_digest), &pubkey, &sign, true));
+        TEST_ESP_OK(verify_ecdsa_sign(key_cfg.type, msg_digest, sizeof(msg_digest), &pubkey, &sign));
+
+        TEST_ESP_OK(esp_tee_sec_storage_clear_key(key_cfg.id));
+    }
+}
+#endif
+
+#if CONFIG_SECURE_TEE_SEC_STG_SUPPORT_SECP384R1_SIGN
+TEST_CASE("Test TEE Secure Storage - Sign-verify (ecdsa_secp384r1)", "[sec_storage]")
+{
+    const size_t buf_sz = 16 * 1024 + 6;  // NOTE: Not an exact multiple of SHA block size
+    unsigned char *message = heap_caps_malloc(buf_sz, MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
+    TEST_ASSERT_NOT_NULL(message);
+
+    esp_fill_random(message, buf_sz);
+
+    uint8_t msg_digest[SHA384_DIGEST_SZ];
+    TEST_ASSERT_MBEDTLS_OK(mbedtls_sha512(message, buf_sz, msg_digest, false));
+    free(message);
+
+    esp_tee_sec_storage_key_cfg_t key_cfg = {
+        .type = ESP_SEC_STG_KEY_ECDSA_SECP384R1
+    };
+
+    for (unsigned int i = 0; i < MAX_SEC_STG_ITER; i++) {
+        char key_id[32];
+        int ret = snprintf(key_id, sizeof(key_id), "ecdsa_key_%u", i);
+        TEST_ASSERT_TRUE(ret > 0 && ret < sizeof(key_id));
+
+        key_cfg.id = key_id;
+        esp_err_t err = esp_tee_sec_storage_clear_key(key_cfg.id);
+        TEST_ASSERT_TRUE(err == ESP_OK || err == ESP_ERR_NOT_FOUND);
+        TEST_ESP_OK(esp_tee_sec_storage_gen_key(&key_cfg));
+
+        esp_tee_sec_storage_ecdsa_sign_t sign = {};
+        TEST_ESP_OK(esp_tee_sec_storage_ecdsa_sign(&key_cfg, msg_digest, sizeof(msg_digest), &sign));
+
+        esp_tee_sec_storage_ecdsa_pubkey_t pubkey = {};
+        TEST_ESP_OK(esp_tee_sec_storage_ecdsa_get_pubkey(&key_cfg, &pubkey));
+
+        TEST_ESP_OK(verify_ecdsa_sign(key_cfg.type, msg_digest, sizeof(msg_digest), &pubkey, &sign));
 
         TEST_ESP_OK(esp_tee_sec_storage_clear_key(key_cfg.id));
     }
@@ -265,7 +327,7 @@ TEST_CASE("Test TEE Secure Storage - Operations with invalid/non-existent keys",
     TEST_ESP_OK(esp_tee_sec_storage_gen_key(&key_cfg));
 
     esp_tee_sec_storage_ecdsa_sign_t sign = {};
-    TEST_ESP_ERR(ESP_FAIL, esp_tee_sec_storage_ecdsa_sign(&key_cfg, msg_digest, sizeof(msg_digest), &sign));
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, esp_tee_sec_storage_ecdsa_sign(&key_cfg, msg_digest, sizeof(msg_digest), &sign));
     TEST_ESP_OK(esp_tee_sec_storage_clear_key(key_cfg.id));
 
     // Test with non-existent data
@@ -377,46 +439,64 @@ static void test_aead_encrypt_decrypt(const char *key_id, const uint8_t *input, 
     free(decrypted);
 }
 
+static void do_ecdsa_sign_and_verify(const esp_tee_sec_storage_key_cfg_t *cfg, const uint8_t *digest, size_t digest_len)
+{
+    esp_tee_sec_storage_ecdsa_sign_t sign = {0};
+    esp_tee_sec_storage_ecdsa_pubkey_t pubkey = {0};
+
+    TEST_ESP_OK(esp_tee_sec_storage_ecdsa_sign(cfg, digest, digest_len, &sign));
+    TEST_ESP_OK(esp_tee_sec_storage_ecdsa_get_pubkey(cfg, &pubkey));
+    TEST_ESP_OK(verify_ecdsa_sign(cfg->type, digest, digest_len, &pubkey, &sign));
+}
+
 TEST_CASE("Test TEE Secure Storage - Host-generated keys", "[sec_storage_host_keygen]")
 {
-    const char *aes_key_id0 = "aes256_key0";
-    const char *aes_key_id1 = "aes256_key1";
+    const char *aes_key_ids[] = { "aes256_key0", "aes256_key1" };
     const char *ecdsa_key_id0 = "p256_key0";
-    const char *attest_key_id = "attest_key";
 
-    TEST_ESP_ERR(ESP_ERR_INVALID_STATE, esp_tee_sec_storage_clear_key(aes_key_id0));
+    TEST_ESP_ERR(ESP_ERR_INVALID_STATE, esp_tee_sec_storage_clear_key(aes_key_ids[0]));
 
     const size_t SZ = 100;
     uint8_t *plaintext = heap_caps_malloc(SZ, MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
     TEST_ASSERT_NOT_NULL(plaintext);
     esp_fill_random(plaintext, SZ);
 
-    test_aead_encrypt_decrypt(aes_key_id0, plaintext, SZ);
-    test_aead_encrypt_decrypt(aes_key_id1, plaintext, SZ);
+    for (size_t i = 0; i < sizeof(aes_key_ids) / sizeof(aes_key_ids[0]); ++i) {
+        test_aead_encrypt_decrypt(aes_key_ids[i], plaintext, SZ);
+    }
 
-    free(plaintext);
+    heap_caps_free(plaintext);
 
-    TEST_ESP_OK(esp_tee_sec_storage_clear_key(aes_key_id1));
+    TEST_ESP_OK(esp_tee_sec_storage_clear_key(aes_key_ids[1]));
 
-    uint8_t msg_digest[SHA256_DIGEST_SZ];
-    esp_fill_random(msg_digest, sizeof(msg_digest));
+    uint8_t digest_buf[SHA384_DIGEST_SZ];
+    esp_fill_random(digest_buf, sizeof(digest_buf));
 
     esp_tee_sec_storage_key_cfg_t key_cfg = {
-        .id = ecdsa_key_id0,
+        .id   = ecdsa_key_id0,
         .type = ESP_SEC_STG_KEY_ECDSA_SECP256R1,
     };
 
-    esp_tee_sec_storage_ecdsa_sign_t sign = {};
-    TEST_ESP_OK(esp_tee_sec_storage_ecdsa_sign(&key_cfg, msg_digest, sizeof(msg_digest), &sign));
-
-    esp_tee_sec_storage_ecdsa_pubkey_t pubkey = {};
-    TEST_ESP_OK(esp_tee_sec_storage_ecdsa_get_pubkey(&key_cfg, &pubkey));
-
-    TEST_ESP_OK(verify_ecdsa_sign(msg_digest, sizeof(msg_digest), &pubkey, &sign, false));
-
+    do_ecdsa_sign_and_verify(&key_cfg, digest_buf, SHA256_DIGEST_SZ);
     TEST_ESP_OK(esp_tee_sec_storage_clear_key(ecdsa_key_id0));
 
-    TEST_ESP_ERR(ESP_ERR_INVALID_STATE, esp_tee_sec_storage_clear_key(attest_key_id));
+#if CONFIG_SECURE_TEE_SEC_STG_SUPPORT_SECP192R1_SIGN
+    const char *ecdsa_key_id1 = "p192_key0";
+    key_cfg.id = ecdsa_key_id1;
+    key_cfg.type = ESP_SEC_STG_KEY_ECDSA_SECP192R1;
+
+    do_ecdsa_sign_and_verify(&key_cfg, digest_buf, SHA256_DIGEST_SZ);
+    TEST_ESP_OK(esp_tee_sec_storage_clear_key(ecdsa_key_id1));
+#endif /* CONFIG_SECURE_TEE_SEC_STG_SUPPORT_SECP192R1_SIGN */
+
+#if CONFIG_SECURE_TEE_SEC_STG_SUPPORT_SECP384R1_SIGN
+    const char *ecdsa_key_id2 = "p384_key0";
+    key_cfg.id = ecdsa_key_id2;
+    key_cfg.type = ESP_SEC_STG_KEY_ECDSA_SECP384R1;
+
+    do_ecdsa_sign_and_verify(&key_cfg, digest_buf, SHA384_DIGEST_SZ);
+    TEST_ESP_ERR(ESP_ERR_INVALID_STATE, esp_tee_sec_storage_clear_key(ecdsa_key_id2));
+#endif /* CONFIG_SECURE_TEE_SEC_STG_SUPPORT_SECP384R1_SIGN */
 
 #if CONFIG_SECURE_TEE_ATTESTATION
     uint8_t *token_buf = heap_caps_calloc(ESP_ATT_TK_BUF_SIZE, sizeof(uint8_t), MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
@@ -427,29 +507,52 @@ TEST_CASE("Test TEE Secure Storage - Host-generated keys", "[sec_storage_host_ke
                                            token_buf, ESP_ATT_TK_BUF_SIZE, &token_len));
 
     free(token_buf);
-#endif
+
+    const char *attest_key_id  = "attest_key";
+    TEST_ESP_ERR(ESP_ERR_INVALID_STATE, esp_tee_sec_storage_clear_key(attest_key_id));
+#endif /* CONFIG_SECURE_TEE_ATTESTATION */
 }
 
 #if CONFIG_MBEDTLS_TEE_SEC_STG_ECDSA_SIGN
 static const uint8_t sha[] = {
-    0x0c, 0xaa, 0x08, 0xb4, 0xf0, 0x89, 0xd3, 0x45,
-    0xbb, 0x55, 0x98, 0xd9, 0xc2, 0xe9, 0x65, 0x5d,
-    0x7e, 0xa3, 0xa9, 0xc3, 0xcd, 0x69, 0xb1, 0xcf,
-    0x91, 0xbe, 0x58, 0x10, 0xfe, 0x80, 0x65, 0x6e
+    0xda, 0x99, 0x5d, 0x66, 0xcb, 0xa5, 0xcb, 0xc7,
+    0xc5, 0x3d, 0x8d, 0x08, 0x4d, 0x6a, 0x5e, 0x8e,
+    0xf0, 0x84, 0x4b, 0x7b, 0xdd, 0xd0, 0x20, 0x47,
+    0xa3, 0x6c, 0x61, 0xf3, 0xbc, 0xcf, 0xf4, 0xe2,
+    0xf7, 0x70, 0xcd, 0x19, 0xf7, 0x31, 0x52, 0x48,
+    0x1f, 0x29, 0x0e, 0x13, 0x24, 0x55, 0x9d, 0xb9,
+    0x1a, 0x48, 0xa4, 0x0e, 0x75, 0xc2, 0xa8, 0x35,
+    0xa9, 0x53, 0x97, 0xec, 0xcc, 0x66, 0x5b, 0xa6
 };
 
 static void test_ecdsa_sign(mbedtls_ecp_group_id gid)
 {
-    bool is_crv_p192 = false;
-    esp_tee_sec_storage_type_t key_type = ESP_SEC_STG_KEY_ECDSA_SECP256R1;
-    size_t key_len = ECDSA_SECP256R1_KEY_LEN;
+    esp_tee_sec_storage_type_t key_type = ESP_SEC_STG_TYPE_MAX;
+    size_t key_len = 0;
+    size_t sha_len = SHA256_DIGEST_SZ;
 
-    if (gid == MBEDTLS_ECP_DP_SECP192R1) {
-        is_crv_p192 = true;
+    switch (gid) {
+    case MBEDTLS_ECP_DP_SECP256R1:
+        key_type = ESP_SEC_STG_KEY_ECDSA_SECP256R1;
+        key_len  = ECDSA_SECP256R1_KEY_LEN;
+        break;
+#if CONFIG_SECURE_TEE_SEC_STG_SUPPORT_SECP192R1_SIGN
+    case MBEDTLS_ECP_DP_SECP192R1:
         key_type = ESP_SEC_STG_KEY_ECDSA_SECP192R1;
-        key_len = ECDSA_SECP192R1_KEY_LEN;
+        key_len  = ECDSA_SECP192R1_KEY_LEN;
+        break;
+#endif
+#if CONFIG_SECURE_TEE_SEC_STG_SUPPORT_SECP384R1_SIGN
+    case MBEDTLS_ECP_DP_SECP384R1:
+        key_type = ESP_SEC_STG_KEY_ECDSA_SECP384R1;
+        key_len  = ECDSA_SECP384R1_KEY_LEN;
+        sha_len  = SHA384_DIGEST_SZ;
+        break;
+#endif
+    default:
+        ESP_LOGE(TAG, "Unsupported curve ID: %d", gid);
+        return;
     }
-
     const char *key_id = "ecdsa_k0";
 
     esp_tee_sec_storage_key_cfg_t key_cfg = {
@@ -486,13 +589,13 @@ static void test_ecdsa_sign(mbedtls_ecp_group_id gid)
     mbedtls_ecp_keypair *keypair = mbedtls_pk_ec(key_ctx);
     mbedtls_mpi key_mpi = keypair->MBEDTLS_PRIVATE(d);
 
-    TEST_ASSERT_MBEDTLS_OK(mbedtls_ecdsa_sign(&ecdsa_context.MBEDTLS_PRIVATE(grp), &r, &s, &key_mpi, sha, SHA256_DIGEST_SZ, NULL, NULL));
+    TEST_ASSERT_MBEDTLS_OK(mbedtls_ecdsa_sign(&ecdsa_context.MBEDTLS_PRIVATE(grp), &r, &s, &key_mpi, sha, sha_len, NULL, NULL));
 
     esp_tee_sec_storage_ecdsa_sign_t sign = {};
     TEST_ASSERT_MBEDTLS_OK(mbedtls_mpi_write_binary(&r, sign.sign_r, key_len));
     TEST_ASSERT_MBEDTLS_OK(mbedtls_mpi_write_binary(&s, sign.sign_s, key_len));
 
-    TEST_ESP_OK(verify_ecdsa_sign(sha, sizeof(sha), &pubkey, &sign, is_crv_p192));
+    TEST_ESP_OK(verify_ecdsa_sign(key_type, sha, sha_len, &pubkey, &sign));
 
     mbedtls_pk_free(&key_ctx);
     mbedtls_ecdsa_free(&ecdsa_context);
@@ -507,6 +610,9 @@ TEST_CASE("Test TEE Secure Storage - mbedtls ECDSA signing", "[mbedtls]")
     test_ecdsa_sign(MBEDTLS_ECP_DP_SECP256R1);
 #if CONFIG_SECURE_TEE_SEC_STG_SUPPORT_SECP192R1_SIGN && !TEMPORARY_DISABLED_FOR_TARGETS(ESP32H2)
     test_ecdsa_sign(MBEDTLS_ECP_DP_SECP192R1);
+#endif
+#if CONFIG_SECURE_TEE_SEC_STG_SUPPORT_SECP384R1_SIGN
+    test_ecdsa_sign(MBEDTLS_ECP_DP_SECP384R1);
 #endif
 }
 #endif
