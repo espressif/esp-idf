@@ -158,7 +158,7 @@ int dpp_hmac(size_t hash_len, const u8 *key, size_t key_len,
 struct crypto_ec_key * dpp_set_pubkey_point(struct crypto_ec_key *group_key,
 					    const u8 *buf, size_t len)
 {
-	const struct crypto_ec_group *group;
+	struct crypto_ec_group *group;
 	struct crypto_ec_key *pkey = NULL;
 
 	group = crypto_ec_get_group_from_key(group_key);
@@ -167,6 +167,7 @@ struct crypto_ec_key * dpp_set_pubkey_point(struct crypto_ec_key *group_key,
 	else
 		wpa_printf(MSG_ERROR, "DPP: Could not get EC group");
 
+	os_free(group);
 	return pkey;
 }
 
@@ -962,7 +963,7 @@ int dpp_bn2bin_pad(const struct crypto_bignum *bn, u8 *pos, size_t len)
 
 int dpp_auth_derive_l_responder(struct dpp_authentication *auth)
 {
-	struct crypto_ec_group *group;
+	struct crypto_ec_group *group = NULL;
 	struct crypto_ec_point *L = NULL;
 	struct crypto_ec_point *BI;
 	struct crypto_bignum *lx, *sum, *q;
@@ -1006,6 +1007,7 @@ fail:
 	crypto_bignum_deinit(lx, 0);
 	crypto_bignum_deinit(sum, 0);
 	crypto_bignum_deinit(q, 0);
+	os_free(group);
 
 	return ret;
 }
@@ -1062,7 +1064,7 @@ fail:
 	}
 
 	if (group) {
-		crypto_ec_deinit((struct crypto_ec *)group);
+		os_free(group);
 	}
 
 	if (bI_bn) {

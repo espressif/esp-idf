@@ -336,7 +336,9 @@ static int hmac_vector(psa_algorithm_t alg,
     }
 
     size_t mac_len;
-    status = psa_mac_sign_finish(&operation, mac, PSA_MAC_LENGTH(PSA_KEY_TYPE_HMAC, 8 * key_len, PSA_ALG_HMAC(alg)), &mac_len);
+    /* For HMAC, the MAC length equals the hash output length */
+    size_t expected_mac_len = PSA_HASH_LENGTH(alg);
+    status = psa_mac_sign_finish(&operation, mac, expected_mac_len, &mac_len);
     if (status != PSA_SUCCESS) {
         ret = -1;
         goto err;
@@ -460,26 +462,22 @@ static int aes_crypt(void *ctx, int mode, const u8 *in, u8 *out)
         status = psa_cipher_decrypt_setup(&operation, *key_id, PSA_ALG_ECB_NO_PADDING);
     } else {
         wpa_printf(MSG_ERROR, "%s: invalid mode", __func__);
-        printf("%s: invalid mode\n", __func__);
         return -1;
     }
     if (status != PSA_SUCCESS) {
         wpa_printf(MSG_ERROR, "%s: psa_cipher_encrypt_setup failed", __func__);
-        printf("%s: psa_cipher_encrypt_setup failed, status: %d\n", __func__, status);
         return -1;
     }
 
     status = psa_cipher_update(&operation, in, 16, out, 16, &output_len);
     if (status != PSA_SUCCESS) {
         wpa_printf(MSG_ERROR, "%s: psa_cipher_update failed", __func__);
-        printf("%s: psa_cipher_update failed\n", __func__);
         return -1;
     }
 
     status = psa_cipher_finish(&operation, out + output_len, 16 - output_len, &output_len);
     if (status != PSA_SUCCESS) {
         wpa_printf(MSG_ERROR, "%s: psa_cipher_finish failed", __func__);
-        printf("%s: psa_cipher_finish failed\n", __func__);
         return -1;
     }
 
@@ -493,10 +491,9 @@ static void aes_crypt_deinit(void *ctx)
     psa_key_id_t *key_id = (psa_key_id_t *) ctx;
     psa_status_t status = psa_destroy_key(*key_id);
     if (status != PSA_SUCCESS) {
-        printf("%s: psa_destroy_key failed\n", __func__);
+        wpa_printf(MSG_ERROR, "%s: psa_destroy_key failed", __func__);
     }
     os_free(ctx);
-    ctx = NULL;
 }
 
 void *aes_encrypt_init(const u8 *key, size_t len)
@@ -612,7 +609,6 @@ int aes_128_cbc_decrypt(const u8 *key, const u8 *iv, u8 *data, size_t data_len)
     status = psa_cipher_decrypt_setup(&operation, key_id, PSA_ALG_CBC_NO_PADDING);
     if (status != PSA_SUCCESS) {
         wpa_printf(MSG_ERROR, "%s: psa_cipher_decrypt_setup failed", __func__);
-        psa_cipher_abort(&operation);
         psa_destroy_key(key_id);
         return -1;
     }
@@ -1121,18 +1117,23 @@ int aes_ccm_ae(const u8 *key, size_t key_len, const u8 *nonce,
     status = psa_aead_encrypt_setup(&operation, key_id, PSA_ALG_CCM);
     if (status != PSA_SUCCESS) {
         wpa_printf(MSG_ERROR, "%s: psa_aead_encrypt_setup failed", __func__);
+        psa_destroy_key(key_id);
         return -1;
     }
 
     status = psa_aead_set_nonce(&operation, nonce, 13);
     if (status != PSA_SUCCESS) {
         wpa_printf(MSG_ERROR, "%s: psa_aead_set_nonce failed", __func__);
+        psa_aead_abort(&operation);
+        psa_destroy_key(key_id);
         return -1;
     }
 
     status = psa_aead_set_lengths(&operation, aad_len, plain_len);
     if (status != PSA_SUCCESS) {
         wpa_printf(MSG_ERROR, "%s: psa_aead_set_lengths failed", __func__);
+        psa_aead_abort(&operation);
+        psa_destroy_key(key_id);
         return -1;
     }
 
@@ -1142,18 +1143,25 @@ int aes_ccm_ae(const u8 *key, size_t key_len, const u8 *nonce,
     status = psa_aead_update_ad(&operation, aad, aad_len);
     if (status != PSA_SUCCESS) {
         wpa_printf(MSG_ERROR, "%s: psa_aead_update_ad failed", __func__);
+        psa_aead_abort(&operation);
+        psa_destroy_key(key_id);
         return -1;
     }
 
     status = psa_aead_update(&operation, plain, plain_len, crypt, plain_len, &output_length);
     if (status != PSA_SUCCESS) {
         wpa_printf(MSG_ERROR, "%s: psa_aead_update failed", __func__);
+        psa_aead_abort(&operation);
+        psa_destroy_key(key_id);
         return -1;
     }
 
-    status = psa_aead_finish(&operation, crypt + output_length, 16 - output_length, &output_length, auth, M, &tag_len);
+    size_t finish_output = 0;
+    status = psa_aead_finish(&operation, crypt + output_length, plain_len - output_length, &finish_output, auth, M, &tag_len);
     if (status != PSA_SUCCESS) {
-        wpa_printf(MSG_ERROR, "%s: psa_aead_finish failed, status: %d\n", __func__, status);
+        wpa_printf(MSG_ERROR, "%s: psa_aead_finish failed, status: %d", __func__, status);
+        psa_aead_abort(&operation);
+        psa_destroy_key(key_id);
         return -1;
     }
 
@@ -1191,18 +1199,23 @@ int aes_ccm_ad(const u8 *key, size_t key_len, const u8 *nonce,
     status = psa_aead_decrypt_setup(&operation, key_id, PSA_ALG_CCM);
     if (status != PSA_SUCCESS) {
         wpa_printf(MSG_ERROR, "%s: psa_aead_decrypt_setup failed", __func__);
+        psa_destroy_key(key_id);
         return -1;
     }
 
     status = psa_aead_set_nonce(&operation, nonce, 13);
     if (status != PSA_SUCCESS) {
         wpa_printf(MSG_ERROR, "%s: psa_aead_set_nonce failed", __func__);
+        psa_aead_abort(&operation);
+        psa_destroy_key(key_id);
         return -1;
     }
 
     status = psa_aead_set_lengths(&operation, aad_len, crypt_len);
     if (status != PSA_SUCCESS) {
         wpa_printf(MSG_ERROR, "%s: psa_aead_set_lengths failed", __func__);
+        psa_aead_abort(&operation);
+        psa_destroy_key(key_id);
         return -1;
     }
 
@@ -1212,18 +1225,25 @@ int aes_ccm_ad(const u8 *key, size_t key_len, const u8 *nonce,
     status = psa_aead_update_ad(&operation, aad, aad_len);
     if (status != PSA_SUCCESS) {
         wpa_printf(MSG_ERROR, "%s: psa_aead_update_ad failed", __func__);
+        psa_aead_abort(&operation);
+        psa_destroy_key(key_id);
         return -1;
     }
 
     status = psa_aead_update(&operation, crypt, crypt_len, plain, crypt_len, &output_length);
     if (status != PSA_SUCCESS) {
         wpa_printf(MSG_ERROR, "%s: psa_aead_update failed", __func__);
+        psa_aead_abort(&operation);
+        psa_destroy_key(key_id);
         return -1;
     }
 
-    status = psa_aead_verify(&operation, plain + output_length, 16 - output_length, &output_length, auth, M);
+    size_t verify_output = 0;
+    status = psa_aead_verify(&operation, plain + output_length, crypt_len - output_length, &verify_output, auth, M);
     if (status != PSA_SUCCESS) {
         wpa_printf(MSG_ERROR, "%s: psa_aead_verify failed", __func__);
+        psa_aead_abort(&operation);
+        psa_destroy_key(key_id);
         return -1;
     }
 

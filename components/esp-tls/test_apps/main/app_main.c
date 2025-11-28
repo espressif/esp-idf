@@ -60,7 +60,7 @@ void setUp(void)
     psa_cipher_encrypt(key_id, PSA_ALG_ECB_NO_PADDING, buf, CALL_SZ, buf, CALL_SZ, &output_length);
     heap_caps_free(buf);
     psa_destroy_key(key_id);
-#endif // SOC_AES_SUPPORTED
+// #endif // SOC_AES_SUPPORTED
 
     test_utils_record_free_mem();
     TEST_ESP_OK(test_utils_set_leak_level(0, ESP_LEAK_TYPE_CRITICAL, ESP_COMP_LEAK_GENERAL));

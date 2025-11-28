@@ -16,7 +16,7 @@ void mbedtls_psa_crypto_init_include_impl(void);
  * @brief Initialize PSA Crypto library at system startup
  *
  * This function is called during the SECONDARY initialization stage with priority 104,
- * which ensures it runs after esp_security_init (priority 104). This ordering guarantees
+ * which ensures it runs after esp_security_init (priority 103). This ordering guarantees
  * that hardware crypto support is fully initialized before PSA crypto initialization.
  */
 ESP_SYSTEM_INIT_FN(mbedtls_psa_crypto_init_fn, SECONDARY, BIT(0), 104)

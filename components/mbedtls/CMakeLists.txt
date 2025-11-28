@@ -183,6 +183,7 @@ endif()
 set(mbedtls_targets mbedtls mbedx509 tfpsacrypto builtin)
 
 target_include_directories(tfpsacrypto PUBLIC "port/include")
+target_include_directories(tfpsacrypto PRIVATE "port/psa_crypto_storage/include")
 
 if(CONFIG_MBEDTLS_HARDWARE_SHA OR CONFIG_MBEDTLS_HARDWARE_AES)
     list(APPEND include_dirs "${COMPONENT_DIR}/port/psa_driver/include")
@@ -212,6 +213,29 @@ set(mbedtls_target_sources "${COMPONENT_DIR}/port/mbedtls_debug.c"
 
 if(CONFIG_MBEDTLS_VER_4_X_SUPPORT)
     list(APPEND mbedtls_target_sources "${COMPONENT_DIR}/port/esp_psa_crypto_init.c")
+    # Add ESP-IDF NVS-based PSA ITS implementation
+    # Only compile esp_psa_its.c if nvs_flash component is available
+    if(NOT ${IDF_TARGET} STREQUAL "linux")
+        if(IDF_BUILD_V2)
+            # For v2: conditionally compile source and link only if nvs_flash target exists
+            target_sources(
+                tfpsacrypto PRIVATE
+                "$<$<TARGET_EXISTS:idf::nvs_flash>:${COMPONENT_DIR}/port/psa_crypto_storage/esp_psa_its.c>"
+            )
+            target_link_libraries(tfpsacrypto PRIVATE "$<$<TARGET_EXISTS:idf::nvs_flash>:idf::nvs_flash>")
+            # Define compile definition to indicate ESP-IDF PSA ITS implementation is available
+            target_compile_definitions(tfpsacrypto PRIVATE "$<$<TARGET_EXISTS:idf::nvs_flash>:ESP_PSA_ITS_AVAILABLE>")
+        else()
+            # For v1: check if component is in build before adding source and linking
+            idf_build_get_property(build_components BUILD_COMPONENTS)
+            if(nvs_flash IN_LIST build_components)
+                target_sources(tfpsacrypto PRIVATE "${COMPONENT_DIR}/port/psa_crypto_storage/esp_psa_its.c")
+                idf_component_get_property(nvs_flash_lib nvs_flash COMPONENT_LIB)
+                target_link_libraries(tfpsacrypto PRIVATE ${nvs_flash_lib})
+                target_compile_definitions(tfpsacrypto PRIVATE ESP_PSA_ITS_AVAILABLE)
+            endif()
+        endif()
+    endif()
 endif()
 
 if(CONFIG_MBEDTLS_DYNAMIC_BUFFER)
@@ -251,7 +275,6 @@ target_sources(mbedtls PRIVATE ${mbedtls_target_sources})
 if(NOT ${IDF_TARGET} STREQUAL "linux")
     target_link_libraries(tfpsacrypto PRIVATE idf::esp_security)
     target_link_libraries(builtin PRIVATE idf::esp_security)
-    # target_link_libraries(builtin PRIVATE idf::esp_security)
 endif()
 
 # Choose peripheral type

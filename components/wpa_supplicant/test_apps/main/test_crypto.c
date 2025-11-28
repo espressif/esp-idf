@@ -706,6 +706,101 @@ TEST_CASE("Test crypto lib aes apis", "[wpa_crypto]")
         TEST_ASSERT(!memcmp(tag, expected_tag, 16));
         TEST_ASSERT(!memcmp(decrypted, data, 16));
     }
+
+    {
+        /* Test PSA migration compatibility: aes_ccm_ae (old AES) vs aes_ccm_ad (PSA)
+         * This test verifies that encryption and decryption are compatible despite
+         * using different implementations. This is critical for PMF frame encryption/decryption.
+         */
+        const uint8_t key_size = 16;
+        const uint8_t key[16] = {[0 ... key_size - 1] = 0x3A};
+        const uint8_t nonce[13] = {[0 ... 12] = 0x5A};
+        const uint8_t aad[16] = {[0 ... 15] = 0xA5};
+
+        /* Test with 32-byte plaintext (not 16 bytes) */
+        const uint8_t data_32[32] = {[0 ... 31] = 0xA5};
+        uint8_t crypt_32[32];
+        uint8_t tag_32[16];
+        uint8_t decrypted_32[32] = {0};
+
+        int ret = aes_ccm_ae(key, key_size, nonce, 16, data_32, 32, aad, 16, crypt_32, tag_32);
+        TEST_ASSERT(ret == 0);
+
+        /* Critical test: Can PSA-based decryption decrypt old AES-based encryption? */
+        ret = aes_ccm_ad(key, key_size, nonce, 16, crypt_32, 32, aad, 16, tag_32, decrypted_32);
+        TEST_ASSERT(ret == 0);
+        TEST_ASSERT(!memcmp(decrypted_32, data_32, 32));
+
+        /* Test with 8-byte plaintext (smaller than 16 bytes) - common for PMF frames */
+        const uint8_t data_8[8] = {[0 ... 7] = 0xA5};
+        uint8_t crypt_8[8];
+        uint8_t tag_8[16];
+        uint8_t decrypted_8[8] = {0};
+
+        ret = aes_ccm_ae(key, key_size, nonce, 16, data_8, 8, aad, 16, crypt_8, tag_8);
+        TEST_ASSERT(ret == 0);
+
+        /* This should also work correctly with the fix */
+        ret = aes_ccm_ad(key, key_size, nonce, 16, crypt_8, 8, aad, 16, tag_8, decrypted_8);
+        TEST_ASSERT(ret == 0);
+        TEST_ASSERT(!memcmp(decrypted_8, data_8, 8));
+    }
+
+    {
+        /* Test round-trip encryption/decryption with various PMF-like frame sizes
+         * PMF frames typically use 8-byte tags and various payload sizes
+         */
+        const uint8_t key_size = 16;
+        const uint8_t key[16] = {[0 ... key_size - 1] = 0x3A};
+        const uint8_t nonce[13] = {[0 ... 12] = 0x5A};
+        const uint8_t aad[24] = {[0 ... 23] = 0xA5};  /* Typical PMF AAD size */
+
+        /* Test multiple round-trips to catch any state issues */
+        for (int i = 0; i < 10; i++) {
+            uint8_t data[20] = {[0 ... 19] = (uint8_t)(0xA5 + i)};
+            uint8_t crypt[20];
+            uint8_t tag[8];  /* PMF uses 8-byte tags */
+            uint8_t decrypted[20] = {0};
+
+            int ret = aes_ccm_ae(key, key_size, nonce, 8, data, 20, aad, 24, crypt, tag);
+            TEST_ASSERT(ret == 0);
+
+            ret = aes_ccm_ad(key, key_size, nonce, 8, crypt, 20, aad, 24, tag, decrypted);
+            TEST_ASSERT(ret == 0);
+            TEST_ASSERT(!memcmp(decrypted, data, 20));
+        }
+    }
+
+    {
+        /* Test ESP-NOW specific case: M=0 (tag_len=0) with modified nonce
+         * ESP-NOW uses tag_len=0 and sets nonce[0]=0 when espnow_pkt=true
+         * This test verifies if PSA implementation handles M=0 correctly
+         */
+        const uint8_t key_size = 16;
+        const uint8_t key[16] = {[0 ... key_size - 1] = 0x3A};
+        uint8_t nonce[13] = {[0 ... 12] = 0x5A};
+        nonce[0] = 0;  /* ESP-NOW sets nonce[0] = 0 when espnow_pkt=true */
+        const uint8_t aad[24] = {[0 ... 23] = 0xA5};
+        const uint8_t data[20] = {[0 ... 19] = 0xA5};
+
+        uint8_t crypt[20];
+        uint8_t tag[8] = {0};  /* M=0 means tag_len=0, tag is not verified */
+        uint8_t decrypted[20] = {0};
+
+        /* Test: Encrypt with M=0 (ESP-NOW encryption case) */
+        int ret = aes_ccm_ae(key, key_size, nonce, 0, data, 20, aad, 24, crypt, tag);
+        if (ret != 0) {
+            TEST_FAIL_MESSAGE("aes_ccm_ae with M=0 failed - PSA may not support zero-length tags for ESP-NOW");
+        }
+
+        /* Test: Decrypt with M=0 (ESP-NOW decryption case) */
+        ret = aes_ccm_ad(key, key_size, nonce, 0, crypt, 20, aad, 24, tag, decrypted);
+        if (ret != 0) {
+            TEST_FAIL_MESSAGE("aes_ccm_ad with M=0 failed - PSA may not support zero-length tags for ESP-NOW");
+        }
+
+        TEST_ASSERT(!memcmp(decrypted, data, 20));
+    }
 }
 
 // NOTE: This is disable as PSA does not support DES

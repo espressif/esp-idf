@@ -1589,6 +1589,7 @@ void esp_ble_controller_log_dump_all(bool output)
 #if CONFIG_BT_LE_CRYPTO_STACK_MBEDTLS
 #if CONFIG_BT_LE_SM_SC
 #include "psa/crypto.h"
+static const char *TAG_SM_ALG = "ble_sm_alg";
 #endif // CONFIG_BT_LE_SM_SC
 #else
 #include "tinycrypt/aes.h"
@@ -1636,12 +1637,14 @@ int ble_sm_alg_gen_dhkey(const uint8_t *peer_pub_key_x, const uint8_t *peer_pub_
     uint8_t priv[32];
     int rc = BLE_SM_KEY_ERR;
 
-    pk[0] = 0x04; // Uncompressed format for public key
-    swap_buf(&pk[1], peer_pub_key_x, 32);
-    swap_buf(&pk[33], peer_pub_key_y, 32);
     swap_buf(priv, our_priv_key, 32);
 
 #if CONFIG_BT_LE_CRYPTO_STACK_MBEDTLS
+    // PSA/mbedTLS expects 65 bytes: 0x04 prefix + X (32 bytes) + Y (32 bytes)
+    pk[0] = 0x04; // Uncompressed format for public key
+    swap_buf(&pk[1], peer_pub_key_x, 32);
+    swap_buf(&pk[33], peer_pub_key_y, 32);
+
     psa_key_id_t key_id = 0;
     psa_status_t status;
     psa_key_attributes_t key_attributes = PSA_KEY_ATTRIBUTES_INIT;
@@ -1651,27 +1654,37 @@ int ble_sm_alg_gen_dhkey(const uint8_t *peer_pub_key_x, const uint8_t *peer_pub_
     psa_set_key_usage_flags(&key_attributes, PSA_KEY_USAGE_DERIVE);
     status = psa_import_key(&key_attributes, priv, 32, &key_id);
     if (status != PSA_SUCCESS) {
+        ESP_LOGE(TAG_SM_ALG, "Failed to import key: %d", status);
         goto exit;
     }
     psa_reset_key_attributes(&key_attributes);
     size_t output_len = 0;
     status = psa_raw_key_agreement(PSA_ALG_ECDH, key_id, pk, BLE_PUB_KEY_LEN, dh, sizeof(dh), &output_len);
     if (status != PSA_SUCCESS) {
+        ESP_LOGE(TAG_SM_ALG, "Failed to perform raw key agreement: %d", status);
         goto exit;
     }
 
     if (output_len != 32) {
+        ESP_LOGE(TAG_SM_ALG, "Unexpected output length: %zu", output_len);
         goto exit;
     }
     rc = 0;
 
 exit:
+    if (key_id != 0) {
+        psa_destroy_key(key_id);
+    }
     if (rc != 0) {
         return BLE_SM_KEY_ERR;
     }
 
 #else
-    if (uECC_valid_public_key(pk, uECC_secp256r1()) < 0) {
+    // TinyCrypt/uECC expects 64 bytes: X (32 bytes) + Y (32 bytes), no prefix
+    swap_buf(pk, peer_pub_key_x, 32);
+    swap_buf(&pk[32], peer_pub_key_y, 32);
+
+    if (uECC_valid_public_key(pk, &curve_secp256r1) < 0) {
         return BLE_SM_KEY_ERR;
     }
 
@@ -1754,8 +1767,16 @@ int ble_sm_alg_gen_key_pair(uint8_t *pub, uint8_t *priv)
         /* Make sure generated key isn't debug key. */
     } while (memcmp(priv, ble_sm_alg_dbg_priv_key, 32) == 0);
 
+#if CONFIG_BT_LE_CRYPTO_STACK_MBEDTLS
+    // PSA returns 65 bytes: 0x04 prefix + X (32 bytes) + Y (32 bytes)
+    // Skip the 0x04 prefix when copying to pub
     swap_buf(pub, &pk[1], 32);
     swap_buf(&pub[32], &pk[33], 32);
+#else
+    // tinycrypt returns 64 bytes: X (32 bytes) + Y (32 bytes), no prefix
+    swap_buf(pub, pk, 32);
+    swap_buf(&pub[32], &pk[32], 32);
+#endif
     swap_in_place(priv, 32);
 #endif // CONFIG_BT_LE_SM_SC_DEBUG_KEYS
     return 0;

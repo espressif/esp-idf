@@ -1052,6 +1052,26 @@ under the driver abstraction layer */
 #endif
 
 #ifndef CONFIG_IDF_TARGET_LINUX
+
+/**
+ * \def MBEDTLS_PSA_ITS_FILE_C
+ *
+ * ESP-IDF: PSA Internal Trusted Storage (ITS) implementation.
+ *
+ * ESP-IDF does NOT use the file-based implementation (MBEDTLS_PSA_ITS_FILE_C)
+ * when the ESP-IDF NVS-based implementation is available.
+ * Instead, ESP-IDF provides its own NVS (Non-Volatile Storage) based implementation
+ * in port/psa_crypto_storage/esp_psa_its.c
+ *
+ * If ESP_PSA_ITS_AVAILABLE is defined, it means the ESP-IDF NVS-based implementation
+ * is available and we should undefine MBEDTLS_PSA_ITS_FILE_C to use it.
+ * Otherwise, keep MBEDTLS_PSA_ITS_FILE_C defined to use the file-based implementation.
+ *
+ */
+#ifdef ESP_PSA_ITS_AVAILABLE
+#undef MBEDTLS_PSA_ITS_FILE_C
+#endif
+
 /**
  * \def MBEDTLS_NO_PLATFORM_ENTROPY
  *
@@ -3070,9 +3090,11 @@ under the driver abstraction layer */
 #ifdef CONFIG_MBEDTLS_SHA256_C
 // #define MBEDTLS_SHA256_C
 #define PSA_WANT_ALG_SHA_256 1
+#define PSA_WANT_ALG_SHA_224 1
 #else
 // #undef MBEDTLS_SHA256_C
 #undef PSA_WANT_ALG_SHA_256
+#undef PSA_WANT_ALG_SHA_224
 #endif
 
 /* MBEDTLS_SHAxx_ALT to enable hardware SHA support
@@ -3105,6 +3127,30 @@ under the driver abstraction layer */
     #undef MBEDTLS_SHA1_ALT
     #undef MBEDTLS_SHA256_ALT
     #undef MBEDTLS_SHA512_ALT
+#endif
+
+/* MBEDTLS_MD_CAN_SHA* macros indicate whether a hash algorithm is available
+ * either via legacy implementation (MBEDTLS_SHA*_C) or via PSA (PSA_WANT_ALG_SHA_*).
+ * These are used for TLS 1.3 signature algorithm configuration.
+ */
+#if defined(MBEDTLS_SHA1_C) || defined(PSA_WANT_ALG_SHA_1)
+#define MBEDTLS_MD_CAN_SHA1
+#endif
+
+#if defined(MBEDTLS_SHA224_C) || defined(PSA_WANT_ALG_SHA_224)
+#define MBEDTLS_MD_CAN_SHA224
+#endif
+
+#if defined(MBEDTLS_SHA256_C) || defined(PSA_WANT_ALG_SHA_256)
+#define MBEDTLS_MD_CAN_SHA256
+#endif
+
+#if defined(MBEDTLS_SHA384_C) || defined(PSA_WANT_ALG_SHA_384)
+#define MBEDTLS_MD_CAN_SHA384
+#endif
+
+#if defined(MBEDTLS_SHA512_C) || defined(PSA_WANT_ALG_SHA_512)
+#define MBEDTLS_MD_CAN_SHA512
 #endif
 
 /**

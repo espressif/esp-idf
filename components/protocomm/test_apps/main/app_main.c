@@ -21,7 +21,7 @@
 /* setUp runs before every test */
 void setUp(void)
 {
-#if SOC_SHA_SUPPORTED
+#if CONFIG_MBEDTLS_HARDWARE_SHA
     // Execute esp_sha operation to allocate internal SHA semaphore (in case of ESP32)
     // and initial DMA setup memory which is considered as leaked otherwise
     const uint8_t input_buffer[64] = {0};
@@ -35,7 +35,7 @@ void setUp(void)
 #if SOC_SHA_SUPPORT_SHA512
     esp_sha(SHA2_512, input_buffer, sizeof(input_buffer), output_buffer);
 #endif // SOC_SHA_SUPPORT_SHA512
-#endif // SOC_SHA_SUPPORTED
+#endif // CONFIG_MBEDTLS_HARDWARE_SHA
 
 #if defined(CONFIG_MBEDTLS_HARDWARE_MPI)
     esp_mpi_enable_hardware_hw_op();
@@ -55,6 +55,7 @@ void setUp(void)
     psa_set_key_algorithm(&attributes, PSA_ALG_CBC_NO_PADDING);
     psa_set_key_type(&attributes, PSA_KEY_TYPE_AES);
     psa_set_key_bits(&attributes, 128);
+    psa_set_key_lifetime(&attributes, PSA_KEY_LIFETIME_VOLATILE);
     status = psa_import_key(&attributes, key, sizeof(key), &key_id);
     TEST_ASSERT_EQUAL(PSA_SUCCESS, status);
     size_t output_len = 0;
@@ -67,7 +68,11 @@ void setUp(void)
     status = psa_cipher_encrypt(key_id, PSA_ALG_CBC_NO_PADDING, plaintext_long, sizeof(plaintext_long), ciphertext_long, sizeof(ciphertext_long), &output_len);
     TEST_ASSERT_EQUAL(PSA_SUCCESS, status);
     psa_destroy_key(key_id);
-#endif // SOC_AES_SUPPORTED
+    // Destroying the key again to get rid of nvs flash memory leak
+    // If the key doesn't exist, PSA looks for it in nvs and that
+    // allocates some memory which is considered as leak otherwise
+    psa_destroy_key(key_id);
+// #endif // SOC_AES_SUPPORTED
 
     test_utils_record_free_mem();
     TEST_ESP_OK(test_utils_set_leak_level(50, ESP_LEAK_TYPE_CRITICAL, ESP_COMP_LEAK_GENERAL));

@@ -159,73 +159,57 @@ int aes_ccm_ae(const u8 *key, size_t key_len, const u8 *nonce,
 	return 0;
 }
 
+static void aes_ccm_decr_auth(void *aes, size_t M, u8 *a, const u8 *auth, u8 *t)
+{
+	size_t i;
+	u8 tmp[AES_BLOCK_SIZE];
+
+	wpa_hexdump_key(MSG_DEBUG, "CCM U", auth, M);
+	/* U = T XOR S_0; S_0 = E(K, A_0) */
+	WPA_PUT_BE16(&a[AES_BLOCK_SIZE - 2], 0);
+	aes_encrypt(aes, a, tmp);
+	for (i = 0; i < M; i++)
+		t[i] = auth[i] ^ tmp[i];
+	wpa_hexdump_key(MSG_DEBUG, "CCM T", t, M);
+}
 
 /* AES-CCM with fixed L=2 and aad_len <= 30 assumption */
 int aes_ccm_ad(const u8 *key, size_t key_len, const u8 *nonce,
 	       size_t M, const u8 *crypt, size_t crypt_len,
 	       const u8 *aad, size_t aad_len, const u8 *auth, u8 *plain)
 {
-	psa_status_t status;
-    psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
-    psa_key_id_t key_id;
+	/* PSA doesn't support M=0 (zero-length tags) which ESP-NOW uses
+	 * Fall back to old AES implementation for M=0 case
+	 */
+	const size_t L = 2;
+	void *aes;
+	u8 x[AES_BLOCK_SIZE], a[AES_BLOCK_SIZE];
+	u8 t[AES_BLOCK_SIZE];
 
-    psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_DECRYPT);
-    psa_set_key_algorithm(&attributes, PSA_ALG_CCM);
-    psa_set_key_type(&attributes, PSA_KEY_TYPE_AES);
-    psa_set_key_bits(&attributes, key_len * 8);
+	if (aad_len > 30 || M > AES_BLOCK_SIZE)
+		return -1;
 
-    status = psa_import_key(&attributes, key, key_len, &key_id);
-    if (status != PSA_SUCCESS) {
-        wpa_printf(MSG_ERROR, "%s: psa_import_key failed", __func__);
-        return -1;
-    }
+	aes = aes_encrypt_init(key, key_len);
+	if (aes == NULL)
+		return -1;
 
-    psa_reset_key_attributes(&attributes);
+	/* Decryption */
+	aes_ccm_encr_start(L, nonce, a);
+	aes_ccm_decr_auth(aes, M, a, auth, t);
 
-    psa_aead_operation_t operation = PSA_AEAD_OPERATION_INIT;
+	/* plaintext = msg XOR (S_1 | S_2 | ... | S_n) */
+	aes_ccm_encr(aes, L, crypt, crypt_len, plain, a);
 
-    status = psa_aead_decrypt_setup(&operation, key_id, PSA_ALG_CCM);
-    if (status != PSA_SUCCESS) {
-        wpa_printf(MSG_ERROR, "%s: psa_aead_decrypt_setup failed", __func__);
-        return -1;
-    }
+	aes_ccm_auth_start(aes, M, L, nonce, aad, aad_len, crypt_len, x);
+	aes_ccm_auth(aes, plain, crypt_len, x);
 
-    status = psa_aead_set_nonce(&operation, nonce, 13);
-    if (status != PSA_SUCCESS) {
-        wpa_printf(MSG_ERROR, "%s: psa_aead_set_nonce failed", __func__);
-        return -1;
-    }
+	aes_encrypt_deinit(aes);
 
-    status = psa_aead_set_lengths(&operation, aad_len, crypt_len);
-    if (status != PSA_SUCCESS) {
-        wpa_printf(MSG_ERROR, "%s: psa_aead_set_lengths failed", __func__);
-        return -1;
-    }
+	if (os_memcmp_const(x, t, M) != 0) {
+		wpa_printf(MSG_DEBUG, "CCM: Auth mismatch");
+		return -1;
+	}
 
-    size_t output_length = 0;
-
-    status = psa_aead_update_ad(&operation, aad, aad_len);
-    if (status != PSA_SUCCESS) {
-        wpa_printf(MSG_ERROR, "%s: psa_aead_update_ad failed", __func__);
-        return -1;
-    }
-
-    status = psa_aead_update(&operation, crypt, crypt_len, plain, crypt_len, &output_length);
-    if (status != PSA_SUCCESS) {
-        wpa_printf(MSG_ERROR, "%s: psa_aead_update failed", __func__);
-        return -1;
-    }
-
-    status = psa_aead_verify(&operation, plain + output_length, 16 - output_length, &output_length, auth, M);
-    if (status != PSA_SUCCESS) {
-        wpa_printf(MSG_ERROR, "%s: psa_aead_verify failed", __func__);
-        return -1;
-    }
-
-    psa_aead_abort(&operation);
-
-    psa_destroy_key(key_id);
-
-    return 0;
+	return 0;
 }
 #endif /* CONFIG_IEEE80211W */

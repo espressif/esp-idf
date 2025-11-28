@@ -25,6 +25,7 @@
 #include "mbedtls/oid.h"
 #include <mbedtls/psa_util.h>
 #include "psa/crypto.h"
+#include "psa/crypto_sizes.h"
 #include "esp_heap_caps.h"
 
 #define ECP_PRV_DER_MAX_BYTES   ( 29 + 3 * MBEDTLS_ECP_MAX_BYTES )
@@ -482,8 +483,8 @@ int crypto_ec_key_compare(struct crypto_ec_key *key1, struct crypto_ec_key *key2
     psa_key_id_t *key1_id = (psa_key_id_t *)key1;
     psa_key_id_t *key2_id = (psa_key_id_t *)key2;
 
-    unsigned char pub1[PSA_EXPORT_PUBLIC_KEY_MAX_SIZE];
-    unsigned char pub2[PSA_EXPORT_PUBLIC_KEY_MAX_SIZE];
+    unsigned char pub1[PSA_KEY_EXPORT_ECC_PUBLIC_KEY_MAX_SIZE(256)];
+    unsigned char pub2[PSA_KEY_EXPORT_ECC_PUBLIC_KEY_MAX_SIZE(256)];
 
     size_t key1_len, key2_len;
 
@@ -1674,6 +1675,10 @@ struct crypto_ecdh * crypto_ecdh_init(int group)
     size_t key_size = 0;
 
     psa_ecc_family_t ecc_family = group_id_to_psa(crypto_mbedtls_get_grp_id(group), &key_size);
+    if (ecc_family == 0) {
+        wpa_printf(MSG_ERROR, "group_id_to_psa failed, group: %d", group);
+        return NULL;
+    }
 
     psa_set_key_type(&key_attributes, PSA_KEY_TYPE_ECC_KEY_PAIR(ecc_family));
     psa_set_key_bits(&key_attributes, key_size);

@@ -113,6 +113,7 @@ static esp_err_t handle_session_command1(session_t *cur_session,
     psa_set_key_usage_flags(&key_attributes, PSA_KEY_USAGE_DECRYPT | PSA_KEY_USAGE_ENCRYPT);
     psa_set_key_algorithm(&key_attributes, alg);
     psa_set_key_type(&key_attributes, PSA_KEY_TYPE_AES);
+    psa_set_key_lifetime(&key_attributes, PSA_KEY_LIFETIME_VOLATILE);
     psa_set_key_bits(&key_attributes, sizeof(cur_session->sym_key) * 8);
     status = psa_import_key(&key_attributes, cur_session->sym_key, sizeof(cur_session->sym_key), &key_id);
     if (status != PSA_SUCCESS) {
@@ -447,21 +448,25 @@ static esp_err_t sec1_close_session(protocomm_security_handle_t handle, uint32_t
 
     // if (cur_session->state == SESSION_STATE_DONE) {
         /* Free AES context data */
+    if (cur_session->key_id != 0) {
         psa_status_t status = psa_destroy_key(cur_session->key_id);
         if (status != PSA_SUCCESS) {
             ESP_LOGE(TAG, "psa_destroy_key failed with status=%d", status);
             // return ESP_FAIL;
         }
-        status = psa_destroy_key(cur_session->key_id_sym);
+    }
+    if (cur_session->key_id_sym != 0) {
+        psa_status_t status = psa_destroy_key(cur_session->key_id_sym);
         if (status != PSA_SUCCESS) {
             ESP_LOGE(TAG, "psa_destroy_key failed with status=%d", status);
             // return ESP_FAIL;
         }
-        status = psa_cipher_abort(&cur_session->ctx_aes);
-        if (status != PSA_SUCCESS) {
-            ESP_LOGE(TAG, "psa_cipher_abort failed with status=%d", status);
-            // return ESP_FAIL;
-        }
+    }
+    psa_status_t status = psa_cipher_abort(&cur_session->ctx_aes);
+    if (status != PSA_SUCCESS) {
+        ESP_LOGE(TAG, "psa_cipher_abort failed with status=%d", status);
+        // return ESP_FAIL;
+    }
     // }
 
     memset(cur_session, 0, sizeof(session_t));
