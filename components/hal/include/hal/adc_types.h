@@ -38,6 +38,7 @@ typedef enum {
     ADC_CHANNEL_7,     ///< ADC channel
     ADC_CHANNEL_8,     ///< ADC channel
     ADC_CHANNEL_9,     ///< ADC channel
+    ADC_CHANNEL_10,    ///< ADC channel
 } adc_channel_t;
 
 /**

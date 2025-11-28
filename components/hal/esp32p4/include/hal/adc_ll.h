@@ -372,6 +372,18 @@ static inline void adc_ll_digi_set_pattern_table(adc_unit_t adc_n, uint32_t patt
     }
 }
 
+
+/**
+ * Rest pattern table to default value
+ */
+static inline void adc_ll_digi_reset_pattern_table(void)
+{
+    for(int i = 0; i < 4; i++) {
+        ADC.sar1_patt_tab[i].sar1_patt_tab = 0xffffff;
+        ADC.sar2_patt_tab[i].sar2_patt_tab = 0xffffff;
+    }
+}
+
 /**
  * Reset the pattern table pointer, then take the measurement rule from table header in next measurement.
  *
@@ -520,24 +532,24 @@ static inline void _adc_ll_sar2_clock_force_en(bool enable)
  * @brief Enable the ADC clock
  * @param enable true to enable, false to disable
  */
-static inline void adc_ll_enable_bus_clock(bool enable)
+static inline void _adc_ll_enable_bus_clock(bool enable)
 {
     HP_SYS_CLKRST.soc_clk_ctrl2.reg_adc_apb_clk_en = enable;
     HP_SYS_CLKRST.peri_clk_ctrl23.reg_adc_clk_en = enable;
 }
 // HP_SYS_CLKRST.soc_clk_ctrl2 are shared registers, so this function must be used in an atomic way
-#define adc_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; adc_ll_enable_bus_clock(__VA_ARGS__)
+#define adc_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _adc_ll_enable_bus_clock(__VA_ARGS__)
 
 /**
  * @brief Reset ADC module
  */
-static inline void adc_ll_reset_register(void)
+static inline void _adc_ll_reset_register(void)
 {
     HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_adc = 1;
     HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_adc = 0;
 }
 //  HP_SYS_CLKRST.hp_rst_en2 is a shared register, so this function must be used in an atomic way
-#define adc_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; adc_ll_reset_register(__VA_ARGS__)
+#define adc_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; _adc_ll_reset_register(__VA_ARGS__)
 
 
 
@@ -751,6 +763,48 @@ static inline void adc_ll_set_calibration_param(adc_unit_t adc_n, uint32_t param
         REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR2_INITIAL_CODE_HIGH_ADDR, msb);
         REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR2_INITIAL_CODE_LOW_ADDR, lsb);
     }
+}
+
+/**
+ * Set the SAR DTEST param
+ *
+ * @param param DTEST value
+ */
+__attribute__((always_inline))
+static inline void adc_ll_set_dtest_param(uint32_t param)
+{
+    REGI2C_WRITE_MASK(I2C_SAR_ADC, I2C_SAR_ADC_DTEST_VDD_GRP1, param);
+}
+
+/**
+ * Set the SAR ENT param
+ *
+ * @param param ENT value
+ */
+__attribute__((always_inline))
+static inline void adc_ll_set_ent_param(uint32_t param)
+{
+    REGI2C_WRITE_MASK(I2C_SAR_ADC, I2C_SAR_ADC_ENT_VDD_GRP1, param);
+}
+
+/**
+ * Init regi2c SARADC registers
+ */
+__attribute__((always_inline))
+static inline void adc_ll_regi2c_init(void)
+{
+    adc_ll_set_dtest_param(0);
+    adc_ll_set_ent_param(1);
+}
+
+/**
+ * Deinit regi2c SARADC registers
+ */
+__attribute__((always_inline))
+static inline void adc_ll_regi2c_adc_deinit(void)
+{
+    adc_ll_set_dtest_param(0);
+    adc_ll_set_ent_param(0);
 }
 
 /*---------------------------------------------------------------
