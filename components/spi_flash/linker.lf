@@ -73,6 +73,9 @@ entries:
         if SPI_FLASH_HPM_ON = y:
             spi_flash_hpm_enable (noflash)
 
+        if ESP_SLEEP_SET_FLASH_DPD = y:
+            spi_flash_dpd_enable (noflash)
+
 [mapping:spi_flash_hal]
 archive: libesp_hal_mspi.a
 entries:

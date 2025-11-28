@@ -322,6 +322,26 @@ static inline void spimem_flash_ll_set_write_protect(spi_mem_dev_t *dev, bool wp
 }
 
 /**
+ * Drive Flash into power down mode
+ *
+ * @param dev Beginning address of the peripheral registers.
+ */
+static inline void spimem_flash_ll_enter_dpd(spi_mem_dev_t *dev)
+{
+    dev->cmd.flash_dp = 1;
+}
+
+/**
+ * Releases Flash from the power-down state
+ *
+ * @param dev Beginning address of the peripheral registers.
+ */
+static inline void spimem_flash_ll_exit_dpd(spi_mem_dev_t *dev)
+{
+    dev->cmd.flash_res = 1;
+}
+
+/**
  * Get the read data from the buffer after ``spimem_flash_ll_read`` is done.
  *
  * @param dev Beginning address of the peripheral registers.
