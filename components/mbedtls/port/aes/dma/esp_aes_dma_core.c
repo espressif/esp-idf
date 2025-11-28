@@ -217,13 +217,20 @@ static inline size_t get_cache_line_size(const void *addr)
     return (size_t)cache_hal_get_cache_line_size(cache_level, CACHE_TYPE_DATA);
 }
 
-/* Output buffers in external ram needs to be 16-byte aligned and DMA can't access input in the iCache mem range,
-   reallocate them into internal memory and encrypt in chunks to avoid
-   having to malloc too big of a buffer
-
-  The function esp_aes_process_dma_ext_ram zeroises the output buffer in the case of memory allocation failure.
-*/
-
+/**
+ * @brief Output buffers located in external RAM must be aligned to dcache_line_size, and DMA cannot access input data residing in the iCache memory range.
+ * To accommodate this issues, we reallocate them into internal memory and process the AES operation in chunks, avoiding large single-block allocations.
+ *
+ * In the case of ESP32-P4, internal memory is also cacheable, so using internal RAM does not bypass the buffer-alignment requirement; the cache still enforces aligned
+ * memory-to-cache (M2C) operations. Therefore, to safely perform an M2C sync on an unaligned buffer, we must ALIGN_UP the output buffer to the nearest cache line
+ * regardless of whether the output buffer resides in internal or external memory.
+ * (The ESP32-P4 AES driver already performs cache-to-memory (C2M) operations on the output buffer using the aligned-up length, which prevents the corruption that could
+ * otherwise occur when extra cache-line bytes need to be included during an aligned-up M2C operation.).
+ *
+ * Thus, for ESP32-P4, we reallocate the buffers into cache-line-size aligned external memory addresses itself, and use the above strategy to perform the AES operation in chunks.
+ *
+ * @note The function esp_aes_process_dma_ext_ram zeroises the output buffer in the case of memory allocation failure.
+ */
 static int esp_aes_process_dma_ext_ram(esp_aes_context *ctx, const unsigned char *input, unsigned char *output, size_t len, uint8_t *stream_out, bool realloc_input, bool realloc_output)
 {
     size_t chunk_len;
@@ -240,8 +247,9 @@ static int esp_aes_process_dma_ext_ram(esp_aes_context *ctx, const unsigned char
     size_t output_alignment = 1;
 
 /* When AES-DMA operations are carried out using external memory with external memory encryption enabled,
-   we need to make sure that the addresses and the sizes of the buffers on which the DMA operates are 16 byte-aligned. */
-#ifdef SOC_GDMA_EXT_MEM_ENC_ALIGNMENT
+   we need to make sure that the addresses and the sizes of the buffers on which the DMA operates are 16 byte-aligned.
+   This is only applicable for ESP32-P4, as other targets use internal memory for DMA operations. */
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
     if (efuse_hal_flash_encryption_enabled()) {
         if (esp_ptr_external_ram(input) || esp_ptr_external_ram(output) || esp_ptr_in_drom(input) || esp_ptr_in_drom(output)) {
             size_t input_cache_line_size = get_cache_line_size(input);
@@ -253,7 +261,7 @@ static int esp_aes_process_dma_ext_ram(esp_aes_context *ctx, const unsigned char
             output_heap_caps = MALLOC_CAP_8BIT | (esp_ptr_external_ram(output) ? MALLOC_CAP_SPIRAM : MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
         }
     }
-#endif /* SOC_GDMA_EXT_MEM_ENC_ALIGNMENT */
+#endif /* SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE */
 
     if (realloc_input) {
         input_buf = heap_caps_aligned_alloc(input_alignment, chunk_len, input_heap_caps);
@@ -358,6 +366,8 @@ static inline esp_err_t dma_desc_link(crypto_dma_desc_t *dmadesc, size_t crypto_
         dmadesc[i].next = ((i == crypto_dma_desc_num - 1) ? NULL : &dmadesc[i+1]);
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
         /* Write back both input buffers and output buffers to clear any cache dirty bit if set */
+        // Even output buffers are C2M synced here, because, while performing an aligned up M2C operation,
+        // extra bytes in the cache (len - ALIGN_UP(len)) might get corrupted if not C2M synced before.
         ret = esp_cache_msync(dmadesc[i].buffer, ALIGN_UP(dmadesc[i].dw0.length, buffer_cache_line_size), ESP_CACHE_MSYNC_FLAG_DIR_C2M);
         if (ret != ESP_OK) {
             return ret;
@@ -646,6 +656,12 @@ int esp_aes_process_dma(esp_aes_context *ctx, const unsigned char *input, unsign
         goto cleanup;
     }
     for (int i = 0; i < output_dma_desc_num; i++) {
+        // Align the output buffer to the cache line size before performing the M2C sync, because M2C sync cannot be performed on buffers with unaligned lengths.
+        // Note: This does not corrupt the extra bytes in the cache (len - ALIGN_UP(len)) because the ESP32-P4 AES driver already performs cache-to-memory (C2M)
+        // operations on the output buffer using the aligned-up length.
+        // But what if those extra bytes get updated (say by a different process) during the AES operation? Would the updated value be lost/corrupted?
+        // No, because the heap allocator would have already allocated a ALIGNED_UP buffer for the output buffer according to the alignment requirements,
+        // while allocating the output buffer (see esp_heap_adjust_alignment_to_hw()).
         if (esp_cache_msync(output_desc[i].buffer, ALIGN_UP(output_desc[i].dw0.length, output_cache_line_size), ESP_CACHE_MSYNC_FLAG_DIR_M2C) != ESP_OK) {
             ESP_LOGE(TAG, "Output DMA descriptor buffers cache sync M2C failed");
             ret = -1;
