@@ -510,6 +510,9 @@ flash 加密设置
 
     idf.py encrypted-flash monitor
 
+.. note::
+
+    上述操作仅适用于 ``DIS_DOWNLOAD_MANUAL_ENCRYPT`` eFuse 位未被烧录的情况。如果该 eFuse 位已被烧录，则需要烧录加密后的密文镜像。
 
 .. _flash-enc-release-mode:
 
