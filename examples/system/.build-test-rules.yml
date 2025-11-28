@@ -266,9 +266,6 @@ examples/system/select:
 examples/system/sysview_tracing:
   disable:
     - if: SOC_GPTIMER_SUPPORTED != 1
-    - if: IDF_TARGET in ["esp32", "esp32s2", "esp32s3", "esp32c2", "esp32c3", "esp32c5", "esp32c61", "esp32c6", "esp32h2", "esp32h21", "esp32h4", "esp32p4"]
-      temporary: true
-      reason: temporarily disabled until the sysview component is published in the component registry
     - if: IDF_TARGET == "esp32p4"
       temporary: true
       reason: p4 rev3 migration # TODO: IDF-14364
@@ -283,9 +280,6 @@ examples/system/sysview_tracing:
 examples/system/sysview_tracing_heap_log:
   disable:
     - if: SOC_GPTIMER_SUPPORTED != 1
-    - if: IDF_TARGET in ["esp32", "esp32s2", "esp32s3", "esp32c2", "esp32c3", "esp32c5", "esp32c61", "esp32c6", "esp32h2", "esp32h21", "esp32h4", "esp32p4"]
-      temporary: true
-      reason: temporarily disabled until the sysview component is published in the component registry
     - if: IDF_TARGET == "esp32p4"
       temporary: true
       reason: p4 rev3 migration # TODO: IDF-14364
