@@ -31,6 +31,10 @@ typedef enum {
 
 typedef struct {
     esp_console_repl_t repl_core;        // base class
+#if CONFIG_LIBC_PICOLIBC
+    FILE *_stdin;
+    FILE *_stdout;
+#endif
     char prompt[CONSOLE_PROMPT_MAX_LEN]; // Prompt to be printed before each line
     repl_state_t state;
     SemaphoreHandle_t state_mux;
