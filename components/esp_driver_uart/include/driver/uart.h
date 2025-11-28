@@ -247,7 +247,7 @@ esp_err_t uart_set_baudrate(uart_port_t uart_num, uint32_t baudrate);
  * @param baudrate Pointer to accept value of UART baud rate
  *
  * @return
- *     - ESP_FAIL Parameter error
+ *     - ESP_FAIL Parameter error or the UART port is not enabled
  *     - ESP_OK   Success, result will be put in (*baudrate)
  *
  */

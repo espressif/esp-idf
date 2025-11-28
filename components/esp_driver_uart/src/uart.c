@@ -406,6 +406,7 @@ esp_err_t uart_set_baudrate(uart_port_t uart_num, uint32_t baud_rate)
 esp_err_t uart_get_baudrate(uart_port_t uart_num, uint32_t *baudrate)
 {
     ESP_RETURN_ON_FALSE((uart_num < UART_NUM_MAX), ESP_FAIL, UART_TAG, "uart_num error");
+    ESP_RETURN_ON_FALSE(uart_ll_is_enabled(uart_num), ESP_FAIL, UART_TAG, "uart port not enabled, unable to get register values");
 
     soc_module_clk_t src_clk;
     uint32_t sclk_freq;
