@@ -23,6 +23,8 @@ static const char *TAG = "eth_example";
 static esp_eth_handle_t *s_eth_handles = NULL;
 static uint8_t s_eth_port_cnt = 0;
 
+static SemaphoreHandle_t ip_got_sem;
+
 #if CONFIG_EXAMPLE_STORE_HISTORY
 
 #define MOUNT_PATH "/data"
@@ -43,8 +45,20 @@ static void initialize_filesystem(void)
 }
 #endif // CONFIG_EXAMPLE_STORE_HISTORY
 
+static void got_ip_event_handler(void *arg, esp_event_base_t event_base,
+                                 int32_t event_id, void *event_data)
+{
+    xSemaphoreGive(ip_got_sem);
+}
+
 void init_ethernet_and_netif(void)
 {
+    ip_got_sem = xSemaphoreCreateBinary();
+    if (ip_got_sem == NULL) {
+        ESP_LOGE(TAG, "Failed to create semaphore");
+        return;
+    }
+
     ESP_ERROR_CHECK(esp_event_loop_create_default());
 
     ESP_ERROR_CHECK(ethernet_init_all(&s_eth_handles, &s_eth_port_cnt));
@@ -71,8 +85,14 @@ void init_ethernet_and_netif(void)
         ESP_ERROR_CHECK(esp_netif_attach(eth_netif, esp_eth_new_netif_glue(s_eth_handles[i])));
     }
 
+    ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_ETH_GOT_IP, &got_ip_event_handler, NULL));
+
     for (int i = 0; i < s_eth_port_cnt; i++) {
         ESP_ERROR_CHECK(esp_eth_start(s_eth_handles[i]));
+    }
+
+    if (xSemaphoreTake(ip_got_sem, portMAX_DELAY) != pdTRUE) {
+        ESP_LOGE(TAG, "Timeout waiting for ETH IP");
     }
 }
 
