@@ -115,6 +115,8 @@ Apple M1 用户
 .. note::
 
     安装过程中，安装脚本 (install.sh) 会检查系统中已安装的 Python 版本，并在所有符合最低要求的版本中，选择最早的版本使用。
+    
+如果要指定 ESP-IDF 使用特定的 Python ，则需要在安装之前及每次使用之前设置环境变量 ``ESP_PYTHON_CUSTOM``，例如 ``export ESP_PYTHON_CUSTOM=/opt/bin/python3.13``。
 
 .. _get-started-get-esp-idf:
 

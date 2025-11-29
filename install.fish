@@ -7,7 +7,7 @@ set -x IDF_PATH $basedir
 echo "INFO: Using IDF_PATH '$IDF_PATH' for installation."
 
 echo "Detecting the Python interpreter"
-source "$IDF_PATH"/tools/detect_python.fish
+source "$IDF_PATH"/tools/detect_python.fish || exit 1
 
 echo "Checking Python compatibility"
 "$ESP_PYTHON" "$IDF_PATH"/tools/python_version_checker.py
