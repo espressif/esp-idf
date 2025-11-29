@@ -92,7 +92,7 @@ def test_examples_tee_secure_ota_example(dut: Dut) -> None:
                 raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
 
             host_ip = get_host_ip4_by_dest_ip(ip_address)
-            dut.expect('Returned from app_main', timeout=30)
+            dut.expect(f'{dut.target}>', timeout=30)
 
             # User OTA for last iteration
             if i == (iterations - 1):
