@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -63,14 +63,6 @@ extern "C" {
 #define rtcio_hal_output_disable(rtcio_num) rtcio_ll_output_disable(rtcio_num)
 
 /**
- * Set RTCIO output level.
- *
- * @param rtcio_num The index of rtcio. 0 ~ SOC_RTCIO_PIN_COUNT.
- * @param level 0: output low; ~0: output high.
- */
-#define rtcio_hal_set_level(rtcio_num, level) rtcio_ll_set_level(rtcio_num, level)
-
-/**
  * Enable rtcio input.
  *
  * @param rtcio_num The index of rtcio. 0 ~ SOC_RTCIO_PIN_COUNT.
@@ -83,14 +75,6 @@ extern "C" {
  * @param rtcio_num The index of rtcio. 0 ~ SOC_RTCIO_PIN_COUNT.
  */
 #define rtcio_hal_input_disable(rtcio_num) rtcio_ll_input_disable(rtcio_num)
-
-/**
- * Get RTCIO input level.
- *
- * @param rtcio_num The index of rtcio. 0 ~ SOC_RTCIO_PIN_COUNT.
- * @return 0: input low; ~0: input high.
- */
-#define rtcio_hal_get_level(rtcio_num) rtcio_ll_get_level(rtcio_num)
 
 /**
  * @brief Set RTC GPIO pad drive capability.
