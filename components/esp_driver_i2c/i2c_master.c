@@ -11,12 +11,12 @@
 #include "sdkconfig.h"
 #include "esp_types.h"
 #include "esp_attr.h"
-#include "esp_check.h"
 #if CONFIG_I2C_ENABLE_DEBUG_LOG
 // The local log level must be defined before including esp_log.h
 // Set the maximum log level for this source file
 #define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
 #endif
+#include "esp_check.h"
 #include "esp_log.h"
 #include "esp_intr_alloc.h"
 #include "freertos/FreeRTOS.h"
