@@ -42,15 +42,14 @@ struct bt_mesh_dfd_srv;
 
 #ifdef CONFIG_BLE_MESH_DFD_SRV_OOB_UPLOAD
 /**
+ * @brief Initialization parameters for the @ref bt_mesh_dfd_srv with OOB
+ *        upload support.
  *
- *  @brief Initialization parameters for the @ref bt_mesh_dfd_srv with OOB
- *         upload support.
- *
- *  @param[in] _cb                Pointer to a @ref bt_mesh_dfd_srv_cb instance.
- *  @param[in] _oob_schemes       Array of OOB schemes supported by the server,
- *                                each scheme being a code point from the
- *                                Bluetooth SIG Assigned Numbers document.
- *  @param[in] _oob_schemes_count Number of schemes in @c _oob_schemes.
+ * @param[in] _cb                Pointer to a @ref bt_mesh_dfd_srv_cb instance.
+ * @param[in] _oob_schemes       Array of OOB schemes supported by the server,
+ *                               each scheme being a code point from the
+ *                               Bluetooth SIG Assigned Numbers document.
+ * @param[in] _oob_schemes_count Number of schemes in @c _oob_schemes.
  */
 #define BT_MESH_DFD_SRV_OOB_INIT(_cb, _oob_schemes, _oob_schemes_count) \
     {                                                                   \
@@ -67,10 +66,9 @@ struct bt_mesh_dfd_srv;
 #endif /* CONFIG_BLE_MESH_DFD_SRV_OOB_UPLOAD */
 
 /**
+ * @brief Initialization parameters for the @ref bt_mesh_dfd_srv.
  *
- *  @brief Initialization parameters for the @ref bt_mesh_dfd_srv.
- *
- *  @param[in] _cb Pointer to a @ref bt_mesh_dfd_srv_cb instance.
+ * @param[in] _cb Pointer to a @ref bt_mesh_dfd_srv_cb instance.
  */
 #define BT_MESH_DFD_SRV_INIT(_cb)                                \
     {                                                            \
@@ -82,10 +80,9 @@ struct bt_mesh_dfd_srv;
     }
 
 /**
+ * @brief Firmware Distribution Server model Composition Data entry.
  *
- *  @brief Firmware Distribution Server model Composition Data entry.
- *
- *  @param _srv Pointer to a @ref bt_mesh_dfd_srv instance.
+ * @param _srv Pointer to a @ref bt_mesh_dfd_srv instance.
  */
 #define BT_MESH_MODEL_DFD_SRV(_srv)                                         \
     BT_MESH_MODEL_DFU_CLI(&(_srv)->dfu),                                    \
@@ -98,15 +95,15 @@ struct bt_mesh_dfd_srv_cb {
 
     /** @brief Slot receive callback.
      *
-     *  Called at the start of an upload procedure. The callback must fill
-     *  @c io with a pointer to a writable BLOB stream for the Firmware Distribution
-     *  Server to write the firmware image to.
+     * Called at the start of an upload procedure. The callback must fill
+     * @c io with a pointer to a writable BLOB stream for the Firmware Distribution
+     * Server to write the firmware image to.
      *
-     *  @param srv  Firmware Distribution Server model instance.
-     *  @param slot DFU image slot being received.
-     *  @param io   BLOB stream response pointer.
+     * @param srv  Firmware Distribution Server model instance.
+     * @param slot DFU image slot being received.
+     * @param io   BLOB stream response pointer.
      *
-     *  @return 0 on success, or (negative) error code otherwise.
+     * @return 0 on success, or (negative) error code otherwise.
      */
     int (*recv)(struct bt_mesh_dfd_srv *srv,
                 const struct bt_mesh_dfu_slot *slot,
@@ -136,7 +133,7 @@ struct bt_mesh_dfd_srv_cb {
      *                      available, or to 0 if new firmware is not
      *                      available.
      *
-     *  @return BT_MESH_DFD_SUCCESS on success, or error code otherwise.
+     *  @return BLE_MESH_DFD_SUCCESS on success, or error code otherwise.
      */
     int (*start_oob_upload)(struct bt_mesh_dfd_srv *srv,
                             const struct bt_mesh_dfu_slot *slot,
@@ -255,11 +252,11 @@ struct bt_mesh_dfd_srv {
  *  callback has completed or failed. The @p status param should be set to one of the following
  *  values:
  *
- *  * @c BT_MESH_DFD_SUCCESS if the check was successful and a new firmware ID was found.
- *  * @c BT_MESH_DFD_ERR_URI_MALFORMED if the URI is not formatted correctly.
- *  * @c BT_MESH_DFD_ERR_URI_NOT_SUPPORTED if the URI scheme is not supported by the node.
- *  * @c BT_MESH_DFD_ERR_URI_UNREACHABLE if the URI can't be reached.
- *  * @c BT_MESH_DFD_ERR_NEW_FW_NOT_AVAILABLE if the check completes successfully but no new
+ *  * @c BLE_MESH_DFD_SUCCESS if the check was successful and a new firmware ID was found.
+ *  * @c BLE_MESH_DFD_ERR_URI_MALFORMED if the URI is not formatted correctly.
+ *  * @c BLE_MESH_DFD_ERR_URI_NOT_SUPPORTED if the URI scheme is not supported by the node.
+ *  * @c BLE_MESH_DFD_ERR_URI_UNREACHABLE if the URI can't be reached.
+ *  * @c BLE_MESH_DFD_ERR_NEW_FW_NOT_AVAILABLE if the check completes successfully but no new
  *    firmware is available.
  *
  *  If this function returns 0, the application should then download the firmware to the
