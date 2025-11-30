@@ -6,7 +6,6 @@
  */
 #include <string.h>
 #include "dfu_slot.h"
-#include "dfd.h"
 #include "dfu.h"
 #include "dfd_srv_internal.h"
 #include "net.h"
@@ -19,7 +18,7 @@
 #if CONFIG_BLE_MESH_DFD_SRV
 #define DFD_UPLOAD_STATUS_MSG_MAXLEN (5 + CONFIG_BLE_MESH_DFU_FWID_MAXLEN)
 
-_Static_assert((DFD_UPLOAD_STATUS_MSG_MAXLEN + BLE_MESH_MODEL_OP_LEN(BT_MESH_DFD_OP_UPLOAD_STATUS) +
+_Static_assert((DFD_UPLOAD_STATUS_MSG_MAXLEN + BLE_MESH_MODEL_OP_LEN(BLE_MESH_DFD_OP_UPLOAD_STATUS) +
                 BLE_MESH_MIC_SHORT) <= BLE_MESH_TX_SDU_MAX,
                "The Firmware Distribution Upload Status message does not fit into the maximum "
                "outgoing SDU size.");
@@ -27,21 +26,21 @@ _Static_assert((DFD_UPLOAD_STATUS_MSG_MAXLEN + BLE_MESH_MODEL_OP_LEN(BT_MESH_DFD
 #define DFD_UPLOAD_START_MSG_MAXLEN (16 + CONFIG_BLE_MESH_DFU_FWID_MAXLEN + \
                                      CONFIG_BLE_MESH_DFU_METADATA_MAXLEN)
 
-_Static_assert((DFD_UPLOAD_START_MSG_MAXLEN + BLE_MESH_MODEL_OP_LEN(BT_MESH_DFD_OP_UPLOAD_START) +
+_Static_assert((DFD_UPLOAD_START_MSG_MAXLEN + BLE_MESH_MODEL_OP_LEN(BLE_MESH_DFD_OP_UPLOAD_START) +
                 BLE_MESH_MIC_SHORT) <= BLE_MESH_RX_SDU_MAX,
                "The Firmware Distribution Upload Start message does not fit into the maximum "
                "incoming SDU size.");
 
 #define DFD_RECEIVERS_LIST_MSG_MAXLEN (4 + CONFIG_BLE_MESH_DFD_SRV_TARGETS_MAX * 5)
 
-_Static_assert((DFD_RECEIVERS_LIST_MSG_MAXLEN + BLE_MESH_MODEL_OP_LEN(BT_MESH_DFD_OP_RECEIVERS_LIST) +
+_Static_assert((DFD_RECEIVERS_LIST_MSG_MAXLEN + BLE_MESH_MODEL_OP_LEN(BLE_MESH_DFD_OP_RECEIVERS_LIST) +
                 BLE_MESH_MIC_SHORT) <= BLE_MESH_TX_SDU_MAX,
                "The Firmware Distribution Receivers List message does not fit into the maximum "
                "outgoing SDU size.");
 
 #define DFD_RECEIVERS_ADD_MSG_MAXLEN (CONFIG_BLE_MESH_DFD_SRV_TARGETS_MAX * 3)
 
-_Static_assert((DFD_RECEIVERS_ADD_MSG_MAXLEN + BLE_MESH_MODEL_OP_LEN(BT_MESH_DFD_OP_RECEIVERS_ADD) +
+_Static_assert((DFD_RECEIVERS_ADD_MSG_MAXLEN + BLE_MESH_MODEL_OP_LEN(BLE_MESH_DFD_OP_RECEIVERS_ADD) +
                 BLE_MESH_MIC_SHORT) <= BLE_MESH_RX_SDU_MAX,
                "The Firmware Distribution Receivers Add message does not fit into the maximum "
                "incoming SDU size.");
@@ -76,15 +75,15 @@ static struct bt_mesh_dfu_target *target_get(struct bt_mesh_dfd_srv *srv,
 
 static bool is_busy(const struct bt_mesh_dfd_srv *srv)
 {
-    return srv->phase == BT_MESH_DFD_PHASE_TRANSFER_ACTIVE ||
-           srv->phase == BT_MESH_DFD_PHASE_TRANSFER_SUCCESS ||
-           srv->phase == BT_MESH_DFD_PHASE_APPLYING_UPDATE;
+    return srv->phase == BLE_MESH_DFD_PHASE_TRANSFER_ACTIVE ||
+           srv->phase == BLE_MESH_DFD_PHASE_TRANSFER_SUCCESS ||
+           srv->phase == BLE_MESH_DFD_PHASE_APPLYING_UPDATE;
 }
 
 static bool upload_is_busy(const struct bt_mesh_dfd_srv *srv)
 {
     return bt_mesh_blob_srv_is_busy(&srv->upload.blob) ||
-           srv->upload.phase == BT_MESH_DFD_UPLOAD_PHASE_TRANSFER_ACTIVE;
+           srv->upload.phase == BLE_MESH_DFD_UPLOAD_PHASE_TRANSFER_ACTIVE;
 }
 
 static int slot_del(struct bt_mesh_dfd_srv *srv, const struct bt_mesh_dfu_slot *slot)
@@ -100,8 +99,8 @@ static void receivers_status_rsp(struct bt_mesh_dfd_srv *srv,
                                  struct bt_mesh_msg_ctx *ctx,
                                  enum bt_mesh_dfd_status status)
 {
-    BLE_MESH_MODEL_BUF_DEFINE(buf, BT_MESH_DFD_OP_RECEIVERS_STATUS, 3);
-    bt_mesh_model_msg_init(&buf, BT_MESH_DFD_OP_RECEIVERS_STATUS);
+    BLE_MESH_MODEL_BUF_DEFINE(buf, BLE_MESH_DFD_OP_RECEIVERS_STATUS, 3);
+    bt_mesh_model_msg_init(&buf, BLE_MESH_DFD_OP_RECEIVERS_STATUS);
 
     net_buf_simple_add_u8(&buf, status);
     net_buf_simple_add_le16(&buf, srv->target_cnt);
@@ -112,7 +111,7 @@ static void receivers_status_rsp(struct bt_mesh_dfd_srv *srv,
 static int handle_receivers_add(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
                                 struct net_buf_simple *buf)
 {
-    enum bt_mesh_dfd_status status = BT_MESH_DFD_SUCCESS;
+    enum bt_mesh_dfd_status status = BLE_MESH_DFD_SUCCESS;
     struct bt_mesh_dfd_srv *srv = mod->user_data;
 
     if (buf->len % 3) {
@@ -121,11 +120,11 @@ static int handle_receivers_add(const struct bt_mesh_model *mod, struct bt_mesh_
 
     if (bt_mesh_dfu_cli_is_busy(&srv->dfu)) {
         receivers_status_rsp(srv, ctx,
-                             BT_MESH_DFD_ERR_BUSY_WITH_DISTRIBUTION);
+                             BLE_MESH_DFD_ERR_BUSY_WITH_DISTRIBUTION);
         return 0;
     }
 
-    while (buf->len >= 3 && status == BT_MESH_DFD_SUCCESS) {
+    while (buf->len >= 3 && status == BLE_MESH_DFD_SUCCESS) {
         uint8_t img_idx;
         uint16_t addr;
 
@@ -166,9 +165,9 @@ static int handle_receivers_get(const struct bt_mesh_model *mod, struct bt_mesh_
 
     /* Create a buffer that can fit the full target list, maxing out at TX_SDU_MAX: */
     NET_BUF_SIMPLE_DEFINE(
-        rsp, BLE_MESH_MODEL_BUF_LEN(BT_MESH_DFD_OP_RECEIVERS_LIST,
+        rsp, BLE_MESH_MODEL_BUF_LEN(BLE_MESH_DFD_OP_RECEIVERS_LIST,
                                     DFD_RECEIVERS_LIST_MSG_MAXLEN));
-    bt_mesh_model_msg_init(&rsp, BT_MESH_DFD_OP_RECEIVERS_LIST);
+    bt_mesh_model_msg_init(&rsp, BLE_MESH_DFD_OP_RECEIVERS_LIST);
 
     net_buf_simple_add_le16(&rsp, srv->target_cnt);
     net_buf_simple_add_le16(&rsp, first);
@@ -208,8 +207,8 @@ static int handle_capabilities_get(const struct bt_mesh_model *mod, struct bt_me
 {
     size_t size = 0;
 
-    BLE_MESH_MODEL_BUF_DEFINE(rsp, BT_MESH_DFD_OP_CAPABILITIES_STATUS, 17);
-    bt_mesh_model_msg_init(&rsp, BT_MESH_DFD_OP_CAPABILITIES_STATUS);
+    BLE_MESH_MODEL_BUF_DEFINE(rsp, BLE_MESH_DFD_OP_CAPABILITIES_GET, 17);
+    bt_mesh_model_msg_init(&rsp, BLE_MESH_DFD_OP_CAPABILITIES_GET);
 
     net_buf_simple_add_le16(&rsp, CONFIG_BLE_MESH_DFD_SRV_TARGETS_MAX);
     net_buf_simple_add_le16(&rsp, CONFIG_BLE_MESH_DFU_SLOT_CNT);
@@ -243,13 +242,13 @@ static int handle_capabilities_get(const struct bt_mesh_model *mod, struct bt_me
 static void status_rsp(struct bt_mesh_dfd_srv *srv, struct bt_mesh_msg_ctx *ctx,
                        enum bt_mesh_dfd_status status)
 {
-    BLE_MESH_MODEL_BUF_DEFINE(rsp, BT_MESH_DFD_OP_STATUS, 12);
-    bt_mesh_model_msg_init(&rsp, BT_MESH_DFD_OP_STATUS);
+    BLE_MESH_MODEL_BUF_DEFINE(rsp, BLE_MESH_DFD_OP_STATUS, 12);
+    bt_mesh_model_msg_init(&rsp, BLE_MESH_DFD_OP_STATUS);
 
     net_buf_simple_add_u8(&rsp, status);
     net_buf_simple_add_u8(&rsp, srv->phase);
 
-    if (srv->phase == BT_MESH_DFD_PHASE_IDLE || !srv->dfu.xfer.slot) {
+    if (srv->phase == BLE_MESH_DFD_PHASE_IDLE || !srv->dfu.xfer.slot) {
         bt_mesh_model_send(srv->mod, ctx, &rsp, NULL, NULL);
         return;
     }
@@ -270,7 +269,7 @@ static int handle_get(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *c
 {
     struct bt_mesh_dfd_srv *srv = mod->user_data;
 
-    status_rsp(srv, ctx, BT_MESH_DFD_SUCCESS);
+    status_rsp(srv, ctx, BLE_MESH_DFD_SUCCESS);
 
     return 0;
 }
@@ -292,7 +291,7 @@ static int handle_start(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx 
 
     if (buf->len == 16) {
         /* TODO: Virtual addresses not supported. */
-        status_rsp(srv, ctx, BT_MESH_DFD_ERR_INTERNAL);
+        status_rsp(srv, ctx, BLE_MESH_DFD_ERR_INTERNAL);
         return 0;
     }
 
@@ -343,14 +342,14 @@ static void upload_status_rsp_with_progress(struct bt_mesh_dfd_srv *srv,
                                             enum bt_mesh_dfd_status status,
                                             uint8_t progress)
 {
-    BLE_MESH_MODEL_BUF_DEFINE(rsp, BT_MESH_DFD_OP_UPLOAD_STATUS,
+    BLE_MESH_MODEL_BUF_DEFINE(rsp, BLE_MESH_DFD_OP_UPLOAD_STATUS,
                               DFD_UPLOAD_STATUS_MSG_MAXLEN);
-    bt_mesh_model_msg_init(&rsp, BT_MESH_DFD_OP_UPLOAD_STATUS);
+    bt_mesh_model_msg_init(&rsp, BLE_MESH_DFD_OP_UPLOAD_STATUS);
 
     net_buf_simple_add_u8(&rsp, status);
     net_buf_simple_add_u8(&rsp, srv->upload.phase);
 
-    if (srv->upload.phase == BT_MESH_DFD_UPLOAD_PHASE_IDLE ||
+    if (srv->upload.phase == BLE_MESH_DFD_UPLOAD_PHASE_IDLE ||
             !srv->upload.slot) {
         bt_mesh_model_send(srv->mod, ctx, &rsp, NULL, NULL);
         return;
@@ -395,7 +394,7 @@ static int handle_upload_get(const struct bt_mesh_model *mod, struct bt_mesh_msg
 {
     struct bt_mesh_dfd_srv *srv = mod->user_data;
 
-    upload_status_rsp(srv, ctx, BT_MESH_DFD_SUCCESS);
+    upload_status_rsp(srv, ctx, BLE_MESH_DFD_SUCCESS);
 
     return 0;
 }
@@ -410,22 +409,22 @@ static inline int set_upload_fwid(struct bt_mesh_dfd_srv *srv, struct bt_mesh_ms
     case -EALREADY: /* Other server is in progress with this fwid */
         bt_mesh_dfu_slot_release(srv->upload.slot);
         srv->upload.slot = NULL;
-        upload_status_rsp(srv, ctx, BT_MESH_DFD_ERR_INTERNAL);
+        upload_status_rsp(srv, ctx, BLE_MESH_DFD_ERR_INTERNAL);
         break;
     case -EEXIST: /* Img with this fwid already is in list */
-        srv->upload.phase = BT_MESH_DFD_UPLOAD_PHASE_TRANSFER_SUCCESS;
+        srv->upload.phase = BLE_MESH_DFD_UPLOAD_PHASE_TRANSFER_SUCCESS;
         bt_mesh_dfu_slot_release(srv->upload.slot);
 
         err = bt_mesh_dfu_slot_get(fwid, fwid_len, &srv->upload.slot);
         if (!err) {
-            upload_status_rsp_with_progress(srv, ctx, BT_MESH_DFD_SUCCESS, 100);
+            upload_status_rsp_with_progress(srv, ctx, BLE_MESH_DFD_SUCCESS, 100);
         } else {
             srv->upload.slot = NULL;
-            upload_status_rsp(srv, ctx, BT_MESH_DFD_ERR_INTERNAL);
+            upload_status_rsp(srv, ctx, BLE_MESH_DFD_ERR_INTERNAL);
         }
         break;
     case 0:
-        srv->upload.phase = BT_MESH_DFD_UPLOAD_PHASE_TRANSFER_ACTIVE;
+        srv->upload.phase = BLE_MESH_DFD_UPLOAD_PHASE_TRANSFER_ACTIVE;
         break;
     case -EINVAL: /* Slot in wrong state. */
     default:
@@ -464,14 +463,14 @@ static int handle_upload_start(const struct bt_mesh_model *mod, struct bt_mesh_m
 
     if (size > CONFIG_BLE_MESH_DFD_SRV_SLOT_MAX_SIZE) {
         upload_status_rsp(srv, ctx,
-                          BT_MESH_DFD_ERR_INSUFFICIENT_RESOURCES);
+                          BLE_MESH_DFD_ERR_INSUFFICIENT_RESOURCES);
         return 0;
     }
 
     if (upload_is_busy(srv)) {
         if (!srv->upload.slot) {
             BT_WARN("Busy with no upload slot");
-            upload_status_rsp(srv, ctx, BT_MESH_DFD_ERR_INTERNAL);
+            upload_status_rsp(srv, ctx, BLE_MESH_DFD_ERR_INTERNAL);
             return 0;
         }
 
@@ -487,12 +486,12 @@ static int handle_upload_start(const struct bt_mesh_model *mod, struct bt_mesh_m
 #endif
            ) {
             BT_DBG("Duplicate upload start");
-            upload_status_rsp(srv, ctx, BT_MESH_DFD_SUCCESS);
+            upload_status_rsp(srv, ctx, BLE_MESH_DFD_SUCCESS);
             return 0;
         }
 
         BT_WARN("Upload already in progress");
-        upload_status_rsp(srv, ctx, BT_MESH_DFD_ERR_BUSY_WITH_UPLOAD);
+        upload_status_rsp(srv, ctx, BLE_MESH_DFD_ERR_BUSY_WITH_UPLOAD);
         return 0;
     }
 
@@ -511,7 +510,7 @@ static int handle_upload_start(const struct bt_mesh_model *mod, struct bt_mesh_m
     if (!srv->upload.slot) {
         BT_WARN("No space for slot");
         upload_status_rsp(srv, ctx,
-                          BT_MESH_DFD_ERR_INSUFFICIENT_RESOURCES);
+                          BLE_MESH_DFD_ERR_INSUFFICIENT_RESOURCES);
         return 0;
     }
 
@@ -523,7 +522,7 @@ static int handle_upload_start(const struct bt_mesh_model *mod, struct bt_mesh_m
     err = bt_mesh_dfu_slot_info_set(srv->upload.slot, size, meta, meta_len);
     switch (err) {
     case -EFBIG:
-        upload_status_rsp(srv, ctx, BT_MESH_DFD_ERR_INTERNAL);
+        upload_status_rsp(srv, ctx, BLE_MESH_DFD_ERR_INTERNAL);
         break;
     case 0:
         break;
@@ -536,7 +535,7 @@ static int handle_upload_start(const struct bt_mesh_model *mod, struct bt_mesh_m
     if (err || !srv->io) {
         BT_ERR("App rejected upload. err: %d io: %p", err, srv->io);
         bt_mesh_dfu_slot_release(srv->upload.slot);
-        upload_status_rsp(srv, ctx, BT_MESH_DFD_ERR_INTERNAL);
+        upload_status_rsp(srv, ctx, BLE_MESH_DFD_ERR_INTERNAL);
         return 0;
     }
 
@@ -545,14 +544,14 @@ static int handle_upload_start(const struct bt_mesh_model *mod, struct bt_mesh_m
     if (err) {
         BT_ERR("BLOB Server rejected upload (err: %d)", err);
         bt_mesh_dfu_slot_release(srv->upload.slot);
-        upload_status_rsp(srv, ctx, BT_MESH_DFD_ERR_INTERNAL);
+        upload_status_rsp(srv, ctx, BLE_MESH_DFD_ERR_INTERNAL);
         return 0;
     }
 
     BT_DBG("%s", bt_hex(fwid, fwid_len));
 
-    srv->upload.phase = BT_MESH_DFD_UPLOAD_PHASE_TRANSFER_ACTIVE;
-    upload_status_rsp(srv, ctx, BT_MESH_DFD_SUCCESS);
+    srv->upload.phase = BLE_MESH_DFD_UPLOAD_PHASE_TRANSFER_ACTIVE;
+    upload_status_rsp(srv, ctx, BLE_MESH_DFD_SUCCESS);
 
     return 0;
 }
@@ -588,11 +587,11 @@ static int handle_upload_start_oob(const struct bt_mesh_model *mod, struct bt_me
                 !memcmp(uri, srv->upload.oob.uri, uri_len) &&
                 !memcmp(fwid, srv->upload.oob.current_fwid, fwid_len)) {
             /* Same image, return SUCCESS for idempotency */
-            upload_status_rsp(srv, ctx, BT_MESH_DFD_SUCCESS);
+            upload_status_rsp(srv, ctx, BLE_MESH_DFD_SUCCESS);
             return 0;
         }
 #endif
-        upload_status_rsp(srv, ctx, BT_MESH_DFD_ERR_BUSY_WITH_UPLOAD);
+        upload_status_rsp(srv, ctx, BLE_MESH_DFD_ERR_BUSY_WITH_UPLOAD);
         return 0;
 #ifdef CONFIG_BLE_MESH_DFD_SRV_OOB_UPLOAD
     } else if (srv->upload.is_oob && srv->upload.is_pending_oob_check) {
@@ -604,14 +603,14 @@ static int handle_upload_start_oob(const struct bt_mesh_model *mod, struct bt_me
 #ifdef CONFIG_BLE_MESH_DFD_SRV_OOB_UPLOAD
     if (uri_len > CONFIG_BLE_MESH_DFU_URI_MAXLEN ||
             fwid_len > CONFIG_BLE_MESH_DFU_FWID_MAXLEN) {
-        upload_status_rsp(srv, ctx, BT_MESH_DFD_ERR_INTERNAL);
+        upload_status_rsp(srv, ctx, BLE_MESH_DFD_ERR_INTERNAL);
         return 0;
     }
 
     struct bt_mesh_dfu_slot *slot = bt_mesh_dfu_slot_reserve();
 
     if (slot == NULL) {
-        upload_status_rsp(srv, ctx, BT_MESH_DFD_ERR_INSUFFICIENT_RESOURCES);
+        upload_status_rsp(srv, ctx, BLE_MESH_DFD_ERR_INSUFFICIENT_RESOURCES);
         return 0;
     }
 
@@ -635,14 +634,14 @@ static int handle_upload_start_oob(const struct bt_mesh_model *mod, struct bt_me
                                            srv->upload.oob.current_fwid,
                                            srv->upload.oob.current_fwid_len);
 
-    if (status != BT_MESH_DFD_SUCCESS) {
+    if (status != BLE_MESH_DFD_SUCCESS) {
         upload_status_rsp(srv, ctx, status);
         bt_mesh_dfu_slot_release(srv->upload.slot);
     } else {
         srv->upload.is_pending_oob_check = true;
     }
 #else
-    upload_status_rsp(srv, ctx, BT_MESH_DFD_ERR_URI_NOT_SUPPORTED);
+    upload_status_rsp(srv, ctx, BLE_MESH_DFD_ERR_URI_NOT_SUPPORTED);
 #endif /* CONFIG_BLE_MESH_DFD_SRV_OOB_UPLOAD */
 
     return 0;
@@ -653,7 +652,7 @@ static int handle_upload_cancel(const struct bt_mesh_model *mod, struct bt_mesh_
 {
     struct bt_mesh_dfd_srv *srv = mod->user_data;
 
-    srv->upload.phase = BT_MESH_DFD_UPLOAD_PHASE_IDLE;
+    srv->upload.phase = BLE_MESH_DFD_UPLOAD_PHASE_IDLE;
 #ifdef CONFIG_BLE_MESH_DFD_SRV_OOB_UPLOAD
     if (srv->upload.is_oob) {
         srv->cb->cancel_oob_upload(srv, srv->upload.slot);
@@ -662,7 +661,7 @@ static int handle_upload_cancel(const struct bt_mesh_model *mod, struct bt_mesh_
     {
         (void)bt_mesh_blob_srv_cancel(&srv->upload.blob);
     }
-    upload_status_rsp(srv, ctx, BT_MESH_DFD_SUCCESS);
+    upload_status_rsp(srv, ctx, BLE_MESH_DFD_SUCCESS);
 
     return 0;
 }
@@ -672,9 +671,9 @@ static void fw_status_rsp(struct bt_mesh_dfd_srv *srv,
                           enum bt_mesh_dfd_status status, uint16_t idx,
                           const uint8_t *fwid, size_t fwid_len)
 {
-    BLE_MESH_MODEL_BUF_DEFINE(rsp, BT_MESH_DFD_OP_FW_STATUS,
+    BLE_MESH_MODEL_BUF_DEFINE(rsp, BLE_MESH_DFD_OP_FW_STATUS,
                               7 + CONFIG_BLE_MESH_DFU_FWID_MAXLEN);
-    bt_mesh_model_msg_init(&rsp, BT_MESH_DFD_OP_FW_STATUS);
+    bt_mesh_model_msg_init(&rsp, BLE_MESH_DFD_OP_FW_STATUS);
 
     net_buf_simple_add_u8(&rsp, status);
     net_buf_simple_add_le16(&rsp, bt_mesh_dfu_slot_count());
@@ -701,10 +700,10 @@ static int handle_fw_get(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx
 
     idx = bt_mesh_dfu_slot_get(fwid, fwid_len, &slot);
     if (idx >= 0) {
-        fw_status_rsp(srv, ctx, BT_MESH_DFD_SUCCESS, idx, fwid,
+        fw_status_rsp(srv, ctx, BLE_MESH_DFD_SUCCESS, idx, fwid,
                       fwid_len);
     } else {
-        fw_status_rsp(srv, ctx, BT_MESH_DFD_ERR_FW_NOT_FOUND, 0xffff,
+        fw_status_rsp(srv, ctx, BLE_MESH_DFD_ERR_FW_NOT_FOUND, 0xffff,
                       fwid, fwid_len);
     }
 
@@ -722,10 +721,10 @@ static int handle_fw_get_by_index(const struct bt_mesh_model *mod, struct bt_mes
 
     slot = bt_mesh_dfu_slot_at(idx);
     if (slot) {
-        fw_status_rsp(srv, ctx, BT_MESH_DFD_SUCCESS, idx, slot->fwid,
+        fw_status_rsp(srv, ctx, BLE_MESH_DFD_SUCCESS, idx, slot->fwid,
                       slot->fwid_len);
     } else {
-        fw_status_rsp(srv, ctx, BT_MESH_DFD_ERR_FW_NOT_FOUND, idx,
+        fw_status_rsp(srv, ctx, BLE_MESH_DFD_ERR_FW_NOT_FOUND, idx,
                       NULL, 0);
     }
 
@@ -772,23 +771,23 @@ static int handle_fw_delete_all(const struct bt_mesh_model *mod, struct bt_mesh_
 }
 
 const struct bt_mesh_model_op _bt_mesh_dfd_srv_op[] = {
-    { BT_MESH_DFD_OP_RECEIVERS_ADD, 3, (void *)handle_receivers_add },
-    { BT_MESH_DFD_OP_RECEIVERS_DELETE_ALL, 0, (void *)handle_receivers_delete_all },
-    { BT_MESH_DFD_OP_RECEIVERS_GET, 4, (void *)handle_receivers_get },
-    { BT_MESH_DFD_OP_CAPABILITIES_GET, 0, (void *)handle_capabilities_get },
-    { BT_MESH_DFD_OP_GET, 0, (void *)handle_get },
-    { BT_MESH_DFD_OP_START, 10, (void *)handle_start },
-    { BT_MESH_DFD_OP_SUSPEND, 0, (void *)handle_suspend },
-    { BT_MESH_DFD_OP_CANCEL, 0, (void *)handle_cancel },
-    { BT_MESH_DFD_OP_APPLY, 0, (void *)handle_apply },
-    { BT_MESH_DFD_OP_UPLOAD_GET, 0, (void *)handle_upload_get },
-    { BT_MESH_DFD_OP_UPLOAD_START, 16, (void *)handle_upload_start },
-    { BT_MESH_DFD_OP_UPLOAD_START_OOB, 2, (void *)handle_upload_start_oob },
-    { BT_MESH_DFD_OP_UPLOAD_CANCEL, 0, (void *)handle_upload_cancel },
-    { BT_MESH_DFD_OP_FW_GET, 0, (void *)handle_fw_get },
-    { BT_MESH_DFD_OP_FW_GET_BY_INDEX, 2, (void *)handle_fw_get_by_index },
-    { BT_MESH_DFD_OP_FW_DELETE, 0, (void *)handle_fw_delete },
-    { BT_MESH_DFD_OP_FW_DELETE_ALL, 0, (void *)handle_fw_delete_all },
+    { BLE_MESH_DFD_OP_RECEIVERS_ADD, 3, (void *)handle_receivers_add },
+    { BLE_MESH_DFD_OP_RECEIVERS_DELETE_ALL, 0, (void *)handle_receivers_delete_all },
+    { BLE_MESH_DFD_OP_RECEIVERS_GET, 4, (void *)handle_receivers_get },
+    { BLE_MESH_DFD_OP_CAPABILITIES_GET, 0, (void *)handle_capabilities_get },
+    { BLE_MESH_DFD_OP_GET, 0, (void *)handle_get },
+    { BLE_MESH_DFD_OP_START, 10, (void *)handle_start },
+    { BLE_MESH_DFD_OP_SUSPEND, 0, (void *)handle_suspend },
+    { BLE_MESH_DFD_OP_CANCEL, 0, (void *)handle_cancel },
+    { BLE_MESH_DFD_OP_APPLY, 0, (void *)handle_apply },
+    { BLE_MESH_DFD_OP_UPLOAD_GET, 0, (void *)handle_upload_get },
+    { BLE_MESH_DFD_OP_UPLOAD_START, 16, (void *)handle_upload_start },
+    { BLE_MESH_DFD_OP_UPLOAD_START_OOB, 2, (void *)handle_upload_start_oob },
+    { BLE_MESH_DFD_OP_UPLOAD_CANCEL, 0, (void *)handle_upload_cancel },
+    { BLE_MESH_DFD_OP_FW_GET, 0, (void *)handle_fw_get },
+    { BLE_MESH_DFD_OP_FW_GET_BY_INDEX, 2, (void *)handle_fw_get_by_index },
+    { BLE_MESH_DFD_OP_FW_DELETE, 0, (void *)handle_fw_delete },
+    { BLE_MESH_DFD_OP_FW_DELETE_ALL, 0, (void *)handle_fw_delete_all },
 
     BLE_MESH_MODEL_OP_END
 };
@@ -798,7 +797,7 @@ static void dfu_suspended(struct bt_mesh_dfu_cli *cli)
     struct bt_mesh_dfd_srv *srv =
         CONTAINER_OF(cli, struct bt_mesh_dfd_srv, dfu);
 
-    dfd_phase_set(srv, BT_MESH_DFD_PHASE_TRANSFER_SUSPENDED);
+    dfd_phase_set(srv, BLE_MESH_DFD_PHASE_TRANSFER_SUSPENDED);
 }
 
 static void dfu_ended(struct bt_mesh_dfu_cli *cli,
@@ -810,31 +809,31 @@ static void dfu_ended(struct bt_mesh_dfu_cli *cli,
 
     BT_DBG("reason: %u, phase: %u, apply: %u", reason, srv->phase, srv->apply);
 
-    if (srv->phase == BT_MESH_DFD_PHASE_IDLE) {
+    if (srv->phase == BLE_MESH_DFD_PHASE_IDLE) {
         return;
     }
 
-    if (srv->phase == BT_MESH_DFD_PHASE_CANCELING_UPDATE) {
-        dfd_phase_set(srv, BT_MESH_DFD_PHASE_IDLE);
+    if (srv->phase == BLE_MESH_DFD_PHASE_CANCELING_UPDATE) {
+        dfd_phase_set(srv, BLE_MESH_DFD_PHASE_IDLE);
         return;
     }
 
     if (reason != BLE_MESH_DFU_SUCCESS) {
-        dfd_phase_set(srv, BT_MESH_DFD_PHASE_FAILED);
+        dfd_phase_set(srv, BLE_MESH_DFD_PHASE_FAILED);
         return;
     }
 
     if (!srv->apply) {
-        dfd_phase_set(srv, BT_MESH_DFD_PHASE_TRANSFER_SUCCESS);
+        dfd_phase_set(srv, BLE_MESH_DFD_PHASE_TRANSFER_SUCCESS);
         return;
     }
 
-    dfd_phase_set(srv, BT_MESH_DFD_PHASE_APPLYING_UPDATE);
+    dfd_phase_set(srv, BLE_MESH_DFD_PHASE_APPLYING_UPDATE);
 
     err = bt_mesh_dfu_cli_apply(cli);
     if (err) {
         BT_ERR("Apply failed: %d", err);
-        dfd_phase_set(srv, BT_MESH_DFD_PHASE_FAILED);
+        dfd_phase_set(srv, BLE_MESH_DFD_PHASE_FAILED);
     }
 }
 
@@ -844,19 +843,19 @@ static void dfu_applied(struct bt_mesh_dfu_cli *cli)
         CONTAINER_OF(cli, struct bt_mesh_dfd_srv, dfu);
     int err;
 
-    if (srv->phase == BT_MESH_DFD_PHASE_CANCELING_UPDATE) {
-        dfd_phase_set(srv, BT_MESH_DFD_PHASE_FAILED);
+    if (srv->phase == BLE_MESH_DFD_PHASE_CANCELING_UPDATE) {
+        dfd_phase_set(srv, BLE_MESH_DFD_PHASE_FAILED);
         return;
     }
 
-    if (srv->phase != BT_MESH_DFD_PHASE_APPLYING_UPDATE) {
+    if (srv->phase != BLE_MESH_DFD_PHASE_APPLYING_UPDATE) {
         return;
     }
 
     err = bt_mesh_dfu_cli_confirm(cli);
     if (err) {
         BT_ERR("Confirm failed: %d", err);
-        dfd_phase_set(srv, BT_MESH_DFD_PHASE_FAILED);
+        dfd_phase_set(srv, BLE_MESH_DFD_PHASE_FAILED);
     }
 }
 
@@ -865,12 +864,12 @@ static void dfu_confirmed(struct bt_mesh_dfu_cli *cli)
     struct bt_mesh_dfd_srv *srv =
         CONTAINER_OF(cli, struct bt_mesh_dfd_srv, dfu);
 
-    if (srv->phase != BT_MESH_DFD_PHASE_APPLYING_UPDATE &&
-            srv->phase != BT_MESH_DFD_PHASE_CANCELING_UPDATE) {
+    if (srv->phase != BLE_MESH_DFD_PHASE_APPLYING_UPDATE &&
+            srv->phase != BLE_MESH_DFD_PHASE_CANCELING_UPDATE) {
         return;
     }
 
-    dfd_phase_set(srv, BT_MESH_DFD_PHASE_COMPLETED);
+    dfd_phase_set(srv, BLE_MESH_DFD_PHASE_COMPLETED);
 }
 
 const struct bt_mesh_dfu_cli_cb _bt_mesh_dfd_srv_dfu_cb = {
@@ -892,19 +891,19 @@ static void upload_end(struct bt_mesh_blob_srv *b, uint64_t id, bool success)
     struct bt_mesh_dfd_srv *srv =
         CONTAINER_OF(b, struct bt_mesh_dfd_srv, upload.blob);
 
-    if (srv->upload.phase != BT_MESH_DFD_UPLOAD_PHASE_TRANSFER_ACTIVE) {
+    if (srv->upload.phase != BLE_MESH_DFD_UPLOAD_PHASE_TRANSFER_ACTIVE) {
         return;
     }
 
     BT_DBG("%u", success);
 
     if (success && (bt_mesh_dfu_slot_commit(srv->upload.slot) == 0)) {
-        srv->upload.phase = BT_MESH_DFD_UPLOAD_PHASE_TRANSFER_SUCCESS;
+        srv->upload.phase = BLE_MESH_DFD_UPLOAD_PHASE_TRANSFER_SUCCESS;
         return;
     }
 
     /* Will delete slot when we start a new upload */
-    srv->upload.phase = BT_MESH_DFD_UPLOAD_PHASE_TRANSFER_ERROR;
+    srv->upload.phase = BLE_MESH_DFD_UPLOAD_PHASE_TRANSFER_ERROR;
 }
 
 static void upload_timeout(struct bt_mesh_blob_srv *b)
@@ -933,9 +932,9 @@ static void dfd_srv_reset(struct bt_mesh_model *mod)
 {
     struct bt_mesh_dfd_srv *srv = mod->user_data;
 
-    dfd_phase_set(srv, BT_MESH_DFD_PHASE_IDLE);
+    dfd_phase_set(srv, BLE_MESH_DFD_PHASE_IDLE);
 
-    srv->upload.phase = BT_MESH_DFD_UPLOAD_PHASE_IDLE;
+    srv->upload.phase = BLE_MESH_DFD_UPLOAD_PHASE_IDLE;
 
     sys_slist_init(&srv->inputs.targets);
     srv->target_cnt = 0;
@@ -963,19 +962,19 @@ enum bt_mesh_dfd_status bt_mesh_dfd_srv_receiver_add(struct bt_mesh_dfd_srv *srv
     struct bt_mesh_blob_target_pull *p;
 
     if (!BLE_MESH_ADDR_IS_UNICAST(addr)) {
-        return BT_MESH_DFD_SUCCESS;
+        return BLE_MESH_DFD_SUCCESS;
     }
 
     t = target_get(srv, addr);
     if (t) {
         t->img_idx = img_idx;
-        return BT_MESH_DFD_SUCCESS;
+        return BLE_MESH_DFD_SUCCESS;
     }
 
     /* New target node, add it to the list */
 
     if (srv->target_cnt == ARRAY_SIZE(srv->targets)) {
-        return BT_MESH_DFD_ERR_INSUFFICIENT_RESOURCES;
+        return BLE_MESH_DFD_ERR_INSUFFICIENT_RESOURCES;
     }
 
     t = &srv->targets[srv->target_cnt];
@@ -991,19 +990,19 @@ enum bt_mesh_dfd_status bt_mesh_dfd_srv_receiver_add(struct bt_mesh_dfd_srv *srv
     BT_DBG("Added receiver 0x%04x img: %u", t->blob.addr,
            t->img_idx);
 
-    return BT_MESH_DFD_SUCCESS;
+    return BLE_MESH_DFD_SUCCESS;
 }
 
 enum bt_mesh_dfd_status bt_mesh_dfd_srv_receivers_delete_all(struct bt_mesh_dfd_srv *srv)
 {
     if (bt_mesh_dfu_cli_is_busy(&srv->dfu)) {
-        return BT_MESH_DFD_ERR_BUSY_WITH_DISTRIBUTION;
+        return BLE_MESH_DFD_ERR_BUSY_WITH_DISTRIBUTION;
     }
 
     sys_slist_init(&srv->inputs.targets);
     srv->target_cnt = 0;
 
-    return BT_MESH_DFD_SUCCESS;
+    return BLE_MESH_DFD_SUCCESS;
 }
 
 enum bt_mesh_dfd_status bt_mesh_dfd_srv_start(struct bt_mesh_dfd_srv *srv,
@@ -1013,17 +1012,17 @@ enum bt_mesh_dfd_status bt_mesh_dfd_srv_start(struct bt_mesh_dfd_srv *srv,
     struct bt_mesh_dfu_cli_xfer xfer = { 0 };
 
     if (!srv->target_cnt) {
-        return BT_MESH_DFD_ERR_RECEIVERS_LIST_EMPTY;
+        return BLE_MESH_DFD_ERR_RECEIVERS_LIST_EMPTY;
     }
 
     if (!bt_mesh_app_key_get(params->app_idx)) {
-        return BT_MESH_DFD_ERR_INVALID_APPKEY_INDEX;
+        return BLE_MESH_DFD_ERR_INVALID_APPKEY_INDEX;
     }
 
     xfer.mode = params->xfer_mode;
     xfer.slot = bt_mesh_dfu_slot_at(params->slot_idx);
     if (!xfer.slot) {
-        return BT_MESH_DFD_ERR_FW_NOT_FOUND;
+        return BLE_MESH_DFD_ERR_FW_NOT_FOUND;
     }
 
     if (srv->inputs.app_idx == params->app_idx &&
@@ -1032,29 +1031,29 @@ enum bt_mesh_dfd_status bt_mesh_dfd_srv_start(struct bt_mesh_dfd_srv *srv,
             srv->dfu.xfer.blob.mode == xfer.mode && srv->apply == params->apply &&
             srv->slot_idx == params->slot_idx) {
         if (is_busy(srv) ||
-                srv->phase == BT_MESH_DFD_PHASE_COMPLETED) {
+                srv->phase == BLE_MESH_DFD_PHASE_COMPLETED) {
             BT_WARN("Already completed or in progress");
-            return BT_MESH_DFD_SUCCESS;
-        } else if (srv->phase == BT_MESH_DFD_PHASE_TRANSFER_SUSPENDED) {
+            return BLE_MESH_DFD_SUCCESS;
+        } else if (srv->phase == BLE_MESH_DFD_PHASE_TRANSFER_SUSPENDED) {
             bt_mesh_dfu_cli_resume(&srv->dfu);
-            dfd_phase_set(srv, BT_MESH_DFD_PHASE_TRANSFER_ACTIVE);
-            return BT_MESH_DFD_SUCCESS;
+            dfd_phase_set(srv, BLE_MESH_DFD_PHASE_TRANSFER_ACTIVE);
+            return BLE_MESH_DFD_SUCCESS;
         }
     } else if (is_busy(srv) ||
-               srv->phase == BT_MESH_DFD_PHASE_TRANSFER_SUSPENDED) {
+               srv->phase == BLE_MESH_DFD_PHASE_TRANSFER_SUSPENDED) {
         BT_WARN("Busy with distribution");
-        return BT_MESH_DFD_ERR_BUSY_WITH_DISTRIBUTION;
+        return BLE_MESH_DFD_ERR_BUSY_WITH_DISTRIBUTION;
     }
 
-    if (srv->phase == BT_MESH_DFD_PHASE_CANCELING_UPDATE) {
+    if (srv->phase == BLE_MESH_DFD_PHASE_CANCELING_UPDATE) {
         BT_WARN("Canceling distribution");
-        return BT_MESH_DFD_ERR_BUSY_WITH_DISTRIBUTION;
+        return BLE_MESH_DFD_ERR_BUSY_WITH_DISTRIBUTION;
     }
 
     srv->io = NULL;
     err = srv->cb->send(srv, xfer.slot, &srv->io);
     if (err || !srv->io) {
-        return BT_MESH_DFD_ERR_INTERNAL;
+        return BLE_MESH_DFD_ERR_INTERNAL;
     }
 
     sys_slist_init(&srv->inputs.targets);
@@ -1083,35 +1082,35 @@ enum bt_mesh_dfd_status bt_mesh_dfd_srv_start(struct bt_mesh_dfd_srv *srv,
     /* DFD Server will always retrieve targets' capabilities before distributing a firmware.*/
     xfer.blob_params = NULL;
 
-    dfd_phase_set(srv, BT_MESH_DFD_PHASE_TRANSFER_ACTIVE);
+    dfd_phase_set(srv, BLE_MESH_DFD_PHASE_TRANSFER_ACTIVE);
     err = bt_mesh_dfu_cli_send(&srv->dfu, &srv->inputs, srv->io, &xfer);
     if (err) {
-        dfd_phase_set(srv, BT_MESH_DFD_PHASE_IDLE);
-        return BT_MESH_DFD_ERR_INTERNAL;
+        dfd_phase_set(srv, BLE_MESH_DFD_PHASE_IDLE);
+        return BLE_MESH_DFD_ERR_INTERNAL;
     }
 
-    return BT_MESH_DFD_SUCCESS;
+    return BLE_MESH_DFD_SUCCESS;
 }
 
 enum bt_mesh_dfd_status bt_mesh_dfd_srv_suspend(struct bt_mesh_dfd_srv *srv)
 {
     int err;
 
-    if (srv->phase == BT_MESH_DFD_PHASE_TRANSFER_SUSPENDED) {
-        return BT_MESH_DFD_SUCCESS;
+    if (srv->phase == BLE_MESH_DFD_PHASE_TRANSFER_SUSPENDED) {
+        return BLE_MESH_DFD_SUCCESS;
     }
 
-    if (srv->phase != BT_MESH_DFD_PHASE_TRANSFER_ACTIVE) {
-        return BT_MESH_DFD_ERR_WRONG_PHASE;
+    if (srv->phase != BLE_MESH_DFD_PHASE_TRANSFER_ACTIVE) {
+        return BLE_MESH_DFD_ERR_WRONG_PHASE;
     }
 
     err = bt_mesh_dfu_cli_suspend(&srv->dfu);
     if (err) {
-        return BT_MESH_DFD_ERR_SUSPEND_FAILED;
+        return BLE_MESH_DFD_ERR_SUSPEND_FAILED;
     }
 
-    srv->phase = BT_MESH_DFD_PHASE_TRANSFER_SUSPENDED;
-    return BT_MESH_DFD_SUCCESS;
+    srv->phase = BLE_MESH_DFD_PHASE_TRANSFER_SUSPENDED;
+    return BLE_MESH_DFD_SUCCESS;
 }
 
 enum bt_mesh_dfd_status bt_mesh_dfd_srv_cancel(struct bt_mesh_dfd_srv *srv,
@@ -1120,36 +1119,36 @@ enum bt_mesh_dfd_status bt_mesh_dfd_srv_cancel(struct bt_mesh_dfd_srv *srv,
     enum bt_mesh_dfd_phase prev_phase;
     int err;
 
-    if (srv->phase == BT_MESH_DFD_PHASE_CANCELING_UPDATE ||
-            srv->phase == BT_MESH_DFD_PHASE_IDLE) {
+    if (srv->phase == BLE_MESH_DFD_PHASE_CANCELING_UPDATE ||
+            srv->phase == BLE_MESH_DFD_PHASE_IDLE) {
         if (ctx != NULL) {
-            status_rsp(srv, ctx, BT_MESH_DFD_SUCCESS);
+            status_rsp(srv, ctx, BLE_MESH_DFD_SUCCESS);
         }
-        return BT_MESH_DFD_SUCCESS;
+        return BLE_MESH_DFD_SUCCESS;
     }
 
-    if (srv->phase == BT_MESH_DFD_PHASE_COMPLETED ||
-            srv->phase == BT_MESH_DFD_PHASE_FAILED) {
-        dfd_phase_set(srv, BT_MESH_DFD_PHASE_IDLE);
+    if (srv->phase == BLE_MESH_DFD_PHASE_COMPLETED ||
+            srv->phase == BLE_MESH_DFD_PHASE_FAILED) {
+        dfd_phase_set(srv, BLE_MESH_DFD_PHASE_IDLE);
         if (ctx != NULL) {
-            status_rsp(srv, ctx, BT_MESH_DFD_SUCCESS);
+            status_rsp(srv, ctx, BLE_MESH_DFD_SUCCESS);
         }
-        return BT_MESH_DFD_SUCCESS;
+        return BLE_MESH_DFD_SUCCESS;
     }
 
     /* Phase TRANSFER_ACTIVE, TRANSFER_SUSPENDED, TRANSFER_SUCCESS, APPLYING_UPDATE: */
 
     prev_phase = srv->phase;
-    dfd_phase_set(srv, BT_MESH_DFD_PHASE_CANCELING_UPDATE);
+    dfd_phase_set(srv, BLE_MESH_DFD_PHASE_CANCELING_UPDATE);
     err = bt_mesh_dfu_cli_cancel(&srv->dfu, NULL);
     if (err) {
         if (ctx != NULL) {
-            status_rsp(srv, ctx, BT_MESH_DFD_ERR_INTERNAL);
+            status_rsp(srv, ctx, BLE_MESH_DFD_ERR_INTERNAL);
         }
-        return BT_MESH_DFD_ERR_INTERNAL;
+        return BLE_MESH_DFD_ERR_INTERNAL;
     }
 
-    if (prev_phase == BT_MESH_DFD_PHASE_APPLYING_UPDATE && ctx) {
+    if (prev_phase == BLE_MESH_DFD_PHASE_APPLYING_UPDATE && ctx) {
         /* Disable randomization for the Firmware Distribution State message to avoid
          * reordering when Firmware Distribution Server sends 2 messages in a row when
          * cancelling the update (see section 6.2.3.10 of MshDFUv1.0).
@@ -1161,43 +1160,43 @@ enum bt_mesh_dfd_status bt_mesh_dfd_srv_cancel(struct bt_mesh_dfd_srv *srv,
     }
 
     if (ctx != NULL) {
-        status_rsp(srv, ctx, BT_MESH_DFD_SUCCESS);
+        status_rsp(srv, ctx, BLE_MESH_DFD_SUCCESS);
     }
 
-    if (prev_phase == BT_MESH_DFD_PHASE_APPLYING_UPDATE) {
-        dfd_phase_set(srv, BT_MESH_DFD_PHASE_IDLE);
+    if (prev_phase == BLE_MESH_DFD_PHASE_APPLYING_UPDATE) {
+        dfd_phase_set(srv, BLE_MESH_DFD_PHASE_IDLE);
         if (ctx != NULL) {
-            status_rsp(srv, ctx, BT_MESH_DFD_SUCCESS);
+            status_rsp(srv, ctx, BLE_MESH_DFD_SUCCESS);
         }
     }
 
-    return BT_MESH_DFD_SUCCESS;
+    return BLE_MESH_DFD_SUCCESS;
 }
 
 enum bt_mesh_dfd_status bt_mesh_dfd_srv_apply(struct bt_mesh_dfd_srv *srv)
 {
     int err;
 
-    if (srv->phase == BT_MESH_DFD_PHASE_IDLE ||
-            srv->phase == BT_MESH_DFD_PHASE_CANCELING_UPDATE ||
-            srv->phase == BT_MESH_DFD_PHASE_TRANSFER_ACTIVE ||
-            srv->phase == BT_MESH_DFD_PHASE_TRANSFER_SUSPENDED ||
-            srv->phase == BT_MESH_DFD_PHASE_FAILED) {
-        return BT_MESH_DFD_ERR_WRONG_PHASE;
+    if (srv->phase == BLE_MESH_DFD_PHASE_IDLE ||
+            srv->phase == BLE_MESH_DFD_PHASE_CANCELING_UPDATE ||
+            srv->phase == BLE_MESH_DFD_PHASE_TRANSFER_ACTIVE ||
+            srv->phase == BLE_MESH_DFD_PHASE_TRANSFER_SUSPENDED ||
+            srv->phase == BLE_MESH_DFD_PHASE_FAILED) {
+        return BLE_MESH_DFD_ERR_WRONG_PHASE;
     }
 
-    if (srv->phase == BT_MESH_DFD_PHASE_APPLYING_UPDATE ||
-            srv->phase == BT_MESH_DFD_PHASE_COMPLETED) {
-        return BT_MESH_DFD_SUCCESS;
+    if (srv->phase == BLE_MESH_DFD_PHASE_APPLYING_UPDATE ||
+            srv->phase == BLE_MESH_DFD_PHASE_COMPLETED) {
+        return BLE_MESH_DFD_SUCCESS;
     }
 
     err = bt_mesh_dfu_cli_apply(&srv->dfu);
     if (err) {
-        return BT_MESH_DFD_ERR_INTERNAL;
+        return BLE_MESH_DFD_ERR_INTERNAL;
     }
 
-    dfd_phase_set(srv, BT_MESH_DFD_PHASE_APPLYING_UPDATE);
-    return BT_MESH_DFD_SUCCESS;
+    dfd_phase_set(srv, BLE_MESH_DFD_PHASE_APPLYING_UPDATE);
+    return BLE_MESH_DFD_SUCCESS;
 }
 
 enum bt_mesh_dfd_status bt_mesh_dfd_srv_fw_delete(struct bt_mesh_dfd_srv *srv, size_t *fwid_len,
@@ -1206,38 +1205,38 @@ enum bt_mesh_dfd_status bt_mesh_dfd_srv_fw_delete(struct bt_mesh_dfd_srv *srv, s
     struct bt_mesh_dfu_slot *slot;
     int idx, err;
 
-    if (srv->phase != BT_MESH_DFD_PHASE_IDLE) {
+    if (srv->phase != BLE_MESH_DFD_PHASE_IDLE) {
         *fwid = NULL;
         *fwid_len = 0;
-        return BT_MESH_DFD_ERR_BUSY_WITH_DISTRIBUTION;
+        return BLE_MESH_DFD_ERR_BUSY_WITH_DISTRIBUTION;
     }
 
     idx = bt_mesh_dfu_slot_get(*fwid, *fwid_len, &slot);
     if (idx < 0) {
-        return BT_MESH_DFD_SUCCESS;
+        return BLE_MESH_DFD_SUCCESS;
     }
 
     err = slot_del(srv, slot);
     if (err) {
         *fwid = NULL;
         *fwid_len = 0;
-        return BT_MESH_DFD_ERR_INTERNAL;
+        return BLE_MESH_DFD_ERR_INTERNAL;
     } else {
-        return BT_MESH_DFD_SUCCESS;
+        return BLE_MESH_DFD_SUCCESS;
     }
 }
 
 enum bt_mesh_dfd_status bt_mesh_dfd_srv_fw_delete_all(struct bt_mesh_dfd_srv *srv)
 {
-    if (srv->phase != BT_MESH_DFD_PHASE_IDLE) {
-        return BT_MESH_DFD_ERR_BUSY_WITH_DISTRIBUTION;
+    if (srv->phase != BLE_MESH_DFD_PHASE_IDLE) {
+        return BLE_MESH_DFD_ERR_BUSY_WITH_DISTRIBUTION;
     }
 
     bt_mesh_dfu_slot_foreach(slot_del_cb, srv);
 
     bt_mesh_dfu_slot_del_all();
 
-    return BT_MESH_DFD_SUCCESS;
+    return BLE_MESH_DFD_SUCCESS;
 }
 
 #ifdef CONFIG_BLE_MESH_DFD_SRV_OOB_UPLOAD
@@ -1248,7 +1247,7 @@ int bt_mesh_dfd_srv_oob_check_complete(struct bt_mesh_dfd_srv *srv,
     int err;
 
     if (slot != srv->upload.slot || !srv->upload.is_oob ||
-            srv->upload.phase == BT_MESH_DFD_UPLOAD_PHASE_TRANSFER_ACTIVE ||
+            srv->upload.phase == BLE_MESH_DFD_UPLOAD_PHASE_TRANSFER_ACTIVE ||
             !srv->upload.is_pending_oob_check) {
         /* This should not happen, unless the application calls the function with a
          * "wrong" pointer or at a wrong time.
@@ -1258,7 +1257,7 @@ int bt_mesh_dfd_srv_oob_check_complete(struct bt_mesh_dfd_srv *srv,
 
     srv->upload.is_pending_oob_check = false;
 
-    if (status != BT_MESH_DFD_SUCCESS) {
+    if (status != BLE_MESH_DFD_SUCCESS) {
         bt_mesh_dfu_slot_release(srv->upload.slot);
         upload_status_rsp(srv, &srv->upload.oob.ctx, status);
         return -ECANCELED;
@@ -1270,7 +1269,7 @@ int bt_mesh_dfd_srv_oob_check_complete(struct bt_mesh_dfd_srv *srv,
         return err;
     }
 
-    upload_status_rsp(srv, &srv->upload.oob.ctx, BT_MESH_DFD_SUCCESS);
+    upload_status_rsp(srv, &srv->upload.oob.ctx, BLE_MESH_DFD_SUCCESS);
     return 0;
 }
 
@@ -1280,7 +1279,7 @@ int bt_mesh_dfd_srv_oob_store_complete(struct bt_mesh_dfd_srv *srv,
 {
     int err = 0;
 
-    if (srv->upload.phase != BT_MESH_DFD_UPLOAD_PHASE_TRANSFER_ACTIVE ||
+    if (srv->upload.phase != BLE_MESH_DFD_UPLOAD_PHASE_TRANSFER_ACTIVE ||
             srv->upload.slot != slot || !srv->upload.is_oob) {
         return -EINVAL;
     }
@@ -1299,11 +1298,11 @@ int bt_mesh_dfd_srv_oob_store_complete(struct bt_mesh_dfd_srv *srv,
         goto error;
     }
 
-    srv->upload.phase = BT_MESH_DFD_UPLOAD_PHASE_TRANSFER_SUCCESS;
+    srv->upload.phase = BLE_MESH_DFD_UPLOAD_PHASE_TRANSFER_SUCCESS;
     return 0;
 
 error:
-    srv->upload.phase = BT_MESH_DFD_UPLOAD_PHASE_TRANSFER_ERROR;
+    srv->upload.phase = BLE_MESH_DFD_UPLOAD_PHASE_TRANSFER_ERROR;
     bt_mesh_dfu_slot_release(srv->upload.slot);
     return err;
 }

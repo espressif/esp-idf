@@ -654,6 +654,8 @@ if(CONFIG_BT_ENABLED)
                         "esp_ble_mesh/v1.1/dfu/dfu_srv.c"
                         "esp_ble_mesh/v1.1/dfu/dfu_slot.c"
                         "esp_ble_mesh/v1.1/dfu/dfu_metadata.c"
+                        "esp_ble_mesh/v1.1/dfu/dfd_srv.c"
+                        "esp_ble_mesh/v1.1/dfu/dfd_cli.c"
                         "esp_ble_mesh/lib/ext.c")
 
             if(CONFIG_BLE_MESH_SAR_ENHANCEMENT)
