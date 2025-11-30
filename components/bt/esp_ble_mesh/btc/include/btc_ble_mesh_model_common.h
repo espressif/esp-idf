@@ -17,6 +17,45 @@
 extern "C" {
 #endif
 
+static inline void btc_ble_mesh_msg_ctx_copy(struct bt_mesh_msg_ctx *dst,
+                                             const struct bt_mesh_msg_ctx *src,
+                                             bool use_dev_key)
+{
+    if (dst == NULL ||
+        src == NULL) {
+        return;
+    }
+
+    dst->net_idx    = src->net_idx;
+    dst->app_idx    = use_dev_key ? BLE_MESH_KEY_DEV : src->app_idx;
+    dst->addr       = src->addr;
+    dst->send_szmic = src->send_szmic;
+    dst->send_ttl   = src->send_ttl;
+    dst->send_cred  = src->send_cred;
+    dst->send_tag   = src->send_tag;
+    if (src->enh.adv_cfg_used) {
+        dst->enh.adv_cfg_used = src->enh.adv_cfg_used;
+        dst->enh.adv_cfg.adv_cnt = src->enh.adv_cfg.adv_cnt;
+        dst->enh.adv_cfg.adv_itvl = src->enh.adv_cfg.adv_itvl;
+        dst->enh.adv_cfg.channel_map = src->enh.adv_cfg.channel_map;
+    }
+#if CONFIG_BLE_MESH_EXT_ADV
+    if (src->enh.ext_adv_cfg_used) {
+        dst->enh.ext_adv_cfg_used = src->enh.ext_adv_cfg_used;
+        dst->enh.ext_adv_cfg.primary_phy = src->enh.ext_adv_cfg.primary_phy;
+        dst->enh.ext_adv_cfg.secondary_phy = src->enh.ext_adv_cfg.secondary_phy;
+        dst->enh.ext_adv_cfg.include_tx_power = src->enh.ext_adv_cfg.include_tx_power;
+        dst->enh.ext_adv_cfg.tx_power = src->enh.ext_adv_cfg.tx_power;
+    }
+#if CONFIG_BLE_MESH_LONG_PACKET
+    if (src->enh.long_pkt_cfg_used) {
+        dst->enh.long_pkt_cfg_used = src->enh.long_pkt_cfg_used;
+        dst->enh.long_pkt_cfg = src->enh.long_pkt_cfg;
+    }
+#endif /* CONFIG_BLE_MESH_LONG_PACKET */
+#endif /* CONFIG_BLE_MESH_EXT_ADV */
+}
+
 static inline void btc_ble_mesh_set_client_common_param(esp_ble_mesh_client_common_param_t *input,
                                                         bt_mesh_client_common_param_t *output,
                                                         bool use_dev_key)
@@ -24,35 +63,8 @@ static inline void btc_ble_mesh_set_client_common_param(esp_ble_mesh_client_comm
     if (input && output) {
         output->opcode         = input->opcode;
         output->model          = (struct bt_mesh_model *)input->model;
-        output->ctx.net_idx    = input->ctx.net_idx;
-        output->ctx.app_idx    = use_dev_key ? BLE_MESH_KEY_DEV : input->ctx.app_idx;
-        output->ctx.addr       = input->ctx.addr;
-        output->ctx.send_szmic = input->ctx.send_szmic;
-        output->ctx.send_ttl   = input->ctx.send_ttl;
-        output->ctx.send_cred  = input->ctx.send_cred;
-        output->ctx.send_tag   = input->ctx.send_tag;
         output->msg_timeout    = input->msg_timeout;
-        if (input->ctx.enh.adv_cfg_used) {
-            output->ctx.enh.adv_cfg_used = input->ctx.enh.adv_cfg_used;
-            output->ctx.enh.adv_cfg.adv_cnt = input->ctx.enh.adv_cfg.adv_cnt;
-            output->ctx.enh.adv_cfg.adv_itvl = input->ctx.enh.adv_cfg.adv_itvl;
-            output->ctx.enh.adv_cfg.channel_map = input->ctx.enh.adv_cfg.channel_map;
-        }
-#if CONFIG_BLE_MESH_EXT_ADV
-        if (input->ctx.enh.ext_adv_cfg_used) {
-            output->ctx.enh.ext_adv_cfg_used = input->ctx.enh.ext_adv_cfg_used;
-            output->ctx.enh.ext_adv_cfg.primary_phy = input->ctx.enh.ext_adv_cfg.primary_phy;
-            output->ctx.enh.ext_adv_cfg.secondary_phy = input->ctx.enh.ext_adv_cfg.secondary_phy;
-            output->ctx.enh.ext_adv_cfg.include_tx_power = input->ctx.enh.ext_adv_cfg.include_tx_power;
-            output->ctx.enh.ext_adv_cfg.tx_power = input->ctx.enh.ext_adv_cfg.tx_power;
-        }
-#if CONFIG_BLE_MESH_LONG_PACKET
-        if (input->ctx.enh.long_pkt_cfg_used) {
-            output->ctx.enh.long_pkt_cfg_used = input->ctx.enh.long_pkt_cfg_used;
-            output->ctx.enh.long_pkt_cfg = input->ctx.enh.long_pkt_cfg;
-        }
-#endif
-#endif
+        btc_ble_mesh_msg_ctx_copy(&output->ctx, (const struct bt_mesh_msg_ctx *)&input->ctx, use_dev_key);
     }
 }
 
