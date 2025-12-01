@@ -38,63 +38,73 @@
 #define LP_CORE_CPU_FREQUENCY_HZ 16000000
 #endif
 
-static uint32_t lp_wakeup_cause = 0;
-
-void ulp_lp_core_update_wakeup_cause(void)
+bool ulp_lp_core_wakeup_assert_clear_hp_cpu(void)
 {
-    lp_wakeup_cause = 0;
-    if ((lp_core_ll_get_wakeup_source() & LP_CORE_LL_WAKEUP_SOURCE_HP_CPU) \
+    if ((lp_core_ll_get_wakeup_source() & LP_CORE_LL_WAKEUP_SOURCE_HP_CPU)
             && (pmu_ll_lp_get_interrupt_raw(&PMU) & PMU_HP_SW_TRIGGER_INT_RAW)) {
-        lp_wakeup_cause |= LP_CORE_LL_WAKEUP_SOURCE_HP_CPU;
         pmu_ll_lp_clear_intsts_mask(&PMU, PMU_HP_SW_TRIGGER_INT_CLR);
+        return true;
     }
+    return false;
+}
 
+bool ulp_lp_core_wakeup_assert_clear_lp_uart(void)
+{
 #if SOC_ULP_LP_UART_SUPPORTED
-    if ((lp_core_ll_get_wakeup_source() & LP_CORE_LL_WAKEUP_SOURCE_LP_UART) \
+    if ((lp_core_ll_get_wakeup_source() & LP_CORE_LL_WAKEUP_SOURCE_LP_UART)
             && (uart_ll_get_intraw_mask(&LP_UART) & LP_UART_WAKEUP_INT_RAW)) {
-        lp_wakeup_cause |= LP_CORE_LL_WAKEUP_SOURCE_LP_UART;
         uart_ll_clr_intsts_mask(&LP_UART, LP_UART_WAKEUP_INT_CLR);
+        return true;
     }
 #endif
+    return false;
+}
 
-    if ((lp_core_ll_get_wakeup_source() & LP_CORE_LL_WAKEUP_SOURCE_LP_IO) \
+bool ulp_lp_core_wakeup_assert_clear_lp_io(void)
+{
+    if ((lp_core_ll_get_wakeup_source() & LP_CORE_LL_WAKEUP_SOURCE_LP_IO)
             && rtcio_ll_get_interrupt_status()) {
-        lp_wakeup_cause |= LP_CORE_LL_WAKEUP_SOURCE_LP_IO;
         rtcio_ll_clear_interrupt_status();
+        return true;
     }
+    return false;
+}
 
+bool ulp_lp_core_wakeup_assert_clear_lp_vad(void)
+{
 #if SOC_LP_VAD_SUPPORTED
-    if ((lp_core_ll_get_wakeup_source() & LP_CORE_LL_WAKEUP_SOURCE_LP_VAD)) {
-        lp_wakeup_cause |= LP_CORE_LL_WAKEUP_SOURCE_LP_VAD;
+    if (lp_core_ll_get_wakeup_source() & LP_CORE_LL_WAKEUP_SOURCE_LP_VAD) {
         lp_i2s_ll_rx_clear_interrupt_status(&LP_I2S, LP_I2S_LL_EVENT_VAD_DONE_INT);
+        return true;
     }
 #endif
+    return false;
+}
 
+bool ulp_lp_core_wakeup_assert_clear_etm(void)
+{
 #if SOC_ETM_SUPPORTED
-    if ((lp_core_ll_get_wakeup_source() & LP_CORE_LL_WAKEUP_SOURCE_ETM) \
+    if ((lp_core_ll_get_wakeup_source() & LP_CORE_LL_WAKEUP_SOURCE_ETM)
             && lp_core_ll_get_etm_wakeup_flag()) {
-        lp_wakeup_cause |= LP_CORE_LL_WAKEUP_SOURCE_ETM;
 #if CONFIG_IDF_TARGET_ESP32P4
         lp_core_ll_clear_etm_wakeup_status();
 #else
         lp_core_ll_clear_etm_wakeup_flag();
 #endif
+        return true;
     }
 #endif /* SOC_ETM_SUPPORTED */
-
-#if SOC_LP_TIMER_SUPPORTED
-    if ((lp_core_ll_get_wakeup_source() & LP_CORE_LL_WAKEUP_SOURCE_LP_TIMER) \
-            && (lp_timer_ll_get_lp_intr_raw(&LP_TIMER) & LP_TIMER_MAIN_TIMER_LP_INT_RAW)) {
-        lp_wakeup_cause |= LP_CORE_LL_WAKEUP_SOURCE_LP_TIMER;
-        lp_timer_ll_clear_lp_intsts_mask(&LP_TIMER, LP_TIMER_MAIN_TIMER_LP_INT_CLR);
-    }
-#endif /* SOC_LP_TIMER_SUPPORTED */
-
+    return false;
 }
 
-uint32_t ulp_lp_core_get_wakeup_cause()
+bool ulp_lp_core_wakeup_assert_clear_lp_timer(void)
 {
-    return lp_wakeup_cause;
+    if ((lp_core_ll_get_wakeup_source() & LP_CORE_LL_WAKEUP_SOURCE_LP_TIMER)
+            && (lp_timer_ll_get_lp_intr_raw(&LP_TIMER) & LP_TIMER_MAIN_TIMER_LP_INT_RAW)) {
+        lp_timer_ll_clear_lp_intsts_mask(&LP_TIMER, LP_TIMER_MAIN_TIMER_LP_INT_CLR);
+        return true;
+    }
+    return false;
 }
 
 /**
