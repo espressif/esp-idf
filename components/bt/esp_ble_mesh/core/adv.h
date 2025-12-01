@@ -94,6 +94,7 @@ uint16_t bt_mesh_get_stored_relay_count(void);
 void bt_mesh_adv_update(void);
 
 void bt_mesh_adv_init(void);
+
 void bt_mesh_adv_deinit(void);
 
 #if CONFIG_BLE_MESH_SUPPORT_BLE_ADV
