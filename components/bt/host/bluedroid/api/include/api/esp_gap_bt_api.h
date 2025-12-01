@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -34,16 +34,16 @@ typedef enum {
     ESP_BT_SET_COD_RESERVED_2      = 0x10,          /*!< overwrite the two least significant bits reserved_2 whose default value is 0b00; other values of reserved_2 are invalid according to Bluetooth Core Specification 5.4 */
 } esp_bt_cod_mode_t;
 
-#define ESP_BT_GAP_AFH_CHANNELS_LEN     10
-typedef uint8_t esp_bt_gap_afh_channels[ESP_BT_GAP_AFH_CHANNELS_LEN];
+#define ESP_BT_GAP_AFH_CHANNELS_LEN     10          /*!< length of AFH channel map in bytes */
+typedef uint8_t esp_bt_gap_afh_channels[ESP_BT_GAP_AFH_CHANNELS_LEN]; /*!< AFH channels */
 
-
-/// Discoverability and Connectability mode
+/// Connectability mode
 typedef enum {
     ESP_BT_NON_CONNECTABLE,             /*!< Non-connectable */
     ESP_BT_CONNECTABLE,                 /*!< Connectable */
 } esp_bt_connection_mode_t;
 
+/// Discoverability mode
 typedef enum {
     ESP_BT_NON_DISCOVERABLE,            /*!< Non-discoverable */
     ESP_BT_LIMITED_DISCOVERABLE,        /*!< Limited Discoverable */
@@ -71,7 +71,7 @@ typedef struct {
     void *val;                                      /*!< Device property value */
 } esp_bt_gap_dev_prop_t;
 
-/// Extended Inquiry Response data type
+/* Extended Inquiry Response data type */
 #define ESP_BT_EIR_TYPE_FLAGS                   0x01      /*!< Flag with information such as BR/EDR and LE support */
 #define ESP_BT_EIR_TYPE_INCMPL_16BITS_UUID      0x02      /*!< Incomplete list of 16-bit service UUIDs */
 #define ESP_BT_EIR_TYPE_CMPL_16BITS_UUID        0x03      /*!< Complete list of 16-bit service UUIDs */
@@ -86,50 +86,50 @@ typedef struct {
 #define ESP_BT_EIR_TYPE_MANU_SPECIFIC           0xff      /*!< Manufacturer specific data */
 #define ESP_BT_EIR_TYPE_MAX_NUM                 12        /*!< MAX number of EIR type */
 
-typedef uint8_t esp_bt_eir_type_t;
+typedef uint8_t esp_bt_eir_type_t;   /*!< EIR type */
 
 /* ACL Packet Types */
-#define ESP_BT_ACL_PKT_TYPES_MASK_DM1           0x0008
-#define ESP_BT_ACL_PKT_TYPES_MASK_DH1           0x0010
-#define ESP_BT_ACL_PKT_TYPES_MASK_DM3           0x0400
-#define ESP_BT_ACL_PKT_TYPES_MASK_DH3           0x0800
-#define ESP_BT_ACL_PKT_TYPES_MASK_DM5           0x4000
-#define ESP_BT_ACL_PKT_TYPES_MASK_DH5           0x8000
-#define ESP_BT_ACL_PKT_TYPES_MASK_NO_2_DH1      0x0002
-#define ESP_BT_ACL_PKT_TYPES_MASK_NO_3_DH1      0x0004
-#define ESP_BT_ACL_PKT_TYPES_MASK_NO_2_DH3      0x0100
-#define ESP_BT_ACL_PKT_TYPES_MASK_NO_3_DH3      0x0200
-#define ESP_BT_ACL_PKT_TYPES_MASK_NO_2_DH5      0x1000
-#define ESP_BT_ACL_PKT_TYPES_MASK_NO_3_DH5      0x2000
+#define ESP_BT_ACL_PKT_TYPES_MASK_DM1           0x0008          /*!< DM1 packet type mask */
+#define ESP_BT_ACL_PKT_TYPES_MASK_DH1           0x0010          /*!< DH1 packet type mask */
+#define ESP_BT_ACL_PKT_TYPES_MASK_DM3           0x0400          /*!< DM3 packet type mask */
+#define ESP_BT_ACL_PKT_TYPES_MASK_DH3           0x0800          /*!< DH3 packet type mask */
+#define ESP_BT_ACL_PKT_TYPES_MASK_DM5           0x4000          /*!< DM5 packet type mask */
+#define ESP_BT_ACL_PKT_TYPES_MASK_DH5           0x8000          /*!< DH5 packet type mask */
+#define ESP_BT_ACL_PKT_TYPES_MASK_NO_2_DH1      0x0002          /*!< No 2-DH1 packet type mask */
+#define ESP_BT_ACL_PKT_TYPES_MASK_NO_3_DH1      0x0004          /*!< No 3-DH1 packet type mask */
+#define ESP_BT_ACL_PKT_TYPES_MASK_NO_2_DH3      0x0100          /*!< No 2-DH3 packet type mask */
+#define ESP_BT_ACL_PKT_TYPES_MASK_NO_3_DH3      0x0200          /*!< No 3-DH3 packet type mask */
+#define ESP_BT_ACL_PKT_TYPES_MASK_NO_2_DH5      0x1000          /*!< No 2-DH5 packet type mask */
+#define ESP_BT_ACL_PKT_TYPES_MASK_NO_3_DH5      0x2000          /*!< No 3-DH5 packet type mask */
 
-// DM1 can not be disabled. All options are mandatory to include DM1.
-#define ESP_BT_ACL_DM1_ONLY     (ESP_BT_ACL_PKT_TYPES_MASK_DM1 | 0x330e)         /* 0x330e */
-#define ESP_BT_ACL_DH1_ONLY     (ESP_BT_ACL_PKT_TYPES_MASK_DH1 | 0x330e)         /* 0x331e */
-#define ESP_BT_ACL_DM3_ONLY     (ESP_BT_ACL_PKT_TYPES_MASK_DM3 | 0x330e)         /* 0x370e */
-#define ESP_BT_ACL_DH3_ONLY     (ESP_BT_ACL_PKT_TYPES_MASK_DH3 | 0x330e)         /* 0x3b0e */
-#define ESP_BT_ACL_DM5_ONLY     (ESP_BT_ACL_PKT_TYPES_MASK_DM5 | 0x330e)         /* 0x730e */
-#define ESP_BT_ACL_DH5_ONLY     (ESP_BT_ACL_PKT_TYPES_MASK_DH5 | 0x330e)         /* 0xb30e */
-#define ESP_BT_ACL_2_DH1_ONLY   (~ESP_BT_ACL_PKT_TYPES_MASK_NO_2_DH1 & 0x330e)   /* 0x330c */
-#define ESP_BT_ACL_3_DH1_ONLY   (~ESP_BT_ACL_PKT_TYPES_MASK_NO_3_DH1 & 0x330e)   /* 0x330a */
-#define ESP_BT_ACL_2_DH3_ONLY   (~ESP_BT_ACL_PKT_TYPES_MASK_NO_2_DH3 & 0x330e)   /* 0x320e */
-#define ESP_BT_ACL_3_DH3_ONLY   (~ESP_BT_ACL_PKT_TYPES_MASK_NO_3_DH3 & 0x330e)   /* 0x310e */
-#define ESP_BT_ACL_2_DH5_ONLY   (~ESP_BT_ACL_PKT_TYPES_MASK_NO_2_DH5 & 0x330e)   /* 0x230e */
-#define ESP_BT_ACL_3_DH5_ONLY   (~ESP_BT_ACL_PKT_TYPES_MASK_NO_3_DH5 & 0x330e)   /* 0x130e */
+/* DM1 can not be disabled. All options are mandatory to include DM1. */
+#define ESP_BT_ACL_DM1_ONLY     (ESP_BT_ACL_PKT_TYPES_MASK_DM1 | 0x330e)         /*!< 0x330e */
+#define ESP_BT_ACL_DH1_ONLY     (ESP_BT_ACL_PKT_TYPES_MASK_DH1 | 0x330e)         /*!< 0x331e */
+#define ESP_BT_ACL_DM3_ONLY     (ESP_BT_ACL_PKT_TYPES_MASK_DM3 | 0x330e)         /*!< 0x370e */
+#define ESP_BT_ACL_DH3_ONLY     (ESP_BT_ACL_PKT_TYPES_MASK_DH3 | 0x330e)         /*!< 0x3b0e */
+#define ESP_BT_ACL_DM5_ONLY     (ESP_BT_ACL_PKT_TYPES_MASK_DM5 | 0x330e)         /*!< 0x730e */
+#define ESP_BT_ACL_DH5_ONLY     (ESP_BT_ACL_PKT_TYPES_MASK_DH5 | 0x330e)         /*!< 0xb30e */
+#define ESP_BT_ACL_2_DH1_ONLY   (~ESP_BT_ACL_PKT_TYPES_MASK_NO_2_DH1 & 0x330e)   /*!< 0x330c */
+#define ESP_BT_ACL_3_DH1_ONLY   (~ESP_BT_ACL_PKT_TYPES_MASK_NO_3_DH1 & 0x330e)   /*!< 0x330a */
+#define ESP_BT_ACL_2_DH3_ONLY   (~ESP_BT_ACL_PKT_TYPES_MASK_NO_2_DH3 & 0x330e)   /*!< 0x320e */
+#define ESP_BT_ACL_3_DH3_ONLY   (~ESP_BT_ACL_PKT_TYPES_MASK_NO_3_DH3 & 0x330e)   /*!< 0x310e */
+#define ESP_BT_ACL_2_DH5_ONLY   (~ESP_BT_ACL_PKT_TYPES_MASK_NO_2_DH5 & 0x330e)   /*!< 0x230e */
+#define ESP_BT_ACL_3_DH5_ONLY   (~ESP_BT_ACL_PKT_TYPES_MASK_NO_3_DH5 & 0x330e)   /*!< 0x130e */
 
-typedef uint16_t esp_bt_acl_pkt_type_t;
+typedef uint16_t esp_bt_acl_pkt_type_t;     /*!< ACL packet type */
 
 /* Range of encryption key size */
-#define ESP_BT_ENC_KEY_SIZE_CTRL_MAX            (16)
-#define ESP_BT_ENC_KEY_SIZE_CTRL_MIN            (7)
+#define ESP_BT_ENC_KEY_SIZE_CTRL_MAX            (16)      /*!< Maximum of encryption key size */
+#define ESP_BT_ENC_KEY_SIZE_CTRL_MIN            (7)       /*!< Minimum of encryption key size */
 
 /* ESP_BT_EIR_FLAG bit definition */
-#define ESP_BT_EIR_FLAG_LIMIT_DISC         (0x01 << 0)
-#define ESP_BT_EIR_FLAG_GEN_DISC           (0x01 << 1)
-#define ESP_BT_EIR_FLAG_BREDR_NOT_SPT      (0x01 << 2)
-#define ESP_BT_EIR_FLAG_DMT_CONTROLLER_SPT (0x01 << 3)
-#define ESP_BT_EIR_FLAG_DMT_HOST_SPT       (0x01 << 4)
+#define ESP_BT_EIR_FLAG_LIMIT_DISC         (0x01 << 0)    /*!< Limited discoverable flag */
+#define ESP_BT_EIR_FLAG_GEN_DISC           (0x01 << 1)    /*!< General discoverable flag */
+#define ESP_BT_EIR_FLAG_BREDR_NOT_SPT      (0x01 << 2)    /*!< BR/EDR not supported flag */
+#define ESP_BT_EIR_FLAG_DMT_CONTROLLER_SPT (0x01 << 3)    /*!< DMT controller supported flag */
+#define ESP_BT_EIR_FLAG_DMT_HOST_SPT       (0x01 << 4)    /*!< DMT host supported flag */
 
-#define ESP_BT_EIR_MAX_LEN                  240
+#define ESP_BT_EIR_MAX_LEN                  240           /*!< Maximum of EIR length */
 /// EIR data content, according to "Supplement to the Bluetooth Core Specification"
 typedef struct {
     bool                    fec_required;           /*!< FEC is required or not, true by default */
@@ -157,6 +157,7 @@ typedef enum {
     ESP_BT_COD_SRVC_INFORMATION              = 0x400,    /*!< Information, e.g., WEB-server, WAP-server */
 } esp_bt_cod_srvc_t;
 
+/// Pin type
 typedef enum{
     ESP_BT_PIN_TYPE_VARIABLE = 0,                       /*!< Refer to BTM_PIN_TYPE_VARIABLE */
     ESP_BT_PIN_TYPE_FIXED    = 1,                       /*!< Refer to BTM_PIN_TYPE_FIXED */
@@ -165,29 +166,27 @@ typedef enum{
 #define ESP_BT_PIN_CODE_LEN        16                   /*!< Max pin code length */
 typedef uint8_t esp_bt_pin_code_t[ESP_BT_PIN_CODE_LEN]; /*!< Pin Code (upto 128 bits) MSB is 0 */
 
+/// SP parameter type
 typedef enum {
     ESP_BT_SP_IOCAP_MODE = 0,                            /*!< Set IO mode */
     //ESP_BT_SP_OOB_DATA, //TODO                         /*!< Set OOB data */
 } esp_bt_sp_param_t;
 
-/* relate to BTM_IO_CAP_xxx in stack/btm_api.h */
-#define ESP_BT_IO_CAP_OUT                      0        /*!< DisplayOnly */         /* relate to BTM_IO_CAP_OUT in stack/btm_api.h */
-#define ESP_BT_IO_CAP_IO                       1        /*!< DisplayYesNo */        /* relate to BTM_IO_CAP_IO in stack/btm_api.h */
-#define ESP_BT_IO_CAP_IN                       2        /*!< KeyboardOnly */        /* relate to BTM_IO_CAP_IN in stack/btm_api.h */
-#define ESP_BT_IO_CAP_NONE                     3        /*!< NoInputNoOutput */     /* relate to BTM_IO_CAP_NONE in stack/btm_api.h */
+/* Input/Output capabilities */
+#define ESP_BT_IO_CAP_OUT                      0        /*!< DisplayOnly */
+#define ESP_BT_IO_CAP_IO                       1        /*!< DisplayYesNo */
+#define ESP_BT_IO_CAP_IN                       2        /*!< KeyboardOnly */
+#define ESP_BT_IO_CAP_NONE                     3        /*!< NoInputNoOutput */
 typedef uint8_t esp_bt_io_cap_t;                        /*!< Combination of the IO Capability */
 
-
-/* BTM Power manager modes */
+/* BT Power manager modes */
 #define ESP_BT_PM_MD_ACTIVE                 0x00        /*!< Active mode */
 #define ESP_BT_PM_MD_HOLD                   0x01        /*!< Hold mode */
 #define ESP_BT_PM_MD_SNIFF                  0x02        /*!< Sniff mode */
 #define ESP_BT_PM_MD_PARK                   0x03        /*!< Park state */
-typedef uint8_t esp_bt_pm_mode_t;
+typedef uint8_t esp_bt_pm_mode_t;                       /*!< BT Power manager mode type */
 
-
-
-/// Bits of major service class field
+/* Bits of major service class field */
 #define ESP_BT_COD_SRVC_BIT_MASK              (0xffe000) /*!< Major service bit mask */
 #define ESP_BT_COD_SRVC_BIT_OFFSET            (13)       /*!< Major service bit offset */
 
@@ -195,9 +194,9 @@ typedef uint8_t esp_bt_pm_mode_t;
 typedef enum {
     ESP_BT_COD_MAJOR_DEV_MISC                = 0,    /*!< Miscellaneous */
     ESP_BT_COD_MAJOR_DEV_COMPUTER            = 1,    /*!< Computer */
-    ESP_BT_COD_MAJOR_DEV_PHONE               = 2,    /*!< Phone(cellular, cordless, pay phone, modem */
+    ESP_BT_COD_MAJOR_DEV_PHONE               = 2,    /*!< Phone (cellular, cordless, pay phone, modem) */
     ESP_BT_COD_MAJOR_DEV_LAN_NAP             = 3,    /*!< LAN, Network Access Point */
-    ESP_BT_COD_MAJOR_DEV_AV                  = 4,    /*!< Audio/Video(headset, speaker, stereo, video display, VCR */
+    ESP_BT_COD_MAJOR_DEV_AV                  = 4,    /*!< Audio/Video (headset, speaker, stereo, video display, VCR) */
     ESP_BT_COD_MAJOR_DEV_PERIPHERAL          = 5,    /*!< Peripheral(mouse, joystick, keyboard) */
     ESP_BT_COD_MAJOR_DEV_IMAGING             = 6,    /*!< Imaging(printer, scanner, camera, display */
     ESP_BT_COD_MAJOR_DEV_WEARABLE            = 7,    /*!< Wearable */
@@ -228,20 +227,19 @@ typedef enum {
     ESP_BT_COD_MINOR_PERIPHERAL_HAND_GESTURAL_INPUT = 0x09, /*!< Hand Gestural Input */
 } esp_bt_cod_minor_peripheral_t;
 
-/// Bits of major device class field
+/* Bits of major device class field */
 #define ESP_BT_COD_MAJOR_DEV_BIT_MASK         (0x1f00) /*!< Major device bit mask */
 #define ESP_BT_COD_MAJOR_DEV_BIT_OFFSET       (8)      /*!< Major device bit offset */
 
-/// Bits of minor device class field
+/* Bits of minor device class field */
 #define ESP_BT_COD_MINOR_DEV_BIT_MASK         (0xfc)   /*!< Minor device bit mask */
 #define ESP_BT_COD_MINOR_DEV_BIT_OFFSET       (2)      /*!< Minor device bit offset */
 
-/// Bits of format type
+/* Bits of format type */
 #define ESP_BT_COD_FORMAT_TYPE_BIT_MASK       (0x03)   /*!< Format type bit mask */
 #define ESP_BT_COD_FORMAT_TYPE_BIT_OFFSET     (0)      /*!< Format type bit offset */
 
-/// Class of device format type 1
-#define ESP_BT_COD_FORMAT_TYPE_1              (0x00)
+#define ESP_BT_COD_FORMAT_TYPE_1              (0x00)   /*!< Class of device format type 1 */
 
 /** Bluetooth Device Discovery state */
 typedef enum {
@@ -249,7 +247,7 @@ typedef enum {
     ESP_BT_GAP_DISCOVERY_STARTED,                   /*!< Device discovery started */
 } esp_bt_gap_discovery_state_t;
 
-/// Type of link key
+/* Type of link key */
 #define ESP_BT_LINK_KEY_COMB                (0x00)  /*!< Combination Key */
 #define ESP_BT_LINK_KEY_DBG_COMB            (0x03)  /*!< Debug Combination Key */
 #define ESP_BT_LINK_KEY_UNAUTHED_COMB_P192  (0x04)  /*!< Unauthenticated Combination Key generated from P-192 */
@@ -257,13 +255,13 @@ typedef enum {
 #define ESP_BT_LINK_KEY_CHG_COMB            (0x06)  /*!< Changed Combination Key */
 #define ESP_BT_LINK_KEY_UNAUTHED_COMB_P256  (0x07)  /*!< Unauthenticated Combination Key generated from P-256 */
 #define ESP_BT_LINK_KEY_AUTHED_COMB_P256    (0x08)  /*!< Authenticated Combination Key generated from P-256 */
-typedef uint8_t esp_bt_link_key_type_t;
+typedef uint8_t esp_bt_link_key_type_t;             /*!< Link key type */
 
-/// Type of encryption
+/* Type of encryption */
 #define ESP_BT_ENC_MODE_OFF                 (0x00)  /*!< Link Level Encryption is OFF */
 #define ESP_BT_ENC_MODE_E0                  (0x01)  /*!< Link Level Encryption is ON with E0 */
 #define ESP_BT_ENC_MODE_AES                 (0x02)  /*!< Link Level Encryption is ON with AES-CCM */
-typedef uint8_t esp_bt_enc_mode_t;
+typedef uint8_t esp_bt_enc_mode_t;                  /*!< encryption mode type */
 
 /// BT GAP callback events
 typedef enum {
@@ -280,7 +278,7 @@ typedef enum {
     ESP_BT_GAP_CONFIG_EIR_DATA_EVT,                 /*!< Config EIR data event */
     ESP_BT_GAP_SET_AFH_CHANNELS_EVT,                /*!< Set AFH channels event */
     ESP_BT_GAP_READ_REMOTE_NAME_EVT,                /*!< Read Remote Name event */
-    ESP_BT_GAP_MODE_CHG_EVT,
+    ESP_BT_GAP_MODE_CHG_EVT,                     /*!< Mode change event */
     ESP_BT_GAP_REMOVE_BOND_DEV_COMPLETE_EVT,         /*!< remove bond device complete event */
     ESP_BT_GAP_QOS_CMPL_EVT,                        /*!< QOS complete event */
     ESP_BT_GAP_ACL_CONN_CMPL_STAT_EVT,              /*!< ACL connection complete status event */
@@ -300,11 +298,11 @@ typedef enum {
     ESP_BT_INQ_MODE_LIMITED_INQUIRY,                /*!< Limited inquiry mode */
 } esp_bt_inq_mode_t;
 
-/** Minimum and Maximum inquiry length*/
+/* Minimum and Maximum inquiry length */
 #define ESP_BT_GAP_MIN_INQ_LEN                (0x01)  /*!< Minimum inquiry duration, unit is 1.28s */
 #define ESP_BT_GAP_MAX_INQ_LEN                (0x30)  /*!< Maximum inquiry duration, unit is 1.28s */
 
-/** Minimum, Default and Maximum poll interval **/
+/* Minimum, Default and Maximum poll interval */
 #define ESP_BT_GAP_TPOLL_MIN                  (0x0006) /*!< Minimum poll interval, unit is 625 microseconds */
 #define ESP_BT_GAP_TPOLL_DFT                  (0x0028) /*!< Default poll interval, unit is 625 microseconds */
 #define ESP_BT_GAP_TPOLL_MAX                  (0x1000) /*!< Maximum poll interval, unit is 625 microseconds */
@@ -354,7 +352,7 @@ typedef union {
     } rmt_srvc_rec;                            /*!< specific service record from remote device parameter struct */
 
     /**
-     * @brief ESP_BT_GAP_READ_RSSI_DELTA_EVT *
+     * @brief ESP_BT_GAP_READ_RSSI_DELTA_EVT
      */
     struct read_rssi_delta_param {
         esp_bd_addr_t bda;                     /*!< remote bluetooth device address*/
@@ -363,7 +361,7 @@ typedef union {
     } read_rssi_delta;                         /*!< read rssi parameter struct */
 
     /**
-     * @brief ESP_BT_GAP_CONFIG_EIR_DATA_EVT *
+     * @brief ESP_BT_GAP_CONFIG_EIR_DATA_EVT
      */
     struct config_eir_data_param {
         esp_bt_status_t stat;                                   /*!< config EIR status:
@@ -605,6 +603,8 @@ static inline bool esp_bt_gap_is_valid_cod(uint32_t cod)
 /**
  * @brief           register callback function. This function should be called after esp_bluedroid_enable() completes successfully
  *
+ * @param[in]       callback : callback function
+ *
  * @return
  *                  - ESP_OK : Succeed
  *                  - ESP_FAIL: others
@@ -664,6 +664,8 @@ esp_err_t esp_bt_gap_cancel_discovery(void);
  * @brief           Start SDP to get remote services. This function should be called after esp_bluedroid_enable() completes successfully.
  *                  esp_bt_gap_cb_t will be called with ESP_BT_GAP_RMT_SRVCS_EVT after service discovery ends.
  *
+ * @param[in]       remote_bda : remote bluetooth device address
+ *
  * @return
  *                  - ESP_OK : Succeed
  *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
@@ -676,6 +678,10 @@ esp_err_t esp_bt_gap_get_remote_services(esp_bd_addr_t remote_bda);
  *                  esp_bluedroid_enable() completes successfully.
  *
  *                  esp_bt_gap_cb_t will be called with ESP_BT_GAP_RMT_SRVC_REC_EVT after service discovery ends
+ *
+ * @param[in]       remote_bda : remote bluetooth device address
+ * @param[in]       uuid : uuid
+ *
  * @return
  *                  - ESP_OK : Succeed
  *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
@@ -952,6 +958,9 @@ esp_err_t esp_bt_gap_get_page_timeout(void);
  *                  An ESP_BT_GAP_ACL_PKT_TYPE_CHANGED_EVT event will be reported to
  *                  the APP layer.
  *
+ * @param[in]       remote_bda : remote bluetooth device address
+ * @param[in]       pkt_types : packet type
+ *
  * @return          - ESP_OK: success
  *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
  *                  - other: failed
@@ -960,6 +969,8 @@ esp_err_t esp_bt_gap_set_acl_pkt_types(esp_bd_addr_t remote_bda, esp_bt_acl_pkt_
 
 /**
  * @brief           Set the minimal size of encryption key
+ *
+ * @param[in]       key_size : the size of encryption key
  *
  * @return          - ESP_OK: success
  *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
