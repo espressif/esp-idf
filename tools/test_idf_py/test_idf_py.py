@@ -99,7 +99,7 @@ class TestDependencyManagement(TestWithoutExtensions):
             args=['--dry-run', 'flash'],
             standalone_mode=False,
         )
-        self.assertEqual(['flash'], list(result.keys()))
+        self.assertEqual(['all', 'flash'], list(result.keys()))
 
     def test_order_only_dependencies(self):
         result = idf.init_cli()(
@@ -120,7 +120,7 @@ class TestDependencyManagement(TestWithoutExtensions):
             args=['--dry-run', 'clean', 'monitor', 'clean', 'fullclean', 'flash'],
             standalone_mode=False,
         )
-        self.assertEqual(['fullclean', 'clean', 'flash', 'monitor'], list(result.keys()))
+        self.assertEqual(['fullclean', 'clean', 'all', 'flash', 'monitor'], list(result.keys()))
 
     def test_dupplicated_commands_warning(self):
         capturedOutput = StringIO()
