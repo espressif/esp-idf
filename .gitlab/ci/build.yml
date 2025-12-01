@@ -72,8 +72,6 @@ build_template_app:
       #
       # keep the log file to help debug
       - "**/build*/build_log.txt"
-      # keep the size info to help track the binary size
-      - size_info.txt
       - "**/build*/size*.json"
     expire_in: 1 week
     when: always

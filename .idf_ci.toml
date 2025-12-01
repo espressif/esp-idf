@@ -100,7 +100,7 @@ patterns = [
 
 [gitlab.artifacts.s3.longterm]
 bucket = "longterm"
-if_clause = '"$CI_COMMIT_REF_NAME" == "master"'
+if_clause = 'CI_COMMIT_REF_NAME == "master"'
 patterns = [
     '**/build*/size*.json',
 ]
