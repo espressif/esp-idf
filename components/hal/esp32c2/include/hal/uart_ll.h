@@ -752,8 +752,6 @@ FORCE_INLINE_ATTR void uart_ll_set_mode_rs485_app_ctrl(uart_dev_t *hw)
     hw->conf0.irda_en = 0;
     hw->conf0.sw_rts = 0;
     hw->conf0.irda_en = 0;
-    hw->rs485_conf.dl0_en = 1;
-    hw->rs485_conf.dl1_en = 1;
     hw->rs485_conf.en = 1;
 }
 
@@ -770,12 +768,9 @@ FORCE_INLINE_ATTR void uart_ll_set_mode_rs485_half_duplex(uart_dev_t *hw)
     hw->conf0.sw_rts = 1;
     // Half duplex mode
     hw->rs485_conf.tx_rx_en = 0;
-    // Setting this bit will allow data to be transmitted while receiving data(full-duplex mode).
-    // But note that this full-duplex mode has no conflict detection function
-    hw->rs485_conf.rx_busy_tx_en = 0;
+    // This is to void collision
+    hw->rs485_conf.rx_busy_tx_en = 1;
     hw->conf0.irda_en = 0;
-    hw->rs485_conf.dl0_en = 1;
-    hw->rs485_conf.dl1_en = 1;
     hw->rs485_conf.en = 1;
 }
 
@@ -793,8 +788,6 @@ FORCE_INLINE_ATTR void uart_ll_set_mode_collision_detect(uart_dev_t *hw)
     hw->rs485_conf.tx_rx_en = 1;
     // Transmitter should send data when the receiver is busy,
     hw->rs485_conf.rx_busy_tx_en = 1;
-    hw->rs485_conf.dl0_en = 1;
-    hw->rs485_conf.dl1_en = 1;
     hw->conf0.sw_rts = 0;
     hw->rs485_conf.en = 1;
 }
