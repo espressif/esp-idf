@@ -48,3 +48,5 @@ Bluedroid
         - 结构体 ``esp_a2d_media_ctrl_t`` 中的字段 ``ESP_A2D_MEDIA_CTRL_STOP`` 被移除，该字段被 ``ESP_A2D_MEDIA_CTRL_SUSPEND`` 替代。
 
         - 结构体 ``esp_a2d_mcc_t`` 中的字段 ``sbc, m12, m24, atrac`` 被移除并由字段 ``bc_info, m12_info, m24_info , atrc_info`` 替代。
+
+        - 宏 ``ESP_A2D_SBC_CIE_ALLOC_MTHD_SRN`` 更名为 ``ESP_A2D_SBC_CIE_ALLOC_MTHD_SNR``。旧宏为兼容保留，但已废弃，使用时会产生编译期告警。

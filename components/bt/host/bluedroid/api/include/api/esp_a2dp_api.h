@@ -19,56 +19,44 @@ extern "C" {
 
 typedef uint16_t esp_a2d_conn_hdl_t;            /*!< Connection handle, associate with specific device that connected */
 
-/**
- * @brief Media codec types supported by A2DP.
- */
+/* Media codec types supported by A2DP. */
 #define ESP_A2D_MCT_SBC         (0)             /*!< SBC */
 #define ESP_A2D_MCT_M12         (0x01)          /*!< MPEG-1, 2 Audio */
 #define ESP_A2D_MCT_M24         (0x02)          /*!< MPEG-2, 4 AAC */
 #define ESP_A2D_MCT_ATRAC       (0x04)          /*!< ATRAC family */
 #define ESP_A2D_MCT_NON_A2DP    (0xff)          /*!< NON-A2DP */
-typedef uint8_t esp_a2d_mct_t;
+typedef uint8_t esp_a2d_mct_t;                  /*!< Media codec type of A2DP */
 
-/**
- * @brief Protocol service capabilities. This value is a mask.
- */
+/* Protocol service capabilities. This value is a mask. */
 #define ESP_A2D_PSC_DELAY_RPT          (1<<0)  /*!< Delay Report */
-typedef uint16_t esp_a2d_psc_t;
+typedef uint16_t esp_a2d_psc_t;                /*!< Protocol service capabilities type */
 
-/**
- * @brief A2DP SBC sampling frequency bit mask in CIE
- */
+/* A2DP SBC sampling frequency bit mask in CIE */
 #define ESP_A2D_SBC_CIE_SF_16K                  (0x8)       /*!< SBC sampling frequency 16kHz  */
 #define ESP_A2D_SBC_CIE_SF_32K                  (0x4)       /*!< SBC sampling frequency 32kHz */
 #define ESP_A2D_SBC_CIE_SF_44K                  (0x2)       /*!< SBC sampling frequency 44.1kHz  */
 #define ESP_A2D_SBC_CIE_SF_48K                  (0x1)       /*!< SBC sampling frequency 48kHz */
 
-/**
- * @brief A2DP SBC channel mode bit mask in CIE
- */
+/* A2DP SBC channel mode bit mask in CIE */
 #define ESP_A2D_SBC_CIE_CH_MODE_MONO            (0x8)       /*!< SBC channel mode Mono */
 #define ESP_A2D_SBC_CIE_CH_MODE_DUAL_CHANNEL    (0x4)       /*!< SBC channel mode Dual Channel */
 #define ESP_A2D_SBC_CIE_CH_MODE_STEREO          (0x2)       /*!< SBC channel mode Stereo */
-#define ESP_A2D_SBC_CIE_CH_MODE_JOINT_STEREO    (0x1)       /*!< SBC channel mode Stereo */
+#define ESP_A2D_SBC_CIE_CH_MODE_JOINT_STEREO    (0x1)       /*!< SBC channel mode Joint Stereo */
 
-/**
- * @brief A2DP SBC block length bit mask in CIE
- */
+/* A2DP SBC block length bit mask in CIE */
 #define ESP_A2D_SBC_CIE_BLOCK_LEN_4             (0x8)       /*!< SBC block length 4 */
 #define ESP_A2D_SBC_CIE_BLOCK_LEN_8             (0x4)       /*!< SBC block length 8 */
 #define ESP_A2D_SBC_CIE_BLOCK_LEN_12            (0x2)       /*!< SBC block length 12 */
 #define ESP_A2D_SBC_CIE_BLOCK_LEN_16            (0x1)       /*!< SBC block length 16 */
 
-/**
- * @brief A2DP SBC number of subbands bit mask in CIE
- */
+/* A2DP SBC number of subbands bit mask in CIE */
 #define ESP_A2D_SBC_CIE_NUM_SUBBANDS_4          (0x2)       /*!< SBC number of subbands 4 */
 #define ESP_A2D_SBC_CIE_NUM_SUBBANDS_8          (0x1)       /*!< SBC number of subbands 8 */
 
-/**
- * @brief A2DP SBC allocation method bit mask in CIE
- */
-#define ESP_A2D_SBC_CIE_ALLOC_MTHD_SRN          (0x2)       /*!< SBC allocation method SNR */
+/* A2DP SBC allocation method bit mask in CIE */
+#define ESP_A2D_SBC_CIE_ALLOC_MTHD_SNR          (0x2)       /*!< SBC allocation method SNR */
+/*!< @deprecated Renamed to ESP_A2D_SBC_CIE_ALLOC_MTHD_SNR */
+#define ESP_A2D_SBC_CIE_ALLOC_MTHD_SRN          _Pragma("GCC warning \"'ESP_A2D_SBC_CIE_ALLOC_MTHD_SRN' macro is deprecated, use 'ESP_A2D_SBC_CIE_ALLOC_MTHD_SNR'\"") ESP_A2D_SBC_CIE_ALLOC_MTHD_SNR
 #define ESP_A2D_SBC_CIE_ALLOC_MTHD_LOUDNESS     (0x1)       /*!< SBC allocation method Loudness */
 
 /**
@@ -136,10 +124,10 @@ typedef struct {
  */
 typedef struct {
     esp_a2d_mct_t type;                        /*!< A2DP media codec type */
-#define ESP_A2D_CIE_LEN_SBC          (4)
-#define ESP_A2D_CIE_LEN_M12          (4)
-#define ESP_A2D_CIE_LEN_M24          (6)
-#define ESP_A2D_CIE_LEN_ATRAC        (7)
+#define ESP_A2D_CIE_LEN_SBC          (4)       /*!< SBC cie length */
+#define ESP_A2D_CIE_LEN_M12          (4)       /*!< MPEG-1,2 cie length */
+#define ESP_A2D_CIE_LEN_M24          (6)       /*!< MPEG-2,4 AAC cie length */
+#define ESP_A2D_CIE_LEN_ATRAC        (7)       /*!< ATRAC family cie length */
     union {
         esp_a2d_cie_sbc_t   sbc_info;          /*!< SBC codec capabilities */
         esp_a2d_cie_m12_t   m12_info;          /*!< MPEG-1,2 audio codec capabilities */
@@ -198,7 +186,7 @@ typedef enum {
  */
 typedef enum {
     ESP_A2D_DEINIT_SUCCESS = 0,                /*!< A2DP profile deinit successful event */
-    ESP_A2D_INIT_SUCCESS                       /*!< A2DP profile deinit successful event */
+    ESP_A2D_INIT_SUCCESS                       /*!< A2DP profile init successful event */
 } esp_a2d_init_state_t;
 
 /**
@@ -237,7 +225,7 @@ typedef enum {
     ESP_A2D_AUDIO_CFG_EVT,                     /*!< audio codec is configured */
     ESP_A2D_MEDIA_CTRL_ACK_EVT,                /*!< acknowledge event in response to media control commands */
     ESP_A2D_PROF_STATE_EVT,                    /*!< indicate a2dp init&deinit complete */
-    ESP_A2D_SEP_REG_STATE_EVT,                 /*!< indicate a2dp steam endpoint register status */
+    ESP_A2D_SEP_REG_STATE_EVT,                 /*!< indicate a2dp stream endpoint register status */
     ESP_A2D_SNK_PSC_CFG_EVT,                   /*!< protocol service capabilities configured，only used for A2DP SINK */
     ESP_A2D_SNK_SET_DELAY_VALUE_EVT,           /*!< indicate a2dp sink set delay report value complete,  only used for A2DP SINK */
     ESP_A2D_SNK_GET_DELAY_VALUE_EVT,           /*!< indicate a2dp sink get delay report value complete,  only used for A2DP SINK */
@@ -345,9 +333,9 @@ typedef union {
 /**
  * @brief           A2DP profile callback function type
  *
- * @param           event : Event type
+ * @param[in]       event : Event type
  *
- * @param           param : Pointer to callback parameter
+ * @param[in]       param : Pointer to callback parameter
  */
 typedef void (* esp_a2d_cb_t)(esp_a2d_cb_event_t event, esp_a2d_cb_param_t *param);
 
@@ -594,7 +582,7 @@ esp_err_t esp_a2d_source_register_stream_endpoint(uint8_t seid, const esp_a2d_mc
 esp_err_t esp_a2d_source_deinit(void);
 
 /**
- * @brief           Send a audio buff with encoded audio data to sink, the audio data len shall not bigger than
+ * @brief           Send an audio buffer with encoded audio data to sink. The audio data length shall not be bigger than
  *                  audio connection mtu (retrieved from ESP_A2D_CONNECTION_STATE_EVT). if the return value is
  *                  ESP_OK, then the audio buff is consumed, otherwise, audio buff can be reused by user.
  *

@@ -212,7 +212,7 @@ static void bt_av_hdl_stack_evt(uint16_t event, void *p_param)
                                      ESP_A2D_SBC_CIE_BLOCK_LEN_12 |
                                      ESP_A2D_SBC_CIE_BLOCK_LEN_16;
         mcc.cie.sbc_info.num_subbands = ESP_A2D_SBC_CIE_NUM_SUBBANDS_4 | ESP_A2D_SBC_CIE_NUM_SUBBANDS_8;
-        mcc.cie.sbc_info.alloc_mthd = ESP_A2D_SBC_CIE_ALLOC_MTHD_SRN | ESP_A2D_SBC_CIE_ALLOC_MTHD_LOUDNESS;
+        mcc.cie.sbc_info.alloc_mthd = ESP_A2D_SBC_CIE_ALLOC_MTHD_SNR | ESP_A2D_SBC_CIE_ALLOC_MTHD_LOUDNESS;
         mcc.cie.sbc_info.max_bitpool = 250;
         mcc.cie.sbc_info.min_bitpool = 2;
         /* register stream end point, only support SBC currently */
