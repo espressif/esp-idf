@@ -274,7 +274,6 @@ int esp_apptrace_feof(void *stream);
         .baud_rate    = CONFIG_APPTRACE_UART_BAUDRATE,      \
         .tx_buff_size = CONFIG_APPTRACE_UART_TX_BUFF_SIZE,  \
         .tx_msg_size  = CONFIG_APPTRACE_UART_TX_MSG_SIZE,   \
-        .task_prio    = CONFIG_APPTRACE_UART_TASK_PRIO,     \
     },                                                      \
     .flush_tmo    = CONFIG_APPTRACE_ONPANIC_HOST_FLUSH_TMO, \
     .flush_thresh = CONFIG_APPTRACE_POSTMORTEM_FLUSH_THRESH, \

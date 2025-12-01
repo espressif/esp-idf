@@ -61,7 +61,6 @@ typedef struct {
     int baud_rate;          ///< Baud rate
     uint32_t tx_buff_size;  ///< TX ring buffer size
     uint32_t tx_msg_size;   ///< Maximum size of the single message to transfer.
-    int task_prio;          ///< Task priority
 } esp_apptrace_uart_config_t;
 
 /**
