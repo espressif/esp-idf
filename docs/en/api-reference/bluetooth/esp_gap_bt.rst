@@ -1,5 +1,10 @@
-Classic Bluetooth® GAP API
+Bluetooth® Classic GAP API
 ==========================
+
+Overview
+--------
+
+The Bluetooth Classic GAP (Generic Access Profile) API provides interfaces for device discovery, pairing, and security management, allowing applications to control visibility, initiate connections, and configure authentication and encryption for Bluetooth Classic links.
 
 Application Examples
 --------------------
