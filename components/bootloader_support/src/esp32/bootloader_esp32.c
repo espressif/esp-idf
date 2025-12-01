@@ -24,7 +24,6 @@
 #include "soc/gpio_sig_map.h"
 #include "soc/io_mux_reg.h"
 #include "soc/rtc.h"
-#include "soc/spi_periph.h"
 #include "hal/gpio_hal.h"
 #include "hal/mmu_hal.h"
 #include "xtensa/config/core.h"

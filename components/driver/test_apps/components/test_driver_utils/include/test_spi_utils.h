@@ -20,7 +20,7 @@
 #include "param_test.h"
 #include "soc/io_mux_reg.h"
 #include "sdkconfig.h"
-#include "soc/spi_periph.h"
+#include "soc/spi_pins.h"
 #include "driver/spi_master.h"
 #include "test_dualboard_utils.h"
 

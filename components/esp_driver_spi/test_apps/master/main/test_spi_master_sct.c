@@ -20,7 +20,6 @@
 #include "esp_private/esp_pmu.h"
 #include "driver/spi_slave_hd.h"
 #include "driver/spi_slave.h"
-#include "soc/spi_pins.h"
 #include "test_spi_utils.h"
 
 __attribute__((unused)) static const char *TAG = "SCT";

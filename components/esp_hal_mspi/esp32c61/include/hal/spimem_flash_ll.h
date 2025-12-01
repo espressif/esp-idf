@@ -18,17 +18,17 @@
 #include <sys/param.h> // For MIN/MAX
 #include <stdbool.h>
 #include <string.h>
-
-#include "soc/spi_periph.h"
+#include "soc/spi_mem_reg.h"
 #include "soc/spi_mem_struct.h"
+#include "soc/interrupts.h"
+#include "soc/pcr_struct.h"
+#include "soc/clk_tree_defs.h"
 #include "hal/assert.h"
 #include "hal/misc.h"
 #include "hal/spi_types.h"
 #include "hal/spi_flash_types.h"
-#include "soc/pcr_struct.h"
-#include "esp_rom_sys.h"
 #include "hal/clk_tree_ll.h"
-#include "soc/clk_tree_defs.h"
+#include "esp_rom_sys.h"
 
 #ifdef __cplusplus
 extern "C" {

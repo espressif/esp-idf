@@ -68,11 +68,6 @@ if(CONFIG_SOC_DEBUG_PROBE_SUPPORTED)
     list(APPEND srcs "${target_folder}/debug_probe_periph.c")
 endif()
 
-
-if(CONFIG_SOC_GPSPI_SUPPORTED)
-    list(APPEND srcs "${target_folder}/spi_periph.c")
-endif()
-
 if(CONFIG_SOC_LEDC_SUPPORTED)
     list(APPEND srcs "${target_folder}/ledc_periph.c")
 endif()

@@ -1473,6 +1473,7 @@ esp_err_t SPI_MASTER_ISR_ATTR spi_device_polling_end(spi_device_handle_t handle,
         }
     }
     spi_trans_dma_error_check(host);
+    uint32_t trans_flags = host->cur_trans_buf.trans->flags;  // save the flags before bus_lock release
 
     ESP_LOGV(SPI_TAG, "polling trans done");
     //deal with the in-flight transaction
@@ -1489,7 +1490,7 @@ esp_err_t SPI_MASTER_ISR_ATTR spi_device_polling_end(spi_device_handle_t handle,
         spi_bus_lock_acquire_end(handle->dev_lock);
     }
 
-    return (host->cur_trans_buf.trans->flags & (SPI_TRANS_DMA_RX_FAIL | SPI_TRANS_DMA_TX_FAIL)) ? ESP_ERR_INVALID_STATE : ESP_OK;
+    return (trans_flags & (SPI_TRANS_DMA_RX_FAIL | SPI_TRANS_DMA_TX_FAIL)) ? ESP_ERR_INVALID_STATE : ESP_OK;
 }
 
 esp_err_t SPI_MASTER_ISR_ATTR spi_device_polling_transmit(spi_device_handle_t handle, spi_transaction_t* trans_desc)

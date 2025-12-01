@@ -10,6 +10,7 @@
 #include "esp_err.h"
 #include "esp_log.h"
 #include "esp_rom_gpio.h"
+#include "soc/spi_pins.h"
 #include "soc/gpio_periph.h"
 #include "soc/spi_mem_reg.h"
 #include "flash_qio_mode.h"

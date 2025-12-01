@@ -10,7 +10,6 @@
 #include "esp_types.h"
 #include "esp_log.h"
 #include "sys/lock.h"
-#include "soc/soc_pins.h"
 #include "soc/soc_caps.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
