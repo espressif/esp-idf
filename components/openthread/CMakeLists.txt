@@ -47,6 +47,7 @@ if(CONFIG_OPENTHREAD_ENABLED)
         # "openthread/src/core/crypto/aes_ccm.cpp"
         # "openthread/src/core/crypto/aes_ecb.cpp"
         "openthread/src/core/crypto/crypto_platform_mbedtls.cpp"
+        "openthread/src/core/api/random_crypto_api.cpp"
         # "openthread/src/core/crypto/hkdf_sha256.cpp"
         # "openthread/src/core/crypto/hmac_sha256.cpp"
         # "openthread/src/core/crypto/mbedtls.cpp"
