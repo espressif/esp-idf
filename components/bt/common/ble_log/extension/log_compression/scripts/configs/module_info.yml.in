@@ -6,6 +6,7 @@ log_config:
       description: "BLE Mesh"
       code_path: [@BLE_MESH_CODE_PATH@]
       log_index_file: @BLE_MESH_LOG_INDEX_HEADER@
+      script: @BLE_MESH_LOG_SCRIPT_PATH@
       tags: [@BLE_MESH_TAGS@]
       tags_with_preserve: [@BLE_MESH_TAGS_PRESERVE@]
 
@@ -13,5 +14,14 @@ log_config:
       description: "BLE Host"
       code_path: [@HOST_CODE_PATH@]
       log_index_file: @HOST_LOG_INDEX_HEADER@
+      script: @BLE_HOST_LOG_SCRIPT_PATH@
       tags: [@BLE_HOST_TAGS@]
       tags_with_preserve: [@BLE_HOST_TAGS_PRESERVE@]
+
+    @BLE_COMPRESSED_LIB_NAME@:
+      description: "@BLE_COMPRESSED_LIB_DESC@"
+      code_path: [@BLE_COMPRESSED_LIB_CODE_DIR@]
+      log_index_file: @BLE_COMPRESSED_LIB_LOG_INDEX_HEADER@
+      script: @BLE_COMPRESSED_LIB_LOG_SCRIPT_PATH@
+      tags: [@BLE_COMPRESSED_LIB_LOG_TAGS@]
+      tags_with_preserve: [@BLE_COMPRESSED_LIB_LOG_TAGS_PRESERVE@]

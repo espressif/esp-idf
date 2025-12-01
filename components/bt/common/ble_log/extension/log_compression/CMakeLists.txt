@@ -1,6 +1,6 @@
-
 set(LOG_COMPRESSED_MODULE "")
 set(LOG_COMPRESSED_MODULE_CODE_PATH "")
+set(BT_ROOT_PATH $ENV{IDF_PATH}/components/bt)
 set(LOG_COMPRESSED_SRCS_DIR "${CMAKE_BINARY_DIR}/ble_log/.compressed_srcs")
 
 # default config value for ble mesh module
@@ -17,32 +17,62 @@ set(BLE_HOST_TAGS_PRESERVE "")
 
 if(CONFIG_BLE_MESH_COMPRESSED_LOG_ENABLE)
     list(APPEND LOG_COMPRESSED_MODULE "BLE_MESH")
-    if(NOT EXISTS "${CMAKE_BINARY_DIR}/ble_log/include/mesh_log_index.h")
-        file(WRITE "${CMAKE_BINARY_DIR}/ble_log/include/mesh_log_index.h" "")
-    endif()
-    list(APPEND LOG_COMPRESSED_MODULE_CODE_PATH "esp_ble_mesh")
 
     # update config file
     set(BLE_MESH_CODE_PATH "esp_ble_mesh")
     set(BLE_MESH_LOG_INDEX_HEADER "mesh_log_index.h")
+    set(BLE_MESH_LOG_SCRIPT_PATH
+        "${CMAKE_CURRENT_LIST_DIR}/scripts/module_scripts/ble_mesh/make_mesh_log_macro.py")
     # update BLE_MESH_TAGS and BLE_MESH_TAGS_PRESERVE
     include(${CMAKE_CURRENT_LIST_DIR}/cmake/ble_mesh_log_tags.cmake)
-
+    if(NOT EXISTS "${CMAKE_BINARY_DIR}/ble_log/include/${BLE_MESH_LOG_INDEX_HEADER}")
+        file(WRITE "${CMAKE_BINARY_DIR}/ble_log/include/${BLE_MESH_LOG_INDEX_HEADER}" "")
+    endif()
+    list(APPEND LOG_COMPRESSED_MODULE_CODE_PATH ${BLE_MESH_CODE_PATH})
 endif()
+
 if(CONFIG_BLE_HOST_COMPRESSED_LOG_ENABLE AND CONFIG_BT_BLUEDROID_ENABLED)
     list(APPEND LOG_COMPRESSED_MODULE "BLE_HOST")
-    list(APPEND LOG_COMPRESSED_MODULE_CODE_PATH "host/bluedroid/stack")
-    if(NOT EXISTS "${CMAKE_BINARY_DIR}/ble_log/include/host_log_index.h")
-        file(WRITE "${CMAKE_BINARY_DIR}/ble_log/include/host_log_index.h" "")
-    endif()
 
+    # update config file
     set(HOST_CODE_PATH "host/bluedroid/stack")
     set(HOST_LOG_INDEX_HEADER "host_log_index.h")
+    set(BLE_HOST_LOG_SCRIPT_PATH
+        "${CMAKE_CURRENT_LIST_DIR}/scripts/module_scripts/bluedroid/make_bluedroid_log_macro.py")
+
     include(${CMAKE_CURRENT_LIST_DIR}/cmake/ble_host_bluedroid_tags.cmake)
+    if(NOT EXISTS "${CMAKE_BINARY_DIR}/ble_log/include/${HOST_LOG_INDEX_HEADER}")
+        file(WRITE "${CMAKE_BINARY_DIR}/ble_log/include/${HOST_LOG_INDEX_HEADER}" "")
+    endif()
+    list(APPEND LOG_COMPRESSED_MODULE_CODE_PATH ${HOST_CODE_PATH})
 endif()
+
+if(BLE_COMPRESSED_LIB_LOG_BUILD)
+    if(NOT (BLE_COMPRESSED_LIB_NAME AND BLE_COMPRESSED_LIB_CODE_DIR AND BLE_COMPRESSED_LIB_LOG_TAGS))
+        message(FATAL_ERROR "Invalid settings")
+    else()
+        message("Building compressed log for ${BLE_COMPRESSED_LIB_NAME}")
+    endif()
+    list(APPEND LOG_COMPRESSED_MODULE ${BLE_COMPRESSED_LIB_NAME})
+    if(NOT EXISTS "${CMAKE_BINARY_DIR}/ble_log/include/${BLE_COMPRESSED_LIB_LOG_INDEX_HEADER}")
+        file(WRITE "${CMAKE_BINARY_DIR}/ble_log/include/${BLE_COMPRESSED_LIB_LOG_INDEX_HEADER}" "")
+    endif()
+    list(APPEND LOG_COMPRESSED_MODULE_CODE_PATH ${BLE_COMPRESSED_LIB_CODE_DIR})
+
+    string(REPLACE ";" "," BLE_COMPRESSED_LIB_CODE_DIR "${BLE_COMPRESSED_LIB_CODE_DIR}")
+    string(REPLACE ";" "," BLE_COMPRESSED_LIB_LOG_TAGS "${BLE_COMPRESSED_LIB_LOG_TAGS}")
+    string(REPLACE ";" "," BLE_COMPRESSED_LIB_LOG_TAGS_PRESERVE "${BLE_COMPRESSED_LIB_LOG_TAGS_PRESERVE}")
+else()
+    set(BLE_COMPRESSED_LIB_NAME "placeholder")
+endif()
+
+
 if(LOG_COMPRESSED_MODULE)
-    list(APPEND srcs "common/ble_log/extension/log_compression/ble_log_compression.c")
-    list(APPEND include_dirs "${CMAKE_BINARY_DIR}/ble_log/include")
+    # When building the library, ble_log_compression.c and its dependencies are not needed
+    if(NOT BLE_COMPRESSED_LIB_LOG_BUILD)
+        list(APPEND srcs "common/ble_log/extension/log_compression/ble_log_compression.c")
+        list(APPEND include_dirs "${CMAKE_BINARY_DIR}/ble_log/include")
+    endif()
     if(NOT CMAKE_VERSION VERSION_LESS 3.15.0)
         set(Python3_FIND_STRATEGY LOCATION)
         find_package(Python3 COMPONENTS Interpreter)
@@ -111,19 +141,39 @@ if(LOG_COMPRESSED_MODULE)
                 "host/nimble/nimble/nimble/host/store/config/src")
         endif()
 
-        add_custom_target(ble_log_compression ALL
-            COMMAND ${BLE_PYTHON_EXECUTABLE} ${PYTHON_SCRIPT}
-                compress
-                --compressed_srcs_path "${LOG_COMPRESSED_SRCS_DIR}"
-                --build_path "${CMAKE_BINARY_DIR}"
-                --module "'${LOG_COMPRESSED_MODULE}'"
-                --bt_path "${BT_ROOT_PATH}"
-                --srcs "'${compressed_srcs}'"
-            DEPENDS ${compressed_srcs_with_abs_path} ${PYTHON_SCRIPT}
-            COMMENT "Log compression is being performed, please wait..."
-            WORKING_DIRECTORY ${BT_ROOT_PATH}
-            USES_TERMINAL
-        )
+        if(BLE_COMPRESSED_LIB_LOG_BUILD)
+            execute_process(COMMAND ${BLE_PYTHON_EXECUTABLE} ${PYTHON_SCRIPT}
+                                compress
+                                --compressed_srcs_path "${LOG_COMPRESSED_SRCS_DIR}"
+                                --build_path "${CMAKE_BINARY_DIR}"
+                                --module "${LOG_COMPRESSED_MODULE}"
+                                --code_base_path "${CODE_BASE_PATH}"
+                                --srcs "${compressed_srcs}"
+                                RESULT_VARIABLE result
+                                OUTPUT_VARIABLE   out
+                                ERROR_VARIABLE    err)
+            if(NOT ${result} EQUAL 0)
+                message(WARNING "${err}")
+                message(WARNING "Exit this log compression due to failure of compression")
+                set(LOG_COMPRESS_INCLUDE_DIRS ${include_dirs} PARENT_SCOPE)
+                set(LOG_COMPRESSION_TARGET "" PARENT_SCOPE)
+                return()
+            endif()
+        else()
+            add_custom_target(ble_log_compression ALL
+                COMMAND ${BLE_PYTHON_EXECUTABLE} ${PYTHON_SCRIPT}
+                    compress
+                    --compressed_srcs_path "${LOG_COMPRESSED_SRCS_DIR}"
+                    --build_path "${CMAKE_BINARY_DIR}"
+                    --module "'${LOG_COMPRESSED_MODULE}'"
+                    --code_base_path "${CODE_BASE_PATH}"
+                    --srcs "'${compressed_srcs}'"
+                DEPENDS ${compressed_srcs_with_abs_path} ${PYTHON_SCRIPT}
+                COMMENT "Log compression is being performed, please wait..."
+                WORKING_DIRECTORY ${BT_ROOT_PATH}
+                USES_TERMINAL
+            )
+        endif()
 
         function(add_flags_if_in_list file file_list compile_flags)
             set(PROCESSED OFF PARENT_SCOPE)
@@ -190,7 +240,10 @@ if(LOG_COMPRESSED_MODULE)
         set(LOG_COMPRESSION_TARGET ble_log_compression PARENT_SCOPE)
         # set(LOG_COMPRESSION_TARGET "" PARENT_SCOPE)
         set(LOG_COMPRESS_SRCS "${compressed_srcs_with_abs_path};${uncompressed_srcs}" PARENT_SCOPE)
-        list(APPEND include_dirs "common/ble_log/extension/log_compression/include")
+        if(NOT BLE_COMPRESSED_LIB_LOG_BUILD)
+            list(APPEND include_dirs "common/ble_log/extension/log_compression/include")
+        endif()
+        list(APPEND include_dirs "${CMAKE_BINARY_DIR}/ble_log/include")
         set(LOG_COMPRESS_INCLUDE_DIRS ${include_dirs} PARENT_SCOPE)
     else()
         set(LOG_COMPRESSION_TARGET "" PARENT_SCOPE)
