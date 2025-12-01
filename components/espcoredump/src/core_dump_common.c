@@ -5,6 +5,7 @@
  */
 #include "sdkconfig.h"
 
+#include <stdint.h>
 #include <string.h>
 #include <stdbool.h>
 #include "soc/soc_memory_layout.h"
@@ -13,9 +14,7 @@
 #include "esp_rom_sys.h"
 #include "esp_core_dump_port.h"
 #include "esp_core_dump_common.h"
-#if CONFIG_ESP_SYSTEM_HW_STACK_GUARD
-#include "esp_private/hw_stack_guard.h"
-#endif // CONFIG_ESP_SYSTEM_HW_STACK_GUARD
+#include "esp_cpu.h"
 
 const static char TAG[] __attribute__((unused)) = "esp_core_dump_common";
 
@@ -54,9 +53,34 @@ extern int _coredump_rtc_fast_start;
 extern int _coredump_rtc_fast_end;
 #endif
 
+static void* s_exc_frame = NULL;
+static uint32_t s_coredump_sp = 0;
+
 /**
- * @brief In the menconfig, it is possible to specify a specific stack size for
- * core dump generation.
+ * @brief Configuration validation: If USE_STACK_SIZE is enabled, STACK_SIZE must be > 0
+ */
+#if CONFIG_ESP_COREDUMP_USE_STACK_SIZE && CONFIG_ESP_COREDUMP_STACK_SIZE == 0
+#error "CONFIG_ESP_COREDUMP_STACK_SIZE must not be 0 when CONFIG_ESP_COREDUMP_USE_STACK_SIZE is enabled"
+#endif
+
+/**
+ * @brief Write ELF core dump and log any errors.
+ *
+ * This function wraps esp_core_dump_write_elf() and handles error logging.
+ * Can be called from both C and assembly code.
+ *
+ * @return esp_err_t ESP_OK on success, error code otherwise
+ */
+void esp_core_dump_write_elf_and_check(void)
+{
+    esp_err_t err = esp_core_dump_write_elf();
+    if (err != ESP_OK) {
+        ESP_COREDUMP_LOGE("Core dump write failed with error=%d", err);
+    }
+}
+
+/**
+ * @brief In the menconfig, it is possible to specify a specific stack size for core dump generation.
  */
 #if CONFIG_ESP_COREDUMP_STACK_SIZE > 0
 
@@ -66,7 +90,7 @@ extern int _coredump_rtc_fast_end;
  */
 #if LOG_LOCAL_LEVEL >= ESP_LOG_DEBUG
 /* Increase stack size in verbose mode */
-#define ESP_COREDUMP_STACK_SIZE (CONFIG_ESP_COREDUMP_STACK_SIZE+100)
+#define ESP_COREDUMP_STACK_SIZE (CONFIG_ESP_COREDUMP_STACK_SIZE + 100)
 #else
 #define ESP_COREDUMP_STACK_SIZE CONFIG_ESP_COREDUMP_STACK_SIZE
 #endif
@@ -74,43 +98,15 @@ extern int _coredump_rtc_fast_end;
 #define COREDUMP_STACK_FILL_BYTE (0xa5U)
 
 static uint8_t s_coredump_stack[ESP_COREDUMP_STACK_SIZE];
-static uint8_t* s_core_dump_sp = NULL;
-static core_dump_stack_context_t s_stack_context;
 
-/**
- * @brief Function setting up the core dump stack.
- *
- * @note This function **must** be aligned as it modifies the
- * stack pointer register.
- */
-FORCE_INLINE_ATTR void esp_core_dump_setup_stack(void)
+void esp_core_dump_setup_stack(void)
 {
-    s_core_dump_sp = (uint8_t *)((uint32_t)(s_coredump_stack + ESP_COREDUMP_STACK_SIZE - 1) & ~0xf);
+    s_coredump_sp = (uint32_t)(s_coredump_stack + ESP_COREDUMP_STACK_SIZE - 1) & ~0xf;
     memset(s_coredump_stack, COREDUMP_STACK_FILL_BYTE, ESP_COREDUMP_STACK_SIZE);
 
-    /* watchpoint 1 can be used for task stack overflow detection, reuse it, it is no more necessary */
-    //esp_cpu_clear_watchpoint(1);
-    //esp_cpu_set_watchpoint(1, s_coredump_stack, 1, ESP_WATCHPOINT_STORE);
-
-#if CONFIG_ESP_SYSTEM_HW_STACK_GUARD
-    /* Save the current area we are watching to restore it later */
-    esp_hw_stack_guard_get_bounds(xPortGetCoreID(), &s_stack_context.sp_min, &s_stack_context.sp_max);
-    /* Since the stack is going to change, make sure we disable protection or an exception would be triggered */
-    esp_hw_stack_guard_monitor_stop();
-#endif // CONFIG_ESP_SYSTEM_HW_STACK_GUARD
-
-    /* Replace the stack pointer depending on the architecture, but save the
-     * current stack pointer, in order to be able too restore it later.
-     * This function must be inlined. */
-    esp_core_dump_replace_sp(s_core_dump_sp, &s_stack_context);
-    ESP_COREDUMP_LOGI("Backing up stack @ 0x%" PRIx32 " and use core dump stack @ %p",
-                      s_stack_context.sp, esp_cpu_get_sp());
-
-#if CONFIG_ESP_SYSTEM_HW_STACK_GUARD
-    /* Re-enable the stack guard to check if the stack is big enough for coredump generation  */
-    esp_hw_stack_guard_set_bounds((uint32_t) s_coredump_stack, (uint32_t) s_core_dump_sp);
-    esp_hw_stack_guard_monitor_start();
-#endif // CONFIG_ESP_SYSTEM_HW_STACK_GUARD
+    /* Stack overflow detection. Watchpoint is set to the end of the core dump stack */
+    esp_cpu_clear_watchpoint(1);
+    esp_cpu_set_watchpoint(1, s_coredump_stack, 1, ESP_CPU_WATCHPOINT_STORE);
 }
 
 /**
@@ -131,72 +127,59 @@ FORCE_INLINE_ATTR uint32_t esp_core_dump_free_stack_space(const uint8_t *pucStac
 }
 
 /**
- * @brief Print how many bytes have been used on the stack to create the core
- * dump.
+ * @brief Print how many bytes have been used on the stack to create the core dump.
+ *
  */
-FORCE_INLINE_ATTR void esp_core_dump_report_stack_usage(void)
+void esp_core_dump_report_stack_usage(uint32_t new_sp)
 {
-#if CONFIG_ESP_COREDUMP_LOGS
-    uint32_t bytes_free = esp_core_dump_free_stack_space(s_coredump_stack);
+    uint32_t __attribute__((unused)) bytes_free = esp_core_dump_free_stack_space(s_coredump_stack);
     ESP_COREDUMP_LOGI("Core dump used %" PRIu32 " bytes on stack. %" PRIu32 " bytes left free.",
-                      s_core_dump_sp - s_coredump_stack - bytes_free, bytes_free);
-#endif
+                      new_sp - (uint32_t)s_coredump_stack - bytes_free, bytes_free);
+}
 
-    /* Restore the stack pointer. */
-    ESP_COREDUMP_LOGI("Restoring stack @ 0x%" PRIx32, s_stack_context.sp);
-#if CONFIG_ESP_SYSTEM_HW_STACK_GUARD
-    esp_hw_stack_guard_monitor_stop();
-#endif // CONFIG_ESP_SYSTEM_HW_STACK_GUARD
-    esp_core_dump_restore_sp(&s_stack_context);
-#if CONFIG_ESP_SYSTEM_HW_STACK_GUARD
-    /* Monitor the same stack area that was set before replacing the stack pointer */
-    esp_hw_stack_guard_set_bounds(s_stack_context.sp_min, s_stack_context.sp_max);
-    esp_hw_stack_guard_monitor_start();
-#endif // CONFIG_ESP_SYSTEM_HW_STACK_GUARD
+void esp_core_dump_report_backup_stack(uint32_t old_sp)
+{
+    ESP_COREDUMP_LOGI("Backing up stack @ 0x%" PRIx32 " and use core dump stack @ %p",
+                      old_sp, esp_cpu_get_sp());
+}
+
+void esp_core_dump_report_restore_stack(uint32_t old_sp)
+{
+    ESP_COREDUMP_LOGI("Restoring stack @ 0x%" PRIx32, old_sp);
 }
 
 #else // CONFIG_ESP_COREDUMP_STACK_SIZE == 0
 
-/* Here, we are not going to use a custom stack for coredump. Make sure the current configuration doesn't require one. */
-#if CONFIG_ESP_COREDUMP_USE_STACK_SIZE
-#pragma error "CONFIG_ESP_COREDUMP_STACK_SIZE must not be 0 in the current configuration"
-#endif // ESP_COREDUMP_USE_STACK_SIZE
+static uint8_t *s_coredump_stack = NULL;
 
-FORCE_INLINE_ATTR void esp_core_dump_setup_stack(void)
+void esp_core_dump_setup_stack(void) { /* No stack setup is needed */ }
+
+/**
+ * @brief Setup watchpoint for stack overflow detection when no custom stack is configured.
+ *
+ * If we are in ISR context, sets up a watchpoint at the end of the ISR stack.
+ * For tasks, stack overflow detection should be enabled in menuconfig.
+ * TODO: If not enabled in menuconfig enable it ourselves.
+ */
+static void esp_core_dump_enable_stack_overflow_detection(void)
 {
-    /* If we are in ISR set watchpoint to the end of ISR stack */
     if (esp_core_dump_in_isr_context()) {
-        uint8_t* topStack = esp_core_dump_get_isr_stack_top();
+        uint8_t *topStack = esp_core_dump_get_isr_stack_top();
         esp_cpu_clear_watchpoint(1);
-        esp_cpu_set_watchpoint(1, topStack + xPortGetCoreID()*configISR_STACK_SIZE, 1, ESP_CPU_WATCHPOINT_STORE);
-    } else {
-        /* for tasks user should enable stack overflow detection in menuconfig
-        TODO: if not enabled in menuconfig enable it ourselves */
+        esp_cpu_set_watchpoint(1, topStack + xPortGetCoreID() * configISR_STACK_SIZE, 1, ESP_CPU_WATCHPOINT_STORE);
     }
 }
 
-FORCE_INLINE_ATTR void esp_core_dump_report_stack_usage(void)
+void esp_core_dump_port_write(uint32_t new_stack, uint32_t new_sp)
 {
+    (void)new_stack;
+    (void)new_sp;
+
+    esp_core_dump_enable_stack_overflow_detection();
+    esp_core_dump_write_elf_and_check();
 }
 
 #endif // CONFIG_ESP_COREDUMP_STACK_SIZE > 0
-
-static void* s_exc_frame = NULL;
-
-inline static void esp_core_dump_write_internal(panic_info_t *info)
-{
-    bool isr_context = esp_core_dump_in_isr_context();
-
-    s_exc_frame = (void *)info->frame;
-
-    esp_core_dump_setup_stack();
-    esp_core_dump_port_init(info, isr_context);
-    esp_err_t err = esp_core_dump_write_elf();
-    if (err != ESP_OK) {
-        ESP_COREDUMP_LOGE("Core dump write failed with error=%d", err);
-    }
-    esp_core_dump_report_stack_usage();
-}
 
 void __attribute__((weak)) esp_core_dump_init(void)
 {
@@ -339,7 +322,12 @@ void esp_core_dump_write(panic_info_t *info)
     return;
 #endif
 
+    s_exc_frame = (void *)info->frame;
     esp_core_dump_print_write_start();
-    esp_core_dump_write_internal(info);
+
+    esp_core_dump_port_init(info, esp_core_dump_in_isr_context());
+    esp_core_dump_setup_stack();
+    esp_core_dump_port_write((uint32_t)s_coredump_stack, s_coredump_sp);
+
     esp_core_dump_print_write_end();
 }

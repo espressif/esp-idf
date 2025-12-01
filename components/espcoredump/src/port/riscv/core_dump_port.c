@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -446,3 +446,88 @@ void esp_core_dump_summary_parse_backtrace_info(esp_core_dump_bt_info_t *bt_info
 }
 
 #endif /* #if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH */
+
+#if CONFIG_ESP_COREDUMP_STACK_SIZE > 0
+
+#if CONFIG_ESP_SYSTEM_HW_STACK_GUARD
+#include "esp_private/hw_stack_guard.h"
+#endif
+
+/**
+ * @brief Define the type that will be used to describe the current context when
+ * doing a backup of the current stack. This same structure is used to restore the stack.
+ */
+typedef struct {
+    uint32_t sp;
+#if CONFIG_ESP_SYSTEM_HW_STACK_GUARD
+    uint32_t sp_min;
+    uint32_t sp_max;
+#endif // CONFIG_ESP_SYSTEM_HW_STACK_GUARD
+} core_dump_stack_context_t;
+
+static core_dump_stack_context_t s_stack_context;
+
+/* Helper functions defined in core_dump_common.c */
+void esp_core_dump_report_backup_stack(uint32_t old_sp);
+void esp_core_dump_report_restore_stack(uint32_t old_sp);
+void esp_core_dump_write_elf_and_check(void);
+void esp_core_dump_report_stack_usage(uint32_t new_sp);
+
+/**
+ * @brief Function setting up the core dump stack.
+ *
+ * @note This function **must** be inlined as it modifies the stack pointer.
+ */
+FORCE_INLINE_ATTR void esp_core_dump_replace_stack(uint32_t new_stack, uint32_t new_sp)
+{
+#if CONFIG_ESP_SYSTEM_HW_STACK_GUARD
+    /* Save the current area we are watching to restore it later */
+    esp_hw_stack_guard_get_bounds(xPortGetCoreID(), &s_stack_context.sp_min, &s_stack_context.sp_max);
+    /* Since the stack is going to change, make sure we disable protection or an exception would be triggered */
+    esp_hw_stack_guard_monitor_stop();
+#endif
+
+    /* Save the current stack pointer and replace it with the core dump stack pointer */
+    asm volatile("mv %0, sp \n\t\
+                   mv sp, %1 \n\t\
+                  "
+                 : "=&r"(s_stack_context.sp)
+                 : "r"(new_sp));
+
+    esp_core_dump_report_backup_stack(s_stack_context.sp);
+
+#if CONFIG_ESP_SYSTEM_HW_STACK_GUARD
+    /* Re-enable the stack guard to check if the stack is big enough for coredump generation  */
+    esp_hw_stack_guard_set_bounds(new_stack, new_sp);
+    esp_hw_stack_guard_monitor_start();
+#endif
+}
+
+FORCE_INLINE_ATTR void esp_core_dump_restore_stack(void)
+{
+    /* Restore the stack pointer. */
+    esp_core_dump_report_restore_stack(s_stack_context.sp);
+
+#if CONFIG_ESP_SYSTEM_HW_STACK_GUARD
+    esp_hw_stack_guard_monitor_stop();
+#endif
+
+    /* Restore the stack pointer to the original value */
+    asm volatile("mv sp, %0 \n\t" :: "r"(s_stack_context.sp));
+
+#if CONFIG_ESP_SYSTEM_HW_STACK_GUARD
+    /* Monitor the same stack area that was set before replacing the stack pointer */
+    esp_hw_stack_guard_set_bounds(s_stack_context.sp_min, s_stack_context.sp_max);
+    esp_hw_stack_guard_monitor_start();
+#endif
+}
+
+void esp_core_dump_port_write(uint32_t new_stack, uint32_t new_sp)
+{
+    esp_core_dump_replace_stack(new_stack, new_sp);
+    esp_core_dump_write_elf_and_check();
+    esp_core_dump_report_stack_usage(new_sp);
+    esp_core_dump_restore_stack();
+}
+
+#endif // CONFIG_ESP_COREDUMP_STACK_SIZE > 0
