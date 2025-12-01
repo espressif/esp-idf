@@ -18,17 +18,18 @@
 #include <sys/param.h> // For MIN/MAX
 #include <stdbool.h>
 #include <string.h>
-
-#include "soc/spi_periph.h"
+#include "soc/spi_mem_reg.h"
+#include "soc/spi_mem_struct.h"
 #include "soc/spi1_mem_c_struct.h"
 #include "soc/spi1_mem_c_reg.h"
 #include "soc/hp_sys_clkrst_struct.h"
+#include "soc/interrupts.h"
+#include "soc/chip_revision.h"
 #include "hal/assert.h"
 #include "hal/spi_types.h"
 #include "hal/spi_flash_types.h"
 #include "hal/misc.h"
 #include "hal/efuse_hal.h"
-#include "soc/chip_revision.h"
 #include "hal/clk_tree_ll.h"
 #include "hal/config.h"
 

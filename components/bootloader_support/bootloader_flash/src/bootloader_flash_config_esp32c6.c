@@ -13,6 +13,7 @@
 #include "esp32c6/rom/spi_flash.h"
 #include "soc/spi_reg.h"
 #include "soc/spi_mem_reg.h"
+#include "soc/spi_pins.h"
 #include "soc/soc_caps.h"
 #include "flash_qio_mode.h"
 #include "bootloader_flash_config.h"

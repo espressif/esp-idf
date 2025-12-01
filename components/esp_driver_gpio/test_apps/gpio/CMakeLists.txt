@@ -30,10 +30,13 @@ endif()
 
 include($ENV{IDF_PATH}/tools/ci/check_register_rw_half_word.cmake)
 message(STATUS "Checking gpio registers are not read-write by half-word")
-check_register_rw_half_word(SOC_MODULES "gpio" "io_mux" "rtc_cntl" "rtc_io" "pcr" "hp_sys_clkrst" "hp_system"
-                                        "lp_aon" "lp_iomux" "pmu"
-                            HAL_MODULES "gpio")
+check_register_rw_half_word(
+    SOC_MODULES "gpio" "io_mux" "rtc_cntl" "rtc_io" "pcr" "hp_sys_clkrst" "hp_system" "lp_aon" "lp_iomux" "pmu"
+    HAL_MODULES "gpio"
+)
 
 message(STATUS "Checking rtcio registers are not read-write by half-word")
-check_register_rw_half_word(SOC_MODULES "rtc_io" "sens" "pcr" "lp_aon" "lp_io" "lp_gpio" "lp_iomux" "lpperi" "pmu"
-                            HAL_MODULES "rtc_io")
+check_register_rw_half_word(
+    SOC_MODULES "rtc_io" "sens" "pcr" "lp_aon" "lp_io" "lp_gpio" "lp_iomux" "lpperi" "pmu"
+    HAL_MODULES "rtc_io"
+)

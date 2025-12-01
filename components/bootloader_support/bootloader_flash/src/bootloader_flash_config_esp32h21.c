@@ -20,6 +20,7 @@
 #include "hal/mspi_ll.h"
 #include "hal/clk_tree_ll.h"
 #include "soc/pcr_reg.h"
+#include "soc/spi_pins.h"
 
 ESP_LOG_ATTR_TAG(TAG, "boot.esp32h21");
 

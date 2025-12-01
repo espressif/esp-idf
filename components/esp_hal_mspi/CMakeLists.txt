@@ -24,7 +24,9 @@ elseif(NOT BOOTLOADER_BUILD)
 
 endif()
 
-idf_component_register(SRCS ${srcs}
-                    INCLUDE_DIRS ${includes}
-                    REQUIRES soc hal
-                    PRIV_REQUIRES esp_hal_gpio)
+idf_component_register(
+    SRCS ${srcs}
+    INCLUDE_DIRS ${includes}
+    REQUIRES soc hal esp_hal_gpspi
+    PRIV_REQUIRES esp_hal_gpio
+)
