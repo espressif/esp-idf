@@ -2,7 +2,7 @@
 
 /*
  * SPDX-FileCopyrightText: 2017 Intel Corporation
- * SPDX-FileContributor: 2018-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2018-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -353,26 +353,22 @@ static void example_ble_mesh_parse_node_comp_data(esp_ble_mesh_node_info_t* node
 
     node->sig_model_num = (uint8_t *)calloc(node->elem_num, sizeof(uint8_t));
     if (!node->sig_model_num) {
-        ESP_LOGW(TAG, "No Free memory to store composition data");
-        return;
+        goto calloc_fail;
     }
 
     node->vnd_model_num = (uint8_t *)calloc(node->elem_num, sizeof(uint8_t));
     if (!node->vnd_model_num) {
-        ESP_LOGW(TAG, "No Free memory to store composition data");
-        return;
+        goto vnd_model_num_fail;
     }
 
     node->sig_models = (uint16_t **)calloc(node->elem_num, sizeof(uint16_t*));
     if (!node->sig_models) {
-        ESP_LOGW(TAG, "No Free memory to store composition data");
-        return;
+        goto sig_models_fail;
     }
 
     node->vnd_models = (uint32_t **)calloc(node->elem_num, sizeof(uint32_t*));
-    if (!node->sig_models) {
-        ESP_LOGW(TAG, "No Free memory to store composition data");
-        return;
+    if (!node->vnd_models) {
+        goto vnd_models_fail;
     }
 
     ESP_LOGI(TAG, "********************** Composition Data Start **********************");
@@ -387,8 +383,7 @@ static void example_ble_mesh_parse_node_comp_data(esp_ble_mesh_node_info_t* node
         if (nums) {
             node->sig_models[seq] = (uint16_t *)calloc(nums, sizeof(uint16_t));
             if (!(node->sig_models[seq])) {
-                ESP_LOGW(TAG, "No Free memory to store composition data");
-                return;
+                goto sig_mode_seq_fail;
             }
         } else {
             node->sig_models[seq] = NULL;
@@ -397,8 +392,7 @@ static void example_ble_mesh_parse_node_comp_data(esp_ble_mesh_node_info_t* node
         if (numv) {
             node->vnd_models[seq] = (uint32_t *)calloc(numv, sizeof(uint32_t));
             if (!(node->vnd_models[seq])) {
-                ESP_LOGW(TAG, "No Free memory to store composition data");
-                return;
+                goto vnd_model_seq_fail;
             }
         } else {
             node->vnd_models[seq] = NULL;
@@ -422,6 +416,32 @@ static void example_ble_mesh_parse_node_comp_data(esp_ble_mesh_node_info_t* node
         seq++;
     }
     ESP_LOGI(TAG, "*********************** Composition Data End ***********************");
+    return;
+
+vnd_model_seq_fail:
+    free(node->sig_models[seq]);
+    node->sig_models[seq] = NULL;
+sig_mode_seq_fail:
+    for (int j = 0; j < seq; j++) {
+        free(node->sig_models[j]);
+        free(node->vnd_models[j]);
+        node->sig_models[j] = NULL;
+        node->vnd_models[j] = NULL;
+    }
+    free(node->vnd_models);
+    node->vnd_models = NULL;
+vnd_models_fail:
+    free(node->sig_models);
+    node->sig_models = NULL;
+sig_models_fail:
+    free(node->vnd_model_num);
+    node->vnd_model_num = NULL;
+vnd_model_num_fail:
+    free(node->sig_model_num);
+    node->sig_model_num = NULL;
+calloc_fail:
+    ESP_LOGW(TAG, "No Free memory to store composition data");
+    return;
 }
 
 static bool example_ble_mesh_query_element_have_model(uint16_t elem_addr, uint16_t model_id, uint16_t company_id)
@@ -434,6 +454,10 @@ static bool example_ble_mesh_query_element_have_model(uint16_t elem_addr, uint16
     node = example_ble_mesh_get_node_info(elem_addr);
 
     elem_idx = elem_addr - node->unicast;
+
+    if (node->sig_model_num == NULL) {
+        return false;
+    }
 
     if (company_id == CID_NVAL) {
         model_num = node->sig_model_num[elem_idx];
