@@ -29,10 +29,10 @@ extern uint32_t r_ble_lll_timer_current_tick_get(void);
 #elif defined(CONFIG_IDF_TARGET_ESP32C2)
 extern uint32_t r_os_cputime_get32(void);
 #define BLE_LOG_GET_LC_TS r_os_cputime_get32()
-/* Legacy BLE Controller (Wait for support) */
-// #elif defined(CONFIG_IDF_TARGET_ESP32C3) || defined(CONFIG_IDF_TARGET_ESP32S3)
-// extern uint32_t lld_read_clock_us(void);
-// #define BLE_LOG_GET_LC_TS lld_read_clock_us()
+/* Legacy BLE Controller */
+#elif defined(CONFIG_IDF_TARGET_ESP32C3) || defined(CONFIG_IDF_TARGET_ESP32S3)
+extern uint32_t lld_read_clock_us(void);
+#define BLE_LOG_GET_LC_TS lld_read_clock_us()
 #else /* Other targets */
 #define BLE_LOG_GET_LC_TS 0
 #endif /* BLE targets */
