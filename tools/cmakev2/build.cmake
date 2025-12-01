@@ -641,6 +641,7 @@ function(__get_components_metadata)
         idf_component_get_property(priv_reqs ${name} PRIV_REQUIRES)
         idf_component_get_property(managed_reqs ${name} MANAGED_REQUIRES)
         idf_component_get_property(managed_priv_reqs ${name} MANAGED_PRIV_REQUIRES)
+        idf_component_get_property(component_source ${name} COMPONENT_SOURCE)
         if("${type}" STREQUAL "LIBRARY")
             set(file "$<TARGET_LINKER_FILE:${lib}>")
 
@@ -673,6 +674,7 @@ function(__get_components_metadata)
             "            \"target\": \"${target}\","
             "            \"prefix\": \"${prefix}\","
             "            \"dir\": \"${dir}\","
+            "            \"source\": \"${component_source}\","
             "            \"type\": \"${type}\","
             "            \"lib\": \"${lib}\","
             "            \"reqs\": ${reqs},"
