@@ -113,14 +113,15 @@ char *http_auth_digest(const char *username, const char *password, esp_http_auth
             password == NULL ||
             auth_data->nonce == NULL ||
             auth_data->uri == NULL ||
-            auth_data->realm == NULL) {
+            auth_data->realm == NULL ||
+            auth_data->algorithm == NULL) {
         return NULL;
     }
 
     int digest_size = MD5_MAX_LEN;
     int (*digest_func)(char *digest, const char *fmt, ...) = md5_printf;
-    if (!memcmp(auth_data->algorithm, "SHA256", strlen("SHA256")) ||
-            !memcmp(auth_data->algorithm, "SHA-256", strlen("SHA-256"))) {
+    if (strcasecmp(auth_data->algorithm, "SHA256") == 0 ||
+            strcasecmp(auth_data->algorithm, "SHA-256") == 0) {
         digest_size = SHA256_HEX_LEN;
         digest_func = sha256_sprintf;
     }
@@ -141,7 +142,7 @@ char *http_auth_digest(const char *username, const char *password, esp_http_auth
     ESP_LOGD(TAG, "%s %s %s %s", "Digest", username, auth_data->realm, password);
     if ((strcasecmp(auth_data->algorithm, "md5-sess") == 0) ||
             (strcasecmp(auth_data->algorithm, "SHA256") == 0) ||
-            (strcasecmp(auth_data->algorithm, "md5-sess") == 0)) {
+            (strcasecmp(auth_data->algorithm, "SHA-256") == 0)) {
         if (digest_func(ha1, "%s:%s:%016llx", ha1, auth_data->nonce, auth_data->cnonce) <= 0) {
             goto _digest_exit;
         }
