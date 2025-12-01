@@ -22,7 +22,6 @@
 #include "unity_test_utils.h"
 #include "driver/gpio.h"
 #include "hal/gpio_ll.h"
-#include "soc/gpio_periph.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"

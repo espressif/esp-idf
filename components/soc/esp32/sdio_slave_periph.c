@@ -6,7 +6,6 @@
 
 #include <stdint.h>
 #include "soc/sdio_slave_periph.h"
-#include "soc/gpio_periph.h"
 
 /**
  * I/O slot of sdio slave:

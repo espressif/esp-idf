@@ -10,7 +10,8 @@
 #include "freertos/task.h"
 #include "unity.h"
 #include "driver/sdm.h"
-#include "soc/sdm_periph.h"
+#include "hal/sdm_periph.h"
+#include "hal/sdm_caps.h"
 #include "esp_attr.h"
 
 TEST_CASE("sdm_channel_install_uninstall", "[sdm]")
@@ -25,17 +26,17 @@ TEST_CASE("sdm_channel_install_uninstall", "[sdm]")
             .allow_pd = false,
         },
     };
-    sdm_channel_handle_t chans[SOC_SDM_ATTR(INST_NUM)][SOC_SDM_ATTR(CHANS_PER_INST)] = {};
-    for (int i = 0; i < SOC_SDM_ATTR(INST_NUM); i++) {
-        for (int j = 0; j < SOC_SDM_ATTR(CHANS_PER_INST); j++) {
+    sdm_channel_handle_t chans[SDM_CAPS_GET(INST_NUM)][SDM_CAPS_GET(CHANS_PER_INST)] = {};
+    for (int i = 0; i < SDM_CAPS_GET(INST_NUM); i++) {
+        for (int j = 0; j < SDM_CAPS_GET(CHANS_PER_INST); j++) {
             TEST_ESP_OK(sdm_new_channel(&config, &chans[i][j]));
         }
         TEST_ESP_ERR(ESP_ERR_NOT_FOUND, sdm_new_channel(&config, &chans[0][0]));
     }
 
     printf("delete sdm channels\r\n");
-    for (int i = 0; i < SOC_SDM_ATTR(INST_NUM); i++) {
-        for (int j = 0; j < SOC_SDM_ATTR(CHANS_PER_INST); j++) {
+    for (int i = 0; i < SDM_CAPS_GET(INST_NUM); i++) {
+        for (int j = 0; j < SDM_CAPS_GET(CHANS_PER_INST); j++) {
             TEST_ESP_OK(sdm_del_channel(chans[i][j]));
         }
     }

@@ -13,7 +13,6 @@
 #include "sys/param.h"
 #include "driver/gpio.h"
 #include "hal/spi_ll.h"     // for SPI_LL_SUPPORT_CLK_SRC_PRE_DIV
-#include "soc/gpio_periph.h"
 #include "soc/spi_periph.h"
 #include "soc/soc_memory_layout.h"
 #include "esp_private/cache_utils.h"

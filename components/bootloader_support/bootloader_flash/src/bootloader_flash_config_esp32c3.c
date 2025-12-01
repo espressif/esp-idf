@@ -12,7 +12,6 @@
 #include "esp_rom_gpio.h"
 #include "esp_rom_efuse.h"
 #include "esp32c3/rom/spi_flash.h"
-#include "soc/gpio_periph.h"
 #include "soc/spi_reg.h"
 #include "soc/spi_mem_reg.h"
 #include "soc/soc_caps.h"

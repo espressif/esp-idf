@@ -12,7 +12,6 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
-#include "soc/gpio_periph.h"
 #include "hal/uart_types.h"
 #include "hal/uart_ll.h"
 #include "driver/uart.h"

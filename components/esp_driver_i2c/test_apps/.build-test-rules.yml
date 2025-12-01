@@ -5,3 +5,4 @@ components/esp_driver_i2c/test_apps/i2c_test_apps:
     - if: SOC_I2C_SUPPORTED != 1
   depends_components:
     - esp_driver_i2c
+    - esp_hal_i2c

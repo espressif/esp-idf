@@ -21,7 +21,6 @@
 #include "soc/rtc.h"
 #include "esp_private/rtc_clk.h"
 #include "soc/syscon_reg.h"
-#include "soc/rtc_periph.h"
 #include "hal/wdt_hal.h"
 #include "hal/uart_ll.h"
 #include "soc/soc_memory_layout.h"
