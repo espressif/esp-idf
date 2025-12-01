@@ -229,7 +229,7 @@ static inline void key_mgr_ll_set_key_usage(const esp_key_mgr_key_type_t key_typ
         break;
 #endif
         default:
-            HAL_ASSERT(false && "Unsupported mode");
+            HAL_ASSERT(false && "Unsupported key type");
             return;
     }
 }
@@ -254,7 +254,7 @@ static inline esp_key_mgr_key_usage_t key_mgr_ll_get_key_usage(esp_key_mgr_key_t
             return (esp_key_mgr_key_usage_t) (REG_GET_BIT(KEYMNG_STATIC_REG, KEYMNG_USE_EFUSE_KEY_PSRAM));
 #endif
         default:
-            HAL_ASSERT(false && "Unsupported mode");
+            HAL_ASSERT(false && "Unsupported key type");
             return ESP_KEY_MGR_USAGE_INVALID;
     }
 }
@@ -352,7 +352,6 @@ static inline bool key_mgr_ll_is_key_deployment_valid(const esp_key_mgr_key_type
         case ESP_KEY_MGR_FLASH_XTS_AES_KEY:
             switch (key_len) {
                 case ESP_KEY_MGR_XTS_AES_LEN_128:
-                    return REG_GET_FIELD(KEYMNG_KEY_VLD_REG, KEYMNG_KEY_FLASH_VLD);
                 case ESP_KEY_MGR_XTS_AES_LEN_256:
                     return REG_GET_FIELD(KEYMNG_KEY_VLD_REG, KEYMNG_KEY_FLASH_VLD);
                 default:
@@ -370,7 +369,6 @@ static inline bool key_mgr_ll_is_key_deployment_valid(const esp_key_mgr_key_type
         case ESP_KEY_MGR_PSRAM_XTS_AES_KEY:
             switch (key_len) {
                 case ESP_KEY_MGR_XTS_AES_LEN_128:
-                    return REG_GET_FIELD(KEYMNG_KEY_VLD_REG, KEYMNG_KEY_PSRAM_VLD);
                 case ESP_KEY_MGR_XTS_AES_LEN_256:
                     return REG_GET_FIELD(KEYMNG_KEY_VLD_REG, KEYMNG_KEY_PSRAM_VLD);
                 default:
@@ -445,33 +443,64 @@ static inline bool key_mgr_ll_is_huk_valid(void)
 {
     return REG_GET_FIELD(KEYMNG_HUK_VLD_REG, KEYMNG_HUK_VALID);
 }
+
 /* @brief Set the XTS-AES (Flash Encryption) key length for the Key Manager */
 static inline void key_mgr_ll_set_xts_aes_key_len(const esp_key_mgr_key_type_t key_type, const esp_key_mgr_key_len_t key_len)
 {
+    uint32_t key_len_bit_mask;
+
     if (key_type == ESP_KEY_MGR_FLASH_XTS_AES_KEY) {
-        REG_SET_FIELD(KEYMNG_STATIC_REG, KEYMNG_FLASH_KEY_LEN, key_len);
+        key_len_bit_mask = KEYMNG_FLASH_KEY_LEN;
     }
 #if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
     else if (key_type == ESP_KEY_MGR_PSRAM_XTS_AES_KEY) {
-        REG_SET_FIELD(KEYMNG_STATIC_REG, KEYMNG_PSRAM_KEY_LEN, key_len);
+        key_len_bit_mask = KEYMNG_PSRAM_KEY_LEN;
     }
 #endif
+    else {
+        HAL_ASSERT(false && "Unsupported key type");
+        return;
+    }
+
+    switch (key_len) {
+        case ESP_KEY_MGR_XTS_AES_LEN_128:
+            REG_CLR_BIT(KEYMNG_STATIC_REG, key_len_bit_mask);
+            break;
+        case ESP_KEY_MGR_XTS_AES_LEN_256:
+            REG_SET_BIT(KEYMNG_STATIC_REG, key_len_bit_mask);
+            break;
+        default:
+            HAL_ASSERT(false && "Unsupported key length");
+            return;
+    }
 }
 
 /* @brief Get the XTS-AES (Flash Encryption) key length for the Key Manager */
 static inline esp_key_mgr_key_len_t key_mgr_ll_get_xts_aes_key_len(const esp_key_mgr_key_type_t key_type)
 {
+    uint32_t key_len_bit = 0;
+
     if (key_type == ESP_KEY_MGR_FLASH_XTS_AES_KEY) {
-        return (esp_key_mgr_key_len_t) REG_GET_FIELD(KEYMNG_STATIC_REG, KEYMNG_FLASH_KEY_LEN);
+        key_len_bit = REG_GET_BIT(KEYMNG_STATIC_REG, KEYMNG_FLASH_KEY_LEN);
     }
 #if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
     else if (key_type == ESP_KEY_MGR_PSRAM_XTS_AES_KEY) {
-        return (esp_key_mgr_key_len_t) REG_GET_FIELD(KEYMNG_STATIC_REG, KEYMNG_PSRAM_KEY_LEN);
+        key_len_bit = REG_GET_BIT(KEYMNG_STATIC_REG, KEYMNG_PSRAM_KEY_LEN);
     }
 #endif
     else {
         HAL_ASSERT(false && "Unsupported key type");
-        return (esp_key_mgr_key_len_t) 0;
+        return (esp_key_mgr_key_len_t) key_len_bit;
+    }
+
+    switch (key_len_bit) {
+        case 0:
+            return ESP_KEY_MGR_XTS_AES_LEN_128;
+        case 1:
+            return ESP_KEY_MGR_XTS_AES_LEN_256;
+        default:
+            HAL_ASSERT(false && "Unsupported key length");
+            return (esp_key_mgr_key_len_t) key_len_bit;
     }
 }
 
