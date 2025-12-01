@@ -106,6 +106,7 @@ static esp_err_t i2s_std_set_slot(i2s_chan_handle_t handle, const i2s_std_slot_c
     handle->active_slot = slot_cfg->slot_mode == I2S_SLOT_MODE_MONO ? 1 : 2;
 
     uint32_t buf_size = i2s_get_buf_size(handle, slot_cfg->data_bit_width, handle->dma.frame_num);
+    ESP_RETURN_ON_FALSE(buf_size != 0, ESP_ERR_INVALID_ARG, TAG, "invalid data_bit_width");
     /* The DMA buffer need to re-allocate if the buffer size changed */
     if (handle->dma.buf_size != buf_size) {
         ESP_RETURN_ON_ERROR(i2s_free_dma_desc(handle), TAG, "failed to free the old dma descriptor");
@@ -237,13 +238,34 @@ static esp_err_t s_i2s_channel_try_to_constitude_std_duplex(i2s_chan_handle_t ha
             if (memcmp(another_handle->mode_info, &curr_cfg, sizeof(i2s_std_config_t)) == 0) {
                 handle->controller->full_duplex = true;
                 ESP_LOGD(TAG, "Constitude full-duplex on port %d", handle->controller->id);
-            }
+            } else {
 #if SOC_I2S_HW_VERSION_1
-            else {
-                ESP_LOGE(TAG, "Can't set different channel configurations on a same port");
-                return ESP_ERR_INVALID_ARG;
-            }
+                bool port_changed = false;
+                if (handle->is_port_auto) {
+                    ESP_LOGD(TAG, "TX & RX on I2S%d are simplex", handle->controller->id);
+                    for (int i = 0; i < SOC_I2S_NUM; i++) {
+                        if (i == handle->controller->id) {
+                            continue;
+                        }
+                        ESP_LOGD(TAG, "Trying to move %s channel from port %d to %d",
+                                 handle->dir == I2S_DIR_TX ? "TX" : "RX", handle->controller->id, i);
+                        if (i2s_channel_change_port(handle, i) == ESP_OK) {
+                            ESP_LOGD(TAG, "Move success!");
+                            port_changed = true;
+                            break;
+                        } else {
+                            ESP_LOGD(TAG, "Move failed...");
+                        }
+                    }
+                }
+                if (!port_changed) {
+                    ESP_LOGE(TAG, "Can't set different channel configurations on a same port");
+                    return ESP_ERR_INVALID_ARG;
+                }
+#else
+                ESP_LOGD(TAG, "TX & RX on I2S%d are simplex", handle->controller->id);
 #endif
+            }
         }
         /* Switch to the slave role if needed */
         if (handle->controller->full_duplex &&

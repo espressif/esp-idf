@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -159,6 +159,7 @@ struct i2s_channel_obj_t {
     /* Stored configurations */
     int                     intr_prio_flags;/*!< i2s interrupt priority flags */
     void                    *mode_info;     /*!< Slot, clock and gpio information of each mode */
+    bool                    is_port_auto;   /*!< Whether the port is auto-assigned */
     bool                    is_etm_start;   /*!< Whether start by etm tasks */
     bool                    is_etm_stop;    /*!< Whether stop by etm tasks */
     bool                    full_duplex_slave; /*!< whether the channel is forced to switch to slave role for full duplex */
@@ -332,6 +333,19 @@ void i2s_output_gpio_reserve(i2s_chan_handle_t handle, int gpio_num);
  * @param gpio_mask The output gpio mask to be revoked
  */
 void i2s_output_gpio_revoke(i2s_chan_handle_t handle, uint64_t gpio_mask);
+
+#if SOC_I2S_HW_VERSION_1
+/**
+ * @brief Change the port of the I2S channel
+ *
+ * @param handle        I2S channel handle
+ * @param id            I2S port id
+ * @return
+ *      - ESP_OK                Change port success
+ *      - ESP_ERR_NOT_FOUND     No available I2S port found
+ */
+esp_err_t i2s_channel_change_port(i2s_chan_handle_t handle, int id);
+#endif
 
 #ifdef __cplusplus
 }
