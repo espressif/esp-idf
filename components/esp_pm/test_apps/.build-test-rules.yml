@@ -8,9 +8,5 @@ components/esp_pm/test_apps:
     - if: IDF_TARGET in ["esp32c61", "esp32h21", "esp32h4"]
       temporary: true
       reason: not support yet # TODO: [ESP32C61] IDF-9250, [ESP32H21] IDF-11522, [ESP32H4] IDF-12286
-  disable_test:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: p4 rev3 migration # TODO: IDF-14416
   depends_components:
     - esp_pm
