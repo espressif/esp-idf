@@ -111,6 +111,10 @@ esp_err_t esp_ble_gap_start_advertising(esp_ble_adv_params_t *adv_params)
 
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
+    if (adv_params == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GAP_BLE;
     msg.act = BTC_GAP_BLE_ACT_START_ADV;
@@ -171,6 +175,10 @@ esp_err_t esp_ble_gap_set_pkt_data_len(esp_bd_addr_t remote_device, uint16_t tx_
 
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
+    if (remote_device == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GAP_BLE;
     msg.act = BTC_GAP_BLE_ACT_SET_PKT_DATA_LEN;
@@ -182,6 +190,9 @@ esp_err_t esp_ble_gap_set_pkt_data_len(esp_bd_addr_t remote_device, uint16_t tx_
 
 esp_err_t esp_ble_gap_addr_create_static(esp_bd_addr_t rand_addr)
 {
+    if (rand_addr == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
     // Static device address: First two bits are '11', rest is random
     rand_addr[0] = 0xC0 | (esp_random() & 0x3F);
     for (int i = 1; i < 6; i++) {
@@ -192,6 +203,9 @@ esp_err_t esp_ble_gap_addr_create_static(esp_bd_addr_t rand_addr)
 
 esp_err_t esp_ble_gap_addr_create_nrpa(esp_bd_addr_t rand_addr)
 {
+    if (rand_addr == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
     // Non-resolvable private address: First two bits are '00', rest is random
     rand_addr[0] = (esp_random() & 0x3F);
     for (int i = 1; i < 6; i++) {
@@ -206,6 +220,10 @@ esp_err_t esp_ble_gap_set_rand_addr(esp_bd_addr_t rand_addr)
     btc_ble_gap_args_t arg;
 
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+
+    if (rand_addr == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
 
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GAP_BLE;
@@ -239,7 +257,7 @@ esp_err_t esp_ble_gap_add_device_to_resolving_list(esp_bd_addr_t peer_addr, uint
 {
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
-    if (addr_type > BLE_ADDR_TYPE_RANDOM ||!peer_addr || (addr_type && ((peer_addr[0] & 0xC0) != 0xC0))) {
+    if (addr_type > BLE_ADDR_TYPE_RANDOM || !peer_addr || !peer_irk || (addr_type && ((peer_addr[0] & 0xC0) != 0xC0))) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -357,6 +375,10 @@ esp_err_t esp_ble_gap_set_prefer_conn_params(esp_bd_addr_t bd_addr,
         return ESP_ERR_INVALID_STATE;
     }
 
+    if (bd_addr == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     if (ESP_BLE_IS_VALID_PARAM(min_conn_int, ESP_BLE_CONN_INT_MIN, ESP_BLE_CONN_INT_MAX) &&
         ESP_BLE_IS_VALID_PARAM(max_conn_int, ESP_BLE_CONN_INT_MIN, ESP_BLE_CONN_INT_MAX) &&
         ESP_BLE_IS_VALID_PARAM(supervision_tout, ESP_BLE_CONN_SUP_TOUT_MIN, ESP_BLE_CONN_SUP_TOUT_MAX) &&
@@ -424,6 +446,9 @@ esp_err_t esp_ble_gap_get_local_used_addr(esp_bd_addr_t local_used_addr, uint8_t
         LOG_ERROR("%s, bluedroid status error", __func__);
         return ESP_FAIL;
     }
+    if (local_used_addr == NULL || addr_type == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
     if(!BTM_BleGetCurrentAddress(local_used_addr, addr_type)) {
         return ESP_FAIL;
     }
@@ -433,13 +458,6 @@ esp_err_t esp_ble_gap_get_local_used_addr(esp_bd_addr_t local_used_addr, uint8_t
 uint8_t *esp_ble_resolve_adv_data_by_type( uint8_t *adv_data, uint16_t adv_data_len, esp_ble_adv_data_type type, uint8_t *length)
 {
     if (length == NULL) {
-        return NULL;
-    }
-
-    if (((type < ESP_BLE_AD_TYPE_FLAG) || (type > ESP_BLE_AD_TYPE_128SERVICE_DATA)) &&
-            (type != ESP_BLE_AD_MANUFACTURER_SPECIFIC_TYPE)) {
-        LOG_ERROR("The advertising data type is not defined, type = %x", type);
-        *length = 0;
         return NULL;
     }
 
@@ -493,6 +511,10 @@ esp_err_t esp_ble_gap_read_rssi(esp_bd_addr_t remote_addr)
 
     if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
         return ESP_ERR_INVALID_STATE;
+    }
+
+    if (remote_addr == NULL) {
+        return ESP_ERR_INVALID_ARG;
     }
 
     msg.sig = BTC_SIG_API_CALL;
@@ -645,6 +667,10 @@ esp_err_t esp_ble_set_encryption(esp_bd_addr_t bd_addr, esp_ble_sec_act_t sec_ac
 
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
+    if (bd_addr == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GAP_BLE;
     msg.act = BTC_GAP_BLE_SET_ENCRYPTION_EVT;
@@ -661,6 +687,10 @@ esp_err_t esp_ble_gap_security_rsp(esp_bd_addr_t bd_addr, bool accept)
     btc_ble_gap_args_t arg;
 
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+
+    if (bd_addr == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
 
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GAP_BLE;
@@ -680,6 +710,10 @@ esp_err_t esp_ble_passkey_reply(esp_bd_addr_t bd_addr, bool accept, uint32_t pas
 
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
+    if (bd_addr == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GAP_BLE;
     msg.act = BTC_GAP_BLE_PASSKEY_REPLY_EVT;
@@ -698,6 +732,10 @@ esp_err_t esp_ble_confirm_reply(esp_bd_addr_t bd_addr, bool accept)
 
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
+    if (bd_addr == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GAP_BLE;
     msg.act = BTC_GAP_BLE_CONFIRM_REPLY_EVT;
@@ -712,6 +750,11 @@ esp_err_t esp_ble_remove_bond_device(esp_bd_addr_t bd_addr)
 {
     btc_msg_t msg = {0};
     btc_ble_gap_args_t arg;
+
+    if (bd_addr == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GAP_BLE;
     msg.act = BTC_GAP_BLE_REMOVE_BOND_DEV_EVT;
@@ -757,6 +800,10 @@ esp_err_t esp_ble_oob_req_reply(esp_bd_addr_t bd_addr, uint8_t *TK, uint8_t len)
         return ESP_ERR_INVALID_ARG;
     }
 
+    if (bd_addr == NULL || TK == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     btc_msg_t msg = {0};
     btc_ble_gap_args_t arg;
 
@@ -775,7 +822,7 @@ esp_err_t esp_ble_oob_req_reply(esp_bd_addr_t bd_addr, uint8_t *TK, uint8_t len)
 
 esp_err_t esp_ble_sc_oob_req_reply(esp_bd_addr_t bd_addr, uint8_t p_c[16], uint8_t p_r[16])
 {
-    if (!p_c || !p_r) {
+    if (!bd_addr || !p_c || !p_r) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -836,6 +883,10 @@ esp_err_t esp_ble_gap_disconnect(esp_bd_addr_t remote_device)
 
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
+    if (remote_device == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GAP_BLE;
     msg.act = BTC_GAP_BLE_DISCONNECT_EVT;
@@ -862,6 +913,10 @@ esp_err_t esp_gap_ble_set_channels(esp_gap_ble_channels channels)
 
     if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
         return ESP_ERR_INVALID_STATE;
+    }
+
+    if (channels == NULL) {
+        return ESP_ERR_INVALID_ARG;
     }
 
     msg.sig = BTC_SIG_API_CALL;

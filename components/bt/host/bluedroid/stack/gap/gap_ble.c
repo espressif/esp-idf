@@ -104,7 +104,7 @@ tGAP_CLCB *gap_ble_find_clcb_by_conn_id(UINT16 conn_id)
         }
     }
 
-    return p_clcb;
+    return NULL;
 }
 
 /*******************************************************************************
@@ -126,10 +126,10 @@ tGAP_CLCB *gap_clcb_alloc (BD_ADDR bda)
             memset(p_clcb, 0, sizeof(tGAP_CLCB));
             p_clcb->in_use = TRUE;
             memcpy (p_clcb->bda, bda, BD_ADDR_LEN);
-            break;
+            return p_clcb;
         }
     }
-    return p_clcb;
+    return NULL;
 }
 
 /*******************************************************************************
@@ -688,6 +688,12 @@ static void gap_ble_c_cmpl_cback (UINT16 conn_id, tGATTC_OPTYPE op, tGATT_STATUS
     switch (op_type) {
     case GATT_UUID_GAP_PREF_CONN_PARAM:
         GAP_TRACE_EVENT ("GATT_UUID_GAP_PREF_CONN_PARAM");
+        /* Verify sufficient data length before reading connection parameters */
+        if (p_data->att_value.len < 8) {
+            GAP_TRACE_ERROR ("GATT_UUID_GAP_PREF_CONN_PARAM: insufficient data length %d", p_data->att_value.len);
+            gap_ble_cl_op_cmpl(p_clcb, FALSE, 0, NULL);
+            break;
+        }
         /* Extract the peripheral preferred connection parameters and save them */
 
         STREAM_TO_UINT16 (min, pp);
@@ -702,7 +708,8 @@ static void gap_ble_c_cmpl_cback (UINT16 conn_id, tGATTC_OPTYPE op, tGATT_STATUS
 
     case GATT_UUID_GAP_DEVICE_NAME:
         GAP_TRACE_EVENT ("GATT_UUID_GAP_DEVICE_NAME\n");
-        len = (UINT16)strlen((char *)pp);
+        /* Use att_value.len instead of strlen to avoid reading beyond buffer */
+        len = p_data->att_value.len;
         if (len > GAP_CHAR_DEV_NAME_SIZE) {
             len = GAP_CHAR_DEV_NAME_SIZE;
         }
@@ -710,6 +717,12 @@ static void gap_ble_c_cmpl_cback (UINT16 conn_id, tGATTC_OPTYPE op, tGATT_STATUS
         break;
 
     case GATT_UUID_GAP_CENTRAL_ADDR_RESOL:
+        /* Verify sufficient data length */
+        if (p_data->att_value.len < 1) {
+            GAP_TRACE_ERROR ("GATT_UUID_GAP_CENTRAL_ADDR_RESOL: insufficient data length");
+            gap_ble_cl_op_cmpl(p_clcb, FALSE, 0, NULL);
+            break;
+        }
         gap_ble_cl_op_cmpl(p_clcb, TRUE, 1, pp);
         break;
     }

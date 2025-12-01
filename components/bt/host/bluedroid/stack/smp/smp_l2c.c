@@ -156,15 +156,31 @@ static void smp_connect_callback (UINT16 channel, BD_ADDR bd_addr, BOOLEAN conne
 static void smp_data_received(UINT16 channel, BD_ADDR bd_addr, BT_HDR *p_buf)
 {
     tSMP_CB *p_cb = &smp_cb;
-    UINT8   *p = (UINT8 *)(p_buf + 1) + p_buf->offset;
-    UINT8   cmd ;
+    UINT8   *p;
+    UINT8   cmd;
     SMP_TRACE_EVENT ("\nSMDBG l2c %s\n", __FUNCTION__);
 
+    /* Validate packet length before accessing data to prevent out-of-bounds read */
+    if (p_buf->len < 1) {
+        SMP_TRACE_WARNING ("Ignore empty SMP packet (len=%d)\n", p_buf->len);
+        osi_free (p_buf);
+        return;
+    }
+
+    p = (UINT8 *)(p_buf + 1) + p_buf->offset;
     STREAM_TO_UINT8(cmd, p);
 
     /* sanity check */
     if ((SMP_OPCODE_MAX < cmd) || (SMP_OPCODE_MIN > cmd)) {
-        SMP_TRACE_WARNING( "Ignore received command with RESERVED code 0x%02x\n", cmd);
+        SMP_TRACE_WARNING ("Ignore received command with RESERVED code 0x%02x\n", cmd);
+        osi_free (p_buf);
+        return;
+    }
+
+    /* Validate command length to prevent out-of-bounds read in handler functions */
+    if (p_buf->len != smp_cmd_size_per_spec[cmd]) {
+        SMP_TRACE_WARNING ("Ignore SMP cmd 0x%02x with invalid length %d (expected %d)\n",
+                           cmd, p_buf->len, smp_cmd_size_per_spec[cmd]);
         osi_free (p_buf);
         return;
     }

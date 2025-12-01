@@ -178,6 +178,10 @@ esp_err_t esp_ble_gattc_enh_open(esp_gatt_if_t gattc_if, esp_ble_gatt_creat_conn
 #if (BLE_42_FEATURE_SUPPORT == TRUE)
 esp_err_t esp_ble_gattc_open(esp_gatt_if_t gattc_if, esp_bd_addr_t remote_bda, esp_ble_addr_type_t remote_addr_type, bool is_direct)
 {
+    if (remote_bda == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     esp_ble_gatt_creat_conn_params_t creat_conn_params = {0};
     memcpy(creat_conn_params.remote_bda, remote_bda, ESP_BD_ADDR_LEN);
     creat_conn_params.remote_addr_type = remote_addr_type;
@@ -192,6 +196,10 @@ esp_err_t esp_ble_gattc_open(esp_gatt_if_t gattc_if, esp_bd_addr_t remote_bda, e
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
 esp_err_t esp_ble_gattc_aux_open(esp_gatt_if_t gattc_if, esp_bd_addr_t remote_bda, esp_ble_addr_type_t remote_addr_type, bool is_direct)
 {
+    if (remote_bda == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     esp_ble_gatt_creat_conn_params_t creat_conn_params = {0};
     memcpy(creat_conn_params.remote_bda, remote_bda, ESP_BD_ADDR_LEN);
     creat_conn_params.remote_addr_type = remote_addr_type;
@@ -626,6 +634,10 @@ esp_err_t esp_ble_gattc_read_multiple(esp_gatt_if_t gattc_if,
 
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
+    if (read_multi == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     tGATT_TCB       *p_tcb = gatt_get_tcb_by_idx(conn_id);
     if (!gatt_check_connection_state_by_tcb(p_tcb)) {
         LOG_WARN("%s, The connection not created.", __func__);
@@ -661,6 +673,10 @@ esp_err_t esp_ble_gattc_read_multiple_variable(esp_gatt_if_t gattc_if,
     btc_ble_gattc_args_t arg;
 
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+
+    if (read_multi == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
 
     tGATT_TCB       *p_tcb = gatt_get_tcb_by_idx(conn_id);
     if (!gatt_check_connection_state_by_tcb(p_tcb)) {
@@ -915,6 +931,10 @@ esp_err_t esp_ble_gattc_register_for_notify (esp_gatt_if_t gattc_if,
 
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
+    if (server_bda == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     if (handle == 0) {
         return ESP_GATT_INVALID_HANDLE;
     }
@@ -937,6 +957,10 @@ esp_err_t esp_ble_gattc_unregister_for_notify (esp_gatt_if_t gattc_if,
 
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
+    if (server_bda == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     if (handle == 0) {
         return ESP_GATT_INVALID_HANDLE;
     }
@@ -957,6 +981,10 @@ esp_err_t esp_ble_gattc_cache_refresh(esp_bd_addr_t remote_bda)
 
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
+    if (remote_bda == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GATTC;
     msg.act = BTC_GATTC_ACT_CACHE_REFRESH;
@@ -972,6 +1000,10 @@ esp_err_t esp_ble_gattc_cache_clean(esp_bd_addr_t remote_bda)
 
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
+    if (remote_bda == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GATTC;
     msg.act = BTC_GATTC_ACT_CACHE_CLEAN;
@@ -986,6 +1018,10 @@ esp_err_t esp_ble_gattc_cache_assoc(esp_gatt_if_t gattc_if, esp_bd_addr_t src_ad
     btc_ble_gattc_args_t arg;
 
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+
+    if (src_addr == NULL || assoc_addr == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
 
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GATTC;
