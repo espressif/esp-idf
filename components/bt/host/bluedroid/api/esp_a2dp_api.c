@@ -355,7 +355,7 @@ esp_err_t esp_a2d_source_register_stream_endpoint(uint8_t seid, const esp_a2d_mc
         return ESP_ERR_INVALID_STATE;
     }
 
-    if (g_a2dp_on_deinit || g_a2dp_sink_ongoing_deinit) {
+    if (g_a2dp_on_deinit || g_a2dp_source_ongoing_deinit) {
         return ESP_ERR_INVALID_STATE;
     }
 
