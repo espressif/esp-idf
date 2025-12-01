@@ -38,6 +38,19 @@ typedef struct {
 tBTM_EXT_ADV_RECORD adv_record[MAX_BLE_ADV_INSTANCE] = {0};
 #endif // #if (BLE_50_EXTEND_ADV_EN == TRUE)
 
+#if (BLE_50_EXTEND_SYNC_EN == TRUE)
+#if (BLE_FEAT_CREATE_SYNC_RETRY_MAX > 0)
+/* Create sync retry control block */
+typedef struct {
+    bool in_use;                                /* Whether sync creation is in progress */
+    uint8_t retry_count;                        /* Current retry count */
+    tBTM_BLE_Periodic_Sync_Params params;       /* Saved sync parameters for retry */
+} tBTM_BLE_SYNC_RETRY_CB;
+
+static tBTM_BLE_SYNC_RETRY_CB sync_retry_cb = {0};
+#endif // #if (BLE_FEAT_CREATE_SYNC_RETRY_MAX > 0)
+#endif // #if (BLE_50_EXTEND_SYNC_EN == TRUE)
+
 extern void btm_ble_inter_set(bool extble_inter);
 
 #if !UC_BT_STACK_NO_LOG
@@ -879,11 +892,19 @@ tBTM_STATUS BTM_BlePeriodicAdvCreateSync(tBTM_BLE_Periodic_Sync_Params *params)
         SET_BIT(option, 2);
     }
 #endif // (BLE_FEAT_CREATE_SYNC_ENH == TRUE)
-
+#if (BLE_FEAT_CREATE_SYNC_RETRY_MAX > 0)
+    /* Save parameters for potential retry */
+    memcpy(&sync_retry_cb.params, params, sizeof(tBTM_BLE_Periodic_Sync_Params));
+    sync_retry_cb.retry_count = 0;
+    sync_retry_cb.in_use = true;
+#endif // #if (BLE_FEAT_CREATE_SYNC_RETRY_MAX > 0)
     if (!btsnd_hcic_ble_periodic_adv_create_sync(option, params->sid, params->addr_type,
                                             params->addr, params->sync_timeout, params->sync_cte_type)) {
         BTM_TRACE_ERROR("LE PA CreateSync cmd failed");
         status = BTM_ILLEGAL_VALUE;
+#if (BLE_FEAT_CREATE_SYNC_RETRY_MAX > 0)
+        sync_retry_cb.in_use = false;
+#endif // #if (BLE_FEAT_CREATE_SYNC_RETRY_MAX > 0)
     }
 
 end:
@@ -941,6 +962,11 @@ tBTM_STATUS BTM_BlePeriodicAdvSyncCancel(void)
     tBTM_STATUS status = BTM_SUCCESS;
     tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
 
+#if (BLE_FEAT_CREATE_SYNC_RETRY_MAX > 0)
+    /* Clear retry state when sync is cancelled */
+    sync_retry_cb.in_use = false;
+    sync_retry_cb.retry_count = 0;
+#endif // #if (BLE_FEAT_CREATE_SYNC_RETRY_MAX > 0)
     if ((err = btsnd_hcic_ble_periodic_adv_create_sync_cancel()) != HCI_SUCCESS) {
         BTM_TRACE_ERROR("LE PA SyncCancel, cmd err=0x%x", err);
         status = BTM_HCI_ERROR | err;
@@ -1398,6 +1424,48 @@ void btm_ble_periodic_adv_sync_establish_evt(tBTM_BLE_PERIOD_ADV_SYNC_ESTAB *par
         return;
     }
 
+#if (BLE_FEAT_CREATE_SYNC_RETRY_MAX > 0)
+    /* Check if retry is needed for error 0x3E (Connection Failed to be Established) */
+    if (params->status == HCI_ERR_CONN_FAILED_ESTABLISHMENT &&
+        sync_retry_cb.in_use &&
+        sync_retry_cb.retry_count < BLE_FEAT_CREATE_SYNC_RETRY_MAX) {
+
+        sync_retry_cb.retry_count++;
+        BTM_TRACE_WARNING("%s, Create sync failed with 0x3E, retry %d/%d",
+                         __func__, sync_retry_cb.retry_count, BLE_FEAT_CREATE_SYNC_RETRY_MAX);
+
+        /* Build option from saved parameters */
+        uint8_t option = 0x00;
+        if (sync_retry_cb.params.filter_policy) {
+            SET_BIT(option, 0);
+        }
+#if (BLE_FEAT_CREATE_SYNC_ENH == TRUE)
+        if (sync_retry_cb.params.reports_disabled) {
+            SET_BIT(option, 1);
+        }
+        if (sync_retry_cb.params.filter_duplicates) {
+            SET_BIT(option, 2);
+        }
+#endif // (BLE_FEAT_CREATE_SYNC_ENH == TRUE)
+
+        /* Retry create sync with saved parameters */
+        if (btsnd_hcic_ble_periodic_adv_create_sync(option,
+                                                    sync_retry_cb.params.sid,
+                                                    sync_retry_cb.params.addr_type,
+                                                    sync_retry_cb.params.addr,
+                                                    sync_retry_cb.params.sync_timeout,
+                                                    sync_retry_cb.params.sync_cte_type)) {
+            /* Retry command sent successfully, wait for next event */
+            return;
+        }
+        /* If retry command failed, fall through to report failure */
+        BTM_TRACE_ERROR("%s, Retry create sync command failed", __func__);
+    }
+
+    /* Clear retry state */
+    sync_retry_cb.in_use = false;
+    sync_retry_cb.retry_count = 0;
+#endif // #if (BLE_FEAT_CREATE_SYNC_RETRY_MAX > 0)
     memcpy(&cb_params.sync_estab, params, sizeof(tBTM_BLE_PERIOD_ADV_SYNC_ESTAB));
 
     // If the user has register the callback function, should callback it to the application.
