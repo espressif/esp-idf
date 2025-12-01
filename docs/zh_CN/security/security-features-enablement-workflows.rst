@@ -318,6 +318,10 @@
 
         espsecure encrypt-flash-data {IDF_TARGET_FLASH_ENC_ARGS} --keyfile my_flash_encryption_key.bin --address 0x10000 --output my-app-enc.bin build/my-app.bin
 
+    .. note::
+
+        如果同时启用了安全启动功能，请先对固件进行安全启动签名，再执行上述加密操作。
+
     上述命令中的偏移量仅适用于示例固件，请通过检查分区表条目或运行 `idf.py partition-table` 来获取你固件的实际偏移量。请注意，不需要加密所有二进制文件，只需加密在分区表定义文件中带有 ``encrypted`` 标记的文件，其他二进制文件只作为构建过程的普通输出进行烧录。
 
     使用 ``esptool`` 可以将上述文件烧写到各自的偏移地址。要查看所有推荐的 ``esptool`` 命令行选项，请查阅 ``idf.py build`` 构建成功后打印的输出。
@@ -685,7 +689,7 @@ Secure Boot v2 指南
 
         * CSV 文件名 - 此命令中，``sample_singlepage_blob.csv`` 是指包含 NVS 数据的 CSV 文件，请将其替换为所选择的文件。
 
-        * NVS 分区偏移量 - 这是 {IDF_TARGET_NAME} flash 中存储 NVS 分区的偏移地址。通过在项目目录下执行 ``idf.py partition-table`` 命令，可以找到 NVS 分区偏移地址。请将上述命令中的示例值 ``0x3000`` 调整为正确的偏移量。
+        * NVS 分区大小 - 这是 NVS 分区的大小（以字节为单位）。请将上述命令中的示例值 ``0x3000`` 更新为你实际 NVS 分区的正确大小。
 
     4. 配置项目
 
@@ -734,7 +738,7 @@ Secure Boot v2 指南
 
     * CSV 文件名 - 上述命名中的 `sample_singlepage_blob.csv` 是指包含 NVS 数据的 CSV 文件，请将其替换为所选文件。
 
-    * NVS 分区偏移量 - 这是 NVS 分区在 {IDF_TARGET_NAME} 的 flash 中存储时的偏移地址。在项目目录中执行 ``idf.py partition-table`` 命令，可以找到 NVS 分区的偏移量。请将上述命令中的示例值 ``0x3000`` 替换为正确的偏移量。
+    * NVS 分区大小 - 这是 NVS 分区的大小（以字节为单位）。请将上述命令中的示例值 ``0x3000`` 更新为你实际 NVS 分区的正确大小。
 
 3. 配置项目
 
@@ -745,4 +749,4 @@ Secure Boot v2 指南
 
     使用 ``esptool`` 命令，将 NVS 分区 (``nvs_encr_partition.bin``) 和 NVS 加密密钥 (``nvs_encr_key.bin``) 烧录到各自的偏移地址。通过 ``idf.py build`` 成功后打印的输出，可查看所有推荐的 ``esptool`` 命令行选项。
 
-    若芯片启用了 flash 加密，请在烧录之前先加密分区。详情请参阅 `flash 加密工作流程 <enable-flash-encryption-externally_>`_ 中与烧录相关的步骤。
+    若芯片启用了 flash 加密，请在烧录前先对 NVS 加密密钥分区进行加密。详情请参阅 `flash 加密工作流程 <enable-flash-encryption-externally_>`_ 中与烧录相关的步骤。
