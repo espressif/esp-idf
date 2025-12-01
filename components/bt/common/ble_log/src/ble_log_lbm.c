@@ -421,6 +421,7 @@ deref:
     BLE_LOG_REF_COUNT_RELEASE(&lbm_ref_count);
 }
 
+BLE_LOG_IRAM_ATTR
 bool ble_log_write_hex(ble_log_src_t src_code, const uint8_t *addr, size_t len)
 {
     BLE_LOG_REF_COUNT_ACQUIRE(&lbm_ref_count);
