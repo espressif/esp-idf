@@ -206,6 +206,7 @@ static void dump_task(void *parameter)
     while (atomic_load(&dump_ctx->is_running)) {
         rx_queue_item_t item;
         if (xQueueReceive(dump_ctx->rx_queue, &item, pdMS_TO_TICKS(CONFIG_EXAMPLE_DUMP_TASK_TIMEOUT_MS)) == pdPASS) {
+            item.frame.buffer = item.buffer;    // point to the new buffer
 
             format_twaidump_frame(dump_ctx->timestamp_mode, &item.frame, item.timestamp_us,
                                   dump_ctx->start_time_us, &dump_ctx->last_frame_time_us,

@@ -18,10 +18,10 @@ extern "C" {
 
 #define GPIO_PIN_COUNT                      (SOC_GPIO_PIN_COUNT)
 /// Check whether it is a valid GPIO number
-#define GPIO_IS_VALID_GPIO(gpio_num)        ((gpio_num >= 0) && \
+#define GPIO_IS_VALID_GPIO(gpio_num)        ((gpio_num >= 0) && (gpio_num <= (SOC_GPIO_PIN_COUNT - 1)) && \
                                               (((1ULL << (gpio_num)) & SOC_GPIO_VALID_GPIO_MASK) != 0))
 /// Check whether it can be a valid GPIO number of output mode
-#define GPIO_IS_VALID_OUTPUT_GPIO(gpio_num) ((gpio_num >= 0) && \
+#define GPIO_IS_VALID_OUTPUT_GPIO(gpio_num) ((gpio_num >= 0) && (gpio_num <= SOC_GPIO_OUT_RANGE_MAX) && \
                                               (((1ULL << (gpio_num)) & SOC_GPIO_VALID_OUTPUT_GPIO_MASK) != 0))
 /// Check whether it can be a valid digital I/O pad
 #define GPIO_IS_VALID_DIGITAL_IO_PAD(gpio_num) ((gpio_num >= 0) && \
