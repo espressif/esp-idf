@@ -318,6 +318,10 @@ In this case all the eFuses related to Flash Encryption are written with help of
 
         espsecure encrypt-flash-data {IDF_TARGET_FLASH_ENC_ARGS} --keyfile my_flash_encryption_key.bin --address 0x10000 --output my-app-enc.bin build/my-app.bin
 
+    .. note::
+
+        If secure boot is enabled, perform secure boot signing of the firmware before carrying out the above encryption operation.
+
     In the above command, the offsets are used for a sample firmware, and the actual offset for your firmware can be obtained by checking the partition table entry or by running `idf.py partition-table`. Please note that not all the binaries need to be encrypted, the encryption applies only to those generated from the partitions which are marked as ``encrypted`` in the partition table definition file. Other binaries are flashed unencrypted, i.e., as a plain output of the build process.
 
     The above files can then be flashed to their respective offset using ``esptool``. To see all of the command line options recommended for ``esptool``, see the output printed when ``idf.py build`` succeeds.
@@ -685,7 +689,7 @@ The details about NVS encryption and related schemes can be found at :doc:`NVS E
 
         * CSV file name - In this case, ``sample_singlepage_blob.csv`` is the CSV file which contains the NVS data. Please replace this with the file you wish to choose.
 
-        * NVS partition offset - This is the offset at which that NVS partition shall be stored in the flash of {IDF_TARGET_NAME}. The offset of your NVS partition can be found by executing ``idf.py partition-table`` in the projtect directory. Please update the sample value of ``0x3000`` in the above-provided command to the correct offset.
+        * NVS partition size - This is the size of the NVS partition in bytes. Please update the sample value of ``0x3000`` in the above-provided command to the correct size of your NVS partition.
 
     4. Configure the project
 
@@ -734,7 +738,7 @@ In this case we generate NVS Encryption keys on a host. This key is then flashed
 
     * CSV file name - In this case `sample_singlepage_blob.csv` is the CSV file which contains the NVS data. Please replace it with the file you wish to choose.
 
-    * NVS partition offset - This is the offset at which the NVS partition shall be stored in the flash of {IDF_TARGET_NAME}. The offset of your NVS partition can be found by executing ``idf.py partition-table`` in the projtect directory. Please update the sample value of ``0x3000`` in the above-provided command to the correct offset.
+    * NVS partition size - This is the size of the NVS partition in bytes. Please update the sample value of ``0x3000`` in the above-provided command to the correct size of your NVS partition.
 
 3. Configure the project
 
@@ -745,4 +749,4 @@ In this case we generate NVS Encryption keys on a host. This key is then flashed
 
     The NVS partition (``nvs_encr_partition.bin``) and NVS encryption key (``nvs_encr_key.bin``) can then be flashed to their respective offset using ``esptool``. To see all of the command line options recommended for ``esptool``, check the output print when ``idf.py build`` succeeds.
 
-    If Flash Encryption is enabled for the chip, then please encrypt the partition first before flashing. You may refer the flashing related steps of `Flash Encryption workflow <enable-flash-encryption-externally_>`_.
+    If Flash Encryption is enabled for the chip, then please encrypt the NVS key partition first before flashing. You may refer the flashing related steps of `Flash Encryption workflow <enable-flash-encryption-externally_>`_.
