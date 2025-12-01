@@ -1275,6 +1275,16 @@ config BT_BLE_FEAT_CREATE_SYNC_ENH
     help
         Enable the create sync enhancements
 
+config BT_BLE_FEAT_CREATE_SYNC_RETRY_MAX
+    int "Maximum retry count for periodic advertising create sync"
+    depends on BT_BLE_50_EXTEND_SYNC_EN
+    default 3
+    range 0 16
+    help
+        Set the maximum retry count when periodic advertising create sync fails
+        with error code 0x3E (Connection Failed to be Established).
+        Set to 0 to disable retry. Default is 3.
+
 menuconfig BT_BLE_FEAT_ISO_EN
     bool "Enable BLE 5.2 iso feature"
     depends on (BT_BLE_50_FEATURES_SUPPORTED && ((BT_CONTROLLER_ENABLED && SOC_BLE_AUDIO_SUPPORTED) || BT_CONTROLLER_DISABLED)) # NOERROR
