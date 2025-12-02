@@ -92,6 +92,10 @@ MIPI DSI Interfaced LCD
 
         ESP_ERROR_CHECK(esp_lcd_dpi_panel_enable_dma2d(mipi_dpi_panel));
 
+    .. note::
+
+        Due to hardware limitation, if external memory encryption is enabled, DMA2D can only access address and length that are aligned to 16 bytes. Unless you can ensure that your draw buffer's address and length are aligned to 16 bytes, it is not recommended to use DMA2D to draw bitmap.
+
     If you need more advanced applications, you can add a custom hook for draw bitmap, such as using PPA to implement rotation, scaling, etc.
 
     .. code-block:: c

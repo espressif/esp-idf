@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,6 +17,7 @@
 #include "soc/soc_caps.h"
 #include "hal/cache_hal.h"
 #include "hal/cache_ll.h"
+#include "hal/gdma_ll.h"
 #include "esp_cache.h"
 
 typedef struct {
@@ -32,37 +33,47 @@ static test_crc_case_t crc_test_cases[] = {
         .crc_bit_width = 8,
         .init_value = 0x00,
         .poly_hex = 0x07,
-        .expected_result = 0xC6,
+        .expected_result = 0xB8,
     },
     [1] = {
         .crc_bit_width = 8,
         .init_value = 0x00,
         .poly_hex = 0x07,
         .reverse_data_mask = true, // refin = true
-        .expected_result = 0xDE,
+        .expected_result = 0xF0,
     },
     // CRC16, x^16+x^12+x^5+1
     [2] = {
         .crc_bit_width = 16,
         .init_value = 0xFFFF,
         .poly_hex = 0x1021,
-        .expected_result = 0x5289,
+        .expected_result = 0xA9B2,
     },
     // CRC32, x32+x26+x23+x22+x16+x12+x11+x10+x8+x7+x5+x4+x2+x+1
     [3] = {
         .crc_bit_width = 32,
         .init_value = 0xFFFFFFFF,
         .poly_hex = 0x04C11DB7,
-        .expected_result = 0x63B3E283,
+        .expected_result = 0x692F6C7E,
     }
 };
 
 // CRC online: https://www.lddgo.net/en/encrypt/crc
 static void test_gdma_crc_calculation(gdma_channel_handle_t tx_chan, int test_num_crc_algorithm)
 {
+    // Note, burst size should be at least 16 when accessing encrypted external memory
+    gdma_transfer_config_t transfer_cfg = {
+        .max_data_burst_size = 16,
+        .access_ext_mem = true,
+    };
+    TEST_ESP_OK(gdma_config_transfer(tx_chan, &transfer_cfg));
+
     uint32_t crc_result = 0;
-    const char *test_input_string = "Share::Connect::Innovate";
+
+    static const char test_input_string[] __attribute__((aligned(GDMA_LL_GET(ACCESS_ENCRYPTION_MEM_ALIGNMENT)))) = "GDMACRC Share::Connect::Innovate";
     size_t input_data_size = strlen(test_input_string);
+
+    TEST_ASSERT_EQUAL((uintptr_t)test_input_string % GDMA_LL_GET(ACCESS_ENCRYPTION_MEM_ALIGNMENT), 0);
     // this test case also test the GDMA can fetch data from MSPI Flash
     TEST_ASSERT_TRUE(esp_ptr_in_drom(test_input_string));
     printf("Calculate CRC value for string: \"%s\"\r\n", test_input_string);

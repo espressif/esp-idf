@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,9 +9,11 @@
 #include "sdkconfig.h"
 #include "esp_heap_caps.h"
 #include "esp_private/esp_cache_private.h"
+#include "esp_private/gdma.h"
 #include "soc/soc_caps.h"
-#if SOC_GDMA_SUPPORTED
+#if SOC_HAS(GDMA)
 #include "hal/gdma_ll.h"
+#include "hal/efuse_hal.h"
 #endif
 
 #if CONFIG_HEAP_PLACE_FUNCTION_INTO_FLASH
@@ -77,6 +79,12 @@ HEAP_IRAM_ATTR void esp_heap_adjust_alignment_to_hw(size_t *p_alignment, size_t 
     // SIMD instructions preferred data alignment, SOC_SIMD_PREFERRED_DATA_ALIGNMENT, which is also definitely a power of two
     if (caps & MALLOC_CAP_SIMD) {
         alignment = (alignment > SOC_SIMD_PREFERRED_DATA_ALIGNMENT) ? alignment : SOC_SIMD_PREFERRED_DATA_ALIGNMENT;
+    }
+#endif
+
+#if SOC_HAS(GDMA) && (SOC_PSRAM_DMA_CAPABLE || SOC_DMA_CAN_ACCESS_FLASH)
+    if ((caps & MALLOC_CAP_DMA) && efuse_hal_flash_encryption_enabled()) {
+        alignment = (alignment > GDMA_LL_GET(ACCESS_ENCRYPTION_MEM_ALIGNMENT)) ? alignment : GDMA_LL_GET(ACCESS_ENCRYPTION_MEM_ALIGNMENT);
     }
 #endif
 

@@ -20,6 +20,7 @@
 #include "hal/gdma_ll.h"
 #include "hal/cache_ll.h"
 #include "hal/cache_hal.h"
+#include "hal/efuse_hal.h"
 #include "esp_cache.h"
 #include "esp_memory_utils.h"
 #include "gdma_test_utils.h"
@@ -173,7 +174,8 @@ TEST_CASE("GDMA channel allocation", "[GDMA]")
 }
 
 static void test_gdma_config_link_list(gdma_channel_handle_t tx_chan, gdma_channel_handle_t rx_chan,
-                                       gdma_link_list_handle_t *tx_link_list, gdma_link_list_handle_t *rx_link_list, bool dma_link_in_ext_mem)
+                                       gdma_link_list_handle_t *tx_link_list, gdma_link_list_handle_t *rx_link_list,
+                                       size_t burst_size, bool dma_link_in_ext_mem)
 {
 
     gdma_strategy_config_t strategy = {
@@ -182,6 +184,15 @@ static void test_gdma_config_link_list(gdma_channel_handle_t tx_chan, gdma_chann
     };
     TEST_ESP_OK(gdma_apply_strategy(tx_chan, &strategy));
     TEST_ESP_OK(gdma_apply_strategy(rx_chan, &strategy));
+
+    gdma_transfer_config_t transfer_cfg = {
+        .max_data_burst_size = burst_size,
+#if SOC_DMA_CAN_ACCESS_FLASH
+        .access_ext_mem = true,
+#endif
+    };
+    TEST_ESP_OK(gdma_config_transfer(tx_chan, &transfer_cfg));
+    TEST_ESP_OK(gdma_config_transfer(rx_chan, &transfer_cfg));
 
     gdma_trigger_t m2m_trigger = GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_M2M, 0);
     // get a free DMA trigger ID for memory copy
@@ -231,16 +242,24 @@ static void test_gdma_m2m_transaction(gdma_channel_handle_t tx_chan, gdma_channe
     TEST_ASSERT_NOT_NULL(done_sem);
     TEST_ESP_OK(gdma_register_rx_event_callbacks(rx_chan, &rx_cbs, done_sem));
 
+    if (efuse_hal_flash_encryption_enabled()) {
+        dma_link_in_ext_mem = false;
+    }
+
     gdma_link_list_handle_t tx_link_list = NULL;
     gdma_link_list_handle_t rx_link_list = NULL;
-    test_gdma_config_link_list(tx_chan, rx_chan, &tx_link_list, &rx_link_list, dma_link_in_ext_mem);
+    test_gdma_config_link_list(tx_chan, rx_chan, &tx_link_list, &rx_link_list, 16, dma_link_in_ext_mem);
+
+    size_t int_mem_alignment = 0;
+    size_t ext_mem_alignment = 0;
+    TEST_ESP_OK(gdma_get_alignment_constraints(tx_chan, &int_mem_alignment, &ext_mem_alignment));
 
     // allocate the source buffer from SRAM
-    uint8_t *src_data = heap_caps_calloc(1, 128, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    uint8_t *src_data = heap_caps_aligned_calloc(int_mem_alignment, 1, 128, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     TEST_ASSERT_NOT_NULL(src_data);
 
     // allocate the destination buffer from SRAM
-    uint8_t *dst_data = heap_caps_calloc(1, 256, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    uint8_t *dst_data = heap_caps_aligned_calloc(int_mem_alignment, 1, 256, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     TEST_ASSERT_NOT_NULL(dst_data);
 
     // prepare the source data
@@ -253,7 +272,7 @@ static void test_gdma_m2m_transaction(gdma_channel_handle_t tx_chan, gdma_channe
     }
     // test DMA can read data from main flash
 #if SOC_DMA_CAN_ACCESS_FLASH
-    const char *src_string = "GDMA can read data from MSPI Flash";
+    static const char src_string[] __attribute__((aligned(GDMA_LL_GET(ACCESS_ENCRYPTION_MEM_ALIGNMENT)))) = "GDMA can read MSPI Flash data!!!";
     size_t src_string_len = strlen(src_string);
     TEST_ASSERT_TRUE(esp_ptr_in_drom(src_string));
 
@@ -268,12 +287,12 @@ static void test_gdma_m2m_transaction(gdma_channel_handle_t tx_chan, gdma_channe
     gdma_buffer_mount_config_t tx_buf_mount_config[] = {
         [0] = {
             .buffer = src_data,
-            .buffer_alignment = 1,
+            .buffer_alignment = int_mem_alignment,
             .length = 64,
         },
         [1] = {
             .buffer = src_data + 64,
-            .buffer_alignment = 1,
+            .buffer_alignment = int_mem_alignment,
             .length = 64,
 #if !SOC_DMA_CAN_ACCESS_FLASH
             .flags = {
@@ -285,7 +304,7 @@ static void test_gdma_m2m_transaction(gdma_channel_handle_t tx_chan, gdma_channe
 #if SOC_DMA_CAN_ACCESS_FLASH
         [2] = {
             .buffer = (void *)src_string,
-            .buffer_alignment = 1,
+            .buffer_alignment = ext_mem_alignment,
             .length = src_string_len,
             .flags = {
                 .mark_eof = true,
@@ -412,6 +431,8 @@ static void test_gdma_m2m_unaligned_buffer_test(uint8_t *dst_data, uint8_t *src_
 {
     TEST_ASSERT_NOT_NULL(src_data);
     TEST_ASSERT_NOT_NULL(dst_data);
+    memset(src_data, 0, data_length + offset_len);
+    memset(dst_data, 0, data_length + offset_len);
     gdma_channel_handle_t tx_chan = NULL;
     gdma_channel_handle_t rx_chan = NULL;
     gdma_channel_alloc_config_t tx_chan_alloc_config = {};
@@ -430,7 +451,10 @@ static void test_gdma_m2m_unaligned_buffer_test(uint8_t *dst_data, uint8_t *src_
 
     gdma_link_list_handle_t tx_link_list = NULL;
     gdma_link_list_handle_t rx_link_list = NULL;
-    test_gdma_config_link_list(tx_chan, rx_chan, &tx_link_list, &rx_link_list, false);
+    test_gdma_config_link_list(tx_chan, rx_chan, &tx_link_list, &rx_link_list, 0, false);
+
+    size_t rx_mem_alignment = 0;
+    TEST_ESP_OK(gdma_get_alignment_constraints(rx_chan, &rx_mem_alignment, NULL));
 
     // prepare the source data
     for (int i = 0; i < data_length; i++) {
@@ -460,7 +484,7 @@ static void test_gdma_m2m_unaligned_buffer_test(uint8_t *dst_data, uint8_t *src_
     TEST_ESP_OK(esp_dma_split_rx_buffer_to_cache_aligned(dst_data + offset_len, data_length, &align_array, &stash_buffer));
     for (int i = 0; i < 3; i++) {
         rx_aligned_buf_mount_config[i].buffer = align_array.aligned_buffer[i].aligned_buffer;
-        rx_aligned_buf_mount_config[i].buffer_alignment = sram_alignment;
+        rx_aligned_buf_mount_config[i].buffer_alignment = MAX(sram_alignment, rx_mem_alignment);
         rx_aligned_buf_mount_config[i].length = align_array.aligned_buffer[i].length;
     }
     TEST_ESP_OK(gdma_link_mount_buffers(rx_link_list, 0, rx_aligned_buf_mount_config, 3, NULL));
@@ -496,6 +520,10 @@ static void test_gdma_m2m_unaligned_buffer_test(uint8_t *dst_data, uint8_t *src_
 
 TEST_CASE("GDMA M2M Unaligned RX Buffer Test", "[GDMA][M2M]")
 {
+    if (efuse_hal_flash_encryption_enabled()) {
+        TEST_PASS_MESSAGE("Flash encryption is enabled, skip this test");
+    }
+
     uint8_t *sbuf = heap_caps_aligned_calloc(64, 1, 10240, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     uint8_t *dbuf = heap_caps_aligned_calloc(64, 1, 10240, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
 

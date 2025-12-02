@@ -16,6 +16,8 @@
 #include "freertos/semphr.h"
 #include "ccomp_timer.h"
 #include "esp_async_memcpy.h"
+#include "hal/efuse_hal.h"
+
 #if SOC_GDMA_SUPPORTED
 #include "hal/gdma_ll.h"
 #endif
@@ -152,17 +154,19 @@ static bool test_async_memcpy_cb_v1(async_memcpy_handle_t mcp_hdl, async_memcpy_
 static void test_memory_copy_blocking(async_memcpy_handle_t driver)
 {
     SemaphoreHandle_t sem = xSemaphoreCreateBinary();
-    const uint32_t test_buffer_size[] = {256, 512, 1024, 2048, 4096, 5012};
+    const uint32_t test_buffer_size[] = {256, 512, 1024, 2048, 4096, 5008};
     memcpy_testbench_context_t test_context = {
-        .align = 4,
+        .align = 16,
     };
     for (int i = 0; i < sizeof(test_buffer_size) / sizeof(test_buffer_size[0]); i++) {
         // Test different align edge
         for (int off = 0; off < 4; off++) {
             test_context.buffer_size = test_buffer_size[i];
             test_context.seed = i;
-            test_context.src_offset = off;
-            test_context.dst_offset = off;
+            if (!efuse_hal_flash_encryption_enabled()) {
+                test_context.src_offset = off;
+                test_context.dst_offset = off;
+            }
             async_memcpy_setup_testbench(&test_context);
 
             TEST_ESP_OK(esp_async_memcpy(driver, test_context.to_addr, test_context.from_addr, test_context.copy_size, test_async_memcpy_cb_v1, sem));
@@ -239,6 +243,9 @@ TEST_CASE("memory copy with dest address unaligned", "[async mcp]")
     };
     [[maybe_unused]] async_memcpy_handle_t driver = NULL;
 
+    if (efuse_hal_flash_encryption_enabled()) {
+        TEST_PASS_MESSAGE("Flash encryption is enabled, skip this test");
+    }
 
 #if SOC_CP_DMA_SUPPORTED
     printf("Testing memcpy by CP DMA\r\n");
@@ -460,7 +467,7 @@ TEST_CASE("GDMA M2M Weighted Arbitration Test SRAM->SRAM", "[GDMA][M2M][async mc
 {
     async_memcpy_config_t driver_config = {
         .backlog = TEST_ASYNC_MEMCPY_BENCH_COUNTS,
-        .dma_burst_size = 64,
+        .dma_burst_size = 32,
     };
 
     async_memcpy_handle_t driver[2] = {NULL};

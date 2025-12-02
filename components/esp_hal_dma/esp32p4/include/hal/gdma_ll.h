@@ -58,6 +58,7 @@
 #define GDMA_LL_AHB_DESC_ALIGNMENT      4
 #define GDMA_LL_AXI_DESC_ALIGNMENT      8
 #define GDMA_LL_MAX_BURST_SIZE_PSRAM    128 // PSRAM controller doesn't support burst access with size > 128 bytes
+#define GDMA_LL_ACCESS_ENCRYPTION_MEM_ALIGNMENT 16 // The alignment of the memory and size when DMA accesses encrypted memory
 
 #if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
 #define GDMA_LL_AHB_BURST_SIZE_ADJUSTABLE 1 // AHB GDMA supports adjustable burst size
