@@ -6,7 +6,7 @@ set(public_include "include")
 
 set(priv_requires "esp_driver_gpio")
 
-set(requires)
+set(requires "esp_hal_cam")
 
 if(CONFIG_SOC_ISP_SUPPORTED)
     list(APPEND srcs "src/isp_core.c"

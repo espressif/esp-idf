@@ -12,7 +12,7 @@
 #include "freertos/FreeRTOS.h"
 #include "driver/isp_core.h"
 #include "driver/isp_demosaic.h"
-#include "soc/isp_periph.h"
+#include "hal/isp_periph.h"
 #include "esp_private/isp_private.h"
 
 static const char *TAG = "ISP_DEMOSAIC";

@@ -943,18 +943,6 @@ config SOC_ISP_SHARE_CSI_BRG
     bool
     default y
 
-config SOC_ISP_NUMS
-    int
-    default 1
-
-config SOC_ISP_DVP_CTLR_NUMS
-    int
-    default 1
-
-config SOC_ISP_AE_CTLR_NUMS
-    int
-    default 1
-
 config SOC_ISP_AE_BLOCK_X_NUMS
     int
     default 5
@@ -962,10 +950,6 @@ config SOC_ISP_AE_BLOCK_X_NUMS
 config SOC_ISP_AE_BLOCK_Y_NUMS
     int
     default 5
-
-config SOC_ISP_AF_CTLR_NUMS
-    int
-    default 1
 
 config SOC_ISP_AF_WINDOW_NUMS
     int
@@ -1003,10 +987,6 @@ config SOC_ISP_DEMOSAIC_GRAD_RATIO_RES_BITS
     int
     default 26
 
-config SOC_ISP_DVP_DATA_WIDTH_MAX
-    int
-    default 16
-
 config SOC_ISP_SHARPEN_TEMPLATE_X_NUMS
     int
     default 3
@@ -1038,10 +1018,6 @@ config SOC_ISP_SHARPEN_M_FREQ_COEF_DEC_BITS
 config SOC_ISP_SHARPEN_M_FREQ_COEF_RES_BITS
     int
     default 24
-
-config SOC_ISP_HIST_CTLR_NUMS
-    int
-    default 1
 
 config SOC_ISP_HIST_BLOCK_X_NUMS
     int

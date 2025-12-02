@@ -36,7 +36,7 @@ INPUT += \
     $(PROJECT_PATH)/components/esp_hal_dma/esp32p4/include/hal/bitscrambler_peri_select.h \
     $(PROJECT_PATH)/components/esp_lcd/dsi/include/esp_lcd_mipi_dsi.h \
     $(PROJECT_PATH)/components/esp_lcd/rgb/include/esp_lcd_panel_rgb.h \
-    $(PROJECT_PATH)/components/hal/include/hal/isp_types.h \
+    $(PROJECT_PATH)/components/esp_hal_cam/include/hal/isp_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/jpeg_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/ppa_types.h \
     $(PROJECT_PATH)/components/sdmmc/include/sd_pwr_ctrl.h \
