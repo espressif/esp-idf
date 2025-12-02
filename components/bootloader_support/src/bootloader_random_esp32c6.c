@@ -10,6 +10,8 @@
 #include "hal/adc_types.h"
 #include "esp_private/regi2c_ctrl.h"
 
+#define I2C_SAR_ADC_INIT_CODE_VAL 2150
+
 void bootloader_random_enable(void)
 {
     adc_ll_reset_register();
@@ -29,8 +31,8 @@ void bootloader_random_enable(void)
     ANALOG_CLOCK_ENABLE();
 
     adc_ll_regi2c_init();
-    adc_ll_set_calibration_param(ADC_UNIT_1, 0x866);
-    adc_ll_set_calibration_param(ADC_UNIT_2, 0x866);
+    adc_ll_set_calibration_param(ADC_UNIT_1, I2C_SAR_ADC_INIT_CODE_VAL);
+    adc_ll_set_calibration_param(ADC_UNIT_2, I2C_SAR_ADC_INIT_CODE_VAL);
 
     adc_digi_pattern_config_t pattern_config = {};
     pattern_config.unit = ADC_UNIT_2;
