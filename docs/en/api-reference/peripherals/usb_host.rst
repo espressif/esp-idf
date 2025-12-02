@@ -39,6 +39,8 @@ The Host Library has the following features:
     - The Host Library itself and the underlying Host Stack does not internally instantiate any OS tasks. The number of tasks is entirely controlled by how the Host Library interface is used. However, a general rule of thumb regarding the number of tasks is ``(the number of host class drivers running + 1)``.
     - Allows single Hub support (If option `CONFIG_USB_HOST_HUBS_SUPPORTED` is enabled).
     - Allows multiple Hubs support (If option `CONFIG_USB_HOST_HUB_MULTI_LEVEL` is enabled).
+    - Supports global suspend and resume, implemented by suspending or resuming the entire bus.
+    - Supports automatic global resume by submitting a transfer.
 
 Currently, the Host Library and the underlying Host Stack has the following limitations:
 
@@ -47,10 +49,12 @@ Currently, the Host Library and the underlying Host Stack has the following limi
     - Only supports Asynchronous transfers.
     - Only supports using one configuration. Changing to other configurations after enumeration is not supported yet.
     - Transfer timeouts are not supported yet.
+    - Selective (per-device/per-port) suspend/resume is not supported yet.
+    - Remote Wakeup initiated by a USB device is not supported yet.
     - The External Hub Driver: Remote Wakeup feature is not supported (External Hubs are active, even if there are no devices inserted).
     - The External Hub Driver: Doesn't handle error cases (overcurrent handling, errors during initialization etc. are not implemented yet).
     - The External Hub Driver: No Interface selection. The Driver uses the first available Interface with Hub Class code (09h).
-    - The External Port Driver: No downstream port debounce mechanism (not implemented yet)
+    - The External Port Driver: No downstream port debounce mechanism (not implemented yet).
     :esp32p4: - The External Hub Driver: No Transaction Translator layer (No FS/LS Devices support when a Hub is attached to HS Host).
 
 
@@ -364,6 +368,126 @@ The typical life cycle of a client task and class driver will go through the fol
 #. Delete the client task. Signal the Daemon Task if necessary.
 
 
+.. ---------------------------------------------------- Power Management -----------------------------------------------
+
+Power Management
+----------------
+
+Global Suspend/Resume
+^^^^^^^^^^^^^^^^^^^^^
+
+USB Host library supports global Suspend/Resume, which suspends and resumes the entire USB bus. The global Suspend/Resume is implemented through the root port(s). When suspended, the USB Host stops sending SOFs, which effectively puts all the devices connected to the USB bus to a suspended state.
+
+Note that the global Suspend/Resume does **not** suspend/resume the USB-OTG peripheral on the USB Host side, and therefore does **not** reduce power consumption on the host controller itself.
+
+Events
+^^^^^^
+
+Client events
+"""""""""""""
+
+When a device is suspended or resumed, all clients that have opened the affected device are notified via the following events. Each event includes the handle of the suspended or resumed device:
+
+- :cpp:enumerator:`USB_HOST_CLIENT_EVENT_DEV_SUSPENDED` — The device has entered a suspended state.
+- :cpp:enumerator:`USB_HOST_CLIENT_EVENT_DEV_RESUMED` — The device has resumed operation.
+
+
+USB Host library event
+""""""""""""""""""""""
+
+The following event is associated with the automatic suspend timer. When a timer expires, its callback unblocks the USB Host library handler and delivers the event:
+
+- :cpp:enumerator:`USB_HOST_LIB_EVENT_FLAGS_AUTO_SUSPEND` — Indicates that the automatic suspend timer has expired.
+
+Auto Suspend Timer
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Users can configure an automatic suspend timer using :cpp:func:`usb_host_lib_set_auto_suspend`. The auto suspend timer is reset every time the USB Host library client processing function handles an event from any client, or when USB Host library itself is processing any event.
+
+The auto suspend timer actively monitors USB bus activity and USB Host library activity. Specifically:
+
+- If USB traffic is detected (i.e., any transfer or client-handled event occurs), the timer is automatically reset.
+- If USB Host library activity is detected (i.e., new device connection occurs), the timer is automatically reset.
+- If the USB bus and USB Host library remain idle (no traffic, client or library events), the timer continues counting down.
+- Once the timer reaches the specified timeout (in milliseconds), the suspend event is triggered.
+
+This mechanism ensures that the USB Host enters suspend mode only when the bus is truly idle, preventing unintended suspension during active communication.
+
+Important considerations for the auto suspend timer:
+
+- The timer can be configured and will start counting down even if no device is connected.
+- The timer stops when all devices are disconnected.
+- The timer automatically resets upon any device connection or disconnection.
+- When the timer expires, the USB Host library event is delivered only if:
+
+    - A device is currently connected to the root port, and
+    - The root port is not already in a suspended state
+
+The auto suspend timer can be configured in the following modes:
+
+- **One-shot** (:cpp:enumerator:`USB_HOST_LIB_AUTO_SUSPEND_ONE_SHOT`) — The timer expires once and then stops.
+- **Periodic** (:cpp:enumerator:`USB_HOST_LIB_AUTO_SUSPEND_PERIODIC`) — The timer automatically restarts after each expiration, repeating indefinitely.
+
+Auto Resume by Transfer Submit
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In addition to the automatic suspend timer, the USB Host library also supports automatic resume of a suspended root port when a transfer (control or non-control) is submitted. This feature allows developers to initiate a resume simply by calling a transfer API (e.g., :cpp:func:`usb_host_transfer_submit` or :cpp:func:`usb_host_transfer_submit_control`), without needing to explicitly call :cpp:func:`usb_host_lib_root_port_resume`.
+
+When the root port is in suspended state and a client submits a transfer to a suspended device, the library will:
+
+1. Automatically initiate a resume on the root port.
+2. Delay the transfer until the resume signaling is complete.
+3. Submit the transfer once the bus is in the active (resumed) state.
+
+This mechanism simplifies client implementation and ensures that resume behavior is consistent and safe, avoiding race conditions that may occur if resume is triggered manually in parallel with transfer submission.
+
+.. note::
+
+    Auto-resume via transfer submission is only applicable when the root port is in a suspended state. If the port is already active, transfer submission proceeds as usual.
+
+The following code snippet demonstrates how to cycle between suspended and resumed states using the auto suspend timer and the auto resume by transfer submit functionality.
+
+.. code-block:: c
+
+    #include "usb/usb_host.h"
+
+    static void client_task(void *arg)
+    {
+        while(true) {
+            // Submit transfer to the suspended device, which automatically resumes the device
+            // Device will then automatically enter suspended mode after 1 second of inactivity thanks to the auto suspend timer
+            usb_host_transfer_submit(xfer_out);
+
+            // Switch context for 10s. The device will be automatically suspended after ~1s of inactivity
+            vTaskDelay(pdMS_TO_TICKS(10000));
+        }
+    }
+
+    void usb_host_lib_task(void *arg)
+    {
+        ...
+
+        // Set the auto suspend timer to periodic mode and period of 1s,
+        // to automatically suspend the device after 1 second of inactivity and to restart automatically after expiration
+        usb_host_lib_set_auto_suspend(USB_HOST_LIB_AUTO_SUSPEND_PERIODIC, 1000);
+
+        while (1) {
+            uint32_t event_flags;
+            usb_host_lib_handle_events(portMAX_DELAY, &event_flags);
+
+            if (event_flags & USB_HOST_LIB_EVENT_FLAGS_AUTO_SUSPEND) {
+                // Auto suspend timer expired, suspend the root port
+                usb_host_lib_root_port_suspend();
+            }
+            ...
+        }
+        ...
+    }
+
+.. note::
+
+    For more details regarding suspend and resume, please refer to `USB 2.0 Specification <https://www.usb.org/document-library/usb-20-specification>`_ > Chapter 11.9 *Suspend and Resume*.
+
 .. ---------------------------------------------------- Examples -------------------------------------------------------
 
 Examples
@@ -372,7 +496,7 @@ Examples
 Host Library Examples
 ^^^^^^^^^^^^^^^^^^^^^
 
-- :example:`peripherals/usb/host/usb_host_lib` demonstrates how to use the USB Host Library API to install and register a client, wait for a device connection, print the device's information, handle disconnection, and repeat these steps until a user quits the application.
+:example:`peripherals/usb/host/usb_host_lib` demonstrates how to use the USB Host Library API to install and register a client, wait for a device connection, print the device's information, handle disconnection, and repeat these steps until a user quits the application.
 
 Class Driver Examples
 ^^^^^^^^^^^^^^^^^^^^^
@@ -432,12 +556,15 @@ UVC
        Example connection using STUSB03E and analog switch (Host mode)
 
     .. note::
+
         This schematic is a minimal example intended only to demonstrate the external PHY connection. It omits other essential components and signals (e.g., VCC, GND, RESET) required for a complete, functional {IDF_TARGET_NAME} design.
+
         The schematic includes both a +5 V rail (used to power USB devices) and a VCC rail (typically 3.3 V). VCC should match the chip supply voltage. Ensure that +5 V for the USB bus is appropriately sourced and protected (e.g., with a power switch and current limiting). Always comply with USB host power requirements, particularly when supporting USB bus-powered devices.
 
     Hardware configuration is handled via GPIO mapping to the PHY's pins. Any unused pins (e.g., :cpp:member:`usb_phy_ext_io_conf_t::suspend_n_io_num`) **must be set to -1**.
 
     .. note::
+
         The :cpp:member:`usb_phy_ext_io_conf_t::suspend_n_io_num` pin is **currently not supported** and does not need to be connected.
 
     **Example Code:**
@@ -547,9 +674,7 @@ Supported amount of channels for {IDF_TARGET_NAME} is {IDF_TARGET_OTG_NUM_HOST_C
 .. note::
 
     - One free channel is required to enumerate the device.
-
     - From 1 to N (when N - number of EPs) free channels are required to claim the interface.
-
     - When there are no more free Host channels available, the device could not be enumerated and its interface cannot be claimed.
 
 
