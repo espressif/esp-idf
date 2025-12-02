@@ -13,7 +13,7 @@
    - 88 bytes are allocated by pthread_setspecific() to init internal lock
    - some more memory...
    */
-#if CONFIG_IDF_TARGET_ESP32
+#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32P4
 #define LEAKS (300)
 #elif CONFIG_IDF_TARGET_ESP32S2
 #define LEAKS (800)

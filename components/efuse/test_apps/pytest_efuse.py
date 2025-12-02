@@ -6,7 +6,7 @@ from pytest_embedded_idf.utils import idf_parametrize
 
 
 @pytest.mark.temp_skip_ci(
-    targets=['esp32s2', 'esp32s3', 'esp32p4'],
+    targets=['esp32s2', 'esp32s3'],
     reason='eFuse for S2 and S3 is similar to the C3 chip, so testing on C3 is enough',
 )
 @pytest.mark.generic
