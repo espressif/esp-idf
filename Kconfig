@@ -797,5 +797,4 @@ mainmenu "Espressif IoT Development Framework Configuration"
             - CONFIG_LIBC_PICOLIBC
             - CONFIG_GDMA_ENABLE_WEIGHTED_ARBITRATION
             - CONFIG_I3C_MASTER_ENABLED
-            - CONFIG_MBEDTLS_ESP_IDF_USE_PSA_CRYPTO
             - CONFIG_ESPTOOLPY_FAST_REFLASHING
