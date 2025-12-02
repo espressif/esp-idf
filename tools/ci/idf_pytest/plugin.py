@@ -307,6 +307,9 @@ class IdfPytestEmbedded:
             if 'esp32c2' in self.target and 'esp32c2' in case.targets and 'xtal_26mhz' not in case.all_markers:
                 item.add_marker('xtal_40mhz')
 
+            if 'esp32p4' in self.target and 'esp32p4' in case.targets:
+                item.add_marker('esp32p4_eco4')
+
     def pytest_report_collectionfinish(self, items: t.List[Function]) -> None:
         self.cases = [item.stash[ITEM_PYTEST_CASE_KEY] for item in items]
 

@@ -127,6 +127,7 @@ ENV_MARKERS = {
     'ram_app': 'ram_app runners',
     'esp32c3eco7': 'esp32c3 major version(v1.1) chips',
     'esp32c2eco4': 'esp32c2 major version(v2.0) chips',
+    'esp32p4_eco4': 'esp32p4 major version(v1.1) chips',
 }
 
 DEFAULT_CONFIG_RULES_STR = ['sdkconfig.ci=default', 'sdkconfig.ci.*=', '=default']
