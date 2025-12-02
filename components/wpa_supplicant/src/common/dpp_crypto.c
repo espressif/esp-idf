@@ -158,8 +158,11 @@ int dpp_hmac(size_t hash_len, const u8 *key, size_t key_len,
 struct crypto_ec_key * dpp_set_pubkey_point(struct crypto_ec_key *group_key,
 					    const u8 *buf, size_t len)
 {
-	struct crypto_ec_group *group;
+	const struct crypto_ec_group *group;
 	struct crypto_ec_key *pkey = NULL;
+
+	if (len & 1)
+		return NULL;
 
 	group = crypto_ec_get_group_from_key(group_key);
 	if (group)
@@ -167,7 +170,6 @@ struct crypto_ec_key * dpp_set_pubkey_point(struct crypto_ec_key *group_key,
 	else
 		wpa_printf(MSG_ERROR, "DPP: Could not get EC group");
 
-	os_free(group);
 	return pkey;
 }
 
@@ -963,7 +965,7 @@ int dpp_bn2bin_pad(const struct crypto_bignum *bn, u8 *pos, size_t len)
 
 int dpp_auth_derive_l_responder(struct dpp_authentication *auth)
 {
-	struct crypto_ec_group *group = NULL;
+	struct crypto_ec_group *group;
 	struct crypto_ec_point *L = NULL;
 	struct crypto_ec_point *BI;
 	struct crypto_bignum *lx, *sum, *q;
@@ -1007,7 +1009,6 @@ fail:
 	crypto_bignum_deinit(lx, 0);
 	crypto_bignum_deinit(sum, 0);
 	crypto_bignum_deinit(q, 0);
-	os_free(group);
 
 	return ret;
 }
@@ -1015,11 +1016,11 @@ fail:
 
 int dpp_auth_derive_l_initiator(struct dpp_authentication *auth)
 {
-	struct crypto_ec_group *group = NULL;
+	struct crypto_ec_group *group;
 	struct crypto_ec_point *L = NULL, *sum = NULL;
-	struct crypto_ec_point *BR_point = NULL, *PR_point = NULL;
+	struct crypto_ec_point *BR_point, *PR_point;
 	struct crypto_bignum *lx;
-	struct crypto_bignum *bI_bn = NULL;
+	struct crypto_bignum *bI_bn;
 	int ret = -1;
 
 	/* L = bI * (BR + PR) */
@@ -1041,7 +1042,7 @@ int dpp_auth_derive_l_initiator(struct dpp_authentication *auth)
 	    crypto_ec_point_mul((struct crypto_ec *)group, sum, bI_bn, L) != 0 ||
 	    crypto_ec_get_affine_coordinates((struct crypto_ec *)group, L, lx, NULL) != 0) {
 		wpa_printf(MSG_ERROR,
-			   "DPP: failed: %s", __func__);
+			   "OpenSSL: failed: %s", __func__);
 		goto fail;
 	}
 
@@ -1055,21 +1056,6 @@ fail:
 	crypto_ec_point_deinit(sum, 1);
 	crypto_bignum_deinit(lx, 0);
 
-	if (BR_point) {
-		crypto_ec_point_deinit(BR_point, 0);
-	}
-
-	if (PR_point) {
-		crypto_ec_point_deinit(PR_point, 0);
-	}
-
-	if (group) {
-		os_free(group);
-	}
-
-	if (bI_bn) {
-		crypto_bignum_deinit(bI_bn, 0);
-	}
 
 	return ret;
 }

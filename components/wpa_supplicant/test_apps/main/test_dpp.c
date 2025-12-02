@@ -134,6 +134,9 @@ TEST_CASE("Test vectors DPP responder p256", "[wpa_dpp]")
         auth_instance = dpp_auth_req_rx(NULL, 1, 0, NULL,
                                         dpp_bootstrap_get_id(dpp, id), 2412, frame, frame + 6, len - 6);
 
+        TEST_ASSERT_NOT_NULL(auth_instance);
+        TEST_ASSERT_NOT_NULL(auth_instance->resp_msg);
+
         /* auth response u8 */
         hex_len = os_strlen(auth_resp);
         if (hex_len > 2 * MAX_FRAME_SIZE) {

@@ -13,7 +13,6 @@
 #include "common.h"
 #include "aes.h"
 #include "aes_wrap.h"
-#include "psa/crypto.h"
 
 
 static void xor_aes_block(u8 *dst, const u8 *src)
@@ -130,6 +129,22 @@ static void aes_ccm_encr_auth(void *aes, size_t M, u8 *x, u8 *a, u8 *auth)
 	wpa_hexdump_key(MSG_DEBUG, "CCM U", auth, M);
 }
 
+
+static void aes_ccm_decr_auth(void *aes, size_t M, u8 *a, const u8 *auth, u8 *t)
+{
+	size_t i;
+	u8 tmp[AES_BLOCK_SIZE];
+
+	wpa_hexdump_key(MSG_DEBUG, "CCM U", auth, M);
+	/* U = T XOR S_0; S_0 = E(K, A_0) */
+	WPA_PUT_BE16(&a[AES_BLOCK_SIZE - 2], 0);
+	aes_encrypt(aes, a, tmp);
+	for (i = 0; i < M; i++)
+		t[i] = auth[i] ^ tmp[i];
+	wpa_hexdump_key(MSG_DEBUG, "CCM T", t, M);
+}
+
+
 /* AES-CCM with fixed L=2 and aad_len <= 30 assumption */
 int aes_ccm_ae(const u8 *key, size_t key_len, const u8 *nonce,
 	       size_t M, const u8 *plain, size_t plain_len,
@@ -159,28 +174,12 @@ int aes_ccm_ae(const u8 *key, size_t key_len, const u8 *nonce,
 	return 0;
 }
 
-static void aes_ccm_decr_auth(void *aes, size_t M, u8 *a, const u8 *auth, u8 *t)
-{
-	size_t i;
-	u8 tmp[AES_BLOCK_SIZE];
-
-	wpa_hexdump_key(MSG_DEBUG, "CCM U", auth, M);
-	/* U = T XOR S_0; S_0 = E(K, A_0) */
-	WPA_PUT_BE16(&a[AES_BLOCK_SIZE - 2], 0);
-	aes_encrypt(aes, a, tmp);
-	for (i = 0; i < M; i++)
-		t[i] = auth[i] ^ tmp[i];
-	wpa_hexdump_key(MSG_DEBUG, "CCM T", t, M);
-}
 
 /* AES-CCM with fixed L=2 and aad_len <= 30 assumption */
 int aes_ccm_ad(const u8 *key, size_t key_len, const u8 *nonce,
 	       size_t M, const u8 *crypt, size_t crypt_len,
 	       const u8 *aad, size_t aad_len, const u8 *auth, u8 *plain)
 {
-	/* PSA doesn't support M=0 (zero-length tags) which ESP-NOW uses
-	 * Fall back to old AES implementation for M=0 case
-	 */
 	const size_t L = 2;
 	void *aes;
 	u8 x[AES_BLOCK_SIZE], a[AES_BLOCK_SIZE];

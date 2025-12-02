@@ -42,8 +42,6 @@ set(mbedtls_targets mbedtls tfpsacrypto builtin mbedx509 everest p256m)
 
 if(NOT ${IDF_TARGET} STREQUAL "linux")
     target_sources(tfpsacrypto PRIVATE "${COMPONENT_DIR}/port/esp_hardware.c")
-else()
-    target_sources(tfpsacrypto PRIVATE "${COMPONENT_DIR}/port/linux_hardware.c")
 endif()
 
 foreach(target ${mbedtls_targets})

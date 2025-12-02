@@ -708,10 +708,6 @@ TEST_CASE("Test crypto lib aes apis", "[wpa_crypto]")
     }
 
     {
-        /* Test PSA migration compatibility: aes_ccm_ae (old AES) vs aes_ccm_ad (PSA)
-         * This test verifies that encryption and decryption are compatible despite
-         * using different implementations. This is critical for PMF frame encryption/decryption.
-         */
         const uint8_t key_size = 16;
         const uint8_t key[16] = {[0 ... key_size - 1] = 0x3A};
         const uint8_t nonce[13] = {[0 ... 12] = 0x5A};
@@ -726,24 +722,9 @@ TEST_CASE("Test crypto lib aes apis", "[wpa_crypto]")
         int ret = aes_ccm_ae(key, key_size, nonce, 16, data_32, 32, aad, 16, crypt_32, tag_32);
         TEST_ASSERT(ret == 0);
 
-        /* Critical test: Can PSA-based decryption decrypt old AES-based encryption? */
         ret = aes_ccm_ad(key, key_size, nonce, 16, crypt_32, 32, aad, 16, tag_32, decrypted_32);
         TEST_ASSERT(ret == 0);
         TEST_ASSERT(!memcmp(decrypted_32, data_32, 32));
-
-        /* Test with 8-byte plaintext (smaller than 16 bytes) - common for PMF frames */
-        const uint8_t data_8[8] = {[0 ... 7] = 0xA5};
-        uint8_t crypt_8[8];
-        uint8_t tag_8[16];
-        uint8_t decrypted_8[8] = {0};
-
-        ret = aes_ccm_ae(key, key_size, nonce, 16, data_8, 8, aad, 16, crypt_8, tag_8);
-        TEST_ASSERT(ret == 0);
-
-        /* This should also work correctly with the fix */
-        ret = aes_ccm_ad(key, key_size, nonce, 16, crypt_8, 8, aad, 16, tag_8, decrypted_8);
-        TEST_ASSERT(ret == 0);
-        TEST_ASSERT(!memcmp(decrypted_8, data_8, 8));
     }
 
     {

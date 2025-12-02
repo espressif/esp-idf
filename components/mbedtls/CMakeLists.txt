@@ -33,7 +33,8 @@ set(mbedtls_include_dirs
     "mbedtls/include"
     "mbedtls/library"
     "mbedtls/tf-psa-crypto/core"
-    "mbedtls/tf-psa-crypto/drivers/builtin/src/")
+    "mbedtls/tf-psa-crypto/drivers/builtin/src/"
+    )
 
 if(CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL)
     list(APPEND mbedtls_include_dirs "port/mbedtls_rom")
@@ -332,8 +333,6 @@ endif()
 
 if(NOT ${IDF_TARGET} STREQUAL "linux")
     target_sources(tfpsacrypto PRIVATE "${COMPONENT_DIR}/port/esp_hardware.c")
-else()
-    target_sources(tfpsacrypto PRIVATE "${COMPONENT_DIR}/port/linux_hardware.c")
 endif()
 target_sources(tfpsacrypto PRIVATE "${COMPONENT_DIR}/port/esp_mem.c"
                                   # "${COMPONENT_DIR}/port/esp_timing.c"

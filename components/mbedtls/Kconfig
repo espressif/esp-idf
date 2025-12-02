@@ -699,13 +699,6 @@ menu "mbedTLS"
                 help
                     Enable to support symmetric key PSK (pre-shared-key) TLS key exchange modes.
 
-            config MBEDTLS_KEY_EXCHANGE_DHE_PSK
-                bool "Enable DHE-PSK based ciphersuite modes"
-                depends on MBEDTLS_PSK_MODES && MBEDTLS_DHM_C
-                default n
-                help
-                    Enable to support Diffie-Hellman PSK (pre-shared-key) TLS authentication modes.
-
             config MBEDTLS_KEY_EXCHANGE_ECDHE_PSK
                 bool "Enable ECDHE-PSK based ciphersuite modes"
                 depends on MBEDTLS_PSK_MODES && MBEDTLS_ECDH_C

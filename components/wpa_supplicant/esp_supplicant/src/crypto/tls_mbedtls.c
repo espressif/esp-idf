@@ -39,8 +39,6 @@
 #include "mbedtls/platform.h"
 #include "eap_peer/eap.h"
 
-#include "mbedtls/psa_util.h"
-
 #ifdef CONFIG_TLSV13
 #include "psa/crypto.h"
 #include "md_psa.h"
@@ -283,6 +281,7 @@ static void tls_set_suiteb_config(tls_context_t *tls)
 }
 #endif
 
+#if 0
 static uint16_t tls_sig_algs_for_eap[] = {
 
 #ifdef CONFIG_TLSV13
@@ -370,6 +369,7 @@ static uint16_t tls_sig_algs_for_eap[] = {
 #endif /* MBEDTLS_SSL_PROTO_TLS1_2 */
     MBEDTLS_TLS_SIG_NONE
 };
+#endif /* 0 */
 
 const mbedtls_x509_crt_profile eap_mbedtls_x509_crt_profile = {
 #if (defined(MBEDTLS_SHA1_C) || defined(PSA_WANT_ALG_SHA_1))
