@@ -239,7 +239,7 @@ _exit:
     return err;
 }
 
-int usb_serial_jtag_read_bytes(void* buf, uint32_t length, TickType_t ticks_to_wait)
+int usb_serial_jtag_read_bytes(void* buf, uint32_t length, uint32_t ticks_to_wait)
 {
     uint8_t *data = NULL;
     size_t data_read_len = 0;
@@ -262,7 +262,7 @@ int usb_serial_jtag_read_bytes(void* buf, uint32_t length, TickType_t ticks_to_w
     return data_read_len;
 }
 
-int usb_serial_jtag_write_bytes(const void* src, size_t size, TickType_t ticks_to_wait)
+int usb_serial_jtag_write_bytes(const void* src, size_t size, uint32_t ticks_to_wait)
 {
     ESP_RETURN_ON_FALSE(src && size, 0, USB_SERIAL_JTAG_TAG, "invalid buffer or size");
     ESP_RETURN_ON_FALSE(p_usb_serial_jtag_obj != NULL, 0, USB_SERIAL_JTAG_TAG, "driver is not initialized yet");
@@ -288,7 +288,7 @@ int usb_serial_jtag_write_bytes(const void* src, size_t size, TickType_t ticks_t
     return (result == pdFALSE) ? 0 : size;
 }
 
-esp_err_t usb_serial_jtag_wait_tx_done(TickType_t ticks_to_wait)
+esp_err_t usb_serial_jtag_wait_tx_done(uint32_t ticks_to_wait)
 {
     int r;
     TimeOut_t timeout;

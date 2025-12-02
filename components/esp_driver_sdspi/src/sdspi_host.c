@@ -1024,7 +1024,7 @@ esp_err_t sdspi_host_io_int_enable(sdspi_dev_handle_t handle)
 }
 
 //the interrupt will give the semaphore and then disable itself
-esp_err_t sdspi_host_io_int_wait(sdspi_dev_handle_t handle, TickType_t timeout_ticks)
+esp_err_t sdspi_host_io_int_wait(sdspi_dev_handle_t handle, uint32_t timeout_ticks)
 {
     slot_info_t* slot = get_slot_info(handle);
     //skip the interrupt and semaphore if the gpio is already low.

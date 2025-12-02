@@ -318,7 +318,7 @@ esp_err_t sdmmc_io_enable_int(sdmmc_card_t* card);
  *        IO interrupts
  *      - ESP_ERR_TIMEOUT if the interrupt does not happen in timeout_ticks
  */
-esp_err_t sdmmc_io_wait_int(sdmmc_card_t* card, TickType_t timeout_ticks);
+esp_err_t sdmmc_io_wait_int(sdmmc_card_t* card, uint32_t timeout_ticks);
 
 /**
  * Get the data of CIS region of an SDIO card.

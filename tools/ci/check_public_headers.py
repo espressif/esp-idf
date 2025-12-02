@@ -57,6 +57,11 @@ class HeaderFailedContainsStaticAssert(HeaderFailed):
         return 'Header uses _Static_assert or static_assert instead of ESP_STATIC_ASSERT'
 
 
+class HeaderFailedForbiddenFreertosInclude(HeaderFailed):
+    def __str__(self) -> str:
+        return 'Header includes forbidden "freertos/*" dependency'
+
+
 #   Creates a temp file and returns both output as a string and a file name
 #
 def exec_cmd_to_temp_file(what: list, suffix: str = '') -> tuple[int, str, str, str, str]:
@@ -101,6 +106,18 @@ class PublicHeaderChecker:
             r'(soc|modem|hw_ver(?:\d+|_[A-Za-z0-9]+)/soc)/'
             r'[a-zA-Z0-9_]+\.h$'
         )
+        self.freertos_forbidden_include = re.compile(r'(?m)^\s*#\s*include\s*"freertos/[^"]+"')
+        # Scope for enforcing freertos include rule:
+        # - components/esp_adc/**
+        # - components/esp_driver_*/**
+        # - components/esp_hw_support/**
+        # - components/sdmmc/**
+        # - components/ieee802154/**
+        # - components/esp_eth/**
+        # - components/esp_lcd/**
+        self.freertos_scope = re.compile(
+            r'^(components/(esp_adc|esp_hw_support|sdmmc|ieee802154|esp_eth|esp_lcd)/|components/esp_driver_[^/]+/)'
+        )
         self.assembly_nocode = r'^\s*(\.file|\.text|\.ident|\.option|\.attribute|(\.section)?).*$'
         self.check_threads: list[Thread] = []
         self.stdc = '--std=c99'
@@ -109,6 +126,11 @@ class PublicHeaderChecker:
         self.job_queue: queue.Queue = queue.Queue()
         self.failed_queue: queue.Queue = queue.Queue()
         self.terminate = Event()
+        # Get IDF_PATH early to avoid dependency on method execution order
+        idf_path = os.getenv('IDF_PATH')
+        if idf_path is None:
+            raise RuntimeError("Environment variable 'IDF_PATH' wasn't set.")
+        self.idf_path = idf_path
 
     def __enter__(self) -> 'PublicHeaderChecker':
         for i in range(self.jobs):
@@ -204,6 +226,18 @@ class PublicHeaderChecker:
         # we ignore the rc here, as the `-fpreprocessed` flag expects the file to have macros already expanded,
         # so we might get some errors here we use it only to remove comments (even if the command returns non-zero
         # code it produces the correct output)
+        # forbid direct inclusion of FreeRTOS headers via quotes (only in scoped components)
+        if re.search(self.freertos_forbidden_include, out):
+            # Determine if current header is inside the scoped component folders
+            rel_path_for_scope = os.path.normpath(header)
+            try:
+                # self.idf_path is set in list_public_headers
+                rel_path_for_scope = os.path.relpath(rel_path_for_scope, self.idf_path)
+            except Exception:
+                pass
+            if re.search(self.freertos_scope, rel_path_for_scope):
+                # Raise, let final summary print the failure; avoid noisy intermediate logs
+                raise HeaderFailedForbiddenFreertosInclude()
         if re.search(self.kconfig_macro, out):
             # enable defined #error if sdkconfig.h not included
             all_compilation_flags.append('-DIDF_CHECK_SDKCONFIG_INCLUDED')
@@ -275,9 +309,7 @@ class PublicHeaderChecker:
 
     # Get compilation data from an example to list all public header files
     def list_public_headers(self, ignore_dirs: list, ignore_files: list | set, only_dir: str | None = None) -> None:
-        idf_path = os.getenv('IDF_PATH')
-        if idf_path is None:
-            raise RuntimeError("Environment variable 'IDF_PATH' wasn't set.")
+        idf_path = self.idf_path
         project_dir = os.path.join(idf_path, 'examples', 'get-started', 'blink')
         build_dir = tempfile.mkdtemp()
         sdkconfig = os.path.join(build_dir, 'sdkconfig')
@@ -381,6 +413,8 @@ def check_all_headers() -> None:
         * Check if no definition is present in the offending header file
     5) "Header contains _Static_assert or static_assert": Makes the use of _Static_assert or static_assert
         functions instead of using ESP_STATIC_ASSERT macro
+    6) "Header includes forbidden \\"freertos/*\\" dependency": Using #include "freertos/..." inside
+        * public headers is not allowed
 
     Notes:
     * The script validates *all* header files (recursively) in public folders for all components.

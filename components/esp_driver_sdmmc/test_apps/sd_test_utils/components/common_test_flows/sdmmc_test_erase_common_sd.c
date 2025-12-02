@@ -9,6 +9,7 @@
 #include <sys/time.h>
 #include "unity.h"
 #include "sdmmc_cmd.h"
+#include "esp_heap_caps.h"
 
 #define PATTERN_SEED    0x12345678
 #define FLAG_ERASE_TEST_ADJACENT    (1 << 0)

@@ -16,9 +16,7 @@
 #include "esp_check.h"
 #include "esp_heap_caps.h"
 #include "esp_intr_alloc.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/queue.h"
-#include "freertos/idf_additions.h"
+#include "esp_private/critical_section.h"
 #include "driver/isp_types.h"
 #include "soc/soc_caps.h"
 #if SOC_ISP_SUPPORTED
@@ -69,7 +67,7 @@ typedef struct isp_processor_t {
     void                        *csi_brg_hw;
 #endif
     ISP_ATOMIC_TYPE(isp_fsm_t)  isp_fsm;
-    portMUX_TYPE                spinlock;
+    DECLARE_CRIT_SECTION_LOCK_IN_STRUCT(spinlock);
     color_space_pixel_format_t  in_color_format;
     color_space_pixel_format_t  out_color_format;
     uint32_t                    h_res;

@@ -7,6 +7,7 @@
 #include "unity.h"
 #include "sdmmc_cmd.h"
 #include "sdmmc_test_begin_end_spi.h"
+#include "esp_heap_caps.h"
 
 #define SDMMC_FREQ_CUSTOM_10M    10000
 

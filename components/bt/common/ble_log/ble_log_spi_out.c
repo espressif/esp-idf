@@ -3,6 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include "freertos/FreeRTOS.h"
 #include "ble_log/ble_log_spi_out.h"
 
 #if CONFIG_BT_BLE_LOG_SPI_OUT_ENABLED
