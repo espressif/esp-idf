@@ -161,7 +161,7 @@ void gpio_hal_intr_disable(gpio_hal_context_t *hal, uint32_t gpio_num);
 #define gpio_hal_output_enable(hal, gpio_num) gpio_ll_output_enable((hal)->dev, gpio_num)
 
 /**
-  * @brief Configure the source of output enable signal for the GPIO pin.
+  * @brief Configure the source of output enable signal for the pad (only takes effect if func sel is selected to be GPIO).
   *
   * @param hal Context of the HAL layer
   * @param gpio_num GPIO number
