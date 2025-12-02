@@ -1014,7 +1014,6 @@ static void ble_rtc_clk_init(esp_bt_controller_config_t *cfg)
     esp_bt_rtc_slow_clk_select(s_bt_lpclk_src);
 }
 
-
 esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 {
     uint8_t mac[6];
