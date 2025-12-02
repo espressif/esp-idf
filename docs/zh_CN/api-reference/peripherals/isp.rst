@@ -978,4 +978,4 @@ API 参考
 .. include-build-file:: inc/isp_crop.inc
 .. include-build-file:: inc/isp_core.inc
 .. include-build-file:: inc/components/esp_driver_isp/include/driver/isp_types.inc
-.. include-build-file:: inc/components/hal/include/hal/isp_types.inc
+.. include-build-file:: inc/components/esp_hal_cam/include/hal/isp_types.inc

@@ -23,7 +23,7 @@
 #include "hal/isp_hal.h"
 #include "hal/isp_ll.h"
 #include "hal/isp_types.h"
-#include "soc/isp_periph.h"
+#include "hal/isp_periph.h"
 #endif
 
 // Helper macros for atomic operations to ensure Clang compatibility
@@ -75,7 +75,7 @@ typedef struct isp_processor_t {
     color_raw_element_order_t   bayer_order;
     bool                        bypass_isp;
     /* sub module contexts */
-    isp_af_ctlr_t               af_ctlr[SOC_ISP_AF_CTLR_NUMS];
+    isp_af_ctlr_t               af_ctlr[ISP_LL_AF_CTLR_NUMS];
     isp_awb_ctlr_t              awb_ctlr;
     isp_ae_ctlr_t               ae_ctlr;
     isp_hist_ctlr_t             hist_ctlr;

@@ -38,7 +38,7 @@ static esp_err_t s_isp_claim_af_controller(isp_proc_handle_t isp_proc, isp_af_ct
 
     bool found = false;
     esp_os_enter_critical(&isp_proc->spinlock);
-    for (int i = 0; i < SOC_ISP_AF_CTLR_NUMS; i++) {
+    for (int i = 0; i < ISP_LL_AF_CTLR_NUMS; i++) {
         found = !isp_proc->af_ctlr[i];
         if (found) {
             isp_proc->af_ctlr[i] = af_ctlr;
@@ -145,7 +145,7 @@ esp_err_t esp_isp_del_af_controller(isp_af_ctlr_t af_ctlr)
     ESP_RETURN_ON_FALSE(af_ctlr && af_ctlr->isp_proc, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
     ESP_RETURN_ON_FALSE(atomic_load(&af_ctlr->fsm) == ISP_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "controller not in init state");
     bool exist = false;
-    for (int i = 0; i < SOC_ISP_AF_CTLR_NUMS; i++) {
+    for (int i = 0; i < ISP_LL_AF_CTLR_NUMS; i++) {
         if (af_ctlr->isp_proc->af_ctlr[i] == af_ctlr) {
             exist = true;
             break;

@@ -95,7 +95,7 @@ typedef enum {
                       AE
 ---------------------------------------------------------------*/
 
-#if (SOC_ISP_AE_BLOCK_X_NUMS && SOC_ISP_AE_BLOCK_Y_NUMS)
+#if SOC_ISP_AWB_WINDOW_X_NUMS
 #define ISP_AE_BLOCK_X_NUM   SOC_ISP_AE_BLOCK_X_NUMS      // The AF window number for sampling
 #define ISP_AE_BLOCK_Y_NUM   SOC_ISP_AE_BLOCK_Y_NUMS      // The AF window number for sampling
 #else
@@ -196,9 +196,9 @@ typedef enum {
  */
 typedef union {
     struct {
-        uint32_t decimal:ISP_DEMOSAIC_GRAD_RATIO_DEC_BITS;    ///< Integer part
-        uint32_t integer:ISP_DEMOSAIC_GRAD_RATIO_INT_BITS;    ///< Decimal part
-        uint32_t reserved:ISP_DEMOSAIC_GRAD_RATIO_RES_BITS;   ///< Reserved
+        uint32_t decimal: ISP_DEMOSAIC_GRAD_RATIO_DEC_BITS;   ///< Integer part
+        uint32_t integer: ISP_DEMOSAIC_GRAD_RATIO_INT_BITS;   ///< Decimal part
+        uint32_t reserved: ISP_DEMOSAIC_GRAD_RATIO_RES_BITS;  ///< Reserved
     };
     uint32_t val;                                             ///< 32-bit gradient ratio value
 } isp_demosaic_grad_ratio_t;
@@ -210,15 +210,6 @@ typedef enum {
     ISP_DEMOSAIC_EDGE_PADDING_MODE_SRND_DATA,      ///< Fill Demosaic edge padding data with surrounding pixel data
     ISP_DEMOSAIC_EDGE_PADDING_MODE_CUSTOM_DATA,    ///< Fill Demosaic edge padding data with custom pixel data
 } isp_demosaic_edge_padding_mode_t;
-
-/*---------------------------------------------------------------
-                      DVP
----------------------------------------------------------------*/
-#if SOC_ISP_DVP_DATA_WIDTH_MAX
-#define ISP_DVP_DATA_SIG_NUM   SOC_ISP_DVP_DATA_WIDTH_MAX // The ISP DVP data signal number
-#else
-#define ISP_DVP_DATA_SIG_NUM   0
-#endif
 
 /*---------------------------------------------------------------
                       Sharpen
@@ -248,9 +239,9 @@ typedef enum {
  */
 typedef union {
     struct {
-        uint32_t decimal:ISP_SHARPEN_H_FREQ_COEF_DEC_BITS;    ///< Decimal part
-        uint32_t integer:ISP_SHARPEN_H_FREQ_COEF_INT_BITS;    ///< Integer part
-        uint32_t reserved:ISP_SHARPEN_H_FREQ_COEF_RES_BITS;   ///< Reserved
+        uint32_t decimal: ISP_SHARPEN_H_FREQ_COEF_DEC_BITS;   ///< Decimal part
+        uint32_t integer: ISP_SHARPEN_H_FREQ_COEF_INT_BITS;   ///< Integer part
+        uint32_t reserved: ISP_SHARPEN_H_FREQ_COEF_RES_BITS;  ///< Reserved
     };
     uint32_t val;                                             ///< 32-bit high freq pixel sharpeness coeff register value
 } isp_sharpen_h_freq_coeff_t;
@@ -260,9 +251,9 @@ typedef union {
  */
 typedef union {
     struct {
-        uint32_t decimal:ISP_SHARPEN_M_FREQ_COEF_DEC_BITS;    ///< Decimal part
-        uint32_t integer:ISP_SHARPEN_M_FREQ_COEF_INT_BITS;    ///< Integer part
-        uint32_t reserved:ISP_SHARPEN_M_FREQ_COEF_RES_BITS;   ///< Reserved
+        uint32_t decimal: ISP_SHARPEN_M_FREQ_COEF_DEC_BITS;   ///< Decimal part
+        uint32_t integer: ISP_SHARPEN_M_FREQ_COEF_INT_BITS;   ///< Integer part
+        uint32_t reserved: ISP_SHARPEN_M_FREQ_COEF_RES_BITS;  ///< Reserved
     };
     uint32_t val;                                             ///< 32-bit medium freq pixel sharpeness coeff register value
 } isp_sharpen_m_freq_coeff;
@@ -341,9 +332,9 @@ typedef enum {
 */
 typedef union {
     struct {
-        uint32_t decimal:ISP_HIST_WEIGHT_DEC_BITS;    ///< Decimal part
-        uint32_t integer:ISP_HIST_WEIGHT_INT_BITS;    ///< Integer part
-        uint32_t reserved:ISP_HIST_WEIGHT_RES_BITS;   ///< Reserved
+        uint32_t decimal: ISP_HIST_WEIGHT_DEC_BITS;   ///< Decimal part
+        uint32_t integer: ISP_HIST_WEIGHT_INT_BITS;   ///< Integer part
+        uint32_t reserved: ISP_HIST_WEIGHT_RES_BITS;  ///< Reserved
     };
     uint32_t val;   ///< 32-bit histogram weight value
 } isp_hist_weight_t;
@@ -353,9 +344,9 @@ typedef union {
 */
 typedef union {
     struct {
-        uint32_t decimal:ISP_HIST_COEFF_DEC_BITS;    ///< Decimal part
-        uint32_t integer:ISP_HIST_COEFF_INT_BITS;    ///< Integer part
-        uint32_t reserved:ISP_HIST_COEFF_RES_BITS;   ///< Reserved
+        uint32_t decimal: ISP_HIST_COEFF_DEC_BITS;   ///< Decimal part
+        uint32_t integer: ISP_HIST_COEFF_INT_BITS;   ///< Integer part
+        uint32_t reserved: ISP_HIST_COEFF_RES_BITS;  ///< Reserved
     };
     uint32_t val;   ///< 32-bit histogram coefficient value
 } isp_hist_coeff_t;
@@ -391,9 +382,9 @@ typedef struct {
  */
 typedef union {
     struct {
-        uint32_t decimal:ISP_COLOR_CONTRAST_DEC_BITS;    ///< Decimal part
-        uint32_t integer:ISP_COLOR_CONTRAST_INT_BITS;    ///< Integer part
-        uint32_t reserved:ISP_COLOR_CONTRAST_RES_BITS;   ///< Reserved
+        uint32_t decimal: ISP_COLOR_CONTRAST_DEC_BITS;   ///< Decimal part
+        uint32_t integer: ISP_COLOR_CONTRAST_INT_BITS;   ///< Integer part
+        uint32_t reserved: ISP_COLOR_CONTRAST_RES_BITS;  ///< Reserved
     };
     uint32_t val;       ///< 32-bit color contrast value
 } isp_color_contrast_t;
@@ -403,9 +394,9 @@ typedef union {
  */
 typedef union {
     struct {
-        uint32_t decimal:ISP_COLOR_SATURATION_DEC_BITS;    ///< Decimal part
-        uint32_t integer:ISP_COLOR_SATURATION_INT_BITS;    ///< Integer part
-        uint32_t reserved:ISP_COLOR_SATURATION_RES_BITS;   ///< Reserved
+        uint32_t decimal: ISP_COLOR_SATURATION_DEC_BITS;   ///< Decimal part
+        uint32_t integer: ISP_COLOR_SATURATION_INT_BITS;   ///< Integer part
+        uint32_t reserved: ISP_COLOR_SATURATION_RES_BITS;  ///< Reserved
     };
     uint32_t val;       ///< 32-bit color saturation value
 } isp_color_saturation_t;
@@ -428,9 +419,9 @@ typedef union {
  */
 typedef union {
     struct {
-        uint32_t decimal:8;    ///< Integer part
-        uint32_t integer:2;    ///< Decimal part
-        uint32_t reserved:ISP_LSC_GRAD_RATIO_RES_BITS;   ///< Reserved
+        uint32_t decimal: ISP_LSC_GRAD_RATIO_DEC_BITS;   ///< Integer part
+        uint32_t integer: ISP_LSC_GRAD_RATIO_INT_BITS;   ///< Decimal part
+        uint32_t reserved: ISP_LSC_GRAD_RATIO_RES_BITS;  ///< Reserved
     };
     uint32_t val;    ///< 32-bit gradient ratio value
 } isp_lsc_gain_t;

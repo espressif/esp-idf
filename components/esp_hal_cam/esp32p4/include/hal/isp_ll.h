@@ -24,8 +24,8 @@
 extern "C" {
 #endif
 
-
 #define ISP_LL_GET_HW(num)                    (((num) == 0) ? (&ISP) : NULL)
+#define ISP_LL_PERIPH_NUMS                    1U
 
 #define ISP_LL_HSIZE_MAX                      1920
 #define ISP_LL_VSIZE_MAX                      1080
@@ -34,7 +34,6 @@ extern "C" {
                       Clock
 ---------------------------------------------------------------*/
 #define ISP_LL_TX_MAX_CLK_INT_DIV             0x100
-
 
 /*---------------------------------------------------------------
                       INTR
@@ -87,11 +86,13 @@ extern "C" {
 /*---------------------------------------------------------------
                       AF
 ---------------------------------------------------------------*/
+#define ISP_LL_AF_CTLR_NUMS                   1U
 #define ISP_LL_AF_WINDOW_MAX_RANGE            ((1<<12) - 1)
 
 /*---------------------------------------------------------------
                       AE
 ---------------------------------------------------------------*/
+#define ISP_LL_AE_CTLR_NUMS                   1U
 #define ISP_LL_AE_WINDOW_MAX_RANGE            ((1<<12) - 1)
 
 /*---------------------------------------------------------------
@@ -110,6 +111,8 @@ extern "C" {
 /*---------------------------------------------------------------
                       DVP
 ---------------------------------------------------------------*/
+#define ISP_LL_DVP_CTLR_NUMS          1U
+#define ISP_LL_DVP_DATA_WIDTH_MAX     16
 #define ISP_LL_DVP_DATA_TYPE_RAW8     0x2A
 #define ISP_LL_DVP_DATA_TYPE_RAW10    0x2B
 #define ISP_LL_DVP_DATA_TYPE_RAW12    0x2C
@@ -140,6 +143,11 @@ extern "C" {
 #define ISP_LL_CCM_MATRIX_FRAC_BITS     (10)
 #endif
 #define ISP_LL_CCM_MATRIX_TOT_BITS      (ISP_LL_CCM_MATRIX_INT_BITS + ISP_LL_CCM_MATRIX_FRAC_BITS + 1)  // including one sign bit
+
+/*---------------------------------------------------------------
+                      CCM
+---------------------------------------------------------------*/
+#define ISP_LL_HIST_CTLR_NUMS           1U
 
 typedef union {
     struct {
@@ -225,7 +233,6 @@ typedef enum {
     ISP_LL_CROP_ERR_X_START_ODD   = (1 << 4),  /*!< X start coordinate is odd (should be even) */
     ISP_LL_CROP_ERR_Y_START_ODD   = (1 << 5),  /*!< Y start coordinate is odd (should be even) */
 } isp_ll_crop_error_t;
-
 
 /*---------------------------------------------------------------
                       Clock
@@ -395,7 +402,7 @@ static inline bool isp_ll_set_input_data_color_format(isp_dev_t *hw, color_space
     bool valid = false;
 
     if (format.color_space == COLOR_SPACE_RAW) {
-        switch(format.pixel_format) {
+        switch (format.pixel_format) {
         case COLOR_PIXEL_RAW8:
             hw->cntl.isp_data_type = 0;
             valid = true;
@@ -451,7 +458,7 @@ static inline bool isp_ll_set_output_data_color_format(isp_dev_t *hw, color_spac
     bool valid = false;
 
     if (format.color_space == COLOR_SPACE_RAW) {
-        switch(format.pixel_format) {
+        switch (format.pixel_format) {
         case COLOR_PIXEL_RAW8:
             hw->cntl.isp_out_type = 0;
             hw->cntl.demosaic_en = 0;
@@ -463,7 +470,7 @@ static inline bool isp_ll_set_output_data_color_format(isp_dev_t *hw, color_spac
             break;
         }
     } else if (format.color_space == COLOR_SPACE_RGB) {
-        switch(format.pixel_format) {
+        switch (format.pixel_format) {
         case COLOR_PIXEL_RGB888:
             hw->cntl.isp_out_type = 2;
             hw->cntl.demosaic_en = 1;
@@ -482,7 +489,7 @@ static inline bool isp_ll_set_output_data_color_format(isp_dev_t *hw, color_spac
             break;
         }
     } else if (format.color_space == COLOR_SPACE_YUV) {
-        switch(format.pixel_format) {
+        switch (format.pixel_format) {
         case COLOR_PIXEL_YUV422:
             hw->cntl.isp_out_type = 1;
             hw->cntl.demosaic_en = 1;
@@ -1146,7 +1153,7 @@ static inline bool isp_ll_dvp_set_data_type(isp_dev_t *hw, color_space_pixel_for
     bool valid = false;
 
     if (format.color_space == COLOR_SPACE_RAW) {
-        switch(format.pixel_format) {
+        switch (format.pixel_format) {
         case COLOR_PIXEL_RAW8:
             hw->cam_conf.cam_data_type = ISP_LL_DVP_DATA_TYPE_RAW8;
             valid = true;
@@ -1329,7 +1336,7 @@ static inline void isp_ll_ae_set_window_range(isp_dev_t *hw, int x_start, int x_
  */
 static inline int isp_ll_ae_get_block_mean_lum(isp_dev_t *hw, int block_id)
 {
-    HAL_ASSERT(block_id >=0 && block_id < (SOC_ISP_AE_BLOCK_X_NUMS * SOC_ISP_AE_BLOCK_Y_NUMS));
+    HAL_ASSERT(block_id >= 0 && block_id < (SOC_ISP_AE_BLOCK_X_NUMS * SOC_ISP_AE_BLOCK_Y_NUMS));
     return hw->ae_block_mean[block_id / 4].ae_b_mean[3 - (block_id % 4)];
 }
 
@@ -1558,7 +1565,7 @@ static inline uint32_t isp_ll_get_intr_status(isp_dev_t *hw)
  */
 static inline uint32_t isp_ll_get_intr_status_reg_addr(isp_dev_t *hw)
 {
-    return (uint32_t)&(hw->int_st);
+    return (uint32_t) & (hw->int_st);
 }
 
 /**
@@ -2531,8 +2538,8 @@ static inline void isp_ll_crop_enable(isp_dev_t *hw, bool enable)
  * @param[in] y_end   Crop end y coordinate (y_start+1 to image_height-1)
  */
 static inline void isp_ll_crop_set_window(isp_dev_t *hw,
-                                         uint32_t x_start, uint32_t x_end,
-                                         uint32_t y_start, uint32_t y_end)
+                                          uint32_t x_start, uint32_t x_end,
+                                          uint32_t y_start, uint32_t y_end)
 {
     hw->crop_x_capture.crop_x_start = x_start;
     hw->crop_x_capture.crop_x_end = x_end;
@@ -2550,8 +2557,8 @@ static inline void isp_ll_crop_set_window(isp_dev_t *hw,
  * @param[out] y_end   Crop end y coordinate (y_start+1 to image_height-1)
  */
 static inline void isp_ll_crop_get_window(isp_dev_t *hw,
-                                         uint32_t *x_start, uint32_t *x_end,
-                                         uint32_t *y_start, uint32_t *y_end)
+                                          uint32_t *x_start, uint32_t *x_end,
+                                          uint32_t *y_start, uint32_t *y_end)
 {
     *x_start = hw->crop_x_capture.crop_x_start;
     *x_end = hw->crop_x_capture.crop_x_end;
@@ -2592,15 +2599,15 @@ static inline void isp_ll_crop_enable(isp_dev_t *hw, bool enable)
 }
 
 static inline void isp_ll_crop_set_window(isp_dev_t *hw,
-                                         uint32_t x_start, uint32_t x_end,
-                                         uint32_t y_start, uint32_t y_end)
+                                          uint32_t x_start, uint32_t x_end,
+                                          uint32_t y_start, uint32_t y_end)
 {
     // for compatibility
 }
 
 static inline void isp_ll_crop_get_window(isp_dev_t *hw,
-                                         uint32_t *x_start, uint32_t *x_end,
-                                         uint32_t *y_start, uint32_t *y_end)
+                                          uint32_t *x_start, uint32_t *x_end,
+                                          uint32_t *y_start, uint32_t *y_end)
 {
     // for compatibility
 }
