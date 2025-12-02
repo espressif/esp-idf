@@ -143,7 +143,7 @@ examples/system/nmi_isr:
 
 examples/system/ota/advanced_https_ota:
   disable:
-    - if: IDF_TARGET in ["esp32h2", "esp32h21", "esp32h4"]
+    - if: IDF_TARGET in ["esp32h21", "esp32h4"]
       temporary: true
       reason: not supported yet
   disable_test:
@@ -160,10 +160,11 @@ examples/system/ota/advanced_https_ota:
     - esp_phy
     - bt
     - protocol_examples_common
+    - openthread
 
 examples/system/ota/native_ota_example:
   disable:
-    - if: IDF_TARGET in ["esp32h2", "esp32h21", "esp32h4"]
+    - if: IDF_TARGET in ["esp32h21", "esp32h4"]
       temporary: true
       reason: not supported yet
   disable_test:
@@ -177,6 +178,7 @@ examples/system/ota/native_ota_example:
     - esp_driver_gpio
     - bootloader_support
     - protocol_examples_common
+    - openthread
 
 examples/system/ota/otatool:
   enable:
@@ -184,7 +186,7 @@ examples/system/ota/otatool:
 
 examples/system/ota/partitions_ota:
   disable:
-    - if: IDF_TARGET in ["esp32h2", "esp32h21", "esp32h4"]
+    - if: IDF_TARGET in ["esp32h21", "esp32h4"]
       temporary: true
       reason: not supported yet
     - if: CONFIG_NAME == "recovery_bootloader" and SOC_RECOVERY_BOOTLOADER_SUPPORTED != 1
@@ -207,10 +209,11 @@ examples/system/ota/partitions_ota:
     - esp_phy
     - mbedtls
     - protocol_examples_common
+    - openthread
 
 examples/system/ota/simple_ota_example:
   disable:
-    - if: IDF_TARGET in ["esp32h2", "esp32h21", "esp32h4"]
+    - if: IDF_TARGET in ["esp32h21", "esp32h4"]
       temporary: true
       reason: not supported yet
     - if: CONFIG_NAME == "spiram" and SOC_SPIRAM_SUPPORTED != 1
@@ -228,6 +231,7 @@ examples/system/ota/simple_ota_example:
     - esp_phy
     - mbedtls
     - protocol_examples_common
+    - openthread
 
 examples/system/perfmon:
   enable:
