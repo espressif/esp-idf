@@ -144,6 +144,11 @@ typedef struct protocomm_ble_config {
     uint8_t *ble_addr;
 
     /**
+     * Flag to keep BLE on
+     */
+    unsigned keep_ble_on:1;
+
+    /**
      * BLE characteristic notify flag
      */
     unsigned ble_notify:1;
