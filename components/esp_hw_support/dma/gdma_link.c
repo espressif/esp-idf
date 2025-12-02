@@ -14,6 +14,7 @@
 #include "esp_heap_caps.h"
 #include "esp_private/gdma_link.h"
 #include "hal/cache_hal.h"
+#include "hal/efuse_hal.h"
 #include "hal/cache_ll.h"
 #include "esp_cache.h"
 
@@ -75,9 +76,16 @@ esp_err_t gdma_new_link_list(const gdma_link_list_config_t *config, gdma_link_li
     // each list item should align to the specified alignment
     size_t item_size = ALIGN_UP(sizeof(gdma_link_list_item_t), item_alignment);
 
+    bool items_in_ext_mem = config->flags.items_in_ext_mem;
     uint32_t list_items_mem_caps = MALLOC_CAP_8BIT | MALLOC_CAP_DMA;
-    if (config->flags.items_in_ext_mem) {
-        list_items_mem_caps |= MALLOC_CAP_SPIRAM;
+    if (items_in_ext_mem) {
+        if (efuse_hal_flash_encryption_enabled()) {
+            items_in_ext_mem = false;
+            list_items_mem_caps |= MALLOC_CAP_INTERNAL;
+            ESP_LOGW(TAG, "DMA linked list items cannot be placed in PSRAM when external memory encryption is enabled, using internal memory instead");
+        } else {
+            list_items_mem_caps |= MALLOC_CAP_SPIRAM;
+        }
     } else {
         list_items_mem_caps |= MALLOC_CAP_INTERNAL;
     }
@@ -86,7 +94,7 @@ esp_err_t gdma_new_link_list(const gdma_link_list_config_t *config, gdma_link_li
 
     // do memory sync if the list items are in the cache
     uint32_t data_cache_line_size = 0;
-    if (config->flags.items_in_ext_mem) {
+    if (items_in_ext_mem) {
         data_cache_line_size = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_DATA);
     } else {
         data_cache_line_size = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA);
@@ -166,7 +174,11 @@ esp_err_t gdma_link_mount_buffers(gdma_link_list_handle_t list, int start_item_i
         ESP_RETURN_ON_FALSE_ISR((buffer_alignment & (buffer_alignment - 1)) == 0, ESP_ERR_INVALID_ARG, TAG, "invalid buffer alignment: %"PRIu32"", buffer_alignment);
         size_t max_buffer_mount_length = ALIGN_DOWN(GDMA_MAX_BUFFER_SIZE_PER_LINK_ITEM, buffer_alignment);
         if (!config->flags.bypass_buffer_align_check) {
-            ESP_RETURN_ON_FALSE_ISR(((uintptr_t)buf & (buffer_alignment - 1)) == 0, ESP_ERR_INVALID_ARG, TAG, "buffer not aligned to %"PRIu32"", buffer_alignment);
+            ESP_RETURN_ON_FALSE_ISR(((uintptr_t)buf & (buffer_alignment - 1)) == 0, ESP_ERR_INVALID_ARG, TAG, "buf misalign idx=%"PRIu32" align=%"PRIu32, bi, buffer_alignment);
+            if (efuse_hal_flash_encryption_enabled()) {
+                // buffer size must be aligned to the encryption alignment which should be provided by the upper buffer_alignment
+                ESP_RETURN_ON_FALSE_ISR((len & (buffer_alignment - 1)) == 0, ESP_ERR_INVALID_ARG, TAG, "buf len misalign idx=%"PRIu32" len=%"PRIu32" align=%"PRIu32"", bi, len, buffer_alignment);
+            }
         }
         uint32_t num_items_need = (len + max_buffer_mount_length - 1) / max_buffer_mount_length;
         // check if there are enough link list items
