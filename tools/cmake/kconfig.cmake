@@ -359,4 +359,17 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
         --env "KCONFIG_REPORT_VERBOSITY=${kconfig_report_verbosity}"
         USES_TERMINAL
         )
+
+    add_custom_target(refresh-config
+        COMMAND ${prepare_kconfig_files_command}
+        COMMAND ${kconfgen_basecommand}
+        --env "IDF_TARGET=${idf_target}"
+        --env "IDF_TOOLCHAIN=${idf_toolchain}"
+        --env "IDF_ENV_FPGA=${idf_env_fpga}"
+        --env "IDF_INIT_VERSION=${idf_init_version}"
+        --output config ${sdkconfig}
+        VERBATIM
+        USES_TERMINAL
+        )
+
 endfunction()

@@ -7,11 +7,11 @@ Configuration Files Structure and Relationships
 
     This article primarily focuses on the structure of the files. For more information about project configuration, please refer to the :ref:`Project Configuration Guide <project-configuration-guide>`. For the component configuration, please refer to the :ref:`Component Configuration Guide <component-configuration-guide>`.
 
-ESP-IDF uses `Kconfig language <https://docs.espressif.com/projects/esp-idf-kconfig/en/latest/kconfiglib/language.html>`_ for configuration of the project. Configuration consists of config options (e.g. ``CONFIG_IDF_TARGET``) and their values (e.g. ``esp32``). Every config option has a prefix ``CONFIG_`` to distinguish it from e.g. environment variables.
+ESP-IDF uses `Kconfig language <https://docs.espressif.com/projects/esp-idf-kconfig/en/latest/kconfiglib/language.html>`_ for configuration of the project. Configuration consists of config options (e.g. ``CONFIG_IDF_TARGET``) and their values (e.g. ``esp32``). Every config option gets a prefix ``CONFIG_`` when written out to e.g. ``sdkconfig`` file to distinguish it from e.g. environment variables.
 
 In context of ESP-IDF, configuration consists of several files, most importantly:
 
-- ``Kconfig`` files, defining the configuration options and their relationships, together with their default values (if any).
+- ``Kconfig`` and ``Kconfig.projbuild`` files, defining the configuration options and their relationships, together with their default values (if any).
 - ``sdkconfig`` file, containing the currently used values of configuration options.
 - ``sdkconfig.defaults`` file, containing user-defined default values for the configuration options.
 - ``sdkconfig.rename`` file, containing ``OLD_NAME NEW_NAME`` pairs of configuration names to ensure backward compatibility. This file is used primarily by component or ESP-IDF developers.
@@ -25,7 +25,7 @@ For more information about the configuration system in ESP-IDF, please refer to 
 Kconfig and Kconfig.projbuild Files
 -----------------------------------
 
-The ``Kconfig.*`` files store the configuration options, together with their properties and relationships. They also may contain default values for the configuration options. Every component has its own ``Kconfig`` file, which is used to define the configuration options for that component.
+The ``Kconfig.*`` files store the configuration options, together with their properties and relationships. They also may contain default values for the configuration options. Every project may have its own ``Kconfig`` and/or ``Kconfig.projbuild`` file, which is used to define the configuration options for that project.
 
 The only difference between ``Kconfig`` and ``Kconfig.projbuild`` files is where the their content will appear in the configuration interface (menuconfig):
 
@@ -51,7 +51,7 @@ For more information about the Kconfig language, please refer to the `Kconfig Do
 sdkconfig and sdkconfig.old
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-In the ``sdkconfig`` file, **values currently assigned** to the configuration options are stored. It is generated automatically and is not to be edited, because configuration options can have relationships between one another (dependencies and reverse dependencies), that can be broken by manual editing.
+In the ``sdkconfig`` file, **values currently assigned** to the configuration options are stored. It is generated automatically and is not to be edited, because configuration options can have relationships between one another (dependencies and reverse dependencies), that can be broken by manual editing. The ``sdkconfig`` file contains both user-set and default values of the configuration options, thus provides a complete list of configuration options available, together with their current values.
 
 Every line follows one of the following patterns:
 
@@ -109,13 +109,30 @@ Example:
 sdkconfig.defaults and sdkconfig.defaults.<chip>
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Kconfig language provides a way to set default values for configs: ``default`` option. However, input Kconfig file may be in a different project, under version control or there is another reason why it would be inconvenient to directly edit it. In this case, ``sdkconfig.defaults`` file can be used. The file structure is the same as ``sdkconfig`` file; on every line, there is a full config name (including the ``CONFIG_`` prefix) and its value. This value has precedence over the default value in the Kconfig file by ``default`` option.
+Kconfig language provides a way to set default values for configs: ``default`` option in ``Kconfig`` files. However, input ``Kconfig`` file may be in a different project, under version control or there is another reason why it would be inconvenient to directly edit it. In this case, ``sdkconfig.defaults`` file can be used. The file structure is the same as ``sdkconfig`` file; on every line, there is a full config name (including the ``CONFIG_`` prefix) and its value. This value has precedence over the default value in the Kconfig file by ``default`` option.
 
 It is also possible to override the default values only for specific target. In this case, you can create ``sdkconfig.defaults.<chip>`` file, where ``<chip>`` is the target name (e.g. ``esp32s2``). In this case, it is mandatory to create the ``sdkconfig.defaults`` file as well, otherwise the ``sdkconfig.defaults.<chip>`` file will be ignored. However, the ``sdkconfig.defaults`` file can be empty.
 
+How to generate ``sdkconfig.defaults`` file:
+
+1. ``cd`` into your project folder.
+2. Configure everything you need in ``idf.py menuconfig``.
+3. Run ``idf.py save-defconfig``. This will generate ``sdkconfig.defaults`` file with all the values different from the default ones.
+
 .. note::
 
-    Values in ``sdkconfig.defaults`` are additional default values, not overrides! This means that those values will be ignored if ``sdkconfig`` file is present.
+    User-set values from ``sdkconfig`` file have precedence before ``sdkconfig.defaults`` file. In other words, if the user changes value of some config option which is also set in ``sdkconfig.defaults`` file, the value from ``sdkconfig.defaults`` file will be ignored:
+
+    ``sdkconfig.defaults``
+    .. code-block:: kconfig
+
+        CONFIG_SUBLIGHT_SPEED=42
+
+    ``sdkconfig``
+    .. code-block:: kconfig
+
+        # user changed the value e.g. in menuconfig -> value from sdkconfig.defaults will be ignored
+        CONFIG_SUBLIGHT_SPEED=10
 
 It is also possible to override the name of this file by setting an environment variable. For information on how to set the custom file name and in which order the files are processed if multiple files with default values are present, please visit :ref:`Custom Sdkconfig Defaults <custom-sdkconfig-defaults>` section of Build System documentation.
 
@@ -138,12 +155,6 @@ Example:
     CONFIG_SUBLIGHT_SPEED=42
 
 When running e.g. ``idf.py menuconfig``, the ``SUBLIGHT_SPEED`` will be set to 42. If the value will be changed in the GUI, the value from the GUI will be used and saved into ``sdkconfig`` file.
-
-How to generate ``sdkconfig.defaults`` file:
-
-1. ``cd`` into your project folder.
-2. Configure everything you need in ``idf.py menuconfig``.
-3. Run ``idf.py save-defconfig``. This will generate ``sdkconfig.defaults`` file with all the values different from the default ones.
 
 sdkconfig.ci
 ^^^^^^^^^^^^
