@@ -699,15 +699,6 @@ int tls_connection_set_verify(void *tls_ctx, struct tls_connection *conn,
 }
 
 #ifdef CONFIG_ESP_WIFI_ENT_FREE_DYNAMIC_BUFFER
-static void esp_mbedtls_free_dhm(mbedtls_ssl_context *ssl)
-{
-#ifdef CONFIG_MBEDTLS_DHM_C
-    // const mbedtls_ssl_config *conf = mbedtls_ssl_context_get_config(ssl);
-    // mbedtls_mpi_free((mbedtls_mpi *)&conf->MBEDTLS_PRIVATE(dhm_P));
-    // mbedtls_mpi_free((mbedtls_mpi *)&conf->MBEDTLS_PRIVATE(dhm_G));
-#endif /* CONFIG_MBEDTLS_DHM_C */
-}
-
 static void esp_mbedtls_free_keycert(mbedtls_ssl_context *ssl)
 {
     mbedtls_ssl_config *conf = (mbedtls_ssl_config *)mbedtls_ssl_context_get_config(ssl);
@@ -780,7 +771,6 @@ struct wpabuf * tls_connection_handshake(void *tls_ctx,
             if (cli_state == MBEDTLS_SSL_SERVER_CERTIFICATE) {
                 esp_mbedtls_free_cacert(&tls->ssl);
             } else if (cli_state == MBEDTLS_SSL_CERTIFICATE_VERIFY) {
-                esp_mbedtls_free_dhm(&tls->ssl);
                 esp_mbedtls_free_keycert_key(&tls->ssl);
                 esp_mbedtls_free_keycert(&tls->ssl);
             }

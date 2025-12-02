@@ -20,7 +20,6 @@
 /* setUp runs before every test */
 void setUp(void)
 {
-    // psa_crypto_init();
     // Execute mbedtls_aes_init operation to allocate AES interrupt
     // allocation memory which is considered as leak otherwise
 #if SOC_AES_SUPPORTED

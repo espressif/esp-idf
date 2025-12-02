@@ -137,7 +137,7 @@ void blufi_dh_negotiate_data_handler(uint8_t *data, int len, uint8_t **output_da
         }
         psa_reset_key_attributes(&attributes);
         size_t public_key_len = 0;
-        status = psa_export_public_key(private_key, blufi_sec->self_public_key, DH_SELF_PUB_KEY_LEN, &public_key_len);\
+        status = psa_export_public_key(private_key, blufi_sec->self_public_key, DH_SELF_PUB_KEY_LEN, &public_key_len);
         if (status != PSA_SUCCESS) {
             BLUFI_ERROR("%s psa_export_public_key failed %d\n", __func__, status);
             psa_destroy_key(private_key);
@@ -151,6 +151,7 @@ void blufi_dh_negotiate_data_handler(uint8_t *data, int len, uint8_t **output_da
             BLUFI_ERROR("%s psa_raw_key_agreement failed %d\n", __func__, status);
             free(blufi_sec->dh_param);
             blufi_sec->dh_param = NULL;
+            btc_blufi_report_error(ESP_BLUFI_DH_PARAM_ERROR);
             return;
         }
 

@@ -51,7 +51,6 @@ static esp_err_t aes_gcm_crypt_common(example_aes_gcm_ctx_t *ctx, uint8_t *tag, 
 
     esp_err_t err = ESP_FAIL;
 #if CONFIG_MBEDTLS_VER_4_X_SUPPORT
-    psa_crypto_init();
     psa_aead_operation_t operation = PSA_AEAD_OPERATION_INIT;
     psa_status_t status;
     psa_key_id_t key_id;

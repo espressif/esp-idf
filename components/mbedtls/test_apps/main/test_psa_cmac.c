@@ -63,10 +63,6 @@ TEST_CASE("PSA CMAC AES-128 test", "[psa_cmac]")
     psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
     psa_key_id_t key_id = 0;
 
-    // Initialize PSA Crypto
-    // status = psa_crypto_init();
-    // TEST_ASSERT_EQUAL(PSA_SUCCESS, status);
-
     // Set up key attributes
     psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_SIGN_MESSAGE | PSA_KEY_USAGE_VERIFY_MESSAGE);
     psa_set_key_algorithm(&attributes, PSA_ALG_CMAC);
@@ -113,10 +109,6 @@ TEST_CASE("PSA CMAC AES-256 test", "[psa_cmac]")
     psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
     psa_key_id_t key_id = 0;
 
-    // Initialize PSA Crypto
-    // status = psa_crypto_init();
-    // TEST_ASSERT_EQUAL(PSA_SUCCESS, status);
-
     // Set up key attributes
     psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_SIGN_MESSAGE | PSA_KEY_USAGE_VERIFY_MESSAGE);
     psa_set_key_algorithm(&attributes, PSA_ALG_CMAC);
@@ -161,10 +153,6 @@ TEST_CASE("PSA CMAC AES-128 multipart test", "[psa_cmac]")
     psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
     psa_key_id_t key_id = 0;
     psa_mac_operation_t operation = PSA_MAC_OPERATION_INIT;
-
-    // Initialize PSA Crypto
-    // status = psa_crypto_init();
-    // TEST_ASSERT_EQUAL(PSA_SUCCESS, status);
 
     // Set up key attributes
     psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_SIGN_MESSAGE | PSA_KEY_USAGE_VERIFY_MESSAGE);
@@ -217,10 +205,6 @@ TEST_CASE("PSA CMAC AES-128 multipart verify test", "[psa_cmac]")
     psa_status_t status;
     psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
     psa_key_id_t key_id = 0;
-
-    // Initialize PSA Crypto
-    // status = psa_crypto_init();
-    // TEST_ASSERT_EQUAL(PSA_SUCCESS, status);
 
     // Set up key attributes
     psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_SIGN_MESSAGE | PSA_KEY_USAGE_VERIFY_MESSAGE);
@@ -282,10 +266,6 @@ TEST_CASE("PSA CMAC zero-length test", "[psa_cmac]")
     psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
     psa_key_id_t key_id = 0;
 
-    // Initialize PSA Crypto
-    // status = psa_crypto_init();
-    // TEST_ASSERT_EQUAL(PSA_SUCCESS, status);
-
     // Set up key attributes
     psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_SIGN_MESSAGE | PSA_KEY_USAGE_VERIFY_MESSAGE);
     psa_set_key_algorithm(&attributes, PSA_ALG_CMAC);
@@ -329,10 +309,6 @@ TEST_CASE("PSA CMAC memory alignment test", "[psa_cmac]")
     psa_status_t status;
     psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
     psa_key_id_t key_id = 0;
-
-    // Initialize PSA Crypto
-    // status = psa_crypto_init();
-    // TEST_ASSERT_EQUAL(PSA_SUCCESS, status);
 
     // Set up key attributes
     psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_SIGN_MESSAGE | PSA_KEY_USAGE_VERIFY_MESSAGE);
@@ -387,10 +363,6 @@ TEST_CASE("PSA CMAC verify failure test", "[psa_cmac]")
     psa_status_t status;
     psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
     psa_key_id_t key_id = 0;
-
-    // Initialize PSA Crypto
-    // status = psa_crypto_init();
-    // TEST_ASSERT_EQUAL(PSA_SUCCESS, status);
 
     // Set up key attributes
     psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_VERIFY_MESSAGE);

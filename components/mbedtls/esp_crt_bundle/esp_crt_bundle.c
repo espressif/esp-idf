@@ -69,7 +69,7 @@ extern const uint8_t x509_crt_imported_bundle_bin_end[]   asm("_binary_x509_crt_
 typedef const uint8_t* bundle_t;
 typedef const uint8_t* cert_t;
 
-static bundle_t s_crt_bundle = NULL;
+static bundle_t s_crt_bundle;
 
 // Read a 16-bit value stored in little-endian format from the given address
 static uint16_t get16_le(const uint8_t* ptr)

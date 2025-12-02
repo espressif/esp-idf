@@ -17,11 +17,6 @@
 #include "esp_hmac.h"
 #endif
 #define MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
-// #include "mbedtls/aes.h"
-// #include "mbedtls/gcm.h"
-// #include "mbedtls/sha256.h"
-// #include "mbedtls/ecdsa.h"
-// #include "mbedtls/error.h"
 #include "esp_hmac_pbkdf2.h"
 #include "psa/crypto.h"
 #include "mbedtls/psa_util.h"
@@ -52,13 +47,13 @@
 /* Structure to hold ECDSA SECP256R1 key pair */
 typedef struct {
     uint8_t priv_key[ECDSA_SECP256R1_KEY_LEN];     /* Private key for ECDSA SECP256R1 */
-    uint8_t pub_key[(2 * ECDSA_SECP256R1_KEY_LEN) + 1];  /* Public key for ECDSA SECP256R1 (X and Y coordinates) */
+    uint8_t pub_key[2 * ECDSA_SECP256R1_KEY_LEN];  /* Public key for ECDSA SECP256R1 (X and Y coordinates) */
 } __attribute__((aligned(4))) __attribute__((__packed__)) sec_stg_ecdsa_secp256r1_t;
 
 /* Structure to hold ECDSA SECP192R1 key pair */
 typedef struct {
     uint8_t priv_key[ECDSA_SECP192R1_KEY_LEN];     /* Private key for ECDSA SECP192R1 */
-    uint8_t pub_key[(2 * ECDSA_SECP192R1_KEY_LEN) + 1];  /* Public key for ECDSA SECP192R1 (X and Y coordinates) */
+    uint8_t pub_key[2 * ECDSA_SECP192R1_KEY_LEN];  /* Public key for ECDSA SECP192R1 (X and Y coordinates) */
 } __attribute__((aligned(4))) __attribute__((__packed__)) sec_stg_ecdsa_secp192r1_t;
 
 /* Structure to hold AES-256 key and IV */
@@ -79,7 +74,7 @@ typedef struct {
     uint32_t reserved[38];                          /* Reserved space for future use */
 } __attribute__((aligned(4))) __attribute__((__packed__)) sec_stg_key_t;
 
-_Static_assert(sizeof(sec_stg_key_t) == 260, "Incorrect sec_stg_key_t size");
+_Static_assert(sizeof(sec_stg_key_t) == 256, "Incorrect sec_stg_key_t size");
 
 static nvs_handle_t tee_nvs_hdl;
 
@@ -270,7 +265,12 @@ esp_err_t esp_tee_sec_storage_init(void)
     ESP_LOGW(TAG, "TEE Secure Storage enabled in insecure DEVELOPMENT mode");
 #endif
 
-    psa_crypto_init();
+    psa_status_t status = psa_crypto_init();
+    if (status != PSA_SUCCESS) {
+        ESP_LOGE(TAG, "Failed to initialize PSA Crypto! (0x%08x)", status);
+        return ESP_FAIL;
+    }
+    ESP_FAULT_ASSERT(status == PSA_SUCCESS);
 
     return ESP_OK;
 }
@@ -309,12 +309,6 @@ static int generate_ecdsa_key(sec_stg_key_t *keyctx, esp_tee_sec_storage_type_t 
         return -1;
     }
 
-    psa_status_t status = psa_crypto_init();
-    if (status != PSA_SUCCESS) {
-        ESP_LOGE(TAG, "Failed to initialize PSA Crypto: %ld", status);
-        return -1;
-    }
-
     psa_key_id_t key_id = 0;
     psa_key_attributes_t key_attributes = PSA_KEY_ATTRIBUTES_INIT;
     psa_set_key_bits(&key_attributes, ECDSA_SECP256R1_KEY_LEN * 8);
@@ -330,7 +324,7 @@ static int generate_ecdsa_key(sec_stg_key_t *keyctx, esp_tee_sec_storage_type_t 
         return -1;
 #endif
     }
-    status = psa_generate_key(&key_attributes, &key_id);
+    psa_status_t status = psa_generate_key(&key_attributes, &key_id);
     if (status != PSA_SUCCESS) {
         ESP_LOGE(TAG, "Failed to generate ECDSA key: %ld", status);
         goto exit;
@@ -365,10 +359,30 @@ static int generate_ecdsa_key(sec_stg_key_t *keyctx, esp_tee_sec_storage_type_t 
         goto exit;
     }
 
-    status = psa_export_public_key(key_id, pub_key_buf, pub_key_buf_size, &pub_key_len);
+    /* PSA exports public key with 0x04 prefix (65 bytes for secp256r1, 49 bytes for secp192r1)
+     * We need to strip the prefix and store only X and Y coordinates (64 bytes for secp256r1, 48 bytes for secp192r1)
+     * Use fixed-size array to avoid VLA issues with goto statements
+     */
+    uint8_t pub_key_with_prefix[(2 * ECDSA_SECP256R1_KEY_LEN) + 1];  /* Max size: 65 bytes for secp256r1 */
+    size_t pub_key_len_with_prefix = 0;
+    size_t expected_pub_key_len_with_prefix = pub_key_buf_size + 1;
+
+    status = psa_export_public_key(key_id, pub_key_with_prefix, sizeof(pub_key_with_prefix), &pub_key_len_with_prefix);
     if (status != PSA_SUCCESS) {
         ESP_LOGE(TAG, "Failed to export ECDSA public key: %ld", status);
         goto exit;
+    }
+
+    /* Strip the 0x04 prefix if present */
+    if (pub_key_len_with_prefix == expected_pub_key_len_with_prefix && pub_key_with_prefix[0] == 0x04) {
+        memcpy(pub_key_buf, pub_key_with_prefix + 1, pub_key_buf_size);
+        pub_key_len = pub_key_buf_size;
+    } else {
+        /* Fallback: copy directly if format is unexpected (should not happen with PSA) */
+        ESP_LOGW(TAG, "Unexpected public key format, copying directly");
+        size_t copy_len = (pub_key_len_with_prefix < pub_key_buf_size) ? pub_key_len_with_prefix : pub_key_buf_size;
+        memcpy(pub_key_buf, pub_key_with_prefix, copy_len);
+        pub_key_len = copy_len;
     }
 
     buffer_hexdump("Private key", priv_key_buf, priv_key_len);

@@ -1178,36 +1178,30 @@ TEST_CASE("security 0 basic test", "[PROTOCOMM]")
 
 TEST_CASE("security 1 basic test", "[PROTOCOMM]")
 {
-    // psa_crypto_init();
     TEST_ASSERT(test_security1() == ESP_OK);
 }
 
 TEST_CASE("security 1 no encryption test", "[PROTOCOMM]")
 {
-    // psa_crypto_init();
     TEST_ASSERT(test_security1_no_encryption() == ESP_OK);
 }
 
 TEST_CASE("security 1 session overflow test", "[PROTOCOMM]")
 {
-    // psa_crypto_init();
     TEST_ASSERT(test_security1_session_overflow() == ESP_OK);
 }
 
 TEST_CASE("security 1 wrong pop test", "[PROTOCOMM]")
 {
-    // psa_crypto_init();
     TEST_ASSERT(test_security1_wrong_pop() == ESP_OK);
 }
 
 TEST_CASE("security 1 insecure client test", "[PROTOCOMM]")
 {
-    // psa_crypto_init();
     TEST_ASSERT(test_security1_insecure_client() == ESP_OK);
 }
 
 TEST_CASE("security 1 weak session test", "[PROTOCOMM]")
 {
-    // psa_crypto_init();
     TEST_ASSERT(test_security1_weak_session() == ESP_OK);
 }

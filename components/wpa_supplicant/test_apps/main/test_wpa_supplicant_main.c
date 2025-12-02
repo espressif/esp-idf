@@ -86,15 +86,12 @@ void setUp(void)
     esp_mpi_disable_hardware_hw_op();
 #endif // CONFIG_MBEDTLS_HARDWARE_MPI
 
-    // psa_crypto_init();
-
     before_free_8bit = heap_caps_get_free_size(MALLOC_CAP_8BIT);
     before_free_32bit = heap_caps_get_free_size(MALLOC_CAP_32BIT);
 }
 
 void tearDown(void)
 {
-    // mbedtls_psa_crypto_free();
     size_t after_free_8bit = heap_caps_get_free_size(MALLOC_CAP_8BIT);
     size_t after_free_32bit = heap_caps_get_free_size(MALLOC_CAP_32BIT);
     check_leak(before_free_8bit, after_free_8bit, "8BIT");

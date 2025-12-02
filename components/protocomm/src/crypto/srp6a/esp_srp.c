@@ -676,9 +676,6 @@ esp_err_t esp_srp_get_session_key(esp_srp_handle_t *hd, char *bytes_A, int len_A
         goto error;
     }
 
-    // psa_status_t status = psa_crypto_init();
-    // ESP_RETURN_ON_FALSE(status == PSA_SUCCESS, ESP_FAIL, TAG, "Failed to initialize PSA crypto: %d", status);
-
     psa_hash_operation_t hash_op = PSA_HASH_OPERATION_INIT;
     psa_status_t status = psa_hash_setup(&hash_op, PSA_ALG_SHA_512);
     ESP_RETURN_ON_FALSE(status == PSA_SUCCESS, ESP_FAIL, TAG, "Failed to setup hash operation: %d", status);

@@ -466,14 +466,6 @@ TEST_CASE("custom certificate bundle - ECDSA signature verification", "[mbedtls]
      * This tests both the ECDSA algorithm path and a different hash algorithm (SHA-512) than
      * the RSA tests which use SHA-256. */
 
-    // CRITICAL: Initialize PSA crypto subsystem before any PSA operations
-    // psa_status_t psa_status = psa_crypto_init();
-    // if (psa_status != PSA_SUCCESS) {
-    //     printf("PSA crypto initialization failed with status 0x%x\n", (unsigned int)psa_status);
-    //     TEST_FAIL_MESSAGE("PSA crypto init failed");
-    // }
-    // printf("PSA crypto initialized successfully\n");
-
     mbedtls_x509_crt crt;
     uint32_t flags = 0;
 

@@ -27,7 +27,7 @@ static psa_status_t esp_crypto_aes_gcm_setup(
     psa_status_t status = PSA_ERROR_GENERIC_ERROR;
 
     if (alg != PSA_ALG_GCM) {
-        status = PSA_ERROR_INVALID_ARGUMENT;
+        status = PSA_ERROR_NOT_SUPPORTED;
         goto exit;
     }
 

@@ -54,31 +54,32 @@ static int digest_vector(psa_algorithm_t alg, size_t num_elem,
                          const u8 *addr[], const size_t *len, u8 *mac)
 {
     psa_hash_operation_t operation = PSA_HASH_OPERATION_INIT;
+    psa_status_t status;
+    int ret = -1;
 
-    psa_status_t status = psa_hash_setup(&operation, alg);
+    status = psa_hash_setup(&operation, alg);
     if (status != PSA_SUCCESS) {
-        return -1;
+        goto cleanup;
     }
 
     for (size_t i = 0; i < num_elem; i++) {
         status = psa_hash_update(&operation, addr[i], len[i]);
         if (status != PSA_SUCCESS) {
-            return -1;
+            goto cleanup;
         }
     }
 
     size_t mac_len;
     status = psa_hash_finish(&operation, mac, PSA_HASH_LENGTH(alg), &mac_len);
     if (status != PSA_SUCCESS) {
-        return -1;
+        goto cleanup;
     }
 
-    status = psa_hash_abort(&operation);
-    if (status != PSA_SUCCESS) {
-        return -1;
-    }
+    ret = 0;
 
-    return 0;
+cleanup:
+    psa_hash_abort(&operation);
+    return ret;
 }
 
 int sha256_vector(size_t num_elem, const u8 *addr[], const size_t *len,
@@ -193,6 +194,7 @@ struct crypto_hash * crypto_hash_init(enum crypto_hash_alg alg, const u8 *key,
 
         status = psa_mac_sign_setup(operation, key_id, PSA_ALG_HMAC(psa_alg));
         if (status != PSA_SUCCESS) {
+            psa_destroy_key(key_id);
             os_free(operation);
             os_free(ctx);
             return NULL;
@@ -428,6 +430,10 @@ static void *aes_crypt_init(int mode, const u8 *key, size_t len)
     psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
     psa_key_id_t *key_id = os_malloc(sizeof(psa_key_id_t));
 
+    if (key_id == NULL) {
+        return NULL;
+    }
+
     if (mode == MBEDTLS_ENCRYPT) {
         psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_ENCRYPT);
     } else if (mode == MBEDTLS_DECRYPT) {
@@ -439,12 +445,12 @@ static void *aes_crypt_init(int mode, const u8 *key, size_t len)
     psa_set_key_bits(&attributes, len * 8);
 
     status = psa_import_key(&attributes, key, len, key_id);
+    psa_reset_key_attributes(&attributes);
     if (status != PSA_SUCCESS) {
         wpa_printf(MSG_ERROR, "%s: psa_import_key failed", __func__);
+        os_free(key_id);
         return NULL;
     }
-
-    psa_reset_key_attributes(&attributes);
 
     return (void *) key_id;
 }
@@ -455,6 +461,7 @@ static int aes_crypt(void *ctx, int mode, const u8 *in, u8 *out)
     psa_key_id_t *key_id = (psa_key_id_t *) ctx;
     psa_cipher_operation_t operation = PSA_CIPHER_OPERATION_INIT;
     size_t output_len;
+    int ret = -1;
 
     if (mode == MBEDTLS_ENCRYPT) {
         status = psa_cipher_encrypt_setup(&operation, *key_id, PSA_ALG_ECB_NO_PADDING);
@@ -466,24 +473,27 @@ static int aes_crypt(void *ctx, int mode, const u8 *in, u8 *out)
     }
     if (status != PSA_SUCCESS) {
         wpa_printf(MSG_ERROR, "%s: psa_cipher_encrypt_setup failed", __func__);
+        psa_cipher_abort(&operation);
         return -1;
     }
 
     status = psa_cipher_update(&operation, in, 16, out, 16, &output_len);
     if (status != PSA_SUCCESS) {
         wpa_printf(MSG_ERROR, "%s: psa_cipher_update failed", __func__);
-        return -1;
+        goto cleanup;
     }
 
     status = psa_cipher_finish(&operation, out + output_len, 16 - output_len, &output_len);
     if (status != PSA_SUCCESS) {
         wpa_printf(MSG_ERROR, "%s: psa_cipher_finish failed", __func__);
-        return -1;
+        goto cleanup;
     }
 
-    psa_cipher_abort(&operation);
+    ret = 0;
 
-    return 0;
+cleanup:
+    psa_cipher_abort(&operation);
+    return ret;
 }
 
 static void aes_crypt_deinit(void *ctx)
@@ -1044,7 +1054,9 @@ int des_encrypt(const u8 *clear, const u8 *key, u8 *cypher)
 {
     psa_status_t status;
     psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
-    psa_key_id_t key_id;
+    psa_key_id_t key_id = 0;
+    psa_cipher_operation_t operation = PSA_CIPHER_OPERATION_INIT;
+    int ret = -1;
 
     psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_ENCRYPT);
     psa_set_key_algorithm(&attributes, PSA_ALG_ECB_NO_PADDING);
@@ -1052,19 +1064,16 @@ int des_encrypt(const u8 *clear, const u8 *key, u8 *cypher)
     psa_set_key_bits(&attributes, 128);
 
     status = psa_import_key(&attributes, key, 8, &key_id);
+    psa_reset_key_attributes(&attributes);
     if (status != PSA_SUCCESS) {
         wpa_printf(MSG_ERROR, "%s: psa_import_key failed", __func__);
         return -1;
     }
 
-    psa_reset_key_attributes(&attributes);
-
-    psa_cipher_operation_t operation = PSA_CIPHER_OPERATION_INIT;
-
     status = psa_cipher_encrypt_setup(&operation, key_id, PSA_ALG_ECB_NO_PADDING);
     if (status != PSA_SUCCESS) {
         wpa_printf(MSG_ERROR, "%s: psa_cipher_encrypt_setup failed", __func__);
-        return -1;
+        goto cleanup;
     }
 
     size_t output_length = 0;
@@ -1072,20 +1081,24 @@ int des_encrypt(const u8 *clear, const u8 *key, u8 *cypher)
     status = psa_cipher_update(&operation, clear, 8, cypher, 8, &output_length);
     if (status != PSA_SUCCESS) {
         wpa_printf(MSG_ERROR, "%s: psa_cipher_update failed", __func__);
-        return -1;
+        goto cleanup;
     }
 
     status = psa_cipher_finish(&operation, cypher + output_length, 8 - output_length, &output_length);
     if (status != PSA_SUCCESS) {
         wpa_printf(MSG_ERROR, "%s: psa_cipher_finish failed", __func__);
-        return -1;
+        goto cleanup;
     }
 
+    ret = 0;
+
+cleanup:
     psa_cipher_abort(&operation);
+    if (key_id) {
+        psa_destroy_key(key_id);
+    }
 
-    psa_destroy_key(key_id);
-
-    return 0;
+    return ret;
 }
 #endif
 
@@ -1180,6 +1193,9 @@ int aes_ccm_ad(const u8 *key, size_t key_len, const u8 *nonce,
     psa_status_t status;
     psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
     psa_key_id_t key_id;
+    u8 *ciphertext_with_tag = NULL;
+    size_t plaintext_length = 0;
+    int ret = -1;
 
     psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_DECRYPT);
     psa_set_key_algorithm(&attributes, PSA_ALG_CCM);
@@ -1187,71 +1203,45 @@ int aes_ccm_ad(const u8 *key, size_t key_len, const u8 *nonce,
     psa_set_key_bits(&attributes, key_len * 8);
 
     status = psa_import_key(&attributes, key, key_len, &key_id);
+    psa_reset_key_attributes(&attributes);
     if (status != PSA_SUCCESS) {
         wpa_printf(MSG_ERROR, "%s: psa_import_key failed", __func__);
         return -1;
     }
 
-    psa_reset_key_attributes(&attributes);
+    /* psa_aead_decrypt expects the tag to be appended to the ciphertext */
+    ciphertext_with_tag = os_malloc(crypt_len + M);
+    if (ciphertext_with_tag == NULL) {
+        wpa_printf(MSG_ERROR, "%s: os_malloc failed", __func__);
+        goto cleanup;
+    }
+    os_memcpy(ciphertext_with_tag, crypt, crypt_len);
+    os_memcpy(ciphertext_with_tag + crypt_len, auth, M);
 
-    psa_aead_operation_t operation = PSA_AEAD_OPERATION_INIT;
-
-    status = psa_aead_decrypt_setup(&operation, key_id, PSA_ALG_CCM);
+    status = psa_aead_decrypt(key_id, PSA_ALG_CCM,
+                              nonce, 13,
+                              aad, aad_len,
+                              ciphertext_with_tag, crypt_len + M,
+                              plain, crypt_len, &plaintext_length);
     if (status != PSA_SUCCESS) {
-        wpa_printf(MSG_ERROR, "%s: psa_aead_decrypt_setup failed", __func__);
-        psa_destroy_key(key_id);
-        return -1;
+        wpa_printf(MSG_ERROR, "%s: psa_aead_decrypt failed, status: %d", __func__, status);
+        goto cleanup;
     }
 
-    status = psa_aead_set_nonce(&operation, nonce, 13);
-    if (status != PSA_SUCCESS) {
-        wpa_printf(MSG_ERROR, "%s: psa_aead_set_nonce failed", __func__);
-        psa_aead_abort(&operation);
-        psa_destroy_key(key_id);
-        return -1;
+    if (plaintext_length != crypt_len) {
+        wpa_printf(MSG_ERROR, "%s: plaintext length mismatch: expected %zu, got %zu", __func__, crypt_len, plaintext_length);
+        goto cleanup;
     }
 
-    status = psa_aead_set_lengths(&operation, aad_len, crypt_len);
-    if (status != PSA_SUCCESS) {
-        wpa_printf(MSG_ERROR, "%s: psa_aead_set_lengths failed", __func__);
-        psa_aead_abort(&operation);
-        psa_destroy_key(key_id);
-        return -1;
+    ret = 0;
+
+cleanup:
+    if (ciphertext_with_tag) {
+        os_free(ciphertext_with_tag);
     }
-
-    size_t output_length = 0;
-    size_t tag_len = 0;
-
-    status = psa_aead_update_ad(&operation, aad, aad_len);
-    if (status != PSA_SUCCESS) {
-        wpa_printf(MSG_ERROR, "%s: psa_aead_update_ad failed", __func__);
-        psa_aead_abort(&operation);
-        psa_destroy_key(key_id);
-        return -1;
-    }
-
-    status = psa_aead_update(&operation, crypt, crypt_len, plain, crypt_len, &output_length);
-    if (status != PSA_SUCCESS) {
-        wpa_printf(MSG_ERROR, "%s: psa_aead_update failed", __func__);
-        psa_aead_abort(&operation);
-        psa_destroy_key(key_id);
-        return -1;
-    }
-
-    size_t verify_output = 0;
-    status = psa_aead_verify(&operation, plain + output_length, crypt_len - output_length, &verify_output, auth, M);
-    if (status != PSA_SUCCESS) {
-        wpa_printf(MSG_ERROR, "%s: psa_aead_verify failed", __func__);
-        psa_aead_abort(&operation);
-        psa_destroy_key(key_id);
-        return -1;
-    }
-
-    psa_aead_abort(&operation);
-
     psa_destroy_key(key_id);
 
-    return 0;
+    return ret;
 }
 #endif
 
@@ -1265,7 +1255,9 @@ int omac1_aes_vector(const u8 *key, size_t key_len, size_t num_elem,
 
     psa_status_t status;
     psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
-    psa_key_id_t key_id;
+    psa_key_id_t key_id = 0;
+    psa_mac_operation_t operation = PSA_MAC_OPERATION_INIT;
+    int ret = -1;
 
     psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_SIGN_HASH);
     psa_set_key_algorithm(&attributes, PSA_ALG_CMAC);
@@ -1275,24 +1267,22 @@ int omac1_aes_vector(const u8 *key, size_t key_len, size_t num_elem,
     status = psa_import_key(&attributes, key, key_len, &key_id);
     if (status != PSA_SUCCESS) {
         wpa_printf(MSG_ERROR, "%s: psa_import_key failed", __func__);
-        return -1;
+        goto cleanup;
     }
 
     psa_reset_key_attributes(&attributes);
 
-    psa_mac_operation_t operation = PSA_MAC_OPERATION_INIT;
-
     status = psa_mac_sign_setup(&operation, key_id, PSA_ALG_CMAC);
     if (status != PSA_SUCCESS) {
         wpa_printf(MSG_ERROR, "%s: psa_mac_sign_setup failed", __func__);
-        return -1;
+        goto cleanup;
     }
 
     for (int i = 0; i < num_elem; i++) {
         status = psa_mac_update(&operation, addr[i], len[i]);
         if (status != PSA_SUCCESS) {
             wpa_printf(MSG_ERROR, "%s: psa_mac_update failed", __func__);
-            return -1;
+            goto cleanup;
         }
     }
 
@@ -1301,14 +1291,18 @@ int omac1_aes_vector(const u8 *key, size_t key_len, size_t num_elem,
     status = psa_mac_sign_finish(&operation, mac, 16, &output_length);
     if (status != PSA_SUCCESS) {
         wpa_printf(MSG_ERROR, "%s: psa_mac_sign_finish failed", __func__);
-        return -1;
+        goto cleanup;
     }
 
+    ret = 0;
+
+cleanup:
     psa_mac_abort(&operation);
+    if (key_id != 0) {
+        psa_destroy_key(key_id);
+    }
 
-    psa_destroy_key(key_id);
-
-    return 0;
+    return ret;
 
 }
 

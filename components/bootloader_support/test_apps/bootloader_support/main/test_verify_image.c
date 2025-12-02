@@ -21,9 +21,6 @@
 #include "esp_partition.h"
 #include "esp_ota_ops.h"
 #include "esp_image_format.h"
-#include "psa/crypto.h"
-#include "mbedtls/asn1.h"
-#include "mbedtls/asn1write.h"
 
 TEST_CASE("Verify bootloader image in flash", "[bootloader_support]")
 {

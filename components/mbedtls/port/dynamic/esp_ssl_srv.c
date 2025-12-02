@@ -100,7 +100,6 @@ static int manage_resource(mbedtls_ssl_context *ssl, bool add)
                 CHECK_OK(esp_mbedtls_add_tx_buffer(ssl, buffer_len));
             } else {
 #ifdef CONFIG_MBEDTLS_DYNAMIC_FREE_CONFIG_DATA
-                esp_mbedtls_free_dhm(ssl);
                 /**
                  * Not free keycert->key and keycert until MBEDTLS_SSL_CLIENT_KEY_EXCHANGE for rsa key exchange methods.
                  * For ssl server will use keycert->key to parse client key exchange.
