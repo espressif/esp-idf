@@ -925,7 +925,9 @@ esp_err_t sdmmc_host_deinit(void)
         return ESP_ERR_INVALID_STATE;
     }
     for (int slot = 0; slot < SOC_SDMMC_NUM_SLOTS; slot++) {
-        sdmmc_host_deinit_slot_internal(slot);
+        if (sdmmc_host_slot_initialized(slot)) {
+            sdmmc_host_deinit_slot_internal(slot);
+        }
     }
     sdmmc_host_deinit_internal();
 
