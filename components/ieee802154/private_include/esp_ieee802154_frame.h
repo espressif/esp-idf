@@ -203,6 +203,15 @@ esp_err_t ieee802154_frame_get_dest_panid(const uint8_t *frame, uint8_t *panid);
  *
  */
 esp_err_t ieee802154_frame_get_src_panid(const uint8_t *frame, uint8_t *panid);
+
+/**
+ * @brief Check whether the given frame is a MAC Data Request command.
+ *
+ * @param[in] frame Pointer to the raw MAC frame buffer.
+ *
+ * @return true if the frame is a Data Request command, false otherwise.
+ */
+bool ieee802154_is_data_request(const uint8_t *frame);
 #ifdef __cplusplus
 }
 #endif

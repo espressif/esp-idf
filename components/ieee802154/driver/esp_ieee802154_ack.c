@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -130,6 +130,13 @@ bool ieee802154_ack_config_pending_bit(const uint8_t *frame)
     // Only set the HW pending bit for the frames with version 0b00 or 0b01.
     bool set_to_hw = (ieee802154_frame_get_version(frame) <= IEEE802154_FRAME_VERSION_1);
 
+    // Check SW should check whether the frame is data request or not.
+    bool sw_check_data_req = ieee802154_ll_get_pending_mode();
+
+    if (sw_check_data_req) {
+        pending_bit = ieee802154_is_data_request(frame);
+    }
+
     ieee802154_ll_pending_mode_t pending_mode = ieee802154_pib_get_pending_mode();
 
     switch (pending_mode) {
@@ -140,20 +147,14 @@ bool ieee802154_ack_config_pending_bit(const uint8_t *frame)
     case IEEE802154_AUTO_PENDING_ENABLE:
     case IEEE802154_AUTO_PENDING_ENHANCED:
         src_mode = ieee802154_frame_get_src_addr(frame, addr);
-
         if (src_mode == IEEE802154_FRAME_SRC_MODE_SHORT || src_mode == IEEE802154_FRAME_SRC_MODE_EXT) {
-            if (ieee802154_addr_in_pending_table(addr, src_mode == IEEE802154_FRAME_SRC_MODE_SHORT)) {
-                pending_bit = true;
-            }
+            pending_bit = ieee802154_addr_in_pending_table(addr, src_mode == IEEE802154_FRAME_SRC_MODE_SHORT);
         }
         break;
     case IEEE802154_AUTO_PENDING_ZIGBEE:
         // If the address type is short and in pending table, set 'pending_bit' false, otherwise set true.
         src_mode = ieee802154_frame_get_src_addr(frame, addr);
-        pending_bit = true;
-        if (src_mode == IEEE802154_FRAME_SRC_MODE_SHORT && ieee802154_addr_in_pending_table(addr, src_mode == IEEE802154_FRAME_SRC_MODE_SHORT)) {
-            pending_bit = false;
-        }
+        pending_bit = !(src_mode == IEEE802154_FRAME_SRC_MODE_SHORT && ieee802154_addr_in_pending_table(addr, src_mode == IEEE802154_FRAME_SRC_MODE_SHORT));
         break;
     default:
         IEEE802154_ASSERT(false);

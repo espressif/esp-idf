@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -412,6 +412,11 @@ static inline void ieee802154_ll_set_promiscuous(bool enable)
 static inline void ieee802154_ll_set_pending_mode(bool enable)
 {
     IEEE802154.conf.pending_enhance = enable;
+}
+
+static inline bool ieee802154_ll_get_pending_mode(void)
+{
+    return IEEE802154.conf.pending_enhance;
 }
 
 FORCE_INLINE_ATTR void ieee802154_ll_set_pending_bit(bool pending)
