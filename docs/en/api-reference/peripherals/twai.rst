@@ -103,7 +103,12 @@ TWAI messages come in various types, which are specified by their headers. A typ
 .. image:: ../../../_static/diagrams/twai/frame_struct.svg
     :align: center
 
-To reduce performance overhead caused by memory copying, the TWAI driver uses pointers to pass messages. The following code demonstrates how to transmit a typical data frame:
+To reduce performance overhead caused by memory copying, the TWAI driver uses pointers to pass messages. The driver is designed to operate in asynchronous mode, so the :cpp:type:`twai_frame_t` structure and the memory pointed to by :cpp:member:`twai_frame_t::buffer` must remain valid until the transmission is actually complete. You can determine when transmission is complete in the following ways:
+
+- Call the :cpp:func:`twai_node_transmit_wait_all_done` function to wait for all transmissions to complete.
+- Register the :cpp:member:`twai_event_callbacks_t::on_tx_done` event callback function to receive a notification when transmission is complete.
+
+The following code demonstrates how to transmit a typical data frame:
 
 .. code:: c
 
@@ -200,7 +205,7 @@ The TWAI driver supports transmitting messages from an Interrupt Service Routine
     }
 
 .. note::
-    When calling :cpp:func:`twai_node_transmit` from an ISR, the ``timeout`` parameter is ignored, and the function will not block. If the transmit queue is full, the function will return immediately with an error. It is the application's responsibility to handle cases where the queue is full.
+    When calling :cpp:func:`twai_node_transmit` from an ISR, the ``timeout`` parameter is ignored, and the function will not block. If the transmit queue is full, the function will return immediately with an error. It is the application's responsibility to handle cases where the queue is full. Similarly, the ``twai_frame_t`` structure and the memory pointed to by ``buffer`` must remain valid until the transmission is complete. You can get the completed frame by the :cpp:member:`twai_tx_done_event_data_t::done_tx_frame` pointer.
 
 Bit Timing Customization
 ------------------------
