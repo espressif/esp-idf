@@ -616,18 +616,16 @@ if(CONFIG_BT_ENABLED)
                         "esp_ble_mesh/v1.1/btc/btc_ble_mesh_sar_model.c"
                         "esp_ble_mesh/v1.1/btc/btc_ble_mesh_srpl_model.c"
                         "esp_ble_mesh/lib/ext.c")
+
             if(CONFIG_BLE_MESH_SAR_ENHANCEMENT)
                 list(APPEND srcs "esp_ble_mesh/core/transport.enh.c")
             else()
                 list(APPEND srcs "esp_ble_mesh/core/transport.c")
             endif()
         else()
-            list(APPEND srcs
-                        "esp_ble_mesh/core/transport.c")
+            list(APPEND srcs "esp_ble_mesh/core/transport.c")
         endif()
     endif()
-
-
 
     if(CONFIG_BT_LE_CONTROLLER_NPL_OS_PORTING_SUPPORT)
         list(APPEND srcs
