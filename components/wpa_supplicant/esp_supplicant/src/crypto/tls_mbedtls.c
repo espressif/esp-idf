@@ -393,7 +393,7 @@ static void tls_enable_sha1_config(tls_context_t *tls)
 {
     const mbedtls_x509_crt_profile *crt_profile = &eap_mbedtls_x509_crt_profile;
     mbedtls_ssl_conf_cert_profile(&tls->conf, crt_profile);
-    mbedtls_ssl_conf_sig_algs(&tls->conf, tls_sig_algs_for_eap);
+    //mbedtls_ssl_conf_sig_algs(&tls->conf, tls_sig_algs_for_eap);
 }
 #ifdef CONFIG_ESP_WIFI_DISABLE_KEY_USAGE_CHECK
 static int tls_disable_key_usages(void *data, mbedtls_x509_crt *cert, int depth, uint32_t *flags)
