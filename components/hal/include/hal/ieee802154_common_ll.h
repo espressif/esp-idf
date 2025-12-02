@@ -414,6 +414,11 @@ static inline void ieee802154_ll_set_pending_mode(bool enable)
     IEEE802154.conf.pending_enhance = enable;
 }
 
+static inline bool ieee802154_ll_get_pending_mode(void)
+{
+    return IEEE802154.conf.pending_enhance;
+}
+
 FORCE_INLINE_ATTR void ieee802154_ll_set_pending_bit(bool pending)
 {
     IEEE802154.pending_cfg.pending = pending;
