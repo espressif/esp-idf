@@ -38,10 +38,7 @@ gen_integration_pipeline:
   variables:
     SUBMODULES_TO_FETCH: "none"
     GIT_LFS_SKIP_SMUDGE: 1
-  needs:
-    - job: fast_template_app
-      artifacts: false
-      optional: true
+  needs: []
   artifacts:
     paths:
       - idf-integration-ci/child_pipeline/
@@ -59,6 +56,9 @@ child_integration_test_pipeline:
     - .integration_test_rules
   stage: assign_test
   needs:
+    - job: fast_template_app
+      artifacts: false
+      optional: true
     - gen_integration_pipeline
   variables:
     IDF_S3_SERVER: $IDF_S3_NEW_SERVER
