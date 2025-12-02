@@ -103,7 +103,12 @@ TWAI 报文有多种类型，由报头指定。一个典型的数据帧报文主
 .. image:: ../../../_static/diagrams/twai/frame_struct.svg
     :align: center
 
-为减少拷贝带来的性能损失，TWAI 驱动使用指针进行传递。以下代码展示了如何发送一条典型的数据帧报文：
+为减少拷贝带来的性能损失，TWAI 驱动使用指针进行传递。且驱动设计为异步模式，因此，在传输真正完成之前， :cpp:type:`twai_frame_t` 实体及其 :cpp:member:`twai_frame_t::buffer` 指向的内存必须保持有效。可通过以下方式得知传输完成：
+
+- 调用 :cpp:func:`twai_node_transmit_wait_all_done` 函数等待所有传输完成。
+- 注册 :cpp:member:`twai_event_callbacks_t::on_tx_done` 事件回调函数，在传输完成时接收通知。
+
+以下代码展示了如何发送一条典型的数据帧报文：
 
 .. code:: c
 
@@ -200,7 +205,7 @@ TWAI 驱动支持在中断服务程序 (ISR) 中发送报文。这对于需要�
     }
 
 .. note::
-    在 ISR 中调用 :cpp:func:`twai_node_transmit` 时，``timeout`` 参数将被忽略，函数不会阻塞。如果发送队列已满，函数将立即返回错误。应用程序需要自行处理队列已满的情况。
+    在 ISR 中调用 :cpp:func:`twai_node_transmit` 时，``timeout`` 参数将被忽略，函数不会阻塞。如果发送队列已满，函数将立即返回错误。应用程序需要自行处理队列已满的情况。同样，``twai_frame_t`` 及其 ``buffer`` 指向的内存必须在 **该传输** 完成之前保持有效。通过 :cpp:member:`twai_tx_done_event_data_t::done_tx_frame` 指针可得知该次完成的报文。
 
 位时序自定义
 -------------
