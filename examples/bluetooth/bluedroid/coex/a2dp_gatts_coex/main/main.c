@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -131,8 +131,24 @@ static struct gatts_profile_inst gl_profile_tab[PROFILE_NUM] = {
 };
 static void ble_init_adv_data(const char *name)
 {
-    int len = strlen(name);
-    uint8_t raw_adv_data[len+5];
+    if (name == NULL) {
+        ESP_LOGE(BT_BLE_COEX_TAG, "ble_init_adv_data: name is NULL");
+        return;
+    }
+
+    size_t len = strlen(name);
+    // ADV data max is 31 bytes; overhead is 5 bytes (Flags: 3, Name header: 2)
+    #define ADV_DATA_MAX_LEN 31
+    #define ADV_DATA_OVERHEAD 5
+
+    if (len > (ADV_DATA_MAX_LEN - ADV_DATA_OVERHEAD)) {
+        ESP_LOGW(BT_BLE_COEX_TAG, "ADV name too long (%d), truncating to %d", (int)len, ADV_DATA_MAX_LEN - ADV_DATA_OVERHEAD);
+        len = ADV_DATA_MAX_LEN - ADV_DATA_OVERHEAD;
+    }
+
+    uint8_t raw_adv_data[ADV_DATA_MAX_LEN];
+    size_t adv_data_len = len + ADV_DATA_OVERHEAD;
+
     //flag
     raw_adv_data[0] = 2;
     raw_adv_data[1] = ESP_BT_EIR_TYPE_FLAGS;
@@ -140,16 +156,14 @@ static void ble_init_adv_data(const char *name)
     //adv name
     raw_adv_data[3] = len + 1;
     raw_adv_data[4] = ESP_BLE_AD_TYPE_NAME_CMPL;
-    for (int i = 0;i < len;i++)
-    {
-        raw_adv_data[i+5] = *(name++);
-    }
+    memcpy(&raw_adv_data[5], name, len);
+
     //The length of adv data must be less than 31 bytes
-    esp_err_t raw_adv_ret = esp_ble_gap_config_adv_data_raw(raw_adv_data, sizeof(raw_adv_data));
+    esp_err_t raw_adv_ret = esp_ble_gap_config_adv_data_raw(raw_adv_data, adv_data_len);
     if (raw_adv_ret){
         ESP_LOGE(BT_BLE_COEX_TAG, "config raw adv data failed, error code = 0x%x ", raw_adv_ret);
     }
-    esp_err_t raw_scan_ret = esp_ble_gap_config_scan_rsp_data_raw(raw_adv_data, sizeof(raw_adv_data));
+    esp_err_t raw_scan_ret = esp_ble_gap_config_scan_rsp_data_raw(raw_adv_data, adv_data_len);
     if (raw_scan_ret){
         ESP_LOGE(BT_BLE_COEX_TAG, "config raw scan rsp data failed, error code = 0x%x", raw_scan_ret);
     }
