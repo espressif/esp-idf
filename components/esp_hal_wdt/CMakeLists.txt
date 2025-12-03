@@ -24,5 +24,14 @@ endif()
 
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS ${public_include}
-                       REQUIRES soc hal esp_hal_timg
+                       REQUIRES soc hal esp_rom esp_hal_timg
                        LDFRAGMENTS linker.lf)
+
+# Link the ROM WDT HAL implementation linker script if selected
+if(CONFIG_HAL_WDT_USE_ROM_IMPL)
+    if(CONFIG_IDF_TARGET_ESP32H4 AND NOT CONFIG_ESP32H4_SELECTS_REV_MP) # TODO: ESP32H4 IDF-13835
+        target_linker_script(${COMPONENT_LIB} INTERFACE "${target}/rom.beta5.wdt.ld")
+    else()
+        target_linker_script(${COMPONENT_LIB} INTERFACE "${target}/rom.wdt.ld")
+    endif()
+endif()
