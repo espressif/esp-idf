@@ -34,11 +34,11 @@ esp_err_t esp_isp_ccm_configure(isp_proc_handle_t proc, const esp_isp_ccm_config
 
     bool ret = true;
     bool valid = false;
-    portENTER_CRITICAL(&proc->spinlock);
+    esp_os_enter_critical(&proc->spinlock);
     isp_ll_ccm_set_clk_ctrl_mode(proc->hal.hw, ISP_LL_PIPELINE_CLK_CTRL_AUTO);
     ret = isp_hal_ccm_set_matrix(&proc->hal, ccm_cfg->saturation, ccm_cfg->matrix);
     valid = isp_ll_shadow_update_ccm(proc->hal.hw);
-    portEXIT_CRITICAL(&proc->spinlock);
+    esp_os_exit_critical(&proc->spinlock);
     ESP_RETURN_ON_FALSE(ret, ESP_ERR_INVALID_ARG, TAG, "invalid argument: ccm matrix contain NaN or out of range");
     ESP_RETURN_ON_FALSE(valid, ESP_ERR_INVALID_STATE, TAG, "failed to update ccm shadow register");
 
@@ -51,9 +51,9 @@ esp_err_t esp_isp_ccm_enable(isp_proc_handle_t proc)
     isp_fsm_t expected_fsm = ISP_FSM_INIT;
     ESP_RETURN_ON_FALSE(atomic_compare_exchange_strong(&proc->ccm_fsm, &expected_fsm, ISP_FSM_ENABLE), ESP_ERR_INVALID_STATE, TAG, "ccm is enabled already");
 
-    portENTER_CRITICAL(&proc->spinlock);
+    esp_os_enter_critical(&proc->spinlock);
     isp_ll_ccm_enable(proc->hal.hw, true);
-    portEXIT_CRITICAL(&proc->spinlock);
+    esp_os_exit_critical(&proc->spinlock);
 
     return ESP_OK;
 }
@@ -64,9 +64,9 @@ esp_err_t esp_isp_ccm_disable(isp_proc_handle_t proc)
     isp_fsm_t expected_fsm = ISP_FSM_ENABLE;
     ESP_RETURN_ON_FALSE(atomic_compare_exchange_strong(&proc->ccm_fsm, &expected_fsm, ISP_FSM_INIT), ESP_ERR_INVALID_STATE, TAG, "ccm isn't enabled yet");
 
-    portENTER_CRITICAL(&proc->spinlock);
+    esp_os_enter_critical(&proc->spinlock);
     isp_ll_ccm_enable(proc->hal.hw, false);
-    portEXIT_CRITICAL(&proc->spinlock);
+    esp_os_exit_critical(&proc->spinlock);
 
     return ESP_OK;
 }

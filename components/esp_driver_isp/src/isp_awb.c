@@ -35,12 +35,12 @@ static esp_err_t s_isp_claim_awb_controller(isp_proc_handle_t isp_proc, isp_awb_
     assert(isp_proc && awb_ctlr);
 
     esp_err_t ret = ESP_ERR_NOT_FOUND;
-    portENTER_CRITICAL(&isp_proc->spinlock);
+    esp_os_enter_critical(&isp_proc->spinlock);
     if (!isp_proc->awb_ctlr) {
         isp_proc->awb_ctlr = awb_ctlr;
         ret = ESP_OK;
     }
-    portEXIT_CRITICAL(&isp_proc->spinlock);
+    esp_os_exit_critical(&isp_proc->spinlock);
 
     return ret;
 }
@@ -48,9 +48,9 @@ static esp_err_t s_isp_claim_awb_controller(isp_proc_handle_t isp_proc, isp_awb_
 static void s_isp_declaim_awb_controller(isp_awb_ctlr_t awb_ctlr)
 {
     if (awb_ctlr && awb_ctlr->isp_proc) {
-        portENTER_CRITICAL(&awb_ctlr->isp_proc->spinlock);
+        esp_os_enter_critical(&awb_ctlr->isp_proc->spinlock);
         awb_ctlr->isp_proc->awb_ctlr = NULL;
-        portEXIT_CRITICAL(&awb_ctlr->isp_proc->spinlock);
+        esp_os_exit_critical(&awb_ctlr->isp_proc->spinlock);
     }
 }
 
