@@ -278,6 +278,9 @@ static void handle_bt_device_result(struct disc_res_param *disc_res)
             GAP_DBG_PRINTF(", %s: ", gap_bt_prop_type_names[prop->type]);
         }
         if (prop->type == ESP_BT_GAP_DEV_PROP_BDNAME) {
+            if (prop->val == NULL) {
+                continue;
+            }
             name = (uint8_t *)prop->val;
             name_len = strlen((const char *)name);
             GAP_DBG_PRINTF("%s", (const char *)name);
