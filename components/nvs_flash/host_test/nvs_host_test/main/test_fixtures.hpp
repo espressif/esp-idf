@@ -1,206 +1,75 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include "nvs_partition.hpp"
-#include "esp_private/partition_linux.h"
-#include "nvs.h"
-#include <random>
-#include <fcntl.h>
-#include <unistd.h>
-#include "esp_partition.h"
 
-class PartitionEmulationFixture {
+#pragma once
+
+#include "nvs_partition.hpp"                // for NVSPartition class
+#include "esp_err.h"                        // for esp_err_t
+#include "esp_private/partition_linux.h"    // for constants of the fail_after() ESP_PARTITION_FAIL_AFTER_MODE_BOTH
+
+class NVSPartitionTestHelper : public nvs::NVSPartition {
 public:
-    PartitionEmulationFixture(  uint32_t start_sector = 0,
-                                uint32_t sector_size = 1,
-                                const char *partition_name = NVS_DEFAULT_PART_NAME) :
-        esp_partition()
-    {
+    // Constructor uses esp_partition API to initialize the partition
+    // Parameters:
+    // - part_name: name of the partition to be used for testing
+    // - erase_partition: if true, the partition will be erased before testing
+    NVSPartitionTestHelper(const char *part_name, const bool erase_partition = true);
 
-        if (esp_partition_file_mmap((const uint8_t **) &p_part_desc_addr_start) != ESP_OK) {
-            FAIL("Failed to initialize esp_partition_file_mmap");
-        }
+    // Destructor decreases the instance count
+    // and unmaps the partition memory if this is the last instance
+    virtual ~NVSPartitionTestHelper();
 
-        const uint32_t sec_size = esp_partition_get_main_flash_sector_size();
-        esp_partition.address = start_sector * sec_size;
-        esp_partition.size = (start_sector + sector_size) * sec_size;
-        esp_partition.erase_size = ESP_PARTITION_EMULATED_SECTOR_SIZE;
-        esp_partition.type = ESP_PARTITION_TYPE_DATA;
-        esp_partition.subtype = ESP_PARTITION_SUBTYPE_DATA_NVS;
-        strncpy(esp_partition.label, partition_name, NVS_PART_NAME_MAX_SIZE);
-        p_part = new (std::nothrow) nvs::NVSPartition(&esp_partition);
-        REQUIRE(p_part != nullptr);
-    }
+    // Load the partition from a file
+    esp_err_t load_from_file(const char *file_name);
 
-    // initializes the partition and loads partition binary file into it
-    PartitionEmulationFixture(  uint32_t start_sector,
-                                uint32_t sector_size,
-                                const char *partition_name,
-                                const char *partition_binary) : PartitionEmulationFixture(start_sector, sector_size, partition_name)
-    {
-        int file_fd = -1;
-        off_t size = -1;
-        void *p_buff = nullptr;
-        char const *fail_msg = nullptr;
-        const uint32_t sec_size = esp_partition_get_main_flash_sector_size();
+    // Return the number of NVS sectors in the partition
+    uint32_t get_sectors();
 
-        do {
-            // get file size
-            file_fd = open(partition_binary, O_RDONLY);
-            if (file_fd == -1) {
-                fail_msg = "Failed to open file with partition content";
-                break;
-            }
-            size = lseek(file_fd, 0L, SEEK_END);
-            if (size < 0) {
-                fail_msg = "failed to seek in file with partition content";
-                break;
-            }
+    // Overrides the erase size to the specified size
+    esp_err_t set_erase_size(const size_t size);
 
-            // check if file fits into the partitiion
-            if (size > sector_size * sec_size) {
-                fail_msg = "file with partition content doesn't fit into the partition";
-                break;
-            }
+    // Function returns the starting sector index of the partition in the emulated flash
+    // The size of emulated sector is defined by ESP_PARTITION_EMULATED_SECTOR_SIZE
+    // First emulated sector of the partition is any number, it depends on the partition location
+    // in the emulated flash
+    size_t get_first_emulated_sector_index();
 
-            // allocate local buffer
-            p_buff = malloc((size_t) size);
-            if (p_buff == nullptr) {
-                fail_msg = "unable to allocate buffer for reading file with partition content";
-                break;
-            }
+    // Get the erase count of a specific NVS sector within the partition
+    // The size of NVS sector is defined by NVS_CONST_PAGE_SIZE
+    // First sector index is 0
+    size_t get_sector_erase_count(size_t nvs_sector_index);
 
-            // laoad file into local buffer
-            int res = lseek(file_fd, 0L, SEEK_SET);
-            if (res < 0) {
-                fail_msg = "failed to seek in file with partition content";
-                break;
-            }
-            size = read(file_fd, p_buff, size);
-            if (size < 0) {
-                fail_msg = "cannot read file with partition content";
-                break;
-            }
+    //--------------- Static helper methods to make testing easier --------------------------
 
-            // erase whole partition
-            if (ESP_OK != esp_partition_erase_range(&esp_partition, 0, sector_size * sec_size)) {
-                fail_msg = "cannot erase partition prior to write partition binary from file";
-                break;
-            }
+    // Randomize the whole partition with a given seed
+    static esp_err_t randomize_partition(const char *part_name, const uint32_t seed);
 
-            // write local buffer to the partition
-            if (ESP_OK != esp_partition_write_raw(&esp_partition, 0, p_buff, size)) {
-                fail_msg = "cannot write to the partition";
-                break;
-            }
-        } while (false);
+    // Erase the whole partition
+    static esp_err_t erase_partition(const char *part_name);
 
-        // close file
-        if (file_fd >= 0) {
-            close(file_fd);
-        }
+    // Get number of NVS sectors in the partition
+    static uint32_t get_sectors(const char *part_name);
 
-        // deallocate buffer
-        if (p_buff != nullptr) {
-            free(p_buff);
-        }
+    // Load the partition from a file
+    static esp_err_t load_from_file(const char *part_name, const char *file_name);
 
-        if(fail_msg != nullptr) {
-            FAIL(fail_msg);
-        }
-    }
-
-    void randomize(uint32_t seed)
-    {
-        std::random_device rd;
-        std::mt19937 gen(rd());
-        gen.seed(seed);
-
-        esp_partition_file_mmap_ctrl_t *p_ctrl = esp_partition_get_file_mmap_ctrl_act();
-        REQUIRE(p_ctrl != nullptr);
-        std::generate_n(p_part_desc_addr_start, p_ctrl->flash_file_size, gen);
-    }
-
-    // absolute sectorNumber is used here
-    bool erase(size_t sectorNumber)
-    {
-        const uint32_t sec_size = esp_partition_get_main_flash_sector_size();
-        size_t offset = sectorNumber * sec_size;
-
-        // check the upper bound
-        esp_partition_file_mmap_ctrl_t *p_ctrl = esp_partition_get_file_mmap_ctrl_act();
-        REQUIRE(p_ctrl != nullptr);
-        if (offset > p_ctrl->flash_file_size) {
-            return false;
-        }
-
-        // esp_partition_erase_range uses offset relative to the beginning of partition
-        return (esp_partition_erase_range(&esp_partition,
-                                          offset - esp_partition.address,
-                                          sec_size) == ESP_OK);
-    }
-
-    ~PartitionEmulationFixture()
-    {
-        delete p_part;
-
-        // ensure underlying mapped file gets deleted after unmap.
-        esp_partition_file_mmap_ctrl_t *p_ctrl = esp_partition_get_file_mmap_ctrl_input();
-        p_ctrl->remove_dump = true;
-        esp_partition_file_munmap();
-    }
-
-    nvs::NVSPartition *part()
-    {
-        return p_part;
-    }
-
-    const esp_partition_t *get_esp_partition() const
-    {
-        return &esp_partition;
-    }
-
-    nvs::NVSPartition *p_part;
-    esp_partition_t esp_partition;
-    uint8_t *p_part_desc_addr_start;
-};
-
-// fixture with 2 partitions
-class PartitionEmulationFixture2 : public PartitionEmulationFixture {
-public:
-    PartitionEmulationFixture2( uint32_t start_sector1 = 0,
-                                uint32_t sector_size1 = 1,
-                                const char *partition_name1 = "nvs1",
-                                uint32_t start_sector2 = 1,
-                                uint32_t sector_size2 = 1,
-                                const char *partition_name2 = "nvs2"
-                              ) :
-        PartitionEmulationFixture(start_sector1, sector_size1, partition_name1), esp_partition2()
-    {
-        const uint32_t sec_size = esp_partition_get_main_flash_sector_size();
-        // for 2nd partition
-        esp_partition2.address = start_sector2 * sec_size;
-        esp_partition2.size = (start_sector2 + sector_size2) * sec_size;
-        esp_partition2.erase_size = ESP_PARTITION_EMULATED_SECTOR_SIZE;
-        esp_partition2.type = ESP_PARTITION_TYPE_DATA;
-        esp_partition2.subtype = ESP_PARTITION_SUBTYPE_DATA_NVS;
-        strncpy(esp_partition2.label, partition_name2, NVS_PART_NAME_MAX_SIZE);
-        p_part2 = new (std::nothrow) nvs::NVSPartition(&esp_partition2);
-        REQUIRE(p_part2 != nullptr);
-    }
-
-    ~PartitionEmulationFixture2()
-    {
-        delete p_part2;
-    }
-
-    nvs::NVSPartition *part2()
-    {
-        return p_part2;
-    }
-
-    nvs::NVSPartition *p_part2;
-    esp_partition_t esp_partition2;
+    // Set of functions to access partition statistics
+    // At the moment these functions are global, it means that they do not distinguish between
+    // different partitions
+    // Be aware that host tests mixing multiple partitions
+    // will not work correctly, as the statistics will be summed up for all partitions
+    static void clear_stats(void);
+    static size_t get_read_ops(void);
+    static size_t get_write_ops(void);
+    static size_t get_erase_ops(void);
+    static size_t get_read_bytes(void);
+    static size_t get_write_bytes(void);
+    static size_t get_total_time(void);
+    static void fail_after(size_t count, uint8_t mode);
+private:
+    static int s_instance_count;    // Static variable to track instance count
+    size_t mOriginalEraseSize;      // Erase size of the Partition at the moment of the object creation
 };

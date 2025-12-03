@@ -13,9 +13,9 @@ namespace nvs {
 
 namespace partition_lookup {
 
-esp_err_t lookup_nvs_partition(const char* label, NVSPartition **p);
+esp_err_t lookup_nvs_partition(const char* label, Partition **p);
 
-esp_err_t lookup_nvs_encrypted_partition(const char* label, nvs_sec_cfg_t* cfg, NVSPartition **p);
+esp_err_t lookup_nvs_encrypted_partition(const char* label, nvs_sec_cfg_t* cfg, Partition **p);
 
 } // partition_lookup
 

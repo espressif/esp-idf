@@ -32,7 +32,7 @@ elseif(esp_tee_build)
              "src/nvs_types.cpp"
              "src/nvs_platform.cpp")
 
-    set(requires esp_partition mbedtls)
+    set(requires esp_partition esp_blockdev mbedtls)
     set(priv_requires spi_flash esp_libc cxx)
 
     idf_component_register(SRCS "${srcs}"
@@ -60,7 +60,7 @@ else()
             "src/nvs_platform.cpp"
             "src/nvs_bootloader.c")
 
-    set(requires esp_partition)
+    set(requires esp_partition esp_blockdev)
     set(priv_requires spi_flash)
     if(NOT ${target} STREQUAL "linux")
         list(APPEND priv_requires esp_libc esptool_py nvs_sec_provider)
