@@ -83,6 +83,8 @@ def test_protocols_icmp_echo_ipv6_only(dut: Dut) -> None:
     logging.info(f'Connected AP with IPv6={ipv6}')
     interface_nr = dut.expect(r'Connected on interface: [a-z]{2}\d \((\d+)\)', timeout=30)[1].decode()
 
+    dut.expect_exact('esp>')
+
     # ping our own address to simplify things
     dut.write(f'ping -I {interface_nr} {ipv6} -c 5')
 

@@ -120,3 +120,14 @@ ASSERT((ADDR(NEXT_SECTION) == ADDR(PREV_SECTION) + SIZEOF(PREV_SECTION)), \
 #else
 #define FAST_REFLASHING_PADDING
 #endif
+
+#if CONFIG_LIBC_PICOLIBC
+# if CONFIG_LIBC_PICOLIBC_NEWLIB_COMPATIBILITY
+#  define PICOLIBC_REENT_STUB 16
+# else
+#  define PICOLIBC_REENT_STUB 4
+# endif
+#define ASSERT_PICOLIBC_REENT_STUB() ASSERT((_picolibc_reent_stub_end - _picolibc_reent_stub_start) == PICOLIBC_REENT_STUB, "Newlib _reent stub have wrong size")
+#else
+#define ASSERT_PICOLIBC_REENT_STUB()
+#endif

@@ -145,7 +145,7 @@ endif()
 
 if(ESP_TEE_BUILD)
     rom_linker_script("heap")
-    if(CONFIG_ESP_ROM_HAS_NEWLIB_NANO_FORMAT)
+    if(CONFIG_LIBC_NEWLIB AND CONFIG_ESP_ROM_HAS_NEWLIB_NANO_FORMAT)
         rom_linker_script("newlib-nano")
     endif()
     rom_linker_script("libc")

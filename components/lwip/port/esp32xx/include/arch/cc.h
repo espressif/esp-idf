@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
- * SPDX-FileContributor: 2018-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2018-2025 Espressif Systems (Shanghai) CO LTD
  */
 #ifndef __ARCH_CC_H__
 #define __ARCH_CC_H__
@@ -25,10 +25,18 @@ extern "C" {
 #endif // BYTE_ORDER
 
 #define LWIP_DONT_PROVIDE_BYTEORDER_FUNCTIONS
+#ifndef htons
 #define htons(x) __builtin_bswap16(x)
+#endif
+#ifndef ntohs
 #define ntohs(x) __builtin_bswap16(x)
+#endif
+#ifndef htonl
 #define htonl(x) __builtin_bswap32(x)
+#endif
+#ifndef ntohl
 #define ntohl(x) __builtin_bswap32(x)
+#endif
 
 #ifndef CONFIG_LWIP_ESP_LWIP_ASSERT
 #define LWIP_NOASSERT 1

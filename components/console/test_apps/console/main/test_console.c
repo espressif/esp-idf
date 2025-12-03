@@ -13,6 +13,9 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
+#if !CONFIG_IDF_TARGET_LINUX
+#include "driver/uart.h"
+#endif
 
 /*
  * NOTE: Most of these unit tests DO NOT work standalone. They require pytest to control
@@ -152,7 +155,7 @@ static esp_console_cmd_t s_quit_cmd = {
    ran separately in test_console_repl  */
 TEST_CASE("esp console repl test", "[console][ignore]")
 {
-    set_leak_threshold(416);
+    set_leak_threshold(248);
 
     s_test_console_mutex = xSemaphoreCreateMutexStatic(&s_test_console_mutex_buf);
     TEST_ASSERT_NOT_NULL(s_test_console_mutex);
@@ -189,7 +192,7 @@ TEST_CASE("esp console repl test", "[console][ignore]")
 
 TEST_CASE("esp console repl deinit", "[console][ignore]")
 {
-    set_leak_threshold(416);
+    set_leak_threshold(248);
 
     esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
     esp_console_dev_uart_config_t uart_config = ESP_CONSOLE_DEV_UART_CONFIG_DEFAULT();
@@ -404,3 +407,33 @@ TEST_CASE("esp console re-register commands", "[console][ignore]")
     TEST_ESP_OK(esp_console_start_repl(s_repl));
     vTaskDelay(pdMS_TO_TICKS(5000));
 }
+
+#if !CONFIG_IDF_TARGET_LINUX
+
+TEST_CASE("esp console repl custom_uart test", "[console][ignore]")
+{
+    set_leak_threshold(248);
+
+    printf("Running repl on UART1\n");
+
+    esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
+    esp_console_dev_uart_config_t uart_config = ESP_CONSOLE_DEV_UART_CONFIG_DEFAULT();
+    uart_config.channel = UART_NUM_1; // Set UART1 for repl task
+
+    TEST_ESP_OK(esp_console_new_repl_uart(&uart_config, &repl_config, &s_repl));
+
+    TEST_ESP_OK(esp_console_cmd_register(&s_quit_cmd));
+
+    TEST_ESP_OK(esp_console_start_repl(s_repl));
+
+    /* Wait a little for repl console initialization on UART1  */
+    vTaskDelay(pdMS_TO_TICKS(300));
+
+    TEST_ESP_OK(esp_console_stop_repl(s_repl));
+
+    /* Let scheduler clean task internals  */
+    vTaskDelay(pdMS_TO_TICKS(50));
+
+    printf("ByeBye\r\n");
+}
+#endif // !CONFIG_IDF_TARGET_LINUX

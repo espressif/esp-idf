@@ -25,19 +25,33 @@ check_public_headers:
     - .host_test_template
     - .rules:build:check
   script:
-    - IDF_TARGET=esp32 python tools/ci/check_public_headers.py --jobs 4 --prefix xtensa-esp32-elf-
-    - IDF_TARGET=esp32s2 python tools/ci/check_public_headers.py --jobs 4 --prefix xtensa-esp32s2-elf-
-    - IDF_TARGET=esp32s3 python tools/ci/check_public_headers.py --jobs 4 --prefix xtensa-esp32s3-elf-
-    - IDF_TARGET=esp32c3 python tools/ci/check_public_headers.py --jobs 4 --prefix riscv32-esp-elf-
-    - IDF_TARGET=esp32c2 python tools/ci/check_public_headers.py --jobs 4 --prefix riscv32-esp-elf-
-    - IDF_TARGET=esp32c6 python tools/ci/check_public_headers.py --jobs 4 --prefix riscv32-esp-elf-
-    - IDF_TARGET=esp32c5 python tools/ci/check_public_headers.py --jobs 4 --prefix riscv32-esp-elf-
-    - IDF_TARGET=esp32h2 python tools/ci/check_public_headers.py --jobs 4 --prefix riscv32-esp-elf-
-    - IDF_TARGET=esp32p4 python tools/ci/check_public_headers.py --jobs 4 --prefix riscv32-esp-elf-
-    - IDF_TARGET=esp32c61 python tools/ci/check_public_headers.py --jobs 4 --prefix riscv32-esp-elf-
-    - IDF_TARGET=esp32h21 python tools/ci/check_public_headers.py --jobs 4 --prefix riscv32-esp-elf-
-    - IDF_TARGET=esp32h4 python tools/ci/check_public_headers.py --jobs 4 --prefix riscv32-esp-elf-
-    - IDF_TARGET=esp32s31 python tools/ci/check_public_headers.py --jobs 4 --prefix riscv32-esp-elf-
+    - |
+      targets="esp32 \
+        esp32s2 \
+        esp32s3 \
+        esp32c3 \
+        esp32c2 \
+        esp32c6 \
+        esp32c5 \
+        esp32h2 \
+        esp32p4 \
+        esp32c61 \
+        esp32h21 \
+        esp32h4 \
+        esp32s31"
+      for libc in newlib picolibc; do
+        for target in ${targets}; do
+          case "${target}" in
+            esp32|esp32s2|esp32s3)
+              PREFIX="xtensa-${target}-elf-"
+              ;;
+            *)
+              PREFIX="riscv32-esp-elf-"
+              ;;
+          esac
+          IDF_TARGET=${target} python tools/ci/check_public_headers.py --jobs 4 --prefix ${PREFIX} --libc-type ${libc}
+        done
+      done
 
 test_nvs_coverage:
   extends:

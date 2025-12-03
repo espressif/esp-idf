@@ -162,7 +162,7 @@ if(CONFIG_ESP_PHY_ENABLED)
             add_custom_command(
                 OUTPUT ${phy_init_data_bin}
                 DEPENDS ${CMAKE_CURRENT_LIST_DIR}/${idf_target}/phy_init_data.c
-                COMMAND ${CMAKE_C_COMPILER} -c ${CMAKE_CURRENT_LIST_DIR}/${idf_target}/phy_init_data.c
+                COMMAND ${CMAKE_C_COMPILER} ${CMAKE_C_FLAGS} -c ${CMAKE_CURRENT_LIST_DIR}/${idf_target}/phy_init_data.c
                 -I ${esp_common_dir}/include -I ${CMAKE_CURRENT_LIST_DIR}/include
                 -I ${CMAKE_CURRENT_LIST_DIR}/${idf_target}/include -I ${esp_rom_dir}/include
                 -I ${soc_dir}/${idf_target}/include -I ${esp_libc_dir}/platform_include

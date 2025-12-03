@@ -2,14 +2,45 @@ menu "LibC"
 
     choice LIBC
         prompt "LibC to build application with"
-        default LIBC_NEWLIB
+        default LIBC_NEWLIB if IDF_TOOLCHAIN_CLANG
+        default LIBC_PICOLIBC
 
         config LIBC_NEWLIB
             bool "NewLib"
         config LIBC_PICOLIBC
-            bool "Picolibc (EXPERIMENTAL)"
-            depends on !IDF_TOOLCHAIN_CLANG && IDF_EXPERIMENTAL_FEATURES
+            bool "Picolibc"
+            depends on !IDF_TOOLCHAIN_CLANG
     endchoice
+
+    config LIBC_PICOLIBC_NEWLIB_COMPATIBILITY
+        bool "Provides limited interoperability with libraries built using Newlib headers"
+        default y
+        depends on LIBC_PICOLIBC
+        help
+            This option provides limited compatibility with libraries built using Newlib headers by:
+
+            Enabling hidden system-header inclusions that exist in Newlib.
+            Adding tls_stdio, tls_stdout, and tls_stderr variables to Thread Local Storage
+            to allow prebuilt libraries to access them via getreent().
+            Providing an implementation of getreent() that returns the value of the thread-pointer register.
+
+            Limitations:
+
+            1. If your application or an external prebuilt library accesses Newlib "struct _reent" implicitly,
+            this may cause memory corruption on the task stack. You have two options:
+
+            - Use libc API calls instead of directly accessing "struct _reent" fields.
+            - Switch ESP-IDF to use the Newlib implementation by setting CONFIG_LIBC_NEWLIB=y in sdkconfig.
+
+            2. If your application uses a prebuilt library built with Newlib headers, you may encounter
+            unexpected behavior when overriding stdin, stdout, and stderr. External prebuilt libraries
+            can only read these streams, so overriding them will not affect as it was for Newlib.
+            You have two options to fix this:
+
+            - Rebuild the library with Picolibc headers that follow POSIX-standardized stdin, stdout,
+              and stderr declarations.
+            - Switch ESP-IDF to use the Newlib implementation by setting CONFIG_LIBC_NEWLIB=y in sdkconfig.
+
 
     config LIBC_MISC_IN_IRAM
         bool "Place misc libc functions (abort/assert/stdatomics) in IRAM" if SPI_FLASH_AUTO_SUSPEND
@@ -18,7 +49,6 @@ menu "LibC"
     config LIBC_LOCKS_PLACE_IN_IRAM
         bool "Place lock API in IRAM"
         default y
-        depends on LIBC_NEWLIB
         help
             Enable this option to include be able to call the lock API from
             code that runs while cache is disabled, e.g. IRAM interrupts.

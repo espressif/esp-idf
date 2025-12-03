@@ -1159,6 +1159,7 @@ def spiram_xip_irom_alignment_reg_execute_violation(dut: PanicTestDut, test_func
 
 
 @pytest.mark.generic
+@pytest.mark.temp_skip_ci(targets=['esp32c5'], reason='TODO IDF-14835')
 @idf_parametrize('config, target', CONFIGS_MEMPROT_SPIRAM_XIP_IROM_ALIGNMENT_HEAP, indirect=['config', 'target'])
 def test_spiram_xip_irom_alignment_reg_execute_violation(dut: PanicTestDut, test_func_name: str) -> None:
     spiram_xip_irom_alignment_reg_execute_violation(dut, test_func_name)
@@ -1187,6 +1188,7 @@ def spiram_xip_drom_alignment_reg_execute_violation(dut: PanicTestDut, test_func
 
 
 @pytest.mark.generic
+@pytest.mark.temp_skip_ci(targets=['esp32c5'], reason='TODO IDF-14835')
 @idf_parametrize('config, target', CONFIGS_MEMPROT_SPIRAM_XIP_DROM_ALIGNMENT_HEAP, indirect=['config', 'target'])
 def test_spiram_xip_drom_alignment_reg_execute_violation(dut: PanicTestDut, test_func_name: str) -> None:
     spiram_xip_drom_alignment_reg_execute_violation(dut, test_func_name)

@@ -58,6 +58,7 @@
 
 #include <tinycrypt/ecc.h>
 #include <tinycrypt/ecc_platform_specific.h>
+#include <assert.h>
 #include <string.h>
 #include <stdio.h>
 

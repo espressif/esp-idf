@@ -64,7 +64,11 @@ else()
     list(APPEND srcs
          "src/picolibc/picolibc_init.c"
          "src/picolibc/rand.c"
-         "src/picolibc/open_memstream.c")
+         "src/picolibc/open_memstream.c"
+         "src/picolibc/errno.c")
+    if(CONFIG_LIBC_PICOLIBC_NEWLIB_COMPATIBILITY)
+        list(APPEND srcs "src/picolibc/getreent.c")
+    endif()
 endif()
 
 set(ldfragments "")
