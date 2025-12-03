@@ -266,7 +266,7 @@ def check_test_scripts(
 
         if manifest_targets == actual_targets:
             continue
-        if not (set(manifest_targets) - set(actual_targets + (bypass_targets or []))):
+        if not ((set(manifest_targets) ^ set(actual_targets)) - set(bypass_targets or [])):
             continue
 
         print(f'Test target MISMATCH!!!: {app_dir}')
