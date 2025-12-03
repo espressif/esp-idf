@@ -67,7 +67,7 @@ build_stage2() {
         --work-dir ${BUILD_PATH}/cmake \
         --build-dir ${BUILD_DIR} \
         --build-log ${BUILD_LOG_CMAKE} \
-        --default-build-targets esp32 esp32s2 esp32s3 esp32c2 esp32c3 esp32c5 esp32c6 esp32h2 esp32p4 esp32c61 esp32h21 esp32h4
+        --default-build-targets esp32 esp32s2 esp32s3 esp32c2 esp32c3 esp32c5 esp32c6 esp32h2 esp32p4 esp32c61 esp32h21 esp32h4 esp32s31
 }
 
 build_stage1() {
@@ -78,7 +78,7 @@ build_stage1() {
         --work-dir ${BUILD_PATH}/cmake \
         --build-dir ${BUILD_DIR} \
         --build-log ${BUILD_LOG_CMAKE} \
-        --default-build-targets esp32 esp32s2 esp32s3 esp32c2 esp32c3 esp32c5 esp32c6 esp32h2 esp32p4 esp32c61 esp32h21 esp32h4
+        --default-build-targets esp32 esp32s2 esp32s3 esp32c2 esp32c3 esp32c5 esp32c6 esp32h2 esp32p4 esp32c61 esp32h21 esp32h4 esp32s31
 }
 
 # Default arguments

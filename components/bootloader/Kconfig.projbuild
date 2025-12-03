@@ -8,7 +8,7 @@ menu "Bootloader config"
         hex
         default 0x1000 if IDF_TARGET_ESP32 || IDF_TARGET_ESP32S2
         # the first 2 sectors are reserved for the key manager with AES-XTS (flash encryption) purpose
-        default 0x2000 if IDF_TARGET_ESP32P4 || IDF_TARGET_ESP32C5 || IDF_TARGET_ESP32H4
+        default 0x2000 if IDF_TARGET_ESP32P4 || IDF_TARGET_ESP32C5 || IDF_TARGET_ESP32H4 || IDF_TARGET_ESP32S31
         default 0x0
         help
             Offset address that 2nd bootloader will be flashed to.
@@ -175,6 +175,7 @@ menu "Bootloader config"
         range 0 30 if IDF_TARGET_ESP32C6
         range 0 27 if IDF_TARGET_ESP32H2
         range 0 54 if IDF_TARGET_ESP32P4
+        range 0 62 if IDF_TARGET_ESP32S31
         default 4
         help
             The selected GPIO will be configured as an input with internal pull-up enabled. To trigger a factory

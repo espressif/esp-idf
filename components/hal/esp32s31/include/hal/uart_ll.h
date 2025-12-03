@@ -245,9 +245,6 @@ static inline void uart_ll_enable_bus_clock(uart_port_t uart_num, bool enable)
         HP_SYS_CLKRST.uart3_ctrl0.reg_uart3_apb_clk_en = enable;
         HP_SYS_CLKRST.uart3_ctrl0.reg_uart3_sys_clk_en = enable;
         break;
-    case 4:
-        // LP_UART port having its own enable_bus_clock function: lp_uart_ll_enable_bus_clock
-        break;;
     default:
         abort();
         break;
@@ -277,9 +274,6 @@ static inline void uart_ll_reset_register(uart_port_t uart_num)
         HP_SYS_CLKRST.uart3_ctrl0.reg_uart3_apb_rst_en = 1;
         HP_SYS_CLKRST.uart3_ctrl0.reg_uart3_apb_rst_en = 0;
         break;
-    case 4:
-        // LP_UART port having its own enable_bus_clock function: lp_uart_ll_reset_register
-        break;;
     default:
         abort();
         break;
@@ -565,6 +559,18 @@ FORCE_INLINE_ATTR void uart_ll_clr_intsts_mask(uart_dev_t *hw, uint32_t mask)
 FORCE_INLINE_ATTR uint32_t uart_ll_get_intr_ena_status(uart_dev_t *hw)
 {
     return hw->int_ena.val;
+}
+
+/**
+ * @brief  Get reg address of interrupt.
+ *
+ * @param  hw Beginning address of the peripheral registers.
+ *
+ * @return reg address
+ */
+FORCE_INLINE_ATTR volatile void* uart_ll_get_intr_status_reg(uart_dev_t *hw)
+{
+    return &hw->int_st.val;
 }
 
 /**
@@ -1021,9 +1027,6 @@ FORCE_INLINE_ATTR void uart_ll_set_char_seq_wk_char(uart_dev_t *hw, uint32_t cha
             break;
         case 3:
             HAL_FORCE_MODIFY_U32_REG_FIELD(hw->sleep_conf0, wk_char3, value);
-            break;
-        case 4:
-            HAL_FORCE_MODIFY_U32_REG_FIELD(hw->sleep_conf0, wk_char4, value);
             break;
         default:
             abort();
@@ -1527,9 +1530,6 @@ FORCE_INLINE_ATTR void uart_ll_memory_lp_enable(uart_port_t uart_num)
     case 3:
         HP_SYSTEM.sys_uart3_mem_lp_ctrl.sys_uart3_mem_lp_en = 1;
         break;
-    case 4:
-        LP_SYS.uart_mem_lp_ctrl.uart_mem_lp_en = 1;
-        break;;
     default:
         abort();
         break;
@@ -1558,9 +1558,6 @@ FORCE_INLINE_ATTR void uart_ll_memory_lp_disable(uart_port_t uart_num)
     case 3:
         HP_SYSTEM.sys_uart3_mem_lp_ctrl.sys_uart3_mem_lp_en = 0;
         break;
-    case 4:
-        LP_SYS.uart_mem_lp_ctrl.uart_mem_lp_en = 0;
-        break;;
     default:
         abort();
         break;

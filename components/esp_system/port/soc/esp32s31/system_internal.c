@@ -31,7 +31,7 @@
 
 // TODO: [ESP32S31] IDF-14841
 
-void IRAM_ATTR esp_system_reset_modules_on_exit(void)
+void esp_system_reset_modules_on_exit(void)
 {
     // Flush any data left in UART FIFOs
     for (int i = 0; i < SOC_UART_HP_NUM; ++i) {
@@ -45,7 +45,7 @@ void IRAM_ATTR esp_system_reset_modules_on_exit(void)
  * core are already stopped. Stalls other core, resets hardware,
  * triggers restart.
 */
-void IRAM_ATTR esp_restart_noos(void)
+void esp_restart_noos(void)
 {
     // Disable interrupts
     rv_utils_intr_global_disable();
