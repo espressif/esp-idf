@@ -135,6 +135,13 @@ static esp_err_t _http_handle_response_code(esp_https_ota_t *https_ota_handle, i
     } else if (status_code >= HttpStatus_InternalError) {
         ESP_LOGE(TAG, "Server error (%d)", status_code);
         return ESP_FAIL;
+    } else if (https_ota_handle->binary_file_len > 0
+#if CONFIG_ESP_HTTPS_OTA_ENABLE_PARTIAL_DOWNLOAD
+        && !https_ota_handle->partial_http_download
+#endif
+        && status_code != HttpStatus_PartialContent) {
+        ESP_LOGE(TAG, "Requested range header ignored by server");
+        return ESP_ERR_HTTP_RANGE_NOT_SATISFIABLE;
     }
 
     char upgrade_data_buf[256];
