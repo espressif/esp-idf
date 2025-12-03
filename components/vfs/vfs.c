@@ -19,7 +19,7 @@
 #include "freertos/semphr.h"
 #include "esp_vfs.h"
 #include "esp_vfs_private.h"
-#include "include/esp_vfs.h"
+#include "esp_private/socket.h"
 #include "sdkconfig.h"
 
 // Warn about using deprecated option

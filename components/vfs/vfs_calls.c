@@ -19,6 +19,7 @@
 #include "freertos/semphr.h"
 #include "esp_log.h"
 #include "esp_vfs.h"
+#include "esp_private/socket.h"
 #include "esp_vfs_private.h"
 #include "esp_vfs_utils.h"
 #include "sdkconfig.h"
