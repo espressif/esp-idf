@@ -66,7 +66,7 @@ static const UINT16 disc_type_to_uuid[GATT_DISC_MAX] = {
     0                   /* no type filtering for DISC_CHAR_DSCPT */
 };
 
-// Use for GATTC discover infomation print
+// Use for GATTC discover information print
 #define GATT_DISC_INFO(fmt, args...) {if (gatt_cb.auto_disc == FALSE) BT_PRINT_I("BT_GATT", fmt, ## args);}
 
 /*******************************************************************************
@@ -604,7 +604,7 @@ void gatt_process_prep_write_rsp (tGATT_TCB *p_tcb, tGATT_CLCB *p_clcb, UINT8 op
 
     GATT_TRACE_DEBUG("value resp op_code = %s len = %d", gatt_dbg_op_name(op_code), len);
 
-    if (len < GATT_PREP_WRITE_RSP_MIN_LEN) {
+    if ((len < GATT_PREP_WRITE_RSP_MIN_LEN) || ((len - 4) > GATT_MAX_ATTR_LEN)) {
         GATT_TRACE_ERROR("illegal prepare write response length, discard");
         gatt_end_operation(p_clcb, GATT_INVALID_PDU, &value);
         return;
@@ -701,7 +701,7 @@ void gatt_process_notification(tGATT_TCB *p_tcb, UINT8 op_code,
         }
         p_tcb->ind_count = 0;
 
-        /* should notify all registered client with the handle value notificaion/indication
+        /* should notify all registered client with the handle value notification/indication
            Note: need to do the indication count and start timer first then do callback
         */
         for (i = 0, p_reg = gatt_cb.cl_rcb; i < GATT_MAX_APPS; i++, p_reg++) {
@@ -800,7 +800,7 @@ void gatt_process_read_by_type_rsp (tGATT_TCB *p_tcb, tGATT_CLCB *p_clcb, UINT8 
         handle_len = 4;
     }
 
-    value_len -= handle_len; /* substract the handle pairs bytes */
+    value_len -= handle_len; /* subtract the handle pairs bytes */
     len -= 1;
 
     while (len >= (handle_len + value_len)) {
@@ -887,7 +887,7 @@ void gatt_process_read_by_type_rsp (tGATT_TCB *p_tcb, tGATT_CLCB *p_clcb, UINT8 
                 gatt_end_operation(p_clcb, GATT_SUCCESS, (void *)p);
             }
             return;
-        } else { /* discover characterisitic */
+        } else { /* discover characteristic */
             STREAM_TO_UINT8 (record_value.dclr_value.char_prop, p);
             STREAM_TO_UINT16(record_value.dclr_value.val_handle, p);
             if (!GATT_HANDLE_IS_VALID(record_value.dclr_value.val_handle)) {
@@ -979,7 +979,7 @@ void gatt_process_read_rsp(tGATT_TCB *p_tcb, tGATT_CLCB *p_clcb,  UINT8 op_code,
 
                 if (len == (p_tcb->payload_size - 1) && /* full packet for read or read blob rsp */
                         len + offset < GATT_MAX_ATTR_LEN) {
-                    GATT_TRACE_DEBUG("full pkt issue read blob for remianing bytes old offset=%d len=%d new offset=%d",
+                    GATT_TRACE_DEBUG("full pkt issue read blob for remaining bytes old offset=%d len=%d new offset=%d",
                                      offset, len, p_clcb->counter);
                     gatt_act_read(p_clcb, p_clcb->counter);
                 } else { /* end of request, send callback */
