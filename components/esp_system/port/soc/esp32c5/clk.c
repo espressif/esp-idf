@@ -55,7 +55,7 @@
 #include "hal/spi_ll.h"
 #include "hal/temperature_sensor_ll.h"
 #include "hal/timer_ll.h"
-#include "hal/twaifd_ll.h"
+#include "hal/twai_ll.h"
 #include "hal/uart_ll.h"
 #include "hal/uhci_ll.h"
 #include "hal/usb_serial_jtag_ll.h"
@@ -290,10 +290,10 @@ __attribute__((weak)) void esp_perip_clk_init(void)
         timer_ll_enable_clock(1, 0, false);
         _timg_ll_enable_bus_clock(0, false);
         _timg_ll_enable_bus_clock(1, false);
-        twaifd_ll_enable_clock(0, false);
-        twaifd_ll_enable_bus_clock(0, false);
-        twaifd_ll_enable_clock(1, false);
-        twaifd_ll_enable_bus_clock(1, false);
+        twai_ll_enable_clock(0, false);
+        twai_ll_enable_bus_clock(0, false);
+        twai_ll_enable_clock(1, false);
+        twai_ll_enable_bus_clock(1, false);
         i2s_ll_enable_bus_clock(0, false);
         i2s_ll_tx_disable_clock(&I2S0);
         i2s_ll_rx_disable_clock(&I2S0);

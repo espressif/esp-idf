@@ -12,10 +12,10 @@ entries:
         esp_twai: twai_node_transmit (noflash)
 
 [mapping:twai_hal]
-archive: libhal.a
+archive: libesp_hal_twai.a
 entries:
     if TWAI_ISR_IN_IRAM = y:
-        if SOC_TWAI_SUPPORT_FD = y:
+        if SOC_TWAI_FD_SUPPORTED = y:
             twai_hal_v2: twai_hal_format_frame (noflash)
             twai_hal_v2: twai_hal_parse_frame (noflash)
             twai_hal_v2: twai_hal_set_tx_buffer_and_transmit (noflash)

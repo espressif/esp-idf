@@ -1761,7 +1761,7 @@ typedef union twaifd_frame_buffer_t {
             struct {
                 uint32_t dlc: 4;            // Data length code (0-15)
                 uint32_t reserved4: 1;      // Reserved bit
-                uint32_t rtr: 1;            // Remote transmission request
+                uint32_t rtr: 1;            // Remote transmission request. Note there are no remote frames in CAN FD protocol
                 uint32_t ide: 1;            // Identifier extension bit
                 uint32_t fdf: 1;            // Flexible data-rate format bit
                 uint32_t reserved8: 1;      // Reserved bit

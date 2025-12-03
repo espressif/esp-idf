@@ -583,18 +583,6 @@ config SOC_TWAI_MASK_FILTER_NUM
     int
     default 1
 
-config SOC_TWAI_BRP_MIN
-    int
-    default 2
-
-config SOC_TWAI_CLK_SUPPORT_APB
-    bool
-    default y
-
-config SOC_TWAI_SUPPORT_MULTI_ADDRESS_LAYOUT
-    bool
-    default y
-
 config SOC_UART_NUM
     int
     default 3
