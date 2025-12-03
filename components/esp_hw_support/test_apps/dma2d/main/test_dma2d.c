@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -317,10 +317,7 @@ TEST_CASE("DMA2D_M2M_1D_RGB565_to_RGB888", "[DMA2D]")
 TEST_CASE("DMA2D_M2M_2D_basic", "[DMA2D]")
 {
     // Test a 128 x 128 pixel data block (one byte per pixel - assume A8)
-    const color_space_pixel_format_t pixel_format = {
-        .color_space = COLOR_SPACE_ALPHA,
-        .pixel_format = COLOR_PIXEL_A8,
-    };
+    const esp_color_fourcc_t pixel_format = ESP_COLOR_FOURCC_ALPHA8;
     const uint32_t stripe_size = 128; // unit: bytes
 
     memset(m2m_trans_config, 0, M2M_TRANS_TIMES * sizeof(dma2d_m2m_trans_config_t));
@@ -452,14 +449,8 @@ static int rgb888_to_rgb565_and_cmp(void *__rgb888, void *__rgb565, int pix)
 TEST_CASE("DMA2D_M2M_2D_RGB888_to_RGB565", "[DMA2D]")
 {
     // Test a 64 x 64 pixel data block (original pixel in RGB888 format, convert to RGB565 format)
-    const color_space_pixel_format_t in_pixel_format = {
-        .color_space = COLOR_SPACE_RGB,
-        .pixel_format = COLOR_PIXEL_RGB888,
-    };
-    const color_space_pixel_format_t out_pixel_format = {
-        .color_space = COLOR_SPACE_RGB,
-        .pixel_format = COLOR_PIXEL_RGB565,
-    };
+    const esp_color_fourcc_t in_pixel_format = ESP_COLOR_FOURCC_BGR24;
+    const esp_color_fourcc_t out_pixel_format = ESP_COLOR_FOURCC_RGB16;
     const uint32_t stripe_pixel_size = 64; // unit: pixel
 
     memset(m2m_trans_config, 0, M2M_TRANS_TIMES * sizeof(dma2d_m2m_trans_config_t));
@@ -572,10 +563,7 @@ TEST_CASE("DMA2D_M2M_2D_RGB888_to_RGB565", "[DMA2D]")
 TEST_CASE("DMA2D_M2M_2D_window", "[DMA2D]")
 {
     // Test 2D memcpy to a 2 x 2 block at (2, 4) in a 8 x 8 picture (pixel in RGB565 format)
-    const color_space_pixel_format_t pixel_format = {
-        .color_space = COLOR_SPACE_RGB,
-        .pixel_format = COLOR_PIXEL_RGB565,
-    };
+    const esp_color_fourcc_t pixel_format = ESP_COLOR_FOURCC_RGB16;
     const uint32_t va = 8, ha = 8; // Define picture height and width (unit: pixel)
     const uint32_t vb = 2, hb = 2; // Define block height and width (unit: pixel)
     const uint32_t x_offset = 2, y_offset = 4; // Define block location in the picture (unit: pixel)

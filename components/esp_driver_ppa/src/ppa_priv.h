@@ -28,12 +28,22 @@ extern "C" {
 #define PPA_PM_LOCK_NAME_LEN_MAX 16
 
 #define PPA_CHECK_CM_SUPPORT_BYTE_SWAP(str, color_type_id) \
-            ESP_RETURN_ON_FALSE(color_type_id == COLOR_TYPE_ID(COLOR_SPACE_ARGB, COLOR_PIXEL_ARGB8888) || color_type_id == COLOR_TYPE_ID(COLOR_SPACE_RGB, COLOR_PIXEL_RGB565), \
+            ESP_RETURN_ON_FALSE((color_type_id == ESP_COLOR_FOURCC_BGRA32) || (color_type_id == ESP_COLOR_FOURCC_RGB16), \
                                 ESP_ERR_INVALID_ARG, TAG, str "_cm does not support byte_swap");
 
 #define PPA_CHECK_CM_SUPPORT_RGB_SWAP(str, color_type_id) \
-            ESP_RETURN_ON_FALSE(COLOR_SPACE_TYPE(color_type_id) == COLOR_SPACE_ARGB || COLOR_SPACE_TYPE(color_type_id) == COLOR_SPACE_RGB, \
+            ESP_RETURN_ON_FALSE((color_type_id == ESP_COLOR_FOURCC_BGRA32) || (color_type_id == ESP_COLOR_FOURCC_BGR24) || (color_type_id == ESP_COLOR_FOURCC_RGB16), \
                                 ESP_ERR_INVALID_ARG, TAG, str "_cm does not support rgb_swap");
+
+#define PPA_IS_CM_YUV422(color_type_id) \
+            (color_type_id == ESP_COLOR_FOURCC_UYVY || color_type_id == ESP_COLOR_FOURCC_VYUY || \
+             color_type_id == ESP_COLOR_FOURCC_YUYV || color_type_id == ESP_COLOR_FOURCC_YVYU)
+
+#define PPA_IS_CM_YUV(color_type_id) \
+            (color_type_id == ESP_COLOR_FOURCC_OUYY_EVYY || color_type_id == ESP_COLOR_FOURCC_YUV || PPA_IS_CM_YUV422(color_type_id))
+
+#define PPA_IS_CM_ALPHA(color_type_id) \
+            (color_type_id == ESP_COLOR_FOURCC_ALPHA8 || color_type_id == ESP_COLOR_FOURCC_ALPHA4)
 
 #define PPA_ALIGN_UP(num, align)    (((num) + ((align) - 1)) & ~((align) - 1))
 #define PPA_ALIGN_DOWN(num, align)  ((num) & ~((align) - 1))

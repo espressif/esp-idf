@@ -117,7 +117,7 @@ typedef union {
          */
         uint32_t rgb2yuv_protocal:1;
         /** yuv422_rx_byte_order : R/W; bitpos: [13:12]; default: 0;
-         *  YUV422 input byte order when reg_sr_rx_cm is 4'd9. 0: YVYU, 1:YUYV, 2: VYUY, 3: UYVY
+         *  YUV422 input byte order when reg_sr_rx_cm is 4'd9. 0: YVYU, 1:YUYV, 2: VYUY, 3: UYVY (high addr -> low addr)
          */
         uint32_t yuv422_rx_byte_order:2;
         uint32_t reserved_14:18;
@@ -162,7 +162,7 @@ typedef union {
          */
         uint32_t blend_tx_rgb2yuv_protocal:1;
         /** blend0_rx_yuv422_byte_order : R/W; bitpos: [17:16]; default: 0;
-         *  YUV422 input byte order when reg_sr_rx_cm is 4'd9. 0: YVYU, 1:YUYV, 2: VYUY, 3: UYVY
+         *  YUV422 input byte order when reg_sr_rx_cm is 4'd9. 0: YVYU, 1:YUYV, 2: VYUY, 3: UYVY (high addr -> low addr)
          */
         uint32_t blend0_rx_yuv422_byte_order:2;
         uint32_t reserved_18:14;
