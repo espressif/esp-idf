@@ -11,6 +11,7 @@ from pytest_embedded_idf.utils import idf_parametrize
     [
         'default_set_key',
         'legacy_set_key',
+        'esp_blockdev',
     ],
     indirect=True,
 )

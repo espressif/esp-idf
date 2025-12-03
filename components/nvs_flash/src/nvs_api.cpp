@@ -17,6 +17,7 @@
 #include "esp_err.h"
 #include <esp_rom_crc.h>
 #include "nvs_internal.h"
+#include "nvs_partition_lookup.hpp"
 
 // Uncomment this line to force output from this module
 // #define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
@@ -91,6 +92,7 @@ static esp_err_t close_handles_and_deinit(const char* part_name)
     return NVSPartitionManager::get_instance()->deinit_partition(part_name);
 }
 
+#ifndef CONFIG_NVS_BDL_STACK
 extern "C" esp_err_t nvs_flash_init_partition_ptr(const esp_partition_t *partition)
 {
     esp_err_t lock_result = Lock::init();
@@ -108,10 +110,12 @@ extern "C" esp_err_t nvs_flash_init_partition_ptr(const esp_partition_t *partiti
         return ESP_ERR_NO_MEM;
     }
 
-    const uint32_t sec_size = esp_partition_get_main_flash_sector_size();
+    uint32_t sec_size = NVS_CONST_PAGE_SIZE;
+    uint32_t size = part->get_size();
+
     esp_err_t init_res = NVSPartitionManager::get_instance()->init_custom(part,
             0,
-            partition->size / sec_size);
+            size / sec_size);
 
     if (init_res != ESP_OK) {
         delete part;
@@ -119,6 +123,46 @@ extern "C" esp_err_t nvs_flash_init_partition_ptr(const esp_partition_t *partiti
 
     return init_res;
 }
+#else
+extern "C" esp_err_t nvs_flash_init_partition_bdl(const char* partition_label, esp_blockdev_handle_t bdl)
+{
+    esp_err_t lock_result = Lock::init();
+    if (lock_result != ESP_OK) {
+        return lock_result;
+    }
+    Lock lock;
+
+    if (partition_label == nullptr) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (bdl == nullptr) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (!NVSPartition::is_bdl_nvs_compliant(partition_label, bdl)) {
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+
+    NVSPartition *part = new (std::nothrow) NVSPartition(partition_label, bdl, false);
+    if (part == nullptr) {
+        return ESP_ERR_NO_MEM;
+    }
+
+    uint32_t sec_size = NVS_CONST_PAGE_SIZE;
+    uint32_t size = part->get_size();
+
+    esp_err_t init_res = NVSPartitionManager::get_instance()->init_custom(part,
+            0,
+            size / sec_size);
+
+    if (init_res != ESP_OK) {
+        delete part;
+    }
+
+    return init_res;
+}
+#endif
 
 #ifndef LINUX_HOST_LEGACY_TEST
 extern "C" esp_err_t nvs_flash_init_partition(const char *part_name)
@@ -129,7 +173,6 @@ extern "C" esp_err_t nvs_flash_init_partition(const char *part_name)
     }
     Lock lock;
 
-    assert(nvs::Page::SEC_SIZE == esp_partition_get_main_flash_sector_size());
     return NVSPartitionManager::get_instance()->init_partition(part_name);
 }
 
@@ -170,7 +213,6 @@ extern "C" esp_err_t nvs_flash_secure_init_partition(const char *part_name, nvs_
     }
     Lock lock;
 
-    assert(nvs::Page::SEC_SIZE == esp_partition_get_main_flash_sector_size());
     return NVSPartitionManager::get_instance()->secure_init_partition(part_name, cfg);
 }
 
@@ -197,38 +239,23 @@ extern "C" esp_err_t nvs_flash_erase_partition(const char *part_name)
         }
     }
 
-    const esp_partition_t* partition = esp_partition_find_first(
-            ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_NVS, part_name);
-    if (partition == nullptr) {
-        return ESP_ERR_NOT_FOUND;
+    // reuse the partition lookup code to find the NVS partition to streamline the BDL and non-BDL code paths
+    nvs::Partition* part = nullptr;
+    esp_err_t err = nvs::partition_lookup::lookup_nvs_partition(part_name, &part);
+    if (err != ESP_OK || part == nullptr) {
+        return err;
     }
 
-    return esp_partition_erase_range(partition, 0, partition->size);
+    // erase the partition
+    err = part->erase_range(0, part->get_size());
+
+    // No need to delete the partition here, as it is managed by the NVSPartitionManager.
+    return err;
 }
 
 extern "C" esp_err_t nvs_flash_erase_partition_ptr(const esp_partition_t *partition)
 {
-    esp_err_t lock_result = Lock::init();
-    if (lock_result != ESP_OK) {
-        return lock_result;
-    }
-    Lock lock;
-
-    if (partition == nullptr) {
-        return ESP_ERR_INVALID_ARG;
-    }
-
-    // if the partition is initialized, uninitialize it first
-    if (NVSPartitionManager::get_instance()->lookup_storage_from_name(partition->label)) {
-        const esp_err_t err = close_handles_and_deinit(partition->label);
-
-        // only hypothetical/future case, deinit_partition() only fails if partition is uninitialized
-        if (err != ESP_OK) {
-            return err;
-        }
-    }
-
-    return esp_partition_erase_range(partition, 0, partition->size);
+    return nvs_flash_erase_partition(partition->label);
 }
 
 extern "C" esp_err_t nvs_flash_erase(void)

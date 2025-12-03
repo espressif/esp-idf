@@ -3,15 +3,20 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
 #include <cstring>
 #include "nvs_encrypted_partition.hpp"
 #include "nvs_types.hpp"
+#include "nvs_constants.h"
 
 namespace nvs {
 
+#ifdef CONFIG_NVS_BDL_STACK
+NVSEncryptedPartition::NVSEncryptedPartition(const char* label, const esp_blockdev_handle_t bdl, const bool managed_bdl)
+    : NVSPartition(label, bdl, managed_bdl) { }
+#else
 NVSEncryptedPartition::NVSEncryptedPartition(const esp_partition_t *partition)
     : NVSPartition(partition) { }
+#endif // CONFIG_NVS_BDL_STACK
 
 esp_err_t NVSEncryptedPartition::init(nvs_sec_cfg_t* cfg)
 {
@@ -33,19 +38,20 @@ esp_err_t NVSEncryptedPartition::init(nvs_sec_cfg_t* cfg)
 
 esp_err_t NVSEncryptedPartition::read(size_t src_offset, void* dst, size_t size)
 {
-    /** Currently upper layer of NVS reads entries one by one even for variable size
-    * multi-entry data types. So length should always be equal to size of an entry.*/
-    if (size != sizeof(Item)) return ESP_ERR_INVALID_SIZE;
+    // Currently upper layer of NVS reads entries one by one even for variable size
+    // multi-entry data types. So length should always be equal to size of an entry.
+    // here we make sure that the size is really compliant with the minimal encryption block size.
+    if (size % NVS_ENCRYPT_BLOCK_SIZE != 0) return ESP_ERR_INVALID_SIZE;
 
     // read data
-    esp_err_t read_result = esp_partition_read(mESPPartition, src_offset, dst, size);
+    esp_err_t read_result = NVSPartition::read(src_offset, dst, size);
     if (read_result != ESP_OK) {
         return read_result;
     }
 
     // decrypt data
     //sector num required as an arr by mbedtls. Should have been just uint64/32.
-    uint8_t data_unit[16];
+    uint8_t data_unit[NVS_ENCRYPT_BLOCK_SIZE];
 
     uint32_t relAddr = src_offset;
 
@@ -64,7 +70,7 @@ esp_err_t NVSEncryptedPartition::read(size_t src_offset, void* dst, size_t size)
 
 esp_err_t NVSEncryptedPartition::write(size_t addr, const void* src, size_t size)
 {
-    if (size % ESP_ENCRYPT_BLOCK_SIZE != 0) return ESP_ERR_INVALID_SIZE;
+    if (size % NVS_ENCRYPT_BLOCK_SIZE != 0) return ESP_ERR_INVALID_SIZE;
 
     // copy data to buffer for encryption
     uint8_t* buf = new (std::nothrow) uint8_t [size];
@@ -77,7 +83,7 @@ esp_err_t NVSEncryptedPartition::write(size_t addr, const void* src, size_t size
     uint8_t entrySize = sizeof(Item);
 
     //sector num required as an arr by mbedtls. Should have been just uint64/32.
-    uint8_t data_unit[16];
+    uint8_t data_unit[NVS_ENCRYPT_BLOCK_SIZE];
 
     /* Use relative address instead of absolute address (relocatable), so that host-generated
      * encrypted nvs images can be used*/
@@ -103,7 +109,7 @@ esp_err_t NVSEncryptedPartition::write(size_t addr, const void* src, size_t size
     }
 
     // write data
-    esp_err_t result = esp_partition_write(mESPPartition, addr, buf, size);
+    esp_err_t result = NVSPartition::write(addr, buf, size);
 
     delete [] buf;
 
