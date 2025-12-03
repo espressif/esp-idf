@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +12,7 @@
 #include <sys/fcntl.h>
 #include <dirent.h>
 #include "esp_vfs.h"
+#include "esp_vfs_ops.h"
 #include "unity.h"
 #include "esp_log.h"
 
@@ -68,13 +69,16 @@ static int dummy_closedir(void* ctx, DIR* pdir)
 /* Initializer for this dummy VFS implementation
  */
 
-#define DUMMY_VFS() { \
-        .flags = ESP_VFS_FLAG_CONTEXT_PTR, \
-        .open_p = dummy_open, \
-        .close_p = dummy_close, \
-        .opendir_p = dummy_opendir, \
-        .closedir_p = dummy_closedir \
-    }
+static const esp_vfs_dir_ops_t s_dummy_vfs_dir = {
+    .opendir_p = dummy_opendir,
+    .closedir_p = dummy_closedir,
+};
+
+static const esp_vfs_fs_ops_t s_dummy_vfs = {
+    .open_p = dummy_open,
+    .close_p = dummy_close,
+    .dir = &s_dummy_vfs_dir,
+};
 
 /* Helper functions to test VFS behavior
  */
@@ -136,15 +140,13 @@ TEST_CASE("vfs parses paths correctly", "[vfs]")
             .match_path = "",
             .called = false
     };
-    esp_vfs_t desc_foo = DUMMY_VFS();
-    TEST_ESP_OK( esp_vfs_register("/foo", &desc_foo, &inst_foo) );
+    TEST_ESP_OK( esp_vfs_register_fs("/foo", &s_dummy_vfs, ESP_VFS_FLAG_CONTEXT_PTR, &inst_foo) );
 
     dummy_vfs_t inst_foo1 = {
         .match_path = "",
         .called = false
     };
-    esp_vfs_t desc_foo1 = DUMMY_VFS();
-    TEST_ESP_OK( esp_vfs_register("/foo1", &desc_foo1, &inst_foo1) );
+    TEST_ESP_OK( esp_vfs_register_fs("/foo1", &s_dummy_vfs, ESP_VFS_FLAG_CONTEXT_PTR, &inst_foo1) );
 
     inst_foo.match_path = "/file";
     test_opened(&inst_foo, "/foo/file");
@@ -171,15 +173,13 @@ TEST_CASE("vfs parses paths correctly", "[vfs]")
         .match_path = "",
         .called = false
     };
-    esp_vfs_t desc_foobar = DUMMY_VFS();
-    TEST_ESP_OK( esp_vfs_register("/foo/bar", &desc_foobar, &inst_foobar) );
+    TEST_ESP_OK( esp_vfs_register_fs("/foo/bar", &s_dummy_vfs, ESP_VFS_FLAG_CONTEXT_PTR, &inst_foobar) );
 
     dummy_vfs_t inst_toplevel = {
         .match_path = "",
         .called = false
     };
-    esp_vfs_t desc_toplevel = DUMMY_VFS();
-    TEST_ESP_OK( esp_vfs_register("", &desc_toplevel, &inst_toplevel) );
+    TEST_ESP_OK( esp_vfs_register_fs("", &s_dummy_vfs, ESP_VFS_FLAG_CONTEXT_PTR, &inst_toplevel) );
 
     inst_foo.match_path = "/bar/file";
     inst_foobar.match_path = "/file";
@@ -204,15 +204,13 @@ TEST_CASE("vfs unregisters correct nested mount point", "[vfs]")
         .match_path = "/file",
         .called = false
     };
-    esp_vfs_t desc_foobar = DUMMY_VFS();
-    TEST_ESP_OK( esp_vfs_register("/foo/bar", &desc_foobar, &inst_foobar) );
+    TEST_ESP_OK( esp_vfs_register_fs("/foo/bar", &s_dummy_vfs, ESP_VFS_FLAG_CONTEXT_PTR, &inst_foobar) );
 
     dummy_vfs_t inst_foo = {
         .match_path = "/bar/file",
         .called = false
     };
-    esp_vfs_t desc_foo = DUMMY_VFS();
-    TEST_ESP_OK( esp_vfs_register("/foo", &desc_foo, &inst_foo) );
+    TEST_ESP_OK( esp_vfs_register_fs("/foo", &s_dummy_vfs, ESP_VFS_FLAG_CONTEXT_PTR, &inst_foo) );
 
     /* basic operation */
     test_opened(&inst_foobar, "/foo/bar/file");
@@ -228,8 +226,8 @@ TEST_CASE("vfs unregisters correct nested mount point", "[vfs]")
 
     /* repeat the above, with the reverse order of registration */
     TEST_ESP_OK( esp_vfs_unregister("/foo/bar") );
-    TEST_ESP_OK( esp_vfs_register("/foo", &desc_foo, &inst_foo) );
-    TEST_ESP_OK( esp_vfs_register("/foo/bar", &desc_foobar, &inst_foobar) );
+    TEST_ESP_OK( esp_vfs_register_fs("/foo", &s_dummy_vfs, ESP_VFS_FLAG_CONTEXT_PTR, &inst_foo) );
+    TEST_ESP_OK( esp_vfs_register_fs("/foo/bar", &s_dummy_vfs, ESP_VFS_FLAG_CONTEXT_PTR, &inst_foobar) );
     test_opened(&inst_foobar, "/foo/bar/file");
     test_not_called(&inst_foo, "/foo/bar/file");
     TEST_ESP_OK( esp_vfs_unregister("/foo") );
@@ -242,13 +240,12 @@ TEST_CASE("vfs unregisters correct nested mount point", "[vfs]")
 void test_vfs_register(const char* prefix, bool expect_success, int line)
 {
     dummy_vfs_t inst;
-    esp_vfs_t desc = DUMMY_VFS();
-    esp_err_t err = esp_vfs_register(prefix, &desc, &inst);
+    esp_err_t err = esp_vfs_register_fs(prefix, &s_dummy_vfs, ESP_VFS_FLAG_CONTEXT_PTR, &inst);
     if (expect_success) {
-        UNITY_TEST_ASSERT_EQUAL_INT(ESP_OK, err, line, "esp_vfs_register should succeed");
+        UNITY_TEST_ASSERT_EQUAL_INT(ESP_OK, err, line, "esp_vfs_register_fs should succeed");
     } else {
         UNITY_TEST_ASSERT_EQUAL_INT(ESP_ERR_INVALID_ARG,
-                err, line, "esp_vfs_register should fail");
+                err, line, "esp_vfs_register_fs should fail");
     }
     if (err == ESP_OK) {
         TEST_ESP_OK( esp_vfs_unregister(prefix) );

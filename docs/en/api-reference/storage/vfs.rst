@@ -17,10 +17,6 @@ For example, one can mount a FAT filesystem driver at the ``/fat`` prefix and ca
 FS Registration
 ---------------
 
-.. note::
-
-    For previous version of the API (using :cpp:type:`esp_vfs_t`), see documentation for previous release.
-
 To register an FS driver, an application needs to define an instance of the :cpp:type:`esp_vfs_fs_ops_t` structure and populate it with function pointers to FS APIs:
 
 .. highlight:: c
@@ -79,7 +75,7 @@ In some cases, it might be beneficial or even necessary to pass some context to 
 
     ssize_t myfs_write(myfs_t* fs, int fd, const void * data, size_t size);
 
-    // In definition of esp_vfs_t:
+    // In definition of esp_vfs_fs_ops_t:
         .write_p = &myfs_write,
     // ... other members initialized
 

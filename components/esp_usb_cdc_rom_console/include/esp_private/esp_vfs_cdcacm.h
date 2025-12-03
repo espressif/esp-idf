@@ -18,7 +18,7 @@ extern "C" {
  * This function is called in vfs_console in order to get the vfs implementation
  * of cdcacm.
  *
- * @return pointer to structure esp_vfs_t
+ * @return pointer to structure esp_vfs_fs_ops_t
  */
 const esp_vfs_fs_ops_t *esp_vfs_cdcacm_get_vfs(void);
 

@@ -17,10 +17,6 @@ VFS 组件支持 C 库函数（如 fopen 和 fprintf 等）与文件系统 (FS) 
 注册 FS 驱动程序
 ---------------------
 
-.. note::
-
-    有关先前版本 API（使用 :cpp:type:`esp_vfs_t`）的内容，可以查阅之前发布的文档。
-
 如需注册 FS 驱动程序，应用程序首先要定义一个 :cpp:type:`esp_vfs_fs_ops_t` 结构体实例，并用指向 FS API 的函数指针填充它。
 
 .. highlight:: c
@@ -79,7 +75,7 @@ VFS 组件支持 C 库函数（如 fopen 和 fprintf 等）与文件系统 (FS) 
 
     ssize_t myfs_write(myfs_t* fs, int fd, const void * data, size_t size);
 
-    // 在 esp_vfs_t 的定义中：
+    // 在 esp_vfs_fs_ops_t 的定义中：
         .write_p = &myfs_write,
     // ... 初始化其他成员
 

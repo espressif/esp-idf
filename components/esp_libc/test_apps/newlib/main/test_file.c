@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -47,14 +47,12 @@ TEST_CASE("file - blksize", "[newlib_file]")
     FILE* f;
     blksize_test_ctx_t ctx = {};
     const char c = 42;
-    const esp_vfs_t desc = {
-        .flags = ESP_VFS_FLAG_CONTEXT_PTR,
+    static const esp_vfs_fs_ops_t desc = {
         .open_p = blksize_test_open,
         .fstat_p = blksize_test_fstat,
         .write_p = blksize_test_write,
     };
-
-    TEST_ESP_OK(esp_vfs_register("/test", &desc, &ctx));
+    TEST_ESP_OK(esp_vfs_register_fs("/test", &desc, ESP_VFS_FLAG_CONTEXT_PTR | ESP_VFS_FLAG_STATIC, &ctx));
 
     /* test with zero st_blksize (=not set) */
     ctx.blksize = 0;

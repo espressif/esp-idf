@@ -290,7 +290,7 @@ esp_err_t esp_vfs_register(const char* base_path, const esp_vfs_t* vfs, void* ct
  *          registered, ESP_ERR_INVALID_ARG if the file descriptor boundaries
  *          are incorrect.
  */
-esp_err_t esp_vfs_register_fd_range(const esp_vfs_t *vfs, void *ctx, int min_fd, int max_fd);
+esp_err_t esp_vfs_register_fd_range(const esp_vfs_fs_ops_t *vfs, int flags, void *ctx, int min_fd, int max_fd);
 
 /**
  * Special case function for registering a VFS that uses a method other than
