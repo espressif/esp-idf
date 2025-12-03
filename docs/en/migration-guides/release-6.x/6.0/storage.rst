@@ -14,6 +14,8 @@ VFS
 
 - Deleted deprecated UART-VFS functions (``esp_vfs_dev_uart_*``) located in the ``vfs`` component. Please use API from UART driver instead: ``uart_vfs_dev_*``.
 - Deleted deprecated USB-Serial-JTAG-VFS functions (``esp_vfs_dev_usb_serial_jtag_*``) located in the ``vfs`` component. Please use API from USB-Serial-JTAG driver instead: ``usb_serial_jtag_vfs_*``.
+- ``esp_vfs_register_fd_range`` is now considered private and its signature was changed to match the new VFS API style. Projects that still rely on this internal helper must include ``esp_private/socket.h`` and should be aware that the API may change without notice.
+- Legacy VFS APIs (such as ``esp_vfs_register``) that operate on ``esp_vfs_t`` instead of ``esp_vfs_fs_ops_t`` are deprecated and will be removed in the next major release. Switch to the new ``esp_vfs_fs_ops_t``-based APIs.
 
 
 ``esp_vfs_console``
