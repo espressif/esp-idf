@@ -15,6 +15,8 @@
 #include "freertos/FreeRTOS.h"
 #include "esp_vfs.h"
 #include "esp_vfs_private.h"
+#include "esp_private/socket.h"
+#include "sdkconfig.h"
 
 // Warn about using deprecated option
 #ifdef CONFIG_LWIP_USE_ONLY_LWIP_SELECT

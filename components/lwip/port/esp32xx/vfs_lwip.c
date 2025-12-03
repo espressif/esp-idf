@@ -13,6 +13,7 @@
 #include <sys/select.h>
 #include "esp_attr.h"
 #include "esp_vfs.h"
+#include "esp_private/socket.h"
 #include "sdkconfig.h"
 #include "lwip/sockets.h"
 #include "lwip/sys.h"

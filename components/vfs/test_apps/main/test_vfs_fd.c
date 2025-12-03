@@ -15,6 +15,7 @@
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 #include "esp_vfs.h"
+#include "esp_private/socket.h"
 #include "unity.h"
 #include "esp_log.h"
 #include "test_utils.h"
