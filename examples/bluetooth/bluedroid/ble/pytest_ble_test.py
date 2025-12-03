@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 import os.path
 from typing import Tuple
@@ -16,7 +16,7 @@ from pytest_embedded_idf.dut import IdfDut
 @pytest.mark.esp32h2
 @pytest.mark.esp32s3
 @pytest.mark.esp32c61
-@pytest.mark.wifi_two_dut
+@pytest.mark.two_duts
 @pytest.mark.parametrize(
     'count, app_path, config, erase_all', [
         (2,
@@ -54,7 +54,7 @@ def test_gatt_func(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> None:
 
 # Case 2: gatt client and gatt server test for ESP32C2 26mhz xtal
 @pytest.mark.esp32c2
-@pytest.mark.wifi_two_dut
+@pytest.mark.two_duts
 @pytest.mark.xtal_26mhz
 @pytest.mark.parametrize(
     'count, target, baud, app_path, config, erase_all', [
@@ -99,7 +99,7 @@ def test_c2_26mhz_xtal_gatt_func(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> N
 @pytest.mark.esp32h2
 @pytest.mark.esp32s3
 @pytest.mark.esp32c61
-@pytest.mark.wifi_two_dut
+@pytest.mark.two_duts
 @pytest.mark.parametrize(
     'count, app_path, config, erase_all', [
         (2,
@@ -154,7 +154,7 @@ def test_gatt_security_func(app_path: str, dut: Tuple[IdfDut, IdfDut], target: T
 
 # Case 4: gatt security server and gatt security client test for ESP32C2 26mhz xtal
 @pytest.mark.esp32c2
-@pytest.mark.wifi_two_dut
+@pytest.mark.two_duts
 @pytest.mark.xtal_26mhz
 @pytest.mark.parametrize(
     'count, target, baud, app_path, config, erase_all', [
@@ -210,7 +210,7 @@ def test_c2_26mhz_xtal_gatt_security_func(app_path: str, dut: Tuple[IdfDut, IdfD
 @pytest.mark.esp32h2
 @pytest.mark.esp32s3
 @pytest.mark.esp32c61
-@pytest.mark.wifi_two_dut
+@pytest.mark.two_duts
 @pytest.mark.parametrize(
     'count, app_path, config, erase_all', [
         (2,
@@ -238,7 +238,7 @@ def test_ble_ibeacon_func(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> None:
 
 # Case 5: ble ibeacon test for ESP32C2 26mhz xtal
 @pytest.mark.esp32c2
-@pytest.mark.wifi_two_dut
+@pytest.mark.two_duts
 @pytest.mark.xtal_26mhz
 @pytest.mark.parametrize(
     'count, target, baud, app_path, config, erase_all', [

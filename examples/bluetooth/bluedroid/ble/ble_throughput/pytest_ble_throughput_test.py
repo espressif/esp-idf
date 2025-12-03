@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 import os.path
 import time
@@ -16,7 +16,7 @@ from pytest_embedded_idf.dut import IdfDut
 @pytest.mark.esp32c5
 @pytest.mark.esp32h2
 @pytest.mark.esp32s3
-@pytest.mark.wifi_two_dut
+@pytest.mark.two_duts
 @pytest.mark.parametrize(
     'count, app_path, config, erase_all', [
         (2,
@@ -50,7 +50,7 @@ def test_gatt_write_throughput(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> Non
 
 # Case 2: gatt write throughput test for ESP32C2 26mhz xtal
 @pytest.mark.esp32c2
-@pytest.mark.wifi_two_dut
+@pytest.mark.two_duts
 @pytest.mark.xtal_26mhz
 @pytest.mark.parametrize(
     'count, target, baud, app_path, config, erase_all', [
@@ -91,7 +91,7 @@ def test_c2_26mhz_xtal_write_throughput(app_path: str, dut: Tuple[IdfDut, IdfDut
 @pytest.mark.esp32c5
 @pytest.mark.esp32h2
 @pytest.mark.esp32s3
-@pytest.mark.wifi_two_dut
+@pytest.mark.two_duts
 @pytest.mark.parametrize(
     'count, app_path, config, erase_all', [
         (2,
@@ -127,7 +127,7 @@ def test_gatt_notify_throughput(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> No
 
 # Case 4: gatt notify throughput test for ESP32C2 26mhz xtal
 @pytest.mark.esp32c2
-@pytest.mark.wifi_two_dut
+@pytest.mark.two_duts
 @pytest.mark.xtal_26mhz
 @pytest.mark.parametrize(
     'count, target, baud, app_path, config, erase_all', [

@@ -16,7 +16,7 @@ from pytest_embedded_idf.dut import IdfDut
 @pytest.mark.esp32c5
 @pytest.mark.esp32c61
 @pytest.mark.esp32
-@pytest.mark.wifi_two_dut
+@pytest.mark.two_duts
 @pytest.mark.parametrize(
     'count, app_path', [
         (2,
@@ -40,7 +40,7 @@ def test_power_save_conn(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> None:
 
 # Case 2: BLE power save test for ESP32C2
 @pytest.mark.esp32c2
-@pytest.mark.wifi_two_dut
+@pytest.mark.two_duts
 @pytest.mark.xtal_26mhz
 @pytest.mark.parametrize(
     'config, count, app_path, baud', [
@@ -65,7 +65,7 @@ def test_power_save_conn_esp32c2_26mhz(dut: Tuple[IdfDut, IdfDut]) -> None:
 
 
 # Case 2: BLE power save test for ESP32C2ECO4
-@pytest.mark.wifi_two_dut
+@pytest.mark.two_duts
 @pytest.mark.xtal_26mhz
 @pytest.mark.esp32c2eco4
 @pytest.mark.parametrize(
@@ -96,7 +96,7 @@ def test_power_save_conn_esp32c2eco4(dut: Tuple[IdfDut, IdfDut]) -> None:
 
 
 # Case 2: BLE power save test for ESP32C3ECO7
-@pytest.mark.wifi_two_dut
+@pytest.mark.two_duts
 @pytest.mark.esp32c3eco7
 @pytest.mark.parametrize(
     'config, count, target, app_path',
