@@ -197,7 +197,7 @@ enum {
 };
 typedef UINT8 tSMP_BR_STATE;
 
-/* random and encrption activity state */
+/* random and encryption activity state */
 enum {
     SMP_GEN_COMPARE = 1,
     SMP_GEN_CONFIRM,
@@ -362,6 +362,9 @@ extern tSMP_CB *smp_cb_ptr;
 
 /* Functions provided by att_main.c */
 extern void smp_init (void);
+
+/* SMP command sizes per spec - defined in smp_utils.c */
+extern const UINT8 smp_cmd_size_per_spec[];
 
 /* smp main */
 extern void smp_sm_event(tSMP_CB *p_cb, tSMP_EVENT event, void *p_data);
