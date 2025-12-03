@@ -147,7 +147,7 @@ def run_phy_tsens_test_with_light_sleep(dut: Tuple[Dut, Dut]) -> None:
 @pytest.mark.esp32c6
 @pytest.mark.esp32s2
 @pytest.mark.esp32s3
-@pytest.mark.wifi_two_dut
+@pytest.mark.two_duts
 @pytest.mark.parametrize('count', [2], indirect=True)
 def test_phy_tsens_coexist(dut: Tuple[Dut, Dut]) -> None:
     for _dut in dut:
@@ -166,7 +166,7 @@ def test_phy_tsens_coexist(dut: Tuple[Dut, Dut]) -> None:
 
 
 @pytest.mark.esp32c2
-@pytest.mark.wifi_two_dut
+@pytest.mark.two_duts
 @pytest.mark.xtal_26mhz
 @pytest.mark.parametrize(
     'count, config, baud',
@@ -191,7 +191,7 @@ def test_phy_tsens_coexist_c2_xtal26m(dut: Tuple[Dut, Dut]) -> None:
     run_phy_tsens_test_with_light_sleep(dut)
 
 
-@pytest.mark.wifi_two_dut
+@pytest.mark.two_duts
 @pytest.mark.xtal_26mhz
 @pytest.mark.esp32c2eco4
 @pytest.mark.parametrize(
@@ -217,7 +217,7 @@ def test_phy_tsens_coexist_c2eco4_xtal26m(dut: Tuple[Dut, Dut]) -> None:
     run_phy_tsens_test_with_light_sleep(dut)
 
 
-@pytest.mark.wifi_two_dut
+@pytest.mark.two_duts
 @pytest.mark.esp32c3eco7
 @pytest.mark.parametrize(
     'count, config, target',
