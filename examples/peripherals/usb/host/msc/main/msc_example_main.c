@@ -264,6 +264,8 @@ static void msc_event_cb(const msc_host_event_t *event, void *arg)
             .data.device_handle = event->device.handle,
         };
         xQueueSend(app_queue, &message, portMAX_DELAY);
+    } else {
+        ESP_LOGW(TAG, "Unsupported MSC event: %d (possibly suspend/resume)", event->event);
     }
 }
 
