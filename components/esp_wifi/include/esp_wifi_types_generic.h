@@ -530,7 +530,7 @@ typedef struct {
     wifi_cipher_type_t pairwise_cipher;       /**< Pairwise cipher of SoftAP, group cipher will be derived using this. Cipher values are valid starting from WIFI_CIPHER_TYPE_TKIP, enum values before that will be considered as invalid and default cipher suites(TKIP+CCMP) will be used. Valid cipher suites in softAP mode are WIFI_CIPHER_TYPE_TKIP, WIFI_CIPHER_TYPE_CCMP, WIFI_CIPHER_TYPE_TKIP_CCMP, WIFI_CIPHER_TYPE_GCMP and WIFI_CIPHER_TYPE_GCMP256. */
     bool ftm_responder;                       /**< Enable FTM Responder mode */
     wifi_pmf_config_t pmf_cfg;                /**< Configuration for Protected Management Frame */
-    wifi_sae_pwe_method_t sae_pwe_h2e;        /**< Configuration for SAE PWE derivation method */
+    wifi_sae_pwe_method_t sae_pwe_h2e;        /**< Configuration for SAE PWE derivation method. Default value :2 (WPA3_SAE_PWE_BOTH) */
     uint8_t transition_disable: 1;            /**< Whether to enable transition disable feature */
     uint8_t sae_ext: 1;                       /**< Enable SAE EXT feature. SOC_GCMP_SUPPORT is required for this feature. */
     uint8_t wpa3_compatible_mode: 1;          /**< Enable WPA3 compatible authmode feature. Note: Enabling this will override the AP configuration's authmode and pairwise_cipher. The AP will operate as a WPA2 access point for all stations except for those that support WPA3 compatible mode. Only WPA3 compatibility mode stations will be able to use WPA3-SAE */
@@ -563,7 +563,7 @@ typedef struct {
     uint32_t transition_disable: 1;           /**< Whether to enable transition disable feature */
     uint32_t disable_wpa3_compatible_mode: 1; /**< Whether to disable wpa3 compatible authmode feature. Disabling this prevents connecting to WPA3-Personal RSN override (compatibility mode) APs; connection falls back to WPA2 only. */
     uint32_t reserved1: 25;                   /**< Reserved for future feature set */
-    wifi_sae_pwe_method_t sae_pwe_h2e;        /**< Configuration for SAE PWE derivation method */
+    wifi_sae_pwe_method_t sae_pwe_h2e;        /**< Configuration for SAE PWE derivation method. Default value :2 (WPA3_SAE_PWE_BOTH) */
     wifi_sae_pk_mode_t sae_pk_mode;           /**< Configuration for SAE-PK (Public Key) Authentication method */
     uint8_t failure_retry_cnt;                /**< Number of connection retries station will do before moving to next AP. scan_method should be set as WIFI_ALL_CHANNEL_SCAN to use this config.
                                                    Note: Enabling this may cause connection time to increase in case best AP doesn't behave properly. */
