@@ -26,9 +26,9 @@ extern "C" {
 #define MHZ                 (1000000)
 
 #define CLK_LL_PLL_8M_FREQ_MHZ    (8)
-// #define CLK_LL_PLL_32M_FREQ_MHZ   (32)
+#define CLK_LL_PLL_32M_FREQ_MHZ   (32)
 #define CLK_LL_PLL_48M_FREQ_MHZ   (48)
-// #define CLK_LL_PLL_64M_FREQ_MHZ   (64)
+#define CLK_LL_PLL_64M_FREQ_MHZ   (64)
 #define CLK_LL_PLL_96M_FREQ_MHZ   (96)
 
 #define CLK_LL_XTAL32K_CONFIG_DEFAULT() { \
@@ -62,8 +62,7 @@ typedef struct {
  */
 static inline __attribute__((always_inline)) void clk_ll_bbpll_enable(void)
 {
-    SET_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_HIGH_XPD_BB_I2C | PMU_TIE_HIGH_XPD_BBPLL | PMU_TIE_HIGH_XPD_BBPLL_I2C);
-    SET_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_HIGH_GLOBAL_BBPLL_ICG);
+    SET_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_HIGH_XPD_BBPLL | PMU_TIE_HIGH_XPD_BBPLL_I2C);
 }
 
 /**
@@ -83,26 +82,26 @@ static inline __attribute__((always_inline)) void clk_ll_cpu_clk_src_lock_releas
     SET_PERI_REG_MASK(PMU_IMM_SLEEP_SYSCLK_REG, PMU_UPDATE_DIG_SYS_CLK_SEL);
 }
 
-// /**
-//  * @brief Power up XTAL_X2 circuit
-//  */
-// static inline __attribute__((always_inline)) void clk_ll_xtal_x2_enable(void)
-// {
-//     CLEAR_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_LOW_XPD_XTALX2);
-//     CLEAR_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_LOW_GLOBAL_XTALX2_ICG);
-//     SET_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_HIGH_XTALX2);
-//     SET_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_HIGH_GLOBAL_XTALX2_ICG);
-// }
+/**
+ * @brief Power up XTAL_X2 circuit
+ */
+static inline __attribute__((always_inline)) void clk_ll_xtal_x2_enable(void)
+{
+    CLEAR_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_LOW_XPD_XTALX2);
+    CLEAR_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_LOW_GLOBAL_XTALX2_ICG);
+    SET_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_HIGH_XTALX2);
+    SET_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_HIGH_GLOBAL_XTALX2_ICG);
+}
 
-// /**
-//  * @brief Power down XTAL_X2 circuit
-//  */
-// static inline __attribute__((always_inline)) void clk_ll_xtal_x2_disable(void)
-// {
-//     CLEAR_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_HIGH_XTALX2 | PMU_TIE_HIGH_GLOBAL_XTALX2_ICG);
-//     SET_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_LOW_XPD_XTALX2);
-//     SET_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_LOW_GLOBAL_XTALX2_ICG);
-// }
+/**
+ * @brief Power down XTAL_X2 circuit
+ */
+static inline __attribute__((always_inline)) void clk_ll_xtal_x2_disable(void)
+{
+    CLEAR_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_HIGH_XTALX2 | PMU_TIE_HIGH_GLOBAL_XTALX2_ICG);
+    SET_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_LOW_XPD_XTALX2);
+    SET_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_LOW_GLOBAL_XTALX2_ICG);
+}
 
 /**
  * @brief Enable the 32kHz crystal oscillator
@@ -281,15 +280,15 @@ static inline __attribute__((always_inline)) void clk_ll_bbpll_set_config(uint32
     REGI2C_WRITE_MASK(I2C_BBPLL, I2C_BBPLL_OC_DLREF_SEL, oc_dlref_sel);
 }
 
-// /**
-//  * @brief Get XTAL_X2_CLK frequency
-//  *
-//  * @return XTAL_X2 clock frequency, in MHz
-//  */
-// static inline __attribute__((always_inline)) uint32_t clk_ll_xtal_x2_get_freq_mhz(void)
-// {
-//     return SOC_XTAL_FREQ_32M * 2;
-// }
+/**
+ * @brief Get XTAL_X2_CLK frequency
+ *
+ * @return XTAL_X2 clock frequency, in MHz
+ */
+static inline __attribute__((always_inline)) uint32_t clk_ll_xtal_x2_get_freq_mhz(void)
+{
+    return SOC_XTAL_FREQ_32M * 2;
+}
 
 /**
  * @brief To enable the change of soc_clk_sel, cpu_div_num, ahb_div_num, apb_div_num
@@ -316,9 +315,9 @@ static inline __attribute__((always_inline)) void clk_ll_cpu_set_src(soc_cpu_clk
     case SOC_CPU_CLK_SRC_RC_FAST:
         PCR.sysclk_conf.soc_clk_sel = 1;
         break;
-    // case SOC_CPU_CLK_SRC_XTAL_X2:
-    //     PCR.sysclk_conf.soc_clk_sel = 2;
-    //     break;
+    case SOC_CPU_CLK_SRC_XTAL_X2:
+        PCR.sysclk_conf.soc_clk_sel = 2;
+        break;
     case SOC_CPU_CLK_SRC_PLL:
         PCR.sysclk_conf.soc_clk_sel = 3;
         break;
@@ -341,8 +340,8 @@ static inline __attribute__((always_inline)) soc_cpu_clk_src_t clk_ll_cpu_get_sr
         return SOC_CPU_CLK_SRC_XTAL;
     case 1:
         return SOC_CPU_CLK_SRC_RC_FAST;
-    // case 2:
-    //     return SOC_CPU_CLK_SRC_XTAL_X2;
+    case 2:
+        return SOC_CPU_CLK_SRC_XTAL_X2;
     case 3:
         return SOC_CPU_CLK_SRC_PLL;
     default:

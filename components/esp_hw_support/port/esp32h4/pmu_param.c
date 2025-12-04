@@ -42,7 +42,7 @@ static __attribute__((unused)) const char *TAG = "pmu_param";
         .xpd_bbpll      = 1  \
     }, \
     .xtal = {                \
-        .xpd_xtalx2     = 0, \
+        .xpd_xtalx2     = 1, \
         .xpd_xtal       = 1  \
     } \
 }
@@ -66,11 +66,19 @@ static __attribute__((unused)) const char *TAG = "pmu_param";
         .xpd_bbpll      = 1  \
     }, \
     .xtal = {                \
-        .xpd_xtalx2     = 0, \
+        .xpd_xtalx2     = 1, \
         .xpd_xtal       = 1  \
     } \
 }
 
+/*
+  flash_mode :
+    0: normal mode;
+    1: off mode
+    2: external mode;
+    3: standby mode
+    4: 4(through mode), only used when vdd low than 3v
+*/
 #define PMU_HP_SLEEP_POWER_CONFIG_DEFAULT() { \
     .dig_power = {           \
         .vdd_flash_mode = 3, \
@@ -85,7 +93,7 @@ static __attribute__((unused)) const char *TAG = "pmu_param";
     .clk_power = {           \
         .i2c_iso_en     = 1, \
         .i2c_retention  = 1, \
-        .xpd_bb_i2c     = 1, \
+        .xpd_bb_i2c     = 0, \
         .xpd_bbpll_i2c  = 0, \
         .xpd_bbpll      = 0, \
     }, \
@@ -211,7 +219,7 @@ const pmu_hp_system_digital_param_t * pmu_hp_system_digital_param_default(pmu_hp
         .dcdc_ccm_enb       = 0,    \
         .dcdc_clear_rdy     = 0,    \
         .dig_reg_dpcur_bias = 3,    \
-        .dig_reg_dsfmos     = 6,    \
+        .dig_reg_dsfmos     = 15,    \
         .dcm_mode           = 3,    \
         .dcm_vset           = 24,   \
         .xpd_trx            = 1,    \
@@ -231,10 +239,10 @@ const pmu_hp_system_digital_param_t * pmu_hp_system_digital_param_default(pmu_hp
         .xpd                = 1,    \
         .slp_mem_dbias      = 0,    \
         .slp_logic_dbias    = 0,    \
-        .dbias              = HP_CALI_DBIAS_DEFAULT \
+        .dbias              = 0 \
     }, \
     .regulator1 = {                 \
-        .drv_b              = 2     \
+        .drv_b              = HP_CALI_DRVB_DEFAULT     \
     } \
 }
 
@@ -243,7 +251,7 @@ const pmu_hp_system_digital_param_t * pmu_hp_system_digital_param_default(pmu_hp
         .dcdc_ccm_enb       = 0,    \
         .dcdc_clear_rdy     = 0,    \
         .dig_reg_dpcur_bias = 1,    \
-        .dig_reg_dsfmos     = 4,    \
+        .dig_reg_dsfmos     = 15,    \
         .dcm_mode           = 3,    \
         .dcm_vset           = 24,   \
         .xpd_trx            = 1,    \
@@ -259,10 +267,10 @@ const pmu_hp_system_digital_param_t * pmu_hp_system_digital_param_default(pmu_hp
         .xpd                = 1,    \
         .slp_mem_dbias      = 0,    \
         .slp_logic_dbias    = 0,    \
-        .dbias              = HP_CALI_DBIAS_DEFAULT  \
+        .dbias              = 0  \
     }, \
     .regulator1 = {                 \
-        .drv_b              = 2     \
+        .drv_b              = HP_CALI_DRVB_DEFAULT     \
     } \
 }
 
@@ -273,7 +281,7 @@ const pmu_hp_system_digital_param_t * pmu_hp_system_digital_param_default(pmu_hp
         .dig_reg_dpcur_bias = 1,    \
         .dig_reg_dsfmos     = 4,    \
         .dcm_mode           = 3,    \
-        .dcm_vset           = 24,   \
+        .dcm_vset           = 20,   \
         .xpd_trx            = 0,    \
         .xpd_bias           = 0,    \
         .discnnt_dig_rtc    = 0,    \
@@ -290,7 +298,7 @@ const pmu_hp_system_digital_param_t * pmu_hp_system_digital_param_default(pmu_hp
         .dbias              = 0     \
     }, \
     .regulator1 = {                 \
-        .drv_b              = 7     \
+        .drv_b              = 25    \
     } \
 }
 
@@ -365,6 +373,14 @@ const pmu_hp_system_retention_param_t * pmu_hp_system_retention_param_default(pm
 # define PMU_SLOW_CLK_USE_EXT_XTAL  (0)
 #endif
 
+/*
+  vdd_io_mode :
+    0: normal mode;
+    1: off mode
+    2: external mode;
+    3: standby mode
+    4: 4(through mode), only used when vdd low than 3v
+*/
 #define PMU_LP_ACTIVE_POWER_CONFIG_DEFAULT() { \
     .dig_power = {              \
         .vdd_io_mode    = 0,    \
@@ -382,9 +398,17 @@ const pmu_hp_system_retention_param_t * pmu_hp_system_retention_param_default(pm
     } \
 }
 
+/*
+  vdd_io_mode :
+    0: normal mode;
+    1: off mode
+    2: external mode;
+    3: standby mode
+    4: 4(through mode), only used when vdd low than 3v
+*/
 #define PMU_LP_SLEEP_POWER_CONFIG_DEFAULT() { \
     .dig_power = {              \
-        .vdd_io_mode    = 3,    \
+        .vdd_io_mode    = 0,    \
         .bod_source_sel = 0,    \
         .vddbat_mode    = 0,    \
         .mem_dslp       = 0,    \
@@ -421,7 +445,7 @@ const pmu_lp_system_power_param_t * pmu_lp_system_power_param_default(pmu_lp_mod
         .dbias      = LP_CALI_DBIAS_DEFAULT  \
     }, \
     .regulator1 = {                 \
-        .drv_b      = 2             \
+        .drv_b      = 0             \
     } \
 }
 
@@ -432,7 +456,7 @@ const pmu_lp_system_power_param_t * pmu_lp_system_power_param_default(pmu_lp_mod
         .dig_reg_dpcur_bias = 1,    \
         .dig_reg_dsfmos     = 4,    \
         .dcm_mode           = 3,    \
-        .dcm_vset           = 0,    \
+        .dcm_vset           = 20,    \
         .xpd_bias           = 0,    \
         .discnnt_dig_rtc    = 1,    \
         .pd_cur             = 1,    \
@@ -442,10 +466,10 @@ const pmu_lp_system_power_param_t * pmu_lp_system_power_param_default(pmu_lp_mod
         .slp_xpd            = 0,    \
         .xpd                = 1,    \
         .slp_dbias          = 0,    \
-        .dbias              = 0     \
+        .dbias              = 3     \
     }, \
     .regulator1 = {                 \
-        .drv_b              = 7     \
+        .drv_b              = 0   \
     } \
 }
 
@@ -459,14 +483,12 @@ const pmu_lp_system_analog_param_t * pmu_lp_system_analog_param_default(pmu_lp_m
     return &lp_analog[mode];
 }
 
-uint32_t get_act_hp_dbias(void)
+uint32_t get_act_hp_drvb(void)
 {
-    // TODO: IDF-12313
-    return HP_CALI_DBIAS_DEFAULT;
+    return HP_CALI_DRVB_DEFAULT;
 }
 
 uint32_t get_act_lp_dbias(void)
 {
-    // TODO: IDF-12313
-     return LP_CALI_DBIAS_DEFAULT;
+    return LP_CALI_DBIAS_DEFAULT;
 }

@@ -16,7 +16,7 @@
 extern "C" {
 #endif
 
-#define HP_CALI_DBIAS_DEFAULT   0
+#define HP_CALI_DRVB_DEFAULT    6
 #define LP_CALI_DBIAS_DEFAULT   0
 
 // FOR  XTAL FORCE PU IN SLEEP
@@ -52,7 +52,7 @@ extern "C" {
 #define PMU_DBG_ATTEN_DEEPSLEEP_DEFAULT     12
 #define PMU_LP_DBIAS_SLEEP_0V7_DEFAULT      23
 
-uint32_t get_act_hp_dbias(void);
+uint32_t get_act_hp_drvb(void);
 uint32_t get_act_lp_dbias(void);
 
 typedef struct {

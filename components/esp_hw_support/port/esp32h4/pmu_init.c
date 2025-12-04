@@ -15,6 +15,9 @@
 #include "pmu_param.h"
 #include "esp_private/esp_pmu.h"
 #include "soc/regi2c_dcdc.h"
+#include "soc/regi2c_ulp.h"
+#include "soc/lp_aon_reg.h"
+#include "soc/rtc.h"
 #include "regi2c_ctrl.h"
 #include "esp_rom_sys.h"
 
@@ -194,7 +197,7 @@ static inline void pmu_hp_system_param_default(pmu_hp_mode_t mode, pmu_hp_system
     param->retent = pmu_hp_system_retention_param_default(mode);
 
     if (mode == PMU_MODE_HP_ACTIVE || mode == PMU_MODE_HP_MODEM) {
-        param->analog->regulator0.dbias = get_act_hp_dbias();
+        param->analog->regulator1.drv_b = get_act_hp_drvb();
     }
 }
 
@@ -216,10 +219,6 @@ static inline void pmu_lp_system_param_default(pmu_lp_mode_t mode, pmu_lp_system
 
     param->power = pmu_lp_system_power_param_default(mode);
     *param->analog = *pmu_lp_system_analog_param_default(mode); //copy default value
-
-    if (mode == PMU_MODE_LP_ACTIVE) {
-        param->analog->regulator0.dbias = get_act_lp_dbias();
-    }
 }
 
 static void pmu_lp_system_init_default(pmu_context_t *ctx)
@@ -232,6 +231,20 @@ static void pmu_lp_system_init_default(pmu_context_t *ctx)
         pmu_lp_system_param_default(mode, &param);
         pmu_lp_system_init(ctx, mode, &param);
     }
+}
+
+uint32_t get_ulp_ocode()
+{
+    uint32_t ulp_ocode = 0;
+#if !CONFIG_IDF_ENV_FPGA
+    bool ulp_force_flag = REGI2C_READ_MASK(I2C_ULP, I2C_ULP_IR_FORCE_CODE);
+    if (ulp_force_flag) {
+        ulp_ocode = REGI2C_READ_MASK(I2C_ULP, I2C_ULP_EXT_CODE);
+    } else {
+        ulp_ocode = REGI2C_READ_MASK(I2C_ULP, I2C_ULP_OCODE);
+    }
+#endif
+    return ulp_ocode;
 }
 
 void pmu_init(void)
@@ -259,4 +272,12 @@ void pmu_init(void)
     //     esp_ocode_calib_init();
     // }
 #endif
+
+    uint32_t ulp_ocode = get_ulp_ocode();
+    REG_SET_FIELD(PMU_BLE_BANDGAP_CTRL_REG, PMU_EXT_OCODE, ulp_ocode);
+    SET_PERI_REG_MASK(PMU_BLE_BANDGAP_CTRL_REG, PMU_EXT_FORCE_OCODE);
+
+    //For dcdc ldo mode when VDD is low than about a certion value, eg 2.6v
+    CLEAR_PERI_REG_MASK(LP_AON_DATE_REG, LP_AON_DREG_LDO_HW);
+    REG_SET_FIELD(LP_AON_DATE_REG, LP_AON_DREG_LDO_SW, 15);
 }

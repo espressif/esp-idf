@@ -602,10 +602,18 @@ typedef union {
  */
 typedef union {
     struct {
-        /** aon_date : R/W; bitpos: [30:0]; default: 38814352;
-         *  version register
+        uint32_t reserved_0:5;
+        /** aon_dreg_ldo_hw : R/W; bitpos: [5]; default: 0;
+         *  control the ldo of dreg by hw or sw
+         *  0: DREG_LDO control by SW;
+         *  1: DREG_LDO control by HW;
          */
-        uint32_t aon_date:31;
+        uint32_t aon_dreg_ldo_hw:1;
+        uint32_t reserved_6:17;
+        /** aon_dreg_ldo_sw : R/W; bitpos: [30:23]; default: 0;
+        *  control the ldo of dreg by sw
+        */
+        uint32_t aon_dreg_ldo_sw:8;
         /** aon_clk_en : R/W; bitpos: [31]; default: 0;
          *  version register
          */
