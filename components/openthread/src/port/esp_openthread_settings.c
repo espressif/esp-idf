@@ -130,9 +130,18 @@ static esp_err_t erase_all_key(uint16_t aKey)
 
 void otPlatSettingsInit(otInstance *aInstance, const uint16_t *aSensitiveKeys, uint16_t aSensitiveKeysLength)
 {
-    esp_err_t err = nvs_open(OT_NAMESPACE, NVS_READWRITE, &s_ot_nvs_handle);
+    OT_UNUSED_VARIABLE(aInstance);
+    OT_UNUSED_VARIABLE(aSensitiveKeys);
+    OT_UNUSED_VARIABLE(aSensitiveKeysLength);
+    esp_err_t err = ESP_OK;
+    if (s_storage_name != NULL) {
+        err = nvs_open_from_partition(s_storage_name, OT_NAMESPACE, NVS_READWRITE, &s_ot_nvs_handle);
+    } else {
+        err = nvs_open(OT_NAMESPACE, NVS_READWRITE, &s_ot_nvs_handle);
+    }
+
     if (err != ESP_OK) {
-        ESP_LOGE(OT_PLAT_LOG_TAG, "Failed to open NVS namespace (0x%x)", err);
+        ESP_LOGE(OT_PLAT_LOG_TAG, "Failed to open %s namespace (0x%x)", s_storage_name == NULL ? "nvs" : s_storage_name, err);
         assert(0);
     }
 }
