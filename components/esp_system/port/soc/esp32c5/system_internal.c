@@ -48,6 +48,7 @@ void esp_system_reset_modules_on_exit(void)
     modem_lpcon_ll_reset_all(&MODEM_LPCON);
 #endif
     // Set Peripheral clk rst
+    SET_PERI_REG_MASK(PCR_MSPI_CLK_CONF_REG, PCR_MSPI_AXI_RST_EN); // Must reset mspi AXI before reset mspi core.
     SET_PERI_REG_MASK(PCR_MSPI_CONF_REG, PCR_MSPI_RST_EN);
     SET_PERI_REG_MASK(PCR_UART0_CONF_REG, PCR_UART0_RST_EN);
     SET_PERI_REG_MASK(PCR_UART1_CONF_REG, PCR_UART1_RST_EN);
@@ -59,9 +60,11 @@ void esp_system_reset_modules_on_exit(void)
     SET_PERI_REG_MASK(PCR_SDIO_SLAVE_CONF_REG, PCR_SDIO_SLAVE_RST_EN);
     //ETM may directly control the GPIO or other peripherals even after CPU reset. Reset to stop these control.
     SET_PERI_REG_MASK(PCR_ETM_CONF_REG, PCR_ETM_RST_EN);
+    SET_PERI_REG_MASK(PCR_REGDMA_CONF_REG, PCR_REGDMA_RST_EN);
 
     // Clear Peripheral clk rst
     CLEAR_PERI_REG_MASK(PCR_MSPI_CONF_REG, PCR_MSPI_RST_EN);
+    CLEAR_PERI_REG_MASK(PCR_MSPI_CLK_CONF_REG, PCR_MSPI_AXI_RST_EN); // Must release mspi core reset before mspi AXI.
     CLEAR_PERI_REG_MASK(PCR_UART0_CONF_REG, PCR_UART0_RST_EN);
     CLEAR_PERI_REG_MASK(PCR_UART1_CONF_REG, PCR_UART1_RST_EN);
     CLEAR_PERI_REG_MASK(PCR_SYSTIMER_CONF_REG, PCR_SYSTIMER_RST_EN);
@@ -70,6 +73,7 @@ void esp_system_reset_modules_on_exit(void)
     CLEAR_PERI_REG_MASK(PCR_PWM_CONF_REG, PCR_PWM_RST_EN);
     CLEAR_PERI_REG_MASK(PCR_SDIO_SLAVE_CONF_REG, PCR_SDIO_SLAVE_RST_EN);
     CLEAR_PERI_REG_MASK(PCR_ETM_CONF_REG, PCR_ETM_RST_EN);
+    CLEAR_PERI_REG_MASK(PCR_REGDMA_CONF_REG, PCR_REGDMA_RST_EN);
 
     // Reset crypto peripherals. This ensures a clean state for the crypto peripherals after a CPU restart
     // and hence avoiding any possibility with crypto failure in ROM security workflows.
