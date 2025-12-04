@@ -67,9 +67,8 @@ static void handle_event(const cdc_acm_host_dev_event_data_t *event, void *user_
     case CDC_ACM_HOST_SERIAL_STATE:
         ESP_LOGI(TAG, "Serial state notif 0x%04X", event->data.serial_state.val);
         break;
-    case CDC_ACM_HOST_NETWORK_CONNECTION:
     default:
-        ESP_LOGW(TAG, "Unsupported CDC event: %i", event->type);
+        ESP_LOGW(TAG, "Unsupported CDC event: %d (possibly suspend/resume)", event->type);
         break;
     }
 }
