@@ -82,6 +82,7 @@ typedef struct {
     int8_t rssi;                 /*!< RSSI */
     uint8_t lqi;                 /*!< LQI */
     uint64_t timestamp;          /*!< The timestamp when the frame's SFD field was received */
+    esp_ieee802154_multipan_index_t mpf_index; /*!< Multipan interface that matches the frame, ESP_IEEE802154_MULTIPAN_MAX if none */
 } esp_ieee802154_frame_info_t;
 
 /**

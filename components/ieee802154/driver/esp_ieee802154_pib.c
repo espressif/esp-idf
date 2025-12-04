@@ -1,11 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <stdint.h>
 #include <string.h>
+#include "sdkconfig.h"
 #include "hal/ieee802154_ll.h"
 #include "esp_check.h"
 #include "esp_ieee802154_pib.h"
@@ -74,7 +75,14 @@ void ieee802154_pib_update(void)
 
         ieee802154_ll_set_coordinator(s_ieee802154_pib.coordinator);
         ieee802154_ll_set_promiscuous(s_ieee802154_pib.promiscuous);
-        ieee802154_ll_set_pending_mode(s_ieee802154_pib.pending_mode == IEEE802154_AUTO_PENDING_ENHANCED);
+        bool target_mode = false;
+        for (int i = 0; i < CONFIG_IEEE802154_INTERFACE_NUM; i++) {
+            if (s_ieee802154_pib.pending_mode[i] == IEEE802154_AUTO_PENDING_ENHANCED || s_ieee802154_pib.pending_mode[i] == IEEE802154_AUTO_PENDING_ZIGBEE) {
+                target_mode = true;
+                break;
+            }
+        }
+        ieee802154_ll_set_pending_mode(target_mode);
 
         clr_pending();
     }
@@ -231,15 +239,15 @@ void ieee802154_pib_set_coordinator(bool enable)
     }
 }
 
-ieee802154_ll_pending_mode_t ieee802154_pib_get_pending_mode(void)
+ieee802154_ll_pending_mode_t ieee802154_pib_get_pending_mode(esp_ieee802154_multipan_index_t inf_index)
 {
-    return s_ieee802154_pib.pending_mode;
+    return s_ieee802154_pib.pending_mode[inf_index];
 }
 
-void ieee802154_pib_set_pending_mode(ieee802154_ll_pending_mode_t pending_mode)
+void ieee802154_pib_set_pending_mode(esp_ieee802154_multipan_index_t inf_index, ieee802154_ll_pending_mode_t pending_mode)
 {
-    if (s_ieee802154_pib.pending_mode != pending_mode) {
-        s_ieee802154_pib.pending_mode = pending_mode;
+    if (s_ieee802154_pib.pending_mode[inf_index] != pending_mode) {
+        s_ieee802154_pib.pending_mode[inf_index] = pending_mode;
         set_pending();
     }
 }

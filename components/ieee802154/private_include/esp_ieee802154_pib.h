@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include "sdkconfig.h"
 #include "hal/ieee802154_ll.h"
 #include "esp_ieee802154_frame.h"
 #include "esp_ieee802154_types.h"
@@ -28,7 +29,7 @@ typedef struct {
     bool rx_when_idle;                                                              /*!< A flag indicates the device is rx on when idle or not */
     esp_ieee802154_txpower_table_t power_table;                                     /*!< The power table configuration */
     uint8_t channel;                                                                /*!< Channel configuration  */
-    ieee802154_ll_pending_mode_t pending_mode;                                      /*!< Pending mode configuration  */
+    ieee802154_ll_pending_mode_t pending_mode[CONFIG_IEEE802154_INTERFACE_NUM];     /*!< Pending mode configuration  */
     int8_t cca_threshold;                                                           /*!< CCA threshold */
     ieee802154_ll_cca_mode_t cca_mode;                                              /*!< CCA mode */
 } ieee802154_pib_t;
@@ -248,7 +249,7 @@ bool ieee802154_pib_get_coordinator(void);
  * @param[in]  pending_mode  The pending mode.
  *
  */
-void ieee802154_pib_set_pending_mode(ieee802154_ll_pending_mode_t pending_mode);
+void ieee802154_pib_set_pending_mode(esp_ieee802154_multipan_index_t inf_index, ieee802154_ll_pending_mode_t pending_mode);
 
 /**
  * @brief  Get the pending mode from the PIB.
@@ -256,7 +257,7 @@ void ieee802154_pib_set_pending_mode(ieee802154_ll_pending_mode_t pending_mode);
  * @return
  *        - The pending mode has been set in the PIB.
  */
-ieee802154_ll_pending_mode_t ieee802154_pib_get_pending_mode(void);
+ieee802154_ll_pending_mode_t ieee802154_pib_get_pending_mode(esp_ieee802154_multipan_index_t inf_index);
 
 /**
  * @brief  Configure the radio mode when the radio is going to enter idle to the PIB.
