@@ -50,20 +50,20 @@ def requires_elf_or_map(case: PytestCase) -> bool:
 
 def skipped_targets(item: Function) -> set[str]:
     def _get_temp_markers_disabled_targets(marker_name: str) -> set[str]:
-        temp_marker = item.get_closest_marker(marker_name)
+        targets = []
+        for _m in item.own_markers:
+            if _m.name == marker_name:
+                if not _m.kwargs.get('targets') or not _m.kwargs.get('reason'):
+                    raise ValueError(
+                        f'`{marker_name}` should always use keyword arguments `targets` and `reason`. '  # noqa: W604
+                        f'For example: '
+                        f'`@pytest.mark.{marker_name}(targets=["esp32"], reason="IDF-xxxx, will fix it ASAP")`'
+                    )
+                targets.extend(to_list(_m.kwargs['targets']))
 
-        if not temp_marker:
-            return set()
-
-        # temp markers should always use keyword arguments `targets` and `reason`
-        if not temp_marker.kwargs.get('targets') or not temp_marker.kwargs.get('reason'):
-            raise ValueError(
-                f'`{marker_name}` should always use keyword arguments `targets` and `reason`. '  # noqa: W604
-                f'For example: '
-                f'`@pytest.mark.{marker_name}(targets=["esp32"], reason="IDF-xxxx, will fix it ASAP")`'
-            )
-
-        return set(to_list(temp_marker.kwargs['targets']))
+        if targets:
+            return set(targets)
+        return set()
 
     _count = IdfLocalPlugin.get_param(item, 'count', 1)
 
@@ -127,7 +127,23 @@ class IdfLocalPlugin:
                 deselected_items.append(item)
                 continue
 
-            if case.target_selector in skipped_targets(item):
+            skipped = False
+            current_targets = case.target_selector.split(',')
+            for st in skipped_targets(item):
+                # Handle wildcard patterns like "esp32p4,*" or "*,esp32p4"
+                if '*' in st:
+                    skip_pattern = st.split(',')
+                    if len(skip_pattern) != len(current_targets):
+                        continue
+                    if all(_p == '*' or _p == _t for _p, _t in zip(skip_pattern, current_targets)):
+                        skipped = True
+                        break
+                # Exact match (no wildcard)
+                elif case.target_selector == st:
+                    skipped = True
+                    break
+
+            if skipped:
                 deselected_items.append(item)
                 item.stash[IDF_CI_PYTEST_DEBUG_INFO_KEY] = 'skipped by temp_skip markers'
                 continue
