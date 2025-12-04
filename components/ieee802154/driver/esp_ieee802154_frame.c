@@ -333,6 +333,9 @@ uint8_t ieee802154_frame_get_dst_addr(const uint8_t *frame, uint8_t *addr)
 
     uint8_t offset = ieee802154_frame_address_offset(frame);
     uint8_t dst_mode = dst_addr_mode(frame);
+    if (dst_mode == IEEE802154_FRAME_DST_MODE_NONE) {
+        return dst_mode;
+    }
     uint8_t addr_size;
 
     ESP_RETURN_ON_FALSE_ISR(dst_mode == IEEE802154_FRAME_DST_MODE_SHORT || dst_mode == IEEE802154_FRAME_DST_MODE_EXT, dst_mode, IEEE802154_TAG, "invalid address mode");
@@ -356,6 +359,10 @@ uint8_t ieee802154_frame_get_src_addr(const uint8_t *frame, uint8_t *addr)
     uint8_t dst_mode = dst_addr_mode(frame);
     uint8_t src_mode = src_addr_mode(frame);
     uint8_t addr_size;
+
+    if (src_mode == IEEE802154_FRAME_SRC_MODE_NONE) {
+        return src_mode;
+    }
 
     ESP_RETURN_ON_FALSE_ISR(src_mode == IEEE802154_FRAME_SRC_MODE_SHORT || src_mode == IEEE802154_FRAME_SRC_MODE_EXT, src_mode, IEEE802154_TAG, "invalid address mode");
 

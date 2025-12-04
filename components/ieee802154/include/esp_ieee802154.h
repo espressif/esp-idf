@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -755,6 +755,80 @@ esp_err_t esp_ieee802154_event_callback_list_register(esp_ieee802154_event_cb_li
  *      - ESP_FAIL on failure.
  */
 esp_err_t esp_ieee802154_event_callback_list_unregister(void);
+
+/**
+ * @brief  Add a pending address to the multipan table for the specified interface.
+ *
+ * @note   This API should be called only when the IEEE 802.15.4 subsystem is enabled.
+ *
+ * @param  inf_index  Index of the interface.
+ * @param  addr       Pointer to the address to add.
+ * @param  is_short   True if the address is a short address, false if extended.
+ *
+ * @return
+ *      - ESP_OK on success.
+ *      - ESP_FAIL on failure.
+ */
+esp_err_t esp_ieee802154_multipan_add_pending_addr(esp_ieee802154_multipan_index_t inf_index, const uint8_t *addr, bool is_short);
+
+/**
+ * @brief  Remove a pending address from the multipan table for the specified interface.
+ *
+ * @note   This API should be called only when the IEEE 802.15.4 subsystem is enabled.
+ *
+ * @param  inf_index  Index of the interface.
+ * @param  addr       Pointer to the address to remove.
+ * @param  is_short   True if the address is a short address, false if extended.
+ *
+ * @return
+ *      - ESP_OK on success.
+ *      - ESP_FAIL on failure.
+ */
+esp_err_t esp_ieee802154_multipan_clear_pending_addr(esp_ieee802154_multipan_index_t inf_index, const uint8_t *addr, bool is_short);
+
+/**
+ * @brief  Reset the pending address table for the specified interface.
+ *
+ * @note   This API clears all pending addresses of the specified type (short or extended) for the interface.
+ *
+ * @param  inf_index  Index of the interface.
+ * @param  is_short   True to reset short addresses, false to reset extended addresses.
+ *
+ * @return
+ *      - ESP_OK on success.
+ *      - ESP_FAIL on failure.
+ */
+esp_err_t esp_ieee802154_multipan_reset_pending_table(esp_ieee802154_multipan_index_t inf_index, bool is_short);
+
+/**
+ * @brief  Get the auto frame pending mode of the specified multipan interface.
+ *
+ * @note   This API returns the logical pending mode configured for a given multipan
+ *         interface. The value is used by the ACK generation logic together with the
+ *         per-interface pending address table.
+ *
+ * @param  inf_index  Index of the multipan interface.
+ *
+ * @return
+ *      - Current pending mode of type ::esp_ieee802154_pending_mode_t.
+ */
+esp_ieee802154_pending_mode_t esp_ieee802154_multipan_get_pending_mode(esp_ieee802154_multipan_index_t inf_index);
+
+/**
+ * @brief  Set the auto frame pending mode of the specified multipan interface.
+ *
+ * @note   This API configures the logical pending mode for a given multipan interface.
+ *         The configured mode is used by the ACK generation logic together with the
+ *         per-interface pending address table.
+ *
+ * @param  inf_index      Index of the multipan interface.
+ * @param  pending_mode   Pending mode to set for this interface.
+ *
+ * @return
+ *      - ESP_OK on success.
+ *      - ESP_FAIL on failure.
+ */
+esp_err_t esp_ieee802154_multipan_set_pending_mode(esp_ieee802154_multipan_index_t inf_index, esp_ieee802154_pending_mode_t pending_mode);
 
 #ifdef __cplusplus
 }

@@ -72,6 +72,16 @@ menu "IEEE 802.15.4"
         help
             Enable IEEE802154 multi-pan
 
+    config IEEE802154_INTERFACE_NUM
+        int "Number of IEEE802154 interfaces"
+        depends on IEEE802154_ENABLED
+        range 1 1 if !IEEE802154_MULTI_PAN_ENABLE
+        range 1 4 if IEEE802154_MULTI_PAN_ENABLE
+        default 1 if !IEEE802154_MULTI_PAN_ENABLE
+        default 2 if IEEE802154_MULTI_PAN_ENABLE
+        help
+            Number of IEEE802154 interfaces
+
     config IEEE802154_TIMING_OPTIMIZATION
         bool "Enable throughput optimization"
         depends on IEEE802154_ENABLED
