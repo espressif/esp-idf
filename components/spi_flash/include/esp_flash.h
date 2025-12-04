@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +9,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "hal/spi_flash_types.h"
+#include "esp_blockdev.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -381,6 +382,24 @@ static inline bool esp_flash_is_quad_mode(const esp_flash_t *chip)
 {
     return (chip->read_mode == SPI_FLASH_QIO) || (chip->read_mode == SPI_FLASH_QOUT);
 }
+
+/*******************************************************************************
+ * BDL Functions
+ ******************************************************************************/
+
+/**
+ * @brief Get block device handle for given flash chip.
+ *
+ * @param chip Pointer to SPI flash chip to use. To use the default chip, pass `esp_flash_default_chip`. Has to be initialized.
+ * @param[out] out_handle Pointer to receive block device handle.
+ *
+ * @return
+ *  - ESP_OK on success
+ *  - ESP_ERR_INVALID_ARG if chip or out_handle is NULL
+ *  - ESP_ERR_NO_MEM if out of memory
+ *  - a flash error code if any underlying esp_flash operation failed.
+ */
+esp_err_t esp_flash_get_blockdev(esp_flash_t* chip, esp_blockdev_handle_t* out_handle);
 
 #ifdef __cplusplus
 }
