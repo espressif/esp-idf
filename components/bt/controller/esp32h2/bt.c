@@ -187,6 +187,7 @@ extern int r_ble_get_npl_element_info(esp_bt_controller_config_t *cfg, ble_npl_c
 extern char *ble_controller_get_compile_version(void);
 extern int esp_ble_register_bb_funcs(void);
 extern void esp_ble_unregister_bb_funcs(void);
+extern bool esp_ble_controller_lib_check(void);
 extern uint32_t _bt_bss_start;
 extern uint32_t _bt_bss_end;
 extern uint32_t _bt_controller_bss_start;
@@ -226,6 +227,10 @@ static void esp_bt_ctrl_log_partition_get_and_erase_first_block(void);
 #if CONFIG_FREERTOS_USE_TICKLESS_IDLE
 static bool esp_bt_check_wakeup_by_bt(void);
 #endif // CONFIG_FREERTOS_USE_TICKLESS_IDLE
+#if (CONFIG_BT_CONTROLLER_ONLY) && (CONFIG_BT_LE_SM_SC) && (!CONFIG_BT_LE_CRYPTO_STACK_MBEDTLS)
+#include "tinycrypt/ecc.h"
+static int ecc_rand_func(uint8_t *dst, unsigned int len);
+#endif // (CONFIG_BT_CONTROLLER_ONLY) && (CONFIG_BT_LE_SM_SC) && (!CONFIG_BT_LE_CRYPTO_STACK_MBEDTLS)
 /* Local variable definition
  ***************************************************************************
  */
@@ -1144,6 +1149,13 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
         goto free_controller;
     }
 
+    if (!esp_ble_controller_lib_check()) {
+        ESP_LOGW(NIMBLE_PORT_LOG_TAG, "Controller lib version mismatch!");
+    }
+
+#if (CONFIG_BT_CONTROLLER_ONLY) && (CONFIG_BT_LE_SM_SC) && (!CONFIG_BT_LE_CRYPTO_STACK_MBEDTLS)
+    uECC_set_rng(ecc_rand_func);
+#endif // (CONFIG_BT_CONTROLLER_ONLY) && (CONFIG_BT_LE_SM_SC) && (!CONFIG_BT_LE_CRYPTO_STACK_MBEDTLS)
     return ESP_OK;
 free_controller:
     hci_transport_deinit();
@@ -1614,6 +1626,25 @@ static mbedtls_ecp_keypair keypair;
 #if CONFIG_BT_LE_SM_SC
 #include "tinycrypt/cmac_mode.h"
 #include "tinycrypt/ecc_dh.h"
+
+/* Used by uECC to get random data */
+static int ecc_rand_func(uint8_t *dst, unsigned int len)
+{
+    int offset_cnt = 0;
+    uint8_t *u8ptr = dst;
+    uint64_t random_64 = 0;
+
+    while(len > 0) {
+        random64 = (uint64_t)esp_random();
+        random64 = (random64 << 32)| (uint64_t)esp_random();;
+        offset_cnt = len < sizeof(uint64_t) ? len : sizeof(uint64_t);
+        memcpy(u8ptr, &random64, offset_cnt);
+        len -= offset_cnt;
+        u8ptr += offset_cnt;
+    }
+
+    return 1;
+}
 #endif // CONFIG_BT_LE_SM_SC
 #endif // CONFIG_BT_LE_CRYPTO_STACK_MBEDTLS
 
@@ -1705,11 +1736,11 @@ exit:
     }
 
 #else
-    if (uECC_valid_public_key(pk, &curve_secp256r1) < 0) {
+    if (uECC_valid_public_key(pk, uECC_secp256r1()) < 0) {
         return BLE_SM_KEY_ERR;
     }
 
-    rc = uECC_shared_secret(pk, priv, dh, &curve_secp256r1);
+    rc = uECC_shared_secret(pk, priv, dh, uECC_secp256r1());
     if (rc == TC_CRYPTO_FAIL) {
         return BLE_SM_KEY_ERR;
     }
@@ -1785,7 +1816,7 @@ int ble_sm_alg_gen_key_pair(uint8_t *pub, uint8_t *priv)
             return BLE_SM_KEY_ERR;
         }
 #else
-        if (uECC_make_key(pk, priv, &curve_secp256r1) != TC_CRYPTO_SUCCESS) {
+        if (uECC_make_key(pk, priv, uECC_secp256r1()) != TC_CRYPTO_SUCCESS) {
             return BLE_SM_KEY_ERR;
         }
 #endif  // CONFIG_BT_LE_CRYPTO_STACK_MBEDTLS
@@ -1801,6 +1832,7 @@ int ble_sm_alg_gen_key_pair(uint8_t *pub, uint8_t *priv)
 
 #endif // CONFIG_BT_LE_SM_LEGACY || CONFIG_BT_LE_SM_SC
 #endif // (!CONFIG_BT_NIMBLE_ENABLED) && (CONFIG_BT_CONTROLLER_ENABLED)
+
 #if CONFIG_BT_LE_DEBUG_REMAIN_SCENE_ENABLED
 #include "esp_gdbstub.h"
 #endif // CONFIG_BT_LE_DEBUG_REMAIN_SCENE_ENABLED
