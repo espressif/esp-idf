@@ -276,6 +276,15 @@ void sleep_retention_do_extra_retention(bool backup_or_restore);
 void sleep_retention_do_system_retention(bool backup_or_restore);
 #endif
 
+#if SOC_PM_SUPPORT_PMU_MODEM_STATE
+/**
+ * @brief Software trigger REGDMA to do phy linked list retention
+ *
+ * @param backup_or_restore true for backup register context to memory
+ *                          or false for restore to register from memory
+ */
+void sleep_retention_do_phy_retention(bool backup_or_restore);
+#endif /*SOC_PM_SUPPORT_PMU_MODEM_STATE */
 #endif // SOC_PAU_SUPPORTED
 
 #ifdef __cplusplus
