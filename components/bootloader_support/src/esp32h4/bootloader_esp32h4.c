@@ -38,15 +38,14 @@
 #include "soc/lp_wdt_reg.h"
 #include "hal/efuse_hal.h"
 #include "hal/lpwdt_ll.h"
+#include "hal/assist_debug_ll.h"
 
 ESP_LOG_ATTR_TAG(TAG, "boot.esp32h4");
 
-// TODO: [ESP32H4] support core1 bus monitor IDF-12592
 static void wdt_reset_cpu0_info_enable(void)
 {
-    REG_SET_BIT(PCR_ASSIST_CONF_REG, PCR_ASSIST_CLK_EN);
-    REG_CLR_BIT(PCR_ASSIST_CONF_REG, PCR_ASSIST_RST_EN);
-    REG_WRITE(BUS_MONITOR_CORE_0_RCD_EN_REG, BUS_MONITOR_CORE_0_RCD_PDEBUGEN | BUS_MONITOR_CORE_0_RCD_RECORDEN);
+    assist_debug_ll_enable_bus_clock(0, true);
+    assist_debug_ll_enable_pc_recording(0, true);
 }
 
 static void wdt_reset_info_dump(int cpu)

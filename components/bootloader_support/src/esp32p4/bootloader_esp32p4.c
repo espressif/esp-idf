@@ -54,8 +54,8 @@ ESP_LOG_ATTR_TAG(TAG, "boot.esp32p4");
 
 static void wdt_reset_cpu0_info_enable(void)
 {
-    _assist_debug_ll_enable_bus_clock(true);
-    REG_WRITE(ASSIST_DEBUG_CORE_0_RCD_EN_REG, ASSIST_DEBUG_CORE_0_RCD_PDEBUGEN | ASSIST_DEBUG_CORE_0_RCD_RECORDEN);
+    _assist_debug_ll_enable_bus_clock(0, true);
+    assist_debug_ll_enable_pc_recording(0, true);
 }
 
 static void wdt_reset_info_dump(int cpu)

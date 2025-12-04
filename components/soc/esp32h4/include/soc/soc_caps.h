@@ -83,7 +83,7 @@
 // #define SOC_LP_PERIPHERALS_SUPPORTED    1
 #define SOC_REG_I2C_SUPPORTED           1
 #define SOC_CLK_TREE_SUPPORTED          1
-// #define SOC_ASSIST_DEBUG_SUPPORTED      1    // TODO: [ESP32H4] IDF-12310
+#define SOC_ASSIST_DEBUG_SUPPORTED      1
 #define SOC_WDT_SUPPORTED               1
 #define SOC_SPI_FLASH_SUPPORTED         1
 #define SOC_SPIRAM_SUPPORTED            1
