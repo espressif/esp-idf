@@ -665,6 +665,16 @@ static void s_i2c_send_command_async(i2c_master_bus_handle_t i2c_master, BaseTyp
     i2c_hal_master_trans_start(hal);
 }
 
+static inline bool s_i2c_timeout_range_check(uint32_t *timeout_us, uint32_t sclk_clock_hz)
+{
+    uint32_t max_timeout_us = (I2C_LL_MAX_TIMEOUT_PERIOD * 1000000ULL) / sclk_clock_hz;
+    if (*timeout_us > max_timeout_us) {
+        *timeout_us = max_timeout_us;
+        return true;
+    }
+    return false;
+}
+
 static esp_err_t s_i2c_transaction_start(i2c_master_dev_handle_t i2c_dev, int xfer_timeout_ms)
 {
     i2c_master_bus_handle_t i2c_master = i2c_dev->master_bus;
@@ -695,6 +705,7 @@ static esp_err_t s_i2c_transaction_start(i2c_master_dev_handle_t i2c_dev, int xf
     }
 
     // Set the timeout value
+    bool timeout_range_exceeded = s_i2c_timeout_range_check(&i2c_dev->scl_wait_us, i2c_master->base->clk_src_freq_hz);
     i2c_hal_master_set_scl_timeout_val(hal, i2c_dev->scl_wait_us, i2c_master->base->clk_src_freq_hz);
 
     i2c_ll_master_set_fractional_divider(hal->dev, 0, 0);
@@ -704,6 +715,11 @@ static esp_err_t s_i2c_transaction_start(i2c_master_dev_handle_t i2c_dev, int xf
     i2c_ll_rxfifo_rst(hal->dev);
     i2c_ll_enable_intr_mask(hal->dev, I2C_LL_MASTER_EVENT_INTR);
     portEXIT_CRITICAL(&i2c_master->base->spinlock);
+
+    if (timeout_range_exceeded) {
+        ESP_LOGW(TAG, "Timeout value exceeds the maximum supported value, rounded down to maximum supported value: %d us", i2c_dev->scl_wait_us);
+    }
+
     if (i2c_master->async_trans == true) {
         s_i2c_send_command_async(i2c_master, NULL);
     } else {
