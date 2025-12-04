@@ -542,11 +542,21 @@ examples/peripherals/twai/twai_error_recovery:
   depends_components:
     - esp_driver_twai
 
-examples/peripherals/twai/twai_network:
+examples/peripherals/twai/twai_network/twai_listen_only:
   disable:
     - if: SOC_TWAI_SUPPORTED != 1
   disable_test:
-    - if: IDF_TARGET == "esp32p4"
+    - if: IDF_TARGET in ["esp32p4", "esp32h2"]
+      temporary: true
+      reason: p4 rev3 migration # TODO: IDF-14393
+  depends_components:
+    - esp_driver_twai
+
+examples/peripherals/twai/twai_network/twai_sender:
+  disable:
+    - if: SOC_TWAI_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET in ["esp32p4", "esp32c5"]
       temporary: true
       reason: p4 rev3 migration # TODO: IDF-14393
   depends_components:

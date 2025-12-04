@@ -16,6 +16,7 @@ from pytest_embedded import Dut
     ],
     indirect=['target'],
 )
+@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration')
 def test_esp_eth_basic(dut: Dut) -> None:
     # wait for ip received
     dut_ip = dut.expect(r'esp_netif_handlers: .+ ip: (\d+\.\d+\.\d+\.\d+),').group(1)

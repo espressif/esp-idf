@@ -79,6 +79,7 @@ def _test_flash_encryption(dut: Dut) -> None:
 
 @pytest.mark.flash_encryption
 @idf_parametrize('target', ['esp32', 'esp32c3', 'esp32p4'], indirect=['target'])
+@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration')
 def test_examples_security_flash_encryption(dut: Dut) -> None:
     _test_flash_encryption(dut)
 
@@ -118,5 +119,6 @@ def test_examples_security_flash_encryption_psram_esp32(dut: Dut) -> None:
     indirect=True,
 )
 @idf_parametrize('target', ['esp32p4'], indirect=['target'])
+@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration')
 def test_examples_security_flash_encryption_psram(dut: Dut) -> None:
     _test_flash_encryption(dut)

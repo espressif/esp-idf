@@ -141,6 +141,7 @@ def test_esp_eth_iperf_ip101(
     indirect=True,
 )
 @idf_parametrize('target', ['esp32p4'], indirect=['target'])
+@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration')
 def test_esp_eth_iperf_ip101_esp32p4(
     dut: Dut,
     log_performance: Callable[[str, object], None],

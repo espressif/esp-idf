@@ -19,6 +19,7 @@ def not_expect(dut: Dut, output_regex: str) -> None:
 @pytest.mark.generic
 @idf_parametrize('config', ['stdio_none'], indirect=['config'])
 @idf_parametrize('target', ['supported_targets'], indirect=['target'])
+@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration')
 def test_esp_system_stdio_no_output_uart(dut: Dut) -> None:
     not_expect(dut, r'2nd stage bootloader|Hello World')
     dut.expect('This message will be printed even with CONFIG_ESP_CONSOLE_NONE')
@@ -29,6 +30,7 @@ def test_esp_system_stdio_no_output_uart(dut: Dut) -> None:
 @idf_parametrize('flash_port', ['/dev/serial_ports/ttyUSB-esp32'], indirect=['flash_port'])
 @idf_parametrize('port', ['/dev/serial_ports/ttyACM-esp32'], indirect=['port'])
 @idf_parametrize('target', soc_filtered_targets('SOC_USB_SERIAL_JTAG_SUPPORTED == 1'), indirect=['target'])
+@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration')
 def test_esp_system_stdio_only_serial_jtag(dut: Dut) -> None:
     dut.expect('2nd stage bootloader')
     dut.expect('Hello World')
@@ -43,6 +45,7 @@ def test_esp_system_stdio_only_serial_jtag(dut: Dut) -> None:
 @idf_parametrize('flash_port', ['/dev/serial_ports/ttyUSB-esp32'], indirect=['flash_port'])
 @idf_parametrize('port', ['/dev/serial_ports/ttyACM-esp32'], indirect=['port'])
 @idf_parametrize('target', soc_filtered_targets('SOC_USB_SERIAL_JTAG_SUPPORTED == 1'), indirect=['target'])
+@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration')
 def test_esp_system_stdio_only_serial_jtag_no_vfs(dut: Dut) -> None:
     dut.expect('2nd stage bootloader')
     dut.expect('Hello World')
@@ -53,6 +56,7 @@ def test_esp_system_stdio_only_serial_jtag_no_vfs(dut: Dut) -> None:
 @idf_parametrize('flash_port', ['/dev/serial_ports/ttyUSB-esp32'], indirect=['flash_port'])
 @idf_parametrize('port', ['/dev/serial_ports/ttyACM-esp32'], indirect=['port'])
 @idf_parametrize('target', soc_filtered_targets('SOC_USB_SERIAL_JTAG_SUPPORTED == 1'), indirect=['target'])
+@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration')
 def test_esp_system_stdio_secondary_serial_jtag(dut: Dut) -> None:
     dut.expect('2nd stage bootloader')
     dut.expect('Hello World')
@@ -61,6 +65,7 @@ def test_esp_system_stdio_secondary_serial_jtag(dut: Dut) -> None:
 @pytest.mark.generic
 @idf_parametrize('config', ['simple'], indirect=['config'])
 @idf_parametrize('target', ['supported_targets'], indirect=['target'])
+@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration')
 def test_esp_system_stdio_correct_open_and_close(dut: Dut) -> None:
     dut.expect('2nd stage bootloader')
     dut.expect('Hello World')
