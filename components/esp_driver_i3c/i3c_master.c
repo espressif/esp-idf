@@ -465,7 +465,7 @@ static esp_err_t do_dma_transaction_handler(i3c_master_bus_handle_t bus_handle, 
                 .length = dma_aligned_size,
                 .flags = {
                     .mark_eof = true,
-                    .mark_final = true,
+                    .mark_final = GDMA_FINAL_LINK_TO_NULL,
                 }
             };
 
@@ -491,7 +491,7 @@ static esp_err_t do_dma_transaction_handler(i3c_master_bus_handle_t bus_handle, 
                 .length = dma_aligned_size,
                 .flags = {
                     .mark_eof = true,
-                    .mark_final = true,
+                    .mark_final = GDMA_FINAL_LINK_TO_NULL,
                 }
             };
 

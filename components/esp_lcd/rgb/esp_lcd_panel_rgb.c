@@ -1034,7 +1034,7 @@ static esp_err_t lcd_rgb_panel_init_trans_link(esp_rgb_panel_t *rgb_panel)
         gdma_buffer_mount_config_t mount_cfg = {
             .length = rgb_panel->fb_size,
             .flags = {
-                .mark_final = rgb_panel->flags.stream_mode ? false : true,
+                .mark_final = rgb_panel->flags.stream_mode ? GDMA_FINAL_LINK_TO_DEFAULT : GDMA_FINAL_LINK_TO_NULL,
                 .mark_eof = true,
             },
         };
