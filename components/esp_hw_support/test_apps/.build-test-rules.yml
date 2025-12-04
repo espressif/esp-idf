@@ -84,6 +84,6 @@ components/esp_hw_support/test_apps/wakeup_tests:
   enable:
     - if: SOC_DEEP_SLEEP_SUPPORTED == 1 and SOC_LIGHT_SLEEP_SUPPORTED == 1
   disable_test:
-    - if: IDF_TARGET in ["esp32c61", "esp32h21", "esp32h4", "esp32p4"]
+    - if: IDF_TARGET in ["esp32c61", "esp32h21", "esp32h4"]
       temporary: true
-      reason: lack of runners # TODO: IDF-14400
+      reason: lack of runners
