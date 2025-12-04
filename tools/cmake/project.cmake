@@ -263,6 +263,7 @@ function(__all_component_info output)
         __component_get_property(priv_reqs ${target} PRIV_REQUIRES)
         __component_get_property(managed_reqs ${target} MANAGED_REQUIRES)
         __component_get_property(managed_priv_reqs ${target} MANAGED_PRIV_REQUIRES)
+        __component_get_property(component_source ${target} COMPONENT_SOURCE)
 
         if(prefix STREQUAL build_prefix)
             set(name ${name})
@@ -282,6 +283,7 @@ function(__all_component_info output)
             "            \"target\": \"${target}\","
             "            \"prefix\": \"${prefix}\","
             "            \"dir\": \"${dir}\","
+            "            \"source\": \"${component_source}\","
             "            \"lib\": \"${lib}\","
             "            \"reqs\": ${reqs},"
             "            \"priv_reqs\": ${priv_reqs},"
