@@ -48,6 +48,7 @@ void esp_system_reset_modules_on_exit(void)
 #endif
 
     // Set Peripheral clk rst
+    SET_PERI_REG_MASK(PCR_MSPI_CLK_CONF_REG, PCR_MSPI_AXI_RST_EN); // Must reset mspi AXI before reset mspi core.
     SET_PERI_REG_MASK(PCR_MSPI_CONF_REG, PCR_MSPI_RST_EN);
     SET_PERI_REG_MASK(PCR_UART0_CONF_REG, PCR_UART0_RST_EN);
     SET_PERI_REG_MASK(PCR_UART1_CONF_REG, PCR_UART1_RST_EN);
@@ -61,6 +62,7 @@ void esp_system_reset_modules_on_exit(void)
     SET_PERI_REG_MASK(PCR_REGDMA_CONF_REG, PCR_REGDMA_RST_EN);
 
     // Clear Peripheral clk rst
+    CLEAR_PERI_REG_MASK(PCR_MSPI_CLK_CONF_REG, PCR_MSPI_AXI_RST_EN); // Must release mspi core reset before mspi AXI.
     CLEAR_PERI_REG_MASK(PCR_MSPI_CONF_REG, PCR_MSPI_RST_EN);
     CLEAR_PERI_REG_MASK(PCR_UART0_CONF_REG, PCR_UART0_RST_EN);
     CLEAR_PERI_REG_MASK(PCR_UART1_CONF_REG, PCR_UART1_RST_EN);

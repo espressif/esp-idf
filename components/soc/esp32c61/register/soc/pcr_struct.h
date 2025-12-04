@@ -1774,6 +1774,30 @@ typedef union {
     uint32_t val;
 } pcr_timergroup_xtal_conf_reg_t;
 
+/** Type of reset_event_bypass register
+ *  reset event bypass backdoor configuration register
+ */
+typedef union {
+    struct {
+        /** reset_event_bypass_apm : R/W; bitpos: [0]; default: 0;
+         *  This field is used to control reset event relationship for
+         *  tee_reg/apm_reg/hp_system_reg. 1: tee_reg/apm_reg/hp_system_reg will only be reset
+         *  by power-reset. some reset event will be bypass. 0: tee_reg/apm_reg/hp_system_reg
+         *  will not only be reset by power-reset, but also some reset event.
+         */
+        uint32_t reset_event_bypass_apm:1;
+        /** reset_event_bypass : R/W; bitpos: [1]; default: 1;
+         *  This field is used to control reset event relationship for system-bus. 1: system
+         *  bus (including arbiter/router) will only be reset by power-reset. some reset event
+         *  will be bypass. 0: system bus (including arbiter/router) will not only be reset by
+         *  power-reset, but also some reset event.
+         */
+        uint32_t reset_event_bypass:1;
+        uint32_t reserved_2:30;
+    };
+    uint32_t val;
+} pcr_reset_event_bypass_reg_t;
+
 /** Type of regdma_conf register
  *  REGDMA configuration register
  */
@@ -1966,7 +1990,7 @@ typedef struct {
     uint32_t reserved_128;
     volatile pcr_timergroup_wdt_conf_reg_t timergroup_wdt_conf;
     volatile pcr_timergroup_xtal_conf_reg_t timergroup_xtal_conf;
-    uint32_t reserved_134;
+    volatile pcr_reset_event_bypass_reg_t reset_event_bypass;
     volatile pcr_regdma_conf_reg_t regdma_conf;
     volatile pcr_etm_conf_reg_t etm_conf;
     uint32_t reserved_140[6];
