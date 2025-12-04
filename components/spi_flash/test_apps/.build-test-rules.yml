@@ -16,6 +16,14 @@ components/spi_flash/test_apps/esp_flash:
     - esptool_py # Some flash related kconfigs are listed here.
     - esp_hal_mspi
 
+components/spi_flash/test_apps/esp_flash_blockdev:
+  disable_test:
+    - if: IDF_TARGET not in ["esp32", "esp32c3"]
+      temporary: false
+      reason: should be sufficient to test on one Xtensa and one RISC-V target
+  depends_components:
+    - spi_flash
+
 components/spi_flash/test_apps/esp_flash_stress:
   disable:
     - if: IDF_TARGET == "esp32h4"

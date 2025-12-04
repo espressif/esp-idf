@@ -5,8 +5,9 @@ if(${target} STREQUAL "linux")
     idf_component_register(SRCS "linux/spi_flash_linux.c"
                           "linux/cache_utils.c"
                           "linux/flash_mmap.c"
+                          "spi_flash_blockdev.c"
                            INCLUDE_DIRS include
-                           REQUIRES esp_hal_mspi
+                           REQUIRES esp_hal_mspi esp_blockdev
                            PRIV_INCLUDE_DIRS include/spi_flash)
     return()
 endif()
@@ -37,7 +38,8 @@ else()
         "spi_flash_chip_boya.c"
         "spi_flash_chip_mxic_opi.c"
         "spi_flash_chip_th.c"
-        "memspi_host_driver.c")
+        "memspi_host_driver.c"
+        "spi_flash_blockdev.c")
 
     set(cache_srcs
         "cache_utils.c"
@@ -61,7 +63,7 @@ else()
 endif()
 
 idf_component_register(SRCS "${srcs}"
-                    REQUIRES hal esp_hal_mspi
+                    REQUIRES hal esp_hal_mspi esp_blockdev
                     PRIV_REQUIRES "${priv_requires}"
                     INCLUDE_DIRS include
                     PRIV_INCLUDE_DIRS include/spi_flash
