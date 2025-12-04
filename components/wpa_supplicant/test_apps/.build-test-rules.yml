@@ -7,5 +7,3 @@ components/wpa_supplicant/test_apps:
     - esp_wifi
     - wpa_supplicant
     - mbedtls
-    - esp_timer
-    - esp_event

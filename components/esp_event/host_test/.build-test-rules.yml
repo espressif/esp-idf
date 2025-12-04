@@ -1,3 +1,5 @@
 components/esp_event/host_test:
   enable:
     - if: IDF_TARGET == "linux"
+  depends_components:
+    - esp_event

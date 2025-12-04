@@ -99,6 +99,8 @@ tools/test_apps/system/log:
   disable_test:
     - if: IDF_TARGET not in ["esp32", "esp32c3"]
       reason: test only on esp32 and c3 as other targets are similar
+  depends_components:
+    - log
 
 tools/test_apps/system/longjmp_test:
   enable:

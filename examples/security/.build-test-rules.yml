@@ -10,6 +10,8 @@ examples/security/flash_encryption:
     - if: IDF_TARGET in ["esp32s2", "esp32s3", "esp32c6", "esp32h2", "esp32c2", "esp32c5", "esp32c61"]
       temporary: true
       reason: lack of runners
+  depends_components:
+    - bootloader_support
 
 examples/security/hmac_soft_jtag:
   disable:
@@ -38,6 +40,8 @@ examples/security/nvs_encryption_hmac:
 examples/security/security_features_app:
   disable:
     - if: IDF_TARGET not in ["esp32c3", "esp32s3"]
+  depends_components:
+    - bootloader_support
 
 examples/security/tee/tee_attestation:
   disable:

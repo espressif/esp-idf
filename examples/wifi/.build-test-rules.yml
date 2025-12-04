@@ -5,7 +5,6 @@
     - esp_wifi
     - esp_phy
     - esp_netif
-    - esp_event
     - esp_coex
     - wpa_supplicant
     - mbedtls
@@ -61,7 +60,6 @@ examples/wifi/iperf:
     - esp_phy
     - esp_netif
     - lwip
-    - esp_event
     - esp_coex
     - wpa_supplicant
 
@@ -81,7 +79,6 @@ examples/wifi/power_save:
     - esp_phy
     - esp_netif
     - lwip
-    - esp_event
     - esp_coex
     - wpa_supplicant
     - esp_driver_uart
@@ -107,7 +104,6 @@ examples/wifi/wifi_aware/nan_console:
     - esp_phy
     - esp_netif
     - lwip
-    - esp_event
     - esp_coex
     - wpa_supplicant
     - mbedtls
@@ -124,7 +120,6 @@ examples/wifi/wifi_aware/nan_publisher:
     - esp_phy
     - esp_netif
     - lwip
-    - esp_event
     - esp_coex
     - wpa_supplicant
     - mbedtls
@@ -139,7 +134,6 @@ examples/wifi/wifi_aware/nan_subscriber:
     - esp_phy
     - esp_netif
     - lwip
-    - esp_event
     - esp_coex
     - wpa_supplicant
     - mbedtls

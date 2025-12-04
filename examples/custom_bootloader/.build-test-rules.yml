@@ -1,6 +1,30 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
+
+examples/custom_bootloader/bootloader_extra_dir:
+  disable_test:
+    - if: IDF_TARGET not in ["esp32s3", "esp32c3"]
+      reason: Testing on two diff architectures is sufficient
+  depends_components:
+    - bootloader_support
+
+examples/custom_bootloader/bootloader_hooks:
+  disable_test:
+    - if: IDF_TARGET not in ["esp32s3", "esp32c3"]
+      reason: Testing on two diff architectures is sufficient
+  depends_components:
+    - bootloader_support
+
 examples/custom_bootloader/bootloader_multiboot:
   disable_test:
     - if: IDF_TARGET not in ["esp32s3", "esp32c3"]
       reason: Testing on two diff architectures is sufficient
+  depends_components:
+    - bootloader_support
+
+examples/custom_bootloader/bootloader_override:
+  disable_test:
+    - if: IDF_TARGET not in ["esp32s3", "esp32c3"]
+      reason: Testing on two diff architectures is sufficient
+  depends_components:
+    - bootloader_support
