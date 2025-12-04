@@ -6,7 +6,30 @@ cmake_minimum_required(VERSION 3.22)
 
 set(g0_components soc hal esp_common esp_rom)  # also <arch>, i.e. xtensa or riscv, will be added below
 set(g1_components spi_flash freertos log heap esp_libc esp_system esp_hw_support esp_mm esp_stdio)
-set(COMPONENTS ${g0_components} ${g1_components} main)
+# The HAL components that required by G1 components
+# Most of these HAL components are required by `clk.c` in `esp_system` for peripherals clock initialization.
+set(esp_hal_components
+    esp_hal_ana_conv
+    esp_hal_cam
+    esp_hal_dma
+    esp_hal_emac
+    esp_hal_gpio
+    esp_hal_i2c
+    esp_hal_i2s
+    esp_hal_jpeg
+    esp_hal_lcd
+    esp_hal_mcpwm
+    esp_hal_mspi
+    esp_hal_parlio
+    esp_hal_pcnt
+    esp_hal_rmt
+    esp_hal_timg
+    esp_hal_touch_sens
+    esp_hal_usb
+    esp_hal_wdt
+    esp_hal_twai
+)
+set(COMPONENTS ${g0_components} ${g1_components} ${esp_hal_components} main)
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 
@@ -17,17 +40,6 @@ project(g1_components)
 set(extra_allowed_components
     ${CONFIG_IDF_TARGET_ARCH}
 )
-
-# Since esp_hal_* components are split from original hal component, so we can allow they are g1 components.
-# But in the future, esp_hal_* components should be removed from common build. IDF-13980
-file(GLOB esp_hal_component_dirs "${idf_path}/components/esp_hal_*")
-set(esp_hal_components "")
-foreach(hal_dir ${esp_hal_component_dirs})
-    if(IS_DIRECTORY ${hal_dir} AND EXISTS "${hal_dir}/CMakeLists.txt")
-        get_filename_component(hal_name ${hal_dir} NAME)
-        list(APPEND esp_hal_components ${hal_name})
-    endif()
-endforeach()
 
 # These components are currently included into "G1" build, but shouldn't.
 # After removing the extra dependencies, remove the components from this list as well.
@@ -118,7 +130,6 @@ set(expected_components
     ${COMPONENTS}
     ${extra_allowed_components}
     ${extra_components_which_shouldnt_be_included}
-    ${esp_hal_components}
 )
 
 list(SORT expected_components)

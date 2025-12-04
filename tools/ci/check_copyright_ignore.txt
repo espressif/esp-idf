@@ -460,7 +460,6 @@ components/fatfs/src/ff.h
 components/fatfs/src/ffconf.h
 components/fatfs/src/ffsystem.c
 components/fatfs/src/ffunicode.c
-components/hal/include/hal/dac_types.h
 components/hal/spi_slave_hal.c
 components/hal/spi_slave_hal_iram.c
 components/idf_test/include/idf_performance.h
@@ -495,7 +494,6 @@ components/soc/esp32s2/include/soc/fe_reg.h
 components/soc/esp32s2/include/soc/memprot_defs.h
 components/soc/esp32s2/include/soc/nrx_reg.h
 components/soc/esp32s2/include/soc/soc_ulp.h
-components/soc/esp32s2/include/soc/touch_sensor_pins.h
 components/spi_flash/include/spi_flash_chip_generic.h
 components/spi_flash/spi_flash_chip_boya.c
 components/spi_flash/spi_flash_chip_issi.c

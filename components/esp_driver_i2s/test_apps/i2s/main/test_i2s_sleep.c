@@ -13,7 +13,7 @@
 #include "driver/i2s_std.h"
 #include "driver/uart.h"
 #include "soc/i2s_struct.h"
-#include "soc/soc_caps_full.h"
+#include "soc/soc_caps.h"
 #include "esp_sleep.h"
 #include "esp_private/sleep_cpu.h"
 #include "esp_private/esp_sleep_internal.h"

@@ -25,13 +25,14 @@ components/driver/test_apps/touch_element:
     - if: IDF_TARGET not in ["esp32s2", "esp32s3"]
       reason: only supports esp32s2 and esp32s3
   depends_filepatterns:
-    - components/soc/**/touch_sensor_periph.h
     - components/soc/esp32s2/**/rtc_cntl_*
     - components/soc/esp32s3/**/rtc_cntl_*
     - components/soc/esp32s2/**/rtc_io_struct.h
     - components/soc/esp32s3/**/rtc_io_struct.h
     - components/soc/esp32s2/**/sens_struct.h
     - components/soc/esp32s3/**/sens_struct.h
+  depends_components:
+    - esp_hal_touch_sens
 
 components/driver/test_apps/touch_sensor_v1:
   disable:

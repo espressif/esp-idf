@@ -8,7 +8,7 @@
 #include <stdbool.h>
 #include "hal/wdt_types.h"
 #include "hal/wdt_hal.h"
-#include "soc/soc_caps_full.h"
+#include "soc/soc_caps.h"
 
 /* ---------------------------- Init and Config ----------------------------- */
 

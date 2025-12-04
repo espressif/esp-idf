@@ -5,11 +5,6 @@ set(srcs "hal_utils.c")
 set(includes "platform_port/include")
 set(requires)
 
-if(${target} STREQUAL "esp32")
-    # TODO: IDF-14079 remove this dependency when ADC hal is graduated from the common hal component
-    list(APPEND requires esp_hal_i2s)
-endif()
-
 # target specific include must be added before the generic one
 # because of the "include_next" directive used by the efuse_hal.h
 list(APPEND includes "${target}/include")
@@ -113,14 +108,6 @@ elseif(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "etm_hal.c" "${target}/etm_periph.c")
     endif()
 
-    if(CONFIG_SOC_ADC_SUPPORTED)
-        list(APPEND srcs "adc_hal_common.c" "adc_oneshot_hal.c")
-
-        if(CONFIG_SOC_ADC_DMA_SUPPORTED)
-            list(APPEND srcs "adc_hal.c")
-        endif()
-    endif()
-
     if(CONFIG_SOC_ECC_SUPPORTED)
         list(APPEND srcs "ecc_hal.c")
     endif()
@@ -195,16 +182,6 @@ elseif(NOT BOOTLOADER_BUILD)
     if(CONFIG_SOC_DIG_SIGN_SUPPORTED AND NOT CONFIG_IDF_TARGET_ESP32S2)
         # For ESP32-S2 we do not have DS HAL layer implementation yet
         list(APPEND srcs "ds_hal.c")
-    endif()
-
-    if(CONFIG_SOC_TOUCH_SENSOR_SUPPORTED)
-        # Source files for the legacy touch hal driver
-        if(CONFIG_SOC_TOUCH_SENSOR_VERSION LESS 3)
-            list(APPEND srcs "${target}/touch_sensor_hal.c")
-            list(APPEND srcs "touch_sensor_hal.c")
-        endif()
-        # Source files for the new touch hal driver
-        list(APPEND srcs "touch_sens_hal.c")
     endif()
 
     if(CONFIG_SOC_TEMP_SENSOR_SUPPORTED)

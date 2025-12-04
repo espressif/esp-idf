@@ -11,9 +11,18 @@ project(adc_test)
 
 idf_build_get_property(elf EXECUTABLE)
 if(CONFIG_COMPILER_DUMP_RTL_FILES)
+    # Collect RTL directories in a variable for readability. Join them
+    # with commas so they are passed as a single --rtl-dirs argument to the script.
+    set(ADC_RTL_DIRS
+        ${CMAKE_BINARY_DIR}/esp-idf/esp_adc
+        ${CMAKE_BINARY_DIR}/esp-idf/hal
+        ${CMAKE_BINARY_DIR}/esp-idf/esp_hal_ana_conv
+    )
+    string(JOIN "," ADC_RTL_DIRS_JOINED ${ADC_RTL_DIRS})
+
     add_custom_target(check_test_app_sections ALL
                       COMMAND ${PYTHON} $ENV{IDF_PATH}/tools/ci/check_callgraph.py
-                      --rtl-dirs ${CMAKE_BINARY_DIR}/esp-idf/esp_adc/,${CMAKE_BINARY_DIR}/esp-idf/hal/
+                      --rtl-dirs ${ADC_RTL_DIRS_JOINED}
                       --elf-file ${CMAKE_BINARY_DIR}/adc_test.elf
                       find-refs
                       --from-sections=.iram0.text

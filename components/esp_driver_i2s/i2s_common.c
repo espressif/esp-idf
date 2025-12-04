@@ -23,7 +23,6 @@
 
 #include "hal/i2s_periph.h"
 #include "soc/soc_caps.h"
-#include "soc/soc_caps_full.h"
 #include "hal/i2s_hal.h"
 #include "hal/hal_utils.h"
 #include "hal/dma_types.h"

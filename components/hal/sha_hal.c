@@ -11,7 +11,7 @@
 #include "hal/sha_hal.h"
 #include "hal/sha_types.h"
 #include "hal/sha_ll.h"
-#include "soc/soc_caps_full.h"
+#include "soc/soc_caps.h"
 
 
 #define SHA1_STATE_LEN_WORDS    (160 / 32)
