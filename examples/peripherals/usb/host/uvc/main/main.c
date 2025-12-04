@@ -114,7 +114,7 @@ static void stream_callback(const uvc_host_stream_event_data_t *event, void *use
         ESP_LOGW(TAG, "Frame buffer underflow");
         break;
     default:
-        abort();
+        ESP_LOGW(TAG, "Unsupported UVC event: %d (possibly suspend/resume)", event->type);
         break;
     }
 }
