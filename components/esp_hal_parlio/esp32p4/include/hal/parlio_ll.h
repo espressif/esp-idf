@@ -50,6 +50,7 @@
 
 #if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
 #define PARLIO_LL_TX_VALID_MAX_DELAY        32767
+#define PARLIO_LL_SUPPORT_TX_EOF_FROM_DMA   1   // Support to treat DMA EOF as TX unit EOF
 #endif
 
 #ifdef __cplusplus
