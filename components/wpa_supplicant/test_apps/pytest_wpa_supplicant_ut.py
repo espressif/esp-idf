@@ -22,7 +22,7 @@ def test_wpa_supplicant_ut(dut: Dut) -> None:
 @pytest.mark.esp32s3
 @pytest.mark.esp32c2
 @pytest.mark.esp32c6
-@pytest.mark.wifi_two_dut
+@pytest.mark.two_duts
 @pytest.mark.parametrize(
     'count',
     [
@@ -32,12 +32,12 @@ def test_wpa_supplicant_ut(dut: Dut) -> None:
 )
 def test_wpa_supplicant_ut_offchan(case_tester: CaseTester) -> None:
     for case in case_tester.test_menu:
-        if case.attributes.get('test_env') == 'wifi_two_dut':
+        if case.attributes.get('test_env') == 'two_duts':
             case_tester.run_multi_dev_case(case=case, reset=True)
 
 
 @pytest.mark.esp32c2
-@pytest.mark.wifi_two_dut_eco
+@pytest.mark.two_duts_eco
 @pytest.mark.xtal_26mhz
 @pytest.mark.parametrize(
     'count, config, baud',
@@ -52,12 +52,12 @@ def test_wpa_supplicant_ut_offchan(case_tester: CaseTester) -> None:
 )
 def test_wpa_supplicant_esp32c2eco4_xtal26mhz(case_tester: CaseTester) -> None:
     for case in case_tester.test_menu:
-        if case.attributes.get('test_env') == 'wifi_two_dut':
+        if case.attributes.get('test_env') == 'two_duts':
             case_tester.run_multi_dev_case(case=case, reset=True)
 
 
 @pytest.mark.esp32c3
-@pytest.mark.wifi_two_dut_eco
+@pytest.mark.two_duts_eco
 @pytest.mark.parametrize(
     'count, config',
     [
@@ -70,5 +70,5 @@ def test_wpa_supplicant_esp32c2eco4_xtal26mhz(case_tester: CaseTester) -> None:
 )
 def test_wpa_supplicant_esp32c3eco7(case_tester: CaseTester) -> None:
     for case in case_tester.test_menu:
-        if case.attributes.get('test_env') == 'wifi_two_dut':
+        if case.attributes.get('test_env') == 'two_duts':
             case_tester.run_multi_dev_case(case=case, reset=True)
