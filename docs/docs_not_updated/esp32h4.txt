@@ -132,7 +132,6 @@ api-reference/peripherals/sdspi_host.rst
 api-reference/peripherals/vad.rst
 api-reference/peripherals/i2s.rst
 api-reference/peripherals/sd_pullup_requirements.rst
-api-reference/peripherals/parlio.rst
 api-reference/peripherals/adc_calibration.rst
 api-reference/peripherals/lp_i2s.rst
 api-reference/peripherals/ecdsa.rst

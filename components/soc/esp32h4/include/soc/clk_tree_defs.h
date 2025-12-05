@@ -461,6 +461,24 @@ typedef enum {
     TWAI_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F96M,  /*!< Select PLL_96M as the default clock choice */
 } soc_periph_twai_clk_src_t;
 
+//////////////////////////////////////////////////PARLIO////////////////////////////////////////////////////////////////
+
+/**
+ * @brief Array initializer for all supported clock sources of PARLIO
+ */
+#define SOC_PARLIO_CLKS {SOC_MOD_CLK_XTAL, SOC_MOD_CLK_RC_FAST, SOC_MOD_CLK_PLL_F96M}
+
+/**
+ * @brief PARLIO clock source
+ */
+typedef enum {
+    PARLIO_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,           /*!< Select XTAL as the source clock */
+    PARLIO_CLK_SRC_RC_FAST = SOC_MOD_CLK_RC_FAST,     /*!< Select RC_FAST as the source clock */
+    PARLIO_CLK_SRC_PLL_F96M = SOC_MOD_CLK_PLL_F96M,   /*!< Select PLL_F96M as the source clock */
+    PARLIO_CLK_SRC_EXTERNAL = -1,                     /*!< Select EXTERNAL clock as the source clock */
+    PARLIO_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F96M,    /*!< Select PLL_F96M as the default clock choice */
+} soc_periph_parlio_clk_src_t;
+
 #ifdef __cplusplus
 }
 #endif

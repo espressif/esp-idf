@@ -37,4 +37,4 @@ entries:
 archive: libesp_hal_parlio.a
 entries:
     if PARLIO_RX_ISR_HANDLER_IN_IRAM = y:
-        parlio_periph: parlio_periph_signals  (noflash)
+        parlio_periph: soc_parlio_signals  (noflash)
