@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 import os.path
 from typing import Tuple
@@ -14,7 +14,7 @@ from pytest_embedded_idf.dut import IdfDut
 @pytest.mark.esp32h2
 @pytest.mark.esp32s3
 @pytest.mark.esp32c61
-@pytest.mark.wifi_two_dut
+@pytest.mark.two_duts
 @pytest.mark.parametrize(
     'count, app_path, config, erase_all', [
         (2,
@@ -47,7 +47,7 @@ def test_ble50_security_func(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> None:
 
 # Case 2: ble50 security client and ble50 security server test for ESP32C2 26mhz xtal
 @pytest.mark.esp32c2
-@pytest.mark.wifi_two_dut
+@pytest.mark.two_duts
 @pytest.mark.xtal_26mhz
 @pytest.mark.parametrize(
     'count, target, baud, app_path, config, erase_all', [
@@ -86,7 +86,7 @@ def test_c2_26mhz_xtal_ble50_security_func(app_path: str, dut: Tuple[IdfDut, Idf
 @pytest.mark.esp32h2
 @pytest.mark.esp32s3
 @pytest.mark.esp32c61
-@pytest.mark.wifi_two_dut
+@pytest.mark.two_duts
 @pytest.mark.parametrize(
     'count, app_path, config, erase_all', [
         (2,
@@ -115,7 +115,7 @@ def test_period_adv_sync_func(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> None
 
 # Case 4: period_adv and period_sync test for ESP32C2 26mhz xtal
 @pytest.mark.esp32c2
-@pytest.mark.wifi_two_dut
+@pytest.mark.two_duts
 @pytest.mark.xtal_26mhz
 @pytest.mark.parametrize(
     'count, target, baud, app_path, config, erase_all', [
