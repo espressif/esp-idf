@@ -37,16 +37,18 @@
 #define ACCESS_ECDH(S, var) S->MBEDTLS_PRIVATE(ctx).MBEDTLS_PRIVATE(mbed_ecdh).MBEDTLS_PRIVATE(var)
 #endif
 
+#define ESP_SUP_MAX_ECC_KEY_SIZE 256
+
 #ifdef CONFIG_ECC
 
 // Wrapper structure for EC keys that includes PSA key ID, curve info, and group
 // This allows us to avoid memory leaks by storing everything with the key
 typedef struct {
     psa_key_id_t key_id;
-    mbedtls_ecp_group_id curve_id;  // Store curve ID for quick access
-    mbedtls_ecp_group group;        // Store group directly in wrapper
-    mbedtls_ecp_point *cached_public_key;  // Cached public key point (freed in deinit)
-    mbedtls_mpi *cached_private_key;      // Cached private key bignum (freed in deinit)
+    mbedtls_ecp_group_id curve_id;
+    mbedtls_ecp_group group;
+    mbedtls_ecp_point *cached_public_key;
+    mbedtls_mpi *cached_private_key;
 } crypto_ec_key_wrapper_t;
 
 // Helper macro to get key_id from wrapper
@@ -499,8 +501,8 @@ int crypto_ec_key_compare(struct crypto_ec_key *key1, struct crypto_ec_key *key2
         return 0;
     }
 
-    unsigned char pub1[PSA_KEY_EXPORT_ECC_PUBLIC_KEY_MAX_SIZE(256)];
-    unsigned char pub2[PSA_KEY_EXPORT_ECC_PUBLIC_KEY_MAX_SIZE(256)];
+    unsigned char pub1[PSA_KEY_EXPORT_ECC_PUBLIC_KEY_MAX_SIZE(ESP_SUP_MAX_ECC_KEY_SIZE)];
+    unsigned char pub2[PSA_KEY_EXPORT_ECC_PUBLIC_KEY_MAX_SIZE(ESP_SUP_MAX_ECC_KEY_SIZE)];
 
     size_t key1_len, key2_len;
 
@@ -560,11 +562,6 @@ static psa_ecc_family_t group_id_to_psa(mbedtls_ecp_group_id grp_id, size_t *bit
             *bits = 192;
         }
         return PSA_ECC_FAMILY_SECP_R1;
-    // case MBEDTLS_ECP_DP_SECP224R1:
-    //     if (bits) {
-    //         *bits = 224;
-    //     }
-    //     return PSA_ECC_FAMILY_SECP_R1;
     case MBEDTLS_ECP_DP_SECP256R1:
         if (bits) {
             *bits = 256;
@@ -1124,14 +1121,13 @@ struct crypto_ec_key *crypto_ec_key_parse_priv(const u8 *privkey, size_t privkey
         wpa_printf(MSG_ERROR, "Memory allocation failed for key wrapper");
         return NULL;
     }
-    mbedtls_ecp_group_init(&wrapper->group);  // Initialize group structure
-    wrapper->group.id = MBEDTLS_ECP_DP_NONE;  // Mark as not loaded yet (lazy init)
+    mbedtls_ecp_group_init(&wrapper->group);
+    wrapper->group.id = MBEDTLS_ECP_DP_NONE;
 
     mbedtls_pk_init(kctx);
     ret = mbedtls_pk_parse_key(kctx, privkey, privkey_len, NULL, 0);
 
     if (ret < 0) {
-        //crypto_print_error_string(ret);
         goto fail;
     }
 
@@ -1196,24 +1192,6 @@ unsigned int crypto_ec_get_mbedtls_to_nist_group_id(int id, int bits)
 {
     unsigned int nist_grpid = 0;
     switch (id) {
-    // case MBEDTLS_ECP_DP_SECP256R1:
-    //     nist_grpid = 19;
-    //     break;
-    // case MBEDTLS_ECP_DP_SECP384R1:
-    //     nist_grpid = 20;
-    //     break;
-    // case MBEDTLS_ECP_DP_SECP521R1:
-    //     nist_grpid = 21;
-    //     break;
-    // case MBEDTLS_ECP_DP_BP256R1:
-    //     nist_grpid = 28;
-    //     break;
-    // case MBEDTLS_ECP_DP_BP384R1:
-    //     nist_grpid = 29;
-    //     break;
-    // case MBEDTLS_ECP_DP_BP512R1:
-    //     nist_grpid = 30;
-    //     break;
     case PSA_ECC_FAMILY_SECP_R1:
         if (bits == 256) {
             nist_grpid = 19; // NIST P-256
@@ -1235,15 +1213,8 @@ unsigned int crypto_ec_get_mbedtls_to_nist_group_id(int id, int bits)
     default:
         break;
     }
-
     return nist_grpid;
 }
-
-// int crypto_ec_get_curve_id(const struct crypto_ec_group *group)
-// {
-//     mbedtls_ecp_group *grp = (mbedtls_ecp_group *)group;
-//     return (crypto_ec_get_mbedtls_to_nist_group_id(grp->id));
-// }
 
 int crypto_ecdh(struct crypto_ec_key *key_own, struct crypto_ec_key *key_peer,
                 u8 *secret, size_t *secret_len)
@@ -1531,16 +1502,11 @@ int crypto_is_ec_key(struct crypto_ec_key *key)
 struct crypto_ec_key * crypto_ec_key_gen(u16 ike_group)
 {
     size_t key_bit_length = 0;
-    // psa_ecc_family_t ecc_family = group_id_to_psa(ike_group, &key_bit_length);
-    // if (ecc_family == 0) {
-    //     printf("mbedtls_ecc_group_to_psa failed, ike_group: %d\n", ike_group);
-    //     return NULL;
-    // }
 
     // Hardcoded this to match the current master implementation with mbedTLS
     // That also enforces the use of the same curve for the key pair
     psa_ecc_family_t ecc_family = PSA_ECC_FAMILY_SECP_R1;
-    key_bit_length = 256;
+    key_bit_length = ESP_SUP_MAX_ECC_KEY_SIZE;
     mbedtls_ecp_group_id curve_id = MBEDTLS_ECP_DP_SECP256R1;  // P-256
 
     // Create wrapper structure
@@ -1550,8 +1516,8 @@ struct crypto_ec_key * crypto_ec_key_gen(u16 ike_group)
         return NULL;
     }
     wrapper->curve_id = curve_id;
-    mbedtls_ecp_group_init(&wrapper->group);  // Initialize group structure
-    wrapper->group.id = MBEDTLS_ECP_DP_NONE;  // Mark as not loaded yet (lazy init)
+    mbedtls_ecp_group_init(&wrapper->group);
+    wrapper->group.id = MBEDTLS_ECP_DP_NONE;
 
     psa_key_attributes_t key_attributes = PSA_KEY_ATTRIBUTES_INIT;
     psa_set_key_usage_flags(&key_attributes, PSA_KEY_USAGE_EXPORT | PSA_KEY_USAGE_DERIVE | PSA_KEY_USAGE_SIGN_HASH | PSA_KEY_USAGE_VERIFY_HASH | PSA_KEY_USAGE_SIGN_MESSAGE | PSA_KEY_USAGE_VERIFY_MESSAGE);
@@ -1575,44 +1541,6 @@ struct crypto_ec_key * crypto_ec_key_gen(u16 ike_group)
     return (struct crypto_ec_key *)wrapper;
 }
 
-// static int pk_write_ec_pubkey_formatted(unsigned char **p, unsigned char *start,
-//                                         mbedtls_ecp_keypair *ec, int format)
-// {
-//     int ret;
-//     size_t len = 0;
-//     unsigned char buf[MBEDTLS_ECP_MAX_PT_LEN];
-
-//     if ((ret = mbedtls_ecp_point_write_binary(&ec->MBEDTLS_PRIVATE(grp), &ec->MBEDTLS_PRIVATE(Q),
-//                                               format,
-//                                               &len, buf, sizeof(buf))) != 0) {
-//         return (ret);
-//     }
-
-//     if (*p < start || (size_t)(*p - start) < len) {
-//         return (MBEDTLS_ERR_ASN1_BUF_TOO_SMALL);
-//     }
-
-//     *p -= len;
-//     memcpy(*p, buf, len);
-
-//     return ((int) len);
-// }
-
-// int mbedtls_pk_write_pubkey_formatted(unsigned char **p, unsigned char *start,
-//                                       const mbedtls_pk_context *key, int format)
-// {
-//     int ret;
-//     size_t len = 0;
-
-//     // if (mbedtls_pk_get_type(key) == MBEDTLS_PK_ECKEY) {
-//         MBEDTLS_ASN1_CHK_ADD(len, pk_write_ec_pubkey_formatted(p, start, mbedtls_pk_ec(*key), format));
-//     // } else {
-//     //     return (MBEDTLS_ERR_PK_FEATURE_UNAVAILABLE);
-//     // }
-
-//     return ((int) len);
-// }
-
 int crypto_pk_write_formatted_pubkey_der(psa_key_id_t key_id, unsigned char *buf, size_t size, int format)
 {
     int ret;
@@ -1626,7 +1554,6 @@ int crypto_pk_write_formatted_pubkey_der(psa_key_id_t key_id, unsigned char *buf
     c = buf + size;
 
     // Export the public key directly from PSA using the key ID
-    // unsigned char point_buf[PSA_EXPORT_PUBLIC_KEY_MAX_SIZE];
     unsigned char *point_buf = os_calloc(PSA_EXPORT_PUBLIC_KEY_MAX_SIZE, sizeof(unsigned char));
     if (!point_buf) {
         return MBEDTLS_ERR_PK_ALLOC_FAILED;
@@ -1926,7 +1853,7 @@ struct crypto_ec_key *crypto_ec_key_parse_pub(const u8 *der, size_t der_len)
         return NULL;
     }
     wrapper->curve_id = grp_id;  // Store curve ID
-    mbedtls_ecp_group_init(&wrapper->group);  // Initialize group structure
+    mbedtls_ecp_group_init(&wrapper->group);
     wrapper->group.id = MBEDTLS_ECP_DP_NONE;  // Mark as not loaded yet (lazy init)
 
     ret = mbedtls_pk_import_into_psa(pkey, &key_attributes, &wrapper->key_id);

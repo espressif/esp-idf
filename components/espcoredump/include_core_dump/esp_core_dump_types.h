@@ -89,8 +89,10 @@ extern "C" {
 typedef uint32_t core_dump_crc_t;
 
 #if CONFIG_IDF_TARGET_ESP32
-#include "psa/crypto.h"
-typedef psa_hash_operation_t sha256_ctx_t;
+/* Use ESP32 ROM SHA context directly to avoid malloc during panic handler.
+ * ESP32 ROM SHA has a different context structure than other targets. */
+#include "rom/sha.h"
+typedef SHA_CTX sha256_ctx_t;
 #else
 #include "hal/sha_types.h"  /* SHA_CTX */
 typedef SHA_CTX sha256_ctx_t;
