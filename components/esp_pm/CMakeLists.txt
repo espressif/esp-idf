@@ -4,6 +4,8 @@ if(${target} STREQUAL "linux")
     return() # This component is not supported by the POSIX/Linux simulator
 endif()
 
+set(srcs)
+
 if(CONFIG_SOC_PM_SUPPORTED)
     list(APPEND srcs "pm_locks.c" "pm_trace.c" "pm_impl.c")
 endif()
