@@ -249,6 +249,17 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
     # When sdkconfig file changes in the future, trigger a cmake run
     set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${sdkconfig}")
 
+    # Or if any of the sdkconfig.defaults files change
+    if(sdkconfig_defaults)
+        foreach(sdkconfig_default ${sdkconfig_defaults})
+            set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${sdkconfig_default}")
+
+            if(EXISTS "${sdkconfig_default}.${idf_target}")
+                set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${sdkconfig_default}.${idf_target}")
+            endif()
+        endforeach()
+    endif()
+
     # Ditto if either of the generated files are missing/modified (this is a bit irritating as it means
     # you can't edit these manually without them being regenerated, but I don't know of a better way...)
     set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${sdkconfig_header}")
