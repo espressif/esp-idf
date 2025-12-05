@@ -147,14 +147,14 @@ ENV_MARKERS = {
     'ieee802154': 'ieee802154 related tests should run on ieee802154 runners.',
     'openthread_br': 'tests should be used for openthread border router.',
     'openthread_sleep': 'tests should be used for openthread sleepy device.',
-    'wifi_two_dut': 'tests should be run on runners which has two wifi duts connected.',
+    'two_duts': 'tests should be run on runners which has two wifi duts connected.',
     'generic_multi_device': 'generic multiple devices whose corresponding gpio pins are connected to each other.',
     'twai_network': 'multiple runners form a TWAI network.',
     'sdio_master_slave': 'Test sdio multi board.',
     'usj_device': 'Test usb_serial_jtag and usb_serial_jtag is used as serial only (not console)',
     'wifi_ap_eco': 'a wifi AP in the environment for major version chips',
     'generic_eco': 'tests should be run on generic runners for major version chips',
-    'wifi_two_dut_eco': 'tests should be run on runners which has two wifi duts connected for major version chips',
+    'two_duts_eco': 'tests should be run on runners which has two wifi duts connected for major version chips',
 
 }
 

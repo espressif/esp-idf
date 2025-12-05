@@ -424,53 +424,53 @@ pytest_examples_esp32_flash_encryption:
     - build_pytest_examples_esp32
   tags: [ esp32, flash_encryption ]
 
-pytest_examples_esp32_wifi_two_dut:
+pytest_examples_esp32_two_duts:
   extends:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32-wifi
   needs:
     - build_pytest_examples_esp32
-  tags: [ esp32, wifi_two_dut ]
+  tags: [ esp32, two_duts ]
 
-pytest_examples_esp32c3_wifi_two_dut:
+pytest_examples_esp32c3_two_duts:
   extends:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32c3-wifi
   needs:
     - build_pytest_examples_esp32c3
-  tags: [ esp32c3, wifi_two_dut ]
+  tags: [ esp32c3, two_duts ]
 
-pytest_examples_esp32s3_wifi_two_dut:
+pytest_examples_esp32s3_two_duts:
   extends:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32s3-wifi
   needs:
     - build_pytest_examples_esp32s3
-  tags: [ esp32s3, wifi_two_dut ]
+  tags: [ esp32s3, two_duts ]
 
-pytest_examples_esp32c2_wifi_two_dut:
+pytest_examples_esp32c2_two_duts:
   extends:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32c2-wifi
   needs:
     - build_pytest_examples_esp32c2
-  tags: [ esp32c2, wifi_two_dut, xtal_26mhz ]
+  tags: [ esp32c2, two_duts, xtal_26mhz ]
 
-pytest_examples_esp32c2eco4_wifi_two_dut:
+pytest_examples_esp32c2eco4_two_duts:
   extends:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32c2-wifi
   needs:
     - build_pytest_examples_esp32c2
-  tags: [wifi_two_dut_eco, xtal_26mhz, esp32c2]
+  tags: [two_duts_eco, xtal_26mhz, esp32c2]
 
-pytest_examples_esp32c3eco7_wifi_two_dut:
+pytest_examples_esp32c3eco7_two_duts:
   extends:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32c3-wifi
   needs:
     - build_pytest_examples_esp32c3
-  tags: [ wifi_two_dut_eco , esp32c3]
+  tags: [ two_duts_eco , esp32c3]
 
 pytest_examples_esp32c3_flash_encryption:
   extends:
@@ -614,13 +614,13 @@ pytest_components_esp32_generic_multi_device:
     - build_pytest_components_esp32
   tags: [ esp32, generic_multi_device ]
 
-pytest_components_esp32_wifi_two_dut:
+pytest_components_esp32_two_duts:
   extends:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32-wifi
   needs:
     - build_pytest_components_esp32
-  tags: [ esp32, wifi_two_dut ]
+  tags: [ esp32, two_duts ]
 
 pytest_components_esp32_adc:
   extends:
@@ -922,45 +922,45 @@ pytest_components_esp32c3_generic_multi_device:
     - build_pytest_components_esp32c3
   tags: [ esp32c3, generic_multi_device ]
 
-pytest_components_esp32c3_wifi_two_dut:
+pytest_components_esp32c3_two_duts:
   extends:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32c3-wifi
   needs:
     - build_pytest_components_esp32c3
-  tags: [ esp32c3, wifi_two_dut ]
+  tags: [ esp32c3, two_duts ]
 
-pytest_components_esp32s3_wifi_two_dut:
+pytest_components_esp32s3_two_duts:
   extends:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32s3-wifi
   needs:
     - build_pytest_components_esp32s3
-  tags: [ esp32s3, wifi_two_dut ]
+  tags: [ esp32s3, two_duts ]
 
-pytest_components_esp32c2_wifi_two_dut:
+pytest_components_esp32c2_two_duts:
   extends:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32c2-wifi
   needs:
     - build_pytest_components_esp32c2
-  tags: [ esp32c2, wifi_two_dut, xtal_26mhz ]
+  tags: [ esp32c2, two_duts, xtal_26mhz ]
 
-pytest_components_esp32c3eco7_wifi_two_dut:
+pytest_components_esp32c3eco7_two_duts:
   extends:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32c3-wifi
   needs:
     - build_pytest_components_esp32c3
-  tags: [ wifi_two_dut_eco , esp32c3]
+  tags: [ two_duts_eco , esp32c3]
 
-pytest_components_esp32c2eco4_wifi_two_dut:
+pytest_components_esp32c2eco4_two_duts:
   extends:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32c2-wifi
   needs:
     - build_pytest_components_esp32c2
-  tags: [ wifi_two_dut_eco, xtal_26mhz, esp32c2]
+  tags: [ two_duts_eco, xtal_26mhz, esp32c2]
 
 pytest_components_esp32c3_adc:
   extends:
