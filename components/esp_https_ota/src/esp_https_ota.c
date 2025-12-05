@@ -349,8 +349,9 @@ esp_err_t esp_https_ota_begin(const esp_https_ota_config_t *ota_config, esp_http
     if (ota_config->ota_resumption) {
         // We allow resumption only if we have minimum buffer size already written to flash
         if (ota_config->ota_image_bytes_written >= DEFAULT_OTA_BUF_SIZE) {
-            ESP_LOGI(TAG, "Valid OTA resumption case, offset %d", ota_config->ota_image_bytes_written);
-            https_ota_handle->binary_file_len = ota_config->ota_image_bytes_written;
+            // For FE case the flash is written in multiples of 16 bytes. So, we need to align the offset to 16 bytes.
+            https_ota_handle->binary_file_len = esp_flash_encryption_enabled() ? (ota_config->ota_image_bytes_written & ~0xF) : ota_config->ota_image_bytes_written;
+            ESP_LOGD(TAG, "Resuming OTA from offset: %d", https_ota_handle->binary_file_len);
         }
     }
 
@@ -544,14 +545,6 @@ esp_err_t esp_https_ota_begin(const esp_https_ota_config_t *ota_config, esp_http
     }
 
     const int alloc_size = MAX(ota_config->http_config->buffer_size, DEFAULT_OTA_BUF_SIZE);
-    if (ota_config->ota_resumption) {
-        if (esp_flash_encryption_enabled() && (alloc_size & 0xFU) != 0) {
-            // For FE case the flash is written in multiples of 16 bytes
-            ESP_LOGE(TAG, "Buffer size must be multiple of 16 bytes for FE and ota resumption case");
-            goto http_cleanup;
-        }
-    }
-
     if (ota_config->buffer_caps != 0) {
         https_ota_handle->ota_upgrade_buf = (char *)heap_caps_malloc(alloc_size, ota_config->buffer_caps);
     } else {

@@ -54,6 +54,13 @@ menu "Example Configuration"
             This option allows one to configure the OTA process to resume downloading the OTA image
             from where it left off in case of an error or reboot.
 
+    config EXAMPLE_OTA_BUF_SIZE
+        int "OTA buffer size"
+        default 1024
+        range 1024 65536
+        help
+            Buffer size for OTA data transfers in bytes.
+
     config EXAMPLE_USE_CERT_BUNDLE
         bool "Enable certificate bundle"
         default y
