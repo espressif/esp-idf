@@ -1,22 +1,22 @@
 # SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
-import os.path
+from pathlib import Path
 
 import pexpect
 import pytest
 from pytest_embedded_idf.dut import IdfDut
 
+CUR_DIR = Path(__file__).parent.resolve()
+
+
 # Case 1: SPP
-
-
-@pytest.mark.wifi_two_dut
+@pytest.mark.two_duts
 @pytest.mark.parametrize(
     'count, app_path, target, erase_all, config',
     [
         (
             2,
-            f'{os.path.join(os.path.dirname(__file__), "bt_spp_acceptor")}|'
-            f'{os.path.join(os.path.dirname(__file__), "bt_spp_initiator")}',
+            f'{str(CUR_DIR / "bt_spp_acceptor")}|{str(CUR_DIR / "bt_spp_initiator")}',
             'esp32|esp32',
             'y',
             'test',
@@ -44,14 +44,13 @@ def test_bt_spp_only(app_path: str, dut: tuple[IdfDut, IdfDut]) -> None:
 
 
 # Case 2: SPP_VFS
-@pytest.mark.wifi_two_dut
+@pytest.mark.two_duts
 @pytest.mark.parametrize(
     'count, app_path, target, config',
     [
         (
             2,
-            f'{os.path.join(os.path.dirname(__file__), "bt_spp_vfs_acceptor")}|'
-            f'{os.path.join(os.path.dirname(__file__), "bt_spp_vfs_initiator")}',
+            f'{str(CUR_DIR / "bt_spp_vfs_acceptor")}|{str(CUR_DIR / "bt_spp_vfs_initiator")}',
             'esp32|esp32',
             'test',
         ),
@@ -73,14 +72,13 @@ def test_bt_spp_vfs(app_path: str, dut: tuple[IdfDut, IdfDut]) -> None:
 
 
 # Case 3: A2DP
-@pytest.mark.wifi_two_dut
+@pytest.mark.two_duts
 @pytest.mark.parametrize(
     'count, app_path, target, config',
     [
         (
             2,
-            f'{os.path.join(os.path.dirname(__file__), "a2dp_sink")}|'
-            f'{os.path.join(os.path.dirname(__file__), "a2dp_source")}',
+            f'{str(CUR_DIR / "a2dp_sink")}|{str(CUR_DIR / "a2dp_source")}',
             'esp32|esp32',
             'test',
         ),
@@ -100,13 +98,13 @@ def test_bt_a2dp(app_path: str, dut: tuple[IdfDut, IdfDut]) -> None:
 
 
 # Case 4: HFP
-@pytest.mark.wifi_two_dut
+@pytest.mark.two_duts
 @pytest.mark.parametrize(
     'count, app_path, target, config',
     [
         (
             2,
-            f'{os.path.join(os.path.dirname(__file__), "hfp_ag")}|{os.path.join(os.path.dirname(__file__), "hfp_hf")}',
+            f'{str(CUR_DIR / "hfp_ag")}|{str(CUR_DIR / "hfp_hf")}',
             'esp32|esp32',
             'all',
         ),
@@ -125,14 +123,13 @@ def test_bt_hfp(app_path: str, dut: tuple[IdfDut, IdfDut]) -> None:
 
 
 # # Case 5: HID
-@pytest.mark.wifi_two_dut
+@pytest.mark.two_duts
 @pytest.mark.parametrize(
     'count, app_path, target, config',
     [
         (
             2,
-            f'{os.path.join(os.path.dirname(__file__), "bt_hid_mouse_device")}|'
-            f'{os.path.join(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")), "esp_hid_host")}',
+            f'{str(CUR_DIR / "bt_hid_mouse_device")}|{str(CUR_DIR / ".." / ".." / "esp_hid_host")}',
             'esp32|esp32',
             'test',
         ),
@@ -154,14 +151,13 @@ def test_bt_hid(app_path: str, dut: tuple[IdfDut, IdfDut]) -> None:
 
 
 # Case 6: L2CAP
-@pytest.mark.wifi_two_dut
+@pytest.mark.two_duts
 @pytest.mark.parametrize(
     'count, app_path, target, config',
     [
         (
             2,
-            f'{os.path.join(os.path.dirname(__file__), "bt_l2cap_server")}|'
-            f'{os.path.join(os.path.dirname(__file__), "bt_l2cap_client")}',
+            f'{str(CUR_DIR / "bt_l2cap_server")}|{str(CUR_DIR / "bt_l2cap_client")}',
             'esp32|esp32',
             'test',
         ),
