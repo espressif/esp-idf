@@ -985,3 +985,11 @@ config BT_LE_CTRL_SLV_FAST_RX_CONN_DATA_EN
         When this option is enabled, the Controller continues receiving PDUs
         In the next connection event instead of entering latency
         After a data packet is received.
+
+config BT_LE_CTRL_DL_ITVL_PHY_SYNC_EN
+    bool "Enables the automatic initiation of a data length update(Experimental)."
+    default n
+    help
+        When this option is enabled, the Controller automatically initiates a data length update
+        Using the appropriate data length parameters
+        When a PHY update or a connection interval update occurs.
