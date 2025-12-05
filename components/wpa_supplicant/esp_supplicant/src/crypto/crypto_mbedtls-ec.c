@@ -1905,8 +1905,65 @@ int crypto_ec_key_verify_signature(struct crypto_ec_key *key, const u8 *data,
     if (!wrapper) {
         return -1;
     }
-    psa_status_t status = psa_verify_hash(wrapper->key_id, PSA_ALG_DETERMINISTIC_ECDSA(PSA_ALG_SHA_256), data, len, sig, sig_len);
+
+    /* Get key attributes to extract key_bits needed for DER-to-raw conversion */
+    psa_key_attributes_t key_attributes = PSA_KEY_ATTRIBUTES_INIT;
+    psa_status_t status = psa_get_key_attributes(wrapper->key_id, &key_attributes);
     if (status != PSA_SUCCESS) {
+        wpa_printf(MSG_ERROR, "crypto_ec_key_verify_signature: psa_get_key_attributes failed: %d", status);
+        psa_reset_key_attributes(&key_attributes);
+        return -1;
+    }
+
+    size_t key_bits = psa_get_key_bits(&key_attributes);
+    psa_reset_key_attributes(&key_attributes);
+
+    /* Determine hash algorithm from data length */
+    psa_algorithm_t verify_alg;
+    if (len == 32) {
+        verify_alg = PSA_ALG_DETERMINISTIC_ECDSA(PSA_ALG_SHA_256);
+    } else if (len == 48) {
+        verify_alg = PSA_ALG_DETERMINISTIC_ECDSA(PSA_ALG_SHA_384);
+    } else if (len == 64) {
+        verify_alg = PSA_ALG_DETERMINISTIC_ECDSA(PSA_ALG_SHA_512);
+    } else if (len == 20) {
+        verify_alg = PSA_ALG_DETERMINISTIC_ECDSA(PSA_ALG_SHA_1);
+    } else {
+        wpa_printf(MSG_ERROR, "crypto_ec_key_verify_signature: Unsupported hash length %d", (int)len);
+        return -1;
+    }
+
+    /* Convert DER-encoded signature to raw format (r||s) for PSA */
+    /* PSA verify_hash expects raw format, not DER format */
+    /* API specification requires DER format input */
+    /* Raw signature length = 2 * PSA_BITS_TO_BYTES(key_bits), max 132 bytes for P-521 */
+    unsigned char raw_sig[132];
+    size_t raw_sig_len = 0;
+    const u8 *sig_to_verify = sig;
+    size_t sig_len_to_verify = sig_len;
+
+    /* Check if signature is DER format (starts with 0x30) */
+    if (sig_len > 0 && sig[0] == 0x30) {
+        /* Convert DER to raw format */
+        int ret = mbedtls_ecdsa_der_to_raw(key_bits, sig, sig_len,
+                                           raw_sig, sizeof(raw_sig), &raw_sig_len);
+        if (ret != 0) {
+            wpa_printf(MSG_ERROR, "crypto_ec_key_verify_signature: Failed to convert DER to raw format: %d", ret);
+            return -1;
+        }
+        sig_to_verify = raw_sig;
+        sig_len_to_verify = raw_sig_len;
+    } else {
+        /* Signature must be in DER format as per API specification */
+        wpa_printf(MSG_ERROR, "crypto_ec_key_verify_signature: Invalid signature format (expected DER, got 0x%02x)", sig_len > 0 ? sig[0] : 0);
+        return -1;
+    }
+
+    /* Perform signature verification */
+    status = psa_verify_hash(wrapper->key_id, verify_alg,
+                             data, len, sig_to_verify, sig_len_to_verify);
+    if (status != PSA_SUCCESS) {
+        wpa_printf(MSG_ERROR, "crypto_ec_key_verify_signature: psa_verify_hash failed: %d", status);
         return -1;
     }
 

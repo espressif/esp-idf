@@ -27,6 +27,11 @@
 
 typedef struct crypto_bignum crypto_bignum;
 
+/* Minimal structure to access key_id from crypto_ec_key wrapper (for test purposes) */
+typedef struct {
+    psa_key_id_t key_id;
+} crypto_ec_key_wrapper_test_t;
+
 TEST_CASE("Test crypto lib bignum apis", "[wpa_crypto]")
 {
     set_leak_threshold(300);
@@ -831,12 +836,28 @@ TEST_CASE("Test crypto lib ecdsa apis", "[wpa_crypto]")
         ret = crypto_bignum_to_bin(s, s_buf, sizeof(s_buf), 32);
         TEST_ASSERT(ret == 32);
 
-        /* Construct signature as r||s */
+        /* Construct signature as r||s (raw format) */
         memcpy(signature, r_buf, 32);
         memcpy(signature + 32, s_buf, 32);
 
+        /* Convert raw signature to DER format as required by crypto_ec_key_verify_signature API */
+        /* Get key bits from the key object */
+        crypto_ec_key_wrapper_test_t *key_wrapper = (crypto_ec_key_wrapper_test_t *)eckey;
+        psa_key_attributes_t key_attributes = PSA_KEY_ATTRIBUTES_INIT;
+        psa_status_t status = psa_get_key_attributes(key_wrapper->key_id, &key_attributes);
+        TEST_ASSERT(status == PSA_SUCCESS);
+        size_t key_bits = psa_get_key_bits(&key_attributes);
+        psa_reset_key_attributes(&key_attributes);
+        TEST_ASSERT(key_bits > 0);
+
+        uint8_t der_sig[MBEDTLS_ECDSA_DER_MAX_SIG_LEN(key_bits)];
+        size_t der_sig_len = 0;
+        ret = mbedtls_ecdsa_raw_to_der(key_bits, signature, 64, der_sig, sizeof(der_sig), &der_sig_len);
+        TEST_ASSERT(ret == 0);
+        TEST_ASSERT(der_sig_len > 0);
+
         uint8_t expected_data[64] = {[0 ... 63] = 0xA5};
-        ret = crypto_ec_key_verify_signature(eckey, expected_data, 64, signature, 64);
+        ret = crypto_ec_key_verify_signature(eckey, expected_data, 64, der_sig, der_sig_len);
         TEST_ASSERT(ret == 1);  /* Returns 1 on success */
 
         ret = crypto_ec_key_verify_signature_r_s(eckey, expected_data, 64, r_buf, 32, s_buf, 32);
@@ -844,7 +865,7 @@ TEST_CASE("Test crypto lib ecdsa apis", "[wpa_crypto]")
 
         // Negative test case
         expected_data[0] = 0x5A;
-        ret = crypto_ec_key_verify_signature(eckey, expected_data, 64, signature, 64);
+        ret = crypto_ec_key_verify_signature(eckey, expected_data, 64, der_sig, der_sig_len);
         TEST_ASSERT(ret == -1);
 
         crypto_bignum_deinit(r, 1);
@@ -1339,12 +1360,28 @@ TEST_CASE("Test crypto lib ecdh apis", "[wpa_crypto]")
         ret = crypto_bignum_to_bin(s, s_buf, sizeof(s_buf), 32);
         TEST_ASSERT(ret == 32);
 
-        /* Construct signature as r||s */
+        /* Construct signature as r||s (raw format) */
         memcpy(signature, r_buf, 32);
         memcpy(signature + 32, s_buf, 32);
 
+        /* Convert raw signature to DER format as required by crypto_ec_key_verify_signature API */
+        /* Get key bits from the key object */
+        crypto_ec_key_wrapper_test_t *key_wrapper = (crypto_ec_key_wrapper_test_t *)key;
+        psa_key_attributes_t key_attributes = PSA_KEY_ATTRIBUTES_INIT;
+        psa_status_t status = psa_get_key_attributes(key_wrapper->key_id, &key_attributes);
+        TEST_ASSERT(status == PSA_SUCCESS);
+        size_t key_bits = psa_get_key_bits(&key_attributes);
+        psa_reset_key_attributes(&key_attributes);
+        TEST_ASSERT(key_bits > 0);
+
+        uint8_t der_sig[MBEDTLS_ECDSA_DER_MAX_SIG_LEN(key_bits)];
+        size_t der_sig_len = 0;
+        ret = mbedtls_ecdsa_raw_to_der(key_bits, signature, 64, der_sig, sizeof(der_sig), &der_sig_len);
+        TEST_ASSERT(ret == 0);
+        TEST_ASSERT(der_sig_len > 0);
+
         /* Verify the signature */
-        ret = crypto_ec_key_verify_signature(key, data, 64, signature, 64);
+        ret = crypto_ec_key_verify_signature(key, data, 64, der_sig, der_sig_len);
         TEST_ASSERT(ret == 1);  /* Returns 1 on success */
 
         /* Now test ECDH with the same key */
