@@ -18,6 +18,7 @@ from pytest_embedded_idf.utils import soc_filtered_targets
 @pytest.mark.generic
 @pytest.mark.parametrize('config', ['release', 'cache_safe'], indirect=True)
 @idf_parametrize('target', soc_filtered_targets('SOC_TWAI_SUPPORTED == 1'), indirect=['target'])
+@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration')
 def test_driver_twai_loopbk(dut: Dut) -> None:
     dut.run_all_single_board_cases(group='twai', reset=True)
 
@@ -77,6 +78,7 @@ def fixture_create_socket_can() -> Bus:
 @pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='no runner')
 @pytest.mark.parametrize('config', ['release'], indirect=True)
 @idf_parametrize('target', soc_filtered_targets('SOC_TWAI_SUPPORTED == 1'), indirect=['target'])
+@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration')
 def test_driver_twai_listen_only(dut: Dut, socket_can: Bus) -> None:
     esp_reset_and_wait_ready(dut)
 
@@ -99,6 +101,7 @@ def test_driver_twai_listen_only(dut: Dut, socket_can: Bus) -> None:
 @pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='no runner')
 @pytest.mark.parametrize('config', ['release'], indirect=True)
 @idf_parametrize('target', soc_filtered_targets('SOC_TWAI_SUPPORTED == 1'), indirect=['target'])
+@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration')
 def test_driver_twai_remote_request(dut: Dut, socket_can: Bus) -> None:
     esp_reset_and_wait_ready(dut)
 

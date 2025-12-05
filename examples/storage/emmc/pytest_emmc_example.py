@@ -19,6 +19,7 @@ from pytest_embedded_idf.utils import idf_parametrize
     indirect=True,
 )
 @idf_parametrize('target', ['esp32s3', 'esp32p4'], indirect=['target'])
+@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration')
 def test_examples_sd_card_sdmmc(dut: Dut) -> None:
     dut.expect('example: Initializing eMMC', timeout=20)
     dut.expect('example: Using SDMMC peripheral', timeout=10)
@@ -32,14 +33,14 @@ def test_examples_sd_card_sdmmc(dut: Dut) -> None:
     speed = dut.expect(re.compile(rb'Speed: (\S+)'), timeout=10).group(1).decode()
     size = dut.expect(re.compile(rb'Size: (\S+)'), timeout=10).group(1).decode()
 
-    logging.info('Card {} {} {}MHz {} found'.format(name, _type, speed, size))
+    logging.info(f'Card {name} {_type} {speed}MHz {size} found')
 
     message_list = (
         'Opening file /eMMC/hello.txt',
         'File written',
         'Renaming file /eMMC/hello.txt to /eMMC/foo.txt',
         'Reading file /eMMC/foo.txt',
-        "Read from file: 'Hello {}!'".format(name),
+        f"Read from file: 'Hello {name}!'",
         'Card unmounted',
     )
 

@@ -142,6 +142,7 @@ def test_rtcio_deepsleep(dut: tuple[IdfDut, IdfDut]) -> None:
 @pytest.mark.parametrize('count', [2], indirect=True)
 @pytest.mark.parametrize('config', TEST_CONFIGS, indirect=True)
 @idf_parametrize('target', ['supported_targets'], indirect=['target'])
+@pytest.mark.temp_skip_ci(targets=['esp32c61'], reason='p4 rev3 migration')
 def test_gpio_wakeup_enable_lightsleep(dut: tuple[IdfDut, IdfDut]) -> None:
     wakee = dut[0]
     waker = dut[1]

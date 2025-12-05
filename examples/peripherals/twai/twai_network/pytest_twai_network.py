@@ -53,6 +53,7 @@ def generate_target_combinations(target_list: list, count: int = 2) -> list:
     ],
     indirect=True,
 )
+@pytest.mark.temp_skip_ci(targets=['esp32p4,*', '*,esp32p4'], reason='p4 rev3 migration')
 def test_twai_network_multi(dut: tuple[IdfDut, IdfDut], socket_can: Bus) -> None:
     """
     Test TWAI network communication between two nodes:

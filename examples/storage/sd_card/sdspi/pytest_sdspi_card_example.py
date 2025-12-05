@@ -11,6 +11,7 @@ from pytest_embedded_idf.utils import idf_parametrize
 @pytest.mark.temp_skip_ci(targets=['esp32c61'], reason='C5 C61 GPSPI same, so testing on C5 is enough')
 @pytest.mark.sdcard_spimode
 @idf_parametrize('target', ['esp32', 'esp32s3', 'esp32c3', 'esp32p4', 'esp32c5'], indirect=['target'])
+@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration')
 def test_examples_sd_card_sdspi(dut: Dut) -> None:
     dut.expect('example: Initializing SD card', timeout=20)
     dut.expect('example: Using SPI peripheral', timeout=20)

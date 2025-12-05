@@ -16,6 +16,7 @@ from pytest_embedded_idf.utils import idf_parametrize
     indirect=True,
 )
 @idf_parametrize('target', ['supported_targets'], indirect=['target'])
+@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration')
 def test_mmap(dut: Dut) -> None:
     dut.run_all_single_board_cases(group='mmu')
 
@@ -32,6 +33,7 @@ def test_mmap(dut: Dut) -> None:
     ],
     indirect=['config', 'target'],
 )
+@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration')
 def test_mmap_psram(dut: Dut) -> None:
     dut.run_all_single_board_cases(group='mmu')
 
@@ -55,6 +57,7 @@ def test_mmap_xip_psram(dut: Dut) -> None:
     indirect=True,
 )
 @idf_parametrize('target', ['supported_targets'], indirect=['target'])
+@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration')
 def test_cache(dut: Dut) -> None:
     dut.run_all_single_board_cases(group='cache')
 
