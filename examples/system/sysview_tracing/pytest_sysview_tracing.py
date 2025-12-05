@@ -87,6 +87,7 @@ def test_sysview_tracing_jtag(openocd_dut: 'OpenOCD', dut: IdfDut) -> None:
 @idf_parametrize(
     'target', ['esp32s3', 'esp32c3', 'esp32c5', 'esp32c6', 'esp32c61', 'esp32h2', 'esp32p4'], indirect=['target']
 )
+@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration')
 def test_sysview_tracing_usj(openocd_dut: 'OpenOCD', dut: IdfDut) -> None:
     _test_sysview_tracing_jtag(openocd_dut, dut)
 
@@ -119,6 +120,7 @@ def _test_sysview_tracing_uart(dut: IdfDut) -> None:
 @pytest.mark.generic
 @idf_parametrize('config', ['sysview_uart'], indirect=['config'])
 @idf_parametrize('target', ['supported_targets'], indirect=['target'])
+@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration')
 def test_sysview_tracing_uart(dut: IdfDut) -> None:
     _test_sysview_tracing_uart(dut)
 

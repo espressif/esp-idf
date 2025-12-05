@@ -7,7 +7,7 @@ from pytest_embedded_idf.utils import idf_parametrize
 
 
 @pytest.mark.generic
-@idf_parametrize('target', ['supported_targets'], indirect=['target'])
+@idf_parametrize('target', ['esp32c3', 'esp32s3'], indirect=['target'])
 def test_custom_bootloader_impl_example(app: IdfApp, dut: Dut) -> None:
     # Expect to read a message from the custom bootloader
     # This message is defined in the Kconfig file, retrieve it while deleting

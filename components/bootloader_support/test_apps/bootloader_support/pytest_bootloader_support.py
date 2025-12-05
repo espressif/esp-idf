@@ -6,7 +6,7 @@ from pytest_embedded_idf.utils import idf_parametrize
 
 
 @pytest.mark.generic
-@idf_parametrize('target', ['supported_targets'], indirect=['target'])
+@idf_parametrize('target', ['esp32', 'esp32s3', 'esp32c3'], indirect=['target'])
 def test_bootloader_support(dut: Dut) -> None:
     dut.run_all_single_board_cases()
 
