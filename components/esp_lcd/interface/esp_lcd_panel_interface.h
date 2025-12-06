@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -58,6 +58,27 @@ struct esp_lcd_panel_t {
      *          - ESP_OK on success
      */
     esp_err_t (*draw_bitmap)(esp_lcd_panel_t *panel, int x_start, int y_start, int x_end, int y_end, const void *color_data);
+
+    /**
+     * @brief Draw partial bitmap on LCD panel
+     *
+     * @param[in] panel LCD panel handle, which is created by other factory API like `esp_lcd_new_panel_st7789()`
+     * @param[in] x_start Start pixel index in the target frame buffer, on x-axis (x_start is included)
+     * @param[in] y_start Start pixel index in the target frame buffer, on y-axis (y_start is included)
+     * @param[in] x_end End pixel index in the target frame buffer, on x-axis (x_end is not included)
+     * @param[in] y_end End pixel index in the target frame buffer, on y-axis (y_end is not included)
+     * @param[in] src_data Source bitmap data
+     * @param[in] src_x_size Size of the source bitmap in the x-axis
+     * @param[in] src_y_size Size of the source bitmap in the y-axis
+     * @param[in] src_x_start Start pixel index in the source bitmap, on x-axis (src_x_start is included)
+     * @param[in] src_y_start Start pixel index in the source bitmap, on y-axis (src_y_start is included)
+     * @param[in] src_x_end End pixel index in the source bitmap, on x-axis (src_x_end is not included)
+     * @param[in] src_y_end End pixel index in the source bitmap, on y-axis (src_y_end is not included)
+     * @return
+     *          - ESP_OK on success
+     */
+    esp_err_t (*draw_bitmap_2d)(esp_lcd_panel_t *panel, int x_start, int y_start, int x_end, int y_end,
+                                const void *src_data, size_t src_x_size, size_t src_y_size, int src_x_start, int src_y_start, int src_x_end, int src_y_end);
 
     /**
      * @brief Mirror the LCD panel on specific axis

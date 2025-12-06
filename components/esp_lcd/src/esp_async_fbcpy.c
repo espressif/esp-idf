@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -187,6 +187,13 @@ esp_err_t esp_async_fbcpy(esp_async_fbcpy_handle_t mcp, esp_async_fbcpy_trans_de
     ESP_RETURN_ON_FALSE(mcp && transaction, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     mcp->memcpy_done_cb = memcpy_done_cb;
     mcp->cb_args = cb_args;
+
+    // write back the user's draw buffer, so that the DMA can see the correct data
+    // Note, the user src buffer may not be contiguous, writeback from the head to the tail anyways
+    size_t bits_per_pixel = color_hal_pixel_format_fourcc_get_bit_depth(transaction->pixel_format_fourcc_id);
+    size_t copy_head = (transaction->src_offset_x + transaction->src_offset_y * transaction->src_buffer_size_x) * bits_per_pixel / 8;
+    size_t copy_size = (transaction->copy_size_x + transaction->copy_size_y * transaction->src_buffer_size_x) * bits_per_pixel / 8;
+    ESP_RETURN_ON_ERROR(esp_cache_msync((void *)transaction->src_buffer + copy_head, copy_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED), TAG, "writeback draw buffer failed");
 
     // mount the data to the DMA descriptor
     async_memcpy_setup_dma2d_descriptor(mcp, transaction);

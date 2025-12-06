@@ -271,6 +271,7 @@ LCD
 - ``esp_lcd_dpi_panel_set_color_conversion`` 函数已被 :cpp:func:`esp_lcd_dpi_panel_set_yuv_conversion` 取代,用于设置 YUV 到 RGB 的色彩转换配置。
 - :cpp:func:`esp_lcd_rgb_panel_set_yuv_conversion` 函数的签名已改变。原先使用的 ``esp_lcd_yuv_conv_config_t`` 配置类型现已被 :cpp:type:`esp_lcd_color_conv_yuv_config_t` 取代。
 - NT35510 LCD 设备驱动已经从 ESP-IDF 中移动到外部仓库，并且托管在了 `ESP Component Registry <https://components.espressif.com/components/espressif/esp_lcd_nt35510/versions/1.0.0/readme>`__ 上。如果你的项目使用到了 NT35510 驱动，你可以通过运行 ``idf.py add-dependency "espressif/esp_lcd_nt35510"`` 将它添加到你的项目中。
+- :cpp:type:`esp_lcd_dpi_panel_config_t` 结构体中的 ``use_dma2d`` 成员已被移除。请使用 :func:`esp_lcd_dpi_panel_enable_dma2d` 函数来启用 DMA2D 功能。当不使用 DMA2D 时，可以减小 10KB 左右的二进制文件大小。
 
 SPI
 ---

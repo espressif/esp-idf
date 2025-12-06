@@ -69,9 +69,6 @@ void example_dsi_resource_alloc(const example_dsi_alloc_config_t *config,
             .vsync_pulse_width = EXAMPLE_MIPI_DSI_IMAGE_VSYNC,
             .vsync_front_porch = EXAMPLE_MIPI_DSI_IMAGE_VFP,
         },
-#if CONFIG_EXAMPLE_MIPI_DSI_DISP_USE_DMA2D
-        .flags.use_dma2d = true,
-#endif
     };
 
 #if CONFIG_EXAMPLE_LCD_PATTERN_ILI9881C
@@ -105,6 +102,12 @@ void example_dsi_resource_alloc(const example_dsi_alloc_config_t *config,
     ESP_ERROR_CHECK(esp_lcd_new_panel_ek79007(*mipi_dbi_io, &lcd_dev_config, mipi_dpi_panel));
 #endif
 
+#if CONFIG_EXAMPLE_MIPI_DSI_DISP_USE_DMA2D
+    // use DMA2D to copy draw buffer into frame buffer
+    ESP_ERROR_CHECK(esp_lcd_dpi_panel_enable_dma2d(*mipi_dpi_panel));
+    ESP_LOGI(TAG, "DPI panel added DMA2D draw bitmap hook");
+#endif
+
     // Get frame buffer addresses
     if (fb0 != NULL) {
         if (num_fbs == 2) {
@@ -122,6 +125,7 @@ void example_dsi_resource_alloc(const example_dsi_alloc_config_t *config,
             ESP_LOGD(TAG, "Frame buffer[0] allocated at: %p", *fb0);
         }
     }
+
 }
 
 void example_dpi_panel_reset(esp_lcd_panel_handle_t mipi_dpi_panel)

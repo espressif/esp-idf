@@ -49,7 +49,7 @@ exit:
 static esp_err_t parlio_destroy_tx_unit(parlio_tx_unit_t *tx_unit)
 {
     if (tx_unit->bs_handle) {
-        ESP_RETURN_ON_FALSE(false, ESP_ERR_INVALID_STATE, TAG, "please call parlio_tx_unit_undecorate_bitscrambler() before delete the tx unit");
+        ESP_RETURN_ON_FALSE(false, ESP_ERR_INVALID_STATE, TAG, "please call `parlio_tx_unit_undecorate_bitscrambler()` before deleting the tx unit");
     }
     if (tx_unit->intr) {
         ESP_RETURN_ON_ERROR(esp_intr_free(tx_unit->intr), TAG, "delete interrupt service failed");
