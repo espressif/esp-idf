@@ -485,6 +485,26 @@ menu "Memory Settings"
         default 1
         help
             This is the service data unit buffer count for l2cap coc.
+
+    config BT_NIMBLE_MEMPOOL_RUNTIME_ALLOC
+        bool "Support on-demand runtime memory allocation for mempool"
+        depends on BT_NIMBLE_ENABLED && !SOC_ESP_NIMBLE_CONTROLLER
+        default n
+        help
+            When this option is enabled, mempool does not require pre-allocating memory.
+            Instead, memory for each block will be dynamically allocated and released
+            during mempool usage. This can significantly reduce memory consumption
+            after mempool initialization, but may have some impact on performance.
+
+    config BT_NIMBLE_MEMPOOL_BLOCK_REUSED
+        bool "Support block reuse for mempool runtime memory allocation"
+        depends on BT_NIMBLE_MEMPOOL_RUNTIME_ALLOC
+        default n
+        help
+            When this option is enabled, dynamically allocated blocks will not be freed
+            but will be reused instead. This ensures virtually no impact on performance
+            while reducing the memory consumption of the mempool.
+
 endmenu #Memory
 
 menu "BLE 5.x Features"
