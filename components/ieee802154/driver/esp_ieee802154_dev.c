@@ -651,7 +651,7 @@ static IRAM_ATTR void isr_handle_ed_done(void)
     if (s_ieee802154_state == IEEE802154_STATE_CCA) {
         esp_ieee802154_cca_done(ieee802154_ll_is_cca_busy());
     } else if (s_ieee802154_state == IEEE802154_STATE_ED) {
-        ieee802154_inner_energy_detect_done(ieee802154_ll_get_ed_rss());
+        ieee802154_inner_energy_detect_done(ieee802154_ll_get_ed_rss() + IEEE802154_RSSI_COMPENSATION_VALUE);
     }
 
     NEEDS_NEXT_OPT(true);
