@@ -1,0 +1,7 @@
+CONFIG_OPENTHREAD_ENABLED=y
+
+# CMAC is required for openthread
+CONFIG_MBEDTLS_CMAC_C=y
+
+# ESP32-H2 requires larger OTA partitions for this example
+CONFIG_PARTITION_TABLE_TWO_OTA_LARGE=y
