@@ -13,6 +13,8 @@ from pytest_embedded_idf.utils import idf_parametrize
     ],
     indirect=True,
 )
-@idf_parametrize('target', ['supported_targets'], indirect=['target'])
+@idf_parametrize(
+    'target', ['esp32', 'esp32c3'], indirect=['target']
+)  # should be sufficient to test on one Xtensa and one RISC-V target
 def test_esp_flash_blockdev(dut: Dut) -> None:
     dut.run_all_single_board_cases(group='esp_flash')
