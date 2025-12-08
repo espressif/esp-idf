@@ -16,7 +16,17 @@ else()
 endif()
 
 # Force this project to use only G0 components
-set(all_g0_components esp_rom soc hal esp_common main)  # also <arch>, i.e. xtensa or riscv, will be added below
+# also <arch>, i.e. xtensa or riscv, will be added below
+set(all_g0_components esp_rom soc hal esp_common main)
+# more esp_hal_* components
+file(GLOB esp_hal_component_dirs "${idf_path}/components/esp_hal_*")
+foreach(hal_dir ${esp_hal_component_dirs})
+    if(IS_DIRECTORY ${hal_dir} AND EXISTS "${hal_dir}/CMakeLists.txt")
+        get_filename_component(hal_name ${hal_dir} NAME)
+        list(APPEND all_g0_components ${hal_name})
+    endif()
+endforeach()
+
 set(COMPONENTS ${all_g0_components})
 
 # By default, common components include some G1+ components. Override common components to only have G0 ones
