@@ -9,25 +9,25 @@ from pytest_embedded_idf.utils import idf_parametrize
 
 # ---------------- Pytest build parameters ----------------
 
-SUPPORTED_TARGETS = ['esp32c6', 'esp32h2', 'esp32c5', 'esp32c61']
+TESTING_TARGETS = ['esp32c6', 'esp32h2', 'esp32c5', 'esp32c61']
 
 CONFIG_DEFAULT = [
     # 'config, target, markers',
     ('tee_default', target, (pytest.mark.generic,))
-    for target in SUPPORTED_TARGETS
+    for target in TESTING_TARGETS
 ]
 
 CONFIG_OTA = [
     # 'config, target, skip_autoflash, markers',
     ('tee_ota', target, 'y', (pytest.mark.generic,))
-    for target in SUPPORTED_TARGETS
+    for target in TESTING_TARGETS
 ]
 
 CONFIG_ALL = [
     # 'config, target, markers',
     (config, target, (pytest.mark.generic,))
     for config in ['tee_default', 'tee_ota']
-    for target in SUPPORTED_TARGETS
+    for target in TESTING_TARGETS
 ]
 
 # ---------------- Exception test-cases reasons  ----------------
@@ -359,7 +359,7 @@ def test_esp_tee_flash_prot_esp_flash(dut: IdfDut) -> None:
 
 @pytest.mark.generic
 @idf_parametrize('config', ['tee_ota'], indirect=['config'])
-@idf_parametrize('target', SUPPORTED_TARGETS, indirect=['target'])
+@idf_parametrize('target', TESTING_TARGETS, indirect=['target'])
 def test_esp_tee_ota_negative(dut: IdfDut) -> None:
     # start test
     dut.run_all_single_board_cases(group='ota_neg_1', timeout=30)

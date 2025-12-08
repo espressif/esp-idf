@@ -13,6 +13,8 @@ from common_test_methods import get_host_ip4_by_dest_ip
 from pytest_embedded import Dut
 from pytest_embedded_idf.utils import idf_parametrize
 
+TESTING_TARGETS = ['esp32c6', 'esp32c5', 'esp32c61']
+
 server_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'test_certs/server_cert.pem')
 key_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'test_certs/server_key.pem')
 
@@ -32,7 +34,7 @@ def start_https_server(ota_image_dir: str, server_ip: str, server_port: int) -> 
 
 
 @pytest.mark.wifi_high_traffic
-@idf_parametrize('target', ['esp32c5', 'esp32c6', 'esp32c61'], indirect=['target'])
+@idf_parametrize('target', TESTING_TARGETS, indirect=['target'])
 def test_examples_tee_secure_ota_example(dut: Dut) -> None:
     """
     This is a positive test case, which downloads complete binary file multiple number of times.

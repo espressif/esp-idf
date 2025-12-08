@@ -13,6 +13,8 @@ from ecdsa.util import sigdecode_der
 from pytest_embedded import Dut
 from pytest_embedded_idf.utils import idf_parametrize
 
+TESTING_TARGETS = ['esp32c6', 'esp32h2', 'esp32c5', 'esp32c61']
+
 
 def verify_att_token_signature(att_tk: str) -> Any:
     # Parsing the token
@@ -46,7 +48,7 @@ def verify_att_token_signature(att_tk: str) -> Any:
 
 
 @pytest.mark.generic
-@idf_parametrize('target', ['esp32c6', 'esp32c5', 'esp32c61'], indirect=['target'])
+@idf_parametrize('target', TESTING_TARGETS, indirect=['target'])
 def test_example_tee_attestation(dut: Dut) -> None:
     # Erase the TEE secure_storage partition
     dut.serial.erase_partition('secure_storage')
