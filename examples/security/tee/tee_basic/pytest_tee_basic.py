@@ -7,9 +7,11 @@ import pytest
 from pytest_embedded import Dut
 from pytest_embedded_idf.utils import idf_parametrize
 
+TESTING_TARGETS = ['esp32c6', 'esp32h2', 'esp32c5', 'esp32c61']
+
 
 @pytest.mark.generic
-@idf_parametrize('target', ['esp32c6', 'esp32c5', 'esp32c61'], indirect=['target'])
+@idf_parametrize('target', TESTING_TARGETS, indirect=['target'])
 def test_example_tee_basic(dut: Dut) -> None:
     # Logging example binary details
     binary_files = [
