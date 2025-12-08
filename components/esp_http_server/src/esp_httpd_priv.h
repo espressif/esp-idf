@@ -597,12 +597,16 @@ esp_err_t httpd_sess_trigger_close_(httpd_handle_t handle, struct sock_db *sessi
 void esp_http_server_dispatch_event(int32_t event_id, const void* event_data, size_t event_data_size);
 
 #else // CONFIG_HTTPD_ENABLE_EVENTS
-#define esp_http_server_dispatch_event(event_id, event_data, event_data_size) do {} while(0)
+static inline void esp_http_server_dispatch_event(int32_t event_id, const void* event_data, size_t event_data_size)
+{
+    // Events disabled, do nothing
+    (void) event_id;
+    (void) event_data;
+    (void) event_data_size;
+}
 #endif // CONFIG_HTTPD_ENABLE_EVENTS
 
-
 esp_err_t httpd_crypto_sha1(const uint8_t *data, size_t data_len, uint8_t *hash);
-
 
 #ifdef __cplusplus
 }
