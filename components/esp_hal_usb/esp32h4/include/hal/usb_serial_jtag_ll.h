@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,10 +13,6 @@
 #include "soc/usb_serial_jtag_struct.h"
 #include "hal/usb_serial_jtag_types.h"
 #include "hal/misc.h"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 /* ----------------------------- Macros & Types ----------------------------- */
 
@@ -35,6 +31,10 @@ typedef enum {
     USB_SERIAL_JTAG_INTR_EP1_ZERO_PAYLOAD       = (1 << 10),
 } usb_serial_jtag_ll_intr_t;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* ----------------------------- USJ Peripheral ----------------------------- */
 
 /**
@@ -46,7 +46,7 @@ typedef enum {
  */
 static inline void usb_serial_jtag_ll_ena_intr_mask(uint32_t mask)
 {
-    USB_SERIAL_JTAG.int_ena.val |= mask;
+    USB_SERIAL_JTAG.serial_jtag_int_ena.val |= mask;
 }
 
 /**
@@ -58,7 +58,7 @@ static inline void usb_serial_jtag_ll_ena_intr_mask(uint32_t mask)
  */
 static inline void usb_serial_jtag_ll_disable_intr_mask(uint32_t mask)
 {
-    USB_SERIAL_JTAG.int_ena.val &= (~mask);
+    USB_SERIAL_JTAG.serial_jtag_int_ena.val &= (~mask);
 }
 
 /**
@@ -68,7 +68,7 @@ static inline void usb_serial_jtag_ll_disable_intr_mask(uint32_t mask)
  */
 static inline uint32_t usb_serial_jtag_ll_get_intsts_mask(void)
 {
-    return USB_SERIAL_JTAG.int_st.val;
+    return USB_SERIAL_JTAG.serial_jtag_int_st.val;
 }
 
 /**
@@ -78,7 +78,7 @@ static inline uint32_t usb_serial_jtag_ll_get_intsts_mask(void)
  */
 static inline __attribute__((always_inline)) uint32_t usb_serial_jtag_ll_get_intraw_mask(void)
 {
-    return USB_SERIAL_JTAG.int_raw.val;
+    return USB_SERIAL_JTAG.serial_jtag_int_raw.val;
 }
 
 /**
@@ -90,7 +90,7 @@ static inline __attribute__((always_inline)) uint32_t usb_serial_jtag_ll_get_int
  */
 static inline __attribute__((always_inline)) void usb_serial_jtag_ll_clr_intsts_mask(uint32_t mask)
 {
-    USB_SERIAL_JTAG.int_clr.val = mask;
+    USB_SERIAL_JTAG.serial_jtag_int_clr.val = mask;
 }
 
 /**
@@ -100,7 +100,7 @@ static inline __attribute__((always_inline)) void usb_serial_jtag_ll_clr_intsts_
  */
 static inline uint32_t usb_serial_jtag_ll_get_intr_ena_status(void)
 {
-    return USB_SERIAL_JTAG.int_ena.val;
+    return USB_SERIAL_JTAG.serial_jtag_int_ena.val;
 }
 
 /**
@@ -115,8 +115,10 @@ static inline int usb_serial_jtag_ll_read_rxfifo(uint8_t *buf, uint32_t rd_len)
 {
     int i;
     for (i = 0; i < (int)rd_len; i++) {
-        if (!USB_SERIAL_JTAG.ep1_conf.serial_out_ep_data_avail) break;
-        buf[i] = USB_SERIAL_JTAG.ep1.val;
+        if (!USB_SERIAL_JTAG.serial_jtag_ep1_conf.serial_jtag_serial_out_ep_data_avail) {
+            break;
+        }
+        buf[i] = USB_SERIAL_JTAG.serial_jtag_ep1.val;
     }
     return i;
 }
@@ -134,8 +136,10 @@ static inline int usb_serial_jtag_ll_write_txfifo(const uint8_t *buf, uint32_t w
 {
     int i;
     for (i = 0; i < (int)wr_len; i++) {
-        if (!USB_SERIAL_JTAG.ep1_conf.serial_in_ep_data_free) break;
-        USB_SERIAL_JTAG.ep1.val = buf[i];
+        if (!USB_SERIAL_JTAG.serial_jtag_ep1_conf.serial_jtag_serial_in_ep_data_free) {
+            break;
+        }
+        USB_SERIAL_JTAG.serial_jtag_ep1.val = buf[i];
     }
     return i;
 }
@@ -147,7 +151,7 @@ static inline int usb_serial_jtag_ll_write_txfifo(const uint8_t *buf, uint32_t w
  */
 static inline int usb_serial_jtag_ll_rxfifo_data_available(void)
 {
-    return USB_SERIAL_JTAG.ep1_conf.serial_out_ep_data_avail;
+    return USB_SERIAL_JTAG.serial_jtag_ep1_conf.serial_jtag_serial_out_ep_data_avail;
 }
 
 /**
@@ -157,7 +161,7 @@ static inline int usb_serial_jtag_ll_rxfifo_data_available(void)
  */
 static inline int usb_serial_jtag_ll_txfifo_writable(void)
 {
-    return USB_SERIAL_JTAG.ep1_conf.serial_in_ep_data_free;
+    return USB_SERIAL_JTAG.serial_jtag_ep1_conf.serial_jtag_serial_in_ep_data_free;
 }
 
 /**
@@ -177,7 +181,7 @@ static inline int usb_serial_jtag_ll_txfifo_writable(void)
  */
 static inline void usb_serial_jtag_ll_txfifo_flush(void)
 {
-    USB_SERIAL_JTAG.ep1_conf.wr_done=1;
+    USB_SERIAL_JTAG.serial_jtag_ep1_conf.serial_jtag_wr_done = 1;
 }
 
 /**
@@ -190,7 +194,7 @@ static inline void usb_serial_jtag_ll_txfifo_flush(void)
  */
 FORCE_INLINE_ATTR void usb_serial_jtag_ll_phy_enable_jtag_bridge(bool enable)
 {
-    USB_SERIAL_JTAG.conf0.usb_jtag_bridge_en = enable;
+    USB_SERIAL_JTAG.serial_jtag_conf0.serial_jtag_usb_jtag_bridge_en = enable;
 }
 
 /* ---------------------------- USB PHY Control  ---------------------------- */
@@ -198,16 +202,14 @@ FORCE_INLINE_ATTR void usb_serial_jtag_ll_phy_enable_jtag_bridge(bool enable)
 /**
  * @brief Sets PHY defaults
  *
- * Some PHY register fields/features of the USJ are redundant on the ESP32-C61.
+ * Some PHY register fields/features of the USJ are redundant on the ESP32-H4.
  * This function those fields are set to the appropriate default values.
  *
  * @param hw Start address of the USB Wrap registers
  */
 FORCE_INLINE_ATTR void usb_serial_jtag_ll_phy_set_defaults(void)
 {
-    // External FSLS PHY is not supported
-    USB_SERIAL_JTAG.conf0.phy_sel = 0;
-    USB_SERIAL_JTAG.conf0.usb_pad_enable = 1;
+    USB_SERIAL_JTAG.serial_jtag_conf0.serial_jtag_usb_pad_enable = 1;
 }
 
 /**
@@ -218,11 +220,11 @@ FORCE_INLINE_ATTR void usb_serial_jtag_ll_phy_set_defaults(void)
 FORCE_INLINE_ATTR void usb_serial_jtag_ll_phy_enable_pin_exchg(bool enable)
 {
     if (enable) {
-        USB_SERIAL_JTAG.conf0.exchg_pins = 1;
-        USB_SERIAL_JTAG.conf0.exchg_pins_override = 1;
+        USB_SERIAL_JTAG.serial_jtag_conf0.serial_jtag_exchg_pins = 1;
+        USB_SERIAL_JTAG.serial_jtag_conf0.serial_jtag_exchg_pins_override = 1;
     } else {
-        USB_SERIAL_JTAG.conf0.exchg_pins_override = 0;
-        USB_SERIAL_JTAG.conf0.exchg_pins = 0;
+        USB_SERIAL_JTAG.serial_jtag_conf0.serial_jtag_exchg_pins_override = 0;
+        USB_SERIAL_JTAG.serial_jtag_conf0.serial_jtag_exchg_pins = 0;
     }
 }
 
@@ -234,9 +236,9 @@ FORCE_INLINE_ATTR void usb_serial_jtag_ll_phy_enable_pin_exchg(bool enable)
  */
 FORCE_INLINE_ATTR void usb_serial_jtag_ll_phy_enable_vref_override(unsigned int vrefh_step, unsigned int vrefl_step)
 {
-    USB_SERIAL_JTAG.conf0.vrefh = vrefh_step;
-    USB_SERIAL_JTAG.conf0.vrefl = vrefl_step;
-    USB_SERIAL_JTAG.conf0.vref_override = 1;
+    USB_SERIAL_JTAG.serial_jtag_conf0.serial_jtag_vrefh = vrefh_step;
+    USB_SERIAL_JTAG.serial_jtag_conf0.serial_jtag_vrefl = vrefl_step;
+    USB_SERIAL_JTAG.serial_jtag_conf0.serial_jtag_vref_override = 1;
 }
 
 /**
@@ -244,7 +246,7 @@ FORCE_INLINE_ATTR void usb_serial_jtag_ll_phy_enable_vref_override(unsigned int 
  */
 FORCE_INLINE_ATTR void usb_serial_jtag_ll_phy_disable_vref_override(void)
 {
-    USB_SERIAL_JTAG.conf0.vref_override = 0;
+    USB_SERIAL_JTAG.serial_jtag_conf0.serial_jtag_vref_override = 0;
 }
 
 /**
@@ -254,11 +256,11 @@ FORCE_INLINE_ATTR void usb_serial_jtag_ll_phy_disable_vref_override(void)
  */
 FORCE_INLINE_ATTR void usb_serial_jtag_ll_phy_enable_pull_override(const usb_serial_jtag_pull_override_vals_t *vals)
 {
-    USB_SERIAL_JTAG.conf0.dp_pullup = vals->dp_pu;
-    USB_SERIAL_JTAG.conf0.dp_pulldown = vals->dp_pd;
-    USB_SERIAL_JTAG.conf0.dm_pullup = vals->dm_pu;
-    USB_SERIAL_JTAG.conf0.dm_pulldown = vals->dm_pd;
-    USB_SERIAL_JTAG.conf0.pad_pull_override = 1;
+    USB_SERIAL_JTAG.serial_jtag_conf0.serial_jtag_dp_pullup = vals->dp_pu;
+    USB_SERIAL_JTAG.serial_jtag_conf0.serial_jtag_dp_pulldown = vals->dp_pd;
+    USB_SERIAL_JTAG.serial_jtag_conf0.serial_jtag_dm_pullup = vals->dm_pu;
+    USB_SERIAL_JTAG.serial_jtag_conf0.serial_jtag_dm_pulldown = vals->dm_pd;
+    USB_SERIAL_JTAG.serial_jtag_conf0.serial_jtag_pad_pull_override = 1;
 }
 
 /**
@@ -266,7 +268,7 @@ FORCE_INLINE_ATTR void usb_serial_jtag_ll_phy_enable_pull_override(const usb_ser
  */
 FORCE_INLINE_ATTR void usb_serial_jtag_ll_phy_disable_pull_override(void)
 {
-    USB_SERIAL_JTAG.conf0.pad_pull_override = 0;
+    USB_SERIAL_JTAG.serial_jtag_conf0.serial_jtag_pad_pull_override = 0;
 }
 
 /**
@@ -276,7 +278,7 @@ FORCE_INLINE_ATTR void usb_serial_jtag_ll_phy_disable_pull_override(void)
  */
 FORCE_INLINE_ATTR void usb_serial_jtag_ll_phy_set_pullup_strength(bool strong)
 {
-    USB_SERIAL_JTAG.conf0.pullup_value = strong;
+    USB_SERIAL_JTAG.serial_jtag_conf0.serial_jtag_pullup_value = strong;
 }
 
 /**
@@ -286,7 +288,7 @@ FORCE_INLINE_ATTR void usb_serial_jtag_ll_phy_set_pullup_strength(bool strong)
  */
 FORCE_INLINE_ATTR bool usb_serial_jtag_ll_phy_is_pad_enabled(void)
 {
-    return USB_SERIAL_JTAG.conf0.usb_pad_enable;
+    return USB_SERIAL_JTAG.serial_jtag_conf0.serial_jtag_usb_pad_enable;
 }
 
 /**
@@ -296,7 +298,7 @@ FORCE_INLINE_ATTR bool usb_serial_jtag_ll_phy_is_pad_enabled(void)
  */
 FORCE_INLINE_ATTR void usb_serial_jtag_ll_phy_enable_pad(bool enable)
 {
-    USB_SERIAL_JTAG.conf0.usb_pad_enable = enable;
+    USB_SERIAL_JTAG.serial_jtag_conf0.serial_jtag_usb_pad_enable = enable;
 }
 
 /* ----------------------------- RCC Functions  ----------------------------- */

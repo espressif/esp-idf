@@ -8,7 +8,6 @@
 
 #include <stdbool.h>
 #include "esp_etm.h"
-#include "soc/gdma_channel.h"
 #include "hal/gdma_types.h"
 #include "esp_err.h"
 
@@ -87,7 +86,7 @@ typedef struct {
  */
 typedef struct {
     gdma_trigger_peripheral_t periph; /*!< Target peripheral which will trigger DMA operations */
-    int instance_id;                  /*!< Peripheral instance ID. Supported IDs are listed in `soc/gdma_channel.h`, e.g. SOC_GDMA_TRIG_PERIPH_UHCI0 */
+    int instance_id;                  /*!< Peripheral instance ID. Supported IDs are listed in `hal/gdma_channel.h`, e.g. SOC_GDMA_TRIG_PERIPH_UHCI0 */
     int bus_id;                       /*!< Which system bus should the DMA attached to */
 } gdma_trigger_t;
 

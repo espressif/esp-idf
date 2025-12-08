@@ -6,6 +6,10 @@
 
 #pragma once
 
+#if __has_include("hal/bitscrambler_peri_select.h")
+#include "hal/bitscrambler_peri_select.h"
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -26,7 +30,6 @@ typedef enum {
     BITSCRAMBLER_LUT_WIDTH_16BIT = 1, /*!< 16-bit LUT */
     BITSCRAMBLER_LUT_WIDTH_32BIT = 2, /*!< 32-bit LUT */
 } bitscrambler_lut_width_t;
-
 
 /**
  * @brief EOF signal generating mode of bitscrambler

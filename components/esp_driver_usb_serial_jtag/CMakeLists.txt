@@ -12,7 +12,7 @@ endif()
 if(${target} STREQUAL "linux")
     set(priv_requires esp_ringbuf esp_timer)
 else()
-    set(priv_requires esp_driver_gpio esp_ringbuf esp_pm esp_timer)
+    set(priv_requires esp_driver_gpio esp_ringbuf esp_pm esp_timer esp_hal_usb)
 endif()
 
 idf_component_register(SRCS ${srcs}

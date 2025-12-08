@@ -31,7 +31,6 @@ typedef enum {
     USB_SERIAL_JTAG_INTR_EP1_ZERO_PAYLOAD       = (1 << 10),
 } usb_serial_jtag_ll_intr_t;
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -116,7 +115,9 @@ static inline int usb_serial_jtag_ll_read_rxfifo(uint8_t *buf, uint32_t rd_len)
 {
     int i;
     for (i = 0; i < (int)rd_len; i++) {
-        if (!USB_SERIAL_JTAG.serial_jtag_ep1_conf.serial_jtag_serial_out_ep_data_avail) break;
+        if (!USB_SERIAL_JTAG.serial_jtag_ep1_conf.serial_jtag_serial_out_ep_data_avail) {
+            break;
+        }
         buf[i] = USB_SERIAL_JTAG.serial_jtag_ep1.val;
     }
     return i;
@@ -135,7 +136,9 @@ static inline int usb_serial_jtag_ll_write_txfifo(const uint8_t *buf, uint32_t w
 {
     int i;
     for (i = 0; i < (int)wr_len; i++) {
-        if (!USB_SERIAL_JTAG.serial_jtag_ep1_conf.serial_jtag_serial_in_ep_data_free) break;
+        if (!USB_SERIAL_JTAG.serial_jtag_ep1_conf.serial_jtag_serial_in_ep_data_free) {
+            break;
+        }
         USB_SERIAL_JTAG.serial_jtag_ep1.val = buf[i];
     }
     return i;
@@ -178,7 +181,7 @@ static inline int usb_serial_jtag_ll_txfifo_writable(void)
 */
 static inline void usb_serial_jtag_ll_txfifo_flush(void)
 {
-    USB_SERIAL_JTAG.serial_jtag_ep1_conf.serial_jtag_wr_done=1;
+    USB_SERIAL_JTAG.serial_jtag_ep1_conf.serial_jtag_wr_done = 1;
 }
 
 /**
@@ -327,8 +330,6 @@ FORCE_INLINE_ATTR bool usb_serial_jtag_ll_module_is_enabled(void)
 {
     return (PCR.usb_device_conf.usb_device_clk_en && !PCR.usb_device_conf.usb_device_rst_en);
 }
-
-
 
 #ifdef __cplusplus
 }
