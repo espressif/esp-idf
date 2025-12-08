@@ -1724,6 +1724,23 @@ static inline uint32_t isp_ll_awb_get_accumulated_b_value(isp_dev_t *hw)
 
 #if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
 /**
+ * @brief Set AWB subwindow range
+ *
+ * @param[in] hw              Hardware instance address
+ * @param[in] top_left_x      Top left pixel x axis value
+ * @param[in] top_left_y      Top left pixel y axis value
+ * @param[in] sub_window_xsize Subwindow x size (minimum 4)
+ * @param[in] sub_window_ysize Subwindow y size (minimum 4)
+ */
+static inline void isp_ll_awb_set_subwindow_range(isp_dev_t *hw, uint32_t top_left_x, uint32_t top_left_y, uint32_t sub_window_xsize, uint32_t sub_window_ysize)
+{
+    hw->awb_bx.awb_x_start = top_left_x;
+    hw->awb_bx.awb_x_bsize = sub_window_xsize;
+    hw->awb_by.awb_y_start = top_left_y;
+    hw->awb_by.awb_y_bsize = sub_window_ysize;
+}
+
+/**
  * @brief Enable AWB white balance gain
  *
  * @param[in] hw      Hardware instance address
@@ -1758,6 +1775,11 @@ static inline void isp_ll_awb_set_wb_gain(isp_dev_t *hw, isp_wbg_gain_t gain)
     hw->wbg_coef_b.wbg_b = gain.gain_b;
 }
 #else
+static inline void isp_ll_awb_set_subwindow_range(isp_dev_t *hw, uint32_t top_left_x, uint32_t top_left_y, uint32_t sub_window_xsize, uint32_t sub_window_ysize)
+{
+    // for compatibility
+}
+
 static inline void isp_ll_awb_enable_wb_gain(isp_dev_t *hw, bool enable)
 {
     //for compatibility
