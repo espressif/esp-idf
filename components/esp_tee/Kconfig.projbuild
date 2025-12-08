@@ -96,11 +96,20 @@ menu "ESP-TEE (Trusted Execution Environment)"
             help
                 eFuse block key ID storing the HMAC key for deriving PBKDF2-based ECDSA keys
 
-        config SECURE_TEE_SEC_STG_SUPPORT_SECP192R1_SIGN
-            bool "Secure Storage: Support signing with the ECDSA SECP192R1 curve"
-            default n
-            help
-                Enable ECDSA signing with the SECP192R1 curve using the TEE secure storage.
+        menu "Secure Storage: Additional supported curves for ECDSA signing"
+
+            config SECURE_TEE_SEC_STG_SUPPORT_SECP192R1_SIGN
+                bool "SECP192R1"
+                help
+                    Enable ECDSA signing with the SECP192R1 curve using TEE secure storage
+
+            config SECURE_TEE_SEC_STG_SUPPORT_SECP384R1_SIGN
+                bool "SECP384R1"
+                depends on SOC_ECDSA_SUPPORT_CURVE_P384
+                help
+                    Enable ECDSA signing with the SECP384R1 curve using TEE secure storage
+
+        endmenu
 
         config SECURE_TEE_ATTESTATION
             bool "Enable Attestation"

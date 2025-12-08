@@ -36,7 +36,7 @@
 
 static const char *TAG = "test_esp_tee_att";
 
-extern int verify_ecdsa_sign(const uint8_t *digest, size_t len, const esp_tee_sec_storage_ecdsa_pubkey_t *pubkey, const esp_tee_sec_storage_ecdsa_sign_t *sign, bool is_crv_p192);
+extern int verify_ecdsa_sign(const esp_tee_sec_storage_type_t key_type, const uint8_t *digest, size_t len, const esp_tee_sec_storage_ecdsa_pubkey_t *pubkey, const esp_tee_sec_storage_ecdsa_sign_t *sign);
 
 static uint8_t hexchar_to_byte(char hex)
 {
@@ -275,7 +275,7 @@ TEST_CASE("Test TEE Attestation - Generate and verify the EAT", "[attestation]")
     fetch_signature((const char *)token_buf, &sign_ctx);
 
     // Verifying the generated token
-    TEST_ASSERT_EQUAL(0, verify_ecdsa_sign(digest, sizeof(digest), &pubkey_ctx, &sign_ctx, false));
+    TEST_ASSERT_EQUAL(0, verify_ecdsa_sign(ESP_SEC_STG_KEY_ECDSA_SECP256R1, digest, sizeof(digest), &pubkey_ctx, &sign_ctx));
     free(token_buf);
 }
 

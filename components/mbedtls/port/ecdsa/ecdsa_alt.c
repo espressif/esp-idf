@@ -560,7 +560,14 @@ int esp_ecdsa_tee_load_pubkey(mbedtls_ecp_keypair *keypair, const char *tee_key_
     } else if (keypair->MBEDTLS_PRIVATE(grp).id == MBEDTLS_ECP_DP_SECP192R1) {
         len = ECDSA_KEY_LEN_P192;
         key_type = ESP_SEC_STG_KEY_ECDSA_SECP192R1;
-    } else {
+    }
+#if SOC_ECDSA_SUPPORT_CURVE_P384
+    else if (keypair->MBEDTLS_PRIVATE(grp).id == MBEDTLS_ECP_DP_SECP384R1) {
+        len = ECDSA_KEY_LEN_P384;
+        key_type = ESP_SEC_STG_KEY_ECDSA_SECP384R1;
+    }
+#endif
+    else {
         return MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
     }
 
@@ -670,7 +677,14 @@ static int esp_ecdsa_tee_sign(mbedtls_ecp_group *grp, mbedtls_mpi* r, mbedtls_mp
     } else if (grp->id == MBEDTLS_ECP_DP_SECP192R1) {
         len = ECDSA_KEY_LEN_P192;
         key_type = ESP_SEC_STG_KEY_ECDSA_SECP192R1;
-    } else {
+    }
+#if SOC_ECDSA_SUPPORT_CURVE_P384
+    else if (grp->id == MBEDTLS_ECP_DP_SECP384R1) {
+        len = ECDSA_KEY_LEN_P384;
+        key_type = ESP_SEC_STG_KEY_ECDSA_SECP384R1;
+    }
+#endif
+    else {
         return MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
     }
 
@@ -689,7 +703,7 @@ static int esp_ecdsa_tee_sign(mbedtls_ecp_group *grp, mbedtls_mpi* r, mbedtls_mp
     esp_tee_sec_storage_ecdsa_sign_t sign = {};
     esp_err_t err = esp_tee_sec_storage_ecdsa_sign(&cfg, (uint8_t *)msg, msg_len, &sign);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to get signature");
+        ESP_LOGE(TAG, "Failed to get signature: 0x%08lx", err);
         return MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
     }
 

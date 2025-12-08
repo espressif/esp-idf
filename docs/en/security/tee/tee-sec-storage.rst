@@ -20,8 +20,14 @@ The TEE Secure Storage service provides persistent storage for securely storing 
 
 Additionally, the secure storage provides interfaces for performing the following cryptographic services from the TEE using securely stored key material:
 
-  #. Message signing and public key retrieval using the ``ecdsa_secp256r1`` and ``ecdsa_secp192r1`` algorithms
-  #. Authenticated encryption and decryption using the ``aes256_gcm`` algorithm
+#. Authenticated encryption and decryption using the ``aes256_gcm`` algorithm
+#. Message signing and public key retrieval using ECDSA with the following curves
+
+   .. list::
+      - ``ecdsa_secp256r1``
+      - ``ecdsa_secp192r1``
+      :SOC_ECDSA_SUPPORT_CURVE_P384: - ``ecdsa_secp384r1``
+
 
 .. note::
 
@@ -47,8 +53,14 @@ Each data object consisting of the type, associated metadata flags (e.g., ``WRIT
 
 Currently, TEE secure storage supports storing the following cryptographic keys:
 
-  #. ``ecdsa_secp256r1`` and ``ecdsa_secp192r1`` curve key-pairs, including private and public key components
-  #. ``aes256`` keys, including the key and initialization vector (IV)
+#. ``aes256`` keys, including the key and initialization vector (IV)
+#. ECDSA key-pairs for the following curves, including both public and private components
+
+   .. list::
+      - ``ecdsa_secp256r1``
+      - ``ecdsa_secp192r1``
+      :SOC_ECDSA_SUPPORT_CURVE_P384: - ``ecdsa_secp384r1``
+
 
 All assets related to TEE secure storage are protected by the APM peripheral and are inaccessible to the REE application. Any direct access attempts will result in a system fault. Future updates are planned to add support for additional key types and general-purpose data storage.
 

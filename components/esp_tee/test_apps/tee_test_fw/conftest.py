@@ -339,6 +339,20 @@ class TEESerial(IdfSerial):
                 'LS0tLS1FTkQgRUMgUFJJVkFURSBLRVktLS0tLQo='
             ),
         },
+        {'key': 'p192_key0', 'type': 'ecdsa_p192', 'input': None, 'write_once': False},
+        {
+            'key': 'p384_key0',
+            'type': 'ecdsa_p384',
+            'input': 'ecdsa_p384_key.pem',
+            'write_once': True,
+            'b64': (
+                'LS0tLS1CRUdJTiBFQyBQUklWQVRFIEtFWS0tLS0tCk1JR2tBZ0VCQkRDQUIreENyckkrOWJObWlzVlVsSG1R'
+                'T3dZMHIyNWVIL09DalVMUVY4NHZtZU0wWDVLMnYrRE4KZkdSUkRZd0NheGlnQndZRks0RUVBQ0toWkFOaUFB'
+                'UVFWcHFObVY0Qm1aemw5VWZBcm0veVpiak9QZTJoUEtDRQp0RERZLy9FS0lOZExvY1dvMUgwWWhzYTBuU2xj'
+                'cGk2SDM3eXlSVHNxUnFueFBOeXFYZDdqbXo1WkIySWZHWHhBCmptZnZLVmJIcVNJV0JDRUx0WUxwS2t3UHNCO'
+                'XV4WW89Ci0tLS0tRU5EIEVDIFBSSVZBVEUgS0VZLS0tLS0='
+            ),
+        },
     ]
 
     NVS_KEYS_B64 = 'MzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzPMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzA=='
