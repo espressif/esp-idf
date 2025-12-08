@@ -539,6 +539,80 @@ static inline void usb_dwc_hal_disable_debounce_lock(usb_dwc_hal_context_t *hal)
     usb_dwc_ll_gintmsk_en_intrs(hal->dev, USB_DWC_LL_INTR_CORE_PRTINT | USB_DWC_LL_INTR_CORE_DISCONNINT);
 }
 
+/**
+ * @brief Check if the root port is suspended
+ *
+ * This function checks if the root port entered suspended state, after calling usb_dwc_hal_port_suspend()
+ *
+ * @param hal Context of the HAL layer
+ * @return true The root port is suspended
+ * @return false The root port is not suspended
+ */
+static inline bool usb_dwc_hal_port_check_if_suspended(usb_dwc_hal_context_t *hal)
+{
+    return usb_dwc_ll_hprt_get_port_suspend(hal->dev);
+}
+
+// ----------------------------------------------------- Power and Clock gating ----------------------------------------
+
+/**
+ * @brief Gate internal clock of the DWC_OTG core
+ *
+ * This function gates the internal clock of the DWC_OTG core to reduce power consumption
+ *
+ * Internal clock gating:
+ *  - stop PHY clock (PCLK)
+ *  - gate HCLK to modules other than the AHB slave, AHB master and wakeup logic
+ * Internal clock un-gating:
+ *  - un-stop PHY clock (PCLK)
+ *  - un-gate HCLK
+ *
+ * @note This is a part of a sequence from the DWC Programming guide, chapter 14.2.2.1
+ * @param hal Context of the HAL layer
+ * @param enable Enable or disable internal clock gating
+ */
+static inline void usb_dwc_hal_pwr_clk_internal_clock_gate(usb_dwc_hal_context_t *hal, bool enable)
+{
+    usb_dwc_ll_set_stoppclk(hal->dev, enable);      // Enable/disable PHY clock stop
+    usb_dwc_ll_set_gatehclk(hal->dev, enable);      // Gate/ungate HCLK
+}
+
+/**
+ * @brief Check if the PHY clock (PCLK) stop is enabled or disabled
+ *
+ * @param hal Context of the HAL layer
+ * @return true The PCLK stop is enabled
+ * @return false The PCLK stop is not enabled
+ */
+static inline bool usb_dwc_hal_pwr_clk_check_phy_clk_stopped(usb_dwc_hal_context_t *hal)
+{
+    return usb_dwc_ll_get_stoppclk_st(hal->dev);
+}
+
+/**
+ * @brief Check if the HCLK is gated or ungated
+ *
+ * @param hal Context of the HAL layer
+ * @return true The HCLK is gated
+ * @return false The HCLK is not gated
+ */
+static inline bool usb_dwc_hal_pwr_clk_check_hclk_gated(usb_dwc_hal_context_t *hal)
+{
+    return usb_dwc_ll_get_gatehclk_st(hal->dev);
+}
+
+/**
+ * @brief Check if PHY is in sleep state
+ *
+ * @param hal Context of the HAL layer
+ * @return true The USB PHY is in sleep state
+ * @return false The USB PHY is not in sleep state
+ */
+static inline bool usb_dwc_hal_pwr_clk_check_phy_sleep(usb_dwc_hal_context_t *hal)
+{
+    return usb_dwc_ll_get_physleep_st(hal->dev);
+}
+
 // ----------------------------------------------------- Channel -------------------------------------------------------
 
 // ----------------- Channel Allocation --------------------
