@@ -14,6 +14,7 @@
 #include "esp_heap_caps.h"
 #include "driver/isp_awb.h"
 #include "esp_private/isp_private.h"
+#include "hal/efuse_hal.h"
 
 typedef struct isp_awb_controller_t {
     _Atomic isp_fsm_t                  fsm;
@@ -71,14 +72,58 @@ static esp_err_t s_esp_isp_awb_config_hardware(isp_proc_handle_t isp_proc, const
 {
     isp_ll_awb_set_sample_point(isp_proc->hal.hw, awb_cfg->sample_point);
     ESP_RETURN_ON_FALSE(isp_hal_awb_set_window_range(&isp_proc->hal, &awb_cfg->window),
-                        ESP_ERR_INVALID_ARG, TAG, "invalid window");
+                        ESP_ERR_INVALID_ARG, TAG, "invalid window range");
+
+    // Subwindow feature is only supported on REV >= 3.0
+    if (efuse_hal_chip_revision() < 300) {
+        bool subwindow_is_zero = awb_cfg->subwindow.top_left.x == 0 &&
+                                 awb_cfg->subwindow.top_left.y == 0 &&
+                                 awb_cfg->subwindow.btm_right.x == 0 &&
+                                 awb_cfg->subwindow.btm_right.y == 0;
+        if (!subwindow_is_zero) {
+            ESP_LOGW(TAG, "Subwindow feature is not supported on REV < 3.0, subwindow will not be configured");
+        }
+    }
+
+    isp_window_t subwindow = awb_cfg->subwindow;
+    ESP_RETURN_ON_FALSE(
+        (subwindow.top_left.x >= awb_cfg->window.top_left.x) &&
+        (subwindow.top_left.y >= awb_cfg->window.top_left.y) &&
+        (subwindow.btm_right.x <= awb_cfg->window.btm_right.x) &&
+        (subwindow.btm_right.y <= awb_cfg->window.btm_right.y),
+        ESP_ERR_INVALID_ARG, TAG, "subwindow exceeds window range"
+    );
+
+    if ((subwindow.btm_right.x - subwindow.top_left.x + 1) / ISP_AWB_WINDOW_X_NUM < 4 ||
+            (subwindow.btm_right.y - subwindow.top_left.y + 1) / ISP_AWB_WINDOW_Y_NUM < 4) {
+        ESP_LOGE(TAG, "subwindow block size is too small: width and height must be at least 4 (got %d x %d)",
+                 (subwindow.btm_right.x - subwindow.top_left.x + 1) / ISP_AWB_WINDOW_X_NUM,
+                 (subwindow.btm_right.y - subwindow.top_left.y + 1) / ISP_AWB_WINDOW_Y_NUM);
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    int size_x = subwindow.btm_right.x - subwindow.top_left.x + 1;
+    int size_y = subwindow.btm_right.y - subwindow.top_left.y + 1;
+    if ((size_x % ISP_AWB_WINDOW_X_NUM != 0) || (size_y % ISP_AWB_WINDOW_Y_NUM != 0)) {
+        ESP_LOGW(TAG, "subwindow size (%d x %d) is not divisible by AWB subwindow blocks grid (%d x %d). \
+            Resolution will be floored to the nearest divisible value.",
+                 size_x, size_y, ISP_AWB_WINDOW_X_NUM, ISP_AWB_WINDOW_Y_NUM);
+        // floor to the nearest divisible value
+        subwindow.btm_right.x -= size_x % ISP_AWB_WINDOW_X_NUM;
+        subwindow.btm_right.y -= size_y % ISP_AWB_WINDOW_Y_NUM;
+    }
+    ESP_RETURN_ON_FALSE(isp_hal_awb_set_subwindow_range(&isp_proc->hal, &subwindow),
+                        ESP_ERR_INVALID_ARG, TAG, "invalid subwindow range");
+
     isp_u32_range_t lum_range = awb_cfg->white_patch.luminance;
     ESP_RETURN_ON_FALSE(isp_hal_awb_set_luminance_range(&isp_proc->hal, lum_range.min, lum_range.max),
                         ESP_ERR_INVALID_ARG, TAG, "invalid luminance range");
+
     isp_float_range_t rg_range = awb_cfg->white_patch.red_green_ratio;
     ESP_RETURN_ON_FALSE(rg_range.min < rg_range.max && rg_range.min >= 0 &&
                         isp_hal_awb_set_rg_ratio_range(&isp_proc->hal, rg_range.min, rg_range.max),
                         ESP_ERR_INVALID_ARG, TAG, "invalid range of Red Green ratio");
+
     isp_float_range_t bg_range = awb_cfg->white_patch.blue_green_ratio;
     ESP_RETURN_ON_FALSE(bg_range.min < bg_range.max && bg_range.min >= 0 &&
                         isp_hal_awb_set_bg_ratio_range(&isp_proc->hal, bg_range.min, bg_range.max),
