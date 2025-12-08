@@ -109,7 +109,7 @@ struct rmt_encoder_t {
  * @param[in] data_size Size of the data, as passed to rmt_transmit()
  * @param[in] symbols_written Current position in encoded stream, in symbols
  * @param[in] symbols_free The maximum amount of symbols that can be written into the `symbols` buffer
- * @param[out] symbols Symbols to be sent to the RMT hardware
+ * @param[out] symbols Symbols to be sent to the RMT hardware. This may be a hardware buffer and can't be used with 'memcpy'
  * @param[out] done Setting this to true marks this transaction as finished
  * @param arg Opaque argument
  * @return Amount of symbols encoded in this callback round. 0 if more space is needed.
