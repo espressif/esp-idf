@@ -81,8 +81,6 @@ You can find configurations for this example in 'Example Configuration' tag.
 
 * In 'Voice volume', you can set the volume between 0 to 100.
 
-* In 'Enable Board Support Package (BSP) support' you can enable support for BSP. You can pick specific BSP in [idf_component.yml](main/idf_component.yml).
-
 ### Build and Flash
 
 Build the project and flash it to the board, then run monitor tool to view serial output:
