@@ -11,6 +11,13 @@
 /* CPU instruction prefetch padding size for flash mmap scenario */
 #define _esp_flash_mmap_prefetch_pad_size 16
 
+/* Copy from esp_secure_boot.h */
+#ifdef CONFIG_SECURE_BOOT_ECDSA_KEY_LEN_384_BITS
+#define ESP_SECURE_BOOT_DIGEST_LEN 48
+#else /* !CONFIG_SECURE_BOOT_ECDSA_KEY_LEN_384_BITS */
+#define ESP_SECURE_BOOT_DIGEST_LEN 32
+#endif /* CONFIG_SECURE_BOOT_ECDSA_KEY_LEN_384_BITS */
+
 /*
  * PMP region granularity size
  * Software may determine the PMP granularity by writing zero to pmp0cfg, then writing all ones
@@ -70,6 +77,8 @@
 	   has the required alignment */
 	    #define ULP_ALIGNMENT_REQ_BYTES 256
         #define RESERVE_RTC_MEM ALIGN_UP(ESP_BOOTLOADER_RESERVE_RTC + RTC_TIMER_RESERVE_RTC, ULP_ALIGNMENT_REQ_BYTES)
+    #elif CONFIG_SECURE_BOOT && CONFIG_ESP_ROM_SUPPORT_SECURE_BOOT_FAST_WAKEUP
+        #define RESERVE_RTC_MEM (ESP_BOOTLOADER_RESERVE_RTC + RTC_TIMER_RESERVE_RTC + ESP_SECURE_BOOT_DIGEST_LEN)
     #else
         #define RESERVE_RTC_MEM (ESP_BOOTLOADER_RESERVE_RTC + RTC_TIMER_RESERVE_RTC)
     #endif
