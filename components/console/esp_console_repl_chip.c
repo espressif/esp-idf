@@ -252,8 +252,41 @@ esp_err_t esp_console_new_repl_uart(const esp_console_dev_uart_config_t *dev_con
         goto _exit;
     }
 
+#if CONFIG_LIBC_PICOLIBC // TODO IDF-14901
+#if !CONFIG_LIBC_PICOLIBC_NEWLIB_COMPATIBILITY
+#define tls_stdin linenoise_stdin
+#define tls_stdout linenoise_stdout
+#endif
+    extern __thread FILE *tls_stdin;
+    extern __thread FILE *tls_stdout;
+
+    // Workaround for Picolibc to use thread-local stdio streams when the console is not the default one.
+    // Need to set linenoise_stdin/linenoise_stdout to correct values that will be used by the esp_console_repl_task
+    // before esp_console_setup_prompt() call, because it uses them. After that, we can restore the original values.
+    if (dev_config->channel != CONFIG_ESP_CONSOLE_UART_NUM) {
+        char path[CONSOLE_PATH_MAX_LEN] = { 0 };
+        snprintf(path, CONSOLE_PATH_MAX_LEN, "/dev/uart/%d", dev_config->channel);
+        uart_repl->repl_com._stdin = fopen(path, "r");
+        uart_repl->repl_com._stdout = fopen(path, "w");
+    }
+    FILE *tmp_stdin = stdin;
+    FILE *tmp_stdout = stdout;
+    if (uart_repl->repl_com._stdin) {
+        tls_stdin = uart_repl->repl_com._stdin;
+        tls_stdout = uart_repl->repl_com._stdout;
+    }
+#endif
+
     // setup prompt
     esp_console_setup_prompt(repl_config->prompt, &uart_repl->repl_com);
+
+#if CONFIG_LIBC_PICOLIBC // TODO IDF-14901
+    if (uart_repl->repl_com._stdin) {
+        // Restore the original values of tls_stdin and tls_stdout just in case.
+        tls_stdin = tmp_stdin;
+        tls_stdout = tmp_stdout;
+    }
+#endif
 
     /* Fill the structure here as it will be used directly by the created task. */
     uart_repl->uart_channel = dev_config->channel;

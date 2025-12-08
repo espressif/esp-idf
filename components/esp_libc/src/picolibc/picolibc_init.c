@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -33,21 +33,59 @@ static void esp_cleanup_r(struct _reent *rptr)
 #endif
 
 #if ESP_ROM_HAS_RETARGETABLE_LOCKING
-static int __retarget_lock_try_acquire(struct __lock * p)
-{
-    __retarget_lock_acquire(p);
-    return 0;
-}
-
-static int __retarget_lock_try_acquire_recursive(struct __lock *p)
-{
-    __retarget_lock_acquire_recursive(p);
-    return 0;
-}
+int __retarget_lock_try_acquire(struct __lock * p);
+int __retarget_lock_try_acquire_recursive(struct __lock *p);
 #endif
 
+#if CONFIG_SECURE_ENABLE_TEE
+struct _reent_stub {
+    int _errno;
+    __FILE *_stdin, *_stdout, *_stderr;
+    int _inc;
+    char *_emergency;
+    int _reserved_0;
+    int _reserved_1;
+    struct __locale_t *_locale;
+    void *_mp;
+    void (*__cleanup)(struct _reent *);
+    int _gamma_signgam;
+    int _cvtlen;
+    char *_cvtbuf;
+    struct _rand48 *_r48;
+#if 0 /* unlikely used fields in ROM implementation */
+    struct __tm *_localtime_buf;
+    char *_asctime_buf;
+    void (** _sig_func)(int);
+    struct _atexit *_reserved_6;
+    struct _atexit _reserved_7;
+    struct _glue _reserved_8;
+    __FILE *__sf;
+    struct _misc_reent *_misc;
+    char *_signal_buf;
+#endif
+};
+
+void *__getreent_rom_stub(void)
+{
+    static struct _reent_stub reent_stub;
+    return &reent_stub;
+}
+#endif // SECURE_ENABLE_TEE
+
 static struct syscall_stub_table s_stub_table = {
+#if CONFIG_SECURE_ENABLE_TEE
+    /*
+     * ESP-TEE uses snprintf() from ROM, which requires at least a fake __getreent stub.
+     *
+     * NOTE: If floating-point variables are intended to be used,
+     *       the following fields must be specified in the syscall_stub_table:
+     *   ._printf_float =
+     *   ._scanf_float =
+     */
+    .__getreent = (void *)__getreent_rom_stub,
+#else
     .__getreent = (void *)abort,
+#endif
     ._malloc_r = (void *)abort,
     ._free_r = (void *)abort,
     ._realloc_r = (void *)abort,
@@ -143,20 +181,10 @@ void esp_reent_cleanup(void)
     return;
 }
 
-#if CONFIG_VFS_SUPPORT_IO
-FILE *stdin;
-FILE *stdout;
-FILE *stderr;
-void esp_libc_init_global_stdio(const char *stdio_dev)
-{
-    stdin = fopen(stdio_dev, "r");
-    stdout = fopen(stdio_dev, "w");
-    assert(stdin);
-    assert(stdout);
-    setlinebuf(stdout);
-    stderr = stdout;
-}
-#else  /* CONFIG_VFS_SUPPORT_IO */
+/*
+ * Initialize stdin, stdout, and stderr using static memory allocation.
+ * Creating them with fopen() would call malloc() internally.
+ */
 static char write_buf[BUFSIZ];
 static char read_buf[BUFSIZ];
 
@@ -166,10 +194,28 @@ static struct __file_bufio __stdout = FDEV_SETUP_BUFIO(1, write_buf, BUFSIZ, rea
 FILE *stdin = &__stdin.xfile.cfile.file;
 FILE *stdout = &__stdout.xfile.cfile.file;
 FILE *stderr = &__stdout.xfile.cfile.file;
+
+#if CONFIG_LIBC_PICOLIBC_NEWLIB_COMPATIBILITY
+__thread FILE* tls_stdin = &__stdin.xfile.cfile.file;
+__thread FILE* tls_stdout = &__stdout.xfile.cfile.file;
+__thread FILE* tls_stderr = &__stdout.xfile.cfile.file;
+#endif
+
+#if CONFIG_VFS_SUPPORT_IO
+void esp_libc_init_global_stdio(const char *stdio_dev)
+{
+    int stdin_fd = open(stdio_dev, O_RDONLY);
+    assert(stdin_fd > 0);
+    __stdin.ptr = (void *)(intptr_t)(stdin_fd);
+
+    int stdout_fd = open(stdio_dev, O_WRONLY);
+    assert(stdout_fd > 0);
+    __stdout.ptr = (void *)(intptr_t)(stdout_fd);
+}
+#else  /* CONFIG_VFS_SUPPORT_IO */
 void esp_libc_init_global_stdio(void)
 {
-    __lock_init_recursive(stdin->lock);
-    __lock_init_recursive(stdout->lock);
+    /* Nothing to do. */
 }
 #endif  /* CONFIG_VFS_SUPPORT_IO */
 

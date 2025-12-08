@@ -3,6 +3,71 @@ System
 
 :link_to_translation:`zh_CN:[中文]`
 
+Default LibC changed from Newlib to PicolibC
+--------------------------------------------
+
+Since ESP-IDF v6.0, the default LibC used in builds has switched to the PicolibC implementation.
+
+.. note::
+   PicolibC is a Newlib fork with a rewritten stdio implementation whose goal is to consume less memory.
+
+In most cases, no application behavior changes are expected, except for reduced binary size and less stack consumption on I/O operations.
+
+.. warning::
+   **Breaking change:** It is not possible to redefine stdin, stdout, and stderr for specific tasks as was possible with Newlib. These streams are global and shared between all tasks. This is POSIX-standardized behavior.
+
+:ref:`CONFIG_LIBC_PICOLIBC_NEWLIB_COMPATIBILITY`, which is enabled by default, provides limited compatibility with Newlib by providing thread-local copies of global stdin, stdout, stderr, and the getreent() implementation. If a library built with Newlib headers operates with "internal" fields of "struct reent", there may be task stack corruption. Note that manipulating "struct reent" fields is expected only by the Newlib library itself.
+
+If you are not linking against external libraries built against Newlib headers, you may disable :ref:`CONFIG_LIBC_PICOLIBC_NEWLIB_COMPATIBILITY` to save a small amount of memory.
+
+Newlib is still maintained in ESP-IDF toolchains. To switch to using it, select Newlib in menuconfig via the option LIBC_NEWLIB in :ref:`CONFIG_LIBC`.
+
+Comparison of Newlib vs Picolibc
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+There are a small example that shows the motivation of switching to Picolibc:
+
+.. code-block:: c
+
+    FILE *f = fopen("/dev/console", "w");
+    for (int i = 0; i < 10; i++)
+    {
+        fprintf(f, "hello world %s\n", "🤖");
+        fprintf(f, "%.1000f\n", 3.141592653589793);
+        fprintf(f, "%1000d\n", 42);
+    }
+
+The test code was compiled with both Newlib and Picolibc, and the results were compared on ESP32-C3:
+
+.. list-table:: Comparison of Newlib vs Picolibc
+   :header-rows: 1
+   :widths: 30 20 20 20
+   :stub-columns: 1
+
+   * - Metric
+     - Newlib
+     - Picolibc
+     - Difference
+   * - Binary size (bytes)
+     - 280,128
+     - 224,656
+     - 19.80%
+   * - Stack usage (bytes)
+     - 1,748
+     - 802
+     - 54.12%
+   * - Heap usage (bytes)
+     - 1,652
+     - 376
+     - 77.24%
+   * - Performance (CPU cycles)
+     - 278,232,026
+     - 279,823,800
+     - 0.59%
+
+.. note::
+   Even when :ref:`CONFIG_LIBC_NEWLIB_NANO_FORMAT` is enabled, which disables float formatting, applications with Picolibc are still smaller by 6% (224,592 vs 239,888 bytes).
+
 Xtensa
 ------
 

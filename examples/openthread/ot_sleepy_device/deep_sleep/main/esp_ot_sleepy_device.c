@@ -16,6 +16,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
+#include <sys/time.h>
 #include "esp_err.h"
 #include "esp_event.h"
 #include "esp_log.h"

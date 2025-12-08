@@ -123,11 +123,12 @@ if(CONFIG_SECURE_ENABLE_TEE AND NOT esp_tee_build)
         list(APPEND exclude_srv "attestation")
     endif()
 
+    idf_build_get_property(secure_service_headers_dir SECURE_SERVICE_HEADERS_DIR)
     execute_process(
         COMMAND python ${secure_service_yml_parser_py}
         "--sec_srv" ${secure_service_yml}
         "--exclude" ${exclude_srv}
-        WORKING_DIRECTORY ${CONFIG_DIR}
+        WORKING_DIRECTORY ${secure_service_headers_dir}
     )
 
     execute_process(

@@ -132,6 +132,18 @@ FORCE_INLINE_ATTR void __attribute__((always_inline)) rv_utils_set_cycle_count(u
 #endif
 }
 
+FORCE_INLINE_ATTR void rv_utils_set_threadptr(void *ptr)
+{
+    asm volatile("mv tp, %0" :: "r"(ptr));
+}
+
+FORCE_INLINE_ATTR void *rv_utils_get_threadptr(void)
+{
+    void *thread_ptr;
+    asm volatile("mv %0, tp" : "=r"(thread_ptr));
+    return thread_ptr;
+}
+
 /* ------------------------------------------------- CPU Interrupts ----------------------------------------------------
  *
  * ------------------------------------------------------------------------------------------------------------------ */

@@ -29,6 +29,11 @@ extern "C" size_t __cxx_eh_arena_size_get(void)
 #endif
 }
 
+extern "C" void __esp_idf_pthread_rwlock_lazy_allocation(void)
+{
+    /* TODO IDF-14862: remove */
+}
+
 /**
  * Dummy function used to force linking this file.
  * This works via -u __cxx_init_dummy flag in CMakeLists.txt

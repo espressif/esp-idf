@@ -70,7 +70,7 @@ idf_component_register(SRCS ${srcs}
 
 # NOTE: The ESP32-H2 and C61 ROM does not have sprintf/snprintf implementation,
 # thus newlib-nano implementation from the toolchain has been used.
-if(CONFIG_IDF_TARGET_ESP32H2 OR CONFIG_IDF_TARGET_ESP32C61)
+if(CONFIG_LIBC_NEWLIB AND (CONFIG_IDF_TARGET_ESP32H2 OR CONFIG_IDF_TARGET_ESP32C61))
     target_link_libraries(${COMPONENT_LIB} INTERFACE "--specs=nano.specs")
 endif()
 
@@ -84,6 +84,8 @@ target_link_libraries(${COMPONENT_LIB} PRIVATE "-u esp_app_desc_tee_include_impl
 
 # Newlib syscalls stub implementation: Linking symbol
 target_link_libraries(${COMPONENT_LIB} PRIVATE "-u esp_tee_include_syscalls_impl")
+
+target_link_libraries(${COMPONENT_LIB} PRIVATE "-u esp_tee_include_heap_impl")
 
 # cut PROJECT_VER and PROJECT_NAME to required 32 characters.
 idf_build_get_property(project_ver PROJECT_VER)

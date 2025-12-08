@@ -30,6 +30,19 @@ esp_err_t esp_console_setup_prompt(const char *prompt, esp_console_repl_com_t *r
     snprintf(repl_com->prompt, CONSOLE_PROMPT_MAX_LEN - 1, LOG_COLOR_I "%s " LOG_RESET_COLOR, prompt_temp);
 
     /* Figure out if the terminal supports escape sequences */
+    /* TODO IDF-14901: It is not appropriate to probe the current thread's console here.
+     * The esp_console_repl_task can open its own stdin/stdout for use.
+     * However, linenoiseProbe() cannot be moved to esp_console_repl_task
+     * to preserve user expectations. Consider the following usage pattern:
+     *     esp_console_start_repl(repl);
+     *     printf("!!!ready!!!");
+     * Users expect that when "!!!ready!!!" is printed, the console is already available.
+     * If linenoiseProbe() were moved to esp_console_repl_task, race conditions
+     * between threads combined with usleep() calls inside linenoiseProbe() could
+     * change this behavior. Currently, there is already a race between threads,
+     * but since esp_console_repl_task does not call any sleep functions, everything
+     * works as users expect.
+     */
     int probe_status = linenoiseProbe();
     if (probe_status) {
         /* zero indicates success */
@@ -159,7 +172,6 @@ void esp_console_repl_task(void *args)
 {
     esp_console_repl_universal_t *repl_conf = (esp_console_repl_universal_t *) args;
     esp_console_repl_com_t *repl_com = &repl_conf->repl_com;
-    const int uart_channel = repl_conf->uart_channel;
 
     /* Waiting for task notify. This happens when `esp_console_start_repl()`
      * function is called. */
@@ -172,6 +184,16 @@ void esp_console_repl_task(void *args)
     /* Change standard input and output of the task if the requested UART is
      * NOT the default one. This block will replace stdin, stdout and stderr.
      */
+#if CONFIG_LIBC_PICOLIBC
+    // TODO IDF-14901
+    if (repl_com->_stdin) {
+        stdin = repl_com->_stdin;
+        stdout = stderr = repl_com->_stdout;
+    } else {
+        linenoise_init_with_global_stdio();
+    }
+#else
+    const int uart_channel = repl_conf->uart_channel;
     if (uart_channel != CONFIG_ESP_CONSOLE_UART_NUM) {
         char path[CONSOLE_PATH_MAX_LEN] = { 0 };
         snprintf(path, CONSOLE_PATH_MAX_LEN, "/dev/uart/%d", uart_channel);
@@ -180,6 +202,7 @@ void esp_console_repl_task(void *args)
         stdout = fopen(path, "w");
         stderr = stdout;
     }
+#endif
 
     /* Disable buffering on stdin of the current task.
      * If the console is ran on a different UART than the default one,
@@ -230,6 +253,10 @@ void esp_console_repl_task(void *args)
         /* linenoise allocates line buffer on the heap, so need to free it */
         linenoiseFree(line);
     }
+
+#if CONFIG_LIBC_PICOLIBC
+    linenoise_close_stdio();
+#endif
 
     if (repl_com->state_mux != NULL) {
         xSemaphoreGive(repl_com->state_mux);
