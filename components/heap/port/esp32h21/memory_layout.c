@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,7 +11,7 @@
 #include "soc/soc.h"
 #include "heap_memory_layout.h"
 #include "esp_heap_caps.h"
-
+#include "esp_rom_caps.h"
 
 /**
  * @brief Memory type descriptors. These describe the capabilities of a type of memory in the SoC.
@@ -65,6 +65,17 @@ const size_t soc_memory_type_count = sizeof(soc_memory_types) / sizeof(soc_memor
  */
 #define APP_USABLE_DRAM_END           (SOC_ROM_STACK_START - SOC_ROM_STACK_SIZE)
 
+#if CONFIG_SECURE_BOOT && ESP_ROM_SUPPORT_SECURE_BOOT_FAST_WAKEUP
+#if CONFIG_SECURE_BOOT_ECDSA_KEY_LEN_384_BITS
+#define ESP_SECURE_BOOT_DIGEST_LEN 48
+#else /* !CONFIG_SECURE_BOOT_ECDSA_KEY_LEN_384_BITS */
+#define ESP_SECURE_BOOT_DIGEST_LEN 32
+#endif /* CONFIG_SECURE_BOOT_ECDSA_KEY_LEN_384_BITS */
+#define APP_USABLE_RTC_MEM_END              (SOC_RTC_DATA_HIGH - ESP_SECURE_BOOT_DIGEST_LEN)
+#else
+#define APP_USABLE_RTC_MEM_END              (SOC_RTC_DATA_HIGH)
+#endif
+
 const soc_memory_region_t soc_memory_regions[] = {
     { 0x40800000,           0x10000,                                    SOC_MEMORY_TYPE_RAM,    0x40800000,             false}, //D/IRAM level 0
     { 0x40810000,           0x10000,                                    SOC_MEMORY_TYPE_RAM,    0x40810000,             false}, //D/IRAM level 1
@@ -73,7 +84,7 @@ const soc_memory_region_t soc_memory_regions[] = {
     { 0x40840000,           APP_USABLE_DRAM_END-0x40840000,             SOC_MEMORY_TYPE_RAM,    0x40840000,             false}, //D/IRAM level 4
     { APP_USABLE_DRAM_END,  (SOC_DIRAM_DRAM_HIGH-APP_USABLE_DRAM_END),  SOC_MEMORY_TYPE_RAM,    APP_USABLE_DRAM_END,    true},  //D/IRAM level 4
 #ifdef CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
-    { 0x50000000,           0x1000,                                     SOC_MEMORY_TYPE_RTCRAM, 0,                      false}, //Fast RTC memory
+    { 0x50000000,           (APP_USABLE_RTC_MEM_END - SOC_RTC_DATA_LOW),SOC_MEMORY_TYPE_RTCRAM, 0,                      false}, //Fast RTC memory
 #endif
 };
 
