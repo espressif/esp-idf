@@ -98,3 +98,7 @@ config ESP_ROM_HAS_VERSION
 config ESP_ROM_SUPPORT_DEEP_SLEEP_WAKEUP_STUB
     bool
     default y
+
+config ESP_ROM_SUPPORT_SECURE_BOOT_FAST_WAKEUP
+    bool
+    default y
