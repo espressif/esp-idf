@@ -14,7 +14,13 @@
 #include <pthread.h>
 #include <unistd.h>
 
+#include "soc/soc_caps.h"
+#include "rom/libc_stubs.h"
+
+#include "esp_attr.h"
+#include "esp_cpu.h"
 #include "esp_random.h"
+
 #include "sdkconfig.h"
 
 #if CONFIG_LIBC_NEWLIB
@@ -76,7 +82,44 @@ int _getentropy_r(struct _reent *r, void *buffer, size_t length)
     esp_fill_random(buffer, length);
     return 0;
 }
+
+struct syscall_stub_table *syscall_table_ptr;
+static struct syscall_stub_table *syscall_table_ptr_ree;
+
+static struct syscall_stub_table s_stub_table_tee = {
+    .__getreent = &__getreent,
+};
+
+void IRAM_ATTR syscall_enter_tee(void)
+{
+    if (syscall_table_ptr) {
+        syscall_table_ptr_ree = syscall_table_ptr;
+        syscall_table_ptr = &s_stub_table_tee;
+    }
+}
+
+void IRAM_ATTR syscall_exit_tee(void)
+{
+    if (syscall_table_ptr_ree) {
+        syscall_table_ptr = syscall_table_ptr_ree;
+        syscall_table_ptr_ree = NULL;
+    }
+}
 #else
+/*
+ * Picolibc does not initialize 'errno' and places it in the TBSS section.
+ *
+ * To allow convenient initialization and support interoperability with Newlib,
+ * 'errno' is defined in the TDATA section. The linker script ensures that
+ * it is positioned at the beginning of the TDATA segment.
+ */
+__thread int errno __attribute__((section(".tdata.errno"))) = 0;
+
+int *__errno(void)
+{
+    return &errno;
+}
+
 int fstat(int fd, struct stat *st)
 {
     errno = ENOSYS;
@@ -122,6 +165,40 @@ int getentropy(void *buffer, size_t length)
 {
     esp_fill_random(buffer, length);
     return 0;
+}
+
+int open(const char *path, int flags, ...)
+{
+    errno = ENOSYS;
+    return -1;
+}
+
+int rename(const char *src, const char *dst)
+{
+    errno = ENOSYS;
+    return -1;
+}
+
+int unlink(const char *path)
+{
+    errno = ENOSYS;
+    return -1;
+}
+
+extern uint32_t _tee_tdata_start;
+static void *s_tp_ree[SOC_CPU_CORES_NUM];
+
+void IRAM_ATTR syscall_enter_tee(void)
+{
+    int core_id = esp_cpu_get_core_id();
+    s_tp_ree[core_id] = esp_cpu_get_threadptr();
+    esp_cpu_set_threadptr(&_tee_tdata_start);
+}
+
+void IRAM_ATTR syscall_exit_tee(void)
+{
+    int core_id = esp_cpu_get_core_id();
+    esp_cpu_set_threadptr(s_tp_ree[core_id]);
 }
 #endif // CONFIG_LIBC_NEWLIB
 

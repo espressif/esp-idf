@@ -158,6 +158,20 @@ menu "ESP-TEE (Trusted Execution Environment)"
             Note: All accesses to the TEE partitions over SPI0 (i.e. the MMU) are blocked
             unconditionally.
 
+    choice SECURE_TEE_LIBC
+        prompt "LibC to build the TEE application with"
+        depends on SECURE_ENABLE_TEE
+        default SECURE_TEE_LIBC_NEWLIB if IDF_TOOLCHAIN_CLANG
+        default SECURE_TEE_LIBC_PICOLIBC
+
+        config SECURE_TEE_LIBC_PICOLIBC
+            bool "Picolibc"
+            depends on !IDF_TOOLCHAIN_CLANG
+        config SECURE_TEE_LIBC_NEWLIB
+            bool "NewLib"
+
+    endchoice
+
     config SECURE_TEE_DEBUG_MODE
         bool "Enable Debug Mode"
         default y

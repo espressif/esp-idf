@@ -37,55 +37,8 @@ int __retarget_lock_try_acquire(struct __lock * p);
 int __retarget_lock_try_acquire_recursive(struct __lock *p);
 #endif
 
-#if CONFIG_SECURE_ENABLE_TEE
-struct _reent_stub {
-    int _errno;
-    __FILE *_stdin, *_stdout, *_stderr;
-    int _inc;
-    char *_emergency;
-    int _reserved_0;
-    int _reserved_1;
-    struct __locale_t *_locale;
-    void *_mp;
-    void (*__cleanup)(struct _reent *);
-    int _gamma_signgam;
-    int _cvtlen;
-    char *_cvtbuf;
-    struct _rand48 *_r48;
-#if 0 /* unlikely used fields in ROM implementation */
-    struct __tm *_localtime_buf;
-    char *_asctime_buf;
-    void (** _sig_func)(int);
-    struct _atexit *_reserved_6;
-    struct _atexit _reserved_7;
-    struct _glue _reserved_8;
-    __FILE *__sf;
-    struct _misc_reent *_misc;
-    char *_signal_buf;
-#endif
-};
-
-void *__getreent_rom_stub(void)
-{
-    static struct _reent_stub reent_stub;
-    return &reent_stub;
-}
-#endif // SECURE_ENABLE_TEE
-
 static struct syscall_stub_table s_stub_table = {
-#if CONFIG_SECURE_ENABLE_TEE
-    /*
-     * ESP-TEE uses snprintf() from ROM, which requires at least a fake __getreent stub.
-     *
-     * NOTE: If floating-point variables are intended to be used,
-     *       the following fields must be specified in the syscall_stub_table:
-     *   ._printf_float =
-     *   ._scanf_float =
-     */
-    .__getreent = (void *)__getreent_rom_stub,
-#else
     .__getreent = (void *)abort,
-#endif
     ._malloc_r = (void *)abort,
     ._free_r = (void *)abort,
     ._realloc_r = (void *)abort,

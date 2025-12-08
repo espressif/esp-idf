@@ -39,6 +39,8 @@
     .global esp_tee_global_interrupt_handler
     .global esp_tee_service_dispatcher
     .global _tee_s_entry
+    .global syscall_enter_tee
+    .global syscall_exit_tee
 
     .section .data
     .balign 4
@@ -384,6 +386,8 @@ _skip_thresh_restore:
     STACK_GUARD_POST_SWITCH t3 1 _ns_sp_min _ns_sp_max
     fence
 
+    call syscall_exit_tee
+
     /* Backup the A0 register
      * This point is reached after an ecall is triggered after executing the secure service.
      * The A0 register contains the return value of the corresponding service.
@@ -452,6 +456,8 @@ _process_ecall:
     li      t0, MSTATUS_MPP
     csrs    mstatus, t0
 
+    call syscall_enter_tee
+
     mret
 
     /* This point is reached after servicing a U-mode interrupt occurred
@@ -471,6 +477,8 @@ _rtn_from_ns_int:
     /* Set the privilege mode to transition to after mret to M-mode */
     li      t0, MSTATUS_MPP
     csrs    mstatus, t0
+
+    call syscall_enter_tee
 
     /* Restore register context and resume the secure service */
     restore_mepc
@@ -544,6 +552,8 @@ _tee_ns_intr_handler:
     csrs    mideleg, t0
 
     STACK_GUARD_POST_SWITCH t3 1 _ns_sp_min _ns_sp_max
+
+    call syscall_exit_tee
 
     /* Place magic bytes in all the general registers */
     store_magic_general_regs
