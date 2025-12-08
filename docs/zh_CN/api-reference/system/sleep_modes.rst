@@ -4,6 +4,7 @@
 :link_to_translation:`en:[English]`
 
 {IDF_TARGET_SPI_POWER_DOMAIN:default="VDD_SPI", esp32="VDD_SDIO"}
+{IDF_TARGET_RTC_POWER_DOMAIN:default="VDD3P3_RTC", esp32c5="VDDPST1", esp32c6="VDDPST1", esp32c61="VDDPST1", esp32p4="VDD_LP"}
 
 概述
 --------
@@ -283,7 +284,7 @@ RTC 控制器中内嵌定时器，可用于在预定义的时间到达后唤醒�
 
 .. only:: SOC_RTCIO_WAKE_SUPPORTED
 
-    GPIO 唤醒（仅适用于 Light-sleep 模式）
+    Light-sleep 模式下的 GPIO 唤醒
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     .. only:: SOC_PM_SUPPORT_EXT0_WAKEUP or SOC_PM_SUPPORT_EXT1_WAKEUP
@@ -317,6 +318,19 @@ RTC 控制器中内嵌定时器，可用于在预定义的时间到达后唤醒�
             .. only::  not SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
 
                 在 Light-sleep 模式下，如果设置 Kconfig 选项 :ref:`CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP`，为了继续使用 :cpp:func:`gpio_wakeup_enable` 用于 GPIO 唤醒， 需要先调用 :cpp:func:`rtc_gpio_init` 和 :cpp:func:`rtc_gpio_set_direction`，用于设置 RTC IO 为输入模式。
+
+    .. only:: SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
+
+        .. _deep_sleep_gpio_wakeup:
+
+        Deep-sleep 模式下的 GPIO 唤醒
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+        除了 Light-sleep 模式下的 GPIO 唤醒之外，{IDF_TARGET_NAME} 还支持 Deep-sleep 模式下的 GPIO 唤醒。
+
+        该唤醒源由 :cpp:func:`esp_deep_sleep_enable_gpio_wakeup` 函数实现，用户可以配置一个或多个 GPIO 管脚以及唤醒电平（高电平或低电平）。只有由 {IDF_TARGET_RTC_POWER_DOMAIN} 电源域供电的 GPIO 管脚才能用作 Deep-sleep GPIO 唤醒源。具体支持的管脚请参考 `datasheet <{IDF_TARGET_DATASHEET_CN_URL}>`__ > IO 管脚。
+
+        完整示例请参考 :example:`system/deep_sleep`。
 
 .. only:: not SOC_RTCIO_WAKE_SUPPORTED and not esp32h2
 
