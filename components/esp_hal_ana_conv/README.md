@@ -5,7 +5,7 @@
 
 ## Overview
 
-The `esp_hal_ana_conv` component provides a **Hardware Abstraction Layer** for analog conversion related peripherals across all ESP-IDF supported targets. This HAL currently supports Analog-to-Digital Converter (ADC), Digital-to-Analog Converter (DAC) and other analog conversion related peripherals. The HAL enables analog signal acquisition, generation, and monitoring capabilities.
+The `esp_hal_ana_conv` component provides a **Hardware Abstraction Layer** for analog conversion related peripherals across all ESP-IDF supported targets. This HAL currently supports Analog-to-Digital Converter (ADC), Digital-to-Analog Converter (DAC), Temperature Sensor and other analog conversion related peripherals. The HAL enables analog signal acquisition, generation, monitoring, and temperature measurement capabilities.
 
 ## Architecture
 
@@ -33,6 +33,12 @@ This HAL supports various DAC controller types depending on the ESP chip:
 
 - **RTC Controller**: Direct voltage output control
 - **DMA Controller**: High-speed data output via I2S or SPI DMA
+
+### Temperature Sensor Controllers
+
+This HAL supports temperature sensor functionality depending on the ESP chip:
+
+- **Temperature Sensor**: On-chip temperature monitoring with automatic range management
 
 ## ADC Features
 
@@ -88,9 +94,32 @@ This HAL supports various DAC controller types depending on the ESP chip:
 - **ADC-DAC Synchronization**: Synchronized operation with ADC RTC controller
 - **Power Management**: Independent power control per channel
 
+## Temperature Sensor Features
+
+### Measurement Capabilities
+
+- **Temperature Range**: Typically -40°C to 125°C (chip-dependent)
+- **Automatic Range Management**: Five configurable temperature ranges with optimized accuracy for each range
+- **Raw Value Reading**: Direct access to raw temperature sensor values
+- **Degree Conversion**: Automatic conversion from raw values to temperature in degrees Celsius
+
+### Range Management
+
+- **Multi-Range Support**: Five temperature ranges with different offset and error characteristics
+- **Dynamic Range Switching**: Automatic range adjustment based on measured temperature for optimal accuracy
+- **Range Tracking**: HAL layer maintains range state to minimize unnecessary range switches
+
+### Advanced Features
+
+- **Sleep Retention**: Register context retention during sleep modes (chip-dependent)
+- **Clock Source Selection**: Flexible clock source configuration (XTAL, FOSC, etc., chip-dependent)
+- **ETM Support**: Event Task Matrix integration for temperature monitoring events and tasks
+- **Wake-up Functionality**: Temperature-based wake-up from sleep modes
+- **Power Control**: Independent power and clock gating control
+
 ## Usage
 
-The HAL functions primarily serve ESP-IDF peripheral drivers such as `esp_adc` and `esp_driver_dac`.
+The HAL functions primarily serve ESP-IDF peripheral drivers such as `esp_adc`, `esp_driver_dac`, and `esp_driver_tsens`.
 
 Advanced developers can use these interfaces directly when implementing custom drivers, with the understanding that API stability is not guaranteed.
 

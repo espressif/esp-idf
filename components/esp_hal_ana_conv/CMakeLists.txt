@@ -15,6 +15,7 @@ if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/${target}/include")
     list(APPEND includes "${target}/include")
 endif()
 
+# ADC related source files
 if(CONFIG_SOC_ADC_SUPPORTED)
     list(APPEND srcs "${target}/adc_periph.c" "adc_hal_common.c" "adc_oneshot_hal.c")
     if(CONFIG_SOC_ADC_DMA_SUPPORTED)
@@ -22,8 +23,14 @@ if(CONFIG_SOC_ADC_SUPPORTED)
     endif()
 endif()
 
+# DAC related source files
 if(CONFIG_SOC_DAC_SUPPORTED)
     list(APPEND srcs "${target}/dac_periph.c")
+endif()
+
+# Temperature sensor related source files
+if(CONFIG_SOC_TEMP_SENSOR_SUPPORTED)
+    list(APPEND srcs "temperature_sensor_hal.c" "${target}/temperature_sensor_periph.c")
 endif()
 
 idf_component_register(SRCS ${srcs}

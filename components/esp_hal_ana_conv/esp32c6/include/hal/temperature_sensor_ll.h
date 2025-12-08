@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -45,7 +45,7 @@ extern "C" {
 #define TEMPERATURE_SENSOR_LL_MEASURE_MAX    (125)
 #define TEMPERATURE_SENSOR_LL_MEASURE_MIN    (-40)
 
-#define TEMPERATURE_SENSOR_LL_INTR_MASK      SARADC_TSENS_INT_ST
+#define TEMPERATURE_SENSOR_LL_INTR_MASK      APB_SARADC_APB_SARADC_TSENS_INT_ST
 
 #define TEMPERATURE_SENSOR_LL_ETM_EVENT_TABLE(event)                     \
     (uint32_t [TEMPERATURE_SENSOR_EVENT_MAX]){                           \
@@ -70,7 +70,7 @@ typedef enum {
  */
 static inline void temperature_sensor_ll_enable(bool enable)
 {
-    ADC.saradc_apb_tsens_ctrl.saradc_tsens_pu = enable;
+    APB_SARADC.saradc_apb_tsens_ctrl.saradc_tsens_pu = enable;
 }
 
 /**
@@ -91,7 +91,7 @@ static inline void temperature_sensor_ll_reset_module(void)
 }
 
 /**
- * @brief Select the clock source for temperature sensor. On ESP32-C61, temperautre sensor
+ * @brief Select the clock source for temperature sensor. On ESP32-C6, temperautre sensor
  *        can use XTAL or FOSC. To make it convenience, suggest using XTAL all the time.
  *
  * @param clk_src refer to ``temperature_sensor_clk_src_t``
@@ -100,15 +100,15 @@ static inline void temperature_sensor_ll_clk_sel(temperature_sensor_clk_src_t cl
 {
     uint8_t clk_sel = 0;
     switch (clk_src) {
-        case TEMPERATURE_SENSOR_CLK_SRC_XTAL:
-            clk_sel = 1;
-            break;
-        case TEMPERATURE_SENSOR_CLK_SRC_RC_FAST:
-            clk_sel = 0;
-            break;
-        default:
-            HAL_ASSERT(false);
-            break;
+    case TEMPERATURE_SENSOR_CLK_SRC_XTAL:
+        clk_sel = 1;
+        break;
+    case TEMPERATURE_SENSOR_CLK_SRC_RC_FAST:
+        clk_sel = 0;
+        break;
+    default:
+        HAL_ASSERT(false);
+        break;
     }
     PCR.tsens_clk_conf.tsens_clk_sel = clk_sel;
 }
@@ -131,7 +131,7 @@ static inline void temperature_sensor_ll_set_range(uint32_t range)
 __attribute__((always_inline))
 static inline uint32_t temperature_sensor_ll_get_raw_value(void)
 {
-    return HAL_FORCE_READ_U32_REG_FIELD(ADC.saradc_apb_tsens_ctrl, saradc_tsens_out);
+    return HAL_FORCE_READ_U32_REG_FIELD(APB_SARADC.saradc_apb_tsens_ctrl, saradc_tsens_out);
 }
 
 /**
@@ -155,7 +155,7 @@ static inline uint32_t temperature_sensor_ll_get_offset(void)
  */
 static inline uint32_t temperature_sensor_ll_get_clk_div(void)
 {
-    return HAL_FORCE_READ_U32_REG_FIELD(ADC.saradc_apb_tsens_ctrl, saradc_tsens_clk_div);
+    return HAL_FORCE_READ_U32_REG_FIELD(APB_SARADC.saradc_apb_tsens_ctrl, saradc_tsens_clk_div);
 }
 
 /**
@@ -168,19 +168,19 @@ static inline uint32_t temperature_sensor_ll_get_clk_div(void)
  */
 static inline void temperature_sensor_ll_set_clk_div(uint8_t clk_div)
 {
-    HAL_FORCE_MODIFY_U32_REG_FIELD(ADC.saradc_apb_tsens_ctrl, saradc_tsens_clk_div, clk_div);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(APB_SARADC.saradc_apb_tsens_ctrl, saradc_tsens_clk_div, clk_div);
 }
 
 /**
  * @brief Choose the wake-up mode for temperature sensor
  *
- * @note ESP32-C61 does not support difference mode.
+ * @note ESP32-C6 does not support difference mode.
  *
  * @param mode 0: Absolute value mode. 1: Difference mode.
  */
 static inline void temperature_sensor_ll_wakeup_mode(temperature_sensor_ll_wakeup_mode_t mode)
 {
-    ADC.tsens_wake.saradc_wakeup_mode = mode;
+    APB_SARADC.tsens_wake.saradc_wakeup_mode = mode;
 }
 
 /**
@@ -191,7 +191,7 @@ static inline void temperature_sensor_ll_wakeup_mode(temperature_sensor_ll_wakeu
 __attribute__((always_inline))
 static inline uint8_t temperature_sensor_ll_get_wakeup_reason(void)
 {
-    return ADC.tsens_wake.saradc_wakeup_over_upper_th;
+    return APB_SARADC.tsens_wake.saradc_wakeup_over_upper_th;
 }
 
 /**
@@ -201,7 +201,7 @@ static inline uint8_t temperature_sensor_ll_get_wakeup_reason(void)
  */
 static inline void temperature_sensor_ll_wakeup_enable(bool en)
 {
-    ADC.tsens_wake.saradc_wakeup_en = en;
+    APB_SARADC.tsens_wake.saradc_wakeup_en = en;
 }
 
 /**
@@ -211,7 +211,7 @@ static inline void temperature_sensor_ll_wakeup_enable(bool en)
  */
 static inline void temperature_sensor_ll_set_th_low_val(uint8_t th_low)
 {
-    HAL_FORCE_MODIFY_U32_REG_FIELD(ADC.tsens_wake, saradc_wakeup_th_low, th_low);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(APB_SARADC.tsens_wake, saradc_wakeup_th_low, th_low);
 }
 
 /**
@@ -221,7 +221,7 @@ static inline void temperature_sensor_ll_set_th_low_val(uint8_t th_low)
  */
 static inline void temperature_sensor_ll_set_th_high_val(uint8_t th_high)
 {
-    HAL_FORCE_MODIFY_U32_REG_FIELD(ADC.tsens_wake, saradc_wakeup_th_high, th_high);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(APB_SARADC.tsens_wake, saradc_wakeup_th_high, th_high);
 }
 
 /**
@@ -231,7 +231,7 @@ static inline void temperature_sensor_ll_set_th_high_val(uint8_t th_high)
  */
 static inline void temperature_sensor_ll_enable_intr(bool enable)
 {
-    ADC.saradc_int_ena.saradc_adc_tsens_int_ena = enable;
+    APB_SARADC.saradc_int_ena.saradc_apb_saradc_tsens_int_ena = enable;
 }
 
 /**
@@ -240,7 +240,7 @@ static inline void temperature_sensor_ll_enable_intr(bool enable)
 __attribute__((always_inline))
 static inline void temperature_sensor_ll_clear_intr(void)
 {
-    ADC.saradc_int_clr.saradc_adc_tsens_int_clr = 1;
+    APB_SARADC.saradc_int_clr.saradc_apb_saradc_tsens_int_clr = 1;
 }
 
 /**
@@ -248,7 +248,7 @@ static inline void temperature_sensor_ll_clear_intr(void)
  */
 static inline volatile void *temperature_sensor_ll_get_intr_status(void)
 {
-    return &ADC.saradc_int_st;
+    return &APB_SARADC.saradc_int_st;
 }
 
 /**
@@ -258,7 +258,7 @@ static inline volatile void *temperature_sensor_ll_get_intr_status(void)
  */
 static inline void temperature_sensor_ll_sample_enable(bool en)
 {
-    ADC.tsens_sample.saradc_tsens_sample_en = en;
+    APB_SARADC.tsens_sample.saradc_tsens_sample_en = en;
 }
 
 /**
@@ -268,7 +268,7 @@ static inline void temperature_sensor_ll_sample_enable(bool en)
  */
 static inline void temperature_sensor_ll_set_sample_rate(uint16_t rate)
 {
-    HAL_FORCE_MODIFY_U32_REG_FIELD(ADC.tsens_sample, saradc_tsens_sample_rate, rate);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(APB_SARADC.tsens_sample, saradc_tsens_sample_rate, rate);
 }
 
 /**
@@ -278,9 +278,9 @@ static inline void temperature_sensor_ll_set_sample_rate(uint16_t rate)
  */
 static inline int temperature_sensor_ll_load_calib_param(void)
 {
-    uint32_t cal_temp = EFUSE0.rd_sys_part1_data4.temperature_sensor;
+    uint32_t cal_temp = EFUSE.rd_sys_part1_data4.temp_calib;
     // BIT(8) stands for sign: 1: negative, 0: positive
-    int tsens_cal = ((cal_temp & BIT(8)) != 0)? -(uint8_t)cal_temp: (uint8_t)cal_temp;
+    int tsens_cal = ((cal_temp & BIT(8)) != 0) ? -(uint8_t)cal_temp : (uint8_t)cal_temp;
     return tsens_cal;
 }
 
@@ -288,10 +288,16 @@ static inline int temperature_sensor_ll_load_calib_param(void)
  * @brief Structure for temperature sensor related register values
  */
 typedef struct {
-    uint32_t tsens_ctrl;      // Temperature sensor control register (SARADC_APB_TSENS_CTRL_REG)
-    uint32_t tsens_ctrl2;     // Temperature sensor control register 2 (SARADC_TSENS_CTRL2_REG)
+    uint32_t tsens_ctrl;      // Temperature sensor control register (APB_SARADC_APB_TSENS_CTRL_REG)
+    uint32_t tsens_ctrl2;     // Temperature sensor control register 2 (APB_SARADC_TSENS_CTRL2_REG)
     uint32_t tsens_wake;      // Temperature sensor wake register (APB_TSENS_WAKE_REG)
     uint32_t tsens_sample;    // Temperature sensor sample register (APB_TSENS_SAMPLE_REG)
+    uint32_t cali;            // ADC calibration register
+    uint32_t clkm_conf;       // ADC clock configuration register
+    uint32_t int_ena;         // ADC interrupt enable register
+    uint32_t int_raw;         // ADC interrupt raw status register
+    uint32_t int_st;          // ADC interrupt status register
+    uint32_t int_clr;         // ADC interrupt clear register
 } tsens_ll_reg_values_t;
 
 /**
@@ -301,10 +307,16 @@ typedef struct {
  */
 static inline void tsens_ll_backup_registers(tsens_ll_reg_values_t *reg_values)
 {
-    reg_values->tsens_ctrl = ADC.saradc_apb_tsens_ctrl.val;
-    reg_values->tsens_ctrl2 = ADC.saradc_tsens_ctrl2.val;
-    reg_values->tsens_wake = ADC.tsens_wake.val;
-    reg_values->tsens_sample = ADC.tsens_sample.val;
+    reg_values->tsens_ctrl = APB_SARADC.saradc_apb_tsens_ctrl.val;
+    reg_values->tsens_ctrl2 = APB_SARADC.saradc_tsens_ctrl2.val;
+    reg_values->tsens_wake = APB_SARADC.tsens_wake.val;
+    reg_values->tsens_sample = APB_SARADC.tsens_sample.val;
+    reg_values->cali = APB_SARADC.saradc_cali.val;
+    reg_values->clkm_conf = APB_SARADC.saradc_clkm_conf.val;
+    reg_values->int_ena = APB_SARADC.saradc_int_ena.val;
+    reg_values->int_raw = APB_SARADC.saradc_int_raw.val;
+    reg_values->int_st = APB_SARADC.saradc_int_st.val;
+    reg_values->int_clr = APB_SARADC.saradc_int_clr.val;
 }
 
 /**
@@ -314,10 +326,16 @@ static inline void tsens_ll_backup_registers(tsens_ll_reg_values_t *reg_values)
  */
 static inline void tsens_ll_restore_registers(const tsens_ll_reg_values_t *reg_values)
 {
-    ADC.saradc_apb_tsens_ctrl.val = reg_values->tsens_ctrl;
-    ADC.saradc_tsens_ctrl2.val = reg_values->tsens_ctrl2;
-    ADC.tsens_wake.val = reg_values->tsens_wake;
-    ADC.tsens_sample.val = reg_values->tsens_sample;
+    APB_SARADC.saradc_apb_tsens_ctrl.val = reg_values->tsens_ctrl;
+    APB_SARADC.saradc_tsens_ctrl2.val = reg_values->tsens_ctrl2;
+    APB_SARADC.tsens_wake.val = reg_values->tsens_wake;
+    APB_SARADC.tsens_sample.val = reg_values->tsens_sample;
+    APB_SARADC.saradc_cali.val = reg_values->cali;
+    APB_SARADC.saradc_clkm_conf.val = reg_values->clkm_conf;
+    APB_SARADC.saradc_int_ena.val = reg_values->int_ena;
+    APB_SARADC.saradc_int_raw.val = reg_values->int_raw;
+    APB_SARADC.saradc_int_st.val = reg_values->int_st;
+    APB_SARADC.saradc_int_clr.val = reg_values->int_clr;
 }
 
 #ifdef __cplusplus
