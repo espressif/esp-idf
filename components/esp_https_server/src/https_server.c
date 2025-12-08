@@ -40,7 +40,13 @@ static void http_dispatch_event_to_event_loop(int32_t event_id, const void* even
     }
 }
 #else // CONFIG_ESP_HTTPS_SERVER_EVENTS
-#define http_dispatch_event_to_event_loop(event_id, event_data, event_data_size) do {} while (0)
+static void http_dispatch_event_to_event_loop(int32_t event_id, const void* event_data, size_t event_data_size)
+{
+    // Events disabled, do nothing
+    (void) event_id;
+    (void) event_data;
+    (void) event_data_size;
+}
 #endif // CONFIG_ESP_HTTPS_SERVER_EVENTS
 
 /**

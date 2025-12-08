@@ -20,6 +20,7 @@ extern "C" {
 
 #if CONFIG_ESP_HTTPS_SERVER_EVENTS || __DOXYGEN__
 ESP_EVENT_DECLARE_BASE(ESP_HTTPS_SERVER_EVENT);
+#endif // CONFIG_ESP_HTTPS_SERVER_EVENTS || __DOXYGEN__
 
 typedef enum {
     HTTPS_SERVER_EVENT_ERROR = 0,       /*!< This event occurs when there are any errors during execution */
@@ -30,7 +31,6 @@ typedef enum {
     HTTPS_SERVER_EVENT_DISCONNECTED,    /*!< The connection has been disconnected */
     HTTPS_SERVER_EVENT_STOP,            /*!< This event occurs when HTTPS Server is stopped */
 } esp_https_server_event_id_t;
-#endif // CONFIG_ESP_HTTPS_SERVER_EVENTS || __DOXYGEN__
 
 typedef enum {
     HTTPD_SSL_TRANSPORT_SECURE,      // SSL Enabled
