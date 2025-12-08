@@ -22,6 +22,7 @@
 #include "bootloader_memory_utils.h"
 #include "soc/soc_caps.h"
 #include "hal/cache_ll.h"
+#include "sdkconfig.h"
 
 #define ALIGN_UP(num, align) (((num) + ((align) - 1)) & ~((align) - 1))
 
@@ -106,6 +107,22 @@ static esp_err_t process_checksum(bootloader_sha256_handle_t sha_handle, uint32_
 
 static esp_err_t __attribute__((unused)) verify_secure_boot_signature(bootloader_sha256_handle_t sha_handle, esp_image_metadata_t *data, uint8_t *image_digest, uint8_t *verified_digest);
 static esp_err_t __attribute__((unused)) verify_simple_hash(bootloader_sha256_handle_t sha_handle, esp_image_metadata_t *data);
+
+#if BOOTLOADER_BUILD && (SECURE_BOOT_CHECK_SIGNATURE == 1)
+#if CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP
+static bool skip_verify(esp_image_load_mode_t mode, bool verify_sha)
+{
+    // Multi level check to ensure that its a legit exit from deep sleep case
+    return (esp_rom_get_reset_reason(0) == RESET_REASON_CORE_DEEP_SLEEP &&
+            mode == ESP_IMAGE_LOAD_NO_VALIDATE &&
+            !verify_sha) ? true : false;
+}
+#else
+
+#define skip_verify(mode, verify_sha) (false)
+
+#endif
+#endif // BOOTLOADER_BUILD && (SECURE_BOOT_CHECK_SIGNATURE == 1)
 
 static esp_err_t image_load(esp_image_load_mode_t mode, const esp_partition_pos_t *part, esp_image_metadata_t *data)
 {
@@ -202,9 +219,9 @@ static esp_err_t image_load(esp_image_load_mode_t mode, const esp_partition_pos_
        "only verify signature in bootloader" into the macro so it's tested multiple times.
      */
 #if CONFIG_SECURE_BOOT_V2_ENABLED
-    ESP_FAULT_ASSERT(!esp_secure_boot_enabled() || memcmp(image_digest, verified_digest, HASH_LEN) == 0);
+    ESP_FAULT_ASSERT(!esp_secure_boot_enabled() || skip_verify(mode, verify_sha)|| memcmp(image_digest, verified_digest, HASH_LEN) == 0);
 #else // Secure Boot V1 on ESP32, only verify signatures for apps not bootloaders
-    ESP_FAULT_ASSERT(data->start_addr == ESP_BOOTLOADER_OFFSET || memcmp(image_digest, verified_digest, HASH_LEN) == 0);
+    ESP_FAULT_ASSERT(data->start_addr == ESP_BOOTLOADER_OFFSET || skip_verify(mode, verify_sha) || memcmp(image_digest, verified_digest, HASH_LEN) == 0);
 #endif
 
 #endif // SECURE_BOOT_CHECK_SIGNATURE
