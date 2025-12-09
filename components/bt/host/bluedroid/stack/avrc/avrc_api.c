@@ -545,7 +545,22 @@ static void avrc_msg_cback(UINT8 handle, UINT8 label, UINT8 cr,
 
     p_data  = (UINT8 *)(p_pkt + 1) + p_pkt->offset;
     memset(&msg, 0, sizeof(tAVRC_MSG) );
-    {
+
+    if (p_pkt->layer_specific == AVCT_DATA_BROWSE) {
+        // opcode = AVRC_OP_BROWSE;
+        // msg.browse.hdr.ctype = cr;
+        // msg.browse.p_browse_data = p_data;
+        // msg.browse.browse_len = p_pkt->len;
+        // msg.browse.p_browse_pkt = p_pkt;
+        AVRC_TRACE_ERROR("BROWSE CHANNEL NOT SUPPORTED NOW!");
+        osi_free(p_pkt);
+        return;
+    } else {
+        if (p_pkt->len < AVRC_AVC_HDR_SIZE) {
+            AVRC_TRACE_WARNING("Bad message length:%d (< %d)", p_pkt->len, AVRC_AVC_HDR_SIZE);
+            osi_free(p_pkt);
+            return;
+        }
         msg.hdr.ctype           = p_data[0] & AVRC_CTYPE_MASK;
         AVRC_TRACE_DEBUG("avrc_msg_cback handle:%d, ctype:%d, offset:%d, len: %d",
                          handle, msg.hdr.ctype, p_pkt->offset, p_pkt->len);
@@ -578,6 +593,14 @@ static void avrc_msg_cback(UINT8 handle, UINT8 label, UINT8 cr,
                 p_drop_msg = "auto respond";
 #endif
             } else {
+                if (p_pkt->len < AVRC_OP_UNIT_INFO_RSP_LEN) {
+                    AVRC_TRACE_WARNING("Bad message length:%d (< %d)", p_pkt->len, AVRC_OP_UNIT_INFO_RSP_LEN);
+                    drop = TRUE;
+#if (BT_USE_TRACES == TRUE)
+                    p_drop_msg = "UNIT_INFO_RSP too short";
+#endif
+                    break;
+                }
                 /* parse response */
                 p_data += 4; /* 3 bytes: ctype, subunit*, opcode + octet 3 (is 7)*/
                 msg.unit.unit_type  = (*p_data & AVRC_SUBTYPE_MASK) >> AVRC_SUBTYPE_SHIFT;
@@ -594,7 +617,7 @@ static void avrc_msg_cback(UINT8 handle, UINT8 label, UINT8 cr,
                 p_rsp_data = avrc_get_data_ptr(p_rsp);
                 *p_rsp_data = AVRC_RSP_IMPL_STBL;
                 /* check & set the offset. set response code, set (subunit_type & subunit_id),
-                   set AVRC_OP_SUB_INFO, set (page & extention code) */
+                   set AVRC_OP_SUB_INFO, set (page & extension code) */
                 p_rsp_data      += 4;
                 /* Panel subunit & id=0 */
                 *p_rsp_data++   = (AVRC_SUB_PANEL << AVRC_SUBTYPE_SHIFT);
@@ -606,6 +629,14 @@ static void avrc_msg_cback(UINT8 handle, UINT8 label, UINT8 cr,
                 p_drop_msg = "auto responded";
 #endif
             } else {
+                if (p_pkt->len < AVRC_OP_SUB_UNIT_INFO_RSP_LEN) {
+                    AVRC_TRACE_WARNING("Bad message length:%d (< %d)", p_pkt->len, AVRC_OP_SUB_UNIT_INFO_RSP_LEN);
+                    drop = TRUE;
+#if (BT_USE_TRACES == TRUE)
+                    p_drop_msg = "UNIT_INFO_RSP too short";
+#endif
+                    break;
+                }
                 /* parse response */
                 p_data += AVRC_AVC_HDR_SIZE; /* 3 bytes: ctype, subunit*, opcode */
                 msg.sub.page    = (*p_data++ >> AVRC_SUB_PAGE_SHIFT) & AVRC_SUB_PAGE_MASK;

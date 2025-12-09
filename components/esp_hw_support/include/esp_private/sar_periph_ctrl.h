@@ -95,6 +95,34 @@ void sar_periph_ctrl_power_enable(void);
  */
 void sar_periph_ctrl_power_disable(void);
 
+/*------------------------------------------------------------------------------
+* ADC Reset
+*----------------------------------------------------------------------------*/
+
+/**
+* @note For chips that temperature sensor uses part of ADC registers,
+*       ADC reset will reset these temperature sensor registers.
+*       So we need to backup and restore these temperature sensor registers when ADC reset.
+*       And in case temperature sensor result error during ADC reset,
+*       we need to acquire a lock to prevent temperature sensor readings during ADC reset.
+*/
+
+/**
+ * @brief Acquire ADC reset lock
+ */
+void adc_reset_lock_acquire(void);
+
+/**
+ * @brief Release ADC reset lock
+ */
+void adc_reset_lock_release(void);
+
+/**
+ * @brief Reset ADC module
+ *
+ */
+void sar_periph_ctrl_adc_reset(void);
+
 #ifdef __cplusplus
 }
 #endif

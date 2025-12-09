@@ -4,8 +4,6 @@ if(${target} STREQUAL "linux")
     return() # This component is not supported by the POSIX/Linux simulator
 endif()
 
-idf_build_get_property(components_to_build BUILD_COMPONENTS)
-
 set(srcs)
 set(include)
 set(ld_fragments linker.lf)
@@ -19,8 +17,9 @@ if(CONFIG_ETH_ENABLED)
     set(srcs "src/esp_eth.c" "src/phy/esp_eth_phy_802_3.c")
     set(include "include")
 
-    if(NOT CMAKE_BUILD_EARLY_EXPANSION)
+    if(NOT CMAKE_BUILD_EARLY_EXPANSION AND NOT IDF_BUILD_V2)
         # esp_netif related
+        idf_build_get_property(components_to_build BUILD_COMPONENTS)
         if(esp_netif IN_LIST components_to_build)
             list(APPEND srcs "src/esp_eth_netif_glue.c")
         endif()
@@ -30,32 +29,12 @@ if(CONFIG_ETH_ENABLED)
         list(APPEND srcs "src/mac/esp_eth_mac_esp.c"
                          "src/mac/esp_eth_mac_esp_dma.c"
                          "src/mac/esp_eth_mac_esp_gpio.c"
-                         "src/phy/esp_eth_phy_generic.c"
-                         "src/phy/esp_eth_phy_dp83848.c"
-                         "src/phy/esp_eth_phy_ip101.c"
-                         "src/phy/esp_eth_phy_ksz80xx.c"
-                         "src/phy/esp_eth_phy_lan87xx.c"
-                         "src/phy/esp_eth_phy_rtl8201.c")
-    endif()
-
-    if(CONFIG_ETH_SPI_ETHERNET_DM9051)
-        list(APPEND srcs "src/spi/dm9051/esp_eth_mac_dm9051.c"
-                         "src/spi/dm9051/esp_eth_phy_dm9051.c")
-    endif()
-
-    if(CONFIG_ETH_SPI_ETHERNET_W5500)
-        list(APPEND srcs "src/spi/w5500/esp_eth_mac_w5500.c"
-                         "src/spi/w5500/esp_eth_phy_w5500.c")
-    endif()
-
-    if(CONFIG_ETH_SPI_ETHERNET_KSZ8851SNL)
-        list(APPEND srcs "src/spi/ksz8851snl/esp_eth_mac_ksz8851snl.c"
-                         "src/spi/ksz8851snl/esp_eth_phy_ksz8851snl.c")
+                         "src/phy/esp_eth_phy_generic.c")
     endif()
 
     if(CONFIG_ETH_USE_OPENETH)
         list(APPEND srcs "src/openeth/esp_eth_mac_openeth.c"
-                         "src/phy/esp_eth_phy_dp83848.c")
+                         "src/phy/esp_eth_phy_generic.c")
     endif()
 endif()
 
@@ -63,9 +42,13 @@ idf_component_register(SRCS "${srcs}"
                        INCLUDE_DIRS ${include}
                        LDFRAGMENTS ${ld_fragments}
                        REQUIRES esp_event # For using "ESP_EVENT_DECLARE_BASE" in header file
+                                esp_hal_emac
                        PRIV_REQUIRES ${priv_requires})
 
 if(CONFIG_ETH_ENABLED)
+    if(IDF_BUILD_V2)
+        target_sources(${COMPONENT_TARGET} PRIVATE "$<$<TARGET_EXISTS:idf::esp_netif>:src/esp_eth_netif_glue.c>")
+    endif()
     if(CONFIG_ETH_USE_SPI_ETHERNET)
         idf_component_optional_requires(PUBLIC esp_driver_spi)
     endif()

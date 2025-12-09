@@ -36,7 +36,6 @@ examples/network/sta2eth:
     - esp_eth
     - esp_wifi
     - protocomm
-    - usb
     - esp_tinyusb
     - http-server
 
@@ -47,5 +46,3 @@ examples/network/vlan_support:
   depends_components:
     - esp_eth
     - esp_netif
-  depends_filepatterns:
-    - examples/ethernet/basic/components/ethernet_init/**/*

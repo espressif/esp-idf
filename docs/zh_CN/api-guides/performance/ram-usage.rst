@@ -132,7 +132,6 @@ ESP-IDF 包含一系列堆 API，可以在运行时测量空闲堆内存，请�
    :SOC_BT_SUPPORTED: - :doc:`/api-reference/bluetooth/nimble/index` 的栈内存大小为 :ref:`CONFIG_BT_NIMBLE_HOST_TASK_STACK_SIZE`。
    - 以太网驱动程序会创建任务，用于使 MAC 接收以太网帧，在默认配置 ``ETH_MAC_DEFAULT_CONFIG`` 下，任务栈内存大小为 4 KB。在初始化以太网 MAC 时，传递自定义 :cpp:class:`eth_mac_config_t` 结构体可以更改此设置。
    - FreeRTOS 空闲任务栈内存大小由 :ref:`CONFIG_FREERTOS_IDLE_TASK_STACKSIZE` 配置。
-   - 使用 :doc:`/api-reference/protocols/mqtt` 组件时会创建一个任务，其栈内存大小由 :ref:`CONFIG_MQTT_TASK_STACK_SIZE` 配置。MQTT 栈内存大小也可以使用 :cpp:class:`esp_mqtt_client_config_t` 结构体中的 ``task_stack`` 字段配置。
    - 有关使用 ``mDNS`` 时内存优化的详细信息，请参阅 `优化内存使用 <https://docs.espressif.com/projects/esp-protocols/mdns/docs/latest/en/index.html#minimizing-ram-usage>`__。
 
 .. note::
@@ -184,7 +183,6 @@ IRAM 优化
     - 启用 :ref:`CONFIG_RINGBUF_PLACE_ISR_FUNCTIONS_INTO_FLASH`。如果从 IRAM 中的中断上下文中使用 ISR ringbuf 函数，例如启用了 :ref:`CONFIG_UART_ISR_IN_IRAM`，则无法安全使用此选项。在此情况下，安装 ESP-IDF 相关驱动程序时，将在运行时报错。
     :SOC_WIFI_SUPPORTED: - 禁用 Wi-Fi 选项 :ref:`CONFIG_ESP_WIFI_IRAM_OPT` 和/或 :ref:`CONFIG_ESP_WIFI_RX_IRAM_OPT` 会释放可用 IRAM，但会牺牲部分 Wi-Fi 性能。
     :CONFIG_ESP_ROM_HAS_SPI_FLASH: - 启用 :ref:`CONFIG_SPI_FLASH_ROM_IMPL` 选项可以释放一些 IRAM，但此时 esp_flash 错误修复程序及新的 flash 芯片支持将失效，详情请参阅 :doc:`/api-reference/peripherals/spi_flash/spi_flash_idf_vs_rom`。
-    :esp32: - 禁用 :ref:`CONFIG_SPI_FLASH_ROM_DRIVER_PATCH` 选项可以释放一些 IRAM，但仅适用于某些 flash 配置，详情请参阅配置项帮助文档。
     :esp32: - 如果应用程序基于 ESP32 rev. 3 (ECO3)，且使用 PSRAM，设置 :ref:`CONFIG_ESP32_REV_MIN` 为 ``3``，可以禁用 PSRAM 的错误处理程序，节省 10 KB 乃至更多的 IRAM。
     - 禁用 :ref:`CONFIG_ESP_EVENT_POST_FROM_IRAM_ISR` 可以防止从 :ref:`iram-safe-interrupt-handlers` 中发布 ``esp_event`` 事件，节省 IRAM 空间。
     :SOC_GPSPI_SUPPORTED: - 禁用 :ref:`CONFIG_SPI_MASTER_ISR_IN_IRAM` 可以防止在写入 flash 时发生 spi_master 中断，节省 IRAM 空间，但可能影响 spi_master 的性能。

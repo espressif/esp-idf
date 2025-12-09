@@ -1,7 +1,7 @@
 /*
  * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 
 #include "soc/interrupt_matrix_reg.h"
@@ -12,3 +12,5 @@
 
 #define INTERRUPT_CURRENT_CORE_INT_THRESH_REG   (CLIC_INT_THRESH_REG)
 #define INTERRUPT_OTHER_CORE_INT_THRESH_REG     (CLIC_INT_THRESH_REG + DUALCORE_CLIC_CTRL_OFF)
+
+#define INTTHRESH_STANDARD  1

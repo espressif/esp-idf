@@ -42,7 +42,7 @@ static __attribute__((unused)) const char *TAG = "pmu_param";
         .xpd_bbpll      = 1  \
     }, \
     .xtal = {                \
-        .xpd_xtalx2     = 1, \
+        .xpd_xtalx2     = 0, \
         .xpd_xtal       = 1  \
     } \
 }
@@ -434,7 +434,7 @@ const pmu_lp_system_power_param_t * pmu_lp_system_power_param_default(pmu_lp_mod
         .dcm_mode           = 3,    \
         .dcm_vset           = 0,    \
         .xpd_bias           = 0,    \
-        .discnnt_dig_rtc    = 0,    \
+        .discnnt_dig_rtc    = 1,    \
         .pd_cur             = 1,    \
         .bias_sleep         = 1,    \
     }, \

@@ -24,7 +24,6 @@ typedef struct gdma_link_list_t *gdma_link_list_handle_t;
 typedef struct {
     uint32_t num_items;              //!< Number of nodes in the link list
     size_t item_alignment;           //!< Alignment of each list item required by the DMA. By default, it's 4 bytes alignment.
-    size_t buffer_alignment;         //!< Alignment of each buffer required by the DMA. By default, it's 1 byte alignment.
     struct gdma_link_list_flags {
         uint32_t items_in_ext_mem: 1; //!< Whether the link list items are allocated from external memory
         uint32_t check_owner: 1;      //!< Whether the link list is responsible for checking the ownership when mount data buffers
@@ -58,20 +57,31 @@ esp_err_t gdma_new_link_list(const gdma_link_list_config_t *config, gdma_link_li
 esp_err_t gdma_del_link_list(gdma_link_list_handle_t list);
 
 /**
+ * @brief Types for the next node of the final item in the DMA link list
+ *
+ */
+typedef enum {
+    GDMA_FINAL_LINK_TO_DEFAULT = 0,     /*!< The next node is linked to the default next item in the link list */
+    GDMA_FINAL_LINK_TO_NULL = 1,        /*!< No next node is linked */
+    GDMA_FINAL_LINK_TO_HEAD = 2,        /*!< The next node is linked to the head item in the link list */
+    GDMA_FINAL_LINK_TO_START = 3,       /*!< The next node is linked to the start item in the link list */
+} gdma_final_node_link_type_t;
+
+/**
  * @brief DMA buffer mount configurations
  */
 typedef struct {
     void *buffer;   //!< Buffer to be mounted to the DMA link list
+    size_t buffer_alignment; //!< Alignment of the buffer. By default, it's 1 byte alignment.
     size_t length;  //!< Number of bytes that are expected to be transferred
     struct gdma_buffer_mount_flags {
         uint32_t mark_eof: 1;   /*!< Whether to mark the list item as the "EOF" item.
                                      Note, an "EOF" descriptor can be interrupted differently by peripheral.
-                                     But it doesn't mean to terminate a DMA link (use `mark_final` instead).
+                                     But it doesn't mean to terminate a DMA link (set `mark_final` to GDMA_FINAL_LINK_TO_NULL instead).
                                      EOF link list item can also trigger an interrupt. */
-        uint32_t mark_final: 1; /*!< Whether to terminate the DMA link list at this item.
-                                     Note, DMA engine will stop at this item and trigger an interrupt.
-                                     If `mark_final` is not set, this list item will point to the next item, and
-                                     wrap around to the head item if it's the last one in the list. */
+        gdma_final_node_link_type_t mark_final: 2; /*!< Specify the next item of the final item of this mount.
+                                                        For the other items that not the final one, it will be linked to the next item automatically and this field takes no effect.
+                                                        Note, the final item here does not mean the last item in the link list. It is `start_item_index + num_items - 1` */
         uint32_t bypass_buffer_align_check: 1; /*!< Whether to bypass the buffer alignment check.
                                                     Only enable it when you know what you are doing. */
     } flags; //!< Flags for buffer mount configurations

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
@@ -56,6 +56,12 @@ esp_err_t esp_apptrace_tmo_check(esp_apptrace_tmo_t *tmo)
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////// LOCK ////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
+
+void esp_apptrace_lock_init(esp_apptrace_lock_t *lock)
+{
+    portMUX_INITIALIZE(&lock->mux);
+    lock->int_state = 0;
+}
 
 esp_err_t esp_apptrace_lock_take(esp_apptrace_lock_t *lock, esp_apptrace_tmo_t *tmo)
 {

@@ -78,7 +78,6 @@ The driver of FIFOs works as below:
 #include <string.h>
 
 #include "soc/soc_memory_layout.h"
-#include "soc/gpio_periph.h"
 #include "soc/soc_caps.h"
 #include "soc/sdio_slave_periph.h"
 #include "esp_cpu.h"
@@ -327,6 +326,7 @@ static void recover_pin(int pin, int sdio_func)
     gpio_io_config_t io_cfg = {};
     esp_err_t ret = gpio_get_io_config(pin, &io_cfg);
     assert(ret == ESP_OK);
+    (void)ret;
 
     if (io_cfg.fun_sel == sdio_func) {
         gpio_set_direction(pin, GPIO_MODE_INPUT);
@@ -355,15 +355,20 @@ esp_err_t sdio_slave_initialize(sdio_slave_config_t *config)
     esp_err_t r;
     intr_handle_t intr_handle = NULL;
     const int flags = 0;
-    r = esp_intr_alloc(ETS_SLC0_INTR_SOURCE, flags, sdio_intr, NULL, &intr_handle);
-    if (r != ESP_OK) {
-        return r;
-    }
 
     r = init_context(config);
-    if (r != ESP_OK) {
-        return r;
-    }
+    SDIO_SLAVE_CHECK(r == ESP_OK, "context initialization failed", r);
+
+    r = esp_intr_alloc_intrstatus(
+            ETS_SLC0_INTR_SOURCE,
+            flags,
+            (uint32_t)sdio_slave_hal_get_intr_status_reg(context.hal),
+            sdio_slave_ll_intr_status_mask,
+            sdio_intr,
+            NULL,
+            &intr_handle
+        );
+    SDIO_SLAVE_CHECK(r == ESP_OK, "interrupt allocation failed", r);
     context.intr_handle = intr_handle;
 
 #if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
@@ -498,7 +503,7 @@ static void sdio_intr_host(void *arg)
     }
 }
 
-esp_err_t sdio_slave_wait_int(int pos, TickType_t wait)
+esp_err_t sdio_slave_wait_int(int pos, uint32_t wait)
 {
     SDIO_SLAVE_CHECK(pos >= 0 && pos < 8, "interrupt num invalid", ESP_ERR_INVALID_ARG);
     return xSemaphoreTake(context.events[pos], wait);
@@ -610,7 +615,7 @@ static void sdio_intr_send(void *arg)
     }
 }
 
-esp_err_t sdio_slave_send_queue(uint8_t *addr, size_t len, void *arg, TickType_t wait)
+esp_err_t sdio_slave_send_queue(uint8_t *addr, size_t len, void *arg, uint32_t wait)
 {
     SDIO_SLAVE_CHECK(len > 0, "len <= 0", ESP_ERR_INVALID_ARG);
     SDIO_SLAVE_CHECK(esp_ptr_dma_capable(addr) && (uint32_t)addr % 4 == 0, "buffer to send should be DMA capable and 32-bit aligned",
@@ -631,7 +636,7 @@ esp_err_t sdio_slave_send_queue(uint8_t *addr, size_t len, void *arg, TickType_t
     return ESP_OK;
 }
 
-esp_err_t sdio_slave_send_get_finished(void **out_arg, TickType_t wait)
+esp_err_t sdio_slave_send_get_finished(void **out_arg, uint32_t wait)
 {
     void *arg = NULL;
     BaseType_t err = xQueueReceive(context.ret_queue, &arg, wait);
@@ -778,7 +783,7 @@ sdio_slave_buf_handle_t sdio_slave_recv_register_buf(uint8_t *start)
     return desc;
 }
 
-esp_err_t sdio_slave_recv(sdio_slave_buf_handle_t *handle_ret, uint8_t **out_addr, size_t *out_len, TickType_t wait)
+esp_err_t sdio_slave_recv(sdio_slave_buf_handle_t *handle_ret, uint8_t **out_addr, size_t *out_len, uint32_t wait)
 {
     esp_err_t ret = sdio_slave_recv_packet(handle_ret, wait);
     if (ret == ESP_ERR_NOT_FINISHED) {
@@ -797,7 +802,7 @@ esp_err_t sdio_slave_recv(sdio_slave_buf_handle_t *handle_ret, uint8_t **out_add
     return ret;
 }
 
-esp_err_t sdio_slave_recv_packet(sdio_slave_buf_handle_t *handle_ret, TickType_t wait)
+esp_err_t sdio_slave_recv_packet(sdio_slave_buf_handle_t *handle_ret, uint32_t wait)
 {
     SDIO_SLAVE_CHECK(handle_ret != NULL, "handle address cannot be 0", ESP_ERR_INVALID_ARG);
     BaseType_t err = xSemaphoreTake(context.recv_event, wait);

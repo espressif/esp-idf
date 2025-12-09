@@ -25,7 +25,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "osi/allocator.h"
 #include "device/controller.h"
 #include "stack/bt_types.h"
 #include "stack/hcimsgs.h"
@@ -36,6 +35,7 @@
 #include "stack/btm_api.h"
 #include "btm_int.h"
 #include "stack/hcidefs.h"
+#include "bt_common.h"
 #include "osi/allocator.h"
 #include "osi/list.h"
 
@@ -157,6 +157,9 @@ void l2cu_update_lcb_4_bonding (BD_ADDR p_bd_addr, BOOLEAN is_bonding)
 void l2cu_release_lcb (tL2C_LCB *p_lcb)
 {
     tL2C_CCB    *p_ccb;
+
+    L2CAP_TRACE_DEBUG("%s handle=%u bda="MACSTR"",
+        __func__, p_lcb->handle, MAC2STR(p_lcb->remote_bd_addr));
 
     p_lcb->in_use     = FALSE;
     p_lcb->is_bonding = FALSE;
@@ -345,6 +348,15 @@ uint8_t l2cu_ble_plcb_active_count(void)
     for (p_node = list_begin(l2cb.p_lcb_pool); p_node; p_node = list_next(p_node)) {
         p_lcb = list_node(p_node);
         if (p_lcb && p_lcb->in_use && p_lcb->transport == BT_TRANSPORT_LE) {
+            L2CAP_TRACE_DEBUG("%s LE PLCB active #%d: remote_addr=%02X:%02X:%02X:%02X:%02X:%02X",
+                              __func__,
+                              active_count,
+                              p_lcb->remote_bd_addr[0],
+                              p_lcb->remote_bd_addr[1],
+                              p_lcb->remote_bd_addr[2],
+                              p_lcb->remote_bd_addr[3],
+                              p_lcb->remote_bd_addr[4],
+                              p_lcb->remote_bd_addr[5]);
             active_count ++;
         }
     }

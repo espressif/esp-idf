@@ -151,6 +151,13 @@ mainmenu "Espressif IoT Development Framework Configuration"
         select IDF_ENV_BRINGUP
         select IDF_ENV_FPGA if ESP32H4_SELECTS_REV_MP
 
+    config IDF_TARGET_ESP32S31
+        bool
+        default "y" if IDF_TARGET="esp32s31"
+        select IDF_TARGET_ARCH_RISCV
+        select IDF_ENV_FPGA
+        select IDF_ENV_BRINGUP
+
     config IDF_TARGET_LINUX
         bool
         default "y" if IDF_TARGET="linux"
@@ -169,6 +176,7 @@ mainmenu "Espressif IoT Development Framework Configuration"
         default 0x0014 if IDF_TARGET_ESP32C61
         default 0x0019 if IDF_TARGET_ESP32H21
         default 0x001C if IDF_TARGET_ESP32H4
+        default 0x0020 if IDF_TARGET_ESP32S31
         default 0xFFFF
 
 
@@ -219,10 +227,10 @@ mainmenu "Espressif IoT Development Framework Configuration"
 
                 When loading the BIN with UART, the ROM will jump to ram and run the app after finishing the ROM
                 startup code, so there's no additional startup initialization required. You can use the
-                `load_ram` in esptool.py to load the generated .bin file into ram and execute.
+                `load-ram` in esptool to load the generated .bin file into ram and execute.
 
                 Example:
-                    esptool.py --chip {chip} -p {port} -b {baud} --no-stub load_ram {app.bin}
+                    esptool --chip {chip} -p {port} -b {baud} --no-stub load-ram {app.bin}
 
                 Recommended sdkconfig.defaults for building loadable ELF files is as follows.
                 CONFIG_APP_BUILD_TYPE_RAM is required, other options help reduce application
@@ -370,6 +378,27 @@ mainmenu "Espressif IoT Development Framework Configuration"
 
         endchoice
 
+        config COMPILER_ENABLE_RISCV_ZCMP
+            bool "Enable RISCV ZCMP extension"
+            depends on SOC_CPU_ZCMP_WORKAROUND
+            default n
+            help
+                Enable the RISC-V ZCMP (Compressed Macro) extension to reduce binary size
+                by optimizing function prologue and epilogue sequences.
+
+                Note: Due to a hardware issue on some ESP32 chips (e.g., ESP32C5, ESP32C61,
+                ESP32H4), executing "cm.push" may re-enable interrupts even when global
+                interrupts are disabled (mstatus.mie = 0). This can cause unexpected interrupts
+                during CPU retention or within critical sections.
+
+                Workarounds are implemented in the IDF codebase. However, if user code
+                directly disables interrupts, additional actions may be required. Refer
+                to code examples under the SOC_CPU_ZCMP_WORKAROUND macro, or disable
+                the ZCMP extension for source files that contain functions which may
+                execute while mstatus.mie = 0.
+
+                Even with these workarounds, the issue may still affect dual-core variants.
+
         choice COMPILER_OPTIMIZATION_ASSERTION_LEVEL
             prompt "Assertion level"
             default COMPILER_OPTIMIZATION_ASSERTIONS_ENABLE
@@ -407,7 +436,7 @@ mainmenu "Espressif IoT Development Framework Configuration"
 
         config COMPILER_ASSERT_NDEBUG_EVALUATE
             bool "Enable the evaluation of the expression inside assert(X) when NDEBUG is set"
-            default y
+            default n
             help
                 When NDEBUG is set, assert(X) will not cause code to trigger an assertion.
                 With this option set, assert(X) will still evaluate the expression X, though
@@ -416,9 +445,6 @@ mainmenu "Espressif IoT Development Framework Configuration"
 
                 This is not according to the standard, which states that the assert(X) should
                 be replaced with ((void)0) if NDEBUG is defined.
-
-                In ESP-IDF v6.0 the default behavior will change to "no" to be in line with the
-                standard.
 
         choice COMPILER_FLOAT_LIB_FROM
             prompt "Compiler float lib source"
@@ -550,6 +576,20 @@ mainmenu "Espressif IoT Development Framework Configuration"
                 distribution is more uniform across libraries. On downside, it may increase
                 the binary size and hence should be used during development phase only.
 
+        config COMPILER_ENABLE_TEXT_SECTION_LITERALS
+            bool
+            depends on IDF_TOOLCHAIN_GCC
+            depends on IDF_TARGET_ARCH_XTENSA
+            default y if ESPTOOLPY_FAST_REFLASHING
+            help
+                Intersperse Xtensa literals within the text section to keep
+                them as close as possible to their references. This prevents
+                literals from being placed into a separate section in the
+                output file and prevents the linker from combining literal
+                pools from different object files. Enabling this is necessary
+                for fast reflashing to prevent mixing code from mutable and
+                immutable libraries.
+
         config COMPILER_WARN_WRITE_STRINGS
             bool "Enable -Wwrite-strings warning flag"
             default "n"
@@ -578,7 +618,7 @@ mainmenu "Espressif IoT Development Framework Configuration"
 
         config COMPILER_DISABLE_DEFAULT_ERRORS
             bool "Disable errors for default warnings"
-            default "y"
+            default "n"
             help
                 Enable this option if you do not want default warnings to be considered as errors,
                 especially when updating IDF.
@@ -685,6 +725,34 @@ mainmenu "Espressif IoT Development Framework Configuration"
             help
                 Enable compiler static analyzer. This may produce false-positive results and increases compile time.
 
+        choice COMPILER_CXX_GLIBCXX_CONSTEXPR
+            prompt "Define _GLIBCXX_CONSTEXPR"
+            default COMPILER_CXX_GLIBCXX_CONSTEXPR_NO_CHANGE
+            depends on IDF_TOOLCHAIN_GCC && !IDF_TARGET_LINUX
+            help
+                Modify libstdc++ _GLIBCXX20_CONSTEXPR and _GLIBCXX23_CONSTEXPR definitions to provide size
+                optimizations. The total size optimization depends on the application's structure.
+                There is no robust way to determine which option would be better in a particular case.
+                Please try all available options to find the best size optimization.
+
+            config COMPILER_CXX_GLIBCXX_CONSTEXPR_NO_CHANGE
+                bool "No change"
+                help
+                    Use default _GLIBCXX20_CONSTEXPR and _GLIBCXX23_CONSTEXPR defined in libstdc++
+
+            config COMPILER_CXX_GLIBCXX_CONSTEXPR_COLD_CONSTEXPR
+                bool "_GLIBCXX2X_CONSTEXPR=__attribute__((cold)) constexpr"
+                help
+                    Define _GLIBCXX20_CONSTEXPR=__attribute__((cold)) constexpr
+                    Define _GLIBCXX23_CONSTEXPR=__attribute__((cold)) constexpr
+
+            config COMPILER_CXX_GLIBCXX_CONSTEXPR_COLD
+                bool "_GLIBCXX2X_CONSTEXPR=__attribute__((cold))"
+                help
+                    Define _GLIBCXX20_CONSTEXPR=__attribute__((cold)).
+                    Define _GLIBCXX23_CONSTEXPR=__attribute__((cold)).
+        endchoice
+
     endmenu # Compiler Options
 
     menu "Component config"
@@ -696,6 +764,17 @@ mainmenu "Espressif IoT Development Framework Configuration"
         depends on "${IDF_MINIMAL_BUILD}"
 
         source "$COMPONENT_KCONFIGS_SOURCE_FILE"
+
+        menu "Configuration for components not included in the build"
+            depends on "${IDF_BUILD_V2}"
+            osource "$COMPONENT_KCONFIGS_EXCLUDED_SOURCE_FILE"
+        endmenu
+
+    endmenu
+
+    menu "Project configuration for components not included in the build"
+        depends on "${IDF_BUILD_V2}"
+        osource "$COMPONENT_KCONFIGS_PROJBUILD_EXCLUDED_SOURCE_FILE"
     endmenu
 
     config IDF_EXPERIMENTAL_FEATURES
@@ -718,3 +797,4 @@ mainmenu "Espressif IoT Development Framework Configuration"
             - CONFIG_LIBC_PICOLIBC
             - CONFIG_GDMA_ENABLE_WEIGHTED_ARBITRATION
             - CONFIG_I3C_MASTER_ENABLED
+            - CONFIG_ESPTOOLPY_FAST_REFLASHING

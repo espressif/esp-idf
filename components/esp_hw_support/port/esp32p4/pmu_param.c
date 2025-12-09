@@ -17,7 +17,7 @@
 #include "hal/efuse_hal.h"
 #include "esp_hw_log.h"
 
-static __attribute__((unused)) const char *TAG = "pmu_param";
+ESP_HW_LOG_ATTR_TAG(TAG, "pmu_param");
 
 #ifndef ARRAY_SIZE
 #define ARRAY_SIZE(a)   (sizeof(a) / sizeof((a)[0]))
@@ -169,7 +169,7 @@ const pmu_hp_system_digital_param_t * pmu_hp_system_digital_param_default(pmu_hp
 #define PMU_HP_SLEEP_ANALOG_CONFIG_DEFAULT() { \
     .bias = {                   \
         .dcm_vset        = 0,   \
-        .dcm_mode        = 0,   \
+        .dcm_mode        = 1,   \
         .xpd_bias        = 0,   \
         .dbg_atten       = 0x0, \
         .pd_cur          = 1,   \

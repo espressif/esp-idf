@@ -85,13 +85,6 @@ esp_libc_component:
     - BSD-2-Clause-FreeBSD AND Apache-2.0
   license_for_new_files: Apache-2.0
 
-asio_component:
-  include:
-    - 'components/asio/port/**'
-  allowed_licenses:
-    - Apache-2.0
-    - BSL-1.0
-
 freertos_component:
   include:
     - 'components/freertos/**'
@@ -223,6 +216,27 @@ zigbee:
     - Apache-2.0
     - LicenseRef-Included
 
+esp_trace:
+  include:
+    - components/esp_trace/include/
+    - components/esp_trace/adapters/transport/
+    - components/esp_trace/adapters/encoder/
+    - components/esp_trace/src/core/
+    - components/esp_trace/src/ports/
+  allowed_licenses:
+    - Apache-2.0
+    - MIT
+    - CC0-1.0
+
+# These files are used in esp-stub-lib which is licensed under a mix of Apache-2.0 and MIT licenses.
+soc_component:
+  include:
+    - 'components/soc/**'
+  allowed_licenses:
+    - Apache-2.0 OR MIT
+  license_for_new_files: Apache-2.0 OR MIT
+
+
 # files matching this section do not perform the check
 # file patterns starting with ! are negated, meaning files matching them won't match the section.
 ignore:
@@ -246,6 +260,4 @@ ignore:
     - components/esp_local_ctrl/python/
     - components/protocomm/proto-c/
     - components/protocomm/python/
-    - components/wifi_provisioning/proto-c/
-    - components/wifi_provisioning/python/
     - tools/templates/

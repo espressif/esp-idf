@@ -35,7 +35,7 @@
 #include "hal/uart_hal.h"
 #endif
 
-static __attribute__((unused)) const char *TAG = "sleep";
+ESP_LOG_ATTR_TAG(TAG, "sleep");
 
 static DRAM_ATTR  sleep_cpu_retention_t s_cpu_retention;
 
@@ -295,14 +295,14 @@ static IRAM_ATTR esp_err_t do_cpu_retention(sleep_cpu_entry_cb_t goto_sleep,
         esp_sleep_execute_event_callbacks(SLEEP_EVENT_SW_CPU_TO_MEM_END, (void *)0);
 #if CONFIG_PM_CHECK_SLEEP_RETENTION_FRAME
         /* Minus 2 * sizeof(long) is for bypass `pmufunc` and `frame_crc` field */
-        update_retention_frame_crc((uint32_t*)frame, RV_SLEEP_CTX_FRMSZ - 2 * sizeof(long), (uint32_t *)(&frame->frame_crc));
+        update_retention_frame_crc((uint32_t*)frame, RV_SLEEP_CTX_SZ1 - 2 * sizeof(long), (uint32_t *)(&frame->frame_crc));
 #endif
         REG_WRITE(RTC_SLEEP_WAKE_STUB_ADDR_REG, (uint32_t)rv_core_critical_regs_restore);
         return (*goto_sleep)(wakeup_opt, reject_opt, lslp_mem_inf_fpu, dslp);
     }
 #if CONFIG_PM_CHECK_SLEEP_RETENTION_FRAME
     else {
-        validate_retention_frame_crc((uint32_t*)frame, RV_SLEEP_CTX_FRMSZ - 2 * sizeof(long), (uint32_t *)(&frame->frame_crc));
+        validate_retention_frame_crc((uint32_t*)frame, RV_SLEEP_CTX_SZ1 - 2 * sizeof(long), (uint32_t *)(&frame->frame_crc));
     }
 #endif
 
@@ -363,7 +363,7 @@ bool cpu_domain_pd_allowed(void)
 
 esp_err_t sleep_cpu_configure(bool light_sleep_enable)
 {
-#if ESP_SLEEP_POWER_DOWN_CPU
+#if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU
     if (light_sleep_enable) {
         ESP_RETURN_ON_ERROR(esp_sleep_cpu_retention_init(), TAG, "Failed to enable CPU power down during light sleep.");
     } else {

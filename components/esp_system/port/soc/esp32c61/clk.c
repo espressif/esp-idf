@@ -36,7 +36,7 @@
 
 static void select_rtc_slow_clk(soc_rtc_slow_clk_src_t rtc_slow_clk_src);
 
-static const char *TAG = "clk";
+ESP_LOG_ATTR_TAG(TAG, "clk");
 
 void esp_rtc_init(void)
 {
@@ -117,7 +117,9 @@ static void select_rtc_slow_clk(soc_rtc_slow_clk_src_t rtc_slow_clk_src)
      */
     int retry_32k_xtal = 3;
 
+    soc_rtc_slow_clk_src_t old_rtc_slow_clk_src = rtc_clk_slow_src_get();
     do {
+        bool revoke_32k_enable = false;
         if (rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_XTAL32K || rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_OSC_SLOW) {
             /* 32k XTAL oscillator needs to be enabled and running before it can
              * be used. Hardware doesn't have a direct way of checking if the
@@ -144,16 +146,28 @@ static void select_rtc_slow_clk(soc_rtc_slow_clk_src_t rtc_slow_clk_src)
                     }
                     ESP_EARLY_LOGW(TAG, "32 kHz clock not found, switching to internal 150 kHz oscillator");
                     rtc_slow_clk_src = SOC_RTC_SLOW_CLK_SRC_RC_SLOW;
+                    revoke_32k_enable = true;
                 }
             }
         }
         rtc_clk_slow_src_set(rtc_slow_clk_src);
         // Disable unused clock sources after clock source switching is complete.
         // Regardless of the clock source selection, the internal 136K clock source will always keep on.
-        if ((rtc_slow_clk_src != SOC_RTC_SLOW_CLK_SRC_XTAL32K) && (rtc_slow_clk_src != SOC_RTC_SLOW_CLK_SRC_OSC_SLOW)) {
+        if (revoke_32k_enable || \
+                (((old_rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_XTAL32K) || (old_rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_OSC_SLOW)) && \
+                 ((rtc_slow_clk_src != SOC_RTC_SLOW_CLK_SRC_XTAL32K) && (rtc_slow_clk_src != SOC_RTC_SLOW_CLK_SRC_OSC_SLOW)))) {
             rtc_clk_32k_enable(false);
             rtc_clk_32k_disable_external();
         }
+        // We have enabled all LP clock power in pmu_init, re-initialize the LP clock power based on the slow clock source after selection.
+        pmu_lp_power_t lp_clk_power = {
+            .xpd_xtal32k = (rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_XTAL32K) || (rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_OSC_SLOW),
+            .xpd_rc32k = 0,
+            .xpd_fosc = 1,
+            .pd_osc = 0
+        };
+        pmu_ll_lp_set_clk_power(&PMU, PMU_MODE_LP_ACTIVE, lp_clk_power.val);
+
         if (SLOW_CLK_CAL_CYCLES > 0) {
             /* TODO: 32k XTAL oscillator has some frequency drift at startup.
              * Improve calibration routine to wait until the frequency is stable.
@@ -181,7 +195,7 @@ void rtc_clk_select_rtc_slow_clk(void)
  */
 __attribute__((weak)) void esp_perip_clk_init(void)
 {
-#if SOC_MODEM_CLOCK_SUPPORTED
+#if CONFIG_ESP_WIFI_ENABLED
     /* During system initialization, the low-power clock source of the modem
      * (WiFi, BLE or Coexist) follows the configuration of the slow clock source
      * of the system. If the WiFi, BLE or Coexist module needs a higher

@@ -6,21 +6,15 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
 #include <sys/errno.h>
 #include <sys/fcntl.h>
-#include <sys/ioctl.h>
 #include <sys/reent.h>
-#include <sys/unistd.h>
 #include <sys/lock.h>
-#include <sys/param.h>
 #include <dirent.h>
+#include "inttypes_ext.h"
 #include "freertos/FreeRTOS.h"
-#include "freertos/semphr.h"
 #include "esp_vfs.h"
 #include "esp_vfs_private.h"
-#include "include/esp_vfs.h"
-#include "sdkconfig.h"
 
 // Warn about using deprecated option
 #ifdef CONFIG_LWIP_USE_ONLY_LWIP_SELECT
@@ -47,7 +41,11 @@ static const char *TAG = "vfs";
 #define LEN_PATH_PREFIX_IGNORED SIZE_MAX /* special length value for VFS which is never recognised by open() */
 #define FD_TABLE_ENTRY_UNUSED   (fd_table_t) { .permanent = false, .has_pending_close = false, .has_pending_select = false, .vfs_index = -1, .local_fd = -1 }
 
+#ifdef CONFIG_IDF_TARGET_LINUX
+typedef uint16_t local_fd_t;
+#else
 typedef uint8_t local_fd_t;
+#endif
 _Static_assert((1 << (sizeof(local_fd_t)*8)) >= MAX_FDS, "file descriptor type too small");
 
 typedef int8_t vfs_index_t;
@@ -547,7 +545,7 @@ esp_err_t esp_vfs_register(const char* base_path, const esp_vfs_t* vfs, void* ct
 esp_err_t esp_vfs_register_fd_range(const esp_vfs_t *vfs, void *ctx, int min_fd, int max_fd)
 {
     if (min_fd < 0 || max_fd < 0 || min_fd > MAX_FDS || max_fd > MAX_FDS || min_fd > max_fd) {
-        ESP_LOGD(TAG, "Invalid arguments: esp_vfs_register_fd_range(0x%x, 0x%x, %d, %d)", (int) vfs, (int) ctx, min_fd, max_fd);
+        ESP_LOGD(TAG, "Invalid arguments: esp_vfs_register_fd_range(0x%p, 0x%p, %d, %d)", vfs, ctx, min_fd, max_fd);
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -623,7 +621,9 @@ esp_err_t esp_vfs_unregister_with_id(esp_vfs_id_t vfs_id)
 
 }
 
+#ifndef CONFIG_IDF_TARGET_LINUX
 esp_err_t esp_vfs_unregister_fs_with_id(esp_vfs_id_t vfs_id) __attribute__((alias("esp_vfs_unregister_with_id")));
+#endif
 
 esp_err_t esp_vfs_unregister(const char* base_path)
 {
@@ -641,7 +641,9 @@ esp_err_t esp_vfs_unregister(const char* base_path)
     return ESP_ERR_INVALID_STATE;
 }
 
+#ifndef CONFIG_IDF_TARGET_LINUX
 esp_err_t esp_vfs_unregister_fs(const char* base_path) __attribute__((alias("esp_vfs_unregister")));
+#endif
 
 esp_err_t esp_vfs_register_fd(esp_vfs_id_t vfs_id, int *fd)
 {
@@ -730,7 +732,7 @@ void esp_vfs_dump_registered_paths(FILE *fp)
     for (size_t i = 0; i < VFS_MAX_COUNT; ++i) {
         fprintf(
             fp,
-            "%d:%s -> %p\n",
+            "%" PRIuSIZE ": %s -> %p\n",
             i,
             s_vfs[i] ? s_vfs[i]->path_prefix : "NULL",
             s_vfs[i] ? s_vfs[i]->vfs : NULL
@@ -1587,7 +1589,7 @@ int esp_vfs_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds
 
         // call start_select for all non-socket VFSs with has at least one FD set in readfds, writefds, or errorfds
         // note: it can point to socket VFS but item->isset will be false for that
-        ESP_LOGD(TAG, "calling start_select for VFS ID %d with the following local FDs", i);
+        ESP_LOGD(TAG, "calling start_select for VFS ID % " PRIuSIZE " with the following local FDs", i);
         esp_vfs_log_fd_set("readfds", &item->readfds);
         esp_vfs_log_fd_set("writefds", &item->writefds);
         esp_vfs_log_fd_set("errorfds", &item->errorfds);
@@ -1833,6 +1835,7 @@ int tcsendbreak(int fd, int duration)
 #endif // CONFIG_VFS_SUPPORT_TERMIOS
 
 
+#ifndef CONFIG_IDF_TARGET_LINUX
 /* Create aliases for libc syscalls
 
    These functions are also available in ROM as stubs which use the syscall table, but linking them
@@ -1905,6 +1908,7 @@ void seekdir(DIR* pdir, long loc)
 void rewinddir(DIR* pdir)
     __attribute__((alias("esp_vfs_rewinddir")));
 #endif // CONFIG_VFS_SUPPORT_DIR
+#endif //CONFIG_IDF_TARGET_LINUX
 
 void vfs_include_syscalls_impl(void)
 {

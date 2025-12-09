@@ -30,7 +30,7 @@ idf.py menuconfig
 
 To configure number of advertising instances:
 
-* Component config → Bluetooth → NimBLE Options → Enable BLE 5 feature → Maximum number of extended advertising instances
+* Component config → Bluetooth → NimBLE Options → BLE 5.x Features → Enable BLE 5 feature → Enable extended advertising → Maximum number of extended advertising instances
 
 ### Hardware Required
 

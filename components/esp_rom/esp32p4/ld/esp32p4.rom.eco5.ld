@@ -171,28 +171,6 @@ g_flash_guard_ops = 0x4ffbfff0;
 
 
 /***************************************
- Group hal_systimer
- ***************************************/
-
-/* Functions */
-systimer_hal_init = 0x4fc00228;
-systimer_hal_deinit = 0x4fc0022c;
-systimer_hal_set_tick_rate_ops = 0x4fc00230;
-systimer_hal_get_counter_value = 0x4fc00234;
-systimer_hal_get_time = 0x4fc00238;
-systimer_hal_set_alarm_target = 0x4fc0023c;
-systimer_hal_set_alarm_period = 0x4fc00240;
-systimer_hal_get_alarm_value = 0x4fc00244;
-systimer_hal_enable_alarm_int = 0x4fc00248;
-systimer_hal_on_apb_freq_update = 0x4fc0024c;
-systimer_hal_counter_value_advance = 0x4fc00250;
-systimer_hal_enable_counter = 0x4fc00254;
-systimer_hal_select_alarm_mode = 0x4fc00258;
-systimer_hal_connect_alarm_counter = 0x4fc0025c;
-systimer_hal_counter_can_stall_by_cpu = 0x4fc00260;
-
-
-/***************************************
  Group cache
  ***************************************/
 
@@ -315,27 +293,27 @@ ets_clk_get_cpu_freq = 0x4fc00554;
  ***************************************/
 
 /* Functions */
-gpio_set_output_level = 0x4fc00558;
-gpio_get_input_level = 0x4fc0055c;
-gpio_matrix_in = 0x4fc00560;
-gpio_matrix_out = 0x4fc00564;
-gpio_bypass_matrix_in = 0x4fc00568;
-/* gpio_output_disable = 0x4fc0056c; */
-/* gpio_output_enable = 0x4fc00570; */
-gpio_pad_input_disable = 0x4fc00574;
-gpio_pad_input_enable = 0x4fc00578;
-gpio_pad_pulldown = 0x4fc0057c;
-gpio_pad_pullup = 0x4fc00580;
-gpio_pad_select_gpio = 0x4fc00584;
-gpio_pad_set_drv = 0x4fc00588;
-gpio_pad_unhold = 0x4fc0058c;
-gpio_pad_hold = 0x4fc00590;
-gpio_lppad_select_mux = 0x4fc00594;
-gpio_ded_pad_set_drv = 0x4fc00598;
-gpio_ded_pad_pullup = 0x4fc0059c;
-gpio_ded_pad_pulldown = 0x4fc005a0;
-gpio_ded_pad_hold = 0x4fc005a4;
-gpio_ded_pad_unhold = 0x4fc005a8;
+rom_gpio_set_output_level = 0x4fc00558;
+rom_gpio_get_input_level = 0x4fc0055c;
+rom_gpio_matrix_in = 0x4fc00560;
+rom_gpio_matrix_out = 0x4fc00564;
+rom_gpio_bypass_matrix_in = 0x4fc00568;
+rom_gpio_output_disable = 0x4fc0056c;
+rom_gpio_output_enable = 0x4fc00570;
+rom_gpio_pad_input_disable = 0x4fc00574;
+rom_gpio_pad_input_enable = 0x4fc00578;
+rom_gpio_pad_pulldown = 0x4fc0057c;
+rom_gpio_pad_pullup = 0x4fc00580;
+rom_gpio_pad_select_gpio = 0x4fc00584;
+rom_gpio_pad_set_drv = 0x4fc00588;
+rom_gpio_pad_unhold = 0x4fc0058c;
+rom_gpio_pad_hold = 0x4fc00590;
+rom_gpio_lppad_select_mux = 0x4fc00594;
+rom_gpio_ded_pad_set_drv = 0x4fc00598;
+rom_gpio_ded_pad_pullup = 0x4fc0059c;
+rom_gpio_ded_pad_pulldown = 0x4fc005a0;
+rom_gpio_ded_pad_hold = 0x4fc005a4;
+rom_gpio_ded_pad_unhold = 0x4fc005a8;
 
 
 /***************************************

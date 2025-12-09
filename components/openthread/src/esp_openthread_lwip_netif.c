@@ -30,7 +30,7 @@
 #endif
 
 static err_t openthread_netif_init(struct netif *netif);
-static void openthread_netif_input(void *h, void *buffer, size_t len, void *eb);
+static esp_err_t openthread_netif_input(void *h, void *buffer, size_t len, void *eb);
 
 const struct esp_netif_netstack_config g_esp_netif_netstack_default_openthread = {
     .lwip = {
@@ -75,35 +75,37 @@ static err_t openthread_output_ip6(struct netif *netif, struct pbuf *p, const st
     }
 }
 
-static void openthread_netif_input(void *h, void *buffer, size_t len, void *eb)
+static esp_err_t openthread_netif_input(void *h, void *buffer, size_t len, void *eb)
 {
     struct netif *netif = h;
     struct pbuf *p;
     otMessage *message = (otMessage *)buffer;
 
     if (unlikely(buffer == NULL || !netif_is_up(netif))) {
-        return;
+        return ESP_FAIL;
     }
 
     /* Allocate LINK buffer in case it's forwarded to WiFi/ETH */
     p = pbuf_alloc(PBUF_LINK, len, PBUF_POOL);
     if (p == NULL) {
         LWIP_DEBUGF(NETIF_DEBUG, ("Failed to allocate input pbuf for OpenThread netif\n"));
-        return;
+        return ESP_ERR_NO_MEM;
     }
 
     if (unlikely(otMessageRead(message, 0, p->payload, len) != otMessageGetLength(message))) {
         LWIP_DEBUGF(NETIF_DEBUG, ("Failed to read OpenThread message\n"));
         pbuf_free(p);
-        return;
+        return ESP_FAIL;
     }
 
     /* full packet send to tcpip_thread to process */
     if (unlikely(netif->input(p, netif) != ERR_OK)) {
         LWIP_DEBUGF(NETIF_DEBUG, ("openthread_netif_input: IP input error\n"));
         pbuf_free(p);
+        return ESP_FAIL;
     }
     /* the pbuf will be free in upper layer, eg: tcpip_input */
+    return ESP_OK;
 }
 
 static err_t openthread_netif_multicast_handler(struct netif *netif, const ip6_addr_t *group,

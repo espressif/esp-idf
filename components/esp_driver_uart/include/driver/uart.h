@@ -397,6 +397,7 @@ static inline esp_err_t _uart_set_pin4(uart_port_t uart_num, int tx_io_num, int 
 // Error function for invalid argument count
 static inline esp_err_t __uart_set_pin_invalid_args__(int dummy, ...)
 {
+    (void)dummy;
     ESP_RETURN_ON_FALSE(false, ESP_FAIL, "uart", "Invalid number of arguments to uart_set_pin(). Expected 5 or 7 arguments.");
     return ESP_OK;
 }
@@ -515,7 +516,7 @@ esp_err_t uart_intr_config(uart_port_t uart_num, const uart_intr_config_t *intr_
  *     - ESP_FAIL Parameter error
  *     - ESP_ERR_TIMEOUT  Timeout
  */
-esp_err_t uart_wait_tx_done(uart_port_t uart_num, TickType_t ticks_to_wait);
+esp_err_t uart_wait_tx_done(uart_port_t uart_num, uint32_t ticks_to_wait);
 
 /**
  * @brief Send data to the UART port from a given buffer and length.
@@ -586,7 +587,7 @@ int uart_write_bytes_with_break(uart_port_t uart_num, const void* src, size_t si
  *     - (-1) Error
  *     - OTHERS (>=0) The number of bytes read from UART buffer
  */
-int uart_read_bytes(uart_port_t uart_num, void* buf, uint32_t length, TickType_t ticks_to_wait);
+int uart_read_bytes(uart_port_t uart_num, void* buf, uint32_t length, uint32_t ticks_to_wait);
 
 /**
  * @brief Alias of uart_flush_input.
@@ -625,7 +626,9 @@ esp_err_t uart_flush_input(uart_port_t uart_num);
 esp_err_t uart_get_buffered_data_len(uart_port_t uart_num, size_t* size);
 
 /**
- * @brief   UART get TX ring buffer free space size
+ * @brief   UART get TX ring buffer free space size for the next data to be enqueued
+ *
+ * It returns the tight conservative bound for NOSPLIT ring buffer overall enqueueable payload across up to two chunks.
  *
  * @param   uart_num UART port number, the max port number is (UART_NUM_MAX -1).
  * @param   size Pointer of size_t to accept the free space size

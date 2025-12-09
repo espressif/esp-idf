@@ -206,6 +206,7 @@ static void dump_task(void *parameter)
     while (atomic_load(&dump_ctx->is_running)) {
         rx_queue_item_t item;
         if (xQueueReceive(dump_ctx->rx_queue, &item, pdMS_TO_TICKS(CONFIG_EXAMPLE_DUMP_TASK_TIMEOUT_MS)) == pdPASS) {
+            item.frame.buffer = item.buffer;    // point to the new buffer
 
             format_twaidump_frame(dump_ctx->timestamp_mode, &item.frame, item.timestamp_us,
                                   dump_ctx->start_time_us, &dump_ctx->last_frame_time_us,
@@ -387,8 +388,6 @@ static int twai_dump_handler(int argc, char **argv)
         ret = twai_node_disable(controller->node_handle);
         ESP_RETURN_ON_ERROR(ret, TAG, "Failed to disable TWAI node%d for filter configuration: %s", controller_id, esp_err_to_name(ret));
 
-        ret = (SOC_TWAI_MASK_FILTER_NUM > 0) ? ESP_OK : ESP_ERR_INVALID_STATE;
-        ESP_RETURN_ON_ERROR(ret, TAG, "TWAI%d does not support %d mask filters", controller_id, SOC_TWAI_MASK_FILTER_NUM);
         if (mask_count > 0) {
             for (int i = 0; i < mask_count; i++) {
                 ret = twai_node_config_mask_filter(controller->node_handle, i,

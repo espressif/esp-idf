@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -35,12 +35,12 @@ static esp_err_t s_isp_claim_awb_controller(isp_proc_handle_t isp_proc, isp_awb_
     assert(isp_proc && awb_ctlr);
 
     esp_err_t ret = ESP_ERR_NOT_FOUND;
-    portENTER_CRITICAL(&isp_proc->spinlock);
+    esp_os_enter_critical(&isp_proc->spinlock);
     if (!isp_proc->awb_ctlr) {
         isp_proc->awb_ctlr = awb_ctlr;
         ret = ESP_OK;
     }
-    portEXIT_CRITICAL(&isp_proc->spinlock);
+    esp_os_exit_critical(&isp_proc->spinlock);
 
     return ret;
 }
@@ -48,9 +48,9 @@ static esp_err_t s_isp_claim_awb_controller(isp_proc_handle_t isp_proc, isp_awb_
 static void s_isp_declaim_awb_controller(isp_awb_ctlr_t awb_ctlr)
 {
     if (awb_ctlr && awb_ctlr->isp_proc) {
-        portENTER_CRITICAL(&awb_ctlr->isp_proc->spinlock);
+        esp_os_enter_critical(&awb_ctlr->isp_proc->spinlock);
         awb_ctlr->isp_proc->awb_ctlr = NULL;
-        portEXIT_CRITICAL(&awb_ctlr->isp_proc->spinlock);
+        esp_os_exit_critical(&awb_ctlr->isp_proc->spinlock);
     }
 }
 
@@ -239,6 +239,26 @@ bool IRAM_ATTR esp_isp_awb_isr(isp_proc_handle_t proc, uint32_t awb_events)
                 .sum_b = isp_ll_awb_get_accumulated_b_value(proc->hal.hw),
             },
         };
+
+        // Get subwindow statistics
+        for (int x = 0; x < ISP_AWB_WINDOW_X_NUM; x++) {
+            for (int y = 0; y < ISP_AWB_WINDOW_Y_NUM; y++) {
+                int subwindow_id = x * ISP_AWB_WINDOW_Y_NUM + y;
+
+                isp_ll_lut_awb_set_cmd(proc->hal.hw, ISP_LL_LUT_AWB_WHITE_PATCH_CNT, subwindow_id, ISP_LL_LUT_AWB);
+                edata.awb_result.subwin_result.white_patch_num[x][y] = isp_ll_lut_awb_get_subwindow_white_patch_cnt(proc->hal.hw);
+
+                isp_ll_lut_awb_set_cmd(proc->hal.hw, ISP_LL_LUT_AWB_ACCUMULATED_R, subwindow_id, ISP_LL_LUT_AWB);
+                edata.awb_result.subwin_result.sum_r[x][y] = isp_ll_lut_awb_get_subwindow_accumulated_r(proc->hal.hw);
+
+                isp_ll_lut_awb_set_cmd(proc->hal.hw, ISP_LL_LUT_AWB_ACCUMULATED_G, subwindow_id, ISP_LL_LUT_AWB);
+                edata.awb_result.subwin_result.sum_g[x][y] = isp_ll_lut_awb_get_subwindow_accumulated_g(proc->hal.hw);
+
+                isp_ll_lut_awb_set_cmd(proc->hal.hw, ISP_LL_LUT_AWB_ACCUMULATED_B, subwindow_id, ISP_LL_LUT_AWB);
+                edata.awb_result.subwin_result.sum_b[x][y] = isp_ll_lut_awb_get_subwindow_accumulated_b(proc->hal.hw);
+            }
+        }
+
         // Invoke the callback if the callback is registered
         if (awb_ctlr->cbs.on_statistics_done) {
             need_yield |= awb_ctlr->cbs.on_statistics_done(awb_ctlr, &edata, awb_ctlr->user_data);

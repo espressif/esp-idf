@@ -26,7 +26,6 @@
 #include <stdint.h>
 #include <stddef.h>
 #include "esp_err.h"
-#include "freertos/FreeRTOS.h"
 #include "sd_pwr_ctrl.h"
 #include "esp_dma_utils.h"
 #include "hal/sd_types.h"
@@ -77,14 +76,14 @@ typedef struct {
  * Note: When new member is added, update reserved bits accordingly
  */
 typedef struct {
-    uint32_t alloc_unit_kb: 16;     /*!< Allocation unit of the card, in multiples of kB (1024 bytes) */
+    uint32_t alloc_unit_kb: 20;     /*!< Allocation unit of the card, in multiples of kB (1024 bytes) */
     uint32_t erase_size_au: 16;     /*!< Erase size for the purpose of timeout calculation, in multiples of allocation unit */
     uint32_t cur_bus_width: 2;      /*!< SD current bus width */
     uint32_t discard_support: 1;    /*!< SD discard feature support */
     uint32_t fule_support: 1;       /*!< SD FILE (Full User Area Logical Erase) feature support */
     uint32_t erase_timeout: 6;      /*!< Timeout (in seconds) for erase of a single allocation unit */
     uint32_t erase_offset: 2;       /*!< Constant timeout offset (in seconds) for any erase operation */
-    uint32_t reserved: 20;          /*!< reserved for future expansion */
+    uint32_t reserved: 16;          /*!< reserved for future expansion */
 } sdmmc_ssr_t;
 
 /**
@@ -218,7 +217,7 @@ typedef struct {
         esp_err_t (*deinit_p)(int slot);  /*!< host function to deinitialize the driver, called with the `slot` */
     };
     esp_err_t (*io_int_enable)(int slot); /*!< Host function to enable SDIO interrupt line */
-    esp_err_t (*io_int_wait)(int slot, TickType_t timeout_ticks); /*!< Host function to wait for SDIO interrupt line to be active */
+    esp_err_t (*io_int_wait)(int slot, uint32_t timeout_ticks); /*!< Host function to wait for SDIO interrupt line to be active */
     int command_timeout_ms;     /*!< timeout, in milliseconds, of a single command. Set to 0 to use the default value. */
     esp_err_t (*get_real_freq)(int slot, int* real_freq); /*!< Host function to provide real working freq, based on SDMMC controller setup */
     sdmmc_delay_phase_t input_delay_phase; /*!< input delay phase, this will only take into effect when the host works in SDMMC_FREQ_HIGHSPEED or SDMMC_FREQ_52M. Driver will print out how long the delay is*/

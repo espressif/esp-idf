@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,7 +14,7 @@ extern "C" {
 
 /**@{*/
 /**
- * @brief labels from bootloader linker script: bootloader.ld
+ * @brief labels from bootloader linker script: bootloader.ld.in
  *
  */
 extern int _bss_start;
@@ -54,6 +54,11 @@ void bootloader_print_banner(void);
  *          ESP_ERR_NOT_SUPPORTED - If selected secure boot scheme is not supported.
  */
 esp_err_t bootloader_init(void);
+
+/**
+ * @brief Initialize cache and mmu
+ */
+void bootloader_init_ext_mem(void);
 
 #ifdef __cplusplus
 }

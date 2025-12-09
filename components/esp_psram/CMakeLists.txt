@@ -10,7 +10,7 @@ if(CONFIG_SOC_SPIRAM_XIP_SUPPORTED)
     list(APPEND includes xip_impl/include)
 endif()
 
-set(priv_requires heap spi_flash esp_mm)
+set(priv_requires heap spi_flash esp_mm esp_hal_mspi esp_hal_gpio)
 if(${target} STREQUAL "esp32")
     list(APPEND priv_requires bootloader_support esp_driver_spi esp_driver_gpio)
 endif()
@@ -50,7 +50,8 @@ if(CONFIG_SPIRAM)
 
 endif()
 
-if(CONFIG_IDF_TARGET_ESP32 AND CONFIG_SPIRAM_CACHE_WORKAROUND AND NOT BOOTLOADER_BUILD)
+# TODO IDF-14338
+if(CONFIG_IDF_TOOLCHAIN_CLANG AND CONFIG_IDF_TARGET_ESP32 AND CONFIG_SPIRAM_CACHE_WORKAROUND AND NOT BOOTLOADER_BUILD)
     # Note: Adding as a PUBLIC compile option here causes this option to propagate to all
     # components that depend on esp_psram.
     #

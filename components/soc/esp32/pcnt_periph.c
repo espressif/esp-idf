@@ -1,10 +1,10 @@
 /*
  * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 
-#include "soc/pcnt_periph.h"
+#include "hal/pcnt_periph.h"
 #include "soc/gpio_sig_map.h"
 #include "soc/soc.h"
 

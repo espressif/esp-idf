@@ -17,6 +17,7 @@
 
 #include <inttypes.h>
 #include "esp_log.h"
+#include "freertos/FreeRTOS.h"
 #include "esp_timer.h"
 #include "esp_private/sdmmc_common.h"
 
@@ -412,6 +413,7 @@ esp_err_t sdmmc_allocate_aligned_buf(sdmmc_card_t* card)
         actual_size = heap_caps_get_allocated_size(buf);
 
         assert(actual_size == SDMMC_IO_BLOCK_SIZE);
+        (void)actual_size;
         card->host.dma_aligned_buffer = buf;
     }
     return ESP_OK;

@@ -218,10 +218,10 @@ Recommended Configuration
     - 1000
 
   * - ``max_freq_mhz``
-    - 160
+    - The maximum CPU frequency supported by {IDF_TARGET_NAME}
 
   * - ``min_freq_mhz``
-    - 40
+    - {CONFIG_XTAL_FREQ}
 
   * - ``light_sleep_enable``
     - false
@@ -271,6 +271,9 @@ This section introduces the recommended configuration and configuration steps fo
 
     - Power down CPU (:ref:`CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP`)
 
+    .. only:: esp32p4
+
+      For ESP32P4, only chips with version greater than 3.0 support powering down the CPU power domain independently.
 
 .. only:: SOC_PM_SUPPORT_TAGMEM_PD
 
@@ -284,6 +287,14 @@ This section introduces the recommended configuration and configuration steps fo
         .. only:: SOC_SPIRAM_SUPPORTED
 
           Due to the shared power pins between flash and PSRAM, cutting power to PSRAM would result in data loss. Therefore, to ensure light sleep does not disrupt program execution, enabling this option requires that the system does not utilize PSRAM.
+
+.. only:: SOC_PM_SUPPORT_TOP_PD
+
+    - Power down Digital Peripheral modules and all child power domains under the TOP power domain in light sleep (:ref:`CONFIG_ESP_SLEEP_POWER_DOWN_FLASH`)
+
+.. only:: SOC_PM_SUPPORT_RTC_PERIPH_PD
+
+    - Power down the RTC digital peripheral module. Automatically powered down the RTC digital peripherals during system sleep is the default system power management policy. Users can call `esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_ON)` to enable the RTC digital peripheral module while in sleep mode.
 
 .. only:: esp32c2
 
@@ -332,7 +343,7 @@ Configuration Steps:
 Recommended Configuration
 +++++++++++++++++++++++++++++
 
-.. only:: esp32c3 or esp32s3
+.. only:: esp32c6 or esp32c5
 
   .. list-table::
    :header-rows: 1
@@ -371,20 +382,125 @@ Recommended Configuration
    * - Power down CPU (:ref:`CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP`)
      - ON
 
-.. only:: SOC_PM_SUPPORT_TAGMEM_PD
+   * - Power down flash in light sleep (:ref:`CONFIG_ESP_SLEEP_POWER_DOWN_FLASH`)
+     - OFF
+
+   * - ``max_freq_mhz``
+     - The maximum CPU frequency supported by {IDF_TARGET_NAME}
+
+   * - ``min_freq_mhz``
+     - {CONFIG_XTAL_FREQ}
+
+   * - ``light_sleep_enable``
+     - true
+
+  .. note::
+      Configurations not mentioned in the above table are set to default.
+
+.. only:: esp32s3
+
+  .. list-table::
+   :header-rows: 1
+   :widths: 30 15
+
+   * - Configuration Name
+     - Configuration Status
+
+   * - Enable power management component (:ref:`CONFIG_PM_ENABLE`)
+     - ON
+
+   * - Enable RTOS Tickless IDLE mode (:ref:`CONFIG_FREERTOS_USE_TICKLESS_IDLE`)
+     - ON
+
+   * - RTOS Tick rate (Hz) (:ref:`CONFIG_FREERTOS_HZ`)
+     - 1000
+
+   * - Minimum IDLE Tick count before entering sleep mode (:ref:`CONFIG_FREERTOS_IDLE_TIME_BEFORE_SLEEP`)
+     - 3
+
+   * - Put light sleep related codes in IRAM (:ref:`CONFIG_PM_SLP_IRAM_OPT`)
+     - OFF
+
+   * - Put RTOS IDLE related codes in IRAM (:ref:`CONFIG_PM_RTOS_IDLE_OPT`)
+     - OFF
+
+   * - RTC slow clock source (:ref:`CONFIG_RTC_CLK_SRC`)
+     - Internal 150 kHz OSC
+
+   * - Disable all GPIO when chip at sleep (:ref:`CONFIG_PM_SLP_DISABLE_GPIO`)
+     - ON
+
+   * - Power down MAC and baseband (:ref:`CONFIG_ESP_PHY_MAC_BB_PD`)
+     - ON
+
+   * - Power down CPU (:ref:`CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP`)
+     - ON
 
    * - Power down I/D-cache tag memory (:ref:`CONFIG_PM_RESTORE_CACHE_TAGMEM_AFTER_LIGHT_SLEEP`)
      - ON
-
 
    * - Power down flash in light sleep (:ref:`CONFIG_ESP_SLEEP_POWER_DOWN_FLASH`)
      - OFF
 
    * - ``max_freq_mhz``
-     - 160
+     - The maximum CPU frequency supported by {IDF_TARGET_NAME}
 
    * - ``min_freq_mhz``
-     - 40
+     - {CONFIG_XTAL_FREQ}
+
+   * - ``light_sleep_enable``
+     - true
+
+  .. note::
+      Configurations not mentioned in the above table are set to default.
+
+.. only:: esp32c3
+
+  .. list-table::
+   :header-rows: 1
+   :widths: 30 15
+
+   * - Configuration Name
+     - Configuration Status
+
+   * - Enable power management component (:ref:`CONFIG_PM_ENABLE`)
+     - ON
+
+   * - Enable RTOS Tickless IDLE mode (:ref:`CONFIG_FREERTOS_USE_TICKLESS_IDLE`)
+     - ON
+
+   * - RTOS Tick rate (Hz) (:ref:`CONFIG_FREERTOS_HZ`)
+     - 1000
+
+   * - Minimum IDLE Tick count before entering sleep mode (:ref:`CONFIG_FREERTOS_IDLE_TIME_BEFORE_SLEEP`)
+     - 3
+
+   * - Put light sleep related codes in IRAM (:ref:`CONFIG_PM_SLP_IRAM_OPT`)
+     - OFF
+
+   * - Put RTOS IDLE related codes in IRAM (:ref:`CONFIG_PM_RTOS_IDLE_OPT`)
+     - OFF
+
+   * - RTC slow clock source (:ref:`CONFIG_RTC_CLK_SRC`)
+     - Internal 150 kHz OSC
+
+   * - Disable all GPIO when chip at sleep (:ref:`CONFIG_PM_SLP_DISABLE_GPIO`)
+     - ON
+
+   * - Power down MAC and baseband (:ref:`CONFIG_ESP_PHY_MAC_BB_PD`)
+     - ON
+
+   * - Power down CPU (:ref:`CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP`)
+     - ON
+
+   * - Power down flash in light sleep (:ref:`CONFIG_ESP_SLEEP_POWER_DOWN_FLASH`)
+     - OFF
+
+   * - ``max_freq_mhz``
+     - The maximum CPU frequency supported by {IDF_TARGET_NAME}
+
+   * - ``min_freq_mhz``
+     - {CONFIG_XTAL_FREQ}
 
    * - ``light_sleep_enable``
      - true
@@ -429,7 +545,7 @@ Recommended Configuration
       - 160
 
     * - ``min_freq_mhz``
-      - 40
+      - {CONFIG_XTAL_FREQ}
 
     * - ``light_sleep_enable``
       - true
@@ -477,7 +593,7 @@ Recommended Configuration
      - 120
 
    * - ``min_freq_mhz``
-     - 40
+     - {CONFIG_XTAL_FREQ}
 
    * - ``light_sleep_enable``
      - true

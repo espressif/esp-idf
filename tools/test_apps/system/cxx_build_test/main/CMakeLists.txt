@@ -7,10 +7,6 @@ if(CONFIG_SOC_I2S_SUPPORTED)
     list(APPEND srcs test_i2s.cpp)
 endif()
 
-if(CONFIG_SOC_TWAI_SUPPORTED)
-    list(APPEND srcs test_twai.cpp)
-endif()
-
 idf_component_register(SRCS "${srcs}"
                        INCLUDE_DIRS "."
-                       PRIV_REQUIRES driver esp_driver_i2s)
+                       PRIV_REQUIRES esp_driver_i2s esp_driver_mcpwm esp_driver_sdmmc esp_driver_sdspi)

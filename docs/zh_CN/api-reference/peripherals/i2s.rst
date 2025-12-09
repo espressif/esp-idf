@@ -116,13 +116,9 @@ I2S 通信模式
 =========  ========  ==========  ==========  ===========  ==========  ========  ===========
 ESP32      I2S 0/1     I2S 0       I2S 0       I2S 0/1        无        I2S 0      I2S 0
 ESP32-S2    I2S 0        无         无           无           无         无        I2S 0
-ESP32-C3    I2S 0      I2S 0        无          I2S 0        I2S 0       无         无
-ESP32-C6    I2S 0      I2S 0        无          I2S 0        I2S 0       无         无
 ESP32-S3   I2S 0/1     I2S 0       I2S 0       I2S 0/1      I2S 0/1      无         无
-ESP32-H2    I2S 0      I2S 0        无          I2S 0        I2S 0       无         无
 ESP32-P4   I2S 0~2     I2S 0       I2S 0       I2S 0~2      I2S 0~2      无         无
-ESP32-C5    I2S 0      I2S 0        无          I2S 0        I2S 0       无         无
-ESP32-C61   I2S 0      I2S 0        无          I2S 0        I2S 0       无         无
+others      I2S 0      I2S 0        无          I2S 0        I2S 0       无         无
 =========  ========  ==========  ==========  ===========  ==========  ========  ===========
 
 .. note::
@@ -225,11 +221,11 @@ ESP32-C61   I2S 0      I2S 0        无          I2S 0        I2S 0       无   
 
     TDM（Time Division Multiplexing，时分多路复用）模式最多支持 16 个声道，可通过 :cpp:member:`i2s_tdm_slot_config_t::slot_mask` 启用通道。
 
-    .. only:: SOC_I2S_TDM_FULL_DATA_WIDTH
+    .. only:: not esp32c3 or esp32c6 or esp32s3
 
         该模式下无论启用多少声道，都支持任意数据位宽，也即一个帧中最多可以有 ``32 位宽 * 16 个声道 = 512 位`` 的数据。
 
-    .. only:: not SOC_I2S_TDM_FULL_DATA_WIDTH
+    .. only:: esp32c3 or esp32c6 or esp32s3
 
         但由于硬件限制，声道设置为 32 位宽时最多只能支持 4 个声道，16 位宽时最多只能支持 8 个声道，8 位宽时最多只能支持 16 个声道。TDM 的声道通信格式与标准模式基本相同，但有一些细微差别。
 
@@ -249,14 +245,14 @@ ESP32-C61   I2S 0      I2S 0        无          I2S 0        I2S 0       无   
 
     .. wavedrom:: /../_static/diagrams/i2s/tdm_pcm_long.json
 
-.. only:: SOC_I2S_SUPPORTS_LCD_CAMERA
+.. only:: esp32 or esp32s2
 
     LCD/摄像头模式
     ^^^^^^^^^^^^^^^
 
     LCD/摄像头模式只支持在 I2S0 上通过并行总线运行。在 LCD 模式下，I2S0 应当设置为主机 TX 模式；在摄像头模式下，I2S0 应当设置为从机 RX 模式。这两种模式不是由 I2S 驱动实现的，关于 LCD 模式的实现，请参阅 :doc:`/api-reference/peripherals/lcd/i80_lcd`。更多信息请参考 **{IDF_TARGET_NAME} 技术参考手册** > **I2S 控制器 (I2S)** > LCD 模式 [`PDF <{IDF_TARGET_TRM_EN_URL}#camlcdctrl>`__]。
 
-.. only:: SOC_I2S_SUPPORTS_ADC_DAC
+.. only:: esp32
 
     ADC/DAC 模式
     ^^^^^^^^^^^^^
@@ -988,6 +984,7 @@ STD RX 模式
 
     ...
 
+
 .. only:: SOC_I2S_HW_VERSION_1
 
     单工模式
@@ -1046,6 +1043,7 @@ STD RX 模式
         };
         ESP_ERROR_CHECK(i2s_channel_init_std_mode(rx_handle, &std_rx_cfg));
         ESP_ERROR_CHECK(i2s_channel_enable(rx_handle));
+
 
 .. only:: SOC_I2S_HW_VERSION_2
 
@@ -1277,4 +1275,4 @@ I2S 类型
 ^^^^^^^^
 
 .. include-build-file:: inc/components/esp_driver_i2s/include/driver/i2s_types.inc
-.. include-build-file:: inc/components/hal/include/hal/i2s_types.inc
+.. include-build-file:: inc/components/esp_hal_i2s/include/hal/i2s_types.inc

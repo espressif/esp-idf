@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2016-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2016-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,6 +11,7 @@
 #include "esp_log.h"
 #include "sys/lock.h"
 #include "soc/soc_pins.h"
+#include "soc/soc_caps_full.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "freertos/timers.h"
@@ -29,18 +30,18 @@ static const char *TOUCH_TAG = "TOUCH_SENSOR";
 })
 #ifdef CONFIG_IDF_TARGET_ESP32
 #define TOUCH_CHANNEL_CHECK(channel) do { \
-        TOUCH_CHECK(channel < SOC_TOUCH_SENSOR_NUM && channel >= 0, "Touch channel error", ESP_ERR_INVALID_ARG); \
+        TOUCH_CHECK(channel < SOC_MODULE_ATTR(TOUCH, CHAN_NUM) && channel >= 0, "Touch channel error", ESP_ERR_INVALID_ARG); \
     } while (0);
 #else // !CONFIG_IDF_TARGET_ESP32
 #define TOUCH_CHANNEL_CHECK(channel) do { \
-        TOUCH_CHECK(channel < SOC_TOUCH_SENSOR_NUM && channel >= 0, "Touch channel error", ESP_ERR_INVALID_ARG); \
+        TOUCH_CHECK(channel < SOC_MODULE_ATTR(TOUCH, CHAN_NUM) && channel >= 0, "Touch channel error", ESP_ERR_INVALID_ARG); \
         TOUCH_CHECK(channel != SOC_TOUCH_DENOISE_CHANNEL, "TOUCH0 is internal denoise channel", ESP_ERR_INVALID_ARG); \
     } while (0);
 #endif // CONFIG_IDF_TARGET_ESP32
 
 #define TOUCH_GET_IO_NUM(channel) (touch_sensor_channel_io_map[channel])
 
-_Static_assert(TOUCH_PAD_MAX == SOC_TOUCH_SENSOR_NUM, "Touch sensor channel number not equal to chip capabilities");
+_Static_assert(TOUCH_PAD_MAX == SOC_MODULE_ATTR(TOUCH, CHAN_NUM), "Touch sensor channel number not equal to chip capabilities");
 
 extern portMUX_TYPE rtc_spinlock; //TODO: Will be placed in the appropriate position after the rtc module is finished.
 #define TOUCH_ENTER_CRITICAL()  portENTER_CRITICAL(&rtc_spinlock)
@@ -87,7 +88,7 @@ esp_err_t touch_pad_get_voltage(touch_high_volt_t *refh, touch_low_volt_t *refl,
 
 esp_err_t touch_pad_set_cnt_mode(touch_pad_t touch_num, touch_cnt_slope_t slope, touch_tie_opt_t opt)
 {
-    TOUCH_CHECK(touch_num < SOC_TOUCH_SENSOR_NUM, "Touch channel error", ESP_ERR_INVALID_ARG);
+    TOUCH_CHECK(touch_num < SOC_MODULE_ATTR(TOUCH, CHAN_NUM), "Touch channel error", ESP_ERR_INVALID_ARG);
     TOUCH_CHECK(slope < TOUCH_PAD_SLOPE_MAX, "touch slope error", ESP_ERR_INVALID_ARG);
     TOUCH_CHECK(opt < TOUCH_PAD_TIE_OPT_MAX, "touch opt error", ESP_ERR_INVALID_ARG);
 
@@ -104,7 +105,7 @@ esp_err_t touch_pad_set_cnt_mode(touch_pad_t touch_num, touch_cnt_slope_t slope,
 
 esp_err_t touch_pad_get_cnt_mode(touch_pad_t touch_num, touch_cnt_slope_t *slope, touch_tie_opt_t *opt)
 {
-    TOUCH_CHECK(touch_num < SOC_TOUCH_SENSOR_NUM, "Touch channel error", ESP_ERR_INVALID_ARG);
+    TOUCH_CHECK(touch_num < SOC_MODULE_ATTR(TOUCH, CHAN_NUM), "Touch channel error", ESP_ERR_INVALID_ARG);
 
     touch_hal_meas_mode_t meas = {0};
     TOUCH_ENTER_CRITICAL();

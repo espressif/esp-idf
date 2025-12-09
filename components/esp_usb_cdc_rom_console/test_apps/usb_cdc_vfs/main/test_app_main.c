@@ -12,6 +12,7 @@
 #include "esp_private/usb_console.h"
 #include "esp_vfs_cdcacm.h"
 #include "esp_rom_sys.h"
+#include "esp_vfs.h"
 
 static void flush_write(void)
 {

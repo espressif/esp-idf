@@ -57,7 +57,7 @@ typedef struct {
  * @brief I2S controller channel configuration
 */
 typedef struct {
-    i2s_port_t          id;                 /*!< I2S port id */
+    int                 id;                 /*!< I2S port id */
     i2s_role_t          role;               /*!< I2S role, I2S_ROLE_MASTER or I2S_ROLE_SLAVE */
 
     /* DMA configurations */
@@ -85,7 +85,7 @@ typedef struct {
  * @brief I2S channel information
  */
 typedef struct {
-    i2s_port_t          id;                 /*!< I2S port id */
+    int                 id;                 /*!< I2S port id */
     i2s_role_t          role;               /*!< I2S role, I2S_ROLE_MASTER or I2S_ROLE_SLAVE */
     i2s_dir_t           dir;                /*!< I2S channel direction */
     i2s_comm_mode_t     mode;               /*!< I2S channel communication mode */

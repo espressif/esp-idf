@@ -209,7 +209,6 @@ ESP-IDF 启动的系统任务预设了固定优先级。启动时，一些任务
         :SOC_BT_SUPPORTED: - :doc:`/api-reference/bluetooth/controller_vhci` 任务优先级较高 (23, ``ESP_TASK_BT_CONTROLLER_PRIO``)。蓝牙控制器需要以低延迟响应请求，因此其任务应始终为系统最高优先级的任务之一。
         :SOC_BT_SUPPORTED: - :doc:`/api-reference/bluetooth/nimble/index` 任务优先级较高 (21).
         - 以太网驱动程序会创建一个 MAC 任务，用于接收以太网帧。如果使用默认配置 ``ETH_MAC_DEFAULT_CONFIG`` ，则该任务为中高优先级 (15)。可以在以太网 MAC 初始化时输入自定义 :cpp:class:`eth_mac_config_t` 结构体来更改此设置。
-        - 如果使用 :doc:`/api-reference/protocols/mqtt` 组件，它会创建优先级默认为 5 的任务（ :ref:`可配置 <CONFIG_MQTT_TASK_PRIORITY>` ），可通过 :ref:`CONFIG_MQTT_USE_CUSTOM_CONFIG` 调整，也可以在运行时通过 :cpp:class:`esp_mqtt_client_config_t` 结构体中的 ``task_prio`` 字段调整。
         - 关于 ``mDNS`` 服务的任务优先级，参见 `性能优化 <https://docs.espressif.com/projects/esp-protocols/mdns/docs/latest/en/index.html#performance-optimization>`__ 。
 
 .. only:: SOC_HP_CPU_HAS_MULTIPLE_CORES
@@ -233,7 +232,6 @@ ESP-IDF 启动的系统任务预设了固定优先级。启动时，一些任务
                所有 Bluedroid 任务默认固定在同一个核心上执行，即核 0（ :ref:`可配置 <CONFIG_BT_BLUEDROID_PINNED_TO_CORE_CHOICE>` ）。
 
         - 以太网驱动程序会创建一个 MAC 任务，用于接收以太网帧。如果使用默认配置 ``ETH_MAC_DEFAULT_CONFIG`` ，则该任务为中高优先级 (15) 且并未固定在特定内核上执行。可以在以太网 MAC 初始化时输入自定义 :cpp:class:`eth_mac_config_t` 结构体来更改此设置。
-        - 如果使用 :doc:`/api-reference/protocols/mqtt` 组件，它会创建优先级默认为 5 的任务（ :ref:`可配置 <CONFIG_MQTT_TASK_PRIORITY>` ，也可通过 :ref:`CONFIG_MQTT_USE_CUSTOM_CONFIG` 调整）。该任务未固定在特定内核上执行（ :ref:`可配置 <CONFIG_MQTT_TASK_CORE_SELECTION_ENABLED>` ）。
         - 关于 ``mDNS`` 服务的任务优先级，参见 `性能优化 <https://docs.espressif.com/projects/esp-protocols/mdns/docs/latest/en/index.html#performance-optimization>`__ 。
 
 

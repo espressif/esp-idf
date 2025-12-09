@@ -1,3 +1,4 @@
+===================
 双线汽车接口 (TWAI)
 ===================
 
@@ -10,15 +11,15 @@
     :depth: 2
 
 概述
-----
+====
 
 TWAI 是一种适用于汽车和工业应用的高可靠性的多主机实时串行异步通信协议。它兼容 ISO11898-1 标准定义的帧结构，可以支持 11 位 ID 的标准帧和 29 位 ID 的扩展帧。支持报文优先级和无损仲裁，支持自动重传和故障自动隔离机制。{IDF_TARGET_NAME} 包含 {IDF_TARGET_CONFIG_SOC_TWAI_CONTROLLER_NUM} 个 TWAI 控制器，可以创建 {IDF_TARGET_CONFIG_SOC_TWAI_CONTROLLER_NUM} 个驱动实例。
 
-.. only:: SOC_TWAI_SUPPORT_FD
+.. only:: SOC_TWAI_FD_SUPPORTED
 
-    {IDF_TARGET_NAME} TWAI 控制器兼容 ISO11898-1 FD 格式帧，可以发送和接收经典格式和 FD 格式帧。
+    {IDF_TARGET_NAME} TWAI 控制器兼容 ISO11898-1 FD (a.k.a. CAN FD) 格式帧，可以发送和接收经典格式和 FD 格式帧。
 
-.. only:: not SOC_TWAI_SUPPORT_FD
+.. only:: not SOC_TWAI_FD_SUPPORTED
 
     {IDF_TARGET_NAME} TWAI 控制器 **不兼容 ISO11898-1 FD 格式帧，并会将这些帧解析为错误。**
 
@@ -30,7 +31,7 @@ TWAI 是一种适用于汽车和工业应用的高可靠性的多主机实时串
 - 配合其他通信协议作为桥接设备
 
 快速入门
---------
+========
 
 本节将带你快速了解如何使用 TWAI 驱动。通过简单的示例，展示如何创建一个 TWAI 节点实例，如何发送和接收总线上的报文，以及如何安全停止和删除驱动。一般的使用流程如下：
 
@@ -38,7 +39,7 @@ TWAI 是一种适用于汽车和工业应用的高可靠性的多主机实时串
     :align: center
 
 硬件连接
-^^^^^^^^
+--------
 
 {IDF_TARGET_NAME} 内部没有集成 TWAI 收发器。因此你需要外接一个收发器才能加入 TWAI 总线。外部收发器的型号取决于具体应用遵循的物理层规范。例如，使用 TJA105x 收发器以兼容 ISO 11898-2 标准。
 
@@ -53,7 +54,7 @@ TWAI 是一种适用于汽车和工业应用的高可靠性的多主机实时串
 - CLK_OUT （可选），输出控制器时间量子时钟，即源时钟的分频时钟。
 
 创建和启动 TWAI 节点
-^^^^^^^^^^^^^^^^^^^^^
+---------------------
 
 首先，我们需要创建一个 TWAI 实例。以下代码展示了如何创建一个波特率为 200kHz 的 TWAI 节点：
 
@@ -90,25 +91,24 @@ TWAI 是一种适用于汽车和工业应用的高可靠性的多主机实时串
     - :cpp:member:`twai_onchip_node_config_t::flags::enable_listen_only` 配置为监听模式，节点只接收，不发送任何显性位，包括 ACK 和错误帧。
     - :cpp:member:`twai_onchip_node_config_t::flags::no_receive_rtr` 使用过滤器时是否同时过滤掉符合 ID 规则的远程帧。
 
-.. only:: esp32c5
-
-    .. note::
-
-        注意： ESP32C5 的监听模式在总线上有多个节点相互发送 ACK 信号时无法正常工作。一种替代方案是使用本身支持监听模式的收发器（例如 TJA1145），并结合启用自测模式。
-
 函数 :cpp:func:`twai_node_enable` 将启动 TWAI 控制器，此时 TWAI 控制器就连接到了总线，可以向总线发送报文。如果收到了总线上其他节点发送的报文，或者检测到了总线错误，也将产生相应事件。
 
 与之对应的函数是 :cpp:func:`twai_node_disable`，该函数将立即停止节点工作并与总线断开，正在进行的传输将被中止。当下次重新启动时，如果发送队列中有未完成的任务，驱动将立即发起新的传输。
 
 发送报文
-^^^^^^^^
+--------
 
 TWAI 报文有多种类型，由报头指定。一个典型的数据帧报文主要包括报头和数据，大概结构如下：
 
 .. image:: ../../../_static/diagrams/twai/frame_struct.svg
     :align: center
 
-为减少拷贝带来的性能损失，TWAI 驱动使用指针进行传递。以下代码展示了如何发送一条典型的数据帧报文：
+为减少拷贝带来的性能损失，TWAI 驱动使用指针进行传递。且驱动设计为异步模式，因此，在传输真正完成之前， :cpp:type:`twai_frame_t` 实体及其 :cpp:member:`twai_frame_t::buffer` 指向的内存必须保持有效。可通过以下方式得知传输完成：
+
+- 调用 :cpp:func:`twai_node_transmit_wait_all_done` 函数等待所有传输完成。
+- 注册 :cpp:member:`twai_event_callbacks_t::on_tx_done` 事件回调函数，在传输完成时接收通知。
+
+以下代码展示了如何发送一条典型的数据帧报文：
 
 .. code:: c
 
@@ -136,7 +136,7 @@ TWAI 报文有多种类型，由报头指定。一个典型的数据帧报文主
 - :cpp:member:`twai_frame_t::header::esi` 对于收到的报文，指示发送节点的错误状态。
 
 接收报文
-^^^^^^^^
+--------
 
 接收报文必须在接收事件回调中进行，因此，要接收报文需要在控制器启动前注册接收事件回调 :cpp:member:`twai_event_callbacks_t::on_rx_done` ，从而在事件发生时接收报文。以下代码分别展示了如何注册接收事件回调，以及如何在回调中接收报文：
 
@@ -169,12 +169,12 @@ TWAI 报文有多种类型，由报头指定。一个典型的数据帧报文主
 同样，驱动使用指针进行传递，因此需要在接收前配置 :cpp:member:`twai_frame_t::buffer` 的指针及其内存长度 :cpp:member:`twai_frame_t::buffer_len`
 
 停止和删除节点
-^^^^^^^^^^^^^^
+--------------
 
 当不再需要使用 TWAI 时，应该调用 :cpp:func:`twai_node_delete` 函数来释放软硬件资源。删除前请确保 TWAI 已经处于停止状态。
 
 进阶功能
---------
+========
 
 在了解了基本用法后，我们可以进一步探索 TWAI 驱动的更多玩法。驱动支持更详细的控制器配置和错误反馈功能，完整的驱动功能图如下：
 
@@ -182,7 +182,7 @@ TWAI 报文有多种类型，由报头指定。一个典型的数据帧报文主
     :align: center
 
 在 ISR 中发送
-^^^^^^^^^^^^^
+-------------
 
 TWAI 驱动支持在中断服务程序 (ISR) 中发送报文。这对于需要低延迟响应或由硬件定时器触发的周期性传输的应用特别有用。例如，你可以在 ``on_tx_done`` 回调中触发一次新的传输，该回调在 ISR 上下文中执行。
 
@@ -205,10 +205,10 @@ TWAI 驱动支持在中断服务程序 (ISR) 中发送报文。这对于需要�
     }
 
 .. note::
-    在 ISR 中调用 :cpp:func:`twai_node_transmit` 时，``timeout`` 参数将被忽略，函数不会阻塞。如果发送队列已满，函数将立即返回错误。应用程序需要自行处理队列已满的情况。
+    在 ISR 中调用 :cpp:func:`twai_node_transmit` 时，``timeout`` 参数将被忽略，函数不会阻塞。如果发送队列已满，函数将立即返回错误。应用程序需要自行处理队列已满的情况。同样，``twai_frame_t`` 及其 ``buffer`` 指向的内存必须在 **该传输** 完成之前保持有效。通过 :cpp:member:`twai_tx_done_event_data_t::done_tx_frame` 指针可得知该次完成的报文。
 
 位时序自定义
-^^^^^^^^^^^^^
+-------------
 
 和其他异步通信不同的是，TWAI 控制器在一个位时间里实际上在进行以 **时间量子（Tq）** 为单位的计数 / 采样，一个位里的时间量子的数量决定了最终的波特率以及采样点位置。在信号质量较低时时，可以手动更加精准的配置这些时序段以满足要求。位时间里的时间量子分为不同的段，如图所示：
 
@@ -253,10 +253,10 @@ TWAI 驱动支持在中断服务程序 (ISR) 中发送报文。这对于需要�
     ``brp``、``prop_seg``、``tseg_1``、``tseg_2`` 和 ``sjw`` 的不同组合可以实现相同波特率。用户应考虑 **传播延迟、节点信息处理时间和相位误差** 等因素，根据总线的物理特性进行调整。
 
 过滤器配置
-^^^^^^^^^^
+----------
 
 掩码过滤器
-""""""""""
+^^^^^^^^^^
 
 TWAI 控制器硬件可以根据 ID 对报文进行过滤，从而减少软硬件开销使节点更加高效。过滤掉报文的节点 **不会接收到该报文，但仍会应答**。
 
@@ -282,10 +282,10 @@ TWAI 控制器硬件可以根据 ID 对报文进行过滤，从而减少软硬�
     };
     ESP_ERROR_CHECK(twai_node_config_mask_filter(node_hdl, 0, &mfilter_cfg));   //配置过滤器0
 
-.. only:: not SOC_TWAI_SUPPORT_FD
+.. only:: not SOC_TWAI_FD_SUPPORTED
 
     双过滤器模式
-    """"""""""""
+    ^^^^^^^^^^^^
 
     {IDF_TARGET_NAME} 支持双过滤器模式，可将硬件配置为并列的两个独立的 16 位掩码过滤器，支持接收更多 ID。但注意，使用双过滤器模式过滤 29 位扩展ID时，每个过滤器只能过滤其ID的高 16 位，剩余13位不做过滤。以下代码展示了如何借助 :cpp:func:`twai_make_dual_filter` 配置双过滤器模式。
 
@@ -296,10 +296,10 @@ TWAI 控制器硬件可以根据 ID 对报文进行过滤，从而减少软硬�
         twai_mask_filter_config_t dual_config = twai_make_dual_filter(0x020, 0x7f0, 0x013, 0x7f8, false); // id1, mask1, id2, mask2, 不接收扩展ID
         ESP_ERROR_CHECK(twai_node_config_mask_filter(node_hdl, 0, &dual_config));
 
-.. only:: SOC_TWAI_SUPPORT_FD
+.. only:: SOC_TWAI_FD_SUPPORTED
 
     范围过滤器
-    """"""""""
+    ^^^^^^^^^^
 
     {IDF_TARGET_NAME} 还包含 1 个范围过滤器，与掩码过滤器属并列关系。可以通过 :cpp:func:`twai_node_config_range_filter` 函数直接配置希望接收的 ID 范围。其中：
 
@@ -307,7 +307,7 @@ TWAI 控制器硬件可以根据 ID 对报文进行过滤，从而减少软硬�
     - 配置为无效区间则表示不接收任何报文。
 
 总线错误和恢复
-^^^^^^^^^^^^^^
+--------------
 
 TWAI控制器能够检测由于总线干扰产生的/损坏的不符合帧格式的错误，并规定了一套由发送/接收错误计数器(TEC/REC)实现的故障隔离机制。计数器值决定节点的错误状态，即主动错误、错误警告、被动错误和离线，它可以使持续存在错误的节点最终自行断开与总线的连接。
 
@@ -316,19 +316,19 @@ TWAI控制器能够检测由于总线干扰产生的/损坏的不符合帧格式
 - **被动错误:** 当 TEC 或 REC 中的一个大于或等于 128 时，节点处于被动错误状态。仍可以参与总线通信，但在检测到错误时，只能发送一次 **被动错误标志**。
 - **离线:** 当 **TEC** 大于或等于 256 时，节点进入离线状态。离线的节点相当于断开连接，不会对总线产生任何影响。节点将保持离线状态，直到软件触发恢复操作。
 
-软件可随时使用函数 :cpp:func:`twai_node_get_info` 获取节点状态。或当控制器检测到错误时，会产生 :cpp:member:`twai_event_callbacks_t::on_error` 回调，可通过传参中的错误数据查看错误原因。
+软件可随时在 task 中使用函数 :cpp:func:`twai_node_get_info` 获取节点状态。或当控制器检测到错误时，会产生 :cpp:member:`twai_event_callbacks_t::on_error` 回调，可通过传参中的错误数据查看错误原因。
 
 当错误导致节点状态变化时，会进入 :cpp:member:`twai_event_callbacks_t::on_state_change` 回调，可在回调中查看节点的状态变化。若节点已经离线且需要恢复，需要在task中调用 :cpp:func:`twai_node_recover`。 **但注意，控制器不会立即恢复** ，需要在检测到 129 次连续 11 个隐性位后才会自动重新连接到总线。
 
 节点恢复完成时同样进入 :cpp:member:`twai_event_callbacks_t::on_state_change` 回调，状态由 :cpp:enumerator:`TWAI_ERROR_BUS_OFF` 变为 :cpp:enumerator:`TWAI_ERROR_ACTIVE`。恢复完成的节点可以立即进行传输，如果发送队列中有未完成的任务，驱动将立即发起新的传输。
 
 关于低功耗
-^^^^^^^^^^
+----------
 
 当启用电源管理 :ref:`CONFIG_PM_ENABLE` 时，系统在进入睡眠模式前可能会调整或关闭时钟源，从而导致 TWAI 出错。为了防止这种情况发生，驱动内部使用电源锁管理。当调用 :cpp:func:`twai_node_enable` 函数后，该锁将被激活，确保系统不会进入睡眠模式，从而保持 TWAI 功能正常。如果需要降低功耗，可以调用 :cpp:func:`twai_node_disable` 函数来释放电源管理锁，使系统能够进入睡眠模式，睡眠期间 TWAI 控制器也将停止工作。
 
 关于 Cache 安全
-^^^^^^^^^^^^^^^
+---------------
 
 在进行 Flash 写操作时，为了避免 Cache 从 Flash 加载指令和数据时出现错误，系统会暂时禁用 Cache 功能。这会导致存放在 Flash 上的中断处理程序在此期间无法响应。如果希望在 Cache 被禁用期间，中断处理程序仍能正常运行，可以启用 :ref:`CONFIG_TWAI_ISR_CACHE_SAFE` 选项。
 
@@ -337,12 +337,12 @@ TWAI控制器能够检测由于总线干扰产生的/损坏的不符合帧格式
     请注意，在启用该选项后，所有的中断回调函数及其上下文数据 **必须存放在内部存储空间** 中。因为在 Cache 被禁用时，系统无法从 Flash 中加载数据和指令。
 
 关于线程安全
-^^^^^^^^^^^^^
+-------------
 
 驱动程序可保证所有公开的 TWAI API 的线程安全，使用时，可以直接从不同的 RTOS 任务中调用此类 API，无需额外锁保护。
 
 关于性能
-^^^^^^^^
+--------
 
 为了提升中断处理的实时响应能力， 驱动提供了 :ref:`CONFIG_TWAI_ISR_IN_IRAM` 选项。启用该选项后，中断处理程序和接收操作将被放置在内部 RAM 中运行，从而减少了从 Flash 加载指令带来的延迟。
 
@@ -353,7 +353,7 @@ TWAI控制器能够检测由于总线干扰产生的/损坏的不符合帧格式
     但是，中断处理程序调用的用户回调函数和用户上下文数据仍然可能位于 Flash 中，延迟问题还是会存在，这需要用户自己将回调函数和数据放入内部 RAM 中，比如使用 :c:macro:`IRAM_ATTR` 和 :c:macro:`DRAM_ATTR`。
 
 关于资源消耗
-^^^^^^^^^^^^
+------------
 
 使用 :doc:`/api-guides/tools/idf-size` 工具可以查看 TWAI 驱动的 Flash 和内存空间消耗。以下是测试条件（以 ESP32-C6 为例）：
 
@@ -391,12 +391,12 @@ TWAI控制器能够检测由于总线干扰产生的/损坏的不符合帧格式
 此外，每一个 TWAI 句柄会从 heap 中动态申请约 ``168`` + 4 * :cpp:member:`twai_onchip_node_config_t::tx_queue_depth` 字节的内存。
 
 其他 Kconfig 选项
-^^^^^^^^^^^^^^^^^
+-----------------
 
 - :ref:`CONFIG_TWAI_ENABLE_DEBUG_LOG` 选项允许强制启用 TWAI 驱动的所有调试日志，无论全局日志级别设置如何。启用此选项可以帮助开发人员在调试过程中获取更详细的日志信息，从而更容易定位和解决问题。
 
 应用示例
---------
+========
 
 .. list::
 
@@ -406,9 +406,24 @@ TWAI控制器能够检测由于总线干扰产生的/损坏的不符合帧格式
     - :example:`peripherals/twai/cybergear` 演示了如何通过 TWAI 接口控制 XiaoMi CyberGear 电机。
 
 API 参考
---------
+========
+
+片上 TWAI API
+-------------
 
 .. include-build-file:: inc/esp_twai_onchip.inc
+
+TWAI 驱动 API
+-------------
+
 .. include-build-file:: inc/esp_twai.inc
+
+TWAI 驱动类型
+-------------
+
 .. include-build-file:: inc/esp_twai_types.inc
+
+TWAI HAL 类型
+--------------
+
 .. include-build-file:: inc/twai_types.inc

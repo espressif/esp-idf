@@ -759,6 +759,35 @@ static inline void cache_ll_l1_enable_bus(uint32_t bus_id, cache_bus_mask_t mask
 }
 
 /**
+ * Returns enabled buses for a given core
+ *
+ * @param cache_id    cache ID (when l1 cache is per core)
+ *
+ * @return State of enabled buses
+ */
+__attribute__((always_inline))
+static inline cache_bus_mask_t cache_ll_l1_get_enabled_bus(uint32_t cache_id)
+{
+    cache_bus_mask_t mask = (cache_bus_mask_t)0;
+
+    uint32_t ibus_mask = REG_READ(CACHE_L1_ICACHE_CTRL_REG);
+    if (cache_id == 0) {
+        mask = (cache_bus_mask_t)(mask | ((!(ibus_mask & CACHE_L1_ICACHE_SHUT_IBUS0)) ? CACHE_BUS_IBUS0 : 0));
+    } else if (cache_id == 1) {
+        mask = (cache_bus_mask_t)(mask | ((!(ibus_mask & CACHE_L1_ICACHE_SHUT_IBUS1)) ? CACHE_BUS_IBUS0 : 0));
+    }
+
+    uint32_t dbus_mask = REG_READ(CACHE_L1_DCACHE_CTRL_REG);
+    if (cache_id == 0) {
+        mask = (cache_bus_mask_t)(mask | ((!(dbus_mask & CACHE_L1_DCACHE_SHUT_DBUS0)) ? CACHE_BUS_DBUS0 : 0));
+    } else if (cache_id == 1) {
+        mask = (cache_bus_mask_t)(mask | ((!(dbus_mask & CACHE_L1_DCACHE_SHUT_DBUS1)) ? CACHE_BUS_DBUS0 : 0));
+    }
+
+    return mask;
+}
+
+/**
  * Disable the Cache Buses
  *
  * @param bus_id      bus ID

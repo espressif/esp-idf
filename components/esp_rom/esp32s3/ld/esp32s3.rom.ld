@@ -349,7 +349,7 @@ PROVIDE( Cache_Set_DCache_Mode = 0x4000162c );
 PROVIDE( Cache_Address_Through_ICache = 0x40001638 );
 PROVIDE( Cache_Address_Through_DCache = 0x40001644 );
 PROVIDE( Cache_Set_Default_Mode = 0x40001650 );
-PROVIDE( Cache_Enable_Defalut_ICache_Mode = 0x4000165c );
+PROVIDE( Cache_Enable_Default_ICache_Mode = 0x4000165c );
 PROVIDE( ROM_Boot_Cache_Init = 0x40001668 );
 PROVIDE( Cache_Invalidate_ICache_Items = 0x40001674 );
 PROVIDE( Cache_Invalidate_DCache_Items = 0x40001680 );
@@ -455,23 +455,23 @@ ets_get_xtal_freq = 0x40001a7c;
  ***************************************/
 
 /* Functions */
-gpio_input_get = 0x40001a88;
-gpio_matrix_in = 0x40001a94;
-gpio_matrix_out = 0x40001aa0;
-/* gpio_output_disable = 0x40001aac; */
-/* gpio_output_enable = 0x40001ab8; */
-gpio_output_set = 0x40001ac4;
-gpio_pad_hold = 0x40001ad0;
-gpio_pad_input_disable = 0x40001adc;
-gpio_pad_input_enable = 0x40001ae8;
-gpio_pad_pulldown = 0x40001af4;
-gpio_pad_pullup = 0x40001b00;
-gpio_pad_select_gpio = 0x40001b0c;
-gpio_pad_set_drv = 0x40001b18;
-gpio_pad_unhold = 0x40001b24;
-gpio_pin_wakeup_disable = 0x40001b30;
-gpio_pin_wakeup_enable = 0x40001b3c;
-gpio_bypass_matrix_in = 0x40001b48;
+rom_gpio_input_get = 0x40001a88;
+rom_gpio_matrix_in = 0x40001a94;
+rom_gpio_matrix_out = 0x40001aa0;
+rom_gpio_output_disable = 0x40001aac;
+rom_gpio_output_enable = 0x40001ab8;
+rom_gpio_output_set = 0x40001ac4;
+rom_gpio_pad_hold = 0x40001ad0;
+rom_gpio_pad_input_disable = 0x40001adc;
+rom_gpio_pad_input_enable = 0x40001ae8;
+rom_gpio_pad_pulldown = 0x40001af4;
+rom_gpio_pad_pullup = 0x40001b00;
+rom_gpio_pad_select_gpio = 0x40001b0c;
+rom_gpio_pad_set_drv = 0x40001b18;
+rom_gpio_pad_unhold = 0x40001b24;
+rom_gpio_pin_wakeup_disable = 0x40001b30;
+rom_gpio_pin_wakeup_enable = 0x40001b3c;
+rom_gpio_bypass_matrix_in = 0x40001b48;
 
 
 /***************************************

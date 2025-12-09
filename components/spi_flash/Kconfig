@@ -36,7 +36,7 @@ menu "Main Flash configuration"
         choice SPI_FLASH_HPM
             prompt "High Performance Mode (READ DOCS FIRST, > 80MHz)"
             # Currently, only esp32s3 allows high performance mode.
-            depends on (IDF_TARGET_ESP32S3 || IDF_TARGET_ESP32P4) && !ESPTOOLPY_OCT_FLASH
+            depends on (IDF_TARGET_ESP32S3 || IDF_TARGET_ESP32P4 || IDF_TARGET_ESP32C5) && !ESPTOOLPY_OCT_FLASH
             default SPI_FLASH_HPM_AUTO
             help
                 Whether the High Performance Mode of Flash is enabled. As an optional feature, user needs to manually
@@ -113,7 +113,7 @@ menu "Main Flash configuration"
             int "SPI flash tRS value (refer to chapter AC CHARACTERISTICS)"
             default 50
             range 20 200
-            depends on SOC_SPI_MEM_SUPPORT_TSUS_TRES_SEPERATE_CTR
+            depends on SOC_SPI_MEM_SUPPORT_TSUS_TRES_SEPERATE_CTR && (!ESP32P4_SELECTS_REV_LESS_V3)
             help
                 This config is used for setting Trs parameter. Trs means CS Latency Between Resume And Next Suspend.
                 You can refer to the chapter of AC CHARACTERISTICS of flash datasheet.
@@ -241,14 +241,7 @@ menu "SPI Flash driver"
             These APIs may be used to collect performance data for spi_flash APIs
             and to help understand behaviour of libraries which use SPI flash.
 
-    config SPI_FLASH_ROM_DRIVER_PATCH
-        bool "Enable SPI flash ROM driver patched functions"
-        default y
-        help
-            Enable this flag to use patched versions of SPI flash ROM driver functions.
-            This option should be enabled, if any one of the following is true: (1) need to write
-            to flash on ESP32-D2WD; (2) main SPI flash is connected to non-default pins; (3) main
-            SPI flash chip is manufactured by ISSI.
+
 
     config SPI_FLASH_ROM_IMPL
         bool "Use esp_flash implementation in ROM"

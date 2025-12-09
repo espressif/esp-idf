@@ -6,6 +6,7 @@ from pytest_embedded_idf.utils import soc_filtered_targets
 
 
 @pytest.mark.generic_multi_device
+@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration # TODO: IDF-14396')
 @pytest.mark.parametrize('count', [2], indirect=True)
 @idf_parametrize('target', soc_filtered_targets('SOC_I2S_SUPPORTS_TDM == 1'), indirect=['target'])
 def test_i2s_multi_dev(case_tester) -> None:  # type: ignore

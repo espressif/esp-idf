@@ -170,7 +170,6 @@ Change into the test app directory to configure and build it:
 * ``idf.py menuconfig`` - configure unit test app.
 * ``idf.py build`` - build unit test app.
 
-
 When the build finishes, it will print instructions for flashing the chip. You can simply run ``idf.py flash`` to flash all build output.
 
 Running Unit Tests
@@ -350,7 +349,6 @@ Examples of component mocks can be found under :idf:`tools/mocks` in the IDF dir
 
 - :component_file:`unit test for the NVS Page class <nvs_flash/host_test/nvs_page_test/README.md>`.
 - :component_file:`unit test for esp_event <esp_event/host_test/esp_event_unit_test/main/esp_event_test.cpp>`.
-- :component_file:`unit test for mqtt <mqtt/esp-mqtt/host_test/README.md>`.
 
 .. _adjustments_for_mocks:
 

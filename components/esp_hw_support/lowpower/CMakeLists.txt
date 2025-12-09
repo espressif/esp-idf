@@ -7,7 +7,7 @@ endif()
 set(srcs)
 
 if(CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP OR
-    (CONFIG_SOC_CPU_IN_TOP_DOMAIN AND CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP))
+    (CONFIG_ESP32P4_SELECTS_REV_LESS_V3 AND CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP))
     list(APPEND srcs "port/${target}/sleep_cpu.c")
     if(CONFIG_PM_CPU_RETENTION_DYNAMIC)
         list(APPEND srcs "port/${target}/sleep_cpu_dynamic.c")
@@ -21,6 +21,12 @@ if(CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP OR
         set_property(TARGET ${COMPONENT_LIB}
                     APPEND PROPERTY INTERFACE_LINK_LIBRARIES "-u rv_core_critical_regs_restore")
     endif()
+endif()
+
+if(CONFIG_P4_REV3_MSPI_CRASH_AFTER_POWER_UP_WORKAROUND)
+    list(APPEND srcs "port/esp32p4/p4_rev3_mspi_workaround.S")
+    set_property(TARGET ${COMPONENT_LIB}
+                APPEND PROPERTY INTERFACE_LINK_LIBRARIES "-u p4_rev3_mspi_workaround")
 endif()
 
 if(CONFIG_SOC_PM_MMU_TABLE_RETENTION_WHEN_TOP_PD AND CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP)

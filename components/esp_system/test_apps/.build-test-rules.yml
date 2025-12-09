@@ -4,14 +4,6 @@ components/esp_system/test_apps/cache_panic:
   depends_components:
     - spi_flash  # esp_system is included by default
 
-components/esp_system/test_apps/console:
-  disable:
-    - if: CONFIG_NAME == "serial_jtag_only" and SOC_USB_SERIAL_JTAG_SUPPORTED != 1
-    - if: CONFIG_NAME == "serial_jtag_only_no_vfs" and SOC_USB_SERIAL_JTAG_SUPPORTED != 1
-    - if: CONFIG_NAME == "console_no_vfs" and SOC_USB_SERIAL_JTAG_SUPPORTED != 1
-  disable_test:
-    - if: CONFIG_NAME == "simple" and IDF_TARGET != "esp32"
-
 components/esp_system/test_apps/esp_system_unity_tests:
   disable:
     - if: (CONFIG_NAME == "psram" and SOC_SPIRAM_SUPPORTED != 1)

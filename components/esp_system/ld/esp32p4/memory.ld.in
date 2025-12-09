@@ -90,14 +90,17 @@ MEMORY
   /* (See irom_seg for meaning of 0x20 offset in the above.) */
 #endif // CONFIG_APP_BUILD_USE_FLASH_SECTIONS
 
+  /* Used to store the deep sleep workaround code of P4 rev3.0. The reset vector will be set here before the chip enters sleep. */
+  rev3_mspi_workaround_seg(RWX) :        org = 0x50108000, len = MSPI_WORKAROUND_SIZE
+
   /**
    * lp ram memory (RWX). Persists over deep sleep. // TODO: IDF-5667
    */
 #if CONFIG_ULP_COPROC_ENABLED
-  lp_ram_seg(RW)  :                 org = 0x50108000 + RESERVE_RTC_MEM + CONFIG_ULP_COPROC_RESERVE_MEM,
+  lp_ram_seg(RW)  :                 org = 0x50108000 + MSPI_WORKAROUND_SIZE + RESERVE_RTC_MEM + CONFIG_ULP_COPROC_RESERVE_MEM,
                                     len = 0x8000 - CONFIG_ULP_COPROC_RESERVE_MEM - RESERVE_RTC_MEM - LP_ROM_DRAM_SIZE
 #else
-  lp_ram_seg(RW)  :                 org = 0x50108000 + RESERVE_RTC_MEM, len = 0x8000 - RESERVE_RTC_MEM
+  lp_ram_seg(RW)  :                 org = 0x50108000 + MSPI_WORKAROUND_SIZE + RESERVE_RTC_MEM, len = 0x8000 - RESERVE_RTC_MEM - MSPI_WORKAROUND_SIZE
 #endif // CONFIG_ULP_COPROC_ENABLED
 
   /* We reduced the size of lp_ram_seg by RESERVE_RTC_MEM value.
@@ -108,7 +111,7 @@ MEMORY
      The aim of this is to keep data that will not be moved around and have a fixed address.
      This segment is placed at the beginning of LP RAM, as the end of LP RAM is occupied by LP ROM stack/data
   */
-  lp_reserved_seg(RW) :        org = 0x50108000, len = RESERVE_RTC_MEM
+  lp_reserved_seg(RW) :        org = 0x50108000 + MSPI_WORKAROUND_SIZE, len = RESERVE_RTC_MEM
 
   /* PSRAM seg */
   extern_ram_seg(RWX) :        org = 0x48000000, len = IDROM_SEG_SIZE
@@ -133,15 +136,22 @@ REGION_ALIAS("rtc_reserved_seg", lp_reserved_seg );
 #if CONFIG_APP_BUILD_USE_FLASH_SECTIONS
   REGION_ALIAS("text_seg_low", irom_seg);
 #else
+#if CONFIG_ESP32P4_SELECTS_REV_LESS_V3
   REGION_ALIAS("text_seg_low", sram_low);
-  REGION_ALIAS("text_seg_high", sram_high);
+#else
+  REGION_ALIAS("text_seg_low", sram_seg);
+#endif //CONFIG_ESP32P4_SELECTS_REV_LESS_V3
 #endif // CONFIG_APP_BUILD_USE_FLASH_SECTIONS
 
 #if CONFIG_APP_BUILD_USE_FLASH_SECTIONS
   REGION_ALIAS("rodata_seg_low", drom_seg);
 #else
+#if CONFIG_ESP32P4_SELECTS_REV_LESS_V3
   REGION_ALIAS("rodata_seg_low", sram_low);
   REGION_ALIAS("rodata_seg_high", sram_high);
+#else
+  REGION_ALIAS("rodata_seg_low", sram_seg);
+#endif //CONFIG_ESP32P4_SELECTS_REV_LESS_V3
 #endif // CONFIG_APP_BUILD_USE_FLASH_SECTIONS
 
 #if CONFIG_SPIRAM_XIP_FROM_PSRAM

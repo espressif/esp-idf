@@ -24,6 +24,7 @@
 #include "hal/cache_ll.h"
 #include "spi_flash_mmap.h"
 #include "hal/efuse_hal.h"
+#include "sdkconfig.h"
 
 #define ALIGN_UP(num, align) (((num) + ((align) - 1)) & ~((align) - 1))
 
@@ -45,7 +46,7 @@
 #endif
 #endif
 
-static const char *TAG = "esp_image";
+ESP_LOG_ATTR_TAG(TAG, "esp_image");
 
 #define HASH_LEN ESP_IMAGE_HASH_LEN
 
@@ -141,6 +142,22 @@ static bool is_bootloader(uint32_t offset)
     );
 }
 
+#if BOOTLOADER_BUILD && (SECURE_BOOT_CHECK_SIGNATURE == 1)
+#if CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP
+static bool skip_verify(esp_image_load_mode_t mode, bool verify_sha)
+{
+    // Multi level check to ensure that its a legit exit from deep sleep case
+    return (esp_rom_get_reset_reason(0) == RESET_REASON_CORE_DEEP_SLEEP &&
+            mode == ESP_IMAGE_LOAD_NO_VALIDATE &&
+            !verify_sha) ? true : false;
+}
+#else
+
+#define skip_verify(mode, verify_sha) (false)
+
+#endif
+#endif // BOOTLOADER_BUILD && (SECURE_BOOT_CHECK_SIGNATURE == 1)
+
 static esp_err_t image_load(esp_image_load_mode_t mode, const esp_partition_pos_t *part, esp_image_metadata_t *data)
 {
 #ifdef BOOTLOADER_BUILD
@@ -173,7 +190,7 @@ static esp_err_t image_load(esp_image_load_mode_t mode, const esp_partition_pos_
 #else // Secure boot not enabled
     // For secure boot V1 on ESP32, we don't calculate SHA or verify signature on bootloaders.
     // (For non-secure boot, we don't verify any SHA-256 hash appended to the bootloader because
-    // esptool.py may have rewritten the header - rely on esptool.py having verified the bootloader at flashing time, instead.)
+    // esptool may have rewritten the header - rely on esptool having verified the bootloader at flashing time, instead.)
     verify_sha = !is_bootloader(part->offset) && do_verify;
 #endif
 
@@ -236,9 +253,9 @@ static esp_err_t image_load(esp_image_load_mode_t mode, const esp_partition_pos_
        "only verify signature in bootloader" into the macro so it's tested multiple times.
      */
 #if CONFIG_SECURE_BOOT_V2_ENABLED
-    ESP_FAULT_ASSERT(!esp_secure_boot_enabled() || memcmp(image_digest, verified_digest, ESP_SECURE_BOOT_DIGEST_LEN) == 0);
+    ESP_FAULT_ASSERT(!esp_secure_boot_enabled() || skip_verify(mode, verify_sha) || memcmp(image_digest, verified_digest, ESP_SECURE_BOOT_DIGEST_LEN) == 0);
 #else // Secure Boot V1 on ESP32, only verify signatures for apps not bootloaders
-    ESP_FAULT_ASSERT(is_bootloader(data->start_addr) || memcmp(image_digest, verified_digest, HASH_LEN) == 0);
+    ESP_FAULT_ASSERT(is_bootloader(data->start_addr) || skip_verify(mode, verify_sha) || memcmp(image_digest, verified_digest, HASH_LEN) == 0);
 #endif
 
 #endif // SECURE_BOOT_CHECK_SIGNATURE
@@ -412,7 +429,7 @@ static bool verify_load_addresses(int segment_index, intptr_t load_addr, intptr_
         intptr_t sp = (intptr_t)esp_cpu_get_sp();
         if (bootloader_util_regions_overlap(sp - STACK_LOAD_HEADROOM, ROM_STACK_START,
                                            load_addr, load_end)) {
-            reason = "overlaps bootloader stack";
+            reason = ESP_LOG_ATTR_STR("overlaps bootloader stack");
             goto invalid;
         }
 
@@ -421,7 +438,7 @@ static bool verify_load_addresses(int segment_index, intptr_t load_addr, intptr_
            (_dram_start.._dram_end includes bss, data, rodata sections in DRAM)
          */
         if (bootloader_util_regions_overlap((intptr_t)&_dram_start, (intptr_t)&_dram_end, load_addr, load_end)) {
-            reason = "overlaps bootloader data";
+            reason = ESP_LOG_ATTR_STR("overlaps bootloader data");
             goto invalid;
         }
 
@@ -459,7 +476,7 @@ static bool verify_load_addresses(int segment_index, intptr_t load_addr, intptr_
         /* Check for overlap of 'loader' section of IRAM */
         if (bootloader_util_regions_overlap((intptr_t)&_loader_text_start, (intptr_t)&_loader_text_end,
                                             load_addr, load_end)) {
-            reason = "overlaps loader IRAM";
+            reason = ESP_LOG_ATTR_STR("overlaps loader IRAM");
             goto invalid;
         }
 
@@ -514,7 +531,7 @@ static bool verify_load_addresses(int segment_index, intptr_t load_addr, intptr_
 #endif
 
     else { /* Not a DRAM or an IRAM or RTC Fast IRAM, RTC Fast DRAM or RTC Slow address */
-        reason = "bad load address range";
+        reason = ESP_LOG_ATTR_STR("bad load address range");
         goto invalid;
     }
     return true;
@@ -617,7 +634,7 @@ static esp_err_t process_segment(int index, uint32_t flash_addr, esp_image_segme
         ESP_LOGI(TAG, "segment %d: paddr=%08"PRIx32" vaddr=%08x size=%05"PRIx32"h (%6"PRIu32") %s",
                  index, data_addr, load_addr,
                  data_len, data_len,
-                 (do_load) ? "load" : (is_mapping) ? "map" : "");
+                 (do_load) ? ESP_LOG_ATTR_STR("load") : (is_mapping) ? ESP_LOG_ATTR_STR("map") : "");
     }
 
 

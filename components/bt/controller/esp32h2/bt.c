@@ -117,6 +117,15 @@ enum {
     BLE_LOG_INTERFACE_FLAG_END,
 };
 #endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
+
+typedef union {
+    struct {
+        uint32_t rtc_freq:20;
+        uint32_t rsv:11;
+        uint32_t bt_wakeup:1;
+    };
+    uint32_t val;
+} bt_wakeup_params_t;
 /* External functions or variables
  ************************************************************************
  */
@@ -150,7 +159,7 @@ extern void esp_unregister_npl_funcs (void);
 extern void npl_freertos_mempool_deinit(void);
 extern uint32_t r_os_cputime_get32(void);
 extern uint32_t r_os_cputime_ticks_to_usecs(uint32_t ticks);
-extern void r_ble_lll_rfmgmt_set_sleep_cb(void *s_cb, void *w_cb, void *s_arg,
+extern void r_ble_lll_sleep_set_sleep_cb(void *s_cb, void *w_cb, void *s_arg,
                                           void *w_arg, uint32_t us_to_enabled);
 extern void r_ble_rtc_wake_up_state_clr(void);
 extern int os_msys_init(void);
@@ -214,6 +223,9 @@ static void esp_bt_ctrl_log_partition_get_and_erase_first_block(void);
 #endif // CONFIG_BT_LE_CONTROLLER_LOG_STORAGE_ENABLE
 #endif /* !CONFIG_BT_LE_CONTROLLER_LOG_MODE_BLE_LOG_V2 */
 #endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
+#if CONFIG_FREERTOS_USE_TICKLESS_IDLE
+static bool esp_bt_check_wakeup_by_bt(void);
+#endif // CONFIG_FREERTOS_USE_TICKLESS_IDLE
 /* Local variable definition
  ***************************************************************************
  */
@@ -533,7 +545,7 @@ struct ext_funcs_t ext_funcs_ro = {
     ._esp_intr_alloc = esp_intr_alloc_wrapper,
     ._esp_intr_free = esp_intr_free_wrapper,
     ._malloc = bt_osi_mem_malloc_internal,
-    ._free = bt_osi_mem_free,
+    ._free = bt_osi_mem_free_internal,
     ._task_create = task_create_wrapper,
     ._task_delete = task_delete_wrapper,
     ._osi_assert = osi_assert_wrapper,
@@ -727,6 +739,7 @@ IRAM_ATTR void controller_sleep_cb(uint32_t enable_tick, void *arg)
 
 IRAM_ATTR void controller_wakeup_cb(void *arg)
 {
+    bt_wakeup_params_t *params;
     if (s_ble_active) {
         return;
     }
@@ -737,15 +750,23 @@ IRAM_ATTR void controller_wakeup_cb(void *arg)
     assert(esp_rom_get_cpu_ticks_per_us() == pm_config.max_freq_mhz);
     r_ble_rtc_wake_up_state_clr();
 #endif //CONFIG_PM_ENABLE
+    params = (bt_wakeup_params_t *)arg;
     esp_phy_enable(PHY_MODEM_BT);
     if (s_bt_lpclk_src == MODEM_CLOCK_LPCLK_SRC_RC_SLOW) {
-        uint32_t *clk_freq = (uint32_t *)arg;
-        *clk_freq = esp_clk_tree_lp_slow_get_freq_hz(ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED) / 5;
+        params->rtc_freq = esp_clk_tree_lp_slow_get_freq_hz(ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED) / 5;
     }
+#if CONFIG_FREERTOS_USE_TICKLESS_IDLE
+    params->bt_wakeup = esp_bt_check_wakeup_by_bt();
+#endif // CONFIG_FREERTOS_USE_TICKLESS_IDLE
     s_ble_active = true;
 }
 
 #ifdef CONFIG_FREERTOS_USE_TICKLESS_IDLE
+static bool esp_bt_check_wakeup_by_bt(void)
+{
+   return (esp_sleep_get_wakeup_causes() & BIT(ESP_SLEEP_WAKEUP_BT));
+}
+
 static esp_err_t sleep_modem_ble_mac_retention_init(void *arg)
 {
     uint8_t size;
@@ -795,10 +816,10 @@ esp_err_t controller_sleep_init(void)
 #ifdef CONFIG_BT_LE_SLEEP_ENABLE
     ESP_LOGW(NIMBLE_PORT_LOG_TAG, "BLE modem sleep is enabled");
 #if CONFIG_FREERTOS_USE_TICKLESS_IDLE
-    r_ble_lll_rfmgmt_set_sleep_cb(controller_sleep_cb, controller_wakeup_cb, 0, 0,
+    r_ble_lll_sleep_set_sleep_cb(controller_sleep_cb, controller_wakeup_cb, 0, 0,
                                 BLE_RTC_DELAY_US_LIGHT_SLEEP);
 #else
-    r_ble_lll_rfmgmt_set_sleep_cb(controller_sleep_cb, controller_wakeup_cb, 0, 0,
+    r_ble_lll_sleep_set_sleep_cb(controller_sleep_cb, controller_wakeup_cb, 0, 0,
                                 BLE_RTC_DELAY_US_MODEM_SLEEP);
 #endif /* FREERTOS_USE_TICKLESS_IDLE */
 #endif // CONFIG_BT_LE_SLEEP_ENABLE

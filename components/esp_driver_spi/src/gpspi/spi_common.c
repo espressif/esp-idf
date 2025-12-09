@@ -6,6 +6,7 @@
 
 #include <string.h>
 #include <stdatomic.h>
+#include <sys/param.h>
 #include "sdkconfig.h"
 #include "esp_types.h"
 #include "esp_attr.h"
@@ -25,6 +26,7 @@
 #include "esp_private/sleep_retention.h"
 #include "esp_dma_utils.h"
 #include "hal/spi_hal.h"
+#include "freertos/FreeRTOS.h"
 #if CONFIG_IDF_TARGET_ESP32
 #include "soc/dport_reg.h"
 #endif
@@ -150,7 +152,7 @@ int spicommon_irqdma_source_for_host(spi_host_device_t host)
 #if !SOC_GDMA_SUPPORTED
 
 #if SPI_LL_DMA_SHARED
-static inline periph_module_t get_dma_periph(int dma_chan)
+static inline shared_periph_module_t get_dma_periph(int dma_chan)
 {
     assert(dma_chan >= 1 && dma_chan <= SOC_SPI_DMA_CHAN_NUM);
     if (dma_chan == 1) {
@@ -247,6 +249,10 @@ static esp_err_t alloc_dma_chan(spi_host_device_t host_id, spi_dma_chan_t dma_ch
 
     spi_dma_enable_burst(dma_ctx->tx_dma_chan, true, true);
     spi_dma_enable_burst(dma_ctx->rx_dma_chan, true, true);
+
+    // Get DMA alignment constraints
+    spi_dma_get_alignment_constraints(dma_ctx->tx_dma_chan, &dma_ctx->dma_align_tx_int, &dma_ctx->dma_align_tx_ext);
+    spi_dma_get_alignment_constraints(dma_ctx->rx_dma_chan, &dma_ctx->dma_align_rx_int, &dma_ctx->dma_align_rx_ext);
     return ret;
 }
 
@@ -287,13 +293,16 @@ static esp_err_t alloc_dma_chan(spi_host_device_t host_id, spi_dma_chan_t dma_ch
             gdma_connect(dma_ctx->rx_dma_chan, GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_SPI, 3));
         }
 #endif
-        // TODO: add support to allow SPI transfer PSRAM buffer
         gdma_transfer_config_t trans_cfg = {
             .max_data_burst_size = 16,
-            .access_ext_mem = false,
+            .access_ext_mem = true, // allow to transfer data from/to external memory directly by DMA
         };
         ESP_RETURN_ON_ERROR(gdma_config_transfer(dma_ctx->tx_dma_chan, &trans_cfg), SPI_TAG, "config gdma tx transfer failed");
         ESP_RETURN_ON_ERROR(gdma_config_transfer(dma_ctx->rx_dma_chan, &trans_cfg), SPI_TAG, "config gdma rx transfer failed");
+
+        // Get DMA alignment constraints
+        gdma_get_alignment_constraints(dma_ctx->tx_dma_chan, &dma_ctx->dma_align_tx_int, &dma_ctx->dma_align_tx_ext);
+        gdma_get_alignment_constraints(dma_ctx->rx_dma_chan, &dma_ctx->dma_align_rx_int, &dma_ctx->dma_align_rx_ext);
     }
     return ret;
 }
@@ -614,7 +623,8 @@ esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_conf
     }
     //set flags for DUAL mode according to output-capability of MOSI and MISO pins.
     if ((bus_config->mosi_io_num < 0 || GPIO_IS_VALID_OUTPUT_GPIO(bus_config->mosi_io_num)) &&
-            (bus_config->miso_io_num < 0 || GPIO_IS_VALID_OUTPUT_GPIO(bus_config->miso_io_num))) {
+            (bus_config->miso_io_num < 0 || GPIO_IS_VALID_OUTPUT_GPIO(bus_config->miso_io_num)) &&
+            (bus_config->miso_io_num != bus_config->mosi_io_num)) {
         temp_flag |= SPICOMMON_BUSFLAG_DUAL;
     }
 
@@ -719,11 +729,13 @@ esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_conf
 #endif //SOC_SPI_SUPPORT_OCT
     }
 
+    if (bus_ctx[host]) {
+        bus_ctx[host]->bus_attr.bus_cfg = *bus_config;
+        bus_ctx[host]->bus_attr.flags = temp_flag;
+        bus_ctx[host]->bus_attr.gpio_reserve = gpio_reserv;
+    }
     if (flags_o) {
         *flags_o = temp_flag;
-    }
-    if (io_reserved) {
-        *io_reserved |= gpio_reserv;
     }
     return ESP_OK;
 }
@@ -768,9 +780,7 @@ void spicommon_cs_initialize(spi_host_device_t host, int cs_io_num, int cs_id, i
         }
         gpio_func_sel(cs_io_num, PIN_FUNC_GPIO);
     }
-    if (io_reserved) {
-        *io_reserved |= out_mask;
-    }
+    bus_ctx[host]->bus_attr.gpio_reserve |= out_mask;
 }
 
 void spicommon_cs_free_io(int cs_gpio_num, uint64_t *io_reserved)
@@ -810,7 +820,7 @@ esp_err_t spi_bus_initialize(spi_host_device_t host_id, const spi_bus_config_t *
 #elif SOC_GDMA_SUPPORTED
     SPI_CHECK(dma_chan == SPI_DMA_DISABLED || dma_chan == SPI_DMA_CH_AUTO, "invalid dma channel, chip only support spi dma channel auto-alloc", ESP_ERR_INVALID_ARG);
 #endif
-    SPI_CHECK((bus_config->intr_flags & (ESP_INTR_FLAG_HIGH | ESP_INTR_FLAG_EDGE | ESP_INTR_FLAG_INTRDISABLED)) == 0, "intr flag not allowed", ESP_ERR_INVALID_ARG);
+    SPI_CHECK((bus_config->intr_flags & (ESP_INTR_FLAG_HIGH | ESP_INTR_FLAG_EDGE | ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_INTRDISABLED)) == 0, "intr flag not allowed", ESP_ERR_INVALID_ARG);
 #ifndef CONFIG_SPI_MASTER_ISR_IN_IRAM
     SPI_CHECK((bus_config->intr_flags & ESP_INTR_FLAG_IRAM) == 0, "ESP_INTR_FLAG_IRAM should be disabled when CONFIG_SPI_MASTER_ISR_IN_IRAM is not set.", ESP_ERR_INVALID_ARG);
 #endif
@@ -819,14 +829,12 @@ esp_err_t spi_bus_initialize(spi_host_device_t host_id, const spi_bus_config_t *
 #endif
 
     ESP_RETURN_ON_ERROR(spicommon_bus_alloc(host_id, "spi master"), SPI_TAG, "alloc host failed");
-    spi_bus_attr_t *bus_attr = (spi_bus_attr_t *)spi_bus_get_attr(host_id);
-    spicommon_bus_context_t *ctx = __containerof(bus_attr, spicommon_bus_context_t, bus_attr);
-    assert(bus_attr && ctx);  //coverity check
-    bus_attr->bus_cfg = *bus_config;
+    spicommon_bus_context_t *ctx = bus_ctx[host_id];
+    spi_bus_attr_t *bus_attr = &ctx->bus_attr;
 
-    if (dma_chan != SPI_DMA_DISABLED) {
-        bus_attr->dma_enabled = 1;
-
+    bus_attr->dma_enabled = (dma_chan != SPI_DMA_DISABLED);
+    bus_attr->max_transfer_sz = SOC_SPI_MAXIMUM_BUFFER_SIZE;
+    if (bus_attr->dma_enabled) {
         err = spicommon_dma_chan_alloc(host_id, dma_chan, &ctx->dma_ctx);
         if (err != ESP_OK) {
             goto cleanup;
@@ -835,14 +843,10 @@ esp_err_t spi_bus_initialize(spi_host_device_t host_id, const spi_bus_config_t *
         if (err != ESP_OK) {
             goto cleanup;
         }
-#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
-        esp_cache_get_alignment(MALLOC_CAP_DMA, (size_t *)&bus_attr->internal_mem_align_size);
-#else
-        bus_attr->internal_mem_align_size = 4;
-#endif
-    } else {
-        bus_attr->dma_enabled = 0;
-        bus_attr->max_transfer_sz = SOC_SPI_MAXIMUM_BUFFER_SIZE;
+
+        // Get cache alignment constraints
+        esp_cache_get_alignment(MALLOC_CAP_DMA, &bus_attr->cache_align_int);
+        esp_cache_get_alignment(MALLOC_CAP_SPIRAM, &bus_attr->cache_align_ext);
     }
 
     spi_bus_lock_config_t lock_config = {
@@ -867,7 +871,7 @@ esp_err_t spi_bus_initialize(spi_host_device_t host_id, const spi_bus_config_t *
 
     _lock_acquire(&ctx->mutex);
     if (sleep_retention_module_init(spi_reg_retention_info[host_id - 1].module_id, &init_param) == ESP_OK) {
-        if ((bus_attr->bus_cfg.flags & SPICOMMON_BUSFLAG_SLP_ALLOW_PD) && (sleep_retention_module_allocate(spi_reg_retention_info[host_id - 1].module_id) != ESP_OK)) {
+        if ((bus_config->flags & SPICOMMON_BUSFLAG_SLP_ALLOW_PD) && (sleep_retention_module_allocate(spi_reg_retention_info[host_id - 1].module_id) != ESP_OK)) {
             // even though the sleep retention create failed, SPI driver should still work, so just warning here
             ESP_LOGW(SPI_TAG, "alloc sleep recover failed, peripherals may hold power on");
         }
@@ -877,7 +881,7 @@ esp_err_t spi_bus_initialize(spi_host_device_t host_id, const spi_bus_config_t *
     }
     _lock_release(&ctx->mutex);
 #else
-    if (bus_attr->bus_cfg.flags & SPICOMMON_BUSFLAG_SLP_ALLOW_PD) {
+    if (bus_config->flags & SPICOMMON_BUSFLAG_SLP_ALLOW_PD) {
         ESP_LOGE(SPI_TAG, "power down peripheral in sleep is not enabled or not supported on your target");
     }
 #endif  // SOC_SPI_SUPPORT_SLEEP_RETENTION
@@ -896,7 +900,7 @@ esp_err_t spi_bus_initialize(spi_host_device_t host_id, const spi_bus_config_t *
     }
 #endif //CONFIG_PM_ENABLE
 
-    err = spicommon_bus_initialize_io(host_id, bus_config, SPICOMMON_BUSFLAG_MASTER | bus_config->flags, &bus_attr->flags, &bus_attr->gpio_reserve);
+    err = spicommon_bus_initialize_io(host_id, bus_config, SPICOMMON_BUSFLAG_MASTER | bus_config->flags, NULL, NULL);
     if (err != ESP_OK) {
         goto cleanup;
     }
@@ -924,11 +928,17 @@ cleanup:
 
 void *spi_bus_dma_memory_alloc(spi_host_device_t host_id, size_t size, uint32_t extra_heap_caps)
 {
-    (void) host_id; //remain for extendability
-    ESP_RETURN_ON_FALSE((extra_heap_caps & MALLOC_CAP_SPIRAM) == 0, NULL, SPI_TAG, "external memory is not supported now");
+    SPI_CHECK(bus_ctx[host_id], "SPI %d not initialized", NULL, host_id + 1);
 
-    size_t dma_requir = 16;  //TODO: IDF-10111, using max alignment temp, refactor to "gdma_get_alignment_constraints" instead
-    return heap_caps_aligned_calloc(dma_requir, 1, size, extra_heap_caps | MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
+    size_t alignment = 16;
+    // detailed alignment requirement is not available for slave bus, so use 16 bytes as default
+    if (bus_ctx[host_id]->bus_attr.flags & SPICOMMON_BUSFLAG_MASTER) {
+        // As don't know the buffer will used for TX or RX, so use the max alignment requirement
+        alignment = (extra_heap_caps & MALLOC_CAP_SPIRAM) ? \
+                    MAX(bus_ctx[host_id]->dma_ctx->dma_align_tx_ext, bus_ctx[host_id]->dma_ctx->dma_align_rx_ext) : \
+                    MAX(bus_ctx[host_id]->dma_ctx->dma_align_tx_int, bus_ctx[host_id]->dma_ctx->dma_align_rx_int);
+    }
+    return heap_caps_aligned_calloc(alignment, 1, size, extra_heap_caps | MALLOC_CAP_DMA);
 }
 
 const spi_bus_attr_t* spi_bus_get_attr(spi_host_device_t host_id)

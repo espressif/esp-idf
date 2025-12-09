@@ -1,6 +1,10 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
 examples/system/app_trace_basic:
+  disable:
+    - if: IDF_TARGET == "esp32p4"
+      temporary: true
+      reason: p4 rev3 migration # TODO: IDF-14364
   disable_test:
     - if: IDF_TARGET == "esp32h21"
       temporary: true
@@ -98,6 +102,9 @@ examples/system/gcov:
     - if: IDF_TARGET == "esp32h4"
       temporary: true
       reason: not supported yet #TODO: OCD-1138
+    - if: IDF_TARGET == "esp32p4"
+      temporary: true
+      reason: p4 rev3 migration # TODO: IDF-14440
 
 examples/system/heap_task_tracking:
   disable:
@@ -136,7 +143,7 @@ examples/system/nmi_isr:
 
 examples/system/ota/advanced_https_ota:
   disable:
-    - if: IDF_TARGET in ["esp32h2", "esp32h21", "esp32h4"]
+    - if: IDF_TARGET in ["esp32h21", "esp32h4"]
       temporary: true
       reason: not supported yet
   disable_test:
@@ -153,10 +160,11 @@ examples/system/ota/advanced_https_ota:
     - esp_phy
     - bt
     - protocol_examples_common
+    - openthread
 
 examples/system/ota/native_ota_example:
   disable:
-    - if: IDF_TARGET in ["esp32h2", "esp32h21", "esp32h4"]
+    - if: IDF_TARGET in ["esp32h21", "esp32h4"]
       temporary: true
       reason: not supported yet
   disable_test:
@@ -170,6 +178,7 @@ examples/system/ota/native_ota_example:
     - esp_driver_gpio
     - bootloader_support
     - protocol_examples_common
+    - openthread
 
 examples/system/ota/otatool:
   enable:
@@ -177,7 +186,7 @@ examples/system/ota/otatool:
 
 examples/system/ota/partitions_ota:
   disable:
-    - if: IDF_TARGET in ["esp32h2", "esp32h21", "esp32h4"]
+    - if: IDF_TARGET in ["esp32h21", "esp32h4"]
       temporary: true
       reason: not supported yet
     - if: CONFIG_NAME == "recovery_bootloader" and SOC_RECOVERY_BOOTLOADER_SUPPORTED != 1
@@ -199,10 +208,12 @@ examples/system/ota/partitions_ota:
     - esp_wifi
     - esp_phy
     - mbedtls
+    - protocol_examples_common
+    - openthread
 
 examples/system/ota/simple_ota_example:
   disable:
-    - if: IDF_TARGET in ["esp32h2", "esp32h21", "esp32h4"]
+    - if: IDF_TARGET in ["esp32h21", "esp32h4"]
       temporary: true
       reason: not supported yet
     - if: CONFIG_NAME == "spiram" and SOC_SPIRAM_SUPPORTED != 1
@@ -219,6 +230,8 @@ examples/system/ota/simple_ota_example:
     - esp_wifi
     - esp_phy
     - mbedtls
+    - protocol_examples_common
+    - openthread
 
 examples/system/perfmon:
   enable:
@@ -253,6 +266,12 @@ examples/system/select:
 examples/system/sysview_tracing:
   disable:
     - if: SOC_GPTIMER_SUPPORTED != 1
+    - if: IDF_TARGET in ["esp32", "esp32s2", "esp32s3", "esp32c2", "esp32c3", "esp32c5", "esp32c61", "esp32c6", "esp32h2", "esp32h21", "esp32h4", "esp32p4"]
+      temporary: true
+      reason: temporarily disabled until the sysview component is published in the component registry
+    - if: IDF_TARGET == "esp32p4"
+      temporary: true
+      reason: p4 rev3 migration # TODO: IDF-14364
   disable_test:
     - if: IDF_TARGET == "esp32h21"
       temporary: true
@@ -264,6 +283,12 @@ examples/system/sysview_tracing:
 examples/system/sysview_tracing_heap_log:
   disable:
     - if: SOC_GPTIMER_SUPPORTED != 1
+    - if: IDF_TARGET in ["esp32", "esp32s2", "esp32s3", "esp32c2", "esp32c3", "esp32c5", "esp32c61", "esp32c6", "esp32h2", "esp32h21", "esp32h4", "esp32p4"]
+      temporary: true
+      reason: temporarily disabled until the sysview component is published in the component registry
+    - if: IDF_TARGET == "esp32p4"
+      temporary: true
+      reason: p4 rev3 migration # TODO: IDF-14364
   disable_test:
     - if: IDF_TARGET == "esp32h21"
       temporary: true
@@ -332,6 +357,12 @@ examples/system/ulp/lp_core/lp_adc:
 examples/system/ulp/lp_core/lp_i2c:
   enable:
     - if: SOC_LP_I2C_SUPPORTED == 1 and SOC_DEEP_SLEEP_SUPPORTED == 1
+  depends_components:
+    - ulp
+
+examples/system/ulp/lp_core/lp_mailbox:
+  enable:
+    - if: SOC_LP_CORE_SUPPORTED == 1
   depends_components:
     - ulp
 
@@ -406,6 +437,12 @@ examples/system/ulp/ulp_riscv/gpio:
     - ulp
 
 examples/system/ulp/ulp_riscv/gpio_interrupt:
+  enable:
+    - if: SOC_RISCV_COPROC_SUPPORTED == 1
+  depends_components:
+    - ulp
+
+examples/system/ulp/ulp_riscv/gpio_pulse_counter:
   enable:
     - if: SOC_RISCV_COPROC_SUPPORTED == 1
   depends_components:

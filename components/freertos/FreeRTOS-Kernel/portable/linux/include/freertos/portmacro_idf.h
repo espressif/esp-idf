@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -114,12 +114,6 @@ static inline void vPortAssertIfInISR(void)
  * @brief Assert if in ISR context
  */
 #define portASSERT_IF_IN_ISR() vPortAssertIfInISR()
-
-#if CONFIG_FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP
-/* If enabled, users must provide an implementation of vPortCleanUpTCB() */
-extern void vPortCleanUpTCB ( void *pxTCB );
-#define portCLEAN_UP_TCB( pxTCB )                   vPortCleanUpTCB( pxTCB )
-#endif /* CONFIG_FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP */
 
 #ifdef __cplusplus
 }

@@ -9,13 +9,9 @@ if(${target} STREQUAL "linux")
     return()
 endif()
 
-set(requires soc)
+set(requires esp_hal_dma esp_hal_gpio esp_hal_usb)
 # only esp_hw_support/adc_share_hw_ctrl.c requires efuse component
-set(priv_requires efuse spi_flash bootloader_support)
-
-if(${target} STREQUAL "esp32c6")
-    list(APPEND priv_requires hal)
-endif()
+set(priv_requires efuse spi_flash bootloader_support esp_hal_wdt)
 
 set(srcs "cpu.c" "port/${IDF_TARGET}/esp_cpu_intr.c" "esp_memory_utils.c" "port/${IDF_TARGET}/cpu_region_protect.c")
 if(NOT non_os_build)
@@ -57,10 +53,14 @@ if(NOT non_os_build)
     if(CONFIG_SOC_MODEM_SUPPORT_ETM)
         list(APPEND srcs "modem/modem_etm.c")
     endif()
+    if(CONFIG_SOC_PMU_SUPPORTED)
+        list(APPEND srcs "pmu_share_hw.c")
+    endif()
     if(CONFIG_SOC_LIGHT_SLEEP_SUPPORTED)
         list(APPEND srcs "sleep_modem.c"
                          "sleep_modes.c"
                          "sleep_console.c"
+                         "sleep_mspi.c"
                          "sleep_usb.c"
                          "sleep_gpio.c"
                          "sleep_event.c"
@@ -75,7 +75,10 @@ if(NOT non_os_build)
                               esp_timer
                               esp_pm)
 
-    list(APPEND priv_requires esp_mm)
+    list(APPEND priv_requires esp_mm
+                              esp_hal_mspi
+                              esp_hal_i2s  # required by `sleep_system_peripheral.c`
+    )
 
     if(CONFIG_IDF_TARGET_ESP32 OR CONFIG_IDF_TARGET_ESP32S2)
         list(APPEND srcs "rtc_wdt.c")
@@ -172,7 +175,20 @@ if(NOT non_os_build)
 else()
     if(ESP_TEE_BUILD)
         list(APPEND srcs "esp_clk.c" "hw_random.c")
+        if(CONFIG_SECURE_TEE_EXT_FLASH_MEMPROT_SPI1)
+            list(APPEND srcs "mspi_timing_tuning/mspi_timing_tuning.c")
+            if(CONFIG_SOC_MEMSPI_TIMING_TUNING_BY_MSPI_DELAY)
+                list(APPEND srcs "mspi_timing_tuning/tuning_scheme_impl/mspi_timing_by_mspi_delay.c")
+            endif()
+            if(CONFIG_SOC_MEMSPI_TIMING_TUNING_BY_DQS)
+                list(APPEND srcs "mspi_timing_tuning/tuning_scheme_impl/mspi_timing_by_dqs.c")
+            endif()
+            if(CONFIG_SOC_MEMSPI_TIMING_TUNING_BY_FLASH_DELAY)
+                list(APPEND srcs "mspi_timing_tuning/tuning_scheme_impl/mspi_timing_by_flash_delay.c")
+            endif()
+        endif()
     endif()
+
     # Requires "_esp_error_check_failed()" function
     list(APPEND priv_requires "esp_system")
 endif()
@@ -186,6 +202,12 @@ if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/include/soc/${target}")
     list(APPEND public_include_dirs
         "include/soc/${target}"
     )
+endif()
+
+if(NOT CONFIG_ESP32P4_SELECTS_REV_LESS_V3 AND CONFIG_IDF_TARGET_ESP32P4)
+    if(CMAKE_C_COMPILER_ID MATCHES "Clang") # TODO: LLVM-478 IDF-14338
+        message(FATAL_ERROR "ESP32-P4 rev. 3.0 or higher is not supported in Clang-based toolchain")
+    endif()
 endif()
 
 idf_component_register(SRCS ${srcs}
@@ -210,4 +232,9 @@ if(NOT non_os_build)
     if(CONFIG_SPIRAM)
         idf_component_optional_requires(PRIVATE esp_psram)
     endif()
+endif()
+
+if(${target} STREQUAL "esp32p4")
+    # for mipi_csi_share_hw_ctrl.c
+    idf_component_optional_requires(PRIVATE esp_hal_cam)
 endif()

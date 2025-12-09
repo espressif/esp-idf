@@ -74,46 +74,46 @@ This contains tests for the following features of the crypto peripherals:
 > **_NOTE:_** The verification tests for the HMAC, Digital Signature, ECDSA and XTS-AES peripherals would get exercised only by enabling the example config in an FPGA environment.
 # Burning the HMAC key
 
-The HMAC tests need an HMAC key to be burned in the `BLOCK_KEY4` and `BLOCK_KEY5` of the efuses. As this verification application is independent of the efuse component, the user needs to manually burn the keys and their key purposes using `espefuse.py`.
+The HMAC tests need an HMAC key to be burned in the `BLOCK_KEY4` and `BLOCK_KEY5` of the efuses. As this verification application is independent of the efuse component, the user needs to manually burn the keys and their key purposes using `espefuse`.
 
 ```bash
-espefuse.py -p $ESPPORT burn_key BLOCK_KEY4 main/hmac/hmac_key.bin HMAC_DOWN_JTAG
+espefuse -p $ESPPORT burn-key BLOCK_KEY4 main/hmac/hmac_key.bin HMAC_DOWN_JTAG
 
-espefuse.py -p $ESPPORT burn_key BLOCK_KEY5 main/hmac/hmac_key.bin HMAC_UP
+espefuse -p $ESPPORT burn-key BLOCK_KEY5 main/hmac/hmac_key.bin HMAC_UP
 ```
 
 # Burning the HMAC keys for Digital Signature tests
 
-The tests needs some HMAC keys to be burned in the `BLOCK_KEY0`, `BLOCK_KEY1` and `BLOCK_KEY2` of the efuses. As this verification application is independent of the efuse component, the user needs to manually burn the keys and their key purposes using `espefuse.py`.
+The tests needs some HMAC keys to be burned in the `BLOCK_KEY0`, `BLOCK_KEY1` and `BLOCK_KEY2` of the efuses. As this verification application is independent of the efuse component, the user needs to manually burn the keys and their key purposes using `espefuse`.
 
 If SOC_DS_SIGNATURE_MAX_BIT_LEN == 3072:
 ```bash
-espefuse.py -p $ESPPORT burn_key BLOCK_KEY0 main/ds/keys/3072/ds_key1.bin HMAC_DOWN_DIGITAL_SIGNATURE
+espefuse -p $ESPPORT burn-key BLOCK_KEY0 main/ds/keys/3072/ds_key1.bin HMAC_DOWN_DIGITAL_SIGNATURE
 
-espefuse.py -p $ESPPORT burn_key BLOCK_KEY1 main/ds/keys/3072/ds_key2.bin HMAC_DOWN_DIGITAL_SIGNATURE
+espefuse -p $ESPPORT burn-key BLOCK_KEY1 main/ds/keys/3072/ds_key2.bin HMAC_DOWN_DIGITAL_SIGNATURE
 
-espefuse.py -p $ESPPORT burn_key BLOCK_KEY2 main/ds/keys/3072/ds_key3.bin HMAC_DOWN_DIGITAL_SIGNATURE
+espefuse -p $ESPPORT burn-key BLOCK_KEY2 main/ds/keys/3072/ds_key3.bin HMAC_DOWN_DIGITAL_SIGNATURE
 ```
 
 If SOC_DS_SIGNATURE_MAX_BIT_LEN == 4096:
 ```bash
-espefuse.py -p $ESPPORT burn_key BLOCK_KEY0 main/ds/keys/4096/ds_key1.bin HMAC_DOWN_DIGITAL_SIGNATURE
+espefuse -p $ESPPORT burn-key BLOCK_KEY0 main/ds/keys/4096/ds_key1.bin HMAC_DOWN_DIGITAL_SIGNATURE
 
-espefuse.py -p $ESPPORT burn_key BLOCK_KEY1 main/ds/keys/4096/ds_key2.bin HMAC_DOWN_DIGITAL_SIGNATURE
+espefuse -p $ESPPORT burn-key BLOCK_KEY1 main/ds/keys/4096/ds_key2.bin HMAC_DOWN_DIGITAL_SIGNATURE
 
-espefuse.py -p $ESPPORT burn_key BLOCK_KEY2 main/ds/keys/4096/ds_key3.bin HMAC_DOWN_DIGITAL_SIGNATURE
+espefuse -p $ESPPORT burn-key BLOCK_KEY2 main/ds/keys/4096/ds_key3.bin HMAC_DOWN_DIGITAL_SIGNATURE
 ```
 
 # Burning the ECDSA keys
 
 By default, ECDSA tests are disabled. You can enable it after disabling HMAC & DS tests using `idf.py menuconfig -> Test App Configuration -> Enable ECDSA Peripheral test cases`
 
-The ECDSA tests need some ECDSA keys to be burned in the `BLOCK_KEY3` and `BLOCK_KEY4` of the efuses. As this verification application is independent of the efuse component, the user needs to manually burn the keys and their key purposes using `espefuse.py`.
+The ECDSA tests need some ECDSA keys to be burned in the `BLOCK_KEY3` and `BLOCK_KEY4` of the efuses. As this verification application is independent of the efuse component, the user needs to manually burn the keys and their key purposes using `espefuse`.
 
 ```bash
-espefuse.py -p $ESPPORT burn_key BLOCK_KEY3 main/ecdsa/ecdsa192_priv_key.pem ECDSA_KEY
+espefuse -p $ESPPORT burn-key BLOCK_KEY3 main/ecdsa/ecdsa192_priv_key.pem ECDSA_KEY
 
-espefuse.py -p $ESPPORT burn_key BLOCK_KEY4 main/ecdsa/ecdsa256_priv_key.pem ECDSA_KEY
+espefuse -p $ESPPORT burn-key BLOCK_KEY4 main/ecdsa/ecdsa256_priv_key.pem ECDSA_KEY
 ```
 
 # Burning the XTS-AES key
@@ -122,18 +122,18 @@ By default, XTS-AES tests are disabled. You can enable it after disabling Digita
 
 The XTS-AES tests contain tests for both the modes, XTS-AES-128 and XTS-AES-256, but as per the peripheral design we can test only one mode at a time. Thus, we need to burn one key at a time.
 
-These keys can be burned in the `BLOCK_KEY0` (for XTS-AES-128), whereas, `BLOCK_KEY0` and `BLOCK_KEY1` (for XTS-AES-256) of the efuses. As this verification application is independent of the efuse component, the user needs to manually burn the keys and their key purposes using `espefuse.py`.
+These keys can be burned in the `BLOCK_KEY0` (for XTS-AES-128), whereas, `BLOCK_KEY0` and `BLOCK_KEY1` (for XTS-AES-256) of the efuses. As this verification application is independent of the efuse component, the user needs to manually burn the keys and their key purposes using `espefuse`.
 
 While running the XTS-AES-128 tests:
 
 ```bash
-espefuse.py -p $ESPPORT burn_key BLOCK_KEY0 main/xts_aes/xts_aes_128_key.bin XTS_AES_128_KEY
+espefuse -p $ESPPORT burn-key BLOCK_KEY0 main/xts_aes/xts_aes_128_key.bin XTS_AES_128_KEY
 ```
 
 While running the XTS-AES-256 tests:
 
 ```bash
-espefuse.py -p $ESPPORT burn_key BLOCK_KEY0 main/xts_aes/xts_aes_256_key.bin XTS_AES_256_KEY
+espefuse -p $ESPPORT burn-key BLOCK_KEY0 main/xts_aes/xts_aes_256_key.bin XTS_AES_256_KEY
 ```
 
 # Building

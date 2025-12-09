@@ -3,8 +3,8 @@ USB 设备栈
 
 :link_to_translation:`en:[English]`
 
-{IDF_TARGET_USB_DP_GPIO_NUM:default="20"}
-{IDF_TARGET_USB_DM_GPIO_NUM:default="19"}
+{IDF_TARGET_USB_DP_GPIO_NUM:default="20", esp32h4="22"}
+{IDF_TARGET_USB_DM_GPIO_NUM:default="19", esp32h4="21"}
 {IDF_TARGET_USB_EP_NUM: default="6", esp32p4="15"}
 {IDF_TARGET_USB_EP_NUM_INOUT:default="5", esp32p4="8"}
 {IDF_TARGET_USB_EP_NUM_IN:default="1", esp32p4="7"}
@@ -34,7 +34,7 @@ USB 设备栈（以下简称设备栈）支持在 {IDF_TARGET_NAME} 上启用 US
 硬件连接
 --------
 
-.. only:: esp32s2 or esp32s3
+.. only:: esp32s2 or esp32s3 or esp32h4
 
     {IDF_TARGET_NAME} 将 USB D+ 和 D- 信号分别路由到 GPIO {IDF_TARGET_USB_DP_GPIO_NUM} 和 {IDF_TARGET_USB_DM_GPIO_NUM}。为了实现 USB 设备功能，这些 GPIO 应通过某种方式连接到总线（例如，通过 Micro-B 端口、USB-C 端口或直接连接到标准-A 插头）。
 
@@ -47,7 +47,7 @@ USB 设备栈（以下简称设备栈）支持在 {IDF_TARGET_NAME} 上启用 US
     :alt: 将 USB GPIO 直接接连至 USB 标准-A 插头
     :figclass: align-center
 
-.. only:: esp32s2 or esp32s3
+.. only:: esp32s2 or esp32s3 or esp32h4
 
     .. note::
 
@@ -406,7 +406,7 @@ single-buffer 方案通过使用专用 buffer 临时存储接收到的写入数�
 
     .. note::
 
-        ESP32-S2 在 MSC 设备模式下不支持 SD 卡功能。
+        {IDF_TARGET_NAME} 在 MSC 设备模式下不支持 SD 卡功能。
 
     **SPI flash 性能：**
 
@@ -422,6 +422,27 @@ single-buffer 方案通过使用专用 buffer 临时存储接收到的写入数�
 
         * - 8192 B
           - 21.54 KB/s
+
+.. only:: esp32h4
+
+    .. note::
+
+        {IDF_TARGET_NAME} 不支持在 MSC 设备模式下使用 SD 卡。
+
+    **SPI Flash 性能：**
+
+    .. list-table::
+        :header-rows: 1
+        :widths: 20 20
+
+        * - FIFO 大小
+          - 写入速度
+
+        * - 512 B
+          - 4.48 KB/s
+
+        * - 8192 B
+          - 22.33 KB/s
 
 性能限制：
 
@@ -444,6 +465,6 @@ single-buffer 方案通过使用专用 buffer 临时存储接收到的写入数�
 - :example:`peripherals/usb/device/tusb_msc` 演示了如何使用 USB 功能创建一个可以被 USB 主机识别的大容量存储设备，允许访问其内部数据存储，支持 SPI Flash 和 SD MMC 卡存储介质。
 - :example:`peripherals/usb/device/tusb_composite_msc_serialdevice` 演示了如何使用 TinyUSB 组件将 {IDF_TARGET_NAME} 同时配置为 USB 串行设备和 MSC 设备（存储介质为 SPI-Flash）运行。
 
-.. only:: not esp32p4
+.. only:: not esp32p4 and not esp32h4
 
   - :example:`peripherals/usb/device/tusb_ncm` 演示了使用 TinyUSB 组件，借助网络控制模型 (NCM) 将 Wi-Fi 数据通过 USB 传输到 Linux 或 Windows 主机。NCM 是通信设备类 (CDC) USB 设备的一个子类，专用于 Ethernet-over-USB 应用。

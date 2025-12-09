@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,7 +8,6 @@
 #include "sdkconfig.h"
 #include "bootloader_common.h"
 #include "soc/efuse_reg.h"
-#include "soc/gpio_periph.h"
 #include "soc/gpio_sig_map.h"
 #include "soc/io_mux_reg.h"
 
@@ -39,7 +38,7 @@
 #include "hal/mmu_hal.h"
 #include "hal/cache_hal.h"
 
-static const char *TAG = "boot.esp32s2";
+ESP_LOG_ATTR_TAG(TAG, "boot.esp32s2");
 
 static void wdt_reset_cpu0_info_enable(void)
 {
@@ -140,10 +139,8 @@ esp_err_t bootloader_init(void)
     bootloader_print_banner();
 
 #if !CONFIG_APP_BUILD_TYPE_RAM
-    // init cache hal
-    cache_hal_init();
-    //init mmu
-    mmu_hal_init();
+    // init cache and mmu
+    bootloader_init_ext_mem();
     // Workaround: normal ROM bootloader exits with DROM0 cache unmasked, but 2nd bootloader exits with it masked.
     REG_CLR_BIT(EXTMEM_PRO_ICACHE_CTRL1_REG, EXTMEM_PRO_ICACHE_MASK_DROM0);
     // update flash ID

@@ -26,7 +26,7 @@
 #include "hal/rtc_hal.h"
 #include "esp32s3/rom/cache.h"
 
-static __attribute__((unused)) const char *TAG = "sleep";
+ESP_LOG_ATTR_TAG(TAG, "sleep");
 
 typedef struct {
     uint32_t start;
@@ -231,7 +231,7 @@ bool cpu_domain_pd_allowed(void)
 
 esp_err_t sleep_cpu_configure(bool light_sleep_enable)
 {
-#if ESP_SLEEP_POWER_DOWN_CPU
+#if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU
     if (light_sleep_enable) {
         ESP_RETURN_ON_ERROR(esp_sleep_cpu_retention_init(), TAG, "Failed to enable CPU power down during light sleep.");
     } else {

@@ -34,7 +34,7 @@
 #define MODEM_FE_DATA_BASE              (0x600a0400)
 #define MODEM_FE_CTRL_BASE              (0x600a0800)
 
-static __attribute__((unused)) const char *TAG = "sleep";
+ESP_LOG_ATTR_TAG(TAG, "sleep");
 
 #if SOC_PM_PAU_REGDMA_LINK_IDX_WIFIMAC
 static esp_err_t sleep_modem_state_phy_wifi_init(void *arg)

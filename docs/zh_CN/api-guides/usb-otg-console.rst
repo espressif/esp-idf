@@ -6,7 +6,7 @@ USB OTG 控制台
 在集成了 USB 外设的芯片上，可以使用 USB 通信设备类 (CDC) 来实现串行控制台，而不是使用带有外部 USB-UART 桥接芯片的 UART，{IDF_TARGET_NAME} ROM 中包含 USB CDC 实现，支持一些基本功能，而无需应用程序包含 USB 协议栈：
 
 * 双向串行控制台，可与 :doc:`IDF 监视器 <tools/idf-monitor>` 或其他串行监视器一起使用。
-* 使用 ``esptool.py`` 和 ``idf.py flash`` 进行烧录。
+* 使用 ``esptool`` 和 ``idf.py flash`` 进行烧录。
 * :doc:`设备固件更新 (DFU) <dfu>` 接口，可通过 ``dfu-util`` 和 ``dfu-util`` 烧录设备。
 
 .. note::

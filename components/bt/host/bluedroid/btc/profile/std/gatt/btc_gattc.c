@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
 
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -24,6 +24,7 @@ static inline void btc_gattc_cb_to_app(esp_gattc_cb_event_t event, esp_gatt_if_t
     esp_gattc_cb_t btc_gattc_cb = (esp_gattc_cb_t )btc_profile_cb_get(BTC_PID_GATTC);
     if (btc_gattc_cb) {
 	btc_gattc_cb(event, gattc_if, param);
+    BTC_TRACE_DEBUG("btc_gattc_cb_to_app, gattc_if %d, event=%d", gattc_if, event);
     }
 }
 
@@ -212,12 +213,21 @@ static void btc_gattc_app_unregister(btc_ble_gattc_args_t *arg)
 static void btc_gattc_open(btc_ble_gattc_args_t *arg)
 {
     tBTA_GATT_TRANSPORT transport = BTA_GATT_TRANSPORT_LE;
-
+#if (BT_BLE_FEAT_PAWR_EN == TRUE)
+    BTA_GATTC_Enh_Open(arg->open.gattc_if, arg->open.remote_bda,
+                    arg->open.remote_addr_type, arg->open.is_direct,
+                    transport, arg->open.is_aux, arg->open.own_addr_type,
+                    arg->open.is_pawr_synced, arg->open.adv_handle, arg->open.subevent,
+                    arg->open.phy_mask, (void *)&arg->open.phy_1m_conn_params,
+                    (void *)&arg->open.phy_2m_conn_params, (void *)&arg->open.phy_coded_conn_params);
+#else
     BTA_GATTC_Enh_Open(arg->open.gattc_if, arg->open.remote_bda,
                    arg->open.remote_addr_type, arg->open.is_direct,
                    transport, arg->open.is_aux, arg->open.own_addr_type,
+                   false, 0xff, 0xff,
                    arg->open.phy_mask, (void *)&arg->open.phy_1m_conn_params,
                    (void *)&arg->open.phy_2m_conn_params, (void *)&arg->open.phy_coded_conn_params);
+#endif // (BT_BLE_FEAT_PAWR_EN == TRUE)
 }
 
 static void btc_gattc_close(btc_ble_gattc_args_t *arg)
@@ -714,6 +724,9 @@ static void btc_gattc_unreg_for_notify(btc_ble_gattc_args_t *arg)
 void btc_gattc_call_handler(btc_msg_t *msg)
 {
     btc_ble_gattc_args_t *arg = (btc_ble_gattc_args_t *)(msg->arg);
+
+    BTC_TRACE_DEBUG("%s act %d", __func__, msg->act);
+
     switch (msg->act) {
     case BTC_GATTC_ACT_APP_REGISTER:
         btc_gattc_app_register(arg);
@@ -802,6 +815,8 @@ void btc_gattc_cb_handler(btc_msg_t *msg)
     esp_ble_gattc_cb_param_t param = {0};
 
     memset(&param, 0, sizeof(esp_ble_gattc_cb_param_t));
+
+    BTC_TRACE_DEBUG("%s act %d", __func__, msg->act);
 
     switch (msg->act) {
     case BTA_GATTC_REG_EVT: {

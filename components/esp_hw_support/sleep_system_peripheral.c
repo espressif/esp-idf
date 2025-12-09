@@ -11,16 +11,19 @@
 #include "soc/soc_caps_full.h"
 #include "soc/system_periph_retention.h"
 #include "soc/uart_periph.h"
-#include "soc/timer_periph.h"
+#include "hal/timer_ll.h"
+#if SOC_HAS(I2S)
+#include "hal/i2s_ll.h"
+#endif
 
 #include "esp_sleep.h"
 #include "esp_log.h"
 #include "esp_check.h"
-
+#include "hal/gdma_periph.h"
 #include "esp_private/startup_internal.h"
 #include "esp_private/sleep_retention.h"
 
-static __attribute__((unused)) const char *TAG = "sleep_sys_periph";
+ESP_LOG_ATTR_TAG(TAG, "sleep_sys_periph");
 
 static __attribute__((unused)) esp_err_t sleep_sys_periph_intr_matrix_retention_init(void *arg)
 {
@@ -189,7 +192,7 @@ bool peripheral_domain_pd_allowed(void)
 #if SOC_TIMER_SUPPORT_SLEEP_RETENTION
     mask.bitmap[SLEEP_RETENTION_MODULE_TG0_TIMER0 >> 5] |= BIT(SLEEP_RETENTION_MODULE_TG0_TIMER0 % 32);
     mask.bitmap[SLEEP_RETENTION_MODULE_TG1_TIMER0 >> 5] |= BIT(SLEEP_RETENTION_MODULE_TG1_TIMER0 % 32);
-#if SOC_GPTIMER_ATTR(TIMERS_PER_TIMG) > 1
+#if TIMG_LL_GET(GPTIMERS_PER_INST) > 1
     mask.bitmap[SLEEP_RETENTION_MODULE_TG0_TIMER1 >> 5] |= BIT(SLEEP_RETENTION_MODULE_TG0_TIMER1 % 32);
     mask.bitmap[SLEEP_RETENTION_MODULE_TG1_TIMER1 >> 5] |= BIT(SLEEP_RETENTION_MODULE_TG1_TIMER1 % 32);
 #endif
@@ -221,31 +224,31 @@ bool peripheral_domain_pd_allowed(void)
 # if SOC_GDMA_SUPPORTED && !CONFIG_IDF_TARGET_ESP32P4 // TODO: IDF-11371
     mask.bitmap[SLEEP_RETENTION_MODULE_GDMA_CH0 >> 5] |= BIT(SLEEP_RETENTION_MODULE_GDMA_CH0 % 32);
     mask.bitmap[SLEEP_RETENTION_MODULE_GDMA_CH1 >> 5] |= BIT(SLEEP_RETENTION_MODULE_GDMA_CH1 % 32);
-#  if (SOC_GDMA_PAIRS_PER_GROUP_MAX > 2)
+#  if (GDMA_LL_GET(PAIRS_PER_INST) > 2)
     mask.bitmap[SLEEP_RETENTION_MODULE_GDMA_CH2 >> 5] |= BIT(SLEEP_RETENTION_MODULE_GDMA_CH2 % 32);
 #  endif
 # endif /* SOC_GDMA_SUPPORTED */
-# if SOC_AHB_GDMA_SUPPORTED && CONFIG_IDF_TARGET_ESP32P4 // TODO: IDF-11372
+# if SOC_HAS(AHB_GDMA) && CONFIG_IDF_TARGET_ESP32P4 // TODO: IDF-11372
     mask.bitmap[SLEEP_RETENTION_MODULE_AHB_DMA_CH0 >> 5] |= BIT(SLEEP_RETENTION_MODULE_AHB_DMA_CH0 % 32);
     mask.bitmap[SLEEP_RETENTION_MODULE_AHB_DMA_CH1 >> 5] |= BIT(SLEEP_RETENTION_MODULE_AHB_DMA_CH1 % 32);
     mask.bitmap[SLEEP_RETENTION_MODULE_AHB_DMA_CH2 >> 5] |= BIT(SLEEP_RETENTION_MODULE_AHB_DMA_CH2 % 32);
-# endif /* SOC_AHB_GDMA_SUPPORTED */
-# if SOC_AXI_GDMA_SUPPORTED
+# endif /* SOC_HAS(AHB_GDMA) */
+# if SOC_HAS(AXI_GDMA)
     mask.bitmap[SLEEP_RETENTION_MODULE_AXI_DMA_CH0 >> 5] |= BIT(SLEEP_RETENTION_MODULE_AXI_DMA_CH0 % 32);
     mask.bitmap[SLEEP_RETENTION_MODULE_AXI_DMA_CH1 >> 5] |= BIT(SLEEP_RETENTION_MODULE_AXI_DMA_CH1 % 32);
     mask.bitmap[SLEEP_RETENTION_MODULE_AXI_DMA_CH2 >> 5] |= BIT(SLEEP_RETENTION_MODULE_AXI_DMA_CH2 % 32);
-# endif /* SOC_AXI_GDMA_SUPPORTED */
+# endif /* SOC_HAS(AXI_GDMA) */
 #endif /* SOC_GDMA_SUPPORT_SLEEP_RETENTION */
 
-#if SOC_I2S_SUPPORT_SLEEP_RETENTION
+#if SOC_HAS(PAU)
     mask.bitmap[SLEEP_RETENTION_MODULE_I2S0 >> 5] |= BIT(SLEEP_RETENTION_MODULE_I2S0 % 32);
-# if (SOC_I2S_NUM > 1)
+# if (I2S_LL_GET(INST_NUM) > 1)
     mask.bitmap[SLEEP_RETENTION_MODULE_I2S1 >> 5] |= BIT(SLEEP_RETENTION_MODULE_I2S1 % 32);
 # endif
-# if (SOC_I2S_NUM > 2)
+# if (I2S_LL_GET(INST_NUM) > 2)
     mask.bitmap[SLEEP_RETENTION_MODULE_I2S2 >> 5] |= BIT(SLEEP_RETENTION_MODULE_I2S2 % 32);
 # endif
-#endif /* SOC_I2S_SUPPORT_SLEEP_RETENTION */
+#endif /* SOC_HAS(PAU) */
 
 #if SOC_I2C_SUPPORT_SLEEP_RETENTION
     mask.bitmap[SLEEP_RETENTION_MODULE_I2C0 >> 5] |= BIT(SLEEP_RETENTION_MODULE_I2C0 % 32);

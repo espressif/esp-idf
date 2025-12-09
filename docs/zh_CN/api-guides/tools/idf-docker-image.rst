@@ -130,7 +130,7 @@ Docker 也支持以交互方式进行构建，以调试构建问题或测试自�
 
 .. code-block:: bash
 
-    esp_rfc2217_server.py -v -p 4000 /dev/ttyUSB0
+    esp_rfc2217_server -v -p 4000 /dev/ttyUSB0
 
 此时，便可使用以下命令，从 Docker 容器内部烧写连接到主机的设备：
 
@@ -152,6 +152,7 @@ ESP-IDF 库中的 Docker 文件提供了以下构建参数，可用于构建自�
 - ``IDF_CLONE_SHALLOW``：如果将此参数设置为非空值，则会在执行 ``git clone`` 时使用 ``--depth=1 --shallow-submodules`` 参数。浅克隆的深度可以使用 ``IDF_CLONE_SHALLOW_DEPTH`` 设置。浅克隆可以极大减少下载的数据量及生成的 Docker 镜像大小。然而，如果需要切换到此类“浅层”存储库中的其他分支，必须先执行额外的 ``git fetch origin <branch>`` 命令。
 - ``IDF_CLONE_SHALLOW_DEPTH``：此参数指定进行浅克隆时要使用的深度值。如未设置，将使用 ``--depth=1``。此参数仅在使用 ``IDF_CLONE_SHALLOW`` 时有效。如果要为分支构建 Docker 镜像，并且该镜像必须包含该分支上的最新标签，则需使用此参数。要确定所需的深度，请在特定的分支运行 ``git describe`` 命令，并注意偏移值。将偏移值加 1 后即可将其用作 ``IDF_CLONE_SHALLOW_DEPTH`` 参数的值。此过程将确保生成的镜像包含分支上的最新标签，且 Docker 镜像内部的 ``git describe`` 命令也会按预期工作。
 - ``IDF_INSTALL_TARGETS``：以逗号分隔的 ESP-IDF 目标列表，用于安装工具链，或者使用 ``all`` 安装所有目标的工具链。选择特定目标可以减少下载的数据量和生成的 Docker 镜像的大小。该参数默认值为 ``all``。
+- ``IDF_GITHUB_ASSETS``：如果将此参数设置为非空值，则会从设置的镜像站点下载 ESP-IDF 工具，而不是从 ``github.com`` 下载。这样可以在网络无法访问 ``github.com`` 时使用镜像站点。该参数的默认值为空。
 
 要使用以上参数，请通过 ``--build-arg`` 命令行选项传递。例如，以下命令使用 ESP-IDF v4.4.1 的浅克隆以及仅适用于 ESP32-C3 的工具链构建了 Docker 镜像：
 
@@ -167,3 +168,9 @@ ESP-IDF 库中的 Docker 文件提供了以下构建参数，可用于构建自�
 .. _RFC2217: http://www.ietf.org/rfc/rfc2217.txt
 .. _ESP 工具版本: https://github.com/espressif/esptool/releases
 .. _设备选项: https://docs.docker.com/engine/reference/run/#runtime-privilege-and-linux-capabilities
+
+
+相关文档
+======================
+
+- `使用 Docker 容器 <https://docs.espressif.com/projects/vscode-esp-idf-extension/zh_CN/latest/additionalfeatures/docker-container.html>`_

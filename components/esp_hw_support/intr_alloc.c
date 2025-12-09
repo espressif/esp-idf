@@ -40,7 +40,7 @@
 /* For targets that uses a CLIC as their interrupt controller, CPU_INT_LINES_COUNT represents the external interrupts count */
 #define CPU_INT_LINES_COUNT 32
 
-static const char* TAG = "intr_alloc";
+ESP_LOG_ATTR_TAG(TAG, "intr_alloc");
 
 #define ETS_INTERNAL_TIMER0_INTR_NO 6
 #define ETS_INTERNAL_TIMER1_INTR_NO 15
@@ -67,7 +67,7 @@ typedef struct vector_desc_t vector_desc_t;
 
 struct shared_vector_desc_t {
     int disabled: 1;
-    int source: 8;
+    int source: 16;
     volatile uint32_t *statusreg;
     uint32_t statusmask;
     intr_handler_t isr;
@@ -95,7 +95,7 @@ struct vector_desc_t {
     int flags: 16;                          //OR of VECDESC_FL_* defines
     unsigned int cpu: 1;
     unsigned int intno: 5;
-    int source: 8;                          //Interrupt mux flags, used when not shared
+    int source: 16;                 //Interrupt mux flags, used when not shared
     shared_vector_desc_t *shared_vec_info;  //used when VECDESC_FL_SHARED
     vector_desc_t *next;
 };
@@ -481,7 +481,7 @@ static void ESP_INTR_IRAM_ATTR shared_intr_isr(void *arg)
     esp_os_exit_critical_isr(&spinlock);
 }
 
-#if CONFIG_APPTRACE_SV_ENABLE
+#if CONFIG_ESP_TRACE_ENABLE
 //Common non-shared isr handler wrapper.
 static void ESP_INTR_IRAM_ATTR non_shared_intr_isr(void *arg)
 {
@@ -489,7 +489,7 @@ static void ESP_INTR_IRAM_ATTR non_shared_intr_isr(void *arg)
     esp_os_enter_critical_isr(&spinlock);
     traceISR_ENTER(ns_isr_arg->source + ETS_INTERNAL_INTR_SOURCE_OFF);
     // FIXME: can we call ISR and check os_task_switch_is_pended() after releasing spinlock?
-    // when CONFIG_APPTRACE_SV_ENABLE = 0 ISRs for non-shared IRQs are called without spinlock
+    // when CONFIG_ESP_TRACE_LIB_NONE is set ISRs for non-shared IRQs are called without spinlock
     ns_isr_arg->isr(ns_isr_arg->isr_arg);
     // check if we will return to scheduler or to interrupted task after ISR
     if (!os_task_switch_is_pended(esp_cpu_get_core_id())) {
@@ -631,7 +631,7 @@ esp_err_t esp_intr_alloc_intrstatus_bind(int source, int flags, uint32_t intrsta
         //Mark as unusable for other interrupt sources. This is ours now!
         vd->flags = VECDESC_FL_NONSHARED;
         if (handler) {
-#if CONFIG_APPTRACE_SV_ENABLE
+#if CONFIG_ESP_TRACE_ENABLE
             non_shared_isr_arg_t *ns_isr_arg = heap_caps_malloc(sizeof(non_shared_isr_arg_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
             if (!ns_isr_arg) {
                 esp_os_exit_critical(&spinlock);
@@ -831,7 +831,7 @@ static esp_err_t intr_free_for_current_cpu(intr_handle_t handle)
 
     if ((handle->vector_desc->flags & VECDESC_FL_NONSHARED) || free_shared_vector) {
         ESP_EARLY_LOGV(TAG, "esp_intr_free: Disabling int, killing handler");
-#if CONFIG_APPTRACE_SV_ENABLE
+#if CONFIG_ESP_TRACE_ENABLE
         if (!free_shared_vector) {
             void *isr_arg = esp_cpu_intr_get_handler_arg(handle->vector_desc->intno);
             if (isr_arg) {

@@ -104,7 +104,7 @@ tGAP_CLCB *gap_ble_find_clcb_by_conn_id(UINT16 conn_id)
         }
     }
 
-    return p_clcb;
+    return NULL;
 }
 
 /*******************************************************************************
@@ -126,10 +126,10 @@ tGAP_CLCB *gap_clcb_alloc (BD_ADDR bda)
             memset(p_clcb, 0, sizeof(tGAP_CLCB));
             p_clcb->in_use = TRUE;
             memcpy (p_clcb->bda, bda, BD_ADDR_LEN);
-            break;
+            return p_clcb;
         }
     }
-    return p_clcb;
+    return NULL;
 }
 
 /*******************************************************************************
@@ -256,6 +256,12 @@ tGATT_STATUS gap_read_attr_value (UINT16 handle, tGATT_VALUE *p_value, BOOLEAN i
                 UINT8_TO_STREAM(p, p_db_attr->attr_value.addr_resolution);
                 p_value->len = 1;
                 break;
+#if (BT_GATTS_SECURITY_LEVELS_CHAR == TRUE)
+            case GATT_UUID_GAP_GATT_SECURITY_LEVELS:
+                UINT16_TO_STREAM(p, p_db_attr->attr_value.security_level);
+                p_value->len = 2;
+                break;
+#endif // (BT_GATTS_SECURITY_LEVELS_CHAR == TRUE)
             }
             return GATT_SUCCESS;
         }
@@ -464,6 +470,17 @@ void gap_attr_db_init(void)
     p_db_attr->attr_value.addr_resolution = 0;
     p_db_attr++;
 
+#if (BT_GATTS_SECURITY_LEVELS_CHAR == TRUE)
+    /* Add LE Security Levels Characteristic */
+    uuid.len = LEN_UUID_16;
+    uuid.uu.uuid16 = p_db_attr->uuid = GATT_UUID_GAP_GATT_SECURITY_LEVELS;
+    p_db_attr->handle = GATTS_AddCharacteristic(service_handle, &uuid,
+                        GATT_PERM_READ, GATT_CHAR_PROP_BIT_READ,
+                        NULL, NULL);
+    p_db_attr->attr_value.security_level = 0x0101;
+    p_db_attr++;
+#endif // (BT_GATTS_SECURITY_LEVELS_CHAR == TRUE)
+
     /* start service now */
     memset (&app_uuid.uu.uuid128, 0x81, LEN_UUID_128);
 
@@ -516,6 +533,12 @@ void GAP_BleAttrDBUpdate(UINT16 attr_uuid, tGAP_BLE_ATTR_VALUE *p_value)
             case GATT_UUID_GAP_CENTRAL_ADDR_RESOL:
                 p_db_attr->attr_value.addr_resolution = p_value->addr_resolution;
                 break;
+
+#if (BT_GATTS_SECURITY_LEVELS_CHAR == TRUE)
+            case GATT_UUID_GAP_GATT_SECURITY_LEVELS:
+                p_db_attr->attr_value.security_level = p_value->security_level;
+                break;
+#endif // (BT_GATTS_SECURITY_LEVELS_CHAR == TRUE)
 
             }
             break;
@@ -665,6 +688,12 @@ static void gap_ble_c_cmpl_cback (UINT16 conn_id, tGATTC_OPTYPE op, tGATT_STATUS
     switch (op_type) {
     case GATT_UUID_GAP_PREF_CONN_PARAM:
         GAP_TRACE_EVENT ("GATT_UUID_GAP_PREF_CONN_PARAM");
+        /* Verify sufficient data length before reading connection parameters */
+        if (p_data->att_value.len < 8) {
+            GAP_TRACE_ERROR ("GATT_UUID_GAP_PREF_CONN_PARAM: insufficient data length %d", p_data->att_value.len);
+            gap_ble_cl_op_cmpl(p_clcb, FALSE, 0, NULL);
+            break;
+        }
         /* Extract the peripheral preferred connection parameters and save them */
 
         STREAM_TO_UINT16 (min, pp);
@@ -679,7 +708,8 @@ static void gap_ble_c_cmpl_cback (UINT16 conn_id, tGATTC_OPTYPE op, tGATT_STATUS
 
     case GATT_UUID_GAP_DEVICE_NAME:
         GAP_TRACE_EVENT ("GATT_UUID_GAP_DEVICE_NAME\n");
-        len = (UINT16)strlen((char *)pp);
+        /* Use att_value.len instead of strlen to avoid reading beyond buffer */
+        len = p_data->att_value.len;
         if (len > GAP_CHAR_DEV_NAME_SIZE) {
             len = GAP_CHAR_DEV_NAME_SIZE;
         }
@@ -687,6 +717,12 @@ static void gap_ble_c_cmpl_cback (UINT16 conn_id, tGATTC_OPTYPE op, tGATT_STATUS
         break;
 
     case GATT_UUID_GAP_CENTRAL_ADDR_RESOL:
+        /* Verify sufficient data length */
+        if (p_data->att_value.len < 1) {
+            GAP_TRACE_ERROR ("GATT_UUID_GAP_CENTRAL_ADDR_RESOL: insufficient data length");
+            gap_ble_cl_op_cmpl(p_clcb, FALSE, 0, NULL);
+            break;
+        }
         gap_ble_cl_op_cmpl(p_clcb, TRUE, 1, pp);
         break;
     }
@@ -728,7 +764,7 @@ BOOLEAN gap_ble_accept_cl_operation(BD_ADDR peer_bda, UINT16 uuid, tGAP_BLE_CMPL
     }
 
     /* hold the link here */
-    if (!GATT_Connect(gap_cb.gatt_if, p_clcb->bda, BLE_ADDR_UNKNOWN_TYPE, TRUE, BT_TRANSPORT_LE, FALSE)) {
+    if (!GATT_Connect(gap_cb.gatt_if, p_clcb->bda, BLE_ADDR_UNKNOWN_TYPE, TRUE, BT_TRANSPORT_LE, FALSE, FALSE, 0xFF, 0xFF)) {
         return started;
     }
 

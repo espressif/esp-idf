@@ -1,7 +1,7 @@
 /**
  * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
- *  SPDX-License-Identifier: Apache-2.0
+ *  SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 #pragma once
 
@@ -411,37 +411,6 @@ typedef union {
     };
     uint32_t val;
 } hp_crypto_ctrl_reg_t;
-
-
-/** Group: HP GPIO O HOLD CTRL0 REG */
-/** Type of gpio_o_hold_ctrl0 register
- *  NA
- */
-typedef union {
-    struct {
-        /** reg_gpio_0_hold_low : R/W; bitpos: [31:0]; default: 0;
-         *  hold control for gpio47~16
-         */
-        uint32_t reg_gpio_0_hold_low:32;
-    };
-    uint32_t val;
-} hp_gpio_o_hold_ctrl0_reg_t;
-
-
-/** Group: HP GPIO O HOLD CTRL1 REG */
-/** Type of gpio_o_hold_ctrl1 register
- *  NA
- */
-typedef union {
-    struct {
-        /** reg_gpio_0_hold_high : R/W; bitpos: [8:0]; default: 0;
-         *  hold control for gpio56~48
-         */
-        uint32_t reg_gpio_0_hold_high:9;
-        uint32_t reserved_9:23;
-    };
-    uint32_t val;
-} hp_gpio_o_hold_ctrl1_reg_t;
 
 
 /** Group: HP SYS RDN ECO CS REG */
@@ -2123,7 +2092,7 @@ typedef union {
 } hp_hp2lp_intr_group3_st_reg_t;
 
 
-typedef struct {
+typedef struct hp_system_dev_t {
     volatile hp_sys_ver_date_reg_t sys_ver_date;
     volatile hp_clk_en_reg_t clk_en;
     uint32_t reserved_008[2];
@@ -2149,8 +2118,7 @@ typedef struct {
     volatile hp_cpu_corestalled_st_reg_t cpu_corestalled_st;
     uint32_t reserved_068[2];
     volatile hp_crypto_ctrl_reg_t crypto_ctrl;
-    volatile hp_gpio_o_hold_ctrl0_reg_t gpio_o_hold_ctrl0;
-    volatile hp_gpio_o_hold_ctrl1_reg_t gpio_o_hold_ctrl1;
+    uint32_t reserved_074[2];
     volatile hp_sys_rdn_eco_cs_reg_t sys_rdn_eco_cs;
     volatile hp_cache_apb_postw_en_reg_t cache_apb_postw_en;
     volatile hp_l2_mem_subsize_reg_t l2_mem_subsize;
@@ -2244,12 +2212,12 @@ typedef struct {
     volatile hp_hp2lp_wakeup_group1_en_reg_t hp2lp_wakeup_group1_en;
     volatile hp_hp2lp_wakeup_group2_en_reg_t hp2lp_wakeup_group2_en;
     volatile hp_hp2lp_wakeup_group3_en_reg_t hp2lp_wakeup_group3_en;
-} hp_dev_t;
+} hp_system_dev_t;
 
-extern hp_dev_t HP_SYSTEM;
+extern hp_system_dev_t HP_SYSTEM;
 
 #ifndef __cplusplus
-_Static_assert(sizeof(hp_dev_t) == 0x220, "Invalid size of hp_dev_t structure");
+_Static_assert(sizeof(hp_system_dev_t) == 0x220, "Invalid size of hp_dev_t structure");
 #endif
 
 #ifdef __cplusplus

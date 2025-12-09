@@ -55,10 +55,6 @@ if(CONFIG_SOC_SYSTIMER_SUPPORTED)
     list(APPEND sources "patches/esp_rom_systimer.c")
 endif()
 
-if(CONFIG_HAL_WDT_USE_ROM_IMPL)
-    list(APPEND sources "patches/esp_rom_wdt.c")
-endif()
-
 if(CONFIG_ESP_ROM_CLIC_INT_TYPE_PATCH)
     list(APPEND sources "patches/esp_rom_clic.c")
 endif()
@@ -135,14 +131,6 @@ endif()
 
 # Common API which is linked both for bootloader and app builds
 
-if(CONFIG_HAL_WDT_USE_ROM_IMPL)
-    if(CONFIG_IDF_TARGET_ESP32H4 AND NOT CONFIG_ESP32H4_SELECTS_REV_MP) # TODO: ESP32H4 IDF-13835
-        rom_linker_script("beta5.wdt")
-    else()
-        rom_linker_script("wdt")
-    endif()
-endif()
-
 if(CONFIG_HAL_SYSTIMER_USE_ROM_IMPL)
     if(CONFIG_IDF_TARGET_ESP32H4 AND NOT CONFIG_ESP32H4_SELECTS_REV_MP) # TODO: ESP32H4 IDF-13835
         rom_linker_script("beta5.systimer")
@@ -156,30 +144,18 @@ if(CONFIG_ESP_ROM_HAS_VERSION)
 endif()
 
 if(ESP_TEE_BUILD)
-    if(CONFIG_IDF_TARGET_ESP32H4 AND NOT CONFIG_ESP32H4_SELECTS_REV_MP) # TODO: ESP32H4 IDF-13835
-        rom_linker_script("beta5.heap")
-        rom_linker_script("beta5.spiflash")
-        if(CONFIG_ESP_ROM_HAS_NEWLIB_NANO_FORMAT)
-            rom_linker_script("beta5.newlib-nano")
-        endif()
-    else()
-        rom_linker_script("heap")
-        rom_linker_script("spiflash")
-        if(CONFIG_ESP_ROM_HAS_NEWLIB_NANO_FORMAT)
-            rom_linker_script("newlib-nano")
-        endif()
+    rom_linker_script("heap")
+    if(CONFIG_ESP_ROM_HAS_NEWLIB_NANO_FORMAT)
+        rom_linker_script("newlib-nano")
     endif()
     rom_linker_script("libc")
-    if(CONFIG_ESP_ROM_HAS_SUBOPTIMAL_NEWLIB_ON_MISALIGNED_MEMORY) # TODO IDF-13852: use optimized memcpy for TEE ?
+    if(CONFIG_ESP_ROM_HAS_SUBOPTIMAL_NEWLIB_ON_MISALIGNED_MEMORY)
         rom_linker_script("libc-suboptimal_for_misaligned_mem")
     endif()
 endif()
 
 if(BOOTLOADER_BUILD)
     if(target STREQUAL "esp32")
-        if(NOT CONFIG_SPI_FLASH_ROM_DRIVER_PATCH)
-            rom_linker_script("spiflash_legacy")
-        endif()
         if(CONFIG_ESP32_REV_MIN_FULL GREATER_EQUAL 300)
             rom_linker_script("eco3")
         endif()
@@ -237,11 +213,6 @@ else() # Regular app build
             if(CONFIG_LIBC_NEWLIB)
                 rom_linker_script("newlib-reent-funcs")
             endif()
-        endif()
-
-        if(NOT CONFIG_SPI_FLASH_ROM_DRIVER_PATCH)
-            # For ESP32, inclusion of ROM driver do not depend on CONFIG_SPI_FLASH_ROM_IMPL
-            rom_linker_script("spiflash_legacy")
         endif()
 
         if(CONFIG_ESP32_REV_MIN_FULL GREATER_EQUAL 300)

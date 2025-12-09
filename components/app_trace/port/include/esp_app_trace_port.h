@@ -15,7 +15,7 @@ extern "C" {
 
 /** Apptrace HW interface. */
 typedef struct {
-    esp_err_t (*init)(void *hw_data);
+    esp_err_t (*init)(void *hw_data, const esp_apptrace_config_t *config);
     uint8_t *(*get_up_buffer)(void *hw_data, uint32_t, esp_apptrace_tmo_t *);
     esp_err_t (*put_up_buffer)(void *hw_data, uint8_t *, esp_apptrace_tmo_t *);
     esp_err_t (*flush_up_buffer_nolock)(void *hw_data, uint32_t, esp_apptrace_tmo_t *);
@@ -24,6 +24,7 @@ typedef struct {
     uint8_t *(*get_down_buffer)(void *hw_data, uint32_t *, esp_apptrace_tmo_t *);
     esp_err_t (*put_down_buffer)(void *hw_data, uint8_t *, esp_apptrace_tmo_t *);
     bool (*host_is_connected)(void *hw_data);
+    void (*set_header_size)(void *hw_data, esp_apptrace_header_size_t header_size);
 } esp_apptrace_hw_t;
 
 esp_apptrace_hw_t *esp_apptrace_jtag_hw_get(void **data);

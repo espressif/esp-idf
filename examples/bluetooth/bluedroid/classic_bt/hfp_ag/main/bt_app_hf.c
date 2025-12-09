@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -25,7 +25,6 @@
 #include "sdkconfig.h"
 #include "bt_app_core.h"
 #include "bt_app_hf.h"
-#include "osi/allocator.h"
 
 const char *c_hf_evt_str[] = {
     "CONNECTION_STATE_EVT",              /*!< SERVICE LEVEL CONNECTION STATE CONTROL */
@@ -231,7 +230,7 @@ static void bt_app_send_data_task(void *arg)
             if (frame_data_num == 0) {
                 continue;
             }
-            buf = osi_malloc(frame_data_num);
+            buf = (uint8_t *)malloc(frame_data_num);
             if (!buf) {
                 ESP_LOGE(BT_HF_TAG, "%s, no mem", __FUNCTION__);
                 continue;
@@ -241,7 +240,7 @@ static void bt_app_send_data_task(void *arg)
             if (!done) {
                 ESP_LOGE(BT_HF_TAG, "rb send fail");
             }
-            osi_free(buf);
+            free(buf);
             vRingbufferGetInfo(s_m_rb, NULL, NULL, NULL, NULL, &item_size);
 
             if(s_audio_code == ESP_HF_AUDIO_STATE_CONNECTED_MSBC) {
@@ -259,7 +258,7 @@ static void bt_app_send_data_task(void *arg)
 void bt_app_send_data(void)
 {
     s_send_data_Semaphore = xSemaphoreCreateBinary();
-    xTaskCreate(bt_app_send_data_task, "BtAppSendDataTask", 2048, NULL, configMAX_PRIORITIES - 3, &s_bt_app_send_data_task_handler);
+    xTaskCreate(bt_app_send_data_task, "BtAppSendDataTask", 4 * 1024, NULL, configMAX_PRIORITIES - 3, &s_bt_app_send_data_task_handler);
     s_m_rb = xRingbufferCreate(ESP_HFP_RINGBUF_SIZE, RINGBUF_TYPE_BYTEBUF);
     const esp_timer_create_args_t c_periodic_timer_args = {
             .callback = &bt_app_send_data_timer_cb,

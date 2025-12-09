@@ -12,6 +12,7 @@
 #include <esp_http_server.h>
 #include "esp_httpd_priv.h"
 #include <netinet/tcp.h>
+#include "ctrl_sock.h"
 
 static const char *TAG = "httpd_txrx";
 
@@ -699,6 +700,11 @@ esp_err_t httpd_req_async_handler_complete(httpd_req_t *r)
         return ESP_ERR_INVALID_ARG;
     }
 
+    // Get server handle and control socket info before freeing the request
+    struct httpd_data *hd = (struct httpd_data *) r->handle;
+    int msg_fd = hd->msg_fd;
+    int port = hd->config.ctrl_port;
+
     struct httpd_req_aux *ra = r->aux;
     ra->sd->for_async_req = false;
     free(ra->scratch);
@@ -709,6 +715,18 @@ esp_err_t httpd_req_async_handler_complete(httpd_req_t *r)
     free(r->aux);
     free(r);
 
+    // Send a dummy control message(httpd_ctrl_data) to unblock the main HTTP server task from the select() call.
+    // Since the current connection FD was marked as inactive for async requests, the main task
+    // will now re-add this FD to its select() descriptor list. This ensures that subsequent requests
+    // on the same FD are processed correctly
+    struct httpd_ctrl_data msg = {.hc_msg = HTTPD_CTRL_MAX};
+    int ret = cs_send_to_ctrl_sock(msg_fd, port, &msg, sizeof(msg));
+    if (ret < 0) {
+        ESP_LOGW(TAG, LOG_FMT("failed to send socket notification"));
+        return ESP_FAIL;
+    }
+
+    ESP_LOGD(TAG, LOG_FMT("socket notification sent"));
     return ESP_OK;
 }
 

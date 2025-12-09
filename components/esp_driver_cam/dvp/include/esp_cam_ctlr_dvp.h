@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,16 +17,18 @@
 extern "C" {
 #endif
 
+#define ESP_CAM_CTLR_DVP_DATA_SIG_NUM 16
+
 /**
  * @brief ESP CAM DVP pins configuration
  */
 typedef struct esp_cam_ctlr_dvp_pin_config {
-    cam_ctlr_data_width_t data_width;           /*!< Number of data lines */
-    gpio_num_t data_io[CAM_DVP_DATA_SIG_NUM];   /*!< DVP data pin number */
-    gpio_num_t vsync_io;                        /*!< DVP V-Sync pin number */
-    gpio_num_t de_io;                           /*!< DVP DE pin number */
-    gpio_num_t pclk_io;                         /*!< DVP PCLK input pin number, clock is from camera sensor */
-    gpio_num_t xclk_io;                         /*!< DVP output clock pin number, if using external XTAL, set xclk_io = GPIO_NUM_NC */
+    cam_ctlr_data_width_t data_width;                    /*!< Number of data lines */
+    gpio_num_t data_io[ESP_CAM_CTLR_DVP_DATA_SIG_NUM];   /*!< DVP data pin number */
+    gpio_num_t vsync_io;                                 /*!< DVP V-Sync pin number */
+    gpio_num_t de_io;                                    /*!< DVP DE pin number */
+    gpio_num_t pclk_io;                                  /*!< DVP PCLK input pin number, clock is from camera sensor */
+    gpio_num_t xclk_io;                                  /*!< DVP output clock pin number, if using external XTAL, set xclk_io = GPIO_NUM_NC */
 } esp_cam_ctlr_dvp_pin_config_t;
 
 /**
@@ -38,8 +40,33 @@ typedef struct esp_cam_ctlr_dvp_config {
     uint32_t h_res;                             /*!< Input horizontal resolution, i.e. the number of pixels in a line */
     uint32_t v_res;                             /*!< Input vertical resolution, i.e. the number of lines in a frame */
     cam_ctlr_color_t input_data_color_type;     /*!< Input pixel format */
+    uint32_t cam_data_width;                        /*!< Byte width, 8, 16 or 24 bit, default to 8 */
     struct {
-        uint32_t byte_swap_en : 1;              /*!< Enable byte swap */
+        uint32_t bit_swap_en : 1;               /*!< Enable bit swap */
+        uint32_t byte_swap_en : 1;              /*!< Enable byte swap
+                                                    *
+                                                    * GDMA Data Byte Order Table (input: B0,B1,B2,B3,B4,B5, addresses from low to high)
+                                                    *
+                                                    * | cam_data_width | bit_swap_en | byte_swap_en | Stage 1 Output Data Sequence   |
+                                                    * |----------------|-------------|--------------|------------------------------  |
+                                                    * | 8-bit          | 0           | 0            | {B0}{B1}{B2}{B3}{B4}{B5}       |
+                                                    * | 8-bit          | 0           | 1            | {B1,B0}{B3,B2}{B5,B4}          |
+                                                    * | 8-bit          | 1           | 0            | {B0'}{B1'}{B2'}{B3'}{B4'}{B5'} |
+                                                    * | 8-bit          | 1           | 1            | {B1',B0'}{B3',B2'}{B5',B4'}    |
+                                                    *
+                                                    * | 16-bit         | 0           | 0            | {B1,B0}{B3,B2}{B5,B4}          |
+                                                    * | 16-bit         | 0           | 1            | {B0,B1}{B2,B3}{B4,B5}          |
+                                                    * | 16-bit         | 1           | 0            | {B1',B0'}{B3',B2'}{B5',B4'}    |
+                                                    * | 16-bit         | 1           | 1            | {B0',B1'}{B2',B3'}{B4',B5'}    |
+                                                    *
+                                                    * | 24-bit         | 0           | 0            | {B2,B1,B0}{B5,B4,B3}           |
+                                                    * | 24-bit         | 0           | 1            | {B0,B1,B2}{B3,B4,B5}           |
+                                                    * | 24-bit         | 1           | 0            | {B2',B1',B0'}{B5',B4',B3'}     |
+                                                    * | 24-bit         | 1           | 1            | {B0',B1',B2'}{B3',B4',B5'}     |
+                                                    *
+                                                    * Where B0' = bit-reversed B0，Bn'[7:0] = Bn[0:7]
+                                                    * Each {} contains big-endian parallel data, {} are in serial relationship, output order is left to right
+                                                    */
         uint32_t bk_buffer_dis  : 1;            /*!< Disable backup buffer */
         uint32_t pin_dont_init : 1;             /*!< Don't initialize DVP pins if users have called "esp_cam_ctlr_dvp_init" before */
         uint32_t pic_format_jpeg : 1;           /*!< Input picture format is JPEG, if set this flag and "input_data_color_type" will be ignored */

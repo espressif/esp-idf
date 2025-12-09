@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,6 +24,11 @@
 #include "dhcpserver/dhcpserver.h"
 #include "dhcpserver/dhcpserver_options.h"
 #include "esp_sntp.h"
+#include "lwip/dhcp.h"
+#include "lwip/acd.h"
+#include "lwip/prot/dhcp.h"
+#include "lwip/prot/acd.h"
+#include "lwip/prot/etharp.h"
 
 #define ETH_PING_END_BIT BIT(1)
 #define ETH_PING_DURATION_MS (5000)
@@ -278,6 +283,82 @@ static void dhcps_test_dns_options(dns_callback_type_t cb_type,
     TEST_ASSERT((api.ret_start == ERR_OK) == pass);
 }
 
+typedef struct {
+    EventGroupHandle_t event;
+    int self_mac_cb_calls;
+    int other_mac_cb_calls;
+} acd_test_ctx_t;
+
+static acd_test_ctx_t g_acd_ctx;
+
+static void acd_test_cb(struct netif *netif, acd_callback_enum_t state)
+{
+    (void)netif;
+    (void)state;
+    /* We only need to know that a callback was triggered (decline/restart). */
+    g_acd_ctx.other_mac_cb_calls++;
+}
+
+static void dhcp_acd_arp_check_api(void *arg)
+{
+    acd_test_ctx_t *ctx = (acd_test_ctx_t *)arg;
+    struct netif *netif = NULL;
+    NETIF_FOREACH(netif) {
+        if (netif->name[0] == 'l' && netif->name[1] == 'o') {
+            break;
+        }
+    }
+    TEST_ASSERT_NOT_NULL(netif);
+
+    /* Set our interface MAC to a known value */
+    const struct eth_addr self = { .addr = { 0x08, 0x3a, 0x8d, 0x41, 0x13, 0x14 } };
+    netif->hwaddr_len = ETH_HWADDR_LEN;
+    SMEMCPY(netif->hwaddr, self.addr, ETH_HWADDR_LEN);
+
+    /* Attach a DHCP client struct with CHECKING state and PROBING ACD state */
+    static struct dhcp dhcp;
+    memset(&dhcp, 0, sizeof(dhcp));
+    netif_set_client_data(netif, LWIP_NETIF_CLIENT_DATA_INDEX_DHCP, &dhcp);
+    IP4_ADDR(&dhcp.offered_ip_addr, 192, 168, 88, 4);
+    dhcp.state = DHCP_STATE_CHECKING;
+    dhcp.acd.state = ACD_STATE_PROBING;
+    dhcp.acd.acd_conflict_callback = acd_test_cb;
+
+    /* Case 1: ARP reply from our offered IP but with our own MAC -> NO conflict */
+    struct etharp_hdr hdr = {0};
+    hdr.opcode = PP_HTONS(ARP_REPLY);
+    IPADDR_WORDALIGNED_COPY_FROM_IP4_ADDR_T(&hdr.sipaddr, &dhcp.offered_ip_addr);
+    SMEMCPY(hdr.shwaddr.addr, self.addr, ETH_HWADDR_LEN);
+    ctx->self_mac_cb_calls = 0;
+    g_acd_ctx.other_mac_cb_calls = 0;
+    acd_arp_reply(netif, &hdr);
+    /* No callback should be invoked for self-MAC */
+    TEST_ASSERT_EQUAL_INT(0, g_acd_ctx.other_mac_cb_calls);
+
+    /* Case 2: ARP reply from offered IP with a different MAC -> conflict expected */
+    const struct eth_addr other = { .addr = { 0x08, 0x3a, 0x8d, 0x41, 0x13, 0x15 } };
+    SMEMCPY(hdr.shwaddr.addr, other.addr, ETH_HWADDR_LEN);
+    g_acd_ctx.other_mac_cb_calls = 0;
+    acd_arp_reply(netif, &hdr);
+    /* Our callback should be called (DECLINE/RESTART) at least once */
+    TEST_ASSERT(g_acd_ctx.other_mac_cb_calls > 0);
+
+    xEventGroupSetBits(ctx->event, 1);
+}
+
+TEST(lwip, dhcp_arp_probe_self_mac_is_ok)
+{
+    test_case_uses_tcpip();
+    g_acd_ctx.event = xEventGroupCreate();
+    TEST_ASSERT_NOT_NULL(g_acd_ctx.event);
+    g_acd_ctx.self_mac_cb_calls = 0;
+    g_acd_ctx.other_mac_cb_calls = 0;
+
+    tcpip_callback(dhcp_acd_arp_check_api, &g_acd_ctx);
+    xEventGroupWaitBits(g_acd_ctx.event, 1, true, true, pdMS_TO_TICKS(5000));
+    vEventGroupDelete(g_acd_ctx.event);
+}
+
 TEST(lwip, dhcp_server_dns_options)
 {
     test_case_uses_tcpip();
@@ -410,6 +491,7 @@ TEST_GROUP_RUNNER(lwip)
     RUN_TEST_CASE(lwip, dhcp_server_dns_options)
     RUN_TEST_CASE(lwip, sntp_client_time_2015)
     RUN_TEST_CASE(lwip, sntp_client_time_2048)
+    RUN_TEST_CASE(lwip, dhcp_arp_probe_self_mac_is_ok)
 }
 
 void app_main(void)

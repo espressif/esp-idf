@@ -3,6 +3,10 @@
 # using gen_soc_caps_kconfig.py, do not edit manually
 #####################################################
 
+config SOC_DEDICATED_GPIO_SUPPORTED
+    bool
+    default y
+
 config SOC_UART_SUPPORTED
     bool
     default y
@@ -40,6 +44,14 @@ config SOC_RTC_FAST_MEM_SUPPORTED
     default y
 
 config SOC_RTC_MEM_SUPPORTED
+    bool
+    default y
+
+config SOC_I2S_SUPPORTED
+    bool
+    default y
+
+config SOC_SDM_SUPPORTED
     bool
     default y
 
@@ -99,6 +111,14 @@ config SOC_PMU_SUPPORTED
     bool
     default y
 
+config SOC_LP_TIMER_SUPPORTED
+    bool
+    default y
+
+config SOC_LP_AON_SUPPORTED
+    bool
+    default y
+
 config SOC_CLK_TREE_SUPPORTED
     bool
     default y
@@ -123,7 +143,15 @@ config SOC_PCNT_SUPPORTED
     bool
     default y
 
+config SOC_MCPWM_SUPPORTED
+    bool
+    default y
+
 config SOC_TWAI_SUPPORTED
+    bool
+    default y
+
+config SOC_ETM_SUPPORTED
     bool
     default y
 
@@ -136,6 +164,18 @@ config SOC_AES_SUPPORTED
     default y
 
 config SOC_PAU_SUPPORTED
+    bool
+    default y
+
+config SOC_LIGHT_SLEEP_SUPPORTED
+    bool
+    default y
+
+config SOC_DEEP_SLEEP_SUPPORTED
+    bool
+    default y
+
+config SOC_PM_SUPPORTED
     bool
     default y
 
@@ -327,13 +367,9 @@ config SOC_AHB_GDMA_VERSION
     int
     default 1
 
-config SOC_GDMA_NUM_GROUPS_MAX
-    int
-    default 1
-
-config SOC_GDMA_PAIRS_PER_GROUP_MAX
-    int
-    default 3
+config SOC_GDMA_SUPPORT_ETM
+    bool
+    default y
 
 config SOC_GDMA_SUPPORT_SLEEP_RETENTION
     bool
@@ -347,11 +383,19 @@ config SOC_GPIO_PIN_COUNT
     int
     default 26
 
+config SOC_GPIO_SUPPORT_PIN_GLITCH_FILTER
+    bool
+    default y
+
+config SOC_GPIO_FLEX_GLITCH_FILTER_NUM
+    int
+    default 8
+
 config SOC_GPIO_SUPPORT_PIN_HYS_FILTER
     bool
     default y
 
-config SOC_GPIO_SUPPORT_RTC_INDEPENDENT
+config SOC_GPIO_SUPPORT_ETM
     bool
     default y
 
@@ -375,15 +419,7 @@ config SOC_GPIO_SUPPORT_FORCE_HOLD
     bool
     default y
 
-config SOC_GPIO_SUPPORT_HOLD_IO_IN_DSLP
-    bool
-    default y
-
 config SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP
-    bool
-    default y
-
-config SOC_SDM_SUPPORT_SLEEP_RETENTION
     bool
     default y
 
@@ -463,6 +499,34 @@ config SOC_I2C_SLAVE_SUPPORT_SLAVE_UNMATCH
     bool
     default y
 
+config SOC_I2S_HW_VERSION_2
+    bool
+    default y
+
+config SOC_I2S_SUPPORTS_ETM
+    bool
+    default y
+
+config SOC_I2S_SUPPORTS_PCM
+    bool
+    default y
+
+config SOC_I2S_SUPPORTS_PDM
+    bool
+    default y
+
+config SOC_I2S_SUPPORTS_PDM_TX
+    bool
+    default y
+
+config SOC_I2S_PDM_MAX_TX_LINES
+    int
+    default 2
+
+config SOC_I2S_SUPPORTS_TDM
+    bool
+    default y
+
 config SOC_LEDC_SUPPORT_PLL_DIV_CLOCK
     bool
     default y
@@ -503,6 +567,10 @@ config SOC_LEDC_SUPPORT_SLEEP_RETENTION
     bool
     default y
 
+config SOC_LEDC_SUPPORT_ETM
+    bool
+    default y
+
 config SOC_PCNT_SUPPORT_RUNTIME_THRES_UPDATE
     bool
     default y
@@ -515,35 +583,11 @@ config SOC_PCNT_SUPPORT_STEP_NOTIFY
     bool
     default y
 
-config SOC_RMT_GROUPS
-    int
-    default 1
-
-config SOC_RMT_TX_CANDIDATES_PER_GROUP
-    int
-    default 2
-
-config SOC_RMT_RX_CANDIDATES_PER_GROUP
-    int
-    default 2
-
-config SOC_RMT_CHANNELS_PER_GROUP
-    int
-    default 4
-
 config SOC_RMT_MEM_WORDS_PER_CHANNEL
     int
     default 48
 
 config SOC_RMT_SUPPORT_RX_PINGPONG
-    bool
-    default y
-
-config SOC_RMT_SUPPORT_RX_DEMODULATION
-    bool
-    default y
-
-config SOC_RMT_SUPPORT_ASYNC_STOP
     bool
     default y
 
@@ -555,23 +599,23 @@ config SOC_RMT_SUPPORT_TX_LOOP_AUTO_STOP
     bool
     default y
 
-config SOC_RMT_SUPPORT_TX_SYNCHRO
-    bool
-    default y
-
-config SOC_RMT_SUPPORT_TX_CARRIER_DATA_ONLY
-    bool
-    default y
-
-config SOC_RMT_SUPPORT_XTAL
-    bool
-    default y
-
-config SOC_RMT_SUPPORT_RC_FAST
-    bool
-    default y
-
 config SOC_RMT_SUPPORT_SLEEP_RETENTION
+    bool
+    default y
+
+config SOC_MCPWM_SWSYNC_CAN_PROPAGATE
+    bool
+    default y
+
+config SOC_MCPWM_SUPPORT_ETM
+    bool
+    default y
+
+config SOC_MCPWM_CAPTURE_CLK_FROM_GROUP
+    bool
+    default y
+
+config SOC_MCPWM_SUPPORT_SLEEP_RETENTION
     bool
     default y
 
@@ -743,6 +787,10 @@ config SOC_SYSTIMER_ALARM_MISS_COMPENSATE
     bool
     default y
 
+config SOC_SYSTIMER_SUPPORT_ETM
+    bool
+    default y
+
 config SOC_LP_TIMER_BIT_WIDTH_LO
     int
     default 32
@@ -750,6 +798,10 @@ config SOC_LP_TIMER_BIT_WIDTH_LO
 config SOC_LP_TIMER_BIT_WIDTH_HI
     int
     default 16
+
+config SOC_TIMER_SUPPORT_ETM
+    bool
+    default y
 
 config SOC_TIMER_SUPPORT_SLEEP_RETENTION
     bool
@@ -770,22 +822,6 @@ config SOC_TWAI_CONTROLLER_NUM
 config SOC_TWAI_MASK_FILTER_NUM
     int
     default 1
-
-config SOC_TWAI_CLK_SUPPORT_XTAL
-    bool
-    default y
-
-config SOC_TWAI_BRP_MIN
-    int
-    default 2
-
-config SOC_TWAI_BRP_MAX
-    int
-    default 32768
-
-config SOC_TWAI_SUPPORTS_RX_STATUS
-    bool
-    default y
 
 config SOC_TWAI_SUPPORT_SLEEP_RETENTION
     bool
@@ -812,6 +848,10 @@ config SOC_EFUSE_DIS_ICACHE
     default y
 
 config SOC_EFUSE_ECDSA_KEY
+    bool
+    default y
+
+config SOC_EFUSE_XTS_AES_KEY_128
     bool
     default y
 

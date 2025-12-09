@@ -109,6 +109,10 @@ typedef enum {
     IP_EVENT_PPP_GOT_IP,               /*!< PPP interface got IP */
     IP_EVENT_PPP_LOST_IP,              /*!< PPP interface lost IP */
     IP_EVENT_TX_RX,                    /*!< transmitting/receiving data packet */
+    IP_EVENT_NETIF_UP,                 /*!< unified netif status: interface became up */
+    IP_EVENT_NETIF_DOWN,               /*!< unified netif status: interface went down */
+    IP_EVENT_CUSTOM_GOT_IP,            /*!< custom netif got IP (for user-defined interfaces) */
+    IP_EVENT_CUSTOM_LOST_IP,           /*!< custom netif lost IP (for user-defined interfaces) */
 } ip_event_t;
 
 /** @brief IP event base declaration */
@@ -152,11 +156,32 @@ typedef struct {
     bool preferred;                 /*!< The default preference of the address */
 } ip_event_add_ip6_t;
 
-/** Event structure for IP_EVENT_ASSIGNED_IP_TO_CLIENT event */
+/** Event structure for IP_EVENT_ASSIGNED_IP_TO_CLIENT event
+ *
+ * This event is posted when a local DHCP server (e.g., SoftAP) assigns an IPv4
+ * address to a client. The structure carries the assigned IPv4 address and the
+ * client's MAC address. If DHCP server support is disabled via Kconfig
+ * (CONFIG_LWIP_DHCPS=n), the \c ip field is not populated.
+ *
+ * If enabled by Kconfig (CONFIG_LWIP_DHCPS_REPORT_CLIENT_HOSTNAME=y), the
+ * optional DHCP client hostname (option 12) is also included in the \c hostname
+ * field. The hostname is a null-terminated UTF-8 string and may be empty if the
+ * client did not provide one. Its maximum length (including the terminator) is
+ * bounded by CONFIG_LWIP_DHCPS_MAX_HOSTNAME_LEN; longer hostnames are truncated.
+ * The value is sanitized to contain only letters, digits, dot, dash, and
+ * underscore. Applications should treat this field as untrusted input.
+ */
 typedef struct {
     esp_netif_t *esp_netif; /*!< Pointer to the associated netif handle */
     esp_ip4_addr_t ip; /*!< IP address which was assigned to the station */
     uint8_t mac[6];    /*!< MAC address of the connected client */
+    /* Client hostname as provided via DHCP option 12 (if available). */
+#ifdef CONFIG_LWIP_DHCPS_REPORT_CLIENT_HOSTNAME
+#define ESP_NETIF_HOSTNAME_MAX_LEN CONFIG_LWIP_DHCPS_MAX_HOSTNAME_LEN
+#else
+#define ESP_NETIF_HOSTNAME_MAX_LEN 1 /* Minimal footprint when hostname reporting is disabled - just null terminator for API compatibility */
+#endif
+    char hostname[ESP_NETIF_HOSTNAME_MAX_LEN]; /*!< Optional DHCP client hostname (may be empty string) */
 } ip_event_assigned_ip_to_client_t;
 
 /** Compatibility event structure for ip_event_ap_staipassigned_t event
@@ -177,6 +202,11 @@ typedef struct {
     esp_netif_tx_rx_direction_t dir; /*!< Directions for data transfer >*/
 } ip_event_tx_rx_t;
 #endif
+
+/** Event structure for IP_EVENT_LINK_UP/DOWN and IP_EVENT_NETIF_UP/DOWN */
+typedef struct {
+    esp_netif_t *esp_netif; /*!< Pointer to the associated netif handle */
+} ip_event_netif_status_t;
 
 typedef enum esp_netif_flags {
     ESP_NETIF_DHCP_CLIENT = 1 << 0,
@@ -227,6 +257,7 @@ typedef struct esp_netif_inherent_config {
                                           A higher value of route_prio indicates
                                           a higher priority */
     bridgeif_config_t *bridge_info;  /*!< LwIP bridge configuration */
+    uint16_t mtu;                    /*!< Optional initial MTU (bytes). 0 = use stack default */
 } esp_netif_inherent_config_t;
 
 typedef struct esp_netif_config esp_netif_config_t;

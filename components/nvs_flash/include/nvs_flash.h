@@ -1,10 +1,9 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef nvs_flash_h
-#define nvs_flash_h
+#pragma once
 
 #ifdef __cplusplus
 extern "C" {
@@ -93,7 +92,11 @@ esp_err_t nvs_flash_init(void);
 esp_err_t nvs_flash_init_partition(const char *partition_label);
 
 /**
- * @brief Initialize NVS flash storage for the partition specified by partition pointer.
+ * @brief Initialize NVS flash storage on the partition specified by esp_partition pointer.
+ *
+ * This API initialises the NVS storage on an esp_partition. The storage is identified
+ * by the label of the respective partition.
+ * Note: this API is only available when the block device support is disabled in the menuconfig.
  *
  * @param[in] partition pointer to a partition obtained by the ESP partition API.
  *
@@ -106,6 +109,30 @@ esp_err_t nvs_flash_init_partition(const char *partition_label);
  *      - one of the error codes from the underlying flash storage driver
  */
 esp_err_t nvs_flash_init_partition_ptr(const esp_partition_t *partition);
+
+/**
+ * @brief Initialize NVS flash storage on the specified block device handle.
+ *
+ * This API initialises the NVS storage on a bdl device and identifies it with the given label.
+ * Caller of this API is responsible for creating and managing the lifetime of the block device handle.
+ * NVS component will stop using the handle when nvs_flash_deinit_partition() is called for the last
+ * partition label using this block device handle.
+ *
+ * Note: to use this API, the block device support must be enabled in the menuconfig option NVS_BDL_STACK
+ *
+ * @param[in] partition_label label of the partition to initialize
+ * @param[in] bdl block device handle for the partition
+ *
+ * @return
+ *      - ESP_OK if storage was successfully initialized
+ *      - ESP_ERR_NVS_NO_FREE_PAGES if the NVS storage contains no empty pages
+ *        (which may happen if NVS partition was truncated)
+ *      - ESP_ERR_INVALID_ARG in case partition_label or bdl is NULL
+ *      - ESP_ERR_NO_MEM in case memory could not be allocated for the internal structures
+ *      - ESP_ERR_NOT_SUPPORTED if the bdl handle does not fulfill the NVS compliance requirements
+ *      - one of the error codes from the underlying flash storage driver
+ */
+esp_err_t nvs_flash_init_partition_bdl(const char* partition_label, esp_blockdev_handle_t bdl);
 
 /**
  * @brief Deinitialize NVS storage for the default NVS partition
@@ -279,6 +306,13 @@ esp_err_t nvs_flash_read_security_cfg(const esp_partition_t* partition, nvs_sec_
 esp_err_t nvs_flash_register_security_scheme(nvs_sec_scheme_t *scheme_cfg);
 
 /**
+ * @brief Deregister the security scheme previously registered using
+ *        nvs_flash_register_security_scheme
+ *
+ */
+void nvs_flash_deregister_security_scheme(void);
+
+/**
  * @brief   Fetch the configuration structure for the default active
  *          security scheme for NVS encryption
  *
@@ -318,6 +352,3 @@ esp_err_t nvs_flash_read_security_cfg_v2(nvs_sec_scheme_t *scheme_cfg, nvs_sec_c
 #ifdef __cplusplus
 }
 #endif
-
-
-#endif /* nvs_flash_h */

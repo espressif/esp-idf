@@ -1,3 +1,4 @@
+========================
 通用硬件定时器 (GPTimer)
 ========================
 
@@ -11,7 +12,7 @@
     :depth: 2
 
 概述
-----
+====
 
 通用定时器是 {IDF_TARGET_NAME} [`定时器组外设 <{IDF_TARGET_TRM_CN_URL}#timg>`__]的专用驱动程序。该定时器可以选择不同的时钟源和分频系数，能满足纳秒级的分辨率要求。此外，它还具有灵活的超时报警功能，并允许在报警时刻自动更新计数值，从而实现非常精准的定时周期。
 
@@ -24,7 +25,7 @@
 - 其他
 
 快速入门
---------
+========
 
 本节将带你快速了解如何使用 GPTimer 驱动。通过简单的示例，展示如何创建一个定时器并启动它，如何设置警报事件，以及如何注册事件回调函数。一般的使用流程如下：
 
@@ -54,7 +55,7 @@
     }
 
 创建和启动定时器
-^^^^^^^^^^^^^^^^
+----------------
 
 首先，我们需要创建一个定时器实例。以下代码展示了如何创建一个分辨率为 1 MHz 的定时器：
 
@@ -104,7 +105,7 @@
     但是请注意，当定时器处于启动的 **中间状态** 时（启动开始了，但还没有启动完毕），此时如果另外一个线程调用 :cpp:func:`gptimer_start` 或者 :cpp:func:`gptimer_stop` 函数，则会返回 :c:macro:`ESP_ERR_INVALID_STATE` 错误，避免触发不确定的行为。
 
 设置和获取计数值
-^^^^^^^^^^^^^^^^
+----------------
 
 一个刚创建的定时器，其内部计数器值默认为 0。你可以通过 :cpp:func:`gptimer_set_raw_count` 设置其他的计数值。最大计数值取决于硬件定时器的位宽（通常不少于 ``54 bit``）。
 
@@ -126,7 +127,7 @@
     double time = (double)count / resolution_hz;
 
 触发周期性警报事件
-^^^^^^^^^^^^^^^^^^
+------------------
 
 除了时间戳功能以外，通用定时器还支持警报功能。以下代码展示了如何设置一个周期性警报，每秒触发一次：
 
@@ -194,7 +195,7 @@ GPTimer 支持的事件回调函数有下面这些：
     请务必在调用 :cpp:func:`gptimer_enable` 之前注册回调函数，否则定时器事件将无法正确触发中断服务。
 
 触发一次性警报事件
-^^^^^^^^^^^^^^^^^^
+------------------
 
 还有一些应用场景只需要触发一次警报中断，以下代码展示了如何设置一个一次性警报，在 1 秒后触发：
 
@@ -242,17 +243,17 @@ GPTimer 支持的事件回调函数有下面这些：
 与周期性警报不同，上述代码在配置警报行为时关闭了自动重载功能。这意味着，当警报事件发生后，定时器将不会自动重载到预设的计数值，而是继续计数直到溢出。如果希望定时器在警报后立即停止，可以在回调函数中调用 :cpp:func:`gptimer_stop`。
 
 资源回收
-^^^^^^^^
+--------
 
 当不再需要使用定时器时，应该调用 :cpp:func:`gptimer_delete_timer` 函数来释放软硬件资源。删除前请确保定时器已经处于停止状态。
 
 进阶功能
---------
+========
 
 在了解了基本用法后，我们可以进一步探索 GPTimer 驱动的更多玩法。
 
 动态更新警报值
-^^^^^^^^^^^^^^
+--------------
 
 GPTimer 驱动支持在中断回调函数中调用 :cpp:func:`gptimer_set_alarm_action` 函数来动态更新警报值，从而实现单调型的软件定时器链表。以下代码展示了如何在警报事件发生时，重新设置下一次警报的触发时间：
 
@@ -300,7 +301,7 @@ GPTimer 驱动支持在中断回调函数中调用 :cpp:func:`gptimer_set_alarm_
     .. _gptimer-etm-event-and-task:
 
     GPTimer 的 ETM 事件与任务
-    ^^^^^^^^^^^^^^^^^^^^^^^^^
+    -------------------------
 
     GPTimer 可以生成多种事件，这些事件可以连接到 :doc:`ETM </api-reference/peripherals/etm>` 模块。事件类型列在 :cpp:type:`gptimer_etm_event_type_t` 中。用户可以通过调用 :cpp:func:`gptimer_new_etm_event` 来创建 ``ETM event`` 句柄。
     GPTimer 还支持一些可由其他事件触发并自动执行的任务。任务类型列在 :cpp:type:`gptimer_etm_task_type_t` 中。用户可以通过调用 :cpp:func:`gptimer_new_etm_task` 来创建 ``ETM task`` 句柄。
@@ -308,7 +309,7 @@ GPTimer 驱动支持在中断回调函数中调用 :cpp:func:`gptimer_set_alarm_
     有关如何将定时器事件和任务连接到 ETM 通道，请参阅 :doc:`ETM </api-reference/peripherals/etm>` 文档。
 
 关于低功耗
-^^^^^^^^^^
+----------
 
 当启用电源管理 :ref:`CONFIG_PM_ENABLE` 时，系统在进入睡眠模式前可能会调整或禁用时钟源，从而导致 GPTimer 的计时出错。
 
@@ -319,7 +320,7 @@ GPTimer 驱动支持在中断回调函数中调用 :cpp:func:`gptimer_set_alarm_
     除了关闭时钟源外，系统在进入睡眠模式时还可以关闭 GPTimer 的电源以进一步降低功耗。要实现这一点，需要将 :cpp:member:`gptimer_config_t::allow_pd` 设置为 ``true``。在系统进入睡眠模式之前， GPTimer 的寄存器上下文会被备份到内存中，并在系统唤醒后恢复。请注意，启用此选项虽然可以降低功耗，但会增加内存的使用量。因此，在使用该功能时需要在功耗和内存消耗之间进行权衡。
 
 关于线程安全
-^^^^^^^^^^^^
+------------
 
 驱动使用了临界区保证了对寄存器的原子操作。句柄内部的关键成员也受临界区保护。驱动内部的状态机使用了原子指令保证了线程安全，通过状态检查还能进一步防止一些不合法的并发操作（例如 `start` 和 `stop` 冲突）。因此， GPTimer 驱动的 API 可以在多线程环境下使用，无需自行加锁。
 
@@ -335,7 +336,7 @@ GPTimer 驱动支持在中断回调函数中调用 :cpp:func:`gptimer_set_alarm_
     - :cpp:func:`gptimer_set_alarm_action`
 
 关于 Cache 安全
-^^^^^^^^^^^^^^^
+---------------
 
 在文件系统进行 Flash 读写操作时，为了避免 Cache 从 Flash 加载指令和数据时出现错误，系统会暂时禁用 Cache 功能。这会导致 GPTimer 的中断处理程序在此期间无法响应，从而使用户的回调函数无法及时执行。如果希望在 Cache 被禁用期间，中断处理程序仍能正常运行，可以启用 :ref:`CONFIG_GPTIMER_ISR_CACHE_SAFE` 选项。
 
@@ -344,7 +345,7 @@ GPTimer 驱动支持在中断回调函数中调用 :cpp:func:`gptimer_set_alarm_
     请注意，在启用该选项后，所有的中断回调函数及其上下文数据 **必须存放在内部存储空间** 中。因为在 Cache 被禁用时，系统无法从 Flash 中加载数据和指令。
 
 关于性能
-^^^^^^^^
+--------
 
 为了提升中断处理的实时响应能力， GPTimer 驱动提供了 :ref:`CONFIG_GPTIMER_ISR_HANDLER_IN_IRAM` 选项。启用该选项后，中断处理程序将被放置在内部 RAM 中运行，从而减少了从 Flash 加载指令时可能出现的缓存丢失带来的延迟。
 
@@ -355,12 +356,12 @@ GPTimer 驱动支持在中断回调函数中调用 :cpp:func:`gptimer_set_alarm_
 前文还提到， GPTimer 驱动允许部分函数在中断上下文中使用。:ref:`CONFIG_GPTIMER_CTRL_FUNC_IN_IRAM` 选项可以将这些函数放入 IRAM 中，一来，可以避免缓存缺失带来的性能损失，二来，这些函数在 Cache 关闭期间也能使用。
 
 其他 Kconfig 选项
-^^^^^^^^^^^^^^^^^
+-----------------
 
 - :ref:`CONFIG_GPTIMER_ENABLE_DEBUG_LOG` 选项允许强制启用 GPTimer 驱动的所有调试日志，无论全局日志级别设置如何。启用此选项可以帮助开发人员在调试过程中获取更详细的日志信息，从而更容易定位和解决问题。
 
 关于资源消耗
-^^^^^^^^^^^^
+------------
 
 使用 :doc:`/api-guides/tools/idf-size` 工具可以查看 GPTimer 驱动的代码和数据消耗。以下是测试前提条件（以 ESP32-C2 为例）：
 
@@ -386,7 +387,7 @@ GPTimer 驱动支持在中断回调函数中调用 :cpp:func:`gptimer_set_alarm_
 此外，每一个 GPTimer 句柄会从 heap 中动态申请约 ``100`` 字节的内存。如果还使能了 :cpp:member:`gptimer_config_t::flags::allow_pd` 选项，那么每个定时器还会在睡眠期间额外消耗约 ``30`` 字节的内存用于保存寄存器上下文。
 
 应用示例
---------
+========
 
 .. list::
 
@@ -395,12 +396,26 @@ GPTimer 驱动支持在中断回调函数中调用 :cpp:func:`gptimer_set_alarm_
     :SOC_TIMER_SUPPORT_ETM: - :example:`peripherals/timer_group/gptimer_capture_hc_sr04` 展示了如何使用通用定时器和事件任务矩阵(ETM)来精确捕获超声波传感器事件的时间戳，并据此换算成距离信息。
 
 API 参考
---------
+========
+
+GPTimer 驱动 API
+-----------------
 
 .. include-build-file:: inc/gptimer.inc
+
+GPTimer 驱动类型
+----------------
+
 .. include-build-file:: inc/gptimer_types.inc
+
+GPTimer HAL 类型
+----------------
+
 .. include-build-file:: inc/timer_types.inc
 
 .. only:: SOC_TIMER_SUPPORT_ETM
+
+    GPTimer ETM API
+    ---------------
 
     .. include-build-file:: inc/gptimer_etm.inc

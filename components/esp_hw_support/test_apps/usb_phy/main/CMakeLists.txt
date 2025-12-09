@@ -2,5 +2,5 @@
 # the component can be registered as WHOLE_ARCHIVE
 idf_component_register(SRC_DIRS "."
                        PRIV_INCLUDE_DIRS "."
-                       REQUIRES usb unity
+                       REQUIRES unity
                        WHOLE_ARCHIVE)

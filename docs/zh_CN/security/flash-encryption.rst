@@ -13,7 +13,7 @@ flash 加密
 
 .. note::
 
-    在本指南中，最常用的命令形式为 ``idf.py secure-<command>``，这是对应 ``espsecure.py <command>`` 的封装。基于 ``idf.py`` 的命令能提供更好的用户体验，但与基于 ``espsecure.py`` 的命令相比，可能会损失一部分高级功能。
+    在本指南中，最常用的命令形式为 ``idf.py secure-<command>``，这是对应 ``espsecure <command>`` 的封装。基于 ``idf.py`` 的命令能提供更好的用户体验，但与基于 ``espsecure`` 的命令相比，可能会损失一部分高级功能。
 
 概述
 ------
@@ -55,7 +55,7 @@ flash 加密功能用于加密与 {IDF_TARGET_NAME} 搭载使用的片外 flash 
 相关 eFuses
 ------------------------------
 
-flash 加密操作由 {IDF_TARGET_NAME} 上的多个 eFuse 控制，具体 eFuse 名称及其描述请参见下表。``espefuse.py`` 工具和基于 ``idf.py`` 的 eFuse 指令也会使用下表中的 eFuse 名。为了能在 eFuse API 中使用，请在名称前加上 ``ESP_EFUSE_``，如：esp_efuse_read_field_bit (ESP_EFUSE_DISABLE_DL_ENCRYPT)。
+flash 加密操作由 {IDF_TARGET_NAME} 上的多个 eFuse 控制，具体 eFuse 名称及其描述请参见下表。``espefuse`` 工具和基于 ``idf.py`` 的 eFuse 指令也会使用下表中的 eFuse 名。为了能在 eFuse API 中使用，请在名称前加上 ``ESP_EFUSE_``，如：esp_efuse_read_field_bit (ESP_EFUSE_DISABLE_DL_ENCRYPT)。
 
 .. Comment: As text in cells of list-table header rows does not wrap, it is necessary to make 0 header rows and apply bold typeface to the first row. Otherwise, the table goes beyond the html page limits on the right.
 
@@ -164,7 +164,7 @@ flash 加密操作由 {IDF_TARGET_NAME} 上的多个 eFuse 控制，具体 eFuse
   * 上表中列出的所有 eFuse 位都提供读/写访问控制。
   * 这些位的默认值是 0。
 
-对上述 eFuse 位的读写访问由 ``WR_DIS`` 和 ``RD_DIS`` 寄存器中的相应字段控制。有关 {IDF_TARGET_NAME} eFuse 的详细信息，请参考 :doc:`eFuse 管理器 <../api-reference/system/efuse>`。要使用 ``idf.py`` 更改 eFuse 字段的保护位，请使用以下两个命令：efuse-read-protect 和 efuse-write-protect（``idf.py`` 基于 ``espefuse.py`` 命令 write_protect_efuse 和 read_protect_efuse 的别名）。例如 ``idf.py efuse-write-protect DISABLE_DL_ENCRYPT``。
+对上述 eFuse 位的读写访问由 ``WR_DIS`` 和 ``RD_DIS`` 寄存器中的相应字段控制。有关 {IDF_TARGET_NAME} eFuse 的详细信息，请参考 :doc:`eFuse 管理器 <../api-reference/system/efuse>`。要使用 ``idf.py`` 更改 eFuse 字段的保护位，请使用以下两个命令：efuse-read-protect 和 efuse-write-protect（``idf.py`` 基于 ``espefuse`` 命令 write-protect-efuse 和 read-protect-efuse 的别名）。例如 ``idf.py efuse-write-protect DISABLE_DL_ENCRYPT``。
 
 .. only:: esp32c2
 
@@ -462,8 +462,8 @@ flash 加密设置
 
     .. code-block:: bash
 
-        espefuse.py --port PORT --chip esp32c2 burn_key_digest secure_boot_signing_key.pem \
-                                                burn_key BLOCK_KEY0 flash_encryption_key128.bin XTS_AES_128_KEY_DERIVED_FROM_128_EFUSE_BITS
+        espefuse --port PORT --chip esp32c2 burn-key-digest secure_boot_signing_key.pem \
+                                                burn-key BLOCK_KEY0 flash_encryption_key128.bin XTS_AES_128_KEY_DERIVED_FROM_128_EFUSE_BITS
 
   如果未烧录密钥并在启用 flash 加密后启动设备，{IDF_TARGET_NAME} 将生成一个软件无法访问或修改的随机密钥。
 
@@ -490,7 +490,7 @@ flash 加密设置
 
 如果使用开发模式，那么更新和重新烧录二进制文件最简单的方法是 :ref:`encrypt-partitions`。
 
-如果使用发布模式，那么可以在主机上预先加密二进制文件，然后将其作为密文烧录。具体请参考 :ref:`manual-encryption`。
+如果使用量产模式，那么可以在主机上预先加密二进制文件，然后将其作为密文烧录。具体请参考 :ref:`manual-encryption`。
 
 
 .. _encrypt-partitions:
@@ -510,13 +510,16 @@ flash 加密设置
 
     idf.py encrypted-flash monitor
 
+.. note::
+
+    上述操作仅适用于 ``DIS_DOWNLOAD_MANUAL_ENCRYPT`` eFuse 位未被烧录的情况。如果该 eFuse 位已被烧录，则需要烧录加密后的密文镜像。
 
 .. _flash-enc-release-mode:
 
-发布模式
+量产模式
 ^^^^^^^^^^
 
-在发布模式下，UART 引导加载程序无法执行 flash 加密操作，**只能** 使用 OTA 方案下载新的明文镜像，该方案将在写入 flash 前加密明文镜像。
+在量产模式下，UART 引导加载程序无法执行 flash 加密操作，**只能** 使用 OTA 方案下载新的明文镜像，该方案将在写入 flash 前加密明文镜像。
 
 使用该模式需要执行以下步骤：
 
@@ -529,9 +532,9 @@ flash 加密设置
   .. list::
 
     - :ref:`启动时使能 flash 加密 <CONFIG_SECURE_FLASH_ENC_ENABLED>`。
-    :esp32: - :ref:`选择发布模式 <CONFIG_SECURE_FLASH_ENCRYPTION_MODE>`。（注意一旦选择了发布模式，``DISABLE_DL_ENCRYPT`` 和 ``DISABLE_DL_DECRYPT`` eFuse 位将被编程为在 ROM 下载模式下禁用 flash 加密硬件）
+    :esp32: - :ref:`选择量产模式 <CONFIG_SECURE_FLASH_ENCRYPTION_MODE>`。（注意一旦选择了量产模式，``DISABLE_DL_ENCRYPT`` 和 ``DISABLE_DL_DECRYPT`` eFuse 位将被编程为在 ROM 下载模式下禁用 flash 加密硬件）
     :esp32: - :ref:`选择 UART ROM 下载模式（推荐永久性禁用）<CONFIG_SECURE_UART_ROM_DL_MODE>` （注意该选项仅在 :ref:`CONFIG_ESP32_REV_MIN` 级别设置为 3 时 (ESP32 V3) 可用。）默认选项是保持启用 UART ROM 下载模式，然而建议永久禁用该模式，以减少攻击者可用的选项。
-    :not esp32: - :ref:`选择发布模式 <CONFIG_SECURE_FLASH_ENCRYPTION_MODE>`。（注意一旦选择了发布模式，``EFUSE_DIS_DOWNLOAD_MANUAL_ENCRYPT`` eFuse 位将被编程为在 ROM 下载模式下禁用 flash 加密硬件）
+    :not esp32: - :ref:`选择量产模式 <CONFIG_SECURE_FLASH_ENCRYPTION_MODE>`。（注意一旦选择了量产模式，``EFUSE_DIS_DOWNLOAD_MANUAL_ENCRYPT`` eFuse 位将被编程为在 ROM 下载模式下禁用 flash 加密硬件）
     :not esp32: - :ref:`选择 UART ROM 下载（推荐永久性的切换到安全模式）<CONFIG_SECURE_UART_ROM_DL_MODE>`。这是默认且推荐使用的选项。如果不需要该模式，也可以改变此配置设置永久地禁用 UART ROM 下载模式。
     :SOC_FLASH_ENCRYPTION_XTS_AES_SUPPORT_PSEUDO_ROUND: - :ref:`启用 XTS-AES 伪轮次功能 <CONFIG_SECURE_FLASH_PSEUDO_ROUND_FUNC>`。该选项已默认启用，且配置为最低强度等级，以降低对 flash 加密/解密操作的性能影响。如需了解每个安全等级对性能影响的更多信息，请参考 :ref:`xts-aes-pseudo-round-func`。
     - :ref:`选择适当详细程度的引导加载程序日志级别 <CONFIG_BOOTLOADER_LOG_LEVEL>`。
@@ -552,7 +555,7 @@ flash 加密设置
 
   该命令将向 flash 写入未加密的镜像：二级引导加载程序、分区表和应用程序。烧录完成后，{IDF_TARGET_NAME} 将复位。在下一次启动时，二级引导加载程序会加密：二级引导加载程序、应用程序分区和标记为 ``加密`` 的分区，然后复位。就地加密可能需要时间，对于大的分区来说可能耗时一分钟。之后，应用程序在运行时被解密并执行。
 
-一旦在发布模式下启用 flash 加密，引导加载程序将写保护 ``{IDF_TARGET_CRYPT_CNT}`` eFuse。
+一旦在量产模式下启用 flash 加密，引导加载程序将写保护 ``{IDF_TARGET_CRYPT_CNT}`` eFuse。
 
 请使用 :ref:`OTA 方案 <updating-encrypted-flash-ota>` 对字段中的明文进行后续更新。
 
@@ -571,7 +574,7 @@ flash 加密设置
 
    - 不要在多个设备之间重复使用同一个 flash 加密密钥，这样攻击者就无法从一台设备上复制加密数据后再将其转移到第二台设备上。
    :esp32: - 在使用 ESP32 V3 时，如果生产设备不需要 UART ROM 下载模式，那么则该禁用该模式以增加设备安全性。这可以通过在应用程序启动时调用 :cpp:func:`esp_efuse_disable_rom_download_mode` 来实现。或者，可将项目 :ref:`CONFIG_ESP32_REV_MIN` 级别配置为 3（仅针对 ESP32 V3），然后选择 :ref:`CONFIG_SECURE_UART_ROM_DL_MODE` 为“永久性的禁用 ROM 下载模式（推荐）”。在早期的 ESP32 版本上无法禁用 ROM 下载模式。
-   :not esp32: - 如果不需要 UART ROM 下载模式，则应完全禁用该模式，或者永久设置为“安全下载模式”。安全下载模式永久性地将可用的命令限制在更新 SPI 配置、更改波特率、基本的 flash 写入和使用 `get_security_info` 命令返回当前启用的安全功能摘要。默认在发布模式下第一次启动时设置为安全下载模式。要完全禁用下载模式，请选择 :ref:`CONFIG_SECURE_UART_ROM_DL_MODE` 为“永久禁用 ROM 下载模式（推荐）”或在运行时调用 :cpp:func:`esp_efuse_disable_rom_download_mode`。
+   :not esp32: - 如果不需要 UART ROM 下载模式，则应完全禁用该模式，或者永久设置为“安全下载模式”。安全下载模式永久性地将可用的命令限制在更新 SPI 配置、更改波特率、基本的 flash 写入和使用 `get-security-info` 命令返回当前启用的安全功能摘要。默认在量产模式下第一次启动时设置为安全下载模式。要完全禁用下载模式，请选择 :ref:`CONFIG_SECURE_UART_ROM_DL_MODE` 为“永久禁用 ROM 下载模式（推荐）”或在运行时调用 :cpp:func:`esp_efuse_disable_rom_download_mode`。
    - 启用 :doc:`安全启动<secure-boot-v2>` 作为额外的保护层，防止攻击者在启动前有选择地破坏 flash 中某部分。
 
 外部启用 flash 加密
@@ -789,7 +792,7 @@ OTA 更新
 
 在开发模式下，推荐的方法是 :ref:`encrypt-partitions`。
 
-在发布模式下，如果主机上有存储在 eFuse 中的相同密钥的副本，那么就可以在主机上对文件进行预加密，然后进行烧录，具体请参考 :ref:`manual-encryption`。
+在量产模式下，如果主机上有存储在 eFuse 中的相同密钥的副本，那么就可以在主机上对文件进行预加密，然后进行烧录，具体请参考 :ref:`manual-encryption`。
 
 关闭 flash 加密
 -----------------
@@ -876,6 +879,10 @@ flash 加密与安全启动
 
     - 如果未重新烧录引导加载程序，则仍然可以 :ref:`使用预生成的 flash 加密密钥重新烧录 <pregenerated-flash-encryption-key>`。重新烧录引导加载程序时，需在安全启动配置中启用相同的 :ref:`可重新烧录 <CONFIG_SECURE_BOOTLOADER_MODE>` 选项。
 
+.. only:: SOC_FLASH_ENCRYPTION_XTS_AES_SUPPORT_PSEUDO_ROUND and SOC_ECDSA_SUPPORT_CURVE_P384
+
+  - 在启用 flash 加密量产模式时，建议在首次启动时就设置 :ref:`xts-aes-pseudo-round-func` 所需的强度。如果你的工作流程需要在首次启动后更新该函数的强度，则应启用 :ref:`CONFIG_SECURE_BOOT_SKIP_WRITE_PROTECTION_SCA`，避免在启动过程中对该位进行写保护。
+
 .. _flash-encryption-without-secure-boot:
 
 flash 加密的高级功能
@@ -957,7 +964,7 @@ flash 加密的高级功能
 
       一个位可以控制三个 eFuse 的写保护，这意味着写保护一个 eFuse 位将写保护所有未设置的 eFuse 位。
 
-  由于 ``esptool.py`` 目前不支持读取加密 flash，所以对这些 eFuse 进行写保护从而使其保持未设置目前来说并不是很有用。
+  由于 ``esptool`` 目前不支持读取加密 flash，所以对这些 eFuse 进行写保护从而使其保持未设置目前来说并不是很有用。
 
 .. only:: esp32
 
@@ -986,7 +993,7 @@ flash 加密的高级功能
 JTAG 调试
 ^^^^^^^^^^^^^^
 
-默认情况下，当启用 flash 加密（开发或发布模式）时，将通过 eFuse 禁用 JTAG 调试。引导加载程序在首次启动时执行此操作，同时启用 flash 加密。
+默认情况下，当启用 flash 加密（开发或量产模式）时，将通过 eFuse 禁用 JTAG 调试。引导加载程序在首次启动时执行此操作，同时启用 flash 加密。
 
 请参考 :ref:`jtag-debugging-security-features` 了解更多关于使用 JTAG 调试与 flash 加密的信息。
 
@@ -1014,7 +1021,7 @@ JTAG 调试
 
        idf.py secure-encrypt-flash-data --aes-xts --keyfile /path/to/key.bin --address 0x10000 --output my-app-ciphertext.bin my-app.bin
 
-然后可以使用 ``esptool.py`` 将文件 ``my-app-ciphertext.bin`` 写入偏移量 0x10000。 关于为 ``esptool.py`` 推荐的所有命令行选项，请查看 idf.py build 成功时打印的输出。
+然后可以使用 ``esptool`` 将文件 ``my-app-ciphertext.bin`` 写入偏移量 0x10000。 关于为 ``esptool`` 推荐的所有命令行选项，请查看 idf.py build 成功时打印的输出。
 
 .. note::
 
@@ -1071,9 +1078,9 @@ JTAG 调试
 
   - 块偏移的 19 个高位（第 5-23 位）由 flash 加密的主密钥进行 XOR 运算。选定该范围的原因为：flash 的大小最大为 16 MB（24 位），每个块大小为 32 字节，因而 5 个最低有效位始终为 0。
 
-  - 从 19 个块偏移位中每个位到 flash 加密密钥的 256 位都有一个特殊的映射，以决定与哪个位进行 XOR 运算。有关完整映射可参见 ``espsecure.py`` 源代码中的变量 ``_FLASH_ENCRYPTION_TWEAK_PATTERN``。
+  - 从 19 个块偏移位中每个位到 flash 加密密钥的 256 位都有一个特殊的映射，以决定与哪个位进行 XOR 运算。有关完整映射可参见 ``espsecure`` 源代码中的变量 ``_FLASH_ENCRYPTION_TWEAK_PATTERN``。
 
-- 有关在 Python 中实现的完整 flash 加密算法，可参见 ``espsecure.py`` 源代码中的函数 ``_flash_encryption_operation()``。
+- 有关在 Python 中实现的完整 flash 加密算法，可参见 ``espsecure`` 源代码中的函数 ``_flash_encryption_operation()``。
 
 .. only:: SOC_FLASH_ENCRYPTION_XTS_AES_256
 
@@ -1088,7 +1095,7 @@ JTAG 调试
 
   - flash 加密的密钥存储于一个或两个 ``BLOCK_KEYN`` eFuse 中，默认受保护防止进一步写入或软件读取。
 
-  - 有关在 Python 中实现的完整 flash 加密算法，可参见 ``espsecure.py`` 源代码中的函数 ``_flash_encryption_operation()``。
+  - 有关在 Python 中实现的完整 flash 加密算法，可参见 ``espsecure`` 源代码中的函数 ``_flash_encryption_operation()``。
 
 .. only:: SOC_FLASH_ENCRYPTION_XTS_AES_128 and not SOC_FLASH_ENCRYPTION_XTS_AES_256 and not SOC_EFUSE_CONSISTS_OF_ONE_KEY_BLOCK
 
@@ -1104,7 +1111,7 @@ JTAG 调试
 
   - flash 加密的密钥存储于一个 ``BLOCK_KEYN`` eFuse 中，默认受保护防止进一步写入或软件读取。
 
-  - 有关在 Python 中实现的完整 flash 加密算法，可参见 ``espsecure.py`` 源代码中的函数 ``_flash_encryption_operation()``。
+  - 有关在 Python 中实现的完整 flash 加密算法，可参见 ``espsecure`` 源代码中的函数 ``_flash_encryption_operation()``。
 
 .. only:: SOC_FLASH_ENCRYPTION_XTS_AES_128 and SOC_EFUSE_CONSISTS_OF_ONE_KEY_BLOCK
 
@@ -1119,7 +1126,7 @@ JTAG 调试
 
   - flash 加密的密钥存储于一个 ``BLOCK_KEY0`` eFuse 中，默认受保护防止进一步写入或软件读取。
 
-  - 有关在 Python 中实现的完整 flash 加密算法，可参见 ``espsecure.py`` 源代码中的函数 ``_flash_encryption_operation()``。
+  - 有关在 Python 中实现的完整 flash 加密算法，可参见 ``espsecure`` 源代码中的函数 ``_flash_encryption_operation()``。
 
 .. only:: SOC_FLASH_ENCRYPTION_XTS_AES_SUPPORT_PSEUDO_ROUND
 

@@ -11,7 +11,7 @@
 #include "stdbool.h"
 #include "hal/misc.h"
 #include "hal/assert.h"
-#include "soc/i2c_periph.h"
+#include "hal/i2c_periph.h"
 #include "soc/soc_caps.h"
 #include "soc/i2c_struct.h"
 #include "soc/clk_tree_defs.h"
@@ -1168,7 +1168,7 @@ static inline void i2c_ll_master_disable_rx_it(i2c_dev_t *hw)
  */
 static inline void i2c_ll_slave_enable_tx_it(i2c_dev_t *hw)
 {
-    hw->int_ena.val |= 0x2;
+    hw->int_ena.val |= I2C_LL_SLAVE_TX_INT;
 }
 
 /**

@@ -1,7 +1,7 @@
 /*
  * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 
 /*
@@ -118,15 +118,12 @@
 
 /*-------------------------- GDMA CAPS -------------------------------------*/
 #define SOC_AHB_GDMA_VERSION            1U
-#define SOC_GDMA_NUM_GROUPS_MAX         1U
-#define SOC_GDMA_PAIRS_PER_GROUP_MAX    1U
 
 /*-------------------------- GPIO CAPS ---------------------------------------*/
 // ESP32-C2 has 1 GPIO peripheral
 #define SOC_GPIO_PORT                      1U
 #define SOC_GPIO_PIN_COUNT                 21
 #define SOC_GPIO_SUPPORT_PIN_GLITCH_FILTER 1
-#define SOC_GPIO_FILTER_CLK_SUPPORT_APB    1
 
 // Target has no full RTC IO subsystem, GPIO0~5 remain RTC function (powered by VDD3V3_RTC, and can be used as deep-sleep wakeup pins)
 
@@ -150,9 +147,6 @@
 // The Clock Out signal is route to the pin by GPIO matrix
 #define SOC_GPIO_CLOCKOUT_BY_GPIO_MATRIX    (1)
 #define SOC_GPIO_CLOCKOUT_CHANNEL_NUM       (3)
-
-// "RTC"_IOs and DIG_IOs can be hold during deep sleep and after waking up
-#define SOC_GPIO_SUPPORT_HOLD_IO_IN_DSLP (1)
 
 /*-------------------------- I2C CAPS ----------------------------------------*/
 // ESP32-C2 has 1 I2C
@@ -280,6 +274,7 @@
 #define SOC_EFUSE_DIS_DOWNLOAD_ICACHE 1
 #define SOC_EFUSE_DIS_PAD_JTAG 1
 #define SOC_EFUSE_DIS_DIRECT_BOOT 1
+#define SOC_EFUSE_XTS_AES_KEY_128 1
 
 /*-------------------------- Secure Boot CAPS----------------------------*/
 #define SOC_SECURE_BOOT_V2_ECC              1
@@ -342,6 +337,7 @@
 /*------------------------------------ WI-FI CAPS ------------------------------------*/
 #define SOC_WIFI_HW_TSF                           (1)    /*!< Support hardware TSF */
 #define SOC_WIFI_FTM_SUPPORT                      (1)    /*!< Support FTM */
+#define SOC_WIFI_TXOP_SUPPORT                     (1)    /*!< Support TXOP */
 #define SOC_WIFI_SUPPORT_VARIABLE_BEACON_WINDOW   (1)    /*!< Support delta early time for rf phy on/off */
 #define SOC_WIFI_PHY_NEEDS_USB_WORKAROUND         (1)    /*!< SoC has WiFi and USB PHYs interference, needs a workaround */
 

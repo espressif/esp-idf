@@ -23,7 +23,7 @@
 #include "hal/efuse_hal.h"
 #include "esp_hw_log.h"
 
-static __attribute__((unused)) const char *TAG = "pmu_sleep";
+ESP_HW_LOG_ATTR_TAG(TAG, "pmu_sleep");
 
 #define HP(state)   (PMU_MODE_HP_ ## state)
 #define LP(state)   (PMU_MODE_LP_ ## state)
@@ -283,6 +283,12 @@ const pmu_sleep_config_t* pmu_sleep_config_default(
         config->analog.hp_sys.analog.bias_sleep = PMU_BIASSLP_SLEEP_ON;
         config->analog.hp_sys.analog.dbg_atten = 0;
         config->analog.hp_sys.analog.dbias = get_act_hp_dbias();
+    }
+
+    if (sleep_flags & RTC_SLEEP_LP_PERIPH_USE_RC_FAST) {
+        config->analog.hp_sys.analog.dbias = get_act_hp_dbias();
+        config->analog.lp_sys[LP(SLEEP)].analog.dbg_atten = 0;
+        config->analog.lp_sys[LP(SLEEP)].analog.dbias = get_act_lp_dbias();
     }
 
     config->power = power_default;

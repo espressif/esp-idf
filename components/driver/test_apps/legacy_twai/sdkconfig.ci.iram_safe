@@ -1,5 +1,5 @@
 CONFIG_COMPILER_DUMP_RTL_FILES=y
-CONFIG_TWAI_ISR_IN_IRAM=y
+CONFIG_TWAI_ISR_IN_IRAM_LEGACY=y
 CONFIG_COMPILER_OPTIMIZATION_NONE=y
 
 # silent the error check, as the error string are stored in rodata, causing RTL check failure

@@ -37,6 +37,9 @@ extern "C" {
 #include <sys/param.h>
 #include "encoding.h"
 #include "esp_assert.h"
+#if __riscv_zcmp && SOC_CPU_ZCMP_WORKAROUND
+#include "riscv/csr_clic.h"
+#endif
 
 /********************************************************
  Physical Memory Attributes (PMA) register fields
@@ -123,17 +126,29 @@ extern "C" {
 */
 #define PMP_ENTRY_SET(ENTRY, ADDR, CFG) do {  \
     RV_WRITE_CSR((CSR_PMPADDR0) + (ENTRY), (ADDR) >> (PMP_SHIFT));    \
-    RV_SET_CSR((CSR_PMPCFG0) + (ENTRY)/4, ((CFG)&0xFF) << (ENTRY%4)*8); \
+    PMP_ENTRY_CFG_SET(ENTRY, CFG); \
     } while(0)
 
 /*Only set PMPCFG entries*/
-#define PMP_ENTRY_CFG_SET(ENTRY, CFG) do {\
-    RV_SET_CSR((CSR_PMPCFG0) + (ENTRY)/4, ((CFG)&0xFF) << (ENTRY%4)*8); \
-    } while(0)
+#define PMP_ENTRY_CFG_SET(ENTRY, CFG) \
+    RV_SET_CSR((CSR_PMPCFG0) + (ENTRY)/4, ((CFG)&0xFF) << (ENTRY%4)*8)
 
 /*Reset all permissions of a particular PMPCFG entry*/
 #define PMP_ENTRY_CFG_RESET(ENTRY) do {\
+    RV_WRITE_CSR((CSR_PMPADDR0) + (ENTRY), 0); \
     RV_CLEAR_CSR((CSR_PMPCFG0) + (ENTRY)/4, (0xFF) << (ENTRY%4)*8); \
+    } while(0)
+
+/*Read configuration of a particular PMPCFG entry*/
+#define PMP_ENTRY_CFG_READ(ENTRY) \
+    ((RV_READ_CSR((CSR_PMPCFG0) + (ENTRY)/4) >> ((ENTRY%4)*8)) & 0xFF)
+
+#define PMP_ENTRY_ADDR_READ(ENTRY) \
+    (RV_READ_CSR((CSR_PMPADDR0) + (ENTRY)) << (PMP_SHIFT))
+
+#define PMP_RESET_AND_ENTRY_SET(ENTRY, ADDR, CFG) do {\
+    PMP_ENTRY_CFG_RESET(ENTRY); \
+    PMP_ENTRY_SET(ENTRY, ADDR, CFG); \
     } while(0)
 
 /*Reset all permissions of a particular PMACFG entry*/
@@ -223,6 +238,16 @@ extern "C" {
 
 #define RV_READ_MSTATUS_AND_DISABLE_INTR() ({ unsigned long __tmp; \
   asm volatile ("csrrci %0, mstatus, 0x8"  : "=r"(__tmp)); __tmp; })
+
+#if __riscv_zcmp && SOC_CPU_ZCMP_WORKAROUND
+#define RV_READ_MINTTHRESH_AND_DISABLE_INTR() ({ unsigned long __tmp; \
+    asm volatile ( \
+        "li t0, 0xff\n\t" \
+        "csrrw %0, %1, t0" : "=r"(__tmp) : "i"(MINTTHRESH_CSR) : "t0", "memory"); __tmp; })
+
+#define RV_RESTORE_MINTTHRESH(val) \
+  asm volatile ("csrw %0, %1" :: "i"(MINTTHRESH_CSR), "r"(val) : "memory")
+#endif
 
 #define _CSR_STRINGIFY(REG) #REG /* needed so the 'reg' argument can be a macro or a register name */
 

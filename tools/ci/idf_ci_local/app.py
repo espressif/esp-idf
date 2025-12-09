@@ -41,9 +41,7 @@ class IdfCMakeApp(CMakeApp):
             )
             rmdir(
                 self.build_path,
-                exclude_file_patterns=[
-                    'build_log.txt',
-                ],
+                exclude_file_patterns=['build_log.txt', 'size*.json'],
             )
 
 

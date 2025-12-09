@@ -33,6 +33,9 @@ examples/openthread/ot_br:
 examples/openthread/ot_cli:
   enable:
     - if: SOC_IEEE802154_SUPPORTED == 1
+  disable:
+    - if: IDF_TARGET == "esp32h4" and CONFIG_NAME == "ext_coex"
+      reason: ext_coex not supported on esp32h4 yet
   disable_test:
     - if: IDF_TARGET not in ["esp32h2", "esp32c6"]
       reason: only test on esp32h2 and esp32c6
@@ -41,6 +44,9 @@ examples/openthread/ot_cli:
 examples/openthread/ot_rcp:
   enable:
     - if: SOC_IEEE802154_SUPPORTED == 1
+  disable:
+    - if: IDF_TARGET == "esp32h4" and CONFIG_NAME == "ext_coex"
+      reason: ext_coex not supported on esp32h4 yet
   disable_test:
     - if: IDF_TARGET not in ["esp32h2", "esp32c6"]
       reason: only test on esp32h2 and esp32c6
@@ -50,7 +56,7 @@ examples/openthread/ot_sleepy_device/deep_sleep:
   enable:
     - if: SOC_IEEE802154_SUPPORTED == 1
   disable:
-    - if: IDF_TARGET in ["esp32c5"]
+    - if: IDF_TARGET in ["esp32c5", "esp32h4"]
       temporary: true
       reason: Not supported yet, TZ-958
   <<: [*openthread_dependencies, *openthread_sleep_dependencies]
@@ -59,7 +65,7 @@ examples/openthread/ot_sleepy_device/light_sleep:
   enable:
     - if: SOC_IEEE802154_SUPPORTED == 1
   disable:
-    - if: IDF_TARGET in ["esp32c5"]
+    - if: IDF_TARGET in ["esp32c5", "esp32h4"]
       temporary: true
       reason: Not supported yet, TZ-958
   <<: [*openthread_dependencies, *openthread_sleep_dependencies]

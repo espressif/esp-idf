@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -44,6 +44,45 @@ void _ss_esp_tee_test_iram_reg2_write_violation(void)
 {
     uint32_t *test_addr = (uint32_t *)((uint32_t)(&_tee_iram_start) - 0x04);
     *test_addr = RND_VAL;
+}
+
+static void do_stack_smash(bool underflow, int depth, volatile uint8_t *sink)
+{
+    /* Overflow path */
+    if (!underflow) {
+        if (depth == -1) {
+            return; // unreachable
+        }
+
+        uint8_t buffer[1024];
+        buffer[0] = (uint8_t)depth;
+        *sink = buffer[0];
+
+        do_stack_smash(false, depth + 1, sink);
+        return;
+    }
+
+    /* Underflow path */
+    asm volatile(
+        "li   t0, 2048\n"
+        "add  sp, sp, t0\n"
+    );
+
+    volatile uint8_t a = 1;
+    volatile uint8_t b = a;
+    (void)b;
+}
+
+void _ss_esp_tee_test_stack_overflow(void)
+{
+    volatile uint8_t sink = 0;
+    do_stack_smash(false, 1, &sink);
+}
+
+void _ss_esp_tee_test_stack_underflow(void)
+{
+    volatile uint8_t sink = 0;
+    do_stack_smash(true, 0, &sink);
 }
 
 #pragma GCC pop_options

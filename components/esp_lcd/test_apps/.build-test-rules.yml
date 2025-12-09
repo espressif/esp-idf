@@ -33,7 +33,7 @@ components/esp_lcd/test_apps/parlio_lcd:
     - esp_lcd
     - esp_driver_parlio
   disable:
-    - if: SOC_PARLIO_SUPPORT_SPI_LCD != 1
+    - if: SOC_PARLIO_LCD_SUPPORTED != 1
 
 components/esp_lcd/test_apps/rgb_lcd:
   depends_components:

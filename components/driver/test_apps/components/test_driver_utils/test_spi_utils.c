@@ -8,9 +8,9 @@
 #include "esp_log.h"
 #include "driver/gpio.h"
 #include "esp_private/gpio.h"
-#include "hal/gpio_hal.h"
-#include "hal/spi_ll.h"
 #include "esp_rom_gpio.h"
+#include "hal/gpio_ll.h"
+#include "hal/spi_ll.h"
 
 const char MASTER_TAG[] = "test_master";
 const char SLAVE_TAG[] = "test_slave";
@@ -76,6 +76,7 @@ void spitest_slave_task(void* arg)
     while (1) {
         BaseType_t ret = xQueueReceive(queue, &txdata, portMAX_DELAY);
         assert(ret);
+        (void)ret;
 
         spi_slave_transaction_t t = {};
         t.length = txdata.len;

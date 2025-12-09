@@ -1,0 +1,216 @@
+/*
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "sdkconfig.h"
+#include "ld.common"
+
+#define SRAM_TEE_SEG_START         (0x40800000)
+#define SRAM_REE_SEG_START         (SRAM_TEE_SEG_START + CONFIG_SECURE_TEE_IRAM_SIZE + CONFIG_SECURE_TEE_DRAM_SIZE)
+
+#define SRAM_TEE_DRAM_SIZE         (CONFIG_SECURE_TEE_DRAM_SIZE - CONFIG_SECURE_TEE_STACK_SIZE - CONFIG_SECURE_TEE_INTR_STACK_SIZE)
+#define SRAM_TEE_DRAM_END          (SRAM_TEE_SEG_START + CONFIG_SECURE_TEE_IRAM_SIZE + SRAM_TEE_DRAM_SIZE)
+
+#define SRAM_TEE_SEG_SIZE          (CONFIG_SECURE_TEE_IRAM_SIZE + SRAM_TEE_DRAM_SIZE)
+
+/* TEE interrupt stack is placed at the end of the TEE DRAM segment.
+ * The top of the TEE stack is before the end of interrupt stack
+ * and the bottom of the stack is at _heap_end.
+ */
+#define SRAM_TEE_STACK_SEG_START        (SRAM_TEE_DRAM_END)
+#define SRAM_TEE_INTR_STACK_SEG_START   (SRAM_TEE_DRAM_END + CONFIG_SECURE_TEE_STACK_SIZE)
+
+#define FLASH_TEE_SEG_START        (0x42000000)
+#define FLASH_TEE_SEG_SIZE         (CONFIG_SECURE_TEE_IROM_SIZE + CONFIG_SECURE_TEE_DROM_SIZE)
+
+/**
+ * These values are the same in every app binary for the same chip target.
+ *
+ * Values that may change when the app is rebuilt, or in a new ESP-IDF version,
+ * should be stored via esp_app_tee_config structure
+ */
+
+PROVIDE ( esp_tee_app_config        = SRAM_REE_SEG_START + 0x2b0 );
+PROVIDE ( GDMA                      = 0x60080000 );
+
+/* SPI Flash functions required from the ROM (refer esp32c61.rom.spiflash.ld) */
+PROVIDE ( spi_flash_check_and_flush_cache            = 0x40000230 );
+PROVIDE ( spi_flash_chip_generic_config_host_io_mode = 0x400002d4 );
+PROVIDE ( memspi_host_flush_cache                    = 0x40000318 );
+
+/* Default entry point: */
+ENTRY(esp_tee_init);
+
+MEMORY
+{
+/* Flash text section */
+  irom_tee_seg (RX):                      org = FLASH_TEE_SEG_START + 0x20, len = FLASH_TEE_SEG_SIZE - 0x20
+
+/* Flash data section */
+  drom_tee_seg (R) :                      org = FLASH_TEE_SEG_START + 0x20, len = FLASH_TEE_SEG_SIZE - 0x20
+
+/* I/DRAM section */
+  sram_tee_seg (RWX) :                    org = SRAM_TEE_SEG_START, len = SRAM_TEE_SEG_SIZE
+
+/* Stack section */
+  stack_tee_seg (RW)  :                   org = SRAM_TEE_STACK_SEG_START, len = CONFIG_SECURE_TEE_STACK_SIZE
+
+/* Interrupt stack section */
+  intr_stack_tee_seg (RW)  :              org = SRAM_TEE_INTR_STACK_SEG_START, len = CONFIG_SECURE_TEE_INTR_STACK_SIZE
+}
+
+SECTIONS
+{
+  .iram.tee.text :
+  {
+    /* Vectors go to start of IRAM */
+    ASSERT(ABSOLUTE(.) % 0x100 == 0, "vector address must be 256 byte aligned");
+    _tee_vec_start = ABSOLUTE(.);
+    KEEP(*(.exception_vectors_table.text));
+    KEEP(*(.exception_vectors.text));
+    ALIGNED_SYMBOL(4, _invalid_pc_placeholder)
+    _tee_vec_end = ABSOLUTE(.);
+
+    /* Code marked as running out of IRAM */
+    _tee_iram_start = ABSOLUTE(.);
+    *(.iram1 .iram1.*)
+    /* TEE initialization */
+    *libmain.a:esp_tee_init.c*(.literal .text .literal.* .text.*)
+    *libmain.a:esp_tee_secure_sys_cfg.c*(.literal .text .literal.* .text.*)
+    *libmain.a:esp_tee_pmp_pma_prot_cfg.c*(.literal .text .literal.* .text.*)
+    *libmain.a:esp_tee_apm_prot_cfg.c*(.literal .text .literal.* .text.*)
+    *libmain.a:brownout.c*(.literal .text .literal.* .text.*)
+    *libmain.a:multi_heap.c*(.literal .text .literal.* .text.*)
+    /* Panic handler */
+    *libmain.a:esp_tee_panic.c*(.literal .text .literal.* .text.*)
+    *libmain.a:panic_helper_riscv.c*(.literal .text .literal.* .text.*)
+    /* Service call execution */
+    *libmain.a:esp_tee_vectors_clic.S*(.literal .text .literal.* .text.*)
+    *libmain.a:esp_secure_dispatcher.c*(.literal .text .literal.* .text.*)
+    *libmain.a:esp_secure_services_iram.c*(.literal .text .literal.* .text.*)
+    /* Interrupt configuration */
+    *libmain.a:esp_tee_intr.c*(.literal .text .literal.* .text.*)
+    *libmain.a:esp_tee_apm_intr.c*(.literal .text .literal.* .text.*)
+    /* HAL */
+    *libhal.a:mmu_hal.c*(.literal .text .literal.* .text.*)
+    *libhal.a:cache_hal.c*(.literal .text .literal.* .text.*)
+    *libhal.a:apm_hal.c*(.literal .text .literal.* .text.*)
+    *libesp_hal_mspi.a:*(.literal .text .literal.* .text.*)
+    *libesp_hal_wdt.a:*(.literal .text .literal.* .text.*)
+    /* IDF components */
+    *libbootloader_support.a:*(.literal .text .literal.* .text.*)
+    *libesp_hw_support.a:*(.literal .text .literal.* .text.*)
+    *liblog.a:*(.literal .text .literal.* .text.*)
+    *libriscv.a:*(.literal .text .literal.* .text.*)
+    /* TEE services: Secure storage, OTA, attestation */
+    *libtee_flash_mgr.a:*(.literal .text .literal.* .text.*)
+    *libtee_sec_storage.a:*(.literal .text .literal.* .text.*)
+    *libtee_ota_ops.a:*(.literal .text .literal.* .text.*)
+    *libtee_attestation.a:*(.literal .text .literal.* .text.*)
+
+    /* Align the end of code region as per PMP region granularity */
+    ALIGNED_SYMBOL(_esp_pmp_align_size, _tee_iram_end)
+  } > sram_tee_seg
+
+  .dram.tee.data :
+  {
+    _tee_dram_start = ABSOLUTE(.);
+    _tee_data_start = ABSOLUTE(.);
+    *(.data .data.*)
+    *(.sdata .sdata.*)
+    *(.dram1 .dram1.*)
+    _tee_data_end = ABSOLUTE(.);
+   } > sram_tee_seg
+
+  .dram.tee.bss (NOLOAD) :
+  {
+    ALIGNED_SYMBOL(8, _tee_bss_start)
+    *(.bss .bss.*)
+    *(.sbss .sbss.*)
+    ALIGNED_SYMBOL(8, _tee_bss_end)
+  } > sram_tee_seg
+
+  .dram.tee.rodata :
+  {
+    _tee_rodata_start = ABSOLUTE(.);
+    /* TEE flash manager */
+    *libtee_flash_mgr.a:*(.rodata .srodata .rodata.* .srodata.*)
+    *libbootloader_support.a:bootloader_flash.*(.rodata .srodata .rodata.* .srodata.*)
+    /* Secure services */
+    *libmain.a:esp_secure_services_iram.c.*(.rodata .srodata .rodata.* .srodata.*)
+    *libmain.a:esp_secure_dispatcher.c.*(.rodata .srodata .rodata.* .srodata.*)
+    /* Panic handler */
+    *libmain.a:panic_helper_riscv.*(.rodata .srodata .rodata.* .srodata.*)
+    *libmain.a:esp_tee_apm_intr.c.*(.rodata .srodata .rodata.* .srodata.*)
+    /* HAL (noflash) */
+    *libhal.a:mmu_hal.c*(.rodata .srodata .rodata.* .srodata.*)
+    *libhal.a:cache_hal.c*(.rodata .srodata .rodata.* .srodata.*)
+    *libesp_hal_mspi.a:*(.rodata .srodata .rodata.* .srodata.*)
+    _tee_rodata_end = ABSOLUTE(.);
+    _tee_dram_end = ABSOLUTE(.);
+  } > sram_tee_seg
+
+  .dram.tee.heap (NOLOAD): ALIGN(0x10)
+  {
+    _tee_heap_start = ABSOLUTE(.);
+    . = ORIGIN(sram_tee_seg) + LENGTH(sram_tee_seg);
+    _tee_heap_end = ABSOLUTE(.);
+  } > sram_tee_seg
+
+  .dram.tee.stack (NOLOAD): ALIGN(0x10)
+  {
+    _tee_stack_bottom = ABSOLUTE(.);
+    . = ORIGIN(stack_tee_seg) + LENGTH(stack_tee_seg);
+    _tee_stack = ABSOLUTE(.);
+  } > stack_tee_seg
+
+  .dram.tee.intr_stack (NOLOAD): ALIGN(0x10)
+  {
+    _tee_intr_stack_bottom = ABSOLUTE(.);
+    . = ORIGIN(intr_stack_tee_seg) + LENGTH(intr_stack_tee_seg);
+    _tee_intr_stack = ABSOLUTE(.);
+  } > intr_stack_tee_seg
+
+
+  .flash.tee.rodata : ALIGN(0x10)
+  {
+    _tee_flash_data_start = ABSOLUTE(.);
+    *(.rodata_desc .rodata_desc.*)                /* Should be the first. TEE App version info. DO NOT PUT ANYTHING BEFORE IT! */
+    *(.rodata .rodata.*)
+    *(.srodata .srodata.*)
+    *(.gcc_except_table .gcc_except_table.*)
+    _tee_flash_data_end = ABSOLUTE(.);
+   } > drom_tee_seg
+
+  .flash.tee.text_dummy (NOLOAD):
+  {
+    /* Create an empty gap as big as .flash.tee.rodata section */
+    . = ALIGN(ALIGNOF(.flash.tee.rodata)) + SIZEOF(.flash.tee.rodata);
+    /* Add alignment of MMU page size + 0x20 bytes for the mapping header. */
+    . = ALIGN(_esp_mmu_page_size) + 0x20;
+  } > irom_tee_seg
+
+  .flash.tee.text :
+  {
+    _tee_flash_text_start = ABSOLUTE(.);
+    *(.literal .text .literal.* .text.*)
+    *(.stub .gnu.warning .gnu.linkonce.literal.* .gnu.linkonce.t.*.literal .gnu.linkonce.t.*)
+    /**
+     * CPU will try to prefetch up to 16 bytes of of instructions.
+     * This means that any configuration (e.g. MMU, PMS) must allow
+     * safe access to up to 16 bytes after the last real instruction, add
+     * dummy bytes to ensure this
+     */
+    . += _esp_flash_mmap_prefetch_pad_size;
+    _tee_flash_text_end = ABSOLUTE(.);
+   } > irom_tee_seg
+
+#include "elf_misc.ld.in"
+}
+
+ASSERT ((_tee_iram_end <= _tee_dram_start),
+        "Error: TEE IRAM segment overflowed into the DRAM segment! Increase CONFIG_SECURE_TEE_IRAM_SIZE as required.");
+ASSERT((_tee_heap_end >= _tee_heap_start + 0x2000),
+        "Error: TEE heap size is too small - minimum is 8KB (0x2000)! Increase CONFIG_SECURE_TEE_DRAM_SIZE as required.");

@@ -7,5 +7,7 @@ dependencies:
       - if: "target in [esp32s2, esp32s3]"
   dns_server:
     path: ${IDF_PATH}/examples/protocols/http_server/captive_portal/components/dns_server
-  ethernet_init:
-    path: ${IDF_PATH}/examples/ethernet/basic/components/ethernet_init
+  espressif/ethernet_init:
+    version: "~1.2.0"
+  espressif/network_provisioning:
+    version: "^1.0.5"

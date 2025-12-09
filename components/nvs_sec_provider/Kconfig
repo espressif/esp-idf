@@ -4,7 +4,8 @@ menu "NVS Security Provider"
     choice NVS_SEC_KEY_PROTECTION_SCHEME
         prompt "NVS Encryption: Key Protection Scheme"
         depends on NVS_ENCRYPTION
-        default NVS_SEC_KEY_PROTECT_USING_FLASH_ENC
+        default NVS_SEC_KEY_PROTECT_USING_HMAC if SOC_HMAC_SUPPORTED
+        default NVS_SEC_KEY_PROTECT_USING_FLASH_ENC if !SOC_HMAC_SUPPORTED
         help
             This choice defines the default NVS encryption keys protection scheme;
             which will be used for the default NVS partition.
@@ -26,6 +27,12 @@ menu "NVS Security Provider"
                 Derive and protect the NVS Encryption Keys using the HMAC peripheral
                 Requires the specified eFuse block (NVS_SEC_HMAC_EFUSE_KEY_ID or the v2 API argument)
                 to be empty or pre-written with a key with the purpose ESP_EFUSE_KEY_PURPOSE_HMAC_UP
+
+        config NVS_SEC_KEY_PROTECT_NONE
+            bool "None"
+            help
+                Select this option if key derivation/protection is handled by
+                a custom implementation, and not by the nvs_sec_provider component.
 
     endchoice
 

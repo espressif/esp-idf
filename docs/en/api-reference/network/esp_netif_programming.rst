@@ -1,8 +1,6 @@
 ESP-NETIF Programmers Manual
 ============================
 
-:link_to_translation:`zh_CN:[中文]`
-
 .. _esp_netif_set_ip:
 
 Configure IP, Gateway, and DNS
@@ -14,6 +12,26 @@ In order to configure static IP addresses and DNS servers, it's necessary to dis
 
 To set IPv4 address, you can use :cpp:func:`esp_netif_set_ip_info()`. For IPv6, these two functions can be used for adding or removing addresses: :cpp:func:`esp_netif_add_ip6_address()`,  :cpp:func:`esp_netif_remove_ip6_address()`.
 To configure DNS servers, please use :cpp:func:`esp_netif_set_dns_info()` API.
+
+Custom Got/Lost IP Events
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+For user-defined interfaces, esp-netif lets you select which IP events are posted when an interface obtains or loses an IP address. Two generic event IDs are provided for this purpose:
+
+- ``IP_EVENT_CUSTOM_GOT_IP``
+- ``IP_EVENT_CUSTOM_LOST_IP``
+
+Configure these by setting :cpp:member:`esp_netif_inherent_config_t::get_ip_event` and :cpp:member:`esp_netif_inherent_config_t::lost_ip_event` when creating the interface:
+
+.. code-block:: c
+
+    esp_netif_inherent_config_t base = ESP_NETIF_INHERENT_DEFAULT_WIFI_STA();
+    base.get_ip_event = IP_EVENT_CUSTOM_GOT_IP;
+    base.lost_ip_event = IP_EVENT_CUSTOM_LOST_IP;
+    esp_netif_config_t cfg = { .base = &base, .stack = ESP_NETIF_NETSTACK_DEFAULT_WIFI_STA };
+    esp_netif_t *netif = esp_netif_new(&cfg);
+
+Event data for these events is the same as the standard ones: :cpp:type:`ip_event_got_ip_t` is posted for “got IP”, and :cpp:type:`ip_event_got_ip_t` with :cpp:member:`ip_event_got_ip_t::ip_changed` set accordingly for updates. For lost IP, an empty :cpp:type:`ip_event_got_ip_t` with only :cpp:member:`ip_event_got_ip_t::esp_netif` set is posted.
 
 .. _esp_netif_set_dhcp:
 
@@ -39,6 +57,31 @@ This section provides more details on specific use cases for the SNTP service, s
 2. Start the service with :cpp:func:`esp_netif_sntp_start()`. This step is not necessary if the service was auto-started in the previous step (default behavior). However, it can be useful to start the service explicitly after connecting if DHCP-provided NTP servers are being used. Note that this option needs to be enabled before connecting, but the SNTP service should only be started afterward.
 3. Wait for the system time to synchronize using :cpp:func:`esp_netif_sntp_sync_wait()` (if required).
 4. Stop and destroy the service using :cpp:func:`esp_netif_sntp_deinit()`.
+
+Events
+^^^^^^
+
+The SNTP wrapper posts an event when the system time is synchronized:
+
+- Event base: ``NETIF_SNTP_EVENT``
+- Event ID: ``NETIF_SNTP_TIME_SYNC``
+- Event data: pointer to :cpp:type:`esp_netif_sntp_time_sync_t` with the synchronized ``timeval``
+
+Register a handler after creating the default event loop:
+
+.. code-block:: c
+
+    static void sntp_evt_handler(void *arg, esp_event_base_t base, int32_t id, void *data)
+    {
+        const esp_netif_sntp_time_sync_t *evt = (const esp_netif_sntp_time_sync_t *)data;
+        if (evt) {
+            ESP_LOGI("sntp", "time synchronized: %ld.%06ld", (long)evt->tv.tv_sec, (long)evt->tv.tv_usec);
+            // Optionally convert to human-readable time using localtime_r() or gmtime_r()
+        }
+    }
+
+    ESP_ERROR_CHECK(esp_event_loop_create_default());
+    ESP_ERROR_CHECK(esp_event_handler_register(NETIF_SNTP_EVENT, NETIF_SNTP_TIME_SYNC, &sntp_evt_handler, NULL));
 
 
 Basic Mode with Statically Defined Server(s)
@@ -337,6 +380,31 @@ The event data structure, :cpp:class:`ip_event_tx_rx_t`, contains the following 
 - :cpp:member:`ip_event_tx_rx_t::dir`: Indicates whether the packet was transmitted (``ESP_NETIF_TX``) or received (``ESP_NETIF_RX``).
 - :cpp:member:`ip_event_tx_rx_t::len`: Length of the data frame.
 - :cpp:member:`ip_event_tx_rx_t::esp_netif`: The network interface on which the packet was sent or received.
+
+IP Events: Netif Status (Unified)
+---------------------------------
+
+ESP-NETIF emits unified status events when an interface becomes usable for L3 traffic or goes down. These are derived from the lwIP extended netif callbacks and posted on ``IP_EVENT``:
+
+- ``IP_EVENT_NETIF_UP`` / ``IP_EVENT_NETIF_DOWN``
+
+ESP-IDF normalizes link and administrative state changes into these two events (including PPP). Subscribe as follows:
+
+.. code-block:: c
+
+    static void netif_status_handler(void *arg, esp_event_base_t base, int32_t id, void *data)
+    {
+        const ip_event_netif_status_t *evt = (const ip_event_netif_status_t *)data;
+        ESP_LOGI("netif", "status %s on %s", (id == IP_EVENT_NETIF_UP) ? "UP" : "DOWN", esp_netif_get_desc(evt->esp_netif));
+    }
+
+    esp_event_handler_register(IP_EVENT, IP_EVENT_NETIF_UP, &netif_status_handler, NULL);
+    esp_event_handler_register(IP_EVENT, IP_EVENT_NETIF_DOWN, &netif_status_handler, NULL);
+
+Event Data Structure
+^^^^^^^^^^^^^^^^^^^^
+
+The event data structure is :cpp:type:`ip_event_netif_status_t`, which contains the ``esp_netif`` handle of the interface that changed state.
 
 
 .. _esp_netif_api_reference:

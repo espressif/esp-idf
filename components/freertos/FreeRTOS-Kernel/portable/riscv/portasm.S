@@ -684,7 +684,7 @@ rtos_int_enter:
     mv      a1, sp
     /* esp_hw_stack_guard_set_bounds(xIsrStackBottom[coreID], xIsrStackTop[coreID]);
      */
-    ESP_HW_STACK_GUARD_SET_BOUNDS_CUR_CORE a2
+    ESP_HW_STACK_GUARD_SET_BOUNDS_CUR_CORE a2 a0 a1
     ESP_HW_STACK_GUARD_MONITOR_START_CUR_CORE a0 a1
 #endif /* CONFIG_ESP_SYSTEM_HW_STACK_GUARD */
 
@@ -841,7 +841,7 @@ restore_stack_pointer:
      */
     lw      a1, PORT_OFFSET_PX_END_OF_STACK(a0)
     lw      a0, PORT_OFFSET_PX_STACK(a0)
-    ESP_HW_STACK_GUARD_SET_BOUNDS_CUR_CORE a2
+    ESP_HW_STACK_GUARD_SET_BOUNDS_CUR_CORE a2 a0 a1
     /* esp_hw_stack_guard_monitor_start(); */
     ESP_HW_STACK_GUARD_MONITOR_START_CUR_CORE a0 a1
 #endif /* CONFIG_ESP_SYSTEM_HW_STACK_GUARD */

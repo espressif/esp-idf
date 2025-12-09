@@ -81,7 +81,7 @@ static void i2c_master_write_sleep_retention_test(void)
     TEST_ESP_OK(i2c_master_transmit(dev_handle, data_wr, DATA_LENGTH, -1));
     unity_wait_for_signal("i2c slave receive once, master to sleep");
 
-#if ESP_SLEEP_POWER_DOWN_CPU
+#if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU
     TEST_ESP_OK(sleep_cpu_configure(true));
 #endif
     TEST_ESP_OK(esp_sleep_enable_timer_wakeup(3 * 1000 * 1000));
@@ -99,7 +99,7 @@ static void i2c_master_write_sleep_retention_test(void)
     unity_send_signal("master write again");
 
     unity_wait_for_signal("ready to delete");
-#if ESP_SLEEP_POWER_DOWN_CPU
+#if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU
     TEST_ESP_OK(sleep_cpu_configure(false));
 #endif
     TEST_ESP_OK(i2c_master_bus_rm_device(dev_handle));
@@ -149,7 +149,7 @@ static void i2c_slave_read_sleep_retention_test(void)
 
     unity_send_signal("i2c slave receive once, master to sleep");
     // Slave sleep as well..
-#if ESP_SLEEP_POWER_DOWN_CPU
+#if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU
     TEST_ESP_OK(sleep_cpu_configure(true));
 #endif
     TEST_ESP_OK(esp_sleep_enable_timer_wakeup(1 * 1000 * 1000));
@@ -173,7 +173,7 @@ static void i2c_slave_read_sleep_retention_test(void)
 
     vQueueDelete(event_queue);
     unity_send_signal("ready to delete");
-#if ESP_SLEEP_POWER_DOWN_CPU
+#if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU
     TEST_ESP_OK(sleep_cpu_configure(false));
 #endif
     TEST_ESP_OK(i2c_del_slave_device(slave_handle));

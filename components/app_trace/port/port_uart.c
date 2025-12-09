@@ -3,49 +3,124 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
-#include "soc/soc.h"
+#include <stdint.h>
+#include <stdbool.h>
+#include <string.h>
+#include <inttypes.h>
+#include "esp_err.h"
 #include "esp_log.h"
 #include "esp_cpu.h"
-#include "esp_app_trace_port.h"
-
+#include "esp_attr.h"
+#include "esp_private/uart_share_hw_ctrl.h"
+#include "hal/uart_hal.h"
+#include "hal/gpio_hal.h"
 #include "driver/uart.h"
+#include "soc/uart_periph.h"
+#include "esp_clk_tree.h"
+#include "esp_private/esp_clk_tree_common.h"
+#include "soc/gpio_periph.h"
+#include "esp_rom_gpio.h"
 #include "hal/uart_ll.h"
-#include "string.h"
-#include "driver/gpio.h"
+#include "esp_intr_alloc.h"
+#include "esp_heap_caps.h"
+#include "esp_private/esp_gpio_reserve.h"
 
-#define APP_TRACE_MAX_TX_BUFF_UART          CONFIG_APPTRACE_UART_TX_BUFF_SIZE
-#define APP_TRACE_MAX_TX_MSG_UART           CONFIG_APPTRACE_UART_TX_MSG_SIZE
+#include "esp_app_trace_port.h"
+#include "esp_app_trace_util.h"
+#include "esp_app_trace_types.h"
 
-/** UART HW transport data */
-typedef struct {
-    uint8_t                             inited;
-#if CONFIG_APPTRACE_LOCK_ENABLE
-    esp_apptrace_lock_t                 lock;   // sync lock
+static const char *TAG = "esp_apptrace_uart";
+
+#ifndef MIN
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
 #endif
-    uart_port_t port_num;
-// TX data ring buffer
-    uint8_t *tx_data_buff;
-    int32_t tx_data_buff_in;
-    int32_t tx_data_buff_out;
-// TX message buffer
-    uint8_t *tx_msg_buff;
-    uint32_t tx_msg_buff_size;
 
-// RX message buffer
-    uint8_t *down_buffer;
-    uint32_t down_buffer_size;
-// Buffer overflow flags
-    bool message_buff_overflow;
-    bool circular_buff_overflow;
+typedef struct {
+    uint8_t *buffer;            ///< Ring buffer data
+    uint32_t max_size;          ///< Ring buffer maximum size (must be power of 2)
+    volatile uint32_t count;    ///< Number of bytes currently in the buffer
+    volatile uint32_t head;     ///< Write pointer index
+    volatile uint32_t tail;     ///< Read pointer index
+} esp_apptrace_uart_rb_t;
+
+typedef struct {
+    int inited;
+    volatile bool tx_busy;              ///< TX busy flag
+    uart_hal_context_t hal_ctx;         ///< UART HAL context
+    esp_apptrace_uart_rb_t tx_ring;     ///< TX ring buffer
+    intr_handle_t intr_handle;          ///< Interrupt handle
+
+    /* TX message buffer */
+    uint8_t *tx_msg_buff;               ///< TX message buffer to provide with get_up_buffer
+    uint32_t tx_msg_buff_size;          ///< TX message buffer size & maximum size of the single message to transfer.
+    uint32_t tx_pending_msg_size;       ///< Pending message size to send with put_up_buffer
+
+    /* RX message buffer */
+    uint8_t *rx_msg_buff;               ///< RX message buffer provided with down_buffer_config function
+    uint32_t rx_msg_buff_size;          ///< RX message buffer size provided with down_buffer_config function
+
+#if CONFIG_APPTRACE_LOCK_ENABLE
+    esp_apptrace_lock_t lock;           ///< Sync lock
+#endif
+
 } esp_apptrace_uart_data_t;
 
-const static char *TAG = "esp_apptrace_uart";
+static inline bool is_power_of_two(uint32_t n)
+{
+    return n != 0 && (n & (n - 1)) == 0;
+}
 
-static esp_err_t esp_apptrace_uart_lock(esp_apptrace_uart_data_t *hw_data, esp_apptrace_tmo_t *tmo)
+static inline uint32_t ring_buffer_mask(const esp_apptrace_uart_rb_t *rb)
+{
+    return rb->max_size - 1;
+}
+
+/* Get the length of the data in the ring buffer */
+static inline uint32_t ring_buffer_data_len(const esp_apptrace_uart_rb_t *rb)
+{
+    return rb->count;
+}
+
+/* Get the length of the free space in the ring buffer */
+static inline uint32_t ring_buffer_free_len(const esp_apptrace_uart_rb_t *rb)
+{
+    return rb->max_size - rb->count;
+}
+
+static inline void ring_buffer_advance_tail(esp_apptrace_uart_rb_t *rb, uint32_t count)
+{
+    rb->tail = (rb->tail + count) & ring_buffer_mask(rb);
+    rb->count -= count;
+}
+
+static inline void ring_buffer_advance_head(esp_apptrace_uart_rb_t *rb, uint32_t count)
+{
+    rb->head = (rb->head + count) & ring_buffer_mask(rb);
+    rb->count += count;
+}
+
+static inline uint32_t ring_buffer_calc_to_send(const esp_apptrace_uart_rb_t *rb, uint32_t tx_msg_size)
+{
+    uint32_t used = ring_buffer_data_len(rb);
+    if (used == 0) {
+        return 0;
+    }
+
+    uint32_t cont = rb->max_size - rb->tail;
+    uint32_t n = MIN(used, cont);
+
+    /* Apply message size limit if specified */
+    if (tx_msg_size && tx_msg_size < n) {
+        return tx_msg_size;
+    }
+    return n;
+}
+
+static esp_err_t esp_apptrace_uart_lock(void *hw_data, esp_apptrace_tmo_t *tmo)
 {
 #if CONFIG_APPTRACE_LOCK_ENABLE
-    esp_err_t ret = esp_apptrace_lock_take(&hw_data->lock, tmo);
+    esp_apptrace_uart_data_t *uart_data = hw_data;
+    esp_err_t ret = esp_apptrace_lock_take(&uart_data->lock, tmo);
     if (ret != ESP_OK) {
         return ESP_FAIL;
     }
@@ -53,277 +128,395 @@ static esp_err_t esp_apptrace_uart_lock(esp_apptrace_uart_data_t *hw_data, esp_a
     return ESP_OK;
 }
 
-static esp_err_t esp_apptrace_uart_unlock(esp_apptrace_uart_data_t *hw_data)
+static esp_err_t esp_apptrace_uart_unlock(void *hw_data)
 {
     esp_err_t ret = ESP_OK;
 #if CONFIG_APPTRACE_LOCK_ENABLE
-    ret = esp_apptrace_lock_give(&hw_data->lock);
+    esp_apptrace_uart_data_t *uart_data = hw_data;
+    ret = esp_apptrace_lock_give(&uart_data->lock);
+    assert(ret == ESP_OK && "Failed to unlock apptrace uart lock!");
 #endif
     return ret;
 }
 
-static inline void esp_apptrace_uart_hw_init(void)
+static esp_err_t ring_buffer_put(esp_apptrace_uart_rb_t *rb, const uint8_t *data, uint32_t len)
 {
-    ESP_APPTRACE_LOGI("Initialized UART on CPU%d", esp_cpu_get_core_id());
+    /* Drop oldest. Make available space if needed */
+    uint32_t free_len = ring_buffer_free_len(rb);
+    if (len > free_len) {
+        uint32_t need = len - free_len;
+        ring_buffer_advance_tail(rb, need);
+    }
+
+    uint32_t head = rb->head;
+    uint32_t space_to_end = rb->max_size - head;
+
+    if (len <= space_to_end) {
+        memcpy(&rb->buffer[head], data, len);
+    } else {
+        memcpy(&rb->buffer[head], data, space_to_end);
+        memcpy(&rb->buffer[0], &data[space_to_end], len - space_to_end);
+    }
+
+    ring_buffer_advance_head(rb, len);
+
+    return ESP_OK;
 }
 
-/*****************************************************************************************/
-/***************************** Apptrace HW iface *****************************************/
-/*****************************************************************************************/
-
-static esp_err_t esp_apptrace_send_uart_data(esp_apptrace_uart_data_t *hw_data, const char *data, uint32_t size, esp_apptrace_tmo_t *tmo)
+static esp_err_t ring_buffer_init(esp_apptrace_uart_rb_t *rb, uint32_t size)
 {
-    esp_err_t res = esp_apptrace_uart_lock(hw_data, tmo);
+    rb->buffer = heap_caps_malloc(size, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    if (!rb->buffer) {
+        return ESP_ERR_NO_MEM;
+    }
+
+    rb->max_size = size;
+    rb->count = 0;
+    rb->head = 0;
+    rb->tail = 0;
+
+    return ESP_OK;
+}
+
+static void IRAM_ATTR esp_apptrace_uart_isr_handler(void *arg)
+{
+    esp_apptrace_uart_data_t *uart_data = arg;
+    esp_apptrace_uart_rb_t *rb = &uart_data->tx_ring;
+
+    uint32_t intr_status = uart_hal_get_intsts_mask(&uart_data->hal_ctx);
+
+    if (intr_status & UART_INTR_TXFIFO_EMPTY) {
+        uart_hal_clr_intsts_mask(&uart_data->hal_ctx, UART_INTR_TXFIFO_EMPTY);
+
+        uint32_t to_send = ring_buffer_calc_to_send(rb, uart_data->tx_msg_buff_size);
+        if (to_send > 0) {
+            uint32_t written = 0;
+            uart_hal_write_txfifo(&uart_data->hal_ctx, &rb->buffer[rb->tail], to_send, &written);
+            ring_buffer_advance_tail(rb, written);
+        }
+
+        /* If ring buffer is empty, disable TX interrupt */
+        if (ring_buffer_data_len(rb) == 0) {
+            uart_ll_disable_intr_mask(uart_data->hal_ctx.dev, UART_INTR_TXFIFO_EMPTY);
+            uart_data->tx_busy = false;
+        }
+    }
+}
+
+static esp_err_t esp_apptrace_uart_init(void *hw_data, const esp_apptrace_config_t *config)
+{
+    esp_err_t ret = ESP_ERR_INVALID_ARG;
+    uint64_t gpio_mask = 0;
+    esp_apptrace_uart_data_t *uart_data = hw_data;
+    const esp_apptrace_uart_config_t *uart_config = &config->dest_cfg.uart;
+
+    /* Init function is called on every core, so ensure to do main setup only once */
+    int core_id = esp_cpu_get_core_id();
+    if (core_id == 0) {
+
+        if (uart_config->uart_num == CONFIG_ESP_CONSOLE_UART_NUM) {
+            ESP_APPTRACE_LOGE("Application trace UART and console UART cannot use the same port number");
+            return ESP_ERR_INVALID_ARG;
+        }
+
+        if (uart_config->uart_num >= SOC_UART_HP_NUM) {
+            ESP_APPTRACE_LOGE("UART port number %d is not supported!", uart_config->uart_num);
+            return ESP_ERR_NOT_SUPPORTED;
+        }
+
+        if (GPIO_IS_VALID_GPIO(uart_config->tx_pin_num)) {
+            gpio_mask |= BIT64(uart_config->tx_pin_num);
+        }
+        if (GPIO_IS_VALID_GPIO(uart_config->rx_pin_num)) {
+            gpio_mask |= BIT64(uart_config->rx_pin_num);
+        }
+
+        if (gpio_mask == 0) {
+            ESP_LOGE(TAG, "No valid GPIOs to reserve");
+            return ESP_ERR_INVALID_STATE;
+        }
+
+        uint64_t r = esp_gpio_reserve(gpio_mask);
+        if (r & gpio_mask) {
+            ESP_LOGE(TAG, "GPIO(s) are already reserved: 0x%"PRIx64, r & gpio_mask);
+            return ESP_ERR_INVALID_STATE;
+        }
+
+        uart_data->hal_ctx.dev = UART_LL_GET_HW(uart_config->uart_num);
+
+        HP_UART_BUS_CLK_ATOMIC() {
+            uart_ll_enable_bus_clock(uart_config->uart_num, true);
+            uart_ll_reset_register(uart_config->uart_num);
+        }
+        HP_UART_SRC_CLK_ATOMIC() {
+            uart_ll_sclk_enable(uart_data->hal_ctx.dev);
+        }
+
+        uint32_t sclk_hz;
+        esp_clk_tree_src_get_freq_hz(UART_SCLK_DEFAULT, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &sclk_hz);
+        /* Enable the default clock source */
+        esp_clk_tree_enable_src(UART_SCLK_DEFAULT, true);
+
+        /* Initialize UART HAL (sets default 8N1 mode) */
+        uart_hal_init(&uart_data->hal_ctx, uart_config->uart_num);
+
+        ESP_LOGI(TAG, "uart_hal_init: %d", uart_config->uart_num);
+
+        HP_UART_SRC_CLK_ATOMIC() {
+            uart_hal_set_sclk(&uart_data->hal_ctx, UART_SCLK_DEFAULT);
+            uart_hal_set_baudrate(&uart_data->hal_ctx, uart_config->baud_rate, sclk_hz);
+        }
+
+        /* Configure FIFO thresholds */
+        uart_hal_set_txfifo_empty_thr(&uart_data->hal_ctx, 16); /* Slow down IRQ rate */
+        uart_hal_set_rxfifo_full_thr(&uart_data->hal_ctx, 1);
+
+        /* Initialize TX ring buffer */
+        if (uart_config->tx_buff_size == 0 || !is_power_of_two(uart_config->tx_buff_size)) {
+            ESP_APPTRACE_LOGE("TX ring buffer size (%u) must be a power of two and greater than 0",
+                              uart_config->tx_buff_size);
+            goto err_init_ring_buff;
+        }
+        ret = ring_buffer_init(&uart_data->tx_ring, uart_config->tx_buff_size);
+        if (ret != ESP_OK) {
+            ESP_APPTRACE_LOGE("Failed to initialize TX ring buffer");
+            goto err_init_ring_buff;
+        }
+
+        /* Initialize TX message buffer for providing with get_up_buffer */
+        uart_data->tx_msg_buff_size = uart_config->tx_msg_size;
+        uart_data->tx_msg_buff = heap_caps_malloc(uart_data->tx_msg_buff_size, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+        if (uart_data->tx_msg_buff == NULL) {
+            ESP_APPTRACE_LOGE("Failed to initialize TX message buffer");
+            ret = ESP_ERR_NO_MEM;
+            goto err_alloc_msg_buff;
+        }
+
+        /* Disable all interrupts and clear status */
+        uart_ll_disable_intr_mask(uart_data->hal_ctx.dev, UART_LL_INTR_MASK);
+        uart_ll_clr_intsts_mask(uart_data->hal_ctx.dev, UART_LL_INTR_MASK);
+
+        /* Install interrupt handler */
+        int intr_alloc_flags = 0;
+        ret = esp_intr_alloc(uart_periph_signal[uart_config->uart_num].irq, intr_alloc_flags,
+                             esp_apptrace_uart_isr_handler, uart_data, &uart_data->intr_handle);
+        if (ret != ESP_OK) {
+            ESP_APPTRACE_LOGE("Failed to allocate interrupt: %s", esp_err_to_name(ret));
+            goto err_alloc_intr;
+        }
+
+        /* Reset FIFOs */
+        uart_hal_rxfifo_rst(&uart_data->hal_ctx);
+        uart_hal_txfifo_rst(&uart_data->hal_ctx);
+
+        /* Configure GPIO pins for RX and TX */
+        const uint32_t tx_idx = UART_PERIPH_SIGNAL(uart_config->uart_num, SOC_UART_PERIPH_SIGNAL_TX);
+        const uint32_t rx_idx = UART_PERIPH_SIGNAL(uart_config->uart_num, SOC_UART_PERIPH_SIGNAL_RX);
+
+        /* Configure TX pin */
+        gpio_ll_func_sel(&GPIO, uart_config->tx_pin_num, PIN_FUNC_GPIO);
+        esp_rom_gpio_pad_pullup_only(uart_config->tx_pin_num);
+        esp_rom_gpio_connect_out_signal(uart_config->tx_pin_num, tx_idx, 0, 0);
+
+        /* Configure RX pin */
+        gpio_ll_input_enable(&GPIO, uart_config->rx_pin_num);
+        esp_rom_gpio_pad_pullup_only(uart_config->rx_pin_num);
+        esp_rom_gpio_connect_in_signal(uart_config->rx_pin_num, rx_idx, 0);
+
+#if CONFIG_APPTRACE_LOCK_ENABLE
+        esp_apptrace_lock_init(&uart_data->lock);
+#endif
+
+    }
+
+    uart_data->inited |= 1 << core_id;
+    uart_data->tx_busy = false;
+
+    return ESP_OK;
+
+err_alloc_intr:
+    heap_caps_free(uart_data->tx_msg_buff);
+err_alloc_msg_buff:
+    heap_caps_free(uart_data->tx_ring.buffer);
+err_init_ring_buff:
+    esp_clk_tree_enable_src(UART_SCLK_DEFAULT, false);
+    HP_UART_SRC_CLK_ATOMIC() {
+        uart_ll_sclk_disable(uart_data->hal_ctx.dev);
+    }
+    HP_UART_BUS_CLK_ATOMIC() {
+        uart_ll_enable_bus_clock(uart_config->uart_num, false);
+    }
+    esp_gpio_revoke(gpio_mask);
+    return ret;
+}
+
+static uint8_t *esp_apptrace_uart_up_buffer_get(void *hw_data, uint32_t size, esp_apptrace_tmo_t *tmo)
+{
+    esp_apptrace_uart_data_t *uart_data = hw_data;
+
+    if (size == 0 || size > uart_data->tx_msg_buff_size) {
+        return NULL;
+    }
+
+    if (esp_apptrace_uart_lock(uart_data, tmo) != ESP_OK) {
+        return NULL;
+    }
+
+    if (uart_data->tx_pending_msg_size != 0) {
+        // A previous message was not sent.
+        esp_apptrace_uart_unlock(uart_data);
+        return NULL;
+    }
+
+    uart_data->tx_pending_msg_size = size;
+
+    esp_apptrace_uart_unlock(uart_data);
+
+    return uart_data->tx_msg_buff;
+}
+
+static esp_err_t esp_apptrace_uart_up_buffer_put(void *hw_data, uint8_t *ptr, esp_apptrace_tmo_t *tmo)
+{
+    esp_apptrace_uart_data_t *uart_data = hw_data;
+    esp_apptrace_uart_rb_t *rb = &uart_data->tx_ring;
+
+    esp_err_t res = esp_apptrace_uart_lock(uart_data, tmo);
     if (res != ESP_OK) {
         return res;
     }
-    // We store current out position to handle it without lock
-    volatile int32_t out_position = hw_data->tx_data_buff_out;
 
-    int len_free = APP_TRACE_MAX_TX_BUFF_UART - (hw_data->tx_data_buff_in - out_position);
-    if (out_position > hw_data->tx_data_buff_in) {
-        len_free = out_position - hw_data->tx_data_buff_in;
-    }
-    int check_len = APP_TRACE_MAX_TX_BUFF_UART - hw_data->tx_data_buff_in;
-    if (size <= len_free) {
-        if (check_len >= size) {
-            memcpy(&hw_data->tx_data_buff[hw_data->tx_data_buff_in], data, size);
-            hw_data->tx_data_buff_in += size;
-        } else {
-            memcpy(&hw_data->tx_data_buff[hw_data->tx_data_buff_in], data, APP_TRACE_MAX_TX_BUFF_UART - hw_data->tx_data_buff_in);
-            memcpy(&hw_data->tx_data_buff[0], &data[APP_TRACE_MAX_TX_BUFF_UART - hw_data->tx_data_buff_in], size - (APP_TRACE_MAX_TX_BUFF_UART - hw_data->tx_data_buff_in));
-            hw_data->tx_data_buff_in = size - (APP_TRACE_MAX_TX_BUFF_UART - hw_data->tx_data_buff_in);
-        }
-        if (hw_data->tx_data_buff_in >= APP_TRACE_MAX_TX_BUFF_UART) {
-            hw_data->tx_data_buff_in = 0;
-        }
-    } else {
-        hw_data->circular_buff_overflow = true;
-    }
+    /* Add data to ring buffer */
+    ring_buffer_put(rb, ptr, uart_data->tx_pending_msg_size);
+    uart_data->tx_pending_msg_size = 0;
 
-    if (esp_apptrace_uart_unlock(hw_data) != ESP_OK) {
-        assert(false && "Failed to unlock apptrace data!");
+    esp_apptrace_uart_unlock(uart_data);
+
+    // Trigger transmission if not already in progress
+    if (!uart_data->tx_busy) {
+        uart_data->tx_busy = true;
+        /* Enable TX interrupt */
+        uart_ll_clr_intsts_mask(uart_data->hal_ctx.dev, UART_INTR_TXFIFO_EMPTY);
+        uart_ll_ena_intr_mask(uart_data->hal_ctx.dev, UART_INTR_TXFIFO_EMPTY);
     }
 
     return ESP_OK;
 }
 
-static void send_buff_data(esp_apptrace_uart_data_t *hw_data, esp_apptrace_tmo_t *tmo)
+static void esp_apptrace_uart_down_buffer_config(void *hw_data, uint8_t *buf, uint32_t size)
 {
-    if (hw_data->tx_data_buff_in == hw_data->tx_data_buff_out) {
-        return;
-    }
-    // We store current in position to handle it without lock
-    volatile int32_t in_position = hw_data->tx_data_buff_in;
-    if (in_position > hw_data->tx_data_buff_out) {
-        int bytes_sent = uart_write_bytes(hw_data->port_num, &hw_data->tx_data_buff[hw_data->tx_data_buff_out], in_position - hw_data->tx_data_buff_out);
-        hw_data->tx_data_buff_out += bytes_sent;
-    } else {
-        int bytes_sent = uart_write_bytes(hw_data->port_num, &hw_data->tx_data_buff[hw_data->tx_data_buff_out], APP_TRACE_MAX_TX_BUFF_UART - hw_data->tx_data_buff_out);
-        hw_data->tx_data_buff_out += bytes_sent;
-        if (hw_data->tx_data_buff_out >= APP_TRACE_MAX_TX_BUFF_UART) {
-            hw_data->tx_data_buff_out = 0;
-        }
-    }
+    esp_apptrace_uart_data_t *uart_data = hw_data;
+
+    assert(buf != NULL && "Down buffer cannot be NULL");
+    assert(size > 0 && "Down buffer size must be greater than 0");
+
+    uart_data->rx_msg_buff = buf;
+    uart_data->rx_msg_buff_size = size;
 }
 
-#define APP_TRACE_UART_STOP_WAIT_TMO    1000000 //us
-
-static void esp_apptrace_send_uart_tx_task(void *arg)
+static uint8_t *esp_apptrace_uart_down_buffer_get(void *hw_data, uint32_t *size, esp_apptrace_tmo_t *tmo)
 {
-    esp_apptrace_uart_data_t *hw_data = (esp_apptrace_uart_data_t *)arg;
-    esp_apptrace_tmo_t tmo;
-    esp_apptrace_tmo_init(&tmo, APP_TRACE_UART_STOP_WAIT_TMO);
-
-    vTaskDelay(10);
-    while (1) {
-        send_buff_data(hw_data, &tmo);
-        vTaskDelay(10);
-        if (hw_data->circular_buff_overflow == true) {
-            hw_data->circular_buff_overflow = false;
-            ESP_LOGE(TAG, "Buffer overflow. Please increase UART baudrate, or increase UART TX ring buffer size in menuconfig.");
-        }
-        if (hw_data->message_buff_overflow == true) {
-            hw_data->message_buff_overflow = false;
-            ESP_LOGE(TAG, "Message size more then message buffer!");
-        }
+    esp_apptrace_uart_data_t *uart_data = hw_data;
+    if (!size || *size == 0) {
+        return NULL;
     }
+
+    if (!uart_data->rx_msg_buff) {
+        ESP_APPTRACE_LOGE("RX message buffer is not configured. Call down_buffer_config() first.");
+        return NULL;
+    }
+
+    if (esp_apptrace_uart_lock(uart_data, tmo) != ESP_OK) {
+        return NULL;
+    }
+
+    uint32_t rx_len = uart_ll_get_rxfifo_len(uart_data->hal_ctx.dev);
+    int to_read = MIN(rx_len, MIN(uart_data->rx_msg_buff_size, *size));
+    if (to_read) {
+        uart_hal_read_rxfifo(&uart_data->hal_ctx, uart_data->rx_msg_buff, &to_read);
+    }
+    *size = to_read;
+
+    esp_apptrace_uart_unlock(uart_data);
+
+    return (*size > 0) ? uart_data->rx_msg_buff : NULL;
 }
 
-static const int APP_TRACE_UART_RX_BUF_SIZE = 4024;
-
-static esp_err_t esp_apptrace_uart_init(esp_apptrace_uart_data_t *hw_data)
+static esp_err_t esp_apptrace_uart_down_buffer_put(void *hw_data, uint8_t *ptr, esp_apptrace_tmo_t *tmo)
 {
-    int core_id = esp_cpu_get_core_id();
-    if (core_id == 0) {
-        hw_data->tx_data_buff = (uint8_t *)heap_caps_malloc(APP_TRACE_MAX_TX_BUFF_UART, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
-        if (hw_data->tx_data_buff == NULL) {
-            return ESP_ERR_NO_MEM;
-        }
-        hw_data->tx_data_buff_in = 0;
-        hw_data->tx_data_buff_out = 0;
-        hw_data->tx_msg_buff = (uint8_t *)heap_caps_malloc(APP_TRACE_MAX_TX_MSG_UART, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
-        if (hw_data->tx_msg_buff == NULL) {
-            return ESP_ERR_NO_MEM;
-        }
-        hw_data->tx_msg_buff_size = 0;
-        hw_data->down_buffer_size = 0;
-        hw_data->message_buff_overflow = false;
-        hw_data->circular_buff_overflow = false;
+    (void)hw_data;
+    (void)ptr;
+    (void)tmo;
 
-        assert((hw_data->port_num <= SOC_UART_NUM) && "Not possible to configure UART. Please check selected UART port");
+    /* No action needed - data was already read in get function */
+    return ESP_OK;
+}
 
-        int source_clk = UART_SCLK_DEFAULT;
-#if SOC_UART_LP_NUM > 0
-        if (hw_data->port_num >= SOC_UART_HP_NUM) {
-            source_clk = LP_UART_SCLK_DEFAULT;
-        }
-#endif
+static bool esp_apptrace_uart_host_is_connected(void *hw_data)
+{
+    esp_apptrace_uart_data_t *uart_data = hw_data;
 
-        const uart_config_t uart_config = {
-            .baud_rate = CONFIG_APPTRACE_UART_BAUDRATE,
-            .data_bits = UART_DATA_8_BITS,
-            .parity = UART_PARITY_DISABLE,
-            .stop_bits = UART_STOP_BITS_1,
-            .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
-            .source_clk = source_clk,
-        };
-        ESP_LOGI(TAG, "UART baud rate: %i", CONFIG_APPTRACE_UART_BAUDRATE);
-        // We won't use a buffer for sending data.
-        esp_err_t err = uart_driver_install(hw_data->port_num, APP_TRACE_UART_RX_BUF_SIZE, APP_TRACE_UART_RX_BUF_SIZE, 0, NULL, 0);
-        assert((err == ESP_OK) && "Not possible to install UART. Please check and change menuconfig parameters!");
-        err = uart_param_config(hw_data->port_num, &uart_config);
-        assert((err == ESP_OK) && "Not possible to configure UART. Please check and change menuconfig parameters!");
-        err = uart_set_pin(hw_data->port_num, CONFIG_APPTRACE_UART_TX_GPIO, CONFIG_APPTRACE_UART_RX_GPIO, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
-        assert((err == ESP_OK) && "Not possible to configure UART RX/TX pins. Please check and change menuconfig parameters!");
+    return uart_data->inited & 1;
+}
 
-        int uart_prio = CONFIG_APPTRACE_UART_TASK_PRIO;
-        if (uart_prio >= (configMAX_PRIORITIES - 1)) {
-            uart_prio = configMAX_PRIORITIES - 1;
-        }
-        err = xTaskCreate(esp_apptrace_send_uart_tx_task, "app_trace_uart_tx_task", 2500, hw_data, uart_prio, NULL);
-        assert((err == pdPASS) && "Not possible to configure UART. Not possible to create task!");
+static esp_err_t esp_apptrace_uart_flush_nolock(void *hw_data, uint32_t min_sz, esp_apptrace_tmo_t *tmo)
+{
+    esp_apptrace_uart_data_t *uart_data = hw_data;
+    esp_apptrace_uart_rb_t *rb = &uart_data->tx_ring;
 
-#if CONFIG_APPTRACE_LOCK_ENABLE
-        esp_apptrace_lock_init(&hw_data->lock);
-#endif
+    uint32_t pending = ring_buffer_data_len(rb);
+    if (pending < min_sz) {
+        ESP_APPTRACE_LOGD("Ignore UART flush request for min %" PRIu32 " bytes. Pending bytes: %" PRIu32, min_sz, pending);
+        return ESP_OK;
     }
-    // init UART on this CPU
-    esp_apptrace_uart_hw_init();
-    hw_data->inited |= 1 << core_id;
+
+    /* Trigger transmission if there's data but not busy */
+    if (pending > 0 && !uart_data->tx_busy) {
+        uart_data->tx_busy = true;
+        uart_ll_clr_intsts_mask(uart_data->hal_ctx.dev, UART_INTR_TXFIFO_EMPTY);
+        uart_ll_ena_intr_mask(uart_data->hal_ctx.dev, UART_INTR_TXFIFO_EMPTY);
+    }
+
+    while (uart_data->tx_busy || ring_buffer_data_len(rb) > 0) {
+        if (esp_apptrace_tmo_check(tmo) != ESP_OK) {
+            return ESP_ERR_TIMEOUT;
+        }
+        esp_rom_delay_us(100);
+    }
 
     return ESP_OK;
 }
 
-static uint8_t *esp_apptrace_uart_up_buffer_get(esp_apptrace_uart_data_t *hw_data, uint32_t size, esp_apptrace_tmo_t *tmo)
+static esp_err_t esp_apptrace_uart_flush(void *hw_data, esp_apptrace_tmo_t *tmo)
 {
-    uint8_t *ptr;
-    if (size > APP_TRACE_MAX_TX_MSG_UART) {
-        hw_data->message_buff_overflow = true;
-        return NULL;
-    }
-    if (hw_data->tx_msg_buff_size != 0) {
-        // A previous message was not sent.
-        return NULL;
-    }
-    esp_err_t res = esp_apptrace_uart_lock(hw_data, tmo);
+    esp_apptrace_uart_data_t *uart_data = hw_data;
+    esp_err_t res = esp_apptrace_uart_lock(uart_data, tmo);
     if (res != ESP_OK) {
-        return NULL;
-    }
-    ptr = hw_data->tx_msg_buff;
-    hw_data->tx_msg_buff_size = size;
-
-    // now we can safely unlock apptrace to allow other tasks/ISRs to get other buffers and write their data
-    if (esp_apptrace_uart_unlock(hw_data) != ESP_OK) {
-        assert(false && "Failed to unlock apptrace data!");
-    }
-    return ptr;
-}
-
-static esp_err_t esp_apptrace_uart_up_buffer_put(esp_apptrace_uart_data_t *hw_data, uint8_t *ptr, esp_apptrace_tmo_t *tmo)
-{
-    esp_err_t res = esp_apptrace_send_uart_data(hw_data, (const char *)ptr, hw_data->tx_msg_buff_size, tmo);
-    // Clear size to indicate that we've sent data
-    hw_data->tx_msg_buff_size = 0;
-    return res;
-}
-
-static void esp_apptrace_uart_down_buffer_config(esp_apptrace_uart_data_t *hw_data, uint8_t *buf, uint32_t size)
-{
-    hw_data->down_buffer = (uint8_t *)malloc(size);
-    if (hw_data->down_buffer == NULL) {
-        assert(false && "Failed to allocate apptrace uart down buffer!");
-    }
-    hw_data->down_buffer_size = size;
-}
-
-static uint8_t *esp_apptrace_uart_down_buffer_get(esp_apptrace_uart_data_t *hw_data, uint32_t *size, esp_apptrace_tmo_t *tmo)
-{
-    uint8_t *ptr = NULL;
-
-    if (*size > hw_data->down_buffer_size) {
-        return NULL;
+        return res;
     }
 
-    esp_err_t res = esp_apptrace_uart_lock(hw_data, tmo);
-    if (res != ESP_OK) {
-        return NULL;
-    }
+    esp_err_t ret = esp_apptrace_uart_flush_nolock(hw_data, 0, tmo);
 
-    size_t uart_fifolen = 0;
-    uart_get_buffered_data_len(hw_data->port_num, &uart_fifolen);
-    if (uart_fifolen > 0) {
-        if (*size < uart_fifolen) {
-            uart_fifolen = *size;
-        }
-        *size = uart_fifolen;
-        ptr = hw_data->down_buffer;
-        *size = uart_read_bytes(hw_data->port_num, ptr, uart_fifolen, 0);
-    }
+    esp_apptrace_uart_unlock(uart_data);
 
-    if (esp_apptrace_uart_unlock(hw_data) != ESP_OK) {
-        assert(false && "Failed to unlock apptrace data!");
-    }
-    return ptr;
-}
-
-static esp_err_t esp_apptrace_uart_down_buffer_put(esp_apptrace_uart_data_t *hw_data, uint8_t *ptr, esp_apptrace_tmo_t *tmo)
-{
-    return ESP_OK;
-}
-
-static bool esp_apptrace_uart_host_is_connected(esp_apptrace_uart_data_t *hw_data)
-{
-    return hw_data->inited & 1;
-}
-
-static esp_err_t esp_apptrace_uart_flush_nolock(esp_apptrace_uart_data_t *hw_data, uint32_t min_sz, esp_apptrace_tmo_t *tmo)
-{
-    return ESP_OK;
-}
-
-static esp_err_t esp_apptrace_uart_flush(esp_apptrace_uart_data_t *hw_data, esp_apptrace_tmo_t *tmo)
-{
-    return ESP_OK;
+    return ret;
 }
 
 esp_apptrace_hw_t *esp_apptrace_uart_hw_get(int num, void **data)
 {
-    ESP_LOGD(TAG, "esp_apptrace_uart_hw_get - %i", num);
+    ESP_APPTRACE_LOGD("esp_apptrace_uart_hw_get - %i", num);
 
     static esp_apptrace_uart_data_t s_uart_hw_data;
     static esp_apptrace_hw_t s_uart_hw = {
-        .init = (esp_err_t (*)(void *))esp_apptrace_uart_init,
-        .get_up_buffer = (uint8_t *(*)(void *, uint32_t, esp_apptrace_tmo_t *))esp_apptrace_uart_up_buffer_get,
-        .put_up_buffer = (esp_err_t (*)(void *, uint8_t *, esp_apptrace_tmo_t *))esp_apptrace_uart_up_buffer_put,
-        .flush_up_buffer_nolock = (esp_err_t (*)(void *, uint32_t, esp_apptrace_tmo_t *))esp_apptrace_uart_flush_nolock,
-        .flush_up_buffer = (esp_err_t (*)(void *, esp_apptrace_tmo_t *))esp_apptrace_uart_flush,
-        .down_buffer_config = (void (*)(void *, uint8_t *, uint32_t))esp_apptrace_uart_down_buffer_config,
-        .get_down_buffer = (uint8_t *(*)(void *, uint32_t *, esp_apptrace_tmo_t *))esp_apptrace_uart_down_buffer_get,
-        .put_down_buffer = (esp_err_t (*)(void *, uint8_t *, esp_apptrace_tmo_t *))esp_apptrace_uart_down_buffer_put,
-        .host_is_connected = (bool (*)(void *))esp_apptrace_uart_host_is_connected,
+        .init = esp_apptrace_uart_init,
+        .get_up_buffer = esp_apptrace_uart_up_buffer_get,
+        .put_up_buffer = esp_apptrace_uart_up_buffer_put,
+        .flush_up_buffer_nolock = esp_apptrace_uart_flush_nolock,
+        .flush_up_buffer = esp_apptrace_uart_flush,
+        .down_buffer_config = esp_apptrace_uart_down_buffer_config,
+        .get_down_buffer = esp_apptrace_uart_down_buffer_get,
+        .put_down_buffer = esp_apptrace_uart_down_buffer_put,
+        .host_is_connected = esp_apptrace_uart_host_is_connected,
     };
-    s_uart_hw_data.port_num = num;
     *data = &s_uart_hw_data;
     return &s_uart_hw;
 }

@@ -23,7 +23,7 @@
 #define PAU_REGDMA_LINK_WAIT_RETRY_COUNT    (1000)
 #define PAU_REGDMA_LINK_WAIT_READ_INTERNAL  (32)
 
-static __attribute__((unused)) const char *TAG = "pau_regdma";
+ESP_LOG_ATTR_TAG(TAG, "pau_regdma");
 
 #if !SOC_RCC_IS_INDEPENDENT
 // Reset and Clock Control registers are mixing with other peripherals, so we need to use a critical section
@@ -137,8 +137,10 @@ void IRAM_ATTR pau_regdma_trigger_extra_link_restore(void)
 }
 
 #if SOC_PAU_IN_TOP_DOMAIN
-void pau_regdma_enable_aon_link_entry(bool enable)
+bool IRAM_ATTR pau_regdma_enable_aon_link_entry(bool enable)
 {
+    bool origin_bypass_en = lp_sys_ll_get_pau_aon_bypass();
     lp_sys_ll_set_pau_aon_bypass(enable);
+    return origin_bypass_en;
 }
 #endif

@@ -118,7 +118,7 @@ SPI Flash Size
 
 The SPI flash size is configured by writing a field in the ESP-IDF second stage bootloader image header, flashed at offset 0x1000.
 
-By default, the SPI flash size is detected by ``esptool.py`` when this bootloader is written to flash, and the header is updated with the correct size. Alternatively, it is possible to generate a fixed flash size by setting :ref:`CONFIG_ESPTOOLPY_FLASHSIZE` in the project configuration.
+By default, the SPI flash size is detected by ``esptool`` when this bootloader is written to flash, and the header is updated with the correct size. Alternatively, it is possible to generate a fixed flash size by setting :ref:`CONFIG_ESPTOOLPY_FLASHSIZE` in the project configuration.
 
 If it is necessary to override the configured flash size at runtime, it is possible to set the ``chip_size`` member of the ``g_rom_flashchip`` structure. This size is used by ``esp_flash_*`` functions (in both software & ROM) to check the bounds.
 
@@ -184,7 +184,7 @@ The ``esp_flash_t`` structure holds chip data as well as three important parts o
 Host Driver
 ^^^^^^^^^^^
 
-The host driver relies on an interface (``spi_flash_host_driver_t``) defined in the ``spi_flash_types.h`` (in the ``hal/include/hal`` folder). This interface provides some common functions to communicate with the chip.
+The host driver relies on an interface (``spi_flash_host_driver_t``) defined in the ``spi_flash_types.h`` (in the ``esp_hal_mspi/include/hal`` folder). This interface provides some common functions to communicate with the chip.
 
 In other files of the SPI HAL, some of these functions are implemented with existing {IDF_TARGET_NAME} memory-spi functionalities. However, due to the speed limitations of {IDF_TARGET_NAME}, the HAL layer cannot provide high-speed implementations to some reading commands (so the support for it was dropped). The files (``memspi_host_driver.h`` and ``.c``) implement the high-speed version of these commands with the ``common_command`` function provided in the HAL, and wrap these functions as ``spi_flash_host_driver_t`` for upper layer to use.
 

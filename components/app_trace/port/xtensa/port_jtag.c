@@ -195,10 +195,11 @@ static uint8_t * const s_trax_blocks[] = {
     (uint8_t *)TRACEMEM_BLK1_ADDR
 };
 
-static esp_err_t esp_apptrace_trax_lock(esp_apptrace_trax_data_t *hw_data, esp_apptrace_tmo_t *tmo)
+static esp_err_t esp_apptrace_trax_lock(void *hw_data, esp_apptrace_tmo_t *tmo)
 {
 #if CONFIG_APPTRACE_LOCK_ENABLE
-    esp_err_t ret = esp_apptrace_lock_take(&hw_data->lock, tmo);
+    esp_apptrace_trax_data_t *trax_data = hw_data;
+    esp_err_t ret = esp_apptrace_lock_take(&trax_data->lock, tmo);
     if (ret != ESP_OK) {
         return ESP_FAIL;
     }
@@ -206,11 +207,12 @@ static esp_err_t esp_apptrace_trax_lock(esp_apptrace_trax_data_t *hw_data, esp_a
     return ESP_OK;
 }
 
-static esp_err_t esp_apptrace_trax_unlock(esp_apptrace_trax_data_t *hw_data)
+static esp_err_t esp_apptrace_trax_unlock(void *hw_data)
 {
     esp_err_t ret = ESP_OK;
 #if CONFIG_APPTRACE_LOCK_ENABLE
-    ret = esp_apptrace_lock_give(&hw_data->lock);
+    esp_apptrace_trax_data_t *trax_data = hw_data;
+    ret = esp_apptrace_lock_give(&trax_data->lock);
 #endif
     return ret;
 }
@@ -262,11 +264,12 @@ static inline void esp_apptrace_trax_memory_enable(void)
 /***************************** Apptrace HW iface *****************************************/
 /*****************************************************************************************/
 
-static esp_err_t esp_apptrace_trax_init(esp_apptrace_trax_data_t *hw_data)
+static esp_err_t esp_apptrace_trax_init(void *hw_data, const esp_apptrace_config_t *config)
 {
-    int core_id = esp_cpu_get_core_id();
+    esp_apptrace_trax_data_t *trax_data = hw_data;
 
     // 'esp_apptrace_trax_init()' is called on every core, so ensure to do main initialization only once
+    int core_id = esp_cpu_get_core_id();
     if (core_id == 0) {
         esp_apptrace_mem_block_t mem_blocks_cfg[2] = {
             {
@@ -278,87 +281,94 @@ static esp_err_t esp_apptrace_trax_init(esp_apptrace_trax_data_t *hw_data)
                 .sz = ESP_APPTRACE_TRAX_BLOCK_SIZE
             },
         };
-        esp_err_t res = esp_apptrace_membufs_init(&hw_data->membufs, mem_blocks_cfg);
+        trax_data->membufs.header_size = ESP_APPTRACE_HEADER_SIZE_32;
+        esp_err_t res = esp_apptrace_membufs_init(&trax_data->membufs, mem_blocks_cfg);
         if (res != ESP_OK) {
             ESP_APPTRACE_LOGE("Failed to init membufs proto (%d)!", res);
             return res;
         }
 #if CONFIG_APPTRACE_LOCK_ENABLE
-        esp_apptrace_lock_init(&hw_data->lock);
+        esp_apptrace_lock_init(&trax_data->lock);
 #endif
         esp_apptrace_trax_memory_enable();
         esp_apptrace_trax_select_memory_block(0);
     }
     // init TRAX on this CPU
     esp_apptrace_trax_hw_init();
-    hw_data->inited |= 1 << core_id;
+    trax_data->inited |= 1 << core_id;
 
     return ESP_OK;
 }
 
-static uint8_t *esp_apptrace_trax_up_buffer_get(esp_apptrace_trax_data_t *hw_data, uint32_t size, esp_apptrace_tmo_t *tmo)
+static uint8_t *esp_apptrace_trax_up_buffer_get(void *hw_data, uint32_t size, esp_apptrace_tmo_t *tmo)
 {
-    uint8_t *ptr;
+    esp_apptrace_trax_data_t *trax_data = hw_data;
 
-    if (!ESP_APPTRACE_TRAX_INITED(hw_data)) {
+    if (!ESP_APPTRACE_TRAX_INITED(trax_data)) {
         return NULL;
     }
-    esp_err_t res = esp_apptrace_trax_lock(hw_data, tmo);
+    esp_err_t res = esp_apptrace_trax_lock(trax_data, tmo);
     if (res != ESP_OK) {
         return NULL;
     }
 
-    ptr = esp_apptrace_membufs_up_buffer_get(&hw_data->membufs, size, tmo);
+    uint8_t *ptr = esp_apptrace_membufs_up_buffer_get(&trax_data->membufs, size, tmo);
 
     // now we can safely unlock apptrace to allow other tasks/ISRs to get other buffers and write their data
-    if (esp_apptrace_trax_unlock(hw_data) != ESP_OK) {
+    if (esp_apptrace_trax_unlock(trax_data) != ESP_OK) {
         assert(false && "Failed to unlock apptrace data!");
     }
     return ptr;
 }
 
-static esp_err_t esp_apptrace_trax_up_buffer_put(esp_apptrace_trax_data_t *hw_data, uint8_t *ptr, esp_apptrace_tmo_t *tmo)
+static esp_err_t esp_apptrace_trax_up_buffer_put(void *hw_data, uint8_t *ptr, esp_apptrace_tmo_t *tmo)
 {
-    if (!ESP_APPTRACE_TRAX_INITED(hw_data)) {
+    esp_apptrace_trax_data_t *trax_data = hw_data;
+
+    if (!ESP_APPTRACE_TRAX_INITED(trax_data)) {
         return ESP_ERR_INVALID_STATE;
     }
     // Can avoid locking because esp_apptrace_membufs_up_buffer_put() just modifies buffer's header
-    esp_err_t res = esp_apptrace_membufs_up_buffer_put(&hw_data->membufs, ptr, tmo);
+    esp_err_t res = esp_apptrace_membufs_up_buffer_put(&trax_data->membufs, ptr, tmo);
     return res;
 }
 
-static void esp_apptrace_trax_down_buffer_config(esp_apptrace_trax_data_t *hw_data, uint8_t *buf, uint32_t size)
+static void esp_apptrace_trax_down_buffer_config(void *hw_data, uint8_t *buf, uint32_t size)
 {
-    if (!ESP_APPTRACE_TRAX_INITED(hw_data)) {
+    esp_apptrace_trax_data_t *trax_data = hw_data;
+
+    if (!ESP_APPTRACE_TRAX_INITED(trax_data)) {
         return;
     }
-    esp_apptrace_membufs_down_buffer_config(&hw_data->membufs, buf, size);
+    esp_apptrace_membufs_down_buffer_config(&trax_data->membufs, buf, size);
 }
 
-static uint8_t *esp_apptrace_trax_down_buffer_get(esp_apptrace_trax_data_t *hw_data, uint32_t *size, esp_apptrace_tmo_t *tmo)
+static uint8_t *esp_apptrace_trax_down_buffer_get(void *hw_data, uint32_t *size, esp_apptrace_tmo_t *tmo)
 {
-    uint8_t *ptr;
+    esp_apptrace_trax_data_t *trax_data = hw_data;
 
-    if (!ESP_APPTRACE_TRAX_INITED(hw_data)) {
+    if (!ESP_APPTRACE_TRAX_INITED(trax_data)) {
         return NULL;
     }
-    esp_err_t res = esp_apptrace_trax_lock(hw_data, tmo);
+    esp_err_t res = esp_apptrace_trax_lock(trax_data, tmo);
     if (res != ESP_OK) {
         return NULL;
     }
 
-    ptr = esp_apptrace_membufs_down_buffer_get(&hw_data->membufs, size, tmo);
+    uint8_t *ptr = esp_apptrace_membufs_down_buffer_get(&trax_data->membufs, size, tmo);
 
     // now we can safely unlock apptrace to allow other tasks/ISRs to get other buffers and write their data
-    if (esp_apptrace_trax_unlock(hw_data) != ESP_OK) {
+    if (esp_apptrace_trax_unlock(trax_data) != ESP_OK) {
         assert(false && "Failed to unlock apptrace data!");
     }
     return ptr;
 }
 
-static esp_err_t esp_apptrace_trax_down_buffer_put(esp_apptrace_trax_data_t *hw_data, uint8_t *ptr, esp_apptrace_tmo_t *tmo)
+static esp_err_t esp_apptrace_trax_down_buffer_put(void *hw_data, uint8_t *ptr, esp_apptrace_tmo_t *tmo)
 {
-    if (!ESP_APPTRACE_TRAX_INITED(hw_data)) {
+    esp_apptrace_trax_data_t *trax_data = hw_data;
+
+    if (!ESP_APPTRACE_TRAX_INITED(trax_data)) {
         return ESP_ERR_INVALID_STATE;
     }
     // Can avoid locking because esp_apptrace_membufs_down_buffer_put() does nothing
@@ -367,7 +377,7 @@ static esp_err_t esp_apptrace_trax_down_buffer_put(esp_apptrace_trax_data_t *hw_
         return res;
     }*/
 
-    esp_err_t res = esp_apptrace_membufs_down_buffer_put(&hw_data->membufs, ptr, tmo);
+    esp_err_t res = esp_apptrace_membufs_down_buffer_put(&trax_data->membufs, ptr, tmo);
 
     // now we can safely unlock apptrace to allow other tasks/ISRs to get other buffers and write their data
     /*if (esp_apptrace_trax_unlock(hw_data) != ESP_OK) {
@@ -376,36 +386,42 @@ static esp_err_t esp_apptrace_trax_down_buffer_put(esp_apptrace_trax_data_t *hw_
     return res;
 }
 
-static bool esp_apptrace_trax_host_is_connected(esp_apptrace_trax_data_t *hw_data)
+static bool esp_apptrace_trax_host_is_connected(void *hw_data)
 {
-    if (!ESP_APPTRACE_TRAX_INITED(hw_data)) {
+    esp_apptrace_trax_data_t *trax_data = hw_data;
+
+    if (!ESP_APPTRACE_TRAX_INITED(trax_data)) {
         return false;
     }
     return eri_read(ESP_APPTRACE_TRAX_CTRL_REG) & ESP_APPTRACE_TRAX_HOST_CONNECT ? true : false;
 }
 
-static esp_err_t esp_apptrace_trax_flush_nolock(esp_apptrace_trax_data_t *hw_data, uint32_t min_sz, esp_apptrace_tmo_t *tmo)
+static esp_err_t esp_apptrace_trax_flush_nolock(void *hw_data, uint32_t min_sz, esp_apptrace_tmo_t *tmo)
 {
-    if (!ESP_APPTRACE_TRAX_INITED(hw_data)) {
+    esp_apptrace_trax_data_t *trax_data = hw_data;
+
+    if (!ESP_APPTRACE_TRAX_INITED(trax_data)) {
         return ESP_ERR_INVALID_STATE;
     }
-    return esp_apptrace_membufs_flush_nolock(&hw_data->membufs, min_sz, tmo);
+    return esp_apptrace_membufs_flush_nolock(&trax_data->membufs, min_sz, tmo);
 }
 
-static esp_err_t esp_apptrace_trax_flush(esp_apptrace_trax_data_t *hw_data, esp_apptrace_tmo_t *tmo)
+static esp_err_t esp_apptrace_trax_flush(void *hw_data, esp_apptrace_tmo_t *tmo)
 {
-    if (!ESP_APPTRACE_TRAX_INITED(hw_data)) {
+    esp_apptrace_trax_data_t *trax_data = hw_data;
+
+    if (!ESP_APPTRACE_TRAX_INITED(trax_data)) {
         return ESP_ERR_INVALID_STATE;
     }
-    esp_err_t res = esp_apptrace_trax_lock(hw_data, tmo);
+    esp_err_t res = esp_apptrace_trax_lock(trax_data, tmo);
     if (res != ESP_OK) {
         return res;
     }
 
-    res = esp_apptrace_membufs_flush_nolock(&hw_data->membufs, 0, tmo);
+    res = esp_apptrace_membufs_flush_nolock(&trax_data->membufs, 0, tmo);
 
     // now we can safely unlock apptrace to allow other tasks/ISRs to get other buffers and write their data
-    if (esp_apptrace_trax_unlock(hw_data) != ESP_OK) {
+    if (esp_apptrace_trax_unlock(trax_data) != ESP_OK) {
         assert(false && "Failed to unlock apptrace data!");
     }
     return res;
@@ -494,6 +510,12 @@ static bool esp_apptrace_trax_host_data_pending(void)
     return (ctrl_reg & ESP_APPTRACE_TRAX_HOST_DATA) ? true : false;
 }
 
+static void esp_apptrace_trax_set_header_size(void *hw_data, esp_apptrace_header_size_t header_size)
+{
+    esp_apptrace_trax_data_t *trax_data = hw_data;
+    trax_data->membufs.header_size = header_size;
+}
+
 esp_apptrace_hw_t *esp_apptrace_jtag_hw_get(void **data)
 {
     static esp_apptrace_membufs_proto_hw_t s_trax_proto_hw = {
@@ -508,15 +530,16 @@ esp_apptrace_hw_t *esp_apptrace_jtag_hw_get(void **data)
         },
     };
     static esp_apptrace_hw_t s_trax_hw = {
-        .init = (esp_err_t (*)(void *))esp_apptrace_trax_init,
-        .get_up_buffer = (uint8_t *(*)(void *, uint32_t, esp_apptrace_tmo_t *))esp_apptrace_trax_up_buffer_get,
-        .put_up_buffer = (esp_err_t (*)(void *, uint8_t *, esp_apptrace_tmo_t *))esp_apptrace_trax_up_buffer_put,
-        .flush_up_buffer_nolock = (esp_err_t (*)(void *, uint32_t, esp_apptrace_tmo_t *))esp_apptrace_trax_flush_nolock,
-        .flush_up_buffer = (esp_err_t (*)(void *, esp_apptrace_tmo_t *))esp_apptrace_trax_flush,
-        .down_buffer_config = (void (*)(void *, uint8_t *, uint32_t))esp_apptrace_trax_down_buffer_config,
-        .get_down_buffer = (uint8_t *(*)(void *, uint32_t *, esp_apptrace_tmo_t *))esp_apptrace_trax_down_buffer_get,
-        .put_down_buffer = (esp_err_t (*)(void *, uint8_t *, esp_apptrace_tmo_t *))esp_apptrace_trax_down_buffer_put,
-        .host_is_connected = (bool (*)(void *))esp_apptrace_trax_host_is_connected,
+        .init = esp_apptrace_trax_init,
+        .get_up_buffer = esp_apptrace_trax_up_buffer_get,
+        .put_up_buffer = esp_apptrace_trax_up_buffer_put,
+        .flush_up_buffer_nolock = esp_apptrace_trax_flush_nolock,
+        .flush_up_buffer = esp_apptrace_trax_flush,
+        .down_buffer_config = esp_apptrace_trax_down_buffer_config,
+        .get_down_buffer = esp_apptrace_trax_down_buffer_get,
+        .put_down_buffer = esp_apptrace_trax_down_buffer_put,
+        .host_is_connected = esp_apptrace_trax_host_is_connected,
+        .set_header_size = esp_apptrace_trax_set_header_size,
     };
     *data = &s_trax_hw_data;
     return &s_trax_hw;

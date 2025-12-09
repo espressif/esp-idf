@@ -132,7 +132,6 @@ The default stack sizes for these tasks are usually set conservatively high to a
    :SOC_BT_SUPPORTED: - :doc:`/api-reference/bluetooth/nimble/index` has task stack size :ref:`CONFIG_BT_NIMBLE_HOST_TASK_STACK_SIZE`.
    - The Ethernet driver creates a task for the MAC to receive Ethernet frames. If using the default config ``ETH_MAC_DEFAULT_CONFIG`` then the task stack size is 4 KB. This setting can be changed by passing a custom :cpp:class:`eth_mac_config_t` struct when initializing the Ethernet MAC.
    - FreeRTOS idle task stack size is configured by :ref:`CONFIG_FREERTOS_IDLE_TASK_STACKSIZE`.
-   - If using the :doc:`/api-reference/protocols/mqtt` component, it creates a task with stack size configured by :ref:`CONFIG_MQTT_TASK_STACK_SIZE`. MQTT stack size can also be configured using ``task_stack`` field of :cpp:class:`esp_mqtt_client_config_t`.
    - To see how to optimize RAM usage when using ``mDNS``, please check `Minimizing RAM Usage <https://docs.espressif.com/projects/esp-protocols/mdns/docs/latest/en/index.html#minimizing-ram-usage>`__.
 
 .. note::
@@ -184,7 +183,6 @@ The following options will reduce IRAM usage of some ESP-IDF features:
     - Enable :ref:`CONFIG_RINGBUF_PLACE_ISR_FUNCTIONS_INTO_FLASH`. This option is not safe to use if the ISR ringbuf functions are used from an IRAM interrupt context, e.g., if :ref:`CONFIG_UART_ISR_IN_IRAM` is enabled. For the ESP-IDF drivers where this is the case, you can get an error at run-time when installing the driver in question.
     :SOC_WIFI_SUPPORTED: - Disabling Wi-Fi options :ref:`CONFIG_ESP_WIFI_IRAM_OPT` and/or :ref:`CONFIG_ESP_WIFI_RX_IRAM_OPT` options frees available IRAM at the cost of Wi-Fi performance.
     :CONFIG_ESP_ROM_HAS_SPI_FLASH: - Enabling :ref:`CONFIG_SPI_FLASH_ROM_IMPL` frees some IRAM but means that esp_flash bugfixes and new flash chip support are not available, see :doc:`/api-reference/peripherals/spi_flash/spi_flash_idf_vs_rom` for details.
-    :esp32: - Disabling :ref:`CONFIG_SPI_FLASH_ROM_DRIVER_PATCH` frees some IRAM but is only available in some flash configurations, see the configuration item help text.
     :esp32: - If the application uses PSRAM and is based on ESP32 rev. 3 (ECO3), setting :ref:`CONFIG_ESP32_REV_MIN` to ``3`` disables PSRAM bug workarounds, saving 10 KB or more of IRAM.
     - Disabling :ref:`CONFIG_ESP_EVENT_POST_FROM_IRAM_ISR` prevents posting ``esp_event`` events from :ref:`iram-safe-interrupt-handlers` but saves some IRAM.
     :SOC_GPSPI_SUPPORTED: - Disabling :ref:`CONFIG_SPI_MASTER_ISR_IN_IRAM` prevents spi_master interrupts from being serviced while writing to flash, and may otherwise reduce spi_master performance, but saves some IRAM.

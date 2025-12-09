@@ -11,13 +11,16 @@ function(__idf_build_setup_flash_targets)
     idf_build_get_property(build_dir BUILD_DIR)
     idf_build_get_property(project_bin PROJECT_BIN)
     partition_table_get_partition_info(app_partition_offset "--partition-boot-default" "offset")
+
+    # Create app-flash target for flashing just the application
     esptool_py_custom_target(app-flash app "app")
-
     esptool_py_flash_target_image(app-flash app "${app_partition_offset}" "${build_dir}/${project_bin}")
-    esptool_py_flash_target_image(flash app "${app_partition_offset}" "${build_dir}/${project_bin}")
 
-    # Setup the main flash target and dependencies
-    __esptool_py_setup_main_flash_target()
+    # Create main flash target for flashing the entire system (bootloader + partition table + app)
+    # Note: Bootloader and partition table components add their own dependencies to this flash target
+    #       in their respective CMakeLists.txt files
+    esptool_py_custom_target(flash project "app" FILENAME_PREFIX "flash")
+    esptool_py_flash_target_image(flash app "${app_partition_offset}" "${build_dir}/${project_bin}")
 
     # Generate flasher_args.json configuration files
     __idf_build_generate_flasher_args()
@@ -33,8 +36,9 @@ function(__idf_build_generate_flasher_args)
 
     idf_build_get_property(target IDF_TARGET)
     set(ESPTOOLPY_CHIP "${target}")
-    set(ESPTOOLPY_BEFORE "${CONFIG_ESPTOOLPY_BEFORE}")
-    set(ESPTOOLPY_AFTER  "${CONFIG_ESPTOOLPY_AFTER}")
+    # Hyphenate reset modes for esptool v5
+    string(REPLACE "_" "-" ESPTOOLPY_BEFORE "${CONFIG_ESPTOOLPY_BEFORE}")
+    string(REPLACE "_" "-" ESPTOOLPY_AFTER  "${CONFIG_ESPTOOLPY_AFTER}")
     if(CONFIG_ESPTOOLPY_NO_STUB)
         set(ESPTOOLPY_WITH_STUB false)
     else()
@@ -43,7 +47,7 @@ function(__idf_build_generate_flasher_args)
 
     if(CONFIG_SECURE_BOOT OR CONFIG_SECURE_FLASH_ENC_ENABLED)
         # If security enabled then override post flash option
-        set(ESPTOOLPY_AFTER "no_reset")
+        set(ESPTOOLPY_AFTER "no-reset")
     endif()
 
     idf_component_get_property(ESPFLASHMODE esptool_py ESPFLASHMODE)

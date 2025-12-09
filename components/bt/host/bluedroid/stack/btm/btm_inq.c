@@ -240,13 +240,6 @@ tBTM_STATUS BTM_SetDiscoverability (UINT16 inq_mode, UINT16 window, UINT16 inter
         scan_mode |= HCI_PAGE_SCAN_ENABLED;
     }
 
-    if (btsnd_hcic_write_scan_enable (scan_mode)) {
-        btm_cb.btm_inq_vars.discoverable_mode &= (~BTM_DISCOVERABLE_MASK);
-        btm_cb.btm_inq_vars.discoverable_mode |= inq_mode;
-    } else {
-        return (BTM_NO_RESOURCES);
-    }
-
     /* Change the service class bit if mode has changed */
     p_cod = BTM_ReadDeviceClass();
     BTM_COD_SERVICE_CLASS(service_class, p_cod);
@@ -264,6 +257,13 @@ tBTM_STATUS BTM_SetDiscoverability (UINT16 inq_mode, UINT16 window, UINT16 inter
 
         FIELDS_TO_COD(cod, reserved_2, minor, major, service_class);
         (void) BTM_SetDeviceClass (cod);
+    }
+
+    if (btsnd_hcic_write_scan_enable (scan_mode)) {
+        btm_cb.btm_inq_vars.discoverable_mode &= (~BTM_DISCOVERABLE_MASK);
+        btm_cb.btm_inq_vars.discoverable_mode |= inq_mode;
+    } else {
+        return (BTM_NO_RESOURCES);
     }
 
     return (BTM_SUCCESS);
@@ -2450,7 +2450,7 @@ UINT8 *BTM_CheckEirData( UINT8 *p_eir, UINT8 type, UINT8 *p_length )
 
         /* Break loop if eir data is in an incorrect format,
            as it may lead to memory overflow */
-        if ( p >= p_eir + HCI_EXT_INQ_RESPONSE_LEN ) {
+        if ( p >= p_eir + HCI_EXT_INQ_RESPONSE_LEN - 1 ) {
             break;
         }
 

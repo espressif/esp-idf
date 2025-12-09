@@ -153,22 +153,22 @@
             |supported|
     * - .. centered:: |5.1|
       - Angle of Arrival (AoA)/Angle of Departure (AoD)
-      - .. only:: esp32h2
+      - .. only:: esp32h2 or esp32c5 or esp32c61
 
             |experimental|
-        .. only:: not esp32h2
+        .. only:: esp32 or esp32c3 or esp32s3 or esp32c6 or esp32c2
 
             |unsupported|
-      - .. only:: esp32h2
+      - .. only:: esp32h2 or esp32c5 or esp32c61
 
             |experimental|
-        .. only:: not esp32h2
+        .. only::  esp32 or esp32c3 or esp32s3 or esp32c6 or esp32c2
 
             |unsupported|
-      - .. only:: esp32h2
+      - .. only:: esp32h2 or esp32c5 or esp32c61
 
             |experimental|
-        .. only:: not esp32h2
+        .. only:: esp32 or esp32c3 or esp32s3 or esp32c6 or esp32c2
 
             |unsupported|
     * -
@@ -178,7 +178,7 @@
       - |experimental|
     * -
       - Randomized Advertising Channel Indexing
-      - |unsupported|
+      - |developing202603|
       - |NA|
       - |NA|
     * -
@@ -188,19 +188,19 @@
             |unsupported|
         .. only:: esp32c6 or esp32h2 or esp32c2 or esp32c5 or esp32c61
 
-            |experimental|
+            |supported|
       - .. only:: esp32 or esp32c3 or esp32s3
 
             |unsupported|
         .. only:: esp32c6 or esp32h2 or esp32c2 or esp32c5 or esp32c61
 
-            |experimental|
+            |supported|
       - .. only:: esp32 or esp32c3 or esp32s3
 
             |unsupported|
         .. only:: esp32c6 or esp32h2 or esp32c2 or esp32c5 or esp32c61
 
-            |experimental|
+            |supported|
     * - .. centered:: |5.2|
       - LE Isochronous Channels (BIS/CIS)
       - |unsupported|
@@ -222,7 +222,7 @@
       - .. only:: esp32 or esp32c2
 
             |unsupported|
-        .. only:: esp32c6 or esp32h2 or esp32c3 or esp32s3 or esp32c5 or esp31c61
+        .. only:: esp32c6 or esp32h2 or esp32c3 or esp32s3 or esp32c5 or esp32c61
 
             |experimental|
       - .. only:: esp32 or esp32c2
@@ -253,22 +253,22 @@
             |supported|
     * -
       - LE Enhanced Connection Update (Connection Subrating)
-      - .. only:: esp32 or esp32c6 or esp32c2 or esp32h2 or esp32c5 or esp32c61
+      - .. only:: esp32
 
             |unsupported|
-        .. only:: esp32c3 or esp32s3
+        .. only:: esp32c3 or esp32s3 or esp32c6 or esp32c2 or esp32h2 or esp32c5 or esp32c61
 
             |experimental|
-      - .. only:: esp32 or esp32c6 or esp32c2 or esp32h2 or esp32c5 or esp32c61
+      - .. only:: esp32
 
             |unsupported|
-        .. only:: esp32c3 or esp32s3
+        .. only:: esp32c3 or esp32s3 or esp32c6 or esp32c2 or esp32h2 or esp32c5 or esp32c61
 
             |experimental|
-      - .. only:: esp32 or esp32c6 or esp32c2 or esp32h2 or esp32c5 or esp32c61
+      - .. only:: esp32
 
             |unsupported|
-        .. only:: esp32c3 or esp32s3
+        .. only:: esp32c3 or esp32s3 or esp32c6 or esp32c2 or esp32h2 or esp32c5 or esp32c61
 
             |experimental|
     * -
@@ -293,22 +293,22 @@
             |experimental|
     * - .. centered:: |5.4|
       - Advertising Coding Selection
-      - .. only:: esp32 or esp32c6 or esp32c2 or esp32h2 or esp32c5 or esp32c61
+      - .. only:: esp32
 
             |unsupported|
-        .. only:: esp32c3 or esp32s3
+        .. only:: esp32c3 or esp32s3 or esp32c6 or esp32c2 or esp32h2 or esp32c5 or esp32c61
 
             |experimental|
-      - .. only:: esp32 or esp32c6 or esp32c2 or esp32h2 or esp32c5 or esp31c61
+      - .. only:: esp32
 
             |unsupported|
-        .. only:: esp32c3 or esp32s3
+        .. only:: esp32c3 or esp32s3 or esp32c6 or esp32c2 or esp32h2 or esp32c5 or esp32c61
 
-            |developing202512|
-      - .. only:: esp32 or esp32c6 or esp32c2 or esp32h2 or esp32c5 or esp32c61
+            |experimental|
+      - .. only:: esp32
 
             |unsupported|
-        .. only:: esp32c3 or esp32s3
+        .. only:: esp32c3 or esp32s3 or esp32c6 or esp32c2 or esp32h2 or esp32c5 or esp32c61
 
             |experimental|
     * -
@@ -323,6 +323,81 @@
       - |experimental|
     * -
       - Periodic Advertising with Responses
+      - .. only:: esp32 or esp32c3 or esp32s3
+
+            |unsupported|
+        .. only:: esp32c6 or esp32c2 or esp32h2 or esp32c5 or esp32c61
+
+            |experimental|
+      - .. only:: esp32 or esp32c3 or esp32s3
+
+            |unsupported|
+        .. only:: esp32c6 or esp32c2 or esp32h2 or esp32c5 or esp32c61
+
+            |experimental|
+      - .. only:: esp32 or esp32c3 or esp32s3
+
+            |unsupported|
+        .. only:: esp32c6 or esp32c2 or esp32h2 or esp32c5 or esp32c61
+
+            |experimental|
+    * - .. centered:: |6.0|
+      - Channel Sounding
+      - |unsupported|
+      - |unsupported|
+      - |unsupported|
+    * -
+      - LL Extended Feature Set
+      - .. only:: esp32 or esp32c3 or esp32s3
+
+            |unsupported|
+        .. only:: esp32c6 or esp32c2 or esp32h2 or esp32c5 or esp32c61
+
+            |developing202606|
+      - .. only:: esp32 or esp32c3 or esp32s3
+
+            |unsupported|
+        .. only:: esp32c6 or esp32c2 or esp32h2 or esp32c5 or esp32c61
+
+            |developing202606|
+      - .. only:: esp32 or esp32c3 or esp32s3
+
+            |unsupported|
+        .. only:: esp32c6 or esp32c2 or esp32h2 or esp32c5 or esp32c61
+
+            |developing202606|
+    * -
+      - Decision-Based Advertising Filtering
+      - |unsupported|
+      - |unsupported|
+      - |unsupported|
+    * -
+      - Enhancements for ISOAL
+      - |unsupported|
+      - |unsupported|
+      - |unsupported|
+    * -
+      - Monitoring Advertisers
+      - .. only:: esp32 or esp32c3 or esp32s3
+
+            |unsupported|
+        .. only:: esp32c6 or esp32c2 or esp32h2 or esp32c5 or esp32c61
+
+            |developing202606|
+      - .. only:: esp32 or esp32c3 or esp32s3
+
+            |unsupported|
+        .. only:: esp32c6 or esp32c2 or esp32h2 or esp32c5 or esp32c61
+
+            |developing202606|
+      - .. only:: esp32 or esp32c3 or esp32s3
+
+            |unsupported|
+        .. only:: esp32c6 or esp32c2 or esp32h2 or esp32c5 or esp32c61
+
+            |developing202606|
+    * -
+      - Frame Space Update
       - |unsupported|
       - |unsupported|
       - |unsupported|
@@ -346,6 +421,12 @@
 .. |developing202512| image:: ../../../_static/ble/feature_status/developing202512.svg
    :class: align-center
    :width: 120px
+.. |developing202603| image:: ../../../_static/ble/feature_status/developing202603.svg
+   :class: align-center
+   :width: 125px
+.. |developing202606| image:: ../../../_static/ble/feature_status/developing202606.svg
+   :class: align-center
+   :width: 125px
 .. |unsupported| image:: ../../../_static/ble/feature_status/unsupported.svg
    :class: align-center
    :width: 75px
@@ -366,3 +447,4 @@
 .. |5.2| replace:: `5.2 <https://www.bluetooth.com/specifications/specs/core-specification-5-2/>`__
 .. |5.3| replace:: `5.3 <https://www.bluetooth.com/specifications/specs/core-specification-5-3/>`__
 .. |5.4| replace:: `5.4 <https://www.bluetooth.com/specifications/specs/core-specification-5-4/>`__
+.. |6.0| replace:: `6.0 <https://www.bluetooth.com/specifications/specs/core-specification-6-0/>`__

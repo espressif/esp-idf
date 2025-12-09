@@ -27,11 +27,12 @@ menu "Example Configuration"
         config EXAMPLE_EXT1_WAKEUP_PIN_1
             int "Enable wakeup from PIN_1"
             depends on !IDF_TARGET_ESP32
-            default 2 if !IDF_TARGET_ESP32H2
-            default 10 if IDF_TARGET_ESP32H2
+            default 2 if !IDF_TARGET_ESP32H2 && !IDF_TARGET_ESP32H21
+            default 10 if IDF_TARGET_ESP32H2 || IDF_TARGET_ESP32H21
             range 0 7 if IDF_TARGET_ESP32C6
             range 0 6 if IDF_TARGET_ESP32C61 || IDF_TARGET_ESP32C5
             range 7 14 if IDF_TARGET_ESP32H2
+            range 5 11 if IDF_TARGET_ESP32H21
             range 0 21 if IDF_TARGET_ESP32S2
             range 0 21 if IDF_TARGET_ESP32S3
             range 0 15 if IDF_TARGET_ESP32P4
@@ -103,11 +104,12 @@ menu "Example Configuration"
         config EXAMPLE_EXT1_WAKEUP_PIN_2
             int "Enable wakeup from PIN_2"
             depends on !IDF_TARGET_ESP32
-            default 4 if !IDF_TARGET_ESP32H2
-            default 11 if IDF_TARGET_ESP32H2
+            default 4 if !IDF_TARGET_ESP32H2 && !IDF_TARGET_ESP32H21
+            default 11 if IDF_TARGET_ESP32H2 || IDF_TARGET_ESP32H2
             range 0 7 if IDF_TARGET_ESP32C6
             range 0 6 if IDF_TARGET_ESP32C61 || IDF_TARGET_ESP32C5
             range 7 14 if IDF_TARGET_ESP32H2
+            range 5 11 if IDF_TARGET_ESP32H21
             range 0 21 if IDF_TARGET_ESP32S2
             range 0 21 if IDF_TARGET_ESP32S3
             range 0 15 if IDF_TARGET_ESP32P4

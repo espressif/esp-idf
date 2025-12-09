@@ -24,30 +24,57 @@ To get the list of your image segments, please run the following command:
 
 .. code-block::
 
-    esptool.py --chip {IDF_TARGET_PATH_NAME} image_info build/app.bin
+    esptool --chip {IDF_TARGET_PATH_NAME} image-info build/app.bin
 
 .. code-block::
 
-    esptool.py v2.3.1
-    Image version: 1
-    Entry point: 40080ea4
-    13 segments
+    esptool v5.0.2
+    Image size: 137312 bytes
 
-    Segment 1: len 0x13ce0 load 0x3f400020 file_offs 0x00000018 SOC_DROM
-    Segment 2: len 0x00000 load 0x3ff80000 file_offs 0x00013d00 SOC_RTC_DRAM
-    Segment 3: len 0x00000 load 0x3ff80000 file_offs 0x00013d08 SOC_RTC_DRAM
-    Segment 4: len 0x028e0 load 0x3ffb0000 file_offs 0x00013d10 DRAM
-    Segment 5: len 0x00000 load 0x3ffb28e0 file_offs 0x000165f8 DRAM
-    Segment 6: len 0x00400 load 0x40080000 file_offs 0x00016600 SOC_IRAM
-    Segment 7: len 0x09600 load 0x40080400 file_offs 0x00016a08 SOC_IRAM
-    Segment 8: len 0x62e4c load 0x400d0018 file_offs 0x00020010 SOC_IROM
-    Segment 9: len 0x06cec load 0x40089a00 file_offs 0x00082e64 SOC_IROM
-    Segment 10: len 0x00000 load 0x400c0000 file_offs 0x00089b58 SOC_RTC_IRAM
-    Segment 11: len 0x00004 load 0x50000000 file_offs 0x00089b60 SOC_RTC_DATA
-    Segment 12: len 0x00000 load 0x50000004 file_offs 0x00089b6c SOC_RTC_DATA
-    Segment 13: len 0x00000 load 0x50000004 file_offs 0x00089b74 SOC_RTC_DATA
-    Checksum: e8 (valid)
-    Validation Hash: 407089ca0eae2bbf83b4120979d3354b1c938a49cb7a0c997f240474ef2ec76b (valid)
+    ESP32 Image Header
+    ==================
+    Image version: 1
+    Entry point: 0x40081214
+    Segments: 6
+    Flash size: 2MB
+    Flash freq: 40m
+    Flash mode: DIO
+
+    ESP32 Extended Image Header
+    ===========================
+    WP pin: 0xee (disabled)
+    Flash pins drive settings: clk_drv: 0x0, q_drv: 0x0, d_drv: 0x0, cs0_drv: 0x0, hd_drv: 0x0, wp_drv: 0x0
+    Chip ID: 0 (ESP32)
+    Minimal chip revision: v0.0, (legacy min_rev = 0)
+    Maximal chip revision: v3.99
+
+    Segments Information
+    ====================
+    Segment   Length   Load addr   File offs  Memory types
+    -------  -------  ----------  ----------  ------------
+        0  0x0711c  0x3f400020  0x00000018  DROM
+        1  0x0241c  0x3ffb0000  0x0000713c  BYTE_ACCESSIBLE, DRAM
+        2  0x06ab0  0x40080000  0x00009560  IRAM
+        3  0x0b724  0x400d0020  0x00010018  IROM
+        4  0x060c0  0x40086ab0  0x0001b744  IRAM
+        5  0x00024  0x50000000  0x0002180c  RTC_DATA
+
+    ESP32 Image Footer
+    ==================
+    Checksum: 0x4b (valid)
+    Validation hash: 8808f05a62fe1a6e1e6830414b95229454b012eb2001511ca434d34e9e63c962 (valid)
+
+    Application Information
+    =======================
+    Project name: hello_world
+    App version: qa-test-esp32c61-master-2025070
+    Compile time: Aug 12 2025 16:36:40
+    ELF file SHA256: 10972f521b52276e988631d7408de388d639437118e8217c366f2bd93b52e1b6
+    ESP-IDF: v6.0-dev-1692-g7aad0d47e66-dirt
+    Minimal eFuse block revision: 0.0
+    Maximal eFuse block revision: 0.99
+    MMU page size: 64 KB
+    Secure version: 0
 
 You can also see the information on segments in the ESP-IDF logs while your application is booting:
 

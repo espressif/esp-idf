@@ -182,7 +182,6 @@ static float test_adc_continuous_std(adc_atten_t atten, bool filter_en, int filt
     adc_continuous_config_t dig_cfg = {
         .sample_freq_hz = ADC_TEST_FREQ_HZ,
         .conv_mode = ADC_CONV_SINGLE_UNIT_1,
-        .format = ADC_TEST_OUTPUT_TYPE,
     };
     adc_digi_pattern_config_t adc_pattern[SOC_ADC_PATT_LEN_MAX] = {0};
     adc_pattern[0].atten = atten;

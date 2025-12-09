@@ -1,6 +1,5 @@
 # SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
-import argparse
 import hashlib
 import hmac
 import os
@@ -17,9 +16,6 @@ from cryptography.hazmat.primitives.ciphers import algorithms
 from cryptography.hazmat.primitives.ciphers import modes
 from cryptography.utils import int_to_bytes
 from ecdsa.curves import NIST256p
-
-supported_targets = {'esp32p4', 'esp32c5'}
-supported_ds_key_size = {'esp32p4': [4096, 3072, 2048, 1024], 'esp32c5': [3072, 2048, 1024]}
 
 # Constants
 TEST_COUNT = 5
@@ -100,24 +96,32 @@ def generate_xts_test_data(key: bytes, base_flash_address: int = STORAGE_PARTITI
     return xts_test_data
 
 
-def generate_ecdsa_256_key_and_pub_key(filename: str) -> tuple:
-    with open(filename, 'rb') as f:
-        private_number = int.from_bytes(f.read(), byteorder='big')
+def generate_ecdsa_key_and_pub_key(key: bytes, key_size: int) -> tuple:
+    private_number = int.from_bytes(key, byteorder='big')
 
-    private_key = ec.derive_private_key(private_number, ec.SECP256R1())
+    if key_size == 192:
+        curve = ec.SECP192R1()
+    elif key_size == 256:
+        curve = ec.SECP256R1()
+    elif key_size == 384:
+        curve = ec.SECP384R1()
+    else:
+        raise ValueError(f'Unsupported key size: {key_size}')
+
+    private_key = ec.derive_private_key(private_number, curve)
     pem = private_key.private_bytes(
         encoding=serialization.Encoding.PEM,
         format=serialization.PrivateFormat.TraditionalOpenSSL,
         encryption_algorithm=serialization.NoEncryption(),
     )
 
-    with open('ecdsa_256_key.pem', 'wb') as pem_file:
+    with open(f'ecdsa_{key_size}_key.pem', 'wb') as pem_file:
         pem_file.write(pem)
 
     public_key = private_key.public_key()
     pub_numbers = public_key.public_numbers()
-    pubx = pub_numbers.x.to_bytes(32, byteorder='little')
-    puby = pub_numbers.y.to_bytes(32, byteorder='little')
+    pubx = pub_numbers.x.to_bytes(key_size // 8, byteorder='little')
+    puby = pub_numbers.y.to_bytes(key_size // 8, byteorder='little')
 
     return pubx, puby
 
@@ -128,31 +132,27 @@ def perform_ecc_point_multiplication(k1_int: int) -> Any:
     return k1_G
 
 
-def generate_k1_G(key_file_path: str) -> tuple:
+def generate_k1_G(k1_bytes: bytes) -> tuple:
     k1_G = []
-    if os.path.exists(key_file_path):
-        with open(key_file_path, 'rb') as key_file:
-            k1_bytes = key_file.read()
+    k1_int = int.from_bytes(k1_bytes, byteorder='big')
+    k1_G_point = perform_ecc_point_multiplication(k1_int)
+    k1_G = k1_G_point.to_bytes()[:64]
 
-        k1_int = int.from_bytes(k1_bytes, byteorder='big')
-        k1_G_point = perform_ecc_point_multiplication(k1_int)
-        k1_G = k1_G_point.to_bytes()[:64]
-
-        k1_G = k1_G[::-1]
-        k1_G_x = k1_G[:32]
-        k1_G_y = k1_G[32:]
-        k1_G = k1_G_y + k1_G_x
+    k1_G = k1_G[::-1]
+    k1_G_x = k1_G[:32]
+    k1_G_y = k1_G[32:]
+    k1_G = k1_G_y + k1_G_x
 
     return k1_G, k1_G
 
 
 def generate_hmac_test_data(key: bytes) -> tuple:
     hmac_message = (
-        'Deleniti voluptas explicabo et assumenda. Sed et aliquid minus quis. '
-        'Praesentium cupiditate quia nemo est. Laboriosam pariatur ut distinctio tenetur. '
-        'Sunt architecto iure aspernatur soluta ut recusandae. '
-        'Ut quibusdam occaecati ut qui sit dignissimos eaque..'
-    ).encode('utf-8')
+        b'Deleniti voluptas explicabo et assumenda. Sed et aliquid minus quis. '
+        b'Praesentium cupiditate quia nemo est. Laboriosam pariatur ut distinctio tenetur. '
+        b'Sunt architecto iure aspernatur soluta ut recusandae. '
+        b'Ut quibusdam occaecati ut qui sit dignissimos eaque..'
+    )
     hmac_result = hmac.HMAC(key, hmac_message, hashlib.sha256).digest()
     return hmac_message, hmac_result
 
@@ -179,22 +179,18 @@ def number_as_bignum_words(number):  # type: (int) -> str
     return '{ ' + ', '.join(result) + ' }'
 
 
-def generate_ds_encrypted_input_params(aes_key: bytes, target: str) -> tuple:
-    iv = os.urandom(16)
-    max_key_size = max(supported_ds_key_size[target])
-    key_size = max_key_size
-    private_key = rsa.generate_private_key(public_exponent=65537, key_size=key_size, backend=default_backend())
-
+def generate_ds_encrypted_input_params(aes_key: bytes, max_key_size: int, iv: bytes) -> tuple:
+    private_key = rsa.generate_private_key(public_exponent=65537, key_size=max_key_size, backend=default_backend())
     priv_numbers = private_key.private_numbers()
     pub_numbers = private_key.public_key().public_numbers()
     Y = priv_numbers.d
     M = pub_numbers.n
 
-    rr = 1 << (key_size * 2)
+    rr = 1 << (max_key_size * 2)
     rinv = rr % pub_numbers.n
     mprime = -rsa._modinv(M, 1 << 32)
     mprime &= 0xFFFFFFFF
-    length = key_size // 32 - 1
+    length = max_key_size // 32 - 1
 
     # calculate MD from preceding values and IV
     # Y_max_key_size || M_max_key_size || Rb_max_key_size || M_prime32 || LENGTH32 || IV128
@@ -230,101 +226,115 @@ def generate_ds_encrypted_input_params(aes_key: bytes, target: str) -> tuple:
     encryptor = cipher.encryptor()
     ds_encrypted_input_params = encryptor.update(p) + encryptor.finalize()
 
-    mask = (1 << key_size) - 1  # truncate messages if needed
+    mask = (1 << max_key_size) - 1  # truncate messages if needed
 
     ds_message = random.randrange(0, 1 << max_key_size)
     ds_result = number_as_bytes(pow(ds_message & mask, Y, M))
 
-    return number_as_bytes(ds_message), ds_encrypted_input_params, iv, key_size, ds_result
+    return number_as_bytes(ds_message), ds_encrypted_input_params, ds_result
 
 
 def write_to_c_header(
     init_key: bytes,
     k1: bytes,
     k2_info: bytes,
+    k1_encrypted_24: list,
+    k1_encrypted_24_reversed: list,
     k1_encrypted_32: list,
     k1_encrypted_32_reversed: list,
+    k1_encrypted_48: list,
+    k1_encrypted_48_reversed: list,
     test_data_xts_aes_128: list,
     k1_encrypted_64: list,
     k1_encrypted_64_reversed: list,
     xts_test_data_xts_aes_256: list,
-    pubx: bytes,
-    puby: bytes,
+    ecdsa_p192_pubx: bytes,
+    ecdsa_p192_puby: bytes,
+    ecdsa_p256_pubx: bytes,
+    ecdsa_p256_puby: bytes,
+    ecdsa_p384_pubx: bytes,
+    ecdsa_p384_puby: bytes,
     k1_G_0: bytes,
     k1_G_1: bytes,
     hmac_message: bytes,
     hmac_result: bytes,
-    ds_message: bytes,
-    ds_encrypted_input_params: bytes,
-    ds_encrypted_input_params_iv: bytes,
-    ds_key_size: int,
-    ds_result: bytes,
+    ds_message_4096: bytes,
+    ds_encrypted_input_params_4096: bytes,
+    ds_result_4096: bytes,
+    ds_message_3072: bytes,
+    ds_encrypted_input_params_3072: bytes,
+    ds_result_3072: bytes,
+    ds_iv: bytes,
 ) -> None:
     with open('key_manager_test_cases.h', 'w', encoding='utf-8') as file:
-        header_content = """#include <stdint.h>
+        header_content = f"""#include <stdint.h>
+#include "soc/soc_caps.h"
 
 #define TEST_COUNT 5
 
-typedef struct test_xts_data {
+typedef struct test_xts_data {{
     uint16_t data_size;
     uint32_t data_offset;
     uint8_t ciphertext[128];
-} test_xts_data_t;
+}} test_xts_data_t;
 
-typedef struct test_ecdsa_data {
-    uint8_t pubx[32];
-    uint8_t puby[32];
-} test_ecdsa_data_t;
+typedef struct test_ecdsa_data {{
+    uint8_t ecdsa_p192_pubx[24];
+    uint8_t ecdsa_p192_puby[24];
+    uint8_t ecdsa_p256_pubx[32];
+    uint8_t ecdsa_p256_puby[32];
+    uint8_t ecdsa_p384_pubx[48];
+    uint8_t ecdsa_p384_puby[48];
+}} test_ecdsa_data_t;
 
-typedef struct test_hmac_data {
-    uint8_t message[%d];
+typedef struct test_hmac_data {{
+    uint8_t message[{len(hmac_message)}];
     uint8_t hmac_result[32];
-} test_hmac_data_t;
+}} test_hmac_data_t;
 
-typedef struct test_ds_data {
-    uint8_t ds_message[%d / 8];
-    uint8_t ds_encrypted_input_params[%d];
-    uint8_t ds_encrypted_input_params_iv[16];
+typedef struct test_ds_data {{
+#if SOC_RSA_MAX_BIT_LEN == 4096
+    uint8_t ds_message[4096 / 8];
+    uint8_t ds_encrypted_input_params[1584];
+    uint8_t ds_result[4096 / 8];
+#elif SOC_RSA_MAX_BIT_LEN == 3072
+    uint8_t ds_message[3072 / 8];
+    uint8_t ds_encrypted_input_params[1200];
+    uint8_t ds_result[3072 / 8];
+#endif
     size_t ds_key_size;
-    uint8_t ds_result[%d];
-} test_ds_data_t;
+    uint8_t ds_encrypted_input_params_iv[16];
+}} test_ds_data_t;
 
-typedef struct test_data {
+typedef struct test_data {{
     uint8_t init_key[32];
     uint8_t k2_info[64];
-    uint8_t k1_encrypted[2][32];  // For both 256-bit and 512-bit keys
+    // [0] for XTS-AES-128 / ECDSA-P192 / HMAC / DS, [1] for XTS-AES-256 / ECDSA-P256
+    // [2] for ECDSA-P384-H, [3] for ECDSA-P384-L
+    uint8_t k1_encrypted[4][32];
     uint8_t plaintext_data[128];
-    union {
+    union {{
         test_xts_data_t xts_test_data[TEST_COUNT];
         test_ecdsa_data_t ecdsa_test_data;
         test_hmac_data_t hmac_test_data;
         test_ds_data_t ds_test_data;
-    };
-} test_data_aes_mode_t;
+    }};
+}} test_data_aes_mode_t;
 
-typedef struct test_data_ecdh0 {
+typedef struct test_data_ecdh0 {{
     uint8_t plaintext_data[128];
     uint8_t k1[2][32];
     uint8_t k1_G[2][64];
-} test_data_ecdh0_mode_t;
+}} test_data_ecdh0_mode_t;
 
 // For 32-byte k1 key
-test_data_aes_mode_t test_data_xts_aes_128 = {
-    .init_key = { %s },
-    .k2_info = { %s },
-    .k1_encrypted = { { %s }, {  } },
-    .plaintext_data = { %s },
-    .xts_test_data = {
-""" % (
-            len(hmac_message),
-            ds_key_size,
-            len(ds_encrypted_input_params),
-            len(ds_result),
-            key_to_c_format(init_key),
-            key_to_c_format(k2_info),
-            key_to_c_format(k1_encrypted_32_reversed[0]),
-            key_to_c_format(bytes(range(1, 129))),
-        )
+test_data_aes_mode_t test_data_xts_aes_128 = {{
+    .init_key = {{ {key_to_c_format(init_key)} }},
+    .k2_info = {{ {key_to_c_format(k2_info)} }},
+    .k1_encrypted = {{ {{ {key_to_c_format(k1_encrypted_32_reversed[0])} }}, {{  }} }},
+    .plaintext_data = {{ {key_to_c_format(bytes(range(1, 129)))} }},
+    .xts_test_data = {{
+"""
 
         for data_size, flash_address, ciphertext in test_data_xts_aes_128:
             header_content += (
@@ -354,90 +364,79 @@ test_data_aes_mode_t test_data_xts_aes_128 = {
             )
         header_content += '\t}\n};\n'
 
-        header_content += """
-test_data_aes_mode_t test_data_ecdsa = {
-    .init_key = { %s },
-    .k2_info = { %s },
-    .k1_encrypted = { { %s }, {  } },
-    .ecdsa_test_data = {
-        .pubx = { %s },
-        .puby = { %s }
-    }
-};\n
-""" % (
-            key_to_c_format(init_key),
-            key_to_c_format(k2_info),
-            key_to_c_format(k1_encrypted_32_reversed[0]),
-            key_to_c_format(pubx),
-            key_to_c_format(puby),
-        )
+        header_content += f"""
+test_data_aes_mode_t test_data_ecdsa = {{
+    .init_key = {{ {key_to_c_format(init_key)} }},
+    .k2_info = {{ {key_to_c_format(k2_info)} }},
+    .k1_encrypted = {{
+        {{ {key_to_c_format(k1_encrypted_24_reversed[0])} }},
+        {{ {key_to_c_format(k1_encrypted_32_reversed[0])} }},
+        {{ {key_to_c_format(k1_encrypted_48_reversed[0])} }},
+        {{ {key_to_c_format(k1_encrypted_48_reversed[1])} }},
+    }},
+    .ecdsa_test_data = {{
+        .ecdsa_p192_pubx = {{ {key_to_c_format(ecdsa_p192_pubx)} }},
+        .ecdsa_p192_puby = {{ {key_to_c_format(ecdsa_p192_puby)} }},
+        .ecdsa_p256_pubx = {{ {key_to_c_format(ecdsa_p256_pubx)} }},
+        .ecdsa_p256_puby = {{ {key_to_c_format(ecdsa_p256_puby)} }},
+        .ecdsa_p384_pubx = {{ {key_to_c_format(ecdsa_p384_pubx)} }},
+        .ecdsa_p384_puby = {{ {key_to_c_format(ecdsa_p384_puby)} }},
+    }}
+}};
+"""
 
-        header_content += """
-test_data_ecdh0_mode_t test_data_ecdh0 = {
-    .plaintext_data = { %s },
-    .k1 = {
-        { %s },
-        { %s },
-    },
-    .k1_G = {
-        { %s },
-        { %s },
-    }
-};\n
-""" % (
-            key_to_c_format(bytes(range(1, 129))),
-            key_to_c_format(k1),
-            key_to_c_format(k1),
-            key_to_c_format(k1_G_0),
-            key_to_c_format(k1_G_1),
-        )
+        header_content += f"""
+test_data_ecdh0_mode_t test_data_ecdh0 = {{
+    .plaintext_data = {{ {key_to_c_format(bytes(range(1, 129)))} }},
+    .k1 = {{
+        {{ {key_to_c_format(k1)} }},
+        {{ {key_to_c_format(k1)} }},
+    }},
+    .k1_G = {{
+        {{ {key_to_c_format(k1_G_0)} }},
+        {{ {key_to_c_format(k1_G_1)} }},
+    }}
+}};
+"""
 
-        header_content += """
-test_data_aes_mode_t test_data_hmac = {
-    .init_key = { %s },
-    .k2_info = { %s },
-    .k1_encrypted = { { %s }, {  } },
-    .hmac_test_data = {
-        .message = { %s },
-        .hmac_result = { %s }
-    }
-};\n
-""" % (
-            key_to_c_format(init_key),
-            key_to_c_format(k2_info),
-            key_to_c_format(k1_encrypted_32[0]),
-            key_to_c_format(hmac_message),
-            key_to_c_format(hmac_result),
-        )
+        header_content += f"""
+test_data_aes_mode_t test_data_hmac = {{
+    .init_key = {{ {key_to_c_format(init_key)} }},
+    .k2_info = {{ {key_to_c_format(k2_info)} }},
+    .k1_encrypted = {{ {{ {key_to_c_format(k1_encrypted_32[0])} }}, {{  }} }},
+    .hmac_test_data = {{
+        .message = {{ {key_to_c_format(hmac_message)} }},
+        .hmac_result = {{ {key_to_c_format(hmac_result)} }}
+    }}
+}};
+"""
 
-        header_content += """
-test_data_aes_mode_t test_data_ds = {
-    .init_key = { %s },
-    .k2_info = { %s },
-    .k1_encrypted = { { %s }, {  } },
-    .ds_test_data = {
-        .ds_message = { %s },
-        .ds_encrypted_input_params = { %s },
-        .ds_encrypted_input_params_iv = { %s },
-        .ds_key_size = %d,
-        .ds_result = { %s }
-    }
-};\n
-""" % (
-            key_to_c_format(init_key),
-            key_to_c_format(k2_info),
-            key_to_c_format(k1_encrypted_32_reversed[0]),
-            key_to_c_format(ds_message),
-            key_to_c_format(ds_encrypted_input_params),
-            key_to_c_format(ds_encrypted_input_params_iv),
-            ds_key_size,
-            key_to_c_format(ds_result),
-        )
+        header_content += f"""
+test_data_aes_mode_t test_data_ds = {{
+    .init_key = {{ {key_to_c_format(init_key)} }},
+    .k2_info = {{ {key_to_c_format(k2_info)} }},
+    .k1_encrypted = {{ {{ {key_to_c_format(k1_encrypted_32_reversed[0])} }}, {{  }} }},
+    .ds_test_data = {{
+#if SOC_DS_SIGNATURE_MAX_BIT_LEN == 4096
+        .ds_message = {{ {key_to_c_format(ds_message_4096)} }},
+        .ds_encrypted_input_params = {{ {key_to_c_format(ds_encrypted_input_params_4096)} }},
+        .ds_key_size = 4096,
+        .ds_result = {{ {key_to_c_format(ds_result_4096)} }},
+#elif SOC_DS_SIGNATURE_MAX_BIT_LEN == 3072
+        .ds_message = {{ {key_to_c_format(ds_message_3072)} }},
+        .ds_encrypted_input_params = {{ {key_to_c_format(ds_encrypted_input_params_3072)} }},
+        .ds_key_size = 3072,
+        .ds_result = {{ {key_to_c_format(ds_result_3072)} }},
+#endif
+        .ds_encrypted_input_params_iv = {{ {key_to_c_format(ds_iv)} }},
+    }},
+}};
+"""
 
         file.write(header_content)
 
 
-def generate_tests_cases(target: str) -> None:
+def generate_tests_cases() -> None:
     # Main script logic follows as per your provided structure
     init_key = key_from_file_or_generate('init_key.bin', 32)
     k2 = key_from_file_or_generate('k2.bin', 32)
@@ -447,69 +446,93 @@ def generate_tests_cases(target: str) -> None:
     temp_result_outer = calculate_aes_cipher(temp_result_inner + rand_num, init_key)
     k2_info = temp_result_outer
 
-    k1_32 = key_from_file_or_generate('k1.bin', 32)
-    k1_64 = key_from_file_or_generate('k1_64.bin', 64)
+    k1 = key_from_file_or_generate('k1_64.bin', 64)
 
+    k1_24 = k1[:24]
+    k1_32 = k1[:32]
+    k1_48 = k1[:48]
+    k1_64 = k1[:]
+
+    k1_24_reversed = k1_24[::-1]
     k1_32_reversed = k1_32[::-1]
+
+    k1_48_1 = k1_48[:16]
+    k1_48_1_reversed = k1_48_1[::-1]
+    k1_48_2 = k1_48[16:]
+    k1_48_2_reversed = k1_48_2[::-1]
 
     k1_64_1 = k1_64[:32]
     k1_64_1_reversed = k1_64_1[::-1]
     k1_64_2 = k1_64[32:]
     k1_64_2_reversed = k1_64_2[::-1]
 
+    k1_encrypted_24 = [calculate_aes_cipher(b'\x00' * 8 + k1_24, k2)]
     k1_encrypted_32 = [calculate_aes_cipher(k1_32, k2)]
+    k1_encrypted_48 = [calculate_aes_cipher(b'\x00' * 16 + k1_48_1, k2), calculate_aes_cipher(k1_48_2, k2)]
     k1_encrypted_64 = [calculate_aes_cipher(k1_64_1, k2), calculate_aes_cipher(k1_64_2, k2)]
 
+    k1_encrypted_24_reversed = [calculate_aes_cipher(k1_24_reversed + b'\x00' * 8, k2)]
     k1_encrypted_32_reversed = [calculate_aes_cipher(k1_32_reversed, k2)]
+    k1_encrypted_48_reversed = [
+        calculate_aes_cipher(k1_48_1_reversed + b'\x00' * 16, k2),
+        calculate_aes_cipher(k1_48_2_reversed, k2),
+    ]
     k1_encrypted_64_reversed = [calculate_aes_cipher(k1_64_1_reversed, k2), calculate_aes_cipher(k1_64_2_reversed, k2)]
 
     test_data_xts_aes_128 = generate_xts_test_data(k1_32)
     xts_test_data_xts_aes_256 = generate_xts_test_data(k1_64)
 
-    pubx, puby = generate_ecdsa_256_key_and_pub_key('k1.bin')
+    ecdsa_p192_pubx, ecdsa_p192_puby = generate_ecdsa_key_and_pub_key(k1_24, 192)
+    ecdsa_p256_pubx, ecdsa_p256_puby = generate_ecdsa_key_and_pub_key(k1_32, 256)
+    ecdsa_p384_pubx, ecdsa_p384_puby = generate_ecdsa_key_and_pub_key(k1_48, 384)
 
-    k1_G_0, k1_G_1 = generate_k1_G('k1.bin')
+    k1_G_0, k1_G_1 = generate_k1_G(k1_32)
 
     hmac_message, hmac_result = generate_hmac_test_data(k1_32)
 
-    ds_message, ds_encrypted_input_params, ds_encrypted_input_params_iv, ds_key_size, ds_result = (
-        generate_ds_encrypted_input_params(k1_32, target)
+    ds_iv = os.urandom(16)
+
+    ds_message_4096, ds_encrypted_input_params_4096, ds_result_4096 = generate_ds_encrypted_input_params(
+        k1_32, 4096, ds_iv
+    )
+
+    ds_message_3072, ds_encrypted_input_params_3072, ds_result_3072 = generate_ds_encrypted_input_params(
+        k1_32, 3072, ds_iv
     )
 
     write_to_c_header(
         init_key,
         k1_32,
         k2_info,
+        k1_encrypted_24,
+        k1_encrypted_24_reversed,
         k1_encrypted_32,
         k1_encrypted_32_reversed,
+        k1_encrypted_48,
+        k1_encrypted_48_reversed,
         test_data_xts_aes_128,
         k1_encrypted_64,
         k1_encrypted_64_reversed,
         xts_test_data_xts_aes_256,
-        pubx,
-        puby,
+        ecdsa_p192_pubx,
+        ecdsa_p192_puby,
+        ecdsa_p256_pubx,
+        ecdsa_p256_puby,
+        ecdsa_p384_pubx,
+        ecdsa_p384_puby,
         k1_G_0,
         k1_G_1,
         hmac_message,
         hmac_result,
-        ds_message,
-        ds_encrypted_input_params,
-        ds_encrypted_input_params_iv,
-        ds_key_size,
-        ds_result,
+        ds_message_4096,
+        ds_encrypted_input_params_4096,
+        ds_result_4096,
+        ds_message_3072,
+        ds_encrypted_input_params_3072,
+        ds_result_3072,
+        ds_iv,
     )
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="""Generates Digital Signature Test Cases""")
-
-    parser.add_argument(
-        '--target',
-        required=True,
-        choices=supported_targets,
-        help='Target to generate test cases for, different targets support different max key length',
-    )
-
-    args = parser.parse_args()
-
-    generate_tests_cases(args.target)
+    generate_tests_cases()

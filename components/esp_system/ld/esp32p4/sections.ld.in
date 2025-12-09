@@ -26,7 +26,12 @@ SECTIONS
     ALIGNED_SYMBOL(_esp_pmp_align_size, _rtc_text_start)
 
     arrays[rtc_text]
+
     mapping[rtc_text]
+
+    /* mutable libs begin */
+    mutable[rtc_text]
+    /* mutable libs end */
 
     *rtc_wake_stub*.*(.text .text.*)
     *(.rtc_text_end_test)
@@ -47,7 +52,12 @@ SECTIONS
     ALIGNED_SYMBOL(4, _rtc_force_fast_start)
 
     arrays[rtc_force_fast]
+
     mapping[rtc_force_fast]
+
+    /* mutable libs begin */
+    mutable[rtc_force_fast]
+    /* mutable libs end */
 
     *(.rtc.force_fast .rtc.force_fast.*)
 
@@ -65,7 +75,12 @@ SECTIONS
     _rtc_data_start = ABSOLUTE(.);
 
     arrays[rtc_data]
+
     mapping[rtc_data]
+
+    /* mutable libs begin */
+    mutable[rtc_data]
+    /* mutable libs end */
 
     *rtc_wake_stub*.*(.data .rodata .data.* .rodata.* .srodata.*)
 
@@ -81,7 +96,12 @@ SECTIONS
     *rtc_wake_stub*.*(COMMON)
 
     arrays[rtc_bss]
+
     mapping[rtc_bss]
+
+    /* mutable libs begin */
+    mutable[rtc_bss]
+    /* mutable libs end */
 
     _rtc_bss_end = ABSOLUTE(.);
   } > lp_ram_seg
@@ -163,7 +183,12 @@ SECTIONS
     _tcm_text_start = ABSOLUTE(.);
 
     arrays[tcm_text]
+
     mapping[tcm_text]
+
+    /* mutable libs begin */
+    mutable[tcm_text]
+    /* mutable libs end */
 
     _tcm_text_end = ABSOLUTE(.);
   } > tcm_idram_seg
@@ -173,7 +198,12 @@ SECTIONS
     _tcm_data_start = ABSOLUTE(.);
 
     arrays[tcm_data]
+
     mapping[tcm_data]
+
+    /* mutable libs begin */
+    mutable[tcm_data]
+    /* mutable libs end */
 
     _tcm_data_end = ABSOLUTE(.);
   } > tcm_idram_seg
@@ -190,7 +220,13 @@ SECTIONS
     _iram_text_start = ABSOLUTE(.);
 
     arrays[iram0_text]
+
     mapping[iram0_text]
+
+    /* mutable libs begin */
+    mutable[iram0_text]
+    FAST_REFLASHING_PADDING;
+    /* mutable libs end */
 
   } > sram_low
 
@@ -208,7 +244,12 @@ SECTIONS
     ALIGNED_SYMBOL(16, _iram_data_start)
 
     arrays[iram0_data]
+
     mapping[iram0_data]
+
+    /* mutable libs begin */
+    mutable[iram0_data]
+    /* mutable libs end */
 
     _iram_data_end = ABSOLUTE(.);
   } > sram_low
@@ -218,7 +259,12 @@ SECTIONS
     ALIGNED_SYMBOL(16, _iram_bss_start)
 
     arrays[iram0_bss]
+
     mapping[iram0_bss]
+
+    /* mutable libs begin */
+    mutable[iram0_bss]
+    /* mutable libs end */
 
     _iram_bss_end = ABSOLUTE(.);
 
@@ -238,7 +284,13 @@ SECTIONS
     *(.jcr)
 
     arrays[dram0_data]
+
     mapping[dram0_data]
+
+    /* mutable libs begin */
+    mutable[dram0_data]
+    FAST_REFLASHING_PADDING;
+    /* mutable libs end */
 
     _data_end_low = ABSOLUTE(.);
   } > sram_low
@@ -248,6 +300,11 @@ SECTIONS
     _data_start_high = ABSOLUTE(.);
 
     mapping[dram0_data]
+
+    /* mutable libs begin */
+    mutable[dram0_data]
+    FAST_REFLASHING_PADDING;
+    /* mutable libs end */
 
     _data_end_high = ABSOLUTE(.);
   } > sram_high
@@ -278,7 +335,13 @@ SECTIONS
     _text_start = ABSOLUTE(.);
 
     arrays[flash_text]
+
     mapping[flash_text]
+
+    /* mutable libs begin */
+    mutable[flash_text]
+    FAST_REFLASHING_PADDING;
+    /* mutable libs end */
 
     *(.stub)
     *(.gnu.linkonce.t.*)
@@ -360,6 +423,7 @@ SECTIONS
     _flash_rodata_start = ABSOLUTE(.);
 
     arrays[flash_rodata]
+
     mapping[flash_rodata]
 
     *(.irom1.text) /* catch stray ICACHE_RODATA_ATTR */
@@ -395,6 +459,11 @@ SECTIONS
     ALIGNED_SYMBOL(4, _esp_system_init_fn_array_start)
     KEEP (*(SORT_BY_INIT_PRIORITY(.esp_system_init_fn.*)))
     _esp_system_init_fn_array_end = ABSOLUTE(.);
+
+    /* mutable libs begin */
+    mutable[flash_rodata]
+    FAST_REFLASHING_PADDING;
+    /* mutable libs end */
 
     _rodata_end = ABSOLUTE(.);
     . = ALIGN(ALIGNOF(SECTION_AFTER_FLASH_RODATA));
@@ -475,7 +544,13 @@ SECTIONS
     _rodata_reserved_end = ADDR(.flash.tbss);
 
     arrays[rodata_noload]
+
     mapping[rodata_noload]
+
+    /* mutable libs begin */
+    mutable[rodata_noload]
+    /* mutable libs end */
+
   } > rodata_seg_low
 
 #if CONFIG_SPIRAM_XIP_FROM_PSRAM
@@ -495,8 +570,15 @@ SECTIONS
   .ext_ram.bss (NOLOAD) :
   {
     _ext_ram_bss_start = ABSOLUTE(.);
+
     arrays[extern_ram]
+
     mapping[extern_ram]
+
+    /* mutable libs begin */
+    mutable[extern_ram]
+    /* mutable libs end */
+
     ALIGNED_SYMBOL(4, _ext_ram_bss_end)
   } > ext_ram_seg
 #endif  //CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
@@ -525,7 +607,12 @@ SECTIONS
      * (See components/esp_system/app.lf).
      */
     arrays[dram0_bss]
+
     mapping[dram0_bss]
+
+    /* mutable libs begin */
+    mutable[dram0_bss]
+    /* mutable libs end */
 
     ALIGNED_SYMBOL(4, _bss_end_low)
   } > sram_low
@@ -539,6 +626,10 @@ SECTIONS
      * (See components/esp_system/app.lf).
      */
     mapping[dram0_bss]
+
+    /* mutable libs begin */
+    mutable[dram0_bss]
+    /* mutable libs end */
 
     ALIGNED_SYMBOL(4, _bss_end_high)
   } > sram_high

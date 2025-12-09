@@ -2056,7 +2056,7 @@ void bta_dm_sdp_result (tBTA_DM_MSG *p_data)
 #endif
 
     UINT32 num_uuids = 0;
-    UINT8  uuid_list[32][MAX_UUID_SIZE]; // assuming a max of 32 services
+    UINT8  uuid_list[MAX_UUID_NUM][MAX_UUID_SIZE]; // assuming a max of MAX_UUID_NUM services
 
     if ((p_data->sdp_event.sdp_result == SDP_SUCCESS)
             || (p_data->sdp_event.sdp_result == SDP_NO_RECS_MATCH)
@@ -2119,8 +2119,12 @@ void bta_dm_sdp_result (tBTA_DM_MSG *p_data)
                             (tBTA_SERVICE_MASK)(BTA_SERVICE_ID_TO_SERVICE_MASK(bta_dm_search_cb.service_index - 1));
                         tmp_svc = bta_service_id_to_uuid_lkup_tbl[bta_dm_search_cb.service_index - 1];
                         /* Add to the list of UUIDs */
-                        sdpu_uuid16_to_uuid128(tmp_svc, uuid_list[num_uuids]);
-                        num_uuids++;
+                        if (num_uuids < MAX_UUID_NUM) {
+                            sdpu_uuid16_to_uuid128(tmp_svc, uuid_list[num_uuids]);
+                            num_uuids++;
+                        } else {
+                            APPL_TRACE_WARNING("only process the first %d records\n", MAX_UUID_NUM);
+                        }
                     }
                 }
             }
@@ -2154,8 +2158,13 @@ void bta_dm_sdp_result (tBTA_DM_MSG *p_data)
                 p_sdp_rec = SDP_FindServiceInDb_128bit(bta_dm_search_cb.p_sdp_db, p_sdp_rec);
                 if (p_sdp_rec) {
                     if (SDP_FindServiceUUIDInRec_128bit(p_sdp_rec, &temp_uuid)) {
-                        memcpy(uuid_list[num_uuids], temp_uuid.uu.uuid128, MAX_UUID_SIZE);
-                        num_uuids++;
+                        if (num_uuids < MAX_UUID_NUM) {
+                            memcpy(uuid_list[num_uuids], temp_uuid.uu.uuid128, MAX_UUID_SIZE);
+                            num_uuids++;
+                        } else {
+                            APPL_TRACE_WARNING("only process the first %d records\n", MAX_UUID_NUM);
+                            break;
+                        }
                     }
                 }
             } while (p_sdp_rec);
@@ -6338,6 +6347,106 @@ void bta_dm_ble_set_host_feature(tBTA_DM_MSG *p_data)
 }
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 
+#if (BT_BLE_FEAT_PAWR_EN == TRUE)
+void bta_dm_api_set_periodic_adv_subevt_data(tBTA_DM_MSG *p_data)
+{
+    BTM_BleSetPaSubeventData(p_data->pa_subevt_data.adv_handle, p_data->pa_subevt_data.num_subevents_with_data, (uint8_t *)(p_data->pa_subevt_data.subevent_params));
+}
+
+void bta_dm_api_set_periodic_adv_response_data(tBTA_DM_MSG *p_data)
+{
+    BTM_BleSetPaResponseData(p_data->pa_rsp_data.sync_handle, p_data->pa_rsp_data.request_event, p_data->pa_rsp_data.request_subevent,
+                            p_data->pa_rsp_data.rsp_subevent, p_data->pa_rsp_data.rsp_slot, p_data->pa_rsp_data.rsp_data_len,
+                            p_data->pa_rsp_data.rsp_data);
+}
+
+void bta_dm_api_set_periodic_sync_subevt(tBTA_DM_MSG *p_data)
+{
+    BTM_BleSetPaSyncSubevt(p_data->pa_sync_subevt.sync_handle, p_data->pa_sync_subevt.periodic_adv_properties, p_data->pa_sync_subevt.num_subevents_to_sync, p_data->pa_sync_subevt.subevent);
+}
+#endif // #if (BT_BLE_FEAT_PAWR_EN == TRUE)
+
+#if (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
+void bta_dm_api_cs_read_local_supported_caps(tBTA_DM_MSG *p_data)
+{
+    BTM_BleCSReadLocalSuppCaps();
+}
+
+void bta_dm_api_cs_read_remote_supported_caps(tBTA_DM_MSG *p_data)
+{
+    BTM_BleCSReadRemoteSuppCaps(p_data->read_remote_supp_caps.conn_handle);
+}
+
+void bta_dm_api_cs_write_cached_remote_supported_caps(tBTA_DM_MSG *p_data)
+{
+    tBTA_DM_API_CS_WRITE_CACHED_REMOTE_SUPP_CAPS *p = &p_data->write_cached_remote_caps;
+    BTM_BleGapWriteCachedRemoteSupportedCaps(p->conn_handle, p->num_config_supported, p->max_consecutive_proc_supported,
+                                                p->num_ant_supported, p->max_ant_paths_supported, p->roles_supported,
+                                                p->modes_supported, p->rtt_capability, p->rtt_aa_only_n,
+                                                p->rtt_sounding_n, p->rtt_random_payload_n, p->NADM_sounding_capability,
+                                                p->NADM_random_capability, p->cs_sync_phys_supported, p->subfeatures_supported,
+                                                p->T_IP1_times_supported, p->T_IP2_times_supported, p->T_FCS_times_supported,
+                                                p->T_PM_times_supported, p->T_SW_times_supported, p->TX_SNR_capability);
+}
+
+void bta_dm_api_cs_security_enable(tBTA_DM_MSG *p_data)
+{
+    BTM_BleGapCsSecurityEnable(p_data->security_enable.conn_handle);
+}
+
+void bta_dm_api_cs_set_default_settings(tBTA_DM_MSG *p_data)
+{
+    BTM_BleGapCsSetDefaultSetting(p_data->set_default_setting_params.conn_handle, p_data->set_default_setting_params.role_enable,
+                                    p_data->set_default_setting_params.cs_sync_ant_selection, p_data->set_default_setting_params.max_tx_power);
+}
+
+void bta_dm_api_cs_read_remote_fae_table(tBTA_DM_MSG *p_data)
+{
+    BTM_BleGapCsReadRemoteFaeTable(p_data->read_remote_tab.conn_handle);
+}
+
+void bta_dm_api_cs_write_cached_remote_fae_table(tBTA_DM_MSG *p_data)
+{
+    BTM_BleGapWriteCachedRemoteFaeTable(p_data->write_cached_remote_fae_tab_params.conn_handle, p_data->write_cached_remote_fae_tab_params.remote_fae_table);
+}
+
+void bta_dm_api_cs_create_config(tBTA_DM_MSG *p_data)
+{
+    tBTA_DM_API_CS_CREATE_CONFIG_PARAMS *p = &p_data->create_config_params;
+    BTM_BleGapCsCreateConfig(p->conn_handle, p->config_id, p->create_context,
+                                p->main_mode_type, p->sub_mode_type, p->min_main_mode_steps,
+                                p->max_main_mode_steps, p->main_mode_repetition, p->mode_0_steps,
+                                p->role, p->rtt_type, p->cs_sync_phy, &p->channel_map[0],
+                                p->channel_map_repetition, p->channel_selection_type, p->ch3c_shape,
+                                p->ch3c_jump, p->reserved);
+}
+
+void bta_dm_api_cs_remove_config(tBTA_DM_MSG *p_data)
+{
+    BTM_BleGapCsRemoveConfig(p_data->remove_config_params.conn_handle, p_data->remove_config_params.config_id);
+}
+
+void bta_dm_api_cs_set_channel_classification(tBTA_DM_MSG *p_data)
+{
+    BTM_BleGapCsSetChannelClass(p_data->set_channel_class_params.channel_class);
+}
+void bta_dm_api_cs_set_procedure_params(tBTA_DM_MSG *p_data)
+{
+    tBTA_DM_API_CS_SET_PROC_PARAMS *p = &p_data->set_proc_params;
+    BTM_BleGapCsSetProcPatams(p->conn_handle, p->config_id, p->max_procedure_len,
+                                p->min_procedure_interval, p->max_procedure_interval,
+                                p->max_procedure_count, p->min_subevent_len,
+                                p->max_subevent_len, p->tone_ant_config_selection,
+                                p->phy, p->tx_power_delta, p->preferred_peer_antenna,
+                                p->SNR_control_initiator, p->SNR_control_reflector);
+}
+
+void bta_dm_api_cs_procedure_enable(tBTA_DM_MSG *p_data)
+{
+    BTM_BleGapCsProcEnable(p_data->proc_enable_params.conn_handle, p_data->proc_enable_params.config_id, p_data->proc_enable_params.enable);
+}
+#endif // (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
+
 #if (BLE_HOST_SETUP_STORAGE_EN == TRUE)
 /*******************************************************************************
 **
@@ -6933,7 +7042,7 @@ void btm_dm_start_gatt_discovery (BD_ADDR bd_addr)
     } else {
         //TODO need to add addr_type in future
         BTA_GATTC_Enh_Open(bta_dm_search_cb.client_if, bd_addr, BLE_ADDR_UNKNOWN_TYPE, TRUE,
-            BTA_GATT_TRANSPORT_LE, FALSE, BLE_ADDR_UNKNOWN_TYPE, 0, NULL, NULL, NULL);
+            BTA_GATT_TRANSPORT_LE, FALSE, BLE_ADDR_UNKNOWN_TYPE, false, 0xFF, 0xFF, 0, NULL, NULL, NULL);
 
     }
 }

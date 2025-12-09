@@ -7,7 +7,7 @@ In smaller projects (e.g. command line utility like ``grep`` command), it is oft
 
 ESP-IDF project unified the way to configure the project, build system, ESP-IDF framework itself and external components. This configuration tool is called Kconfig.
 
-Kconfig tool uses distributed structure of configuration files of the same name (``Kconfig``). These files contain the **definition** of configuration options (e.g. name, type) and may contain their **default values**. Every component has its own ``Kconfig`` file. Their discovery is done automatically by the configuration tool.
+Kconfig tool uses distributed structure of configuration files of the same name (``Kconfig`` and ``Kconfig.projbuild``, for difference between those two, please visit :ref:`kconfig-files`). These files contain the **definition** of configuration options (e.g. name, type) and may contain their **default values**. Every project may have its own ``Kconfig`` or ``Kconfig.projbuild`` file. The discovery of ``Kconfig`` and ``Kconfig.projbuild`` files is done automatically by the configuration tool. See :ref:`component-configuration-guide` for more information about writing configuration files for your component.
 
 **Values currently assigned** to the configuration options are then stored in one :ref:`sdkconfig file <sdkconfig-file>` in the project's root folder. This file is specific for the given project and is changed every time user makes a change in any of the configuration option's value. For the purpose of editing the configuration, the :ref:`menuconfig tool <project-configuration-menu>` is used. The values of the configuration options are also propagated to the CMake scripts and C code via ``sdkconfig.h`` and ``sdkconfig.cmake`` files.
 

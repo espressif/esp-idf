@@ -7,6 +7,7 @@
 #include <stdbool.h>
 #include "driver/usb_serial_jtag.h"
 #include "hal/usb_serial_jtag_ll.h"
+#include "freertos/FreeRTOS.h"
 #include "esp_private/startup_internal.h"
 #include "esp_freertos_hooks.h"
 #include "esp_pm.h"

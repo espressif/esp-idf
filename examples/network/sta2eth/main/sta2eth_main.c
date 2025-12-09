@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -40,7 +40,7 @@ static esp_err_t wired_recv_callback(void *buffer, uint16_t len, void *ctx)
 {
     if (s_wifi_is_connected) {
         mac_spoof(FROM_WIRED, buffer, len, s_sta_mac);
-        if (esp_wifi_internal_tx(ESP_IF_WIFI_STA, buffer, len) != ESP_OK) {
+        if (esp_wifi_internal_tx(WIFI_IF_STA, buffer, len) != ESP_OK) {
             ESP_LOGD(TAG, "Failed to send packet to WiFi!");
         }
     }
@@ -68,14 +68,14 @@ static void event_handler(void *arg, esp_event_base_t event_base,
     if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
         ESP_LOGI(TAG, "Wi-Fi STA disconnected");
         s_wifi_is_connected = false;
-        esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_STA, NULL);
+        esp_wifi_internal_reg_rxcb(WIFI_IF_STA, NULL);
         esp_wifi_connect();
 
         xEventGroupClearBits(s_event_flags, CONNECTED_BIT);
         xEventGroupSetBits(s_event_flags, DISCONNECTED_BIT);
     } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_CONNECTED) {
         ESP_LOGI(TAG, "Wi-Fi STA connected");
-        esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_STA, wifi_recv_callback);
+        esp_wifi_internal_reg_rxcb(WIFI_IF_STA, wifi_recv_callback);
         s_wifi_is_connected = true;
         xEventGroupClearBits(s_event_flags, DISCONNECTED_BIT);
         xEventGroupSetBits(s_event_flags, CONNECTED_BIT);

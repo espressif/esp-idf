@@ -39,7 +39,7 @@
 #include "hal/efuse_hal.h"
 #include "hal/lpwdt_ll.h"
 
-static const char *TAG = "boot.esp32h4";
+ESP_LOG_ATTR_TAG(TAG, "boot.esp32h4");
 
 // TODO: [ESP32H4] support core1 bus monitor IDF-12592
 static void wdt_reset_cpu0_info_enable(void)
@@ -108,7 +108,6 @@ static inline void bootloader_config_dcache(void)
 
 static inline void bootloader_config_icache1(void)
 {
-    // TODO: [ESP32H4] IDF-12289
 #if CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     REG_CLR_BIT(LP_AON_SRAM_USAGE_CONF_REG, LP_AON_ICACHE1_USAGE);
 #else
@@ -150,10 +149,8 @@ esp_err_t bootloader_init(void)
     bootloader_print_banner();
 
 #if !CONFIG_APP_BUILD_TYPE_RAM
-    //init cache hal
-    cache_hal_init();
-    //init mmu
-    mmu_hal_init();
+    // init cache and mmu
+    bootloader_init_ext_mem();
     // update flash ID
     bootloader_flash_update_id();
     // Check and run XMC startup flow

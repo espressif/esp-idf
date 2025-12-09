@@ -154,6 +154,35 @@ static void IRAM_ATTR s_mapping(int v_start, int size)
 }
 #endif  //CONFIG_IDF_TARGET_ESP32
 
+#if CONFIG_ESP32P4_REV_MIN_FULL == 300
+#include "hal/psram_ctrlr_ll.h"
+static void IRAM_ATTR esp_psram_p4_rev3_workaround(void)
+{
+    spi_mem_s_dev_t backup_reg = {};
+    psram_ctrlr_ll_backup_registers(PSRAM_CTRLR_LL_MSPI_ID_2, &backup_reg);
+
+    __attribute__((unused)) volatile uint32_t val = 0;
+    psram_ctrlr_ll_disable_core_err_resp();
+
+    /**
+     * this workaround is to have two dummy reads, therefore
+     * - map 1 page
+     * - read 2 times
+     * - delay 1us
+     *
+     * The mapping will be overwritten by the real mapping in `s_psram_mapping`
+     */
+    mmu_ll_write_entry(1, 0, 0, MMU_TARGET_PSRAM0);
+    val = *(uint32_t *)(0x88000000);
+    val = *(uint32_t *)(0x88000080);
+    esp_rom_delay_us(1);
+
+    _psram_ctrlr_ll_reset_module_clock(PSRAM_CTRLR_LL_MSPI_ID_2);
+    psram_ctrlr_ll_enable_core_err_resp();
+    psram_ctrlr_ll_restore_registers(PSRAM_CTRLR_LL_MSPI_ID_2, &backup_reg);
+}
+#endif
+
 static esp_err_t s_psram_chip_init(void)
 {
     if (s_psram_ctx.is_chip_initialised) {
@@ -251,6 +280,7 @@ static void s_psram_mapping(uint32_t psram_available_size, uint32_t start_page)
     const void *v_start_8bit_aligned = NULL;
     ret = esp_mmu_map_reserve_block_with_caps(size_to_map, MMU_MEM_CAP_READ | MMU_MEM_CAP_WRITE | MMU_MEM_CAP_8BIT | MMU_MEM_CAP_32BIT, MMU_TARGET_PSRAM0, &v_start_8bit_aligned);
     assert(ret == ESP_OK);
+    (void)ret;
 
 #if CONFIG_IDF_TARGET_ESP32
     s_mapping((int)v_start_8bit_aligned, size_to_map);
@@ -373,6 +403,10 @@ esp_err_t esp_psram_init(void)
             return ret;
         }
     }
+
+#if CONFIG_ESP32P4_REV_MIN_FULL == 300
+    esp_psram_p4_rev3_workaround();
+#endif
 
     uint32_t psram_available_size = 0;
     ret = esp_psram_impl_get_available_size(&psram_available_size);
@@ -663,6 +697,7 @@ static size_t esp_psram_get_effective_mapped_size(void)
         uint32_t psram_available_size = 0;
         esp_err_t ret = esp_psram_impl_get_available_size(&psram_available_size);
         assert(ret == ESP_OK);
+        (void)ret;
 
 #if CONFIG_SPIRAM_RODATA
         psram_available_size -= mmu_psram_get_rodata_segment_length();

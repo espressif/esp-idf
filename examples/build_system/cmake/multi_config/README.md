@@ -28,44 +28,60 @@ For each configuration, a few configuration options are set:
 
 ### Development build
 
-In this example, Development configuration is specified in `sdkconfig.defaults`, so it is the default one. You can build the project as usual:
+To build the development configuration (specified in `sdkconfig.defaults`), specify it using --preset argument:
 
 ```
-idf.py build
+idf.py --preset default build
 ```
 
 To flash the project and see the output, run:
 
 ```
-idf.py -p PORT flash monitor
+idf.py --preset default -p PORT flash monitor
 ```
 
 (To exit the serial monitor, type ``Ctrl-]``.)
 
 ### Production build
 
-To build one of the Production configurations, specify a different build directory and `SDKCONFIG_DEFAULTS` file. For example, to build `prod1` configuration:
+To build one of the Production configurations, specify the name using idf.py --preset argument:
 
 ```
-idf.py -B build_prod1 -D SDKCONFIG_DEFAULTS="sdkconfig.prod_common;sdkconfig.prod1" build
+idf.py --preset prod1 build
 ```
-
-* `-B build_prod1` sets the build directory to `build_prod1`
-* `-D SDKCONFIG_DEFAULTS="sdkconfig.prod_common;sdkconfig.prod1"` selects `sdkconfig.prod_common` and `sdkconfig.prod1` files to be used for creating app configuration (sdkconfig), instead of the usual `sdkconfig.defaults`. See the section below on how these two default configuration files are combined.
 
 To flash the project and see the output, run:
 
 ```
-idf.py -B build_prod1 -p PORT flash monitor
-```
-
-Note that it is not necessary to repeat `-D SDKCONFIG_DEFAULTS=...` option once the build directory has been created and `sdkconfig` file generated. For example, to build the project again, run:
-
-```
-idf.py -B build_prod1 build
+idf.py --preset prod1 -p PORT flash monitor
 ```
 
 To build and run the app with `prod2` configuration, repeat the steps above, replacing `prod1` with `prod2`.
+
+### Specifying the preset for multiple commands
+
+To avoid having to specify `--preset` argument every time you run `idf.py`, you can set `IDF_PRESET` environment variable:
+
+For UNIX-like systems (Linux, macOS):
+```shell
+export IDF_PRESET=prod1
+```
+
+For Windows (PowerShell):
+```powershell
+$ENV:IDF_PRESET='prod1'
+```
+
+For Windows (cmd.exe):
+```shell
+set IDF_PRESET=prod1
+```
+
+Then subsequent commands will work with `prod1` configuration:
+```shell
+idf.py build
+idf.py flash monitor
+```
 
 ### Combining multiple files in `SDKCONFIG_DEFAULTS`
 
@@ -79,24 +95,6 @@ It is possible to specify multiple files in this variable, separating them with 
 * product 2: `sdkconfig.prod_common;sdkconfig.prod2`
 
 This way the common options do not need to be repeated in each of `sdkconfig.prodN` files.
-
-### Create configuration profile files via @filename
-
-You can further enhance your build process by using configuration profile files. These profile files contain arguments that streamline the build process for specific scenarios. Let's have our example profile files: 
-
-- [profiles/prod](profiles/prod)
-- [profiles/debug](profiles/debug)
-
-You can use these profile files to quickly set up the build environment with specific configurations.
-
-- To build with the production profile: `idf.py @profiles/prod build`
-- To build with the debug profile: `idf.py @profiles/debug build`
-
-This approach simplifies the process of specifying complex command-line arguments and allows for greater flexibility in managing different build scenarios.
-
-Moreover, you can combine arguments from a profile file with additional command line arguments. Anywhere on the idf.py command line, you can specify a file as @filename.txt to read one or more arguments from the text file. Arguments in the file can be separated by newlines or spaces and are expanded exactly as if they had appeared in that order on the idf.py command line.
-
-For example using [cutom_flash.txt](custom_flash.txt), you can expand the command: `idf.py -B build_production @custom_flash.txt monitor`
 
 ### Generated `sdkconfig` file
 

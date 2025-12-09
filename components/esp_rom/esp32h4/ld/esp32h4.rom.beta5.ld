@@ -243,21 +243,21 @@ ets_clk_get_cpu_freq = 0x400006a4;
  ***************************************/
 
 /* Functions */
-gpio_set_output_level = 0x400006a8;
-gpio_get_input_level = 0x400006ac;
-gpio_matrix_in = 0x400006b0;
-gpio_matrix_out = 0x400006b4;
-gpio_bypass_matrix_in = 0x400006b8;
-/* gpio_output_disable = 0x400006bc; */
-/* gpio_output_enable = 0x400006c0; */
-gpio_pad_input_disable = 0x400006c4;
-gpio_pad_input_enable = 0x400006c8;
-gpio_pad_pulldown = 0x400006cc;
-gpio_pad_pullup = 0x400006d0;
-gpio_pad_select_gpio = 0x400006d4;
-gpio_pad_set_drv = 0x400006d8;
-gpio_pad_unhold = 0x400006dc;
-gpio_pad_hold = 0x400006e0;
+rom_gpio_set_output_level = 0x400006a8;
+rom_gpio_get_input_level = 0x400006ac;
+rom_gpio_matrix_in = 0x400006b0;
+rom_gpio_matrix_out = 0x400006b4;
+rom_gpio_bypass_matrix_in = 0x400006b8;
+rom_gpio_output_disable = 0x400006bc;
+rom_gpio_output_enable = 0x400006c0;
+rom_gpio_pad_input_disable = 0x400006c4;
+rom_gpio_pad_input_enable = 0x400006c8;
+rom_gpio_pad_pulldown = 0x400006cc;
+rom_gpio_pad_pullup = 0x400006d0;
+rom_gpio_pad_select_gpio = 0x400006d4;
+rom_gpio_pad_set_drv = 0x400006d8;
+rom_gpio_pad_unhold = 0x400006dc;
+rom_gpio_pad_hold = 0x400006e0;
 
 
 /***************************************

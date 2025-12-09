@@ -1,7 +1,7 @@
 /*
  * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 
 PROVIDE ( TRACE0              = 0x60000000 );
@@ -38,6 +38,7 @@ PROVIDE ( SAMPLE_RATE_CONVERTER = 0x60028000 );
 PROVIDE ( ZERO_DET            = 0x60029000 );
 PROVIDE ( USB_OTG_FS_CORE0    = 0x60040000 );
 PROVIDE ( USB_OTG_FS_CORE1    = 0x6007F000 );
+PROVIDE ( USB_DWC             = 0x60040000 );
 PROVIDE ( USB_WRAP            = 0x60080000 );
 PROVIDE ( TIMERG0             = 0x60090000 );
 PROVIDE ( TIMERG1             = 0x60091000 );
@@ -78,5 +79,6 @@ PROVIDE ( LP_TIMER            = 0x600B5000 );
 PROVIDE ( LP_WDT              = 0x600B5400 );
 PROVIDE ( TOUCH_SENS          = 0x600B5800 );
 PROVIDE ( TOUCH_AON           = 0x600B5C00 );
+PROVIDE ( IEEE802154          = 0x600C3000 );
 PROVIDE ( MODEM_SYSCON        = 0x600C9C00 );
 PROVIDE ( MODEM_LPCON         = 0x600CF000 );

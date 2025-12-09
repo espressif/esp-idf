@@ -11,7 +11,7 @@ from pytest_embedded_idf.utils import idf_parametrize
 )
 def test_eh_frame_wdt(dut: Dut) -> None:
     dut.expect_exact('Press ENTER to see the list of tests')
-    dut.confirm_write('"Test task wdt can print backtrace with eh-frame"', expect_str=f'Running')
+    dut.confirm_write('"Test task wdt can print backtrace with eh-frame"', expect_str='Running')
 
     # Expect a backtrace which is at least 3 PC-SP pairs deep
     dut.expect(r'Backtrace: (0x[a-fA-F0-9]+:0x[a-fA-F0-9]+\s*){3,}')
@@ -23,7 +23,7 @@ def test_eh_frame_wdt(dut: Dut) -> None:
 )
 def test_eh_frame_panic(dut: Dut) -> None:
     dut.expect_exact('Press ENTER to see the list of tests')
-    dut.confirm_write('"Test panic can print backtrace with eh-frame"', expect_str=f'Running')
+    dut.confirm_write('"Test panic can print backtrace with eh-frame"', expect_str='Running')
 
     # Expect a backtrace which is at least 3 PC-SP pairs deep
     dut.expect(r'Backtrace: (0x[a-fA-F0-9]+:0x[a-fA-F0-9]+\s*){3,}')

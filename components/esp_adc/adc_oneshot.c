@@ -122,6 +122,9 @@ esp_err_t adc_oneshot_new_unit(const adc_oneshot_unit_init_cfg_t *init_config, a
         .unit = init_config->unit_id,
         .clk_src = clk_src,
         .clk_src_freq_hz = clk_src_freq_hz,
+#if CONFIG_ADC_DISABLE_DAC_OUTPUT
+        .disable_dac_output = true,
+#endif
     };
 
     switch (init_config->ulp_mode) {

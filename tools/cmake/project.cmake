@@ -351,7 +351,6 @@ function(__project_info test_components)
     include(${sdkconfig_cmake})
     idf_build_get_property(COMPONENT_KCONFIGS KCONFIGS)
     idf_build_get_property(COMPONENT_KCONFIGS_PROJBUILD KCONFIG_PROJBUILDS)
-    idf_build_get_property(debug_prefix_map_gdbinit DEBUG_PREFIX_MAP_GDBINIT)
 
     __generate_gdbinit()
     idf_build_get_property(gdbinit_files_prefix_map GDBINIT_FILES_PREFIX_MAP)
@@ -884,13 +883,6 @@ macro(project project_name)
             target_link_options(${project_elf} PRIVATE "-Wl,--orphan-handling=error")
         endif()
         unset(idf_target)
-    endif()
-
-
-    if(CONFIG_LIBC_PICOLIBC)
-        idf_build_set_property(C_COMPILE_OPTIONS "-specs=picolibc.specs" APPEND)
-        idf_build_set_property(CXX_COMPILE_OPTIONS "-specs=picolibcpp.specs" APPEND)
-        idf_build_set_property(LINK_OPTIONS "-specs=picolibc.specs" APPEND)
     endif()
 
     set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}" APPEND PROPERTY

@@ -33,11 +33,13 @@ FORCE_INLINE_ATTR void cpu_utility_ll_stall_cpu(uint32_t cpu_no)
 {
     if (cpu_no == 0) {
         HAL_FORCE_MODIFY_U32_REG_FIELD(PMU.cpu_sw_stall, hpcore0_stall_code, 0x86);
-        while(!REG_GET_BIT(HP_SYSTEM_CPU_CORESTALLED_ST_REG, HP_SYSTEM_REG_CORE0_CORESTALLED_ST));
     } else {
         HAL_FORCE_MODIFY_U32_REG_FIELD(PMU.cpu_sw_stall, hpcore1_stall_code, 0x86);
-        while(!REG_GET_BIT(HP_SYSTEM_CPU_CORESTALLED_ST_REG, HP_SYSTEM_REG_CORE1_CORESTALLED_ST));
     }
+    // We do not check stalled status here because
+    // it will not be set if the stalled core was in WFI when the stall happens, thus any check
+    // is unreliable.
+    // TODO: when ECO6 fixes this we can add back a check here
 }
 
 FORCE_INLINE_ATTR void cpu_utility_ll_unstall_cpu(uint32_t cpu_no)

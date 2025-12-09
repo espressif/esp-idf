@@ -12,6 +12,7 @@ Migration from 5.5 to 6.0
     peripherals
     provisioning
     protocols
+    :SOC_WIFI_SUPPORTED: wifi
     security
     tools
     storage

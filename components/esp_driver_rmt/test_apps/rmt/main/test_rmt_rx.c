@@ -13,6 +13,7 @@
 #include "driver/rmt_rx.h"
 #include "driver/gpio.h"
 #include "soc/soc_caps.h"
+#include "hal/rmt_ll.h"
 #include "test_util_rmt_encoders.h"
 #include "test_board.h"
 
@@ -136,7 +137,7 @@ static void test_rmt_rx_nec_carrier(size_t mem_block_symbols, bool with_dma, rmt
     TEST_ASSERT_EQUAL(test_user_data.received_symbol_num, mem_block_symbols);
 #endif // SOC_RMT_SUPPORT_RX_PINGPONG
 
-#if SOC_RMT_SUPPORT_RX_DEMODULATION
+#if RMT_LL_SUPPORT(RX_DEMODULATION)
     rmt_carrier_config_t carrier_cfg = {
         .duty_cycle = 0.33,
         .frequency_hz = 38000,
@@ -170,7 +171,7 @@ static void test_rmt_rx_nec_carrier(size_t mem_block_symbols, bool with_dma, rmt
     printf("disable modulation and demodulation for tx and rx channels\r\n");
     TEST_ESP_OK(rmt_apply_carrier(tx_channel, NULL));
     TEST_ESP_OK(rmt_apply_carrier(rx_channel, NULL));
-#endif // SOC_RMT_SUPPORT_RX_DEMODULATION
+#endif // RMT_LL_SUPPORT(RX_DEMODULATION)
 
     TEST_ESP_OK(rmt_receive(rx_channel, remote_codes, test_rx_buffer_symbols * sizeof(rmt_symbol_word_t), &receive_config));
     printf("send NEC frame without carrier\r\n");
@@ -456,18 +457,23 @@ static bool test_rmt_rx_unaligned_buffer_done_callback(rmt_channel_handle_t chan
     return high_task_wakeup == pdTRUE;
 }
 
-static void test_rmt_unaligned_receive(size_t mem_block_symbols, int test_symbols_num, bool with_dma, bool en_partial_rx, rmt_clock_source_t clk_src)
+static void test_rmt_unaligned_receive(size_t mem_block_symbols, int test_symbols_num, bool with_dma, bool en_partial_rx, bool rx_buffer_use_psram)
 {
     uint32_t const test_rx_buffer_symbols = 128;
-    rmt_symbol_word_t *receive_user_buf = heap_caps_aligned_calloc(64, test_rx_buffer_symbols, sizeof(rmt_symbol_word_t),
-                                                                   MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
+    uint32_t caps = MALLOC_CAP_8BIT | MALLOC_CAP_DMA;
+    if (rx_buffer_use_psram) {
+        caps |= MALLOC_CAP_SPIRAM;
+    } else {
+        caps |= MALLOC_CAP_INTERNAL;
+    }
+    rmt_symbol_word_t *receive_user_buf = heap_caps_aligned_calloc(64, test_rx_buffer_symbols, sizeof(rmt_symbol_word_t), caps);
     TEST_ASSERT_NOT_NULL(receive_user_buf);
     rmt_symbol_word_t *receive_user_buf_unaligned = (rmt_symbol_word_t *)((uint8_t *)receive_user_buf + 1);
     size_t receive_user_buf_unaligned_size = test_rx_buffer_symbols * sizeof(rmt_symbol_word_t) - 1;
 
     // use TX channel to simulate the input signal
     rmt_tx_channel_config_t tx_channel_cfg = {
-        .clk_src = clk_src,
+        .clk_src = RMT_CLK_SRC_DEFAULT,
         .resolution_hz = 1000000, // 1MHz, 1 tick = 1us
         .mem_block_symbols = SOC_RMT_MEM_WORDS_PER_CHANNEL,
         .trans_queue_depth = 4,
@@ -485,7 +491,7 @@ static void test_rmt_unaligned_receive(size_t mem_block_symbols, int test_symbol
     };
 
     rmt_rx_channel_config_t rx_channel_cfg = {
-        .clk_src = clk_src,
+        .clk_src = RMT_CLK_SRC_DEFAULT,
         .resolution_hz = 1000000, // 1MHz, 1 tick = 1us
         .mem_block_symbols = mem_block_symbols,
         .gpio_num = TEST_RMT_GPIO_NUM_A,
@@ -553,14 +559,20 @@ static void test_rmt_unaligned_receive(size_t mem_block_symbols, int test_symbol
 
 TEST_CASE("rmt rx unaligned buffer", "[rmt]")
 {
-    test_rmt_unaligned_receive(SOC_RMT_MEM_WORDS_PER_CHANNEL, SOC_RMT_MEM_WORDS_PER_CHANNEL, false, false, RMT_CLK_SRC_DEFAULT);
+    test_rmt_unaligned_receive(SOC_RMT_MEM_WORDS_PER_CHANNEL, SOC_RMT_MEM_WORDS_PER_CHANNEL, false, false, false);
 #if SOC_RMT_SUPPORT_RX_PINGPONG
-    test_rmt_unaligned_receive(SOC_RMT_MEM_WORDS_PER_CHANNEL, 10000, false, true, RMT_CLK_SRC_DEFAULT);
+    test_rmt_unaligned_receive(SOC_RMT_MEM_WORDS_PER_CHANNEL, 10000, false, true, false);
 #endif
 #if SOC_RMT_SUPPORT_DMA
-    test_rmt_unaligned_receive(256, SOC_RMT_MEM_WORDS_PER_CHANNEL, true, false, RMT_CLK_SRC_DEFAULT);
+    test_rmt_unaligned_receive(256, SOC_RMT_MEM_WORDS_PER_CHANNEL, true, false, false);
+#if SOC_PSRAM_DMA_CAPABLE
+    test_rmt_unaligned_receive(256, SOC_RMT_MEM_WORDS_PER_CHANNEL, true, false, true);
+#endif
 #endif
 #if SOC_RMT_SUPPORT_RX_PINGPONG && SOC_RMT_SUPPORT_DMA
-    test_rmt_unaligned_receive(256, 10000, true, true, RMT_CLK_SRC_DEFAULT);
+    test_rmt_unaligned_receive(256, 10000, true, true, false);
+#if SOC_PSRAM_DMA_CAPABLE
+    test_rmt_unaligned_receive(256, 10000, true, true, true);
+#endif
 #endif
 }

@@ -20,7 +20,7 @@
 #include "unity.h"
 #include "math.h"
 #include "esp_rom_gpio.h"
-#include "soc/i2s_periph.h"
+#include "hal/i2s_periph.h"
 #include "driver/i2s_std.h"
 #if SOC_I2S_SUPPORTS_PDM
 #include "driver/i2s_pdm.h"
@@ -32,7 +32,7 @@
 #include "esp_private/i2s_platform.h"
 #if SOC_PCNT_SUPPORTED
 #include "driver/pulse_cnt.h"
-#include "soc/pcnt_periph.h"
+#include "hal/pcnt_periph.h"
 #endif
 
 #include "../../test_inc/test_i2s.h"
@@ -55,7 +55,7 @@ static void i2s_test_io_config(int mode)
     gpio_set_direction(DATA_OUT_IO, GPIO_MODE_INPUT_OUTPUT);
 
     switch (mode) {
-#if SOC_I2S_NUM > 1
+#if I2S_LL_GET(INST_NUM) > 1
     case I2S_TEST_MODE_SLAVE_TO_MASTER: {
         esp_rom_gpio_connect_out_signal(MASTER_BCK_IO, i2s_periph_signal[0].m_rx_bck_sig, 0, 0);
         esp_rom_gpio_connect_in_signal(MASTER_BCK_IO, i2s_periph_signal[1].s_tx_bck_sig, 0);
@@ -169,14 +169,14 @@ TEST_CASE("I2S_basic_channel_allocation_reconfig_deleting_test", "[i2s]")
 
     /* Exhaust test */
     std_cfg.gpio_cfg.mclk = -1;
-    i2s_chan_handle_t tx_ex[SOC_I2S_NUM] = {};
-    for (int i = 0; i < SOC_I2S_NUM; i++) {
+    i2s_chan_handle_t tx_ex[I2S_LL_GET(INST_NUM)] = {};
+    for (int i = 0; i < I2S_LL_GET(INST_NUM); i++) {
         TEST_ESP_OK(i2s_new_channel(&chan_cfg, &tx_ex[i], NULL));
         TEST_ESP_OK(i2s_channel_init_std_mode(tx_ex[i], &std_cfg));
         TEST_ESP_OK(i2s_channel_enable(tx_ex[i]));
     }
     TEST_ESP_ERR(ESP_ERR_NOT_FOUND, i2s_new_channel(&chan_cfg, &tx_handle, NULL));
-    for (int i = 0; i < SOC_I2S_NUM; i++) {
+    for (int i = 0; i < I2S_LL_GET(INST_NUM); i++) {
         TEST_ESP_OK(i2s_channel_disable(tx_ex[i]));
         TEST_ESP_OK(i2s_del_channel(tx_ex[i]));
     }
@@ -237,6 +237,8 @@ TEST_CASE("I2S_basic_channel_allocation_reconfig_deleting_test", "[i2s]")
 }
 
 static volatile bool task_run_flag;
+static volatile bool read_task_success = true;
+static volatile bool write_task_success = true;
 
 #define TEST_I2S_DATA 0x78
 
@@ -269,6 +271,7 @@ static void i2s_read_task(void *args)
         ret = i2s_channel_read(rx_handle, recv_buf, 2000, &recv_size, 300);
         if (ret == ESP_ERR_TIMEOUT) {
             printf("Read timeout count: %"PRIu32"\n", cnt++);
+            read_task_success = false;
         }
     }
 
@@ -290,6 +293,7 @@ static void i2s_write_task(void *args)
         ret = i2s_channel_write(tx_handle, send_buf, 2000, &send_size, 300);
         if (ret == ESP_ERR_TIMEOUT) {
             printf("Write timeout count: %"PRIu32"\n", cnt++);
+            write_task_success = false;
         }
     }
 
@@ -430,6 +434,7 @@ TEST_CASE("I2S_lazy_duplex_test", "[i2s]")
             },
         },
     };
+    /* Part 1: test common lazy duplex mode */
     TEST_ESP_OK(i2s_new_channel(&chan_cfg, &tx_handle, NULL));
     TEST_ESP_OK(i2s_channel_init_std_mode(tx_handle, &std_cfg));
     TEST_ESP_OK(i2s_channel_enable(tx_handle));
@@ -450,7 +455,7 @@ TEST_CASE("I2S_lazy_duplex_test", "[i2s]")
     xTaskCreate(i2s_read_check_task, "i2s_read_check_task", 4096, rx_handle, 5, NULL);
     printf("RX started\n");
 
-    /* Wait 3 seconds to see if any failures occur */
+    /* Wait 1 seconds to see if any failures occur */
     vTaskDelay(pdMS_TO_TICKS(1000));
     printf("Finished\n");
 
@@ -466,6 +471,72 @@ TEST_CASE("I2S_lazy_duplex_test", "[i2s]")
     /* Delete the channels */
     TEST_ESP_OK(i2s_del_channel(tx_handle));
     TEST_ESP_OK(i2s_del_channel(rx_handle));
+
+    /* Part 2: Test no lazy duplex mode with port auto assignment */
+    chan_cfg.id = I2S_NUM_AUTO;
+    TEST_ESP_OK(i2s_new_channel(&chan_cfg, NULL, &rx_handle));
+    TEST_ESP_OK(i2s_new_channel(&chan_cfg, &tx_handle, NULL));
+    TEST_ESP_OK(i2s_channel_init_std_mode(rx_handle, &std_cfg));
+
+    /* Change the config to not constitute full-duplex */
+    std_cfg.gpio_cfg.mclk = I2S_GPIO_UNUSED;
+    std_cfg.gpio_cfg.bclk = I2S_GPIO_UNUSED;
+    std_cfg.gpio_cfg.ws = I2S_GPIO_UNUSED;
+    std_cfg.gpio_cfg.dout = I2S_GPIO_UNUSED;
+    std_cfg.gpio_cfg.din = I2S_GPIO_UNUSED;
+#if CONFIG_IDF_TARGET_ESP32S2
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, i2s_channel_init_std_mode(tx_handle, &std_cfg));
+    /* Delete the channels */
+    TEST_ESP_OK(i2s_del_channel(tx_handle));
+    TEST_ESP_OK(i2s_del_channel(rx_handle));
+    return;
+#else
+    TEST_ESP_OK(i2s_channel_init_std_mode(tx_handle, &std_cfg));
+#endif
+
+#if CONFIG_IDF_TARGET_ESP32
+    /* On ESP32, if failed to constitute full-duplex with `I2S_NUM_AUTO`,
+       the channel will be re-assigned to the next availableport */
+    i2s_chan_info_t chan_info;
+    TEST_ESP_OK(i2s_channel_get_info(rx_handle, &chan_info));
+    TEST_ASSERT(chan_info.id == I2S_NUM_0);
+    TEST_ESP_OK(i2s_channel_get_info(tx_handle, &chan_info));
+    TEST_ASSERT(chan_info.id == I2S_NUM_1);
+#endif
+
+    TEST_ESP_OK(i2s_channel_enable(tx_handle));
+    TEST_ESP_OK(i2s_channel_enable(rx_handle));
+
+    task_run_flag = true;
+    read_task_success = true;
+    write_task_success = true;
+    /* writing task to keep writing */
+    xTaskCreate(i2s_write_task, "i2s_write_task", 4096, tx_handle, 5, NULL);
+    printf("TX started\n");
+    vTaskDelay(pdMS_TO_TICKS(1000));
+    /* reading task to keep reading */
+    xTaskCreate(i2s_read_task, "i2s_read_task", 4096, rx_handle, 5, NULL);
+    printf("RX started\n");
+
+    /* Wait 1 seconds to see if any failures occur */
+    vTaskDelay(pdMS_TO_TICKS(1000));
+    printf("Finished\n");
+
+    /* Stop those three tasks */
+    task_run_flag = false;
+
+    /* Wait for the three thread deleted */
+    vTaskDelay(pdMS_TO_TICKS(1000));
+
+    /* Disable the channels, they will keep waiting until the current reading / writing finished */
+    TEST_ESP_OK(i2s_channel_disable(tx_handle));
+    TEST_ESP_OK(i2s_channel_disable(rx_handle));
+    /* Delete the channels */
+    TEST_ESP_OK(i2s_del_channel(tx_handle));
+    TEST_ESP_OK(i2s_del_channel(rx_handle));
+    /* Check if the reading and writing tasks are successful */
+    TEST_ASSERT(read_task_success);
+    TEST_ASSERT(write_task_success);
 }
 
 static bool whether_contains_exapected_data(uint16_t *src, uint32_t src_len, uint32_t src_step, uint32_t start_val, uint32_t val_step)
@@ -741,7 +812,7 @@ TEST_CASE("I2S_loopback_test", "[i2s]")
     TEST_ESP_OK(i2s_del_channel(rx_handle));
 }
 
-#if SOC_I2S_NUM > 1
+#if I2S_LL_GET(INST_NUM) > 1 && !CONFIG_ESP32P4_SELECTS_REV_LESS_V3
 TEST_CASE("I2S_master_write_slave_read_test", "[i2s]")
 {
     i2s_chan_handle_t tx_handle;
@@ -856,11 +927,11 @@ static void i2s_test_common_sample_rate(i2s_chan_handle_t rx_chan, i2s_std_clk_c
     };
     int real_pulse = 0;
     int case_cnt = sizeof(test_freq) / sizeof(uint32_t);
-#if SOC_I2S_SUPPORTS_PLL_F96M
+#if I2S_LL_DEFAULT_CLK_FREQ == 96000000
     // 196000 Hz sample rate doesn't support on PLL_96M target
     case_cnt = 15;
 #endif
-#if SOC_I2S_SUPPORTS_XTAL
+#if I2S_LL_SUPPORT_XTAL
     // Can't support a very high sample rate while using XTAL as clock source
     if (clk_cfg->clk_src == I2S_CLK_SRC_XTAL) {
         case_cnt = 10;
@@ -907,11 +978,11 @@ TEST_CASE("I2S_default_PLL_clock_test", "[i2s]")
     TEST_ESP_OK(i2s_new_channel(&chan_cfg, NULL, &rx_handle));
     TEST_ESP_OK(i2s_channel_init_std_mode(rx_handle, &std_cfg));
 
-#if CONFIG_IDF_TARGET_ESP32P4 && CONFIG_ESP_REV_MIN_FULL >= 300
-    std_cfg.clk_cfg.clk_src = I2S_CLK_SRC_PLL_160M;
+#ifdef I2S_LL_DEFAULT_CLK_SRC
+    std_cfg.clk_cfg.clk_src = I2S_LL_DEFAULT_CLK_SRC;
 #endif
     i2s_test_common_sample_rate(rx_handle, &std_cfg.clk_cfg);
-#if SOC_I2S_SUPPORTS_XTAL
+#if I2S_LL_SUPPORT_XTAL
     std_cfg.clk_cfg.clk_src = I2S_CLK_SRC_XTAL;
     i2s_test_common_sample_rate(rx_handle, &std_cfg.clk_cfg);
 #endif

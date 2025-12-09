@@ -87,7 +87,8 @@ int IRAM_ATTR esp_clk_apb_freq(void)
 {
     // TODO: IDF-5173 Require cleanup, implementation should be unified
 #if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C2
-    return MIN(s_get_cpu_freq_mhz() * MHZ, APB_CLK_FREQ);
+    uint32_t cpu_freq_hz = s_get_cpu_freq_mhz() * MHZ;
+    return MIN(cpu_freq_hz, APB_CLK_FREQ);
 #else // for all later targets
     return rtc_clk_apb_freq_get();
 #endif
@@ -163,7 +164,9 @@ void esp_clk_slowclk_cal_set(uint32_t new_cal)
 #if SOC_RTC_MEM_SUPPORTED
     esp_rtc_get_time_us();
 #else
+#if !NON_OS_BUILD
     esp_os_enter_critical_safe(&s_esp_rtc_time_lock);
+#endif
     uint32_t old_cal = clk_ll_rtc_slow_load_cal();
     if (old_cal != 0) {
         /**
@@ -186,7 +189,9 @@ void esp_clk_slowclk_cal_set(uint32_t new_cal)
         new_fix_us = old_fix_us - new_fix_us;
         clk_ll_rtc_slow_store_rtc_fix_us(new_fix_us);
     }
+#if !NON_OS_BUILD
     esp_os_exit_critical_safe(&s_esp_rtc_time_lock);
+#endif
 #endif // SOC_RTC_MEM_SUPPORTED
 #endif // CONFIG_ESP_TIME_FUNCS_USE_RTC_TIMER
     clk_ll_rtc_slow_store_cal(new_cal);

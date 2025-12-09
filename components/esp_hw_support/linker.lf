@@ -40,6 +40,7 @@ entries:
         rtc_sleep:rtc_sleep_pu (noflash)
     if SOC_PMU_SUPPORTED = y && SOC_LIGHT_SLEEP_SUPPORTED = y:
         pmu_sleep (noflash)
+        sleep_mspi (noflash)
         if SPIRAM_FLASH_LOAD_TO_PSRAM = y:
             pmu_init (noflash)
             pmu_param (noflash)
@@ -84,6 +85,11 @@ entries:
         sleep_modes: esp_sleep_enable_vbat_under_volt_wakeup (noflash)
         sleep_modes: esp_sleep_sub_mode_config (noflash)
         sleep_modes: esp_sleep_sub_mode_force_disable (noflash)
+
+[mapping:hal_gpio_pm]
+archive: libesp_hal_gpio.a
+entries:
+    gpio_hal: gpio_hal_isolate_in_sleep (noflash)
 
 [mapping:soc_pm]
 archive: libsoc.a

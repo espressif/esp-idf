@@ -1,3 +1,3 @@
 idf_component_register(SRCS "tee_main.c"
-                    INCLUDE_DIRS ""
-                    PRIV_REQUIRES esp_tee mbedtls)
+                       INCLUDE_DIRS ""
+                       PRIV_REQUIRES esp_tee mbedtls example_secure_service)

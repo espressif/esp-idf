@@ -28,7 +28,7 @@ JTAG 调试
 :ref:`jtag-debugging-examples`
     如果你不熟悉 GDB，请查看此小节以获取 :ref:`Eclipse 集成开发环境 <jtag-debugging-examples-eclipse>` 以及 :ref:`命令行终端 <jtag-debugging-examples-command-line>` 提供的调试示例。
 :ref:`jtag-debugging-building-openocd`
-    介绍如何在 :doc:`Windows <building-openocd-windows>`，:doc:`Linux <building-openocd-linux>` 和 :doc:`macOS <building-openocd-macos>` 操作系统上从源码构建 OpenOCD。
+    OpenOCD 源码构建流程参考。
 :ref:`jtag-debugging-tips-and-quirks`
     介绍使用 OpenOCD 和 GDB 通过 JTAG 接口调试 {IDF_TARGET_NAME} 时的注意事项和补充内容。
 
@@ -221,7 +221,7 @@ OpenOCD 安装完成后就可以配置 {IDF_TARGET_NAME} 目标（即带 JTAG �
 
 其中 OpenOCD 的烧写命令 ``program_esp`` 格式如下：
 
-``program_esp <image_file> <offset> [verify] [reset] [exit] [compress] [encrypt]``
+``program_esp <image_file> <offset> [verify] [reset] [exit] [compress] [encrypt] [no_clock_boost] [restore_clock] [skip_loaded]``
 
 -  ``image_file`` - 程序镜像文件存放的路径
 -  ``offset`` - 镜像烧写到 flash 中的偏移地址
@@ -232,9 +232,37 @@ OpenOCD 安装完成后就可以配置 {IDF_TARGET_NAME} 目标（即带 JTAG �
 - ``encrypt`` - 烧写到 flash 前加密二进制文件，与 ``idf.py encrypted-flash`` 功能相同（可选）
 - ``no_clock_boost`` - 禁用在烧写前将目标时钟频率设置为其最大可能值（可选）。默认情况下禁用该选项，即默认启用时钟提升。
 - ``restore_clock`` - 可选。烧写完成后将时钟频率恢复到初始值。默认情况下不启用。
+- ``skip_loaded`` - 可选。如果二进制文件已加载，则跳过烧录。默认情况下不启用。
+
+替代方法：使用 ``program_esp_bins``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+为了便于在 ESP-IDF 项目中使用，OpenOCD 提供了一个替代命令 ``program_esp_bins``，该命令可以通过读取 ESP-IDF 构建过程中生成的 ``flasher_args.json`` 文件中的构建配置，在单个命令中烧录多个二进制文件。
+
+此方案有如下几点优势：
+
+* 自动从构建输出中读取所有二进制文件及其 flash 地址。
+* 根据项目配置自动处理加密分区。
+* 无需手动指定每个二进制文件（引导加载程序、分区表、应用程序等）的地址。
+
+基本用法：
+
+.. code-block:: bash
+
+    openocd -f board/esp32-wrover-kit-3.3v.cfg -c "program_esp_bins build flasher_args.json verify exit"
+
+命令格式
+""""""""
+
+OpenOCD 烧录命令 ``program_esp_bins`` 格式如下：
+
+``program_esp_bins <build_dir> <json_file> [verify] [reset] [exit] [compress] [no_clock_boost] [restore_clock] [skip_loaded]``
+
+ - ``build_dir`` - 包含 ``flasher_args.json`` 文件的构建目录路径。
+ - ``json_file`` - 包含 flash 配置的 JSON 文件名称（通常为 ``flasher_args.json``）。
+ - 其他可选参数的使用方式与 ``program_esp`` 命令相同。详情请参阅 :ref:`jtag-upload-app-debug` 章节。
 
 现在可以调试应用程序了，请按照以下章节中的步骤进行操作。
-
 
 .. _jtag-debugging-launching-debugger:
 
@@ -282,42 +310,9 @@ OpenOCD 安装完成后就可以配置 {IDF_TARGET_NAME} 目标（即带 JTAG �
 从源码构建 OpenOCD
 ------------------
 
-以下文档分别介绍了如何在各操作系统平台上从源码构建 OpenOCD。
-
-.. toctree::
-    :maxdepth: 1
-
-    Windows <building-openocd-windows>
-    Linux <building-openocd-linux>
-    macOS <building-openocd-macos>
-
 本文档在演示中所使用的 OpenOCD 是预编译好的二进制发行版，在 :ref:`jtag-debugging-setup-openocd` 章节中有所介绍。
 
-如果要使用本地从源代码编译的 OpenOCD 程序，需要将相应可执行文件的路径修改为 ``src/openocd``，并设置 ``OPENOCD_SCRIPTS`` 环境变量，使得 OpenOCD 能够找到配置文件。Linux 和 macOS 用户可以执行:
-
-.. code-block:: bash
-
-    cd ~/esp/openocd-esp32
-    export OPENOCD_SCRIPTS=$PWD/tcl
-
-Windows 用户可以执行:
-
-.. code-block:: batch
-
-    cd %USERPROFILE%\esp\openocd-esp32
-    set "OPENOCD_SCRIPTS=%CD%\tcl"
-
-针对 Linux 和 macOS 用户，运行本地编译的 OpenOCD 的示例:
-
-.. include:: {IDF_TARGET_PATH_NAME}.inc
-   :start-after: run-openocd-src-linux
-   :end-before: ---
-
-Windows 用户的示例如下:
-
-.. include:: {IDF_TARGET_PATH_NAME}.inc
-   :start-after: run-openocd-src-win
-   :end-before: ---
+如需根据特定需求从源码构建 OpenOCD，请参考 `OpenOCD 构建工作流程 <https://github.com/espressif/openocd-esp32/blob/master/.github/workflows/build_openocd.yml>`_。该工作流演示了如何在不同平台 (Windows, Linux, macOS) 上构建 OpenOCD。
 
 .. _jtag-debugging-tips-and-quirks:
 

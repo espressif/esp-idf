@@ -89,6 +89,10 @@ esp_err_t esp_ota_begin(const esp_partition_t* partition, size_t image_size, esp
  * Unlike esp_ota_begin(), this function does not erase the partition which receives the OTA update, but rather expects that part of the image
  * has already been written correctly, and it resumes writing from the given offset.
  *
+ * @note When flash encryption is enabled, data writes must be 16-byte aligned.
+ *       Any leftover (non-aligned) data is temporarily cached and may be lost after reboot.
+ *       Therefore, during resumption, ensure that image offset is always 16-byte aligned.
+ *
  * @param partition Pointer to info for the partition which is receiving the OTA update. Required.
  * @param erase_size Specifies how much flash memory to erase before resuming OTA, depending on whether a sequential write or a bulk erase is being used.
  * @param image_offset Offset from where to resume the OTA process. Should be set to the number of bytes already written.

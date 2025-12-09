@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -31,8 +31,10 @@
 extern "C" {
 #endif
 
+#ifndef CONFIG_IDF_TARGET_LINUX
 #ifndef _SYS_TYPES_FD_SET
 #error "VFS should be used with FD_SETSIZE and FD_SET from sys/types.h"
+#endif
 #endif
 
 /**
@@ -385,6 +387,25 @@ int esp_vfs_link(struct _reent *r, const char* n1, const char* n2);
 int esp_vfs_unlink(struct _reent *r, const char *path);
 int esp_vfs_rename(struct _reent *r, const char *src, const char *dst);
 int esp_vfs_utime(const char *path, const struct utimbuf *times);
+int esp_vfs_fsync(int fd);
+int esp_vfs_fcntl_r(struct _reent *r, int fd, int cmd, int arg);
+int esp_vfs_ioctl(int fd, int cmd, ...);
+
+/* Directory related functions */
+int esp_vfs_stat(struct _reent *r, const char *path, struct stat *st);
+int esp_vfs_truncate(const char *path, off_t length);
+int esp_vfs_ftruncate(int fd, off_t length);
+int esp_vfs_access(const char *path, int amode);
+int esp_vfs_utime(const char *path, const struct utimbuf *times);
+int esp_vfs_rmdir(const char* name);
+int esp_vfs_mkdir(const char* name, mode_t mode);
+DIR* esp_vfs_opendir(const char* name);
+int esp_vfs_closedir(DIR* pdir);
+int esp_vfs_readdir_r(DIR* pdir, struct dirent* entry, struct dirent** out_dirent);
+struct dirent* esp_vfs_readdir(DIR* pdir);
+long esp_vfs_telldir(DIR* pdir);
+void esp_vfs_seekdir(DIR* pdir, long loc);
+void esp_vfs_rewinddir(DIR* pdir);
 /**@}*/
 
 /**

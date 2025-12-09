@@ -21,7 +21,7 @@
 #include "esp_intr_alloc.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
-#include "soc/i2c_periph.h"
+#include "hal/i2c_periph.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/esp_clk.h"
 #include "esp_rom_gpio.h"
@@ -190,7 +190,8 @@ static bool s_i2c_write_command(i2c_master_bus_handle_t i2c_master, i2c_operatio
     uint8_t data_fill = 0;
 
     // data_fill refers to the length to fill the data
-    data_fill = MIN(remaining_bytes, I2C_FIFO_LEN(i2c_master->base->port_num) - *address_fill);
+    uint32_t fifo_len = I2C_FIFO_LEN(i2c_master->base->port_num);
+    data_fill = MIN(remaining_bytes, fifo_len - *address_fill);
     write_pr = i2c_operation->data + i2c_operation->bytes_used;
     i2c_operation->bytes_used += data_fill;
     hw_cmd.byte_num = data_fill + *address_fill;
@@ -286,7 +287,8 @@ static bool s_i2c_read_command(i2c_master_bus_handle_t i2c_master, i2c_operation
     i2c_bus_handle_t handle = i2c_master->base;
     i2c_ll_hw_cmd_t hw_cmd = i2c_operation->hw_cmd;
 
-    *fifo_fill = MIN(remaining_bytes, I2C_FIFO_LEN(i2c_master->base->port_num) - i2c_master->read_len_static);
+    uint32_t fifo_len = I2C_FIFO_LEN(i2c_master->base->port_num);
+    *fifo_fill = MIN(remaining_bytes, fifo_len - i2c_master->read_len_static);
     i2c_master->rx_cnt = *fifo_fill;
     hw_cmd.byte_num = *fifo_fill;
 
@@ -590,8 +592,15 @@ static void s_i2c_send_commands(i2c_master_bus_handle_t i2c_master, TickType_t t
             // For i2c nack detected, the i2c transaction not finish.
             // start->address->nack->stop
             // So wait the whole transaction finishes, then quit the function.
+            TickType_t start_tick = xTaskGetTickCount();
+            const TickType_t timeout_ticks = ticks_to_wait;
             while (i2c_ll_is_bus_busy(hal->dev)) {
-                __asm__ __volatile__("nop");
+                if ((xTaskGetTickCount() - start_tick) > timeout_ticks) {
+                    ESP_LOGE(TAG, "I2C bus is still busy but software timeout detected");
+                    atomic_store(&i2c_master->status, I2C_STATUS_TIMEOUT);
+                    s_i2c_hw_fsm_reset(i2c_master, true);
+                    break;
+                }
             }
         }
         s_i2c_err_log_print(event, i2c_master->bypass_nack_log);
@@ -870,7 +879,7 @@ static esp_err_t i2c_master_bus_destroy(i2c_master_bus_handle_t bus_handle)
     i2c_master_bus_handle_t i2c_master = bus_handle;
     esp_err_t err = ESP_OK;
     if (i2c_master->base) {
-        i2c_common_deinit_pins(i2c_master->base);
+        ESP_RETURN_ON_ERROR(i2c_common_deinit_pins(i2c_master->base), TAG, "failed to deinit i2c pins");
         err = i2c_release_bus_handle(i2c_master->base);
     }
     if (err == ESP_OK) {
@@ -1037,9 +1046,6 @@ esp_err_t i2c_new_master_bus(const i2c_master_bus_config_t *bus_config, i2c_mast
     i2c_master->base->sda_num = bus_config->sda_io_num;
     i2c_master->base->pull_up_enable = bus_config->flags.enable_internal_pullup;
 
-    if (i2c_master->base->pull_up_enable == false) {
-        ESP_LOGW(TAG, "Please check pull-up resistances whether be connected properly. Otherwise unexpected behavior would happen. For more detailed information, please read docs");
-    }
     ESP_GOTO_ON_ERROR(i2c_param_master_config(i2c_master->base, bus_config), err, TAG, "i2c configure parameter failed");
 
     if (!i2c_master->base->is_lp_i2c) {
@@ -1292,6 +1298,10 @@ esp_err_t i2c_master_transmit_receive(i2c_master_dev_handle_t i2c_dev, const uin
     ESP_RETURN_ON_FALSE((write_buffer != NULL) && (write_size > 0), ESP_ERR_INVALID_ARG, TAG, "i2c transmit buffer or size invalid");
     ESP_RETURN_ON_FALSE((read_buffer != NULL) && (read_size > 0), ESP_ERR_INVALID_ARG, TAG, "i2c receive buffer or size invalid");
 
+#if CONFIG_I2C_ISR_IRAM_SAFE
+    ESP_RETURN_ON_FALSE(esp_ptr_internal(read_buffer), ESP_ERR_INVALID_ARG, TAG, "read buffer not in internal RAM");
+#endif
+
     esp_err_t ret = ESP_OK;
     i2c_operation_t i2c_ops[] = {
         {.hw_cmd = I2C_TRANS_START_COMMAND},
@@ -1315,6 +1325,10 @@ esp_err_t i2c_master_receive(i2c_master_dev_handle_t i2c_dev, uint8_t *read_buff
     ESP_RETURN_ON_FALSE(i2c_dev != NULL, ESP_ERR_INVALID_ARG, TAG, "i2c handle not initialized");
     ESP_RETURN_ON_FALSE((read_buffer != NULL) && (read_size > 0), ESP_ERR_INVALID_ARG, TAG, "i2c receive buffer or size invalid");
     esp_err_t ret = ESP_OK;
+
+#if CONFIG_I2C_ISR_IRAM_SAFE
+    ESP_RETURN_ON_FALSE(esp_ptr_internal(read_buffer), ESP_ERR_INVALID_ARG, TAG, "read buffer not in internal RAM");
+#endif
 
     i2c_operation_t i2c_ops[] = {
         {.hw_cmd = I2C_TRANS_START_COMMAND},
@@ -1432,10 +1446,13 @@ esp_err_t i2c_master_execute_defined_operations(i2c_master_dev_handle_t i2c_dev,
         case I2C_MASTER_CMD_WRITE:
             i2c_ops[i].hw_cmd.op_code = I2C_LL_CMD_WRITE;
             i2c_ops[i].hw_cmd.ack_en = i2c_operation[i].write.ack_check;
-            i2c_ops[i].data = i2c_operation[i].write.data;
+            i2c_ops[i].data = (uint8_t *)i2c_operation[i].write.data;
             i2c_ops[i].total_bytes = i2c_operation[i].write.total_bytes;
             break;
         case I2C_MASTER_CMD_READ:
+#if CONFIG_I2C_ISR_IRAM_SAFE
+            ESP_RETURN_ON_FALSE(esp_ptr_internal(i2c_operation[i].read.data), ESP_ERR_INVALID_ARG, TAG, "read buffer not in internal RAM");
+#endif
             i2c_ops[i].hw_cmd.op_code = I2C_LL_CMD_READ;
             i2c_ops[i].hw_cmd.ack_val = i2c_operation[i].read.ack_value;
             i2c_ops[i].data = i2c_operation[i].read.data;

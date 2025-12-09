@@ -61,8 +61,7 @@ typedef struct {
 typedef struct {
     int id;
     _Atomic spi_bus_fsm_t fsm;
-    uint64_t gpio_reserve;
-    spi_bus_config_t bus_config;
+    spi_bus_attr_t* bus_attr;
     spi_dma_ctx_t   *dma_ctx;
     spi_slave_interface_config_t cfg;
     intr_handle_t intr;
@@ -104,20 +103,26 @@ static inline bool SPI_SLAVE_ISR_ATTR bus_is_iomux(spi_slave_t *host)
     return host->flags & SPICOMMON_BUSFLAG_IOMUX_PINS;
 }
 
-static void SPI_SLAVE_ISR_ATTR freeze_cs(spi_slave_t *host)
+static inline void SPI_SLAVE_ISR_ATTR freeze_cs(spi_slave_t *host)
 {
+#if SPI_LL_SLAVE_NEEDS_CS_WORKAROUND
+    // This workaround only for ESP32 due to old hardware design, see MR !3207
     esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ONE_INPUT, host->cs_in_signal, false);
+#endif
 }
 
 // Use this function instead of cs_initial to avoid overwrite the output config
 // This is used in test by internal gpio matrix connections
 static inline void SPI_SLAVE_ISR_ATTR restore_cs(spi_slave_t *host)
 {
+#if SPI_LL_SLAVE_NEEDS_CS_WORKAROUND
+    // This workaround only for ESP32 due to old hardware design, see MR !3207
     if (host->cs_iomux) {
         gpio_ll_set_input_signal_from(GPIO_HAL_GET_HW(GPIO_PORT_0), host->cs_in_signal, false);
     } else {
         esp_rom_gpio_connect_in_signal(host->cfg.spics_io_num, host->cs_in_signal, false);
     }
+#endif
 }
 
 #if (SOC_CPU_CORES_NUM > 1) && (!CONFIG_FREERTOS_UNICORE)
@@ -156,7 +161,7 @@ esp_err_t spi_slave_initialize(spi_host_device_t host, const spi_bus_config_t *b
 #elif SOC_GDMA_SUPPORTED
     SPI_CHECK(dma_chan == SPI_DMA_DISABLED || dma_chan == SPI_DMA_CH_AUTO, "invalid dma channel, chip only support spi dma channel auto-alloc", ESP_ERR_INVALID_ARG);
 #endif
-    SPI_CHECK((bus_config->intr_flags & (ESP_INTR_FLAG_HIGH | ESP_INTR_FLAG_EDGE | ESP_INTR_FLAG_INTRDISABLED)) == 0, "intr flag not allowed", ESP_ERR_INVALID_ARG);
+    SPI_CHECK((bus_config->intr_flags & (ESP_INTR_FLAG_HIGH | ESP_INTR_FLAG_EDGE | ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_INTRDISABLED)) == 0, "intr flag not allowed", ESP_ERR_INVALID_ARG);
 #ifndef CONFIG_SPI_SLAVE_ISR_IN_IRAM
     SPI_CHECK((bus_config->intr_flags & ESP_INTR_FLAG_IRAM) == 0, "ESP_INTR_FLAG_IRAM should be disabled when CONFIG_SPI_SLAVE_ISR_IN_IRAM is not set.", ESP_ERR_INVALID_ARG);
 #endif
@@ -175,8 +180,8 @@ esp_err_t spi_slave_initialize(spi_host_device_t host, const spi_bus_config_t *b
         goto cleanup;
     }
     memcpy(&spihost[host]->cfg, slave_config, sizeof(spi_slave_interface_config_t));
-    memcpy(&spihost[host]->bus_config, bus_config, sizeof(spi_bus_config_t));
     spihost[host]->id = host;
+    spihost[host]->bus_attr = (spi_bus_attr_t *)spi_bus_get_attr(host);
     atomic_store(&spihost[host]->fsm, SPI_BUS_FSM_ENABLED);
     spi_slave_hal_context_t *hal = &spihost[host]->hal;
 
@@ -207,17 +212,18 @@ esp_err_t spi_slave_initialize(spi_host_device_t host, const spi_bus_config_t *b
         spihost[host]->max_transfer_sz = SOC_SPI_MAXIMUM_BUFFER_SIZE;
     }
 
-    err = spicommon_bus_initialize_io(host, bus_config, SPICOMMON_BUSFLAG_SLAVE | bus_config->flags, &spihost[host]->flags, &spihost[host]->gpio_reserve);
+    err = spicommon_bus_initialize_io(host, bus_config, SPICOMMON_BUSFLAG_SLAVE | bus_config->flags, NULL, NULL);
     if (err != ESP_OK) {
         ret = err;
         goto cleanup;
     }
     if (slave_config->spics_io_num >= 0) {
-        spicommon_cs_initialize(host, slave_config->spics_io_num, 0, !bus_is_iomux(spihost[host]), &spihost[host]->gpio_reserve);
+        spicommon_cs_initialize(host, slave_config->spics_io_num, 0, !bus_is_iomux(spihost[host]), NULL);
         // check and save where cs line really route through
         spihost[host]->cs_iomux = (slave_config->spics_io_num == spi_periph_signal[host].spics0_iomux_pin) && bus_is_iomux(spihost[host]);
         spihost[host]->cs_in_signal = spi_periph_signal[host].spics_in;
     }
+    spihost[host]->flags = spihost[host]->bus_attr->flags; // This flag MUST be set after spicommon_bus_initialize_io is called
 
     // The slave DMA suffers from unexpected transactions. Forbid reading if DMA is enabled by disabling the CS line.
     if (spihost[host]->dma_enabled) {
@@ -331,9 +337,9 @@ esp_err_t spi_slave_free(spi_host_device_t host)
         free(spihost[host]->dma_ctx->dmadesc_rx);
         spicommon_dma_chan_free(spihost[host]->dma_ctx);
     }
-    spicommon_bus_free_io_cfg(&spihost[host]->bus_config, &spihost[host]->gpio_reserve);
+    spicommon_bus_free_io_cfg(&spihost[host]->bus_attr->bus_cfg, &spihost[host]->bus_attr->gpio_reserve);
     if (spihost[host]->cfg.spics_io_num >= 0) {
-        spicommon_cs_free_io(spihost[host]->cfg.spics_io_num, &spihost[host]->gpio_reserve);
+        spicommon_cs_free_io(spihost[host]->cfg.spics_io_num, &spihost[host]->bus_attr->gpio_reserve);
     }
     esp_intr_free(spihost[host]->intr);
 
@@ -401,9 +407,13 @@ esp_err_t spi_slave_disable(spi_host_device_t host)
 
 static void SPI_SLAVE_ISR_ATTR spi_slave_uninstall_priv_trans(spi_host_device_t host, spi_slave_trans_priv_t *priv_trans)
 {
+    __attribute__((unused)) spi_slave_transaction_t *trans = (spi_slave_transaction_t *)priv_trans->trans;
+#if CONFIG_IDF_TARGET_ESP32
+    if (spihost[host]->dma_enabled && (trans->trans_len % 32)) {
+        ESP_EARLY_LOGW(SPI_TAG, "Use DMA but real trans_len is not 4 bytes aligned, slave may loss data");
+    }
+#endif
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
-    spi_slave_transaction_t *trans = (spi_slave_transaction_t *)priv_trans->trans;
-
     if (spihost[host]->dma_enabled) {
         if (trans->tx_buffer && (trans->tx_buffer != priv_trans->tx_buffer)) {
             free(priv_trans->tx_buffer);
@@ -463,7 +473,7 @@ static esp_err_t SPI_SLAVE_ISR_ATTR spi_slave_setup_priv_trans(spi_host_device_t
     return ESP_OK;
 }
 
-esp_err_t SPI_SLAVE_ATTR spi_slave_queue_trans(spi_host_device_t host, const spi_slave_transaction_t *trans_desc, TickType_t ticks_to_wait)
+esp_err_t SPI_SLAVE_ATTR spi_slave_queue_trans(spi_host_device_t host, const spi_slave_transaction_t *trans_desc, uint32_t ticks_to_wait)
 {
     BaseType_t r;
     SPI_CHECK(is_valid_host(host), "invalid host", ESP_ERR_INVALID_ARG);
@@ -591,7 +601,7 @@ esp_err_t SPI_SLAVE_ISR_ATTR spi_slave_queue_reset_isr(spi_host_device_t host)
     return ESP_OK;
 }
 
-esp_err_t SPI_SLAVE_ATTR spi_slave_get_trans_result(spi_host_device_t host, spi_slave_transaction_t **trans_desc, TickType_t ticks_to_wait)
+esp_err_t SPI_SLAVE_ATTR spi_slave_get_trans_result(spi_host_device_t host, spi_slave_transaction_t **trans_desc, uint32_t ticks_to_wait)
 {
     BaseType_t r;
     SPI_CHECK(is_valid_host(host), "invalid host", ESP_ERR_INVALID_ARG);
@@ -610,7 +620,7 @@ esp_err_t SPI_SLAVE_ATTR spi_slave_get_trans_result(spi_host_device_t host, spi_
     return ESP_OK;
 }
 
-esp_err_t SPI_SLAVE_ATTR spi_slave_transmit(spi_host_device_t host, spi_slave_transaction_t *trans_desc, TickType_t ticks_to_wait)
+esp_err_t SPI_SLAVE_ATTR spi_slave_transmit(spi_host_device_t host, spi_slave_transaction_t *trans_desc, uint32_t ticks_to_wait)
 {
     esp_err_t ret;
     spi_slave_transaction_t *ret_trans;
@@ -640,21 +650,13 @@ static void SPI_SLAVE_ISR_ATTR s_spi_slave_dma_prepare_data(spi_dma_ctx_t *dma_c
 
         spi_dma_reset(dma_ctx->rx_dma_chan);
         spi_slave_hal_hw_prepare_rx(hal->hw);
+        spi_dma_start(dma_ctx->rx_dma_chan, dma_ctx->dmadesc_rx);
     }
     if (hal->tx_buffer) {
         spicommon_dma_desc_setup_link(dma_ctx->dmadesc_tx, hal->tx_buffer, (hal->bitlen + 7) / 8, false);
 
         spi_dma_reset(dma_ctx->tx_dma_chan);
         spi_slave_hal_hw_prepare_tx(hal->hw);
-    }
-}
-
-static void SPI_SLAVE_ISR_ATTR s_spi_slave_start_dma(spi_dma_ctx_t *dma_ctx, spi_slave_hal_context_t *hal)
-{
-    if (hal->rx_buffer) {
-        spi_dma_start(dma_ctx->rx_dma_chan, dma_ctx->dmadesc_rx);
-    }
-    if (hal->tx_buffer) {
         spi_dma_start(dma_ctx->tx_dma_chan, dma_ctx->dmadesc_tx);
     }
 }
@@ -724,6 +726,7 @@ static void SPI_SLAVE_ISR_ATTR spi_intr(void *arg)
             // invalidate priv_trans.buffer_to_rcv anyway, only user provide aligned buffer can rcv correct data in post_cb
             esp_err_t ret = esp_cache_msync((void *)host->cur_trans.rx_buffer, buffer_byte_len, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
             assert(ret == ESP_OK);
+            (void)ret;
         }
 #endif
         if (host->cfg.post_trans_cb) {
@@ -784,10 +787,7 @@ static void SPI_SLAVE_ISR_ATTR spi_intr(void *arg)
 
         //The slave rx dma get disturbed by unexpected transaction. Only connect the CS and start DMA when slave is ready.
         if (use_dma) {
-            // Note: order of restore_cs and s_spi_slave_start_dma is important
-            // restore_cs also bring potential glitch, should happen before start DMA
             restore_cs(host);
-            s_spi_slave_start_dma(host->dma_ctx, hal);
         }
 
         //Kick off transfer

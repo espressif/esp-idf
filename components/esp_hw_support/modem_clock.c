@@ -21,6 +21,9 @@
 #include "hal/clk_tree_ll.h"
 #include "hal/regi2c_ctrl_ll.h"
 #include "esp_private/regi2c_ctrl.h"
+#if CONFIG_IDF_TARGET_ESP32H2
+#include "soc/rtc.h"
+#endif // CONFIG_IDF_TARGET_ESP32H2
 
 // Please define the frequently called modules in the low bit,
 // which will improve the execution efficiency
@@ -266,7 +269,7 @@ static void IRAM_ATTR modem_clock_device_disable(modem_clock_context_t *ctx, uin
     assert(refs >= 0);
 }
 
-void IRAM_ATTR modem_clock_module_mac_reset(periph_module_t module)
+void IRAM_ATTR modem_clock_module_mac_reset(shared_periph_module_t module)
 {
     __attribute__((unused)) modem_clock_context_t *ctx = MODEM_CLOCK_instance();
     esp_os_enter_critical_safe(&ctx->lock);
@@ -312,7 +315,7 @@ void IRAM_ATTR modem_clock_module_mac_reset(periph_module_t module)
 #define PHY_CALIBRATION_CLOCK_DEPS      (BIT(MODEM_CLOCK_WIFI_APB) | BIT(MODEM_CLOCK_WIFI_BB_44M))
 #endif
 
-static IRAM_ATTR uint32_t modem_clock_get_module_deps(periph_module_t module)
+static IRAM_ATTR uint32_t modem_clock_get_module_deps(shared_periph_module_t module)
 {
     uint32_t deps = 0;
     switch (module) {
@@ -349,7 +352,7 @@ static IRAM_ATTR uint32_t modem_clock_get_module_deps(periph_module_t module)
 #define ICG_NOGATING_SLEEP  (BIT(PMU_HP_ICG_MODEM_CODE_SLEEP))
 #define ICG_NOGATING_MODEM  (BIT(PMU_HP_ICG_MODEM_CODE_MODEM))
 
-#if !CONFIG_IDF_TARGET_ESP32H2
+#if SOC_PM_SUPPORT_PMU_MODEM_STATE
 static const DRAM_ATTR uint32_t initial_gating_mode[MODEM_CLOCK_DOMAIN_MAX] = {
     [MODEM_CLOCK_DOMAIN_MODEM_APB]      = ICG_NOGATING_ACTIVE | ICG_NOGATING_MODEM,
     [MODEM_CLOCK_DOMAIN_MODEM_PERIPH]   = ICG_NOGATING_ACTIVE,
@@ -364,7 +367,7 @@ static const DRAM_ATTR uint32_t initial_gating_mode[MODEM_CLOCK_DOMAIN_MAX] = {
 };
 #endif
 
-#if !CONFIG_IDF_TARGET_ESP32H2  //TODO: PM-92
+#if SOC_PM_SUPPORT_PMU_MODEM_STATE
 static IRAM_ATTR void modem_clock_module_icg_map_init_all(void)
 {
     esp_os_enter_critical_safe(&MODEM_CLOCK_instance()->lock);
@@ -376,17 +379,17 @@ static IRAM_ATTR void modem_clock_module_icg_map_init_all(void)
 }
 #endif
 
-void IRAM_ATTR modem_clock_module_enable(periph_module_t module)
+void IRAM_ATTR modem_clock_module_enable(shared_periph_module_t module)
 {
     assert(IS_MODEM_MODULE(module));
-#if !CONFIG_IDF_TARGET_ESP32H2
+#if SOC_PM_SUPPORT_PMU_MODEM_STATE
     modem_clock_module_icg_map_init_all();
 #endif
     uint32_t deps = modem_clock_get_module_deps(module);
     modem_clock_device_enable(MODEM_CLOCK_instance(), deps);
 }
 
-void IRAM_ATTR modem_clock_module_disable(periph_module_t module)
+void IRAM_ATTR modem_clock_module_disable(shared_periph_module_t module)
 {
     assert(IS_MODEM_MODULE(module));
     uint32_t deps = modem_clock_get_module_deps(module);
@@ -404,7 +407,7 @@ void modem_clock_deselect_all_module_lp_clock_source(void)
     modem_clock_hal_deselect_all_coex_lpclk_source(MODEM_CLOCK_instance()->hal);
 }
 
-void modem_clock_select_lp_clock_source(periph_module_t module, modem_clock_lpclk_src_t src, uint32_t divider)
+void modem_clock_select_lp_clock_source(shared_periph_module_t module, modem_clock_lpclk_src_t src, uint32_t divider)
 {
     assert(IS_MODEM_MODULE(module));
     esp_os_enter_critical_safe(&MODEM_CLOCK_instance()->lock);
@@ -429,7 +432,7 @@ void modem_clock_select_lp_clock_source(periph_module_t module, modem_clock_lpcl
         if (selected) {
             rc_clk_en = clk_ll_rc32k_is_enabled();
             if (!rc_clk_en) {
-                clk_ll_rc32k_enable();
+                rtc_clk_rc32k_enable(true);
             }
             modem_clock_hal_select_ble_rtc_timer_lpclk_source(MODEM_CLOCK_instance()->hal, MODEM_CLOCK_LPCLK_SRC_RC32K);
         }
@@ -442,7 +445,7 @@ void modem_clock_select_lp_clock_source(periph_module_t module, modem_clock_lpcl
         if (!rc_clk_en) {
             extern void r_esp_ble_rtc_ticks_delay(uint32_t ticks);
             r_esp_ble_rtc_ticks_delay(2);
-            clk_ll_rc32k_disable();
+            rtc_clk_rc32k_enable(false);
         }
 #endif // CONFIG_IDF_TARGET_ESP32H2
 #if SOC_BLE_USE_WIFI_PWR_CLK_WORKAROUND
@@ -497,7 +500,7 @@ void modem_clock_select_lp_clock_source(periph_module_t module, modem_clock_lpcl
 #endif
 }
 
-void modem_clock_deselect_lp_clock_source(periph_module_t module)
+void modem_clock_deselect_lp_clock_source(shared_periph_module_t module)
 {
     assert(IS_MODEM_MODULE(module));
     esp_os_enter_critical_safe(&MODEM_CLOCK_instance()->lock);

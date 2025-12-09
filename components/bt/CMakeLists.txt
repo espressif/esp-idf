@@ -50,6 +50,9 @@ set(ble_mesh_v11_include_dirs
     "esp_ble_mesh/v1.1/api/core/include"
     "esp_ble_mesh/v1.1/api/models/include"
     "esp_ble_mesh/v1.1/btc/include"
+    "esp_ble_mesh/v1.1/include"
+    "esp_ble_mesh/v1.1/dfu"
+    "esp_ble_mesh/v1.1/mbt"
 )
 
 if(CONFIG_IDF_DOC_BUILD)
@@ -559,7 +562,6 @@ if(CONFIG_BT_ENABLED)
                     "esp_ble_mesh/core/storage/settings.c"
                     "esp_ble_mesh/core/access.c"
                     "esp_ble_mesh/core/adv_common.c"
-                    "esp_ble_mesh/core/ble_adv.c"
                     "esp_ble_mesh/core/beacon.c"
                     "esp_ble_mesh/core/cfg_cli.c"
                     "esp_ble_mesh/core/cfg_srv.c"
@@ -616,6 +618,7 @@ if(CONFIG_BT_ENABLED)
                     "esp_ble_mesh/common/tinycrypt/src/sha256.c"
                     "esp_ble_mesh/common/tinycrypt/src/utils.c")
         endif()
+
         if(CONFIG_BLE_MESH_V11_SUPPORT)
             list(APPEND include_dirs ${ble_mesh_v11_include_dirs})
 
@@ -631,9 +634,13 @@ if(CONFIG_BT_ENABLED)
                         "esp_ble_mesh/v1.1/api/core/esp_ble_mesh_sar_model_api.c"
                         "esp_ble_mesh/v1.1/api/core/esp_ble_mesh_srpl_model_api.c"
                         "esp_ble_mesh/v1.1/api/models/esp_ble_mesh_mbt_model_api.c"
+                        "esp_ble_mesh/v1.1/api/models/esp_ble_mesh_dfu_model_api.c"
+                        "esp_ble_mesh/v1.1/api/models/esp_ble_mesh_dfu_slot_api.c"
                         "esp_ble_mesh/v1.1/btc/btc_ble_mesh_agg_model.c"
                         "esp_ble_mesh/v1.1/btc/btc_ble_mesh_brc_model.c"
                         "esp_ble_mesh/v1.1/btc/btc_ble_mesh_df_model.c"
+                        "esp_ble_mesh/v1.1/btc/btc_ble_mesh_dfu_model.c"
+                        "esp_ble_mesh/v1.1/btc/btc_ble_mesh_dfu_slot.c"
                         "esp_ble_mesh/v1.1/btc/btc_ble_mesh_lcd_model.c"
                         "esp_ble_mesh/v1.1/btc/btc_ble_mesh_mbt_model.c"
                         "esp_ble_mesh/v1.1/btc/btc_ble_mesh_odp_model.c"
@@ -641,24 +648,33 @@ if(CONFIG_BT_ENABLED)
                         "esp_ble_mesh/v1.1/btc/btc_ble_mesh_rpr_model.c"
                         "esp_ble_mesh/v1.1/btc/btc_ble_mesh_sar_model.c"
                         "esp_ble_mesh/v1.1/btc/btc_ble_mesh_srpl_model.c"
+                        "esp_ble_mesh/v1.1/mbt/blob_srv.c"
+                        "esp_ble_mesh/v1.1/mbt/blob_cli.c"
+                        "esp_ble_mesh/v1.1/dfu/dfu_cli.c"
+                        "esp_ble_mesh/v1.1/dfu/dfu_srv.c"
+                        "esp_ble_mesh/v1.1/dfu/dfu_slot.c"
+                        "esp_ble_mesh/v1.1/dfu/dfu_metadata.c"
                         "esp_ble_mesh/lib/ext.c")
+
             if(CONFIG_BLE_MESH_SAR_ENHANCEMENT)
                 list(APPEND srcs "esp_ble_mesh/core/transport.enh.c")
             else()
                 list(APPEND srcs "esp_ble_mesh/core/transport.c")
             endif()
         else()
-            list(APPEND srcs
-                        "esp_ble_mesh/core/transport.c")
+            list(APPEND srcs "esp_ble_mesh/core/transport.c")
         endif()
+
         if(CONFIG_BLE_MESH_SUPPORT_MULTI_ADV)
             list(APPEND srcs "esp_ble_mesh/core/ext_adv.c")
         else()
             list(APPEND srcs "esp_ble_mesh/core/adv.c")
         endif()
+
+        if(CONFIG_BLE_MESH_SUPPORT_BLE_ADV)
+            list(APPEND srcs "esp_ble_mesh/core/ble_adv.c")
+        endif()
     endif()
-
-
 
     if(CONFIG_BT_LE_CONTROLLER_NPL_OS_PORTING_SUPPORT)
         list(APPEND srcs
@@ -754,6 +770,7 @@ if(CONFIG_BT_ENABLED)
                     host/nimble/nimble/nimble/host/util/include
                     host/nimble/nimble/nimble/host/store/ram/include
                     host/nimble/nimble/nimble/host/store/config/include
+                    host/nimble/nimble/nimble/host/services/ras/include
                     )
 
         list(APPEND srcs "host/nimble/nimble/nimble/transport/src/transport.c"
@@ -774,6 +791,8 @@ if(CONFIG_BT_ENABLED)
                     "host/nimble/nimble/nimble/host/services/hid/src/ble_svc_hid.c"
                     "host/nimble/nimble/nimble/host/services/sps/src/ble_svc_sps.c"
                     "host/nimble/nimble/nimble/host/services/cte/src/ble_svc_cte.c"
+                    "host/nimble/nimble/nimble/host/services/ras/src/ble_svc_ras.c"
+                    "host/nimble/nimble/nimble/host/src/ble_cs.c"
                     "host/nimble/nimble/nimble/host/src/ble_hs_conn.c"
                     "host/nimble/nimble/nimble/host/src/ble_store_util.c"
                     "host/nimble/nimble/nimble/host/src/ble_sm.c"
@@ -963,12 +982,34 @@ set(bt_priv_requires
     esp_security
 )
 
+if(CONFIG_BLE_COMPRESSED_LOG_ENABLE)
+    set(CODE_BASE_PATH "${CMAKE_CURRENT_SOURCE_DIR}")
+    # When log compression is enabled, selected logs are replaced
+    # by auto-generated macros that emit pre-encoded data.
+    # This eliminates the original format strings, reducing firmware size and
+    # removing runtime formatting overhead, so logs are produced faster and
+    # with less system impact.
+    add_subdirectory(common/ble_log/extension/log_compression)
+    if(LOG_COMPRESSION_TARGET)
+        set(srcs ${LOG_COMPRESS_SRCS})
+        set(include_dirs ${LOG_COMPRESS_INCLUDE_DIRS})
+    else()
+        list(APPEND include_dirs ${LOG_COMPRESS_INCLUDE_DIRS})
+    endif()
+endif()
+
 idf_component_register(SRCS "${srcs}"
                        INCLUDE_DIRS "${include_dirs}"
                        PRIV_INCLUDE_DIRS "${priv_include_dirs}"
                        REQUIRES esp_timer esp_wifi
                        PRIV_REQUIRES "${bt_priv_requires}"
                        LDFRAGMENTS "${ldscripts}")
+
+if(CONFIG_BLE_COMPRESSED_LOG_ENABLE)
+    if(LOG_COMPRESSION_TARGET)
+        add_dependencies(${COMPONENT_LIB} ${LOG_COMPRESSION_TARGET})
+    endif()
+endif()
 
 if(CONFIG_BT_ENABLED)
     target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-implicit-fallthrough -Wno-unused-const-variable)

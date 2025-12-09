@@ -25,6 +25,7 @@
 #include "hal/wdt_hal.h"
 #include "hal/uart_types.h"
 #include "hal/uart_ll.h"
+#include "freertos/FreeRTOS.h"
 
 #if CONFIG_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE
 #include "private/esp_coexist_internal.h"
@@ -48,7 +49,7 @@
 #endif
 
 // Using the same tag as in startup.c to keep the logs unchanged
-static const char* TAG = "cpu_start";
+ESP_LOG_ATTR_TAG(TAG, "cpu_start");
 
 // Hook to force the linker to include this file
 void esp_system_include_startup_funcs(void)

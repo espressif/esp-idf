@@ -1,11 +1,11 @@
 cmake_minimum_required(VERSION 3.22)
-project(esp-idf C CXX ASM)
 
 if(CMAKE_CURRENT_LIST_DIR STREQUAL CMAKE_SOURCE_DIR)
     message(FATAL_ERROR "Current directory '${CMAKE_CURRENT_LIST_DIR}' is not buildable. "
-    "Change directories to one of the example projects in '${CMAKE_CURRENT_LIST_DIR}/examples' and try "
-    "again.")
+    "Change directories to one of the example projects in '${CMAKE_CURRENT_LIST_DIR}/examples' and try again.")
 endif()
+
+project(esp-idf C CXX ASM)
 
 # Variables compile_options, c_compile_options, cxx_compile_options, compile_definitions, link_options shall
 # not be unset as they may already contain flags, set by toolchain-TARGET.cmake files.
@@ -159,6 +159,10 @@ if(CONFIG_COMPILER_NO_MERGE_CONSTANTS)
     list(APPEND compile_options "-fno-merge-constants")
 endif()
 
+if(CONFIG_COMPILER_ENABLE_TEXT_SECTION_LITERALS)
+    list(APPEND compile_options "-mtext-section-literals")
+endif()
+
 if(CONFIG_COMPILER_STACK_CHECK_MODE_NORM)
     list(APPEND compile_options "-fstack-protector")
 elseif(CONFIG_COMPILER_STACK_CHECK_MODE_STRONG)
@@ -173,6 +177,14 @@ endif()
 
 if(CMAKE_C_COMPILER_ID MATCHES "GNU" AND CMAKE_C_COMPILER_VERSION VERSION_GREATER 15.0)
     list(APPEND c_compile_options "-fzero-init-padding-bits=all" "-fno-malloc-dce")
+endif()
+
+if(CONFIG_COMPILER_CXX_GLIBCXX_CONSTEXPR_COLD_CONSTEXPR)
+    list(APPEND cxx_compile_options "-D_GLIBCXX20_CONSTEXPR=__attribute__((cold)) constexpr")
+    list(APPEND cxx_compile_options "-D_GLIBCXX23_CONSTEXPR=__attribute__((cold)) constexpr")
+elseif(CONFIG_COMPILER_CXX_GLIBCXX_CONSTEXPR_COLD)
+    list(APPEND cxx_compile_options "-D_GLIBCXX20_CONSTEXPR=__attribute__((cold))")
+    list(APPEND cxx_compile_options "-D_GLIBCXX23_CONSTEXPR=__attribute__((cold))")
 endif()
 
 __generate_prefix_map(prefix_map_compile_options)
@@ -320,3 +332,12 @@ foreach(component_target ${build_component_targets})
     endif()
     set(__idf_component_context 0)
 endforeach()
+
+# Run component validation checks after all components have been processed
+# Only run validation for the main project, not subprojects like bootloader
+idf_build_get_property(bootloader_build BOOTLOADER_BUILD)
+idf_build_get_property(esp_tee_build ESP_TEE_BUILD)
+if(NOT bootloader_build AND NOT esp_tee_build)
+    include("${CMAKE_CURRENT_LIST_DIR}/tools/cmake/component_validation.cmake")
+    __component_validation_run_checks()
+endif()

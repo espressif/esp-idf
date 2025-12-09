@@ -1,6 +1,6 @@
 /* ESP-TEE (Trusted Execution Environment) Example
  *
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -10,55 +10,72 @@
 
 #include "esp_log.h"
 #include "esp_err.h"
-#include "aes/esp_aes.h"
+#include "esp_random.h"
 
 #include "esp_tee.h"
 #include "secure_service_num.h"
+#include "example_service.h"
 
-#define BUF_SZ  (16)
+#define EXAMPLE_BUF_SZ        (32)
+#define AES256_GCM_TAG_LEN    (12)
+#define AES256_GCM_AAD_LEN    (16)
 
 static const char *TAG = "example_tee_basic";
 
-static const uint8_t expected_cipher[] = {
-    0xee, 0x04, 0x9b, 0xee, 0x95, 0x6f, 0x25, 0x04,
-    0x1e, 0x8c, 0xe4, 0x4e, 0x8e, 0x4e, 0x7a, 0xd3
-};
-
-static const uint8_t nonce[IV_BYTES] =  {[0 ... IV_BYTES - 1] = 0xFF};
-
 /*
  * Example workflow:
- * 1. The REE initiates an AES operation request via the secure service call interface
- * 2. The TEE receives the request and performs encryption/decryption using AES-256-CBC mode
- * 3. The TEE uses a protected key that is only accessible within the secure environment
- * 4. The encrypted/decrypted result is returned to the non-secure world through an output buffer
- *    provided in the secure service call
+ * 1. The REE generates random plaintext and AAD (Additional Authenticated Data)
+ * 2. The REE initiates an AES-256-GCM encryption request and provides output buffers
+ *    for ciphertext and authentication tag
+ * 3. The TEE receives the request and performs encryption using a protected key and
+ *    nonce that are only accessible within the secure environment
+ * 4. The encrypted ciphertext and authentication tag are returned to the REE
+ * 5. The REE initiates a decryption request with the ciphertext and authentication tag
+ * 6. The TEE performs authenticated decryption, verifying the tag and returning the plaintext
+ * 7. The REE verifies that the decrypted data matches the original plaintext
  */
 void app_main(void)
 {
-    ESP_LOGI(TAG, "AES-256-CBC operations in TEE");
+    ESP_LOGI(TAG, "AES-256-GCM operations in TEE");
 
-    uint8_t plain_text[BUF_SZ] =  {[0 ... BUF_SZ - 1] = 0x3A};
-    uint8_t cipher_text[BUF_SZ] = {0};
-    uint8_t decrypted_text[BUF_SZ] = {0};
-    uint8_t iv[IV_BYTES] = {0};
+    uint8_t plain_text[EXAMPLE_BUF_SZ];
+    uint8_t cipher_text[EXAMPLE_BUF_SZ] = {0};
+    uint8_t decrypted_text[EXAMPLE_BUF_SZ] = {0};
+    uint8_t tag[AES256_GCM_TAG_LEN] = {0};
+    uint8_t aad_buf[AES256_GCM_AAD_LEN];
 
-    memcpy(iv, nonce, sizeof(iv));
-    uint32_t ret = esp_tee_service_call(6, SS_EXAMPLE_SEC_SERV_AES_OP, ESP_AES_ENCRYPT, sizeof(plain_text), iv, plain_text, cipher_text);
-    if (ret != ESP_OK || memcmp(cipher_text, expected_cipher, sizeof(expected_cipher))) {
-        ESP_LOGE(TAG, "Failed to encrypt data!");
+    /* Generate random plaintext and AAD */
+    esp_fill_random(plain_text, sizeof(EXAMPLE_BUF_SZ));
+    esp_fill_random(aad_buf, AES256_GCM_AAD_LEN);
+
+    /* Encryption operation */
+    example_aes_gcm_ctx_t enc_ctx = {
+        .aad = aad_buf,
+        .aad_len = sizeof(aad_buf),
+        .input = plain_text,
+        .input_len = sizeof(plain_text),
+    };
+
+    uint32_t ret = esp_tee_service_call(5, SS_EXAMPLE_SEC_SERV_AES_GCM_ENCRYPT, &enc_ctx, tag, AES256_GCM_TAG_LEN, cipher_text);
+    ESP_ERROR_CHECK((esp_err_t)ret);
+
+    ESP_LOG_BUFFER_HEX_LEVEL("ciphertext", cipher_text, sizeof(cipher_text), ESP_LOG_INFO);
+    ESP_LOG_BUFFER_HEX_LEVEL("tag", tag, AES256_GCM_TAG_LEN, ESP_LOG_INFO);
+
+    /* Decryption operation */
+    example_aes_gcm_ctx_t dec_ctx = {
+        .aad = aad_buf,
+        .aad_len = sizeof(aad_buf),
+        .input = cipher_text,
+        .input_len = sizeof(cipher_text),
+    };
+
+    ret = esp_tee_service_call(5, SS_EXAMPLE_SEC_SERV_AES_GCM_DECRYPT, &dec_ctx, tag, AES256_GCM_TAG_LEN, decrypted_text);
+    ESP_ERROR_CHECK((esp_err_t)ret);
+
+    if (memcmp(decrypted_text, plain_text, sizeof(plain_text)) != 0) {
+        ESP_LOGE(TAG, "Decrypted data mismatch!");
     } else {
-        ESP_LOGI(TAG, "AES encryption successful!");
-    }
-
-    ESP_LOGI(TAG, "Cipher text -");
-    ESP_LOG_BUFFER_HEX_LEVEL(TAG, cipher_text, sizeof(cipher_text), ESP_LOG_INFO);
-
-    memcpy(iv, nonce, sizeof(iv));
-    ret = esp_tee_service_call(6, SS_EXAMPLE_SEC_SERV_AES_OP, ESP_AES_DECRYPT, sizeof(cipher_text), iv, cipher_text, decrypted_text);
-    if (ret != ESP_OK || memcmp(decrypted_text, plain_text, sizeof(plain_text))) {
-        ESP_LOGE(TAG, "Failed to decrypt data!");
-    } else {
-        ESP_LOGI(TAG, "AES decryption successful!");
+        ESP_LOGI(TAG, "AES-GCM decryption successful!");
     }
 }

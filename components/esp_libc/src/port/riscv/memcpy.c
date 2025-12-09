@@ -134,7 +134,7 @@ small:
                      "addi %1, %1,  4\n" // lb++;
                      "addi %2, %2,  4\n" // la++;
                      "sw   %0, -4(%2)\n" // *(la-1) = src0;
-                     : "=r"(src0), "+r"(lb), "+r"(la)
+                     : "=&r"(src0), "+r"(lb), "+r"(la)
                      :: "memory");
     }
 

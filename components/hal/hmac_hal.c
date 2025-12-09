@@ -7,10 +7,12 @@
 #include "stdio.h"
 #include "hal/hmac_hal.h"
 #include "hal/hmac_ll.h"
+#include "hal/assert.h"
 #include "soc/soc_caps.h"
 
 #if SOC_KEY_MANAGER_HMAC_KEY_DEPLOY
 #include "hal/key_mgr_hal.h"
+#include "hal/key_mgr_ll.h"
 #endif
 
 void hmac_hal_start(void)
@@ -26,6 +28,10 @@ uint32_t hmac_hal_configure(hmac_hal_output_t config, uint32_t key_id)
 
 #if SOC_KEY_MANAGER_HMAC_KEY_DEPLOY
     if (key_id == HMAC_KEY_KM) {
+        if (!key_mgr_ll_is_supported()) {
+            HAL_ASSERT(false && "Key manager is not supported");
+        }
+
         if (config == HMAC_OUTPUT_USER) {
             key_mgr_hal_set_key_usage(ESP_KEY_MGR_HMAC_KEY, ESP_KEY_MGR_USE_OWN_KEY);
         } else {

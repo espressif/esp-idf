@@ -30,11 +30,11 @@
 TEST_CASE("GDMA channel allocation", "[GDMA]")
 {
     gdma_channel_alloc_config_t channel_config = {};
-    gdma_channel_handle_t tx_channels[SOC_GDMA_PAIRS_PER_GROUP_MAX] = {};
-    gdma_channel_handle_t rx_channels[SOC_GDMA_PAIRS_PER_GROUP_MAX] = {};
+    gdma_channel_handle_t tx_channels[GDMA_LL_GET(PAIRS_PER_INST)] = {};
+    gdma_channel_handle_t rx_channels[GDMA_LL_GET(PAIRS_PER_INST)] = {};
     channel_config.direction = GDMA_CHANNEL_DIRECTION_TX;
 
-#if SOC_AHB_GDMA_SUPPORTED
+#if SOC_HAS(AHB_GDMA)
     // install TX channels
     for (int i = 0; i < GDMA_LL_AHB_PAIRS_PER_GROUP; i++) {
         TEST_ESP_OK(gdma_new_ahb_channel(&channel_config, &tx_channels[i]));
@@ -56,7 +56,7 @@ TEST_CASE("GDMA channel allocation", "[GDMA]")
     for (int i = 0; i < GDMA_LL_AHB_PAIRS_PER_GROUP; i++) {
         TEST_ESP_OK(gdma_del_channel(rx_channels[i]));
     }
-#endif // SOC_AHB_GDMA_SUPPORTED
+#endif // SOC_HAS(AHB_GDMA)
 
     // install single and paired TX/RX channels
 #if GDMA_LL_AHB_PAIRS_PER_GROUP >= 2
@@ -102,7 +102,7 @@ TEST_CASE("GDMA channel allocation", "[GDMA]")
     }
 #endif // GDMA_LL_AHB_PAIRS_PER_GROUP >= 2
 
-#if SOC_AXI_GDMA_SUPPORTED
+#if SOC_HAS(AXI_GDMA)
     // install TX channels
     channel_config.direction = GDMA_CHANNEL_DIRECTION_TX;
     for (int i = 0; i < GDMA_LL_AXI_PAIRS_PER_GROUP; i++) {
@@ -125,7 +125,7 @@ TEST_CASE("GDMA channel allocation", "[GDMA]")
     for (int i = 0; i < GDMA_LL_AXI_PAIRS_PER_GROUP; i++) {
         TEST_ESP_OK(gdma_del_channel(rx_channels[i]));
     }
-#endif // SOC_AXI_GDMA_SUPPORTED
+#endif // SOC_HAS(AXI_GDMA)
 
     // install single and paired TX/RX channels
 #if GDMA_LL_AXI_PAIRS_PER_GROUP >= 2
@@ -173,7 +173,7 @@ TEST_CASE("GDMA channel allocation", "[GDMA]")
 }
 
 static void test_gdma_config_link_list(gdma_channel_handle_t tx_chan, gdma_channel_handle_t rx_chan,
-                                       gdma_link_list_handle_t *tx_link_list, gdma_link_list_handle_t *rx_link_list, size_t sram_alignment, bool dma_link_in_ext_mem)
+                                       gdma_link_list_handle_t *tx_link_list, gdma_link_list_handle_t *rx_link_list, bool dma_link_in_ext_mem)
 {
 
     gdma_strategy_config_t strategy = {
@@ -193,7 +193,6 @@ static void test_gdma_config_link_list(gdma_channel_handle_t tx_chan, gdma_chann
 
     // create DMA link list for TX channel (a singly link with 3 nodes)
     gdma_link_list_config_t tx_link_list_config = {
-        .buffer_alignment = 1,
         .item_alignment = 8, // 8-byte alignment required by the AXI-GDMA
         .num_items = 3,
         .flags = {
@@ -204,7 +203,6 @@ static void test_gdma_config_link_list(gdma_channel_handle_t tx_chan, gdma_chann
     TEST_ESP_OK(gdma_new_link_list(&tx_link_list_config, tx_link_list));
     // create DMA link list for RX channel
     gdma_link_list_config_t rx_link_list_config = {
-        .buffer_alignment = sram_alignment, // RX buffer should be aligned to the cache line size, because we will do cache invalidate later
         .item_alignment = 8, // 8-byte alignment required by the AXI-GDMA
         .num_items = 5,
         .flags = {
@@ -235,7 +233,7 @@ static void test_gdma_m2m_transaction(gdma_channel_handle_t tx_chan, gdma_channe
 
     gdma_link_list_handle_t tx_link_list = NULL;
     gdma_link_list_handle_t rx_link_list = NULL;
-    test_gdma_config_link_list(tx_chan, rx_chan, &tx_link_list, &rx_link_list, sram_alignment, dma_link_in_ext_mem);
+    test_gdma_config_link_list(tx_chan, rx_chan, &tx_link_list, &rx_link_list, dma_link_in_ext_mem);
 
     // allocate the source buffer from SRAM
     uint8_t *src_data = heap_caps_calloc(1, 128, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
@@ -270,25 +268,28 @@ static void test_gdma_m2m_transaction(gdma_channel_handle_t tx_chan, gdma_channe
     gdma_buffer_mount_config_t tx_buf_mount_config[] = {
         [0] = {
             .buffer = src_data,
+            .buffer_alignment = 1,
             .length = 64,
         },
         [1] = {
             .buffer = src_data + 64,
+            .buffer_alignment = 1,
             .length = 64,
 #if !SOC_DMA_CAN_ACCESS_FLASH
             .flags = {
                 .mark_eof = true,
-                .mark_final = true, // using singly list, so terminate the link here
+                .mark_final = GDMA_FINAL_LINK_TO_NULL, // using singly list, so terminate the link here
             }
 #endif
         },
 #if SOC_DMA_CAN_ACCESS_FLASH
         [2] = {
             .buffer = (void *)src_string,
+            .buffer_alignment = 1,
             .length = src_string_len,
             .flags = {
                 .mark_eof = true,
-                .mark_final = true, // using singly list, so terminate the link here
+                .mark_final = GDMA_FINAL_LINK_TO_NULL, // using singly list, so terminate the link here
             }
         },
 #endif
@@ -297,6 +298,7 @@ static void test_gdma_m2m_transaction(gdma_channel_handle_t tx_chan, gdma_channe
 
     gdma_buffer_mount_config_t rx_buf_mount_config = {
         .buffer = dst_data,
+        .buffer_alignment = sram_alignment, // RX buffer should be aligned to the cache line size, because we will do cache invalidate later
         .length = 256,
     };
     TEST_ESP_OK(gdma_link_mount_buffers(rx_link_list, 0, &rx_buf_mount_config, 1, NULL));
@@ -345,7 +347,7 @@ static void test_gdma_m2m_mode(bool trig_retention_backup)
     gdma_channel_alloc_config_t tx_chan_alloc_config = {};
     gdma_channel_alloc_config_t rx_chan_alloc_config = {};
 
-#if SOC_AHB_GDMA_SUPPORTED
+#if SOC_HAS(AHB_GDMA)
     tx_chan_alloc_config = (gdma_channel_alloc_config_t) {
         .direction = GDMA_CHANNEL_DIRECTION_TX,
         .flags.reserve_sibling = true,
@@ -361,9 +363,9 @@ static void test_gdma_m2m_mode(bool trig_retention_backup)
 
     TEST_ESP_OK(gdma_del_channel(tx_chan));
     TEST_ESP_OK(gdma_del_channel(rx_chan));
-#endif // SOC_AHB_GDMA_SUPPORTED
+#endif // SOC_HAS(AHB_GDMA)
 
-#if SOC_AXI_GDMA_SUPPORTED
+#if SOC_HAS(AXI_GDMA)
     tx_chan_alloc_config = (gdma_channel_alloc_config_t) {
         .direction = GDMA_CHANNEL_DIRECTION_TX,
         .flags.reserve_sibling = true,
@@ -380,7 +382,7 @@ static void test_gdma_m2m_mode(bool trig_retention_backup)
 
     TEST_ESP_OK(gdma_del_channel(tx_chan));
     TEST_ESP_OK(gdma_del_channel(rx_chan));
-#endif // SOC_AXI_GDMA_SUPPORTED
+#endif // SOC_HAS(AXI_GDMA)
 }
 
 TEST_CASE("GDMA M2M Mode", "[GDMA][M2M]")
@@ -428,7 +430,7 @@ static void test_gdma_m2m_unaligned_buffer_test(uint8_t *dst_data, uint8_t *src_
 
     gdma_link_list_handle_t tx_link_list = NULL;
     gdma_link_list_handle_t rx_link_list = NULL;
-    test_gdma_config_link_list(tx_chan, rx_chan, &tx_link_list, &rx_link_list, sram_alignment, false);
+    test_gdma_config_link_list(tx_chan, rx_chan, &tx_link_list, &rx_link_list, false);
 
     // prepare the source data
     for (int i = 0; i < data_length; i++) {
@@ -442,10 +444,11 @@ static void test_gdma_m2m_unaligned_buffer_test(uint8_t *dst_data, uint8_t *src_
     gdma_buffer_mount_config_t tx_buf_mount_config[] = {
         [0] = {
             .buffer = src_data,
+            .buffer_alignment = 1,
             .length = data_length,
             .flags = {
                 .mark_eof = true,
-                .mark_final = true, // using singly list, so terminate the link here
+                .mark_final = GDMA_FINAL_LINK_TO_NULL, // using singly list, so terminate the link here
             }
         }
     };
@@ -457,6 +460,7 @@ static void test_gdma_m2m_unaligned_buffer_test(uint8_t *dst_data, uint8_t *src_
     TEST_ESP_OK(esp_dma_split_rx_buffer_to_cache_aligned(dst_data + offset_len, data_length, &align_array, &stash_buffer));
     for (int i = 0; i < 3; i++) {
         rx_aligned_buf_mount_config[i].buffer = align_array.aligned_buffer[i].aligned_buffer;
+        rx_aligned_buf_mount_config[i].buffer_alignment = sram_alignment;
         rx_aligned_buf_mount_config[i].length = align_array.aligned_buffer[i].length;
     }
     TEST_ESP_OK(gdma_link_mount_buffers(rx_link_list, 0, rx_aligned_buf_mount_config, 3, NULL));
@@ -559,7 +563,6 @@ TEST_CASE("GDMA M2M Unaligned RX Buffer Test", "[GDMA][M2M]")
     gdma_link_list_handle_t rx_link_list = NULL;
     // create DMA link list for TX channel
     gdma_link_list_config_t tx_link_list_config = {
-        .buffer_alignment = 32,
         .item_alignment = 8, // 8-byte alignment required by the AXI-GDMA
         .num_items = 20,
         .flags = {
@@ -569,7 +572,6 @@ TEST_CASE("GDMA M2M Unaligned RX Buffer Test", "[GDMA][M2M]")
     TEST_ESP_OK(gdma_new_link_list(&tx_link_list_config, &tx_link_list));
     // create DMA link list for RX channel
     gdma_link_list_config_t rx_link_list_config = {
-        .buffer_alignment = 32,
         .item_alignment = 8, // 8-byte alignment required by the AXI-GDMA
         .num_items = 20,
         .flags = {
@@ -603,19 +605,21 @@ TEST_CASE("GDMA M2M Unaligned RX Buffer Test", "[GDMA][M2M]")
 
     gdma_buffer_mount_config_t tx_buf_mount_config = {
         .buffer = src_data,
+        .buffer_alignment = 32,
         .length = COPY_SIZE,
         .flags = {
             .mark_eof = true,
-            .mark_final = true, // using singly list, so terminate the link here
+            .mark_final = GDMA_FINAL_LINK_TO_NULL, // using singly list, so terminate the link here
         }
     };
     TEST_ESP_OK(gdma_link_mount_buffers(tx_link_list, 0, &tx_buf_mount_config, 1, NULL));
 
     gdma_buffer_mount_config_t rx_buf_mount_config = {
         .buffer = dst_data,
+        .buffer_alignment = 32,
         .length = COPY_SIZE,
         .flags = {
-            .mark_final = true, // using singly list, so terminate the link here
+            .mark_final = GDMA_FINAL_LINK_TO_NULL, // using singly list, so terminate the link here
         }
     };
     TEST_ESP_OK(gdma_link_mount_buffers(rx_link_list, 0, &rx_buf_mount_config, 1, NULL));
@@ -672,7 +676,8 @@ TEST_CASE("GDMA memory copy SRAM->PSRAM->SRAM", "[GDMA][M2M]")
     [[maybe_unused]] gdma_channel_alloc_config_t tx_chan_alloc_config = {};
     [[maybe_unused]] gdma_channel_alloc_config_t rx_chan_alloc_config = {};
 
-#if SOC_AHB_GDMA_SUPPORTED && SOC_AHB_GDMA_SUPPORT_PSRAM
+#if SOC_HAS(AHB_GDMA)
+#if GDMA_LL_GET(AHB_PSRAM_CAPABLE)
     printf("Testing AHB-GDMA memory copy SRAM->PSRAM->SRAM\n");
     tx_chan_alloc_config = (gdma_channel_alloc_config_t) {
         .direction = GDMA_CHANNEL_DIRECTION_TX,
@@ -690,8 +695,10 @@ TEST_CASE("GDMA memory copy SRAM->PSRAM->SRAM", "[GDMA][M2M]")
     TEST_ESP_OK(gdma_del_channel(tx_chan));
     TEST_ESP_OK(gdma_del_channel(rx_chan));
 #endif
+#endif // SOC_HAS(AHB_GDMA)
 
-#if SOC_AXI_GDMA_SUPPORTED && SOC_AXI_GDMA_SUPPORT_PSRAM
+#if SOC_HAS(AXI_GDMA)
+#if GDMA_LL_GET(AXI_PSRAM_CAPABLE)
     printf("Testing AXI-GDMA memory copy SRAM->PSRAM->SRAM\n");
     tx_chan_alloc_config = (gdma_channel_alloc_config_t) {
         .direction = GDMA_CHANNEL_DIRECTION_TX,
@@ -709,5 +716,6 @@ TEST_CASE("GDMA memory copy SRAM->PSRAM->SRAM", "[GDMA][M2M]")
     TEST_ESP_OK(gdma_del_channel(tx_chan));
     TEST_ESP_OK(gdma_del_channel(rx_chan));
 #endif
+#endif // SOC_HAS(AXI_GDMA)
 }
 #endif // SOC_SPIRAM_SUPPORTED

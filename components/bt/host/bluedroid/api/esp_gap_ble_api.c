@@ -111,6 +111,10 @@ esp_err_t esp_ble_gap_start_advertising(esp_ble_adv_params_t *adv_params)
 
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
+    if (adv_params == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GAP_BLE;
     msg.act = BTC_GAP_BLE_ACT_START_ADV;
@@ -171,6 +175,10 @@ esp_err_t esp_ble_gap_set_pkt_data_len(esp_bd_addr_t remote_device, uint16_t tx_
 
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
+    if (remote_device == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GAP_BLE;
     msg.act = BTC_GAP_BLE_ACT_SET_PKT_DATA_LEN;
@@ -182,6 +190,9 @@ esp_err_t esp_ble_gap_set_pkt_data_len(esp_bd_addr_t remote_device, uint16_t tx_
 
 esp_err_t esp_ble_gap_addr_create_static(esp_bd_addr_t rand_addr)
 {
+    if (rand_addr == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
     // Static device address: First two bits are '11', rest is random
     rand_addr[0] = 0xC0 | (esp_random() & 0x3F);
     for (int i = 1; i < 6; i++) {
@@ -192,6 +203,9 @@ esp_err_t esp_ble_gap_addr_create_static(esp_bd_addr_t rand_addr)
 
 esp_err_t esp_ble_gap_addr_create_nrpa(esp_bd_addr_t rand_addr)
 {
+    if (rand_addr == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
     // Non-resolvable private address: First two bits are '00', rest is random
     rand_addr[0] = (esp_random() & 0x3F);
     for (int i = 1; i < 6; i++) {
@@ -206,6 +220,10 @@ esp_err_t esp_ble_gap_set_rand_addr(esp_bd_addr_t rand_addr)
     btc_ble_gap_args_t arg;
 
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+
+    if (rand_addr == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
 
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GAP_BLE;
@@ -239,7 +257,7 @@ esp_err_t esp_ble_gap_add_device_to_resolving_list(esp_bd_addr_t peer_addr, uint
 {
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
-    if (addr_type > BLE_ADDR_TYPE_RANDOM ||!peer_addr || (addr_type && ((peer_addr[0] & 0xC0) != 0xC0))) {
+    if (addr_type > BLE_ADDR_TYPE_RANDOM || !peer_addr || !peer_irk || (addr_type && ((peer_addr[0] & 0xC0) != 0xC0))) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -357,6 +375,10 @@ esp_err_t esp_ble_gap_set_prefer_conn_params(esp_bd_addr_t bd_addr,
         return ESP_ERR_INVALID_STATE;
     }
 
+    if (bd_addr == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     if (ESP_BLE_IS_VALID_PARAM(min_conn_int, ESP_BLE_CONN_INT_MIN, ESP_BLE_CONN_INT_MAX) &&
         ESP_BLE_IS_VALID_PARAM(max_conn_int, ESP_BLE_CONN_INT_MIN, ESP_BLE_CONN_INT_MAX) &&
         ESP_BLE_IS_VALID_PARAM(supervision_tout, ESP_BLE_CONN_SUP_TOUT_MIN, ESP_BLE_CONN_SUP_TOUT_MAX) &&
@@ -424,6 +446,9 @@ esp_err_t esp_ble_gap_get_local_used_addr(esp_bd_addr_t local_used_addr, uint8_t
         LOG_ERROR("%s, bluedroid status error", __func__);
         return ESP_FAIL;
     }
+    if (local_used_addr == NULL || addr_type == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
     if(!BTM_BleGetCurrentAddress(local_used_addr, addr_type)) {
         return ESP_FAIL;
     }
@@ -433,13 +458,6 @@ esp_err_t esp_ble_gap_get_local_used_addr(esp_bd_addr_t local_used_addr, uint8_t
 uint8_t *esp_ble_resolve_adv_data_by_type( uint8_t *adv_data, uint16_t adv_data_len, esp_ble_adv_data_type type, uint8_t *length)
 {
     if (length == NULL) {
-        return NULL;
-    }
-
-    if (((type < ESP_BLE_AD_TYPE_FLAG) || (type > ESP_BLE_AD_TYPE_128SERVICE_DATA)) &&
-            (type != ESP_BLE_AD_MANUFACTURER_SPECIFIC_TYPE)) {
-        LOG_ERROR("The advertising data type is not defined, type = %x", type);
-        *length = 0;
         return NULL;
     }
 
@@ -493,6 +511,10 @@ esp_err_t esp_ble_gap_read_rssi(esp_bd_addr_t remote_addr)
 
     if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
         return ESP_ERR_INVALID_STATE;
+    }
+
+    if (remote_addr == NULL) {
+        return ESP_ERR_INVALID_ARG;
     }
 
     msg.sig = BTC_SIG_API_CALL;
@@ -645,6 +667,10 @@ esp_err_t esp_ble_set_encryption(esp_bd_addr_t bd_addr, esp_ble_sec_act_t sec_ac
 
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
+    if (bd_addr == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GAP_BLE;
     msg.act = BTC_GAP_BLE_SET_ENCRYPTION_EVT;
@@ -661,6 +687,10 @@ esp_err_t esp_ble_gap_security_rsp(esp_bd_addr_t bd_addr, bool accept)
     btc_ble_gap_args_t arg;
 
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+
+    if (bd_addr == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
 
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GAP_BLE;
@@ -680,6 +710,10 @@ esp_err_t esp_ble_passkey_reply(esp_bd_addr_t bd_addr, bool accept, uint32_t pas
 
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
+    if (bd_addr == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GAP_BLE;
     msg.act = BTC_GAP_BLE_PASSKEY_REPLY_EVT;
@@ -698,6 +732,10 @@ esp_err_t esp_ble_confirm_reply(esp_bd_addr_t bd_addr, bool accept)
 
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
+    if (bd_addr == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GAP_BLE;
     msg.act = BTC_GAP_BLE_CONFIRM_REPLY_EVT;
@@ -712,6 +750,11 @@ esp_err_t esp_ble_remove_bond_device(esp_bd_addr_t bd_addr)
 {
     btc_msg_t msg = {0};
     btc_ble_gap_args_t arg;
+
+    if (bd_addr == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GAP_BLE;
     msg.act = BTC_GAP_BLE_REMOVE_BOND_DEV_EVT;
@@ -757,6 +800,10 @@ esp_err_t esp_ble_oob_req_reply(esp_bd_addr_t bd_addr, uint8_t *TK, uint8_t len)
         return ESP_ERR_INVALID_ARG;
     }
 
+    if (bd_addr == NULL || TK == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     btc_msg_t msg = {0};
     btc_ble_gap_args_t arg;
 
@@ -775,7 +822,7 @@ esp_err_t esp_ble_oob_req_reply(esp_bd_addr_t bd_addr, uint8_t *TK, uint8_t len)
 
 esp_err_t esp_ble_sc_oob_req_reply(esp_bd_addr_t bd_addr, uint8_t p_c[16], uint8_t p_r[16])
 {
-    if (!p_c || !p_r) {
+    if (!bd_addr || !p_c || !p_r) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -805,6 +852,28 @@ esp_err_t esp_ble_create_sc_oob_data(void)
 
     return (btc_transfer_context(&msg, NULL, 0, NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
+
+esp_err_t esp_ble_gap_get_local_irk(uint8_t local_irk[16])
+{
+    if (local_irk == NULL) {
+        ESP_LOGE(__func__, "local_irk is NULL");
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        ESP_LOGE(__func__, "Bluedroid is not enabled");
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    /* Use BTM API to safely retrieve local IRK */
+    if (BTM_GetLocalIRK(local_irk)) {
+        ESP_LOGD(__func__, "Local IRK retrieved successfully");
+        return ESP_OK;
+    } else {
+        ESP_LOGW(__func__, "Local IRK not available");
+        return ESP_ERR_INVALID_STATE;
+    }
+}
 #endif /* #if (SMP_INCLUDED == TRUE) */
 
 esp_err_t esp_ble_gap_disconnect(esp_bd_addr_t remote_device)
@@ -813,6 +882,10 @@ esp_err_t esp_ble_gap_disconnect(esp_bd_addr_t remote_device)
     btc_ble_gap_args_t arg;
 
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+
+    if (remote_device == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
 
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GAP_BLE;
@@ -840,6 +913,10 @@ esp_err_t esp_gap_ble_set_channels(esp_gap_ble_channels channels)
 
     if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
         return ESP_ERR_INVALID_STATE;
+    }
+
+    if (channels == NULL) {
+        return ESP_ERR_INVALID_ARG;
     }
 
     msg.sig = BTC_SIG_API_CALL;
@@ -1795,6 +1872,24 @@ esp_err_t esp_ble_gap_set_sch_len(uint8_t role, uint32_t len)
     return esp_ble_gap_vendor_command_send(&vs_cmd);
 }
 #endif // CONFIG_SOC_BLE_MULTI_CONN_OPTIMIZATION
+
+esp_err_t esp_ble_gap_set_scan_chan_map(uint8_t state, uint8_t chan_map[5])
+{
+    esp_ble_vendor_cmd_params_t vs_cmd;
+    uint8_t cmd_param[6];
+
+    if (chan_map == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    cmd_param[0] = state;
+    memcpy(&cmd_param[1], chan_map, 5);
+    vs_cmd.opcode = 0xFD19;
+    vs_cmd.param_len = 6;
+    vs_cmd.p_param_buf = cmd_param;
+
+    return esp_ble_gap_vendor_command_send(&vs_cmd);
+}
 #endif // (BLE_VENDOR_HCI_EN == TRUE)
 
 #if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
@@ -1987,3 +2082,437 @@ esp_err_t esp_ble_gap_set_host_feature(uint16_t bit_num, uint8_t bit_val)
                 == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 #endif //#if (BLE_50_FEATURE_SUPPORT == TRUE)
+
+#if (BT_BLE_FEAT_PAWR_EN == TRUE)
+esp_err_t esp_ble_gap_set_periodic_adv_subevent_data(esp_ble_per_adv_subevent_data_params *subevent_data_params)
+{
+    btc_msg_t msg = {0};
+    btc_ble_5_gap_args_t arg;
+
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    if ((!subevent_data_params) || (!subevent_data_params->subevent_params)) {
+        return ESP_ERR_NOT_ALLOWED;
+    }
+
+    if ((subevent_data_params->num_subevents_with_data > 0x0F) || (!subevent_data_params->num_subevents_with_data)) {
+        return ESP_ERR_NOT_ALLOWED;
+    }
+
+    for (uint8_t i = 0; i < subevent_data_params->num_subevents_with_data; i++)
+    {
+        if (subevent_data_params->subevent_params[i].subevent_data_len && (subevent_data_params->subevent_params[i].subevent_data == NULL)) {
+            return ESP_ERR_NOT_ALLOWED;
+        }
+    }
+
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_GAP_BLE;
+    msg.act = BTC_GAP_BLE_SET_PA_SUBEVT_DATA;
+
+    arg.per_adv_subevent_data_params.adv_handle = subevent_data_params->adv_handle;
+    arg.per_adv_subevent_data_params.num_subevents_with_data = subevent_data_params->num_subevents_with_data;
+    arg.per_adv_subevent_data_params.subevent_params = subevent_data_params->subevent_params;
+
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gap_args_t), btc_gap_ble_arg_deep_copy, btc_gap_ble_arg_deep_free)
+                == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+
+esp_err_t esp_ble_gap_set_periodic_adv_response_data(esp_ble_per_adv_response_data_params *rsp_data_params)
+{
+    btc_msg_t msg = {0};
+    btc_ble_5_gap_args_t arg;
+
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    if (!rsp_data_params) {
+        return ESP_ERR_NOT_ALLOWED;
+    }
+
+    if ((rsp_data_params->response_data == NULL) && rsp_data_params->response_data_len) {
+        return ESP_ERR_NOT_ALLOWED;
+    }
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_GAP_BLE;
+    msg.act = BTC_GAP_BLE_SET_PA_RSP_DATA;
+
+    arg.per_adv_response_data_params.sync_handle = rsp_data_params->sync_handle;
+    arg.per_adv_response_data_params.request_event = rsp_data_params->request_event;
+    arg.per_adv_response_data_params.request_subevent = rsp_data_params->request_subevent;
+    arg.per_adv_response_data_params.response_subevent = rsp_data_params->response_subevent;
+    arg.per_adv_response_data_params.response_slot = rsp_data_params->response_slot;
+    arg.per_adv_response_data_params.response_data_len = rsp_data_params->response_data_len;
+    arg.per_adv_response_data_params.response_data = rsp_data_params->response_data;
+
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gap_args_t), btc_gap_ble_arg_deep_copy, btc_gap_ble_arg_deep_free)
+                == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+
+esp_err_t esp_ble_gap_set_periodic_sync_subevent(esp_ble_per_sync_subevent_params *sync_subevent_params)
+{
+    btc_msg_t msg = {0};
+    btc_ble_5_gap_args_t arg;
+
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    if (!sync_subevent_params) {
+        return ESP_ERR_NOT_ALLOWED;
+    }
+
+    if ((sync_subevent_params->subevent == NULL) && sync_subevent_params->num_subevents_to_sync) {
+        return ESP_ERR_NOT_ALLOWED;
+    }
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_GAP_BLE;
+    msg.act = BTC_GAP_BLE_SET_PA_SYNC_SUBEVT;
+
+    arg.per_sync_subevent_params.sync_handle = sync_subevent_params->sync_handle;
+    arg.per_sync_subevent_params.periodic_adv_properties = sync_subevent_params->periodic_adv_properties;
+    arg.per_sync_subevent_params.num_subevents_to_sync = sync_subevent_params->num_subevents_to_sync;
+    arg.per_sync_subevent_params.subevent = sync_subevent_params->subevent;
+
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gap_args_t), btc_gap_ble_arg_deep_copy, btc_gap_ble_arg_deep_free)
+                == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+#endif // #if (BT_BLE_FEAT_PAWR_EN == TRUE)
+
+#if (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
+esp_err_t esp_ble_cs_read_local_supported_capabilities(void)
+{
+    btc_msg_t msg = {0};
+
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_GAP_BLE;
+    msg.act = BTC_GAP_BLE_CS_READ_LOCAL_SUPPORTED_CAPS;
+
+    return (btc_transfer_context(&msg, NULL, 0, NULL, NULL)
+                == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+
+esp_err_t esp_ble_cs_read_remote_supported_capabilities(uint16_t conn_handle)
+{
+    btc_msg_t msg = {0};
+    btc_ble_5_gap_args_t arg;
+
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_GAP_BLE;
+    msg.act = BTC_GAP_BLE_CS_READ_REMOTE_SUPPORTED_CAPS;
+
+    arg.cs_read_remote_supp_caps.conn_handle = conn_handle;
+
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_5_gap_args_t), NULL, NULL)
+                == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+
+esp_err_t esp_ble_cs_write_cached_remote_supported_capabilities(esp_ble_cs_write_cached_remote_supp_caps_params *cached_remote_supp_caps_params)
+{
+    btc_msg_t msg = {0};
+    btc_ble_5_gap_args_t arg = {0};
+
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    if (!cached_remote_supp_caps_params) {
+        return ESP_ERR_NOT_ALLOWED;
+    }
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_GAP_BLE;
+    msg.act = BTC_GAP_BLE_CS_WRITE_CACHED_REMOTE_SUPPORTED_CAPS;
+
+    arg.cs_write_cached_remote_supp_caps.conn_handle = cached_remote_supp_caps_params->conn_handle;
+    arg.cs_write_cached_remote_supp_caps.num_config_supported = cached_remote_supp_caps_params->num_config_supported;
+    arg.cs_write_cached_remote_supp_caps.max_consecutive_proc_supported = cached_remote_supp_caps_params->max_consecutive_proc_supported;
+    arg.cs_write_cached_remote_supp_caps.num_ant_supported = cached_remote_supp_caps_params->num_ant_supported;
+    arg.cs_write_cached_remote_supp_caps.max_ant_paths_supported = cached_remote_supp_caps_params->max_ant_paths_supported;
+    arg.cs_write_cached_remote_supp_caps.modes_supported = cached_remote_supp_caps_params->modes_supported;
+    arg.cs_write_cached_remote_supp_caps.rtt_capability = cached_remote_supp_caps_params->rtt_capability;
+    arg.cs_write_cached_remote_supp_caps.rtt_aa_only_n = cached_remote_supp_caps_params->rtt_aa_only_n;
+    arg.cs_write_cached_remote_supp_caps.rtt_sounding_n = cached_remote_supp_caps_params->rtt_sounding_n;
+    arg.cs_write_cached_remote_supp_caps.rtt_random_payload_n = cached_remote_supp_caps_params->rtt_random_payload_n;
+    arg.cs_write_cached_remote_supp_caps.NADM_sounding_capability = cached_remote_supp_caps_params->NADM_sounding_capability;
+    arg.cs_write_cached_remote_supp_caps.NADM_random_capability = cached_remote_supp_caps_params->NADM_random_capability;
+    arg.cs_write_cached_remote_supp_caps.subfeatures_supported = cached_remote_supp_caps_params->subfeatures_supported;
+    arg.cs_write_cached_remote_supp_caps.T_IP1_times_supported = cached_remote_supp_caps_params->T_IP1_times_supported;
+    arg.cs_write_cached_remote_supp_caps.T_IP2_times_supported = cached_remote_supp_caps_params->T_IP2_times_supported;
+    arg.cs_write_cached_remote_supp_caps.T_FCS_times_supported = cached_remote_supp_caps_params->T_FCS_times_supported;
+    arg.cs_write_cached_remote_supp_caps.T_PM_times_supported = cached_remote_supp_caps_params->T_PM_times_supported;
+    arg.cs_write_cached_remote_supp_caps.T_SW_times_supported = cached_remote_supp_caps_params->T_SW_times_supported;
+    arg.cs_write_cached_remote_supp_caps.TX_SNR_capability = cached_remote_supp_caps_params->TX_SNR_capability;
+    if (cached_remote_supp_caps_params->initiator_role_supported) {
+        arg.cs_write_cached_remote_supp_caps.roles_supported |= ESP_BLE_CS_INITIATOR_ROLE_SUPPORTED;
+    }
+    if (cached_remote_supp_caps_params->reflector_role_supported) {
+        arg.cs_write_cached_remote_supp_caps.roles_supported |= ESP_BLE_CS_REFLECTOR_ROLE_SUPPORTED;
+    }
+    if (cached_remote_supp_caps_params->cs_sync_2m_phy_supported) {
+        arg.cs_write_cached_remote_supp_caps.cs_sync_phys_supported |= ESP_BLE_CS_SYNC_PHYS_2M_SUPPORTED;
+    }
+    if (cached_remote_supp_caps_params->cs_sync_2m_2bt_phy_supported) {
+        arg.cs_write_cached_remote_supp_caps.cs_sync_phys_supported |= ESP_BLE_CS_SYNC_PHYS_2M_2BT_SUPPORTED;
+    }
+
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_5_gap_args_t), NULL, NULL)
+                == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+
+esp_err_t esp_ble_cs_security_enable(uint16_t conn_handle)
+{
+    btc_msg_t msg = {0};
+    btc_ble_5_gap_args_t arg;
+
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_GAP_BLE;
+    msg.act = BTC_GAP_BLE_CS_SECURITY_ENABLE;
+
+    arg.cs_security_enable.conn_handle = conn_handle;
+
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_5_gap_args_t), NULL, NULL)
+                == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+
+esp_err_t esp_ble_cs_set_default_settings(esp_ble_cs_set_default_settings_params *default_setting_params)
+{
+    btc_msg_t msg = {0};
+    btc_ble_5_gap_args_t arg = {0};
+
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    if (!default_setting_params) {
+        return ESP_ERR_NOT_ALLOWED;
+    }
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_GAP_BLE;
+    msg.act = BTC_GAP_BLE_CS_SET_DEFAULT_SETTINGS;
+
+    arg.cs_set_default_settings_params.conn_handle = default_setting_params->conn_handle;
+    arg.cs_set_default_settings_params.cs_sync_ant_selection = default_setting_params->cs_sync_ant_selection;
+    arg.cs_set_default_settings_params.max_tx_power = default_setting_params->max_tx_power;
+    if (default_setting_params->initiator_role_enable) {
+        arg.cs_set_default_settings_params.role_enable |= ESP_BLE_CS_INITIATOR_ROLE_ENABLED;
+    }
+    if (default_setting_params->reflector_role_enable) {
+        arg.cs_set_default_settings_params.role_enable |= ESP_BLE_CS_REFLECTOR_ROLE_ENABLED;
+    }
+
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_5_gap_args_t), NULL, NULL)
+                == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+
+esp_err_t esp_ble_cs_read_remote_fae_table(uint16_t conn_handle)
+{
+    btc_msg_t msg = {0};
+    btc_ble_5_gap_args_t arg;
+
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_GAP_BLE;
+    msg.act = BTC_GAP_BLE_CS_READ_REMOTE_FAE_TABLE;
+
+    arg.cs_read_remote_tab.conn_handle = conn_handle;
+
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_5_gap_args_t), NULL, NULL)
+                == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+
+esp_err_t esp_ble_cs_write_cached_remote_fae_table(esp_ble_cs_write_cached_remote_fae_table_params *write_cached_remote_fae_tab_params)
+{
+    btc_msg_t msg = {0};
+    btc_ble_5_gap_args_t arg = {0};
+
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    if (!write_cached_remote_fae_tab_params) {
+        return ESP_ERR_NOT_ALLOWED;
+    }
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_GAP_BLE;
+    msg.act = BTC_GAP_BLE_CS_WRITE_CACHED_REMOTE_FAE_TABLE;
+
+    arg.cs_write_cached_remote_fae_table_params.conn_handle = write_cached_remote_fae_tab_params->conn_handle;
+    memcpy(arg.cs_write_cached_remote_fae_table_params.remote_fae_table, write_cached_remote_fae_tab_params->remote_fae_table, sizeof(arg.cs_write_cached_remote_fae_table_params.remote_fae_table));
+
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_5_gap_args_t), NULL, NULL)
+                == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+
+esp_err_t esp_ble_cs_create_config(esp_ble_cs_create_config_params *create_config_params)
+{
+    btc_msg_t msg = {0};
+    btc_ble_5_gap_args_t arg = {0};
+
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    if (!create_config_params) {
+        return ESP_ERR_NOT_ALLOWED;
+    }
+
+    arg.cs_create_config_params.conn_handle = create_config_params->conn_handle;
+    arg.cs_create_config_params.config_id = create_config_params->config_id;
+    arg.cs_create_config_params.create_context = create_config_params->create_context;
+    arg.cs_create_config_params.main_mode_type = create_config_params->main_mode_type;
+    arg.cs_create_config_params.sub_mode_type = create_config_params->sub_mode_type;
+    arg.cs_create_config_params.min_main_mode_steps = create_config_params->min_main_mode_steps;
+    arg.cs_create_config_params.max_main_mode_steps = create_config_params->max_main_mode_steps;
+    arg.cs_create_config_params.main_mode_repetition = create_config_params->main_mode_repetition;
+    arg.cs_create_config_params.mode_0_steps = create_config_params->mode_0_steps;
+    arg.cs_create_config_params.role = create_config_params->role;
+    arg.cs_create_config_params.rtt_type = create_config_params->rtt_type;
+    arg.cs_create_config_params.cs_sync_phy = create_config_params->cs_sync_phy;
+    memcpy(arg.cs_create_config_params.channel_map, create_config_params->channel_map, sizeof(arg.cs_create_config_params.channel_map));
+    arg.cs_create_config_params.channel_map_repetition = create_config_params->channel_map_repetition;
+    arg.cs_create_config_params.channel_selection_type = create_config_params->channel_selection_type;
+    arg.cs_create_config_params.ch3c_shape = create_config_params->ch3c_shape;
+    arg.cs_create_config_params.ch3c_jump = create_config_params->ch3c_jump;
+    arg.cs_create_config_params.reserved = create_config_params->reserved;
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_GAP_BLE;
+    msg.act = BTC_GAP_BLE_CS_CREATE_CONFIG;
+
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_5_gap_args_t), NULL, NULL)
+                == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+
+esp_err_t esp_ble_cs_remove_config(esp_ble_cs_remove_config_params *remove_config_params)
+{
+    btc_msg_t msg = {0};
+    btc_ble_5_gap_args_t arg;
+
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    if (!remove_config_params) {
+        return ESP_ERR_NOT_ALLOWED;
+    }
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_GAP_BLE;
+    msg.act = BTC_GAP_BLE_CS_REMOVE_CONFIG;
+
+    arg.cs_remove_config_params.conn_handle = remove_config_params->conn_handle;
+    arg.cs_remove_config_params.config_id = remove_config_params->config_id;
+
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_5_gap_args_t), NULL, NULL)
+                == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+
+esp_err_t esp_ble_cs_set_channel_classification(esp_ble_cs_set_channel_class_params *channel_class_params)
+{
+    btc_msg_t msg = {0};
+    btc_ble_5_gap_args_t arg;
+
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    if (!channel_class_params) {
+        return ESP_ERR_NOT_ALLOWED;
+    }
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_GAP_BLE;
+    msg.act = BTC_GAP_BLE_CS_SET_CAHNNEL_CLASSIFICATION;
+
+    memcpy(arg.cs_set_channel_class_params.channel_class, channel_class_params->channel_class, sizeof(arg.cs_set_channel_class_params));
+
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_5_gap_args_t), NULL, NULL)
+                == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+
+esp_err_t esp_ble_cs_set_procedure_params(esp_ble_cs_set_proc_params *procedure_params)
+{
+    btc_msg_t msg = {0};
+    btc_ble_5_gap_args_t arg;
+
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    if (!procedure_params) {
+        return ESP_ERR_NOT_ALLOWED;
+    }
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_GAP_BLE;
+    msg.act = BTC_GAP_BLE_CS_SET_PROCEDURE_PARAMS;
+
+    arg.cs_set_procedure_params.conn_handle = procedure_params->conn_handle;
+    arg.cs_set_procedure_params.config_id = procedure_params->config_id;
+    arg.cs_set_procedure_params.max_procedure_len = procedure_params->max_procedure_len;
+    arg.cs_set_procedure_params.min_procedure_interval = procedure_params->min_procedure_interval;
+    arg.cs_set_procedure_params.max_procedure_interval = procedure_params->max_procedure_interval;
+    arg.cs_set_procedure_params.max_procedure_count = procedure_params->max_procedure_count;
+    arg.cs_set_procedure_params.min_subevent_len = (procedure_params->min_subevent_len & 0x00FFFFFF);
+    arg.cs_set_procedure_params.max_subevent_len = (procedure_params->max_subevent_len & 0x00FFFFFF);
+    arg.cs_set_procedure_params.tone_ant_config_selection = procedure_params->tone_ant_config_selection;
+    arg.cs_set_procedure_params.phy = procedure_params->phy;
+    arg.cs_set_procedure_params.tx_power_delta = procedure_params->tx_power_delta;
+    arg.cs_set_procedure_params.preferred_peer_antenna = procedure_params->preferred_peer_antenna;
+    arg.cs_set_procedure_params.SNR_control_initiator = procedure_params->SNR_control_initiator;
+    arg.cs_set_procedure_params.SNR_control_reflector = procedure_params->SNR_control_reflector;
+
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_5_gap_args_t), NULL, NULL)
+                == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+
+esp_err_t esp_ble_cs_procedure_enable(esp_ble_cs_procedure_enable_params *procedure_enable_params)
+{
+    btc_msg_t msg = {0};
+    btc_ble_5_gap_args_t arg;
+
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    if (!procedure_enable_params) {
+        return ESP_ERR_NOT_ALLOWED;
+    }
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_GAP_BLE;
+    msg.act = BTC_GAP_BLE_CS_PROCEDURE_ENABLE;
+
+    arg.cs_procedure_enable_params.conn_handle = procedure_enable_params->conn_handle;
+    arg.cs_procedure_enable_params.config_id = procedure_enable_params->config_id;
+    arg.cs_procedure_enable_params.enable = procedure_enable_params->enable;
+
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_5_gap_args_t), NULL, NULL)
+                == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+
+#endif

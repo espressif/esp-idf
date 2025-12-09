@@ -15,6 +15,9 @@
 #include "esp_private/esp_psram_extram.h"
 #endif /* CONFIG_SPIRAM */
 
+#include "soc/chip_revision.h"
+#include "hal/config.h"
+
 #ifdef BOOTLOADER_BUILD
 // Without L bit set
 #define CONDITIONAL_NONE        0x0
@@ -82,70 +85,160 @@ static void esp_cpu_configure_invalid_regions(void)
     PMA_RESET_AND_ENTRY_SET_TOR(15, UINT32_MAX, PMA_TOR | PMA_NONE);
 }
 
-void esp_cpu_configure_region_protection(void)
-{
-    /* Notes on implementation:
-     *
-     * 1) Note: ESP32-P4 CPU support overlapping PMP regions, configuration is based on static priority
-     * feature (lowest numbered entry has highest priority).
-     *
-     * 2) ESP32-P4 supports 16 PMA regions so we use this feature to block the invalid address ranges.
-     * However the entries are not sufficient to block all reserved memory ranges and the excluded sections are:
-     *    a. Region between LP ROM and LP SRAM
-     *    b. Region between LP peripherals and External flash (direct access)
-     *    c. Region between External flash (direct access) and External RAM (direct access)
-     *    d. Region between External RAM (direct access) and HP ROM (direct access)
-     *    e. Region between HP ROM (direct access) and HP L2MEM (direct access)
-     *
-     * 3) We use combination of NAPOT (Naturally Aligned Power Of Two) and TOR (top of range)
-     * entries to map all the valid address space, bottom to top. This leaves us with some extra PMP entries
-     * which can be used to provide more granular access
-     *
-     * 4) Entries are grouped in order with some static asserts to try and verify everything is
-     * correct.
-     *
-     * 5) No explicit permission specified in PMP (default all permissions) for following regions due to
-     * limited entries:
-     *    a. External RAM
-     *    b. LP ROM, LP Peripherals, LP SRAM
-     *    c. External flash, External RAM, HP ROM, HP L2MEM (direct access)
-     */
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+// Helper macro to set both cached and non-cached PMP entries with the same permissions
+#define PMP_ENTRY_SET_CACHED_AND_UNCACHED(cached_entry, non_cached_entry, addr, perm) \
+    do { \
+        PMP_RESET_AND_ENTRY_SET(cached_entry, addr, perm); \
+        PMP_RESET_AND_ENTRY_SET(non_cached_entry, CACHE_LL_L2MEM_NON_CACHE_ADDR(addr), perm); \
+    } while(0)
 
-    /* There are 4 configuration scenarios for SRAM
-     *
-     * 1. Bootloader build:
-     *    - We cannot set the lock bit as we need to reconfigure it again for the application.
-     *      We configure PMP to cover entire valid IRAM and DRAM range.
-     *
-     * 2. Application build with CONFIG_ESP_SYSTEM_MEMPROT enabled
-     *    - We split the SRAM into IRAM and DRAM such that IRAM region cannot be written to
-     *      and DRAM region cannot be executed. We use _iram_text_end and _data_start markers to set the boundaries.
-     *      We also lock these entries so the R/W/X permissions are enforced even for machine mode
-     *
-     * 3. Application build with CONFIG_ESP_SYSTEM_MEMPROT disabled
-     *    - The IRAM-DRAM split is not enabled so we just need to ensure that access to only valid address ranges are successful
-     *      so for that we set PMP to cover entire valid IRAM and DRAM region.
-     *      We also lock these entries so the R/W/X permissions are enforced even for machine mode
-     *
-     * 4. CPU is in OCD debug mode
-     *    - The IRAM-DRAM split is not enabled so that OpenOCD can write and execute from IRAM.
-     *      We set PMP to cover entire valid IRAM and DRAM region.
-     *      We also lock these entries so the R/W/X permissions are enforced even for machine mode
-     */
+static void esp_cpu_configure_region_protection_rev_v3(void)
+{
     const unsigned NONE    = PMP_L;
     __attribute__((unused)) const unsigned R       = PMP_L | PMP_R;
     const unsigned RW      = PMP_L | PMP_R | PMP_W;
     const unsigned RX      = PMP_L | PMP_R | PMP_X;
     const unsigned RWX     = PMP_L | PMP_R | PMP_W | PMP_X;
 
-    //
-    // Configure all the invalid address regions using PMA
-    //
-    esp_cpu_configure_invalid_regions();
+    // 1. CPU Subsystem region - contains debug mode code and interrupt config registers
+    const uint32_t pmpaddr0 = PMPADDR_NAPOT(SOC_CPU_SUBSYSTEM_LOW, SOC_CPU_SUBSYSTEM_HIGH);
+    PMP_RESET_AND_ENTRY_SET(0, pmpaddr0, PMP_NAPOT | RW);
+    _Static_assert(SOC_CPU_SUBSYSTEM_LOW < SOC_CPU_SUBSYSTEM_HIGH, "Invalid CPU subsystem region");
 
-    //
-    // Configure all the valid address regions using PMP
-    //
+    // 2. HP-CPU TCM
+    // The default memory permissions are RWX and TCM should be RWX, so we can skip configuring it
+
+    // 3. CPU Peripherals
+    const uint32_t pmpaddr1 = PMPADDR_NAPOT(CPU_PERIPH_LOW, CPU_PERIPH_HIGH);
+    PMP_RESET_AND_ENTRY_SET(1, pmpaddr1, PMP_NAPOT | RW);
+    _Static_assert(CPU_PERIPH_LOW < CPU_PERIPH_HIGH, "Invalid CPU peripheral region");
+
+    // 4. I/D-ROM
+    const uint32_t pmpaddr2 = PMPADDR_NAPOT(SOC_IROM_MASK_LOW, SOC_IROM_MASK_HIGH);
+    PMP_RESET_AND_ENTRY_SET(2, pmpaddr2, PMP_NAPOT | RX);
+
+    const uint32_t pmpaddr3 = PMPADDR_NAPOT(CACHE_LL_L2MEM_NON_CACHE_ADDR(SOC_IROM_MASK_LOW), CACHE_LL_L2MEM_NON_CACHE_ADDR(SOC_IROM_MASK_HIGH));
+    PMP_RESET_AND_ENTRY_SET(3, pmpaddr3, PMP_NAPOT | RX);
+
+    _Static_assert(SOC_IROM_MASK_LOW < SOC_IROM_MASK_HIGH, "Invalid I/D-ROM region");
+
+    // 5. IRAM and DRAM
+    if (esp_cpu_dbgr_is_attached()) {
+        // Anti-FI check that cpu is really in ocd mode
+        ESP_FAULT_ASSERT(esp_cpu_dbgr_is_attached());
+
+        PMP_ENTRY_SET_CACHED_AND_UNCACHED(4, 6, SOC_IRAM_LOW, NONE);
+        PMP_ENTRY_SET_CACHED_AND_UNCACHED(5, 7, SOC_IRAM_HIGH, PMP_TOR | RWX);
+
+        _Static_assert(SOC_IRAM_LOW < SOC_IRAM_HIGH, "Invalid RAM region");
+    } else {
+#if CONFIG_ESP_SYSTEM_MEMPROT && CONFIG_ESP_SYSTEM_MEMPROT_PMP && !BOOTLOADER_BUILD
+        extern int _iram_text_end;
+
+        PMP_ENTRY_SET_CACHED_AND_UNCACHED(4, 7, SOC_IRAM_LOW, NONE);
+        PMP_ENTRY_SET_CACHED_AND_UNCACHED(5, 8, (int)&_iram_text_end, PMP_TOR | RX);
+        PMP_ENTRY_SET_CACHED_AND_UNCACHED(6, 9, SOC_DRAM_HIGH, PMP_TOR | RW);
+#else
+        PMP_ENTRY_SET_CACHED_AND_UNCACHED(4, 6, SOC_IRAM_LOW, CONDITIONAL_NONE);
+        PMP_ENTRY_SET_CACHED_AND_UNCACHED(5, 7, SOC_IRAM_HIGH, PMP_TOR | CONDITIONAL_RWX);
+        _Static_assert(SOC_IRAM_LOW < SOC_IRAM_HIGH, "Invalid RAM region");
+#endif
+    }
+
+#if CONFIG_ESP_SYSTEM_MEMPROT && CONFIG_ESP_SYSTEM_MEMPROT_PMP && !BOOTLOADER_BUILD
+    extern int _instruction_reserved_end;
+    extern int _rodata_reserved_end;
+
+    const uint32_t page_aligned_irom_resv_end = ALIGN_UP_TO_MMU_PAGE_SIZE((uint32_t)(&_instruction_reserved_end));
+    __attribute__((unused)) const uint32_t page_aligned_drom_resv_end = ALIGN_UP_TO_MMU_PAGE_SIZE((uint32_t)(&_rodata_reserved_end));
+
+    // 6. I_EXTRAM / D_EXTRAM (SPIRAM)
+#if CONFIG_SPIRAM && CONFIG_SPIRAM_PRE_CONFIGURE_MEMORY_PROTECTION
+
+    const size_t available_psram_heap = esp_psram_get_heap_size_to_protect();
+
+    PMP_ENTRY_SET_CACHED_AND_UNCACHED(10, 15, SOC_EXTRAM_LOW, NONE);
+
+#if CONFIG_SPIRAM_FETCH_INSTRUCTIONS && CONFIG_SPIRAM_RODATA
+    PMP_ENTRY_SET_CACHED_AND_UNCACHED(11, 16, (uint32_t)(&_instruction_reserved_end), PMP_TOR | RX);
+    PMP_ENTRY_SET_CACHED_AND_UNCACHED(12, 17, page_aligned_irom_resv_end, PMP_TOR | RW);
+    PMP_ENTRY_SET_CACHED_AND_UNCACHED(13, 18, (uint32_t)(&_rodata_reserved_end), PMP_TOR | R);
+    PMP_ENTRY_SET_CACHED_AND_UNCACHED(14, 19, ALIGN_UP((uint32_t)(&_rodata_reserved_end) + available_psram_heap, SOC_CPU_PMP_REGION_GRANULARITY), PMP_TOR | RW);
+
+#elif CONFIG_SPIRAM_FETCH_INSTRUCTIONS
+    PMP_ENTRY_SET_CACHED_AND_UNCACHED(11, 16, (uint32_t)(&_instruction_reserved_end), PMP_TOR | RX);
+    PMP_ENTRY_SET_CACHED_AND_UNCACHED(12, 17, page_aligned_irom_resv_end, PMP_TOR | RW);
+    PMP_ENTRY_SET_CACHED_AND_UNCACHED(13, 18, ALIGN_UP(page_aligned_irom_resv_end + available_psram_heap, SOC_CPU_PMP_REGION_GRANULARITY), PMP_TOR | RW);
+
+#elif CONFIG_SPIRAM_RODATA
+    PMP_ENTRY_SET_CACHED_AND_UNCACHED(11, 16, (uint32_t)(&_rodata_reserved_end), PMP_TOR | R);
+    PMP_ENTRY_SET_CACHED_AND_UNCACHED(12, 17, ALIGN_UP((uint32_t)(&_rodata_reserved_end) + available_psram_heap, SOC_CPU_PMP_REGION_GRANULARITY), PMP_TOR | RW);
+
+#else
+    PMP_ENTRY_SET_CACHED_AND_UNCACHED(11, 16, ALIGN_UP(SOC_EXTRAM_LOW + available_psram_heap, SOC_CPU_PMP_REGION_GRANULARITY), PMP_TOR | RW);
+#endif
+#endif /* CONFIG_SPIRAM && CONFIG_SPIRAM_PRE_CONFIGURE_MEMORY_PROTECTION */
+
+    // ESP32-P4 V3's 24th PMP entry cannot be used as a TOR entry // DIG-752
+    // 7. I_Cache / D_Cache (flash)
+    PMP_ENTRY_SET_CACHED_AND_UNCACHED(20, 24, SOC_IROM_LOW, NONE);
+    PMP_ENTRY_SET_CACHED_AND_UNCACHED(21, 25, page_aligned_irom_resv_end, PMP_TOR | RX);
+    PMP_ENTRY_SET_CACHED_AND_UNCACHED(22, 26, page_aligned_drom_resv_end, PMP_TOR | R);
+
+#else
+#if CONFIG_SPIRAM
+    const uint32_t pmpaddr10 = PMPADDR_NAPOT(SOC_EXTRAM_LOW, SOC_EXTRAM_HIGH);
+    PMP_RESET_AND_ENTRY_SET(10, pmpaddr10, PMP_NAPOT | CONDITIONAL_RWX);
+
+    const uint32_t pmpaddr11 = PMPADDR_NAPOT(CACHE_LL_L2MEM_NON_CACHE_ADDR(SOC_EXTRAM_LOW), CACHE_LL_L2MEM_NON_CACHE_ADDR(SOC_EXTRAM_HIGH));
+    PMP_RESET_AND_ENTRY_SET(11, pmpaddr11, PMP_NAPOT | CONDITIONAL_RWX);
+    _Static_assert(SOC_EXTRAM_LOW < SOC_EXTRAM_HIGH, "Invalid I/D_EXTRAM region");
+#endif /* CONFIG_SPIRAM */
+
+    const uint32_t pmpaddr12 = PMPADDR_NAPOT(SOC_IROM_LOW, SOC_IROM_HIGH);
+    PMP_RESET_AND_ENTRY_SET(12, pmpaddr12, PMP_NAPOT | CONDITIONAL_RX);
+
+    const uint32_t pmpaddr13 = PMPADDR_NAPOT(CACHE_LL_L2MEM_NON_CACHE_ADDR(SOC_IROM_LOW), CACHE_LL_L2MEM_NON_CACHE_ADDR(SOC_IROM_HIGH));
+    PMP_RESET_AND_ENTRY_SET(13, pmpaddr13, PMP_NAPOT | CONDITIONAL_RX);
+    _Static_assert(SOC_IROM_LOW < SOC_IROM_HIGH, "Invalid I/D_Cache region");
+#endif
+
+    // 8. Peripheral addresses
+    const uint32_t pmpaddr27 = PMPADDR_NAPOT(SOC_PERIPHERAL_LOW, SOC_PERIPHERAL_HIGH);
+    PMP_RESET_AND_ENTRY_SET(27, pmpaddr27, PMP_NAPOT | RW);
+    _Static_assert(SOC_PERIPHERAL_LOW < SOC_PERIPHERAL_HIGH, "Invalid peripheral region");
+
+    // 9. LP memory
+#if CONFIG_ESP_SYSTEM_MEMPROT && CONFIG_ESP_SYSTEM_MEMPROT_PMP && !BOOTLOADER_BUILD
+    extern int _rtc_text_start;
+    extern int _rtc_text_end;
+
+    // ESP32-P4 V3's 28th PMP entry cannot be used as a TOR entry // DIG-752
+    PMP_RESET_AND_ENTRY_SET(28, SOC_RTC_IRAM_LOW, NONE);
+    // First part of LP mem is reserved for RTC reserved mem (shared between bootloader and app)
+    // as well as memory for ULP coprocessor
+#if CONFIG_ESP_SYSTEM_MEMPROT_PMP_LP_CORE_RESERVE_MEM_EXEC
+    PMP_RESET_AND_ENTRY_SET(29, (int)&_rtc_text_start, PMP_TOR | RWX);
+#else
+    PMP_RESET_AND_ENTRY_SET(29, (int)&_rtc_text_start, PMP_TOR | RW);
+#endif
+    PMP_RESET_AND_ENTRY_SET(30, (int)&_rtc_text_end, PMP_TOR | RX);
+    PMP_RESET_AND_ENTRY_SET(31, SOC_RTC_IRAM_HIGH, PMP_TOR | RW);
+#else
+    const uint32_t pmpaddr28 = PMPADDR_NAPOT(SOC_RTC_IRAM_LOW, SOC_RTC_IRAM_HIGH);
+    PMP_RESET_AND_ENTRY_SET(28, pmpaddr28, PMP_NAPOT | CONDITIONAL_RWX);
+    _Static_assert(SOC_RTC_IRAM_LOW < SOC_RTC_IRAM_HIGH, "Invalid RTC IRAM region");
+#endif
+}
+#else
+static void esp_cpu_configure_region_protection_rev_less_than_v3(void)
+{
+    const unsigned NONE    = PMP_L;
+    __attribute__((unused)) const unsigned R       = PMP_L | PMP_R;
+    const unsigned RW      = PMP_L | PMP_R | PMP_W;
+    const unsigned RX      = PMP_L | PMP_R | PMP_X;
+    const unsigned RWX     = PMP_L | PMP_R | PMP_W | PMP_X;
 
     // 1. CPU Subsystem region - contains debug mode code and interrupt config registers
     const uint32_t pmpaddr0 = PMPADDR_NAPOT(SOC_CPU_SUBSYSTEM_LOW, SOC_CPU_SUBSYSTEM_HIGH);
@@ -261,4 +354,72 @@ void esp_cpu_configure_region_protection(void)
     const uint32_t pmpaddr15 = PMPADDR_NAPOT(SOC_PERIPHERAL_LOW, SOC_PERIPHERAL_HIGH);
     PMP_ENTRY_SET(15, pmpaddr15, PMP_NAPOT | RW);
     _Static_assert(SOC_PERIPHERAL_LOW < SOC_PERIPHERAL_HIGH, "Invalid peripheral region");
+}
+#endif
+
+void esp_cpu_configure_region_protection(void)
+{
+    /* Notes on implementation:
+     *
+     * 1) Note: ESP32-P4 CPU support overlapping PMP regions, configuration is based on static priority
+     * feature (lowest numbered entry has highest priority).
+     *
+     * 2) ESP32-P4 supports 16 PMA regions so we use this feature to block the invalid address ranges.
+     * However the entries are not sufficient to block all reserved memory ranges and the excluded sections are:
+     *    a. Region between LP ROM and LP SRAM
+     *    b. Region between LP peripherals and External flash (direct access)
+     *    c. Region between External flash (direct access) and External RAM (direct access)
+     *    d. Region between External RAM (direct access) and HP ROM (direct access)
+     *    e. Region between HP ROM (direct access) and HP L2MEM (direct access)
+     *
+     * 3) We use combination of NAPOT (Naturally Aligned Power Of Two) and TOR (top of range)
+     * entries to map all the valid address space, bottom to top. This leaves us with some extra PMP entries
+     * which can be used to provide more granular access
+     *
+     * 4) Entries are grouped in order with some static asserts to try and verify everything is
+     * correct.
+     *
+     * 5) For ESP32-P4's versions less than v3, no explicit permissions are specified in PMP (default all permissions) for following regions:
+     * limited entries:
+     *    a. External RAM
+     *    b. LP ROM, LP Peripherals, LP SRAM
+     *    c. External flash, External RAM, HP ROM, HP L2MEM (direct access)
+     */
+
+    /* There are 4 configuration scenarios for SRAM
+     *
+     * 1. Bootloader build:
+     *    - We cannot set the lock bit as we need to reconfigure it again for the application.
+     *      We configure PMP to cover entire valid IRAM and DRAM range.
+     *
+     * 2. Application build with CONFIG_ESP_SYSTEM_MEMPROT enabled
+     *    - We split the SRAM into IRAM and DRAM such that IRAM region cannot be written to
+     *      and DRAM region cannot be executed. We use _iram_text_end and _data_start markers to set the boundaries.
+     *      We also lock these entries so the R/W/X permissions are enforced even for machine mode
+     *
+     * 3. Application build with CONFIG_ESP_SYSTEM_MEMPROT disabled
+     *    - The IRAM-DRAM split is not enabled so we just need to ensure that access to only valid address ranges are successful
+     *      so for that we set PMP to cover entire valid IRAM and DRAM region.
+     *      We also lock these entries so the R/W/X permissions are enforced even for machine mode
+     *
+     * 4. CPU is in OCD debug mode
+     *    - The IRAM-DRAM split is not enabled so that OpenOCD can write and execute from IRAM.
+     *      We set PMP to cover entire valid IRAM and DRAM region.
+     *      We also lock these entries so the R/W/X permissions are enforced even for machine mode
+     */
+    //
+    // Configure all the invalid address regions using PMA
+    //
+    esp_cpu_configure_invalid_regions();
+
+    //
+    // Configure all the valid address regions using PMP
+    //
+
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+    esp_cpu_configure_region_protection_rev_v3();
+#else
+    esp_cpu_configure_region_protection_rev_less_than_v3();
+#endif
+
 }

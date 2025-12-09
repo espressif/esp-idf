@@ -13,7 +13,7 @@ examples/storage/fatfs/ext_flash:
     - fatfs
     - vfs
     - spi_flash
-    - driver
+    - esp_driver_spi
   disable:
     - if: IDF_TARGET in ["esp32p4", "esp32c5", "esp32c61", "esp32h21", "esp32h4"]
       temporary: true

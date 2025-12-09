@@ -1,6 +1,5 @@
 tools/ble/**/*
 tools/bt/**/*
-tools/catch/**/*
 tools/check_term.py
 tools/ci/*exclude*.txt
 tools/ci/astyle-rules.yml
@@ -28,6 +27,9 @@ tools/ci/idf_build_apps_dump_soc_caps.py
 tools/ci/idf_ci_local/**/*
 tools/ci/idf_ci_utils.py
 tools/ci/idf_pytest/**/*
+tools/ci/metrics/examples_count/example.metrics.json
+tools/ci/metrics/examples_count/generate_metrics.py
+tools/ci/metrics/examples_count/schema.yaml
 tools/ci/mirror-submodule-update.sh
 tools/ci/multirun_with_pyenv.sh
 tools/ci/mypy_ignore_list.txt
@@ -42,7 +44,6 @@ tools/ci/sg_rules/*
 tools/ci/sort_yaml.py
 tools/ci/utils.sh
 tools/eclipse-code-style.xml
-tools/esp_prov/**/*
 tools/format.sh
 tools/gdb_panic_server.py
 tools/mocks/**/*

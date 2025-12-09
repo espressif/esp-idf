@@ -1,7 +1,7 @@
 /**
  * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
- *  SPDX-License-Identifier: Apache-2.0
+ *  SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 #pragma once
 
@@ -130,21 +130,10 @@ extern "C" {
 #define GPIO_PAD_PULLUP(num) do{PIN_PULLDWN_DIS(IOMUX_REG_GPIO##num);PIN_PULLUP_EN(IOMUX_REG_GPIO##num);}while(0)
 #define GPIO_PAD_PULLDOWN(num) do{PIN_PULLUP_DIS(IOMUX_REG_GPIO##num);PIN_PULLDWN_EN(IOMUX_REG_GPIO##num);}while(0)
 
-#define SPI_HD_GPIO_NUM              20
-#define SPI_WP_GPIO_NUM              18
-#define SPI_CS0_GPIO_NUM             16
-#define SPI_CLK_GPIO_NUM             21
-#define SPI_D_GPIO_NUM               22
-#define SPI_Q_GPIO_NUM               17
-#define SPI_CS1_GPIO_NUM             15
-
 #define USB_INT_PHY0_DM_GPIO_NUM              13
 #define USB_INT_PHY0_DP_GPIO_NUM              14
 
 #define MAX_RTC_GPIO_NUM              6
-#define MAX_PAD_GPIO_NUM             28
-#define MAX_GPIO_NUM                 32
-#define DIG_IO_HOLD_BIT_SHIFT        32
 
 #define REG_IO_MUX_BASE DR_REG_IO_MUX_BASE
 // definitions above are inherited from previous version of code, should double check

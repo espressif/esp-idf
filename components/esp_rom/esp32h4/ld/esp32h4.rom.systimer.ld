@@ -6,7 +6,7 @@
 /* ROM function interface esp32h4.rom.systimer.ld for esp32h4
  *
  *
- * Generated from ../../rom/target/esp32h4/interface-esp32h4.yml md5sum c9db9928804fe99070d282b058ff3c65
+ * Generated from ../../rom/target/esp32h4/interface-esp32h4.yml md5sum bb9ee317148d3c5b10610936a3675a65
  *
  * Compatible with ROM where ECO version equal or greater to 0.
  *
@@ -18,8 +18,10 @@
  ***************************************/
 
 /* Functions */
-systimer_hal_init = 0x4000036c;
-systimer_hal_deinit = 0x40000370;
+/* The following ROM functions are commented out because they're patched in the esp_rom_systimer.c */
+/* systimer_hal_init = 0x4000036c; */
+/* systimer_hal_deinit = 0x40000370; */
+
 systimer_hal_set_tick_rate_ops = 0x40000374;
 systimer_hal_get_counter_value = 0x40000378;
 systimer_hal_get_time = 0x4000037c;

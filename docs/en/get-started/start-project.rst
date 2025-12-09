@@ -27,11 +27,14 @@ This command compiles the application and all ESP-IDF components, then it genera
     ... (more lines of build system output)
 
     [527/527] Generating hello_world.bin
-    esptool.py v2.3.1
+    esptool v5.0.2
 
-    Project build complete. To flash, run this command:
-    ../../../components/esptool_py/esptool/esptool.py -p (PORT) -b 921600 write_flash --flash_mode dio --flash_size detect --flash_freq 40m 0x10000 build/hello_world.bin  build 0x1000 build/bootloader/bootloader.bin 0x8000 build/partition_table/partition-table.bin
-    or run 'idf.py -p PORT flash'
+    Project build complete. To flash, run:
+      idf.py flash
+    or
+      idf.py -p PORT flash
+    or
+      esptool -p (PORT) -b 921600 write-flash --flash-mode dio --flash-size detect --flash-freq 40m 0x10000 build/hello_world.bin  build 0x1000 build/bootloader/bootloader.bin 0x8000 build/partition_table/partition-table.bin
 
 If there are no errors, the build finishes by generating the firmware binary .bin files.
 

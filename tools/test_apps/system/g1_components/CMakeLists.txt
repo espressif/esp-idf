@@ -5,7 +5,7 @@
 cmake_minimum_required(VERSION 3.22)
 
 set(g0_components soc hal esp_common esp_rom)  # also <arch>, i.e. xtensa or riscv, will be added below
-set(g1_components spi_flash freertos log heap esp_libc esp_system esp_hw_support esp_mm)
+set(g1_components spi_flash freertos log heap esp_libc esp_system esp_hw_support esp_mm esp_stdio)
 set(COMPONENTS ${g0_components} ${g1_components} main)
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
@@ -99,6 +99,9 @@ set(extra_components_which_shouldnt_be_included
     # esp_partition is a new component for separated IDF partition APIs. Pulled in from app_update and efuse,
     # both which should be removed
     esp_partition
+
+    # esp_blockdev is a new component for separated IDF block storage device APIs. Pulled in from esp_partition
+    esp_blockdev
 
     # pthread is required by cxx. See [refactor-todo] about cxx, can it work without pthread?
     pthread

@@ -45,7 +45,7 @@ memmove(void *dst_void,
                              "addi %2, %2, -4\n" // aligned_dst--;
                              "addi %3, %3, -4\n" // length -= LITTLE_BLOCK_SIZE;
                              "sw   %0,  0(%2)\n" // aligned_dst = src0;
-                             : "=r"(src0), "+r"(aligned_src), "+r"(aligned_dst), "+r"(length)
+                             : "=&r"(src0), "+r"(aligned_src), "+r"(aligned_dst), "+r"(length)
                              :: "memory");
             }
 
@@ -122,13 +122,13 @@ memmove(void *dst_void,
                  */
                 long src0;
                 /* DIG-694: need at least 2 instructions between lw and sw */
-                asm volatile("lw   %0,  0(%4)\n" // long src0 = *aligned_src;
-                             "addi %1, %4,  4\n" // aligned_src++;
-                             "addi %2, %5,  4\n" // aligned_dst++;
-                             "addi %3, %6, -4\n" // length -= LITTLE_BLOCK_SIZE;
-                             "sw   %0, -4(%5)\n" // *(aligned_dst-1) = src0;
-                             : "=r"(src0), "=r"(aligned_src), "=r"(aligned_dst), "=r"(length)
-                             : "r"(aligned_src), "r"(aligned_dst), "r"(length));
+                asm volatile("lw   %0,  0(%1)\n" // long src0 = *aligned_src;
+                             "addi %1, %1,  4\n" // aligned_src++;
+                             "addi %2, %2,  4\n" // aligned_dst++;
+                             "addi %3, %3, -4\n" // length -= LITTLE_BLOCK_SIZE;
+                             "sw   %0, -4(%2)\n" // *(aligned_dst-1) = src0;
+                             : "=&r"(src0), "+r"(aligned_src), "+r"(aligned_dst), "+r"(length)
+                             :: "memory");
             }
 
             /* Pick up any residual with a byte copier.  */

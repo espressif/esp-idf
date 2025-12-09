@@ -1,5 +1,3 @@
-api-guides/low-power-mode.rst
-api-guides/deep-sleep-stub.rst
 api-guides/inc/external-ram-esp32-notes.rst
 api-reference/storage/vfs.rst
 api-reference/storage/spiffs.rst
@@ -13,4 +11,3 @@ api-reference/storage/mass_mfg.rst
 api-reference/storage/fatfsgen.rst
 api-reference/storage/index.rst
 api-reference/storage/nvs_partition_parse.rst
-api-reference/system/sleep_modes.rst

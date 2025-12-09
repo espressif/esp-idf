@@ -45,8 +45,6 @@ These third party libraries can be included into the application (firmware) prod
 
 * `FatFS`_ library, Copyright (C) 2017 ChaN, is licensed under :component_file:`a BSD-style license <fatfs/src/ff.h#L1-L18>`.
 
-* `cJSON`_ library, Copyright (C) 2009-2017 Dave Gamble and cJSON contributors, is licensed under MIT License as described in :component_file:`LICENSE file <json/cJSON/LICENSE>`.
-
 * `micro-ecc`_ library, Copyright (C) 2014 Kenneth MacKay, is licensed under 2-clause BSD License.
 
 * `Mbed TLS`_ library, Copyright (C) 2006-2018 ARM Limited, is licensed under Apache License 2.0 as described in :component_file:`LICENSE file <mbedtls/mbedtls/LICENSE>`.
@@ -54,8 +52,6 @@ These third party libraries can be included into the application (firmware) prod
 * `SPIFFS`_ library, Copyright (C) 2013-2017 Peter Andersson, is licensed under MIT License as described in :component_file:`LICENSE file <spiffs/spiffs/LICENSE>`.
 
 * :component_file:`SD/MMC driver <sdmmc/sdmmc_cmd.c>` is derived from `OpenBSD SD/MMC driver`_, Copyright (C) 2006 Uwe Stuehler, and is licensed under BSD License.
-
-* :component:`ESP-MQTT <mqtt>` Package (contiki-mqtt), Copyright (C) 2014 Stephen Robinson, MQTT-ESP - Tuan PM <tuanpm at live dot com> is licensed under Apache License 2.0 as described in :component_file:`LICENSE file <mqtt/esp-mqtt/LICENSE>`.
 
 * :component:`BLE Mesh <bt/esp_ble_mesh>` is adapted from Zephyr Project, Copyright (C) 2017-2018 Intel Corporation and licensed under Apache License 2.0.
 
@@ -145,7 +141,7 @@ Copyright (C) 2011 ChaN, all right reserved.
 .. _Newlib: https://sourceware.org/newlib/
 .. _Picolibc: https://keithp.com/picolibc/
 .. _FreeRTOS: https://freertos.org/
-.. _esptool.py: https://github.com/espressif/esptool
+.. _esptool: https://github.com/espressif/esptool
 .. _LWIP: https://savannah.nongnu.org/projects/lwip/
 .. _TinyBasic: https://github.com/BleuLlama/TinyBasicPlus
 .. _miniz: https://code.google.com/archive/p/miniz/
@@ -155,7 +151,6 @@ Copyright (C) 2011 ChaN, all right reserved.
 .. _argtable3: https://github.com/argtable/argtable3
 .. _linenoise: https://github.com/antirez/linenoise
 .. _fatfs: http://elm-chan.org/fsw/ff/00index_e.html
-.. _cJSON: https://github.com/DaveGamble/cJSON
 .. _micro-ecc: https://github.com/kmackay/micro-ecc
 .. _OpenBSD SD/MMC driver: https://github.com/openbsd/src/blob/f303646/sys/dev/sdmmc/sdmmc.c
 .. _Mbed TLS: https://github.com/Mbed-TLS/mbedtls
@@ -163,8 +158,6 @@ Copyright (C) 2011 ChaN, all right reserved.
 .. _CMock: https://github.com/ThrowTheSwitch/CMock
 .. _protobuf-c: https://github.com/protobuf-c/protobuf-c
 .. _Unity: https://github.com/ThrowTheSwitch/Unity
-.. _asio: https://github.com/chriskohlhoff/asio
-.. _mqtt: https://github.com/espressif/esp-mqtt
 .. _zephyr: https://github.com/zephyrproject-rtos/zephyr
 .. _mynewt-nimble: https://github.com/apache/mynewt-nimble
 .. _ESP-IDF Programming Guide: https://docs.espressif.com/projects/esp-idf/en/latest/

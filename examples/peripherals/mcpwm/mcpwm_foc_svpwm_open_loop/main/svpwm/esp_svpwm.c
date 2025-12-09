@@ -49,10 +49,12 @@ esp_err_t svpwm_new_inverter(const inverter_config_t *config, inverter_handle_t 
     }
 
     for (int i = 0; i < 3; i++) {
-        ESP_GOTO_ON_ERROR(mcpwm_generator_set_actions_on_compare_event(svpwm_dev->generators[i][0],
-                                                                       MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, svpwm_dev->comparators[i], MCPWM_GEN_ACTION_LOW),
-                                                                       MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_DOWN, svpwm_dev->comparators[i], MCPWM_GEN_ACTION_HIGH),
-                                                                       MCPWM_GEN_COMPARE_EVENT_ACTION_END()), err, TAG, "Set generator actions failed");
+        ESP_GOTO_ON_ERROR(mcpwm_generator_set_action_on_compare_event(svpwm_dev->generators[i][0],
+                                                                      MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, svpwm_dev->comparators[i], MCPWM_GEN_ACTION_LOW)),
+                          err, TAG, "Set generator UP action failed");
+        ESP_GOTO_ON_ERROR(mcpwm_generator_set_action_on_compare_event(svpwm_dev->generators[i][0],
+                                                                      MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_DOWN, svpwm_dev->comparators[i], MCPWM_GEN_ACTION_HIGH)),
+                          err, TAG, "Set generator DOWN action failed");
     }
 
     for (int i = 0; i < 3; i++) {

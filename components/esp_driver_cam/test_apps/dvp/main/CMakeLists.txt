@@ -11,6 +11,7 @@ set(priv_requires
         unity
         esp_driver_cam
         esp_psram
+        esp_driver_ledc
 )
 
 idf_component_register(SRCS ${srcs}

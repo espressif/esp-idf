@@ -15,7 +15,10 @@
       artifacts: false
   variables:
     GIT_STRATEGY: fetch  # use brew local mirror first
-  before_script: []
+  before_script:
+    - if ($env:IDF_DONT_USE_MIRRORS) {
+        $env:IDF_MIRROR_PREFIX_MAP = ""
+      }
   after_script: []
 
 test_cli_installer_win:
@@ -47,6 +50,7 @@ test_tools_win:
   extends:
     - .host_test_win_template
     - .rules:labels:windows_pytest_build_system
+  parallel: 4
   artifacts:
     paths:
       - ${IDF_PATH}/*.out
@@ -64,8 +68,8 @@ test_tools_win:
     - .\export.ps1
     - python "${SUBMODULE_FETCH_TOOL}" -s "all"
     - cd ${IDF_PATH}/tools/test_idf_py
-    - pytest --noconftest test_idf_py.py       --junitxml=${IDF_PATH}/XUNIT_IDF_PY.xml
-    - pytest --noconftest test_hints.py        --junitxml=${IDF_PATH}/XUNIT_HINTS.xml
+    - idf-ci gitlab download-known-failure-cases-file ${KNOWN_FAILURE_CASES_FILE_NAME}
+    - pytest --parallel-count ${CI_NODE_TOTAL} --parallel-index ${CI_NODE_INDEX} --junitxml=${IDF_PATH}/XUNIT_RESULT.xml --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}
 
 # Build tests
 .test_build_system_template_win:
@@ -82,12 +86,61 @@ test_tools_win:
     - . .\export.ps1
     - python "${SUBMODULE_FETCH_TOOL}" -s "all"
     - cd ${IDF_PATH}\tools\test_build_system
-    - pytest --parallel-count ${CI_NODE_TOTAL} --parallel-index ${CI_NODE_INDEX} --junitxml=${CI_PROJECT_DIR}\XUNIT_RESULT.xml
+    - idf-ci gitlab download-known-failure-cases-file ${KNOWN_FAILURE_CASES_FILE_NAME}
+    - pytest --parallel-count ${CI_NODE_TOTAL} --parallel-index ${CI_NODE_INDEX} --junitxml=${CI_PROJECT_DIR}\XUNIT_RESULT.xml --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}
 
 pytest_build_system_win:
   extends:
     - .test_build_system_template_win
     - .rules:labels:windows_pytest_build_system
+  parallel: 6
+  needs: []
+  tags: [windows-build, brew]
+  artifacts:
+    paths:
+      - XUNIT_RESULT.xml
+      - test_build_system
+    expire_in: 2 days
+    reports:
+      junit: XUNIT_RESULT.xml
+    when: always
+
+pytest_build_system_win_minimal_cmake:
+  extends:
+    - .test_build_system_template_win
+    - .rules:labels:windows_pytest_build_system
+  needs: []
+  tags: [windows-build, brew]
+  artifacts:
+    paths:
+      - XUNIT_RESULT.xml
+      - test_build_system
+    expire_in: 2 days
+    reports:
+      junit: XUNIT_RESULT.xml
+    when: always
+  variables:
+    MINIMAL_CMAKE_VERSION: "3.22.1"
+  script:
+    - .\install.ps1 --enable-ci
+    - . .\export.ps1
+    - python ${IDF_PATH}\tools\idf_tools.py install cmake@${MINIMAL_CMAKE_VERSION}
+    - $Env:PATH = "$Env:USERPROFILE\.espressif\tools\cmake\${MINIMAL_CMAKE_VERSION}\bin;$Env:PATH"
+    - |
+      $actualVersion = (& cmake --version).Split()[2]
+      if ($actualVersion -ne $Env:MINIMAL_CMAKE_VERSION) {
+        Write-Error "ERROR: Wrong CMake version! Detected: $actualVersion, but expected: $Env:MINIMAL_CMAKE_VERSION"
+        exit 1
+      }
+    - python "${SUBMODULE_FETCH_TOOL}" -s "all"
+    - cd ${IDF_PATH}\tools\test_build_system
+    - idf-ci gitlab download-known-failure-cases-file ${KNOWN_FAILURE_CASES_FILE_NAME}
+    - pytest -k cmake --junitxml=${CI_PROJECT_DIR}\XUNIT_RESULT.xml --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}
+
+pytest_buildv2_system_win:
+  extends:
+    - .test_build_system_template_win
+    - .rules:labels:buildv2
   parallel: 2
   needs: []
   tags: [windows-build, brew]
@@ -99,3 +152,31 @@ pytest_build_system_win:
     reports:
       junit: XUNIT_RESULT.xml
     when: always
+  script:
+    - .\install.ps1 --enable-ci
+    - . .\export.ps1
+    - python "${SUBMODULE_FETCH_TOOL}" -s "all"
+    - cd ${IDF_PATH}\tools\test_build_system
+    - idf-ci gitlab download-known-failure-cases-file ${KNOWN_FAILURE_CASES_FILE_NAME}
+    - pytest
+      --buildv2
+      --parallel-count ${CI_NODE_TOTAL}
+      --parallel-index ${CI_NODE_INDEX}
+      --junitxml=${CI_PROJECT_DIR}\XUNIT_RESULT.xml
+      --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}
+      --
+      test_non_default_target.py
+      test_component_manager.py
+      test_build.py
+      test_bootloader.py
+      test_git.py
+      test_kconfig.py
+      test_partition.py
+      test_reproducible_build.py
+      test_sdkconfig.py
+      test_versions.py
+      test_common.py
+      test_components.py
+      test_cmake.py
+      test_idf_extension.py
+      test_rebuild.py

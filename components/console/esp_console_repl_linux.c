@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -74,6 +74,12 @@ static esp_err_t esp_console_repl_linux_delete(esp_console_repl_t *repl)
         goto _exit;
     }
     repl_com->state = CONSOLE_REPL_STATE_DEINIT;
+
+    ret = esp_console_common_deinit(&linux_repl->repl_com);
+    if (ret != ESP_OK) {
+        goto _exit;
+    }
+
     esp_console_deinit();
 
     free(linux_repl);

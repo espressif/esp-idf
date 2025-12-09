@@ -321,7 +321,7 @@ TX 单元可以选择各种不同的时钟源，其中外部时钟源较为特�
 
     编写好比特调节器程序后，通过调用 :cpp:func:`parlio_tx_unit_decorate_bitscrambler` 启用比特调节器。并在 :cpp:member:`parlio_transmit_config_t::bitscrambler_program` 配置本次传输使用比特调节器程序的二进制文件。不同的传输事务可以使用不同的比特调节器程序。该二进制文件必须符合比特调节器的汇编语言规范，并且在运行时会被加载到比特调节器的指令存储器中。如何编写并编译比特调节器程序请参考 :doc:`比特调节器编程指南 </api-reference/peripherals/bitscrambler>`。
 
-    .. only:: not SOC_PARLIO_TX_SUPPORT_EOF_FROM_DMA
+    .. only:: esp32p4
 
         .. note::
 
@@ -338,7 +338,7 @@ TX 单元可以选择各种不同的时钟源，其中外部时钟源较为特�
 
 .. only:: SOC_PARLIO_SUPPORT_SLEEP_RETENTION
 
-    除了关闭时钟源外，系统在进入睡眠模式时还可以关闭 TX 单元的电源以进一步降低功耗。要实现这一点，需要将 :cpp:member:`parlio_tx_unit_config_t::allow_pd` 设置为 ``true``。在系统进入睡眠模式之前，TX 单元的寄存器上下文会被备份到内存中，并在系统唤醒后恢复。请注意，启用此选项虽然可以降低功耗，但会增加内存的使用量。因此，在使用该功能时需要在功耗和内存消耗之间进行权衡。
+    除了关闭时钟源外，系统在进入睡眠模式时还可以关闭 TX 单元的电源以进一步降低功耗。要实现这一点，需要将 :cpp:member:`parlio_tx_unit_config_t::flags::allow_pd` 设置为 ``true``。在系统进入睡眠模式之前，TX 单元的寄存器上下文会被备份到内存中，并在系统唤醒后恢复。请注意，启用此选项虽然可以降低功耗，但会增加内存的使用量。因此，在使用该功能时需要在功耗和内存消耗之间进行权衡。
 
 关于线程安全
 ^^^^^^^^^^^^^
@@ -410,7 +410,7 @@ TX 单元可以选择各种不同的时钟源，其中外部时钟源较为特�
 
     - :example:`peripherals/parlio/parlio_tx/simple_rgb_led_matrix` 演示了如何使用 {IDF_TARGET_NAME} 的 TX 单元驱动支持 HUB75 接口的 RGB LED 矩阵板，并使用 LVGL 库来展示简单的 UI 元素。
     :SOC_PARLIO_TX_SUPPORT_LOOP_TRANSMISSION: - :example:`peripherals/parlio/parlio_tx/advanced_rgb_led_matrix` 演示了如何使用 {IDF_TARGET_NAME} 的 TX 单元的无限循环发送特性支持 HUB75 接口的 RGB LED 矩阵板。相比 simple_rgb_led_matrix 示例，不需要手动执行循环扫描，使用更加灵活。
-    :SOC_PARLIO_SUPPORT_SPI_LCD: - :example:`peripherals/lcd/parlio_simulate` 演示了如何使用并行 IO 外设的 TX 单元驱动 SPI 或 I80 接口的屏幕。
+    :SOC_PARLIO_LCD_SUPPORTED: - :example:`peripherals/lcd/parlio_simulate` 演示了如何使用并行 IO 外设的 TX 单元驱动 SPI 或 I80 接口的屏幕。
 
 API 参考
 -------------

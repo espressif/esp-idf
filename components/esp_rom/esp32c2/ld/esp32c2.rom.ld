@@ -304,7 +304,7 @@ PROVIDE( Cache_Get_Mode = 0x400006e4 );
 PROVIDE( Cache_Address_Through_IBus = 0x400006e8 );
 PROVIDE( Cache_Address_Through_DBus = 0x400006ec );
 PROVIDE( Cache_Set_Default_Mode = 0x400006f0 );
-PROVIDE( Cache_Enable_Defalut_ICache_Mode = 0x400006f4 );
+PROVIDE( Cache_Enable_Default_ICache_Mode = 0x400006f4 );
 PROVIDE( ROM_Boot_Cache_Init = 0x400006f8 );
 PROVIDE( MMU_Set_Page_Mode = 0x400006fc );
 PROVIDE( MMU_Get_Page_Mode = 0x40000700 );
@@ -358,23 +358,23 @@ ets_get_xtal_freq = 0x40000784;
  ***************************************/
 
 /* Functions */
-gpio_input_get = 0x40000788;
-gpio_matrix_in = 0x4000078c;
-gpio_matrix_out = 0x40000790;
-/* gpio_output_disable = 0x40000794; */
-/* gpio_output_enable = 0x40000798; */
-gpio_output_set = 0x4000079c;
-gpio_pad_hold = 0x400007a0;
-gpio_pad_input_disable = 0x400007a4;
-gpio_pad_input_enable = 0x400007a8;
-gpio_pad_pulldown = 0x400007ac;
-gpio_pad_pullup = 0x400007b0;
-gpio_pad_select_gpio = 0x400007b4;
-gpio_pad_set_drv = 0x400007b8;
-gpio_pad_unhold = 0x400007bc;
-gpio_pin_wakeup_disable = 0x400007c0;
-gpio_pin_wakeup_enable = 0x400007c4;
-gpio_bypass_matrix_in = 0x400007c8;
+rom_gpio_input_get = 0x40000788;
+rom_gpio_matrix_in = 0x4000078c;
+rom_gpio_matrix_out = 0x40000790;
+rom_gpio_output_disable = 0x40000794;
+rom_gpio_output_enable = 0x40000798;
+rom_gpio_output_set = 0x4000079c;
+rom_gpio_pad_hold = 0x400007a0;
+rom_gpio_pad_input_disable = 0x400007a4;
+rom_gpio_pad_input_enable = 0x400007a8;
+rom_gpio_pad_pulldown = 0x400007ac;
+rom_gpio_pad_pullup = 0x400007b0;
+rom_gpio_pad_select_gpio = 0x400007b4;
+rom_gpio_pad_set_drv = 0x400007b8;
+rom_gpio_pad_unhold = 0x400007bc;
+rom_gpio_pin_wakeup_disable = 0x400007c0;
+rom_gpio_pin_wakeup_enable = 0x400007c4;
+rom_gpio_bypass_matrix_in = 0x400007c8;
 
 
 /***************************************
@@ -948,7 +948,7 @@ ieee80211_getcapinfo = 0x40002130;
 /* sta_rx_csa = 0x40002134; */
 /* sta_recv_sa_query_resp = 0x40002144; */
 ieee80211_set_max_rate = 0x4000214c;
-ic_set_sta = 0x40002150;
+//ic_set_sta = 0x40002150;
 //ieee80211_parse_wpa = 0x40002158;
 ieee80211_add_assoc_req_ies = 0x40002160;
 ieee80211_add_probe_req_ies = 0x40002164;

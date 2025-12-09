@@ -26,13 +26,12 @@ if(CONFIG_ESP_COREDUMP_ENABLE)
   list(APPEND priv_includes "include_core_dump")
 
   if(CONFIG_IDF_TARGET_ARCH_XTENSA)
-    list(APPEND srcs "src/port/xtensa/core_dump_port.c")
+    list(APPEND srcs "src/port/xtensa/core_dump_port.c"
+                     "src/port/xtensa/core_dump_stack_switch.S")
     list(APPEND includes "include/port/xtensa")
-    list(APPEND priv_includes "include_core_dump/port/xtensa")
   elseif(CONFIG_IDF_TARGET_ARCH_RISCV)
     list(APPEND srcs "src/port/riscv/core_dump_port.c")
     list(APPEND includes "include/port/riscv")
-    list(APPEND priv_includes "include_core_dump/port/riscv")
   endif()
 
   idf_component_register(SRCS ${srcs}

@@ -220,13 +220,8 @@ else()
     # linker to not drop this symbol.
     target_link_libraries(${COMPONENT_LIB} INTERFACE "-u app_main")
 
-    if(CONFIG_APPTRACE_SV_ENABLE)
-        # FreeRTOS headers have a dependency on app_trace when SystemView tracing is enabled
-        idf_component_optional_requires(PUBLIC app_trace)
-    elseif(CONFIG_APPTRACE_ENABLE)
-        # [refactor-todo]: app_startup.c esp_startup_start_app_other_cores() has a dependency on esp_apptrace_init()
-        # (called on CPU1). This should be resolved when link-time registration of startup functions is added.
-        idf_component_optional_requires(PRIVATE app_trace)
+    if(CONFIG_ESP_TRACE_ENABLE)
+        idf_component_optional_requires(PUBLIC esp_trace)
     endif()
 
     if(CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME)

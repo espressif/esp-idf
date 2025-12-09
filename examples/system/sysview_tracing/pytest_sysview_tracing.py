@@ -15,6 +15,20 @@ if typing.TYPE_CHECKING:
     from conftest import OpenOCD
 
 
+def _validate_trace_data(trace_log: list[str], target: str) -> None:
+    """Validate SysView trace data in log file(s).
+
+    Args:
+        trace_log: List of trace log paths
+        target: Target chip name (e.g., 'esp32', 'esp32s3')
+    """
+    for idx, log in enumerate(trace_log):
+        with open(log, 'rb') as f:
+            content = f.read()
+            search_str = f'N=FreeRTOS Application,D={target},C=core{idx},O=FreeRTOS'.encode()
+            assert search_str in content, f'SysView trace data not found in {log}'
+
+
 def _test_sysview_tracing_jtag(openocd_dut: 'OpenOCD', dut: IdfDut) -> None:
     # Construct trace log paths
     trace_log = [
@@ -58,6 +72,8 @@ def _test_sysview_tracing_jtag(openocd_dut: 'OpenOCD', dut: IdfDut) -> None:
         time.sleep(3)
         openocd.write('esp sysview stop')
 
+    _validate_trace_data(trace_log, dut.target)
+
 
 @pytest.mark.jtag
 @idf_parametrize('config', ['sysview_jtag'], indirect=['config'])
@@ -79,10 +95,10 @@ def _test_sysview_tracing_uart(dut: IdfDut) -> None:
     dut.serial.close()
     time.sleep(2)  # Wait for the DUT to reboot
     with serial.Serial(dut.serial.port, baudrate=dut.app.sdkconfig.get('APPTRACE_UART_BAUDRATE'), timeout=10) as ser:
-        trace_log = os.path.join(dut.logdir, 'sys_log_uart.svdat')  # pylint: disable=protected-access
+        trace_log = [os.path.join(dut.logdir, 'sys_log_uart.svdat')]  # pylint: disable=protected-access
         # Send Start command to start SysView tracing
         ser.write(b'\x01')
-        with open(trace_log, 'w+b') as f:
+        with open(trace_log[0], 'w+b') as f:
             start_time = time.time()
             while True:
                 try:
@@ -97,10 +113,7 @@ def _test_sysview_tracing_uart(dut: IdfDut) -> None:
             # Send Stop command
             ser.write(b'\x02')
 
-            f.seek(0)
-            content = f.read()
-            search_str = f'N=FreeRTOS Application,D={dut.target},C=core0,O=FreeRTOS'.encode()
-            assert search_str in content, 'SysView trace data not found in the log file'
+        _validate_trace_data(trace_log, dut.target)
 
 
 @pytest.mark.generic

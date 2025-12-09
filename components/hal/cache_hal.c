@@ -6,7 +6,6 @@
 #include <sys/param.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include "sdkconfig.h"
 #include "esp_err.h"
 #include "esp_attr.h"
 #include "hal/assert.h"
@@ -56,31 +55,30 @@ void s_cache_hal_init_ctx(void)
 }
 
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
-//TODO: IDF-5670, add cache init API, then don't need sdkconfig
-void cache_hal_init_l2_cache(void)
+void cache_hal_init_l2_cache(const cache_hal_config_t *config)
 {
     cache_size_t cache_size;
     cache_line_size_t cache_line_size;
-#if CONFIG_CACHE_L2_CACHE_128KB
-    cache_size = CACHE_SIZE_128K;
-#elif CONFIG_CACHE_L2_CACHE_256KB
-    cache_size = CACHE_SIZE_256K;
-#else
-    cache_size = CACHE_SIZE_512K;
-#endif
+    if (config->l2_cache_size == 0x20000) {
+        cache_size = CACHE_SIZE_128K;
+    } else if (config->l2_cache_size == 0x40000) {
+        cache_size = CACHE_SIZE_256K;
+    } else {
+        cache_size = CACHE_SIZE_512K;
+    }
 
-#if CONFIG_CACHE_L2_CACHE_LINE_64B
-    cache_line_size = CACHE_LINE_SIZE_64B;
-#else
-    cache_line_size = CACHE_LINE_SIZE_128B;
-#endif
+    if (config->l2_cache_line_size == 64) {
+        cache_line_size = CACHE_LINE_SIZE_64B;
+    } else {
+        cache_line_size = CACHE_LINE_SIZE_128B;
+    }
 
     Cache_Set_L2_Cache_Mode(cache_size, 8, cache_line_size);
     Cache_Invalidate_All(CACHE_MAP_L2_CACHE);
 }
 #endif
 
-void cache_hal_init(void)
+void cache_hal_init(const cache_hal_config_t *config)
 {
     s_cache_hal_init_ctx();
 
@@ -90,12 +88,10 @@ void cache_hal_init(void)
         cache_ll_enable_cache(2, CACHE_TYPE_ALL, CACHE_LL_ID_ALL, ctx.l2.i_autoload_en, ctx.l2.d_autoload_en);
     }
 
-    cache_ll_l1_enable_bus(0, CACHE_LL_DEFAULT_DBUS_MASK);
-    cache_ll_l1_enable_bus(0, CACHE_LL_DEFAULT_IBUS_MASK);
-#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
-    cache_ll_l1_enable_bus(1, CACHE_LL_DEFAULT_DBUS_MASK);
-    cache_ll_l1_enable_bus(1, CACHE_LL_DEFAULT_IBUS_MASK);
-#endif
+    for (int i = 0; i < config->core_nums; i++) {
+        cache_ll_l1_enable_bus(i, CACHE_LL_DEFAULT_DBUS_MASK);
+        cache_ll_l1_enable_bus(i, CACHE_LL_DEFAULT_IBUS_MASK);
+    }
 
 #if CACHE_LL_ENABLE_DISABLE_STATE_SW
     ctx.l1.i_cache_enabled = 1;
@@ -105,7 +101,7 @@ void cache_hal_init(void)
 #endif
 
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
-    cache_hal_init_l2_cache();
+    cache_hal_init_l2_cache(config);
 #endif
 }
 

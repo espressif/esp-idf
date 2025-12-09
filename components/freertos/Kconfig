@@ -299,7 +299,7 @@ menu "FreeRTOS"
 
         choice FREERTOS_RUN_TIME_COUNTER_TYPE
             prompt "configRUN_TIME_COUNTER_TYPE"
-            depends on FREERTOS_GENERATE_RUN_TIME_STATS && !FREERTOS_SMP
+            depends on FREERTOS_GENERATE_RUN_TIME_STATS
             default FREERTOS_RUN_TIME_COUNTER_TYPE_U32
             help
                 Sets the data type used for the FreeRTOS run time stats. A larger data type can be used to reduce the
@@ -405,10 +405,7 @@ menu "FreeRTOS"
                 off to save space in the TCB memory.
 
         config FREERTOS_TASK_PRE_DELETION_HOOK
-            # This option is a replacement for FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP (which is now deprecated). If the
-            # deprecated option is defined, we hide this option to avoid multiple pre-deletion hooks from running.
             bool "Enable task pre-deletion hook"
-            depends on !FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP
             default n
             help
                 Enable this option to make FreeRTOS call a user provided hook function right before it deletes a task
@@ -417,18 +414,6 @@ menu "FreeRTOS"
 
                 If this config option is enabled, users must define a ``void vTaskPreDeletionHook( void * pxTCB )``
                 hook function in their application.
-
-        config FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP
-            # This option is deprecated (replaced by FREERTOS_TASK_PRE_DELETION_HOOK) but still exists to maintain
-            # compatibility. Todo: Remove by v6.0 (see IDF-8097).
-            bool "Enable static task clean up hook (DEPRECATED)"
-            default n
-            help
-                THIS OPTION IS DEPRECATED. Use FREERTOS_TASK_PRE_DELETION_HOOK instead.
-
-                Enable this option to make FreeRTOS call the static task clean up hook when a task is deleted.
-
-                Note: Users will need to provide a ``void vPortCleanUpTCB ( void *pxTCB )`` callback
 
         config FREERTOS_CHECK_MUTEX_GIVEN_BY_OWNER
             # This feature is innately supported in FreeRTOS SMP, and hence not available as a config option when

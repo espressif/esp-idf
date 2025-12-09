@@ -1,5 +1,5 @@
-idf_component_register(SRCS "test_fatfs.cpp"
-                       REQUIRES fatfs
+idf_component_register(SRCS "test_fatfs.cpp" "test_fatfs_vfs.cpp"
+                       REQUIRES fatfs vfs
                        WHOLE_ARCHIVE
                        )
 

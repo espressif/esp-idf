@@ -1,9 +1,194 @@
-menu "Example Configuration"
+menu "Example Ethernet Configuration"
+
+    orsource "$IDF_PATH/examples/common_components/env_caps/$IDF_TARGET/Kconfig.env_caps"
+
+    choice EXAMPLE_ETH_PHY_INTERFACE
+        prompt "PHY interface"
+        default EXAMPLE_ETH_PHY_INTERFACE_DEFAULT
+        help
+            Select the communication interface between MAC and PHY chip.
+
+        config EXAMPLE_ETH_PHY_INTERFACE_DEFAULT
+            bool "Default EMAC interface configuration"
+            help
+                Will use default hardcoded ESP Ethernet MAC driver configuration
+
+        config EXAMPLE_ETH_PHY_INTERFACE_RMII
+            bool "Reduced Media Independent Interface (RMII)"
+    endchoice
+
+    if EXAMPLE_ETH_PHY_INTERFACE_RMII
+        choice EXAMPLE_ETH_RMII_CLK_MODE
+            prompt "RMII CLK mode"
+            default EXAMPLE_ETH_RMII_CLK_INPUT
+            help
+                Select external or internal RMII CLK.
+
+            config EXAMPLE_ETH_RMII_CLK_INPUT
+                bool "Input RMII CLK from external"
+                help
+                    MAC will get RMII CLK from outside.
+
+            config EXAMPLE_ETH_RMII_CLK_OUTPUT
+                bool "Output RMII CLK from internal"
+                help
+                    Generate RMII CLK by internal PLL.
+                    This clock can be routed to the external PHY device.
+                    !! WARNING !!
+                    ESP32 Errata: If you want the Ethernet to work with WiFi or BT, don’t select ESP32
+                    as RMII CLK output as it would result in clock instability! Applicable only to ESP32,
+                    other ESP32 SoCs (like ESP32P4) are not affected.
+        endchoice
+
+        config EXAMPLE_ETH_RMII_CLK_GPIO
+            int "RMII CLK GPIO"
+            range ENV_GPIO_RANGE_MIN ENV_GPIO_RANGE_MAX
+            default 50 if IDF_TARGET_ESP32P4
+            default 0
+            help
+                RMII CLK input or output GPIO. See datasheet for available GPIOs.
+
+        config EXAMPLE_ETH_RMII_CLK_EXT_LOOPBACK_EN
+            depends on !SOC_EMAC_RMII_CLK_OUT_INTERNAL_LOOPBACK && EXAMPLE_ETH_RMII_CLK_OUTPUT
+            bool "Enable external RMII CLK loopback input"
+            default y
+            help
+                RMII CLK output signal must be looped back to the EMAC externally on certain chips.
+
+        config EXAMPLE_ETH_RMII_CLK_EXT_LOOPBACK_IN_GPIO
+            depends on EXAMPLE_ETH_RMII_CLK_EXT_LOOPBACK_EN
+            int "RMII CLK loopback input GPIO"
+            range ENV_GPIO_RANGE_MIN ENV_GPIO_RANGE_MAX
+            default 32 if IDF_TARGET_ESP32P4
+            default 0
+            help
+                Set GPIO number used by RMII REF CLK input to loopback internally generated RMII CLK output.
+                See datasheet for available GPIOs.
+
+        if SOC_EMAC_USE_MULTI_IO_MUX
+            config EXAMPLE_ETH_RMII_TX_EN_GPIO
+                int "RMII TX_EN GPIO number"
+                range ENV_GPIO_RANGE_MIN ENV_GPIO_OUT_RANGE_MAX
+                default 49 if IDF_TARGET_ESP32P4
+                default 0
+                help
+                    Set the GPIO number used by RMII TX_EN signal.
+                    See datasheet for available GPIOs.
+
+            config EXAMPLE_ETH_RMII_TXD0_GPIO
+                int "RMII TXD0 GPIO number"
+                range ENV_GPIO_RANGE_MIN ENV_GPIO_OUT_RANGE_MAX
+                default 34 if IDF_TARGET_ESP32P4
+                default 0
+                help
+                    Set the GPIO number used by RMII TXD0 signal.
+                    See datasheet for available GPIOs.
+
+            config EXAMPLE_ETH_RMII_TXD1_GPIO
+                int "RMII TXD1 GPIO number"
+                range ENV_GPIO_RANGE_MIN ENV_GPIO_OUT_RANGE_MAX
+                default 35 if IDF_TARGET_ESP32P4
+                default 0
+                help
+                    Set the GPIO number used by RMII TXD1 signal.
+                    See datasheet for available GPIOs.
+
+            config EXAMPLE_ETH_RMII_CRS_DV_GPIO
+                int "RMII CRS_DV GPIO number"
+                range ENV_GPIO_RANGE_MIN ENV_GPIO_IN_RANGE_MAX
+                default 28 if IDF_TARGET_ESP32P4
+                default 0
+                help
+                    Set the GPIO number used by RMII CRS_DV signal.
+                    See datasheet for available GPIOs.
+
+            config EXAMPLE_ETH_RMII_RXD0_GPIO
+                int "RMII RXD0 GPIO number"
+                range ENV_GPIO_RANGE_MIN ENV_GPIO_IN_RANGE_MAX
+                default 29 if IDF_TARGET_ESP32P4
+                default 0
+                help
+                    Set the GPIO number used by RMII RXD0 signal.
+                    See datasheet for available GPIOs.
+
+            config EXAMPLE_ETH_RMII_RXD1_GPIO
+                int "RMII RXD1 GPIO number"
+                range ENV_GPIO_RANGE_MIN ENV_GPIO_IN_RANGE_MAX
+                default 30 if IDF_TARGET_ESP32P4
+                default 0
+                help
+                    Set the GPIO number used by RMII RXD1 signal.
+                    See datasheet for available GPIOs.
+
+        endif # SOC_EMAC_USE_MULTI_IO_MUX
+
+    endif # EXAMPLE_ETH_PHY_INTERFACE_RMII
+
+    config EXAMPLE_ETH_MDC_GPIO
+        int "SMI MDC GPIO number"
+        range ENV_GPIO_RANGE_MIN ENV_GPIO_OUT_RANGE_MAX
+        default 23 if IDF_TARGET_ESP32
+        default 31 if IDF_TARGET_ESP32P4
+        help
+            Set the GPIO number used by SMI MDC.
+
+    config EXAMPLE_ETH_MDIO_GPIO
+        int "SMI MDIO GPIO number"
+        range ENV_GPIO_RANGE_MIN ENV_GPIO_OUT_RANGE_MAX
+        default 18 if IDF_TARGET_ESP32
+        default 52 if IDF_TARGET_ESP32P4
+        help
+            Set the GPIO number used by SMI MDIO.
+
+    config EXAMPLE_ETH_PHY_ADDR
+        int "PHY Address"
+        range -1 31
+        default 1
+        help
+            Set PHY address according your board schematic.
+            Set to -1 to driver find the PHY address automatically.
+
+    config EXAMPLE_ETH_PHY_RST_GPIO
+        int "PHY Reset GPIO number"
+        range -1 ENV_GPIO_OUT_RANGE_MAX
+        default 5 if IDF_TARGET_ESP32
+        default 51 if IDF_TARGET_ESP32P4
+        help
+            Set the GPIO number used to reset PHY chip.
+            Set to -1 to disable PHY chip hardware reset.
+
+    menuconfig EXAMPLE_ETH_PHY_RST_TIMING_EN
+        bool "PHY Reset Timing configuration"
+        default n
+        help
+            Default reset timing configuration is set conservatively. If you need faster response and
+            your chip supports it, enable and configure it. See PHY datasheet "AC Specification" section.
+
+    config EXAMPLE_ETH_PHY_RST_ASSERT_TIME_US
+        int "PHY Reset Assert Time (microseconds)"
+        depends on EXAMPLE_ETH_PHY_RST_TIMING_EN
+        range 0 100000
+        default 10000
+        help
+            Time in microseconds to assert the PHY reset signal.
+            This should be long enough to ensure the PHY chip is properly reset.
+
+    config EXAMPLE_ETH_PHY_RST_DELAY_MS
+        int "PHY Post-Reset Delay (milliseconds)"
+        depends on EXAMPLE_ETH_PHY_RST_TIMING_EN
+        range -1 4000
+        default 10
+        help
+            Delay in milliseconds after releasing the PHY reset signal.
+            This allows the PHY chip to stabilize before communication begins.
+            When no delay required, set -1.
+
     config EXAMPLE_ETH_DEINIT_AFTER_S
-        int "Stop and deinit Ethernet after elapsing number of secs"
-        range -1 300
+        int "Deinitialize Ethernet after (seconds)"
+        range -1 3600
         default -1
         help
             This option is for demonstration purposes only to demonstrate deinitialization of the Ethernet driver.
             Set to -1 to not deinitialize.
+
 endmenu

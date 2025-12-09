@@ -31,8 +31,8 @@ typedef struct {
     int intr_priority;                      /**< Interrupt priority, [0:3] */
     struct {
         uint32_t enable_self_test: 1;       /**< Transmission does not require acknowledgment. Use this mode for self testing */
-        uint32_t enable_loopback: 1;        /**< The TWAI controller receive back frames what it send out */
-        uint32_t enable_listen_only: 1;     /**< The TWAI controller will not influence the bus (No transmissions or acknowledgments) but can receive messages */
+        uint32_t enable_loopback: 1;        /**< The TWAI controller receives back frames that it sends out, but does not acknowledge them */
+        uint32_t enable_listen_only: 1;     /**< No transmissions or acknowledgements. The controller only monitors the bus without participating */
         uint32_t no_receive_rtr: 1;         /**< Don't receive remote frames */
     } flags;                                /**< Misc configuration flags */
 } twai_onchip_node_config_t;
@@ -57,14 +57,14 @@ esp_err_t twai_new_node_onchip(const twai_onchip_node_config_t *node_config, twa
  * @brief Helper function to configure a dual 16-bit acceptance filter.
  * @note  For 29bits Extended IDs, ONLY high 16bits id/mask is used for each filter.
  *
- * @param id1     First ID to filter.
+ * @param id1     First full 11/29 bits ID to filter.
  * @param mask1   Mask for first ID.
- * @param id2     Second ID to filter.
+ * @param id2     Second full 11/29 bits ID to filter.
  * @param mask2   Mask for second ID.
  * @param is_ext  True if using Extended (29-bit) IDs, false for Standard (11-bit) IDs.
  * @return twai_mask_filter_config_t   A filled filter configuration structure for dual filtering.
  */
-static inline twai_mask_filter_config_t twai_make_dual_filter(uint16_t id1, uint16_t mask1, uint16_t id2, uint16_t mask2, bool is_ext)
+static inline twai_mask_filter_config_t twai_make_dual_filter(uint32_t id1, uint32_t mask1, uint32_t id2, uint32_t mask2, bool is_ext)
 {
     /**
      * Dual filter is a special mode in hardware,
@@ -90,6 +90,10 @@ static inline twai_mask_filter_config_t twai_make_dual_filter(uint16_t id1, uint
         .no_fd = false,
         .dual_filter = true,
     };
+    if ((id1 & mask1 & id2 & mask2) == 0xffffffff) {
+        dual_cfg.id = 0xffffffff;   // recover the 'disable' code
+        dual_cfg.mask = 0xffffffff;
+    }
     return dual_cfg;
 }
 

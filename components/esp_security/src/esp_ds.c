@@ -40,6 +40,7 @@
 
 #ifdef SOC_KEY_MANAGER_DS_KEY_DEPLOY
 #include "hal/key_mgr_hal.h"
+#include "hal/key_mgr_ll.h"
 #endif
 
 /**
@@ -326,6 +327,10 @@ esp_err_t esp_ds_start_sign(const void *message,
     ds_acquire_enable();
 
 #if SOC_KEY_MANAGER_DS_KEY_DEPLOY
+    if (!key_mgr_ll_is_supported()) {
+        assert(false && "Key manager is not supported");
+    }
+
     if (key_id == HMAC_KEY_KM) {
         key_mgr_hal_set_key_usage(ESP_KEY_MGR_DS_KEY, ESP_KEY_MGR_USE_OWN_KEY);
         ds_hal_set_key_source(DS_KEY_SOURCE_KEY_MGR);

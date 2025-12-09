@@ -26,8 +26,7 @@
 #include "esp_check.h"
 #include "esp_err.h"
 #include "soc/soc_caps.h"
-#include "soc/gdma_channel.h"
-#include "soc/rmt_periph.h"
+#include "hal/rmt_periph.h"
 #include "hal/rmt_types.h"
 #include "hal/rmt_hal.h"
 #include "hal/rmt_ll.h"
@@ -75,7 +74,7 @@ extern "C" {
 
 // Hopefully the channel offset won't change in other targets
 #define RMT_TX_CHANNEL_OFFSET_IN_GROUP 0
-#define RMT_RX_CHANNEL_OFFSET_IN_GROUP (SOC_RMT_CHANNELS_PER_GROUP - SOC_RMT_TX_CANDIDATES_PER_GROUP)
+#define RMT_RX_CHANNEL_OFFSET_IN_GROUP (RMT_LL_GET(CHANS_PER_INST) - RMT_LL_GET(TX_CANDIDATES_PER_INST))
 
 #define RMT_ALLOW_INTR_PRIORITY_MASK ESP_INTR_FLAG_LOWMED
 
@@ -103,7 +102,7 @@ extern "C" {
 typedef struct {
     struct {
         rmt_symbol_word_t symbols[SOC_RMT_MEM_WORDS_PER_CHANNEL];
-    } channels[SOC_RMT_CHANNELS_PER_GROUP];
+    } channels[RMT_LL_GET(CHANS_PER_INST)];
 } rmt_block_mem_t;
 
 // RMTMEM address is declared in <target>.peripherals.ld
@@ -141,8 +140,8 @@ struct rmt_group_t {
     rmt_clock_source_t clk_src; // record the group clock source, group clock is shared by all channels
     uint32_t resolution_hz;     // resolution of group clock. clk_src_hz / prescale = resolution_hz
     uint32_t occupy_mask;       // a set bit in the mask indicates the channel is not available
-    rmt_tx_channel_t *tx_channels[SOC_RMT_TX_CANDIDATES_PER_GROUP]; // array of RMT TX channels
-    rmt_rx_channel_t *rx_channels[SOC_RMT_RX_CANDIDATES_PER_GROUP]; // array of RMT RX channels
+    rmt_tx_channel_t *tx_channels[RMT_LL_GET(TX_CANDIDATES_PER_INST)]; // array of RMT TX channels
+    rmt_rx_channel_t *rx_channels[RMT_LL_GET(RX_CANDIDATES_PER_INST)]; // array of RMT RX channels
     rmt_sync_manager_t *sync_manager; // sync manager, this can be extended into an array if there're more sync controllers in one RMT group
     int intr_priority;     // RMT interrupt priority
 };
@@ -225,6 +224,7 @@ struct rmt_rx_channel_t {
     rmt_rx_trans_desc_t trans_desc;      // transaction description
     size_t num_dma_nodes;                // number of DMA nodes, determined by how big the memory block that user configures
     size_t dma_int_mem_alignment;        // DMA buffer alignment (both in size and address) for internal RX memory
+    size_t dma_ext_mem_alignment;        // DMA buffer alignment (both in size and address) for external RX memory
     gdma_link_list_handle_t dma_link;    // DMA link list handle
 };
 

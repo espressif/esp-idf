@@ -277,6 +277,7 @@ static IRAM_ATTR esp_err_t ledc_duty_config(ledc_mode_t speed_mode, ledc_channel
     // Clear left-off LEDC gamma ram registers, random data in ram could cause output waveform error
     ledc_hal_clear_left_off_fade_param(&(p_ledc_obj[speed_mode]->ledc_hal), channel, 1);
 #endif
+    ESP_EARLY_LOGD(LEDC_TAG, "duty_config: duty-%d, dir-%d, cycle-%d, scale-%d, step-%d", duty_val, duty_direction, duty_cycle, duty_scale, duty_num);
     return ESP_OK;
 }
 
@@ -391,6 +392,21 @@ esp_err_t ledc_timer_resume(ledc_mode_t speed_mode, ledc_timer_t timer_sel)
     portEXIT_CRITICAL(&ledc_spinlock);
     return ESP_OK;
 }
+
+#if SOC_LEDC_SUPPORT_ETM
+esp_err_t ledc_channel_configure_maximum_timer_ovf_cnt(ledc_mode_t speed_mode, ledc_channel_t channel, uint32_t max_ovf_cnt)
+{
+    LEDC_ARG_CHECK(speed_mode < LEDC_SPEED_MODE_MAX, "speed_mode");
+    LEDC_ARG_CHECK(channel < LEDC_CHANNEL_MAX, "channel");
+    LEDC_ARG_CHECK(max_ovf_cnt <= LEDC_LL_OVF_CNT_MAX, "max_ovf_cnt");
+    LEDC_CHECK(p_ledc_obj[speed_mode] != NULL, LEDC_NOT_INIT, ESP_ERR_INVALID_STATE);
+
+    ledc_hal_channel_configure_maximum_timer_ovf_cnt(&(p_ledc_obj[speed_mode]->ledc_hal), channel, max_ovf_cnt);
+    ledc_ls_channel_update(speed_mode, channel);
+
+    return ESP_OK;
+}
+#endif
 
 esp_err_t ledc_isr_register(void (*fn)(void *), void *arg, int intr_alloc_flags, ledc_isr_handle_t *handle)
 {
@@ -905,7 +921,7 @@ esp_err_t ledc_channel_config(const ledc_channel_config_t *ledc_conf)
     /*set channel parameters*/
     /*   channel parameters decide how the waveform looks like in one period */
     /*   set channel duty and hpoint value, duty range is [0, (2**duty_res)], hpoint range is [0, (2**duty_res)-1] */
-    /*   Note: On ESP32, ESP32S2, ESP32S3, ESP32C3, ESP32C2, ESP32C6, ESP32H2 (rev < 1.2), ESP32P4, due to a hardware bug,
+    /*   Note: On ESP32, ESP32S2, ESP32S3, ESP32C3, ESP32C2, ESP32C6, ESP32H2 (rev < 1.2), ESP32P4 (rev < 3.0), due to a hardware bug,
      *         100% duty cycle (i.e. 2**duty_res) is not reachable when the binded timer selects the maximum duty
      *         resolution. For example, the max duty resolution on ESP32C3 is 14-bit width, then set duty to (2**14)
      *         will mess up the duty calculation in hardware.
@@ -1176,11 +1192,13 @@ uint32_t ledc_find_suitable_duty_resolution(uint32_t src_clk_freq, uint32_t time
 {
     // Highest resolution is calculated when LEDC_CLK_DIV = 1 (i.e. div_param = 1 << LEDC_LL_FRACTIONAL_BITS)
     uint32_t div = (src_clk_freq + timer_freq / 2) / timer_freq; // rounded
-    uint32_t duty_resolution = MIN(ilog2(div), SOC_LEDC_TIMER_BIT_WIDTH);
+    uint32_t ilog2_div = ilog2(div);
+    uint32_t duty_resolution = MIN(ilog2_div, SOC_LEDC_TIMER_BIT_WIDTH);
     uint32_t div_param = ledc_calculate_divisor(src_clk_freq, timer_freq, 1 << duty_resolution);
     if (LEDC_IS_DIV_INVALID(div_param)) {
         div = src_clk_freq / timer_freq; // truncated
-        duty_resolution = MIN(ilog2(div), SOC_LEDC_TIMER_BIT_WIDTH);
+        ilog2_div = ilog2(div);
+        duty_resolution = MIN(ilog2_div, SOC_LEDC_TIMER_BIT_WIDTH);
         div_param = ledc_calculate_divisor(src_clk_freq, timer_freq, 1 << duty_resolution);
         if (LEDC_IS_DIV_INVALID(div_param)) {
             duty_resolution = 0;
@@ -1564,8 +1582,25 @@ exit:
 esp_err_t ledc_fade_func_install(int intr_alloc_flags)
 {
     LEDC_CHECK(s_ledc_fade_isr_handle == NULL, "fade function already installed", ESP_ERR_INVALID_STATE);
+
+    ledc_mode_t speed_mode = LEDC_SPEED_MODE_MAX;
+    for (int i = 0; i < LEDC_SPEED_MODE_MAX; i++) {
+        if (p_ledc_obj[i] != NULL) {
+            speed_mode = i;
+            break;
+        }
+    }
+
     //OR intr_alloc_flags with ESP_INTR_FLAG_IRAM because the fade isr is in IRAM
-    return esp_intr_alloc(ETS_LEDC_INTR_SOURCE, intr_alloc_flags | ESP_INTR_FLAG_IRAM, ledc_fade_isr, NULL, &s_ledc_fade_isr_handle);
+    return esp_intr_alloc_intrstatus(
+               ETS_LEDC_INTR_SOURCE,
+               intr_alloc_flags | ESP_INTR_FLAG_IRAM,
+               (uint32_t)ledc_hal_get_fade_end_intr_addr(&(p_ledc_obj[speed_mode]->ledc_hal)),
+               LEDC_LL_FADE_END_INTR_MASK,
+               ledc_fade_isr,
+               NULL,
+               &s_ledc_fade_isr_handle
+           );
 }
 
 void ledc_fade_func_uninstall(void)

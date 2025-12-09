@@ -1,7 +1,7 @@
 /*
  * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 
 // The long term plan is to have a single soc_caps.h for all peripherals.
@@ -38,10 +38,11 @@
 #define SOC_UHCI_SUPPORTED              1
 #define SOC_AHB_GDMA_SUPPORTED          1
 #define SOC_GPTIMER_SUPPORTED           1
-#define SOC_LCDCAM_SUPPORTED            1
-#define SOC_LCDCAM_CAM_SUPPORTED        1 // support the camera driver based on the LCD_CAM peripheral
+#define SOC_LCDCAM_CAM_SUPPORTED        1
 #define SOC_LCDCAM_I80_LCD_SUPPORTED    1
 #define SOC_LCDCAM_RGB_LCD_SUPPORTED    1
+#define SOC_LCD_I80_SUPPORTED           1
+#define SOC_LCD_RGB_SUPPORTED           1
 #define SOC_MCPWM_SUPPORTED             1
 #define SOC_DEDICATED_GPIO_SUPPORTED    1
 #define SOC_CACHE_SUPPORT_WRAP          1
@@ -172,20 +173,13 @@
 
 /*-------------------------- GDMA CAPS ---------------------------------------*/
 #define SOC_AHB_GDMA_VERSION           1U
-#define SOC_GDMA_NUM_GROUPS_MAX        1U
-#define SOC_GDMA_PAIRS_PER_GROUP       5 // esp32s3 has only one kind of GDMA, which is AHB GDMA, and it has 5 pairs in total.
-#define SOC_GDMA_PAIRS_PER_GROUP_MAX   5 // when there're multiple GDMA instances, this macro represents the maximum number of GDMA pairs in the same group.
-#define SOC_AHB_GDMA_SUPPORT_PSRAM     1
 
 /*-------------------------- GPIO CAPS ---------------------------------------*/
 // ESP32-S3 has 1 GPIO peripheral
 #define SOC_GPIO_PORT                      1U
 #define SOC_GPIO_PIN_COUNT                 49
 #define SOC_GPIO_SUPPORT_PIN_GLITCH_FILTER 1
-#define SOC_GPIO_FILTER_CLK_SUPPORT_APB 1
 
-// On ESP32-S3, Digital IOs have their own registers to control pullup/down/capability, independent with RTC registers.
-#define SOC_GPIO_SUPPORT_RTC_INDEPENDENT (1)
 // Force hold is a new function of ESP32-S3
 #define SOC_GPIO_SUPPORT_FORCE_HOLD      (1)
 
@@ -203,9 +197,6 @@
 // The Clock Out signal is binding to the pin's IO_MUX function
 #define SOC_GPIO_CLOCKOUT_BY_IO_MUX    (1)
 #define SOC_GPIO_CLOCKOUT_CHANNEL_NUM  (3)
-
-// RTC_IOs and DIG_IOs can be hold during deep sleep and after waking up
-#define SOC_GPIO_SUPPORT_HOLD_IO_IN_DSLP (1)
 
 /*-------------------------- I2C CAPS ----------------------------------------*/
 // ESP32-S3 has 2 I2C
@@ -229,10 +220,7 @@
 #define SOC_I2C_SLAVE_CAN_GET_STRETCH_CAUSE (1)
 
 /*-------------------------- I2S CAPS ----------------------------------------*/
-#define SOC_I2S_NUM                 (2U)
 #define SOC_I2S_HW_VERSION_2        (1)
-#define SOC_I2S_SUPPORTS_XTAL       (1)
-#define SOC_I2S_SUPPORTS_PLL_F160M  (1)
 #define SOC_I2S_SUPPORTS_PCM        (1)
 #define SOC_I2S_SUPPORTS_PDM        (1)
 #define SOC_I2S_SUPPORTS_PDM_TX     (1)     // Support to output raw PDM format data
@@ -251,17 +239,7 @@
 #define SOC_LEDC_TIMER_BIT_WIDTH         (14)
 #define SOC_LEDC_SUPPORT_FADE_STOP       (1)
 
-/*-------------------------- MCPWM CAPS --------------------------------------*/
-#define SOC_MCPWM_GROUPS                     (2)    ///< 2 MCPWM groups on the chip (i.e., the number of independent MCPWM peripherals)
-#define SOC_MCPWM_TIMERS_PER_GROUP           (3)    ///< The number of timers that each group has
-#define SOC_MCPWM_OPERATORS_PER_GROUP        (3)    ///< The number of operators that each group has
-#define SOC_MCPWM_COMPARATORS_PER_OPERATOR   (2)    ///< The number of comparators that each operator has
-#define SOC_MCPWM_GENERATORS_PER_OPERATOR    (2)    ///< The number of generators that each operator has
-#define SOC_MCPWM_TRIGGERS_PER_OPERATOR      (2)    ///< The number of triggers that each operator has
-#define SOC_MCPWM_GPIO_FAULTS_PER_GROUP      (3)    ///< The number of fault signal detectors that each group has
-#define SOC_MCPWM_CAPTURE_TIMERS_PER_GROUP   (1)    ///< The number of capture timers that each group has
-#define SOC_MCPWM_CAPTURE_CHANNELS_PER_TIMER (3)    ///< The number of capture channels that each capture timer has
-#define SOC_MCPWM_GPIO_SYNCHROS_PER_GROUP    (3)    ///< The number of GPIO synchros that each group has
+/*-------------------------- MCPWM CAPS ---------------------------------------*/
 #define SOC_MCPWM_SWSYNC_CAN_PROPAGATE       (1)    ///< Software sync event can be routed to its output
 
 /*-------------------------- MMU CAPS ----------------------------------------*/
@@ -276,36 +254,11 @@
 #define SOC_MPU_REGION_WO_SUPPORTED               0
 
 /*-------------------------- RMT CAPS ----------------------------------------*/
-#define SOC_RMT_GROUPS                        1U /*!< One RMT group */
-#define SOC_RMT_TX_CANDIDATES_PER_GROUP       4  /*!< Number of channels that capable of Transmit in each group */
-#define SOC_RMT_RX_CANDIDATES_PER_GROUP       4  /*!< Number of channels that capable of Receive in each group */
-#define SOC_RMT_CHANNELS_PER_GROUP            8  /*!< Total 8 channels */
 #define SOC_RMT_MEM_WORDS_PER_CHANNEL         48 /*!< Each channel owns 48 words memory (1 word = 4 Bytes) */
 #define SOC_RMT_SUPPORT_RX_PINGPONG           1  /*!< Support Ping-Pong mode on RX path */
-#define SOC_RMT_SUPPORT_RX_DEMODULATION       1  /*!< Support signal demodulation on RX path (i.e. remove carrier) */
-#define SOC_RMT_SUPPORT_ASYNC_STOP            1  /*!< Support stop transmission asynchronously */
 #define SOC_RMT_SUPPORT_TX_LOOP_COUNT         1  /*!< Support transmit specified number of cycles in loop mode */
 #define SOC_RMT_SUPPORT_TX_LOOP_AUTO_STOP     1  /*!< Hardware support of auto-stop in loop mode */
-#define SOC_RMT_SUPPORT_TX_SYNCHRO            1  /*!< Support coordinate a group of TX channels to start simultaneously */
-#define SOC_RMT_SUPPORT_TX_CARRIER_DATA_ONLY  1  /*!< TX carrier can be modulated to data phase only */
-#define SOC_RMT_SUPPORT_XTAL                  1  /*!< Support set XTAL clock as the RMT clock source */
-#define SOC_RMT_SUPPORT_RC_FAST               1  /*!< Support set RC_FAST clock as the RMT clock source */
-#define SOC_RMT_SUPPORT_APB                   1  /*!< Support set APB as the RMT clock source */
 #define SOC_RMT_SUPPORT_DMA                   1  /*!< RMT peripheral can connect to DMA channel */
-
-/*-------------------------- LCD CAPS ----------------------------------------*/
-/* Notes: On esp32-s3, I80 bus and RGB timing generator can't work at the same time */
-#define SOC_LCD_I80_SUPPORTED           (1)  /*!< Intel 8080 LCD is supported */
-#define SOC_LCD_RGB_SUPPORTED           (1)  /*!< RGB LCD is supported */
-#define SOC_LCD_I80_BUSES               (1U) /*!< Has one LCD Intel 8080 bus */
-#define SOC_LCD_RGB_PANELS              (1U) /*!< Support one RGB LCD panel */
-#define SOC_LCD_I80_BUS_WIDTH           (16) /*!< Intel 8080 bus width */
-#define SOC_LCD_RGB_DATA_WIDTH          (16) /*!< Number of LCD data lines */
-#define SOC_LCD_SUPPORT_RGB_YUV_CONV    (1)  /*!< Support color format conversion between RGB and YUV */
-#define SOC_LCDCAM_I80_NUM_BUSES        (1U) /*!< LCD_CAM peripheral provides one LCD Intel 8080 bus */
-#define SOC_LCDCAM_I80_BUS_WIDTH        (16) /*!< Intel 8080 bus max data width */
-#define SOC_LCDCAM_RGB_NUM_PANELS       (1U) /*!< LCD_CAM peripheral provides one RGB panel */
-#define SOC_LCDCAM_RGB_DATA_WIDTH       (16) /*!< RGB panel max data width */
 
 /*-------------------------- RTC CAPS --------------------------------------*/
 #define SOC_RTC_CNTL_CPU_PD_DMA_BUS_WIDTH       (128)
@@ -382,7 +335,6 @@
 
 /*-------------------------- TOUCH SENSOR CAPS -------------------------------*/
 #define SOC_TOUCH_SENSOR_VERSION                    (2)  /*!< Hardware version of touch sensor */
-#define SOC_TOUCH_SENSOR_NUM                        (15) /*!< 15 Touch channels */
 #define SOC_TOUCH_MIN_CHAN_ID                       (1U)  /*!< Touch minimum channel number, (0 is internal denoise channel) */
 #define SOC_TOUCH_MAX_CHAN_ID                       (14) /*!< Touch maximum channel number */
 #define SOC_TOUCH_SUPPORT_BENCHMARK                 (1)  /*!< Touch sensor supports benchmark configuration */
@@ -391,17 +343,12 @@
 #define SOC_TOUCH_SUPPORT_PROX_SENSING              (1)  /*!< Touch sensor supports proximity sensing */
 #define SOC_TOUCH_SUPPORT_DENOISE_CHAN              (1)  /*!< Touch sensor supports denoise channel */
 #define SOC_TOUCH_PROXIMITY_CHANNEL_NUM             (3)  /*!< Support touch proximity sensing channel number. */
-#define SOC_TOUCH_PROXIMITY_MEAS_DONE_SUPPORTED     (1)  /*!< Support touch proximity sensing measure done interrupt type. */
 
 #define SOC_TOUCH_SAMPLE_CFG_NUM                    (1U) /*!< The sample configuration number in total, each sampler can be used to sample on one frequency */
 
 /*-------------------------- TWAI CAPS ---------------------------------------*/
 #define SOC_TWAI_CONTROLLER_NUM         1U
 #define SOC_TWAI_MASK_FILTER_NUM        1U
-#define SOC_TWAI_CLK_SUPPORT_APB        1
-#define SOC_TWAI_BRP_MIN                2
-#define SOC_TWAI_BRP_MAX                16384
-#define SOC_TWAI_SUPPORTS_RX_STATUS     1
 
 /*-------------------------- UART CAPS ---------------------------------------*/
 // ESP32-S3 has 3 UARTs
@@ -505,6 +452,8 @@
 #define SOC_EFUSE_DIS_DIRECT_BOOT 1
 #define SOC_EFUSE_DIS_ICACHE 1
 #define SOC_EFUSE_BLOCK9_KEY_PURPOSE_QUIRK 1  // XTS-AES key purpose not supported for this block
+#define SOC_EFUSE_XTS_AES_KEY_128 1
+#define SOC_EFUSE_XTS_AES_KEY_256 1
 
 /*-------------------------- Secure Boot CAPS----------------------------*/
 #define SOC_SECURE_BOOT_V2_RSA              1
@@ -571,6 +520,7 @@
 #define SOC_WIFI_FTM_SUPPORT                (1)    /*!< Support FTM */
 #define SOC_WIFI_GCMP_SUPPORT               (1)    /*!< Support GCMP(GCMP128 and GCMP256) */
 #define SOC_WIFI_WAPI_SUPPORT               (1)    /*!< Support WAPI */
+#define SOC_WIFI_TXOP_SUPPORT               (1)    /*!< Support TXOP */
 #define SOC_WIFI_CSI_SUPPORT                (1)    /*!< Support CSI */
 #define SOC_WIFI_MESH_SUPPORT               (1)    /*!< Support WIFI MESH */
 #define SOC_WIFI_SUPPORT_VARIABLE_BEACON_WINDOW   (1)    /*!< Support delta early time for rf phy on/off */
@@ -591,5 +541,3 @@
 
 /*--------------------------- CAM ---------------------------------*/
 #define SOC_LCDCAM_CAM_SUPPORT_RGB_YUV_CONV         (1)
-#define SOC_LCDCAM_CAM_PERIPH_NUM                   (1U)
-#define SOC_LCDCAM_CAM_DATA_WIDTH_MAX               (16U)

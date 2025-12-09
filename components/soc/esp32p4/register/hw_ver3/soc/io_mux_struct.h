@@ -1,7 +1,7 @@
 /*
  * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 #pragma once
 
@@ -10,7 +10,6 @@
 extern "C" {
 #endif
 
-//TODO: IDF-13419
 /** Type of GPIO register
  *  IO MUX gpio configuration register
  */

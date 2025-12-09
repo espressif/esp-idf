@@ -25,7 +25,7 @@ esp_err_t esp_lcd_new_dsi_bus(const esp_lcd_dsi_bus_config_t *bus_config, esp_lc
     // And each PHY has its own associated PINs, which is not changeable.
     // So user HAS TO specify the bus ID by themselves, according to their PCB design.
     int bus_id = bus_config->bus_id;
-    ESP_RETURN_ON_FALSE(bus_id >= 0 && bus_id < MIPI_DSI_LL_NUM_BUS, ESP_ERR_INVALID_ARG, TAG, "invalid bus ID %d", bus_id);
+    ESP_RETURN_ON_FALSE(bus_id >= 0 && bus_id < MIPI_DSI_LL_GET(BUS_NUM), ESP_ERR_INVALID_ARG, TAG, "invalid bus ID %d", bus_id);
     esp_lcd_dsi_bus_t *dsi_bus = heap_caps_calloc(1, sizeof(esp_lcd_dsi_bus_t), DSI_MEM_ALLOC_CAPS);
     ESP_RETURN_ON_FALSE(dsi_bus, ESP_ERR_NO_MEM, TAG, "no memory for DSI bus");
     dsi_bus->bus_id = bus_id;
@@ -46,6 +46,10 @@ esp_err_t esp_lcd_new_dsi_bus(const esp_lcd_dsi_bus_config_t *bus_config, esp_lc
 #endif
     }
     ESP_GOTO_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)phy_clk_src, true), err, TAG, "clock source enable failed");
+
+    // always use the default clock source for the DSI PHY configuration
+    ESP_GOTO_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)MIPI_DSI_PHY_CFG_CLK_SRC_DEFAULT, true), err, TAG, "clock source enable failed");
+
     // enable the clock source for DSI PHY
     PERIPH_RCC_ATOMIC() {
         // set the DSI PHY configuration clock

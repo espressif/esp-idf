@@ -69,7 +69,7 @@ esp_err_t esp_cam_ctlr_get_frame_buffer(esp_cam_ctlr_handle_t handle, uint32_t f
     ESP_RETURN_ON_FALSE(handle, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null handle");
     ESP_RETURN_ON_FALSE(handle->get_internal_buffer, ESP_ERR_NOT_SUPPORTED, TAG, "get buffer function not supported");
 
-    va_list args;
+    va_list args = {0};
     va_start(args, fb0);
     esp_err_t ret = handle->get_internal_buffer(handle, fb_num, fb0, args);
     va_end(args);

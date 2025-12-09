@@ -32,7 +32,7 @@ def start_https_server(ota_image_dir: str, server_ip: str, server_port: int) -> 
 
 
 @pytest.mark.wifi_high_traffic
-@idf_parametrize('target', ['esp32c6'], indirect=['target'])
+@idf_parametrize('target', ['supported_targets'], indirect=['target'])
 def test_examples_tee_secure_ota_example(dut: Dut) -> None:
     """
     This is a positive test case, which downloads complete binary file multiple number of times.
@@ -86,7 +86,7 @@ def test_examples_tee_secure_ota_example(dut: Dut) -> None:
                 ap_password = get_env_config_variable(env_name, 'ap_password')
                 dut.write(f'{ap_ssid} {ap_password}')
             try:
-                ip_address = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=30)[1].decode()
+                ip_address = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=60)[1].decode()
                 print(f'Connected to AP/Ethernet with IP: {ip_address}')
             except pexpect.exceptions.TIMEOUT:
                 raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')

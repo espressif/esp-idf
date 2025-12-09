@@ -6,6 +6,7 @@
 
 #include <inttypes.h>
 #include <sys/param.h> // for MIN/MAX
+#include "freertos/FreeRTOS.h"
 #include "esp_private/sdmmc_common.h"
 
 

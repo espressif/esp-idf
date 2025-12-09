@@ -11,7 +11,6 @@ api-guides/esp-wifi-mesh.rst
 api-guides/core_dump.rst
 api-guides/inc/external-ram-esp32-notes.rst
 api-guides/dfu.rst
-api-guides/current-consumption-measurement-modules.rst
 api-guides/wifi-security.rst
 api-reference/storage/vfs.rst
 api-reference/storage/spiffs.rst
@@ -45,7 +44,6 @@ api-reference/network/index.rst
 api-reference/network/esp_netif.rst
 api-reference/system/sleep_modes.rst
 api-reference/system/app_trace.rst
-api-reference/system/power_management.rst
 api-reference/system/inc/power_management_esp32c61.rst
 api-reference/index.rst
 api-reference/protocols/icmp_echo.rst

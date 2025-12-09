@@ -1,7 +1,7 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 
 #pragma once
@@ -153,23 +153,6 @@
 #define GPIO_PAD_PULLDOWN(num) do{PIN_PULLUP_DIS(IOMUX_REG_GPIO##num);PIN_PULLDWN_EN(IOMUX_REG_GPIO##num);}while(0)
 #define GPIO_PAD_SET_DRV(num, drv) PIN_SET_DRV(IOMUX_REG_GPIO##num, drv)
 
-// TODO: IDF-7499, IDF-7495
-// SPI pins defined here are all wrong. On P4, these pins are individual pins, don't use normal GPIO pins anymore.
-// Please check iomux_mspi_pin_struct/reg.h
-#include "soc/gpio_num.h"
-#define SPI_CS1_GPIO_NUM GPIO_NUM_MAX
-#define SPI_HD_GPIO_NUM  GPIO_NUM_MAX
-#define SPI_WP_GPIO_NUM  GPIO_NUM_MAX
-#define SPI_CS0_GPIO_NUM GPIO_NUM_MAX
-#define SPI_CLK_GPIO_NUM GPIO_NUM_MAX
-#define SPI_Q_GPIO_NUM   GPIO_NUM_MAX
-#define SPI_D_GPIO_NUM   GPIO_NUM_MAX
-#define SPI_D4_GPIO_NUM  GPIO_NUM_MAX
-#define SPI_D5_GPIO_NUM  GPIO_NUM_MAX
-#define SPI_D6_GPIO_NUM  GPIO_NUM_MAX
-#define SPI_D7_GPIO_NUM  GPIO_NUM_MAX
-#define SPI_DQS_GPIO_NUM GPIO_NUM_MAX
-
 #define SD_CLK_GPIO_NUM           43
 #define SD_CMD_GPIO_NUM           44
 #define SD_DATA0_GPIO_NUM         39
@@ -193,8 +176,6 @@
 #define USB_OTG_INT_PHY_DP_GPIO_NUM     USB_INT_PHY1_DP_GPIO_NUM
 
 #define MAX_RTC_GPIO_NUM             15
-#define MAX_PAD_GPIO_NUM             54
-#define MAX_GPIO_NUM                 56
 
 
 #define REG_IO_MUX_BASE DR_REG_IO_MUX_BASE

@@ -24,6 +24,9 @@
 #include "bluedroid_user_config.h"
 #include "stack/bt_types.h"
 #include "bt_common.h"
+#if CONFIG_BLE_HOST_COMPRESSED_LOG_ENABLE
+#include "host_log_index.h"
+#endif
 
 #if (BT_BLE_LOG_SPI_OUT_HOST_ENABLED && !CLASSIC_BT_INCLUDED)
 #include "ble_log/ble_log_spi_out.h"
@@ -53,6 +56,14 @@ static inline void trc_dump_buffer(const char *prefix, uint8_t *data, uint16_t l
 #else
 #define BTTRC_DUMP_BUFFER(_prefix, _data, _len)
 #endif
+
+#ifndef MAC2STR
+#define MAC2STR(a) (a)[0], (a)[1], (a)[2], (a)[3], (a)[4], (a)[5]
+#define MACSTR "%02x:%02x:%02x:%02x:%02x:%02x"
+#endif
+
+/* Support up to 64 bytes of buffer */
+const char *bt_hex2str(const void *buf, size_t len);
 
 //static const char BTE_LOGMSG_MODULE[] = "bte_logmsg_module";
 

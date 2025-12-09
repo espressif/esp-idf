@@ -10,7 +10,7 @@
 #include "freertos/task.h"
 #include "unity.h"
 #include "soc/soc_caps.h"
-#include "soc/pcnt_periph.h"
+#include "hal/pcnt_periph.h"
 #include "hal/pcnt_ll.h"
 #include "driver/pulse_cnt.h"
 #include "driver/gpio.h"
@@ -24,11 +24,11 @@ TEST_CASE("pcnt_unit_install_uninstall", "[pcnt]")
         .high_limit = 100,
         .intr_priority = 0,
     };
-    pcnt_unit_handle_t units[SOC_PCNT_ATTR(UNITS_PER_INST)];
+    pcnt_unit_handle_t units[PCNT_LL_GET(UNITS_PER_INST)];
     int count_value = 0;
 
     printf("install pcnt units and check initial count\r\n");
-    for (int i = 0; i < SOC_PCNT_ATTR(UNITS_PER_INST) - 1; i++) {
+    for (int i = 0; i < PCNT_LL_GET(UNITS_PER_INST) - 1; i++) {
         TEST_ESP_OK(pcnt_new_unit(&unit_config, &units[i]));
         TEST_ESP_OK(pcnt_unit_get_count(units[i], &count_value));
         TEST_ASSERT_EQUAL(0, count_value);
@@ -36,9 +36,9 @@ TEST_CASE("pcnt_unit_install_uninstall", "[pcnt]")
 
     // unit with a different interrupt priority
     unit_config.intr_priority = 3;
-    TEST_ESP_ERR(ESP_ERR_INVALID_STATE, pcnt_new_unit(&unit_config, &units[SOC_PCNT_ATTR(UNITS_PER_INST) - 1]));
+    TEST_ESP_ERR(ESP_ERR_INVALID_STATE, pcnt_new_unit(&unit_config, &units[PCNT_LL_GET(UNITS_PER_INST) - 1]));
     unit_config.intr_priority = 0;
-    TEST_ESP_OK(pcnt_new_unit(&unit_config, &units[SOC_PCNT_ATTR(UNITS_PER_INST) - 1]));
+    TEST_ESP_OK(pcnt_new_unit(&unit_config, &units[PCNT_LL_GET(UNITS_PER_INST) - 1]));
 
     // no more free pcnt units
     TEST_ASSERT_EQUAL(ESP_ERR_NOT_FOUND, pcnt_new_unit(&unit_config, &units[0]));
@@ -47,7 +47,7 @@ TEST_CASE("pcnt_unit_install_uninstall", "[pcnt]")
     pcnt_glitch_filter_config_t filter_config = {
         .max_glitch_ns = 1000,
     };
-    for (int i = 0; i < SOC_PCNT_ATTR(UNITS_PER_INST); i++) {
+    for (int i = 0; i < PCNT_LL_GET(UNITS_PER_INST); i++) {
         TEST_ESP_OK(pcnt_unit_set_glitch_filter(units[i], &filter_config));
     }
     // invalid glitch configuration
@@ -57,30 +57,30 @@ TEST_CASE("pcnt_unit_install_uninstall", "[pcnt]")
         .on_reach = NULL,
     };
     printf("enable pcnt units\r\n");
-    for (int i = 0; i < SOC_PCNT_ATTR(UNITS_PER_INST); i++) {
+    for (int i = 0; i < PCNT_LL_GET(UNITS_PER_INST); i++) {
         TEST_ESP_OK(pcnt_unit_register_event_callbacks(units[i], &cbs, NULL));
         TEST_ESP_OK(pcnt_unit_enable(units[i]));
     }
 
     printf("start pcnt units\r\n");
-    for (int i = 0; i < SOC_PCNT_ATTR(UNITS_PER_INST); i++) {
+    for (int i = 0; i < PCNT_LL_GET(UNITS_PER_INST); i++) {
         TEST_ESP_OK(pcnt_unit_start(units[i]));
     }
 
     printf("stop pcnt units\r\n");
-    for (int i = 0; i < SOC_PCNT_ATTR(UNITS_PER_INST); i++) {
+    for (int i = 0; i < PCNT_LL_GET(UNITS_PER_INST); i++) {
         TEST_ESP_OK(pcnt_unit_stop(units[i]));
     }
 
     // can't uninstall unit before disable it
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_STATE, pcnt_del_unit(units[0]));
     printf("disable pcnt units\r\n");
-    for (int i = 0; i < SOC_PCNT_ATTR(UNITS_PER_INST); i++) {
+    for (int i = 0; i < PCNT_LL_GET(UNITS_PER_INST); i++) {
         TEST_ESP_OK(pcnt_unit_disable(units[i]));
     }
 
     printf("uninstall pcnt units\r\n");
-    for (int i = 0; i < SOC_PCNT_ATTR(UNITS_PER_INST); i++) {
+    for (int i = 0; i < PCNT_LL_GET(UNITS_PER_INST); i++) {
         TEST_ESP_OK(pcnt_del_unit(units[i]));
     }
 }
@@ -97,17 +97,17 @@ TEST_CASE("pcnt_channel_install_uninstall", "[pcnt]")
         .edge_gpio_num = TEST_PCNT_GPIO_A, // only detect edge signal in this case
         .level_gpio_num = -1,
     };
-    pcnt_unit_handle_t units[SOC_PCNT_ATTR(UNITS_PER_INST)];
-    pcnt_channel_handle_t chans[SOC_PCNT_ATTR(UNITS_PER_INST)][SOC_PCNT_ATTR(CHANS_PER_UNIT)];
+    pcnt_unit_handle_t units[PCNT_LL_GET(UNITS_PER_INST)];
+    pcnt_channel_handle_t chans[PCNT_LL_GET(UNITS_PER_INST)][PCNT_LL_GET(CHANS_PER_UNIT)];
 
     printf("install pcnt units\r\n");
-    for (int i = 0; i < SOC_PCNT_ATTR(UNITS_PER_INST); i++) {
+    for (int i = 0; i < PCNT_LL_GET(UNITS_PER_INST); i++) {
         TEST_ESP_OK(pcnt_new_unit(&unit_config, &units[i]));
     }
 
     printf("install pcnt channels\r\n");
-    for (int i = 0; i < SOC_PCNT_ATTR(UNITS_PER_INST); i++) {
-        for (int j = 0; j < SOC_PCNT_ATTR(CHANS_PER_UNIT); j++) {
+    for (int i = 0; i < PCNT_LL_GET(UNITS_PER_INST); i++) {
+        for (int j = 0; j < PCNT_LL_GET(CHANS_PER_UNIT); j++) {
             TEST_ESP_OK(pcnt_new_channel(units[i], &chan_config, &chans[i][j]));
             TEST_ESP_OK(pcnt_channel_set_edge_action(chans[i][j], PCNT_CHANNEL_EDGE_ACTION_INCREASE, PCNT_CHANNEL_EDGE_ACTION_HOLD));
             TEST_ESP_OK(pcnt_channel_set_level_action(chans[i][j], PCNT_CHANNEL_LEVEL_ACTION_KEEP, PCNT_CHANNEL_LEVEL_ACTION_KEEP));
@@ -118,55 +118,55 @@ TEST_CASE("pcnt_channel_install_uninstall", "[pcnt]")
 
     printf("start units\r\n");
     int count_value = 0;
-    for (int i = 0; i < SOC_PCNT_ATTR(UNITS_PER_INST); i++) {
+    for (int i = 0; i < PCNT_LL_GET(UNITS_PER_INST); i++) {
         // start unit
         TEST_ESP_OK(pcnt_unit_start(units[i]));
         // trigger 10 rising edge on GPIO0
         test_gpio_simulate_rising_edge(TEST_PCNT_GPIO_A, 10);
         TEST_ESP_OK(pcnt_unit_get_count(units[i], &count_value));
         // each channel increases to the same unit counter
-        TEST_ASSERT_EQUAL(10 * SOC_PCNT_ATTR(CHANS_PER_UNIT), count_value);
+        TEST_ASSERT_EQUAL(10 * PCNT_LL_GET(CHANS_PER_UNIT), count_value);
     }
 
     printf("clear counts\r\n");
-    for (int i = 0; i < SOC_PCNT_ATTR(UNITS_PER_INST); i++) {
+    for (int i = 0; i < PCNT_LL_GET(UNITS_PER_INST); i++) {
         TEST_ESP_OK(pcnt_unit_clear_count(units[i]));
         TEST_ESP_OK(pcnt_unit_get_count(units[i], &count_value));
         TEST_ASSERT_EQUAL(0, count_value);
     }
 
     printf("stop unit\r\n");
-    for (int i = 0; i < SOC_PCNT_ATTR(UNITS_PER_INST); i++) {
+    for (int i = 0; i < PCNT_LL_GET(UNITS_PER_INST); i++) {
         // stop unit
         TEST_ESP_OK(pcnt_unit_stop(units[i]));
     }
 
     // trigger 10 rising edge on GPIO0 shouldn't increase the counter
     test_gpio_simulate_rising_edge(TEST_PCNT_GPIO_A, 10);
-    for (int i = 0; i < SOC_PCNT_ATTR(UNITS_PER_INST); i++) {
+    for (int i = 0; i < PCNT_LL_GET(UNITS_PER_INST); i++) {
         TEST_ESP_OK(pcnt_unit_get_count(units[i], &count_value));
         TEST_ASSERT_EQUAL(0, count_value);
     }
 
     printf("restart units\r\n");
-    for (int i = 0; i < SOC_PCNT_ATTR(UNITS_PER_INST); i++) {
+    for (int i = 0; i < PCNT_LL_GET(UNITS_PER_INST); i++) {
         // start unit
         TEST_ESP_OK(pcnt_unit_start(units[i]));
         // trigger 10 rising edge on GPIO
         test_gpio_simulate_rising_edge(TEST_PCNT_GPIO_A, 10);
         TEST_ESP_OK(pcnt_unit_get_count(units[i], &count_value));
         // each channel increases to the same unit counter
-        TEST_ASSERT_EQUAL(10 * SOC_PCNT_ATTR(CHANS_PER_UNIT), count_value);
+        TEST_ASSERT_EQUAL(10 * PCNT_LL_GET(CHANS_PER_UNIT), count_value);
     }
 
     printf("uninstall channels and units\r\n");
-    for (int i = 0; i < SOC_PCNT_ATTR(UNITS_PER_INST); i++) {
+    for (int i = 0; i < PCNT_LL_GET(UNITS_PER_INST); i++) {
         // stop unit
         TEST_ESP_OK(pcnt_unit_stop(units[i]));
         TEST_ESP_OK(pcnt_unit_disable(units[i]));
         // can't uninstall unit when channel is still alive
         TEST_ASSERT_EQUAL(ESP_ERR_INVALID_STATE, pcnt_del_unit(units[i]));
-        for (int j = 0; j < SOC_PCNT_ATTR(CHANS_PER_UNIT); j++) {
+        for (int j = 0; j < PCNT_LL_GET(CHANS_PER_UNIT); j++) {
             TEST_ESP_OK(pcnt_del_channel(chans[i][j]));
         }
         TEST_ESP_OK(pcnt_del_unit(units[i]));

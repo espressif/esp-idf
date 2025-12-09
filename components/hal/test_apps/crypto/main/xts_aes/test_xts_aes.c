@@ -17,7 +17,7 @@
 #include "unity_fixture.h"
 #include "xts_aes_params.h"
 
-const static char *TAG = "test_xts_aes";
+ESP_LOG_ATTR_TAG(TAG, "test_xts_aes");
 
 const esp_partition_t *get_test_data_partition(void)
 {

@@ -37,7 +37,8 @@ typedef struct {
     size_t dma_burst_size;    /*!< DMA burst size, in bytes */
     parlio_sample_edge_t sample_edge;       /*!< Parallel IO sample edge */
     parlio_bit_pack_order_t bit_pack_order; /*!< Set the order of packing the bits into bytes (only works when `data_width` < 8) */
-    struct {
+    /// Extra configuration flags for PARLIO TX unit
+    struct extra_parlio_tx_unit_flags {
         uint32_t clk_gate_en: 1;  /*!< Enable TX clock gating,
                                        the output clock will be controlled by the MSB bit of the data bus,
                                        i.e. by data_gpio_nums[PARLIO_TX_UNIT_MAX_DATA_WIDTH-1]. High level to enable the clock output, low to disable */

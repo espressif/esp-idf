@@ -20,7 +20,7 @@
 
 #if CONFIG_SECURE_BOOT_V2_ENABLED
 
-static const char* TAG = "secure_boot_v2";
+ESP_LOG_ATTR_TAG(TAG, "secure_boot_v2");
 
 #define ALIGN_UP(num, align) (((num) + ((align) - 1)) & ~((align) - 1))
 

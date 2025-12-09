@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -43,7 +43,7 @@ extern "C" {
  *
  * @param module  modem module
  */
-void modem_clock_module_enable(periph_module_t module);
+void modem_clock_module_enable(shared_periph_module_t module);
 
 /**
  * @brief Disable the clock of modem module
@@ -60,7 +60,7 @@ void modem_clock_module_enable(periph_module_t module);
  *
  * @param module  modem module
  */
-void modem_clock_module_disable(periph_module_t module);
+void modem_clock_module_disable(shared_periph_module_t module);
 
 /**
  * @brief Reset the mac of modem module
@@ -68,7 +68,7 @@ void modem_clock_module_disable(periph_module_t module);
  * @param module  modem module, must be one of
  *    PERIPH_WIFI_MODULE / PERIPH_BT_MODULE /PERIPH_IEEE802154_MODULE
  */
-void modem_clock_module_mac_reset(periph_module_t module);
+void modem_clock_module_mac_reset(shared_periph_module_t module);
 
 #if SOC_BLE_USE_WIFI_PWR_CLK_WORKAROUND
 /**
@@ -103,13 +103,13 @@ esp_err_t modem_clock_domain_clk_gate_disable(modem_clock_domain_t domain, pmu_h
  * @param src     lowpower clock source
  * @param divider divider value to lowpower clock source
  */
-void modem_clock_select_lp_clock_source(periph_module_t module, modem_clock_lpclk_src_t src, uint32_t divider);
+void modem_clock_select_lp_clock_source(shared_periph_module_t module, modem_clock_lpclk_src_t src, uint32_t divider);
 
 /**
  * @brief Disable lowpower clock source selection
  * @param module  modem module
  */
-void modem_clock_deselect_lp_clock_source(periph_module_t module);
+void modem_clock_deselect_lp_clock_source(shared_periph_module_t module);
 
 /**
 * @brief Disable all modem module's lowpower clock source selection

@@ -14,6 +14,9 @@
 #endif // CONFIG_TARGET_USE_SPI_ETHERNET
 #include "sdkconfig.h"
 #include "esp_eth_test_common.h"
+#if CONFIG_TARGET_ETH_PHY_DEVICE_LAN8720
+#include "esp_eth_phy_lan87xx.h"
+#endif // CONFIG_TARGET_ETH_PHY_DEVICE_LAN8720
 
 #if CONFIG_TARGET_USE_SPI_ETHERNET
 #define DEFAULT_TARGET_SPI_HOST 1
@@ -42,8 +45,10 @@ esp_eth_mac_t *mac_init(void *vendor_emac_config, eth_mac_config_t *mac_config)
 #if CONFIG_TARGET_RMII_CLK_OUT
     esp32_emac_config.clock_config.rmii.clock_mode = EMAC_CLK_OUT;
     esp32_emac_config.clock_config.rmii.clock_gpio = CONFIG_TARGET_RMII_CLK_OUT_GPIO;
+#if !SOC_EMAC_RMII_CLK_OUT_INTERNAL_LOOPBACK
     esp32_emac_config.clock_config_out_in.rmii.clock_mode = EMAC_CLK_EXT_IN;
     esp32_emac_config.clock_config_out_in.rmii.clock_gpio = CONFIG_TARGET_RMII_CLK_IN_GPIO;
+#endif // !SOC_EMAC_RMII_CLK_OUT_INTERNAL_LOOPBACK
 #endif // CONFIG_TARGET_TEST_RMII_CLK_OUT
     if (vendor_emac_config == NULL) {
         vendor_emac_config = &esp32_emac_config;
@@ -112,7 +117,10 @@ esp_eth_phy_t *phy_init(eth_phy_config_t *phy_config)
     }
 #if CONFIG_TARGET_USE_INTERNAL_ETHERNET
     phy_config->phy_addr = ESP_ETH_PHY_ADDR_AUTO;
-#if CONFIG_TARGET_ETH_PHY_DEVICE_IP101
+#if CONFIG_TARGET_ETH_PHY_DEVICE_GENERIC
+    phy = esp_eth_phy_new_generic(phy_config);
+    ESP_LOGI(TAG, "DUT PHY: Generic");
+#elif CONFIG_TARGET_ETH_PHY_DEVICE_IP101
     phy = esp_eth_phy_new_ip101(phy_config);
     ESP_LOGI(TAG, "DUT PHY: IP101");
 #elif CONFIG_TARGET_ETH_PHY_DEVICE_LAN8720

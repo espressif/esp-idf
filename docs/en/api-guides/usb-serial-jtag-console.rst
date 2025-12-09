@@ -9,7 +9,7 @@ Generally, ESP chips implement a serial port using UART and can be connected to 
 {IDF_TARGET_NAME} contains a USB Serial/JTAG Controller providing the following functions:
 
 * Bidirectional serial console, which can be used with :doc:`IDF Monitor <tools/idf-monitor>` or another serial monitor.
-* Flashing using ``esptool.py`` and ``idf.py flash``.
+* Flashing using ``esptool`` and ``idf.py flash``.
 * JTAG debugging, performed simultaneously with serial operations using tools like OpenOCD.
 
 .. note::

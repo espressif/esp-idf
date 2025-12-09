@@ -66,7 +66,7 @@ ESP-IDF 为 Mbed TLS 提供了基于预设的配置系统，用于简化设置�
         • 基本的 X.509 解析
     * - **蓝牙 (BT)**
       - 蓝牙应用
-      - • 针对 BLE 安全性需求进行优化
+      - • 针对低功耗蓝牙安全性需求进行优化
         • 支持 ECC P-256 曲线
         • 最小的 TLS 开销
         • 蓝牙特定算法
@@ -311,5 +311,5 @@ Mbed TLS 配置系统支持预设配置。``Component Config`` > ``mbedTLS`` 中
 在 ``Component Config`` > ``mbedTLS`` 配置中，多个 Mbed TLS 功能已默认启用。如无需使用，可以禁用以减小固件大小。详情请参阅 :ref:`最小化固件大小 <minimizing_binary_mbedtls>`。
 
 
-.. _`API Reference`: https://mbed-tls.readthedocs.io/projects/api/en/v3.6.4/
+.. _`API Reference`: https://mbed-tls.readthedocs.io/projects/api/en/v3.6.5/
 .. _`Knowledge Base`: https://mbed-tls.readthedocs.io/en/latest/kb/

@@ -6,7 +6,7 @@
 /* ROM function interface esp32h4.rom.ld for esp32h4
  *
  *
- * Generated from ../../rom/target/esp32h4/interface-esp32h4.yml md5sum c9db9928804fe99070d282b058ff3c65
+ * Generated from ../../rom/target/esp32h4/interface-esp32h4.yml md5sum bb9ee317148d3c5b10610936a3675a65
  *
  * Compatible with ROM where ECO version equal or greater to 0.
  *
@@ -241,21 +241,21 @@ ets_clk_get_cpu_freq = 0x4000066c;
  ***************************************/
 
 /* Functions */
-gpio_set_output_level = 0x40000670;
-gpio_get_input_level = 0x40000674;
-gpio_matrix_in = 0x40000678;
-gpio_matrix_out = 0x4000067c;
-gpio_bypass_matrix_in = 0x40000680;
-gpio_output_disable = 0x40000684;
-gpio_output_enable = 0x40000688;
-gpio_pad_input_disable = 0x4000068c;
-gpio_pad_input_enable = 0x40000690;
-gpio_pad_pulldown = 0x40000694;
-gpio_pad_pullup = 0x40000698;
-gpio_pad_select_gpio = 0x4000069c;
-gpio_pad_set_drv = 0x400006a0;
-gpio_pad_unhold = 0x400006a4;
-gpio_pad_hold = 0x400006a8;
+rom_gpio_set_output_level = 0x40000670;
+rom_gpio_get_input_level = 0x40000674;
+rom_gpio_matrix_in = 0x40000678;
+rom_gpio_matrix_out = 0x4000067c;
+rom_gpio_bypass_matrix_in = 0x40000680;
+rom_gpio_output_disable = 0x40000684;
+rom_gpio_output_enable = 0x40000688;
+rom_gpio_pad_input_disable = 0x4000068c;
+rom_gpio_pad_input_enable = 0x40000690;
+rom_gpio_pad_pulldown = 0x40000694;
+rom_gpio_pad_pullup = 0x40000698;
+rom_gpio_pad_select_gpio = 0x4000069c;
+rom_gpio_pad_set_drv = 0x400006a0;
+rom_gpio_pad_unhold = 0x400006a4;
+rom_gpio_pad_hold = 0x400006a8;
 
 
 /***************************************
@@ -377,6 +377,7 @@ ets_jtag_enable_temporarily = 0x400007bc;
 esp_rom_check_recover_key = 0x400007c0;
 esp_rom_km_huk_conf = 0x400007c4;
 esp_rom_km_huk_risk = 0x400007c8;
+esp_rom_recover_key = 0x400007cc;
 
 
 /***************************************
@@ -384,11 +385,11 @@ esp_rom_km_huk_risk = 0x400007c8;
  ***************************************/
 
 /* Functions */
-ets_ecdsa_verify = 0x400007cc;
-ets_secure_boot_verify_bootloader_with_keys = 0x400007d0;
-ets_secure_boot_verify_signature = 0x400007d4;
-ets_secure_boot_read_key_digests = 0x400007d8;
-ets_secure_boot_revoke_public_key_digest = 0x400007dc;
+ets_ecdsa_verify = 0x400007d0;
+ets_secure_boot_verify_bootloader_with_keys = 0x400007d4;
+ets_secure_boot_verify_signature = 0x400007d8;
+ets_secure_boot_read_key_digests = 0x400007dc;
+ets_secure_boot_revoke_public_key_digest = 0x400007e0;
 
 
 /***************************************
@@ -396,7 +397,7 @@ ets_secure_boot_revoke_public_key_digest = 0x400007dc;
  ***************************************/
 
 /* Functions */
-usb_serial_device_rx_one_char = 0x4000090c;
-usb_serial_device_rx_one_char_block = 0x40000910;
-usb_serial_device_tx_flush = 0x40000914;
-usb_serial_device_tx_one_char = 0x40000918;
+usb_serial_device_rx_one_char = 0x40000910;
+usb_serial_device_rx_one_char_block = 0x40000914;
+usb_serial_device_tx_flush = 0x40000918;
+usb_serial_device_tx_one_char = 0x4000091c;

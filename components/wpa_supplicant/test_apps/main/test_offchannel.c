@@ -135,6 +135,7 @@ void esp_send_action_frame(uint8_t *dest_mac, const uint8_t *buf, uint32_t len,
     req->data_len = len;
     req->rx_cb = dummy_rx_action;
     req->channel = channel;
+    req->sec_channel = WIFI_SECOND_CHAN_NONE;
     req->wait_time_ms = wait_time_ms;
     req->type = WIFI_OFFCHAN_TX_REQ;
 
@@ -264,4 +265,4 @@ static void test_wifi_roc(void)
     }
 }
 
-TEST_CASE_MULTIPLE_DEVICES("test ROC and Offchannel Action Frame Tx", "[Offchan][test_env=wifi_two_dut][timeout=90]", test_wifi_roc, test_wifi_offchan_tx);
+TEST_CASE_MULTIPLE_DEVICES("test ROC and Offchannel Action Frame Tx", "[Offchan][test_env=two_duts][timeout=90]", test_wifi_roc, test_wifi_offchan_tx);

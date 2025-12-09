@@ -3,6 +3,9 @@
 examples/security/flash_encryption:
   disable:
     - if: CONFIG_NAME == "psram" and SOC_SPIRAM_SUPPORTED != 1
+    - if: IDF_TARGET == "esp32p4"
+      temporary: true
+      reason: p4 rev3 migration # TODO: IDF-14367
   disable_test:
     - if: IDF_TARGET in ["esp32s2", "esp32s3", "esp32c6", "esp32h2", "esp32c2", "esp32c5", "esp32c61"]
       temporary: true
@@ -38,7 +41,7 @@ examples/security/security_features_app:
 
 examples/security/tee/tee_attestation:
   disable:
-    - if: IDF_TARGET not in ["esp32c6"]
+    - if: IDF_TARGET not in ["esp32c6", "esp32c5", "esp32c61"]
   depends_components:
     - esp_tee
   depends_filepatterns:
@@ -46,7 +49,7 @@ examples/security/tee/tee_attestation:
 
 examples/security/tee/tee_basic:
   disable:
-    - if: IDF_TARGET not in ["esp32c6"]
+    - if: IDF_TARGET not in ["esp32c6", "esp32c5", "esp32c61"]
   depends_components:
     - esp_tee
   depends_filepatterns:
@@ -54,15 +57,16 @@ examples/security/tee/tee_basic:
 
 examples/security/tee/tee_secure_ota:
   disable:
-    - if: IDF_TARGET not in ["esp32c6"]
+    - if: IDF_TARGET not in ["esp32c6", "esp32c5", "esp32c61"]
   depends_components:
     - esp_tee
+    - protocol_examples_common
   depends_filepatterns:
     - examples/security/tee/tee_secure_ota/**/*
 
 examples/security/tee/tee_secure_storage:
   disable:
-    - if: IDF_TARGET not in ["esp32c6"]
+    - if: IDF_TARGET not in ["esp32c6", "esp32c5", "esp32c61"]
   depends_components:
     - esp_tee
   depends_filepatterns:

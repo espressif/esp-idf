@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -138,6 +138,56 @@ typedef enum {
     LEDC_FADE_WAIT_DONE,    /*!< LEDC fade function will block until fading to the target duty */
     LEDC_FADE_MAX,
 } ledc_fade_mode_t;
+
+#if SOC_LEDC_SUPPORT_ETM
+/**
+ * @brief LEDC channel related specific tasks that supported by the ETM module
+ */
+typedef enum {
+    LEDC_CHANNEL_ETM_TASK_FADE_SCALE_UPDATE,     /*!< Update newly configured scale for the fade on the channel */
+    LEDC_CHANNEL_ETM_TASK_SIG_OUT_DIS,           /*!< Disable signal output on the channel */
+    LEDC_CHANNEL_ETM_TASK_OVF_CNT_RST,           /*!< Reset channel's timer overflow counter */
+    LEDC_CHANNEL_ETM_TASK_FADE_RESTART,          /* Restart the last fade on the channel, the replay will start from last configured duty
+                                                    (note that, for a single fade, the duty may be configured to a new value in ISR,
+                                                     so it may not be the initial value you configured before fade) */
+    LEDC_CHANNEL_ETM_TASK_FADE_PAUSE,            /*!< Pause fading on the channel */
+    LEDC_CHANNEL_ETM_TASK_FADE_RESUME,           /*!< Resume fading on the channel */
+    LEDC_CHANNEL_ETM_TASK_MAX,
+} ledc_channel_etm_task_type_t;
+
+/**
+ * @brief LEDC timer related specific tasks that supported by the ETM module
+ */
+typedef enum {
+    LEDC_TIMER_ETM_TASK_RST,                     /*!< Reset the timer
+                                                      When timer is reset, a timer overflow equivalent signal is sent to the channel, so any newly configured parameter is able to get updated
+                                                      This is not the case on C6/H2/P4/C5/H4/H21, on such targets, no timer overflow equivalent signal is sent to the channel, i.e. newly configured parameter is not able to get updated when this ETM task is triggered */
+    LEDC_TIMER_ETM_TASK_RESUME,                  /*!< Resume the timer
+                                                      Note that the ETM timer pause/resume task must be used in pair
+                                                      Pause by ETM task and resume by calling `ledc_timer_resume` is not allowed, vice versa */
+    LEDC_TIMER_ETM_TASK_PAUSE,                   /*!< Pause the timer */
+    LEDC_TIMER_ETM_TASK_MAX,
+} ledc_timer_etm_task_type_t;
+
+/**
+ * @brief LEDC channel related specific events that supported by the ETM module
+ */
+typedef enum {
+    LEDC_CHANNEL_ETM_EVENT_FADE_END,             /*!< Channel fading ended */
+    LEDC_CHANNEL_ETM_EVENT_REACH_MAX_OVF_CNT,    /*!< Channel has reached the maximum timer overflow count
+                                                      The maximum overflow count value can be set with `ledc_channel_configure_maximum_timer_ovf_cnt` */
+    LEDC_CHANNEL_ETM_EVENT_MAX,
+} ledc_channel_etm_event_type_t;
+
+/**
+ * @brief LEDC timer related specific events that supported by the ETM module
+ */
+typedef enum {
+    LEDC_TIMER_ETM_EVENT_OVF,                    /*!< Timer overflow happened */
+    LEDC_TIMER_ETM_EVENT_MAX,
+} ledc_timer_etm_event_type_t;
+
+#endif
 
 #ifdef __cplusplus
 }

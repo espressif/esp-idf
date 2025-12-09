@@ -31,6 +31,9 @@
 #include "port_systick.h"
 #include "portmacro.h"
 #include "esp_memory_utils.h"
+#if CONFIG_FREERTOS_RUN_TIME_STATS_USING_ESP_TIMER
+#include "esp_timer.h"
+#endif
 #ifdef CONFIG_FREERTOS_SYSTICK_USES_SYSTIMER
 #include "soc/periph_defs.h"
 #include "soc/system_reg.h"
@@ -269,16 +272,6 @@ void vPortTCBPreDeleteHook( void *pxTCB )
         extern void vTaskPreDeletionHook( void * pxTCB );
         vTaskPreDeletionHook( pxTCB );
     #endif /* CONFIG_FREERTOS_TASK_PRE_DELETION_HOOK */
-
-    #if ( CONFIG_FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP )
-        /*
-         * If the user is using the legacy task pre-deletion hook, call it.
-         * Todo: Will be removed in IDF-8097
-         */
-        #warning "CONFIG_FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP is deprecated. Use CONFIG_FREERTOS_TASK_PRE_DELETION_HOOK instead."
-        extern void vPortCleanUpTCB( void * pxTCB );
-        vPortCleanUpTCB( pxTCB );
-    #endif /* CONFIG_FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP */
 
     #if ( CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS )
         /* Call TLS pointers deletion callbacks */
@@ -526,3 +519,18 @@ void vApplicationPassiveIdleHook( void )
     esp_vApplicationIdleHook(); //Run IDF style hooks
 }
 #endif // CONFIG_FREERTOS_USE_PASSIVE_IDLE_HOOK
+
+/* ------------------------------------------------ Run Time Stats ------------------------------------------------- */
+
+#if ( CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS )
+
+configRUN_TIME_COUNTER_TYPE xPortGetRunTimeCounterValue( void )
+{
+#ifdef CONFIG_FREERTOS_RUN_TIME_STATS_USING_ESP_TIMER
+    return (configRUN_TIME_COUNTER_TYPE) esp_timer_get_time();
+#else
+    return 0;
+#endif // CONFIG_FREERTOS_RUN_TIME_STATS_USING_ESP_TIMER
+}
+
+#endif /* CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS */

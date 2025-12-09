@@ -1,7 +1,7 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 
 #pragma once
@@ -15,7 +15,7 @@ extern "C" {
 #endif
 
 typedef struct {
-    const periph_module_t module;  // peripheral module
+    const shared_periph_module_t module;  // peripheral module
     const int irq_id;              // interrupt source ID
 } ieee802154_conn_t;
 

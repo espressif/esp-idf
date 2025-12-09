@@ -10,8 +10,6 @@
 #include "esp_attr.h"
 #include "soc/soc_caps.h"
 #include "soc/rtc.h"
-#include "soc/rtc_periph.h"
-#include "soc/gpio_periph.h"
 #include "hal/gpio_ll.h"
 #include "soc/io_mux_reg.h"
 #include "driver/rtc_io.h"
@@ -263,6 +261,7 @@ static void start_freq(soc_rtc_slow_clk_src_t required_src, uint32_t start_delay
             printf("PASS");
         }
         printf(" [calibration val = %"PRIu32"] \n", esp_clk_slowclk_cal_get());
+        rtc_clk_slow_src_set(SOC_RTC_SLOW_CLK_SRC_DEFAULT);
         stop_rtc_external_quartz();
         esp_rom_delay_us(500000);
     }
@@ -304,6 +303,7 @@ TEST_CASE("Test starting external RTC quartz", "[rtc_clk][test_env=xtal32k]")
         } else {
             printf("PASS\n");
         }
+        rtc_clk_slow_src_set(SOC_RTC_SLOW_CLK_SRC_DEFAULT);
         stop_rtc_external_quartz();
         esp_rom_delay_us(100000);
     }
@@ -364,7 +364,18 @@ TEST_CASE("Test rtc clk calibration compensation", "[rtc_clk]")
 #endif
 
 #if SOC_DEEP_SLEEP_SUPPORTED
-static RTC_NOINIT_ATTR int64_t start = 0;
+#if SOC_RTC_FAST_MEM_SUPPORTED || SOC_RTC_SLOW_MEM_SUPPORTED
+RTC_NOINIT_ATTR
+#else
+#if CONFIG_IDF_TARGET_ESP32C2
+#define TEMP_RTC_STORE_REG          RTC_CNTL_DATE_REG
+#define TEMP_RTC_STORE_REG_M        RTC_CNTL_DATE_M
+#elif CONFIG_IDF_TARGET_ESP32C61 || CONFIG_IDF_TARGET_ESP32H4
+#define TEMP_RTC_STORE_REG          LP_AON_DATE_REG
+#define TEMP_RTC_STORE_REG_M        LP_AON_DATE_M
+#endif
+#endif
+static int64_t start = 0;
 
 static void trigger_deepsleep(void)
 {
@@ -379,6 +390,11 @@ static void trigger_deepsleep(void)
 
     // Save start time. Deep sleep.
     start = esp_rtc_get_time_us();
+#if !(SOC_RTC_FAST_MEM_SUPPORTED || SOC_RTC_SLOW_MEM_SUPPORTED)
+    // Store start timestamp in RTC_CNTL_DATE reg if RTC MEM is not supported
+    TEST_ASSERT(start <= TEMP_RTC_STORE_REG_M);
+    REG_WRITE(TEMP_RTC_STORE_REG, start & TEMP_RTC_STORE_REG_M);
+#endif
     esp_sleep_enable_timer_wakeup(5000);
     // In function esp_deep_sleep_start() uses function esp_sync_timekeeping_timers()
     // to prevent a negative time after wake up.
@@ -390,6 +406,9 @@ static void check_time_deepsleep_1(void)
     soc_reset_reason_t reason = esp_rom_get_reset_reason(0);
     TEST_ASSERT(reason == RESET_REASON_CORE_DEEP_SLEEP);
     int64_t end = esp_rtc_get_time_us();
+#if !(SOC_RTC_FAST_MEM_SUPPORTED || SOC_RTC_SLOW_MEM_SUPPORTED)
+    start  = REG_READ(TEMP_RTC_STORE_REG);
+#endif
     TEST_ASSERT_GREATER_THAN(start, end);
 
     esp_clk_slowclk_cal_set(esp_clk_slowclk_cal_get() * 2);
@@ -398,7 +417,10 @@ static void check_time_deepsleep_1(void)
     vTaskDelay(pdMS_TO_TICKS(10*1000));
 
     start = esp_rtc_get_time_us();
-
+#if !(SOC_RTC_FAST_MEM_SUPPORTED || SOC_RTC_SLOW_MEM_SUPPORTED)
+    TEST_ASSERT(start <= TEMP_RTC_STORE_REG_M);
+    REG_WRITE(TEMP_RTC_STORE_REG, start & TEMP_RTC_STORE_REG_M);
+#endif
     esp_sleep_enable_timer_wakeup(5000);
     // In function esp_deep_sleep_start() uses function esp_sync_timekeeping_timers()
     // to prevent a negative time after wake up.
@@ -410,6 +432,9 @@ static void check_time_deepsleep_2(void)
     soc_reset_reason_t reason = esp_rom_get_reset_reason(0);
     TEST_ASSERT(reason == RESET_REASON_CORE_DEEP_SLEEP);
     int64_t end = esp_rtc_get_time_us();
+#if !(SOC_RTC_FAST_MEM_SUPPORTED || SOC_RTC_SLOW_MEM_SUPPORTED)
+    start  = REG_READ(TEMP_RTC_STORE_REG);
+#endif
     TEST_ASSERT_GREATER_THAN(start, end);
 }
 
@@ -421,7 +446,7 @@ TEST_CASE_MULTIPLE_STAGES("Test rtc clk calibration compensation across deep sle
  * output either 150k, 32k, 8M clock to GPIO25.
  */
 #if CONFIG_IDF_TARGET_ESP32
-
+#include "soc/rtc_io_reg.h"
 #include "soc/sens_reg.h"
 
 static void pull_out_clk(int sel)

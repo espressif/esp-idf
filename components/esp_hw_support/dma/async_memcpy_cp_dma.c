@@ -25,7 +25,7 @@
 #include "hal/cp_dma_hal.h"
 #include "hal/cp_dma_ll.h"
 
-static const char *TAG = "async_mcp.cpdma";
+ESP_LOG_ATTR_TAG(TAG, "async_mcp.cpdma");
 
 #define MCP_DMA_DESCRIPTOR_BUFFER_MAX_SIZE 4095
 
@@ -217,7 +217,6 @@ static esp_err_t mcp_cpdma_memcpy(async_memcpy_context_t *ctx, void *dst, void *
 
     // allocate gdma TX link
     gdma_link_list_config_t tx_link_cfg = {
-        .buffer_alignment = 1, // CP_DMA doesn't have alignment requirement for internal memory
         .item_alignment = 4,   // CP_DMA requires 4 bytes alignment for each descriptor
         .num_items = num_dma_nodes,
         .flags = {
@@ -230,10 +229,11 @@ static esp_err_t mcp_cpdma_memcpy(async_memcpy_context_t *ctx, void *dst, void *
     gdma_buffer_mount_config_t tx_buf_mount_config[1] = {
         [0] = {
             .buffer = src,
+            .buffer_alignment = 1, // CP_DMA doesn't have alignment requirement for internal memory
             .length = n,
             .flags = {
                 .mark_eof = true,   // mark the last item as EOF, so the RX channel can also received an EOF list item
-                .mark_final = true, // using singly list, so terminate the link here
+                .mark_final = GDMA_FINAL_LINK_TO_NULL, // using singly list, so terminate the link here
             }
         }
     };
@@ -241,7 +241,6 @@ static esp_err_t mcp_cpdma_memcpy(async_memcpy_context_t *ctx, void *dst, void *
 
     // allocate gdma RX link
     gdma_link_list_config_t rx_link_cfg = {
-        .buffer_alignment = 1, // CP_DMA doesn't have alignment requirement for internal memory
         .item_alignment = 4,   // CP_DMA requires 4 bytes alignment for each descriptor
         .num_items = num_dma_nodes,
         .flags = {
@@ -254,10 +253,11 @@ static esp_err_t mcp_cpdma_memcpy(async_memcpy_context_t *ctx, void *dst, void *
     gdma_buffer_mount_config_t rx_buf_mount_config[1] = {
         [0] = {
             .buffer = dst,
+            .buffer_alignment = 1, // CP_DMA doesn't have alignment requirement for internal memory
             .length = n,
             .flags = {
                 .mark_eof = false,  // EOF is set by TX side
-                .mark_final = true, // using singly list, so terminate the link here
+                .mark_final = GDMA_FINAL_LINK_TO_NULL, // using singly list, so terminate the link here
             }
         }
     };
@@ -292,8 +292,8 @@ static void mcp_default_isr_handler(void *args)
     bool need_yield = false;
     async_memcpy_cpdma_context_t *mcp_dma = (async_memcpy_cpdma_context_t *)args;
     // get the interrupt status and clear it
-    uint32_t status = cp_dma_hal_get_intr_status(&mcp_dma->hal);
-    cp_dma_hal_clear_intr_status(&mcp_dma->hal, status);
+    uint32_t status = cp_dma_ll_get_intr_status(mcp_dma->hal.dev);
+    cp_dma_ll_clear_intr_status(mcp_dma->hal.dev, status);
 
     // End-Of-Frame on RX side
     if (status & CP_DMA_LL_EVENT_RX_EOF) {

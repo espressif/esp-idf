@@ -1,14 +1,13 @@
 # SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import http.server
+import logging
 import multiprocessing
 import os
 import ssl
 import subprocess
 import sys
 from typing import Any
-from typing import Optional
-from typing import Tuple
 
 import pexpect
 import pytest
@@ -87,8 +86,8 @@ def start_https_server(
     ota_image_dir: str,
     server_ip: str,
     server_port: int,
-    server_file: Optional[str] = None,
-    key_file: Optional[str] = None,
+    server_file: str | None = None,
+    key_file: str | None = None,
 ) -> None:
     os.chdir(ota_image_dir)
 
@@ -143,15 +142,15 @@ def start_tls1_3_server(ota_image_dir: str, server_port: int) -> subprocess.Pope
 
 
 def check_sha256(sha256_expected: str, sha256_reported: str) -> None:
-    print('sha256_expected: %s' % (sha256_expected))
-    print('sha256_reported: %s' % (sha256_reported))
+    logging.info('sha256_expected: %s', sha256_expected)
+    logging.info('sha256_reported: %s', sha256_reported)
     if sha256_expected not in sha256_reported:
         raise ValueError('SHA256 mismatch')
     else:
-        print('SHA256 expected and reported are the same')
+        logging.info('SHA256 expected and reported are the same')
 
 
-def calc_all_sha256(dut: Dut) -> Tuple[str, str]:
+def calc_all_sha256(dut: Dut) -> tuple[str, str]:
     bootloader_path = os.path.join(dut.app.binary_path, 'bootloader', 'bootloader.bin')
     sha256_bootloader = dut.app.get_sha256(bootloader_path)
 
@@ -161,14 +160,14 @@ def calc_all_sha256(dut: Dut) -> Tuple[str, str]:
     return str(sha256_bootloader), str(sha256_app)
 
 
-def setting_connection(dut: Dut, env_name: Optional[str] = None) -> Any:
+def setting_connection(dut: Dut, env_name: str | None = None) -> Any:
     if env_name is not None and dut.app.sdkconfig.get('EXAMPLE_WIFI_SSID_PWD_FROM_STDIN') is True:
         dut.expect('Please input ssid password:')
         ap_ssid = get_env_config_variable(env_name, 'ap_ssid')
         ap_password = get_env_config_variable(env_name, 'ap_password')
         dut.write(f'{ap_ssid} {ap_password}')
     try:
-        ip_address = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=30)[1].decode()
+        ip_address = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=60)[1].decode()
         print(f'Connected to AP/Ethernet with IP: {ip_address}')
     except pexpect.exceptions.TIMEOUT:
         raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP/Ethernet')

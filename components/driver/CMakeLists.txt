@@ -8,8 +8,7 @@ endif()
 set(srcs)
 
 # Always included headers
-set(includes "deprecated"
-             "i2c/include"
+set(includes "i2c/include"
              "touch_sensor/include"
              "twai/include")
 
@@ -33,7 +32,7 @@ endif()
 
 # TWAI related source files
 # TWAIFD is not supported by the legacy driver
-if(CONFIG_SOC_TWAI_SUPPORTED AND NOT CONFIG_SOC_TWAI_SUPPORT_FD)
+if(CONFIG_SOC_TWAI_SUPPORTED AND NOT CONFIG_SOC_TWAI_FD_SUPPORTED)
     list(APPEND srcs "twai/twai.c")
     list(APPEND ldfragments "twai/linker.lf")
 endif()
@@ -45,15 +44,8 @@ else()
     # (REQUIRES cannot hide soc headers, since many arguments in the driver headers are chip-dependent)
     idf_component_register(SRCS "${srcs}"
                            INCLUDE_DIRS ${includes}
-                           PRIV_REQUIRES efuse esp_timer esp_mm
-                           REQUIRES esp_pm esp_ringbuf freertos soc hal esp_hw_support
-                           # for backward compatibility, the driver component needs to
-                           # have a public dependency on other "esp_driver_foo" components
-                                    esp_driver_gpio esp_driver_pcnt esp_driver_gptimer esp_driver_spi esp_driver_mcpwm
-                                    esp_driver_ana_cmpr esp_driver_i2s esp_driver_sdmmc esp_driver_sdspi esp_driver_sdio
-                                    esp_driver_dac esp_driver_rmt esp_driver_tsens esp_driver_sdm esp_driver_i2c
-                                    esp_driver_uart esp_driver_ledc esp_driver_parlio esp_driver_usb_serial_jtag
-                                    esp_driver_twai
+                           PRIV_REQUIRES esp_timer esp_mm esp_driver_gpio esp_ringbuf esp_pm
+                           REQUIRES esp_hal_i2c esp_hal_twai
                            LDFRAGMENTS ${ldfragments}
                           )
 endif()

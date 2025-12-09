@@ -369,6 +369,7 @@ IRAM_ATTR static bool csi_dma_trans_done_callback(dw_gdma_channel_handle_t chan,
     if ((ctlr->trans.buffer != ctlr->backup_buffer) || ctlr->bk_buffer_exposed) {
         esp_err_t ret = esp_cache_msync((void *)(ctlr->trans.buffer), ctlr->trans.received_size, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
         assert(ret == ESP_OK);
+        (void)ret;
         assert(ctlr->cbs.on_trans_finished);
         if (ctlr->cbs.on_trans_finished) {
             ctlr->trans.received_size = ctlr->fb_size_in_bytes;

@@ -1,7 +1,7 @@
 /*
  * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 #pragma once
 
@@ -347,6 +347,53 @@ typedef enum {
     LEDC_USE_XTAL_CLK = SOC_MOD_CLK_XTAL,           /*!< Select XTAL as the source clock */
 } soc_periph_ledc_clk_src_legacy_t;
 
+//////////////////////////////////////////////////MCPWM/////////////////////////////////////////////////////////////////
+
+/**
+ * @brief Array initializer for all supported clock sources of MCPWM Timer
+ */
+#define SOC_MCPWM_TIMER_CLKS {SOC_MOD_CLK_PLL_F96M, SOC_MOD_CLK_RC_FAST, SOC_MOD_CLK_XTAL}
+
+/**
+ * @brief Type of MCPWM timer clock source
+ */
+typedef enum {
+    MCPWM_TIMER_CLK_SRC_PLL96M = SOC_MOD_CLK_PLL_F96M, /*!< Select PLL_F96M as the source clock */
+    MCPWM_TIMER_CLK_SRC_RC_FAST = SOC_MOD_CLK_RC_FAST, /*!< Select RC_FAST as the source clock */
+    MCPWM_TIMER_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,         /*!< Select XTAL as the source clock */
+    MCPWM_TIMER_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F96M, /*!< Select PLL_F96M as the default clock choice */
+} soc_periph_mcpwm_timer_clk_src_t;
+
+/**
+ * @brief Array initializer for all supported clock sources of MCPWM Capture Timer
+ */
+#define SOC_MCPWM_CAPTURE_CLKS {SOC_MOD_CLK_PLL_F96M, SOC_MOD_CLK_RC_FAST, SOC_MOD_CLK_XTAL}
+
+/**
+ * @brief Type of MCPWM capture clock source
+ */
+typedef enum {
+    MCPWM_CAPTURE_CLK_SRC_PLL96M = SOC_MOD_CLK_PLL_F96M, /*!< Select PLL_F96M as the source clock */
+    MCPWM_CAPTURE_CLK_SRC_RC_FAST = SOC_MOD_CLK_RC_FAST, /*!< Select RC_FAST as the source clock */
+    MCPWM_CAPTURE_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,         /*!< Select XTAL as the source clock */
+    MCPWM_CAPTURE_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F96M, /*!< Select PLL_F96M as the default clock choice */
+} soc_periph_mcpwm_capture_clk_src_t;
+
+/**
+ * @brief Array initializer for all supported clock sources of MCPWM Carrier
+ */
+#define SOC_MCPWM_CARRIER_CLKS {SOC_MOD_CLK_PLL_F96M, SOC_MOD_CLK_RC_FAST, SOC_MOD_CLK_XTAL}
+
+/**
+ * @brief Type of MCPWM carrier clock source
+ */
+typedef enum {
+    MCPWM_CARRIER_CLK_SRC_PLL96M = SOC_MOD_CLK_PLL_F96M, /*!< Select PLL_F96M as the source clock */
+    MCPWM_CARRIER_CLK_SRC_RC_FAST = SOC_MOD_CLK_RC_FAST, /*!< Select RC_FAST as the source clock */
+    MCPWM_CARRIER_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,         /*!< Select XTAL as the source clock */
+    MCPWM_CARRIER_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F96M, /*!< Select PLL_F96M as the default clock choice */
+} soc_periph_mcpwm_carrier_clk_src_t;
+
 ///////////////////////////////////////////////////// I2S //////////////////////////////////////////////////////////////
 
 /**
@@ -380,6 +427,23 @@ typedef enum {
     SDM_CLK_SRC_PLL_F48M = SOC_MOD_CLK_PLL_F48M, /*!< Select PLL_F48M clock as the source clock */
     SDM_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F48M,  /*!< Select PLL_F48M clock as the default clock choice */
 } soc_periph_sdm_clk_src_t;
+
+//////////////////////////////////////////////////GPIO Glitch Filter////////////////////////////////////////////////////
+
+/**
+ * @brief Array initializer for all supported clock sources of Glitch Filter
+ */
+#define SOC_GLITCH_FILTER_CLKS {SOC_MOD_CLK_PLL_F48M, SOC_MOD_CLK_XTAL}
+
+/**
+ * @brief Glitch filter clock source
+ */
+
+typedef enum {
+    GLITCH_FILTER_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,         /*!< Select XTAL clock as the source clock */
+    GLITCH_FILTER_CLK_SRC_PLL_F48M = SOC_MOD_CLK_PLL_F48M, /*!< Select PLL_F48M clock as the source clock */
+    GLITCH_FILTER_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F48M,  /*!< Select PLL_F48M clock as the default clock choice */
+} soc_periph_glitch_filter_clk_src_t;
 
 //////////////////////////////////////////////////TWAI//////////////////////////////////////////////////////////////////
 

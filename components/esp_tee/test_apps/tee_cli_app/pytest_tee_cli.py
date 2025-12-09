@@ -21,8 +21,7 @@ from ecdsa.util import sigdecode_der
 from pytest_embedded import Dut
 from pytest_embedded_idf.utils import idf_parametrize
 
-# TODO: Enable for ESP32-C5 once support is stable
-SUPPORTED_TARGETS = ['esp32c6', 'esp32h2']
+SUPPORTED_TARGETS = ['esp32c6', 'esp32c5', 'esp32c61']
 
 TEST_MSG = 'hello world'
 
@@ -221,7 +220,7 @@ def test_tee_cli_secure_ota_wifi(dut: Dut) -> None:
 
             # Fetch the DUT IP address
             try:
-                ip_address = dut.expect(r'got ip:(\d+\.\d+\.\d+\.\d+)[^\d]', timeout=30)[1].decode()
+                ip_address = dut.expect(r'got ip:(\d+\.\d+\.\d+\.\d+)[^\d]', timeout=60)[1].decode()
                 print(f'Connected to AP/Ethernet with IP: {ip_address}')
             except pexpect.exceptions.TIMEOUT:
                 raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')

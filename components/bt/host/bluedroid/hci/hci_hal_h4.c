@@ -25,6 +25,7 @@
 #include "hci/hci_trans_int.h"
 #include "osi/thread.h"
 #include "osi/pkt_queue.h"
+#include "esp_bt_main.h"
 #if (BLE_ADV_REPORT_FLOW_CONTROL == TRUE)
 #include "osi/mutex.h"
 #include "osi/alarm.h"
@@ -507,9 +508,10 @@ static void hci_hal_h4_hdl_rx_packet(BT_HDR *packet)
         STREAM_TO_UINT8(length, stream);
     }
 
-    if ((length + hdr_size) != packet->len) {
-        HCI_TRACE_ERROR("Wrong packet length type=%d hdr_len=%d pd_len=%d "
-                  "pkt_len=%d", type, hdr_size, length, packet->len);
+    // Prevents integer wrap-around when calculating (length + hdr_size).
+    if (length != (packet->len - hdr_size)) {
+        HCI_TRACE_ERROR("%s: SECURITY: parameter length (%d) exceeds packet bounds (%d)",
+                        __func__, length, packet->len - hdr_size);
         osi_free(packet);
         return;
     }
@@ -645,6 +647,11 @@ static int host_recv_pkt_cb(uint8_t *data, uint16_t len)
             fixed_queue_enqueue(hci_hal_env.rx_q, pkt, FIXED_QUEUE_MAX_TIMEOUT);
         }
     } else {
+        if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+            // Prevent race condition during host deinit/disable
+            // Host not ready, dropped advertising report
+            return 0;
+        }
 #if (BLE_42_SCAN_EN == TRUE)
 #if !BLE_ADV_REPORT_FLOW_CONTROL
         // drop the packets if pkt_queue length goes beyond upper limit

@@ -930,7 +930,7 @@ TEST_CASE("test_spi_slave_hd_sleep_retention", "[spi]")
 {
     // Prepare a TOP PD sleep
     TEST_ESP_OK(esp_sleep_enable_timer_wakeup(1 * 1000 * 1000));
-#if ESP_SLEEP_POWER_DOWN_CPU
+#if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU
     sleep_cpu_configure(true);
 #endif
     esp_sleep_context_t sleep_ctx;
@@ -1002,7 +1002,7 @@ TEST_CASE("test_spi_slave_hd_sleep_retention", "[spi]")
     }
 
     esp_sleep_set_sleep_context(NULL);
-#if ESP_SLEEP_POWER_DOWN_CPU
+#if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU
     TEST_ESP_OK(sleep_cpu_configure(false));
 #endif
 }
@@ -1012,7 +1012,7 @@ TEST_CASE("test_spi_slave_hd_append_sleep_retention", "[spi]")
 {
     // Prepare a TOP PD sleep
     TEST_ESP_OK(esp_sleep_enable_timer_wakeup(1 * 1000 * 1000));
-#if ESP_SLEEP_POWER_DOWN_CPU
+#if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU
     sleep_cpu_configure(true);
 #endif
     esp_sleep_context_t sleep_ctx;
@@ -1080,7 +1080,7 @@ TEST_CASE("test_spi_slave_hd_append_sleep_retention", "[spi]")
     }
     spi_slave_hd_deinit(TEST_SLAVE_HOST);
     esp_sleep_set_sleep_context(NULL);
-#if ESP_SLEEP_POWER_DOWN_CPU
+#if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU
     TEST_ESP_OK(sleep_cpu_configure(false));
 #endif
 }

@@ -14,13 +14,6 @@
       temporary: true
       reason: not supported yet  # TODO: [ESP32H21] IDF-11581   [ESP32H4] IDF-12360
 
-.mqtt_dependencies: &mqtt_dependencies
-  <<: *default_rules
-  depends_filepatterns:
-    - components/mqtt/**/*
-  depends_components+:
-    - mqtt
-
 examples/protocols/dns_over_https:
   <<: *default_rules
 examples/protocols/esp_http_client:
@@ -162,61 +155,21 @@ examples/protocols/l2tap:
     - if: IDF_TARGET != "esp32"
       reason: only test on esp32
 
-examples/protocols/mqtt/custom_outbox:
-  <<: *mqtt_dependencies
-
-examples/protocols/mqtt/ssl:
-  <<: *mqtt_dependencies
+examples/protocols/mqtt:
+  <<: *default_rules
   disable_test:
     - if: IDF_TARGET != "esp32"
-      reason: only test on esp32
-
-examples/protocols/mqtt/ssl_ds:
-  <<: *mqtt_dependencies
-  disable+:
-    - if: SOC_DIG_SIGN_SUPPORTED != 1
-      temporary: false
-      reason: DS not present
-  depends_filepatterns+:
-    - examples/protocols/mqtt/ssl_ds/**/*
-
-examples/protocols/mqtt/ssl_mutual_auth:
-  <<: *mqtt_dependencies
-
-examples/protocols/mqtt/ssl_psk:
-  <<: *mqtt_dependencies
-examples/protocols/mqtt/tcp:
-  <<: *mqtt_dependencies
-  disable_test:
-    - if: IDF_TARGET != "esp32"
-      reason: only test on esp32
-  depends_filepatterns+:
-    - examples/protocols/mqtt/tcp/**/*
-
-examples/protocols/mqtt/ws:
-  <<: *mqtt_dependencies
-  disable_test:
-    - if: IDF_TARGET != "esp32"
-      reason: only test on esp32
-  depends_filepatterns+:
-    - examples/protocols/mqtt/ws/**/*
-
-examples/protocols/mqtt/wss:
-  <<: *mqtt_dependencies
-  disable_test:
-    - if: IDF_TARGET != "esp32"
-      reason: only test on esp32
-  depends_filepatterns+:
-    - examples/protocols/mqtt/wss/**/*
-
+      reason: only test on esp32 for now
+  depends_components+:
+    - esp-tls
 
 examples/protocols/mqtt5:
-  <<: *mqtt_dependencies
+  <<: *default_rules
   disable_test:
     - if: IDF_TARGET != "esp32"
-      reason: only test on esp32
-  depends_filepatterns+:
-    - examples/protocols/mqtt5/**/*
+      reason: only test on esp32 for now
+  depends_components+:
+    - esp-tls
 
 examples/protocols/smtp_client:
   <<: *default_rules

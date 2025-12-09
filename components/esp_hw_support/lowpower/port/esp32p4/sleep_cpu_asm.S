@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +12,7 @@
 #include "soc/cache_reg.h"
 #define CACHE_MAP_L1_CACHE_MASK     (BIT(0) | BIT(1) | BIT(4))
 #define MTVT                        (0x307)
+#define MINTTHRESH                  (0x347)
 
     .section    .tcm.data,"aw"
     .global     rv_core_critical_regs_frame
@@ -93,6 +94,10 @@ rv_core_critical_regs_save:
     sw      t3, RV_SLP_CTX_MCAUSE(t0)
     csrr    t4, MTVT
     sw      t4, RV_SLP_CTX_MTVT(t0)
+#if !CONFIG_ESP32P4_SELECTS_REV_LESS_V3
+    csrr    t4, MINTTHRESH
+    sw      t4, RV_SLP_CTX_MINTTHRESH(t0)
+#endif
     csrr    t1, mtval
     sw      t1, RV_SLP_CTX_MTVAL(t0)
     csrr    t2, mie
@@ -177,6 +182,10 @@ rv_core_critical_regs_restore:
     csrw    mstatus, t2
     lw      t4, RV_SLP_CTX_MTVT(t0)
     csrw    MTVT, t4
+#if !CONFIG_ESP32P4_SELECTS_REV_LESS_V3
+    lw      t1, RV_SLP_CTX_MINTTHRESH(t0)
+    csrw    MINTTHRESH, t1
+#endif
     lw      t3, RV_SLP_CTX_MTVEC(t0)
     csrw    mtvec, t3
     lw      t1, RV_SLP_CTX_MCAUSE(t0)

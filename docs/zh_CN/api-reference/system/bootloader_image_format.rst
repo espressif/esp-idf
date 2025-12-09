@@ -9,50 +9,50 @@
 
 .. code-block::
 
-    esptool.py --chip {IDF_TARGET_PATH_NAME} image_info build/bootloader/bootloader.bin --version 2
+    esptool --chip {IDF_TARGET_PATH_NAME} image-info ./build/bootloader/bootloader.bin
 
 输出结果如下形式所示：
 
 .. code-block::
 
-    File size: 26576 (bytes)
+    esptool v5.0.2
+    Image size: 26352 bytes
 
-    ESP32 image header
+    ESP32 Image Header
     ==================
     Image version: 1
-    Entry point: 0x40080658
-    Segments: 4
+    Entry point: 0x40080644
+    Segments: 3
     Flash size: 2MB
     Flash freq: 40m
     Flash mode: DIO
 
-    ESP32 extended image header
+    ESP32 Extended Image Header
     ===========================
-    WP pin: 0xee
+    WP pin: 0xee (disabled)
     Flash pins drive settings: clk_drv: 0x0, q_drv: 0x0, d_drv: 0x0, cs0_drv: 0x0, hd_drv: 0x0, wp_drv: 0x0
-    Chip ID: 0
+    Chip ID: 0 (ESP32)
     Minimal chip revision: v0.0, (legacy min_rev = 0)
     Maximal chip revision: v3.99
 
-    Segments information
+    Segments Information
     ====================
     Segment   Length   Load addr   File offs  Memory types
     -------  -------  ----------  ----------  ------------
-        1  0x01bb0  0x3fff0030  0x00000018  BYTE_ACCESSIBLE, DRAM, DIRAM_DRAM
-        2  0x03c90  0x40078000  0x00001bd0  CACHE_APP
-        3  0x00004  0x40080400  0x00005868  IRAM
-        4  0x00f2c  0x40080404  0x00005874  IRAM
+        0  0x018e8  0x3fff0030  0x00000018  BYTE_ACCESSIBLE, DRAM, DIRAM_DRAM
+        1  0x03e58  0x40078000  0x00001908  CACHE_APP
+        2  0x00f5c  0x40080400  0x00005768  IRAM
 
-    ESP32 image footer
+    ESP32 Image Footer
     ==================
-    Checksum: 0x65 (valid)
-    Validation hash: 6f31a7f8512f26f6bce7c3b270f93bf6cf1ee4602c322998ca8ce27433527e92 (valid)
+    Checksum: 0x6b (valid)
+    Validation hash: 09fdc81d436a927b5018e19073a787cd37ffce655f505ad92675edd784419034 (valid)
 
-    Bootloader information
+    Bootloader Information
     ======================
     Bootloader version: 1
-    ESP-IDF: v5.1-dev-4304-gcb51a3b-dirty
-    Compile time: Mar 30 2023 19:14:17
+    ESP-IDF: v6.0-dev-1620-g15d7e41a848-dirt
+    Compile time: Aug  8 2025 16:22:1
 
 
 .. _image-format-bootloader-description:

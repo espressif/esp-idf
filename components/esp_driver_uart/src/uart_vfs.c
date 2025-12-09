@@ -443,18 +443,32 @@ static esp_err_t unregister_select(uart_select_args_t *args)
         for (int i = 0; i < s_registered_select_num; ++i) {
             if (s_registered_selects[i] == args) {
                 const int new_size = s_registered_select_num - 1;
-                // The item is removed by overwriting it with the last item. The subsequent rellocation will drop the
-                // last item.
-                s_registered_selects[i] = s_registered_selects[new_size];
-                uart_select_args_t **new_selects = heap_caps_realloc(s_registered_selects, new_size * sizeof(uart_select_args_t *), UART_VFS_MALLOC_FLAGS);
-                if (new_selects == NULL && new_size > 0) {
-                    ret = ESP_ERR_NO_MEM;
-                } else {
-                    s_registered_selects = new_selects;
+                // Move last element to fill gap (only if not removing the last element)
+                if (i < new_size) {
+                    s_registered_selects[i] = s_registered_selects[new_size];
                 }
-                // Shrinking a buffer with realloc is guaranteed to succeed.
-                s_registered_select_num = new_size;
-                ret = ESP_OK;
+                if (new_size == 0) {
+                    // Free the entire array
+                    free(s_registered_selects);
+                    s_registered_selects = NULL;
+                    s_registered_select_num = 0;
+                    ret = ESP_OK;
+                } else {
+                    // Shrink the array
+                    uart_select_args_t **new_selects = heap_caps_realloc(s_registered_selects, new_size * sizeof(uart_select_args_t *), UART_VFS_MALLOC_FLAGS);
+                    if (new_selects == NULL) {
+                        // Realloc failed - restore moved element
+                        if (i < new_size) {
+                            s_registered_selects[new_size] = s_registered_selects[i];
+                        }
+                        ret = ESP_ERR_NO_MEM;
+                    } else {
+                        // Success - update pointer
+                        s_registered_selects = new_selects;
+                        s_registered_select_num = new_size;
+                        ret = ESP_OK;
+                    }
+                }
                 break;
             }
         }
@@ -1160,19 +1174,3 @@ void uart_vfs_include_dev_init(void)
 {
     // Linker hook function, exists to make the linker examine this file
 }
-
-// -------------------------- esp_vfs_dev_uart_xxx ALIAS (deprecated) ----------------------------
-
-void esp_vfs_dev_uart_register(void) __attribute__((alias("uart_vfs_dev_register")));
-
-void esp_vfs_dev_uart_set_rx_line_endings(esp_line_endings_t mode) __attribute__((alias("uart_vfs_dev_set_rx_line_endings")));
-
-void esp_vfs_dev_uart_set_tx_line_endings(esp_line_endings_t mode) __attribute__((alias("uart_vfs_dev_set_tx_line_endings")));
-
-int esp_vfs_dev_uart_port_set_rx_line_endings(int uart_num, esp_line_endings_t mode) __attribute__((alias("uart_vfs_dev_port_set_rx_line_endings")));
-
-int esp_vfs_dev_uart_port_set_tx_line_endings(int uart_num, esp_line_endings_t mode) __attribute__((alias("uart_vfs_dev_port_set_tx_line_endings")));
-
-void esp_vfs_dev_uart_use_nonblocking(int uart_num) __attribute__((alias("uart_vfs_dev_use_nonblocking")));
-
-void esp_vfs_dev_uart_use_driver(int uart_num) __attribute__((alias("uart_vfs_dev_use_driver")));

@@ -9,6 +9,7 @@ INPUT += \
     $(PROJECT_PATH)/components/ulp/lp_core/lp_core/include/ulp_lp_core_uart.h \
     $(PROJECT_PATH)/components/ulp/lp_core/lp_core/include/ulp_lp_core_utils.h \
     $(PROJECT_PATH)/components/ulp/lp_core/lp_core/include/ulp_lp_core_interrupts.h \
+	$(PROJECT_PATH)/components/ulp/lp_core/lp_core/include/ulp_lp_core_mailbox.h \
     $(PROJECT_PATH)/components/bt/include/esp32c6/include/esp_bt.h \
     $(PROJECT_PATH)/components/bt/include/$(IDF_TARGET)/include/esp_bt_vs.h \
     $(PROJECT_PATH)/components/esp_phy/include/esp_phy_init.h \

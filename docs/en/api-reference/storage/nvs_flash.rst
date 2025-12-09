@@ -177,6 +177,22 @@ You can find code examples in the :example:`storage/nvs` directory of ESP-IDF ex
 
   This example does exactly the same as :example:`storage/nvs/nvs_rw_value`, except that it uses the C++ NVS handle class.
 
+:example:`storage/nvs/nvs_statistics`
+
+  This example demonstrates how to obtain and interpret NVS usage statistics: free/used/available/total number of entries and number of namespaces in given NVS partition.
+
+  Default NVS partition is erased for a clean run of this example. Then mock data string values are written.
+
+  Usage statistics are obtained prior to and post writing, with the differences being compared to expected values of newly used entries.
+
+:example:`storage/nvs/nvs_iteration`
+
+  This example demonstrates how to iterate over entries of specific (or any) NVS data type and how to obtain info about such entries.
+
+  Default NVS partition is erased for a clean run of this example. Then mock data consisting of different NVS integer data types are written.
+
+  After that, the example iterates over each individual data type as well as the generic ``NVS_TYPE_ANY`` type, and logs the information obtained from each iteration.
+
 Internals
 ---------
 

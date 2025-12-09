@@ -18,7 +18,7 @@
 #include "soc/spi_mem_reg.h"
 #include "esp_private/startup_internal.h"
 
-static const char *TAG = "sleep_mmu";
+ESP_LOG_ATTR_TAG(TAG, "sleep_mmu");
 
 typedef struct {
     uint32_t start;

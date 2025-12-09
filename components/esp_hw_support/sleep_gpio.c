@@ -21,7 +21,7 @@
 #include "driver/gpio.h"
 #include "hal/gpio_hal.h"
 #include "hal/rtc_io_hal.h"
-#include "soc/rtc_io_periph.h"
+#include "hal/rtc_io_periph.h"
 #include "soc/uart_pins.h"
 
 #include "hal/rtc_hal.h"
@@ -32,7 +32,7 @@
 #include "esp_private/startup_internal.h"
 #include "bootloader_flash.h"
 
-static const char *TAG = "sleep_gpio";
+ESP_LOG_ATTR_TAG(TAG, "sleep_gpio");
 
 #if CONFIG_IDF_TARGET_ESP32
 /* On ESP32, for IOs with RTC functionality, setting SLP_PU, SLP_PD couldn't change IO status
@@ -170,7 +170,7 @@ void esp_sleep_enable_gpio_switch(bool enable)
     }
 }
 
-#if SOC_GPIO_SUPPORT_HOLD_IO_IN_DSLP && !SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP
+#if !SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP
 IRAM_ATTR void esp_sleep_isolate_digital_gpio(void)
 {
     gpio_hal_context_t gpio_hal = {
@@ -225,7 +225,7 @@ IRAM_ATTR void esp_sleep_isolate_digital_gpio(void)
         }
     }
 }
-#endif //SOC_GPIO_SUPPORT_HOLD_IO_IN_DSLP && !SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP
+#endif //!SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP
 
 #if SOC_DEEP_SLEEP_SUPPORTED
 void esp_deep_sleep_wakeup_io_reset(void)

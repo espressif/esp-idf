@@ -2,8 +2,8 @@
 
     idf.py -p /dev/ttyUSB0  efuse-summary
 
-    espefuse.py v4.10.dev2
-    Connecting....
+    Executing action: efuse-summary
+    (...)
 
     === Run "summary" command ===
     EFUSE_NAME (Block) Description  = [Meaningful Value] [Readable/Writeable] (Hex Value)

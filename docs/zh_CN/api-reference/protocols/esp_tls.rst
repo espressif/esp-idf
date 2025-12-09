@@ -229,7 +229,7 @@ ESP-TLS 支持在 ESP32 系列芯片上使用 ATECC608A 加密芯片，但必须
 
         当使用数字签名进行 TLS 连接时，除其他必要参数外，仅需提供客户端证书 (``clientcert_buf``) 和数字签名参数 (``ds_data``) ，此时可将客户端密钥 (``clientkey_buf``) 设置为 NULL。
 
-    * 使用数字签名外设进行双向认证的示例请参阅 :example:`SSL 双向认证 <protocols/mqtt/ssl_mutual_auth>`，该示例使用 ESP-TLS 实现 TLS 连接。
+    * 现有一个基于 DS 外设的双向认证示例，已随独立的 `espressif/mqtt <https://components.espressif.com/components/espressif/mqtt>`__ 组件一同提供，其内部依赖 ESP-TLS 建立 TLS 连接。请参照组件文档获取并构建该示例。
 
 .. only:: SOC_ECDSA_SUPPORTED
 

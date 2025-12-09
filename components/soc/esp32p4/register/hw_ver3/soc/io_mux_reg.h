@@ -1,13 +1,11 @@
 /*
  * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 
 #pragma once
 #include "soc/soc.h"
-
-//TODO: IDF-13419
 
 /* The following are the bit fields for PERIPHS_IO_MUX_x_U registers */
 /* Output enable in sleep mode */
@@ -155,23 +153,6 @@
 #define GPIO_PAD_PULLDOWN(num) do{PIN_PULLUP_DIS(IOMUX_REG_GPIO##num);PIN_PULLDWN_EN(IOMUX_REG_GPIO##num);}while(0)
 #define GPIO_PAD_SET_DRV(num, drv) PIN_SET_DRV(IOMUX_REG_GPIO##num, drv)
 
-// TODO: IDF-7499, IDF-7495
-// SPI pins defined here are all wrong. On P4, these pins are individual pins, don't use normal GPIO pins anymore.
-// Please check iomux_mspi_pin_struct/reg.h
-#include "soc/gpio_num.h"
-#define SPI_CS1_GPIO_NUM GPIO_NUM_MAX
-#define SPI_HD_GPIO_NUM  GPIO_NUM_MAX
-#define SPI_WP_GPIO_NUM  GPIO_NUM_MAX
-#define SPI_CS0_GPIO_NUM GPIO_NUM_MAX
-#define SPI_CLK_GPIO_NUM GPIO_NUM_MAX
-#define SPI_Q_GPIO_NUM   GPIO_NUM_MAX
-#define SPI_D_GPIO_NUM   GPIO_NUM_MAX
-#define SPI_D4_GPIO_NUM  GPIO_NUM_MAX
-#define SPI_D5_GPIO_NUM  GPIO_NUM_MAX
-#define SPI_D6_GPIO_NUM  GPIO_NUM_MAX
-#define SPI_D7_GPIO_NUM  GPIO_NUM_MAX
-#define SPI_DQS_GPIO_NUM GPIO_NUM_MAX
-
 #define SD_CLK_GPIO_NUM           43
 #define SD_CMD_GPIO_NUM           44
 #define SD_DATA0_GPIO_NUM         39
@@ -195,8 +176,6 @@
 #define USB_OTG_INT_PHY_DP_GPIO_NUM     USB_INT_PHY1_DP_GPIO_NUM
 
 #define MAX_RTC_GPIO_NUM             15
-#define MAX_PAD_GPIO_NUM             54
-#define MAX_GPIO_NUM                 56
 
 
 #define REG_IO_MUX_BASE DR_REG_IO_MUX_BASE
@@ -357,6 +336,7 @@
 #define FUNC_GPIO31_GPIO31                                               1
 #define FUNC_GPIO31_GPIO31_0                                             0
 
+// Strapping: Diag Group Sel1
 #define PERIPHS_IO_MUX_U_PAD_GPIO32               (REG_IO_MUX_BASE + 0x84)
 #define FUNC_GPIO32_DBG_PSRAM_DQ4_PAD                                    4
 #define FUNC_GPIO32_EMAC_RMII_CLK_PAD                                    3
@@ -364,6 +344,7 @@
 #define FUNC_GPIO32_GPIO32                                               1
 #define FUNC_GPIO32_GPIO32_0                                             0
 
+// Strapping: Diag Group Sel0
 #define PERIPHS_IO_MUX_U_PAD_GPIO33               (REG_IO_MUX_BASE + 0x88)
 #define FUNC_GPIO33_DBG_PSRAM_DQ5_PAD                                    4
 #define FUNC_GPIO33_EMAC_PHY_TXEN_PAD                                    3
@@ -371,6 +352,7 @@
 #define FUNC_GPIO33_GPIO33                                               1
 #define FUNC_GPIO33_GPIO33_0                                             0
 
+// Strapping: USB2JTAG select: 1->usb2jtag 0-> pad_jtag
 #define PERIPHS_IO_MUX_U_PAD_GPIO34               (REG_IO_MUX_BASE + 0x8C)
 #define FUNC_GPIO34_DBG_PSRAM_DQ6_PAD                                    4
 #define FUNC_GPIO34_EMAC_PHY_TXD0_PAD                                    3
@@ -378,6 +360,7 @@
 #define FUNC_GPIO34_GPIO34                                               1
 #define FUNC_GPIO34_GPIO34_0                                             0
 
+// Strapping: Boot Mode select 3
 #define PERIPHS_IO_MUX_U_PAD_GPIO35               (REG_IO_MUX_BASE + 0x90)
 #define FUNC_GPIO35_DBG_PSRAM_DQ7_PAD                                    4
 #define FUNC_GPIO35_EMAC_PHY_TXD1_PAD                                    3
@@ -385,6 +368,7 @@
 #define FUNC_GPIO35_GPIO35                                               1
 #define FUNC_GPIO35_GPIO35_0                                             0
 
+// Strapping: Boot Mode select 2
 #define PERIPHS_IO_MUX_U_PAD_GPIO36               (REG_IO_MUX_BASE + 0x94)
 #define FUNC_GPIO36_DBG_PSRAM_DQS_0_PAD                                  4
 #define FUNC_GPIO36_EMAC_PHY_TXER_PAD                                    3
@@ -392,11 +376,13 @@
 #define FUNC_GPIO36_GPIO36                                               1
 #define FUNC_GPIO36_GPIO36_0                                             0
 
+// Strapping: Boot Mode select 1
 #define PERIPHS_IO_MUX_U_PAD_GPIO37               (REG_IO_MUX_BASE + 0x98)
 #define FUNC_GPIO37_SPI2_IO7_PAD                                         2
 #define FUNC_GPIO37_GPIO37                                               1
 #define FUNC_GPIO37_UART0_TXD_PAD                                        0
 
+// Strapping: Boot Mode select 0
 #define PERIPHS_IO_MUX_U_PAD_GPIO38               (REG_IO_MUX_BASE + 0x9C)
 #define FUNC_GPIO38_SPI2_DQS_PAD                                         2
 #define FUNC_GPIO38_GPIO38                                               1

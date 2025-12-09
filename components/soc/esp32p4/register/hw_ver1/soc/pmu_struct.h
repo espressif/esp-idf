@@ -1,13 +1,13 @@
 /**
  * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
- *  SPDX-License-Identifier: Apache-2.0
+ *  SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 #pragma once
 
 #include <stddef.h>
 #include <stdint.h>
-#include "soc/pmu_reg.h"
+#include "pmu_reg.h"
 #ifdef __cplusplus
 extern "C" {
 #endif

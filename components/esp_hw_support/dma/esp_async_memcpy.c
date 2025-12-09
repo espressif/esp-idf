@@ -8,7 +8,7 @@
 #include "esp_async_memcpy.h"
 #include "esp_async_memcpy_priv.h"
 
-static const char *TAG = "async_mcp";
+ESP_LOG_ATTR_TAG(TAG, "async_mcp");
 
 esp_err_t esp_async_memcpy_uninstall(async_memcpy_handle_t asmcp)
 {

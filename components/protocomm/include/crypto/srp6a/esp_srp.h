@@ -18,7 +18,7 @@ extern "C" {
  *
  * More information on protocol can be found: https://datatracker.ietf.org/doc/html/rfc5054
  *
- * This implementation is used by security2 of wifi_provisioning and local control features.
+ * This implementation is used by security2 of network_provisioning and local control features.
  * Details on how these protocols use this feature can be found here: https://docs.espressif.com/projects/esp-idf/en/latest/esp32c3/api-reference/provisioning/provisioning.html#security-2-scheme
  *
  * Below is the example usage of the srp6a protocol in protocomm component,

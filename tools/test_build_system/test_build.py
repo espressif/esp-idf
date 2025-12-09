@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: Apache-2.0
 import logging
 import os
-import re
 import shutil
 import stat
 import sys
@@ -115,6 +114,15 @@ def test_build_skdconfig_phy_init_data(idf_py: IdfPyFunc, test_app_copy: Path) -
     logging.info('can build with phy_init_data')
     (test_app_copy / 'sdkconfig.defaults').touch()
     (test_app_copy / 'sdkconfig.defaults').write_text('CONFIG_ESP32_PHY_INIT_DATA_IN_PARTITION=y')
+
+    # The phy_init_data.bin file is generated in the esp_phy component, so it
+    # should be added to the requirements.
+    replace_in_file(
+        test_app_copy / 'main' / 'CMakeLists.txt',
+        search='# placeholder_inside_idf_component_register',
+        replace='PRIV_REQUIRES esp_phy',
+    )
+
     idf_py('reconfigure')
     idf_py('build')
     assert_built(BOOTLOADER_BINS + APP_BINS + PARTITION_BIN + ['build/phy_init_data.bin'])
@@ -183,23 +191,28 @@ def test_build_dfu(idf_py: IdfPyFunc) -> None:
 def test_build_uf2(idf_py: IdfPyFunc) -> None:
     logging.info('UF2 build works')
     ret = idf_py('uf2')
-    assert re.search(r"build/uf2.bin'?, ready to be flashed with any ESP USB Bridge", ret.stdout) is not None, (
+    assert "build/uf2.bin', ready to be flashed with any ESP USB Bridge" in ret.stdout, (
         'UF2 build should work for esp32'
     )
     assert_built(BOOTLOADER_BINS + APP_BINS + PARTITION_BIN + ['build/uf2.bin'])
     ret = idf_py('uf2-app')
-    assert re.search(r"build/uf2-app.bin'?, ready to be flashed with any ESP USB Bridge", ret.stdout) is not None, (
+    assert "build/uf2-app.bin', ready to be flashed with any ESP USB Bridge" in ret.stdout, (
         'UF2 build should work for application binary'
     )
     assert_built(['build/uf2-app.bin'])
     idf_py('set-target', 'esp32s2')
     ret = idf_py('uf2')
-    assert re.search(r"build/uf2.bin'?, ready to be flashed with any ESP USB Bridge", ret.stdout) is not None, (
+    assert "build/uf2.bin', ready to be flashed with any ESP USB Bridge" in ret.stdout, (
         'UF2 build should work for esp32s2'
     )
     assert_built(BOOTLOADER_BINS + APP_BINS + PARTITION_BIN + ['build/uf2.bin'])
 
 
+# The bootloader_support component defines its requirements based on the
+# sdkconfig values, specifically the CONFIG_APP_BUILD_TYPE_RAM used in this
+# test. If CONFIG_APP_BUILD_TYPE_RAM is set, bootloader_support declares a
+# dependency on micro-ecc.
+@pytest.mark.buildv2_skip('bootloader_support component CMakeLists.txt is broken')
 def test_build_loadable_elf(idf_py: IdfPyFunc, test_app_copy: Path) -> None:
     logging.info('Loadable ELF build works')
     (test_app_copy / 'sdkconfig').write_text(

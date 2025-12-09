@@ -55,7 +55,7 @@ ESP-IDF 中集成的电源管理算法可以根据应用程序组件的需求，
 
 电源管理锁
 ----------------------
-{IDF_TARGET_MAX_CPU_FREQ: default="Not updated yet", esp32="80 MHz, 160 MHz, or 240 MHz", esp32s2="80 MHz, 160 MHz, 或 240 MHz", esp32s3="80 MHz, 160 MHz, 或 240 MHz", esp32c2="80 MHz 或 120 MHz", esp32c3="80 MHz 或 160 MHz", esp32c6="80 MHz 或 160 MHz", esp32p4="360 MHz", esp32c5="80 MHz, 160 MHz, 或 240 MHz"}
+{IDF_TARGET_MAX_CPU_FREQ: default="Not updated yet", esp32="80 MHz, 160 MHz, or 240 MHz", esp32s2="80 MHz, 160 MHz, 或 240 MHz", esp32s3="80 MHz, 160 MHz, 或 240 MHz", esp32c2="80 MHz 或 120 MHz", esp32c3="80 MHz 或 160 MHz", esp32c6="80 MHz 或 160 MHz", esp32p4="360 MHz", esp32c5="80 MHz, 160 MHz, 或 240 MHz", esp32c61="80 MHz 或 160 MHz"}
 
 应用程序可以通过获取或释放管理锁来控制电源管理算法。应用程序获取电源管理锁后，电源管理算法的操作将受到下面的限制。释放电源管理锁后，限制解除。
 
@@ -92,6 +92,23 @@ ESP-IDF 中集成的电源管理算法可以根据应用程序组件的需求，
 
 为了跳过不必要的唤醒，可以将 ``skip_unhandled_events`` 选项设置为 ``true`` 来初始化 ``esp_timer``。带有此标志的定时器不会唤醒系统，有助于减少功耗。
 
+调试和性能分析
+-----------------------
+
+电源管理子系统提供了几个函数来帮助调试和分析应用程序中的电源管理锁使用情况：
+
+- :cpp:func:`esp_pm_dump_locks` - 将所有当前创建的锁列表转储到指定流，显示其类型、名称和当前获取状态。
+- :cpp:func:`esp_pm_get_lock_stats_all` - 获取所有 PM 锁类型的统计信息，包括创建的锁数量和当前持有数。
+- :cpp:func:`esp_pm_lock_get_stats` - 获取特定锁实例的详细统计信息，包括获取计数（如果启用性能分析）和总占用时间。
+
+这些函数特别适用于：
+
+1. 识别获取但从未释放的锁导致的泄漏
+2. 了解哪些组件阻止了节能
+3. 通过分析锁使用模式来优化功耗
+4. 调试与应用程序中锁管理相关的问题
+
+要启用性能分析功能（单个锁的计时信息），请在 menuconfig 中启用 :ref:`CONFIG_PM_PROFILING` 选项。
 
 动态调频和外设驱动
 ------------------------------------------------
@@ -102,10 +119,13 @@ ESP-IDF 中集成的电源管理算法可以根据应用程序组件的需求，
 
 目前以下外设驱动程序可感知动态调频，并在调频期间使用 ``ESP_PM_APB_FREQ_MAX`` 锁：
 
-- SPI master
-- I2C
-- I2S（如果 APLL 锁在使用中，I2S 则会启用 ``ESP_PM_NO_LIGHT_SLEEP`` 锁）
-- SDMMC
+.. list::
+
+  - SPI master
+  - I2C
+  :SOC_I2S_HW_VERSION_1 or not SOC_I2S_SUPPORTS_APLL: - I2S
+  :not SOC_I2S_HW_VERSION_1 and SOC_I2S_SUPPORTS_APLL: - I2S（如果 APLL 锁在使用中，I2S 则会启用 ``ESP_PM_NO_LIGHT_SLEEP`` 锁）
+  - SDMMC
 
 启用以下驱动程序时，将占用 ``ESP_PM_APB_FREQ_MAX`` 锁：
 

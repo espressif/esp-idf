@@ -6,7 +6,7 @@ Bluetooth Classic
 Bluedroid
 ---------
 
-    The following Bluedroid API have been deprecated and removed:
+    The following Bluedroid APIs have been deprecated and removed:
 
     - :component_file:`/bt/host/bluedroid/api/include/api/esp_bt_device.h`
 

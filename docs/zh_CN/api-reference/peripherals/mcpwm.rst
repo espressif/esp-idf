@@ -67,14 +67,19 @@ MCPWM 定时器
 
 调用 :cpp:func:`mcpwm_new_timer` 函数，以配置结构体 :cpp:type:`mcpwm_timer_config_t` 为参数，分配一个 MCPWM 定时器为对象。结构体定义为：
 
-- :cpp:member:`mcpwm_timer_config_t::group_id` 指定 MCPWM 组 ID，范围为 [0, :c:macro:`SOC_MCPWM_GROUPS` - 1]。需注意，位于不同组的定时器彼此独立。
+- :cpp:member:`mcpwm_timer_config_t::group_id` 指定 MCPWM 组 ID，范围为 [0, ``MCPWM_GROUP_NUM`` - 1]，其中 ``MCPWM_GROUP_NUM`` 是芯片上可用的 MCPWM 组数量。需注意，位于不同组的定时器彼此独立。
+
+.. note::
+
+    对于芯片上可用的 MCPWM 组数量，请参阅 *{IDF_TARGET_NAME} 技术参考手册* > *电机控制脉宽调制器（MCPWM）* [`PDF <{IDF_TARGET_TRM_CN_URL}#mcpwm>`__]。
+
 - :cpp:member:`mcpwm_timer_config_t::intr_priority` 设置中断的优先级。如果设置为 ``0``，则会分配一个默认优先级的中断，否则会使用指定的优先级。
 - :cpp:member:`mcpwm_timer_config_t::clk_src` 设置定时器的时钟源。
 - :cpp:member:`mcpwm_timer_config_t::resolution_hz` 设置定时器的预期分辨率。内部驱动将根据时钟源和分辨率设置合适的分频器。
 - :cpp:member:`mcpwm_timer_config_t::count_mode` 设置定时器的计数模式。
 - :cpp:member:`mcpwm_timer_config_t::period_ticks` 设置定时器的周期，以 Tick 为单位（通过 :cpp:member:`mcpwm_timer_config_t::resolution_hz` 设置 Tick 分辨率）。
-- :cpp:member:`mcpwm_timer_config_t::update_period_on_empty` 设置当定时器计数为零时是否更新周期值。
-- :cpp:member:`mcpwm_timer_config_t::update_period_on_sync` 设置当定时器接收同步信号时是否更新周期值。
+- :cpp:member:`mcpwm_timer_config_t::flags::update_period_on_empty` 设置当定时器计数为零时是否更新周期值。
+- :cpp:member:`mcpwm_timer_config_t::flags::update_period_on_sync` 设置当定时器接收同步信号时是否更新周期值。
 
 分配成功后，:cpp:func:`mcpwm_new_timer` 将返回一个指向已分配定时器的指针。否则，函数将返回错误代码。具体来说，当 MCPWM 组中没有空闲定时器时，将返回 :c:macro:`ESP_ERR_NOT_FOUND` 错误。[1]_
 
@@ -89,14 +94,14 @@ MCPWM 操作器
 
 调用 :cpp:func:`mcpwm_new_operator` 函数，以配置结构体 :cpp:type:`mcpwm_operator_config_t` 为参数，分配一个 MCPWM 操作器为对象。结构体定义为：
 
-- :cpp:member:`mcpwm_operator_config_t::group_id` 指定 MCPWM 组 ID，范围为 [0, :c:macro:`SOC_MCPWM_GROUPS` - 1]。需注意，位于不同组的操作器彼此独立。
+- :cpp:member:`mcpwm_operator_config_t::group_id` 指定 MCPWM 组 ID，范围为 [0, ``MCPWM_GROUP_NUM`` - 1]，其中 ``MCPWM_GROUP_NUM`` 是芯片上可用的 MCPWM 组数量。需注意，位于不同组的操作器彼此独立。
 - :cpp:member:`mcpwm_operator_config_t::intr_priority` 设置中断的优先级。如果设置为 ``0``，则会分配一个默认优先级的中断，否则会使用指定的优先级。
-- :cpp:member:`mcpwm_operator_config_t::update_gen_action_on_tez` 设置是否在定时器计数为零时更新生成器操作。此处及下文提到的定时器指通过 :cpp:func:`mcpwm_operator_connect_timer` 连接到操作器的定时器。
-- :cpp:member:`mcpwm_operator_config_t::update_gen_action_on_tep` 设置当定时器计数达到峰值时是否更新生成器操作。
-- :cpp:member:`mcpwm_operator_config_t::update_gen_action_on_sync` 设置当定时器接收同步信号时是否更新生成器操作。
-- :cpp:member:`mcpwm_operator_config_t::update_dead_time_on_tez` 设置当定时器计数为零时是否更新死区时间。
-- :cpp:member:`mcpwm_operator_config_t::update_dead_time_on_tep` 设置当定时器计数达到峰值时是否更新死区时间。
-- :cpp:member:`mcpwm_operator_config_t::update_dead_time_on_sync` 设置当定时器接收同步信号时是否更新死区时间。
+- :cpp:member:`mcpwm_operator_config_t::flags::update_gen_action_on_tez` 设置是否在定时器计数为零时更新生成器操作。此处及下文提到的定时器指通过 :cpp:func:`mcpwm_operator_connect_timer` 连接到操作器的定时器。
+- :cpp:member:`mcpwm_operator_config_t::flags::update_gen_action_on_tep` 设置当定时器计数达到峰值时是否更新生成器操作。
+- :cpp:member:`mcpwm_operator_config_t::flags::update_gen_action_on_sync` 设置当定时器接收同步信号时是否更新生成器操作。
+- :cpp:member:`mcpwm_operator_config_t::flags::update_dead_time_on_tez` 设置当定时器计数为零时是否更新死区时间。
+- :cpp:member:`mcpwm_operator_config_t::flags::update_dead_time_on_tep` 设置当定时器计数达到峰值时是否更新死区时间。
+- :cpp:member:`mcpwm_operator_config_t::flags::update_dead_time_on_sync` 设置当定时器接收同步信号时是否更新死区时间。
 
 分配成功后，:cpp:func:`mcpwm_new_operator` 将返回一个指向已分配操作器的指针。否则，函数将返回错误代码。具体来说，当 MCPWM 组中没有空闲操作器时，将返回 :c:macro:`ESP_ERR_NOT_FOUND` 错误。[1]_
 
@@ -108,9 +113,9 @@ MCPWM 比较器
 调用 :cpp:func:`mcpwm_new_comparator` 函数，以一个 MCPWM 操作器句柄和配置结构体 :cpp:type:`mcpwm_comparator_config_t` 为参数，分配一个 MCPWM 比较器为对象。操作器句柄由 :cpp:func:`mcpwm_new_operator` 生成，结构体定义为：
 
 - :cpp:member:`mcpwm_comparator_config_t::intr_priority` 设置中断的优先级。如果设置为 ``0``，则会分配一个默认优先级的中断，否则会使用指定的优先级。
-- :cpp:member:`mcpwm_comparator_config_t::update_cmp_on_tez` 设置当定时器计数为零时是否更新比较阈值。
-- :cpp:member:`mcpwm_comparator_config_t::update_cmp_on_tep` 设置当定时器计数达到峰值时是否更新比较阈值。
-- :cpp:member:`mcpwm_comparator_config_t::update_cmp_on_sync` 设置当定时器接收同步信号时是否更新比较阈值。
+- :cpp:member:`mcpwm_comparator_config_t::flags::update_cmp_on_tez` 设置当定时器计数为零时是否更新比较阈值。
+- :cpp:member:`mcpwm_comparator_config_t::flags::update_cmp_on_tep` 设置当定时器计数达到峰值时是否更新比较阈值。
+- :cpp:member:`mcpwm_comparator_config_t::flags::update_cmp_on_sync` 设置当定时器接收同步信号时是否更新比较阈值。
 
 分配成功后，:cpp:func:`mcpwm_new_comparator` 将返回一个指向已分配比较器的指针。否则，函数将返回错误代码。具体来说，当 MCPWM 操作器中没有空闲比较器时，将返回 :c:macro:`ESP_ERR_NOT_FOUND` 错误。[1]_
 
@@ -126,7 +131,7 @@ MCPWM 生成器
 调用 :cpp:func:`mcpwm_new_generator` 函数，以一个 MCPWM 操作器句柄和配置结构体 :cpp:type:`mcpwm_generator_config_t` 为参数，分配一个 MCPWM 生成器为对象。操作器句柄由 :cpp:func:`mcpwm_new_operator` 生成，结构体定义为：
 
 - :cpp:member:`mcpwm_generator_config_t::gen_gpio_num` 设置生成器使用的 GPIO 编号。
-- :cpp:member:`mcpwm_generator_config_t::invert_pwm` 设置是否反相 PWM 信号。
+- :cpp:member:`mcpwm_generator_config_t::flags::invert_pwm` 设置是否反相 PWM 信号。
 - :cpp:member:`mcpwm_generator_config_t::pull_up` 和 :cpp:member:`mcpwm_generator_config_t::pull_down` 用来设置是否启用内部上下拉电阻。
 
 分配成功后，:cpp:func:`mcpwm_new_generator` 将返回一个指向已分配生成器的指针。否则，函数将返回错误代码。具体来说，当 MCPWM 操作器中没有空闲生成器时，将返回 :c:macro:`ESP_ERR_NOT_FOUND` 错误。[1]_
@@ -140,10 +145,10 @@ MCPWM 故障分为两种类型：来自 GPIO 的故障信号和软件故障。
 
 调用 :cpp:func:`mcpwm_new_gpio_fault` 函数，以配置结构体 :cpp:type:`mcpwm_gpio_fault_config_t` 为参数，分配一个 GPIO 故障为对象。结构体定义为：
 
-- :cpp:member:`mcpwm_gpio_fault_config_t::group_id` 设置 MCPWM 组 ID，范围为 [0, :c:macro:`SOC_MCPWM_GROUPS` - 1]。需注意，位于不同组的 GPIO 故障彼此独立，也就是说，1 组的操作器无法检测到 0 组的 GPIO 故障。
+- :cpp:member:`mcpwm_gpio_fault_config_t::group_id` 设置 MCPWM 组 ID，范围为 [0, ``MCPWM_GROUP_NUM`` - 1]，其中 ``MCPWM_GROUP_NUM`` 是芯片上可用的 MCPWM 组数量。需注意，位于不同组的 GPIO 故障彼此独立，也就是说，1 组的操作器无法检测到 0 组的 GPIO 故障。
 - :cpp:member:`mcpwm_gpio_fault_config_t::intr_priority` 设置中断的优先级。如果设置为 ``0``，则会分配一个默认优先级的中断，否则会使用指定的优先级。
 - :cpp:member:`mcpwm_gpio_fault_config_t::gpio_num` 设置故障所使用的 GPIO 编号。
-- :cpp:member:`mcpwm_gpio_fault_config_t::active_level` 设置故障信号的有效电平。
+- :cpp:member:`mcpwm_gpio_fault_config_t::flags::active_level` 设置故障信号的有效电平。
 - :cpp:member:`mcpwm_gpio_fault_config_t::pull_up` 和 :cpp:member:`mcpwm_gpio_fault_config_t::pull_down` 设置是否在内部拉高和/或拉低 GPIO。
 
 分配成功后，:cpp:func:`mcpwm_new_gpio_fault` 将返回一个指向已分配故障的指针。否则，函数将返回错误代码。具体来说，当指定 MCPWM 组中没有空闲 GPIO 故障时，将返回 :c:macro:`ESP_ERR_NOT_FOUND` 错误。[1]_
@@ -161,9 +166,9 @@ MCPWM 同步源
 
 调用 :cpp:func:`mcpwm_new_gpio_sync_src` 函数，以配置结构体 :cpp:type:`mcpwm_gpio_sync_src_config_t` 为参数，分配一个 GPIO 同步源。结构体定义为：
 
-- :cpp:member:`mcpwm_gpio_sync_src_config_t::group_id` 指定 MCPWM 组 ID，范围为 [0, :c:macro:`SOC_MCPWM_GROUPS` - 1]。需注意，位于不同组的 GPIO 同步源彼此独立，也就是说，1 组的定时器无法检测到 0 组的 GPIO 同步源。
+- :cpp:member:`mcpwm_gpio_sync_src_config_t::group_id` 指定 MCPWM 组 ID，范围为 [0, ``MCPWM_GROUP_NUM`` - 1]，其中 ``MCPWM_GROUP_NUM`` 是芯片上可用的 MCPWM 组数量。需注意，位于不同组的 GPIO 同步源彼此独立，也就是说，1 组的定时器无法检测到 0 组的 GPIO 同步源。
 - :cpp:member:`mcpwm_gpio_sync_src_config_t::gpio_num` 设置同步源使用的 GPIO 编号。
-- :cpp:member:`mcpwm_gpio_sync_src_config_t::active_neg` 设置同步信号在下降沿是否有效。
+- :cpp:member:`mcpwm_gpio_sync_src_config_t::flags::active_neg` 设置同步信号在下降沿是否有效。
 - :cpp:member:`mcpwm_gpio_sync_src_config_t::pull_up` 和 :cpp:member:`mcpwm_gpio_sync_src_config_t::pull_down` 设置是否在内部拉高和/或拉低 GPIO。
 
 分配成功后，:cpp:func:`mcpwm_new_gpio_sync_src` 将返回一个指向已分配同步源的指针。否则，函数将返回错误代码。具体来说，当 MCPWM 组中没有空闲 GPIO 时钟源时，将返回 :c:macro:`ESP_ERR_NOT_FOUND` 错误。[1]_
@@ -188,7 +193,7 @@ MCPWM 组有一个专用定时器，用于捕获特定事件发生时的时间�
 
 调用 :cpp:func:`mcpwm_new_capture_timer` 函数，以配置结构体 :cpp:type:`mcpwm_capture_timer_config_t` 为参数，分配一个捕获定时器。结构体定义为：
 
-- :cpp:member:`mcpwm_capture_timer_config_t::group_id` 设置 MCPWM 组 ID，范围为 [0, :c:macro:`SOC_MCPWM_GROUPS` - 1]。
+- :cpp:member:`mcpwm_capture_timer_config_t::group_id` 设置 MCPWM 组 ID，范围为 [0, ``MCPWM_GROUP_NUM`` - 1]，其中 ``MCPWM_GROUP_NUM`` 是芯片上可用的 MCPWM 组数量。
 - :cpp:member:`mcpwm_capture_timer_config_t::clk_src` 设置捕获定时器的时钟源。
 - :cpp:member:`mcpwm_capture_timer_config_t::resolution_hz` 设置捕获定时器的预期分辨率。内部驱动将根据时钟源和分辨率设置合适的分频器。设置为 ``0`` 时，驱动会自己选取一个适当的分辨率，后续你可以通过 :cpp:func:`mcpwm_capture_timer_get_resolution` 查看当前定时器的分辨率。
 
@@ -237,7 +242,7 @@ MCPWM 允许为 定时器、操作器、比较器、故障以及捕获事件分�
 更新定时器周期
 ~~~~~~~~~~~~~~
 
-定时器周期在创建定时器时就已经通过 :cpp:member:`mcpwm_timer_config_t::period_ticks` 被初始化过了。你还可以在运行期间，调用 :cpp:func:`mcpwm_timer_set_period` 函数来更新定时周期。新周期的生效时机由 :cpp:member:`mcpwm_timer_config_t::update_period_on_empty` 和 :cpp:member:`mcpwm_timer_config_t::update_period_on_sync` 共同决定。如果他们两个参数都是 ``false``， 那么新的定时周期会立即生效。
+定时器周期在创建定时器时就已经通过 :cpp:member:`mcpwm_timer_config_t::period_ticks` 被初始化过了。你还可以在运行期间，调用 :cpp:func:`mcpwm_timer_set_period` 函数来更新定时周期。新周期的生效时机由 :cpp:member:`mcpwm_timer_config_t::flags::update_period_on_empty` 和 :cpp:member:`mcpwm_timer_config_t::flags::update_period_on_sync` 共同决定。如果他们两个参数都是 ``false``， 那么新的定时周期会立即生效。
 
 注册定时器事件回调
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -305,7 +310,7 @@ MCPWM 比较器可以在定时器计数器等于比较值时发送通知。若�
 
 运行 MCPWM 比较器时，可以调用 :cpp:func:`mcpwm_comparator_set_compare_value` 设置比较值。需注意以下几点：
 
-- 重新设置的比较值可能不会立即生效。比较值的更新时间通过 :cpp:member:`mcpwm_comparator_config_t::update_cmp_on_tez` 或 :cpp:member:`mcpwm_comparator_config_t::update_cmp_on_tep` 或 :cpp:member:`mcpwm_comparator_config_t::update_cmp_on_sync` 配置。
+- 重新设置的比较值可能不会立即生效。比较值的更新时间通过 :cpp:member:`mcpwm_comparator_config_t::flags::update_cmp_on_tez` 或 :cpp:member:`mcpwm_comparator_config_t::flags::update_cmp_on_tep` 或 :cpp:member:`mcpwm_comparator_config_t::flags::update_cmp_on_sync` 配置。
 - 请确保已经预先调用 :cpp:func:`mcpwm_operator_connect_timer` 将操作器连接至 MCPWM 定时器。否则，将返回 :c:macro:`ESP_ERR_INVALID_STATE` 错误。
 - 比较值不应超过定时器的计数峰值。否则，将无法触发比较事件。
 
@@ -318,7 +323,7 @@ MCPWM 比较器可以在定时器计数器等于比较值时发送通知。若�
 设置生成器对定时器事件执行的操作
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-调用 :cpp:func:`mcpwm_generator_set_actions_on_timer_event` 并辅以若干操作配置，可以针对不同的定时器事件，为生成器设置不同的操作。操作配置定义在 :cpp:type:`mcpwm_gen_timer_event_action_t` 中：
+单个生成器可以针对不同的定时器事件配置多种操作。为此，应针对每个事件-操作对分别调用 :cpp:func:`mcpwm_generator_set_action_on_timer_event`。每个操作的详细配置通过结构体 :cpp:type:`mcpwm_gen_timer_event_action_t` 指定。
 
 - :cpp:member:`mcpwm_gen_timer_event_action_t::direction` 指定定时器计数方向，可以调用 :cpp:type:`mcpwm_timer_direction_t` 查看支持的方向。
 - :cpp:member:`mcpwm_gen_timer_event_action_t::event` 指定定时器事件，可以调用 :cpp:type:`mcpwm_timer_event_t` 查看支持的定时器事件。
@@ -326,14 +331,10 @@ MCPWM 比较器可以在定时器计数器等于比较值时发送通知。若�
 
 可借助辅助宏 :c:macro:`MCPWM_GEN_TIMER_EVENT_ACTION` 构建定时器事件操作条目。
 
-需注意，:cpp:func:`mcpwm_generator_set_actions_on_timer_event` 的参数列表 **必须** 以 :c:macro:`MCPWM_GEN_TIMER_EVENT_ACTION_END` 结束。
-
-也可以调用 :cpp:func:`mcpwm_generator_set_action_on_timer_event` 逐一设置定时器操作，无需涉及变量参数。
-
 设置生成器对比较器事件执行的操作
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-调用 :cpp:func:`mcpwm_generator_set_actions_on_compare_event` 并辅以若干操作配置，可以针对不同的比较器事件，为生成器设置不同的操作。操作配置定义在 :cpp:type:`mcpwm_gen_compare_event_action_t` 中：
+单个生成器可以针对不同的比较器事件配置多种操作。为此，应针对每个比较事件-操作对分别调用 :cpp:func:`mcpwm_generator_set_action_on_compare_event`。每个操作的详细配置通过结构体 :cpp:type:`mcpwm_gen_compare_event_action_t` 指定。
 
 - :cpp:member:`mcpwm_gen_compare_event_action_t::direction` 指定定时器计数方向，可以调用 :cpp:type:`mcpwm_timer_direction_t` 查看支持的方向。
 - :cpp:member:`mcpwm_gen_compare_event_action_t::comparator` 指定比较器句柄。有关分配比较器的方法，请参见 `MCPWM 比较器`_。
@@ -341,14 +342,10 @@ MCPWM 比较器可以在定时器计数器等于比较值时发送通知。若�
 
 可借助辅助宏 :c:macro:`MCPWM_GEN_COMPARE_EVENT_ACTION` 构建比较事件操作条目。
 
-需注意，:cpp:func:`mcpwm_generator_set_actions_on_compare_event` 的参数列表 **必须** 以 :c:macro:`MCPWM_GEN_COMPARE_EVENT_ACTION_END` 结束。
-
-也可以调用 :cpp:func:`mcpwm_generator_set_action_on_compare_event` 逐一设置比较器操作，无需涉及变量参数。
-
 设置生成器对故障事件执行的操作
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-调用 :cpp:func:`mcpwm_generator_set_action_on_fault_event` 并辅以操作配置，可以针对故障事件，为生成器设置操作。操作配置定义在 :cpp:type:`mcpwm_gen_fault_event_action_t` 中：
+单个发生器可以配置为在故障事件发生时执行多个操作。要实现此功能，请针对每个期望的操作调用 :cpp:func:`mcpwm_generator_set_action_on_fault_event`。具体的操作由 :cpp:type:`mcpwm_gen_fault_event_action_t` 结构体描述。
 
 - :cpp:member:`mcpwm_gen_fault_event_action_t::direction` 指定定时器计数方向，可以调用 :cpp:type:`mcpwm_timer_direction_t` 查看支持的方向。
 - :cpp:member:`mcpwm_gen_fault_event_action_t::fault` 指定用于触发器的故障。有关分配故障的方法，请参见 `MCPWM 故障`_。
@@ -360,12 +357,10 @@ MCPWM 比较器可以在定时器计数器等于比较值时发送通知。若�
 
 可借助辅助宏 :c:macro:`MCPWM_GEN_FAULT_EVENT_ACTION` 构建触发事件操作条目。
 
-需注意，故障事件没有类似 :cpp:func:`mcpwm_generator_set_actions_on_fault_event` 这样的可变参数函数。
-
 设置生成器对同步事件执行的操作
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-调用 :cpp:func:`mcpwm_generator_set_action_on_sync_event` 并辅以操作配置，可以针对同步事件，为生成器设置操作。操作配置定义在 :cpp:type:`mcpwm_gen_sync_event_action_t` 中：
+单个生成器可以针对不同的同步事件配置多种操作。为此，应针对每个同步事件-操作对分别调用 :cpp:func:`mcpwm_generator_set_action_on_sync_event`。每个操作的详细配置通过结构体 :cpp:type:`mcpwm_gen_sync_event_action_t` 指定。
 
 - :cpp:member:`mcpwm_gen_sync_event_action_t::direction` 指定定时器计数方向，可以调用 :cpp:type:`mcpwm_timer_direction_t` 查看支持的方向。
 - :cpp:member:`mcpwm_gen_sync_event_action_t::sync` 指定用于触发器的同步源。有关分配同步源的方法，请参见 `MCPWM 同步源`_。
@@ -376,8 +371,6 @@ MCPWM 比较器可以在定时器计数器等于比较值时发送通知。若�
 无论同步为何种类型，触发器仅支持一种同步操作，如果多次设置同步操作，将返回 :c:macro:`ESP_ERR_INVALID_STATE` 错误。
 
 可借助辅助宏 :c:macro:`MCPWM_GEN_SYNC_EVENT_ACTION` 构建触发事件操作条目。
-
-需注意，同步事件没有类似 :cpp:func:`mcpwm_generator_set_actions_on_sync_event` 这样的可变参数函数。
 
 
 .. _mcpwm-classical-pwm-waveforms-and-generator-configurations:
@@ -439,13 +432,12 @@ MCPWM 比较器可以在定时器计数器等于比较值时发送通知。若�
 
     static void gen_action_config(mcpwm_gen_handle_t gena, mcpwm_gen_handle_t genb, mcpwm_cmpr_handle_t cmpa, mcpwm_cmpr_handle_t cmpb)
     {
-        ESP_ERROR_CHECK(mcpwm_generator_set_actions_on_compare_event(gena,
-                        MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, cmpa, MCPWM_GEN_ACTION_HIGH),
-                        MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, cmpb, MCPWM_GEN_ACTION_LOW),
-                        MCPWM_GEN_COMPARE_EVENT_ACTION_END()));
-        ESP_ERROR_CHECK(mcpwm_generator_set_actions_on_timer_event(genb,
-                        MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_GEN_ACTION_TOGGLE),
-                        MCPWM_GEN_TIMER_EVENT_ACTION_END()));
+        ESP_ERROR_CHECK(mcpwm_generator_set_action_on_compare_event(gena,
+                        MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, cmpa, MCPWM_GEN_ACTION_HIGH)));
+        ESP_ERROR_CHECK(mcpwm_generator_set_action_on_compare_event(gena,
+                        MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, cmpb, MCPWM_GEN_ACTION_LOW)));
+        ESP_ERROR_CHECK(mcpwm_generator_set_action_on_timer_event(genb,
+                        MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_GEN_ACTION_TOGGLE)));
     }
 
 双沿不对称波形 - 低电平有效
@@ -457,14 +449,14 @@ MCPWM 比较器可以在定时器计数器等于比较值时发送通知。若�
 
     static void gen_action_config(mcpwm_gen_handle_t gena, mcpwm_gen_handle_t genb, mcpwm_cmpr_handle_t cmpa, mcpwm_cmpr_handle_t cmpb)
     {
-        ESP_ERROR_CHECK(mcpwm_generator_set_actions_on_compare_event(gena,
-                        MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, cmpa, MCPWM_GEN_ACTION_HIGH),
-                        MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_DOWN, cmpb, MCPWM_GEN_ACTION_LOW),
-                        MCPWM_GEN_COMPARE_EVENT_ACTION_END()));
-        ESP_ERROR_CHECK(mcpwm_generator_set_actions_on_timer_event(genb,
-                        MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_GEN_ACTION_LOW),
-                        MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_DOWN, MCPWM_TIMER_EVENT_FULL, MCPWM_GEN_ACTION_HIGH),
-                        MCPWM_GEN_TIMER_EVENT_ACTION_END()));
+        ESP_ERROR_CHECK(mcpwm_generator_set_action_on_compare_event(gena,
+                        MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, cmpa, MCPWM_GEN_ACTION_HIGH)));
+        ESP_ERROR_CHECK(mcpwm_generator_set_action_on_compare_event(gena,
+                        MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_DOWN, cmpb, MCPWM_GEN_ACTION_LOW)));
+        ESP_ERROR_CHECK(mcpwm_generator_set_action_on_timer_event(genb,
+                        MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_GEN_ACTION_LOW)));
+        ESP_ERROR_CHECK(mcpwm_generator_set_action_on_timer_event(genb,
+                        MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_DOWN, MCPWM_TIMER_EVENT_FULL, MCPWM_GEN_ACTION_HIGH)));
     }
 
 双沿对称波形 - 低电平有效
@@ -476,14 +468,14 @@ MCPWM 比较器可以在定时器计数器等于比较值时发送通知。若�
 
     static void gen_action_config(mcpwm_gen_handle_t gena, mcpwm_gen_handle_t genb, mcpwm_cmpr_handle_t cmpa, mcpwm_cmpr_handle_t cmpb)
     {
-        ESP_ERROR_CHECK(mcpwm_generator_set_actions_on_compare_event(gena,
-                        MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, cmpa, MCPWM_GEN_ACTION_HIGH),
-                        MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_DOWN, cmpa, MCPWM_GEN_ACTION_LOW),
-                        MCPWM_GEN_COMPARE_EVENT_ACTION_END()));
-        ESP_ERROR_CHECK(mcpwm_generator_set_actions_on_compare_event(genb,
-                        MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, cmpb, MCPWM_GEN_ACTION_HIGH),
-                        MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_DOWN, cmpb, MCPWM_GEN_ACTION_LOW),
-                        MCPWM_GEN_COMPARE_EVENT_ACTION_END()));
+        ESP_ERROR_CHECK(mcpwm_generator_set_action_on_compare_event(gena,
+                        MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, cmpa, MCPWM_GEN_ACTION_HIGH)));
+        ESP_ERROR_CHECK(mcpwm_generator_set_action_on_compare_event(gena,
+                        MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_DOWN, cmpa, MCPWM_GEN_ACTION_LOW)));
+        ESP_ERROR_CHECK(mcpwm_generator_set_action_on_compare_event(genb,
+                        MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, cmpb, MCPWM_GEN_ACTION_HIGH)));
+        ESP_ERROR_CHECK(mcpwm_generator_set_action_on_compare_event(genb,
+                        MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_DOWN, cmpb, MCPWM_GEN_ACTION_LOW)));
     }
 
 双沿对称波形 - 互补
@@ -495,14 +487,14 @@ MCPWM 比较器可以在定时器计数器等于比较值时发送通知。若�
 
     static void gen_action_config(mcpwm_gen_handle_t gena, mcpwm_gen_handle_t genb, mcpwm_cmpr_handle_t cmpa, mcpwm_cmpr_handle_t cmpb)
     {
-        ESP_ERROR_CHECK(mcpwm_generator_set_actions_on_compare_event(gena,
-                        MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, cmpa, MCPWM_GEN_ACTION_HIGH),
-                        MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_DOWN, cmpa, MCPWM_GEN_ACTION_LOW),
-                        MCPWM_GEN_COMPARE_EVENT_ACTION_END()));
-        ESP_ERROR_CHECK(mcpwm_generator_set_actions_on_compare_event(genb,
-                        MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, cmpb, MCPWM_GEN_ACTION_LOW),
-                        MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_DOWN, cmpb, MCPWM_GEN_ACTION_HIGH),
-                        MCPWM_GEN_COMPARE_EVENT_ACTION_END()));
+        ESP_ERROR_CHECK(mcpwm_generator_set_action_on_compare_event(gena,
+                        MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, cmpa, MCPWM_GEN_ACTION_HIGH)));
+        ESP_ERROR_CHECK(mcpwm_generator_set_action_on_compare_event(gena,
+                        MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_DOWN, cmpa, MCPWM_GEN_ACTION_LOW)));
+        ESP_ERROR_CHECK(mcpwm_generator_set_action_on_compare_event(genb,
+                        MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, cmpb, MCPWM_GEN_ACTION_LOW)));
+        ESP_ERROR_CHECK(mcpwm_generator_set_action_on_compare_event(genb,
+                        MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_DOWN, cmpb, MCPWM_GEN_ACTION_HIGH)));
     }
 
 
@@ -797,17 +789,13 @@ MCPWM 操作器对故障的响应方式为 **制动**。可以调用 :cpp:func:`
 设置发生制动事件时的生成器操作
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-调用 :cpp:func:`mcpwm_generator_set_actions_on_brake_event` 并辅以若干操作配置，可以针对不同的制动事件，为生成器设置不同的对应操作。操作配置定义在 :cpp:type:`mcpwm_gen_brake_event_action_t` 中：
+单个生成器可以针对不同的制动事件配置多种操作。为此，应针对每个期望的操作分别调用 :cpp:func:`mcpwm_generator_set_action_on_brake_event`。每个操作的详细配置通过结构体 :cpp:type:`mcpwm_gen_brake_event_action_t` 指定。
 
 - :cpp:member:`mcpwm_gen_brake_event_action_t::direction` 指定定时器的方向，可以调用 :cpp:type:`mcpwm_timer_direction_t` 查看支持的方向。
 - :cpp:member:`mcpwm_gen_brake_event_action_t::brake_mode` 指定制动模式，可以调用 :cpp:type:`mcpwm_operator_brake_mode_t` 查看支持的制动模式。
 - :cpp:member:`mcpwm_gen_brake_event_action_t::action` 指定生成器操作，可以调用 :cpp:type:`mcpwm_generator_action_t` 查看支持的操作。
 
 可借助辅助宏 :c:macro:`MCPWM_GEN_BRAKE_EVENT_ACTION` 构建制动事件操作条目。
-
-需注意， :cpp:func:`mcpwm_generator_set_actions_on_brake_event` 的参数列表 **必须** 以 :c:macro:`MCPWM_GEN_BRAKE_EVENT_ACTION_END` 结束。
-
-也可以调用 :cpp:func:`mcpwm_generator_set_action_on_brake_event` 逐一设置制动操作，无需涉及变量参数。
 
 注册故障事件回调
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -843,7 +831,7 @@ MCPWM 操作器支持在进行制动操作前发送通知。若有函数需在�
 生成器强制操作
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-调用 :cpp:func:`mcpwm_generator_set_force_level`，使能软件强制决定运行时的生成器输出电平。相较于通过 :cpp:func:`mcpwm_generator_set_actions_on_timer_event` 配置的其他事件操作，软件强制事件优先级最高。
+调用 :cpp:func:`mcpwm_generator_set_force_level`，使能软件强制决定运行时的生成器输出电平。相较于通过 :cpp:func:`mcpwm_generator_set_action_on_timer_event` 配置的其他事件操作，软件强制事件优先级最高。
 
 - 设置 ``level`` 为 -1，代表禁用强制操作，生成器的输出电平重新交由事件操作控制。
 - 设置 ``hold_on`` 为 true，代表强制输出电平将保持不变，直到设置 ``level`` 为 -1 来移除该电平。
@@ -995,7 +983,7 @@ MCPWM 捕获通道支持在信号上检测到有效边沿时发送通知。须�
 
     {IDF_TARGET_NAME} 支持在进入 **Light-sleep** 之前保留 MCPWM 寄存器中的内容，并在唤醒后恢复。也就是说程序不需要在 **Light-sleep** 唤醒后重新配置 MCPWM。
 
-    该特性可以通过置位配置中的 :cpp:member:`mcpwm_timer_config_t::allow_pd` 或 :cpp:member:`mcpwm_capture_timer_config_t::allow_pd` 标志位启用。启用后驱动允许系统在 Light-sleep 时对 MCPWM 掉电，同时保存 MCPWM 的寄存器内容。它可以帮助降低 Light-sleep 时的功耗，但需要花费一些额外的存储来保存寄存器的配置。
+    该特性可以通过置位配置中的 :cpp:member:`mcpwm_timer_config_t::flags::allow_pd` 或 :cpp:member:`mcpwm_capture_timer_config_t::flags::allow_pd` 标志位启用。启用后驱动允许系统在 Light-sleep 时对 MCPWM 掉电，同时保存 MCPWM 的寄存器内容。它可以帮助降低 Light-sleep 时的功耗，但需要花费一些额外的存储来保存寄存器的配置。
 
 .. _mcpwm-resolution-config:
 

@@ -302,7 +302,7 @@ static bool wifi_cmd_sta_join(const char *ssid, const char *pass)
     if (pass) {
         strlcpy((char *) wifi_config.sta.password, pass, sizeof(wifi_config.sta.password));
     }
-    ESP_ERROR_CHECK( esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config) );
+    ESP_ERROR_CHECK( esp_wifi_set_config(WIFI_IF_STA, &wifi_config) );
     ESP_ERROR_CHECK( esp_wifi_connect() );
     s_reconnect = true;
     s_retry_num = 0;
@@ -436,27 +436,27 @@ static bool wifi_cmd_ap_set(const char* ssid, const char* pass, uint8_t channel,
         if (bw == 40) {
             proto.ghz_2g = WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N;
             proto.ghz_5g = 0;
-            esp_wifi_set_protocols(ESP_IF_WIFI_AP, &proto);
+            esp_wifi_set_protocols(WIFI_IF_AP, &proto);
             bws.ghz_2g = WIFI_BW_HT40;
-            esp_wifi_set_bandwidths(ESP_IF_WIFI_AP, &bws);
+            esp_wifi_set_bandwidths(WIFI_IF_AP, &bws);
         } else {
             bws.ghz_2g = WIFI_BW_HT20;
-            esp_wifi_set_bandwidths(ESP_IF_WIFI_AP, &bws);
+            esp_wifi_set_bandwidths(WIFI_IF_AP, &bws);
         }
     } else {
 #if CONFIG_SOC_WIFI_SUPPORT_5G
         if (bw == 40) {
             proto.ghz_2g = 0;
             proto.ghz_5g = WIFI_PROTOCOL_11N | WIFI_PROTOCOL_11A;
-            esp_wifi_set_protocols(ESP_IF_WIFI_AP, &proto);
+            esp_wifi_set_protocols(WIFI_IF_AP, &proto);
             bws.ghz_5g=WIFI_BW_HT40;
-            esp_wifi_set_bandwidths(ESP_IF_WIFI_AP, &bws);
+            esp_wifi_set_bandwidths(WIFI_IF_AP, &bws);
         } else {
             proto.ghz_2g = 0;
             proto.ghz_5g = WIFI_PROTOCOL_11AC | WIFI_PROTOCOL_11A | WIFI_PROTOCOL_11AX;
-            esp_wifi_set_protocols(ESP_IF_WIFI_AP, &proto);
+            esp_wifi_set_protocols(WIFI_IF_AP, &proto);
             bws.ghz_5g = WIFI_BW_HT20;
-            esp_wifi_set_bandwidths(ESP_IF_WIFI_AP, &bws);
+            esp_wifi_set_bandwidths(WIFI_IF_AP, &bws);
         }
 #endif
     }
@@ -464,7 +464,7 @@ static bool wifi_cmd_ap_set(const char* ssid, const char* pass, uint8_t channel,
         g_ap_config.ap.authmode = WIFI_AUTH_OPEN;
     }
     g_ap_config.ap.channel = channel;
-    ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_AP, &g_ap_config));
+    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_AP, &g_ap_config));
     ESP_LOGI(TAG_AP, "Starting SoftAP with FTM Responder support, SSID - %s, Password - %s, Primary Channel - %d, Bandwidth - %dMHz",
                         ap_args.ssid->sval[0], ap_args.password->sval[0], channel, bw);
 
@@ -571,7 +571,6 @@ static int wifi_cmd_ftm(int argc, char **argv)
     wifi_ftm_initiator_cfg_t ftmi_cfg = {
         .frm_count = 32,
         .burst_period = 2,
-        .use_get_report_api = true,
     };
 
     if (nerrors != 0) {
@@ -667,7 +666,7 @@ ftm_responder:
             return 0;
         }
         g_ap_config.ap.ftm_responder = true;
-        ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_AP, &g_ap_config));
+        ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_AP, &g_ap_config));
         ESP_LOGI(TAG_AP, "Re-starting SoftAP with FTM Responder enabled");
 
         return 0;
@@ -679,7 +678,7 @@ ftm_responder:
             return 0;
         }
         g_ap_config.ap.ftm_responder = false;
-        ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_AP, &g_ap_config));
+        ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_AP, &g_ap_config));
         ESP_LOGI(TAG_AP, "Re-starting SoftAP with FTM Responder disabled");
     }
 

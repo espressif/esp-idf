@@ -115,8 +115,9 @@ def parse_dependencies(file_path: str, target: str | None = None) -> tuple[dict[
                 parts = line.split(' -> ')
 
                 if len(parts) >= 2:
-                    source_component = parts[0]
-                    target_component = parts[1].split()[0]  # Extracting the target component
+                    source_component = parts[0].strip('"')
+                    target_component = parts[1].split()[0].strip('"')  # Extracting the target component
+                    print(f'{source_component} -> {target_component}')
                     logging.debug(f'Parsed dependency: {source_component} -> {target_component}')
 
                     # Check that g1/g0 dependencies are either on the list of expected violations

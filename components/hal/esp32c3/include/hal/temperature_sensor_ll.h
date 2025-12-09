@@ -66,7 +66,7 @@ static inline void temperature_sensor_ll_bus_clk_enable(bool enable)
 /**
  * @brief Reset the Temperature sensor module
  */
-static inline void temperature_sensor_ll_reset_module(void)
+static inline void _temperature_sensor_ll_reset_module(void)
 {
     SYSTEM.perip_rst_en1.reg_tsens_rst = 1;
     SYSTEM.perip_rst_en1.reg_tsens_rst = 0;
@@ -74,7 +74,7 @@ static inline void temperature_sensor_ll_reset_module(void)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define temperature_sensor_ll_reset_module(...) do {(void)__DECLARE_RCC_ATOMIC_ENV; temperature_sensor_ll_reset_module(__VA_ARGS__);} while(0)
+#define temperature_sensor_ll_reset_module(...) do {(void)__DECLARE_RCC_ATOMIC_ENV; _temperature_sensor_ll_reset_module(__VA_ARGS__);} while(0)
 
 /**
  * @brief Select the clock source for temperature sensor. On ESP32-C3, temperautre sensor
@@ -170,6 +170,36 @@ static inline int temperature_sensor_ll_load_calib_param(void)
     // BIT(8) stands for sign: 1: negative, 0: positive
     int tsens_cal = ((cal_temp & BIT(8)) != 0)? -(uint8_t)cal_temp: (uint8_t)cal_temp;
     return tsens_cal;
+}
+
+/**
+ * @brief Structure for temperature sensor related register values
+ */
+typedef struct {
+    uint32_t tsens_ctrl;      // Temperature sensor control register (APB_SARADC_APB_TSENS_CTRL_REG)
+    uint32_t tsens_ctrl2;     // Temperature sensor control register 2 (APB_SARADC_THRES1_HIGH_INT_ST_M)
+} tsens_ll_reg_values_t;
+
+/**
+ * @brief Read temperature sensor related ADC register values for backup
+ *
+ * @param reg_values Output parameter, pointer to structure for storing register values
+ */
+static inline void tsens_ll_backup_registers(tsens_ll_reg_values_t *reg_values)
+{
+    reg_values->tsens_ctrl = APB_SARADC.apb_tsens_ctrl.val;
+    reg_values->tsens_ctrl2 = APB_SARADC.apb_tsens_ctrl2.val;
+}
+
+/**
+ * @brief Restore temperature sensor related ADC register values from backup
+ *
+ * @param reg_values Input parameter, pointer to structure containing register values to restore
+ */
+static inline void tsens_ll_restore_registers(const tsens_ll_reg_values_t *reg_values)
+{
+    APB_SARADC.apb_tsens_ctrl.val = reg_values->tsens_ctrl;
+    APB_SARADC.apb_tsens_ctrl2.val = reg_values->tsens_ctrl2;
 }
 
 #ifdef __cplusplus

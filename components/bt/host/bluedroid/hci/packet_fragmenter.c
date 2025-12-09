@@ -26,7 +26,7 @@
 #include "osi/hash_map.h"
 #include "osi/hash_functions.h"
 #include "common/bt_trace.h"
-
+#include "esp_log.h"
 
 #define APPLY_CONTINUATION_FLAG(handle) (((handle) & 0xCFFF) | 0x1000)
 #define APPLY_START_FLAG(handle) (((handle) & 0xCFFF) | 0x2000)
@@ -161,6 +161,13 @@ static void reassemble_and_dispatch(BT_HDR *packet)
                 osi_free(partial_packet);
             }
 
+            /* Check for integer overflow in length calculation */
+            if (l2cap_length > (UINT16_MAX - L2CAP_HEADER_SIZE - HCI_ACL_PREAMBLE_SIZE)) {
+                HCI_TRACE_ERROR("L2CAP length too large: %u", l2cap_length);
+                osi_free(packet);
+                return;
+            }
+
             uint16_t full_length = l2cap_length + L2CAP_HEADER_SIZE + HCI_ACL_PREAMBLE_SIZE;
             if (full_length <= packet->len) {
                 if (full_length < packet->len) {
@@ -173,7 +180,7 @@ static void reassemble_and_dispatch(BT_HDR *packet)
             partial_packet = (BT_HDR *)osi_calloc(full_length + sizeof(BT_HDR));
 
             if (partial_packet == NULL) {
-               HCI_TRACE_WARNING("%s full_length %d no memory.\n", __func__, full_length);
+               HCI_TRACE_WARNING("%s full_length %d no memory.", __func__, full_length);
                assert(0);
             }
 
@@ -200,6 +207,20 @@ static void reassemble_and_dispatch(BT_HDR *packet)
 
             packet->offset += HCI_ACL_PREAMBLE_SIZE; // skip ACL preamble
             packet->len -= HCI_ACL_PREAMBLE_SIZE;
+
+            // CVE-2020-0022 (BlueFrag) Fix: Prevent integer underflow
+            if (partial_packet->offset > partial_packet->len) {
+                HCI_TRACE_ERROR("%s offset exceeds expected length. Dropping packet.\n", __func__);
+                osi_free(packet);
+                return;
+            }
+
+            if (packet->len > UINT16_MAX - partial_packet->offset) {
+                HCI_TRACE_ERROR("%s: packet->len too large, would overflow. Dropping packet.\n", __func__);
+                osi_free(packet);
+                return;
+            }
+
             uint16_t projected_offset = partial_packet->offset + packet->len;
             if (projected_offset > partial_packet->len) { // len stores the expected length
                 HCI_TRACE_ERROR("%s got packet which would exceed expected length of %d. Truncating.\n", __func__, partial_packet->len);

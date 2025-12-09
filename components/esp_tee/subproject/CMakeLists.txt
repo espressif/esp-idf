@@ -25,7 +25,7 @@ set(ESP_TEE_BUILD 1)
 set(NON_OS_BUILD 1)
 
 # Additional components
-list(APPEND COMPONENTS bootloader_support efuse esp_security mbedtls)
+list(APPEND COMPONENTS bootloader_support efuse esp_hal_mspi esp_hal_wdt esp_security mbedtls esp_stdio)
 
 # TEE-specific components
 list(APPEND COMPONENTS tee_flash_mgr tee_ota_ops tee_sec_storage tee_attestation)
@@ -82,7 +82,7 @@ if(CONFIG_SECURE_BOOT_V2_ENABLED)
                 "Secure Boot Signing Key Not found."
                 "\nGenerate the Secure Boot V2 RSA-PSS 3072 Key."
                 "\nTo generate one, you can use this command:"
-                "\n\t${espsecure_py_cmd} generate_signing_key --version 2 your_key.pem"
+                "\n\t${espsecure_py_cmd} generate-signing-key --version 2 your_key.pem"
             )
         endif()
 

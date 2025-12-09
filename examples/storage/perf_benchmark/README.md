@@ -88,12 +88,12 @@ GPIO12 is used as a bootstrapping pin to select output voltage of an internal re
 The following command can be used to program flash voltage selection efuses **to 3.3V**:
 
 ```sh
-    components/esptool_py/esptool/espefuse.py set_flash_voltage 3.3V
+    espefuse set-flash-voltage 3.3V
 ```
 
 This command will burn the `XPD_SDIO_TIEH`, `XPD_SDIO_FORCE`, and `XPD_SDIO_REG` efuses. With all three burned to value 1, the internal VDD_SDIO flash voltage regulator is permanently enabled at 3.3V. See the technical reference manual for more details.
 
-`espefuse.py` has a `--do-not-confirm` option if running from an automated flashing script.
+`espefuse` has a `--do-not-confirm` option if running from an automated flashing script.
 
 See [the document about pullup requirements](https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/peripherals/sd_pullup_requirements.html) for more details about pullup support and compatibility of modules and development boards.
 

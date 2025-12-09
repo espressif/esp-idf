@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
- * SPDX-FileContributor: 2018-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2018-2025 Espressif Systems (Shanghai) CO LTD
  */
 
 /* lwIP includes. */
@@ -22,6 +22,8 @@
 #include "arch/vfs_lwip.h"
 #include "esp_log.h"
 #include "esp_compiler.h"
+#include "esp_heap_caps.h"
+#include <string.h>
 
 static const char* TAG = "lwip_arch";
 
@@ -43,11 +45,11 @@ sys_mutex_new(sys_mutex_t *pxMutex)
 {
   *pxMutex = xSemaphoreCreateMutex();
   if (*pxMutex == NULL) {
-    LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("sys_mutex_new: out of mem\r\n"));
+    LWIP_DEBUGF(SYS_DEBUG, ("sys_mutex_new: out of mem\r\n"));
     return ERR_MEM;
   }
 
-  LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("sys_mutex_new: m=%p\n", *pxMutex));
+  LWIP_DEBUGF(SYS_DEBUG, ("sys_mutex_new: m=%p\n", *pxMutex));
 
   return ERR_OK;
 }
@@ -88,7 +90,7 @@ sys_mutex_unlock(sys_mutex_t *pxMutex)
 void
 sys_mutex_free(sys_mutex_t *pxMutex)
 {
-  LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("sys_mutex_free: m=%p\n", *pxMutex));
+  LWIP_DEBUGF(SYS_DEBUG, ("sys_mutex_free: m=%p\n", *pxMutex));
   vSemaphoreDelete(*pxMutex);
   *pxMutex = NULL;
 }
@@ -96,11 +98,14 @@ sys_mutex_free(sys_mutex_t *pxMutex)
 #endif /* !LWIP_COMPAT_MUTEX */
 
 /**
- * @brief Creates a new semaphore
+ * @brief Creates a new semaphore using static allocation
  *
- * @param sem pointer of the semaphore
- * @param count initial state of the semaphore
- * @return err_t
+ * Uses FreeRTOS static semaphore allocation to prevent heap fragmentation.
+ * The semaphore structure is pre-allocated and passed to this function.
+ *
+ * @param sem pointer to the pre-allocated semaphore structure
+ * @param count initial state of the semaphore (0 or 1)
+ * @return err_t ERR_OK on success, ERR_MEM on failure
  */
 err_t
 sys_sem_new(sys_sem_t *sem, u8_t count)
@@ -108,14 +113,14 @@ sys_sem_new(sys_sem_t *sem, u8_t count)
   LWIP_ASSERT("initial_count invalid (neither 0 nor 1)",
              (count == 0) || (count == 1));
 
-  *sem = xSemaphoreCreateBinary();
-  if (*sem == NULL) {
-      LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("sys_sem_new: out of mem\r\n"));
+  QueueHandle_t res = xSemaphoreCreateBinaryStatic(sem);
+  if ((sys_sem_t *)res != sem) {
+      LWIP_DEBUGF(SYS_DEBUG, ("sys_sem_new: out of mem\r\n"));
       return ERR_MEM;
   }
 
   if (count == 1) {
-      BaseType_t ret = xSemaphoreGive(*sem);
+      BaseType_t ret = xSemaphoreGive(sem);
       LWIP_ASSERT("sys_sem_new: initial give failed", ret == pdTRUE);
       (void)ret;
   }
@@ -131,7 +136,7 @@ sys_sem_new(sys_sem_t *sem, u8_t count)
 void
 sys_sem_signal(sys_sem_t *sem)
 {
-  BaseType_t ret = xSemaphoreGive(*sem);
+  BaseType_t ret = xSemaphoreGive(sem);
   /* queue full is OK, this is a signal only... */
   LWIP_ASSERT("sys_sem_signal: sane return value",
              (ret == pdTRUE) || (ret == errQUEUE_FULL));
@@ -144,7 +149,7 @@ int
 sys_sem_signal_isr(sys_sem_t *sem)
 {
     BaseType_t woken = pdFALSE;
-    xSemaphoreGiveFromISR(*sem, &woken);
+    xSemaphoreGiveFromISR(sem, &woken);
     return woken == pdTRUE;
 }
 
@@ -162,7 +167,7 @@ sys_arch_sem_wait(sys_sem_t *sem, u32_t timeout)
 
   if (!timeout) {
     /* wait infinite */
-    ret = xSemaphoreTake(*sem, portMAX_DELAY);
+    ret = xSemaphoreTake((QueueHandle_t)sem, portMAX_DELAY);
     LWIP_ASSERT("taking semaphore failed", ret == pdTRUE);
   } else {
     /* Round up the number of ticks.
@@ -172,7 +177,7 @@ sys_arch_sem_wait(sys_sem_t *sem, u32_t timeout)
      * 1 tick before triggering a timeout. Thus, we need to pass 2 ticks as a timeout
      * to `xSemaphoreTake`. */
     TickType_t timeout_ticks = ((timeout + portTICK_PERIOD_MS - 1) / portTICK_PERIOD_MS) + 1;
-    ret = xSemaphoreTake(*sem, timeout_ticks);
+    ret = xSemaphoreTake((QueueHandle_t)sem, timeout_ticks);
     if (ret == errQUEUE_EMPTY) {
       /* timed out */
       return SYS_ARCH_TIMEOUT;
@@ -191,35 +196,39 @@ sys_arch_sem_wait(sys_sem_t *sem, u32_t timeout)
 void
 sys_sem_free(sys_sem_t *sem)
 {
-  vSemaphoreDelete(*sem);
-  *sem = NULL;
+  vSemaphoreDelete((QueueHandle_t)sem);
+  memset(sem, 0, sizeof(*sem));
 }
 
 /**
- * @brief Create an empty mailbox.
+ * @brief Create an empty mailbox using static allocation
  *
- * @param mbox pointer of the mailbox
- * @param size size of the mailbox
+ * Uses FreeRTOS static queue allocation to prevent heap fragmentation.
+ * Allocates memory for the mailbox structure plus the queue storage buffer.
+ * The buffer[] flexible array member points to the queue storage area.
+ *
+ * @param mbox pointer to the mailbox pointer (will be allocated)
+ * @param size size of the mailbox (number of messages)
  * @return ERR_OK on success, ERR_MEM when out of memory
  */
 err_t
 sys_mbox_new(sys_mbox_t *mbox, int size)
 {
-  *mbox = mem_malloc(sizeof(struct sys_mbox_s));
+  *mbox = (sys_mbox_t)heap_caps_malloc(sizeof(struct sys_mbox_s) + (size * sizeof(void *)), ( MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT ));
   if (*mbox == NULL){
-    LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("fail to new *mbox\n"));
+    LWIP_DEBUGF(SYS_DEBUG, ("fail to new *mbox\n"));
     return ERR_MEM;
   }
 
-  (*mbox)->os_mbox = xQueueCreate(size, sizeof(void *));
+  QueueHandle_t res = xQueueCreateStatic(size, sizeof(void *), (*mbox)->buffer, &(*mbox)->os_mbox);
 
-  if ((*mbox)->os_mbox == NULL) {
-    LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("fail to new (*mbox)->os_mbox\n"));
-    free(*mbox);
+  if ((QueueHandle_t)&(*mbox)->os_mbox != res) {
+    LWIP_DEBUGF(SYS_DEBUG, ("fail to new (*mbox)->os_mbox\n"));
+    heap_caps_free(*mbox);
     return ERR_MEM;
   }
 
-  LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("new *mbox ok mbox=%p os_mbox=%p\n", *mbox, (*mbox)->os_mbox));
+  LWIP_DEBUGF(SYS_DEBUG, ("new *mbox ok mbox=%p os_mbox=%p\n", *mbox, (QueueHandle_t)&(*mbox)->os_mbox));
   return ERR_OK;
 }
 
@@ -232,7 +241,7 @@ sys_mbox_new(sys_mbox_t *mbox, int size)
 void
 sys_mbox_post(sys_mbox_t *mbox, void *msg)
 {
-  BaseType_t ret = xQueueSendToBack((*mbox)->os_mbox, &msg, portMAX_DELAY);
+  BaseType_t ret = xQueueSendToBack((QueueHandle_t)&(*mbox)->os_mbox, &msg, portMAX_DELAY);
   LWIP_ASSERT("mbox post failed", ret == pdTRUE);
   (void)ret;
 }
@@ -249,10 +258,10 @@ sys_mbox_trypost(sys_mbox_t *mbox, void *msg)
 {
   err_t xReturn;
 
-  if (xQueueSend((*mbox)->os_mbox, &msg, 0) == pdTRUE) {
+  if (xQueueSend((QueueHandle_t)&(*mbox)->os_mbox, &msg, 0) == pdTRUE) {
     xReturn = ERR_OK;
   } else {
-    LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("trypost mbox=%p fail\n", (*mbox)->os_mbox));
+    LWIP_DEBUGF(SYS_DEBUG, ("trypost mbox=%p fail\n", (QueueHandle_t)&(*mbox)->os_mbox));
     xReturn = ERR_MEM;
   }
 
@@ -274,7 +283,7 @@ sys_mbox_trypost_fromisr(sys_mbox_t *mbox, void *msg)
   BaseType_t ret;
   BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 
-  ret = xQueueSendFromISR((*mbox)->os_mbox, &msg, &xHigherPriorityTaskWoken);
+  ret = xQueueSendFromISR((QueueHandle_t)&(*mbox)->os_mbox, &msg, &xHigherPriorityTaskWoken);
   if (ret == pdTRUE) {
     if (xHigherPriorityTaskWoken == pdTRUE) {
       return ERR_NEED_SCHED;
@@ -306,11 +315,11 @@ sys_arch_mbox_fetch(sys_mbox_t *mbox, void **msg, u32_t timeout)
 
   if (timeout == 0) {
     /* wait infinite */
-    ret = xQueueReceive((*mbox)->os_mbox, &(*msg), portMAX_DELAY);
+    ret = xQueueReceive((QueueHandle_t)&(*mbox)->os_mbox, &(*msg), portMAX_DELAY);
     LWIP_ASSERT("mbox fetch failed", ret == pdTRUE);
   } else {
     TickType_t timeout_ticks = timeout / portTICK_PERIOD_MS;
-    ret = xQueueReceive((*mbox)->os_mbox, &(*msg), timeout_ticks);
+    ret = xQueueReceive((QueueHandle_t)&(*mbox)->os_mbox, &(*msg), timeout_ticks);
     if (ret == errQUEUE_EMPTY) {
       /* timed out */
       *msg = NULL;
@@ -338,7 +347,7 @@ sys_arch_mbox_tryfetch(sys_mbox_t *mbox, void **msg)
   if (msg == NULL) {
     msg = &msg_dummy;
   }
-  ret = xQueueReceive((*mbox)->os_mbox, &(*msg), 0);
+  ret = xQueueReceive((QueueHandle_t)&(*mbox)->os_mbox, &(*msg), 0);
   if (ret == errQUEUE_EMPTY) {
     *msg = NULL;
     return SYS_MBOX_EMPTY;
@@ -359,11 +368,11 @@ sys_mbox_free(sys_mbox_t *mbox)
   if ((NULL == mbox) || (NULL == *mbox)) {
     return;
   }
-  UBaseType_t msgs_waiting = uxQueueMessagesWaiting((*mbox)->os_mbox);
+  UBaseType_t msgs_waiting = uxQueueMessagesWaiting((QueueHandle_t)&(*mbox)->os_mbox);
   LWIP_ASSERT("mbox quence not empty", msgs_waiting == 0);
 
-  vQueueDelete((*mbox)->os_mbox);
-  free(*mbox);
+  vQueueDelete((QueueHandle_t)&(*mbox)->os_mbox);
+  heap_caps_free(*mbox);
   *mbox = NULL;
 
   (void)msgs_waiting;
@@ -481,7 +490,7 @@ sys_thread_sem_get(void)
   if (!sem) {
       sem = sys_thread_sem_init();
   }
-  LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("sem_get s=%p\n", sem));
+  LWIP_DEBUGF(SYS_DEBUG, ("sem_get s=%p\n", sem));
   return sem;
 }
 
@@ -490,31 +499,42 @@ sys_thread_sem_free(void* data) // destructor for TLS semaphore
 {
   sys_sem_t *sem = (sys_sem_t*)(data);
 
-  if (sem && *sem){
-    LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("sem del, sem=%p\n", *sem));
-    vSemaphoreDelete(*sem);
+  if (sem){
+    LWIP_DEBUGF(SYS_DEBUG, ("sem del, sem=%p\n", sem));
+    vSemaphoreDelete((QueueHandle_t)sem);
   }
 
   if (sem) {
-    LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("sem pointer del, sem_p=%p\n", sem));
-    free(sem);
+    LWIP_DEBUGF(SYS_DEBUG, ("sem pointer del, sem_p=%p\n", sem));
+    heap_caps_free(sem);
   }
 }
 
+/**
+ * @brief Initialize thread-local semaphore using static allocation
+ *
+ * Creates a thread-local semaphore using static allocation to prevent heap fragmentation.
+ * Uses heap_caps_malloc with internal memory capabilities for better performance.
+ *
+ * @return pointer to the allocated semaphore structure, or NULL on failure
+ */
 sys_sem_t*
 sys_thread_sem_init(void)
 {
-  sys_sem_t *sem = (sys_sem_t*)mem_malloc(sizeof(sys_sem_t*));
+  // Always allocate semaphores from internal memory
+  sys_sem_t *sem = (sys_sem_t*)heap_caps_malloc(sizeof(StaticSemaphore_t), ( MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT ));
 
   if (!sem){
     ESP_LOGE(TAG, "thread_sem_init: out of memory");
     return 0;
   }
 
-  *sem = xSemaphoreCreateBinary();
-  if (!(*sem)){
-    free(sem);
-    ESP_LOGE(TAG, "thread_sem_init: out of memory");
+  // If successful, create a binary semaphore the pointer to the semaphore is returned
+  QueueHandle_t res = xSemaphoreCreateBinaryStatic(sem);
+
+  if (res != (QueueHandle_t)sem){
+    heap_caps_free(sem);
+    ESP_LOGE(TAG, "thread_sem_init: unable to create semaphore %p != %p", res, sem);
     return 0;
   }
 

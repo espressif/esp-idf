@@ -24,7 +24,7 @@
 
 #include "sdkconfig.h"
 
-static const char *TAG = "boot_tee";
+ESP_LOG_ATTR_TAG(TAG, "boot_tee");
 
 static esp_err_t write_tee_otadata_sector(esp_tee_ota_select_entry_t *tee_otadata, uint32_t offset)
 {

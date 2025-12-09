@@ -44,6 +44,9 @@ extern "C" {
 #define SPI_LL_CPU_MAX_BIT_LEN    (16 * 32)    //Fifo len: 16 words
 #define SPI_LL_MOSI_FREE_LEVEL    0            //Default level after bus initialized
 
+// CS_WORKAROUND: SPI slave with using DMA, the rx dma suffers from unexpected transactions
+// before slave is ready, need disconnect CS before and after each transaction
+#define SPI_LL_SLAVE_NEEDS_CS_WORKAROUND    1
 #define SPI_LL_SLAVE_NEEDS_RESET_WORKAROUND 1
 #define SPI_LL_SUPPORT_TIME_TUNING          1
 
@@ -1179,6 +1182,19 @@ static inline void spi_dma_ll_rx_enable_burst_data(spi_dma_dev_t *dma_in, uint32
 static inline void spi_dma_ll_rx_enable_burst_desc(spi_dma_dev_t *dma_in, uint32_t channel, bool enable)
 {
     dma_in->dma_conf.indscr_burst_en = enable;
+}
+
+/**
+ * Get the DMA RX alignment requirements
+ *
+ * @param dma_dev Beginning address of the DMA peripheral registers.
+ * @param internal_size The internal memory alignment requirements.
+ * @param external_size The external memory alignment requirements.
+ */
+static inline void spi_dma_ll_get_rx_alignment_require(spi_dma_dev_t *dma_dev, uint32_t *internal_size, uint32_t *external_size)
+{
+    *internal_size = 4;     // esp32 needs 4 bytes alignment on hardware design
+    *external_size = UINT32_MAX;    // dma of esp32 spi don't support external memory
 }
 
 /**

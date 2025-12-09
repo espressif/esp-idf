@@ -107,6 +107,16 @@ typedef struct {
 #define uart_hal_get_intr_ena_status(hal) uart_ll_get_intr_ena_status((hal)->dev)
 
 /**
+ * @brief Get the pointer to the UART interrupt status register
+ *
+ * @param  hal Context of the HAL layer
+ *
+ * @return UART interrupt status register
+ */
+#define uart_hal_get_intr_status_reg(hal) uart_ll_get_intr_status_reg((hal)->dev)
+
+
+/**
  * @brief Get the UART pattern char configuration
  *
  * @param  hal Context of the HAL layer

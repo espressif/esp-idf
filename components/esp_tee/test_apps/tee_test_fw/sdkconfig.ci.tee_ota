@@ -15,3 +15,7 @@ CONFIG_SECURE_TEE_ATT_KEY_STR_ID="tee_att_keyN"
 
 # Enabling flash protection over SPI1
 CONFIG_SECURE_TEE_EXT_FLASH_MEMPROT_SPI1=y
+
+# Increasing TEE DRAM size
+# 19KB
+CONFIG_SECURE_TEE_DRAM_SIZE=0x4c00

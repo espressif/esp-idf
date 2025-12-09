@@ -663,6 +663,7 @@ PROVIDE ( ld_acl_clk_isr = 0x40030cf8 );
 PROVIDE ( ld_acl_rsw_frm_cbk = 0x40033bb0 );
 PROVIDE ( ld_sco_modify = 0x40031778 );
 PROVIDE ( lm_cmd_cmp_send = 0x40051838 );
+PROVIDE ( ld_sco_resched_cbk = 0x40031a10 );
 PROVIDE ( ld_sco_frm_cbk = 0x400349dc );
 PROVIDE ( ld_sco_evt_start_cbk = 0x40031afc );
 PROVIDE ( ld_sco_evt_stop_cbk = 0x40031d78 );
@@ -1502,18 +1503,18 @@ PROVIDE ( gpio_register_get = 0x40009cbc );
 PROVIDE ( gpio_register_set = 0x40009bbc );
 */
 /* These are still part of that driver, but have been verified not to use static RAM, so they can be used. */
-PROVIDE ( gpio_output_set = 0x40009b24 );
-PROVIDE ( gpio_output_set_high = 0x40009b5c );
-PROVIDE ( gpio_input_get = 0x40009b88 );
-PROVIDE ( gpio_input_get_high = 0x40009b9c );
-PROVIDE ( gpio_matrix_in = 0x40009edc );
-PROVIDE ( gpio_matrix_out = 0x40009f0c );
-PROVIDE ( gpio_pad_select_gpio = 0x40009fdc );
-PROVIDE ( gpio_pad_set_drv = 0x4000a11c );
-PROVIDE ( gpio_pad_pulldown = 0x4000a348 );
-PROVIDE ( gpio_pad_pullup = 0x4000a22c );
-PROVIDE ( gpio_pad_hold = 0x4000a734 );
-PROVIDE ( gpio_pad_unhold = 0x4000a484 );
+PROVIDE ( rom_gpio_output_set = 0x40009b24 );
+PROVIDE ( rom_gpio_output_set_high = 0x40009b5c );
+PROVIDE ( rom_gpio_input_get = 0x40009b88 );
+PROVIDE ( rom_gpio_input_get_high = 0x40009b9c );
+PROVIDE ( rom_gpio_matrix_in = 0x40009edc );
+PROVIDE ( rom_gpio_matrix_out = 0x40009f0c );
+PROVIDE ( rom_gpio_pad_select_gpio = 0x40009fdc );
+PROVIDE ( rom_gpio_pad_set_drv = 0x4000a11c );
+PROVIDE ( rom_gpio_pad_pulldown = 0x4000a348 );
+PROVIDE ( rom_gpio_pad_pullup = 0x4000a22c );
+PROVIDE ( rom_gpio_pad_hold = 0x4000a734 );
+PROVIDE ( rom_gpio_pad_unhold = 0x4000a484 );
 
 /*
 These functions are part of the non-os kernel (etsc).
@@ -1632,11 +1633,15 @@ PROVIDE ( ld_pscan_em_init = 0x4003e5e8 );
 PROVIDE ( ld_acl_rsw_start = 0x40032e90 );
 PROVIDE ( ld_acl_sniff_enter = 0x40031244 );
 PROVIDE ( ld_acl_sniff_trans_sched = 0x40033734 );
+PROVIDE ( ld_acl_afh_apply = 0x40030e94 );
+PROVIDE ( ld_acl_afh_switch_on_cbk = 0x40030fa8 );
+PROVIDE ( ld_acl_afh_switch_off_cbk = 0x400310c4 );
 PROVIDE ( lc_pwr_decr_ind_handler = 0x4002859c );
 PROVIDE ( lc_pwr_incr_ind_handler = 0x400284a8 );
 PROVIDE ( lc_pwr_max_ind_handler = 0x40028690 );
 PROVIDE ( lc_setup_sync_param_check = 0x4002354c );
 PROVIDE ( lc_lmp_rsp_to_flow_spec_handler = 0x400297f0 );
+PROVIDE ( lc_lmp_rsp_to_ind_handler = 0x4002a674 );
 PROVIDE ( lc_pca_sscan_clk_ind_handler = 0x4002a38c );
 PROVIDE ( lc_op_loc_unsniff_req_handler = 0x40028be0 );
 PROVIDE ( lc_op_loc_sniff_req_handler = 0x40028ccc );

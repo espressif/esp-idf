@@ -9,7 +9,7 @@ ESP 芯片通常使用 UART 实现串口，并可以通过外部 USB-UART 桥接
 拥有 USB 串行/JTAG 控制器时，{IDF_TARGET_NAME} 支持以下功能：
 
 * 双向串行控制台，可与 :doc:`IDF 监视器 <tools/idf-monitor>` 或其他串行监视器一起使用。
-* 使用 ``esptool.py`` 和 ``idf.py flash`` 烧录。
+* 使用 ``esptool`` 和 ``idf.py flash`` 烧录。
 * 使用 OpenOCD 等工具进行 JTAG 调试，同时进行串行操作。
 
 .. note::

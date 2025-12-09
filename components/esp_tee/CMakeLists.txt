@@ -6,8 +6,8 @@ idf_build_get_property(target IDF_TARGET)
 # headers & sources here are compiled into the app, not the esp_tee binary
 # (see subproject/ for the esp_tee binary build files)
 
-# ESP-TEE is currently supported only on the ESP32-C6, H2 and C5 SoCs
-set(SUPPORTED_TARGETS "esp32c6" "esp32h2" "esp32c5")
+# ESP-TEE is currently supported only on the ESP32-C6, H2, C5 and C61 SoCs
+set(SUPPORTED_TARGETS "esp32c6" "esp32h2" "esp32c5" "esp32c61")
 if(NOT target IN_LIST SUPPORTED_TARGETS)
     message(STATUS "ESP-TEE is currently supported only on the ${SUPPORTED_TARGETS} SoCs")
     return()
@@ -15,7 +15,6 @@ endif()
 
 if(BOOTLOADER_BUILD)
     idf_component_register()
-    return()
 elseif(esp_tee_build)
     # TEE build currently only uses the shared headers.
     idf_component_register(INCLUDE_DIRS include)
@@ -29,6 +28,10 @@ else()
             endif()
             add_dependencies(esp_tee partition_table_bin)
             add_dependencies(flash esp_tee)
+            if(CONFIG_SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT)
+                # Also add ESP-TEE binary as a dependency to the encrypted-flash target
+                add_dependencies(encrypted-flash esp_tee)
+            endif()
             set(image_file ${TEE_BUILD_DIR}/esp_tee.bin)
             partition_table_get_partition_info(offset "--partition-name ${partition}" "offset")
             esptool_py_flash_target_image(flash "${partition}" "${offset}" "${image_file}")
@@ -77,13 +80,27 @@ else()
 
     idf_component_register(INCLUDE_DIRS include
                            SRCS ${srcs}
-                           PRIV_REQUIRES efuse esp_security esp_system spi_flash esptool_py)
+                           PRIV_REQUIRES efuse esp_security esp_system esp_stdio spi_flash esptool_py esp_hal_wdt)
 
     if(CONFIG_SECURE_ENABLE_TEE)
         set(EXTRA_LINK_FLAGS)
         list(APPEND EXTRA_LINK_FLAGS "-u esp_tee_app_config")
         target_link_libraries(${COMPONENT_LIB} INTERFACE "${EXTRA_LINK_FLAGS}")
     endif()
+endif()
+
+# TODO: IDF-14145
+if((CONFIG_SECURE_ENABLE_TEE OR esp_tee_build) AND CMAKE_C_COMPILER_ID MATCHES "GNU")
+    if(CONFIG_IDF_TARGET_ESP32C5 OR CONFIG_IDF_TARGET_ESP32C61)
+        # Disable zcmp extension to avoid hardware issue with interrupts (DIG-661)
+        set(march_option "-march=rv32imac_zicsr_zifencei_zaamo_zalrsc")
+        idf_build_set_property(COMPILE_OPTIONS "${march_option}" APPEND)
+        idf_build_set_property(LINK_OPTIONS "${march_option}" APPEND)
+    endif()
+endif()
+
+if(BOOTLOADER_BUILD)
+    return()
 endif()
 
 set(secure_service_yml

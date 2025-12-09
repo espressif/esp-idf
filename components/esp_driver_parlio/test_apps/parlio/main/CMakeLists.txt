@@ -19,7 +19,7 @@ endif()
 idf_component_register(SRCS ${srcs}
                        PRIV_REQUIRES unity esp_driver_parlio esp_driver_gpio
                                     esp_driver_i2s esp_driver_spi esp_psram
-                                    esp_driver_bitscrambler
+                                    esp_driver_bitscrambler esp_hal_parlio
                        WHOLE_ARCHIVE)
 
 if(CONFIG_SOC_BITSCRAMBLER_SUPPORTED)

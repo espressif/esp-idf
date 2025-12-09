@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -37,7 +37,7 @@ static esp_err_t s_isp_claim_af_controller(isp_proc_handle_t isp_proc, isp_af_ct
     assert(isp_proc && af_ctlr);
 
     bool found = false;
-    portENTER_CRITICAL(&isp_proc->spinlock);
+    esp_os_enter_critical(&isp_proc->spinlock);
     for (int i = 0; i < SOC_ISP_AF_CTLR_NUMS; i++) {
         found = !isp_proc->af_ctlr[i];
         if (found) {
@@ -47,7 +47,7 @@ static esp_err_t s_isp_claim_af_controller(isp_proc_handle_t isp_proc, isp_af_ct
             break;
         }
     }
-    portEXIT_CRITICAL(&isp_proc->spinlock);
+    esp_os_exit_critical(&isp_proc->spinlock);
 
     if (!found) {
         return ESP_ERR_NOT_FOUND;
@@ -59,9 +59,9 @@ static void s_isp_declaim_af_controller(isp_af_ctlr_t af_ctlr)
 {
     assert(af_ctlr && af_ctlr->isp_proc);
 
-    portENTER_CRITICAL(&af_ctlr->isp_proc->spinlock);
+    esp_os_enter_critical(&af_ctlr->isp_proc->spinlock);
     af_ctlr->isp_proc->af_ctlr[af_ctlr->id] = NULL;
-    portEXIT_CRITICAL(&af_ctlr->isp_proc->spinlock);
+    esp_os_exit_critical(&af_ctlr->isp_proc->spinlock);
 }
 
 static void s_isp_af_free_controller(isp_af_ctlr_t af_ctlr)

@@ -69,8 +69,11 @@ const size_t soc_memory_type_count = sizeof(soc_memory_types) / sizeof(soc_memor
 #define APP_USABLE_DIRAM_END           (SOC_ROM_STACK_START - SOC_ROM_STACK_SIZE)
 
 const soc_memory_region_t soc_memory_regions[] = {
+#if CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
+    { SOC_RAM_ICACHE1_LOW,  (SOC_RAM_ICACHE1_HIGH - SOC_RAM_ICACHE1_LOW), SOC_MEMORY_TYPE_RAM,     SOC_RAM_ICACHE1_LOW,    true}, //ICache1, when in single core mode, ICache1 is used as RAM
+#endif
     { SOC_DIRAM_DRAM_LOW,   (APP_USABLE_DIRAM_END - SOC_DIRAM_DRAM_LOW),  SOC_MEMORY_TYPE_RAM,     SOC_DIRAM_IRAM_LOW,     false}, //D/IRAM, can be used as trace memory
-    { APP_USABLE_DIRAM_END, (SOC_DIRAM_DRAM_HIGH - APP_USABLE_DIRAM_END), SOC_MEMORY_TYPE_RAM,     APP_USABLE_DIRAM_END,    true}, //D/IRAM, can be used as trace memory (ROM reserved area)
+    { APP_USABLE_DIRAM_END, (SOC_DIRAM_DRAM_HIGH - APP_USABLE_DIRAM_END), SOC_MEMORY_TYPE_RAM,     APP_USABLE_DIRAM_END,   true}, //D/IRAM, can be used as trace memory (ROM reserved area)
 };
 
 const size_t soc_memory_region_count = sizeof(soc_memory_regions) / sizeof(soc_memory_region_t);

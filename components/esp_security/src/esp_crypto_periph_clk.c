@@ -7,6 +7,7 @@
 #include "soc/soc_caps.h"
 #include "esp_private/esp_crypto_lock_internal.h"
 #include "sdkconfig.h"
+#include "esp_crypto_periph_clk.h"
 
 #if SOC_AES_SUPPORTED
 #include "hal/aes_ll.h"
@@ -36,6 +37,11 @@
 /* Crypto DMA, shared between AES and SHA */
 #if SOC_AES_CRYPTO_DMA && SOC_SHA_CRYPTO_DMA
 #include "hal/crypto_dma_ll.h"
+#endif
+
+#if NON_OS_BUILD
+// To suppress build errors about spinlock's __DECLARE_RCC_ATOMIC_ENV
+int __DECLARE_RCC_ATOMIC_ENV __attribute__((unused));
 #endif
 
 #if SOC_AES_SUPPORTED

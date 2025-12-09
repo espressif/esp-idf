@@ -1,7 +1,7 @@
 /*
  * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 
 /*
@@ -149,17 +149,19 @@
 
 #define SOC_CPU_HAS_LOCKUP_RESET        1
 
+#define SOC_CPU_ZCMP_WORKAROUND         1
+#define SOC_CPU_ZCMP_PUSH_REVERSED      1
+#define SOC_CPU_ZCMP_POPRET_ISSUE       1
+
 /*-------------------------- DMA Common CAPS ----------------------------------------*/
 #define SOC_DMA_CAN_ACCESS_FLASH 1 /*!< DMA can access Flash memory */
 
 /*-------------------------- GDMA CAPS -------------------------------------*/
 #define SOC_AHB_GDMA_VERSION            2U
-#define SOC_GDMA_NUM_GROUPS_MAX         1U
-#define SOC_GDMA_PAIRS_PER_GROUP_MAX    2
 #define SOC_GDMA_SUPPORT_ETM            1  // Support ETM submodule
 #define SOC_GDMA_SUPPORT_SLEEP_RETENTION    1
-#define SOC_AHB_GDMA_SUPPORT_PSRAM 1
 #define SOC_GDMA_SUPPORT_WEIGHTED_ARBITRATION   1
+#define SOC_GDMA_EXT_MEM_ENC_ALIGNMENT   (16)
 
 /*-------------------------- ETM CAPS -----------------------------------*/
 #define SOC_ETM_SUPPORT_SLEEP_RETENTION 1
@@ -175,8 +177,6 @@
 #define SOC_GPIO_SUPPORT_ETM          1
 
 // Target has the full LP IO subsystem
-// On ESP32-C61, Digital IOs have their own registers to control pullup/down capability, independent of LP registers.
-#define SOC_GPIO_SUPPORT_RTC_INDEPENDENT    (1)
 
 // LP IO peripherals have independent clock gating to manage
 #define SOC_LP_IO_CLOCK_IS_INDEPENDENT      (1)
@@ -197,8 +197,6 @@
 
 // Support to force hold all IOs
 #define SOC_GPIO_SUPPORT_FORCE_HOLD              (1)
-// "LP"_IOs and DIG_IOs can be hold during deep sleep and after waking up
-#define SOC_GPIO_SUPPORT_HOLD_IO_IN_DSLP         (1)
 // Support to hold a single digital I/O when the digital domain is powered off
 #define SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP  (1)
 
@@ -215,7 +213,6 @@
                                                  */
 #define SOC_RTCIO_HOLD_SUPPORTED            1
 #define SOC_RTCIO_WAKE_SUPPORTED            1
-#define SOC_RTCIO_EDGE_WAKE_SUPPORTED       1
 
 /*------------------------- Analog Comparator CAPS ---------------------------*/
 #define SOC_ANA_CMPR_NUM                       (1U)
@@ -242,12 +239,8 @@
 #define SOC_I2C_SUPPORT_SLEEP_RETENTION        (1)
 
 // /*-------------------------- I2S CAPS ----------------------------------------*/
-#define SOC_I2S_NUM                     (1U)
 #define SOC_I2S_HW_VERSION_2            (1)
 #define SOC_I2S_SUPPORTS_ETM            (1)
-#define SOC_I2S_SUPPORTS_XTAL           (1)
-#define SOC_I2S_SUPPORTS_PLL_F160M      (1)
-#define SOC_I2S_SUPPORTS_PLL_F120M      (1)
 #define SOC_I2S_SUPPORTS_PCM            (1)
 #define SOC_I2S_SUPPORTS_PDM            (1)
 #define SOC_I2S_SUPPORTS_PDM_TX         (1)     // Support to output raw PDM format data
@@ -257,8 +250,6 @@
 #define SOC_I2S_PDM_MAX_TX_LINES        (2)
 #define SOC_I2S_PDM_MAX_RX_LINES        (1U)
 #define SOC_I2S_SUPPORTS_TDM            (1)
-#define SOC_I2S_TDM_FULL_DATA_WIDTH     (1)     /*!< No limitation to data bit width when using multiple slots */
-#define SOC_I2S_SUPPORT_SLEEP_RETENTION (1)
 
 /*-------------------------- LEDC CAPS ---------------------------------------*/
 #define SOC_LEDC_SUPPORT_PLL_DIV_CLOCK      (1)
@@ -271,6 +262,7 @@
 #define SOC_LEDC_GAMMA_CURVE_FADE_RANGE_MAX (16)
 #define SOC_LEDC_FADE_PARAMS_BIT_WIDTH      (10)
 #define SOC_LEDC_SUPPORT_SLEEP_RETENTION    (1)
+#define SOC_LEDC_SUPPORT_ETM                (1)
 
 /*-------------------------- MMU CAPS ----------------------------------------*/
 #define SOC_MMU_PAGE_SIZE_CONFIGURABLE        (1)
@@ -386,6 +378,7 @@
 #define SOC_EFUSE_SOFT_DIS_JTAG 0
 #define SOC_EFUSE_DIS_ICACHE 1
 #define SOC_EFUSE_ECDSA_KEY 1
+#define SOC_EFUSE_XTS_AES_KEY_128 1
 
 /*-------------------------- Secure Boot CAPS----------------------------*/
 #define SOC_SECURE_BOOT_V2_RSA              0
@@ -510,6 +503,7 @@
 #define SOC_WIFI_FTM_SUPPORT                (1)    /*!< Support FTM */
 #define SOC_WIFI_GCMP_SUPPORT               (1)    /*!< Support GCMP(GCMP128 and GCMP256) */
 #define SOC_WIFI_WAPI_SUPPORT               (1)    /*!< Support WAPI */
+#define SOC_WIFI_TXOP_SUPPORT               (1)    /*!< Support TXOP */
 #define SOC_WIFI_CSI_SUPPORT                (1)    /*!< Support CSI */
 #define SOC_WIFI_MESH_SUPPORT               (1)    /*!< Support WIFI MESH */
 #define SOC_WIFI_HE_SUPPORT                 (1)    /*!< Support Wi-Fi 6 */

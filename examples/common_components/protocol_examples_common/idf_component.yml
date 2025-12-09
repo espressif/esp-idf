@@ -1,0 +1,5 @@
+dependencies:
+  espressif/ethernet_init:
+    version: "~1.2.0"
+    rules:
+     - if: "target != linux"

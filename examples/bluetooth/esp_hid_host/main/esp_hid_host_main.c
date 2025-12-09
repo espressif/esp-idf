@@ -164,7 +164,7 @@ void hid_demo_task(void *pvParameters)
                 printf("] srv 0x%03x, ", r->bt.cod.service);
                 print_uuid(&r->bt.uuid);
                 printf(", ");
-                if (strncmp(r->name, remote_device_name, strlen(remote_device_name)) == 0) {
+                if (r->name && strncmp(r->name, remote_device_name, strlen(remote_device_name)) == 0) {
                     break;
                 }
             }
@@ -175,7 +175,7 @@ void hid_demo_task(void *pvParameters)
         }
 
 #if CONFIG_BT_HID_HOST_ENABLED
-        if (cr && strncmp(cr->name, remote_device_name, strlen(remote_device_name)) == 0) {
+        if (cr && cr->name && strncmp(cr->name, remote_device_name, strlen(remote_device_name)) == 0) {
             esp_hidh_dev_open(cr->bda, cr->transport, cr->ble.addr_type);
         }
 #else

@@ -56,7 +56,7 @@ HEAP_IRAM_ATTR void esp_heap_adjust_alignment_to_hw(size_t *p_alignment, size_t 
         return;
     }
 
-#if SOC_GDMA_SUPPORTED && SOC_AXI_GDMA_SUPPORTED
+#if SOC_HAS(AXI_GDMA)
     //Special case: AXI DMA descriptors need to be aligned to 8-byte boundaries.
     if ((caps & MALLOC_CAP_DMA_DESC_AXI) && (cache_alignment_bytes < GDMA_LL_AXI_DESC_ALIGNMENT)) {
         cache_alignment_bytes = GDMA_LL_AXI_DESC_ALIGNMENT;

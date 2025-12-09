@@ -34,6 +34,103 @@ static bool s_camera_get_new_vb(esp_cam_ctlr_handle_t handle, esp_cam_ctlr_trans
 static bool s_camera_get_finished_trans(esp_cam_ctlr_handle_t handle, esp_cam_ctlr_trans_t *trans, void *user_data);
 
 /*---------------------------------------------------------------
+                      Ping-Pong Buffer Management
+---------------------------------------------------------------*/
+typedef struct {
+    void *fb0;                   // Frame buffer 0
+    void *fb1;                   // Frame buffer 1
+    void *csi_buffer;            // Current buffer for CSI to write
+    void *dsi_buffer;            // Current buffer for DSI to display
+    esp_lcd_panel_handle_t panel;// DPI panel handle
+    int h_res;                   // Horizontal resolution
+    int v_res;                   // Vertical resolution (full screen)
+#ifdef CONFIG_EXAMPLE_ISP_CROP_ENABLE
+    int crop_h_res;              // Cropped horizontal resolution
+    int crop_v_res;              // Cropped vertical resolution
+    void *pending_buffer;        // Buffer pending to be displayed
+    SemaphoreHandle_t frame_ready_sem; // Semaphore to signal frame ready
+#endif
+} pingpong_buffer_ctx_t;
+
+#ifdef CONFIG_EXAMPLE_ISP_CROP_ENABLE
+/**
+ * @brief Process frame: Add blank areas to fill full screen resolution
+ *
+ * Algorithm: Fill from bottom to top to avoid overwriting crop data
+ * - Cropped image is placed at original position (relative to full frame)
+ * - Other areas are filled with white (0xFFFF for RGB565)
+ *
+ * Example: Original 100x100, crop (50,50) to (100,100) → shows at bottom-right
+ *
+ * @param buffer Frame buffer to process (contains cropped image at start)
+ * @param ctx Ping-pong buffer context
+ */
+static void process_frame_with_blanks(void *buffer, pingpong_buffer_ctx_t *ctx)
+{
+    if (ctx->crop_v_res == ctx->v_res) {
+        // No cropping, no need to process
+        return;
+    }
+
+    uint16_t *fb = (uint16_t *)buffer;
+
+    const int crop_left   = CONFIG_EXAMPLE_ISP_CROP_TOP_LEFT_H;
+    const int crop_top    = CONFIG_EXAMPLE_ISP_CROP_TOP_LEFT_V;
+    const int crop_right  = CONFIG_EXAMPLE_ISP_CROP_BOTTOM_RIGHT_H;
+    const int crop_bottom = CONFIG_EXAMPLE_ISP_CROP_BOTTOM_RIGHT_V;
+    const int crop_width  = crop_right - crop_left + 1;
+
+    const int full_width  = CONFIG_EXAMPLE_MIPI_CSI_DISP_HRES;
+    const int full_height = CONFIG_EXAMPLE_MIPI_CSI_DISP_VRES;
+
+    // Helper macros for pixel indexing
+#define SRC_PIXEL(x, y)  fb[(y) * crop_width + (x)]
+#define DST_PIXEL(x, y)  fb[(y) * full_width + (x)]
+
+    // ========== Step 1: Fill bottom blank region [crop_bottom+1, full_height) ==========
+    if (crop_bottom + 1 < full_height) {
+        memset(&DST_PIXEL(0, crop_bottom + 1),
+               0xFF,
+               full_width * (full_height - crop_bottom - 1) * EXAMPLE_RGB565_BYTES_PER_PIXEL);
+    }
+
+    // ========== Step 2: Process crop region [crop_top, crop_bottom] ==========
+    for (int y = crop_bottom; y >= crop_top; y--) {
+        int src_y = y - crop_top;  // Corresponding row in cropped data (0-based)
+
+        // Fill right blank region first (crop_right+1, full_width)
+        if (crop_right + 1 < full_width) {
+            memset(&DST_PIXEL(crop_right + 1, y),
+                   0xFF,
+                   (full_width - crop_right - 1) * EXAMPLE_RGB565_BYTES_PER_PIXEL);
+        }
+
+        // Copy crop data from source to destination
+        memcpy(&DST_PIXEL(crop_left, y),
+               &SRC_PIXEL(0, src_y),
+               crop_width * EXAMPLE_RGB565_BYTES_PER_PIXEL);
+
+        // Fill left blank region [0, crop_left)
+        if (crop_left > 0) {
+            memset(&DST_PIXEL(0, y),
+                   0xFF,
+                   crop_left * EXAMPLE_RGB565_BYTES_PER_PIXEL);
+        }
+    }
+
+    // ========== Step 3: Fill top blank region [0, crop_top) ==========
+    if (crop_top > 0) {
+        memset(&DST_PIXEL(0, 0),
+               0xFF,
+               full_width * crop_top * EXAMPLE_RGB565_BYTES_PER_PIXEL);
+    }
+
+#undef SRC_PIXEL
+#undef DST_PIXEL
+}
+#endif
+
+/*---------------------------------------------------------------
                       AF
 ---------------------------------------------------------------*/
 typedef union {
@@ -185,13 +282,47 @@ static uint32_t s_gamma_correction_curve(uint32_t x)
     return pow((double)x / 256, 0.7) * 256;
 }
 
+#ifdef CONFIG_EXAMPLE_ISP_CROP_ENABLE
+/*---------------------------------------------------------------
+                      Frame Processing Task
+---------------------------------------------------------------*/
+static void frame_processing_task(void *arg)
+{
+    pingpong_buffer_ctx_t *ctx = (pingpong_buffer_ctx_t *)arg;
+
+    while (1) {
+        // Wait for frame ready signal from ISR
+        if (xSemaphoreTake(ctx->frame_ready_sem, portMAX_DELAY) == pdTRUE) {
+            // Process the frame: add blank areas if needed
+            process_frame_with_blanks(ctx->pending_buffer, ctx);
+
+            // Ping-Pong switch: swap CSI write buffer and DSI display buffer
+            void *temp = ctx->csi_buffer;
+            ctx->csi_buffer = ctx->dsi_buffer;
+            ctx->dsi_buffer = temp;
+
+            // Trigger buffer switch by calling draw_bitmap
+            // DPI driver will detect which buffer we're using and switch to it
+            ESP_ERROR_CHECK(esp_lcd_panel_draw_bitmap(ctx->panel,
+                                                      0, 0,
+                                                      ctx->h_res,
+                                                      ctx->crop_v_res,
+                                                      ctx->pending_buffer));
+
+            ESP_LOGD(TAG, "Frame displayed: %p", ctx->pending_buffer);
+        }
+    }
+}
+#endif // CONFIG_EXAMPLE_ISP_CROP_ENABLE
+
 void app_main(void)
 {
     esp_err_t ret = ESP_FAIL;
     esp_lcd_dsi_bus_handle_t mipi_dsi_bus = NULL;
     esp_lcd_panel_io_handle_t mipi_dbi_io = NULL;
     esp_lcd_panel_handle_t mipi_dpi_panel = NULL;
-    void *frame_buffer = NULL;
+    void *fb0 = NULL;
+    void *fb1 = NULL;
     size_t frame_buffer_size = 0;
 
     //mipi ldo
@@ -207,18 +338,54 @@ void app_main(void)
      * Sensor use RAW8
      * ISP convert to RGB565
      */
-    //---------------DSI Init------------------//
-    example_dsi_resource_alloc(&mipi_dsi_bus, &mipi_dbi_io, &mipi_dpi_panel, &frame_buffer);
+    //---------------DSI Init with Dual Frame Buffers------------------//
+    example_dsi_alloc_config_t dsi_alloc_config = {
+        .num_fbs = 2,  // Enable dual frame buffers
+    };
+    example_dsi_resource_alloc(&dsi_alloc_config, &mipi_dsi_bus, &mipi_dbi_io, &mipi_dpi_panel, &fb0, &fb1);
 
     //---------------Necessary variable config------------------//
-    frame_buffer_size = CONFIG_EXAMPLE_MIPI_CSI_DISP_HRES * CONFIG_EXAMPLE_MIPI_DSI_DISP_VRES * EXAMPLE_RGB565_BITS_PER_PIXEL / 8;
+    int display_h_res = CONFIG_EXAMPLE_MIPI_CSI_DISP_HRES;
+    int display_v_res = CONFIG_EXAMPLE_MIPI_CSI_DISP_VRES;
 
-    ESP_LOGD(TAG, "CONFIG_EXAMPLE_MIPI_CSI_DISP_HRES: %d, CONFIG_EXAMPLE_MIPI_DSI_DISP_VRES: %d, bits per pixel: %d", CONFIG_EXAMPLE_MIPI_CSI_DISP_HRES, CONFIG_EXAMPLE_MIPI_DSI_DISP_VRES, 8);
-    ESP_LOGD(TAG, "frame_buffer_size: %zu", frame_buffer_size);
-    ESP_LOGD(TAG, "frame_buffer: %p", frame_buffer);
+#ifdef CONFIG_EXAMPLE_ISP_CROP_ENABLE
+    // Use cropped resolution for frame buffer
+    display_h_res = CONFIG_EXAMPLE_ISP_CROP_BOTTOM_RIGHT_H - CONFIG_EXAMPLE_ISP_CROP_TOP_LEFT_H + 1;
+    display_v_res = CONFIG_EXAMPLE_ISP_CROP_BOTTOM_RIGHT_V - CONFIG_EXAMPLE_ISP_CROP_TOP_LEFT_V + 1;
+#endif
+
+    frame_buffer_size = CONFIG_EXAMPLE_MIPI_DSI_DISP_HRES * CONFIG_EXAMPLE_MIPI_DSI_DISP_VRES * EXAMPLE_RGB565_BYTES_PER_PIXEL;
+
+    ESP_LOGI(TAG, "Original CSI resolution: %dx%d", CONFIG_EXAMPLE_MIPI_CSI_DISP_HRES, CONFIG_EXAMPLE_MIPI_CSI_DISP_VRES);
+    ESP_LOGI(TAG, "Display resolution: %dx%d, bits per pixel: %d", display_h_res, display_v_res, EXAMPLE_RGB565_BITS_PER_PIXEL);
+    ESP_LOGI(TAG, "Frame buffers: fb0=%p, fb1=%p", fb0, fb1);
+
+    //---------------Ping-Pong Buffer Context------------------//
+    pingpong_buffer_ctx_t pp_ctx = {
+        .fb0 = fb0,
+        .fb1 = fb1,
+        .csi_buffer = fb0,  // CSI starts writing to fb0
+        .dsi_buffer = fb1,  // DSI starts displaying fb1
+        .panel = mipi_dpi_panel,
+        .h_res = CONFIG_EXAMPLE_MIPI_DSI_DISP_HRES,
+        .v_res = CONFIG_EXAMPLE_MIPI_DSI_DISP_VRES,
+#ifdef CONFIG_EXAMPLE_ISP_CROP_ENABLE
+        .crop_h_res = display_h_res,
+        .crop_v_res = display_v_res,
+        .pending_buffer = NULL,
+        .frame_ready_sem = xSemaphoreCreateBinary(),
+#endif
+    };
+
+#ifdef CONFIG_EXAMPLE_ISP_CROP_ENABLE
+    if (pp_ctx.frame_ready_sem == NULL) {
+        ESP_LOGE(TAG, "Failed to create frame ready semaphore");
+        return;
+    }
+#endif
 
     esp_cam_ctlr_trans_t new_trans = {
-        .buffer = frame_buffer,
+        .buffer = pp_ctx.csi_buffer,
         .buflen = frame_buffer_size,
     };
 
@@ -248,8 +415,8 @@ void app_main(void)
     //---------------CSI Init------------------//
     esp_cam_ctlr_csi_config_t csi_config = {
         .ctlr_id = 0,
-        .h_res = CONFIG_EXAMPLE_MIPI_CSI_DISP_HRES,
-        .v_res = CONFIG_EXAMPLE_MIPI_CSI_DISP_VRES,
+        .h_res = display_h_res,
+        .v_res = display_v_res,
         .lane_bit_rate_mbps = EXAMPLE_MIPI_CSI_LANE_BITRATE_MBPS,
         .input_data_color_type = CAM_CTLR_COLOR_RAW8,
         .output_data_color_type = CAM_CTLR_COLOR_RGB565,
@@ -268,13 +435,15 @@ void app_main(void)
         .on_get_new_trans = s_camera_get_new_vb,
         .on_trans_finished = s_camera_get_finished_trans,
     };
-    if (esp_cam_ctlr_register_event_callbacks(handle, &cbs, &new_trans) != ESP_OK) {
+    if (esp_cam_ctlr_register_event_callbacks(handle, &cbs, &pp_ctx) != ESP_OK) {
         ESP_LOGE(TAG, "ops register fail");
         return;
     }
 
     ESP_ERROR_CHECK(esp_cam_ctlr_enable(handle));
-    //---------------ISP Init------------------//
+    /*---------------------------------------------------------------
+                          ISP Init
+    ---------------------------------------------------------------*/
     isp_proc_handle_t isp_proc = NULL;
     esp_isp_processor_cfg_t isp_config = {
         .clk_hz = 80 * 1000 * 1000,
@@ -289,6 +458,9 @@ void app_main(void)
     ESP_ERROR_CHECK(esp_isp_new_processor(&isp_config, &isp_proc));
     ESP_ERROR_CHECK(esp_isp_enable(isp_proc));
 
+    /*---------------------------------------------------------------
+                          BF
+    ---------------------------------------------------------------*/
     esp_isp_bf_config_t bf_config = {
         .denoising_level = 5,
         .padding_mode = ISP_BF_EDGE_PADDING_MODE_SRND_DATA,
@@ -303,6 +475,55 @@ void app_main(void)
     ESP_ERROR_CHECK(esp_isp_bf_configure(isp_proc, &bf_config));
     ESP_ERROR_CHECK(esp_isp_bf_enable(isp_proc));
 
+    /*---------------------------------------------------------------
+                          BLC
+    ---------------------------------------------------------------*/
+#if CONFIG_ESP32P4_REV_MIN_FULL >= 300
+    /**
+     * This piece of BLC code is to show how to use the BLC related APIs.
+     * Suggested way to calibrate the BLC is by covering the lens and record the raw data.
+     * Then, use the recorded data to calibrate the BLC.
+     */
+    esp_isp_blc_config_t blc_config = {
+        .window = {
+            .top_left = {
+                .x = 0,
+                .y = 0,
+            },
+            .btm_right = {
+                .x = CONFIG_EXAMPLE_MIPI_CSI_DISP_HRES,
+                .y = CONFIG_EXAMPLE_MIPI_CSI_DISP_VRES,
+            },
+        },
+        .filter_enable = true,
+        .filter_threshold = {
+            .top_left_chan_thresh = 128,
+            .top_right_chan_thresh = 128,
+            .bottom_left_chan_thresh = 128,
+            .bottom_right_chan_thresh = 128,
+        },
+        .stretch = {
+            .top_left_chan_stretch_en = true,
+            .top_right_chan_stretch_en = true,
+            .bottom_left_chan_stretch_en = true,
+            .bottom_right_chan_stretch_en = true,
+        },
+    };
+    ESP_ERROR_CHECK(esp_isp_blc_configure(isp_proc, &blc_config));
+    ESP_ERROR_CHECK(esp_isp_blc_enable(isp_proc));
+
+    esp_isp_blc_offset_t blc_offset = {
+        .top_left_chan_offset = 20,
+        .top_right_chan_offset = 20,
+        .bottom_left_chan_offset = 20,
+        .bottom_right_chan_offset = 20,
+    };
+    ESP_ERROR_CHECK(esp_isp_blc_set_correction_offset(isp_proc, &blc_offset));
+#endif
+
+    /*---------------------------------------------------------------
+                          DEMOSAIC
+    ---------------------------------------------------------------*/
     esp_isp_demosaic_config_t demosaic_config = {
         .grad_ratio = {
             .integer = 2,
@@ -312,6 +533,38 @@ void app_main(void)
     ESP_ERROR_CHECK(esp_isp_demosaic_configure(isp_proc, &demosaic_config));
     ESP_ERROR_CHECK(esp_isp_demosaic_enable(isp_proc));
 
+    /*---------------------------------------------------------------
+                          CCM
+    ---------------------------------------------------------------*/
+    /**
+     * CCM is used for color correction and white balance adjustment.
+     * It should be configured after demosaic and before gamma correction.
+     *
+     * The matrix format is:
+     * [R_out]   [RR RG RB] [R_in]
+     * [G_out] = [GR GG GB] [G_in]
+     * [B_out]   [BR BG BB] [B_in]
+     *
+     * For ESP32P4 ECO5:
+     * - Matrix coefficients range: ±15.996 (4-bit integer + 8-bit fraction)
+     * - For earlier versions: ±3.999 (2-bit integer + 10-bit fraction)
+     */
+    esp_isp_ccm_config_t ccm_config = {
+        .matrix = {
+            // Default identity matrix (no color correction)
+            {1.0, 0.0, 0.0},   // R channel: R = 1.0*R + 0.0*G + 0.0*B
+            {0.0, 1.0, 0.0},   // G channel: G = 0.0*R + 1.0*G + 0.0*B
+            {0.0, 0.0, 1.0}    // B channel: B = 0.0*R + 0.0*G + 1.0*B
+        },
+        .saturation = false        // Don't use saturation for out-of-range values
+    };
+
+    ESP_ERROR_CHECK(esp_isp_ccm_configure(isp_proc, &ccm_config));
+    ESP_ERROR_CHECK(esp_isp_ccm_enable(isp_proc));
+
+    /*---------------------------------------------------------------
+                          GAMMA
+    ---------------------------------------------------------------*/
     isp_gamma_curve_points_t pts = {};
     ESP_ERROR_CHECK(esp_isp_gamma_fill_curve_points(s_gamma_correction_curve, &pts));
     ESP_ERROR_CHECK(esp_isp_gamma_configure(isp_proc, COLOR_COMPONENT_R, &pts));
@@ -319,6 +572,9 @@ void app_main(void)
     ESP_ERROR_CHECK(esp_isp_gamma_configure(isp_proc, COLOR_COMPONENT_B, &pts));
     ESP_ERROR_CHECK(esp_isp_gamma_enable(isp_proc));
 
+    /*---------------------------------------------------------------
+                          SHARPEN
+    ---------------------------------------------------------------*/
     esp_isp_sharpen_config_t sharpen_config = {
         .h_freq_coeff = {
             .integer = 2,
@@ -342,6 +598,9 @@ void app_main(void)
     ESP_ERROR_CHECK(esp_isp_sharpen_configure(isp_proc, &sharpen_config));
     ESP_ERROR_CHECK(esp_isp_sharpen_enable(isp_proc));
 
+    /*---------------------------------------------------------------
+                          COLOR
+    ---------------------------------------------------------------*/
     esp_isp_color_config_t color_config = {
         .color_contrast = {
             .integer = 1,
@@ -358,6 +617,9 @@ void app_main(void)
     ESP_ERROR_CHECK(esp_isp_color_enable(isp_proc));
 
 #if CONFIG_ESP32P4_REV_MIN_FULL >= 100
+    /*---------------------------------------------------------------
+                          LSC
+    ---------------------------------------------------------------*/
     esp_isp_lsc_gain_array_t gain_array = {};
     esp_isp_lsc_config_t lsc_config = {
         .gain_array = &gain_array,
@@ -379,6 +641,29 @@ void app_main(void)
     ESP_ERROR_CHECK(esp_isp_lsc_enable(isp_proc));
 #endif
 
+#ifdef CONFIG_EXAMPLE_ISP_CROP_ENABLE
+    /*---------------------------------------------------------------
+                          CROP
+    ---------------------------------------------------------------*/
+    esp_isp_crop_config_t crop_config = {
+        .window = {
+            .top_left = {
+                .x = CONFIG_EXAMPLE_ISP_CROP_TOP_LEFT_H,
+                .y = CONFIG_EXAMPLE_ISP_CROP_TOP_LEFT_V
+            },
+            .btm_right = {
+                .x = CONFIG_EXAMPLE_ISP_CROP_BOTTOM_RIGHT_H,
+                .y = CONFIG_EXAMPLE_ISP_CROP_BOTTOM_RIGHT_V
+            }
+        }
+    };
+    ESP_ERROR_CHECK(esp_isp_crop_configure(isp_proc, &crop_config));
+    ESP_ERROR_CHECK(esp_isp_crop_enable(isp_proc));
+    ESP_LOGI(TAG, "ISP Crop enabled: (%d,%d) to (%d,%d)",
+             CONFIG_EXAMPLE_ISP_CROP_TOP_LEFT_H, CONFIG_EXAMPLE_ISP_CROP_TOP_LEFT_V,
+             CONFIG_EXAMPLE_ISP_CROP_BOTTOM_RIGHT_H, CONFIG_EXAMPLE_ISP_CROP_BOTTOM_RIGHT_V);
+#endif
+
     typedef struct af_task_param_t {
         isp_proc_handle_t isp_proc;
         esp_sccb_io_handle_t dw9714_io_handle;
@@ -390,12 +675,20 @@ void app_main(void)
     };
     xTaskCreatePinnedToCore(af_task, "af_task", 8192, &af_task_param, 5, NULL, 0);
 
+#ifdef CONFIG_EXAMPLE_ISP_CROP_ENABLE
+    //---------------Frame Processing Task------------------//
+    xTaskCreatePinnedToCore(frame_processing_task, "frame_proc", 4096, &pp_ctx, 6, NULL, 0);
+    ESP_LOGI(TAG, "Frame processing task created");
+#endif
+
     //---------------DPI Reset------------------//
     example_dpi_panel_reset(mipi_dpi_panel);
 
-    //init to all white
-    memset(frame_buffer, 0xFF, frame_buffer_size);
-    esp_cache_msync((void *)frame_buffer, frame_buffer_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
+    //init both frame buffers to white
+    memset(fb0, 0xFF, frame_buffer_size);
+    memset(fb1, 0xFF, frame_buffer_size);
+    esp_cache_msync((void *)fb0, frame_buffer_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
+    esp_cache_msync((void *)fb1, frame_buffer_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
 
     if (esp_cam_ctlr_start(handle) != ESP_OK) {
         ESP_LOGE(TAG, "Driver start fail");
@@ -411,14 +704,30 @@ void app_main(void)
 
 static bool s_camera_get_new_vb(esp_cam_ctlr_handle_t handle, esp_cam_ctlr_trans_t *trans, void *user_data)
 {
-    esp_cam_ctlr_trans_t new_trans = *(esp_cam_ctlr_trans_t *)user_data;
-    trans->buffer = new_trans.buffer;
-    trans->buflen = new_trans.buflen;
+    pingpong_buffer_ctx_t *ctx = (pingpong_buffer_ctx_t *)user_data;
+
+    // Provide the current CSI buffer for the next frame
+    trans->buffer = ctx->csi_buffer;
+    trans->buflen = CONFIG_EXAMPLE_MIPI_CSI_DISP_HRES * CONFIG_EXAMPLE_MIPI_DSI_DISP_VRES * EXAMPLE_RGB565_BYTES_PER_PIXEL;
 
     return false;
 }
 
 bool s_camera_get_finished_trans(esp_cam_ctlr_handle_t handle, esp_cam_ctlr_trans_t *trans, void *user_data)
 {
+    pingpong_buffer_ctx_t *ctx = (pingpong_buffer_ctx_t *)user_data;
+
+#ifdef CONFIG_EXAMPLE_ISP_CROP_ENABLE
+    BaseType_t high_task_wakeup = pdFALSE;
+    ctx->pending_buffer = trans->buffer;
+    xSemaphoreGiveFromISR(ctx->frame_ready_sem, &high_task_wakeup);
+    return (high_task_wakeup == pdTRUE);
+#else
+    void *temp = ctx->csi_buffer;
+    ctx->csi_buffer = ctx->dsi_buffer;
+    ctx->dsi_buffer = temp;
+
+    ESP_ERROR_CHECK(esp_lcd_panel_draw_bitmap(ctx->panel, 0, 0, ctx->h_res, ctx->v_res, trans->buffer));
     return false;
+#endif
 }

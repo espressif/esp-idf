@@ -14,14 +14,17 @@
 #include "soc/pmu_struct.h"
 #include "hal/efuse_hal.h"
 #include "hal/pmu_hal.h"
+#include "hal/lp_sys_ll.h"
 #include "pmu_param.h"
 #include "esp_private/esp_pmu.h"
 #include "soc/regi2c_dig_reg.h"
+#include "soc/lp_system_reg.h"
 #include "regi2c_ctrl.h"
 #include "esp_rom_sys.h"
 #include "soc/rtc.h"
+#include "esp_hw_log.h"
 
-static __attribute__((unused)) const char *TAG = "pmu_init";
+ESP_HW_LOG_ATTR_TAG(TAG, "pmu_init");
 
 typedef struct {
     const pmu_hp_system_power_param_t     *power;
@@ -132,6 +135,7 @@ static inline void pmu_power_domain_force_default(pmu_context_t *ctx)
         PMU_HP_PD_TOP,
         PMU_HP_PD_CNNT,
         PMU_HP_PD_HPMEM,
+        PMU_HP_PD_CPU
     };
 
     for (uint8_t idx = 0; idx < (sizeof(pmu_hp_domains) / sizeof(pmu_hp_power_domain_t)); idx++) {
@@ -173,6 +177,9 @@ static void pmu_hp_system_init_default(pmu_context_t *ctx)
         pmu_hp_system_param_default(mode, &param);
         pmu_hp_system_init(ctx, mode, &param);
     }
+#if CONFIG_ESP32P4_REV_MIN_FULL >= 300
+    lp_sys_ll_set_hp_mem_lowpower_mode(MEM_AUX_DEEPSLEEP);
+#endif
 }
 
 static inline void pmu_lp_system_param_default(pmu_lp_mode_t mode, pmu_lp_system_param_t *param)
@@ -189,6 +196,9 @@ static void pmu_lp_system_init_default(pmu_context_t *ctx)
         pmu_lp_system_param_default(mode, &param);
         pmu_lp_system_init(ctx, mode, &param);
     }
+#if CONFIG_ESP32P4_REV_MIN_FULL >= 300
+    lp_sys_ll_set_lp_mem_lowpower_mode(MEM_AUX_DEEPSLEEP);
+#endif
 }
 
 void pmu_init(void)

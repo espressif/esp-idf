@@ -119,8 +119,17 @@ esp_err_t esp_isp_new_processor(const esp_isp_processor_cfg_t *proc_config, isp_
         isp_ll_set_clock_div(proc->hal.hw, &clk_div);
     }
     proc->clk_src = clk_src;
-    proc->isp_fsm = ISP_FSM_INIT;
-    proc->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
+    atomic_init(&proc->isp_fsm, ISP_FSM_INIT);
+    atomic_init(&proc->bf_fsm, ISP_FSM_INIT);
+    atomic_init(&proc->blc_fsm, ISP_FSM_INIT);
+    atomic_init(&proc->ccm_fsm, ISP_FSM_INIT);
+    atomic_init(&proc->color_fsm, ISP_FSM_INIT);
+    atomic_init(&proc->demosaic_fsm, ISP_FSM_INIT);
+    atomic_init(&proc->gamma_fsm, ISP_FSM_INIT);
+    atomic_init(&proc->lsc_fsm, ISP_FSM_INIT);
+    atomic_init(&proc->sharpen_fsm, ISP_FSM_INIT);
+    atomic_init(&proc->wbg_fsm, ISP_FSM_INIT);
+    INIT_CRIT_SECTION_LOCK_RUNTIME(&proc->spinlock);
 
     //Input & Output color format
     color_space_pixel_format_t in_color_format = {
@@ -169,6 +178,8 @@ esp_err_t esp_isp_new_processor(const esp_isp_processor_cfg_t *proc_config, isp_
         isp_ll_set_byte_swap(proc->hal.hw, true);
     }
 
+    isp_ll_shadow_set_mode(proc->hal.hw, ISP_SHADOW_MODE_UPDATE_ONLY_NEXT_VSYNC);
+
     proc->in_color_format = in_color_format;
     proc->out_color_format = out_color_format;
     proc->h_res = proc_config->h_res;
@@ -189,7 +200,7 @@ err:
 esp_err_t esp_isp_del_processor(isp_proc_handle_t proc)
 {
     ESP_RETURN_ON_FALSE(proc, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
-    ESP_RETURN_ON_FALSE(proc->isp_fsm == ISP_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "processor isn't in init state");
+    ESP_RETURN_ON_FALSE(atomic_load(&proc->isp_fsm) == ISP_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "processor isn't in init state");
 
     //declaim first, then do free
     ESP_RETURN_ON_ERROR(s_isp_declaim_processor(proc), TAG, "declaim processor fail");
@@ -205,7 +216,7 @@ esp_err_t esp_isp_del_processor(isp_proc_handle_t proc)
 esp_err_t esp_isp_register_event_callbacks(isp_proc_handle_t proc, const esp_isp_evt_cbs_t *cbs, void *user_data)
 {
     ESP_RETURN_ON_FALSE(proc && cbs, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
-    ESP_RETURN_ON_FALSE(proc->isp_fsm == ISP_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "processor isn't in the init state");
+    ESP_RETURN_ON_FALSE(atomic_load(&proc->isp_fsm) == ISP_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "processor isn't in the init state");
 
 #if CONFIG_ISP_ISR_IRAM_SAFE
     if (cbs->on_sharpen_frame_done) {
@@ -230,11 +241,11 @@ esp_err_t esp_isp_register_event_callbacks(isp_proc_handle_t proc, const esp_isp
 esp_err_t esp_isp_enable(isp_proc_handle_t proc)
 {
     ESP_RETURN_ON_FALSE(proc, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
-    ESP_RETURN_ON_FALSE(proc->isp_fsm == ISP_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "processor isn't in init state");
+    isp_fsm_t expected_fsm = ISP_FSM_INIT;
+    ESP_RETURN_ON_FALSE(atomic_compare_exchange_strong(&proc->isp_fsm, &expected_fsm, ISP_FSM_ENABLE), ESP_ERR_INVALID_STATE, TAG, "processor isn't in init state");
     ESP_RETURN_ON_FALSE(proc->bypass_isp == false, ESP_ERR_INVALID_STATE, TAG, "processor is configured to be bypassed");
 
     isp_ll_enable(proc->hal.hw, true);
-    proc->isp_fsm = ISP_FSM_ENABLE;
 
     return ESP_OK;
 }
@@ -242,10 +253,10 @@ esp_err_t esp_isp_enable(isp_proc_handle_t proc)
 esp_err_t esp_isp_disable(isp_proc_handle_t proc)
 {
     ESP_RETURN_ON_FALSE(proc, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
-    ESP_RETURN_ON_FALSE(proc->isp_fsm == ISP_FSM_ENABLE, ESP_ERR_INVALID_STATE, TAG, "processor isn't in enable state");
+    isp_fsm_t expected_fsm = ISP_FSM_ENABLE;
+    ESP_RETURN_ON_FALSE(atomic_compare_exchange_strong(&proc->isp_fsm, &expected_fsm, ISP_FSM_INIT), ESP_ERR_INVALID_STATE, TAG, "processor isn't in enable state");
 
     isp_ll_enable(proc->hal.hw, false);
-    proc->isp_fsm = ISP_FSM_INIT;
 
     return ESP_OK;
 }
@@ -268,9 +279,9 @@ static void IRAM_ATTR s_isp_isr_dispatcher(void *arg)
     bool do_dispatch = false;
     //Deal with hw events
     if (af_events) {
-        portENTER_CRITICAL_ISR(&proc->spinlock);
+        esp_os_enter_critical_isr(&proc->spinlock);
         do_dispatch = proc->isr_users.af_isr_added;
-        portEXIT_CRITICAL_ISR(&proc->spinlock);
+        esp_os_exit_critical_isr(&proc->spinlock);
 
         if (do_dispatch) {
             need_yield |= esp_isp_af_isr(proc, af_events);
@@ -278,9 +289,9 @@ static void IRAM_ATTR s_isp_isr_dispatcher(void *arg)
         do_dispatch = false;
     }
     if (awb_events) {
-        portENTER_CRITICAL_ISR(&proc->spinlock);
+        esp_os_enter_critical_isr(&proc->spinlock);
         do_dispatch = proc->isr_users.awb_isr_added;
-        portEXIT_CRITICAL_ISR(&proc->spinlock);
+        esp_os_exit_critical_isr(&proc->spinlock);
 
         if (do_dispatch) {
             need_yield |= esp_isp_awb_isr(proc, awb_events);
@@ -288,9 +299,9 @@ static void IRAM_ATTR s_isp_isr_dispatcher(void *arg)
         do_dispatch = false;
     }
     if (ae_events) {
-        portENTER_CRITICAL_ISR(&proc->spinlock);
+        esp_os_enter_critical_isr(&proc->spinlock);
         do_dispatch = proc->isr_users.ae_isr_added;
-        portEXIT_CRITICAL_ISR(&proc->spinlock);
+        esp_os_exit_critical_isr(&proc->spinlock);
 
         if (do_dispatch) {
             need_yield |= esp_isp_ae_isr(proc, ae_events);
@@ -298,9 +309,9 @@ static void IRAM_ATTR s_isp_isr_dispatcher(void *arg)
         do_dispatch = false;
     }
     if (sharp_events) {
-        portENTER_CRITICAL_ISR(&proc->spinlock);
+        esp_os_enter_critical_isr(&proc->spinlock);
         do_dispatch = proc->isr_users.sharp_isr_added;
-        portEXIT_CRITICAL_ISR(&proc->spinlock);
+        esp_os_exit_critical_isr(&proc->spinlock);
 
         if (do_dispatch) {
             need_yield |= esp_isp_sharpen_isr(proc, sharp_events);
@@ -308,9 +319,9 @@ static void IRAM_ATTR s_isp_isr_dispatcher(void *arg)
         do_dispatch = false;
     }
     if (hist_events) {
-        portENTER_CRITICAL_ISR(&proc->spinlock);
+        esp_os_enter_critical_isr(&proc->spinlock);
         do_dispatch = proc->isr_users.hist_isr_added;
-        portEXIT_CRITICAL_ISR(&proc->spinlock);
+        esp_os_exit_critical_isr(&proc->spinlock);
 
         if (do_dispatch) {
             need_yield |= esp_isp_hist_isr(proc, hist_events);
@@ -328,7 +339,7 @@ esp_err_t esp_isp_register_isr(isp_proc_handle_t proc, isp_submodule_t submodule
     ESP_RETURN_ON_FALSE(proc, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
 
     bool do_alloc = false;
-    portENTER_CRITICAL(&proc->spinlock);
+    esp_os_enter_critical(&proc->spinlock);
     proc->isr_ref_counts++;
     if (proc->isr_ref_counts == 1) {
         assert(!proc->intr_hdl);
@@ -354,7 +365,7 @@ esp_err_t esp_isp_register_isr(isp_proc_handle_t proc, isp_submodule_t submodule
     default:
         assert(false);
     }
-    portEXIT_CRITICAL(&proc->spinlock);
+    esp_os_exit_critical(&proc->spinlock);
 
     if (do_alloc) {
 
@@ -378,7 +389,7 @@ esp_err_t esp_isp_deregister_isr(isp_proc_handle_t proc, isp_submodule_t submodu
     ESP_RETURN_ON_FALSE(proc, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
 
     bool do_free = false;
-    portENTER_CRITICAL(&proc->spinlock);
+    esp_os_enter_critical(&proc->spinlock);
     proc->isr_ref_counts--;
     assert(proc->isr_ref_counts >= 0);
     if (proc->isr_ref_counts == 0) {
@@ -405,7 +416,7 @@ esp_err_t esp_isp_deregister_isr(isp_proc_handle_t proc, isp_submodule_t submodu
     default:
         assert(false);
     }
-    portEXIT_CRITICAL(&proc->spinlock);
+    esp_os_exit_critical(&proc->spinlock);
 
     if (do_free) {
         esp_intr_disable(proc->intr_hdl);

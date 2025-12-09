@@ -73,6 +73,7 @@ if(BOOTLOADER_BUILD OR CONFIG_APP_BUILD_TYPE_RAM)
     set(include_dirs "include" "bootloader_flash/include"
         "private_include")
     set(priv_requires micro-ecc spi_flash efuse esp_bootloader_format esp_app_format esptool_py)
+    list(APPEND priv_requires esp_hal_wdt esp_hal_gpio)
     list(APPEND srcs
     "src/bootloader_init.c"
     "src/bootloader_clock_loader.c"
@@ -84,16 +85,18 @@ if(BOOTLOADER_BUILD OR CONFIG_APP_BUILD_TYPE_RAM)
     if(CONFIG_SECURE_ENABLE_TEE)
         list(APPEND srcs "src/bootloader_utility_tee.c")
     endif()
-    list(APPEND priv_requires hal)
 else()
     set(include_dirs "include" "bootloader_flash/include")
     set(priv_include_dirs "private_include")
     # heap is required for `heap_memory_layout.h` header
     set(priv_requires spi_flash mbedtls efuse heap esp_bootloader_format esp_app_format esptool_py)
+    list(APPEND priv_requires esp_hal_wdt esp_hal_gpio)
 endif()
 
 if(BOOTLOADER_BUILD)
     list(APPEND srcs "src/bootloader_panic.c")
+    list(APPEND priv_requires esp_security)
+
     if(CONFIG_SECURE_FLASH_ENC_ENABLED)
         list(APPEND srcs "src/flash_encryption/flash_encrypt.c"
                          "src/${IDF_TARGET}/flash_encryption_secure_features.c")
@@ -167,7 +170,7 @@ if(CONFIG_SECURE_SIGNED_APPS AND (CONFIG_SECURE_BOOT_V1_ENABLED OR CONFIG_SECURE
                 ABSOLUTE BASE_DIR "${CMAKE_CURRENT_BINARY_DIR}")
             add_custom_command(OUTPUT "${secure_boot_verification_key}"
                 COMMAND ${espsecure_py_cmd}
-                extract_public_key --keyfile "${secure_boot_signing_key}"
+                extract-public-key --keyfile "${secure_boot_signing_key}"
                 "${secure_boot_verification_key}"
                 DEPENDS ${secure_boot_signing_key}
                 VERBATIM)
@@ -195,7 +198,7 @@ if(CONFIG_SECURE_SIGNED_APPS AND (CONFIG_SECURE_BOOT_V1_ENABLED OR CONFIG_SECURE
 
             add_custom_command(OUTPUT "${secure_boot_verification_key}"
                 COMMAND ${espsecure_py_cmd}
-                extract_public_key --keyfile "${secure_boot_signing_key}"
+                extract-public-key --keyfile "${secure_boot_signing_key}"
                 "${secure_boot_verification_key}"
                 WORKING_DIRECTORY ${project_dir}
                 DEPENDS ${secure_boot_signing_key}

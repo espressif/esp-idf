@@ -11,6 +11,7 @@
 #include "host/ble_hs.h"
 
 #define BLE_PAWR_EVENT_INTERVAL               (600)
+#define BLE_PAWR_PERIODIC_EVENT_INTERVAL_MS   (3000)
 #define BLE_PAWR_NUM_SUBEVTS                  (10)
 #define BLE_PAWR_SUB_INTERVAL                 (44)  /*!< Interval between subevents (N * 1.25 ms)   */
 #define BLE_PAWR_RSP_SLOT_DELAY               (20)   /*!< The first response slot delay (N * 1.25 ms)*/
@@ -135,8 +136,8 @@ start_periodic_adv(void)
     /* configure periodic advertising */
     memset(&pparams, 0, sizeof(pparams));
     pparams.include_tx_power = 0;
-    pparams.itvl_min = BLE_GAP_PERIODIC_ITVL_MS(3000);
-    pparams.itvl_max = BLE_GAP_PERIODIC_ITVL_MS(3000);
+    pparams.itvl_min = BLE_GAP_PERIODIC_ITVL_MS(BLE_PAWR_PERIODIC_EVENT_INTERVAL_MS);
+    pparams.itvl_max = BLE_GAP_PERIODIC_ITVL_MS(BLE_PAWR_PERIODIC_EVENT_INTERVAL_MS);
     /* Configure the parameters of PAwR. */
     pparams.num_subevents           = BLE_PAWR_NUM_SUBEVTS;
     pparams.subevent_interval       = BLE_PAWR_SUB_INTERVAL;

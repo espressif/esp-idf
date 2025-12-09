@@ -23,8 +23,7 @@
     return ret_val;\
 } }while (0)
 
-/* The tag may be unused if log level is set to NONE  */
-static const __attribute__((unused)) char TAG[] = "SDIO_HAL";
+HAL_LOG_ATTR_TAG(TAG, "SDIO_HAL");
 
 static esp_err_t init_send_queue(sdio_slave_context_t *hal);
 
@@ -720,4 +719,9 @@ void sdio_slave_hal_host_set_reg(sdio_slave_context_t *hal, int pos, uint8_t reg
 void sdio_slave_hal_slvint_fetch_clear(sdio_slave_context_t *hal, sdio_slave_ll_slvint_t *out_int_mask)
 {
     sdio_slave_ll_slvint_fetch_clear(hal->slc, out_int_mask);
+}
+
+volatile void* sdio_slave_hal_get_intr_status_reg(sdio_slave_context_t *hal)
+{
+    return sdio_slave_ll_get_intr_status_reg(hal->slc);
 }

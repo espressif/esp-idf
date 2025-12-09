@@ -28,7 +28,7 @@
 #define ESP_ROM_HAS_SW_FLOAT                (1) // ROM has libgcc software floating point emulation functions
 #define ESP_ROM_USB_OTG_NUM                 (-1) // No USB_OTG CDC in the ROM, set -1 for Kconfig usage.
 #define ESP_ROM_HAS_VERSION                 (1) // ROM has version/eco information
-// #define ESP_ROM_SUPPORT_DEEP_SLEEP_WAKEUP_STUB  (1) // ROM supports the HP core to jump to the RTC memory to execute stub code after waking up from deepsleep. //TODO: [ESP32H21] IDF-11515
+#define ESP_ROM_SUPPORT_DEEP_SLEEP_WAKEUP_STUB  (1) // ROM supports the HP core to jump to the RTC memory to execute stub code after waking up from deepsleep.
 #define ESP_ROM_HAS_OUTPUT_PUTC_FUNC        (1) // ROM has esp_rom_output_putc (or ets_write_char_uart)
 #define ESP_ROM_HAS_SUBOPTIMAL_NEWLIB_ON_MISALIGNED_MEMORY  (1) // ROM mem/str functions are not optimized well for misaligned memory access.
 #define ESP_ROM_NO_USB_SERIAL_OUTPUT_API    (1) // ROM does not export the usb-serial-jtag write char function

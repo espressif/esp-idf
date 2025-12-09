@@ -194,6 +194,10 @@ The logging system supports the following formatting options, applicable for bot
 
   - For **Log V2**, the :ref:`CONFIG_LOG_COLORS_SUPPORT` option enables runtime support for adding color output to specific logs, files, or components, even if global color is disabled. To enable color for a specific context use ``ESP_LOG_COLOR_DISABLED``.
 
+  .. note::
+
+    Please note that IDF Monitor requires the log message format described above in order to apply color highlighting automatically. The minimum required format is a log level name followed by a timestamp, and each log message must end with a newline character. For example, ``I (56): Log message\n``. If this format is not followed, such as when the timestamp is disabled, automatic log coloring will not work. In these cases, it is recommended to enable :ref:`CONFIG_LOG_COLORS` in the menuconfig. Another limitation is that for multi-line log messages, only the first line will be colored correctly.
+
 - **Level Name**: A single letter (I, W, E, D, V) indicating log verbosity, displayed at the start of each message. Useful for identifying log levels, especially when color is disabled, as utilized by the ESP-IDF monitor tool.
 
 - **Timestamp**: Adds a timestamp to log messages globally. Controlled by :ref:`CONFIG_LOG_TIMESTAMP_SOURCE`.

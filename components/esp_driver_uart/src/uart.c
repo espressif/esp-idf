@@ -85,8 +85,8 @@ static const char *UART_TAG = "uart";
                             | (UART_INTR_RXFIFO_TOUT) \
                             | (UART_INTR_RXFIFO_OVF) \
                             | (UART_INTR_BRK_DET) \
-                            | (UART_INTR_PARITY_ERR)) \
-                            | (UART_INTR_WAKEUP)
+                            | (UART_INTR_PARITY_ERR) \
+                            | (UART_INTR_WAKEUP))
 #else
 #define UART_INTR_CONFIG_FLAG ((UART_INTR_RXFIFO_FULL) \
                             | (UART_INTR_RXFIFO_TOUT) \
@@ -144,7 +144,6 @@ typedef struct {
     bool coll_det_flg;                  /*!< UART collision detection flag */
     bool rx_always_timeout_flg;         /*!< UART always detect rx timeout flag */
     int rx_buffered_len;                /*!< UART cached data length */
-    int rx_buf_size;                    /*!< RX ring buffer size */
     bool rx_buffer_full_flg;            /*!< RX ring buffer full flag. */
     uint8_t *rx_data_buf;               /*!< Data buffer to stash FIFO data*/
     uint8_t rx_stash_len;               /*!< stashed data length.(When using flow control, after reading out FIFO data, if we fail to push to buffer, we can just stash them.) */
@@ -154,8 +153,8 @@ typedef struct {
     bool tx_waiting_fifo;               /*!< this flag indicates that some task is waiting for FIFO empty interrupt, used to send all data without any data buffer*/
     uint8_t *tx_ptr;                    /*!< TX data pointer to push to FIFO in TX buffer mode*/
     uart_tx_data_t *tx_head;            /*!< TX data pointer to head of the current buffer in TX ring buffer*/
-    uint32_t tx_len_tot;                /*!< Total length of current item in ring buffer*/
-    uint32_t tx_len_cur;
+    uint32_t trans_total_remaining_len; /*!< Remaining data length of the current processing transaction in TX ring buffer*/
+    uint32_t trans_chunk_remaining_len; /*!< Remaining data length of the current processing chunk of the transaction in TX ring buffer*/
     uint8_t tx_brk_flg;                 /*!< Flag to indicate to send a break signal in the end of the item sending procedure */
     uint8_t tx_brk_len;                 /*!< TX break signal cycle length/number */
     uint8_t tx_waiting_brk;             /*!< Flag to indicate that TX FIFO is ready to send break signal after FIFO is empty, do not push data into TX FIFO right now.*/
@@ -216,6 +215,9 @@ static esp_err_t uart_create_sleep_retention_link_cb(void *arg);
 
 static bool uart_module_enable(uart_port_t uart_num)
 {
+    if (uart_num >= UART_NUM_MAX) {
+        return false;
+    }
     bool newly_enabled = false;
     _lock_acquire(&(uart_context[uart_num].mutex));
     if (uart_context[uart_num].hw_enabled != true) {
@@ -224,6 +226,10 @@ static bool uart_module_enable(uart_port_t uart_num)
                 uart_ll_enable_bus_clock(uart_num, true);
             }
             if (uart_num != CONFIG_ESP_CONSOLE_UART_NUM) {
+                // Workaround: Set RX signal to high to avoid false RX BRK_DET interrupt raised after register reset
+                if (uart_context[uart_num].rx_io_num == -1) {
+                    esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ONE_INPUT, UART_PERIPH_SIGNAL(uart_num, SOC_UART_PERIPH_SIGNAL_RX), false);
+                }
                 HP_UART_BUS_CLK_ATOMIC() {
                     uart_ll_reset_register(uart_num);
                 }
@@ -254,6 +260,16 @@ static bool uart_module_enable(uart_port_t uart_num)
         }
 #if (SOC_UART_LP_NUM >= 1)
         else {
+            // Workaround: Set RX signal to high to avoid false RX BRK_DET interrupt raised after register reset
+            if (uart_context[uart_num].rx_io_num == -1) { // if RX pin is already configured, then workaround not needed, skip
+#if SOC_LP_GPIO_MATRIX_SUPPORTED
+                lp_gpio_connect_in_signal(LP_GPIO_MATRIX_CONST_ONE_INPUT, UART_PERIPH_SIGNAL(uart_num, SOC_UART_PERIPH_SIGNAL_RX), false);
+#else
+                // the signal is directly connected to its LP IO pin, the only way is to enable its pullup
+                uint32_t io_num = uart_periph_signal[uart_num].pins[SOC_UART_PERIPH_SIGNAL_RX].default_gpio;
+                gpio_pullup_en(io_num);
+#endif
+            }
             LP_UART_BUS_CLK_ATOMIC() {
                 lp_uart_ll_enable_bus_clock(TO_LP_UART_NUM(uart_num), true);
                 lp_uart_ll_reset_register(TO_LP_UART_NUM(uart_num));
@@ -719,6 +735,12 @@ static bool uart_try_set_iomux_pin(uart_port_t uart_num, int io_num, uint32_t id
         }
         rtc_gpio_init(io_num);
         rtc_gpio_iomux_func_sel(io_num, upin->iomux_func);
+        // undo the workaround done in uart_module_enable for RX pin
+#if !SOC_LP_GPIO_MATRIX_SUPPORTED
+        if (upin->input) {
+            gpio_pullup_dis(io_num);
+        }
+#endif
     }
 #endif
 
@@ -1057,8 +1079,8 @@ esp_err_t uart_param_config(uart_port_t uart_num, const uart_config_t *uart_conf
     uint32_t sclk_freq;
     ESP_RETURN_ON_ERROR(esp_clk_tree_src_get_freq_hz(uart_sclk_sel, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &sclk_freq), UART_TAG, "invalid src_clk");
 
-    // Enable the newly selected clock source.
-    ESP_RETURN_ON_ERROR(esp_clk_tree_enable_src(uart_sclk_sel, true), UART_TAG, "clock source enable failed");
+    // Enable the newly selected clock source
+    esp_clk_tree_enable_src(uart_sclk_sel, true);
 #if SOC_UART_SUPPORT_RTC_CLK
     if (uart_sclk_sel == (soc_module_clk_t)UART_SCLK_RTC) {
         periph_rtc_dig_clk8m_enable();
@@ -1067,8 +1089,6 @@ esp_err_t uart_param_config(uart_port_t uart_num, const uart_config_t *uart_conf
 
     bool success = false;
     UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
-    soc_module_clk_t uart_old_sclk_sel = uart_context[uart_num].sclk_sel;
-    uart_context[uart_num].sclk_sel = uart_sclk_sel;
     uart_hal_init(&(uart_context[uart_num].hal), uart_num);
     if (uart_num < SOC_UART_HP_NUM) {
         HP_UART_SRC_CLK_ATOMIC() {
@@ -1084,7 +1104,6 @@ esp_err_t uart_param_config(uart_port_t uart_num, const uart_config_t *uart_conf
         success = lp_uart_ll_set_baudrate(uart_context[uart_num].hal.dev, uart_config->baud_rate, sclk_freq);
     }
 #endif
-    // Disable the previously selected clock source
     uart_hal_set_parity(&(uart_context[uart_num].hal), uart_config->parity);
     uart_hal_set_data_bit_num(&(uart_context[uart_num].hal), uart_config->data_bits);
     uart_hal_set_stop_bits(&(uart_context[uart_num].hal), uart_config->stop_bits);
@@ -1093,8 +1112,18 @@ esp_err_t uart_param_config(uart_port_t uart_num, const uart_config_t *uart_conf
     UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
     uart_hal_rxfifo_rst(&(uart_context[uart_num].hal));
     uart_hal_txfifo_rst(&(uart_context[uart_num].hal));
-    ESP_RETURN_ON_ERROR(esp_clk_tree_enable_src(uart_old_sclk_sel, false), UART_TAG, "clock source disable failed");
-    ESP_RETURN_ON_FALSE(success, ESP_FAIL, UART_TAG, "baud rate unachievable");
+    // Disable the previously selected clock source, and update the new source in context
+    soc_module_clk_t uart_old_sclk_sel = uart_context[uart_num].sclk_sel;
+    esp_clk_tree_enable_src(uart_old_sclk_sel, false);
+    if (success) {
+        uart_context[uart_num].sclk_sel = uart_sclk_sel;
+    } else {
+        uart_context[uart_num].sclk_sel = -1;
+        esp_clk_tree_enable_src(uart_sclk_sel, false);
+        ESP_LOGE(UART_TAG, "baud rate unachievable");
+        return ESP_FAIL;
+    }
+
 #if SOC_UART_SUPPORT_SLEEP_RETENTION && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
     // Create sleep retention link if desired
     if (uart_num != CONFIG_ESP_CONSOLE_UART_NUM && uart_num < SOC_UART_HP_NUM) {
@@ -1222,15 +1251,15 @@ static void UART_ISR_ATTR uart_rx_intr_handler_default(void *param)
                 //That would cause a watch_dog reset because empty interrupt happens so often.
                 //Although this is a loop in ISR, this loop will execute at most 128 turns.
                 while (tx_fifo_rem) {
-                    if (p_uart->tx_len_tot == 0 || p_uart->tx_ptr == NULL || p_uart->tx_len_cur == 0) {
+                    if (p_uart->trans_total_remaining_len == 0 || p_uart->tx_ptr == NULL || p_uart->trans_chunk_remaining_len == 0) {
                         size_t size;
                         p_uart->tx_head = (uart_tx_data_t *) xRingbufferReceiveFromISR(p_uart->tx_ring_buf, &size);
                         if (p_uart->tx_head) {
                             //The first item is the data description
                             //Get the first item to get the data information
-                            if (p_uart->tx_len_tot == 0) {
+                            if (p_uart->trans_total_remaining_len == 0) {
                                 p_uart->tx_ptr = NULL;
-                                p_uart->tx_len_tot = p_uart->tx_head->tx_data.size;
+                                p_uart->trans_total_remaining_len = p_uart->tx_head->tx_data.size;
                                 if (p_uart->tx_head->type == UART_DATA_BREAK) {
                                     p_uart->tx_brk_flg = 1;
                                     p_uart->tx_brk_len = p_uart->tx_head->tx_data.brk_len;
@@ -1242,22 +1271,22 @@ static void UART_ISR_ATTR uart_rx_intr_handler_default(void *param)
                                 //Update the TX item pointer, we will need this to return item to buffer.
                                 p_uart->tx_ptr = (uint8_t *)p_uart->tx_head;
                                 en_tx_flg = true;
-                                p_uart->tx_len_cur = size;
+                                p_uart->trans_chunk_remaining_len = size;
                             }
                         } else {
                             //Can not get data from ring buffer, return;
                             break;
                         }
                     }
-                    if (p_uart->tx_len_tot > 0 && p_uart->tx_ptr && p_uart->tx_len_cur > 0) {
+                    if (p_uart->trans_total_remaining_len > 0 && p_uart->tx_ptr && p_uart->trans_chunk_remaining_len > 0) {
                         // To fill the TX FIFO.
                         uint32_t send_len = uart_enable_tx_write_fifo(uart_num, (const uint8_t *) p_uart->tx_ptr,
-                                                                      MIN(p_uart->tx_len_cur, tx_fifo_rem));
+                                                                      MIN(p_uart->trans_chunk_remaining_len, tx_fifo_rem));
                         p_uart->tx_ptr += send_len;
-                        p_uart->tx_len_tot -= send_len;
-                        p_uart->tx_len_cur -= send_len;
+                        p_uart->trans_total_remaining_len -= send_len;
+                        p_uart->trans_chunk_remaining_len -= send_len;
                         tx_fifo_rem -= send_len;
-                        if (p_uart->tx_len_cur == 0) {
+                        if (p_uart->trans_chunk_remaining_len == 0) {
                             //Return item to ring buffer.
                             vRingbufferReturnItemFromISR(p_uart->tx_ring_buf, p_uart->tx_head, &HPTaskAwoken);
                             need_yield |= (HPTaskAwoken == pdTRUE);
@@ -1265,7 +1294,7 @@ static void UART_ISR_ATTR uart_rx_intr_handler_default(void *param)
                             p_uart->tx_ptr = NULL;
                             //Sending item done, now we need to send break if there is a record.
                             //Set TX break signal after FIFO is empty
-                            if (p_uart->tx_len_tot == 0 && p_uart->tx_brk_flg == 1) {
+                            if (p_uart->trans_total_remaining_len == 0 && p_uart->tx_brk_flg == 1) {
                                 uart_hal_clr_intsts_mask(&(uart_context[uart_num].hal), UART_INTR_TX_BRK_DONE);
                                 UART_ENTER_CRITICAL_ISR(&(uart_context[uart_num].spinlock));
                                 uart_hal_tx_break(&(uart_context[uart_num].hal), p_uart->tx_brk_len);
@@ -1514,7 +1543,7 @@ static void UART_ISR_ATTR uart_rx_intr_handler_default(void *param)
 }
 
 /**************************************************************/
-esp_err_t uart_wait_tx_done(uart_port_t uart_num, TickType_t ticks_to_wait)
+esp_err_t uart_wait_tx_done(uart_port_t uart_num, uint32_t ticks_to_wait)
 {
     ESP_RETURN_ON_FALSE((uart_num < UART_NUM_MAX), ESP_FAIL, UART_TAG, "uart_num error");
     ESP_RETURN_ON_FALSE((p_uart_obj[uart_num]), ESP_FAIL, UART_TAG, "uart driver error");
@@ -1592,6 +1621,8 @@ int uart_tx_chars(uart_port_t uart_num, const char *buffer, uint32_t len)
     return tx_len;
 }
 
+// Per transaction in the ring buffer:
+// A data description item, followed by one or more data chunk items
 static int uart_tx_all(uart_port_t uart_num, const char *src, size_t size, bool brk_en, int brk_len)
 {
     if (size == 0) {
@@ -1606,7 +1637,6 @@ static int uart_tx_all(uart_port_t uart_num, const char *src, size_t size, bool 
 #endif
     p_uart_obj[uart_num]->coll_det_flg = false;
     if (p_uart_obj[uart_num]->tx_buf_size > 0) {
-        size_t max_size = xRingbufferGetMaxItemSize(p_uart_obj[uart_num]->tx_ring_buf);
         int offset = 0;
         uart_tx_data_t evt;
         evt.tx_data.size = size;
@@ -1618,11 +1648,14 @@ static int uart_tx_all(uart_port_t uart_num, const char *src, size_t size, bool 
         }
         xRingbufferSend(p_uart_obj[uart_num]->tx_ring_buf, (void *) &evt, sizeof(uart_tx_data_t), portMAX_DELAY);
         while (size > 0) {
-            size_t send_size = size > max_size / 2 ? max_size / 2 : size;
-            xRingbufferSend(p_uart_obj[uart_num]->tx_ring_buf, (void *)(src + offset), send_size, portMAX_DELAY);
-            size -= send_size;
-            offset += send_size;
-            uart_enable_tx_intr(uart_num, 1, UART_THRESHOLD_NUM(uart_num, UART_EMPTY_THRESH_DEFAULT));
+            size_t free_size = xRingbufferGetCurFreeSize(p_uart_obj[uart_num]->tx_ring_buf);
+            size_t send_size = MIN(size, free_size);
+            if (send_size > 0) {
+                xRingbufferSend(p_uart_obj[uart_num]->tx_ring_buf, (void *)(src + offset), send_size, portMAX_DELAY);
+                size -= send_size;
+                offset += send_size;
+                uart_enable_tx_intr(uart_num, 1, UART_THRESHOLD_NUM(uart_num, UART_EMPTY_THRESH_DEFAULT));
+            }
         }
     } else {
         while (size) {
@@ -1690,7 +1723,7 @@ static bool uart_check_buf_full(uart_port_t uart_num)
     return false;
 }
 
-int uart_read_bytes(uart_port_t uart_num, void *buf, uint32_t length, TickType_t ticks_to_wait)
+int uart_read_bytes(uart_port_t uart_num, void *buf, uint32_t length, uint32_t ticks_to_wait)
 {
     ESP_RETURN_ON_FALSE((uart_num < UART_NUM_MAX), (-1), UART_TAG, "uart_num error");
     ESP_RETURN_ON_FALSE((buf), (-1), UART_TAG, "uart data null");
@@ -1746,7 +1779,79 @@ esp_err_t uart_get_tx_buffer_free_size(uart_port_t uart_num, size_t *size)
     ESP_RETURN_ON_FALSE((uart_num < UART_NUM_MAX), ESP_ERR_INVALID_ARG, UART_TAG, "uart_num error");
     ESP_RETURN_ON_FALSE((p_uart_obj[uart_num]), ESP_ERR_INVALID_ARG, UART_TAG, "uart driver error");
     ESP_RETURN_ON_FALSE((size != NULL), ESP_ERR_INVALID_ARG, UART_TAG, "arg pointer is NULL");
-    *size = p_uart_obj[uart_num]->tx_buf_size - p_uart_obj[uart_num]->tx_len_tot;
+
+    // If tx buffer is disabled or ring buffer is full, overall enqueueable payload is 0
+    if (p_uart_obj[uart_num]->tx_buf_size == 0 || xRingbufferGetCurFreeSize(p_uart_obj[uart_num]->tx_ring_buf) == 0) {
+        *size = 0;
+        return ESP_OK;
+    }
+
+    // Tight conservative bound for NOSPLIT ring buffer overall enqueueable payload across up to two segments
+    const size_t RINGBUF_ITEM_HDR_SIZE = 8; // per public ringbuf API docs
+
+    // Per-item cap in current state and basis to infer minimal buffer size
+    size_t max_item = xRingbufferGetMaxItemSize(p_uart_obj[uart_num]->tx_ring_buf);
+
+    // Get current ring buffer pointer offsets and items waiting to detect empty
+    UBaseType_t off_free = 0;
+    UBaseType_t off_acq = 0;
+    UBaseType_t items_waiting = 0;
+    vRingbufferGetInfo(p_uart_obj[uart_num]->tx_ring_buf, &off_free, NULL, NULL, &off_acq, &items_waiting);
+
+    // Minimal possible total buffer size for NOSPLIT: see ringbuf initialization logic
+    // xMaxItemSize = ALIGN4(xSize/2) - header => xSize_min = 2 * (xMaxItemSize + header - up_to_3_alignment)
+    size_t buf_size_min = 2 * (max_item + RINGBUF_ITEM_HDR_SIZE - 3);
+    buf_size_min &= ~((size_t)3); // align down to 4 bytes
+
+    size_t total_payload = 0;
+    if (off_acq == off_free && items_waiting == 0) {
+        // Empty buffer: conservatively treat as a single large contiguous segment
+        total_payload = p_uart_obj[uart_num]->tx_buf_size - RINGBUF_ITEM_HDR_SIZE;
+    } else if (off_acq <= off_free) {
+        // Single contiguous free segment
+        size_t seg = (size_t)off_free - (size_t)off_acq;
+        if (seg > RINGBUF_ITEM_HDR_SIZE) {
+            size_t usable = seg - RINGBUF_ITEM_HDR_SIZE;
+            usable &= ~((size_t)3);
+            if (usable > max_item) {
+                usable = max_item;
+            }
+            total_payload = usable;
+        }
+    } else {
+        // Free space wraps: two segments [acq..tail) and [head..free)
+        size_t seg1 = buf_size_min - (size_t)off_acq;
+        size_t seg2 = (size_t)off_free; // from head (offset 0) to free
+        size_t payload1 = 0;
+        if (seg1 > RINGBUF_ITEM_HDR_SIZE) {
+            size_t usable1 = seg1 - RINGBUF_ITEM_HDR_SIZE;
+            usable1 &= ~((size_t)3);
+            if (usable1 > max_item) {
+                usable1 = max_item;
+            }
+            payload1 = usable1;
+        }
+        size_t payload2 = 0;
+        if (seg2 > RINGBUF_ITEM_HDR_SIZE) {
+            size_t usable2 = seg2 - RINGBUF_ITEM_HDR_SIZE;
+            usable2 &= ~((size_t)3);
+            if (usable2 > max_item) {
+                usable2 = max_item;
+            }
+            payload2 = usable2;
+        }
+        total_payload = payload1 + payload2;
+    }
+
+    // Subtract the cost of the transaction's data description item (header + aligned struct)
+    size_t desc_cost = RINGBUF_ITEM_HDR_SIZE + (((sizeof(uart_tx_data_t)) + 3) & ~((size_t)3));
+    if (total_payload > desc_cost) {
+        total_payload -= desc_cost;
+    } else {
+        total_payload = 0;
+    }
+
+    *size = total_payload;
     return ESP_OK;
 }
 
@@ -1922,7 +2027,8 @@ esp_err_t uart_driver_install(uart_port_t uart_num, int rx_buffer_size, int tx_b
         p_uart_obj[uart_num]->event_queue_size = event_queue_size;
         p_uart_obj[uart_num]->tx_ptr = NULL;
         p_uart_obj[uart_num]->tx_head = NULL;
-        p_uart_obj[uart_num]->tx_len_tot = 0;
+        p_uart_obj[uart_num]->trans_total_remaining_len = 0;
+        p_uart_obj[uart_num]->trans_chunk_remaining_len = 0;
         p_uart_obj[uart_num]->tx_brk_flg = 0;
         p_uart_obj[uart_num]->tx_brk_len = 0;
         p_uart_obj[uart_num]->tx_waiting_brk = 0;
@@ -1943,21 +2049,57 @@ esp_err_t uart_driver_install(uart_port_t uart_num, int rx_buffer_size, int tx_b
         return ESP_FAIL;
     }
 
+    uart_module_enable(uart_num);
+    uart_hal_disable_intr_mask(&(uart_context[uart_num].hal), UART_LL_INTR_MASK);
+    uart_hal_clr_intsts_mask(&(uart_context[uart_num].hal), UART_LL_INTR_MASK);
+
+    ret = esp_intr_alloc_intrstatus(
+              uart_periph_signal[uart_num].irq,
+              intr_alloc_flags,
+              (uint32_t)uart_hal_get_intr_status_reg(&(uart_context[uart_num].hal)),
+              UART_LL_INTR_MASK,
+              uart_rx_intr_handler_default,
+              p_uart_obj[uart_num],
+              &p_uart_obj[uart_num]->intr_handle
+          );
+    ESP_GOTO_ON_ERROR(ret, err, UART_TAG, "Could not allocate an interrupt for UART");
+
+    // Make sure uart sclk at least exist first (following code touchs hardware, and requires sclk to be enabled)
+    if (uart_context[uart_num].sclk_sel == -1 && uart_num != CONFIG_ESP_CONSOLE_UART_NUM) {
+        // set to a default clock source
+        soc_module_clk_t default_sclk = -1;
+        if (uart_num < SOC_UART_HP_NUM) {
+            default_sclk = UART_SCLK_DEFAULT;
+        }
+#if (SOC_UART_LP_NUM >= 1)
+        else {
+            default_sclk = LP_UART_SCLK_DEFAULT;
+        }
+#endif
+        esp_clk_tree_enable_src(default_sclk, true);
+        UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
+        if (uart_num < SOC_UART_HP_NUM) {
+            HP_UART_SRC_CLK_ATOMIC() {
+                uart_hal_set_sclk(&(uart_context[uart_num].hal), default_sclk);
+            }
+        }
+#if (SOC_UART_LP_NUM >= 1)
+        else {
+            LP_UART_SRC_CLK_ATOMIC() {
+                lp_uart_ll_set_source_clk(uart_context[uart_num].hal.dev, (soc_periph_lp_uart_clk_src_t)default_sclk);
+            }
+        }
+#endif
+        uart_context[uart_num].sclk_sel = default_sclk;
+        UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
+    }
+
     uart_intr_config_t uart_intr = {
         .intr_enable_mask = UART_INTR_CONFIG_FLAG,
         .rxfifo_full_thresh = UART_THRESHOLD_NUM(uart_num, UART_FULL_THRESH_DEFAULT),
         .rx_timeout_thresh = UART_TOUT_THRESH_DEFAULT,
         .txfifo_empty_intr_thresh = UART_THRESHOLD_NUM(uart_num, UART_EMPTY_THRESH_DEFAULT),
     };
-    uart_module_enable(uart_num);
-    uart_hal_disable_intr_mask(&(uart_context[uart_num].hal), UART_LL_INTR_MASK);
-    uart_hal_clr_intsts_mask(&(uart_context[uart_num].hal), UART_LL_INTR_MASK);
-
-    ret = esp_intr_alloc(uart_periph_signal[uart_num].irq, intr_alloc_flags,
-                         uart_rx_intr_handler_default, p_uart_obj[uart_num],
-                         &p_uart_obj[uart_num]->intr_handle);
-    ESP_GOTO_ON_ERROR(ret, err, UART_TAG, "Could not allocate an interrupt for UART");
-
     ret = uart_intr_config(uart_num, &uart_intr);
     ESP_GOTO_ON_ERROR(ret, err, UART_TAG, "Could not configure the interrupt for UART");
 
@@ -1986,14 +2128,15 @@ esp_err_t uart_driver_delete(uart_port_t uart_num)
     uart_free_driver_obj(p_uart_obj[uart_num]);
     p_uart_obj[uart_num] = NULL;
 
-    ESP_RETURN_ON_ERROR(esp_clk_tree_enable_src(uart_context[uart_num].sclk_sel, false), UART_TAG, "clock source disable failed");
+    if (uart_num != CONFIG_ESP_CONSOLE_UART_NUM) {
+        esp_clk_tree_enable_src(uart_context[uart_num].sclk_sel, false);
 #if SOC_UART_SUPPORT_RTC_CLK
-    soc_module_clk_t sclk = 0;
-    uart_hal_get_sclk(&(uart_context[uart_num].hal), &sclk);
-    if (sclk == (soc_module_clk_t)UART_SCLK_RTC) {
-        periph_rtc_dig_clk8m_disable();
-    }
+        if (uart_context[uart_num].sclk_sel == (soc_module_clk_t)UART_SCLK_RTC) {
+            periph_rtc_dig_clk8m_disable();
+        }
 #endif
+        uart_context[uart_num].sclk_sel = -1;
+    }
 
 #if SOC_UART_SUPPORT_SLEEP_RETENTION && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
     // Free sleep retention link for HP UART
@@ -2195,7 +2338,7 @@ esp_err_t uart_detect_bitrate_start(uart_port_t uart_num, const uart_bitrate_det
         uart_sclk_sel = (soc_module_clk_t)((config->source_clk) ? config->source_clk : UART_SCLK_DEFAULT); // if no specifying the clock source (soc_module_clk_t starts from 1), then just use the default clock
         uint32_t sclk_freq = 0;
         ESP_GOTO_ON_ERROR(esp_clk_tree_src_get_freq_hz(uart_sclk_sel, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &sclk_freq), err, UART_TAG, "invalid source_clk");
-        ESP_GOTO_ON_ERROR(esp_clk_tree_enable_src(uart_sclk_sel, true), err, UART_TAG, "clock source enable failed");
+        esp_clk_tree_enable_src(uart_sclk_sel, true);
 #if SOC_UART_SUPPORT_RTC_CLK
         if (uart_sclk_sel == (soc_module_clk_t)UART_SCLK_RTC) {
             periph_rtc_dig_clk8m_enable();
@@ -2205,6 +2348,7 @@ esp_err_t uart_detect_bitrate_start(uart_port_t uart_num, const uart_bitrate_det
             uart_hal_set_sclk(&(uart_context[uart_num].hal), uart_sclk_sel);
             uart_hal_set_baudrate(&(uart_context[uart_num].hal), 57600, sclk_freq); // set to any baudrate
         }
+        uart_context[uart_num].sclk_sel = uart_sclk_sel;
         _uart_set_pin6(uart_num, UART_PIN_NO_CHANGE, config->rx_io_num, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
     } else if (config != NULL) {
         ESP_LOGW(UART_TAG, "unable to re-configure for an acquired port, ignoring the new config");
@@ -2257,12 +2401,15 @@ esp_err_t uart_detect_bitrate_stop(uart_port_t uart_num, bool deinit, uart_bitra
 
     if (deinit) { // release the port
         uart_release_pin(uart_num, true, true, true, true, true, true);
-        ESP_RETURN_ON_ERROR(esp_clk_tree_enable_src(uart_context[uart_num].sclk_sel, false), UART_TAG, "clock source disable failed");
+        if (uart_num != CONFIG_ESP_CONSOLE_UART_NUM) {
+            esp_clk_tree_enable_src(uart_context[uart_num].sclk_sel, false);
 #if SOC_UART_SUPPORT_RTC_CLK
-        if (src_clk == (soc_module_clk_t)UART_SCLK_RTC) {
-            periph_rtc_dig_clk8m_disable();
-        }
+            if (src_clk == (soc_module_clk_t)UART_SCLK_RTC) {
+                periph_rtc_dig_clk8m_disable();
+            }
 #endif
+            uart_context[uart_num].sclk_sel = -1;
+        }
         uart_module_disable(uart_num);
     }
     return ret;

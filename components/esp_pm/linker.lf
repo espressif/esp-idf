@@ -31,7 +31,7 @@ entries:
                 sleep_system_peripheral:peripheral_domain_pd_allowed (noflash)
             if SOC_PM_CPU_RETENTION_BY_RTCCNTL = y && (PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP = y || SOC_PM_SUPPORT_TAGMEM_PD = y):
                 sleep_cpu:sleep_enable_cpu_retention (noflash)
-            if PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP = y || (SOC_CPU_IN_TOP_DOMAIN = y && PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP = y):
+            if PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP = y || (ESP32P4_SELECTS_REV_LESS_V3 = y && PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP = y):
                 sleep_cpu:cpu_domain_pd_allowed (noflash)
             if SOC_PM_MMU_TABLE_RETENTION_WHEN_TOP_PD = y && PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP = y:
                 sleep_mmu:mmu_domain_pd_allowed (noflash)

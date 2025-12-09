@@ -116,7 +116,7 @@ DWC_OTG IP 是可配置的。有关 {IDF_TARGET_NAME} 的 DWC_OTG 的重要主�
         * - 每个微帧仅支持 4 个周期性和 4 个非周期性事务
           - ``OTG_NPERIO_TX_QUEUE_DEPTH = 4``、``OTG_PERIO_TX_QUEUE_DEPTH = 4``
 
-.. only:: esp32s2 or esp32s3
+.. only:: esp32s2 or esp32s3 or esp32h4
 
     .. list-table:: {IDF_TARGET_NAME} 的 DWC_OTG 配置
         :widths: 70 30

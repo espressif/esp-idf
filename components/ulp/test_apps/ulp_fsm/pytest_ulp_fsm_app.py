@@ -9,4 +9,4 @@ from pytest_embedded_idf.utils import soc_filtered_targets
 @pytest.mark.generic
 @idf_parametrize('target', soc_filtered_targets('SOC_ULP_FSM_SUPPORTED == 1'), indirect=['target'])
 def test_ulp_fsm(dut: Dut) -> None:
-    dut.run_all_single_board_cases()
+    dut.run_all_single_board_cases(reset=True)

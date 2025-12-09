@@ -167,6 +167,10 @@ list(APPEND mbedtls_targets everest p256m)
 set(mbedtls_target_sources "${COMPONENT_DIR}/port/mbedtls_debug.c"
                            "${COMPONENT_DIR}/port/esp_platform_time.c")
 
+if(CONFIG_MBEDTLS_VER_4_X_SUPPORT)
+    list(APPEND mbedtls_target_sources "${COMPONENT_DIR}/port/esp_psa_crypto_init.c")
+endif()
+
 if(CONFIG_MBEDTLS_DYNAMIC_BUFFER)
 set(mbedtls_target_sources ${mbedtls_target_sources}
                            "${COMPONENT_DIR}/port/dynamic/esp_mbedtls_dynamic_impl.c"
@@ -188,9 +192,14 @@ endif()
 # net_sockets.c should only be compiled if BSD socket functions are available.
 # Do this by checking if lwip component is included into the build.
 if(CONFIG_LWIP_ENABLE)
-    list(APPEND mbedtls_target_sources "${COMPONENT_DIR}/port/net_sockets.c")
-    idf_component_get_property(lwip_lib lwip COMPONENT_LIB)
-    target_link_libraries(${COMPONENT_LIB} ${linkage_type} ${lwip_lib})
+    if(IDF_BUILD_V2)
+        target_sources(${COMPONENT_LIB} PRIVATE "$<$<TARGET_EXISTS:idf::lwip>:${COMPONENT_DIR}/port/net_sockets.c>")
+        target_link_libraries(${COMPONENT_LIB} ${linkage_type} "$<$<TARGET_EXISTS:idf::lwip>:idf::lwip>")
+    else()
+        list(APPEND mbedtls_target_sources "${COMPONENT_DIR}/port/net_sockets.c")
+        idf_component_get_property(lwip_lib lwip COMPONENT_LIB)
+        target_link_libraries(${COMPONENT_LIB} ${linkage_type} ${lwip_lib})
+    endif()
 endif()
 
 # Add port files to mbedtls targets
@@ -210,14 +219,6 @@ if(CONFIG_SOC_SHA_SUPPORTED)
     endif()
 endif()
 
-if(CONFIG_SOC_AES_SUPPORTED)
-    if(CONFIG_SOC_AES_SUPPORT_DMA)
-        set(AES_PERIPHERAL_TYPE "dma")
-    else()
-        set(AES_PERIPHERAL_TYPE "block")
-    endif()
-endif()
-
 if(SHA_PERIPHERAL_TYPE STREQUAL "core")
     target_include_directories(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/sha/core/include")
 
@@ -229,7 +230,7 @@ if(SHA_PERIPHERAL_TYPE STREQUAL "core")
     target_sources(mbedcrypto PRIVATE  "${SHA_CORE_SRCS}")
 endif()
 
-if(AES_PERIPHERAL_TYPE STREQUAL "dma")
+if(CONFIG_SOC_AES_SUPPORT_DMA)
     if(NOT CONFIG_SOC_AES_GDMA)
         set(AES_DMA_SRCS "${COMPONENT_DIR}/port/aes/dma/esp_aes_crypto_dma_impl.c")
     else()
@@ -242,12 +243,9 @@ if(AES_PERIPHERAL_TYPE STREQUAL "dma")
     target_sources(mbedcrypto PRIVATE  "${AES_DMA_SRCS}")
 endif()
 
-if((SHA_PERIPHERAL_TYPE STREQUAL "core" AND CONFIG_SOC_SHA_SUPPORT_DMA) OR AES_PERIPHERAL_TYPE STREQUAL "dma")
+if((SHA_PERIPHERAL_TYPE STREQUAL "core" AND CONFIG_SOC_SHA_SUPPORT_DMA) OR CONFIG_SOC_AES_SUPPORT_DMA)
     target_link_libraries(mbedcrypto PRIVATE idf::esp_mm)
     if(CONFIG_SOC_SHA_GDMA OR CONFIG_SOC_AES_GDMA)
-        if(CONFIG_SOC_AXI_DMA_EXT_MEM_ENC_ALIGNMENT)
-            target_link_libraries(mbedcrypto PRIVATE idf::bootloader_support)
-        endif()
         target_sources(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/crypto_shared_gdma/esp_crypto_shared_gdma.c")
     endif()
 endif()
@@ -263,7 +261,7 @@ if(CONFIG_SOC_AES_SUPPORTED)
     target_include_directories(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/aes/include")
     target_sources(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/aes/esp_aes_xts.c"
                                   "${COMPONENT_DIR}/port/aes/esp_aes_common.c"
-                                  "${COMPONENT_DIR}/port/aes/${AES_PERIPHERAL_TYPE}/esp_aes.c"
+                                  "${COMPONENT_DIR}/port/aes/esp_aes.c"
     )
 endif()
 
@@ -278,6 +276,10 @@ target_sources(mbedcrypto PRIVATE
                 "${COMPONENT_DIR}/port/esp_ds/esp_rsa_sign_alt.c"
                 "${COMPONENT_DIR}/port/esp_ds/esp_rsa_dec_alt.c"
                 "${COMPONENT_DIR}/port/esp_ds/esp_ds_common.c")
+endif()
+
+if(CONFIG_SOC_HMAC_SUPPORTED)
+    target_sources(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/esp_hmac_pbkdf2.c")
 endif()
 
 # Note: some mbedTLS hardware acceleration can be enabled/disabled by config.
@@ -361,14 +363,14 @@ foreach(target ${mbedtls_targets})
     endif()
     if(CONFIG_MBEDTLS_COMPILER_OPTIMIZATION_SIZE)
         target_compile_options(${target} PRIVATE "-Os")
-    elseif(CONFIG_MBEDTLS_COMPILER_OPTIMIZATION_SPEED)
+    elseif(CONFIG_MBEDTLS_COMPILER_OPTIMIZATION_PERF)
         target_compile_options(${target} PRIVATE "-O2")
     endif()
 endforeach()
 
 if(CONFIG_MBEDTLS_COMPILER_OPTIMIZATION_SIZE)
     target_compile_options(${COMPONENT_LIB} PRIVATE "-Os")
-elseif(CONFIG_MBEDTLS_COMPILER_OPTIMIZATION_SPEED)
+elseif(CONFIG_MBEDTLS_COMPILER_OPTIMIZATION_PERF)
     target_compile_options(${COMPONENT_LIB} PRIVATE "-O2")
 endif()
 
@@ -401,6 +403,9 @@ if(CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN OR CONFIG_MBEDTLS_HARDWARE_ECDSA_VERIFY)
 endif()
 
 target_link_libraries(${COMPONENT_LIB} ${linkage_type} ${mbedtls_targets})
+
+# Ensure PSA crypto initialization is included in the build
+target_link_libraries(${COMPONENT_LIB} ${linkage_type} "-u mbedtls_psa_crypto_init_include_impl")
 
 if(CONFIG_ESP_TLS_USE_DS_PERIPHERAL)
     # The linker seems to be unable to resolve all the dependencies without increasing this

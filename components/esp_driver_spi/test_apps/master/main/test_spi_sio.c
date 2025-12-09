@@ -23,9 +23,9 @@
 #include "esp_heap_caps.h"
 #include "esp_log.h"
 #include "soc/spi_periph.h"
+#include "soc/gpio_struct.h"
 #include "test_utils.h"
 #include "test_spi_utils.h"
-#include "soc/gpio_periph.h"
 
 #include "hal/spi_ll.h"
 

@@ -39,7 +39,7 @@
 #endif
 
 
-static const char *TAG = "adc_share_hw_ctrl";
+ESP_LOG_ATTR_TAG(TAG, "adc_share_hw_ctrl");
 extern portMUX_TYPE rtc_spinlock;
 
 
@@ -211,7 +211,7 @@ void adc_apb_periph_claim(void)
 #if SOC_RCC_IS_INDEPENDENT
             adc_ll_enable_func_clock(true);
 #endif
-            adc_ll_reset_register();
+            sar_periph_ctrl_adc_reset();
         }
     }
 

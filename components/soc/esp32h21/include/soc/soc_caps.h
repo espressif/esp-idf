@@ -1,7 +1,7 @@
 /*
  * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 
 /*
@@ -25,7 +25,7 @@
 /*-------------------------- COMMON CAPS ---------------------------------------*/
 // #define SOC_ADC_SUPPORTED               1    //TODO: [ESP32H21] IDF-11589, IDF-11592
 // #define SOC_ANA_CMPR_SUPPORTED          1
-// #define SOC_DEDICATED_GPIO_SUPPORTED    1    //TODO: [ESP32H21] IDF-11621
+#define SOC_DEDICATED_GPIO_SUPPORTED    1
 #define SOC_UART_SUPPORTED              1
 #define SOC_GDMA_SUPPORTED              1
 #define SOC_AHB_GDMA_SUPPORTED          1
@@ -42,8 +42,8 @@
 #define SOC_EFUSE_SUPPORTED             1       //TODO: [ESP32H21] IDF-11507
 #define SOC_RTC_FAST_MEM_SUPPORTED      1
 #define SOC_RTC_MEM_SUPPORTED           1       //TODO: [ESP32H21] IDF-11548
-// #define SOC_I2S_SUPPORTED               1    //TODO: [ESP32H21] IDF-11606, IDF-11608
-// #define SOC_SDM_SUPPORTED               1    //TODO: [ESP32H21] IDF-11573
+#define SOC_I2S_SUPPORTED               1
+#define SOC_SDM_SUPPORTED               1
 #define SOC_GPSPI_SUPPORTED             1
 #define SOC_LEDC_SUPPORTED              1
 #define SOC_I2C_SUPPORTED               1
@@ -61,8 +61,8 @@
 // #define SOC_BOD_SUPPORTED               1    //TODO: [ESP32H21] IDF-11530
 // #define SOC_APM_SUPPORTED               1    //TODO: [ESP32H21] IDF-11494
 #define SOC_PMU_SUPPORTED               1
-// #define SOC_LP_TIMER_SUPPORTED          1
-// #define SOC_LP_AON_SUPPORTED            1
+#define SOC_LP_TIMER_SUPPORTED          1
+#define SOC_LP_AON_SUPPORTED            1
 // #define SOC_LP_PERIPHERALS_SUPPORTED    1
 #define SOC_CLK_TREE_SUPPORTED          1
 // #define SOC_ASSIST_DEBUG_SUPPORTED      1    //TODO: [ESP32H21] IDF-11544
@@ -73,18 +73,17 @@
 #define SOC_REG_I2C_SUPPORTED           1
 // #define SOC_PHY_SUPPORTED               1
 #define SOC_PCNT_SUPPORTED              1
-// #define SOC_MCPWM_SUPPORTED             1    //TODO: [ESP32H21] IDF-11601
+#define SOC_MCPWM_SUPPORTED             1
 #define SOC_TWAI_SUPPORTED              1
-// #define SOC_ETM_SUPPORTED               1    //TODO: [ESP32H21] IDF-11576
+#define SOC_ETM_SUPPORTED               1
 // #define SOC_PARLIO_SUPPORTED            1    //TODO: [ESP32H21] IDF-11570, IDF-11572
 #define SOC_RMT_SUPPORTED               1
 #define SOC_AES_SUPPORTED               1
 // #define SOC_SDIO_SLAVE_SUPPORTED        1
 #define SOC_PAU_SUPPORTED               1
-// #define SOC_LIGHT_SLEEP_SUPPORTED       1    //TODO: [ESP32H21] IDF-11517, IDF-11520
-// #define SOC_DEEP_SLEEP_SUPPORTED        1    //TODO: [ESP32H21] IDF-11515
-// #define SOC_MODEM_CLOCK_SUPPORTED       1
-// #define SOC_PM_SUPPORTED                1
+#define SOC_LIGHT_SLEEP_SUPPORTED       1
+#define SOC_DEEP_SLEEP_SUPPORTED        1
+#define SOC_PM_SUPPORTED                1
 
 /*-------------------------- XTAL CAPS ---------------------------------------*/
 #define SOC_XTAL_SUPPORT_32M                        1
@@ -188,26 +187,21 @@
 
 /*-------------------------- GDMA CAPS -------------------------------------*/
 #define SOC_AHB_GDMA_VERSION                1U
-#define SOC_GDMA_NUM_GROUPS_MAX             1U
-#define SOC_GDMA_PAIRS_PER_GROUP_MAX        3
-// #define SOC_GDMA_SUPPORT_ETM                1  // Support ETM submodule TODO: IDF-11604
+#define SOC_GDMA_SUPPORT_ETM                1
 #define SOC_GDMA_SUPPORT_SLEEP_RETENTION    1
 
 /*-------------------------- GPIO CAPS ---------------------------------------*/
 // ESP32-H21 has 1 GPIO peripheral
 #define SOC_GPIO_PORT                           1U
 #define SOC_GPIO_PIN_COUNT                      26
-// #define SOC_GPIO_SUPPORT_PIN_GLITCH_FILTER      1
-// #define SOC_GPIO_FLEX_GLITCH_FILTER_NUM         8
+#define SOC_GPIO_SUPPORT_PIN_GLITCH_FILTER      1
+#define SOC_GPIO_FLEX_GLITCH_FILTER_NUM         8
 #define SOC_GPIO_SUPPORT_PIN_HYS_FILTER         1
 
 // GPIO peripheral has the ETM extension
-// #define SOC_GPIO_SUPPORT_ETM          1
+#define SOC_GPIO_SUPPORT_ETM          1
 
 // Target has no full LP IO subsystem, GPIO5~11 remain LP function (powered by VDD3V3_LP, and can be used as ext1 wakeup pins)
-// Digital IOs have their own registers to control pullup/down/capability
-// However, there is no way to control pullup/down/capability for IOs under LP function since there is no LP_IOMUX registers
-#define SOC_GPIO_SUPPORT_RTC_INDEPENDENT    (1)
 
 // LP IO peripherals have independent clock gating to manage
 #define SOC_LP_IO_CLOCK_IS_INDEPENDENT      (1)
@@ -223,8 +217,6 @@
 
 // Support to force hold all IOs
 #define SOC_GPIO_SUPPORT_FORCE_HOLD              (1)
-// LP_IOs and DIG_IOs can be hold during deep sleep and after waking up
-#define SOC_GPIO_SUPPORT_HOLD_IO_IN_DSLP (1)
 // Support to hold a single digital I/O when the digital domain is powered off
 #define SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP  (1)
 
@@ -234,7 +226,7 @@
 // #define SOC_GPIO_CLOCKOUT_CHANNEL_NUM       (3)
 
 /*-------------------------- Sigma Delta Modulator CAPS -----------------*/
-#define SOC_SDM_SUPPORT_SLEEP_RETENTION 1
+// #define SOC_SDM_SUPPORT_SLEEP_RETENTION 1 //TODO [ESP32H21] IDF-14159
 
 /*-------------------------- ETM CAPS -----------------------------------*/
 #define SOC_ETM_SUPPORT_SLEEP_RETENTION 1
@@ -271,18 +263,13 @@
 // #define SOC_I2C_SUPPORT_SLEEP_RETENTION           (1)
 
 /*-------------------------- I2S CAPS ----------------------------------------*/
-// #define SOC_I2S_NUM                 (1U)
-// #define SOC_I2S_HW_VERSION_2        (1)
-// // #define SOC_I2S_SUPPORTS_ETM        (1)
-// #define SOC_I2S_SUPPORTS_XTAL       (1)
-// #define SOC_I2S_SUPPORTS_PLL_F96M   (1)
-// #define SOC_I2S_SUPPORTS_PLL_F64M   (1)
-// #define SOC_I2S_SUPPORTS_PCM        (1)
-// #define SOC_I2S_SUPPORTS_PDM        (1)
-// #define SOC_I2S_SUPPORTS_PDM_TX     (1)
-// #define SOC_I2S_PDM_MAX_TX_LINES    (2)
-// #define SOC_I2S_SUPPORTS_TDM        (1)
-// #define SOC_I2S_TDM_FULL_DATA_WIDTH (1)  /*!< No limitation to data bit width when using multiple slots */
+#define SOC_I2S_HW_VERSION_2        (1)
+#define SOC_I2S_SUPPORTS_ETM        (1)
+#define SOC_I2S_SUPPORTS_PCM        (1)
+#define SOC_I2S_SUPPORTS_PDM        (1)
+#define SOC_I2S_SUPPORTS_PDM_TX     (1)
+#define SOC_I2S_PDM_MAX_TX_LINES    (2)
+#define SOC_I2S_SUPPORTS_TDM        (1)
 
 /*-------------------------- LEDC CAPS ---------------------------------------*/
 #define SOC_LEDC_SUPPORT_PLL_DIV_CLOCK      (1)
@@ -295,6 +282,7 @@
 #define SOC_LEDC_GAMMA_CURVE_FADE_RANGE_MAX (16)
 #define SOC_LEDC_FADE_PARAMS_BIT_WIDTH      (10)
 #define SOC_LEDC_SUPPORT_SLEEP_RETENTION    (1)
+#define SOC_LEDC_SUPPORT_ETM                (1)
 
 /*-------------------------- MPU CAPS ----------------------------------------*/
 // #define SOC_MPU_CONFIGURABLE_REGIONS_SUPPORTED    0
@@ -309,50 +297,27 @@
 #define SOC_PCNT_SUPPORT_STEP_NOTIFY          1
 
 /*--------------------------- RMT CAPS ---------------------------------------*/
-#define SOC_RMT_GROUPS                        1U /*!< One RMT group */
-#define SOC_RMT_TX_CANDIDATES_PER_GROUP       2  /*!< Number of channels that capable of Transmit */
-#define SOC_RMT_RX_CANDIDATES_PER_GROUP       2  /*!< Number of channels that capable of Receive */
-#define SOC_RMT_CHANNELS_PER_GROUP            4  /*!< Total 4 channels */
 #define SOC_RMT_MEM_WORDS_PER_CHANNEL         48 /*!< Each channel owns 48 words memory (1 word = 4 Bytes) */
 #define SOC_RMT_SUPPORT_RX_PINGPONG           1  /*!< Support Ping-Pong mode on RX path */
-#define SOC_RMT_SUPPORT_RX_DEMODULATION       1  /*!< Support signal demodulation on RX path (i.e. remove carrier) */
-#define SOC_RMT_SUPPORT_ASYNC_STOP            1  /*!< Support stop transmission asynchronously */
 #define SOC_RMT_SUPPORT_TX_LOOP_COUNT         1  /*!< Support transmit specified number of cycles in loop mode */
 #define SOC_RMT_SUPPORT_TX_LOOP_AUTO_STOP     1  /*!< Hardware support of auto-stop in loop mode */
-#define SOC_RMT_SUPPORT_TX_SYNCHRO            1  /*!< Support coordinate a group of TX channels to start simultaneously */
-#define SOC_RMT_SUPPORT_TX_CARRIER_DATA_ONLY  1  /*!< TX carrier can be modulated to data phase only */
-#define SOC_RMT_SUPPORT_XTAL                  1  /*!< Support set XTAL clock as the RMT clock source */
-#define SOC_RMT_SUPPORT_RC_FAST               1  /*!< Support set RC_FAST as the RMT clock source */
 #define SOC_RMT_SUPPORT_SLEEP_RETENTION       1  /*!< The sleep retention feature can help back up RMT registers before sleep */
 
 /*-------------------------- MCPWM CAPS --------------------------------------*/
-// #define SOC_MCPWM_GROUPS                     (1U)   ///< 1 MCPWM groups on the chip (i.e., the number of independent MCPWM peripherals)
-// #define SOC_MCPWM_TIMERS_PER_GROUP           (3)    ///< The number of timers that each group has
-// #define SOC_MCPWM_OPERATORS_PER_GROUP        (3)    ///< The number of operators that each group has
-// #define SOC_MCPWM_COMPARATORS_PER_OPERATOR   (2)    ///< The number of comparators that each operator has
-// #define SOC_MCPWM_GENERATORS_PER_OPERATOR    (2)    ///< The number of generators that each operator has
-// #define SOC_MCPWM_TRIGGERS_PER_OPERATOR      (2)    ///< The number of triggers that each operator has
-// #define SOC_MCPWM_GPIO_FAULTS_PER_GROUP      (3)    ///< The number of fault signal detectors that each group has
-// #define SOC_MCPWM_CAPTURE_TIMERS_PER_GROUP   (1)    ///< The number of capture timers that each group has
-// #define SOC_MCPWM_CAPTURE_CHANNELS_PER_TIMER (3)    ///< The number of capture channels that each capture timer has
-// #define SOC_MCPWM_GPIO_SYNCHROS_PER_GROUP    (3)    ///< The number of GPIO synchros that each group has
-// #define SOC_MCPWM_SWSYNC_CAN_PROPAGATE       (1)    ///< Software sync event can be routed to its output
-// #define SOC_MCPWM_SUPPORT_ETM                (1)    ///< Support ETM (Event Task Matrix)
-// #define SOC_MCPWM_CAPTURE_CLK_FROM_GROUP     (1)    ///< Capture timer shares clock with other PWM timers
+
+#define SOC_MCPWM_SWSYNC_CAN_PROPAGATE       (1)    ///< Software sync event can be routed to its output
+#define SOC_MCPWM_SUPPORT_ETM                (1)    ///< Support ETM (Event Task Matrix)
+#define SOC_MCPWM_CAPTURE_CLK_FROM_GROUP     (1)    ///< Capture timer shares clock with other PWM timers
+#define SOC_MCPWM_SUPPORT_SLEEP_RETENTION    (1)    ///< Support back up registers before sleep
 
 /*------------------------ USB SERIAL JTAG CAPS ------------------------------*/
 // #define SOC_USB_SERIAL_JTAG_SUPPORT_LIGHT_SLEEP     (1)     /*!< Support to maintain minimum usb communication during light sleep */ // TODO: IDF-6395
 
 /*-------------------------- PARLIO CAPS --------------------------------------*/
-// #define SOC_PARLIO_GROUPS                    1U /*!< Number of parallel IO peripherals */
-// #define SOC_PARLIO_TX_UNITS_PER_GROUP        1U /*!< number of TX units in each group */
-// #define SOC_PARLIO_RX_UNITS_PER_GROUP        1U /*!< number of RX units in each group */
 // #define SOC_PARLIO_TX_UNIT_MAX_DATA_WIDTH    8  /*!< Number of data lines of the TX unit */
 // #define SOC_PARLIO_RX_UNIT_MAX_DATA_WIDTH    8  /*!< Number of data lines of the RX unit */
 // #define SOC_PARLIO_TX_CLK_SUPPORT_GATING     1  /*!< Support gating TX clock */
 // #define SOC_PARLIO_RX_CLK_SUPPORT_GATING     1  /*!< Support gating RX clock */
-// #define SOC_PARLIO_RX_CLK_SUPPORT_OUTPUT     1  /*!< Support output RX clock to a GPIO */
-// #define SOC_PARLIO_TRANS_BIT_ALIGN           1  /*!< Support bit alignment in transaction */
 
 /*--------------------------- MPI CAPS ---------------------------------------*/
 #define SOC_MPI_MEM_BLOCKS_NUM (4)
@@ -430,14 +395,14 @@
 #define SOC_SYSTIMER_SUPPORT_RC_FAST        1  // Systimer can use RC_FAST clock source
 #define SOC_SYSTIMER_INT_LEVEL              1  // Systimer peripheral uses level interrupt
 #define SOC_SYSTIMER_ALARM_MISS_COMPENSATE  1  // Systimer peripheral can generate interrupt immediately if t(target) > t(current)
-// #define SOC_SYSTIMER_SUPPORT_ETM            1  // Systimer comparator can generate ETM event
+#define SOC_SYSTIMER_SUPPORT_ETM            1  // Systimer comparator can generate ETM event
 
 /*-------------------------- LP_TIMER CAPS ----------------------------------*/
 #define SOC_LP_TIMER_BIT_WIDTH_LO           32 // Bit width of lp_timer low part
 #define SOC_LP_TIMER_BIT_WIDTH_HI           16 // Bit width of lp_timer high part
 
 /*--------------------------- TIMER GROUP CAPS ---------------------------------------*/
-// #define SOC_TIMER_SUPPORT_ETM             (1)    //TODO: [ESP32H21] IDF-11576
+#define SOC_TIMER_SUPPORT_ETM             (1)
 #define SOC_TIMER_SUPPORT_SLEEP_RETENTION (1)
 
 /*--------------------------- WATCHDOG CAPS ---------------------------------------*/
@@ -447,10 +412,6 @@
 /*-------------------------- TWAI CAPS ---------------------------------------*/
 #define SOC_TWAI_CONTROLLER_NUM             1U
 #define SOC_TWAI_MASK_FILTER_NUM            1U
-#define SOC_TWAI_CLK_SUPPORT_XTAL           1
-#define SOC_TWAI_BRP_MIN                    2
-#define SOC_TWAI_BRP_MAX                    32768
-#define SOC_TWAI_SUPPORTS_RX_STATUS         1
 #define SOC_TWAI_SUPPORT_SLEEP_RETENTION    1
 
 /*-------------------------- eFuse CAPS----------------------------*/
@@ -461,6 +422,7 @@
 #define SOC_EFUSE_DIS_ICACHE 1
 // #define SOC_EFUSE_ECDSA_USE_HARDWARE_K 1 // Force use hardware TRNG supplied K for ECDSA
 #define SOC_EFUSE_ECDSA_KEY 1
+#define SOC_EFUSE_XTS_AES_KEY_128 1
 
 /*-------------------------- Secure Boot CAPS----------------------------*/
 #define SOC_SECURE_BOOT_V2_RSA              1

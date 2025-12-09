@@ -1,7 +1,6 @@
 # SPDX-FileCopyrightText: 2018-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import binascii
-from collections import namedtuple
 from io import BytesIO
 
 import espsecure
@@ -13,9 +12,9 @@ from pytest_embedded_idf.utils import idf_parametrize
 # 1. Generate zero flash encryption key:
 #   dd if=/dev/zero of=key.bin bs=1 count=32
 # 2.Burn Efuses:
-#   espefuse.py --do-not-confirm -p $ESPPORT burn_efuse FLASH_CRYPT_CONFIG 0xf
-#   espefuse.py --do-not-confirm -p $ESPPORT burn_efuse FLASH_CRYPT_CNT 0x1
-#   espefuse.py --do-not-confirm -p $ESPPORT burn_key flash_encryption key.bin
+#   espefuse --do-not-confirm -p $ESPPORT burn-efuse FLASH_CRYPT_CONFIG 0xf
+#   espefuse --do-not-confirm -p $ESPPORT burn-efuse FLASH_CRYPT_CNT 0x1
+#   espefuse --do-not-confirm -p $ESPPORT burn-key flash_encryption key.bin
 
 
 def _test_flash_encryption(dut: Dut) -> None:
@@ -36,17 +35,17 @@ def _test_flash_encryption(dut: Dut) -> None:
         key_bytes = b'\xff' + b'\x00' * 31
         aes_xts = True
 
-    EncryptFlashDataArgs = namedtuple(
-        'EncryptFlashDataArgs', ['output', 'plaintext_file', 'address', 'keyfile', 'flash_crypt_conf', 'aes_xts']
+    output = BytesIO()
+    espsecure.encrypt_flash_data(
+        output=output,
+        plaintext_file=BytesIO(plain_data),
+        address=flash_addr,
+        keyfile=BytesIO(key_bytes),
+        flash_crypt_conf=0xF,
+        aes_xts=aes_xts,
     )
-    args = EncryptFlashDataArgs(BytesIO(), BytesIO(plain_data), flash_addr, BytesIO(key_bytes), 0xF, aes_xts)
-    try:
-        # espsecure 5.0 arguments are passed one by one; the following will convert tuple to dict and unwrap it
-        espsecure.encrypt_flash_data(**args._asdict())
-    except TypeError:
-        espsecure.encrypt_flash_data(args)
 
-    expected_ciphertext = args.output.getvalue()
+    expected_ciphertext = output.getvalue()
     hex_ciphertext = binascii.hexlify(expected_ciphertext).decode('ascii')
     expected_str = (
         ' '.join(hex_ciphertext[i : i + 2] for i in range(0, 16, 2))

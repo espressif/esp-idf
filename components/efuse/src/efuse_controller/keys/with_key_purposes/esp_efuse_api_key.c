@@ -18,7 +18,7 @@
  * This special field is called key_purpose.
  */
 
-const static char *TAG = "efuse";
+ESP_LOG_ATTR_TAG(TAG, "efuse");
 
 /**
  * @brief Keys and their attributes are packed into a structure
@@ -43,7 +43,9 @@ const esp_efuse_keys_t s_table[EFUSE_BLK_KEY_MAX - EFUSE_BLK_KEY0] = {
     {ESP_EFUSE_KEY2, ESP_EFUSE_KEY_PURPOSE_2, ESP_EFUSE_RD_DIS_KEY2, ESP_EFUSE_WR_DIS_KEY2, ESP_EFUSE_WR_DIS_KEY2_PURPOSE},
     {ESP_EFUSE_KEY3, ESP_EFUSE_KEY_PURPOSE_3, ESP_EFUSE_RD_DIS_KEY3, ESP_EFUSE_WR_DIS_KEY3, ESP_EFUSE_WR_DIS_KEY3_PURPOSE},
     {ESP_EFUSE_KEY4, ESP_EFUSE_KEY_PURPOSE_4, ESP_EFUSE_RD_DIS_KEY4, ESP_EFUSE_WR_DIS_KEY4, ESP_EFUSE_WR_DIS_KEY4_PURPOSE},
+#if !CONFIG_IDF_TARGET_ESP32S31 // TODO: [ESP32S31] IDF-14688
     {ESP_EFUSE_KEY5, ESP_EFUSE_KEY_PURPOSE_5, ESP_EFUSE_RD_DIS_KEY5, ESP_EFUSE_WR_DIS_KEY5, ESP_EFUSE_WR_DIS_KEY5_PURPOSE},
+#endif
 #if 0
     {ESP_EFUSE_KEY6, ESP_EFUSE_KEY_PURPOSE_6, ESP_EFUSE_RD_DIS_KEY6, ESP_EFUSE_WR_DIS_KEY6, ESP_EFUSE_WR_DIS_KEY6_PURPOSE},
 #endif
@@ -76,6 +78,7 @@ bool esp_efuse_block_is_empty(esp_efuse_block_t block)
     return false;
 }
 
+#if !CONFIG_IDF_TARGET_ESP32S31 // TODO: [ESP32S31] IDF-14688
 // Sets a write protection for the whole block.
 esp_err_t esp_efuse_set_write_protect(esp_efuse_block_t blk)
 {
@@ -108,6 +111,7 @@ esp_err_t esp_efuse_set_read_protect(esp_efuse_block_t blk)
 
 }
 
+#endif
 // get efuse coding_scheme.
 esp_efuse_coding_scheme_t esp_efuse_get_coding_scheme(esp_efuse_block_t blk)
 {
@@ -177,7 +181,7 @@ esp_efuse_purpose_t esp_efuse_get_key_purpose(esp_efuse_block_t block)
     }
     unsigned idx = block - EFUSE_BLK_KEY0;
     uint8_t value = 0;
-    esp_err_t err = esp_efuse_read_field_blob(s_table[idx].keypurpose, &value, s_table[idx].keypurpose[0]->bit_count);
+    esp_err_t err = esp_efuse_read_field_blob(s_table[idx].keypurpose, &value, esp_efuse_get_field_size(s_table[idx].keypurpose));
     if (err != ESP_OK) {
         return ESP_EFUSE_KEY_PURPOSE_MAX;
     }
@@ -190,7 +194,7 @@ esp_err_t esp_efuse_set_key_purpose(esp_efuse_block_t block, esp_efuse_purpose_t
         return ESP_ERR_INVALID_ARG;
     }
     unsigned idx = block - EFUSE_BLK_KEY0;
-    return esp_efuse_write_field_blob(s_table[idx].keypurpose, &purpose, s_table[idx].keypurpose[0]->bit_count);
+    return esp_efuse_write_field_blob(s_table[idx].keypurpose, &purpose, esp_efuse_get_field_size(s_table[idx].keypurpose));
 }
 
 bool esp_efuse_get_keypurpose_dis_write(esp_efuse_block_t block)
@@ -286,7 +290,7 @@ esp_err_t esp_efuse_write_key(esp_efuse_block_t block, esp_efuse_purpose_t purpo
 
 #if SOC_EFUSE_BLOCK9_KEY_PURPOSE_QUIRK
         if (block == EFUSE_BLK9 && (
-#if SOC_FLASH_ENCRYPTION_XTS_AES_256
+#if SOC_EFUSE_XTS_AES_KEY_256
             purpose == ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_1 ||
             purpose == ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_2 ||
 #endif
@@ -301,24 +305,24 @@ esp_err_t esp_efuse_write_key(esp_efuse_block_t block, esp_efuse_purpose_t purpo
 #endif // SOC_EFUSE_BLOCK9_KEY_PURPOSE_QUIRK
 
         if (purpose == ESP_EFUSE_KEY_PURPOSE_XTS_AES_128_KEY ||
-#ifdef SOC_FLASH_ENCRYPTION_XTS_AES_256
+#ifdef SOC_EFUSE_XTS_AES_KEY_256
             purpose == ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_1 ||
             purpose == ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_2 ||
-#endif //#ifdef SOC_EFUSE_SUPPORT_XTS_AES_256_KEYS
+#endif //#ifdef SOC_EFUSE_XTS_AES_KEY_256
 #if SOC_EFUSE_ECDSA_KEY
             purpose == ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY ||
 #endif
-#if SOC_EFUSE_ECDSA_KEY_P192
+#if SOC_EFUSE_ECDSA_KEY_P192 || EFUSE_LL_HAS_ECDSA_KEY_P192
             purpose == ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY_P192 ||
 #endif
-#if SOC_EFUSE_ECDSA_KEY_P384
+#if SOC_EFUSE_ECDSA_KEY_P384 || EFUSE_LL_HAS_ECDSA_KEY_P384
             purpose == ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY_P384_L ||
             purpose == ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY_P384_H ||
 #endif
-#if SOC_PSRAM_ENCRYPTION_XTS_AES_128
+#if SOC_PSRAM_ENCRYPTION_XTS_AES_128 || EFUSE_LL_HAS_PSRAM_ENCRYPTION_XTS_AES_128
             purpose == ESP_EFUSE_KEY_PURPOSE_XTS_AES_128_PSRAM_KEY ||
 #endif
-#if SOC_PSRAM_ENCRYPTION_XTS_AES_256
+#if SOC_PSRAM_ENCRYPTION_XTS_AES_256 || EFUSE_LL_HAS_PSRAM_ENCRYPTION_XTS_AES_256
             purpose == ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_PSRAM_KEY_1 ||
             purpose == ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_PSRAM_KEY_2 ||
 #endif

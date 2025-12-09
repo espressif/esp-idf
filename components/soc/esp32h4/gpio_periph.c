@@ -1,10 +1,11 @@
 /*
  * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 
 #include "soc/gpio_periph.h"
+#include "esp_bit_defs.h"
 
 const uint32_t GPIO_HOLD_MASK[] = {
     BIT(0),          //GPIO0    //LP_AON_GPIO_HOLD0_REG

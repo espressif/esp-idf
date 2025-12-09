@@ -327,6 +327,8 @@ void bta_gattc_clcb_dealloc_by_conn_id(UINT16 conn_id)
 {
     tBTA_GATTC_CLCB *p_clcb = bta_gattc_find_clcb_by_conn_id(conn_id);
 
+    APPL_TRACE_DEBUG("%s conn_id=%u p_clcb=%p", __func__, conn_id, p_clcb);
+
     if (p_clcb) {
         tBTA_GATTC_RCB      *p_clreg = p_clcb->p_rcb;
         bta_gattc_clcb_dealloc(p_clcb);

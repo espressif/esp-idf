@@ -29,10 +29,12 @@
 #include "hal/gdma_ll.h"
 #include "hal/gdma_hal_ahb.h"
 #include "hal/gdma_hal_axi.h"
-#include "soc/gdma_periph.h"
+#include "hal/gdma_periph.h"
 #include "soc/periph_defs.h"
 #include "esp_private/gdma.h"
 #include "esp_private/periph_ctrl.h"
+#include "esp_private/critical_section.h"
+#include "esp_private/sleep_retention.h"
 
 #if CONFIG_GDMA_OBJ_DRAM_SAFE
 #define GDMA_MEM_ALLOC_CAPS    (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
@@ -41,9 +43,6 @@
 #endif
 
 #define GDMA_ACCESS_ENCRYPTION_MEM_ALIGNMENT 16 /*!< The alignment of the memory and size when DMA accesses the encryption memory */
-
-///!< Logging settings
-#define TAG "gdma"
 
 #ifdef __cplusplus
 extern "C" {
@@ -61,8 +60,8 @@ typedef struct gdma_group_t {
     portMUX_TYPE spinlock;  // group level spinlock, protect group level stuffs, e.g. hal object, pair handle slots and reference count of each pair
     uint32_t tx_periph_in_use_mask; // each bit indicates which peripheral (TX direction) has been occupied
     uint32_t rx_periph_in_use_mask; // each bit indicates which peripheral (RX direction) has been occupied
-    gdma_pair_t *pairs[SOC_GDMA_PAIRS_PER_GROUP_MAX];  // handles of GDMA pairs
-    int pair_ref_counts[SOC_GDMA_PAIRS_PER_GROUP_MAX]; // reference count used to protect pair install/uninstall
+    gdma_pair_t *pairs[GDMA_LL_GET(PAIRS_PER_INST)];  // handles of GDMA pairs
+    int pair_ref_counts[GDMA_LL_GET(PAIRS_PER_INST)]; // reference count used to protect pair install/uninstall
 } gdma_group_t;
 
 struct gdma_pair_t {
@@ -100,6 +99,9 @@ struct gdma_rx_channel_t {
     void *user_data;     // user registered DMA event data
     gdma_rx_event_callbacks_t cbs;      // RX event callbacks
 };
+
+void gdma_acquire_sleep_retention(gdma_pair_t* pair);
+void gdma_release_sleep_retention(gdma_pair_t* pair);
 
 #ifdef __cplusplus
 }

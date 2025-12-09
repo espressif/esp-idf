@@ -1,10 +1,13 @@
 idf_build_get_property(target IDF_TARGET)
 
-list(APPEND includes "${target}/include")
-list(APPEND includes "include")
+set(includes)
 
 set(srcs)
-set(include "include")
+if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/${target}/include")
+    list(APPEND includes "${target}/include")
+endif()
+list(APPEND includes "include")
+
 set(target_folder "${target}")
 
 # I2C related source files

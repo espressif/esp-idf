@@ -35,20 +35,10 @@
 #endif
 
 #if CONFIG_SNIFFER_SD_SPI_MODE
-
-#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2
-#define PIN_NUM_MISO 2
-#define PIN_NUM_MOSI 15
-#define PIN_NUM_CLK  14
-#define PIN_NUM_CS   13
-
-#elif CONFIG_IDF_TARGET_ESP32C3
-#define PIN_NUM_MISO 18
-#define PIN_NUM_MOSI 9
-#define PIN_NUM_CLK  8
-#define PIN_NUM_CS   19
-#endif //CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2
-
+#define PIN_NUM_MISO CONFIG_SNIFFER_PIN_MISO
+#define PIN_NUM_MOSI CONFIG_SNIFFER_PIN_MOSI
+#define PIN_NUM_CLK  CONFIG_SNIFFER_PIN_CLK
+#define PIN_NUM_CS   CONFIG_SNIFFER_PIN_CS
 #endif  // CONFIG_SNIFFER_SD_SPI_MODE
 
 static const char *TAG = "example";
@@ -127,7 +117,7 @@ static void initialize_eth(void)
     // Initialize Ethernet driver
     uint8_t eth_port_cnt = 0;
     esp_eth_handle_t *eth_handles;
-    ESP_ERROR_CHECK(example_eth_init(&eth_handles, &eth_port_cnt));
+    ESP_ERROR_CHECK(ethernet_init_all(&eth_handles, &eth_port_cnt));
 
     if (eth_port_cnt > 0) {
         // Register user defined event handlers
@@ -147,6 +137,8 @@ static struct {
     struct arg_str *device;
     struct arg_end *end;
 } mount_args;
+
+static sdmmc_card_t *card = NULL;
 
 /** 'mount' command */
 static int mount(int argc, char **argv)
@@ -168,8 +160,6 @@ static int mount(int argc, char **argv)
         };
 
         // initialize SD card and mount FAT filesystem.
-        sdmmc_card_t *card;
-
 #if CONFIG_SNIFFER_SD_SPI_MODE
         ESP_LOGI(TAG, "Using SPI peripheral");
         sdmmc_host_t host = SDSPI_HOST_DEFAULT();
@@ -249,10 +239,11 @@ static int unmount(int argc, char **argv)
     }
     /* unmount sd card */
     if (!strncmp(mount_args.device->sval[0], "sd", 2)) {
-        if (esp_vfs_fat_sdmmc_unmount() != ESP_OK) {
+        if (esp_vfs_fat_sdcard_unmount(CONFIG_SNIFFER_MOUNT_POINT, card) != ESP_OK) {
             ESP_LOGE(TAG, "Card unmount failed");
             return -1;
         }
+        card = NULL;
         ESP_LOGI(TAG, "Card unmounted");
     }
     return 0;

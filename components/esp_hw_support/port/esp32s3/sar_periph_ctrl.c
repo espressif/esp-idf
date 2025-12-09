@@ -21,10 +21,11 @@
 #include "esp_private/sar_periph_ctrl.h"
 #include "esp_private/regi2c_ctrl.h"
 #include "esp_private/critical_section.h"
+#include "esp_private/adc_share_hw_ctrl.h"
 #include "hal/sar_ctrl_ll.h"
 #include "hal/adc_ll.h"
 
-static const char *TAG = "sar_periph_ctrl";
+ESP_LOG_ATTR_TAG(TAG, "sar_periph_ctrl");
 extern portMUX_TYPE rtc_spinlock;
 
 
@@ -120,4 +121,24 @@ void sar_periph_ctrl_adc_continuous_power_acquire(void)
 void sar_periph_ctrl_adc_continuous_power_release(void)
 {
     s_sar_power_release();
+}
+
+/*------------------------------------------------------------------------------
+* ADC Reset
+*----------------------------------------------------------------------------*/
+void sar_periph_ctrl_adc_reset(void)
+{
+    ADC_BUS_CLK_ATOMIC() {
+        adc_ll_reset_register();
+    }
+}
+
+void adc_reset_lock_acquire(void)
+{
+    // Empty implementation
+}
+
+void adc_reset_lock_release(void)
+{
+    // Empty implementation
 }

@@ -17,7 +17,6 @@
 #include "esp_timer.h"
 #include "esp_vfs.h"
 #include "esp_vfs_dev.h" // Old headers for the aliasing functions
-#include "esp_vfs_usb_serial_jtag.h" // Old headers for the aliasing functions
 #include "esp_attr.h"
 #include "esp_log.h"
 #include "sdkconfig.h"
@@ -182,6 +181,10 @@ static int usb_serial_jtag_rx_char_no_driver(int fd)
 
 static ssize_t usb_serial_jtag_write(int fd, const void * data, size_t size)
 {
+    if (!usb_serial_jtag_is_connected()) {
+        // TODO: IDF-14303
+        return -1;
+    }
     const char *data_c = (const char *)data;
     /*  Even though newlib does stream locking on each individual stream, we need
      *  a dedicated lock if two streams (stdout and stderr) point to the
@@ -226,6 +229,10 @@ static void usb_serial_jtag_return_char(int fd, int c)
 
 static ssize_t usb_serial_jtag_read(int fd, void* data, size_t size)
 {
+    if (!usb_serial_jtag_is_connected()) {
+        // TODO: IDF-14303
+        return -1;
+    }
     assert(fd == USJ_LOCAL_FD);
     char *data_c = (char *) data;
     size_t received = 0;
@@ -349,6 +356,10 @@ static int usb_serial_jtag_wait_tx_done_no_driver(int fd)
 
 static int usb_serial_jtag_fsync(int fd)
 {
+    if (!usb_serial_jtag_is_connected()) {
+        // TODO: IDF-14303
+        return -1;
+    }
     _lock_acquire_recursive(&s_ctx.write_lock);
     int r = s_ctx.fsync_func(fd);
     _lock_release_recursive(&s_ctx.write_lock);
@@ -362,7 +373,7 @@ static int usb_serial_jtag_fsync(int fd)
 
 #ifdef CONFIG_VFS_SUPPORT_SELECT
 
-static void select_notif_callback_isr(usj_select_notif_t usj_select_notif, BaseType_t *task_woken)
+static void select_notif_callback_isr(usj_select_notif_t usj_select_notif, int *task_woken)
 {
     portENTER_CRITICAL_ISR(&s_registered_select_lock);
     for (int i = 0; i < s_registered_select_num; ++i) {

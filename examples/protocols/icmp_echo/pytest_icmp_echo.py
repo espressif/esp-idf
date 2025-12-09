@@ -24,7 +24,7 @@ def _run_test(dut: Dut) -> None:
     dut.expect('Got IPv4 event:', timeout=30)
 
     ping_dest = os.getenv('EXAMPLE_ICMP_SERVER', 'ci.espressif.cn')
-    dut.write('ping {} -c 5'.format(ping_dest))
+    dut.write(f'ping {ping_dest} -c 5')
 
     # expect at least two packets (there could be lost packets)
     ip = dut.expect(r'64 bytes from (\d+\.\d+\.\d+\.\d+) icmp_seq=\d ttl=\d+ time=\d+ ms')[1].decode()
@@ -79,12 +79,12 @@ def test_protocols_icmp_echo_ipv6_only(dut: Dut) -> None:
         dut.write(f'{ap_ssid} {ap_password}')
     # expect all 8 octets from IPv6 (assumes it's printed in the long form)
     ipv6_r = r':'.join((r'[0-9a-fA-F]{4}',) * 8)
-    ipv6 = dut.expect(ipv6_r, timeout=30)[0].decode()
+    ipv6 = dut.expect(ipv6_r, timeout=60)[0].decode()
     logging.info(f'Connected AP with IPv6={ipv6}')
     interface_nr = dut.expect(r'Connected on interface: [a-z]{2}\d \((\d+)\)', timeout=30)[1].decode()
 
     # ping our own address to simplify things
-    dut.write('ping -I {} {} -c 5'.format(interface_nr, ipv6))
+    dut.write(f'ping -I {interface_nr} {ipv6} -c 5')
 
     # expect at least two packets (there could be lost packets)
     ip = dut.expect(r'64 bytes from ([0-9a-fA-F:]+) icmp_seq=\d ttl=\d+ time=\d+ ms')[1].decode()

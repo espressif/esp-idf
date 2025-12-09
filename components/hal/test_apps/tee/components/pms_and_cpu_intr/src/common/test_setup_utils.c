@@ -11,7 +11,7 @@
 #include "soc/soc_caps.h"
 
 #include "hal/gdma_ll.h"
-#include "soc/gdma_channel.h"
+#include "hal/gdma_types.h"
 #if SOC_AHB_GDMA_VERSION == 2
 #include "soc/ahb_dma_struct.h"
 #elif SOC_AHB_GDMA_VERSION == 1

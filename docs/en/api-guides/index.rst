@@ -13,6 +13,7 @@ API Guides
    :SOC_BLE_MESH_SUPPORTED: esp-ble-mesh/ble-mesh-index
    bootloader
    build-system
+   build-system-v2
    :SOC_SUPPORT_COEXISTENCE: coexist
    c
    cplusplus
@@ -20,7 +21,7 @@ API Guides
    core_dump
    current-consumption-measurement-modules
    :ESP_ROM_SUPPORT_DEEP_SLEEP_WAKEUP_STUB: deep-sleep-stub
-   :SOC_USB_OTG_SUPPORTED: dfu
+   :SOC_USB_OTG_SUPPORTED and not esp32h4: dfu
    error-handling
    :SOC_WIFI_MESH_SUPPORT: esp-wifi-mesh
    :SOC_SPIRAM_SUPPORTED: external-ram
@@ -45,7 +46,7 @@ API Guides
    tools/index
    unit-tests
    host-apps
-   :SOC_USB_OTG_SUPPORTED and not esp32p4: usb-otg-console
+   :SOC_USB_OTG_SUPPORTED and not esp32p4 and not esp32h4: usb-otg-console
    :SOC_USB_SERIAL_JTAG_SUPPORTED: usb-serial-jtag-console
    :SOC_WIFI_SUPPORTED: wifi
    :SOC_WIFI_SUPPORTED: wifi-security

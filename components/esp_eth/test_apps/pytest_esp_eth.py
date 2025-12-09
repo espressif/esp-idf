@@ -31,16 +31,18 @@ class EthTestIntf:
         netifs.sort(reverse=True)
         logging.info('detected interfaces: %s', str(netifs))
 
-        for netif in netifs:
-            # if no interface defined, try to find it automatically
-            if my_if == '':
-                if netif.find('eth') == 0 or netif.find('enp') == 0 or netif.find('eno') == 0:
-                    self.target_if = netif
-                    break
+        if my_if == '':
+            if 'dut_p1' in netifs:
+                self.target_if = 'dut_p1'
             else:
-                if netif.find(my_if) == 0:
-                    self.target_if = my_if
-                    break
+                for netif in netifs:
+                    # if no interface defined, try to find it automatically
+                    if netif.find('eth') == 0 or netif.find('enp') == 0 or netif.find('eno') == 0:
+                        self.target_if = netif
+                        break
+        elif my_if in netifs:
+            self.target_if = my_if
+
         if self.target_if == '':
             raise RuntimeError('network interface not found')
         logging.info('Use %s for testing', self.target_if)
@@ -132,8 +134,8 @@ def ethernet_int_emac_test(dut: IdfDut) -> None:
     dut.run_all_single_board_cases(group='esp_emac', timeout=240)
 
 
-def ethernet_l2_test(dut: IdfDut) -> None:
-    target_if = EthTestIntf(ETH_TYPE)
+def ethernet_l2_test(dut: IdfDut, test_if: str = '') -> None:
+    target_if = EthTestIntf(ETH_TYPE, test_if)
 
     dut.expect_exact('Press ENTER to see the list of tests')
     dut.write('\n')
@@ -169,11 +171,10 @@ def ethernet_l2_test(dut: IdfDut) -> None:
         r'DUT MAC: ([0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2})'
     )
     dut_mac = res.group(1).decode('utf-8')
+    target_if.recv_resp_poke(mac=dut_mac)
     for _ in range(5):
-        # wait for POKE msg to be sure the switch already started forwarding the port's traffic
-        # (there might be slight delay due to the RSTP execution)
-        # or wait for next POKE msg to be sure the DUT reconfigured the filter
-        target_if.recv_resp_poke(mac=dut_mac)
+        # wait to be sure the DUT reconfigured the filter
+        dut.expect_exact('Filter configured')
         target_if.send_eth_packet('ff:ff:ff:ff:ff:ff')  # broadcast frame
         target_if.send_eth_packet('01:00:5e:00:00:00')  # IPv4 multicast frame
         target_if.send_eth_packet('33:33:00:00:00:00')  # IPv6 multicast frame
@@ -251,7 +252,7 @@ def ethernet_heap_alloc_test(dut: IdfDut) -> None:
 
 # ----------- IP101 -----------
 @pytest.mark.ethernet
-@pytest.mark.parametrize('config', ['default_ip101', 'release_ip101', 'single_core_ip101'], indirect=True)
+@pytest.mark.parametrize('config', ['default_generic', 'release_generic', 'single_core_generic'], indirect=True)
 @pytest.mark.flaky(reruns=3, reruns_delay=5)
 @idf_parametrize('target', ['esp32'], indirect=['target'])
 def test_esp_ethernet(dut: IdfDut) -> None:
@@ -262,7 +263,7 @@ def test_esp_ethernet(dut: IdfDut) -> None:
 @pytest.mark.parametrize(
     'config',
     [
-        'default_ip101',
+        'default_generic',
     ],
     indirect=True,
 )
@@ -277,7 +278,7 @@ def test_esp_emac(dut: IdfDut) -> None:
 @pytest.mark.parametrize(
     'config',
     [
-        'default_ip101',
+        'default_generic',
     ],
     indirect=True,
 )
@@ -291,7 +292,7 @@ def test_esp_eth_ip101(dut: IdfDut) -> None:
 @pytest.mark.parametrize(
     'config',
     [
-        'default_ip101_esp32p4',
+        'default_generic_esp32p4',
     ],
     indirect=True,
 )
@@ -306,7 +307,7 @@ def test_esp32p4_ethernet(dut: IdfDut) -> None:
 @pytest.mark.parametrize(
     'config',
     [
-        'default_ip101_esp32p4',
+        'default_generic_esp32p4',
     ],
     indirect=True,
 )
@@ -331,6 +332,7 @@ def test_esp32p4_emac_clko(dut: IdfDut) -> None:
 
 
 # ----------- LAN8720 -----------
+@pytest.mark.temp_skip_ci(targets=['esp32'], reason='IDF-14124')
 @pytest.mark.eth_lan8720
 @pytest.mark.parametrize(
     'config',
@@ -347,6 +349,7 @@ def test_esp_eth_lan8720(dut: IdfDut) -> None:
 
 
 # ----------- RTL8201 -----------
+@pytest.mark.temp_skip_ci(targets=['esp32'], reason='IDF-14124')
 @pytest.mark.eth_rtl8201
 @pytest.mark.parametrize(
     'config',
@@ -363,6 +366,7 @@ def test_esp_eth_rtl8201(dut: IdfDut) -> None:
 
 
 # ----------- KSZ8041 -----------
+@pytest.mark.temp_skip_ci(targets=['esp32'], reason='IDF-14124')
 @pytest.mark.eth_ksz8041
 @pytest.mark.parametrize(
     'config',
@@ -379,6 +383,7 @@ def test_esp_eth_ksz8041(dut: IdfDut) -> None:
 
 
 # ----------- DP83848 -----------
+@pytest.mark.temp_skip_ci(targets=['esp32'], reason='IDF-14124')
 @pytest.mark.eth_dp83848
 @pytest.mark.parametrize(
     'config',
@@ -395,6 +400,7 @@ def test_esp_eth_dp83848(dut: IdfDut) -> None:
 
 
 # ----------- W5500 -----------
+@pytest.mark.temp_skip_ci(targets=['esp32'], reason='IDF-14124')
 @pytest.mark.eth_w5500
 @pytest.mark.parametrize(
     'config',
@@ -414,6 +420,7 @@ def test_esp_eth_w5500(dut: IdfDut) -> None:
 
 
 # ----------- KSZ8851SNL -----------
+@pytest.mark.temp_skip_ci(targets=['esp32'], reason='IDF-14124')
 @pytest.mark.eth_ksz8851snl
 @pytest.mark.parametrize(
     'config',
@@ -433,6 +440,7 @@ def test_esp_eth_ksz8851snl(dut: IdfDut) -> None:
 
 
 # ----------- DM9051 -----------
+@pytest.mark.temp_skip_ci(targets=['esp32'], reason='IDF-14124')
 @pytest.mark.eth_dm9051
 @pytest.mark.parametrize(
     'config',

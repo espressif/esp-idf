@@ -25,7 +25,7 @@
 #endif
 #include "pmu_param.h"
 
-static const char *TAG = "rtc_clk_init";
+ESP_HW_LOG_ATTR_TAG(TAG, "rtc_clk_init");
 
 /**
  * Initialize the ICG map of some modem clock domains in the PMU_ACTIVE state
@@ -47,8 +47,14 @@ static void rtc_clk_modem_clock_domain_active_state_icg_map_preinit(void)
 #if SOC_MODEM_CLOCK_SUPPORTED
     /* Disable clock gating for MODEM_APB, I2C_MST and LP_APB clock domains in PMU_ACTIVE state */
     modem_syscon_ll_set_modem_apb_icg_bitmap(&MODEM_SYSCON, BIT(PMU_HP_ICG_MODEM_CODE_ACTIVE));
+    modem_syscon_ll_set_ieee802154_icg_bitmap(&MODEM_SYSCON, BIT(PMU_HP_ICG_MODEM_CODE_ACTIVE));
+    modem_syscon_ll_set_fe_icg_bitmap(&MODEM_SYSCON, BIT(PMU_HP_ICG_MODEM_CODE_ACTIVE));
+    modem_syscon_ll_set_bt_icg_bitmap(&MODEM_SYSCON, BIT(PMU_HP_ICG_MODEM_CODE_ACTIVE));
+
     modem_lpcon_ll_set_i2c_master_icg_bitmap(&MODEM_LPCON, BIT(PMU_HP_ICG_MODEM_CODE_ACTIVE));
     modem_lpcon_ll_set_lp_apb_icg_bitmap(&MODEM_LPCON, BIT(PMU_HP_ICG_MODEM_CODE_ACTIVE));
+    modem_lpcon_ll_set_coex_icg_bitmap(&MODEM_LPCON, BIT(PMU_HP_ICG_MODEM_CODE_ACTIVE));
+
 #endif
 
     /* Software trigger force update modem ICG code and ICG switch */

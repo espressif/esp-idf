@@ -18,7 +18,7 @@
 #include <stdlib.h>
 #include <sys/param.h>
 
-#if !CONFIG_ESP_SYSTEM_MEMPROT && !CONFIG_HEAP_TASK_TRACKING
+#if CONFIG_HEAP_HAS_EXEC_HEAP && !(CONFIG_HEAP_TASK_TRACKING)
 TEST_CASE("Capabilities allocator test", "[heap]")
 {
     char *m1, *m2[10];
@@ -108,7 +108,7 @@ TEST_CASE("Capabilities allocator test", "[heap]")
     free(m1);
     printf("Done.\n");
 }
-#endif // !CONFIG_ESP_SYSTEM_MEMPROT && !CONFIG_HEAP_TASK_TRACKING
+#endif // CONFIG_HEAP_HAS_EXEC_HEAP && !(CONFIG_HEAP_TASK_TRACKING)
 
 #ifdef CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY
 TEST_CASE("IRAM_8BIT capability test", "[heap]")
@@ -230,7 +230,7 @@ TEST_CASE("heap caps minimum free bytes fault cases", "[heap]")
 /* Small function runs from IRAM to check that malloc/free/realloc
    all work OK when cache is disabled...
 */
-#if !CONFIG_ESP_SYSTEM_MEMPROT && !CONFIG_HEAP_PLACE_FUNCTION_INTO_FLASH && !CONFIG_HEAP_TASK_TRACKING
+#if CONFIG_HEAP_HAS_EXEC_HEAP && !CONFIG_HEAP_PLACE_FUNCTION_INTO_FLASH && !CONFIG_HEAP_TASK_TRACKING
 static IRAM_ATTR __attribute__((noinline)) bool iram_malloc_test(void)
 {
     spi_flash_guard_get()->start(); // Disables flash cache
@@ -252,7 +252,7 @@ TEST_CASE("heap_caps_xxx functions work with flash cache disabled", "[heap]")
 {
     TEST_ASSERT( iram_malloc_test() );
 }
-#endif // !CONFIG_ESP_SYSTEM_MEMPROT && !CONFIG_HEAP_PLACE_FUNCTION_INTO_FLASH && !CONFIG_HEAP_TASK_TRACKING
+#endif // CONFIG_HEAP_HAS_EXEC_HEAP && !CONFIG_HEAP_PLACE_FUNCTION_INTO_FLASH && !CONFIG_HEAP_TASK_TRACKING
 
 #ifdef CONFIG_HEAP_ABORT_WHEN_ALLOCATION_FAILS
 TEST_CASE("When enabled, allocation operation failure generates an abort", "[heap][reset=abort,SW_CPU_RESET]")
@@ -322,27 +322,28 @@ TEST_CASE("allocation with invalid capability should also trigger the alloc fail
 TEST_CASE("RTC memory should be lowest priority and its free size should be big enough", "[heap]")
 {
     const size_t allocation_size = 1024 * 4;
-    void *ptr = NULL;
-    size_t free_size = 0;
 
-    ptr = heap_caps_malloc(allocation_size, MALLOC_CAP_DEFAULT);
+    void *ptr = heap_caps_malloc(allocation_size, MALLOC_CAP_DEFAULT);
     TEST_ASSERT_NOT_NULL(ptr);
     TEST_ASSERT(!esp_ptr_in_rtc_dram_fast(ptr));
 
-    free_size = heap_caps_get_free_size(MALLOC_CAP_RTCRAM);
-    TEST_ASSERT_GREATER_OR_EQUAL(1024 * 4, free_size);
+    const size_t max_rtc_size = SOC_RTC_DATA_HIGH - SOC_RTC_DATA_LOW;
+    const size_t min_rtc_size_since_init = heap_caps_get_minimum_free_size(MALLOC_CAP_RTCRAM);
+    const size_t rtc_free_size = heap_caps_get_free_size(MALLOC_CAP_RTCRAM);
+    TEST_ASSERT_EQUAL(min_rtc_size_since_init, rtc_free_size);
+    TEST_ASSERT_GREATER_OR_EQUAL((max_rtc_size * 8) / 10, rtc_free_size);
 
     free(ptr);
 }
 #endif
 
+#if CONFIG_HEAP_HAS_EXEC_HEAP
 TEST_CASE("test memory protection features", "[heap][mem_prot]")
 {
     // try to allocate memory in IRAM and check that if memory protection is active,
     // no memory is being allocated
     uint32_t *iram_ptr = heap_caps_malloc(4, MALLOC_CAP_EXEC);
 
-#if !CONFIG_ESP_SYSTEM_MEMPROT
     // System memory protection not active, check that iram_ptr is not null
     // Check that iram_ptr is in IRAM
     TEST_ASSERT_NOT_NULL(iram_ptr);
@@ -350,8 +351,5 @@ TEST_CASE("test memory protection features", "[heap][mem_prot]")
 
     // free the memory
     heap_caps_free(iram_ptr);
-#else
-    // System memory protection is active, DIRAM seen as DRAM, iram_ptr should be null
-    TEST_ASSERT_NULL(iram_ptr);
-#endif // !CONFIG_ESP_SYSTEM_MEMPROT
 }
+#endif // CONFIG_HEAP_HAS_EXEC_HEAP

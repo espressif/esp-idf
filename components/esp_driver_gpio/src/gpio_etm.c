@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,6 +15,7 @@
 #include "esp_log.h"
 #include "esp_check.h"
 #include "soc/soc_caps.h"
+#include "hal/gpio_caps.h"
 #include "hal/gpio_ll.h"
 #include "hal/gpio_etm_ll.h"
 #include "esp_private/etm_interface.h"
@@ -29,10 +30,10 @@ typedef struct gpio_etm_event_t gpio_etm_event_t;
 typedef struct gpio_etm_group_t {
     portMUX_TYPE spinlock;
     gpio_etm_dev_t *dev;
-    uint8_t tasks[GPIO_LL_ETM_TASK_CHANNELS_PER_GROUP];           // Array of the acquired action masks in each GPIO ETM task channel
-    uint8_t events[GPIO_LL_ETM_EVENT_CHANNELS_PER_GROUP];         // Array of the acquired event masks in each GPIO ETM event channel
+    uint8_t tasks[GPIO_CAPS_GET(ETM_TASK_CHANNELS_PER_GROUP)];           // Array of the acquired action masks in each GPIO ETM task channel
+    uint8_t events[GPIO_CAPS_GET(ETM_EVENT_CHANNELS_PER_GROUP)];         // Array of the acquired event masks in each GPIO ETM event channel
     uint8_t actions[SOC_GPIO_PIN_COUNT];                          // Array of the masks of the added actions to each GPIO
-    uint8_t edges[GPIO_LL_ETM_EVENT_CHANNELS_PER_GROUP];          // Array of the masks of the bound event edges in each GPIO ETM event channel
+    uint8_t edges[GPIO_CAPS_GET(ETM_EVENT_CHANNELS_PER_GROUP)];          // Array of the masks of the bound event edges in each GPIO ETM event channel
 } gpio_etm_group_t;
 
 struct gpio_etm_event_t {
@@ -63,7 +64,7 @@ static esp_err_t gpio_etm_acquire_event_channel(uint8_t event_mask, int *chan_id
     int free_chan_id = -1;
     // loop to search free event channel in the group
     portENTER_CRITICAL(&group->spinlock);
-    for (int j = 0; j < GPIO_LL_ETM_EVENT_CHANNELS_PER_GROUP; j++) {
+    for (int j = 0; j < GPIO_CAPS_GET(ETM_EVENT_CHANNELS_PER_GROUP); j++) {
         if (!group->events[j]) {
             free_chan_id = j;
             group->events[j] = event_mask;
@@ -94,7 +95,7 @@ static esp_err_t gpio_etm_acquire_task_channel(uint8_t task_mask, int *chan_id)
     int free_chan_id = -1;
     // loop to search free task channel in the group
     portENTER_CRITICAL(&group->spinlock);
-    for (int j = 0; j < GPIO_LL_ETM_TASK_CHANNELS_PER_GROUP; j++) {
+    for (int j = 0; j < GPIO_CAPS_GET(ETM_TASK_CHANNELS_PER_GROUP); j++) {
         if (!group->tasks[j]) {
             free_chan_id = j;
             group->tasks[j] = task_mask;

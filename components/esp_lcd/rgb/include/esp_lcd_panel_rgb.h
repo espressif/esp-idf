@@ -11,11 +11,16 @@
 #include "esp_lcd_types.h"
 #include "soc/soc_caps.h"
 
+#define ESP_LCD_RGB_BUS_WIDTH_MAX 24
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #if SOC_LCD_RGB_SUPPORTED
+
+#define ESP_RGB_LCD_PANEL_MAX_FB_NUM         3 // maximum supported frame buffer number
+
 /**
  * @brief LCD RGB timing structure
  * @verbatim
@@ -137,9 +142,12 @@ typedef struct {
     lcd_clock_source_t clk_src;   /*!< Clock source for the RGB LCD peripheral */
     esp_lcd_rgb_timing_t timings; /*!< RGB timing parameters, including the screen resolution */
     size_t data_width;            /*!< Number of data lines */
-    size_t bits_per_pixel;        /*!< Frame buffer color depth, in bpp, specially, if set to zero, it will default to `data_width`.
-                                       When using a Serial RGB interface, this value could be different from `data_width` */
+    lcd_color_format_t in_color_format;  /*!< Format of the input data (color space and pixel format),
+                                              which is the format stored in the frame buffer */
+    lcd_color_format_t out_color_format; /*!< Format of the output data (color space and pixel format),
+                                              which is the format that the panel device can accept */
     size_t num_fbs;               /*!< Number of screen-sized frame buffers that allocated by the driver. By default (set to either 0 or 1) only one frame buffer will be used. Maximum number of buffers are 3 */
+    void *user_fbs[ESP_RGB_LCD_PANEL_MAX_FB_NUM];              /*!< Array of user-provided frame buffers. If not NULL, the driver will use these buffers instead of allocating its own */
     size_t bounce_buffer_size_px; /*!< If it's non-zero, the driver allocates two DRAM bounce buffers for DMA use.
                                        DMA fetching from DRAM bounce buffer is much faster than PSRAM frame buffer. */
     size_t dma_burst_size;        /*!< DMA burst size, in bytes */
@@ -148,7 +156,7 @@ typedef struct {
     gpio_num_t de_gpio_num;       /*!< GPIO used for DE signal, set to -1 if it's not used */
     gpio_num_t pclk_gpio_num;     /*!< GPIO used for PCLK signal, set to -1 if it's not used */
     gpio_num_t disp_gpio_num;     /*!< GPIO used for display control signal, set to -1 if it's not used */
-    gpio_num_t data_gpio_nums[SOC_LCDCAM_RGB_DATA_WIDTH]; /*!< GPIOs used for data lines */
+    gpio_num_t data_gpio_nums[ESP_LCD_RGB_BUS_WIDTH_MAX]; /*!< GPIOs used for data lines */
     struct {
         uint32_t disp_active_low: 1;     /*!< If this flag is enabled, a low level of display control signal can turn the screen on; vice versa */
         uint32_t refresh_on_demand: 1;   /*!< If this flag is enabled, the host only refresh the frame buffer in `esp_lcd_panel_draw_bitmap` and `esp_lcd_rgb_panel_refresh`. */
@@ -249,37 +257,28 @@ esp_err_t esp_lcd_rgb_panel_get_frame_buffer(esp_lcd_panel_handle_t panel, uint3
 esp_err_t esp_lcd_rgb_panel_refresh(esp_lcd_panel_handle_t panel);
 
 /**
- * @brief LCD color conversion profile
+ * @brief Allocate a draw buffer for RGB LCD panel
+ *
+ * @note This function differs from the normal 'heap_caps_*' functions in that it can also automatically handle the alignment required by DMA burst, cache line size, etc.
+ *
+ * @param[in] panel LCD panel handle, returned from `esp_lcd_new_rgb_panel`
+ * @param[in] size Size of memory to be allocated
+ * @param[in] caps Bitwise OR of MALLOC_CAP_* flags indicating the type of memory desired for the allocation
+ * @return Pointer to a new buffer of size 'size' with capabilities 'caps', or NULL if allocation failed
  */
-typedef struct {
-    lcd_color_space_t color_space; /*!< Color space of the image */
-    lcd_color_range_t color_range; /*!< Color range of the image */
-    lcd_yuv_sample_t yuv_sample;   /*!< YUV sample format of the image */
-} esp_lcd_color_conv_profile_t;
-
-/**
- * @brief Configuration of YUG-RGB conversion
- */
-typedef struct {
-    lcd_yuv_conv_std_t std;           /*!< YUV conversion standard: BT601, BT709 */
-    esp_lcd_color_conv_profile_t src; /*!< Color conversion profile of the input image */
-    esp_lcd_color_conv_profile_t dst; /*!< Color conversion profile of the output image */
-} esp_lcd_yuv_conv_config_t;
+void *esp_lcd_rgb_alloc_draw_buffer(esp_lcd_panel_handle_t panel, size_t size, uint32_t caps);
 
 /**
  * @brief Configure how to convert the color format between RGB and YUV
  *
- * @note Pass in `config` as NULL will disable the RGB-YUV converter.
- * @note The hardware converter can only parse a "packed" storage format, while "planar" and "semi-planar" format is not supported.
- *
  * @param[in] panel LCD panel handle, returned from `esp_lcd_new_rgb_panel`
- * @param[in] config Configuration of RGB-YUV conversion
+ * @param[in] config Configuration of RGB-YUV conversion profile
  * @return
  *      - ESP_ERR_INVALID_ARG: Configure RGB-YUV conversion failed because of invalid argument
  *      - ESP_ERR_NOT_SUPPORTED: Configure RGB-YUV conversion failed because the conversion mode is not supported by the hardware
  *      - ESP_OK: Configure RGB-YUV conversion successfully
  */
-esp_err_t esp_lcd_rgb_panel_set_yuv_conversion(esp_lcd_panel_handle_t panel, const esp_lcd_yuv_conv_config_t *config);
+esp_err_t esp_lcd_rgb_panel_set_yuv_conversion(esp_lcd_panel_handle_t panel, const esp_lcd_color_conv_yuv_config_t *config);
 
 #endif // SOC_LCD_RGB_SUPPORTED
 

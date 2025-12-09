@@ -2063,7 +2063,6 @@ UINT8 *BTM_CheckAdvData( UINT8 *p_adv, UINT16 adv_data_len, UINT8 type, UINT8 *p
     UINT8 *p = p_adv;
     UINT8 length;
     UINT8 adv_type;
-    BTM_TRACE_API("BTM_CheckAdvData type=0x%02X", type);
 
     STREAM_TO_UINT8(length, p);
 
@@ -2137,6 +2136,7 @@ void BTM_Recovery_Pre_State(void)
 {
 #if ((BLE_42_ADV_EN == TRUE) || (BLE_42_SCAN_EN == TRUE))
     tBTM_BLE_INQ_CB *ble_inq_cb = &btm_cb.ble_ctr_cb.inq_var;
+    BTM_TRACE_DEBUG("%s state=0x%x", __func__, ble_inq_cb->state);
 #endif // #if ((BLE_42_ADV_EN == TRUE) || (BLE_42_SCAN_EN == TRUE))
 #if (BLE_42_ADV_EN == TRUE)
     if (ble_inq_cb->state & BTM_BLE_ADVERTISING) {
@@ -3111,6 +3111,13 @@ void btm_ble_cache_adv_data(BD_ADDR bda, tBTM_INQ_RESULTS *p_cur, UINT8 data_len
         memset(p_le_inq_cb->adv_data_cache, 0, BTM_BLE_CACHE_ADV_DATA_MAX);
         p_cur->adv_data_len = 0;
         p_cur->scan_rsp_len = 0;
+    }
+
+    /* Additional validation to prevent potential integer overflow */
+    if (data_len > BTM_BLE_CACHE_ADV_DATA_MAX) {
+        BTM_TRACE_ERROR("BLE advertising data length exceeds maximum: %u > %u",
+                    data_len, BTM_BLE_CACHE_ADV_DATA_MAX);
+        return;
     }
 
     if (data_len > 0) {
@@ -4870,4 +4877,16 @@ bool btm_ble_adv_pkt_post(pkt_linked_item_t *pkt)
 }
 #endif // #if (BLE_42_SCAN_EN == TRUE)
 
+#if (SMP_INCLUDED == TRUE)
+/* Retrieve local IRK safely */
+bool BTM_GetLocalIRK(uint8_t *irk)
+{
+    if (!irk) {
+        return false;
+    }
+
+    memcpy(irk, btm_cb.devcb.id_keys.irk, sizeof(btm_cb.devcb.id_keys.irk));
+    return true;
+}
+#endif // (SMP_INCLUDED == TRUE)
 #endif  /* BLE_INCLUDED */

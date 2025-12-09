@@ -13,7 +13,7 @@
 #include "sdkconfig.h"
 #include <sys/param.h>
 
-static const char *TAG = "efuse";
+ESP_LOG_ATTR_TAG(TAG, "efuse");
 
 // This counter is used to implement independent read access for efuses.
 // During the read operation, the counter should be unchanged and even.

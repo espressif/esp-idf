@@ -13,6 +13,7 @@
 #include "driver/gpio.h"
 #include "esp_timer.h"
 #include "soc/soc_caps.h"
+#include "hal/rmt_ll.h"
 #include "test_util_rmt_encoders.h"
 #include "test_board.h"
 
@@ -619,13 +620,13 @@ static void test_rmt_multi_channels_trans(size_t channel0_mem_block_symbols, siz
         .tx_channel_array = tx_channels,
         .array_size = test_rmt_chans,
     };
-#if SOC_RMT_SUPPORT_TX_SYNCHRO
+#if RMT_LL_SUPPORT(TX_SYNCHRO)
     TEST_ESP_OK(rmt_new_sync_manager(&synchro_config, &synchro));
 #else
     TEST_ASSERT_EQUAL(ESP_ERR_NOT_SUPPORTED, rmt_new_sync_manager(&synchro_config, &synchro));
-#endif // SOC_RMT_SUPPORT_TX_SYNCHRO
+#endif // RMT_LL_SUPPORT(TX_SYNCHRO)
 
-#if SOC_RMT_SUPPORT_TX_SYNCHRO
+#if RMT_LL_SUPPORT(TX_SYNCHRO)
     printf("transmit with synchronization\r\n");
     for (int i = 0; i < test_rmt_chans; i++) {
         TEST_ESP_OK(rmt_transmit(tx_channels[i], led_strip_encoders[i], leds_grb, test_led_num * 3, &transmit_config));
@@ -662,7 +663,7 @@ static void test_rmt_multi_channels_trans(size_t channel0_mem_block_symbols, siz
 
     printf("delete sync manager\r\n");
     TEST_ESP_OK(rmt_del_sync_manager(synchro));
-#endif // SOC_RMT_SUPPORT_TX_SYNCHRO
+#endif // RMT_LL_SUPPORT(TX_SYNCHRO)
 
     printf("disable tx channels\r\n");
     for (int i = 0; i < test_rmt_chans; i++) {

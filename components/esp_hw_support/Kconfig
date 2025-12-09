@@ -70,8 +70,7 @@ menu "Hardware Settings"
         # regardless of power management configuration.
         config ESP_SLEEP_POWER_DOWN_FLASH
             bool "Power down flash in light sleep when there is no SPIRAM or SPIRAM has independent power supply"
-            # TODO: PM-383
-            select PM_SLP_IRAM_OPT if (!IDF_TARGET_ESP32H21 && !IDF_TARGET_ESP32H4)
+            select PM_SLP_IRAM_OPT
             select ESP_PERIPH_CTRL_FUNC_IN_IRAM
             select ESP_REGI2C_CTRL_FUNC_IN_IRAM
             depends on !SPIRAM || ESP_LDO_RESERVE_PSRAM
@@ -133,12 +132,11 @@ menu "Hardware Settings"
 
         config ESP_SLEEP_GPIO_RESET_WORKAROUND
             bool "light sleep GPIO reset workaround"
-            default y if IDF_TARGET_ESP32C2 || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3 || \
-                IDF_TARGET_ESP32C6 || IDF_TARGET_ESP32H2 || IDF_TARGET_ESP32C5
+            default y if !(IDF_TARGET_ESP32 || IDF_TARGET_ESP32S2)
             select PM_SLP_DISABLE_GPIO if FREERTOS_USE_TICKLESS_IDLE
             help
-                esp32c2, esp32c3, esp32s3, esp32c5, esp32c6 and esp32h2 will reset at wake-up if GPIO is received
-                a small electrostatic pulse during light sleep, with specific condition
+                All existing chips except esp32 and esp32s2 will reset on wake-up if a GPIO receives
+                a small electrostatic pulse during light sleep, with specific conditions.
 
                 - GPIO needs to be configured as input-mode only
                 - The pin receives a small electrostatic pulse, and reset occurs when the pulse
@@ -300,4 +298,5 @@ menu "Hardware Settings"
         bool "Place esp_intr_alloc functions in IRAM" if SPI_FLASH_AUTO_SUSPEND
         default y
 
+    orsource "./lowpower/port/esp32p4/Kconfig.p4_rev3_mspi_workaround"
 endmenu

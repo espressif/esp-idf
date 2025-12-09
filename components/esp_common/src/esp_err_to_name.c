@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -46,9 +46,6 @@
 #endif
 #if __has_include("esp_ota_ops.h")
 #include "esp_ota_ops.h"
-#endif
-#if __has_include("esp_ping.h")
-#include "esp_ping.h"
 #endif
 #if __has_include("esp_tls_errors.h")
 #include "esp_tls_errors.h"
@@ -618,7 +615,7 @@ static const esp_err_msg_t esp_err_msg_table[] = {
 #   ifdef      ESP_ERR_FLASH_OP_TIMEOUT
     ERR_TBL_IT(ESP_ERR_FLASH_OP_TIMEOUT),                       /* 24578 0x6002 */
 #   endif
-    // components/hal/include/hal/esp_flash_err.h
+    // components/esp_hal_mspi/include/hal/esp_flash_err.h
 #   ifdef      ESP_ERR_FLASH_NOT_INITIALISED
     ERR_TBL_IT(ESP_ERR_FLASH_NOT_INITIALISED),                  /* 24579 0x6003 */
 #   endif
@@ -746,6 +743,9 @@ static const esp_err_msg_t esp_err_msg_table[] = {
 #   ifdef      ESP_ERR_MBEDTLS_SSL_TICKET_SETUP_FAILED
     ERR_TBL_IT(ESP_ERR_MBEDTLS_SSL_TICKET_SETUP_FAILED),        /* 32796 0x801c mbedtls api returned failed */
 #   endif
+#   ifdef      ESP_ERR_MBEDTLS_SSL_READ_FAILED
+    ERR_TBL_IT(ESP_ERR_MBEDTLS_SSL_READ_FAILED),                /* 32797 0x801d mbedtls api returned failed */
+#   endif
 #   ifdef      ESP_ERR_WOLFSSL_SSL_SET_HOSTNAME_FAILED
     ERR_TBL_IT(ESP_ERR_WOLFSSL_SSL_SET_HOSTNAME_FAILED),        /* 32817 0x8031 wolfSSL api returned error */
 #   endif
@@ -776,16 +776,6 @@ static const esp_err_msg_t esp_err_msg_table[] = {
 #   endif
 #   ifdef      ESP_ERR_HTTPS_OTA_IN_PROGRESS
     ERR_TBL_IT(ESP_ERR_HTTPS_OTA_IN_PROGRESS),                  /* 36865 0x9001 */
-#   endif
-    // components/lwip/include/apps/esp_ping.h
-#   ifdef      ESP_ERR_PING_BASE
-    ERR_TBL_IT(ESP_ERR_PING_BASE),                              /* 40960 0xa000 */
-#   endif
-#   ifdef      ESP_ERR_PING_INVALID_PARAMS
-    ERR_TBL_IT(ESP_ERR_PING_INVALID_PARAMS),                    /* 40961 0xa001 */
-#   endif
-#   ifdef      ESP_ERR_PING_NO_MEM
-    ERR_TBL_IT(ESP_ERR_PING_NO_MEM),                            /* 40962 0xa002 */
 #   endif
     // components/esp_http_server/include/esp_http_server.h
 #   ifdef      ESP_ERR_HTTPD_BASE

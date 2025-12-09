@@ -59,7 +59,7 @@ def make_cpio_header(filename_len, file_len, is_trailer=False):  # type: (int, i
     """Returns CPIOHeader for the given file name and file size"""
 
     def as_hex(val):  # type: (int) -> bytes
-        return '{:08x}'.format(val).encode('ascii')
+        return f'{val:08x}'.encode('ascii')
 
     hex_0 = as_hex(0)
     mode = hex_0 if is_trailer else as_hex(0o0100644)
@@ -135,10 +135,10 @@ def flash_size_bytes(size):  # type: (str) -> int
     try:
         return int(size.rstrip('MB'), 10) * 1024 * 1024
     except ValueError:
-        raise argparse.ArgumentTypeError('Unknown size {}'.format(size))
+        raise argparse.ArgumentTypeError(f'Unknown size {size}')
 
 
-class EspDfuWriter(object):
+class EspDfuWriter:
     def __init__(self, dest_file, pid, part_size):  # type: (typing.BinaryIO, int, int) -> None
         self.dest = dest_file
         self.pid = pid
@@ -153,7 +153,7 @@ class EspDfuWriter(object):
         Corresponds to the "flashchip" data structure that the ROM
         has in RAM.
 
-        See flash_set_parameters() in esptool.py for more info
+        See flash_set_parameters() in esptool for more info
         """
         flash_params = FlashParamsData(
             ishspi=0,
@@ -238,7 +238,7 @@ def action_write(args):  # type: (typing.Mapping[str, typing.Any]) -> None
     print('Adding flash chip parameters file with flash_size = {}'.format(args['flash_size']))
     writer.add_flash_params_file(args['flash_size'])
     for addr, f in args['files']:
-        print('Adding {} at {:#x}'.format(f, addr))
+        print(f'Adding {f} at {addr:#x}')
         writer.add_file(addr, f)
     writer.finish()
     print('"{}" has been written. You may proceed with DFU flashing.'.format(args['output_file'].name))
@@ -284,7 +284,7 @@ def main():  # type: () -> None
 
     def check_file(file_name):  # type: (str) -> str
         if not os.path.isfile(file_name):
-            raise RuntimeError('{} is not a regular file!'.format(file_name))
+            raise RuntimeError(f'{file_name} is not a regular file!')
         return file_name
 
     files = []

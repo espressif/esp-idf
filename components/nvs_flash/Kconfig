@@ -45,4 +45,10 @@ menu "NVS"
             instead of internal RAM. It can help applications using large nvs partitions or large number
             of keys to save heap space in internal RAM. SPIRAM heap allocation negatively impacts speed
             of NVS operations as the CPU accesses NVS cache via SPI instead of direct access to the internal RAM.
+
+    config NVS_BDL_STACK
+        bool "Run NVS on BDL instead of ESP_Partition"
+        default n
+        help
+            This option enforces internal use of Block Device Layer instead ESP_Partition.
 endmenu

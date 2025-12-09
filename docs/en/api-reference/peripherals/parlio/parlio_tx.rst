@@ -321,7 +321,7 @@ The waveform of the external clock input is shown below:
 
     After writing the BitScrambler program, we can enable it by calling :cpp:func:`parlio_tx_unit_decorate_bitscrambler`. And configure the :cpp:member:`parlio_transmit_config_t::bitscrambler_program` to point to the binary file of the BitScrambler program. Different transmission transactions can use different BitScrambler programs. The binary file must conform to the BitScrambler assembly language specification, and will be loaded into the BitScrambler's instruction memory at runtime. For details on how to write and compile the BitScrambler program, please refer to :doc:`BitScrambler Programming Guide </api-reference/peripherals/bitscrambler>`.
 
-    .. only:: not SOC_PARLIO_TX_SUPPORT_EOF_FROM_DMA
+    .. only:: esp32p4
 
         .. note::
 
@@ -338,7 +338,7 @@ To prevent this, the TX unit driver internally creates a power management lock. 
 
 .. only:: SOC_PARLIO_SUPPORT_SLEEP_RETENTION
 
-    In addition to turning off the clock source, the system can also turn off the TX unit's power to further reduce power consumption when entering sleep mode. To achieve this, set :cpp:member:`parlio_tx_unit_config_t::allow_pd` to ``true``. Before the system enters sleep mode, the TX unit's register context will be backed up to memory and restored when the system wakes up. Note that enabling this option can reduce power consumption but will increase memory usage. Therefore, when using this feature, you need to balance power consumption and memory usage.
+    In addition to turning off the clock source, the system can also turn off the TX unit's power to further reduce power consumption when entering sleep mode. To achieve this, set :cpp:member:`parlio_tx_unit_config_t::flags::allow_pd` to ``true``. Before the system enters sleep mode, the TX unit's register context will be backed up to memory and restored when the system wakes up. Note that enabling this option can reduce power consumption but will increase memory usage. Therefore, when using this feature, you need to balance power consumption and memory usage.
 
 Thread Safety
 ^^^^^^^^^^^^^
@@ -410,7 +410,7 @@ Application Examples
 
     - :example:`peripherals/parlio/parlio_tx/simple_rgb_led_matrix` demonstrates how to use the TX unit driver of {IDF_TARGET_NAME} to support HUB75 interface RGB LED matrix panels and use the LVGL library to display simple UI elements.
     :SOC_PARLIO_TX_SUPPORT_LOOP_TRANSMISSION: - :example:`peripherals/parlio/parlio_tx/advanced_rgb_led_matrix` demonstrates how to use the infinite loop transmission feature of the TX unit of {IDF_TARGET_NAME} to support HUB75 interface RGB LED matrix panels. Compared to the simple_rgb_led_matrix example, it does not require manual loop scanning and is more flexible.
-    :SOC_PARLIO_SUPPORT_SPI_LCD: - :example:`peripherals/lcd/parlio_simulate` demonstrates how to use the TX unit driver of the parallel IO peripheral to drive screens with SPI or I80 interfaces.
+    :SOC_PARLIO_LCD_SUPPORTED: - :example:`peripherals/lcd/parlio_simulate` demonstrates how to use the TX unit driver of the parallel IO peripheral to drive screens with SPI or I80 interfaces.
 
 API Reference
 -------------

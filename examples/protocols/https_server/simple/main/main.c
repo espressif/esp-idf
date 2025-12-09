@@ -21,6 +21,10 @@
 #include "esp_tls.h"
 #include "sdkconfig.h"
 
+#if CONFIG_EXAMPLE_ENABLE_HTTPS_SERVER_CUSTOM_CIPHERSUITES
+#include "mbedtls/ssl_ciphersuites.h"
+#endif // CONFIG_EXAMPLE_ENABLE_HTTPS_SERVER_CUSTOM_CIPHERSUITES
+
 /* A simple example that demonstrates how to create GET and POST
  * handlers and start an HTTPS server.
 */
@@ -151,13 +155,44 @@ static httpd_handle_t start_webserver(void)
 
     extern const unsigned char servercert_start[] asm("_binary_servercert_pem_start");
     extern const unsigned char servercert_end[]   asm("_binary_servercert_pem_end");
+
+    extern const unsigned char cacert_start[] asm("_binary_cacert_pem_start");
+    extern const unsigned char cacert_end[]   asm("_binary_cacert_pem_end");
     conf.servercert = servercert_start;
     conf.servercert_len = servercert_end - servercert_start;
+
+#if CONFIG_EXAMPLE_ENABLE_SKIP_CLIENT_CERT
+    conf.client_cert_authmode_optional = true;
+#endif // EXAMPLE_ENABLE_SKIP_CLIENT_CERT
+
+    conf.cacert_pem = cacert_start;
+    conf.cacert_len = cacert_end - cacert_start;
 
     extern const unsigned char prvtkey_pem_start[] asm("_binary_prvtkey_pem_start");
     extern const unsigned char prvtkey_pem_end[]   asm("_binary_prvtkey_pem_end");
     conf.prvtkey_pem = prvtkey_pem_start;
     conf.prvtkey_len = prvtkey_pem_end - prvtkey_pem_start;
+
+#if CONFIG_EXAMPLE_ENABLE_HTTPS_SERVER_CUSTOM_CIPHERSUITES
+    static const int ciphersuites_to_use[] = {
+        MBEDTLS_TLS_DHE_RSA_WITH_AES_128_CBC_SHA256,
+        MBEDTLS_TLS_DHE_RSA_WITH_AES_256_CBC_SHA256,
+        MBEDTLS_TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384,
+        MBEDTLS_TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256,
+        0,
+    };
+    conf.ciphersuites_list = ciphersuites_to_use;
+#else
+    conf.ciphersuites_list = NULL;
+#endif // CONFIG_EXAMPLE_ENABLE_HTTPS_SERVER_CUSTOM_CIPHERSUITES
+
+#if CONFIG_EXAMPLE_ENABLE_HTTPS_SERVER_TLS_1_3_ONLY
+    conf.tls_version = ESP_TLS_VER_TLS_1_3;
+#elif CONFIG_EXAMPLE_ENABLE_HTTPS_SERVER_TLS_1_2_ONLY
+    conf.tls_version = ESP_TLS_VER_TLS_1_2;
+#else
+    conf.tls_version = ESP_TLS_VER_ANY;
+#endif // CONFIG_EXAMPLE_ENABLE_HTTPS_SERVER_TLS_1_3_ONLY
 
 #if CONFIG_EXAMPLE_ENABLE_HTTPS_USER_CALLBACK
     conf.user_cb = https_server_user_callback;

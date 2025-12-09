@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -107,6 +107,17 @@ void eth_event_handler(void *arg, esp_event_base_t event_base,
 #define DHCP_PORT_OUT 0x44
 #define DHCP_MACIG_COOKIE_OFFSET (8 + 236)
 #define DHCP_HW_ADDRESS_OFFSET (36)
+/**
+ * The minimum size of a DHCP packet is 236 bytes.
+ * This includes the DHCP header and the minimum-sized DHCP message, which is a DHCPDISCOVER or
+ * DHCPREQUEST message with no options.
+ * The value 285 bytes includes the Ethernet frame overhead:
+ * - Ethernet header: 14 bytes (6 dest MAC + 6 src MAC + 2 type)
+ * - IP header: 20 bytes
+ * - UDP header: 8 bytes
+ * - DHCP message: 236 bytes
+ * - Total: 14 + 20 + 8 + 236 = 278 bytes minimum, rounded up to 285 for safety margin
+ */
 #define MIN_DHCP_PACKET_SIZE (285)
 #define IP_HEADER_SIZE (20)
 #define DHCP_DISCOVER 1
@@ -271,7 +282,7 @@ esp_err_t wired_bridge_init(wired_rx_cb_t rx_cb, wired_free_cb_t free_cb)
 {
     uint8_t eth_port_cnt = 0;
     esp_eth_handle_t *eth_handles;
-    ESP_ERROR_CHECK(example_eth_init(&eth_handles, &eth_port_cnt));
+    ESP_ERROR_CHECK(ethernet_init_all(&eth_handles, &eth_port_cnt));
 
     // Check for multiple Ethernet interfaces
     if (1 < eth_port_cnt) {
@@ -324,7 +335,7 @@ esp_err_t wired_netif_init(void)
 {
     uint8_t eth_port_cnt = 0;
     esp_eth_handle_t *eth_handles;
-    ESP_ERROR_CHECK(example_eth_init(&eth_handles, &eth_port_cnt));
+    ESP_ERROR_CHECK(ethernet_init_all(&eth_handles, &eth_port_cnt));
 
     // Check or multiple ethernet interface
     if (1 < eth_port_cnt) {

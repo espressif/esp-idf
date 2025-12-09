@@ -31,7 +31,7 @@
  */
 
 #ifdef CONFIG_SECURE_BOOT_V1_ENABLED
-static const char *TAG = "secure_boot_v1";
+ESP_LOG_ATTR_TAG(TAG, "secure_boot_v1");
 /**
  *  @function :     secure_boot_generate
  *  @description:   generate boot digest (aka "abstract") & iv

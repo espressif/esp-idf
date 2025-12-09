@@ -4006,8 +4006,6 @@ void bt_mesh_ext_mbt_server_cb_evt_to_btc(uint8_t event, void *model, void *ctx)
 }
 
 typedef struct {
-    uint64_t config_ble_mesh_stack_trace_level : 3;
-
     uint64_t config_ble_mesh_use_ble_50: 1;
     uint64_t config_ble_mesh_use_duplicate_scan : 1;
     uint64_t config_ble_mesh_pb_adv : 1;
@@ -4172,8 +4170,6 @@ typedef struct {
 } bt_mesh_ext_config_t;
 
 static const bt_mesh_ext_config_t bt_mesh_ext_cfg = {
-    .config_ble_mesh_stack_trace_level              = BLE_MESH_LOG_LEVEL,
-
     .config_ble_mesh_use_ble_50                     = IS_ENABLED(CONFIG_BLE_MESH_USE_BLE_50),
     .config_ble_mesh_use_duplicate_scan             = IS_ENABLED(CONFIG_BLE_MESH_USE_DUPLICATE_SCAN),
     .config_ble_mesh_pb_adv                         = IS_ENABLED(CONFIG_BLE_MESH_PB_ADV),
@@ -4962,6 +4958,116 @@ static const bt_mesh_ext_funcs_t bt_mesh_ext_func = {
     ._bt_mesh_ext_mbt_server_cb_evt_to_btc              = bt_mesh_ext_mbt_server_cb_evt_to_btc,
 /* CONFIG_BLE_MESH_MBT_SRV */
 };
+
+#define BLE_MESH_LIB_TRACE_TAG             "BLE_MESH(lib)"
+#define BLE_MESH_LOG_FORMAT_START(level)   LOG_COLOR_ ## level #level " (%" PRIu32 ") %s: "
+#define BLE_MESH_LOG_FORMAT_END            LOG_RESET_COLOR "\n"
+
+typedef void (*logger_func_t)(const char *format, ...);
+
+typedef struct {
+    logger_func_t error;
+    logger_func_t warn;
+    logger_func_t info;
+    logger_func_t debug;
+} bt_mesh_lib_ext_log_env_t;
+
+void bt_mesh_lib_log_error(const char *format, ...)
+{
+#if (CONFIG_BLE_MESH_NO_LOG ||\
+    /* Disable log output when compressed logging
+     * is enabled but ERR logs are not preserved */\
+    (CONFIG_BLE_MESH_STACK_ERR_LOG_COMPRESSION &&\
+    !CONFIG_BLE_MESH_STACK_ERR_LOG_PRESERVE))
+    return;
+#else
+    if ((BLE_MESH_LOG_LEVEL >= BLE_MESH_LOG_LEVEL_ERROR) &&
+        BLE_MESH_LOG_LEVEL_CHECK(BLE_MESH, ERROR)) {
+        va_list args = {0};
+        va_start(args, format);
+        esp_log_write(ESP_LOG_ERROR, BLE_MESH_LIB_TRACE_TAG, BLE_MESH_LOG_FORMAT_START(E), esp_log_timestamp(), BLE_MESH_LIB_TRACE_TAG);
+        esp_log_writev(ESP_LOG_ERROR, BLE_MESH_LIB_TRACE_TAG, format, args);
+        esp_log_write(ESP_LOG_ERROR, BLE_MESH_LIB_TRACE_TAG, BLE_MESH_LOG_FORMAT_END);
+        va_end(args);
+    }
+#endif
+}
+
+void bt_mesh_lib_log_warn(const char *format, ...)
+{
+#if (CONFIG_BLE_MESH_NO_LOG ||\
+    /* Disable log output when compressed logging
+     * is enabled but WARN logs are not preserved */\
+    (CONFIG_BLE_MESH_STACK_WARN_LOG_COMPRESSION &&\
+    !CONFIG_BLE_MESH_STACK_WARN_LOG_PRESERVE))
+    return;
+#else
+    if ((BLE_MESH_LOG_LEVEL >= BLE_MESH_LOG_LEVEL_WARN) &&
+        BLE_MESH_LOG_LEVEL_CHECK(BLE_MESH, WARN)) {
+        va_list args = {0};
+        va_start(args, format);
+        esp_log_write(ESP_LOG_WARN, BLE_MESH_LIB_TRACE_TAG, BLE_MESH_LOG_FORMAT_START(W), esp_log_timestamp(), BLE_MESH_LIB_TRACE_TAG);
+        esp_log_writev(ESP_LOG_WARN, BLE_MESH_LIB_TRACE_TAG, format, args);
+        esp_log_write(ESP_LOG_WARN, BLE_MESH_LIB_TRACE_TAG, BLE_MESH_LOG_FORMAT_END);
+        va_end(args);
+    }
+#endif
+}
+
+void bt_mesh_lib_log_info(const char *format, ...)
+{
+#if (CONFIG_BLE_MESH_NO_LOG ||\
+    /* Disable log output when compressed logging
+     * is enabled but INFO logs are not preserved */\
+    (CONFIG_BLE_MESH_STACK_INFO_LOG_COMPRESSION &&\
+    !CONFIG_BLE_MESH_STACK_INFO_LOG_PRESERVE))
+    return;
+#else
+    if ((BLE_MESH_LOG_LEVEL >= BLE_MESH_LOG_LEVEL_INFO) &&
+        BLE_MESH_LOG_LEVEL_CHECK(BLE_MESH, INFO)) {
+        va_list args = {0};
+        va_start(args, format);
+        esp_log_write(ESP_LOG_INFO, BLE_MESH_LIB_TRACE_TAG, BLE_MESH_LOG_FORMAT_START(I), esp_log_timestamp(), BLE_MESH_LIB_TRACE_TAG);
+        esp_log_writev(ESP_LOG_INFO, BLE_MESH_LIB_TRACE_TAG, format, args);
+        esp_log_write(ESP_LOG_INFO, BLE_MESH_LIB_TRACE_TAG, BLE_MESH_LOG_FORMAT_END);
+        va_end(args);
+    }
+#endif
+}
+
+void bt_mesh_lib_log_debug(const char *format, ...)
+{
+#if (CONFIG_BLE_MESH_NO_LOG ||\
+    /* Disable log output when compressed logging
+     * is enabled but DEBUG logs are not preserved */\
+    (CONFIG_BLE_MESH_STACK_DEBUG_LOG_COMPRESSION &&\
+    !CONFIG_BLE_MESH_STACK_DEBUG_LOG_PRESERVE))
+    return;
+#else
+    if ((BLE_MESH_LOG_LEVEL >= BLE_MESH_LOG_LEVEL_DEBUG) &&
+        BLE_MESH_LOG_LEVEL_CHECK(BLE_MESH, DEBUG)) {
+        va_list args = {0};
+        va_start(args, format);
+        esp_log_write(ESP_LOG_DEBUG, BLE_MESH_LIB_TRACE_TAG, BLE_MESH_LOG_FORMAT_START(D), esp_log_timestamp(), BLE_MESH_LIB_TRACE_TAG);
+        esp_log_writev(ESP_LOG_DEBUG, BLE_MESH_LIB_TRACE_TAG, format, args);
+        esp_log_write(ESP_LOG_DEBUG, BLE_MESH_LIB_TRACE_TAG, BLE_MESH_LOG_FORMAT_END);
+        va_end(args);
+    }
+#endif
+}
+
+static bt_mesh_lib_ext_log_env_t bt_mesh_ext_log_env = {
+    .error = bt_mesh_lib_log_error,
+    .warn = bt_mesh_lib_log_warn,
+    .info = bt_mesh_lib_log_info,
+    .debug = bt_mesh_lib_log_debug,
+};
+
+int bt_mesh_ext_log_init(void)
+{
+    return bt_mesh_lib_log_env_init(&bt_mesh_ext_log_env,
+                                    sizeof(bt_mesh_lib_ext_log_env_t));
+}
 
 int bt_mesh_v11_ext_init(void)
 {

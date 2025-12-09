@@ -26,7 +26,7 @@
 #define ALARM_PERIOD_MS 100
 #define ALARM_TIMES     200 // 200*100ms = 20s
 
-static const char* TAG = "ESP_TIMER with DFS";
+ESP_LOG_ATTR_TAG(TAG, "ESP_TIMER with DFS");
 
 static uint32_t s_current_alarm = 0;
 static uint64_t s_alarm_records[ALARM_TIMES + 1] = {0};

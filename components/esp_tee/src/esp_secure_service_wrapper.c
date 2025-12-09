@@ -5,25 +5,32 @@
  */
 #include <stdarg.h>
 
+#include "soc/soc_caps.h"
 #include "esp_err.h"
 #include "esp_random.h"
 
-#include "hal/sha_types.h"
-#include "hal/sha_hal.h"
-#include "rom/digital_signature.h"
 #include "hal/mmu_types.h"
 #include "hal/wdt_hal.h"
+#include "hal/spi_flash_hal.h"
 #include "hal/spi_flash_types.h"
+#include "esp_private/mspi_timing_tuning.h"
+#if SOC_SHA_SUPPORTED
+#include "hal/sha_types.h"
+#include "hal/sha_hal.h"
+#endif
+#if SOC_HMAC_SUPPORTED
 #include "esp_hmac.h"
+#endif
+#if SOC_DIG_SIGN_SUPPORTED
 #include "esp_ds.h"
+#include "rom/digital_signature.h"
+#endif
 #include "esp_crypto_lock.h"
 #include "esp_flash.h"
 
-#include "soc/soc_caps.h"
-#include "sdkconfig.h"
-
 #include "esp_tee.h"
 #include "secure_service_num.h"
+#include "sdkconfig.h"
 
 /* ---------------------------------------------- Interrupts ------------------------------------------------- */
 
@@ -41,18 +48,19 @@ void IRAM_ATTR __wrap_esprv_int_set_vectored(int rv_int_num, bool vectored)
 
 /* ---------------------------------------------- RTC_WDT ------------------------------------------------- */
 
-void __wrap_wdt_hal_init(wdt_hal_context_t *hal, wdt_inst_t wdt_inst, uint32_t prescaler, bool enable_intr)
+void IRAM_ATTR __wrap_wdt_hal_init(wdt_hal_context_t *hal, wdt_inst_t wdt_inst, uint32_t prescaler, bool enable_intr)
 {
     esp_tee_service_call(5, SS_WDT_HAL_INIT, hal, wdt_inst, prescaler, enable_intr);
 }
 
-void __wrap_wdt_hal_deinit(wdt_hal_context_t *hal)
+void IRAM_ATTR __wrap_wdt_hal_deinit(wdt_hal_context_t *hal)
 {
     esp_tee_service_call(2, SS_WDT_HAL_DEINIT, hal);
 }
 
 /* ---------------------------------------------- AES ------------------------------------------------- */
 
+#if SOC_AES_SUPPORTED
 typedef struct {
     uint8_t key_bytes;
     volatile uint8_t key_in_hardware; /* This variable is used for fault injection checks, so marked volatile to avoid optimisation */
@@ -146,9 +154,10 @@ int __wrap_esp_aes_crypt_ofb(esp_aes_context *ctx,
     esp_crypto_sha_aes_lock_release();
     return err;
 }
-
+#endif
 /* ---------------------------------------------- SHA ------------------------------------------------- */
 
+#if SOC_SHA_SUPPORTED
 typedef enum {
     ESP_SHA1_STATE_INIT,
     ESP_SHA1_STATE_IN_PROCESS
@@ -236,9 +245,11 @@ int __wrap_esp_sha_512_t_init_hash(uint16_t t)
     return esp_tee_service_call(2, SS_ESP_SHA_512_T_INIT_HASH, t);
 }
 #endif
+#endif
 
 /* ---------------------------------------------- HMAC ------------------------------------------------- */
 
+#if SOC_HMAC_SUPPORTED
 esp_err_t __wrap_esp_hmac_calculate(hmac_key_id_t key_id, const void *message, size_t message_len, uint8_t *hmac)
 {
     esp_crypto_hmac_lock_acquire();
@@ -262,9 +273,11 @@ esp_err_t __wrap_esp_hmac_jtag_disable(void)
     esp_crypto_hmac_lock_release();
     return err;
 }
+#endif
 
 /* ---------------------------------------------- DS ------------------------------------------------- */
 
+#if SOC_DIG_SIGN_SUPPORTED
 esp_err_t __wrap_esp_ds_sign(const void *message,
                              const esp_ds_data_t *data,
                              hmac_key_id_t key_id,
@@ -316,16 +329,20 @@ esp_err_t __wrap_esp_ds_encrypt_params(esp_ds_data_t *data,
     esp_crypto_sha_aes_lock_release();
     return err;
 }
+#endif
 
 /* ---------------------------------------------- MPI ------------------------------------------------- */
 
+#if SOC_MPI_SUPPORTED
 void __wrap_esp_crypto_mpi_enable_periph_clk(bool enable)
 {
     esp_tee_service_call(2, SS_ESP_CRYPTO_MPI_ENABLE_PERIPH_CLK, enable);
 }
+#endif
 
 /* ---------------------------------------------- ECC ------------------------------------------------- */
 
+#if SOC_ECC_SUPPORTED
 #define P256_LEN        (256/8)
 #define P192_LEN        (192/8)
 
@@ -350,8 +367,9 @@ int __wrap_esp_ecc_point_verify(const ecc_point_t *point)
     esp_crypto_ecc_lock_release();
     return err;
 }
+#endif
 
-#if SOC_ECDSA_SUPPORTED
+#if SOC_ECC_SUPPORTED && SOC_ECDSA_SUPPORTED
 void __wrap_esp_crypto_ecc_enable_periph_clk(bool enable)
 {
     esp_tee_service_call(2, SS_ESP_CRYPTO_ECC_ENABLE_PERIPH_CLK, enable);
@@ -422,11 +440,6 @@ void IRAM_ATTR __wrap_spi_flash_hal_erase_block(spi_flash_host_inst_t *host, uin
     esp_tee_service_call(3, SS_SPI_FLASH_HAL_ERASE_BLOCK, host, start_address);
 }
 
-void IRAM_ATTR __wrap_spi_flash_hal_erase_chip(spi_flash_host_inst_t *host)
-{
-    esp_tee_service_call(2, SS_SPI_FLASH_HAL_ERASE_CHIP, host);
-}
-
 void IRAM_ATTR __wrap_spi_flash_hal_erase_sector(spi_flash_host_inst_t *host, uint32_t start_address)
 {
     esp_tee_service_call(3, SS_SPI_FLASH_HAL_ERASE_SECTOR, host, start_address);
@@ -495,4 +508,36 @@ esp_err_t IRAM_ATTR __wrap_spi_flash_chip_generic_config_host_io_mode(esp_flash_
 {
     return esp_tee_service_call(3, SS_SPI_FLASH_CHIP_GENERIC_CONFIG_HOST_IO_MODE, chip, flags);
 }
+
+#if CONFIG_IDF_TARGET_ESP32C5
+void IRAM_ATTR __wrap_mspi_timing_flash_tuning(void)
+{
+    esp_tee_service_call(1, SS_MSPI_TIMING_FLASH_TUNING);
+}
+
+void IRAM_ATTR __wrap_mspi_timing_psram_tuning(void)
+{
+    esp_tee_service_call(1, SS_MSPI_TIMING_PSRAM_TUNING);
+}
+
+void IRAM_ATTR __wrap_mspi_timing_enter_low_speed_mode(bool control_spi1)
+{
+    esp_tee_service_call(2, SS_MSPI_TIMING_ENTER_LOW_SPEED_MODE, control_spi1);
+}
+
+void IRAM_ATTR __wrap_mspi_timing_enter_high_speed_mode(bool control_spi1)
+{
+    esp_tee_service_call(2, SS_MSPI_TIMING_ENTER_HIGH_SPEED_MODE, control_spi1);
+}
+
+void IRAM_ATTR __wrap_mspi_timing_change_speed_mode_cache_safe(bool switch_down)
+{
+    esp_tee_service_call(2, SS_MSPI_TIMING_CHANGE_SPEED_MODE_CACHE_SAFE, switch_down);
+}
+
+void IRAM_ATTR __wrap_spi_timing_get_flash_timing_param(spi_flash_hal_timing_config_t *out_timing_config)
+{
+    esp_tee_service_call(2, SS_SPI_TIMING_GET_FLASH_TIMING_PARAM, out_timing_config);
+}
+#endif
 #endif

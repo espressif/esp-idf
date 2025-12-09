@@ -108,6 +108,7 @@ examples/peripherals/i2c/i2c_slave_network_sensor:
     - if: SOC_I2C_SLAVE_CAN_GET_STRETCH_CAUSE != 1 or (SOC_WIFI_SUPPORTED != 1 and SOC_EMAC_SUPPORTED != 1)
   depends_components:
     - esp_driver_i2c
+    - protocol_examples_common
 
 examples/peripherals/i2c/i2c_tools:
   disable:
@@ -136,6 +137,9 @@ examples/peripherals/i2s/i2s_advance/i2s_usb:
     - if: SOC_I2S_SUPPORTED != 1
     - if: SOC_I2C_SUPPORTED != 1
     - if: SOC_USB_OTG_SUPPORTED != 1
+    - if: IDF_TARGET == "esp32h4"
+      temporary: true
+      reason: usb_device_uac does not support esp32h4
   depends_components:
     - esp_driver_i2s
     - esp_driver_i2c
@@ -238,7 +242,7 @@ examples/peripherals/lcd/mipi_dsi:
 
 examples/peripherals/lcd/parlio_simulate:
   disable:
-    - if: SOC_PARLIO_SUPPORT_SPI_LCD != 1
+    - if: SOC_PARLIO_LCD_SUPPORTED != 1
   depends_components:
     - esp_lcd
     - esp_driver_parlio
@@ -266,6 +270,12 @@ examples/peripherals/lcd/tjpgd:
 examples/peripherals/ledc:
   disable:
     - if: SOC_LEDC_SUPPORTED != 1
+  depends_components:
+    - esp_driver_ledc
+
+examples/peripherals/ledc/ledc_dimmer:
+  disable:
+    - if: SOC_ETM_SUPPORTED != 1 or SOC_LEDC_SUPPORT_ETM != 1
   depends_components:
     - esp_driver_ledc
 
@@ -341,6 +351,7 @@ examples/peripherals/parlio/parlio_rx:
     - if: SOC_PARLIO_SUPPORTED != 1
   depends_components:
     - esp_driver_parlio
+    - protocol_examples_common
 
 examples/peripherals/parlio/parlio_tx/advanced_rgb_led_matrix:
   disable:
@@ -479,18 +490,21 @@ examples/peripherals/timer_group/gptimer:
     - if: SOC_GPTIMER_SUPPORTED != 1
   depends_components:
     - esp_driver_gptimer
+    - esp_hal_timg
 
 examples/peripherals/timer_group/gptimer_capture_hc_sr04:
   disable:
     - if: SOC_ETM_SUPPORTED != 1 or SOC_TIMER_SUPPORT_ETM != 1
   depends_components:
     - esp_driver_gptimer
+    - esp_hal_timg
 
 examples/peripherals/timer_group/wiegand_interface:
   disable:
     - if: SOC_GPTIMER_SUPPORTED != 1 or IDF_TARGET in ["esp32c2"]
   depends_components:
     - esp_driver_gptimer
+    - esp_hal_timg
 
 examples/peripherals/touch_sensor:
   disable:
@@ -511,12 +525,20 @@ examples/peripherals/touch_sensor/touch_sens_sleep:
 examples/peripherals/twai/cybergear:
   disable:
     - if: SOC_TWAI_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET == "esp32p4"
+      temporary: true
+      reason: p4 rev3 migration # TODO: IDF-14393
   depends_components:
     - esp_driver_twai
 
 examples/peripherals/twai/twai_error_recovery:
   disable:
     - if: SOC_TWAI_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET == "esp32p4"
+      temporary: true
+      reason: p4 rev3 migration # TODO: IDF-14393
   depends_components:
     - esp_driver_twai
 
@@ -524,14 +546,19 @@ examples/peripherals/twai/twai_network:
   disable:
     - if: SOC_TWAI_SUPPORTED != 1
   disable_test:
-    - if: IDF_TARGET == "esp32"
-      reason: esp32c5,esp32 test has been disabled, because C5 twai don't support listen only in network test, see errata issue 5
+    - if: IDF_TARGET == "esp32p4"
+      temporary: true
+      reason: p4 rev3 migration # TODO: IDF-14393
   depends_components:
     - esp_driver_twai
 
 examples/peripherals/twai/twai_utils:
   disable:
     - if: SOC_TWAI_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET == "esp32p4"
+      temporary: true
+      reason: p4 rev3 migration # TODO: IDF-14393
   depends_components:
     - esp_driver_twai
 
@@ -555,10 +582,19 @@ examples/peripherals/usb/device:
       temporary: true
       reason: lack of runners with usb_device tag
   depends_components:
-    - usb
     - fatfs
+    - esp_hw_support # for usb_phy
   depends_filepatterns:
+    - components/soc/esp32*/include/soc/usb_dwc_struct.h
+    - components/esp_hw_support/usb_phy/usb_phy.c
+    - components/esp_hw_support/include/esp_private/usb_phy.h
     - examples/peripherals/usb/device/**/*
+
+examples/peripherals/usb/device/cherryusb_serial_device:
+  disable:
+    - if: (IDF_TARGET == "esp32h4") or (SOC_USB_OTG_SUPPORTED != 1)
+      temporary: true
+      reason: CherryUSB does not support esp32h4
 
 examples/peripherals/usb/device/tusb_ncm:
   disable:
@@ -568,7 +604,6 @@ examples/peripherals/usb/device/tusb_ncm:
       temporary: true
       reason: lack of runners with usb_device tag
   depends_components:
-    - usb
     - esp_wifi
   depends_filepatterns:
     - examples/peripherals/usb/device/tusb_ncm/**/*
@@ -581,19 +616,20 @@ examples/peripherals/usb/host:
       temporary: true
       reason: lack of runners with usb_host_flash_disk tag
   depends_components:
-    - usb
     - fatfs
+    - esp_hal_usb
+    - esp_hw_support # for usb_phy
   depends_filepatterns:
-    - components/hal/usb*.c
-    - components/hal/include/hal/usb*.h
-    - components/hal/esp32*/include/hal/usb*.h
-    - components/soc/esp32*/usb*.c
-    - components/soc/include/soc/usb*.h
-    - components/soc/esp32*/include/soc/usb_dwc_*.h
-    - components/soc/esp32*/include/soc/usb_wrap_*.h
+    - components/soc/esp32*/include/soc/usb_dwc_struct.h
     - components/esp_hw_support/usb_phy/usb_phy.c
     - components/esp_hw_support/include/esp_private/usb_phy.h
     - examples/peripherals/usb/host/**/*
+
+examples/peripherals/usb/host/cherryusb_host:
+  disable:
+    - if: (IDF_TARGET == "esp32h4") or (SOC_USB_OTG_SUPPORTED != 1)
+      temporary: true
+      reason: CherryUSB does not support esp32h4
 
 examples/peripherals/usb_serial_jtag/usb_serial_jtag_echo:
   disable:

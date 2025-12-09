@@ -10,7 +10,7 @@
 #include "esp_check.h"
 #include "esp_log.h"
 
-static const char *TAG = "scandir";
+ESP_LOG_ATTR_TAG(TAG, "scandir");
 
 int alphasort(const struct dirent **lhs, const struct dirent **rhs)
 {

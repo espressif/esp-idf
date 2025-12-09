@@ -6,14 +6,13 @@
 
 #include <stdio.h>
 #include "esp_log.h"
-#include "hal/i2c_ll.h"
 #include "soc/io_mux_reg.h"
 #include "soc/periph_defs.h"
 #include "soc/gpio_sig_map.h"
 #include "hal/gpio_ll.h"
 #include "hal/gpio_hal.h"
-#include "esp_rom_gpio.h"
 #include "hal/i2c_ll.h"
+#include "esp_rom_gpio.h"
 #include "esp_cpu.h"
 #include "esp_check.h"
 #include "esp_private/periph_ctrl.h"
@@ -36,7 +35,7 @@ static inline uint32_t time_get_us_by_ccount(uint32_t counter)
 #define NOT_CHECK_ACK_VALUE  (0)
 #define CHECK_ACK_VALUE      (1)
 
-static const char *TAG = "hal-i2c";
+ESP_LOG_ATTR_TAG(TAG, "hal-i2c");
 
 // If Reset and Clock Control is independent, we need this macro to avoid concurrency issue
 #if !SOC_RCC_IS_INDEPENDENT

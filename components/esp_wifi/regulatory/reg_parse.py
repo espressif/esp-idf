@@ -26,16 +26,12 @@ import math
 import sys
 from collections import OrderedDict
 from collections import defaultdict
+from collections.abc import Callable
 from functools import total_ordering
 from math import ceil
-from typing import Callable
-from typing import Dict
-from typing import List
-from typing import Optional
 from typing import TextIO
-from typing import Tuple
 
-flag_definitions: Dict[str, int] = {
+flag_definitions: dict[str, int] = {
     'NO-OFDM': 1 << 0,
     'NO-CCK': 1 << 1,
     'NO-INDOOR': 1 << 2,
@@ -50,13 +46,13 @@ flag_definitions: Dict[str, int] = {
     'AUTO-BW': 1 << 11,
 }
 
-dfs_regions: Dict[str, int] = {
+dfs_regions: dict[str, int] = {
     'DFS-FCC': 1,
     'DFS-ETSI': 2,
     'DFS-JP': 3,
 }
 
-typical_regdomain: Dict[str, List[str]] = {
+typical_regdomain: dict[str, list[str]] = {
     'DEFAULT': ['01'],
     'CE': [
         'AT',
@@ -106,7 +102,7 @@ typical_regdomain: Dict[str, List[str]] = {
 
 
 @total_ordering
-class WmmRule(object):
+class WmmRule:
     def __init__(self, vo_c: int, vi_c: int, be_c: int, bk_c: int, vo_ap: int, vi_ap: int, be_ap: int, bk_ap: int):
         self.vo_c = vo_c
         self.vi_c = vi_c
@@ -117,7 +113,7 @@ class WmmRule(object):
         self.be_ap = be_ap
         self.bk_ap = bk_ap
 
-    def _as_tuple(self) -> Tuple[int, int, int, int, int, int, int, int]:
+    def _as_tuple(self) -> tuple[int, int, int, int, int, int, int, int]:
         return (self.vo_c, self.vi_c, self.be_c, self.bk_c, self.vo_ap, self.vi_ap, self.be_ap, self.bk_ap)
 
     def __eq__(self, other: object) -> bool:
@@ -137,14 +133,14 @@ class WmmRule(object):
         return hash(self._as_tuple())
 
 
-class FreqBand(object):
-    def __init__(self, start: float, end: float, bw: float, comments: Optional[List[str]] = None):
+class FreqBand:
+    def __init__(self, start: float, end: float, bw: float, comments: list[str] | None = None):
         self.start = start
         self.end = end
         self.maxbw = bw
         self.comments = comments or []
 
-    def _as_tuple(self) -> Tuple[float, float, float]:
+    def _as_tuple(self) -> tuple[float, float, float]:
         return (self.start, self.end, self.maxbw)
 
     def __eq__(self, other: object) -> bool:
@@ -164,17 +160,17 @@ class FreqBand(object):
         return hash(self._as_tuple())
 
     def __str__(self) -> str:
-        return '<FreqBand %.3f - %.3f @ %.3f>' % (self.start, self.end, self.maxbw)
+        return f'<FreqBand {self.start:.3f} - {self.end:.3f} @ {self.maxbw:.3f}>'
 
 
 @total_ordering
-class PowerRestriction(object):
-    def __init__(self, max_ant_gain: float, max_eirp: float, comments: Optional[List[str]] = None):
+class PowerRestriction:
+    def __init__(self, max_ant_gain: float, max_eirp: float, comments: list[str] | None = None):
         self.max_ant_gain = max_ant_gain
         self.max_eirp = max_eirp
         self.comments = comments or []
 
-    def _as_tuple(self) -> Tuple[float, float]:
+    def _as_tuple(self) -> tuple[float, float]:
         return (self.max_ant_gain, self.max_eirp)
 
     def __eq__(self, other: object) -> bool:
@@ -208,8 +204,8 @@ class FlagError(Exception):
 
 
 @total_ordering
-class Permission(object):
-    def __init__(self, freqband: FreqBand, power: PowerRestriction, flags: List[str], wmmrule: Optional[WmmRule]):
+class Permission:
+    def __init__(self, freqband: FreqBand, power: PowerRestriction, flags: list[str], wmmrule: WmmRule | None):
         assert isinstance(freqband, FreqBand)
         assert isinstance(power, PowerRestriction) or power is None
         assert isinstance(wmmrule, WmmRule) or wmmrule is None
@@ -226,7 +222,7 @@ class Permission(object):
         if self.flags & (1 << 4):
             self.dfs = 1
 
-    def _as_tuple(self) -> Tuple[FreqBand, PowerRestriction, int, Optional[WmmRule]]:
+    def _as_tuple(self) -> tuple[FreqBand, PowerRestriction, int, WmmRule | None]:
         return (self.freqband, self.power, self.flags, self.wmmrule)
 
     def __eq__(self, other: object) -> bool:
@@ -249,13 +245,13 @@ class Permission(object):
         return str(self.freqband) + str(self.power) + str(self.wmmrule)
 
 
-class Country(object):
+class Country:
     def __init__(
         self,
         dfs_region: str,
-        permissions: Optional[List[Permission]] = None,
-        permissions_2g: Optional[List[Permission]] = None,
-        comments: Optional[List[str]] = None,
+        permissions: list[Permission] | None = None,
+        permissions_2g: list[Permission] | None = None,
+        comments: list[str] | None = None,
     ):
         self._permissions = permissions or []
         self._permissions_2g = permissions_2g or []
@@ -282,13 +278,13 @@ class Country(object):
         return perm in self._permissions
 
     def __str__(self) -> str:
-        r = ['(%s, %s)' % (str(permission.freqband), str(permission.power)) for permission in self._permissions]
-        return '<Country (%s)>' % (', '.join(r))
+        r = [f'({permission.freqband}, {permission.power})' for permission in self._permissions]
+        return f'<Country ({", ".join(r)})>'
 
-    def _get_permissions_tuple(self) -> Tuple[Permission, ...]:
+    def _get_permissions_tuple(self) -> tuple[Permission, ...]:
         return tuple(self._permissions)
 
-    def _get_permissions_2g_tuple(self) -> Tuple[Permission, ...]:
+    def _get_permissions_2g_tuple(self) -> tuple[Permission, ...]:
         return tuple(self._permissions_2g)
 
     permissions = property(_get_permissions_tuple)
@@ -299,26 +295,26 @@ class MySyntaxError(Exception):
     pass
 
 
-class DBParser(object):
-    def __init__(self, warn: Optional[Callable[[str], None]] = None) -> None:
+class DBParser:
+    def __init__(self, warn: Callable[[str], None] | None = None) -> None:
         self._warn_callout = warn or sys.stderr.write
         self._lineno: int = 0
-        self._comments: List[str] = []
-        self._banddup: Dict[str, str] = {}
-        self._bandrev: Dict[FreqBand, str] = {}
-        self._bands: Dict[str, FreqBand] = {}
-        self._bandline: Dict[str, int] = {}
-        self._powerdup: Dict[str, str] = {}
-        self._powerrev: Dict[PowerRestriction, str] = {}
-        self._power: Dict[str, PowerRestriction] = {}
-        self._powerline: Dict[str, int] = {}
-        self._wmm_rules: Dict[str, OrderedDict] = defaultdict(lambda: OrderedDict())
-        self._countries: Dict[bytes, Country] = {}
-        self._bands_used: Dict[str, bool] = {}
-        self._power_used: Dict[str, bool] = {}
-        self._current_countries: Optional[Dict[bytes, Country]] = None
-        self._current_regions: Optional[Dict[str, int]] = None
-        self._channel_list: List[int] = [
+        self._comments: list[str] = []
+        self._banddup: dict[str, str] = {}
+        self._bandrev: dict[FreqBand, str] = {}
+        self._bands: dict[str, FreqBand] = {}
+        self._bandline: dict[str, int] = {}
+        self._powerdup: dict[str, str] = {}
+        self._powerrev: dict[PowerRestriction, str] = {}
+        self._power: dict[str, PowerRestriction] = {}
+        self._powerline: dict[str, int] = {}
+        self._wmm_rules: dict[str, OrderedDict] = defaultdict(lambda: OrderedDict())
+        self._countries: dict[bytes, Country] = {}
+        self._bands_used: dict[str, bool] = {}
+        self._power_used: dict[str, bool] = {}
+        self._current_countries: dict[bytes, Country] | None = None
+        self._current_regions: dict[str, int] | None = None
+        self._channel_list: list[int] = [
             1,
             2,
             3,
@@ -363,12 +359,12 @@ class DBParser(object):
             177,
         ]
 
-    def _syntax_error(self, txt: Optional[str] = None) -> None:
-        txt = txt and ' (%s)' % txt or ''
-        raise MySyntaxError('Syntax error in line %d%s' % (self._lineno, txt))
+    def _syntax_error(self, txt: str | None = None) -> None:
+        txt = f' ({txt})' if txt else ''
+        raise MySyntaxError(f'Syntax error in line {self._lineno}{txt}')
 
     def _warn(self, txt: str) -> None:
-        self._warn_callout('Warning (line %d): %s\n' % (self._lineno, txt))
+        self._warn(f'Warning (line {self._lineno}): {txt}\n')
 
     def channel_to_freq(self, channel: int) -> int:
         if channel == 14:
@@ -380,7 +376,7 @@ class DBParser(object):
         else:
             return 5000 + channel * 5
 
-    def find_channel(self, start_freq: float, end_freq: float) -> Tuple:
+    def find_channel(self, start_freq: float, end_freq: float) -> tuple:
         start_channel = 0
         end_channel = 0
         for channel in self._channel_list:
@@ -421,13 +417,13 @@ class DBParser(object):
             start = float(start_str)
             end = float(end_str)
             if start <= 0:
-                self._syntax_error('Invalid start freq (%d)' % start)
+                self._syntax_error(f'Invalid start freq ({start})')
             if end <= 0:
-                self._syntax_error('Invalid end freq (%d)' % end)
+                self._syntax_error(f'Invalid end freq ({end})')
             if start > end:
-                self._syntax_error('Inverted freq range (%d - %d)' % (start, end))
+                self._syntax_error(f'Inverted freq range ({start} - {end})')
             if start == end:
-                self._syntax_error('Start and end freqs are equal (%d)' % start)
+                self._syntax_error(f'Start and end freqs are equal ({start})')
         except ValueError:
             self._syntax_error('band must have frequency range')
 
@@ -436,7 +432,7 @@ class DBParser(object):
         self._banddup[bname] = bname
         if b in self._bandrev:
             if dupwarn:
-                self._warn('Duplicate band definition ("%s" and "%s")' % (bname, self._bandrev[b]))
+                self._warn(f'Duplicate band definition ("{bname}" and "{self._bandrev[b]}")')
             self._banddup[bname] = self._bandrev[b]
         self._bands[bname] = b
         self._bandrev[b] = bname
@@ -491,7 +487,7 @@ class DBParser(object):
         self._powerdup[pname] = pname
         if p in self._powerrev:
             if dupwarn:
-                self._warn('Duplicate power definition ("%s" and "%s")' % (pname, self._powerrev[p]))
+                self._warn(f'Duplicate power definition ("{pname}" and "{self._powerrev[p]}")')
             self._powerdup[pname] = self._powerrev[p]
         self._power[pname] = p
         self._powerrev[p] = pname
@@ -507,25 +503,25 @@ class DBParser(object):
         self._current_regions = {}
         for region in regions_list:
             if region in self._wmm_rules:
-                self._warn('region %s was added already to wmm rules' % region)
+                self._warn(f'region {region} was added already to wmm rules')
             self._current_regions[region] = 1
         self._comments = []
 
     def _validate_input(self, cw_min: int, cw_max: int, aifsn: int, cot: int) -> None:
         if cw_min < 1:
-            self._syntax_error('Invalid cw_min value (%d)' % cw_min)
+            self._syntax_error(f'Invalid cw_min value ({cw_min})')
         if cw_max < 1:
-            self._syntax_error('Invalid cw_max value (%d)' % cw_max)
+            self._syntax_error(f'Invalid cw_max value ({cw_max})')
         if cw_min > cw_max:
-            self._syntax_error('Inverted contention window (%d - %d)' % (cw_min, cw_max))
+            self._syntax_error(f'Inverted contention window ({cw_min} - {cw_max})')
         if not (bin(cw_min + 1).count('1') == 1 and cw_min < 2**15):
-            self._syntax_error('Invalid cw_min value should be power of 2 - 1 (%d)' % cw_min)
+            self._syntax_error(f'Invalid cw_min value should be power of 2 - 1 ({cw_min})')
         if not (bin(cw_max + 1).count('1') == 1 and cw_max < 2**15):
-            self._syntax_error('Invalid cw_max value should be power of 2 - 1 (%d)' % cw_max)
+            self._syntax_error(f'Invalid cw_max value should be power of 2 - 1 ({cw_max})')
         if aifsn < 1:
-            self._syntax_error('Invalid aifsn value (%d)' % aifsn)
+            self._syntax_error(f'Invalid aifsn value ({aifsn})')
         if cot < 0:
-            self._syntax_error('Invalid cot value (%d)' % cot)
+            self._syntax_error(f'Invalid cot value ({cot})')
 
     def _validate_size(self, var: int, bytcnt: float) -> bool:
         return bytcnt < ceil(len(bin(var)[2:]) / 8.0)
@@ -542,7 +538,7 @@ class DBParser(object):
         self._validate_input(*p)
         for v, b in zip(p, bytcnt):
             if self._validate_size(v, b):
-                self._syntax_error('unexpected input size expect %d got %d' % (b, v))
+                self._syntax_error(f'unexpected input size expect {b} got {v}')
 
         if self._current_regions is not None:
             for r in self._current_regions:
@@ -562,7 +558,7 @@ class DBParser(object):
         self._current_countries = {}
         for cname in cnames:
             if len(cname) != 2:
-                self._warn("country '%s' not alpha2" % cname)
+                self._warn(f"country '{cname}' not alpha2")
             cname_bytes = cname.encode('ascii')
             if cname_bytes not in self._countries:
                 self._countries[cname_bytes] = Country(dfs_region, comments=self._comments)
@@ -573,7 +569,7 @@ class DBParser(object):
         if line[0] == '(':
             try:
                 band, line = line[1:].split('),', 1)
-                bname = 'UNNAMED %d' % self._lineno
+                bname = f'UNNAMED {self._lineno}'
                 self._parse_band_def(bname, band, dupwarn=False)
             except Exception:
                 self._syntax_error('Badly parenthesised band definition')
@@ -600,7 +596,7 @@ class DBParser(object):
                 pname = items[0]
                 flags = items[1].split(',')
             power = pname[1:]
-            pname = 'UNNAMED %d' % self._lineno
+            pname = f'UNNAMED {self._lineno}'
             self._parse_power_def(pname, power, dupwarn=False)
         else:
             line_list = line.split(',')
@@ -611,7 +607,7 @@ class DBParser(object):
             try:
                 region = flags.pop().split('=', 1)[1]
                 if region not in self._wmm_rules.keys():
-                    self._syntax_error('No wmm rule for %s' % region)
+                    self._syntax_error(f'No wmm rule for {region}')
             except IndexError:
                 self._syntax_error('flags is empty list or no region was found')
             w = WmmRule(*self._wmm_rules[region].values())
@@ -626,7 +622,7 @@ class DBParser(object):
         pname = self._powerdup[pname]
         b = self._bands[bname]
         p = self._power[pname]
-        if (b.start >= 2400 and b.end <= 2494) or (b.start >= 5150 and b.end <= 5895):
+        if (b.start >= 2400 and b.end <= 2500) or (b.start >= 5000 and b.end <= 5900):
             try:
                 channel_tuple = self.find_channel(b.start, b.end)
                 b.start = channel_tuple[0]
@@ -634,11 +630,11 @@ class DBParser(object):
                 b.maxbw = self.convert_maxbandwidth(b.maxbw)
                 perm = Permission(b, p, flags, w)
             except FlagError as e:
-                self._syntax_error("Invalid flag '%s'" % e.flag)
+                self._syntax_error(f"Invalid flag '{e.flag}'")
             if self._current_countries is not None:
                 for cname, c in self._current_countries.items():
                     if perm in c:
-                        self._warn('Rule "%s, %s" added to "%s" twice' % (bname, pname, cname.decode('ascii')))
+                        self._warn('Rule "{}, {}" added to "{}" twice'.format(bname, pname, cname.decode('ascii')))
                     else:
                         c.add(perm)
                         if perm.freqband.end <= 14:
@@ -646,7 +642,7 @@ class DBParser(object):
             else:
                 self._warn('No current countries defined')
 
-    def parse(self, f: TextIO) -> Dict[bytes, Country]:
+    def parse(self, f: TextIO) -> dict[bytes, Country]:
         for line in f:
             self._lineno += 1
             line = line.strip()
@@ -696,7 +692,7 @@ class DBParser(object):
                 continue
             if self._banddup[k] == k:
                 self._lineno = self._bandline[k]
-                self._warn('Unused band definition "%s"' % k)
+                self._warn(f'Unused band definition "{k}"')
         power = {}
         for k, j in self._power.items():
             if k in self._power_used:
@@ -704,18 +700,18 @@ class DBParser(object):
                 continue
             if self._powerdup[k] == k:
                 self._lineno = self._powerline[k]
-                self._warn('Unused power definition "%s"' % k)
+                self._warn(f'Unused power definition "{k}"')
         return countries
 
 
-class Regdomain(object):
+class Regdomain:
     def __init__(self) -> None:
-        self.regdomain_countries: Dict[bytes, int] = {}
-        self.typical_regulatory: Dict[str, List] = {}
-        self.regdomain_countries_2g: Dict[bytes, int] = {}
-        self.typical_regulatory_2g: Dict[str, List] = {}
+        self.regdomain_countries: dict[bytes, int] = {}
+        self.typical_regulatory: dict[str, list] = {}
+        self.regdomain_countries_2g: dict[bytes, int] = {}
+        self.typical_regulatory_2g: dict[str, list] = {}
 
-    def build_typical_regdomains(self, countries: Dict[bytes, Country]) -> None:
+    def build_typical_regdomains(self, countries: dict[bytes, Country]) -> None:
         """Populate typical regulatory domains based on country permissions."""
         for cn, country in countries.items():
             cn_str = cn.decode('utf-8')
@@ -723,7 +719,7 @@ class Regdomain(object):
                 if cn_str in typical_regdomain[reg_type]:
                     self.typical_regulatory.setdefault(reg_type, country.permissions)
 
-    def build_typical_regdomains_2g(self, countries: Dict[bytes, Country]) -> None:
+    def build_typical_regdomains_2g(self, countries: dict[bytes, Country]) -> None:
         """Populate typical regulatory domains based on country permissions."""
         for cn, country in countries.items():
             cn_str = cn.decode('utf-8')
@@ -731,7 +727,7 @@ class Regdomain(object):
                 if cn_str in typical_regdomain[reg_type]:
                     self.typical_regulatory_2g.setdefault(reg_type, country.permissions_2g)
 
-    def simplify_countries(self, countries: Dict[bytes, Country]) -> None:
+    def simplify_countries(self, countries: dict[bytes, Country]) -> None:
         """Simplify country permissions by building typical regdomains."""
         self.build_typical_regdomains(countries)
         perm_list = list(self.typical_regulatory.values())
@@ -744,7 +740,7 @@ class Regdomain(object):
                 perm_list.append(permissions)
             self.regdomain_countries[cn] = perm_list.index(permissions)
 
-    def simplify_countries_2g(self, countries: Dict[bytes, Country]) -> None:
+    def simplify_countries_2g(self, countries: dict[bytes, Country]) -> None:
         """Simplify country permissions by building typical regdomains."""
         self.build_typical_regdomains_2g(countries)
 

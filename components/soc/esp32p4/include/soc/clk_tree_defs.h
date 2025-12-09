@@ -1,7 +1,7 @@
 /*
  * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 #pragma once
 
@@ -350,7 +350,7 @@ typedef enum {
  * @brief I2S clock source enum
  */
 typedef enum {
-    I2S_CLK_SRC_DEFAULT = SOC_MOD_CLK_XTAL,             /*!< Select XTAL as the default source clock  */
+    I2S_CLK_SRC_DEFAULT = 0,                            /*!< Auto select maximum clock source asdefault source clock  */
     I2S_CLK_SRC_PLL_160M = SOC_MOD_CLK_PLL_F160M,       /*!< Select PLL_F160M as the source clock (only supported on P4 hw_ver3) */
     I2S_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,                /*!< Select XTAL as the source clock */
     I2S_CLK_SRC_APLL = SOC_MOD_CLK_APLL,                /*!< Select APLL as the source clock */
@@ -472,10 +472,10 @@ typedef enum {
 /**
  * @brief For backward compatibility, old macro definitions are kept. Remove it in the next major release (esp-idf v7.0)
  */
-#define MIPI_DSI_PHY_CLK_SRC_RC_FAST SOC_MOD_CLK_RC_FAST
-#define MIPI_DSI_PHY_CLK_SRC_PLL_F25M SOC_MOD_CLK_PLL_F25M
-#define MIPI_DSI_PHY_CLK_SRC_PLL_F20M SOC_MOD_CLK_PLL_F20M
-#define MIPI_DSI_PHY_CLK_SRC_DEFAULT SOC_MOD_CLK_PLL_F20M
+#define MIPI_DSI_PHY_CLK_SRC_RC_FAST MIPI_DSI_PHY_PLLREF_CLK_SRC_RC_FAST
+#define MIPI_DSI_PHY_CLK_SRC_PLL_F25M MIPI_DSI_PHY_PLLREF_CLK_SRC_PLL_F25M
+#define MIPI_DSI_PHY_CLK_SRC_PLL_F20M MIPI_DSI_PHY_PLLREF_CLK_SRC_PLL_F20M
+#define MIPI_DSI_PHY_CLK_SRC_DEFAULT MIPI_DSI_PHY_PLLREF_CLK_SRC_DEFAULT_LEGACY
 
 /////////////////////////////////////////////////I2C////////////////////////////////////////////////////////////////////
 

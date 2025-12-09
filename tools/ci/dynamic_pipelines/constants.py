@@ -15,10 +15,6 @@ TOP_N_APPS_BY_SIZE_DIFF = 10
 SIZE_DIFFERENCE_BYTES_THRESHOLD = 500
 BINARY_SIZE_METRIC_NAME = 'binary_size'
 
-RETRY_JOB_PICTURE_PATH = 'tools/ci/dynamic_pipelines/templates/retry-jobs.png'
-RETRY_JOB_TITLE = '\n\nRetry failed jobs with with help of "retry_failed_jobs" stage of the pipeline:'
-RETRY_JOB_PICTURE_LINK = '![Retry Jobs Image]({pic_url})'
-
 KNOWN_GENERATE_TEST_CHILD_PIPELINE_WARNINGS_FILEPATH = os.path.join(
     IDF_PATH, 'tools', 'ci', 'dynamic_pipelines', 'templates', 'known_generate_test_child_pipeline_warnings.yml'
 )

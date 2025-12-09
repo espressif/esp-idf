@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 # These tests check whether the build system rebuilds some files or not
 # depending on the changes to the project.
@@ -7,7 +7,8 @@ import os
 from pathlib import Path
 
 import pytest
-from test_build_system_helpers import ALL_ARTIFACTS
+from test_build_system_helpers import ALL_ARTIFACTS_BUILDV1
+from test_build_system_helpers import ALL_ARTIFACTS_BUILDV2
 from test_build_system_helpers import APP_BINS
 from test_build_system_helpers import BOOTLOADER_BINS
 from test_build_system_helpers import PARTITION_BIN
@@ -17,7 +18,7 @@ from test_build_system_helpers import replace_in_file
 
 
 @pytest.mark.usefixtures('test_app_copy')
-def test_rebuild_no_changes(idf_py: IdfPyFunc) -> None:
+def test_rebuild_no_changes(idf_py: IdfPyFunc, request: pytest.FixtureRequest) -> None:
     logging.info('initial build')
     idf_py('build')
     logging.info('get the first snapshot')
@@ -32,7 +33,8 @@ def test_rebuild_no_changes(idf_py: IdfPyFunc) -> None:
     )
 
     logging.info('check that all build artifacts were generated')
-    for artifact in ALL_ARTIFACTS:
+    all_artifacts = ALL_ARTIFACTS_BUILDV2 if request.config.getoption('buildv2', False) else ALL_ARTIFACTS_BUILDV1
+    for artifact in all_artifacts:
         assert Path(artifact).exists()
 
     logging.info('build again with no changes')

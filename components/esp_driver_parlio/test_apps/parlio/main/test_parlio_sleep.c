@@ -94,7 +94,7 @@ static void test_parlio_sleep_retention(bool allow_pd)
 
     parlio_rx_level_delimiter_config_t lvl_deli_cfg = {
         .valid_sig_line_id = PARLIO_RX_UNIT_MAX_DATA_WIDTH - 1,
-        .sample_edge = PARLIO_SAMPLE_EDGE_POS,
+        .sample_edge = PARLIO_SAMPLE_EDGE_NEG,  // opposite to tx unit in case of timing issue
         .bit_pack_order = PARLIO_BIT_PACK_ORDER_MSB,
         .eof_data_len = TEST_PAYLOAD_SIZE,
         .timeout_ticks = 0,
@@ -120,14 +120,14 @@ static void test_parlio_sleep_retention(bool allow_pd)
     esp_sleep_context_t sleep_ctx;
     esp_sleep_set_sleep_context(&sleep_ctx);
     printf("go to light sleep for 2 seconds\r\n");
-#if ESP_SLEEP_POWER_DOWN_CPU
+#if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU
     TEST_ESP_OK(sleep_cpu_configure(true));
 #endif
     TEST_ESP_OK(esp_sleep_enable_timer_wakeup(2 * 1000 * 1000));
     TEST_ESP_OK(esp_light_sleep_start());
 
     printf("Waked up! Let's see if PARLIO driver can still work...\r\n");
-#if ESP_SLEEP_POWER_DOWN_CPU
+#if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU
     TEST_ESP_OK(sleep_cpu_configure(false));
 #endif
 

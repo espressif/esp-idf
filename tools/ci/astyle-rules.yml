@@ -20,10 +20,8 @@ submodules:
     - "/components/esp_phy/lib/"
     - "/components/esp_wifi/lib/"
     - "/components/heap/tlsf/"
-    - "/components/json/cJSON/"
     - "/components/lwip/lwip/"
     - "/components/mbedtls/mbedtls/"
-    - "/components/mqtt/esp-mqtt/"
     - "/components/openthread/lib/"
     - "/components/openthread/openthread/"
     - "/components/protobuf-c/protobuf-c/"
@@ -70,10 +68,8 @@ components_not_formatted_temporary:
     - "/components/heap/"
     - "/components/idf_test/"
     - "/components/ieee802154/"
-    - "/components/json/"
     - "/components/lwip/"
     - "/components/mbedtls/"
-    - "/components/mqtt/"
     - "/components/nvs_flash/"
     - "/components/nvs_sec_provider/"
     - "/components/openthread/"
@@ -89,7 +85,6 @@ components_not_formatted_temporary:
     - "/components/unity/"
     - "/components/vfs/"
     - "/components/wear_levelling/"
-    - "/components/wifi_provisioning/"
     - "/components/xtensa/"
     - "/examples/bluetooth/"
     - "/examples/build_system/"
@@ -134,8 +129,6 @@ components_not_formatted_permanent:
     - "/components/console/argtable3/"
     # Linenoise (upstream source code)
     - "/components/console/linenoise/"
-    # Catch (upstream source code)
-    - "/tools/catch/catch.hpp"
     # FreeRTOS kernel files (upstream source code)
     - "/components/freertos/FreeRTOS-Kernel/"
     - "/components/freertos/FreeRTOS-Kernel-SMP/"

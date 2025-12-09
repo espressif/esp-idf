@@ -17,7 +17,6 @@
 #include "soc/rtc_cntl_reg.h"
 #include "soc/sens_reg.h"
 #include "soc/rtc_periph.h"
-#include "hal/rtc_io_ll.h"
 #include "driver/gpio.h"
 #include "driver/rtc_io.h"
 #include "ulp_riscv.h"

@@ -1,7 +1,7 @@
 /*
  * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 
 #pragma once
@@ -32,7 +32,7 @@ extern const regdma_entries_config_t intr_matrix_regs_retention[INT_MTX_RETENTIO
  * This is an internal function of the sleep retention driver, and is not
  * useful for external use.
  */
-#define CACHE_RETENTION_LINK_LEN 8
+#define CACHE_RETENTION_LINK_LEN 12
 extern const regdma_entries_config_t cache_regs_retention[CACHE_RETENTION_LINK_LEN];
 
 /**

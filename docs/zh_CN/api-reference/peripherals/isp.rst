@@ -23,6 +23,7 @@
     - AE：自动曝光
     - HIST：直方图
     - BF：拜耳域降噪
+    - BLC：黑电平校正
     - LSC：镜头阴影校正
     - CCM：色彩校正矩阵
 
@@ -46,7 +47,7 @@ ISP 流水线
         isp_chs [label = "对比度 &\n 色调 & 饱和度", width = 150, height = 70];
         isp_yuv [label = "YUV 限制\n YUB2RGB", width = 120, height = 70];
 
-        isp_header -> BF -> LSC -> 去马赛克 -> CCM -> gamma 校正 -> RGB 转 YUV -> 锐化 -> isp_chs -> isp_yuv -> isp_tail;
+        isp_header -> BLC -> BF -> LSC -> 去马赛克 -> CCM -> gamma 校正 -> RGB 转 YUV -> 锐化 -> isp_chs -> isp_yuv -> 裁剪 -> isp_tail;
 
         LSC -> HIST
         去马赛克 -> AWB
@@ -70,11 +71,13 @@ ISP 驱动程序提供以下服务：
 - :ref:`isp-ae-statistics` - 涵盖如何单次或连续获取 AE 统计信息。
 - :ref:`isp-hist-statistics` - 涵盖如何单次或连续获取直方图统计信息。
 - :ref:`isp-bf` - 涵盖如何启用和配置 BF 功能。
+- :ref:`isp-blc` - 涵盖如何启用和配置 BLC 功能。
 - :ref:`isp-lsc` - 涵盖如何启用和配置 LSC 功能。
 - :ref:`isp-ccm-config` - 涵盖如何配置 CCM。
 - :ref:`isp-demosaic` - 涵盖如何配置去马赛克功能。
 - :ref:`isp-gamma-correction` - 涵盖如何启用和配置 gamma 校正。
 - :ref:`isp-sharpen` - 涵盖如何配置锐化功能。
+- :ref:`isp-crop` - 涵盖如何启用和配置图像裁剪功能。
 - :ref:`isp-callback` - 涵盖如何将用户特定代码挂接到 ISP 驱动事件回调。
 - :ref:`isp-thread-safety` - 列出了驱动程序中线程安全的 API。
 - :ref:`isp-kconfig-options` - 列出了支持的 Kconfig 选项，这些选项可以对驱动程序产生不同影响。
@@ -387,7 +390,7 @@ ISP AE 控制器
 
 使用单次 AE 数据统计时，需要禁用连续 AE 模式，否则结果可能会被环境检测器覆盖。完成单次操作后，请重新启动连续模式。
 
-除了上述单次统计 API 外，ISP AE 驱动程序还可以连续获取 AE 统计信息。调用 :cpp:member:`esp_isp_ae_env_detector_evt_cbs_t::on_env_statistics_done` 可启动连续统计，调用 :cpp:member:`esp_isp_ae_env_detector_evt_cbs_t::on_env_change` 可停止统计。
+除了上述单次统计 API 外，ISP AE 驱动程序还可以连续获取 AE 统计信息。调用 :cpp:func:`esp_isp_ae_controller_start_continuous_statistics` 可启动连续统计，调用 :cpp:func:`esp_isp_ae_controller_stop_continuous_statistics` 可停止统计。
 
 若想启用连续统计，需要先注册回调函数 :cpp:member:`esp_isp_ae_env_detector_evt_cbs_t::on_env_statistics_done` 或 :cpp:member:`esp_isp_ae_env_detector_evt_cbs_t::on_env_change` 以获取统计数据。有关如何注册回调函数，请参见 :ref:`isp-callback`。
 
@@ -397,7 +400,7 @@ ISP AE 控制器
 
 .. code-block:: c
 
-     esp_isp_ae_config_t ae_config = {
+    esp_isp_ae_config_t ae_config = {
         .sample_point = ISP_AE_SAMPLE_POINT_AFTER_DEMOSAIC,
     };
     isp_ae_ctlr_t ae_ctlr = NULL;
@@ -517,6 +520,64 @@ ISP BF 控制器
 调用 :cpp:func:`esp_isp_bf_disable` 函数会执行相反的操作，即将驱动程序恢复到 **init** 状态。
 
 
+.. _isp-blc:
+
+ISP BLC 控制器
+~~~~~~~~~~~~~~
+
+黑电平校正 (BLC) 旨在解决因相机传感器中光线折射不均而引起的问题。
+
+可调用 :cpp:func:`esp_isp_blc_configure` 函数配置 BLC 模块以进行校正。
+
+.. code-block:: c
+
+    esp_isp_blc_config_t blc_config = {
+        .window = {
+            .top_left = {
+                .x = 0,
+                .y = 0,
+            },
+            .btm_right = {
+                .x = CONFIG_EXAMPLE_MIPI_CSI_DISP_HRES,
+                .y = CONFIG_EXAMPLE_MIPI_CSI_DISP_VRES,
+            },
+        },
+        .filter_enable = true,
+        .filter_threshold = {
+            .top_left_chan_thresh = 128,
+            .top_right_chan_thresh = 128,
+            .bottom_left_chan_thresh = 128,
+            .bottom_right_chan_thresh = 128,
+        },
+        .stretch = {
+            .top_left_chan_stretch_en = true,
+            .top_right_chan_stretch_en = true,
+            .bottom_left_chan_stretch_en = true,
+            .bottom_right_chan_stretch_en = true,
+        },
+    };
+    ESP_ERROR_CHECK(esp_isp_blc_configure(isp_proc, &blc_config));
+    ESP_ERROR_CHECK(esp_isp_blc_enable(isp_proc));
+
+调用 :cpp:func:`esp_isp_blc_configure` 后，需要通过调用 :cpp:func:`esp_isp_blc_enable` 来启用 ISP BLC 控制器。此函数：
+
+* 将驱动程序状态从 **init** 切换到 **enable**。
+
+调用 :cpp:func:`esp_isp_blc_disable` 函数会执行相反的操作，即将驱动程序恢复到 **init** 状态。
+
+调用 :cpp:func:`esp_isp_blc_set_correction_offset` 函数来设置 BLC 校正偏移量。
+
+.. code-block:: c
+
+    esp_isp_blc_offset_t blc_offset = {
+        .top_left_chan_offset = 20,
+        .top_right_chan_offset = 20,
+        .bottom_left_chan_offset = 20,
+        .bottom_right_chan_offset = 20,
+    };
+    ESP_ERROR_CHECK(esp_isp_blc_set_correction_offset(isp_proc, &blc_offset));
+
+
 .. _isp-lsc:
 
 ISP LSC 控制器
@@ -565,7 +626,7 @@ ISP 色彩控制器
 {IDF_TARGET_SOC_ISP_COLOR_SATURATION_MAX:default="1.0", esp32p4="1.0"}
 {IDF_TARGET_SOC_ISP_COLOR_SATURATION_DEFAULT:default="1.0", esp32p4="1.0"}
 
-{IDF_TARGET_SOC_ISP_COLOR_HUE_MAX:default="360", esp32p4="360"}
+{IDF_TARGET_SOC_ISP_COLOR_HUE_MAX:default="359", esp32p4="359"}
 {IDF_TARGET_SOC_ISP_COLOR_HUE_DEFAULT:default="0", esp32p4="0"}
 
 {IDF_TARGET_SOC_ISP_COLOR_BRIGHTNESS_MIN:default="-127", esp32p4="-127"}
@@ -664,7 +725,7 @@ ISP 去马赛克控制器
         ...
     };
 
-    ESP_ERROR_CHECK(esp_isp_demosaic_configure(isp_proc, &sharpen_config));
+    ESP_ERROR_CHECK(esp_isp_demosaic_configure(isp_proc, &demosaic_config));
     ESP_ERROR_CHECK(esp_isp_demosaic_enable(isp_proc));
 
 调用 :cpp:func:`esp_isp_demosaic_configure` 后，需要通过调用 :cpp:func:`esp_isp_demosaic_enable` 来启用 ISP 去马赛克控制器。此函数：
@@ -740,6 +801,51 @@ ISP 锐化控制器
 调用 :cpp:func:`esp_isp_sharpen_disable` 函数会执行相反的操作，即将驱动程序恢复到 **init** 状态。
 
 即使驱动程序处于 **init** 状态，也可以调用 :cpp:func:`esp_isp_sharpen_configure`，但锐化配置只有在 **enable** 状态下才会生效。
+
+.. _isp-crop:
+
+ISP 图像裁剪控制器
+~~~~~~~~~~~~~~~~~~
+
+ISP 图像裁剪功能可以从原始图像中提取指定区域，减少后续处理的数据量，提高处理效率。裁剪功能在 ISP 流水线的末端执行，可以输出比输入图像更小的区域。
+
+.. note::
+
+    ISP 图像裁剪功能仅在 ESP32-P4 revision 3.0 及以上版本中可用。
+
+可调用 :cpp:func:`esp_isp_crop_configure` 函数配置图像裁剪功能，请参考以下代码：
+
+.. code-block:: c
+
+    esp_isp_crop_config_t crop_config = {
+        .window = {
+            .top_left = {
+                .x = 100,  // 裁剪区域左上角 X 坐标
+                .y = 100,  // 裁剪区域左上角 Y 坐标
+            },
+            .btm_right = {
+                .x = 699,  // 裁剪区域右下角 X 坐标
+                .y = 499,  // 裁剪区域右下角 Y 坐标
+            }
+        }
+    };
+    ESP_ERROR_CHECK(esp_isp_crop_configure(isp_proc, &crop_config));
+    ESP_ERROR_CHECK(esp_isp_crop_enable(isp_proc));
+
+调用 :cpp:func:`esp_isp_crop_configure` 后，需要通过调用 :cpp:func:`esp_isp_crop_enable` 来启用 ISP 图像裁剪控制器。此函数：
+
+* 将驱动程序状态从 **init** 切换到 **enable**。
+
+调用 :cpp:func:`esp_isp_crop_disable` 函数会执行相反的操作，即将驱动程序恢复到 **init** 状态。
+
+即使驱动程序处于 **init** 状态，也可以调用 :cpp:func:`esp_isp_crop_configure`，但裁剪配置只有在 **enable** 状态下才会生效。
+
+.. note::
+
+    - 裁剪区域的左上角坐标 (top_left) 必须小于右下角坐标 (btm_right)
+    - 裁剪区域的左上角坐标必须为偶数，右下角坐标必须为奇数
+    - 裁剪区域不能超出原始图像的边界
+    - 需根据裁剪后分辨率调整显示介质（如LCD）的尺寸，确保显示完整，避免出现黑边或拉伸现象。
 
 
 .. _isp-callback:
@@ -861,6 +967,7 @@ API 参考
 .. include-build-file:: inc/isp_ae.inc
 .. include-build-file:: inc/isp_awb.inc
 .. include-build-file:: inc/isp_bf.inc
+.. include-build-file:: inc/isp_blc.inc
 .. include-build-file:: inc/isp_lsc.inc
 .. include-build-file:: inc/isp_ccm.inc
 .. include-build-file:: inc/isp_demosaic.inc
@@ -868,6 +975,7 @@ API 参考
 .. include-build-file:: inc/isp_gamma.inc
 .. include-build-file:: inc/isp_hist.inc
 .. include-build-file:: inc/isp_color.inc
+.. include-build-file:: inc/isp_crop.inc
 .. include-build-file:: inc/isp_core.inc
 .. include-build-file:: inc/components/esp_driver_isp/include/driver/isp_types.inc
 .. include-build-file:: inc/components/hal/include/hal/isp_types.inc

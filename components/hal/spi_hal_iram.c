@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,12 +10,11 @@
 #include "hal/spi_hal.h"
 #include "hal/log.h"
 #include "hal/assert.h"
-#include "hal/gpio_ll.h"    //for GPIO_LL_MATRIX_DELAY_NS
+#include "hal/gpio_caps.h"    //for GPIO_CAPS_GET(MATRIX_DELAY_NS)
 #include "soc/ext_mem_defs.h"
 #include "soc/soc_caps.h"
 
-/* The tag may be unused if log level is set to NONE  */
-static __attribute__((unused)) char SPI_HAL_TAG[] = "spi_hal";
+HAL_LOG_ATTR_TAG(SPI_HAL_TAG, "spi_hal");
 
 void spi_hal_setup_device(spi_hal_context_t *hal, const spi_hal_dev_config_t *dev)
 {
@@ -76,8 +75,8 @@ void spi_hal_cal_timing(int source_freq_hz, int eff_clk, bool gpio_is_used, int 
     //how many apb clocks a period has
     const int spiclk_apb_n = source_freq_hz / eff_clk;
     int gpio_delay_ns = 0;
-#if GPIO_LL_MATRIX_DELAY_NS
-    gpio_delay_ns = gpio_is_used ? GPIO_LL_MATRIX_DELAY_NS : 0;
+#if GPIO_CAPS_GET(MATRIX_DELAY_NS)
+    gpio_delay_ns = gpio_is_used ? GPIO_CAPS_GET(MATRIX_DELAY_NS) : 0;
 #endif
 
     //how many apb clocks the delay is, the 1 is to compensate in case ``input_delay_ns`` is rounded off.
@@ -110,8 +109,8 @@ int spi_hal_get_freq_limit(bool gpio_is_used, int input_delay_ns)
 {
     const int apbclk_kHz = APB_CLK_FREQ / 1000;
     int gpio_delay_ns = 0;
-#if GPIO_LL_MATRIX_DELAY_NS
-    gpio_delay_ns = gpio_is_used ? GPIO_LL_MATRIX_DELAY_NS : 0;
+#if GPIO_CAPS_GET(MATRIX_DELAY_NS)
+    gpio_delay_ns = gpio_is_used ? GPIO_CAPS_GET(MATRIX_DELAY_NS) : 0;
 #endif
 
     //how many apb clocks the delay is, the 1 is to compensate in case ``input_delay_ns`` is rounded off.
@@ -235,6 +234,16 @@ bool spi_hal_usr_is_done(const spi_hal_context_t *hal)
     return spi_ll_usr_is_done(hal->hw);
 }
 
+#if SOC_SPI_SUPPORT_SLAVE_HD_VER2
+bool spi_hal_get_intr_mask(spi_hal_context_t *hal, uint32_t mask) {
+    return spi_ll_get_intr(hal->hw, mask);
+}
+
+void spi_hal_clear_intr_mask(spi_hal_context_t *hal, uint32_t mask) {
+    spi_ll_clear_intr(hal->hw, mask);
+}
+#endif
+
 void spi_hal_push_tx_buffer(const spi_hal_context_t *hal, const spi_hal_trans_config_t *hal_trans)
 {
     if (hal_trans->send_buffer) {
@@ -256,15 +265,7 @@ void spi_hal_fetch_result(const spi_hal_context_t *hal)
 #if SOC_SPI_SCT_SUPPORTED
 /*------------------------------------------------------------------------------
  * Segmented-Configure-Transfer
- *----------------------------------------------------------------------------*/
-void spi_hal_clear_intr_mask(spi_hal_context_t *hal, uint32_t mask) {
-    spi_ll_clear_intr(hal->hw, mask);
-}
-
-bool spi_hal_get_intr_mask(spi_hal_context_t *hal, uint32_t mask) {
-    return spi_ll_get_intr(hal->hw, mask);
-}
-
+*----------------------------------------------------------------------------*/
 void spi_hal_sct_set_conf_bits_len(spi_hal_context_t *hal, uint32_t conf_len) {
     spi_ll_set_conf_phase_bits_len(hal->hw, conf_len);
 }

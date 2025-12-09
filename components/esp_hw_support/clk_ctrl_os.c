@@ -18,7 +18,7 @@
 #endif
 
 #if SOC_CLK_APLL_SUPPORTED || SOC_CLK_MPLL_SUPPORTED
-static const char *TAG = "clk_ctrl_os";
+ESP_LOG_ATTR_TAG(TAG, "clk_ctrl_os");
 #endif
 
 static portMUX_TYPE __attribute__((unused)) periph_spinlock = portMUX_INITIALIZER_UNLOCKED;

@@ -1,0 +1,126 @@
+/*
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/**
+ *                    ESP32-S31 Linker Script Memory Layout
+ * This file describes the memory layout (memory blocks) by virtual memory addresses.
+ * This linker script is passed through the C preprocessor to include configuration options.
+ * Please use preprocessor features sparingly!
+ * Restrict to simple macros with numeric values, and/or #if/#endif blocks.
+ */
+
+/* This file might not accurate, please check [ESP32S31] IDF-14669 */
+
+#include "sdkconfig.h"
+#include "ld.common"
+
+#define SRAM_START     0x2F000000
+#define SRAM_END       0x2F07AFC0  /* 2nd stage bootloader iram_loader_seg start address */
+#define SRAM_SIZE      SRAM_END - SRAM_START
+
+#define IDROM_SEG_SIZE   (CONFIG_MMU_PAGE_SIZE << 10)
+
+MEMORY
+{
+
+#if CONFIG_APP_BUILD_USE_FLASH_SECTIONS
+#if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
+  /* PSRAM mapped instruction data */
+  irom_seg (RX) :                    org = 0x50000020, len = IDROM_SEG_SIZE - 0x20
+#else
+  /* Flash mapped instruction data */
+  irom_seg (RX) :                    org = 0x40000020, len = IDROM_SEG_SIZE - 0x20
+
+  /**
+   * (0x20 offset above is a convenience for the app binary image generation.
+   * Flash cache has 64KB pages. The .bin file which is flashed to the chip
+   * has a 0x18 byte file header, and each segment has a 0x08 byte segment
+   * header. Setting this offset makes it simple to meet the flash cache MMU's
+   * constraint that (paddr % 64KB == vaddr % 64KB).)
+   */
+#endif // CONFIG_SPIRAM_FETCH_INSTRUCTIONS
+#endif // CONFIG_APP_BUILD_USE_FLASH_SECTIONS
+
+  /**
+   * Shared data RAM, excluding memory reserved for ROM bss/data/stack.
+   * Enabling Bluetooth & Trace Memory features in menuconfig will decrease the amount of RAM available.
+   */
+  sram_seg (RWX) :                 org = SRAM_START, len = SRAM_SIZE
+
+#if CONFIG_APP_BUILD_USE_FLASH_SECTIONS
+#if CONFIG_SPIRAM_RODATA
+  /* PSRAM mapped constant data */
+  drom_seg (R) :                     org = 0x50000020, len = IDROM_SEG_SIZE - 0x20
+#else
+  /* Flash mapped constant data */
+  drom_seg (R) :                     org = 0x40000020, len = IDROM_SEG_SIZE - 0x20
+#endif // CONFIG_SPIRAM_RODATA
+
+  /* (See irom_seg for meaning of 0x20 offset in the above.) */
+#endif // CONFIG_APP_BUILD_USE_FLASH_SECTIONS
+
+  /**
+   * lp ram memory (RWX). Persists over deep sleep. // TODO: IDF-5667
+   */
+   /* TODO: ["ESP32S31"] IDF-14640 */
+
+  /* We reduced the size of lp_ram_seg by RESERVE_RTC_MEM value.
+     It reserves the amount of LP memory that we use for this memory segment.
+     This segment is intended for keeping:
+       - (lower addr) rtc timer data (s_rtc_timer_retain_mem, see esp_clk.c files).
+       - (higher addr) bootloader rtc data (s_bootloader_retain_mem, when a Kconfig option is on).
+     The aim of this is to keep data that will not be moved around and have a fixed address.
+     This segment is placed at the beginning of LP RAM, as the end of LP RAM is occupied by LP ROM stack/data
+  */
+  /* TODO: ["ESP32S31"] IDF-14640 */
+
+  /* PSRAM seg */
+  extern_ram_seg(RWX) :        org = 0x50000000, len = IDROM_SEG_SIZE
+}
+
+/* Heap ends at top of dram0_0_seg */
+_heap_end = 0x40000000;
+
+
+/**
+ *  The lines below define location alias for .rtc.data section
+ *  S31 has no distinguished LP(RTC) fast and slow memory sections, instead, there is a unified LP_RAM section
+ *  Thus, the following region segments are not configurable like on other targets
+ */
+
+  /* TODO: ["ESP32S31"] IDF-14640 */
+
+#if CONFIG_APP_BUILD_USE_FLASH_SECTIONS
+  REGION_ALIAS("text_seg", irom_seg);
+#else
+  REGION_ALIAS("text_seg", sram_seg);
+#endif // CONFIG_APP_BUILD_USE_FLASH_SECTIONS
+
+#if CONFIG_APP_BUILD_USE_FLASH_SECTIONS
+  REGION_ALIAS("rodata_seg", drom_seg);
+#else
+  REGION_ALIAS("rodata_seg", sram_seg);
+#endif // CONFIG_APP_BUILD_USE_FLASH_SECTIONS
+
+#if CONFIG_SPIRAM_XIP_FROM_PSRAM
+  REGION_ALIAS("ext_ram_seg", drom_seg);
+#else
+  REGION_ALIAS("ext_ram_seg", extern_ram_seg);
+#endif //#if CONFIG_SPIRAM_XIP_FROM_PSRAM
+
+/**
+ *  If rodata default segment is placed in `drom_seg`, then flash's first rodata section must
+ *  also be first in the segment.
+ */
+#if CONFIG_APP_BUILD_USE_FLASH_SECTIONS
+  ASSERT(_flash_rodata_dummy_start == ORIGIN(rodata_seg),
+         ".flash_rodata_dummy section must be placed at the beginning of the rodata segment.")
+#endif
+
+#if CONFIG_ESP_SYSTEM_USE_EH_FRAME
+    ASSERT ((__eh_frame_end > __eh_frame), "Error: eh_frame size is null!");
+    ASSERT ((__eh_frame_hdr_end > __eh_frame_hdr), "Error: eh_frame_hdr size is null!");
+#endif

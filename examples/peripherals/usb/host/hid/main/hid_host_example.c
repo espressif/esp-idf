@@ -557,7 +557,7 @@ static void usb_lib_task(void *arg)
 {
     const usb_host_config_t host_config = {
         .skip_phy_setup = false,
-        .intr_flags = ESP_INTR_FLAG_LEVEL1,
+        .intr_flags = ESP_INTR_FLAG_LOWMED,
     };
 
     ESP_ERROR_CHECK(usb_host_install(&host_config));
@@ -645,7 +645,7 @@ void app_main(void)
         .intr_type = GPIO_INTR_NEGEDGE,
     };
     ESP_ERROR_CHECK(gpio_config(&input_pin));
-    ESP_ERROR_CHECK(gpio_install_isr_service(ESP_INTR_FLAG_LEVEL1));
+    ESP_ERROR_CHECK(gpio_install_isr_service(ESP_INTR_FLAG_LOWMED));
     ESP_ERROR_CHECK(gpio_isr_handler_add(APP_QUIT_PIN, gpio_isr_cb, NULL));
 
     /*

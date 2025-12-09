@@ -38,6 +38,19 @@ extern "C" {
 #define LOG_FMT(x)      "%s: " x, __func__
 
 /**
+ * @brief Control message data structure for internal use. Sent to control socket.
+ */
+struct httpd_ctrl_data {
+    enum httpd_ctrl_msg {
+        HTTPD_CTRL_SHUTDOWN,
+        HTTPD_CTRL_WORK,
+        HTTPD_CTRL_MAX,
+    } hc_msg;
+    httpd_work_fn_t hc_work;
+    void *hc_work_arg;
+};
+
+/**
  * @brief Thread related data for internal use
  */
 struct thread_data {
@@ -579,6 +592,8 @@ esp_err_t httpd_sess_trigger_close_(httpd_handle_t handle, struct sock_db *sessi
  *
  */
 void esp_http_server_dispatch_event(int32_t event_id, const void* event_data, size_t event_data_size);
+
+esp_err_t httpd_crypto_sha1(const uint8_t *data, size_t data_len, uint8_t *hash);
 
 #ifdef __cplusplus
 }

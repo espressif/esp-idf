@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -62,23 +62,23 @@ static void test_mcpwm_timer_sleep_retention(bool allow_pd)
     TEST_ESP_OK(mcpwm_new_generator(oper, &gen_config, &gen));
 
     printf("set generator to output high on timer full\r\n");
-    TEST_ESP_OK(mcpwm_generator_set_actions_on_timer_event(gen,
-                                                           MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_FULL, MCPWM_GEN_ACTION_HIGH),
-                                                           MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_GEN_ACTION_KEEP),
-                                                           MCPWM_GEN_TIMER_EVENT_ACTION_END()));
+    TEST_ESP_OK(mcpwm_generator_set_action_on_timer_event(gen,
+                                                          MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_FULL, MCPWM_GEN_ACTION_HIGH)));
+    TEST_ESP_OK(mcpwm_generator_set_action_on_timer_event(gen,
+                                                          MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_GEN_ACTION_KEEP)));
 
     // go to sleep
     esp_sleep_context_t sleep_ctx;
     esp_sleep_set_sleep_context(&sleep_ctx);
     printf("go to light sleep for 1 seconds\r\n");
-#if ESP_SLEEP_POWER_DOWN_CPU
+#if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU
     TEST_ESP_OK(sleep_cpu_configure(true));
 #endif
     TEST_ESP_OK(esp_sleep_enable_timer_wakeup(1 * 1000 * 1000));
     TEST_ESP_OK(esp_light_sleep_start());
 
     printf("Waked up! Let's see if MCPWM driver can still work...\r\n");
-#if ESP_SLEEP_POWER_DOWN_CPU
+#if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU
     TEST_ESP_OK(sleep_cpu_configure(false));
 #endif
 
@@ -176,14 +176,14 @@ static void test_mcpwm_capture_timer_sleep_retention(bool allow_pd)
     esp_sleep_context_t sleep_ctx;
     esp_sleep_set_sleep_context(&sleep_ctx);
     printf("go to light sleep for 1 seconds\r\n");
-#if ESP_SLEEP_POWER_DOWN_CPU
+#if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU
     TEST_ESP_OK(sleep_cpu_configure(true));
 #endif
     TEST_ESP_OK(esp_sleep_enable_timer_wakeup(1 * 1000 * 1000));
     TEST_ESP_OK(esp_light_sleep_start());
 
     printf("Waked up! Let's see if MCPWM driver can still work...\r\n");
-#if ESP_SLEEP_POWER_DOWN_CPU
+#if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU
     TEST_ESP_OK(sleep_cpu_configure(false));
 #endif
 

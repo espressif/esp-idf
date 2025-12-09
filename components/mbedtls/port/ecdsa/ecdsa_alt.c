@@ -182,14 +182,19 @@ static int esp_ecdsa_validate_efuse_block(mbedtls_ecp_group_id grp_id, int efuse
     expected_key_purpose_low = ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY;
 #endif  /* !SOC_ECDSA_SUPPORT_CURVE_SPECIFIC_KEY_PURPOSES */
 
-    if (expected_key_purpose_low != esp_efuse_get_key_purpose((esp_efuse_block_t)low_blk)
-#if SOC_ECDSA_SUPPORT_CURVE_SPECIFIC_KEY_PURPOSES && SOC_ECDSA_SUPPORT_CURVE_P384
-        || expected_key_purpose_high != esp_efuse_get_key_purpose((esp_efuse_block_t)high_blk)
-#endif
-    ) {
+    if (expected_key_purpose_low != esp_efuse_get_key_purpose((esp_efuse_block_t)low_blk)) {
         ESP_LOGE(TAG, "Key burned in efuse has incorrect purpose");
         return MBEDTLS_ERR_ECP_INVALID_KEY;
     }
+
+#if SOC_ECDSA_SUPPORT_CURVE_SPECIFIC_KEY_PURPOSES && SOC_ECDSA_SUPPORT_CURVE_P384
+    // Only check high block purpose for P384 curves that actually use it
+    if (grp_id == MBEDTLS_ECP_DP_SECP384R1 &&
+        expected_key_purpose_high != esp_efuse_get_key_purpose((esp_efuse_block_t)high_blk)) {
+        ESP_LOGE(TAG, "Key burned in efuse has incorrect purpose for high block");
+        return MBEDTLS_ERR_ECP_INVALID_KEY;
+    }
+#endif
 
     return 0;
 }
@@ -590,7 +595,7 @@ int esp_ecdsa_tee_set_pk_context(mbedtls_pk_context *key_ctx, esp_ecdsa_pk_conf_
         return ret;
     }
 
-    if (!conf->use_tee_sec_stg_key) {
+    if (!conf->tee_key_id) {
         ESP_LOGE(TAG, "Invalid esp_ecdsa_pk_conf_t configuration");
         return ret;
     }

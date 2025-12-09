@@ -2,15 +2,15 @@
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 # !/usr/bin/env python3
 # this file defines some functions for testing cli and br under pytest framework
+import logging
 import os
 import re
 import socket
 import struct
 import subprocess
 import time
+from collections.abc import Callable
 from functools import wraps
-from typing import Callable
-from typing import Tuple
 
 import netifaces
 import pexpect
@@ -19,19 +19,31 @@ from pytest_embedded_idf.dut import IdfDut
 
 
 def extract_address(
-    command: str, pattern: str, default_return: str = ''
+    command: str,
+    pattern: str,
+    default_return: str = '',
+    retries: int = 3,
+    delay: int = 2,
 ) -> Callable[[Callable[[str], str]], Callable[[IdfDut], str]]:
     def decorator(func: Callable[[str], str]) -> Callable[[IdfDut], str]:
         @wraps(func)
         def wrapper(dut: IdfDut) -> str:
-            clean_buffer(dut)
-            execute_command(dut, command)
-            try:
-                result = dut.expect(pattern, timeout=5)[1].decode()
-            except Exception as e:
-                print(f'Error: {e}')
-                return default_return
-            return func(result)
+            last_exception: Exception | None = None
+            for attempt in range(1, retries + 1):
+                try:
+                    clean_buffer(dut)
+                    execute_command(dut, command)
+                    result = dut.expect(pattern, timeout=5)[1].decode()
+                    return func(result)
+                except Exception as e:
+                    logging.exception(f'[{command}] Attempt {attempt}/{retries} failed: {e}')
+                    last_exception = e
+                    if attempt < retries:
+                        time.sleep(delay)
+
+            if last_exception:
+                logging.exception(f'[{command}] Giving up after {retries} retries.')
+            return default_return
 
         return wrapper
 
@@ -125,15 +137,19 @@ def joinThreadNetwork(dut: IdfDut, thread: thread_parameter) -> None:
 
 
 def wait_for_join(dut: IdfDut, role: str) -> bool:
+    clean_buffer(dut)
     for _ in range(1, 30):
-        if getDeviceRole(dut) == role:
-            wait(dut, 5)
+        time.sleep(1)
+        execute_command(dut, 'state')
+        try:
+            dut.expect(re.compile(role), timeout=5)
             return True
-        wait(dut, 1)
+        except Exception:
+            continue
     return False
 
 
-def joinWiFiNetwork(dut: IdfDut, wifi: wifi_parameter) -> Tuple[str, int]:
+def joinWiFiNetwork(dut: IdfDut, wifi: wifi_parameter) -> tuple[str, int]:
     clean_buffer(dut)
     ip_address = ''
     for order in range(1, wifi.retry_times):
@@ -152,7 +168,7 @@ def getDeviceRole(dut: IdfDut) -> str:
     wait(dut, 1)
     execute_command(dut, 'state')
     role = dut.expect(r'\W+(\w+)\W+Done', timeout=5)[1].decode()
-    print(role)
+    logging.info(role)
     return str(role)
 
 
@@ -168,41 +184,46 @@ def getDataset(dut: IdfDut) -> str:
 
 
 def init_thread(dut: IdfDut) -> None:
-    dut.expect('>', timeout=10)
+    dut.expect('OpenThread attached to netif', timeout=10)
     wait(dut, 3)
+    reset_thread(dut)
+
+
+def stop_thread(dut: IdfDut) -> None:
+    execute_command(dut, 'thread stop')
+    dut.expect('disabled', timeout=20)
     reset_thread(dut)
 
 
 def reset_thread(dut: IdfDut) -> None:
     execute_command(dut, 'factoryreset')
     dut.expect('OpenThread attached to netif', timeout=20)
-    dut.expect('>', timeout=10)
     wait(dut, 3)
     clean_buffer(dut)
 
 
+def hardreset_dut(dut: IdfDut) -> None:
+    dut.serial.hard_reset()
+    time.sleep(5)
+    execute_command(dut, 'factoryreset')
+
+
 # get the mleid address of the thread
-def get_mleid_addr(dut: IdfDut) -> str:
-    dut_adress = ''
-    execute_command(dut, 'ipaddr mleid')
-    dut_adress = dut.expect(r'\n((?:\w+:){7}\w+)\r', timeout=5)[1].decode()
-    return dut_adress
+@extract_address('ipaddr mleid', r'\n((?:\w+:){7}\w+)\r')
+def get_mleid_addr(addr: str) -> str:
+    return addr
 
 
 # get the rloc address of the thread
-def get_rloc_addr(dut: IdfDut) -> str:
-    dut_adress = ''
-    execute_command(dut, 'ipaddr rloc')
-    dut_adress = dut.expect(r'\n((?:\w+:){7}\w+)\r', timeout=5)[1].decode()
-    return dut_adress
+@extract_address('ipaddr rloc', r'\n((?:\w+:){7}\w+)\r')
+def get_rloc_addr(addr: str) -> str:
+    return addr
 
 
 # get the linklocal address of the thread
-def get_linklocal_addr(dut: IdfDut) -> str:
-    dut_adress = ''
-    execute_command(dut, 'ipaddr linklocal')
-    dut_adress = dut.expect(r'\n((?:\w+:){7}\w+)\r', timeout=5)[1].decode()
-    return dut_adress
+@extract_address('ipaddr linklocal', r'\n((?:\w+:){7}\w+)\r')
+def get_linklocal_addr(addr: str) -> str:
+    return addr
 
 
 # get the global unicast address of the thread:
@@ -211,8 +232,8 @@ def get_global_unicast_addr(dut: IdfDut, br: IdfDut) -> str:
     clean_buffer(br)
     omrprefix = get_omrprefix(br)
     execute_command(dut, 'ipaddr')
-    dut_adress = dut.expect(r'(%s(?:\w+:){3}\w+)\r' % str(omrprefix), timeout=5)[1].decode()
-    return dut_adress
+    dut_adress = dut.expect(rf'({omrprefix}(?:\w+:){{3}}\w+)\r', timeout=5)[1].decode()
+    return str(dut_adress)
 
 
 @extract_address('rloc16', r'(\w{4})')
@@ -223,7 +244,7 @@ def get_rloc16_addr(rloc16: str) -> str:
 # ping of thread
 def ot_ping(
     dut: IdfDut, target: str, timeout: int = 5, count: int = 1, size: int = 56, interval: int = 1, hoplimit: int = 64
-) -> Tuple[int, int]:
+) -> tuple[int, int]:
     command = f'ping {str(target)} {size} {count} {interval} {hoplimit} {str(timeout)}'
     execute_command(dut, command)
     transmitted = dut.expect(r'(\d+) packets transmitted', timeout=60)[1].decode()
@@ -307,12 +328,12 @@ def get_host_interface_name() -> str:
     config_path = os.path.join(home_dir, 'config', 'env_config.yml')
     try:
         if os.path.exists(config_path):
-            with open(config_path, 'r') as file:
+            with open(config_path) as file:
                 config = yaml.safe_load(file)
             interface_name = config.get('interface_name')
             if interface_name:
                 if interface_name == 'eth0':
-                    print(
+                    logging.warning(
                         f"Warning: 'eth0' is not recommended as a valid network interface. "
                         f"Please check and update the 'interface_name' in the configuration file: "
                         f'{config_path}'
@@ -320,9 +341,9 @@ def get_host_interface_name() -> str:
                 else:
                     return str(interface_name)
             else:
-                print("Warning: Configuration file found but 'interface_name' is not defined.")
+                logging.warning("Warning: Configuration file found but 'interface_name' is not defined.")
     except Exception as e:
-        print(f'Error: Failed to read or parse {config_path}. Details: {e}')
+        logging.error(f'Error: Failed to read or parse {config_path}. Details: {e}')
     if 'eth1' in netifaces.interfaces():
         return 'eth1'
 
@@ -331,7 +352,7 @@ def get_host_interface_name() -> str:
 
 def clean_buffer(dut: IdfDut) -> None:
     str_length = str(len(dut.expect(pexpect.TIMEOUT, timeout=0.1)))
-    dut.expect(r'[\s\S]{%s}' % str(str_length), timeout=10)
+    dut.expect(rf'[\s\S]{{{str_length}}}', timeout=10)
 
 
 def check_if_host_receive_ra(br: IdfDut) -> bool:
@@ -340,8 +361,8 @@ def check_if_host_receive_ra(br: IdfDut) -> bool:
     omrprefix = get_omrprefix(br)
     command = 'ip -6 route | grep ' + str(interface_name)
     out_str = subprocess.getoutput(command)
-    print('br omrprefix: ', str(omrprefix))
-    print('host route table:\n', str(out_str))
+    logging.info(f'br omrprefix: {omrprefix}')
+    logging.info(f'host route table:\n {out_str}')
     return str(omrprefix) in str(out_str)
 
 
@@ -406,7 +427,7 @@ def create_host_udp_server(myudp: udp_parameter) -> None:
             AF_INET = socket.AF_INET6
         else:
             AF_INET = socket.AF_INET
-        print('The host start to create udp server!')
+        logging.info('The host start to create udp server!')
         if_index = socket.if_nametoindex(interface_name)
         sock = socket.socket(AF_INET, socket.SOCK_DGRAM)
         sock.bind((myudp.addr, myudp.port))
@@ -419,13 +440,14 @@ def create_host_udp_server(myudp: udp_parameter) -> None:
             )
         sock.settimeout(myudp.timeout)
         myudp.init_flag = True
-        print('The host start to receive message!')
+        logging.info('The host start to receive message!')
         myudp.udp_bytes = (sock.recvfrom(1024))[0]
-        print('The host has received message: ', myudp.udp_bytes)
-    except socket.error:
-        print('The host did not receive message!')
+        udp_str = str(myudp.udp_bytes)
+        logging.info(f'The host has received message: {udp_str}')
+    except OSError:
+        logging.error('The host did not receive message!')
     finally:
-        print('Close the socket.')
+        logging.info('Close the socket.')
         sock.close()
 
 
@@ -440,10 +462,10 @@ def host_udp_send_message(udp_target: udp_parameter) -> None:
         sock.bind(('::', 12350))
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_BINDTODEVICE, interface_name.encode())
         sock.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_MULTICAST_HOPS, 32)
-        print('Host is sending message')
+        logging.info('Host is sending message')
         sock.sendto(udp_target.udp_bytes, (udp_target.addr, udp_target.port))
-    except socket.error:
-        print('Host cannot send message')
+    except OSError:
+        logging.error('Host cannot send message')
     finally:
         sock.close()
 
@@ -459,7 +481,7 @@ def get_host_ipv4_address() -> str:
     out_str = out_bytes.decode('utf-8')
     host_ipv4_address = ''
     host_ipv4_address = re.findall(r'((?:\d+.){3}\d+)', str(out_str))[0]
-    return host_ipv4_address
+    return str(host_ipv4_address)
 
 
 def restart_avahi() -> None:
@@ -483,13 +505,13 @@ def host_close_service() -> None:
     command = 'ps auxww | grep avahi-publish-s'
     out_bytes = subprocess.check_output(command, shell=True, timeout=5)
     out_str = out_bytes.decode('utf-8')
-    print('host close service avahi status:\n', out_str)
+    logging.info(f'host close service avahi status:\n {out_str}')
     service_info = [line for line in out_str.splitlines() if 'testxxx _testxxx._udp' in line]
     for line in service_info:
-        print('Process:', line)
+        logging.info(f'Process:{line}')
         pid = line.split()[1]
         command = 'kill -9 ' + pid
-        print('kill ', pid)
+        logging.info(f'kill {pid}')
         subprocess.call(command, shell=True, timeout=5)
         time.sleep(1)
 
@@ -522,24 +544,24 @@ def open_host_interface() -> None:
 
 def get_domain() -> str:
     hostname = socket.gethostname()
-    print('hostname is: ', hostname)
+    logging.info(f'hostname is: {hostname}')
     command = 'ps -auxww | grep avahi-daemon | grep running'
     out_str = subprocess.getoutput(command)
-    print('avahi status:\n', out_str)
+    logging.info(f'avahi status:\n {out_str}')
     role = re.findall(r'\[([\w\W]+)\.local\]', str(out_str))[0]
-    print('active host is: ', role)
+    logging.info(f'active host is: {role}')
     return str(role)
 
 
 def flush_ipv6_addr_by_interface() -> None:
     interface_name = get_host_interface_name()
-    print(f'flush ipv6 addr : {interface_name}')
+    logging.info(f'flush ipv6 addr : {interface_name}')
     command_show_addr = f'ip -6 addr show dev {interface_name}'
     command_show_route = f'ip -6 route show dev {interface_name}'
     addr_before = subprocess.getoutput(command_show_addr)
     route_before = subprocess.getoutput(command_show_route)
-    print(f'Before flush, IPv6 addresses: \n{addr_before}')
-    print(f'Before flush, IPv6 routes: \n{route_before}')
+    logging.info(f'Before flush, IPv6 addresses: \n{addr_before}')
+    logging.info(f'Before flush, IPv6 routes: \n{route_before}')
     subprocess.run(['ip', 'link', 'set', interface_name, 'down'])
     subprocess.run(['ip', '-6', 'addr', 'flush', 'dev', interface_name])
     subprocess.run(['ip', '-6', 'route', 'flush', 'dev', interface_name])
@@ -547,8 +569,8 @@ def flush_ipv6_addr_by_interface() -> None:
     time.sleep(5)
     addr_after = subprocess.getoutput(command_show_addr)
     route_after = subprocess.getoutput(command_show_route)
-    print(f'After flush, IPv6 addresses: \n{addr_after}')
-    print(f'After flush, IPv6 routes: \n{route_after}')
+    logging.info(f'After flush, IPv6 addresses: \n{addr_after}')
+    logging.info(f'After flush, IPv6 routes: \n{route_after}')
 
 
 class tcp_parameter:
@@ -577,28 +599,29 @@ def create_host_tcp_server(mytcp: tcp_parameter) -> None:
             AF_INET = socket.AF_INET6
         else:
             AF_INET = socket.AF_INET
-        print('The host start to create a tcp server!')
+        logging.info('The host start to create a tcp server!')
         sock = socket.socket(AF_INET, socket.SOCK_STREAM)
         sock.bind((mytcp.addr, mytcp.port))
         sock.listen(5)
         mytcp.listen_flag = True
 
-        print('The tcp server is waiting for connection!')
+        logging.info('The tcp server is waiting for connection!')
         sock.settimeout(mytcp.timeout)
         connfd, addr = sock.accept()
-        print('The tcp server connected with ', addr)
+        logging.info(f'The tcp server connected with {addr}')
         mytcp.recv_flag = True
 
         mytcp.tcp_bytes = connfd.recv(1024)
-        print('The tcp server has received message: ', mytcp.tcp_bytes)
+        tcp_str = str(mytcp.tcp_bytes)
+        logging.info(f'The tcp server has received message: {tcp_str}')
 
-    except socket.error:
+    except OSError:
         if mytcp.recv_flag:
-            print('The tcp server did not receive message!')
+            logging.error('The tcp server did not receive message!')
         else:
-            print('The tcp server fail to connect!')
+            logging.error('The tcp server fail to connect!')
     finally:
-        print('Close the socket.')
+        logging.info('Close the socket.')
         sock.close()
 
 
@@ -618,27 +641,24 @@ def decimal_to_hex(decimal_str: str) -> str:
     return hex_str
 
 
-def get_omrprefix(br: IdfDut) -> str:
-    execute_command(br, 'br omrprefix')
-    omrprefix = br.expect(r'Local: ((?:\w+:){4}):/\d+\r', timeout=5)[1].decode()
-    return str(omrprefix)
+@extract_address('br omrprefix', r'Local: ((?:\w+:){4}):/\d+\r')
+def get_omrprefix(addr: str) -> str:
+    return addr
 
 
-def get_onlinkprefix(br: IdfDut) -> str:
-    execute_command(br, 'br onlinkprefix')
-    onlinkprefix = br.expect(r'Local: ((?:\w+:){4}):/\d+\r', timeout=5)[1].decode()
-    return str(onlinkprefix)
+@extract_address('br onlinkprefix', r'Local: ((?:\w+:){4}):/\d+\r')
+def get_onlinkprefix(addr: str) -> str:
+    return addr
 
 
-def get_nat64prefix(br: IdfDut) -> str:
-    execute_command(br, 'br nat64prefix')
-    nat64prefix = br.expect(r'Local: ((?:\w+:){6}):/\d+', timeout=5)[1].decode()
-    return str(nat64prefix)
+@extract_address('br nat64prefix', r'Local: ((?:\w+:){6}):/\d+')
+def get_nat64prefix(addr: str) -> str:
+    return addr
 
 
-def execute_command(dut: IdfDut, command: str) -> None:
+def execute_command(dut: IdfDut, command: str, prefix: str = 'ot ') -> None:
     clean_buffer(dut)
-    dut.write(command)
+    dut.write(prefix + command)
 
 
 def get_ouput_string(dut: IdfDut, command: str, wait_time: int) -> str:
@@ -646,3 +666,17 @@ def get_ouput_string(dut: IdfDut, command: str, wait_time: int) -> str:
     tmp = dut.expect(pexpect.TIMEOUT, timeout=wait_time)
     clean_buffer(dut)
     return str(tmp)
+
+
+def wait_for_host_network(host: str = '8.8.8.8', retries: int = 6, interval: int = 10) -> None:
+    for attempt in range(1, retries + 1):
+        try:
+            subprocess.run(['ping', '-c', '1', '-W', '2', host], check=True)
+            logging.info(f'Host network reachable on attempt {attempt}')
+            return
+        except subprocess.CalledProcessError:
+            logging.info(f'Ping attempt {attempt} failed, retrying in {interval} seconds...')
+            if attempt < retries:
+                time.sleep(interval)
+            else:
+                raise RuntimeError(f'Host network is not reachable after {retries} attempts.')

@@ -39,6 +39,7 @@ extern "C" {
 #define TEST_GPIO_EXT_IN_IO                (3)
 #define TEST_GPIO_INPUT_LEVEL_LOW_PIN      (1)
 #define TEST_GPIO_SIGNAL_IDX               (SIG_IN_FUNC250_IDX)
+#define TEST_GPIO_DEEP_SLEEP_HOLD_PIN      (28)
 #elif CONFIG_IDF_TARGET_ESP32H2
 #define TEST_GPIO_EXT_OUT_IO               (2)
 #define TEST_GPIO_EXT_IN_IO                (3)

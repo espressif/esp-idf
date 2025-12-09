@@ -136,6 +136,15 @@ uint8_t btm_ble_acl_active_count(void)
     for (p_node = list_begin(btm_cb.p_acl_db_list); p_node; p_node = list_next(p_node)) {
         p_acl_conn = list_node(p_node);
         if (p_acl_conn && p_acl_conn->in_use && p_acl_conn->transport == BT_TRANSPORT_LE) {
+            BTM_TRACE_DEBUG("%s LE ACL active #%d: remote_addr=%02X:%02X:%02X:%02X:%02X:%02X",
+                            __func__,
+                            count,
+                            p_acl_conn->remote_addr[0],
+                            p_acl_conn->remote_addr[1],
+                            p_acl_conn->remote_addr[2],
+                            p_acl_conn->remote_addr[3],
+                            p_acl_conn->remote_addr[4],
+                            p_acl_conn->remote_addr[5]);
             count++;
         }
     }

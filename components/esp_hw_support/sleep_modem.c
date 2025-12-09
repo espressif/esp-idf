@@ -26,7 +26,7 @@
 #include "esp_pau.h"
 #endif
 
-static __attribute__((unused)) const char *TAG = "sleep_modem";
+ESP_LOG_ATTR_TAG(TAG, "sleep_modem");
 
 #if CONFIG_PM_SLP_DEFAULT_PARAMS_OPT
 static void esp_pm_light_sleep_default_params_config(int min_freq_mhz, int max_freq_mhz);
@@ -195,7 +195,7 @@ inline __attribute__((always_inline)) bool sleep_modem_wifi_modem_link_done(void
 
 bool modem_domain_pd_allowed(void)
 {
-#if SOC_PM_MODEM_RETENTION_BY_REGDMA
+#if SOC_PM_MODEM_RETENTION_BY_REGDMA && SOC_PAU_SUPPORTED
     const sleep_retention_module_bitmap_t inited_modules = sleep_retention_get_inited_modules();
     const sleep_retention_module_bitmap_t created_modules = sleep_retention_get_created_modules();
 

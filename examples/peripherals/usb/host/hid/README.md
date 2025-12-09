@@ -1,5 +1,5 @@
-| Supported Targets | ESP32-P4 | ESP32-S2 | ESP32-S3 |
-| ----------------- | -------- | -------- | -------- |
+| Supported Targets | ESP32-H4 | ESP32-P4 | ESP32-S2 | ESP32-S3 |
+| ----------------- | -------- | -------- | -------- | -------- |
 
 # USB HID Class example
 This example implements a basic USB Host HID Class Driver, and demonstrates how to use the driver to communicate with USB HID devices (such as Keyboard and Mouse or both) on the ESP32-S2/S3. Currently, the example only supports the HID boot protocol which should be present on most USB Mouse and Keyboards. The example will continuously scan for the connection of any HID Mouse or Keyboard, and attempt to fetch HID reports from those devices once connected. To quit the example (and shut down the HID driver), users can GPIO0 to low (i.e., pressing the "Boot" button on most ESP dev kits).

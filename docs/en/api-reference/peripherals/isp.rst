@@ -23,6 +23,7 @@ Terminology
     - AE: Auto exposure
     - HIST: Histogram
     - BF: Bayer noise filter
+    - BLC: Black Level Correction
     - LSC: Lens Shading Correction
     - CCM: Color correction matrix
 
@@ -46,7 +47,7 @@ ISP Pipeline
         isp_chs [label = "Contrast &\n Hue & Saturation", width = 150, height = 70];
         isp_yuv [label = "YUV Limit\n YUB2RGB", width = 120, height = 70];
 
-        isp_header -> BF -> LSC -> Demosaic -> CCM -> Gamma -> RGB2YUV -> SHARP -> isp_chs -> isp_yuv -> isp_tail;
+        isp_header -> BLC -> BF -> LSC -> Demosaic -> CCM -> Gamma -> RGB2YUV -> SHARP -> isp_chs -> isp_yuv -> CROP -> isp_tail;
 
         LSC -> HIST
         Demosaic -> AWB
@@ -70,11 +71,13 @@ The ISP driver offers following services:
 - :ref:`isp-ae-statistics` - covers how to get AE statistics one-shot or continuously.
 - :ref:`isp-hist-statistics` - covers how to get histogram statistics one-shot or continuously.
 - :ref:`isp-bf` - covers how to enable and configure BF function.
+- :ref:`isp-blc` - covers how to enable and configure BLC function.
 - :ref:`isp-lsc` - covers how to enable and configure LSC function.
 - :ref:`isp-ccm-config` - covers how to configure the CCM.
 - :ref:`isp-demosaic` - covers how to configure the Demosaic function.
 - :ref:`isp-gamma-correction` - covers how to enable and configure gamma correction.
 - :ref:`isp-sharpen` - covers how to configure the sharpening function.
+- :ref:`isp-crop` - covers how to enable and configure image cropping function.
 - :ref:`isp-callback` - covers how to hook user specific code to ISP driver event callback function.
 - :ref:`isp-thread-safety` - lists which APIs are guaranteed to be thread safe by the driver.
 - :ref:`isp-kconfig-options` - lists the supported Kconfig options that can bring different effects to the driver.
@@ -517,6 +520,64 @@ After calling :cpp:func:`esp_isp_bf_configure`, you need to enable the ISP BF co
 Calling :cpp:func:`esp_isp_bf_disable` does the opposite, that is, put the driver back to the **init** state.
 
 
+.. _isp-blc:
+
+ISP BLC Controller
+^^^^^^^^^^^^^^^^^^
+
+Black Level Correction (BLC) aims for the issues caused by the uneven black level of the image.
+
+Calling :cpp:func:`esp_isp_blc_configure` to configure the BLC module to do the correction.
+
+.. code-block:: c
+
+    esp_isp_blc_config_t blc_config = {
+        .window = {
+            .top_left = {
+                .x = 0,
+                .y = 0,
+            },
+            .btm_right = {
+                .x = CONFIG_EXAMPLE_MIPI_CSI_DISP_HRES,
+                .y = CONFIG_EXAMPLE_MIPI_CSI_DISP_VRES,
+            },
+        },
+        .filter_enable = true,
+        .filter_threshold = {
+            .top_left_chan_thresh = 128,
+            .top_right_chan_thresh = 128,
+            .bottom_left_chan_thresh = 128,
+            .bottom_right_chan_thresh = 128,
+        },
+        .stretch = {
+            .top_left_chan_stretch_en = true,
+            .top_right_chan_stretch_en = true,
+            .bottom_left_chan_stretch_en = true,
+            .bottom_right_chan_stretch_en = true,
+        },
+    };
+    ESP_ERROR_CHECK(esp_isp_blc_configure(isp_proc, &blc_config));
+    ESP_ERROR_CHECK(esp_isp_blc_enable(isp_proc));
+
+After calling :cpp:func:`esp_isp_blc_configure`, you need to enable the ISP BLC controller by calling :cpp:func:`esp_isp_blc_enable`. This function:
+
+* Switches the driver state from **init** to **enable**.
+
+Calling :cpp:func:`esp_isp_blc_disable` does the opposite, that is, put the driver back to the **init** state.
+
+Calling :cpp:func:`esp_isp_blc_set_correction_offset` to set the BLC correction offset.
+
+.. code-block:: c
+
+    esp_isp_blc_offset_t blc_offset = {
+        .top_left_chan_offset = 20,
+        .top_right_chan_offset = 20,
+        .bottom_left_chan_offset = 20,
+        .bottom_right_chan_offset = 20,
+    };
+    ESP_ERROR_CHECK(esp_isp_blc_set_correction_offset(isp_proc, &blc_offset));
+
+
 .. _isp-lsc:
 
 ISP LSC Controller
@@ -565,7 +626,7 @@ Calling :cpp:func:`esp_isp_color_configure` to configure color function, you can
 {IDF_TARGET_SOC_ISP_COLOR_SATURATION_MAX:default="1.0", esp32p4="1.0"}
 {IDF_TARGET_SOC_ISP_COLOR_SATURATION_DEFAULT:default="1.0", esp32p4="1.0"}
 
-{IDF_TARGET_SOC_ISP_COLOR_HUE_MAX:default="360", esp32p4="360"}
+{IDF_TARGET_SOC_ISP_COLOR_HUE_MAX:default="359", esp32p4="359"}
 {IDF_TARGET_SOC_ISP_COLOR_HUE_DEFAULT:default="0", esp32p4="0"}
 
 {IDF_TARGET_SOC_ISP_COLOR_BRIGHTNESS_MIN:default="-127", esp32p4="-127"}
@@ -664,7 +725,7 @@ Calling :cpp:func:`esp_isp_demosaic_configure` to configure Demosaic function, y
         ...
     };
 
-    ESP_ERROR_CHECK(esp_isp_demosaic_configure(isp_proc, &sharpen_config));
+    ESP_ERROR_CHECK(esp_isp_demosaic_configure(isp_proc, &demosaic_config));
     ESP_ERROR_CHECK(esp_isp_demosaic_enable(isp_proc));
 
 After calling :cpp:func:`esp_isp_demosaic_configure`, you need to enable the ISP Demosaic controller, by calling :cpp:func:`esp_isp_demosaic_enable`. This function:
@@ -740,6 +801,51 @@ After calling :cpp:func:`esp_isp_sharpen_configure`, you need to enable the ISP 
 Calling :cpp:func:`esp_isp_sharpen_disable` does the opposite, that is, put the driver back to the **init** state.
 
 :cpp:func:`esp_isp_sharpen_configure` is allowed to be called even if the driver is in **init** state, but the sharpen configurations will only be taken into effect when in **enable** state.
+
+.. _isp-crop:
+
+ISP Image Crop Controller
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The ISP image crop function can extract a specified region from the original image, reducing the amount of data for subsequent processing and improving processing efficiency. The crop function is executed at the end of the ISP pipeline and can output a smaller region than the input image.
+
+.. note::
+
+    The ISP image crop function is only available on ESP32-P4 revision 3.0 and above.
+
+Calling :cpp:func:`esp_isp_crop_configure` to configure the image crop function, you can take the following code as reference:
+
+.. code-block:: c
+
+    esp_isp_crop_config_t crop_config = {
+        .window = {
+            .top_left = {
+                .x = 100,  // Top-left X coordinate of crop region
+                .y = 100,  // Top-left Y coordinate of crop region
+            },
+            .btm_right = {
+                .x = 699,  // Bottom-right X coordinate of crop region
+                .y = 499,  // Bottom-right Y coordinate of crop region
+            }
+        }
+    };
+    ESP_ERROR_CHECK(esp_isp_crop_configure(isp_proc, &crop_config));
+    ESP_ERROR_CHECK(esp_isp_crop_enable(isp_proc));
+
+After calling :cpp:func:`esp_isp_crop_configure`, you need to enable the ISP image crop controller by calling :cpp:func:`esp_isp_crop_enable`. This function:
+
+* Switches the driver state from **init** to **enable**.
+
+Calling :cpp:func:`esp_isp_crop_disable` does the opposite, that is, put the driver back to the **init** state.
+
+:cpp:func:`esp_isp_crop_configure` is allowed to be called even if the driver is in **init** state, but the crop configurations will only be taken into effect when in **enable** state.
+
+.. note::
+
+    - The top-left coordinates (top_left) of the crop region must be smaller than the bottom-right coordinates (btm_right)
+    - The top-left coordinates (top_left) of the crop region must be even, and the bottom-right coordinates (btm_right) must be odd
+    - The crop region cannot exceed the boundaries of the original image
+    - Adjust the display medium (such as LCD) size according to the cropped resolution to ensure complete display and avoid black borders or stretching.
 
 
 .. _isp-callback:
@@ -861,6 +967,7 @@ API Reference
 .. include-build-file:: inc/isp_ae.inc
 .. include-build-file:: inc/isp_awb.inc
 .. include-build-file:: inc/isp_bf.inc
+.. include-build-file:: inc/isp_blc.inc
 .. include-build-file:: inc/isp_lsc.inc
 .. include-build-file:: inc/isp_ccm.inc
 .. include-build-file:: inc/isp_demosaic.inc
@@ -868,6 +975,7 @@ API Reference
 .. include-build-file:: inc/isp_gamma.inc
 .. include-build-file:: inc/isp_hist.inc
 .. include-build-file:: inc/isp_color.inc
+.. include-build-file:: inc/isp_crop.inc
 .. include-build-file:: inc/isp_core.inc
 .. include-build-file:: inc/components/esp_driver_isp/include/driver/isp_types.inc
 .. include-build-file:: inc/components/hal/include/hal/isp_types.inc

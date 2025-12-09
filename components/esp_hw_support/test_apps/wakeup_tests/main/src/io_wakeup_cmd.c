@@ -16,7 +16,7 @@
 #include "argtable3/argtable3.h"
 #include "esp_log.h"
 
-static const char* TAG = "io_wakeup_test";
+ESP_LOG_ATTR_TAG(TAG, "io_wakeup_test");
 
 typedef enum {
     IO_WAKEUP_LEVEL_LOW = 0,

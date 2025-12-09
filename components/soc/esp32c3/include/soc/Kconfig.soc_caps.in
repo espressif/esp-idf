@@ -367,14 +367,6 @@ config SOC_AHB_GDMA_VERSION
     int
     default 1
 
-config SOC_GDMA_NUM_GROUPS_MAX
-    int
-    default 1
-
-config SOC_GDMA_PAIRS_PER_GROUP_MAX
-    int
-    default 3
-
 config SOC_GPIO_PORT
     int
     default 1
@@ -384,10 +376,6 @@ config SOC_GPIO_PIN_COUNT
     default 22
 
 config SOC_GPIO_SUPPORT_PIN_GLITCH_FILTER
-    bool
-    default y
-
-config SOC_GPIO_FILTER_CLK_SUPPORT_APB
     bool
     default y
 
@@ -426,10 +414,6 @@ config SOC_GPIO_CLOCKOUT_BY_GPIO_MATRIX
 config SOC_GPIO_CLOCKOUT_CHANNEL_NUM
     int
     default 3
-
-config SOC_GPIO_SUPPORT_HOLD_IO_IN_DSLP
-    bool
-    default y
 
 config SOC_I2C_NUM
     int
@@ -479,19 +463,7 @@ config SOC_I2C_SLAVE_SUPPORT_I2CRAM_ACCESS
     bool
     default y
 
-config SOC_I2S_NUM
-    int
-    default 1
-
 config SOC_I2S_HW_VERSION_2
-    bool
-    default y
-
-config SOC_I2S_SUPPORTS_XTAL
-    bool
-    default y
-
-config SOC_I2S_SUPPORTS_PLL_F160M
     bool
     default y
 
@@ -579,22 +551,6 @@ config SOC_MPU_REGION_WO_SUPPORTED
     bool
     default n
 
-config SOC_RMT_GROUPS
-    int
-    default 1
-
-config SOC_RMT_TX_CANDIDATES_PER_GROUP
-    int
-    default 2
-
-config SOC_RMT_RX_CANDIDATES_PER_GROUP
-    int
-    default 2
-
-config SOC_RMT_CHANNELS_PER_GROUP
-    int
-    default 4
-
 config SOC_RMT_MEM_WORDS_PER_CHANNEL
     int
     default 48
@@ -603,35 +559,7 @@ config SOC_RMT_SUPPORT_RX_PINGPONG
     bool
     default y
 
-config SOC_RMT_SUPPORT_RX_DEMODULATION
-    bool
-    default y
-
-config SOC_RMT_SUPPORT_ASYNC_STOP
-    bool
-    default y
-
 config SOC_RMT_SUPPORT_TX_LOOP_COUNT
-    bool
-    default y
-
-config SOC_RMT_SUPPORT_TX_SYNCHRO
-    bool
-    default y
-
-config SOC_RMT_SUPPORT_TX_CARRIER_DATA_ONLY
-    bool
-    default y
-
-config SOC_RMT_SUPPORT_XTAL
-    bool
-    default y
-
-config SOC_RMT_SUPPORT_APB
-    bool
-    default y
-
-config SOC_RMT_SUPPORT_RC_FAST
     bool
     default y
 
@@ -859,22 +787,6 @@ config SOC_TWAI_MASK_FILTER_NUM
     int
     default 1
 
-config SOC_TWAI_CLK_SUPPORT_APB
-    bool
-    default y
-
-config SOC_TWAI_BRP_MIN
-    int
-    default 2
-
-config SOC_TWAI_BRP_MAX
-    int
-    default 16384
-
-config SOC_TWAI_SUPPORTS_RX_STATUS
-    bool
-    default y
-
 config SOC_EFUSE_DIS_DOWNLOAD_ICACHE
     bool
     default y
@@ -900,6 +812,10 @@ config SOC_EFUSE_DIS_ICACHE
     default y
 
 config SOC_EFUSE_BLOCK9_KEY_PURPOSE_QUIRK
+    bool
+    default y
+
+config SOC_EFUSE_XTS_AES_KEY_128
     bool
     default y
 
@@ -1092,6 +1008,10 @@ config SOC_WIFI_GCMP_SUPPORT
     default y
 
 config SOC_WIFI_WAPI_SUPPORT
+    bool
+    default y
+
+config SOC_WIFI_TXOP_SUPPORT
     bool
     default y
 

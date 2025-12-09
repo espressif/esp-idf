@@ -74,6 +74,7 @@ GPIO **边沿** 事件是最常见的事件类型，任何 GPIO 管脚均可触�
     :SOC_ANA_CMPR_SUPPORT_ETM: - 要了解如何从模拟比较器获取 ETM 事件句柄，请参阅 :doc:`/api-reference/peripherals/ana_cmpr`。
     :SOC_TEMPERATURE_SENSOR_SUPPORT_ETM: - 要了解如何从温度传感器获取 ETM 事件句柄，请参阅 :doc:`/api-reference/peripherals/temp_sensor`。
     :SOC_I2S_SUPPORTS_ETM:  - 要了解如何从 I2S 获取 ETM 事件句柄，请参阅 :doc:`/api-reference/peripherals/i2s`。
+    :SOC_LEDC_SUPPORT_ETM:  - 要了解如何从 LEDC 获取 ETM 事件句柄，请参阅 :doc:`/api-reference/peripherals/ledc`。
 
 .. _etm-task:
 
@@ -101,6 +102,7 @@ GPIO 任务是最常见的任务类型。一个 GPIO 可以采取一个或多个
     :SOC_TIMER_SUPPORT_ETM: - 要了解如何从 GPTimer 获取 ETM 任务句柄，请参阅 :ref:`gptimer-etm-event-and-task`。
     :SOC_TEMPERATURE_SENSOR_SUPPORT_ETM: - 要了解如何从温度传感器获取 ETM 任务句柄，请参阅 :doc:`/api-reference/peripherals/temp_sensor`。
     :SOC_I2S_SUPPORTS_ETM:  - 要了解如何从 I2S 获取 ETM 任务句柄，请参阅 :doc:`/api-reference/peripherals/i2s`。
+    :SOC_LEDC_SUPPORT_ETM:  - 要了解如何从 LEDC 获取 ETM 任务句柄，请参阅 :doc:`/api-reference/peripherals/ledc`。
 
 .. _etm-channel-control:
 

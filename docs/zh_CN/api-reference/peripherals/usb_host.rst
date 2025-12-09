@@ -29,7 +29,7 @@ USB 主机库（以下简称主机库）是 USB 主机栈的最底层，提供�
 
 .. list::
 
-    :esp32s2 or esp32s3: - 支持全速 (FS) 和低速 (LS) 设备。
+    :esp32s2 or esp32s3 or esp32h4: - 支持全速 (FS) 和低速 (LS) 设备。
     :esp32p4: - 支持高速 (HS)、全速 (FS) 和低速 (LS) 设备。
     - 支持四种传输类型，即控制传输、块传输、中断传输和同步传输。
     :esp32p4: - 支持高带宽等时性端点。
@@ -37,8 +37,10 @@ USB 主机库（以下简称主机库）是 USB 主机栈的最底层，提供�
     - 支持多个 Class 驱动程序同时运行，即主机的多个客户端同时运行。
     - 单个设备可以由多个客户端同时使用，如复合设备。
     - 主机库及其底层主机栈不会在内部自动创建操作系统任务，任务数量完全由主机库接口的使用方式决定。一般来说，任务数量为 ``（运行中的主机 Class 驱动程序数量 + 1）``。
-    - 支持单个 Hub（启用选项 :ref:`CONFIG_USB_HOST_HUBS_SUPPORTED`）。
-    - 支持多个 Hub（启用选项 :ref:`CONFIG_USB_HOST_HUB_MULTI_LEVEL`）。
+    - 支持单个 Hub（启用选项 `CONFIG_USB_HOST_HUBS_SUPPORTED`）。
+    - 支持多个 Hub（启用选项 `CONFIG_USB_HOST_HUB_MULTI_LEVEL`）。
+    - 支持全局挂起与恢复，通过挂起或恢复整个总线来实现。
+    - 支持通过提交传输自动触发全局恢复。
 
 目前，主机库及其底层主机栈存在以下限制：
 
@@ -47,6 +49,8 @@ USB 主机库（以下简称主机库）是 USB 主机栈的最底层，提供�
     - 仅支持异步传输。
     - 仅支持使用发现的首个配置，尚不支持变更为其他配置。
     - 尚不支持传输超时。
+    - 尚未支持选择性（按设备/按端口）挂起/恢复。
+    - 尚不支持由 USB 设备发起的远程唤醒。
     - 外部 Hub 驱动：不支持远程唤醒功能（即使没有设备插入，外部 Hub 也处于工作状态）。
     - 外部 Hub 驱动：不处理错误用例（尚未实现过流处理、初始化错误等功能）。
     - 外部 Hub 驱动：不支持接口选择。驱动程序使用具有 Hub 类代码 (09h) 的第一个可用接口。
@@ -104,7 +108,7 @@ USB 主机库（以下简称主机库）是 USB 主机栈的最底层，提供�
 设备
 ^^^^^^^
 
-主机库隔离了客户端与设备处理的细节，包括连接、内存分配和枚举等，客户端只需提供已连接且已枚举的设备列表供选择。默认情况下，在枚举过程中，每个设备都会自动配置为使用找到的第一个配置，即通过获取配置描述符请求返回的第一个配置描述符。对于大多数标准设备，通常将第一个配置的 ``bConfigurationValue`` 设置为 ``1``。启用选项 :ref:`CONFIG_USB_HOST_ENABLE_ENUM_FILTER_CALLBACK` 后，可以选择不同的 ``bConfigurationValue``。获取更多详细信息，请参阅 `多项配置支持`_。
+主机库隔离了客户端与设备处理的细节，包括连接、内存分配和枚举等，客户端只需提供已连接且已枚举的设备列表供选择。默认情况下，在枚举过程中，每个设备都会自动配置为使用找到的第一个配置，即通过获取配置描述符请求返回的第一个配置描述符。对于大多数标准设备，通常将第一个配置的 ``bConfigurationValue`` 设置为 ``1``。启用选项 `CONFIG_USB_HOST_ENABLE_ENUM_FILTER_CALLBACK` 后，可以选择不同的 ``bConfigurationValue``。获取更多详细信息，请参阅 `多项配置支持`_。
 
 只要不与相同接口通信，两个及以上的客户端可以同时与同一设备通信。然而，多个客户端同时与相同设备的默认端点（即 EP0）通信，将导致它们的控制传输序列化。
 
@@ -364,6 +368,126 @@ USB 主机库（以下简称主机库）是 USB 主机栈的最底层，提供�
 #. 删除客户端任务。如有需要，向守护进程任务发送信号。
 
 
+.. ---------------------------------------------------- 电源管理 -----------------------------------------------
+
+电源管理
+----------------
+
+全局挂起/恢复
+^^^^^^^^^^^^^^^^^^^^^
+
+USB 主机库支持全局挂起/恢复，也就是挂起或恢复整个 USB 总线。全局挂起恢复通过根端口实现。挂起时，USB 主机会停止发送 SOF 包，从而使连接到 USB 总线的所有设备进入挂起状态。
+
+请注意，全局挂起/恢复并 **不会** 在 USB 主机端挂起/恢复 USB-OTG 外设，因此并 **不会** 降低主机控制器本身的功耗。
+
+事件
+^^^^^^
+
+客户端事件
+"""""""""""""
+
+当设备被挂起或恢复时，所有已打开该受影响设备的客户端都会通过以下事件收到通知。每个事件都包含该被挂起或已恢复设备的句柄：
+
+- :cpp:enumerator:`USB_HOST_CLIENT_EVENT_DEV_SUSPENDED` — 设备已进入挂起状态。
+
+- :cpp:enumerator:`USB_HOST_CLIENT_EVENT_DEV_RESUMED` — 设备已恢复运行。
+
+USB 主机库事件
+""""""""""""""""""""
+
+下列事件与自动挂起定时器相关联。定时器超时后，其回调函数会解除 USB 主机库处理程序的阻塞并传递该事件：
+
+- :cpp:enumerator:`USB_HOST_LIB_EVENT_FLAGS_AUTO_SUSPEND` — 表示自动挂起定时器已超时。
+
+自动挂起定时器
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+可使用 :cpp:func:`usb_host_lib_set_auto_suspend` 配置自动挂起定时器。每当 USB 主机库的客户端处理函数处理来自任意客户端的事件时，或当 USB 主机库本身在处理任何事件时，自动挂起定时器都会被重置。
+
+自动挂起定时器会主动监测 USB 总线活动以及 USB 主机库的活动情况。具体如下：
+
+- 如果检测到 USB 流量（即发生任何传输或由客户端处理的事件），定时器会自动重置。
+- 如果检测到 USB 主机库的活动（即有新设备连接），定时器会自动重置。
+- 如果 USB 总线和 USB 主机库保持空闲（无流量、客户端事件或库事件），定时器继续倒计时。
+- 一旦定时器达到指定的超时时间（以毫秒为单位），将触发挂起。
+
+这种机制确保 USB 主机仅在总线真正空闲时才进入挂起模式，避免在活跃通信期间出现意外挂起。
+
+自动挂起定时器的重要注意事项：
+
+- 定时器可配置，即使未连接任何设备也会开始倒计时。
+- 所有设备断开连接后，定时器停止。
+- 设备连接或断开时，定时器自动重置。
+- 定时器超时后，只有在以下情况下才会派发 USB 主机库事件：
+
+    - 当前有设备连接到根端口，并且
+    - 根端口尚未处于挂起状态
+
+自动挂起定时器可以配置为以下几种模式：
+
+- **单次** (:cpp:enumerator:`USB_HOST_LIB_PM_SUSPEND_ONE_SHOT`)：定时器超时一次后停止。
+- **周期性** (:cpp:enumerator:`USB_HOST_LIB_PM_SUSPEND_PERIODIC`)：定时器在每次超时后自动重启，无限重复。
+
+由传输提交触发自动恢复
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+除了自动挂起定时器之外，USB 主机库还支持在传输提交（控制或非控制）时对已挂起的根端口进行自动恢复。通过此功能，开发人员只需调用传输 API（例如 :cpp:func:`usb_host_transfer_submit` 或 :cpp:func:`usb_host_transfer_submit_control`）即可发起恢复，无需显式调用 :cpp:func:`usb_host_lib_root_port_resume`。
+
+当根端口处于挂起状态，且有客户端向已挂起的设备提交传输请求时，USB 主机库将执行以下流程：
+
+1. 自动向根端口发起恢复信号。
+2. 暂停处理该传输请求，直到恢复信号完成。
+3. 待总线进入活动（已恢复）状态后提交传输。
+
+这一机制简化了客户端实现，避免了因手动触发恢复与提交传输并行进行而可能产生的竞态条件，确保恢复行为一致且安全。
+
+.. note::
+
+    仅在根端口处于挂起状态时，才能通过传输提交进行自动恢复。若根端口已处于活动状态，传输提交将照常进行。
+
+下面的代码片段演示了如何使用自动挂起定时器和传输提交自动恢复功能，在挂起与恢复状态之间循环切换。
+
+.. code-block:: c
+
+    #include "usb/usb_host.h"
+
+    static void client_task(void *arg)
+    {
+        while(true) {
+            // 向挂起的设备提交传输，以自动恢复设备
+            // 借助自动挂起定时器，设备在无操作 1 秒后自动进入挂起模式
+            usb_host_transfer_submit(xfer_out);
+
+            // 切换上下文 10 秒。设备将在空闲约 1 秒后自动挂起
+            vTaskDelay(pdMS_TO_TICKS(10000));
+        }
+    }
+
+    void usb_host_lib_task(void *arg)
+    {
+        ...
+
+        // 将自动挂起定时器设置为周期模式，周期为 1 秒，
+        // 用于在无操作 1 秒后自动挂起设备，并在超时后自动重启
+        usb_host_lib_set_auto_suspend(USB_HOST_LIB_PM_SUSPEND_PERIODIC, 1000);
+
+        while (1) {
+            uint32_t event_flags;
+            usb_host_lib_handle_events(portMAX_DELAY, &event_flags);
+
+            if (event_flags & USB_HOST_LIB_EVENT_FLAGS_AUTO_SUSPEND) {
+                // 自动挂起定时器超时，挂起根端口
+                usb_host_lib_root_port_suspend();
+            }
+            ...
+        }
+        ...
+    }
+
+.. note::
+
+    关于挂起与恢复的更多细节，请参阅 `USB 2.0 规范 <https://www.usb.org/document-library/usb-20-specification>`_ > 第 11.9 章 *Suspend and Resume*。
+
 .. ---------------------------------------------------- Examples -------------------------------------------------------
 
 示例
@@ -432,12 +556,15 @@ UVC
        使用 STUSB03E 与模拟开关的连接示例（主机模式）
 
     .. note::
+
         此原理图为简化示例，用于演示外部 PHY 连接方式，未包含完整 {IDF_TARGET_NAME} 设计所需的所有元器件和信号（如 VCC、GND、RESET 等）。
+
         图中包含 +5 V 电源轨（用于为 USB 设备供电）和 VCC 电源轨（通常为 3.3 V）。VCC 电压应与芯片供电电压保持一致。确保为 USB 总线提供的 +5 V 电源可靠，并具备必要的保护措施（如电源开关和限流设计）在支持 USB 总线供电设备时，务必遵守 USB 主机的供电规范。
 
     硬件配置通过将 GPIO 映射到 PHY 引脚实现。任何未使用的引脚（如 :cpp:member:`usb_phy_ext_io_conf_t::suspend_n_io_num`） **必须设置为 -1**。
 
     .. note::
+
         :cpp:member:`usb_phy_ext_io_conf_t::suspend_n_io_num` 引脚 **当前不支持**，无需连接。
 
     **示例代码：**
@@ -510,10 +637,10 @@ USB 设备可能是热插拔的，因此必须配置电源开关和设备连接�
 
 可通过 Menuconfig 选项设置 USB 主机栈的可配置参数。
 
-* :ref:`CONFIG_USB_HOST_DEBOUNCE_DELAY_MS` 用于配置防抖延迟。
-* :ref:`CONFIG_USB_HOST_RESET_HOLD_MS` 用于配置重置保持时间。
-* :ref:`CONFIG_USB_HOST_RESET_RECOVERY_MS` 用于配置重置恢复时间。
-* :ref:`CONFIG_USB_HOST_SET_ADDR_RECOVERY_MS` 用于配置 ``SetAddress()`` 恢复时间。
+* `CONFIG_USB_HOST_DEBOUNCE_DELAY_MS` 用于配置防抖延迟。
+* `CONFIG_USB_HOST_RESET_HOLD_MS` 用于配置重置保持时间。
+* `CONFIG_USB_HOST_RESET_RECOVERY_MS` 用于配置重置恢复时间。
+* `CONFIG_USB_HOST_SET_ADDR_RECOVERY_MS` 用于配置 ``SetAddress()`` 恢复时间。
 
 下游端口配置
 ^^^^^^^^^^^^
@@ -528,17 +655,17 @@ USB 设备可能是热插拔的，因此必须配置电源开关和设备连接�
 
 可以通过 Menuconfig 配置下游端口的可配置参数。
 
-* 对于在端口上电后稳定电源的自定义值（PwrOn2PwrGood 值），请参阅 :ref:`CONFIG_USB_HOST_EXT_PORT_CUSTOM_POWER_ON_DELAY_MS`。
-* 对于复位恢复间隔，请参阅 :ref:`CONFIG_USB_HOST_EXT_PORT_RESET_RECOVERY_DELAY_MS`。
+* 对于在端口上电后稳定电源的自定义值（PwrOn2PwrGood 值），请参阅 `CONFIG_USB_HOST_EXT_PORT_CUSTOM_POWER_ON_DELAY_MS`。
+* 对于复位恢复间隔，请参阅 `CONFIG_USB_HOST_EXT_PORT_RESET_RECOVERY_DELAY_MS`。
 
 .. note::
 
-    规范规定，对于没有电源开关的 Hub，PwrOn2PwrGood 必须设置为零。同时，对于某些设备，可以增加此值以提供额外的上电时间。如需启用此功能，请参考 :ref:`CONFIG_USB_HOST_EXT_PORT_CUSTOM_POWER_ON_DELAY_ENABLE`。
+    规范规定，对于没有电源开关的 Hub，PwrOn2PwrGood 必须设置为零。同时，对于某些设备，可以增加此值以提供额外的上电时间。如需启用此功能，请参考 `CONFIG_USB_HOST_EXT_PORT_CUSTOM_POWER_ON_DELAY_ENABLE`。
 
 主机通道
 """""""""""""
 
-当启用外部 Hub 支持功能（:ref:`CONFIG_USB_HOST_HUBS_SUPPORTED`）时，主机通道的数量非常重要，因为每个下游设备都需要空闲通道。
+当启用外部 Hub 支持功能（`CONFIG_USB_HOST_HUBS_SUPPORTED`）时，主机通道的数量非常重要，因为每个下游设备都需要空闲通道。
 
 每个连接的设备需要不同数量的通道，而所需通道数则取决于设备类别（EP 数量）。
 
@@ -547,9 +674,7 @@ USB 设备可能是热插拔的，因此必须配置电源开关和设备连接�
 .. note::
 
     - 需要一个空闲通道来枚举设备。
-
     - 需要 1 到 N（N 为 EP 数量）个空闲通道来占用接口。
-
     - 如果所有的主机通道都已经被占用，则设备无法进行枚举，也无法获取接口。
 
 
@@ -566,28 +691,35 @@ USB 设备可能是热插拔的，因此必须配置电源开关和设备连接�
 * 选择 USB 设备的配置。
 * 过滤应该进行枚举的 USB 设备。
 
-在 menuconfig 中启用 :ref:`CONFIG_USB_HOST_ENABLE_ENUM_FILTER_CALLBACK` 选项即可启用枚举过滤器。可以通过设置 :cpp:member:`usb_host_config_t::enum_filter_cb` 来指定回调函数，该函数会在调用 :cpp:func:`usb_host_install` 时传递至主机库。
+在 menuconfig 中启用 `CONFIG_USB_HOST_ENABLE_ENUM_FILTER_CALLBACK` 选项即可启用枚举过滤器。可以通过设置 :cpp:member:`usb_host_config_t::enum_filter_cb` 来指定回调函数，该函数会在调用 :cpp:func:`usb_host_install` 时传递至主机库。
 
 .. -------------------------------------------------- API Reference ----------------------------------------------------
 
 API 参考
--------------
+--------
 
-USB 主机库的 API 包含以下头文件，但应用程序调用该 API 时只需 ``#include "usb/usb_host.h"``，该头文件包含了所有 USB 主机库的头文件。
+USB 主机库的 API 包含以下头文件，但应用程序调用该 API 时只需 ``#include "usb/usb_host.h"``，就可以包含所有 USB 主机库的头文件。
 
-- :component_file:`usb/include/usb/usb_host.h` 包含 USB 主机库的函数和类型。
-- :component_file:`usb/include/usb/usb_helpers.h` 包含与 USB 协议相关的各种辅助函数，如描述符解析等。
-- :component_file:`usb/include/usb/usb_types_stack.h` 包含在 USB 主机栈的多个层次中使用的类型。
-- :component_file:`usb/include/usb/usb_types_ch9.h` 包含了与 USB 2.0 规范中第 9 章相关的类型和宏，即描述符和标准请求。
+- `usb/include/usb/usb_host.h` 包含 USB 主机库的函数和类型。
+- `usb/include/usb/usb_helpers.h` 包含与 USB 协议相关的各种辅助函数，如描述符解析等。
+- `usb/include/usb/usb_types_stack.h` 包含在 USB 主机栈的多个层次中使用的类型。
+- `usb/include/usb/usb_types_ch9.h` 包含了与 USB 2.0 规范中第 9 章相关的类型和宏，即描述符和标准请求。
+- `usb/include/usb/usb_types_ch11.h` 包含与 USB2.0 规范第 11 章相关的类型和宏，即集线器规范。
 
+头文件
+^^^^^^^
 
-.. include-build-file:: inc/usb_host.inc
+- ``usb_host.h`` 可以通过以下方式包含：
 
-.. include-build-file:: inc/usb_helpers.inc
+.. code:: c
 
-.. include-build-file:: inc/usb_types_stack.inc
+    #include "usb/usb_host.h"
 
-.. include-build-file:: inc/usb_types_ch9.inc
+- 该头文件是 ``usb`` 组件提供的 API 的一部分。``usb`` 组件通过 `乐鑫组件注册表 <https://components.espressif.com/components/espressif/usb>`__ 分发。因此，若要使用该组件，请通过以下命令将 Host Stack 组件添加为依赖项：
+
+.. code:: bash
+
+    idf.py add-dependency usb
 
 .. ------------------------------------------------ Maintainers Notes --------------------------------------------------
 
