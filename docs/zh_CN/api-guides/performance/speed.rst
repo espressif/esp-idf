@@ -204,7 +204,7 @@ ESP-IDF 启动的系统任务预设了固定优先级。启动时，一些任务
         - FreeRTOS 初始化调度器时会创建定时器任务，用于处理 FreeRTOS 定时器的回调函数，优先级最低（1, :ref:`可配置 <CONFIG_FREERTOS_TIMER_TASK_PRIORITY>` ）。
         - 系统任务 :doc:`/api-reference/system/esp_event` 用于管理默认的系统事件循环并执行回调函数，优先级较高 (20, ``ESP_TASK_EVENT_PRIO``)。仅在应用程序调用 :cpp:func:`esp_event_loop_create_default` 时使用此配置。可以调用 :cpp:func:`esp_event_loop_create` 添加自定义任务配置。
         - :doc:`/api-guides/lwip` TCP/IP 任务优先级较高 (18, ``ESP_TASK_TCPIP_PRIO``)。
-        :SOC_WIFI_SUPPORTED: - :doc:`/api-guides/wifi` 任务优先级较高 (23).
+        :SOC_WIFI_SUPPORTED: - :doc:`/api-guides/wifi-driver/index` 任务优先级较高 (23).
         :SOC_WIFI_SUPPORTED: - 使用 Wi-Fi Protected Setup (WPS)、WPA2 EAP-TLS、Device Provisioning Protocol (DPP) 或 BSS Transition Management (BTM) 等功能时，Wi-Fi wpa_supplicant 组件可能会创建优先级较低的专用任务 (2)。
         :SOC_BT_SUPPORTED: - :doc:`/api-reference/bluetooth/controller_vhci` 任务优先级较高 (23, ``ESP_TASK_BT_CONTROLLER_PRIO``)。蓝牙控制器需要以低延迟响应请求，因此其任务应始终为系统最高优先级的任务之一。
         :SOC_BT_SUPPORTED: - :doc:`/api-reference/bluetooth/nimble/index` 任务优先级较高 (21).
@@ -220,7 +220,7 @@ ESP-IDF 启动的系统任务预设了固定优先级。启动时，一些任务
         - FreeRTOS 初始化调度器时会创建定时器任务，用于处理 FreeRTOS 定时器的回调函数，优先级最低（1， :ref:`可配置 <CONFIG_FREERTOS_TIMER_TASK_PRIORITY>` ）且固定在核 0 上执行。
         - 系统任务 :doc:`/api-reference/system/esp_event` 用于管理默认的系统事件循环并执行回调函数，优先级较高 (20, ``ESP_TASK_EVENT_PRIO``) 且固定在核 0 上执行。此配置仅在应用程序调用 :cpp:func:`esp_event_loop_create_default` 时使用。可以调用 :cpp:func:`esp_event_loop_create` 添加自定义任务配置。
         - :doc:`/api-guides/lwip` TCP/IP 任务优先级较高 (18, ``ESP_TASK_TCPIP_PRIO``) 且并未固定在特定内核上执行（ :ref:`可配置 <CONFIG_LWIP_TCPIP_TASK_AFFINITY>` ）。
-        :SOC_WIFI_SUPPORTED: - :doc:`/api-guides/wifi` 任务优先级较高 (23) 且默认固定在核 0 上执行（ :ref:`可配置 <CONFIG_ESP_WIFI_TASK_CORE_ID>` ）。
+        :SOC_WIFI_SUPPORTED: - :doc:`/api-guides/wifi-driver/index` 任务优先级较高 (23) 且默认固定在核 0 上执行（ :ref:`可配置 <CONFIG_ESP_WIFI_TASK_CORE_ID>` ）。
         :SOC_WIFI_SUPPORTED: - 使用 Wi-Fi Protected Setup (WPS)、WPA2 EAP-TLS、Device Provisioning Protocol (DPP) 或 BSS Transition Management (BTM) 等功能时，Wi-Fi wpa_supplicant 组件可能会创建优先级较低的专用任务 (2)，这些任务并未固定在特定内核上执行。
         :SOC_BT_SUPPORTED: - :doc:`/api-reference/bluetooth/controller_vhci` 任务优先级较高 (23, ``ESP_TASK_BT_CONTROLLER_PRIO``) 且默认固定在核 0 上执行（ :ref:`可配置 <{IDF_TARGET_CONTROLLER_CORE_CONFIG}>` ）。蓝牙控制器需要以低延迟响应请求，因此其任务应始终为最高优先级的任务之一并分配给单个 CPU 执行。
         :SOC_BT_SUPPORTED: - :doc:`/api-reference/bluetooth/nimble/index` 任务优先级较高 (21) 且默认固定在核 0 上执行（ :ref:`可配置 <CONFIG_BT_NIMBLE_PINNED_TO_CORE_CHOICE>` ）.
