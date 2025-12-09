@@ -5,6 +5,7 @@
  */
 
 #include "soc/gpio_periph.h"
+#include "soc/io_mux_reg.h"
 #include "esp_attr.h"
 
 const uint32_t GPIO_PIN_MUX_REG[] = {

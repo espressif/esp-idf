@@ -215,8 +215,6 @@
 #define SOC_GPIO_ETM_TASKS_PER_GROUP  8
 
 // Target has the full LP IO subsystem
-// On ESP32-H4, Digital IOs have their own registers to control pullup/down capability, independent of LP registers.
-#define SOC_GPIO_SUPPORT_RTC_INDEPENDENT    1
 
 // LP IO peripherals have independent clock gating to manage
 #define SOC_LP_IO_CLOCK_IS_INDEPENDENT      (1)
@@ -243,7 +241,6 @@
                                                      when the pins are switched to RTC function. */
 #define SOC_RTCIO_HOLD_SUPPORTED            1
 #define SOC_RTCIO_WAKE_SUPPORTED            1
-#define SOC_RTCIO_EDGE_WAKE_SUPPORTED       1
 
 /*-------------------------- Sigma Delta Modulator CAPS -----------------*/
 #define SOC_SDM_SUPPORT_SLEEP_RETENTION 1

@@ -331,10 +331,6 @@ config SOC_GPIO_ETM_TASKS_PER_GROUP
     int
     default 8
 
-config SOC_GPIO_SUPPORT_RTC_INDEPENDENT
-    bool
-    default y
-
 config SOC_LP_IO_CLOCK_IS_INDEPENDENT
     bool
     default y
@@ -372,10 +368,6 @@ config SOC_RTCIO_HOLD_SUPPORTED
     default y
 
 config SOC_RTCIO_WAKE_SUPPORTED
-    bool
-    default y
-
-config SOC_RTCIO_EDGE_WAKE_SUPPORTED
     bool
     default y
 

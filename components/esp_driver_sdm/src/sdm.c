@@ -23,7 +23,8 @@
 #include "esp_clk_tree.h"
 #include "driver/gpio.h"
 #include "driver/sdm.h"
-#include "soc/sdm_periph.h"
+#include "hal/sdm_caps.h"
+#include "hal/sdm_periph.h"
 #include "hal/sdm_hal.h"
 #include "hal/sdm_ll.h"
 #include "hal/hal_utils.h"
@@ -50,15 +51,15 @@ typedef struct sdm_channel_t sdm_channel_t;
 
 struct sdm_platform_t {
     _lock_t mutex;                               // platform level mutex lock
-    sdm_group_t *groups[SOC_SDM_ATTR(INST_NUM)]; // sdm group pool
-    int group_ref_counts[SOC_SDM_ATTR(INST_NUM)];// reference count used to protect group install/uninstall
+    sdm_group_t *groups[SDM_CAPS_GET(INST_NUM)]; // sdm group pool
+    int group_ref_counts[SDM_CAPS_GET(INST_NUM)];// reference count used to protect group install/uninstall
 };
 
 struct sdm_group_t {
     int group_id;          // Group ID, index from 0
     portMUX_TYPE spinlock; // to protect per-group register level concurrent access
     sdm_hal_context_t hal; // hal context
-    sdm_channel_t *channels[SOC_SDM_ATTR(CHANS_PER_INST)]; // array of sdm channels
+    sdm_channel_t *channels[SDM_CAPS_GET(CHANS_PER_INST)]; // array of sdm channels
     sdm_clock_source_t clk_src; // Clock source
 #if CONFIG_PM_ENABLE
     esp_pm_lock_handle_t pm_lock; // PM lock, to prevent the system going into light sleep when SDM is running
@@ -162,11 +163,11 @@ static sdm_group_t *sdm_acquire_group_handle(int group_id, sdm_clock_source_t cl
         ESP_LOGD(TAG, "new group (%d) at %p", group_id, group);
 #if CONFIG_PM_ENABLE
         esp_pm_lock_type_t pm_type = ESP_PM_NO_LIGHT_SLEEP;
-#if SDM_LL_FUNC_CLOCK_SUPPORT_APB
+#if SDM_CAPS_GET(FUNC_CLOCK_SUPPORT_APB)
         if (clk_src == SDM_CLK_SRC_APB) {
             pm_type = ESP_PM_APB_FREQ_MAX;
         }
-#endif // SDM_LL_FUNC_CLOCK_SUPPORT_APB
+#endif // SDM_CAPS_GET(FUNC_CLOCK_SUPPORT_APB)
         if (esp_pm_lock_create(pm_type, 0, soc_sdm_signals[group_id].module_name, &group->pm_lock) != ESP_OK) {
             ESP_LOGE(TAG, "fail to create PM lock for group %d", group_id);
         }
@@ -216,12 +217,12 @@ static esp_err_t sdm_register_to_group(sdm_channel_t *chan, sdm_clock_source_t c
 {
     sdm_group_t *group = NULL;
     int chan_id = -1;
-    for (int i = 0; i < SOC_SDM_ATTR(INST_NUM); i++) {
+    for (int i = 0; i < SDM_CAPS_GET(INST_NUM); i++) {
         group = sdm_acquire_group_handle(i, clk_src);
         ESP_RETURN_ON_FALSE(group, ESP_ERR_NO_MEM, TAG, "no mem for group (%d)", i);
         // loop to search free unit in the group
         portENTER_CRITICAL(&group->spinlock);
-        for (int j = 0; j < SOC_SDM_ATTR(CHANS_PER_INST); j++) {
+        for (int j = 0; j < SDM_CAPS_GET(CHANS_PER_INST); j++) {
             if (!group->channels[j]) {
                 chan_id = j;
                 group->channels[j] = chan;

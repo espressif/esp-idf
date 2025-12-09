@@ -23,7 +23,6 @@
 #include "driver/rtc_io.h"
 #include "soc/rtc.h"
 #include "esp_private/gptimer.h"
-#include "soc/rtc_periph.h"
 #include "esp_rom_sys.h"
 #include "esp_private/esp_clk.h"
 
@@ -32,6 +31,10 @@
 #if CONFIG_ULP_COPROC_TYPE_FSM
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/ulp.h"
+#include "soc/rtc_io_reg.h"
+#include "hal/rtc_io_periph.h"
+#include "soc/rtc_io_channel.h"
+#include "soc/rtc_cntl_reg.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/ulp.h"
 #elif CONFIG_IDF_TARGET_ESP32S3

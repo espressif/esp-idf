@@ -26,4 +26,5 @@ endif()
 
 idf_component_register(SRCS ${srcs}
                     INCLUDE_DIRS ${includes}
-                    REQUIRES soc hal)
+                    REQUIRES soc hal
+                    PRIV_REQUIRES esp_hal_gpio)

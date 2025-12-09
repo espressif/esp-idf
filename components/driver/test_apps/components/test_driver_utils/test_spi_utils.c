@@ -8,9 +8,9 @@
 #include "esp_log.h"
 #include "driver/gpio.h"
 #include "esp_private/gpio.h"
-#include "hal/gpio_hal.h"
-#include "hal/spi_ll.h"
 #include "esp_rom_gpio.h"
+#include "hal/gpio_ll.h"
+#include "hal/spi_ll.h"
 
 const char MASTER_TAG[] = "test_master";
 const char SLAVE_TAG[] = "test_slave";

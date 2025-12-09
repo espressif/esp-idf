@@ -11,19 +11,19 @@
 #include "driver/i2c.h"
 #include "esp_attr.h"
 #include "esp_log.h"
-#include "soc/gpio_periph.h"
 #include "hal/i2c_periph.h"
 #include "esp_system.h"
 #include "soc/uart_struct.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/uart_share_hw_ctrl.h"
 #include "esp_rom_gpio.h"
-#include "hal/gpio_hal.h"
+#include "hal/gpio_types.h"
 #include "hal/uart_ll.h"
 #include "hal/i2c_types.h"
 #include "soc/uart_periph.h"
 #include "test_utils.h"
 #include "esp_private/gpio.h"
+#include "driver/gpio.h"
 
 #define DATA_LENGTH          512  /*!<Data buffer length for test buffer*/
 #define RW_TEST_LENGTH       129  /*!<Data length for r/w test, any value from 0-DATA_LENGTH*/

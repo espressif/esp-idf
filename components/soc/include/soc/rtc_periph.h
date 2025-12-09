@@ -7,7 +7,6 @@
 #pragma once
 
 #include <stdint.h>
-#include "rtc_io_periph.h"
 #include "rtc_cntl_periph.h"
 #include "soc/soc_caps.h"
 

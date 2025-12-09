@@ -72,10 +72,6 @@ if(CONFIG_SOC_ANA_CMPR_SUPPORTED)
     list(APPEND srcs "${target_folder}/ana_cmpr_periph.c")
 endif()
 
-if(CONFIG_SOC_DEDICATED_GPIO_SUPPORTED)
-    list(APPEND srcs "${target_folder}/dedic_gpio_periph.c")
-endif()
-
 if(CONFIG_SOC_DEBUG_PROBE_SUPPORTED)
     list(APPEND srcs "${target_folder}/debug_probe_periph.c")
 endif()
@@ -94,10 +90,6 @@ endif()
 
 if(CONFIG_SOC_RMT_SUPPORTED)
     list(APPEND srcs "${target_folder}/rmt_periph.c")
-endif()
-
-if(CONFIG_SOC_SDM_SUPPORTED)
-    list(APPEND srcs "${target_folder}/sdm_periph.c")
 endif()
 
 if(CONFIG_SOC_ISP_SUPPORTED)
@@ -144,10 +136,6 @@ endif()
 
 if(CONFIG_SOC_DAC_SUPPORTED)
     list(APPEND srcs "${target_folder}/dac_periph.c")
-endif()
-
-if(CONFIG_SOC_RTCIO_PIN_COUNT GREATER 0)
-    list(APPEND srcs "${target_folder}/rtc_io_periph.c")
 endif()
 
 if(CONFIG_SOC_SDIO_SLAVE_SUPPORTED)

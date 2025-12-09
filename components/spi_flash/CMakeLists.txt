@@ -13,7 +13,7 @@ endif()
 
 if(non_os_build OR CONFIG_APP_BUILD_TYPE_PURE_RAM_APP)
     set(srcs "spi_flash_wrap.c")
-    set(priv_requires bootloader_support soc)
+    set(priv_requires bootloader_support soc esp_hal_gpio)
 else()
     set(srcs "flash_brownout_hook.c")
 
@@ -53,7 +53,7 @@ else()
         "spi_flash_os_func_noos.c")
 
     list(APPEND srcs ${cache_srcs})
-    set(priv_requires bootloader_support soc esp_mm)
+    set(priv_requires bootloader_support soc esp_hal_gpio esp_mm)
 
     if(${target} STREQUAL "esp32s2")
         list(APPEND priv_requires esp_security)

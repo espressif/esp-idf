@@ -11,7 +11,6 @@
 #include "esp_log.h"
 #include "esp_rom_gpio.h"
 #include "esp32h2/rom/spi_flash.h"
-#include "soc/gpio_periph.h"
 #include "soc/spi_reg.h"
 #include "soc/spi_mem_reg.h"
 #include "soc/soc_caps.h"
