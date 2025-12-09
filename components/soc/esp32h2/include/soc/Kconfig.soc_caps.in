@@ -1474,3 +1474,7 @@ config SOC_BLE_PERIODIC_ADV_ENH_SUPPORTED
 config SOC_BLE_CTE_SUPPORTED
     bool
     default y
+
+config SOC_BLE_PERIODIC_ADV_WITH_RESPONSE
+    bool
+    default y
