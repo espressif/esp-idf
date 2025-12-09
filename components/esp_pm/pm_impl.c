@@ -840,6 +840,30 @@ static inline void IRAM_ATTR other_core_should_skip_light_sleep(int core_id)
 #endif
 }
 
+// Adjust RTOS tick count based on the amount of time spent in sleep.
+FORCE_INLINE_ATTR void pm_step_tick(int64_t slept_us)
+{
+    uint32_t slept_ticks = slept_us / (portTICK_PERIOD_MS * 1000LL);
+    if (slept_ticks) {
+        /* Adjust RTOS tick count based on the amount of time spent in sleep */
+        vTaskStepTick(slept_ticks);
+
+#ifdef CONFIG_FREERTOS_SYSTICK_USES_CCOUNT
+        /* Trigger tick interrupt, since sleep time was longer
+        * than portTICK_PERIOD_MS. Note that setting INTSET does not
+        * work for timer interrupt, and changing CCOMPARE would clear
+        * the interrupt flag.
+        */
+        esp_cpu_set_cycle_count(XTHAL_GET_CCOMPARE(XT_TIMER_INDEX) - 16);
+        while (!(XTHAL_GET_INTERRUPT() & BIT(XT_TIMER_INTNUM))) {
+            ;
+        }
+#else
+        portYIELD_WITHIN_API();
+#endif
+    }
+}
+
 void vApplicationSleep( TickType_t xExpectedIdleTime )
 {
     portENTER_CRITICAL(&s_switch_lock);
@@ -862,36 +886,23 @@ void vApplicationSleep( TickType_t xExpectedIdleTime )
             /* Enter sleep */
             ESP_PM_TRACE_ENTER(SLEEP, core_id);
             int64_t sleep_start = esp_timer_get_time();
-            if (esp_light_sleep_start() != ESP_OK){
-#ifdef WITH_PROFILING
-                s_light_sleep_reject_counts++;
-            } else {
-                s_light_sleep_counts++;
-#endif
-            }
+            esp_err_t err = esp_light_sleep_start();
             slept_us = esp_timer_get_time() - sleep_start;
             ESP_PM_TRACE_EXIT(SLEEP, core_id);
-
-            uint32_t slept_ticks = slept_us / (portTICK_PERIOD_MS * 1000LL);
-            if (slept_ticks > 0) {
-                /* Adjust RTOS tick count based on the amount of time spent in sleep */
-                vTaskStepTick(slept_ticks);
-
-#ifdef CONFIG_FREERTOS_SYSTICK_USES_CCOUNT
-                /* Trigger tick interrupt, since sleep time was longer
-                 * than portTICK_PERIOD_MS. Note that setting INTSET does not
-                 * work for timer interrupt, and changing CCOMPARE would clear
-                 * the interrupt flag.
-                 */
-                esp_cpu_set_cycle_count(XTHAL_GET_CCOMPARE(XT_TIMER_INDEX) - 16);
-                while (!(XTHAL_GET_INTERRUPT() & BIT(XT_TIMER_INTNUM))) {
-                    ;
-                }
-#else
-                portYIELD_WITHIN_API();
-#endif
+            // If the sleep request was rejected, the SYSTIMER_COUNTER_OS_TICK remains accurate.
+            // In this case, there is no need to call vTaskStepTick, because the OS tick count will
+            // automatically catch up in the next systick interrupt handler.
+            if (err == ESP_OK) {
+                pm_step_tick(slept_us);
             }
             other_core_should_skip_light_sleep(core_id);
+#ifdef WITH_PROFILING
+            if (err == ESP_OK) {
+                s_light_sleep_counts++;
+            } else {
+                s_light_sleep_reject_counts++;
+            }
+#endif
         }
 #if CONFIG_PM_LIGHT_SLEEP_CALLBACKS
         esp_pm_execute_exit_sleep_callbacks(slept_us);
