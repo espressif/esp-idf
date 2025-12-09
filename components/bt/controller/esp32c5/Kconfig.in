@@ -191,7 +191,7 @@ config BT_LE_MAX_PERIODIC_ADVERTISER_LIST
 
 config BT_LE_POWER_CONTROL_ENABLED
     bool "Enable controller support for BLE Power Control"
-    depends on BT_LE_50_FEATURE_SUPPORT && !BT_NIMBLE_ENABLED && IDF_TARGET_ESP32C6
+    depends on BT_LE_50_FEATURE_SUPPORT && !BT_NIMBLE_ENABLED
     default n
     help
         Set this option to enable the Power Control feature on controller
