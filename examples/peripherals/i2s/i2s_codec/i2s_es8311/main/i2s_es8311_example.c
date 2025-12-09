@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  */
@@ -31,7 +31,6 @@ extern const uint8_t music_pcm_end[]   asm("_binary_canon_pcm_end");
 static esp_err_t es8311_codec_init(void)
 {
     /* Initialize I2C peripheral */
-#if !defined(CONFIG_EXAMPLE_BSP)
     const i2c_config_t es_i2c_cfg = {
         .sda_io_num = I2C_SDA_IO,
         .scl_io_num = I2C_SCL_IO,
@@ -42,9 +41,6 @@ static esp_err_t es8311_codec_init(void)
     };
     ESP_RETURN_ON_ERROR(i2c_param_config(I2C_NUM, &es_i2c_cfg), TAG, "config i2c failed");
     ESP_RETURN_ON_ERROR(i2c_driver_install(I2C_NUM, I2C_MODE_MASTER,  0, 0, 0), TAG, "install i2c driver failed");
-#else
-    ESP_ERROR_CHECK(bsp_i2c_init());
-#endif
 
     /* Initialize es8311 codec */
     es8311_handle_t es_handle = es8311_create(I2C_NUM, ES8311_ADDRRES_0);
@@ -69,7 +65,6 @@ static esp_err_t es8311_codec_init(void)
 
 static esp_err_t i2s_driver_init(void)
 {
-#if !defined(CONFIG_EXAMPLE_BSP)
     i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM, I2S_ROLE_MASTER);
     chan_cfg.auto_clear = true; // Auto clear the legacy data in the DMA buffer
     ESP_ERROR_CHECK(i2s_new_channel(&chan_cfg, &tx_handle, &rx_handle));
@@ -95,17 +90,7 @@ static esp_err_t i2s_driver_init(void)
     ESP_ERROR_CHECK(i2s_channel_init_std_mode(rx_handle, &std_cfg));
     ESP_ERROR_CHECK(i2s_channel_enable(tx_handle));
     ESP_ERROR_CHECK(i2s_channel_enable(rx_handle));
-#else
-    ESP_LOGI(TAG, "Using BSP for HW configuration");
-    i2s_std_config_t std_cfg = {
-        .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(EXAMPLE_SAMPLE_RATE),
-        .slot_cfg = I2S_STD_PHILIPS_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_STEREO),
-        .gpio_cfg = BSP_I2S_GPIO_CFG,
-    };
-    std_cfg.clk_cfg.mclk_multiple = EXAMPLE_MCLK_MULTIPLE;
-    ESP_ERROR_CHECK(bsp_audio_init(&std_cfg, &tx_handle, &rx_handle));
-    ESP_ERROR_CHECK(bsp_audio_poweramp_enable(true));
-#endif
+
     return ESP_OK;
 }
 
