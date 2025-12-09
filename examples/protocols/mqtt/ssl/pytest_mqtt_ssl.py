@@ -16,6 +16,7 @@ from pytest_embedded_idf.utils import idf_parametrize
 
 event_client_connected = Event()
 event_stop_client = Event()
+event_client_connected_to_topic_binary = Event()
 event_client_received_correct = Event()
 event_client_received_binary = Event()
 message_log = ''
@@ -37,14 +38,15 @@ def mqtt_client_task(client):  # type: (mqtt.Client) -> None
 # The callback for when a PUBLISH message is received from the server.
 def on_message(client, userdata, msg):  # type: (mqtt.Client, tuple, mqtt.client.MQTTMessage) -> None
     global message_log
+    global event_client_connected_to_topic_binary
     global event_client_received_correct
     global event_client_received_binary
     if msg.topic == '/topic/binary':
         binary, bin_size = userdata
         print('Receiving binary from esp and comparing with {}, size {}...'.format(binary, bin_size))
         with open(binary, 'rb') as f:
-            bin = f.read()
-            if bin[:bin_size] == msg.payload[:bin_size]:
+            binary_reference = f.read()
+            if binary_reference[:bin_size] == msg.payload[:bin_size]:
                 print('...matches!')
                 event_client_received_binary.set()
                 return
@@ -56,9 +58,13 @@ def on_message(client, userdata, msg):  # type: (mqtt.Client, tuple, mqtt.client
             )
 
     payload = msg.payload.decode()
-    if not event_client_received_correct.is_set() and payload == 'data':
-        client.subscribe('/topic/binary')
-        client.publish('/topic/qos0', 'send binary please')
+    if (
+        event_client_connected_to_topic_binary.is_set()
+        and not event_client_received_correct.is_set()
+        and payload == 'data'
+    ):
+        client.publish('/topic/binary', 'send binary please', qos=1)
+        client.subscribe('/topic/binary', qos=1)
         if msg.topic == '/topic/qos0' and payload == 'data':
             event_client_received_correct.set()
     message_log += 'Received data:' + msg.topic + ' ' + payload + '\n'
@@ -66,7 +72,7 @@ def on_message(client, userdata, msg):  # type: (mqtt.Client, tuple, mqtt.client
 
 @pytest.mark.ethernet
 @idf_parametrize('target', ['esp32'], indirect=['target'])
-def test_examples_protocol_mqtt_ssl(dut):  # type: (Dut) -> None
+def test_examples_protocol_mqtt_ssl(dut: Dut) -> None:
     broker_url = ''
     broker_port = 0
     """
@@ -121,6 +127,19 @@ def test_examples_protocol_mqtt_ssl(dut):  # type: (Dut) -> None
             print('Connected to AP with IP: {}'.format(ip_address))
         except pexpect.TIMEOUT:
             print('ENV_TEST_FAILURE: Cannot connect to AP')
+            raise
+        try:
+            dut.expect(r'MQTT_EVENT_CONNECTED', timeout=120)
+            # SSL example subscribes to topics /topic/binary, /topic/qos0, and /topic/qos1
+            # We do not want to introduce any logs related to /topic/binary, so we will
+            # wait for all three MQTT_EVENT_SUBSCRIBED to be processed
+            for i in range(3):
+                dut.expect(r'MQTT_EVENT_SUBSCRIBED, msg_id=(\d+)')
+
+            event_client_connected_to_topic_binary.set()
+
+        except pexpect.TIMEOUT:
+            print('ENV_TEST_FAILURE: Client cannot connect to the broker {}:{}.'.format(broker_url, broker_port))
             raise
         print('Checking py-client received msg published from esp...')
         if not event_client_received_correct.wait(timeout=30):
