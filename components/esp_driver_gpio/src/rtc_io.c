@@ -67,7 +67,8 @@ esp_err_t rtc_gpio_deinit(gpio_num_t gpio_num)
     // Select Gpio as Digital Gpio
     rtcio_hal_function_select(rtc_io_number_get(gpio_num), RTCIO_LL_FUNC_DIGITAL);
 
-#if SOC_LP_IO_CLOCK_IS_INDEPENDENT
+    // TODO: IDF-14951 Turning off the lp io clock might affect other lp peripherals. Temporary disabled.
+#if SOC_LP_IO_CLOCK_IS_INDEPENDENT && !CONFIG_IDF_TARGET_ESP32H4
     io_mux_force_disable_lp_io_clock(gpio_num);
 #endif
     RTCIO_EXIT_CRITICAL();

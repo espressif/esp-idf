@@ -118,7 +118,6 @@ api-reference/bluetooth/esp_gap_bt.rst
 api-reference/bluetooth/classic_bt.rst
 api-reference/bluetooth/esp_a2dp.rst
 api-reference/bluetooth/esp_hf_defs.rst
-api-reference/peripherals/cap_touch_sens.rst
 api-reference/peripherals/index.rst
 api-reference/peripherals/sdio_slave.rst
 api-reference/peripherals/temp_sensor.rst

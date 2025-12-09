@@ -147,7 +147,7 @@ static esp_err_t s_touch_convert_to_hal_config(touch_sensor_handle_t sens_handle
     ESP_RETURN_ON_FALSE(sens_cfg->trigger_rise_cnt < 2, ESP_ERR_INVALID_ARG, TAG,
                         "this target do not support trigger_rise_cnt > 1");
 #endif
-
+    esp_err_t ret = ESP_OK;
     /* Get the source clock frequency for the first time */
     if (!sens_handle->src_freq_hz) {
         /* Touch sensor actually uses dynamic fast clock LP_DYN_FAST_CLK, but it will only switch to the slow clock during sleep,
@@ -157,8 +157,12 @@ static esp_err_t s_touch_convert_to_hal_config(touch_sensor_handle_t sens_handle
         ESP_LOGD(TAG, "touch rtc clock source: RTC_FAST, frequency: %"PRIu32" Hz", sens_handle->src_freq_hz);
     }
     if (!sens_handle->interval_freq_hz) {
-        ESP_RETURN_ON_ERROR(esp_clk_tree_src_get_freq_hz(SOC_MOD_CLK_RTC_SLOW, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &sens_handle->interval_freq_hz),
-                            TAG, "get interval clock frequency failed");
+        ret = esp_clk_tree_src_get_freq_hz(SOC_MOD_CLK_RTC_SLOW, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &sens_handle->interval_freq_hz);
+        if (ret != ESP_OK) {
+            ESP_LOGW(TAG, "get cached interval clock frequency failed, try to get approximate frequency");
+            ret = esp_clk_tree_src_get_freq_hz(SOC_MOD_CLK_RTC_SLOW, ESP_CLK_TREE_SRC_FREQ_PRECISION_APPROX, &sens_handle->interval_freq_hz);
+        }
+        ESP_RETURN_ON_ERROR(ret, TAG, "get interval clock frequency failed");
     }
 
     uint32_t src_freq_hz = sens_handle->src_freq_hz;
@@ -424,8 +428,8 @@ esp_err_t touch_sensor_config_sleep_wakeup(touch_sensor_handle_t sens_handle, co
 #if SOC_PM_SUPPORT_RTC_PERIPH_PD
     esp_sleep_pd_domain_t pd_domain = ESP_PD_DOMAIN_RTC_PERIPH;
 #else
-#warning "RTC_PERIPH power domain is not supported"
     esp_sleep_pd_domain_t pd_domain = ESP_PD_DOMAIN_MAX;
+    ESP_LOGW(TAG, "RTC_PERIPH power domain is not supported");
 #endif  // SOC_PM_SUPPORT_RTC_PERIPH_PD
     ESP_GOTO_ON_ERROR(esp_sleep_pd_config(pd_domain, slp_opt), err, TAG, "Failed to set RTC_PERIPH power domain");
 

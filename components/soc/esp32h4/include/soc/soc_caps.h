@@ -81,6 +81,7 @@
 #define SOC_PAU_SUPPORTED               1
 #define SOC_LP_TIMER_SUPPORTED          1
 #define SOC_LP_AON_SUPPORTED            1
+#define SOC_TOUCH_SENSOR_SUPPORTED      1
 // #define SOC_LP_PERIPHERALS_SUPPORTED    1
 // #define SOC_LP_I2C_SUPPORTED            1    // TODO: [ESP32H4] IDF-12449
 // #define SOC_ULP_LP_UART_SUPPORTED       1    // TODO: [ESP32H4] IDF-12445 IDF-12451
@@ -535,6 +536,19 @@
 // #define SOC_TEMPERATURE_SENSOR_SUPPORT_FAST_RC                (1)
 // #define SOC_TEMPERATURE_SENSOR_SUPPORT_XTAL                   (1)
 // #define SOC_TEMPERATURE_SENSOR_INTR_SUPPORT                   (1)
+
+/*-------------------------- TOUCH SENSOR CAPS -------------------------------*/
+#define SOC_TOUCH_SENSOR_VERSION                    (3)     /*!< Hardware version of touch sensor */
+#define SOC_TOUCH_MIN_CHAN_ID                       (0U)    /*!< Touch minimum channel number */
+#define SOC_TOUCH_MAX_CHAN_ID                       (14)    /*!< Touch maximum channel number */
+
+/* Touch Sensor Features */
+#define SOC_TOUCH_SUPPORT_SLEEP_WAKEUP              (1)     /*!< Touch sensor supports sleep awake */
+#define SOC_TOUCH_SUPPORT_BENCHMARK                 (1)     /*!< Touch sensor supports benchmark configuration */
+#define SOC_TOUCH_SUPPORT_WATERPROOF                (1)     /*!< Touch sensor supports waterproof */
+#define SOC_TOUCH_SUPPORT_PROX_SENSING              (1)     /*!< Touch sensor supports proximity sensing */
+#define SOC_TOUCH_PROXIMITY_CHANNEL_NUM             (3)     /*!< Support touch proximity channel number. */
+#define SOC_TOUCH_SAMPLE_CFG_NUM                    (3)     /*!< The sample configurations number in total, each sampler can be used to sample on one frequency */
 
 /*---------------------------------- Bluetooth CAPS ----------------------------------*/
 // #define SOC_BLE_SUPPORTED               (1)    /*!< Support Bluetooth Low Energy hardware */

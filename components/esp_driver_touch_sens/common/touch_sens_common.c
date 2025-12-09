@@ -93,7 +93,7 @@ esp_err_t touch_sensor_new_controller(const touch_sensor_config_t *sens_cfg, tou
 #if SOC_TOUCH_SENSOR_VERSION <= 2
     ESP_GOTO_ON_ERROR(rtc_isr_register(touch_priv_default_intr_handler, NULL, TOUCH_LL_INTR_MASK_ALL, 0), err, TAG, "Failed to register interrupt handler");
 #else
-    ESP_GOTO_ON_ERROR(esp_intr_alloc(ETS_LP_TOUCH_INTR_SOURCE, TOUCH_INTR_ALLOC_FLAGS, touch_priv_default_intr_handler, NULL, &(g_touch->intr_handle)),
+    ESP_GOTO_ON_ERROR(esp_intr_alloc(TOUCH_LL_INTR_SOURCE, TOUCH_INTR_ALLOC_FLAGS, touch_priv_default_intr_handler, NULL, &(g_touch->intr_handle)),
                       err, TAG, "Failed to register interrupt handler");
 #endif
     *ret_sens_handle = g_touch;

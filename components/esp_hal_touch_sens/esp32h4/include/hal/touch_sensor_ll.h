@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,28 +17,29 @@
 #include "hal/misc.h"
 #include "hal/assert.h"
 #include "hal/touch_sensor_periph.h"
+#include "hal/touch_sens_types.h"
+#include "hal/config.h"
 #include "soc/lp_analog_peri_struct.h"
 #include "soc/lp_clkrst_struct.h"
-#include "soc/lp_system_struct.h"
 #include "soc/lpperi_struct.h"
+#include "soc/touch_aon_struct.h"
 #include "soc/touch_struct.h"
 #include "soc/pmu_struct.h"
 #include "soc/soc_caps.h"
-#include "hal/touch_sens_types.h"
-#include "hal/config.h"
+#include "esp_rom_sys.h"
 
 #define TOUCH_LL_GET(_attr)  TOUCH_LL_ ## _attr
-#define TOUCH_LL_CHAN_NUM    14
+#define TOUCH_LL_CHAN_NUM    15
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define TOUCH_LL_READ_BENCHMARK     0x2
-#define TOUCH_LL_READ_SMOOTH        0x3
+#define TOUCH_LL_READ_BENCHMARK             0x2
+#define TOUCH_LL_READ_SMOOTH                0x3
 
-#define TOUCH_LL_TIMER_FORCE_DONE_BY_SW   0x1
-#define TOUCH_LL_TIMER_DONE_BY_FSM         0x0
+#define TOUCH_LL_TIMER_FORCE_DONE_BY_SW     0x1
+#define TOUCH_LL_TIMER_DONE_BY_FSM          0x0
 
 // Interrupt mask
 #define TOUCH_LL_INTR_MASK_SCAN_DONE        BIT(0)
@@ -47,20 +48,21 @@ extern "C" {
 #define TOUCH_LL_INTR_MASK_INACTIVE         BIT(3)
 #define TOUCH_LL_INTR_MASK_TIMEOUT          BIT(4)
 #define TOUCH_LL_INTR_MASK_PROX_DONE        BIT(5)
+// #define TOUCH_LL_INTR_MASK_BENCHMARK_UPDATE BIT(6)
 #define TOUCH_LL_INTR_MASK_ALL              (0x3F)
 
 #define TOUCH_LL_FULL_CHANNEL_MASK          ((uint16_t)((1U << (TOUCH_LL_GET(CHAN_NUM))) - 1) << SOC_TOUCH_MIN_CHAN_ID)
 #define TOUCH_LL_NULL_CHANNEL               (15)  // Null Channel id. Used for disabling some functions like sleep/proximity/waterproof
 
-#define TOUCH_LL_PAD_MEASURE_WAIT_MAX      (0x7FFF)    // The timer frequency is 8Mhz, the max value is 0xff
-#define TOUCH_LL_ACTIVE_THRESH_MAX         (0xFFFF)    // Max channel active threshold
-#define TOUCH_LL_CLK_DIV_MAX               (0x08)      // Max clock divider value
-#define TOUCH_LL_TIMEOUT_MAX               (0xFFFF)    // Max timeout value
-#define TOUCH_LL_SLP_MEASURE_WAIT_MAX      (0x1FF)     // Max wait ticks to wait PMU entering HP SLEEP status during the sleep.
+#define TOUCH_LL_PAD_MEASURE_WAIT_MAX       (0x7FFF)    // The timer frequency is 8Mhz, the max value is 0xff
+#define TOUCH_LL_ACTIVE_THRESH_MAX          (0xFFFF)    // Max channel active threshold
+#define TOUCH_LL_CLK_DIV_MAX                (0x08)      // Max clock divider value
+#define TOUCH_LL_TIMEOUT_MAX                (0xFFFF)    // Max timeout value
+#define TOUCH_LL_SLP_MEASURE_WAIT_MAX       (0x1FF)     // Max wait ticks to wait PMU entering HP SLEEP status during the sleep.
 
-#define TOUCH_LL_SUPPORT_PROX_DONE         (1)
+#define TOUCH_LL_SUPPORT_PROX_DONE          (1)
 
-#define TOUCH_LL_INTR_SOURCE                ETS_LP_TOUCH_INTR_SOURCE  // Touch sensor interrupt source, defined in ll for the driver compatibility
+#define TOUCH_LL_INTR_SOURCE                ETS_TOUCH_INTR_SOURCE  // Touch sensor interrupt source, defined in ll for the driver compatibility
 
 /**
  * Enable/disable clock gate of touch sensor.
@@ -69,7 +71,9 @@ extern "C" {
  */
 static inline void touch_ll_enable_module_clock(bool enable)
 {
-    LPPERI.clk_en.ck_en_lp_touch = enable;
+    LPPERI.clk_en.lp_touch_ck_en = enable;
+    // This clock decides whether the value can be written to the TOUCH_AON registers.
+    LP_CLKRST.lp_clk_en.aon_touch_gate = enable;
 }
 
 /**
@@ -79,8 +83,8 @@ static inline void touch_ll_enable_module_clock(bool enable)
  */
 static inline void touch_ll_reset_module(void)
 {
-    LPPERI.reset_en.rst_en_lp_touch = 1;
-    LPPERI.reset_en.rst_en_lp_touch = 0;
+    LPPERI.reset_en.lp_touch_reset_en = 1;
+    LPPERI.reset_en.lp_touch_reset_en = 0;
 }
 
 /**
@@ -90,7 +94,7 @@ static inline void touch_ll_reset_module(void)
  */
 static inline void touch_ll_set_power_on_wait_cycle(uint32_t wait_cycles)
 {
-    LP_ANA_PERI.touch_scan_ctrl1.touch_xpd_wait = wait_cycles;
+    TOUCH_AON.aon_scan_ctrl1.aon_touch_xpd_wait = wait_cycles;
 }
 
 /**
@@ -105,13 +109,13 @@ static inline void touch_ll_set_charge_times(uint8_t sample_cfg_id, uint16_t cha
     //The times of charge and discharge in each measure process of touch channels.
     switch (sample_cfg_id) {
     case 0:
-        LP_ANA_PERI.touch_work_meas_num.touch_meas_num0 = charge_times;
+        TOUCH_AON.aon_work_meas_num.aon_touch_meas_num0 = charge_times;
         break;
     case 1:
-        LP_ANA_PERI.touch_work_meas_num.touch_meas_num1 = charge_times;
+        TOUCH_AON.aon_work_meas_num.aon_touch_meas_num1 = charge_times;
         break;
     case 2:
-        LP_ANA_PERI.touch_work_meas_num.touch_meas_num2 = charge_times;
+        TOUCH_AON.aon_work_meas_num.aon_touch_meas_num2 = charge_times;
         break;
     default:
         abort();
@@ -127,13 +131,13 @@ static inline void touch_ll_get_charge_times(uint8_t sample_cfg_id, uint16_t *ch
 {
     switch (sample_cfg_id) {
     case 0:
-        *charge_times = LP_ANA_PERI.touch_work_meas_num.touch_meas_num0;
+        *charge_times = TOUCH_AON.aon_work_meas_num.aon_touch_meas_num0;
         break;
     case 1:
-        *charge_times = LP_ANA_PERI.touch_work_meas_num.touch_meas_num1;
+        *charge_times = TOUCH_AON.aon_work_meas_num.aon_touch_meas_num1;
         break;
     case 2:
-        *charge_times = LP_ANA_PERI.touch_work_meas_num.touch_meas_num2;
+        *charge_times = TOUCH_AON.aon_work_meas_num.aon_touch_meas_num2;
         break;
     default:
         abort();
@@ -151,7 +155,7 @@ static inline void touch_ll_get_charge_times(uint8_t sample_cfg_id, uint16_t *ch
 static inline void touch_ll_set_measure_interval_ticks(uint16_t interval_ticks)
 {
     // touch sensor sleep cycle Time = interval_ticks / RTC_SLOW_CLK
-    HAL_FORCE_MODIFY_U32_REG_FIELD(PMU.touch_pwr_cntl, sleep_cycles, interval_ticks);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(PMU.touch_pwr_ctrl, touch_sleep_cycles, interval_ticks);
 }
 
 /**
@@ -161,7 +165,7 @@ static inline void touch_ll_set_measure_interval_ticks(uint16_t interval_ticks)
  */
 static inline void touch_ll_get_measure_interval_ticks(uint16_t *interval_ticks)
 {
-    *interval_ticks = HAL_FORCE_READ_U32_REG_FIELD(PMU.touch_pwr_cntl, sleep_cycles);
+    *interval_ticks = HAL_FORCE_READ_U32_REG_FIELD(PMU.touch_pwr_ctrl, touch_sleep_cycles);
 }
 
 /**
@@ -175,11 +179,11 @@ __attribute__((always_inline))
 static inline void touch_ll_enable_fsm_timer(bool enable)
 {
     // FSM controlled by timer or software
-    LP_ANA_PERI.touch_mux0.touch_fsm_en = enable;
+    TOUCH_AON.aon_mux0.aon_touch_fsm_en = enable;
     // Set 0 to stop by timer, otherwise by software
-    LP_ANA_PERI.touch_mux0.touch_done_force = !enable;
+    TOUCH_AON.aon_mux0.aon_touch_done_force = !enable;
     // Set 0 to start by timer, otherwise by software
-    LP_ANA_PERI.touch_mux0.touch_start_force = !enable;
+    TOUCH_AON.aon_mux0.aon_touch_start_force = !enable;
 }
 
 /**
@@ -190,7 +194,7 @@ static inline void touch_ll_enable_fsm_timer(bool enable)
  */
 static inline bool touch_ll_is_fsm_using_timer(void)
 {
-    return !LP_ANA_PERI.touch_mux0.touch_start_force;
+    return !TOUCH_AON.aon_mux0.aon_touch_start_force;
 }
 
 /**
@@ -201,18 +205,12 @@ static inline bool touch_ll_is_fsm_using_timer(void)
 __attribute__((always_inline))
 static inline void touch_ll_force_done_curr_measurement(void)
 {
-    // Enable event tick first
-    LP_AON_CLKRST.lp_clk_en.etm_event_tick_en = 1;
     // Set `force done` signal
-    PMU.touch_pwr_cntl.force_done = 1;
-    // Force done signal should last at least one slow clock tick, wait until tick interrupt triggers
-    LP_SYS.int_clr.slow_clk_tick_int_clr = 1;
-    while (LP_SYS.int_clr.slow_clk_tick_int_clr);
-    while (!LP_SYS.int_raw.slow_clk_tick_int_raw);
+    PMU.touch_pwr_ctrl.touch_force_done = 1;
+    // Force done signal should last at least one slow clock tick
+    esp_rom_delay_us(3);
     // Clear `force done` signal
-    PMU.touch_pwr_cntl.force_done = 0;
-    // Disable event tick
-    LP_AON_CLKRST.lp_clk_en.etm_event_tick_en = 0;
+    PMU.touch_pwr_ctrl.touch_force_done = 0;
 }
 
 /**
@@ -229,7 +227,7 @@ static inline void touch_ll_start_fsm_repeated_timer(void)
      * Force done for touch timer ensures that the timer always can get the measurement done signal.
      */
     touch_ll_force_done_curr_measurement();
-    PMU.touch_pwr_cntl.sleep_timer_en = 1;
+    PMU.touch_pwr_ctrl.touch_sleep_timer_en = 1;
 }
 
 /**
@@ -239,7 +237,7 @@ static inline void touch_ll_start_fsm_repeated_timer(void)
 __attribute__((always_inline))
 static inline void touch_ll_stop_fsm_repeated_timer(void)
 {
-    PMU.touch_pwr_cntl.sleep_timer_en = 0;
+    PMU.touch_pwr_ctrl.touch_sleep_timer_en = 0;
     touch_ll_force_done_curr_measurement();
 }
 
@@ -254,7 +252,7 @@ static inline void touch_ll_stop_fsm_repeated_timer(void)
 __attribute__((always_inline))
 static inline bool touch_ll_is_fsm_repeated_timer_enabled(void)
 {
-    return (bool)(PMU.touch_pwr_cntl.sleep_timer_en);
+    return (bool)(PMU.touch_pwr_ctrl.touch_sleep_timer_en);
 }
 
 /**
@@ -264,13 +262,13 @@ __attribute__((always_inline))
 static inline void touch_ll_trigger_oneshot_measurement(void)
 {
     /* Trigger once measurement */
-    LP_ANA_PERI.touch_mux0.touch_start_en = 1;
-    LP_ANA_PERI.touch_mux0.touch_start_en = 0;
+    TOUCH_AON.aon_mux0.aon_touch_start_en = 1;
+    TOUCH_AON.aon_mux0.aon_touch_start_en = 0;
 }
 
 static inline void touch_ll_measure_channel_once(uint16_t chan_mask)
 {
-    LP_ANA_PERI.touch_mux1.touch_start = chan_mask;
+    TOUCH_AON.aon_mux1.aon_touch_start = chan_mask;
 }
 
 /**
@@ -286,7 +284,7 @@ static inline void touch_ll_measure_channel_once(uint16_t chan_mask)
 static inline void touch_ll_set_chan_active_threshold(uint32_t touch_num, uint8_t sample_cfg_id, uint32_t thresh)
 {
     HAL_ASSERT(sample_cfg_id < SOC_TOUCH_SAMPLE_CFG_NUM);
-    HAL_FORCE_MODIFY_U32_REG_FIELD(LP_ANA_PERI.touch_padx_thn[touch_num].thresh[sample_cfg_id], threshold, thresh);  // codespell:ignore
+    HAL_FORCE_MODIFY_U32_REG_FIELD(TOUCH_AON.aon_padx_thn[touch_num].thresh[sample_cfg_id], threshold, thresh);  // codespell:ignore
 }
 
 /**
@@ -303,7 +301,7 @@ static inline void touch_ll_set_chan_active_threshold(uint32_t touch_num, uint8_
 static inline uint32_t touch_ll_get_chan_active_threshold(uint32_t touch_num, uint8_t sample_cfg_id)
 {
     HAL_ASSERT(sample_cfg_id < SOC_TOUCH_SAMPLE_CFG_NUM);
-    return HAL_FORCE_READ_U32_REG_FIELD(LP_ANA_PERI.touch_padx_thn[touch_num].thresh[sample_cfg_id], threshold);  // codespell:ignore
+    return HAL_FORCE_READ_U32_REG_FIELD(TOUCH_AON.aon_padx_thn[touch_num].thresh[sample_cfg_id], threshold);  // codespell:ignore
 }
 
 /**
@@ -318,11 +316,11 @@ static inline void touch_ll_enable_scan_mask(uint16_t chan_mask, bool enable)
 {
     // the lowest bit takes no effect
     uint16_t mask = chan_mask & TOUCH_LL_FULL_CHANNEL_MASK;
-    uint16_t prev_mask = LP_ANA_PERI.touch_scan_ctrl1.touch_scan_pad_map;
+    uint16_t prev_mask = TOUCH_AON.aon_scan_ctrl1.aon_touch_scan_pad_map;
     if (enable) {
-        LP_ANA_PERI.touch_scan_ctrl1.touch_scan_pad_map = prev_mask | mask;
+        TOUCH_AON.aon_scan_ctrl1.aon_touch_scan_pad_map = prev_mask | mask;
     } else {
-        LP_ANA_PERI.touch_scan_ctrl1.touch_scan_pad_map = prev_mask & (~mask);
+        TOUCH_AON.aon_scan_ctrl1.aon_touch_scan_pad_map = prev_mask & (~mask);
     }
 }
 
@@ -342,8 +340,8 @@ static inline void touch_ll_enable_channel_mask(uint16_t enable_mask)
 {
     // the lowest bit takes no effect
     uint16_t mask = enable_mask & TOUCH_LL_FULL_CHANNEL_MASK;
-    LP_ANA_PERI.touch_scan_ctrl1.touch_scan_pad_map = mask;
-    LP_ANA_PERI.touch_filter2.touch_outen = mask;
+    TOUCH_AON.aon_scan_ctrl1.aon_touch_scan_pad_map = mask;
+    TOUCH_AON.aon_filter2.aon_touch_outen = mask;
 }
 
 /**
@@ -354,8 +352,8 @@ static inline void touch_ll_enable_channel_mask(uint16_t enable_mask)
 __attribute__((always_inline))
 static inline void touch_ll_channel_sw_measure_mask(uint16_t chan_mask)
 {
-    LP_ANA_PERI.touch_mux1.touch_xpd = chan_mask;
-    LP_ANA_PERI.touch_mux1.touch_start = chan_mask;
+    TOUCH_AON.aon_mux1.aon_touch_xpd = chan_mask;
+    TOUCH_AON.aon_mux1.aon_touch_start = chan_mask;
 }
 
 /**
@@ -365,8 +363,8 @@ static inline void touch_ll_channel_sw_measure_mask(uint16_t chan_mask)
  */
 static inline void touch_ll_channel_power_off(uint16_t chan_mask)
 {
-    uint32_t curr_mask = LP_ANA_PERI.touch_mux1.touch_xpd;
-    LP_ANA_PERI.touch_mux1.touch_xpd = (~chan_mask) & curr_mask;
+    uint32_t curr_mask = TOUCH_AON.aon_mux1.aon_touch_xpd;
+    TOUCH_AON.aon_mux1.aon_touch_xpd = (~chan_mask) & curr_mask;
 }
 
 /**
@@ -377,7 +375,7 @@ static inline void touch_ll_channel_power_off(uint16_t chan_mask)
 __attribute__((always_inline))
 static inline void touch_ll_get_active_channel_mask(uint32_t *active_mask)
 {
-    *active_mask = LP_TOUCH.chn_status.pad_active;
+    *active_mask = TOUCH_SENS.chn_status.pad_active;
 }
 
 /**
@@ -387,7 +385,7 @@ static inline void touch_ll_get_active_channel_mask(uint32_t *active_mask)
  */
 static inline void touch_ll_clear_active_channel_status(void)
 {
-    LP_ANA_PERI.touch_clr.touch_status_clr = 1;
+    TOUCH_AON.aon_clr.aon_touch_status_clr = 1;
 }
 
 /**
@@ -407,9 +405,9 @@ static inline void touch_ll_read_chan_data(uint32_t touch_num, uint8_t sample_cf
 {
     HAL_ASSERT(sample_cfg_id < SOC_TOUCH_SAMPLE_CFG_NUM);
     HAL_ASSERT(type == TOUCH_LL_READ_BENCHMARK || type == TOUCH_LL_READ_SMOOTH);
-    LP_ANA_PERI.touch_mux0.touch_freq_sel = sample_cfg_id;
-    LP_ANA_PERI.touch_mux0.touch_data_sel = type;
-    *data = HAL_FORCE_READ_U32_REG_FIELD(LP_TOUCH.chn_data[touch_num], pad_data);
+    TOUCH_AON.aon_mux0.aon_touch_freq_sel = sample_cfg_id;
+    TOUCH_AON.aon_mux0.aon_touch_data_sel = type;
+    *data = HAL_FORCE_READ_U32_REG_FIELD(TOUCH_SENS.chn_data[touch_num], pad_data);
 }
 
 /**
@@ -421,7 +419,7 @@ static inline void touch_ll_read_chan_data(uint32_t touch_num, uint8_t sample_cf
 __attribute__((always_inline))
 static inline bool touch_ll_is_measure_done(void)
 {
-    return (bool)LP_TOUCH.chn_status.meas_done;
+    return (bool)TOUCH_SENS.chn_status.meas_done;
 }
 
 /**
@@ -433,7 +431,7 @@ static inline bool touch_ll_is_measure_done(void)
  */
 static inline void touch_ll_set_out_mode(touch_out_mode_t mode)
 {
-    LP_ANA_PERI.touch_work.touch_out_sel = mode;
+    TOUCH_AON.aon_work.aon_touch_out_sel = mode;
 }
 
 /**
@@ -443,7 +441,7 @@ static inline void touch_ll_set_out_mode(touch_out_mode_t mode)
  */
 static inline void touch_ll_enable_out_gate(bool enable)
 {
-    LP_ANA_PERI.touch_work.touch_out_gate = enable;
+    TOUCH_AON.aon_work.aon_touch_out_gate = enable;
 }
 
 /**
@@ -456,13 +454,13 @@ static inline void touch_ll_set_clock_div(uint8_t sample_cfg_id, uint32_t div_nu
 {
     switch (sample_cfg_id) {
     case 0:
-        LP_ANA_PERI.touch_work.div_num0 = div_num - 1;
+        TOUCH_AON.aon_work.aon_div_num0 = div_num - 1;
         break;
     case 1:
-        LP_ANA_PERI.touch_work.div_num1 = div_num - 1;
+        TOUCH_AON.aon_work.aon_div_num1 = div_num - 1;
         break;
     case 2:
-        LP_ANA_PERI.touch_work.div_num2 = div_num - 1;
+        TOUCH_AON.aon_work.aon_div_num2 = div_num - 1;
         break;
     default:
         // invalid sample_cfg_id
@@ -496,7 +494,7 @@ static inline void touch_ll_set_idle_channel_connect(touch_idle_conn_t type)
 __attribute__((always_inline))
 static inline uint32_t touch_ll_get_current_meas_channel(void)
 {
-    return LP_TOUCH.chn_status.scan_curr;
+    return TOUCH_SENS.chn_status.scan_curr;
 }
 
 /**
@@ -506,9 +504,9 @@ static inline uint32_t touch_ll_get_current_meas_channel(void)
  */
 static inline void touch_ll_interrupt_enable(uint32_t int_mask)
 {
-    uint32_t mask = LP_TOUCH.int_ena.val;
+    uint32_t mask = TOUCH_SENS.int_ena.val;
     mask |= (int_mask & TOUCH_LL_INTR_MASK_ALL);
-    LP_TOUCH.int_ena.val = mask;
+    TOUCH_SENS.int_ena.val = mask;
 }
 
 /**
@@ -518,9 +516,9 @@ static inline void touch_ll_interrupt_enable(uint32_t int_mask)
  */
 static inline void touch_ll_interrupt_disable(uint32_t int_mask)
 {
-    uint32_t mask = LP_TOUCH.int_ena.val;
+    uint32_t mask = TOUCH_SENS.int_ena.val;
     mask &= ~(int_mask & TOUCH_LL_INTR_MASK_ALL);
-    LP_TOUCH.int_ena.val = mask;
+    TOUCH_SENS.int_ena.val = mask;
 }
 
 /**
@@ -531,7 +529,7 @@ static inline void touch_ll_interrupt_disable(uint32_t int_mask)
 __attribute__((always_inline))
 static inline void touch_ll_interrupt_clear(uint32_t int_mask)
 {
-    LP_TOUCH.int_clr.val = int_mask;
+    TOUCH_SENS.int_clr.val = int_mask;
 }
 
 /**
@@ -542,7 +540,7 @@ static inline void touch_ll_interrupt_clear(uint32_t int_mask)
 __attribute__((always_inline))
 static inline uint32_t touch_ll_get_intr_status_mask(void)
 {
-    uint32_t intr_st = LP_TOUCH.int_st.val;
+    uint32_t intr_st = TOUCH_SENS.int_st.val;
     return (intr_st & TOUCH_LL_INTR_MASK_ALL);
 }
 
@@ -559,10 +557,10 @@ static inline uint32_t touch_ll_get_intr_status_mask(void)
 static inline void touch_ll_set_timeout(uint32_t timeout_cycles)
 {
     if (timeout_cycles) {
-        HAL_FORCE_MODIFY_U32_REG_FIELD(LP_ANA_PERI.touch_scan_ctrl2, touch_timeout_num, timeout_cycles);
-        LP_ANA_PERI.touch_scan_ctrl2.touch_timeout_en = 1;
+        HAL_FORCE_MODIFY_U32_REG_FIELD(TOUCH_AON.aon_scan_ctrl2, aon_touch_timeout_num, timeout_cycles);
+        TOUCH_AON.aon_scan_ctrl2.aon_touch_timeout_en = 1;
     } else {
-        LP_ANA_PERI.touch_scan_ctrl2.touch_timeout_en = 0;
+        TOUCH_AON.aon_scan_ctrl2.aon_touch_timeout_en = 0;
     }
 }
 
@@ -575,8 +573,8 @@ static inline void touch_ll_set_timeout(uint32_t timeout_cycles)
 static inline void touch_ll_sample_cfg_set_engaged_num(uint8_t sample_cfg_num)
 {
     HAL_ASSERT(sample_cfg_num <= SOC_TOUCH_SAMPLE_CFG_NUM);
-    LP_ANA_PERI.touch_scan_ctrl2.freq_scan_en = !!sample_cfg_num;
-    LP_ANA_PERI.touch_scan_ctrl2.freq_scan_cnt_limit = sample_cfg_num ? sample_cfg_num : 1;
+    TOUCH_AON.aon_scan_ctrl2.aon_freq_scan_en = !!sample_cfg_num;
+    TOUCH_AON.aon_scan_ctrl2.aon_freq_scan_cnt_limit = sample_cfg_num ? sample_cfg_num : 1;
 }
 
 /**
@@ -586,12 +584,12 @@ static inline void touch_ll_sample_cfg_set_engaged_num(uint8_t sample_cfg_num)
  */
 static inline uint32_t touch_ll_sample_cfg_get_engaged_num(void)
 {
-    uint32_t sample_cfg_num = LP_ANA_PERI.touch_scan_ctrl2.freq_scan_cnt_limit;
+    uint32_t sample_cfg_num = TOUCH_AON.aon_scan_ctrl2.aon_freq_scan_cnt_limit;
     return sample_cfg_num ? sample_cfg_num : 1;
 }
 
 /**
- * Set the number of trigger rise count (only available since P4 ver3)
+ * Set the number of trigger rise count
  *
  * @param rise_cnt Configure the number of hit frequency points that need to be determined for touch
  *                 in frequency hopping mode.
@@ -599,7 +597,7 @@ static inline uint32_t touch_ll_sample_cfg_get_engaged_num(void)
 static inline void touch_ll_sample_cfg_set_trigger_rise_cnt(uint8_t rise_cnt)
 {
 #if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
-    LP_ANA_PERI.touch_ctrl.freq_scan_cnt_rise = rise_cnt;
+    TOUCH_AON.aon_ctrl.aon_freq_scan_cnt_rise = rise_cnt;
 #endif
 }
 
@@ -613,8 +611,8 @@ static inline void touch_ll_sample_cfg_set_trigger_rise_cnt(uint8_t rise_cnt)
 static inline void touch_ll_sample_cfg_set_rc_filter(uint8_t sample_cfg_id, uint32_t cap, uint32_t res)
 {
     HAL_ASSERT(sample_cfg_id < SOC_TOUCH_SAMPLE_CFG_NUM);
-    LP_ANA_PERI.touch_freq_scan_para[sample_cfg_id].touch_freq_dcap_lpf = cap;
-    LP_ANA_PERI.touch_freq_scan_para[sample_cfg_id].touch_freq_dres_lpf = res;
+    TOUCH_AON.aon_freq_scan_para[sample_cfg_id].aon_touch_freq_dcap_lpf = cap;
+    TOUCH_AON.aon_freq_scan_para[sample_cfg_id].aon_touch_freq_dres_lpf = res;
 }
 
 /**
@@ -627,8 +625,8 @@ static inline void touch_ll_sample_cfg_set_rc_filter(uint8_t sample_cfg_id, uint
 static inline void touch_ll_sample_cfg_set_driver(uint8_t sample_cfg_id, uint32_t ls_drv, uint32_t hs_drv)
 {
     HAL_ASSERT(sample_cfg_id < SOC_TOUCH_SAMPLE_CFG_NUM);
-    LP_ANA_PERI.touch_freq_scan_para[sample_cfg_id].touch_freq_drv_ls = ls_drv;
-    LP_ANA_PERI.touch_freq_scan_para[sample_cfg_id].touch_freq_drv_hs = hs_drv;
+    TOUCH_AON.aon_freq_scan_para[sample_cfg_id].aon_touch_freq_drv_ls = ls_drv;
+    TOUCH_AON.aon_freq_scan_para[sample_cfg_id].aon_touch_freq_drv_hs = hs_drv;
 }
 
 /**
@@ -640,7 +638,7 @@ static inline void touch_ll_sample_cfg_set_driver(uint8_t sample_cfg_id, uint32_
 static inline void touch_ll_sample_cfg_set_bias_voltage(uint8_t sample_cfg_id, uint32_t bias_volt)
 {
     HAL_ASSERT(sample_cfg_id < SOC_TOUCH_SAMPLE_CFG_NUM);
-    LP_ANA_PERI.touch_freq_scan_para[sample_cfg_id].touch_freq_dbias = bias_volt;
+    TOUCH_AON.aon_freq_scan_para[sample_cfg_id].aon_touch_freq_dbias = bias_volt;
 }
 
 /**
@@ -652,8 +650,8 @@ static inline void touch_ll_sample_cfg_set_bias_voltage(uint8_t sample_cfg_id, u
 static inline void touch_ll_set_internal_loop_capacitance(int cap)
 {
     bool enable = cap > 0;
-    LP_ANA_PERI.touch_ana_para.touch_touch_en_cal = enable;
-    LP_ANA_PERI.touch_ana_para.touch_touch_dcap_cal = enable ? cap : 0;
+    TOUCH_AON.aon_ana_para.aon_touch_touch_en_cal = enable;
+    TOUCH_AON.aon_ana_para.aon_touch_touch_dcap_cal = enable ? cap : 0;
 }
 
 /************************ Filter register setting ************************/
@@ -667,7 +665,7 @@ static inline void touch_ll_set_internal_loop_capacitance(int cap)
 __attribute__((always_inline))
 static inline void touch_ll_reset_chan_benchmark(uint32_t chan_mask)
 {
-    LP_ANA_PERI.touch_clr.touch_channel_clr = chan_mask;
+    TOUCH_AON.aon_clr.aon_touch_channel_clr = chan_mask;
 }
 
 /**
@@ -678,7 +676,7 @@ static inline void touch_ll_reset_chan_benchmark(uint32_t chan_mask)
  */
 static inline void touch_ll_filter_set_filter_mode(touch_benchmark_filter_mode_t mode)
 {
-    LP_ANA_PERI.touch_filter1.touch_filter_mode = mode;
+    TOUCH_AON.aon_filter1.aon_touch_filter_mode = mode;
 }
 
 /**
@@ -689,7 +687,7 @@ static inline void touch_ll_filter_set_filter_mode(touch_benchmark_filter_mode_t
  */
 static inline void touch_ll_filter_set_smooth_mode(touch_smooth_filter_mode_t mode)
 {
-    LP_ANA_PERI.touch_filter1.touch_smooth_lvl = mode;
+    TOUCH_AON.aon_filter1.aon_touch_smooth_lvl = mode;
 }
 
 /**
@@ -700,7 +698,7 @@ static inline void touch_ll_filter_set_smooth_mode(touch_smooth_filter_mode_t mo
  */
 static inline void touch_ll_filter_set_debounce(uint32_t dbc_cnt)
 {
-    LP_ANA_PERI.touch_filter1.touch_debounce_limit = dbc_cnt;
+    TOUCH_AON.aon_filter1.aon_touch_debounce_limit = dbc_cnt;
 }
 
 /**
@@ -715,12 +713,12 @@ static inline void touch_ll_filter_set_denoise_level(int denoise_lvl)
     // Map denoise level to actual noise threshold coefficients
     uint32_t noise_thresh = denoise_lvl == 4 ? 3 : 3 - denoise_lvl;
 
-    LP_ANA_PERI.touch_filter2.touch_bypass_noise_thres = always_update;
-    LP_ANA_PERI.touch_filter1.touch_noise_thres = always_update ? 0 : noise_thresh;
+    TOUCH_AON.aon_filter2.aon_touch_bypass_noise_thres = always_update;
+    TOUCH_AON.aon_filter1.aon_touch_noise_thres = always_update ? 0 : noise_thresh;
 
-    LP_ANA_PERI.touch_filter2.touch_bypass_nn_thres = always_update;
-    LP_ANA_PERI.touch_filter1.touch_nn_thres = always_update ? 0 : noise_thresh;
-    LP_ANA_PERI.touch_filter1.touch_nn_limit = 5; // 5 is the default value
+    TOUCH_AON.aon_filter2.aon_touch_bypass_nn_thres = always_update;
+    TOUCH_AON.aon_filter1.aon_touch_nn_thres = always_update ? 0 : noise_thresh;
+    TOUCH_AON.aon_filter1.aon_touch_nn_limit = 5; // 5 is the default value
 }
 
 /**
@@ -732,7 +730,7 @@ static inline void touch_ll_filter_set_denoise_level(int denoise_lvl)
  */
 static inline void touch_ll_filter_set_active_hysteresis(uint32_t hysteresis)
 {
-    LP_ANA_PERI.touch_filter1.touch_hysteresis = hysteresis;
+    TOUCH_AON.aon_filter1.aon_touch_hysteresis = hysteresis;
 }
 
 /**
@@ -744,7 +742,7 @@ static inline void touch_ll_filter_set_active_hysteresis(uint32_t hysteresis)
  */
 static inline void touch_ll_filter_set_jitter_step(uint32_t step)
 {
-    LP_ANA_PERI.touch_filter1.touch_jitter_step = step;
+    TOUCH_AON.aon_filter1.aon_touch_jitter_step = step;
 }
 
 /**
@@ -753,11 +751,11 @@ static inline void touch_ll_filter_set_jitter_step(uint32_t step)
  */
 static inline void touch_ll_filter_enable(bool enable)
 {
-    LP_ANA_PERI.touch_filter1.touch_filter_en = enable;
+    TOUCH_AON.aon_filter1.aon_touch_filter_en = enable;
 }
 
 /**
- * Force the update the benchmark by software  (only available since P4 ver3)
+ * Force the update the benchmark by software
  * @note  This benchmark will be applied to all enabled channel and all sampling frequency
  *
  * @param pad_num The pad number, range [1-14]
@@ -766,14 +764,12 @@ static inline void touch_ll_filter_enable(bool enable)
  */
 static inline void touch_ll_force_update_benchmark(uint32_t pad_num, uint8_t sample_cfg_id, uint32_t benchmark)
 {
-#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
-    LP_ANA_PERI.touch_ctrl.touch_update_benchmark_pad_sel = pad_num;
-    LP_ANA_PERI.touch_ctrl.touch_update_benchmark_freq_sel = sample_cfg_id;
-#endif
-    HAL_FORCE_MODIFY_U32_REG_FIELD(LP_ANA_PERI.touch_filter3, touch_benchmark_sw, benchmark);
-    LP_ANA_PERI.touch_filter3.touch_update_benchmark_sw = 1;
+    TOUCH_AON.aon_filter3.aon_touch_update_benchmark_pad_sel = pad_num;
+    TOUCH_AON.aon_filter3.aon_touch_update_benchmark_freq_sel = sample_cfg_id;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(TOUCH_AON.aon_filter3, aon_touch_benchmark_sw, benchmark);
+    TOUCH_AON.aon_filter3.aon_touch_update_benchmark_sw = 1;
     // waiting for update
-    while (LP_ANA_PERI.touch_filter3.touch_update_benchmark_sw);
+    while (TOUCH_AON.aon_filter3.aon_touch_update_benchmark_sw);
 }
 
 /************************ Waterproof register setting ************************/
@@ -785,7 +781,7 @@ static inline void touch_ll_force_update_benchmark(uint32_t pad_num, uint8_t sam
  */
 static inline void touch_ll_waterproof_set_guard_chan(uint32_t pad_num)
 {
-    LP_ANA_PERI.touch_scan_ctrl2.touch_out_ring = pad_num;
+    TOUCH_AON.aon_scan_ctrl2.aon_touch_out_ring = pad_num;
 }
 
 /**
@@ -798,7 +794,7 @@ static inline void touch_ll_waterproof_set_guard_chan(uint32_t pad_num)
  */
 static inline void touch_ll_waterproof_enable(bool enable)
 {
-    LP_ANA_PERI.touch_scan_ctrl1.touch_shield_pad_en = enable;
+    TOUCH_AON.aon_scan_ctrl1.aon_touch_shield_pad_en = enable;
 }
 
 /**
@@ -808,7 +804,7 @@ static inline void touch_ll_waterproof_enable(bool enable)
  */
 static inline void touch_ll_waterproof_set_shield_chan_mask(uint32_t mask)
 {
-    LP_ANA_PERI.touch_mux0.touch_bufsel = mask;
+    TOUCH_AON.aon_mux0.aon_touch_bufsel = mask;
 }
 
 /**
@@ -818,7 +814,7 @@ static inline void touch_ll_waterproof_set_shield_chan_mask(uint32_t mask)
  */
 static inline void touch_ll_waterproof_set_shield_driver(touch_chan_shield_cap_t driver_level)
 {
-    LP_ANA_PERI.touch_ana_para.touch_touch_buf_drv = driver_level;
+    TOUCH_AON.aon_ana_para.aon_touch_touch_buf_drv = driver_level;
 }
 
 /************************ Approach register setting ************************/
@@ -834,13 +830,13 @@ static inline void touch_ll_set_proximity_sensing_channel(uint8_t prox_chan, uin
 {
     switch (prox_chan) {
     case 0:
-        LP_ANA_PERI.touch_approach.touch_approach_pad0 = touch_num;
+        TOUCH_AON.aon_approach.aon_touch_approach_pad0 = touch_num;
         break;
     case 1:
-        LP_ANA_PERI.touch_approach.touch_approach_pad1 = touch_num;
+        TOUCH_AON.aon_approach.aon_touch_approach_pad1 = touch_num;
         break;
     case 2:
-        LP_ANA_PERI.touch_approach.touch_approach_pad2 = touch_num;
+        TOUCH_AON.aon_approach.aon_touch_approach_pad2 = touch_num;
         break;
     default:
         // invalid proximity channel
@@ -855,7 +851,7 @@ static inline void touch_ll_set_proximity_sensing_channel(uint8_t prox_chan, uin
  */
 static inline void touch_ll_proximity_set_total_scan_times(uint32_t scan_times)
 {
-    HAL_FORCE_MODIFY_U32_REG_FIELD(LP_ANA_PERI.touch_filter1, touch_approach_limit, scan_times);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(TOUCH_AON.aon_filter1, aon_touch_approach_limit, scan_times);
 }
 
 /**
@@ -868,13 +864,13 @@ static inline void touch_ll_proximity_set_charge_times(uint8_t sample_cfg_id, ui
 {
     switch (sample_cfg_id) {
     case 0:
-        LP_ANA_PERI.touch_approach_work_meas_num.touch_approach_meas_num0 = charge_times;
+        TOUCH_AON.aon_approach_work_meas_num.aon_touch_approach_meas_num0 = charge_times;
         break;
     case 1:
-        LP_ANA_PERI.touch_approach_work_meas_num.touch_approach_meas_num1 = charge_times;
+        TOUCH_AON.aon_approach_work_meas_num.aon_touch_approach_meas_num1 = charge_times;
         break;
     case 2:
-        LP_ANA_PERI.touch_approach_work_meas_num.touch_approach_meas_num2 = charge_times;
+        TOUCH_AON.aon_approach_work_meas_num.aon_touch_approach_meas_num2 = charge_times;
         break;
     default:
         // invalid sample_cfg_id
@@ -892,16 +888,16 @@ static inline void touch_ll_proximity_read_measure_cnt(uint8_t prox_chan, uint32
 {
     switch (prox_chan) {
     case 0:
-        *cnt = HAL_FORCE_READ_U32_REG_FIELD(LP_TOUCH.aprch_ch_data, approach_pad0_cnt);
+        *cnt = HAL_FORCE_READ_U32_REG_FIELD(TOUCH_SENS.aprch_ch_data, approach_pad0_cnt);
         break;
     case 1:
-        *cnt = HAL_FORCE_READ_U32_REG_FIELD(LP_TOUCH.aprch_ch_data, approach_pad1_cnt);
+        *cnt = HAL_FORCE_READ_U32_REG_FIELD(TOUCH_SENS.aprch_ch_data, approach_pad1_cnt);
         break;
     case 2:
-        *cnt = HAL_FORCE_READ_U32_REG_FIELD(LP_TOUCH.aprch_ch_data, approach_pad2_cnt);
+        *cnt = HAL_FORCE_READ_U32_REG_FIELD(TOUCH_SENS.aprch_ch_data, approach_pad2_cnt);
         break;
     default:  // sleep channel
-        *cnt = HAL_FORCE_READ_U32_REG_FIELD(LP_TOUCH.aprch_ch_data, slp_approach_cnt);
+        *cnt = HAL_FORCE_READ_U32_REG_FIELD(TOUCH_SENS.aprch_ch_data, slp_approach_cnt);
         break;
     }
 }
@@ -913,9 +909,9 @@ static inline void touch_ll_proximity_read_measure_cnt(uint8_t prox_chan, uint32
  */
 static inline bool touch_ll_is_proximity_sensing_channel(uint32_t touch_num)
 {
-    if ((LP_ANA_PERI.touch_approach.touch_approach_pad0 != touch_num)
-            && (LP_ANA_PERI.touch_approach.touch_approach_pad1 != touch_num)
-            && (LP_ANA_PERI.touch_approach.touch_approach_pad2 != touch_num)) {
+    if ((TOUCH_AON.aon_approach.aon_touch_approach_pad0 != touch_num)
+            && (TOUCH_AON.aon_approach.aon_touch_approach_pad1 != touch_num)
+            && (TOUCH_AON.aon_approach.aon_touch_approach_pad2 != touch_num)) {
         return false;
     }
     return true;
@@ -931,7 +927,7 @@ static inline bool touch_ll_is_proximity_sensing_channel(uint32_t touch_num)
  */
 static inline void touch_ll_sleep_set_channel_num(uint32_t touch_num)
 {
-    LP_ANA_PERI.touch_slp0.touch_slp_pad = touch_num;
+    TOUCH_AON.aon_slp0.aon_touch_slp_pad = touch_num;
 }
 
 /**
@@ -942,7 +938,7 @@ static inline void touch_ll_sleep_set_channel_num(uint32_t touch_num)
  */
 static inline void touch_ll_sleep_get_channel_num(uint32_t *touch_num)
 {
-    *touch_num = (uint32_t)(LP_ANA_PERI.touch_slp0.touch_slp_pad);
+    *touch_num = (uint32_t)(TOUCH_AON.aon_slp0.aon_touch_slp_pad);
 }
 
 /**
@@ -956,13 +952,13 @@ static inline void touch_ll_sleep_set_threshold(uint8_t sample_cfg_id, uint32_t 
 {
     switch (sample_cfg_id) {
     case 0:
-        HAL_FORCE_MODIFY_U32_REG_FIELD(LP_ANA_PERI.touch_slp0, touch_slp_th0, touch_thresh);
+        HAL_FORCE_MODIFY_U32_REG_FIELD(TOUCH_AON.aon_slp0, aon_touch_slp_th0, touch_thresh);
         break;
     case 1:
-        HAL_FORCE_MODIFY_U32_REG_FIELD(LP_ANA_PERI.touch_slp1, touch_slp_th1, touch_thresh);
+        HAL_FORCE_MODIFY_U32_REG_FIELD(TOUCH_AON.aon_slp1, aon_touch_slp_th1, touch_thresh);
         break;
     case 2:
-        HAL_FORCE_MODIFY_U32_REG_FIELD(LP_ANA_PERI.touch_slp1, touch_slp_th2, touch_thresh);
+        HAL_FORCE_MODIFY_U32_REG_FIELD(TOUCH_AON.aon_slp1, aon_touch_slp_th2, touch_thresh);
         break;
     default:
         // invalid sample_cfg_id
@@ -982,7 +978,7 @@ static inline void touch_ll_sleep_set_threshold(uint8_t sample_cfg_id, uint32_t 
  */
 static inline void touch_ll_sleep_set_measure_wait_ticks(uint32_t wait_ticks)
 {
-    PMU.touch_pwr_cntl.wait_cycles = wait_ticks;
+    PMU.touch_pwr_ctrl.touch_wait_cycles = wait_ticks;
 }
 
 /**
@@ -990,7 +986,7 @@ static inline void touch_ll_sleep_set_measure_wait_ticks(uint32_t wait_ticks)
  */
 static inline void touch_ll_sleep_enable_proximity_sensing(bool enable)
 {
-    LP_ANA_PERI.touch_approach.touch_slp_approach_en = enable;
+    TOUCH_AON.aon_approach.aon_touch_slp_approach_en = enable;
 }
 
 /**
@@ -1008,9 +1004,9 @@ __attribute__((always_inline))
 static inline void touch_ll_sleep_read_chan_data(uint8_t type, uint8_t sample_cfg_id, uint32_t *data)
 {
     HAL_ASSERT(type <= TOUCH_LL_READ_SMOOTH);
-    LP_ANA_PERI.touch_mux0.touch_freq_sel = sample_cfg_id + 1;
-    LP_ANA_PERI.touch_mux0.touch_data_sel = type;
-    *data = HAL_FORCE_READ_U32_REG_FIELD(LP_TOUCH.slp_ch_data, slp_data);
+    TOUCH_AON.aon_mux0.aon_touch_freq_sel = sample_cfg_id + 1;
+    TOUCH_AON.aon_mux0.aon_touch_data_sel = type;
+    *data = HAL_FORCE_READ_U32_REG_FIELD(TOUCH_SENS.slp_ch_data, slp_data);
 }
 
 /**
@@ -1019,7 +1015,7 @@ static inline void touch_ll_sleep_read_chan_data(uint8_t type, uint8_t sample_cf
  */
 static inline void touch_ll_sleep_reset_benchmark(void)
 {
-    LP_ANA_PERI.touch_slp0.touch_slp_channel_clr = 1;
+    TOUCH_AON.aon_slp0.aon_touch_slp_channel_clr = 1;
 }
 
 /**
@@ -1029,7 +1025,7 @@ static inline void touch_ll_sleep_reset_benchmark(void)
  */
 static inline void touch_ll_sleep_read_debounce(uint32_t *debounce)
 {
-    *debounce = LP_TOUCH.slp_ch_data.slp_debounce_cnt;
+    *debounce = TOUCH_SENS.slp_ch_data.slp_debounce_cnt;
 }
 
 /**
@@ -1038,7 +1034,7 @@ static inline void touch_ll_sleep_read_debounce(uint32_t *debounce)
  */
 static inline void touch_ll_sleep_read_proximity_cnt(uint32_t *prox_cnt)
 {
-    *prox_cnt = HAL_FORCE_READ_U32_REG_FIELD(LP_TOUCH.aprch_ch_data, slp_approach_cnt);
+    *prox_cnt = HAL_FORCE_READ_U32_REG_FIELD(TOUCH_SENS.aprch_ch_data, slp_approach_cnt);
 }
 
 /**
@@ -1048,7 +1044,7 @@ static inline void touch_ll_sleep_read_proximity_cnt(uint32_t *prox_cnt)
  */
 static inline void touch_ll_enable_internal_capacitor(bool enable)
 {
-    LP_ANA_PERI.touch_ana_para.touch_touch_en_cal = enable;
+    TOUCH_AON.aon_ana_para.aon_touch_touch_en_cal = enable;
 }
 
 /**
@@ -1059,7 +1055,7 @@ static inline void touch_ll_enable_internal_capacitor(bool enable)
  */
 static inline void touch_ll_set_internal_capacitor(uint32_t cap)
 {
-    LP_ANA_PERI.touch_ana_para.touch_touch_dcap_cal = cap;
+    TOUCH_AON.aon_ana_para.aon_touch_touch_dcap_cal = cap;
 }
 
 #ifdef __cplusplus

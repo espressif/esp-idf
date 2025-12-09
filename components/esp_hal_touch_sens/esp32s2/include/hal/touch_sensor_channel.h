@@ -1,10 +1,11 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2025 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: Apache-2.0 OR MIT
+ * SPDX-License-Identifier: Apache-2.0
  */
 
-#pragma once
+#ifndef _SOC_TOUCH_CHANNEL_H
+#define _SOC_TOUCH_CHANNEL_H
 
 //Touch channels
 
@@ -51,3 +52,5 @@
 
 #define TOUCH_PAD_GPIO14_CHANNEL    14
 #define TOUCH_PAD_NUM14_GPIO_NUM    14
+
+#endif
