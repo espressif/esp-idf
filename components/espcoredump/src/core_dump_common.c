@@ -24,12 +24,7 @@ const static char TAG[] __attribute__((unused)) = "esp_core_dump_common";
  * @brief Memory regions to dump, defined at compile time.
  */
 #if CONFIG_ESP_COREDUMP_CAPTURE_DRAM
-#if !CONFIG_IDF_TARGET_ESP32P4
-extern int _bss_start;
-extern int _bss_end;
-extern int _data_start;
-extern int _data_end;
-#else
+#if CONFIG_ESP32P4_SELECTS_REV_LESS_V3
 extern int _bss_start_low;
 extern int _bss_end_low;
 extern int _data_start_low;
@@ -38,6 +33,11 @@ extern int _bss_start_high;
 extern int _bss_end_high;
 extern int _data_start_high;
 extern int _data_end_high;
+#else
+extern int _bss_start;
+extern int _bss_end;
+extern int _data_start;
+extern int _data_end;
 #endif
 #endif
 
@@ -262,14 +262,14 @@ static const struct {
 } s_memory_sections[COREDUMP_MEMORY_MAX] = {
     [COREDUMP_MEMORY_IRAM] = { &_coredump_iram_start, &_coredump_iram_end },
 #if CONFIG_ESP_COREDUMP_CAPTURE_DRAM
-#if !CONFIG_IDF_TARGET_ESP32P4
-    [COREDUMP_MEMORY_DRAM_BSS] = { &_bss_start, &_bss_end },
-    [COREDUMP_MEMORY_DRAM_DATA] = { &_data_start, &_data_end },
-#else
+#if CONFIG_ESP32P4_SELECTS_REV_LESS_V3
     [COREDUMP_MEMORY_DRAM_BSS] = { &_bss_start_low, &_bss_end_low },
     [COREDUMP_MEMORY_DRAM_DATA] = { &_data_start_low, &_data_end_low },
     [COREDUMP_MEMORY_DRAM_BSS_HIGH] = { &_bss_start_high, &_bss_end_high },
     [COREDUMP_MEMORY_DRAM_DATA_HIGH] = { &_data_start_high, &_data_end_high },
+#else
+    [COREDUMP_MEMORY_DRAM_BSS] = { &_bss_start, &_bss_end },
+    [COREDUMP_MEMORY_DRAM_DATA] = { &_data_start, &_data_end },
 #endif
 #else
     [COREDUMP_MEMORY_DRAM] = { &_coredump_dram_start, &_coredump_dram_end },
