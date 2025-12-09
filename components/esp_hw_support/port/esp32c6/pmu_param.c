@@ -351,7 +351,7 @@ const pmu_hp_system_retention_param_t * pmu_hp_system_retention_param_default(pm
 
 #define PMU_LP_SLEEP_POWER_CONFIG_DEFAULT() { \
     .dig_power = {              \
-        .mem_dslp       = 1,    \
+        .mem_dslp       = 0,    \
         .peri_pd_en     = 0,    \
     }, \
     .clk_power = {              \
