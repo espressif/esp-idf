@@ -24,8 +24,6 @@ extern "C" {
 int bt_mesh_v11_init(const void *cfg, size_t cfg_size,
                      const void *func, size_t func_size);
 
-int bt_mesh_lib_log_env_init(void *log_env, size_t log_env_size);
-
 int bt_mesh_v11_deinit(void);
 
 #define BLE_MESH_TAG_SEND_SEGMENTED     BIT(0)

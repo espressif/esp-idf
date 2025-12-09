@@ -211,11 +211,6 @@ void bt_mesh_ext_mem_swap(void *buf, size_t length)
     sys_mem_swap(buf, length);
 }
 
-uint32_t bt_mesh_ext_log_timestamp(void)
-{
-    return esp_log_timestamp();
-}
-
 /* Net buf */
 void bt_mesh_ext_buf_simple_init(struct net_buf_simple *buf, size_t reserve_head)
 {
@@ -4963,15 +4958,6 @@ static const bt_mesh_ext_funcs_t bt_mesh_ext_func = {
 #define BLE_MESH_LOG_FORMAT_START(level)   LOG_COLOR_ ## level #level " (%" PRIu32 ") %s: "
 #define BLE_MESH_LOG_FORMAT_END            LOG_RESET_COLOR "\n"
 
-typedef void (*logger_func_t)(const char *format, ...);
-
-typedef struct {
-    logger_func_t error;
-    logger_func_t warn;
-    logger_func_t info;
-    logger_func_t debug;
-} bt_mesh_lib_ext_log_env_t;
-
 void bt_mesh_lib_log_error(const char *format, ...)
 {
 #if (CONFIG_BLE_MESH_NO_LOG ||\
@@ -5056,17 +5042,16 @@ void bt_mesh_lib_log_debug(const char *format, ...)
 #endif
 }
 
-static bt_mesh_lib_ext_log_env_t bt_mesh_ext_log_env = {
-    .error = bt_mesh_lib_log_error,
-    .warn = bt_mesh_lib_log_warn,
-    .info = bt_mesh_lib_log_info,
-    .debug = bt_mesh_lib_log_debug,
-};
-
-int bt_mesh_ext_log_init(void)
+/**
+ * @brief  Keep symbols alive.
+ * @note   Dummy function to stop the linker from
+ *         optimizing away unused code.The dummy
+ *         function is discarded after linking,
+ *         so it adds zero bytes to the final binary.
+ */
+void bt_mesh_lib_ext_func_dummy_call(void)
 {
-    return bt_mesh_lib_log_env_init(&bt_mesh_ext_log_env,
-                                    sizeof(bt_mesh_lib_ext_log_env_t));
+    (void *)bt_hex(NULL, 0);
 }
 
 int bt_mesh_v11_ext_init(void)
