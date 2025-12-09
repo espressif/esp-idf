@@ -6,11 +6,9 @@
 
 /*******************************************************************************
  * NOTICE
- * The hal is not public api, don't use in application code.
- * See readme.md in hal/include/hal/readme.md
+ * The LL layer is not public api, don't use in application code.
+ * See readme.md in esp_hal_gpspi/readme.md
  ******************************************************************************/
-
-// The LL layer for ESP32 SPI register operations
 
 #pragma once
 
@@ -40,8 +38,11 @@ extern "C" {
 #define HAL_SPI_SWAP_DATA_TX(data, len) HAL_SWAP32((uint32_t)(data) << (32 - len))
 #define SPI_LL_GET_HW(ID) ((ID)==0? &SPI1:((ID)==1? &SPI2 : &SPI3))
 
+#define SPI_LL_DMA_CHANNEL_NUM    (2)
 #define SPI_LL_DMA_MAX_BIT_LEN    (1 << 24)    //reg len: 24 bits
 #define SPI_LL_CPU_MAX_BIT_LEN    (16 * 32)    //Fifo len: 16 words
+#define SPI_LL_MAX_PRE_DIV_NUM    (8192)
+#define SPI_LL_SUPPORT_CLK_AS_CS  1            //Output clock on CS line if CS is active
 #define SPI_LL_MOSI_FREE_LEVEL    0            //Default level after bus initialized
 
 // CS_WORKAROUND: SPI slave with using DMA, the rx dma suffers from unexpected transactions
@@ -709,8 +710,8 @@ static inline int spi_ll_master_cal_clock(int fapb, int hz, int duty_cycle, spi_
             if (pre <= 0) {
                 pre = 1;
             }
-            if (pre > 8192) {
-                pre = 8192;
+            if (pre > SPI_LL_MAX_PRE_DIV_NUM) {
+                pre = SPI_LL_MAX_PRE_DIV_NUM;
             }
             errval = abs(spi_ll_freq_for_pre_n(fapb, pre, n) - hz);
             if (bestn == -1 || errval <= besterr) {

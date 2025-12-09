@@ -85,8 +85,6 @@ esp_err_t spi_flash_hal_configure_host_io_mode(
     esp_flash_io_mode_t io_mode)
 {
     spi_dev_t *dev = get_spi_dev(host);
-    int host_id = spi_flash_ll_hw_get_id(dev);
-
     uint32_t extra_bits = io_mode & 0xFFFF0000;
     io_mode = io_mode & 0xFFFF;
 
@@ -98,12 +96,12 @@ esp_err_t spi_flash_hal_configure_host_io_mode(
      */
     bool conf_required = ((extra_bits & SPI_FLASH_CONFIG_CONF_BITS) != 0);
 
-    if (!SOC_SPI_PERIPH_SUPPORT_MULTILINE_MODE(host_id) && io_mode > SPI_FLASH_FASTRD) {
+    if ((SOC_SPI_MAX_BITWIDTH(spi_flash_ll_hw_get_id(dev)) < 2) && io_mode > SPI_FLASH_FASTRD) {
         return ESP_ERR_NOT_SUPPORTED;
     }
 
 #ifndef GPSPI_BUILD
-#if SOC_SPI_PERIPH_SUPPORT_CONTROL_DUMMY_OUT
+#if SOC_MEMSPI_SUPPORT_CONTROL_DUMMY_OUT
     // The CONTROL_DUMMY_OUTPUT feature is used to control M7-M0 bits.
     spi_flash_ll_set_dummy_out(dev, (conf_required ? 1 : 0), 1);
 #else

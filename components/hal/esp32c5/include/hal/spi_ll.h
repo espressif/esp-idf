@@ -6,8 +6,8 @@
 
 /*******************************************************************************
  * NOTICE
- * The LL layer for ESP32C5 SPI register operations
- * It is NOT public api, don't use in application code.
+ * The LL layer is not public api, don't use in application code.
+ * See readme.md in esp_hal_gpspi/readme.md
  ******************************************************************************/
 
 #pragma once
@@ -39,6 +39,7 @@ extern "C" {
 
 #define SPI_LL_DMA_MAX_BIT_LEN    SPI_MS_DATA_BITLEN
 #define SPI_LL_CPU_MAX_BIT_LEN    (16 * 32)    //Fifo len: 16 words
+#define SPI_LL_MAX_PRE_DIV_NUM    (16)
 #define SPI_LL_MOSI_FREE_LEVEL    1            //Default level after bus initialized
 #define SPI_LL_SUPPORT_CLK_SRC_PRE_DIV      1  //clock source have divider before peripheral
 #define SPI_LL_SRC_PRE_DIV_MAX    (PCR_SPI2_CLKM_DIV_NUM + 1)   //source pre divider max
@@ -789,8 +790,8 @@ static inline int spi_ll_master_cal_clock(int fapb, int hz, int duty_cycle, spi_
             if (pre <= 0) {
                 pre = 1;
             }
-            if (pre > 16) {
-                pre = 16;
+            if (pre > SPI_LL_MAX_PRE_DIV_NUM) {
+                pre = SPI_LL_MAX_PRE_DIV_NUM;
             }
             errval = abs(spi_ll_freq_for_pre_n(fapb, pre, n) - hz);
             if (bestn == -1 || errval <= besterr) {

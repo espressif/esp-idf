@@ -181,18 +181,13 @@
 // TODO: [ESP32S31] IDF-14734
 #define SOC_SPI_PERIPH_NUM              3
 #define SOC_SPI_PERIPH_CS_NUM(i)        (((i)==0)? 2: (((i)==1)? 6: 3))
-#define SOC_SPI_MAX_CS_NUM              6
 #define SOC_SPI_MAXIMUM_BUFFER_SIZE     64
+#define SOC_SPI_MAX_BITWIDTH(host_id)   ((host_id == 2) ? 4 : 8) // Supported line mode: SPI3: 1, 2, 4, SPI1/2: 1, 2, 4, 8
 
-// Peripheral supports DIO, DOUT, QIO, or QOUT
-// host_id = 0 -> SPI0/SPI1, host_id = 1 -> SPI2,
-#define SOC_SPI_PERIPH_SUPPORT_MULTILINE_MODE(host_id)  ({(void)host_id; 1;})
-
-#define SOC_MSPI_HAS_INDEPENT_IOMUX 1
-#define SOC_MEMSPI_IS_INDEPENDENT   1
 /*-------------------------- SPI MEM CAPS ---------------------------------------*/
-
-#define SOC_SPI_PERIPH_SUPPORT_CONTROL_DUMMY_OUT (1)
+#define SOC_MSPI_HAS_INDEPENT_IOMUX               1
+#define SOC_MEMSPI_IS_INDEPENDENT                 1
+#define SOC_MEMSPI_SUPPORT_CONTROL_DUMMY_OUT      1
 
 #define SOC_MEMSPI_SRC_FREQ_80M_SUPPORTED         1
 #define SOC_MEMSPI_SRC_FREQ_40M_SUPPORTED         1

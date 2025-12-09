@@ -215,10 +215,6 @@ config SOC_SPI_PERIPH_NUM
     int
     default 3
 
-config SOC_SPI_MAX_CS_NUM
-    int
-    default 6
-
 config SOC_SPI_MAXIMUM_BUFFER_SIZE
     int
     default 64
@@ -231,7 +227,7 @@ config SOC_MEMSPI_IS_INDEPENDENT
     bool
     default y
 
-config SOC_SPI_PERIPH_SUPPORT_CONTROL_DUMMY_OUT
+config SOC_MEMSPI_SUPPORT_CONTROL_DUMMY_OUT
     bool
     default y
 

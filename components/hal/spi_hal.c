@@ -45,7 +45,7 @@ void spi_hal_deinit(spi_hal_context_t *hal)
     }
 }
 
-#if SOC_SPI_SCT_SUPPORTED
+#ifdef SOC_SPI_SCT_SUPPORTED
 void spi_hal_sct_init(spi_hal_context_t *hal)
 {
     spi_ll_conf_state_enable(hal->hw, true);
@@ -63,7 +63,7 @@ void spi_hal_sct_deinit(spi_hal_context_t *hal)
     spi_ll_clear_int_stat(hal->hw);
     spi_ll_enable_int(hal->hw); //recover trans_done intr
 }
-#endif  //#if SOC_SPI_SCT_SUPPORTED
+#endif  //#ifdef SOC_SPI_SCT_SUPPORTED
 
 int spi_hal_master_cal_clock(int fapb, int hz, int duty_cycle)
 {

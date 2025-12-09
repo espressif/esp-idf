@@ -20,7 +20,7 @@
 extern "C" {
 #endif
 
-#if SOC_SPI_SCT_SUPPORTED
+#ifdef SOC_SPI_SCT_SUPPORTED
 /**
  * @Backgrounds: `SCT Mode`
  * Segmented-Configure-Transfer Mode
@@ -115,7 +115,7 @@ esp_err_t spi_device_queue_multi_trans(spi_device_handle_t handle, spi_multi_tra
  *        - ESP_ERR_TIMEOUT:       Timeout, didn't get a completed SCT transaction
  */
 esp_err_t spi_device_get_multi_trans_result(spi_device_handle_t handle, spi_multi_transaction_t **seg_trans_desc, uint32_t ticks_to_wait);
-#endif  //#if SOC_SPI_SCT_SUPPORTED
+#endif  //#ifdef SOC_SPI_SCT_SUPPORTED
 
 #ifdef __cplusplus
 }

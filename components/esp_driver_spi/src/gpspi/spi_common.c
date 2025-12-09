@@ -154,7 +154,7 @@ int spicommon_irqdma_source_for_host(spi_host_device_t host)
 #if SPI_LL_DMA_SHARED
 static inline shared_periph_module_t get_dma_periph(int dma_chan)
 {
-    assert(dma_chan >= 1 && dma_chan <= SOC_SPI_DMA_CHAN_NUM);
+    assert(dma_chan >= 1 && dma_chan <= SPI_LL_DMA_CHANNEL_NUM);
     if (dma_chan == 1) {
         return PERIPH_SPI2_DMA_MODULE;
     } else if (dma_chan == 2) {
@@ -220,7 +220,7 @@ static esp_err_t alloc_dma_chan(spi_host_device_t host_id, spi_dma_chan_t dma_ch
 
     if (dma_chan == SPI_DMA_CH_AUTO) {
 #if CONFIG_IDF_TARGET_ESP32
-        for (int i = 1; i < SOC_SPI_DMA_CHAN_NUM + 1; i++) {
+        for (int i = 1; i < SPI_LL_DMA_CHANNEL_NUM + 1; i++) {
             success = claim_dma_chan(i, &actual_dma_chan);
             if (success) {
                 break;
