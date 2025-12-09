@@ -53,6 +53,7 @@ LCD Data Panel Operations
 * :cpp:func:`esp_lcd_panel_reset` can reset the LCD data panel.
 * :cpp:func:`esp_lcd_panel_init` performs a basic initialization of the data panel.
 * :cpp:func:`esp_lcd_panel_draw_bitmap` is the function which does the magic to flush the user draw buffer to the LCD screen, where the target draw window is configurable. Please note, this function expects that the draw buffer is a 1-D array and there's no stride in between each lines.
+* :cpp:func:`esp_lcd_panel_draw_bitmap_2d` is the function which does the magic to flush the user draw buffer to the LCD screen, where the source and target draw windows are configurable. Please note, the draw buffer can be a 2-D array or a 1-D array with no stride in between each lines.
 
 .. _steps_add_manufacture_init:
 
