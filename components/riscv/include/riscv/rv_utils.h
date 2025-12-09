@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,6 +16,10 @@
 #include "riscv/csr_pie.h"
 #include "riscv/csr_dsp.h"
 #include "sdkconfig.h"
+
+#if __riscv_zcmp && SOC_CPU_ZCMP_WORKAROUND
+#include "esp_private/interrupt_clic.h"
+#endif
 
 #if CONFIG_SECURE_ENABLE_TEE && !NON_OS_BUILD
 #include "secure_service_num.h"
@@ -167,15 +171,50 @@ FORCE_INLINE_ATTR void rv_utils_set_xtvec(uint32_t xtvec_val)
 
 // ------------------ Interrupt Control --------------------
 
+#if __riscv_zcmp && SOC_CPU_ZCMP_WORKAROUND
+
+extern uint32_t g_xintthresh[SOC_CPU_CORES_NUM];
+
+FORCE_INLINE_ATTR void rv_utils_xintthres_raise(void)
+{
+    /**
+     * Make sure NOT to use `g_xintthresh[rv_utils_get_core_id()] = rv_utils_set_intlevel_regval(0xff);`
+     * since that statement would let the compiler first calculate the offset in `g_xintthresh` array
+     * before setting the interrupt threshold, which may lead to a race condition if an interrupt occurs in between.
+     */
+    uint32_t threshold = rv_utils_set_intlevel_regval(0xff);
+    g_xintthresh[rv_utils_get_core_id()] = threshold;
+}
+
+FORCE_INLINE_ATTR void rv_utils_xintthres_lower(void)
+{
+    rv_utils_restore_intlevel_regval(g_xintthresh[rv_utils_get_core_id()]);
+}
+
+#else
+
+FORCE_INLINE_ATTR void rv_utils_xintthres_raise(void)
+{
+}
+
+FORCE_INLINE_ATTR void rv_utils_xintthres_lower(void)
+{
+}
+
+#endif // __riscv_zcmp && SOC_CPU_ZCMP_WORKAROUND
+
+
 FORCE_INLINE_ATTR void rv_utils_intr_enable(uint32_t intr_mask)
 {
 #if CONFIG_SECURE_ENABLE_TEE && !NON_OS_BUILD
     esp_tee_intr_sec_srv_cb(2, SS_RV_UTILS_INTR_ENABLE, intr_mask);
 #else
     // Disable all interrupts to make updating of the interrupt mask atomic.
+    rv_utils_xintthres_raise();
     unsigned old_mstatus = RV_CLEAR_CSR(mstatus, MSTATUS_MIE);
     esprv_int_enable(intr_mask);
     RV_SET_CSR(mstatus, old_mstatus & MSTATUS_MIE);
+    rv_utils_xintthres_lower();
 #endif
 }
 
@@ -185,9 +224,11 @@ FORCE_INLINE_ATTR void rv_utils_intr_disable(uint32_t intr_mask)
     esp_tee_intr_sec_srv_cb(2, SS_RV_UTILS_INTR_DISABLE, intr_mask);
 #else
     // Disable all interrupts to make updating of the interrupt mask atomic.
+    rv_utils_xintthres_raise();
     unsigned old_mstatus = RV_CLEAR_CSR(mstatus, MSTATUS_MIE);
     esprv_int_disable(intr_mask);
     RV_SET_CSR(mstatus, old_mstatus & MSTATUS_MIE);
+    rv_utils_xintthres_lower();
 #endif
 }
 
@@ -198,10 +239,12 @@ FORCE_INLINE_ATTR void rv_utils_intr_global_enable(void)
 #else
     RV_SET_CSR(mstatus, MSTATUS_MIE);
 #endif
+    rv_utils_xintthres_lower();
 }
 
 FORCE_INLINE_ATTR void rv_utils_intr_global_disable(void)
 {
+    rv_utils_xintthres_raise();
 #if CONFIG_SECURE_ENABLE_TEE
     if (IS_PRV_M_MODE()) {
         RV_CLEAR_CSR(mstatus, MSTATUS_MIE);
