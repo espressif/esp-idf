@@ -85,8 +85,13 @@ TEST_CASE("espcoredump SHA256 checksum API", "[espcoredump]")
     };
 
     // Verify size and version
+#if CONFIG_ESP_COREDUMP_CHECKSUM_SHA256
     TEST_ASSERT_EQUAL(SHA256_RESULT_LEN, esp_core_dump_checksum_size());
+#endif // CONFIG_ESP_COREDUMP_CHECKSUM_SHA256
+
+#if CONFIG_ESP_COREDUMP_DATA_FORMAT_ELF
     TEST_ASSERT_EQUAL(COREDUMP_VERSION_ELF_SHA256, esp_core_dump_elf_version());
+#endif // CONFIG_ESP_COREDUMP_DATA_FORMAT_ELF
 
     // Test both single update and multiple updates with the same input
     checksum_ctx_t sha_ctx1, sha_ctx2;

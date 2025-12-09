@@ -7,5 +7,5 @@ idf_component_register(SRCS ${SRCS}
                        INCLUDE_DIRS "."
                        PRIV_REQUIRES unity
                        PRIV_INCLUDE_DIRS ${priv_includes}
-                       REQUIRES mbedtls espcoredump
+                       REQUIRES espcoredump
                        WHOLE_ARCHIVE)

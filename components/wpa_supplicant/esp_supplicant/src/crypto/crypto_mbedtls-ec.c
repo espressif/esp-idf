@@ -760,7 +760,7 @@ struct crypto_ec_point *crypto_ec_key_get_public_key(struct crypto_ec_key *key)
     psa_status_t status;
 
     // Export public key in uncompressed format: 0x04 || X || Y
-    uint8_t pub_key_buf[PSA_EXPORT_PUBLIC_KEY_MAX_SIZE];
+    uint8_t pub_key_buf[PSA_KEY_EXPORT_ECC_PUBLIC_KEY_MAX_SIZE(ESP_SUP_MAX_ECC_KEY_SIZE)];
     size_t pub_key_len = 0;
 
     status = psa_export_public_key(wrapper->key_id, pub_key_buf, sizeof(pub_key_buf), &pub_key_len);
@@ -922,6 +922,7 @@ int crypto_ec_key_group(struct crypto_ec_key *key)
     psa_status_t status = psa_get_key_attributes(wrapper->key_id, &key_attributes);
     if (status != PSA_SUCCESS) {
         wpa_printf(MSG_ERROR, "crypto_ec_key_group: psa_get_key_attributes failed: %d", status);
+        psa_reset_key_attributes(&key_attributes);
         return -1;
     }
 
