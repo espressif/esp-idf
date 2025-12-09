@@ -20,31 +20,21 @@ uint32_t esp_core_dump_elf_version(void) __attribute__((alias("core_dump_sha_ver
 #if CONFIG_IDF_TARGET_ESP32
 
 #include "rom/sha.h"
-
-/* Use ESP32 ROM SHA hardware directly to avoid malloc during panic handler.
- * PSA driver allocates memory which is unsafe during panic handling.
- * ESP32 ROM SHA API uses bits instead of bytes and has a different context structure. */
 static void core_dump_sha256_start(core_dump_sha_ctx_t *sha_ctx)
 {
-    SHA_CTX *ctx = (SHA_CTX *)&sha_ctx->ctx;
-    /* Initialize context to zero */
-    memset(ctx, 0, sizeof(SHA_CTX));
-    ets_sha_enable();
-    ets_sha_init(ctx);
+    mbedtls_sha256_init(&sha_ctx->ctx);
+    mbedtls_sha256_starts(&sha_ctx->ctx, false);
 }
 
 static void core_dump_sha256_update(core_dump_sha_ctx_t *sha_ctx, const void *data, size_t data_len)
 {
-    SHA_CTX *ctx = (SHA_CTX *)&sha_ctx->ctx;
-    /* ESP32 ROM SHA update takes input_bits, not bytes */
-    ets_sha_update(ctx, SHA2_256, (const uint8_t *)data, data_len * 8);
+    mbedtls_sha256_update(&sha_ctx->ctx, data, data_len);
 }
 
 static void core_dump_sha256_finish(core_dump_sha_ctx_t *sha_ctx)
 {
-    SHA_CTX *ctx = (SHA_CTX *)&sha_ctx->ctx;
-    ets_sha_finish(ctx, SHA2_256, sha_ctx->result);
-    ets_sha_disable();
+    mbedtls_sha256_finish(&sha_ctx->ctx, sha_ctx->result);
+    mbedtls_sha256_free(&sha_ctx->ctx);
 }
 
 #else

@@ -1724,6 +1724,9 @@ int crypto_mbedtls_get_grp_id(int group)
 
 void crypto_ecdh_deinit(struct crypto_ecdh *ecdh)
 {
+    if (!ecdh) {
+        return;
+    }
     psa_key_id_t *key_id = (psa_key_id_t *)ecdh;
     psa_destroy_key(*key_id);
     os_free(key_id);
@@ -1797,9 +1800,114 @@ struct wpabuf * crypto_ecdh_set_peerkey(struct crypto_ecdh *ecdh, int inc_y,
     }
     size_t secret_length = 0;
 
-    psa_status_t status = psa_raw_key_agreement(PSA_ALG_ECDH, *key_id, key, len, secret, secret_len, &secret_length);
+    /* PSA expects peer public key in uncompressed format: 0x04 || X || Y
+     * For OWE (inc_y=0), we only have X coordinate - but PSA requires full uncompressed format.
+     * For full keys (inc_y=1), we have X || Y and need to prepend 0x04.
+     */
+    uint8_t *peer_key_buf = NULL;
+    size_t peer_key_len = 0;
+
+    if (inc_y) {
+        /* Full public key: prepend 0x04 prefix for uncompressed format */
+        peer_key_len = 1 + len;  /* len should be 64 for P-256 (X+Y) */
+        peer_key_buf = os_zalloc(peer_key_len);
+        if (!peer_key_buf) {
+            os_free(secret);
+            return NULL;
+        }
+        peer_key_buf[0] = 0x04; /* Uncompressed point format */
+        os_memcpy(peer_key_buf + 1, key, len);
+    } else {
+        /* Only X coordinate provided (OWE case): need to convert to uncompressed format
+         * RFC 8110: OWE transmits only X coordinate (32 bytes for P-256).
+         * PSA expects uncompressed format: 0x04 || X || Y (65 bytes for P-256).
+         * Use mbedtls to convert compressed (0x02 || X) to uncompressed (0x04 || X || Y).
+         */
+        mbedtls_ecp_group grp;
+        mbedtls_ecp_point pt;
+        mbedtls_ecp_group_init(&grp);
+        mbedtls_ecp_point_init(&pt);
+
+        int ret = mbedtls_ecp_group_load(&grp, MBEDTLS_ECP_DP_SECP256R1);
+        if (ret != 0) {
+            wpa_printf(MSG_ERROR, "Failed to load ECC group: -0x%04x", -ret);
+            mbedtls_ecp_point_free(&pt);
+            mbedtls_ecp_group_free(&grp);
+            os_free(secret);
+            return NULL;
+        }
+
+        /* Create compressed format buffer: 0x02 || X (assuming even Y) */
+        uint8_t *compressed = os_zalloc(1 + len);
+        if (!compressed) {
+            mbedtls_ecp_point_free(&pt);
+            mbedtls_ecp_group_free(&grp);
+            os_free(secret);
+            return NULL;
+        }
+        compressed[0] = 0x02; /* Compressed format with even Y */
+        os_memcpy(compressed + 1, key, len);
+
+        /* Parse compressed point - mbedtls will compute Y from X */
+        ret = mbedtls_ecp_point_read_binary(&grp, &pt, compressed, 1 + len);
+        os_free(compressed);
+
+        if (ret != 0) {
+            /* Try with odd Y (0x03) if even Y failed */
+            compressed = os_zalloc(1 + len);
+            if (!compressed) {
+                mbedtls_ecp_point_free(&pt);
+                mbedtls_ecp_group_free(&grp);
+                os_free(secret);
+                return NULL;
+            }
+            compressed[0] = 0x03; /* Compressed format with odd Y */
+            os_memcpy(compressed + 1, key, len);
+
+            ret = mbedtls_ecp_point_read_binary(&grp, &pt, compressed, 1 + len);
+            os_free(compressed);
+
+            if (ret != 0) {
+                wpa_printf(MSG_ERROR, "Failed to parse compressed ECC point: -0x%04x", -ret);
+                mbedtls_ecp_point_free(&pt);
+                mbedtls_ecp_group_free(&grp);
+                os_free(secret);
+                return NULL;
+            }
+        }
+
+        /* Export point in uncompressed format: 0x04 || X || Y */
+        peer_key_len = 1 + 2 * len;  /* 65 bytes for P-256 */
+        peer_key_buf = os_zalloc(peer_key_len);
+        if (!peer_key_buf) {
+            mbedtls_ecp_point_free(&pt);
+            mbedtls_ecp_group_free(&grp);
+            os_free(secret);
+            return NULL;
+        }
+
+        size_t olen = 0;
+        ret = mbedtls_ecp_point_write_binary(&grp, &pt, MBEDTLS_ECP_PF_UNCOMPRESSED,
+                                             &olen, peer_key_buf, peer_key_len);
+        if (ret != 0 || olen != peer_key_len) {
+            wpa_printf(MSG_ERROR, "Failed to export uncompressed ECC point: -0x%04x", -ret);
+            os_free(peer_key_buf);
+            mbedtls_ecp_point_free(&pt);
+            mbedtls_ecp_group_free(&grp);
+            os_free(secret);
+            return NULL;
+        }
+
+        mbedtls_ecp_point_free(&pt);
+        mbedtls_ecp_group_free(&grp);
+    }
+
+    psa_status_t status = psa_raw_key_agreement(PSA_ALG_ECDH, *key_id, peer_key_buf, peer_key_len,
+                                                secret, secret_len, &secret_length);
+    os_free(peer_key_buf);
+
     if (status != PSA_SUCCESS) {
-        wpa_printf(MSG_ERROR, "psa_raw_key_agreement failed with %d", status);
+        wpa_printf(MSG_ERROR, "psa_raw_key_agreement failed with PSA error 0x%x", status);
         os_free(secret);
         return NULL;
     }

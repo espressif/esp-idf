@@ -3,12 +3,8 @@ menu "mbedTLS"
     menu "Core Configuration"
 
         config MBEDTLS_VER_4_X_SUPPORT
-            depends on IDF_EXPERIMENTAL_FEATURES
-            bool "Enable support for mbedTLS version 4.x and the PSA cryptography API for ESP-IDF"
+            bool
             default y
-            help
-                Enable support for mbedTLS version 4.x and the PSA cryptography API for ESP-IDF.
-                This option migrates from mbedtls API to PSA Crypto API. This increases code size and is experimental.
 
         choice MBEDTLS_COMPILER_OPTIMIZATION
             prompt "Compiler optimization level"

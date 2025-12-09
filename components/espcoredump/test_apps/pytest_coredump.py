@@ -12,6 +12,7 @@ def test_coredump(dut: Dut) -> None:
 
 
 @pytest.mark.generic
+@idf_parametrize('target', ['esp32'], indirect=['target'])
 @pytest.mark.parametrize(
     'config',
     [

@@ -755,7 +755,7 @@ mainmenu "Espressif IoT Development Framework Configuration"
 
     config IDF_EXPERIMENTAL_FEATURES
         bool "Make experimental features visible"
-        default "y"
+        default "n"
         help
             By enabling this option, ESP-IDF experimental feature options will be visible.
 
@@ -772,4 +772,3 @@ mainmenu "Espressif IoT Development Framework Configuration"
             - CONFIG_USB_HOST_EXT_PORT_RESET_ATTEMPTS
             - CONFIG_GDMA_ENABLE_WEIGHTED_ARBITRATION
             - CONFIG_I3C_MASTER_ENABLED
-            - CONFIG_MBEDTLS_VER_4_X_SUPPORT

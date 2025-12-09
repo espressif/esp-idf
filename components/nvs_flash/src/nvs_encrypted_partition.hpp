@@ -3,9 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
-#ifndef NVS_ENCRYPTED_PARTITION_HPP_
-#define NVS_ENCRYPTED_PARTITION_HPP_
+#pragma once
 
 #include "sdkconfig.h"          // For CONFIG_NVS_BDL_STACK
 
@@ -80,5 +78,3 @@ protected:
 };
 
 } // nvs
-
-#endif // NVS_ENCRYPTED_PARTITION_HPP_

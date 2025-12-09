@@ -10,8 +10,6 @@
 #include "nvs_encrypted_partition.hpp"
 #endif // ! LINUX_TARGET
 
-#include "esp_log.h"
-
 namespace nvs {
 namespace partition_lookup {
 

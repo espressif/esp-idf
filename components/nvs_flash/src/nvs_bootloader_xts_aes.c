@@ -257,26 +257,21 @@ int nvs_bootloader_aes_crypt_xts(nvs_bootloader_xts_aes_context *ctx,
 
 #endif /* CONFIG_ESP_ROM_HAS_MBEDTLS_CRYPTO_LIB */
 #else /* BOOTLOADER_BUILD && !CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL_BOOTLOADER */
-#include "psa/crypto.h"
+#define MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
+#include "mbedtls/private/aes.h"
 
-static const char *TAG = "nvs_bootloader_xts_aes";
-
-static psa_cipher_operation_t operation;
-static psa_key_id_t nvs_bootloader_xts_aes_key_id = 0;
+static mbedtls_aes_xts_context ctx_xts;
 
 void nvs_bootloader_xts_aes_init(nvs_bootloader_xts_aes_context *ctx)
 {
     (void) ctx;
-    // mbedtls_aes_xts_init(&ctx_xts);
-    // psa_status_t status = PSA_SUCCESS;
+    mbedtls_aes_xts_init(&ctx_xts);
 }
 
 void nvs_bootloader_xts_aes_free(nvs_bootloader_xts_aes_context *ctx)
 {
     (void) ctx;
-    psa_cipher_abort(&operation);
-    psa_destroy_key(nvs_bootloader_xts_aes_key_id);
-    nvs_bootloader_xts_aes_key_id = 0;
+    mbedtls_aes_xts_free(&ctx_xts);
 }
 
 int nvs_bootloader_xts_aes_setkey(nvs_bootloader_xts_aes_context *ctx,
@@ -284,32 +279,7 @@ int nvs_bootloader_xts_aes_setkey(nvs_bootloader_xts_aes_context *ctx,
                                 unsigned int key_bytes)
 {
     (void) ctx;
-    // return mbedtls_aes_xts_setkey_dec(&ctx_xts, key, key_bytes * 8);
-    psa_status_t status;
-    psa_key_attributes_t key_attributes = PSA_KEY_ATTRIBUTES_INIT;
-
-    psa_set_key_usage_flags(&key_attributes, PSA_KEY_USAGE_ENCRYPT | PSA_KEY_USAGE_DECRYPT);
-    psa_set_key_algorithm(&key_attributes, PSA_ALG_XTS);
-    psa_set_key_type(&key_attributes, PSA_KEY_TYPE_AES);
-    psa_set_key_bits(&key_attributes, key_bytes * 8);
-    status = psa_import_key(&key_attributes, key, key_bytes, &nvs_bootloader_xts_aes_key_id);
-    if (status != PSA_SUCCESS) {
-        ESP_LOGE(TAG, "Failed to import key: %d", status);
-        psa_cipher_abort(&operation);
-        return -1;
-    }
-    psa_reset_key_attributes(&key_attributes);
-
-    size_t key_len = key_bytes / 2;
-    status = psa_cipher_set_iv(&operation, key + key_len, key_len);
-    if (status != PSA_SUCCESS) {
-        ESP_LOGE(TAG, "Failed to set IV: %d", status);
-        psa_cipher_abort(&operation);
-        psa_destroy_key(nvs_bootloader_xts_aes_key_id);
-        return -1;
-    }
-    ESP_LOGI(TAG, "XTS-AES key set successfully");
-    return 0;
+    return mbedtls_aes_xts_setkey_dec(&ctx_xts, key, key_bytes * 8);
 }
 /*
  * XTS-AES buffer encryption/decryption
@@ -322,43 +292,8 @@ int nvs_bootloader_aes_crypt_xts(nvs_bootloader_xts_aes_context *ctx,
                                 unsigned char *output)
 {
     (void) ctx;
-    psa_status_t status;
-    size_t output_len = 0;
-    if (nvs_bootloader_xts_aes_key_id == 0) {
-        ESP_LOGE(TAG, "XTS-AES key not set");
-        return -1;
-    }
-
-    if (mode == AES_ENC) {
-        status = psa_cipher_encrypt_setup(&operation, nvs_bootloader_xts_aes_key_id, PSA_ALG_XTS);
-    } else {
-        status = psa_cipher_decrypt_setup(&operation, nvs_bootloader_xts_aes_key_id, PSA_ALG_XTS);
-    }
-    if (status != PSA_SUCCESS) {
-        ESP_LOGE(TAG, "Failed to setup cipher operation: %d", status);
-        return -1;
-    }
-
-    status = psa_cipher_update(&operation, input, length, output, length, &output_len);
-    if (status != PSA_SUCCESS) {
-        ESP_LOGE(TAG, "Failed to update cipher operation: %d", status);
-        psa_cipher_abort(&operation);
-        return -1;
-    }
-    if (output_len != length) {
-        ESP_LOGE(TAG, "Output length mismatch: expected %zu, got %zu", length, output_len);
-        psa_cipher_abort(&operation);
-        return -1;
-    }
-
-    status = psa_cipher_finish(&operation, output + output_len, length - output_len, &output_len);
-    if (status != PSA_SUCCESS) {
-        ESP_LOGE(TAG, "Failed to finish cipher operation: %d", status);
-        psa_cipher_abort(&operation);
-        return -1;
-    }
-
-    return 0;
+    int mbedtls_aes_mode = mode == AES_ENC ? MBEDTLS_AES_ENCRYPT : MBEDTLS_AES_DECRYPT;
+    return mbedtls_aes_crypt_xts(&ctx_xts, mbedtls_aes_mode, length, data_unit, input, output);
 }
 #endif /* !(BOOTLOADER_BUILD && !CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL_BOOTLOADER) */
 #endif /* !SOC_AES_SUPPORTED */

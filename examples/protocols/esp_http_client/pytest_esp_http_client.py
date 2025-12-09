@@ -65,7 +65,7 @@ def test_examples_protocol_esp_http_client(dut: Dut) -> None:
     ],
     indirect=True,
 )
-@idf_parametrize('target', ['esp32s3'], indirect=['target'])
+@idf_parametrize('target', ['esp32'], indirect=['target'])
 def test_examples_protocol_esp_http_client_dynamic_buffer(dut: Dut) -> None:
     # test mbedtls dynamic resource
     # check and log bin size
