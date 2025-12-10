@@ -6,7 +6,7 @@
 /* ROM function interface esp32h4.rom.ld for esp32h4
  *
  *
- * Generated from ../../rom/target/esp32h4/interface-esp32h4.yml md5sum c9db9928804fe99070d282b058ff3c65
+ * Generated from ../../rom/target/esp32h4/interface-esp32h4.yml md5sum bb9ee317148d3c5b10610936a3675a65
  *
  * Compatible with ROM where ECO version equal or greater to 0.
  *
@@ -377,6 +377,7 @@ ets_jtag_enable_temporarily = 0x400007bc;
 esp_rom_check_recover_key = 0x400007c0;
 esp_rom_km_huk_conf = 0x400007c4;
 esp_rom_km_huk_risk = 0x400007c8;
+esp_rom_recover_key = 0x400007cc;
 
 
 /***************************************
@@ -384,11 +385,11 @@ esp_rom_km_huk_risk = 0x400007c8;
  ***************************************/
 
 /* Functions */
-ets_ecdsa_verify = 0x400007cc;
-ets_secure_boot_verify_bootloader_with_keys = 0x400007d0;
-ets_secure_boot_verify_signature = 0x400007d4;
-ets_secure_boot_read_key_digests = 0x400007d8;
-ets_secure_boot_revoke_public_key_digest = 0x400007dc;
+ets_ecdsa_verify = 0x400007d0;
+ets_secure_boot_verify_bootloader_with_keys = 0x400007d4;
+ets_secure_boot_verify_signature = 0x400007d8;
+ets_secure_boot_read_key_digests = 0x400007dc;
+ets_secure_boot_revoke_public_key_digest = 0x400007e0;
 
 
 /***************************************
@@ -396,7 +397,7 @@ ets_secure_boot_revoke_public_key_digest = 0x400007dc;
  ***************************************/
 
 /* Functions */
-usb_serial_device_rx_one_char = 0x4000090c;
-usb_serial_device_rx_one_char_block = 0x40000910;
-usb_serial_device_tx_flush = 0x40000914;
-usb_serial_device_tx_one_char = 0x40000918;
+usb_serial_device_rx_one_char = 0x40000910;
+usb_serial_device_rx_one_char_block = 0x40000914;
+usb_serial_device_tx_flush = 0x40000918;
+usb_serial_device_tx_one_char = 0x4000091c;
