@@ -87,7 +87,7 @@ typedef struct {
     uint16_t ble_ext_adv_data_max_len;
 #endif // #if (BLE_50_EXTEND_ADV_EN == TRUE)
 #if (BLE_50_EXTEND_SYNC_EN == TRUE)
-    uint16_t get_ble_periodic_advertiser_list_size;
+    uint8_t get_ble_periodic_advertiser_list_size;
 #endif // #if (BLE_50_EXTEND_SYNC_EN == TRUE)
 #endif //#if (BLE_50_FEATURE_SUPPORT == TRUE)
 } controller_local_param_t;
