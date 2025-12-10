@@ -74,7 +74,6 @@ def test_cache(dut: Dut) -> None:
     ],
     indirect=['config', 'target'],
 )
-@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='h4 rev3 migration # TODO: IDF-14470')
 def test_cache_psram(dut: Dut) -> None:
     dut.run_all_single_board_cases(group='cache')
 

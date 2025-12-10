@@ -15,7 +15,6 @@ from pytest_embedded_idf.utils import soc_filtered_targets
     indirect=True,
 )
 @idf_parametrize('target', ['supported_targets'], indirect=['target'])
-@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration')
 def test_esp_common(dut: Dut) -> None:
     dut.run_all_single_board_cases()
 
@@ -30,7 +29,6 @@ def test_esp_common(dut: Dut) -> None:
     indirect=True,
 )
 @idf_parametrize('target', soc_filtered_targets('SOC_SPIRAM_SUPPORTED == 1'), indirect=['target'])
-@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration')
 def test_esp_attr_psram_noinit(dut: Dut) -> None:
     dut.run_all_single_board_cases()
 
@@ -43,7 +41,6 @@ def test_esp_attr_psram_noinit(dut: Dut) -> None:
     indirect=True,
 )
 @idf_parametrize('target', soc_filtered_targets('SOC_SPIRAM_SUPPORTED == 1'), indirect=['target'])
-@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration')
 def test_esp_attr_psram_noinit_multiple_stages(case_tester: Any) -> None:
     case_tester.run_all_multi_stage_cases()
 
@@ -58,7 +55,6 @@ def test_esp_attr_psram_noinit_multiple_stages(case_tester: Any) -> None:
     indirect=True,
 )
 @idf_parametrize('target', soc_filtered_targets('SOC_SPIRAM_SUPPORTED == 1'), indirect=['target'])
-@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration')
 def test_esp_attr_psram(dut: Dut) -> None:
     dut.run_all_single_board_cases()
 
@@ -71,6 +67,5 @@ def test_esp_attr_psram(dut: Dut) -> None:
     indirect=True,
 )
 @idf_parametrize('target', soc_filtered_targets('SOC_SPIRAM_XIP_SUPPORTED == 1'), indirect=['target'])
-@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration')
 def test_esp_attr_xip_psram(dut: Dut) -> None:
     dut.run_all_single_board_cases()
