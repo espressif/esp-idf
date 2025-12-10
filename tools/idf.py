@@ -999,47 +999,94 @@ def expand_file_arguments(argv: list[Any]) -> list[Any]:
     return argv
 
 
-def _valid_unicode_config() -> codecs.CodecInfo | bool:
-    # With python 3 unicode environment is required
+def _valid_unicode_config() -> bool:
     try:
-        return codecs.lookup(locale.getpreferredencoding()).name != 'ascii'
+        locale_name, encoding = locale.getlocale()
+        if encoding is None or locale_name is None:
+            return False
+        encoding_name = codecs.lookup(encoding).name
+        # LC_CTYPE has issues with case conversion for ASCII characters in these locales
+        if locale_name.lower().startswith(('tr', 'az', 'lt', 'kk')):
+            # Turkish (tr) & Azerbaijani (az): dotless I (ı/I vs i/İ) breaks strcasecmp for "INTERRUPT"
+            #   https://unicode.org/mail-arch/unicode-ml/Archives-Old/UML009/0619.html
+            #   https://en.wikipedia.org/wiki/Dotted_and_dotless_I_in_computing
+            # Lithuanian (lt): special rules for i with accents affect case conversion
+            # Kazakh (kk): may use dotless I in Latin script
+            # These cause issues when parsing assembly code with strcasecmp on registers/opcodes
+            # so we are introducing this workaround to change the locale to a Unicode-capable one
+            return False
+        # Check if the encoding is Unicode-capable
+        return encoding_name.lower().startswith('utf')
     except Exception:
         return False
 
 
-def _find_usable_locale() -> str:
+def _find_usable_locale() -> str | None:
+    """
+    Find the best locale for Unicode support.
+    All the locales available on the system (via locale -a) are checked.
+    The unicode locales are filtered.
+    The best locale is selected based on the proiority (the lowest number, the higher priority):
+        - user preferred Unicode    (priority -1)
+        - c.utf8                    (priority 0)
+        - universal Unicode         (priority 1)
+        - any english Unicode       (priority 2)
+    this concludes for the priority <= 1 to be sufficient in the search
+    """
+    locale_name, encoding = locale.getlocale()
+
+    err_msg = (
+        'Support for Unicode is required, '
+        'locale '
+        f'with {str(encoding) if locale_name is not None else "default"} '  # C locale can be interpreted as None
+        'encoding found on your system is not sufficient.'
+        ' Please refer to the manual for your operating system for details on locale installation.'
+    )
+
+    # Get available locales from the system
     try:
-        locales = (
-            subprocess.Popen(['locale', '-a'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            .communicate()[0]
-            .decode('ascii', 'replace')
-        )
-    except OSError:
-        locales = ''
+        result = subprocess.run(['locale', '-a'], capture_output=True, text=True, check=True)
+        system_locales = result.stdout.strip().split('\n')
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        raise FatalError('Failed to get available locales from the system')
 
-    usable_locales: list[str] = []
-    for line in locales.splitlines():
-        locale = line.strip()
-        locale_name = locale.lower().replace('-', '')
+    # (priority, locale_name, encoding) - lower priority = higher preference
+    best_locale: tuple[int, str, str] | None = None
+    found_locale: tuple[int, str, str] | None = None
+    for lcl in system_locales:
+        lcl = lcl.strip()
+        if 'utf' in str(lcl).lower().replace('-', ''):
+            # filter unicode locales
+            lcl_alias_name = lcl.lower()
+            if str(locale_name).lower().replace(' ', '-') in lcl_alias_name:
+                # user preferred language has unicode encoding (highest priority -1)
+                if str(locale_name).lower().startswith(('tr', 'az', 'lt', 'kk')):
+                    print_warning(
+                        f'Your locale "{locale_name}" has potential issues with case conversion for ASCII characters'
+                    )
+                    continue
+                found_locale = (-1, lcl_alias_name, lcl)
+            elif 'c.utf8' == lcl_alias_name:
+                # c.utf should be on most systems (second priority 0)
+                found_locale = (0, lcl_alias_name, lcl)
+            elif 'univ' in lcl_alias_name:
+                # universal unicode locale (third priority 1)
+                found_locale = (1, lcl_alias_name, lcl)
+            elif 'en_' in lcl_alias_name:
+                # any english unicode locale (fourth priority 2)
+                found_locale = (2, lcl_alias_name, lcl)
+            if found_locale is not None and (best_locale is None or found_locale[0] < best_locale[0]):
+                best_locale = found_locale
+                if best_locale[0] <= 1:
+                    # if there is a hit for the best locale to satisfy the unicode support (priority <= 1)
+                    # we can break the loop and use the best locale
+                    break
 
-        # C.UTF-8 is the best option, if supported
-        if locale_name == 'c.utf8':
-            return locale
+    if best_locale is None:
+        raise FatalError(err_msg)
 
-        if locale_name.endswith('.utf8'):
-            # Make a preference of english locales
-            if locale.startswith('en_'):
-                usable_locales.insert(0, locale)
-            else:
-                usable_locales.append(locale)
-
-    if not usable_locales:
-        raise FatalError(
-            'Support for Unicode filenames is required, but no suitable UTF-8 locale was found on your system.'
-            ' Please refer to the manual for your operating system for details on locale reconfiguration.'
-        )
-
-    return usable_locales[0]
+    # return encoding of the best locale
+    return str(best_locale[2])
 
 
 if __name__ == '__main__':
@@ -1050,15 +1097,20 @@ if __name__ == '__main__':
                 'documentation in order to set up a suitiable environment, or continue at your own risk.'
             )
         elif os.name == 'posix' and not _valid_unicode_config():
-            # Trying to find best utf-8 locale available on the system and restart python with it
+            # Trying to find best unicode locale available on the system and restart python with
             best_locale = _find_usable_locale()
 
-            print_warning(
-                'Your environment is not configured to handle unicode filenames outside of ASCII range.'
-                f' Environment variable LC_ALL is temporary set to {best_locale} for unicode support.'
-            )
-
-            os.environ['LC_ALL'] = best_locale
+            # Unset LC_ALL if it exists, as it takes precedence over LC_CTYPE
+            # This prevents infinite loops when LC_ALL is set to a non-Unicode locale
+            if best_locale:
+                print_warning(
+                    'Your environment is not configured to handle unicode characters.'
+                    ' Environment variable LC_CTYPE is temporary set to '
+                    f'{best_locale} (found on the system) for unicode support.'
+                )
+                if 'LC_ALL' in os.environ:
+                    del os.environ['LC_ALL']
+                os.environ['LC_CTYPE'] = best_locale
             ret = subprocess.call([sys.executable] + sys.argv, env=os.environ)
             if ret:
                 raise SystemExit(ret)
