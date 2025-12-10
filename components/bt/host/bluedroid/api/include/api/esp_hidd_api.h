@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -16,7 +16,7 @@
 extern "C" {
 #endif
 
-/// subclass of hid device
+/* subclass of hid device */
 #define ESP_HID_CLASS_UNKNOWN      (0x00<<2)           /*!< unknown HID device subclass */
 #define ESP_HID_CLASS_JOS          (0x01<<2)           /*!< joystick */
 #define ESP_HID_CLASS_GPD          (0x02<<2)           /*!< game pad */
@@ -57,9 +57,9 @@ typedef enum {
  */
 typedef enum {
     ESP_HIDD_CONN_STATE_CONNECTED,                   /*!< HID connection established */
-    ESP_HIDD_CONN_STATE_CONNECTING,                  /*!< connection to remote Bluetooth device */
+    ESP_HIDD_CONN_STATE_CONNECTING,                  /*!< connecting to remote Bluetooth device */
     ESP_HIDD_CONN_STATE_DISCONNECTED,                /*!< connection released */
-    ESP_HIDD_CONN_STATE_DISCONNECTING,               /*!< disconnecting to remote Bluetooth device*/
+    ESP_HIDD_CONN_STATE_DISCONNECTING,               /*!< disconnecting from remote Bluetooth device*/
     ESP_HIDD_CONN_STATE_UNKNOWN,                     /*!< unknown connection state */
 } esp_hidd_connection_state_t;
 
@@ -116,32 +116,35 @@ typedef struct {
  * @brief HID device callback function events
  */
 typedef enum {
-    ESP_HIDD_INIT_EVT = 0,       /*!< When HID device is initialized, the event comes */
-    ESP_HIDD_DEINIT_EVT,         /*!< When HID device is deinitialized, the event comes */
-    ESP_HIDD_REGISTER_APP_EVT,   /*!< When HID device application registered, the event comes */
-    ESP_HIDD_UNREGISTER_APP_EVT, /*!< When HID device application unregistered, the event comes */
-    ESP_HIDD_OPEN_EVT,           /*!< When HID device connection to host opened, the event comes */
-    ESP_HIDD_CLOSE_EVT,          /*!< When HID device connection to host closed, the event comes */
-    ESP_HIDD_SEND_REPORT_EVT,    /*!< When HID device send report to lower layer, the event comes */
-    ESP_HIDD_REPORT_ERR_EVT,     /*!< When HID device report handshanke error to lower layer, the event comes */
-    ESP_HIDD_GET_REPORT_EVT,     /*!< When HID device receives GET_REPORT request from host, the event comes */
-    ESP_HIDD_SET_REPORT_EVT,     /*!< When HID device receives SET_REPORT request from host, the event comes */
-    ESP_HIDD_SET_PROTOCOL_EVT,   /*!< When HID device receives SET_PROTOCOL request from host, the event comes */
-    ESP_HIDD_INTR_DATA_EVT,      /*!< When HID device receives DATA from host on intr, the event comes */
-    ESP_HIDD_VC_UNPLUG_EVT,      /*!< When HID device initiates Virtual Cable Unplug, the event comes */
-    ESP_HIDD_API_ERR_EVT         /*!< When HID device has API error, the event comes */
+    ESP_HIDD_INIT_EVT = 0,        /*!< HID device initialized. */
+    ESP_HIDD_DEINIT_EVT,          /*!< HID device deinitialized. */
+    ESP_HIDD_REGISTER_APP_EVT,    /*!< HID device application registered. */
+    ESP_HIDD_UNREGISTER_APP_EVT,  /*!< HID device application unregistered. */
+    ESP_HIDD_OPEN_EVT,            /*!< HID device connection to host opened. */
+    ESP_HIDD_CLOSE_EVT,           /*!< HID device connection to host closed. */
+    ESP_HIDD_SEND_REPORT_EVT,     /*!< HID device sent report to lower layer. */
+    ESP_HIDD_REPORT_ERR_EVT,      /*!< HID device reported handshake error to lower layer. */
+    ESP_HIDD_GET_REPORT_EVT,      /*!< HID device received GET_REPORT request from host. */
+    ESP_HIDD_SET_REPORT_EVT,      /*!< HID device received SET_REPORT request from host. */
+    ESP_HIDD_SET_PROTOCOL_EVT,    /*!< HID device received SET_PROTOCOL request from host. */
+    ESP_HIDD_INTR_DATA_EVT,       /*!< HID device received DATA from host on interrupt channel. */
+    ESP_HIDD_VC_UNPLUG_EVT,       /*!< HID device initiated Virtual Cable Unplug. */
+    ESP_HIDD_API_ERR_EVT          /*!< HID device had API error. */
 } esp_hidd_cb_event_t;
 
+/**
+ * @brief HID device status
+ */
 typedef enum {
-    ESP_HIDD_SUCCESS,
-    ESP_HIDD_ERROR,         /*!< general ESP HD error */
+    ESP_HIDD_SUCCESS,       /*!< successful */
+    ESP_HIDD_ERROR,         /*!< general ESP HID error */
     ESP_HIDD_NO_RES,        /*!< out of system resources */
     ESP_HIDD_BUSY,          /*!< Temporarily can not handle this request. */
     ESP_HIDD_NO_DATA,       /*!< No data. */
-    ESP_HIDD_NEED_INIT,     /*!< HIDD module shall init first */
-    ESP_HIDD_NEED_DEINIT,   /*!< HIDD module shall deinit first */
-    ESP_HIDD_NEED_REG,      /*!< HIDD module shall register first */
-    ESP_HIDD_NEED_DEREG,    /*!< HIDD module shall deregister first */
+    ESP_HIDD_NEED_INIT,     /*!< HIDD module must be initialized first. */
+    ESP_HIDD_NEED_DEINIT,   /*!< HIDD module must be deinitialized first. */
+    ESP_HIDD_NEED_REG,      /*!< HIDD module must be registered first. */
+    ESP_HIDD_NEED_DEREG,    /*!< HIDD module must be deregistered first. */
     ESP_HIDD_NO_CONNECTION, /*!< connection may have been closed */
 } esp_hidd_status_t;
 
@@ -270,8 +273,8 @@ typedef union {
 
 /**
  * @brief           HID device callback function type.
- * @param           event: Event type
- * @param           param: Point to callback parameter, currently is union type
+ * @param[in]       event: Event type
+ * @param[in]       param: Point to callback parameter, currently is union type
  */
 typedef void (*esp_hd_cb_t)(esp_hidd_cb_event_t event, esp_hidd_cb_param_t *param);
 
