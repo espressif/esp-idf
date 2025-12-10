@@ -24,6 +24,7 @@
 #include "esp_log.h"
 #include "esp_check.h"
 #include "esp_lcd_common.h"
+#include "freertos/FreeRTOS.h"
 
 static const char *TAG = "lcd_panel.io.spi";
 

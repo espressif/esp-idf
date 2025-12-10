@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,7 +7,6 @@
 #pragma once
 
 #include "esp_err.h"
-#include "freertos/FreeRTOS.h"
 #include "hal/spi_types.h"
 //for spi_bus_initialization functions. to be back-compatible
 #include "driver/spi_common.h"
@@ -219,7 +218,7 @@ esp_err_t spi_bus_remove_device(spi_device_handle_t handle);
  *         - ESP_ERR_INVALID_STATE if previous transactions are not finished
  *         - ESP_OK                on success
  */
-esp_err_t spi_device_queue_trans(spi_device_handle_t handle, spi_transaction_t *trans_desc, TickType_t ticks_to_wait);
+esp_err_t spi_device_queue_trans(spi_device_handle_t handle, spi_transaction_t *trans_desc, uint32_t ticks_to_wait);
 
 /**
  * @brief Get the result of a SPI transaction queued earlier by ``spi_device_queue_trans``.
@@ -241,7 +240,7 @@ esp_err_t spi_device_queue_trans(spi_device_handle_t handle, spi_transaction_t *
  *         - ESP_ERR_TIMEOUT       if there was no completed transaction before ticks_to_wait expired
  *         - ESP_OK                on success
  */
-esp_err_t spi_device_get_trans_result(spi_device_handle_t handle, spi_transaction_t **trans_desc, TickType_t ticks_to_wait);
+esp_err_t spi_device_get_trans_result(spi_device_handle_t handle, spi_transaction_t **trans_desc, uint32_t ticks_to_wait);
 
 /**
  * @brief Send a SPI transaction, wait for it to complete, and return the result
@@ -282,7 +281,7 @@ esp_err_t spi_device_transmit(spi_device_handle_t handle, spi_transaction_t *tra
  *         - ESP_ERR_INVALID_STATE if previous transactions are not finished
  *         - ESP_OK                on success
  */
-esp_err_t spi_device_polling_start(spi_device_handle_t handle, spi_transaction_t *trans_desc, TickType_t ticks_to_wait);
+esp_err_t spi_device_polling_start(spi_device_handle_t handle, spi_transaction_t *trans_desc, uint32_t ticks_to_wait);
 
 /**
  * @brief Poll until the polling transaction ends.
@@ -299,7 +298,7 @@ esp_err_t spi_device_polling_start(spi_device_handle_t handle, spi_transaction_t
  *         - ESP_ERR_TIMEOUT       if the transaction cannot finish before ticks_to_wait expired
  *         - ESP_OK                on success
  */
-esp_err_t spi_device_polling_end(spi_device_handle_t handle, TickType_t ticks_to_wait);
+esp_err_t spi_device_polling_end(spi_device_handle_t handle, uint32_t ticks_to_wait);
 
 /**
  * @brief Send a polling transaction, wait for it to complete, and return the result
@@ -336,7 +335,7 @@ esp_err_t spi_device_polling_transmit(spi_device_handle_t handle, spi_transactio
  *      - ESP_ERR_INVALID_ARG : ``wait`` is not set to portMAX_DELAY.
  *      - ESP_OK : Success.
  */
-esp_err_t spi_device_acquire_bus(spi_device_handle_t device, TickType_t wait);
+esp_err_t spi_device_acquire_bus(spi_device_handle_t device, uint32_t wait);
 
 /**
  * @brief Release the SPI bus occupied by the device. All other devices can start sending transactions.

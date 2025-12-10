@@ -27,7 +27,7 @@
 #include "wear_levelling.h"
 #include "esp_log.h"
 #include "esp_check.h"
-
+#include "esp_heap_caps.h"
 #include "sdkconfig.h"
 #include "perf_benchmark_example_tests.h"
 

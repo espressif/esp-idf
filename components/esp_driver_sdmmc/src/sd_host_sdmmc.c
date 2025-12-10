@@ -29,6 +29,7 @@
 #include "esp_private/esp_cache_private.h"
 #include "esp_private/gpio.h"
 #include "esp_private/sd_host_private.h"
+#include "freertos/FreeRTOS.h"
 
 typedef struct sd_platform_t {
     _lock_t              mutex;

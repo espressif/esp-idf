@@ -123,4 +123,7 @@ components/riscv/include/riscv/rvruntime-frames.h
 # should be private include, but 'private_include' is a subdir of public includes
 components/console/private_include/console_private.h
 
-# Missing extern "C"
+# Public driver headers contain FreeRTOS headers
+
+components/esp_driver_uart/include/driver/uart.h
+components/esp_driver_sdmmc/include/esp_private/sd_host_private.h

@@ -25,6 +25,7 @@
 #include "esp_private/sleep_retention.h"
 #include "esp_dma_utils.h"
 #include "hal/spi_hal.h"
+#include "freertos/FreeRTOS.h"
 #if CONFIG_IDF_TARGET_ESP32
 #include "soc/dport_reg.h"
 #endif

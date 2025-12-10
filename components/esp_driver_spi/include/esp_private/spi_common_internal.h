@@ -10,7 +10,6 @@
 
 #include <esp_intr_alloc.h>
 #include "driver/spi_common.h"
-#include "freertos/FreeRTOS.h"
 #include "hal/spi_types.h"
 #include "hal/dma_types.h"
 #include "soc/ext_mem_defs.h"   //for SOC_NON_CACHEABLE_OFFSET

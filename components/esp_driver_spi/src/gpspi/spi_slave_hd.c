@@ -836,7 +836,7 @@ esp_err_t s_spi_slave_hd_append_rxdma(spi_slave_hd_slot_t *host, uint8_t *data, 
 }
 
 //---------------------------------------------------------Segment Mode Transaction APIs-----------------------------------------------------------//
-esp_err_t spi_slave_hd_queue_trans(spi_host_device_t host_id, spi_slave_chan_t chan, spi_slave_hd_data_t *trans, TickType_t timeout)
+esp_err_t spi_slave_hd_queue_trans(spi_host_device_t host_id, spi_slave_chan_t chan, spi_slave_hd_data_t *trans, uint32_t timeout)
 {
     spi_slave_hd_slot_t *host = spihost[host_id];
 
@@ -864,7 +864,7 @@ esp_err_t spi_slave_hd_queue_trans(spi_host_device_t host_id, spi_slave_chan_t c
     return ESP_OK;
 }
 
-esp_err_t spi_slave_hd_get_trans_res(spi_host_device_t host_id, spi_slave_chan_t chan, spi_slave_hd_data_t **out_trans, TickType_t timeout)
+esp_err_t spi_slave_hd_get_trans_res(spi_host_device_t host_id, spi_slave_chan_t chan, spi_slave_hd_data_t **out_trans, uint32_t timeout)
 {
     esp_err_t ret;
     spi_slave_hd_slot_t *host = spihost[host_id];
@@ -887,7 +887,7 @@ void spi_slave_hd_write_buffer(spi_host_device_t host_id, int addr, uint8_t *dat
 }
 
 //---------------------------------------------------------Append Mode Transaction APIs-----------------------------------------------------------//
-esp_err_t spi_slave_hd_append_trans(spi_host_device_t host_id, spi_slave_chan_t chan, spi_slave_hd_data_t *trans, TickType_t timeout)
+esp_err_t spi_slave_hd_append_trans(spi_host_device_t host_id, spi_slave_chan_t chan, spi_slave_hd_data_t *trans, uint32_t timeout)
 {
     esp_err_t err;
     spi_slave_hd_slot_t *host = spihost[host_id];
@@ -921,7 +921,7 @@ esp_err_t spi_slave_hd_append_trans(spi_host_device_t host_id, spi_slave_chan_t 
     return err;
 }
 
-esp_err_t spi_slave_hd_get_append_trans_res(spi_host_device_t host_id, spi_slave_chan_t chan, spi_slave_hd_data_t **out_trans, TickType_t timeout)
+esp_err_t spi_slave_hd_get_append_trans_res(spi_host_device_t host_id, spi_slave_chan_t chan, spi_slave_hd_data_t **out_trans, uint32_t timeout)
 {
     esp_err_t ret;
     spi_slave_hd_slot_t *host = spihost[host_id];

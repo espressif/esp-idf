@@ -7,7 +7,6 @@
 #pragma once
 
 #include "esp_err.h"
-#include "freertos/FreeRTOS.h" // for TickType_t
 #include "hal/sdio_slave_types.h"
 
 #ifdef __cplusplus
@@ -160,7 +159,7 @@ esp_err_t sdio_slave_recv_load_buf(sdio_slave_buf_handle_t handle);
  *     - ESP_ERR_NOT_FINISHED   if returned buffer is not the end of a packet from the host, should call this API again until the end of a packet
  *     - ESP_OK if success
  */
-esp_err_t sdio_slave_recv_packet(sdio_slave_buf_handle_t* handle_ret, TickType_t wait);
+esp_err_t sdio_slave_recv_packet(sdio_slave_buf_handle_t* handle_ret, uint32_t wait);
 
 /** Get received data if exist. The driver returns the ownership of the buffer to the app.
  *
@@ -177,7 +176,7 @@ esp_err_t sdio_slave_recv_packet(sdio_slave_buf_handle_t* handle_ret, TickType_t
  *     - ESP_ERR_TIMEOUT        if timeout before receiving new data
  *     - ESP_OK if success
  */
-esp_err_t sdio_slave_recv(sdio_slave_buf_handle_t* handle_ret, uint8_t **out_addr, size_t *out_len, TickType_t wait);
+esp_err_t sdio_slave_recv(sdio_slave_buf_handle_t* handle_ret, uint8_t **out_addr, size_t *out_len, uint32_t wait);
 
 /** Retrieve the buffer corresponding to a handle.
  *
@@ -205,7 +204,7 @@ uint8_t* sdio_slave_recv_get_buf(sdio_slave_buf_handle_t handle, size_t *len_o);
  *     - ESP_ERR_TIMEOUT if the queue is still full until timeout.
  *     - ESP_OK if success.
  */
-esp_err_t sdio_slave_send_queue(uint8_t* addr, size_t len, void* arg, TickType_t wait);
+esp_err_t sdio_slave_send_queue(uint8_t* addr, size_t len, void* arg, uint32_t wait);
 
 /** Return the ownership of a finished transaction.
  * @param out_arg Argument of the finished transaction. Set to NULL if unused.
@@ -213,7 +212,7 @@ esp_err_t sdio_slave_send_queue(uint8_t* addr, size_t len, void* arg, TickType_t
  *
  * @return ESP_ERR_TIMEOUT if no transaction finished, or ESP_OK if succeed.
  */
-esp_err_t sdio_slave_send_get_finished(void** out_arg, TickType_t wait);
+esp_err_t sdio_slave_send_get_finished(void** out_arg, uint32_t wait);
 
 /** Start a new sending transfer, and wait for it (blocked) to be finished.
  *
@@ -289,7 +288,7 @@ void sdio_slave_clear_host_int(sdio_slave_hostint_t mask);
  *
  * @return ESP_OK if success, ESP_ERR_TIMEOUT if timeout.
  */
-esp_err_t sdio_slave_wait_int(int pos, TickType_t wait);
+esp_err_t sdio_slave_wait_int(int pos, uint32_t wait);
 
 #ifdef __cplusplus
 }

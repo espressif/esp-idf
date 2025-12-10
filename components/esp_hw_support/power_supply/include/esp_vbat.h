@@ -7,7 +7,6 @@
 #pragma once
 
 #include "sdkconfig.h"
-#include "freertos/FreeRTOS.h"
 #include "esp_err.h"
 
 #ifdef __cplusplus
@@ -32,7 +31,7 @@ typedef enum {
  *  - ESP_FAIL: Called in ISR context
  *  - ESP_ERR_TIMEOUT: Timeout waiting for battery charging to complete
  */
-esp_err_t esp_vbat_wait_battery_charge_done(TickType_t checking_period);
+esp_err_t esp_vbat_wait_battery_charge_done(uint32_t checking_period);
 #endif
 
 /**

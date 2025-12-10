@@ -120,7 +120,7 @@ IRAM_ATTR static void vbat_isr_handler(void *arg)
 }
 
 #if CONFIG_ESP_VBAT_USE_RECHARGEABLE_BATTERY
-esp_err_t esp_vbat_wait_battery_charge_done(TickType_t checking_period)
+esp_err_t esp_vbat_wait_battery_charge_done(uint32_t checking_period)
 {
     BaseType_t ret;
     if (!xPortInIsrContext()) {
