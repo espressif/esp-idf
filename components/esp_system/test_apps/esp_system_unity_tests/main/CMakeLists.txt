@@ -17,7 +17,8 @@ set(SRC  "test_app_main.c"
          "test_task_wdt.c")
 
 if(CONFIG_SOC_LIGHT_SLEEP_SUPPORTED OR CONFIG_SOC_DEEP_SLEEP_SUPPORTED)
-    list(APPEND SRC "test_sleep.c")
+    list(APPEND SRC "test_sleep.c"
+                    "test_sleep_uart.c")
 endif()
 
 if(CONFIG_SOC_SYSTIMER_SUPPORT_ETM)
