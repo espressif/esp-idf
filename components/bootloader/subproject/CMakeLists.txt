@@ -67,7 +67,6 @@ idf_build_set_property(__COMPONENT_REQUIRES_COMMON "${common_req}")
 idf_build_set_property(__OUTPUT_SDKCONFIG 0)
 # Define a property for the default linker script
 set(LD_DEFAULT_PATH "${CMAKE_CURRENT_SOURCE_DIR}/main/ld/${IDF_TARGET}")
-idf_build_set_property(BOOTLOADER_LINKER_SCRIPT "${LD_DEFAULT_PATH}/bootloader.rom.ld" APPEND)
 project(bootloader)
 if(CONFIG_ESP32P4_REV_MIN_300)
     target_linker_script("__idf_main" INTERFACE "${LD_DEFAULT_PATH}/bootloader.rev3.ld.in")
