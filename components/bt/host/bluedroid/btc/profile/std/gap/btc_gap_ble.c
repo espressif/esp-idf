@@ -2182,14 +2182,12 @@ void btc_gap_ble_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
             uint16_t params_len = src->per_adv_subevent_data_params.num_subevents_with_data * sizeof(esp_ble_subevent_params);
             dst->per_adv_subevent_data_params.subevent_params = osi_malloc(params_len);
             if (dst->per_adv_subevent_data_params.subevent_params) {
-
                 for (uint8_t i = 0; i < src->per_adv_subevent_data_params.num_subevents_with_data; i++)
                 {
-                    memcpy(&dst->per_adv_subevent_data_params.subevent_params[i], &src->per_adv_subevent_data_params.subevent_params[i], params_len);
-                    // dst->per_adv_subevent_data_params.subevent_params[i].subevent = src->per_adv_subevent_data_params.subevent_params[i].subevent;
-                    // dst->per_adv_subevent_data_params.subevent_params[i].response_slot_start = src->per_adv_subevent_data_params.subevent_params[i].response_slot_start;
-                    // dst->per_adv_subevent_data_params.subevent_params[i].response_slot_count = src->per_adv_subevent_data_params.subevent_params[i].response_slot_count;
-                    // dst->per_adv_subevent_data_params.subevent_params[i].subevent_data_len = src->per_adv_subevent_data_params.subevent_params[i].subevent_data_len;
+                    /* Fix: Use sizeof(esp_ble_subevent_params) instead of params_len to prevent buffer overflow */
+                    memcpy(&dst->per_adv_subevent_data_params.subevent_params[i],
+                           &src->per_adv_subevent_data_params.subevent_params[i],
+                           sizeof(esp_ble_subevent_params));
                     dst->per_adv_subevent_data_params.subevent_params[i].subevent_data = osi_malloc(src->per_adv_subevent_data_params.subevent_params[i].subevent_data_len);
                     if (dst->per_adv_subevent_data_params.subevent_params[i].subevent_data) {
                         memcpy(dst->per_adv_subevent_data_params.subevent_params[i].subevent_data, src->per_adv_subevent_data_params.subevent_params[i].subevent_data, src->per_adv_subevent_data_params.subevent_params[i].subevent_data_len);
