@@ -23,6 +23,12 @@ extern "C" {
 #define IEEE802154_OQPSK_2P4G_CHANNEL_MIN 11
 #define IEEE802154_OQPSK_2P4G_CHANNEL_MAX 26
 
+#define IEEE802154_RETURN_ON_FALSE_SILENTLY(a, ret) do {    \
+                if (unlikely(!(a))) {                       \
+                    return ret;                             \
+                }                                           \
+} while(0)
+
 static inline bool ieee802154_is_valid_channel(uint8_t channel)
 {
     return ((channel <= IEEE802154_OQPSK_2P4G_CHANNEL_MAX) && (channel >= IEEE802154_OQPSK_2P4G_CHANNEL_MIN));

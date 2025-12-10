@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,7 +10,7 @@
 #include <stdbool.h>
 #include "esp_err.h"
 
-#define US_PER_SYMBLE 16
+#define US_PER_SYMBOL 16
 
 #ifdef __cplusplus
 extern "C" {
@@ -61,8 +61,8 @@ typedef enum {
 } esp_ieee802154_pending_mode_t;
 
 /**
-* @brief The four groups of mac filter interface index.
-*/
+ * @brief The four groups of mac filter interface index.
+ */
 typedef enum {
     ESP_IEEE802154_MULTIPAN_0 = 0,
     ESP_IEEE802154_MULTIPAN_1 = 1,
@@ -143,13 +143,13 @@ typedef esp_err_t (*esp_ieee802154_enh_ack_generator_cb_t)(uint8_t *frame, esp_i
  *
  */
 typedef struct {
-    esp_ieee802154_receive_done_cb_t rx_done_cb;                   /*!<The callback to process Rx Done event */
-    esp_ieee802154_receive_sfd_done_cb_t rx_sfd_done_cb;           /*!<The callback to process Rx SFD Done event */
-    esp_ieee802154_transmit_done_cb_t tx_done_cb;                  /*!<The callback to process Tx Done event */
-    esp_ieee802154_transmit_failed_cb_t tx_failed_cb;              /*!<The callback to process Tx Failed event */
-    esp_ieee802154_transmit_sfd_done_cb_t tx_sfd_done_cb;          /*!<The callback to process Tx SFD Done event */
-    esp_ieee802154_energy_detect_done_cb_t ed_done_cb;             /*!<The callback to process ED Done event */
-    esp_ieee802154_enh_ack_generator_cb_t enh_ack_generator_cb;    /*!<The callback to process enh-ack generating */
+    esp_ieee802154_receive_done_cb_t rx_done_cb;                   /*!< The callback to process Rx Done event */
+    esp_ieee802154_receive_sfd_done_cb_t rx_sfd_done_cb;           /*!< The callback to process Rx SFD Done event */
+    esp_ieee802154_transmit_done_cb_t tx_done_cb;                  /*!< The callback to process Tx Done event */
+    esp_ieee802154_transmit_failed_cb_t tx_failed_cb;              /*!< The callback to process Tx Failed event */
+    esp_ieee802154_transmit_sfd_done_cb_t tx_sfd_done_cb;          /*!< The callback to process Tx SFD Done event */
+    esp_ieee802154_energy_detect_done_cb_t ed_done_cb;             /*!< The callback to process ED Done event */
+    esp_ieee802154_enh_ack_generator_cb_t enh_ack_generator_cb;    /*!< The callback to process Enh-ack generating */
 } esp_ieee802154_event_cb_list_t;
 
 #ifdef __cplusplus
