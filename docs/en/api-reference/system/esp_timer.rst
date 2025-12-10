@@ -34,6 +34,7 @@ Features and Concepts
 The ESP Timer API provides:
 
 - One-shot and periodic timers
+- Relative and absolute timing
 - Multiple callback dispatch methods
 - Handling overdue callbacks
 - Bit range: {IDF_TARGET_HR_TIMER_Resolution} bits
@@ -43,7 +44,7 @@ The ESP Timer API provides:
 One-Shot and Periodic Timers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-A one-shot timer invokes its callback function only once upon expiration and then stops operation. One-shot timers are useful for single delayed actions, such as turning off a device or reading a sensor after a specified time interval.
+A one-shot timer invokes its callback function only once upon expiration and then stops operation. One-shot timers are useful for single delayed or timed actions, such as turning off a device or reading a sensor after a specified time interval or at a specified time point.
 
 A periodic timer invokes its callback function upon expiration and restarts itself automatically, resulting in the callback function being invoked at a defined interval until the periodic timer is manually stopped. Periodic timers are useful for repeated actions, such as sampling sensor data, updating display information, or generating a waveform.
 
@@ -205,12 +206,12 @@ The general procedure to create, start, stop, and delete a timer is as follows:
 
 2. Start the timer in one-shot mode or periodic mode depending on your requirements
 
-    - To start the timer in one-shot mode, call :cpp:func:`esp_timer_start_once`.
-    - To start the timer in periodic mode, call :cpp:func:`esp_timer_start_periodic`; the timer will continue running until you explicitly stop it using :cpp:func:`esp_timer_stop`.
+    - To start the timer in one-shot mode, call :cpp:func:`esp_timer_start_once` to invoke the callback after a specified timeout duration, or :cpp:func:`esp_timer_start_once_at` to invoke it at a specific absolute time.
+    - To start the timer in periodic mode, call :cpp:func:`esp_timer_start_periodic` to invoke the callback repeatedly at regular intervals, or :cpp:func:`esp_timer_start_periodic_at` to start the first invocation at a specific absolute time and then repeat at regular intervals; the timer will continue running until you explicitly stop it using :cpp:func:`esp_timer_stop`.
 
     .. note::
 
-        When executing a start function, ensure that the timer is not running. If a timer is running, either call :cpp:func:`esp_timer_restart` or stop it first using :cpp:func:`esp_timer_stop` and then call one of the start functions.
+        When executing a start function, ensure that the timer is not running. If a timer is running, either call :cpp:func:`esp_timer_restart` / :cpp:func:`esp_timer_restart_at` or stop it first using :cpp:func:`esp_timer_stop` and then call one of the start functions.
 
 3. Stop the timer
 

@@ -65,6 +65,7 @@ static esp_err_t timer_remove(esp_timer_handle_t timer);
 static bool timer_armed(esp_timer_handle_t timer);
 static void timer_list_lock(esp_timer_dispatch_t timer_type);
 static void timer_list_unlock(esp_timer_dispatch_t timer_type);
+static esp_err_t timer_restart(esp_timer_handle_t timer, uint64_t timeout_us, uint64_t alarm_us);
 
 #if WITH_PROFILING
 static void timer_insert_inactive(esp_timer_handle_t timer);
@@ -134,6 +135,20 @@ esp_err_t esp_timer_create(const esp_timer_create_args_t* args,
 */
 esp_err_t ESP_TIMER_IRAM_ATTR esp_timer_restart(esp_timer_handle_t timer, uint64_t timeout_us)
 {
+    return timer_restart(timer, timeout_us, 0);
+}
+
+esp_err_t ESP_TIMER_IRAM_ATTR esp_timer_restart_at(esp_timer_handle_t timer, uint64_t period_us, uint64_t first_alarm_us)
+{
+    const uint64_t min_overhead_us = esp_timer_impl_get_min_period_us();
+    if (first_alarm_us + min_overhead_us < esp_timer_impl_get_time()) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    return timer_restart(timer, period_us, first_alarm_us);
+}
+
+static esp_err_t ESP_TIMER_IRAM_ATTR timer_restart(esp_timer_handle_t timer, uint64_t timeout_us, uint64_t first_alarm_us)
+{
     esp_err_t ret = ESP_OK;
 
     if (timer == NULL) {
@@ -163,11 +178,11 @@ esp_err_t ESP_TIMER_IRAM_ATTR esp_timer_restart(esp_timer_handle_t timer, uint64
             /* Remove function got rid of the alarm and period fields, restore them */
             const uint64_t min_period = esp_timer_impl_get_min_period_us();
             const uint64_t new_period = MAX(timeout_us, min_period);
-            timer->alarm = now + new_period;
+            timer->alarm = (first_alarm_us != 0) ? first_alarm_us : now + new_period;
             timer->period = new_period;
         } else {
             /* The new one-shot alarm shall be triggered timeout_us after the current time */
-            timer->alarm = now + timeout_us;
+            timer->alarm = (first_alarm_us != 0) ? first_alarm_us : now + timeout_us;
             timer->period = 0;
         }
         ret = timer_insert(timer, false);
@@ -178,7 +193,7 @@ esp_err_t ESP_TIMER_IRAM_ATTR esp_timer_restart(esp_timer_handle_t timer, uint64
     return ret;
 }
 
-esp_err_t ESP_TIMER_IRAM_ATTR esp_timer_start_once(esp_timer_handle_t timer, uint64_t timeout_us)
+static esp_err_t ESP_TIMER_IRAM_ATTR timer_init(esp_timer_handle_t timer, uint64_t period_us, uint64_t first_alarm_us)
 {
     if (timer == NULL) {
         return ESP_ERR_INVALID_ARG;
@@ -186,7 +201,7 @@ esp_err_t ESP_TIMER_IRAM_ATTR esp_timer_start_once(esp_timer_handle_t timer, uin
     if (!is_initialized()) {
         return ESP_ERR_INVALID_STATE;
     }
-    int64_t alarm = esp_timer_get_time() + timeout_us;
+
     esp_timer_dispatch_t dispatch_method = timer->flags & FL_ISR_DISPATCH_METHOD;
     esp_err_t err;
 
@@ -200,37 +215,7 @@ esp_err_t ESP_TIMER_IRAM_ATTR esp_timer_start_once(esp_timer_handle_t timer, uin
     if (timer_armed(timer)) {
         err = ESP_ERR_INVALID_STATE;
     } else {
-        timer->alarm = alarm;
-        timer->period = 0;
-#if WITH_PROFILING
-        timer->times_armed++;
-#endif
-        err = timer_insert(timer, false);
-    }
-    timer_list_unlock(dispatch_method);
-    return err;
-}
-
-esp_err_t ESP_TIMER_IRAM_ATTR esp_timer_start_periodic(esp_timer_handle_t timer, uint64_t period_us)
-{
-    if (timer == NULL) {
-        return ESP_ERR_INVALID_ARG;
-    }
-    if (!is_initialized()) {
-        return ESP_ERR_INVALID_STATE;
-    }
-    uint64_t min_period = esp_timer_impl_get_min_period_us();
-    period_us = MAX(period_us, min_period);
-    int64_t alarm = esp_timer_get_time() + period_us;
-    esp_timer_dispatch_t dispatch_method = timer->flags & FL_ISR_DISPATCH_METHOD;
-    esp_err_t err;
-    timer_list_lock(dispatch_method);
-
-    /* Check if the timer is armed once the list is locked to avoid a data race */
-    if (timer_armed(timer)) {
-        err = ESP_ERR_INVALID_STATE;
-    } else {
-        timer->alarm = alarm;
+        timer->alarm = first_alarm_us;
         timer->period = period_us;
 #if WITH_PROFILING
         timer->times_armed++;
@@ -240,6 +225,37 @@ esp_err_t ESP_TIMER_IRAM_ATTR esp_timer_start_periodic(esp_timer_handle_t timer,
     }
     timer_list_unlock(dispatch_method);
     return err;
+}
+
+esp_err_t ESP_TIMER_IRAM_ATTR esp_timer_start_once(esp_timer_handle_t timer, uint64_t timeout_us)
+{
+    return timer_init(timer, 0, esp_timer_get_time() + timeout_us);
+}
+
+esp_err_t ESP_TIMER_IRAM_ATTR esp_timer_start_once_at(esp_timer_handle_t timer, uint64_t alarm_us)
+{
+    const uint64_t min_overhead_us = esp_timer_impl_get_min_period_us();
+    if (alarm_us + min_overhead_us < esp_timer_impl_get_time()) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    return timer_init(timer, 0, alarm_us);
+}
+
+esp_err_t ESP_TIMER_IRAM_ATTR esp_timer_start_periodic(esp_timer_handle_t timer, uint64_t period_us)
+{
+    uint64_t min_period = esp_timer_impl_get_min_period_us();
+    period_us = MAX(period_us, min_period);
+    return timer_init(timer, period_us, esp_timer_get_time() + period_us);
+}
+
+esp_err_t ESP_TIMER_IRAM_ATTR esp_timer_start_periodic_at(esp_timer_handle_t timer, uint64_t period_us, uint64_t first_alarm_us)
+{
+    const uint64_t min_overhead_us = esp_timer_impl_get_min_period_us();
+    if (first_alarm_us + min_overhead_us < esp_timer_impl_get_time()) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    period_us = MAX(period_us, min_overhead_us);
+    return timer_init(timer, period_us, first_alarm_us);
 }
 
 esp_err_t ESP_TIMER_IRAM_ATTR esp_timer_stop(esp_timer_handle_t timer)
