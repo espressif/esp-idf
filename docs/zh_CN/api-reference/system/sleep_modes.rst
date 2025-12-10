@@ -434,6 +434,17 @@ flash 断电
         - Light-sleep 模式下，ESP-IDF 没有提供保证 flash 一定会被断电的机制。
         - 不管用户的配置如何，函数 :cpp:func:`esp_deep_sleep_start` 都会强制断电 flash。
 
+flash 进入 deep power-down 模式
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+除了通过让 flash 完全断电来降低芯片功耗之外，还可以通过启用 Kconfig 配置项 :ref:`CONFIG_ESP_SLEEP_SET_FLASH_DPD`，进一步减少休眠期间 flash 的功耗。与直接对 flash 断电相比，该功能能够避免芯片从休眠唤醒时 flash 重新上电所带来的额外延迟，同时也能保持极低的功耗。大多数 flash 在进入 Deep Power-Down（DPD）模式后电流消耗低于 1 µA。
+
+在几乎所有应用场景中，使用 DPD 模式都比直接断电 flash 更具优势，兼顾了安全性与低功耗表现。
+
+.. warning::
+
+    使用该功能前需要查阅使用芯片所搭载的 flash 的技术手册是否支持 deep power-down 模式。
+
 配置 IO（仅适用于 Deep-sleep）
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 

@@ -27,6 +27,11 @@ else()
             "spi_flash_hpm_enable.c")
     endif()
 
+    if(CONFIG_ESP_SLEEP_SET_FLASH_DPD)
+        list(APPEND srcs
+            "spi_flash_dpd_enable.c")
+    endif()
+
     # New implementation after IDF v4.0
     list(APPEND srcs
         "spi_flash_chip_drivers.c"

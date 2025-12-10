@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -124,6 +124,26 @@ static inline void spi_flash_ll_set_write_protect(spi_dev_t *dev, bool wp)
     } else {
         dev->cmd.flash_wren = 1;
     }
+}
+
+/**
+ * Drive Flash into power down mode
+ *
+ * @param dev Beginning address of the peripheral registers.
+ */
+static inline void spi_flash_ll_enter_dpd(spi_dev_t *dev)
+{
+    dev->cmd.flash_dp = 1;
+}
+
+/**
+ * Releases Flash from the power-down state
+ *
+ * @param dev Beginning address of the peripheral registers.
+ */
+static inline void spi_flash_ll_exit_dpd(spi_dev_t *dev)
+{
+    dev->cmd.flash_res = 1;
 }
 
 /**

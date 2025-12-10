@@ -626,6 +626,7 @@ typedef struct {
 #define RTC_SLEEP_USE_ADC_TESEN_MONITOR BIT(17)
 #define RTC_SLEEP_NO_ULTRA_LOW          BIT(18) //!< Avoid using ultra low power in deep sleep, in which RTCIO cannot be used as input, and RTCMEM can't work under high temperature
 #define RTC_SLEEP_XTAL_AS_RTC_FAST      BIT(19)
+#define RTC_SLEEP_FLASH_DPD             BIT(20)
 
 /**
  * Default initializer for rtc_sleep_config_t

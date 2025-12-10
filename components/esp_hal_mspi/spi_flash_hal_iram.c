@@ -88,6 +88,22 @@ esp_err_t spi_flash_hal_set_write_protect(spi_flash_host_inst_t *host, bool wp)
     return ESP_OK;
 }
 
+esp_err_t spi_flash_hal_enter_dpd_mode(spi_flash_host_inst_t *host)
+{
+    spi_dev_t *dev = get_spi_dev(host);
+    spi_flash_ll_enter_dpd(dev);
+    host->driver->poll_cmd_done(host);
+    return ESP_OK;
+}
+
+esp_err_t spi_flash_hal_exit_dpd_mode(spi_flash_host_inst_t *host)
+{
+    spi_dev_t *dev = get_spi_dev(host);
+    spi_flash_ll_exit_dpd(dev);
+    host->driver->poll_cmd_done(host);
+    return ESP_OK;
+}
+
 #else
 
 static inline spi_dev_t *get_spi_dev(spi_flash_host_inst_t *host)

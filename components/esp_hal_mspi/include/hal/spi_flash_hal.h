@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -191,6 +191,22 @@ esp_err_t spi_flash_hal_read(spi_flash_host_inst_t *host, void *buffer, uint32_t
  * @return always return ESP_OK.
  */
 esp_err_t spi_flash_hal_set_write_protect(spi_flash_host_inst_t *host, bool wp);
+
+/**
+ * @brief Send the deep power down (b9h) command to the flash chip.
+ *
+ * @param host The driver context.
+ * @return always return ESP_OK.
+ */
+esp_err_t spi_flash_hal_enter_dpd_mode(spi_flash_host_inst_t *host);
+
+/**
+ * @brief Send the release from deep power down (abh) command to the flash chip.
+ *
+ * @param host The driver context.
+ * @return always return ESP_OK.
+ */
+esp_err_t spi_flash_hal_exit_dpd_mode(spi_flash_host_inst_t *host);
 
 /**
  * Check whether the SPI host is idle and can perform other operations.

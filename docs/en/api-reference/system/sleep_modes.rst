@@ -434,6 +434,17 @@ However, for those who have fully understood the risk and are still willing to p
         - ESP-IDF does not provide any mechanism that can power down the flash in all conditions when Light-sleep.
         - :cpp:func:`esp_deep_sleep_start` function forces power down flash regardless of user configuration.
 
+Flash Entering Deep Power-Down Mode
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In addition to reducing power consumption by completely powering off the flash, you can further lower flash power usage during sleep by enabling the Kconfig option :ref:`CONFIG_ESP_SLEEP_SET_FLASH_DPD`. Compared with fully cutting off the flash power, this feature avoids the extra delay caused by re-powering the flash when the chip wakes up from sleep, while still achieving extremely low power consumption. Most flashes draw less than 1 µA when entering Deep Power-Down (DPD) mode.
+
+In almost all use cases, using DPD mode provides better overall benefits than fully powering off the flash, offering both improved safety and lower power consumption.
+
+.. warning::
+
+    Before using this feature, check the datasheet of the flash device used on your chip to ensure it supports the Deep Power-Down mode.
+
 Configuring IOs (Deep-sleep Only)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 

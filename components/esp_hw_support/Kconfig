@@ -214,6 +214,52 @@ menu "Hardware Settings"
 
                 NOTE: Enabling these callbacks may change sleep duration calculations based on time spent in
                 callback and hence it is highly recommended to keep them as short as possible.
+
+        config ESP_SLEEP_SET_FLASH_DPD
+            bool "Set SPI flash to deep power-down mode in light sleep"
+            depends on (!APP_BUILD_TYPE_PURE_RAM_APP && !ESP_SLEEP_POWER_DOWN_FLASH && !SPI_FLASH_ROM_IMPL)
+            default y if (IDF_TARGET_ESP32H4 || IDF_TARGET_ESP32H21)
+            default y if (IDF_TARGET_ESP32P4 && ESP32P4_SELECTS_REV_LESS_V3)
+            default n
+            help
+                Deep Power-Down mode is a power mode supported by most SPI Flash, SPI Flash has better power
+                consumption performance in this mode comparing to standby mode (hold CS).
+                Enabling this option will set the SPI Flash to deep power down mode during lightsleep to save power,
+                which will reduce the sleep current by about 10uA. And you can also use this option to reduce power
+                consumption when using PSRAM
+
+                NOTE: We have conducted sufficient testing on ESP32H21, ESP32H4 and ESP32P4(less v3). If you plan to
+                use a customized flash chip, or if you are working with other ESP32-series chips, please make sure to
+                check the corresponding flash datasheet or consult us directly. This is to ensure that using the B9h
+                command to enter Deep Power-Down mode and ABh to exit Deep Power-Down mode will not introduce any
+                potential issues.
+
+        config ESP_SLEEP_SPI_FLASH_ENTER_DPD_MODE_DELAY
+            int "SPI Flash enter deep power-down time delay (in us)"
+            depends on ESP_SLEEP_SET_FLASH_DPD
+            default 25
+            range 0 100
+            help
+                When used to set the SPI Flash to enter the Deep Power-Down mode, the command is issued by driving
+                CS pin low, shifting the instruction code "B9H" and driving CS high, enter Deep Power-Down mode will
+                take the time duration of tDP before the supply current is reduced and Deep Power-down mode is
+                entered. The CS pin must keep high during the tDP time duration, adjust the value of this option to
+                configure the value of tDP, different types of flash require different tDP values, usually no more
+                than 20us, please refer to the datasheet of the used Flash to configure this option.
+
+        config ESP_SLEEP_SPI_FLASH_EXIT_DPD_MODE_DELAY
+            int "SPI Flash exit from deep power-down time delay (in us)"
+            depends on ESP_SLEEP_SET_FLASH_DPD
+            default 40
+            range 0 100
+            help
+                When used to exit the SPI Flash from the Deep Power-Down mode, the command is issued by driving the
+                CS pin low, shifting the instruction code "ABH" and driving CS high, release from Deep Power-Down will
+                take the time duration of tRES1 before the SPI FLASH will resume normal operation and other command are
+                accepted. The CS pin must keep high during the tRES1 time duration, adjust the value of this option
+                to configure the value of tRES1, different types of flash require different tRES1 values, usually no
+                more than 35us, please refer to the datasheet of the used Flash to configure this option.
+
     endmenu
 
     menu "RTC Clock Config"
