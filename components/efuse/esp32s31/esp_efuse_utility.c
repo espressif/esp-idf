@@ -19,6 +19,7 @@ extern uint32_t virt_blocks[EFUSE_BLK_MAX][COUNT_EFUSE_REG_PER_BLOCK];
 #endif // CONFIG_EFUSE_VIRTUAL
 
 /*Range addresses to read blocks*/
+// TODO: [ESP32S31] IDF-14688 the table is written for passing static check, not accurate, please check.
 const esp_efuse_range_addr_t range_read_addr_blocks[] = {
     {EFUSE_RD_WR_DIS_REG,       EFUSE_RD_REPEAT_DATA4_REG},      // range address of EFUSE_BLK0  REPEAT
     {EFUSE_RD_MAC_SYS0_REG,    EFUSE_RD_MAC_SYS5_REG},      // range address of EFUSE_BLK1  MAC_SPI_8M
@@ -28,6 +29,7 @@ const esp_efuse_range_addr_t range_read_addr_blocks[] = {
     {EFUSE_RD_KEY1_DATA0_REG,   EFUSE_RD_KEY1_DATA7_REG},        // range address of EFUSE_BLK5  KEY1
     {EFUSE_RD_KEY2_DATA0_REG,   EFUSE_RD_KEY2_DATA7_REG},        // range address of EFUSE_BLK6  KEY2
     {EFUSE_RD_KEY3_DATA0_REG,   EFUSE_RD_KEY3_DATA7_REG},        // range address of EFUSE_BLK7  KEY3
+    {EFUSE_RD_KEY4_DATA0_REG,   EFUSE_RD_KEY4_DATA7_REG},        // range address of EFUSE_BLK8  KEY4
     {EFUSE_RD_KEY4_DATA0_REG,   EFUSE_RD_KEY4_DATA7_REG},        // range address of EFUSE_BLK8  KEY4
 };
 

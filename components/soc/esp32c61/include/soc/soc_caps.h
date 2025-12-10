@@ -71,6 +71,7 @@
 #define SOC_PM_SUPPORTED                1
 #define SOC_ECDSA_SUPPORTED             1
 #define SOC_SPIRAM_SUPPORTED            1
+#define SOC_SPI_EXTERNAL_NOR_FLASH_SUPPORTED    1
 /*-------------------------- XTAL CAPS ---------------------------------------*/
 #define SOC_XTAL_SUPPORT_40M                        1
 #define SOC_XTAL_CLOCK_PATH_DEPENDS_ON_TOP_DOMAIN   1

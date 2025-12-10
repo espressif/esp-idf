@@ -23,3 +23,4 @@
 #define ESP_ROM_HAS_NEWLIB                  (1) // ROM has newlib (at least parts of it) functions included
 #define ESP_ROM_HAS_NEWLIB_NANO_FORMAT      (1) // ROM has the newlib nano version of formatting functions
 #define ESP_ROM_HAS_VERSION                 (1) // ROM has version/eco information
+#define ESP_ROM_MULTI_HEAP_WALK_PATCH       (1) // ROM does not contain the patch of multi_heap_walk()

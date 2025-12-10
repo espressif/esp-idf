@@ -11,4 +11,4 @@
 // TODO: to be checked IDF-14632
 
 /* Hardware random number generator register */
-#define WDEV_RND_REG    0//0x20814000
+#define WDEV_RND_REG    0x20814000

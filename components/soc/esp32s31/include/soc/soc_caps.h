@@ -259,12 +259,10 @@
 
 // /*-------------------------- CLOCK SUBSYSTEM CAPS ----------------------------------------*/
 // TODO: [ESP32S31] IDF-14733
-#define SOC_CLK_RC_FAST_SUPPORT_CALIBRATION       (1)
 #define SOC_MODEM_CLOCK_IS_INDEPENDENT            (1)
 
 #define SOC_CLK_APLL_SUPPORTED                    (1)     /*!< Support Audio PLL */
 #define SOC_CLK_SDIO_PLL_SUPPORTED                (1)     /*!< Support SDIO PLL */
-#define SOC_CLK_XTAL32K_SUPPORTED                 (1)     /*!< Support to connect an external low frequency crystal */
 #define SOC_CLK_RC32K_SUPPORTED                   (1)     /*!< Support an internal 32kHz RC oscillator */
 
 #define SOC_CLK_LP_FAST_SUPPORT_LP_PLL            (1)      /*!< Support LP_PLL clock as the LP_FAST clock source */

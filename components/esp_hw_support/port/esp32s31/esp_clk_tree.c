@@ -30,6 +30,8 @@ esp_err_t esp_clk_tree_src_get_freq_hz(soc_module_clk_t clk_src, esp_clk_tree_sr
     ESP_RETURN_ON_FALSE(precision < ESP_CLK_TREE_SRC_FREQ_PRECISION_INVALID, ESP_ERR_INVALID_ARG, TAG, "unknown precision");
     ESP_RETURN_ON_FALSE(freq_value, ESP_ERR_INVALID_ARG, TAG, "null pointer");
 
+#if SOC_CLK_TREE_SUPPORTED
+
     uint32_t clk_src_freq = 0;
     switch (clk_src) {
     case SOC_MOD_CLK_CPU:
@@ -89,6 +91,7 @@ esp_err_t esp_clk_tree_src_get_freq_hz(soc_module_clk_t clk_src, esp_clk_tree_sr
     ESP_RETURN_ON_FALSE(clk_src_freq, ESP_FAIL, TAG,
                         "freq shouldn't be 0, calibration failed");
     *freq_value = clk_src_freq;
+#endif // SOC_CLK_TREE_SUPPORTED
     return ESP_OK;
 }
 

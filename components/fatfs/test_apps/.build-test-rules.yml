@@ -32,9 +32,9 @@ components/fatfs/test_apps/flash_wl:
 
 components/fatfs/test_apps/sdcard:
   disable:
-    - if: IDF_TARGET in ["esp32h21", "esp32h4"]
+    - if: SOC_GPSPI_SUPPORTED != 1
       temporary: true
-      reason: not supported yet # TODO: [esp32h21] IDF-11593 [ESP32H4] IDF-12372
+      reason: not supported yet
   disable_test:
     - if: IDF_TARGET not in ["esp32", "esp32c3"]
       temporary: true

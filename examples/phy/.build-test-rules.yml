@@ -2,15 +2,15 @@
 
 examples/phy/antenna:
   disable:
-    - if: IDF_TARGET in ["esp32c5", "esp32c61", "esp32h21", "esp32h4"]
+    - if: IDF_TARGET in ["esp32c5", "esp32c61", "esp32h21", "esp32h4", "esp32s31"]
       temporary: true
-      reason: not supported yet  # TODO: [ESP32C5] IDF-8851, [esp32c61] IDF-9859, [esp32h21] IDF-12041, [ESP32H4] IDF-12716
+      reason: not supported yet  # TODO: [ESP32C5] IDF-8851, [esp32c61] IDF-9859, [esp32h21] IDF-12041, [ESP32H4] IDF-12716 [ESP32S31] IDF-14930
     - if: IDF_TARGET in ["esp32p4", "esp32h2"]
       reason: not supported
 examples/phy/cert_test:
   disable:
     - if: IDF_TARGET in ["esp32p4"]
       reason: not supported
-    - if: IDF_TARGET in ["esp32c61", "esp32h21", "esp32h4"]
+    - if: IDF_TARGET in ["esp32c61", "esp32h21", "esp32h4", "esp32s31"]
       temporary: true
-      reason: not supported yet  # TODO: [ESP32C5] IDF-8851, [esp32c61] IDF-9859, [esp32h21] IDF-12041, [ESP32H4] IDF-12716
+      reason: not supported yet  # TODO: [ESP32C5] IDF-8851, [esp32c61] IDF-9859, [esp32h21] IDF-12041, [ESP32H4] IDF-12716 [ESP32S31] IDF-14930

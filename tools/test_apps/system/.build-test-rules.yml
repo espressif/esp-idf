@@ -5,6 +5,9 @@ tools/test_apps/system/bootloader_sections:
     - if: CONFIG_NAME == "rtc_retain" and SOC_RTC_FAST_MEM_SUPPORTED != 1
     - if: CONFIG_NAME == "flash_encryption_key_mgr" and (SOC_KEY_MANAGER_FE_KEY_DEPLOY != 1 or IDF_TARGET == "esp32p4")
     - if: CONFIG_NAME == "flash_encryption_key_mgr_esp32p4" and IDF_TARGET != "esp32p4"
+    - if: IDF_TARGET == "esp32s31"
+      temporary: true
+      reason: cannot pass build because flash encryption is not supported yet # TODO: [ESP32S31] IDF-14628
 
 tools/test_apps/system/build_tests/client_only_mbedtls:
   disable:
@@ -134,6 +137,9 @@ tools/test_apps/system/panic:
     - if: INCLUDE_DEFAULT == 1 or IDF_TARGET in ["esp32p4"] # preview targets
   disable:
     - if: IDF_TARGET == "esp32p4" # TODO: IDF-14348
+    - if: IDF_TARGET == "esp32s31"
+      temporary: true
+      reason: cannot pass build because flash encryption is not supported yet # TODO: [ESP32S31] IDF-14628
 
 tools/test_apps/system/ram_loadable_app:
   disable:

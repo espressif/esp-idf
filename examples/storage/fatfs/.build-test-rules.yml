@@ -15,9 +15,7 @@ examples/storage/fatfs/ext_flash:
     - spi_flash
     - esp_driver_spi
   disable:
-    - if: IDF_TARGET in ["esp32p4", "esp32c5", "esp32c61", "esp32h21", "esp32h4"]
-      temporary: true
-      reason: not supported on p4 and c5  # TODO: [ESP32C5] IDF-8715, [ESP32C61] IDF-9314, [ESP32H21] IDF-11609, [ESP32H4] IDF-12388
+    - if: SOC_SPI_EXTERNAL_NOR_FLASH_SUPPORTED != 1
   disable_test:
     - if: IDF_TARGET not in ["esp32"]
       temporary: true

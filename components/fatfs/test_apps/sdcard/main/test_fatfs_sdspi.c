@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -46,6 +46,12 @@
 #define SDSPI_MOSI_PIN 5
 #define SDSPI_CLK_PIN  4
 #define SDSPI_CS_PIN   1
+#define SPI_DMA_CHAN   SPI_DMA_CH_AUTO
+#else
+#define SDSPI_MISO_PIN 0
+#define SDSPI_MOSI_PIN 0
+#define SDSPI_CLK_PIN  0
+#define SDSPI_CS_PIN   0
 #define SPI_DMA_CHAN   SPI_DMA_CH_AUTO
 #endif
 

@@ -56,6 +56,7 @@
 #define SOC_DEEP_SLEEP_SUPPORTED        1
 #define SOC_LP_PERIPH_SHARE_INTERRUPT   1   // LP peripherals sharing the same interrupt source
 #define SOC_PM_SUPPORTED                1
+#define SOC_SPI_EXTERNAL_NOR_FLASH_SUPPORTED    1
 
 /*-------------------------- XTAL CAPS ---------------------------------------*/
 #define SOC_XTAL_SUPPORT_26M            1

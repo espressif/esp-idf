@@ -115,6 +115,7 @@
 #define SOC_BITSCRAMBLER_SUPPORTED      1
 #define SOC_SIMD_INSTRUCTION_SUPPORTED  1
 #define SOC_I3C_MASTER_SUPPORTED        1
+#define SOC_SPI_EXTERNAL_NOR_FLASH_SUPPORTED    1
 
 /*-------------------------- XTAL CAPS ---------------------------------------*/
 #define SOC_XTAL_SUPPORT_40M            1

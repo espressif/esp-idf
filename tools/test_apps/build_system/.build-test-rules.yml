@@ -2,8 +2,8 @@
 
 tools/test_apps/build_system/bootloader:
   disable:
-    - if: IDF_TARGET == "linux"
-      reason: the test should run on all targets except linux
+    - if: IDF_TARGET == "linux" or IDF_TARGET in ["esp32s31"]
+      reason: the test should run on all targets except linux and esp32s31 encryption build cannot pass IDF-14629
 
 tools/test_apps/build_system/custom_partition_subtypes:
   enable:
