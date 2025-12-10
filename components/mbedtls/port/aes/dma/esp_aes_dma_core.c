@@ -1022,11 +1022,12 @@ int esp_aes_process_dma(esp_aes_context *ctx, const unsigned char *input, unsign
 #if (CONFIG_SPIRAM && SOC_PSRAM_DMA_CAPABLE)
 #ifdef SOC_GDMA_EXT_MEM_ENC_ALIGNMENT
         if (efuse_hal_flash_encryption_enabled()) {
-            if (esp_ptr_external_ram(input) || esp_ptr_external_ram(output) || esp_ptr_in_drom(input) || esp_ptr_in_drom(output)) {
+            if (esp_ptr_external_ram(input) || esp_ptr_in_drom(input)) {
                 if (((intptr_t)(input) & (SOC_GDMA_EXT_MEM_ENC_ALIGNMENT - 1)) != 0) {
                     input_needs_realloc = true;
                 }
-
+            }
+            if (esp_ptr_external_ram(output) || esp_ptr_in_drom(output)) {
                 if (((intptr_t)(output) & (SOC_GDMA_EXT_MEM_ENC_ALIGNMENT - 1)) != 0) {
                     output_needs_realloc = true;
                 }
