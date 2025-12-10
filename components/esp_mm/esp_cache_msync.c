@@ -102,7 +102,7 @@ esp_err_t esp_cache_msync(void *addr, size_t size, int flags)
     uint32_t cache_id = 0;
     valid = cache_hal_vaddr_to_cache_level_id(vaddr, size, &cache_level, &cache_id);
     if (!valid) {
-        ESP_EARLY_LOGD(TAG, "vaddr is not in cacheable range, do nothing");
+        ESP_EARLY_LOGV(TAG, "vaddr is not in cacheable range, do nothing");
         return ESP_ERR_NOT_SUPPORTED;
     }
 
