@@ -48,7 +48,12 @@ extern uint32_t bt_bb_get_cur_rx_info(void);
 
 IEEE802154_STATIC volatile ieee802154_state_t s_ieee802154_state;
 static uint8_t *s_tx_frame = NULL;
+
+#if CONFIG_IEEE802154_TEST
 #define IEEE802154_RX_FRAME_SIZE (127 + 1 + 1) // +1: len, +1: for dma test
+#else
+#define IEEE802154_RX_FRAME_SIZE (127 + 1) // +1: len
+#endif // CONFIG_IEEE802154_TEST
 
 // +1: for the stub buffer when the valid buffers are full.
 //
@@ -224,9 +229,18 @@ IEEE802154_STATIC IEEE802154_NOINLINE void update_mpf_index(void)
 
 static IEEE802154_NOINLINE void ieee802154_rx_frame_info_update(void)
 {
-    uint8_t len = s_rx_frame[s_rx_index][0];
-    int8_t rssi = s_rx_frame[s_rx_index][len - 1]; // crc is not written to rx buffer
-    uint8_t lqi = s_rx_frame[s_rx_index][len];
+    uint8_t len = s_rx_frame[s_rx_index][0] & 0x7f;
+    int8_t rssi = 0;
+    uint8_t lqi = 0;
+
+    if (len < IEEE802154_FRAME_MIN_LEN) {
+        s_rx_frame_info[s_rx_index].channel = 0;
+        s_rx_frame_info[s_rx_index].rssi = 0;
+        s_rx_frame_info[s_rx_index].lqi = 0;
+        return;
+    }
+    rssi = s_rx_frame[s_rx_index][len - 1]; // crc is not written to rx buffer
+    lqi = s_rx_frame[s_rx_index][len];
 
 #if CONFIG_IEEE802154_MULTI_PAN_ENABLE
     update_mpf_index();
@@ -977,7 +991,6 @@ static inline esp_err_t ieee802154_transmit_internal(const uint8_t *frame, bool 
 
 esp_err_t ieee802154_transmit(const uint8_t *frame, bool cca)
 {
-    ESP_RETURN_ON_FALSE(frame[0] <= 127, ESP_ERR_INVALID_ARG, IEEE802154_TAG, "Invalid frame length.");
 #if !CONFIG_IEEE802154_TEST
     ieee802154_enter_critical();
     if ((s_ieee802154_state == IEEE802154_STATE_RX && ieee802154_ll_is_current_rx_frame())
@@ -999,32 +1012,23 @@ esp_err_t ieee802154_transmit(const uint8_t *frame, bool cca)
 
 esp_err_t ieee802154_transmit_at(const uint8_t *frame, bool cca, uint32_t time)
 {
-    ESP_RETURN_ON_FALSE(frame[0] <= 127, ESP_ERR_INVALID_ARG, IEEE802154_TAG, "Invalid frame length.");
-    uint32_t tx_target_time;
+    uint32_t rampup_time = cca ? IEEE802154_ED_TRIG_TX_RAMPUP_TIME_US : IEEE802154_TX_RAMPUP_TIME_US;
+    uint32_t tx_target_time = (time >= rampup_time) ? time - rampup_time : 0;
     IEEE802154_RF_ENABLE();
     tx_init(frame);
     IEEE802154_SET_TXRX_PTI(IEEE802154_SCENE_TX_AT);
     if (cca) {
         ieee802154_ll_set_ed_duration(CCA_DETECTION_TIME);
-        tx_target_time = time - IEEE802154_ED_TRIG_TX_RAMPUP_TIME_US;
-        ieee802154_set_state(IEEE802154_STATE_TX_CCA);
-        ieee802154_enter_critical();
-        ieee802154_etm_set_event_task(IEEE802154_ETM_CHANNEL0, ETM_EVENT_TIMER0_OVERFLOW, ETM_TASK_ED_TRIG_TX);
-        ieee802154_timer0_fire_at(tx_target_time);
-        ieee802154_exit_critical();
-    } else {
-        tx_target_time = time - IEEE802154_TX_RAMPUP_TIME_US;
-        if (ieee802154_frame_get_type(frame) == IEEE802154_FRAME_TYPE_ACK && ieee802154_frame_get_version(frame) == IEEE802154_FRAME_VERSION_2) {
-            ieee802154_set_state(IEEE802154_STATE_TX_ENH_ACK);
-        } else {
-            ieee802154_set_state(IEEE802154_STATE_TX);
-        }
-        ieee802154_enter_critical();
-        ieee802154_etm_set_event_task(IEEE802154_ETM_CHANNEL0, ETM_EVENT_TIMER0_OVERFLOW, ETM_TASK_TX_START);
-        ieee802154_timer0_fire_at(tx_target_time);
-        ieee802154_exit_critical();
     }
-
+    ieee802154_set_state(cca ? IEEE802154_STATE_TX_CCA : IEEE802154_STATE_TX);
+    ieee802154_enter_critical();
+    ieee802154_etm_set_event_task(IEEE802154_ETM_CHANNEL0, ETM_EVENT_TIMER0_OVERFLOW, cca ? ETM_TASK_ED_TRIG_TX : ETM_TASK_TX_START);
+    ieee802154_timer0_fire_at(tx_target_time);
+    ieee802154_exit_critical();
+    if (time < rampup_time) {
+        // First start the transmit at and then print some logs.
+        ESP_EARLY_LOGE(IEEE802154_TAG, "Time should be longer than %d us to account for the TX ramp-up", rampup_time);
+    }
     return ESP_OK;
 }
 
@@ -1072,6 +1076,7 @@ IEEE802154_NOINLINE static void ieee802154_start_receive_at(void* ctx)
 esp_err_t ieee802154_receive_at(uint32_t time, uint32_t duration)
 {
     // TODO: Light sleep current optimization, TZ-1613.
+    uint32_t target_time = (time >= IEEE802154_RX_RAMPUP_TIME_US) ? time - IEEE802154_RX_RAMPUP_TIME_US : 0;
     IEEE802154_RF_ENABLE();
     ieee802154_enter_critical();
     rx_init();
@@ -1080,11 +1085,15 @@ esp_err_t ieee802154_receive_at(uint32_t time, uint32_t duration)
     ieee802154_set_state(IEEE802154_STATE_RX);
     ieee802154_etm_set_event_task(IEEE802154_ETM_CHANNEL1, ETM_EVENT_TIMER1_OVERFLOW, ETM_TASK_RX_START);
     if (duration) {
-        ieee802154_timer1_fire_at_with_callback(time - IEEE802154_RX_RAMPUP_TIME_US, ieee802154_start_receive_at, (void*)(time + duration));
+        ieee802154_timer1_fire_at_with_callback(target_time, ieee802154_start_receive_at, (void*)(time + duration));
     } else {
-        ieee802154_timer1_fire_at(time - IEEE802154_RX_RAMPUP_TIME_US);
+        ieee802154_timer1_fire_at(target_time);
     }
     ieee802154_exit_critical();
+    if (time < IEEE802154_RX_RAMPUP_TIME_US) {
+        // First start the receive at and then print some logs.
+        ESP_EARLY_LOGE(IEEE802154_TAG, "Time should be longer than %d us to account for the RX ramp-up", IEEE802154_RX_RAMPUP_TIME_US);
+    }
     return ESP_OK;
 }
 
