@@ -1050,6 +1050,20 @@ menu "Security features"
 
                 Only set this option in testing environments.
 
+        config SECURE_BOOT_REQUIRE_ALREADY_ENABLED
+            bool "Require secure boot to be already enabled"
+            depends on SECURE_BOOT_INSECURE
+            default n
+            help
+                If not set (default), and secure boot is not yet enabled in eFuses, the 2nd stage bootloader
+                will enable secure boot: generate the secure boot digest and program eFuses.
+                If this option is set, and secure boot is not yet enabled, the bootloader will error out and
+                reboot.
+                If secure boot is enabled in eFuses, this option does not change the bootloader behavior.
+
+                Only use this option in testing environments, to avoid accidentally enabling secure boot on
+                the wrong device. The device needs to have secure boot already enabled using espefuse.
+
         config SECURE_FLASH_REQUIRE_ALREADY_ENABLED
             bool "Require flash encryption to be already enabled"
             depends on SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT

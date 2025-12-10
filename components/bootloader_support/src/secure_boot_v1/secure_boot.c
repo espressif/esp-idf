@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -94,6 +94,12 @@ esp_err_t esp_secure_boot_generate_digest(void)
                       " No need to generate digest. continuing..");
         return ESP_OK;
     }
+#if CONFIG_SECURE_BOOT_REQUIRE_ALREADY_ENABLED
+    else {
+        ESP_LOGE(TAG, "secure boot is not enabled, and SECURE_BOOT_REQUIRE_ALREADY_ENABLED is set, refusing to boot.");
+        return ESP_ERR_INVALID_STATE;
+    }
+#endif // CONFIG_SECURE_BOOT_REQUIRE_ALREADY_ENABLED
 
     esp_efuse_coding_scheme_t coding_scheme = esp_efuse_get_coding_scheme(EFUSE_BLK_SECURE_BOOT);
     if (coding_scheme != EFUSE_CODING_SCHEME_NONE && coding_scheme != EFUSE_CODING_SCHEME_3_4) {
@@ -149,6 +155,12 @@ esp_err_t esp_secure_boot_permanently_enable(void)
         ESP_LOGI(TAG, "bootloader secure boot is already enabled, continuing..");
         return ESP_OK;
     }
+#if CONFIG_SECURE_BOOT_REQUIRE_ALREADY_ENABLED
+    else {
+        ESP_LOGE(TAG, "secure boot is not enabled, and SECURE_BOOT_REQUIRE_ALREADY_ENABLED is set, refusing to boot.");
+        return ESP_ERR_INVALID_STATE;
+    }
+#endif // CONFIG_SECURE_BOOT_REQUIRE_ALREADY_ENABLED
 
     bool dis_read  = esp_efuse_read_field_bit(ESP_EFUSE_RD_DIS_BLK2);
     bool dis_write = esp_efuse_read_field_bit(ESP_EFUSE_WR_DIS_BLK2);
