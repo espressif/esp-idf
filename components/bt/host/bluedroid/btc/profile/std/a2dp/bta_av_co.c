@@ -1780,6 +1780,50 @@ BOOLEAN bta_av_co_get_remote_bitpool_pref(UINT8 *min, UINT8 *max)
     return TRUE;
 }
 
+/*******************************************************************************
+ **
+ ** Function         bta_av_co_get_peer_sink_caps
+ **
+ ** Description      Get the sink codec capabilities of the peer
+ **
+ ** Returns          TRUE if sink capabilities are available, FALSE otherwise
+ **
+ *******************************************************************************/
+BOOLEAN bta_av_co_get_peer_sink_caps(tBTA_AV_HNDL hndl, UINT8 *p_codec_caps, UINT8 *p_codec_type)
+{
+    tBTA_AV_CO_PEER *p_peer;
+    tBTA_AV_CO_SINK *p_sink;
+
+    FUNC_TRACE();
+
+    /* Find the peer info */
+    p_peer = bta_av_co_get_peer(hndl);
+    if (p_peer == NULL) {
+        APPL_TRACE_ERROR("bta_av_co_get_peer_sink_caps could not find peer entry");
+        return FALSE;
+    }
+
+    /* Check if we have a selected sink */
+    if (p_peer->p_snk == NULL) {
+        APPL_TRACE_ERROR("bta_av_co_get_peer_sink_caps no sink selected");
+        return FALSE;
+    }
+
+    p_sink = p_peer->p_snk;
+
+    /* Copy the codec capabilities */
+    if (p_codec_caps) {
+        memcpy(p_codec_caps, p_sink->codec_caps, AVDT_CODEC_SIZE);
+    }
+
+    /* Copy the codec type */
+    if (p_codec_type) {
+        *p_codec_type = p_sink->codec_type;
+    }
+
+    return TRUE;
+}
+
 /* the call out functions for audio stream */
 const tBTA_AV_CO_FUNCTS bta_av_a2d_cos = {
     bta_av_co_audio_init,

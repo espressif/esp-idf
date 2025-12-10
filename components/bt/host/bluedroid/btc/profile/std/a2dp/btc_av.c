@@ -522,6 +522,30 @@ static BOOLEAN btc_av_state_opening_handler(btc_sm_event_t event, void *p_data)
                 } else {
                     BTC_TRACE_WARNING("AVRC not Init, not using it.");
                 }
+            } else if (btc_av_cb.peer_sep == AVDT_TSEP_SNK) {
+                /* For A2DP source, report sink codec capabilities after connection established */
+                UINT8 codec_caps[AVDT_CODEC_SIZE];
+                UINT8 codec_type;
+
+                if (bta_av_co_get_peer_sink_caps(btc_av_cb.bta_handle, codec_caps, &codec_type)) {
+                    switch (codec_type) {
+                        /* Currently only supports SBC */
+                        case BTA_AV_CODEC_SBC: {
+                            param.a2d_report_snk_codec_caps_stat.conn_hdl = btc_av_cb.bta_handle;
+                            param.a2d_report_snk_codec_caps_stat.mcc.type = ESP_A2D_MCT_SBC;
+                            memcpy(&param.a2d_report_snk_codec_caps_stat.mcc.cie, (uint8_t *)codec_caps + BTC_AV_SBC_CIE_OFFSET, BTC_AV_SBC_CIE_LEN);
+                            btc_a2d_cb_to_app(ESP_A2D_REPORT_SNK_CODEC_CAPS_EVT, &param);
+                            break;
+                        }
+
+                        default: {
+                            BTC_TRACE_WARNING("Unsupported codec type %d", codec_type);
+                            break;
+                        }
+                    }
+                } else {
+                    BTC_TRACE_WARNING("No sink capabilities available yet");
+                }
             }
         }
         btc_queue_advance();

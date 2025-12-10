@@ -216,6 +216,17 @@ BOOLEAN bta_av_co_peer_cp_supported(tBTA_AV_HNDL hndl);
  *******************************************************************************/
 BOOLEAN bta_av_co_get_remote_bitpool_pref(UINT8 *min, UINT8 *max);
 
+/*******************************************************************************
+ **
+ ** Function         bta_av_co_get_peer_sink_caps
+ **
+ ** Description      Get the sink codec capabilities of the peer
+ **
+ ** Returns          TRUE if sink capabilities are available, FALSE otherwise
+ **
+ *******************************************************************************/
+BOOLEAN bta_av_co_get_peer_sink_caps(tBTA_AV_HNDL hndl, UINT8 *p_codec_caps, UINT8 *p_codec_type);
+
 #endif  ///BTA_AV_INCLUDED == TRUE
 
 #endif

@@ -230,6 +230,7 @@ typedef enum {
     ESP_A2D_SNK_SET_DELAY_VALUE_EVT,           /*!< indicate a2dp sink set delay report value complete,  only used for A2DP SINK */
     ESP_A2D_SNK_GET_DELAY_VALUE_EVT,           /*!< indicate a2dp sink get delay report value complete,  only used for A2DP SINK */
     ESP_A2D_REPORT_SNK_DELAY_VALUE_EVT,        /*!< report delay value,  only used for A2DP SRC */
+    ESP_A2D_REPORT_SNK_CODEC_CAPS_EVT,         /*!< report sink codec capabilities, only used for A2DP SRC */
 } esp_a2d_cb_event_t;
 
 /**
@@ -327,6 +328,14 @@ typedef union {
     struct a2d_report_delay_stat_param {
         uint16_t delay_value;                  /*!< delay report value */
     } a2d_report_delay_value_stat;             /*!< A2DP source received sink report value status */
+
+    /**
+     * @brief ESP_A2D_REPORT_SNK_CODEC_CAPS_EVT
+     */
+    struct a2d_report_snk_codec_caps_param {
+        esp_a2d_conn_hdl_t conn_hdl;           /*!< connection handle */
+        esp_a2d_mcc_t mcc;                     /*!< A2DP sink media codec capability information */
+    } a2d_report_snk_codec_caps_stat;         /*!< A2DP source received sink codec capabilities */
 
 } esp_a2d_cb_param_t;
 
