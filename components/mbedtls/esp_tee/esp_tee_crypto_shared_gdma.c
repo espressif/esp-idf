@@ -72,7 +72,7 @@ static void crypto_shared_gdma_init(void)
     // setting the transfer ability
 #if SOC_AHB_GDMA_VERSION == 2
     dma_ll_rx_enable_data_burst(&DMA_DEV, TEE_CRYPTO_GDMA_CH, true);
-    dma_ll_tx_set_burst_size(&DMA_DEV, TEE_CRYPTO_GDMA_CH, 16);
+    dma_ll_rx_set_burst_size(&DMA_DEV, TEE_CRYPTO_GDMA_CH, 16);
     dma_ll_tx_set_burst_size(&DMA_DEV, TEE_CRYPTO_GDMA_CH, 16);
 #else
     dma_ll_rx_enable_data_burst(&DMA_DEV, TEE_CRYPTO_GDMA_CH, false);

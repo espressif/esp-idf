@@ -39,9 +39,11 @@ static void setup_console(void)
     ESP_ERROR_CHECK(esp_console_register_help_command());
 
     /* Register custom commands */
+#if CONFIG_SOC_WIFI_SUPPORTED
     register_cmd_wifi();
     register_srv_tee_ota();
     register_srv_user_ota();
+#endif
 #if CONFIG_SECURE_TEE_ATTESTATION
     register_srv_attestation();
 #endif
