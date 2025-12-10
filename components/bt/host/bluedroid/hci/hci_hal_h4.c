@@ -185,6 +185,7 @@ static bool hal_open(const hci_hal_callbacks_t *upper_callbacks, void *task_thre
 
     //register vhci host cb
     if (hci_host_register_callback(&hci_host_cb) != ESP_OK) {
+        hci_hal_env_deinit();  // Clean up allocated resources on failure
         return false;
     }
 
