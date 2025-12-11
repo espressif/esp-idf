@@ -321,7 +321,7 @@ The waveform of the external clock input is shown below:
 
     After writing the BitScrambler program, we can enable it by calling :cpp:func:`parlio_tx_unit_decorate_bitscrambler`. And configure the :cpp:member:`parlio_transmit_config_t::bitscrambler_program` to point to the binary file of the BitScrambler program. Different transmission transactions can use different BitScrambler programs. The binary file must conform to the BitScrambler assembly language specification, and will be loaded into the BitScrambler's instruction memory at runtime. For details on how to write and compile the BitScrambler program, please refer to :doc:`BitScrambler Programming Guide </api-reference/peripherals/bitscrambler>`.
 
-    .. only:: not SOC_PARLIO_TX_SUPPORT_EOF_FROM_DMA
+    .. only:: esp32p4
 
         .. note::
 

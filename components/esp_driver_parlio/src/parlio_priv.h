@@ -27,7 +27,7 @@
 #include "freertos/queue.h"
 #include "freertos/idf_additions.h"
 #include "soc/soc_caps.h"
-#include "soc/parlio_periph.h"
+#include "hal/parlio_periph.h"
 #include "hal/parlio_types.h"
 #include "hal/parlio_hal.h"
 #include "hal/parlio_ll.h"
@@ -132,8 +132,8 @@ typedef struct parlio_group_t {
     portMUX_TYPE              spinlock;     // to protect per-group register level concurrent access
     parlio_hal_context_t      hal;          // hal layer context
     uint32_t                  dma_align;    // DMA buffer alignment
-    parlio_unit_base_handle_t    tx_units[SOC_PARLIO_TX_UNITS_PER_GROUP]; // tx unit handles
-    parlio_unit_base_handle_t    rx_units[SOC_PARLIO_RX_UNITS_PER_GROUP]; // rx unit handles
+    parlio_unit_base_handle_t    tx_units[PARLIO_LL_GET(TX_UNITS_PER_INST)]; // tx unit handles
+    parlio_unit_base_handle_t    rx_units[PARLIO_LL_GET(RX_UNITS_PER_INST)]; // rx unit handles
 } parlio_group_t;
 
 /**

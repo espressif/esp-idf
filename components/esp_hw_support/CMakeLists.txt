@@ -77,9 +77,13 @@ if(NOT non_os_build)
     # [refactor-todo]
     list(APPEND priv_requires esp_driver_gpio   # for GPIO and RTC (by sleep_gpio and sleep_modes)
                               esp_timer
+                              esp_hal_touch_sens # for touch sensor wakeup (introduced in sleep_modes.c)
                               esp_pm)
 
-    list(APPEND priv_requires esp_mm esp_hal_mspi)
+    list(APPEND priv_requires esp_mm
+                              esp_hal_mspi
+                              esp_hal_i2s  # required by `sleep_system_peripheral.c`
+    )
 
     if(CONFIG_IDF_TARGET_ESP32 OR CONFIG_IDF_TARGET_ESP32S2)
         list(APPEND srcs "rtc_wdt.c")
@@ -239,3 +243,6 @@ if(${target} STREQUAL "esp32p4")
     # for mipi_csi_share_hw_ctrl.c
     idf_component_optional_requires(PRIVATE esp_hal_cam)
 endif()
+
+# Required in `adc_share_hw_ctrl.h`
+idf_component_optional_requires(PUBLIC esp_hal_ana_conv)

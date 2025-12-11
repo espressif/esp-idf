@@ -138,7 +138,7 @@ typedef struct {
  * @brief Init I2S hal context
  *
  * @param hal Context of the HAL layer
- * @param port_id The I2S port number, the max port number is (SOC_I2S_ATTR(INST_NUM) -1)
+ * @param port_id The I2S port number, the max port number is (I2S_LL_GET(INST_NUM) -1)
  */
 void i2s_hal_init(i2s_hal_context_t *hal, int port_id);
 

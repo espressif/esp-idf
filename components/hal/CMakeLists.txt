@@ -3,6 +3,7 @@ idf_build_get_property(esp_tee_build ESP_TEE_BUILD)
 
 set(srcs "hal_utils.c")
 set(includes "platform_port/include")
+set(requires)
 
 # target specific include must be added before the generic one
 # because of the "include_next" directive used by the efuse_hal.h
@@ -95,20 +96,12 @@ elseif(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "isp_hal.c")
     endif()
 
-    if(CONFIG_SOC_LP_I2S_SUPPORTED)
-        list(APPEND srcs "lp_i2s_hal.c")
-    endif()
-
     if(CONFIG_SOC_RMT_SUPPORTED)
         list(APPEND srcs "rmt_hal.c")
     endif()
 
     if(CONFIG_SOC_UHCI_SUPPORTED)
         list(APPEND srcs "uhci_hal.c")
-    endif()
-
-    if(CONFIG_SOC_I2S_SUPPORTED)
-        list(APPEND srcs "i2s_hal.c")
     endif()
 
     if(CONFIG_SOC_SDMMC_HOST_SUPPORTED)
@@ -121,18 +114,6 @@ elseif(NOT BOOTLOADER_BUILD)
 
     if(CONFIG_SOC_ETM_SUPPORTED)
         list(APPEND srcs "etm_hal.c" "${target}/etm_periph.c")
-    endif()
-
-    if(CONFIG_SOC_PARLIO_SUPPORTED)
-        list(APPEND srcs "parlio_hal.c")
-    endif()
-
-    if(CONFIG_SOC_ADC_SUPPORTED)
-        list(APPEND srcs "adc_hal_common.c" "adc_oneshot_hal.c")
-
-        if(CONFIG_SOC_ADC_DMA_SUPPORTED)
-            list(APPEND srcs "adc_hal.c")
-        endif()
     endif()
 
     if(CONFIG_SOC_ECC_SUPPORTED)
@@ -215,16 +196,6 @@ elseif(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "ds_hal.c")
     endif()
 
-    if(CONFIG_SOC_TOUCH_SENSOR_SUPPORTED)
-        # Source files for the legacy touch hal driver
-        if(CONFIG_SOC_TOUCH_SENSOR_VERSION LESS 3)
-            list(APPEND srcs "${target}/touch_sensor_hal.c")
-            list(APPEND srcs "touch_sensor_hal.c")
-        endif()
-        # Source files for the new touch hal driver
-        list(APPEND srcs "touch_sens_hal.c")
-    endif()
-
     if(CONFIG_SOC_TEMP_SENSOR_SUPPORTED)
         list(APPEND srcs "temperature_sensor_hal.c")
     endif()
@@ -238,7 +209,7 @@ endif()
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS ${includes}
                        PRIV_INCLUDE_DIRS ${priv_include}
-                       REQUIRES soc esp_rom
+                       REQUIRES ${requires}
                        PRIV_REQUIRES esp_hal_gpio
                        LDFRAGMENTS linker.lf)
 

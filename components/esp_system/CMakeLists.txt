@@ -79,11 +79,13 @@ else()
                                     # [REFACTOR-TODO] Provide system hook to release dependency reversion.
                                     # IDF-13980
                                     esp_hal_i2c
+                                    esp_hal_i2s
                                     esp_hal_wdt
                                     esp_hal_lcd
                                     esp_hal_mcpwm
                                     esp_hal_pcnt
                                     esp_hal_cam
+                                    esp_hal_parlio
                                     esp_hal_twai
                         LDFRAGMENTS "linker.lf" "app.lf")
     add_subdirectory(port)

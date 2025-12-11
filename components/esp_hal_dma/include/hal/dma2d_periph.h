@@ -7,7 +7,7 @@
 #pragma once
 
 #include <stdint.h>
-#include "soc/soc_caps_full.h"
+#include "soc/soc_caps.h"
 
 #if SOC_HAS(DMA2D)
 #include "hal/dma2d_ll.h"

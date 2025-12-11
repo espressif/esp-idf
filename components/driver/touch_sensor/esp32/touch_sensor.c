@@ -11,7 +11,7 @@
 #include "esp_log.h"
 #include "sys/lock.h"
 #include "soc/rtc.h"
-#include "soc/soc_caps_full.h"
+#include "soc/soc_caps.h"
 #include "soc/periph_defs.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
@@ -29,7 +29,7 @@
 #endif
 #include "sys/queue.h"
 #include "hal/touch_sensor_legacy_types.h"
-#include "hal/touch_sensor_hal.h"
+#include "hal/touch_sensor_legacy_hal.h"
 
 typedef struct {
     esp_timer_handle_t timer;
@@ -52,8 +52,8 @@ static SemaphoreHandle_t rtc_touch_mux = NULL;
 
 static __attribute__((unused)) const char *TOUCH_TAG = "TOUCH_SENSOR";
 
-#define TOUCH_CHANNEL_CHECK(channel) ESP_RETURN_ON_FALSE(channel < SOC_MODULE_ATTR(TOUCH, CHAN_NUM), ESP_ERR_INVALID_ARG, TOUCH_TAG,  "Touch channel error");
-#define TOUCH_CHANNEL_CHECK_ISR(channel) ESP_RETURN_ON_FALSE_ISR(channel < SOC_MODULE_ATTR(TOUCH, CHAN_NUM), ESP_ERR_INVALID_ARG, TOUCH_TAG,  "Touch channel error");
+#define TOUCH_CHANNEL_CHECK(channel) ESP_RETURN_ON_FALSE(channel < TOUCH_LL_GET(CHAN_NUM), ESP_ERR_INVALID_ARG, TOUCH_TAG,  "Touch channel error");
+#define TOUCH_CHANNEL_CHECK_ISR(channel) ESP_RETURN_ON_FALSE_ISR(channel < TOUCH_LL_GET(CHAN_NUM), ESP_ERR_INVALID_ARG, TOUCH_TAG,  "Touch channel error");
 #define TOUCH_NULL_POINTER_CHECK(p, name) ESP_RETURN_ON_FALSE((p), ESP_ERR_INVALID_ARG, TOUCH_TAG, "input param '"name"' is NULL")
 #define TOUCH_NULL_POINTER_CHECK_ISR(p, name) ESP_RETURN_ON_FALSE_ISR((p), ESP_ERR_INVALID_ARG, TOUCH_TAG, "input param '"name"' is NULL")
 #define TOUCH_PARAM_CHECK_STR(s)     ""s" parameter error"

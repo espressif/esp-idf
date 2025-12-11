@@ -15,7 +15,7 @@
 #include "esp_log.h"
 #include "esp_check.h"
 #include "esp_cpu.h"
-#include "soc/soc_caps_full.h"
+#include "soc/soc_caps.h"
 #include "soc/io_mux_reg.h"
 #include "hal/dedic_gpio_caps.h"
 #include "hal/dedic_gpio_cpu_ll.h"

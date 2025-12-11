@@ -8,7 +8,7 @@
 #include <stdint.h>
 #include <string.h> // For memset()
 #include <stdlib.h> // For abort()
-#include "soc/soc_caps_full.h"
+#include "soc/soc_caps.h"
 #include "soc/chip_revision.h"
 #include "soc/usb_periph.h"
 #include "hal/usb_dwc_hal.h"

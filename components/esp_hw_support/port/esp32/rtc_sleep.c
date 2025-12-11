@@ -8,7 +8,7 @@
 #include "soc/soc.h"
 #include "soc/rtc.h"
 #include "soc/dport_reg.h"
-#include "soc/i2s_periph.h"
+#include "soc/i2s_reg.h"
 #include "soc/bb_reg.h"
 #include "soc/nrx_reg.h"
 #include "soc/fe_reg.h"

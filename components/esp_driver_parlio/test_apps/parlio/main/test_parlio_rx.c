@@ -19,9 +19,9 @@
 #include "hal/cache_hal.h"
 #include "hal/cache_ll.h"
 #include "soc/soc_caps.h"
-#include "soc/i2s_periph.h"
 #include "soc/spi_periph.h"
-#include "soc/parlio_periph.h"
+#include "hal/parlio_periph.h"
+#include "hal/parlio_ll.h"
 #include "esp_attr.h"
 #include "test_board.h"
 #include "esp_private/parlio_rx_private.h"
@@ -30,7 +30,7 @@
 #define TEST_I2S_PORT   I2S_NUM_0
 #define TEST_VALID_SIG  (PARLIO_RX_UNIT_MAX_DATA_WIDTH - 1)
 
-#if SOC_PARLIO_RX_CLK_SUPPORT_OUTPUT
+#if PARLIO_LL_SUPPORT(RX_CLK_OUTPUT)
 #define TEST_OUTPUT_CLK_PIN     TEST_CLK_GPIO
 #else
 #define TEST_OUTPUT_CLK_PIN     -1
@@ -96,20 +96,6 @@ static bool test_parlio_rx_timeout_callback(parlio_rx_unit_handle_t rx_unit, con
     return false;
 }
 
-static void connect_signal_internally(uint32_t gpio, uint32_t sigo, uint32_t sigi)
-{
-    gpio_config_t gpio_conf = {
-        .pin_bit_mask = BIT64(gpio),
-        .mode = GPIO_MODE_INPUT_OUTPUT,
-        .intr_type = GPIO_INTR_DISABLE,
-        .pull_down_en = GPIO_PULLDOWN_DISABLE,
-        .pull_up_en = GPIO_PULLUP_DISABLE,
-    };
-    gpio_config(&gpio_conf);
-    esp_rom_gpio_connect_out_signal(gpio, sigo, false, false);
-    esp_rom_gpio_connect_in_signal(gpio, sigi, false);
-}
-
 #define TEST_EOF_DATA_LEN    64
 
 static void pulse_delimiter_sender_task_i2s(void *args)
@@ -155,17 +141,6 @@ static void pulse_delimiter_sender_task_i2s(void *args)
     // Transmission will start after enable the tx channel
     TEST_ESP_OK(i2s_channel_enable(tx_chan));
 
-    // Connect GPIO signals
-    connect_signal_internally(TEST_CLK_GPIO,
-                              i2s_periph_signal[TEST_I2S_PORT].m_tx_bck_sig,
-                              parlio_periph_signals.groups[0].rx_units[0].clk_in_sig);
-    connect_signal_internally(TEST_VALID_GPIO,
-                              i2s_periph_signal[TEST_I2S_PORT].m_tx_ws_sig,
-                              parlio_periph_signals.groups[0].rx_units[0].data_sigs[TEST_VALID_SIG]);
-    connect_signal_internally(TEST_DATA0_GPIO,
-                              i2s_periph_signal[TEST_I2S_PORT].data_out_sig,
-                              parlio_periph_signals.groups[0].rx_units[0].data_sigs[0]);
-
     while (!((*task_flags) & TEST_TASK_FINISHED_BIT)) {
         vTaskDelay(pdMS_TO_TICKS(1));
         *task_flags |= TEST_TASK_DATA_READY_BIT;
@@ -192,6 +167,20 @@ static void cs_low(spi_transaction_t *trans)
 }
 
 #define TEST_SPI_CLK_FREQ   100000
+
+static void connect_signal_internally(uint32_t gpio, uint32_t sigo, uint32_t sigi)
+{
+    gpio_config_t gpio_conf = {
+        .pin_bit_mask = BIT64(gpio),
+        .mode = GPIO_MODE_INPUT_OUTPUT,
+        .intr_type = GPIO_INTR_DISABLE,
+        .pull_down_en = GPIO_PULLDOWN_DISABLE,
+        .pull_up_en = GPIO_PULLUP_DISABLE,
+    };
+    gpio_config(&gpio_conf);
+    esp_rom_gpio_connect_out_signal(gpio, sigo, false, false);
+    esp_rom_gpio_connect_in_signal(gpio, sigi, false);
+}
 
 static void level_delimiter_sender_task_spi(void *args)
 {
@@ -411,11 +400,11 @@ TEST_CASE("parallel_rx_unit_pulse_delimiter_test_via_i2s", "[parlio_rx]")
 TEST_CASE("parallel_rx_unit_install_uninstall", "[parlio_rx]")
 {
     printf("install rx units exhaustively\r\n");
-    parlio_rx_unit_handle_t units[SOC_PARLIO_GROUPS * SOC_PARLIO_RX_UNITS_PER_GROUP];
+    parlio_rx_unit_handle_t units[PARLIO_LL_GET(INST_NUM) * PARLIO_LL_GET(RX_UNITS_PER_INST)];
     int k = 0;
     parlio_rx_unit_config_t config = TEST_DEFAULT_UNIT_CONFIG(PARLIO_CLK_SRC_DEFAULT, 1000000);
-    for (int i = 0; i < SOC_PARLIO_GROUPS; i++) {
-        for (int j = 0; j < SOC_PARLIO_RX_UNITS_PER_GROUP; j++) {
+    for (int i = 0; i < PARLIO_LL_GET(INST_NUM); i++) {
+        for (int j = 0; j < PARLIO_LL_GET(RX_UNITS_PER_INST); j++) {
             TEST_ESP_OK(parlio_new_rx_unit(&config, &units[k++]));
         }
     }
@@ -433,7 +422,7 @@ TEST_CASE("parallel_rx_unit_install_uninstall", "[parlio_rx]")
     // clock from internal
     config.clk_src = PARLIO_CLK_SRC_DEFAULT;
     config.clk_out_gpio_num = TEST_CLK_GPIO;
-#if SOC_PARLIO_RX_CLK_SUPPORT_OUTPUT
+#if PARLIO_LL_SUPPORT(RX_CLK_OUTPUT)
     TEST_ESP_OK(parlio_new_rx_unit(&config, &units[0]));
     TEST_ESP_OK(parlio_del_rx_unit(units[0]));
 #else

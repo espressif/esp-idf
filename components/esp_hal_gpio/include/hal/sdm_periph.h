@@ -8,7 +8,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
-#include "soc/soc_caps_full.h"
+#include "soc/soc_caps.h"
 #include "soc/periph_defs.h"
 #include "soc/regdma.h"
 

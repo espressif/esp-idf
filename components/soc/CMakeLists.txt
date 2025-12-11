@@ -64,14 +64,6 @@ if(target STREQUAL "esp32")
     list(APPEND srcs "${target_folder}/dport_access.c")
 endif()
 
-if(CONFIG_SOC_ADC_SUPPORTED)
-    list(APPEND srcs "${target_folder}/adc_periph.c")
-endif()
-
-if(CONFIG_SOC_ANA_CMPR_SUPPORTED)
-    list(APPEND srcs "${target_folder}/ana_cmpr_periph.c")
-endif()
-
 if(CONFIG_SOC_DEBUG_PROBE_SUPPORTED)
     list(APPEND srcs "${target_folder}/debug_probe_periph.c")
 endif()
@@ -96,20 +88,12 @@ if(CONFIG_SOC_ISP_SUPPORTED)
     list(APPEND srcs "${target}/isp_periph.c")
 endif()
 
-if(CONFIG_SOC_I2S_SUPPORTED)
-    list(APPEND srcs "${target_folder}/i2s_periph.c")
-endif()
-
 if(CONFIG_SOC_I3C_MASTER_SUPPORTED)
     list(APPEND srcs "${target_folder}/i3c_master_periph.c")
 endif()
 
 if(CONFIG_SOC_TEMP_SENSOR_SUPPORTED)
     list(APPEND srcs "${target_folder}/temperature_sensor_periph.c")
-endif()
-
-if(CONFIG_SOC_PARLIO_SUPPORTED)
-    list(APPEND srcs "${target_folder}/parlio_periph.c")
 endif()
 
 if(CONFIG_SOC_MPI_SUPPORTED)
@@ -120,18 +104,10 @@ if(CONFIG_SOC_SDMMC_HOST_SUPPORTED)
     list(APPEND srcs "${target_folder}/sdmmc_periph.c")
 endif()
 
-if(CONFIG_SOC_TOUCH_SENSOR_SUPPORTED)
-    list(APPEND srcs "${target_folder}/touch_sensor_periph.c")
-endif()
-
 if(CONFIG_SOC_IEEE802154_SUPPORTED)
     if(NOT target STREQUAL "esp32h4")
         list(APPEND srcs "${target_folder}/ieee802154_periph.c")
     endif()
-endif()
-
-if(CONFIG_SOC_DAC_SUPPORTED)
-    list(APPEND srcs "${target_folder}/dac_periph.c")
 endif()
 
 if(CONFIG_SOC_SDIO_SLAVE_SUPPORTED)
