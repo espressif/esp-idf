@@ -77,6 +77,7 @@ typedef struct {
     bool do_flow_ctrl;  // indicates whether we need to do software flow control
     bool use_pll;  // Only use (A/M)PLL in EMAC_DATA_INTERFACE_RMII && EMAC_CLK_OUT
     SemaphoreHandle_t multi_reg_mutex; // lock for multiple register access
+    int32_t mdc_freq_hz;
 #ifdef CONFIG_PM_ENABLE
     esp_pm_lock_handle_t pm_lock;
 #endif
@@ -618,7 +619,14 @@ static esp_err_t emac_esp32_init(esp_eth_mac_t *mac)
     }
     ESP_GOTO_ON_FALSE(to < emac->sw_reset_timeout_ms / 10, ESP_ERR_TIMEOUT, err, TAG, "reset timeout");
     /* set smi clock */
-    emac_hal_set_csr_clock_range(&emac->hal, esp_clk_apb_freq());
+    uint32_t csr_freq_hz;
+    soc_module_clk_t csr_clk_src = emac_ll_get_csr_clk_src();
+    ESP_GOTO_ON_ERROR(esp_clk_tree_src_get_freq_hz(csr_clk_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_APPROX, &csr_freq_hz), err, TAG, "get CSR frequency failed");
+    if (emac->mdc_freq_hz <= 0) {
+        emac_hal_set_csr_clock_range(&emac->hal, csr_freq_hz);
+    } else {
+        emac_hal_find_set_closest_csr_clock_range(&emac->hal, emac->mdc_freq_hz, csr_freq_hz);
+    }
     /* init mac registers by default */
     emac_hal_init_mac_default(&emac->hal);
     /* init dma registers with selected EMAC-DMA configuration */
@@ -949,6 +957,8 @@ esp_eth_mac_t *esp_eth_mac_new_esp32(const eth_esp32_emac_config_t *esp32_config
 
     emac->dma_burst_len = esp32_config->dma_burst_len;
     emac->sw_reset_timeout_ms = config->sw_reset_timeout_ms;
+
+    emac->mdc_freq_hz = esp32_config->mdc_freq_hz;
 
     emac->flow_control_high_water_mark = FLOW_CONTROL_HIGH_WATER_MARK;
     emac->flow_control_low_water_mark = FLOW_CONTROL_LOW_WATER_MARK;

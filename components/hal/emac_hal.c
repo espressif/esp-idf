@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <string.h>
+#include <stdlib.h>
 #include "soc/soc_caps.h"
 #include "esp_attr.h"
 #include "hal/emac_hal.h"
@@ -12,6 +13,15 @@
 #include "esp_rom_sys.h"
 #define EMAC_PTP_INIT_TIMEOUT_US (10)
 #endif // SOC_EMAC_IEEE1588V2_SUPPORTED
+
+static uint8_t emac_crs_div_table[] = {
+    42,
+    62,
+    16,
+    26,
+    102,
+    124,
+};
 
 static esp_err_t emac_hal_flush_trans_fifo(emac_hal_context_t *hal)
 {
@@ -37,6 +47,21 @@ void emac_hal_init(emac_hal_context_t *hal)
 #if SOC_EMAC_IEEE1588V2_SUPPORTED
     hal->ptp_regs = &EMAC_PTP;
 #endif
+}
+
+void emac_hal_find_set_closest_csr_clock_range(emac_hal_context_t *hal, int mdc_freq_hz, int freq_hz)
+{
+    int min_diff = abs(freq_hz / emac_crs_div_table[0] - mdc_freq_hz);
+    uint32_t best_div = 0;
+
+    for (int i = 1; i < sizeof(emac_crs_div_table) / sizeof(emac_crs_div_table[0]); i++) {
+        int cur_diff = abs(freq_hz / emac_crs_div_table[i] - mdc_freq_hz);
+        if (cur_diff < min_diff) {
+            min_diff = cur_diff;
+            best_div = i;
+        }
+    }
+    emac_ll_set_csr_clock_division(hal->mac_regs, best_div);
 }
 
 void emac_hal_set_csr_clock_range(emac_hal_context_t *hal, int freq)
