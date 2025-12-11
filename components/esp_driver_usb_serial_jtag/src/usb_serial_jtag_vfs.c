@@ -373,7 +373,7 @@ static int usb_serial_jtag_fsync(int fd)
 
 #ifdef CONFIG_VFS_SUPPORT_SELECT
 
-static void select_notif_callback_isr(usj_select_notif_t usj_select_notif, BaseType_t *task_woken)
+static void select_notif_callback_isr(usj_select_notif_t usj_select_notif, int *task_woken)
 {
     portENTER_CRITICAL_ISR(&s_registered_select_lock);
     for (int i = 0; i < s_registered_select_num; ++i) {

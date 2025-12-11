@@ -233,7 +233,7 @@ esp_err_t sdmmc_host_io_int_enable(int slot)
     return sd_host_slot_enable_io_int(hdl);
 }
 
-esp_err_t sdmmc_host_io_int_wait(int slot, TickType_t timeout_ticks)
+esp_err_t sdmmc_host_io_int_wait(int slot, uint32_t timeout_ticks)
 {
     assert(slot == 0 || slot == 1);
     sd_host_slot_handle_t hdl = sdmmc_get_slot_handle(slot);

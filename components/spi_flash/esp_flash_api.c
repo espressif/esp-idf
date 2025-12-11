@@ -24,6 +24,7 @@
 #include "esp_check.h"
 #include "hal/efuse_hal.h"
 #include "soc/chip_revision.h"
+#include "esp_cpu.h"
 
 #if CONFIG_IDF_TARGET_ESP32S2
 #include "esp_crypto_lock.h" // for locking flash encryption peripheral

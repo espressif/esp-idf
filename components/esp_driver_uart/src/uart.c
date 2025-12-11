@@ -1540,7 +1540,7 @@ static void UART_ISR_ATTR uart_rx_intr_handler_default(void *param)
 }
 
 /**************************************************************/
-esp_err_t uart_wait_tx_done(uart_port_t uart_num, TickType_t ticks_to_wait)
+esp_err_t uart_wait_tx_done(uart_port_t uart_num, uint32_t ticks_to_wait)
 {
     ESP_RETURN_ON_FALSE((uart_num < UART_NUM_MAX), ESP_FAIL, UART_TAG, "uart_num error");
     ESP_RETURN_ON_FALSE((p_uart_obj[uart_num]), ESP_FAIL, UART_TAG, "uart driver error");
@@ -1720,7 +1720,7 @@ static bool uart_check_buf_full(uart_port_t uart_num)
     return false;
 }
 
-int uart_read_bytes(uart_port_t uart_num, void *buf, uint32_t length, TickType_t ticks_to_wait)
+int uart_read_bytes(uart_port_t uart_num, void *buf, uint32_t length, uint32_t ticks_to_wait)
 {
     ESP_RETURN_ON_FALSE((uart_num < UART_NUM_MAX), (-1), UART_TAG, "uart_num error");
     ESP_RETURN_ON_FALSE((buf), (-1), UART_TAG, "uart data null");

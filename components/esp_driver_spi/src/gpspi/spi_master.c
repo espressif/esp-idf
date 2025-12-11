@@ -121,6 +121,9 @@ We have two bits to control the interrupt:
 #include "esp_log.h"
 #include "esp_check.h"
 #include "esp_ipc.h"
+#include "esp_cache.h"
+#include "esp_heap_caps.h"
+#include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
 #include "soc/soc_memory_layout.h"
@@ -1233,7 +1236,7 @@ clean_up:
     return ESP_ERR_NO_MEM;
 }
 
-esp_err_t SPI_MASTER_ATTR spi_device_queue_trans(spi_device_handle_t handle, spi_transaction_t *trans_desc, TickType_t ticks_to_wait)
+esp_err_t SPI_MASTER_ATTR spi_device_queue_trans(spi_device_handle_t handle, spi_transaction_t *trans_desc, uint32_t ticks_to_wait)
 {
     esp_err_t ret = check_trans_valid(handle, trans_desc);
     if (ret != ESP_OK) {
@@ -1285,7 +1288,7 @@ clean_up:
     return ret;
 }
 
-esp_err_t SPI_MASTER_ATTR spi_device_get_trans_result(spi_device_handle_t handle, spi_transaction_t **trans_desc, TickType_t ticks_to_wait)
+esp_err_t SPI_MASTER_ATTR spi_device_get_trans_result(spi_device_handle_t handle, spi_transaction_t **trans_desc, uint32_t ticks_to_wait)
 {
     BaseType_t r;
     spi_trans_priv_t trans_buf;
@@ -1332,7 +1335,7 @@ esp_err_t SPI_MASTER_ATTR spi_device_transmit(spi_device_handle_t handle, spi_tr
     return ESP_OK;
 }
 
-esp_err_t SPI_MASTER_ISR_ATTR spi_device_acquire_bus(spi_device_t *device, TickType_t wait)
+esp_err_t SPI_MASTER_ISR_ATTR spi_device_acquire_bus(spi_device_t *device, uint32_t wait)
 {
     spi_host_t *const host = device->host;
     SPI_CHECK(wait == portMAX_DELAY, "acquire finite time not supported now.", ESP_ERR_INVALID_ARG);
@@ -1396,7 +1399,7 @@ void SPI_MASTER_ISR_ATTR spi_device_release_bus(spi_device_t *dev)
     (void) ret;
 }
 
-esp_err_t SPI_MASTER_ISR_ATTR spi_device_polling_start(spi_device_handle_t handle, spi_transaction_t *trans_desc, TickType_t ticks_to_wait)
+esp_err_t SPI_MASTER_ISR_ATTR spi_device_polling_start(spi_device_handle_t handle, spi_transaction_t *trans_desc, uint32_t ticks_to_wait)
 {
     esp_err_t ret;
     SPI_CHECK(ticks_to_wait == portMAX_DELAY, "currently timeout is not available for polling transactions", ESP_ERR_INVALID_ARG);
@@ -1443,7 +1446,7 @@ esp_err_t SPI_MASTER_ISR_ATTR spi_device_polling_start(spi_device_handle_t handl
     return ESP_OK;
 }
 
-esp_err_t SPI_MASTER_ISR_ATTR spi_device_polling_end(spi_device_handle_t handle, TickType_t ticks_to_wait)
+esp_err_t SPI_MASTER_ISR_ATTR spi_device_polling_end(spi_device_handle_t handle, uint32_t ticks_to_wait)
 {
     SPI_CHECK(handle != NULL, "invalid dev handle", ESP_ERR_INVALID_ARG);
     spi_host_t *host = handle->host;
@@ -1821,7 +1824,7 @@ static void SPI_MASTER_ATTR s_sct_format_conf_buffer(spi_device_handle_t handle,
     spi_hal_sct_format_conf_buffer(hal, &seg_config, hal_dev, buffer);
 }
 
-esp_err_t SPI_MASTER_ATTR spi_device_queue_multi_trans(spi_device_handle_t handle, spi_multi_transaction_t *seg_trans_desc, uint32_t trans_num, TickType_t ticks_to_wait)
+esp_err_t SPI_MASTER_ATTR spi_device_queue_multi_trans(spi_device_handle_t handle, spi_multi_transaction_t *seg_trans_desc, uint32_t trans_num, uint32_t ticks_to_wait)
 {
     SPI_CHECK(handle, "Invalid arguments.", ESP_ERR_INVALID_ARG);
     SPI_CHECK(SOC_SPI_SCT_SUPPORTED_PERIPH(handle->host->id), "Invalid arguments", ESP_ERR_INVALID_ARG);
@@ -1923,7 +1926,7 @@ esp_err_t SPI_MASTER_ATTR spi_device_queue_multi_trans(spi_device_handle_t handl
     return ESP_OK;
 }
 
-esp_err_t SPI_MASTER_ATTR spi_device_get_multi_trans_result(spi_device_handle_t handle, spi_multi_transaction_t **seg_trans_desc, TickType_t ticks_to_wait)
+esp_err_t SPI_MASTER_ATTR spi_device_get_multi_trans_result(spi_device_handle_t handle, spi_multi_transaction_t **seg_trans_desc, uint32_t ticks_to_wait)
 {
     SPI_CHECK(handle, "Invalid arguments.", ESP_ERR_INVALID_ARG);
     SPI_CHECK(SOC_SPI_SCT_SUPPORTED_PERIPH(handle->host->id), "Invalid arguments", ESP_ERR_INVALID_ARG);

@@ -721,7 +721,7 @@ IRAM_ATTR bool spi_bus_lock_touch(spi_bus_lock_dev_handle_t dev_handle)
 /*******************************************************************************
  * Acquiring service
  ******************************************************************************/
-IRAM_ATTR esp_err_t spi_bus_lock_acquire_start(spi_bus_lock_dev_t *dev_handle, TickType_t wait)
+IRAM_ATTR esp_err_t spi_bus_lock_acquire_start(spi_bus_lock_dev_t *dev_handle, uint32_t wait)
 {
     ESP_RETURN_ON_FALSE_ISR(wait == portMAX_DELAY, ESP_ERR_INVALID_ARG, TAG, "timeout other than portMAX_DELAY not supported");
 
@@ -774,9 +774,9 @@ SPI_BUS_LOCK_ISR_ATTR bool spi_bus_lock_bg_entry(spi_bus_lock_t* lock)
     return bg_entry_core(lock);
 }
 
-SPI_BUS_LOCK_ISR_ATTR bool spi_bus_lock_bg_exit(spi_bus_lock_t* lock, bool wip, BaseType_t* do_yield)
+SPI_BUS_LOCK_ISR_ATTR bool spi_bus_lock_bg_exit(spi_bus_lock_t* lock, bool wip, int* do_yield)
 {
-    return bg_exit_core(lock, wip, do_yield);
+    return bg_exit_core(lock, wip, (BaseType_t*)do_yield);
 }
 
 SPI_BUSLOCK_ATTR esp_err_t spi_bus_lock_bg_request(spi_bus_lock_dev_t *dev_handle)
@@ -785,7 +785,7 @@ SPI_BUSLOCK_ATTR esp_err_t spi_bus_lock_bg_request(spi_bus_lock_dev_t *dev_handl
     return ESP_OK;
 }
 
-IRAM_ATTR esp_err_t spi_bus_lock_wait_bg_done(spi_bus_lock_dev_handle_t dev_handle, TickType_t wait)
+IRAM_ATTR esp_err_t spi_bus_lock_wait_bg_done(spi_bus_lock_dev_handle_t dev_handle, uint32_t wait)
 {
     spi_bus_lock_t *lock = dev_handle->parent;
 

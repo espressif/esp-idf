@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,7 +14,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "soc/soc.h"
-#include "freertos/FreeRTOSConfig.h"
 
 #ifdef __cplusplus
 extern "C" {
