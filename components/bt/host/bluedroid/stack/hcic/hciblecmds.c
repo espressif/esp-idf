@@ -2994,7 +2994,7 @@ UINT8 btsnd_hcic_ble_set_periodic_adv_subevt_data(UINT8 adv_handle, UINT8 num_su
             esp_log_buffer_hex_internal("data", subevent_params[i].data, subevent_params[i].subevent_data_len, ESP_LOG_DEBUG);
         }
 
-        param_len += (4 + subevent_params->subevent_data_len);
+        param_len += (4 + subevent_params[i].subevent_data_len);
     }
 
     HCIC_BLE_CMD_CREATED(p, pp, param_len);
