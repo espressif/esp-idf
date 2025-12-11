@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -210,15 +210,20 @@ TEST_CASE("ISP CCM basic function", "[isp]")
 
     esp_isp_ccm_config_t ccm_cfg = {
         .matrix = {
-            {5.0, 0.0, 0.0},
+            {16.0, 0.0, 0.0},
             {0.0, 1.0, 0.0},
             {0.0, 0.0, 1.0}
         },
         .saturation = false,
+        .flags = {
+            .update_once_configured = true,
+        },
     };
     // Out of range case
     TEST_ESP_ERR(ESP_ERR_INVALID_ARG, esp_isp_ccm_configure(isp_proc, &ccm_cfg));
+
     // saturation case
+    ccm_cfg.matrix[0][0] = 5.0;
     ccm_cfg.saturation = true;
     TEST_ESP_OK(esp_isp_ccm_configure(isp_proc, &ccm_cfg));
     TEST_ESP_OK(esp_isp_ccm_enable(isp_proc));
