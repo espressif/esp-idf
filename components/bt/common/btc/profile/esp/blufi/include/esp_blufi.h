@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -89,6 +89,22 @@ void esp_blufi_adv_start(void);
 void esp_blufi_adv_start_with_name(const char *name);
 
 void esp_blufi_send_encap(void *arg);
+
+/*
+ * @brief Initiate BLE security request with the connected peer device.
+ *
+ * This function triggers the BLE Security Manager Protocol (SMP) procedure
+ * to establish a secure, encrypted connection with the specified remote device.
+ * It should be called after a BLE connection is established.
+ *
+ * @param[in] remote_bda  Bluetooth device address of the connected peer.
+ *
+ * @return
+ *     - ESP_OK: Security request initiated successfully
+ *     - ESP_FAIL: Security request failed
+ *     - ESP_ERR_INVALID_STATE: BluFi BLE SMP is not enabled
+ */
+esp_err_t esp_blufi_start_security_request(esp_blufi_bd_addr_t remote_bda);
 
 #ifdef CONFIG_BT_NIMBLE_ENABLED
 /**
