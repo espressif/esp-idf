@@ -5,19 +5,19 @@ import subprocess
 
 import pytest
 from pytest_embedded import Dut
-from pytest_embedded_idf.utils import idf_parametrize
 
 
 @pytest.mark.parametrize(
-    'config',
+    'config, target',
     [
-        pytest.param('default_ip101', marks=[pytest.mark.ethernet_router]),
-        pytest.param('default_generic', marks=[pytest.mark.ethernet_router]),
-        pytest.param('default_dm9051', marks=[pytest.mark.eth_dm9051]),
+        pytest.param('default_ip101', 'esp32', marks=[pytest.mark.ethernet_router]),
+        pytest.param('default_generic', 'esp32', marks=[pytest.mark.ethernet_router]),
+        pytest.param('default_dm9051', 'esp32', marks=[pytest.mark.eth_dm9051]),
+        pytest.param('defaults_esp32p4', 'esp32p4', marks=[pytest.mark.eth_ip101]),
+        pytest.param('defaults_esp32p4v1', 'esp32p4', marks=[pytest.mark.eth_ip101, pytest.mark.esp32p4_eco4]),
     ],
-    indirect=True,
+    indirect=['target'],
 )
-@idf_parametrize('target', ['esp32'], indirect=['target'])
 def test_esp_eth_basic(dut: Dut) -> None:
     # wait for ip received
     dut_ip = dut.expect(r'esp_netif_handlers: .+ ip: (\d+\.\d+\.\d+\.\d+),').group(1)
