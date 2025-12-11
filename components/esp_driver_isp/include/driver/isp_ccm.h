@@ -26,6 +26,9 @@ typedef struct {
                                                              *   When saturation is true, and final value will be limited to 4.0, and won't rise error
                                                              *   When saturation is false, `esp_isp_ccm_configure` will rise ESP_ERR_INVALID_ARG error
                                                              */
+    struct {
+        uint32_t update_once_configured : 1;                ///< If set, apply configuration to hardware immediately; otherwise defer to frame boundary
+    } flags;                                                ///< Driver behaviour flags
 } esp_isp_ccm_config_t;
 
 /**

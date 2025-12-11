@@ -37,7 +37,7 @@ esp_err_t esp_isp_ccm_configure(isp_proc_handle_t proc, const esp_isp_ccm_config
     esp_os_enter_critical(&proc->spinlock);
     isp_ll_ccm_set_clk_ctrl_mode(proc->hal.hw, ISP_LL_PIPELINE_CLK_CTRL_AUTO);
     ret = isp_hal_ccm_set_matrix(&proc->hal, ccm_cfg->saturation, ccm_cfg->matrix);
-    valid = isp_ll_shadow_update_ccm(proc->hal.hw);
+    valid = isp_ll_shadow_update_ccm(proc->hal.hw, ccm_cfg->flags.update_once_configured);
     esp_os_exit_critical(&proc->spinlock);
     ESP_RETURN_ON_FALSE(ret, ESP_ERR_INVALID_ARG, TAG, "invalid argument: ccm matrix contain NaN or out of range");
     ESP_RETURN_ON_FALSE(valid, ESP_ERR_INVALID_STATE, TAG, "failed to update ccm shadow register");
