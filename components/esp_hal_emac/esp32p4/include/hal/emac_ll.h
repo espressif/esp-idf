@@ -840,6 +840,12 @@ static inline void emac_ll_ts_target_int_trig_enable(emac_ptp_dev_t *ptp_regs)
 
 /************** End of ptp regs operation ********************/
 
+static inline soc_module_clk_t emac_ll_get_csr_clk_src(void)
+{
+    // Source of the ESP32P4 EMAC CRS clock is SYS clock.
+    return SOC_MOD_CLK_SYS;
+}
+
 /**
  * @brief Enable the bus clock for the EMAC module
  *

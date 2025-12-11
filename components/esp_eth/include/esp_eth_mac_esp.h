@@ -126,6 +126,7 @@ typedef struct {
 #if !SOC_EMAC_RMII_CLK_OUT_INTERNAL_LOOPBACK
     eth_mac_clock_config_t clock_config_out_in;     /*!< EMAC input clock configuration for internally generated output clock (when output clock is looped back externally) */
 #endif //SOC_EMAC_RMII_CLK_OUT_INTERNAL_LOOPBACK
+    int32_t mdc_freq_hz;                            /*!< EMAC MDC frequency range limit, if set to 0 or a negative value, the driver will can set the CSR clock range up to 2.5 MHz */
 } eth_esp32_emac_config_t;
 
 /**
@@ -185,6 +186,7 @@ typedef bool (*ts_target_exceed_cb_from_isr_t)(esp_eth_mediator_t *eth, void *us
         },                                                                    \
         .dma_burst_len = ETH_DMA_BURST_LEN_32,                                \
         .intr_priority = 0,                                                   \
+        .mdc_freq_hz = 0,                                                     \
     }
 #elif CONFIG_IDF_TARGET_ESP32P4
 #define ETH_ESP32_EMAC_DEFAULT_CONFIG()                                       \
@@ -205,6 +207,7 @@ typedef bool (*ts_target_exceed_cb_from_isr_t)(esp_eth_mediator_t *eth, void *us
         },                                                                    \
         .dma_burst_len = ETH_DMA_BURST_LEN_32,                                \
         .intr_priority = 0,                                                   \
+        .mdc_freq_hz = 0,                                                     \
         .emac_dataif_gpio =                                                   \
         {                                                                     \
             .rmii =                                                           \

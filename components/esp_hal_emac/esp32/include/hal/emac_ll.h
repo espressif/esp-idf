@@ -22,6 +22,7 @@
 #include "soc/emac_mac_struct.h"
 #include "soc/emac_ext_struct.h"
 #include "soc/dport_reg.h"
+#include "soc/clk_tree_defs.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -744,6 +745,12 @@ static inline void emac_ll_pause_frame_enable(emac_ext_dev_t *ext_regs, bool ena
     ext_regs->ex_phyinf_conf.sbd_flowctrl = enable;
 }
 /*************** End of ext regs operation *********************/
+
+static inline soc_module_clk_t emac_ll_get_csr_clk_src(void)
+{
+    // Source of the ESP32 EMAC CRS clock is APB clock.
+    return SOC_MOD_CLK_APB;
+}
 
 #ifdef __cplusplus
 }

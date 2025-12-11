@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -35,7 +35,14 @@ uint32_t clk_hal_soc_root_get_freq_mhz(soc_cpu_clk_src_t cpu_clk_src);
 uint32_t clk_hal_cpu_get_freq_hz(void);
 
 /**
- * @brief Get APB_CLK frequency
+ * @brief Get SYS_CLK frequency, derived from MEM_CLK
+ *
+ * @return SYS clock frequency, in Hz. Returns 0 if internal clock configuration is invalid.
+ */
+uint32_t clk_hal_sys_get_freq_hz(void);
+
+/**
+ * @brief Get APB_CLK frequency, derived from SYS_CLK
  *
  * @return APB clock frequency, in Hz. Returns 0 if internal clock configuration is invalid.
  */
