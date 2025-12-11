@@ -46,7 +46,7 @@ extern "C" {
 #define ESP_VFS_PATH_MAX 15
 
 /**
- * Default value of flags member in esp_vfs_t structure.
+ * Default value of flags member in esp_vfs_fs_ops_t structure.
  */
 #define ESP_VFS_FLAG_DEFAULT (1 << 0)
 
@@ -68,6 +68,7 @@ extern "C" {
 
 /**
  * @brief VFS definition structure
+ * @note Prefer using esp_vfs_fs_ops_t with esp_vfs_register_fs*() instead.
  *
  * This structure should be filled with pointers to corresponding
  * FS driver functions.
@@ -248,8 +249,6 @@ typedef struct
 #endif // CONFIG_VFS_SUPPORT_SELECT || defined __DOXYGEN__
 } esp_vfs_t;
 
-
-
 /**
  * Register a virtual filesystem for given path prefix.
  *
@@ -291,7 +290,7 @@ esp_err_t esp_vfs_register(const char* base_path, const esp_vfs_t* vfs, void* ct
  *          registered, ESP_ERR_INVALID_ARG if the file descriptor boundaries
  *          are incorrect.
  */
-esp_err_t esp_vfs_register_with_id(const esp_vfs_t *vfs, void *ctx, esp_vfs_id_t *vfs_id);
+esp_err_t esp_vfs_register_with_id(const esp_vfs_t *vfs, void *ctx, esp_vfs_id_t *vfs_id) __attribute__((deprecated("Use esp_vfs_register_fs_with_id() instead")));
 
 /**
  * Unregister a virtual filesystem for given path prefix
