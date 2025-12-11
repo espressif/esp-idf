@@ -16,26 +16,28 @@
 extern "C" {
 #endif
 
+#define ESP_CAM_CTLR_ISP_DVP_DATA_SIG_NUM_MAX    16
+
 /**
  * @brief ESP CAM ISP DVP controller configurations.
  */
 typedef struct {
-    cam_ctlr_data_width_t data_width;             /*!< Number of data lines. */
-    int data_io[ISP_DVP_DATA_SIG_NUM];            /*!< ISP DVP data-in IO numbers. */
-    int pclk_io;                                  /*!< ISP DVP pclk IO number. */
-    int hsync_io;                                 /*!< ISP DVP hsync IO number. */
-    int vsync_io;                                 /*!< ISP DVP vsync IO number. */
-    int de_io;                                    /*!< ISP DVP de IO number. */
+    cam_ctlr_data_width_t data_width;                      /*!< Number of data lines. */
+    int data_io[ESP_CAM_CTLR_ISP_DVP_DATA_SIG_NUM_MAX];    /*!< ISP DVP data-in IO numbers. */
+    int pclk_io;                                           /*!< ISP DVP pclk IO number. */
+    int hsync_io;                                          /*!< ISP DVP hsync IO number. */
+    int vsync_io;                                          /*!< ISP DVP vsync IO number. */
+    int de_io;                                             /*!< ISP DVP de IO number. */
     struct {
-        uint32_t pclk_invert: 1;                  /*!< Set to 1 to invert the pclk signal. */
-        uint32_t hsync_invert: 1;                 /*!< Set to 1 to invert the hsync signal (i.e., active low). */
-        uint32_t vsync_invert: 1;                 /*!< Set to 1 to invert the vsync signal (i.e., active high). */
-        uint32_t de_invert: 1;                    /*!< Set to 1 to invert the de signal (i.e., active low). */
-    } io_flags;                                   /*!< ISP DVP IO flags. */
-    int queue_items;                              /*!< Queue items. */
+        uint32_t pclk_invert: 1;                           /*!< Set to 1 to invert the pclk signal. */
+        uint32_t hsync_invert: 1;                          /*!< Set to 1 to invert the hsync signal (i.e., active low). */
+        uint32_t vsync_invert: 1;                          /*!< Set to 1 to invert the vsync signal (i.e., active high). */
+        uint32_t de_invert: 1;                             /*!< Set to 1 to invert the de signal (i.e., active low). */
+    } io_flags;                                            /*!< ISP DVP IO flags. */
+    int queue_items;                                       /*!< Queue items. */
     struct {
-        uint32_t byte_swap_en   : 1;              /*!< Set to 1 to enable byte swap. */
-        uint32_t bk_buffer_dis  : 1;              /*!< Set to 1 to disable backup buffer. */
+        uint32_t byte_swap_en   : 1;                       /*!< Set to 1 to enable byte swap. */
+        uint32_t bk_buffer_dis  : 1;                       /*!< Set to 1 to disable backup buffer. */
     };
 } esp_cam_ctlr_isp_dvp_cfg_t;
 

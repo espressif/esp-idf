@@ -66,7 +66,7 @@ typedef struct isp_dvp_controller_t {
 
 typedef struct isp_dvp_ctx_t {
     _lock_t              mutex;
-    isp_dvp_controller_t *dvp_ctlr[SOC_ISP_DVP_CTLR_NUMS];
+    isp_dvp_controller_t *dvp_ctlr[ISP_LL_DVP_CTLR_NUMS];
 } isp_dvp_ctx_t;
 
 static const char *TAG = "ISP_DVP";
@@ -572,7 +572,7 @@ static esp_err_t s_isp_claim_dvp_controller(isp_proc_handle_t isp_proc, isp_dvp_
 
     _lock_acquire(&s_ctx.mutex);
     bool found = false;
-    for (int i = 0; i < SOC_ISP_DVP_CTLR_NUMS; i++) {
+    for (int i = 0; i < ISP_LL_DVP_CTLR_NUMS; i++) {
         found = !s_ctx.dvp_ctlr[i];
         if (found) {
             s_ctx.dvp_ctlr[i] = dvp_ctlr;

@@ -22,6 +22,12 @@ if(CONFIG_SOC_MIPI_CSI_SUPPORTED)
     list(APPEND srcs "${target}/mipi_csi_periph.c")
 endif()
 
+# ISP related source files
+if(CONFIG_SOC_ISP_SUPPORTED)
+    list(APPEND srcs "isp_hal.c")
+    list(APPEND srcs "${target}/isp_periph.c")
+endif()
+
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS ${public_include}
                        REQUIRES soc hal)
