@@ -1725,7 +1725,6 @@ BOOLEAN btsnd_hcic_ble_create_ext_conn_v2(tHCI_CreatExtConn *p_conn)
     UINT8_TO_STREAM(pp, p_conn->adv_handle);
     UINT8_TO_STREAM(pp, p_conn->subevent);
     UINT8_TO_STREAM(pp, p_conn->filter_policy);
-    UINT8_TO_STREAM(pp, p_conn->filter_policy);
     UINT8_TO_STREAM(pp, p_conn->own_addr_type);
     UINT8_TO_STREAM(pp, p_conn->peer_addr_type);
     BDADDR_TO_STREAM(pp, p_conn->peer_addr);
