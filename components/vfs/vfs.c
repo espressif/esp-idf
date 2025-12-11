@@ -522,6 +522,16 @@ esp_err_t esp_vfs_register(const char* base_path, const esp_vfs_t* vfs, void* ct
     return esp_vfs_register_common(base_path, strlen(base_path), vfs, ctx, NULL);
 }
 
+esp_err_t esp_vfs_register_with_id(const esp_vfs_t *vfs, void *ctx, esp_vfs_id_t *vfs_id)
+{
+    if (vfs_id == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    *vfs_id = -1;
+    return esp_vfs_register_common("", LEN_PATH_PREFIX_IGNORED, vfs, ctx, vfs_id);
+}
+
 esp_err_t esp_vfs_register_fd_range(const esp_vfs_fs_ops_t *vfs, int flags, void *ctx, int min_fd, int max_fd)
 {
     if (min_fd < 0 || max_fd < 0 || min_fd > MAX_FDS || max_fd > MAX_FDS || min_fd > max_fd) {
@@ -530,7 +540,7 @@ esp_err_t esp_vfs_register_fd_range(const esp_vfs_fs_ops_t *vfs, int flags, void
     }
 
     int index = 0;
-    esp_err_t ret = esp_vfs_register_common("", LEN_PATH_PREFIX_IGNORED, vfs, ctx, &index);
+    esp_err_t ret = esp_vfs_register_fs_common(NULL, vfs, flags, ctx, &index);
 
     if (ret == ESP_OK) {
         _lock_acquire(&s_fd_table_lock);
@@ -567,16 +577,6 @@ esp_err_t esp_vfs_register_fs_with_id(const esp_vfs_fs_ops_t *vfs, int flags, vo
 
     *vfs_id = -1;
     return esp_vfs_register_fs_common(NULL, vfs, flags, ctx, vfs_id);
-}
-
-esp_err_t esp_vfs_register_with_id(const esp_vfs_t *vfs, void *ctx, esp_vfs_id_t *vfs_id)
-{
-    if (vfs_id == NULL) {
-        return ESP_ERR_INVALID_ARG;
-    }
-
-    *vfs_id = -1;
-    return esp_vfs_register_common("", LEN_PATH_PREFIX_IGNORED, vfs, ctx, vfs_id);
 }
 
 esp_err_t esp_vfs_unregister_with_id(esp_vfs_id_t vfs_id)
