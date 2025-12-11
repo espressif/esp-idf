@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <sys/lock.h>
 #include "esp_efuse.h"
 #include "esp_efuse_utility.h"
 #include "soc/efuse_periph.h"
