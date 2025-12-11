@@ -8,6 +8,10 @@ set(srcs "commands.c"
          "split_argv.c"
          "linenoise/linenoise.c")
 
+if(CONFIG_CONSOLE_SHELL_ENABLE)
+    list(APPEND srcs "shell.c")
+endif()
+
 set(requires vfs)
 
 if(${target} STREQUAL "linux")
