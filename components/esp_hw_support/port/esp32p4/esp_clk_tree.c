@@ -8,6 +8,7 @@
 #include "esp_clk_tree.h"
 #include "esp_err.h"
 #include "esp_check.h"
+#include "soc/clk_tree_defs.h"
 #include "soc/rtc.h"
 #include "hal/clk_gate_ll.h"
 #include "hal/clk_tree_hal.h"
@@ -31,6 +32,12 @@ esp_err_t esp_clk_tree_src_get_freq_hz(soc_module_clk_t clk_src, esp_clk_tree_sr
         break;
     case SOC_MOD_CLK_XTAL:
         clk_src_freq = clk_hal_xtal_get_freq_mhz() * MHZ;
+        break;
+    case SOC_MOD_CLK_SYS:
+        clk_src_freq = clk_hal_sys_get_freq_hz();
+        break;
+    case SOC_MOD_CLK_APB:
+        clk_src_freq = clk_hal_apb_get_freq_hz();
         break;
     case SOC_MOD_CLK_PLL_F20M:
         clk_src_freq = CLK_LL_PLL_480M_FREQ_MHZ / clk_ll_pll_f20m_get_divider() * MHZ;
