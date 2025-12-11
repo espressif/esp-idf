@@ -161,7 +161,7 @@ ESP-IDF 的根目录中提供了针对不同 shell 的用户安装脚本，包�
 * ``install.sh`` 适用于 Bash
 * ``install.fish`` 适用于 Fish
 
-这些脚本除了下载和安装 ``IDF_TOOLS_PATH`` 中的工具外，还会准备一个 Python 虚拟环境，并在此虚拟环境中安装所需软件包。
+这些脚本除了下载和安装 ``IDF_TOOLS_PATH`` 中的工具外，还会准备一个 Python 虚拟环境，并在此虚拟环境中安装所需软件包。如果要指定 ESP-IDF 使用特定的 Python ，则需要在安装之前及每次使用之前设置环境变量 ``ESP_PYTHON_CUSTOM``，例如 ``export ESP_PYTHON_CUSTOM=/opt/bin/python3.13``。
 
 为启用相应功能，这些脚本可以选择性地接受一组以逗号分隔的芯片目标列表及 ``--enable-*`` 参数，这类参数会传递给 ``idf_tools.py`` 脚本，并由该脚本将这类参数存储在 ``idf-env.json`` 中，从而逐步启用芯片目标及功能。
 

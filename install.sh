@@ -10,7 +10,7 @@ export IDF_PATH
 echo "INFO: Using IDF_PATH '${IDF_PATH}' for installation."
 
 echo "Detecting the Python interpreter"
-. "${IDF_PATH}/tools/detect_python.sh"
+. "${IDF_PATH}/tools/detect_python.sh" || exit 1
 
 echo "Checking Python compatibility"
 "${ESP_PYTHON}" "${IDF_PATH}/tools/python_version_checker.py"

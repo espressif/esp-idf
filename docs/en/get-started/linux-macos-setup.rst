@@ -116,6 +116,8 @@ To install supported Python 3 on macOS:
 
     During installation, the install script will check for supported Python versions on your system and select the oldest version that meets the minimum requirement.
 
+If you want to specify a particular Python for ESP-IDF, you need to set environment variable ``ESP_PYTHON_CUSTOM`` before installation and each time before use. For example ``export ESP_PYTHON_CUSTOM=/opt/bin/python3.13``.
+    
 .. _get-started-get-esp-idf:
 
 Step 2. Get ESP-IDF
