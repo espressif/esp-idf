@@ -113,6 +113,38 @@ static inline void regi2c_ctrl_ll_i2c_sar_periph_disable(void)
     CLEAR_PERI_REG_MASK(PMU_RF_PWC_REG, PMU_XPD_PERIF_I2C);
 }
 
+/**
+ * @brief Enable the RF TX I2C internal bus power domain
+ */
+static inline void regi2c_ctrl_ll_i2c_rftx_periph_enable(void)
+{
+    SET_PERI_REG_MASK(PMU_RF_PWC_REG, PMU_XPD_RFTX_I2C);
+}
+
+/**
+ * @brief Disable the RF TX I2C internal bus power domain
+ */
+static inline void regi2c_ctrl_ll_i2c_rftx_periph_disable(void)
+{
+    CLEAR_PERI_REG_MASK(PMU_RF_PWC_REG, PMU_XPD_RFTX_I2C);
+}
+
+/**
+ * @brief Enable the RF RX I2C internal bus power domain
+ */
+static inline void regi2c_ctrl_ll_i2c_rfrx_periph_enable(void)
+{
+    SET_PERI_REG_MASK(PMU_RF_PWC_REG, PMU_XPD_RFRX_I2C);
+}
+
+/**
+ * @brief Disable the RF RX I2C internal bus power domain
+ */
+static inline void regi2c_ctrl_ll_i2c_rfrx_periph_disable(void)
+{
+    CLEAR_PERI_REG_MASK(PMU_RF_PWC_REG, PMU_XPD_RFRX_I2C);
+}
+
 #ifdef __cplusplus
 }
 #endif
