@@ -10,6 +10,17 @@ This page briefly lists all of the vulnerabilities that are discovered and fixed
 CVE-2025
 --------
 
+CVE-2025-66409
+~~~~~~~~~~~~~~
+
+Out-of-Bounds Read in ESP32 Bluetooth AVRCP Command Handling
+
+* Espressif Advisory: NA (Published on GitHub)
+* Impact: Applicable for ESP-IDF
+* Resolution: Please see advisory for details
+* Advisory pointer: `GHSA-qhf9-vr2h-jh96`_
+
+
 CVE-2025-65092
 ~~~~~~~~~~~~~~
 
@@ -245,3 +256,4 @@ Security Advisory Concerning Wi-Fi Authentication Bypass
 .. _`GHSA-9w88-r2vm-qfc4` : https://github.com/espressif/esp-idf/security/advisories/GHSA-9w88-r2vm-qfc4
 .. _`GHSA-8mg7-9qpg-p92v` : https://github.com/espressif/esp-idf/security/advisories/GHSA-8mg7-9qpg-p92v
 .. _`GHSA-vcw6-jc3p-4gj8` : https://github.com/espressif/esp-idf/security/advisories/GHSA-vcw6-jc3p-4gj8
+.. _`GHSA-qhf9-vr2h-jh96` : https://github.com/espressif/esp-idf/security/advisories/GHSA-qhf9-vr2h-jh96
