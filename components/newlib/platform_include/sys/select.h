@@ -26,6 +26,10 @@ int select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds, struct
 
 #endif // fd_set
 
+#if __BSD_VISIBLE && !defined(fds_bits)
+#define fds_bits    __fds_bits
+#endif
+
 #if defined(FD_ISSET) || defined(FD_SET) || defined(FD_CLR)
 #undef FD_SET
 #undef FD_CLR

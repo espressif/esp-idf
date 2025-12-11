@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <signal.h>
 #include <sys/time.h>
 #include <wchar.h>
 #include <unistd.h>

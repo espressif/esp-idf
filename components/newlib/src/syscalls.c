@@ -10,6 +10,7 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <sys/time.h>
+#include <sys/stat.h>
 #include "esp_attr.h"
 
 #if CONFIG_LIBC_PICOLIBC
@@ -83,7 +84,7 @@ int rename(const char *src, const char *dst)
 
 int isatty(int fd)
 {
-    struct stat buf;
+    struct stat buf = {0};
 
     if (_fstat_r(__getreent(), fd, &buf) < 0) {
         return 0;
@@ -109,6 +110,7 @@ int getpid()
 {
     return _getpid_r(__getreent());
 }
+
 #endif // CONFIG_LIBC_PICOLIBC
 
 void _exit(int __status)
@@ -121,6 +123,7 @@ int fstat(int fd, struct stat *st)
     return _fstat_r(__getreent(), fd, st);
 }
 
+#if !CONFIG_LIBC_PICOLIBC
 #if CONFIG_SPIRAM_CACHE_LIBMISC_IN_IRAM
 IRAM_ATTR
 #endif
@@ -128,6 +131,7 @@ int raise(int sig)
 {
     return _raise_r(__getreent(), sig);
 }
+#endif
 
 #if CONFIG_SPIRAM_CACHE_LIBMISC_IN_IRAM
 IRAM_ATTR

@@ -39,18 +39,19 @@ endif()
 
 if(CONFIG_LIBC_OPTIMIZED_MISALIGNED_ACCESS)
     list(APPEND srcs
-         "src/string/memcmp.c"
-         "src/string/memmove.c"
-         "src/string/strncmp.c"
-         "src/string/strncpy.c"
          "src/port/riscv/memcpy.c"
+         "src/port/riscv/memmove.c"
+         "src/string/memcmp.c"
          "src/port/riscv/strcpy.c"
+         "src/string/strncpy.c"
+         "src/string/strncmp.c"
          "src/port/riscv/strcmp.S")
-    list(APPEND EXTRA_LINK_FLAGS "-u esp_libc_include_memcmp_impl")
+    list(APPEND EXTRA_LINK_FLAGS "-u esp_libc_include_memcpy_impl")
     list(APPEND EXTRA_LINK_FLAGS "-u esp_libc_include_memmove_impl")
-    list(APPEND EXTRA_LINK_FLAGS "-u esp_libc_include_strncmp_impl")
-    list(APPEND EXTRA_LINK_FLAGS "-u esp_libc_include_strncpy_impl")
+    list(APPEND EXTRA_LINK_FLAGS "-u esp_libc_include_memcmp_impl")
     list(APPEND EXTRA_LINK_FLAGS "-u esp_libc_include_strcpy_impl")
+    list(APPEND EXTRA_LINK_FLAGS "-u esp_libc_include_strncpy_impl")
+    list(APPEND EXTRA_LINK_FLAGS "-u esp_libc_include_strncmp_impl")
     list(APPEND EXTRA_LINK_FLAGS "-u esp_libc_include_strcmp_impl")
 endif()
 
@@ -70,21 +71,28 @@ else()
     endif()
 endif()
 
-list(APPEND ldfragments "src/newlib.lf" "src/system_libs.lf")
+set(ldfragments "")
+list(APPEND ldfragments "src/esp_libc.lf" "src/system_libs.lf")
 
-if(CONFIG_SPIRAM_CACHE_WORKAROUND)
-    if(CONFIG_LIBC_NEWLIB)
-        list(APPEND ldfragments src/esp32-spiram-rom-functions-c.lf)
-        list(APPEND ldfragments src/libm.lf)
-    else()
-        list(APPEND ldfragments src/picolibc/esp32-spiram-rom-functions-c.lf)
+if(CONFIG_LIBC_NEWLIB)
+    list(APPEND ldfragments src/libc.lf)
+    list(APPEND ldfragments src/libm.lf)
+else()
+    list(APPEND ldfragments src/picolibc/libc.lf)
+endif()
+
+set(priv_reqs soc spi_flash)
+
+if(IDF_BUILD_V2)
+    if(CONFIG_VFS_SUPPORT_IO)
+        list(APPEND priv_reqs vfs)
     endif()
 endif()
 
 idf_component_register(SRCS "${srcs}"
                     INCLUDE_DIRS platform_include
                     PRIV_INCLUDE_DIRS priv_include
-                    PRIV_REQUIRES soc spi_flash
+                    PRIV_REQUIRES "${priv_reqs}"
                     LDFRAGMENTS "${ldfragments}")
 
 # Toolchain libraries require code defined in this component
@@ -96,6 +104,17 @@ set_source_files_properties(heap.c PROPERTIES COMPILE_FLAGS -fno-builtin)
 if(CONFIG_STDATOMIC_S32C1I_SPIRAM_WORKAROUND)
     set_source_files_properties("src/port/xtensa/stdatomic_s32c1i.c"
                                 PROPERTIES COMPILE_FLAGS "-mno-disable-hardware-atomics")
+endif()
+
+if(CONFIG_LIBC_OPTIMIZED_MISALIGNED_ACCESS)
+    # TODO GCC-419 and IDF-13089: cleanup files
+    set_source_files_properties("src/string/memcmp.c"
+                                "src/string/strncmp.c"
+                                "src/string/strncpy.c"
+                                "src/port/riscv/memcpy.c"
+                                "src/port/riscv/memmove.c"
+                                "src/port/riscv/strcpy.c"
+                                PROPERTIES COMPILE_FLAGS -O2)
 endif()
 
 # Forces the linker to include heap, syscall, pthread, assert, and retargetable locks from this component,

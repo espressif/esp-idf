@@ -13,9 +13,10 @@
 #include <stdio-bufio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <sys/signal.h>
+#include <signal.h>
 #include <sys/unistd.h>
 #include <sys/reent.h>
+#include <sys/lock.h>
 #include <assert.h>
 #include <fcntl.h>
 #include "esp_newlib.h"

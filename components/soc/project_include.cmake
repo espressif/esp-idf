@@ -13,11 +13,10 @@ if(CONFIG_IDF_TOOLCHAIN_GCC)
            CONFIG_IDF_TARGET_ESP32C61 OR
            CONFIG_IDF_TARGET_ESP32H2 OR
            CONFIG_IDF_TARGET_ESP32H21)
-        set(_march "rv32imac_zicsr_zifencei_zaamo_zalrsc")
-    elseif(CONFIG_IDF_TARGET_ESP32H4)
-        set(_march "rv32imafcb_zicsr_zifencei_zaamo_zalrsc")
-    elseif(CONFIG_IDF_TARGET_ESP32P4)
-        set(_march "rv32imafc_zicsr_zifencei_zaamo_zalrsc")
+        set(_march "rv32imac_zicsr_zifencei")
+    elseif(CONFIG_IDF_TARGET_ESP32H4 OR
+           CONFIG_IDF_TARGET_ESP32P4)
+        set(_march "rv32imafc_zicsr_zifencei")
     elseif(NOT(CONFIG_IDF_TARGET_ESP32S2 OR CONFIG_IDF_TARGET_ESP32S3))
         message(FATAL_ERROR "Unknown Espressif target: ${CONFIG_IDF_TARGET}")
     endif()
@@ -48,19 +47,12 @@ if(CONFIG_IDF_TOOLCHAIN_GCC)
             endif()
         endif()
 
-        if(CONFIG_SOC_CPU_HAS_DSP)
-            set(_march "${_march}_xespdsp")
-        endif()
-
         # Set ABI and ARCH options
         if(CONFIG_SOC_CPU_HAS_FPU)
             idf_toolchain_add_flags(COMPILE_OPTIONS "-mabi=ilp32f")
         endif()
         idf_toolchain_add_flags(COMPILE_OPTIONS "-march=${_march}")
 
-        if(NOT CONFIG_SOC_CPU_MISALIGNED_ACCESS_ON_PMP_MISMATCH_ISSUE)
-            idf_toolchain_add_flags(COMPILE_OPTIONS "-mtune=esp-base")
-        endif()
         idf_toolchain_rerun_abi_detection()
     else()
         message(FATAL_ERROR "Unknown Espressif architecture: ${CONFIG_IDF_TARGET_ARCH}")

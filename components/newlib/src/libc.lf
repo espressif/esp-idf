@@ -3,10 +3,6 @@
 # and/or applications may assume that because these functions normally are in ROM, they are accessible even when flash is
 # inaccessible. To work around this, this ld fragment places these functions in RAM instead. If the ROM functions are used,
 # these defines do nothing, so they can still be included in that situation.
-#
-#
-# Note: the only difference between esp32-spiram-rom-functions-c.lf
-# and esp32-spiram-rom-functions-psram-workaround.lf is the archive name.
 
 [mapping:libc]
 archive:
