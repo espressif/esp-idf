@@ -57,8 +57,16 @@ menu "HTTP Server"
             It internally uses a counting semaphore with count set to `LWIP_UDP_RECVMBOX_SIZE` to achieve this.
             This config will slightly change API behavior to block until message gets delivered on control socket.
 
+    config HTTPD_ENABLE_EVENTS
+        bool "Enable ESP_HTTP_SERVER_EVENT"
+        default y
+        help
+            This enables the ESP_HTTP_SERVER_EVENT event type. Generating these eventes adds some overhead.
+            If you are not using this event type, you can disable it to save some memory and add performance.
+
     config HTTPD_SERVER_EVENT_POST_TIMEOUT
         int "Time in millisecond to wait for posting event"
+        depends on HTTPD_ENABLE_EVENTS
         default 2000
         help
             This config option helps in setting the time in millisecond to wait for event to be posted to the

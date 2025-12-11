@@ -6,8 +6,18 @@ menu "ESP HTTPS server"
         help
             Enable ESP HTTPS server component
 
+    config ESP_HTTPS_SERVER_EVENTS
+        bool "Enable ESP_HTTPS_SERVER_EVENT event type"
+        depends on ESP_HTTPS_SERVER_ENABLE
+        default y
+        help
+            This enables the ESP_HTTPS_SERVER_EVENT event type. Generating these eventes adds some overhead.
+            If you are not using this event type, you can disable it to save some memory.
+
+
     config ESP_HTTPS_SERVER_EVENT_POST_TIMEOUT
         int "Time in millisecond to wait for posting event"
+        depends on (ESP_HTTPS_SERVER_ENABLE && ESP_HTTPS_SERVER_EVENTS)
         default 2000
         help
             This config option helps in setting the time in millisecond to wait for event to be posted to the
