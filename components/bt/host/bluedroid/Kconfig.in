@@ -291,6 +291,16 @@ config BT_BLE_BLUFI_ENABLE
     help
         This option can be close when the app does not require blufi function.
 
+config BT_BLUFI_BLE_SMP_ENABLE
+    bool "Enable BLE SMP support for BluFi"
+    depends on BT_BLE_BLUFI_ENABLE && BT_BLE_SMP_ENABLE
+    default n
+    help
+        Enable BLE Security Manager Protocol (SMP) for BluFi.
+        When enabled, BluFi will support BLE pairing and encryption
+        before Wi-Fi provisioning, providing a more secure provisioning process.
+        This feature is only supported with the Bluedroid host.
+
 config BT_GATT_MAX_SR_PROFILES
     int "Max GATT Server Profiles"
     depends on BT_GATTS_ENABLE && BT_BLUEDROID_ENABLED
