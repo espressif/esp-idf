@@ -15,10 +15,18 @@ check_register_rw_half_word(SOC_MODULES "twai*" "pcr" "hp_sys_clkrst"
                             HAL_MODULES "twai*")
 
 if(CONFIG_COMPILER_DUMP_RTL_FILES)
+    # Collect RTL directories in a variable for readability. Join them
+    # with commas so they are passed as a single --rtl-dirs argument to the script.
+    set(TWAI_RTL_DIRS
+        ${CMAKE_BINARY_DIR}/esp-idf/esp_driver_twai
+        ${CMAKE_BINARY_DIR}/esp-idf/hal
+        ${CMAKE_BINARY_DIR}/esp-idf/esp_hal_twai
+    )
+    string(JOIN "," TWAI_RTL_DIRS_JOINED ${TWAI_RTL_DIRS})
     add_custom_target(
         check_test_app_sections ALL
         COMMAND ${PYTHON} $ENV{IDF_PATH}/tools/ci/check_callgraph.py
-        --rtl-dirs ${CMAKE_BINARY_DIR}/esp-idf/esp_driver_twai/,${CMAKE_BINARY_DIR}/esp-idf/hal/
+        --rtl-dirs ${TWAI_RTL_DIRS_JOINED}
         --elf-file ${CMAKE_BINARY_DIR}/test_twai.elf
         find-refs
         --from-sections=.iram0.text

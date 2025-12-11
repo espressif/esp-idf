@@ -27,7 +27,7 @@
 #include "soc/soc_caps.h"
 #include "soc/soc.h"
 #include "soc/io_mux_reg.h"
-#include "soc/twai_periph.h"
+#include "hal/twai_periph.h"
 #include "hal/twai_hal.h"
 #include "hal/twai_ll.h"
 #include "esp_rom_gpio.h"
@@ -139,7 +139,7 @@ static void twai_alert_handler(twai_obj_t *p_twai_obj, uint32_t alert_code, int 
 
 static inline void twai_handle_rx_buffer_frames(twai_obj_t *p_twai_obj, BaseType_t *task_woken, int *alert_req)
 {
-#ifdef SOC_TWAI_SUPPORTS_RX_STATUS
+#if TWAI_LL_SUPPORT(RX_STATUS)
     uint32_t msg_count = twai_hal_get_rx_msg_count(p_twai_obj->hal);
 
     for (uint32_t i = 0; i < msg_count; i++) {
@@ -158,7 +158,7 @@ static inline void twai_handle_rx_buffer_frames(twai_obj_t *p_twai_obj, BaseType
             twai_alert_handler(p_twai_obj, TWAI_ALERT_RX_FIFO_OVERRUN, alert_req);
         }
     }
-#else   //SOC_TWAI_SUPPORTS_RX_STATUS
+#else
     uint32_t msg_count = twai_hal_get_rx_msg_count(p_twai_obj->hal);
     bool overrun = false;
     //Clear all valid RX frames
@@ -183,7 +183,7 @@ static inline void twai_handle_rx_buffer_frames(twai_obj_t *p_twai_obj, BaseType
         p_twai_obj->rx_overrun_count += twai_hal_clear_rx_fifo_overrun(p_twai_obj->hal);
         twai_alert_handler(p_twai_obj, TWAI_ALERT_RX_FIFO_OVERRUN, alert_req);
     }
-#endif  //SOC_TWAI_SUPPORTS_RX_STATUS
+#endif // TWAI_LL_SUPPORT(RX_STATUS)
 }
 
 static inline void twai_handle_tx_buffer_frame(twai_obj_t *p_twai_obj, bool tx_success, BaseType_t *task_woken, int *alert_req)
@@ -429,7 +429,7 @@ static esp_err_t twai_alloc_driver_obj(const twai_general_config_t *g_config, tw
     p_obj->hal = (twai_hal_context_t *)(p_obj + 1);   //hal context is place at end of driver context
 
 #if CONFIG_PM_ENABLE
-#if SOC_TWAI_CLK_SUPPORT_APB
+#if TWAI_LL_SUPPORT(APB_CLK)
     // DFS can change APB frequency. So add lock to prevent sleep and APB freq from changing
     if (clk_src == TWAI_CLK_SRC_APB) {
         // TODO: pm_lock name should also reflect the controller ID
@@ -444,7 +444,7 @@ static esp_err_t twai_alloc_driver_obj(const twai_general_config_t *g_config, tw
     if (ret != ESP_OK) {
         goto err;
     }
-#endif //SOC_TWAI_CLK_SUPPORT_APB
+#endif // TWAI_LL_SUPPORT(APB_CLK)
 #endif //CONFIG_PM_ENABLE
 
 #if TWAI_USE_RETENTION_LINK
