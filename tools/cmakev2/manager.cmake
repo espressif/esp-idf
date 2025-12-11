@@ -25,9 +25,9 @@ function(__init_component_manager)
     endif()
 
     # Set IDF_COMPONENT_MANAGER_INTERFACE_VERSION.
-    # Defaults to 4. Allow overriding via env/CMake.
+    # Defaults to 5. Allow overriding via env/CMake.
     __get_default_value(VARIABLE IDF_COMPONENT_MANAGER_INTERFACE_VERSION
-                        DEFAULT 4
+                        DEFAULT 5
                         OUTPUT cmgr_iface)
     idf_build_set_property(IDF_COMPONENT_MANAGER_INTERFACE_VERSION ${cmgr_iface})
 
@@ -126,18 +126,17 @@ function(__download_managed_component)
     idf_build_get_property(project_dir PROJECT_DIR)
     idf_build_get_property(component_manager_interface_version IDF_COMPONENT_MANAGER_INTERFACE_VERSION)
     idf_build_get_property(dependencies_lock_file DEPENDENCIES_LOCK)
-    idf_build_get_property(sdkconfig_json __SDKCONFIG_JSON)
-
     # Invoke the component manager
     execute_process(COMMAND ${python}
         "-m"
         "idf_component_manager.prepare_components"
         "--project_dir=${project_dir}"
         "--lock_path=${dependencies_lock_file}"
-        "--sdkconfig_json_file=${sdkconfig_json}"
         "--interface_version=${component_manager_interface_version}"
+        "--use_sdk_json=true"
         "prepare_dependencies"
         "--local_components_list_file=${ARG_COMPONENTS_LIST_FILE}"
+        "--build_dir=${build_dir}"
         "--managed_components_list_file=${ARG_MANAGED_OUTPUT_FILE}"
         RESULT_VARIABLE result
         ERROR_VARIABLE error)
@@ -183,7 +182,8 @@ function(__download_component_level_managed_components)
     foreach(interface ${component_interfaces})
         __idf_component_get_property_unchecked(name ${interface} COMPONENT_NAME)
         __idf_component_get_property_unchecked(dir ${interface} COMPONENT_DIR)
-        set(__contents "${__contents}  - name: \"${name}\"\n    path: \"${dir}\"\n")
+        __idf_component_get_property_unchecked(source ${interface} COMPONENT_SOURCE)
+        set(__contents "${__contents}  - name: \"${name}\"\n    path: \"${dir}\"\n    source: \"${source}\"\n")
     endforeach()
     file(WRITE ${local_components_list_file} "${__contents}")
 
@@ -289,7 +289,6 @@ function(__inject_requirements_for_component_from_manager component_name)
     idf_build_get_property(project_dir PROJECT_DIR)
     idf_build_get_property(build_dir BUILD_DIR)
     idf_build_get_property(dependencies_lock_file DEPENDENCIES_LOCK)
-    idf_build_get_property(sdkconfig_json __SDKCONFIG_JSON)
     idf_build_get_property(component_manager_interface_version IDF_COMPONENT_MANAGER_INTERFACE_VERSION)
     idf_build_get_property(idf_path IDF_PATH)
     idf_build_get_property(component_prefix PREFIX)
@@ -325,8 +324,8 @@ function(__inject_requirements_for_component_from_manager component_name)
         "idf_component_manager.prepare_components"
         "--project_dir=${project_dir}"
         "--lock_path=${dependencies_lock_file}"
-        "--sdkconfig_json_file=${sdkconfig_json}"
         "--interface_version=${component_manager_interface_version}"
+        "--use_sdk_json=true"
         "inject_requirements"
         "--idf_path=${idf_path}"
         "--build_dir=${build_dir}"

@@ -207,7 +207,7 @@ endfunction()
 # Given a component directory, get the requirements by expanding it early. The expansion is performed
 # using a separate CMake script (the expansion is performed in a separate instance of CMake in scripting mode).
 #
-function(__component_get_requirements)
+function(__component_get_requirements use_sdk_json)
     idf_build_get_property(idf_path IDF_PATH)
 
     idf_build_get_property(build_dir BUILD_DIR)
@@ -245,8 +245,8 @@ function(__component_get_requirements)
             "idf_component_manager.prepare_components"
             "--project_dir=${project_dir}"
             "--lock_path=${DEPENDENCIES_LOCK}"
-            "--sdkconfig_json_file=${build_dir}/config/sdkconfig.json"
             "--interface_version=${component_manager_interface_version}"
+            "--use_sdk_json=${use_sdk_json}"
             "inject_requirements"
             "--idf_path=${idf_path}"
             "--build_dir=${build_dir}"
