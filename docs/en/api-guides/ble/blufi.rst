@@ -12,6 +12,16 @@ Fragmenting, data encryption, and checksum verification in the BluFi layer are t
 
 You can customize symmetric encryption, asymmetric encryption, and checksum support customization. Here we use the DH algorithm for key negotiation, 128-AES algorithm for data encryption, and CRC16 algorithm for checksum verification.
 
+.. note::
+
+   **BluFi is currently in maintenance mode, and no new features are planned.**
+
+   For new projects or when adding Wi-Fi provisioning, we recommend using the network_provisioning component
+
+   (`network_provisioning <https://github.com/espressif/idf-extra-components/tree/master/network_provisioning>`_)
+
+   for a modern, secure, and actively maintained solution.
+
 
 Getting Started
 -----------------
@@ -693,15 +703,36 @@ The data to be encrypted and decrypted must be in the same length. The IV8 is an
 
 This function is used to compute CheckSum and return a value of CheckSum. BluFi uses the returned value to compare the CheckSum of the frame.
 
-5. Implementing Stronger Security
+5. BLE SMP Encryption for Blufi
 
-The default encryption/decryption logic in this example is intended for demonstration purposes only.
+Before Wi-Fi provisioning, you can use BLE SMP pairing to establish a secure connection, making the provisioning process safer.
 
-If you require a higher level of security, it is recommended to implement your own encryption, decryption, authentication, and checksum algorithms by customizing the security callbacks in the BluFi framework.
+This feature can be enabled or disabled via the configuration option:
 
 .. code-block:: c
 
-   esp_err_t esp_blufi_register_callbacks(esp_blufi_callbacks_t *callbacks)
+   CONFIG_EXAMPLE_BLUFI_BLE_SMP_ENABLE
+
+If this option is enabled, the ESP32 device will issue a pairing request once it is connected. Only after a successful pairing can the device proceed with provisioning.
+
+Currently, BLE SMP pairing is supported **only on the Bluedroid host**.
+
+6. Implementing Stronger Security
+
+The default encryption and decryption logic in this example is intended for demonstration purposes only.
+
+If you require a higher level of security, you may consider one of the following approaches:
+
+1. **Custom Security Callbacks** – Implement your own encryption, decryption, authentication, and checksum algorithms by customizing the security callbacks in the Blufi framework:
+
+   .. code-block:: c
+
+      esp_err_t esp_blufi_register_callbacks(esp_blufi_callbacks_t *callbacks);
+
+2. **Network Provisioning Component (recommended)** – Alternatively, you can use the network_provisioning component for a secure, ready-to-use provisioning solution:
+
+   `network_provisioning <https://github.com/espressif/idf-extra-components/tree/master/network_provisioning>`_
+
 
 GATT Related Instructions
 ----------------------------
