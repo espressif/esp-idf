@@ -175,6 +175,8 @@ if(CONFIG_APP_BUILD_GENERATE_BINARIES AND CONFIG_APP_BUILD_TYPE_APP_2NDBOOT)
     esptool_py_flash_target_image(flash partition-table "${PARTITION_TABLE_OFFSET}"
                                         "${build_dir}/partition_table/${final_partition_bin}")
 
+    # Add partition table as a dependency to the partition-table-flash target
+    add_dependencies(partition-table-flash partition-table)
     # Add partition table as a dependency to the flash target
     add_dependencies(flash partition_table_bin)
 
