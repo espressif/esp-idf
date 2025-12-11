@@ -374,6 +374,10 @@ esp_err_t adc_continuous_start(adc_continuous_handle_t handle)
     //start conversion
     adc_hal_digi_start(&handle->hal, handle->rx_dma_buf);
 
+#if ADC_LL_DEFAULT_CONV_LIMIT_EN
+    adc_ll_digi_convert_limit_enable(false);
+#endif
+
     return ESP_OK;
 }
 
