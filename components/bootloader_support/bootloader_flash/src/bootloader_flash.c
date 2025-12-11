@@ -598,7 +598,34 @@ esp_err_t bootloader_flash_write(size_t dest_addr, void *src, size_t size, bool 
     esp_rom_spiflash_result_t rc = ESP_ROM_SPIFLASH_RESULT_OK;
 
     if (write_encrypted && !ENCRYPTION_IS_VIRTUAL) {
+
+    /* NOTE: [Cache Coherency] Manual cache management for encrypted writes
+    *
+    * The `esp_rom_spiflash_write_encrypted` function modifies the physical
+    * flash memory but does not automatically manage CPU cache coherency.
+    * If a cache line holding the old data for the destination address
+    * exists, a subsequent read could be incorrectly served from this
+    * stale cache, returning outdated data.
+    *
+    * To prevent this cache coherency issue, we manually disable the
+    * cache before the write operation and re-enable it immediately
+    * after. This ensures that any subsequent read of this memory
+    * region will fetch the new, correct data from the physical flash.
+    */
+#if CONFIG_IDF_TARGET_ESP32
+        Cache_Read_Disable(0);
+        Cache_Flush(0);
+#else
+        cache_hal_disable(CACHE_TYPE_ALL);
+#endif
+
         rc = esp_rom_spiflash_write_encrypted(dest_addr, src, size);
+
+#if CONFIG_IDF_TARGET_ESP32
+        Cache_Read_Enable(0);
+#else
+        cache_hal_enable(CACHE_TYPE_ALL);
+#endif
     } else {
         rc = esp_rom_spiflash_write(dest_addr, src, size);
     }
