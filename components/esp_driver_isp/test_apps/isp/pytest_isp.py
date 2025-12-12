@@ -11,3 +11,18 @@ from pytest_embedded_idf.utils import soc_filtered_targets
 @idf_parametrize('target', soc_filtered_targets('SOC_ISP_SUPPORTED == 1'), indirect=['target'])
 def test_isp(dut: Dut) -> None:
     dut.run_all_single_board_cases()
+
+
+# TODO: IDF-15006
+# @pytest.mark.generic
+# @pytest.mark.esp32p4_eco4
+# @pytest.mark.parametrize(
+#     'config',
+#     [
+#         ('esp32p4_eco4'),
+#     ],
+#     indirect=True,
+# )
+# @idf_parametrize('target', ['esp32p4'], indirect=['target'])
+# def test_isp_esp32p4_rev2(dut: Dut) -> None:
+#     dut.run_all_single_board_cases()
