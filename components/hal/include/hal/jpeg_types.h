@@ -75,9 +75,9 @@ typedef enum {
  * @brief JPEG encoder source formats.
  */
 typedef enum {
-    JPEG_ENC_SRC_RGB888 = ESP_COLOR_FOURCC_RGB24,   /*!< JPEG encoder source RGB888 */
+    JPEG_ENC_SRC_RGB888 = ESP_COLOR_FOURCC_BGR24,   /*!< JPEG encoder source RGB888 */
     JPEG_ENC_SRC_YUV422 = ESP_COLOR_FOURCC_YVYU,   /*!< JPEG encoder source YUV422 */
-    JPEG_ENC_SRC_RGB565 = ESP_COLOR_FOURCC_RGB16_BE,   /*!< JPEG encoder source RGB565 */
+    JPEG_ENC_SRC_RGB565 = ESP_COLOR_FOURCC_RGB16,   /*!< JPEG encoder source RGB565 */
     JPEG_ENC_SRC_YUV444 = ESP_COLOR_FOURCC_YUV,   /*!< JPEG encoder source YUV444 */
     JPEG_ENC_SRC_YUV420 = ESP_COLOR_FOURCC_OUYY_EVYY,   /*!< JPEG encoder source YUV420 */
     JPEG_ENC_SRC_GRAY = ESP_COLOR_FOURCC_GREY,     /*!< JPEG encoder source GRAY */

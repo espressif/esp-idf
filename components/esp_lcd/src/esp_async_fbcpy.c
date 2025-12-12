@@ -101,7 +101,7 @@ static void async_memcpy_setup_dma2d_descriptor(esp_async_fbcpy_context_t* mcp_c
     dma2d_descriptor_t* tx_desc = mcp_ctx->tx_desc;
     dma2d_descriptor_t* rx_desc = mcp_ctx->rx_desc;
     size_t dma_desc_size = mcp_ctx->dma_desc_size;
-    uint8_t dma2d_pbyte = dma2d_desc_pixel_format_to_pbyte_value_fourcc(transaction->pixel_format_fourcc_id);
+    uint8_t dma2d_pbyte = dma2d_desc_pixel_format_to_pbyte_value(transaction->pixel_format_fourcc_id);
 
     tx_desc->buffer = (void*)transaction->src_buffer;
     tx_desc->next = NULL;

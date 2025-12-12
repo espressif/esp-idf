@@ -43,9 +43,12 @@ uint32_t color_hal_pixel_format_get_bit_depth(color_space_pixel_format_t format)
     }
 }
 
-uint32_t color_hal_pixel_format_fourcc_get_bit_depth(uint32_t four_character_code)
+uint32_t color_hal_pixel_format_fourcc_get_bit_depth(esp_color_fourcc_t four_character_code)
 {
     switch (four_character_code) {
+    case ESP_COLOR_FOURCC_ALPHA4:
+        return 4;
+    case ESP_COLOR_FOURCC_ALPHA8:
     case ESP_COLOR_FOURCC_GREY:
         return 8;
     case ESP_COLOR_FOURCC_OUYY_EVYY:
@@ -54,11 +57,13 @@ uint32_t color_hal_pixel_format_fourcc_get_bit_depth(uint32_t four_character_cod
     case ESP_COLOR_FOURCC_UYVY:
     case ESP_COLOR_FOURCC_YVYU:
     case ESP_COLOR_FOURCC_VYUY:
-    case ESP_COLOR_FOURCC_RGB16_BE:
+    case ESP_COLOR_FOURCC_RGB16:
         return 16;
-    case ESP_COLOR_FOURCC_RGB24:
+    case ESP_COLOR_FOURCC_BGR24:
     case ESP_COLOR_FOURCC_YUV:
         return 24;
+    case ESP_COLOR_FOURCC_BGRA32:
+        return 32;
     default:
         // Unknown color space pixel format, unknown bit depth
         HAL_ASSERT(false);
