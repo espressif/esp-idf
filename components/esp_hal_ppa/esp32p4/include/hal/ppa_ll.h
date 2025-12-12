@@ -16,10 +16,6 @@
 #include "hal/misc.h"
 #include "hal/config.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #define PPA_LL_GET_HW     &PPA
 
 #define PPA_LL_BLEND0_CLUT_MEM_ADDR_OFFSET  0x400
@@ -27,6 +23,10 @@ extern "C" {
 
 #define PPA_LL_SRM_SCALING_INT_MAX   (PPA_SR_SCAL_X_INT_V + 1)
 #define PPA_LL_SRM_SCALING_FRAG_MAX  (PPA_SR_SCAL_X_FRAG_V + 1)
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * @brief Enumeration of PPA SRM macro block size options
@@ -273,7 +273,7 @@ static inline bool ppa_ll_srm_is_color_mode_supported(ppa_srm_color_mode_t color
 static inline void ppa_ll_srm_set_rx_color_mode(ppa_dev_t *dev, ppa_srm_color_mode_t color_mode)
 {
     uint32_t val = 0;
-    bool is_yuv422 __attribute__ ((unused)) = false;
+    bool is_yuv422 __attribute__((unused)) = false;
     switch (color_mode) {
     case PPA_SRM_COLOR_MODE_ARGB8888:
         val = 0;
@@ -712,8 +712,8 @@ static inline bool ppa_ll_blend_is_color_mode_supported(ppa_blend_color_mode_t c
     case PPA_BLEND_COLOR_MODE_RGB565:
     case PPA_BLEND_COLOR_MODE_A8:
     case PPA_BLEND_COLOR_MODE_A4:
-    // case PPA_BLEND_COLOR_MODE_L8:
-    // case PPA_BLEND_COLOR_MODE_L4:
+        // case PPA_BLEND_COLOR_MODE_L8:
+        // case PPA_BLEND_COLOR_MODE_L4:
 #if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
     case PPA_BLEND_COLOR_MODE_YUV420:
     case PPA_BLEND_COLOR_MODE_YUV422_UYVY:
@@ -737,7 +737,7 @@ static inline bool ppa_ll_blend_is_color_mode_supported(ppa_blend_color_mode_t c
 static inline void ppa_ll_blend_set_rx_bg_color_mode(ppa_dev_t *dev, ppa_blend_color_mode_t color_mode)
 {
     uint32_t val = 0;
-    bool is_yuv422 __attribute__ ((unused)) = false;
+    bool is_yuv422 __attribute__((unused)) = false;
     switch (color_mode) {
     case PPA_BLEND_COLOR_MODE_ARGB8888:
         val = 0;
@@ -748,12 +748,12 @@ static inline void ppa_ll_blend_set_rx_bg_color_mode(ppa_dev_t *dev, ppa_blend_c
     case PPA_BLEND_COLOR_MODE_RGB565:
         val = 2;
         break;
-    // case PPA_BLEND_COLOR_MODE_L8:
-    //     val = 4;
-    //     break;
-    // case PPA_BLEND_COLOR_MODE_L4:
-    //     val = 5;
-    //     break;
+        // case PPA_BLEND_COLOR_MODE_L8:
+        //     val = 4;
+        //     break;
+        // case PPA_BLEND_COLOR_MODE_L4:
+        //     val = 5;
+        //     break;
 #if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
     case PPA_BLEND_COLOR_MODE_YUV420:
         val = 8;
