@@ -19,7 +19,7 @@
 #include "bootloader_soc.h"
 #include "esp_private/bootloader_flash_internal.h"
 
-static const char *TAG = "boot.esp32s31";
+ESP_LOG_ATTR_TAG(TAG, "boot.esp32s31");
 
 esp_err_t bootloader_init(void)
 {

@@ -17,6 +17,7 @@ examples/storage/nvs/nvs_console:
   disable_test:
     - if: IDF_TARGET not in ["esp32", "esp32c3"]
       reason: only one target per arch needed
+
 examples/storage/nvs/nvs_iteration:
   depends_components:
     - nvs_flash

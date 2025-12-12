@@ -2,9 +2,9 @@
 
 examples/network/bridge:
   disable:
-    - if: IDF_TARGET in ["esp32h21", "esp32h4"]
+    - if: IDF_TARGET in ["esp32h21", "esp32h4", "esp32s31"]
       temporary: true
-      reason: not supported yet # TODO: [ESP32H21] IDF-12203 [ESP32H4] IDF-12712
+      reason: not supported yet # TODO: [ESP32H21] IDF-12203 [ESP32H4] IDF-12712 [ESP32S31] IDF-14929
   disable_test:
     - if: IDF_TARGET != "esp32"
       reason: Generic functionality, no need to be run on specific targets
@@ -40,6 +40,10 @@ examples/network/sta2eth:
     - http-server
 
 examples/network/vlan_support:
+  disable:
+    - if: IDF_TARGET in ["esp32s31"]
+      temporary: true
+      reason: not support yet # TODO: [ESP32S31] IDF-14929
   disable_test:
     - if: IDF_TARGET not in ["esp32"]
       reason: Runner uses esp32 ethernet kit

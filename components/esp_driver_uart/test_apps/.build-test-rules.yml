@@ -3,6 +3,9 @@
 components/esp_driver_uart/test_apps/rs485:
   disable:
     - if: SOC_UART_SUPPORTED != 1
+    - if: IDF_TARGET in ["esp32s31"]
+      temporary: true
+      reason: not support yet # TODO: [ESP32S31] IDF-14789
   disable_test:
     - if: IDF_TARGET not in ["esp32", "esp32h2"]
       temporary: true
@@ -14,6 +17,9 @@ components/esp_driver_uart/test_apps/rs485:
 components/esp_driver_uart/test_apps/uart:
   disable:
     - if: SOC_UART_SUPPORTED != 1
+    - if: IDF_TARGET in ["esp32s31"]
+      temporary: true
+      reason: not support yet # TODO: [ESP32S31] IDF-14789
   depends_components:
     - esp_driver_uart
     - esp_driver_gpio

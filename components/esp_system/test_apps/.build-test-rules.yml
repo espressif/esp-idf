@@ -8,6 +8,9 @@ components/esp_system/test_apps/esp_system_unity_tests:
   disable:
     - if: (CONFIG_NAME == "psram" and SOC_SPIRAM_SUPPORTED != 1)
     - if: (CONFIG_NAME == "psram_with_pd_top" and (SOC_SPIRAM_SUPPORTED != 1 or SOC_PM_SUPPORT_TOP_PD != 1))
+    - if: IDF_TARGET == "esp32s31"
+      temporary: true
+      reason: cannot pass build because of pm not supported yet # TODO: [ESP32S31] IDF-14648
 
 components/esp_system/test_apps/linux_apis:
   enable:

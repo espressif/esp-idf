@@ -10,7 +10,7 @@
     - mbedtls
     - protocol_examples_common
   disable:
-    - if: IDF_TARGET in ["esp32h21", "esp32h4"]
+    - if: IDF_TARGET in ["esp32h21", "esp32h4", "esp32s31"]  # TODO: [ESP32S31] IDF-14935
       temporary: true
       reason: not supported yet  # TODO: [ESP32H21] IDF-11581   [ESP32H4] IDF-12360
 
@@ -143,6 +143,9 @@ examples/protocols/https_x509_bundle:
       reason: only test on esp32
   depends_components+:
     - esp-tls
+
+examples/protocols/icmp/pmtu_probe:
+  <<: *default_rules
 
 examples/protocols/icmp_echo:
   <<: *default_rules

@@ -28,6 +28,7 @@ verbose = 1  # INFO
 additional_build_targets = [
     'esp32h21',
     'esp32h4',
+    'esp32s31',
 ]
 
 # collect

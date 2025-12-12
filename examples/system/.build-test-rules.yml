@@ -52,6 +52,9 @@ examples/system/efuse:
       reason: Security features are not yet supported for Linux.
     - if: SOC_ECDSA_SUPPORT_CURVE_P384 != 1 and (CONFIG_NAME == "virt_secure_boot_v2_ecdsa_p384" or CONFIG_NAME == "virt_sb_v2_ecdsa_p384_and_fe")
       reason: Secure Boot V2 with ECDSA P384 is not supported.
+    - if: IDF_TARGET in ["esp32s31"]
+      temporary: true
+      reason: not support yet # TODO: [ESP32S31] IDF-14688
   depends_components:
     - efuse
     - bootloader_support
@@ -70,7 +73,7 @@ examples/system/esp_timer:
 
 examples/system/eventfd:
   disable:
-    - if: SOC_GPTIMER_SUPPORTED != 1 and (IDF_TARGET != "esp32" and (NIGHTLY_RUN != "1" or IDF_TARGET == "linux"))
+    - if: SOC_GPTIMER_SUPPORTED != 1 and (IDF_TARGET != "esp32" and (NIGHTLY_RUN != "1" or IDF_TARGET == "linux")) or IDF_TARGET in ["esp32s31"] # TODO: [ESP32S31] IDF-14932
       reason: no target specific functionality, testing on a single target is sufficient
   depends_components:
     - vfs
@@ -146,9 +149,9 @@ examples/system/nmi_isr:
 
 examples/system/ota/advanced_https_ota:
   disable:
-    - if: IDF_TARGET in ["esp32h21", "esp32h4"]
+    - if: IDF_TARGET in ["esp32h21", "esp32h4", "esp32s31"]
       temporary: true
-      reason: not supported yet
+      reason: not supported yet # TODO: [ESP32S31,ESP32H4,ESP32H21] IDF-14944
   disable_test:
     - if: IDF_TARGET not in ["esp32", "esp32c3", "esp32s3"]
       temporary: true
@@ -167,9 +170,9 @@ examples/system/ota/advanced_https_ota:
 
 examples/system/ota/native_ota_example:
   disable:
-    - if: IDF_TARGET in ["esp32h21", "esp32h4"]
+    - if: IDF_TARGET in ["esp32h21", "esp32h4", "esp32s31"]
       temporary: true
-      reason: not supported yet
+      reason: not supported yet # TODO: [ESP32S31,ESP32H4,ESP32H21] IDF-14944
   disable_test:
     - if: IDF_TARGET != "esp32"
       reason: Only esp32 has ethernet runners
@@ -189,7 +192,7 @@ examples/system/ota/otatool:
 
 examples/system/ota/partitions_ota:
   disable:
-    - if: IDF_TARGET in ["esp32h21", "esp32h4"]
+    - if: IDF_TARGET in ["esp32h21", "esp32h4", "esp32s31"] # TODO: [ESP32S31] IDF-14944
       temporary: true
       reason: not supported yet
     - if: CONFIG_NAME == "recovery_bootloader" and SOC_RECOVERY_BOOTLOADER_SUPPORTED != 1
@@ -216,7 +219,7 @@ examples/system/ota/partitions_ota:
 
 examples/system/ota/simple_ota_example:
   disable:
-    - if: IDF_TARGET in ["esp32h21", "esp32h4"]
+    - if: IDF_TARGET in ["esp32h21", "esp32h4", "esp32s31"] # TODO: [ESP32S31] IDF-14944
       temporary: true
       reason: not supported yet
     - if: CONFIG_NAME == "spiram" and SOC_SPIRAM_SUPPORTED != 1

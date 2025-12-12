@@ -97,7 +97,7 @@ esp_reset_reason_t esp_reset_reason(void)
  */
 
 /* in IRAM, can be called from panic handler */
-void IRAM_ATTR esp_reset_reason_set_hint(esp_reset_reason_t hint)
+void esp_reset_reason_set_hint(esp_reset_reason_t hint)
 {
     // TODO: ["ESP32S31"] IDF-14672
 }

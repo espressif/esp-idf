@@ -70,3 +70,7 @@ config ESP_ROM_HAS_NEWLIB_NANO_FORMAT
 config ESP_ROM_HAS_VERSION
     bool
     default y
+
+config ESP_ROM_MULTI_HEAP_WALK_PATCH
+    bool
+    default y
