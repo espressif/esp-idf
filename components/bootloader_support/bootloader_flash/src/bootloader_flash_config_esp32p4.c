@@ -12,6 +12,7 @@
 #include "esp_rom_gpio.h"
 #include "soc/spi_pins.h"
 #include "soc/spi_mem_reg.h"
+#include "soc/spi_pins.h"
 #include "flash_qio_mode.h"
 #include "bootloader_flash_config.h"
 #include "bootloader_common.h"

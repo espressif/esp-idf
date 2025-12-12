@@ -1,7 +1,11 @@
 idf_build_get_property(target IDF_TARGET)
 
 set(srcs)
-set(includes "include" "${target}/include")
+set(includes "include")
+
+if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/${target}/include")
+    list(APPEND includes "${target}/include")
+endif()
 
 if(CONFIG_SOC_GPIO_PORT GREATER 0)
     list(APPEND srcs "gpio_hal.c")

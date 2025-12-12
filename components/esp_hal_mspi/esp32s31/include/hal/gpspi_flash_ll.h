@@ -13,7 +13,7 @@
 #pragma once
 
 #include <stdlib.h>
-#include "soc/spi_periph.h"
+#include "soc/spi_reg.h"
 #include "soc/spi_struct.h"
 #include "hal/spi_types.h"
 #include "hal/spi_flash_types.h"

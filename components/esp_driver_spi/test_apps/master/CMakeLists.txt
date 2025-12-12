@@ -9,19 +9,28 @@ project(spi_master_test)
 
 idf_build_get_property(elf EXECUTABLE)
 if(CONFIG_COMPILER_DUMP_RTL_FILES)
-    add_custom_target(check_test_app_sections ALL
-                      COMMAND ${PYTHON} $ENV{IDF_PATH}/tools/ci/check_callgraph.py
-                      --rtl-dirs ${CMAKE_BINARY_DIR}/esp-idf/esp_driver_spi/,${CMAKE_BINARY_DIR}/esp-idf/hal/
-                      --elf-file ${CMAKE_BINARY_DIR}/spi_master_test.elf
-                      find-refs
-                      --from-sections=.iram0.text
-                      --to-sections=.flash.text,.flash.rodata
-                      --exit-code
-                      DEPENDS ${elf}
-                      )
+    set(SPI_MASTER_RTL_DIRS
+        ${CMAKE_BINARY_DIR}/esp-idf/esp_driver_spi
+        ${CMAKE_BINARY_DIR}/esp-idf/esp_hal_gpspi
+        ${CMAKE_BINARY_DIR}/esp-idf/hal
+    )
+    string(JOIN "," RTL_DIRS_STRING ${SPI_MASTER_RTL_DIRS})
+    add_custom_target(
+        check_test_app_sections ALL
+        COMMAND ${PYTHON} $ENV{IDF_PATH}/tools/ci/check_callgraph.py
+        --rtl-dirs ${RTL_DIRS_STRING}
+        --elf-file ${CMAKE_BINARY_DIR}/spi_master_test.elf
+        find-refs
+        --from-sections=.iram0.text
+        --to-sections=.flash.text,.flash.rodata
+        --exit-code
+        DEPENDS ${elf}
+    )
 endif()
 
 message(STATUS "Checking spi registers are not read-write by half-word")
 include($ENV{IDF_PATH}/tools/ci/check_register_rw_half_word.cmake)
-check_register_rw_half_word(SOC_MODULES "spi" "syscon" "pcr" "system" "hp_sys_clkrst"
-                            HAL_MODULES "spi")
+check_register_rw_half_word(
+    SOC_MODULES "spi" "syscon" "pcr" "system" "hp_sys_clkrst"
+    HAL_MODULES "spi"
+)

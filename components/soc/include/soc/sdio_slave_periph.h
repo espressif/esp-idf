@@ -8,7 +8,6 @@
 #include <stdint.h>
 //include soc related (generated) definitions
 #include "soc/soc_caps.h"
-#include "soc/soc_pins.h"
 #if SOC_SDIO_SLAVE_SUPPORTED
 #include "soc/sdio_slc_reg.h"
 #include "soc/sdio_slc_struct.h"

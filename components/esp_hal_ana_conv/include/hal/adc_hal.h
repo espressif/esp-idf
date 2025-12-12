@@ -15,11 +15,6 @@
 #include "hal/adc_ll.h"
 #endif
 
-#if SOC_IS(ESP32S2)
-//ADC utilises SPI3 DMA on ESP32S2
-#include "hal/spi_ll.h"
-#endif
-
 #if SOC_IS(ESP32)
 //ADC utilises I2S0 DMA on ESP32
 #include "hal/i2s_ll.h"

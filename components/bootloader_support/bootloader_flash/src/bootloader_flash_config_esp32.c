@@ -17,7 +17,7 @@
 #include "soc/spi_reg.h"
 #include "soc/dport_reg.h"
 #include "soc/soc_caps.h"
-#include "soc/soc_pins.h"
+#include "soc/spi_pins.h"
 #include "soc/chip_revision.h"
 #include "hal/efuse_hal.h"
 #include "hal/gpio_hal.h"

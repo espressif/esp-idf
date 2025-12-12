@@ -8,7 +8,6 @@
 #include <stdint.h>
 //include soc related (generated) definitions
 #include "soc/soc_caps.h"
-#include "soc/soc_pins.h"
 #include "soc/gpio_num.h"
 #if SOC_SDMMC_HOST_SUPPORTED
 #include "soc/sdmmc_reg.h"

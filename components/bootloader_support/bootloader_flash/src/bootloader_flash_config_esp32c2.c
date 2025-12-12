@@ -19,6 +19,7 @@
 #include "bootloader_common.h"
 #include "bootloader_flash_priv.h"
 #include "bootloader_init.h"
+#include "soc/spi_pins.h"
 #include "hal/mmu_hal.h"
 #include "hal/mmu_ll.h"
 #include "hal/cache_hal.h"

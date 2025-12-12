@@ -18,8 +18,7 @@
 #include <sys/param.h> // For MIN/MAX
 #include <stdbool.h>
 #include <string.h>
-
-#include "soc/spi_periph.h"
+#include "soc/spi_mem_reg.h"
 #include "soc/spi_mem_struct.h"
 #include "hal/assert.h"
 #include "hal/spi_types.h"

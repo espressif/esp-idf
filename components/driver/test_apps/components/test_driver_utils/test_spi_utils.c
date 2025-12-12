@@ -3,14 +3,15 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include "esp_log.h"
 #include "test_spi_utils.h"
 #include "driver/spi_slave.h"
-#include "esp_log.h"
+#include "soc/gpio_sig_map.h"
 #include "driver/gpio.h"
 #include "esp_private/gpio.h"
-#include "esp_rom_gpio.h"
-#include "hal/gpio_ll.h"
+#include "soc/spi_periph.h"
 #include "hal/spi_ll.h"
+#include "hal/gpio_ll.h"
 
 const char MASTER_TAG[] = "test_master";
 const char SLAVE_TAG[] = "test_slave";
