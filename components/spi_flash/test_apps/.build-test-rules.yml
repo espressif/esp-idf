@@ -2,9 +2,9 @@
 
 components/spi_flash/test_apps/esp_flash:
   disable:
-    - if: IDF_TARGET in ["esp32h21", "esp32h4", "esp32s31"]
+    - if: IDF_TARGET in ["esp32s31"]
       temporary: true
-      reason: not support yet # TODO: [esp32h21] IDF-11609 [ESP32H4] IDF-12388 TODO: [esp32s31] IDF-14777
+      reason: not support yet # TODO: TODO: [esp32s31] IDF-14777
   depends_filepatterns:
     - components/bootloader_support/bootloader_flash/**/*
   depends_components:
@@ -26,9 +26,9 @@ components/spi_flash/test_apps/esp_flash_blockdev:
 
 components/spi_flash/test_apps/esp_flash_stress:
   disable:
-    - if: IDF_TARGET in ["esp32h4", "esp32s31"]
+    - if: IDF_TARGET in ["esp32s31"]
       temporary: true
-      reason: not support yet # TODO: [ESP32H4] IDF-12388 [ESP32S31] IDF-14777
+      reason: not support yet # TODO: [ESP32S31] IDF-14777
   depends_components:
     - esp_mm
     - spi_flash
@@ -38,7 +38,7 @@ components/spi_flash/test_apps/flash_encryption:
   disable:
     - if: IDF_TARGET in ["esp32h4", "esp32s31"]
       temporary: true
-      reason: not support yet # TODO: [ESP32H4] IDF-12388 [ESP32S31] IDF-14628
+      reason: not support yet # TODO: [ESP32H4] IDF-12261 [ESP32S31] IDF-14628
   disable_test:
     - if: IDF_TARGET in ["esp32c2", "esp32s2", "esp32c6", "esp32h2", "esp32p4", "esp32c5", "esp32c61", "esp32h21", "esp32h4"]
       temporary: true

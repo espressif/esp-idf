@@ -21,8 +21,6 @@
 extern "C" {
 #endif
 
-// TODO: [ESP32C5] IDF-8715
-
 #define spi_flash_ll_calculate_clock_reg(host_id, clock_div) (((host_id)<=SPI1_HOST) ? spimem_flash_ll_calculate_clock_reg(clock_div) \
                                             : gpspi_flash_ll_calculate_clock_reg(clock_div))
 

@@ -26,8 +26,6 @@
 #include "hal/misc.h"
 #include "hal/assert.h"
 
-//TODO: [ESP32H4] IDF-12390 inherited from verification branch, need check
-
 #ifdef __cplusplus
 extern "C" {
 #endif

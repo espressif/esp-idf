@@ -17,8 +17,6 @@
 #include "gpspi_flash_ll.h"
 #include "spimem_flash_ll.h"
 
-//TODO: [ESP32H4] IDF-12388 inherited from verification branch, need check
-
 #ifdef __cplusplus
 extern "C" {
 #endif

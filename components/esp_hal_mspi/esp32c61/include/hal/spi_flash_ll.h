@@ -14,8 +14,6 @@
 
 #pragma once
 
-// TODO: [ESP32C61] IDF-9314, inherit from c6
-
 #include "gpspi_flash_ll.h"
 #include "spimem_flash_ll.h"
 

@@ -11,8 +11,6 @@
 #include "esp_attr.h"
 #include "esp_rom_spiflash.h"
 
-//TODO: [ESP32H21] IDF-11609
-
 #ifdef __cplusplus
 extern "C" {
 #endif
