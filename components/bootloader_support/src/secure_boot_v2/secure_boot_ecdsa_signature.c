@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,12 +13,17 @@
 #include "mbedtls/ctr_drbg.h"
 #include "mbedtls/ecp.h"
 #include "rom/ecdsa.h"
+#include "sdkconfig.h"
 
 #include "secure_boot_signature_priv.h"
 
 ESP_LOG_ATTR_TAG(TAG, "secure_boot_v2_ecdsa");
 
+#if CONFIG_SECURE_BOOT_ECDSA_KEY_LEN_384_BITS
+#define ECDSA_INTEGER_LEN 48
+#else
 #define ECDSA_INTEGER_LEN 32
+#endif /* CONFIG_SECURE_BOOT_ECDSA_KEY_LEN_384_BITS */
 
 esp_err_t verify_ecdsa_signature_block(const ets_secure_boot_signature_t *sig_block, const uint8_t *image_digest, const ets_secure_boot_sig_block_t *trusted_block)
 {
@@ -48,6 +53,12 @@ esp_err_t verify_ecdsa_signature_block(const ets_secure_boot_signature_t *sig_bl
             key_size = 32;
             mbedtls_ecp_group_load(&ecdsa_context.MBEDTLS_PRIVATE(grp), MBEDTLS_ECP_DP_SECP256R1);
             break;
+#if CONFIG_SECURE_BOOT_ECDSA_KEY_LEN_384_BITS
+        case ECDSA_CURVE_P384:
+            key_size = 48;
+            mbedtls_ecp_group_load(&ecdsa_context.MBEDTLS_PRIVATE(grp), MBEDTLS_ECP_DP_SECP384R1);
+            break;
+#endif /* CONFIG_SECURE_BOOT_ECDSA_KEY_LEN_384_BITS */
         default:
             ESP_LOGE(TAG, "Invalid curve ID");
             return ESP_ERR_INVALID_ARG;
