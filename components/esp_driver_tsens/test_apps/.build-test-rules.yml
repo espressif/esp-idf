@@ -6,10 +6,6 @@ components/esp_driver_tsens/test_apps/temperature_sensor:
     - if: IDF_TARGET == "esp32c5" and CONFIG_NAME == "iram_safe"
       temporary: false
       reason: Use test_temperature_sensor_cbs_esp32c5 instead, iram_safe need to use single app large partition table on c5
-  disable_test:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: p4 rev3 migration # TODO: IDF-14834
   depends_components:
     - esp_driver_tsens
     - esp_phy

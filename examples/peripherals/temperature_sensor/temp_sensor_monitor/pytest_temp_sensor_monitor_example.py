@@ -7,7 +7,6 @@ from pytest_embedded_idf.utils import idf_parametrize
 
 @pytest.mark.generic
 @idf_parametrize('target', ['esp32c6', 'esp32h2', 'esp32p4', 'esp32c5', 'esp32c61'], indirect=['target'])
-@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration, IDF-14834')
 def test_temp_sensor_monitor_example(dut: Dut) -> None:
     dut.expect_exact('Install temperature sensor')
     dut.expect_exact('Enable temperature sensor')
