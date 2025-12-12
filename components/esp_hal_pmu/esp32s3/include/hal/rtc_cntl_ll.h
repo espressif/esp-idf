@@ -45,10 +45,10 @@ FORCE_INLINE_ATTR void rtc_cntl_ll_ext1_set_wakeup_pins(uint32_t io_mask, uint32
     REG_SET_FIELD(RTC_CNTL_EXT_WAKEUP1_REG, RTC_CNTL_EXT_WAKEUP1_SEL, io_mask);
     if ((io_mask & mode_mask) == io_mask) {
         SET_PERI_REG_BITS(RTC_CNTL_EXT_WAKEUP_CONF_REG, 0x1,
-                1, RTC_CNTL_EXT_WAKEUP1_LV_S);
+                          1, RTC_CNTL_EXT_WAKEUP1_LV_S);
     } else {
         SET_PERI_REG_BITS(RTC_CNTL_EXT_WAKEUP_CONF_REG, 0x1,
-                0, RTC_CNTL_EXT_WAKEUP1_LV_S);
+                          0, RTC_CNTL_EXT_WAKEUP1_LV_S);
     }
 }
 

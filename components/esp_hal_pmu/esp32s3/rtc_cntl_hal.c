@@ -62,10 +62,10 @@ void rtc_cntl_hal_enable_cpu_retention(void *addr)
 
             rtc_cntl_ll_set_cpu_retention_link_addr((uint32_t)plink);
             rtc_cntl_ll_config_cpu_retention_timing(
-                    DEFAULT_RETENTION_WAIT_CYCLES,
-                    DEFAULT_RETENTION_CLKOFF_WAIT_CYCLES,
-                    DEFAULT_RETENTION_DONE_WAIT_CYCLES
-                );
+                DEFAULT_RETENTION_WAIT_CYCLES,
+                DEFAULT_RETENTION_CLKOFF_WAIT_CYCLES,
+                DEFAULT_RETENTION_DONE_WAIT_CYCLES
+            );
             rtc_cntl_ll_enable_cpu_retention_clock();
             rtc_cntl_ll_enable_cpu_retention();
 #if SOC_PM_SUPPORT_TAGMEM_PD
@@ -119,17 +119,17 @@ void rtc_cntl_hal_enable_tagmem_retention(void *addr)
             rtc_cntl_ll_enable_tagmem_retention();
             if (retent->tagmem.icache.enable) {
                 rtc_cntl_ll_enable_icache_tagmem_retention(
-                        retent->tagmem.icache.start_point,
-                        retent->tagmem.icache.vld_size,
-                        retent->tagmem.icache.size
-                    );
+                    retent->tagmem.icache.start_point,
+                    retent->tagmem.icache.vld_size,
+                    retent->tagmem.icache.size
+                );
             }
             if (retent->tagmem.dcache.enable) {
                 rtc_cntl_ll_enable_dcache_tagmem_retention(
-                        retent->tagmem.dcache.start_point,
-                        retent->tagmem.dcache.vld_size,
-                        retent->tagmem.dcache.size
-                    );
+                    retent->tagmem.dcache.start_point,
+                    retent->tagmem.dcache.vld_size,
+                    retent->tagmem.dcache.size
+                );
             }
         }
     }
