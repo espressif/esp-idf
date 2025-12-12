@@ -2093,7 +2093,7 @@ static inline bool isp_ll_shadow_update_wbg(isp_dev_t *hw)
     return true;
 }
 
-static inline bool isp_ll_shadow_update_ccm(isp_dev_t *hw)
+static inline bool isp_ll_shadow_update_ccm(isp_dev_t *hw, bool force_update)
 {
     //for compatibility
     return true;
