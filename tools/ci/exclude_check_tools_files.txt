@@ -43,6 +43,7 @@ tools/ci/python_packages/wifi_tools.py
 tools/ci/sg_rules/*
 tools/ci/sort_yaml.py
 tools/ci/utils.sh
+tools/docs/gen_version_specific_includes.py
 tools/eclipse-code-style.xml
 tools/format.sh
 tools/gdb_panic_server.py

@@ -129,6 +129,10 @@ Open Terminal, and run the following commands:
 
 .. include-build-file:: inc/git-clone-bash.inc
 
+.. note::
+
+    If your internet connection is slow, you can add the ``--depth 1`` option to the ``git clone`` command to download the latest commit only. However, this will make subsequent ``git fetch`` operations slower and download more data than necessary.
+
 ESP-IDF is downloaded into ``~/esp/esp-idf``.
 
 Consult :doc:`/versions` for information about which ESP-IDF version to use in a given situation.
