@@ -2513,6 +2513,23 @@ static inline void isp_ll_hist_set_rgb_coefficient(isp_dev_t *hw, const isp_hist
 
 #if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
 /**
+ * @brief Set AWB subwindow range
+ *
+ * @param[in] hw              Hardware instance address
+ * @param[in] top_left_x      Top left pixel x axis value
+ * @param[in] top_left_y      Top left pixel y axis value
+ * @param[in] sub_window_xsize Subwindow x size (minimum 4)
+ * @param[in] sub_window_ysize Subwindow y size (minimum 4)
+ */
+static inline void isp_ll_awb_set_subwindow_range(isp_dev_t *hw, uint32_t top_left_x, uint32_t top_left_y, uint32_t sub_window_xsize, uint32_t sub_window_ysize)
+{
+    hw->awb_bx.awb_x_start = top_left_x;
+    hw->awb_bx.awb_x_bsize = sub_window_xsize;
+    hw->awb_by.awb_y_start = top_left_y;
+    hw->awb_by.awb_y_bsize = sub_window_ysize;
+}
+
+/**
  * @brief Set crop clock control mode
  *
  * @param[in] hw      Hardware instance address
@@ -2594,6 +2611,11 @@ static inline void isp_ll_crop_clear_error(isp_dev_t *hw)
 }
 
 #else
+static inline void isp_ll_awb_set_subwindow_range(isp_dev_t *hw, uint32_t top_left_x, uint32_t top_left_y, uint32_t sub_window_xsize, uint32_t sub_window_ysize)
+{
+    // for compatibility
+}
+
 static inline void isp_ll_crop_set_clk_ctrl_mode(isp_dev_t *hw, isp_ll_pipeline_clk_ctrl_t mode)
 {
     // for compatibility
