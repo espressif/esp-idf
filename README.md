@@ -13,26 +13,7 @@ ESP-IDF is the development framework for Espressif SoCs supported on Windows, Li
 
 # ESP-IDF Release and SoC Compatibility
 
-The following table shows ESP-IDF support of Espressif SoCs where ![alt text][preview] and ![alt text][supported] denote preview status and support, respectively. The preview support is usually limited in time and intended for beta versions of chips. Please use an ESP-IDF release where the desired SoC is already supported.
-
-|Chip         |         v5.1           |         v5.2           |         v5.3           |          v5.4           |          v5.5          |          v6.0           |                                                                     |
-|:----------- |:---------------------: |:---------------------: |:---------------------: | :---------------------: |  :-------------------: |  :--------------------: |:------------------------------------------------------------------- |
-|ESP32        | ![alt text][supported] | ![alt text][supported] | ![alt text][supported] |  ![alt text][supported] | ![alt text][supported] |  ![alt text][supported] |                                                                     |
-|ESP32-S2     | ![alt text][supported] | ![alt text][supported] | ![alt text][supported] |  ![alt text][supported] | ![alt text][supported] |  ![alt text][supported] |                                                                     |
-|ESP32-C3     | ![alt text][supported] | ![alt text][supported] | ![alt text][supported] |  ![alt text][supported] | ![alt text][supported] |  ![alt text][supported] |                                                                     |
-|ESP32-S3     | ![alt text][supported] | ![alt text][supported] | ![alt text][supported] |  ![alt text][supported] | ![alt text][supported] |  ![alt text][supported] |[Announcement](https://www.espressif.com/en/news/ESP32_S3)           |
-|ESP32-C2     | ![alt text][supported] | ![alt text][supported] | ![alt text][supported] |  ![alt text][supported] | ![alt text][supported] |  ![alt text][supported] |[Announcement](https://www.espressif.com/en/news/ESP32-C2)           |
-|ESP32-C6     | ![alt text][supported] | ![alt text][supported] | ![alt text][supported] |  ![alt text][supported] | ![alt text][supported] |  ![alt text][supported] |[Announcement](https://www.espressif.com/en/news/ESP32_C6)           |
-|ESP32-H2     | ![alt text][supported] | ![alt text][supported] | ![alt text][supported] |  ![alt text][supported] | ![alt text][supported] |  ![alt text][supported] |[Announcement](https://www.espressif.com/en/news/ESP32_H2)           |
-|ESP32-P4     |                        |                        | ![alt text][supported] |  ![alt text][supported] | ![alt text][supported] |  ![alt text][supported] |[Announcement](https://www.espressif.com/en/news/ESP32-P4)           |
-|ESP32-C5     |                        |                        |                        |                         | ![alt text][supported] |  ![alt text][supported] |[Announcement](https://www.espressif.com/en/news/ESP32-C5)           |
-|ESP32-C61    |                        |                        |                        |                         | ![alt text][supported] |  ![alt text][supported] |[Announcement](https://www.espressif.com/en/products/socs/esp32-c61) |
-|ESP32-H4     |                        |                        |                        |                         |                        |  ![alt text][preview]   |[Announcement](https://www.espressif.com/en/news/ESP32-H4)           |
-
-[supported]: https://img.shields.io/badge/-supported-green "supported"
-[preview]: https://img.shields.io/badge/-preview-orange "preview"
-
-There are variants of revisions for a series of chips. See [Compatibility Between ESP-IDF Releases and Revisions of Espressif SoCs](https://github.com/espressif/esp-idf/blob/master/COMPATIBILITY.md) for the details of the compatibility between ESP-IDF and chip revisions.
+See [Compatibility Between ESP-IDF Releases and Revisions of Espressif SoCs](https://github.com/espressif/esp-idf/blob/master/COMPATIBILITY.md) for the details of the compatibility between ESP-IDF and chip revisions.
 
 Espressif SoCs released before 2016 (ESP8266 and ESP8285) are supported by [RTOS SDK](https://github.com/espressif/ESP8266_RTOS_SDK) instead.
 
