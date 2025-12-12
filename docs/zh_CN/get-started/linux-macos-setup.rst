@@ -129,6 +129,10 @@ Apple M1 用户
 
 .. include-build-file:: inc/git-clone-bash.inc
 
+.. note::
+
+    如果网络连接较慢，可以在 ``git clone`` 命令中添加 ``--depth 1`` 选项，仅下载最新提交。但这样会导致后续的 ``git fetch`` 操作变慢，下载更多不必要的数据。
+
 ESP-IDF 将下载至 ``~/esp/esp-idf``。
 
 请前往 :doc:`/versions`，查看 ESP-IDF 不同版本的具体适用场景。

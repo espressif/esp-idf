@@ -14,6 +14,7 @@ from pathlib import Path
 from esp_docs.conf_docs import *  # noqa: F403,F401
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'tools', 'cmakev2')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'tools', 'docs')))
 
 if os.environ.get('IDF_PATH') is None:
     raise RuntimeError('IDF_PATH should be set, run export.sh before building docs')
@@ -415,13 +416,13 @@ extensions += [  # noqa: F405
     'esp_docs.idf_extensions.build_system',
     'esp_docs.idf_extensions.esp_err_definitions',
     'esp_docs.idf_extensions.gen_defines',
-    'esp_docs.idf_extensions.gen_version_specific_includes',
     'esp_docs.idf_extensions.kconfig_reference',
     'esp_docs.idf_extensions.gen_idf_tools_links',
     'esp_docs.esp_extensions.run_doxygen',
     'esp_docs.esp_extensions.add_html_zip',
     'linuxdoc.rstFlatTable',  # https://return42.github.io/linuxdoc/linuxdoc-howto/table-markup.html#flat-table
     'esp_docs_cmakev2_extension',
+    'gen_version_specific_includes',
 ]
 
 # Use wavedrompy as backend, instead of wavedrom-cli
