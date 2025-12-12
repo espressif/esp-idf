@@ -1,23 +1,25 @@
 Watchdogs
 =========
 
+The purpose of a watchdog timer is to monitor the system's operation and automatically recover from software or hardware faults by restarting the system if it becomes unresponsive.
+
 :link_to_translation:`zh_CN:[中文]`
 
 Overview
 --------
 
-ESP-IDF supports multiple types of watchdogs:
+ESP-IDF supports multiple types of watchdog timers:
 
 .. list::
 
-    - Hardware Watchdog Timers
     - Interrupt Watchdog Timer (IWDT)
     - Task Watchdog Timer (TWDT)
+    - RTC/LP Watchdog Timer (RTC_WDT/LP_WDT)
     :SOC_XT_WDT_SUPPORTED: - XTAL32K Watchdog Timer (Crystal 32K Watchdog Timer, i.e., XTWDT)
 
-The Interrupt Watchdog is responsible for ensuring that ISRs (Interrupt Service Routines) are not blocked for a prolonged period of time. The TWDT is responsible for detecting instances of tasks running without yielding for a prolonged period.
+The Interrupt Watchdog Timer (IWDT) is responsible for ensuring that ISRs (Interrupt Service Routines) are not blocked from running for a prolonged period of time, and also ensures that an ISR isn't stuck while executing. The Task Watchdog Timer (TWDT) is responsible for detecting instances of tasks running without yielding for too long. The RTC Watchdog Timer (RTC_WDT) is used to track the boot time from power-up until the user's main function, during panic handling and it can also be used from the low-power domain.
 
-The various watchdog timers can be enabled using the :ref:`project-configuration-menu`. However, the TWDT can also be enabled during runtime.
+The various watchdog timers can be enabled by :ref:`project-configuration-menu`. However, the TWDT can also be enabled during runtime.
 
 .. _app-hardware-watchdog-timers:
 
@@ -50,13 +52,13 @@ Interrupt Watchdog Timer (IWDT)
 
 {IDF_TARGET_IWDT_TIMER_GROUP:default="Timer Group 1", esp32c2="Timer Group 0"}
 
-The purpose of the IWDT is to ensure that interrupt service routines (ISRs) are not blocked from running for a prolonged period of time (i.e., the IWDT timeout period). Preventing ISRs from running in a timely manner is undesirable as it can increase ISR latency, and also prevent task switching (as task switching is executed form an ISR). The things that can block ISRs from running include:
+The purpose of the IWDT is to ensure that interrupt service routines (ISRs) are not blocked from running for a prolonged period of time (i.e., the IWDT timeout period). Preventing ISRs from running in a timely manner is undesirable as it can increase ISR latency, and also prevent task switching (as task switching is executed from an ISR). The things that can block ISRs from running include:
 
 - Disabling interrupts
 - Critical Sections (also disables interrupts)
 - Other same/higher priority ISRs which block same/lower priority ISRs from running
 
-The IWDT utilizes the MWDT_WDT watchdog timer in {IDF_TARGET_IWDT_TIMER_GROUP} as its underlying hardware timer and leverages the FreeRTOS tick interrupt on each CPU to feed the watchdog timer. If the tick interrupt on a particular CPU is not run at within the IWDT timeout period, it is indicative that something is blocking ISRs from being run on that CPU (see the list of reasons above).
+The IWDT utilizes the MWDT_WDT watchdog timer in {IDF_TARGET_IWDT_TIMER_GROUP} as its underlying hardware timer and leverages the FreeRTOS tick interrupt on each CPU to feed the watchdog timer. If the tick interrupt on a particular CPU is not executed within the IWDT timeout period, it indicates that something is blocking ISRs from being run on that CPU (see the list of reasons above).
 
 When the IWDT times out, the default action is to invoke the panic handler and display the panic reason as ``Interrupt wdt timeout on CPU0`` or ``Interrupt wdt timeout on CPU1`` (as applicable). Depending on the panic handler's configured behavior (see :ref:`CONFIG_ESP_SYSTEM_PANIC`), users can then debug the source of the IWDT timeout (via the backtrace, OpenOCD, gdbstub etc) or simply reset the chip (which may be preferred in a production environment).
 
@@ -69,7 +71,7 @@ Configuration
 - The IWDT's timeout is configured by setting the :ref:`CONFIG_ESP_INT_WDT_TIMEOUT_MS` option.
 
     - Note that the default timeout is higher if PSRAM support is enabled, as a critical section or interrupt routine that accesses a large amount of PSRAM takes longer to complete in some circumstances.
-    - The timeout should always at least twice longer than the period between FreeRTOS ticks (see :ref:`CONFIG_FREERTOS_HZ`).
+    - The configured timeout duration for IWDT should always be at least twice longer than the period between two FreeRTOS ticks, e.g., if two FreeRTOS ticks occur 10 ms apart, then IWDT timeout duration should at least be more than 20 ms (see :ref:`CONFIG_FREERTOS_HZ`).
 
 Tuning
 ^^^^^^
@@ -86,7 +88,7 @@ Neither critical sections or interrupt handlers should ever block waiting for an
 Task Watchdog Timer (TWDT)
 --------------------------
 
-The Task Watchdog Timer (TWDT) is used to monitor particular tasks, ensuring that they are able to execute within a given timeout period. The TWDT primarily watches the Idle Tasks of each CPU, however any task can subscribe to be watched by the TWDT. By watching the Idle Tasks of each CPU, the TWDT can detect instances of tasks running for a prolonged period of time without yielding. This can be an indicator of poorly written code that spinloops on a peripheral, or a task that is stuck in an infinite loop.
+The Task Watchdog Timer (TWDT) is used to monitor particular tasks, ensuring that they are able to execute within a given timeout period. By default the TWDT watches the Idle Tasks of each CPU, however any task can subscribe to be watched by the TWDT. By watching the Idle Tasks of each CPU, the TWDT can detect instances of tasks running for a prolonged period of time without yielding. This can be an indicator of poorly written code that spinloops on a peripheral, or a task that is stuck in an infinite loop.
 
 .. only:: not esp32c2
 
@@ -127,7 +129,7 @@ The default timeout period for the TWDT is set using config item :ref:`CONFIG_ES
     Erasing large flash areas can be time consuming and can cause a task to run continuously, thus triggering a TWDT timeout. The following two methods can be used to avoid this:
 
     - Increase :ref:`CONFIG_ESP_TASK_WDT_TIMEOUT_S` in menuconfig for a larger watchdog timeout period.
-    - You can also call :cpp:func:`esp_task_wdt_init` to increase the watchdog timeout period before erasing a large flash area.
+    - You can also call :cpp:func:`esp_task_wdt_init` again to increase the watchdog timeout period before erasing a large flash area.
 
     For more information, you can refer to :doc:`../peripherals/spi_flash/index`.
 
@@ -138,9 +140,9 @@ The following config options control TWDT configuration. They are all enabled by
 .. list::
 
     - :ref:`CONFIG_ESP_TASK_WDT_EN` - enables TWDT feature. If this option is disabled, TWDT cannot be used, even if initialized at runtime.
-    - :ref:`CONFIG_ESP_TASK_WDT_INIT` - the TWDT is initialized automatically during startup. If this option is disabled, it is still possible to initialize the Task WDT at runtime by calling :cpp:func:`esp_task_wdt_init`.
-    - :ref:`CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU0` - {IDF_TARGET_IDLE_TASK} is subscribed to the TWDT during startup. If this option is disabled, it is still possible to subscribe the idle task by calling :cpp:func:`esp_task_wdt_init` again.
-    :SOC_HP_CPU_HAS_MULTIPLE_CORES: - :ref:`CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU1` - CPU1 Idle task is subscribed to the TWDT during startup.
+    - :ref:`CONFIG_ESP_TASK_WDT_INIT` - initializes the TWDT automatically during startup. If this option is disabled, it is still possible to initialize the Task WDT at runtime by calling :cpp:func:`esp_task_wdt_init`.
+    - :ref:`CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU0` - subscribes {IDF_TARGET_IDLE_TASK} to the TWDT during startup. If this option is disabled, it is still possible to subscribe the idle task by calling :cpp:func:`esp_task_wdt_init` again, or by using :cpp:func:`esp_task_wdt_add` and passing it the idle task handle obtained via :cpp:func:`xTaskGetIdleTaskHandleForCore`.
+    :SOC_HP_CPU_HAS_MULTIPLE_CORES: - :ref:`CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU1` - Subscribes CPU1 Idle task to the TWDT during startup.
 
 
 .. note::
@@ -168,11 +170,34 @@ The following config options control TWDT configuration. They are all enabled by
     - The timeout is configured by setting the :ref:`CONFIG_ESP_XT_WDT_TIMEOUT` option.
     - The automatic backup clock functionality is enabled via the ref:`CONFIG_ESP_XT_WDT_BACKUP_CLK_ENABLE` configuration option.
 
+Timeout Stages
+--------------
+
+Hardware watchdog timers in ESP-IDF have four timeout stages. If the WDT is not fed in the previous stage within the configured timeout duration of that stage, it will trigger the next stage. Each stage can be configured to take one out of below mentioned actions after the timeout duration:
+
+- Trigger an interrupt. When the stage expires an interrupt is triggered.
+- Reset a CPU core. When the stage expires the designated CPU core will be reset.
+- Reset the main system. When the stage expires, the main system, including the MWDTs, will be reset. The main system includes the CPU and all peripherals. The RTC is an exception to this, and it will not be reset.
+- Reset the main system and RTC. When the stage expires the main system and the RTC will both be reset. This action is only available in the RTC_WDT.
+- Disabled. This stage will have no effects on the system.
+
+The typical configuration of the stages can be done by having interrupt actions in the earlier stages and allowing stepwise handling up to a final system reset action in the later stages.
+
+Stages can be configured via :cpp:func:`wdt_hal_config_stage` (or equivalent APIs), selecting actions per stage to match application behavior.
 
 JTAG & Watchdogs
 ----------------
 
 While debugging using OpenOCD, the CPUs are halted every time a breakpoint is reached. However if the watchdog timers continue to run when a breakpoint is encountered, they will eventually trigger a reset making it very difficult to debug code. Therefore OpenOCD will disable the hardware timers of both the interrupt and task watchdogs at every breakpoint. Moreover, OpenOCD will not re-enable them upon leaving the breakpoint. This means that interrupt watchdog and task watchdog functionality will essentially be disabled. No warnings or panics from either watchdogs will be generated when the {IDF_TARGET_NAME} is connected to OpenOCD via JTAG.
+
+Common error logs when WDT triggers and possible resolutions
+------------------------------------------------------------
+
+- ``Guru Meditation Error: Core  0 panic'ed (Interrupt wdt timeout on CPU0).`` followed by a backtrace: Indicates that the Interrupt Watchdog Timer (IWDT) has detected that interrupts have been blocked on CPU 0 for longer than the configured timeout period. This can be fixed by reducing the duration of long-running ISRs or critical sections, or by increasing the IWDT timeout period.
+- ``Task watchdog got triggered. The following tasks/users did not reset the watchdog in time: - IDLE0 (CPU 0), Tasks currently running: CPU 0: main, CPU 1: IDLE1``: Indicates that the Task Watchdog Timer (TWDT) has detected that one or more tasks have not yielded within the configured timeout period, and hence the IDLE task couldn't feed the TWDT in time. This can be fixed by ensuring that tasks yield appropriately, reducing the duration of long-running tasks, or by increasing the TWDT timeout period. User can also use :cpp:func:`esp_task_wdt_add`, :cpp:func:`esp_task_wdt_add_user` and :cpp:func:`esp_task_wdt_reset_user` APIs to find out which task and which code path inside that task is taking the longest time and causing the TWDT timeout.
+- :ref:`CONFIG_BOOTLOADER_WDT_DISABLE_IN_USER_CODE` is enabled and causes WDT timeout: Make sure RTC WDT is fed frequently enough from user code.
+- WDT Reset happens during boot-up: Ensure that a valid secondary bootloader is flashed correctly and investigate possible communication issues with external flash.
+- WDT Reset happens during operation: Try to identify when it happens, is it during a panic, a restart or enter/exit light-sleep? If it happens during any of these system operations, it could point towards an issue inside ESP-IDF.
 
 Application Examples
 --------------------
