@@ -45,7 +45,7 @@ static uint32_t clk_hal_mem_get_freq_hz(void)
     return clk_hal_cpu_get_freq_hz() / clk_ll_mem_get_divider();
 }
 
-static uint32_t clk_hal_sys_get_freq_hz(void)
+uint32_t clk_hal_sys_get_freq_hz(void)
 {
     return clk_hal_mem_get_freq_hz() / clk_ll_sys_get_divider();
 }
