@@ -15,7 +15,7 @@
 #include "hal/uart_hal.h"
 #include "hal/gpio_hal.h"
 #include "driver/uart.h"
-#include "soc/uart_periph.h"
+#include "hal/uart_periph.h"
 #include "esp_clk_tree.h"
 #include "esp_private/esp_clk_tree_common.h"
 #include "soc/gpio_periph.h"

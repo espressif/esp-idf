@@ -82,6 +82,7 @@ if(NOT non_os_build)
 
     list(APPEND priv_requires esp_mm
                               esp_hal_mspi
+                              esp_hal_uart
                               esp_hal_i2s  # required by `sleep_system_peripheral.c`
     )
 

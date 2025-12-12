@@ -16,7 +16,7 @@
 #include "driver/rtc_io.h"
 #include "hal/rtc_io_ll.h"
 #endif
-#include "soc/uart_periph.h"
+#include "hal/uart_periph.h"
 #include "soc/uart_pins.h"
 #include "soc/soc_caps.h"
 #include "soc/clk_tree_defs.h"

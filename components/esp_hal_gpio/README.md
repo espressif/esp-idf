@@ -1,9 +1,36 @@
-# `esp_hal_gpio`
+# ESP Hardware Abstraction Layer for GPIO Peripheral
 
-⚠️ This HAL component is still under heavy development at the moment, so we don't guarantee the stability and backward-compatibility among versions.
+> [!NOTE]
+> This component is currently in beta. Its API, behavior, and compatibility may change at any time and without notice; backward compatibility is not guaranteed. Use caution when integrating into production systems.
 
-The `esp_hal_gpio` component provides a **Hardware Abstraction Layer** of GPIO for all targets supported by ESP-IDF.
+## Overview
 
-In a broad sense, the HAL layer consists of two sub-layers: HAL (upper) and Low-Level(bottom). The HAL layer defines the steps and data that is required to operate a peripheral (e.g. initialization, start and stop). The low-level is a translation layer above the register files under the `soc` component, it only covers general conceptions to register configurations.
+The `esp_hal_gpio` component provides a **Hardware Abstraction Layer** for General-Purpose Input/Output (GPIO) across all ESP-IDF supported targets.
 
-The functions in this file mainly provide hardware abstraction for IDF peripheral drivers. For advanced developers, the HAL layer functions can also be directly used to assist in implementing their own drivers. However, it needs to be mentioned again that the interfaces here do not guarantee stability.
+## Architecture
+
+The GPIO HAL is structured in two main sub-layers:
+
+1. **HAL Layer (Upper)**: Defines the operational steps and data structures required to configure and control GPIO pins (e.g., direction, level, pull mode, interrupt enable/disable).
+2. **Low-Level Layer (Bottom)**: Serves as a translation layer between the HAL and the register files defined in the `soc` component, handling target-specific register configurations.
+
+## Features
+
+- Configure pin direction (input/output)
+- Set and get logic levels
+- Internal pull-up/pull-down configuration (on supported chips)
+- Open-drain/output mode selection (on supported chips)
+- Interrupt configuration (edge/level) and handling
+- Drive strength configuration (on supported chips)
+- Deep sleep and light sleep helpers for pin retention (on supported chips)
+
+## Usage
+
+The HAL functions primarily serve ESP-IDF peripheral drivers and system components that need efficient and portable GPIO control.
+
+Advanced developers can use these interfaces directly when implementing custom drivers, with the understanding that API stability is not guaranteed.
+
+## Dependencies
+
+- `soc`: Provides chip-specific register definitions
+- `hal`: Core hardware abstraction utilities and macros

@@ -17,7 +17,6 @@
 #include "unity.h"
 #include "test_utils.h"
 #include "esp32/rom/sha.h"
-#include "soc/uart_periph.h"
 #include "soc/dport_reg.h"
 #include "soc/rtc.h"
 #include "esp_log.h"
