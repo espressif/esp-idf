@@ -101,16 +101,6 @@ esp_trace_handle_t esp_trace_get_active_handle(void);
 esp_err_t esp_trace_write(esp_trace_handle_t handle, const void *data, size_t size, unsigned long tmo);
 
 /**
- * @brief Flush the trace handle
- *
- * @param handle The trace handle
- * @param tmo The timeout in us
- *
- * @return ESP_OK on success, otherwise see esp_err_t
- */
-esp_err_t esp_trace_flush(esp_trace_handle_t handle, unsigned long tmo);
-
-/**
  * @brief Check if the host is connected
  *
  * @param handle The trace handle

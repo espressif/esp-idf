@@ -153,12 +153,13 @@ The architecture follows a layered Port & Adapter pattern where the core manages
 ### Using Menuconfig
 
 1. Go to `Component config` → `ESP Trace Configuration`
-2. Select your desired trace transport under `Trace transport`:
+2. Select your trace library under `Trace library`:
+   - **External library from component registry** - Use a custom encoder provided by an external component (e.g. SystemView)
+   - **Disabled** - Disable trace library
+3. Select your desired trace transport under `Trace transport`:
    - **ESP-IDF apptrace** - Use built-in apptrace for custom tracing
+   - **External transport from component registry** - Use a custom transport provided by an external component
    - **None** - Disable tracing transport
-3. Select your trace library under `Trace library`:
-   - **SEGGER SystemView** - Enable SystemView tracing
-   - **None** - Use standalone apptrace without a library
 
 ### Using sdkconfig
 
@@ -172,16 +173,41 @@ CONFIG_ESP_TRACE_TRANSPORT_APPTRACE=y
 
 For SystemView tracing over JTAG:
 
+1. Add `espressif/esp_sysview` component to your `idf_component.yml`:
+
+```yaml
+dependencies:
+  espressif/esp_sysview: "^1"
+```
+
+2. Configure in `sdkconfig`:
+
 ```
 CONFIG_ESP_TRACE_ENABLE=y
-CONFIG_ESP_TRACE_LIB_SYSVIEW=y
+CONFIG_ESP_TRACE_LIB_EXTERNAL=y
 CONFIG_ESP_TRACE_TRANSPORT_APPTRACE=y
 CONFIG_APPTRACE_DEST_JTAG=y
 ```
 
 ## Component Dependencies
 
-To use tracing in your application, add `esp_trace` to your component's dependencies in `CMakeLists.txt`:
+### When Using External Trace Libraries (e.g., SystemView)
+
+If you're using an external trace library from the component registry (like `espressif/esp_sysview`), you **don't need** to explicitly add `esp_trace` to your dependencies. The external component already has a public dependency on `esp_trace` (using `REQUIRES`), so it's automatically available to your application code:
+
+```cmake
+idf_component_register(
+    SRCS "main.c"
+    INCLUDE_DIRS "."
+    # No need to add esp_trace here when using esp_sysview
+)
+```
+
+This means you can directly use both the trace library APIs (e.g., SystemView) and `esp_trace` APIs (like `esp_trace_get_user_params()`, `esp_trace_is_host_connected()`, etc.) without explicitly declaring the dependency.
+
+### When Using Standalone Apptrace
+
+For standalone apptrace usage (without an external trace library), add `esp_trace` to your component's dependencies:
 
 ```cmake
 idf_component_register(
@@ -291,7 +317,7 @@ ESP_TRACE_REGISTER_ENCODER("my_encoder", &s_my_encoder_vt);
 - Use `ESP_TRACE_REGISTER_TRANSPORT(name, vtable)` if you're implementing a custom transport
 - Registration happens automatically at link time (no manual initialization needed)
 
-See `components/esp_trace/adapters/encoder/adapter_encoder_sysview.c` for a complete reference implementation.
+See `espressif/esp_sysview` component source (specifically `adapter_encoder_sysview.c`) for a complete reference implementation.
 
 ### FreeRTOS Trace Integration
 
@@ -381,3 +407,4 @@ For detailed usage instructions, see:
 Examples demonstrating trace usage can be found in:
 - `examples/system/app_trace_basic/` - Basic application tracing
 - `examples/system/sysview_tracing/` - SystemView tracing example
+- `examples/system/sysview_tracing_heap_log/` - SystemView heap and log tracing example
