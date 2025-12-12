@@ -22,7 +22,7 @@
 #include "driver/uart.h"
 #include "driver/uhci.h"
 #include "driver/uhci_types.h"
-#include "soc/uhci_periph.h"
+#include "hal/uhci_periph.h"
 #include "soc/soc_caps.h"
 #include "hal/uhci_hal.h"
 #include "hal/uhci_ll.h"

@@ -149,6 +149,7 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_driver_tsens/include/driver/temperature_sensor.h \
     $(PROJECT_PATH)/components/esp_driver_tsens/include/driver/temperature_sensor_etm.h \
     $(PROJECT_PATH)/components/esp_driver_uart/include/driver/uart.h \
+    $(PROJECT_PATH)/components/esp_driver_uart/include/driver/uart_wakeup.h \
     $(PROJECT_PATH)/components/esp_driver_uart/include/driver/uart_vfs.h \
     $(PROJECT_PATH)/components/esp_driver_uart/include/driver/uhci.h \
     $(PROJECT_PATH)/components/esp_driver_uart/include/driver/uhci_types.h \
@@ -182,6 +183,8 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_hal_pcnt/include/hal/pcnt_types.h \
     $(PROJECT_PATH)/components/esp_hal_rmt/include/hal/rmt_types.h \
     $(PROJECT_PATH)/components/esp_hal_twai/include/hal/twai_types.h \
+    $(PROJECT_PATH)/components/esp_hal_uart/include/hal/uart_types.h \
+    $(PROJECT_PATH)/components/esp_hal_uart/include/hal/uhci_types.h \
     $(PROJECT_PATH)/components/esp_http_client/include/esp_http_client.h \
     $(PROJECT_PATH)/components/esp_http_server/include/esp_http_server.h \
     $(PROJECT_PATH)/components/esp_https_ota/include/esp_https_ota.h \
@@ -269,12 +272,10 @@ INPUT = \
     $(PROJECT_PATH)/components/hal/include/hal/color_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/mcpwm_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/sdio_slave_types.h \
-    $(PROJECT_PATH)/components/hal/include/hal/uart_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/efuse_hal.h \
     $(PROJECT_PATH)/components/hal/include/hal/eth_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/lp_core_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/sd_types.h \
-    $(PROJECT_PATH)/components/hal/include/hal/uhci_types.h \
     $(PROJECT_PATH)/components/heap/include/esp_heap_caps_init.h \
     $(PROJECT_PATH)/components/heap/include/esp_heap_caps.h \
     $(PROJECT_PATH)/components/heap/include/esp_heap_task_info.h \
@@ -335,7 +336,6 @@ INPUT = \
     $(PROJECT_PATH)/components/wear_levelling/include/wear_levelling.h \
     $(PROJECT_PATH)/components/wpa_supplicant/esp_supplicant/include/esp_dpp.h \
     $(PROJECT_PATH)/components/wpa_supplicant/esp_supplicant/include/esp_supplicant_utils.h \
-    $(PROJECT_PATH)/components/esp_driver_uart/include/driver/uart_wakeup.h \
 
 ## Target specific headers are in separate Doxyfile files
 @INCLUDE = $(PROJECT_PATH)/docs/doxygen/Doxyfile_$(IDF_TARGET)

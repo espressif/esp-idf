@@ -9,7 +9,6 @@ if(CONFIG_SOC_UART_SUPPORTED)
     endif()
 endif()
 
-
 if(${target} STREQUAL "linux")
     set(priv_requires esp_ringbuf)
 else()
@@ -19,6 +18,7 @@ endif()
 idf_component_register(
     SRCS ${srcs}
     INCLUDE_DIRS ${public_include}
+    REQUIRES esp_hal_uart
     PRIV_REQUIRES "${priv_requires}"
     LDFRAGMENTS "linker.lf"
 )

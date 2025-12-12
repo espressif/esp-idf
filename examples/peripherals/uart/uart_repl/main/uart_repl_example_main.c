@@ -10,7 +10,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "driver/uart.h"
-#include "soc/uart_periph.h"
+#include "hal/uart_periph.h"
 #include "esp_rom_gpio.h"
 #include "driver/gpio.h"
 #include "hal/gpio_hal.h"

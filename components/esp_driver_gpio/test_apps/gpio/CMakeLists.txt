@@ -14,11 +14,11 @@ if(CONFIG_COMPILER_DUMP_RTL_FILES)
         ${CMAKE_BINARY_DIR}/esp-idf/esp_hal_gpio
         ${CMAKE_BINARY_DIR}/esp-idf/hal
     )
-    string(JOIN "," RTL_DIRS_STRING ${GPIO_RTL_DIRS})
+    string(JOIN "," GPIO_RTL_DIRS_JOINED ${GPIO_RTL_DIRS})
     add_custom_target(
         check_test_app_sections ALL
         COMMAND ${PYTHON} $ENV{IDF_PATH}/tools/ci/check_callgraph.py
-        --rtl-dirs ${RTL_DIRS_STRING}
+        --rtl-dirs ${GPIO_RTL_DIRS_JOINED}
         --elf-file  ${CMAKE_BINARY_DIR}/gpio_test.elf
         find-refs
         --from-sections=.iram0.text

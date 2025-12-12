@@ -10,6 +10,7 @@ components/esp_driver_gpio/test_apps/gpio:
     - if: IDF_TARGET in ["esp32s31"]
       temporary: true
       reason: not support yet   # TODO: [ESP32S31] IDF-14780
+
 components/esp_driver_gpio/test_apps/gpio_extensions:
   enable:
     - if: SOC_DEDICATED_GPIO_SUPPORTED == 1
