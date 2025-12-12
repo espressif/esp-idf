@@ -12,7 +12,7 @@
 #include "freertos/idf_additions.h"
 #include "esp_log.h"
 #include "esp_check.h"
-#include "soc/ledc_periph.h"
+#include "hal/ledc_periph.h"
 #include "esp_clk_tree.h"
 #include "soc/soc_caps.h"
 #include "hal/ledc_hal.h"

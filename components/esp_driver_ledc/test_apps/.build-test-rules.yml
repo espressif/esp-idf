@@ -9,3 +9,4 @@ components/esp_driver_ledc/test_apps/ledc:
       reason: p4 rev3 migration # TODO: IDF-14398
   depends_components:
     - esp_driver_ledc
+    - esp_hal_ledc
