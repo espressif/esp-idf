@@ -831,6 +831,7 @@ static void periodic_scan_roam(struct timeval *now)
     roaming_app_get_ap_info(&g_roaming_app.current_bss.ap);
     ESP_LOGD(ROAMING_TAG, "Connected AP's RSSI=%d", g_roaming_app.current_bss.ap.rssi);
     if (g_roaming_app.current_bss.ap.rssi > g_roaming_app.config.scan_rssi_threshold) {
+        ESP_LOGD(ROAMING_TAG, "Not going for scan, Scan RSSI threshold=%d", g_roaming_app.config.scan_rssi_threshold);
         return;
     }
 

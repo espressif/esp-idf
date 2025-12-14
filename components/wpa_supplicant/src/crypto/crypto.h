@@ -1141,17 +1141,6 @@ void crypto_free_buffer(unsigned char *buf);
  */
 int crypto_ec_get_priv_key_der(struct crypto_ec_key *key, unsigned char **key_data, int *key_len);
 
-/**
- * crypto_bignum_to_string: get big number in ascii format
- * @a: big number
- * @buf: buffer in which number will written to
- * @buflen: buffer length
- * @padlen: padding length
- * Return : 0 if success
- */
-int crypto_bignum_to_string(const struct crypto_bignum *a,
-                         u8 *buf, size_t buflen, size_t padlen);
-
 struct crypto_ecdh;
 
 void crypto_ecdh_deinit(struct crypto_ecdh *ecdh);

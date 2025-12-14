@@ -385,6 +385,10 @@ static esp_err_t esp_dpp_rx_peer_disc_resp(struct action_rx_param *rx_param)
         return ESP_ERR_INVALID_ARG;
     }
 
+    if (rx_param->vendor_data_len < 2) {
+        wpa_printf(MSG_INFO, "DPP: Too short vendor specific data");
+        return ESP_FAIL;
+    }
     size_t len = rx_param->vendor_data_len - 2;
 
     buf = rx_param->action_frm->u.public_action.v.pa_vendor_spec.vendor_data;
@@ -519,28 +523,38 @@ static esp_err_t gas_query_resp_rx(struct action_rx_param *rx_param)
 {
     struct dpp_authentication *auth = s_dpp_ctx.dpp_auth;
     uint8_t *pos = rx_param->action_frm->u.public_action.v.pa_gas_resp.data;
-    uint8_t *resp = &pos[10];
+    uint8_t *resp = &pos[10];  /* first byte of DPP attributes */
+    size_t vendor_len = rx_param->vendor_data_len;
     int i, res;
 
-    if (pos[1] == WLAN_EID_VENDOR_SPECIFIC && pos[2] == 5 &&
-            WPA_GET_BE24(&pos[3]) == OUI_WFA && pos[6] == 0x1a && pos[7] == 1 && auth) {
+    /* Basic structural checks on the Advertisement Protocol payload */
+    if (!(pos[1] == WLAN_EID_VENDOR_SPECIFIC && pos[2] == 5 &&
+            WPA_GET_BE24(&pos[3]) == OUI_WFA && pos[6] == 0x1a && pos[7] == 1 && auth)) {
+        wpa_hexdump(MSG_INFO, "DPP: Failed, Configuration Response adv_proto", pos, 8);
+        return ESP_OK;
+    }
 
-        eloop_cancel_timeout(gas_query_timeout, NULL, auth);
-        if (dpp_conf_resp_rx(auth, resp, rx_param->vendor_data_len - 2) < 0) {
-            wpa_printf(MSG_INFO, "DPP: Configuration attempt failed");
+    /* DPP attribute length = vendor_data_len - 2, caller validated vendor_data_len
+     * (we skip the 2-byte length field and pass only the attributes). */
+    size_t dpp_data_len = vendor_len - 2;
+
+    eloop_cancel_timeout(gas_query_timeout, NULL, auth);
+
+    if (dpp_conf_resp_rx(auth, resp, dpp_data_len) < 0) {
+        wpa_printf(MSG_INFO, "DPP: Configuration attempt failed");
+        goto fail;
+    }
+
+    for (i = 0; i < auth->num_conf_obj; i++) {
+        res = esp_dpp_handle_config_obj(auth, &auth->conf_obj[i]);
+        if (res < 0) {
+            wpa_printf(MSG_INFO, "DPP: Configuration parsing failed");
             goto fail;
-        }
-
-        for (i = 0; i < auth->num_conf_obj; i++) {
-            res = esp_dpp_handle_config_obj(auth, &auth->conf_obj[i]);
-            if (res < 0) {
-                wpa_printf(MSG_INFO, "DPP: Configuration parsing failed");
-                goto fail;
-            }
         }
     }
 
     return ESP_OK;
+
 fail:
     return ESP_FAIL;
 }
@@ -821,11 +835,17 @@ static char *esp_dpp_parse_chan_list(const char *chan_list)
     }
 
     char *uri_ptr = uri_channels;
+    size_t current_offset = 0; // Use an offset to track current position
     params->num_chan = 0;
 
     /* Append " chan=" at the beginning of the URI */
-    strcpy(uri_ptr, " chan=");
-    uri_ptr += strlen(" chan=");
+    int written = os_snprintf(uri_ptr + current_offset, max_uri_len - current_offset, " chan=");
+    if (written < 0 || written >= max_uri_len - current_offset) { // Check for error or truncation
+        wpa_printf(MSG_ERROR, "DPP: URI buffer too small for initial string");
+        os_free(uri_channels);
+        return NULL;
+    }
+    current_offset += written;
 
     while (*chan_list && params->num_chan < ESP_DPP_MAX_CHAN_COUNT) {
         int channel = 0;
@@ -860,16 +880,23 @@ static char *esp_dpp_parse_chan_list(const char *chan_list)
         /* Add the valid channel to the list */
         params->chan_list[params->num_chan++] = channel;
 
-        /* Check if there's space left in uri_channels buffer */
-        size_t remaining_space = max_uri_len - (uri_ptr - uri_channels);
-        if (remaining_space <= 8) {  // Oper class + "/" + channel + "," + null terminator
-            wpa_printf(MSG_ERROR, "DPP: Not enough space in URI buffer");
+        // Calculate space needed for current channel string (e.g., "81/1,")
+        int needed_for_channel = os_snprintf(NULL, 0, "%d/%d,", oper_class, channel);
+
+        if (current_offset + needed_for_channel + 1 > max_uri_len) { // +1 for null terminator
+            wpa_printf(MSG_ERROR, "DPP: Not enough space in URI buffer for channel %d", channel);
             os_free(uri_channels);
             return NULL;
         }
 
         /* Append the operating class and channel to the URI */
-        uri_ptr += sprintf(uri_ptr, "%d/%d,", oper_class, channel);
+        written = os_snprintf(uri_ptr + current_offset, max_uri_len - current_offset, "%d/%d,", oper_class, channel);
+        if (written < 0 || written >= max_uri_len - current_offset) { // Check for error or truncation
+            wpa_printf(MSG_ERROR, "DPP: Error writing channel %d to URI buffer", channel);
+            os_free(uri_channels);
+            return NULL;
+        }
+        current_offset += written;
 
         /* Skip any delimiters (comma or space) */
         while (*chan_list == ',' || *chan_list == ' ') {
@@ -884,8 +911,8 @@ static char *esp_dpp_parse_chan_list(const char *chan_list)
     }
 
     /* Replace the last comma with a space if there was content added */
-    if (uri_ptr > uri_channels && *(uri_ptr - 1) == ',') {
-        *(uri_ptr - 1) = ' ';
+    if (current_offset > strlen(" chan=") && uri_ptr[current_offset - 1] == ',') {
+        uri_ptr[current_offset - 1] = ' ';
     }
 
     return uri_channels;
