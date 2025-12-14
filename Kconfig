@@ -397,8 +397,6 @@ mainmenu "Espressif IoT Development Framework Configuration"
                 the ZCMP extension for source files that contain functions which may
                 execute while mstatus.mie = 0.
 
-                Even with these workarounds, the issue may still affect dual-core variants.
-
         choice COMPILER_OPTIMIZATION_ASSERTION_LEVEL
             prompt "Assertion level"
             default COMPILER_OPTIMIZATION_ASSERTIONS_ENABLE
