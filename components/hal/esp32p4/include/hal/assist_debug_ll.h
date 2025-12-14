@@ -124,17 +124,15 @@ FORCE_INLINE_ATTR void _assist_debug_ll_enable_bus_clock(bool enable)
 #define assist_debug_ll_enable_bus_clock(...) \
     (void)__DECLARE_RCC_ATOMIC_ENV; _assist_debug_ll_enable_bus_clock(__VA_ARGS__)
 
-FORCE_INLINE_ATTR void _assist_debug_ll_reset_register(void)
+FORCE_INLINE_ATTR void _assist_debug_ll_reset_register(uint32_t core_id)
 {
     /* esp32p4 has no assist_debug reset register: disable & clear interrupts manually.  */
-    for (int i = 0; i < SOC_CPU_CORES_NUM; i++) {
-        assist_debug_ll_sp_spill_monitor_disable(i);
-        assist_debug_ll_sp_spill_interrupt_clear(i);
-        assist_debug_ll_sp_spill_set_min(i, 0);
-        assist_debug_ll_sp_spill_set_max(i, 0xffffffff);
-        /* Enable PC register storing when trigger stack monitor.  */
-        REG_WRITE(i ? ASSIST_DEBUG_CORE_1_RCD_EN_REG : ASSIST_DEBUG_CORE_0_RCD_EN_REG, ASSIST_DEBUG_CORE_1_RCD_PDEBUGEN | ASSIST_DEBUG_CORE_1_RCD_RECORDEN);
-    }
+    assist_debug_ll_sp_spill_monitor_disable(core_id);
+    assist_debug_ll_sp_spill_interrupt_clear(core_id);
+    assist_debug_ll_sp_spill_set_min(core_id, 0);
+    assist_debug_ll_sp_spill_set_max(core_id, 0xffffffff);
+    /* Enable PC register storing when trigger stack monitor.  */
+    REG_WRITE(core_id ? ASSIST_DEBUG_CORE_1_RCD_EN_REG : ASSIST_DEBUG_CORE_0_RCD_EN_REG, ASSIST_DEBUG_CORE_1_RCD_PDEBUGEN | ASSIST_DEBUG_CORE_1_RCD_RECORDEN);
 }
 #define assist_debug_ll_reset_register(...) \
     (void)__DECLARE_RCC_ATOMIC_ENV; _assist_debug_ll_reset_register(__VA_ARGS__)

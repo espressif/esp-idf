@@ -119,7 +119,7 @@ FORCE_INLINE_ATTR void assist_debug_ll_enable_bus_clock(bool enable)
     SYSTEM.cpu_peri_clk_en.clk_en_assist_debug = enable;
 }
 
-FORCE_INLINE_ATTR void assist_debug_ll_reset_register(void)
+FORCE_INLINE_ATTR void assist_debug_ll_reset_register(__attribute__((unused)) uint32_t core_id)
 {
     SYSTEM.cpu_peri_rst_en.rst_en_assist_debug = true;
     SYSTEM.cpu_peri_rst_en.rst_en_assist_debug = false;
