@@ -40,10 +40,10 @@ typedef union {
          *  need_des
          */
         uint32_t approach_loop_done_int_raw:1;
-        /** baseline_update_int_raw : R/WTC/SS; bitpos: [6]; default: 0;
+        /** benchmark_update_int_raw : R/WTC/SS; bitpos: [6]; default: 0;
          *  need_des
          */
-        uint32_t baseline_update_int_raw:1;
+        uint32_t benchmark_update_int_raw:1;
         uint32_t reserved_7:25;
     };
     uint32_t val;
@@ -78,10 +78,10 @@ typedef union {
          *  need_des
          */
         uint32_t approach_loop_done_int_st:1;
-        /** baseline_update_int_st : RO; bitpos: [6]; default: 0;
+        /** benchmark_update_int_st : RO; bitpos: [6]; default: 0;
          *  need_des
          */
-        uint32_t baseline_update_int_st:1;
+        uint32_t benchmark_update_int_st:1;
         uint32_t reserved_7:25;
     };
     uint32_t val;
@@ -116,10 +116,10 @@ typedef union {
          *  need_des
          */
         uint32_t approach_loop_done_int_ena:1;
-        /** baseline_update_int_ena : R/W; bitpos: [6]; default: 0;
+        /** benchmark_update_int_ena : R/W; bitpos: [6]; default: 0;
          *  need_des
          */
-        uint32_t baseline_update_int_ena:1;
+        uint32_t benchmark_update_int_ena:1;
         uint32_t reserved_7:25;
     };
     uint32_t val;
@@ -154,10 +154,10 @@ typedef union {
          *  need_des
          */
         uint32_t approach_loop_done_int_clr:1;
-        /** baseline_update_int_clr : WT; bitpos: [6]; default: 0;
+        /** benchmark_update_int_clr : WT; bitpos: [6]; default: 0;
          *  need_des
          */
-        uint32_t baseline_update_int_clr:1;
+        uint32_t benchmark_update_int_clr:1;
         uint32_t reserved_7:25;
     };
     uint32_t val;
@@ -185,342 +185,34 @@ typedef union {
     uint32_t val;
 } touch_chn_status_reg_t;
 
-/** Type of status_0 register
+/** Type of chn_data register
  *  need_des
  */
 typedef union {
     struct {
-        /** pad0_data : RO; bitpos: [15:0]; default: 0;
+        /** pad_data : RO; bitpos: [15:0]; default: 0;
          *  need_des
          */
-        uint32_t pad0_data:16;
-        /** pad0_debounce_cnt : RO; bitpos: [18:16]; default: 0;
+        uint32_t pad_data:16;
+        /** pad_debounce_cnt : RO; bitpos: [18:16]; default: 0;
          *  need_des
          */
-        uint32_t pad0_debounce_cnt:3;
-        /** pad0_nn_cnt : RO; bitpos: [22:19]; default: 0;
+        uint32_t pad_debounce_cnt:3;
+        /** pad_neg_noise_cnt : RO; bitpos: [22:19]; default: 0;
          *  need_des
          */
-        uint32_t pad0_nn_cnt:4;
+        uint32_t pad_neg_noise_cnt:4;
         uint32_t reserved_23:9;
     };
     uint32_t val;
-} touch_status_0_reg_t;
+} touch_chn_data_reg_t;
 
-/** Type of status_1 register
+/** Type of slp_ch_data register
  *  need_des
  */
 typedef union {
     struct {
-        /** pad1_data : RO; bitpos: [15:0]; default: 0;
-         *  need_des
-         */
-        uint32_t pad1_data:16;
-        /** pad1_debounce_cnt : RO; bitpos: [18:16]; default: 0;
-         *  need_des
-         */
-        uint32_t pad1_debounce_cnt:3;
-        /** pad1_nn_cnt : RO; bitpos: [22:19]; default: 0;
-         *  need_des
-         */
-        uint32_t pad1_nn_cnt:4;
-        uint32_t reserved_23:9;
-    };
-    uint32_t val;
-} touch_status_1_reg_t;
-
-/** Type of status_2 register
- *  need_des
- */
-typedef union {
-    struct {
-        /** pad2_data : RO; bitpos: [15:0]; default: 0;
-         *  need_des
-         */
-        uint32_t pad2_data:16;
-        /** pad2_debounce_cnt : RO; bitpos: [18:16]; default: 0;
-         *  need_des
-         */
-        uint32_t pad2_debounce_cnt:3;
-        /** pad2_nn_cnt : RO; bitpos: [22:19]; default: 0;
-         *  need_des
-         */
-        uint32_t pad2_nn_cnt:4;
-        uint32_t reserved_23:9;
-    };
-    uint32_t val;
-} touch_status_2_reg_t;
-
-/** Type of status_3 register
- *  need_des
- */
-typedef union {
-    struct {
-        /** pad3_data : RO; bitpos: [15:0]; default: 0;
-         *  need_des
-         */
-        uint32_t pad3_data:16;
-        /** pad3_debounce_cnt : RO; bitpos: [18:16]; default: 0;
-         *  need_des
-         */
-        uint32_t pad3_debounce_cnt:3;
-        /** pad3_nn_cnt : RO; bitpos: [22:19]; default: 0;
-         *  need_des
-         */
-        uint32_t pad3_nn_cnt:4;
-        uint32_t reserved_23:9;
-    };
-    uint32_t val;
-} touch_status_3_reg_t;
-
-/** Type of status_4 register
- *  need_des
- */
-typedef union {
-    struct {
-        /** pad4_data : RO; bitpos: [15:0]; default: 0;
-         *  need_des
-         */
-        uint32_t pad4_data:16;
-        /** pad4_debounce_cnt : RO; bitpos: [18:16]; default: 0;
-         *  need_des
-         */
-        uint32_t pad4_debounce_cnt:3;
-        /** pad4_nn_cnt : RO; bitpos: [22:19]; default: 0;
-         *  need_des
-         */
-        uint32_t pad4_nn_cnt:4;
-        uint32_t reserved_23:9;
-    };
-    uint32_t val;
-} touch_status_4_reg_t;
-
-/** Type of status_5 register
- *  need_des
- */
-typedef union {
-    struct {
-        /** pad5_data : RO; bitpos: [15:0]; default: 0;
-         *  need_des
-         */
-        uint32_t pad5_data:16;
-        /** pad5_debounce_cnt : RO; bitpos: [18:16]; default: 0;
-         *  need_des
-         */
-        uint32_t pad5_debounce_cnt:3;
-        /** pad5_nn_cnt : RO; bitpos: [22:19]; default: 0;
-         *  need_des
-         */
-        uint32_t pad5_nn_cnt:4;
-        uint32_t reserved_23:9;
-    };
-    uint32_t val;
-} touch_status_5_reg_t;
-
-/** Type of status_6 register
- *  need_des
- */
-typedef union {
-    struct {
-        /** pad6_data : RO; bitpos: [15:0]; default: 0;
-         *  need_des
-         */
-        uint32_t pad6_data:16;
-        /** pad6_debounce_cnt : RO; bitpos: [18:16]; default: 0;
-         *  need_des
-         */
-        uint32_t pad6_debounce_cnt:3;
-        /** pad6_nn_cnt : RO; bitpos: [22:19]; default: 0;
-         *  need_des
-         */
-        uint32_t pad6_nn_cnt:4;
-        uint32_t reserved_23:9;
-    };
-    uint32_t val;
-} touch_status_6_reg_t;
-
-/** Type of status_7 register
- *  need_des
- */
-typedef union {
-    struct {
-        /** pad7_data : RO; bitpos: [15:0]; default: 0;
-         *  need_des
-         */
-        uint32_t pad7_data:16;
-        /** pad7_debounce_cnt : RO; bitpos: [18:16]; default: 0;
-         *  need_des
-         */
-        uint32_t pad7_debounce_cnt:3;
-        /** pad7_nn_cnt : RO; bitpos: [22:19]; default: 0;
-         *  need_des
-         */
-        uint32_t pad7_nn_cnt:4;
-        uint32_t reserved_23:9;
-    };
-    uint32_t val;
-} touch_status_7_reg_t;
-
-/** Type of status_8 register
- *  need_des
- */
-typedef union {
-    struct {
-        /** pad8_data : RO; bitpos: [15:0]; default: 0;
-         *  need_des
-         */
-        uint32_t pad8_data:16;
-        /** pad8_debounce_cnt : RO; bitpos: [18:16]; default: 0;
-         *  need_des
-         */
-        uint32_t pad8_debounce_cnt:3;
-        /** pad8_nn_cnt : RO; bitpos: [22:19]; default: 0;
-         *  need_des
-         */
-        uint32_t pad8_nn_cnt:4;
-        uint32_t reserved_23:9;
-    };
-    uint32_t val;
-} touch_status_8_reg_t;
-
-/** Type of status_9 register
- *  need_des
- */
-typedef union {
-    struct {
-        /** pad9_data : RO; bitpos: [15:0]; default: 0;
-         *  need_des
-         */
-        uint32_t pad9_data:16;
-        /** pad9_debounce_cnt : RO; bitpos: [18:16]; default: 0;
-         *  need_des
-         */
-        uint32_t pad9_debounce_cnt:3;
-        /** pad9_nn_cnt : RO; bitpos: [22:19]; default: 0;
-         *  need_des
-         */
-        uint32_t pad9_nn_cnt:4;
-        uint32_t reserved_23:9;
-    };
-    uint32_t val;
-} touch_status_9_reg_t;
-
-/** Type of status_10 register
- *  need_des
- */
-typedef union {
-    struct {
-        /** pad10_data : RO; bitpos: [15:0]; default: 0;
-         *  need_des
-         */
-        uint32_t pad10_data:16;
-        /** pad10_debounce_cnt : RO; bitpos: [18:16]; default: 0;
-         *  need_des
-         */
-        uint32_t pad10_debounce_cnt:3;
-        /** pad10_nn_cnt : RO; bitpos: [22:19]; default: 0;
-         *  need_des
-         */
-        uint32_t pad10_nn_cnt:4;
-        uint32_t reserved_23:9;
-    };
-    uint32_t val;
-} touch_status_10_reg_t;
-
-/** Type of status_11 register
- *  need_des
- */
-typedef union {
-    struct {
-        /** pad11_data : RO; bitpos: [15:0]; default: 0;
-         *  need_des
-         */
-        uint32_t pad11_data:16;
-        /** pad11_debounce_cnt : RO; bitpos: [18:16]; default: 0;
-         *  need_des
-         */
-        uint32_t pad11_debounce_cnt:3;
-        /** pad11_nn_cnt : RO; bitpos: [22:19]; default: 0;
-         *  need_des
-         */
-        uint32_t pad11_nn_cnt:4;
-        uint32_t reserved_23:9;
-    };
-    uint32_t val;
-} touch_status_11_reg_t;
-
-/** Type of status_12 register
- *  need_des
- */
-typedef union {
-    struct {
-        /** pad12_data : RO; bitpos: [15:0]; default: 0;
-         *  need_des
-         */
-        uint32_t pad12_data:16;
-        /** pad12_debounce_cnt : RO; bitpos: [18:16]; default: 0;
-         *  need_des
-         */
-        uint32_t pad12_debounce_cnt:3;
-        /** pad12_nn_cnt : RO; bitpos: [22:19]; default: 0;
-         *  need_des
-         */
-        uint32_t pad12_nn_cnt:4;
-        uint32_t reserved_23:9;
-    };
-    uint32_t val;
-} touch_status_12_reg_t;
-
-/** Type of status_13 register
- *  need_des
- */
-typedef union {
-    struct {
-        /** pad13_data : RO; bitpos: [15:0]; default: 0;
-         *  need_des
-         */
-        uint32_t pad13_data:16;
-        /** pad13_debounce_cnt : RO; bitpos: [18:16]; default: 0;
-         *  need_des
-         */
-        uint32_t pad13_debounce_cnt:3;
-        /** pad13_nn_cnt : RO; bitpos: [22:19]; default: 0;
-         *  need_des
-         */
-        uint32_t pad13_nn_cnt:4;
-        uint32_t reserved_23:9;
-    };
-    uint32_t val;
-} touch_status_13_reg_t;
-
-/** Type of status_14 register
- *  need_des
- */
-typedef union {
-    struct {
-        /** pad14_data : RO; bitpos: [15:0]; default: 0;
-         *  need_des
-         */
-        uint32_t pad14_data:16;
-        /** pad14_debounce_cnt : RO; bitpos: [18:16]; default: 0;
-         *  need_des
-         */
-        uint32_t pad14_debounce_cnt:3;
-        /** pad14_nn_cnt : RO; bitpos: [22:19]; default: 0;
-         *  need_des
-         */
-        uint32_t pad14_nn_cnt:4;
-        uint32_t reserved_23:9;
-    };
-    uint32_t val;
-} touch_status_14_reg_t;
-
-/** Type of status_15 register
- *  need_des
- */
-typedef union {
-    struct {
-        /** slp_data : RO; bitpos: [15:0]; default: 65535;
+        /** slp_data : RO; bitpos: [15:0]; default: 0;
          *  need_des
          */
         uint32_t slp_data:16;
@@ -528,16 +220,16 @@ typedef union {
          *  need_des
          */
         uint32_t slp_debounce_cnt:3;
-        /** slp_nn_cnt : RO; bitpos: [22:19]; default: 0;
+        /** slp_neg_noise_cnt : RO; bitpos: [22:19]; default: 0;
          *  need_des
          */
-        uint32_t slp_nn_cnt:4;
+        uint32_t slp_neg_noise_cnt:4;
         uint32_t reserved_23:9;
     };
     uint32_t val;
-} touch_status_15_reg_t;
+} touch_slp_ch_data_reg_t;
 
-/** Type of status_16 register
+/** Type of aprch_ch_data register
  *  need_des
  */
 typedef union {
@@ -560,9 +252,9 @@ typedef union {
         uint32_t slp_approach_cnt:8;
     };
     uint32_t val;
-} touch_status_16_reg_t;
+} touch_aprch_ch_data_reg_t;
 
-/** Type of status_17 register
+/** Type of config register
  *  need_des
  */
 typedef union {
@@ -594,7 +286,7 @@ typedef union {
         uint32_t reserved_25:7;
     };
     uint32_t val;
-} touch_status_17_reg_t;
+} touch_sample_status_reg_t;
 
 /** Type of chn_tmp_status register
  *  need_des
@@ -637,24 +329,10 @@ typedef struct {
     volatile touch_int_ena_reg_t int_ena;
     volatile touch_int_clr_reg_t int_clr;
     volatile touch_chn_status_reg_t chn_status;
-    volatile touch_status_0_reg_t status_0;
-    volatile touch_status_1_reg_t status_1;
-    volatile touch_status_2_reg_t status_2;
-    volatile touch_status_3_reg_t status_3;
-    volatile touch_status_4_reg_t status_4;
-    volatile touch_status_5_reg_t status_5;
-    volatile touch_status_6_reg_t status_6;
-    volatile touch_status_7_reg_t status_7;
-    volatile touch_status_8_reg_t status_8;
-    volatile touch_status_9_reg_t status_9;
-    volatile touch_status_10_reg_t status_10;
-    volatile touch_status_11_reg_t status_11;
-    volatile touch_status_12_reg_t status_12;
-    volatile touch_status_13_reg_t status_13;
-    volatile touch_status_14_reg_t status_14;
-    volatile touch_status_15_reg_t status_15;
-    volatile touch_status_16_reg_t status_16;
-    volatile touch_status_17_reg_t status_17;
+    volatile touch_chn_data_reg_t chn_data[15];
+    volatile touch_slp_ch_data_reg_t slp_ch_data;
+    volatile touch_aprch_ch_data_reg_t aprch_ch_data;
+    volatile touch_sample_status_reg_t sample_status;
     volatile touch_chn_tmp_status_reg_t chn_tmp_status;
     uint32_t reserved_060[40];
     volatile touch_date_reg_t date;

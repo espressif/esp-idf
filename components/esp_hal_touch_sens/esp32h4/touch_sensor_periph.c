@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,9 +7,8 @@
 #include "hal/touch_sensor_channel.h"
 
 /* Store IO number corresponding to the Touch Sensor channel number. */
-/* Note: T0 is an internal channel that does not have a corresponding external GPIO. */
 const int touch_sensor_channel_io_map[] = {
-    -1,
+    TOUCH_PAD_NUM0_GPIO_NUM,
     TOUCH_PAD_NUM1_GPIO_NUM,
     TOUCH_PAD_NUM2_GPIO_NUM,
     TOUCH_PAD_NUM3_GPIO_NUM,

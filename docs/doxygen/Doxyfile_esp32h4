@@ -1,3 +1,6 @@
 INPUT += \
     $(PROJECT_PATH)/components/esp_phy/include/esp_phy_init.h \
     $(PROJECT_PATH)/components/esp_phy/include/esp_phy_cert_test.h \
+    $(PROJECT_PATH)/components/esp_driver_touch_sens/hw_ver3/include/driver/touch_version_types.h \
+    $(PROJECT_PATH)/components/esp_driver_touch_sens/include/driver/touch_sens.h \
+    $(PROJECT_PATH)/components/esp_driver_touch_sens/include/driver/touch_sens_types.h \

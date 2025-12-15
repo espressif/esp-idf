@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "soc/touch_sensor_channel.h"
+#include "hal/touch_sensor_channel.h"
 
 /* Store IO number corresponding to the Touch Sensor channel number. */
 const int touch_sensor_channel_io_map[] = {

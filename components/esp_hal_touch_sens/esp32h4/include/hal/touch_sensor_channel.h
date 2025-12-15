@@ -1,0 +1,54 @@
+/*
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#pragma once
+
+//Touch channels
+
+#define TOUCH_PAD_GPIO0_CHANNEL     0
+#define TOUCH_PAD_NUM0_GPIO_NUM     0
+
+#define TOUCH_PAD_GPIO1_CHANNEL     1
+#define TOUCH_PAD_NUM1_GPIO_NUM     1
+
+#define TOUCH_PAD_GPIO2_CHANNEL     2
+#define TOUCH_PAD_NUM2_GPIO_NUM     2
+
+#define TOUCH_PAD_GPIO3_CHANNEL     3
+#define TOUCH_PAD_NUM3_GPIO_NUM     3
+
+#define TOUCH_PAD_GPIO29_CHANNEL    4
+#define TOUCH_PAD_NUM4_GPIO_NUM     29
+
+#define TOUCH_PAD_GPIO30_CHANNEL    5
+#define TOUCH_PAD_NUM5_GPIO_NUM     30
+
+#define TOUCH_PAD_GPIO31_CHANNEL    6
+#define TOUCH_PAD_NUM6_GPIO_NUM     31
+
+#define TOUCH_PAD_GPIO32_CHANNEL    7
+#define TOUCH_PAD_NUM7_GPIO_NUM     32
+
+#define TOUCH_PAD_GPIO33_CHANNEL    8
+#define TOUCH_PAD_NUM8_GPIO_NUM     33
+
+#define TOUCH_PAD_GPIO34_CHANNEL    9
+#define TOUCH_PAD_NUM9_GPIO_NUM     34
+
+#define TOUCH_PAD_GPIO35_CHANNEL    10
+#define TOUCH_PAD_NUM10_GPIO_NUM    35
+
+#define TOUCH_PAD_GPIO36_CHANNEL    11
+#define TOUCH_PAD_NUM11_GPIO_NUM    36
+
+#define TOUCH_PAD_GPIO37_CHANNEL    12
+#define TOUCH_PAD_NUM12_GPIO_NUM    37
+
+#define TOUCH_PAD_GPIO38_CHANNEL    13
+#define TOUCH_PAD_NUM13_GPIO_NUM    38
+
+#define TOUCH_PAD_GPIO39_CHANNEL    14
+#define TOUCH_PAD_NUM14_GPIO_NUM    39
