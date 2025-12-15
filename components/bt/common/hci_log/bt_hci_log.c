@@ -225,6 +225,10 @@ esp_err_t IRAM_ATTR bt_hci_log_record_data(bt_hci_log_t *p_hci_log_ctl, char *st
     ts = esp_timer_get_time();
 
     temp_buf = (uint8_t *)malloc(data_len + 8);
+    if (!temp_buf) {
+        return ESP_ERR_NO_MEM;
+    }
+
     memset(temp_buf, 0x0, data_len + 8);
 
     memcpy(temp_buf, &ts, 8);
