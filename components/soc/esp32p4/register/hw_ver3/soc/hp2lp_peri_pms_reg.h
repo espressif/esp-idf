@@ -14,7 +14,7 @@ extern "C" {
  *  Version control register
  */
 #define PMS_HP2LP_PERI_PMS_DATE_REG (DR_REG_HP2LP_PERI_PMS_BASE + 0x0)
-/** PMS_HP2LP_PERI_PMS_DATE : R/W; bitpos: [31:0]; default: 2294790;
+/** PMS_HP2LP_PERI_PMS_DATE : R/W; bitpos: [31:0]; default: 2363943;
  *  Version control register
  */
 #define PMS_HP2LP_PERI_PMS_DATE    0xFFFFFFFFU
@@ -262,6 +262,14 @@ extern "C" {
 #define PMS_HP_CORE0_MM_LP_SRAM_ALLOW_M  (PMS_HP_CORE0_MM_LP_SRAM_ALLOW_V << PMS_HP_CORE0_MM_LP_SRAM_ALLOW_S)
 #define PMS_HP_CORE0_MM_LP_SRAM_ALLOW_V  0x00000001U
 #define PMS_HP_CORE0_MM_LP_SRAM_ALLOW_S  23
+/** PMS_HP_CORE0_MM_LP_TRNG_ALLOW : R/W; bitpos: [24]; default: 1;
+ *  Configures whether HP CPU0 in machine mode has permission to access RNG.
+ *  0: Not allowed
+ *  1: Allowed */
+#define PMS_HP_CORE0_MM_LP_TRNG_ALLOW    (BIT(24))
+#define PMS_HP_CORE0_MM_LP_TRNG_ALLOW_M  (PMS_HP_CORE0_MM_LP_TRNG_ALLOW_V << PMS_HP_CORE0_MM_LP_TRNG_ALLOW_S)
+#define PMS_HP_CORE0_MM_LP_TRNG_ALLOW_V  0x00000001U
+#define PMS_HP_CORE0_MM_LP_TRNG_ALLOW_S  24
 
 /** PMS_HP_CORE0_UM_PMS_REG0_REG register
  *  Permission control register0 for HP CPU0 in user mode
@@ -487,6 +495,15 @@ extern "C" {
 #define PMS_HP_CORE0_UM_LP_SRAM_ALLOW_M  (PMS_HP_CORE0_UM_LP_SRAM_ALLOW_V << PMS_HP_CORE0_UM_LP_SRAM_ALLOW_S)
 #define PMS_HP_CORE0_UM_LP_SRAM_ALLOW_V  0x00000001U
 #define PMS_HP_CORE0_UM_LP_SRAM_ALLOW_S  23
+/** PMS_HP_CORE0_UM_LP_TRNG_ALLOW : R/W; bitpos: [24]; default: 1;
+ *  Configures whether HP CPU0 in user mode has permission to access RNG.
+ *  0: Not allowed
+ *  1: Allowed
+ */
+#define PMS_HP_CORE0_UM_LP_TRNG_ALLOW    (BIT(24))
+#define PMS_HP_CORE0_UM_LP_TRNG_ALLOW_M  (PMS_HP_CORE0_UM_LP_TRNG_ALLOW_V << PMS_HP_CORE0_UM_LP_TRNG_ALLOW_S)
+#define PMS_HP_CORE0_UM_LP_TRNG_ALLOW_V  0x00000001U
+#define PMS_HP_CORE0_UM_LP_TRNG_ALLOW_S  24
 
 /** PMS_HP_CORE1_MM_PMS_REG0_REG register
  *  Permission control register0 for HP CPU1 in machine mode
@@ -714,6 +731,15 @@ extern "C" {
 #define PMS_HP_CORE1_MM_LP_SRAM_ALLOW_M  (PMS_HP_CORE1_MM_LP_SRAM_ALLOW_V << PMS_HP_CORE1_MM_LP_SRAM_ALLOW_S)
 #define PMS_HP_CORE1_MM_LP_SRAM_ALLOW_V  0x00000001U
 #define PMS_HP_CORE1_MM_LP_SRAM_ALLOW_S  23
+/** PMS_HP_CORE1_MM_LP_TRNG_ALLOW : R/W; bitpos: [24]; default: 1;
+ *  Configures whether HP CPU1 in machine mode has permission to access RNG.
+ *  0: Not allowed
+ *  1: Allowed
+ */
+#define PMS_HP_CORE1_MM_LP_TRNG_ALLOW    (BIT(24))
+#define PMS_HP_CORE1_MM_LP_TRNG_ALLOW_M  (PMS_HP_CORE1_MM_LP_TRNG_ALLOW_V << PMS_HP_CORE1_MM_LP_TRNG_ALLOW_S)
+#define PMS_HP_CORE1_MM_LP_TRNG_ALLOW_V  0x00000001U
+#define PMS_HP_CORE1_MM_LP_TRNG_ALLOW_S  24
 
 /** PMS_HP_CORE1_UM_PMS_REG0_REG register
  *  Permission control register0 for HP CPU1 in user mode
@@ -939,6 +965,15 @@ extern "C" {
 #define PMS_HP_CORE1_UM_LP_SRAM_ALLOW_M  (PMS_HP_CORE1_UM_LP_SRAM_ALLOW_V << PMS_HP_CORE1_UM_LP_SRAM_ALLOW_S)
 #define PMS_HP_CORE1_UM_LP_SRAM_ALLOW_V  0x00000001U
 #define PMS_HP_CORE1_UM_LP_SRAM_ALLOW_S  23
+/** PMS_HP_CORE1_UM_LP_TRNG_ALLOW : R/W; bitpos: [24]; default: 1;
+ *  Configures whether HP CPU1 in user mode has permission to access RNG.
+ *  0: Not allowed
+ *  1: Allowed
+ */
+#define PMS_HP_CORE1_UM_LP_TRNG_ALLOW    (BIT(24))
+#define PMS_HP_CORE1_UM_LP_TRNG_ALLOW_M  (PMS_HP_CORE1_UM_LP_TRNG_ALLOW_V << PMS_HP_CORE1_UM_LP_TRNG_ALLOW_S)
+#define PMS_HP_CORE1_UM_LP_TRNG_ALLOW_V  0x00000001U
+#define PMS_HP_CORE1_UM_LP_TRNG_ALLOW_S  24
 
 /** PMS_REGDMA_LP_PERI_PMS_REG register
  *  LP Peripheral Permission register for REGDMA

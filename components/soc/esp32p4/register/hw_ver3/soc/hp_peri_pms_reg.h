@@ -14,7 +14,7 @@ extern "C" {
  *  Version control register
  */
 #define PMS_HP_PERI_PMS_DATE_REG (DR_REG_HP_PERI_PMS_BASE + 0x0)
-/** PMS_HP_PERI_PMS_DATE : R/W; bitpos: [31:0]; default: 2294537;
+/** PMS_HP_PERI_PMS_DATE : R/W; bitpos: [31:0]; default: 2363943;
  *  Version control register.
  */
 #define PMS_HP_PERI_PMS_DATE    0xFFFFFFFFU
@@ -179,6 +179,15 @@ extern "C" {
 #define PMS_CORE0_MM_HP_GDMA_ALLOW_M  (PMS_CORE0_MM_HP_GDMA_ALLOW_V << PMS_CORE0_MM_HP_GDMA_ALLOW_S)
 #define PMS_CORE0_MM_HP_GDMA_ALLOW_V  0x00000001U
 #define PMS_CORE0_MM_HP_GDMA_ALLOW_S  3
+/** PMS_CORE0_MM_HP_REGDMA_ALLOW : R/W; bitpos: [4]; default: 1;
+ *  Configures whether HP CPU0 in machine mode has permission to access HP REGDMA.
+ *  0: Not allowed
+ *  1: Allowed
+ */
+#define PMS_CORE0_MM_HP_REGDMA_ALLOW    (BIT(4))
+#define PMS_CORE0_MM_HP_REGDMA_ALLOW_M  (PMS_CORE0_MM_HP_REGDMA_ALLOW_V << PMS_CORE0_MM_HP_REGDMA_ALLOW_S)
+#define PMS_CORE0_MM_HP_REGDMA_ALLOW_V  0x00000001U
+#define PMS_CORE0_MM_HP_REGDMA_ALLOW_S  4
 /** PMS_CORE0_MM_HP_SDMMC_ALLOW : R/W; bitpos: [5]; default: 1;
  *  Configures whether HP CPU0 in machine mode has permission to access HP SDMMC.
  *  0: Not allowed
@@ -406,6 +415,15 @@ extern "C" {
 #define PMS_CORE0_MM_HP_H264_DMA2D_ALLOW_M  (PMS_CORE0_MM_HP_H264_DMA2D_ALLOW_V << PMS_CORE0_MM_HP_H264_DMA2D_ALLOW_S)
 #define PMS_CORE0_MM_HP_H264_DMA2D_ALLOW_V  0x00000001U
 #define PMS_CORE0_MM_HP_H264_DMA2D_ALLOW_S  28
+/** PMS_CORE0_MM_AXI_PERF_MON_ALLOW : R/W; bitpos: [29]; default: 1;
+ *  Configures whether HP CPU0 in machine mode has permission to access AXI PERFMON.
+ *  0: Not allowed
+ *  1: Allowed
+ */
+#define PMS_CORE0_MM_AXI_PERF_MON_ALLOW    (BIT(29))
+#define PMS_CORE0_MM_AXI_PERF_MON_ALLOW_M  (PMS_CORE0_MM_AXI_PERF_MON_ALLOW_V << PMS_CORE0_MM_AXI_PERF_MON_ALLOW_S)
+#define PMS_CORE0_MM_AXI_PERF_MON_ALLOW_V  0x00000001U
+#define PMS_CORE0_MM_AXI_PERF_MON_ALLOW_S  29
 
 /** PMS_CORE0_MM_HP_PERI_PMS_REG2_REG register
  *  Permission control register2 for HP CPU0 in machine mode
@@ -877,13 +895,20 @@ extern "C" {
  *  Configures whether HP CPU0 in user mode has permission to access HP DW-GDMA.
  *  0: Not allowed
  *  1: Allowed
- *  0: Not allowed
- *  1: Allowed
  */
 #define PMS_CORE0_UM_HP_GDMA_ALLOW    (BIT(3))
 #define PMS_CORE0_UM_HP_GDMA_ALLOW_M  (PMS_CORE0_UM_HP_GDMA_ALLOW_V << PMS_CORE0_UM_HP_GDMA_ALLOW_S)
 #define PMS_CORE0_UM_HP_GDMA_ALLOW_V  0x00000001U
 #define PMS_CORE0_UM_HP_GDMA_ALLOW_S  3
+/** PMS_CORE0_UM_HP_REGDMA_ALLOW : R/W; bitpos: [4]; default: 1;
+ *  Configures whether HP CPU0 in user mode has permission to access HP REGDMA.
+ *  0: Not allowed
+ *  1: Allowed
+ */
+#define PMS_CORE0_UM_HP_REGDMA_ALLOW    (BIT(4))
+#define PMS_CORE0_UM_HP_REGDMA_ALLOW_M  (PMS_CORE0_UM_HP_REGDMA_ALLOW_V << PMS_CORE0_UM_HP_REGDMA_ALLOW_S)
+#define PMS_CORE0_UM_HP_REGDMA_ALLOW_V  0x00000001U
+#define PMS_CORE0_UM_HP_REGDMA_ALLOW_S  4
 /** PMS_CORE0_UM_HP_SDMMC_ALLOW : R/W; bitpos: [5]; default: 1;
  *  Configures whether HP CPU0 in user mode has permission to access HP SDMMC.
  *  0: Not allowed
@@ -1104,6 +1129,15 @@ extern "C" {
 #define PMS_CORE0_UM_HP_H264_DMA2D_ALLOW_M  (PMS_CORE0_UM_HP_H264_DMA2D_ALLOW_V << PMS_CORE0_UM_HP_H264_DMA2D_ALLOW_S)
 #define PMS_CORE0_UM_HP_H264_DMA2D_ALLOW_V  0x00000001U
 #define PMS_CORE0_UM_HP_H264_DMA2D_ALLOW_S  28
+/** PMS_CORE0_UM_AXI_PERF_MON_ALLOW : R/W; bitpos: [29]; default: 1;
+ *  Configures whether HP CPU0 in user mode has permission to access AXI PERFMON.
+ *  0: Not allowed
+ *  1: Allowed
+ */
+#define PMS_CORE0_UM_AXI_PERF_MON_ALLOW    (BIT(29))
+#define PMS_CORE0_UM_AXI_PERF_MON_ALLOW_M  (PMS_CORE0_UM_AXI_PERF_MON_ALLOW_V << PMS_CORE0_UM_AXI_PERF_MON_ALLOW_S)
+#define PMS_CORE0_UM_AXI_PERF_MON_ALLOW_V  0x00000001U
+#define PMS_CORE0_UM_AXI_PERF_MON_ALLOW_S  29
 
 /** PMS_CORE0_UM_HP_PERI_PMS_REG2_REG register
  *  Permission control register2 for HP CPU0 in user mode
@@ -1578,6 +1612,15 @@ extern "C" {
 #define PMS_CORE1_MM_HP_GDMA_ALLOW_M  (PMS_CORE1_MM_HP_GDMA_ALLOW_V << PMS_CORE1_MM_HP_GDMA_ALLOW_S)
 #define PMS_CORE1_MM_HP_GDMA_ALLOW_V  0x00000001U
 #define PMS_CORE1_MM_HP_GDMA_ALLOW_S  3
+/** PMS_CORE1_MM_HP_REGDMA_ALLOW : R/W; bitpos: [4]; default: 1;
+ *  Configures whether HP CPU1 in machine mode has permission to access HP REGDMA.
+ *  0: Not allowed
+ *  1: Allowed
+ */
+#define PMS_CORE1_MM_HP_REGDMA_ALLOW    (BIT(4))
+#define PMS_CORE1_MM_HP_REGDMA_ALLOW_M  (PMS_CORE1_MM_HP_REGDMA_ALLOW_V << PMS_CORE1_MM_HP_REGDMA_ALLOW_S)
+#define PMS_CORE1_MM_HP_REGDMA_ALLOW_V  0x00000001U
+#define PMS_CORE1_MM_HP_REGDMA_ALLOW_S  4
 /** PMS_CORE1_MM_HP_SDMMC_ALLOW : R/W; bitpos: [5]; default: 1;
  *  Configures whether HP CPU1 in machine mode has permission to access HP SDMMC.
  *  0: Not allowed
@@ -1805,6 +1848,15 @@ extern "C" {
 #define PMS_CORE1_MM_HP_H264_DMA2D_ALLOW_M  (PMS_CORE1_MM_HP_H264_DMA2D_ALLOW_V << PMS_CORE1_MM_HP_H264_DMA2D_ALLOW_S)
 #define PMS_CORE1_MM_HP_H264_DMA2D_ALLOW_V  0x00000001U
 #define PMS_CORE1_MM_HP_H264_DMA2D_ALLOW_S  28
+/** PMS_CORE1_MM_AXI_PERF_MON_ALLOW : R/W; bitpos: [29]; default: 1;
+ *  Configures whether HP CPU1 in machine mode has permission to access AXI PERFMON.
+ *  0: Not allowed
+ *  1: Allowed
+ */
+#define PMS_CORE1_MM_AXI_PERF_MON_ALLOW    (BIT(29))
+#define PMS_CORE1_MM_AXI_PERF_MON_ALLOW_M  (PMS_CORE1_MM_AXI_PERF_MON_ALLOW_V << PMS_CORE1_MM_AXI_PERF_MON_ALLOW_S)
+#define PMS_CORE1_MM_AXI_PERF_MON_ALLOW_V  0x00000001U
+#define PMS_CORE1_MM_AXI_PERF_MON_ALLOW_S  29
 
 /** PMS_CORE1_MM_HP_PERI_PMS_REG2_REG register
  *  Permission control register2 for HP CPU1 in machine mode
@@ -2276,13 +2328,20 @@ extern "C" {
  *  Configures whether HP CPU1 in user mode has permission to access HP DW-GDMA.
  *  0: Not allowed
  *  1: Allowed
- *  0: Not allowed
- *  1: Allowed
  */
 #define PMS_CORE1_UM_HP_GDMA_ALLOW    (BIT(3))
 #define PMS_CORE1_UM_HP_GDMA_ALLOW_M  (PMS_CORE1_UM_HP_GDMA_ALLOW_V << PMS_CORE1_UM_HP_GDMA_ALLOW_S)
 #define PMS_CORE1_UM_HP_GDMA_ALLOW_V  0x00000001U
 #define PMS_CORE1_UM_HP_GDMA_ALLOW_S  3
+/** PMS_CORE1_UM_HP_REGDMA_ALLOW : R/W; bitpos: [4]; default: 1;
+ *  Configures whether HP CPU1 in user mode has permission to access HP REGDMA.
+ *  0: Not allowed
+ *  1: Allowed
+ */
+#define PMS_CORE1_UM_HP_REGDMA_ALLOW    (BIT(4))
+#define PMS_CORE1_UM_HP_REGDMA_ALLOW_M  (PMS_CORE1_UM_HP_REGDMA_ALLOW_V << PMS_CORE1_UM_HP_REGDMA_ALLOW_S)
+#define PMS_CORE1_UM_HP_REGDMA_ALLOW_V  0x00000001U
+#define PMS_CORE1_UM_HP_REGDMA_ALLOW_S  4
 /** PMS_CORE1_UM_HP_SDMMC_ALLOW : R/W; bitpos: [5]; default: 1;
  *  Configures whether HP CPU1 in user mode has permission to access HP SDMMC.
  *  0: Not allowed
@@ -2503,6 +2562,15 @@ extern "C" {
 #define PMS_CORE1_UM_HP_H264_DMA2D_ALLOW_M  (PMS_CORE1_UM_HP_H264_DMA2D_ALLOW_V << PMS_CORE1_UM_HP_H264_DMA2D_ALLOW_S)
 #define PMS_CORE1_UM_HP_H264_DMA2D_ALLOW_V  0x00000001U
 #define PMS_CORE1_UM_HP_H264_DMA2D_ALLOW_S  28
+/** PMS_CORE1_UM_AXI_PERF_MON_ALLOW : R/W; bitpos: [29]; default: 1;
+ *  Configures whether HP CPU1 in user mode has permission to access AXI PERFMON.
+ *  0: Not allowed
+ *  1: Allowed
+ */
+#define PMS_CORE1_UM_AXI_PERF_MON_ALLOW    (BIT(29))
+#define PMS_CORE1_UM_AXI_PERF_MON_ALLOW_M  (PMS_CORE1_UM_AXI_PERF_MON_ALLOW_V << PMS_CORE1_UM_AXI_PERF_MON_ALLOW_S)
+#define PMS_CORE1_UM_AXI_PERF_MON_ALLOW_V  0x00000001U
+#define PMS_CORE1_UM_AXI_PERF_MON_ALLOW_S  29
 
 /** PMS_CORE1_UM_HP_PERI_PMS_REG2_REG register
  *  Permission control register2 for HP CPU1 in user mode
@@ -2833,6 +2901,20 @@ extern "C" {
 #define PMS_CORE1_UM_HP_CLKRST_ALLOW_M  (PMS_CORE1_UM_HP_CLKRST_ALLOW_V << PMS_CORE1_UM_HP_CLKRST_ALLOW_S)
 #define PMS_CORE1_UM_HP_CLKRST_ALLOW_V  0x00000001U
 #define PMS_CORE1_UM_HP_CLKRST_ALLOW_S  4
+
+/** PMS_REGDMA_HP_PERI_PMS_REG register
+ *  HP Peripheral Permission register for REGDMA
+ */
+#define PMS_REGDMA_HP_PERI_PMS_REG (DR_REG_HP_PERI_PMS_BASE + 0x48)
+/** PMS_REGDMA_PERI_HP_PERI_ALLOW : R/W; bitpos: [0]; default: 1;
+ *  Configures whether REGDMA has permission to access  all HP peripherals.
+ *  0: Not allowed
+ *  1: Allow
+ */
+#define PMS_REGDMA_PERI_HP_PERI_ALLOW    (BIT(0))
+#define PMS_REGDMA_PERI_HP_PERI_ALLOW_M  (PMS_REGDMA_PERI_HP_PERI_ALLOW_V << PMS_REGDMA_PERI_HP_PERI_ALLOW_S)
+#define PMS_REGDMA_PERI_HP_PERI_ALLOW_V  0x00000001U
+#define PMS_REGDMA_PERI_HP_PERI_ALLOW_S  0
 
 #ifdef __cplusplus
 }

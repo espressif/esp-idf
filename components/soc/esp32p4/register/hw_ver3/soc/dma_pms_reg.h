@@ -1584,6 +1584,30 @@ extern "C" {
 #define PMS_DMA_SPM_MON_W_PMS_V  0xFFFFFFFFU
 #define PMS_DMA_SPM_MON_W_PMS_S  0
 
+/** PMS_DMA_REGDMA_PMS_R_REG register
+ *  REGDMA read permission control registers.
+ */
+#define PMS_DMA_REGDMA_PMS_R_REG (DR_REG_DMA_PMS_BASE + 0x1ec)
+/** PMS_DMA_REGDMA_R_PMS : R/W; bitpos: [31:0]; default: 4294967295;
+ *  REGDMA read permission control, each bit corresponds to a region.
+ */
+#define PMS_DMA_REGDMA_R_PMS    0xFFFFFFFFU
+#define PMS_DMA_REGDMA_R_PMS_M  (PMS_DMA_REGDMA_R_PMS_V << PMS_DMA_REGDMA_R_PMS_S)
+#define PMS_DMA_REGDMA_R_PMS_V  0xFFFFFFFFU
+#define PMS_DMA_REGDMA_R_PMS_S  0
+
+/** PMS_DMA_REGDMA_PMS_W_REG register
+ *  REGDMA write permission control registers.
+ */
+#define PMS_DMA_REGDMA_PMS_W_REG (DR_REG_DMA_PMS_BASE + 0x1f0)
+/** PMS_DMA_REGDMA_W_PMS : R/W; bitpos: [31:0]; default: 4294967295;
+ *  REGDMA write permission control, each bit corresponds to a region.
+ */
+#define PMS_DMA_REGDMA_W_PMS    0xFFFFFFFFU
+#define PMS_DMA_REGDMA_W_PMS_M  (PMS_DMA_REGDMA_W_PMS_V << PMS_DMA_REGDMA_W_PMS_S)
+#define PMS_DMA_REGDMA_W_PMS_V  0xFFFFFFFFU
+#define PMS_DMA_REGDMA_W_PMS_S  0
+
 /** PMS_DMA_H264_PMS_R_REG register
  *  H264 DMA read permission control register
  */
