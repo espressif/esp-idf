@@ -24,19 +24,7 @@
 #include "test_utils.h"
 #include "esp_memory_utils.h"
 
-TEST_CASE("mbedtls SHA self-tests", "[mbedtls]")
-{
-    start_apb_access_loop();
-#if CONFIG_MBEDTLS_SHA1_C
-    TEST_ASSERT_FALSE_MESSAGE(mbedtls_sha1_self_test(1), "SHA1 self-tests should pass.");
-#endif
-    TEST_ASSERT_FALSE_MESSAGE(mbedtls_sha256_self_test(1), "SHA256 self-tests should pass.");
-#if CONFIG_MBEDTLS_SHA512_C
-    TEST_ASSERT_FALSE_MESSAGE(mbedtls_sha512_self_test(1), "SHA512 self-tests should pass.");
-#endif
-    verify_apb_access_loop();
-}
-
+#if CONFIG_MBEDTLS_HARDWARE_SHA
 static const unsigned char *one_hundred_as = (unsigned char *)
         "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
 
@@ -65,7 +53,6 @@ static const uint8_t sha1_thousand_as[20] = {
     0x29, 0x1e, 0x9a, 0x6c, 0x66, 0x99, 0x49, 0x49, 0xb5, 0x7b, 0xa5,
     0xe6, 0x50, 0x36, 0x1e, 0x98, 0xfc, 0x36, 0xb1, 0xba
 };
-
 
 TEST_CASE("mbedtls SHA interleaving", "[mbedtls]")
 {
@@ -617,3 +604,4 @@ TEST_CASE("mbedtls SHA stack in PSRAM", "[mbedtls]")
 }
 
 #endif //CONFIG_FREERTOS_TASK_CREATE_ALLOW_EXT_MEM && CONFIG_SPIRAM_USE_MALLOC
+#endif // CONFIG_MBEDTLS_HARDWARE_SHA

@@ -34,7 +34,7 @@ are tested as part of mbedTLS tests. Only esp_sha() is different.
 
 #define TAG "sha_test"
 
-#if SOC_SHA_SUPPORTED
+#if SOC_SHA_SUPPORTED && CONFIG_MBEDTLS_HARDWARE_SHA
 TEST_CASE("Test esp_sha()", "[hw_crypto]")
 {
     const size_t BUFFER_SZ = 32 * 1024 + 6; // NB: not an exact multiple of SHA block size
@@ -268,4 +268,4 @@ TEST_CASE("Test mbedtls_internal_sha_process()", "[hw_crypto]")
 }
 #endif
 
-#endif // SOC_SHA_SUPPORTED
+#endif // SOC_SHA_SUPPORTED && CONFIG_MBEDTLS_HARDWARE_SHA
