@@ -126,6 +126,7 @@ int fstat(int fd, struct stat *st)
     return _fstat_r(__getreent(), fd, st);
 }
 
+#ifndef CONFIG_LIBC_PICOLIBC
 #if CONFIG_SPIRAM_CACHE_LIBMISC_IN_IRAM
 IRAM_ATTR
 #endif
@@ -133,6 +134,7 @@ int raise(int sig)
 {
     return _raise_r(__getreent(), sig);
 }
+#endif // !CONFIG_LIBC_PICOLIBC
 
 #if CONFIG_SPIRAM_CACHE_LIBMISC_IN_IRAM
 IRAM_ATTR
