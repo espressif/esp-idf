@@ -7,7 +7,6 @@
 #include "unity.h"
 #include "unity_test_runner.h"
 #include "esp_heap_caps.h"
-// #include "mbedtls/aes.h"
 #include "bignum_impl.h"
 #include "sdkconfig.h"
 #include "soc/soc_caps.h"
@@ -60,7 +59,6 @@ void setUp(void)
 #endif // SOC_SHA_SUPPORT_SHA1
 #endif // CONFIG_MBEDTLS_HARDWARE_SHA
 
-// #if CONFIG_MBEDTLS_HARDWARE_AES
     // Execute mbedtls_aes_init operation to allocate AES interrupt
     // allocation memory which is considered as leak otherwise
     const uint8_t plaintext[16] = {0};
@@ -79,7 +77,6 @@ void setUp(void)
     status = psa_cipher_encrypt(key_id, PSA_ALG_ECB_NO_PADDING, plaintext, sizeof(plaintext), ciphertext, sizeof(ciphertext), &output_len);
     TEST_ASSERT_EQUAL(PSA_SUCCESS, status);
     psa_destroy_key(key_id);
-// #endif // SOC_AES_SUPPORTED
 
 #if defined(CONFIG_MBEDTLS_HARDWARE_MPI)
     esp_mpi_enable_hardware_hw_op();

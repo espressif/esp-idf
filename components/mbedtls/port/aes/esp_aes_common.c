@@ -17,13 +17,14 @@
 #include "sdkconfig.h"
 #define MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
 #include "esp_aes_internal.h"
-// // #include "mbedtls/aes.h"
 #include "hal/aes_hal.h"
 #include "hal/aes_types.h"
 #include "soc/soc_caps.h"
-// #include "mbedtls/error.h"
+#include "psa/crypto.h"
 
 #include <string.h>
+
+#define MBEDTLS_ERR_AES_INVALID_KEY_LENGTH                -0x0020
 
 #if SOC_AES_SUPPORT_DMA
 #include "esp_aes_dma_priv.h"
@@ -66,11 +67,11 @@ int esp_aes_setkey( esp_aes_context *ctx, const unsigned char *key,
 {
 #if !SOC_AES_SUPPORT_AES_192
     if (keybits == 192) {
-        return -1;
+        return PSA_ERROR_NOT_SUPPORTED;
     }
 #endif
     if (keybits != 128 && keybits != 192 && keybits != 256) {
-        return -1;
+        return MBEDTLS_ERR_AES_INVALID_KEY_LENGTH;
     }
     ctx->key_bytes = keybits / 8;
     memcpy(ctx->key, key, ctx->key_bytes);

@@ -37,7 +37,6 @@
 #ifndef CONFIG_IDF_TARGET_LINUX
 #undef MBEDTLS_PSA_BUILTIN_GET_ENTROPY
 #define MBEDTLS_PSA_DRIVER_GET_ENTROPY
-#define MBEDTLS_PLATFORM_GET_ENTROPY_ALT
 #define MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG
 #endif // !CONFIG_IDF_TARGET_LINUX
 
@@ -1075,19 +1074,6 @@ under the driver abstraction layer */
 #define MBEDTLS_ENTROPY_FORCE_SHA256
 #else
 #undef MBEDTLS_ENTROPY_FORCE_SHA256
-#endif
-
-/**
- * \def MBEDTLS_PK_RSA_ALT_SUPPORT
- *
- * Support external private RSA keys (eg from a HSM) in the PK layer.
- *
- * Comment this macro to disable support for external private RSA keys.
- */
-#ifdef CONFIG_MBEDTLS_PK_RSA_ALT_SUPPORT
-#define MBEDTLS_PK_RSA_ALT_SUPPORT
-#else
-#undef MBEDTLS_PK_RSA_ALT_SUPPORT
 #endif
 
 /**

@@ -25,11 +25,6 @@
 #define ACCESS_ECDH(S, var) S->MBEDTLS_PRIVATE(ctx).MBEDTLS_PRIVATE(mbed_ecdh).MBEDTLS_PRIVATE(var)
 #endif
 
-// #include <mbedtls/aes.h>
-// #include <mbedtls/sha256.h>
-// #include <mbedtls/entropy.h>
-// #include <mbedtls/ctr_drbg.h>
-// #include <mbedtls/ecdh.h>
 #include <mbedtls/error.h>
 #include <mbedtls/constant_time.h>
 #include "psa/crypto.h"
@@ -79,7 +74,7 @@ typedef struct session {
 
 static void hexdump(const char *msg, uint8_t *buf, int len)
 {
-    ESP_LOGI(TAG, "%s:", msg);
+    ESP_LOGD(TAG, "%s:", msg);
     ESP_LOG_BUFFER_HEX_LEVEL(TAG, buf, len, ESP_LOG_INFO);
 }
 
@@ -102,9 +97,6 @@ static esp_err_t handle_session_command1(session_t *cur_session,
 
     hexdump("Data to decrypt", in->sc1->client_verify_data.data,
             in->sc1->client_verify_data.len);
-    hexdump("Symmetric key:", cur_session->sym_key, sizeof(cur_session->sym_key));
-    hexdump("Client rand", cur_session->rand,
-            sizeof(cur_session->rand));
 
     psa_status_t status;
     psa_key_id_t key_id = 0;
@@ -152,8 +144,6 @@ static esp_err_t handle_session_command1(session_t *cur_session,
     }
 
     hexdump("Dec Client verifier", check_buf, sizeof(check_buf));
-
-    hexdump("Device pubkey", cur_session->device_pubkey, sizeof(cur_session->device_pubkey));
 
     /* constant time memcmp */
     if (mbedtls_ct_memcmp(check_buf, cur_session->device_pubkey,
@@ -211,7 +201,7 @@ static esp_err_t handle_session_command1(session_t *cur_session,
         ESP_LOGE(TAG, "Failed to post secure session setup success event");
     }
 
-    ESP_LOGI(TAG, "Secure session established successfully");
+    ESP_LOGD(TAG, "Secure session established successfully");
     return ESP_OK;
 }
 
@@ -359,7 +349,7 @@ static esp_err_t handle_session_command0(session_t *cur_session,
 
     cur_session->state = SESSION_STATE_CMD1;
 
-    ESP_LOGI(TAG, "Session setup phase1 done");
+    ESP_LOGD(TAG, "Session setup phase1 done");
     ret = ESP_OK;
 
 exit_cmd0:
@@ -446,28 +436,22 @@ static esp_err_t sec1_close_session(protocomm_security_handle_t handle, uint32_t
         return ESP_ERR_INVALID_STATE;
     }
 
-    // if (cur_session->state == SESSION_STATE_DONE) {
-        /* Free AES context data */
     if (cur_session->key_id != 0) {
         psa_status_t status = psa_destroy_key(cur_session->key_id);
         if (status != PSA_SUCCESS) {
             ESP_LOGE(TAG, "psa_destroy_key failed with status=%d", status);
-            // return ESP_FAIL;
         }
     }
     if (cur_session->key_id_sym != 0) {
         psa_status_t status = psa_destroy_key(cur_session->key_id_sym);
         if (status != PSA_SUCCESS) {
             ESP_LOGE(TAG, "psa_destroy_key failed with status=%d", status);
-            // return ESP_FAIL;
         }
     }
     psa_status_t status = psa_cipher_abort(&cur_session->ctx_aes);
     if (status != PSA_SUCCESS) {
         ESP_LOGE(TAG, "psa_cipher_abort failed with status=%d", status);
-        // return ESP_FAIL;
     }
-    // }
 
     memset(cur_session, 0, sizeof(session_t));
     cur_session->id = -1;

@@ -117,10 +117,10 @@ void blufi_dh_negotiate_data_handler(uint8_t *data, int len, uint8_t **output_da
 
         size_t pub_len = (param[0] << 8) | param[1];
         param += 2;
-        ESP_LOGI("blfi", "P len %d, G len %d, pub len %d", p_len, g_len, pub_len);
+        ESP_LOGD("blfi", "P len %d, G len %d, pub len %d", p_len, g_len, pub_len);
 
         psa_key_type_t key_type = PSA_KEY_TYPE_DH_KEY_PAIR(PSA_DH_FAMILY_RFC7919);
-        size_t key_bits = 2048;
+        size_t key_bits = 3072;
         ESP_LOGI("blfi", "DH param len %d, bits %d", blufi_sec->dh_param_len, key_bits);
         psa_algorithm_t alg = PSA_ALG_FFDH;
         psa_key_attributes_t attributes = psa_key_attributes_init();

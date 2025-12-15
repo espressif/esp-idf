@@ -14,7 +14,6 @@
 #include "crypto.h"
 #include "des_i.h"
 
-#include "psa/crypto.h"
 /*
  * This implementation is based on a DES implementation included in
  * LibTomCrypt. The version here is modified to fit in wpa_supplicant/hostapd

@@ -206,19 +206,6 @@ esp_err_t esp_att_utils_ecdsa_get_pubkey_digest(const esp_att_ecdsa_keypair_t *k
         return ESP_ERR_INVALID_ARG;
     }
 
-    // Check if the public key is available in the keypair struct
-    // We already export the public key in the gen_ecdsa_keypair_secp256r1 function
-    // If not, we need to export it again
-    if (keypair->pub_key_x[0] != 0) {
-        memcpy(digest, keypair->pub_key_x, len);
-        return ESP_OK;
-    }
-
-    if (keypair->pub_key_y[0] != 0) {
-        memcpy(digest, keypair->pub_key_y, len);
-        return ESP_OK;
-    }
-
     uint8_t pubkey_c[SECP256R1_ECDSA_KEY_LEN * 2] = {0};
     memcpy(pubkey_c, keypair->pub_key_x, sizeof(keypair->pub_key_x));
     memcpy(pubkey_c + SECP256R1_ECDSA_KEY_LEN, keypair->pub_key_y, sizeof(keypair->pub_key_y));

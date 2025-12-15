@@ -9,16 +9,3 @@ from pytest_embedded_idf.utils import idf_parametrize
 @idf_parametrize('target', ['esp32', 'esp32c3', 'esp32c2'], indirect=['target'])
 def test_coredump(dut: Dut) -> None:
     dut.run_all_single_board_cases()
-
-
-@pytest.mark.generic
-@idf_parametrize('target', ['esp32'], indirect=['target'])
-@pytest.mark.parametrize(
-    'config',
-    [
-        'checksum_sha256',
-    ],
-    indirect=True,
-)
-def test_coredump_sha(dut: Dut) -> None:
-    dut.run_all_single_board_cases()

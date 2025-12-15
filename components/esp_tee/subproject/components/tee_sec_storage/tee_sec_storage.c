@@ -265,13 +265,6 @@ esp_err_t esp_tee_sec_storage_init(void)
     ESP_LOGW(TAG, "TEE Secure Storage enabled in insecure DEVELOPMENT mode");
 #endif
 
-    psa_status_t status = psa_crypto_init();
-    if (status != PSA_SUCCESS) {
-        ESP_LOGE(TAG, "Failed to initialize PSA Crypto! (0x%08x)", status);
-        return ESP_FAIL;
-    }
-    ESP_FAULT_ASSERT(status == PSA_SUCCESS);
-
     return ESP_OK;
 }
 

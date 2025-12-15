@@ -984,8 +984,9 @@ struct crypto_bignum *crypto_ec_key_get_private_key(struct crypto_ec_key *key);
 struct crypto_ec_key *crypto_ec_key_parse_priv(const u8 *privkey, size_t privkey_len);
 
 /**
- * crypto_ec_get_mbedtls_to_nist_group_id - get nist group from mbedtls internal group
- * @id: mbedtls group
+ * crypto_ec_get_mbedtls_to_nist_group_id - get nist group from PSA internal group
+ * @id: PSA family
+ * @bits: PSA family size in bits
  * Returns: NIST group
  */
 unsigned int crypto_ec_get_mbedtls_to_nist_group_id(int id, int bits);

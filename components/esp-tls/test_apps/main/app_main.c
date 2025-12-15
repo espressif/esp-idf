@@ -7,7 +7,6 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "unity.h"
-// #include "mbedtls/aes.h"
 #include "memory_checks.h"
 #include "soc/soc_caps.h"
 #if SOC_SHA_SUPPORT_PARALLEL_ENG
@@ -38,7 +37,6 @@ void setUp(void)
     esp_sha(SHA_TYPE, input_buffer, sizeof(input_buffer), output_buffer);
 #endif // SOC_SHA_SUPPORTED
 
-// #if SOC_AES_SUPPORTED
     // Execute mbedtls_aes_init operation to allocate AES interrupt
     // allocation memory which is considered as leak otherwise
     uint8_t iv[16];
@@ -60,7 +58,6 @@ void setUp(void)
     psa_cipher_encrypt(key_id, PSA_ALG_ECB_NO_PADDING, buf, CALL_SZ, buf, CALL_SZ, &output_length);
     heap_caps_free(buf);
     psa_destroy_key(key_id);
-// #endif // SOC_AES_SUPPORTED
 
     test_utils_record_free_mem();
     TEST_ESP_OK(test_utils_set_leak_level(0, ESP_LEAK_TYPE_CRITICAL, ESP_COMP_LEAK_GENERAL));
@@ -75,8 +72,6 @@ void tearDown(void)
 
     /* clean up some of the newlib's lazy allocations */
     esp_reent_cleanup();
-
-    // mbedtls_psa_crypto_free();
 
     /* check if unit test has caused heap corruption in any heap */
     TEST_ASSERT_MESSAGE( heap_caps_check_integrity(MALLOC_CAP_INVALID, true), "The test has corrupted the heap");

@@ -19,7 +19,6 @@ uint32_t esp_core_dump_elf_version(void) __attribute__((alias("core_dump_sha_ver
 
 #if CONFIG_IDF_TARGET_ESP32
 
-#include "rom/sha.h"
 static void core_dump_sha256_start(core_dump_sha_ctx_t *sha_ctx)
 {
     mbedtls_sha256_init(&sha_ctx->ctx);

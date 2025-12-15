@@ -6,9 +6,6 @@
 #include <string.h>
 #include <stdbool.h>
 #include <esp_system.h>
-#define MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
-// // #include "mbedtls/aes.h"
-// // #include "mbedtls/sha256.h"
 #include "unity.h"
 #include "sdkconfig.h"
 #include "esp_heap_caps.h"
@@ -77,7 +74,6 @@ static void tskRunAES256Test(void *pvParameters)
     for (int i = 0; i <1000; i++)
     {
         const unsigned SZ = 1600;
-        // mbedtls_aes_context ctx;
         psa_cipher_operation_t ctx = PSA_CIPHER_OPERATION_INIT;
         uint8_t nonce[16];
 
@@ -101,14 +97,11 @@ static void tskRunAES256Test(void *pvParameters)
 
         psa_cipher_encrypt_setup(&ctx, key_id, PSA_ALG_CBC_NO_PADDING);
         psa_cipher_set_iv(&ctx, nonce, sizeof(nonce));
-        // mbedtls_aes_init(&ctx);
-        // mbedtls_aes_setkey_enc(&ctx, key_256, 256);
 
         memset(plaintext, 0x3A, SZ);
         memset(decryptedtext, 0x0, SZ);
 
         // Encrypt
-        // mbedtls_aes_crypt_cbc(&ctx, MBEDTLS_AES_ENCRYPT, SZ, nonce, plaintext, ciphertext);
         size_t enc_len = 0;
         psa_cipher_update(&ctx, plaintext, SZ, ciphertext, SZ, &enc_len);
         psa_cipher_finish(&ctx, ciphertext + enc_len, SZ - enc_len, &enc_len);
@@ -123,7 +116,6 @@ static void tskRunAES256Test(void *pvParameters)
 
         TEST_ASSERT_EQUAL_HEX8_ARRAY(plaintext, decryptedtext, SZ);
 
-        // mbedtls_aes_free(&ctx);
         psa_cipher_abort(&ctx);
         free(plaintext);
         free(ciphertext);

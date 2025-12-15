@@ -38,7 +38,6 @@
 #endif
 #endif
 #define DECLARE_PRIVATE_IDENTIFIERS
-// // #include "mbedtls/sha256.h"
 #include "psa/crypto.h"
 #include "bootloader_flash_priv.h"
 #include "esp_attestation_utils.h"

@@ -90,7 +90,12 @@ static esp_err_t aes_gcm_crypt_common(example_aes_gcm_ctx_t *ctx, uint8_t *tag, 
     }
 
     size_t output_len = 0;
-    psa_aead_update(&operation, ctx->input, ctx->input_len, output, ctx->input_len, &output_len);
+    status = psa_aead_update(&operation, ctx->input, ctx->input_len, output, ctx->input_len, &output_len);
+    if (status != PSA_SUCCESS) {
+        ESP_LOGE(TAG, "Error in updating aead: %d", status);
+        goto cleanup;
+    }
+
     if (is_encrypt) {
         size_t output_tag_len = 0;
         status = psa_aead_finish(&operation, output + output_len, ctx->input_len + tag_len - output_len, &output_len, tag, tag_len, &output_tag_len);

@@ -649,7 +649,6 @@ int esp_ecdsa_tee_set_pk_context(mbedtls_pk_context *key_ctx, esp_ecdsa_pk_conf_
         ESP_LOGE(TAG, "Failed to setup pk context, mbedtls_pk_setup() returned %d", ret);
         return ret;
     }
-    // keypair = mbedtls_pk_ec(*key_ctx);
     keypair = calloc(1, sizeof(mbedtls_ecp_keypair));
     if (keypair == NULL) {
         ESP_LOGE(TAG, "Failed to allocate memory for ecp_keypair");
@@ -948,7 +947,7 @@ static int ecdsa_signature_to_asn1(const mbedtls_mpi *r, const mbedtls_mpi *s,
                                    unsigned char *sig, size_t sig_size,
                                    size_t *slen)
 {
-    int ret = -1;
+    int ret = PSA_ERROR_CORRUPTION_DETECTED;
     unsigned char buf[MBEDTLS_ECDSA_MAX_LEN] = { 0 };
     // Setting the pointer p to the end of the buffer as the functions used afterwards write in backwards manner in the given buffer.
     unsigned char *p = buf + sizeof(buf);
@@ -986,7 +985,7 @@ int __wrap_mbedtls_ecdsa_write_signature_restartable(mbedtls_ecdsa_context *ctx,
         return __real_mbedtls_ecdsa_write_signature_restartable(ctx, md_alg, hash, hlen, sig, sig_size, slen, f_rng, p_rng, rs_ctx);
     }
 
-    int ret = -1;
+    int ret = PSA_ERROR_CORRUPTION_DETECTED;
     mbedtls_mpi r, s;
 
     mbedtls_mpi_init(&r);
@@ -1197,7 +1196,7 @@ int __wrap_mbedtls_ecdsa_read_signature_restartable(mbedtls_ecdsa_context *ctx,
                                              const unsigned char *sig, size_t slen,
                                              mbedtls_ecdsa_restart_ctx *rs_ctx)
 {
-    int ret = -1;
+    int ret = PSA_ERROR_CORRUPTION_DETECTED;
     unsigned char *p = (unsigned char *) sig;
     const unsigned char *end = sig + slen;
     size_t len;
@@ -1212,8 +1211,6 @@ int __wrap_mbedtls_ecdsa_read_signature_restartable(mbedtls_ecdsa_context *ctx,
     }
 
     if (p + len != end) {
-        // ret = MBEDTLS_ERROR_ADD(MBEDTLS_ERR_ECP_BAD_INPUT_DATA,
-        //                         MBEDTLS_ERR_ASN1_LENGTH_MISMATCH);
         ret = MBEDTLS_ERR_ECP_BAD_INPUT_DATA + MBEDTLS_ERR_ASN1_LENGTH_MISMATCH;
         goto cleanup;
     }
@@ -1233,7 +1230,7 @@ int __wrap_mbedtls_ecdsa_read_signature_restartable(mbedtls_ecdsa_context *ctx,
      * Return 0 if the buffer just contains the signature, and a specific
      * error code if the valid signature is followed by more data. */
     if (p != end) {
-        ret = -1;
+        ret = PSA_ERROR_INVALID_SIGNATURE;
     }
 
 cleanup:

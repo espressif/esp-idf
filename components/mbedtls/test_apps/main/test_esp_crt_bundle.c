@@ -15,9 +15,6 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
-#define MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
-// // #include "mbedtls/entropy.h"
-// // #include "mbedtls/ctr_drbg.h"
 #include "mbedtls/x509.h"
 #include "mbedtls/ssl.h"
 #include "entropy_poll.h"
@@ -72,10 +69,6 @@ typedef struct {
     mbedtls_ssl_context ssl;
     mbedtls_net_context listen_fd;
     mbedtls_net_context client_fd;
-
-    // mbedtls_entropy_context entropy;
-    // mbedtls_ctr_drbg_context ctr_drbg;
-
     mbedtls_ssl_config conf;
     mbedtls_x509_crt cert;
     mbedtls_pk_context pkey;
@@ -96,12 +89,6 @@ static volatile bool exit_flag;
 
 esp_err_t endpoint_teardown(mbedtls_endpoint_t *endpoint);
 
-// static int myrand(void *rng_state, unsigned char *output, size_t len)
-// {
-//     size_t olen;
-//     return mbedtls_hardware_poll(rng_state, output, len, &olen);
-// }
-
 esp_err_t server_setup(mbedtls_endpoint_t *server)
 {
     int ret;
@@ -114,8 +101,6 @@ esp_err_t server_setup(mbedtls_endpoint_t *server)
     mbedtls_ssl_init( &server->ssl );
     mbedtls_x509_crt_init( &server->cert );
     mbedtls_pk_init( &server->pkey );
-    // mbedtls_entropy_init( &server->entropy );
-    // mbedtls_ctr_drbg_init( &server->ctr_drbg );
 
     ESP_LOGI(TAG, "Loading the server cert and key");
     ret = mbedtls_x509_crt_parse( &server->cert, server_cert_chain_pem_start,
@@ -140,13 +125,6 @@ esp_err_t server_setup(mbedtls_endpoint_t *server)
     }
     mbedtls_net_set_nonblock(&server->listen_fd);
 
-    // ESP_LOGI(TAG, "Seeding the random number generator");
-    // if ( ( ret = mbedtls_ctr_drbg_seed( &server->ctr_drbg, mbedtls_entropy_func, &server->entropy,
-    //                                     NULL, 0) ) != 0 ) {
-    //     ESP_LOGE(TAG, "mbedtls_ctr_drbg_seed returned %d", ret );
-    //     return ESP_FAIL;
-    // }
-
     ESP_LOGI(TAG, "Setting up the SSL data");
     if ( ( ret = mbedtls_ssl_config_defaults( &server->conf,
                  MBEDTLS_SSL_IS_SERVER,
@@ -155,8 +133,6 @@ esp_err_t server_setup(mbedtls_endpoint_t *server)
         ESP_LOGE(TAG, "mbedtls_ssl_config_defaults returned %d", ret );
         return ESP_FAIL;
     }
-
-    // mbedtls_ssl_conf_rng( &server->conf, mbedtls_ctr_drbg_random, &server->ctr_drbg );
 
     if (( ret = mbedtls_ssl_conf_own_cert( &server->conf, &server->cert, &server->pkey ) ) != 0 ) {
         ESP_LOGE(TAG, "mbedtls_ssl_conf_own_cert returned %d", ret );
@@ -221,9 +197,6 @@ esp_err_t endpoint_teardown(mbedtls_endpoint_t *endpoint)
     mbedtls_ssl_free( &endpoint->ssl );
     mbedtls_ssl_config_free( &endpoint->conf );
 
-    // mbedtls_ctr_drbg_free( &endpoint->ctr_drbg );
-    // mbedtls_entropy_free( &endpoint->entropy );
-
     return ESP_OK;
 }
 
@@ -239,16 +212,6 @@ esp_err_t client_setup(mbedtls_endpoint_t *client)
     mbedtls_ssl_init( &client->ssl );
     mbedtls_x509_crt_init( &client->cert );
     mbedtls_pk_init( &client->pkey );
-    // mbedtls_entropy_init( &client->entropy );
-    // mbedtls_ctr_drbg_init( &client->ctr_drbg );
-
-    // ESP_LOGI(TAG, "Seeding the random number generator");
-    // if ((ret = mbedtls_ctr_drbg_seed(&client->ctr_drbg, mbedtls_entropy_func, &client->entropy,
-    //                                  NULL, 0)) != 0) {
-    //     ESP_LOGE(TAG, "mbedtls_ctr_drbg_seed returned %d", ret);
-    //     return ESP_FAIL;
-    // }
-
     ESP_LOGI(TAG, "Setting hostname for TLS session...");
     /* Hostname set here should match CN in server certificate */
     if ((ret = mbedtls_ssl_set_hostname(&client->ssl, SERVER_ADDRESS)) != 0) {
@@ -264,7 +227,6 @@ esp_err_t client_setup(mbedtls_endpoint_t *client)
         ESP_LOGE(TAG, "mbedtls_ssl_config_defaults returned %d", ret);
         return ESP_FAIL;
     }
-    // mbedtls_ssl_conf_rng(&client->conf, mbedtls_ctr_drbg_random, &client->ctr_drbg);
 
     if ((ret = mbedtls_ssl_setup(&client->ssl, &client->conf)) != 0) {
         ESP_LOGE(TAG, "mbedtls_ssl_setup returned -0x%x", -ret);

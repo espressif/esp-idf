@@ -21,8 +21,6 @@
 #include "esp_aes_internal.h"
 #include "hal/aes_hal.h"
 
-// #include "mbedtls/aes.h"
-// #include "mbedtls/error.h"
 #include "mbedtls/gcm.h"
 
 #include "esp_heap_caps.h"
@@ -32,9 +30,13 @@
 
 #include "sdkconfig.h"
 
+#include "psa/crypto.h"
+
 #if SOC_AES_SUPPORT_DMA
 #include "esp_aes_dma_priv.h"
 #endif
+
+#define MBEDTLS_ERR_AES_INVALID_KEY_LENGTH                -0x0020
 
 #define ESP_PUT_BE64(a, val)                                    \
     do {                                                        \
@@ -258,11 +260,11 @@ int esp_aes_gcm_setkey( esp_gcm_context *ctx,
 {
 #if !SOC_AES_SUPPORT_AES_192
     if (keybits == 192) {
-        return -1;
+        return PSA_ERROR_NOT_SUPPORTED;
     }
 #endif
     if (keybits != 128 && keybits != 192 && keybits != 256) {
-        return -1;
+        return MBEDTLS_ERR_AES_INVALID_KEY_LENGTH;
     }
 
 
@@ -348,19 +350,19 @@ int esp_aes_gcm_starts( esp_gcm_context *ctx,
 {
     if (!ctx) {
         ESP_LOGE(TAG, "No AES context supplied");
-        return -1;
+        return PSA_ERROR_INVALID_ARGUMENT;
     }
 
     /* IV is limited to 2^32 bits, so 2^29 bytes */
     /* IV is not allowed to be zero length */
     if ( iv_len == 0 ||
             ( (uint32_t) iv_len  ) >> 29 != 0 ) {
-        return ( -1 );
+        return ( PSA_ERROR_INVALID_ARGUMENT );
     }
 
     if (!iv) {
         ESP_LOGE(TAG, "No IV supplied");
-        return -1;
+        return -PSA_ERROR_INVALID_ARGUMENT;
     }
 
     /* Initialize AES-GCM context */
@@ -414,22 +416,22 @@ int esp_aes_gcm_update_ad( esp_gcm_context *ctx,
 {
     if (!ctx) {
         ESP_LOGE(TAG, "No AES context supplied");
-        return -1;
+        return PSA_ERROR_INVALID_ARGUMENT;
     }
 
     /* AD are limited to 2^32 bits, so 2^29 bytes */
     if ( ( (uint32_t) aad_len ) >> 29 != 0 ) {
-        return ( -1 );
+        return ( PSA_ERROR_INVALID_ARGUMENT );
     }
 
     if ( (aad_len > 0) && !aad) {
         ESP_LOGE(TAG, "No aad supplied");
-        return -1;
+        return PSA_ERROR_INVALID_ARGUMENT;
     }
 
     if (ctx->gcm_state != ESP_AES_GCM_STATE_START) {
         ESP_LOGE(TAG, "AES context in invalid state!");
-        return -1;
+        return PSA_ERROR_BAD_STATE;
     }
 
     /* Initialise associated data */
@@ -458,21 +460,21 @@ int esp_aes_gcm_update( esp_gcm_context *ctx,
 
     if (!output_length) {
         ESP_LOGE(TAG, "No output length supplied");
-        return -1;
+        return PSA_ERROR_INVALID_ARGUMENT;
     }
     *output_length = input_length;
 
     if (!input) {
         ESP_LOGE(TAG, "No input supplied");
-        return -1;
+        return PSA_ERROR_INVALID_ARGUMENT;
     }
     if (!output) {
         ESP_LOGE(TAG, "No output supplied");
-        return -1;
+        return PSA_ERROR_INVALID_ARGUMENT;
     }
 
     if ( output > input && (size_t) ( output - input ) < input_length ) {
-        return ( -1 );
+        return ( PSA_ERROR_INVALID_ARGUMENT );
     }
     /* If this is the first time esp_gcm_update is getting called
      * calculate GHASH on aad and preincrement the ICB
@@ -523,7 +525,7 @@ int esp_aes_gcm_finish( esp_gcm_context *ctx,
     uint8_t stream[AES_BLOCK_BYTES] = {0};
 
     if ( tag_len > 16 || tag_len < 4 ) {
-        return ( -1 );
+        return ( PSA_ERROR_INVALID_ARGUMENT );
     }
 
     /* Calculate final GHASH on aad_len, data length */
@@ -611,7 +613,7 @@ int esp_aes_gcm_crypt_and_tag( esp_gcm_context *ctx,
 {
     if (!ctx) {
         ESP_LOGE(TAG, "No AES context supplied");
-        return -1;
+        return PSA_ERROR_INVALID_ARGUMENT;
     }
 #if CONFIG_MBEDTLS_HARDWARE_GCM
     int ret;
@@ -636,17 +638,17 @@ int esp_aes_gcm_crypt_and_tag( esp_gcm_context *ctx,
     if ( iv_len == 0 ||
             ( (uint32_t) iv_len  ) >> 29 != 0 ||
             ( (uint32_t) aad_len ) >> 29 != 0 ) {
-        return ( -1 );
+        return ( PSA_ERROR_INVALID_ARGUMENT );
     }
 
     if (!iv) {
         ESP_LOGE(TAG, "No IV supplied");
-        return -1;
+        return PSA_ERROR_INVALID_ARGUMENT;
     }
 
     if ( (aad_len > 0) && !aad) {
         ESP_LOGE(TAG, "No aad supplied");
-        return -1;
+        return PSA_ERROR_INVALID_ARGUMENT;
     }
 
     /* Initialize AES-GCM context */
@@ -721,7 +723,7 @@ int esp_aes_gcm_auth_decrypt( esp_gcm_context *ctx,
 
     if ( diff != 0 ) {
         bzero( output, length );
-        return ( -1 );
+        return ( PSA_ERROR_INVALID_SIGNATURE );
     }
 
     return ( 0 );

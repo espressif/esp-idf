@@ -26,8 +26,6 @@
 // located at mbedtls/library/ssl_misc.h
 #include "ssl_misc.h"
 
-// // #include "mbedtls/ctr_drbg.h"
-// // #include "mbedtls/entropy.h"
 #include "mbedtls/debug.h"
 #include "mbedtls/oid.h"
 #ifdef ESPRESSIF_USE
@@ -606,8 +604,6 @@ static int tls_create_mbedtls_handle(struct tls_connection *conn,
         wpa_printf(MSG_ERROR, "Failed to set client configurations");
         goto exit;
     }
-
-    // mbedtls_ssl_conf_rng(&tls->conf, mbedtls_psa_get_random, MBEDTLS_PSA_RANDOM_STATE);
 
 #if defined(CONFIG_MBEDTLS_SSL_PROTO_TLS1_3) && !defined(CONFIG_TLSV13)
     /* Disable TLSv1.3 even when enabled in MbedTLS and not enabled in WiFi config.

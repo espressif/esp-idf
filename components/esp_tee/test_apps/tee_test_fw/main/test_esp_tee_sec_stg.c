@@ -8,10 +8,6 @@
 #include "esp_log.h"
 #include "esp_heap_caps.h"
 #include "esp_partition.h"
-#define MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
-// #include "mbedtls/ecp.h"
-// #include "mbedtls/ecdsa.h"
-// #include "mbedtls/sha256.h"
 #include "ecdsa/ecdsa_alt.h"
 
 #include "esp_tee.h"

@@ -85,17 +85,13 @@ TEST_CASE("mbedtls AES performance", "[aes][timeout=60]")
     };
     TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_last_block, buf + CALL_SZ - 16, 16);
 
-    // mbedtls_aes_free(&ctx);
     psa_destroy_key(key_id);
     psa_reset_key_attributes(&attributes);
     free(buf);
 
-    // mbedtls_psa_crypto_free();
-
     // bytes/usec = MB/sec
     float mb_sec = (CALL_SZ * CALLS) / elapsed_usec;
     printf("Encryption rate %.3fMB/sec\n", mb_sec);
-    // Commenting out this for now as we do not have hardware support with PSA
 #ifdef CONFIG_MBEDTLS_HARDWARE_AES
     // Don't put a hard limit on software AES performance
     TEST_PERFORMANCE_CCOMP_GREATER_THAN(AES_CBC_THROUGHPUT_MBSEC, "%.3fMB/sec", mb_sec);

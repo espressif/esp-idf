@@ -124,7 +124,6 @@ esp_err_t esp_create_mbedtls_handle(const char *hostname, size_t hostlen, const 
     tls->server_fd.fd = tls->sockfd;
     mbedtls_ssl_init(&tls->ssl);
     mbedtls_ssl_config_init(&tls->conf);
-    // mbedtls_ssl_conf_rng(&tls->conf, mbedtls_psa_get_random, MBEDTLS_PSA_RANDOM_STATE);
 
 #if CONFIG_MBEDTLS_DYNAMIC_BUFFER
     tls->esp_tls_dyn_buf_strategy = ((esp_tls_cfg_t *)cfg)->esp_tls_dyn_buf_strategy;
@@ -693,7 +692,7 @@ esp_err_t esp_mbedtls_server_session_ticket_ctx_init(esp_tls_server_session_tick
     esp_err_t esp_ret;
     if ((ret = mbedtls_ssl_ticket_setup(&ctx->ticket_ctx,
                     PSA_ALG_GCM, PSA_KEY_TYPE_AES, 256,
-                    86400)) != 0) {
+                    CONFIG_ESP_TLS_SERVER_SESSION_TICKET_TIMEOUT)) != 0) {
         ESP_LOGE(TAG, "mbedtls_ssl_ticket_setup returned -0x%04X", -ret);
         mbedtls_print_error_msg(ret);
         esp_ret = ESP_ERR_MBEDTLS_SSL_TICKET_SETUP_FAILED;
@@ -949,12 +948,6 @@ esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls_cfg_t 
     mbedtls_ssl_conf_renegotiation(&tls->conf, MBEDTLS_SSL_RENEGOTIATION_ENABLED);
 #endif /* CONFIG_MBEDTLS_SSL_RENEGOTIATION */
 #endif /* CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS */
-
-#if CONFIG_MBEDTLS_SSL_PROTO_TLS1_3
-#if CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS || CONFIG_MBEDTLS_DYNAMIC_BUFFER
-    // mbedtls_ssl_conf_tls13_enable_signal_new_session_tickets(&tls->conf, MBEDTLS_SSL_SESSION_TICKETS_ENABLED);
-#endif
-#endif
 
     if (cfg->crt_bundle_attach != NULL) {
 #ifdef CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
@@ -1392,7 +1385,6 @@ static esp_err_t esp_mbedtls_init_pk_ctx_for_ds(const void *pki)
     mbedtls_rsa_init(rsakey);
     esp_tls_pki_t *pki_l = (esp_tls_pki_t *) pki;
     mbedtls_pk_context *pk_context = (mbedtls_pk_context *) pki_l->pk_key;
-    // const mbedtls_pk_info_t *pk_info = mbedtls_pk_info_from_type(MBEDTLS_PK_RSA);
     mbedtls_pk_info_t *esp_ds_pk_info = calloc(1, sizeof(mbedtls_pk_info_t));
     if (esp_ds_pk_info == NULL) {
         ESP_LOGE(TAG, "Failed to allocate memory for mbedtls_pk_info_t");
@@ -1406,15 +1398,6 @@ static esp_err_t esp_mbedtls_init_pk_ctx_for_ds(const void *pki)
     esp_ds_pk_info->type = MBEDTLS_PK_RSASSA_PSS;
     pk_context->pk_info = esp_ds_pk_info;
     pk_context->pk_ctx = rsakey;
-    // if ((ret = mbedtls_pk_setup_rsa_alt(((const esp_tls_pki_t*)pki)->pk_key, rsakey, NULL, esp_ds_rsa_sign,
-    //                                     esp_ds_get_keylen )) != 0) {
-    //     ESP_LOGE(TAG, "Error in mbedtls_pk_setup_rsa_alt, returned -0x%04X", -ret);
-    //     mbedtls_print_error_msg(ret);
-    //     mbedtls_rsa_free(rsakey);
-    //     free(rsakey);
-    //     ret = ESP_FAIL;
-    //     goto exit;
-    // }
     ret = esp_ds_init_data_ctx(((const esp_tls_pki_t*)pki)->esp_ds_data);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to initialize DS parameters from nvs");

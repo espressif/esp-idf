@@ -12,7 +12,6 @@
 #include "esp_ds/esp_ds_rsa.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
-// #include "mbedtls/rsa.h"
 #include "psa/crypto.h"
 
 #ifdef SOC_DIG_SIGN_SUPPORTED

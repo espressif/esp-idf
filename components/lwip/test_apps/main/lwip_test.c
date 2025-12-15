@@ -492,6 +492,7 @@ TEST_GROUP_RUNNER(lwip)
     RUN_TEST_CASE(lwip, dhcp_server_dns_options)
     RUN_TEST_CASE(lwip, sntp_client_time_2015)
     RUN_TEST_CASE(lwip, sntp_client_time_2048)
+    RUN_TEST_CASE(lwip, dhcp_arp_probe_self_mac_is_ok)
 }
 
 void app_main(void)

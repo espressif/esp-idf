@@ -11,7 +11,6 @@
 #pragma once
 
 #include "aes/esp_aes.h"
-// #include "mbedtls/cipher.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -10,8 +10,6 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <string.h>
-#define MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
-// // #include "mbedtls/sha256.h"
 #include "unity.h"
 #include "sdkconfig.h"
 #include "esp_heap_caps.h"

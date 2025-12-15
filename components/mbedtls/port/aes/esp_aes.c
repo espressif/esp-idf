@@ -16,7 +16,6 @@
  */
 
 #include <string.h>
-// #include "mbedtls/aes.h"
 #include "esp_log.h"
 #include "esp_crypto_lock.h"
 #include "hal/aes_hal.h"
@@ -135,7 +134,6 @@ static int esp_aes_block(esp_aes_context *ctx, const void *input, void *output)
        key write to hardware. Treat this as a fatal error and zero the output block.
     */
     if (ctx->key_in_hardware != ctx->key_bytes) {
-        // mbedtls_platform_zeroize(output, 16);
         memset(output, 0, 16);
         return MBEDTLS_ERR_AES_INVALID_INPUT_LENGTH;
     }
@@ -160,8 +158,6 @@ static int esp_aes_block(esp_aes_context *ctx, const void *input, void *output)
     if (i0 == output_words[0] && i1 == output_words[1] && i2 == output_words[2] && i3 == output_words[3]) {
         // calling zeroing functions to narrow the
         // window for a double-fault of the abort step, here
-        memset(output, 0, 16);
-        // mbedtls_platform_zeroize(output, 16);
         memset(output, 0, 16);
         abort();
     }

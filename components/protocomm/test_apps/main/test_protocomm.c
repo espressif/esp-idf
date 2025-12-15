@@ -31,11 +31,6 @@
 #endif
 
 #define MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
-// #include <mbedtls/aes.h>
-// #include <mbedtls/sha256.h>
-// #include <mbedtls/entropy.h>
-// #include <mbedtls/ctr_drbg.h>
-// #include <mbedtls/ecdh.h>
 #include <mbedtls/error.h>
 #include "psa/crypto.h"
 #include <protocomm.h>
@@ -172,21 +167,18 @@ static esp_err_t verify_response0(session_t *session, SessionData *resp)
         status = psa_hash_setup(&hash_operation, PSA_ALG_SHA_256);
         if (status != PSA_SUCCESS) {
             ESP_LOGE(TAG, "psa_hash_setup failed with status=%d", status);
-            // ret = ESP_FAIL;
         }
 
         status = psa_hash_update(&hash_operation, pop->data, pop->len);
         if (status != PSA_SUCCESS) {
             ESP_LOGE(TAG, "psa_hash_update failed with status=%d", status);
             psa_hash_abort(&hash_operation);
-            // ret = ESP_FAIL;
         }
 
         status = psa_hash_finish(&hash_operation, sha_out, sizeof(sha_out), &olen);
         if (status != PSA_SUCCESS || olen != sizeof(sha_out)) {
             ESP_LOGE(TAG, "psa_hash_finish failed with status=%d", status);
             psa_hash_abort(&hash_operation);
-            // ret = ESP_FAIL;
         }
 
         for (int i = 0; i < PUBLIC_KEY_LEN; i++) {

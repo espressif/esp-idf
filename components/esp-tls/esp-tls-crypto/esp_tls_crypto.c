@@ -10,8 +10,6 @@
 #include "sdkconfig.h"
 __attribute__((unused)) static const char *TAG = "esp_crypto";
 #ifdef CONFIG_ESP_TLS_USING_MBEDTLS
-/* Need this for mbedtls_sha1_* APIs */
-#define MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
 #include "mbedtls/base64.h"
 #include "mbedtls/error.h"
 #include "psa/crypto.h"

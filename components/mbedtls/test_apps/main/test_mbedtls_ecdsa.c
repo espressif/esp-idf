@@ -10,8 +10,6 @@
 #include <inttypes.h>
 #include <esp_log.h>
 #define MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
-// #include <mbedtls/entropy.h>
-// #include <mbedtls/ctr_drbg.h>
 #include <mbedtls/private/ecdh.h>
 #include <mbedtls/private/ecdsa.h>
 #include <mbedtls/private/pk_private.h>

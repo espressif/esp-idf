@@ -15,9 +15,6 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-// #include "mbedtls/ecp.h"
-// #include "mbedtls/ecdsa.h"
-// #include "mbedtls/sha256.h"
 #include "psa/crypto.h"
 
 #include "esp_tee_sec_storage.h"
@@ -29,7 +26,8 @@
 #define AES256_GCM_TAG_LEN       (16)
 #define AES256_GCM_AAD_LEN       (16)
 
-#define KEY_STR_ID               (CONFIG_EXAMPLE_TEE_SEC_STG_KEY_STR_ID)
+#define SIGN_KEY_STR_ID          (CONFIG_EXAMPLE_TEE_SEC_STG_SIGN_KEY_STR_ID)
+#define ENC_KEY_STR_ID           (CONFIG_EXAMPLE_TEE_SEC_STG_ENC_KEY_STR_ID)
 #define MAX_AES_PLAINTEXT_LEN    (128)
 
 static const char *message = "Lorem ipsum dolor sit amet, consectetur adipiscing elit.";
@@ -93,7 +91,7 @@ static void example_tee_sec_stg_sign_verify(void *pvParameter)
     }
 
     esp_tee_sec_storage_key_cfg_t cfg = {
-        .id = (const char *)(KEY_STR_ID),
+        .id = (const char *)(SIGN_KEY_STR_ID),
         .type = ESP_SEC_STG_KEY_ECDSA_SECP256R1
     };
 
@@ -161,7 +159,7 @@ static void example_tee_sec_stg_encrypt_decrypt(void *pvParameter)
     }
 
     esp_tee_sec_storage_key_cfg_t cfg = {
-        .id = (const char *)(KEY_STR_ID),
+        .id = (const char *)(ENC_KEY_STR_ID),
         .type = ESP_SEC_STG_KEY_AES256
     };
 

@@ -1660,12 +1660,6 @@ menu "mbedTLS"
                 it also increases the binary size by ~1.2 KB as it pulls in the peripheral's block
                 mode code as well.
 
-        config MBEDTLS_PK_RSA_ALT_SUPPORT
-            bool "Enable RSA alt support"
-            default n
-            help
-                Support external private RSA keys (eg from a HSM) int the PK layer.
-
         config MBEDTLS_ATCA_HW_ECDSA_SIGN
             bool "Enable hardware ECDSA sign acceleration when using ATECC608A"
             default n

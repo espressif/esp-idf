@@ -100,26 +100,6 @@ struct fast_psk_context {
     uint32_t sum[SHA1_OUTPUT_SZ_WORDS]; /* Intermediate hash result */
 };
 
-/* Acquire SHA1 hardware for exclusive use */
-// static inline void sha1_setup(void)
-// {
-// #if SOC_SHA_SUPPORT_PARALLEL_ENG
-//     esp_sha_lock_engine(SHA1);
-// #else
-//     esp_sha_acquire_hardware();
-// #endif
-// }
-
-/* Release SHA1 hardware */
-// static inline void sha1_teardown(void)
-// {
-// #if SOC_SHA_SUPPORT_PARALLEL_ENG
-//     esp_sha_unlock_engine(SHA1);
-// #else
-//     esp_sha_release_hardware();
-// #endif
-// }
-
 /*
  * Pads the given HMAC block context with the appropriate SHA1 padding.
  * Length is the number of bytes of actual data in the block.
@@ -247,8 +227,6 @@ void fast_psk_f(const char *password, size_t password_len, const uint8_t *ssid, 
     /* Pad the block */
     pad_blocks(&ctx->inner, SHA1_BLOCK_SZ + ssid_len + 4);
 
-    // sha1_setup();
-
     uint32_t *pi, *po;
     pi = ctx->inner.whole_words;
     po = ctx->outer.whole_words;
@@ -281,8 +259,6 @@ void fast_psk_f(const char *password, size_t password_len, const uint8_t *ssid, 
             sum[j] ^= inner_blk1[j];
         }
     }
-
-    // sha1_teardown();
 
     /* Copy the final result to the output digest */
     memcpy(digest, sum, SHA1_OUTPUT_SZ);

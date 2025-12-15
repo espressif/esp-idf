@@ -67,7 +67,6 @@ static void compute_alice_txt_md5(void)
 
     do {
         read = fread((void*) buf, 1, sizeof(buf), f);
-        // mbedtls_md5_update(&ctx, (unsigned const char*) buf, read);
         status = psa_hash_update(&operation, (unsigned const char*) buf, read);
         if (status != PSA_SUCCESS) {
             ESP_LOGE(TAG, "Failed to update hash operation");
@@ -75,7 +74,6 @@ static void compute_alice_txt_md5(void)
         }
     } while(read == sizeof(buf));
 
-    // mbedtls_md5_finish(&ctx, digest);
     size_t md5len = 0;
     status = psa_hash_finish(&operation, digest, md5_len, &md5len);
     if (status != PSA_SUCCESS) {

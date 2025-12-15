@@ -8,12 +8,10 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "unity.h"
-// // #include "mbedtls/aes.h"
 #include "memory_checks.h"
 #include "soc/soc_caps.h"
 #include "esp_newlib.h"
 #include "esp_random.h"
-// // #include "mbedtls/entropy.h"
 
 #define CALL_SZ (32 * 1024)
 
@@ -42,8 +40,6 @@ void setUp(void)
     psa_cipher_encrypt(key_id, PSA_ALG_ECB_NO_PADDING, buf, CALL_SZ, buf, CALL_SZ, &output_length);
     heap_caps_free(buf);
     psa_destroy_key(key_id);
-    // mbedtls_aes_context ctx;
-    // mbedtls_aes_init(&ctx);
 #endif // SOC_AES_SUPPORTED
 
     test_utils_record_free_mem();

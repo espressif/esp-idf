@@ -11,7 +11,6 @@
 #include <esp_system.h>
 #define MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
 #include "mbedtls/bignum.h"
-// #include "mbedtls/private/bignum.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"

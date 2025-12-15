@@ -172,8 +172,6 @@ esp_err_t esp_att_generate_token(const uint32_t nonce, const uint32_t client_id,
         return ESP_ERR_INVALID_ARG;
     }
 
-    ESP_LOGI(TAG, "Generating attestation token");
-
     if (token_buf_size < ESP_ATT_TK_MIN_SIZE) {
         ESP_LOGE(TAG, "EAT buffer too small: got %luB, need > %dB", token_buf_size, ESP_ATT_TK_MIN_SIZE);
         return ESP_ERR_INVALID_SIZE;

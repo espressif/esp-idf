@@ -633,34 +633,6 @@ TEST_CASE("Test crypto lib aes apis", "[wpa_crypto]")
         TEST_ASSERT(!memcmp(plain, expected_cipher, 16));
     }
 
-    /*
-        {
-            Check internal crypto cipher APIs
-            const uint8_t key_size = 16;
-            const uint8_t key[16] = {[0 ... key_size - 1] = 0x3A};
-            const uint8_t iv[16] = {[0 ... 15] = 0x5A};
-            uint8_t plain[16] = {[0 ... 15] = 0xA5};
-
-            const uint8_t expected_cipher[16] = {
-                0xA0, 0x67, 0x6C, 0x77, 0x53, 0xE2, 0x17, 0x63, 0x00, 0x4C, 0xB8, 0xF6, 0xA8, 0x9F, 0xC0, 0xD2
-            };
-
-            struct crypto_cipher *ctx = crypto_cipher_init(CRYPTO_CIPHER_ALG_AES, iv, key, key_size);
-            TEST_ASSERT_NOT_NULL(ctx);
-
-            uint8_t crypt[16];
-            int ret = crypto_cipher_encrypt(ctx, plain, crypt, 16);
-            TEST_ASSERT(ret == 0);
-            TEST_ASSERT(!memcmp(crypt, expected_cipher, 16));
-
-            ret = crypto_cipher_decrypt(ctx, crypt, plain, 16);
-            TEST_ASSERT(ret == 0);
-            uint8_t expected_plain[16] = {[0 ... 15] = 0xA5};
-            TEST_ASSERT(!memcmp(plain, expected_plain, 16));
-
-            crypto_cipher_deinit(ctx);
-        }
-    */
     {
         /* Check omac1_aes_128 APIs */
         const uint8_t key_size = 16;
@@ -790,26 +762,6 @@ TEST_CASE("Test crypto lib aes apis", "[wpa_crypto]")
     }
 }
 
-// NOTE: This is disable as PSA does not support DES
-/*
-TEST_CASE("Test crypto lib des apis", "[wpa_crypto]")
-{
-    {
-        const uint8_t key[8] = {[0 ... 7] = 0x3A};
-        const uint8_t plain[8] = {[0 ... 7] = 0xA5};
-
-        const uint8_t expected_cipher[8] = {
-            0x54, 0x24, 0x29, 0x5E, 0x53, 0x94, 0x1D, 0x8E
-        };
-
-        uint8_t crypt[8];
-        int ret = des_encrypt(plain, key, crypt);
-        TEST_ASSERT(ret == 0);
-        TEST_ASSERT(!memcmp(crypt, expected_cipher, 8));
-    }
-}
-*/
-
 TEST_CASE("Test crypto lib ecdsa apis", "[wpa_crypto]")
 {
     set_leak_threshold(300);
@@ -903,7 +855,6 @@ TEST_CASE("Test crypto lib hash apis", "[wpa_crypto]")
         memset((void *)data[0], 0xA5, 32);
         uint8_t hash[48];
 
-        // 80b0d3a08d530e02627c374ef4bf507faa55001e2ffdcd20c0be7d0f47ea600e3d980256699409c673d6fc823742fc20
         uint8_t expected_hash[48] = {
             0x80, 0xB0, 0xD3, 0xA0, 0x8D, 0x53, 0x0E, 0x02, 0x62, 0x7C, 0x37, 0x4E, 0xF4, 0xBF, 0x50, 0x7F, 0xAA, 0x55, 0x00, 0x1E, 0x2F, 0xFD, 0xCD, 0x20, 0xC0, 0xBE, 0x7D, 0x0F, 0x47, 0xEA, 0x60, 0x0E, 0x3D, 0x98, 0x02, 0x56, 0x69, 0x94, 0x09, 0xC6, 0x73, 0xD6, 0xFC, 0x82, 0x37, 0x42, 0xFC, 0x20
         };
@@ -922,7 +873,6 @@ TEST_CASE("Test crypto lib hash apis", "[wpa_crypto]")
         memset((void *)data[0], 0xA5, 32);
         uint8_t hash[64];
 
-        // 774B67B3A64977E9A42E46217F17A6E85402A50A1EC8B75EB53FCDD5D4EB4B54D4A249F863E97128CF6529763BC96AA73CA9AE49784D2FF158B324A6016CB518
         uint8_t expected_hash[64] = {
             0x77, 0x4B, 0x67, 0xB3, 0xA6, 0x49, 0x77, 0xE9, 0xA4, 0x2E, 0x46, 0x21, 0x7F, 0x17, 0xA6, 0xE8, 0x54, 0x02, 0xA5, 0x0A, 0x1E, 0xC8, 0xB7, 0x5E, 0xB5, 0x3F, 0xCD, 0xD5, 0xD4, 0xEB, 0x4B, 0x54, 0xD4, 0xA2, 0x49, 0xF8, 0x63, 0xE9, 0x71, 0x28, 0xCF, 0x65, 0x29, 0x76, 0x3B, 0xC9, 0x6A, 0xA7, 0x3C, 0xA9, 0xAE, 0x49, 0x78, 0x4D, 0x2F, 0xF1, 0x58, 0xB3, 0x24, 0xA6, 0x01, 0x6C, 0xB5, 0x18
         };
@@ -943,7 +893,6 @@ TEST_CASE("Test crypto lib hash apis", "[wpa_crypto]")
         uint8_t hash[20];
         size_t len[1] = {32};
 
-        // 3723E743D2EAB795ED034F03ECD20E69E8839219
         uint8_t expected_hash[20] = {
             0x37, 0x23, 0xE7, 0x43, 0xD2, 0xEA, 0xB7, 0x95, 0xED, 0x03, 0x4F, 0x03, 0xEC, 0xD2, 0x0E, 0x69, 0xE8, 0x83, 0x92, 0x19
         };
@@ -962,7 +911,6 @@ TEST_CASE("Test crypto lib hash apis", "[wpa_crypto]")
         uint8_t hash[16];
         size_t len[1] = {32};
 
-        // 096CABA666F7B5381886AA0BD54114ED
         uint8_t expected_hash[16] = {
             0x09, 0x6C, 0xAB, 0xA6, 0x66, 0xF7, 0xB5, 0x38, 0x18, 0x86, 0xAA, 0x0B, 0xD5, 0x41, 0x14, 0xED
         };
@@ -1019,7 +967,6 @@ TEST_CASE("Test crypto lib hash apis", "[wpa_crypto]")
 
         uint8_t key[32] = {[0 ... 31] = 0x3A};
 
-        // 2b89551909266ed16c077407800210be3c537474ed3d6850ca9f313aea897cd5
         uint8_t expected_hash[32] = {
             0x2B, 0x89, 0x55, 0x19, 0x09, 0x26, 0x6E, 0xD1, 0x6C, 0x07, 0x74, 0x07, 0x80, 0x02, 0x10, 0xBE, 0x3C, 0x53, 0x74, 0x74, 0xED, 0x3D, 0x68, 0x50, 0xCA, 0x9F, 0x31, 0x3A, 0xEA, 0x89, 0x7C, 0xD5
         };
@@ -1041,7 +988,6 @@ TEST_CASE("Test crypto lib hash apis", "[wpa_crypto]")
         uint8_t hash[48];
         uint8_t key[32] = {[0 ... 31] = 0x3A};
 
-        // 8014a069bfa41e5d298e2c6050ad6ca8a3d7ac447068455b035c24c531f67d2687db1259105fabe9cdb0809604e552ce
         uint8_t expected_hash[48] = {
             0x80, 0x14, 0xA0, 0x69, 0xBF, 0xA4, 0x1E, 0x5D, 0x29, 0x8E, 0x2C, 0x60, 0x50, 0xAD, 0x6C, 0xA8, 0xA3, 0xD7, 0xAC, 0x44, 0x70, 0x68, 0x45, 0x5B, 0x03, 0x5C, 0x24, 0xC5, 0x31, 0xF6, 0x7D, 0x26, 0x87, 0xDB, 0x12, 0x59, 0x10, 0x5F, 0xAB, 0xE9, 0xCD, 0xB0, 0x80, 0x96, 0x04, 0xE5, 0x52, 0xCE
         };
@@ -1231,7 +1177,6 @@ TEST_CASE("Test crypto lib rsa apis", "[wpa_crypto]")
         int ret = crypto_private_key_sign_pkcs1((struct crypto_private_key *)ctx, data, 32, signature, &signature_size);
         TEST_ASSERT(ret == 0);
 
-        // 700CE7B382057B3DA95734BFF2371A6435E9B226BFE2BB97922529A3331F1DEE57CA02341EE7448A5605813C8124BD64EBC21623EAC7CA8DECB61B615676BA0CBCE3A0B51369E4D69C8C7628AC55952D1553951722C05A0F79F9AC1C17061781532B8E2577529C480F96B93ED73D4079C865D71758ABB6EC4B51C4ED0ED8D47DF82C9B8701E072D5B9786CC835A52F508F2BCC2A762DD8C4BB9C02B44591954EDEF38655A2E551C6BAA0AFA803D583147856980D4EF3A1053A32EB997B3DEF46C86E7BB59F83F7D6FE38E825B60BF42652DF87AA4F19689BFBB6CEF07789A4B3AAD270A4FF9D942083BA08D0D97BD0D707B57424C652850627A505D23E1D0B2E
         uint8_t expected_signature[256] = {
             0x70, 0x0C, 0xE7, 0xB3, 0x82, 0x05, 0x7B, 0x3D, 0xA9, 0x57,
             0x34, 0xBF, 0xF2, 0x37, 0x1A, 0x64, 0x35, 0xE9, 0xB2, 0x26,

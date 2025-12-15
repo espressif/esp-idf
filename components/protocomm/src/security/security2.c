@@ -12,10 +12,7 @@
 #include <esp_check.h>
 #include <inttypes.h>
 
-// #include <mbedtls/gcm.h>
 #include <mbedtls/error.h>
-// #include <mbedtls/entropy.h>
-// #include <mbedtls/ctr_drbg.h>
 #include "psa/crypto.h"
 
 #include <protocomm_security.h>

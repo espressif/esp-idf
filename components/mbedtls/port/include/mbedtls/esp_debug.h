@@ -32,7 +32,7 @@ extern "C" {
  * enough in menuconfig, or some messages may be filtered at compile time.
  *
  * @param conf mbedtls_ssl_config structure
- * @param threshold debug threshold, 0-4. Messages are filtered at runtime.
+ * @param threshold mbedTLS debug threshold, 0-4. Messages are filtered at runtime.
  */
 void mbedtls_esp_enable_debug_log(mbedtls_ssl_config *conf, int threshold);
 

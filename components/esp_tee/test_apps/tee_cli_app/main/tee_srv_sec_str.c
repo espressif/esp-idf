@@ -14,10 +14,6 @@
 #include "esp_console.h"
 #include "argtable3/argtable3.h"
 
-#define MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
-// #include "mbedtls/ecp.h"
-// #include "mbedtls/ecdsa.h"
-// #include "mbedtls/sha256.h"
 #include "psa/crypto.h"
 
 #include "esp_tee_sec_storage.h"
@@ -113,13 +109,13 @@ static esp_err_t verify_ecdsa_secp256r1_sign(const uint8_t *digest, size_t len, 
     if (status != PSA_SUCCESS) {
         goto exit;
     }
-
-    psa_destroy_key(key_id);
-    psa_reset_key_attributes(&key_attributes);
-
     err = ESP_OK;
 
 exit:
+    if (key_id) {
+        psa_destroy_key(key_id);
+    }
+    psa_reset_key_attributes(&key_attributes);
     return err;
 }
 

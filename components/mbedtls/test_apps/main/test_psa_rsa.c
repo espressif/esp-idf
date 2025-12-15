@@ -12,10 +12,10 @@
 #include "psa/crypto.h"
 #include "mbedtls/pk.h"
 #include "mbedtls/pem.h"
-// #include "mbedtls/rsa.h"
 #include "mbedtls/error.h"
 #include "unity.h"
 #include "ccomp_timer.h"
+#include "test_utils.h"
 
 typedef enum {
     PSA_RSA_KEY_SIZE_2048,
@@ -121,8 +121,6 @@ static int pem_to_der_rsa_key(const char *pem_key, size_t pem_key_len,
         mbedtls_pk_free(&pk);
         return ret;
     }
-
-    // printf("PEM key parsed successfully, key type: %d\n", mbedtls_pk_get_type(&pk));
 
     // Write key to DER format
     // NOTE: mbedtls_pk_write_key_der writes to the END of the buffer!
@@ -290,6 +288,14 @@ TEST_CASE("test performance RSA key operations", "[bignum]")
         printf("RSA Key Size: %d bits\n", (keysize == PSA_RSA_KEY_SIZE_2048) ? 2048 :
                                             (keysize == PSA_RSA_KEY_SIZE_3072) ? 3072 : 4096);
         printf("Encryption took %d us, Decryption took %d us\n", public_perf, private_perf);
+
+        if (keysize == PSA_RSA_KEY_SIZE_2048) {
+            TEST_PERFORMANCE_CCOMP_LESS_THAN(RSA_2048KEY_PUBLIC_OP, "%d us", public_perf);
+            TEST_PERFORMANCE_CCOMP_LESS_THAN(RSA_2048KEY_PRIVATE_OP, "%d us", private_perf);
+        } else if (keysize == 4096) {
+            TEST_PERFORMANCE_CCOMP_LESS_THAN(RSA_4096KEY_PUBLIC_OP, "%d us", public_perf);
+            TEST_PERFORMANCE_CCOMP_LESS_THAN(RSA_4096KEY_PRIVATE_OP, "%d us", private_perf);
+        }
     #endif // SOC_CCOMP_TIMER_SUPPORTED
         psa_destroy_key(key_id);
         keysize++;
