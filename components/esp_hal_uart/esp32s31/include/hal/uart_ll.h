@@ -47,7 +47,7 @@
 #define UART_LL_INTR_MASK         (0x7ffff) //All interrupt mask
 
 #define UART_LL_FSM_IDLE                       (0x0)
-#define UART_LL_FSM_TX_WAIT_SEND               (0xf)
+#define UART_LL_FSM_TX_WAIT_SEND               (0xf)    // UART has an extra TX_WAIT_SEND state when the FIFO is not empty and XOFF is enabled
 
 #ifdef __cplusplus
 extern "C" {

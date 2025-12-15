@@ -6,8 +6,6 @@
 
 #pragma once
 
-#include "soc/io_mux_reg.h"
-
 /* Specify the GPIO pin number for each UART signal in the IOMUX */
 #define U0RXD_GPIO_NUM 38
 #define U0TXD_GPIO_NUM 37
@@ -53,18 +51,18 @@
 
 /* The following defines are necessary for reconfiguring the UART
  * to use IOMUX, at runtime. */
-#define U0TXD_MUX_FUNC  (FUNC_GPIO37_UART0_TXD_PAD)
-#define U0RXD_MUX_FUNC  (FUNC_GPIO38_UART0_RXD_PAD)
-#define U0RTS_MUX_FUNC  (FUNC_GPIO8_UART0_RTS_PAD)
-#define U0CTS_MUX_FUNC  (FUNC_GPIO9_UART0_CTS_PAD)
+#define U0TXD_MUX_FUNC  (0)
+#define U0RXD_MUX_FUNC  (0)
+#define U0RTS_MUX_FUNC  (2)
+#define U0CTS_MUX_FUNC  (2)
 #define U0DTR_MUX_FUNC  (-1)
 #define U0DSR_MUX_FUNC  (-1)
 
 /* Same goes for UART1 */
-#define U1TXD_MUX_FUNC  (FUNC_GPIO10_UART1_TXD_PAD)
-#define U1RXD_MUX_FUNC  (FUNC_GPIO11_UART1_RXD_PAD)
-#define U1RTS_MUX_FUNC  (FUNC_GPIO12_UART1_RTS_PAD)
-#define U1CTS_MUX_FUNC  (FUNC_GPIO13_UART1_CTS_PAD)
+#define U1TXD_MUX_FUNC  (2)
+#define U1RXD_MUX_FUNC  (2)
+#define U1RTS_MUX_FUNC  (2)
+#define U1CTS_MUX_FUNC  (2)
 #define U1DTR_MUX_FUNC  (-1)
 #define U1DSR_MUX_FUNC  (-1)
 

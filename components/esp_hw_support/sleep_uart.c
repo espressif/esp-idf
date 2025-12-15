@@ -38,7 +38,7 @@ static SLEEP_UART_FN_ATTR void suspend_uart(int uart_num)
 {
     uart_ll_force_xoff(uart_num);
     s_suspended_uarts_bmap |= BIT(uart_num);
-#if SOC_UART_SUPPORT_FSM_TX_WAIT_SEND
+#ifdef UART_LL_FSM_TX_WAIT_SEND
     uint32_t uart_fsm = 0;
     do {
         uart_fsm = uart_ll_get_tx_fsm_status(uart_num);
