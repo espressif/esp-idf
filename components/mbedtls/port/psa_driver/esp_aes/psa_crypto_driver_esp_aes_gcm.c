@@ -25,6 +25,7 @@ static psa_status_t esp_crypto_aes_gcm_setup(
     psa_algorithm_t alg, psa_encrypt_or_decrypt_t mode)
 {
     psa_status_t status = PSA_ERROR_GENERIC_ERROR;
+    esp_gcm_context *ctx = NULL;
 
     if (alg != PSA_ALG_GCM) {
         status = PSA_ERROR_NOT_SUPPORTED;
@@ -36,7 +37,7 @@ static psa_status_t esp_crypto_aes_gcm_setup(
         goto exit;
     }
 
-    esp_gcm_context *ctx = (esp_gcm_context *) malloc(sizeof(esp_gcm_context));
+    ctx = (esp_gcm_context *) malloc(sizeof(esp_gcm_context));
     if (ctx == NULL) {
         status = PSA_ERROR_INSUFFICIENT_MEMORY;
         goto exit;
@@ -47,6 +48,7 @@ static psa_status_t esp_crypto_aes_gcm_setup(
     status = mbedtls_to_psa_error(esp_aes_gcm_setkey(ctx, 2, key_buffer, key_buffer_size * 8));
 
     if (status != PSA_SUCCESS) {
+        free(ctx);
         goto exit;
     }
 

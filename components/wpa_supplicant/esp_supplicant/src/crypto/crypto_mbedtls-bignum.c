@@ -38,10 +38,12 @@ struct crypto_bignum *crypto_bignum_init_set(const u8 *buf, size_t len)
         return NULL;
     }
 
+    mbedtls_mpi_init(bn);
     MBEDTLS_MPI_CHK(mbedtls_mpi_read_binary(bn, buf, len));
     return (struct crypto_bignum *) bn;
 
 cleanup:
+    mbedtls_mpi_free(bn);
     os_free(bn);
     return NULL;
 }

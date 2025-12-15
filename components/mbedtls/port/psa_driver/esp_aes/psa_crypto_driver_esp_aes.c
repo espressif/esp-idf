@@ -488,6 +488,7 @@ static psa_status_t esp_crypto_aes_setup(
     status = mbedtls_to_psa_error(esp_aes_setkey(ctx, key_buffer, key_buffer_size * 8));
 
     if (status != PSA_SUCCESS) {
+        free(ctx);
         goto exit;
     }
 

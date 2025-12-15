@@ -210,6 +210,7 @@ psa_status_t esp_cmac_mac_setup(esp_cmac_operation_t *operation,
             status = esp_sha_hash_compute(hash_alg, key_buffer, key_buffer_size,
                                     ipad, sizeof(ipad), &key_buffer_size);
             if (status != PSA_SUCCESS) {
+                return status;
             }
         }
         /* A 0-length key is not commonly used in HMAC when used as a MAC,
@@ -602,7 +603,7 @@ psa_status_t esp_cmac_mac_verify_finish(
 
     size_t actual_mac_length = 0;
 
-    status = esp_cmac_mac_finish(operation, actual_mac, mac_length, &actual_mac_length);
+    status = esp_cmac_mac_finish(operation, actual_mac, sizeof(actual_mac), &actual_mac_length);
     if (status == PSA_SUCCESS) {
         if (memcmp(actual_mac, mac, mac_length) == 0) {
             return PSA_SUCCESS;

@@ -572,17 +572,8 @@ esp_err_t esp_tee_sec_storage_ecdsa_get_pubkey(const esp_tee_sec_storage_key_cfg
         return ESP_ERR_INVALID_ARG;
     }
 
-    // If pub_key_src[0] is 0x04, then it is compressed format
-    // This is what we save when exporting the public key from PSA
-    if (pub_key_src[0] == 0x04) {
-        memcpy(out_pubkey->pub_x, pub_key_src + 1, pub_key_len);
-        memcpy(out_pubkey->pub_y, pub_key_src + pub_key_len + 1, pub_key_len);
-    } else {
-        // This case is when the keys are host generated
-        // In this case the public key is stored as X and Y concatenated without 0x04 prefix
-        memcpy(out_pubkey->pub_x, pub_key_src, pub_key_len);
-        memcpy(out_pubkey->pub_y, pub_key_src + pub_key_len, pub_key_len);
-    }
+    memcpy(out_pubkey->pub_x, pub_key_src, pub_key_len);
+    memcpy(out_pubkey->pub_y, pub_key_src + pub_key_len, pub_key_len);
 
     return ESP_OK;
 }

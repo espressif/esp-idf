@@ -136,11 +136,13 @@ psa_status_t esp_sha_hash_setup(esp_sha_hash_operation_t *operation, psa_algorit
         }
         memset(sha256_ctx, 0, sizeof(esp_sha256_context));
         operation->sha_ctx = sha256_ctx;
-        int mode = SHA2_256;
-        operation->sha_type = ESP_SHA_OPERATION_TYPE_SHA256;
+        int mode;
 #if CONFIG_SOC_SHA_SUPPORT_SHA224
         operation->sha_type = (alg == PSA_ALG_SHA_224) ? ESP_SHA_OPERATION_TYPE_SHA224 : ESP_SHA_OPERATION_TYPE_SHA256;
         mode = (alg == PSA_ALG_SHA_224) ? SHA2_224 : SHA2_256;
+#else
+        operation->sha_type = ESP_SHA_OPERATION_TYPE_SHA256;
+        mode = SHA2_256;
 #endif // CONFIG_SOC_SHA_SUPPORT_SHA224
         return esp_sha256_starts(sha256_ctx, mode);
     } else

@@ -248,8 +248,7 @@ int crypto_hash_finish(struct crypto_hash *crypto_ctx, u8 *mac, size_t *len)
     int ret = 0;
 
     if (crypto_ctx == NULL) {
-        ret = -2;
-        goto err;
+        return -2;
     }
 
     if (mac == NULL || len == NULL) {
@@ -715,14 +714,14 @@ struct crypto_cipher *crypto_cipher_init(enum crypto_cipher_alg alg,
     uint32_t psa_alg = alg_to_psa_cipher(alg);
     if (psa_alg == 0) {
         wpa_printf(MSG_ERROR, "%s: invalid cipher algorithm", __func__);
-        return NULL;
+        goto cleanup;
     }
     psa_set_key_algorithm(&attributes, psa_alg);
 
     uint32_t psa_key_type = alg_to_psa_key_type(alg);
     if (psa_key_type == 0) {
         wpa_printf(MSG_ERROR, "%s: invalid key type", __func__);
-        return NULL;
+        goto cleanup;
     }
     psa_set_key_type(&attributes, psa_key_type);
     psa_set_key_bits(&attributes, key_len * 8);
@@ -730,7 +729,7 @@ struct crypto_cipher *crypto_cipher_init(enum crypto_cipher_alg alg,
     status = psa_import_key(&attributes, key, key_len, &key_id);
     if (status != PSA_SUCCESS) {
         wpa_printf(MSG_ERROR, "%s: psa_import_key failed", __func__);
-        return NULL;
+        goto cleanup;
     }
 
     psa_reset_key_attributes(&attributes);

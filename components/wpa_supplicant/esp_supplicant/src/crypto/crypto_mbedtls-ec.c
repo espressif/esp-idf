@@ -1008,9 +1008,14 @@ int crypto_ec_get_publickey_buf(struct crypto_ec_key *key, u8 *key_buf, int len)
     if (!wrapper) {
         return -1;
     }
+
+    if (key_buf == NULL && len != 0) {
+        return -1;
+    }
+
     psa_status_t status = PSA_SUCCESS;
 
-    if (key_buf == NULL && len == 0) {
+    if (key_buf == NULL) {
         // This is a call to determine the buffer length
         // needed for the public key
 
@@ -1743,6 +1748,7 @@ struct crypto_ecdh * crypto_ecdh_init(int group)
 
     psa_ecc_family_t ecc_family = group_id_to_psa(crypto_mbedtls_get_grp_id(group), &key_size);
     if (ecc_family == 0) {
+        os_free(key_id);
         wpa_printf(MSG_ERROR, "group_id_to_psa failed, group: %d", group);
         return NULL;
     }
