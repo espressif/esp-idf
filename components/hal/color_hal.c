@@ -50,7 +50,11 @@ uint32_t color_hal_pixel_format_fourcc_get_bit_depth(esp_color_fourcc_t four_cha
         return 4;
     case ESP_COLOR_FOURCC_ALPHA8:
     case ESP_COLOR_FOURCC_GREY:
+    case ESP_COLOR_FOURCC_RAW8:
         return 8;
+    case ESP_COLOR_FOURCC_RAW10:
+        return 10;
+    case ESP_COLOR_FOURCC_RAW12:
     case ESP_COLOR_FOURCC_OUYY_EVYY:
         return 12;
     case ESP_COLOR_FOURCC_YUYV:

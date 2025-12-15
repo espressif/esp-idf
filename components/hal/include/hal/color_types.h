@@ -133,6 +133,38 @@ typedef uint32_t esp_color_fourcc_t;
  */
 #define ESP_COLOR_FOURCC_OUYY_EVYY      ESP_COLOR_FOURCC('O', 'U', 'E', 'V') /* 12 bpp, Espressif Y-U-V 4:2:0 */
 
+/**
+ * RAW8
+ * Memory Layout:
+ *    Addr0    Addr1    Addr2    Addr3
+ *    R0        R1       R2       R3
+ */
+#define ESP_COLOR_FOURCC_RAW8           ESP_COLOR_FOURCC('R', 'A', 'W', '8') /* 8 bpp, raw8 */
+
+/**
+ * RAW10
+ * Memory Layout:
+ *    Addr0      Addr1      Addr2      Addr3
+ *    R0[7:0]    R0[1:0]    R1[7:0]    R1[1:0]
+ */
+#define ESP_COLOR_FOURCC_RAW10          ESP_COLOR_FOURCC('R', 'A', 'W', 'A') /* 10 bpp, raw10 */
+
+/**
+ * RAW12
+ * Memory Layout:
+ *    Addr0      Addr1      Addr2      Addr3
+ *    R0[7:0]    R0[3:0]    R1[7:0]    R1[3:0]
+ */
+#define ESP_COLOR_FOURCC_RAW12          ESP_COLOR_FOURCC('R', 'A', 'W', 'C') /* 12 bpp, raw12 */
+
+/**
+ * RAW16
+ * Memory Layout:
+ *    Addr0      Addr1      Addr2      Addr3
+ *    R0[7:0]    R0[7:0]    R1[7:0]    R1[7:0]
+ */
+#define ESP_COLOR_FOURCC_RAW16          ESP_COLOR_FOURCC('R', 'A', 'W', 'G') /* 16 bpp, raw16 */
+
 
 /*---------------------------------------------------------------
                       Color Conversion

@@ -68,8 +68,8 @@ typedef struct isp_processor_t {
 #endif
     ISP_ATOMIC_TYPE(isp_fsm_t)  isp_fsm;
     DECLARE_CRIT_SECTION_LOCK_IN_STRUCT(spinlock);
-    color_space_pixel_format_t  in_color_format;
-    color_space_pixel_format_t  out_color_format;
+    isp_color_t                 in_color_format;
+    isp_color_t                 out_color_format;
     uint32_t                    h_res;
     uint32_t                    v_res;
     color_raw_element_order_t   bayer_order;
