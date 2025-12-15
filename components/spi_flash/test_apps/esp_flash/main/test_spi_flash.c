@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -125,41 +125,41 @@ TEST_CASE("flash write and erase work both on PRO CPU and on APP CPU", "[spi_fla
 #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32, ESP32S2, ESP32S3, ESP32C3, ESP32P4)
 
 #if CONFIG_FREERTOS_NUMBER_OF_CORES > 1
+typedef struct {
+    QueueHandle_t queue;
+    volatile bool done;
+} deadlock_test_arg_t;
+
+static void producer_task(void* varg)
+{
+    int dummy = 0;
+    deadlock_test_arg_t* arg = (deadlock_test_arg_t*) varg;
+    while (!arg->done) {
+        xQueueSend(arg->queue, &dummy, 0);
+        vTaskDelay(1);
+    }
+    vTaskDelete(NULL);
+}
+
+static void consumer_task(void* varg)
+{
+    int dummy;
+    deadlock_test_arg_t* arg = (deadlock_test_arg_t*) varg;
+    while (!arg->done) {
+        if (xQueueReceive(arg->queue, &dummy, 0) == pdTRUE) {
+            vTaskDelay(1);
+        }
+    }
+    vTaskDelete(NULL);
+}
+
 TEST_CASE("spi_flash deadlock with high priority busy-waiting task", "[spi_flash][esp_flash]")
 {
-    typedef struct {
-        QueueHandle_t queue;
-        volatile bool done;
-    } deadlock_test_arg_t;
-
     /* Create two tasks: high-priority consumer on CPU0, low-priority producer on CPU1.
      * Consumer polls the queue until it gets some data, then yields.
      * Run flash operation on CPU0. Check that when IPC1 task blocks out the producer,
      * the task which does flash operation does not get blocked by the consumer.
      */
-
-    void producer_task(void* varg)
-    {
-        int dummy = 0;
-        deadlock_test_arg_t* arg = (deadlock_test_arg_t*) varg;
-        while (!arg->done) {
-            xQueueSend(arg->queue, &dummy, 0);
-            vTaskDelay(1);
-        }
-        vTaskDelete(NULL);
-    }
-
-    void consumer_task(void* varg)
-    {
-        int dummy;
-        deadlock_test_arg_t* arg = (deadlock_test_arg_t*) varg;
-        while (!arg->done) {
-            if (xQueueReceive(arg->queue, &dummy, 0) == pdTRUE) {
-                vTaskDelay(1);
-            }
-        }
-        vTaskDelete(NULL);
-    }
     deadlock_test_arg_t arg = {
         .queue = xQueueCreate(32, sizeof(int)),
         .done = false

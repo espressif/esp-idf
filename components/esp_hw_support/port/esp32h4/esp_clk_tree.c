@@ -67,7 +67,7 @@ uint32_t *freq_value)
 
 void esp_clk_tree_initialize(void)
 {
-    // // TODO: IDF-12388
+    // // TODO: IDF-14962
     // // // In bootloader, flash clock source will always be switched to use XTAL_X2 clock
     // // s_xtal_x2_ref_cnt++;
     // if (clk_ll_cpu_get_src() == SOC_CPU_CLK_SRC_XTAL_X2) {
