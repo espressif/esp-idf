@@ -107,7 +107,9 @@ menu "AVRCP Features"
         default y
         select BT_GOEPC_ENABLED
         help
-            This enable Cover Art feature of AVRCP CT role
+            This enable Cover Art feature for AVRCP CT role, Cover Art requires AVRCP
+            version 1.6 or higher. Therefore, if the Cover Art feature is enabled,
+            AVRCP version will set to 1.6, otherwise, it will remain at 1.5
 
 endmenu
 
