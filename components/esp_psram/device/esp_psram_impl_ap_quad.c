@@ -15,6 +15,9 @@
 #include "esp_private/mspi_timing_tuning.h"
 #include "esp_private/esp_gpio_reserve.h"
 #include "hal/psram_ctrlr_ll.h"
+#if CONFIG_SPIRAM_ECC_ENABLE
+#include "hal/mspi_pms_ll.h"
+#endif
 #include "esp_quad_psram_defs_ap.h"
 #include "soc/soc_caps.h"
 
@@ -215,9 +218,9 @@ static esp_err_t s_check_psram_connected(int spi_num)
 #if CONFIG_SPIRAM_ECC_ENABLE
 static void s_mspi_ecc_show_info(void)
 {
-    for (int i = 0; i < PSRAM_CTRLR_LL_PMS_REGION_NUMS; i++) {
-        ESP_EARLY_LOGV(TAG, "region[%d] addr: 0x%08x", i, psram_ctrlr_ll_get_pms_region_start_addr(PSRAM_CTRLR_LL_MSPI_ID_0, i));
-        ESP_EARLY_LOGV(TAG, "region[%d] size: 0x%08x", i, psram_ctrlr_ll_get_pms_region_size(PSRAM_CTRLR_LL_MSPI_ID_0, i));
+    for (int i = 0; i < MSPI_LL_PMS_REGION_NUM; i++) {
+        ESP_EARLY_LOGV(TAG, "region[%d] addr: 0x%08x", i, mspi_ll_pms_get_region_addr(MSPI_PMS_MEM_PSRAM, i));
+        ESP_EARLY_LOGV(TAG, "region[%d] size: 0x%08x", i, mspi_ll_pms_get_region_size(MSPI_PMS_MEM_PSRAM, i));
     }
 
     uint32_t page_size = psram_ctrlr_ll_get_page_size(PSRAM_CTRLR_LL_MSPI_ID_0);
@@ -240,10 +243,9 @@ static void s_configure_psram_ecc(void)
      * Default: ACE0 range: 0 ~ 256MB
      * For current Quad PSRAM, ACE0 is enough
      */
-    psram_ctrlr_ll_set_pms_region_start_addr(PSRAM_CTRLR_LL_MSPI_ID_0, 0, 0);
-    psram_ctrlr_ll_set_pms_region_size(PSRAM_CTRLR_LL_MSPI_ID_0, 0, 4096);
-    psram_ctrlr_ll_set_pms_region_attr(PSRAM_CTRLR_LL_MSPI_ID_0, 0, PSRAM_CTRLR_LL_PMS_ATTR_WRITABLE | PSRAM_CTRLR_LL_PMS_ATTR_READABLE);
-    psram_ctrlr_ll_enable_pms_region_ecc(PSRAM_CTRLR_LL_MSPI_ID_0, 0, true);
+    mspi_ll_pms_set_region_addr(MSPI_PMS_MEM_PSRAM, 0, 0);
+    mspi_ll_pms_set_region_size(MSPI_PMS_MEM_PSRAM, 0, 16 * 1024 * 1024);
+    mspi_ll_pms_set_region_attr(MSPI_PMS_MEM_PSRAM, 0, MSPI_PMS_MODE_TEE, MSPI_PMS_ATTR_ECC);
     ESP_EARLY_LOGI(TAG, "ECC is enabled");
     s_mspi_ecc_show_info();
 }

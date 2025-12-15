@@ -38,10 +38,6 @@ extern "C" {
 #define PSRAM_CTRLR_LL_MSPI_ID_SYSTEM            PSRAM_CTRLR_LL_MSPI_ID_2
 #define PSRAM_CTRLR_LL_MSPI_ID_PERI              PSRAM_CTRLR_LL_MSPI_ID_3
 
-#define PSRAM_CTRLR_LL_PMS_REGION_NUMS           4
-#define PSRAM_CTRLR_LL_PMS_ATTR_WRITABLE         (1<<0)
-#define PSRAM_CTRLR_LL_PMS_ATTR_READABLE         (1<<1)
-
 #define PSRAM_CTRLR_LL_FIFO_MAX_BYTES            64
 
 #define PSRAM_CTRLR_LL_THRESH_INT_SUPPORTED      1
@@ -695,101 +691,6 @@ static inline uint32_t psram_ctrlr_ll_get_page_size(uint32_t mspi_id)
     }
 
     return page_size;
-}
-
-/**
- * @brief Enable PMS ECC
- *
- * @param mspi_id      mspi_id
- * @param region_id    region_id
- * @param en           enable / disable
- */
-__attribute__((always_inline))
-static inline void psram_ctrlr_ll_enable_pms_region_ecc(uint32_t mspi_id, uint32_t region_id, bool en)
-{
-    (void)mspi_id;
-    HAL_ASSERT(region_id < PSRAM_CTRLR_LL_PMS_REGION_NUMS);
-    SPIMEM2.smem_pmsn_attr[region_id].smem_pmsn_ecc = en;
-}
-
-/**
- * @brief Set PMS attr
- *
- * @param mspi_id      mspi_id
- * @param region_id    region_id
- * @param attr_mask    attribute mask
- */
-__attribute__((always_inline))
-static inline void psram_ctrlr_ll_set_pms_region_attr(uint32_t mspi_id, uint32_t region_id, uint32_t attr_mask)
-{
-    (void)mspi_id;
-    HAL_ASSERT(region_id < PSRAM_CTRLR_LL_PMS_REGION_NUMS);
-    SPIMEM2.smem_pmsn_attr[region_id].smem_pmsn_wr_attr = 0;
-    SPIMEM2.smem_pmsn_attr[region_id].smem_pmsn_rd_attr = 0;
-    if (attr_mask & PSRAM_CTRLR_LL_PMS_ATTR_WRITABLE) {
-        SPIMEM2.smem_pmsn_attr[region_id].smem_pmsn_wr_attr = 1;
-    }
-    if (attr_mask & PSRAM_CTRLR_LL_PMS_ATTR_READABLE) {
-        SPIMEM2.smem_pmsn_attr[region_id].smem_pmsn_rd_attr = 1;
-    }
-}
-
-/**
- * @brief Set PMS address
- *
- * @param mspi_id      mspi_id
- * @param region_id    region_id
- * @param addr         start addr
- */
-__attribute__((always_inline))
-static inline void psram_ctrlr_ll_set_pms_region_start_addr(uint32_t mspi_id, uint32_t region_id, uint32_t addr)
-{
-    (void)mspi_id;
-    HAL_ASSERT(region_id < PSRAM_CTRLR_LL_PMS_REGION_NUMS);
-    SPIMEM2.smem_pmsn_addr[region_id].smem_pmsn_addr_s = addr;
-}
-
-/**
- * @brief Set PMS size
- *
- * @param mspi_id      mspi_id
- * @param region_id    region_id
- * @param size         size
- */
-__attribute__((always_inline))
-static inline void psram_ctrlr_ll_set_pms_region_size(uint32_t mspi_id, uint32_t region_id, uint32_t size)
-{
-    (void)mspi_id;
-    HAL_ASSERT(region_id < PSRAM_CTRLR_LL_PMS_REGION_NUMS);
-    SPIMEM2.smem_pmsn_size[region_id].smem_pmsn_size = size;
-}
-
-/**
- * @brief Get PMS address
- *
- * @param mspi_id      mspi_id
- * @param region_id    region_id
- */
-__attribute__((always_inline))
-static inline uint32_t psram_ctrlr_ll_get_pms_region_start_addr(uint32_t mspi_id, uint32_t region_id)
-{
-    (void)mspi_id;
-    HAL_ASSERT(region_id < PSRAM_CTRLR_LL_PMS_REGION_NUMS);
-    return SPIMEM2.smem_pmsn_addr[region_id].smem_pmsn_addr_s;
-}
-
-/**
- * @brief Get PMS size
- *
- * @param mspi_id      mspi_id
- * @param region_id    region_id
- */
-__attribute__((always_inline))
-static inline uint32_t psram_ctrlr_ll_get_pms_region_size(uint32_t mspi_id, uint32_t region_id)
-{
-    (void)mspi_id;
-    HAL_ASSERT(region_id < PSRAM_CTRLR_LL_PMS_REGION_NUMS);
-    return SPIMEM2.smem_pmsn_size[region_id].smem_pmsn_size;
 }
 
 /**
