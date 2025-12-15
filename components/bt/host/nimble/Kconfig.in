@@ -592,7 +592,7 @@ menu "BLE 5.x Features"
 
             config BT_NIMBLE_PERIODIC_ADV_WITH_RESPONSES
                 bool "Enable Periodic Advertisement with Response (EXPERIMENTAL)"
-                depends on BT_NIMBLE_ENABLE_PERIODIC_ADV
+                depends on BT_NIMBLE_ENABLE_PERIODIC_ADV && SOC_BLE_PERIODIC_ADV_WITH_RESPONSE
                 default n
                 help
                     This enables controller PAwR (Periodic Advertisement with Response).
