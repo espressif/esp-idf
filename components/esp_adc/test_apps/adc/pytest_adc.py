@@ -32,6 +32,7 @@ def test_adc_esp32c2_xtal_26mhz(dut: Dut) -> None:
     dut.run_all_single_board_cases(timeout=120, reset=True)
 
 
+# TODO: IDF-15005
 # P4 REV2 adc
 # @pytest.mark.adc
 # @pytest.mark.esp32p4_eco4
