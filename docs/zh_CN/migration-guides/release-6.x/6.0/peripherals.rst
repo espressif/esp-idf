@@ -144,7 +144,9 @@ LEDC
 UART
 ----
 
-``UART_FIFO_LEN`` 已被移除。请使用 ``UART_HW_FIFO_LEN`` 代替。
+- ``UART_FIFO_LEN`` 已被移除。请使用 ``UART_HW_FIFO_LEN`` 代替。
+
+- ``soc/uart_channel.h`` 头文件已被移除。所有 UART GPIO 查找宏都可以在 ``soc/uart_pins.h`` 中找到。例如，``UART_NUM_0_TXD_DIRECT_GPIO_NUM`` 等同于 ``U0TXD_GPIO_NUM``。
 
 I2C
 ---
