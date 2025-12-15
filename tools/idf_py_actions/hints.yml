@@ -757,3 +757,7 @@
 -
     re: "error: 'WIFI_BW_HT40' undeclared \\(first use in this function\\)"
     hint: "The enum value 'WIFI_BW_HT40' has been removed. Use 'WIFI_BW40' instead."
+
+-
+    re: "fatal error: soc/uart_channel.h: No such file or directory"
+    hint: "The header file 'soc/uart_channel.h' has been removed. All equivalent UART GPIO lookup macros can be found in 'soc/uart_pins.h' now."
