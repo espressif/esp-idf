@@ -32,7 +32,7 @@
 #define UART_LL_INTR_MASK         (0x7ffff) //All interrupt mask
 
 #define UART_LL_FSM_IDLE                       (0x0)
-#define UART_LL_FSM_TX_WAIT_SEND               (0xf)
+#define UART_LL_FSM_TX_WAIT_SEND               (0xf)    // UART has an extra TX_WAIT_SEND state when the FIFO is not empty and XOFF is enabled
 
 #define UART_LL_PCR_REG_U32_SET(hw, reg_suffix, field_suffix, val)  \
     if ((hw) == &UART0) { \

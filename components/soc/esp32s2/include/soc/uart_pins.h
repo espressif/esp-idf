@@ -6,8 +6,6 @@
 
 #pragma once
 
-#include "soc/io_mux_reg.h"
-
 /* Specify the GPIO pin number for each UART signal in the IOMUX */
 #define U0RXD_GPIO_NUM  (44)
 #define U0TXD_GPIO_NUM  (43)
@@ -25,16 +23,16 @@
 
 /* The following defines are necessary for reconfiguring the UART
  * to use IOMUX, at runtime. */
-#define U0TXD_MUX_FUNC  (FUNC_U0TXD_U0TXD)
-#define U0RXD_MUX_FUNC  (FUNC_U0RXD_U0RXD)
-#define U0RTS_MUX_FUNC  (FUNC_XTAL_32K_P_U0RTS)
-#define U0CTS_MUX_FUNC  (FUNC_XTAL_32K_N_U0CTS)
+#define U0TXD_MUX_FUNC  (0)
+#define U0RXD_MUX_FUNC  (0)
+#define U0RTS_MUX_FUNC  (2)
+#define U0CTS_MUX_FUNC  (2)
 #define U0DTR_MUX_FUNC  (-1)
 #define U0DSR_MUX_FUNC  (-1)
 
-#define U1TXD_MUX_FUNC  (FUNC_DAC_1_U1TXD)
-#define U1RXD_MUX_FUNC  (FUNC_DAC_2_U1RXD)
-#define U1RTS_MUX_FUNC  (FUNC_GPIO19_U1RTS)
-#define U1CTS_MUX_FUNC  (FUNC_GPIO20_U1CTS)
+#define U1TXD_MUX_FUNC  (2)
+#define U1RXD_MUX_FUNC  (2)
+#define U1RTS_MUX_FUNC  (2)
+#define U1CTS_MUX_FUNC  (2)
 #define U1DTR_MUX_FUNC  (-1)
 #define U1DSR_MUX_FUNC  (-1)
