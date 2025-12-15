@@ -354,6 +354,7 @@ typedef union {
 /** Group: csi host color mode control registers. */
 /** Type of host_cm_ctrl register
  *  CSI HOST color mode convert configuration.
+ *  Valid when ISP is bypassed.
  */
 typedef union {
     struct {
@@ -362,23 +363,24 @@ typedef union {
          */
         uint32_t csi_host_cm_en:1;
         /** csi_host_cm_bypass : R/W; bitpos: [1]; default: 1;
-         *  Configures whether to bypass cm
+         *  Configures whether to bypass cm, input directly to output
          */
         uint32_t csi_host_cm_bypass:1;
         /** csi_host_cm_rx : R/W; bitpos: [3:2]; default: 0;
-         *  Configures whether to bypass cm
+         *  0: RGB888, 1: RGB565, 2: YUV422, 3: YUV420
          */
         uint32_t csi_host_cm_rx:2;
         /** csi_host_cm_rx_rgb_format : R/W; bitpos: [6:4]; default: 0;
-         *  Configures whether to bypass cm
+         *  0: RGB, 1: BGR, 2: RBG, 3: BRG, 4: GRB, 5: GBR
          */
         uint32_t csi_host_cm_rx_rgb_format:3;
         /** csi_host_cm_rx_yuv422_format : R/W; bitpos: [8:7]; default: 0;
          *  Configures whether to bypass cm
+         *  0: YVYU, 1: YUYV, 2: VYUY, 3: UYVY
          */
         uint32_t csi_host_cm_rx_yuv422_format:2;
         /** csi_host_cm_tx : R/W; bitpos: [10:9]; default: 0;
-         *  Configures whether to bypass cm
+         *  0: RGB888, 1: RGB565, 2: YUV422, 3: YUV420
          */
         uint32_t csi_host_cm_tx:2;
         /** csi_host_cm_lane_num : R/W; bitpos: [11]; default: 1;
