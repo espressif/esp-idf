@@ -686,6 +686,10 @@ NOINLINE_ATTR static void system_early_init(const soc_reset_reason_t *rst_reas)
 
 #if SOC_CPU_CORES_NUM > 1 // there is no 'single-core mode' for natively single-core processors
 #if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
+#if CONFIG_IDF_TARGET_ESP32P4 && CONFIG_ESP32P4_REV_MIN_FULL >= 300
+    // Ensure autoclock gating mode for core1 is enabled, it gets disabled in single-core mode.
+    REG_SET_BIT(HP_SYS_CLKRST_CPU_WAITI_CTRL0_REG, HP_SYS_CLKRST_REG_CORE1_WAITI_ICG_EN);
+#endif
     start_other_core();
 #else
     ESP_EARLY_LOGI(TAG, "Single core mode");
