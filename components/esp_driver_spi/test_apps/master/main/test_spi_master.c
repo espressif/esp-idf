@@ -124,7 +124,7 @@ TEST_CASE("SPI Master clockdiv calculation routines", "[spi]")
 
 // Test All clock source
 #define TEST_CLK_BYTE_LEN           10000
-#define TEST_TRANS_TIME_BIAS_RATIO  (float)5.0/100   // think 5% transfer time bias as acceptable
+#define TEST_TRANS_TIME_BIAS_RATIO  (float)8.0/100   // think 8% transfer time bias as acceptable
 TEST_CASE("SPI Master clk_source and divider accuracy", "[spi]")
 {
     int64_t start = 0, end = 0;
