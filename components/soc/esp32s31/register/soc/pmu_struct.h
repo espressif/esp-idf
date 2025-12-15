@@ -3480,6 +3480,7 @@ typedef struct {
     volatile pmu_date_reg_t date;
 } pmu_dev_t;
 
+extern pmu_dev_t PMU;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(pmu_dev_t) == 0x400, "Invalid size of pmu_dev_t structure");

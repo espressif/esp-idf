@@ -975,8 +975,8 @@ typedef union {
 typedef union {
     struct {
         /** in_sel : R/W; bitpos: [7:0]; default: 63;
-         *  set this value: s=0-56: connect GPIO[s] to this port. s=0x3F: set this port always
-         *  high level. s=0x3E: set this port always low level.
+         *  set this value: s=0-56: connect GPIO[s] to this port. s=0x80: set this port always
+         *  high level. s=0xC0: set this port always low level.
          */
         uint32_t in_sel:8;
         /** in_inv_sel : R/W; bitpos: [8]; default: 0;

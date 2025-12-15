@@ -26,13 +26,6 @@ extern "C" {
 #define GPIO_REG_READ(reg)       READ_PERI_REG(reg)
 #define GPIO_REG_WRITE(reg, val) WRITE_PERI_REG(reg, val)
 
-#define GPIO_FUNC_ZERO 0
-#define GPIO_FUNC_GPIO 1
-
-#define GPIO_OUTPUT_SET(gpio_no, bit_value) rom_gpio_set_output_level(gpio_no, bit_value)
-#define GPIO_DIS_OUTPUT(gpio_no)            rom_gpio_output_disable(gpio_no)
-#define GPIO_INPUT_GET(gpio_no)             rom_gpio_get_input_level(gpio_no)
-
 /**
   * @brief Set GPIO output level
   *

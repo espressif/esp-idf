@@ -137,12 +137,12 @@
 #define IO_MUX_GPIO61_REG                   PERIPHS_IO_MUX_U_GPIO61
 #define IO_MUX_GPIO62_REG                   PERIPHS_IO_MUX_U_GPIO62
 
-#define FUNC_GPIO_GPIO                              1
 #define PIN_FUNC_GPIO								1
 
 #define MAX_RTC_GPIO_NUM             7
-#define MAX_PAD_GPIO_NUM             62
 
+#define USB_INT_PHY0_DM_GPIO_NUM     33
+#define USB_INT_PHY0_DP_GPIO_NUM     34
 
 #define REG_IO_MUX_BASE                              DR_REG_IO_MUX_BASE
 

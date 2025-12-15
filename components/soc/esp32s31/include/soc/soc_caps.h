@@ -141,37 +141,44 @@
 #define SOC_SIMD_PREFERRED_DATA_ALIGNMENT 16 // The preferred data alignment accepted by the SIMD instructions, in bytes
 
 /*-------------------------- GPIO CAPS ---------------------------------------*/
-// TODO: [ESP32S31] IDF-14780
 // ESP32-S31 has 1 GPIO peripheral
 #define SOC_GPIO_PORT                      1U
-#define SOC_GPIO_PIN_COUNT                 63
+#define SOC_GPIO_PIN_COUNT                 62
+// #define SOC_GPIO_SUPPORT_PIN_GLITCH_FILTER 1 // TODO: [ESP32S31] IDF-14781
+// #define SOC_GPIO_FLEX_GLITCH_FILTER_NUM    8 // TODO: [ESP32S31] IDF-14781
 #define SOC_GPIO_SUPPORT_PIN_HYS_FILTER    1
 
-// Target has the full LP IO subsystem
-#define SOC_GPIO_SUPPORT_RTC_INDEPENDENT    (1)
-// GPIO0~15 on ESP32S31 can support chip deep sleep wakeup
+// GPIO peripheral has the ETM extension
+// #define SOC_GPIO_SUPPORT_ETM          1 // TODO: [ESP32S31] IDF-14786
+// #define SOC_GPIO_ETM_EVENTS_PER_GROUP 8 // TODO: [ESP32S31] IDF-14786
+// #define SOC_GPIO_ETM_TASKS_PER_GROUP  8 // TODO: [ESP32S31] IDF-14786
+
+// GPIO0~7 on ESP32S31 can support chip deep sleep wakeup
 #define SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP   (1)
 #define SOC_LP_IO_HAS_INDEPENDENT_WAKEUP_SOURCE   (1)
 
 // LP IO peripherals have independent clock gating to manage
 #define SOC_LP_IO_CLOCK_IS_INDEPENDENT      (1)
 
-#define SOC_GPIO_VALID_GPIO_MASK        (0x7FFFFFFFFFFFFFFF)
+#define SOC_GPIO_VALID_GPIO_MASK        (((1ULL << SOC_GPIO_PIN_COUNT) - 1) & ~(0ULL | BIT29 | BIT41))
 #define SOC_GPIO_VALID_OUTPUT_GPIO_MASK SOC_GPIO_VALID_GPIO_MASK
 
-#define SOC_GPIO_IN_RANGE_MAX           62
-#define SOC_GPIO_OUT_RANGE_MAX          62
+#define SOC_GPIO_IN_RANGE_MAX           61
+#define SOC_GPIO_OUT_RANGE_MAX          61
 
 #define SOC_GPIO_DEEP_SLEEP_WAKE_VALID_GPIO_MASK        (0ULL | 0xFF)
 #define SOC_GPIO_DEEP_SLEEP_WAKE_SUPPORTED_PIN_CNT      (8)
 
-#define SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP  (1)
-
-// digital I/O pad powered by VDD3P3_CPU or VDD_SPI(GPIO_NUM_16~GPIO_NUM_62)
-#define SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK 0x7FFFFFFFFFFFFF00ULL
+// digital I/O pad powered by VDD3V3_CPU or VDD_SPI(GPIO_NUM_8~GPIO_NUM_61, excluding GPIO29/41 which are not bonded)
+#define SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK (SOC_GPIO_VALID_GPIO_MASK & ~((1ULL << SOC_RTCIO_PIN_COUNT) - 1))
 
 // Support to force hold all IOs
 #define SOC_GPIO_SUPPORT_FORCE_HOLD              (1)
+// Support to hold a single digital I/O when the digital domain is powered off
+#define SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP  (1)
+
+/*-------------------------- RTCIO CAPS --------------------------------------*/
+#define SOC_RTCIO_PIN_COUNT                 8
 
 /*-------------------------- MMU CAPS ----------------------------------------*/
 // TODO: [ESP32S31] IDF-14669

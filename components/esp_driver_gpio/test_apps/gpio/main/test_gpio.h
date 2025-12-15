@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -46,6 +46,12 @@ extern "C" {
 #define TEST_GPIO_INPUT_LEVEL_LOW_PIN      (1)
 #define TEST_GPIO_SIGNAL_IDX               (SIG_IN_FUNC97_IDX)
 #define TEST_GPIO_DEEP_SLEEP_HOLD_PIN      (25)
+#elif CONFIG_IDF_TARGET_ESP32S31
+#define TEST_GPIO_EXT_OUT_IO               (2)
+#define TEST_GPIO_EXT_IN_IO                (3)
+#define TEST_GPIO_INPUT_LEVEL_LOW_PIN      (1)
+#define TEST_GPIO_SIGNAL_IDX               (SIG_IN_FUNC251_IDX)
+#define TEST_GPIO_DEEP_SLEEP_HOLD_PIN      (28)
 #else
 #define TEST_GPIO_EXT_OUT_IO               (2)
 #define TEST_GPIO_EXT_IN_IO                (3)
