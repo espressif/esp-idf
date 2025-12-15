@@ -222,7 +222,7 @@ config BT_LE_MAX_PERIODIC_ADVERTISER_LIST
 
 config BT_LE_POWER_CONTROL_ENABLED
     bool "Enable controller support for BLE Power Control"
-    depends on BT_LE_50_FEATURE_SUPPORT && !BT_NIMBLE_ENABLED && IDF_TARGET_ESP32C6
+    depends on BT_LE_50_FEATURE_SUPPORT && !BT_NIMBLE_ENABLED
     default n
     help
         Set this option to enable the Power Control feature on controller
@@ -239,7 +239,7 @@ config BT_LE_CTE_FEATURE_ENABLED
 
 config BT_LE_PERIODIC_ADV_WITH_RESPONSE_ENABLED
     bool "Enable BLE periodic advertising with response"
-    depends on BT_LE_50_FEATURE_SUPPORT
+    depends on BT_LE_50_FEATURE_SUPPORT && SOC_BLE_PERIODIC_ADV_WITH_RESPONSE
     default n
     help
         This enables BLE periodic advertising with response feature
