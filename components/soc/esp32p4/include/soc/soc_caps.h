@@ -515,27 +515,13 @@
 #define SOC_ECDSA_USES_MPI                  (1)
 
 /*-------------------------- SPI CAPS ----------------------------------------*/
-#define SOC_SPI_PERIPH_NUM              3
-#define SOC_SPI_PERIPH_CS_NUM(i)        (((i)==0)? 2: (((i)==1)? 6: 3))
-#define SOC_SPI_MAX_CS_NUM              6
-#define SOC_SPI_MAXIMUM_BUFFER_SIZE     64
-
+#define SOC_SPI_PERIPH_NUM                  3
+#define SOC_SPI_PERIPH_CS_NUM(i)            6
+#define SOC_SPI_MAXIMUM_BUFFER_SIZE         64
 #define SOC_SPI_SUPPORT_SLEEP_RETENTION     1
 #define SOC_SPI_SUPPORT_SLAVE_HD_VER2       1
-#define SOC_SPI_SLAVE_SUPPORT_SEG_TRANS     1
-#define SOC_SPI_SUPPORT_DDRCLK              1
-#define SOC_SPI_SUPPORT_CD_SIG              1
 #define SOC_SPI_SUPPORT_OCT                 1
-#define SOC_SPI_SUPPORT_CLK_XTAL            1
-#define SOC_SPI_SUPPORT_CLK_RC_FAST         1
-
-// Peripheral supports DIO, DOUT, QIO, or QOUT
-// host_id = 0 -> SPI0/SPI1, host_id = 1 -> SPI2,
-#define SOC_SPI_PERIPH_SUPPORT_MULTILINE_MODE(host_id)  ({(void)host_id; 1;})
-
-#define SOC_MSPI_HAS_INDEPENT_IOMUX 1
-#define SOC_MEMSPI_IS_INDEPENDENT   1
-#define SOC_SPI_MAX_PRE_DIVIDER     16
+#define SOC_SPI_MAX_BITWIDTH(host_id)       ((host_id == 2) ? 4 : 8) // Supported line mode: SPI3: 1, 2, 4, SPI1/2: 1, 2, 4, 8
 
 /*-------------------------- LP SPI CAPS ----------------------------------------*/
 #define SOC_LP_SPI_MAXIMUM_BUFFER_SIZE     64
@@ -557,7 +543,9 @@
 #define SOC_SPI_MEM_SUPPORT_CACHE_32BIT_ADDR_MAP          (1)
 #define SOC_SPI_MEM_SUPPORT_TSUS_TRES_SEPERATE_CTR        (1)
 
-#define SOC_SPI_PERIPH_SUPPORT_CONTROL_DUMMY_OUT (1)
+#define SOC_MSPI_HAS_INDEPENT_IOMUX               1
+#define SOC_MEMSPI_IS_INDEPENDENT                 1
+#define SOC_MEMSPI_SUPPORT_CONTROL_DUMMY_OUT      1
 
 #define SOC_MEMSPI_SRC_FREQ_80M_SUPPORTED         1
 #define SOC_MEMSPI_SRC_FREQ_40M_SUPPORTED         1

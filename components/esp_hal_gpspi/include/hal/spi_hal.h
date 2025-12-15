@@ -120,14 +120,14 @@ typedef struct {
         uint32_t tx_lsbfirst : 1;       ///< Whether LSB is sent first for TX data, device specific
         uint32_t rx_lsbfirst : 1;       ///< Whether LSB is received first for RX data, device specific
         uint32_t no_compensate : 1;     ///< No need to add dummy to compensate the timing, device specific
-#if SOC_SPI_AS_CS_SUPPORTED
+#if SPI_LL_SUPPORT_CLK_AS_CS
         uint32_t as_cs  : 1;            ///< Whether to toggle the CS while the clock toggles, device specific
 #endif
         uint32_t positive_cs : 1;       ///< Whether the positive CS feature is enabled, device specific
     };//boolean configurations
 } spi_hal_dev_config_t;
 
-#if SOC_SPI_SCT_SUPPORTED
+#ifdef SOC_SPI_SCT_SUPPORTED
 /**
  * SCT mode required configurations, per segment
  */
@@ -152,7 +152,7 @@ typedef struct {
     /* DONE State */
     int cs_hold;                        ///< Hold time of CS inactive edge after the last SPI clock
 } spi_hal_seg_config_t;
-#endif  //#if SOC_SPI_SCT_SUPPORTED
+#endif  //#ifdef SOC_SPI_SCT_SUPPORTED
 
 /**
  * Init the peripheral and the context.
@@ -312,7 +312,7 @@ void spi_hal_cal_timing(int source_freq_hz, int eff_clk, bool gpio_is_used, int 
  */
 int spi_hal_get_freq_limit(bool gpio_is_used, int input_delay_ns);
 
-#if SOC_SPI_SCT_SUPPORTED
+#ifdef SOC_SPI_SCT_SUPPORTED
 /*----------------------------------------------------------
  * Segmented-Configure-Transfer (SCT) Mode
  * ---------------------------------------------------------*/
@@ -328,7 +328,7 @@ void spi_hal_sct_init(spi_hal_context_t *hal);
  *
  * @param hal            Context of the HAL layer.
  */
-void spi_hal_sct_init_conf_buffer(spi_hal_context_t *hal, uint32_t conf_buffer[SOC_SPI_SCT_BUFFER_NUM_MAX]);
+void spi_hal_sct_init_conf_buffer(spi_hal_context_t *hal, uint32_t *conf_buffer);
 
 /**
  * Format the conf buffer
@@ -338,7 +338,7 @@ void spi_hal_sct_init_conf_buffer(spi_hal_context_t *hal, uint32_t conf_buffer[S
  * @param config         Conf buffer configuration, per segment. See `spi_hal_seg_config_t` to know what can be configured
  * @param conf_buffer    Conf buffer
  */
-void spi_hal_sct_format_conf_buffer(spi_hal_context_t *hal, const spi_hal_seg_config_t *config, const spi_hal_dev_config_t *dev, uint32_t conf_buffer[SOC_SPI_SCT_BUFFER_NUM_MAX]);
+void spi_hal_sct_format_conf_buffer(spi_hal_context_t *hal, const spi_hal_seg_config_t *config, const spi_hal_dev_config_t *dev, uint32_t *conf_buffer);
 
 /**
  * Deinit SCT mode related registers and hal states
@@ -354,7 +354,7 @@ void spi_hal_sct_set_conf_bits_len(spi_hal_context_t *hal, uint32_t conf_len);
  * Set conf_bitslen base to HW for sct, only supported on s2.
  */
 #define spi_hal_sct_setup_conf_base(hal, conf_base)     spi_ll_set_conf_base_bitslen((hal)->hw, conf_base)
-#endif  //#if SOC_SPI_SCT_SUPPORTED
+#endif  //#ifdef SOC_SPI_SCT_SUPPORTED
 #endif  //#if SOC_GPSPI_SUPPORTED
 
 #ifdef __cplusplus

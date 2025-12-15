@@ -188,12 +188,12 @@ typedef struct {
     const uint32_t *buffer_to_send;    //equals to tx_data, if SPI_TRANS_USE_RXDATA is applied; otherwise if original buffer wasn't in DMA-capable memory, this gets the address of a temporary buffer that is;
     //otherwise sets to the original buffer or NULL if no buffer is assigned.
     uint32_t *buffer_to_rcv;           //similar to buffer_to_send
-#if SOC_SPI_SCT_SUPPORTED
+#ifdef SOC_SPI_SCT_SUPPORTED
     uint32_t reserved[2];              //As we create the queue when in init, to use sct mode private descriptor as a queue item (when in sct mode), we need to add a dummy member here to keep the same size with `spi_sct_trans_priv_t`.
 #endif
 } spi_trans_priv_t;
 
-#if SOC_SPI_SCT_SUPPORTED
+#ifdef SOC_SPI_SCT_SUPPORTED
 //Type of dma descriptors that used under SPI SCT mode
 typedef struct {
     spi_dma_desc_t          *tx_seg_head;
@@ -225,7 +225,7 @@ typedef struct {
     intr_handle_t intr;
     spi_hal_context_t hal;
     spi_trans_priv_t cur_trans_buf;
-#if SOC_SPI_SCT_SUPPORTED
+#ifdef SOC_SPI_SCT_SUPPORTED
     spi_sct_desc_ctx_t sct_desc_pool;
     spi_sct_trans_priv_t cur_sct_trans;
 #endif
@@ -453,14 +453,12 @@ esp_err_t spi_bus_add_device(spi_host_device_t host_id, const spi_device_interfa
     const spi_bus_attr_t* bus_attr = host->bus_attr;
     SPI_CHECK(dev_config->spics_io_num < 0 || GPIO_IS_VALID_OUTPUT_GPIO(dev_config->spics_io_num), "spics pin invalid", ESP_ERR_INVALID_ARG);
     SPI_CHECK(dev_config->clock_speed_hz > 0, "invalid sclk speed", ESP_ERR_INVALID_ARG);
-#if SOC_SPI_SUPPORT_CLK_RC_FAST
-    if (dev_config->clock_source == SPI_CLK_SRC_RC_FAST) {
-        SPI_CHECK(periph_rtc_dig_clk8m_enable(), "the selected clock not available", ESP_ERR_INVALID_STATE);
-    }
-#endif
     uint32_t clock_source_hz = 0;
     uint32_t clock_source_div = 1;
     spi_clock_source_t clk_src = dev_config->clock_source ? dev_config->clock_source : SPI_CLK_SRC_DEFAULT;
+    if ((soc_module_clk_t)clk_src == SOC_MOD_CLK_RC_FAST) {
+        SPI_CHECK(periph_rtc_dig_clk8m_enable(), "the selected clock not available", ESP_ERR_INVALID_STATE);
+    }
     SPI_CHECK(esp_clk_tree_enable_src(clk_src, true) == ESP_OK, "clock source enable failed", ESP_ERR_INVALID_STATE);
     esp_clk_tree_src_get_freq_hz(clk_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clock_source_hz);
 #if SPI_LL_SUPPORT_CLK_SRC_PRE_DIV
@@ -576,7 +574,7 @@ esp_err_t spi_bus_add_device(spi_host_device_t host_id, const spi_device_interfa
     hal_dev->tx_lsbfirst = dev_config->flags & SPI_DEVICE_TXBIT_LSBFIRST ? 1 : 0;
     hal_dev->rx_lsbfirst = dev_config->flags & SPI_DEVICE_RXBIT_LSBFIRST ? 1 : 0;
     hal_dev->no_compensate = dev_config->flags & SPI_DEVICE_NO_DUMMY ? 1 : 0;
-#if SOC_SPI_AS_CS_SUPPORTED
+#if SPI_LL_SUPPORT_CLK_AS_CS
     hal_dev->as_cs = dev_config->flags & SPI_DEVICE_CLK_AS_CS ? 1 : 0;
 #endif
     hal_dev->positive_cs = dev_config->flags & SPI_DEVICE_POSITIVE_CS ? 1 : 0;
@@ -611,8 +609,7 @@ esp_err_t spi_bus_remove_device(spi_device_handle_t handle)
         SPI_CHECK(uxQueueMessagesWaiting(handle->ret_queue) == 0, "Have unfinished transactions", ESP_ERR_INVALID_STATE);
     }
 
-#if SOC_SPI_SUPPORT_CLK_RC_FAST
-    if (handle->hal_dev.timing_conf.clock_source == SPI_CLK_SRC_RC_FAST) {
+    if ((soc_module_clk_t)handle->hal_dev.timing_conf.clock_source == SOC_MOD_CLK_RC_FAST) {
         // If no transactions from other device, acquire the bus to switch module clock to `SPI_CLK_SRC_DEFAULT`
         // because `SPI_CLK_SRC_RC_FAST` will be disabled then, which block following transactions
         if (handle->host->cur_cs == DEV_NUM_MAX) {
@@ -624,7 +621,6 @@ esp_err_t spi_bus_remove_device(spi_device_handle_t handle)
         }
         periph_rtc_dig_clk8m_disable();
     }
-#endif
     SPI_CHECK(esp_clk_tree_enable_src(handle->hal_dev.timing_conf.clock_source, false) == ESP_OK, "clock source disable failed", ESP_ERR_INVALID_STATE);
 
     //return
@@ -870,7 +866,7 @@ static void SPI_MASTER_ISR_ATTR spi_post_trans(spi_host_t *host)
     host->cur_cs = DEV_NUM_MAX;
 }
 
-#if SOC_SPI_SCT_SUPPORTED
+#ifdef SOC_SPI_SCT_SUPPORTED
 static void SPI_MASTER_ISR_ATTR spi_sct_set_hal_trans_config(spi_multi_transaction_t *trans_header, spi_hal_trans_config_t *hal_trans)
 {
     spi_transaction_t *trans = &trans_header->base;
@@ -943,7 +939,7 @@ static void SPI_MASTER_ISR_ATTR spi_post_sct_trans(spi_host_t *host)
 
     host->cur_cs = DEV_NUM_MAX;
 }
-#endif  //#if SOC_SPI_SCT_SUPPORTED
+#endif  //#ifdef SOC_SPI_SCT_SUPPORTED
 
 static void SPI_MASTER_ISR_ATTR spi_trans_dma_error_check(spi_host_t *host)
 {
@@ -976,7 +972,7 @@ static void SPI_MASTER_ISR_ATTR spi_intr(void *arg)
     const spi_dma_ctx_t *dma_ctx = host->dma_ctx;
 #endif
 
-#if SOC_SPI_SCT_SUPPORTED
+#ifdef SOC_SPI_SCT_SUPPORTED
     assert(spi_hal_usr_is_done(&host->hal) || spi_hal_get_intr_mask(&host->hal, SPI_LL_INTR_SEG_DONE));
 #else
     assert(spi_hal_usr_is_done(&host->hal));
@@ -1005,7 +1001,7 @@ static void SPI_MASTER_ISR_ATTR spi_intr(void *arg)
             spi_trans_dma_error_check(host);
         }
 
-#if SOC_SPI_SCT_SUPPORTED
+#ifdef SOC_SPI_SCT_SUPPORTED
         if (host->sct_mode_enabled) {
             //cur_cs is changed to DEV_NUM_MAX here
             spi_post_sct_trans(host);
@@ -1013,7 +1009,7 @@ static void SPI_MASTER_ISR_ATTR spi_intr(void *arg)
                 xQueueSendFromISR(host->device[cs]->ret_queue, &host->cur_sct_trans, &do_yield);
             }
         } else
-#endif  //#if SOC_SPI_SCT_SUPPORTED
+#endif  //#ifdef SOC_SPI_SCT_SUPPORTED
         {
             //cur_cs is changed to DEV_NUM_MAX here
             spi_post_trans(host);
@@ -1058,11 +1054,11 @@ static void SPI_MASTER_ISR_ATTR spi_intr(void *arg)
             bool dev_has_req = spi_bus_lock_bg_check_dev_req(desired_dev);
             if (dev_has_req) {
                 device_to_send = host->device[spi_bus_lock_get_dev_id(desired_dev)];
-#if SOC_SPI_SCT_SUPPORTED
+#ifdef SOC_SPI_SCT_SUPPORTED
                 if (host->sct_mode_enabled) {
                     trans_found = xQueueReceiveFromISR(device_to_send->trans_queue, &host->cur_sct_trans, &do_yield);
                 } else
-#endif  //#if SOC_SPI_SCT_SUPPORTED
+#endif  //#ifdef SOC_SPI_SCT_SUPPORTED
                 {
                     trans_found = xQueueReceiveFromISR(device_to_send->trans_queue, &host->cur_trans_buf, &do_yield);
                 }
@@ -1073,11 +1069,11 @@ static void SPI_MASTER_ISR_ATTR spi_intr(void *arg)
         }
 
         if (trans_found) {
-#if SOC_SPI_SCT_SUPPORTED
+#ifdef SOC_SPI_SCT_SUPPORTED
             if (host->sct_mode_enabled) {
                 spi_new_sct_trans(device_to_send, &host->cur_sct_trans);
             } else
-#endif  //#if SOC_SPI_SCT_SUPPORTED
+#endif  //#ifdef SOC_SPI_SCT_SUPPORTED
             {
                 spi_trans_priv_t *const cur_trans_buf = &host->cur_trans_buf;
 #if CONFIG_IDF_TARGET_ESP32
@@ -1521,7 +1517,7 @@ esp_err_t spi_bus_get_max_transaction_len(spi_host_device_t host_id, size_t *max
     return ESP_OK;
 }
 
-#if SOC_SPI_SCT_SUPPORTED
+#ifdef SOC_SPI_SCT_SUPPORTED
 
 /*-----------------------------------------------------------
  * Below functions should be in the same spinlock
@@ -1568,12 +1564,12 @@ static void SPI_MASTER_ISR_ATTR spi_hal_sct_tx_dma_desc_recycle(spi_sct_desc_ctx
     desc_ctx->tx_free_desc_num += recycle_num;
 }
 
-static void SPI_MASTER_ISR_ATTR s_sct_prepare_tx_seg(spi_sct_desc_ctx_t *desc_ctx, const uint32_t conf_buffer[SOC_SPI_SCT_BUFFER_NUM_MAX], const void *send_buffer, uint32_t buf_len_bytes, spi_dma_desc_t **trans_head)
+static void SPI_MASTER_ISR_ATTR s_sct_prepare_tx_seg(spi_sct_desc_ctx_t *desc_ctx, const uint32_t *conf_buffer, const void *send_buffer, uint32_t buf_len_bytes, spi_dma_desc_t **trans_head)
 {
     const spi_dma_ctx_t *dma_ctx = __containerof(desc_ctx, spi_host_t, sct_desc_pool)->dma_ctx;
 
     *trans_head = desc_ctx->cur_tx_seg_link;
-    s_sct_setup_desc_anywhere(dma_ctx->dmadesc_tx, desc_ctx->cur_tx_seg_link, dma_ctx->dma_desc_num, conf_buffer, SOC_SPI_SCT_BUFFER_NUM_MAX * 4, false);
+    s_sct_setup_desc_anywhere(dma_ctx->dmadesc_tx, desc_ctx->cur_tx_seg_link, dma_ctx->dma_desc_num, conf_buffer, SPI_LL_SCT_CONF_BUF_NUM * 4, false);
     spi_dma_desc_t *conf_buffer_link = desc_ctx->cur_tx_seg_link;
     desc_ctx->tx_free_desc_num -= 1;
 
@@ -1596,7 +1592,7 @@ static void SPI_MASTER_ISR_ATTR s_sct_prepare_tx_seg(spi_sct_desc_ctx_t *desc_ct
     }
 }
 
-static esp_err_t SPI_MASTER_ISR_ATTR spi_hal_sct_new_tx_dma_desc_head(spi_sct_desc_ctx_t *desc_ctx, const uint32_t conf_buffer[SOC_SPI_SCT_BUFFER_NUM_MAX], const void *send_buffer, uint32_t buf_len_bytes, spi_dma_desc_t **trans_head, uint32_t *used_desc_num)
+static esp_err_t SPI_MASTER_ISR_ATTR spi_hal_sct_new_tx_dma_desc_head(spi_sct_desc_ctx_t *desc_ctx, const uint32_t *conf_buffer, const void *send_buffer, uint32_t buf_len_bytes, spi_dma_desc_t **trans_head, uint32_t *used_desc_num)
 {
     //1 desc for the conf_buffer, other for data.
     int desc_need = 1 + s_sct_desc_get_required_num(buf_len_bytes);
@@ -1610,7 +1606,7 @@ static esp_err_t SPI_MASTER_ISR_ATTR spi_hal_sct_new_tx_dma_desc_head(spi_sct_de
     return ESP_OK;
 }
 
-static esp_err_t SPI_MASTER_ISR_ATTR spi_hal_sct_link_tx_seg_dma_desc(spi_sct_desc_ctx_t *desc_ctx, const uint32_t conf_buffer[SOC_SPI_SCT_BUFFER_NUM_MAX], const void *send_buffer, uint32_t buf_len_bytes, uint32_t *used_desc_num)
+static esp_err_t SPI_MASTER_ISR_ATTR spi_hal_sct_link_tx_seg_dma_desc(spi_sct_desc_ctx_t *desc_ctx, const uint32_t *conf_buffer, const void *send_buffer, uint32_t buf_len_bytes, uint32_t *used_desc_num)
 {
     //1 desc for the conf_buffer, other for data.
     int desc_need = 1 + s_sct_desc_get_required_num(buf_len_bytes);
@@ -1703,7 +1699,7 @@ static void s_spi_sct_reset_dma_pool(const spi_dma_ctx_t *dma_ctx, spi_sct_desc_
 esp_err_t spi_bus_multi_trans_mode_enable(spi_device_handle_t handle, bool enable)
 {
     SPI_CHECK(handle, "Invalid arguments.", ESP_ERR_INVALID_ARG);
-    SPI_CHECK(SOC_SPI_SCT_SUPPORTED_PERIPH(handle->host->id), "Invalid arguments", ESP_ERR_INVALID_ARG);
+    SPI_CHECK(SOC_SPI_SCT_SUPPORTED(handle->host->id), "Invalid arguments", ESP_ERR_INVALID_ARG);
     SPI_CHECK(handle->cfg.flags & SPI_DEVICE_HALFDUPLEX, "SCT mode only available under Half Duplex mode", ESP_ERR_INVALID_STATE);
     SPI_CHECK(!spi_bus_device_is_polling(handle), "Cannot queue new transaction while previous polling transaction is not terminated.", ESP_ERR_INVALID_STATE);
     SPI_CHECK(uxQueueMessagesWaiting(handle->trans_queue) == 0, "Cannot enable SCT mode when internal Queue still has items", ESP_ERR_INVALID_STATE);
@@ -1756,11 +1752,11 @@ static void SPI_MASTER_ATTR s_sct_init_conf_buffer(spi_hal_context_t *hal, uint3
 {
     // read from HW need waiting for slower APB clock domain return data, loop to contact slow clock domain will waste time.
     // use one imagen then copied by cpu instead.
-    uint32_t conf_buffer_img[SOC_SPI_SCT_BUFFER_NUM_MAX];
+    uint32_t conf_buffer_img[SPI_LL_SCT_CONF_BUF_NUM];
     spi_hal_sct_init_conf_buffer(hal, conf_buffer_img);
 
     for (int i = 0; i < trans_num; i++) {
-        memcpy(&buffer[i * SOC_SPI_SCT_BUFFER_NUM_MAX], conf_buffer_img, sizeof(conf_buffer_img));
+        memcpy(&buffer[i * SPI_LL_SCT_CONF_BUF_NUM], conf_buffer_img, sizeof(conf_buffer_img));
     }
 }
 
@@ -1827,7 +1823,7 @@ static void SPI_MASTER_ATTR s_sct_format_conf_buffer(spi_device_handle_t handle,
 esp_err_t SPI_MASTER_ATTR spi_device_queue_multi_trans(spi_device_handle_t handle, spi_multi_transaction_t *seg_trans_desc, uint32_t trans_num, uint32_t ticks_to_wait)
 {
     SPI_CHECK(handle, "Invalid arguments.", ESP_ERR_INVALID_ARG);
-    SPI_CHECK(SOC_SPI_SCT_SUPPORTED_PERIPH(handle->host->id), "Invalid arguments", ESP_ERR_INVALID_ARG);
+    SPI_CHECK(SOC_SPI_SCT_SUPPORTED(handle->host->id), "Invalid arguments", ESP_ERR_INVALID_ARG);
     SPI_CHECK(handle->host->sct_mode_enabled == 1, "SCT mode isn't enabled", ESP_ERR_INVALID_STATE);
 
     esp_err_t ret = ESP_OK;
@@ -1836,7 +1832,7 @@ esp_err_t SPI_MASTER_ATTR spi_device_queue_multi_trans(spi_device_handle_t handl
     }
     SPI_CHECK(!spi_bus_device_is_polling(handle), "Cannot queue new transaction while previous polling transaction is not terminated.", ESP_ERR_INVALID_STATE);
 
-    uint32_t *conf_buffer = heap_caps_malloc(trans_num * SOC_SPI_SCT_BUFFER_NUM_MAX * sizeof(uint32_t), MALLOC_CAP_DMA);
+    uint32_t *conf_buffer = heap_caps_malloc(trans_num * SPI_LL_SCT_CONF_BUF_NUM * sizeof(uint32_t), MALLOC_CAP_DMA);
     SPI_CHECK(conf_buffer, "No enough memory", ESP_ERR_NO_MEM);
 
     spi_hal_context_t *hal = &handle->host->hal;
@@ -1872,12 +1868,12 @@ esp_err_t SPI_MASTER_ATTR spi_device_queue_multi_trans(spi_device_handle_t handl
 
     /*--------------Prepare other segments--------------*/
     for (int i = 1; i < trans_num; i++) {
-        s_sct_format_conf_buffer(handle, &seg_trans_desc[i], &conf_buffer[i * SOC_SPI_SCT_BUFFER_NUM_MAX], (i == (trans_num - 1)));
+        s_sct_format_conf_buffer(handle, &seg_trans_desc[i], &conf_buffer[i * SPI_LL_SCT_CONF_BUF_NUM], (i == (trans_num - 1)));
 
         //TX
         tx_buf_len = (seg_trans_desc[i].base.length + 8 - 1) / 8;
         portENTER_CRITICAL(&handle->host->spinlock);
-        dma_desc_status = spi_hal_sct_link_tx_seg_dma_desc(&handle->host->sct_desc_pool, &conf_buffer[i * SOC_SPI_SCT_BUFFER_NUM_MAX], seg_trans_desc[i].base.tx_buffer, tx_buf_len, &tx_used_dma_desc_num);
+        dma_desc_status = spi_hal_sct_link_tx_seg_dma_desc(&handle->host->sct_desc_pool, &conf_buffer[i * SPI_LL_SCT_CONF_BUF_NUM], seg_trans_desc[i].base.tx_buffer, tx_buf_len, &tx_used_dma_desc_num);
         portEXIT_CRITICAL(&handle->host->spinlock);
         SPI_CHECK(dma_desc_status == ESP_OK, "No available dma descriptors, increase the `max_transfer_sz`, or wait queued transactions are done", ESP_ERR_INVALID_STATE);
 
@@ -1925,7 +1921,7 @@ esp_err_t SPI_MASTER_ATTR spi_device_queue_multi_trans(spi_device_handle_t handl
 esp_err_t SPI_MASTER_ATTR spi_device_get_multi_trans_result(spi_device_handle_t handle, spi_multi_transaction_t **seg_trans_desc, uint32_t ticks_to_wait)
 {
     SPI_CHECK(handle, "Invalid arguments.", ESP_ERR_INVALID_ARG);
-    SPI_CHECK(SOC_SPI_SCT_SUPPORTED_PERIPH(handle->host->id), "Invalid arguments", ESP_ERR_INVALID_ARG);
+    SPI_CHECK(SOC_SPI_SCT_SUPPORTED(handle->host->id), "Invalid arguments", ESP_ERR_INVALID_ARG);
     SPI_CHECK(handle->host->sct_mode_enabled == 1, "SCT mode isn't enabled", ESP_ERR_INVALID_STATE);
     spi_sct_trans_priv_t sct_desc = {};
 
@@ -1938,4 +1934,4 @@ esp_err_t SPI_MASTER_ATTR spi_device_get_multi_trans_result(spi_device_handle_t 
 
     return ESP_OK;
 }
-#endif  //#if SOC_SPI_SCT_SUPPORTED
+#endif  //#ifdef SOC_SPI_SCT_SUPPORTED

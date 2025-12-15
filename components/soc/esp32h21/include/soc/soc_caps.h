@@ -350,32 +350,12 @@
 #define SOC_ECC_CONSTANT_TIME_POINT_MUL           1
 
 /*-------------------------- SPI CAPS ----------------------------------------*/
-#define SOC_SPI_PERIPH_NUM          2
-#define SOC_SPI_PERIPH_CS_NUM(i)    6
-#define SOC_SPI_MAX_CS_NUM          6
+#define SOC_SPI_PERIPH_NUM                  2
+#define SOC_SPI_PERIPH_CS_NUM(i)            6
 #define SOC_SPI_MAXIMUM_BUFFER_SIZE         64
-#define SOC_SPI_SLAVE_SUPPORT_SEG_TRANS     1
-#define SOC_SPI_SUPPORT_CD_SIG              1
-#define SOC_SPI_SUPPORT_CONTINUOUS_TRANS    1
 #define SOC_SPI_SUPPORT_SLAVE_HD_VER2       1
-#define SOC_SPI_SUPPORT_CLK_XTAL            1
-#if SOC_CLK_TREE_SUPPORTED  //TODO: [ESP32H21] IDF-11521
-#define SOC_SPI_SUPPORT_CLK_PLL_F48M        1
-#define SOC_SPI_SUPPORT_CLK_RC_FAST         1
-#endif
-
-// Peripheral supports DIO, DOUT, QIO, or QOUT
-// host_id = 0 -> SPI0/SPI1, host_id = 1 -> SPI2,
-#define SOC_SPI_PERIPH_SUPPORT_MULTILINE_MODE(host_id)  ({(void)host_id; 1;})
-
-#define SOC_SPI_SCT_SUPPORTED                     1
-#define SOC_SPI_SCT_SUPPORTED_PERIPH(PERIPH_NUM)  ((PERIPH_NUM==1) ? 1 : 0)    //Support Segmented-Configure-Transfer
-#define SOC_SPI_SCT_REG_NUM                       14
-#define SOC_SPI_SCT_BUFFER_NUM_MAX                (1 + SOC_SPI_SCT_REG_NUM)  //1-word-bitmap + 14-word-regs
-#define SOC_SPI_SCT_CONF_BITLEN_MAX               0x3FFFA       //18 bits wide reg
-
-#define SOC_MEMSPI_IS_INDEPENDENT           1
-#define SOC_SPI_MAX_PRE_DIVIDER             16
+#define SOC_SPI_MAX_BITWIDTH(host_id)       (4) // Supported line mode: SPI2: 1, 2, 4
+#define SOC_SPI_SCT_SUPPORTED(host_id)      ((host_id) == 1)
 
 /*-------------------------- SPI MEM CAPS ---------------------------------------*/
 #define SOC_SPI_MEM_SUPPORT_AUTO_WAIT_IDLE                (1)
@@ -385,6 +365,7 @@
 #define SOC_SPI_MEM_SUPPORT_SW_SUSPEND                    (1)
 #define SOC_SPI_MEM_SUPPORT_CHECK_SUS                     (1)
 #define SOC_SPI_MEM_SUPPORT_WRAP                          (1)
+#define SOC_MEMSPI_IS_INDEPENDENT                          1
 
 /*-------------------------- SYSTIMER CAPS ----------------------------------*/
 #define SOC_SYSTIMER_COUNTER_NUM            2  // Number of counter units

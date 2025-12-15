@@ -614,8 +614,7 @@ void test_permutations_part(const flashtest_config_t* config, esp_partition_t* p
             //the io mode will switch frequently.
             esp_flash_io_mode_t io_mode = SPI_FLASH_READ_MODE_MIN;
             while (io_mode != SPI_FLASH_QIO + 1) {
-                if (io_mode > SPI_FLASH_FASTRD &&
-                    !SOC_SPI_PERIPH_SUPPORT_MULTILINE_MODE(config->host_id)) {
+                if (io_mode > SPI_FLASH_FASTRD && (SOC_SPI_MAX_BITWIDTH(config->host_id) < 2)) {
                     io_mode++;
                     continue;
                 }

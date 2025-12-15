@@ -368,25 +368,11 @@
 #define SOC_ECC_CONSTANT_TIME_POINT_MUL           1
 
 /*-------------------------- SPI CAPS ----------------------------------------*/
-#define SOC_SPI_PERIPH_NUM              3
-#define SOC_SPI_PERIPH_CS_NUM(i)        (((i)==0)? 2: (((i)==1)? 6: 3))
-#define SOC_SPI_MAX_CS_NUM              6
-
-#define SOC_SPI_MAXIMUM_BUFFER_SIZE     64
-#define SOC_SPI_SUPPORT_DDRCLK              1
-#define SOC_SPI_SLAVE_SUPPORT_SEG_TRANS     1
-#define SOC_SPI_SUPPORT_CD_SIG              1
-#define SOC_SPI_SUPPORT_CONTINUOUS_TRANS    1
+#define SOC_SPI_PERIPH_NUM                  3
+#define SOC_SPI_PERIPH_CS_NUM(i)            (((i)==0)? 2: (((i)==1)? 6: 3))
+#define SOC_SPI_MAXIMUM_BUFFER_SIZE         64
 #define SOC_SPI_SUPPORT_SLAVE_HD_VER2       1
-#define SOC_SPI_SUPPORT_CLK_XTAL            1
-#define SOC_SPI_SUPPORT_CLK_RC_FAST         1
-
-// Peripheral supports DIO, DOUT, QIO, or QOUT
-// host_id = 0 -> SPI0/SPI1, host_id = 1 -> SPI2,
-#define SOC_SPI_PERIPH_SUPPORT_MULTILINE_MODE(host_id)  ({(void)host_id; 1;})
-
-#define SOC_MEMSPI_IS_INDEPENDENT 1
-#define SOC_SPI_MAX_PRE_DIVIDER 16
+#define SOC_SPI_MAX_BITWIDTH(host_id)       (4) // Supported line mode: SPI2: 1, 2, 4
 
 /*-------------------------- SPI MEM CAPS ---------------------------------------*/
 #define SOC_SPI_MEM_SUPPORT_AUTO_WAIT_IDLE                (1)
@@ -396,6 +382,7 @@
 #define SOC_SPI_MEM_SUPPORT_SW_SUSPEND                    (1)
 #define SOC_SPI_MEM_SUPPORT_CHECK_SUS                     (1)
 #define SOC_SPI_MEM_SUPPORT_WRAP                          (1)
+#define SOC_MEMSPI_IS_INDEPENDENT                          1
 
 /*-------------------------- SYSTIMER CAPS ----------------------------------*/
 #define SOC_SYSTIMER_COUNTER_NUM            2  // Number of counter units

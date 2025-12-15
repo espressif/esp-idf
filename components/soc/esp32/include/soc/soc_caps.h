@@ -254,27 +254,18 @@
 #define SOC_RTCIO_WAKE_SUPPORTED 1
 
 /*-------------------------- SPI CAPS ----------------------------------------*/
-#define SOC_SPI_HD_BOTH_INOUT_SUPPORTED 1  //Support enabling MOSI and MISO phases together under Halfduplex mode
-#define SOC_SPI_AS_CS_SUPPORTED         1  //Support to toggle the CS while the clock toggles
 #define SOC_SPI_PERIPH_NUM              3
-#define SOC_SPI_DMA_CHAN_NUM            2
-
 #define SOC_SPI_PERIPH_CS_NUM(i)        3
-#define SOC_SPI_MAX_CS_NUM              3
 
-#define SOC_SPI_SUPPORT_CLK_APB         1
-
+#define SOC_SPI_HD_BOTH_INOUT_SUPPORTED 1  //Support enabling MOSI and MISO phases together under Halfduplex mode
 #define SOC_SPI_MAXIMUM_BUFFER_SIZE     64
-#define SOC_SPI_MAX_PRE_DIVIDER         8192
+#define SOC_SPI_MAX_BITWIDTH(host_id)   (4) // Supported line mode: DIO, DOUT, QIO, or QOUT
 
 // Although ESP32 doesn't has memspi, but keep consistent with following chips.(This means SPI0/1)
 #define SOC_MEMSPI_SRC_FREQ_80M_SUPPORTED         1
 #define SOC_MEMSPI_SRC_FREQ_40M_SUPPORTED         1
 #define SOC_MEMSPI_SRC_FREQ_26M_SUPPORTED         1
 #define SOC_MEMSPI_SRC_FREQ_20M_SUPPORTED         1
-
-// Peripheral supports DIO, DOUT, QIO, or QOUT
-#define SOC_SPI_PERIPH_SUPPORT_MULTILINE_MODE(spi_host)         ({(void)spi_host; 1;})
 
 /*-------------------------- LP_TIMER CAPS ----------------------------------*/
 #define SOC_LP_TIMER_BIT_WIDTH_LO           32 // Bit width of lp_timer low part

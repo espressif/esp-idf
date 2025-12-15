@@ -6,11 +6,9 @@
 
 /*******************************************************************************
  * NOTICE
- * The hal is not public api, don't use in application code.
- * See readme.md in soc/include/hal/readme.md
+ * The LL layer is not public api, don't use in application code.
+ * See readme.md in esp_hal_gpspi/readme.md
  ******************************************************************************/
-
-// The LL layer for SPI register operations
 
 #pragma once
 
@@ -41,12 +39,10 @@ extern "C" {
 #define SPI_LL_DMA_MAX_BIT_LEN    (1 << 18)    //reg len: 18 bits
 #define SPI_LL_CPU_MAX_BIT_LEN    (16 * 32)    //Fifo len: 16 words
 #define SPI_LL_MOSI_FREE_LEVEL    1            //Default level after bus initialized
+#define SPI_LL_MAX_PRE_DIV_NUM    (16)
+#define SPI_LL_MAX_SCT_CONF_LEN   (0x3FFFA)    //18 bits wide reg
+#define SPI_LL_SCT_CONF_BUF_NUM   (1 + 14)     //1-word-bitmap + 14-word-regs according to TRM
 
-/**
- * The data structure holding calculated clock configuration. Since the
- * calculation needs long time, it should be calculated during initialization and
- * stored somewhere to be quickly used.
- */
 typedef uint32_t spi_ll_clock_val_t;
 typedef spi_dev_t spi_dma_dev_t;
 
@@ -788,8 +784,8 @@ static inline int spi_ll_master_cal_clock(int fapb, int hz, int duty_cycle, spi_
             if (pre <= 0) {
                 pre = 1;
             }
-            if (pre > 16) {
-                pre = 16;
+            if (pre > SPI_LL_MAX_PRE_DIV_NUM) {
+                pre = SPI_LL_MAX_PRE_DIV_NUM;
             }
             errval = abs(spi_ll_freq_for_pre_n(fapb, pre, n) - hz);
             if (bestn == -1 || errval <= besterr) {
@@ -1334,7 +1330,7 @@ static inline int spi_ll_get_slave_hd_dummy_bits(spi_line_mode_t line_mode)
  */
 static inline void spi_ll_set_conf_phase_bits_len(spi_dev_t *hw, uint32_t conf_bitlen)
 {
-    if (conf_bitlen <= SOC_SPI_SCT_CONF_BITLEN_MAX) {
+    if (conf_bitlen <= SPI_LL_MAX_SCT_CONF_LEN) {
         hw->cmd.conf_bitlen = conf_bitlen;
     }
 }
@@ -1346,7 +1342,7 @@ static inline void spi_ll_set_conf_phase_bits_len(spi_dev_t *hw, uint32_t conf_b
  * @param is_end Is this transaction the end of this segment.
  * @param conf_buffer Conf buffer to be updated.
  */
-static inline void spi_ll_format_conf_phase_conf_buffer(spi_dev_t *hw, bool is_end, uint32_t conf_buffer[SOC_SPI_SCT_BUFFER_NUM_MAX])
+static inline void spi_ll_format_conf_phase_conf_buffer(spi_dev_t *hw, bool is_end, uint32_t *conf_buffer)
 {
     //user reg: usr_conf_nxt
     if (is_end) {
@@ -1363,7 +1359,7 @@ static inline void spi_ll_format_conf_phase_conf_buffer(spi_dev_t *hw, bool is_e
  * @param line_mode line mode struct of each phase.
  * @param conf_buffer Conf buffer to be updated.
  */
-static inline void spi_ll_format_line_mode_conf_buff(spi_dev_t *hw, spi_line_mode_t line_mode, uint32_t conf_buffer[SOC_SPI_SCT_BUFFER_NUM_MAX])
+static inline void spi_ll_format_line_mode_conf_buff(spi_dev_t *hw, spi_line_mode_t line_mode, uint32_t *conf_buffer)
 {
     conf_buffer[SPI_LL_CTRL_REG_POS + SPI_LL_CONF_BUFFER_OFFSET] &= ~SPI_LL_ONE_LINE_CTRL_MASK;
     conf_buffer[SPI_LL_USER_REG_POS + SPI_LL_CONF_BUFFER_OFFSET] &= ~SPI_LL_ONE_LINE_USER_MASK;
@@ -1398,7 +1394,7 @@ static inline void spi_ll_format_line_mode_conf_buff(spi_dev_t *hw, spi_line_mod
  * @param setup CS setup time
  * @param conf_buffer Conf buffer to be updated.
  */
-static inline void spi_ll_format_prep_phase_conf_buffer(spi_dev_t *hw, uint8_t setup, uint32_t conf_buffer[SOC_SPI_SCT_BUFFER_NUM_MAX])
+static inline void spi_ll_format_prep_phase_conf_buffer(spi_dev_t *hw, uint8_t setup, uint32_t *conf_buffer)
 {
     //user reg: cs_setup
     if (setup) {
@@ -1420,7 +1416,7 @@ static inline void spi_ll_format_prep_phase_conf_buffer(spi_dev_t *hw, uint8_t s
  * @param lsbfirst Whether LSB first
  * @param conf_buffer Conf buffer to be updated.
  */
-static inline void spi_ll_format_cmd_phase_conf_buffer(spi_dev_t *hw, uint16_t cmd, int cmdlen, bool lsbfirst, uint32_t conf_buffer[SOC_SPI_SCT_BUFFER_NUM_MAX])
+static inline void spi_ll_format_cmd_phase_conf_buffer(spi_dev_t *hw, uint16_t cmd, int cmdlen, bool lsbfirst, uint32_t *conf_buffer)
 {
     //user reg: usr_command
     if (cmdlen) {
@@ -1449,7 +1445,7 @@ static inline void spi_ll_format_cmd_phase_conf_buffer(spi_dev_t *hw, uint16_t c
  * @param lsbfirst whether the LSB first feature is enabled.
  * @param conf_buffer Conf buffer to be updated.
  */
-static inline void spi_ll_format_addr_phase_conf_buffer(spi_dev_t *hw, uint64_t addr, int addrlen, bool lsbfirst, uint32_t conf_buffer[SOC_SPI_SCT_BUFFER_NUM_MAX])
+static inline void spi_ll_format_addr_phase_conf_buffer(spi_dev_t *hw, uint64_t addr, int addrlen, bool lsbfirst, uint32_t *conf_buffer)
 {
     //user reg: usr_addr
     if (addrlen) {
@@ -1476,7 +1472,7 @@ static inline void spi_ll_format_addr_phase_conf_buffer(spi_dev_t *hw, uint64_t 
  * @param dummy_n Dummy cycles used. 0 to disable the dummy phase.
  * @param conf_buffer Conf buffer to be updated.
  */
-static inline void spi_ll_format_dummy_phase_conf_buffer(spi_dev_t *hw, int dummy_n, uint32_t conf_buffer[SOC_SPI_SCT_BUFFER_NUM_MAX])
+static inline void spi_ll_format_dummy_phase_conf_buffer(spi_dev_t *hw, int dummy_n, uint32_t *conf_buffer)
 {
     //user reg: usr_dummy
     if (dummy_n) {
@@ -1496,7 +1492,7 @@ static inline void spi_ll_format_dummy_phase_conf_buffer(spi_dev_t *hw, int dumm
  * @param bitlen output length, in bits.
  * @param conf_buffer Conf buffer to be updated.
  */
-static inline void spi_ll_format_dout_phase_conf_buffer(spi_dev_t *hw, int bitlen, uint32_t conf_buffer[SOC_SPI_SCT_BUFFER_NUM_MAX])
+static inline void spi_ll_format_dout_phase_conf_buffer(spi_dev_t *hw, int bitlen, uint32_t *conf_buffer)
 {
     if (bitlen) {
         //user reg: usr_mosi
@@ -1520,7 +1516,7 @@ static inline void spi_ll_format_dout_phase_conf_buffer(spi_dev_t *hw, int bitle
  * @param bitlen input length, in bits.
  * @param conf_buffer Conf buffer to be updated.
  */
-static inline void spi_ll_format_din_phase_conf_buffer(spi_dev_t *hw, int bitlen, uint32_t conf_buffer[SOC_SPI_SCT_BUFFER_NUM_MAX])
+static inline void spi_ll_format_din_phase_conf_buffer(spi_dev_t *hw, int bitlen, uint32_t *conf_buffer)
 {
     if (bitlen) {
         //user reg: usr_miso
@@ -1544,7 +1540,7 @@ static inline void spi_ll_format_din_phase_conf_buffer(spi_dev_t *hw, int bitlen
  * @param setup CS hold time
  * @param conf_buffer Conf buffer to be updated.
  */
-static inline void spi_ll_format_done_phase_conf_buffer(spi_dev_t *hw, int hold, uint32_t conf_buffer[SOC_SPI_SCT_BUFFER_NUM_MAX])
+static inline void spi_ll_format_done_phase_conf_buffer(spi_dev_t *hw, int hold, uint32_t *conf_buffer)
 {
     //user reg: cs_hold
     if (hold) {
@@ -1567,7 +1563,7 @@ static inline void spi_ll_format_done_phase_conf_buffer(spi_dev_t *hw, int hold,
  * @param conf_buffer Conf buffer to be updated.
  */
 __attribute__((always_inline))
-static inline void spi_ll_init_conf_buffer(spi_dev_t *hw, uint32_t conf_buffer[SOC_SPI_SCT_BUFFER_NUM_MAX])
+static inline void spi_ll_init_conf_buffer(spi_dev_t *hw, uint32_t *conf_buffer)
 {
     conf_buffer[SPI_LL_CONF_BITMAP_POS] = 0x7FFF | (SPI_LL_SCT_MAGIC_NUMBER << 28);
     conf_buffer[SPI_LL_ADDR_REG_POS + SPI_LL_CONF_BUFFER_OFFSET] = hw->addr;

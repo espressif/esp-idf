@@ -250,39 +250,19 @@
 #define SOC_LP_IO_CLOCK_IS_INDEPENDENT 1
 
 /*-------------------------- SPI CAPS ----------------------------------------*/
-#define SOC_SPI_HD_BOTH_INOUT_SUPPORTED     1   //Support enabling MOSI and MISO phases together under Halfduplex mode
 #define SOC_SPI_PERIPH_NUM                  3
-#define SOC_SPI_DMA_CHAN_NUM                3
 #define SOC_SPI_PERIPH_CS_NUM(i)            (((i)==0)? 2: (((i)==1)? 6: 3))
-#define SOC_SPI_MAX_CS_NUM                  6
-
 #define SOC_SPI_MAXIMUM_BUFFER_SIZE         72
-#define SOC_SPI_MAX_PRE_DIVIDER             8192
-
-#define SOC_SPI_SUPPORT_DDRCLK              1
-#define SOC_SPI_SLAVE_SUPPORT_SEG_TRANS     1
-#define SOC_SPI_SUPPORT_CD_SIG              1
-#define SOC_SPI_SUPPORT_CONTINUOUS_TRANS    1
-#define SOC_SPI_SUPPORT_CLK_APB             1
 /// The SPI Slave half duplex mode has been updated greatly in ESP32-S2
 #define SOC_SPI_SUPPORT_SLAVE_HD_VER2       1
-
-// Peripheral supports DIO, DOUT, QIO, or QOUT
-// VSPI (SPI3) only support 1-bit mode
-#define SOC_SPI_PERIPH_SUPPORT_MULTILINE_MODE(host_id)          ((host_id) != 2)
+#define SOC_SPI_HD_BOTH_INOUT_SUPPORTED     1   //Support enabling MOSI and MISO phases together under Halfduplex mode
+#define SOC_SPI_SUPPORT_OCT                 1
+#define SOC_SPI_MAX_BITWIDTH(host_id)       ((host_id == 2) ? 1 : 8) // Supported line mode: SPI3: 1, SPI1/2: 1, 2, 4, 8
+#define SOC_SPI_SCT_SUPPORTED(host_id)      ((host_id) == 1)
 
 // Peripheral supports output given level during its "dummy phase"
 // Only SPI1 supports this feature
-#define SOC_SPI_PERIPH_SUPPORT_CONTROL_DUMMY_OUT             1
-
-#define SOC_SPI_SUPPORT_OCT                       1
-
-#define SOC_SPI_SCT_SUPPORTED                     1
-#define SOC_SPI_SCT_SUPPORTED_PERIPH(PERIPH_NUM)  (((PERIPH_NUM==1) || (PERIPH_NUM==2)) ? 1 : 0)    //Support Segmented-Configure-Transfer
-#define SOC_SPI_SCT_REG_NUM                       27
-#define SOC_SPI_SCT_BUFFER_NUM_MAX                (1 + SOC_SPI_SCT_REG_NUM)  //1-word-bitmap + 27-word-regs
-#define SOC_SPI_SCT_CONF_BITLEN_MAX               0x7FFFFD    //23 bit wide reg
-
+#define SOC_MEMSPI_SUPPORT_CONTROL_DUMMY_OUT      1
 #define SOC_MEMSPI_IS_INDEPENDENT                 1
 #define SOC_MEMSPI_SRC_FREQ_80M_SUPPORTED         1
 #define SOC_MEMSPI_SRC_FREQ_40M_SUPPORTED         1

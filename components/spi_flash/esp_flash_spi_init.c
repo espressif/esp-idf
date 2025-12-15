@@ -273,12 +273,9 @@ static uint32_t init_gpspi_clock(esp_flash_t *chip, const esp_flash_spi_device_c
     uint32_t clk_src_freq = 0;
     spi_clock_source_t clk_src = config->clock_source ? config->clock_source : SPI_CLK_SRC_DEFAULT;
 
-#if SOC_SPI_SUPPORT_CLK_RC_FAST
-    if (config->clock_source == SPI_CLK_SRC_RC_FAST) {
+    if ((soc_module_clk_t)clk_src == SOC_MOD_CLK_RC_FAST) {
         periph_rtc_dig_clk8m_enable();
     }
-#endif
-
     esp_clk_tree_enable_src(clk_src, true);
     esp_clk_tree_src_get_freq_hz(clk_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clk_src_freq);
 
@@ -346,12 +343,10 @@ static void deinit_gpspi_clock(esp_flash_t *chip)
     // Disable the clock source
     esp_clk_tree_enable_src(chip->clock_source, false);
 
-#if SOC_SPI_SUPPORT_CLK_RC_FAST
     // Disable RC_FAST clock if it was used
-    if (chip->clock_source == SPI_CLK_SRC_RC_FAST) {
+    if ((soc_module_clk_t)chip->clock_source == SOC_MOD_CLK_RC_FAST) {
         periph_rtc_dig_clk8m_disable();
     }
-#endif
 #endif // !CONFIG_IDF_TARGET_ESP32
 }
 

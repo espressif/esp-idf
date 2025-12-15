@@ -81,14 +81,14 @@ static void check_spi_pre_n_for(int clk, int pre, int n)
  * Only test on SPI_CLK_SRC_DEFAULT here
  */
 #define TEST_CLK_TIMES     8
-uint32_t clk_param_80m[TEST_CLK_TIMES][3] = {{1, SOC_SPI_MAX_PRE_DIVIDER, 64}, {100000, 16, 50}, {333333, 4, 60}, {800000, 2, 50}, {900000, 2, 44}, {8000000, 1, 10}, {20000000, 1, 4}, {26000000, 1, 3} };
-uint32_t clk_param_160m[TEST_CLK_TIMES][3] = {{1, SOC_SPI_MAX_PRE_DIVIDER, 64}, {100000, 16, 50}, {333333, 4, 60}, {800000, 2, 50}, {900000, 2, 44}, {8000000, 1, 10}, {20000000, 1, 4}, {26000000, 1, 3} };
+uint32_t clk_param_80m[TEST_CLK_TIMES][3] = {{1, SPI_LL_MAX_PRE_DIV_NUM, 64}, {100000, 16, 50}, {333333, 4, 60}, {800000, 2, 50}, {900000, 2, 44}, {8000000, 1, 10}, {20000000, 1, 4}, {26000000, 1, 3} };
+uint32_t clk_param_160m[TEST_CLK_TIMES][3] = {{1, SPI_LL_MAX_PRE_DIV_NUM, 64}, {100000, 16, 50}, {333333, 4, 60}, {800000, 2, 50}, {900000, 2, 44}, {8000000, 1, 10}, {20000000, 1, 4}, {26000000, 1, 3} };
 #if SPI_LL_SUPPORT_CLK_SRC_PRE_DIV
-uint32_t clk_param_40m[TEST_CLK_TIMES][3] = {{1, SOC_SPI_MAX_PRE_DIVIDER, 64}, {100000, 4, 50}, {333333, 1, 60}, {800000, 1, 25}, {2000000, 1, 10}, {5000000, 1,  4}, {12000000, 1, 2}, {18000000, 1, 1} };
-uint32_t clk_param_48m[TEST_CLK_TIMES][3] = {{1, SOC_SPI_MAX_PRE_DIVIDER, 64}, {100000, 4, 60}, {333333, 2, 36}, {800000, 1, 30}, {5000000, 1, 5}, {12000000, 1, 2}, {18000000, 1, 2}, {24000000, 1, 1} };
+uint32_t clk_param_40m[TEST_CLK_TIMES][3] = {{1, SPI_LL_MAX_PRE_DIV_NUM, 64}, {100000, 4, 50}, {333333, 1, 60}, {800000, 1, 25}, {2000000, 1, 10}, {5000000, 1,  4}, {12000000, 1, 2}, {18000000, 1, 1} };
+uint32_t clk_param_48m[TEST_CLK_TIMES][3] = {{1, SPI_LL_MAX_PRE_DIV_NUM, 64}, {100000, 4, 60}, {333333, 2, 36}, {800000, 1, 30}, {5000000, 1, 5}, {12000000, 1, 2}, {18000000, 1, 2}, {24000000, 1, 1} };
 #else
-uint32_t clk_param_40m[TEST_CLK_TIMES][3] = {{1, SOC_SPI_MAX_PRE_DIVIDER, 64}, {100000, 8, 50}, {333333, 2, 60}, {800000, 1, 50}, {2000000, 1, 20}, {5000000, 1,  8}, {12000000, 1, 3}, {18000000, 1, 2} };
-uint32_t clk_param_48m[TEST_CLK_TIMES][3] = {{1, SOC_SPI_MAX_PRE_DIVIDER, 64}, {100000, 8, 60}, {333333, 3, 48}, {800000, 1, 60}, {5000000, 1, 10}, {12000000, 1, 4}, {18000000, 1, 3}, {26000000, 1, 2} };
+uint32_t clk_param_40m[TEST_CLK_TIMES][3] = {{1, SPI_LL_MAX_PRE_DIV_NUM, 64}, {100000, 8, 50}, {333333, 2, 60}, {800000, 1, 50}, {2000000, 1, 20}, {5000000, 1,  8}, {12000000, 1, 3}, {18000000, 1, 2} };
+uint32_t clk_param_48m[TEST_CLK_TIMES][3] = {{1, SPI_LL_MAX_PRE_DIV_NUM, 64}, {100000, 8, 60}, {333333, 3, 48}, {800000, 1, 60}, {5000000, 1, 10}, {12000000, 1, 4}, {18000000, 1, 3}, {26000000, 1, 2} };
 #endif
 
 TEST_CASE("SPI Master clockdiv calculation routines", "[spi]")
@@ -154,11 +154,9 @@ TEST_CASE("SPI Master clk_source and divider accuracy", "[spi]")
 #if CONFIG_IDF_TARGET_ESP32
             devcfg.flags |= SPI_DEVICE_HALFDUPLEX;  //esp32 half duplex to work on high freq
 #endif
-#if SOC_SPI_SUPPORT_CLK_RC_FAST
-            if (devcfg.clock_source == SPI_CLK_SRC_RC_FAST) {
+            if ((soc_module_clk_t)devcfg.clock_source == SOC_MOD_CLK_RC_FAST) {
                 devcfg.clock_speed_hz /= 2; //rc_fast have bad accuracy, test at low speed
             }
-#endif
             TEST_ESP_OK(spi_bus_add_device(TEST_SPI_HOST, &devcfg, &handle));
             // one trans first to trigger lazy load
             TEST_ESP_OK(spi_device_polling_transmit(handle, &trans));
@@ -1543,6 +1541,7 @@ TEST_CASE("spi_speed", "[spi]")
 #endif // !(CONFIG_SPIRAM) || (CONFIG_SPIRAM_MALLOC_ALWAYSINTERNAL >= 16384)
 
 //****************************************spi master add device test************************************//
+#define SPI_MAX_DEVICE_NUM  SOC_SPI_PERIPH_CS_NUM(TEST_SPI_HOST)
 //add dummy devices first
 #if CONFIG_IDF_TARGET_ESP32
 #define DUMMY_CS_PINS() {25, 26, 27}
@@ -1559,8 +1558,8 @@ TEST_CASE("spi_speed", "[spi]")
 
 void test_add_device_master(void)
 {
-    spi_device_handle_t devs[SOC_SPI_MAX_CS_NUM] = {};
-    uint8_t cs_pins[SOC_SPI_MAX_CS_NUM] = DUMMY_CS_PINS();
+    spi_device_handle_t devs[SPI_MAX_DEVICE_NUM] = {};
+    uint8_t cs_pins[SPI_MAX_DEVICE_NUM] = DUMMY_CS_PINS();
 
     uint8_t master_sendbuf[TEST_TRANS_LEN] = {0};
     uint8_t master_recvbuf[TEST_TRANS_LEN] = {0};
@@ -1574,7 +1573,7 @@ void test_add_device_master(void)
         .queue_size = 3,
     };
 
-    for (uint8_t i = 0; i < SOC_SPI_MAX_CS_NUM; i++) {
+    for (uint8_t i = 0; i < SPI_MAX_DEVICE_NUM; i++) {
         dev_cfg.spics_io_num = cs_pins[i];
         TEST_ESP_OK(spi_bus_add_device(TEST_SPI_HOST, &dev_cfg, &devs[i]));
     }
@@ -1584,7 +1583,7 @@ void test_add_device_master(void)
     trans.tx_buffer = master_sendbuf;
     trans.rx_buffer = master_recvbuf;
 
-    for (uint8_t i = 0; i < SOC_SPI_MAX_CS_NUM; i++) {
+    for (uint8_t i = 0; i < SPI_MAX_DEVICE_NUM; i++) {
         //1. add max dummy devices
         //2. replace devs[i] as a real device, than start a transaction
         //3. free devs[i] after transaction to release the real CS pin for using again by another dev,
@@ -1610,7 +1609,7 @@ void test_add_device_master(void)
         TEST_ESP_OK(spi_bus_add_device(TEST_SPI_HOST, &dev_cfg, &devs[i]));
     }
 
-    for (uint8_t i = 0; i < SOC_SPI_MAX_CS_NUM; i++) {
+    for (uint8_t i = 0; i < SPI_MAX_DEVICE_NUM; i++) {
         spi_bus_remove_device(devs[i]);
     }
     spi_bus_free(TEST_SPI_HOST);
@@ -1635,7 +1634,7 @@ void test_add_device_slave(void)
     slave_trans.rx_buffer = slave_recvbuf;
     slave_trans.flags |= SPI_SLAVE_TRANS_DMA_BUFFER_ALIGN_AUTO;
 
-    for (uint8_t i = 0; i < SOC_SPI_MAX_CS_NUM; i++) {
+    for (uint8_t i = 0; i < SPI_MAX_DEVICE_NUM; i++) {
         memset(slave_recvbuf, 0, sizeof(slave_recvbuf));
         test_fill_random_to_buffers_dualboard(21, slave_expect, slave_sendbuf, TEST_TRANS_LEN);
 

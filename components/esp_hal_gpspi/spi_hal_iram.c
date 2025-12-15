@@ -20,7 +20,7 @@ void spi_hal_setup_device(spi_hal_context_t *hal, const spi_hal_dev_config_t *de
 {
     //Configure clock settings
     spi_dev_t *hw = hal->hw;
-#if SOC_SPI_AS_CS_SUPPORTED
+#if SPI_LL_SUPPORT_CLK_AS_CS
     spi_ll_master_set_cksel(hw, dev->cs_pin_id, dev->as_cs);
 #endif
     spi_ll_master_set_pos_cs(hw, dev->cs_pin_id, dev->positive_cs);
@@ -264,7 +264,7 @@ void spi_hal_fetch_result(const spi_hal_context_t *hal)
     }
 }
 
-#if SOC_SPI_SCT_SUPPORTED
+#ifdef SOC_SPI_SCT_SUPPORTED
 /*------------------------------------------------------------------------------
  * Segmented-Configure-Transfer
 *----------------------------------------------------------------------------*/
@@ -273,12 +273,12 @@ void spi_hal_sct_set_conf_bits_len(spi_hal_context_t *hal, uint32_t conf_len)
     spi_ll_set_conf_phase_bits_len(hal->hw, conf_len);
 }
 
-void spi_hal_sct_init_conf_buffer(spi_hal_context_t *hal, uint32_t conf_buffer[SOC_SPI_SCT_BUFFER_NUM_MAX])
+void spi_hal_sct_init_conf_buffer(spi_hal_context_t *hal, uint32_t *conf_buffer)
 {
     spi_ll_init_conf_buffer(hal->hw, conf_buffer);
 }
 
-void spi_hal_sct_format_conf_buffer(spi_hal_context_t *hal, const spi_hal_seg_config_t *config, const spi_hal_dev_config_t *dev, uint32_t conf_buffer[SOC_SPI_SCT_BUFFER_NUM_MAX])
+void spi_hal_sct_format_conf_buffer(spi_hal_context_t *hal, const spi_hal_seg_config_t *config, const spi_hal_dev_config_t *dev, uint32_t *conf_buffer)
 {
     spi_ll_format_line_mode_conf_buff(hal->hw, hal->trans_config.line_mode, conf_buffer);
     spi_ll_format_prep_phase_conf_buffer(hal->hw, config->cs_setup, conf_buffer);
@@ -294,4 +294,4 @@ void spi_hal_sct_format_conf_buffer(spi_hal_context_t *hal, const spi_hal_seg_co
 #endif
 }
 
-#endif  //#if SOC_SPI_SCT_SUPPORTED
+#endif  //#ifdef SOC_SPI_SCT_SUPPORTED
