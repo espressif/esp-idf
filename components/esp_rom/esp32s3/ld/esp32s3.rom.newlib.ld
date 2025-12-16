@@ -42,3 +42,5 @@ strcoll = 0x400013a4;
 strlwr = 0x400013c8;
 strncasecmp = 0x400013d4;
 strupr = 0x40001434;
+hmac_md5_vector = 0x40001c80;
+hmac_md5 = 0x40001c8c;
