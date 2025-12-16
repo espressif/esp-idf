@@ -9,44 +9,17 @@
 #include <sys/time.h>
 #include <sys/param.h>
 #include "sdkconfig.h"
-#include "esp_attr.h"
 #include "esp_log.h"
-#include "esp_clk_internal.h"
-#include "esp32c6/rom/ets_sys.h"
-#include "esp32c6/rom/uart.h"
 #include "soc/soc.h"
 #include "soc/rtc.h"
-#include "soc/rtc_periph.h"
-#include "soc/i2s_reg.h"
-#include "soc/lpperi_reg.h"
-#include "soc/lp_clkrst_reg.h"
 #include "esp_cpu.h"
 #include "hal/wdt_hal.h"
-#include "hal/uart_ll.h"
-#include "hal/i2c_ll.h"
-#include "hal/rmt_ll.h"
-#include "hal/ledc_ll.h"
-#include "hal/lp_clkrst_ll.h"
-#include "hal/timer_ll.h"
-#include "hal/twai_ll.h"
-#include "hal/i2s_ll.h"
-#include "hal/pcnt_ll.h"
-#include "hal/etm_ll.h"
-#include "hal/mcpwm_ll.h"
-#include "hal/parlio_ll.h"
-#include "hal/gdma_ll.h"
-#include "hal/pau_ll.h"
-#include "hal/spi_ll.h"
 #include "hal/clk_gate_ll.h"
-#include "hal/lp_core_ll.h"
-#include "hal/temperature_sensor_ll.h"
-#include "hal/usb_serial_jtag_ll.h"
+#include "hal/pmu_ll.h"
 #include "esp_private/esp_modem_clock.h"
-#include "esp_private/periph_ctrl.h"
 #include "esp_private/esp_clk.h"
 #include "esp_private/esp_pmu.h"
 #include "esp_rom_serial_output.h"
-#include "esp_rom_sys.h"
 
 /* Number of cycles to wait from the 32k XTAL oscillator to consider it running.
  * Larger values increase startup delay. Smaller values may cause false positive
@@ -248,96 +221,28 @@ __attribute__((weak)) void esp_perip_clk_init(void)
 #endif
 
     soc_reset_reason_t rst_reason = esp_rom_get_reset_reason(0);
-    if ((rst_reason != RESET_REASON_CPU0_MWDT0) && (rst_reason != RESET_REASON_CPU0_MWDT1)      \
-            && (rst_reason != RESET_REASON_CPU0_SW) && (rst_reason != RESET_REASON_CPU0_RTC_WDT)    \
-            && (rst_reason != RESET_REASON_CPU0_JTAG)) {
+    periph_ll_clk_gate_config_t clk_gate_config = {0};
+
 #if CONFIG_ESP_CONSOLE_UART_NUM != 0
-        uart_ll_enable_bus_clock(UART_NUM_0, false);
-        uart_ll_sclk_disable(&UART0);
-#elif CONFIG_ESP_CONSOLE_UART_NUM != 1
-        uart_ll_sclk_disable(&UART1);
-        uart_ll_enable_bus_clock(UART_NUM_1, false);
+    clk_gate_config.disable_uart0_clk = true;
 #endif
-        i2c_ll_enable_bus_clock(0, false);
-        i2c_ll_enable_controller_clock(&I2C0, false);
-        rmt_ll_enable_bus_clock(0, false);
-        rmt_ll_enable_group_clock(0, false);
-        ledc_ll_enable_clock(&LEDC, false);
-        ledc_ll_enable_bus_clock(false);
-        timer_ll_enable_clock(0, 0, false);
-        timer_ll_enable_clock(1, 0, false);
-        _timg_ll_enable_bus_clock(0, false);
-        _timg_ll_enable_bus_clock(1, false);
-        twai_ll_enable_clock(0, false);
-        twai_ll_enable_bus_clock(0, false);
-        twai_ll_enable_clock(1, false);
-        twai_ll_enable_bus_clock(1, false);
-        i2s_ll_enable_bus_clock(0, false);
-        i2s_ll_tx_disable_clock(&I2S0);
-        i2s_ll_rx_disable_clock(&I2S0);
-        pcnt_ll_enable_bus_clock(0, false);
-        etm_ll_enable_bus_clock(0, false);
-        mcpwm_ll_enable_bus_clock(0, false);
-        mcpwm_ll_group_enable_clock(0, false);
-        parlio_ll_rx_enable_clock(&PARL_IO, false);
-        parlio_ll_tx_enable_clock(&PARL_IO, false);
-        parlio_ll_enable_bus_clock(0, false);
-        gdma_ll_force_enable_reg_clock(&GDMA, false);
-        _gdma_ll_enable_bus_clock(0, false);
+#if CONFIG_ESP_CONSOLE_UART_NUM != 1
+    clk_gate_config.disable_uart1_clk = true;
+#endif
 #if CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
-        spi_ll_enable_bus_clock(SPI1_HOST, false);
+    clk_gate_config.disable_mspi_flash_clk = true;
 #endif
-        spi_ll_enable_bus_clock(SPI2_HOST, false);
-        temperature_sensor_ll_bus_clk_enable(false);
-        pau_ll_enable_bus_clock(false);
-
-        periph_ll_disable_clk_set_rst(PERIPH_UHCI0_MODULE);
-        periph_ll_disable_clk_set_rst(PERIPH_SARADC_MODULE);
-        periph_ll_disable_clk_set_rst(PERIPH_SDIO_SLAVE_MODULE);
 #if !CONFIG_ESP_SYSTEM_HW_PC_RECORD
-        /* Disable ASSIST Debug module clock if PC recoreding function is not used,
-         * if stack guard function needs it, it will be re-enabled at esp_hw_stack_guard_init */
-        periph_ll_disable_clk_set_rst(PERIPH_ASSIST_DEBUG_MODULE);
+    clk_gate_config.disable_assist_clk = true;
 #endif
-        periph_ll_disable_clk_set_rst(PERIPH_RSA_MODULE);
 #if !CONFIG_SECURE_ENABLE_TEE
-        // NOTE: [ESP-TEE] The TEE is responsible for the AES and SHA peripherals
-        periph_ll_disable_clk_set_rst(PERIPH_AES_MODULE);
-        periph_ll_disable_clk_set_rst(PERIPH_SHA_MODULE);
-        periph_ll_disable_clk_set_rst(PERIPH_HMAC_MODULE);
-        periph_ll_disable_clk_set_rst(PERIPH_DS_MODULE);
-        periph_ll_disable_clk_set_rst(PERIPH_ECC_MODULE);
+    clk_gate_config.disable_crypto_periph_clk = true;
 #endif
-
-        // TODO: Replace with hal implementation
-        REG_CLR_BIT(PCR_CTRL_TICK_CONF_REG, PCR_TICK_ENABLE);
-        REG_CLR_BIT(PCR_TRACE_CONF_REG, PCR_TRACE_CLK_EN);
-        REG_CLR_BIT(PCR_RETENTION_CONF_REG, PCR_RETENTION_CLK_EN);
-        REG_CLR_BIT(PCR_MEM_MONITOR_CONF_REG, PCR_MEM_MONITOR_CLK_EN);
-        REG_CLR_BIT(PCR_PVT_MONITOR_CONF_REG, PCR_PVT_MONITOR_CLK_EN);
-        REG_CLR_BIT(PCR_PVT_MONITOR_FUNC_CLK_CONF_REG, PCR_PVT_MONITOR_FUNC_CLK_EN);
-        WRITE_PERI_REG(PCR_CTRL_CLK_OUT_EN_REG, 0);
-
 #if !CONFIG_USJ_ENABLE_USB_SERIAL_JTAG && !CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG_ENABLED
-        // Disable USB-Serial-JTAG clock and it's pad if not used
-        usb_serial_jtag_ll_phy_enable_pad(false);
-        usb_serial_jtag_ll_enable_bus_clock(false);
+    clk_gate_config.disable_usb_serial_jtag = true;
 #endif
-    }
 
-    if ((rst_reason == RESET_REASON_CHIP_POWER_ON) || (rst_reason == RESET_REASON_CHIP_BROWN_OUT) \
-            || (rst_reason == RESET_REASON_SYS_RTC_WDT) || (rst_reason == RESET_REASON_SYS_SUPER_WDT)) {
-        _lp_i2c_ll_enable_bus_clock(0, false);
-        lp_uart_ll_sclk_disable(0);
-        _lp_uart_ll_enable_bus_clock(0, false);
-        lp_core_ll_enable_bus_clock(false);
-        _lp_clkrst_ll_enable_rng_clock(false);
-
-        CLEAR_PERI_REG_MASK(LPPERI_CLK_EN_REG, LPPERI_OTP_DBG_CK_EN);
-        CLEAR_PERI_REG_MASK(LPPERI_CLK_EN_REG, LPPERI_LP_ANA_I2C_CK_EN);
-        CLEAR_PERI_REG_MASK(LPPERI_CLK_EN_REG, LPPERI_LP_IO_CK_EN);
-        WRITE_PERI_REG(LP_CLKRST_LP_CLK_PO_EN_REG, 0);
-    }
+    periph_ll_clk_gate_set_default(rst_reason, &clk_gate_config);
 }
 
 // Workaround for bootloader not calibrated well issue.
