@@ -45,9 +45,6 @@ static void configure_ecdsa_periph(ecdsa_hal_config_t *conf)
         ecdsa_hal_set_efuse_key(conf->curve, conf->efuse_key_blk);
 
 #if SOC_KEY_MANAGER_ECDSA_KEY_DEPLOY
-        if (!key_mgr_ll_is_supported()) {
-            HAL_ASSERT(false && "Key manager is not supported");
-        }
 
         // Force Key Manager to use eFuse key for ECDSA operation
         key_mgr_hal_set_key_usage(ESP_KEY_MGR_ECDSA_KEY, ESP_KEY_MGR_USE_EFUSE_KEY);
@@ -55,6 +52,10 @@ static void configure_ecdsa_periph(ecdsa_hal_config_t *conf)
     }
 #if SOC_KEY_MANAGER_SUPPORTED
     else {
+        if (!key_mgr_ll_is_supported()) {
+            HAL_ASSERT(false && "Key manager is not supported");
+        }
+
         key_mgr_hal_set_key_usage(ESP_KEY_MGR_ECDSA_KEY, ESP_KEY_MGR_USE_OWN_KEY);
     }
 #endif

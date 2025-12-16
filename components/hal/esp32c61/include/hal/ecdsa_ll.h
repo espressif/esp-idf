@@ -445,6 +445,15 @@ __attribute__((always_inline)) static inline void ecdsa_ll_set_ecdsa_key_blk(ecd
     EFUSE0.conf.cfg_ecdsa_blk = efuse_blk;
 }
 
+/**
+ * @brief Check if the ECDSA peripheral is supported on this chip revision
+ * For ESP32-C61, ECDSA is always supported
+ */
+static inline bool ecdsa_ll_is_supported(void)
+{
+    return true;
+}
+
 #ifdef __cplusplus
 }
 #endif

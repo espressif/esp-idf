@@ -75,7 +75,7 @@
 #define SOC_DIG_SIGN_SUPPORTED          1
 #define SOC_ECC_SUPPORTED               1
 #define SOC_ECC_EXTENDED_MODES_SUPPORTED   1
-#define SOC_ECDSA_SUPPORTED             0   // TODO: IDF-13523
+#define SOC_ECDSA_SUPPORTED             1
 #define SOC_KEY_MANAGER_SUPPORTED       1
 #define SOC_HUK_SUPPORTED               1
 #define SOC_FLASH_ENC_SUPPORTED         1
@@ -511,7 +511,10 @@
 /*--------------------------- ECDSA CAPS ---------------------------------------*/
 #define SOC_ECDSA_SUPPORT_EXPORT_PUBKEY     (1)
 #define SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE   (1)
+#define SOC_ECDSA_SUPPORT_HW_DETERMINISTIC_LOOP (1)
 #define SOC_ECDSA_USES_MPI                  (1)
+#define SOC_ECDSA_SUPPORT_CURVE_P384 (1)
+#define SOC_ECDSA_SUPPORT_CURVE_SPECIFIC_KEY_PURPOSES (1)  /*!< Support individual key purposes for different ECDSA curves (P192, P256, P384) */
 
 /*-------------------------- SPI CAPS ----------------------------------------*/
 #define SOC_SPI_PERIPH_NUM                  3
@@ -599,13 +602,16 @@
 #define SOC_EFUSE_SOFT_DIS_JTAG 1
 /* Capability to disable the MSPI access in download mode */
 #define SOC_EFUSE_DIS_DOWNLOAD_MSPI 1
+// ECDSA_P256_KEY
 #define SOC_EFUSE_ECDSA_KEY 1
 #define SOC_EFUSE_XTS_AES_KEY_128 1
 #define SOC_EFUSE_XTS_AES_KEY_256 1
+#define SOC_EFUSE_ECDSA_KEY_P192 1
+#define SOC_EFUSE_ECDSA_KEY_P384 1
 
 /*-------------------------- Key Manager CAPS----------------------------*/
 #define SOC_KEY_MANAGER_SUPPORT_KEY_DEPLOYMENT  1 /*!< Key manager supports key deployment */
-#define SOC_KEY_MANAGER_ECDSA_KEY_DEPLOY        0 /*!< Key manager responsible to deploy ECDSA key */ // TODO: IDF-13523
+#define SOC_KEY_MANAGER_ECDSA_KEY_DEPLOY        1 /*!< Key manager responsible to deploy ECDSA key */
 #define SOC_KEY_MANAGER_FE_KEY_DEPLOY           1 /*!< Key manager responsible to deploy Flash Encryption key */
 #define SOC_KEY_MANAGER_FE_KEY_DEPLOY_XTS_AES_128   1 /*!< Key manager responsible to deploy the XTS-AES-128 key */
 #define SOC_KEY_MANAGER_FE_KEY_DEPLOY_XTS_AES_256   1 /*!< Key manager responsible to deploy the XTS-AES-256 key */

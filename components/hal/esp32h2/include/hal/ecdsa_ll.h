@@ -439,6 +439,15 @@ static inline bool ecdsa_ll_is_mpi_required(void)
     return !ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 102);
 }
 
+/**
+ * @brief Check if the ECDSA peripheral is supported on this chip revision
+ * For ESP32-H2, ECDSA is always supported
+ */
+static inline bool ecdsa_ll_is_supported(void)
+{
+    return true;
+}
+
 #ifdef __cplusplus
 }
 #endif

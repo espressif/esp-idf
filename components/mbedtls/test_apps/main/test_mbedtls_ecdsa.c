@@ -225,12 +225,22 @@ void test_ecdsa_verify(mbedtls_ecp_group_id id, const uint8_t *hash, const uint8
 
 TEST_CASE("mbedtls ECDSA signature verification performance on SECP192R1", "[mbedtls]")
 {
+#if SOC_ECDSA_SUPPORTED
+    if (!ecdsa_ll_is_supported()) {
+        TEST_IGNORE_MESSAGE("ECDSA is not supported");
+    }
+#endif
     test_ecdsa_verify(MBEDTLS_ECP_DP_SECP192R1, sha, ecdsa192_r, ecdsa192_s,
                 ecdsa192_pub_x, ecdsa192_pub_y);
 }
 
 TEST_CASE("mbedtls ECDSA signature verification performance on SECP256R1", "[mbedtls]")
 {
+#if SOC_ECDSA_SUPPORTED
+    if (!ecdsa_ll_is_supported()) {
+        TEST_IGNORE_MESSAGE("ECDSA is not supported");
+    }
+#endif
     test_ecdsa_verify(MBEDTLS_ECP_DP_SECP256R1, sha, ecdsa256_r, ecdsa256_s,
                  ecdsa256_pub_x, ecdsa256_pub_y);
 }
@@ -238,6 +248,11 @@ TEST_CASE("mbedtls ECDSA signature verification performance on SECP256R1", "[mbe
 #ifdef SOC_ECDSA_SUPPORT_CURVE_P384
 TEST_CASE("mbedtls ECDSA signature verification performance on SECP384R1", "[mbedtls]")
 {
+#if SOC_ECDSA_SUPPORTED
+    if (!ecdsa_ll_is_supported()) {
+        TEST_IGNORE_MESSAGE("ECDSA is not supported");
+    }
+#endif
     test_ecdsa_verify(MBEDTLS_ECP_DP_SECP384R1, sha, ecdsa384_r, ecdsa384_s,
              ecdsa384_pub_x, ecdsa384_pub_y);
 }
@@ -341,16 +356,25 @@ void test_ecdsa_sign(mbedtls_ecp_group_id id, const uint8_t *hash, const uint8_t
 
 TEST_CASE("mbedtls ECDSA signature generation on SECP192R1", "[mbedtls][efuse_key]")
 {
+    if (!ecdsa_ll_is_supported()) {
+        TEST_IGNORE_MESSAGE("ECDSA is not supported");
+    }
     test_ecdsa_sign(MBEDTLS_ECP_DP_SECP192R1, sha, ecdsa192_pub_x, ecdsa192_pub_y, false, SECP192R1_EFUSE_BLOCK);
 }
 
 TEST_CASE("mbedtls ECDSA signature generation on SECP256R1", "[mbedtls][efuse_key]")
 {
+    if (!ecdsa_ll_is_supported()) {
+        TEST_IGNORE_MESSAGE("ECDSA is not supported");
+    }
     test_ecdsa_sign(MBEDTLS_ECP_DP_SECP256R1, sha, ecdsa256_pub_x, ecdsa256_pub_y, false, SECP256R1_EFUSE_BLOCK);
 }
 #ifdef SOC_ECDSA_SUPPORT_CURVE_P384
 TEST_CASE("mbedtls ECDSA signature generation on SECP384R1", "[mbedtls][efuse_key]")
 {
+    if (!ecdsa_ll_is_supported()) {
+        TEST_IGNORE_MESSAGE("ECDSA is not supported");
+    }
     uint8_t efuse_key_block = HAL_ECDSA_COMBINE_KEY_BLOCKS(SECP384R1_EFUSE_BLOCK_HIGH, SECP384R1_EFUSE_BLOCK_LOW);
     test_ecdsa_sign(MBEDTLS_ECP_DP_SECP384R1, sha, ecdsa384_pub_x, ecdsa384_pub_y, false, efuse_key_block);
 }
@@ -386,6 +410,9 @@ static void deploy_key_in_key_manager(const uint8_t *k1_encrypted, esp_key_mgr_k
 
 TEST_CASE("mbedtls ECDSA signature generation on SECP192R1", "[mbedtls][key_manager_key]")
 {
+    if (!ecdsa_ll_is_supported()) {
+        TEST_IGNORE_MESSAGE("ECDSA is not supported");
+    }
     if (!key_mgr_ll_is_supported()) {
         TEST_IGNORE_MESSAGE("Key manager is not supported");
     }
@@ -397,6 +424,9 @@ TEST_CASE("mbedtls ECDSA signature generation on SECP192R1", "[mbedtls][key_mana
 
 TEST_CASE("mbedtls ECDSA signature generation on SECP256R1", "[mbedtls][key_manager_key]")
 {
+    if (!ecdsa_ll_is_supported()) {
+        TEST_IGNORE_MESSAGE("ECDSA is not supported");
+    }
     if (!key_mgr_ll_is_supported()) {
         TEST_IGNORE_MESSAGE("Key manager is not supported");
     }
@@ -410,6 +440,9 @@ TEST_CASE("mbedtls ECDSA signature generation on SECP256R1", "[mbedtls][key_mana
 #ifdef SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE
 TEST_CASE("mbedtls ECDSA deterministic signature generation on SECP192R1", "[mbedtls][efuse_key]")
 {
+    if (!ecdsa_ll_is_supported()) {
+        TEST_IGNORE_MESSAGE("ECDSA is not supported");
+    }
     if (!ecdsa_ll_is_deterministic_mode_supported()) {
         ESP_LOGI(TAG, "Skipping test because ECDSA deterministic mode is not supported.");
     } else {
@@ -419,6 +452,9 @@ TEST_CASE("mbedtls ECDSA deterministic signature generation on SECP192R1", "[mbe
 
 TEST_CASE("mbedtls ECDSA deterministic signature generation on SECP256R1", "[mbedtls][efuse_key]")
 {
+    if (!ecdsa_ll_is_supported()) {
+        TEST_IGNORE_MESSAGE("ECDSA is not supported");
+    }
     if (!ecdsa_ll_is_deterministic_mode_supported()) {
         ESP_LOGI(TAG, "Skipping test because ECDSA deterministic mode is not supported.");
     } else {
@@ -429,6 +465,9 @@ TEST_CASE("mbedtls ECDSA deterministic signature generation on SECP256R1", "[mbe
 #ifdef SOC_ECDSA_SUPPORT_CURVE_P384
 TEST_CASE("mbedtls ECDSA deterministic signature generation on SECP384R1", "[mbedtls][efuse_key]")
 {
+    if (!ecdsa_ll_is_supported()) {
+        TEST_IGNORE_MESSAGE("ECDSA is not supported");
+    }
     uint8_t efuse_key_block = HAL_ECDSA_COMBINE_KEY_BLOCKS(SECP384R1_EFUSE_BLOCK_HIGH, SECP384R1_EFUSE_BLOCK_LOW);
     test_ecdsa_sign(MBEDTLS_ECP_DP_SECP384R1, sha, ecdsa384_pub_x, ecdsa384_pub_y, true, efuse_key_block);
 }
@@ -437,6 +476,9 @@ TEST_CASE("mbedtls ECDSA deterministic signature generation on SECP384R1", "[mbe
 #if SOC_KEY_MANAGER_SUPPORTED
 TEST_CASE("mbedtls ECDSA deterministic signature generation on SECP192R1", "[mbedtls][key_manager_key]")
 {
+    if (!ecdsa_ll_is_supported()) {
+        TEST_IGNORE_MESSAGE("ECDSA is not supported");
+    }
     if (!key_mgr_ll_is_supported()) {
         TEST_IGNORE_MESSAGE("Key manager is not supported");
     }
@@ -452,6 +494,13 @@ TEST_CASE("mbedtls ECDSA deterministic signature generation on SECP192R1", "[mbe
 
 TEST_CASE("mbedtls ECDSA deterministic signature generation on SECP256R1", "[mbedtls][key_manager_key]")
 {
+    if (!ecdsa_ll_is_supported()) {
+        TEST_IGNORE_MESSAGE("ECDSA is not supported");
+    }
+    if (!key_mgr_ll_is_supported()) {
+        TEST_IGNORE_MESSAGE("Key manager is not supported");
+    }
+
     if (!ecdsa_ll_is_deterministic_mode_supported()) {
         ESP_LOGI(TAG, "Skipping test because ECDSA deterministic mode is not supported.");
     } else {
@@ -510,17 +559,26 @@ void test_ecdsa_export_pubkey(mbedtls_ecp_group_id id, const uint8_t *pub_x, con
 
 TEST_CASE("mbedtls ECDSA export public key on SECP192R1", "[mbedtls][efuse_key]")
 {
+    if (!ecdsa_ll_is_supported()) {
+        TEST_IGNORE_MESSAGE("ECDSA is not supported");
+    }
     test_ecdsa_export_pubkey(MBEDTLS_ECP_DP_SECP192R1, ecdsa192_pub_x, ecdsa192_pub_y, SECP192R1_EFUSE_BLOCK);
 }
 
 TEST_CASE("mbedtls ECDSA export public key on SECP256R1", "[mbedtls][efuse_key]")
 {
+    if (!ecdsa_ll_is_supported()) {
+        TEST_IGNORE_MESSAGE("ECDSA is not supported");
+    }
     test_ecdsa_export_pubkey(MBEDTLS_ECP_DP_SECP256R1, ecdsa256_pub_x, ecdsa256_pub_y,  SECP256R1_EFUSE_BLOCK);
 }
 
 #ifdef SOC_ECDSA_SUPPORT_CURVE_P384
 TEST_CASE("mbedtls ECDSA export public key on SECP384R1", "[mbedtls][efuse_key]")
 {
+    if (!ecdsa_ll_is_supported()) {
+        TEST_IGNORE_MESSAGE("ECDSA is not supported");
+    }
     uint8_t efuse_key_block = HAL_ECDSA_COMBINE_KEY_BLOCKS(SECP384R1_EFUSE_BLOCK_HIGH, SECP384R1_EFUSE_BLOCK_LOW);
     test_ecdsa_export_pubkey(MBEDTLS_ECP_DP_SECP384R1, ecdsa384_pub_x, ecdsa384_pub_y, efuse_key_block);
 }
@@ -529,6 +587,9 @@ TEST_CASE("mbedtls ECDSA export public key on SECP384R1", "[mbedtls][efuse_key]"
 #if SOC_KEY_MANAGER_SUPPORTED
 TEST_CASE("mbedtls ECDSA export public key on SECP192R1", "[mbedtls][key_manager_key]")
 {
+    if (!ecdsa_ll_is_supported()) {
+        TEST_IGNORE_MESSAGE("ECDSA is not supported");
+    }
     if (!key_mgr_ll_is_supported()) {
         TEST_IGNORE_MESSAGE("Key manager is not supported");
     }
@@ -540,6 +601,9 @@ TEST_CASE("mbedtls ECDSA export public key on SECP192R1", "[mbedtls][key_manager
 
 TEST_CASE("mbedtls ECDSA export public key on SECP256R1", "[mbedtls][key_manager_key]")
 {
+    if (!ecdsa_ll_is_supported()) {
+        TEST_IGNORE_MESSAGE("ECDSA is not supported");
+    }
     if (!key_mgr_ll_is_supported()) {
         TEST_IGNORE_MESSAGE("Key manager is not supported");
     }
