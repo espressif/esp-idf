@@ -9,23 +9,15 @@
 extern "C" {
 #endif
 
-#if defined(ESP_SHA_DRIVER_ENABLED)
+#include "psa_crypto_driver_esp_sha_contexts.h"
+#include <stdbool.h>
+#include "psa/crypto.h"
+
+#ifdef CONFIG_MBEDTLS_HARDWARE_SHA
 #ifndef PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT
 #define PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT
 #endif
-
-#include <stdbool.h>
-#include "psa_crypto_driver_esp_sha_contexts.h"
-#include "psa/crypto.h"
-
-// /* Include function declarations from individual SHA modules */
-// #ifdef MBEDTLS_PSA_ACCEL_ALG_SHA_1
-// #include "../esp_sha/include/psa_crypto_driver_esp_sha1.h"
-// #endif /* MBEDTLS_PSA_ACCEL_ALG_SHA_1 */
-
-// #ifdef MBEDTLS_PSA_ACCEL_ALG_SHA_256
-// #include "../esp_sha/include/psa_crypto_driver_esp_sha256.h"
-// #endif
+#endif // CONFIG_MBEDTLS_HARDWARE_SHA
 
 #ifndef PUT_UINT32_BE
 #define PUT_UINT32_BE(n,b,i)                            \
@@ -65,13 +57,12 @@ psa_status_t esp_sha_hash_clone(
     const esp_sha_hash_operation_t *source_operation,
     esp_sha_hash_operation_t *target_operation);
 
-void esp_sha1_software_process( esp_sha1_context *ctx, const unsigned char data[64] );
+int esp_internal_sha1_process( esp_sha1_context *ctx, const unsigned char data[64] );
+int esp_internal_sha256_process( esp_sha256_context *ctx, const unsigned char data[64] );
+int esp_internal_sha512_process( esp_sha512_context *ctx, const unsigned char data[128] );
 int esp_sha1_starts(esp_sha1_context *ctx);
 int esp_sha1_update(esp_sha1_context *ctx, const unsigned char *input, size_t ilen);
 int esp_sha1_finish(esp_sha1_context *ctx, uint8_t *output);
-
-#endif
-
 #ifdef __cplusplus
 }
 #endif

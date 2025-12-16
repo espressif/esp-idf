@@ -52,7 +52,8 @@ esp_err_t verify_ecdsa_signature_block(const ets_secure_boot_signature_t *sig_bl
 #if CONFIG_SECURE_BOOT_ECDSA_KEY_LEN_384_BITS
         case ECDSA_CURVE_P384:
             key_size = 48;
-            mbedtls_ecp_group_load(&ecdsa_context.MBEDTLS_PRIVATE(grp), MBEDTLS_ECP_DP_SECP384R1);
+            curve_family = PSA_ECC_FAMILY_SECP_R1;
+            psa_set_key_bits(&key_attributes, PSA_BYTES_TO_BITS(key_size));
             break;
 #endif /* CONFIG_SECURE_BOOT_ECDSA_KEY_LEN_384_BITS */
         default:
@@ -64,22 +65,25 @@ esp_err_t verify_ecdsa_signature_block(const ets_secure_boot_signature_t *sig_bl
     psa_set_key_type(&key_attributes, PSA_KEY_TYPE_ECC_PUBLIC_KEY(curve_family));
 
     /* Prepare the public key data from X and Y coordinates */
-    uint8_t public_key[2 * ECDSA_INTEGER_LEN];
+    uint8_t public_key[(2 * ECDSA_INTEGER_LEN) + 1];
     uint8_t x_point[ECDSA_INTEGER_LEN] = {0};
     uint8_t y_point[ECDSA_INTEGER_LEN] = {0};
 
     /* Convert key points from little-endian to big-endian format */
     for (int i = 0; i < key_size; i++) {
         x_point[i] = trusted_block->ecdsa.key.point[key_size - i - 1];
+
         y_point[i] = trusted_block->ecdsa.key.point[2 * key_size - i - 1];
     }
 
+    public_key[0] = 0x04; /* Uncompressed point format */
+
     /* Combine X and Y into a single public key buffer */
-    memcpy(public_key, x_point, key_size);
-    memcpy(public_key + key_size, y_point, key_size);
+    memcpy(public_key + 1, x_point, key_size);
+    memcpy(public_key + 1 + key_size, y_point, key_size);
 
     /* Import the public key */
-    status = psa_import_key(&key_attributes, public_key, 2 * key_size, &key_handle);
+    status = psa_import_key(&key_attributes, public_key, (2 * key_size) + 1, &key_handle);
     if (status != PSA_SUCCESS) {
         ESP_LOGE(TAG, "Failed to import key, err:%d", status);
         ret = ESP_FAIL;

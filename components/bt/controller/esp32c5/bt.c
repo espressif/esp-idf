@@ -1720,8 +1720,8 @@ static int mbedtls_gen_keypair(uint8_t *public_key, uint8_t *private_key)
     psa_reset_key_attributes(&key_attributes);
 
     size_t olen = 0;
-    status = psa_export_public_key(key_id, public_key, 65, &olen);
-    if (status != PSA_SUCCESS || olen != 65) {
+    status = psa_export_public_key(key_id, public_key, BLE_PUB_KEY_LEN, &olen);
+    if (status != PSA_SUCCESS || olen != BLE_PUB_KEY_LEN) {
         goto exit;
     }
 

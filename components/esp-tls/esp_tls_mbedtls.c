@@ -22,6 +22,7 @@
 #include "esp_check.h"
 #include "soc/soc_caps.h"
 #include "mbedtls/esp_mbedtls_dynamic.h"
+#include "mbedtls/private/pk_private.h"
 #ifdef CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN
 #include "mbedtls/ecp.h"
 #include "ecdsa/ecdsa_alt.h"

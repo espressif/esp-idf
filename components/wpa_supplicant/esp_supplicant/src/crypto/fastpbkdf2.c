@@ -29,7 +29,6 @@
 #include "mbedtls/esp_config.h"
 #include "utils/wpa_debug.h"
 #include "psa/crypto.h"
-#define ESP_SHA_DRIVER_ENABLED
 #include "psa_crypto_driver_esp_sha.h"
 
 /* --- MSVC doesn't support C99 --- */
@@ -300,9 +299,7 @@ static int esp_sha1_init_start(esp_sha1_context *ctx)
     esp_sha1_starts(ctx);
 #if defined(CONFIG_IDF_TARGET_ESP32) && defined(MBEDTLS_PSA_ACCEL_ALG_SHA_1)
     /* Use software mode for esp32 since hardware can't give output more than 20 */
-    // esp_mbedtls_set_sha1_mode(ctx, ESP_MBEDTLS_SHA1_SOFTWARE);
     ctx->operation_mode = ESP_SHA_MODE_SOFTWARE;
-    ctx->sha_state = ESP_SHA1_STATE_IN_PROCESS;
 #endif
     return 0;
 }
@@ -329,7 +326,9 @@ static int sha1_finish(esp_sha1_context *ctx,
         /* We'll need an extra block */
         memset(ctx->MBEDTLS_PRIVATE(buffer) + used, 0, 64 - used);
 
-        esp_sha1_software_process(ctx, ctx->MBEDTLS_PRIVATE(buffer));
+        if ((ret = esp_internal_sha1_process(ctx, ctx->MBEDTLS_PRIVATE(buffer))) != 0) {
+            goto exit;
+        }
 
         memset(ctx->MBEDTLS_PRIVATE(buffer), 0, 56);
     }
@@ -344,7 +343,9 @@ static int sha1_finish(esp_sha1_context *ctx,
     write32_be(high, ctx->MBEDTLS_PRIVATE(buffer) + 56);
     write32_be(low, ctx->MBEDTLS_PRIVATE(buffer) + 60);
 
-    esp_sha1_software_process(ctx, ctx->MBEDTLS_PRIVATE(buffer));
+    if ((ret = esp_internal_sha1_process(ctx, ctx->MBEDTLS_PRIVATE(buffer))) != 0) {
+        goto exit;
+    }
 
     /*
      * Output final state
@@ -357,6 +358,7 @@ static int sha1_finish(esp_sha1_context *ctx,
 
     ret = 0;
 
+exit:
     return ret;
 }
 #endif
@@ -367,7 +369,7 @@ DECL_PBKDF2(sha1,                           // _name
             esp_sha1_context,           // _ctx
             esp_sha1_init_start,        // _init
             esp_sha1_update,            // _update
-            esp_sha1_software_process,  // _xform
+            esp_internal_sha1_process,  // _xform
 #if defined(MBEDTLS_PSA_ACCEL_ALG_SHA_1)
             esp_sha1_finish,            // _final
 #else

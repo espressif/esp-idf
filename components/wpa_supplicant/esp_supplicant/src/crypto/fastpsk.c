@@ -63,7 +63,6 @@
 #include "sha/sha_core.h"
 #endif
 #include "esp_log.h"
-#include "psa/crypto.h"
 
 #ifndef PUT_UINT32_BE
 #define PUT_UINT32_BE(n, b, i)                          \
@@ -257,6 +256,10 @@ void fast_psk_f(const char *password, size_t password_len, const uint8_t *ssid, 
 
 int esp_fast_psk(const char *password, size_t password_len, const uint8_t *ssid, size_t ssid_len, size_t iterations, uint8_t *output, size_t output_len)
 {
+    if (!(ssid_len <= 32 && password_len <= 63 && iterations == 4096 && output_len == 32)) {
+        return -1; /* Invalid input parameters */
+    }
+
     /* Compute the first 16 bytes of the PSK */
     fast_psk_f(password, password_len, ssid, ssid_len, 2, output);
 

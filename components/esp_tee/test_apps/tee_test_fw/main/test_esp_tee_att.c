@@ -7,6 +7,7 @@
 
 #include "esp_log.h"
 #include "esp_heap_caps.h"
+#define MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
 #include "psa/crypto.h"
 
 #include "esp_tee.h"

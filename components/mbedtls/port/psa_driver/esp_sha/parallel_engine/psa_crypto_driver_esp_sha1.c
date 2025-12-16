@@ -34,12 +34,24 @@
 }
 #endif
 
-static const unsigned char sha1_padding[64] = {
-    0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-};
+psa_status_t esp_sha1_driver_clone(const esp_sha1_context *source_ctx, esp_sha1_context *target_ctx)
+{
+    if (source_ctx == NULL || target_ctx == NULL) {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+    memcpy(target_ctx, source_ctx, sizeof(esp_sha1_context));
+    // If the source context is in hardware mode, we need to read the digest state
+    // from the hardware engine to ensure the target context has the correct state
+#ifdef MBEDTLS_PSA_ACCEL_ALG_SHA_1
+    if (source_ctx->operation_mode == ESP_SHA_MODE_HARDWARE) {
+        esp_sha_read_digest_state(SHA1, target_ctx->state);
+        target_ctx->operation_mode = ESP_SHA_MODE_SOFTWARE; // Cloned context operates in software mode
+    }
+#else
+    target_ctx->operation_mode = ESP_SHA_MODE_SOFTWARE; // Cloned context operates in software mode
+#endif // MBEDTLS_PSA_ACCEL_ALG_SHA_1
+    return PSA_SUCCESS;
+}
 
 int esp_sha1_starts(esp_sha1_context *ctx)
 {
@@ -53,13 +65,17 @@ int esp_sha1_starts(esp_sha1_context *ctx)
     ctx->state[3] = 0x10325476;
     ctx->state[4] = 0xC3D2E1F0;
 
-    ctx->sha_state = ESP_SHA1_STATE_INIT;
-    ctx->first_block = false;
-    ctx->operation_mode = ESP_SHA_MODE_SOFTWARE;
+#ifdef MBEDTLS_PSA_ACCEL_ALG_SHA_1
+    if (ctx->operation_mode == ESP_SHA_MODE_HARDWARE) {
+        esp_sha_unlock_engine(SHA1);
+    }
+#endif // MBEDTLS_PSA_ACCEL_ALG_SHA_1
+    ctx->operation_mode = ESP_SHA_MODE_UNUSED;
+
     return ESP_OK;
 }
 
-void esp_sha1_software_process( esp_sha1_context *ctx, const unsigned char data[64] )
+static void esp_sha1_software_process( esp_sha1_context *ctx, const unsigned char data[64] )
 {
     uint32_t temp, W[16], A, B, C, D, E;
 
@@ -217,30 +233,38 @@ void esp_sha1_software_process( esp_sha1_context *ctx, const unsigned char data[
 
 static int esp_internal_sha1_parallel_engine_process( esp_sha1_context *ctx, const unsigned char data[64], bool read_digest )
 {
-    if (ctx->sha_state == ESP_SHA1_STATE_INIT) {
+#ifdef MBEDTLS_PSA_ACCEL_ALG_SHA_1
+    bool first_block = false;
+
+    if (ctx->operation_mode == ESP_SHA_MODE_UNUSED) {
+        /* try to use hardware for this digest */
         if (esp_sha_try_lock_engine(SHA1)) {
-            ctx->first_block = true;
-            ctx->sha_state = ESP_SHA1_STATE_IN_PROCESS;
             ctx->operation_mode = ESP_SHA_MODE_HARDWARE;
+            first_block = true;
         } else {
             ctx->operation_mode = ESP_SHA_MODE_SOFTWARE;
         }
-    } else if (ctx->sha_state == ESP_SHA1_STATE_IN_PROCESS) {
-        ctx->first_block = false;
     }
 
     if (ctx->operation_mode == ESP_SHA_MODE_HARDWARE) {
-        esp_sha_block(SHA1, data, ctx->first_block);
+        esp_sha_block(SHA1, data, first_block);
         if (read_digest) {
             esp_sha_read_digest_state(SHA1, ctx->state);
         }
     } else {
-        // Software mode processing can be added here if needed
         esp_sha1_software_process(ctx, data);
     }
-
+#else
+    esp_sha1_software_process(ctx, data);
+#endif
     return 0;
 }
+
+int esp_internal_sha1_process( esp_sha1_context *ctx, const unsigned char data[64] )
+{
+    return esp_internal_sha1_parallel_engine_process(ctx, data, true);
+}
+
 
 int esp_sha1_update(esp_sha1_context *ctx, const unsigned char *input, size_t ilen)
 {
@@ -283,6 +307,12 @@ int esp_sha1_update(esp_sha1_context *ctx, const unsigned char *input, size_t il
         ilen  -= 64;
     }
 
+#ifdef MBEDTLS_PSA_ACCEL_ALG_SHA_1
+    if (ctx->operation_mode == ESP_SHA_MODE_HARDWARE) {
+        esp_sha_read_digest_state(SHA1, ctx->state);
+    }
+#endif // #ifdef MBEDTLS_PSA_ACCEL_ALG_SHA_1
+
     if ( ilen > 0 ) {
         memcpy( (void *) (ctx->buffer + left), input, ilen );
     }
@@ -290,22 +320,12 @@ int esp_sha1_update(esp_sha1_context *ctx, const unsigned char *input, size_t il
     return 0;
 }
 
-psa_status_t esp_sha1_driver_update(
-    esp_sha1_context *ctx,
-    const uint8_t *input,
-    size_t input_length)
-{
-    if (ctx == NULL || input == NULL) {
-        return PSA_ERROR_INVALID_ARGUMENT;
-    }
-
-    int ret = esp_sha1_update(ctx, input, input_length);
-    if (ret != ESP_OK) {
-        return PSA_ERROR_HARDWARE_FAILURE;
-    }
-
-    return PSA_SUCCESS;
-}
+static const unsigned char sha1_padding[64] = {
+    0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+};
 
 int esp_sha1_finish(esp_sha1_context *ctx, uint8_t *output)
 {
@@ -331,13 +351,11 @@ int esp_sha1_finish(esp_sha1_context *ctx, uint8_t *output)
         goto out;
     }
 
-    if (ctx->sha_state == ESP_SHA1_STATE_IN_PROCESS) {
-        // If there is no more input data, and state is in hardware, read it out to ctx->state
-        // This ensures that ctx->state always has the latest digest state
-        if (ctx->operation_mode == ESP_SHA_MODE_HARDWARE) {
-            esp_sha_read_digest_state(SHA1, ctx->state);
-        }
+#ifdef MBEDTLS_PSA_ACCEL_ALG_SHA_1
+    if (ctx->operation_mode == ESP_SHA_MODE_HARDWARE) {
+        esp_sha_read_digest_state(SHA1, ctx->state);
     }
+#endif // MBEDTLS_PSA_ACCEL_ALG_SHA_1
 
     PUT_UINT32_BE( ctx->state[0], output,  0 );
     PUT_UINT32_BE( ctx->state[1], output,  4 );
@@ -346,11 +364,30 @@ int esp_sha1_finish(esp_sha1_context *ctx, uint8_t *output)
     PUT_UINT32_BE( ctx->state[4], output, 16 );
 
 out:
+#ifdef MBEDTLS_PSA_ACCEL_ALG_SHA_1
     if (ctx->operation_mode == ESP_SHA_MODE_HARDWARE) {
         esp_sha_unlock_engine(SHA1);
         ctx->operation_mode = ESP_SHA_MODE_SOFTWARE;
     }
+#endif // MBEDTLS_PSA_ACCEL_ALG_SHA_1
     return ret;
+}
+
+psa_status_t esp_sha1_driver_update(
+    esp_sha1_context *ctx,
+    const uint8_t *input,
+    size_t input_length)
+{
+    if (ctx == NULL || input == NULL) {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+
+    int ret = esp_sha1_update(ctx, input, input_length);
+    if (ret != ESP_OK) {
+        return PSA_ERROR_HARDWARE_FAILURE;
+    }
+
+    return PSA_SUCCESS;
 }
 
 psa_status_t esp_sha1_driver_finish(
@@ -408,26 +445,13 @@ psa_status_t esp_sha1_driver_abort(esp_sha1_context *ctx)
     if (!ctx) {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
+#ifdef MBEDTLS_PSA_ACCEL_ALG_SHA_1
     // Also unlock the hardware engine if it was in use
     if (ctx->operation_mode == ESP_SHA_MODE_HARDWARE) {
         esp_sha_unlock_engine(SHA1);
         ctx->operation_mode = ESP_SHA_MODE_SOFTWARE;
     }
+#endif // MBEDTLS_PSA_ACCEL_ALG_SHA_1
     memset(ctx, 0, sizeof(esp_sha1_context));
-    return PSA_SUCCESS;
-}
-
-psa_status_t esp_sha1_driver_clone(const esp_sha1_context *source_ctx, esp_sha1_context *target_ctx)
-{
-    if (source_ctx == NULL || target_ctx == NULL) {
-        return PSA_ERROR_INVALID_ARGUMENT;
-    }
-    memcpy(target_ctx, source_ctx, sizeof(esp_sha1_context));
-    // If the source context is in hardware mode, we need to read the digest state
-    // from the hardware engine to ensure the target context has the correct state
-    if (source_ctx->operation_mode == ESP_SHA_MODE_HARDWARE) {
-        esp_sha_read_digest_state(SHA1, target_ctx->state);
-        target_ctx->operation_mode = ESP_SHA_MODE_SOFTWARE; // Cloned context operates in software mode
-    }
     return PSA_SUCCESS;
 }

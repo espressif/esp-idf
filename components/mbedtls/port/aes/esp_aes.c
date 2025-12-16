@@ -23,6 +23,7 @@
 #include "esp_crypto_periph_clk.h"
 #include "soc/soc_caps.h"
 #include "sdkconfig.h"
+#include "mbedtls/platform_util.h"
 
 #if SOC_AES_GDMA
 #define AES_LOCK() esp_crypto_sha_aes_lock_acquire()
@@ -134,6 +135,7 @@ static int esp_aes_block(esp_aes_context *ctx, const void *input, void *output)
        key write to hardware. Treat this as a fatal error and zero the output block.
     */
     if (ctx->key_in_hardware != ctx->key_bytes) {
+        mbedtls_platform_zeroize(output, 16);
         memset(output, 0, 16);
         return MBEDTLS_ERR_AES_INVALID_INPUT_LENGTH;
     }
@@ -159,6 +161,7 @@ static int esp_aes_block(esp_aes_context *ctx, const void *input, void *output)
         // calling zeroing functions to narrow the
         // window for a double-fault of the abort step, here
         memset(output, 0, 16);
+        mbedtls_platform_zeroize(output, 16);
         abort();
     }
 

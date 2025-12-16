@@ -345,12 +345,6 @@ static int hmac_vector(psa_algorithm_t alg,
         goto err;
     }
 
-    status = psa_mac_abort(&operation);
-    if (status != PSA_SUCCESS) {
-        ret = -1;
-        goto err;
-    }
-
     status = psa_destroy_key(key_id);
     if (status != PSA_SUCCESS) {
         ret = -1;
@@ -364,6 +358,7 @@ err:
         if (key_id) {
             psa_destroy_key(key_id);
         }
+        psa_mac_abort(&operation);
     }
 
     return ret;
@@ -783,9 +778,11 @@ cleanup:
         psa_destroy_key(key_id);
     }
     if (enc_operation) {
+        psa_cipher_abort(enc_operation);
         os_free(enc_operation);
     }
     if (dec_operation) {
+        psa_cipher_abort(dec_operation);
         os_free(dec_operation);
     }
     psa_reset_key_attributes(&attributes);

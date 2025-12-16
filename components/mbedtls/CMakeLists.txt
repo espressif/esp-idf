@@ -45,6 +45,8 @@ if(CONFIG_MBEDTLS_CERTIFICATE_BUNDLE)
     list(APPEND mbedtls_include_dirs "esp_crt_bundle/include")
 endif()
 
+list(APPEND mbedtls_include_dirs "${COMPONENT_DIR}/port/psa_driver/include")
+
 idf_component_register(SRCS "${mbedtls_srcs}"
     INCLUDE_DIRS "${mbedtls_include_dirs}"
     PRIV_REQUIRES "${priv_requires}"
@@ -139,6 +141,8 @@ if(CONFIG_MBEDTLS_CERTIFICATE_BUNDLE)
     list(APPEND include_dirs "${COMPONENT_DIR}/esp_crt_bundle/include")
 endif()
 
+list(APPEND include_dirs "${COMPONENT_DIR}/port/psa_driver/include")
+
 include_directories(${include_dirs})
 
 # Needed to for mbedtls_rom includes to work from within mbedtls
@@ -187,7 +191,6 @@ target_include_directories(tfpsacrypto PUBLIC "port/include")
 target_include_directories(tfpsacrypto PRIVATE "port/psa_crypto_storage/include")
 
 if(CONFIG_MBEDTLS_HARDWARE_SHA OR CONFIG_MBEDTLS_HARDWARE_AES)
-    list(APPEND include_dirs "${COMPONENT_DIR}/port/psa_driver/include")
     target_include_directories(tfpsacrypto PUBLIC "${COMPONENT_DIR}/port/psa_driver/include")
 endif()
 
@@ -354,12 +357,15 @@ if(CONFIG_SOC_SHA_SUPPORTED)
         target_compile_definitions(tfpsacrypto PRIVATE ESP_SHA_DRIVER_ENABLED)
         target_sources(tfpsacrypto PRIVATE
             "${COMPONENT_DIR}/port/psa_driver/esp_sha/psa_crypto_driver_esp_sha.c"
-            "${COMPONENT_DIR}/port/psa_driver/esp_sha/${SHA_PERIPHERAL_TYPE}/psa_crypto_driver_esp_sha1.c"
             "${COMPONENT_DIR}/port/psa_driver/esp_sha/${SHA_PERIPHERAL_TYPE}/psa_crypto_driver_esp_sha256.c"
             "${COMPONENT_DIR}/port/psa_driver/esp_sha/${SHA_PERIPHERAL_TYPE}/psa_crypto_driver_esp_sha512.c"
-            "${COMPONENT_DIR}/port/sha/${SHA_PERIPHERAL_TYPE}/sha.c"
+
             "${COMPONENT_DIR}/port/sha/esp_sha.c")
     endif()
+    target_sources(tfpsacrypto PRIVATE
+            "${COMPONENT_DIR}/port/psa_driver/esp_sha/${SHA_PERIPHERAL_TYPE}/psa_crypto_driver_esp_sha1.c"
+            "${COMPONENT_DIR}/port/sha/${SHA_PERIPHERAL_TYPE}/sha.c"
+    )
 endif()
 
 if(CONFIG_SOC_DIG_SIGN_SUPPORTED)

@@ -252,11 +252,7 @@ bootloader_sha_handle_t bootloader_sha512_start(bool is384)
     op->psa_alg = is384 ? PSA_ALG_SHA_384 : PSA_ALG_SHA_512;
 
     *op->hash_op = psa_hash_operation_init();
-    if (is384) {
-        status = psa_hash_setup(op->hash_op, op->psa_alg);
-    } else {
-        status = psa_hash_setup(op->hash_op, op->psa_alg);
-    }
+    status = psa_hash_setup(op->hash_op, op->psa_alg);
     if (status != PSA_SUCCESS) {
         free(op->hash_op);
         free(op);

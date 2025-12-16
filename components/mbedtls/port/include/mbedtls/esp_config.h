@@ -60,6 +60,8 @@
  */
 #define MBEDTLS_PSA_ASSUME_EXCLUSIVE_BUFFERS
 
+#define PSA_WANT_ECC_SECP_R1_192                1
+
 /**
  * \name SECTION: System support
  *

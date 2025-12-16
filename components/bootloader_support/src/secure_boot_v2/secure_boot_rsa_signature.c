@@ -8,6 +8,7 @@
 #include "psa/crypto.h"
 #include "mbedtls/asn1.h"
 #include "mbedtls/asn1write.h"
+#include "mbedtls/x509.h"
 
 #include "secure_boot_signature_priv.h"
 
@@ -28,7 +29,7 @@ static int encode_rsa_pubkey_der(const uint8_t *modulus, size_t modulus_len,
                                   uint8_t **der_start, size_t *der_len)
 {
     if (!der_buf || !der_start || !der_len || der_buf_size == 0) {
-        return -1;
+        return MBEDTLS_ERR_X509_BAD_INPUT_DATA;
     }
 
     int ret;

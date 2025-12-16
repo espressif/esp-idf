@@ -1,5 +1,5 @@
 /*
- * SHA-1 implementation with hardware ESP support added.
+ * SHA-256 implementation with hardware ESP support added.
  *
  * SPDX-FileCopyrightText: The Mbed TLS Contributors
  *
@@ -37,34 +37,54 @@ do {                                                    \
 } while( 0 )
 #endif
 
-static const unsigned char sha256_padding[64] = {
-    0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-};
+psa_status_t esp_sha256_driver_clone(const esp_sha256_context *source_ctx, esp_sha256_context *target_ctx)
+{
+    if (source_ctx == NULL || target_ctx == NULL) {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+    memcpy(target_ctx, source_ctx, sizeof(esp_sha256_context));
+    // If the source context is in hardware mode, we need to read the digest state
+    // from the hardware engine to ensure the target context has the correct state
+    if (source_ctx->operation_mode == ESP_SHA_MODE_HARDWARE) {
+        esp_sha_read_digest_state(SHA2_256, target_ctx->state);
+        target_ctx->operation_mode = ESP_SHA_MODE_SOFTWARE; // Cloned context operates in software mode
+    }
+    return PSA_SUCCESS;
+}
 
-psa_status_t esp_sha256_starts(esp_sha256_context *ctx, int is224)
+psa_status_t esp_sha256_starts(esp_sha256_context *ctx, int mode)
 {
     memset(ctx, 0, sizeof(esp_sha256_context));
     ctx->total[0] = 0;
     ctx->total[1] = 0;
 
-    ctx->state[0] = 0x6A09E667;
-    ctx->state[1] = 0xBB67AE85;
-    ctx->state[2] = 0x3C6EF372;
-    ctx->state[3] = 0xA54FF53A;
-    ctx->state[4] = 0x510E527F;
-    ctx->state[5] = 0x9B05688C;
-    ctx->state[6] = 0x1F83D9AB;
-    ctx->state[7] = 0x5BE0CD19;
+    if ( mode == SHA2_256 ) {
+        /* SHA-256 */
+        ctx->state[0] = 0x6A09E667;
+        ctx->state[1] = 0xBB67AE85;
+        ctx->state[2] = 0x3C6EF372;
+        ctx->state[3] = 0xA54FF53A;
+        ctx->state[4] = 0x510E527F;
+        ctx->state[5] = 0x9B05688C;
+        ctx->state[6] = 0x1F83D9AB;
+        ctx->state[7] = 0x5BE0CD19;
+    } else {
+        /* SHA-224 */
+        ctx->state[0] = 0xC1059ED8;
+        ctx->state[1] = 0x367CD507;
+        ctx->state[2] = 0x3070DD17;
+        ctx->state[3] = 0xF70E5939;
+        ctx->state[4] = 0xFFC00B31;
+        ctx->state[5] = 0x68581511;
+        ctx->state[6] = 0x64F98FA7;
+        ctx->state[7] = 0xBEFA4FA4;
+    }
 
-    // if (ctx->operation_mode == ESP_SHA_MODE_HARDWARE) {
-    //     esp_sha_unlock_engine(SHA2_256);
-    // }
-    ctx->sha_state = ESP_SHA256_STATE_INIT;
-    ctx->operation_mode = ESP_SHA_MODE_SOFTWARE;
-    ctx->first_block = false;
+    ctx->mode = mode;
+    if (ctx->operation_mode == ESP_SHA_MODE_HARDWARE) {
+        esp_sha_unlock_engine(SHA2_256);
+    }
+    ctx->operation_mode = ESP_SHA_MODE_UNUSED;
     return PSA_SUCCESS;
 }
 
@@ -169,28 +189,37 @@ static void esp_sha256_software_process(esp_sha256_context *ctx, const unsigned 
 }
 static int esp_internal_sha256_parallel_engine_process(esp_sha256_context *ctx, const unsigned char data[64], bool read_digest)
 {
-    if (ctx->sha_state == ESP_SHA256_STATE_INIT) {
-        if (esp_sha_try_lock_engine(SHA2_256)) {
-            ctx->first_block = true;
+    bool first_block = false;
+
+    if (ctx->operation_mode == ESP_SHA_MODE_UNUSED) {
+        /* try to use hardware for this digest */
+        if (esp_sha_try_lock_engine(SHA2_256)
+#if SOC_SHA_SUPPORT_SHA224
+        && (ctx->mode != SHA2_224)
+#endif
+    ) {
             ctx->operation_mode = ESP_SHA_MODE_HARDWARE;
+            first_block = true;
         } else {
             ctx->operation_mode = ESP_SHA_MODE_SOFTWARE;
         }
-        ctx->sha_state = ESP_SHA256_STATE_IN_PROCESS;
-    } else if (ctx->sha_state == ESP_SHA256_STATE_IN_PROCESS) {
-        ctx->first_block = false;
     }
+
     if (ctx->operation_mode == ESP_SHA_MODE_HARDWARE) {
-        esp_sha_block(SHA2_256, data, ctx->first_block);
+        esp_sha_block(SHA2_256, data, first_block);
         if (read_digest) {
             esp_sha_read_digest_state(SHA2_256, ctx->state);
         }
     } else {
-        // Software mode processing can be added here if needed
         esp_sha256_software_process(ctx, data);
     }
 
     return 0;
+}
+
+int esp_internal_sha256_process( esp_sha256_context *ctx, const unsigned char data[64] )
+{
+    return esp_internal_sha256_parallel_engine_process(ctx, data, true);
 }
 
 static int esp_sha256_update(esp_sha256_context *ctx, const unsigned char *input,
@@ -235,6 +264,10 @@ static int esp_sha256_update(esp_sha256_context *ctx, const unsigned char *input
         ilen  -= 64;
     }
 
+    if (ctx->operation_mode == ESP_SHA_MODE_HARDWARE) {
+        esp_sha_read_digest_state(SHA2_256, ctx->state);
+    }
+
     if ( ilen > 0 ) {
         memcpy( (void *) (ctx->buffer + left), input, ilen );
     }
@@ -242,21 +275,12 @@ static int esp_sha256_update(esp_sha256_context *ctx, const unsigned char *input
     return 0;
 }
 
-psa_status_t esp_sha256_driver_update(
-    esp_sha256_context *ctx,
-    const uint8_t *input,
-    size_t input_length)
-{
-    if (ctx == NULL || input == NULL) {
-        return PSA_ERROR_INVALID_ARGUMENT;
-    }
-    int ret = esp_sha256_update(ctx, input, input_length);
-    if (ret != ESP_OK) {
-        return PSA_ERROR_HARDWARE_FAILURE;
-    }
-
-    return PSA_SUCCESS;
-}
+static const unsigned char sha256_padding[64] = {
+    0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+};
 
 static int esp_sha256_finish(esp_sha256_context *ctx, unsigned char *output)
 {
@@ -283,13 +307,8 @@ static int esp_sha256_finish(esp_sha256_context *ctx, unsigned char *output)
         goto out;
     }
 
-    if (ctx->sha_state == ESP_SHA256_STATE_IN_PROCESS) {
-        // If there is no more input data, and state is in hardware, read it out to ctx->state
-        // This ensures that ctx->state always has the latest digest state
-        if (ctx->operation_mode == ESP_SHA_MODE_HARDWARE) {
-            esp_sha_read_digest_state(SHA2_256, ctx->state);
-        } else {
-        }
+    if (ctx->operation_mode == ESP_SHA_MODE_HARDWARE) {
+        esp_sha_read_digest_state(SHA2_256, ctx->state);
     }
 
     PUT_UINT32_BE( ctx->state[0], output,  0 );
@@ -307,8 +326,23 @@ out:
         esp_sha_unlock_engine(SHA2_256);
         ctx->operation_mode = ESP_SHA_MODE_SOFTWARE;
     }
-    memset(ctx, 0, sizeof(esp_sha256_context));
     return ret;
+}
+
+psa_status_t esp_sha256_driver_update(
+    esp_sha256_context *ctx,
+    const uint8_t *input,
+    size_t input_length)
+{
+    if (ctx == NULL || input == NULL) {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+    int ret = esp_sha256_update(ctx, input, input_length);
+    if (ret != ESP_OK) {
+        return PSA_ERROR_HARDWARE_FAILURE;
+    }
+
+    return PSA_SUCCESS;
 }
 
 psa_status_t esp_sha256_driver_compute(
@@ -396,20 +430,5 @@ psa_status_t esp_sha256_driver_abort(esp_sha256_context *ctx)
         ctx->operation_mode = ESP_SHA_MODE_SOFTWARE;
     }
     memset(ctx, 0, sizeof(esp_sha256_context));
-    return PSA_SUCCESS;
-}
-
-psa_status_t esp_sha256_driver_clone(const esp_sha256_context *source_ctx, esp_sha256_context *target_ctx)
-{
-    if (source_ctx == NULL || target_ctx == NULL) {
-        return PSA_ERROR_INVALID_ARGUMENT;
-    }
-    memcpy(target_ctx, source_ctx, sizeof(esp_sha256_context));
-    // If the source context is in hardware mode, we need to read the digest state
-    // from the hardware engine to ensure the target context has the correct state
-    if (source_ctx->operation_mode == ESP_SHA_MODE_HARDWARE) {
-        esp_sha_read_digest_state(SHA2_256, target_ctx->state);
-        target_ctx->operation_mode = ESP_SHA_MODE_SOFTWARE; // Cloned context operates in software mode
-    }
     return PSA_SUCCESS;
 }

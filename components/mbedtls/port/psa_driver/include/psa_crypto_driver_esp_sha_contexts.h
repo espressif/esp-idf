@@ -27,8 +27,6 @@ extern "C" {
 #include <stdbool.h>
 #include "sdkconfig.h"
 
-#if defined(ESP_SHA_DRIVER_ENABLED)
-
 typedef enum {
     ESP_SHA_OPERATION_TYPE_SHA1,
     ESP_SHA_OPERATION_TYPE_SHA256,
@@ -57,8 +55,9 @@ typedef enum {
 
 #if CONFIG_SOC_SHA_SUPPORT_PARALLEL_ENG
 typedef enum {
-    ESP_SHA_MODE_SOFTWARE,
-    ESP_SHA_MODE_HARDWARE
+    ESP_SHA_MODE_UNUSED,
+    ESP_SHA_MODE_HARDWARE,
+    ESP_SHA_MODE_SOFTWARE
 } esp_sha_mode_t;
 #endif /* CONFIG_SOC_SHA_SUPPORT_PARALLEL_ENG */
 
@@ -119,8 +118,6 @@ typedef struct {
     esp_sha_context_t sha_ctx;
     esp_sha_operation_type_t sha_type;
 } esp_sha_hash_operation_t;
-
-#endif /* ESP_SHA_DRIVER_ENABLED */
 
 #ifdef __cplusplus
 }

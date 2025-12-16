@@ -1,5 +1,5 @@
 /*
- * SHA-1 implementation with hardware ESP support added.
+ * SHA-512 implementation with hardware ESP support added.
  *
  * SPDX-FileCopyrightText: The Mbed TLS Contributors
  *
@@ -51,17 +51,6 @@
 }
 #endif /* PUT_UINT64_BE */
 
-static const unsigned char sha512_padding[128] = {
-    0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-};
-
 inline static esp_sha_type sha_type(const esp_sha512_context *ctx)
 {
     return ctx->mode;
@@ -96,12 +85,11 @@ psa_status_t esp_sha512_starts(esp_sha512_context *ctx, int mode)
     }
 
     ctx->mode = mode;
-    ctx->sha_state = ESP_SHA512_STATE_INIT;
-    ctx->operation_mode = ESP_SHA_MODE_SOFTWARE;
-    ctx->first_block = false;
-    // if (ctx->operation_mode == ESP_SHA_MODE_HARDWARE) {
-    //     esp_sha_unlock_engine(sha_type(ctx));
-    // }
+
+    if (ctx->operation_mode == ESP_SHA_MODE_HARDWARE) {
+        esp_sha_unlock_engine(sha_type(ctx));
+    }
+    ctx->operation_mode = ESP_SHA_MODE_UNUSED;
 
     return PSA_SUCCESS;
 }
@@ -220,31 +208,34 @@ static void esp_sha512_software_process(esp_sha512_context *ctx, const unsigned 
 
 static int esp_internal_sha512_parallel_engine_process( esp_sha512_context *ctx, const unsigned char data[128], bool read_digest )
 {
-    if (ctx->sha_state == ESP_SHA512_STATE_INIT) {
+    bool first_block = false;
+
+    if (ctx->mode == ESP_SHA_MODE_UNUSED) {
+        /* try to use hardware for this digest */
         if (esp_sha_try_lock_engine(sha_type(ctx))) {
-            ctx->first_block = true;
-            ctx->operation_mode = ESP_SHA_MODE_HARDWARE;
+            ctx->mode = ESP_SHA_MODE_HARDWARE;
+            first_block = true;
         } else {
-            // printf("Failed to lock SHA512 engine\n");
-            ctx->operation_mode = ESP_SHA_MODE_SOFTWARE;
+            ctx->mode = ESP_SHA_MODE_SOFTWARE;
         }
-        ctx->sha_state = ESP_SHA512_STATE_IN_PROCESS;
-    } else if (ctx->sha_state == ESP_SHA512_STATE_IN_PROCESS) {
-        ctx->first_block = false;
     }
-    if (ctx->operation_mode == ESP_SHA_MODE_HARDWARE) {
-        esp_sha_block(sha_type(ctx), data, ctx->first_block);
+
+    if (ctx->mode == ESP_SHA_MODE_HARDWARE) {
+        esp_sha_block(sha_type(ctx), data, first_block);
         if (read_digest) {
             esp_sha_read_digest_state(sha_type(ctx), ctx->state);
         }
     } else {
-        // Software mode processing can be added here if needed
         esp_sha512_software_process(ctx, data);
     }
 
     return 0;
 }
 
+int esp_internal_sha512_process( esp_sha512_context *ctx, const unsigned char data[128] )
+{
+    return esp_internal_sha512_parallel_engine_process(ctx, data, true);
+}
 static int esp_sha512_update(esp_sha512_context *ctx, const unsigned char *input,
                                size_t ilen)
 {
@@ -296,6 +287,17 @@ static int esp_sha512_update(esp_sha512_context *ctx, const unsigned char *input
     return 0;
 }
 
+static const unsigned char sha512_padding[128] = {
+    0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+};
+
 static int esp_sha512_finish(esp_sha512_context *ctx, unsigned char *output)
 {
     int ret = -1;
@@ -321,12 +323,8 @@ static int esp_sha512_finish(esp_sha512_context *ctx, unsigned char *output)
         goto out;
     }
 
-    if (ctx->sha_state == ESP_SHA512_STATE_IN_PROCESS) {
-        // If there is no more input data, and state is in hardware, read it out to ctx->state
-        // This ensures that ctx->state always has the latest digest state
-        if (ctx->operation_mode == ESP_SHA_MODE_HARDWARE) {
-            esp_sha_read_digest_state(sha_type(ctx), ctx->state);
-        }
+    if (ctx->operation_mode == ESP_SHA_MODE_HARDWARE) {
+        esp_sha_read_digest_state(sha_type(ctx), ctx->state);
     }
 
     PUT_UINT64_BE( ctx->state[0], output,  0 );
@@ -346,7 +344,6 @@ out:
         esp_sha_unlock_engine(sha_type(ctx));
         ctx->operation_mode = ESP_SHA_MODE_SOFTWARE;
     }
-    memset(ctx, 0, sizeof(esp_sha512_context));
 
     return ret;
 }
