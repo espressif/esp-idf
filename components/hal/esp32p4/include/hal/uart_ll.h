@@ -1179,15 +1179,15 @@ FORCE_INLINE_ATTR void uart_ll_set_char_seq_wk_char(uart_dev_t *hw, uint32_t cha
 FORCE_INLINE_ATTR void _uart_ll_enable_pad_sleep_clock(uart_dev_t *hw, bool enable)
 {
     if (hw == &UART0) {
-        LP_AON_CLKRST.hp_clk_ctrl.hp_pad_uart0_slp_clk_en = 1;
+        LP_AON_CLKRST.hp_clk_ctrl.hp_pad_uart0_slp_clk_en = enable;
     } else if (hw == &UART1) {
-        LP_AON_CLKRST.hp_clk_ctrl.hp_pad_uart1_slp_clk_en = 1;
+        LP_AON_CLKRST.hp_clk_ctrl.hp_pad_uart1_slp_clk_en = enable;
     } else if (hw == &UART2) {
-        LP_AON_CLKRST.hp_clk_ctrl.hp_pad_uart2_slp_clk_en = 1;
+        LP_AON_CLKRST.hp_clk_ctrl.hp_pad_uart2_slp_clk_en = enable;
     } else if (hw == &UART3) {
-        LP_AON_CLKRST.hp_clk_ctrl.hp_pad_uart3_slp_clk_en = 1;
+        LP_AON_CLKRST.hp_clk_ctrl.hp_pad_uart3_slp_clk_en = enable;
     } else if (hw == &UART4) {
-        LP_AON_CLKRST.hp_clk_ctrl.hp_pad_uart4_slp_clk_en = 1;
+        LP_AON_CLKRST.hp_clk_ctrl.hp_pad_uart4_slp_clk_en = enable;
     }
 }
 
