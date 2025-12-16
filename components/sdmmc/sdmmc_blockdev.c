@@ -132,7 +132,7 @@ esp_err_t sdmmc_get_blockdev(sdmmc_card_t* card, esp_blockdev_handle_t* out_hand
 
     out->device_flags.default_val_after_erase = card->scr.erase_mem_state;
 
-    out->geometry.disk_size = (uint64_t) (card->csd.capacity * card->csd.sector_size);
+    out->geometry.disk_size = ((uint64_t) card->csd.capacity) * ((uint64_t) card->csd.sector_size);
     out->geometry.read_size = (size_t) card->csd.sector_size;
     out->geometry.write_size = (size_t) card->csd.sector_size;
     out->geometry.erase_size = (size_t) card->csd.sector_size;
