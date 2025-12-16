@@ -72,3 +72,5 @@ strcoll = 0x40001398;
 strlwr = 0x40001524;
 strncasecmp = 0x40001550;
 strupr = 0x4000174c;
+PROVIDE ( hmac_md5 = 0x4005d264 );
+PROVIDE ( hmac_md5_vector = 0x4005d17c );
