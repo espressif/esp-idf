@@ -131,6 +131,7 @@ soc_rtc_fast_clk_src_t rtc_clk_fast_src_get(void)
     return clk_ll_rtc_fast_get_src();
 }
 
+#if BOOTLOADER_BUILD
 static void rtc_clk_bbpll_disable(void)
 {
     clk_ll_bbpll_disable();
@@ -141,6 +142,7 @@ static void rtc_clk_bbpll_enable(void)
 {
     clk_ll_bbpll_enable();
 }
+#endif
 
 static void rtc_clk_bbpll_configure(soc_xtal_freq_t xtal_freq, int pll_freq)
 {
@@ -276,8 +278,16 @@ __attribute__((weak)) void rtc_clk_set_cpu_switch_to_bbpll(int event_id)
 static void rtc_clk_cpu_src_clk_enable(soc_cpu_clk_src_t new_src, uint32_t new_src_freq_mhz)
 {
     if (new_src == SOC_CPU_CLK_SRC_PLL) {
+        bool truly_enabled = false;
+#if BOOTLOADER_BUILD
         rtc_clk_bbpll_enable();
-        rtc_clk_bbpll_configure(rtc_clk_xtal_freq_get(), new_src_freq_mhz);
+        truly_enabled = true;
+#else
+        truly_enabled = esp_clk_tree_enable_power(SOC_ROOT_CIRCUIT_CLK_BBPLL, true);
+#endif
+        if (truly_enabled || (s_cur_pll_freq != new_src_freq_mhz)) {
+            rtc_clk_bbpll_configure(rtc_clk_xtal_freq_get(), new_src_freq_mhz);
+        }
     } else if (new_src == SOC_CPU_CLK_SRC_XTAL_X2) {
 #if BOOTLOADER_BUILD
         clk_ll_xtal_x2_enable();
@@ -290,7 +300,14 @@ static void rtc_clk_cpu_src_clk_enable(soc_cpu_clk_src_t new_src, uint32_t new_s
 static void rtc_clk_cpu_src_clk_disable(soc_cpu_clk_src_t old_src)
 {
     if ((old_src == SOC_CPU_CLK_SRC_PLL) && !s_bbpll_digi_consumers_ref_count) {
+#if BOOTLOADER_BUILD
         rtc_clk_bbpll_disable();
+#else
+        bool truly_disabled = esp_clk_tree_enable_power(SOC_ROOT_CIRCUIT_CLK_BBPLL, false);
+        if (truly_disabled) {
+            s_cur_pll_freq = 0;
+        }
+#endif
     } else if (old_src == SOC_CPU_CLK_SRC_XTAL_X2) {
 #if BOOTLOADER_BUILD
         clk_ll_xtal_x2_disable();
@@ -379,7 +396,11 @@ void rtc_clk_cpu_freq_set_config_fast(const rtc_cpu_freq_config_t *config)
 void rtc_clk_cpu_freq_set_xtal(void)
 {
     rtc_clk_cpu_set_to_default_config();
+#if BOOTLOADER_BUILD
     rtc_clk_bbpll_disable();
+#else
+    esp_clk_tree_enable_power(SOC_ROOT_CIRCUIT_CLK_BBPLL, false);
+#endif
 }
 
 void rtc_clk_cpu_set_to_default_config(void)

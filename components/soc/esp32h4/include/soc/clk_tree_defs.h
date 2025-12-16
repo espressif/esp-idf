@@ -287,7 +287,7 @@ typedef enum {
     FLASH_CLK_SRC_RC_FAST = SOC_MOD_CLK_RC_FAST,     /*!< Select RC_FAST as the source clock */
     FLASH_CLK_SRC_REF_F64M = SOC_MOD_CLK_XTAL_X2_F64M, /*!< Select XTAL_X2_F64M as the source clock */
     FLASH_CLK_SRC_PLL_F48M = SOC_MOD_CLK_PLL_F48M,   /*!< Select PLL_F48M as the source clock */
-    FLASH_CLK_SRC_DEFAULT = SOC_MOD_CLK_XTAL,        /*!< Select XTAL as the default clock choice */
+    FLASH_CLK_SRC_DEFAULT = SOC_MOD_CLK_XTAL_X2_F64M,  /*!< Select XTAL_X2_F64M as the default clock choice */
     FLASH_CLK_SRC_ROM_DEFAULT = SOC_MOD_CLK_XTAL,    /*!< Select XTAL as ROM default clock source */
 } soc_periph_flash_clk_src_t;
 

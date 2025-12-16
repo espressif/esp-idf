@@ -82,7 +82,7 @@ bool esp_clk_tree_is_power_on(soc_root_clk_circuit_t clk_circuit)
     return false;
 }
 
-esp_err_t esp_clk_tree_enable_power(soc_root_clk_circuit_t clk_circuit, bool enable)
+bool esp_clk_tree_enable_power(soc_root_clk_circuit_t clk_circuit, bool enable)
 {
     switch (clk_circuit) {
     // case SOC_ROOT_CIRCUIT_CLK_XTAL_X2:
@@ -103,7 +103,7 @@ esp_err_t esp_clk_tree_enable_power(soc_root_clk_circuit_t clk_circuit, bool ena
     default:
         break;
     }
-    return ESP_OK; // TODO: PM-354
+    return false; // TODO: PM-653
 }
 
 esp_err_t esp_clk_tree_enable_src(soc_module_clk_t clk_src, bool enable)
@@ -116,5 +116,5 @@ esp_err_t esp_clk_tree_enable_src(soc_module_clk_t clk_src, bool enable)
     default:
         break;
     }
-    return ESP_OK; // TODO: PM-354
+    return ESP_OK; // TODO: PM-653
 }
