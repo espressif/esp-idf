@@ -125,11 +125,11 @@ config SOC_CPU_COPROC_NUM
 
 config SOC_CPU_BREAKPOINTS_NUM
     int
-    default 4
+    default 3
 
 config SOC_CPU_WATCHPOINTS_NUM
     int
-    default 4
+    default 3
 
 config SOC_CPU_WATCHPOINT_MAX_REGION_SIZE
     hex
