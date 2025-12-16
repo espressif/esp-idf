@@ -291,6 +291,27 @@ typedef enum {
     FLASH_CLK_SRC_ROM_DEFAULT = SOC_MOD_CLK_XTAL,    /*!< Select XTAL as ROM default clock source */
 } soc_periph_flash_clk_src_t;
 
+//////////////////////////////////////////////CLOCK OUTPUT///////////////////////////////////////////////////////////
+/**
+ * @brief Clock output signal ID
+ */
+typedef enum {
+    CLKOUT_SIG_MODEM_8M         = 0x1,  /*!< 8MHz clock for modem (clk8M) */
+    CLKOUT_SIG_MODEM_16M        = 0x2,  /*!< 16MHz clock for modem (clk16) */
+    CLKOUT_SIG_MODEM_32M        = 0x3,  /*!< 32MHz clock for modem (clk32) */
+    CLKOUT_SIG_XTAL             = 0x5,  /*!< 32MHz main crystal oscillator clock */
+    CLKOUT_SIG_RTC_FAST         = 0x6,  /*!< 16MHz RTC fast clock from LP system */
+    CLKOUT_SIG_TIMERGROUP0      = 0xC,  /*!< 32MHz timergroup0 function clock (default is xtal) */
+    CLKOUT_SIG_I2S_APB          = 0xF,  /*!< 32MHz I2S APB clock */
+    CLKOUT_SIG_CPU              = 0x10, /*!< 32MHz CPU debug mode clock */
+    CLKOUT_SIG_AHB              = 0x11, /*!< 32MHz REGDMA AHB clock */
+    CLKOUT_SIG_XTAL32K          = 0x15, /*!< 32KHz external crystal clock */
+    CLKOUT_SIG_EXT32K           = 0x16, /*!< 32KHz external slow clock input */
+    CLKOUT_SIG_RC_FAST          = 0x17, /*!< 8MHz FOSC clock (RTC fast clock) */
+    CLKOUT_SIG_RC_SLOW          = 0x19, /*!< 600KHz SOSC clock (RTC slow clock) */
+    CLKOUT_SIG_INVALID          = 0xFF,
+} soc_clkout_sig_id_t;
+
 //////////////////////////////////////CLOCK FREQUENCY CALCULATION////////////////////////////////////////////////////
 /**
  * @brief Clock frequency calculation source selection

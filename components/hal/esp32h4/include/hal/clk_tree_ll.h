@@ -672,6 +672,30 @@ static inline __attribute__((always_inline)) uint64_t clk_ll_rtc_slow_load_rtc_f
     return REG_READ(RTC_FIX_US_LOW_REG) | ((uint64_t)REG_READ(RTC_FIX_US_HIGH_REG) << 32);
 }
 
+/*
+ * Enable/Disable the clock gate for clock output signal source
+*/
+static inline void clk_ll_enable_clkout_source(soc_clkout_sig_id_t clk_src, bool en)
+{
+    switch (clk_src)
+    {
+        case CLKOUT_SIG_MODEM_8M:
+            PCR.ctrl_clk_out_en.clk8_oen = en;
+            break;
+        case CLKOUT_SIG_MODEM_16M:
+            PCR.ctrl_clk_out_en.clk16_oen = en;
+            break;
+        case CLKOUT_SIG_MODEM_32M:
+            PCR.ctrl_clk_out_en.clk32_oen = en;
+            break;
+        case CLKOUT_SIG_XTAL:
+            PCR.ctrl_clk_out_en.clk_xtal_oen = en;
+            break;
+        default:
+            break;
+    }
+}
+
 #ifdef __cplusplus
 }
 #endif
