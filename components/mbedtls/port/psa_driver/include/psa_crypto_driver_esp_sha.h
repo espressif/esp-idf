@@ -64,6 +64,12 @@ psa_status_t esp_sha_hash_abort(esp_sha_hash_operation_t *operation);
 psa_status_t esp_sha_hash_clone(
     const esp_sha_hash_operation_t *source_operation,
     esp_sha_hash_operation_t *target_operation);
+
+void esp_sha1_software_process( esp_sha1_context *ctx, const unsigned char data[64] );
+int esp_sha1_starts(esp_sha1_context *ctx);
+int esp_sha1_update(esp_sha1_context *ctx, const unsigned char *input, size_t ilen);
+int esp_sha1_finish(esp_sha1_context *ctx, uint8_t *output);
+
 #endif
 
 #ifdef __cplusplus

@@ -41,7 +41,7 @@ static const unsigned char sha1_padding[64] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 };
 
-psa_status_t esp_sha1_starts(esp_sha1_context *ctx)
+int esp_sha1_starts(esp_sha1_context *ctx)
 {
     memset(ctx, 0, sizeof(esp_sha1_context));
     ctx->total[0] = 0;
@@ -56,10 +56,10 @@ psa_status_t esp_sha1_starts(esp_sha1_context *ctx)
     ctx->sha_state = ESP_SHA1_STATE_INIT;
     ctx->first_block = false;
     ctx->operation_mode = ESP_SHA_MODE_SOFTWARE;
-    return PSA_SUCCESS;
+    return ESP_OK;
 }
 
-static void esp_sha1_software_process( esp_sha1_context *ctx, const unsigned char data[64] )
+void esp_sha1_software_process( esp_sha1_context *ctx, const unsigned char data[64] )
 {
     uint32_t temp, W[16], A, B, C, D, E;
 
@@ -242,7 +242,7 @@ static int esp_internal_sha1_parallel_engine_process( esp_sha1_context *ctx, con
     return 0;
 }
 
-static int esp_sha1_update(esp_sha1_context *ctx, const unsigned char *input, size_t ilen)
+int esp_sha1_update(esp_sha1_context *ctx, const unsigned char *input, size_t ilen)
 {
     int ret = -1;
     size_t fill;
@@ -307,7 +307,7 @@ psa_status_t esp_sha1_driver_update(
     return PSA_SUCCESS;
 }
 
-static int esp_sha1_finish(esp_sha1_context *ctx, uint8_t *output)
+int esp_sha1_finish(esp_sha1_context *ctx, uint8_t *output)
 {
     int ret = -1;
     uint32_t last, padn;
@@ -350,7 +350,6 @@ out:
         esp_sha_unlock_engine(SHA1);
         ctx->operation_mode = ESP_SHA_MODE_SOFTWARE;
     }
-    memset(ctx, 0, sizeof(esp_sha1_context));
     return ret;
 }
 

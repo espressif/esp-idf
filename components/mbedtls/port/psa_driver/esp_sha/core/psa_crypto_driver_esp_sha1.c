@@ -24,9 +24,9 @@ static const unsigned char sha1_padding[64] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 };
 
-psa_status_t esp_sha1_starts(esp_sha1_context *ctx) {
+int esp_sha1_starts(esp_sha1_context *ctx) {
     memset(ctx, 0, sizeof(esp_sha1_context));
-    return PSA_SUCCESS;
+    return ESP_OK;
 }
 
 static void esp_internal_sha1_block_process(esp_sha1_context *ctx, const uint8_t *data)
@@ -49,7 +49,7 @@ static void esp_internal_sha_update_state(esp_sha1_context *ctx)
     }
 }
 
-static int esp_sha1_update(esp_sha1_context *ctx, const unsigned char *input, size_t ilen)
+int esp_sha1_update(esp_sha1_context *ctx, const unsigned char *input, size_t ilen)
 {
     size_t fill, left, len;
     uint32_t local_len = 0;
@@ -120,7 +120,7 @@ static int esp_sha1_update(esp_sha1_context *ctx, const unsigned char *input, si
     return 0;
 }
 
-static int esp_sha1_finish(esp_sha1_context *ctx, uint8_t *hash)
+int esp_sha1_finish(esp_sha1_context *ctx, uint8_t *hash)
 {
     int ret = -1;
     uint32_t last, padn;

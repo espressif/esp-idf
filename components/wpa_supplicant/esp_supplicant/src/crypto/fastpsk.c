@@ -100,6 +100,26 @@ struct fast_psk_context {
     uint32_t sum[SHA1_OUTPUT_SZ_WORDS]; /* Intermediate hash result */
 };
 
+/* Acquire SHA1 hardware for exclusive use */
+static inline void sha1_setup(void)
+{
+#if SOC_SHA_SUPPORT_PARALLEL_ENG
+    esp_sha_lock_engine(SHA1);
+#else
+    esp_sha_acquire_hardware();
+#endif
+}
+
+/* Release SHA1 hardware */
+static inline void sha1_teardown(void)
+{
+#if SOC_SHA_SUPPORT_PARALLEL_ENG
+    esp_sha_unlock_engine(SHA1);
+#else
+    esp_sha_release_hardware();
+#endif
+}
+
 /*
  * Pads the given HMAC block context with the appropriate SHA1 padding.
  * Length is the number of bytes of actual data in the block.
@@ -141,49 +161,13 @@ static inline void write32_be(uint32_t n, uint8_t out[4])
 
 void sha1_op(uint32_t blocks[FAST_PSK_SHA1_BLOCKS_BUF_WORDS], uint32_t output[SHA1_OUTPUT_SZ_WORDS])
 {
-    psa_status_t status;
-    psa_hash_operation_t operation = PSA_HASH_OPERATION_INIT;
-
-    // Initialize output to zero in case of error
-    memset(output, 0, SHA1_OUTPUT_SZ_WORDS * sizeof(uint32_t));
-
-    status = psa_hash_setup(&operation, PSA_ALG_SHA_1);
-    if (status != PSA_SUCCESS) {
-        ESP_LOGE("fastpsk", "psa_hash_setup failed: %d", status);
-        return;
-    }
-
-    // Update with the first block
-    status = psa_hash_update(&operation, (const uint8_t *)blocks, SHA1_BLOCK_SZ);
-    if (status != PSA_SUCCESS) {
-        ESP_LOGE("fastpsk", "psa_hash_update failed: %d", status);
-        psa_hash_abort(&operation);
-        return;
-    }
-
-    // Update with the second block
-    status = psa_hash_update(&operation, (const uint8_t *)&blocks[SHA1_BLOCK_SZ_WORDS], SHA1_BLOCK_SZ);
-    if (status != PSA_SUCCESS) {
-        ESP_LOGE("fastpsk", "psa_hash_update failed: %d", status);
-        psa_hash_abort(&operation);
-        return;
-    }
-
-    // Finish the hash operation
-    size_t mac_len;
-    status = psa_hash_finish(&operation, (uint8_t *)output, SHA1_OUTPUT_SZ, &mac_len);
-    if (status != PSA_SUCCESS) {
-        ESP_LOGE("fastpsk", "psa_hash_finish failed: %d", status);
-        memset(output, 0, SHA1_OUTPUT_SZ_WORDS * sizeof(uint32_t));
-        return;
-    }
-
-    // Ensure the output length is correct
-    if (mac_len != SHA1_OUTPUT_SZ) {
-        ESP_LOGE("fastpsk", "Unexpected hash length: %zu, expected: %d", mac_len, SHA1_OUTPUT_SZ);
-        memset(output, 0, SHA1_OUTPUT_SZ_WORDS * sizeof(uint32_t));
-        return;
-    }
+    esp_sha_set_mode(SHA1);
+    /* First block */
+    esp_sha_block(SHA1, blocks, true);
+    /* Second block */
+    esp_sha_block(SHA1, &blocks[SHA1_BLOCK_SZ_WORDS], false);
+    /* Read the final digest */
+    esp_sha_read_digest_state(SHA1, output);
 
 #if CONFIG_IDF_TARGET_ESP32
     for (int i = 0; i < SHA1_OUTPUT_SZ_WORDS; i++) {
@@ -227,6 +211,8 @@ void fast_psk_f(const char *password, size_t password_len, const uint8_t *ssid, 
     /* Pad the block */
     pad_blocks(&ctx->inner, SHA1_BLOCK_SZ + ssid_len + 4);
 
+    sha1_setup();
+
     uint32_t *pi, *po;
     pi = ctx->inner.whole_words;
     po = ctx->outer.whole_words;
@@ -260,6 +246,8 @@ void fast_psk_f(const char *password, size_t password_len, const uint8_t *ssid, 
         }
     }
 
+    sha1_teardown();
+
     /* Copy the final result to the output digest */
     memcpy(digest, sum, SHA1_OUTPUT_SZ);
 
@@ -269,50 +257,14 @@ void fast_psk_f(const char *password, size_t password_len, const uint8_t *ssid, 
 
 int esp_fast_psk(const char *password, size_t password_len, const uint8_t *ssid, size_t ssid_len, size_t iterations, uint8_t *output, size_t output_len)
 {
-    if (!(ssid_len <= 32 && password_len <= 63 && iterations == 4096 && output_len == 32)) {
-        return -1; /* Invalid input parameters */
-    }
+    /* Compute the first 16 bytes of the PSK */
+    fast_psk_f(password, password_len, ssid, ssid_len, 2, output);
 
-    /* Compute the full PSK */
-    psa_status_t status;
-    psa_key_derivation_operation_t operation = PSA_KEY_DERIVATION_OPERATION_INIT;
-    int ret = -1;  /* Track error status */
+    /* Replicate the first 16 bytes to form the second half temporarily */
+    memcpy(output + SHA1_OUTPUT_SZ, output, 32 - SHA1_OUTPUT_SZ);
 
-    // Set up key derivation
-    status = psa_key_derivation_setup(&operation, PSA_ALG_PBKDF2_HMAC(PSA_ALG_SHA_1));
-    if (status != PSA_SUCCESS) {
-        goto cleanup;
-    }
+    /* Compute the second 16 bytes of the PSK */
+    fast_psk_f(password, password_len, ssid, ssid_len, 1, output);
 
-    // Set iteration count
-    status = psa_key_derivation_input_integer(&operation, PSA_KEY_DERIVATION_INPUT_COST, iterations);
-    if (status != PSA_SUCCESS) {
-        goto cleanup;
-    }
-
-    // Add salt
-    status = psa_key_derivation_input_bytes(&operation, PSA_KEY_DERIVATION_INPUT_SALT,
-                                            ssid, ssid_len);
-    if (status != PSA_SUCCESS) {
-        goto cleanup;
-    }
-
-    // Add password
-    status = psa_key_derivation_input_bytes(&operation, PSA_KEY_DERIVATION_INPUT_PASSWORD,
-                                            (const uint8_t*)password, password_len);
-    if (status != PSA_SUCCESS) {
-        goto cleanup;
-    }
-
-    // Generate output
-    status = psa_key_derivation_output_bytes(&operation, output, output_len);
-    if (status != PSA_SUCCESS) {
-        goto cleanup;
-    }
-
-    ret = 0;  /* Success */
-
-cleanup:
-    psa_key_derivation_abort(&operation);
-    return ret;
+    return 0; /* Success */
 }

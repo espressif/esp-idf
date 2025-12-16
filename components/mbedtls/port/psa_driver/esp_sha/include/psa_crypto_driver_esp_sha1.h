@@ -25,7 +25,7 @@ psa_status_t esp_sha1_driver_compute(
     size_t hash_size,
     size_t *hash_length);
 
-psa_status_t esp_sha1_starts(esp_sha1_context *ctx);
+int esp_sha1_starts(esp_sha1_context *ctx);
 
 psa_status_t esp_sha1_driver_update(
     esp_sha1_context *ctx,
