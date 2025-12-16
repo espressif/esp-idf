@@ -93,6 +93,45 @@ MEMORY
   /* Used to store the deep sleep workaround code of P4 rev3.0. The reset vector will be set here before the chip enters sleep. */
   rev3_mspi_workaround_seg(RWX) :        org = 0x50108000, len = MSPI_WORKAROUND_SIZE
 
+
+/**
+ *  LP RAM (RTC Memory) Layout for ESP32-P4
+ *  Total Size: 32KB (0x8000)
+ *  Address Range: 0x50108000 - 0x50110000
+ *
+ *  ESP32-P4 has LP ROM, and LP RAM layout is different from other chips.
+ *  The reserved segments are placed at the BEGINNING of LP RAM (low address),
+ *  because the END of LP RAM is occupied by LP ROM stack/data.
+ *
+ *  +-----------------------------+ 0x50110000  (LP RAM end)
+ *  |     LP ROM Reserved         | LP ROM bss/data/stack (reserved by ROM)
+ *  |     (LP_ROM_DRAM_SIZE)      | ~1.4KB from 0x5010FA80
+ *  +-----------------------------+ (LP_ROM_DRAM_START, see soc.h)
+ *  | .rtc.force_slow             |
+ *  | .rtc_noinit (NOLOAD)        |
+ *  | .rtc.bss (NOLOAD)           |
+ *  | .rtc.data                   | lp_ram_seg (= rtc_iram_seg = rtc_data_seg = rtc_slow_seg)
+ *  | .rtc.force_fast             |
+ *  |- - - - - - - - - - - - - - -|
+ *  | .rtc.text                   | RTC wake stub code
+ *  +-----------------------------+ lp_ram_seg start (after reserved areas)
+ *  | ULP Coprocessor Reserve     | (Optional, CONFIG_ULP_COPROC_RESERVE_MEM)
+ *  | (code + data)               |
+ *  +-----------------------------+ 0x50108000 + MSPI_WORKAROUND_SIZE + RESERVE_RTC_MEM
+ *  | bootloader_data_rtc_mem     |
+ *  | (ESP_BOOTLOADER_RESERVE_RTC)| lp_reserved_seg (RESERVE_RTC_MEM)
+ *  |- - - - - - - - - - - - - - -|
+ *  | rtc_timer_data_in_rtc_mem   |
+ *  | (RTC_TIMER_RESERVE_RTC=24B) |
+ *  +-----------------------------+ 0x50108000 + MSPI_WORKAROUND_SIZE
+ *  | rev3_mspi_workaround_seg    | Deep sleep workaround code for P4 rev3.0
+ *  | (MSPI_WORKAROUND_SIZE)      | Reset vector set here before sleep
+ *  +-----------------------------+ 0x50108000 (LP RAM start)
+ *
+ *  Note: ESP32-P4's reserved segments are at LOW address (beginning of LP RAM),
+ *        unlike other chips where they are at HIGH address (end of LP RAM).
+ *        This is because LP ROM uses the end of LP RAM for its stack/data.
+ */
   /**
    * lp ram memory (RWX). Persists over deep sleep. // TODO: IDF-5667
    */

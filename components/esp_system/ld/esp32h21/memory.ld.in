@@ -61,6 +61,37 @@ MEMORY
   /* (See irom_seg for meaning of 0x20 offset in the above.) */
 #endif // CONFIG_APP_BUILD_USE_FLASH_SECTIONS
 
+/**
+ *  LP RAM (RTC Memory) Layout for ESP32-H21
+ *  Total Size: 4KB (0x1000)
+ *  Address Range: 0x50000000 - 0x50001000
+ *
+ *  ESP32-H21 has only unified LP RAM (no separate RTC FAST/SLOW).
+ *  The LP RAM persists over deep sleep and is used for:
+ *  - RTC wake stub code and data
+ *  - Data that needs to survive deep sleep
+ *  - Bootloader retain memory (for reboot counter, OTA info, etc.)
+ *
+ *  +-----------------------------+ 0x50001000 (LP RAM end)
+ *  | Secure Boot Image Digest    |
+ *  | for fast wake secure boot.  | ( For ROM using, must keep it at the end 32 bytes of LP RAM)
+ *  |(only if CONFIG_SECURE_BOOT) |
+ *  |- - - - - - - - - - - - - - -|
+ *  | bootloader_data_rtc_mem     |
+ *  | (ESP_BOOTLOADER_RESERVE_RTC)| lp_reserved_seg (RESERVE_RTC_MEM)
+ *  |- - - - - - - - - - - - - - -|
+ *  | rtc_timer_data_in_rtc_mem   |
+ *  | (RTC_TIMER_RESERVE_RTC=24B) |
+ *  +-----------------------------+ 0x50001000 - RESERVE_RTC_MEM
+ *  | .rtc.force_slow             |
+ *  | .rtc_noinit (NOLOAD)        |
+ *  | .rtc.bss (NOLOAD)           |
+ *  | .rtc.data                   | lp_ram_seg (= rtc_iram_seg = rtc_data_seg = rtc_slow_seg)
+ *  | .rtc.force_fast             |
+ *  |- - - - - - - - - - - - - - -|
+ *  | .rtc.text                   | RTC wake stub code
+ *  +-----------------------------+ 0x50000000 (LP RAM start)
+ */
   /**
    * lp ram memory (RWX). Persists over deep sleep.
    */

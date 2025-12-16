@@ -16,7 +16,7 @@
 #include "ld.common"
 
 /**
- * physical memory is mapped twice to the vritual address (IRAM and DRAM).
+ * physical memory is mapped twice to the virtual address (IRAM and DRAM).
  * `I_D_SRAM_OFFSET` is the offset between the two locations of the same physical memory
  */
 #define SRAM_IRAM_START     0x4037C000
@@ -68,6 +68,36 @@ MEMORY
 
   /* (See iram0_2_seg for meaning of 0x20 offset in the above.) */
 #endif // CONFIG_APP_BUILD_USE_FLASH_SECTIONS
+
+/**
+ *  RTC Memory (LP RAM) Layout for ESP32-C3
+ *  Total Size: 8KB (0x2000)
+ *  Address Range: 0x50000000 - 0x50002000
+ *
+ *  ESP32-C3 has only unified RTC FAST memory (no separate RTC SLOW).
+ *  The LP RAM persists over deep sleep and is used for:
+ *  - RTC wake stub code and data
+ *  - Data that needs to survive deep sleep
+ *  - Bootloader retain memory (for reboot counter, OTA info, etc.)
+ *
+ *  +-----------------------------+ 0x50002000 (RTC memory end)
+ *  | bootloader_data_rtc_mem     |
+ *  | (ESP_BOOTLOADER_RESERVE_RTC)|
+ *  |- - - - - - - - - - - - - - -| rtc_reserved_seg (RESERVE_RTC_MEM)
+ *  | rtc_timer_data_in_rtc_mem   |
+ *  | (RTC_TIMER_RESERVE_RTC=24B) |
+ *  +-----------------------------+ 0x50002000 - RESERVE_RTC_MEM
+ *  | .rtc.force_slow             |
+ *  | .rtc_noinit (NOLOAD)        |
+ *  | .rtc.bss (NOLOAD)           |
+ *  | .rtc.data                   | rtc_iram_seg (= rtc_data_seg = rtc_slow_seg)
+ *  | .rtc.force_fast             |
+ *  |- - - - - - - - - - - - - - -|
+ *  | .rtc.text                   | RTC wake stub code
+ *  +-----------------------------+ 0x50000000 (RTC memory start)
+ *
+ *  RESERVE_RTC_MEM = RTC_TIMER_RESERVE_RTC (24B) + ESP_BOOTLOADER_RESERVE_RTC
+ */
 
   /**
    * RTC fast memory (executable). Persists over deep sleep.

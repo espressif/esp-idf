@@ -12,6 +12,9 @@
 #include "esp_rom_crc.h"
 #include "esp_rom_gpio.h"
 #include "esp_flash_partitions.h"
+#if CONFIG_SECURE_BOOT
+#include "esp_secure_boot.h"
+#endif
 #include "bootloader_flash.h"
 #include "bootloader_common.h"
 #include "soc/rtc.h"
@@ -272,7 +275,12 @@ rtc_retain_mem_t* bootloader_common_get_rtc_retain_mem(void)
     #define RETAIN_MEM_SIZE     ALIGN_UP(sizeof(rtc_retain_mem_t), 8)
     #define RTC_RETAIN_MEM_ADDR (SOC_RTC_DRAM_HIGH - RETAIN_MEM_SIZE)
 #endif //ESP_ROM_HAS_LP_ROM
+
+#if CONFIG_SECURE_BOOT && ESP_ROM_SUPPORT_SECURE_BOOT_FAST_WAKEUP
+    static rtc_retain_mem_t *const s_bootloader_retain_mem = (rtc_retain_mem_t *)RTC_RETAIN_MEM_ADDR - ESP_SECURE_BOOT_DIGEST_LEN;
+#else
     static rtc_retain_mem_t *const s_bootloader_retain_mem = (rtc_retain_mem_t *)RTC_RETAIN_MEM_ADDR;
+#endif
     return s_bootloader_retain_mem;
 #else
     static __attribute__((section(".bootloader_data_rtc_mem"))) rtc_retain_mem_t s_bootloader_retain_mem;
