@@ -373,6 +373,9 @@ static esp_err_t s_isp_dvp_start(esp_cam_ctlr_handle_t handle)
         }
     }
 
+    ESP_RETURN_ON_ERROR(esp_cache_msync((void *)(trans.buffer), trans.buflen, ESP_CACHE_MSYNC_FLAG_DIR_M2C),
+                        TAG, "failed to sync(M2C) trans buffer");
+
     ESP_LOGD(TAG, "trans.buffer: %p, trans.buflen: %d", trans.buffer, trans.buflen);
     dvp_ctlr->trans = trans;
 
@@ -495,6 +498,10 @@ IRAM_ATTR static bool s_dvp_dma_trans_done_callback(dw_gdma_channel_handle_t cha
             assert(false && "no new buffer, and no driver internal buffer");
         }
     }
+
+    esp_err_t ret = esp_cache_msync((void *)(new_trans.buffer), new_trans.buflen, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
+    assert(ret == ESP_OK);
+    (void)ret;
 
     ESP_EARLY_LOGD(TAG, "new_trans.buffer: %p, new_trans.buflen: %d", new_trans.buffer, new_trans.buflen);
     dw_gdma_channel_config_transfer(chan, &dvp_dma_transfer_config);
