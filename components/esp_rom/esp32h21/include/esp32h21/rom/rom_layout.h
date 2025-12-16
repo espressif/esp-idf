@@ -8,8 +8,6 @@
 
 #include <stdint.h>
 
-//TODO: [ESP32H21] IDF-11555
-
 #ifdef __cplusplus
 extern "C" {
 #endif

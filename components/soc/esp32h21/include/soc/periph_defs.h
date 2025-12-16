@@ -12,7 +12,6 @@
 extern "C" {
 #endif
 
-// TODO: IDF-11855
 typedef enum {
     PERIPH_TIMG0_MODULE,
     PERIPH_TIMG1_MODULE,

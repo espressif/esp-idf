@@ -60,7 +60,6 @@
 #define SOC_ASSIST_DEBUG_SUPPORTED      1
 #define SOC_WDT_SUPPORTED               1
 #define SOC_SPI_FLASH_SUPPORTED         1
-//  \#define SOC_RNG_SUPPORTED               1    //TODO: [ESP32C61] IDF-9236
 #define SOC_MODEM_CLOCK_SUPPORTED       1
 #define SOC_REG_I2C_SUPPORTED           1
 #define SOC_ETM_SUPPORTED               1
@@ -282,7 +281,6 @@
 /*------------------------ USB SERIAL JTAG CAPS ------------------------------*/
 //  \#define SOC_USB_SERIAL_JTAG_SUPPORT_LIGHT_SLEEP     (1)     /*!< Support to maintain minimum usb communication during light sleep */ // TODO: IDF-6395
 
-// TODO: IDF-5353 (Copy from esp32c3, need check)
 /*--------------------------- SHA CAPS ---------------------------------------*/
 
 /* Max amount of bytes in a single DMA operation is 4095,
@@ -419,7 +417,6 @@
 #define SOC_UART_WAKEUP_SUPPORT_START_BIT_MODE     (1)
 #define SOC_UART_WAKEUP_SUPPORT_CHAR_SEQ_MODE      (1)
 
-// TODO: IDF-5679 (Copy from esp32c3, need check)
 /*-------------------------- COEXISTENCE HARDWARE PTI CAPS -------------------------------*/
 #define SOC_COEX_HW_PTI                 (1)
 
@@ -430,11 +427,9 @@
 /*--------------- PHY REGISTER AND MEMORY SIZE CAPS --------------------------*/
 #define SOC_PHY_DIG_REGS_MEM_SIZE       (21*4)
 
-// TODO: IDF-5679 (Copy from esp32c3, need check)
 /*--------------- WIFI LIGHT SLEEP CLOCK WIDTH CAPS --------------------------*/
 #define SOC_WIFI_LIGHT_SLEEP_CLK_WIDTH  (12)
 
-// TODO: IDF-5351 (Copy from esp32c3, need check)
 /*-------------------------- Power Management CAPS ----------------------------*/
 #define SOC_PM_SUPPORT_WIFI_WAKEUP      (1)
 #define SOC_PM_SUPPORT_BEACON_WAKEUP    (1)
@@ -490,7 +485,6 @@
 #define SOC_TEMPERATURE_SENSOR_UNDER_PD_TOP_DOMAIN            (1)
 
 /*------------------------------------ WI-FI CAPS ------------------------------------*/
-//TODO: IDF-13138, re-open on c61 eco3
 #define SOC_WIFI_HW_TSF                     (1)    /*!< Support hardware TSF */
 #define SOC_WIFI_FTM_SUPPORT                (1)    /*!< Support FTM */
 #define SOC_WIFI_GCMP_SUPPORT               (1)    /*!< Support GCMP(GCMP128 and GCMP256) */

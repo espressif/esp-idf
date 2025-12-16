@@ -424,7 +424,6 @@ BaseType_t xTaskGetCoreID( TaskHandle_t xTask )
         #else /* CONFIG_FREERTOS_SMP */
             TCB_t * pxTCB;
 
-            /* Todo: Remove xCoreID for single core builds (IDF-7894) */
             pxTCB = prvGetTCBFromHandle( xTask );
 
             xReturn = pxTCB->xCoreID;

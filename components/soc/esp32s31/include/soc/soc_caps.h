@@ -19,6 +19,9 @@
 #if __has_include("soc/soc_caps_eval.h")
 #include "soc/soc_caps_eval.h"
 #endif
+
+#define _SOC_CAPS_TARGET_IS_ESP32S31       1 // [gen_soc_caps:ignore]
+
 /*-------------------------- COMMON CAPS ---------------------------------------*/
 // #define SOC_ADC_SUPPORTED               1      // TODO: [ESP32S31] IDF-14741
 // #define SOC_ANA_CMPR_SUPPORTED          1      // TODO: [ESP32S31] IDF-14787

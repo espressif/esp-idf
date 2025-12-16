@@ -9,8 +9,6 @@
 #include "esp_private/system_internal.h"
 #include "esp32c61/rom/rtc.h"
 
-// TODO: [ESP32C61] IDF-9267
-
 static void esp_reset_reason_clear_hint(void);
 
 static esp_reset_reason_t s_reset_reason;

@@ -12,7 +12,7 @@
 #define IDF_PERFORMANCE_MIN_AES_CBC_THROUGHPUT_MBSEC                            8.2
 
 // SHA256 hardware throughput at 240MHz, threshold set lower than worst case
-#if CONFIG_FREERTOS_SMP // IDF-5222
+#if CONFIG_FREERTOS_SMP // IDF-5826
 #define IDF_PERFORMANCE_MIN_SHA256_THROUGHPUT_MBSEC                             6.0
 #else
 #define IDF_PERFORMANCE_MIN_SHA256_THROUGHPUT_MBSEC                             8.0
@@ -40,7 +40,7 @@
 #define IDF_PERFORMANCE_MIN_SDIO_THROUGHPUT_KBSEC_TOHOST_4BIT                   12200
 #endif
 
-#if !CONFIG_FREERTOS_SMP // IDF-5224
+#if !CONFIG_FREERTOS_SMP // IDF-5826
 #ifndef IDF_PERFORMANCE_MIN_SDIO_THROUGHPUT_KBSEC_FRHOST_4BIT
 #define IDF_PERFORMANCE_MIN_SDIO_THROUGHPUT_KBSEC_FRHOST_4BIT                   11000
 #endif

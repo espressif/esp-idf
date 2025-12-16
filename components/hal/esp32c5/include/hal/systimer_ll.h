@@ -16,8 +16,6 @@
 extern "C" {
 #endif
 
-// TODO: [ESP32C5] IDF-8707
-
 // All these functions get invoked either from ISR or HAL that linked to IRAM.
 // Always inline these functions even no gcc optimization is applied.
 

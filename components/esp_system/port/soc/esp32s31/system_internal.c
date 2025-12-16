@@ -97,7 +97,6 @@ void esp_restart_noos(void)
 #endif
 
 #if CONFIG_SPIRAM_INSTRUCTIONS_RODATA
-    //TODO: IDF-7556
     // disable remap if enabled in menuconfig
     REG_CLR_BIT(HP_SYS_HP_PSRAM_FLASH_ADDR_INTERCHANGE_REG, HP_SYS_HP_PSRAM_FLASH_ADDR_INTERCHANGE_DMA | HP_SYS_HP_PSRAM_FLASH_ADDR_INTERCHANGE_CPU);
 #endif
