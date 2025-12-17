@@ -8,6 +8,9 @@ examples/system/app_trace_basic:
     - if: IDF_TARGET == "esp32h4"
       temporary: true
       reason: not supported yet #TODO: OCD-1137
+    - if: IDF_TARGET == "esp32p4"
+      temporary: true
+      reason: p4 rev3 migration # TODO: IDF-14440
 
 examples/system/base_mac_address:
   depends_components:
@@ -279,6 +282,9 @@ examples/system/sysview_tracing:
     - if: IDF_TARGET == "esp32h4"
       temporary: true
       reason: not supported yet #TODO: OCD-1136
+    - if: IDF_TARGET == "esp32p4"
+      temporary: true
+      reason: p4 rev3 migration # TODO: IDF-14440
 
 examples/system/sysview_tracing_heap_log:
   disable:
@@ -290,6 +296,9 @@ examples/system/sysview_tracing_heap_log:
     - if: IDF_TARGET == "esp32h4"
       temporary: true
       reason: not supported yet #TODO: OCD-1136
+    - if: IDF_TARGET == "esp32p4"
+      temporary: true
+      reason: p4 rev3 migration # TODO: IDF-14440
 
 examples/system/task_watchdog:
   disable:
