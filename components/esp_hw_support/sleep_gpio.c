@@ -41,6 +41,9 @@
 #include "esp_private/spi_flash_os.h"
 #include "esp_private/startup_internal.h"
 #include "bootloader_flash.h"
+#if CONFIG_SPIRAM_MODE_OCT_SUPPORTED
+#include "esp_private/esp_psram_impl.h"
+#endif
 
 ESP_LOG_ATTR_TAG(TAG, "sleep_gpio");
 
@@ -153,9 +156,12 @@ void esp_sleep_config_gpio_isolate(void)
     gpio_sleep_set_pull_mode(esp_mspi_get_io(ESP_MSPI_IO_WP),  GPIO_PULLUP_ONLY);
 #if SOC_SPI_MEM_SUPPORT_FLASH_OPI_MODE
     bool octal_mspi_required = bootloader_flash_is_octal_mode_enabled();
-#if CONFIG_SPIRAM_MODE_OCT
-    octal_mspi_required |= true;
-#endif // CONFIG_SPIRAM_MODE_OCT
+#if CONFIG_SPIRAM_MODE_OCT_SUPPORTED
+    psram_mode_t psram_mode;
+    if (esp_psram_impl_get_mode(&psram_mode) == ESP_OK) {
+        octal_mspi_required |= (psram_mode == PSRAM_MODE_OCT);
+    }
+#endif // CONFIG_SPIRAM_MODE_OCT_SUPPORTED
     if (octal_mspi_required) {
         gpio_sleep_set_pull_mode(esp_mspi_get_io(ESP_MSPI_IO_DQS), GPIO_PULLUP_ONLY);
         gpio_sleep_set_pull_mode(esp_mspi_get_io(ESP_MSPI_IO_D4),  GPIO_PULLUP_ONLY);

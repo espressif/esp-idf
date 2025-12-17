@@ -62,8 +62,19 @@ extern "C" {
 #endif
 
 //--------------------------------------PSRAM Sampling Mode --------------------------------------//
-#define MSPI_TIMING_PSRAM_DTR_MODE                   CONFIG_SPIRAM_MODE_OCT
-#define MSPI_TIMING_PSRAM_STR_MODE                   !CONFIG_SPIRAM_MODE_OCT
+#ifdef CONFIG_SPIRAM_MODE_OCT_SUPPORTED
+#define MSPI_TIMING_PSRAM_DTR_SUPPORTED              1
+#else
+#define MSPI_TIMING_PSRAM_DTR_SUPPORTED              0
+#endif
+#ifdef CONFIG_SPIRAM_MODE_QUAD_SUPPORTED
+#define MSPI_TIMING_PSRAM_STR_SUPPORTED              1
+#else
+#define MSPI_TIMING_PSRAM_STR_SUPPORTED              0
+#endif
+//The core clock is shared with the FLASH and is settled before the PSRAM is probed, so assume the more demanding DTR chip whenever one could be present
+#define MSPI_TIMING_PSRAM_DTR_MODE                   MSPI_TIMING_PSRAM_DTR_SUPPORTED
+#define MSPI_TIMING_PSRAM_STR_MODE                   (!MSPI_TIMING_PSRAM_DTR_SUPPORTED)
 //--------------------------------------PSRAM Module Clock --------------------------------------//
 #if CONFIG_SPIRAM
 #if CONFIG_SPIRAM_SPEED_40M
@@ -77,11 +88,10 @@ extern "C" {
 #define MSPI_TIMING_PSRAM_MODULE_CLOCK               10      //Define this to 10MHz, because we rely on `MSPI_TIMING_PSRAM_MODULE_CLOCK` macro for calculation and check below, see `Determine the Core Clock` chapter
 #endif
 //------------------------------------PSRAM Needs Tuning or not-------------------------------------//
-#if MSPI_TIMING_PSRAM_DTR_MODE
-#define MSPI_TIMING_PSRAM_NEEDS_TUNING               (MSPI_TIMING_PSRAM_MODULE_CLOCK > 40)
-#elif MSPI_TIMING_PSRAM_STR_MODE
-#define MSPI_TIMING_PSRAM_NEEDS_TUNING               (MSPI_TIMING_PSRAM_MODULE_CLOCK > 80)
-#endif
+//Which one applies is only known once the chip is probed, see `mspi_timing_psram_needs_tuning`
+#define MSPI_TIMING_PSRAM_DTR_NEEDS_TUNING           (MSPI_TIMING_PSRAM_DTR_SUPPORTED && (MSPI_TIMING_PSRAM_MODULE_CLOCK > 40))
+#define MSPI_TIMING_PSRAM_STR_NEEDS_TUNING           (MSPI_TIMING_PSRAM_STR_SUPPORTED && (MSPI_TIMING_PSRAM_MODULE_CLOCK > 80))
+#define MSPI_TIMING_PSRAM_NEEDS_TUNING               (MSPI_TIMING_PSRAM_DTR_NEEDS_TUNING || MSPI_TIMING_PSRAM_STR_NEEDS_TUNING)
 
 
 /**

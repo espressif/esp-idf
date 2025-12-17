@@ -32,6 +32,23 @@
 #if SOC_MEMSPI_TIMING_TUNING_BY_MSPI_DELAY || SOC_MEMSPI_TIMING_TUNING_BY_DQS || SOC_MEMSPI_TIMING_TUNING_BY_FLASH_DELAY
 #include "mspi_timing_tuning_configs.h"
 #endif
+
+#ifndef MSPI_TIMING_PSRAM_DTR_MODE
+#define MSPI_TIMING_PSRAM_DTR_MODE                   0
+#endif
+#ifndef MSPI_TIMING_PSRAM_STR_MODE
+#define MSPI_TIMING_PSRAM_STR_MODE                   (!MSPI_TIMING_PSRAM_DTR_MODE)
+#endif
+#ifndef MSPI_TIMING_PSRAM_NEEDS_TUNING
+#define MSPI_TIMING_PSRAM_NEEDS_TUNING               0
+#endif
+#ifndef MSPI_TIMING_PSRAM_DTR_NEEDS_TUNING
+#define MSPI_TIMING_PSRAM_DTR_NEEDS_TUNING           (MSPI_TIMING_PSRAM_DTR_MODE && MSPI_TIMING_PSRAM_NEEDS_TUNING)
+#endif
+#ifndef MSPI_TIMING_PSRAM_STR_NEEDS_TUNING
+#define MSPI_TIMING_PSRAM_STR_NEEDS_TUNING           (MSPI_TIMING_PSRAM_STR_MODE && MSPI_TIMING_PSRAM_NEEDS_TUNING)
+#endif
+
 #if SOC_MEMSPI_CLK_SRC_IS_INDEPENDENT
 #include "hal/spimem_flash_ll.h"
 #endif
@@ -212,6 +229,23 @@ void s_register_config_driver(mspi_tuning_cfg_drv_t *cfg_drv, bool is_flash)
     s_tuning_cfg_drv.sweep_test_nums = cfg_drv->sweep_test_nums;
 }
 
+static bool DRAM_ATTR s_psram_is_dtr = MSPI_TIMING_PSRAM_DTR_MODE;
+
+void mspi_timing_psram_set_dtr_mode(bool is_dtr)
+{
+    s_psram_is_dtr = is_dtr;
+}
+
+bool mspi_timing_psram_is_dtr_mode(void)
+{
+    return s_psram_is_dtr;
+}
+
+bool mspi_timing_psram_needs_tuning(void)
+{
+    return s_psram_is_dtr ? MSPI_TIMING_PSRAM_DTR_NEEDS_TUNING : MSPI_TIMING_PSRAM_STR_NEEDS_TUNING;
+}
+
 #if MSPI_TIMING_FLASH_NEEDS_TUNING || MSPI_TIMING_PSRAM_NEEDS_TUNING
 /**
  * We use different MSPI timing tuning config to read data to see if current MSPI sampling is successful.
@@ -305,14 +339,14 @@ static void s_select_best_tuning_config(mspi_timing_config_t *config, uint32_t c
 #endif
         s_tuning_cfg_drv.flash_set_best_tuning_config(timing_config, best_point);
     } else {
-#if MSPI_TIMING_PSRAM_DTR_MODE
-        best_point = s_tuning_cfg_drv.psram_select_best_tuning_config(timing_config, consecutive_length, end, reference_data, IS_DDR);
+        if (s_psram_is_dtr) {
+            best_point = s_tuning_cfg_drv.psram_select_best_tuning_config(timing_config, consecutive_length, end, reference_data, IS_DDR);
 #if CONFIG_SPIRAM_TIMING_TUNING_POINT_VIA_TEMPERATURE_SENSOR
-        mspi_timing_setting_temperature_adjustment_best_point(best_point);
+            mspi_timing_setting_temperature_adjustment_best_point(best_point);
 #endif
-#elif MSPI_TIMING_PSRAM_STR_MODE
-        best_point = s_tuning_cfg_drv.psram_select_best_tuning_config(timing_config, consecutive_length, end, NULL, IS_SDR);
-#endif
+        } else {
+            best_point = s_tuning_cfg_drv.psram_select_best_tuning_config(timing_config, consecutive_length, end, NULL, IS_SDR);
+        }
         s_tuning_cfg_drv.psram_set_best_tuning_config(timing_config, best_point);
     }
 }
@@ -402,6 +436,10 @@ void mspi_timing_flash_tuning(void)
 #if MSPI_TIMING_PSRAM_NEEDS_TUNING
 void mspi_timing_psram_tuning(void)
 {
+    if (!mspi_timing_psram_needs_tuning()) {
+        return;
+    }
+
     /**
      * set MSPI related regs to 20mhz configuration, to write reference data to PSRAM
      * see detailed comments in this function (`mspi_timing_enter_low_speed_early`)

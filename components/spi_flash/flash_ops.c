@@ -146,10 +146,6 @@ void IRAM_ATTR esp_mspi_pin_init(void)
 {
 #if SOC_SPI_MEM_SUPPORT_FLASH_OPI_MODE
     bool octal_mspi_required = bootloader_flash_is_octal_mode_enabled();
-#if CONFIG_SPIRAM_MODE_OCT
-    octal_mspi_required |= true;
-#endif
-
     if (octal_mspi_required) {
         esp_rom_opiflash_pin_config();
         mspi_timing_set_pin_drive_strength();
@@ -205,7 +201,7 @@ void IRAM_ATTR spi_flash_set_rom_required_regs(void)
 #endif
 }
 
-#if CONFIG_IDF_TARGET_ESP32S3 && CONFIG_SPIRAM_MODE_OCT
+#if CONFIG_IDF_TARGET_ESP32S3 && CONFIG_SPIRAM_MODE_OCT_SUPPORTED
 // This function will only be called when Octal PSRAM enabled.
 void IRAM_ATTR spi_flash_set_vendor_required_regs(void)
 {
