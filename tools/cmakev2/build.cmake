@@ -703,7 +703,7 @@ endfunction()
     .. code-block:: cmake
 
         idf_build_generate_metadata(<binary>
-                                    [FILE <file>])
+                                    [OUTPUT_FILE <file>])
 
     *binary[in]*
 
@@ -715,8 +715,8 @@ endfunction()
         the default path ``<build>/project_description.json`` is used.
 
     Generate metadata for the specified ``binary`` and store it in the
-    specified ``FILE``. If no ``FILE`` is provided, the default location
-    ``<build>/project_description.json`` will be used.
+    specified ``OUTPUT_FILE``. If no ``OUTPUT_FILE`` is provided, the default
+    location ``<build>/project_description.json`` will be used.
 #]]
 function(idf_build_generate_metadata binary)
     set(options)
@@ -1179,4 +1179,70 @@ function(idf_check_binary_signed binary)
         "${espsecure_py_cmd} sign-data --keyfile KEYFILE --version ${secure_boot_version}"
         "${binary_path}"
         VERBATIM)
+endfunction()
+
+#[[
+.. cmakev2:function:: idf_build_generate_depgraph
+
+    .. code-block:: cmake
+
+        idf_build_generate_depgraph(<executable>
+                                    [OUTPUT_FILE <file>])
+
+    *executable[in]*
+
+        Executable target for which to generate a dependency graph.
+
+    *OUTPUT_FILE[in,opt]*
+
+        Optional output file path for storing the dependency graph. If not
+        provided, the default path ``<build>/component_deps.dot`` is used.
+
+    Generate dependency graph for the specified ``executable`` and store it in
+    the specified ``OUTPUT_FILE``. If no ``OUTPUT_FILE`` is provided, the
+    default location ``<build>/component_deps.dot`` will be used.
+#]]
+function(idf_build_generate_depgraph executable)
+    set(options)
+    set(one_value OUTPUT_FILE)
+    set(multi_value)
+    cmake_parse_arguments(ARG "${options}" "${one_value}" "${multi_value}" ${ARGN})
+
+    idf_build_get_property(depgraph_enabled __BUILD_COMPONENT_DEPGRAPH_ENABLED)
+    if(NOT depgraph_enabled)
+        return()
+    endif()
+
+    __get_executable_library_or_die(TARGET "${executable}" OUTPUT library)
+
+    idf_build_set_property(__BUILD_COMPONENT_DEPGRAPH "")
+    idf_build_get_property(common_reqs __COMPONENT_REQUIRES_COMMON)
+
+    idf_library_get_property(build_components "${library}" LIBRARY_COMPONENTS_LINKED)
+
+    foreach(component_name IN LISTS build_components)
+        idf_component_get_property(reqs "${component_name}" REQUIRES)
+        idf_component_get_property(component_format "${component_name}" COMPONENT_FORMAT)
+        if("${component_format}" STREQUAL "CMAKEV1")
+            # For cmakev1 components, also include commonly required
+            # components.
+            list(APPEND reqs ${common_reqs})
+        endif()
+
+        foreach(req IN LISTS reqs)
+            depgraph_add_edge(${component_name} ${req} REQUIRES)
+        endforeach()
+
+        idf_component_get_property(priv_reqs "${component_name}" PRIV_REQUIRES)
+        foreach(priv_req IN LISTS priv_reqs)
+            depgraph_add_edge(${component_name} ${priv_req} PRIV_REQUIRES)
+        endforeach()
+    endforeach()
+
+    if(NOT DEFINED ARG_OUTPUT_FILE)
+        idf_build_get_property(build_dir BUILD_DIR)
+        set(ARG_OUTPUT_FILE "${build_dir}/component_deps.dot")
+    endif()
+
+    depgraph_generate("${ARG_OUTPUT_FILE}")
 endfunction()
