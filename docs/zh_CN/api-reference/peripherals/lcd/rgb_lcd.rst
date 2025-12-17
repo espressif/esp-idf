@@ -150,6 +150,48 @@ PSRAM 中的双 frame buffer
     };
     ESP_ERROR_CHECK(esp_lcd_new_rgb_panel(&panel_config, &panel_handle));
 
+.. _user_custom_frame_buffer:
+
+用户自定义 frame buffer
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+用户可以提供自己分配的 frame buffer，而不是让驱动程序分配。该模式下，用户需要自己管理 frame buffer 的生命周期。
+
+.. code:: c
+
+    esp_lcd_panel_handle_t panel_handle = NULL;
+    esp_lcd_rgb_panel_config_t panel_config = {
+        .data_width = 16, // 并行模式下像素格式为 RGB565，数据宽度为 16 位
+        .clk_src = LCD_CLK_SRC_DEFAULT,
+        .disp_gpio_num = EXAMPLE_PIN_NUM_DISP_EN,
+        .pclk_gpio_num = EXAMPLE_PIN_NUM_PCLK,
+        .vsync_gpio_num = EXAMPLE_PIN_NUM_VSYNC,
+        .hsync_gpio_num = EXAMPLE_PIN_NUM_HSYNC,
+        .de_gpio_num = EXAMPLE_PIN_NUM_DE,
+        .data_gpio_nums = {
+            EXAMPLE_PIN_NUM_DATA0,
+            EXAMPLE_PIN_NUM_DATA1,
+            EXAMPLE_PIN_NUM_DATA2,
+            // 其他 GPIO
+            // 此处 GPIO 的数量应与上文中 "data_width" 的值相同
+            ...
+        },
+        // 参照 LCD 规格书，填写时序参数
+        .timings = {
+            .pclk_hz = EXAMPLE_LCD_PIXEL_CLOCK_HZ,
+            .h_res = EXAMPLE_LCD_H_RES,
+            .v_res = EXAMPLE_LCD_V_RES,
+            .hsync_back_porch = 40,
+            .hsync_front_porch = 20,
+            .hsync_pulse_width = 1,
+            .vsync_back_porch = 8,
+            .vsync_front_porch = 4,
+            .vsync_pulse_width = 1,
+        },
+        .user_fbs[0] = user_frame_buffer, // 使用用户自定义 frame buffer
+    };
+    ESP_ERROR_CHECK(esp_lcd_new_rgb_panel(&panel_config, &panel_handle));
+
 .. _bounce_buffer_with_single_psram_frame_buffer:
 
 bounce buffer 与 PSRAM frame buffer

@@ -72,7 +72,6 @@
 #error "Unsupported GDMA bus type for RGB LCD"
 #endif
 
-#define RGB_LCD_PANEL_MAX_FB_NUM         3 // maximum supported frame buffer number
 #define RGB_LCD_PANEL_BOUNCE_BUF_NUM     2 // bounce buffer number
 
 ESP_LOG_ATTR_TAG(TAG, "lcd.rgb");
@@ -112,12 +111,12 @@ struct esp_rgb_panel_t {
 #endif
     size_t num_dma_nodes;  // Number of DMA descriptors that used to carry the frame buffer
     gdma_channel_handle_t dma_chan; // DMA channel handle
-    gdma_link_list_handle_t dma_fb_links[RGB_LCD_PANEL_MAX_FB_NUM]; // DMA link lists for multiple frame buffers
+    gdma_link_list_handle_t dma_fb_links[ESP_RGB_LCD_PANEL_MAX_FB_NUM]; // DMA link lists for multiple frame buffers
     gdma_link_list_handle_t dma_bb_link; // DMA link list for bounce buffer
 #if RGB_LCD_NEEDS_SEPARATE_RESTART_LINK
     gdma_link_list_handle_t dma_restart_link; // DMA link list for restarting the DMA
 #endif
-    uint8_t *fbs[RGB_LCD_PANEL_MAX_FB_NUM]; // Frame buffers
+    uint8_t *fbs[ESP_RGB_LCD_PANEL_MAX_FB_NUM]; // Frame buffers
     uint8_t *bounce_buffer[RGB_LCD_PANEL_BOUNCE_BUF_NUM]; // Pointer to the bounce buffers
     size_t fb_size;        // Size of frame buffer, in bytes
     size_t bb_size;        // Size of the bounce buffer, in bytes. If not-zero, the driver uses two bounce buffers allocated from internal memory
@@ -154,10 +153,11 @@ struct esp_rgb_panel_t {
         uint32_t need_restart: 1;        // Whether to restart the LCD controller and the DMA
         uint32_t fb_behind_cache: 1;     // Whether the frame buffer is behind the cache
         uint32_t bb_behind_cache: 1;     // Whether the bounce buffer is behind the cache
+        uint32_t user_fb: 1;             // Whether the frame buffer is provided by user
     } flags;
 };
 
-static esp_err_t lcd_rgb_panel_alloc_frame_buffers(esp_rgb_panel_t *rgb_panel)
+static esp_err_t lcd_rgb_panel_alloc_frame_buffers(esp_rgb_panel_t *rgb_panel, const esp_lcd_rgb_panel_config_t *panel_config)
 {
     bool fb_in_psram = rgb_panel->flags.fb_in_psram;
 
@@ -166,23 +166,51 @@ static esp_err_t lcd_rgb_panel_alloc_frame_buffers(esp_rgb_panel_t *rgb_panel)
     uint32_t ext_mem_cache_line_size = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_DATA);
 
     // alloc frame buffer
+    uint8_t user_fb_count = 0;
     for (int i = 0; i < rgb_panel->num_fbs; i++) {
-        if (fb_in_psram) {
-            // the allocated buffer is also aligned to the cache line size
-            rgb_panel->fbs[i] = heap_caps_aligned_calloc(rgb_panel->ext_mem_align, 1, rgb_panel->fb_size,
-                                                         MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA | MALLOC_CAP_8BIT);
-            ESP_RETURN_ON_FALSE(rgb_panel->fbs[i], ESP_ERR_NO_MEM, TAG, "no mem for frame buffer");
-            rgb_panel->flags.fb_behind_cache = ext_mem_cache_line_size > 0;
+        if (panel_config->user_fbs[i] != NULL) {
+            // Frame buffer is provided by user, no need to allocate
+            rgb_panel->flags.user_fb = true;
+            // Check user frame buffer DMA accessibility
+            if (!esp_ptr_dma_capable(panel_config->user_fbs[i]) && !esp_ptr_dma_ext_capable(panel_config->user_fbs[i])) {
+                ESP_RETURN_ON_FALSE(false, ESP_ERR_INVALID_ARG, TAG, "frame buffer %d is not DMA accessible", i);
+            }
+            // Check if user frame buffer is in PSRAM or internal memory
+            if (esp_ptr_external_ram(panel_config->user_fbs[i])) {
+                ESP_RETURN_ON_FALSE(((uintptr_t)panel_config->user_fbs[i] & (rgb_panel->ext_mem_align - 1)) == 0,
+                                    ESP_ERR_INVALID_ARG, TAG, "frame buffer %d is not aligned to "PRIu32"", i, rgb_panel->ext_mem_align);
+                rgb_panel->flags.fb_behind_cache = ext_mem_cache_line_size > 0;
+            } else {
+                ESP_RETURN_ON_FALSE(((uintptr_t)panel_config->user_fbs[i] & (rgb_panel->int_mem_align - 1)) == 0,
+                                    ESP_ERR_INVALID_ARG, TAG, "frame buffer %d is not aligned to "PRIu32"", i, rgb_panel->int_mem_align);
+                rgb_panel->flags.fb_behind_cache = int_mem_cache_line_size > 0;
+            }
+            rgb_panel->fbs[i] = (uint8_t *)panel_config->user_fbs[i];
+            user_fb_count++;
         } else {
-            rgb_panel->fbs[i] = heap_caps_aligned_calloc(rgb_panel->int_mem_align, 1, rgb_panel->fb_size,
-                                                         MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA | MALLOC_CAP_8BIT);
-            ESP_RETURN_ON_FALSE(rgb_panel->fbs[i], ESP_ERR_NO_MEM, TAG, "no mem for frame buffer");
-            rgb_panel->flags.fb_behind_cache = int_mem_cache_line_size > 0;
+            // Allocate frame buffer by driver
+            if (fb_in_psram) {
+                // the allocated buffer is also aligned to the cache line size
+                rgb_panel->fbs[i] = heap_caps_aligned_calloc(rgb_panel->ext_mem_align, 1, rgb_panel->fb_size,
+                                                             MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA | MALLOC_CAP_8BIT);
+                ESP_RETURN_ON_FALSE(rgb_panel->fbs[i], ESP_ERR_NO_MEM, TAG, "no mem for frame buffer");
+                rgb_panel->flags.fb_behind_cache = ext_mem_cache_line_size > 0;
+            } else {
+                rgb_panel->fbs[i] = heap_caps_aligned_calloc(rgb_panel->int_mem_align, 1, rgb_panel->fb_size,
+                                                             MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA | MALLOC_CAP_8BIT);
+                ESP_RETURN_ON_FALSE(rgb_panel->fbs[i], ESP_ERR_NO_MEM, TAG, "no mem for frame buffer");
+                rgb_panel->flags.fb_behind_cache = int_mem_cache_line_size > 0;
+            }
         }
+
         // flush data from cache to the physical memory
         if (rgb_panel->flags.fb_behind_cache) {
             esp_cache_msync(rgb_panel->fbs[i], rgb_panel->fb_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
         }
+    }
+
+    if (user_fb_count > 0 && user_fb_count != rgb_panel->num_fbs) {
+        ESP_RETURN_ON_FALSE(false, ESP_ERR_INVALID_ARG, TAG, "user frame buffer count conflicts with num_fbs");
     }
 
     // alloc bounce buffer
@@ -226,8 +254,9 @@ static esp_err_t lcd_rgb_panel_destroy(esp_rgb_panel_t *rgb_panel)
         gdma_disconnect(rgb_panel->dma_chan);
         gdma_del_channel(rgb_panel->dma_chan);
     }
-    for (size_t i = 0; i < RGB_LCD_PANEL_MAX_FB_NUM; i++) {
-        if (rgb_panel->fbs[i]) {
+    for (size_t i = 0; i < ESP_RGB_LCD_PANEL_MAX_FB_NUM; i++) {
+        if (rgb_panel->fbs[i] && !rgb_panel->flags.user_fb) {
+            // Only free frame buffer if it was allocated by the driver
             free(rgb_panel->fbs[i]);
         }
         if (rgb_panel->dma_fb_links[i]) {
@@ -286,7 +315,7 @@ esp_err_t esp_lcd_new_rgb_panel(const esp_lcd_rgb_panel_config_t *rgb_panel_conf
     } else if (rgb_panel_config->num_fbs > 0) {
         num_fbs = rgb_panel_config->num_fbs;
     }
-    ESP_RETURN_ON_FALSE(num_fbs <= RGB_LCD_PANEL_MAX_FB_NUM, ESP_ERR_INVALID_ARG, TAG, "too many frame buffers");
+    ESP_RETURN_ON_FALSE(num_fbs <= ESP_RGB_LCD_PANEL_MAX_FB_NUM, ESP_ERR_INVALID_ARG, TAG, "too many frame buffers");
 
     // by default, we guess the input color format according to the data lines number, usually 16 lines means RGB565, 24 lines means RGB888
     lcd_color_format_t in_color_format = 0;
@@ -370,7 +399,7 @@ esp_err_t esp_lcd_new_rgb_panel(const esp_lcd_rgb_panel_config_t *rgb_panel_conf
     rgb_panel->flags.fb_in_psram = rgb_panel_config->flags.fb_in_psram;
     ESP_GOTO_ON_ERROR(lcd_rgb_create_dma_channel(rgb_panel), err, TAG, "install DMA failed");
     // allocate frame buffers + bounce buffers
-    ESP_GOTO_ON_ERROR(lcd_rgb_panel_alloc_frame_buffers(rgb_panel), err, TAG, "alloc frame buffers failed");
+    ESP_GOTO_ON_ERROR(lcd_rgb_panel_alloc_frame_buffers(rgb_panel, rgb_panel_config), err, TAG, "alloc frame buffers failed");
     // initialize DMA descriptor link
     ESP_GOTO_ON_ERROR(lcd_rgb_panel_init_trans_link(rgb_panel), err, TAG, "init DMA link failed");
 
@@ -514,6 +543,20 @@ esp_err_t esp_lcd_rgb_panel_set_yuv_conversion(esp_lcd_panel_handle_t panel, con
     // set conversion data width
     lcd_ll_set_convert_data_width(hal->dev, rgb_panel->data_width);
     return ESP_OK;
+}
+
+void *esp_lcd_rgb_alloc_draw_buffer(esp_lcd_panel_handle_t panel, size_t size, uint32_t caps)
+{
+    ESP_RETURN_ON_FALSE(panel, NULL, TAG, "invalid argument");
+    esp_rgb_panel_t *rgb_panel = __containerof(panel, esp_rgb_panel_t, base);
+    void *buf = NULL;
+    // alloc from external memory
+    if (caps & MALLOC_CAP_SPIRAM) {
+        buf = heap_caps_aligned_calloc(rgb_panel->ext_mem_align, 1, size, MALLOC_CAP_8BIT | MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA);
+    } else {
+        buf = heap_caps_aligned_calloc(rgb_panel->int_mem_align, 1, size, MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
+    }
+    return buf;
 }
 
 static esp_err_t rgb_panel_del(esp_lcd_panel_t *panel)
