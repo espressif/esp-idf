@@ -9,6 +9,7 @@ set(srcs "sdmmc_cmd.c"
          "sdmmc_init.c"
          "sdmmc_mmc.c"
          "sdmmc_sd.c"
+         "sdmmc_blockdev.c"
          "sd_pwr_ctrl/sd_pwr_ctrl.c")
 
 if(CONFIG_SD_ENABLE_SDIO_SUPPORT)
@@ -21,4 +22,5 @@ endif()
 
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS include
+                       REQUIRES esp_blockdev
                        PRIV_REQUIRES soc esp_timer esp_mm)

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include "esp_err.h"
 #include "sd_protocol_types.h"
+#include "esp_blockdev.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -367,6 +368,20 @@ esp_err_t sdmmc_io_get_cis_data(sdmmc_card_t* card, uint8_t* out_buffer, size_t 
  */
 esp_err_t sdmmc_io_print_cis_info(uint8_t* buffer, size_t buffer_size, FILE* fp);
 
+/**
+ * Get a block device handle for the SD/MMC card
+ *
+ * This function allocates a block device handle and initializes it with the
+ * card information.
+ *
+ * @param[in] card Pointer to card information structure previously initialized using sdmmc_card_init.
+ * @param[in,out] out_handle Pointer to variable which will receive the block device handle.
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_ARG if card or out_handle is NULL
+ *      - ESP_ERR_NO_MEM if memory allocation fails
+ */
+esp_err_t sdmmc_get_blockdev(sdmmc_card_t* card, esp_blockdev_handle_t* out_handle);
 
 #ifdef __cplusplus
 }

@@ -22,5 +22,6 @@ set(priv_requires "sdmmc"
 )
 
 idf_component_register(SRCS ${srcs}
+                       INCLUDE_DIRS "."
                        PRIV_REQUIRES ${priv_requires}
                        WHOLE_ARCHIVE TRUE)
