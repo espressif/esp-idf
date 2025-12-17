@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +13,7 @@
 #include <sys/select.h>
 #include "esp_attr.h"
 #include "esp_vfs.h"
+#include "esp_private/socket.h"
 #include "sdkconfig.h"
 #include "lwip/sockets.h"
 #include "lwip/sys.h"
@@ -88,26 +89,39 @@ static int lwip_fstat(int fd, struct stat * st)
 
 void esp_vfs_lwip_sockets_register(void)
 {
-    esp_vfs_t vfs = {
-        .flags = ESP_VFS_FLAG_DEFAULT,
-        .write = &lwip_write,
-        .open = NULL,
-        .fstat = &lwip_fstat,
-        .close = &lwip_close,
-        .read = &lwip_read,
-        .fcntl = &lwip_fcntl_r_wrapper,
-        .ioctl = &lwip_ioctl_r_wrapper,
+
 #ifdef CONFIG_VFS_SUPPORT_SELECT
+
+    static const esp_vfs_select_ops_t s_lwip_select_ops = {
         .socket_select = &lwip_select,
-        .get_socket_select_semaphore = &lwip_get_socket_select_semaphore,
         .stop_socket_select = &lwip_stop_socket_select,
         .stop_socket_select_isr = &lwip_stop_socket_select_isr,
-#endif // CONFIG_VFS_SUPPORT_SELECT
+        .get_socket_select_semaphore = &lwip_get_socket_select_semaphore,
     };
-    /* Non-LWIP file descriptors are from 0 to (LWIP_SOCKET_OFFSET-1). LWIP
-     * file descriptors are registered from LWIP_SOCKET_OFFSET to
-     * MAX_FDS-1.
-     */
 
-    ESP_ERROR_CHECK(esp_vfs_register_fd_range(&vfs, NULL, LWIP_SOCKET_OFFSET, MAX_FDS));
+#endif
+
+    static const esp_vfs_fs_ops_t s_lwip_vfs = {
+        .write  = &lwip_write,
+        .read   = &lwip_read,
+        .close  = &lwip_close,
+        .fstat  = &lwip_fstat,
+        .fcntl  = &lwip_fcntl_r_wrapper,
+        .ioctl  = &lwip_ioctl_r_wrapper,
+#ifdef CONFIG_VFS_SUPPORT_SELECT
+        .select = &s_lwip_select_ops,
+#endif
+    };
+
+    /* Non-LWIP file descriptors are from 0 to (LWIP_SOCKET_OFFSET-1).
+     * LWIP file descriptors are registered from LWIP_SOCKET_OFFSET to MAX_FDS-1.
+     *
+     * Use ESP_VFS_FLAG_STATIC since s_lwip_vfs and subcomponents are static.
+     * No context pointer needed -> flags have no ESP_VFS_FLAG_CONTEXT_PTR.
+     */
+    ESP_ERROR_CHECK(esp_vfs_register_fd_range(&s_lwip_vfs,
+                                              ESP_VFS_FLAG_STATIC,
+                                              NULL /* ctx */,
+                                              LWIP_SOCKET_OFFSET,
+                                              MAX_FDS));
 }

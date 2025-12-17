@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,6 +15,7 @@
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 #include "esp_vfs.h"
+#include "esp_private/socket.h"
 #include "unity.h"
 #include "esp_log.h"
 #include "test_utils.h"
@@ -60,13 +61,12 @@ TEST_CASE("FDs from different VFSs don't collide", "[vfs]")
         .fd = 1,
     };
 
-    esp_vfs_t desc = {
-        .flags = ESP_VFS_FLAG_CONTEXT_PTR,
+    esp_vfs_fs_ops_t desc = {
         .open_p = collision_test_vfs_open,
         .close_p = collision_test_vfs_close,
     };
-    TEST_ESP_OK( esp_vfs_register(VFS_PREF1, &desc, &param) );
-    TEST_ESP_OK( esp_vfs_register(VFS_PREF2, &desc, &param) );
+    TEST_ESP_OK( esp_vfs_register_fs(VFS_PREF1, &desc, ESP_VFS_FLAG_CONTEXT_PTR, &param) );
+    TEST_ESP_OK( esp_vfs_register_fs(VFS_PREF2, &desc, ESP_VFS_FLAG_CONTEXT_PTR, &param) );
 
     const int fd1 = open(VFS_PREF1 FILE1, 0, 0);
     const int fd2 = open(VFS_PREF2 FILE1, 0, 0);
@@ -155,13 +155,12 @@ static void concurrent_task(void *param)
 
 TEST_CASE("VFS can handle concurrent open/close requests", "[vfs]")
 {
-    esp_vfs_t desc = {
-        .flags = ESP_VFS_FLAG_DEFAULT,
+    esp_vfs_fs_ops_t desc = {
         .open = concurrent_test_vfs_open,
         .close = concurrent_test_vfs_close,
     };
 
-    TEST_ESP_OK( esp_vfs_register(VFS_PREF1, &desc, NULL) );
+    TEST_ESP_OK( esp_vfs_register_fs(VFS_PREF1, &desc, ESP_VFS_FLAG_DEFAULT, NULL) );
 
     concurrent_test_task_param_t param1 = { .path = VFS_PREF1 FILE1, .done = xSemaphoreCreateBinary() };
     concurrent_test_task_param_t param2 = { .path = VFS_PREF1 FILE1, .done = xSemaphoreCreateBinary() };
@@ -233,14 +232,13 @@ static int time_test_vfs_write(int fd, const void *data, size_t size)
 
 TEST_CASE("Open & write & close through VFS passes performance test", "[vfs]")
 {
-    esp_vfs_t desc = {
-        .flags = ESP_VFS_FLAG_DEFAULT,
+    esp_vfs_fs_ops_t desc = {
         .open = time_test_vfs_open,
         .close = time_test_vfs_close,
         .write = time_test_vfs_write,
     };
 
-    TEST_ESP_OK( esp_vfs_register(VFS_PREF1, &desc, NULL) );
+    TEST_ESP_OK( esp_vfs_register_fs(VFS_PREF1, &desc, ESP_VFS_FLAG_DEFAULT, NULL) );
 
     ccomp_timer_start();
     const int iter_count = 5000;
@@ -278,17 +276,16 @@ static int vfs_overlap_test_close(int fd)
 
 TEST_CASE("esp_vfs_register_fd_range checks for overlap", "[vfs]")
 {
-    esp_vfs_t vfs1 = {
+    esp_vfs_fs_ops_t vfs1 = {
         .open = vfs_overlap_test_open,
         .close = vfs_overlap_test_close
     };
 
-
-    TEST_ESP_OK(esp_vfs_register("/test", &vfs1, NULL));
+    TEST_ESP_OK(esp_vfs_register_fs("/test", &vfs1, ESP_VFS_FLAG_DEFAULT, NULL));
     int fd = open("/test/1", 0, 0);
     TEST_ASSERT_NOT_EQUAL(-1, fd);
-    esp_vfs_t vfs2 = { };
-    esp_err_t err = esp_vfs_register_fd_range(&vfs2, NULL, fd, fd + 1);
+    esp_vfs_fs_ops_t vfs2 = { };
+    esp_err_t err = esp_vfs_register_fd_range(&vfs2, ESP_VFS_FLAG_DEFAULT, NULL, fd, fd + 1);
     close(fd);
 
     TEST_ESP_OK(esp_vfs_unregister("/test"));

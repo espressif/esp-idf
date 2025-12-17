@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +9,7 @@
 #include <fcntl.h>
 #include <errno.h>
 #include "esp_vfs.h"
+#include "esp_vfs_ops.h"
 #include "unity.h"
 
 static int open_errno_test_open(const char * path, int flags, int mode)
@@ -19,10 +20,10 @@ static int open_errno_test_open(const char * path, int flags, int mode)
 
 TEST_CASE("esp_vfs_open sets correct errno", "[vfs]")
 {
-    esp_vfs_t desc = {
+    const esp_vfs_fs_ops_t desc = {
         .open = open_errno_test_open
     };
-    TEST_ESP_OK(esp_vfs_register("/test", &desc, NULL));
+    TEST_ESP_OK(esp_vfs_register_fs("/test", &desc, ESP_VFS_FLAG_DEFAULT, NULL));
 
     int fd = open("/test/path", 0, 0);
     int e = errno;

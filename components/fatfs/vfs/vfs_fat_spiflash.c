@@ -23,7 +23,7 @@ static const char* TAG = "vfs_fat_spiflash";
 
 static vfs_fat_spiflash_ctx_t *s_ctx[FF_VOLUMES] = {};
 
-extern esp_err_t esp_vfs_set_readonly_flag(const char* base_path); // from vfs/vfs.c to set readonly flag in esp_vfs_t struct externally
+extern esp_err_t esp_vfs_set_readonly_flag(const char* base_path); // from vfs/vfs.c to set readonly flag externally
 
 static bool s_get_context_id_by_label(const char *label, uint32_t *out_id)
 {
