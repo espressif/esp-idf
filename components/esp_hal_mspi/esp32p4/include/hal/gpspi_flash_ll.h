@@ -13,7 +13,7 @@
 #pragma once
 
 #include <stdlib.h>
-#include "soc/spi_periph.h"
+#include "soc/spi_reg.h"
 #include "soc/spi_struct.h"
 #include "soc/hp_sys_clkrst_struct.h"
 #include "hal/assert.h"

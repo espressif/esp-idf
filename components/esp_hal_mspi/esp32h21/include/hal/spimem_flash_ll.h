@@ -18,17 +18,15 @@
 #include <sys/param.h> // For MIN/MAX
 #include <stdbool.h>
 #include <string.h>
-
-#include "soc/spi_periph.h"
+#include "soc/spi_mem_reg.h"
 #include "soc/spi_mem_struct.h"
+#include "soc/interrupts.h"
+#include "soc/pcr_struct.h"
+#include "soc/clk_tree_defs.h"
 #include "hal/assert.h"
 #include "hal/spi_types.h"
 #include "hal/spi_flash_types.h"
-#include "soc/pcr_struct.h"
-#include "soc/clk_tree_defs.h"
 #include "hal/misc.h"
-
-//TODO: [ESP32H21] IDF-11609, inherit from h2
 
 #ifdef __cplusplus
 extern "C" {

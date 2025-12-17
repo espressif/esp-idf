@@ -140,7 +140,6 @@ TEST_CASE("SPI Single Board Test SIO", "[spi]")
 }
 #endif //#if (TEST_SPI_PERIPH_NUM >= 2)
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32P4)    //IDF-7503 slave support
 /********************************************************************************
  *                             Test SIO Master
  * SIO Slave is not supported, and one unit test is limited to one feature, so,,,
@@ -271,7 +270,7 @@ void test_sio_slave_emulate(bool sio_master_in)
 
     unity_wait_for_signal("Master ready");
     for (int i = 0; i < TEST_NUM; i++) {
-        spi_slave_transaction_t trans = {};
+        spi_slave_transaction_t trans = { .flags = SPI_SLAVE_TRANS_DMA_BUFFER_ALIGN_AUTO, };
         if (sio_master_in) {
             // slave output only section
             trans.length = (i + 1) * 8 * 8;
@@ -324,4 +323,3 @@ void test_slave_run(void)
 }
 
 TEST_CASE_MULTIPLE_DEVICES("SPI_Master:Test_SIO_Mode_Multi_Board", "[spi_ms][test_env=generic_multi_device]", test_master_run, test_slave_run);
-#endif  //p4 slave support

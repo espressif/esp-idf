@@ -9,7 +9,6 @@
 #include <ctype.h>
 #include "esp_log.h"
 #include "sys/lock.h"
-#include "soc/soc_pins.h"
 #include "soc/soc_caps.h"
 #include "soc/rtc_cntl_reg.h"
 #include "freertos/FreeRTOS.h"

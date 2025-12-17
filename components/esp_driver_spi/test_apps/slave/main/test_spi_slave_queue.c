@@ -17,7 +17,6 @@
 #include "driver/spi_slave.h"
 #include "esp_private/spi_slave_internal.h"
 #include "soc/spi_pins.h"
-#include "soc/spi_periph.h"
 
 #define TEST_BUF_SIZE    32
 #define TEST_TIMES       4

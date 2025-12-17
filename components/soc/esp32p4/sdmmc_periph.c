@@ -5,6 +5,8 @@
  */
 
 #include "soc/sdmmc_periph.h"
+#include "soc/sdmmc_pins.h"
+
 const sdmmc_slot_info_t sdmmc_slot_info[SOC_SDMMC_NUM_SLOTS] = {
     {
         .width = 8,

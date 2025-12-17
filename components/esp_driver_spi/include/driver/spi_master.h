@@ -103,6 +103,7 @@ typedef struct {
                                  */
 } spi_device_interface_config_t;
 
+// Input flags
 #define SPI_TRANS_MODE_DIO            (1<<0)  ///< Transmit/receive data in 2-bit mode
 #define SPI_TRANS_MODE_QIO            (1<<1)  ///< Transmit/receive data in 4-bit mode
 #define SPI_TRANS_USE_RXDATA          (1<<2)  ///< Receive into rx_data member of spi_transaction_t instead into memory at rx_buffer.
@@ -116,6 +117,11 @@ typedef struct {
 #define SPI_TRANS_MODE_OCT            (1<<10) ///< Transmit/receive data in 8-bit mode
 #define SPI_TRANS_MULTILINE_ADDR      SPI_TRANS_MODE_DIOQIO_ADDR ///< The data lines used at address phase is the same as data phase (otherwise, only one data line is used at address phase)
 #define SPI_TRANS_DMA_BUFFER_ALIGN_MANUAL   (1<<11) ///< By default driver will automatically re-alloc dma buffer if it doesn't meet hardware alignment or dma_capable requirements, this flag is for you to disable this feature, you will need to take care of the alignment otherwise driver will return you error ESP_ERR_INVALID_ARG
+#define SPI_TRANS_DMA_USE_PSRAM       (1<<12) ///< Use PSRAM for DMA buffer directly, has speed limit, but no temp buffer and save memory
+
+// Output flags
+#define SPI_TRANS_DMA_RX_FAIL         (1<<30) ///< RX transaction data lose flag, indicate DMA RX overflow
+#define SPI_TRANS_DMA_TX_FAIL         (1<<31) ///< TX transaction data lose flag, indicate DMA TX underflow
 
 /**
  * This structure describes one SPI transaction. The descriptor should not be modified until the transaction finishes.

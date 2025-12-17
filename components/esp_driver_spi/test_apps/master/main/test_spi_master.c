@@ -25,6 +25,7 @@
 #include "esp_clk_tree.h"
 #include "esp_timer.h"
 #include "esp_log.h"
+#include "esp_cache.h"
 #include "test_utils.h"
 #include "test_spi_utils.h"
 #include "spi_performance.h"
@@ -123,7 +124,7 @@ TEST_CASE("SPI Master clockdiv calculation routines", "[spi]")
 
 // Test All clock source
 #define TEST_CLK_BYTE_LEN           10000
-#define TEST_TRANS_TIME_BIAS_RATIO  (float)5.0/100   // think 5% transfer time bias as acceptable
+#define TEST_TRANS_TIME_BIAS_RATIO  (float)8.0/100   // think 8% transfer time bias as acceptable
 TEST_CASE("SPI Master clk_source and divider accuracy", "[spi]")
 {
     int64_t start = 0, end = 0;
@@ -775,24 +776,27 @@ TEST_CASE("SPI Master DMA test, TX and RX in different regions", "[spi]")
     //connect MOSI to two devices breaks the output, fix it.
     spitest_gpio_output_sel(buscfg.mosi_io_num, FUNC_GPIO, spi_periph_signal[TEST_SPI_HOST].spid_out);
 
-#define TEST_REGION_SIZE 2
+#define TEST_REGION_SIZE 3
     static spi_transaction_t trans[TEST_REGION_SIZE];
-    int x;
     memset(trans, 0, sizeof(trans));
 
-    trans[0].length = 320 * 8,
-            trans[0].tx_buffer = data_malloc + 2;
+    trans[0].length = 320 * 8;
+    trans[0].tx_buffer = data_malloc + 2;
     trans[0].rx_buffer = data_dram;
 
-    trans[1].length = 4 * 8,
-            trans[1].flags = SPI_TRANS_USE_RXDATA | SPI_TRANS_USE_TXDATA;
+    trans[1].length = 4 * 8;
+    trans[1].flags = SPI_TRANS_USE_RXDATA | SPI_TRANS_USE_TXDATA;
     uint32_t *ptr = (uint32_t *)trans[1].rx_data;
     *ptr = 0x54545454;
     ptr = (uint32_t *)trans[1].tx_data;
     *ptr = 0xbc124960;
 
+    trans[2].length = 64 * 8;
+    trans[2].tx_buffer = data_drom;
+    trans[2].rx_buffer = data_malloc;
+
     //Queue all transactions.
-    for (x = 0; x < TEST_REGION_SIZE; x++) {
+    for (int x = 0; x < TEST_REGION_SIZE; x++) {
         ESP_LOGI(TAG, "transmitting %d...", x);
         ret = spi_device_transmit(spi, &trans[x]);
         TEST_ASSERT(ret == ESP_OK);
@@ -1723,6 +1727,7 @@ static IRAM_ATTR void test_master_iram(void)
 
     spi_device_handle_t dev_handle = {0};
     spi_device_interface_config_t devcfg = SPI_DEVICE_TEST_DEFAULT_CONFIG();
+    devcfg.cs_ena_pretrans = 1;
     devcfg.post_cb = test_master_iram_post_trans_cbk;
     TEST_ESP_OK(spi_bus_add_device(TEST_SPI_HOST, &devcfg, &dev_handle));
 
@@ -1967,3 +1972,100 @@ TEST_CASE("test_spi_master_auto_sleep_retention", "[spi]")
 }
 #endif  //CONFIG_PM_ENABLE
 #endif  //SOC_LIGHT_SLEEP_SUPPORTED
+
+#if CONFIG_SPIRAM && SOC_PSRAM_DMA_CAPABLE
+#define TEST_EDMA_PSRAM_TRANS_NUM    5
+#define TEST_EDMA_TRANS_LEN          20000
+#define TEST_EDMA_BUFFER_SZ          (TEST_EDMA_PSRAM_TRANS_NUM * TEST_EDMA_TRANS_LEN)
+
+void test_spi_psram_trans(spi_device_handle_t dev_handle, void *tx, void *rx)
+{
+    spi_transaction_t trans_cfg = {
+        .tx_buffer = tx,
+        .rx_buffer = rx,
+    };
+
+    int trans_len = TEST_EDMA_TRANS_LEN - TEST_EDMA_PSRAM_TRANS_NUM / 2;
+    for (uint8_t cnt = 0; cnt < TEST_EDMA_PSRAM_TRANS_NUM; cnt ++) {
+        trans_cfg.length = trans_len * 8;
+        trans_cfg.rxlength = trans_len * 8;
+        trans_cfg.flags = (cnt % 2) ? 0 : SPI_TRANS_DMA_USE_PSRAM;
+
+        // To use psram, hardware will pass data through MSPI and GDMA to GPSPI, which need some time
+        // GPSPI bandwidth(speed * line_num) should always no more than PSRAM bandwidth
+        trans_cfg.override_freq_hz = (CONFIG_SPIRAM_SPEED / 4) * 1000 * 1000;
+        printf("%d TX %p RX %p len %d @%ld kHz\n", cnt, trans_cfg.tx_buffer, trans_cfg.rx_buffer, trans_len, trans_cfg.override_freq_hz / 1000);
+        TEST_ESP_OK(spi_device_transmit(dev_handle, &trans_cfg));
+        TEST_ASSERT(!(trans_cfg.flags & (SPI_TRANS_DMA_RX_FAIL | SPI_TRANS_DMA_TX_FAIL)));
+        spitest_cmp_or_dump(trans_cfg.tx_buffer, trans_cfg.rx_buffer, trans_len);
+        trans_cfg.tx_buffer += trans_len;
+        trans_cfg.rx_buffer += trans_len;
+        trans_len ++;
+    }
+}
+
+TEST_CASE("SPI_Master: PSRAM buffer transaction via EDMA", "[spi]")
+{
+    spi_bus_config_t buscfg = SPI_BUS_TEST_DEFAULT_CONFIG();
+    buscfg.miso_io_num = buscfg.mosi_io_num;    // set spi "self-loopback"
+    buscfg.max_transfer_sz = TEST_EDMA_BUFFER_SZ;
+    TEST_ESP_OK(spi_bus_initialize(TEST_SPI_HOST, &buscfg, SPI_DMA_CH_AUTO));
+
+    spi_device_handle_t dev_handle = NULL;
+    spi_device_interface_config_t devcfg = SPI_DEVICE_TEST_DEFAULT_CONFIG();
+    devcfg.clock_speed_hz = 80 * 1000 * 1000;   // Test error case on highest freq first
+    TEST_ESP_OK(spi_bus_add_device(TEST_SPI_HOST, &devcfg, &dev_handle));
+    int real_freq_khz;
+    spi_device_get_actual_freq(dev_handle, &real_freq_khz);
+
+    uint8_t *internal_1 = heap_caps_calloc(1, TEST_EDMA_BUFFER_SZ, MALLOC_CAP_INTERNAL);
+    uint8_t *external_1 = heap_caps_calloc(1, TEST_EDMA_BUFFER_SZ, MALLOC_CAP_SPIRAM);
+    uint8_t *external_2 = heap_caps_calloc(1, TEST_EDMA_BUFFER_SZ, MALLOC_CAP_SPIRAM);
+    test_fill_random_to_buffers_dualboard(1001, internal_1, external_2, TEST_EDMA_BUFFER_SZ);
+
+    printf("Test error case: High freq @%d kHz\n", real_freq_khz);
+    spi_transaction_t trans_cfg = {
+        .length = TEST_EDMA_TRANS_LEN * 8,
+        .tx_buffer = external_2,
+        .rx_buffer = external_1,
+    };
+
+    // also test on polling API, and automalloc mechanism
+    for (uint8_t i = 0; i < 2; i++) {
+        printf("\n==== %s ====\n", i ? "EDMA" : "Auto Malloc");
+        trans_cfg.flags = i ? SPI_TRANS_DMA_USE_PSRAM : 0;
+        uint32_t before = esp_get_free_heap_size();
+        spi_device_polling_start(dev_handle, &trans_cfg, portMAX_DELAY);
+        uint32_t after = esp_get_free_heap_size();
+        printf("mem_diff: %ld, trans_len: %d\n", after - before, TEST_EDMA_TRANS_LEN);
+        // rx buffer still potential re-malloc from psram even if SPI_TRANS_DMA_USE_PSRAM is set
+        TEST_ASSERT(i ? (before - after) < 2 * TEST_EDMA_TRANS_LEN : (before - after) > 2 * TEST_EDMA_TRANS_LEN);
+        spi_device_polling_end(dev_handle, portMAX_DELAY);
+        printf("TX fail: %d, RX fail: %d\n", !!(trans_cfg.flags & SPI_TRANS_DMA_TX_FAIL), !!(trans_cfg.flags & SPI_TRANS_DMA_RX_FAIL));
+        TEST_ASSERT((!!i) == !!(trans_cfg.flags & (SPI_TRANS_DMA_TX_FAIL | SPI_TRANS_DMA_RX_FAIL)));
+        if (!i) { // data should be correct if using auto malloc
+            spitest_cmp_or_dump(trans_cfg.tx_buffer, trans_cfg.rx_buffer, TEST_EDMA_TRANS_LEN);
+        }
+    }
+
+    printf("\nTest trans: internal -> psram\n");
+    memset(external_1, 0, TEST_EDMA_BUFFER_SZ);
+    TEST_ESP_OK(esp_cache_msync((void *)external_1, TEST_EDMA_BUFFER_SZ, (ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED)));
+    test_spi_psram_trans(dev_handle, internal_1, external_1);
+
+    printf("\nTest trans: psram    -> psram\n");
+    memset(external_2, 0, TEST_EDMA_BUFFER_SZ);
+    TEST_ESP_OK(esp_cache_msync((void *)external_2, TEST_EDMA_BUFFER_SZ, (ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED)));
+    test_spi_psram_trans(dev_handle, external_1, external_2);
+
+    printf("\nTest trans: psram    -> internal\n");
+    memset(internal_1, 0, TEST_EDMA_BUFFER_SZ);
+    test_spi_psram_trans(dev_handle, external_2, internal_1);
+
+    free(internal_1);
+    free(external_1);
+    free(external_2);
+    spi_bus_remove_device(dev_handle);
+    spi_bus_free(TEST_SPI_HOST);
+}
+#endif

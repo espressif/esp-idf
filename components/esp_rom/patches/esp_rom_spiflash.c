@@ -5,7 +5,14 @@
  */
 
 #include "sdkconfig.h"
-#include "soc/spi_periph.h"
+#include "soc/soc_caps.h"
+#include "soc/soc.h"
+#include "soc/spi_reg.h"
+#if SOC_MEMSPI_IS_INDEPENDENT
+#include "soc/spi_mem_struct.h"
+#include "soc/spi_mem_reg.h"
+#endif
+
 #include "esp_rom_spiflash.h"
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/spi_flash.h"
