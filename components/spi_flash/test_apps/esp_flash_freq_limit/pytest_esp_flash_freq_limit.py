@@ -15,6 +15,7 @@ from pytest_embedded_idf.utils import idf_parametrize
         'pm_enabled_160mhz',
         'pm_disabled_240mhz_xip_psram',
         'pm_enabled_240mhz_xip_psram',
+        'pm_enabled_240mhz_xip_psram_rom_impl',
     ],
     indirect=True,
 )
