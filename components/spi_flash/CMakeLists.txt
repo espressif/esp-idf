@@ -60,7 +60,7 @@ else()
         "spi_flash_os_func_noos.c")
 
     list(APPEND srcs ${cache_srcs})
-    set(priv_requires bootloader_support soc esp_hal_gpio esp_mm)
+    set(priv_requires bootloader_support soc esp_hal_gpio esp_driver_gpio esp_mm)
 
     if(${target} STREQUAL "esp32s2")
         list(APPEND priv_requires esp_security)
@@ -88,4 +88,6 @@ if(NOT non_os_build AND NOT CONFIG_APP_BUILD_TYPE_PURE_RAM_APP)
         # will be replaced with MMU requirements
         idf_component_optional_requires(PRIVATE esp_psram)
     endif()
+    # Force linking init_flash ESP_SYSTEM_INIT_FN to ensure it's not discarded by linker
+    target_link_libraries(${COMPONENT_LIB} INTERFACE "-u esp_flash_app_init")
 endif()

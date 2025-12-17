@@ -7,9 +7,7 @@
 #pragma once
 #include "esp_flash.h"
 #include "esp_attr.h"
-
-struct esp_flash_t;
-typedef struct esp_flash_t esp_flash_t;
+#include "esp_private/esp_flash_types.h"
 
 typedef struct spi_flash_chip_t spi_flash_chip_t;
 

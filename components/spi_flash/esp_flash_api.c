@@ -10,7 +10,7 @@
 #include <string.h>
 
 #include "esp_memory_utils.h"
-#include "spi_flash_chip_driver.h"
+#include "esp_flash_port/spi_flash_chip_driver.h"
 #include "memspi_host_driver.h"
 #include "esp_log.h"
 #include "sdkconfig.h"
@@ -24,7 +24,6 @@
 #include "esp_check.h"
 #include "hal/efuse_hal.h"
 #include "soc/chip_revision.h"
-#include "esp_cpu.h"
 
 #if CONFIG_IDF_TARGET_ESP32S2
 #include "esp_crypto_lock.h" // for locking flash encryption peripheral
@@ -1610,4 +1609,12 @@ esp_err_t esp_flash_app_disable_protect(bool disable)
     } else {
         return esp_flash_app_enable_os_functions(esp_flash_default_chip);
     }
+}
+
+bool esp_flash_is_quad_mode(const esp_flash_t *chip)
+{
+    if (chip == NULL) {
+        chip = esp_flash_default_chip;
+    }
+    return (chip->read_mode == SPI_FLASH_QIO) || (chip->read_mode == SPI_FLASH_QOUT);
 }

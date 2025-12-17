@@ -10,6 +10,7 @@
 #include "esp_attr.h"
 #include "esp_private/system_internal.h"
 #include "esp_flash.h"
+#include "esp_private/esp_flash_types.h"
 #include "esp_flash_partitions.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"

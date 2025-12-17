@@ -7,7 +7,7 @@
 #include <inttypes.h>
 #include <string.h>
 #include "esp_flash.h"
-#include "spi_flash_chip_driver.h"
+#include "esp_flash_port/spi_flash_chip_driver.h"
 #include "esp_heap_caps.h"
 #include "esp_blockdev.h"
 

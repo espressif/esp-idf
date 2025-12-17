@@ -15,6 +15,7 @@
 #include "esp_rom_spiflash.h"
 #include "esp_err.h"
 #include "esp_flash.h"
+#include "esp_private/esp_flash_types.h"
 #include "hal/spi_flash_hal.h"
 #include "spi_flash_override.h"
 #include "soc/soc_caps.h"

@@ -33,7 +33,6 @@ components/spi_flash/include/spi_flash_chip_winbond.h
 components/spi_flash/include/spi_flash_chip_boya.h
 components/spi_flash/include/spi_flash_chip_th.h
 components/spi_flash/include/memspi_host_driver.h
-components/spi_flash/include/spi_flash_chip_driver.h
 components/spi_flash/include/spi_flash_chip_generic.h
 
 

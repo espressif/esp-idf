@@ -8,7 +8,7 @@
 
 #include <stdint.h>
 #include "esp_flash.h"
-#include "spi_flash_chip_driver.h"
+#include "esp_flash_port/spi_flash_chip_driver.h"
 #include "sdkconfig.h"
 
 /**

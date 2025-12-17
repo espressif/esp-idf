@@ -7,6 +7,7 @@
 #include <stdarg.h>
 #include "sdkconfig.h"
 #include "esp_flash.h"
+#include "esp_private/esp_flash_types.h"
 #include "esp_attr.h"
 #include "esp_rom_sys.h"
 #include "esp_cpu.h"

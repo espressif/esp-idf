@@ -779,10 +779,6 @@ config SOC_SPI_MEM_SUPPORT_TSUS_TRES_SEPERATE_CTR
     bool
     default y
 
-config SOC_SPI_MEM_PSRAM_FREQ_AXI_CONSTRAINED
-    bool
-    default y
-
 config SOC_MEMSPI_TIMING_TUNING_BY_MSPI_DELAY
     bool
     default y

@@ -5,7 +5,7 @@
  */
 
 #include <stdlib.h>
-#include "spi_flash_chip_driver.h"
+#include "esp_flash_port/spi_flash_chip_driver.h"
 #include "spi_flash_chip_generic.h"
 #include "spi_flash_chip_issi.h"
 #include "spi_flash_chip_mxic.h"
