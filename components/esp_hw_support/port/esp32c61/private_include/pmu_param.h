@@ -16,8 +16,6 @@
 extern "C" {
 #endif
 
-//TODO: [ESP32C61] IDF-9250
-
 #define HP_CALI_DBIAS_DEFAULT   26
 #define LP_CALI_DBIAS_DEFAULT   25
 #define HP_CALI_DBIAS_SLP_1V1   22
