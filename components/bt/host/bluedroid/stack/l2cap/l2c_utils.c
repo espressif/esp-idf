@@ -158,6 +158,9 @@ void l2cu_release_lcb (tL2C_LCB *p_lcb)
 {
     tL2C_CCB    *p_ccb;
 
+    L2CAP_TRACE_DEBUG("%s handle=%u bda="MACSTR"",
+        __func__, p_lcb->handle, MAC2STR(p_lcb->remote_bd_addr));
+
     p_lcb->in_use     = FALSE;
     p_lcb->is_bonding = FALSE;
 #if (BLE_INCLUDED == TRUE)
