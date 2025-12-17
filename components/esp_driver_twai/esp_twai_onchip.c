@@ -556,6 +556,7 @@ static esp_err_t _node_get_status(twai_node_handle_t node, twai_node_status_t *s
         status_ret->state = atomic_load(&twai_ctx->state);
         status_ret->tx_error_count = twai_hal_get_tec(twai_ctx->hal);
         status_ret->rx_error_count = twai_hal_get_rec(twai_ctx->hal);
+        status_ret->tx_queue_remaining = uxQueueSpacesAvailable(twai_ctx->tx_mount_queue);
     }
     if (record_ret) {
         *record_ret = twai_ctx->history;
@@ -569,7 +570,7 @@ static esp_err_t _node_queue_tx(twai_node_handle_t node, const twai_frame_t *fra
 {
     twai_onchip_ctx_t *twai_ctx = __containerof(node, twai_onchip_ctx_t, api_base);
     if (frame->header.dlc && frame->buffer_len) {
-        ESP_RETURN_ON_FALSE_ISR(frame->header.dlc == twaifd_len2dlc(frame->buffer_len), ESP_ERR_INVALID_ARG, TAG, "unmatched dlc and buffer_len");
+        ESP_RETURN_ON_FALSE_ISR(frame->header.dlc == twaifd_len2dlc(frame->buffer_len), ESP_ERR_INVALID_ARG, TAG, "unmatched dlc(%i) and buffer_len(%i)", frame->header.dlc, twaifd_len2dlc(frame->buffer_len));
     }
 #if !SOC_HAS(TWAI_FD)
     ESP_RETURN_ON_FALSE_ISR(!frame->header.fdf || frame->buffer_len <= TWAI_FRAME_MAX_LEN, ESP_ERR_INVALID_ARG, TAG, "fdf flag or buffer_len not supported");
