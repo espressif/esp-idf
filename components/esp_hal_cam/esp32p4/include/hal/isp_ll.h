@@ -393,31 +393,29 @@ static inline void isp_ll_set_input_data_source(isp_dev_t *hw, isp_input_data_so
  * @brief Set input data color format
  *
  * @param[in] hw      Hardware instance address
- * @param[in] format  color format, see `color_space_pixel_format_t`
+ * @param[in] format  color format, see `isp_color_t`
  *
  * @return true for valid format, false for invalid format
  */
-static inline bool isp_ll_set_input_data_color_format(isp_dev_t *hw, color_space_pixel_format_t format)
+static inline bool isp_ll_set_input_data_color_format(isp_dev_t *hw, isp_color_t format)
 {
     bool valid = false;
 
-    if (format.color_space == COLOR_SPACE_RAW) {
-        switch (format.pixel_format) {
-        case COLOR_PIXEL_RAW8:
-            hw->cntl.isp_data_type = 0;
-            valid = true;
-            break;
-        case COLOR_PIXEL_RAW10:
-            hw->cntl.isp_data_type = 1;
-            valid = true;
-            break;
-        case COLOR_PIXEL_RAW12:
-            hw->cntl.isp_data_type = 2;
-            valid = true;
-            break;
-        default:
-            break;
-        }
+    switch (format) {
+    case ISP_COLOR_RAW8:
+        hw->cntl.isp_data_type = 0;
+        valid = true;
+        break;
+    case ISP_COLOR_RAW10:
+        hw->cntl.isp_data_type = 1;
+        valid = true;
+        break;
+    case ISP_COLOR_RAW12:
+        hw->cntl.isp_data_type = 2;
+        valid = true;
+        break;
+    default:
+        break;
     }
 
     return valid;
@@ -449,64 +447,52 @@ static inline void isp_ll_set_intput_data_v_row_num(isp_dev_t *hw, uint32_t row_
  * @brief Set output data color format
  *
  * @param[in] hw      Hardware instance address
- * @param[in] format  color format, see `color_space_pixel_format_t`
+ * @param[in] format  color format, see `isp_color_t`
  *
  * @return true for valid format, false for invalid format
  */
-static inline bool isp_ll_set_output_data_color_format(isp_dev_t *hw, color_space_pixel_format_t format)
+static inline bool isp_ll_set_output_data_color_format(isp_dev_t *hw, isp_color_t format)
 {
     bool valid = false;
 
-    if (format.color_space == COLOR_SPACE_RAW) {
-        switch (format.pixel_format) {
-        case COLOR_PIXEL_RAW8:
-            hw->cntl.isp_out_type = 0;
-            hw->cntl.demosaic_en = 0;
-            hw->cntl.rgb2yuv_en = 0;
-            hw->cntl.yuv2rgb_en = 0;
-            valid = true;
-            break;
-        default:
-            break;
-        }
-    } else if (format.color_space == COLOR_SPACE_RGB) {
-        switch (format.pixel_format) {
-        case COLOR_PIXEL_RGB888:
-            hw->cntl.isp_out_type = 2;
-            hw->cntl.demosaic_en = 1;
-            hw->cntl.rgb2yuv_en = 1;
-            hw->cntl.yuv2rgb_en = 1;
-            valid = true;
-            break;
-        case COLOR_PIXEL_RGB565:
-            hw->cntl.isp_out_type = 4;
-            hw->cntl.demosaic_en = 1;
-            hw->cntl.rgb2yuv_en = 1;
-            hw->cntl.yuv2rgb_en = 1;
-            valid = true;
-            break;
-        default:
-            break;
-        }
-    } else if (format.color_space == COLOR_SPACE_YUV) {
-        switch (format.pixel_format) {
-        case COLOR_PIXEL_YUV422:
-            hw->cntl.isp_out_type = 1;
-            hw->cntl.demosaic_en = 1;
-            hw->cntl.rgb2yuv_en = 1;
-            hw->cntl.yuv2rgb_en = 0;
-            valid = true;
-            break;
-        case COLOR_PIXEL_YUV420:
-            hw->cntl.isp_out_type = 3;
-            hw->cntl.demosaic_en = 1;
-            hw->cntl.rgb2yuv_en = 1;
-            hw->cntl.yuv2rgb_en = 0;
-            valid = true;
-            break;
-        default:
-            break;
-        }
+    switch (format) {
+    case ISP_COLOR_RAW8:
+        hw->cntl.isp_out_type = 0;
+        hw->cntl.demosaic_en = 0;
+        hw->cntl.rgb2yuv_en = 0;
+        hw->cntl.yuv2rgb_en = 0;
+        valid = true;
+        break;
+    case ISP_COLOR_RGB888:
+        hw->cntl.isp_out_type = 2;
+        hw->cntl.demosaic_en = 1;
+        hw->cntl.rgb2yuv_en = 1;
+        hw->cntl.yuv2rgb_en = 1;
+        valid = true;
+        break;
+    case ISP_COLOR_RGB565:
+        hw->cntl.isp_out_type = 4;
+        hw->cntl.demosaic_en = 1;
+        hw->cntl.rgb2yuv_en = 1;
+        hw->cntl.yuv2rgb_en = 1;
+        valid = true;
+        break;
+    case ISP_COLOR_YUV422:
+        hw->cntl.isp_out_type = 1;
+        hw->cntl.demosaic_en = 1;
+        hw->cntl.rgb2yuv_en = 1;
+        hw->cntl.yuv2rgb_en = 0;
+        valid = true;
+        break;
+    case ISP_COLOR_YUV420:
+        hw->cntl.isp_out_type = 3;
+        hw->cntl.demosaic_en = 1;
+        hw->cntl.rgb2yuv_en = 1;
+        hw->cntl.yuv2rgb_en = 0;
+        valid = true;
+        break;
+    default:
+        break;
     }
 
     return valid;
@@ -1144,31 +1130,29 @@ static inline void isp_ll_color_set_brigntness(isp_dev_t *hw, int8_t color_brigh
  * @brief Set dvp data color format
  *
  * @param[in] hw      Hardware instance address
- * @param[in] format  color format, see `color_space_pixel_format_t`
+ * @param[in] format  color format, see `isp_color_t`
  *
  * @return true for valid format, false for invalid format
  */
-static inline bool isp_ll_dvp_set_data_type(isp_dev_t *hw, color_space_pixel_format_t format)
+static inline bool isp_ll_dvp_set_data_type(isp_dev_t *hw, isp_color_t format)
 {
     bool valid = false;
 
-    if (format.color_space == COLOR_SPACE_RAW) {
-        switch (format.pixel_format) {
-        case COLOR_PIXEL_RAW8:
-            hw->cam_conf.cam_data_type = ISP_LL_DVP_DATA_TYPE_RAW8;
-            valid = true;
-            break;
-        case COLOR_PIXEL_RAW10:
-            hw->cam_conf.cam_data_type = ISP_LL_DVP_DATA_TYPE_RAW10;
-            valid = true;
-            break;
-        case COLOR_PIXEL_RAW12:
-            hw->cam_conf.cam_data_type = ISP_LL_DVP_DATA_TYPE_RAW12;
-            valid = true;
-            break;
-        default:
-            break;
-        }
+    switch (format) {
+    case ISP_COLOR_RAW8:
+        hw->cam_conf.cam_data_type = ISP_LL_DVP_DATA_TYPE_RAW8;
+        valid = true;
+        break;
+    case ISP_COLOR_RAW10:
+        hw->cam_conf.cam_data_type = ISP_LL_DVP_DATA_TYPE_RAW10;
+        valid = true;
+        break;
+    case ISP_COLOR_RAW12:
+        hw->cam_conf.cam_data_type = ISP_LL_DVP_DATA_TYPE_RAW12;
+        valid = true;
+        break;
+    default:
+        break;
     }
 
     return valid;
