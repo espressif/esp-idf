@@ -12,6 +12,11 @@
 
 #pragma once
 
+#include "soc/soc_caps.h"
+#if SOC_HAS(PPA)
+#include "hal/ppa_ll.h"
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif

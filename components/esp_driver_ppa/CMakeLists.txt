@@ -18,5 +18,6 @@ endif()
 
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS ${public_include}
+                       REQUIRES esp_hal_ppa
                        PRIV_REQUIRES "${priv_requires}"
                       )

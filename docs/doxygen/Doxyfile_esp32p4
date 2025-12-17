@@ -29,6 +29,7 @@ INPUT += \
     $(PROJECT_PATH)/components/esp_driver_jpeg/include/driver/jpeg_encode.h \
     $(PROJECT_PATH)/components/esp_driver_jpeg/include/driver/jpeg_types.h \
     $(PROJECT_PATH)/components/esp_driver_ppa/include/driver/ppa.h \
+    $(PROJECT_PATH)/components/esp_hal_ppa/include/hal/ppa_types.h \
     $(PROJECT_PATH)/components/esp_driver_touch_sens/hw_ver3/include/driver/touch_version_types.h \
     $(PROJECT_PATH)/components/esp_driver_touch_sens/include/driver/touch_sens.h \
     $(PROJECT_PATH)/components/esp_driver_touch_sens/include/driver/touch_sens_types.h \
@@ -36,7 +37,6 @@ INPUT += \
     $(PROJECT_PATH)/components/esp_hal_cam/include/hal/isp_types.h \
     $(PROJECT_PATH)/components/esp_lcd/dsi/include/esp_lcd_mipi_dsi.h \
     $(PROJECT_PATH)/components/esp_lcd/rgb/include/esp_lcd_panel_rgb.h \
-    $(PROJECT_PATH)/components/hal/include/hal/ppa_types.h \
     $(PROJECT_PATH)/components/sdmmc/include/sd_pwr_ctrl.h \
     $(PROJECT_PATH)/components/sdmmc/include/sd_pwr_ctrl_by_on_chip_ldo.h \
     $(PROJECT_PATH)/components/esp_hal_dma/esp32p4/include/hal/bitscrambler_peri_select.h \
