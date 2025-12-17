@@ -1659,19 +1659,15 @@ static void btc_spp_vfs_register(void)
             break;
         }
 
-        esp_vfs_t vfs = {
-            .flags = ESP_VFS_FLAG_DEFAULT,
+        static const esp_vfs_fs_ops_t vfs = {
             .write = spp_vfs_write,
-            .open = NULL,
-            .fstat = NULL,
             .close = spp_vfs_close,
             .read = spp_vfs_read,
-            .fcntl = NULL
         };
 
         // No FD range is registered here: spp_vfs_id is used to register/unregister
         // file descriptors
-        if (esp_vfs_register_with_id(&vfs, NULL, &spp_local_param.spp_vfs_id) != ESP_OK) {
+        if (esp_vfs_register_fs_with_id(&vfs, ESP_VFS_FLAG_STATIC, NULL, &spp_local_param.spp_vfs_id) != ESP_OK) {
             ret = ESP_SPP_FAILURE;
             break;
         }

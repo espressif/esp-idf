@@ -48,7 +48,7 @@ extern "C" {
 #define ESP_VFS_PATH_MAX 15
 
 /**
- * Default value of flags member in esp_vfs_t structure.
+ * Default value of flags member in esp_vfs_fs_ops_t structure.
  */
 #define ESP_VFS_FLAG_DEFAULT (1 << 0)
 
@@ -70,6 +70,7 @@ extern "C" {
 
 /**
  * @brief VFS definition structure
+ * @note Prefer using esp_vfs_fs_ops_t with esp_vfs_register_fs*() instead.
  *
  * This structure should be filled with pointers to corresponding
  * FS driver functions.
@@ -250,8 +251,6 @@ typedef struct
 #endif // CONFIG_VFS_SUPPORT_SELECT || defined __DOXYGEN__
 } esp_vfs_t;
 
-
-
 /**
  * Register a virtual filesystem for given path prefix.
  *
@@ -279,23 +278,6 @@ esp_err_t esp_vfs_register(const char* base_path, const esp_vfs_t* vfs, void* ct
 
 /**
  * Special case function for registering a VFS that uses a method other than
- * open() to open new file descriptors from the interval <min_fd; max_fd).
- *
- * This is a special-purpose function intended for registering LWIP sockets to VFS.
- *
- * @param vfs Pointer to esp_vfs_t. Meaning is the same as for esp_vfs_register().
- * @param ctx Pointer to context structure. Meaning is the same as for esp_vfs_register().
- * @param min_fd The smallest file descriptor this VFS will use.
- * @param max_fd Upper boundary for file descriptors this VFS will use (the biggest file descriptor plus one).
- *
- * @return  ESP_OK if successful, ESP_ERR_NO_MEM if too many VFSes are
- *          registered, ESP_ERR_INVALID_ARG if the file descriptor boundaries
- *          are incorrect.
- */
-esp_err_t esp_vfs_register_fd_range(const esp_vfs_t *vfs, void *ctx, int min_fd, int max_fd);
-
-/**
- * Special case function for registering a VFS that uses a method other than
  * open() to open new file descriptors. In comparison with
  * esp_vfs_register_fd_range, this function doesn't pre-registers an interval
  * of file descriptors. File descriptors can be registered later, by using
@@ -310,7 +292,7 @@ esp_err_t esp_vfs_register_fd_range(const esp_vfs_t *vfs, void *ctx, int min_fd,
  *          registered, ESP_ERR_INVALID_ARG if the file descriptor boundaries
  *          are incorrect.
  */
-esp_err_t esp_vfs_register_with_id(const esp_vfs_t *vfs, void *ctx, esp_vfs_id_t *vfs_id);
+esp_err_t esp_vfs_register_with_id(const esp_vfs_t *vfs, void *ctx, esp_vfs_id_t *vfs_id) __attribute__((deprecated("Use esp_vfs_register_fs_with_id() instead")));
 
 /**
  * Unregister a virtual filesystem for given path prefix

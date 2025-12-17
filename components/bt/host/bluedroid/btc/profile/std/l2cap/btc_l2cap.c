@@ -1252,19 +1252,15 @@ static void btc_l2cap_vfs_register(void)
             break;
         }
 
-        esp_vfs_t vfs = {
-            .flags = ESP_VFS_FLAG_DEFAULT,
+        static const esp_vfs_fs_ops_t vfs = {
             .write = l2cap_vfs_write,
-            .open = NULL,
-            .fstat = NULL,
             .close = l2cap_vfs_close,
             .read = l2cap_vfs_read,
-            .fcntl = NULL
         };
 
         // No FD range is registered here: l2cap_vfs_id is used to register/unregister
         // file descriptors
-        if (esp_vfs_register_with_id(&vfs, NULL, &l2cap_local_param.l2cap_vfs_id) != ESP_OK) {
+        if (esp_vfs_register_fs_with_id(&vfs, ESP_VFS_FLAG_STATIC, NULL, &l2cap_local_param.l2cap_vfs_id) != ESP_OK) {
             ret = ESP_BT_L2CAP_FAILURE;
             break;
         }

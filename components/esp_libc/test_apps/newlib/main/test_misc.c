@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -153,14 +153,17 @@ TEST_CASE("file - scandir", "[newlib_misc]")
 
     scandir_test_dir_context_t scandir_test_dir_ctx = { .filenames = test_filenames, .num_files = num_test_files };
 
-    const esp_vfs_t scandir_test_vfs = {
-        .flags = ESP_VFS_FLAG_CONTEXT_PTR,
+    static const esp_vfs_dir_ops_t dir_ops = {
         .opendir_p = scandir_test_opendir,
         .readdir_p = scandir_test_readdir,
         .closedir_p = scandir_test_closedir
     };
 
-    TEST_ESP_OK(esp_vfs_register("/data", &scandir_test_vfs, &scandir_test_dir_ctx));
+    static const esp_vfs_fs_ops_t fs_ops = {
+        .dir = &dir_ops,
+    };
+
+    TEST_ESP_OK(esp_vfs_register_fs("/data", &fs_ops, ESP_VFS_FLAG_CONTEXT_PTR | ESP_VFS_FLAG_STATIC, &scandir_test_dir_ctx));
 
     struct dirent **namelist;
     s_select_calls = 0;

@@ -14,6 +14,8 @@ VFS
 
 - 位于 ``vfs`` 组件中已弃用的 UART-VFS 函数 ``esp_vfs_dev_uart_*`` 现已删除，请改用 UART 驱动中的 API：``uart_vfs_dev_*``。
 - 位于 ``vfs`` 组件中已弃用的 USB-Serial-JTAG-VFS 函数 ``esp_vfs_dev_usb_serial_jtag_*`` 现已删除，请改用 USB-Serial-JTAG 驱动中的 API：``usb_serial_jtag_vfs_*``。
+- ``esp_vfs_register_fd_range`` 现被视为私有接口，其函数签名已调整为匹配新的 VFS API 风格。仍依赖此内部辅助函数的项目需包含 ``esp_private/socket.h`` 头文件，并请注意该 API 可能在不另行通知的情况下发生变更。
+- 基于 ``esp_vfs_t`` 而非 ``esp_vfs_fs_ops_t`` 的传统 VFS API（如 ``esp_vfs_register``）已弃用，并将在下一个主版本中移除。请迁移至基于 ``esp_vfs_fs_ops_t`` 的新 API。
 
 
 ``esp_vfs_console``
