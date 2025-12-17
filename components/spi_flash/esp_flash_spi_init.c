@@ -146,7 +146,7 @@ esp_flash_t *esp_flash_default_chip = NULL;
 // 1. Frequency limit workaround is enabled (CONFIG_SPI_FLASH_FREQ_LIMIT_C5_240MHZ)
 // 2. Flash frequency requires timing tuning (80MHz or 120MHz, i.e., > 40MHz)
 // 3. CPU frequency reduction will trigger MSPI timing tuning to enter low speed mode
-//    This happens when: SOC_SPI_MEM_PSRAM_FREQ_AXI_CONSTRAINED && CONFIG_SPIRAM &&
+//    This happens when: MSPI_TIMING_LL_PSRAM_FREQ_AXI_CONSTRAINED && CONFIG_SPIRAM &&
 //                      (target_cpu_freq < CONFIG_SPIRAM_SPEED)
 //    Note: The runtime check for CPU freq < PSRAM speed is done in clk_utils.c,
 //          which calls mspi_timing_change_speed_mode_cache_safe(true) to enter low speed mode.
