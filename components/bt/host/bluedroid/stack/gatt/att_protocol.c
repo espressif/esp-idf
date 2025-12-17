@@ -33,7 +33,7 @@
 #define GATT_HDR_FIND_TYPE_VALUE_LEN    21
 #define GATT_OP_CODE_SIZE   1
 /**********************************************************************
-**   ATT protocl message building utility                              *
+**   ATT protocol message building utility                              *
 ***********************************************************************/
 /*******************************************************************************
 **
@@ -494,7 +494,7 @@ BT_HDR *attp_build_sr_msg(tGATT_TCB *p_tcb, UINT8 op_code, tGATT_SR_MSG *p_msg)
 ** Description      This function sends the server response or indication message
 **                  to client.
 **
-** Parameter        p_tcb: pointer to the connecton control block.
+** Parameter        p_tcb: pointer to the connection  control block.
 **                  p_msg: pointer to message parameters structure.
 **
 ** Returns          GATT_SUCCESS if successfully sent; otherwise error code.
