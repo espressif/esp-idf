@@ -6,7 +6,7 @@
 
 PROVIDE ( TRACE0              = 0x60000000 );
 PROVIDE ( TRACE1              = 0x60001000 );
-PROVIDE ( ASSIST_DEBUG        = 0x60002000 );
+PROVIDE ( BUS_MONITOR         = 0x60002000 );
 PROVIDE ( INTPRI              = 0x60005000 );
 PROVIDE ( CACHE               = 0x60008000 );
 PROVIDE ( GPSPI2              = 0x60010000 );
