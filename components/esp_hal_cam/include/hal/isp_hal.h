@@ -83,7 +83,6 @@ typedef struct {
  */
 void isp_hal_init(isp_hal_context_t *hal, int isp_id);
 
-
 /**
  * @brief Color configurations
  */
@@ -93,7 +92,6 @@ typedef struct {
     uint32_t color_hue;                           ///< The color hue angle value, range 0-359
     int color_brightness;                         ///< The color brightness value, range -128~127
 } isp_hal_color_cfg_t;
-
 
 /*---------------------------------------------------------------
                       AF

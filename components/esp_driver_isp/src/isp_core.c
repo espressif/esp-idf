@@ -19,7 +19,7 @@
 #include "hal/hal_utils.h"
 #include "hal/color_hal.h"
 #include "soc/mipi_csi_bridge_struct.h"
-#include "soc/isp_periph.h"
+#include "hal/isp_periph.h"
 #include "soc/soc_caps.h"
 #include "esp_private/esp_clk_tree_common.h"
 #include "esp_private/isp_private.h"
@@ -28,7 +28,7 @@
 
 typedef struct isp_platform_t {
     _lock_t         mutex;
-    isp_processor_t *processors[SOC_ISP_NUMS];
+    isp_processor_t *processors[ISP_LL_PERIPH_NUMS];
 } isp_platform_t;
 
 static const char *TAG = "ISP";
@@ -40,7 +40,7 @@ static esp_err_t s_isp_claim_processor(isp_processor_t *proc)
 
     _lock_acquire(&s_platform.mutex);
     bool found = false;
-    for (int i = 0; i < SOC_ISP_NUMS; i ++) {
+    for (int i = 0; i < ISP_LL_PERIPH_NUMS; i ++) {
         found = !s_platform.processors[i];
         if (found) {
             s_platform.processors[i] = proc;

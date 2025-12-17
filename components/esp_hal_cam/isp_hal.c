@@ -56,9 +56,9 @@ void isp_hal_af_window_config(isp_hal_context_t *hal, int window_id, const isp_w
 bool isp_hal_awb_set_window_range(isp_hal_context_t *hal, const isp_window_t *win)
 {
     if (win->top_left.x > win->btm_right.x ||
-        win->top_left.y > win->btm_right.y ||
-        win->btm_right.x > ISP_LL_AWB_WINDOW_MAX_RANGE ||
-        win->btm_right.y > ISP_LL_AWB_WINDOW_MAX_RANGE) {
+            win->top_left.y > win->btm_right.y ||
+            win->btm_right.x > ISP_LL_AWB_WINDOW_MAX_RANGE ||
+            win->btm_right.y > ISP_LL_AWB_WINDOW_MAX_RANGE) {
         return false;
     }
     isp_ll_awb_set_window_range(hal->hw, win->top_left.x, win->top_left.y,
