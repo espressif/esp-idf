@@ -603,7 +603,7 @@ static bool jpeg_dec_transaction_on_picked(uint32_t channel_num, const dma2d_tra
 
 static esp_err_t jpeg_color_space_support_check(jpeg_decoder_handle_t decoder_engine)
 {
-#if !(CONFIG_ESP_REV_MIN_FULL < 300 && SOC_IS(ESP32P4)) // Invisible for unsupported chips
+#if (CONFIG_ESP_REV_MIN_FULL < 300 && SOC_IS(ESP32P4)) // For P4 less than 3.0
     if (decoder_engine->sample_method == JPEG_DOWN_SAMPLING_YUV444) {
         if (decoder_engine->output_format == JPEG_DECODE_OUT_FORMAT_YUV422 || decoder_engine->output_format == JPEG_DECODE_OUT_FORMAT_YUV420) {
             ESP_LOGE(TAG, "Detected YUV444 but want to convert to YUV422/YUV420, which is not supported");
@@ -621,9 +621,11 @@ static esp_err_t jpeg_color_space_support_check(jpeg_decoder_handle_t decoder_en
         }
     }
 #else
-    if (decoder_engine->sample_method != JPEG_DOWN_SAMPLING_YUV422) {
-        ESP_LOGE(TAG, "Detected YUV444/YUV420 but want to convert to YUV422, which is not supported");
-        return ESP_ERR_INVALID_ARG;
+    if (decoder_engine->sample_method == JPEG_DOWN_SAMPLING_YUV420 || decoder_engine->sample_method == JPEG_DOWN_SAMPLING_YUV444) {
+        if (decoder_engine->output_format == JPEG_DECODE_OUT_FORMAT_YUV422) {
+            ESP_LOGE(TAG, "Detected YUV444/YUV420 but want to convert to YUV422, which is not supported");
+            return ESP_ERR_INVALID_ARG;
+        }
     }
 #endif
     return ESP_OK;
