@@ -1,0 +1,40 @@
+name: Test Issue Fixed-in Comment
+
+on:
+  issues:
+    types: [closed]
+
+jobs:
+  post-fixed-in:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Build fixed-in table
+        id: table
+        run: |
+          # 1. Extract the MR IID from the issue body
+          MR=$(echo "${{ github.event.issue.body }}" \
+               | grep -oE 'MR IID: *[0-9]+' \
+               | grep -oE '[0-9]+')
+          # 2. Run the lookup script
+          MD=$(node tools/get_fix_info_cli.js --mr $MR --format markdown)
+          # 3. Expose it for the next step
+          echo "::set-output name=md::$MD"
+
+      - name: Post fixed-in comment
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const table = `\n${{ steps.table.outputs.md }}`;
+            const prompt = `
+Was this issue resolved to your satisfaction?
+👍 **Yes – my issue was resolved**
+👎 **No – my issue was not resolved**
+_(Other users — please do not vote here.)_
+`;
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.issue.number,
+              body: table + prompt
+            });
