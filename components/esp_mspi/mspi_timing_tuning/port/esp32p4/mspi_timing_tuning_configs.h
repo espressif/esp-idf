@@ -34,7 +34,11 @@ extern "C" {
 #endif
 #define MSPI_TIMING_SPLL_FREQ_MHZ           480
 
-#define MSPI_TIMING_PSRAM_DTR_MODE          CONFIG_SPIRAM_MODE_HEX
+#if CONFIG_SPIRAM_MODE_HEX
+#define MSPI_TIMING_PSRAM_DTR_MODE          1
+#else
+#define MSPI_TIMING_PSRAM_DTR_MODE          0
+#endif
 #define MSPI_TIMING_FLASH_STR_MODE          1
 
 #if CONFIG_ESPTOOLPY_FLASHFREQ_20M

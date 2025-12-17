@@ -36,6 +36,11 @@
 #define OCT_PSRAM_RD_REG_DUMMY_BITLEN   (2*(5-1))
 #define OCT_PSRAM_WR_DUMMY_BITLEN       (2*(5-1))
 #define OCT_PSRAM_CS1_IO                MSPI_IOMUX_PIN_NUM_CS1
+#define OCT_PSRAM_D4_IO                 MSPI_IOMUX_PIN_NUM_D4
+#define OCT_PSRAM_D5_IO                 MSPI_IOMUX_PIN_NUM_D5
+#define OCT_PSRAM_D6_IO                 MSPI_IOMUX_PIN_NUM_D6
+#define OCT_PSRAM_D7_IO                 MSPI_IOMUX_PIN_NUM_D7
+#define OCT_PSRAM_DQS_IO                MSPI_IOMUX_PIN_NUM_DQS
 #define OCT_PSRAM_VENDOR_ID_AP          0xD
 #define OCT_PSRAM_VENDOR_ID_UNILC       0x1A
 
@@ -107,7 +112,7 @@ static const char* TAG = "octal_psram";
 static uint32_t s_psram_size;   //this stands for physical psram size in bytes
 static void s_config_psram_spi_phases(void);
 
-uint8_t esp_psram_impl_get_cs_io(void)
+static uint8_t s_get_cs_io(void)
 {
     return OCT_PSRAM_CS1_IO;
 }
@@ -302,6 +307,14 @@ static void s_set_psram_cs_timing(void)
 
 static void s_init_psram_pins(void)
 {
+    /**
+     * The upper data lines are shared with the octal flash, which sets them up in
+     * `esp_mspi_pin_init` when it needs them. Otherwise they are untouched until here, so that a
+     * board whose psram turns out not to be octal keeps them as ordinary GPIOs.
+     */
+    esp_rom_opiflash_pin_config();
+    mspi_timing_set_pin_drive_strength();
+
     //Set cs1 pin function
     PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[OCT_PSRAM_CS1_IO],  FUNC_SPICS1_SPICS1);
     //Set mspi cs1 drive strength
@@ -310,7 +323,8 @@ static void s_init_psram_pins(void)
     REG_SET_FIELD(SPI_MEM_DATE_REG(0), SPI_MEM_SPI_SMEM_SPICLK_FUN_DRV, 3);
 
     // Preserve psram pins
-    esp_gpio_reserve(BIT64(OCT_PSRAM_CS1_IO));
+    esp_gpio_reserve(BIT64(OCT_PSRAM_CS1_IO) | BIT64(OCT_PSRAM_D4_IO) | BIT64(OCT_PSRAM_D5_IO) |
+                     BIT64(OCT_PSRAM_D6_IO) | BIT64(OCT_PSRAM_D7_IO) | BIT64(OCT_PSRAM_DQS_IO));
 }
 
 /**
@@ -349,11 +363,10 @@ static void s_set_flash_vendor_required_regs(void)
     }
 }
 
-esp_err_t esp_psram_impl_enable(void)
+static esp_err_t s_probe(void)
 {
     s_init_psram_pins();
     s_set_psram_cs_timing();
-    s_configure_psram_ecc();
 
     //enter MSPI slow mode to init PSRAM device registers (early init: see mspi_timing_enter_low_speed_early)
     mspi_timing_enter_low_speed_early();
@@ -387,6 +400,13 @@ esp_err_t esp_psram_impl_enable(void)
                    mode_reg.mr2.density == 0x5 ? PSRAM_SIZE_16MB :
                    mode_reg.mr2.density == 0x7 ? PSRAM_SIZE_32MB :
                    mode_reg.mr2.density == 0x6 ? PSRAM_SIZE_64MB : 0;
+
+    return ESP_OK;
+}
+
+static esp_err_t s_configure(void)
+{
+    s_configure_psram_ecc();
 
     //Do PSRAM timing tuning, we use SPI1 to do the tuning, and set the SPI0 PSRAM timing related registers accordingly
     mspi_timing_psram_tuning();
@@ -442,7 +462,7 @@ static void s_config_psram_spi_phases(void)
  *
  * Consider moving these to another file if this kind of APIs grows dramatically
  *-------------------------------------------------------------------------------*/
-esp_err_t esp_psram_impl_get_physical_size(uint32_t *out_size_bytes)
+static esp_err_t s_get_physical_size(uint32_t *out_size_bytes)
 {
     if (!out_size_bytes) {
         return ESP_ERR_INVALID_ARG;
@@ -456,7 +476,7 @@ esp_err_t esp_psram_impl_get_physical_size(uint32_t *out_size_bytes)
  * This function is to get the available physical psram size in bytes.
  * If ECC is enabled, available PSRAM size will be 15/16 times its physical size.
  */
-esp_err_t esp_psram_impl_get_available_size(uint32_t *out_size_bytes)
+static esp_err_t s_get_available_size(uint32_t *out_size_bytes)
 {
     if (!out_size_bytes) {
         return ESP_ERR_INVALID_ARG;
@@ -472,14 +492,26 @@ esp_err_t esp_psram_impl_get_available_size(uint32_t *out_size_bytes)
 
 /******************************* Halfsleep Mode *******************************/
 // This PSRAM supports halfsleep mode, but not implemented yet
-PSRAM_HALFSLEEP_SLEEP_CODE_ATTR void esp_psram_impl_enter_halfsleep_mode(void)
+PSRAM_HALFSLEEP_SLEEP_CODE_ATTR static void s_enter_halfsleep_mode(void)
 {
 }
 
-PSRAM_HALFSLEEP_SLEEP_CODE_ATTR void esp_psram_impl_exit_halfsleep_mode(void)
+PSRAM_HALFSLEEP_SLEEP_CODE_ATTR static void s_exit_halfsleep_mode(void)
 {
 }
 
-PSRAM_HALFSLEEP_RESUME_CODE_ATTR void esp_psram_impl_resume_from_halfsleep_mode(uint32_t slowclk_period)
+PSRAM_HALFSLEEP_RESUME_CODE_ATTR static void s_resume_from_halfsleep_mode(uint32_t slowclk_period)
 {
 }
+
+const esp_psram_impl_t g_psram_impl_oct = {
+    .mode = PSRAM_MODE_OCT,
+    .probe = s_probe,
+    .configure = s_configure,
+    .get_physical_size = s_get_physical_size,
+    .get_available_size = s_get_available_size,
+    .get_cs_io = s_get_cs_io,
+    .enter_halfsleep_mode = s_enter_halfsleep_mode,
+    .exit_halfsleep_mode = s_exit_halfsleep_mode,
+    .resume_from_halfsleep_mode = s_resume_from_halfsleep_mode,
+};
