@@ -21,7 +21,6 @@ def test_i2c(dut: Dut) -> None:
 
 
 @pytest.mark.generic_multi_device
-@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration # TODO: IDF-14395')
 @pytest.mark.parametrize(
     'count, config',
     [

@@ -1,7 +1,0 @@
-# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
-
-components/esp_mm/test_apps/mm:
-  disable_test:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: p4 rev3 migration # TODO: IDF-14470

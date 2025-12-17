@@ -6,7 +6,6 @@ from pytest_embedded_idf.utils import idf_parametrize
 from pytest_embedded_idf.utils import soc_filtered_targets
 
 
-@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='lack of runners for now')
 @pytest.mark.lp_i2s
 @idf_parametrize('target', soc_filtered_targets('SOC_LP_VAD_SUPPORTED == 1'), indirect=['target'])
 def test_efuse_component_ut(dut: Dut) -> None:
