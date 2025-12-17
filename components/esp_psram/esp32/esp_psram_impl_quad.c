@@ -246,7 +246,7 @@ static void psram_cache_init(psram_cache_speed_t psram_cache_mode, psram_vaddr_m
 
 static uint8_t s_psram_cs_io = (uint8_t) -1;
 
-uint8_t esp_psram_impl_get_cs_io(void)
+static uint8_t s_get_cs_io(void)
 {
     return s_psram_cs_io;
 }
@@ -852,7 +852,7 @@ bool psram_is_32mbit_ver0(void)
  * Psram mode init will overwrite original flash speed mode, so that it is possible to change psram and flash speed after OTA.
  * Flash read mode(QIO/QOUT/DIO/DOUT) will not be changed in app bin. It is decided by bootloader, OTA can not change this mode.
  */
-esp_err_t IRAM_ATTR esp_psram_impl_enable(void)   //psram init
+static esp_err_t IRAM_ATTR s_probe(void)   //psram init
 {
     psram_vaddr_mode_t vaddrmode = PSRAM_MODE;
     psram_cache_speed_t mode = PSRAM_SPEED;
@@ -1149,7 +1149,7 @@ static void IRAM_ATTR psram_cache_init(psram_cache_speed_t psram_cache_mode, psr
     CLEAR_PERI_REG_MASK(SPI_PIN_REG(0), SPI_CS1_DIS_M); //ENABLE SPI0 CS1 TO PSRAM(CS0--FLASH; CS1--SRAM)
 }
 
-esp_err_t esp_psram_impl_get_physical_size(uint32_t *out_size_bytes)
+static esp_err_t s_get_physical_size(uint32_t *out_size_bytes)
 {
     if (!out_size_bytes) {
         return ESP_ERR_INVALID_ARG;
@@ -1171,23 +1171,35 @@ esp_err_t esp_psram_impl_get_physical_size(uint32_t *out_size_bytes)
  * This function is to get the available physical psram size in bytes.
  * On ESP32, all of the PSRAM physical region are available
  */
-esp_err_t esp_psram_impl_get_available_size(uint32_t *out_size_bytes)
+static esp_err_t s_get_available_size(uint32_t *out_size_bytes)
 {
-    return esp_psram_impl_get_physical_size(out_size_bytes);
+    return s_get_physical_size(out_size_bytes);
 }
 
 /******************************* Halfsleep Mode *******************************/
 // This PSRAM device does not support halfsleep mode
-PSRAM_HALFSLEEP_SLEEP_CODE_ATTR void esp_psram_impl_enter_halfsleep_mode(void)
+PSRAM_HALFSLEEP_SLEEP_CODE_ATTR static void s_enter_halfsleep_mode(void)
 {
 }
 
-PSRAM_HALFSLEEP_SLEEP_CODE_ATTR void esp_psram_impl_exit_halfsleep_mode(void)
+PSRAM_HALFSLEEP_SLEEP_CODE_ATTR static void s_exit_halfsleep_mode(void)
 {
 }
 
-PSRAM_HALFSLEEP_RESUME_CODE_ATTR void esp_psram_impl_resume_from_halfsleep_mode(uint32_t slowclk_period)
+PSRAM_HALFSLEEP_RESUME_CODE_ATTR static void s_resume_from_halfsleep_mode(uint32_t slowclk_period)
 {
 }
+
+
+const esp_psram_impl_t g_psram_impl_quad = {
+    .mode = PSRAM_MODE_QUAD,
+    .probe = s_probe,
+    .get_physical_size = s_get_physical_size,
+    .get_available_size = s_get_available_size,
+    .get_cs_io = s_get_cs_io,
+    .enter_halfsleep_mode = s_enter_halfsleep_mode,
+    .exit_halfsleep_mode = s_exit_halfsleep_mode,
+    .resume_from_halfsleep_mode = s_resume_from_halfsleep_mode,
+};
 
 #endif // CONFIG_SPIRAM
