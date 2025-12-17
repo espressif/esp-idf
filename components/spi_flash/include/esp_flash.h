@@ -39,10 +39,16 @@ typedef struct {
 */
 typedef struct {
     /**
+     * Flags for start function
+     */
+    /** Limit CPU frequency during flash operations (ESP32-C5 only, 240MHz).
+     */
+    #define ESP_FLASH_START_FLAG_LIMIT_CPU_FREQ  BIT(0)
+    /**
      * Called before commencing any flash operation. Does not need to be
      * recursive (ie is called at most once for each call to 'end').
      */
-    esp_err_t (*start)(void *arg);
+    esp_err_t (*start)(void *arg, uint32_t flags);
 
     /** Called after completing any flash operation. */
     esp_err_t (*end)(void *arg);
