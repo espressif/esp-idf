@@ -2941,7 +2941,9 @@ void bta_jv_l2cap_connect_le(tBTA_JV_MSG *p_data)
     if (call_init_f) {
         cc->p_cback(BTA_JV_L2CAP_CL_INIT_EVT, &evt, cc->user_data);
     }
-    t->init_called = TRUE;
+    if (t) {
+        t->init_called = TRUE;
+    }
 }
 
 

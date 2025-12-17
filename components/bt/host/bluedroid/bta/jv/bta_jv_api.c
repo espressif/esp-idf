@@ -696,7 +696,7 @@ on
 *******************************************************************************/
 int BTA_JvL2capRead(UINT32 handle, UINT32 req_id, UINT8 *p_data, UINT16 len)
 {
-    tBTA_JV_L2CAP_READ evt_data;
+    tBTA_JV_L2CAP_READ evt_data = {0};
 
     APPL_TRACE_API( "%s", __func__);
 

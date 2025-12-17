@@ -415,6 +415,10 @@ BOOLEAN SDP_AddAttribute (UINT32 handle, UINT16 attr_id, UINT8 attr_type,
     tSDP_RECORD     *p_rec = NULL;
     list_node_t     *p_node= NULL;
 
+    if (!p_val) {
+        return FALSE;
+    }
+
 #if (BT_TRACE_VERBOSE == TRUE)
     if (sdp_cb.trace_level >= BT_TRACE_LEVEL_DEBUG) {
         if ((attr_type == UINT_DESC_TYPE) ||
@@ -447,6 +451,12 @@ BOOLEAN SDP_AddAttribute (UINT32 handle, UINT16 attr_id, UINT8 attr_type,
 	p_rec= list_node(p_node);
         if (p_rec->record_handle == handle) {
             tSDP_ATTRIBUTE  *p_attr = &p_rec->attribute[0];
+
+            // error out early, no need to look up
+            if (p_rec->free_pad_ptr >= SDP_MAX_PAD_LEN) {
+                SDP_TRACE_ERROR("the free pad for SDP record with handle %d is full, skip adding the attribute", handle);
+                return (FALSE);
+            }
 
             /* Found the record. Now, see if the attribute already exists */
             for (xx = 0; xx < p_rec->num_attributes; xx++, p_attr++) {

@@ -429,8 +429,7 @@ BOOLEAN btm_ble_dealloc_addr_filter_counter(tBLE_BD_ADDR *p_bd_addr, UINT8 filte
 
     for (i = 0; i < cmn_ble_adv_vsc_cb.max_filter; i ++, p_addr_filter ++) {
         if ((p_addr_filter->in_use) && (NULL == p_bd_addr ||
-                                        (NULL != p_bd_addr &&
-                                         memcmp(p_bd_addr->bda, p_addr_filter->bd_addr, BD_ADDR_LEN) == 0))) {
+                                        (memcmp(p_bd_addr->bda, p_addr_filter->bd_addr, BD_ADDR_LEN) == 0)) {
             found = TRUE;
             memset(p_addr_filter, 0, sizeof(tBTM_BLE_PF_COUNT));
 
@@ -915,7 +914,7 @@ tBTM_STATUS btm_ble_clear_scan_pf_filter(tBTM_BLE_SCAN_COND_OP action,
 
     if (NULL == p_bda_filter ||
             /* not a generic filter */
-            (p_target != NULL && p_bda_filter)) {
+            (p_target != NULL)) {
         BTM_TRACE_ERROR("Error: Can not clear filter, No PF filter has been configured!");
         return st;
     }

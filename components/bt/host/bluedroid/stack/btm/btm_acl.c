@@ -792,6 +792,11 @@ void btm_acl_encrypt_change (UINT16 handle, UINT8 status, UINT8 encr_enable)
     if (p == NULL) {
         return;
     }
+    /* if we are trying to drop encryption on an encrypted connection, drop the connection */
+    if (!encr_enable && (p->encrypt_state == BTM_ACL_ENCRYPT_STATE_ENCRYPT_ON)) {
+        btm_sec_disconnect(handle, HCI_ERR_HOST_REJECT_SECURITY);
+        return;
+    }
     /* Process Role Switch if active */
     if (p->switch_role_state == BTM_ACL_SWKEY_STATE_ENCRYPTION_OFF) {
         /* if encryption turn off failed we still will try to switch role */
@@ -2300,7 +2305,7 @@ void BTM_BleGetPeriodicAdvListSize(uint8_t *size)
 ** Returns          void
 **
 *******************************************************************************/
-void btm_read_tx_power_complete (UINT8 *p, BOOLEAN is_ble)
+void btm_read_tx_power_complete (UINT8 *p, UINT16 evt_len, BOOLEAN is_ble)
 {
     tBTM_CMPL_CB            *p_cb = btm_cb.devcb.p_tx_power_cmpl_cb;
     tBTM_TX_POWER_RESULTS   results;
@@ -2313,12 +2318,23 @@ void btm_read_tx_power_complete (UINT8 *p, BOOLEAN is_ble)
     btm_cb.devcb.p_tx_power_cmpl_cb = NULL;
 
     if (p_cb) {
+        if (evt_len < 1) {
+            BTM_TRACE_ERROR("Bogus event packet, too short\n");
+            results.status = BTM_ERR_PROCESSING;
+            goto err_out;
+        }
+
         STREAM_TO_UINT8  (results.hci_status, p);
 
         if (results.hci_status == HCI_SUCCESS) {
             results.status = BTM_SUCCESS;
 
             if (!is_ble) {
+                if (evt_len < 1 + 3) {
+                    BTM_TRACE_ERROR("Bogus event packet, too short\n");
+                    results.status = BTM_ERR_PROCESSING;
+                    goto err_out;
+                }
                 STREAM_TO_UINT16 (handle, p);
                 STREAM_TO_UINT8 (results.tx_power, p);
 
@@ -2330,6 +2346,11 @@ void btm_read_tx_power_complete (UINT8 *p, BOOLEAN is_ble)
             }
 #if BLE_INCLUDED == TRUE
             else {
+                if (evt_len < 1 + 1) {
+                    BTM_TRACE_ERROR("Bogus event packet, too short\n");
+                    results.status = BTM_ERR_PROCESSING;
+                    goto err_out;
+                }
                 STREAM_TO_UINT8 (results.tx_power, p);
                 memcpy(results.rem_bda, btm_cb.devcb.read_tx_pwr_addr, BD_ADDR_LEN);
             }
@@ -2340,6 +2361,7 @@ void btm_read_tx_power_complete (UINT8 *p, BOOLEAN is_ble)
             results.status = BTM_ERR_PROCESSING;
         }
 
+err_out:
         (*p_cb)(&results);
     }
 }
@@ -2411,7 +2433,7 @@ void btm_read_channel_map_complete(UINT8 *p)
 ** Returns          void
 **
 *******************************************************************************/
-void btm_read_rssi_complete (UINT8 *p)
+void btm_read_rssi_complete (UINT8 *p, UINT16 evt_len)
 {
     tBTM_CMPL_CB            *p_cb = btm_cb.devcb.p_rssi_cmpl_cb;
     tBTM_RSSI_RESULTS        results;
@@ -2424,11 +2446,21 @@ void btm_read_rssi_complete (UINT8 *p)
     btm_cb.devcb.p_rssi_cmpl_cb = NULL;
 
     if (p_cb) {
+        if (evt_len < 1) {
+            BTM_TRACE_ERROR("Bogus event packet, too short");
+            results.status = BTM_ERR_PROCESSING;
+            goto err_out;
+        }
         STREAM_TO_UINT8  (results.hci_status, p);
 
         if (results.hci_status == HCI_SUCCESS) {
             results.status = BTM_SUCCESS;
 
+            if (evt_len < 1 + 3) {
+                BTM_TRACE_ERROR("Bogus event packet, too short");
+                results.status = BTM_ERR_PROCESSING;
+                goto err_out;
+            }
             STREAM_TO_UINT16 (handle, p);
 
             STREAM_TO_UINT8 (results.rssi, p);
@@ -2444,6 +2476,7 @@ void btm_read_rssi_complete (UINT8 *p)
             results.status = BTM_ERR_PROCESSING;
         }
 
+err_out:
         (*p_cb)(&results);
     }
 }

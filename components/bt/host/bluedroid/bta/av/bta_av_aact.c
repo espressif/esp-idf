@@ -1954,13 +1954,17 @@ void bta_av_getcap_results (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
 void bta_av_setconfig_rej (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
 {
     tBTA_AV_REJECT reject;
-    UINT8   avdt_handle = p_data->ci_setconfig.avdt_handle;
+    UINT8 err_code = p_data->ci_setconfig.err_code;
 
-    bta_av_adjust_seps_idx(p_scb, avdt_handle);
+    if (err_code == AVDT_SUCCESS) {
+        err_code = AVDT_ERR_UNSUP_CFG;
+    }
+
+    bta_av_adjust_seps_idx(p_scb, p_scb->avdt_handle);
     APPL_TRACE_DEBUG("bta_av_setconfig_rej: sep_idx: %d", p_scb->sep_idx);
-    AVDT_ConfigRsp(p_scb->avdt_handle, p_scb->avdt_label, p_data->ci_setconfig.err_code, 0);
+    AVDT_ConfigRsp(p_scb->avdt_handle, p_scb->avdt_label, err_code, 0);
 
-    bdcpy(reject.bd_addr, p_data->str_msg.bd_addr);
+    bdcpy(reject.bd_addr, p_scb->peer_addr);
     reject.hndl = p_scb->hndl;
     (*bta_av_cb.p_cback)(BTA_AV_REJECT_EVT, (tBTA_AV *) &reject);
 }

@@ -320,6 +320,12 @@ static void smp_br_data_received(UINT16 channel, BD_ADDR bd_addr, BT_HDR *p_buf)
     UINT8   cmd ;
     SMP_TRACE_EVENT ("SMDBG l2c %s\n", __func__);
 
+    if (p_buf->len < 1) {
+        SMP_TRACE_WARNING( "Bogus l2cap packet, too short");
+        osi_free(p_buf);
+        return;
+    }
+
     STREAM_TO_UINT8(cmd, p);
 
     /* sanity check */
@@ -331,6 +337,11 @@ static void smp_br_data_received(UINT16 channel, BD_ADDR bd_addr, BT_HDR *p_buf)
 
     /* reject the pairing request if there is an on-going SMP pairing */
     if (SMP_OPCODE_PAIRING_REQ == cmd) {
+        if (p_buf->len != smp_cmd_size_per_spec[cmd]) {
+            SMP_TRACE_WARNING( "Ignore received command 0x%02x with invalid length %d", cmd, p_buf->len);
+            osi_free(p_buf);
+            return;
+        }
         if ((p_cb->state == SMP_STATE_IDLE) && (p_cb->br_state == SMP_BR_STATE_IDLE)) {
             p_cb->role = HCI_ROLE_SLAVE;
             p_cb->smp_over_br = TRUE;

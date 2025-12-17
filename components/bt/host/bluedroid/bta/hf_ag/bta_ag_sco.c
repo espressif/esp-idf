@@ -1405,14 +1405,8 @@ BOOLEAN bta_ag_sco_is_open(tBTA_AG_SCB *p_scb)
 *******************************************************************************/
 BOOLEAN bta_ag_sco_is_opening(tBTA_AG_SCB *p_scb)
 {
-#if (BTM_WBS_INCLUDED == TRUE )
-    return (((bta_ag_cb.sco.state == BTA_AG_SCO_OPENING_ST) ||
-            (bta_ag_cb.sco.state == BTA_AG_SCO_OPENING_ST)) &&
-            (bta_ag_cb.sco.p_curr_scb == p_scb));
-#else
     return ((bta_ag_cb.sco.state == BTA_AG_SCO_OPENING_ST) &&
             (bta_ag_cb.sco.p_curr_scb == p_scb));
-#endif
 }
 
 /*******************************************************************************
