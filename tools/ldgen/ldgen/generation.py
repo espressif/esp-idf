@@ -129,7 +129,7 @@ class Placement:
         basis_str = self.basis.node.name if self.basis else 'NONE'
         return (
             f'({sections_str} -> {self.target}), basis: {basis_str}, '
-            f'force: {self.force}, stable: {self.stable}, '
+            f'force: {self.force}, mutable: {self.mutable}, '
             f'explicit: {self.explicit}, flags: {self.flags}'
         )
 
@@ -360,6 +360,19 @@ class ObjectNode(EntityNode):
             if obj_sections:
                 symbol = entity.symbol
                 remove_sections = [s.replace('.*', f'.{symbol}') for s in sections if '.*' in s]
+                # As part of IPA optimization, the compiler may perform
+                # constant propagation and generate specialized versions of a
+                # function. For example, for the function spiflash_start_core,
+                # the compiler might also generate a
+                # spiflash_start_core.constprop.0 symbol, which will be placed
+                # in a separate input section named
+                # .text.spiflash_start_core.constprop.0. Ensure that such
+                # generated functions are placed into the appropriate marker as
+                # well.
+                remove_sections_patterns = [s.replace('.*', f'.{symbol}.*') for s in sections if '.*' in s]
+                for pattern in remove_sections_patterns:
+                    remove_sections.extend(fnmatch.filter(obj_sections, pattern))
+
                 filtered_sections = [s for s in obj_sections if s not in remove_sections]
 
                 if set(filtered_sections) != set(obj_sections):
