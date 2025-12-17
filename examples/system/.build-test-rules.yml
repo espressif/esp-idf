@@ -220,8 +220,16 @@ examples/system/ota/simple_ota_example:
       temporary: true
       reason: not supported yet
     - if: CONFIG_NAME == "spiram" and SOC_SPIRAM_SUPPORTED != 1
+    - if: CONFIG_NAME == "on_update_no_sb_ecdsa_p256" and SOC_SECURE_BOOT_V2_ECC != 1
+      reason: Secure Boot V2 with ECDSA signatures is not supported.
+    - if: CONFIG_NAME == "on_update_no_sb_ecdsa_p384" and SOC_ECDSA_SUPPORT_CURVE_P384 != 1
+      reason: Secure Boot V2 with ECDSA P384 signatures is not supported.
+    - if: CONFIG_NAME == "on_update_no_sb_ecdsa_esp32" and SOC_SECURE_BOOT_V1 != 1
+      reason: Secure Boot V1 is not supported.
+    - if: CONFIG_NAME == "on_update_no_sb_rsa" and SOC_SECURE_BOOT_V2_RSA != 1
+      reason: Secure Boot V2 with RSA signatures is not supported.
   disable_test:
-    - if: IDF_TARGET not in ["esp32", "esp32c3", "esp32s3"]
+    - if: IDF_TARGET not in ["esp32", "esp32c3", "esp32s3", "esp32c5"]
       temporary: true
       reason: lack of runners
   depends_components:

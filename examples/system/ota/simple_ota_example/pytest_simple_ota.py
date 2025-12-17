@@ -300,7 +300,7 @@ def test_examples_protocol_simple_ota_example_with_flash_encryption_wifi(dut: Du
 @pytest.mark.parametrize(
     'config',
     [
-        'on_update_no_sb_ecdsa',
+        'on_update_no_sb_ecdsa_esp32',
     ],
     indirect=True,
 )
@@ -460,6 +460,55 @@ def test_examples_protocol_simple_ota_example_tls1_2_dynamic(dut: Dut) -> None:
         dut.expect('OTA Succeed, Rebooting...', timeout=120)
         # after reboot
         dut.expect(f'Loaded app from partition at offset {OTA_1_ADDRESS}', timeout=30)
+        dut.expect('OTA example app_main start', timeout=10)
+    finally:
+        thread1.terminate()
+
+
+@pytest.mark.parametrize(
+    'config',
+    [
+        'on_update_no_sb_ecdsa_p256',
+        'on_update_no_sb_ecdsa_p384',
+    ],
+    indirect=True,
+)
+@pytest.mark.wifi_high_traffic
+@idf_parametrize('target', ['esp32c5'], indirect=['target'])
+def test_examples_protocol_simple_ota_example_with_verify_app_signature_on_update_no_secure_boot_v2_ecdsa(
+    dut: Dut,
+) -> None:
+    """
+    steps: |
+      1. join AP/Ethernet
+      2. Fetch OTA image over HTTPS
+      3. Reboot with the new OTA image
+    """
+    sha256_bootloader, sha256_app = calc_all_sha256(dut)
+    # Start server
+    thread1 = multiprocessing.Process(target=start_https_server, args=(dut.app.binary_path, '0.0.0.0', 8000))
+    thread1.daemon = True
+    thread1.start()
+    try:
+        # start test
+        dut.expect(f'Loaded app from partition at offset {OTA_0_ADDRESS}', timeout=30)
+        check_sha256(sha256_bootloader, str(dut.expect(r'SHA-256 for bootloader:\s+([a-f0-9]){64}')[0]))
+        check_sha256(sha256_app, str(dut.expect(r'SHA-256 for current firmware:\s+([a-f0-9]){64}')[0]))
+
+        # Parse IP address of STA
+        env_name = 'wifi_high_traffic' if dut.app.sdkconfig.get('EXAMPLE_WIFI_SSID_PWD_FROM_STDIN') is True else None
+        host_ip = setting_connection(dut, env_name)
+
+        dut.expect('Starting OTA example task', timeout=30)
+        print(f'writing to device: https://{host_ip}:8000/simple_ota.bin')
+        dut.write(f'https://{host_ip}:8000/simple_ota.bin')
+        dut.expect(f'Writing to <ota_1> partition at offset {OTA_1_ADDRESS}', timeout=20)
+        dut.expect('Verifying image signature...', timeout=60)
+        dut.expect('#0 app key digest == #0 trusted key digest', timeout=10)
+        dut.expect('Verifying with ECDSA...', timeout=10)
+        dut.expect('OTA Succeed, Rebooting...', timeout=60)
+        # after reboot
+        dut.expect(f'Loaded app from partition at offset {OTA_1_ADDRESS}', timeout=20)
         dut.expect('OTA example app_main start', timeout=10)
     finally:
         thread1.terminate()
