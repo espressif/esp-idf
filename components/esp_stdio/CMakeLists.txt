@@ -7,7 +7,6 @@ if(non_os_build)
     idf_component_register()
     return()
 endif()
-
 set(srcs)
 set(includes)
 
@@ -18,10 +17,13 @@ if(${target} STREQUAL "linux")
                          "linux/include")
 else()
     list(APPEND srcs "stdio_port.c"
-                     "stdio_vfs.c"
                      "stdio_simple.c"
                      "stdio_syscalls_simple.c")
     list(APPEND includes "include")
+
+    if(CONFIG_VFS_SUPPORT_IO)
+        list(APPEND srcs "stdio_vfs.c")
+    endif()
 endif()
 
 idf_component_register(SRCS ${srcs}

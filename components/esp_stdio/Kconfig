@@ -185,4 +185,25 @@ menu "ESP-STDIO"
             If enabled, esp_rom_printf and ESP_EARLY_LOG output will also be sent over USB CDC.
             Disabling this option saves about 1kB or RAM.
 
+    config ESP_STDIO_MAX_FDS
+        int "Max logical stdio file descriptors"
+        depends on VFS_SUPPORT_IO
+        range 0 64
+        default 3
+        help
+            Maximum number of logical /dev/console descriptors tracked by esp_stdio VFS.
+                - 0 enables basic mode with a shared internal descriptor.
+                - 1..2 is not allowed
+                - Values >3 enable descriptor-table mode.
+
+            Enabling basic mode decreases RAM usage, but disables checks for per-fd behaviour, such as read-only.
+
+    config ESP_STDIO_MAX_VFS_ENTRIES
+        int "Maximum number of registerable VFS sinks"
+        depends on VFS_SUPPORT_IO
+        range 1 10
+        default 2
+        help
+            Maximum number of filesystems that can be registered as sinks for console output.
+
 endmenu
