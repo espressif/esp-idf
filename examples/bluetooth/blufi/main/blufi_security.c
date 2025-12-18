@@ -41,6 +41,7 @@
 
 struct blufi_security {
 #define DH_SELF_PUB_KEY_LEN     128
+#define DH_PARAM_LEN_MAX        1024
     uint8_t  self_public_key[DH_SELF_PUB_KEY_LEN];
 #define SHARE_KEY_LEN           128
     uint8_t  share_key[SHARE_KEY_LEN];
@@ -83,6 +84,13 @@ void blufi_dh_negotiate_data_handler(uint8_t *data, int len, uint8_t **output_da
     switch (type) {
     case SEC_TYPE_DH_PARAM_LEN:
         blufi_sec->dh_param_len = ((data[1]<<8)|data[2]);
+        // Security fix: Limit DH param length to prevent DoS via large memory allocation
+        if (blufi_sec->dh_param_len == 0 || blufi_sec->dh_param_len > DH_PARAM_LEN_MAX) {
+            BLUFI_ERROR("%s, invalid dh param len %d\n", __func__, blufi_sec->dh_param_len);
+            blufi_sec->dh_param_len = 0;
+            btc_blufi_report_error(ESP_BLUFI_DH_PARAM_ERROR);
+            return;
+        }
         if (blufi_sec->dh_param) {
             free(blufi_sec->dh_param);
             blufi_sec->dh_param = NULL;
