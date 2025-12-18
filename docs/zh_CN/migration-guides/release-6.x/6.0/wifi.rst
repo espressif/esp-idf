@@ -37,6 +37,8 @@ Wi-Fi
 
 - **FTM：** 结构体 ``wifi_ftm_initiator_cfg_t`` 中的字段 ``use_get_report_api`` 和结构体 ``wifi_event_ftm_report_t`` 中的字段 ``ftm_report_data`` 已被移除。请改用 ``esp_wifi_ftm_get_report`` 获取原始 FTM 报告数据。
 
+- **Wi-Fi 接口宏：** 枚举值 ``WIFI_BW_HT20`` 和 ``WIFI_BW_HT40`` 已被移除。请直接使用枚举值 ``WIFI_BW20`` 和 ``WIFI_BW40``。
+
 已修改的函数和类型
 ------------------
 

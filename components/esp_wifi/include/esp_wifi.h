@@ -730,8 +730,8 @@ esp_err_t esp_wifi_get_protocol(wifi_interface_t ifx, uint8_t *protocol_bitmap);
 /**
   * @brief     Set the bandwidth of specified interface
   *
-  * @attention 1. WIFI_BW_HT40 is supported only when the interface support 11N
-  * @attention 2. When the interface supports 11AX/11AC, it only supports setting WIFI_BW_HT20.
+  * @attention 1. WIFI_BW40 is supported only when the interface support 11N
+  * @attention 2. When the interface supports 11AX/11AC, it only supports setting WIFI_BW20.
   * @attention 3. Can not set WiFi bandwidth under band mode 2.4G + 5G (WIFI_BAND_MODE_AUTO), you can use esp_wifi_set_bandwidths instead
   * @attention 4. API return ESP_ERR_NOT_SUPPORTED if the band mode is set to 2.4G + 5G (WIFI_BAND_MODE_AUTO)
   *
@@ -1740,8 +1740,8 @@ esp_err_t esp_wifi_get_protocols(wifi_interface_t ifx, wifi_protocols_t *protoco
 /**
   * @brief     Set the bandwidth of specified interface and specified band
   *
-  * @attention 1. WIFI_BW_HT40 is supported only when the interface support 11N
-  * @attention 2. When the interface supports 11AX/11AC, it only supports setting WIFI_BW_HT20.
+  * @attention 1. WIFI_BW40 is supported only when the interface support 11N
+  * @attention 2. When the interface supports 11AX/11AC, it only supports setting WIFI_BW20.
   * @attention 3. When the WiFi band mode is set to 2.4G only, it will not set 5G bandwidth
   * @attention 4. When the WiFi band mode is set to 5G only, it will not set 2.4G bandwidth
   *

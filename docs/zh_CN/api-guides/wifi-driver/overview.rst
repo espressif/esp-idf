@@ -723,7 +723,7 @@ Wi-Fi 带宽模式
         esp_wifi_set_protocol(WIFI_IF_STA, protocol);
 
         // 设置 STA 的带宽为 40 MHz
-        esp_wifi_set_bandwidth(WIFI_IF_STA, WIFI_BW_HT40);
+        esp_wifi_set_bandwidth(WIFI_IF_STA, WIFI_BW40);
 
 .. only:: esp32c6
 
@@ -748,7 +748,7 @@ Wi-Fi 带宽模式
         esp_wifi_set_protocol(WIFI_IF_STA, protocol);
 
         // 设置 STA 的带宽为 40 MHz
-        esp_wifi_set_bandwidth(WIFI_IF_STA, WIFI_BW_HT40);
+        esp_wifi_set_bandwidth(WIFI_IF_STA, WIFI_BW40);
 
 .. only:: esp32c5
 
@@ -777,8 +777,8 @@ Wi-Fi 带宽模式
 
         // 设置 2.4 GHz 带宽为 20 MHz，5 GHz 带宽为 40 MHz
         wifi_bandwidths_t bw = {
-            .ghz_2g = WIFI_BW_HT20,
-            .ghz_5g = WIFI_BW_HT40
+            .ghz_2g = WIFI_BW20,
+            .ghz_5g = WIFI_BW40
         };
         esp_wifi_set_bandwidths(WIFI_IF_STA, &bw);
 
@@ -801,7 +801,7 @@ Wi-Fi 带宽模式
           esp_wifi_set_protocol(WIFI_IF_STA, protocol);
 
           // 设置 STA 的带宽为 40 MHz
-          esp_wifi_set_bandwidth(WIFI_IF_STA, WIFI_BW_HT40);
+          esp_wifi_set_bandwidth(WIFI_IF_STA, WIFI_BW40);
 
     .. note::
 
