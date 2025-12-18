@@ -1164,6 +1164,39 @@ void BTM_BleConfigLocalIcon(uint16_t icon)
 #endif
 }
 
+#if (BT_GATTS_KEY_MATERIAL_CHAR == TRUE)
+/*******************************************************************************
+**
+** Function         BTM_BleSetKeyMaterial
+**
+** Description      Set the Encrypted Data Key Material in GAP service
+**
+** Parameters       session_key: 16-byte session key (must not be NULL)
+**                  iv:          8-byte initialization vector (must not be NULL)
+**
+** Returns          void
+**
+*******************************************************************************/
+void BTM_BleSetKeyMaterial(const uint8_t *session_key, const uint8_t *iv)
+{
+#if (defined(GAP_INCLUDED) && GAP_INCLUDED == TRUE && GATTS_INCLUDED == TRUE)
+    tGAP_BLE_ATTR_VALUE p_value;
+
+    if (session_key == NULL || iv == NULL) {
+        BTM_TRACE_ERROR("%s: NULL pointer parameter", __func__);
+        return;
+    }
+
+    memset(&p_value, 0, sizeof(tGAP_BLE_ATTR_VALUE));
+    memcpy(p_value.key_material.session_key, session_key, GAP_KEY_MATERIAL_SESSION_KEY_SIZE);
+    memcpy(p_value.key_material.iv, iv, GAP_KEY_MATERIAL_IV_SIZE);
+    GAP_BleAttrDBUpdate(GATT_UUID_GAP_KEY_MATERIAL, &p_value);
+#else
+    BTM_TRACE_ERROR("%s\n", __func__);
+#endif
+}
+#endif
+
 /*******************************************************************************
 **
 ** Function         BTM_BleConfigConnParams
