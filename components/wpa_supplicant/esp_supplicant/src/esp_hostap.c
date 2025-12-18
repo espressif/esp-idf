@@ -132,7 +132,10 @@ void *hostap_init(void)
         hapd = NULL;
         return NULL;
     }
-    memcpy(hapd->conf->ssid.wpa_passphrase, esp_wifi_ap_get_prof_password_internal(), strlen((char *)esp_wifi_ap_get_prof_password_internal()));
+    /* wpa_passphrase buffer is os_zalloc(64) above; bound the copy to that size. */
+    os_snprintf(hapd->conf->ssid.wpa_passphrase, 64,
+                "%s", esp_wifi_ap_get_prof_password_internal());
+    hapd->conf->ssid.wpa_passphrase[64 - 1] = '\0';
 
     hapd->conf->ap_max_inactivity = 5 * 60;
     hostapd_setup_wpa_psk(hapd->conf);

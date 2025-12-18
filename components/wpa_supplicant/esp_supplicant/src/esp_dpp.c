@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -309,21 +309,31 @@ static void gas_query_resp_rx(struct action_rx_param *rx_param)
 {
     struct dpp_authentication *auth = s_dpp_ctx.dpp_auth;
     uint8_t *pos = rx_param->action_frm->u.public_action.v.pa_gas_resp.data;
-    uint8_t *resp = &pos[10];
+    uint8_t *resp = &pos[10]; /* first byte of DPP attributes */
+    size_t vendor_len = rx_param->vendor_data_len;
     int i, res;
 
-    if (pos[1] == WLAN_EID_VENDOR_SPECIFIC && pos[2] == 5 &&
-            WPA_GET_BE24(&pos[3]) == OUI_WFA && pos[6] == 0x1a && pos[7] == 1 && auth) {
-        if (dpp_conf_resp_rx(auth, resp, rx_param->vendor_data_len - 2) < 0) {
-            wpa_printf(MSG_DEBUG, "DPP: Configuration attempt failed");
-            goto fail;
-        }
+    /* Basic structural checks on the Advertisement Protocol payload */
+    if (!(pos[1] == WLAN_EID_VENDOR_SPECIFIC && pos[2] == 5 &&
+            WPA_GET_BE24(&pos[3]) == OUI_WFA && pos[6] == 0x1a && pos[7] == 1 && auth)) {
+        wpa_hexdump(MSG_INFO, "DPP: Failed, Configuration Response adv_proto", pos, 8);
+        return;
+    }
 
-        for (i = 0; i < auth->num_conf_obj; i++) {
-            res = esp_dpp_handle_config_obj(auth, &auth->conf_obj[i]);
-            if (res < 0) {
-                goto fail;
-            }
+    /* DPP attribute length = vendor_data_len - 2, caller validated vendor_data_len
+     * (we skip the 2-byte length field and pass only the attributes). */
+    size_t dpp_data_len = vendor_len - 2;
+
+    if (dpp_conf_resp_rx(auth, resp, dpp_data_len) < 0) {
+        wpa_printf(MSG_INFO, "DPP: Configuration attempt failed");
+        goto fail;
+    }
+
+    for (i = 0; i < auth->num_conf_obj; i++) {
+        res = esp_dpp_handle_config_obj(auth, &auth->conf_obj[i]);
+        if (res < 0) {
+            wpa_printf(MSG_INFO, "DPP: Configuration parsing failed");
+            goto fail;
         }
     }
 
