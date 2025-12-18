@@ -198,6 +198,7 @@ bool ble_log_lbm_init(void)
     /* Initialize lock types for spin pool */
     for (int i = 0; i < BLE_LOG_LBM_SPIN_MAX; i++) {
         lbm_ctx->spin_pool[i].lock_type = BLE_LOG_LBM_LOCK_SPIN;
+        portMUX_INITIALIZE(&(lbm_ctx->spin_pool[i].spin_lock));
     }
 
 #if CONFIG_BLE_LOG_LL_ENABLED
