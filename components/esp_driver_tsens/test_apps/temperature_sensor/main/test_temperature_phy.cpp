@@ -16,7 +16,7 @@
 #include "nvs_flash.h"
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
-#include "soc/temperature_sensor_periph.h"
+#include "hal/temperature_sensor_periph.h"
 #include "unity.h"
 #include "unity_test_utils.h"
 #include "driver/temperature_sensor.h"

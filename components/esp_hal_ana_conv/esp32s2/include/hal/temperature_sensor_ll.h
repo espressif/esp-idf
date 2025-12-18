@@ -15,17 +15,14 @@
 #pragma once
 
 #include <stdbool.h>
-#include <stdlib.h>
 #include "hal/regi2c_ctrl.h"
 #include "soc/regi2c_saradc.h"
 #include "soc/apb_saradc_struct.h"
-#include "soc/soc.h"
-#include "soc/soc_caps.h"
-#include "soc/system_struct.h"
+#include "soc/rtc_cntl_reg.h"
+#include "soc/sens_struct.h"
 #include "hal/temperature_sensor_types.h"
-#include "hal/assert.h"
 #include "hal/misc.h"
-#include "soc/efuse_struct.h"
+#include "hal/efuse_ll.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -48,7 +45,9 @@ extern "C" {
  */
 static inline void temperature_sensor_ll_enable(bool enable)
 {
-    APB_SARADC.saradc_apb_tsens_ctrl.saradc_reg_tsens_pu = enable;
+    SENS.sar_tctrl.tsens_power_up_force = enable;
+    SENS.sar_tctrl2.tsens_xpd_force = enable;
+    SENS.sar_tctrl.tsens_power_up = enable;
 }
 
 /**
@@ -56,7 +55,7 @@ static inline void temperature_sensor_ll_enable(bool enable)
  */
 static inline void temperature_sensor_ll_bus_clk_enable(bool enable)
 {
-    SYSTEM.perip_clk_en1.tsens_clk_en = enable;
+    SENS.sar_tctrl2.tsens_clkgate_en = enable;
 }
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
@@ -64,12 +63,12 @@ static inline void temperature_sensor_ll_bus_clk_enable(bool enable)
 #define temperature_sensor_ll_bus_clk_enable(...) do {(void)__DECLARE_RCC_ATOMIC_ENV; temperature_sensor_ll_bus_clk_enable(__VA_ARGS__);} while(0)
 
 /**
- * @brief Reset the Temperature sensor module
+ * @brief Enable the clock
  */
 static inline void temperature_sensor_ll_reset_module(void)
 {
-    SYSTEM.perip_rst_en1.tsens_rst = 1;
-    SYSTEM.perip_rst_en1.tsens_rst = 0;
+    SENS.sar_tctrl2.tsens_reset = 1;
+    SENS.sar_tctrl2.tsens_reset = 0;
 }
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
@@ -77,26 +76,12 @@ static inline void temperature_sensor_ll_reset_module(void)
 #define temperature_sensor_ll_reset_module(...) do {(void)__DECLARE_RCC_ATOMIC_ENV; temperature_sensor_ll_reset_module(__VA_ARGS__);} while(0)
 
 /**
- * @brief Select the clock source for temperature sensor. On ESP32-C2, temperautre sensor
- *        can use XTAL or FOSC. To make it convenience, suggest using XTAL all the time.
- *
- * @param clk_src refer to ``temperature_sensor_clk_src_t``
+ * @brief Choose the clock. No need to choose the clock source on ESP32-S2. ESP32-S2
+ *        can use RTC clock.
  */
 static inline void temperature_sensor_ll_clk_sel(temperature_sensor_clk_src_t clk_src)
 {
-    uint8_t clk_sel = 0;
-    switch (clk_src) {
-        case TEMPERATURE_SENSOR_CLK_SRC_XTAL:
-            clk_sel = 1;
-            break;
-        case TEMPERATURE_SENSOR_CLK_SRC_RC_FAST:
-            clk_sel = 0;
-            break;
-        default:
-            HAL_ASSERT(false);
-            break;
-    }
-    APB_SARADC.saradc_apb_tsens_ctrl2.saradc_tsens_clk_sel = clk_sel;
+    // No need to select the temperature sensor clock on esp32s2.
 }
 
 /**
@@ -104,9 +89,9 @@ static inline void temperature_sensor_ll_clk_sel(temperature_sensor_clk_src_t cl
  *
  * @param tsens_dac ``reg_val`` in table ``temperature_sensor_attributes``
  */
-static inline void temperature_sensor_ll_set_range(uint32_t range)
+static inline void temperature_sensor_ll_set_range(uint32_t tsens_dac)
 {
-    REGI2C_WRITE_MASK(I2C_SAR_ADC, I2C_SARADC_TSENS_DAC, range);
+    REGI2C_WRITE_MASK(I2C_SAR_ADC, I2C_SARADC_TSENS_DAC, tsens_dac);
 }
 
 /**
@@ -116,7 +101,11 @@ static inline void temperature_sensor_ll_set_range(uint32_t range)
  */
 static inline uint32_t temperature_sensor_ll_get_raw_value(void)
 {
-    return HAL_FORCE_READ_U32_REG_FIELD(APB_SARADC.saradc_apb_tsens_ctrl, saradc_reg_tsens_out);
+    SENS.sar_tctrl.tsens_dump_out = 1;
+    while (!SENS.sar_tctrl.tsens_ready) {
+    }
+    SENS.sar_tctrl.tsens_dump_out = 0;
+    return HAL_FORCE_READ_U32_REG_FIELD(SENS.sar_tctrl, tsens_out);
 }
 
 /**
@@ -140,7 +129,7 @@ static inline uint32_t temperature_sensor_ll_get_offset(void)
  */
 static inline uint32_t temperature_sensor_ll_get_clk_div(void)
 {
-    return HAL_FORCE_READ_U32_REG_FIELD(APB_SARADC.saradc_apb_tsens_ctrl, saradc_reg_tsens_clk_div);
+    return HAL_FORCE_READ_U32_REG_FIELD(SENS.sar_tctrl, tsens_clk_div);
 }
 
 /**
@@ -153,7 +142,7 @@ static inline uint32_t temperature_sensor_ll_get_clk_div(void)
  */
 static inline void temperature_sensor_ll_set_clk_div(uint8_t clk_div)
 {
-    HAL_FORCE_MODIFY_U32_REG_FIELD(APB_SARADC.saradc_apb_tsens_ctrl, saradc_reg_tsens_clk_div, clk_div);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(SENS.sar_tctrl, tsens_clk_div, clk_div);
 }
 
 /**
@@ -163,10 +152,12 @@ static inline void temperature_sensor_ll_set_clk_div(uint8_t clk_div)
  */
 static inline int temperature_sensor_ll_load_calib_param(void)
 {
-    uint32_t cal_temp = 0;
-    cal_temp = EFUSE.rd_blk2_data2.temp_calib;
+    if (efuse_ll_get_blk_version_major() == 0) {
+        return 0;
+    }
+    uint32_t cal_temp = EFUSE.rd_sys_part1_data4.temp_calib;
     // BIT(8) stands for sign: 1: negative, 0: positive
-    int tsens_cal = ((cal_temp & BIT(8)) != 0)? -(uint8_t)cal_temp: (uint8_t)cal_temp;
+    int tsens_cal = ((cal_temp & BIT(8)) != 0) ? -(uint8_t)cal_temp : (uint8_t)cal_temp;
     return tsens_cal;
 }
 

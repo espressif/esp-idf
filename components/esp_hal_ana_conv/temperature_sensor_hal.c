@@ -6,7 +6,7 @@
 
 #include "hal/temperature_sensor_hal.h"
 #include "hal/temperature_sensor_ll.h"
-#include "soc/temperature_sensor_periph.h"
+#include "hal/temperature_sensor_periph.h"
 #include "hal/log.h"
 #include "esp_rom_sys.h"
 

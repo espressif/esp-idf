@@ -89,6 +89,10 @@ entries:
             rtc_cntl_hal:rtc_cntl_hal_enable_cpu_retention (noflash)
         if PM_SLP_IRAM_OPT = y && PM_RESTORE_CACHE_TAGMEM_AFTER_LIGHT_SLEEP = y:
             rtc_cntl_hal:rtc_cntl_hal_enable_tagmem_retention (noflash)
+
+[mapping:esp_hal_ana_conv_pm]
+archive: libesp_hal_ana_conv.a
+entries:
     if SOC_TEMP_SENSOR_SUPPORTED = y:
         if PM_SLP_IRAM_OPT = y:
             temperature_sensor_hal:temperature_sensor_hal_get_raw_value (noflash)

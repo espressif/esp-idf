@@ -25,7 +25,7 @@
 #include "esp_private/periph_ctrl.h"
 #include "temperature_sensor_private.h"
 #include "hal/temperature_sensor_ll.h"
-#include "soc/temperature_sensor_periph.h"
+#include "hal/temperature_sensor_periph.h"
 #include "hal/temperature_sensor_hal.h"
 #include "esp_memory_utils.h"
 #include "esp_private/sar_periph_ctrl.h"

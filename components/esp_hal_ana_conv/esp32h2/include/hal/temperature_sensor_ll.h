@@ -20,7 +20,6 @@
 #include "soc/regi2c_saradc.h"
 #include "soc/apb_saradc_struct.h"
 #include "soc/apb_saradc_reg.h"
-#include "soc/pcr_struct.h"
 #include "soc/soc.h"
 #include "soc/soc_caps.h"
 #include "soc/pcr_struct.h"
@@ -100,15 +99,15 @@ static inline void temperature_sensor_ll_clk_sel(temperature_sensor_clk_src_t cl
 {
     uint8_t clk_sel = 0;
     switch (clk_src) {
-        case TEMPERATURE_SENSOR_CLK_SRC_XTAL:
-            clk_sel = 1;
-            break;
-        case TEMPERATURE_SENSOR_CLK_SRC_RC_FAST:
-            clk_sel = 0;
-            break;
-        default:
-            HAL_ASSERT(false);
-            break;
+    case TEMPERATURE_SENSOR_CLK_SRC_XTAL:
+        clk_sel = 1;
+        break;
+    case TEMPERATURE_SENSOR_CLK_SRC_RC_FAST:
+        clk_sel = 0;
+        break;
+    default:
+        HAL_ASSERT(false);
+        break;
     }
     PCR.tsens_clk_conf.tsens_clk_sel = clk_sel;
 }
@@ -278,9 +277,9 @@ static inline void temperature_sensor_ll_set_sample_rate(uint16_t rate)
  */
 static inline int temperature_sensor_ll_load_calib_param(void)
 {
-    uint32_t cal_temp = EFUSE.rd_sys_part1_data4.temperature_sensor;
+    uint32_t cal_temp = EFUSE.rd_sys_part1_data4.temp_calib;
     // BIT(8) stands for sign: 1: negative, 0: positive
-    int tsens_cal = ((cal_temp & BIT(8)) != 0)? -(uint8_t)cal_temp: (uint8_t)cal_temp;
+    int tsens_cal = ((cal_temp & BIT(8)) != 0) ? -(uint8_t)cal_temp : (uint8_t)cal_temp;
     return tsens_cal;
 }
 

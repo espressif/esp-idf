@@ -1,10 +1,10 @@
 /*
  * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: Apache-2.0 OR MIT
+ * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "soc/temperature_sensor_periph.h"
+#include "hal/temperature_sensor_periph.h"
 
 const temperature_sensor_attribute_t temperature_sensor_attributes[TEMPERATURE_SENSOR_ATTR_RANGE_NUM] = {
     /*Offset   reg_val  min  max  error */
