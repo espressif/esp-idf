@@ -16,7 +16,7 @@
 #if (SMP_INCLUDED == TRUE)
 
 //the maximum number of bonded devices
-#define BONED_DEVICES_MAX_COUNT (BTM_SEC_MAX_DEVICE_RECORDS)
+#define BONED_DEVICES_MAX_COUNT (BTM_SEC_MAX_BONDS)
 
 static void _btc_storage_save(void)
 {
