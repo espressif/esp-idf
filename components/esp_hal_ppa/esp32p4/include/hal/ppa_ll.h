@@ -556,14 +556,14 @@ static inline void ppa_ll_srm_get_dma_dscr_port_mode_block_size(ppa_dev_t *dev, 
             break;
         case PPA_SRM_COLOR_MODE_YUV420:
             *block_h = 20;
-            *block_v = 18;
+            *block_v = 20;
             break;
         case PPA_SRM_COLOR_MODE_YUV422_UYVY:
         case PPA_SRM_COLOR_MODE_YUV422_VYUY:
         case PPA_SRM_COLOR_MODE_YUV422_YUYV:
         case PPA_SRM_COLOR_MODE_YUV422_YVYU:
             *block_h = 20;
-            *block_v = 20;
+            *block_v = 18;
             break;
         default:
             // Unsupported SRM input color mode
@@ -583,14 +583,14 @@ static inline void ppa_ll_srm_get_dma_dscr_port_mode_block_size(ppa_dev_t *dev, 
             break;
         case PPA_SRM_COLOR_MODE_YUV420:
             *block_h = 36;
-            *block_v = 34;
+            *block_v = 36;
             break;
         case PPA_SRM_COLOR_MODE_YUV422_UYVY:
         case PPA_SRM_COLOR_MODE_YUV422_VYUY:
         case PPA_SRM_COLOR_MODE_YUV422_YUYV:
         case PPA_SRM_COLOR_MODE_YUV422_YVYU:
             *block_h = 36;
-            *block_v = 36;
+            *block_v = 34;
             break;
         default:
             // Unsupported SRM input color mode
