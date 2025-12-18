@@ -59,3 +59,8 @@
 
     - 新旧驱动不互相兼容，不可混合使用，否则将在启动时打印警告，甚至崩溃并重启。可打开配置项 :ref:`CONFIG_TWAI_SKIP_LEGACY_CONFLICT_CHECK` 以屏蔽该检查。
     - 旧版驱动将不再添加新特性（如 TWAIFD）的支持。
+
+SPI flash 驱动
+--------------
+
+- ``esp_flash_os_functions_t::start`` 新增了一个参数 ``flags``。调用者和实现者应正确处理此参数。

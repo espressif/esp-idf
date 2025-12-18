@@ -15,7 +15,7 @@
 #include "hal/cache_ll.h"
 #include "soc/soc_caps.h"
 
-static IRAM_ATTR esp_err_t start(void *arg)
+static IRAM_ATTR esp_err_t start(void *arg, uint32_t flags)
 {
 #if SOC_BRANCH_PREDICTOR_SUPPORTED
     //branch predictor will start cache request as well

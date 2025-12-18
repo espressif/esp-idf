@@ -45,12 +45,15 @@ entries:
             if SPI_FLASH_VERIFY_WRITE = y:
                 esp_flash_api: s_verify_write (noflash)
 
-            if SPI_FLASH_ROM_IMPL = n || ESP_ROM_HAS_ENCRYPTED_WRITES_USING_LEGACY_DRV = y:
+            if SPI_FLASH_ROM_IMPL = n || ESP_ROM_HAS_ENCRYPTED_WRITES_USING_LEGACY_DRV = y || SPI_FLASH_FREQ_LIMIT_C5_240MHZ = y:
                 esp_flash_api: spiflash_start_default (noflash)
+                esp_flash_api: spiflash_start_core (noflash)
+                esp_flash_api: esp_flash_write_encrypted (noflash)
+
+            if SPI_FLASH_ROM_IMPL = n || ESP_ROM_HAS_ENCRYPTED_WRITES_USING_LEGACY_DRV = y:
                 esp_flash_api: spiflash_end_default (noflash)
                 esp_flash_api: check_chip_pointer_default (noflash)
                 esp_flash_api: flash_end_flush_cache (noflash)
-                esp_flash_api: esp_flash_write_encrypted (noflash)
 
             if SPI_FLASH_ROM_IMPL = n:
                 esp_flash_api: esp_flash_get_size (noflash)
