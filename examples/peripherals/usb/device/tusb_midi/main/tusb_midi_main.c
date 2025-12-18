@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: MIT
  *
- * SPDX-FileContributor: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2022-2025 Espressif Systems (Shanghai) CO LTD
  */
 
 #include <stdlib.h>
@@ -11,6 +11,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "tinyusb.h"
+#include "tinyusb_default_config.h"
 #include "esp_timer.h"
 
 static const char *TAG = "example";
@@ -149,19 +150,16 @@ void app_main(void)
 {
     ESP_LOGI(TAG, "USB initialization");
 
-    tinyusb_config_t const tusb_cfg = {
-        .device_descriptor = NULL, // If device_descriptor is NULL, tinyusb_driver_install() will use Kconfig
-        .string_descriptor = s_str_desc,
-        .string_descriptor_count = sizeof(s_str_desc) / sizeof(s_str_desc[0]),
-        .external_phy = false,
+    tinyusb_config_t tusb_cfg = TINYUSB_DEFAULT_CONFIG();
+
+    tusb_cfg.descriptor.string = s_str_desc;
+    tusb_cfg.descriptor.string_count = sizeof(s_str_desc) / sizeof(s_str_desc[0]);
+    tusb_cfg.descriptor.full_speed_config = s_midi_cfg_desc;
 #if (TUD_OPT_HIGH_SPEED)
-        .fs_configuration_descriptor = s_midi_cfg_desc, // HID configuration descriptor for full-speed and high-speed are the same
-        .hs_configuration_descriptor = s_midi_hs_cfg_desc,
-        .qualifier_descriptor = NULL,
-#else
-        .configuration_descriptor = s_midi_cfg_desc,
+    tusb_cfg.descriptor.high_speed_config = s_midi_hs_cfg_desc;
+    tusb_cfg.descriptor.qualifier = NULL;
 #endif // TUD_OPT_HIGH_SPEED
-    };
+
     ESP_ERROR_CHECK(tinyusb_driver_install(&tusb_cfg));
 
     ESP_LOGI(TAG, "USB initialization DONE");
