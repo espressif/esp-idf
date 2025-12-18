@@ -749,3 +749,11 @@
 -
     re: "error: 'MALLOC_CAP_EXEC' undeclared \\(first use in this function\\)"
     hint: "MALLOC_CAP_EXEC capability cannot be used if CONFIG_ESP_SYSTEM_PMP_IDRAM_SPLIT or CONFIG_ESP_SYSTEM_MEMPROT_FEATURE is enabled. \nFor further information about those configurations, run 'idf.py docs -sp api-reference/kconfig-reference.html#memory-protection'"
+
+-
+    re: "error: 'WIFI_BW_HT20' undeclared \\(first use in this function\\)"
+    hint: "The enum value 'WIFI_BW_HT20' has been removed. Use 'WIFI_BW20' instead."
+
+-
+    re: "error: 'WIFI_BW_HT40' undeclared \\(first use in this function\\)"
+    hint: "The enum value 'WIFI_BW_HT40' has been removed. Use 'WIFI_BW40' instead."

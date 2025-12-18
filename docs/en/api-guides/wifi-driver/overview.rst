@@ -723,7 +723,7 @@ Wi-Fi Bandwidth Mode
         esp_wifi_set_protocol(WIFI_IF_STA, protocol);
 
         // Set STA interface bandwidth to 40 MHz
-        esp_wifi_set_bandwidth(WIFI_IF_STA, WIFI_BW_HT40);
+        esp_wifi_set_bandwidth(WIFI_IF_STA, WIFI_BW40);
 
 .. only:: esp32c6
 
@@ -748,7 +748,7 @@ Wi-Fi Bandwidth Mode
         esp_wifi_set_protocol(WIFI_IF_STA, protocol);
 
         // Set bandwidth of station to 40 MHz
-        esp_wifi_set_bandwidth(WIFI_IF_STA, WIFI_BW_HT40);
+        esp_wifi_set_bandwidth(WIFI_IF_STA, WIFI_BW40);
 
 .. only:: esp32c5
 
@@ -777,8 +777,8 @@ Wi-Fi Bandwidth Mode
 
         // Set bandwidth to 20 MHz for 2.4 GHz band and 40 MHz for 5 GHz band
         wifi_bandwidths_t bw = {
-            .ghz_2g = WIFI_BW_HT20,
-            .ghz_5g = WIFI_BW_HT40
+            .ghz_2g = WIFI_BW20,
+            .ghz_5g = WIFI_BW40
         };
         esp_wifi_set_bandwidths(WIFI_IF_STA, &bw);
 
@@ -801,7 +801,7 @@ Wi-Fi Bandwidth Mode
           esp_wifi_set_protocol(WIFI_IF_STA, protocol);
 
           // Set bandwidth of the station interface to 40 MHz
-          esp_wifi_set_bandwidth(WIFI_IF_STA, WIFI_BW_HT40);
+          esp_wifi_set_bandwidth(WIFI_IF_STA, WIFI_BW40);
 
     .. note::
 
