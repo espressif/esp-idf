@@ -84,10 +84,6 @@ elseif(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "uart_hal.c" "uart_hal_iram.c")
     endif()
 
-    if(CONFIG_SOC_LEDC_SUPPORTED)
-        list(APPEND srcs "ledc_hal.c" "ledc_hal_iram.c")
-    endif()
-
     if(CONFIG_SOC_I3C_MASTER_SUPPORTED)
         list(APPEND srcs "i3c_master_hal.c")
     endif()

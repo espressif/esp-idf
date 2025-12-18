@@ -14,7 +14,7 @@
 #include "esp_private/sleep_cpu.h"
 #include "esp_private/esp_sleep_internal.h"
 #include "esp_private/esp_pmu.h"
-#include "soc/ledc_periph.h"
+#include "hal/ledc_periph.h"
 #include "esp_private/sleep_retention.h"
 #include "esp_rom_serial_output.h"
 
