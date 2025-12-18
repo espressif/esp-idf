@@ -1274,6 +1274,11 @@ void btm_ble_adv_set_terminated_evt(tBTM_BLE_ADV_TERMINAT *params)
         return;
     }
 
+    if (params->adv_handle >= MAX_BLE_ADV_INSTANCE) {
+        BTM_TRACE_ERROR("%s, Invalid adv_handle %d, max is %d.", __func__, params->adv_handle, MAX_BLE_ADV_INSTANCE);
+        return;
+    }
+
     // adv terminated due to connection, save the adv handle and connection handle
     if(params->status == 0x00) {
         adv_record[params->adv_handle].ter_con_handle = params->conn_handle;
