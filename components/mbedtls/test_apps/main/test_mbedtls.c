@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -46,5 +46,18 @@ TEST_CASE("mbedtls RSA self-tests", "[bignum]")
 {
     start_apb_access_loop();
     TEST_ASSERT_FALSE_MESSAGE(mbedtls_rsa_self_test(1), "RSA self-tests should pass.");
+    verify_apb_access_loop();
+}
+
+TEST_CASE("mbedtls SHA self-tests", "[mbedtls]")
+{
+    start_apb_access_loop();
+#if CONFIG_MBEDTLS_SHA1_C
+    TEST_ASSERT_FALSE_MESSAGE(mbedtls_sha1_self_test(1), "SHA1 self-tests should pass.");
+#endif
+    TEST_ASSERT_FALSE_MESSAGE(mbedtls_sha256_self_test(1), "SHA256 self-tests should pass.");
+#if CONFIG_MBEDTLS_SHA512_C
+    TEST_ASSERT_FALSE_MESSAGE(mbedtls_sha512_self_test(1), "SHA512 self-tests should pass.");
+#endif
     verify_apb_access_loop();
 }

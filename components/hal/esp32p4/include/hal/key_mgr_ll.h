@@ -47,12 +47,10 @@ extern "C" {
 
 static inline void key_mgr_ll_power_up(void)
 {
-    // TODO: IDF-13524
 }
 
 static inline void key_mgr_ll_power_down(void)
 {
-    // TODO: IDF-13524
 }
 
 /**

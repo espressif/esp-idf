@@ -16,6 +16,8 @@
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 
+#if CONFIG_MBEDTLS_HARDWARE_AES || CONFIG_MBEDTLS_HARDWARE_SHA
+
 static SemaphoreHandle_t done_sem;
 
 static const unsigned char *one_hundred_bs =  (unsigned char *)
@@ -128,3 +130,4 @@ TEST_CASE("mbedtls AES/SHA multithreading", "[mbedtls]")
 
     vSemaphoreDelete(done_sem);
 }
+#endif // CONFIG_MBEDTLS_HARDWARE_AES || CONFIG_MBEDTLS_HARDWARE_SHA
