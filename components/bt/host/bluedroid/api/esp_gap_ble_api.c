@@ -440,6 +440,28 @@ esp_err_t esp_ble_gap_get_device_name(void)
     return (btc_transfer_context(&msg, NULL, 0, NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
+#if (BT_GATTS_KEY_MATERIAL_CHAR == TRUE)
+esp_err_t esp_ble_gap_set_key_material(const uint8_t session_key[16], const uint8_t iv[8])
+{
+    btc_msg_t msg = {0};
+    btc_ble_gap_args_t arg;
+
+    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+
+    if (session_key == NULL || iv == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_GAP_BLE;
+    msg.act = BTC_GAP_BLE_ACT_SET_KEY_MATERIAL;
+    memcpy(arg.set_key_material.session_key, session_key, 16);
+    memcpy(arg.set_key_material.iv, iv, 8);
+
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gap_args_t), NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+#endif // (BT_GATTS_KEY_MATERIAL_CHAR == TRUE)
+
 esp_err_t esp_ble_gap_get_local_used_addr(esp_bd_addr_t local_used_addr, uint8_t * addr_type)
 {
     if(esp_bluedroid_get_status() != (ESP_BLUEDROID_STATUS_ENABLED)) {
