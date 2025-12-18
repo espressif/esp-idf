@@ -3141,6 +3141,25 @@ esp_err_t esp_ble_gap_set_device_name(const char *name);
  */
 esp_err_t esp_ble_gap_get_device_name(void);
 
+#if defined(CONFIG_BT_GATTS_KEY_MATERIAL_CHAR) && CONFIG_BT_GATTS_KEY_MATERIAL_CHAR
+/**
+ * @brief          Set the Encrypted Data Key Material in GAP service
+ *
+ *                 This function sets the session key and IV that will be exposed
+ *                 through the Key Material characteristic (UUID 0x2B88) in the GAP service.
+ *                 The Key Material allows central devices to decrypt encrypted advertising data.
+ *
+ * @param[in]      session_key - 16-byte (128-bit) session key for AES-CCM encryption
+ * @param[in]      iv          - 8-byte (64-bit) initialization vector
+ *
+ * @return
+ *                  - ESP_OK : success
+ *                  - other  : failed
+ *
+ */
+esp_err_t esp_ble_gap_set_key_material(const uint8_t session_key[16], const uint8_t iv[8]);
+#endif // CONFIG_BT_GATTS_KEY_MATERIAL_CHAR
+
 /**
  * @brief          This function is called to get local used address and address type.
  *                 uint8_t *esp_bt_dev_get_address(void) get the public address
