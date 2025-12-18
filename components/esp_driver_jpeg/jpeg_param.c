@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -40,10 +40,10 @@ const uint8_t zigzag_arr[64] = {
  * data stream during the decoding process.
  */
 const uint32_t dec_hb_tbl[JPEG_DOWN_SAMPLING_NUM][JPEG_DEC_BEST_HB_MAX] = {
-    {40, 40, 40, 32, 0},
-    {64, 32, 32, 64, 0},
-    {48, 32, 32, 48, 0},
-    {96,  0,  0,  0, 96},
+    {40, 40, 40, 32, 0, 32},
+    {64, 32, 32, 64, 0, 32},
+    {48, 32, 32, 48, 0, 48},
+    {96,  0,  0,  0, 96, 0},
 };
 
 /**

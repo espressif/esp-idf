@@ -63,6 +63,7 @@ typedef enum {
     JPEG_DEC_RGB888_HB = 2,        /*!< output RGB888 format */
     JPEG_DEC_RGB565_HB = 3,        /*!< output RGB565 format */
     JPEG_DEC_GRAY_HB = 4,          /*!< output the gray picture */
+    JPEG_DEC_YUV420_HB = 5,        /*!< output YUV420 format */
     JPEG_DEC_BEST_HB_MAX,          /*!< Max value of output formats */
 } jpeg_dec_format_hb_t;
 

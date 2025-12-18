@@ -60,7 +60,7 @@ esp_err_t jpeg_parse_com_marker(jpeg_dec_header_info_t *header_info)
     uint16_t skip_num = jpeg_get_bytes(header_info, 2);
     ESP_RETURN_ON_FALSE(skip_num >= 2, ESP_ERR_INVALID_ARG, TAG, "Invalid COM marker length: %"PRIu32, skip_num);
     uint32_t bytes_to_skip = skip_num - 2;
-    ESP_RETURN_ON_FALSE(header_info->header_size >= bytes_to_skip, ESP_ERR_INVALID_ARG, TAG, "COM marker data underflow for header_size: %"PRIu32, header_info->header_size);
+    ESP_RETURN_ON_FALSE(header_info->buffer_left >= bytes_to_skip, ESP_ERR_INVALID_ARG, TAG, "COM marker data underflow for header_size: %"PRIu32, header_info->buffer_left);
     header_info->buffer_offset += bytes_to_skip;
     header_info->header_size += bytes_to_skip;
     header_info->buffer_left -= bytes_to_skip;
