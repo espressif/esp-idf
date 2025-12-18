@@ -302,6 +302,13 @@ ULP
 
 LP-Core 在深度睡眠期间遇到异常时，将唤醒主 CPU。此功能默认启用，若不需要此行为，可以通过 :ref:`CONFIG_ULP_TRAP_WAKEUP` Kconfig 配置选项禁用。
 
+堆
+----
+
+在 ESP-IDF 早期版本中，无论是否启用内存保护配置， ``MALLOC_CAP_EXEC`` 都始终可用。这可能引起误解，例如，当启用了 ``CONFIG_ESP_SYSTEM_MEMPROT_FEATURE`` 或 ``CONFIG_ESP_SYSTEM_PMP_IDRAM_SPLIT`` 时，如果调用 :cpp:func:`heap_caps_malloc` 并指定 `MALLOC_CAP_EXEC`，该函数会返回 ``NULL``。
+
+自 ESP-IDF v6.0 起， `MALLOC_CAP_EXEC` 的定义改为条件性定义。也就是说，当启用 ``CONFIG_ESP_SYSTEM_MEMPROT`` 时， `MALLOC_CAP_EXEC` 将不会被定义。因此，如果代码中仍然使用 `MALLOC_CAP_EXEC`，会在编译阶段报错。
+
 ``esp_common``
 ----------------
 

@@ -370,9 +370,9 @@ The LP-Core will now wake up the main CPU when it encounters an exception during
 Heap
 ----
 
-In previous versions of ESP-IDF, the capability MALLOC_CAP_EXEC would be available regardless of the memory protection configuration state. This implied that a call to e.g., :cpp:func:`heap_caps_malloc` with MALLOC_CAP_EXEC would return NULL when CONFIG_ESP_SYSTEM_MEMPROT_FEATURE or CONFIG_ESP_SYSTEM_PMP_IDRAM_SPLIT are enabled.
+In previous versions of ESP-IDF, the capability `MALLOC_CAP_EXEC` would be available regardless of the memory protection configuration state. This implied that a call to e.g., :cpp:func:`heap_caps_malloc` with `MALLOC_CAP_EXEC` would return NULL when CONFIG_ESP_SYSTEM_MEMPROT_FEATURE or CONFIG_ESP_SYSTEM_PMP_IDRAM_SPLIT are enabled.
 
-Since ESP-IDF v6.0, the definition of MALLOC_CAP_EXEC is conditional, meaning that if CONFIG_ESP_SYSTEM_MEMPROT is enabled, MALLOC_CAP_EXEC will not be defined. Therefore, using it will generate a compile time error.
+Since ESP-IDF v6.0, the definition of `MALLOC_CAP_EXEC` is conditional, meaning that if CONFIG_ESP_SYSTEM_MEMPROT is enabled, `MALLOC_CAP_EXEC` will not be defined. Therefore, using it will generate a compile time error.
 
 ``esp_common``
 --------------
