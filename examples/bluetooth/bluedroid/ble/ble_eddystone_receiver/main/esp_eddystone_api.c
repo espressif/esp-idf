@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -21,6 +21,7 @@
 #include "esp_eddystone_protocol.h"
 #include "esp_eddystone_api.h"
 
+#define EDDYSTONE_URL_BUF_SIZE  100
 
 /* Declare static functions */
 static esp_err_t esp_eddystone_uid_received(const uint8_t* buf, uint8_t len, esp_eddystone_result_t* res);
@@ -101,18 +102,33 @@ static esp_err_t esp_eddystone_uid_received(const uint8_t* buf, uint8_t len, esp
 static char* esp_eddystone_resolve_url_scheme(const uint8_t *url_start, const uint8_t *url_end)
 {
     int pos = 0;
-    static char url_buf[100] = {0};
+    static char url_buf[EDDYSTONE_URL_BUF_SIZE] = {0};
     const uint8_t *p = url_start;
+    int written;
 
-    pos += sprintf(&url_buf[pos], "%s", eddystone_url_prefix[*p++]);
+    // Security fix: Use snprintf instead of sprintf to prevent buffer overflow
+    written = snprintf(&url_buf[pos], EDDYSTONE_URL_BUF_SIZE - pos, "%s", eddystone_url_prefix[*p++]);
+    if (written < 0 || written >= (EDDYSTONE_URL_BUF_SIZE - pos)) {
+        url_buf[EDDYSTONE_URL_BUF_SIZE - 1] = '\0';
+        return url_buf;
+    }
+    pos += written;
 
     for (; p <= url_end; p++) {
-        if (esp_eddystone_is_char_invalid((*p))) {
-            pos += sprintf(&url_buf[pos], "%s", eddystone_url_encoding[*p]);
-        } else {
-            pos += sprintf(&url_buf[pos], "%c", *p);
+        if (pos >= EDDYSTONE_URL_BUF_SIZE - 1) {
+            break;
         }
+        if (esp_eddystone_is_char_invalid((*p))) {
+            written = snprintf(&url_buf[pos], EDDYSTONE_URL_BUF_SIZE - pos, "%s", eddystone_url_encoding[*p]);
+        } else {
+            written = snprintf(&url_buf[pos], EDDYSTONE_URL_BUF_SIZE - pos, "%c", *p);
+        }
+        if (written < 0 || written >= (EDDYSTONE_URL_BUF_SIZE - pos)) {
+            break;
+        }
+        pos += written;
     }
+    url_buf[EDDYSTONE_URL_BUF_SIZE - 1] = '\0';
     return url_buf;
 }
 

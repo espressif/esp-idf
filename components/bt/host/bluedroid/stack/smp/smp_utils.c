@@ -55,7 +55,7 @@
 #define SMP_PAIR_KEYPR_NOTIF_SIZE       (1 /* opcode */ + 1 /*Notif Type*/)
 
 /* SMP command sizes per spec */
-static const UINT8 smp_cmd_size_per_spec[] = {
+const UINT8 smp_cmd_size_per_spec[] = {
     0,
     SMP_PAIRING_REQ_SIZE,       /* 0x01: pairing request */
     SMP_PAIRING_REQ_SIZE,       /* 0x02: pairing response */

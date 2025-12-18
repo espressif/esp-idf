@@ -3113,6 +3113,13 @@ void btm_ble_cache_adv_data(BD_ADDR bda, tBTM_INQ_RESULTS *p_cur, UINT8 data_len
         p_cur->scan_rsp_len = 0;
     }
 
+    /* Additional validation to prevent potential integer overflow */
+    if (data_len > BTM_BLE_CACHE_ADV_DATA_MAX) {
+        BTM_TRACE_ERROR("BLE advertising data length exceeds maximum: %u > %u",
+                    data_len, BTM_BLE_CACHE_ADV_DATA_MAX);
+        return;
+    }
+
     if (data_len > 0) {
         p_cache = &p_le_inq_cb->adv_data_cache[p_le_inq_cb->adv_len];
         if((data_len + p_le_inq_cb->adv_len) <= BTM_BLE_CACHE_ADV_DATA_MAX) {
