@@ -285,57 +285,89 @@ BT_HDR *attp_build_opcode_cmd(UINT8 op_code)
 ** Returns          None.
 **
 *******************************************************************************/
-BT_HDR *attp_build_value_cmd (UINT16 payload_size, UINT8 op_code, UINT16 handle,
-                              UINT16 offset, UINT16 len, UINT8 *p_data)
+BT_HDR *attp_build_value_cmd(UINT16 payload_size, UINT8 op_code,
+                             UINT16 handle, UINT16 offset,
+                             UINT16 len, UINT8 *p_data)
 {
-    BT_HDR      *p_buf = NULL;
-    UINT8       *p, *pp, pair_len, *p_pair_len;
+    BT_HDR *p_buf = NULL;
+    UINT8 *p = NULL, *pp = NULL, *p_pair_len = NULL;
+    size_t pair_len = 0;
+    size_t size_now = 1;  /* track current buffer size including op_code */
 
-    if ((p_buf = (BT_HDR *)osi_malloc((UINT16)(sizeof(BT_HDR) + payload_size + L2CAP_MIN_OFFSET))) != NULL) {
-        p = pp = (UINT8 *)(p_buf + 1) + L2CAP_MIN_OFFSET;
+#define CHECK_SIZE()                                \
+    do {                                           \
+        if (size_now > payload_size) {            \
+            GATT_TRACE_ERROR("payload size too small"); \
+            osi_free(p_buf);                       \
+            return NULL;                           \
+        }                                          \
+    } while (0)
 
-        UINT8_TO_STREAM (p, op_code);
-        p_buf->offset = L2CAP_MIN_OFFSET;
-        p_buf->len = 1;
+    /* allocate buffer with extra space for L2CAP offset */
+    p_buf = (BT_HDR *)osi_malloc(sizeof(BT_HDR) + payload_size + L2CAP_MIN_OFFSET);
+    if (!p_buf) return NULL;
 
-        if (op_code == GATT_RSP_READ_BY_TYPE) {
-            p_pair_len = p;
-            pair_len = len + 2;
-            UINT8_TO_STREAM (p, pair_len);
-            p_buf->len += 1;
+    p = pp = (UINT8 *)(p_buf + 1) + L2CAP_MIN_OFFSET;
+
+    CHECK_SIZE();
+    UINT8_TO_STREAM(p, op_code);
+    p_buf->offset = L2CAP_MIN_OFFSET;
+
+    /* handle Read By Type response: reserve space for pair_len */
+    if (op_code == GATT_RSP_READ_BY_TYPE) {
+        p_pair_len = p++;
+        pair_len = len + 2; /* handle(2 bytes) + value length */
+        size_now += 1;
+        CHECK_SIZE();
+        /* pair_len will be backfilled after value is written */
+    }
+
+    /* write handle if needed */
+    if (op_code != GATT_RSP_READ_BLOB && op_code != GATT_RSP_READ &&
+        op_code != GATT_HANDLE_MULTI_VALUE_NOTIF) {
+        size_now += 2;
+        CHECK_SIZE();
+        UINT16_TO_STREAM(p, handle);
+    }
+
+    /* write offset for prepare write requests */
+    if (op_code == GATT_REQ_PREPARE_WRITE || op_code == GATT_RSP_PREPARE_WRITE) {
+        size_now += 2;
+        CHECK_SIZE();
+        UINT16_TO_STREAM(p, offset);
+    }
+
+    /* write value data, ensure it does not exceed payload_size */
+    if (len > 0 && p_data != NULL) {
+        if (payload_size - size_now < len) {
+            len = payload_size - size_now;
+            if (op_code == GATT_RSP_READ_BY_TYPE) {
+                pair_len = len + 2;
+            }
+            GATT_TRACE_WARNING("attribute value too long, truncated to %d", len);
         }
-        if (op_code != GATT_RSP_READ_BLOB && op_code != GATT_RSP_READ && op_code != GATT_HANDLE_MULTI_VALUE_NOTIF) {
-            UINT16_TO_STREAM (p, handle);
-            p_buf->len += 2;
-        }
 
-        if (op_code == GATT_REQ_PREPARE_WRITE || op_code == GATT_RSP_PREPARE_WRITE ) {
-            UINT16_TO_STREAM (p, offset);
-            p_buf->len += 2;
-        }
+        size_now += len;
+        CHECK_SIZE();
 
-        if(payload_size < GATT_DEF_BLE_MTU_SIZE || payload_size > GATT_MAX_MTU_SIZE) {
-            GATT_TRACE_ERROR("invalid payload_size %d", payload_size);
+        ARRAY_TO_STREAM(p, p_data, len);
+    }
+
+    /* backfill pair_len for Read By Type response */
+    if (op_code == GATT_RSP_READ_BY_TYPE) {
+        if (pair_len > UINT8_MAX) {
+            GATT_TRACE_ERROR("pair_len > UINT8_MAX");
             osi_free(p_buf);
             return NULL;
         }
-
-        if (len > 0 && p_data != NULL) {
-            /* ensure data not exceed MTU size */
-            if (payload_size - p_buf->len < len) {
-                len = payload_size - p_buf->len;
-                /* update handle value pair length */
-                if (op_code == GATT_RSP_READ_BY_TYPE) {
-                    *p_pair_len = (len + 2);
-                }
-
-                GATT_TRACE_WARNING("attribute value too long, to be truncated to %d", len);
-            }
-
-            ARRAY_TO_STREAM (p, p_data, len);
-            p_buf->len += len;
-        }
+        *p_pair_len = (UINT8)pair_len;
     }
+
+    /* update buffer length */
+    p_buf->len = (UINT16)size_now;
+
+#undef CHECK_SIZE
+
     return p_buf;
 }
 

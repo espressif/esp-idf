@@ -16,7 +16,6 @@
 //#define SUPPORT_HEARTBEAT
 //#define SPP_DEBUG_MODE
 
-#define spp_sprintf(s,...)         sprintf((char*)(s), ##__VA_ARGS__)
 #define SPP_DATA_MAX_LEN           (512)
 #define SPP_CMD_MAX_LEN            (20)
 #define SPP_STATUS_MAX_LEN         (20)

@@ -164,7 +164,7 @@ static void parse_ble_read_buffer_size_response_v2 (
     uint8_t *iso_pkt_num_ptr)
 {
 
-    uint8_t *stream = read_command_complete_header(response, HCI_BLE_READ_BUFFER_SZIE_V2, 3 /* bytes after */);
+    uint8_t *stream = read_command_complete_header(response, HCI_BLE_READ_BUFFER_SZIE_V2, 6 /* bytes after: 2+1+2+1 */);
     assert(stream != NULL);
     STREAM_TO_UINT16(*data_size_ptr, stream);
     STREAM_TO_UINT8(*acl_buffer_count_ptr, stream);
