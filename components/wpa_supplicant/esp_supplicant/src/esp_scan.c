@@ -262,7 +262,7 @@ static int issue_scan(struct wpa_supplicant *wpa_s,
     typedef void (* scan_done_cb_t)(void *arg, ETS_STATUS status);
     extern int esp_wifi_promiscuous_scan_start(wifi_scan_config_t *config, scan_done_cb_t cb);
     /* issue scan */
-    if (esp_wifi_promiscuous_scan_start(params, scan_done_event_handler) < 0) {
+    if (esp_wifi_promiscuous_scan_start(params, scan_done_event_handler) != ESP_OK) {
         ret = -1;
         goto cleanup;
     }

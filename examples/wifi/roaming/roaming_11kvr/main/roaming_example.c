@@ -325,7 +325,7 @@ static void esp_neighbor_report_recv_handler(void* arg, esp_event_base_t event_b
     g_neighbor_report_active = false;
     uint8_t cand_list = 0;
     wifi_event_neighbor_report_t *neighbor_report_event = (wifi_event_neighbor_report_t*)event_data;
-    uint8_t *pos = (uint8_t *)neighbor_report_event->report;
+    uint8_t *pos = (uint8_t *)neighbor_report_event->n_report;
     char * neighbor_list = NULL;
     if (!pos) {
         ESP_LOGE(TAG, "Neighbor report is empty");
@@ -343,7 +343,7 @@ static void esp_neighbor_report_recv_handler(void* arg, esp_event_base_t event_b
         /* issue scan */
         wifi_scan_config_t params;
         memset(&params, 0, sizeof(wifi_scan_config_t));
-        if (esp_wifi_scan_start(&params, true) < 0) {
+        if (esp_wifi_scan_start(&params, true) != ESP_OK) {
 		    goto cleanup;
 	    }
 	    /* cleanup from net802.11 */
