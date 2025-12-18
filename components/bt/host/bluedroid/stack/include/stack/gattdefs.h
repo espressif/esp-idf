@@ -53,6 +53,7 @@
 #define GATT_UUID_GAP_CENTRAL_ADDR_RESOL 0x2AA6
 
 #define GATT_UUID_GAP_GATT_SECURITY_LEVELS 0x2BF5
+#define GATT_UUID_GAP_KEY_MATERIAL         0x2B88  /* Encrypted Data Key Material */
 
 /* Attribute Profile Attribute UUID */
 #define GATT_UUID_GATT_SRV_CHGD          0x2A05

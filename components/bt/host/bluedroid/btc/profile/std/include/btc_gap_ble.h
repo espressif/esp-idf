@@ -160,6 +160,9 @@ typedef enum {
     BTC_GAP_BLE_CS_SET_PROCEDURE_PARAMS,
     BTC_GAP_BLE_CS_PROCEDURE_ENABLE,
 #endif // (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
+#if (BT_GATTS_KEY_MATERIAL_CHAR == TRUE)
+    BTC_GAP_BLE_ACT_SET_KEY_MATERIAL,
+#endif
 } btc_gap_ble_act_t;
 
 /* btc_ble_gap_args_t */
@@ -215,6 +218,13 @@ typedef union {
     struct cfg_local_icon_args {
         uint16_t icon;
     } cfg_local_icon;
+#if (BT_GATTS_KEY_MATERIAL_CHAR == TRUE)
+    //BTC_GAP_BLE_ACT_SET_KEY_MATERIAL
+    struct set_key_material_args {
+        uint8_t session_key[16];
+        uint8_t iv[8];
+    } set_key_material;
+#endif
     //BTC_GAP_BLE_ACT_UPDATE_WHITE_LIST
     struct update_white_list_args {
         bool add_remove;
