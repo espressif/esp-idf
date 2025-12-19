@@ -404,7 +404,9 @@ static void IRAM_ATTR NOINLINE_ATTR s_do_cache_invalidate(uint32_t vaddr_start, 
      */
     cache_sync();
 #else   //Other chips
+    esp_cache_sync_ops_enter_critical_section();
     cache_hal_invalidate_addr(vaddr_start, size);
+    esp_cache_sync_ops_exit_critical_section();
 #endif // CONFIG_IDF_TARGET_ESP32
 }
 
