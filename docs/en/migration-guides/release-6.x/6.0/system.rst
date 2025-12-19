@@ -9,14 +9,16 @@ Default LibC changed from Newlib to PicolibC
 Since ESP-IDF v6.0, the default LibC used in builds has switched to the PicolibC implementation.
 
 .. note::
-   PicolibC is a Newlib fork with a rewritten stdio implementation whose goal is to consume less memory.
+
+    PicolibC is a Newlib fork with a rewritten stdio implementation whose goal is to consume less memory.
 
 In most cases, no application behavior changes are expected, except for reduced binary size and less stack consumption on I/O operations.
 
 .. warning::
-   **Breaking change:** It is not possible to redefine stdin, stdout, and stderr for specific tasks as was possible with Newlib. These streams are global and shared between all tasks. This is POSIX-standardized behavior.
 
-:ref:`CONFIG_LIBC_PICOLIBC_NEWLIB_COMPATIBILITY`, which is enabled by default, provides limited compatibility with Newlib by providing thread-local copies of global stdin, stdout, stderr, and the getreent() implementation. If a library built with Newlib headers operates with "internal" fields of "struct reent", there may be task stack corruption. Note that manipulating "struct reent" fields is expected only by the Newlib library itself.
+    **Breaking change:** It is not possible to redefine stdin, stdout, and stderr for specific tasks as was possible with Newlib. These streams are global and shared between all tasks. This is POSIX-standardized behavior.
+
+:ref:`CONFIG_LIBC_PICOLIBC_NEWLIB_COMPATIBILITY`, which is enabled by default, provides limited compatibility with Newlib by providing thread-local copies of ``global stdin``, ``stdout``, ``stderr``, and the ``getreent()`` implementation. If a library built with Newlib headers operates with "internal" fields of "struct reent", there may be task stack corruption. Note that manipulating ``struct reent`` fields is expected only by the Newlib library itself.
 
 If you are not linking against external libraries built against Newlib headers, you may disable :ref:`CONFIG_LIBC_PICOLIBC_NEWLIB_COMPATIBILITY` to save a small amount of memory.
 
@@ -42,7 +44,6 @@ The test code was compiled with both Newlib and Picolibc, and the results were c
 .. list-table:: Comparison of Newlib vs Picolibc
    :header-rows: 1
    :widths: 30 20 20 20
-   :stub-columns: 1
 
    * - Metric
      - Newlib
@@ -66,7 +67,8 @@ The test code was compiled with both Newlib and Picolibc, and the results were c
      - 0.59%
 
 .. note::
-   Even when :ref:`CONFIG_LIBC_NEWLIB_NANO_FORMAT` is enabled, which disables float formatting, applications with Picolibc are still smaller by 6% (224,592 vs 239,888 bytes).
+
+    Even when :ref:`CONFIG_LIBC_NEWLIB_NANO_FORMAT` is enabled, which disables float formatting, applications with Picolibc are still smaller by 6% (224,592 vs 239,888 bytes).
 
 Xtensa
 ------
@@ -370,9 +372,9 @@ The LP-Core will now wake up the main CPU when it encounters an exception during
 Heap
 ----
 
-In previous versions of ESP-IDF, the capability `MALLOC_CAP_EXEC` would be available regardless of the memory protection configuration state. This implied that a call to e.g., :cpp:func:`heap_caps_malloc` with `MALLOC_CAP_EXEC` would return NULL when CONFIG_ESP_SYSTEM_MEMPROT_FEATURE or CONFIG_ESP_SYSTEM_PMP_IDRAM_SPLIT are enabled.
+In previous versions of ESP-IDF, the capability ``MALLOC_CAP_EXEC`` would be available regardless of the memory protection configuration state. This implied that a call to e.g., :cpp:func:`heap_caps_malloc` with ``MALLOC_CAP_EXEC`` would return NULL when ``CONFIG_ESP_SYSTEM_MEMPROT_FEATURE`` or ``CONFIG_ESP_SYSTEM_PMP_IDRAM_SPLIT`` are enabled.
 
-Since ESP-IDF v6.0, the definition of `MALLOC_CAP_EXEC` is conditional, meaning that if CONFIG_ESP_SYSTEM_MEMPROT is enabled, `MALLOC_CAP_EXEC` will not be defined. Therefore, using it will generate a compile time error.
+Since ESP-IDF v6.0, the definition of ``MALLOC_CAP_EXEC`` is conditional, meaning that if CONFIG_ESP_SYSTEM_MEMPROT is enabled, ``MALLOC_CAP_EXEC`` will not be defined. Therefore, using it will generate a compile time error.
 
 ``esp_common``
 --------------

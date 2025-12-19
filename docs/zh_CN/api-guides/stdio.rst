@@ -7,13 +7,13 @@ ESP-IDF 提供了 C 标准输入输出功能，如 ``stdin``、``stdout`` 和 ``
 
 类似 POSIX 系统，这些流是文件描述符的缓冲封装：
 
-- ``stdin`` 是用于从用户读取输入的缓冲流，封装文件描述符 ``STDIN_FILENO`` (0)。
-- ``stdout`` 是用于向用户写入输出的缓冲流，封装文件描述符 ``STDOUT_FILENO`` (1)。
-- ``stderr`` 是用于向用户写入错误信息的缓冲流，封装文件描述符 ``STDERR_FILENO`` (2)。
+- ``stdin`` 用于读取用户输入的缓冲流，封装了文件描述符 ``STDIN_FILENO`` (0)。
+- ``stdout`` 用于向用户写入输出的缓冲流，封装了文件描述符 ``STDOUT_FILENO`` (1)。
+- ``stderr`` 用于向用户写入错误信息的缓冲流，封装了文件描述符 ``STDERR_FILENO`` (2)。
 
 在 ESP-IDF 中， ``stdout`` 与 ``stderr`` 没有实际区别，因为两者都发送到相同的物理接口。大多数应用程序通常只使用 ``stdout``。例如，对于 ESP-IDF 的日志函数，无论日志等级如何，始终写入 ``stdout``。
 
-底层的 stdin、stdout 和 stderr 文件描述符是基于 :doc:`VFS 驱动 <../api-reference/storage/vfs>` 实现的。
+底层的 `stdin`、`stdout` 和 `stderr` 文件描述符是基于 :doc:`VFS 驱动 <../api-reference/storage/vfs>` 实现的。
 
 在 {IDF_TARGET_NAME} 上，ESP-IDF 提供了用于以下 I/O 接口的 VFS 驱动实现：
 
@@ -33,8 +33,8 @@ ESP-IDF 提供了 C 标准输入输出功能，如 ``stdin``、``stdout`` 和 ``
 
 .. list::
 
-    - :ref:`CONFIG_ESP_CONSOLE_UART_DEFAULT<CONFIG_ESP_CONSOLE_UART_DEFAULT>` — 启用 UART 用于标准 I/O，保持默认选项（引脚号、波特率）
-    - :ref:`CONFIG_ESP_CONSOLE_UART_CUSTOM<CONFIG_ESP_CONSOLE_UART_CUSTOM>` — 启用 UART 用于标准 I/O，通过 Kconfig 配置 TX/RX 引脚号和波特率
+    - :ref:`CONFIG_ESP_CONSOLE_UART_DEFAULT<CONFIG_ESP_CONSOLE_UART_DEFAULT>` — 启用 UART 用于标准 I/O，保持默认选项项（管脚号、波特率）。
+    - :ref:`CONFIG_ESP_CONSOLE_UART_CUSTOM<CONFIG_ESP_CONSOLE_UART_CUSTOM>` — 启用 UART 用于标准 I/O，通过 Kconfig 配置 TX/RX 管脚号和波特率。
     :esp32s2 or esp32s3: - :ref:`CONFIG_ESP_CONSOLE_USB_CDC<CONFIG_ESP_CONSOLE_USB_CDC>` — 启用 USB CDC（使用 USB_OTG 外设）用于标准 I/O。硬件连接要求请参见 :doc:`usb-otg-console`。
     :SOC_USB_SERIAL_JTAG_SUPPORTED: - :ref:`CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG<CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG>` — 启用 USB Serial/JTAG 用于标准 I/O。硬件连接要求请参见 :doc:`usb-serial-jtag-console`。
     - :ref:`CONFIG_ESP_CONSOLE_NONE<CONFIG_ESP_CONSOLE_NONE>` — 禁用标准 I/O。选择此选项时， ``stdin``、 ``stdout`` 和 ``stderr`` 将映射到 ``/dev/null``，不会产生输出或输入。
@@ -60,13 +60,26 @@ ESP-IDF 提供了 C 标准输入输出功能，如 ``stdin``、``stdout`` 和 ``
 标准流与 FreeRTOS 任务
 -----------------------
 
+ESP-IDF 根据 :ref:`CONFIG_LIBC` 中所选择的 LibC 实现，提供了两种不同的标准 I/O 流实现方式。 ``stdin``、 ``stdout`` 和 ``stderr`` 流在这两种实现下的行为存在差异，尤其体现在 FreeRTOS 任务之间的共享方式上。
+
+两种实现的共同点是，每个流 (``stdin``、 ``stdout``、 ``stderr``) 都具有一个互斥锁 (mutex) 用于保护，防止多个任务并发访问同一个流。例如，当两个任务同时向 ``stdout`` 写数据时，该互斥锁可以确保各个任务的输出不会相互混杂。
+
+Newlib
+^^^^^^
+
 在 ESP-IDF 中，为节省 RAM， ``stdin`` 、 ``stdout`` 和 ``stderr`` 的 ``FILE`` 对象在所有 FreeRTOS 任务间共享，但每个任务具有唯一的指针。这就说明：
 
 - 可以为某个任务单独更改 ``stdin``、 ``stdout`` 和 ``stderr`` 而不影响其他任务。例如 ``stdin = fopen("/dev/uart/1", "r")``。
 - 若要更改新任务的默认 ``stdin``, ``stdout``, ``stderr`` 流，请在创建任务前修改 ``_GLOBAL_REENT->_stdin`` (``_stdout``, ``_stderr``)。
 - 使用 ``fclose`` 关闭默认 ``stdin``、 ``stdout`` 或 ``stderr`` 时也会关闭 ``FILE`` 流对象，并影响所有其他任务。
 
-每个流 (``stdin``, ``stdout``, ``stderr``) 都有一个互斥锁用于保护，防止多个任务并发访问。例如，如果两个任务同时写入 ``stdout``，互斥锁将确保各任务的输出不会混在一起。
+Picolibc
+^^^^^^^^
+
+根据 POSIX 标准，默认的 ``stdin``、 ``stdout`` 和 ``stderr`` 流是全局的，在所有 FreeRTOS 任务之间共享。这意味着：
+
+- 修改 ``stdin``、 ``stdout`` 或 ``stderr`` 会影响所有其他任务，无法为特定任务单独更改标准 I/O 流。
+- 对于需要线程本地 (thread-local) 的流，应在应用程序代码中通过打开文件流并在任务中使用它来实现，例如 ``fscanf()``、 ``fprintf()`` 等。
 
 阻塞与非阻塞 I/O
 -----------------
@@ -78,7 +91,7 @@ UART
 
 使用 UART 驱动的应用程序，可通过调用 :cpp:func:`uart_vfs_dev_use_driver` 来使用该驱动提供的中断驱动型阻塞读写函数。也可通过 :cpp:func:`uart_vfs_dev_use_nonblocking` 回退到基本的非阻塞函数。
 
-安装中断驱动后，也可使用带有 ``O_NONBLOCK`` flag 的 ``fcntl`` 函数来启用/禁用非阻塞行为。
+安装中断驱动后，也可使用带有 ``O_NONBLOCK`` 标志的 ``fcntl`` 函数来启用/禁用非阻塞行为。
 
 .. only:: SOC_USB_SERIAL_JTAG_SUPPORTED
 
@@ -87,14 +100,14 @@ UART
 
     与 UART 类似，USB Serial/JTAG VFS 驱动默认使用简化实现：写操作阻塞（忙等待直到所有数据发送完成），读操作非阻塞，只返回 FIFO 中的数据。可通过调用 :cpp:func:`usb_serial_jtag_vfs_use_nonblocking` 使用中断驱动阻塞读写函数，将此行为更改为使用 USB Serial/JTAG 驱动程序的中断驱动和阻塞式读写函数。注意，USB Serial/JTAG 驱动需先使用 :cpp:func:`usb_serial_jtag_driver_install` 初始化。也可通过相应函数回退到基本非阻塞函数。
 
-    安装中断驱动后，也可使用带有 ``O_NONBLOCK`` flag 的 ``fcntl`` 函数启用/禁用非阻塞行为。
+    安装中断驱动后，也可使用带有 ``O_NONBLOCK`` 标志的 ``fcntl`` 函数启用/禁用非阻塞行为。
 
 .. only:: esp32s2 or esp32s3
 
     USB CDC（使用 USB_OTG 外设）
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    USB CDC VFS 驱动默认提供阻塞 I/O。带有 ``O_NONBLOCK`` flag 的 ``fcntl`` 函数启用非阻塞行为。
+    USB CDC VFS 驱动默认提供阻塞 I/O。带有 ``O_NONBLOCK`` 标志的 ``fcntl`` 函数启用非阻塞行为。
 
 换行符转换
 ------------
@@ -124,7 +137,7 @@ UART
 缓冲
 -----
 
-默认情况下，标准 I/O 流是按行缓冲的。这意味着写入流的数据在写入换行符或缓冲区满之前不会发送到底层设备。例如，调用 ``printf("Hello")`` 时，文本在你调用 ``printf("\n")`` 或缓冲区因其他输出填满前，文本不会立即发送到 UART。
+默认情况下，标准 I/O 流是按行缓冲的。这意味着写入流的数据在写入换行符或缓冲区满之前不会发送到底层设备。例如，调用 ``printf("Hello")`` 时，文本不会立即发送到 UART；只有当你调用 ``printf("\n")`` 或者由于其他打印操作导致 stream 缓冲被填满时，文本才会真正发送。
 
 可使用 ``setvbuf()`` 函数更改此行为。例如，禁用 ``stdout`` 缓冲：
 

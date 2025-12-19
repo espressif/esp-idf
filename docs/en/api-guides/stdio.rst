@@ -39,7 +39,7 @@ Built-in implementations of standard I/O can be selected using several Kconfig o
     :SOC_USB_SERIAL_JTAG_SUPPORTED: - :ref:`CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG<CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG>` — Enables USB Serial/JTAG for standard I/O. See :doc:`usb-serial-jtag-console` for details about hardware connections required.
     - :ref:`CONFIG_ESP_CONSOLE_NONE<CONFIG_ESP_CONSOLE_NONE>` — Disables standard I/O. If this option is selected, ``stdin``, ``stdout``, and ``stderr`` will be mapped to ``/dev/null`` and won't produce any output or generate any input.
 
-Enabling one of these option will cause the corresponding VFS driver to be built into the application and used to open ``stdin``, ``stdout``, and ``stderr`` streams. Data written to ``stdout`` and ``stderr`` will be sent over the selected interface, and input from the selected interface will be available on ``stdin``.
+Enabling one of these options will cause the corresponding VFS driver to be built into the application and used to open ``stdin``, ``stdout``, and ``stderr`` streams. Data written to ``stdout`` and ``stderr`` will be sent over the selected interface, and input from the selected interface will be available on ``stdin``.
 
 .. only:: SOC_USB_SERIAL_JTAG_SUPPORTED
 
@@ -98,7 +98,7 @@ When the interrupt-driven driver is installed, it is also possible to enable/dis
     USB Serial/JTAG
     ^^^^^^^^^^^^^^^
 
-    Similar to UART, the VFS driver for USB Serial/JTAG defaults to a simplified implementation: writes are blocking (busy-wait until all the data has been sent) and reads are non-blocking, returning only the data present in the FIFO. This behavior can be changed to use the interrupt driven, blocking read and write functions of USB Serial/JTAG driver using a call to the :cpp:func:`usb_serial_jtag_vfs_use_nonblocking` function. Note that the USB Serial/JTAG driver has to be initialized using :cpp:func:`usb_serial_jtag_driver_install` beforehand. It is also possible to revert to the basic non-blocking functions using a call to :cpp:func:`usb_serial_jtag_vfs_use_nonblocking`.
+    Similar to UART, the VFS driver for USB Serial/JTAG defaults to a simplified implementation: writes are blocking (busy-wait until all the data has been sent) and reads are non-blocking, returning only the data present in the FIFO. This behavior can be changed to use the interrupt-driven, blocking read and write functions of the USB Serial/JTAG driver by calling :cpp:func:`usb_serial_jtag_vfs_use_nonblocking`. Note that the USB Serial/JTAG driver has to be initialized using :cpp:func:`usb_serial_jtag_driver_install` beforehand. It is also possible to revert to the basic non-blocking functions using a call to :cpp:func:`usb_serial_jtag_vfs_use_nonblocking`.
 
     When the interrupt-driven driver is installed, it is also possible to enable/disable non-blocking behavior using ``fcntl`` function with ``O_NONBLOCK`` flag.
 
@@ -116,7 +116,7 @@ VFS drivers provide an optional newline conversion feature for input and output.
 
 Applications can configure this behavior globally using the following Kconfig options:
 
-    -  For output
+    - For output
         - :ref:`CONFIG_LIBC_STDOUT_LINE_ENDING_CRLF<CONFIG_LIBC_STDOUT_LINE_ENDING_CRLF>`
         - :ref:`CONFIG_LIBC_STDOUT_LINE_ENDING_CR<CONFIG_LIBC_STDOUT_LINE_ENDING_CR>`
         - :ref:`CONFIG_LIBC_STDOUT_LINE_ENDING_LF<CONFIG_LIBC_STDOUT_LINE_ENDING_LF>`

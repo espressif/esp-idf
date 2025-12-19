@@ -3,6 +3,73 @@
 
 :link_to_translation:`en:[English]`
 
+默认 LibC 已从 Newlib 更改为 PicolibC
+--------------------------------------
+
+自 ESP-IDF v6.0 起，构建时默认使用的 LibC 已更改为 PicolibC。
+
+.. note::
+
+    PicolibC 是 Newlib 的一个分支，重新实现了 stdio，其目标是减少内存消耗。
+
+虽然二进制文件大小减小，且 I/O 操作时的栈消耗会降低，但在大多数情况下，应用程序的行为不会发生变化。
+
+.. warning::
+
+    **重大变更：** 无法像使用 Newlib 时那样，为特定任务重新定义 ``stdin``、 ``stdout`` 和 ``stderr``。这些流是全局的，并在所有任务之间共享。这是符合 POSIX 标准的行为。
+
+:ref:`CONFIG_LIBC_PICOLIBC_NEWLIB_COMPATIBILITY` 是默认启用的，通过提供全局 ``stdin``、 ``stdout``、 ``stderr`` 的线程本地副本以及 ``getreent()`` 实现，为 Newlib 提供有限兼容性。如果使用 Newlib 头文件构建的库操作 ``struct reent`` 的内部字段，可能会导致任务栈损坏。请注意，只有 Newlib 库本身才应该操作 ``struct reent`` 字段。
+
+如果你没有链接使用 Newlib 头文件构建的外部库，可以禁用 :ref:`CONFIG_LIBC_PICOLIBC_NEWLIB_COMPATIBILITY` 来节省少量内存。
+
+Newlib 仍然在 ESP-IDF 工具链中维护。如需切换使用 Newlib，可在 menuconfig 中通过 :ref:`CONFIG_LIBC` 选项选择 LIBC_NEWLIB。
+
+Newlib 与 Picolibc 对比
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+以下示例说明切换到 Picolibc 原因：
+
+.. code-block:: c
+
+    FILE *f = fopen("/dev/console", "w");
+    for (int i = 0; i < 10; i++)
+    {
+        fprintf(f, "hello world %s\n", "🤖");
+        fprintf(f, "%.1000f\n", 3.141592653589793);
+        fprintf(f, "%1000d\n", 42);
+    }
+
+该示例代码使用 Newlib 和 Picolibc 分别编译，并在 ESP32-C3 上对比结果：
+
+.. list-table:: Newlib 与 Picolibc 对比
+   :header-rows: 1
+   :widths: 30 20 20 20
+
+   * - 指标
+     - Newlib
+     - Picolibc
+     - 差异
+   * - 二进制大小（字节）
+     - 280,128
+     - 224,656
+     - 19.80%
+   * - 栈使用（字节）
+     - 1,748
+     - 802
+     - 54.12%
+   * - 堆使用（字节）
+     - 1,652
+     - 376
+     - 77.24%
+   * - 性能（CPU 周期）
+     - 278,232,026
+     - 279,823,800
+     - 0.59%
+
+.. note::
+
+    即使启用 :ref:`CONFIG_LIBC_NEWLIB_NANO_FORMAT` 选项（禁用浮点格式化），使用 Picolibc 的应用程序仍比 Newlib 小 6%（224,592 v.s. 239,888 字节）。
+
 Xtensa
 ------
 
@@ -305,9 +372,9 @@ LP-Core 在深度睡眠期间遇到异常时，将唤醒主 CPU。此功能默�
 堆
 ----
 
-在 ESP-IDF 早期版本中，无论是否启用内存保护配置， ``MALLOC_CAP_EXEC`` 都始终可用。这可能引起误解，例如，当启用了 ``CONFIG_ESP_SYSTEM_MEMPROT_FEATURE`` 或 ``CONFIG_ESP_SYSTEM_PMP_IDRAM_SPLIT`` 时，如果调用 :cpp:func:`heap_caps_malloc` 并指定 `MALLOC_CAP_EXEC`，该函数会返回 ``NULL``。
+在 ESP-IDF 旧版本中，无论是否启用内存保护配置， ``MALLOC_CAP_EXEC`` 都是可用的。这意味着，当启用了 ``CONFIG_ESP_SYSTEM_MEMPROT_FEATURE`` 或 ``CONFIG_ESP_SYSTEM_PMP_IDRAM_SPLIT`` 时，如果调用 :cpp:func:`heap_caps_malloc` 并指定 ``MALLOC_CAP_EXEC``，该函数会返回 ``NULL``。
 
-自 ESP-IDF v6.0 起， `MALLOC_CAP_EXEC` 的定义改为条件性定义。也就是说，当启用 ``CONFIG_ESP_SYSTEM_MEMPROT`` 时， `MALLOC_CAP_EXEC` 将不会被定义。因此，如果代码中仍然使用 `MALLOC_CAP_EXEC`，会在编译阶段报错。
+自 ESP-IDF v6.0 起， ``MALLOC_CAP_EXEC`` 的定义改为条件性定义。也就是说，当启用 ``CONFIG_ESP_SYSTEM_MEMPROT`` 时， ``MALLOC_CAP_EXEC`` 将不会被定义。因此，如果代码中仍然使用 ``MALLOC_CAP_EXEC``，会在编译阶段报错。
 
 ``esp_common``
 ----------------
