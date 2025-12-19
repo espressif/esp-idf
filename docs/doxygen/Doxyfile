@@ -45,6 +45,8 @@ INPUT = \
     $(PROJECT_PATH)/components/bt/esp_ble_mesh/v1.1/api/core/include/esp_ble_mesh_rpr_model_api.h \
     $(PROJECT_PATH)/components/bt/esp_ble_mesh/v1.1/api/core/include/esp_ble_mesh_sar_model_api.h \
     $(PROJECT_PATH)/components/bt/esp_ble_mesh/v1.1/api/core/include/esp_ble_mesh_srpl_model_api.h \
+    $(PROJECT_PATH)/components/bt/esp_ble_mesh/v1.1/api/models/include/esp_ble_mesh_dfu_model_api.h \
+    $(PROJECT_PATH)/components/bt/esp_ble_mesh/v1.1/api/models/include/esp_ble_mesh_dfu_slot_api.h \
     $(PROJECT_PATH)/components/bt/esp_ble_mesh/api/esp_ble_mesh_defs.h \
     $(PROJECT_PATH)/components/bt/esp_ble_mesh/api/models/include/esp_ble_mesh_config_model_api.h \
     $(PROJECT_PATH)/components/bt/esp_ble_mesh/api/models/include/esp_ble_mesh_generic_model_api.h \
