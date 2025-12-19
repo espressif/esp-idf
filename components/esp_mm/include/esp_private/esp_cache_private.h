@@ -68,6 +68,16 @@ void esp_cache_unfreeze_caches_enable_interrupts(void);
 #endif
 
 /**
+ * @brief Enter critical section for cache sync operations
+ */
+void esp_cache_sync_ops_enter_critical_section(void);
+
+/**
+ * @brief Exit critical section for cache sync operations
+ */
+void esp_cache_sync_ops_exit_critical_section(void);
+
+/**
  * @brief Get Cache alignment requirement for data
  *
  * @note Now only support 'MALLOC_CAP_INTERNAL', 'MALLOC_CAP_DMA' and 'MALLOC_CAP_SPIRAM'
