@@ -1,0 +1,15 @@
+menu "A2DP Example Configuration"
+    config EXAMPLE_LOCAL_DEVICE_NAME
+        string "Local Device Name"
+        default "ESP_SPEAKER"
+        help
+            Use this option to set local device name.
+
+    config EXAMPLE_A2DP_SINK_USE_EXTERNAL_CODEC
+        bool "Use External Codec Instead of Internal"
+        default n
+        select BT_A2DP_USE_EXTERNAL_CODEC
+        help
+            If enable, Bluedroid stack will not decode A2DP audio data, user need to decode it in application layer.
+
+endmenu
