@@ -12,7 +12,7 @@
 #include "sdkconfig.h"
 
 #include "esp_flash.h"
-#include "esp_private/esp_flash_types.h"
+#include "esp_flash_chips/esp_flash_types.h"
 
 /** Internal API, don't use in the applications */
 

@@ -12,17 +12,12 @@
 #include "esp_err.h"
 #include "esp_check.h"
 #include "esp_system.h"
-#include "esp_private/log_util.h"
 #include "esp_log.h"
-#include "esp_private/cache_utils.h"
-#include "spi_flash_mmap.h"
-#include "esp_private/mspi_intr.h"
 #include "esp_newlib.h"
 #include "esp_xt_wdt.h"
 #include "esp_cpu.h"
 #include "esp_private/startup_internal.h"
-#include "esp_private/pm_impl.h"
-#include "freertos/portmacro.h"
+#include "freertos/FreeRTOS.h"
 #include "soc/soc_caps.h"
 #include "hal/wdt_hal.h"
 #include "hal/uart_types.h"
@@ -38,7 +33,6 @@
 #endif
 
 #include "esp_private/esp_clk.h"
-#include "esp_private/spi_flash_os.h"
 #include "esp_private/brownout.h"
 #include "esp_private/vbat.h"
 
@@ -123,14 +117,6 @@ ESP_SYSTEM_INIT_FN(init_pm, SECONDARY, BIT(0), 201)
     return ESP_OK;
 }
 #endif // CONFIG_PM_ENABLE
-
-#if CONFIG_PM_WORKAROUND_FREQ_LIMIT_ENABLED
-ESP_SYSTEM_INIT_FN(init_pm_flash_freq_limit, SECONDARY, BIT(0), 202)
-{
-    esp_pm_flash_freq_limit_init();
-    return ESP_OK;
-}
-#endif // CONFIG_PM_WORKAROUND_FREQ_LIMIT_ENABLED
 
 #if SOC_APB_BACKUP_DMA
 ESP_SYSTEM_INIT_FN(init_apb_dma, SECONDARY, BIT(0), 203)

@@ -310,9 +310,28 @@ SPI Flash Driver
 - New argument ``flags`` is added to ``esp_flash_os_functions_t::start``. Caller and implementer should handle this argument properly.
 - Kconfig option ``CONFIG_SPI_FLASH_ROM_DRIVER_PATCH`` has been removed. Considering that this option is unlikely to be widely used by users and may cause serious issues if misused, it has been decided to remove it.
 
-.. note::
+Header File Reorganization
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    Note that enabling :ref:`CONFIG_FREERTOS_IN_IRAM` will increase IRAM usage. Consider this trade-off when optimizing for SPI performance.
+Several internal header files have been reorganized to better reflect their visibility and intended usage:
+
+- **Flash chip driver related headers** have been moved to ``esp_flash_chips/`` directory:
+  - ``spi_flash_chip_driver.h``
+  - ``spi_flash_chip_*.h``
+  - ``spi_flash_defs.h``
+  - ``spi_flash_override.h``
+  - ``esp_flash_types.h``
+  - The ``esp_flash_t`` structure definition has been moved from ``esp_flash.h`` to ``esp_flash_chips/esp_flash_types.h``. Applications should not access structure members directly; use the public APIs instead (e.g., use :cpp:func:`esp_flash_get_size` instead of accessing ``chip->size`` directly).
+  - The ``esp_flash_os_functions_t`` structure definition has been moved from ``esp_flash.h`` to ``esp_flash_chips/esp_flash_types.h``.
+  - The ``spi_flash_chip_t`` type forward declaration has been removed from ``esp_flash.h`` and all ROM headers (``components/esp_rom/esp32xx/include/esp32xx/rom/esp_flash.h``). The type is now only defined in ``esp_flash_chips/esp_flash_types.h``. Applications should not use this type directly; it is only intended for custom chip driver implementations.
+
+  .. note::
+
+      The headers in ``esp_flash_chips/`` are **semi-public** - they are intended for expert users who need to implement custom chip drivers for unsupported flash chips, but they are **not considered stable API** and may change without notice. For most use cases, you should use the public APIs in ``esp_flash.h`` instead. See :doc:`Override Driver for SPI Flash <../../../api-reference/peripherals/spi_flash/spi_flash_override_driver>` for more details.
+
+- **Internal headers** have been moved to ``esp_private/`` directory and not included in the public (stable) header files:
+  - ``esp_flash_internal.h``
+  - ``memspi_host_driver.h``
 
 Touch Element
 -------------

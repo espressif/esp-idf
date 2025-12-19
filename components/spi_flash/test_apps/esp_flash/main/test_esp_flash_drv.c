@@ -14,7 +14,7 @@
 #include "esp_flash.h"
 #include "esp_private/spi_common_internal.h"
 #include "esp_flash_spi_init.h"
-#include "memspi_host_driver.h"
+#include "esp_private/memspi_host_driver.h"
 #include <esp_attr.h>
 #include "esp_log.h"
 #include "test_utils.h"

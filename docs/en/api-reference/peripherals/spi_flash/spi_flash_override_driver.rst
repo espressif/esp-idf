@@ -149,7 +149,12 @@ Generic Flash Driver
 The flash driver in the application is used to read, write, erase, and save data. It also supports some advanced features like OTA. Below is a guide on how to customize the driver for your specific flash model.
 
 - Step 1: The last item of `default_registered_chips` should be the `generic chip driver <https://github.com/espressif/esp-idf/blob/master/components/spi_flash/spi_flash_chip_generic.c>`_. If your flash chip does not match any of the chip drivers listed above, it will use the generic driver. Check for any differences in behavior between your flash and the generic driver, including but not limited to different commands, dummy cycles, data bytes, and status registers.
-- Step 2: If you have found something different from the generic driver, you need to implement your own chip driver. Create a new file named ``spi_flash_chip_<vendor>.c`` to implement the specific behavior, and copy the ``esp_flash_chip_generic`` structure into it as a starting point. Remember to include ``spi_flash_chip_generic.h``. Here is an example `esp_flash_nor <https://github.com/espressif/esp-flash-drivers/tree/main/esp_flash_nor/>`_.
+- Step 2: If you have found something different from the generic driver, you need to implement your own chip driver. Create a new file named ``spi_flash_chip_<vendor>.c`` to implement the specific behavior, and copy the ``esp_flash_chip_generic`` structure into it as a starting point. Remember to include ``esp_flash_chips/spi_flash_chip_generic.h``. Here is an example `esp_flash_nor <https://github.com/espressif/esp-flash-drivers/tree/main/esp_flash_nor/>`_.
+
+  .. note::
+
+      The chip driver header files are located in the ``esp_flash_chips/`` directory (e.g., ``components/spi_flash/include/esp_flash_chips/``). These headers are **semi-public** - they are intended for expert users who need to implement custom chip drivers, but they are **not considered stable API** and may change without notice.
+
 - Step 3: Implement the functions with difference and point to them from the ``spi_flash_chip_t``. Note: if some behavior of your flash is the same as the generic one, retain the generic driver functions without customization. Only implement the parts that differ. Here is an example:
 
 .. important::

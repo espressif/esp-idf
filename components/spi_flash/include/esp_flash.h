@@ -16,9 +16,6 @@
 extern "C" {
 #endif
 
-struct spi_flash_chip_t;
-typedef struct spi_flash_chip_t spi_flash_chip_t;
-
 /** @cond */
 typedef struct esp_flash_t esp_flash_t;
 /** @endcond */

@@ -18,6 +18,7 @@ entries:
             esp_flash_api: esp_flash_chip_driver_initialized (noflash)
             esp_flash_api: esp_flash_init (noflash)
             esp_flash_api: esp_flash_init_main (noflash)
+            esp_flash_api: esp_flash_is_quad_mode (noflash)
             esp_flash_api: read_unique_id (noflash)
             esp_flash_api: detect_spi_flash_chip (noflash)
             esp_flash_api: esp_flash_get_physical_size (noflash)

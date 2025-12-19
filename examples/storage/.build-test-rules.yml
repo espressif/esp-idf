@@ -3,6 +3,10 @@
 examples/storage/custom_flash_driver:
   depends_components:
     - spi_flash
+  disable:
+    - if: 1 == 1
+      temporary: true
+      reason: breaking change needs external component to fix first (IDF-15134)
 
 examples/storage/emmc:
   depends_components:

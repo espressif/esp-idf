@@ -9,21 +9,23 @@
 #include <sys/param.h>
 #include <string.h>
 
+#include "esp_cpu.h"
 #include "esp_memory_utils.h"
-#include "esp_flash_port/spi_flash_chip_driver.h"
-#include "memspi_host_driver.h"
 #include "esp_log.h"
 #include "sdkconfig.h"
-#include "esp_flash_internal.h"
-#include "spi_flash_defs.h"
-#include "spi_flash_mmap.h"
 #include "esp_rom_caps.h"
 #include "esp_rom_spiflash.h"
 #include "esp_private/esp_clk.h"
-#include "esp_spi_flash_counters.h"
 #include "esp_check.h"
-#include "hal/efuse_hal.h"
 #include "soc/chip_revision.h"
+#include "hal/efuse_hal.h"
+
+#include "esp_spi_flash_counters.h"
+#include "esp_flash_chips/spi_flash_chip_driver.h"
+#include "esp_private/memspi_host_driver.h"
+#include "esp_private/esp_flash_internal.h"
+#include "esp_flash_chips/spi_flash_defs.h"
+#include "spi_flash_mmap.h"
 
 #if CONFIG_IDF_TARGET_ESP32S2
 #include "esp_crypto_lock.h" // for locking flash encryption peripheral

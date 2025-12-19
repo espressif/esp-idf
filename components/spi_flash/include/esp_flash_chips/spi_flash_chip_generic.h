@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,8 +8,11 @@
 
 #include <stdint.h>
 #include "esp_flash.h"
-#include "esp_flash_port/spi_flash_chip_driver.h"
+#include "esp_flash_chips/spi_flash_chip_driver.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /*
  * The 'chip_generic' SPI flash operations are a lowest common subset of SPI
@@ -401,3 +404,7 @@ esp_err_t spi_flash_chip_generic_read_unique_id_none(esp_flash_t *chip, uint64_t
 
 /// Default timeout configuration used by most chips
 extern const flash_chip_op_timeout_t spi_flash_chip_generic_timeout;
+
+#ifdef __cplusplus
+}
+#endif

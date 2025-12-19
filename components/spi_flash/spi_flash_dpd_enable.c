@@ -9,8 +9,9 @@
 #include "esp_err.h"
 #include "esp_log.h"
 #include "esp_attr.h"
-#include "spi_flash_chip_generic.h"
+
 #include "hal/spi_flash_hal.h"
+#include "esp_flash_chips/spi_flash_chip_generic.h"
 
 /*******************************************************************************
  * Flash deep power-down mode.

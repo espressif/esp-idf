@@ -24,3 +24,8 @@ idf_component_register(SRCS "${srcs}"
                        INCLUDE_DIRS include
                        PRIV_REQUIRES "${priv_requires}"
                        LDFRAGMENTS linker.lf)
+
+if(CONFIG_PM_WORKAROUND_FREQ_LIMIT_ENABLED)
+    # Force linking init_flash ESP_SYSTEM_INIT_FN to ensure it's not discarded by linker
+    target_link_libraries(${COMPONENT_LIB} INTERFACE "-u pm_c5_flash_freq_limit_init_include_func")
+endif()

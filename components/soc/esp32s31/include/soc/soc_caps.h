@@ -212,7 +212,6 @@
 #define SOC_MEMSPI_IS_INDEPENDENT                 1
 #define SOC_MEMSPI_SUPPORT_CONTROL_DUMMY_OUT      1
 
-
 #define SOC_MEMSPI_FLASH_PSRAM_INDEPENDENT        1
 
 /*-------------------------- SYSTIMER CAPS ----------------------------------*/

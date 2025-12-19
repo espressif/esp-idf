@@ -310,9 +310,28 @@ SPI flash 驱动
 - ``esp_flash_os_functions_t::start`` 新增了一个参数 ``flags``。调用者和实现者应正确处理此参数。
 - Kconfig 选项 ``CONFIG_SPI_FLASH_ROM_DRIVER_PATCH`` 已被移除，考虑到这个选项不会被广泛被用户使用，且有因误用而导致出现严重的问题，遂决定移除。
 
-.. note::
+头文件重组
+~~~~~~~~~~
 
-    启用 :ref:`CONFIG_FREERTOS_IN_IRAM` 会显著增加 IRAM 使用量。在优化 SPI 性能时，需进行权衡。
+为了更好地反映其可见性和预期用途，多个内部头文件已重新组织：
+
+- **Flash 芯片驱动相关头文件** 已移至 ``esp_flash_chips/`` 目录：
+  - ``spi_flash_chip_driver.h``
+  - ``spi_flash_chip_*.h``
+  - ``spi_flash_defs.h``
+  - ``spi_flash_override.h``
+  - ``esp_flash_types.h``
+  - ``esp_flash_t`` 结构体定义已从 ``esp_flash.h`` 移至 ``esp_flash_chips/esp_flash_types.h``。应用程序不应直接访问结构体成员；请改用公开 API（例如，使用 :cpp:func:`esp_flash_get_size` 而不是直接访问 ``chip->size``）。
+  - ``esp_flash_os_functions_t`` 结构体定义已从 ``esp_flash.h`` 移至 ``esp_flash_chips/esp_flash_types.h``。
+  - ``spi_flash_chip_t`` 类型的前向声明已从 ``esp_flash.h`` 和所有 ROM 头文件（``components/esp_rom/esp32xx/include/esp32xx/rom/esp_flash.h``）中移除。该类型现在仅在 ``esp_flash_chips/esp_flash_types.h`` 中定义。应用程序不应直接使用此类型；它仅用于自定义芯片驱动实现。
+
+  .. note::
+
+      ``esp_flash_chips/`` 中的头文件是**半公开的** - 它们面向需要为不支持的 flash 芯片实现自定义芯片驱动的专家用户，但**不被视为稳定 API**，可能会在不通知的情况下更改。对于大多数用例，您应该改用 ``esp_flash.h`` 中的公开 API。更多详情请参阅 :doc:`SPI Flash 驱动覆盖 <../../../api-reference/peripherals/spi_flash/spi_flash_override_driver>`。
+
+- **内部头文件** 已移至 ``esp_private/`` 目录，且不包含在公共（稳定）头文件中：
+  - ``esp_flash_internal.h``
+  - ``memspi_host_driver.h``
 
 Touch Element
 -------------

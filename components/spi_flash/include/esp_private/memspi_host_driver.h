@@ -7,6 +7,10 @@
 #pragma once
 #include "hal/spi_flash_hal.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** Default configuration for the memspi (high speed version) */
 #define ESP_FLASH_DEFAULT_HOST_DRIVER()  (spi_flash_host_driver_t) { \
         .dev_config = spi_flash_hal_device_config, \
@@ -183,3 +187,7 @@ int memspi_host_read_data_slicer(spi_flash_host_inst_t *host, uint32_t address, 
  * @return Length that can actually be written in one `program_page` call in `spi_flash_host_driver_t`.
  */
 int memspi_host_write_data_slicer(spi_flash_host_inst_t *host, uint32_t address, uint32_t len, uint32_t *align_address, uint32_t page_size);
+
+#ifdef __cplusplus
+}
+#endif
