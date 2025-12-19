@@ -57,6 +57,9 @@ set(ble_mesh_v11_include_dirs
     "esp_ble_mesh/v1.1/api/core/include"
     "esp_ble_mesh/v1.1/api/models/include"
     "esp_ble_mesh/v1.1/btc/include"
+    "esp_ble_mesh/v1.1/include"
+    "esp_ble_mesh/v1.1/dfu"
+    "esp_ble_mesh/v1.1/mbt"
 )
 
 if(CONFIG_IDF_DOC_BUILD)
@@ -622,9 +625,13 @@ if(CONFIG_BT_ENABLED)
                         "esp_ble_mesh/v1.1/api/core/esp_ble_mesh_sar_model_api.c"
                         "esp_ble_mesh/v1.1/api/core/esp_ble_mesh_srpl_model_api.c"
                         "esp_ble_mesh/v1.1/api/models/esp_ble_mesh_mbt_model_api.c"
+                        "esp_ble_mesh/v1.1/api/models/esp_ble_mesh_dfu_model_api.c"
+                        "esp_ble_mesh/v1.1/api/models/esp_ble_mesh_dfu_slot_api.c"
                         "esp_ble_mesh/v1.1/btc/btc_ble_mesh_agg_model.c"
                         "esp_ble_mesh/v1.1/btc/btc_ble_mesh_brc_model.c"
                         "esp_ble_mesh/v1.1/btc/btc_ble_mesh_df_model.c"
+                        "esp_ble_mesh/v1.1/btc/btc_ble_mesh_dfu_model.c"
+                        "esp_ble_mesh/v1.1/btc/btc_ble_mesh_dfu_slot.c"
                         "esp_ble_mesh/v1.1/btc/btc_ble_mesh_lcd_model.c"
                         "esp_ble_mesh/v1.1/btc/btc_ble_mesh_mbt_model.c"
                         "esp_ble_mesh/v1.1/btc/btc_ble_mesh_odp_model.c"
@@ -632,6 +639,14 @@ if(CONFIG_BT_ENABLED)
                         "esp_ble_mesh/v1.1/btc/btc_ble_mesh_rpr_model.c"
                         "esp_ble_mesh/v1.1/btc/btc_ble_mesh_sar_model.c"
                         "esp_ble_mesh/v1.1/btc/btc_ble_mesh_srpl_model.c"
+                        "esp_ble_mesh/v1.1/mbt/blob_srv.c"
+                        "esp_ble_mesh/v1.1/mbt/blob_cli.c"
+                        "esp_ble_mesh/v1.1/dfu/dfu_cli.c"
+                        "esp_ble_mesh/v1.1/dfu/dfu_srv.c"
+                        "esp_ble_mesh/v1.1/dfu/dfu_slot.c"
+                        "esp_ble_mesh/v1.1/dfu/dfu_metadata.c"
+                        "esp_ble_mesh/v1.1/dfu/dfd_srv.c"
+                        "esp_ble_mesh/v1.1/dfu/dfd_cli.c"
                         "esp_ble_mesh/lib/ext.c")
 
             if(CONFIG_BLE_MESH_SAR_ENHANCEMENT)
