@@ -187,7 +187,7 @@ class OpenOCD:
         ocd_env = os.environ.copy()
         ocd_env['LIBUSB_DEBUG'] = '1'
 
-        for _ in range(1, self.MAX_RETRIES + 1):
+        for attempt in range(1, self.MAX_RETRIES + 1):
             try:
                 self.proc = pexpect.spawn(
                     command='openocd',
@@ -203,7 +203,9 @@ class OpenOCD:
                     self.write(f'log_output {self.log_file}')
                     return self
             except (pexpect.exceptions.EOF, pexpect.exceptions.TIMEOUT, ConnectionRefusedError) as e:
-                logging.error('Error running OpenOCD: %s', str(e))
+                logging.error(
+                    'OpenOCD connection attempt %d/%d failed. Error: %s', attempt, self.MAX_RETRIES, type(e).__name__
+                )
                 self.kill()
             time.sleep(self.RETRY_DELAY)
 
