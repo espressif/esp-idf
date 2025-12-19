@@ -176,7 +176,7 @@ MEMORY
   rtc_slow_reserved_seg(RW) :        org = 0x50000000 + 0x2000 - RESERVE_RTC_MEM, len = RESERVE_RTC_MEM
 
   /* external memory */
-  extern_ram_seg(RWX)  :             org = 0x3F800000,
+  extern_ram_seg(RW)  :              org = 0x3F800000,
                                      len = 0x400000
 }
 
