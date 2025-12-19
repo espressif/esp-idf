@@ -336,7 +336,6 @@ def test_unknown_component_error(idf_py: IdfPyFunc, test_app_copy: Path) -> None
     assert "Failed to resolve component 'unknown'" in ret.stderr
 
 
-@pytest.mark.buildv2_skip('not yet implemented in cmakev2')
 def test_component_with_improper_dependency(idf_py: IdfPyFunc, test_app_copy: Path) -> None:
     # test for __component_validation_check_include_dirs and __component_validation_check_sources
     # Checks that the following warnings are produced:
@@ -377,7 +376,6 @@ def test_component_with_improper_dependency(idf_py: IdfPyFunc, test_app_copy: Pa
     assert re_source.search(ret.stderr) is not None, f'Expected source file warning not found in: {ret.stderr}'
 
 
-@pytest.mark.buildv2_skip('not yet implemented in cmakev2')
 def test_component_validation_not_run_in_subprojects(idf_py: IdfPyFunc, test_app_copy: Path) -> None:
     # test that component validation doesn't run in subprojects like bootloader
     logging.info('Check that component validation warnings are not shown in subprojects')
@@ -419,7 +417,6 @@ def test_component_validation_not_run_in_subprojects(idf_py: IdfPyFunc, test_app
     assert ret.returncode == 0, 'Build should complete successfully with validation warnings'
 
 
-@pytest.mark.buildv2_skip('not yet implemented in cmakev2')
 def test_component_validation_private_include_dirs(idf_py: IdfPyFunc, test_app_copy: Path) -> None:
     # test that component validation works for private include directories
     logging.info('Check that component validation warnings are shown for private include directories')
@@ -450,7 +447,6 @@ def test_component_validation_private_include_dirs(idf_py: IdfPyFunc, test_app_c
     )
 
 
-@pytest.mark.buildv2_skip('not yet implemented in cmakev2')
 def test_component_validation_finds_right_component(idf_py: IdfPyFunc, test_app_copy: Path) -> None:
     # test that __component_validation_get_component_for_path finds the correct component for a given path
     #
