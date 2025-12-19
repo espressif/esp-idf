@@ -1239,6 +1239,15 @@ int bt_mesh_net_send(struct bt_mesh_net_tx *tx, struct net_buf *buf,
                 send_cb = NULL;
                 goto done;
             }
+
+            /* GATT bearer sends faster than ADV bearer, so the remote node
+             * may receive the message and respond before ADV bearer starts.
+             * To avoid issues where the start callback hasn't been called
+             * when the response arrives, we call the start callback here
+             * immediately after GATT bearer sends successfully. The ADV
+             * bearer will skip start callback since the flag is set.
+             */
+            BLE_MESH_SEND_START_CB(buf, 0, 0, send_cb, cb_data);
         }
     }
 #endif /* CONFIG_BLE_MESH_GATT_PROXY_CLIENT */
@@ -1253,9 +1262,7 @@ int bt_mesh_net_send(struct bt_mesh_net_tx *tx, struct net_buf *buf,
          * See BLEMESH24-76 for more details.
          */
         if (BLE_MESH_ADDR_IS_UNICAST(tx->ctx->addr)) {
-            if (send_cb && send_cb->start) {
-                send_cb->start(0, 0, cb_data);
-            }
+            BLE_MESH_SEND_START_CB(buf, 0, 0, send_cb, cb_data);
 
             net_buf_slist_put(&bt_mesh.local_queue, net_buf_ref(buf));
 
