@@ -592,7 +592,7 @@ static esp_err_t lcd_i80_init_dma_link(esp_lcd_i80_bus_handle_t bus, const esp_l
     gdma_apply_strategy(bus->dma_chan, &strategy_config);
     // config DMA transfer parameters
     gdma_transfer_config_t trans_cfg = {
-        .max_data_burst_size = bus_config->dma_burst_size ? bus_config->dma_burst_size : 16, // Enable DMA burst transfer for better performance
+        .max_data_burst_size = bus_config->dma_burst_size ? bus_config->dma_burst_size : 32, // Enable DMA burst transfer for better performance
         .access_ext_mem = true, // the LCD can carry pixel buffer from the external memory
     };
     ESP_RETURN_ON_ERROR(gdma_config_transfer(bus->dma_chan, &trans_cfg), TAG, "config DMA transfer failed");

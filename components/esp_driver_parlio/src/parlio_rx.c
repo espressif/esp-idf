@@ -460,7 +460,7 @@ static esp_err_t parlio_rx_unit_init_dma(parlio_rx_unit_handle_t rx_unit, size_t
     gdma_apply_strategy(rx_unit->dma_chan, &gdma_strategy_conf);
 
     // configure DMA transfer parameters
-    rx_unit->dma_burst_size = dma_burst_size ? dma_burst_size : 16;
+    rx_unit->dma_burst_size = dma_burst_size ? dma_burst_size : 32;
     gdma_transfer_config_t trans_cfg = {
         .max_data_burst_size = rx_unit->dma_burst_size, // Enable DMA burst transfer for better performance,
         .access_ext_mem = true,
