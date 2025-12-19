@@ -1988,7 +1988,8 @@ typedef union {
 #define ESP_BLE_MESH_MODEL_ID_BLOB_CLI                              0x1401
 #define ESP_BLE_MESH_MODEL_ID_DFU_SRV                               0x1402
 #define ESP_BLE_MESH_MODEL_ID_DFU_CLI                               0x1403
-
+#define ESP_BLE_MESH_MODEL_ID_DFD_SRV                               0x1404
+#define ESP_BLE_MESH_MODEL_ID_DFD_CLI                               0x1405
 /**
  * esp_ble_mesh_opcode_config_client_get_t belongs to esp_ble_mesh_opcode_t, this typedef is only
  * used to locate the opcodes used by esp_ble_mesh_config_client_get_state.

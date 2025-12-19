@@ -135,11 +135,11 @@ Mesh Models
 
 * Device Firmware Update Client models
     * Firmware Update Client model (Preview)
-    * Firmware Distribution Client model (coming soon)
+    * Firmware Distribution Client model (Preview)
 
 * Device Firmware Update Server models
     * Firmware Update Server model (Preview)
-    * Firmware Distribution Server model (coming soon)
+    * Firmware Distribution Server model (Preview)
 
 Mesh Examples
 """""""""""""
