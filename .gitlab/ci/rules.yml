@@ -9,6 +9,7 @@
 
   - "**/*.{c,C,cpp}"
   - "**/*.{h,H,hpp}"
+  - "Kconfig"
   - "components/**/Kconfig"
   - "components/**/CMakeLists.txt"
 
@@ -44,15 +45,18 @@
 .patterns-build_system: &patterns-build_system
   - "tools/cmake/**/*"
   - "tools/cmakev2/**/*"
-  - "tools/kconfig_new/**/*"
   - "tools/idf.py"
   - "tools/idf_py_actions/**/*"
-  - "tools/requirements.json"
   - "tools/ci/ignore_build_warnings.txt"
   - "tools/ci/test_build_system*.sh"
   - "tools/ci/test_build_system*.py"
   - "tools/ci/build_template_app.sh"
   - "tools/test_build_system/**/*"
+
+.patterns-host_test_ldgen: &patterns-host_test_ldgen
+  - ".gitlab/ci/host-test.yml"
+
+  - "tools/ldgen/**/*"
 
 .patterns-build_system_win: &patterns-build_system_win
   - "tools/test_build_system/**/*"
@@ -69,30 +73,10 @@
   - "tools/ci/check_register_rw_half_word.py"
   - "examples/build_system/**/*"
 
-.patterns-host_test: &patterns-host_test
+.patterns-host_test_cli_installer: &patterns-host_test_cli_installer
   - ".gitlab/ci/host-test.yml"
 
-  - "components/**/*"
-
-  - "tools/ci/test_autocomplete/*"
-
-  - "tools/mass_mfg/**/*"
-
-  - "tools/esp_app_trace/**/*"
-  - "tools/ldgen/**/*"
-
-  - "tools/idf_monitor.py"
-
   - "tools/activate.py"
-
-  - "tools/idf.py"
-  - "tools/idf_py_actions/**/*"
-  - "tools/test_idf_py/**/*"
-
-  - "tools/idf_size.py"
-  - "tools/test_idf_size/**/*"
-
-  - "tools/test_idf_diag/**/*"
 
   - "tools/tools.json"
   - "tools/tools_schema.json"
@@ -109,25 +93,48 @@
   - "tools/requirements.json"
   - "tools/requirements_schema.json"
 
+  - "tools/detect_python.sh"
+  - "tools/detect_python.fish"
+
+  - "tools/check_python_dependencies.py"
+
+.patterns-host_test_tools: &patterns-host_test_tools
+  - ".gitlab/ci/host-test.yml"
+
+  - "tools/ci/test_autocomplete/*"
+
+  - "tools/idf_monitor.py"
+
+  - "tools/idf.py"
+  - "tools/idf_py_actions/**/*"
+  - "tools/test_idf_py/**/*"
+
+  - "tools/idf_size.py"
+  - "tools/test_idf_size/**/*"
+
+  - "tools/test_idf_diag/**/*"
+
   - "tools/mkdfu.py"
   - "tools/test_mkdfu/**/*"
 
-  - "tools/kconfig_new/**/*"
+  - "tools/mkuf2.py"
 
-  - "tools/detect_python.sh"
-  - "tools/detect_python.fish"
+  - "tools/bsasm.py"
+  - "tools/test_bsasm/**/*"
+
+.patterns-host_test: &patterns-host_test
+  - ".gitlab/ci/host-test.yml"
+
+  - "components/**/*"
+
+  - "tools/mass_mfg/**/*"
+
+  - "tools/esp_app_trace/**/*"
 
   - "tools/gen_soc_caps_kconfig/*"
   - "tools/gen_soc_caps_kconfig/test/test_gen_soc_caps_kconfig.py"
 
-  - "tools/mkuf2.py"
-
   - "tools/split_paths_by_spaces.py"
-
-  - "tools/check_python_dependencies.py"
-
-  - "tools/bsasm.py"
-  - "tools/test_bsasm/**/*"
 
   - "tools/ci/test_soc_headers_load_in_idf_build_apps.py"
 
@@ -379,6 +386,39 @@
     - <<: *if-label-host_test
     - <<: *if-dev-push
       changes: *patterns-host_test
+
+.rules:test:host_test_cli_installer:
+  rules:
+    - <<: *if-revert-branch
+      when: never
+    - <<: *if-protected-check
+    - <<: *if-label-build-only
+      when: never
+    - <<: *if-label-host_test
+    - <<: *if-dev-push
+      changes: *patterns-host_test_cli_installer
+
+.rules:test:host_test_ldgen:
+  rules:
+    - <<: *if-revert-branch
+      when: never
+    - <<: *if-protected-check
+    - <<: *if-label-build-only
+      when: never
+    - <<: *if-label-host_test
+    - <<: *if-dev-push
+      changes: *patterns-host_test_ldgen
+
+.rules:test:host_test_tools:
+  rules:
+    - <<: *if-revert-branch
+      when: never
+    - <<: *if-protected-check
+    - <<: *if-label-build-only
+      when: never
+    - <<: *if-label-host_test
+    - <<: *if-dev-push
+      changes: *patterns-host_test_tools
 
 .rules:test:submodule:
   rules:
