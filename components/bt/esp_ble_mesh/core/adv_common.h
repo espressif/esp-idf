@@ -175,29 +175,7 @@ typedef enum {
     BLE_MESH_BUF_REF_MAX,
 } bt_mesh_buf_ref_flag_t;
 
-
-static const uint8_t adv_type[] = {
-    [BLE_MESH_ADV_PROV]   = BLE_MESH_DATA_MESH_PROV,
-    [BLE_MESH_ADV_DATA]   = BLE_MESH_DATA_MESH_MESSAGE,
-#if CONFIG_BLE_MESH_EXT_ADV
-    [BLE_MESH_ADV_EXT_PROV] = BLE_MESH_DATA_MESH_PROV,
-    [BLE_MESH_ADV_EXT_RELAY_DATA] = BLE_MESH_DATA_MESH_MESSAGE,
-    [BLE_MESH_ADV_EXT_DATA] = BLE_MESH_DATA_MESH_MESSAGE,
-#if CONFIG_BLE_MESH_LONG_PACKET
-    [BLE_MESH_ADV_EXT_LONG_PROV] = BLE_MESH_DATA_MESH_PROV,
-    [BLE_MESH_ADV_EXT_LONG_RELAY_DATA] = BLE_MESH_DATA_MESH_MESSAGE,
-    [BLE_MESH_ADV_EXT_LONG_DATA] = BLE_MESH_DATA_MESH_MESSAGE,
-#endif /* CONFIG_BLE_MESH_LONG_PACKET */
-#endif /* CONFIG_BLE_MESH_EXT_ADV */
-#if CONFIG_BLE_MESH_FRIEND
-    [BLE_MESH_ADV_FRIEND]     = BLE_MESH_DATA_MESH_MESSAGE,
-#endif
-#if CONFIG_BLE_MESH_RELAY_ADV_BUF
-    [BLE_MESH_ADV_RELAY_DATA] = BLE_MESH_DATA_MESH_MESSAGE,
-#endif
-    [BLE_MESH_ADV_BEACON]     = BLE_MESH_DATA_MESH_BEACON,
-    [BLE_MESH_ADV_URI]        = BLE_MESH_DATA_URI,
-};
+extern const uint8_t adv_type[];
 
 typedef struct bt_mesh_adv *(*bt_mesh_pool_allocator_t)(int id, enum bt_mesh_adv_type type);
 typedef void (*bt_mesh_adv_queue_send_cb_t)(bt_mesh_msg_t *msg, uint32_t timeout, bool front);
