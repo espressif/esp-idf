@@ -612,6 +612,8 @@ esp_err_t esp_sleep_pd_config(esp_sleep_pd_domain_t domain,
  *
  * @return
  *  - No return - If the sleep is not rejected.
+ *  - ESP_ERR_NOT_ALLOWED  Since the sleep process disables the cache, the task requesting to enter sleep must have its
+ *                         stack located in internal RAM. Tasks with their stacks in PSRAM are not allowed to request sleep.
  *  - ESP_ERR_INVALID_STATE VBAT power does not meet the requirements for entering deepsleep
  *  - ESP_ERR_SLEEP_REJECT sleep request is rejected(wakeup source set before the sleep request)
  */
@@ -630,6 +632,8 @@ void esp_deep_sleep_start(void) __attribute__((__noreturn__));
  *
  * @return
  *  - ESP_OK on success (returned after wakeup)
+ *  - ESP_ERR_NOT_ALLOWED  Since the sleep process disables the cache, the task requesting to enter sleep must have its
+ *                         stack located in internal RAM. Tasks with their stacks in PSRAM are not allowed to request sleep.
  *  - ESP_ERR_SLEEP_REJECT sleep request is rejected(wakeup source set before the sleep request)
  *  - ESP_ERR_SLEEP_TOO_SHORT_SLEEP_DURATION after deducting the sleep flow overhead, the final sleep duration
  *                                           is too short to cover the minimum sleep duration of the chip, when

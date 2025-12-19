@@ -383,6 +383,15 @@ inline static bool esp_stack_ptr_in_dram(uint32_t sp)
  * @return true: is in external ram; false: not in external ram
  */
 bool esp_stack_ptr_in_extram(uint32_t sp);
+
+/**
+ * @brief Check if the current task's stack is in internal memory (DRAM or RTC fast memory = not in PSRAM)
+ *
+ * This function verifies that the current task's stack is located in internal memory,
+ *
+ * @return true if the stack is in non-cacheable memory, false otherwise
+ */
+bool esp_task_stack_is_sane_cache_disabled(void);
 #endif
 
 /**

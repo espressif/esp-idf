@@ -1282,7 +1282,14 @@ static esp_err_t FORCE_IRAM_ATTR deep_sleep_start(bool allow_sleep_rejection)
         }
     }
 #endif
-
+#if CONFIG_SPIRAM && CONFIG_FREERTOS_TASK_CREATE_ALLOW_EXT_MEM
+    if (!esp_task_stack_is_sane_cache_disabled()) {
+        ESP_LOGE(TAG, "Deep sleep requests are not allowed from tasks with stacks in PSRAM");
+        if (allow_sleep_rejection) {
+            return ESP_ERR_NOT_ALLOWED;
+        }
+    }
+#endif
 #if CONFIG_IDF_TARGET_ESP32S2
     /* Due to hardware limitations, on S2 the brownout detector sometimes trigger during deep sleep
        to circumvent this we disable the brownout detector before sleeping  */
@@ -1665,7 +1672,13 @@ esp_err_t esp_light_sleep_start(void)
     // if rtc timer wakeup source is enabled, need to compare final sleep duration and min sleep duration to avoid late wakeup
     if ((s_config.wakeup_triggers & RTC_TIMER_TRIG_EN) && (final_sleep_duration_us <= min_sleep_duration_us)) {
         err = ESP_ERR_SLEEP_TOO_SHORT_SLEEP_DURATION;
-    } else {
+    }
+#if CONFIG_SPIRAM && CONFIG_FREERTOS_TASK_CREATE_ALLOW_EXT_MEM
+    else if (!esp_task_stack_is_sane_cache_disabled()) {
+        err = ESP_ERR_NOT_ALLOWED;
+    }
+#endif
+    else {
         // Enter sleep, then wait for flash to be ready on wakeup
         err = esp_light_sleep_inner(sleep_flags, clk_flags, flash_enable_time_us);
     }
