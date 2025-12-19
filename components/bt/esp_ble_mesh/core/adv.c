@@ -42,6 +42,7 @@ static int adv_send(struct net_buf *buf)
     uint8_t adv_cnt = 0;
     struct bt_mesh_adv_data ad = {0};
     int err = 0;
+    bool start_cb_called = (BLE_MESH_ADV(buf)->flags & BLE_MESH_ADV_FLAG_SKIP_START_CB);
 
     BT_DBG("LegacyAdvSend, Type %u", BLE_MESH_ADV(buf)->type);
     BT_DBG("Len %u: %s", buf->len, bt_hex(buf->data, buf->len));
@@ -175,7 +176,10 @@ static int adv_send(struct net_buf *buf)
 
     net_buf_unref(buf);
 
-    adv_send_start(duration, err, cb, cb_data);
+    if (!start_cb_called && cb && cb->start) {
+        cb->start(duration, err, cb_data);
+    }
+
     if (err) {
         BT_ERR("Start advertising failed: err %d", err);
         return err;
@@ -194,7 +198,7 @@ static int adv_send(struct net_buf *buf)
     err = bt_le_adv_stop();
 #endif /* CONFIG_BLE_MESH_USE_BLE_50 */
 
-    adv_send_end(err, cb, cb_data);
+    BLE_MESH_SEND_END_CB(err, cb, cb_data);
     if (err) {
         BT_ERR("Stop advertising failed: err %d", err);
         return 0;
