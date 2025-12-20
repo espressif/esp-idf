@@ -16,6 +16,7 @@
 #include "esp_sha_internal.h"
 #include "sha/sha_core.h"
 #include "esp_err.h"
+#include "soc/soc_caps.h"
 
 #ifndef GET_UINT32_BE
 #define GET_UINT32_BE(n,b,i)                            \

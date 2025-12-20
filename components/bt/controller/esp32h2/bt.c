@@ -1607,7 +1607,6 @@ void esp_ble_controller_log_dump_all(bool output)
 #define BLE_SM_KEY_ERR 0x17
 #define BLE_PUB_KEY_LEN 65
 #if CONFIG_BT_LE_CRYPTO_STACK_MBEDTLS
-// #include "mbedtls/aes.h"
 #if CONFIG_BT_LE_SM_SC
 #include "psa/crypto.h"
 #endif // CONFIG_BT_LE_SM_SC

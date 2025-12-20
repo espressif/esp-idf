@@ -15,7 +15,7 @@ Starting from **ESP-IDF v6.0**, some already deprecated mbedtls header files lik
 PSA Crypto migration
 ~~~~~~~~~~~~~~~~~~~~
 
-In ESP-IDF v6.0, multiple ESP-IDF components have been migrated from using legacy Mbed TLS cryptography APIs (for example, ``mbedtls_sha*_*()``, ``mbedtls_md*_*()``, etc.) to using the `PSA Crypto API <https://armmbed.github.io/mbedtls-docs/#psa-cryptography>`__.
+In ESP-IDF v6.0, multiple ESP-IDF components have been migrated from using legacy Mbed TLS cryptography APIs (for example, ``mbedtls_sha*_*()``, ``mbedtls_md*_*()``, etc.) to using the `PSA Crypto API <https://arm-software.github.io/psa-api/>`__.
 
 This migration aligns ESP-IDF with Mbed TLS v4.x, where PSA Crypto is the primary cryptography interface, and it enables the use of ESP-IDF hardware acceleration through PSA drivers where available.
 
@@ -26,10 +26,37 @@ ESP-IDF v6.0 updates to Mbed TLS v4.0, where **PSA Crypto is the primary cryptog
 
 - **Breaking change**: In Mbed TLS v4.0, **most legacy cryptography APIs have been removed** and PSA Crypto is the primary interface. If your application directly uses legacy ``mbedtls_*`` cryptography primitives, you may need to migrate to PSA Crypto APIs.
 - **Breaking change**: ``psa_crypto_init()`` must be called before any cryptographic operation, including indirect operations such as parsing keys/certificates or starting a TLS handshake. ESP-IDF initializes PSA during normal startup; however, code that runs earlier than the normal startup sequence must call ``psa_crypto_init()`` explicitly.
+- **New API**: ``esp_ecdsa_free_pk_context(mbedtls_pk_context *key_ctx)`` was added (``ecdsa/ecdsa_alt.h``). If your application initializes a PK context with a hardware-backed ECDSA key using ``esp_ecdsa_set_pk_context()``, use ``esp_ecdsa_free_pk_context()`` to free it. With PSA-backed Mbed TLS v4.x, ``mbedtls_pk_free()`` does not deallocate the manually created keypair structure in this case.
 - **Breaking change**: APIs that previously required an application-provided RNG callback (``f_rng``, ``p_rng``) have changed in Mbed TLS v4.0 to use the PSA RNG instead. Update application code to the new prototypes (for example X.509 write APIs, SSL cookie setup, and SSL ticket setup).
 - **Breaking change**: TLS 1.2 / DTLS 1.2 interoperability may be affected because Mbed TLS v4.0 removes support for key exchanges based on finite-field DHE and RSA key exchange without forward secrecy (and static ECDH). If a peer requires removed suites, TLS connections may fail; update server/client cipher suite configuration accordingly.
 - **Breaking change**: certificates/peers using elliptic curves of less than 250 bits (for example secp192r1/secp224r1) are no longer supported in certificates and in TLS.
 - **Note**: avoid relying on Mbed TLS private declarations (for example headers under ``mbedtls/private/`` or declarations enabled via ``MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS`` / ``MBEDTLS_ALLOW_PRIVATE_ACCESS``). Such private interfaces may change without notice.
+- **Note**: the PSA Crypto migration (TF-PSA-Crypto) can increase flash footprint, depending on the features enabled. As reference points:
+
+  .. list-table::
+     :header-rows: 1
+     :widths: 30 15 15 15 10
+
+     * - Example
+       - non PSA build (bytes)
+       - PSA migration (bytes)
+       - Diff (bytes)
+       - Diff (%)
+     * - :example:`protocols/esp_http_client`
+       - 609041
+       - 646293
+       - 37252
+       - 5.76
+     * - :example:`protocols/https_server`
+       - 871021
+       - 898717
+       - 27696
+       - 3.08
+     * - :example:`protocols/http_server/simple`
+       - 785825
+       - 826909
+       - 41084
+       - 4.97
 
 References
 ^^^^^^^^^^

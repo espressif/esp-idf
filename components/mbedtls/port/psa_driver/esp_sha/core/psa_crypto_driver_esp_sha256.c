@@ -16,6 +16,7 @@
 #include "esp_sha_internal.h"
 #include "sha/sha_core.h"
 #include "esp_err.h"
+#include "soc/soc_caps.h"
 
 static const unsigned char sha256_padding[64] = {
     0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,

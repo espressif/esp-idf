@@ -410,7 +410,6 @@ static const int suiteb_rsa_ciphersuite_preference[] = {
 #if defined(MBEDTLS_GCM_C)
 #if (defined(MBEDTLS_SHA512_C) || defined(PSA_WANT_ALG_SHA_512))
     MBEDTLS_TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
-    // MBEDTLS_TLS_DHE_RSA_WITH_AES_256_GCM_SHA384,
 #endif
 #endif
     0

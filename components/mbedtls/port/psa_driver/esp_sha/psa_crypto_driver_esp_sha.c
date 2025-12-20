@@ -114,7 +114,7 @@ psa_status_t esp_sha_hash_setup(esp_sha_hash_operation_t *operation, psa_algorit
     }
 #if CONFIG_SOC_SHA_SUPPORT_SHA1
     if (alg == PSA_ALG_SHA_1) {
-        esp_sha1_context *sha1_ctx = heap_caps_malloc(sizeof(esp_sha1_context), MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
+        esp_sha1_context *sha1_ctx = heap_caps_malloc(sizeof(esp_sha1_context), MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
         if (!sha1_ctx) {
             return PSA_ERROR_INSUFFICIENT_MEMORY;
         }
@@ -130,7 +130,7 @@ psa_status_t esp_sha_hash_setup(esp_sha_hash_operation_t *operation, psa_algorit
         alg == PSA_ALG_SHA_224 ||
 #endif // CONFIG_SOC_SHA_SUPPORT_SHA224
         alg == PSA_ALG_SHA_256) {
-        esp_sha256_context *sha256_ctx = heap_caps_malloc(sizeof(esp_sha256_context), MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
+        esp_sha256_context *sha256_ctx = heap_caps_malloc(sizeof(esp_sha256_context), MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
         if (!sha256_ctx) {
             return PSA_ERROR_INSUFFICIENT_MEMORY;
         }
@@ -153,7 +153,7 @@ psa_status_t esp_sha_hash_setup(esp_sha_hash_operation_t *operation, psa_algorit
         alg == PSA_ALG_SHA_384 ||
 #endif // CONFIG_SOC_SHA_SUPPORT_SHA384
         alg == PSA_ALG_SHA_512) {
-        esp_sha512_context *sha512_ctx = heap_caps_malloc(sizeof(esp_sha512_context), MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
+        esp_sha512_context *sha512_ctx = heap_caps_malloc(sizeof(esp_sha512_context), MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
         if (!sha512_ctx) {
             return PSA_ERROR_INSUFFICIENT_MEMORY;
         }
@@ -292,7 +292,7 @@ psa_status_t esp_sha_hash_clone(
     target_operation->sha_type = source_operation->sha_type;
 #if CONFIG_SOC_SHA_SUPPORT_SHA1
     if (target_operation->sha_type == ESP_SHA_OPERATION_TYPE_SHA1) {
-        esp_sha1_context *sha1_ctx = heap_caps_malloc(sizeof(esp_sha1_context), MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
+        esp_sha1_context *sha1_ctx = heap_caps_malloc(sizeof(esp_sha1_context), MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
         if (!sha1_ctx) {
             return PSA_ERROR_INSUFFICIENT_MEMORY;
         }
@@ -307,7 +307,7 @@ psa_status_t esp_sha_hash_clone(
 #if CONFIG_SOC_SHA_SUPPORT_SHA224 || CONFIG_SOC_SHA_SUPPORT_SHA256
     if (target_operation->sha_type == ESP_SHA_OPERATION_TYPE_SHA256 ||
                target_operation->sha_type == ESP_SHA_OPERATION_TYPE_SHA224) {
-        esp_sha256_context *sha256_ctx = heap_caps_malloc(sizeof(esp_sha256_context), MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
+        esp_sha256_context *sha256_ctx = heap_caps_malloc(sizeof(esp_sha256_context), MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
         if (!sha256_ctx) {
             return PSA_ERROR_INSUFFICIENT_MEMORY;
         }
@@ -322,7 +322,7 @@ psa_status_t esp_sha_hash_clone(
 #if CONFIG_SOC_SHA_SUPPORT_SHA384 || CONFIG_SOC_SHA_SUPPORT_SHA512
     if (target_operation->sha_type == ESP_SHA_OPERATION_TYPE_SHA384 ||
                target_operation->sha_type == ESP_SHA_OPERATION_TYPE_SHA512) {
-        esp_sha512_context *sha512_ctx = heap_caps_malloc(sizeof(esp_sha512_context), MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
+        esp_sha512_context *sha512_ctx = heap_caps_malloc(sizeof(esp_sha512_context), MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
         if (!sha512_ctx) {
             return PSA_ERROR_INSUFFICIENT_MEMORY;
         }

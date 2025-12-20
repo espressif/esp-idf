@@ -13,6 +13,7 @@
 #include "../include/psa_crypto_driver_esp_sha256.h"
 #include "sha/sha_parallel_engine.h"
 #include "esp_err.h"
+#include "soc/soc_caps.h"
 
 /*
  * 32-bit integer manipulation macros (big endian)

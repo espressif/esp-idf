@@ -37,8 +37,6 @@
 #include <string.h>
 #include <sys/lock.h>
 #define MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
-// #include "mbedtls/aes.h"
-
 #include "aes/esp_aes.h"
 #include "psa/crypto.h"
 

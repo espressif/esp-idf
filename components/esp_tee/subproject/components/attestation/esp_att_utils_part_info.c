@@ -193,8 +193,8 @@ esp_err_t get_flash_contents_sha256(uint32_t flash_offset, uint32_t len, uint8_t
         len -= mmap_len;
     }
 
-    size_t digest_len = 0;
-    status = psa_hash_finish(&hash_op, digest, digest_len, &digest_len);
+    size_t digest_size = 0;
+    status = psa_hash_finish(&hash_op, digest, digest_len, &digest_size);
     if (status != PSA_SUCCESS) {
         psa_hash_abort(&hash_op);
         goto exit;

@@ -264,7 +264,6 @@ TEST_CASE("PSA AES-CBC multipart", "[psa-aes]")
     psa_destroy_key(key_id);
 }
 
-#if 1
 TEST_CASE("PSA AES-CBC-PKCS7 multipart", "[psa-aes]")
 {
     // Test both aligned and unaligned sizes
@@ -410,7 +409,6 @@ TEST_CASE("PSA AES-CBC-PKCS7 multipart", "[psa-aes]")
 
     psa_destroy_key(key_id);
 }
-#endif
 
 TEST_CASE("PSA AES-CFB multipart", "[psa-aes]")
 {

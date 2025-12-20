@@ -11,7 +11,6 @@
 #include <stddef.h>
 
 /* Forward declarations to avoid circular dependencies */
-// typedef struct esp_sha1_context esp_sha1_context;
 typedef uint32_t psa_algorithm_t;
 typedef int32_t psa_status_t;
 

@@ -55,16 +55,12 @@ static inline void mbedtls_put_unaligned_uint32(void *p, uint32_t x)
     )
 
 #define MBEDTLS_PUT_UINT32_BE(n, data, offset)                                   \
-    {                                                                            \
-        if (MBEDTLS_IS_BIG_ENDIAN)                                               \
-        {                                                                        \
-            mbedtls_put_unaligned_uint32((data) + (offset), (uint32_t) (n));     \
-        }                                                                        \
-        else                                                                     \
-        {                                                                        \
-            mbedtls_put_unaligned_uint32((data) + (offset), MBEDTLS_BSWAP32((uint32_t) (n))); \
-        }                                                                        \
-    }
+    do {                                                                         \
+        mbedtls_put_unaligned_uint32((data) + (offset),                          \
+            (MBEDTLS_IS_BIG_ENDIAN)                                              \
+                ? (uint32_t) (n)                                                 \
+                : MBEDTLS_BSWAP32((uint32_t) (n)));                              \
+    } while (0)
 
 psa_status_t esp_cmac_mac_abort(esp_cmac_operation_t *operation)
 {
@@ -88,9 +84,6 @@ static psa_status_t mac_init(
     esp_cmac_operation_t *operation,
     psa_algorithm_t alg)
 {
-    // psa_status_t status = PSA_ERROR_CORRUPTION_DETECTED;
-
-    // memset(&operation->cipher_ctx, 0, sizeof(operation->cipher_ctx));
     memset(operation, 0, sizeof(*operation));
 
     return PSA_SUCCESS;
@@ -173,22 +166,15 @@ psa_status_t esp_cmac_mac_setup(esp_cmac_operation_t *operation,
 {
     psa_status_t status = PSA_ERROR_CORRUPTION_DETECTED;
 
-// #if defined(MBEDTLS_PSA_BUILTIN_ALG_CMAC)
     if (PSA_ALG_FULL_LENGTH_MAC(alg) == PSA_ALG_CMAC) {
         status = esp_cmac_mac_setup_cmac(operation, attributes, key_buffer, key_buffer_size, alg);
         operation->alg = alg;
-    } else
-// #endif /* MBEDTLS_PSA_BUILTIN_ALG_CMAC */
-// #if defined(MBEDTLS_PSA_BUILTIN_ALG_HMAC)
-    if (PSA_ALG_IS_HMAC(alg)) {
+    } else if (PSA_ALG_IS_HMAC(alg)) {
         psa_algorithm_t hash_alg = PSA_ALG_GET_HASH(alg);
         uint8_t ipad[PSA_HMAC_MAX_HASH_BLOCK_SIZE];
         size_t i;
         size_t hash_size = PSA_HASH_LENGTH(hash_alg);
         size_t block_size = PSA_HASH_BLOCK_LENGTH(hash_alg);
-        // psa_status_t status;
-
-        // hmac->alg = hash_alg;
 
         /* Sanity checks on block_size, to guarantee that there won't be a buffer
         * overflow below. This should never trigger if the hash algorithm
@@ -218,6 +204,10 @@ psa_status_t esp_cmac_mac_setup(esp_cmac_operation_t *operation,
         * example. Don't call `memcpy` in the 0-length because `key` could be
         * an invalid pointer which would make the behavior undefined. */
         else if (key_buffer_size != 0) {
+            /* Additional safety check: ensure key fits in ipad buffer */
+            if (key_buffer_size > sizeof(ipad)) {
+                return PSA_ERROR_INVALID_ARGUMENT;
+            }
             memcpy(ipad, key_buffer, key_buffer_size);
         }
 
@@ -244,9 +234,7 @@ psa_status_t esp_cmac_mac_setup(esp_cmac_operation_t *operation,
             return status;
         }
         operation->alg = alg;
-    } else
-// #endif /* MBEDTLS_PSA_BUILTIN_ALG_HMAC */
-    {
+    } else {
         (void) attributes;
         (void) key_buffer;
         (void) key_buffer_size;
@@ -273,10 +261,6 @@ static psa_status_t esp_cmac_mac_update_internal(esp_cmac_operation_t *cmac, con
     }
 
     block_size = cmac->cipher_block_length;
-
-    /* Without the MBEDTLS_ASSUME below, gcc -O3 will generate a warning of the form
-    * error: writing 16 bytes into a region of size 0 [-Werror=stringop-overflow=] */
-    // MBEDTLS_ASSUME(block_size <= PSA_CMAC_MAX_BLOCK_SIZE);
 
     /* Is there data still to process from the last call, that's greater in
     * size than a block? */
@@ -371,7 +355,6 @@ static int cmac_multiply_by_u(unsigned char *output,
         overflow = new_overflow;
     }
 
-    // R_n = (unsigned char) mbedtls_ct_uint_if_else_0(mbedtls_ct_bool(input[0] >> 7), R_n);
     unsigned char msb = (input[0] >> 7) & 1;
     output[blocksize - 1] ^= (unsigned char)(msb * R_n);
 
@@ -469,8 +452,10 @@ static psa_status_t esp_cmac_mac_finish_internal(
         goto exit;
     }
 
-    memcpy(mac, state, mac_size);
-    *mac_length = mac_size;
+    /* CMAC output is always the cipher block size, regardless of requested mac_size */
+    size_t output_length = (mac_size < block_size) ? mac_size : block_size;
+    memcpy(mac, state, output_length);
+    *mac_length = output_length;
 exit:
     mbedtls_platform_zeroize(K1, sizeof(K1));
     mbedtls_platform_zeroize(K2, sizeof(K2));
@@ -494,13 +479,10 @@ psa_status_t esp_cmac_mac_finish(
         status = esp_cmac_mac_finish_internal(cmac, mac, mac_size, mac_length);
     } else if (PSA_ALG_IS_HMAC(cmac->alg)) {
         psa_algorithm_t hash_alg = PSA_ALG_GET_HASH(cmac->alg);
-        // status = esp_sha_hash_finish(&cmac->hmac_operation, mac, mac_size, mac_length);
 
         uint8_t tmp[PSA_HASH_MAX_SIZE];
-        // psa_algorithm_t hash_alg = hmac->alg;
         size_t hash_size = 0;
         size_t block_size = PSA_HASH_BLOCK_LENGTH(hash_alg);
-        // psa_status_t status;
 
         status = esp_sha_hash_finish(&cmac->hmac_operation, tmp, sizeof(tmp), &hash_size);
         if (status != PSA_SUCCESS) {

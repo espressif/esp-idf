@@ -88,9 +88,6 @@ static int ssl_handshake_params_init( mbedtls_ssl_handshake_params *handshake )
 
     handshake->update_checksum = ssl_update_checksum_start;
 
-#if defined(MBEDTLS_DHM_C)
-    mbedtls_dhm_init( &handshake->dhm_ctx );
-#endif
 #if !defined(MBEDTLS_USE_PSA_CRYPTO) && \
     defined(MBEDTLS_KEY_EXCHANGE_SOME_ECDH_OR_ECDHE_1_2_ENABLED)
     mbedtls_ecdh_init( &handshake->ecdh_ctx );

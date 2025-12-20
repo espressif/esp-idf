@@ -1390,6 +1390,8 @@ static esp_err_t esp_mbedtls_init_pk_ctx_for_ds(const void *pki)
     if (esp_ds_pk_info == NULL) {
         ESP_LOGE(TAG, "Failed to allocate memory for mbedtls_pk_info_t");
         ret = ESP_ERR_NO_MEM;
+        mbedtls_rsa_free(rsakey);
+        free(rsakey);
         goto exit;
     }
 

@@ -13,6 +13,7 @@
 #include "../include/psa_crypto_driver_esp_sha512.h"
 #include "sha/sha_parallel_engine.h"
 #include "esp_err.h"
+#include "soc/soc_caps.h"
 
 #if defined(_MSC_VER) || defined(__WATCOMC__)
 #define UL64(x) x##ui64

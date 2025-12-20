@@ -17,6 +17,7 @@
 #include "sha/sha_core.h"
 #include "esp_err.h"
 #include "sdkconfig.h"
+#include "soc/soc_caps.h"
 
 #if CONFIG_SOC_SHA_SUPPORT_SHA512
 

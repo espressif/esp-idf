@@ -91,6 +91,7 @@ def test_mbedtls_ecdsa_sign(dut: Dut) -> None:
     dut.run_all_single_board_cases(group='efuse_key')
 
 
+# TODO: IDF-15012
 # @pytest.mark.generic
 # @pytest.mark.parametrize(
 #     'config',

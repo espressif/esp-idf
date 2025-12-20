@@ -350,9 +350,6 @@ if(CONFIG_SOC_AES_SUPPORTED)
 endif()
 
 if(CONFIG_SOC_SHA_SUPPORTED)
-    # target_sources(builtin PRIVATE "${COMPONENT_DIR}/port/sha/esp_sha.c"
-    #                                 "${COMPONENT_DIR}/port/sha/${SHA_PERIPHERAL_TYPE}/sha.c"
-    # )
     if(CONFIG_MBEDTLS_HARDWARE_SHA)
         target_compile_definitions(tfpsacrypto PRIVATE ESP_SHA_DRIVER_ENABLED)
         target_sources(tfpsacrypto PRIVATE
@@ -519,10 +516,6 @@ target_link_libraries(${COMPONENT_LIB} ${linkage_type} ${mbedtls_targets})
 if(NOT ${IDF_TARGET} STREQUAL "linux")
     target_link_libraries(${COMPONENT_LIB} ${linkage_type} "-u mbedtls_psa_crypto_init_include_impl")
 endif()
-# if(CONFIG_ESP_TLS_USE_DS_PERIPHERAL)
-#     # The linker seems to be unable to resolve all the dependencies without increasing this
-#     set_property(TARGET mbedcrypto APPEND PROPERTY LINK_INTERFACE_MULTIPLICITY 6)
-# endif()
 
 # Additional optional dependencies for the mbedcrypto library
 function(builtin_optional_deps component_name)

@@ -278,18 +278,19 @@ int crypto_hash_finish(struct crypto_hash *crypto_ctx, u8 *mac, size_t *len)
 
 err:
     if (crypto_ctx->is_mac) {
-        psa_mac_abort(crypto_ctx->u.mac_operation);
+        if (crypto_ctx->u.mac_operation) {
+            psa_mac_abort(crypto_ctx->u.mac_operation);
+            os_free(crypto_ctx->u.mac_operation);
+        }
     } else {
-        psa_hash_abort(crypto_ctx->u.hash_operation);
+        if (crypto_ctx->u.hash_operation) {
+            psa_hash_abort(crypto_ctx->u.hash_operation);
+            os_free(crypto_ctx->u.hash_operation);
+        }
     }
 
     if (crypto_ctx->key_id) {
         psa_destroy_key(crypto_ctx->key_id);
-    }
-    if (crypto_ctx->is_mac) {
-        os_free(crypto_ctx->u.mac_operation);
-    } else {
-        os_free(crypto_ctx->u.hash_operation);
     }
     os_free(crypto_ctx);
     return ret;

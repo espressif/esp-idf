@@ -9,9 +9,6 @@
 
 #include "esp_log.h"
 
-// // #include "mbedtls/aes.h"
-// #include "mbedtls/gcm.h"
-
 #include "psa/crypto.h"
 
 #include "unity.h"
@@ -25,8 +22,6 @@ static const uint8_t key_256[] = {
 
 TEST_CASE("PSA AES-GCM multipart", "[psa-aes-gcm]")
 {
-    // TEST_ASSERT_EQUAL(PSA_SUCCESS, psa_crypto_init());
-
     const size_t SZ = 100;
     const size_t iv_SZ = 12;  // GCM typically uses 12 bytes IV
     const size_t tag_SZ = 16; // GCM tag size
@@ -131,13 +126,10 @@ TEST_CASE("PSA AES-GCM multipart", "[psa-aes-gcm]")
 
     /* Destroy the key */
     psa_destroy_key(key_id);
-    // mbedtls_psa_crypto_free();
 }
 
 TEST_CASE("PSA AES-GCM one-shot", "[psa-aes-gcm]")
 {
-    // TEST_ASSERT_EQUAL(PSA_SUCCESS, psa_crypto_init());
-
     const size_t SZ = 100;
     const size_t iv_SZ = 12;  // GCM typically uses 12 bytes IV
     const size_t tag_SZ = 16; // GCM tag size
@@ -208,5 +200,4 @@ TEST_CASE("PSA AES-GCM one-shot", "[psa-aes-gcm]")
 
     /* Destroy the key */
     psa_destroy_key(key_id);
-    // mbedtls_psa_crypto_free();
 }

@@ -15,7 +15,6 @@
 #include <string.h>
 #include <sys/param.h>
 #include "mbedtls/pk.h"
-#include "psa/crypto.h"
 
 
 #ifdef CONFIG_SECURE_SIGNED_APPS_ECDSA_SCHEME
