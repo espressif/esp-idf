@@ -186,7 +186,7 @@ esp_err_t esp_lcd_new_panel_dpi(esp_lcd_dsi_bus_handle_t bus, const esp_lcd_dpi_
     esp_lcd_dpi_panel_t *dpi_panel = NULL;
     ESP_RETURN_ON_FALSE(bus && panel_config && ret_panel, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     ESP_RETURN_ON_FALSE(panel_config->virtual_channel < 4, ESP_ERR_INVALID_ARG, TAG, "invalid virtual channel %d", panel_config->virtual_channel);
-    ESP_RETURN_ON_FALSE(panel_config->dpi_clock_freq_mhz, ESP_ERR_INVALID_ARG, TAG, "invalid DPI clock frequency %"PRIu32, panel_config->dpi_clock_freq_mhz);
+    ESP_RETURN_ON_FALSE(panel_config->dpi_clock_freq_mhz > 0, ESP_ERR_INVALID_ARG, TAG, "invalid DPI clock frequency %.2f", panel_config->dpi_clock_freq_mhz);
 
     size_t num_fbs = panel_config->num_fbs;
     // if the user doesn't specify the number of frame buffers, then fallback to use one frame buffer
@@ -250,7 +250,8 @@ esp_err_t esp_lcd_new_panel_dpi(esp_lcd_dsi_bus_handle_t bus, const esp_lcd_dpi_
     ESP_GOTO_ON_ERROR(esp_clk_tree_src_get_freq_hz(dpi_clk_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED,
                                                    &dpi_clk_src_freq_hz), err, TAG, "get clock source frequency failed");
     // divide the source clock to get the final DPI clock
-    uint32_t dpi_div = mipi_dsi_hal_host_dpi_calculate_divider(hal, dpi_clk_src_freq_hz / 1000 / 1000, panel_config->dpi_clock_freq_mhz);
+    float dpi_clk_src_freq_mhz = (float)dpi_clk_src_freq_hz / 1000.0f / 1000.0f;
+    uint32_t dpi_div = mipi_dsi_hal_host_dpi_calculate_divider(hal, dpi_clk_src_freq_mhz, panel_config->dpi_clock_freq_mhz);
     ESP_GOTO_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)dpi_clk_src, true), err, TAG, "clock source enable failed");
     // set the clock source, set the divider, and enable the dpi clock
     PERIPH_RCC_ATOMIC() {
