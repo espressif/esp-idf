@@ -24,7 +24,7 @@ typedef struct {
     int bus_id;                              /*!< Select which DSI controller, index from 0 */
     uint8_t num_data_lanes;                  /*!< Number of data lanes, if set to 0, the driver will fallback to use maximum number of lanes */
     mipi_dsi_phy_pllref_clock_source_t phy_clk_src; /*!< The clock source for the PHY PLL */
-    uint32_t lane_bit_rate_mbps;             /*!< Lane bit rate in Mbps */
+    float lane_bit_rate_mbps;                /*!< Lane bit rate in Mbps */
 } esp_lcd_dsi_bus_config_t;
 
 /**
@@ -83,7 +83,7 @@ esp_err_t esp_lcd_new_panel_io_dbi(esp_lcd_dsi_bus_handle_t bus, const esp_lcd_d
 typedef struct {
     uint8_t virtual_channel;                   /*!< Virtual channel ID, index from 0 */
     mipi_dsi_dpi_clock_source_t dpi_clk_src;   /*!< MIPI DSI DPI clock source */
-    uint32_t dpi_clock_freq_mhz;               /*!< DPI clock frequency in MHz */
+    float dpi_clock_freq_mhz;                  /*!< Pixel clock frequency in MHz */
     lcd_color_format_t in_color_format;        /*!< Format of the input data (color space and pixel format),
                                                     which is the format stored in the frame buffer */
     lcd_color_format_t out_color_format;       /*!< Format of the output data (color space and pixel format),
