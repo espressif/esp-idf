@@ -271,4 +271,56 @@ typedef struct {
 #define BD_ADDR_LEN     6                   /* Device address length */
 typedef UINT8 BD_ADDR[BD_ADDR_LEN];         /* Device address */
 
+#define BT_AD_TYPE_FLAGS 0x01
+#define BT_AD_TYPE_SERVICE_LIST_16BITS_INCOMPLETE 0x02 /* Incomplete List of 16-bit Service or Service Class UUIDs */
+#define BT_AD_TYPE_SERVICE_LIST_16BITS_COMPLETE 0x03 /* Complete List of 16-bit Service or Service Class UUIDs */
+#define BT_AD_TYPE_SERVICE_LIST_32BITS_INCOMPLETE 0x04 /* Incomplete List of 32-bit Service or Service Class UUIDs */
+#define BT_AD_TYPE_SERVICE_LIST_32BITS_COMPLETE 0x05 /* Complete List of 32-bit Service or Service Class UUIDs */
+#define BT_AD_TYPE_SERVICE_LIST_128BITS_INCOMPLETE 0x06 /* Incomplete List of 128-bit Service or Service Class UUIDs */
+#define BT_AD_TYPE_SERVICE_LIST_128BITS_COMPLETE 0x07 /* Complete List of 128-bit Service or Service Class UUIDs */
+#define BT_AD_TYPE_LOCAL_NAME_SHORT 0x08 /* Shortened Local Name */
+#define BT_AD_TYPE_LOCAL_NAME_COMPLETE  0x09 /* Complete Local Name */
+#define BT_AD_TYPE_TX_POWER_LEVEL 0x0A /* Tx Power Level */
+#define BT_AD_TYPE_DEVICE_CLASS 0x0D /* Class of Device */
+#define BT_AD_TYPE_PAIRING_HASH_C192 0x0E /* Simple Pairing Hash C-192 */
+#define BT_AD_TYPE_PAIRING_RANDOMIZER_R192 0x0F /* Simple Pairing Randomizer R-192 */
+#define BT_AD_TYPE_DEVICE_ID 0x10 /* Device ID */
+#define BT_AD_TYPE_SECURITY_MANAGER_TK 0x10 /* Security Manager TK Value. Core Specification Supplement, Part A, Section 1.8 (when used in OOB data blocks)*/
+#define BT_AD_TYPE_SECURITY_MANAGER_OB_FLAGS 0x11 /* Security Manager Out of Band Flags */
+#define BT_AD_TYPE_PERIPHERAL_CONNECTION_INTERVAL_RANGE 0x12 /* Peripheral Connection Interval Range */
+#define BT_AD_TYPE_SERVICE_SOLICITATION_16BITS 0x14 /* List of 16-bit Service Solicitation UUIDs */
+#define BT_AD_TYPE_SERVICE_SOLICITATION_128BITS 0x15 /* List of 128-bit Service Solicitation UUIDs */
+#define BT_AD_TYPE_SERVICE_DATA_16BITS 0x16 /* Service Data - 16-bit UUID */
+#define BT_AD_TYPE_TARGET_ADDRESS_PUBLIC 0x17 /* Public Target Address */
+#define BT_AD_TYPE_TARGET_ADDRESS_RANDOM 0x18 /* Random Target Address */
+#define BT_AD_TYPE_APPEARANCE 0x19 /* Appearance */
+#define BT_AD_TYPE_ADVERTISING_INTERVAL 0x1A /* Advertising Interval */
+#define BT_AD_TYPE_LE_DEVICE_ADDRESS 0x1B /* LE Bluetooth Device Address */
+#define BT_AD_TYPE_LE_ROLE 0x1C /* LE Role */
+#define BT_AD_TYPE_SIMPLE_PAIRING_HASH_C256 0x1D /* Simple Pairing Hash C-256 */
+#define BT_AD_TYPE_SIMPLE_PAIRING_RANDOMIZER_R256 0x1E /* Simple Pairing Randomizer R-256 */
+#define BT_AD_TYPE_SERVICE_SOLICITATION_32BITS 0x1F /* List of 32-bit Service Solicitation UUIDs */
+#define BT_AD_TYPE_SERVICE_DATA_32BITS 0x20 /* Service Data - 32-bit UUID */
+#define BT_AD_TYPE_SERVICE_DATA_128BITS 0x21 /* Service Data - 128-bit UUID */
+#define BT_AD_TYPE_LE_SECURE_CONNECTIONS_CONFIRMATION_VALUE 0x22 /* LE Secure Connections Confirmation Value */
+#define BT_AD_TYPE_LE_SECURE_CONNECTIONS_RANDOM_VALUE 0x23 /* LE Secure Connections Random Value */
+#define BT_AD_TYPE_URI 0x24 /* URI */
+#define BT_AD_TYPE_INDOOR_POSITIONING 0x25 /* Indoor Positioning */
+#define BT_AD_TYPE_DISCOVERY_DATA 0x26 /* Transport Discovery Data */
+#define BT_AD_TYPE_LE_SUPPORTED_FEATURES 0x27 /* LE Supported Features */
+#define BT_AD_TYPE_CHANNEL_MAP_UPDATE_INDICATION 0x28 /* Channel Map Update Indication */
+#define BT_AD_TYPE_PB_ADV 0x29 /* PB-ADV */
+#define BT_AD_TYPE_MESH_MESSAGE 0x2A /* Mesh Message */
+#define BT_AD_TYPE_MESH_BEACON 0x2B /* Mesh Beacon */
+#define BT_AD_TYPE_BIGINFO 0x2C /* BIGnfo */
+#define BT_AD_TYPE_BROADCAST_CODE 0x2D /* Broadcast_Code */
+#define BT_AD_TYPE_RESOLVABLE_SET_IDENTIFIER 0x2E /* Resolvable Set Identifier */
+#define BT_AD_TYPE_ADVERTISING_INTERVAL_LONG 0x2F /* Advertising Interval - long */
+#define BT_AD_TYPE_BROADCAST_NAME 0x30 /* Broadcast_Name */
+#define BT_AD_TYPE_ENCRYPTED_ADVERTISING_DATA 0x31 /* Encrypted Advertising Data */
+#define BT_AD_TYPE_PERIODIC_ADVERTISING_RESPONSE_TIMING_INFORMATION 0x32 /* Periodic Advertising Response Timing Information */
+#define BT_AD_TYPE_ELECTRONICC_SHELF_LABEL 0x34 /* Electronic Shelf Label */
+#define BT_AD_TYPE_3D_INFORMATION_DATA 0x3D /* 3D Information Data */
+#define BT_AD_TYPE_MANUFACTURER_SPECIFIC_DATA 0xFF /* Manufacturer Specific Data */
+
 #endif /* _BT_COMMON_H_ */
