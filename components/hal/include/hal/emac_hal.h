@@ -247,6 +247,8 @@ void emac_hal_init(emac_hal_context_t *hal);
 
 #define emac_hal_is_reset_done(hal) emac_ll_is_reset_done((hal)->dma_regs)
 
+void emac_hal_find_set_closest_csr_clock_range(emac_hal_context_t *hal, int mdc_freq_hz, int freq_hz);
+
 void emac_hal_set_csr_clock_range(emac_hal_context_t *hal, int freq);
 
 void emac_hal_init_mac_default(emac_hal_context_t *hal);
