@@ -16,6 +16,7 @@
 #include "soc/gpio_reg.h"
 #include "soc/io_mux_reg.h"
 #include "soc/interrupt_matrix_reg.h"
+#include "soc/pvt_reg.h"
 
 /* Interrupt Matrix Registers Context */
 #define N_REGS_INTR_MATRIX()    (((INTMTX_CORE0_CLOCK_GATE_REG - DR_REG_INTMTX_BASE) / 4) + 1)
@@ -112,3 +113,10 @@ const regdma_entries_config_t systimer_regs_retention[] = {
     [18] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_SYSTIMER_LINK(0x12), SYSTIMER_INT_ENA_REG,        SYSTIMER_INT_ENA_REG,             1,                                0, 0), .owner = ENTRY(0) | ENTRY(2) }  /* Systimer intr enable */
 };
 _Static_assert(ARRAY_SIZE(systimer_regs_retention) == SYSTIMER_RETENTION_LINK_LEN, "Inconsistent Systimer retention link length definitions");
+
+/* PVT Registers Context */
+#define N_REGS_PVT    (((PVT_COMB_PD_SITE2_UNIT2_VT2_CONF2_REG - DR_REG_PVT_MONITOR_BASE) / 4) + 1)
+const regdma_entries_config_t pvt_regs_retention[] = {
+    [0] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_PVT_LINK(0x00), DR_REG_PVT_MONITOR_BASE, DR_REG_PVT_MONITOR_BASE, N_REGS_PVT, 0, 0), .owner = ENTRY(0) | ENTRY(2) },
+};
+_Static_assert(ARRAY_SIZE(pvt_regs_retention) == PVT_RETENTION_LINK_LEN, "Inconsistent PVT retention link length definitions");
