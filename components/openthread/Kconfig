@@ -45,9 +45,9 @@ menu "OpenThread"
     endmenu
 
     menu "Thread Console"
+        depends on OPENTHREAD_ENABLED
         config OPENTHREAD_CONSOLE_ENABLE
             bool "Enable OpenThread console"
-            depends on OPENTHREAD_ENABLED
             default y
             help
                 Enable the OpenThread-specific console provided by the SDK. This only controls whether
