@@ -866,9 +866,7 @@ void btm_pm_proc_ssr_evt (UINT8 *p, UINT16 evt_len)
     /* notify registered parties */
     for (xx = 0; xx < BTM_MAX_PM_RECORDS; xx++) {
         if (btm_cb.pm_reg_db[xx].mask & BTM_PM_REG_NOTIF) {
-            if ( p_acl) {
-                (*btm_cb.pm_reg_db[xx].cback)( p_acl->remote_addr, BTM_PM_STS_SSR, use_ssr, status);
-            }
+            (*btm_cb.pm_reg_db[xx].cback)( p_acl->remote_addr, BTM_PM_STS_SSR, use_ssr, status);
         }
     }
 }

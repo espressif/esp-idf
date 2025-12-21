@@ -865,7 +865,7 @@ void smp_br_process_pairing_command(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 
     SMP_TRACE_DEBUG("%s", __func__);
     /* rejecting BR pairing request over non-SC BR link */
-    if (!p_dev_rec->new_encryption_key_is_p256 && p_cb->role == HCI_ROLE_SLAVE) {
+    if (p_dev_rec && !p_dev_rec->new_encryption_key_is_p256 && p_cb->role == HCI_ROLE_SLAVE) {
         reason = SMP_XTRANS_DERIVE_NOT_ALLOW;
         smp_br_state_machine_event(p_cb, SMP_BR_AUTH_CMPL_EVT, &reason);
         return;
@@ -1343,7 +1343,14 @@ void smp_key_distribution(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
         /* state check to prevent re-entrant */
         if (smp_get_state() == SMP_STATE_BOND_PENDING) {
             if (p_cb->derive_lk) {
-                smp_derive_link_key_from_long_term_key(p_cb, NULL);
+                tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(p_cb->pairing_bda);
+                if (!(p_dev_rec->sec_flags & BTM_SEC_LE_LINK_KEY_AUTHED) &&
+                    (p_dev_rec->sec_flags & BTM_SEC_LINK_KEY_AUTHED)) {
+                    SMP_TRACE_DEBUG("%s BREDR key is higher security than existing LE keys, "
+                                    "don't derive LK from LTK", __func__);
+                } else {
+                    smp_derive_link_key_from_long_term_key(p_cb, NULL);
+                }
                 p_cb->derive_lk = FALSE;
             }
 

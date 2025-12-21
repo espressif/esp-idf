@@ -2753,11 +2753,16 @@ static void btm_sec_bond_cancel_complete (void)
 ** Returns          void
 **
 *******************************************************************************/
-void btm_create_conn_cancel_complete (UINT8 *p)
+void btm_create_conn_cancel_complete (UINT8 *p, UINT16 evt_len)
 {
     UINT8       status;
 
-    STREAM_TO_UINT8 (status, p);
+    if (evt_len >= 1) {
+        STREAM_TO_UINT8 (status, p);
+    } else {
+        BTM_TRACE_ERROR("%s malformatted event packet, too short", __func__);
+        status = BTM_ERR_PROCESSING;
+    }
     //BTM_TRACE_EVENT ("btm_create_conn_cancel_complete(): in State: %s  status:%d\n",
     //                 btm_pair_state_descr(btm_cb.pairing_state), status);
 
@@ -3792,13 +3797,27 @@ void btm_rem_oob_req (UINT8 *p)
 ** Returns          void
 **
 *******************************************************************************/
-void btm_read_local_oob_complete (UINT8 *p)
+void btm_read_local_oob_complete (UINT8 *p, UINT16 evt_len)
 {
     tBTM_SP_LOC_OOB evt_data;
-    UINT8           status = *p++;
+    UINT8           status;
+
+    if (evt_len < 1) {
+        BTM_TRACE_ERROR("%s malformatted event packet, too short", __func__);
+        evt_data.status = BTM_ERR_PROCESSING;
+        goto err_out;
+    }
+
+    STREAM_TO_UINT8(status, p);
 
     BTM_TRACE_EVENT ("btm_read_local_oob_complete:%d\n", status);
     if (status == HCI_SUCCESS) {
+        if (evt_len < 1 + 32) {
+            BTM_TRACE_ERROR("%s malformatted event packet, too short", __func__);
+            evt_data.status = BTM_ERR_PROCESSING;
+            goto err_out;
+        }
+
         evt_data.status = BTM_SUCCESS;
         STREAM_TO_ARRAY16(evt_data.c, p);
         STREAM_TO_ARRAY16(evt_data.r, p);
@@ -3806,6 +3825,7 @@ void btm_read_local_oob_complete (UINT8 *p)
         evt_data.status = BTM_ERR_PROCESSING;
     }
 
+err_out:
     if (btm_cb.api.p_sp_callback) {
         (*btm_cb.api.p_sp_callback) (BTM_SP_LOC_OOB_EVT, (tBTM_SP_EVT_DATA *)&evt_data);
     }
@@ -4278,7 +4298,6 @@ static void btm_sec_connect_after_reject_timeout (TIMER_LIST_ENT *p_tle)
 #if (SMP_INCLUDED == TRUE)
 void btm_sec_connected (UINT8 *bda, UINT16 handle, UINT8 status, UINT8 enc_mode)
 {
-    tBTM_SEC_DEV_REC *p_dev_rec = btm_find_dev (bda);
     UINT8            res;
     UINT8            sec_dev_rec_status;
     BOOLEAN          is_pairing_device = FALSE;
@@ -4286,6 +4305,8 @@ void btm_sec_connected (UINT8 *bda, UINT16 handle, UINT8 status, UINT8 enc_mode)
     UINT8            bit_shift = 0;
 
     btm_acl_resubmit_page();
+
+    tBTM_SEC_DEV_REC *p_dev_rec = btm_find_dev (bda);
 
     /* Commenting out trace due to obf/compilation problems.
     */
@@ -4609,7 +4630,6 @@ tBTM_STATUS btm_sec_disconnect (UINT16 handle, UINT8 reason)
 *******************************************************************************/
 BOOLEAN btm_sec_disconnected (UINT16 handle, UINT8 reason)
 {
-    tBTM_SEC_DEV_REC  *p_dev_rec = btm_find_dev_by_handle (handle);
     UINT8             old_pairing_flags = btm_cb.pairing_flags;
     int               result = HCI_ERR_AUTH_FAILURE;
     tBTM_SEC_CALLBACK   *p_callback = NULL;
@@ -4621,6 +4641,8 @@ BOOLEAN btm_sec_disconnected (UINT16 handle, UINT8 reason)
 #if (CLASSIC_BT_INCLUDED == TRUE)
     btm_acl_resubmit_page();
 #endif
+
+    tBTM_SEC_DEV_REC  *p_dev_rec = btm_find_dev_by_handle (handle);
 
     if (!p_dev_rec) {
         return FALSE;
@@ -5044,6 +5066,12 @@ void btm_sec_pin_code_request (UINT8 *p_bda)
                      btm_pair_state_descr(btm_cb.pairing_state),
                      (p_bda[0] << 8) + p_bda[1], (p_bda[2] << 24) + (p_bda[3] << 16) + (p_bda[4] << 8) + p_bda[5] );
 #endif  ///BT_USE_TRACES == TRUE && SMP_INCLUDED == TRUE
+    const bt_bdaddr_t *local_bd_addr = controller_get_interface()->get_address();
+    if (!memcmp(p_bda, local_bd_addr, BD_ADDR_LEN)) {
+        BTM_TRACE_WARNING("btm_sec_pin_code_request() rejected device with same address\n");
+        btsnd_hcic_pin_code_neg_reply(p_bda);
+        return;
+    }
     if (btm_cb.pairing_state != BTM_PAIR_STATE_IDLE) {
         if ( (memcmp (p_bda, btm_cb.pairing_bda, BD_ADDR_LEN) == 0)  &&
                 (btm_cb.pairing_state == BTM_PAIR_STATE_WAIT_AUTH_COMPLETE) ) {
