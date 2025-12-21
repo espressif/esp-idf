@@ -17,13 +17,16 @@ if(CONFIG_SOC_BITSCRAMBLER_SUPPORTED AND CONFIG_SOC_RMT_SUPPORT_DMA)
 endif()
 
 if(${target} STREQUAL "linux")
+    set(requires "")
     set(priv_requires "")
 else()
+    set(requires esp_hal_rmt)
     set(priv_requires esp_pm esp_driver_gpio esp_driver_bitscrambler esp_mm)
 endif()
 
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS ${public_include}
+                       REQUIRES "${requires}"
                        PRIV_REQUIRES "${priv_requires}"
                        LDFRAGMENTS "linker.lf"
                       )
