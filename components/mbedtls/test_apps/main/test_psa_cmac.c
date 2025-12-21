@@ -100,7 +100,6 @@ TEST_CASE("PSA CMAC AES-128 test", "[psa_cmac]")
     // Cleanup
     psa_destroy_key(key_id);
     free(cmac);
-    // mbedtls_psa_crypto_free();
 }
 
 TEST_CASE("PSA CMAC AES-256 test", "[psa_cmac]")
@@ -144,7 +143,6 @@ TEST_CASE("PSA CMAC AES-256 test", "[psa_cmac]")
     // Cleanup
     psa_destroy_key(key_id);
     free(cmac);
-    // mbedtls_psa_crypto_free();
 }
 
 TEST_CASE("PSA CMAC AES-128 multipart test", "[psa_cmac]")
@@ -197,7 +195,6 @@ TEST_CASE("PSA CMAC AES-128 multipart test", "[psa_cmac]")
     // Cleanup
     psa_destroy_key(key_id);
     free(cmac);
-    // mbedtls_psa_crypto_free();
 }
 
 TEST_CASE("PSA CMAC AES-128 multipart verify test", "[psa_cmac]")
@@ -257,7 +254,6 @@ TEST_CASE("PSA CMAC AES-128 multipart verify test", "[psa_cmac]")
     // Cleanup
     psa_destroy_key(key_id);
     free(cmac);
-    // mbedtls_psa_crypto_free();
 }
 
 TEST_CASE("PSA CMAC zero-length test", "[psa_cmac]")
@@ -301,7 +297,6 @@ TEST_CASE("PSA CMAC zero-length test", "[psa_cmac]")
     // Cleanup
     psa_destroy_key(key_id);
     free(cmac);
-    // mbedtls_psa_crypto_free();
 }
 
 TEST_CASE("PSA CMAC memory alignment test", "[psa_cmac]")
@@ -355,7 +350,6 @@ TEST_CASE("PSA CMAC memory alignment test", "[psa_cmac]")
     psa_destroy_key(key_id);
     free(cmac_internal);
     free(cmac_dma);
-    // mbedtls_psa_crypto_free();
 }
 
 TEST_CASE("PSA CMAC verify failure test", "[psa_cmac]")
@@ -393,6 +387,5 @@ TEST_CASE("PSA CMAC verify failure test", "[psa_cmac]")
 
     // Cleanup
     psa_destroy_key(key_id);
-    // mbedtls_psa_crypto_free();
 }
 #endif /* CONFIG_MBEDTLS_CMAC_C */
