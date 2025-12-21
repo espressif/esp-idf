@@ -24,6 +24,7 @@
 #include "hal/cache_ll.h"
 #include "spi_flash_mmap.h"
 #include "hal/efuse_hal.h"
+#include "sdkconfig.h"
 
 #define ALIGN_UP(num, align) (((num) + ((align) - 1)) & ~((align) - 1))
 
@@ -141,6 +142,22 @@ static bool is_bootloader(uint32_t offset)
     );
 }
 
+#if BOOTLOADER_BUILD && (SECURE_BOOT_CHECK_SIGNATURE == 1)
+#if CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP
+static bool skip_verify(esp_image_load_mode_t mode, bool verify_sha)
+{
+    // Multi level check to ensure that its a legit exit from deep sleep case
+    return (esp_rom_get_reset_reason(0) == RESET_REASON_CORE_DEEP_SLEEP &&
+            mode == ESP_IMAGE_LOAD_NO_VALIDATE &&
+            !verify_sha) ? true : false;
+}
+#else
+
+#define skip_verify(mode, verify_sha) (false)
+
+#endif
+#endif // BOOTLOADER_BUILD && (SECURE_BOOT_CHECK_SIGNATURE == 1)
+
 static esp_err_t image_load(esp_image_load_mode_t mode, const esp_partition_pos_t *part, esp_image_metadata_t *data)
 {
 #ifdef BOOTLOADER_BUILD
@@ -236,9 +253,9 @@ static esp_err_t image_load(esp_image_load_mode_t mode, const esp_partition_pos_
        "only verify signature in bootloader" into the macro so it's tested multiple times.
      */
 #if CONFIG_SECURE_BOOT_V2_ENABLED
-    ESP_FAULT_ASSERT(!esp_secure_boot_enabled() || memcmp(image_digest, verified_digest, ESP_SECURE_BOOT_DIGEST_LEN) == 0);
+    ESP_FAULT_ASSERT(!esp_secure_boot_enabled() || skip_verify(mode, verify_sha) || memcmp(image_digest, verified_digest, ESP_SECURE_BOOT_DIGEST_LEN) == 0);
 #else // Secure Boot V1 on ESP32, only verify signatures for apps not bootloaders
-    ESP_FAULT_ASSERT(is_bootloader(data->start_addr) || memcmp(image_digest, verified_digest, HASH_LEN) == 0);
+    ESP_FAULT_ASSERT(is_bootloader(data->start_addr) || skip_verify(mode, verify_sha) || memcmp(image_digest, verified_digest, HASH_LEN) == 0);
 #endif
 
 #endif // SECURE_BOOT_CHECK_SIGNATURE
