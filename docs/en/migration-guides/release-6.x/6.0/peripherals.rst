@@ -303,6 +303,7 @@ SPI Flash Driver
 - Deprecated API ``spi_flash_dump_counters`` has been removed. Please use :cpp:func:`esp_flash_dump_counters` instead.
 - Deprecated API ``spi_flash_get_counters`` has been removed. Please use :cpp:func:`esp_flash_get_counters` instead.
 - Deprecated API ``spi_flash_reset_counters`` has been removed. Please use :cpp:func:`esp_flash_reset_counters` instead.
+- New argument ``flags`` is added to ``esp_flash_os_functions_t::start``. Caller and implementer should handle this argument properly.
 - Kconfig option ``CONFIG_SPI_FLASH_ROM_DRIVER_PATCH`` has been removed. Considering that this option is unlikely to be widely used by users and may cause serious issues if misused, it has been decided to remove it.
 
 .. note::

@@ -303,6 +303,7 @@ SPI flash 驱动
 - 已弃用的 API ``spi_flash_dump_counters`` 已被移除。请改用 :cpp:func:`esp_flash_dump_counters`。
 - 已弃用的 API ``spi_flash_get_counters`` 已被移除。请改用 :cpp:func:`esp_flash_get_counters`。
 - 已弃用的 API ``spi_flash_reset_counters`` 已被移除。请改用 :cpp:func:`esp_flash_reset_counters`。
+- ``esp_flash_os_functions_t::start`` 新增了一个参数 ``flags``。调用者和实现者应正确处理此参数。
 - Kconfig 选项 ``CONFIG_SPI_FLASH_ROM_DRIVER_PATCH`` 已被移除，考虑到这个选项不会被广泛被用户使用，且有因误用而导致出现严重的问题，遂决定移除。
 
 .. note::

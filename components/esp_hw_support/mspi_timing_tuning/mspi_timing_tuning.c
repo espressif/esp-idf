@@ -481,6 +481,11 @@ void mspi_timing_psram_tuning(void)
 /*------------------------------------------------------------------------------
  * APIs to make SPI0 (and SPI1) FLASH work for high/low freq
  *----------------------------------------------------------------------------*/
+uint32_t mspi_timing_get_psram_low_speed_freq_mhz(void)
+{
+    return 20;
+}
+
 void mspi_timing_enter_low_speed_mode(bool control_spi1)
 {
 #if MSPI_TIMING_LL_FLASH_CLK_SRC_CHANGEABLE
@@ -500,14 +505,14 @@ void mspi_timing_enter_low_speed_mode(bool control_spi1)
      * Should be extended to other no-timing-tuning chips if needed. e.g.:
      * we still need to turn down Flash / PSRAM clock speed at a certain period of time
      */
-    mspi_timing_config_set_flash_clock(20, MSPI_TIMING_SPEED_MODE_LOW_PERF, control_spi1);
-    mspi_timing_config_set_psram_clock(20, MSPI_TIMING_SPEED_MODE_LOW_PERF, control_spi1);
-#endif  //#if SOC_SPI_MEM_SUPPORT_TIMING_TUNING
-
+    uint32_t low_speed_freq_mhz = mspi_timing_get_psram_low_speed_freq_mhz();
+    mspi_timing_config_set_flash_clock(low_speed_freq_mhz, MSPI_TIMING_SPEED_MODE_LOW_PERF, control_spi1);
+    mspi_timing_config_set_psram_clock(low_speed_freq_mhz, MSPI_TIMING_SPEED_MODE_LOW_PERF, control_spi1);
 #if MSPI_TIMING_FLASH_NEEDS_TUNING || MSPI_TIMING_PSRAM_NEEDS_TUNING
     mspi_timing_flash_config_clear_tuning_regs(control_spi1);
     mspi_timing_psram_config_clear_tuning_regs(control_spi1);
 #endif  //#if MSPI_TIMING_FLASH_NEEDS_TUNING || MSPI_TIMING_PSRAM_NEEDS_TUNING
+#endif  //#if SOC_SPI_MEM_SUPPORT_TIMING_TUNING
 }
 
 /**
@@ -568,10 +573,24 @@ void mspi_timing_change_speed_mode_cache_safe(bool switch_down)
 
     if (switch_down) {
         //enter MSPI low speed mode, extra delays should be removed
+#if CONFIG_IDF_TARGET_ESP32C5
+        // ESP32-C5 needs to perform encrypted flash writes even when CPU frequency is reduced.
+        // Since encrypted writes use SPI1, we need to configure SPI1 timing registers as well
+        // during runtime frequency switching to ensure proper operation.
+        mspi_timing_enter_low_speed_mode(true);
+#else
         mspi_timing_enter_low_speed_mode(false);
+#endif
     } else {
         //enter MSPI high speed mode, extra delays should be considered
+#if CONFIG_IDF_TARGET_ESP32C5
+        // ESP32-C5 needs to perform encrypted flash writes even when CPU frequency is reduced.
+        // Since encrypted writes use SPI1, we need to configure SPI1 timing registers as well
+        // during runtime frequency switching to ensure proper operation.
+        mspi_timing_enter_high_speed_mode(true);
+#else
         mspi_timing_enter_high_speed_mode(false);
+#endif
     }
 
 #if SOC_CACHE_FREEZE_SUPPORTED

@@ -48,6 +48,17 @@ typedef spi_flash_hal_context_t memspi_host_inst_t;
  */
 esp_err_t memspi_host_init_pointers(memspi_host_inst_t *host, const memspi_host_config_t *cfg);
 
+/**
+ * Initialize the memory SPI host for ESP32-C5 dynamic configuration.
+ *
+ * @param host Pointer to the host structure.
+ *
+ * @note This function is available only when CONFIG_SPI_FLASH_FREQ_LIMIT_C5_240MHZ is defined.
+ * @note This function can only be called once at startup, after memspi_host_init_pointers() is called.
+ * @return always return ESP_OK
+ */
+esp_err_t memspi_host_init_c5_dynamic_config(memspi_host_inst_t *host);
+
 /*******************************************************************************
  * NOTICE
  * Rest part of this file are part of the HAL layer
@@ -161,7 +172,7 @@ int memspi_host_read_data_slicer(spi_flash_host_inst_t *host, uint32_t address, 
 
 /**
  * @brief Slicer for write data used in non-encrypted regions. This slicer limit the length to the
- *        maximum size the host supports, and truncate if the write data lie accross the page boundary
+ *        maximum size the host supports, and truncate if the write data lie across the page boundary
  *        (256 bytes)
  *
  * @param address Flash address to write

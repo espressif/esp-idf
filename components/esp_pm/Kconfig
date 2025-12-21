@@ -239,4 +239,12 @@ menu "Power Management"
             NOTE: Enabling these callbacks may change sleep duration calculations based on time spent in callback and
             hence it is highly recommended to keep them as short as possible
 
+    config PM_WORKAROUND_FREQ_LIMIT_ENABLED
+        bool
+        default y if SPI_FLASH_FREQ_LIMIT_C5_240MHZ
+        help
+            Workaround for frequency limit during encrypted flash writes.
+            Only enabled when SPI_FLASH_FREQ_LIMIT_C5_240MHZ is enabled.
+            This is an internal configuration, automatically set based on SPI Flash configuration.
+
 endmenu # "Power Management"

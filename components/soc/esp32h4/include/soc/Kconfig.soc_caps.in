@@ -675,6 +675,10 @@ config SOC_SPI_MEM_SUPPORT_WRAP
     bool
     default y
 
+config SOC_SPI_MEM_PSRAM_FREQ_AXI_CONSTRAINED
+    bool
+    default y
+
 config SOC_SYSTIMER_COUNTER_NUM
     int
     default 2
