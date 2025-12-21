@@ -6,6 +6,7 @@ include_guard(GLOBAL)
 include(utilities)
 include(CheckCCompilerFlag)
 include(CheckCXXCompilerFlag)
+include(component_validation)
 
 #[[api
 .. cmakev2:function:: idf_build_set_property
@@ -501,6 +502,9 @@ function(idf_build_library library)
             set_property(TARGET "${library}" APPEND PROPERTY INTERFACE_LINK_DEPENDS "${script}")
         endforeach()
     endforeach()
+
+    # Validate components linked to this library
+    __component_validation_run_checks(LIBRARY "${library}")
 endfunction()
 
 #[[
