@@ -60,7 +60,7 @@ esp_err_t esp_isp_demosaic_disable(isp_proc_handle_t proc)
     isp_fsm_t expected_fsm = ISP_FSM_ENABLE;
     ESP_RETURN_ON_FALSE(atomic_compare_exchange_strong(&proc->demosaic_fsm, &expected_fsm, ISP_FSM_INIT), ESP_ERR_INVALID_STATE, TAG, "demosaic isn't enabled yet");
 
-    if (proc->out_color_format.color_space == (uint32_t)COLOR_SPACE_RAW) {
+    if (proc->out_color_format == ISP_COLOR_RAW8 || proc->out_color_format == ISP_COLOR_RAW10 || proc->out_color_format == ISP_COLOR_RAW12) {
         // for other out_color_format, demosaic module is needed for rgb interpolation algorithm
         isp_ll_demosaic_enable(proc->hal.hw, false);
     }

@@ -132,13 +132,10 @@ esp_err_t esp_isp_new_processor(const esp_isp_processor_cfg_t *proc_config, isp_
     INIT_CRIT_SECTION_LOCK_RUNTIME(&proc->spinlock);
 
     //Input & Output color format
-    color_space_pixel_format_t in_color_format = {
-        .color_type_id = proc_config->input_data_color_type,
-    };
-    color_space_pixel_format_t out_color_format = {
-        .color_type_id = proc_config->output_data_color_type,
-    };
-    int in_bits_per_pixel = color_hal_pixel_format_get_bit_depth(in_color_format);
+    isp_color_t in_color_format = proc_config->input_data_color_type;
+    isp_color_t out_color_format = proc_config->output_data_color_type;
+
+    int in_bits_per_pixel = color_hal_pixel_format_fourcc_get_bit_depth(in_color_format);
 
     if (!proc_config->flags.bypass_isp) {
         bool valid_format = false;
@@ -167,11 +164,11 @@ esp_err_t esp_isp_new_processor(const esp_isp_processor_cfg_t *proc_config, isp_
     isp_ll_set_intput_data_v_row_num(proc->hal.hw, proc_config->v_res);
     isp_ll_set_bayer_mode(proc->hal.hw, proc_config->bayer_order);
     isp_ll_yuv_set_std(proc->hal.hw, proc_config->yuv_std);
-    if (out_color_format.color_space == COLOR_SPACE_YUV) {
+    if (out_color_format == ISP_COLOR_YUV422 || out_color_format == ISP_COLOR_YUV420) {
         isp_ll_yuv_set_range(proc->hal.hw, proc_config->yuv_range);
     }
 
-    if (out_color_format.color_space == COLOR_SPACE_RGB && proc_config->input_data_source == ISP_INPUT_DATA_SOURCE_DVP) {
+    if ((out_color_format == ISP_COLOR_RGB888 || out_color_format == ISP_COLOR_RGB565) && proc_config->input_data_source == ISP_INPUT_DATA_SOURCE_DVP) {
         isp_ll_color_enable(proc->hal.hw, true); // workaround for DIG-474
     }
     if (proc_config->flags.byte_swap_en) {

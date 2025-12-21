@@ -110,12 +110,12 @@ esp_err_t esp_cam_new_isp_dvp_ctlr(isp_proc_handle_t isp_proc, const esp_cam_ctl
     dvp_ctlr->trans_que = xQueueCreateWithCaps(ctlr_config->queue_items, sizeof(esp_cam_ctlr_trans_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     ESP_GOTO_ON_FALSE(dvp_ctlr->trans_que, ESP_ERR_NO_MEM, err, TAG, "no memory for transaction queue");
     //in color type
-    int in_bits_per_pixel = color_hal_pixel_format_get_bit_depth(isp_proc->in_color_format);
+    int in_bits_per_pixel = color_hal_pixel_format_fourcc_get_bit_depth(isp_proc->in_color_format);
     dvp_ctlr->in_bpp = in_bits_per_pixel;
     ESP_LOGD(TAG, "dvp_ctlr->in_bpp: 0d %d", dvp_ctlr->in_bpp);
 
     //out color type
-    int out_bits_per_pixel = color_hal_pixel_format_get_bit_depth(isp_proc->out_color_format);
+    int out_bits_per_pixel = color_hal_pixel_format_fourcc_get_bit_depth(isp_proc->out_color_format);
     dvp_ctlr->out_bpp = out_bits_per_pixel;
     ESP_LOGD(TAG, "dvp_ctlr->out_bpp: 0d %d", dvp_ctlr->out_bpp);
 
