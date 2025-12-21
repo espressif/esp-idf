@@ -12,12 +12,12 @@
 #include <stdbool.h>
 #include <inttypes.h>
 #include <esp_random.h>
-
-#include <mbedtls/entropy.h>
-#include <mbedtls/ctr_drbg.h>
-#include <mbedtls/ecdh.h>
-#include <mbedtls/ecdsa.h>
+#define MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
+#include <mbedtls/private/ecdh.h>
+#include <mbedtls/private/ecdsa.h>
 #include <mbedtls/error.h>
+#include "psa/crypto.h"
+#include "mbedtls/psa_util.h"
 
 #include "test_utils.h"
 #include "ccomp_timer.h"
@@ -54,24 +54,20 @@
 
 TEST_CASE("mbedtls ECDH Generate Key", "[mbedtls]")
 {
-    mbedtls_ecdh_context ctx;
-    mbedtls_entropy_context entropy;
-    mbedtls_ctr_drbg_context ctr_drbg;
+    psa_key_attributes_t key_attributes;
+    psa_key_id_t key_id;
 
-    mbedtls_ecdh_init(&ctx);
-    mbedtls_ctr_drbg_init(&ctr_drbg);
+    psa_set_key_type(&key_attributes, PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_MONTGOMERY));
+    psa_set_key_usage_flags(&key_attributes, PSA_KEY_USAGE_DERIVE);
+    psa_set_key_bits(&key_attributes, 255);
+    psa_set_key_lifetime(&key_attributes, PSA_KEY_LIFETIME_VOLATILE);
+    psa_set_key_algorithm(&key_attributes, PSA_ALG_ECDH);
 
-    mbedtls_entropy_init(&entropy);
-    TEST_ASSERT_MBEDTLS_OK( mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy, NULL, 0) );
+    psa_status_t status = psa_generate_key(&key_attributes, &key_id);
+    TEST_ASSERT_EQUAL(PSA_SUCCESS, status);
 
-    TEST_ASSERT_MBEDTLS_OK( mbedtls_ecp_group_load(ACCESS_ECDH(&ctx, grp), MBEDTLS_ECP_DP_CURVE25519) );
-
-    TEST_ASSERT_MBEDTLS_OK( mbedtls_ecdh_gen_public(ACCESS_ECDH(&ctx, grp), ACCESS_ECDH(&ctx, d), ACCESS_ECDH(&ctx, Q),
-                                                    mbedtls_ctr_drbg_random, &ctr_drbg ) );
-
-    mbedtls_ecdh_free(&ctx);
-    mbedtls_ctr_drbg_free(&ctr_drbg);
-    mbedtls_entropy_free(&entropy);
+    psa_reset_key_attributes(&key_attributes);
+    psa_destroy_key(key_id);
 }
 
 TEST_CASE("mbedtls ECP self-tests", "[mbedtls]")
@@ -82,29 +78,19 @@ TEST_CASE("mbedtls ECP self-tests", "[mbedtls]")
 TEST_CASE("mbedtls ECP mul w/ koblitz", "[mbedtls]")
 {
     /* Test case code via https://github.com/espressif/esp-idf/issues/1556 */
-    mbedtls_entropy_context ctxEntropy;
-    mbedtls_ctr_drbg_context ctxRandom;
     mbedtls_ecdsa_context ctxECDSA;
-    const char* pers = "myecdsa";
-
-    mbedtls_entropy_init(&ctxEntropy);
-    mbedtls_ctr_drbg_init(&ctxRandom);
-    TEST_ASSERT_MBEDTLS_OK( mbedtls_ctr_drbg_seed(&ctxRandom, mbedtls_entropy_func, &ctxEntropy,
-                                                  (const unsigned char*) pers, strlen(pers)) );
 
     mbedtls_ecdsa_init(&ctxECDSA);
 
     TEST_ASSERT_MBEDTLS_OK( mbedtls_ecdsa_genkey(&ctxECDSA, MBEDTLS_ECP_DP_SECP256K1,
-                                                 mbedtls_ctr_drbg_random, &ctxRandom) );
+                                                 mbedtls_psa_get_random, MBEDTLS_PSA_RANDOM_STATE) );
 
 
     TEST_ASSERT_MBEDTLS_OK(mbedtls_ecp_mul(&ctxECDSA.MBEDTLS_PRIVATE(grp), &ctxECDSA.MBEDTLS_PRIVATE(Q),
                                            &ctxECDSA.MBEDTLS_PRIVATE(d), &ctxECDSA.MBEDTLS_PRIVATE(grp).G,
-                                           mbedtls_ctr_drbg_random, &ctxRandom) );
+                                           mbedtls_psa_get_random, MBEDTLS_PSA_RANDOM_STATE) );
 
     mbedtls_ecdsa_free(&ctxECDSA);
-    mbedtls_ctr_drbg_free(&ctxRandom);
-    mbedtls_entropy_free(&ctxEntropy);
 }
 
 #if CONFIG_MBEDTLS_HARDWARE_ECC

@@ -11,7 +11,6 @@
 #pragma once
 
 #include "aes/esp_aes.h"
-#include "mbedtls/cipher.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -69,7 +68,7 @@ void esp_aes_gcm_init( esp_gcm_context *ctx);
  * \return          A cipher-specific error code on failure.
  */
 int esp_aes_gcm_setkey( esp_gcm_context *ctx,
-                        mbedtls_cipher_id_t cipher,
+                        int cipher,
                         const unsigned char *key,
                         unsigned int keybits );
 

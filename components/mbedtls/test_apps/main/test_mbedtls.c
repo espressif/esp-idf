@@ -14,12 +14,9 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <esp_system.h>
-#include "mbedtls/sha1.h"
-#include "mbedtls/sha256.h"
-#include "mbedtls/sha512.h"
-#include "mbedtls/aes.h"
-#include "mbedtls/bignum.h"
-#include "mbedtls/rsa.h"
+#define MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
+#include "mbedtls/private/aes.h"
+#include "mbedtls/private/rsa.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"

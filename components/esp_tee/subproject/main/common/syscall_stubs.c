@@ -54,6 +54,12 @@ ssize_t _write_r(struct _reent *r, int fd, const void *ptr, size_t len)
     return -1;
 }
 
+ssize_t _open_r(struct _reent *r, const char *path, int flags, int mode)
+{
+    errno = ENOSYS;
+    return -1;
+}
+
 int _getpid_r(struct _reent *r)
 {
     return 1;
@@ -180,14 +186,24 @@ int __cxa_thread_atexit(void (*func)(void *), void *arg, void *dso)
     return 0;
 }
 
-#if CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32C61
 void *_sbrk(ptrdiff_t incr)
 {
     return (void *) -1;
 }
-#endif
 
 void esp_tee_include_syscalls_impl(void)
 {
 
+}
+
+int _unlink_r(struct _reent *r, const char *path)
+{
+    errno = ENOSYS;
+    return -1;
+}
+
+int _rename_r(struct _reent *r, const char *src, const char *dst)
+{
+    errno = ENOSYS;
+    return -1;
 }

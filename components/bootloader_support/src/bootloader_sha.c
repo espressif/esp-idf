@@ -179,81 +179,117 @@ void bootloader_sha256_finish(bootloader_sha256_handle_t handle, uint8_t *digest
 #else /* NON_OS_BUILD || CONFIG_APP_BUILD_TYPE_RAM */
 
 #include "bootloader_flash_priv.h"
-#include <mbedtls/sha256.h>
-#include <mbedtls/sha512.h>
+#include "psa/crypto.h"
 
 bootloader_sha256_handle_t bootloader_sha256_start(void)
 {
-    mbedtls_sha256_context *ctx = (mbedtls_sha256_context *)malloc(sizeof(mbedtls_sha256_context));
-    if (!ctx) {
+    psa_hash_operation_t *op = (psa_hash_operation_t *)malloc(sizeof(psa_hash_operation_t));
+    if (!op) {
         return NULL;
     }
-    mbedtls_sha256_init(ctx);
-    int ret = mbedtls_sha256_starts(ctx, false);
-    if (ret != 0) {
+
+    *op = psa_hash_operation_init();
+    psa_status_t status = psa_hash_setup(op, PSA_ALG_SHA_256);
+    if (status != PSA_SUCCESS) {
+        free(op);
         return NULL;
     }
-    return ctx;
+
+    return (bootloader_sha256_handle_t)op;
 }
 
 void bootloader_sha256_data(bootloader_sha256_handle_t handle, const void *data, size_t data_len)
 {
     assert(handle != NULL);
-    mbedtls_sha256_context *ctx = (mbedtls_sha256_context *)handle;
-    int ret = mbedtls_sha256_update(ctx, data, data_len);
-    assert(ret == 0);
-    (void)ret;
+    psa_hash_operation_t *op = (psa_hash_operation_t *)handle;
+
+    psa_status_t status = psa_hash_update(op, data, data_len);
+    assert(status == PSA_SUCCESS);
+    (void)status; // Suppress unused variable warning in release builds
 }
 
 void bootloader_sha256_finish(bootloader_sha256_handle_t handle, uint8_t *digest)
 {
     assert(handle != NULL);
-    mbedtls_sha256_context *ctx = (mbedtls_sha256_context *)handle;
+    psa_hash_operation_t *op = (psa_hash_operation_t *)handle;
+
     if (digest != NULL) {
-        int ret = mbedtls_sha256_finish(ctx, digest);
-        assert(ret == 0);
-        (void)ret;
+        size_t hash_len;
+        psa_status_t status = psa_hash_finish(op, digest, PSA_HASH_LENGTH(PSA_ALG_SHA_256), &hash_len);
+        assert(status == PSA_SUCCESS);
+        assert(hash_len == PSA_HASH_LENGTH(PSA_ALG_SHA_256));
+        (void)status; // Suppress unused variable warning in release builds
+        (void)hash_len; // Suppress unused variable warning in release builds
+    } else {
+        psa_hash_abort(op);
     }
-    mbedtls_sha256_free(ctx);
+
     free(handle);
     handle = NULL;
 }
 
 #if SOC_SHA_SUPPORT_SHA512
+
+typedef struct {
+    psa_hash_operation_t *hash_op;
+    int psa_alg;
+} bootloader_psa_sha_handle_t;
+
 bootloader_sha_handle_t bootloader_sha512_start(bool is384)
 {
-    mbedtls_sha512_context *ctx = (mbedtls_sha512_context *)malloc(sizeof(mbedtls_sha512_context));
-    if (!ctx) {
+    psa_status_t status;
+    bootloader_psa_sha_handle_t *op = (bootloader_psa_sha_handle_t *)malloc(sizeof(bootloader_psa_sha_handle_t));
+    if (!op) {
         return NULL;
     }
-    mbedtls_sha512_init(ctx);
-    int ret = mbedtls_sha512_starts(ctx, is384);
-    if (ret != 0) {
+
+    op->hash_op = (psa_hash_operation_t *)malloc(sizeof(psa_hash_operation_t));
+    if (!op->hash_op) {
+        free(op);
         return NULL;
     }
-    return ctx;
+
+    op->psa_alg = is384 ? PSA_ALG_SHA_384 : PSA_ALG_SHA_512;
+
+    *op->hash_op = psa_hash_operation_init();
+    status = psa_hash_setup(op->hash_op, op->psa_alg);
+    if (status != PSA_SUCCESS) {
+        free(op->hash_op);
+        free(op);
+        return NULL;
+    }
+
+    return (bootloader_psa_sha_handle_t *)op;
 }
 
 void bootloader_sha512_data(bootloader_sha_handle_t handle, const void *data, size_t data_len)
 {
     assert(handle != NULL);
-    mbedtls_sha512_context *ctx = (mbedtls_sha512_context *)handle;
-    int ret = mbedtls_sha512_update(ctx, data, data_len);
-    assert(ret == 0);
-    (void)ret;
+    bootloader_psa_sha_handle_t *op = (bootloader_psa_sha_handle_t *)handle;
+
+    psa_status_t status = psa_hash_update(op->hash_op, data, data_len);
+    assert(status == PSA_SUCCESS);
+    (void)status; // Suppress unused variable warning in release builds
 }
 
 void bootloader_sha512_finish(bootloader_sha_handle_t handle, uint8_t *digest)
 {
     assert(handle != NULL);
-    mbedtls_sha512_context *ctx = (mbedtls_sha512_context *)handle;
+    bootloader_psa_sha_handle_t *op = (bootloader_psa_sha_handle_t *)handle;
+
     if (digest != NULL) {
-        int ret = mbedtls_sha512_finish(ctx, digest);
-        assert(ret == 0);
-        (void)ret;
+        size_t hash_len;
+        psa_status_t status = psa_hash_finish(op->hash_op, digest, PSA_HASH_LENGTH(op->psa_alg), &hash_len);
+        assert(status == PSA_SUCCESS);
+        assert(hash_len == PSA_HASH_LENGTH(op->psa_alg));
+        (void)status; // Suppress unused variable warning in release builds
+        (void)hash_len; // Suppress unused variable warning in release builds
+    } else {
+        psa_hash_abort(op->hash_op);
     }
-    mbedtls_sha512_free(ctx);
-    free(handle);
+
+    free(op->hash_op);
+    free(op);
     handle = NULL;
 }
 #endif /* SOC_SHA_SUPPORT_SHA512 */

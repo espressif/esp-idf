@@ -11,7 +11,7 @@
 #include <sys/random.h>
 #include <esp_log.h>
 #include <esp_err.h>
-#include <mbedtls/sha1.h>
+#include <psa/crypto.h>
 #include <mbedtls/base64.h>
 #include <mbedtls/error.h>
 
@@ -143,37 +143,29 @@ esp_err_t httpd_ws_respond_server_handshake(httpd_req_t *req, const char *suppor
 
     ESP_LOGD(TAG, LOG_FMT("Server key before encoding: %s"), server_raw_text);
 
-    /* Generate SHA-1 first and then encode to Base64 */
-    size_t key_len = strlen(server_raw_text);
-
-#if CONFIG_MBEDTLS_SHA1_C || CONFIG_MBEDTLS_HARDWARE_SHA
-    int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
-    mbedtls_sha1_context ctx;
-    mbedtls_sha1_init(&ctx);
-
-    if ((ret = mbedtls_sha1_starts(&ctx)) != 0) {
-        goto sha_end;
-    }
-
-    if ((ret = mbedtls_sha1_update(&ctx, (uint8_t *)server_raw_text, key_len)) != 0) {
-        goto sha_end;
-    }
-
-    if ((ret = mbedtls_sha1_finish(&ctx, server_key_hash)) != 0) {
-        goto sha_end;
-    }
-
-sha_end:
-    mbedtls_sha1_free(&ctx);
-    if (ret != 0) {
-        ESP_LOGE(TAG, "Error in calculating SHA1 sum , returned 0x%02X", ret);
+    /* Generate SHA-1 hash */
+    psa_hash_operation_t sha1_operation = PSA_HASH_OPERATION_INIT;
+    psa_status_t status = psa_hash_setup(&sha1_operation, PSA_ALG_SHA_1);
+    if (status != PSA_SUCCESS) {
+        ESP_LOGE(TAG, "Failed to setup SHA-1 operation");
         return ESP_FAIL;
     }
-#else
-    ESP_LOGE(TAG, "Please enable CONFIG_MBEDTLS_SHA1_C or CONFIG_MBEDTLS_HARDWARE_SHA to support SHA1 operations");
-    return ESP_FAIL;
-#endif /* CONFIG_MBEDTLS_SHA1_C || CONFIG_MBEDTLS_HARDWARE_SHA */
 
+    status = psa_hash_update(&sha1_operation, (uint8_t *)server_raw_text, strlen(server_raw_text));
+    if (status != PSA_SUCCESS) {
+        ESP_LOGE(TAG, "Failed to update SHA-1 hash");
+        psa_hash_abort(&sha1_operation);
+        return ESP_FAIL;
+    }
+
+    size_t hash_length;
+    status = psa_hash_finish(&sha1_operation, server_key_hash, sizeof(server_key_hash), &hash_length);
+    if (status != PSA_SUCCESS || hash_length != sizeof(server_key_hash)) {
+        ESP_LOGE(TAG, "Failed to finish SHA-1 hash");
+        return ESP_FAIL;
+    }
+
+    /* Encode to Base64 */
     size_t encoded_len = 0;
     mbedtls_base64_encode((uint8_t *)server_key_encoded, sizeof(server_key_encoded), &encoded_len,
                           server_key_hash, sizeof(server_key_hash));

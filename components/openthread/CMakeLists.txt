@@ -43,7 +43,11 @@ if(CONFIG_OPENTHREAD_ENABLED)
     set(exclude_srcs
         "openthread/examples/platforms/utils/logging_rtt.c"
         "openthread/examples/platforms/utils/soft_source_match_table.c"
-        "openthread/src/core/instance/extension_example.cpp")
+        "openthread/src/core/instance/extension_example.cpp"
+        "openthread/src/core/crypto/crypto_platform_mbedtls.cpp"
+        "openthread/src/core/api/random_crypto_api.cpp"
+        )
+
 
     if(CONFIG_OPENTHREAD_FTD OR CONFIG_OPENTHREAD_MTD)
         list(APPEND src_dirs

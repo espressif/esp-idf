@@ -27,7 +27,7 @@ extern "C" {
  *                 stronger message digests instead.
  *
  */
-typedef struct mbedtls_md5_context {
+typedef struct md5_context {
     uint32_t total[2];          /*!< number of bytes processed  */
     uint32_t state[4];          /*!< intermediate digest state  */
     unsigned char buffer[64];   /*!< data block being processed */

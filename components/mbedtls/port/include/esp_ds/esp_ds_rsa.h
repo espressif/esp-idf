@@ -12,7 +12,7 @@ extern "C" {
 
 #include "esp_ds.h"
 #include "mbedtls/md.h"
-
+#include "mbedtls/pk.h"
 /**
  * @brief      ESP-DS data context
  *
@@ -68,12 +68,48 @@ int esp_ds_rsa_sign( void *ctx,
                      mbedtls_md_type_t md_alg, unsigned int hashlen,
                      const unsigned char *hash, unsigned char *sig );
 
+/**
+ * @brief       Alternate implementation for mbedtls_pk_sign, uses DS module for hardware accelerated RSA sign operation
+ *
+ * This function is an alternate implementation compatible with mbedtls_pk_sign interface.
+ * It internally makes use of the DS (Digital Signature) peripheral to perform hardware
+ * accelerated RSA signature operations.
+ *
+ * @param pk        Pointer to the mbedtls_pk_context structure containing the public key context
+ * @param md_alg    Message digest algorithm type used for hashing (e.g., MBEDTLS_MD_SHA256)
+ * @param hash      Pointer to the hash value to be signed
+ * @param hash_len  Length of the hash value in bytes
+ * @param sig       Buffer to hold the generated signature
+ * @param sig_size  Maximum size of the signature buffer in bytes
+ * @param sig_len   Pointer to store the actual length of the generated signature in bytes
+ *
+ * @return
+ *              - 0 on success
+ *              - MBEDTLS_ERR_PK_BAD_INPUT_DATA if input parameters are invalid
+ *              - MBEDTLS_ERR_PK_ALLOC_FAILED if memory allocation fails
+ *              - Other mbedtls error codes on failure
+ */
+int esp_ds_rsa_sign_alt(mbedtls_pk_context *pk, mbedtls_md_type_t md_alg,
+                     const unsigned char *hash, size_t hash_len,
+                     unsigned char *sig, size_t sig_size, size_t *sig_len);
 /*
  * @brief       Get RSA key length in bytes from internal DS context
  *
  * @return      RSA key length in bytes
  */
 size_t esp_ds_get_keylen(void *ctx);
+
+/**
+ * @brief       Get RSA key length in bytes from mbedtls_pk_context
+ *
+ * This function retrieves the RSA key length from an mbedtls_pk_context structure.
+ * It is an alternate implementation compatible with mbedtls PK interface.
+ *
+ * @param ctx   Pointer to the mbedtls_pk_context structure
+ *
+ * @return      RSA key length in bytes, or 0 if the context is invalid
+ */
+size_t esp_ds_get_keylen_alt(mbedtls_pk_context *ctx);
 
 /*
  * @brief       Set timeout (equal to TLS session timeout), so that DS module usage can be synchronized in case of multiple TLS connections using DS module,

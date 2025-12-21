@@ -16,7 +16,6 @@
  */
 
 #include <string.h>
-#include "mbedtls/aes.h"
 #include "esp_log.h"
 #include "esp_crypto_lock.h"
 #include "hal/aes_hal.h"
@@ -24,6 +23,7 @@
 #include "esp_crypto_periph_clk.h"
 #include "soc/soc_caps.h"
 #include "sdkconfig.h"
+#include "mbedtls/platform_util.h"
 
 #if SOC_AES_GDMA
 #define AES_LOCK() esp_crypto_sha_aes_lock_acquire()
@@ -33,6 +33,10 @@
 #define AES_RELEASE() esp_crypto_dma_lock_release()
 #include "hal/crypto_dma_ll.h"
 #endif
+
+#define MBEDTLS_ERR_AES_BAD_INPUT_DATA                  -0x0021  /**< Invalid input data. */
+#define MBEDTLS_ERR_AES_INVALID_KEY_LENGTH              -0x0020  /**< Invalid key length. */
+#define MBEDTLS_ERR_AES_INVALID_INPUT_LENGTH            -0x0022  /**< Invalid data input length. */
 
 static const char *TAG = "esp-aes";
 
@@ -132,6 +136,7 @@ static int esp_aes_block(esp_aes_context *ctx, const void *input, void *output)
     */
     if (ctx->key_in_hardware != ctx->key_bytes) {
         mbedtls_platform_zeroize(output, 16);
+        memset(output, 0, 16);
         return MBEDTLS_ERR_AES_INVALID_INPUT_LENGTH;
     }
     i0 = input_words[0];

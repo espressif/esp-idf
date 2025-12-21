@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,14 +11,11 @@
 #include "esp_log.h"
 #include "esp_image_format.h"
 #include "esp_secure_boot.h"
-#include "mbedtls/sha256.h"
-#include "mbedtls/x509.h"
-#include "mbedtls/md.h"
-#include "mbedtls/platform.h"
-#include "mbedtls/entropy.h"
-#include "mbedtls/ctr_drbg.h"
+#include "psa/crypto.h"
 #include <string.h>
 #include <sys/param.h>
+#include "mbedtls/pk.h"
+
 
 #ifdef CONFIG_SECURE_SIGNED_APPS_ECDSA_SCHEME
 ESP_LOG_ATTR_TAG(TAG, "secure_boot_v1");
@@ -27,7 +24,9 @@ extern const uint8_t signature_verification_key_start[] asm("_binary_signature_v
 extern const uint8_t signature_verification_key_end[] asm("_binary_signature_verification_key_bin_end");
 
 #define SIGNATURE_VERIFICATION_KEYLEN 64
-
+#define PSA_ECDSA_PUB_KEY_SIZE_BITS 256
+#define UNCOMPRESSED_SECP256R1_KEY_SIZE 65  // Size for uncompressed SECP256R1 (1 + 32 + 32)
+#define ECC_UNCOMPRESSED_POINT_FORMAT_INDICATOR 0x04
 esp_err_t esp_secure_boot_verify_signature(uint32_t src_addr, uint32_t length)
 {
     uint8_t digest[ESP_SECURE_BOOT_DIGEST_LEN];
@@ -76,53 +75,47 @@ esp_err_t esp_secure_boot_verify_ecdsa_signature_block(const esp_secure_boot_sig
     }
 
     ESP_LOGD(TAG, "Verifying secure boot signature");
+    psa_status_t status;
+    psa_key_attributes_t key_attributes = PSA_KEY_ATTRIBUTES_INIT;
+    psa_key_id_t key_handle;
 
-    int ret;
-    mbedtls_mpi r, s;
+    // Format the public key for PSA import
+    uint8_t formatted_key[UNCOMPRESSED_SECP256R1_KEY_SIZE];
+    formatted_key[0] = ECC_UNCOMPRESSED_POINT_FORMAT_INDICATOR;
 
-    mbedtls_mpi_init(&r);
-    mbedtls_mpi_init(&s);
-
-    /* Extract r and s components from RAW ECDSA signature of 64 bytes */
-#define ECDSA_INTEGER_LEN 32
-    ret = mbedtls_mpi_read_binary(&r, &sig_block->signature[0], ECDSA_INTEGER_LEN);
-    if (ret != 0) {
-        ESP_LOGE(TAG, "Failed mbedtls_mpi_read_binary(1), err:%d", ret);
+    // Copy X and Y coordinates
+    if (keylen == 64) { // Raw coordinates without format byte
+        memcpy(&formatted_key[1], signature_verification_key_start, 64);
+    } else if (keylen == UNCOMPRESSED_SECP256R1_KEY_SIZE && signature_verification_key_start[0] == ECC_UNCOMPRESSED_POINT_FORMAT_INDICATOR) {
+        // Key is already in correct format
+        memcpy(formatted_key, signature_verification_key_start, UNCOMPRESSED_SECP256R1_KEY_SIZE);
+    } else {
+        ESP_LOGE(TAG, "Invalid key format or length");
         return ESP_FAIL;
     }
 
-    ret = mbedtls_mpi_read_binary(&s, &sig_block->signature[ECDSA_INTEGER_LEN], ECDSA_INTEGER_LEN);
-    if (ret != 0) {
-        ESP_LOGE(TAG, "Failed mbedtls_mpi_read_binary(2), err:%d", ret);
-        mbedtls_mpi_free(&r);
+    // Set key attributes
+    psa_set_key_usage_flags(&key_attributes, PSA_KEY_USAGE_VERIFY_HASH);
+    psa_set_key_algorithm(&key_attributes, PSA_ALG_ECDSA(PSA_ALG_SHA_256));
+    psa_set_key_type(&key_attributes, PSA_KEY_TYPE_ECC_PUBLIC_KEY(PSA_ECC_FAMILY_SECP_R1));
+    psa_set_key_bits(&key_attributes, PSA_ECDSA_PUB_KEY_SIZE_BITS);
+
+    // Import the properly formatted public key
+    status = psa_import_key(&key_attributes, formatted_key, sizeof(formatted_key), &key_handle);
+    if (status != PSA_SUCCESS) {
+        ESP_LOGE(TAG, "Failed to import key, status:%d", status);
         return ESP_FAIL;
     }
 
-    /* Initialise ECDSA context */
-    mbedtls_ecdsa_context ecdsa_context;
-    mbedtls_ecdsa_init(&ecdsa_context);
+    // Verify the signature
+    status = psa_verify_hash(key_handle, PSA_ALG_ECDSA(PSA_ALG_SHA_256), image_digest, ESP_SECURE_BOOT_DIGEST_LEN, sig_block->signature, SIGNATURE_VERIFICATION_KEYLEN);
+    ESP_LOGI(TAG, "Verification result %d", status);
 
-    mbedtls_ecp_group_load(&ecdsa_context.MBEDTLS_PRIVATE(grp), MBEDTLS_ECP_DP_SECP256R1);
-    size_t plen = mbedtls_mpi_size(&ecdsa_context.MBEDTLS_PRIVATE(grp).P);
-    if (keylen != 2 * plen) {
-        ESP_LOGE(TAG, "Incorrect ECDSA key length %d", keylen);
-        ret = ESP_FAIL;
-        goto cleanup;
-    }
+    // Destroy the key handle
+    psa_destroy_key(key_handle);
+    psa_reset_key_attributes(&key_attributes);
 
-    /* Extract X and Y components from ECDSA public key */
-    MBEDTLS_MPI_CHK(mbedtls_mpi_read_binary(&ecdsa_context.MBEDTLS_PRIVATE(Q).MBEDTLS_PRIVATE(X), signature_verification_key_start, plen));
-    MBEDTLS_MPI_CHK(mbedtls_mpi_read_binary(&ecdsa_context.MBEDTLS_PRIVATE(Q).MBEDTLS_PRIVATE(Y), signature_verification_key_start + plen, plen));
-    MBEDTLS_MPI_CHK(mbedtls_mpi_lset(&ecdsa_context.MBEDTLS_PRIVATE(Q).MBEDTLS_PRIVATE(Z), 1));
-
-    ret = mbedtls_ecdsa_verify(&ecdsa_context.MBEDTLS_PRIVATE(grp), image_digest, ESP_SECURE_BOOT_DIGEST_LEN, &ecdsa_context.MBEDTLS_PRIVATE(Q), &r, &s);
-    ESP_LOGD(TAG, "Verification result %d", ret);
-
-cleanup:
-    mbedtls_mpi_free(&r);
-    mbedtls_mpi_free(&s);
-    mbedtls_ecdsa_free(&ecdsa_context);
-    return ret == 0 ? ESP_OK : ESP_ERR_IMAGE_INVALID;
+    return status == PSA_SUCCESS ? ESP_OK : ESP_ERR_IMAGE_INVALID;
 #endif // CONFIG_MBEDTLS_ECDSA_C && CONFIG_MBEDTLS_ECP_DP_SECP256R1_ENABLED
 }
 #endif // CONFIG_SECURE_SIGNED_APPS_ECDSA_SCHEME

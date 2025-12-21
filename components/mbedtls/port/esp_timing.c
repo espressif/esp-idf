@@ -14,7 +14,6 @@
  * DTLS (in particular mbedtls_ssl_set_timer_cb() must be called for DTLS
  * which requires these 2 delay functions).
  */
-
 #include <mbedtls/build_info.h>
 
 #if !defined(MBEDTLS_ESP_TIMING_C)

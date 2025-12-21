@@ -79,8 +79,7 @@ typedef struct {
  *
  */
 typedef struct {
-    uint8_t sign_r[MAX_ECDSA_SUPPORTED_KEY_LEN];    /*!< R component */
-    uint8_t sign_s[MAX_ECDSA_SUPPORTED_KEY_LEN];    /*!< S component */
+    uint8_t signature[MAX_ECDSA_SUPPORTED_KEY_LEN * 2];    /*!< Signature */
 } __attribute__((__packed__)) esp_tee_sec_storage_ecdsa_sign_t;
 
 #if ESP_TEE_BUILD && !(__DOXYGEN__)

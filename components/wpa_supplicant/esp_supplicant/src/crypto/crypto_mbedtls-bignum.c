@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
+#define MBEDTLS_ALLOW_PRIVATE_ACCESS
 #ifdef ESP_PLATFORM
 #include "esp_system.h"
 #include "mbedtls/bignum.h"
@@ -16,6 +16,7 @@
 #include "random.h"
 #include "sha256.h"
 #include "mbedtls/pk.h"
+#include "mbedtls/psa_util.h"
 
 struct crypto_bignum *crypto_bignum_init(void)
 {
@@ -37,10 +38,12 @@ struct crypto_bignum *crypto_bignum_init_set(const u8 *buf, size_t len)
         return NULL;
     }
 
+    mbedtls_mpi_init(bn);
     MBEDTLS_MPI_CHK(mbedtls_mpi_read_binary(bn, buf, len));
     return (struct crypto_bignum *) bn;
 
 cleanup:
+    mbedtls_mpi_free(bn);
     os_free(bn);
     return NULL;
 }
@@ -216,7 +219,7 @@ int crypto_bignum_is_odd(const struct crypto_bignum *a)
 int crypto_bignum_rand(struct crypto_bignum *r, const struct crypto_bignum *m)
 {
     return ((mbedtls_mpi_random((mbedtls_mpi *) r, 0, (const mbedtls_mpi *) m,
-                                mbedtls_esp_random, NULL) != 0) ? -1 : 0);
+                                mbedtls_psa_get_random, MBEDTLS_PSA_RANDOM_STATE) != 0) ? -1 : 0);
 }
 
 int crypto_bignum_legendre(const struct crypto_bignum *a,
