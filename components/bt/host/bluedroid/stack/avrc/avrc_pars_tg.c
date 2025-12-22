@@ -106,46 +106,54 @@ static tAVRC_STS avrc_pars_vendor_cmd(tAVRC_MSG_VENDOR *p_msg, tAVRC_COMMAND *p_
 
     case AVRC_PDU_GET_CUR_PLAYER_APP_VALUE: /* 0x13 */
     case AVRC_PDU_GET_PLAYER_APP_ATTR_TEXT: /* 0x15 */
-        BE_STREAM_TO_UINT8 (p_result->get_cur_app_val.num_attr, p);
-        if (len != (p_result->get_cur_app_val.num_attr + 1)) {
+        if (len < 1) {
             status = AVRC_STS_INTERNAL_ERR;
-            break;
-        }
-        p_u8 = p_result->get_cur_app_val.attrs;
-        for (xx = 0, yy = 0; xx < p_result->get_cur_app_val.num_attr; xx++) {
-            /* only report the valid player app attributes */
-            if (AVRC_IsValidPlayerAttr(*p)) {
-                p_u8[yy++] = *p;
+        } else {
+            BE_STREAM_TO_UINT8 (p_result->get_cur_app_val.num_attr, p);
+            if (len != (p_result->get_cur_app_val.num_attr + 1)) {
+                status = AVRC_STS_INTERNAL_ERR;
+                break;
             }
-            p++;
-        }
-        p_result->get_cur_app_val.num_attr = yy;
-        if (yy == 0) {
-            status = AVRC_STS_BAD_PARAM;
+            p_u8 = p_result->get_cur_app_val.attrs;
+            for (xx = 0, yy = 0; xx < p_result->get_cur_app_val.num_attr; xx++) {
+                /* only report the valid player app attributes */
+                if (AVRC_IsValidPlayerAttr(*p)) {
+                    p_u8[yy++] = *p;
+                }
+                p++;
+            }
+            p_result->get_cur_app_val.num_attr = yy;
+            if (yy == 0) {
+                status = AVRC_STS_BAD_PARAM;
+            }
         }
         break;
 
     case AVRC_PDU_SET_PLAYER_APP_VALUE:     /* 0x14 */
-        BE_STREAM_TO_UINT8 (p_result->set_app_val.num_val, p);
-        size_needed = sizeof(tAVRC_APP_SETTING);
-        if (p_buf && (len == ((p_result->set_app_val.num_val << 1) + 1))) {
-            p_result->set_app_val.p_vals = (tAVRC_APP_SETTING *)p_buf;
-            p_app_set = p_result->set_app_val.p_vals;
-            for (xx = 0; ((xx < p_result->set_app_val.num_val) && (buf_len > size_needed)); xx++) {
-                p_app_set[xx].attr_id = *p++;
-                p_app_set[xx].attr_val = *p++;
-                if (!avrc_is_valid_player_attrib_value(p_app_set[xx].attr_id, p_app_set[xx].attr_val)) {
-                    status = AVRC_STS_BAD_PARAM;
-                }
-            }
-            if (xx != p_result->set_app_val.num_val) {
-                AVRC_TRACE_ERROR("AVRC_PDU_SET_PLAYER_APP_VALUE not enough room:%d orig num_val:%d",
-                                 xx, p_result->set_app_val.num_val);
-                p_result->set_app_val.num_val = xx;
-            }
-        } else {
-            AVRC_TRACE_ERROR("AVRC_PDU_SET_PLAYER_APP_VALUE NULL decode buffer or bad len");
+        if (len < 1) {
             status = AVRC_STS_INTERNAL_ERR;
+        } else {
+            BE_STREAM_TO_UINT8 (p_result->set_app_val.num_val, p);
+            size_needed = sizeof(tAVRC_APP_SETTING);
+            if (p_buf && (len == ((p_result->set_app_val.num_val << 1) + 1))) {
+                p_result->set_app_val.p_vals = (tAVRC_APP_SETTING *)p_buf;
+                p_app_set = p_result->set_app_val.p_vals;
+                for (xx = 0; ((xx < p_result->set_app_val.num_val) && (buf_len > size_needed)); xx++) {
+                    p_app_set[xx].attr_id = *p++;
+                    p_app_set[xx].attr_val = *p++;
+                    if (!avrc_is_valid_player_attrib_value(p_app_set[xx].attr_id, p_app_set[xx].attr_val)) {
+                        status = AVRC_STS_BAD_PARAM;
+                    }
+                }
+                if (xx != p_result->set_app_val.num_val) {
+                    AVRC_TRACE_ERROR("AVRC_PDU_SET_PLAYER_APP_VALUE not enough room:%d orig num_val:%d",
+                                    xx, p_result->set_app_val.num_val);
+                    p_result->set_app_val.num_val = xx;
+                }
+            } else {
+                AVRC_TRACE_ERROR("AVRC_PDU_SET_PLAYER_APP_VALUE NULL decode buffer or bad len");
+                status = AVRC_STS_INTERNAL_ERR;
+            }
         }
         break;
 
