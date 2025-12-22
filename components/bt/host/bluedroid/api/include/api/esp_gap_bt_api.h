@@ -15,10 +15,6 @@
 extern "C" {
 #endif
 
-/// RSSI threshold
-#define ESP_BT_GAP_RSSI_HIGH_THRLD  -20             /*!< High RSSI threshold */
-#define ESP_BT_GAP_RSSI_LOW_THRLD   -45             /*!< Low RSSI threshold */
-
 /// Class of device
 typedef struct {
     uint32_t      reserved_2: 2;                    /*!< undefined */
@@ -363,7 +359,7 @@ typedef union {
     struct read_rssi_delta_param {
         esp_bd_addr_t bda;                     /*!< remote bluetooth device address*/
         esp_bt_status_t stat;                  /*!< read rssi status */
-        int8_t rssi_delta;                     /*!< rssi delta value range -128 ~127, The value zero indicates that the RSSI is inside the Golden Receive Power Range, the Golden Receive Power Range is from ESP_BT_GAP_RSSI_LOW_THRLD to ESP_BT_GAP_RSSI_HIGH_THRLD */
+        int8_t rssi_delta;                     /*!< rssi delta value range -128 ~127, The value zero indicates that the RSSI is inside the Golden Receive Power Range */
     } read_rssi_delta;                         /*!< read rssi parameter struct */
 
     /**
