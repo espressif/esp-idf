@@ -86,6 +86,7 @@ tools/ci/test_autocomplete/test_autocomplete.py
 tools/ci/test_configure_ci_environment.sh
 tools/docker/entrypoint.sh
 tools/docs/gen_version_specific_includes.py
+tools/esp_app_trace/gcov_capture.py
 tools/esp_app_trace/logtrace_proc.py
 tools/esp_app_trace/sysviewtrace_proc.py
 tools/esp_app_trace/test/logtrace/test.sh

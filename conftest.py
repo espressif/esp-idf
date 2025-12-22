@@ -229,6 +229,8 @@ class OpenOCD:
         resp = self.telnet.read_very_eager()
         self.telnet.write(to_bytes(s, '\n'))
         resp += self.telnet.read_until(b'>', timeout=timeout)
+        if not resp.endswith(b'>'):
+            return ''
         return to_str(resp)
 
     def apptrace_wait_stop(self, timeout: int = 30) -> None:

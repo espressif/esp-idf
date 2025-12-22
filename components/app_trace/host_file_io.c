@@ -15,9 +15,10 @@
 //   * Operation arguments. See file operation helper structures below.
 
 #include <string.h>
+#include <stdbool.h>
 #include "esp_app_trace.h"
-
 #include "esp_log.h"
+
 const static char *TAG = "esp_host_file_io";
 
 #define ESP_APPTRACE_FILE_CMD_FOPEN     0x0
@@ -77,25 +78,56 @@ typedef struct {
     void *file;
 } esp_apptrace_ftell_args_t;
 
+#define ESP_APPTRACE_FILE_RECV_TIMEOUT_US 100000 // 100ms
+#define ESP_APPTRACE_FRAME_STX 0x02
+#define ESP_APPTRACE_FRAME_ETX 0x03
+/**
+ * Send a file command to the host.
+ * For the UART destination, the command is wrapped in a frame protocol.
+ * The frame protocol is as follows:
+ * - STX (0x02)
+ * - Length of the command and arguments (2 bytes)
+ * - Command ID (1 byte)
+ * - Arguments (variable length)
+ * - ETX (0x03)
+ */
 static esp_err_t esp_apptrace_file_cmd_send(uint8_t cmd, void (*prep_args)(uint8_t *, void *), void *args, uint32_t args_len)
 {
-    esp_err_t ret;
-    esp_apptrace_fcmd_hdr_t *hdr;
+    const bool is_uart = esp_apptrace_get_destination() == ESP_APPTRACE_DEST_UART;
+    const size_t payload_off    = is_uart ? 3u : 0u; // STX + LEN
+    const size_t payload_len    = sizeof(cmd) + (size_t)args_len; // CMD + ARGS
+    const size_t total_len      = payload_off + payload_len + (is_uart ? 1u /*ETX*/ : 0u);
+    size_t inx = 0;
 
-    ESP_EARLY_LOGV(TAG, "%s %d", __func__, cmd);
-    uint8_t *ptr = esp_apptrace_buffer_get(sizeof(*hdr) + args_len, ESP_APPTRACE_TMO_INFINITE); //TODO: finite tmo
-    if (ptr == NULL) {
+    if (is_uart && payload_len > 0xFFFFu) {
+        return ESP_ERR_INVALID_SIZE;
+    }
+
+    ESP_EARLY_LOGV(TAG, "%s cmd:%d len:%d", __func__, cmd, total_len);
+    uint8_t *buf = esp_apptrace_buffer_get(total_len, ESP_APPTRACE_TMO_INFINITE);
+    if (!buf) {
         return ESP_ERR_NO_MEM;
     }
 
-    hdr = (esp_apptrace_fcmd_hdr_t *)ptr;
-    hdr->cmd = cmd;
-    if (prep_args) {
-        prep_args(ptr + sizeof(hdr->cmd), args);
+    if (is_uart) {
+        buf[inx++] = ESP_APPTRACE_FRAME_STX;
+        buf[inx++] = (uint8_t)(payload_len & 0xFF);
+        buf[inx++] = (uint8_t)((payload_len >> 8) & 0xFF);
+    }
+
+    // Payload: CMD then ARGS
+    buf[inx++] = cmd;
+    if (args_len) {
+        prep_args(&buf[inx], args);
+        inx += args_len;
+    }
+
+    if (is_uart) {
+        buf[inx++] = ESP_APPTRACE_FRAME_ETX;
     }
 
     // now indicate that this buffer is ready to be sent off to host
-    ret = esp_apptrace_buffer_put(ptr, ESP_APPTRACE_TMO_INFINITE);//TODO: finite tmo
+    esp_err_t ret = esp_apptrace_buffer_put(buf, ESP_APPTRACE_TMO_INFINITE);//TODO: finite tmo
     if (ret != ESP_OK) {
         ESP_EARLY_LOGE(TAG, "Failed to put apptrace buffer (%d)!", ret);
         return ret;
@@ -115,7 +147,7 @@ static esp_err_t esp_apptrace_file_rsp_recv(uint8_t *buf, uint32_t buf_len)
     uint32_t tot_rd = 0;
     while (tot_rd < buf_len) {
         uint32_t rd_size = buf_len - tot_rd;
-        esp_err_t ret = esp_apptrace_read(buf + tot_rd, &rd_size, ESP_APPTRACE_TMO_INFINITE); //TODO: finite tmo
+        esp_err_t ret = esp_apptrace_read(buf + tot_rd, &rd_size, ESP_APPTRACE_FILE_RECV_TIMEOUT_US);
         if (ret != ESP_OK) {
             ESP_EARLY_LOGE(TAG, "Failed to read (%d)!", ret);
             return ret;
