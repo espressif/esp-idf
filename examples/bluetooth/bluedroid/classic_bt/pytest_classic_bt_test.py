@@ -71,33 +71,7 @@ def test_bt_spp_vfs(app_path: str, dut: tuple[IdfDut, IdfDut]) -> None:
     acceptor.expect_exact('ESP_SPP_SRV_OPEN_EVT status:0', timeout=30)
 
 
-# Case 3: A2DP
-@pytest.mark.two_duts
-@pytest.mark.parametrize(
-    'count, app_path, target, config',
-    [
-        (
-            2,
-            f'{str(CUR_DIR / "a2dp_sink")}|{str(CUR_DIR / "a2dp_source")}',
-            'esp32|esp32',
-            'test',
-        ),
-    ],
-    indirect=True,
-)
-def test_bt_a2dp(app_path: str, dut: tuple[IdfDut, IdfDut]) -> None:
-    sink_dut = dut[0]
-    source_dut = dut[1]
-    source_dut_mac = source_dut.expect(r'Bluetooth MAC: (([0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2})').group(1).decode('utf8')
-    sink_dut.expect_exact('A2DP PROF STATE: Init Complete', timeout=30)
-    source_dut.expect_exact('a2dp connecting to peer', timeout=30)
-    source_dut.expect_exact('a2dp connected', timeout=30)
-    source_dut.expect_exact('a2dp media start successfully', timeout=30)
-    sink_dut.expect_exact(f'A2DP connection state: Connected, [{source_dut_mac}]', timeout=30)
-    sink_dut.expect_exact('start volume change simulation', timeout=30)
-
-
-# Case 4: HFP
+# Case 3: HFP
 @pytest.mark.two_duts
 @pytest.mark.parametrize(
     'count, app_path, target, config',
@@ -122,7 +96,7 @@ def test_bt_hfp(app_path: str, dut: tuple[IdfDut, IdfDut]) -> None:
     hfp_ag.expect_exact('connection state SLC_CONNECTED', timeout=30)
 
 
-# # Case 5: HID
+# # Case 4: HID
 @pytest.mark.two_duts
 @pytest.mark.parametrize(
     'count, app_path, target, config',
@@ -150,7 +124,7 @@ def test_bt_hid(app_path: str, dut: tuple[IdfDut, IdfDut]) -> None:
     hid_host.expect_exact(f'ESP_HIDH_DEMO: {hid_device_mac} OPEN', timeout=30)
 
 
-# Case 6: L2CAP
+# Case 5: L2CAP
 @pytest.mark.two_duts
 @pytest.mark.parametrize(
     'count, app_path, target, config',
@@ -178,3 +152,55 @@ def test_bt_l2cap(app_path: str, dut: tuple[IdfDut, IdfDut]) -> None:
     client.expect_exact('ESP_SDP_SEARCH_COMP_EVT: status:0', timeout=30)
     client.expect_exact('ESP_BT_L2CAP_OPEN_EVT: status:0', timeout=30)
     server.expect_exact('ESP_BT_L2CAP_OPEN_EVT: status:0', timeout=30)
+
+
+# case 6: A2DP Stream
+@pytest.mark.two_duts
+@pytest.mark.parametrize(
+    'count, app_path, target, config',
+    [
+        (
+            2,
+            f'{str(CUR_DIR / "a2dp_sink_stream")}|{str(CUR_DIR / "a2dp_source")}',
+            'esp32|esp32',
+            'test',
+        ),
+    ],
+    indirect=True,
+)
+def test_bt_a2dp_stream(app_path: str, dut: tuple[IdfDut, IdfDut]) -> None:
+    sink_dut = dut[0]
+    source_dut = dut[1]
+    source_dut_mac = source_dut.expect(r'Bluetooth MAC: (([0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2})').group(1).decode('utf8')
+    sink_dut.expect_exact('A2DP PROF STATE: Init Complete', timeout=30)
+    source_dut.expect_exact('a2dp connecting to peer', timeout=30)
+    source_dut.expect_exact('a2dp connected', timeout=30)
+    source_dut.expect_exact('a2dp media start successfully', timeout=30)
+    sink_dut.expect_exact(f'A2DP connection state: Connected, [{source_dut_mac}]', timeout=30)
+
+
+# case 7: AVRCP absolute volume
+@pytest.mark.two_duts
+@pytest.mark.parametrize(
+    'count, app_path, target, config',
+    [
+        (
+            2,
+            f'{str(CUR_DIR / "avrcp_absolute_volume")}|{str(CUR_DIR / "a2dp_source")}',
+            'esp32|esp32',
+            'test',
+        ),
+    ],
+    indirect=True,
+)
+def test_bt_avrcp_absolute_volume(app_path: str, dut: tuple[IdfDut, IdfDut]) -> None:
+    sink_dut = dut[0]
+    source_dut = dut[1]
+    source_dut_mac = source_dut.expect(r'Bluetooth MAC: (([0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2})').group(1).decode('utf8')
+    sink_dut.expect_exact('AVRCP CT STATE: Init Complete', timeout=30)
+    sink_dut.expect_exact('AVRCP TG STATE: Init Complete', timeout=30)
+    source_dut.expect_exact('a2dp connecting to peer', timeout=30)
+    source_dut.expect_exact('a2dp connected', timeout=30)
+    sink_dut.expect_exact(f'AVRC conn_state event: state 1, [{source_dut_mac}]', timeout=30)
+    sink_dut.expect_exact(f'AVRC conn_state evt: state 1, [{source_dut_mac}]', timeout=30)
+    sink_dut.expect_exact('start volume change simulation', timeout=30)
