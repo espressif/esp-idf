@@ -481,6 +481,10 @@ static void hci_hal_h4_hdl_rx_packet(BT_HDR *packet)
     packet->len--;
     if (type == HCI_BLE_EVENT) {
 #if (!CONFIG_BT_STACK_NO_LOG)
+        if (packet->len < 1) {
+            osi_free(packet);
+            return;
+        }
         uint8_t len = 0;
         STREAM_TO_UINT8(len, stream);
 #endif
