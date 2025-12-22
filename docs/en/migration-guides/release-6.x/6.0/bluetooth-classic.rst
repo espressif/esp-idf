@@ -31,6 +31,12 @@ Bluedroid
 
             - Sending indicator reports to the HFP client API has been replaced by ``esp_hf_ag_ciev_report(...)``.
 
+     - :component_file:`/bt/host/bluedroid/api/include/api/esp_gap_bt_api.h`
+
+        - Remove ``ESP_BT_GAP_RSSI_HIGH_THRLD`` and ``ESP_BT_GAP_RSSI_LOW_THRLD``
+
+            - Macros of low and high RSSI threshold have been removed.
+
     The following Bluedroid API have been changed:
 
     - :component_file:`/bt/host/bluedroid/api/include/api/esp_sdp_api.h`

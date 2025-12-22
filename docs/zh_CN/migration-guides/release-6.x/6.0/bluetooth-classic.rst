@@ -31,6 +31,12 @@ Bluedroid
 
             - 向 HFP 客户端发送指标报告 API 已被替换为 ``esp_hf_ag_ciev_report(...)``。
 
+    - :component_file:`/bt/host/bluedroid/api/include/api/esp_gap_bt_api.h`
+
+        - 移除 ``ESP_BT_GAP_RSSI_HIGH_THRLD`` 和 ``ESP_BT_GAP_RSSI_LOW_THRLD``
+
+            - 表示接受信号强度阈值的宏 ``ESP_BT_GAP_RSSI_HIGH_THRLD`` 和 ``ESP_BT_GAP_RSSI_LOW_THRLD`` 已经被移除。
+
     以下 Bluedroid API 发生变更
 
     - :component_file:`/bt/host/bluedroid/api/include/api/esp_sdp_api.h`
