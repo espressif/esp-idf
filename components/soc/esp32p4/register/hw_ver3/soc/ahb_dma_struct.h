@@ -604,6 +604,7 @@ typedef union {
          *  task.
          */
         uint32_t out_etm_en_chn: 1;
+        uint32_t reserved_7: 1;
         /** out_data_burst_mode_sel_chn : R/W; bitpos: [9:8]; default: 1;
          *  Configures max burst size for TX channeln.
          *  2'b00: single
