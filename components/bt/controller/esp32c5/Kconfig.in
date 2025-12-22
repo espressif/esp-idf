@@ -196,6 +196,26 @@ config BT_LE_POWER_CONTROL_ENABLED
     help
         Set this option to enable the Power Control feature on controller
 
+config BT_LE_SUBRATE_ENABLED
+    bool "Enable BLE connection subrating"
+    depends on BT_LE_50_FEATURE_SUPPORT && !BT_NIMBLE_ENABLED && !BT_BLUEDROID_ENABLED && SOC_BLE_SUBRATE_SUPPORTED
+    default n
+    help
+        Set this option to enable the Connection Subrating feature on controller
+
+config BT_LE_CTE_FEATURE_ENABLED
+    bool "Enable Bluetooth LE Direction Finding (AoA/AoD)"
+    depends on BT_LE_50_FEATURE_SUPPORT && SOC_BLE_CTE_SUPPORTED && !(BT_LE_SECURITY_ENABLE)
+    default n
+    help
+        Enable this option to activate Bluetooth LE Direction Finding (AoA/AoD) feature.
+        Note:
+        This feature allows devices to determine the direction of a Bluetooth CTE signal,
+        enabling Angle of Arrival (AoA) and Angle of Departure (AoD) functionality.
+        In chip esp32h2, Direction Finding is not supported in encrypted
+        communication scenarios. If you are using chip esp32h2, ensure that encryption is
+        disabled when using this feature.
+
 config BT_LE_PERIODIC_ADV_WITH_RESPONSE_ENABLED
     bool "Enable BLE periodic advertising with response"
     depends on BT_LE_50_FEATURE_SUPPORT && SOC_BLE_PERIODIC_ADV_WITH_RESPONSE

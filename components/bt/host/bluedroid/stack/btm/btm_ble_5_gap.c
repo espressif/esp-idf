@@ -1838,7 +1838,7 @@ void BTM_BleSetPaSubeventData(UINT8 adv_handle, UINT8 num_subevents_with_data, u
     tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
 
     if ((err = btsnd_hcic_ble_set_periodic_adv_subevt_data(adv_handle, num_subevents_with_data, (ble_subevent_params *)subevent_params)) != HCI_SUCCESS) {
-        BTM_TRACE_ERROR("%s cmd err = 0x%x", __func__, err);
+        BTM_TRACE_WARNING("%s cmd err = 0x%x", __func__, err);
         status = BTM_HCI_ERROR | err;
     }
 

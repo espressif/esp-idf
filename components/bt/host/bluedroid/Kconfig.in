@@ -1542,7 +1542,7 @@ config BT_BLE_FEAT_CONN_SUBRATING
 
 config BT_BLE_FEAT_PAWR_EN
     bool "Enable Periodic Advertisement with Response(PAwR)"
-    depends on (BT_BLE_50_FEATURES_SUPPORTED && ((BT_CONTROLLER_ENABLED && SOC_BLE_PAWR_SUPPORTED) || BT_CONTROLLER_DISABLED)) # NOERROR
+    depends on (BT_BLE_50_FEATURES_SUPPORTED && ((BT_CONTROLLER_ENABLED && SOC_BLE_PERIODIC_ADV_WITH_RESPONSE) || BT_CONTROLLER_DISABLED)) # NOERROR
     default n
     help
         Enable BLE Periodic Advertisement with Response(PAwR) feature
