@@ -89,6 +89,12 @@ esp_err_t sdmmc_card_init(const sdmmc_host_t* config, sdmmc_card_t* card)
 #if CONFIG_SD_ENABLE_SDIO_SUPPORT
     /* IO_SEND_OP_COND(CMD5), Determine if the card is an IO card. */
     SDMMC_INIT_STEP(io_supported, sdmmc_init_io);
+    /* Some cards (especially after CMD5) delay R1 response by up to 8 bytes.
+     * If the next command starts too soon, the old 0x05 (illegal cmd) byte
+     * corrupts the new CMD frame (seen as CRC_ON_OFF fail). */
+    if (card->is_mem) {
+        SDMMC_INIT_STEP(always, sdmmc_send_cmd_go_idle_state);
+    }
 #endif
 
     const bool is_mem = card->is_mem;
