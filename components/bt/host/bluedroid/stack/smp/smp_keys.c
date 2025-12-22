@@ -2231,7 +2231,7 @@ void smp_process_new_nonce(tSMP_CB *p_cb)
 static void smp_rand_back(tBTM_RAND_ENC *p)
 {
     tSMP_CB *p_cb = &smp_cb;
-    UINT8   *pp = p->param_buf;
+    UINT8   *pp = NULL;
     UINT8   failure = SMP_PAIR_FAIL_UNKNOWN;
     UINT8   state = p_cb->rand_enc_proc_state & ~0x80;
 
@@ -2249,11 +2249,13 @@ static void smp_rand_back(tBTM_RAND_ENC *p)
             break;
 
         case SMP_GEN_DIV_LTK:
+            pp = p->param_buf;
             STREAM_TO_UINT16(p_cb->div, pp);
             smp_generate_ltk_cont(p_cb, NULL);
             break;
 
         case SMP_GEN_DIV_CSRK:
+            pp = p->param_buf;
             STREAM_TO_UINT16(p_cb->div, pp);
             smp_compute_csrk(p_cb, NULL);
             break;

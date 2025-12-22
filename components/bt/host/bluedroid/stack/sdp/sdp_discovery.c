@@ -45,9 +45,9 @@
 /*              L O C A L    F U N C T I O N     P R O T O T Y P E S            */
 /********************************************************************************/
 #if SDP_CLIENT_ENABLED == TRUE
-static void          process_service_search_rsp (tCONN_CB *p_ccb, UINT8 *p_reply);
-static void          process_service_attr_rsp (tCONN_CB *p_ccb, UINT8 *p_reply);
-static void          process_service_search_attr_rsp (tCONN_CB *p_ccb, UINT8 *p_reply);
+static void          process_service_search_rsp (tCONN_CB *p_ccb, UINT8 *p_reply, UINT8 *p_reply_end);
+static void          process_service_attr_rsp (tCONN_CB *p_ccb, UINT8 *p_reply, UINT8 *p_reply_end);
+static void          process_service_search_attr_rsp (tCONN_CB *p_ccb, UINT8 *p_reply, UINT8 *p_reply_end);
 static UINT8         *save_attr_seq (tCONN_CB *p_ccb, UINT8 *p, UINT8 *p_msg_end);
 static tSDP_DISC_REC *add_record (tSDP_DISCOVERY_DB *p_db, BD_ADDR p_bda);
 static UINT8         *add_attr (UINT8 *p, UINT8 *p_end, tSDP_DISCOVERY_DB *p_db, tSDP_DISC_REC *p_rec,
@@ -189,7 +189,7 @@ void sdp_disc_connected (tCONN_CB *p_ccb)
     if (p_ccb->is_attr_search) {
         p_ccb->disc_state = SDP_DISC_WAIT_SEARCH_ATTR;
 
-        process_service_search_attr_rsp (p_ccb, NULL);
+        process_service_search_attr_rsp (p_ccb, NULL, NULL);
     } else {
         /* First step is to get a list of the handles from the server. */
         /* We are not searching for a specific attribute, so we will   */
@@ -213,7 +213,7 @@ void sdp_disc_connected (tCONN_CB *p_ccb)
 *******************************************************************************/
 void sdp_disc_server_rsp (tCONN_CB *p_ccb, BT_HDR *p_msg)
 {
-    UINT8           *p, rsp_pdu;
+    UINT8           *p, *p_end, rsp_pdu;
     BOOLEAN         invalid_pdu = TRUE;
 
 #if (SDP_DEBUG_RAW == TRUE)
@@ -225,7 +225,12 @@ void sdp_disc_server_rsp (tCONN_CB *p_ccb, BT_HDR *p_msg)
 
     /* Got a reply!! Check what we got back */
     p = (UINT8 *)(p_msg + 1) + p_msg->offset;
+    p_end = p + p_msg->len;
 
+    if (p_msg->len < 1) {
+        sdp_disconnect(p_ccb, SDP_GENERIC_ERROR);
+        return;
+    }
     BE_STREAM_TO_UINT8 (rsp_pdu, p);
 
     p_msg->len--;
@@ -233,21 +238,21 @@ void sdp_disc_server_rsp (tCONN_CB *p_ccb, BT_HDR *p_msg)
     switch (rsp_pdu) {
     case SDP_PDU_SERVICE_SEARCH_RSP:
         if (p_ccb->disc_state == SDP_DISC_WAIT_HANDLES) {
-            process_service_search_rsp (p_ccb, p);
+            process_service_search_rsp (p_ccb, p, p_end);
             invalid_pdu = FALSE;
         }
         break;
 
     case SDP_PDU_SERVICE_ATTR_RSP:
         if (p_ccb->disc_state == SDP_DISC_WAIT_ATTR) {
-            process_service_attr_rsp (p_ccb, p);
+            process_service_attr_rsp (p_ccb, p, p_end);
             invalid_pdu = FALSE;
         }
         break;
 
     case SDP_PDU_SERVICE_SEARCH_ATTR_RSP:
         if (p_ccb->disc_state == SDP_DISC_WAIT_SEARCH_ATTR) {
-            process_service_search_attr_rsp (p_ccb, p);
+            process_service_search_attr_rsp (p_ccb, p, p_end);
             invalid_pdu = FALSE;
         }
         break;
@@ -269,11 +274,16 @@ void sdp_disc_server_rsp (tCONN_CB *p_ccb, BT_HDR *p_msg)
 ** Returns          void
 **
 *******************************************************************************/
-static void process_service_search_rsp (tCONN_CB *p_ccb, UINT8 *p_reply)
+static void process_service_search_rsp (tCONN_CB *p_ccb, UINT8 *p_reply, UINT8 *p_reply_end)
 {
     UINT16      xx;
     UINT16      total, cur_handles, orig;
     UINT8       cont_len;
+
+    if (p_reply + 8 > p_reply_end) {
+        sdp_disconnect (p_ccb, SDP_GENERIC_ERROR);
+        return;
+    }
 
     /* Skip transaction, and param len */
     p_reply += 4;
@@ -282,7 +292,7 @@ static void process_service_search_rsp (tCONN_CB *p_ccb, UINT8 *p_reply)
 
     orig = p_ccb->num_handles;
     p_ccb->num_handles += cur_handles;
-    if (p_ccb->num_handles == 0) {
+    if ((p_ccb->num_handles == 0) || (p_ccb->num_handles < orig)) {
         SDP_TRACE_WARNING ("SDP - Rcvd ServiceSearchRsp, no matches\n");
         sdp_disconnect (p_ccb, SDP_NO_RECS_MATCH);
         return;
@@ -296,6 +306,11 @@ static void process_service_search_rsp (tCONN_CB *p_ccb, UINT8 *p_reply)
         p_ccb->num_handles = sdp_cb.max_recs_per_search;
     }
 
+    if (p_reply + ((p_ccb->num_handles - orig) * 4) + 1 > p_reply_end) {
+        sdp_disconnect(p_ccb, SDP_GENERIC_ERROR);
+        return;
+    }
+
     for (xx = orig; xx < p_ccb->num_handles; xx++) {
         BE_STREAM_TO_UINT32 (p_ccb->handles[xx], p_reply);
     }
@@ -306,6 +321,10 @@ static void process_service_search_rsp (tCONN_CB *p_ccb, UINT8 *p_reply)
             sdp_disconnect (p_ccb, SDP_INVALID_CONT_STATE);
             return;
         }
+        if (p_reply + cont_len > p_reply_end) {
+            sdp_disconnect(p_ccb, SDP_INVALID_CONT_STATE);
+            return;
+        }
         /* stay in the same state */
         sdp_snd_service_search_req(p_ccb, cont_len, p_reply);
     } else {
@@ -313,7 +332,7 @@ static void process_service_search_rsp (tCONN_CB *p_ccb, UINT8 *p_reply)
         p_ccb->disc_state = SDP_DISC_WAIT_ATTR;
 
         /* Kick off the first attribute request */
-        process_service_attr_rsp (p_ccb, NULL);
+        process_service_attr_rsp (p_ccb, NULL, NULL);
     }
 }
 
@@ -392,7 +411,7 @@ static void sdp_copy_raw_data (tCONN_CB *p_ccb, BOOLEAN offset)
 ** Returns          void
 **
 *******************************************************************************/
-static void process_service_attr_rsp (tCONN_CB *p_ccb, UINT8 *p_reply)
+static void process_service_attr_rsp (tCONN_CB *p_ccb, UINT8 *p_reply, UINT8 *p_reply_end)
 {
     UINT8           *p_start, *p_param_len;
     UINT16          param_len, list_byte_count;
@@ -411,6 +430,11 @@ static void process_service_attr_rsp (tCONN_CB *p_ccb, UINT8 *p_reply)
         /* Skip transaction ID and length */
         p_reply += 4;
 
+        if (p_reply + 2 > p_reply_end) {
+            sdp_disconnect (p_ccb, SDP_INVALID_PDU_SIZE);
+            return;
+        }
+
         BE_STREAM_TO_UINT16 (list_byte_count, p_reply);
 #if (SDP_DEBUG_RAW == TRUE)
         SDP_TRACE_WARNING("list_byte_count:%d\n", list_byte_count);
@@ -426,6 +450,12 @@ static void process_service_attr_rsp (tCONN_CB *p_ccb, UINT8 *p_reply)
         SDP_TRACE_WARNING("list_len: %d, list_byte_count: %d\n",
                           p_ccb->list_len, list_byte_count);
 #endif
+
+        if (p_reply + list_byte_count + 1 /* continuation */ > p_reply_end) {
+            sdp_disconnect(p_ccb, SDP_INVALID_PDU_SIZE);
+            return;
+        }
+
         if (p_ccb->rsp_list == NULL) {
             p_ccb->rsp_list = (UINT8 *)osi_malloc (SDP_MAX_LIST_BYTE_COUNT);
             if (p_ccb->rsp_list == NULL) {
@@ -502,8 +532,10 @@ static void process_service_attr_rsp (tCONN_CB *p_ccb, UINT8 *p_reply)
 
         /* Was this a continuation request ? */
         if (cont_request_needed) {
-            memcpy (p, p_reply, *p_reply + 1);
-            p += *p_reply + 1;
+            if (p_reply + *p_reply + 1 <= p_reply_end) {
+                memcpy (p, p_reply, *p_reply + 1);
+                p += *p_reply + 1;
+            }
         } else {
             UINT8_TO_BE_STREAM (p, 0);
         }
@@ -537,7 +569,7 @@ static void process_service_attr_rsp (tCONN_CB *p_ccb, UINT8 *p_reply)
 ** Returns          void
 **
 *******************************************************************************/
-static void process_service_search_attr_rsp (tCONN_CB *p_ccb, UINT8 *p_reply)
+static void process_service_search_attr_rsp (tCONN_CB *p_ccb, UINT8 *p_reply, UINT8 *p_reply_end)
 {
     UINT8           *p, *p_start, *p_end, *p_param_len;
     UINT8           type;
@@ -557,6 +589,11 @@ static void process_service_search_attr_rsp (tCONN_CB *p_ccb, UINT8 *p_reply)
         /* Skip transaction ID and length */
         p_reply += 4;
 
+        if (p_reply + 2 > p_reply_end) {
+            sdp_disconnect (p_ccb, SDP_INVALID_PDU_SIZE);
+            return;
+        }
+
         BE_STREAM_TO_UINT16 (lists_byte_count, p_reply);
 #if (SDP_DEBUG_RAW == TRUE)
         SDP_TRACE_WARNING("lists_byte_count:%d\n", lists_byte_count);
@@ -572,6 +609,12 @@ static void process_service_search_attr_rsp (tCONN_CB *p_ccb, UINT8 *p_reply)
         SDP_TRACE_WARNING("list_len: %d, list_byte_count: %d\n",
                           p_ccb->list_len, lists_byte_count);
 #endif
+
+        if (p_reply + lists_byte_count + 1 /* continuation */ > p_reply_end) {
+            sdp_disconnect(p_ccb, SDP_INVALID_PDU_SIZE);
+            return;
+        }
+
         if (p_ccb->rsp_list == NULL) {
             p_ccb->rsp_list = (UINT8 *)osi_malloc (SDP_MAX_LIST_BYTE_COUNT);
             if (p_ccb->rsp_list == NULL) {
@@ -643,8 +686,10 @@ static void process_service_search_attr_rsp (tCONN_CB *p_ccb, UINT8 *p_reply)
 
         /* No continuation for first request */
         if (p_reply) {
-            memcpy (p, p_reply, *p_reply + 1);
-            p += *p_reply + 1;
+            if (p_reply + *p_reply + 1 <= p_reply_end) {
+                memcpy (p, p_reply, *p_reply + 1);
+                p += *p_reply + 1;
+            }
         } else {
             UINT8_TO_BE_STREAM (p, 0);
         }
