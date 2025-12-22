@@ -2,3 +2,5 @@
 dependencies:
   ot_examples_common:
     path: ${IDF_PATH}/examples/openthread/ot_common_components/ot_examples_common
+  cmd_ieee802154_debug:
+    path: ${IDF_PATH}/examples/ieee802154/components/cmd_ieee802154_debug
