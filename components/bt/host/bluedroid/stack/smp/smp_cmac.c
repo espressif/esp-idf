@@ -34,9 +34,13 @@
 #include "stack/hcimsgs.h"
 #if (SMP_CRYPTO_MBEDTLS == TRUE)
 #include "psa/crypto.h"
+#elif (SMP_CRYPTO_TINYCRYPT == TRUE)
+#include "tinycrypt/aes.h"
+#include "tinycrypt/cmac_mode.h"
+#include "tinycrypt/constants.h"
 #endif
 
-#if (SMP_CRYPTO_MBEDTLS == FALSE)
+#if (SMP_CRYPTO_STACK_NATIVE == TRUE)
 typedef struct {
     UINT8               *text;
     UINT16              len;
@@ -50,7 +54,7 @@ const BT_OCTET16 const_Rb = {
     0x87, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 };
-#endif /* SMP_CRYPTO_MBEDTLS == FALSE */
+#endif /* SMP_CRYPTO_STACK_NATIVE == TRUE */
 
 void print128(BT_OCTET16 x, const UINT8 *key_name)
 {
@@ -80,7 +84,7 @@ void print128(BT_OCTET16 x, const UINT8 *key_name)
 ** Returns          void
 **
 *******************************************************************************/
-#if (SMP_CRYPTO_MBEDTLS == FALSE)
+#if (SMP_CRYPTO_STACK_NATIVE == TRUE)
 static void padding ( BT_OCTET16 dest, UINT8 length )
 {
     UINT8   i, *p = dest;
@@ -89,6 +93,7 @@ static void padding ( BT_OCTET16 dest, UINT8 length )
         p[BT_OCTET16_LEN - i - 1] = ( i == length ) ? 0x80 : 0;
     }
 }
+
 /*******************************************************************************
 **
 ** Function         leftshift_onebit
@@ -110,6 +115,8 @@ static void leftshift_onebit(UINT8 *input, UINT8 *output)
     }
     return;
 }
+#endif /* SMP_CRYPTO_STACK_NATIVE == TRUE */
+
 /*******************************************************************************
 **
 ** Function         cmac_aes_cleanup
@@ -119,6 +126,7 @@ static void leftshift_onebit(UINT8 *input, UINT8 *output)
 ** Returns          void
 **
 *******************************************************************************/
+#if (SMP_CRYPTO_STACK_NATIVE == TRUE)
 static void cmac_aes_cleanup(void)
 {
     if (cmac_cb.text != NULL) {
@@ -173,6 +181,7 @@ static BOOLEAN cmac_aes_k_calculate(BT_OCTET16 key, UINT8 *p_signature, UINT16 t
         return FALSE;
     }
 }
+
 /*******************************************************************************
 **
 ** Function         cmac_prepare_last_block
@@ -203,6 +212,8 @@ static void cmac_prepare_last_block (BT_OCTET16 k1, BT_OCTET16 k2)
         smp_xor_128(&cmac_cb.text[0], k2);
     }
 }
+#endif /* SMP_CRYPTO_STACK_NATIVE == TRUE */
+
 /*******************************************************************************
 **
 ** Function         cmac_subkey_cont
@@ -212,6 +223,7 @@ static void cmac_prepare_last_block (BT_OCTET16 k1, BT_OCTET16 k2)
 ** Returns          void
 **
 *******************************************************************************/
+#if (SMP_CRYPTO_STACK_NATIVE == TRUE)
 static void cmac_subkey_cont(tSMP_ENC *p)
 {
     UINT8 k1[BT_OCTET16_LEN], k2[BT_OCTET16_LEN];
@@ -268,7 +280,7 @@ static BOOLEAN cmac_generate_subkey(BT_OCTET16 key)
 
     return ret;
 }
-#endif /* SMP_CRYPTO_MBEDTLS == FALSE */
+#endif /* SMP_CRYPTO_STACK_NATIVE == TRUE */
 
 /*******************************************************************************
 **
@@ -380,6 +392,82 @@ BOOLEAN aes_cipher_msg_auth_code(BT_OCTET16 key, UINT8 *input, UINT16 length,
 
         /* Clear sensitive data from stack */
         memset(key_be, 0, sizeof(key_be));
+
+        ret = TRUE;
+    }
+#elif (SMP_CRYPTO_TINYCRYPT == TRUE)
+    {
+        /*
+         * TinyCrypt CMAC implementation.
+         * Bluedroid uses little-endian, TinyCrypt uses big-endian.
+         * We reverse the key and input, then reverse the output.
+         */
+        struct tc_aes_key_sched_struct sched;
+        struct tc_cmac_struct state;
+        UINT8 key_be[BT_OCTET16_LEN];
+        UINT8 *input_be = NULL;
+        UINT8 mac_be[BT_OCTET16_LEN];
+
+        SMP_TRACE_DEBUG("AES128_CMAC (TinyCrypt) started, length = %d", length);
+
+        /* Convert key from little-endian to big-endian */
+        for (int i = 0; i < BT_OCTET16_LEN; i++) {
+            key_be[i] = key[BT_OCTET16_LEN - 1 - i];
+        }
+
+        /* Setup CMAC */
+        if (tc_cmac_setup(&state, key_be, &sched) == TC_CRYPTO_FAIL) {
+            SMP_TRACE_ERROR("tc_cmac_setup failed");
+            memset(key_be, 0, sizeof(key_be));
+            memset(&sched, 0, sizeof(sched));
+            return FALSE;
+        }
+
+        /* Allocate and convert input from little-endian to big-endian */
+        if (length > 0) {
+            input_be = (UINT8 *)osi_malloc(length);
+            if (input_be == NULL) {
+                SMP_TRACE_ERROR("No resources for input_be");
+                tc_cmac_erase(&state);
+                memset(key_be, 0, sizeof(key_be));
+                memset(&sched, 0, sizeof(sched));
+                return FALSE;
+            }
+            for (UINT16 i = 0; i < length; i++) {
+                input_be[i] = input[length - 1 - i];
+            }
+
+            /* Update CMAC with input data */
+            if (tc_cmac_update(&state, input_be, length) == TC_CRYPTO_FAIL) {
+                SMP_TRACE_ERROR("tc_cmac_update failed");
+                osi_free(input_be);
+                tc_cmac_erase(&state);
+                memset(key_be, 0, sizeof(key_be));
+                memset(&sched, 0, sizeof(sched));
+                return FALSE;
+            }
+            osi_free(input_be);
+        }
+
+        /* Finalize CMAC */
+        if (tc_cmac_final(mac_be, &state) == TC_CRYPTO_FAIL) {
+            SMP_TRACE_ERROR("tc_cmac_final failed");
+            tc_cmac_erase(&state);
+            memset(key_be, 0, sizeof(key_be));
+            memset(&sched, 0, sizeof(sched));
+            return FALSE;
+        }
+
+        /* Convert MAC from big-endian to little-endian and truncate to tlen bytes */
+        for (UINT16 i = 0; i < tlen && i < BT_OCTET16_LEN; i++) {
+            p_signature[i] = mac_be[BT_OCTET16_LEN - 1 - i];
+        }
+
+        /* Clear sensitive data from stack */
+        tc_cmac_erase(&state);
+        memset(key_be, 0, sizeof(key_be));
+        memset(mac_be, 0, sizeof(mac_be));
+        memset(&sched, 0, sizeof(sched));
 
         ret = TRUE;
     }

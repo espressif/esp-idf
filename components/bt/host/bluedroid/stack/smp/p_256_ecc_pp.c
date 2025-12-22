@@ -26,7 +26,7 @@
 #include <string.h>
 #include "common/bt_target.h"
 
-#if (SMP_CRYPTO_MBEDTLS == FALSE)
+#if (SMP_CRYPTO_STACK_NATIVE == TRUE)
 
 #include "p_256_ecc_pp.h"
 #include "p_256_multprecision.h"
@@ -285,4 +285,4 @@ bool ECC_CheckPointIsInElliCur_P256(Point *p)
     }
 }
 
-#endif /* SMP_CRYPTO_MBEDTLS == FALSE */
+#endif /* SMP_CRYPTO_STACK_NATIVE == TRUE */

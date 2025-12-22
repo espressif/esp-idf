@@ -24,6 +24,10 @@
 #include "smp_int.h"
 #if (SMP_CRYPTO_MBEDTLS == TRUE)
 #include "psa/crypto.h"
+#elif (SMP_CRYPTO_TINYCRYPT == TRUE)
+#include "tinycrypt/ecc_dh.h"
+#include "tinycrypt/ecc.h"
+#include "tinycrypt/constants.h"
 #else
 #include "p_256_ecc_pp.h"
 #endif
@@ -815,6 +819,34 @@ void smp_process_pairing_public_key(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 
         /* Key is valid, clean up */
         psa_destroy_key(key_id);
+    }
+#elif (SMP_CRYPTO_TINYCRYPT == TRUE)
+    {
+        /*
+         * TinyCrypt validates the public key using uECC_valid_public_key.
+         * TinyCrypt expects public key in format: X (32 bytes) || Y (32 bytes), no prefix.
+         */
+        UINT8 pub_be[64];  /* TinyCrypt format: X (32 bytes) || Y (32 bytes), no prefix */
+
+        /* Convert peer public key from little-endian to big-endian */
+        /* TinyCrypt format: X (32 bytes) || Y (32 bytes), no prefix */
+        for (int i = 0; i < BT_OCTET32_LEN; i++) {
+            pub_be[i] = p_cb->peer_publ_key.x[BT_OCTET32_LEN - 1 - i];
+            pub_be[BT_OCTET32_LEN + i] = p_cb->peer_publ_key.y[BT_OCTET32_LEN - 1 - i];
+        }
+
+        /* Validate public key - TinyCrypt will check if it's on the curve */
+        /* uECC_valid_public_key returns 0 if valid, negative value if invalid */
+        if (uECC_valid_public_key(pub_be, uECC_secp256r1()) < 0) {
+            SMP_TRACE_ERROR("%s, Invalid Public key. uECC_valid_public_key failed\n", __func__);
+            reason = SMP_INVALID_PARAMETERS;
+            smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &reason);
+            memset(pub_be, 0, sizeof(pub_be));
+            return;
+        }
+
+        /* Clear sensitive data from stack */
+        memset(pub_be, 0, sizeof(pub_be));
     }
 #else
     if (!ECC_CheckPointIsInElliCur_P256((Point *)&p_cb->peer_publ_key)) {

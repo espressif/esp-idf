@@ -33,7 +33,7 @@
 
 #include "common/bt_target.h"
 
-#if (SMP_CRYPTO_MBEDTLS == FALSE)
+#if (SMP_CRYPTO_STACK_NATIVE == TRUE)
 
 #if 1
 #  define AES_ENC_PREKEYED  /* AES encryption with a precomputed key schedule  */
@@ -163,6 +163,6 @@ void bluedroid_aes_decrypt_256( const unsigned char in[N_BLOCK],
                                 unsigned char o_key[2 * N_BLOCK] );
 #endif
 
-#endif /* SMP_CRYPTO_MBEDTLS == FALSE */
+#endif /* SMP_CRYPTO_STACK_NATIVE == TRUE */
 
 #endif /* AES_H */
