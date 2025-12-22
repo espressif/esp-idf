@@ -256,6 +256,14 @@ menu "IEEE 802.15.4"
                 counts, errors, and other metrics for transmitted and received frames.
                 Statistics can be accessed via debug APIs for performance analysis.
 
+        config IEEE802154_PRINT_PHY_REG
+            bool "Enable print IEEE802154 PHY register command"
+            default n
+            help
+                Enable the 'phyreg' console command to print IEEE 802.15.4 PHY register
+                information for debugging purposes. This command displays register values
+                and configuration settings of the IEEE 802.15.4 hardware.
+
     endmenu  # IEEE 802.15.4 Debug Parameters
 
 endmenu  # IEEE 802.15.4
