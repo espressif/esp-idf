@@ -16,7 +16,7 @@ if not test -f "$idf_path/tools/idf.py"
     exit 1
 end
 
-source "$idf_path"/tools/detect_python.fish
+source "$idf_path"/tools/detect_python.fish || return 1
 
 eval ("$ESP_PYTHON" "$idf_path"/tools/activate.py --export)
 set -e idf_path

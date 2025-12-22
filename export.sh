@@ -53,7 +53,7 @@ then
     return 1
 fi
 
-. "${idf_path}/tools/detect_python.sh"
+. "${idf_path}/tools/detect_python.sh" || return 1
 
 # Evaluate the ESP-IDF environment set up by the activate.py script.
 idf_exports=$("$ESP_PYTHON" "${idf_path}/tools/activate.py" --export --shell $shell_type)

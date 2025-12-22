@@ -161,7 +161,7 @@ Shell-specific user-facing installation scripts are provided in the root directo
 * ``install.sh`` for Bash
 * ``install.fish`` for Fish
 
-Apart from downloading and installing the tools in ``IDF_TOOLS_PATH``, these scripts prepare a Python virtual environment, and install the required packages into that environment.
+Apart from downloading and installing the tools in ``IDF_TOOLS_PATH``, these scripts prepare a Python virtual environment, and install the required packages into that environment. If you want to specify a particular Python for ESP-IDF, you need to set environment variable ``ESP_PYTHON_CUSTOM`` before installation and each time before use. For example ``export ESP_PYTHON_CUSTOM=/opt/bin/python3.13``.
 
 These scripts accept optionally a comma-separated list of chip targets and ``--enable-*`` arguments for enabling features. These arguments are passed to the ``idf_tools.py`` script which stores them in ``idf-env.json``. Therefore, chip targets and features can be enabled incrementally.
 
