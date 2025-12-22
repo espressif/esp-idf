@@ -135,16 +135,14 @@ def test_esp_eth_iperf_ip101(
     test_esp_eth_iperf(dut, log_performance, check_performance, udp_tx_bw_lim=90)
 
 
-@pytest.mark.eth_ip101
 @pytest.mark.parametrize(
-    'config',
+    'config, target',
     [
-        'default_ip101_esp32p4',
+        pytest.param('default_ip101_esp32p4', 'esp32p4', marks=[pytest.mark.eth_ip101]),
+        pytest.param('default_ip101_esp32p4v1', 'esp32p4', marks=[pytest.mark.eth_ip101, pytest.mark.esp32p4_eco4]),
     ],
-    indirect=True,
+    indirect=['target'],
 )
-@idf_parametrize('target', ['esp32p4'], indirect=['target'])
-@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration')
 def test_esp_eth_iperf_ip101_esp32p4(
     dut: Dut,
     log_performance: Callable[[str, object], None],
