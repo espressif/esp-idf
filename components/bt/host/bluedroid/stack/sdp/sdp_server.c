@@ -118,6 +118,10 @@ void sdp_server_handle_client_req (tCONN_CB *p_ccb, BT_HDR *p_msg)
     UINT8   pdu_id;
     UINT16  trans_num, param_len;
 
+    if (p_msg->len < 5) {
+        SDP_TRACE_WARNING("SDP - short request received: len=%u\n", p_msg->len);
+        return;
+    }
 
     /* Start inactivity timer */
     btu_start_timer (&p_ccb->timer_entry, BTU_TTYPE_SDP, SDP_INACT_TIMEOUT);
@@ -187,13 +191,17 @@ static void process_service_search (tCONN_CB *p_ccb, UINT16 trans_num,
         return;
     }
 
+    if (p_req + 2 > p_req_end) {
+        sdpu_build_n_send_error (p_ccb, trans_num, SDP_INVALID_REQ_SYNTAX, SDP_TEXT_BAD_MAX_RECORDS_LIST);
+        return;
+    }
+
     /* Get the max replies we can send. Cap it at our max anyways. */
     BE_STREAM_TO_UINT16 (max_replies, p_req);
 
     if (max_replies > SDP_MAX_RECORDS) {
         max_replies = SDP_MAX_RECORDS;
     }
-
 
     if ((!p_req) || (p_req > p_req_end)) {
         sdpu_build_n_send_error (p_ccb, trans_num, SDP_INVALID_REQ_SYNTAX, SDP_TEXT_BAD_MAX_RECORDS_LIST);
@@ -322,14 +330,13 @@ static void process_service_attr_req (tCONN_CB *p_ccb, UINT16 trans_num,
     BOOLEAN         is_cont = FALSE;
     UINT16          attr_len;
 
-    /* Extract the record handle */
-    BE_STREAM_TO_UINT32 (rec_handle, p_req);
-
-    if (p_req > p_req_end) {
+    if (p_req + 4 + 2 > p_req_end) {
         sdpu_build_n_send_error (p_ccb, trans_num, SDP_INVALID_SERV_REC_HDL, SDP_TEXT_BAD_HANDLE);
         return;
     }
 
+    /* Extract the record handle */
+    BE_STREAM_TO_UINT32 (rec_handle, p_req);
     /* Get the max list length we can send. Cap it at MTU size minus overhead */
     BE_STREAM_TO_UINT16 (max_list_len, p_req);
 
@@ -371,7 +378,7 @@ static void process_service_attr_req (tCONN_CB *p_ccb, UINT16 trans_num,
             return;
         }
 
-        if (*p_req++ != SDP_CONTINUATION_LEN) {
+        if ((*p_req++ != SDP_CONTINUATION_LEN) || (p_req + 2 > p_req_end)) {
             sdpu_build_n_send_error (p_ccb, trans_num, SDP_INVALID_CONT_STATE, SDP_TEXT_BAD_CONT_LEN);
             return;
         }
