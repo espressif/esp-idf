@@ -2333,10 +2333,6 @@ found_rx:
         }
     }
 
-    if (rpl) {
-        bt_mesh_update_rpl(rpl, net_rx);
-    }
-
     /* Mark segment as received */
     rx->block |= BIT(seg_o);
 
@@ -2347,6 +2343,10 @@ found_rx:
     }
 
     BT_DBG("Complete SDU");
+
+    if (rpl) {
+        bt_mesh_update_rpl(rpl, net_rx);
+    }
 
     *pdu_type = BLE_MESH_FRIEND_PDU_COMPLETE;
 
