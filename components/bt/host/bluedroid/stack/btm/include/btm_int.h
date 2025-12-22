@@ -1074,9 +1074,9 @@ void         btm_cont_rswitch (tACL_CONN *p,
 
 tACL_CONN    *btm_handle_to_acl (UINT16 hci_handle);
 void         btm_read_link_policy_complete (UINT8 *p);
-void         btm_read_rssi_complete (UINT8 *p);
+void         btm_read_rssi_complete (UINT8 *p, UINT16 evt_len);
 void         btm_read_channel_map_complete (UINT8 *p);
-void         btm_read_tx_power_complete (UINT8 *p, BOOLEAN is_ble);
+void         btm_read_tx_power_complete (UINT8 *p, UINT16 evt_len, BOOLEAN is_ble);
 void         btm_acl_pkt_types_changed(UINT8 status, UINT16 handle, UINT16 pkt_types);
 void         btm_read_link_quality_complete (UINT8 *p);
 tBTM_STATUS  btm_set_packet_types (tACL_CONN *p, UINT16 pkt_types);
@@ -1189,7 +1189,7 @@ void btm_vsc_complete (UINT8 *p, UINT16 cc_opcode, UINT16 evt_len,
                        tBTM_CMPL_CB *p_vsc_cplt_cback);
 void btm_inq_db_reset (void);
 void btm_vendor_specific_evt (UINT8 *p, UINT8 evt_len);
-void btm_delete_stored_link_key_complete (UINT8 *p);
+void btm_delete_stored_link_key_complete (UINT8 *p, UINT16 evt_len);
 void btm_report_device_status (tBTM_DEV_STATUS status);
 void btm_set_afh_channels_complete (UINT8 *p);
 void btm_ble_set_channels_complete (UINT8 *p);
@@ -1226,7 +1226,7 @@ tBTM_STATUS  btm_sec_mx_access_request (BD_ADDR bd_addr, UINT16 psm, BOOLEAN is_
                                         UINT32 mx_proto_id, UINT32 mx_chan_id,
                                         tBTM_SEC_CALLBACK *p_callback, void *p_ref_data);
 void  btm_sec_conn_req (UINT8 *bda, UINT8 *dc);
-void btm_create_conn_cancel_complete (UINT8 *p);
+void btm_create_conn_cancel_complete (UINT8 *p, UINT16 evt_len);
 void btm_read_linq_tx_power_complete (UINT8 *p);
 
 void  btm_sec_init (UINT8 sec_mode);
@@ -1270,10 +1270,10 @@ tINQ_DB_ENT *btm_inq_db_new (BD_ADDR p_bda);
 
 #if BTM_OOB_INCLUDED == TRUE
 void  btm_rem_oob_req (UINT8 *p);
-void  btm_read_local_oob_complete (UINT8 *p);
+void  btm_read_local_oob_complete (UINT8 *p, UINT16 evt_len);
 #else
 #define btm_rem_oob_req(p)
-#define btm_read_local_oob_complete(p)
+#define btm_read_local_oob_complete(p, evt_len)
 #endif
 
 void  btm_acl_resubmit_page (void);

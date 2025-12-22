@@ -2037,7 +2037,7 @@ BOOLEAN bta_gattc_process_srvc_chg_ind(UINT16 conn_id,
         if ( ++ p_srcb->update_count == bta_gattc_num_reg_app()) {
             /* not an opened connection; or connection busy */
             /* search for first available clcb and start discovery */
-            if (p_clcb == NULL || (p_clcb && p_clcb->p_q_cmd != NULL)) {
+            if ((p_clcb == NULL) || (p_clcb->p_q_cmd != NULL)) {
                 for (i = 0 ; i < BTA_GATTC_CLCB_MAX; i ++) {
                     if (bta_gattc_cb.clcb[i].in_use &&
                             bta_gattc_cb.clcb[i].p_srcb == p_srcb &&
