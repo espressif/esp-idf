@@ -340,18 +340,6 @@ void ets_delay_us(uint32_t us);
 void ets_update_cpu_frequency(uint32_t ticks_per_us);
 
 /**
-  * @brief  Set the real CPU ticks per us to the ets, so that ets_delay_us will be accurate.
-  *
-  * @note This function only sets the tick rate for the current CPU. It is located in ROM,
-  *       so the deep sleep stub can use it even if IRAM is not initialized yet.
-  *
-  * @param  uint32_t ticks_per_us : CPU ticks per us.
-  *
-  * @return None
-  */
-void ets_update_cpu_frequency_rom(uint32_t ticks_per_us);
-
-/**
   * @brief  Get the real CPU ticks per us to the ets.
   *         This function do not return real CPU ticks per us, just the record in ets. It can be used to check with the real CPU frequency.
   *
@@ -360,40 +348,6 @@ void ets_update_cpu_frequency_rom(uint32_t ticks_per_us);
   * @return uint32_t : CPU ticks per us record in ets.
   */
 uint32_t ets_get_cpu_frequency(void);
-
-/**
-  * @brief  Get xtal_freq value, If value not stored in RTC_STORE5, than store.
-  *
-  * @param  None
-  *
-  * @return uint32_t : if stored in efuse(not 0)
-  *                         clock = ets_efuse_get_xtal_freq() * 1000000;
-  *                    else if analog_8M in efuse
-  *                         clock = ets_get_xtal_scale() * 625 / 16 * ets_efuse_get_8M_clock();
-  *                    else clock = 40M.
-  */
-uint32_t ets_get_xtal_freq(void);
-
-/**
-  * @brief  Get the apb divior by xtal frequency.
-  *         When any types of reset happen, the default value is 2.
-  *
-  * @param  None
-  *
-  * @return uint32_t : 1 or 2.
-  */
-uint32_t ets_get_xtal_div(void);
-
-/**
-  * @brief  Get apb_freq value, If value not stored in RTC_STORE5, than store.
-  *
-  * @param  None
-  *
-  * @return uint32_t : if rtc store the value (RTC_STORE5 high 16 bits and low 16 bits with same value), read from rtc register.
-  *                         clock = (REG_READ(RTC_STORE5) & 0xffff) << 12;
-  *                    else store ets_get_detected_xtal_freq() in.
-  */
-uint32_t ets_get_apb_freq(void);
 
 /**
   * @}
@@ -467,17 +421,6 @@ void ets_intr_lock(void);
   * @return None
   */
 void ets_intr_unlock(void);
-
-/**
-  * @brief  Unlock the interrupt to level 0, and CPU will go into power save mode(wait interrupt).
-  *         This function direct set the CPU registers.
-  *         In FreeRTOS, please call FreeRTOS apis, never call this api.
-  *
-  * @param  None
-  *
-  * @return None
-  */
-void ets_waiti0(void);
 
 /**
   * @brief  Attach an CPU interrupt to a hardware source.

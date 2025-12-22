@@ -13,7 +13,7 @@ void bootloader_ana_super_wdt_reset_config(bool enable)
     REG_CLR_BIT(LP_ANA_FIB_ENABLE_REG, LP_ANALOG_PERI_LP_ANA_FIB_SUPER_WDT_RST);
 }
 
-//TODO: [ESP32H21] IDF-11534, there is a `bootloader_ana_bod_reset_config` in verify code, please check
+//TODO: [ESP32H21] IDF-11531, there is a `bootloader_ana_bod_reset_config` in verify code, please check
 void bootloader_ana_bod_reset_config(bool enable)
 {
     REG_CLR_BIT(LP_ANA_FIB_ENABLE_REG, LP_ANALOG_PERI_LP_ANA_FIB_BOD_RST);

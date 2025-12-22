@@ -97,7 +97,7 @@ static inline void bootloader_ana_reset_config(void)
     //Enable super WDT reset.
     bootloader_ana_super_wdt_reset_config(true);
     //Enable BOD reset
-    //TODO: [ESP32H4] IDF-12300 need check
+    //TODO: [ESP32H4] IDF-12295 need check
 }
 
 static inline void bootloader_config_dcache(void)

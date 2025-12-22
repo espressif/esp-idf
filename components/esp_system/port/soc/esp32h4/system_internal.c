@@ -104,7 +104,7 @@ void esp_restart_noos(void)
     wdt_hal_write_protect_enable(&rtc_wdt_ctx);
 
     const uint32_t core_id = esp_cpu_get_core_id();
-#if !CONFIG_FREERTOS_UNICORE
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     const uint32_t other_core_id = (core_id == 0) ? 1 : 0;
     esp_cpu_reset(other_core_id);
     esp_cpu_stall(other_core_id);
@@ -131,15 +131,20 @@ void esp_restart_noos(void)
     rtc_clk_cpu_set_to_default_config();
 #endif
 
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
+    // clear entry point for APP CPU
+    ets_set_appcpu_boot_addr(0);
+#endif
+
     // Reset CPUs
     if (core_id == 0) {
         // Running on PRO CPU: APP CPU is stalled. Can reset both CPUs.
-#if !CONFIG_FREERTOS_UNICORE
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
         esp_cpu_reset(1);
 #endif
         esp_cpu_reset(0);
     }
-#if !CONFIG_FREERTOS_UNICORE
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     else {
         // Running on APP CPU: need to reset PRO CPU and unstall it,
         // then reset APP CPU
