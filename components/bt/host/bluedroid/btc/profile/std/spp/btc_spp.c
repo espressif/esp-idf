@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -652,7 +652,11 @@ static void btc_spp_start_discovery(btc_spp_args_t *arg)
             ret = ESP_SPP_NEED_INIT;
             break;
         }
-        BTA_JvStartDiscovery(arg->start_discovery.bd_addr, arg->start_discovery.num_uuid, arg->start_discovery.p_uuid_list, NULL);
+        tBTA_JV_STATUS status = BTA_JvStartDiscovery(arg->start_discovery.bd_addr, arg->start_discovery.num_uuid, arg->start_discovery.p_uuid_list, NULL);
+        if (status != BTA_JV_SUCCESS) {
+            BTC_TRACE_ERROR("%s SPP failed to start discovery\n", __func__);
+            ret = ESP_SPP_NO_RESOURCE;
+        }
     } while (0);
 
     if (ret != ESP_SPP_SUCCESS) {
