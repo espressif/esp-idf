@@ -48,7 +48,7 @@
 /* add the target configuration to allow using internal data types and compilation options */
 #include "common/bt_target.h"
 
-#if (SMP_CRYPTO_MBEDTLS == FALSE)
+#if (SMP_CRYPTO_STACK_NATIVE == TRUE)
 
 /* define if you have fast 32-bit types on your system */
 #if 1
@@ -937,6 +937,6 @@ void bluedroid_aes_decrypt_256( const unsigned char in[N_BLOCK], unsigned char o
     copy_and_key( out, s1, o_key );
 }
 
-#endif /* SMP_CRYPTO_MBEDTLS == FALSE */
+#endif /* SMP_CRYPTO_STACK_NATIVE == TRUE */
 
 #endif
