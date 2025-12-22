@@ -449,12 +449,26 @@ static bool filter_incoming_event(BT_HDR *packet)
     uint8_t event_code;
     command_opcode_t opcode;
 
+    if (packet == NULL) {
+        return true;
+    }
+
+    if (packet->len < HCI_EVENT_PREAMBLE_SIZE) {
+        HCI_TRACE_WARNING("dropping too short HCI event (len=%u)", packet->len);
+        osi_free(packet);
+        return true;
+    }
     STREAM_TO_UINT8(event_code, stream);
     STREAM_SKIP_UINT8(stream); // Skip the parameter total length field
 
     HCI_TRACE_DEBUG("Receive packet event_code=0x%x\n", event_code);
 
     if (event_code == HCI_COMMAND_COMPLETE_EVT) {
+        if (packet->len < HCI_EVENT_PREAMBLE_SIZE + HCI_CC_EVENT_MIN_PARAM_LEN) {
+            HCI_TRACE_WARNING("dropping too short Command Complete (len=%u)", packet->len);
+            osi_free(packet);
+            return true;
+        }
         STREAM_TO_UINT8(hci_host_env.command_credits, stream);
         STREAM_TO_UINT16(opcode, stream);
         wait_entry = get_waiting_command(opcode);
@@ -483,6 +497,11 @@ static bool filter_incoming_event(BT_HDR *packet)
         goto intercepted;
     } else if (event_code == HCI_COMMAND_STATUS_EVT) {
         uint8_t status;
+        if (packet->len < HCI_EVENT_PREAMBLE_SIZE + HCI_CS_EVENT_MIN_PARAM_LEN) {
+            HCI_TRACE_WARNING("dropping too short Command Status (len=%u)", packet->len);
+            osi_free(packet);
+            return true;
+        }
         STREAM_TO_UINT8(status, stream);
         STREAM_TO_UINT8(hci_host_env.command_credits, stream);
         STREAM_TO_UINT16(opcode, stream);
