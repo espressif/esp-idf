@@ -5,3 +5,4 @@ components/esp_driver_ppa/test_apps:
     - if: SOC_PPA_SUPPORTED != 1
   depends_components:
     - esp_driver_ppa
+    - esp_hal_ppa

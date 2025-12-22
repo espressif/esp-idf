@@ -6,7 +6,6 @@
 
 #include <stddef.h>
 #include "hal/ppa_hal.h"
-#include "hal/ppa_ll.h"
 
 void ppa_hal_init(ppa_hal_context_t *hal)
 {

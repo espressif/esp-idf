@@ -380,6 +380,7 @@ examples/peripherals/ppa/ppa_dsi:
     - if: SOC_PPA_SUPPORTED != 1 or SOC_MIPI_DSI_SUPPORTED != 1
   depends_components:
     - esp_driver_ppa
+    - esp_hal_ppa
     - esp_lcd
 
 examples/peripherals/rmt:
