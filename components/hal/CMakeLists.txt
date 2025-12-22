@@ -124,10 +124,6 @@ elseif(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "${target}/modem_clock_hal.c")
     endif()
 
-    if(CONFIG_SOC_PAU_SUPPORTED)
-        list(APPEND srcs "${target}/pau_hal.c")
-    endif()
-
     if(CONFIG_SOC_BOD_SUPPORTED)
         list(APPEND srcs "brownout_hal.c")
     endif()

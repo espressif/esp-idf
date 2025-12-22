@@ -17,7 +17,6 @@ extern "C" {
 #include "hal/pau_ll.h"
 #include "hal/pau_types.h"
 
-
 typedef struct {
     pau_dev_t *dev;
 } pau_hal_context_t;

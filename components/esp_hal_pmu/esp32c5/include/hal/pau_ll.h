@@ -104,7 +104,6 @@ static inline void pau_ll_clear_regdma_backup_error_intr_state(pau_dev_t *dev)
     dev->int_clr.val = 0x2;
 }
 
-
 /**
  * @brief Set the maximum number of linked lists supported by REGDMA
  * @param count: the maximum number of regdma link
