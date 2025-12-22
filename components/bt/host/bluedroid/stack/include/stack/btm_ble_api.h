@@ -1523,7 +1523,7 @@ typedef struct {
     UINT8 data_status;
     UINT8 data_len;
     UINT8 *data;
-} __attribute__((packed)) tBTM_BLE_PA_RSP_DATA_INFO;
+} tBTM_BLE_PA_RSP_DATA_INFO;
 
 typedef struct {
     UINT8 adv_handle;
