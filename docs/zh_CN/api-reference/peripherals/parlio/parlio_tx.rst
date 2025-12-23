@@ -325,7 +325,7 @@ TX 单元可以选择各种不同的时钟源，其中外部时钟源较为特�
 
         .. note::
 
-            由于硬件限制，使用比特调节器生成的比特流与原本比特流相比，长度不能发生变化，否则可能会发生传输阻塞或数据丢失。
+            由于硬件限制，在 rev3.0 之前的芯片版本上，使用比特调节器生成的比特流与原本比特流相比，长度不能发生变化，否则可能会发生传输阻塞或数据丢失。
 
     :cpp:func:`parlio_tx_unit_decorate_bitscrambler` 和 :cpp:func:`parlio_tx_unit_undecorate_bitscrambler` 需要成对使用。在删除 TX 单元时，需要先调用 :cpp:func:`parlio_tx_unit_undecorate_bitscrambler` 移除比特调节器。
 
