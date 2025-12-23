@@ -579,10 +579,8 @@ static esp_err_t lcd_i80_init_dma_link(esp_lcd_i80_bus_handle_t bus, const esp_l
 {
     esp_err_t ret = ESP_OK;
     // alloc DMA channel and connect to LCD peripheral
-    gdma_channel_alloc_config_t dma_chan_config = {
-        .direction = GDMA_CHANNEL_DIRECTION_TX,
-    };
-    ret = LCD_GDMA_NEW_CHANNEL(&dma_chan_config, &bus->dma_chan);
+    gdma_channel_alloc_config_t dma_chan_config = {0};
+    ret = LCD_GDMA_NEW_CHANNEL(&dma_chan_config, &bus->dma_chan, NULL);
     ESP_RETURN_ON_ERROR(ret, TAG, "alloc DMA channel failed");
     gdma_connect(bus->dma_chan, GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_LCD, 0));
     gdma_strategy_config_t strategy_config = {
