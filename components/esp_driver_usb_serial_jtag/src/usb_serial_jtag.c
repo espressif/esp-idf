@@ -170,7 +170,7 @@ esp_err_t usb_serial_jtag_driver_install(usb_serial_jtag_driver_config_t *usb_se
     }
 
     p_usb_serial_jtag_obj->tx_ring_buf = xRingbufferCreate(usb_serial_jtag_config->tx_buffer_size, RINGBUF_TYPE_BYTEBUF);
-    if (p_usb_serial_jtag_obj->rx_ring_buf == NULL) {
+    if (p_usb_serial_jtag_obj->tx_ring_buf == NULL) {
         ESP_LOGE(USB_SERIAL_JTAG_TAG, "ringbuffer create error");
         err = ESP_ERR_NO_MEM;
         goto _exit;
