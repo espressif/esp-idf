@@ -217,12 +217,13 @@ BOOLEAN smp_encrypt_data (UINT8 *key, UINT8 key_len,
         psa_set_key_bits(&key_attributes, 128);
 
         status = psa_import_key(&key_attributes, p_rev_key, SMP_ENCRYT_KEY_SIZE, &key_id);
+        psa_reset_key_attributes(&key_attributes);
+
         if (status != PSA_SUCCESS) {
             SMP_TRACE_ERROR("%s psa_import_key failed: %d\n", __func__, status);
             osi_free(p_start);
             return FALSE;
         }
-        psa_reset_key_attributes(&key_attributes);
 
         status = psa_cipher_encrypt(key_id, PSA_ALG_ECB_NO_PADDING, p_rev_data,
                                     SMP_ENCRYT_DATA_SIZE, p_rev_output, SMP_ENCRYT_DATA_SIZE, &output_len);
@@ -1218,11 +1219,12 @@ void smp_process_private_key(tSMP_CB *p_cb)
         psa_set_key_usage_flags(&key_attributes, PSA_KEY_USAGE_DERIVE | PSA_KEY_USAGE_EXPORT);
 
         status = psa_import_key(&key_attributes, priv_be, BT_OCTET32_LEN, &key_id);
+        psa_reset_key_attributes(&key_attributes);
+
         if (status != PSA_SUCCESS) {
             SMP_TRACE_ERROR("%s psa_import_key failed: %d\n", __FUNCTION__, status);
             goto psa_pubkey_cleanup;
         }
-        psa_reset_key_attributes(&key_attributes);
 
         /* Export public key */
         status = psa_export_public_key(key_id, pub_be, sizeof(pub_be), &pub_len);
@@ -1330,11 +1332,12 @@ void smp_compute_dhkey (tSMP_CB *p_cb)
     psa_set_key_usage_flags(&key_attributes, PSA_KEY_USAGE_DERIVE);
 
     status = psa_import_key(&key_attributes, priv_be, BT_OCTET32_LEN, &key_id);
+    psa_reset_key_attributes(&key_attributes);
+
     if (status != PSA_SUCCESS) {
         SMP_TRACE_ERROR("%s psa_import_key failed: %d\n", __FUNCTION__, status);
         goto psa_dhkey_cleanup;
     }
-    psa_reset_key_attributes(&key_attributes);
 
     /* Construct peer public key in uncompressed format: 0x04 || X || Y */
     peer_pub_be[0] = 0x04;
