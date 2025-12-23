@@ -8,7 +8,6 @@
 #include "esp_err.h"
 #include "soc/soc_caps.h"
 
-#include "mbedtls/aes.h"
 #include "esp_crypto_dma.h"
 
 #include "soc/soc_caps.h"
