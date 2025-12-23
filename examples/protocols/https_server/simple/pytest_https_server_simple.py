@@ -362,7 +362,7 @@ def test_examples_protocol_https_server_tls1_2_only(dut: Dut) -> None:
         conn.close()
 
     # Now try with the matching ciphersuite
-    ssl_context.set_ciphers('DHE-RSA-AES128-SHA256')
+    ssl_context.set_ciphers('ECDHE-RSA-AES128-SHA256')
 
     conn = http.client.HTTPSConnection(got_ip, got_port, context=ssl_context)
     logging.info('Performing SSL handshake with the server')
