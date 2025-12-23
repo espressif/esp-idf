@@ -10,9 +10,9 @@
 #include "sdkconfig.h"
 __attribute__((unused)) static const char *TAG = "esp_crypto";
 #ifdef CONFIG_ESP_TLS_USING_MBEDTLS
-#include "mbedtls/sha1.h"
 #include "mbedtls/base64.h"
 #include "mbedtls/error.h"
+#include "psa/crypto.h"
 #define _esp_crypto_sha1 esp_crypto_sha1_mbedtls
 #define _esp_crypto_base64_encode esp_crypto_bas64_encode_mbedtls
 #elif  CONFIG_ESP_TLS_USING_WOLFSSL
@@ -28,29 +28,25 @@ static int esp_crypto_sha1_mbedtls( const unsigned char *input,
                                     unsigned char output[20])
 {
 #if CONFIG_MBEDTLS_SHA1_C || CONFIG_MBEDTLS_HARDWARE_SHA
-    int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
-    mbedtls_sha1_context ctx;
+    psa_hash_operation_t ctx = PSA_HASH_OPERATION_INIT;
 
-    mbedtls_sha1_init(&ctx);
-
-    if ((ret = mbedtls_sha1_starts(&ctx)) != 0) {
+    psa_status_t status = psa_hash_setup(&ctx, PSA_ALG_SHA_1);
+    if (status != PSA_SUCCESS) {
         goto exit;
     }
 
-    if ((ret = mbedtls_sha1_update(&ctx, input, ilen)) != 0) {
+    if ((status = psa_hash_update(&ctx, input, ilen)) != PSA_SUCCESS) {
         goto exit;
     }
 
-    if ((ret = mbedtls_sha1_finish(&ctx, output)) != 0) {
+    size_t hash_len;
+    if ((status = psa_hash_finish(&ctx, output, 20, &hash_len)) != PSA_SUCCESS) {
         goto exit;
     }
 
 exit:
-    mbedtls_sha1_free(&ctx);
-    if (ret != 0) {
-        ESP_LOGE(TAG, "Error in calculating sha1 sum , Returned 0x%02X", ret);
-    }
-    return ret;
+    psa_hash_abort(&ctx);
+    return status == PSA_SUCCESS ? 0 : -1;
 #else
     ESP_LOGE(TAG, "Please enable CONFIG_MBEDTLS_SHA1_C or CONFIG_MBEDTLS_HARDWARE_SHA to support SHA1 operations");
     return MBEDTLS_ERR_PLATFORM_FEATURE_UNSUPPORTED;

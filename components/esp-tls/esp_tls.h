@@ -15,8 +15,6 @@
 #include "mbedtls/x509_crt.h"
 #ifdef CONFIG_ESP_TLS_SERVER_SESSION_TICKETS
 #include "mbedtls/ssl_ticket.h"
-#include "mbedtls/entropy.h"
-#include "mbedtls/ctr_drbg.h"
 #endif
 #elif CONFIG_ESP_TLS_USING_WOLFSSL
 #include "wolfssl/wolfcrypt/settings.h"
@@ -246,11 +244,6 @@ typedef struct esp_tls_cfg {
  * @brief Data structures necessary to support TLS session tickets according to RFC5077
  */
 typedef struct esp_tls_server_session_ticket_ctx {
-    mbedtls_entropy_context entropy;                                            /*!< mbedTLS entropy context structure */
-
-    mbedtls_ctr_drbg_context ctr_drbg;                                          /*!< mbedTLS ctr drbg context structure.
-                                                                                     CTR_DRBG is deterministic random
-                                                                                     bit generation based on AES-256 */
     mbedtls_ssl_ticket_context ticket_ctx;                                     /*!< Session ticket generation context */
 } esp_tls_server_session_ticket_ctx_t;
 #endif
