@@ -575,9 +575,6 @@ macro(idf_project_init)
         # Set PROJECT_VER build property
         __init_project_version()
 
-        # Initialize all compilation options and defines.
-        __init_project_configuration()
-
         # Create global flash targets.
         __create_project_flash_targets()
 
@@ -597,6 +594,10 @@ macro(idf_project_init)
         endif()
         include("${sdkconfig_cmake}")
         unset(sdkconfig_cmake)
+
+        # Initialize all compilation options and defines.
+        # This must be done after including sdkconfig.cmake
+        __init_project_configuration()
 
         # Initialize the target architecture based on the configuration
         # Ensure this is done after including the sdkconfig.
