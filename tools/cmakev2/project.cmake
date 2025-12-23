@@ -416,12 +416,6 @@ function(__init_project_configuration)
         list(APPEND link_options "-rtlib=${CONFIG_COMPILER_RT_LIB_NAME}")
     endif()
 
-    if(CONFIG_LIBC_PICOLIBC)
-        list(APPEND c_compile_options "-specs=picolibc.specs")
-        list(APPEND cxx_compile_options "-specs=picolibcpp.specs")
-        list(APPEND link_options "-specs=picolibc.specs")
-    endif()
-
     if("${linker_type}" STREQUAL "GNU")
         set(target_upper "${idf_target}")
         string(TOUPPER ${target_upper} target_upper)
