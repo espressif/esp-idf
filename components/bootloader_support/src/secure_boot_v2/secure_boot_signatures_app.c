@@ -11,12 +11,6 @@
 #include "bootloader_signature.h"
 #include "esp_log.h"
 #include "esp_image_format.h"
-#include "mbedtls/sha256.h"
-#include "mbedtls/x509.h"
-#include "mbedtls/md.h"
-#include "mbedtls/platform.h"
-#include "mbedtls/entropy.h"
-#include "mbedtls/ctr_drbg.h"
 #include <string.h>
 #include <sys/param.h>
 #include "esp_secure_boot.h"
