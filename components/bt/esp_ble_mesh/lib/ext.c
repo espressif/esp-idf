@@ -35,8 +35,6 @@
 #include "lpn.h"
 #include "rpl.h"
 #include "foundation.h"
-#include <tinycrypt/hmac.h>
-#include <tinycrypt/sha256.h>
 #include "mesh/buf.h"
 #include "mesh/slist.h"
 #include "mesh/config.h"
@@ -562,24 +560,9 @@ int bt_mesh_ext_net_decrypt(const uint8_t key[16], struct net_buf_simple *buf,
     return bt_mesh_net_decrypt(key, buf, iv_index, proxy, proxy_solic);
 }
 
-int bt_mesh_ext_tc_hmac_set_key(void *ctx, const uint8_t *key, unsigned int key_size)
+int bt_mesh_ext_hmac_sha_256(const uint8_t key[32], struct bt_mesh_sg *sg, size_t sg_len, uint8_t mac[32])
 {
-    return tc_hmac_set_key(ctx, key, key_size);
-}
-
-int bt_mesh_ext_tc_hmac_init(void *ctx)
-{
-    return tc_hmac_init(ctx);
-}
-
-int bt_mesh_ext_tc_hmac_update(void *ctx, const void *data, unsigned int data_length)
-{
-    return tc_hmac_update(ctx, data, data_length);
-}
-
-int bt_mesh_ext_tc_hmac_final(uint8_t *tag, unsigned int taglen, void *ctx)
-{
-    return tc_hmac_final(tag, taglen, ctx);
+    return bt_mesh_sha256_hmac_raw_key(key, sg, sg_len, mac);
 }
 
 /* Mutex */
@@ -4274,12 +4257,6 @@ static const bt_mesh_ext_config_t bt_mesh_ext_cfg = {
     .struct_addr_off_val                            = offsetof(bt_mesh_addr_t, val),
     .struct_sg_size                                 = sizeof(struct bt_mesh_sg),
     .struct_sg_off_len                              = offsetof(struct bt_mesh_sg, len),
-    .struct_tc_sha256_state                         = sizeof(struct tc_sha256_state_struct),
-    .struct_tc_sha256_off_bits_hashed               = offsetof(struct tc_sha256_state_struct, bits_hashed),
-    .struct_tc_sha256_off_leftover                  = offsetof(struct tc_sha256_state_struct, leftover),
-    .struct_tc_sha256_off_leftover_offset           = offsetof(struct tc_sha256_state_struct, leftover_offset),
-    .struct_tc_hmac_state_size                      = sizeof(struct tc_hmac_state_struct),
-    .struct_tc_hmac_state_off_key                   = offsetof(struct tc_hmac_state_struct, key),
 
     .btc_ble_mesh_evt_agg_client_send_timeout                   = BTC_BLE_MESH_EVT_AGG_CLIENT_SEND_TIMEOUT,
     .btc_ble_mesh_evt_agg_client_recv_rsp                       = BTC_BLE_MESH_EVT_AGG_CLIENT_RECV_RSP,

@@ -1764,8 +1764,8 @@ static void prov_gen_dh_key(struct bt_mesh_prov_link *link)
     /* Copy public key in little-endian for generating DHKey.
      * X and Y halves are swapped independently.
      */
-    sys_memcpy_swap(&pub_key[0], &link->conf_inputs[81], 32);
-    sys_memcpy_swap(&pub_key[32], &link->conf_inputs[113], 32);
+    memcpy(&pub_key[0], &link->conf_inputs[81], 32);
+    memcpy(&pub_key[32], &link->conf_inputs[113], 32);
 
     if (bt_mesh_dh_key_gen(pub_key, dhkey)) {
         BT_ERR("Failed to generate DHKey");
@@ -1773,7 +1773,7 @@ static void prov_gen_dh_key(struct bt_mesh_prov_link *link)
         return;
     }
 
-    sys_memcpy_swap(link->dhkey, dhkey, 32);
+    memcpy(link->dhkey, dhkey, 32);
 
     BT_DBG("DHKey: %s", bt_hex(link->dhkey, 32));
 
@@ -1861,9 +1861,8 @@ static void send_pub_key(struct bt_mesh_prov_link *link)
 
     bt_mesh_prov_buf_init(&buf, PROV_PUB_KEY);
 
-    /* Swap X and Y halves independently to big-endian */
-    sys_memcpy_swap(net_buf_simple_add(&buf, 32), key, 32);
-    sys_memcpy_swap(net_buf_simple_add(&buf, 32), &key[32], 32);
+    memcpy(net_buf_simple_add(&buf, 32), key, 32);
+    memcpy(net_buf_simple_add(&buf, 32), &key[32], 32);
 
     /* Store provisioner public key value in conf_inputs */
     memcpy(&link->conf_inputs[17], &buf.data[1], 64);
@@ -2819,7 +2818,6 @@ static void protocol_timeout(struct k_work *work)
 
 int bt_mesh_provisioner_prov_init(void)
 {
-    const uint8_t *key = NULL;
     int i;
 
     if (bt_mesh_prov_get() == NULL) {
@@ -2827,8 +2825,7 @@ int bt_mesh_provisioner_prov_init(void)
         return -EINVAL;
     }
 
-    key = bt_mesh_pub_key_get();
-    if (!key) {
+    if (bt_mesh_pub_key_gen()) {
         BT_ERR("Failed to generate Public Key");
         return -EIO;
     }
