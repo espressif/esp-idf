@@ -6,8 +6,14 @@
 #pragma once
 
 #include "sdkconfig.h"          // For CONFIG_NVS_BDL_STACK
-#include "mbedtls/aes.h"        // For mbedtls_aes_xts_context
-#include "nvs_flash.h"          // For nvs_sec_cfg_t
+
+/* NOTE: Using legacy mbedtls XTS API until PSA Crypto adds XTS support
+* With TF-PSA-Crypto 1.0, AES headers moved to mbedtls/private/.
+* Need MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS to access XTS functions.
+*/
+#define MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
+#include "mbedtls/private/aes.h"
+#include "nvs_flash.h"
 #include "nvs_partition.hpp"
 
 namespace nvs {
