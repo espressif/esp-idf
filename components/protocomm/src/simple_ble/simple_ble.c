@@ -14,6 +14,7 @@
 #include <esp_gap_ble_api.h>
 #include <esp_gatts_api.h>
 #include <esp_bt_main.h>
+#include "esp_bt_device.h"
 #include <esp_gatt_common_api.h>
 
 #include "simple_ble.h"
@@ -29,6 +30,11 @@ static uint8_t adv_config_done;
 static esp_bd_addr_t s_cached_remote_bda = {0x0,};
 #define adv_config_flag      (1 << 0)
 #define scan_rsp_config_flag (1 << 1)
+
+uint8_t get_keep_ble_on()
+{
+    return g_ble_cfg_p->keep_ble_on;
+}
 
 const uint8_t *simple_ble_get_uuid128(uint16_t handle)
 {
@@ -250,7 +256,8 @@ esp_err_t simple_ble_start(simple_ble_cfg_t *cfg)
     }
 #endif
 
-    ret = esp_bluedroid_init();
+    esp_bluedroid_config_t bluedroid_cfg = BT_BLUEDROID_INIT_CONFIG_DEFAULT();
+    ret = esp_bluedroid_init_with_cfg(&bluedroid_cfg);
     if (ret) {
         ESP_LOGE(TAG, "%s init bluetooth failed %d", __func__, ret);
         return ret;
