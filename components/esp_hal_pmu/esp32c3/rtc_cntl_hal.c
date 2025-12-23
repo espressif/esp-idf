@@ -53,7 +53,7 @@ void rtc_cntl_hal_enable_cpu_retention(void *addr)
             pbuf->cfg[0] = 0;
             pbuf->cfg[1] = 0;
             pbuf->cfg[2] = 0;
-            pbuf->cfg[3] = (uint32_t)-1;
+            pbuf->cfg[3] = (uint32_t) -1;
 
             rtc_cntl_ll_set_cpu_retention_link_addr((uint32_t)plink);
             rtc_cntl_ll_enable_cpu_retention_clock();

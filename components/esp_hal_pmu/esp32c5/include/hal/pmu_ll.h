@@ -1,10 +1,10 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// The LL layer for ESP32-H21 PMU register operations
+// The LL layer for ESP32-C6 PMU register operations
 
 #pragma once
 
@@ -94,29 +94,9 @@ FORCE_INLINE_ATTR void pmu_ll_hp_set_clk_power(pmu_dev_t *hw, pmu_hp_mode_t mode
     hw->hp_sys[mode].clk_power.val = xpd_flag;
 }
 
-FORCE_INLINE_ATTR void pmu_ll_hp_set_dcdc_ccm_enable(pmu_dev_t *hw, pmu_hp_mode_t mode, bool enable)
+FORCE_INLINE_ATTR void pmu_ll_hp_set_xtal_xpd(pmu_dev_t *hw, pmu_hp_mode_t mode, bool xpd_xtal)
 {
-    hw->hp_sys[mode].bias.dcdc_ccm_enb = enable;
-}
-
-FORCE_INLINE_ATTR void pmu_ll_hp_set_dig_reg_dpcur_bias(pmu_dev_t *hw, pmu_hp_mode_t mode, uint32_t bias)
-{
-    hw->hp_sys[mode].bias.dig_reg_dpcur_bias = bias;
-}
-
-FORCE_INLINE_ATTR void pmu_ll_hp_set_dig_reg_dsfmos(pmu_dev_t *hw, pmu_hp_mode_t mode, uint32_t value)
-{
-    hw->hp_sys[mode].bias.dig_reg_dsfmos = value;
-}
-
-FORCE_INLINE_ATTR void pmu_ll_hp_set_dcm_vset(pmu_dev_t *hw, pmu_hp_mode_t mode, uint32_t value)
-{
-    hw->hp_sys[mode].bias.dcm_vset = value;
-}
-
-FORCE_INLINE_ATTR void pmu_ll_hp_set_dcm_mode(pmu_dev_t *hw, pmu_hp_mode_t mode, uint32_t dcm_mode)
-{
-    hw->hp_sys[mode].bias.dcm_mode = dcm_mode;
+    hw->hp_sys[mode].xtal.xpd_xtal = xpd_xtal;
 }
 
 FORCE_INLINE_ATTR void pmu_ll_hp_set_bias_xpd(pmu_dev_t *hw, pmu_hp_mode_t mode, bool xpd_bias)
@@ -124,21 +104,10 @@ FORCE_INLINE_ATTR void pmu_ll_hp_set_bias_xpd(pmu_dev_t *hw, pmu_hp_mode_t mode,
     hw->hp_sys[mode].bias.xpd_bias = xpd_bias;
 }
 
-FORCE_INLINE_ATTR void pmu_ll_hp_set_trx_xpd(pmu_dev_t *hw, pmu_hp_mode_t mode, bool xpd_trx)
+FORCE_INLINE_ATTR void pmu_ll_hp_set_dbg_atten(pmu_dev_t *hw, pmu_hp_mode_t mode, uint32_t value)
 {
-    hw->hp_sys[mode].bias.xpd_trx = xpd_trx;
+    hw->hp_sys[mode].bias.dbg_atten = value;
 }
-
-FORCE_INLINE_ATTR void pmu_ll_hp_set_xtal_xpd(pmu_dev_t *hw, pmu_hp_mode_t mode, bool xpd_xtal)
-{
-    hw->hp_sys[mode].xtal.xpd_xtal = xpd_xtal;
-}
-
-FORCE_INLINE_ATTR void pmu_ll_hp_set_discnnt_dig_rtc(pmu_dev_t *hw, pmu_hp_mode_t mode, bool discnnt)
-{
-    hw->hp_sys[mode].bias.discnnt_dig_rtc = discnnt;
-}
-
 
 FORCE_INLINE_ATTR void pmu_ll_hp_set_current_power_off(pmu_dev_t *hw, pmu_hp_mode_t mode, bool off)
 {
@@ -165,6 +134,26 @@ FORCE_INLINE_ATTR void pmu_ll_hp_set_sleep_to_active_backup_disable(pmu_dev_t *h
     hw->hp_sys[PMU_MODE_HP_ACTIVE].backup.hp_sleep2active_backup_en = 0;
 }
 
+FORCE_INLINE_ATTR void pmu_ll_hp_set_modem_to_active_backup_enable(pmu_dev_t *hw)
+{
+    hw->hp_sys[PMU_MODE_HP_ACTIVE].backup.hp_modem2active_backup_en = 1;
+}
+
+FORCE_INLINE_ATTR void pmu_ll_hp_set_modem_to_active_backup_disable(pmu_dev_t *hw)
+{
+    hw->hp_sys[PMU_MODE_HP_ACTIVE].backup.hp_modem2active_backup_en = 0;
+}
+
+FORCE_INLINE_ATTR void pmu_ll_hp_set_sleep_to_modem_backup_enable(pmu_dev_t *hw)
+{
+    hw->hp_sys[PMU_MODE_HP_MODEM].backup.hp_sleep2modem_backup_en = 1;
+}
+
+FORCE_INLINE_ATTR void pmu_ll_hp_set_sleep_to_modem_backup_disable(pmu_dev_t *hw)
+{
+    hw->hp_sys[PMU_MODE_HP_MODEM].backup.hp_sleep2modem_backup_en = 0;
+}
+
 FORCE_INLINE_ATTR void pmu_ll_hp_set_active_to_sleep_backup_enable(pmu_dev_t *hw)
 {
     hw->hp_sys[PMU_MODE_HP_SLEEP].backup.hp_active2sleep_backup_en = 1;
@@ -173,6 +162,16 @@ FORCE_INLINE_ATTR void pmu_ll_hp_set_active_to_sleep_backup_enable(pmu_dev_t *hw
 FORCE_INLINE_ATTR void pmu_ll_hp_set_active_to_sleep_backup_disable(pmu_dev_t *hw)
 {
     hw->hp_sys[PMU_MODE_HP_SLEEP].backup.hp_active2sleep_backup_en = 0;
+}
+
+FORCE_INLINE_ATTR void pmu_ll_hp_set_modem_to_sleep_backup_enable(pmu_dev_t *hw)
+{
+    hw->hp_sys[PMU_MODE_HP_SLEEP].backup.hp_modem2sleep_backup_en = 1;
+}
+
+FORCE_INLINE_ATTR void pmu_ll_hp_set_modem_to_sleep_backup_disable(pmu_dev_t *hw)
+{
+    hw->hp_sys[PMU_MODE_HP_SLEEP].backup.hp_modem2sleep_backup_en = 0;
 }
 
 FORCE_INLINE_ATTR void pmu_ll_hp_set_backup_icg_func(pmu_dev_t *hw, pmu_hp_mode_t mode, uint32_t icg_func)
@@ -203,35 +202,6 @@ FORCE_INLINE_ATTR void pmu_ll_hp_set_icg_sysclk_slp_sel(pmu_dev_t *hw, pmu_hp_mo
 FORCE_INLINE_ATTR void pmu_ll_hp_set_dig_sysclk(pmu_dev_t *hw, pmu_hp_mode_t mode, uint32_t sysclk_sel)
 {
     hw->hp_sys[mode].sysclk.dig_sysclk_sel = sysclk_sel;
-}
-
-FORCE_INLINE_ATTR void pmu_ll_hp_set_regulator_power_detect_bypass(pmu_dev_t *hw, pmu_hp_mode_t mode, bool bypass)
-{
-    hw->hp_sys[mode].regulator0.power_det_bypass = bypass;
-}
-
-FORCE_INLINE_ATTR void pmu_ll_hp_set_regulator_lp_dbias_voltage(pmu_dev_t *hw, pmu_hp_mode_t mode, uint32_t voltage)
-{
-    HAL_ASSERT(mode == PMU_MODE_HP_ACTIVE);
-    hw->hp_sys[mode].regulator0.lp_dbias_vol = voltage;
-}
-
-FORCE_INLINE_ATTR void pmu_ll_hp_set_regulator_hp_dbias_voltage(pmu_dev_t *hw, pmu_hp_mode_t mode, uint32_t voltage)
-{
-    HAL_ASSERT(mode == PMU_MODE_HP_ACTIVE);
-    hw->hp_sys[mode].regulator0.hp_dbias_vol = voltage;
-}
-
-FORCE_INLINE_ATTR void pmu_ll_hp_set_regulator_dbias_select(pmu_dev_t *hw, pmu_hp_mode_t mode, bool sel)
-{
-    HAL_ASSERT(mode == PMU_MODE_HP_ACTIVE);
-    hw->hp_sys[mode].regulator0.dbias_sel = sel;
-}
-
-FORCE_INLINE_ATTR void pmu_ll_hp_set_regulator_dbias_init(pmu_dev_t *hw, pmu_hp_mode_t mode, bool init)
-{
-    HAL_ASSERT(mode == PMU_MODE_HP_ACTIVE);
-    hw->hp_sys[mode].regulator0.dbias_init = init;
 }
 
 FORCE_INLINE_ATTR void pmu_ll_hp_set_regulator_sleep_logic_xpd(pmu_dev_t *hw, pmu_hp_mode_t mode, bool slp_xpd)
@@ -294,10 +264,10 @@ FORCE_INLINE_ATTR void pmu_ll_lp_set_regulator_driver_bar(pmu_dev_t *hw, pmu_lp_
     hw->lp_sys[mode].regulator1.drv_b = drv_b;
 }
 
-FORCE_INLINE_ATTR void pmu_ll_lp_set_xtal_xpd(pmu_dev_t *hw, pmu_lp_mode_t mode, bool slp_xpd)
+FORCE_INLINE_ATTR void pmu_ll_lp_set_xtal_xpd(pmu_dev_t *hw, pmu_lp_mode_t mode, bool xpd_xtal)
 {
     HAL_ASSERT(mode == PMU_MODE_LP_SLEEP);
-    hw->lp_sys[mode].xtal.xpd_xtal = slp_xpd;
+    hw->lp_sys[mode].xtal.xpd_xtal = xpd_xtal;
 }
 
 FORCE_INLINE_ATTR void pmu_ll_lp_set_dig_power(pmu_dev_t *hw, pmu_lp_mode_t mode, uint32_t flag)
@@ -315,53 +285,16 @@ FORCE_INLINE_ATTR uint32_t pmu_ll_lp_get_clk_power(pmu_dev_t *hw, pmu_lp_mode_t 
     return hw->lp_sys[mode].clk_power.val;
 }
 
-FORCE_INLINE_ATTR void pmu_ll_lp_set_dcdc_ccm_enable(pmu_dev_t *hw, pmu_lp_mode_t mode, bool enable)
-{
-    HAL_ASSERT(mode == PMU_MODE_LP_SLEEP);
-    hw->lp_sys[mode].bias.dcdc_ccm_enb = enable;
-}
-
-FORCE_INLINE_ATTR void pmu_ll_lp_set_dig_reg_dpcur_bias(pmu_dev_t *hw, pmu_lp_mode_t mode, uint32_t value)
-{
-    HAL_ASSERT(mode == PMU_MODE_LP_SLEEP);
-    hw->lp_sys[mode].bias.dig_reg_dpcur_bias = value;
-}
-
-FORCE_INLINE_ATTR void pmu_ll_lp_set_dig_reg_dsfmos(pmu_dev_t *hw, pmu_lp_mode_t mode, uint32_t value)
-{
-    HAL_ASSERT(mode == PMU_MODE_LP_SLEEP);
-    hw->lp_sys[mode].bias.dig_reg_dsfmos = value;
-}
-
-FORCE_INLINE_ATTR void pmu_ll_lp_set_dcm_vset(pmu_dev_t *hw, pmu_lp_mode_t mode, uint32_t value)
-{
-    HAL_ASSERT(mode == PMU_MODE_LP_SLEEP);
-    hw->lp_sys[mode].bias.dcm_vset = value;
-}
-
-FORCE_INLINE_ATTR void pmu_ll_lp_set_dcm_mode(pmu_dev_t *hw, pmu_lp_mode_t mode, uint32_t dcm_mode)
-{
-    HAL_ASSERT(mode == PMU_MODE_LP_SLEEP);
-    hw->lp_sys[mode].bias.dcm_mode = dcm_mode;
-}
-
 FORCE_INLINE_ATTR void pmu_ll_lp_set_bias_xpd(pmu_dev_t *hw, pmu_lp_mode_t mode, bool xpd_bias)
 {
     HAL_ASSERT(mode == PMU_MODE_LP_SLEEP);
     hw->lp_sys[mode].bias.xpd_bias = xpd_bias;
 }
 
-FORCE_INLINE_ATTR void pmu_ll_hp_set_memory_power_on_mask(pmu_dev_t *hw, uint32_t mem_mask)
-{
-    hw->power.mem_mask.mem0_mask = mem_mask & BIT(0);
-    hw->power.mem_mask.mem1_mask = mem_mask & BIT(1);
-    hw->power.mem_mask.mem2_mask = mem_mask & BIT(2);
-}
-
-FORCE_INLINE_ATTR void pmu_ll_lp_set_discnnt_dig_rtc(pmu_dev_t *hw, pmu_lp_mode_t mode, bool discnnt)
+FORCE_INLINE_ATTR void pmu_ll_lp_set_dbg_atten(pmu_dev_t *hw, pmu_lp_mode_t mode, uint32_t value)
 {
     HAL_ASSERT(mode == PMU_MODE_LP_SLEEP);
-    hw->lp_sys[mode].bias.discnnt_dig_rtc = discnnt;
+    hw->lp_sys[mode].bias.dbg_atten = value;
 }
 
 FORCE_INLINE_ATTR void pmu_ll_lp_set_current_power_off(pmu_dev_t *hw, pmu_lp_mode_t mode, bool off)
@@ -376,6 +309,7 @@ FORCE_INLINE_ATTR void pmu_ll_lp_set_bias_sleep_enable(pmu_dev_t *hw, pmu_lp_mod
     hw->lp_sys[mode].bias.bias_sleep = en;
 }
 
+/****/
 FORCE_INLINE_ATTR void pmu_ll_imm_set_clk_power(pmu_dev_t *hw, uint32_t flag)
 {
     hw->imm.clk_power.val = flag;
@@ -442,6 +376,7 @@ FORCE_INLINE_ATTR void pmu_ll_imm_set_lp_pad_hold_all(pmu_dev_t *hw, bool hold_a
     }
 }
 
+/*** */
 FORCE_INLINE_ATTR void pmu_ll_hp_set_power_force_reset(pmu_dev_t *hw, pmu_hp_power_domain_t domain, bool rst)
 {
     hw->power.hp_pd[domain].force_reset = rst;
@@ -522,6 +457,7 @@ FORCE_INLINE_ATTR void pmu_ll_hp_set_memory_power_up(pmu_dev_t *hw, uint32_t fpu
     hw->power.mem_cntl.force_hp_mem_pu = fpu;
 }
 
+/*** */
 FORCE_INLINE_ATTR void pmu_ll_hp_set_sleep_enable(pmu_dev_t *hw)
 {
     hw->wakeup.cntl0.sleep_req = 1;
@@ -548,9 +484,9 @@ FORCE_INLINE_ATTR void pmu_ll_hp_set_sleep_protect_mode(pmu_dev_t *hw, int mode)
     hw->wakeup.cntl3.sleep_prt_sel = mode;
 }
 
-FORCE_INLINE_ATTR void pmu_ll_hp_set_min_sleep_cycle(pmu_dev_t *hw, uint32_t cycle)
+FORCE_INLINE_ATTR void pmu_ll_hp_set_min_sleep_cycle(pmu_dev_t *hw, uint32_t slow_clk_cycle)
 {
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->wakeup.cntl3, hp_min_slp_val, cycle);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->wakeup.cntl3, hp_min_slp_val, slow_clk_cycle);
 }
 
 FORCE_INLINE_ATTR void pmu_ll_hp_clear_reject_cause(pmu_dev_t *hw)
@@ -560,22 +496,32 @@ FORCE_INLINE_ATTR void pmu_ll_hp_clear_reject_cause(pmu_dev_t *hw)
 
 FORCE_INLINE_ATTR bool pmu_ll_hp_is_sleep_wakeup(pmu_dev_t *hw)
 {
-    return (hw->hp_ext.int_raw.soc_wakeup == 1);
+    return (hw->hp_ext.int_raw.wakeup == 1);
 }
 
 FORCE_INLINE_ATTR bool pmu_ll_hp_is_sleep_reject(pmu_dev_t *hw)
 {
-    return (hw->hp_ext.int_raw.soc_sleep_reject == 1);
+    return (hw->hp_ext.int_raw.reject == 1);
+}
+
+FORCE_INLINE_ATTR void pmu_ll_hp_clear_sw_intr_status(pmu_dev_t *hw)
+{
+    hw->hp_ext.int_clr.sw = 1;
 }
 
 FORCE_INLINE_ATTR void pmu_ll_hp_clear_wakeup_intr_status(pmu_dev_t *hw)
 {
-    hw->hp_ext.int_clr.soc_wakeup = 1;
+    hw->hp_ext.int_clr.wakeup = 1;
 }
 
 FORCE_INLINE_ATTR void pmu_ll_hp_clear_reject_intr_status(pmu_dev_t *hw)
 {
-    hw->hp_ext.int_clr.soc_sleep_reject = 1;
+    hw->hp_ext.int_clr.reject = 1;
+}
+
+FORCE_INLINE_ATTR void pmu_ll_hp_enable_sw_intr(pmu_dev_t *hw, bool enable)
+{
+    hw->hp_ext.int_ena.sw = enable;
 }
 
 FORCE_INLINE_ATTR uint32_t pmu_ll_hp_get_wakeup_cause(pmu_dev_t *hw)
@@ -641,6 +587,16 @@ FORCE_INLINE_ATTR void pmu_ll_lp_set_analog_wait_target_cycle(pmu_dev_t *hw, uin
 FORCE_INLINE_ATTR uint32_t pmu_ll_lp_get_analog_wait_target_cycle(pmu_dev_t *hw)
 {
     return HAL_FORCE_READ_U32_REG_FIELD(hw->wakeup.cntl5, lp_ana_wait_target);
+}
+
+FORCE_INLINE_ATTR void pmu_ll_set_modem_wait_target_cycle(pmu_dev_t *hw, uint32_t cycle)
+{
+    hw->wakeup.cntl5.modem_wait_target = cycle;
+}
+
+FORCE_INLINE_ATTR uint32_t pmu_ll_get_modem_wait_target_cycle(pmu_dev_t *hw)
+{
+    return hw->wakeup.cntl5.modem_wait_target;
 }
 
 FORCE_INLINE_ATTR void pmu_ll_set_xtal_stable_wait_cycle(pmu_dev_t *hw, uint32_t cycle)
@@ -733,9 +689,39 @@ FORCE_INLINE_ATTR uint32_t pmu_ll_hp_get_digital_power_up_wait_cycle(pmu_dev_t *
     return hw->power.wait_timer0.powerup_timer;
 }
 
-FORCE_INLINE_ATTR void pmu_ll_set_dcdc_ccm_sw_en(pmu_dev_t *hw, bool enable)
+FORCE_INLINE_ATTR uint32_t pmu_ll_get_sysclk_sleep_select_state(pmu_dev_t *hw)
 {
-    hw->dcm_ctrl.dcdc_ccm_sw_en = enable;
+    return hw->clk_state0.sysclk_slp_sel;
+}
+
+FORCE_INLINE_ATTR uint32_t pmu_ll_lp_get_interrupt_raw(pmu_dev_t *hw)
+{
+    return hw->lp_ext.int_raw.val;
+}
+
+FORCE_INLINE_ATTR void pmu_ll_lp_clear_intsts_mask(pmu_dev_t *hw, uint32_t mask)
+{
+    hw->lp_ext.int_clr.val = mask;
+}
+
+FORCE_INLINE_ATTR void pmu_ll_lp_trigger_sw_intr(pmu_dev_t *hw)
+{
+    hw->hp_lp_cpu_comm.lp_trigger_hp = 1;
+}
+
+FORCE_INLINE_ATTR void pmu_ll_hp_trigger_sw_intr(pmu_dev_t *hw)
+{
+    hw->hp_lp_cpu_comm.hp_trigger_lp = 1;
+}
+
+FORCE_INLINE_ATTR void pmu_ll_lp_clear_sw_intr_status(pmu_dev_t *hw)
+{
+    hw->lp_ext.int_clr.sw_trigger = 1;
+}
+
+FORCE_INLINE_ATTR void pmu_ll_lp_enable_sw_intr(pmu_dev_t *hw, bool enable)
+{
+    hw->lp_ext.int_ena.sw_trigger = enable;
 }
 
 #ifdef __cplusplus

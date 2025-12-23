@@ -124,10 +124,6 @@ elseif(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "${target}/modem_clock_hal.c")
     endif()
 
-    if(CONFIG_SOC_PAU_SUPPORTED)
-        list(APPEND srcs "${target}/pau_hal.c")
-    endif()
-
     if(CONFIG_SOC_BOD_SUPPORTED)
         list(APPEND srcs "brownout_hal.c")
     endif()
@@ -138,10 +134,6 @@ elseif(NOT BOOTLOADER_BUILD)
 
     if(CONFIG_SOC_SDIO_SLAVE_SUPPORTED)
         list(APPEND srcs "sdio_slave_hal.c")
-    endif()
-
-    if(CONFIG_SOC_PMU_SUPPORTED)
-        list(APPEND srcs "${target}/pmu_hal.c")
     endif()
 
     if(CONFIG_SOC_APM_SUPPORTED)
@@ -157,11 +149,6 @@ elseif(NOT BOOTLOADER_BUILD)
         # For ESP32-S2 we do not have DS HAL layer implementation yet
         list(APPEND srcs "ds_hal.c")
     endif()
-
-    if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/${target}/rtc_cntl_hal.c")
-        list(APPEND srcs "${target}/rtc_cntl_hal.c")
-    endif()
-
 endif()
 
 idf_component_register(SRCS ${srcs}

@@ -1,10 +1,10 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// The LL layer for ESP32-C61 PMU register operations
+// The LL layer for ESP32-C6 PMU register operations
 
 #pragma once
 
@@ -16,7 +16,6 @@
 #include "soc/pmu_struct.h"
 #include "hal/pmu_types.h"
 #include "hal/misc.h"
-
 
 #ifdef __cplusplus
 extern "C" {
@@ -240,7 +239,6 @@ FORCE_INLINE_ATTR void pmu_ll_hp_set_regulator_driver_bar(pmu_dev_t *hw, pmu_hp_
     hw->hp_sys[mode].regulator1.drv_b = drv_b;
 }
 
-
 FORCE_INLINE_ATTR void pmu_ll_lp_set_regulator_slp_xpd(pmu_dev_t *hw, pmu_lp_mode_t mode, bool slp_xpd)
 {
     hw->lp_sys[mode].regulator0.slp_xpd = slp_xpd;
@@ -271,7 +269,6 @@ FORCE_INLINE_ATTR void pmu_ll_lp_set_xtal_xpd(pmu_dev_t *hw, pmu_lp_mode_t mode,
     HAL_ASSERT(mode == PMU_MODE_LP_SLEEP);
     hw->lp_sys[mode].xtal.xpd_xtal = xpd_xtal;
 }
-
 
 FORCE_INLINE_ATTR void pmu_ll_lp_set_dig_power(pmu_dev_t *hw, pmu_lp_mode_t mode, uint32_t flag)
 {
@@ -311,7 +308,6 @@ FORCE_INLINE_ATTR void pmu_ll_lp_set_bias_sleep_enable(pmu_dev_t *hw, pmu_lp_mod
     HAL_ASSERT(mode == PMU_MODE_LP_SLEEP);
     hw->lp_sys[mode].bias.bias_sleep = en;
 }
-
 
 /****/
 FORCE_INLINE_ATTR void pmu_ll_imm_set_clk_power(pmu_dev_t *hw, uint32_t flag)
@@ -523,6 +519,11 @@ FORCE_INLINE_ATTR void pmu_ll_hp_clear_reject_intr_status(pmu_dev_t *hw)
     hw->hp_ext.int_clr.reject = 1;
 }
 
+FORCE_INLINE_ATTR void pmu_ll_hp_enable_sw_intr(pmu_dev_t *hw, bool enable)
+{
+    hw->hp_ext.int_ena.sw = enable;
+}
+
 FORCE_INLINE_ATTR uint32_t pmu_ll_hp_get_wakeup_cause(pmu_dev_t *hw)
 {
     return hw->wakeup.status0;
@@ -541,6 +542,26 @@ FORCE_INLINE_ATTR uint32_t pmu_ll_lp_get_interrupt_raw(pmu_dev_t *hw)
 FORCE_INLINE_ATTR void pmu_ll_lp_clear_intsts_mask(pmu_dev_t *hw, uint32_t mask)
 {
     hw->lp_ext.int_clr.val = mask;
+}
+
+FORCE_INLINE_ATTR void pmu_ll_lp_trigger_sw_intr(pmu_dev_t *hw)
+{
+    hw->hp_lp_cpu_comm.lp_trigger_hp = 1;
+}
+
+FORCE_INLINE_ATTR void pmu_ll_hp_trigger_sw_intr(pmu_dev_t *hw)
+{
+    hw->hp_lp_cpu_comm.hp_trigger_lp = 1;
+}
+
+FORCE_INLINE_ATTR void pmu_ll_lp_clear_sw_intr_status(pmu_dev_t *hw)
+{
+    hw->lp_ext.int_clr.sw_trigger = 1;
+}
+
+FORCE_INLINE_ATTR void pmu_ll_lp_enable_sw_intr(pmu_dev_t *hw, bool enable)
+{
+    hw->lp_ext.int_ena.sw_trigger = enable;
 }
 
 FORCE_INLINE_ATTR void pmu_ll_lp_set_min_sleep_cycle(pmu_dev_t *hw, uint32_t slow_clk_cycle)
@@ -586,26 +607,6 @@ FORCE_INLINE_ATTR void pmu_ll_lp_set_digital_power_down_wait_cycle(pmu_dev_t *hw
 FORCE_INLINE_ATTR uint32_t pmu_ll_lp_get_digital_power_down_wait_cycle(pmu_dev_t *hw)
 {
     return hw->power.wait_timer1.powerdown_timer;
-}
-
-FORCE_INLINE_ATTR void pmu_ll_lp_set_isolate_wait_cycle(pmu_dev_t *hw, uint32_t isolate_wait_cycle)
-{
-    hw->power.wait_timer2.lp_iso_wait_timer = isolate_wait_cycle;
-}
-
-FORCE_INLINE_ATTR void pmu_ll_lp_set_reset_wait_cycle(pmu_dev_t *hw, uint32_t reset_wait_cycle)
-{
-    hw->power.wait_timer2.lp_rst_wait_timer = reset_wait_cycle;
-}
-
-FORCE_INLINE_ATTR void pmu_ll_hp_set_isolate_wait_cycle(pmu_dev_t *hw, uint32_t isolate_wait_cycle)
-{
-    hw->power.wait_timer2.hp_iso_wait_timer = isolate_wait_cycle;
-}
-
-FORCE_INLINE_ATTR void pmu_ll_hp_set_reset_wait_cycle(pmu_dev_t *hw, uint32_t reset_wait_cycle)
-{
-    hw->power.wait_timer2.hp_rst_wait_timer = reset_wait_cycle;
 }
 
 FORCE_INLINE_ATTR void pmu_ll_lp_set_analog_wait_target_cycle(pmu_dev_t *hw, uint32_t slow_clk_cycle)
@@ -680,9 +681,6 @@ FORCE_INLINE_ATTR uint32_t pmu_ll_hp_get_analog_wait_target_cycle(pmu_dev_t *hw)
 
 FORCE_INLINE_ATTR void pmu_ll_hp_set_digital_power_supply_wait_cycle(pmu_dev_t *hw, uint32_t cycle)
 {
-    if (cycle > 0x1FF) {
-        cycle = 0x1FF;
-    }
     hw->power.wait_timer0.wait_timer = cycle;
 }
 

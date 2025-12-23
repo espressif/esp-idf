@@ -81,8 +81,8 @@ entries:
         esp_time_impl:esp_time_impl_get_boot_time (noflash)
         esp_time_impl:esp_set_time_from_rtc (noflash)
 
-[mapping:hal_pm]
-archive: libhal.a
+[mapping:esp_hal_pmu_pm]
+archive: libesp_hal_pmu.a
 entries:
     if SOC_PM_CPU_RETENTION_BY_RTCCNTL = y:
         if PM_SLP_IRAM_OPT = y && PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP = y:
