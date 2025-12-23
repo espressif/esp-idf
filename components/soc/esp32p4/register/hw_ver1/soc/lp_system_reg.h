@@ -88,6 +88,14 @@ extern "C" {
 #define LP_SYSTEM_REG_ANA_FIB_M  (LP_SYSTEM_REG_ANA_FIB_V << LP_SYSTEM_REG_ANA_FIB_S)
 #define LP_SYSTEM_REG_ANA_FIB_V  0x0000007FU
 #define LP_SYSTEM_REG_ANA_FIB_S  14
+/** LP_SYSTEM_REG_LP_FIB_SEL : R/W; bitpos: [28:21]; default: 255;
+ *  This is for compatibility with hw_ver3 chips
+ *  This field does not exist on hw_ver1 chips
+ */
+#define LP_SYSTEM_REG_LP_FIB_SEL    0x000000FFU
+#define LP_SYSTEM_REG_LP_FIB_SEL_M  (LP_SYSTEM_REG_LP_FIB_SEL_V << LP_SYSTEM_REG_LP_FIB_SEL_S)
+#define LP_SYSTEM_REG_LP_FIB_SEL_V  0x000000FFU
+#define LP_SYSTEM_REG_LP_FIB_SEL_S  21
 /** LP_SYSTEM_REG_LP_FIB_BOD_RESET : R/W; bitpos: [22]; default: 1;
  *  need_des
  */
