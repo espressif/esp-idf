@@ -61,6 +61,14 @@ idf.py menuconfig
 In the `Example Configuration` menu:
 
 * Change the `Peer Address` option if needed.
+* Optional: enable static passkey support via `Component config -> Bluetooth -> NimBLE -> Enable support for Static Passkey`.
+
+Static passkey mode is useful for demos where you want to avoid interactive passkey entry.
+When enabled, the example calls `ble_sm_configure_static_passkey(456789, true)` and NimBLE
+automatically injects the passkey during pairing. Update the passkey in
+`examples/bluetooth/nimble/blecent/main/main.c` if you want a different value.
+Both devices must use the same 6-digit passkey, and you should only use a fixed
+passkey for development or controlled environments.
 
 ### Build and Flash
 
