@@ -2754,6 +2754,9 @@ static SLEEP_FN_ATTR uint32_t get_power_down_flags(void)
         // TOP power domain depends on the RTC_PERIPH power domain on ESP32C6, RTC_PERIPH should only be disabled when the TOP domain is down.
         pd_flags &= ~RTC_SLEEP_PD_RTC_PERIPH;
     }
+#elif CONFIG_IDF_TARGET_ESP32C5
+    // TODO: [ESP32C5] PM-642 RNG module depends on LP PERIPH domain, force it on temporary.
+    pd_flags &= ~RTC_SLEEP_PD_RTC_PERIPH;
 #endif
     return pd_flags;
 }
