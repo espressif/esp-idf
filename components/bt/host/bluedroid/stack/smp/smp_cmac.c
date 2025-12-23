@@ -346,12 +346,13 @@ BOOLEAN aes_cipher_msg_auth_code(BT_OCTET16 key, UINT8 *input, UINT16 length,
         psa_set_key_bits(&key_attributes, 128);
 
         status = psa_import_key(&key_attributes, key_be, BT_OCTET16_LEN, &key_id);
+        psa_reset_key_attributes(&key_attributes);
+
         if (status != PSA_SUCCESS) {
             SMP_TRACE_ERROR("psa_import_key failed: %d", status);
             if (input_be) osi_free(input_be);
             return FALSE;
         }
-        psa_reset_key_attributes(&key_attributes);
 
         /* Setup MAC operation */
         status = psa_mac_sign_setup(&operation, key_id, PSA_ALG_CMAC);
