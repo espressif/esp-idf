@@ -143,6 +143,7 @@ Light-sleep 外设下电
     - TIMG0
     - SPI0/1
     - SYSTIMER
+    :SOC_SPI_SUPPORT_SLEEP_RETENTION: - All GPSPIs
 
     以下外设尚未支持：
     - ETM
@@ -150,7 +151,6 @@ Light-sleep 外设下电
     - ASSIST_DEBUG
     - Trace
     - Crypto: AES/ECC/HMAC/RSA/SHA/DS/XTA_AES/ECDSA
-    - SPI2
     - I2C
     - I2S
     - PCNT

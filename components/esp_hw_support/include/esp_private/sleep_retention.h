@@ -47,6 +47,7 @@ typedef enum sleep_retention_module {
     SLEEP_RETENTION_MODULE_GDMA_CH2     = 26,
     SLEEP_RETENTION_MODULE_UART0        = 27,
     SLEEP_RETENTION_MODULE_UART1        = 28,
+    SLEEP_RETENTION_MODULE_GPSPI2       = 29,
 
     SLEEP_RETENTION_MODULE_MAX          = 31
 } sleep_retention_module_t;
@@ -76,6 +77,8 @@ typedef enum sleep_retention_module_bitmap {
     SLEEP_RETENTION_MODULE_BM_UART0        = BIT(SLEEP_RETENTION_MODULE_UART0),
     SLEEP_RETENTION_MODULE_BM_UART1        = BIT(SLEEP_RETENTION_MODULE_UART1),
 
+    SLEEP_RETENTION_MODULE_BM_GPSPI2       = BIT(SLEEP_RETENTION_MODULE_GPSPI2),
+
     SLEEP_RETENTION_MODULE_BM_ALL          = (uint32_t)-1
 } sleep_retention_module_bitmap_t;
 
@@ -86,6 +89,7 @@ typedef enum sleep_retention_module_bitmap {
                                     | SLEEP_RETENTION_MODULE_BM_ADC         \
                                     | SLEEP_RETENTION_MODULE_BM_UART0       \
                                     | SLEEP_RETENTION_MODULE_BM_UART1       \
+                                    | SLEEP_RETENTION_MODULE_BM_GPSPI2      \
                                    )
 
 typedef regdma_entry_buf_t sleep_retention_entries_t;

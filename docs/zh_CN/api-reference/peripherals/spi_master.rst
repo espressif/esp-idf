@@ -305,6 +305,14 @@ SPI 总线传输事务由五个阶段构成，详见下表（任意阶段均可�
 
 若需连续发送专门的 SPI 传输事务以提高效率，可采用获取总线的方式。获取总线后，与其他设备间的传输事务（包括轮询传输事务或中断传输事务）将处于待处理状态，直到总线被释放。要获取和释放总线，请调用函数 :cpp:func:`spi_device_acquire_bus` 和 :cpp:func:`spi_device_release_bus`。
 
+.. only:: SOC_SPI_SUPPORT_SLEEP_RETENTION
+
+    睡眠保留
+    ^^^^^^^^
+
+    {IDF_TARGET_NAME} 支持在进入 **Light Sleep** 之前保留 SPI 寄存器中的内容，并在唤醒后恢复。即程序不需要在 **Light Sleep** 唤醒后重新配置 SPI。
+
+    该特性可以通过置位配置中的 :c:macro:`SPICOMMON_BUSFLAG_SLP_ALLOW_PD` 标志位启用。启用后驱动允许系统在 Light Sleep 时对 SPI 掉电，同时保存寄存器配置。它可以帮助降低轻度睡眠时的功耗，但需要花费一些额外的存储来保存寄存器的配置。
 
 使用驱动程序
 -----------------

@@ -143,6 +143,7 @@ Light-sleep Peripheral Power Down
     - TIMG0
     - SPI0/1
     - SYSTIMER
+    :SOC_SPI_SUPPORT_SLEEP_RETENTION: - All GPSPIs
 
     The following peripherals are not yet supported:
     - ETM
@@ -150,7 +151,6 @@ Light-sleep Peripheral Power Down
     - ASSIST_DEBUG
     - Trace
     - Crypto: AES/ECC/HMAC/RSA/SHA/DS/XTA_AES/ECDSA
-    - SPI2
     - I2C
     - I2S
     - PCNT

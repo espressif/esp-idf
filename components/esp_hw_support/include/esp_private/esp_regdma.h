@@ -44,6 +44,7 @@ extern "C" {
 #define REGDMA_MODEM_BT_BB_LINK(_pri)       ((0x16 << 8) | _pri)
 #define REGDMA_MODEM_IEEE802154_LINK(_pri)  ((0x17 << 8) | _pri)
 #define REGDMA_MODEM_GDMA_LINK(_pri)        ((0x18 << 8) | _pri)
+#define REGDMA_GPSPI_LINK(_pri)             ((0x19 << 8) | _pri)
 #define REGDMA_MODEM_FE_LINK(_pri)          ((0xFF << 8) | _pri)
 
 typedef enum {
@@ -78,6 +79,7 @@ typedef enum regdma_link_mode {
 #define REGDMA_LINK_PRI_IEEE802154              REGDMA_LINK_PRI_GENERAL_PERIPH
 #define REGDMA_LINK_PRI_GDMA                    REGDMA_LINK_PRI_GENERAL_PERIPH
 #define REGDMA_LINK_PRI_UART                    REGDMA_LINK_PRI_GENERAL_PERIPH
+#define REGDMA_LINK_PRI_GPSPI                   REGDMA_LINK_PRI_GENERAL_PERIPH
 
 typedef struct regdma_link_head {
     volatile uint32_t length: 10, /* total count of registers that need to be backup or restore, unit: 1 word = 4 bytes */
