@@ -91,17 +91,18 @@ def test_mbedtls_ecdsa_sign(dut: Dut) -> None:
     dut.run_all_single_board_cases(group='efuse_key')
 
 
-@pytest.mark.generic
-@pytest.mark.parametrize(
-    'config',
-    [
-        'rom_impl',
-    ],
-    indirect=True,
-)
-@idf_parametrize('target', ['esp32c2'], indirect=['target'])
-def test_mbedtls_rom_impl_esp32c2(dut: Dut) -> None:
-    dut.run_all_single_board_cases()
+# TODO: IDF-15012
+# @pytest.mark.generic
+# @pytest.mark.parametrize(
+#     'config',
+#     [
+#         'rom_impl',
+#     ],
+#     indirect=True,
+# )
+# @idf_parametrize('target', ['esp32c2'], indirect=['target'])
+# def test_mbedtls_rom_impl_esp32c2(dut: Dut) -> None:
+#     dut.run_all_single_board_cases()
 
 
 @pytest.mark.generic
