@@ -1,8 +1,12 @@
-*********************************
-Updating ESP-IDF Tools on Windows
-*********************************
+*******************************************
+Updating ESP-IDF Tools on Windows (Legacy)
+*******************************************
 
 :link_to_translation:`zh_CN:[中文]`
+
+.. warning::
+
+    This document describes the legacy method for updating ESP-IDF tools, which was the default before v6.0.
 
 .. _get-started-install_bat-windows:
 

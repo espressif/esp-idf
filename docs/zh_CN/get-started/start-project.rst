@@ -2,10 +2,10 @@
 
 {IDF_TARGET_HEAP_SIZE:default="[NEEDS TO BE UPDATED]", esp32="298968", esp32s2="253900", esp32s3="390684", esp32c2="203888", esp32c3="337332", esp32c6="473816", esp32h2="268256", esp32p4="618848", esp32c5="348724"}
 
-编译工程
+编译项目
 =========================
 
-请使用以下命令，编译烧录工程：
+请使用以下命令，编译烧录项目：
 
 .. code-block:: batch
 
@@ -54,7 +54,7 @@
 
 .. note::
 
-    勾选 ``flash`` 选项将自动编译并烧录工程，因此无需再运行 ``idf.py build``。
+    勾选 ``flash`` 选项将自动编译并烧录项目，因此无需再运行 ``idf.py build``。
 
 若在烧录过程中遇到问题，请参考下文中的“其他提示”。也可以前往 :doc:`flashing-troubleshooting` 或 :doc:`establish-serial-connection` 获取更多详细信息。
 
@@ -73,7 +73,7 @@
 监视输出
 ===============
 
-可以使用 ``idf.py -p PORT monitor`` 命令，监视 “hello_world” 工程的运行情况。注意，不要忘记将 PORT 替换为自己的串口名称。
+可以使用 ``idf.py -p PORT monitor`` 命令，监视 “hello_world” 项目的运行情况。注意，不要忘记将 PORT 替换为自己的串口名称。
 
 运行该命令后，:doc:`IDF 监视器 <../api-guides/tools/idf-monitor>` 应用程序将启动。
 
@@ -222,3 +222,17 @@ ESP-IDF 支持擦除 flash。请运行以下命令，擦除整个 flash：
     idf.py -p PORT erase-otadata
 
 擦除 flash 需要一段时间，在擦除过程中，请勿断开设备连接。
+
+
+相关文档
+========
+
+* :doc:`establish-serial-connection`
+* :doc:`../api-guides/tools/idf-monitor`
+
+.. toctree::
+    :hidden:
+    :maxdepth: 1
+
+    establish-serial-connection
+    flashing-troubleshooting

@@ -7,7 +7,6 @@ Tools
    idf-py
    idf-monitor
    idf-docker-image
-   idf-windows-installer
    idf-component-manager
    idf-clang-tidy
    idf-tools

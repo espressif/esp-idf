@@ -381,6 +381,6 @@ macOS 提供了 **屏幕** 命令，因此无需安装串口终端程序。
 
    在某些串口接线方式下，在 {IDF_TARGET_NAME} 启动并开始打印串口日志前，需要在终端程序中禁用串口 RTS ＆ DTR 管脚。该问题仅存在于将 RTS ＆ DTR 管脚直接连接到 EN ＆ {IDF_TARGET_STRAP_GPIO} 管脚上的情况，绝大多数开发板（包括乐鑫所有的开发板）都没有这个问题。更多详细信息，请参考 `esptool 文档`_。
 
-如在安装 {IDF_TARGET_NAME} 硬件开发的软件环境时，从 :ref:`get-started-connect` 跳转到了这里，请从 :ref:`get-started-configure` 继续阅读。
+如在安装 {IDF_TARGET_NAME} 硬件开发的软件环境时，从 :ref:`Windows <get-started-connect>`、:ref:`Linux 或 macOS 连接设备 <get-started-connect-linux-macos>` 跳转到了这里，请从 :ref:`Windows <get-started-configure>`、:ref:`Linux 或 macOS 配置项目 <get-started-configure-linux-macos>` 继续阅读。
 
 .. _esptool 文档: https://docs.espressif.com/projects/esptool/en/latest/advanced-topics/boot-mode-selection.html#automatic-bootloader

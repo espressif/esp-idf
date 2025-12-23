@@ -63,7 +63,7 @@ ESP-IDF 有一些针对 OpenOCD 调试功能的选项可以在编译时进行设
 
 * :ref:`CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK` 默认没有使能。在所有任务堆栈的末尾设置观察点，从 1 号开始索引。这是调试任务堆栈溢出的最准确的方式。
 
-更多有关设置编译时的选项的信息，请参阅 :ref:`项目配置菜单 <get-started-configure>`。
+更多有关设置编译时的选项的信息，请参阅 :ref:`Windows <get-started-configure>`、:ref:`Linux 或 macOS 项目配置菜单<get-started-configure-linux-macos>`。
 
 .. _jtag-debugging-tip-freertos-support:
 

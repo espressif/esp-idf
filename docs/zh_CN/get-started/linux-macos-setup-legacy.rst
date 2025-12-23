@@ -1,8 +1,12 @@
-﻿*********************************************
-Linux 和 macOS 平台工具链的标准设置
-*********************************************
+﻿***********************************************
+Linux 和 macOS 平台工具链的标准设置（已过时）
+***********************************************
 
 :link_to_translation:`en:[English]`
+
+.. warning::
+
+   本章节描述了在 Linux 和 macOS 上安装 ESP-IDF v6.0 之前版本的默认方式。
 
 详细安装步骤
 =========================
@@ -14,13 +18,12 @@ Linux 和 macOS 平台工具链的标准设置
 
 以下是为 {IDF_TARGET_NAME} 设置 ESP-IDF 的具体步骤。
 
-* :ref:`get-started-prerequisites`
-* :ref:`get-started-get-esp-idf`
-* :ref:`get-started-set-up-tools`
-* :ref:`get-started-set-up-env`
-* :ref:`get-started-start-a-project`
+* :ref:`get-started-prerequisites-legacy`
+* :ref:`get-started-get-esp-idf-legacy`
+* :ref:`get-started-set-up-tools-legacy`
+* :ref:`get-started-set-up-env-legacy`
 
-.. _get-started-prerequisites:
+.. _get-started-prerequisites-legacy:
 
 第一步：安装准备
 =============================
@@ -116,7 +119,7 @@ Apple M1 用户
 
     安装过程中，安装脚本 (install.sh) 会检查系统中已安装的 Python 版本，并在所有符合最低要求的版本中，选择最早的版本使用。
 
-.. _get-started-get-esp-idf:
+.. _get-started-get-esp-idf-legacy:
 
 第二步：获取 ESP-IDF
 =================================
@@ -137,7 +140,7 @@ ESP-IDF 将下载至 ``~/esp/esp-idf``。
 
 请前往 :doc:`/versions`，查看 ESP-IDF 不同版本的具体适用场景。
 
-.. _get-started-set-up-tools:
+.. _get-started-set-up-tools-legacy:
 
 第三步：设置工具
 =================================
@@ -232,7 +235,7 @@ ESP-IDF 工具安装器会下载 Github 发布版本中附带的一些工具，�
 .. note::
     如未导出环境变量，大多数 shell 将不支持在变量赋值中使用 ``IDF_TOOLS_PATH``，例如 ``IDF_TOOLS_PATH="$HOME/required_idf_tools_path" ./install.sh``。因为即便在源脚本中导出或修改了该变量，当前的执行环境也不受变量赋值影响。
 
-.. _get-started-set-up-env:
+.. _get-started-set-up-env-legacy:
 
 第四步：设置环境变量
 =======================================
@@ -267,32 +270,21 @@ ESP-IDF 工具安装器会下载 Github 发布版本中附带的一些工具，�
 
 不建议直接将 ``export.sh`` 添加到 shell 的配置文件。这样做会导致在每个终端会话中都激活 IDF 虚拟环境（包括无需使用 ESP-IDF 的会话）。这违背了使用虚拟环境的目的，还可能影响其他软件的使用。
 
-.. _get-started-start-a-project:
-.. _get-started-build:
-.. _get-started-configure:
-.. _get-started-connect:
-.. _get-started-linux-macos-first-steps:
 
-第五步：开始使用 ESP-IDF 吧
-========================================
-
-.. include:: linux-macos-start-project.rst
-.. include:: start-project.rst
-
-.. _get-started-update-esp-idf:
+.. _get-started-update-esp-idf-legacy:
 
 ESP-IDF 环境更新：升级 ESP-IDF 与 Python 软件包
 ===================================================
 
 乐鑫会不时推出新版本的 ESP-IDF，修复 bug 或提供新的功能。请注意，ESP-IDF 的每个主要版本和次要版本都有相应的支持期限。支持期限满后，版本停止更新维护，用户可将项目升级到最新的 ESP-IDF 版本。更多关于支持期限的信息，请参考 :doc:`ESP-IDF 版本 <../versions>`。
 
-因此，在使用时，也应注意更新本地版本。最简单的方法是：直接删除本地的 ``esp-idf`` 文件夹，然后按照 :ref:`get-started-get-esp-idf` 中的指示，重新完成克隆。
+因此，在使用时，也应注意更新本地版本。最简单的方法是：直接删除本地的 ``esp-idf`` 文件夹，然后按照 :ref:`get-started-get-esp-idf-legacy` 中的指示，重新完成克隆。
 
 另一种方法是仅更新变更的部分，具体方式请参阅 :ref:`更新 ESP-IDF <updating>` 章节。
 
-为确保工具版本符合新 ESP-IDF 的要求，在更新 ESP-IDF 版本后，请在 ``$IDF_PATH`` 目录下重新运行 ``./install.sh`` 脚本。详细说明请参阅 :ref:`get-started-set-up-tools`。
+为确保工具版本符合新 ESP-IDF 的要求，在更新 ESP-IDF 版本后，请在 ``$IDF_PATH`` 目录下重新运行 ``./install.sh`` 脚本。详细说明请参阅 :ref:`get-started-set-up-tools-legacy`。
 
-所有新工具安装完成后，请参考 :ref:`get-started-set-up-env`，运行导出脚本并进入 ESP-IDF 开发环境。
+所有新工具安装完成后，请参考 :ref:`get-started-set-up-env-legacy`，运行导出脚本并进入 ESP-IDF 开发环境。
 
 ESP-IDF 环境更新：只升级 Python 软件包
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -303,20 +295,6 @@ ESP-IDF 的部分功能并非直接包含在主代码库中，而是由 ``esp-id
 
     高级用户如需更灵活地控制更新流程，可参考 :ref:`idf-tools-py` 工具及 ``install-python-env`` 命令。此命令被安装脚本调用，专门用于创建或更新 ESP-IDF 环境。
 
-相关文档
-=================
-
-* :doc:`establish-serial-connection`
-* `Eclipse Plugin <https://github.com/espressif/idf-eclipse-plugin/blob/master/README_CN.md>`_
-* `VSCode Extension <https://github.com/espressif/vscode-esp-idf-extension/blob/master/docs/tutorial/install.md>`_
-* :doc:`../api-guides/tools/idf-monitor`
-
-.. toctree::
-    :hidden:
-    :maxdepth: 1
-
-    establish-serial-connection
-    flashing-troubleshooting
 
 .. _AUR: https://wiki.archlinux.org/index.php/Arch_User_Repository
 .. _First Steps on ESP-IDF: ../get-started/first-steps.html

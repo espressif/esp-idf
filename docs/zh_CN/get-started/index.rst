@@ -127,21 +127,18 @@
 
         ESP32-DevKitC <https://docs.espressif.com/projects/esp-dev-kits/zh_CN/latest/esp32/esp32-devkitc/index.html>
         ESP32-DevKitM-1 <https://docs.espressif.com/projects/esp-dev-kits/zh_CN/latest/esp32/esp32-devkitm-1/index.html>
-        ESP-WROVER-KIT <https://docs.espressif.com/projects/esp-dev-kits/zh_CN/latest/esp32/esp-wrover-kit/index.html>
-        ESP32-PICO-KIT <https://docs.espressif.com/projects/esp-dev-kits/zh_CN/latest/esp32/esp32-pico-kit/index.html>
         ESP32-Ethernet-Kit <https://docs.espressif.com/projects/esp-dev-kits/zh_CN/latest/esp32/esp32-ethernet-kit/index.html>
         ESP32-PICO-KIT-1 <https://docs.espressif.com/projects/esp-dev-kits/zh_CN/latest/esp32/esp32-pico-kit-1/index.html>
         ESP32-PICO-DevKitM-2 <https://docs.espressif.com/projects/esp-dev-kits/zh_CN/latest/esp32/esp32-pico-devkitm-2/index.html>
+        ESP32-LCDKit <https://docs.espressif.com/projects/esp-dev-kits/zh_CN/latest/esp32/esp32-lcdkit/index.html>
 
 .. only:: esp32s2
 
     .. toctree::
         :maxdepth: 1
 
-        ESP32-S2-Saola-1 <https://docs.espressif.com/projects/esp-dev-kits/zh_CN/latest/esp32s2/esp32-s2-saola-1/index.html>
         ESP32-S2-DevKitM-1 <https://docs.espressif.com/projects/esp-dev-kits/zh_CN/latest/esp32s2/esp32-s2-devkitm-1/index.html>
         ESP32-S2-DevKitC-1 <https://docs.espressif.com/projects/esp-dev-kits/zh_CN/latest/esp32s2/esp32-s2-devkitc-1/index.html>
-        ESP32-S2-Kaluga-Kit <https://docs.espressif.com/projects/esp-dev-kits/zh_CN/latest/esp32s2/esp32-s2-kaluga-1/index.html>
 
 .. only:: esp32c3
 
@@ -150,7 +147,7 @@
 
         ESP32-C3-DevKitC-02 <https://docs.espressif.com/projects/espressif-esp-dev-kits/zh_CN/latest/esp32c3/esp32-c3-devkitc-02/index.html>
         ESP32-C3-DevKitM-1 <https://docs.espressif.com/projects/espressif-esp-dev-kits/zh_CN/latest/esp32c3/esp32-c3-devkitm-1/index.html>
-
+        ESP32-C3-LCDkit <https://docs.espressif.com/projects/esp-dev-kits/zh_CN/latest/esp32c3/esp32-c3-lcdkit/index.html>
 
 .. only:: esp32s3
 
@@ -159,6 +156,10 @@
 
         ESP32-S3-DevKitC-1 <https://docs.espressif.com/projects/esp-dev-kits/zh_CN/latest/esp32s3/esp32-s3-devkitc-1/index.html>
         ESP32-S3-DevKitM-1 <https://docs.espressif.com/projects/esp-dev-kits/zh_CN/latest/esp32s3/esp32-s3-devkitm-1/index.html>
+        ESP32-S3-USB-OTG <https://docs.espressif.com/projects/esp-dev-kits/zh_CN/latest/esp32s3/esp32-s3-usb-otg/index.html>
+        ESP32-S3-LCD-EV-Board <https://docs.espressif.com/projects/esp-dev-kits/zh_CN/latest/esp32s3/esp32-s3-lcd-ev-board/index.html>
+        EchoEar <https://docs.espressif.com/projects/esp-dev-kits/zh_CN/latest/esp32s3/echoear/index.html>
+        ESP-DualKey <https://docs.espressif.com/projects/esp-dev-kits/zh_CN/latest/esp32s3/esp-dualkey/index.html>
 
 .. only:: esp32c2
 
@@ -166,6 +167,7 @@
         :maxdepth: 1
 
         ESP8684-DevKitM-1 <https://docs.espressif.com/projects/espressif-esp-dev-kits/zh_CN/latest/esp8684/esp8684-devkitm-1/index.html>
+        ESP8684-DevKitC-02 <https://docs.espressif.com/projects/esp-dev-kits/en/latest/esp32c2/esp8684-devkitc-02/index.html>
 
 .. only:: esp32c5
 
@@ -208,39 +210,111 @@
 
 .. _get-started-step-by-step:
 .. _get-started-how-to-get-esp-idf:
+.. _get-started-set-up-tools:
 
 安装
-============
+====
 
-为安装所需软件，乐鑫提供了以下方法，可根据需要选择其中之一。
+请使用 ESP-IDF 安装管理器 (EIM) 来安装 ESP-IDF、构建工具和相关工具链，该管理器支持多种操作系统。
 
-IDE
-~~~~~~
+EIM 提供两种安装方式：
 
-.. note:: 建议通过自己喜欢的集成开发环境 (IDE) 安装 ESP-IDF。
-
-* `Eclipse Plugin <https://github.com/espressif/idf-eclipse-plugin/blob/master/README.md>`_
-* `VSCode Extension <https://github.com/espressif/vscode-esp-idf-extension/blob/master/README_CN.md>`_
-
-手动安装
-~~~~~~~~~~~~~~~~~~~
-
-请根据操作系统，选择对应的手动安装流程。
+- **图形用户界面 (GUI)**：用户友好，适合大多数用户。
+- **命令行界面 (CLI)**：适用于 CI/CD 流水线和自动化安装。
 
 .. toctree::
     :maxdepth: 1
 
-    Windows Installer <windows-setup>
-    Linux and macOS <linux-macos-setup>
+    windows-setup
+    linux-setup
+    macos-setup
 
-编译第一个工程
-===================
+.. _get-started-build:
 
-如果已经安装好 ESP-IDF，且没有使用集成开发环境 (IDE)，请在命令提示行中，按照 :ref:`在 Windows 中开始创建工程 <get-started-windows-first-steps>` 或 :ref:`在 Linux 和 macOS 中开始创建工程 <get-started-linux-macos-first-steps>` 编译第一个工程。
+构建首个项目
+============
 
-.. _Stable version: https://docs.espressif.com/projects/esp-idf/en/stable/
+安装 ESP-IDF 后，您可选择在集成开发环境 (IDE) 中或通过命令行来构建首个项目。
+
+
+在 IDE 中构建
+~~~~~~~~~~~~~
+
+通过 EIM 安装的 ESP-IDF 版本可搭配以下 IDE 使用，获得图形化开发体验：
+
+- 基于 Eclipse CDT 的 `Espressif-IDE <https://docs.espressif.com/projects/espressif-ide/zh_CN/latest/>`_
+
+    该 IDE 已集成 IDF Eclipse 插件、必备 Eclipse CDT 插件和其他 Eclipse 平台插件，可支持 ESP-IDF 应用的开发和构建。
+- 安装 `ESP-IDF 拓展 <https://docs.espressif.com/projects/vscode-esp-idf-extension/zh_CN/latest/index.html>`_ 的 Visual Studio Code
+
+    通过安装拓展，您可直接在 Visual Studio Code 中开发、构建、烧录和监视 ESP-IDF 应用程序。
+
+关于 IDE 的具体配置与使用方法，请参阅上述对应的文档。
+
+
+通过命令行构建
+~~~~~~~~~~~~~~~~
+
+如果使用命令行构建项目、构建、烧录至 {IDF_TARGET_NAME}、监视设备输出，请根据您的操作系统参考以下说明：
+
+.. toctree::
+    :maxdepth: 1
+
+    windows-start-project
+    linux-macos-start-project
+
+.. note::
+
+    如果尚未安装 ESP-IDF，请跳转至 :ref:`get-started-step-by-step`，按照说明先安装所有必需的软件。
+
 
 卸载 ESP-IDF
-=================
+============
 
-如需卸载 ESP-IDF，请参考 :ref:`idf-tools-uninstall`。
+如需卸载通过 EIM 安装的 ESP-IDF 及相关工具，可使用图形用户界面 (GUI) 或命令行界面 (CLI) 两种方式。
+
+使用 EIM GUI 卸载
+~~~~~~~~~~~~~~~~~
+
+启动 ESP-IDF 安装管理器。在 ``管理安装`` 下，点击 ``打开仪表板``。
+
+.. figure:: ../../_static/get-started-eim-gui-zh.png
+    :align: center
+    :alt: EIM 打开仪表板
+    :figclass: align-center
+
+    EIM 打开仪表板
+
+如需删除特定 ESP-IDF 版本，请在该版本下点击 ``移除`` 按键。
+
+如果删除所有 ESP-IDF 版本，请点击页面底部的 ``清除所有`` 按键。
+
+.. figure:: ../../_static/get-started-eim-gui-uninstall-zh.png
+    :align: center
+    :alt: EIM 卸载 ESP-IDF
+    :figclass: align-center
+
+    EIM 卸载 ESP-IDF
+
+使用 EIM CLI 卸载
+~~~~~~~~~~~~~~~~~
+
+如需删除特定 ESP-IDF 版本，例如 v5.4.2，请在终端中运行以下命令：
+
+.. code-block:: bash
+
+    eim uninstall v5.4.2
+
+如需删除所有 ESP-IDF 版本，请在终端中运行以下命令：
+
+.. code-block:: bash
+
+    eim purge
+
+
+相关文档
+=========
+
+* `ESP-IDF 安装管理器 (EIM) 文档 <https://docs.espressif.com/projects/idf-im-ui/en/latest/>`_
+* `Espressif-IDE (ESP-IDF Eclipse 插件) GitHub 仓库 <https://github.com/espressif/idf-eclipse-plugin/tree/master>`_
+* `VSCode ESP-IDF 扩展 GitHub 仓库 <https://github.com/espressif/vscode-esp-idf-extension/tree/master>`_

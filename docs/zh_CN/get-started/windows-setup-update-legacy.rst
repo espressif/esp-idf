@@ -1,8 +1,12 @@
 *************************************************
-在 Windows 环境下更新 ESP-IDF 工具
+在 Windows 环境下更新 ESP-IDF 工具（已过时）
 *************************************************
 
 :link_to_translation:`en:[English]`
+
+.. warning::
+
+   本章节描述了 ESP-IDF v6.0 版本之前更新 ESP-IDF 工具的默认方式。
 
 .. _get-started-install_bat-windows:
 
