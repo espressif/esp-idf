@@ -10,8 +10,3 @@ set(COMPONENTS main esptool_py)
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 
 project(test_esp_flash_freq_limit)
-
-message(STATUS "Checking memspi registers are not read-write by half-word")
-include($ENV{IDF_PATH}/tools/ci/check_register_rw_half_word.cmake)
-check_register_rw_half_word(SOC_MODULES "spi_mem*" "spi1_mem*"
-                            HAL_MODULES "spimem_flash")

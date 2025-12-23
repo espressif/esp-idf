@@ -294,7 +294,7 @@ static esp_err_t alloc_dma_chan(spi_host_device_t host_id, spi_dma_chan_t dma_ch
         }
 #endif
         gdma_transfer_config_t trans_cfg = {
-            .max_data_burst_size = 16,
+            .max_data_burst_size = 32,
             .access_ext_mem = true, // allow to transfer data from/to external memory directly by DMA
         };
         ESP_RETURN_ON_ERROR(gdma_config_transfer(dma_ctx->tx_dma_chan, &trans_cfg), SPI_TAG, "config gdma tx transfer failed");
