@@ -43,12 +43,11 @@ static inline void rmt_rx_mount_dma_buffer(rmt_rx_channel_t *rx_chan, const void
 static esp_err_t rmt_rx_init_dma_link(rmt_rx_channel_t *rx_channel, const rmt_rx_channel_config_t *config)
 {
     gdma_channel_alloc_config_t dma_chan_config = {
-        .direction = GDMA_CHANNEL_DIRECTION_RX,
 #if CONFIG_RMT_RX_ISR_CACHE_SAFE
         .flags.isr_cache_safe = true,
 #endif
     };
-    ESP_RETURN_ON_ERROR(gdma_new_ahb_channel(&dma_chan_config, &rx_channel->base.dma_chan), TAG, "allocate RX DMA channel failed");
+    ESP_RETURN_ON_ERROR(gdma_new_ahb_channel(&dma_chan_config, NULL, &rx_channel->base.dma_chan), TAG, "allocate RX DMA channel failed");
     gdma_transfer_config_t transfer_cfg = {
         .access_ext_mem = true, // support receive buffer to PSRAM
         .max_data_burst_size = 32,

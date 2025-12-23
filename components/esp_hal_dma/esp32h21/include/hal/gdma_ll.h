@@ -56,6 +56,8 @@ extern "C" {
 #define GDMA_LL_AHB_RX_BURST_NEEDS_ALIGNMENT  1
 #define GDMA_LL_ACCESS_ENCRYPTION_MEM_ALIGNMENT 16 // The alignment of the memory and size when DMA accesses encrypted memory
 
+#define GDMA_LL_AHB_M2M_CAPABLE_PAIR_MASK   0x07  // pair 0,1,2 are M2M capable
+
 #define GDMA_LL_TX_ETM_EVENT_TABLE(group, chan, event)                                     \
     (uint32_t[1][3][GDMA_ETM_EVENT_MAX]){{{                                                \
                                               [GDMA_ETM_EVENT_EOF] = GDMA_EVT_OUT_EOF_CH0, \

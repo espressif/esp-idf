@@ -437,18 +437,9 @@ static void hci_driver_uart_dma_install(void)
     periph_module_enable(PERIPH_UHCI0_MODULE);
     periph_module_reset(PERIPH_UHCI0_MODULE);
     // install DMA driver
-    gdma_channel_alloc_config_t tx_channel_config = {
-        .flags.reserve_sibling = 1,
-        .direction = GDMA_CHANNEL_DIRECTION_TX,
-    };
+    gdma_channel_alloc_config_t channel_config = {0};
 
-    ESP_ERROR_CHECK(gdma_new_ahb_channel(&tx_channel_config, &s_tx_channel));
-    gdma_channel_alloc_config_t rx_channel_config = {
-        .direction = GDMA_CHANNEL_DIRECTION_RX,
-        .sibling_chan = s_tx_channel,
-    };
-
-    ESP_ERROR_CHECK(gdma_new_ahb_channel(&rx_channel_config, &s_rx_channel));
+    ESP_ERROR_CHECK(gdma_new_ahb_channel(&channel_config, &s_tx_channel, &s_rx_channel));
     gdma_connect(s_tx_channel, GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_UHCI, 0));
     gdma_connect(s_rx_channel, GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_UHCI, 0));
     gdma_strategy_config_t strategy_config = {

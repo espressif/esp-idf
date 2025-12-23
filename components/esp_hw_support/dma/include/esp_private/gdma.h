@@ -26,10 +26,7 @@ typedef struct gdma_channel_t *gdma_channel_handle_t;
  *
  */
 typedef struct {
-    gdma_channel_handle_t sibling_chan; /*!< DMA sibling channel handle (NULL means having sibling is not necessary) */
-    gdma_channel_direction_t direction; /*!< DMA channel direction */
     struct {
-        int reserve_sibling: 1; /*!< If set, DMA channel allocator would prefer to allocate new channel in a new pair, and reserve sibling channel for future use */
         int isr_cache_safe: 1;  /*!< If set, DMA channel allocator would allocate interrupt in cache-safe region, and ISR is serviceable when cache is disabled */
     } flags;
 } gdma_channel_alloc_config_t;
@@ -110,34 +107,44 @@ typedef struct {
 } gdma_strategy_config_t;
 
 /**
- * @brief Create AHB-GDMA channel
+ * @brief Create AHB-GDMA channel(s)
  * @note This API won't install interrupt service for the allocated channel.
  *       If interrupt service is needed, user has to register GDMA event callback by `gdma_register_tx_event_callbacks` or `gdma_register_rx_event_callbacks`.
+ * @note To allocate both TX and RX channels in a pair, pass non-NULL pointers for both ret_tx_chan and ret_rx_chan.
+ *       To allocate only one direction, pass NULL for the unwanted direction.
+ * @note Allocation is atomic: if any channel fails to allocate, all partially allocated resources are cleaned up automatically.
+ *       Either all requested channels are successfully allocated, or the function fails with no channels allocated.
  *
  * @param[in] config Pointer to a collection of configurations for allocating GDMA channel
- * @param[out] ret_chan Returned channel handle
+ * @param[out] ret_tx_chan Returned TX channel handle. Pass NULL if TX channel is not needed. Must not be NULL if ret_rx_chan is also NULL.
+ * @param[out] ret_rx_chan Returned RX channel handle. Pass NULL if RX channel is not needed. Must not be NULL if ret_tx_chan is also NULL.
  * @return
- *      - ESP_OK: Create DMA channel successfully
- *      - ESP_ERR_INVALID_ARG: Create DMA channel failed because of invalid argument
+ *      - ESP_OK: Create DMA channel(s) successfully
+ *      - ESP_ERR_INVALID_ARG: Create DMA channel failed because both ret_tx_chan and ret_rx_chan are NULL
  *      - ESP_ERR_NO_MEM: Create DMA channel failed because out of memory
  *      - ESP_FAIL: Create DMA channel failed because of other error
  */
-esp_err_t gdma_new_ahb_channel(const gdma_channel_alloc_config_t *config, gdma_channel_handle_t *ret_chan);
+esp_err_t gdma_new_ahb_channel(const gdma_channel_alloc_config_t *config, gdma_channel_handle_t *ret_tx_chan, gdma_channel_handle_t *ret_rx_chan);
 
 /**
- * @brief Create AXI-GDMA channel
+ * @brief Create AXI-GDMA channel(s)
  * @note This API won't install interrupt service for the allocated channel.
  *       If interrupt service is needed, user has to register GDMA event callback by `gdma_register_tx_event_callbacks` or `gdma_register_rx_event_callbacks`.
+ * @note To allocate both TX and RX channels in a pair, pass non-NULL pointers for both ret_tx_chan and ret_rx_chan.
+ *       To allocate only one direction, pass NULL for the unwanted direction.
+ * @note Allocation is atomic: if any channel fails to allocate, all partially allocated resources are cleaned up automatically.
+ *       Either all requested channels are successfully allocated, or the function fails with no channels allocated.
  *
  * @param[in] config Pointer to a collection of configurations for allocating GDMA channel
- * @param[out] ret_chan Returned channel handle
+ * @param[out] ret_tx_chan Returned TX channel handle. Pass NULL if TX channel is not needed. Must not be NULL if ret_rx_chan is also NULL.
+ * @param[out] ret_rx_chan Returned RX channel handle. Pass NULL if RX channel is not needed. Must not be NULL if ret_tx_chan is also NULL.
  * @return
- *      - ESP_OK: Create DMA channel successfully
- *      - ESP_ERR_INVALID_ARG: Create DMA channel failed because of invalid argument
+ *      - ESP_OK: Create DMA channel(s) successfully
+ *      - ESP_ERR_INVALID_ARG: Create DMA channel failed because both ret_tx_chan and ret_rx_chan are NULL
  *      - ESP_ERR_NO_MEM: Create DMA channel failed because out of memory
  *      - ESP_FAIL: Create DMA channel failed because of other error
  */
-esp_err_t gdma_new_axi_channel(const gdma_channel_alloc_config_t *config, gdma_channel_handle_t *ret_chan);
+esp_err_t gdma_new_axi_channel(const gdma_channel_alloc_config_t *config, gdma_channel_handle_t *ret_tx_chan, gdma_channel_handle_t *ret_rx_chan);
 
 /**
  * @brief Connect GDMA channel to trigger peripheral

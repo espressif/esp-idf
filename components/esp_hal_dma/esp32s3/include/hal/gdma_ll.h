@@ -74,6 +74,8 @@ extern "C" {
 #define GDMA_LL_MAX_BURST_SIZE_PSRAM          64 // PSRAM controller doesn't support burst access with size > 64 bytes
 #define GDMA_LL_ACCESS_ENCRYPTION_MEM_ALIGNMENT 16 // The alignment of the memory and size when DMA accesses encrypted memory
 
+#define GDMA_LL_AHB_M2M_CAPABLE_PAIR_MASK   0x1F  // pair 0,1,2,3,4 are M2M capable
+
 ///////////////////////////////////// Common /////////////////////////////////////////
 
 /**

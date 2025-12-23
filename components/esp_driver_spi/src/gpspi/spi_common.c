@@ -265,23 +265,14 @@ static esp_err_t alloc_dma_chan(spi_host_device_t host_id, spi_dma_chan_t dma_ch
     esp_err_t ret = ESP_OK;
 
     if (dma_chan == SPI_DMA_CH_AUTO) {
-        gdma_channel_alloc_config_t tx_alloc_config = {
-            .flags.reserve_sibling = 1,
-#if CONFIG_SPI_MASTER_ISR_IN_IRAM
-            .flags.isr_cache_safe = true,
-#endif
-            .direction = GDMA_CHANNEL_DIRECTION_TX,
-        };
-        ESP_RETURN_ON_ERROR(SPI_GDMA_NEW_CHANNEL(&tx_alloc_config, &dma_ctx->tx_dma_chan), SPI_TAG, "alloc gdma tx failed");
-
-        gdma_channel_alloc_config_t rx_alloc_config = {
-            .direction = GDMA_CHANNEL_DIRECTION_RX,
-            .sibling_chan = dma_ctx->tx_dma_chan,
+        gdma_channel_alloc_config_t alloc_config = {
 #if CONFIG_SPI_MASTER_ISR_IN_IRAM
             .flags.isr_cache_safe = true,
 #endif
         };
-        ESP_RETURN_ON_ERROR(SPI_GDMA_NEW_CHANNEL(&rx_alloc_config, &dma_ctx->rx_dma_chan), SPI_TAG, "alloc gdma rx failed");
+        // Allocate TX and RX channels separately (they don't need to be in the same pair)
+        ESP_RETURN_ON_ERROR(SPI_GDMA_NEW_CHANNEL(&alloc_config, &dma_ctx->tx_dma_chan, NULL), SPI_TAG, "alloc gdma tx channel failed");
+        ESP_RETURN_ON_ERROR(SPI_GDMA_NEW_CHANNEL(&alloc_config, NULL, &dma_ctx->rx_dma_chan), SPI_TAG, "alloc gdma rx channel failed");
 
         if (host_id == SPI2_HOST) {
             gdma_connect(dma_ctx->tx_dma_chan, GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_SPI, 2));
