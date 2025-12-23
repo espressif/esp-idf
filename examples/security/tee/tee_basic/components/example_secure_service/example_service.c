@@ -8,7 +8,7 @@
 #include "esp_err.h"
 #include "esp_log.h"
 
-#include "mbedtls/gcm.h"
+#include "psa/crypto.h"
 
 #include "esp_tee.h"
 #include "secure_service_num.h"
@@ -45,42 +45,72 @@ static esp_err_t aes_gcm_crypt_common(example_aes_gcm_ctx_t *ctx, uint8_t *tag, 
     ESP_LOGI(TAG, "Secure service call: PROTECTED M-mode");
     ESP_LOGI(TAG, "AES-256-GCM %s", is_encrypt ? "encryption" : "decryption");
 
-    mbedtls_gcm_context gcm;
-    mbedtls_gcm_init(&gcm);
-
     esp_err_t err = ESP_FAIL;
+    psa_aead_operation_t operation = PSA_AEAD_OPERATION_INIT;
+    psa_status_t status;
+    psa_key_id_t key_id;
+    psa_key_attributes_t key_attributes = PSA_KEY_ATTRIBUTES_INIT;
+    psa_algorithm_t alg = PSA_ALG_GCM;
+    psa_set_key_usage_flags(&key_attributes, PSA_KEY_USAGE_ENCRYPT | PSA_KEY_USAGE_DECRYPT);
+    psa_set_key_algorithm(&key_attributes, alg);
+    psa_set_key_type(&key_attributes, PSA_KEY_TYPE_AES);
+    psa_set_key_bits(&key_attributes, AES256_KEY_BITS);
+    status = psa_import_key(&key_attributes, key, sizeof(key), &key_id);
+    psa_reset_key_attributes(&key_attributes);
+    if (status != PSA_SUCCESS) {
+        ESP_LOGE(TAG, "Error in importing key: %d", status);
+        return ESP_ERR_INVALID_STATE;
+    }
+    if (is_encrypt) {
+        status = psa_aead_encrypt_setup(&operation, key_id, alg);
+    } else {
+        status = psa_aead_decrypt_setup(&operation, key_id, alg);
+    }
+    if (status != PSA_SUCCESS) {
+        ESP_LOGE(TAG, "Error in AEAD setup: %d", status);
+        goto cleanup;
+    }
+    status = psa_aead_set_lengths(&operation, ctx->aad_len, ctx->input_len);
+    if (status != PSA_SUCCESS) {
+        ESP_LOGE(TAG, "Error in setting lengths: %d", status);
+        goto cleanup;
+    }
+    psa_aead_set_nonce(&operation, nonce, AES256_NONCE_LEN);
+    if (ctx->aad_len > 0) {
+        status = psa_aead_update_ad(&operation, ctx->aad, ctx->aad_len);
+        if (status != PSA_SUCCESS) {
+            ESP_LOGE(TAG, "Error in updating AAD: %d", status);
+            goto cleanup;
+        }
+    }
 
-    int ret = mbedtls_gcm_setkey(&gcm, MBEDTLS_CIPHER_ID_AES, key, AES256_KEY_BITS);
-    if (ret != 0) {
-        ESP_LOGE(TAG, "Error in setting key: %d", ret);
+    size_t output_len = 0;
+    status = psa_aead_update(&operation, ctx->input, ctx->input_len, output, ctx->input_len, &output_len);
+    if (status != PSA_SUCCESS) {
+        ESP_LOGE(TAG, "Error in updating aead: %d", status);
         goto cleanup;
     }
 
     if (is_encrypt) {
-        ret = mbedtls_gcm_crypt_and_tag(&gcm, MBEDTLS_GCM_ENCRYPT, ctx->input_len,
-                                        nonce, AES256_NONCE_LEN,
-                                        ctx->aad, ctx->aad_len,
-                                        ctx->input, output,
-                                        tag_len, tag);
-        if (ret != 0) {
-            ESP_LOGE(TAG, "Error in encrypting data: %d", ret);
+        size_t output_tag_len = 0;
+        status = psa_aead_finish(&operation, output + output_len, ctx->input_len + tag_len - output_len, &output_len, tag, tag_len, &output_tag_len);
+        if (status != PSA_SUCCESS) {
+            ESP_LOGE(TAG, "Error in finishing encryption: %d", status);
             goto cleanup;
         }
     } else {
-        ret = mbedtls_gcm_auth_decrypt(&gcm, ctx->input_len,
-                                    nonce, AES256_NONCE_LEN,
-                                    ctx->aad, ctx->aad_len,
-                                    tag, tag_len,
-                                    ctx->input, output);
-        if (ret != 0) {
-            ESP_LOGE(TAG, "Error in decrypting data: %d", ret);
+        size_t plaintext_len = 0;
+        status = psa_aead_verify(&operation, output, ctx->input_len, &plaintext_len, tag, tag_len);
+        if (status != PSA_SUCCESS) {
+            ESP_LOGE(TAG, "Error in verifying decryption: %d", status);
             goto cleanup;
         }
     }
     err = ESP_OK;
 
 cleanup:
-    mbedtls_gcm_free(&gcm);
+    psa_aead_abort(&operation);
+    psa_destroy_key(key_id);
     return err;
 }
 

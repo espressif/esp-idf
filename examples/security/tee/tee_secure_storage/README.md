@@ -29,7 +29,9 @@ Before the project configuration and build, be sure to set the correct chip targ
 
 Open the project configuration menu (`idf.py menuconfig`).
 
-- Configure the secure storage example key ID at `Example Configuration → TEE: Secure Storage Key ID`.
+- Configure unique secure storage key IDs for each workflow:
+  - `Example Configuration → TEE: Secure Storage Key ID for signing`
+  - `Example Configuration → TEE: Secure Storage Key ID for encryption`
 
 TEE Secure Storage follows the NVS partition format and uses an XTS-AES encryption scheme derived via the HMAC peripheral or software-based HMAC implementation. It supports two key derivation modes, configurable via `CONFIG_SECURE_TEE_SEC_STG_MODE`:
 

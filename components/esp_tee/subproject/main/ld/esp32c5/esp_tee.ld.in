@@ -214,3 +214,8 @@ ASSERT ((_tee_iram_end <= _tee_dram_start),
         "Error: TEE IRAM segment overflowed into the DRAM segment! Increase CONFIG_SECURE_TEE_IRAM_SIZE as required.");
 ASSERT((_tee_heap_end >= _tee_heap_start + 0x2000),
         "Error: TEE heap size is too small - minimum is 8KB (0x2000)! Increase CONFIG_SECURE_TEE_DRAM_SIZE as required.");
+/* MMU Page Alignment Checks */
+ASSERT ((CONFIG_SECURE_TEE_IROM_SIZE % 0x10000) == 0,
+        "Error: SECURE_TEE_IROM_SIZE must be a multiple of MMU_PAGE_SIZE (0x10000/64KB)!");
+ASSERT ((CONFIG_SECURE_TEE_DROM_SIZE % 0x10000) == 0,
+        "Error: SECURE_TEE_DROM_SIZE must be a multiple of MMU_PAGE_SIZE (0x10000/64KB)!");

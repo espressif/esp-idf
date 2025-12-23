@@ -14,12 +14,8 @@
 #include "bootloader_sha.h"
 #include "esp_tee_sec_storage.h"
 #endif
-
 #include "esp_random.h"
-#include "mbedtls/ecdh.h"
-#include "mbedtls/ecdsa.h"
-#include "mbedtls/sha256.h"
-
+#include "psa/crypto.h"
 #include "esp_attestation_utils.h"
 
 #define ECDSA_PUBKEY_PREFIX_SZ  (0x02)
@@ -91,8 +87,8 @@ static esp_err_t get_ecdsa_sign_secp256r1(const esp_att_ecdsa_keypair_t *keypair
         return err;
     }
 
-    memcpy(sign_r, sign.sign_r, sign_r_len);
-    memcpy(sign_s, sign.sign_s, sign_s_len);
+    memcpy(sign_r, sign.signature, sign_r_len);
+    memcpy(sign_s, sign.signature + sign_r_len, sign_s_len);
 
     return ESP_OK;
 }
@@ -113,44 +109,34 @@ static esp_err_t gen_ecdsa_keypair_secp256r1(esp_att_ecdsa_keypair_t *keypair)
 
     memset(keypair, 0x00, sizeof(esp_att_ecdsa_keypair_t));
 
-    int ret = -1;
-    esp_err_t err = ESP_FAIL;
-
-    mbedtls_ecdsa_context ecdsa_ctx;
-    mbedtls_ecdsa_init(&ecdsa_ctx);
-
-    ret = mbedtls_ecdsa_genkey(&ecdsa_ctx, MBEDTLS_ECP_DP_SECP256R1, rng_func, NULL);
-    if (ret != 0) {
-        goto exit;
+    psa_key_attributes_t key_attributes = PSA_KEY_ATTRIBUTES_INIT;
+    psa_set_key_type(&key_attributes, PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_SECP_R1));
+    psa_set_key_bits(&key_attributes, 256);
+    psa_set_key_usage_flags(&key_attributes, PSA_KEY_USAGE_SIGN | PSA_KEY_USAGE_VERIFY);
+    psa_set_key_algorithm(&key_attributes, PSA_ALG_ECDSA);
+    psa_status_t status = psa_generate_key(&key_attributes, &keypair->key_id);
+    if (status != PSA_SUCCESS) {
+        return ESP_FAIL;
     }
 
-    size_t pvt_len = mbedtls_mpi_size(&ecdsa_ctx.MBEDTLS_PRIVATE(d));
-    ret = mbedtls_mpi_write_binary(&ecdsa_ctx.MBEDTLS_PRIVATE(d), (unsigned char *)keypair->pvt_key, pvt_len);
-    if (ret != 0) {
-        goto exit;
+    size_t pub_key_len = 0;
+    uint8_t pub_key[2 * SECP256R1_ECDSA_KEY_LEN + 1] = {0};
+    status = psa_export_public_key(keypair->key_id, pub_key, sizeof(pub_key), &pub_key_len);
+    if (status != PSA_SUCCESS) {
+        return ESP_FAIL;
     }
 
-    size_t pubx_len = mbedtls_mpi_size(&(ecdsa_ctx.MBEDTLS_PRIVATE(Q).MBEDTLS_PRIVATE(X)));
-    ret = mbedtls_mpi_write_binary(&(ecdsa_ctx.MBEDTLS_PRIVATE(Q).MBEDTLS_PRIVATE(X)), (unsigned char *)(keypair->pub_key_x), pubx_len);
-    if (ret != 0) {
-        goto exit;
+    if (pub_key_len != sizeof(pub_key)) {
+        return ESP_ERR_INVALID_SIZE;
     }
 
-    size_t puby_len = mbedtls_mpi_size(&(ecdsa_ctx.MBEDTLS_PRIVATE(Q).MBEDTLS_PRIVATE(Y)));
-    ret = mbedtls_mpi_write_binary(&(ecdsa_ctx.MBEDTLS_PRIVATE(Q).MBEDTLS_PRIVATE(Y)), (unsigned char *)(keypair->pub_key_y), puby_len);
-    if (ret != 0) {
-        goto exit;
-    }
+    memcpy(keypair->pub_key_x, pub_key + 1, SECP256R1_ECDSA_KEY_LEN);
+    memcpy(keypair->pub_key_y, pub_key + 1 + SECP256R1_ECDSA_KEY_LEN, SECP256R1_ECDSA_KEY_LEN);
+
+    psa_reset_key_attributes(&key_attributes);
 
     keypair->curve = 0;
-    err = ESP_OK;
-
-exit:
-    if (ret != 0) {
-        ESP_LOGE(TAG, "Failed to generate ECDSA keypair (-0x%X)", -ret);
-    }
-    mbedtls_ecdsa_free(&ecdsa_ctx);
-    return err;
+    return ESP_OK;
 }
 
 static esp_err_t get_ecdsa_sign_secp256r1(const esp_att_ecdsa_keypair_t *keypair, const uint8_t *digest, const size_t len,
@@ -164,67 +150,21 @@ static esp_err_t get_ecdsa_sign_secp256r1(const esp_att_ecdsa_keypair_t *keypair
         return ESP_ERR_INVALID_SIZE;
     }
 
-    esp_err_t err = ESP_FAIL;
-
-    mbedtls_ecp_keypair pvt_key;
-    mbedtls_mpi r, s;
-
-    mbedtls_mpi_init(&r);
-    mbedtls_mpi_init(&s);
-    mbedtls_ecp_keypair_init(&pvt_key);
-
-    int ret = mbedtls_ecp_read_key(MBEDTLS_ECP_DP_SECP256R1, &pvt_key, keypair->pvt_key, sizeof(keypair->pvt_key));
-    if (ret != 0) {
-        goto exit;
+    size_t signature_len = 0;
+    uint8_t signature[sign_r_len + sign_s_len];
+    psa_status_t status = psa_sign_hash(keypair->key_id, PSA_ALG_ECDSA(PSA_ALG_SHA_256), digest, len, signature, sign_r_len + sign_s_len, &signature_len);
+    if (status != PSA_SUCCESS) {
+        return ESP_FAIL;
     }
 
-    mbedtls_ecdsa_context ecdsa_ctx;
-    mbedtls_ecdsa_init(&ecdsa_ctx);
-
-    ret = mbedtls_ecdsa_from_keypair(&ecdsa_ctx, &pvt_key);
-    if (ret != 0) {
-        goto exit;
+    if (signature_len != sign_r_len + sign_s_len) {
+        return ESP_ERR_INVALID_SIZE;
     }
 
-    ret = mbedtls_ecdsa_sign(&ecdsa_ctx.MBEDTLS_PRIVATE(grp), &r, &s, &ecdsa_ctx.MBEDTLS_PRIVATE(d),
-                             digest, len, rng_func, NULL);
-    if (ret != 0) {
-        return ret;
-    }
+    memcpy(sign_r, signature, sign_r_len);
+    memcpy(sign_s, signature + sign_r_len, sign_s_len);
 
-    size_t r_len = mbedtls_mpi_size(&r);
-    if (r_len > sign_s_len) {
-        goto exit;
-    }
-
-    ret = mbedtls_mpi_write_binary(&r, (unsigned char *)(sign_r), r_len);
-    if (ret != 0) {
-        goto exit;
-    }
-
-    size_t s_len = mbedtls_mpi_size(&s);
-    if (s_len > sign_s_len) {
-        goto exit;
-    }
-
-    ret = mbedtls_mpi_write_binary(&s, (unsigned char *)(sign_s), s_len);
-    if (ret != 0) {
-        goto exit;
-    }
-
-    err = ESP_OK;
-
-exit:
-    if (ret != 0) {
-        ESP_LOGE(TAG, "Failed to generate ECDSA signature (-0x%X)", -ret);
-    }
-
-    mbedtls_ecdsa_free(&ecdsa_ctx);
-    mbedtls_ecp_keypair_free(&pvt_key);
-    mbedtls_mpi_free(&s);
-    mbedtls_mpi_free(&r);
-
-    return err;
+    return ESP_OK;
 }
 
 #endif
@@ -241,33 +181,23 @@ esp_err_t esp_att_utils_ecdsa_get_pubkey(const esp_att_ecdsa_keypair_t *keypair,
         return ESP_ERR_INVALID_ARG;
     }
 
-    esp_err_t err = ESP_FAIL;
-
-    size_t hexstr_len = sizeof(keypair->pub_key_x) * 2 + ECDSA_PUBKEY_PREFIX_SZ + 1;
-    char *hexstr = calloc(hexstr_len, sizeof(uint8_t));
-    if (hexstr == NULL) {
-        err = ESP_ERR_NO_MEM;
-        goto exit;
+    size_t pubkey_hexstr_size = sizeof(keypair->pub_key_x) * 2 + ECDSA_PUBKEY_PREFIX_SZ + 1;
+    *pubkey_hexstr = calloc(pubkey_hexstr_size, sizeof(char));
+    if (*pubkey_hexstr == NULL) {
+        return ESP_ERR_NO_MEM;
     }
 
-    /* Checking the parity of the y-component of the public key */
-    char *pubkey_prefix = (keypair->pub_key_y[SECP256R1_ECDSA_KEY_LEN - 1] & 1)
-                          ? ECDSA_COMPRESSED_KEY_ODD_PREFIX
-                          : ECDSA_COMPRESSED_KEY_EVEN_PREFIX;
-    memcpy(hexstr, pubkey_prefix, ECDSA_PUBKEY_PREFIX_SZ);
+    char *pubkey_prefix = (keypair->pub_key_y[SECP256R1_ECDSA_KEY_LEN - 1] & 1) ? ECDSA_COMPRESSED_KEY_ODD_PREFIX : ECDSA_COMPRESSED_KEY_EVEN_PREFIX;
+    memcpy(*pubkey_hexstr, pubkey_prefix, ECDSA_PUBKEY_PREFIX_SZ);
 
-    err = esp_att_utils_hexbuf_to_hexstr(keypair->pub_key_x, sizeof(keypair->pub_key_x),
-                                         &hexstr[ECDSA_PUBKEY_PREFIX_SZ], hexstr_len - ECDSA_PUBKEY_PREFIX_SZ);
+    int err = esp_att_utils_hexbuf_to_hexstr(keypair->pub_key_x, sizeof(keypair->pub_key_x), *pubkey_hexstr + ECDSA_PUBKEY_PREFIX_SZ, pubkey_hexstr_size - ECDSA_PUBKEY_PREFIX_SZ);
     if (err != ESP_OK) {
-        goto exit;
+        free(*pubkey_hexstr);
+        *pubkey_hexstr = NULL;
+        return err;
     }
 
-    *pubkey_hexstr = hexstr;
     return ESP_OK;
-
-exit:
-    free(hexstr);
-    return err;
 }
 
 esp_err_t esp_att_utils_ecdsa_get_pubkey_digest(const esp_att_ecdsa_keypair_t *keypair, uint8_t *digest, const size_t len)
@@ -277,14 +207,28 @@ esp_err_t esp_att_utils_ecdsa_get_pubkey_digest(const esp_att_ecdsa_keypair_t *k
     }
 
     uint8_t pubkey_c[SECP256R1_ECDSA_KEY_LEN * 2] = {0};
-    memcpy(pubkey_c, keypair->pub_key_x, SECP256R1_ECDSA_KEY_LEN);
-    memcpy(pubkey_c + SECP256R1_ECDSA_KEY_LEN, keypair->pub_key_y, SECP256R1_ECDSA_KEY_LEN);
+    memcpy(pubkey_c, keypair->pub_key_x, sizeof(keypair->pub_key_x));
+    memcpy(pubkey_c + SECP256R1_ECDSA_KEY_LEN, keypair->pub_key_y, sizeof(keypair->pub_key_y));
 
     uint8_t pubkey_digest[SHA256_DIGEST_SZ];
-    int ret = mbedtls_sha256((const unsigned char *)pubkey_c, sizeof(pubkey_c), pubkey_digest, false);
-    if (ret != 0) {
-        ESP_LOGE(TAG, "Failed to calculate pubkey digest (-%X)", -ret);
+    psa_hash_operation_t hash_op = PSA_HASH_OPERATION_INIT;
+    psa_status_t status = psa_hash_setup(&hash_op, PSA_ALG_SHA_256);
+    if (status != PSA_SUCCESS) {
         return ESP_FAIL;
+    }
+
+    status = psa_hash_update(&hash_op, pubkey_c, sizeof(pubkey_c));
+    if (status != PSA_SUCCESS) {
+        return ESP_FAIL;
+    }
+    size_t pubkey_digest_len = 0;
+    status = psa_hash_finish(&hash_op, pubkey_digest, len, &pubkey_digest_len);
+    if (status != PSA_SUCCESS) {
+        return ESP_FAIL;
+    }
+
+    if (pubkey_digest_len != len) {
+        return ESP_ERR_INVALID_SIZE;
     }
 
     memcpy(digest, pubkey_digest, len);
