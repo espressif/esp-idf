@@ -47,52 +47,48 @@ static int ssl_update_checksum_start( mbedtls_ssl_context *ssl,
                                        const unsigned char *buf, size_t len )
 {
     int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
-#if defined(MBEDTLS_SHA256_C)
-    ret = mbedtls_md_update( &ssl->handshake->fin_sha256, buf, len );
+    psa_status_t status;
+#if defined(PSA_WANT_ALG_SHA_256)
+    status = psa_hash_update(
+                                         &ssl->handshake->fin_sha256_psa, buf, len);
+    if (status != PSA_SUCCESS) {
+        ret = psa_status_to_mbedtls(status, psa_to_md_errors, ARRAY_LENGTH(psa_to_md_errors), psa_generic_status_to_mbedtls);
+        return ret;
+    }
 #endif
-#if defined(MBEDTLS_SHA512_C)
-    ret = mbedtls_md_update( &ssl->handshake->fin_sha384, buf, len );
+#if defined(PSA_WANT_ALG_SHA_384)
+    status = psa_hash_update(
+                                         &ssl->handshake->fin_sha384_psa, buf, len);
+    if (status != PSA_SUCCESS) {
+        ret = psa_status_to_mbedtls(status, psa_to_md_errors, ARRAY_LENGTH(psa_to_md_errors), psa_generic_status_to_mbedtls);
+        return ret;
+    }
 #endif
-    return ret;
+    return 0;
 }
 
 static int ssl_handshake_params_init( mbedtls_ssl_handshake_params *handshake )
 {
     memset( handshake, 0, sizeof( mbedtls_ssl_handshake_params ) );
-
-#if defined(MBEDTLS_SHA256_C)
-    mbedtls_md_init( &handshake->fin_sha256 );
-    int ret = mbedtls_md_setup( &handshake->fin_sha256,
-                    mbedtls_md_info_from_type(MBEDTLS_MD_SHA256),
-                    0 );
-    if (ret != 0) {
-        return ret;
-    }
-    ret = mbedtls_md_starts( &handshake->fin_sha256 );
-    if (ret != 0) {
-        return ret;
+    psa_status_t status;
+#if defined(PSA_WANT_ALG_SHA_256)
+    handshake->fin_sha256_psa = psa_hash_operation_init();
+    status = psa_hash_setup( &handshake->fin_sha256_psa, PSA_ALG_SHA_256 );
+    if (status != PSA_SUCCESS) {
+        return psa_status_to_mbedtls(status, psa_to_md_errors, ARRAY_LENGTH(psa_to_md_errors), psa_generic_status_to_mbedtls);
     }
 #endif
-#if defined(MBEDTLS_SHA512_C)
-    mbedtls_md_init( &handshake->fin_sha384 );
-    ret = mbedtls_md_setup( &handshake->fin_sha384,
-                    mbedtls_md_info_from_type(MBEDTLS_MD_SHA384),
-                    0 );
-    if (ret != 0) {
-        return ret;
-    }
-    ret = mbedtls_md_starts( &handshake->fin_sha384 );
-    if (ret != 0) {
-        return ret;
+#if defined(PSA_WANT_ALG_SHA_384)
+    handshake->fin_sha384_psa = psa_hash_operation_init();
+    status = psa_hash_setup( &handshake->fin_sha384_psa, PSA_ALG_SHA_384 );
+    if (status != PSA_SUCCESS) {
+        return psa_status_to_mbedtls(status, psa_to_md_errors, ARRAY_LENGTH(psa_to_md_errors), psa_generic_status_to_mbedtls);
     }
 #endif
 
     handshake->update_checksum = ssl_update_checksum_start;
 
-#if defined(MBEDTLS_DHM_C)
-    mbedtls_dhm_init( &handshake->dhm_ctx );
-#endif
-#if defined(MBEDTLS_ECDH_C) && \
+#if !defined(MBEDTLS_USE_PSA_CRYPTO) && \
     defined(MBEDTLS_KEY_EXCHANGE_SOME_ECDH_OR_ECDHE_1_2_ENABLED)
     mbedtls_ecdh_init( &handshake->ecdh_ctx );
 #endif

@@ -467,7 +467,6 @@ components/mbedtls/port/aes/esp_aes_xts.c
 components/mbedtls/port/include/aes/esp_aes.h
 components/mbedtls/port/include/aes_alt.h
 components/mbedtls/port/include/bignum_impl.h
-components/mbedtls/port/include/mbedtls/esp_debug.h
 components/mbedtls/port/include/sha1_alt.h
 components/mbedtls/port/include/sha256_alt.h
 components/mbedtls/port/include/sha512_alt.h

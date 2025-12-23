@@ -9,7 +9,8 @@
 #include "sdkconfig.h"
 #include "esp_ds.h"
 #include "rsa_dec_alt.h"
-#include "mbedtls/rsa.h"
+#include "mbedtls/private/rsa.h"
+#include "psa/crypto.h"
 #include "esp_ds_common.h"
 #include "esp_log.h"
 
@@ -24,7 +25,7 @@ static int esp_ds_rsaes_pkcs1_v15_unpadding(unsigned char *input,
     size_t *olen)
 {
     if (ilen < MIN_V15_PADDING_LEN) {
-        return MBEDTLS_ERR_RSA_INVALID_PADDING;
+        return MBEDTLS_ERR_CIPHER_INVALID_PADDING;
     }
 
     unsigned char bad = 0;
@@ -39,7 +40,7 @@ static int esp_ds_rsaes_pkcs1_v15_unpadding(unsigned char *input,
     bad |= input[0];
 
     /* Check the padding type */
-    bad |= input[1] ^ MBEDTLS_RSA_CRYPT;
+    bad |= input[1] ^ 2; // MBEDTLS_RSA_CRYPT;
 
     /* Scan for separator (0x00) and count padding bytes in constant time */
     for (size_t i = 2; i < ilen; i++) {
@@ -72,7 +73,7 @@ static int esp_ds_rsaes_pkcs1_v15_unpadding(unsigned char *input,
     }
 
     if (bad) {
-        return MBEDTLS_ERR_RSA_INVALID_PADDING;
+        return PSA_ERROR_INVALID_ARGUMENT;
     }
 
     *olen = msg_len;
@@ -88,7 +89,7 @@ static int esp_ds_compute_hash(mbedtls_md_type_t md_alg,
 {
     const mbedtls_md_info_t *md_info = mbedtls_md_info_from_type(md_alg);
     if (md_info == NULL) {
-        return MBEDTLS_ERR_RSA_BAD_INPUT_DATA;
+        return PSA_ERROR_INVALID_ARGUMENT;
     }
     return mbedtls_md(md_info, input, ilen, output);
 }
@@ -165,7 +166,7 @@ static int esp_ds_rsaes_pkcs1_v21_unpadding(unsigned char *input,
     bad |= (output_max_len < msg_len);
 
     if (bad) {
-        return MBEDTLS_ERR_RSA_INVALID_PADDING;
+        return PSA_ERROR_INVALID_ARGUMENT;
     }
 
     /* Copy message in constant time */
@@ -181,7 +182,7 @@ int esp_ds_rsa_decrypt(void *ctx, size_t *olen,
     const unsigned char *input, unsigned char *output,
     size_t output_max_len)
 {
-    int padding = MBEDTLS_RSA_PKCS_V15;
+    int padding = MBEDTLS_PK_RSA_PKCS_V15;
 
     if (ctx != NULL) {
         mbedtls_rsa_context *rsa_ctx = (mbedtls_rsa_context *)ctx;
@@ -256,12 +257,12 @@ int esp_ds_rsa_decrypt(void *ctx, size_t *olen,
     }
 
     // Unpad the decrypted data
-    if (padding == MBEDTLS_RSA_PKCS_V15) {
+    if (padding == MBEDTLS_PK_RSA_PKCS_V15) {
         if (esp_ds_rsaes_pkcs1_v15_unpadding((uint8_t *)output_tmp, ilen, (uint8_t *)output_tmp, ilen, olen) != 0) {
             ESP_LOGE(TAG, "Error in v15 unpadding");
             goto exit;
         }
-    } else if (padding == MBEDTLS_RSA_PKCS_V21) {
+    } else if (padding == MBEDTLS_PK_RSA_PKCS_V21) {
         if (esp_ds_rsaes_pkcs1_v21_unpadding((uint8_t *)output_tmp, ilen, (uint8_t *)output_tmp, ilen, olen) != 0) {
             ESP_LOGE(TAG, "Error in v21 unpadding");
             goto exit;
