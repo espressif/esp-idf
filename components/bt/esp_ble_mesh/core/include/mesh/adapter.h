@@ -15,6 +15,7 @@
 #include "mesh/utils.h"
 #include "mesh/uuid.h"
 #include "mesh/buf.h"
+#include "mesh/crypto.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -931,20 +932,6 @@ void bt_mesh_gatt_init(void);
 void bt_mesh_gatt_deinit(void);
 
 void bt_mesh_adapt_init(void);
-
-void bt_mesh_set_private_key(const uint8_t pri_key[32]);
-
-const uint8_t *bt_mesh_pub_key_get(void);
-
-bool bt_mesh_check_public_key(const uint8_t key[64]);
-
-int bt_mesh_dh_key_gen(const uint8_t remote_pub_key[64], uint8_t dhkey[32]);
-
-int bt_mesh_encrypt_le(const uint8_t key[16], const uint8_t plaintext[16],
-                       uint8_t enc_data[16]);
-
-int bt_mesh_encrypt_be(const uint8_t key[16], const uint8_t plaintext[16],
-                       uint8_t enc_data[16]);
 
 enum {
     BLE_MESH_EXCEP_LIST_SUB_CODE_ADD = 0,

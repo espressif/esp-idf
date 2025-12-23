@@ -625,8 +625,8 @@ static void send_pub_key(void)
      * buffer as a temporary storage location. The validating
      * of the remote public key is finished when it is received.
      */
-    sys_memcpy_swap(buf.data, &prov_link.conf_inputs[17], 32);
-    sys_memcpy_swap(&buf.data[32], &prov_link.conf_inputs[49], 32);
+    memcpy(buf.data, &prov_link.conf_inputs[17], 32);
+    memcpy(&buf.data[32], &prov_link.conf_inputs[49], 32);
 
     if (bt_mesh_dh_key_gen(buf.data, dhkey)) {
         BT_ERR("Unable to generate DHKey");
@@ -634,7 +634,7 @@ static void send_pub_key(void)
         return;
     }
 
-    sys_memcpy_swap(prov_link.dhkey, dhkey, 32);
+    memcpy(prov_link.dhkey, dhkey, 32);
 
     BT_DBG("DHkey: %s", bt_hex(prov_link.dhkey, 32));
 
@@ -652,8 +652,8 @@ static void send_pub_key(void)
     bt_mesh_prov_buf_init(&buf, PROV_PUB_KEY);
 
     /* Swap X and Y halves independently to big-endian */
-    sys_memcpy_swap(net_buf_simple_add(&buf, 32), key, 32);
-    sys_memcpy_swap(net_buf_simple_add(&buf, 32), &key[32], 32);
+    memcpy(net_buf_simple_add(&buf, 32), key, 32);
+    memcpy(net_buf_simple_add(&buf, 32), &key[32], 32);
 
     memcpy(&prov_link.conf_inputs[81], &buf.data[1], 64);
 
@@ -673,8 +673,8 @@ static int bt_mesh_calc_dh_key(void)
     /* Copy remote key in little-endian for generating DHKey.
      * X and Y halves are swapped independently.
      */
-    sys_memcpy_swap(&pub_key[0], &prov_link.conf_inputs[17], 32);
-    sys_memcpy_swap(&pub_key[32], &prov_link.conf_inputs[49], 32);
+    memcpy(&pub_key[0], &prov_link.conf_inputs[17], 32);
+    memcpy(&pub_key[32], &prov_link.conf_inputs[49], 32);
 
     if (bt_mesh_dh_key_gen(pub_key, dhkey)) {
         BT_ERR("Unable to generate DHKey");
@@ -682,7 +682,7 @@ static int bt_mesh_calc_dh_key(void)
         return -EIO;
     }
 
-    sys_memcpy_swap(prov_link.dhkey, dhkey, 32);
+    memcpy(prov_link.dhkey, dhkey, 32);
 
     BT_DBG("DHkey: %s", bt_hex(prov_link.dhkey, 32));
 
@@ -1558,8 +1558,6 @@ static void protocol_timeout(struct k_work *work)
 
 int bt_mesh_prov_init(void)
 {
-    const uint8_t *key = NULL;
-
     if (bt_mesh_prov_get() == NULL) {
         BT_ERR("No provisioning context provided");
         return -EINVAL;
@@ -1574,8 +1572,7 @@ int bt_mesh_prov_init(void)
 
     __ASSERT(bt_mesh_prov_get()->uuid, "Device UUID not initialized");
 
-    key = bt_mesh_pub_key_get();
-    if (!key) {
+    if (bt_mesh_pub_key_gen()) {
         BT_ERR("Failed to generate public key");
         return -EIO;
     }
