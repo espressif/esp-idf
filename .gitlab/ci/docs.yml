@@ -115,7 +115,7 @@ build_docs_html_full:
     paths:
       - docs/_build/*/*/*.txt
       - docs/_build/*/*/html/*
-    expire_in: 4 days
+    expire_in: 12 hrs
   variables:
     DOC_BUILDERS: "html"
 
@@ -128,7 +128,7 @@ build_docs_html_partial:
     paths:
       - docs/_build/*/*/*.txt
       - docs/_build/*/*/html/*
-    expire_in: 4 days
+    expire_in: 12 hrs
   variables:
     DOC_BUILDERS: "html"
   parallel:
