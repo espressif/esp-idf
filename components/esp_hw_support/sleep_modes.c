@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -39,6 +39,10 @@
 #include "hal/efuse_hal.h"
 #include "hal/rtc_io_hal.h"
 #include "hal/clk_tree_hal.h"
+
+#if __has_include("hal/rng_ll.h")
+#include "hal/rng_ll.h"
+#endif
 
 #if SOC_SLEEP_SYSTIMER_STALL_WORKAROUND
 #include "hal/systimer_ll.h"
@@ -809,6 +813,13 @@ static SLEEP_FN_ATTR void misc_modules_wake_prepare(uint32_t sleep_flags)
 #endif
 #if SOC_TEMPERATURE_SENSOR_SUPPORT_SLEEP_RETENTION
     regi2c_tsens_reg_write();
+#endif
+#if RNG_LL_DEPENDS_ON_LP_PERIPH
+    if (sleep_flags & PMU_SLEEP_PD_LP_PERIPH) {
+        // Re-enable the RNG module.
+        rng_ll_reset();
+        rng_ll_enable();
+    }
 #endif
 }
 
