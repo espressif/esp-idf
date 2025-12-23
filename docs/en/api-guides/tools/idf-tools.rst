@@ -167,7 +167,7 @@ These scripts accept optionally a comma-separated list of chip targets and ``--e
 
 To install tools for all chip targets, run the scripts without any optional arguments using ``idf_tools.py install --targets=all``. Similarly, to install Python packages for core ESP-IDF functionality, run ``idf_tools.py install-python-env --features=core``.
 
-It is also possible to install tools for specific chip targets. For example, ``install.sh esp32`` installs tools only for ESP32. See :ref:`Step 3. Set up the Tools <get-started-set-up-tools>` for more examples.
+It is also possible to install tools for specific chip targets. For example, ``install.sh esp32`` installs tools only for ESP32. See :ref:`Step 3. Set up the Tools <get-started-set-up-tools-legacy>` for more examples.
 
 ``install.sh --enable-XY`` enables feature ``XY`` (by running ``idf_tools.py install-python-env --features=core,XY``).
 
@@ -208,7 +208,7 @@ Other Installation Methods
 
 Depending on the environment, more user-friendly wrappers for ``idf_tools.py`` are provided:
 
-* :ref:`ESP-IDF Tools Installer <get-started-windows-tools-installer>` can download and install the tools. Internally the installer uses ``idf_tools.py``.
+* :ref:`ESP-IDF Installation Manager <get-started-how-to-get-esp-idf>` can download and install the tools. Internally the installer uses ``idf_tools.py``.
 * `ESP-IDF Eclipse Plugin <https://github.com/espressif/idf-eclipse-plugin/blob/master/README.md>`_ includes a menu item to set up the tools. Internally the plugin calls ``idf_tools.py``.
 * `VSCode ESP-IDF Extension <https://github.com/espressif/vscode-esp-idf-extension/blob/master/docs/tutorial/install.md>`_ includes an onboarding flow. This flow helps set up the tools. Although the extension does not rely on ``idf_tools.py``, the same installation method is used.
 
@@ -226,7 +226,7 @@ Uninstall ESP-IDF
 
 Uninstalling ESP-IDF requires removing both the tools and the environment variables that have been configured during the installation.
 
-* Windows users using the :ref:`Windows ESP-IDF Tools Installer <get-started-windows-tools-installer>` can simply run the uninstall wizard to remove ESP-IDF.
+* Users using the :ref:`ESP-IDF Installation Manager <get-started-how-to-get-esp-idf>` can remove ESP-IDF in the graphical user interface (GUI) or command line interface (CLI).
 * To remove an installation performed by running the supported :ref:`install scripts <idf-tools-install>`, simply delete the :ref:`tools installation directory <idf-tools-path>` including the downloaded and installed tools. Any environment variables set by the :ref:`export scripts <idf-tools-export>` are not permanent and will not be present after opening a new environment.
 * When dealing with a custom installation, in addition to deleting the tools as mentioned above, you may also need to manually revert any changes to environment variables or system paths that were made to accommodate the ESP-IDF tools (e.g., ``IDF_PYTHON_ENV_PATH`` or ``IDF_TOOLS_PATH``). If you manually copied any tools, you would need to track and delete those files manually.
 * If you installed any plugins like the `ESP-IDF Eclipse Plugin <https://github.com/espressif/idf-eclipse-plugin/blob/master/README.md>`_ or `VSCode ESP-IDF Extension <https://github.com/espressif/vscode-esp-idf-extension/blob/master/docs/tutorial/install.md>`_, you should follow the specific uninstallation instructions described in the documentation of those components.

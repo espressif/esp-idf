@@ -1,8 +1,12 @@
-********************************************
-Standard Toolchain Setup for Linux and macOS
-********************************************
+*********************************************************
+Standard Toolchain Setup for Linux and macOS (Legacy)
+*********************************************************
 
 :link_to_translation:`zh_CN:[中文]`
+
+.. warning::
+
+    This document describes the legacy installation method of ESP-IDF on Linux and macOS, which was the default before v6.0.
 
 Installation Step by Step
 =========================
@@ -14,13 +18,12 @@ Setting up Development Environment
 
 These are the steps for setting up the ESP-IDF for your {IDF_TARGET_NAME}.
 
-* :ref:`get-started-prerequisites`
-* :ref:`get-started-get-esp-idf`
-* :ref:`get-started-set-up-tools`
-* :ref:`get-started-set-up-env`
-* :ref:`get-started-start-a-project`
+* :ref:`get-started-prerequisites-legacy`
+* :ref:`get-started-get-esp-idf-legacy`
+* :ref:`get-started-set-up-tools-legacy`
+* :ref:`get-started-set-up-env-legacy`
 
-.. _get-started-prerequisites:
+.. _get-started-prerequisites-legacy:
 
 Step 1. Install Prerequisites
 =============================
@@ -116,7 +119,7 @@ To install supported Python 3 on macOS:
 
     During installation, the install script will check for supported Python versions on your system and select the oldest version that meets the minimum requirement.
 
-.. _get-started-get-esp-idf:
+.. _get-started-get-esp-idf-legacy:
 
 Step 2. Get ESP-IDF
 ===================
@@ -137,7 +140,7 @@ ESP-IDF is downloaded into ``~/esp/esp-idf``.
 
 Consult :doc:`/versions` for information about which ESP-IDF version to use in a given situation.
 
-.. _get-started-set-up-tools:
+.. _get-started-set-up-tools-legacy:
 
 Step 3. Set up the Tools
 ========================
@@ -232,7 +235,7 @@ If changing the ``IDF_TOOLS_PATH``, make sure it is exported in the environment 
 .. note::
     Using ``IDF_TOOLS_PATH`` in variable assignment, e.g., ``IDF_TOOLS_PATH="$HOME/required_idf_tools_path" ./install.sh``, without prior exporting, will not work in most shells because the variable assignment will not affect the current execution environment, even if it's exported/changed in the sourced script.
 
-.. _get-started-set-up-env:
+.. _get-started-set-up-env-legacy:
 
 Step 4. Set up the Environment Variables
 ========================================
@@ -267,32 +270,21 @@ Now you can run ``get_idf`` to set up or refresh the esp-idf environment in any 
 
 Technically, you can add ``export.sh`` to your shell's profile directly; however, it is not recommended. Doing so activates IDF virtual environment in every terminal session (including those where IDF is not needed), defeating the purpose of the virtual environment and likely affecting other software.
 
-.. _get-started-start-a-project:
-.. _get-started-build:
-.. _get-started-configure:
-.. _get-started-connect:
-.. _get-started-linux-macos-first-steps:
 
-Step 5. First Steps on ESP-IDF
-==============================
-
-.. include:: linux-macos-start-project.rst
-.. include:: start-project.rst
-
-.. _get-started-update-esp-idf:
+.. _get-started-update-esp-idf-legacy:
 
 Updating ESP-IDF and Python Packages in the ESP-IDF Environment
 ===============================================================
 
 It is recommended to update ESP-IDF from time to time, as newer versions fix bugs and/or provide new features. Please note that each ESP-IDF major and minor release version has an associated support period, and when one release branch is approaching end of life (EOL), all users are encouraged to upgrade their projects to more recent ESP-IDF releases, to find out more about support periods, see :doc:`ESP-IDF Versions <../versions>`.
 
-The simplest way to do the update is to delete the existing ``esp-idf`` folder and clone it again, as if performing the initial installation described in :ref:`get-started-get-esp-idf`.
+The simplest way to do the update is to delete the existing ``esp-idf`` folder and clone it again, as if performing the initial installation described in :ref:`get-started-get-esp-idf-legacy`.
 
 Another solution is to update only what has changed. For specific instructions, please visit :ref:`Updating ESP-IDF <updating-master>` page.
 
-After updating ESP-IDF, execute the install script again (``./install.sh`` in your ``$IDF_PATH``), in case the new ESP-IDF version requires different versions of tools. See instructions at :ref:`get-started-set-up-tools`.
+After updating ESP-IDF, execute the install script again (``./install.sh`` in your ``$IDF_PATH``), in case the new ESP-IDF version requires different versions of tools. See instructions at :ref:`get-started-set-up-tools-legacy`.
 
-Once all the new tools are installed, enter the ESP-IDF environment using the export script as described in :ref:`get-started-set-up-env`.
+Once all the new tools are installed, enter the ESP-IDF environment using the export script as described in :ref:`get-started-set-up-env-legacy`.
 
 Updating Python Packages in the ESP-IDF Environment Without Updating ESP-IDF
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -303,20 +295,6 @@ Some features in ESP-IDF are not included directly in the ESP-IDF repository. In
 
     If you are an advanced user and want more control over the update process, you can also check :ref:`idf-tools-py` and its ``install-python-env`` command, which is used by the install script and handles the creation or update of the ESP-IDF environment.
 
-Related Documents
-=================
-
-    * :doc:`establish-serial-connection`
-    * `Eclipse Plugin <https://github.com/espressif/idf-eclipse-plugin/blob/master/README.md>`_
-    * `VSCode Extension <https://github.com/espressif/vscode-esp-idf-extension/blob/master/docs/tutorial/install.md>`_
-    * :doc:`../api-guides/tools/idf-monitor`
-
-.. toctree::
-    :hidden:
-    :maxdepth: 1
-
-    establish-serial-connection
-    flashing-troubleshooting
 
 .. _AUR: https://wiki.archlinux.org/index.php/Arch_User_Repository
 .. _First Steps on ESP-IDF: ../get-started/first-steps.html

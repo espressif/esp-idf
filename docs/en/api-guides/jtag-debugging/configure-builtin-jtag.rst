@@ -36,8 +36,35 @@ Please verify that the {IDF_TARGET_NAME} pins used for USB communication are not
 Configure USB Drivers
 ^^^^^^^^^^^^^^^^^^^^^
 
-JTAG communication should work on all supported platforms. Windows users might get `LIBUSB_ERROR_NOT_FOUND` errors. Please use version 2.8 (or newer) of the :ref:`get-started-windows-tools-installer` and select the driver "Espressif - WinUSB support for JTAG (ESP32-C3/S3)" in order to resolve this issue. If you do not want to re-run the installer then the same can be achieved with `idf-env <https://github.com/espressif/idf-env>`_ by running the following command from PowerShell::
+JTAG communication should work on all supported platforms. Windows and Linux require extra steps as described below.
 
-    Invoke-WebRequest 'https://dl.espressif.com/dl/idf-env/idf-env.exe' -OutFile .\idf-env.exe; .\idf-env.exe driver install --espressif
+Windows
+"""""""
+
+Windows users might get `LIBUSB_ERROR_NOT_FOUND` errors. To resolve this, install drivers using one of the following methods:
+
+- In :doc:`Espressif Installation Manager (EIM) <../../get-started/windows-setup>` graphical user interface (GUI), click ``Open Dashboard`` under ``Manage Installations``, and then click ``Install Drivers``:
+
+    .. figure:: ../../../_static/jtag-debugging-install-usb-drivers-eim.png
+      :align: center
+      :alt: Install Drivers in EIM GUI
+      :figclass: align-center
+
+      Install Drivers in EIM GUI
+
+- Run the following command from PowerShell to install drivers with EIM command line interface:
+
+    .. code-block:: bash
+
+      eim install-drivers
+
+- Run the following command from PowerShell to install drivers with `idf-env <https://github.com/espressif/idf-env>`_:
+
+    .. code-block:: bash
+
+      Invoke-WebRequest 'https://dl.espressif.com/dl/idf-env/idf-env.exe' -OutFile .\idf-env.exe; .\idf-env.exe driver install --espressif
+
+Linux
+"""""
 
 On Linux adding OpenOCD udev rules is required and is done by placing the following `udev rules file <https://github.com/espressif/openocd-esp32/blob/master/contrib/60-openocd.rules>`_ in the ``/etc/udev/rules.d`` folder.

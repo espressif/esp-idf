@@ -9,7 +9,7 @@ IDF 前端工具 - ``idf.py``
 - Ninja_ 用于构建工程。
 - `esptool`_ 用于烧录目标芯片。
 
-:ref:`第五步：开始使用 ESP-IDF 吧 <get-started-configure>` 简要介绍了设置 ``idf.py`` 以配置、构建及烧录工程的操作流程。
+:ref:`Windows <get-started-configure>`、 :ref:`Linux 或 macOS 配置项目 <get-started-configure-linux-macos>` 中简要介绍了设置 ``idf.py`` 以配置、构建及烧录工程的操作流程。
 
 .. important::
 
@@ -176,7 +176,7 @@ uf2 二进制文件也可以通过 :ref:`idf.py uf2 <generate-uf2-binary>` 生�
 
 命令 ``idf.py`` 支持 bash、zsh 和 fish shell 的 `shell 自动补全 <https://click.palletsprojects.com/shell-completion/>`_。
 
-调用命令 ``export`` 为 ``idf.py`` 启用自动补全（:ref:`第四步：设置环境变量 <get-started-set-up-env>`），按 TAB 键启动自动补全。输入 ``idf.py -`` 并按 TAB 键以自动补全选项。
+调用命令 ``export`` 为 ``idf.py`` 启用自动补全（:ref:`Windows <get-started-set-up-env>`、:ref:`Linux 或 macOS 设置环境<get-started-set-up-env-linux-macos>`），按 TAB 键启动自动补全。输入 ``idf.py -`` 并按 TAB 键以自动补全选项。
 
 预计未来版本将支持 PowerShell 自动补全。
 

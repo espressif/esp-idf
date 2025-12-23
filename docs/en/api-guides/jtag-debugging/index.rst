@@ -117,7 +117,7 @@ Setup of OpenOCD
 
 .. highlight:: bash
 
-If you have already set up ESP-IDF with CMake build system according to the :doc:`Getting Started Guide <../../get-started/index>`, then OpenOCD is already installed. After :ref:`setting up the environment <get-started-set-up-env>` in your terminal, you should be able to run OpenOCD. Check this by executing the following command:
+If you have already set up ESP-IDF with CMake build system according to the :doc:`Getting Started Guide <../../get-started/index>`, then OpenOCD is already installed. After :ref:`setting up the environment for Windows <get-started-set-up-env>`, :ref:`Linux or macOS <get-started-set-up-env-linux-macos>` in your terminal, you should be able to run OpenOCD. Check this by executing the following command:
 
 .. code-block:: none
 
@@ -136,7 +136,7 @@ The output should be as follows (although the version may be more recent than li
 
 You may also verify that OpenOCD knows where its configuration scripts are located by printing the value of ``OPENOCD_SCRIPTS`` environment variable, by typing ``echo $OPENOCD_SCRIPTS`` (for Linux and macOS) or ``echo %OPENOCD_SCRIPTS%`` (for Windows). If a valid path is printed, then OpenOCD is set up correctly.
 
-If any of these steps do not work, please go back to the :ref:`setting up the tools <get-started-set-up-tools>` section (for Linux and macOS) or :ref:`ESP-IDF Tools Installer <get-started-windows-tools-installer>` (for Windows) section of the Getting Started Guide.
+If any of these steps do not work, please go back to the :ref:`Installation <get-started-how-to-get-esp-idf>` section of the Getting Started Guide.
 
 .. note::
 
@@ -178,7 +178,7 @@ Once target is configured and connected to computer, you are ready to launch Ope
 
 .. highlight:: bash
 
-Open a terminal and set it up for using the ESP-IDF as described in the :ref:`setting up the environment <get-started-set-up-env>` section of the Getting Started Guide. To run OpenOCD for a specific board, you must pass the board-specific configuration. The default configuration for the built project can be found in the ``debug_arguments_openocd`` field of the ``build/project_description.json`` file. There is an example to run OpenOCD (this command works on Windows, Linux, and macOS):
+Open a terminal and set it up for using the ESP-IDF as described in the :ref:`setting up the environment for Windows <get-started-set-up-env>`, :ref:`Linux or macOS <get-started-set-up-env-linux-macos>` section of the Getting Started Guide. To run OpenOCD for a specific board, you must pass the board-specific configuration. The default configuration for the built project can be found in the ``debug_arguments_openocd`` field of the ``build/project_description.json`` file. There is an example to run OpenOCD (this command works on Windows, Linux, and macOS):
 
 .. include:: {IDF_TARGET_PATH_NAME}.inc
    :start-after: run-openocd
