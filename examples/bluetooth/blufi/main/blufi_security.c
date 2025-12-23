@@ -23,9 +23,7 @@
 #include "esp_blufi_api.h"
 #include "blufi_example.h"
 
-#include "mbedtls/aes.h"
-#include "mbedtls/dhm.h"
-#include "mbedtls/md5.h"
+#include "psa/crypto.h"
 #include "esp_crc.h"
 
 /*
@@ -40,10 +38,10 @@
 
 
 struct blufi_security {
-#define DH_SELF_PUB_KEY_LEN     128
 #define DH_PARAM_LEN_MAX        1024
+#define DH_SELF_PUB_KEY_LEN     256
     uint8_t  self_public_key[DH_SELF_PUB_KEY_LEN];
-#define SHARE_KEY_LEN           128
+#define SHARE_KEY_LEN           256
     uint8_t  share_key[SHARE_KEY_LEN];
     size_t   share_len;
 #define PSK_LEN                 16
@@ -51,16 +49,9 @@ struct blufi_security {
     uint8_t  *dh_param;
     int      dh_param_len;
     uint8_t  iv[16];
-    mbedtls_dhm_context dhm;
-    mbedtls_aes_context aes;
+    psa_key_id_t aes_key;
 };
 static struct blufi_security *blufi_sec;
-
-static int myrand( void *rng_state, unsigned char *output, size_t len )
-{
-    esp_fill_random(output, len);
-    return( 0 );
-}
 
 extern void btc_blufi_report_error(esp_blufi_error_state_t state);
 
@@ -72,7 +63,6 @@ void blufi_dh_negotiate_data_handler(uint8_t *data, int len, uint8_t **output_da
         return;
     }
 
-    int ret;
     uint8_t type = data[0];
 
     if (blufi_sec == NULL) {
@@ -116,56 +106,78 @@ void blufi_dh_negotiate_data_handler(uint8_t *data, int len, uint8_t **output_da
             return;
         }
 
+
         uint8_t *param = blufi_sec->dh_param;
         memcpy(blufi_sec->dh_param, &data[1], blufi_sec->dh_param_len);
-        ret = mbedtls_dhm_read_params(&blufi_sec->dhm, &param, &param[blufi_sec->dh_param_len]);
-        if (ret) {
-            BLUFI_ERROR("%s read param failed %d\n", __func__, ret);
-            btc_blufi_report_error(ESP_BLUFI_READ_PARAM_ERROR);
+        size_t p_len = (param[0] << 8) | param[1];
+        param += 2 + p_len;
+
+        size_t g_len = (param[0] << 8) | param[1];
+        param += 2 + g_len;
+
+        size_t pub_len = (param[0] << 8) | param[1];
+        param += 2;
+        ESP_LOGD("blfi", "P len %d, G len %d, pub len %d", p_len, g_len, pub_len);
+
+        psa_key_type_t key_type = PSA_KEY_TYPE_DH_KEY_PAIR(PSA_DH_FAMILY_RFC7919);
+        size_t key_bits = 3072;
+        ESP_LOGI("blfi", "DH param len %d, bits %d", blufi_sec->dh_param_len, key_bits);
+        psa_algorithm_t alg = PSA_ALG_FFDH;
+        psa_key_attributes_t attributes = psa_key_attributes_init();
+        psa_set_key_type(&attributes, key_type);
+        psa_set_key_bits(&attributes, key_bits);
+        psa_set_key_algorithm(&attributes, alg);
+        psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_DERIVE);
+        psa_key_id_t private_key = 0;
+        psa_status_t status = psa_generate_key(&attributes, &private_key);
+        if (status != PSA_SUCCESS) {
+            BLUFI_ERROR("%s psa_generate_key failed %d\n", __func__, status);
+            btc_blufi_report_error(ESP_BLUFI_DH_MALLOC_ERROR);
             return;
         }
-        free(blufi_sec->dh_param);
-        blufi_sec->dh_param = NULL;
+        psa_reset_key_attributes(&attributes);
+        size_t public_key_len = 0;
+        status = psa_export_public_key(private_key, blufi_sec->self_public_key, DH_SELF_PUB_KEY_LEN, &public_key_len);
+        if (status != PSA_SUCCESS) {
+            BLUFI_ERROR("%s psa_export_public_key failed %d\n", __func__, status);
+            psa_destroy_key(private_key);
+            btc_blufi_report_error(ESP_BLUFI_DH_MALLOC_ERROR);
+            return;
+        }
 
-        const int dhm_len = mbedtls_dhm_get_len(&blufi_sec->dhm);
-
-        if (dhm_len > DH_SELF_PUB_KEY_LEN) {
-            BLUFI_ERROR("%s dhm len not support %d\n", __func__, dhm_len);
+        status = psa_raw_key_agreement(alg, private_key, param, pub_len, blufi_sec->share_key, SHARE_KEY_LEN, &blufi_sec->share_len);
+        psa_destroy_key(private_key);
+        if (status != PSA_SUCCESS) {
+            BLUFI_ERROR("%s psa_raw_key_agreement failed %d\n", __func__, status);
+            free(blufi_sec->dh_param);
+            blufi_sec->dh_param = NULL;
             btc_blufi_report_error(ESP_BLUFI_DH_PARAM_ERROR);
             return;
         }
 
-        ret = mbedtls_dhm_make_public(&blufi_sec->dhm, dhm_len, blufi_sec->self_public_key, DH_SELF_PUB_KEY_LEN, myrand, NULL);
-        if (ret) {
-            BLUFI_ERROR("%s make public failed %d\n", __func__, ret);
-            btc_blufi_report_error(ESP_BLUFI_MAKE_PUBLIC_ERROR);
-            return;
-        }
-
-        ret = mbedtls_dhm_calc_secret( &blufi_sec->dhm,
-                blufi_sec->share_key,
-                SHARE_KEY_LEN,
-                &blufi_sec->share_len,
-                myrand, NULL);
-        if (ret) {
-            BLUFI_ERROR("%s mbedtls_dhm_calc_secret failed %d\n", __func__, ret);
-            btc_blufi_report_error(ESP_BLUFI_DH_PARAM_ERROR);
-            return;
-        }
-
-        ret = mbedtls_md5(blufi_sec->share_key, blufi_sec->share_len, blufi_sec->psk);
-
-        if (ret) {
-            BLUFI_ERROR("%s mbedtls_md5 failed %d\n", __func__, ret);
+        size_t hash_length = 0;
+        status = psa_hash_compute(PSA_ALG_MD5, blufi_sec->share_key, blufi_sec->share_len, blufi_sec->psk, PSK_LEN, &hash_length);
+        if (status != PSA_SUCCESS) {
+            BLUFI_ERROR("%s psa_hash_compute failed %d\n", __func__, status);
             btc_blufi_report_error(ESP_BLUFI_CALC_MD5_ERROR);
             return;
         }
 
-        mbedtls_aes_setkey_enc(&blufi_sec->aes, blufi_sec->psk, PSK_LEN * 8);
+        // mbedtls_aes_setkey_enc(&blufi_sec->aes, blufi_sec->psk, PSK_LEN * 8);
+        attributes = psa_key_attributes_init();
+        psa_set_key_type(&attributes, PSA_KEY_TYPE_AES);
+        psa_set_key_bits(&attributes, PSK_LEN * 8);
+        psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_ENCRYPT | PSA_KEY_USAGE_DECRYPT);
+        status = psa_import_key(&attributes, blufi_sec->psk, PSK_LEN, &blufi_sec->aes_key);
+        if (status != PSA_SUCCESS) {
+            BLUFI_ERROR("%s psa_import_key failed %d\n", __func__, status);
+            btc_blufi_report_error(ESP_BLUFI_DH_MALLOC_ERROR);
+            return;
+        }
 
         /* alloc output data */
         *output_data = &blufi_sec->self_public_key[0];
-        *output_len = dhm_len;
+        *output_len = public_key_len;
         *need_free = false;
 
     }
@@ -181,40 +193,76 @@ void blufi_dh_negotiate_data_handler(uint8_t *data, int len, uint8_t **output_da
 
 int blufi_aes_encrypt(uint8_t iv8, uint8_t *crypt_data, int crypt_len)
 {
-    int ret;
-    size_t iv_offset = 0;
     uint8_t iv0[16];
 
     if (!blufi_sec) {
         return -1;
     }
 
-    memcpy(iv0, blufi_sec->iv, sizeof(blufi_sec->iv));
-    iv0[0] = iv8;   /* set iv8 as the iv0[0] */
-
-    ret = mbedtls_aes_crypt_cfb128(&blufi_sec->aes, MBEDTLS_AES_ENCRYPT, crypt_len, &iv_offset, iv0, crypt_data, crypt_data);
-    if (ret) {
+    psa_cipher_operation_t operation = PSA_CIPHER_OPERATION_INIT;
+    psa_status_t status = psa_cipher_encrypt_setup(&operation, blufi_sec->aes_key, PSA_ALG_CFB);
+    if (status != PSA_SUCCESS) {
         return -1;
     }
 
-    return crypt_len;
+    memcpy(iv0, blufi_sec->iv, sizeof(blufi_sec->iv));
+    iv0[0] = iv8;
+
+    status = psa_cipher_set_iv(&operation, iv0, sizeof(iv0));
+    if (status != PSA_SUCCESS) {
+        psa_cipher_abort(&operation);
+        return -1;
+    }
+
+    size_t encrypt_out_len = 0;
+    status = psa_cipher_update(&operation, crypt_data, crypt_len, crypt_data, crypt_len, &encrypt_out_len);
+    if (status != PSA_SUCCESS) {
+        psa_cipher_abort(&operation);
+        return -1;
+    }
+
+    status = psa_cipher_finish(&operation, crypt_data, crypt_len, &encrypt_out_len);
+    if (status != PSA_SUCCESS) {
+        psa_cipher_abort(&operation);
+        return -1;
+    }
+
+    return encrypt_out_len;
 }
 
 int blufi_aes_decrypt(uint8_t iv8, uint8_t *crypt_data, int crypt_len)
 {
-    int ret;
-    size_t iv_offset = 0;
     uint8_t iv0[16];
 
     if (!blufi_sec) {
         return -1;
     }
 
-    memcpy(iv0, blufi_sec->iv, sizeof(blufi_sec->iv));
-    iv0[0] = iv8;   /* set iv8 as the iv0[0] */
+    psa_cipher_operation_t operation = PSA_CIPHER_OPERATION_INIT;
+    psa_status_t status = psa_cipher_decrypt_setup(&operation, blufi_sec->aes_key, PSA_ALG_CFB);
+    if (status != PSA_SUCCESS) {
+        return -1;
+    }
 
-    ret = mbedtls_aes_crypt_cfb128(&blufi_sec->aes, MBEDTLS_AES_DECRYPT, crypt_len, &iv_offset, iv0, crypt_data, crypt_data);
-    if (ret) {
+    memcpy(iv0, blufi_sec->iv, sizeof(blufi_sec->iv));
+    iv0[0] = iv8;
+
+    status = psa_cipher_set_iv(&operation, iv0, sizeof(iv0));
+    if (status != PSA_SUCCESS) {
+        psa_cipher_abort(&operation);
+        return -1;
+    }
+
+    size_t encrypt_out_len = 0;
+    status = psa_cipher_update(&operation, crypt_data, crypt_len, crypt_data, crypt_len, &encrypt_out_len);
+    if (status != PSA_SUCCESS) {
+        psa_cipher_abort(&operation);
+        return -1;
+    }
+
+    status = psa_cipher_finish(&operation, crypt_data, crypt_len, &encrypt_out_len);
+    if (status != PSA_SUCCESS) {
+        psa_cipher_abort(&operation);
         return -1;
     }
 
@@ -236,9 +284,6 @@ esp_err_t blufi_security_init(void)
 
     memset(blufi_sec, 0x0, sizeof(struct blufi_security));
 
-    mbedtls_dhm_init(&blufi_sec->dhm);
-    mbedtls_aes_init(&blufi_sec->aes);
-
     memset(blufi_sec->iv, 0x0, sizeof(blufi_sec->iv));
     return 0;
 }
@@ -252,8 +297,7 @@ void blufi_security_deinit(void)
         free(blufi_sec->dh_param);
         blufi_sec->dh_param = NULL;
     }
-    mbedtls_dhm_free(&blufi_sec->dhm);
-    mbedtls_aes_free(&blufi_sec->aes);
+    psa_destroy_key(blufi_sec->aes_key);
 
     memset(blufi_sec, 0x0, sizeof(struct blufi_security));
 
