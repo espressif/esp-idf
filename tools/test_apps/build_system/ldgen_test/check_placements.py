@@ -31,26 +31,24 @@ contents = subprocess.check_output([args.objdump, '-t', args.elf]).decode()
 def check_location(symbol, expected):
     pattern = (
         LineStart()
-        + Word(hexnums).setResultsName('address')
+        + Word(hexnums).set_results_name('address')
         + Optional(Word(alphanums, exact=1))
         + Optional(Word(alphanums, exact=1))
-        + Word(alphanums + '._*').setResultsName('actual')
+        + Word(alphanums + '._*').set_results_name('actual')
         + Word(hexnums)
         + Literal(symbol)
         + LineEnd()
     )
 
     try:
-        results = pattern.searchString(contents)[0]
+        results = pattern.search_string(contents)[0]
     except IndexError:
-        raise Exception("check placement fail: '%s' was not found" % (symbol))
+        raise Exception(f"check placement fail: '{symbol}' was not found")
 
     if results.actual != expected:
-        raise Exception(
-            "check placement fail: '%s' was placed in '%s', not in '%s'" % (symbol, results.actual, expected)
-        )
+        raise Exception(f"check placement fail: '{symbol}' was placed in '{results.actual}', not in '{expected}'")
 
-    print("check placement pass: '%s' was successfully placed in '%s'" % (symbol, results.actual))
+    print(f"check placement pass: '{symbol}' was successfully placed in '{results.actual}'")
     return int(results.address, 16)
 
 
