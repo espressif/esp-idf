@@ -83,37 +83,38 @@ static esp_err_t s_esp_isp_awb_config_hardware(isp_proc_handle_t isp_proc, const
         if (!subwindow_is_zero) {
             ESP_LOGW(TAG, "Subwindow feature is not supported on REV < 3.0, subwindow will not be configured");
         }
-    }
+    } else {
+        // Subwindow is just checked and configured on REV >= 3.0
+        isp_window_t subwindow = awb_cfg->subwindow;
+        ESP_RETURN_ON_FALSE(
+            (subwindow.top_left.x >= awb_cfg->window.top_left.x) &&
+            (subwindow.top_left.y >= awb_cfg->window.top_left.y) &&
+            (subwindow.btm_right.x <= awb_cfg->window.btm_right.x) &&
+            (subwindow.btm_right.y <= awb_cfg->window.btm_right.y),
+            ESP_ERR_INVALID_ARG, TAG, "subwindow exceeds window range"
+        );
 
-    isp_window_t subwindow = awb_cfg->subwindow;
-    ESP_RETURN_ON_FALSE(
-        (subwindow.top_left.x >= awb_cfg->window.top_left.x) &&
-        (subwindow.top_left.y >= awb_cfg->window.top_left.y) &&
-        (subwindow.btm_right.x <= awb_cfg->window.btm_right.x) &&
-        (subwindow.btm_right.y <= awb_cfg->window.btm_right.y),
-        ESP_ERR_INVALID_ARG, TAG, "subwindow exceeds window range"
-    );
+        if ((subwindow.btm_right.x - subwindow.top_left.x + 1) / ISP_AWB_WINDOW_X_NUM < 4 ||
+                (subwindow.btm_right.y - subwindow.top_left.y + 1) / ISP_AWB_WINDOW_Y_NUM < 4) {
+            ESP_LOGE(TAG, "subwindow block size is too small: width and height must be at least 4 (got %d x %d)",
+                     (subwindow.btm_right.x - subwindow.top_left.x + 1) / ISP_AWB_WINDOW_X_NUM,
+                     (subwindow.btm_right.y - subwindow.top_left.y + 1) / ISP_AWB_WINDOW_Y_NUM);
+            return ESP_ERR_INVALID_ARG;
+        }
 
-    if ((subwindow.btm_right.x - subwindow.top_left.x + 1) / ISP_AWB_WINDOW_X_NUM < 4 ||
-            (subwindow.btm_right.y - subwindow.top_left.y + 1) / ISP_AWB_WINDOW_Y_NUM < 4) {
-        ESP_LOGE(TAG, "subwindow block size is too small: width and height must be at least 4 (got %d x %d)",
-                 (subwindow.btm_right.x - subwindow.top_left.x + 1) / ISP_AWB_WINDOW_X_NUM,
-                 (subwindow.btm_right.y - subwindow.top_left.y + 1) / ISP_AWB_WINDOW_Y_NUM);
-        return ESP_ERR_INVALID_ARG;
+        int size_x = subwindow.btm_right.x - subwindow.top_left.x + 1;
+        int size_y = subwindow.btm_right.y - subwindow.top_left.y + 1;
+        if ((size_x % ISP_AWB_WINDOW_X_NUM != 0) || (size_y % ISP_AWB_WINDOW_Y_NUM != 0)) {
+            ESP_LOGW(TAG, "subwindow size (%d x %d) is not divisible by AWB subwindow blocks grid (%d x %d). \
+                Resolution will be floored to the nearest divisible value.",
+                     size_x, size_y, ISP_AWB_WINDOW_X_NUM, ISP_AWB_WINDOW_Y_NUM);
+            // floor to the nearest divisible value
+            subwindow.btm_right.x -= size_x % ISP_AWB_WINDOW_X_NUM;
+            subwindow.btm_right.y -= size_y % ISP_AWB_WINDOW_Y_NUM;
+        }
+        ESP_RETURN_ON_FALSE(isp_hal_awb_set_subwindow_range(&isp_proc->hal, &subwindow),
+                            ESP_ERR_INVALID_ARG, TAG, "invalid subwindow range");
     }
-
-    int size_x = subwindow.btm_right.x - subwindow.top_left.x + 1;
-    int size_y = subwindow.btm_right.y - subwindow.top_left.y + 1;
-    if ((size_x % ISP_AWB_WINDOW_X_NUM != 0) || (size_y % ISP_AWB_WINDOW_Y_NUM != 0)) {
-        ESP_LOGW(TAG, "subwindow size (%d x %d) is not divisible by AWB subwindow blocks grid (%d x %d). \
-            Resolution will be floored to the nearest divisible value.",
-                 size_x, size_y, ISP_AWB_WINDOW_X_NUM, ISP_AWB_WINDOW_Y_NUM);
-        // floor to the nearest divisible value
-        subwindow.btm_right.x -= size_x % ISP_AWB_WINDOW_X_NUM;
-        subwindow.btm_right.y -= size_y % ISP_AWB_WINDOW_Y_NUM;
-    }
-    ESP_RETURN_ON_FALSE(isp_hal_awb_set_subwindow_range(&isp_proc->hal, &subwindow),
-                        ESP_ERR_INVALID_ARG, TAG, "invalid subwindow range");
 
     isp_u32_range_t lum_range = awb_cfg->white_patch.luminance;
     ESP_RETURN_ON_FALSE(isp_hal_awb_set_luminance_range(&isp_proc->hal, lum_range.min, lum_range.max),
