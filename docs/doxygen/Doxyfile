@@ -273,6 +273,7 @@ INPUT = \
     $(PROJECT_PATH)/components/hal/include/hal/efuse_hal.h \
     $(PROJECT_PATH)/components/hal/include/hal/eth_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/lp_core_types.h \
+    $(PROJECT_PATH)/components/hal/include/hal/sd_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/uhci_types.h \
     $(PROJECT_PATH)/components/heap/include/esp_heap_caps_init.h \
     $(PROJECT_PATH)/components/heap/include/esp_heap_caps.h \
@@ -310,6 +311,9 @@ INPUT = \
     $(PROJECT_PATH)/components/protocomm/include/transports/protocomm_httpd.h \
     $(PROJECT_PATH)/components/protocomm/include/crypto/srp6a/esp_srp.h \
     $(PROJECT_PATH)/components/pthread/include/esp_pthread.h \
+    $(PROJECT_PATH)/components/sdmmc/include/sd_protocol_types.h \
+    $(PROJECT_PATH)/components/sdmmc/include/sd_pwr_ctrl.h \
+    $(PROJECT_PATH)/components/sdmmc/include/sd_pwr_ctrl_by_on_chip_ldo.h \
     $(PROJECT_PATH)/components/sdmmc/include/sdmmc_cmd.h \
     $(PROJECT_PATH)/components/soc/include/soc/soc_caps_eval.h \
     $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/include/soc/adc_channel.h \
