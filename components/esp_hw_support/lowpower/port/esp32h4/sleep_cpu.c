@@ -343,6 +343,7 @@ static IRAM_ATTR esp_err_t do_cpu_retention(sleep_cpu_entry_cb_t goto_sleep,
         uint32_t wakeup_opt, uint32_t reject_opt, uint32_t lslp_mem_inf_fpu, bool dslp)
 {
     __attribute__((unused)) uint8_t core_id = esp_cpu_get_core_id();
+    bool reject = false;
     /* mstatus is core privated CSR, do it near the core critical regs restore */
     uint32_t mstatus = save_mstatus_and_disable_global_int();
 #if __riscv_zcmp && SOC_CPU_ZCMP_WORKAROUND
@@ -366,7 +367,7 @@ static IRAM_ATTR esp_err_t do_cpu_retention(sleep_cpu_entry_cb_t goto_sleep,
         }
 #endif
 
-        return (*goto_sleep)(wakeup_opt, reject_opt, lslp_mem_inf_fpu, dslp);
+        reject =  (*goto_sleep)(wakeup_opt, reject_opt, lslp_mem_inf_fpu, dslp);
     }
 #if CONFIG_PM_CHECK_SLEEP_RETENTION_FRAME
     else {
@@ -377,7 +378,7 @@ static IRAM_ATTR esp_err_t do_cpu_retention(sleep_cpu_entry_cb_t goto_sleep,
     restore_mintthresh(mintthresh);
 #endif
     restore_mstatus(mstatus);
-    return pmu_sleep_finish(dslp);
+    return reject ? reject : pmu_sleep_finish(dslp);
 }
 
 esp_err_t IRAM_ATTR esp_sleep_cpu_retention(uint32_t (*goto_sleep)(uint32_t, uint32_t, uint32_t, bool),
