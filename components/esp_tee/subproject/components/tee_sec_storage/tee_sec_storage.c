@@ -542,7 +542,7 @@ esp_err_t esp_tee_sec_storage_ecdsa_sign(const esp_tee_sec_storage_key_cfg_t *cf
 
     psa_status_t status = psa_import_key(&key_attributes, priv_key, priv_key_len, &key_id);
     if (status != PSA_SUCCESS) {
-        err = ESP_FAIL;
+        err = ESP_ERR_INVALID_ARG;
         ESP_LOGE(TAG, "Failed to import ECDSA private key: %ld", status);
         goto exit;
     }

@@ -304,8 +304,7 @@ static int hmac_vector(psa_algorithm_t alg,
     int ret = 0;
     psa_key_id_t key_id = 0;
     if (key == NULL || key_len == 0 || num_elem == 0 || addr == NULL || len == NULL || mac == NULL) {
-        ret = -1;
-        goto err;
+        return -1;
     }
 
     psa_status_t status;
@@ -316,13 +315,14 @@ static int hmac_vector(psa_algorithm_t alg,
     psa_set_key_type(&attributes, PSA_KEY_TYPE_HMAC);
     psa_set_key_bits(&attributes, 8 * key_len);
 
+    psa_mac_operation_t operation = PSA_MAC_OPERATION_INIT;
+
     status = psa_import_key(&attributes, key, key_len, &key_id);
     if (status != PSA_SUCCESS) {
         ret = -1;
         goto err;
     }
 
-    psa_mac_operation_t operation = PSA_MAC_OPERATION_INIT;
     status = psa_mac_sign_setup(&operation, key_id, PSA_ALG_HMAC(alg));
     if (status != PSA_SUCCESS) {
         ret = -1;
@@ -354,13 +354,13 @@ static int hmac_vector(psa_algorithm_t alg,
     return ret;
 
 err:
-
     if (ret != 0) {
         if (key_id) {
             psa_destroy_key(key_id);
         }
         psa_mac_abort(&operation);
     }
+    psa_reset_key_attributes(&attributes);
 
     return ret;
 }

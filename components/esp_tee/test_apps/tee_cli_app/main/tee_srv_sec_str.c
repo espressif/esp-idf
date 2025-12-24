@@ -21,11 +21,11 @@
 #include "example_tee_srv.h"
 
 #define SHA256_DIGEST_SZ         (32)
-#if SOC_ECDSA_SUPPORT_CURVE_P384
+#if CONFIG_SECURE_TEE_SEC_STG_SUPPORT_SECP384R1_SIGN
 #define MAX_ECDSA_KEY_LEN        (48)
 #else
 #define MAX_ECDSA_KEY_LEN        (32)
-#endif
+#endif /* CONFIG_SECURE_TEE_SEC_STG_SUPPORT_SECP384R1_SIGN */
 
 #define AES256_GCM_TAG_LEN       (16)
 #define MAX_AES_PLAINTEXT_LEN    (256)
@@ -112,8 +112,9 @@ static esp_err_t verify_ecdsa_secp256r1_sign(const uint8_t *digest, size_t len, 
         goto exit;
     }
 
-    status = psa_verify_hash(key_id, PSA_ALG_ECDSA(PSA_ALG_SHA_256), digest, len, sign->signature, sizeof(sign->signature));
+    status = psa_verify_hash(key_id, PSA_ALG_ECDSA(PSA_ALG_SHA_256), digest, len, sign->signature, 2 * ECDSA_SECP256R1_KEY_LEN);
     if (status != PSA_SUCCESS) {
+        ESP_LOGE(TAG, "Failed to verify hash: %ld", status);
         goto exit;
     }
     err = ESP_OK;

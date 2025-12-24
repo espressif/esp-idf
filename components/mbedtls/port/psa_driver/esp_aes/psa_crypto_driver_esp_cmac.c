@@ -198,6 +198,11 @@ psa_status_t esp_cmac_mac_setup(esp_cmac_operation_t *operation,
             if (status != PSA_SUCCESS) {
                 return status;
             }
+            /* After hashing, key_buffer_size is set to the hash size, which
+             * should be <= block_size. Verify this for static analysis. */
+            if (key_buffer_size > block_size) {
+                return PSA_ERROR_CORRUPTION_DETECTED;
+            }
         }
         /* A 0-length key is not commonly used in HMAC when used as a MAC,
         * but it is permitted. It is common when HMAC is used in HKDF, for
@@ -216,14 +221,34 @@ psa_status_t esp_cmac_mac_setup(esp_cmac_operation_t *operation,
         for (i = 0; i < key_buffer_size; i++) {
             ipad[i] ^= 0x36;
         }
-        memset(ipad + key_buffer_size, 0x36, block_size - key_buffer_size);
+        /* Only fill remaining bytes if key_buffer_size < block_size.
+         * When key_buffer_size == block_size, the entire buffer is already
+         * processed, so no padding is needed. This check also prevents
+         * out-of-bounds pointer arithmetic (ipad + key_buffer_size would be
+         * out of bounds when key_buffer_size == block_size == sizeof(ipad)). */
+        if (key_buffer_size < block_size) {
+            /* At this point: key_buffer_size < block_size <= sizeof(ipad),
+             * so ipad + key_buffer_size is guaranteed to be within bounds. */
+            size_t fill_size = block_size - key_buffer_size;
+            memset(ipad + key_buffer_size, 0x36, fill_size);
+        }
 
         /* Copy the key material from ipad to opad, flipping the requisite bits,
         * and filling the rest of opad with the requisite constant. */
         for (i = 0; i < key_buffer_size; i++) {
             operation->opad[i] = ipad[i] ^ 0x36 ^ 0x5C;
         }
-        memset(operation->opad + key_buffer_size, 0x5C, block_size - key_buffer_size);
+        /* Only fill remaining bytes if key_buffer_size < block_size.
+         * When key_buffer_size == block_size, the entire buffer is already
+         * processed, so no padding is needed. This check also prevents
+         * out-of-bounds pointer arithmetic (operation->opad + key_buffer_size
+         * would be out of bounds when key_buffer_size == block_size == sizeof(operation->opad)). */
+        if (key_buffer_size < block_size) {
+            /* At this point: key_buffer_size < block_size <= sizeof(operation->opad),
+             * so operation->opad + key_buffer_size is guaranteed to be within bounds. */
+            size_t fill_size = block_size - key_buffer_size;
+            memset(operation->opad + key_buffer_size, 0x5C, fill_size);
+        }
         status = esp_sha_hash_setup(&operation->hmac_operation, hash_alg);
         if (status != PSA_SUCCESS) {
             return status;
