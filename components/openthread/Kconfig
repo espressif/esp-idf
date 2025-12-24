@@ -239,6 +239,12 @@ menu "OpenThread"
                 default y
                 help
                     Select this to enable OpenThread NCP vendor commands.
+
+            config OPENTHREAD_RCP_SPINEL_CONSOLE
+                bool "Enable RCP console via Spinel"
+                default n
+                help
+                    Select this to enable sending console commands to OpenThread RCP via Spinel.
         endmenu
 
         config OPENTHREAD_BORDER_ROUTER
