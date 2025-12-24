@@ -2880,7 +2880,8 @@ static SLEEP_FN_ATTR uint32_t get_power_down_flags(void)
 #endif
 
 #if SOC_PM_SUPPORT_CNNT_PD
-    if (s_config.domain[ESP_PD_DOMAIN_CNNT].pd_option != ESP_PD_OPTION_ON && top_domain_pd_allowed()) {
+    // The TOP domain depends on the CNNT domain, only after the TOP power domain has been powered off is the CNNT power domain allowed to power down.
+    if (s_config.domain[ESP_PD_DOMAIN_CNNT].pd_option != ESP_PD_OPTION_ON && (pd_flags & PMU_SLEEP_PD_TOP)) {
         pd_flags |= PMU_SLEEP_PD_CNNT;
     }
 #endif
