@@ -74,6 +74,15 @@ void modem_clock_module_disable(periph_module_t module);
  */
 uint32_t modem_clock_module_bits_get(periph_module_t module);
 
+#if SOC_WIFI_SUPPORTED
+/**
+ * @brief Set Wi-Fi initialization status.
+ *
+ * @param inited Wi-Fi initialization status.
+ */
+void modem_clock_configure_wifi_status(bool inited);
+#endif
+
 /**
  * @brief Reset the mac of modem module
  *
