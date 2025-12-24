@@ -9,6 +9,14 @@ entries:
       strncpy (noflash)
       strcmp  (noflash)
       strncmp (noflash)
+  # TODO IDF-15041: remove this block
+  if LIBC_PICOLIBC = y:
+      if SPIRAM_CACHE_WORKAROUND = y:
+          memcpy (noflash)
+          memset (noflash)
+      if SPIRAM_CACHE_LIBSTR_IN_IRAM = y:
+          strcpy  (noflash)
+          strncpy (noflash)
   if LIBC_MISC_IN_IRAM = y:
     if HEAP_PLACE_FUNCTION_INTO_FLASH = n:
       heap (noflash)
