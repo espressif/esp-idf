@@ -42,6 +42,10 @@
 #include "esp_roaming.h"
 #endif
 
+#if SOC_MODEM_CLOCK_IS_INDEPENDENT
+#include "esp_private/esp_modem_clock.h"
+#endif
+
 static bool s_wifi_inited = false;
 
 #if (CONFIG_ESP_WIFI_RX_BA_WIN > CONFIG_ESP_WIFI_DYNAMIC_RX_BUFFER_NUM)
@@ -254,6 +258,10 @@ static esp_err_t wifi_deinit_internal(void)
     esp_phy_modem_deinit();
 #endif
     s_wifi_inited = false;
+
+#if SOC_MODEM_CLOCK_IS_INDEPENDENT
+    modem_clock_configure_wifi_status(s_wifi_inited);
+#endif
 
     return err;
 }
@@ -490,6 +498,10 @@ esp_err_t esp_wifi_init(const wifi_init_config_t *config)
 #endif
 
     s_wifi_inited = true;
+
+#if SOC_MODEM_CLOCK_IS_INDEPENDENT
+    modem_clock_configure_wifi_status(s_wifi_inited);
+#endif
 
     return result;
 
