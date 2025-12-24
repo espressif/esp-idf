@@ -53,5 +53,6 @@ typedef struct {
 bool ble_log_ts_init(void);
 void ble_log_ts_deinit(void);
 void ble_log_ts_info_update(ble_log_ts_info_t **ts_info);
+void ble_log_ts_reset(bool status);
 
 #endif /* __BLE_LOG_TS_H__ */
