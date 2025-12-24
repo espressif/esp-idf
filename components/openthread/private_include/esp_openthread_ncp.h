@@ -12,6 +12,10 @@ extern "C" {
 
 void otAppNcpInit(otInstance *aInstance);
 
+#if CONFIG_OPENTHREAD_RCP_SPINEL_CONSOLE
+esp_err_t esp_console_redirect_to_otlog(void);
+#endif // CONFIG_OPENTHREAD_RCP_SPINEL_CONSOLE
+
 #ifdef __cplusplus
 }
 #endif
