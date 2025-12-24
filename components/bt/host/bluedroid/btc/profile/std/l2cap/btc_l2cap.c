@@ -42,6 +42,7 @@
 #define VFS_CLOSE_TIMEOUT (20 * 1000)
 #define BTC_L2CAP_ROLE_MASTER  0
 #define BTC_L2CAP_ROLE_SLAVE   1
+#define BTC_L2CAP_RX_MTU (990)
 
 typedef struct {
     bool peer_fc;         /* true if flow control is set based on peer's request */
@@ -101,10 +102,10 @@ static const tL2CAP_ERTM_INFO obex_l2c_etm_opt =
 {
     L2CAP_FCR_ERTM_MODE,            /* Mandatory for OBEX over l2cap */
     L2CAP_FCR_CHAN_OPT_ERTM,        /* Mandatory for OBEX over l2cap */
-    OBX_USER_RX_POOL_ID,
-    OBX_USER_TX_POOL_ID,
-    OBX_FCR_RX_POOL_ID,
-    OBX_FCR_TX_POOL_ID
+    L2CAP_USER_RX_BUF_SIZE,
+    L2CAP_USER_TX_BUF_SIZE,
+    L2CAP_FCR_RX_BUF_SIZE,
+    L2CAP_FCR_TX_BUF_SIZE
 };
 
 #if L2CAP_DYNAMIC_MEMORY == FALSE
@@ -553,7 +554,7 @@ static void btc_l2cap_start_srv(btc_l2cap_args_t *arg)
         cfg.fcr_present = TRUE;
         cfg.fcr = obex_l2c_fcr_opts_def;
         BTA_JvL2capStartServer(slot->security, slot->role, &obex_l2c_etm_opt, slot->psm,
-                                    L2CAP_MAX_SDU_LENGTH, &cfg, (tBTA_JV_L2CAP_CBACK *)btc_l2cap_inter_cb, (void *)slot->id);
+                                    BTC_L2CAP_RX_MTU, &cfg, (tBTA_JV_L2CAP_CBACK *)btc_l2cap_inter_cb, (void *)slot->id);
         osi_mutex_unlock(&l2cap_local_param.l2cap_slot_mutex);
     } while(0);
 
@@ -694,7 +695,7 @@ static void btc_l2cap_connect(btc_l2cap_args_t *arg)
         cfg.fcr = obex_l2c_fcr_opts_def;
 
         BTA_JvL2capConnect(slot->security, slot->role, &obex_l2c_etm_opt, slot->psm,
-                            L2CAP_MAX_SDU_LENGTH, &cfg, slot->addr, (tBTA_JV_L2CAP_CBACK *)btc_l2cap_inter_cb, (void *)slot->id);
+                            BTC_L2CAP_RX_MTU, &cfg, slot->addr, (tBTA_JV_L2CAP_CBACK *)btc_l2cap_inter_cb, (void *)slot->id);
         osi_mutex_unlock(&l2cap_local_param.l2cap_slot_mutex);
     } while (0);
 
