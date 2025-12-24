@@ -25,6 +25,9 @@
 #include "esp_private/gptimer.h"
 #include "esp_rom_sys.h"
 #include "esp_private/esp_clk.h"
+#if !CONFIG_FREERTOS_UNICORE
+#include "esp_ipc_isr.h"
+#endif
 
 #include "sdkconfig.h"
 
@@ -52,51 +55,62 @@ TEST_CASE("Test get PM lock statistics API", "[pm]")
 #ifdef CONFIG_PM_ENABLE
     esp_pm_lock_stats_t init_stats[ESP_PM_LOCK_MAX], stats[ESP_PM_LOCK_MAX];
 
-    // Get initial stats
-    TEST_ESP_OK(esp_pm_get_lock_stats_all(init_stats));
+#if !CONFIG_FREERTOS_UNICORE
+    // Stall other CPU to avoid another core's rtos lock interference with the test.
+    esp_ipc_isr_stall_other_cpu();
+    // Use TEST_PROTECT() to ensure the other CPU is released even if an assertion fails,
+    // otherwise the CPU1 will dead.
+    if (TEST_PROTECT()) {
+#endif // !CONFIG_FREERTOS_UNICORE
+        // Get initial stats
+        TEST_ESP_OK(esp_pm_get_lock_stats_all(init_stats));
 
-    // Create a few locks of different types
-    esp_pm_lock_handle_t lock1, lock2, lock3;
-    TEST_ESP_OK(esp_pm_lock_create(ESP_PM_CPU_FREQ_MAX, 0, "cpu_lock", &lock1));
-    TEST_ESP_OK(esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "apb_lock", &lock2));
-    TEST_ESP_OK(esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, "sleep_lock", &lock3));
+        // Create a few locks of different types
+        esp_pm_lock_handle_t lock1, lock2, lock3;
+        TEST_ESP_OK(esp_pm_lock_create(ESP_PM_CPU_FREQ_MAX, 0, "cpu_lock", &lock1));
+        TEST_ESP_OK(esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "apb_lock", &lock2));
+        TEST_ESP_OK(esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, "sleep_lock", &lock3));
 
-    // Check stats after creating locks
-    TEST_ESP_OK(esp_pm_get_lock_stats_all(stats));
-    TEST_ASSERT_EQUAL(1, stats[ESP_PM_CPU_FREQ_MAX].created - init_stats[ESP_PM_CPU_FREQ_MAX].created);
-    TEST_ASSERT_EQUAL(1, stats[ESP_PM_APB_FREQ_MAX].created - init_stats[ESP_PM_APB_FREQ_MAX].created);
-    TEST_ASSERT_EQUAL(1, stats[ESP_PM_NO_LIGHT_SLEEP].created - init_stats[ESP_PM_NO_LIGHT_SLEEP].created);
+        // Check stats after creating locks
+        TEST_ESP_OK(esp_pm_get_lock_stats_all(stats));
+        TEST_ASSERT_EQUAL(1, stats[ESP_PM_CPU_FREQ_MAX].created - init_stats[ESP_PM_CPU_FREQ_MAX].created);
+        TEST_ASSERT_EQUAL(1, stats[ESP_PM_APB_FREQ_MAX].created - init_stats[ESP_PM_APB_FREQ_MAX].created);
+        TEST_ASSERT_EQUAL(1, stats[ESP_PM_NO_LIGHT_SLEEP].created - init_stats[ESP_PM_NO_LIGHT_SLEEP].created);
 
-    // Acquire locks multiple times
-    TEST_ESP_OK(esp_pm_lock_acquire(lock1));
-    TEST_ESP_OK(esp_pm_lock_acquire(lock1)); // Acquire again (recursive)
-    TEST_ESP_OK(esp_pm_lock_acquire(lock2));
+        // Acquire locks multiple times
+        TEST_ESP_OK(esp_pm_lock_acquire(lock1));
+        TEST_ESP_OK(esp_pm_lock_acquire(lock1)); // Acquire again (recursive)
+        TEST_ESP_OK(esp_pm_lock_acquire(lock2));
 
-    // Check stats after acquiring locks
-    TEST_ESP_OK(esp_pm_get_lock_stats_all(stats));
-    // Count total held locks (sum of all lock counts)
-    TEST_ASSERT_EQUAL(2, stats[ESP_PM_CPU_FREQ_MAX].acquired - init_stats[ESP_PM_CPU_FREQ_MAX].acquired); // lock1 acquired twice
-    TEST_ASSERT_EQUAL(1, stats[ESP_PM_APB_FREQ_MAX].acquired - init_stats[ESP_PM_APB_FREQ_MAX].acquired); // lock2 acquired once
+        // Check stats after acquiring locks
+        TEST_ESP_OK(esp_pm_get_lock_stats_all(stats));
+        // Count total held locks (sum of all lock counts)
+        TEST_ASSERT_EQUAL(2, stats[ESP_PM_CPU_FREQ_MAX].acquired - init_stats[ESP_PM_CPU_FREQ_MAX].acquired); // lock1 acquired twice
+        TEST_ASSERT_EQUAL(1, stats[ESP_PM_APB_FREQ_MAX].acquired - init_stats[ESP_PM_APB_FREQ_MAX].acquired); // lock2 acquired once
 
-    // Release locks
-    TEST_ESP_OK(esp_pm_lock_release(lock1));
-    TEST_ESP_OK(esp_pm_lock_release(lock1)); // Release second acquisition
-    TEST_ESP_OK(esp_pm_lock_release(lock2));
+        // Release locks
+        TEST_ESP_OK(esp_pm_lock_release(lock1));
+        TEST_ESP_OK(esp_pm_lock_release(lock1)); // Release second acquisition
+        TEST_ESP_OK(esp_pm_lock_release(lock2));
 
-    // Delete locks
-    TEST_ESP_OK(esp_pm_lock_delete(lock1));
-    TEST_ESP_OK(esp_pm_lock_delete(lock2));
-    TEST_ESP_OK(esp_pm_lock_delete(lock3));
+        // Delete locks
+        TEST_ESP_OK(esp_pm_lock_delete(lock1));
+        TEST_ESP_OK(esp_pm_lock_delete(lock2));
+        TEST_ESP_OK(esp_pm_lock_delete(lock3));
 
-    // Check stats after deleting locks
-    TEST_ESP_OK(esp_pm_get_lock_stats_all(stats));
-    TEST_ASSERT_EQUAL(0, stats[ESP_PM_CPU_FREQ_MAX].created - init_stats[ESP_PM_CPU_FREQ_MAX].created);
-    TEST_ASSERT_EQUAL(0, stats[ESP_PM_APB_FREQ_MAX].created - init_stats[ESP_PM_APB_FREQ_MAX].created);
-    TEST_ASSERT_EQUAL(0, stats[ESP_PM_NO_LIGHT_SLEEP].created - init_stats[ESP_PM_NO_LIGHT_SLEEP].created);
+        // Check stats after deleting locks
+        TEST_ESP_OK(esp_pm_get_lock_stats_all(stats));
+        TEST_ASSERT_EQUAL(0, stats[ESP_PM_CPU_FREQ_MAX].created - init_stats[ESP_PM_CPU_FREQ_MAX].created);
+        TEST_ASSERT_EQUAL(0, stats[ESP_PM_APB_FREQ_MAX].created - init_stats[ESP_PM_APB_FREQ_MAX].created);
+        TEST_ASSERT_EQUAL(0, stats[ESP_PM_NO_LIGHT_SLEEP].created - init_stats[ESP_PM_NO_LIGHT_SLEEP].created);
 
-    // Test error cases
-    // NULL stats pointer
-    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_pm_get_lock_stats_all(NULL));
+        // Test error cases
+        // NULL stats pointer
+        TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_pm_get_lock_stats_all(NULL));
+#if !CONFIG_FREERTOS_UNICORE
+    }
+    esp_ipc_isr_release_other_cpu();
+#endif // !CONFIG_FREERTOS_UNICORE
 #else
     // When PM is not enabled, function should return ESP_ERR_NOT_SUPPORTED
     esp_pm_lock_stats_t stats[ESP_PM_LOCK_MAX];
