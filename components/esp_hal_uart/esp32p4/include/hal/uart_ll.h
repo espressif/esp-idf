@@ -591,7 +591,7 @@ FORCE_INLINE_ATTR uint32_t uart_ll_get_baudrate(uart_dev_t *hw, uint32_t sclk_fr
 {
     typeof(hw->clkdiv_sync) div_reg;
     div_reg.val = hw->clkdiv_sync.val;
-    int sclk_div = 0;
+    int sclk_div = 1;
     if ((hw) == &UART0) {
         sclk_div = HAL_FORCE_READ_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl111, reg_uart0_sclk_div_num) + 1;
     } else if ((hw) == &UART1) {
@@ -606,6 +606,49 @@ FORCE_INLINE_ATTR uint32_t uart_ll_get_baudrate(uart_dev_t *hw, uint32_t sclk_fr
         sclk_div = 1; // no pre-divider for LP UART clock source on the target
     }
     return ((sclk_freq << 4)) / (((div_reg.clkdiv << 4) | div_reg.clkdiv_frag) * sclk_div);
+}
+
+/**
+ * @brief  Set the UART glitch filter threshold. Any high pulse lasting shorter than this value will be ignored when the filter is enabled.
+ *
+ * @param  hw Beginning address of the peripheral registers.
+ * @param  glitch_filt_thrd The glitch filter threshold to be set (unit: ns)
+ * @param  sclk_freq Frequency of the clock source of UART, in Hz.
+ */
+FORCE_INLINE_ATTR void uart_ll_set_glitch_filt_thrd(uart_dev_t *hw, uint32_t glitch_filt_thrd, uint32_t sclk_freq)
+{
+    uint32_t clk_cycles = 0;
+    if (glitch_filt_thrd > 0) {
+        int sclk_div = 1;
+        if ((hw) == &UART0) {
+            sclk_div = HAL_FORCE_READ_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl111, reg_uart0_sclk_div_num) + 1;
+        } else if ((hw) == &UART1) {
+            sclk_div = HAL_FORCE_READ_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl112, reg_uart1_sclk_div_num) + 1;
+        } else if ((hw) == &UART2) {
+            sclk_div = HAL_FORCE_READ_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl113, reg_uart2_sclk_div_num) + 1;
+        } else if ((hw) == &UART3) {
+            sclk_div = HAL_FORCE_READ_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl114, reg_uart3_sclk_div_num) + 1;
+        } else if ((hw) == &UART4) {
+            sclk_div = HAL_FORCE_READ_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl115, reg_uart4_sclk_div_num) + 1;
+        } else if ((hw) == &LP_UART) {
+            sclk_div = 1; // no pre-divider for LP UART clock source on the target
+        }
+        uint32_t ref_clk_freq = sclk_freq / sclk_div;
+        clk_cycles = ((uint64_t)glitch_filt_thrd * ref_clk_freq + 1000000000 - 1) / 1000000000; // round up to always filter something
+        HAL_ASSERT(clk_cycles <= UART_GLITCH_FILT_V);
+    }
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->rx_filt, glitch_filt, clk_cycles);
+}
+
+/**
+ * @brief  Enable or disable the UART glitch filter
+ *
+ * @param  hw Beginning address of the peripheral registers.
+ * @param  enable True to enable the filter, False to disable the filter
+ */
+FORCE_INLINE_ATTR void uart_ll_enable_glitch_filt(uart_dev_t *hw, bool enable)
+{
+    hw->rx_filt.glitch_filt_en = enable;
 }
 
 /**

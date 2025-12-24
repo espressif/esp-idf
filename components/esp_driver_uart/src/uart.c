@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1060,6 +1060,9 @@ esp_err_t uart_param_config(uart_port_t uart_num, const uart_config_t *uart_conf
     ESP_RETURN_ON_FALSE((uart_config->rx_flow_ctrl_thresh < UART_HW_FIFO_LEN(uart_num)), ESP_FAIL, UART_TAG, "rx flow thresh error");
     ESP_RETURN_ON_FALSE((uart_config->flow_ctrl < UART_HW_FLOWCTRL_MAX), ESP_FAIL, UART_TAG, "hw_flowctrl mode error");
     ESP_RETURN_ON_FALSE((uart_config->data_bits < UART_DATA_BITS_MAX), ESP_FAIL, UART_TAG, "data bit error");
+#if UART_LL_GLITCH_FILT_ONLY_ON_AUTOBAUD
+    ESP_RETURN_ON_FALSE((uart_config->rx_glitch_filt_thresh == 0), ESP_FAIL, UART_TAG, "glitch filter on RX signal is not supported");
+#endif
 
     bool allow_pd __attribute__((unused)) = (uart_config->flags.allow_pd || uart_config->flags.backup_before_sleep);
 #if !SOC_UART_SUPPORT_SLEEP_RETENTION
@@ -1105,6 +1108,9 @@ esp_err_t uart_param_config(uart_port_t uart_num, const uart_config_t *uart_conf
         success = lp_uart_ll_set_baudrate(uart_context[uart_num].hal.dev, uart_config->baud_rate, sclk_freq);
     }
 #endif
+    uart_hal_set_glitch_filt_thrd(&(uart_context[uart_num].hal), uart_config->rx_glitch_filt_thresh, sclk_freq);
+    uart_hal_enable_glitch_filt(&(uart_context[uart_num].hal), uart_config->rx_glitch_filt_thresh > 0);
+
     uart_hal_set_parity(&(uart_context[uart_num].hal), uart_config->parity);
     uart_hal_set_data_bit_num(&(uart_context[uart_num].hal), uart_config->data_bits);
     uart_hal_set_stop_bits(&(uart_context[uart_num].hal), uart_config->stop_bits);
@@ -2345,14 +2351,37 @@ esp_err_t uart_detect_bitrate_start(uart_port_t uart_num, const uart_bitrate_det
             periph_rtc_dig_clk8m_enable();
         }
 #endif
+        UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
         HP_UART_SRC_CLK_ATOMIC() {
             uart_hal_set_sclk(&(uart_context[uart_num].hal), uart_sclk_sel);
             uart_hal_set_baudrate(&(uart_context[uart_num].hal), 57600, sclk_freq); // set to any baudrate
         }
         uart_context[uart_num].sclk_sel = uart_sclk_sel;
+
+#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2
+        // On such targets, the reference tick for filter is APB clock, regardless the UART func clock sel
+        esp_clk_tree_src_get_freq_hz(SOC_MOD_CLK_APB, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &sclk_freq);
+#endif
+        uart_hal_set_glitch_filt_thrd(&(uart_context[uart_num].hal), config->rx_glitch_filt_thresh, sclk_freq);
+        uart_hal_enable_glitch_filt(&(uart_context[uart_num].hal), config->rx_glitch_filt_thresh > 0);
+        UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
+
         _uart_set_pin6(uart_num, UART_PIN_NO_CHANGE, config->rx_io_num, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
     } else if (config != NULL) {
-        ESP_LOGW(UART_TAG, "unable to re-configure for an acquired port, ignoring the new config");
+#if UART_LL_GLITCH_FILT_ONLY_ON_AUTOBAUD
+        if (config->rx_glitch_filt_thresh > 0) {
+            // On ESP32 and ESP32S2, the reference tick for filter is APB clock, regardless the UART func clock sel
+            UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
+            soc_module_clk_t src_clk = SOC_MOD_CLK_APB;
+            uint32_t sclk_freq = 0;
+            esp_clk_tree_src_get_freq_hz(src_clk, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &sclk_freq);
+            uart_hal_set_glitch_filt_thrd(&(uart_context[uart_num].hal), config->rx_glitch_filt_thresh, sclk_freq);
+            UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
+        } else
+#endif
+        {
+            ESP_LOGW(UART_TAG, "unable to re-configure such parameters for an acquired port, ignoring the new config");
+        }
     }
 
     // start auto baud rate detection

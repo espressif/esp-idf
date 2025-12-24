@@ -37,10 +37,9 @@ ledc_timer_config_t create_default_timer_config(void)
 // use UART auto baud rate detection feature to test the waveform of LEDC
 int wave_count(int last_time)
 {
-    uart_bitrate_detect_config_t conf = {
-        .rx_io_num = PULSE_IO,
-        .source_clk = UART_SCLK_DEFAULT,
-    };
+    uart_bitrate_detect_config_t conf = {};
+    conf.rx_io_num = PULSE_IO;
+    conf.source_clk = UART_SCLK_DEFAULT;
     uart_bitrate_res_t res = {};
     uart_detect_bitrate_start(UART_NUM_1, &conf);
     vTaskDelay(pdMS_TO_TICKS(last_time));

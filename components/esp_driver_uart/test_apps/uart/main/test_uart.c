@@ -7,20 +7,24 @@
 #include <sys/param.h>
 #include "unity.h"
 #include "test_utils.h"
+#include "unity_test_utils.h"
 #include "driver/uart.h"
 #include "esp_log.h"
 #include "esp_rom_gpio.h"
 #include "esp_private/gpio.h"
+#include "hal/gpio_ll.h"
 #if SOC_LP_GPIO_MATRIX_SUPPORTED
 #include "driver/lp_io.h"
 #include "driver/rtc_io.h"
 #include "hal/rtc_io_ll.h"
 #endif
+#include "hal/uart_ll.h"
 #include "hal/uart_periph.h"
 #include "soc/uart_pins.h"
 #include "soc/soc_caps.h"
 #include "soc/clk_tree_defs.h"
 #include "test_common.h"
+#include "esp_attr.h"
 
 #define BUF_SIZE         (100)
 #define UART_BAUD_11520  (11520)
@@ -35,8 +39,8 @@ bool port_select(uart_port_param_t *port_param)
     if (strcmp(argv, "uart") == 0) {
         port_param->port_num = UART_NUM_1;                  // Test HP_UART with UART1 port
         port_param->default_src_clk = UART_SCLK_DEFAULT;
-        port_param->tx_pin_num = 4;
-        port_param->rx_pin_num = 5;
+        port_param->tx_pin_num = TEST_UART_TX_PIN_NUM;
+        port_param->rx_pin_num = TEST_UART_RX_PIN_NUM;
         port_param->rx_flow_ctrl_thresh = 120;
         return true;
 #if SOC_UART_LP_NUM > 0
@@ -303,15 +307,21 @@ TEST_CASE("uart general API test", "[uart]")
     uart_wakeup_set_get_test(uart_num);
 }
 
+typedef struct {
+    uart_port_t port_num;
+    int test_times;
+} uart_write_task_param_t;
+
 static void uart_write_task(void *param)
 {
-    uart_port_t uart_num = (uart_port_t)param;
+    uart_write_task_param_t *task_param = (uart_write_task_param_t *)param;
+    uart_port_t uart_num = task_param->port_num;
     uint8_t *tx_buf = (uint8_t *)malloc(1024);
     TEST_ASSERT_NOT_NULL(tx_buf);
     for (int i = 1; i < 1023; i++) {
         tx_buf[i] = (i & 0xff);
     }
-    for (int i = 0; i < 1024; i++) {
+    for (int i = 0; i < task_param->test_times; i++) {
         //d[0] and d[1023] are header
         tx_buf[0] = (i & 0xff);
         tx_buf[1023] = ((~i) & 0xff);
@@ -322,33 +332,11 @@ static void uart_write_task(void *param)
     vTaskDelete(NULL);
 }
 
-TEST_CASE("uart read write test", "[uart]")
+static void uart_read_data_with_check(uart_port_t uart_num, int test_times)
 {
-    uart_port_param_t port_param = {};
-    TEST_ASSERT(port_select(&port_param));
-
-    uart_port_t uart_num = port_param.port_num;
     uint8_t *rd_data = (uint8_t *)malloc(1024);
     TEST_ASSERT_NOT_NULL(rd_data);
-    uart_config_t uart_config = {
-        .baud_rate = 2000000,
-        .data_bits = UART_DATA_8_BITS,
-        .parity = UART_PARITY_DISABLE,
-        .stop_bits = UART_STOP_BITS_1,
-        .flow_ctrl = UART_HW_FLOWCTRL_CTS_RTS,
-        .source_clk = port_param.default_src_clk,
-        .rx_flow_ctrl_thresh = port_param.rx_flow_ctrl_thresh,
-    };
-    TEST_ESP_OK(uart_driver_install(uart_num, BUF_SIZE * 2, 0, 20, NULL, 0));
-    TEST_ESP_OK(uart_param_config(uart_num, &uart_config));
-    // Use loop back feature to connect TX signal to RX signal, CTS signal to RTS signal internally. Then no need to configure uart pins.
-    TEST_ESP_OK(uart_set_loop_back(uart_num, true));
-
-    TEST_ESP_OK(uart_wait_tx_done(uart_num, portMAX_DELAY));
-    vTaskDelay(pdMS_TO_TICKS(20)); // make sure last byte has flushed from TX FIFO
-    TEST_ESP_OK(uart_flush_input(uart_num));
-    xTaskCreate(uart_write_task, "uart_write_task", 8192, (void *)uart_num, 5, NULL);
-    for (int i = 0; i < 1024; i++) {
+    for (int i = 0; i < test_times; i++) {
         int bytes_remaining = 1024;
         memset(rd_data, 0, 1024);
         while (bytes_remaining) {
@@ -382,9 +370,43 @@ TEST_CASE("uart read write test", "[uart]")
             TEST_FAIL();
         }
     }
+    free(rd_data);
+}
+
+TEST_CASE("uart read write test", "[uart]")
+{
+    uart_port_param_t port_param = {};
+    TEST_ASSERT(port_select(&port_param));
+
+    uart_port_t uart_num = port_param.port_num;
+    uart_config_t uart_config = {
+        .baud_rate = 2000000,
+        .data_bits = UART_DATA_8_BITS,
+        .parity = UART_PARITY_DISABLE,
+        .stop_bits = UART_STOP_BITS_1,
+        .flow_ctrl = UART_HW_FLOWCTRL_CTS_RTS,
+        .source_clk = port_param.default_src_clk,
+        .rx_flow_ctrl_thresh = port_param.rx_flow_ctrl_thresh,
+    };
+    TEST_ESP_OK(uart_driver_install(uart_num, BUF_SIZE * 2, 0, 20, NULL, 0));
+    TEST_ESP_OK(uart_param_config(uart_num, &uart_config));
+    // Use loop back feature to connect TX signal to RX signal, CTS signal to RTS signal internally. Then no need to configure uart pins.
+    TEST_ESP_OK(uart_set_loop_back(uart_num, true));
+
+    TEST_ESP_OK(uart_wait_tx_done(uart_num, portMAX_DELAY));
+    vTaskDelay(pdMS_TO_TICKS(20)); // make sure last byte has flushed from TX FIFO
+    TEST_ESP_OK(uart_flush_input(uart_num));
+
+    uart_write_task_param_t task_param = {
+        .port_num = uart_num,
+        .test_times = 1024,
+    };
+    xTaskCreate(uart_write_task, "uart_write_task", 8192, (void *)&task_param, 5, NULL);
+
+    uart_read_data_with_check(uart_num, task_param.test_times);
+
     uart_wait_tx_done(uart_num, portMAX_DELAY);
     uart_driver_delete(uart_num);
-    free(rd_data);
 
     vTaskDelay(2); // wait for uart_write_task to exit
 }
@@ -694,4 +716,137 @@ TEST_CASE("uart auto baud rate detection", "[uart]")
 
         vTaskDelete(console_write_task);
     }
+}
+
+IRAM_ATTR static void uart_signal_inject_glitch_task(void *param)
+{
+    uart_port_param_t *port_param = (uart_port_param_t *)param;
+    uart_port_t uart_num = port_param->port_num;
+    uint32_t tx_pin = port_param->tx_pin_num;
+    // while sending, frequently disconnect from UART TX signal and set level to high to create glitches
+    gpio_ll_set_level(&GPIO, tx_pin, 1);
+#if SOC_UART_LP_NUM > 0 && SOC_LP_GPIO_MATRIX_SUPPORTED
+    uint32_t rtc_gpio_num = rtc_io_number_get(tx_pin);
+    rtcio_ll_set_level(rtc_gpio_num, 1);
+#endif
+
+    // esp_rom_delay_us(1000); // wait for uart write task to start sending data
+
+    while (1) {
+        // make sure the glitch is always less than 5us
+        portDISABLE_INTERRUPTS();
+        if (uart_num < SOC_UART_HP_NUM) {
+            esp_rom_gpio_connect_out_signal(tx_pin, SIG_GPIO_OUT_IDX, false, false);
+            gpio_ll_set_output_enable_ctrl(&GPIO, tx_pin, false, false);
+            esp_rom_gpio_connect_out_signal(tx_pin, UART_PERIPH_SIGNAL(uart_num, SOC_UART_PERIPH_SIGNAL_TX), false, false);
+#if SOC_UART_LP_NUM > 0 && SOC_LP_GPIO_MATRIX_SUPPORTED
+        } else {
+            rtcio_ll_matrix_out(rtc_gpio_num, SIG_LP_GPIO_OUT_IDX, false, false);
+            LP_GPIO.func_out_sel_cfg[rtc_gpio_num].oe_sel = 1;
+            rtcio_ll_matrix_out(rtc_gpio_num, UART_PERIPH_SIGNAL(uart_num, SOC_UART_PERIPH_SIGNAL_TX), false, false);
+#endif
+        }
+        portENABLE_INTERRUPTS();
+        vTaskDelay(pdMS_TO_TICKS(1));
+    }
+}
+
+TEST_CASE("uart rx glitch filter (read write test + auto baud rate detection test)", "[uart]")
+{
+    // The test will be constructed as:
+    // Configuring TX and RX signal on the same GPIO pad
+    // And while the TX data is sending, the TX output configuration will be manipulated to generate glitches on the signal
+    uart_port_param_t port_param = {};
+    TEST_ASSERT(port_select(&port_param));
+    port_param.tx_pin_num = port_param.rx_pin_num; // let tx and rx use the same pin
+
+    uart_port_t uart_num = port_param.port_num;
+    // High speed clock source may not able to filter a 5us glitch, therefore, lower the source clock frequency
+    if (uart_num < SOC_UART_HP_NUM) {
+#if SOC_UART_SUPPORT_XTAL_CLK
+        port_param.default_src_clk = UART_SCLK_XTAL;
+#endif
+    }
+    uart_config_t uart_config = {
+        .baud_rate = 50000,
+        .data_bits = UART_DATA_8_BITS,
+        .parity    = UART_PARITY_DISABLE,
+        .stop_bits = UART_STOP_BITS_1,
+        .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
+        .source_clk = port_param.default_src_clk,
+#if !UART_LL_GLITCH_FILT_ONLY_ON_AUTOBAUD
+        .rx_glitch_filt_thresh = 5000, // filter all glitches with width less than 5us
+#endif
+    };
+
+    TEST_ESP_OK(uart_driver_install(uart_num, BUF_SIZE * 2, 0, 20, NULL, 0));
+    TEST_ESP_OK(uart_param_config(uart_num, &uart_config));
+    esp_err_t err = uart_set_pin(uart_num, port_param.tx_pin_num, port_param.rx_pin_num, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
+    if (uart_num < SOC_UART_HP_NUM) {
+        TEST_ESP_OK(err);
+#if SOC_UART_LP_NUM > 0
+    } else {
+#if !SOC_LP_GPIO_MATRIX_SUPPORTED
+        TEST_ESP_ERR(ESP_FAIL, err); // For LP UART port, if no LP GPIO Matrix, unable to be used in one-wire mode
+#else
+        TEST_ESP_OK(err);
+#endif
+#endif // SOC_UART_LP_NUM > 0
+    }
+
+    // If successfully route TX and RX on the same pad, then we can continue with the test
+    if (err == ESP_OK) {
+        TEST_ESP_OK(uart_wait_tx_done(uart_num, portMAX_DELAY));
+        vTaskDelay(pdMS_TO_TICKS(20)); // make sure last byte has flushed from TX FIFO
+        TEST_ESP_OK(uart_flush_input(uart_num));
+
+        uart_write_task_param_t task_param = {
+            .port_num = uart_num,
+            .test_times = 10,
+        };
+        TaskHandle_t inject_glitch_task_handle;
+        xTaskCreate(uart_signal_inject_glitch_task, "uart_signal_inject_glitch_task", 1024, (void *)&port_param, 6, &inject_glitch_task_handle);
+
+        // 1. read write test
+#if !UART_LL_GLITCH_FILT_ONLY_ON_AUTOBAUD
+        xTaskCreate(uart_write_task, "uart_write_task", 8192, (void *)&task_param, 5, NULL);
+        uart_read_data_with_check(uart_num, task_param.test_times);
+        uart_wait_tx_done(uart_num, portMAX_DELAY);
+#endif
+
+        // 2. auto baud rate detection test
+        if (uart_num < SOC_UART_HP_NUM) {
+            TaskHandle_t write_task_handle;
+            task_param.test_times = 5;
+            xTaskCreate(uart_write_task, "uart_write_task", 8192, (void *)&task_param, 5, &write_task_handle);
+            uart_bitrate_res_t res = {};
+#if UART_LL_GLITCH_FILT_ONLY_ON_AUTOBAUD
+            // Set the glitch filter threshold for auto baud rate detection on ESP32 and ESP32S2
+            // And since the reference tick for filter is APB clock (80MHz) for the two targets, so set the threshold to 3us to avoid exceeding the register value limit
+            // The glitch is much less than 3us
+            uart_bitrate_detect_config_t conf = {
+                .rx_glitch_filt_thresh = 3000,
+            };
+            TEST_ESP_OK(uart_detect_bitrate_start(uart_num, &conf));
+#else
+            TEST_ESP_OK(uart_detect_bitrate_start(uart_num, NULL));
+#endif
+            vTaskDelay(pdMS_TO_TICKS(10));
+            TEST_ESP_OK(uart_detect_bitrate_stop(uart_num, false, &res));
+            uint32_t detected_baudrate = res.clk_freq_hz * 2 / res.pos_period; // assume the wave has a slow falling slew rate
+            uint32_t actual_baudrate = 0;
+            uart_get_baudrate(uart_num, &actual_baudrate);
+            TEST_ASSERT_INT32_WITHIN(actual_baudrate * 0.03, actual_baudrate, detected_baudrate);
+            // wait for write task to finish and self deleted
+            while (eTaskGetState(write_task_handle) != eDeleted) {
+                vTaskDelay(1);
+            }
+        }
+
+        unity_utils_task_delete(inject_glitch_task_handle);
+    }
+
+    uart_driver_delete(uart_num);
+
+    vTaskDelay(2); // wait for tasks to exit
 }
