@@ -1026,6 +1026,15 @@ void btc_l2cap_cb_handler(btc_msg_t *msg)
                     p_buf->event++;
                     BTA_JvL2capWrite(p_data->l2c_write.handle, slot->id, p_buf->data + p_buf->offset, p_buf->len, (void *)slot->id);
                 }
+            } else {
+                if (!p_data->l2c_write.cong && slot->connected) {
+                    // retry
+                    BTA_JvL2capWrite(p_data->l2c_write.handle, slot->id, p_buf->data + p_buf->offset, p_buf->len, (void *)slot->id);
+                } else {
+                    p_buf->event--;
+                    // Reset layer-specific flag to 0, marking packet as ready for transmission
+                    p_buf->layer_specific = 0;
+                }
             }
         }
         osi_mutex_unlock(&l2cap_local_param.l2cap_slot_mutex);
@@ -1086,7 +1095,7 @@ static ssize_t l2cap_vfs_write(int fd, const void * data, size_t size)
                 }
                 p_buf->offset = 0;
                 p_buf->len = write_size;
-                p_buf->event = 0; // indicate the p_buf be sent count
+                p_buf->event = 0; // Indicate the count of successful sends of p_buf
                 p_buf->layer_specific = 0; // indicate the p_buf whether to be sent, 0 - ready to send; 1 - have sent
                 memcpy((UINT8 *)(p_buf + 1), data + sent, write_size);
             }
