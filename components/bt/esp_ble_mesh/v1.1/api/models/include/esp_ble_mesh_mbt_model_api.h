@@ -14,7 +14,6 @@
 #define _BLE_MESH_MBT_DEPRECATE_WARN
 #warning "warning: 'All content in this document, including data structures and APIs, will be deprecated."
 #endif
-#endif /* CONFIG_BLE_MESH_MBT_SRV || CONFIG_BLE_MESH_MBT_CLI */
 
 #ifdef __cplusplus
 extern "C" {
@@ -773,4 +772,5 @@ esp_err_t esp_ble_mesh_mbt_server_get_blob_reception_progress(esp_ble_mesh_model
 }
 #endif
 
+#endif /* CONFIG_BLE_MESH_MBT_SRV || CONFIG_BLE_MESH_MBT_CLI */
 #endif /* _ESP_BLE_MESH_MBT_MODEL_API_H_ */
