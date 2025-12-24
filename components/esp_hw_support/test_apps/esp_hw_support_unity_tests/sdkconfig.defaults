@@ -6,3 +6,6 @@ CONFIG_BOOTLOADER_COMPILER_OPTIMIZATION_SIZE=y
 
 # we can silent the assertion to save the binary footprint
 CONFIG_COMPILER_OPTIMIZATION_ASSERTIONS_SILENT=y
+
+# primitives for checking sleep internal state
+CONFIG_ESP_SLEEP_DEBUG=y
