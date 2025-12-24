@@ -58,7 +58,7 @@ TEMPLATES = {
 .. note::
 
      这是 ESP-IDF master 分支（最新版本）的文档，该版本在持续开发中。还有
-     `Stable version`_ 的文档，以及其他版本的文档 :doc:`/versions` 供参考。
+     `稳定版本`_ 的文档，以及其他版本的文档 :doc:`/versions` 供参考。
 """,
             'stable': """
 .. note::
