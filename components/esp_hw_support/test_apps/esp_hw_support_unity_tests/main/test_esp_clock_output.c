@@ -138,7 +138,7 @@ TEST_CASE("GPIO output internal clock one-to-many", "[gpio_output_clock][ignore]
 #if CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32C3
     test_clk_out_sig[3] = CLKOUT_SIG_PLL_F80M;
 #else
-    test_clk_out_sig[3] = CLKOUT_SIG_RC_32K;
+    test_clk_out_sig[3] = CLKOUT_SIG_CPU;
 #endif
 
     // Test the excess clock channel request assertion

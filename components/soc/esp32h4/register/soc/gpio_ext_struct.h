@@ -202,6 +202,31 @@ typedef union {
     uint32_t val;
 } gpio_ext_etm_task_pn_cfg_reg_t;
 
+/** Group: Pin Control Register */
+/** Type of pin_ctrl register
+ *  Clock Output Configuration Register
+ */
+ typedef union {
+    struct {
+        /** clk_out1 : R/W; bitpos: [4:0]; default: 0;
+         *  If you want to output clock for I2S to CLK_OUT_out1, set this register to 0x0.
+         *  CLK_OUT_out1 can be found in peripheral output signals.
+         */
+        uint32_t clk_out1:5;
+        /** clk_out2 : R/W; bitpos: [9:5]; default: 0;
+         *  If you want to output clock for I2S to CLK_OUT_out2, set this register to 0x0.
+         *  CLK_OUT_out2 can be found in peripheral output signals.
+         */
+        uint32_t clk_out2:5;
+        /** clk_out3 : R/W; bitpos: [14:10]; default: 0;
+         *  If you want to output clock for I2S to CLK_OUT_out3, set this register to 0x0.
+         *  CLK_OUT_out3 can be found in peripheral output signals.
+         */
+        uint32_t clk_out3:5;
+        uint32_t reserved_15:17;
+    };
+    uint32_t val;
+} gpio_ext_pin_ctrl_reg_t;
 
 /** Group: Version Register */
 /** Type of ext_version register
@@ -240,7 +265,8 @@ typedef struct {
     volatile gpio_glitch_filter_dev_t ext_glitch_filter;
     uint32_t reserved_0f8[8];
     volatile gpio_etm_dev_t etm;
-    uint32_t reserved_178[33];
+    uint32_t reserved_178[32];
+    volatile gpio_ext_pin_ctrl_reg_t pin_ctrl;
     volatile gpio_ext_version_reg_t ext_version;
 } gpio_ext_dev_t;
 

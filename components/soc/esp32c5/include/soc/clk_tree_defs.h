@@ -535,7 +535,6 @@ typedef enum {
 
 //////////////////////////////////////////////CLOCK OUTPUT///////////////////////////////////////////////////////////
 typedef enum {
-    CLKOUT_SIG_INVALID          = 0,
     CLKOUT_SIG_PLL_F160M        = 1,    /*!< Divided from PLL_F480M */
     CLKOUT_SIG_PLL_F22M         = 2,    /*!< Divided from PLL_F160M */
     CLKOUT_SIG_PLL_F40M         = 3,    /*!< Divided from PLL_F160M */
@@ -550,8 +549,8 @@ typedef enum {
     CLKOUT_SIG_XTAL32K          = 0x15, /*!< External 32kHz crystal clock */
     CLKOUT_SIG_EXT32K           = 0x16, /*!< External slow clock input through XTAL_32K_P */
     CLKOUT_SIG_RC_FAST          = 0x17, /*!< RC fast clock, about 17.5MHz */
-    CLKOUT_SIG_RC_32K           = 0x18, /*!< Internal slow RC oscillator */
     CLKOUT_SIG_RC_SLOW          = 0x19, /*!< RC slow clock, depends on the RTC_CLK_SRC configuration */
+    CLKOUT_SIG_INVALID          = 0xFF,
 } soc_clkout_sig_id_t;
 
 //////////////////////////////////////CLOCK FREQUENCY CALCULATION////////////////////////////////////////////////////
