@@ -139,6 +139,7 @@ bool ble_log_sync_enable(bool enable)
         return false;
     }
     rt_ts_enabled = enable;
+    ble_log_ts_reset(enable);
     return true;
 }
 #endif /* CONFIG_BLE_LOG_TS_ENABLED */

@@ -73,3 +73,12 @@ void ble_log_ts_info_update(ble_log_ts_info_t **info)
 
     *info = ts_info;
 }
+
+void ble_log_ts_reset(bool status)
+{
+    if (!status && !ts_info->io_level) {
+        gpio_set_level(CONFIG_BLE_LOG_SYNC_IO_NUM, 1);
+    }
+    ts_info->io_level = 0;
+    gpio_set_level(CONFIG_BLE_LOG_SYNC_IO_NUM, 0);
+}
