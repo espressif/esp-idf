@@ -63,6 +63,10 @@ void ble_log_ts_deinit(void)
 
 void ble_log_ts_info_update(ble_log_ts_info_t **info)
 {
+    if (!ts_inited) {
+        return;
+    }
+
     BLE_LOG_ENTER_CRITICAL();
     ts_info->io_level = !ts_info->io_level;
     gpio_set_level(CONFIG_BLE_LOG_SYNC_IO_NUM, ts_info->io_level);
@@ -76,6 +80,10 @@ void ble_log_ts_info_update(ble_log_ts_info_t **info)
 
 void ble_log_ts_reset(bool status)
 {
+    if (!ts_inited) {
+        return;
+    }
+
     if (!status && !ts_info->io_level) {
         gpio_set_level(CONFIG_BLE_LOG_SYNC_IO_NUM, 1);
     }
