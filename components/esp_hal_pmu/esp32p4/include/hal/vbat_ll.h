@@ -19,7 +19,6 @@
 #include "hal/regi2c_ctrl.h"
 #include "soc/regi2c_brownout.h"
 
-
 typedef enum {
     VBAT_LL_CHARGER_UPVOLTAGE_INTR = BIT(27),
     VBAT_LL_CHARGER_UNDERVOLTAGE_INTR = BIT(28),
@@ -73,7 +72,7 @@ static inline void vbat_ll_enable_charger_comparator(bool enable)
  */
 static inline void vbat_ll_set_undervoltage_filter_time(uint32_t time_tick)
 {
-    HAL_ASSERT(time_tick < (2<<10));
+    HAL_ASSERT(time_tick < (2 << 10));
     LP_ANA_PERI.vddbat_charge_cntl.vddbat_charge_undervoltage_target = time_tick;
 }
 
@@ -84,7 +83,7 @@ static inline void vbat_ll_set_undervoltage_filter_time(uint32_t time_tick)
  */
 static inline void vbat_ll_set_upvoltage_filter_time(uint32_t time_tick)
 {
-    HAL_ASSERT(time_tick < (2<<10));
+    HAL_ASSERT(time_tick < (2 << 10));
     LP_ANA_PERI.vddbat_charge_cntl.vddbat_charge_upvoltage_target = time_tick;
 }
 

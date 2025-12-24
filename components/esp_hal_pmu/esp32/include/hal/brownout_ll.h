@@ -123,7 +123,6 @@ static inline void brownout_ll_clear_count(void)
     // Not supported on esp32
 }
 
-
 #ifdef __cplusplus
 }
 #endif

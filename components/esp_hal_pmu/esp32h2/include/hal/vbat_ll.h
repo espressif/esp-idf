@@ -18,7 +18,6 @@
 #include "hal/regi2c_ctrl.h"
 #include "soc/regi2c_brownout.h"
 
-
 typedef enum {
     VBAT_LL_CHARGER_UPVOLTAGE_INTR = BIT(27),
     VBAT_LL_CHARGER_UNDERVOLTAGE_INTR = BIT(28),

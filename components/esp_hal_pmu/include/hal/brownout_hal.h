@@ -36,7 +36,6 @@ typedef struct {
  */
 void brownout_hal_config(const brownout_hal_config_t *cfg);
 
-
 #ifdef __cplusplus
 }
 #endif
