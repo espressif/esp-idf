@@ -403,10 +403,11 @@ esp_err_t IRAM_ATTR esp_sleep_cpu_retention(uint32_t (*goto_sleep)(uint32_t, uin
 
     esp_err_t err = do_cpu_retention(goto_sleep, wakeup_opt, reject_opt, lslp_mem_inf_fpu, dslp);
 
+    if (err == ESP_OK) {
 #if CONFIG_PM_CHECK_SLEEP_RETENTION_FRAME
-    validate_retention_frame_crc((uint32_t*)frame, sizeof(RvCoreNonCriticalSleepFrame) - sizeof(long), (uint32_t *)(&frame->frame_crc));
+        validate_retention_frame_crc((uint32_t*)frame, sizeof(RvCoreNonCriticalSleepFrame) - sizeof(long), (uint32_t *)(&frame->frame_crc));
 #endif
-
+    }
 #if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU && !CONFIG_FREERTOS_UNICORE
     // Start core1
     if (core_id == 0) {
@@ -416,12 +417,12 @@ esp_err_t IRAM_ATTR esp_sleep_cpu_retention(uint32_t (*goto_sleep)(uint32_t, uin
 
     atomic_store(&s_smp_retention_state[core_id], SMP_RESTORE_START);
 #endif
-
-    rv_core_noncritical_regs_restore();
-    cpu_domain_dev_regs_restore(s_cpu_retention.retent.cache_config_frame);
-    cpu_domain_dev_regs_restore(s_cpu_retention.retent.clic_frame[core_id]);
-    cpu_domain_dev_regs_restore(s_cpu_retention.retent.clint_frame[core_id]);
-
+    if (err == ESP_OK) {
+        rv_core_noncritical_regs_restore();
+        cpu_domain_dev_regs_restore(s_cpu_retention.retent.cache_config_frame);
+        cpu_domain_dev_regs_restore(s_cpu_retention.retent.clic_frame[core_id]);
+        cpu_domain_dev_regs_restore(s_cpu_retention.retent.clint_frame[core_id]);
+    }
 #if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU && !CONFIG_FREERTOS_UNICORE
     atomic_store(&s_smp_retention_state[core_id], SMP_RESTORE_DONE);
 #endif

@@ -328,15 +328,17 @@ esp_err_t IRAM_ATTR esp_sleep_cpu_retention(uint32_t (*goto_sleep)(uint32_t, uin
 
     esp_err_t err = do_cpu_retention(goto_sleep, wakeup_opt, reject_opt, lslp_mem_inf_fpu, dslp);
 
+    if (err == ESP_OK) {
 #if CONFIG_PM_CHECK_SLEEP_RETENTION_FRAME
-    validate_retention_frame_crc((uint32_t*)frame, sizeof(RvCoreNonCriticalSleepFrame) - sizeof(long), (uint32_t *)(&frame->frame_crc));
+        validate_retention_frame_crc((uint32_t*)frame, sizeof(RvCoreNonCriticalSleepFrame) - sizeof(long), (uint32_t *)(&frame->frame_crc));
 #endif
 
-    rv_core_noncritical_regs_restore(frame);
-    cpu_domain_dev_regs_restore(s_cpu_retention.retent.cache_config_frame);
-    cpu_domain_dev_regs_restore(s_cpu_retention.retent.intpri_frame);
-    cpu_domain_dev_regs_restore(s_cpu_retention.retent.clint_frame);
-    cpu_domain_dev_regs_restore(s_cpu_retention.retent.plic_frame);
+        rv_core_noncritical_regs_restore(frame);
+        cpu_domain_dev_regs_restore(s_cpu_retention.retent.cache_config_frame);
+        cpu_domain_dev_regs_restore(s_cpu_retention.retent.intpri_frame);
+        cpu_domain_dev_regs_restore(s_cpu_retention.retent.clint_frame);
+        cpu_domain_dev_regs_restore(s_cpu_retention.retent.plic_frame);
+    }
     restore_mstatus(mstatus);
     return err;
 }
