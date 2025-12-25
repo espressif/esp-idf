@@ -223,6 +223,12 @@ TEST_CASE("Test vTaskSuspendAll() and xTaskResumeAll() multicore", "[freertos]")
         for (int j = 0; j < 2; j++) {
             xSemaphoreTake(done_sem, portMAX_DELAY);
         }
+
+        // Suspend the test tasks in case they haven't suspended themselves yet
+        vTaskSuspend(taskA_hdl);
+        vTaskSuspend(taskB_hdl);
+        vTaskDelay(10);
+
         // Cleanup the tasks
         vTaskDelete(taskA_hdl);
         vTaskDelete(taskB_hdl);
@@ -332,6 +338,8 @@ static void test_unblk_a1_task(void *arg)
 
     // Cleanup A2 and interrupt
     deregister_intr_cb();
+    vTaskSuspend(a2_task_hdl);
+    vTaskDelay(10);
     vTaskDelete(a2_task_hdl);
 
     // Indicate done and wait to be deleted
@@ -384,6 +392,11 @@ TEST_CASE("Test vTaskSuspendAll allows scheduling on other cores", "[freertos]")
         for (int j = 0; j < 2; j++) {
             xSemaphoreTake(test_unblk_done_sem, portMAX_DELAY);
         }
+        // Suspend the test tasks in case they haven't suspended themselves yet
+        vTaskSuspend(a1_task_hdl);
+        vTaskSuspend(b1_task_hdl);
+        vTaskDelay(10);
+
         // Cleanup tasks
         vTaskDelete(a1_task_hdl);
         vTaskDelete(b1_task_hdl);
@@ -506,6 +519,10 @@ TEST_CASE("Test vTaskSuspendAll doesn't block unpinned tasks from being schedule
     for (int i = 0; i < 2; i++) {
         xSemaphoreTake(test_unpinned_sem, portMAX_DELAY);
     }
+    // Suspend the test tasks in case they haven't suspended themselves yet
+    vTaskSuspend(pinned_task_hdl);
+    vTaskSuspend(unpinned_task_hdl);
+    vTaskDelay(10);
 
     // Cleanup
     vTaskDelete(pinned_task_hdl);
@@ -632,8 +649,9 @@ TEST_CASE("Test xTaskResumeAll resumes pended tasks", "[freertos]")
         TEST_ASSERT_EQUAL(pdTRUE, xTaskCreatePinnedToCore(test_pended_running_task, "susp", 2048, (void *)xTaskGetCurrentTaskHandle(), UNITY_FREERTOS_PRIORITY + 1, &susp_tsk_hdl, i));
         // Wait for to be notified to test completion
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
-        // Add a short delay to allow the test_pended_running_task to go to suspend state
-        vTaskDelay(1);
+        // Suspend the test task in case it hasn't suspended itself yet
+        vTaskSuspend(susp_tsk_hdl);
+        vTaskDelay(10);
         vTaskDelete(susp_tsk_hdl);
     }
     // Add a short delay to allow the idle task to free any remaining task memory
@@ -746,8 +764,12 @@ TEST_CASE("Test xTaskSuspendAll on all cores pends all tasks and xTaskResumeAll 
 
     // Cleanup
     for (int i = 0; i < TEST_PENDED_NUM_BLOCKED_TASKS; i++) {
+        vTaskSuspend(blkd_tasks[i]);
+        vTaskDelay(10);
         vTaskDelete(blkd_tasks[i]);
     }
+    vTaskSuspend(susp_task);
+    vTaskDelay(10);
     vTaskDelete(susp_task);
     vSemaphoreDelete(done_sem);
 }
