@@ -38,7 +38,7 @@ entries:
         image_process (noflash)
 
 [mapping:esp_system_hal]
-archive: libhal.a
+archive: libesp_hal_uart.a
 entries:
     if ESP_PANIC_HANDLER_IRAM = y:
         uart_hal_iram (noflash)

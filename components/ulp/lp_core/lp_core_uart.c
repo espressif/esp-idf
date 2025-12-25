@@ -10,7 +10,7 @@
 #include "lp_core_uart.h"
 #include "driver/rtc_io.h"
 #include "driver/lp_io.h"
-#include "soc/uart_periph.h"
+#include "hal/uart_periph.h"
 #include "soc/lp_uart_struct.h"
 #include "hal/uart_hal.h"
 #include "hal/rtc_io_hal.h"

@@ -80,6 +80,7 @@ if(NOT non_os_build)
 
     list(APPEND priv_requires esp_mm
                               esp_hal_mspi
+                              esp_hal_uart
     )
 
     if(CONFIG_IDF_TARGET_ESP32 OR CONFIG_IDF_TARGET_ESP32S2)

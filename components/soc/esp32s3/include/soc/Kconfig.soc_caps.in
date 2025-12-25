@@ -819,10 +819,6 @@ config SOC_UART_BITRATE_MAX
     int
     default 5000000
 
-config SOC_UART_SUPPORT_FSM_TX_WAIT_SEND
-    bool
-    default y
-
 config SOC_UART_SUPPORT_WAKEUP_INT
     bool
     default y

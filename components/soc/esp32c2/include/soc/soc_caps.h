@@ -280,9 +280,6 @@
 #define SOC_UART_SUPPORT_RTC_CLK    (1)     /*!< Support RTC clock as the clock source */
 #define SOC_UART_SUPPORT_XTAL_CLK   (1)     /*!< Support XTAL clock as the clock source */
 
-// UART has an extra TX_WAIT_SEND state when the FIFO is not empty and XOFF is enabled
-#define SOC_UART_SUPPORT_FSM_TX_WAIT_SEND   (1)
-
 #define SOC_UART_WAKEUP_SUPPORT_ACTIVE_THRESH_MODE (1)
 
 /*-------------------------- COEXISTENCE CAPS -------------------------------*/

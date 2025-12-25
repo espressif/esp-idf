@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 # This check script is used to ensure the public APIs won't expose the unstable soc files like register files
 # public API header files are those taken by doxygen and have full documented docs
@@ -18,7 +18,7 @@ allowed_soc_headers = (
     'soc/reset_reasons.h',
     'soc/reg_base.h',
     'soc/clk_tree_defs.h',
-    'soc/uart_channel.h',
+    'soc/uart_pins.h',
 )
 
 include_header_pattern = re.compile(r'[\s]*#[\s]*include ["<](.*)[">].*')
@@ -36,8 +36,8 @@ class PublicAPIVisits:
             for line in f:
                 line = line.strip()
                 if line.startswith('$(PROJECT_PATH)'):
-                    # $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/include/soc/uart_channel.h \
-                    # -> ${PROJECT_PATH}/components/soc/${IDF_TARGET}/include/soc/uart_channel.h
+                    # $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/include/soc/uart_pins.h \
+                    # -> ${PROJECT_PATH}/components/soc/${IDF_TARGET}/include/soc/uart_pins.h
                     line = line.replace('(', '{').replace(')', '}').rstrip('\\ ')
                     file_path = Template(line).substitute(PROJECT_PATH=self._idf_path, IDF_TARGET=self._target)
                     yield file_path

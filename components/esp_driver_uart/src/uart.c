@@ -18,7 +18,7 @@
 #include "freertos/idf_additions.h"
 #include "esp_private/critical_section.h"
 #include "hal/uart_hal.h"
-#include "soc/uart_periph.h"
+#include "hal/uart_periph.h"
 #include "soc/soc_caps.h"
 #include "driver/uart.h"
 #include "driver/gpio.h"
