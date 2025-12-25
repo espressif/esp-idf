@@ -211,7 +211,7 @@ int bt_mesh_pub_key_gen(void)
     return 0;
 }
 
-const uint8_t *bt_mesh_pub_key_get(void)
+const uint8_t *bt_mesh_pub_key_get_raw(void)
 {
     if (!dh_pair.is_ready) {
         if (bt_mesh_pub_key_gen() != 0) {
@@ -222,7 +222,7 @@ const uint8_t *bt_mesh_pub_key_get(void)
     return dh_pair.public_key;
 }
 
-void bt_mesh_set_private_key(const uint8_t pri_key[32])
+void bt_mesh_set_private_key_raw(const uint8_t pri_key[32])
 {
     int rc;
 
@@ -239,13 +239,13 @@ void bt_mesh_set_private_key(const uint8_t pri_key[32])
     dh_pair.is_ready = true;
 }
 
-bool bt_mesh_check_public_key(const uint8_t key[64])
+bool bt_mesh_check_public_key_raw(const uint8_t key[64])
 {
     return uECC_valid_public_key(key, uECC_secp256r1()) == 0;
 }
 
-int bt_mesh_dhkey_gen(const uint8_t *pub_key, const uint8_t *priv_key,
-                      uint8_t *dhkey)
+int bt_mesh_dhkey_gen_raw(const uint8_t *pub_key, const uint8_t *priv_key,
+                          uint8_t *dhkey)
 {
     if (uECC_valid_public_key(pub_key, uECC_secp256r1()) != 0) {
         BT_ERR("Public key is not valid");

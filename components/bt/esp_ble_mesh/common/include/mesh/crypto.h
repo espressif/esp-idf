@@ -26,6 +26,87 @@ extern "C" {
 #define DH_KEY_SIZE     32
 
 /**
+ * @brief Crypto module endianness definitions
+ *
+ * BLE Mesh protocol uses big-endian format for ECC operations.
+ * These macros define whether the underlying crypto implementation
+ * expects big-endian or little-endian input.
+ *
+ * - BT_MESH_CRYPTO_ENDIAN_BIG: Module expects big-endian (TinyCrypt, MbedTLS, PSA)
+ * - BT_MESH_CRYPTO_ENDIAN_LITTLE: Module expects little-endian (future implementations)
+ */
+#define BT_MESH_CRYPTO_ENDIAN_BIG       0
+#define BT_MESH_CRYPTO_ENDIAN_LITTLE    1
+
+/**
+ * @brief Current crypto module endianness
+ *
+ * This macro should be defined by the crypto implementation.
+ * Default is big-endian (matching TinyCrypt, MbedTLS, PSA).
+ */
+#ifndef BT_MESH_CRYPTO_ENDIAN
+#define BT_MESH_CRYPTO_ENDIAN   BT_MESH_CRYPTO_ENDIAN_BIG
+#endif
+
+/**
+ * @brief Parameter conversion macros for endianness handling
+ *
+ * These macros automatically handle byte order conversion between
+ * BLE Mesh's big-endian format and the crypto module's expected format.
+ *
+ * For public keys (64 bytes = X + Y), the X and Y coordinates must be
+ * swapped separately, not as a single 64-byte block.
+ */
+#if (BT_MESH_CRYPTO_ENDIAN == BT_MESH_CRYPTO_ENDIAN_LITTLE)
+
+/* Little-endian mode: need byte order conversion */
+#define CRYPTO_PARAM_DECLARE(name, size) \
+    uint8_t _##name[size]
+
+#define CRYPTO_PARAM_IN(name, size) \
+    sys_memcpy_swap(_##name, name, size)
+
+#define CRYPTO_PARAM_OUT(name, size) \
+    sys_memcpy_swap((uint8_t *)(name), _##name, size)
+
+#define CRYPTO_PARAM(name) (_##name)
+
+/* Public key (64 bytes) needs special handling: swap X and Y separately */
+#define CRYPTO_PARAM_PUBKEY_IN(name) \
+    do { \
+        sys_memcpy_swap(_##name, name, 32); \
+        sys_memcpy_swap(_##name + 32, (name) + 32, 32); \
+    } while (0)
+
+#define CRYPTO_PARAM_PUBKEY_OUT(name) \
+    do { \
+        sys_memcpy_swap((uint8_t *)(name), _##name, 32); \
+        sys_memcpy_swap((uint8_t *)(name) + 32, _##name + 32, 32); \
+    } while (0)
+
+#else /* BT_MESH_CRYPTO_ENDIAN_BIG */
+
+/* Big-endian mode: no conversion needed, use original parameters directly */
+#define CRYPTO_PARAM_DECLARE(name, size) \
+    (void)0
+
+#define CRYPTO_PARAM_IN(name, size) \
+    (void)0
+
+#define CRYPTO_PARAM_OUT(name, size) \
+    (void)0
+
+#define CRYPTO_PARAM(name) (name)
+
+#define CRYPTO_PARAM_PUBKEY_IN(name) \
+    (void)0
+
+#define CRYPTO_PARAM_PUBKEY_OUT(name) \
+    (void)0
+
+#endif /* BT_MESH_CRYPTO_ENDIAN */
+
+/**
  * @brief Scatter-Gather data structure for cryptographic operations
  */
 struct bt_mesh_sg {
@@ -214,6 +295,25 @@ static inline int bt_mesh_sha256_hmac_one(const uint8_t key[32], const void *m,
     return bt_mesh_sha256_hmac_raw_key(key, &sg, 1, mac);
 }
 
+/* ============================================================================
+ * Internal Low-Level ECC APIs
+ * ============================================================================
+ * These functions operate in the crypto module's native byte order.
+ * Do NOT call these directly - use the public wrapper functions below.
+ */
+const uint8_t *bt_mesh_pub_key_get_raw(void);
+void bt_mesh_set_private_key_raw(const uint8_t pri_key[32]);
+bool bt_mesh_check_public_key_raw(const uint8_t key[64]);
+int bt_mesh_dhkey_gen_raw(const uint8_t *pub_key, const uint8_t *priv_key,
+                          uint8_t *dhkey);
+
+/* ============================================================================
+ * Public ECC APIs (with automatic endianness conversion)
+ * ============================================================================
+ * All public key and DHKey parameters use big-endian format (BLE Mesh protocol).
+ * For little-endian crypto modules, conversion is handled automatically.
+ */
+
 /**
  * @brief Generate a new ECC public key pair
  *
@@ -225,41 +325,106 @@ static inline int bt_mesh_sha256_hmac_one(const uint8_t key[32], const void *m,
 int bt_mesh_pub_key_gen(void);
 
 /**
- * @brief Get the current public key
+ * @brief Get the current public key (raw pointer)
  *
- * @return Pointer to 64-byte public key (X || Y), or NULL if not ready
+ * Returns pointer to the internal public key storage.
+ * Note: The byte order depends on crypto module's native format.
+ * Use bt_mesh_pub_key_copy() to get big-endian format.
+ *
+ * @return Pointer to 64-byte public key, or NULL if not ready
  */
-const uint8_t *bt_mesh_pub_key_get(void);
+#define bt_mesh_pub_key_get() bt_mesh_pub_key_get_raw()
+
+/**
+ * @brief Copy current public key to user buffer (big-endian output)
+ *
+ * Copies the public key to the provided buffer, converting to big-endian
+ * format (BLE Mesh protocol format) if necessary.
+ *
+ * @param buf 64-byte output buffer for public key (big-endian output)
+ *
+ * @return 0 on success, -EAGAIN if public key not ready
+ */
+static inline int bt_mesh_pub_key_copy(uint8_t buf[64])
+{
+    const uint8_t *key = bt_mesh_pub_key_get_raw();
+
+    if (key == NULL) {
+        return -EAGAIN;
+    }
+
+#if (BT_MESH_CRYPTO_ENDIAN == BT_MESH_CRYPTO_ENDIAN_LITTLE)
+    /* Swap X and Y coordinates separately to big-endian */
+    sys_memcpy_swap(buf, key, 32);
+    sys_memcpy_swap(buf + 32, key + 32, 32);
+#else
+    memcpy(buf, key, PUB_KEY_SIZE);
+#endif
+
+    return 0;
+}
 
 /**
  * @brief Set a custom private key
  *
- * @param pri_key 32-byte private key
+ * @param pri_key 32-byte private key (big-endian, BLE Mesh format)
  */
-void bt_mesh_set_private_key(const uint8_t pri_key[32]);
+static inline void bt_mesh_set_private_key(const uint8_t pri_key[32])
+{
+    CRYPTO_PARAM_DECLARE(pri_key, PRIV_KEY_SIZE);
+    CRYPTO_PARAM_IN(pri_key, PRIV_KEY_SIZE);
+    bt_mesh_set_private_key_raw(CRYPTO_PARAM(pri_key));
+}
 
 /**
  * @brief Check if a public key is valid
  *
  * Verifies that the given public key is a valid point on the P-256 curve.
  *
- * @param key 64-byte public key (X || Y)
+ * @param key 64-byte public key (X || Y, big-endian, BLE Mesh format)
  *
  * @return true if valid, false otherwise
  */
-bool bt_mesh_check_public_key(const uint8_t key[64]);
+static inline bool bt_mesh_check_public_key(const uint8_t key[64])
+{
+    CRYPTO_PARAM_DECLARE(key, PUB_KEY_SIZE);
+    CRYPTO_PARAM_PUBKEY_IN(key);
+    return bt_mesh_check_public_key_raw(CRYPTO_PARAM(key));
+}
 
 /**
  * @brief Generate ECDH shared secret (DHKey)
  *
- * @param pub_key  64-byte remote public key (X || Y)
+ * @param pub_key  64-byte remote public key (X || Y, big-endian, BLE Mesh format)
  * @param priv_key 32-byte private key (NULL to use internal key)
- * @param dhkey    32-byte output buffer for shared secret
+ * @param dhkey    32-byte output buffer for shared secret (big-endian output)
  *
  * @return 0 on success, negative error code otherwise
  */
-int bt_mesh_dhkey_gen(const uint8_t *pub_key, const uint8_t *priv_key,
-                      uint8_t *dhkey);
+static inline int bt_mesh_dhkey_gen(const uint8_t *pub_key, const uint8_t *priv_key,
+                                    uint8_t *dhkey)
+{
+    int rc;
+    CRYPTO_PARAM_DECLARE(pub_key, PUB_KEY_SIZE);
+    CRYPTO_PARAM_DECLARE(priv_key, PRIV_KEY_SIZE);
+    CRYPTO_PARAM_DECLARE(dhkey, DH_KEY_SIZE);
+
+    /* Public key: swap X and Y coordinates separately */
+    CRYPTO_PARAM_PUBKEY_IN(pub_key);
+    if (priv_key != NULL) {
+        CRYPTO_PARAM_IN(priv_key, PRIV_KEY_SIZE);
+    }
+
+    rc = bt_mesh_dhkey_gen_raw(CRYPTO_PARAM(pub_key),
+                               priv_key ? CRYPTO_PARAM(priv_key) : NULL,
+                               CRYPTO_PARAM(dhkey));
+    if (rc) {
+        return rc;
+    }
+
+    CRYPTO_PARAM_OUT(dhkey, DH_KEY_SIZE);
+    return rc;
+}
 
 #define bt_mesh_dh_key_gen(pubkey, dhkey) bt_mesh_dhkey_gen(pubkey, NULL, dhkey)
 
