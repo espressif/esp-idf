@@ -25,6 +25,8 @@ examples/openthread/ot_br:
   enable:
     - if: (SOC_WIFI_SUPPORTED == 1 or IDF_TARGET == "esp32p4") and CONFIG_NAME != "native_radio"
     - if: SOC_WIFI_SUPPORTED == 1 and (SOC_IEEE802154_SUPPORTED == 1 and CONFIG_NAME == "native_radio")
+  disable:
+    - if: IDF_TARGET in ["esp32", "esp32s2", "esp32s3"] and CONFIG_NAME == "br_debug_riscv"
   disable_test:
     - if: IDF_TARGET not in ["esp32s3"]
       reason: only test on esp32s3

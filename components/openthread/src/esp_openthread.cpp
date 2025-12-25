@@ -18,6 +18,7 @@
 #include "esp_openthread_platform.h"
 #include "esp_openthread_sleep.h"
 #include "esp_openthread_state.h"
+#include "esp_openthread_debug.h"
 #include "esp_openthread_task_queue.h"
 #include "esp_openthread_types.h"
 #include "freertos/FreeRTOS.h"
@@ -27,7 +28,6 @@
 #include "openthread/netdata.h"
 #include "openthread/tasklet.h"
 #include "openthread/thread.h"
-#include <cstddef>
 
 #if CONFIG_OPENTHREAD_FTD
 #include "openthread/dataset_ftd.h"
@@ -186,6 +186,10 @@ esp_err_t esp_openthread_launch_mainloop(void)
     esp_err_t error = ESP_OK;
     s_ot_mainloop_running = true;
 
+#if CONFIG_OPENTHREAD_TASK_BLOCK_MONITOR
+    ESP_ERROR_CHECK(esp_openthread_task_block_monitor_create());
+#endif
+
     while (s_ot_mainloop_running) {
         FD_ZERO(&mainloop.read_fds);
         FD_ZERO(&mainloop.write_fds);
@@ -206,8 +210,14 @@ esp_err_t esp_openthread_launch_mainloop(void)
 #endif /* CONFIG_FREERTOS_USE_TICKLESS_IDLE && CONFIG_OPENTHREAD_RADIO_NATIVE */
         esp_openthread_lock_release();
 
-        if (select(mainloop.max_fd + 1, &mainloop.read_fds, &mainloop.write_fds, &mainloop.error_fds,
-                   &mainloop.timeout) >= 0) {
+#if CONFIG_OPENTHREAD_TASK_BLOCK_MONITOR
+        esp_openthread_task_block_monitor_set(false);
+#endif
+        int result = select(mainloop.max_fd + 1, &mainloop.read_fds, &mainloop.write_fds, &mainloop.error_fds, &mainloop.timeout);
+#if CONFIG_OPENTHREAD_TASK_BLOCK_MONITOR
+        esp_openthread_task_block_monitor_set(true);
+#endif
+        if (result >= 0) {
             esp_openthread_lock_acquire(portMAX_DELAY);
             error = esp_openthread_platform_process(instance, &mainloop);
             while (otTaskletsArePending(instance)) {
@@ -224,6 +234,9 @@ esp_err_t esp_openthread_launch_mainloop(void)
             break;
         }
     }
+#if CONFIG_OPENTHREAD_TASK_BLOCK_MONITOR
+    ESP_ERROR_CHECK(esp_openthread_task_block_monitor_delete());
+#endif
     return error;
 }
 
