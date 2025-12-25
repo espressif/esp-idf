@@ -416,12 +416,6 @@ function(__init_project_configuration)
         list(APPEND link_options "-rtlib=${CONFIG_COMPILER_RT_LIB_NAME}")
     endif()
 
-    if(CONFIG_LIBC_PICOLIBC)
-        list(APPEND c_compile_options "-specs=picolibc.specs")
-        list(APPEND cxx_compile_options "-specs=picolibcpp.specs")
-        list(APPEND link_options "-specs=picolibc.specs")
-    endif()
-
     if("${linker_type}" STREQUAL "GNU")
         set(target_upper "${idf_target}")
         string(TOUPPER ${target_upper} target_upper)
@@ -575,9 +569,6 @@ macro(idf_project_init)
         # Set PROJECT_VER build property
         __init_project_version()
 
-        # Initialize all compilation options and defines.
-        __init_project_configuration()
-
         # Create global flash targets.
         __create_project_flash_targets()
 
@@ -597,6 +588,10 @@ macro(idf_project_init)
         endif()
         include("${sdkconfig_cmake}")
         unset(sdkconfig_cmake)
+
+        # Initialize all compilation options and defines.
+        # This must be done after including sdkconfig.cmake
+        __init_project_configuration()
 
         # Initialize the target architecture based on the configuration
         # Ensure this is done after including the sdkconfig.
