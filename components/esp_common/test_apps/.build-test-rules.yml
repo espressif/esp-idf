@@ -5,3 +5,6 @@ components/esp_common/test_apps/esp_common:
     - if: CONFIG_NAME == "psram" and SOC_SPIRAM_SUPPORTED != 1
     - if: CONFIG_NAME == "psram_noinit" and SOC_SPIRAM_SUPPORTED != 1
     - if: CONFIG_NAME == "xip_psram" and SOC_SPIRAM_XIP_SUPPORTED != 1
+  depends_components:
+    - esp_common
+    - esp_system # Defines the section placement for attributes
