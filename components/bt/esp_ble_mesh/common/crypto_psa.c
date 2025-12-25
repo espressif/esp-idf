@@ -343,7 +343,7 @@ int bt_mesh_pub_key_gen(void)
     return 0;
 }
 
-const uint8_t *bt_mesh_pub_key_get(void)
+const uint8_t *bt_mesh_pub_key_get_raw(void)
 {
     if (!dh_pair.is_ready) {
         if (bt_mesh_pub_key_gen() != 0) {
@@ -354,7 +354,7 @@ const uint8_t *bt_mesh_pub_key_get(void)
     return &dh_pair.public_key[1];
 }
 
-void bt_mesh_set_private_key(const uint8_t pri_key[32])
+void bt_mesh_set_private_key_raw(const uint8_t pri_key[32])
 {
     psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
     psa_status_t status;
@@ -396,7 +396,7 @@ void bt_mesh_set_private_key(const uint8_t pri_key[32])
     psa_reset_key_attributes(&attributes);
 }
 
-bool bt_mesh_check_public_key(const uint8_t key[64])
+bool bt_mesh_check_public_key_raw(const uint8_t key[64])
 {
     psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
     psa_key_id_t key_id;
@@ -425,8 +425,8 @@ bool bt_mesh_check_public_key(const uint8_t key[64])
     return true;
 }
 
-int bt_mesh_dhkey_gen(const uint8_t *pub_key, const uint8_t *priv_key,
-                      uint8_t *dhkey)
+int bt_mesh_dhkey_gen_raw(const uint8_t *pub_key, const uint8_t *priv_key,
+                          uint8_t *dhkey)
 {
     psa_key_id_t priv_key_id = PSA_KEY_ID_NULL;
     uint8_t public_key_be[PUB_KEY_SIZE + 1];

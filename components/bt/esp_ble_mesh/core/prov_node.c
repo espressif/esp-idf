@@ -616,7 +616,7 @@ int bt_mesh_input_string(const char *str)
 
 static void send_pub_key(void)
 {
-    const uint8_t *key = NULL;
+    uint8_t pub_key[64] = {0};
     uint8_t dhkey[32] = {0};
     PROV_BUF(buf, 65);
 
@@ -640,20 +640,19 @@ static void send_pub_key(void)
 
     bt_mesh_atomic_set_bit(prov_link.flags, HAVE_DHKEY);
 
-    key = bt_mesh_pub_key_get();
-    if (!key) {
+    if (bt_mesh_pub_key_copy(pub_key)) {
         BT_ERR("No public key available");
         close_link(PROV_ERR_UNEXP_ERR);
         return;
     }
 
-    BT_DBG("Local Public Key: %s", bt_hex(key, 64));
+    BT_DBG("Local Public Key: %s", bt_hex(pub_key, 64));
 
     bt_mesh_prov_buf_init(&buf, PROV_PUB_KEY);
 
-    /* Swap X and Y halves independently to big-endian */
-    memcpy(net_buf_simple_add(&buf, 32), key, 32);
-    memcpy(net_buf_simple_add(&buf, 32), &key[32], 32);
+    /* Public key is already in big-endian format from bt_mesh_pub_key_copy() */
+    memcpy(net_buf_simple_add(&buf, 32), pub_key, 32);
+    memcpy(net_buf_simple_add(&buf, 32), &pub_key[32], 32);
 
     memcpy(&prov_link.conf_inputs[81], &buf.data[1], 64);
 

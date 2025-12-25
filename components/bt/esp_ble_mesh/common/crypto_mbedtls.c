@@ -281,7 +281,7 @@ cleanup:
     return ret == 0 ? 0 : -EIO;
 }
 
-const uint8_t *bt_mesh_pub_key_get(void)
+const uint8_t *bt_mesh_pub_key_get_raw(void)
 {
     if (!dh_pair.is_ready) {
         if (bt_mesh_pub_key_gen() != 0) {
@@ -292,7 +292,7 @@ const uint8_t *bt_mesh_pub_key_get(void)
     return dh_pair.public_key;
 }
 
-void bt_mesh_set_private_key(const uint8_t pri_key[32])
+void bt_mesh_set_private_key_raw(const uint8_t pri_key[32])
 {
     mbedtls_ecp_group grp;
     mbedtls_mpi d;
@@ -343,7 +343,7 @@ cleanup:
     mbedtls_ecp_point_free(&Q);
 }
 
-bool bt_mesh_check_public_key(const uint8_t key[64])
+bool bt_mesh_check_public_key_raw(const uint8_t key[64])
 {
     mbedtls_ecp_group grp;
     mbedtls_ecp_point Q;
@@ -382,8 +382,8 @@ cleanup:
     return ret == 0;
 }
 
-int bt_mesh_dhkey_gen(const uint8_t *pub_key, const uint8_t *priv_key,
-                      uint8_t *dhkey)
+int bt_mesh_dhkey_gen_raw(const uint8_t *pub_key, const uint8_t *priv_key,
+                          uint8_t *dhkey)
 {
     mbedtls_ecp_group grp;
     mbedtls_mpi d;
