@@ -217,6 +217,7 @@
 /tools/cmake/                 @esp-idf-codeowners/build-config
 /tools/cmake/toolchain-*.cmake      @esp-idf-codeowners/toolchain
 /tools/cmakev2/               @esp-idf-codeowners/build-config
+/tools/docs/                  @esp-idf-codeowners/docs @esp-idf-codeowners/tools
 /tools/esp_app_trace/         @esp-idf-codeowners/debugging
 /tools/gdb_panic_server.py    @esp-idf-codeowners/debugging
 /tools/kconfig*/              @esp-idf-codeowners/build-config
