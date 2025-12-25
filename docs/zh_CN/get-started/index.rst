@@ -318,3 +318,5 @@ EIM 提供两种安装方式：
 * `ESP-IDF 安装管理器 (EIM) 文档 <https://docs.espressif.com/projects/idf-im-ui/en/latest/>`_
 * `Espressif-IDE (ESP-IDF Eclipse 插件) GitHub 仓库 <https://github.com/espressif/idf-eclipse-plugin/tree/master>`_
 * `VSCode ESP-IDF 扩展 GitHub 仓库 <https://github.com/espressif/vscode-esp-idf-extension/tree/master>`_
+
+.. _稳定版本: https://docs.espressif.com/projects/esp-idf/zh_CN/stable/

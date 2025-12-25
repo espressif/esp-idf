@@ -318,3 +318,5 @@ Related Documents
 * `ESP-IDF Installation Manager (EIM) documentation <https://docs.espressif.com/projects/idf-im-ui/en/latest/>`_
 * `Espressif-IDE (ESP-IDF Eclipse Plugin) GitHub repository <https://github.com/espressif/idf-eclipse-plugin/tree/master>`_
 * `ESP-IDF Extension for VS Code GitHub repository <https://github.com/espressif/vscode-esp-idf-extension/tree/master>`_
+
+.. _Stable version: https://docs.espressif.com/projects/esp-idf/en/stable/
