@@ -1,10 +1,5 @@
 menu "ESP-Driver:I3C Master Configurations"
 
-    config I3C_MASTER_ENABLED
-        bool
-        default y if SOC_I3C_MASTER_SUPPORTED && IDF_EXPERIMENTAL_FEATURES
-        default n
-
     config I3C_MASTER_ISR_CACHE_SAFE
         bool "I3C ISR Cache-Safe"
         select I3C_MASTER_ISR_HANDLER_IN_IRAM

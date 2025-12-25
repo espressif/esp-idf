@@ -127,6 +127,9 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_driver_i2s/include/driver/i2s_std.h \
     $(PROJECT_PATH)/components/esp_driver_i2s/include/driver/i2s_tdm.h \
     $(PROJECT_PATH)/components/esp_driver_i2s/include/driver/i2s_types.h \
+    $(PROJECT_PATH)/components/esp_driver_i3c/include/driver/i3c_master.h \
+    $(PROJECT_PATH)/components/esp_driver_i3c/include/driver/i3c_master_i2c.h \
+    $(PROJECT_PATH)/components/esp_driver_i3c/include/driver/i3c_master_types.h \
     $(PROJECT_PATH)/components/esp_driver_pcnt/include/driver/pulse_cnt.h \
     $(PROJECT_PATH)/components/esp_driver_rmt/include/driver/rmt_common.h \
     $(PROJECT_PATH)/components/esp_driver_rmt/include/driver/rmt_encoder.h \
@@ -175,6 +178,7 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_hal_timg/include/hal/timer_types.h \
     $(PROJECT_PATH)/components/esp_hal_i2c/include/hal/i2c_types.h \
     $(PROJECT_PATH)/components/esp_hal_i2s/include/hal/i2s_types.h \
+    $(PROJECT_PATH)/components/esp_hal_i3c/include/hal/i3c_master_types.h \
     $(PROJECT_PATH)/components/esp_hal_jpeg/include/hal/jpeg_types.h \
     $(PROJECT_PATH)/components/esp_hal_lcd/include/hal/lcd_types.h \
     $(PROJECT_PATH)/components/esp_hal_ledc/include/hal/ledc_types.h \

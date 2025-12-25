@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -29,8 +29,8 @@ typedef struct {
     int intr_priority;                                                       /*!< I3C interrupt priority, if set to 0, driver will select the default priority (1,2,3). */
     uint32_t i3c_scl_freq_hz_od;                                             /*!< I3C SCL frequency for Open-Drain mode */
     uint32_t i3c_scl_freq_hz_pp;                                             /*!< I3C SCL frequency for Push-Pull mode */
-    float i3c_scl_pp_duty_cycle;                                             /*!< Duty cycle of I3C Push-Pull SCL signal, range from (0, 1) */
-    float i3c_scl_od_duty_cycle;                                             /*!< Duty cycle of I3C Open-Drain SCL signal, range from (0, 1) */
+    float i3c_scl_pp_duty_cycle;                                             /*!< Duty cycle of I3C Push-Pull SCL signal, range from (0, 1). When set 0, then duty cycle is 0.5 */
+    float i3c_scl_od_duty_cycle;                                             /*!< Duty cycle of I3C Open-Drain SCL signal, range from (0, 1). When set 0, then duty cycle is 0.5 */
     uint32_t i3c_sda_od_hold_time_ns;                                        /*!< I3C Open-Drain sda drive point after scl neg, in nanoseconds, default 25 */
     uint32_t i3c_sda_pp_hold_time_ns;                                        /*!< I3C Push-Pull sda drive point after scl neg, in nanoseconds, default 0 */
     uint8_t entdaa_device_num;                                               /*!< Maximum number of devices can be discovered by ENTDAA, range from [0x0, 0x7F], 0x0 means no entdaa is used. */

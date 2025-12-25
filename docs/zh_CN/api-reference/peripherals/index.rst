@@ -20,6 +20,7 @@
     :SOC_DIG_SIGN_SUPPORTED: ds
     :SOC_I2C_SUPPORTED: i2c
     :SOC_I2S_SUPPORTED: i2s
+    :SOC_I3C_MASTER_SUPPORTED: i3c_master
     :SOC_ISP_SUPPORTED: isp
     lcd/index
     :SOC_GP_LDO_SUPPORTED: ldo_regulator
