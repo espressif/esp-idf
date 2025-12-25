@@ -1065,7 +1065,7 @@ API 参考
 .. include-build-file:: inc/mcpwm_cap.inc
 .. include-build-file:: inc/mcpwm_etm.inc
 .. include-build-file:: inc/components/esp_driver_mcpwm/include/driver/mcpwm_types.inc
-.. include-build-file:: inc/components/hal/include/hal/mcpwm_types.inc
+.. include-build-file:: inc/components/esp_hal_mcpwm/include/hal/mcpwm_types.inc
 
 
 .. [1]
