@@ -10,6 +10,28 @@ This page briefly lists all of the vulnerabilities that are discovered and fixed
 CVE-2025
 --------
 
+CVE-2025-68474
+~~~~~~~~~~~~~~
+
+Out-of-Bounds Write in ESP32 Bluetooth AVRCP Vendor Command Handling
+
+* Espressif Advisory: NA (Published on GitHub)
+* Impact: Applicable for ESP-IDF
+* Resolution: Please see advisory for details
+* Advisory pointer: `GHSA-43gh-7r4f-qp57`_
+
+
+CVE-2025-68473
+~~~~~~~~~~~~~~
+
+Out-of-Bounds Write in ESP32 Bluetooth SDP Result Handling
+
+* Espressif Advisory: NA (Published on GitHub)
+* Impact: Applicable for ESP-IDF
+* Resolution: Please see advisory for details
+* Advisory pointer: `GHSA-hmjj-rjvv-w8pq`_
+
+
 CVE-2025-66409
 ~~~~~~~~~~~~~~
 
@@ -257,3 +279,5 @@ Security Advisory Concerning Wi-Fi Authentication Bypass
 .. _`GHSA-8mg7-9qpg-p92v` : https://github.com/espressif/esp-idf/security/advisories/GHSA-8mg7-9qpg-p92v
 .. _`GHSA-vcw6-jc3p-4gj8` : https://github.com/espressif/esp-idf/security/advisories/GHSA-vcw6-jc3p-4gj8
 .. _`GHSA-qhf9-vr2h-jh96` : https://github.com/espressif/esp-idf/security/advisories/GHSA-qhf9-vr2h-jh96
+.. _`GHSA-hmjj-rjvv-w8pq` : https://github.com/espressif/esp-idf/security/advisories/GHSA-hmjj-rjvv-w8pq
+.. _`GHSA-43gh-7r4f-qp57` : https://github.com/espressif/esp-idf/security/advisories/GHSA-43gh-7r4f-qp57
