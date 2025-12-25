@@ -8,7 +8,7 @@
 #include <assert.h>
 #include "esp32s31/rom/ets_sys.h"
 #include "soc/rtc.h"
-#include "hal/lp_timer_hal.h"
+#include "hal/rtc_timer_hal.h"
 #include "hal/clk_tree_ll.h"
 // #include "hal/timer_ll.h"
 #include "soc/hp_sys_clkrst_reg.h"

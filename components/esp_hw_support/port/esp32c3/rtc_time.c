@@ -9,7 +9,7 @@
 #include "soc/rtc.h"
 #include "soc/rtc_cntl_reg.h"
 #include "hal/clk_tree_ll.h"
-#include "hal/rtc_cntl_ll.h"
+#include "hal/rtc_timer_ll.h"
 #include "hal/timg_ll.h"
 #include "soc/timer_group_reg.h"
 #include "esp_rom_sys.h"
@@ -170,7 +170,7 @@ uint64_t rtc_time_slowclk_to_us(uint64_t rtc_cycles, uint32_t period)
 
 uint64_t rtc_time_get(void)
 {
-    return rtc_cntl_ll_get_rtc_time();
+    return rtc_timer_ll_get_cycle_count(0);
 }
 
 void rtc_clk_wait_for_slow_cycle(void) //This function may not by useful any more

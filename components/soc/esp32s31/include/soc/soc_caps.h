@@ -73,7 +73,7 @@
 // #define SOC_BOD_SUPPORTED               1      // TODO: [ESP32S31] IDF-14658
 // #define SOC_APM_SUPPORTED               1      // TODO: [ESP32S31] IDF-14620
 // #define SOC_PMU_SUPPORTED               1      // TODO: [ESP32S31] IDF-14642
-// #define SOC_LP_TIMER_SUPPORTED          1      // TODO: [ESP32S31] IDF-14638
+// #define SOC_RTC_TIMER_V2_SUPPORTED      1      // TODO: [ESP32S31] IDF-14638
 // #define SOC_ULP_LP_UART_SUPPORTED       1      // TODO: [ESP32S31] IDF-14634
 // #define SOC_LP_GPIO_MATRIX_SUPPORTED    1      // TODO: [ESP32S31] IDF-14785
 // #define SOC_LP_PERIPHERALS_SUPPORTED    1      // TODO: [ESP32S31] IDF-14785

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,14 +11,10 @@
 #include "hal/clk_tree_ll.h"
 #include "esp_rom_sys.h"
 #include "hal/assert.h"
-#include "hal/rtc_timer_ll.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-// RTC timer functions moved to esp_hal_rtc_timer component
-#define rtc_cntl_ll_set_wakeup_timer(t)    rtc_timer_ll_set_wakeup_timer(t)
 
 FORCE_INLINE_ATTR void rtc_cntl_ll_ext1_clear_wakeup_status(void)
 {
@@ -84,9 +80,6 @@ FORCE_INLINE_ATTR void rtc_cntl_ll_sleep_enable(void)
 {
     SET_PERI_REG_MASK(RTC_CNTL_STATE0_REG, RTC_CNTL_SLEEP_EN);
 }
-
-// RTC timer functions moved to esp_hal_rtc_timer component
-#define rtc_cntl_ll_get_rtc_time()         rtc_timer_ll_get_rtc_time()
 
 FORCE_INLINE_ATTR uint32_t rtc_cntl_ll_get_wakeup_cause(void)
 {

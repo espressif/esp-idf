@@ -86,6 +86,7 @@
 #define SOC_RTC_FAST_MEM_SUPPORTED  1
 #define SOC_RTC_SLOW_MEM_SUPPORTED  1
 #define SOC_RTC_MEM_SUPPORTED       1
+#define SOC_RTC_TIMER_V1_SUPPORTED  1
 #define SOC_I2S_SUPPORTED           1
 #define SOC_I2S_I80_LCD_SUPPORTED   1
 #define SOC_LCD_I80_SUPPORTED       1
@@ -270,6 +271,7 @@
 /*-------------------------- LP_TIMER CAPS ----------------------------------*/
 #define SOC_LP_TIMER_BIT_WIDTH_LO           32 // Bit width of lp_timer low part
 #define SOC_LP_TIMER_BIT_WIDTH_HI           16 // Bit width of lp_timer high part
+#define SOC_RTC_TIMER_SUPPORTED             SOC_RTC_TIMER_V1_SUPPORTED
 
 /*-------------------------- TOUCH SENSOR CAPS -------------------------------*/
 #define SOC_TOUCH_SENSOR_VERSION            (1U)     /*!<Hardware version of touch sensor */

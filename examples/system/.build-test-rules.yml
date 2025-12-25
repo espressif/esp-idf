@@ -373,7 +373,7 @@ examples/system/ulp/lp_core/lp_spi:
 
 examples/system/ulp/lp_core/lp_timer_interrupt:
   disable:
-    - if: (SOC_LP_CORE_SUPPORTED != 1) or (SOC_LP_TIMER_SUPPORTED != 1)
+    - if: (SOC_LP_CORE_SUPPORTED != 1) or (SOC_RTC_TIMER_V2_SUPPORTED != 1)
   depends_components:
     - ulp
 

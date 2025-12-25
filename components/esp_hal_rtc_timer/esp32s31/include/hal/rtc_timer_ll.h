@@ -4,19 +4,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// The LL layer for ESP32-S31 PMU register operations
+// The LL layer for ESP32-P4 RTC_Timer register operations
 
 #pragma once
 
 #include <stdlib.h>
 #include <stdbool.h>
 #include "soc/soc.h"
-#include "esp_attr.h"
-#include "hal/assert.h"
-#include "soc/pmu_struct.h"
-#include "hal/pmu_types.h"
+#include "soc/lp_timer_struct.h"
+#include "soc/lp_timer_reg.h"
+#include "soc/lp_system_reg.h"
 #include "hal/misc.h"
-#include "hal/config.h"
+#include "esp_attr.h"
 
 #ifdef __cplusplus
 extern "C" {

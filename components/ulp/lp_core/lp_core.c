@@ -133,7 +133,7 @@ esp_err_t ulp_lp_core_run(ulp_lp_core_cfg_t* cfg)
     }
 #endif
 
-#if SOC_LP_TIMER_SUPPORTED
+#if SOC_RTC_TIMER_V2_SUPPORTED
     ulp_lp_core_memory_shared_cfg_t* shared_mem = ulp_lp_core_memory_shared_cfg_get();
 
     if (cfg->wakeup_source & ULP_LP_CORE_WAKEUP_SOURCE_LP_TIMER) {

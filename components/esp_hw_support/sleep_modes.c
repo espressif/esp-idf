@@ -140,9 +140,7 @@
 #include "soc/pmu_icg_mapping.h"
 #endif
 
-#if SOC_LP_TIMER_SUPPORTED
-#include "hal/lp_timer_hal.h"
-#endif
+#include "hal/rtc_timer_hal.h"
 
 #if SOC_VBAT_SUPPORTED
 #include "esp_vbat.h"
@@ -1842,7 +1840,6 @@ static SLEEP_FN_ATTR esp_err_t timer_wakeup_prepare(int64_t sleep_duration)
     int64_t ticks = rtc_time_us_to_slowclk(sleep_duration, s_config.rtc_clk_cal_period);
     int64_t target_wakeup_tick = s_config.rtc_ticks_at_sleep_start + ticks;
 
-#if SOC_LP_TIMER_SUPPORTED
 #if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
     int64_t backup_cost_ticks = rtc_time_us_to_slowclk(((pmu_sleep_machine_constant_t *)PMU_instance()->mc)->hp.regdma_a2s_work_time_us, s_config.rtc_clk_cal_period);
     // Last timer wake-up validity check
@@ -1852,11 +1849,7 @@ static SLEEP_FN_ATTR esp_err_t timer_wakeup_prepare(int64_t sleep_duration)
         return ESP_ERR_SLEEP_REJECT;
     }
 #endif
-    lp_timer_hal_set_alarm_target(0, target_wakeup_tick);
-#else
-    rtc_hal_set_wakeup_timer(target_wakeup_tick);
-#endif
-
+    rtc_timer_hal_set_wakeup_time(0, target_wakeup_tick);
     return ESP_OK;
 }
 
