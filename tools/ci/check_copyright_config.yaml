@@ -181,6 +181,14 @@ xtensa:
     - Apache-2.0    #Files added to the xtensa component by us
     - MIT           #Cadence sources
 
+# TODO IDF-15041 - remove this block
+esp_libc:
+  include:
+    - 'components/esp_libc/**'
+  allowed_licenses:
+    - Apache-2.0    #Files added to the esp_libc component by us
+    - MIT           #Cadence sources
+
 tinyusb:
   include:
     - 'examples/peripherals/usb/device/tusb_midi/'
