@@ -140,6 +140,21 @@ enum {
 };
 
 /**
+ * @brief UART handling mode before entering sleep
+ *
+ * These modes define how UARTs are handled when the chip enters sleep mode.
+ * The behavior affects data integrity, power consumption, and sleep entry time.
+ */
+typedef enum {
+    ESP_SLEEP_AUTO_FLUSH_SUSPEND_UART,  //!< Automatically select flush or suspend based on sleep type and power domain configuration. For deep sleep, always flush. For light sleep, suspend if UART remains powered, flush/discard if UART power domain is powered down.
+    ESP_SLEEP_ALWAYS_FLUSH_UART,        //!< Always wait for all data in TX FIFO to be transmitted before sleep. Ensures data integrity but increases power consumption and sleep entry time.
+    ESP_SLEEP_ALWAYS_SUSPEND_UART,      //!< Suspend UART transmission after current frame completes. If UART remains powered during sleep, transmission resumes after wake. If UART power domain is powered down, unsent data will be lost.
+    ESP_SLEEP_ALWAYS_DISCARD_UART,      //!< Discard all data in TX/RX FIFOs and enter sleep immediately. Fastest sleep entry and lowest power, but all unsent data is lost.
+    ESP_SLEEP_NO_HANDLING,              //!< Do not perform any UART handling before sleep. UART state is not modified.
+} esp_sleep_uart_handling_mode_t;
+
+
+/**
  * @brief Disable wakeup source
  *
  * This function is used to deactivate wake up trigger for source
@@ -778,6 +793,43 @@ void esp_default_wake_deep_sleep(void);
  * Using LSB of RTC_STORE4.
  */
 void esp_deep_sleep_disable_rom_logging(void);
+
+/**
+ * @brief Configure how the console UART is handled when entering sleep
+ *
+ * This function configures the handling behavior for the console UART (CONFIG_ESP_CONSOLE_UART_NUM)
+ * during sleep modes. The console UART is typically used for debug output, so its handling mode
+ * affects whether debug messages are preserved or discarded before sleep.
+ *
+ * @param handling_mode Handling method, one of the following strategies:
+ *  - ESP_SLEEP_AUTO_FLUSH_SUSPEND_UART (default):
+ *      Automatically selects the appropriate strategy based on sleep type and power domain:
+ *      - Deep sleep: Always flush to avoid data loss
+ *      - Light sleep: Suspend if UART remains powered, flush if UART power domain is powered down
+ *  - ESP_SLEEP_ALWAYS_FLUSH_UART:
+ *      Wait for all data in TX FIFO to be fully transmitted before entering sleep.
+ *      Ensures all debug output is visible but increases sleep entry time and power consumption.
+ *  - ESP_SLEEP_ALWAYS_SUSPEND_UART:
+ *      Wait for current UART frame to complete, then suspend the UART state machine.
+ *      If UART remains powered during light sleep, transmission resumes after wake.
+ *      If UART power domain is powered down, unsent data will be lost.
+ *  - ESP_SLEEP_ALWAYS_DISCARD_UART:
+ *      Discard all unsent data in UART FIFO and enter sleep immediately.
+ *      Fastest sleep entry and lowest power, but all unsent debug output is lost.
+ *  - ESP_SLEEP_NO_HANDLING:
+ *      Do not perform any handling on the console UART before sleep.
+ *      Can be used to disable the default UART handling behavior.
+ *
+ * @note When CONFIG_ESP_SLEEP_CACHE_SAFE_ASSERTION is enabled, the console UART
+ *       will always be flushed regardless of the configured mode to ensure debug
+ *       output is visible even when cache is disabled.
+ *
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_ARG if handling_mode is not valid
+ *      - ESP_ERR_NOT_SUPPORTED if no console UART is configured (CONFIG_ESP_CONSOLE_UART_NUM == -1)
+ */
+esp_err_t esp_sleep_set_console_uart_handling_mode(esp_sleep_uart_handling_mode_t handling_mode);
 
 #if CONFIG_IDF_TARGET_ESP32
 /**

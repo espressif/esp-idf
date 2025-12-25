@@ -78,6 +78,7 @@
 #include "esp_private/cache_utils.h"
 #include "esp_private/brownout.h"
 #include "esp_private/sleep_console.h"
+#include "esp_private/sleep_uart.h"
 #include "esp_private/sleep_cpu.h"
 #include "esp_private/sleep_modem.h"
 #include "esp_private/sleep_flash.h"
@@ -211,17 +212,6 @@
 
 // Actually costs 80us, using the fastest slow clock 150K calculation takes about 16 ticks
 #define SLEEP_TIMER_ALARM_TO_SLEEP_TICKS    (16)
-
-#define SLEEP_UART_FLUSH_DONE_TO_SLEEP_US   (450)
-
-#if SOC_PM_SUPPORT_TOP_PD
-// IDF console uses 8 bits data mode without parity, so each char occupy 8(data)+1(start)+1(stop)=10bits
-#define UART_FLUSH_US_PER_CHAR              (10*1000*1000 / CONFIG_ESP_CONSOLE_UART_BAUDRATE)
-#define CONCATENATE_HELPER(x, y)            (x##y)
-#define CONCATENATE(x, y)                   CONCATENATE_HELPER(x, y)
-#define CONSOLE_UART_DEV                    (&CONCATENATE(UART, CONFIG_ESP_CONSOLE_UART_NUM))
-#endif
-
 #define LIGHT_SLEEP_TIME_OVERHEAD_US        DEFAULT_HARDWARE_OUT_OVERHEAD_US
 #ifdef CONFIG_ESP_SYSTEM_RTC_EXT_XTAL
 #define DEEP_SLEEP_TIME_OVERHEAD_US         (650 + 100 * 240 / CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ)
@@ -239,9 +229,9 @@
                                             (source == value))
 
 #if CONFIG_PM_SLP_IRAM_OPT
-# define SLEEP_FN_ATTR      FORCE_IRAM_ATTR
+#define SLEEP_FN_ATTR      FORCE_IRAM_ATTR
 #else
-# define SLEEP_FN_ATTR
+#define SLEEP_FN_ATTR
 #endif
 
 #define MAX_DSLP_HOOKS      3
@@ -623,99 +613,6 @@ static SLEEP_FN_ATTR void resume_timers(uint32_t sleep_flags) {
     }
 }
 
-// [refactor-todo] provide target logic for body of uart functions below
-static SLEEP_FN_ATTR void flush_uarts(void)
-{
-    for (int i = 0; i < SOC_UART_HP_NUM; ++i) {
-        if (uart_ll_is_enabled(i)) {
-            esp_rom_output_tx_wait_idle(i);
-        }
-    }
-}
-
-static uint32_t s_suspended_uarts_bmap = 0;
-
-/**
- * Suspend enabled uarts and return suspended uarts bit map.
- * Must be called from critical sections.
- */
-static SLEEP_FN_ATTR void suspend_uarts(void)
-{
-    s_suspended_uarts_bmap = 0;
-    for (int i = 0; i < SOC_UART_HP_NUM; ++i) {
-        if (!uart_ll_is_enabled(i)) {
-            continue;
-        }
-        uart_ll_force_xoff(i);
-        s_suspended_uarts_bmap |= BIT(i);
-#if SOC_UART_SUPPORT_FSM_TX_WAIT_SEND
-        uint32_t uart_fsm = 0;
-        do {
-            uart_fsm = uart_ll_get_tx_fsm_status(i);
-        } while (!(uart_fsm == UART_LL_FSM_IDLE || uart_fsm == UART_LL_FSM_TX_WAIT_SEND));
-#else
-        while (uart_ll_get_tx_fsm_status(i) != 0) {}
-#endif
-    }
-}
-
-// Must be called from critical sections
-static SLEEP_FN_ATTR void resume_uarts(void)
-{
-    for (int i = 0; i < SOC_UART_HP_NUM; ++i) {
-        if (s_suspended_uarts_bmap & 0x1) {
-            uart_ll_force_xon(i);
-        }
-        s_suspended_uarts_bmap >>= 1;
-    }
-}
-
-/*
-  UART prepare strategy in sleep:
-    Deepsleep : flush the fifo before enter sleep to avoid data loss
-
-    Lightsleep:
-      Chips not support PD_TOP: Suspend uart before cpu freq switch
-
-      Chips support PD_TOP:
-        For sleep which will not power down the TOP domain (uart belongs it), we can just suspend the UART.
-
-        For sleep which will power down the TOP domain, we need to consider whether the uart flushing will
-        block the sleep process and cause the rtos target tick to be missed upon waking up. It's need to
-        estimate the flush time based on the number of bytes in the uart FIFO,  if the predicted flush
-        completion time has exceeded the wakeup time, we should abandon the flush, skip the sleep and
-        return ESP_ERR_SLEEP_REJECT.
- */
-static SLEEP_FN_ATTR bool light_sleep_uart_prepare(uint32_t sleep_flags, int64_t sleep_duration)
-{
-    bool should_skip_sleep = false;
-#if !SOC_PM_SUPPORT_TOP_PD || !CONFIG_ESP_CONSOLE_UART
-    suspend_uarts();
-#else
-#ifdef CONFIG_ESP_SLEEP_CACHE_SAFE_ASSERTION
-#define FORCE_FLUSH_CONSOLE_UART 1
-#else
-#define FORCE_FLUSH_CONSOLE_UART 0
-#endif
-    if (FORCE_FLUSH_CONSOLE_UART || (sleep_flags & PMU_SLEEP_PD_TOP)) {
-        if ((s_config.wakeup_triggers & RTC_TIMER_TRIG_EN) &&
-            // +1 is for cover the last character flush time
-            (sleep_duration < (int64_t)((UART_LL_FIFO_DEF_LEN - uart_ll_get_txfifo_len(CONSOLE_UART_DEV) + 1) * UART_FLUSH_US_PER_CHAR) + SLEEP_UART_FLUSH_DONE_TO_SLEEP_US)) {
-            should_skip_sleep = true;
-        } else {
-            /* Only flush the uart_num configured to console, the transmission integrity of
-               other uarts is guaranteed by the UART driver */
-            if (CONFIG_ESP_CONSOLE_ROM_SERIAL_PORT_NUM != -1) {
-                esp_rom_output_tx_wait_idle(CONFIG_ESP_CONSOLE_ROM_SERIAL_PORT_NUM);
-            }
-        }
-    } else {
-        suspend_uarts();
-    }
-#endif
-    return should_skip_sleep;
-}
-
 /**
  * LP peripherals prepare XTAL, FOSC or other clocks as the clock source for sleep.
  */
@@ -1046,11 +943,7 @@ static esp_err_t SLEEP_FN_ATTR esp_sleep_start(uint32_t sleep_flags, uint32_t cl
     int64_t sleep_duration = (int64_t) s_config.sleep_duration - (int64_t) s_config.sleep_time_adjustment;
 
     // Sleep UART prepare
-    if (deep_sleep) {
-        flush_uarts();
-    } else {
-        should_skip_sleep = light_sleep_uart_prepare(sleep_flags, sleep_duration);
-    }
+    sleep_uart_prepare(sleep_flags, deep_sleep);
 
 #if CONFIG_ESP_PHY_ENABLED && SOC_DEEP_SLEEP_SUPPORTED
     // Do deep-sleep PHY related callback, which need to be executed when the PLL clock is exists.
@@ -1252,7 +1145,7 @@ static esp_err_t SLEEP_FN_ATTR esp_sleep_start(uint32_t sleep_flags, uint32_t cl
     esp_clk_utils_mspi_speed_mode_sync_after_cpu_freq_switching(cpu_freq_config.source_freq_mhz, cpu_freq_config.freq_mhz);
 #endif
     // re-enable UART output
-    resume_uarts();
+    sleep_uart_resume();
     return result ? ESP_ERR_SLEEP_REJECT : ESP_OK;
 }
 
