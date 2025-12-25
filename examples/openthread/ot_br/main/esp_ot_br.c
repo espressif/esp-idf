@@ -113,7 +113,6 @@ void app_main(void)
     };
 
     ESP_ERROR_CHECK(esp_openthread_start(&config));
-    esp_netif_set_default_netif(esp_openthread_get_netif());
 #if CONFIG_OPENTHREAD_CLI_ESP_EXTENSION
     esp_cli_custom_command_init();
 #endif
