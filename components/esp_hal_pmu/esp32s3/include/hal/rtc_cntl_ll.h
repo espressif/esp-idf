@@ -11,6 +11,7 @@
 #include "soc/syscon_reg.h"
 #include "esp_attr.h"
 #include "hal/assert.h"
+#include "hal/rtc_timer_ll.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -19,14 +20,8 @@ extern "C" {
 #define RTC_CNTL_LL_RETENTION_TARGET_CPU         (BIT(0))
 #define RTC_CNTL_LL_RETENTION_TARGET_TAGMEM      (BIT(1))
 
-FORCE_INLINE_ATTR void rtc_cntl_ll_set_wakeup_timer(uint64_t t)
-{
-    WRITE_PERI_REG(RTC_CNTL_SLP_TIMER0_REG, t & UINT32_MAX);
-    WRITE_PERI_REG(RTC_CNTL_SLP_TIMER1_REG, t >> 32);
-
-    SET_PERI_REG_MASK(RTC_CNTL_INT_CLR_REG, RTC_CNTL_MAIN_TIMER_INT_CLR_M);
-    SET_PERI_REG_MASK(RTC_CNTL_SLP_TIMER1_REG, RTC_CNTL_MAIN_TIMER_ALARM_EN_M);
-}
+// RTC timer functions moved to esp_hal_rtc_timer component
+#define rtc_cntl_ll_set_wakeup_timer(t)    rtc_timer_ll_set_wakeup_timer(t)
 
 FORCE_INLINE_ATTR void rtc_cntl_ll_ext1_clear_wakeup_status(void)
 {
@@ -166,13 +161,8 @@ FORCE_INLINE_ATTR void rtc_cntl_ll_sleep_enable(void)
     SET_PERI_REG_MASK(RTC_CNTL_STATE0_REG, RTC_CNTL_SLEEP_EN);
 }
 
-FORCE_INLINE_ATTR uint64_t rtc_cntl_ll_get_rtc_time(void)
-{
-    SET_PERI_REG_MASK(RTC_CNTL_TIME_UPDATE_REG, RTC_CNTL_TIME_UPDATE);
-    uint64_t t = READ_PERI_REG(RTC_CNTL_TIME0_REG);
-    t |= ((uint64_t) READ_PERI_REG(RTC_CNTL_TIME1_REG)) << 32;
-    return t;
-}
+// RTC timer functions moved to esp_hal_rtc_timer component
+#define rtc_cntl_ll_get_rtc_time()         rtc_timer_ll_get_rtc_time()
 
 FORCE_INLINE_ATTR uint32_t rtc_cntl_ll_get_wakeup_cause(void)
 {

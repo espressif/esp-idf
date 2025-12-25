@@ -1,0 +1,5 @@
+[mapping:esp_hal_rtc_timer]
+archive: libesp_hal_rtc_timer.a
+entries:
+    if SOC_LP_TIMER_SUPPORTED = y:
+        lp_timer_hal (noflash)

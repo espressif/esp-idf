@@ -83,31 +83,20 @@ typedef struct rtc_cntl_sleep_retent {
 #endif // SOC_PM_SUPPORT_EXT1_WAKEUP
 
 #if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP && (SOC_RTCIO_PIN_COUNT == 0) && SOC_DEEP_SLEEP_SUPPORTED
-
 #define rtc_hal_gpio_get_wakeup_status()                  rtc_cntl_ll_gpio_get_wakeup_status()
-
 #define rtc_hal_gpio_clear_wakeup_status()                rtc_cntl_ll_gpio_clear_wakeup_status()
-
 #endif
-
-#define rtc_hal_set_wakeup_timer(ticks)                   rtc_cntl_ll_set_wakeup_timer(ticks)
 
 void * rtc_cntl_hal_dma_link_init(void *elem, void *buff, int size, void *next);
 
 #if SOC_PM_SUPPORT_CPU_PD
-
 void rtc_cntl_hal_enable_cpu_retention(void *addr);
-
 void rtc_cntl_hal_disable_cpu_retention(void *addr);
-
 #endif
 
 #if SOC_PM_SUPPORT_TAGMEM_PD
-
 void rtc_cntl_hal_enable_tagmem_retention(void *addr);
-
 void rtc_cntl_hal_disable_tagmem_retention(void *addr);
-
 #endif
 
 /*
