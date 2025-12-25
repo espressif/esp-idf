@@ -12,10 +12,13 @@
 
 #pragma once
 #include <stdbool.h>
+#include "esp_bit_defs.h"
 #include "soc/rtc_cntl_struct.h"
 #include "hal/regi2c_ctrl.h"
 #include "hal/psdet_types.h"
 #include "soc/regi2c_brownout.h"
+
+#define BROWNOUT_DETECTOR_LL_FIB_ENABLE       (BIT(1))
 
 #ifdef __cplusplus
 extern "C" {
@@ -55,7 +58,6 @@ static inline void brownout_ll_reset_config(bool reset_ena, uint32_t reset_wait,
 {
     RTCCNTL.brown_out.rst_wait = reset_wait;
     RTCCNTL.brown_out.rst_ena = reset_ena;
-    RTCCNTL.brown_out.out2_ena = true;
     RTCCNTL.brown_out.rst_sel = reset_level;
 }
 
@@ -100,13 +102,16 @@ static inline void brownout_ll_intr_enable(bool enable)
 }
 
 /**
- * @brief Enable brownout hardware reset
+ * @brief Enable brownout hardware reset (mode1)
  *
  * @param enable true: enable, false: disable
  */
 static inline void brownout_ll_ana_reset_enable(bool enable)
 {
-    // Not supported on ESP32S2
+    // give BOD mode1 control permission to the software
+    RTCCNTL.fib_sel.val &= ~BROWNOUT_DETECTOR_LL_FIB_ENABLE;
+    // then we can enable or disable if we want the BOD mode1 to reset the system
+    RTCCNTL.brown_out.ana_rst_en = enable;
 }
 
 /**
@@ -126,7 +131,6 @@ static inline void brownout_ll_clear_count(void)
     RTCCNTL.brown_out.cnt_clr = 1;
     RTCCNTL.brown_out.cnt_clr = 0;
 }
-
 
 #ifdef __cplusplus
 }
