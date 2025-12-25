@@ -2399,10 +2399,11 @@ esp_err_t uart_detect_bitrate_stop(uart_port_t uart_num, bool deinit, uart_bitra
     ESP_RETURN_ON_FALSE(uart_context[uart_num].hw_enabled && ret_res, ESP_ERR_INVALID_ARG, UART_TAG, "invalid arg");
 
     esp_err_t ret = ESP_OK;
-    ret_res->low_period = uart_hal_get_low_pulse_cnt(&(uart_context[uart_num].hal)) + 1;
-    ret_res->high_period = uart_hal_get_high_pulse_cnt(&(uart_context[uart_num].hal)) + 1;
-    ret_res->pos_period = uart_hal_get_pos_pulse_cnt(&(uart_context[uart_num].hal)) + 1;
-    ret_res->neg_period = uart_hal_get_neg_pulse_cnt(&(uart_context[uart_num].hal)) + 1;
+    // For period count values, we will later add 1 to always over-count instead of under-count
+    ret_res->low_period = uart_hal_get_low_pulse_cnt(&(uart_context[uart_num].hal));
+    ret_res->high_period = uart_hal_get_high_pulse_cnt(&(uart_context[uart_num].hal));
+    ret_res->pos_period = uart_hal_get_pos_pulse_cnt(&(uart_context[uart_num].hal));
+    ret_res->neg_period = uart_hal_get_neg_pulse_cnt(&(uart_context[uart_num].hal));
     ret_res->edge_cnt = uart_hal_get_rxd_edge_cnt(&(uart_context[uart_num].hal));
 
     // stop auto baud rate detection
@@ -2411,11 +2412,11 @@ esp_err_t uart_detect_bitrate_stop(uart_port_t uart_num, bool deinit, uart_bitra
     const char *err_str = "";
     if (ret_res->low_period == 0 || ret_res->high_period == 0 || ret_res->pos_period == 0 || ret_res->neg_period == 0) {
         err_str = "fast";
-    } else if (ret_res->low_period == UART_LL_PULSE_TICK_CNT_MAX || ret_res->high_period == UART_LL_PULSE_TICK_CNT_MAX || ret_res->pos_period == UART_LL_PULSE_TICK_CNT_MAX || ret_res->neg_period == UART_LL_PULSE_TICK_CNT_MAX) {
+    } else if (ret_res->low_period++ == UART_LL_PULSE_TICK_CNT_MAX || ret_res->high_period++ == UART_LL_PULSE_TICK_CNT_MAX || ret_res->pos_period++ == UART_LL_PULSE_TICK_CNT_MAX || ret_res->neg_period++ == UART_LL_PULSE_TICK_CNT_MAX) {
         err_str = "slow";
     }
     if (strcmp(err_str, "") != 0) {
-        ESP_LOGE(UART_TAG, "bitrate too %s, unable to count ticks, please try to adjust source_clk", err_str);
+        ESP_LOGW(UART_TAG, "bitrate too %s, unreliable xxx_period values, please try to adjust source_clk", err_str);
     }
 
     soc_module_clk_t src_clk;
