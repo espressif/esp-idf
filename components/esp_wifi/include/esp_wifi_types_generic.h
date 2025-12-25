@@ -276,10 +276,8 @@ typedef enum {
   * @brief Wi-Fi bandwidth type
   */
 typedef enum {
-    WIFI_BW_HT20   = 1,       /**< Bandwidth is HT20      */
-    WIFI_BW20 = WIFI_BW_HT20, /**< Bandwidth is 20 MHz    */
-    WIFI_BW_HT40   = 2,       /**< Bandwidth is HT40      */
-    WIFI_BW40 = WIFI_BW_HT40, /**< Bandwidth is 40 MHz    */
+    WIFI_BW20      = 1,       /**< Bandwidth is 20 MHz    */
+    WIFI_BW40      = 2,       /**< Bandwidth is 40 MHz    */
     WIFI_BW80      = 3,       /**< Bandwidth is 80 MHz    */
     WIFI_BW160     = 4,       /**< Bandwidth is 160 MHz   */
     WIFI_BW80_BW80 = 5,       /**< Bandwidth is 80 + 80 MHz */

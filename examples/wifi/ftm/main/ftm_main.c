@@ -437,10 +437,10 @@ static bool wifi_cmd_ap_set(const char* ssid, const char* pass, uint8_t channel,
             proto.ghz_2g = WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N;
             proto.ghz_5g = 0;
             esp_wifi_set_protocols(WIFI_IF_AP, &proto);
-            bws.ghz_2g = WIFI_BW_HT40;
+            bws.ghz_2g = WIFI_BW40;
             esp_wifi_set_bandwidths(WIFI_IF_AP, &bws);
         } else {
-            bws.ghz_2g = WIFI_BW_HT20;
+            bws.ghz_2g = WIFI_BW20;
             esp_wifi_set_bandwidths(WIFI_IF_AP, &bws);
         }
     } else {
@@ -449,13 +449,13 @@ static bool wifi_cmd_ap_set(const char* ssid, const char* pass, uint8_t channel,
             proto.ghz_2g = 0;
             proto.ghz_5g = WIFI_PROTOCOL_11N | WIFI_PROTOCOL_11A;
             esp_wifi_set_protocols(WIFI_IF_AP, &proto);
-            bws.ghz_5g=WIFI_BW_HT40;
+            bws.ghz_5g=WIFI_BW40;
             esp_wifi_set_bandwidths(WIFI_IF_AP, &bws);
         } else {
             proto.ghz_2g = 0;
             proto.ghz_5g = WIFI_PROTOCOL_11AC | WIFI_PROTOCOL_11A | WIFI_PROTOCOL_11AX;
             esp_wifi_set_protocols(WIFI_IF_AP, &proto);
-            bws.ghz_5g = WIFI_BW_HT20;
+            bws.ghz_5g = WIFI_BW20;
             esp_wifi_set_bandwidths(WIFI_IF_AP, &bws);
         }
 #endif
