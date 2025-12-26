@@ -703,6 +703,8 @@ int bt_mesh_set_oob_pub_key(const uint8_t pub_key_x[32],
                             const uint8_t pub_key_y[32],
                             const uint8_t pri_key[32])
 {
+    uint8_t privkey[32] = {0};
+
     if (!pub_key_x || !pub_key_y || !pri_key) {
         BT_ERR("%s, Invalid parameter", __func__);
         return -EINVAL;
@@ -714,7 +716,8 @@ int bt_mesh_set_oob_pub_key(const uint8_t pub_key_x[32],
      */
     sys_memcpy_swap(&prov_link.conf_inputs[81], pub_key_x, 32);
     sys_memcpy_swap(&prov_link.conf_inputs[81] + 32, pub_key_y, 32);
-    bt_mesh_set_private_key(pri_key);
+    sys_memcpy_swap(privkey, pri_key, 32);
+    bt_mesh_set_private_key(privkey);
 
     bt_mesh_atomic_set_bit(prov_link.flags, OOB_PUB_KEY);
 

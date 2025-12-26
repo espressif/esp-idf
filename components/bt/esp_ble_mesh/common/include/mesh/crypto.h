@@ -345,11 +345,11 @@ int bt_mesh_pub_key_gen(void);
  *
  * @return 0 on success, -EAGAIN if public key not ready
  */
-static inline int bt_mesh_pub_key_copy(uint8_t buf[64])
+static inline int bt_mesh_pub_key_copy(uint8_t *buf)
 {
     const uint8_t *key = bt_mesh_pub_key_get_raw();
 
-    if (key == NULL) {
+    if (key == NULL || buf == NULL) {
         return -EAGAIN;
     }
 
