@@ -200,7 +200,8 @@ BT_HDR *attp_build_read_by_type_value_cmd (UINT16 payload_size, tGATT_FIND_TYPE_
 BT_HDR *attp_build_read_multi_cmd(UINT8 op_code, UINT16 payload_size, UINT16 num_handle, UINT16 *p_handle)
 {
     BT_HDR      *p_buf = NULL;
-    UINT8       *p, i = 0;
+    UINT8       *p;
+    UINT16      i = 0;
 
     if ((p_buf = (BT_HDR *)osi_malloc((UINT16)(sizeof(BT_HDR) + num_handle * 2 + 1 + L2CAP_MIN_OFFSET))) != NULL) {
         p = (UINT8 *)(p_buf + 1) + L2CAP_MIN_OFFSET;

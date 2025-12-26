@@ -357,7 +357,7 @@ int hci_adv_credits_prep_to_release(uint16_t num)
     hci_hal_env.adv_credits_to_release = credits_to_release;
     osi_mutex_unlock(&hci_hal_env.adv_flow_lock);
 
-    if (credits_to_release == num && num != 0) {
+    if (credits_to_release == num) {
         osi_alarm_cancel(hci_hal_env.adv_flow_monitor);
         osi_alarm_set(hci_hal_env.adv_flow_monitor, HCI_ADV_FLOW_MONITOR_PERIOD_MS);
     }
