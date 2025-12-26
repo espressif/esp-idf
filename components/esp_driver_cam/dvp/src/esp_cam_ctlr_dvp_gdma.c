@@ -101,7 +101,7 @@ esp_err_t esp_cam_ctlr_dvp_dma_init(esp_cam_ctlr_dvp_dma_t *dma, uint32_t burst_
     ESP_GOTO_ON_ERROR(gdma_apply_strategy(dma->dma_chan, &strategy_config), fail1, TAG, "apply strategy failed");
     // set DMA transfer ability
     gdma_transfer_config_t transfer_config = {
-        .max_data_burst_size = burst_size,
+        .max_data_burst_size = burst_size ? burst_size : 32, // Enable DMA burst transfer for better performance
         .access_ext_mem = true,
     };
     ESP_GOTO_ON_ERROR(gdma_config_transfer(dma->dma_chan, &transfer_config), fail1, TAG, "set trans ability failed");
