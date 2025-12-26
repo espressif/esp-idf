@@ -12,6 +12,7 @@
 #include "esp_radio_spinel.h"
 #include "esp_radio_spinel_platform.h"
 #include "esp_radio_spinel_adapter.hpp"
+#include "esp_spinel_ncp_vendor_macro.h"
 #include "esp_radio_spinel_uart_interface.hpp"
 #include "spinel_driver.hpp"
 #include "openthread/link.h"

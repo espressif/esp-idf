@@ -18,10 +18,6 @@ extern "C" {
 
 #define ESP_SPINEL_LOG_TAG "ESP_RADIO_SPINEL"
 
-#define SPINEL_PROP_VENDOR_ESP_SET_COORDINATOR (SPINEL_PROP_VENDOR_ESP__BEGIN + 1)  /* Vendor command for coordinator.*/
-
-#define SPINEL_PROP_VENDOR_ESP_SET_PENDINGMODE (SPINEL_PROP_VENDOR_ESP__BEGIN + 2)  /* Vendor command for pending mode.*/
-
 typedef enum {
     ESP_RADIO_SPINEL_ZIGBEE = 0x0,      /* The index of Zigbee.*/
     ESP_RADIO_SPINEL_OPENTHREAD = 0x1,  /* The index of OpenThread.*/
