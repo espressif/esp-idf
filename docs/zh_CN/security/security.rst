@@ -75,7 +75,7 @@ flash 加密功能可以加密外部 flash 中的内容，从而保护存储在 
 flash 加密最佳实践
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-* 建议在生产环境中使用 flash 加密的量产模式。
+* 建议在生产环境中使用 flash 加密的 :ref:`flash-enc-release-mode`。
 * 建议为每个设备生成唯一的 flash 加密密钥。
 * 启用 :ref:`secure_boot-guide` 作为额外保护层，防止 flash 在启动前遭受恶意攻击。
 

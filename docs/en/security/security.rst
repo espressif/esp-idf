@@ -75,7 +75,7 @@ Please refer to :doc:`flash-encryption` for detailed information about this feat
 Flash Encryption Best Practices
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-* It is recommended to use flash Encryption release mode for the production use-cases.
+* It is recommended to use :ref:`flash-enc-release-mode` for the production use-cases.
 * It is recommended to have a unique flash encryption key per device.
 * Enable :ref:`secure_boot-guide` as an extra layer of protection, and to prevent an attacker from selectively corrupting any part of the flash before boot.
 
