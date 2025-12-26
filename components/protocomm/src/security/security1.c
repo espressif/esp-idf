@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -99,6 +99,21 @@ static esp_err_t handle_session_command1(session_t *cur_session,
     if (cur_session->state != SESSION_STATE_CMD1) {
         ESP_LOGE(TAG, "Invalid state of session %d (expected %d)", SESSION_STATE_CMD1, cur_session->state);
         return ESP_ERR_INVALID_STATE;
+    }
+
+    /* Validate client verifier data before processing */
+    if (!in || !in->sc1 ||
+        in->sc1->client_verify_data.data == NULL ||
+        in->sc1->client_verify_data.len != PUBLIC_KEY_LEN) {
+        ESP_LOGE(TAG, "Invalid client verifier (ptr=%p len=%d)",
+                 (void *) (in && in->sc1 ? in->sc1->client_verify_data.data : NULL),
+                 (int) (in && in->sc1 ? in->sc1->client_verify_data.len : -1));
+        if (esp_event_post(PROTOCOMM_SECURITY_SESSION_EVENT,
+                          PROTOCOMM_SECURITY_SESSION_INVALID_SECURITY_PARAMS,
+                          NULL, 0, portMAX_DELAY) != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to post invalid security params event");
+        }
+        return ESP_ERR_INVALID_ARG;
     }
 
     /* Initialize crypto context */
