@@ -366,6 +366,11 @@ static int esp_aes_process_dma(esp_aes_context *ctx, const unsigned char *input,
         if (esp_ptr_external_ram(input)) {
             Cache_WriteBack_Addr((uint32_t)input, len);
         }
+
+        if (esp_ptr_external_ram(output)) {
+            Cache_WriteBack_Addr((uint32_t)output, len);
+        }
+
         if (esp_ptr_external_ram(output)) {
             if ((((intptr_t)(output) & (DCACHE_LINE_SIZE - 1)) != 0) || (block_bytes % DCACHE_LINE_SIZE != 0)) {
                 // Non aligned ext-mem buffer
