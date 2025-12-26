@@ -15,6 +15,7 @@
 #include <fcntl.h>
 #include "esp_err.h"
 #include "esp_tls_errors.h"
+
 #ifdef CONFIG_ESP_TLS_USING_MBEDTLS
 #include "mbedtls/platform.h"
 #include "mbedtls/net_sockets.h"
@@ -30,8 +31,11 @@
 #include "psa/crypto.h"
 #endif
 #elif CONFIG_ESP_TLS_USING_WOLFSSL
-#include "wolfssl/wolfcrypt/settings.h"
-#include "wolfssl/ssl.h"
+    #include "wolfssl/wolfcrypt/settings.h"
+    #include "wolfssl/ssl.h"
+    #include "wolfssl/openssl/x509.h" /* TODO not wolfssl internal WOLFSSL_X509 ? */
+    #include "wolfssl/wolfcrypt/port/Espressif/esp_crt_bundle.h"
+    #include "private_include/esp_tls_wolfssl.h"
 #endif
 
 struct esp_tls {
@@ -74,6 +78,11 @@ struct esp_tls {
     size_t client_session_len;                                                  /*!< Length of the serialized client session ticket context. */
 #endif /* CONFIG_MBEDTLS_SSL_PROTO_TLS1_3 && CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS */
 #elif CONFIG_ESP_TLS_USING_WOLFSSL
+    #ifndef WOLFSSL_NO_CONF_COMPATIBILITY
+    wolfssl_ssl_config conf;
+    void (*sync)(struct esp_tls*);
+    #endif
+
     void *priv_ctx;
     void *priv_ssl;
 #endif
