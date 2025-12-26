@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -80,8 +80,8 @@ static void client_event_cb(const usb_host_client_event_msg_t *event_msg, void *
         xSemaphoreGive(driver_obj->constant.mux_lock);
         break;
     default:
-        // Should never occur
-        abort();
+        ESP_LOGW(TAG, "Unsupported client event: %d (possibly suspend/resume)", event_msg->event);
+        break;
     }
 }
 

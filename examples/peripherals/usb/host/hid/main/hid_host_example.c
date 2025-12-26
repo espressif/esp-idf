@@ -502,8 +502,9 @@ void hid_host_interface_callback(hid_host_device_handle_t hid_device_handle,
                  hid_proto_name_str[dev_params.proto]);
         break;
     default:
-        ESP_LOGE(TAG, "HID Device, protocol '%s' Unhandled event",
-                 hid_proto_name_str[dev_params.proto]);
+        ESP_LOGW(TAG, "HID Device, protocol '%s' Unhandled event: %d (possibly suspend/resume)",
+                 hid_proto_name_str[dev_params.proto],
+                 event);
         break;
     }
 }
