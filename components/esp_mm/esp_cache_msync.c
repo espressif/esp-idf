@@ -26,6 +26,16 @@ static const char *TAG = "cache";
 
 DEFINE_CRIT_SECTION_LOCK_STATIC(s_spinlock);
 
+void esp_cache_sync_ops_enter_critical_section(void)
+{
+    esp_os_enter_critical_safe(&s_spinlock);
+}
+
+void esp_cache_sync_ops_exit_critical_section(void)
+{
+    esp_os_exit_critical_safe(&s_spinlock);
+}
+
 esp_err_t esp_cache_msync(void *addr, size_t size, int flags)
 {
     ESP_RETURN_ON_FALSE_ISR(addr, ESP_ERR_INVALID_ARG, TAG, "null pointer");
