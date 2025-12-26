@@ -60,7 +60,9 @@ BLE_LOG_IRAM_ATTR BLE_LOG_STATIC void ble_log_rt_task(void *pvParameters)
         if (rt_ts_enabled) {
             ble_log_ts_info_t *ts_info = NULL;
             ble_log_ts_info_update(&ts_info);
-            ble_log_write_hex(BLE_LOG_SRC_INTERNAL, (const uint8_t *)ts_info, sizeof(ble_log_ts_info_t));
+            if (ts_info) {
+                ble_log_write_hex(BLE_LOG_SRC_INTERNAL, (const uint8_t *)ts_info, sizeof(ble_log_ts_info_t));
+            }
         }
 #endif /* CONFIG_BLE_LOG_TS_ENABLED */
 
@@ -139,6 +141,7 @@ bool ble_log_sync_enable(bool enable)
         return false;
     }
     rt_ts_enabled = enable;
+    ble_log_ts_reset(enable);
     return true;
 }
 #endif /* CONFIG_BLE_LOG_TS_ENABLED */
