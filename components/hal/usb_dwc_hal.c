@@ -44,7 +44,8 @@
 
 //Interrupts that pertain to core events
 #define CORE_EVENTS_INTRS_MSK (USB_DWC_LL_INTR_CORE_DISCONNINT | \
-                               USB_DWC_LL_INTR_CORE_HCHINT)
+                               USB_DWC_LL_INTR_CORE_HCHINT | \
+                               USB_DWC_LL_INTR_CORE_WKUPINT)
 
 //Interrupt that pertain to host port events
 #define PORT_EVENTS_INTRS_MSK (USB_DWC_LL_INTR_HPRT_PRTCONNDET | \
@@ -463,6 +464,8 @@ usb_dwc_hal_port_event_t usb_dwc_hal_decode_intr(usb_dwc_hal_context_t *hal)
         } else if (intrs_port & USB_DWC_LL_INTR_HPRT_PRTCONNDET && !hal->flags.dbnc_lock_enabled) {
             event = USB_DWC_HAL_PORT_EVENT_CONN;
             debounce_lock_enable(hal);
+        } else if (intrs_core & USB_DWC_LL_INTR_CORE_WKUPINT) {
+            event = USB_DWC_HAL_PORT_EVENT_REMOTE_WAKEUP;   // Remote wakeup was generated from device
         }
     }
     //Port events always take precedence over channel events
