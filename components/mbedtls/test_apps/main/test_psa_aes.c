@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -866,4 +866,78 @@ TEST_CASE("PSA AES-CBC one-shot", "[psa-aes]")
 
     /* Destroy the key */
     psa_destroy_key(key_id);
+}
+
+static const uint8_t key_192[24] = {
+    0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+    0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
+    0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
+};
+
+TEST_CASE("PSA AES-CBC-192", "[psa-aes]")
+{
+    const size_t SZ = 1008;
+    const size_t iv_SZ = 16;
+
+    const uint8_t expected_cipher_end[] = {
+        0x57, 0x6a, 0x75, 0xb4, 0x5d, 0xbc, 0x96, 0xf8,
+        0xa4, 0xb7, 0xb6, 0x0c, 0x6b, 0xa5, 0x1e, 0x02,
+    };
+
+    const uint8_t iv_seed[] = {
+        0x10, 0x0f, 0x0e, 0x0d, 0x0c, 0x0b, 0x0a, 0x09,
+        0x08, 0x07, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01,
+    };
+
+    uint8_t iv[iv_SZ];
+    uint8_t *plaintext = malloc(SZ);
+    uint8_t *ciphertext = malloc(SZ);
+    uint8_t *decryptedtext = malloc(SZ);
+
+    memcpy(iv, iv_seed, iv_SZ);
+    memset(plaintext, 0x3A, SZ);
+    memset(decryptedtext, 0x0, SZ);
+
+    psa_key_id_t key_id;
+    psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
+    psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_ENCRYPT | PSA_KEY_USAGE_DECRYPT);
+    psa_set_key_algorithm(&attributes, PSA_ALG_CBC_NO_PADDING);
+    psa_set_key_type(&attributes, PSA_KEY_TYPE_AES);
+    psa_set_key_bits(&attributes, 192);
+    TEST_ASSERT_EQUAL(PSA_SUCCESS, psa_import_key(&attributes, key_192, sizeof(key_192), &key_id));
+    psa_reset_key_attributes(&attributes);
+
+    psa_cipher_operation_t enc_op = PSA_CIPHER_OPERATION_INIT;
+    size_t out_len = 0, total_out = 0;
+
+    TEST_ASSERT_EQUAL(PSA_SUCCESS, psa_cipher_encrypt_setup(&enc_op, key_id, PSA_ALG_CBC_NO_PADDING));
+    TEST_ASSERT_EQUAL(PSA_SUCCESS, psa_cipher_set_iv(&enc_op, iv, iv_SZ));
+
+    TEST_ASSERT_EQUAL(PSA_SUCCESS, psa_cipher_update(&enc_op, plaintext, SZ, ciphertext, SZ, &out_len));
+    total_out += out_len;
+    TEST_ASSERT_EQUAL(PSA_SUCCESS, psa_cipher_finish(&enc_op, ciphertext + total_out, SZ - total_out, &out_len));
+    total_out += out_len;
+    TEST_ASSERT_EQUAL_size_t(SZ, total_out);
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_cipher_end, ciphertext + SZ - sizeof(expected_cipher_end), sizeof(expected_cipher_end));
+
+    psa_cipher_operation_t dec_op = PSA_CIPHER_OPERATION_INIT;
+    total_out = 0;
+    memcpy(iv, iv_seed, iv_SZ);
+    TEST_ASSERT_EQUAL(PSA_SUCCESS, psa_cipher_decrypt_setup(&dec_op, key_id, PSA_ALG_CBC_NO_PADDING));
+    TEST_ASSERT_EQUAL(PSA_SUCCESS, psa_cipher_set_iv(&dec_op, iv, iv_SZ));
+
+    TEST_ASSERT_EQUAL(PSA_SUCCESS, psa_cipher_update(&dec_op, ciphertext, SZ, decryptedtext, SZ, &out_len));
+    total_out += out_len;
+    TEST_ASSERT_EQUAL(PSA_SUCCESS, psa_cipher_finish(&dec_op, decryptedtext + total_out, SZ - total_out, &out_len));
+    total_out += out_len;
+    TEST_ASSERT_EQUAL_size_t(SZ, total_out);
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(plaintext, decryptedtext, SZ);
+
+    psa_cipher_abort(&enc_op);
+    psa_cipher_abort(&dec_op);
+    psa_destroy_key(key_id);
+
+    free(plaintext);
+    free(ciphertext);
+    free(decryptedtext);
 }
