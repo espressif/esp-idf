@@ -18,11 +18,13 @@
 #include "soc/lp_clkrst_reg.h"
 #include "soc/lp_system_reg.h"
 #include "soc/pmu_reg.h"
+#include "soc/chip_revision.h"
 #include "esp_hw_log.h"
 #include "sdkconfig.h"
 #include "esp_rom_serial_output.h"
 #include "esp_private/esp_pmu.h"
 #include "hal/clk_tree_ll.h"
+#include "hal/efuse_hal.h"
 
 ESP_HW_LOG_ATTR_TAG(TAG, "rtc_clk_init");
 
@@ -70,6 +72,10 @@ void rtc_clk_init(rtc_clk_config_t cfg)
     pmu_ll_hp_set_dcm_vset(&PMU, PMU_MODE_HP_ACTIVE, hp_dcmvset);
     SET_PERI_REG_MASK(PMU_HP_ACTIVE_HP_REGULATOR0_REG, PMU_DIG_REGULATOR0_DBIAS_SEL); // Hand over control of dbias to pmu
     esp_rom_delay_us(1000);
+    unsigned chip_version = efuse_hal_chip_revision();
+    if (ESP_CHIP_REV_ABOVE(chip_version, 301)) {
+        REG_SET_FIELD(LP_SYSTEM_REG_SYS_CTRL_REG, LP_SYSTEM_REG_LP_FIB_SEL, 0xEF);// lp_fib_sel bit4 set to 0: select dig_fib_reg instead of ana_fib_reg
+    }
     pmu_ll_hp_set_regulator_xpd(&PMU, PMU_MODE_HP_ACTIVE, false);
 
     soc_xtal_freq_t xtal_freq = cfg.xtal_freq;
