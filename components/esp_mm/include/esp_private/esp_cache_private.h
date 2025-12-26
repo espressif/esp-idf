@@ -160,6 +160,16 @@ __attribute__((deprecated("Use 'heap_caps_calloc' with MALLOC_CAP_CACHE_ALIGNED 
 esp_err_t esp_cache_aligned_calloc_prefer(size_t n, size_t size, void **out_ptr, size_t *actual_size, size_t flag_nums, ...);
 
 /**
+ * @brief Enter critical section for cache sync operations
+ */
+void esp_cache_sync_ops_enter_critical_section(void);
+
+/**
+ * @brief Exit critical section for cache sync operations
+ */
+void esp_cache_sync_ops_exit_critical_section(void);
+
+/**
  * @brief Get Cache alignment requirement for data
  *
  * @note Now only support 'MALLOC_CAP_INTERNAL', 'MALLOC_CAP_DMA' and 'MALLOC_CAP_SPIRAM'
