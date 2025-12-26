@@ -121,13 +121,6 @@ bool ppa_srm_transaction_on_picked(uint32_t num_chans, const dma2d_trans_channel
     }
 
     ppa_srm_color_mode_t ppa_out_color_mode = srm_trans_desc->out.srm_cm;
-    if (ppa_out_color_mode == PPA_SRM_COLOR_MODE_YUV444) {
-        ppa_out_color_mode = PPA_SRM_COLOR_MODE_YUV420;
-        dma2d_csc_config_t dma_rx_csc = {
-            .rx_csc_option = DMA2D_CSC_RX_YUV420_TO_YUV444,
-        };
-        dma2d_configure_color_space_conversion(dma2d_rx_chan, &dma_rx_csc);
-    }
 
     dma2d_rx_event_callbacks_t dma_event_cbs = {
         .on_recv_eof = ppa_transaction_done_cb,
@@ -160,6 +153,28 @@ bool ppa_srm_transaction_on_picked(uint32_t num_chans, const dma2d_trans_channel
     ppa_ll_srm_set_scaling_y(platform->hal.dev, srm_trans_desc->scale_y_int, srm_trans_desc->scale_y_frag);
     ppa_ll_srm_enable_mirror_x(platform->hal.dev, srm_trans_desc->mirror_x);
     ppa_ll_srm_enable_mirror_y(platform->hal.dev, srm_trans_desc->mirror_y);
+
+    // Hardware bug workaround (DIG-734)
+    uint32_t w_out = srm_trans_desc->in.block_w * srm_trans_desc->scale_x_int + srm_trans_desc->in.block_w * srm_trans_desc->scale_x_frag / PPA_LL_SRM_SCALING_FRAG_MAX;
+    uint32_t w_divisor = (ppa_out_color_mode == PPA_SRM_COLOR_MODE_ARGB8888 || ppa_out_color_mode == PPA_SRM_COLOR_MODE_RGB888) ? 32 : 64;
+    uint32_t w_left = w_out % w_divisor;
+    w_left = (w_left == 0) ? w_divisor : w_left;
+    uint32_t h_mb = (ppa_ll_srm_get_mb_size(platform->hal.dev) == PPA_LL_SRM_MB_SIZE_16_16) ? 16 : 32;
+    uint32_t h_in_left = srm_trans_desc->in.block_h % h_mb;
+    h_in_left = (h_in_left == 0) ? h_mb : h_in_left;
+    uint32_t h_left = h_in_left * srm_trans_desc->scale_y_int + h_in_left * srm_trans_desc->scale_y_frag / PPA_LL_SRM_SCALING_FRAG_MAX;
+    const uint32_t dma2d_fifo_depth_bits = 12 * 128;
+    color_space_pixel_format_t out_pixel_format = {
+        .color_type_id = ppa_out_color_mode,
+    };
+    uint32_t out_pixel_depth = color_hal_pixel_format_get_bit_depth(out_pixel_format);
+    bool bypass_mb_order = false;
+    if (((w_out > w_divisor) || (srm_trans_desc->in.block_h > h_mb)) && // will be cut into more than one trans unit
+            ((w_left * h_left * out_pixel_depth) < dma2d_fifo_depth_bits)
+       ) {
+        bypass_mb_order = true;
+    }
+    ppa_ll_srm_bypass_mb_order(platform->hal.dev, bypass_mb_order);
 
     ppa_ll_srm_start(platform->hal.dev);
 
@@ -281,9 +296,6 @@ esp_err_t ppa_do_scale_rotate_mirror(ppa_client_handle_t ppa_client, const ppa_s
         dma_trans_desc->channel_flags = 0;
         if (config->in.srm_cm == PPA_SRM_COLOR_MODE_YUV444) {
             dma_trans_desc->channel_flags |= DMA2D_CHANNEL_FUNCTION_FLAG_TX_CSC;
-        }
-        if (config->out.srm_cm == PPA_SRM_COLOR_MODE_YUV444) {
-            dma_trans_desc->channel_flags |= DMA2D_CHANNEL_FUNCTION_FLAG_RX_CSC;
         }
         dma_trans_desc->specified_tx_channel_mask = 0;
         dma_trans_desc->specified_rx_channel_mask = 0;
