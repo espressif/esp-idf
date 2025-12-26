@@ -886,22 +886,6 @@ menu "mbedTLS"
                 3DES is vulnerable to the Sweet32 attack and should only be enabled
                 if absolutely necessary.
 
-        config MBEDTLS_BLOWFISH_C
-            bool "Blowfish block cipher (read help)"
-            default n
-            help
-                Enables the Blowfish block cipher (not used for TLS sessions.)
-
-                The Blowfish cipher is not used for mbedTLS TLS sessions but can be
-                used for other purposes. Read up on the limitations of Blowfish (including
-                Sweet32) before enabling.
-
-        config MBEDTLS_XTEA_C
-            bool "XTEA block cipher"
-            default n
-            help
-                Enables the XTEA block cipher.
-
         config MBEDTLS_CCM_C
             bool "CCM (Counter with CBC-MAC) block cipher modes"
             default y
@@ -1427,6 +1411,15 @@ menu "mbedTLS"
                 Note that if the ESP32 CPU is running at 240MHz, hardware AES does not
                 offer any speed boost over software AES.
 
+        config MBEDTLS_AES_SOFT_FALLBACK
+            bool "Enable software fallback for AES"
+            default n
+            depends on MBEDTLS_HARDWARE_AES
+            help
+                Enable software fallback for AES.
+                This option is used to fallback to software implementation of AES if the
+                hardware AES does not support the requested operation.
+
         config MBEDTLS_HARDWARE_GCM
             bool "Enable partially hardware accelerated GCM"
             depends on SOC_AES_SUPPORT_GCM && MBEDTLS_HARDWARE_AES
@@ -1447,7 +1440,7 @@ menu "mbedTLS"
                 Enable this config to support fallback to software definitions for a non-AES
                 cipher GCM operation as we support hardware acceleration only for AES cipher.
                 Some of the non-AES ciphers used in a GCM operation are DES, ARIA, CAMELLIA,
-                CHACHA20, BLOWFISH.
+                CHACHA20.
 
                 If this config is disabled, performing a non-AES cipher GCM operation with
                 the config MBEDTLS_HARDWARE_AES enabled will result in calculation of an
