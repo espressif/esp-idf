@@ -352,6 +352,10 @@ BT_HDR *l2c_fcr_clone_buf (BT_HDR *p_buf, UINT16 new_offset, UINT16 no_of_bytes)
     buf_size += sizeof(uint32_t);
 #endif
     BT_HDR *p_buf2 = (BT_HDR *)osi_malloc(buf_size);
+    if (!p_buf2) {
+        L2CAP_TRACE_ERROR ("l2c_fcr_clone_buf() malloc failed");
+        return NULL;
+    }
 
     p_buf2->offset = new_offset;
     p_buf2->len = no_of_bytes;
@@ -989,7 +993,7 @@ static void process_s_frame (tL2C_CCB *p_ccb, BT_HDR *p_buf, UINT16 ctrl_word)
 #endif
 
     if (ctrl_word & L2CAP_FCR_P_BIT) {
-        p_fcrb->rej_sent   = FALSE;             /* After checkpoint, we can send anoher REJ */
+        p_fcrb->rej_sent   = FALSE;             /* After checkpoint, we can send another REJ */
         p_fcrb->send_f_rsp = TRUE;              /* Set a flag in case an I-frame is pending */
     }
 
@@ -1160,7 +1164,7 @@ static void process_i_frame (tL2C_CCB *p_ccb, BT_HDR *p_buf, UINT16 ctrl_word, B
         return;
     }
 
-    /* Seq number is the next expected. Clear possible reject exception in case it occured */
+    /* Seq number is the next expected. Clear possible reject exception in case it occurred */
     p_fcrb->rej_sent = p_fcrb->srej_sent = FALSE;
 
     /* Adjust the next_seq, so that if the upper layer sends more data in the callback
@@ -1839,7 +1843,7 @@ void l2c_fcr_adj_monitor_retran_timeout (tL2C_CCB *p_ccb)
     /* adjust our monitor/retran timeout */
     if (p_ccb->out_cfg_fcr_present) {
         /*
-        ** if we requestd ERTM or accepted ERTM
+        ** if we requested ERTM or accepted ERTM
         ** We may accept ERTM even if we didn't request ERTM, in case of requesting STREAM
         */
         if ((p_ccb->our_cfg.fcr.mode == L2CAP_FCR_ERTM_MODE)
@@ -1860,7 +1864,7 @@ void l2c_fcr_adj_monitor_retran_timeout (tL2C_CCB *p_ccb)
 **
 ** Function         l2c_fcr_adj_our_rsp_options
 **
-** Description      Overrides any neccesary FCR options passed in from
+** Description      Overrides any necessary FCR options passed in from
 **                  L2CA_ConfigRsp based on our FCR options.
 **                  Only makes adjustments if channel is in ERTM mode.
 **
@@ -1937,7 +1941,7 @@ BOOLEAN l2c_fcr_renegotiate_chan(tL2C_CCB *p_ccb, tL2CAP_CFG_INFO *p_cfg)
 
             /* Try another supported mode if available based on our last attempted channel */
             switch (p_ccb->our_cfg.fcr.mode) {
-            /* Our Streaming mode request was unnacceptable; try ERTM or Basic */
+            /* Our Streaming mode request was unacceptable; try ERTM or Basic */
             case L2CAP_FCR_STREAM_MODE:
                 /* Peer wants ERTM and we support it */
                 if ( (peer_mode == L2CAP_FCR_ERTM_MODE) && (p_ccb->ertm_info.allowed_modes & L2CAP_FCR_CHAN_OPT_ERTM) ) {
