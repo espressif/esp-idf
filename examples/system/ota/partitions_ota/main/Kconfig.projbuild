@@ -50,5 +50,12 @@ menu "Example Configuration"
             depends on EXAMPLE_CONNECT_ETHERNET
             help
                 Select ethernet interface to pass the OTA data.
+
+        config EXAMPLE_FIRMWARE_UPGRADE_BIND_IF_THREAD
+            bool "Bind thread interface"
+            depends on EXAMPLE_CONNECT_THREAD
+            help
+                Select Thread interface to pass the OTA data.
+
     endchoice
 endmenu
