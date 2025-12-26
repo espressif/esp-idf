@@ -282,7 +282,8 @@ static inline void cache_ll_resume_cache(uint32_t cache_level, cache_type_t type
  * @return  true: enabled; false: disabled
  */
 __attribute__((always_inline))
-static inline bool cache_ll_l1_is_icache_enabled(uint32_t cache_id){
+static inline bool cache_ll_l1_is_icache_enabled(uint32_t cache_id)
+{
     HAL_ASSERT(cache_id <= CACHE_LL_ID_ALL);
 
     bool enabled;

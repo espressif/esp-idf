@@ -15,7 +15,7 @@
 #include "esp_err.h"
 #include "driver/sdmmc_types.h"
 #include "driver/sdmmc_default_configs.h"
-#include "driver/gpio.h"
+#include "soc/gpio_num.h"
 
 #ifdef __cplusplus
 extern "C" {

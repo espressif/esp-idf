@@ -532,6 +532,14 @@ uint8_t sdio_slave_hal_host_get_reg(sdio_slave_context_t *hal, int pos);
  */
 void sdio_slave_hal_host_set_reg(sdio_slave_context_t *hal, int pos, uint8_t reg);
 
+/**
+ * Get the address of the interrupt status register.
+ *
+ * @param hal Context of the HAL layer.
+ * @return Address of the interrupt status register
+ */
+volatile void* sdio_slave_hal_get_intr_status_reg(sdio_slave_context_t *hal);
+
 #endif  // SOC_SDIO_SLAVE_SUPPORTED
 
 #ifdef __cplusplus

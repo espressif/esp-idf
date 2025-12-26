@@ -1535,8 +1535,25 @@ exit:
 esp_err_t ledc_fade_func_install(int intr_alloc_flags)
 {
     LEDC_CHECK(s_ledc_fade_isr_handle == NULL, "fade function already installed", ESP_ERR_INVALID_STATE);
+
+    ledc_mode_t speed_mode = LEDC_SPEED_MODE_MAX;
+    for (int i = 0; i < LEDC_SPEED_MODE_MAX; i++) {
+        if (p_ledc_obj[i] != NULL) {
+            speed_mode = i;
+            break;
+        }
+    }
+
     //OR intr_alloc_flags with ESP_INTR_FLAG_IRAM because the fade isr is in IRAM
-    return ledc_isr_register(ledc_fade_isr, NULL, intr_alloc_flags | ESP_INTR_FLAG_IRAM, &s_ledc_fade_isr_handle);
+    return esp_intr_alloc_intrstatus(
+               ETS_LEDC_INTR_SOURCE,
+               intr_alloc_flags | ESP_INTR_FLAG_IRAM,
+               (uint32_t)ledc_hal_get_fade_end_intr_addr(&(p_ledc_obj[speed_mode]->ledc_hal)),
+               LEDC_LL_FADE_END_INTR_MASK,
+               ledc_fade_isr,
+               NULL,
+               &s_ledc_fade_isr_handle
+           );
 }
 
 void ledc_fade_func_uninstall(void)

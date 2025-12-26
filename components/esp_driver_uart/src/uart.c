@@ -1989,9 +1989,15 @@ esp_err_t uart_driver_install(uart_port_t uart_num, int rx_buffer_size, int tx_b
     uart_hal_disable_intr_mask(&(uart_context[uart_num].hal), UART_LL_INTR_MASK);
     uart_hal_clr_intsts_mask(&(uart_context[uart_num].hal), UART_LL_INTR_MASK);
 
-    ret = esp_intr_alloc(uart_periph_signal[uart_num].irq, intr_alloc_flags,
-                         uart_rx_intr_handler_default, p_uart_obj[uart_num],
-                         &p_uart_obj[uart_num]->intr_handle);
+    ret = esp_intr_alloc_intrstatus(
+              uart_periph_signal[uart_num].irq,
+              intr_alloc_flags,
+              (uint32_t)uart_hal_get_intr_status_reg(&(uart_context[uart_num].hal)),
+              UART_LL_INTR_MASK,
+              uart_rx_intr_handler_default,
+              p_uart_obj[uart_num],
+              &p_uart_obj[uart_num]->intr_handle
+          );
     ESP_GOTO_ON_ERROR(ret, err, UART_TAG, "Could not allocate an interrupt for UART");
 
     // Make sure uart sclk at least exist first (following code touchs hardware, and requires sclk to be enabled)
