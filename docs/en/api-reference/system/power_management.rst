@@ -102,10 +102,13 @@ Peripheral clock sources such as ``REF_TICK``, ``XTAL``, ``RC_FAST`` (i.e., ``RT
 
 Currently, the following peripheral drivers are aware of DFS and use the ``ESP_PM_APB_FREQ_MAX`` lock for the duration of the transaction:
 
-- SPI master
-- I2C
-- I2S (If the APLL clock is used, then it will use the ``ESP_PM_NO_LIGHT_SLEEP`` lock)
-- SDMMC
+.. list::
+
+  - SPI master
+  - I2C
+  :SOC_I2S_HW_VERSION_1 or not SOC_I2S_SUPPORTS_APLL: - I2S
+  :not SOC_I2S_HW_VERSION_1 and SOC_I2S_SUPPORTS_APLL: - I2S (if the APLL clock is used, then it will use the ``ESP_PM_NO_LIGHT_SLEEP`` lock)
+  - SDMMC
 
 The following drivers hold the ``ESP_PM_APB_FREQ_MAX`` lock while the driver is enabled:
 

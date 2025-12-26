@@ -29,7 +29,7 @@ esp_err_t esp_dma_split_rx_buffer_to_cache_aligned(void *rx_buffer, size_t buffe
 {
     esp_err_t ret = ESP_OK;
     uint8_t* stash_buffer = NULL;
-    ESP_RETURN_ON_FALSE(rx_buffer && buffer_len && align_buf_array, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    ESP_RETURN_ON_FALSE_ISR(rx_buffer && buffer_len && align_buf_array, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
 
     // read the cache line size of internal and external memory, we also use this information to check if a given memory is behind the cache
     size_t int_mem_cache_line_size = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA);
@@ -41,80 +41,83 @@ esp_err_t esp_dma_split_rx_buffer_to_cache_aligned(void *rx_buffer, size_t buffe
     } else if (esp_ptr_internal(rx_buffer)) {
         split_line_size = int_mem_cache_line_size;
     }
-    ESP_LOGV(TAG, "split_line_size:%zu", split_line_size);
+    bool align_required = split_line_size > 0;
+    ESP_EARLY_LOGV(TAG, "split_line_size:%zu", split_line_size);
 
-    // allocate the stash buffer from internal RAM
-    // Note, the split_line_size can be 0, in this case, the stash_buffer is also NULL, which is fine
-    stash_buffer = heap_caps_calloc(2, split_line_size, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
-    ESP_RETURN_ON_FALSE(!(split_line_size && !stash_buffer), ESP_ERR_NO_MEM, TAG, "no mem for stash buffer");
+    if (*ret_stash_buffer == NULL) {
+        // If the stash buffer is not offered by the caller, allocate the stash buffer from internal RAM
+        // Note, the split_line_size can be 0, in this case, the stash_buffer is also NULL, which is fine
+        stash_buffer = heap_caps_calloc(2, split_line_size, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+        ESP_RETURN_ON_FALSE_ISR(!(split_line_size && !stash_buffer), ESP_ERR_NO_MEM, TAG, "no mem for stash buffer");
+    } else {
+        // If the stash buffer is offered by the caller, check if it is aligned
+        ESP_RETURN_ON_FALSE_ISR(split_line_size == 0 || (uintptr_t)(*ret_stash_buffer) % split_line_size == 0,
+                            ESP_ERR_INVALID_ARG, TAG, "the offered stash buffer is not aligned");
+        // If the stash buffer is offered by the caller, use it
+        stash_buffer = *ret_stash_buffer;
+    }
 
     // clear align_array to avoid garbage data
     memset(align_buf_array, 0, sizeof(dma_buffer_split_array_t));
     bool need_cache_sync[3] = {false};
 
-    // if split_line_size is non-zero, split the buffer into head, body and tail
-    if (split_line_size > 0) {
+    // if align_required, split the buffer into head, body and tail
+    if (align_required) {
         // calculate head_overflow_len
         size_t head_overflow_len = (uintptr_t)rx_buffer % split_line_size;
         head_overflow_len = head_overflow_len ? split_line_size - head_overflow_len : 0;
-        ESP_LOGV(TAG, "head_addr:%p head_overflow_len:%zu", rx_buffer, head_overflow_len);
+        ESP_EARLY_LOGV(TAG, "head_addr:%p head_overflow_len:%zu", rx_buffer, head_overflow_len);
         // calculate tail_overflow_len
         size_t tail_overflow_len = ((uintptr_t)rx_buffer + buffer_len) % split_line_size;
-        ESP_LOGV(TAG, "tail_addr:%p tail_overflow_len:%zu", rx_buffer + buffer_len - tail_overflow_len, tail_overflow_len);
-
-        uint8_t extra_buf_count = 0;
-        uint8_t* input_buffer = (uint8_t*)rx_buffer;
-        align_buf_array->buf.head.recovery_address = input_buffer;
-        align_buf_array->buf.head.aligned_buffer = stash_buffer + split_line_size * extra_buf_count++;
-        align_buf_array->buf.head.length = head_overflow_len;
-        need_cache_sync[0] = int_mem_cache_line_size > 0;
-        align_buf_array->buf.body.recovery_address = input_buffer + head_overflow_len;
-        align_buf_array->buf.body.aligned_buffer = input_buffer + head_overflow_len;
-        align_buf_array->buf.body.length = buffer_len - head_overflow_len - tail_overflow_len;
-        need_cache_sync[1] = true;
-        align_buf_array->buf.tail.recovery_address = input_buffer + buffer_len - tail_overflow_len;
-        align_buf_array->buf.tail.aligned_buffer = stash_buffer + split_line_size * extra_buf_count++;
-        align_buf_array->buf.tail.length = tail_overflow_len;
-        need_cache_sync[2] = int_mem_cache_line_size > 0;
+        ESP_EARLY_LOGV(TAG, "tail_addr:%p tail_overflow_len:%zu", rx_buffer + buffer_len - tail_overflow_len, tail_overflow_len);
 
         // special handling when input_buffer length is no more than buffer alignment
-        if (head_overflow_len >= buffer_len || tail_overflow_len >= buffer_len) {
-            align_buf_array->buf.head.length  = buffer_len ;
-            align_buf_array->buf.body.length  = 0 ;
-            align_buf_array->buf.tail.length  = 0 ;
+        bool is_small_buf = head_overflow_len >= buffer_len || tail_overflow_len >= buffer_len;
+        uint8_t extra_buf_count = 0;
+        uint8_t* input_buffer = (uint8_t*)rx_buffer;
+        if (head_overflow_len || is_small_buf) {
+            align_buf_array->buf.head.recovery_address = input_buffer;
+            align_buf_array->buf.head.aligned_buffer = stash_buffer + split_line_size * extra_buf_count++;
+            align_buf_array->buf.head.length = is_small_buf ? buffer_len : head_overflow_len;
+            need_cache_sync[0] = int_mem_cache_line_size > 0;
+        }
+        int body_len = (int)buffer_len - (int)head_overflow_len - (int)tail_overflow_len;
+        if (body_len > 0) {
+            align_buf_array->buf.body.recovery_address = input_buffer + head_overflow_len;
+            align_buf_array->buf.body.aligned_buffer = input_buffer + head_overflow_len;
+            align_buf_array->buf.body.length = body_len;
+            need_cache_sync[1] = true;
+        }
+        if (tail_overflow_len && !is_small_buf) {
+            align_buf_array->buf.tail.recovery_address = input_buffer + buffer_len - tail_overflow_len;
+            align_buf_array->buf.tail.aligned_buffer = stash_buffer + split_line_size * extra_buf_count++;
+            align_buf_array->buf.tail.length = tail_overflow_len;
+            need_cache_sync[2] = int_mem_cache_line_size > 0;
         }
     } else {
         align_buf_array->buf.body.aligned_buffer = rx_buffer;
         align_buf_array->buf.body.recovery_address = rx_buffer;
         align_buf_array->buf.body.length = buffer_len;
-        need_cache_sync[1] = false;
-    }
-
-    for (int i = 0; i < 3; i++) {
-        if (align_buf_array->aligned_buffer[i].length == 0) {
-            align_buf_array->aligned_buffer[i].aligned_buffer = NULL;
-            align_buf_array->aligned_buffer[i].recovery_address = NULL;
-            need_cache_sync[i] = false;
-        }
     }
 
     // invalidate the aligned buffer if necessary
     for (int i = 0; i < 3; i++) {
-        if (need_cache_sync[i]) {
-            size_t sync_size = align_buf_array->aligned_buffer[i].length;
+        size_t sync_size = align_buf_array->aligned_buffer[i].length;
+        if (need_cache_sync[i] && sync_size > 0) {
             if (sync_size < split_line_size) {
                 // If the buffer is smaller than the cache line size, we need to sync the whole buffer
                 sync_size = split_line_size;
             }
             esp_err_t res = esp_cache_msync(align_buf_array->aligned_buffer[i].aligned_buffer, sync_size, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
-            ESP_GOTO_ON_ERROR(res, err, TAG, "failed to do cache sync");
+            ESP_GOTO_ON_ERROR_ISR(res, err, TAG, "failed to do cache sync");
         }
     }
 
     *ret_stash_buffer = stash_buffer;
     return ESP_OK;
 err:
-    if (stash_buffer) {
+    // Only free the stash buffer if it is not offered by the caller
+    if (stash_buffer && *ret_stash_buffer == NULL) {
         free(stash_buffer);
     }
     return ret;

@@ -278,7 +278,7 @@ static void test_gdma_m2m_transaction(gdma_channel_handle_t tx_chan, gdma_channe
 #if !SOC_DMA_CAN_ACCESS_FLASH
             .flags = {
                 .mark_eof = true,
-                .mark_final = true, // using singly list, so terminate the link here
+                .mark_final = GDMA_FINAL_LINK_TO_NULL, // using singly list, so terminate the link here
             }
 #endif
         },
@@ -289,7 +289,7 @@ static void test_gdma_m2m_transaction(gdma_channel_handle_t tx_chan, gdma_channe
             .length = src_string_len,
             .flags = {
                 .mark_eof = true,
-                .mark_final = true, // using singly list, so terminate the link here
+                .mark_final = GDMA_FINAL_LINK_TO_NULL, // using singly list, so terminate the link here
             }
         },
 #endif
@@ -448,7 +448,7 @@ static void test_gdma_m2m_unaligned_buffer_test(uint8_t *dst_data, uint8_t *src_
             .length = data_length,
             .flags = {
                 .mark_eof = true,
-                .mark_final = true, // using singly list, so terminate the link here
+                .mark_final = GDMA_FINAL_LINK_TO_NULL, // using singly list, so terminate the link here
             }
         }
     };
@@ -609,7 +609,7 @@ TEST_CASE("GDMA M2M Unaligned RX Buffer Test", "[GDMA][M2M]")
         .length = COPY_SIZE,
         .flags = {
             .mark_eof = true,
-            .mark_final = true, // using singly list, so terminate the link here
+            .mark_final = GDMA_FINAL_LINK_TO_NULL, // using singly list, so terminate the link here
         }
     };
     TEST_ESP_OK(gdma_link_mount_buffers(tx_link_list, 0, &tx_buf_mount_config, 1, NULL));
@@ -619,7 +619,7 @@ TEST_CASE("GDMA M2M Unaligned RX Buffer Test", "[GDMA][M2M]")
         .buffer_alignment = 32,
         .length = COPY_SIZE,
         .flags = {
-            .mark_final = true, // using singly list, so terminate the link here
+            .mark_final = GDMA_FINAL_LINK_TO_NULL, // using singly list, so terminate the link here
         }
     };
     TEST_ESP_OK(gdma_link_mount_buffers(rx_link_list, 0, &rx_buf_mount_config, 1, NULL));

@@ -33,7 +33,7 @@
 #include "driver/parlio_tx.h"
 #include "driver/parlio_types.h"
 #include "esp_private/gpio.h"
-#include "esp_private/parlio_private.h"
+#include "esp_private/parlio_tx_private.h"
 #include "esp_lcd_panel_io_interface.h"
 #include "esp_lcd_panel_io.h"
 #include "esp_lcd_common.h"
