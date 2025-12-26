@@ -815,6 +815,8 @@ static inline uint32_t i2c_ll_calculate_timeout_us_to_reg_val(uint32_t src_clk_h
 #define I2C_LL_MASTER_RX_INT          (I2C_TIME_OUT_INT_ENA_M|I2C_TRANS_COMPLETE_INT_ENA_M|I2C_ARBITRATION_LOST_INT_ENA_M|I2C_END_DETECT_INT_ENA_M)
 // I2C max timeout value
 #define I2C_LL_MAX_TIMEOUT I2C_TIME_OUT_VALUE
+// I2C max timeout period in clock cycles
+#define I2C_LL_MAX_TIMEOUT_PERIOD    (1UL << I2C_LL_MAX_TIMEOUT)
 
 #define I2C_LL_INTR_MASK          (0x3fff) /*!< I2C all interrupt bitmap */
 
