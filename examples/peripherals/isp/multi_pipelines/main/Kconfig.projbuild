@@ -44,4 +44,57 @@ menu "Example Configuration"
         default 600 if EXAMPLE_MIPI_CSI_VRES_600
         default 640 if EXAMPLE_MIPI_CSI_VRES_640
         default 1280 if EXAMPLE_MIPI_CSI_VRES_1280
+
+    config EXAMPLE_ISP_CROP_ENABLE
+        depends on (ESP32P4_REV_MIN_FULL >= 300)
+        bool "Enable ISP crop functionality"
+        default n
+        help
+            Enable ISP crop functionality. When enabled, you can configure
+            the crop area for the ISP pipeline.
+
+    menu "ISP Crop Configuration"
+        visible if EXAMPLE_ISP_CROP_ENABLE
+
+        config EXAMPLE_ISP_CROP_TOP_LEFT_H
+            int "ISP crop top-left horizontal coordinate"
+            default 0
+            range 0 799 if EXAMPLE_MIPI_CSI_HRES_800
+            range 0 1023 if EXAMPLE_MIPI_CSI_HRES_1024
+            help
+                Horizontal coordinate of the top-left corner for ISP crop.
+                Must be an even number and less than bottom-right horizontal coordinate.
+
+        config EXAMPLE_ISP_CROP_TOP_LEFT_V
+            int "ISP crop top-left vertical coordinate"
+            default 0
+            range 0 599 if EXAMPLE_MIPI_CSI_VRES_600
+            range 0 639 if EXAMPLE_MIPI_CSI_VRES_640
+            range 0 1279 if EXAMPLE_MIPI_CSI_VRES_1280
+            help
+                Vertical coordinate of the top-left corner for ISP crop.
+                Must be an even number and less than bottom-right vertical coordinate.
+
+        config EXAMPLE_ISP_CROP_BOTTOM_RIGHT_H
+            int "ISP crop bottom-right horizontal coordinate"
+            default 799 if EXAMPLE_MIPI_CSI_HRES_800
+            default 1023 if EXAMPLE_MIPI_CSI_HRES_1024
+            range 1 799 if EXAMPLE_MIPI_CSI_HRES_800
+            range 1 1023 if EXAMPLE_MIPI_CSI_HRES_1024
+            help
+                Horizontal coordinate of the bottom-right corner for ISP crop.
+                Must be an odd number, greater than top-left horizontal coordinate, and not exceed display width.
+
+        config EXAMPLE_ISP_CROP_BOTTOM_RIGHT_V
+            int "ISP crop bottom-right vertical coordinate"
+            default 599 if EXAMPLE_MIPI_CSI_VRES_600
+            default 639 if EXAMPLE_MIPI_CSI_VRES_640
+            default 1279 if EXAMPLE_MIPI_CSI_VRES_1280
+            range 1 599 if EXAMPLE_MIPI_CSI_VRES_600
+            range 1 639 if EXAMPLE_MIPI_CSI_VRES_640
+            range 1 1279 if EXAMPLE_MIPI_CSI_VRES_1280
+            help
+                Vertical coordinate of the bottom-right corner for ISP crop.
+                Must be an odd number, greater than top-left vertical coordinate, and not exceed display height.
+    endmenu
 endmenu
