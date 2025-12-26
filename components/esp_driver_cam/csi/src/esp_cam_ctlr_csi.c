@@ -362,6 +362,10 @@ IRAM_ATTR static bool csi_dma_trans_done_callback(dw_gdma_channel_handle_t chan,
         }
     }
 
+    esp_err_t ret = esp_cache_msync((void *)(new_trans.buffer), new_trans.buflen, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
+    assert(ret == ESP_OK);
+    (void)ret;
+
     ESP_EARLY_LOGD(TAG, "new_trans.buffer: %p, new_trans.buflen: %d", new_trans.buffer, new_trans.buflen);
     dw_gdma_channel_config_transfer(chan, &csi_dma_transfer_config);
     dw_gdma_channel_enable_ctrl(chan, true);
@@ -468,6 +472,9 @@ esp_err_t s_ctlr_csi_start(esp_cam_ctlr_handle_t handle)
             ESP_RETURN_ON_FALSE(false, ESP_ERR_INVALID_STATE, TAG, "no ready transaction, and no backup buffer");
         }
     }
+
+    ESP_RETURN_ON_ERROR(esp_cache_msync((void *)(trans.buffer), trans.buflen, ESP_CACHE_MSYNC_FLAG_DIR_M2C),
+                        TAG, "failed to sync(M2C) trans buffer");
 
     ESP_LOGD(TAG, "trans.buffer: %p, trans.buflen: %d", trans.buffer, trans.buflen);
     ctlr->trans = trans;
