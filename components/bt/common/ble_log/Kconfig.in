@@ -91,6 +91,12 @@ if BLE_LOG_ENABLED
             checksum of frame head and payload all together by default, or only
             calculate the checksum of frame head to minimize performance decrease
 
+    config BLE_LOG_XOR_CHECKSUM_ENABLED
+        bool "Enable XOR checksum for BLE Log payload integrity check"
+        default y
+        help
+            XOR checksum is introduced for integrity check performance optimization.
+
     config BLE_LOG_ENH_STAT_ENABLED
         bool "Enable enhanced statistics for BLE Log"
         default n
