@@ -230,7 +230,11 @@ TEST_CASE("twai transmit stop resume (loopback)", "[twai]")
     TEST_ESP_OK(twai_node_enable(node_hdl));
 
     //waiting pkg receive finish
-    TEST_ESP_OK(twai_node_transmit_wait_all_done(node_hdl, -1));
+    twai_node_status_t status = {};
+    while (status.tx_queue_remaining < TEST_TWAI_QUEUE_DEPTH) {
+        TEST_ESP_OK(twai_node_get_info(node_hdl, &status, NULL));
+        printf("%ld\n", status.tx_queue_remaining);
+    }
     free(tx_msgs);
 
     // check if pkg receive correct

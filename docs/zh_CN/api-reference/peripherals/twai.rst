@@ -103,7 +103,12 @@ TWAI 报文有多种类型，由报头指定。一个典型的数据帧报文主
 .. image:: ../../../_static/diagrams/twai/frame_struct.svg
     :align: center
 
-为减少拷贝带来的性能损失，TWAI 驱动使用指针进行传递。以下代码展示了如何发送一条典型的数据帧报文：
+为减少拷贝带来的性能损失，TWAI 驱动使用指针进行传递。且驱动设计为异步模式，因此，在传输真正完成之前， :cpp:type:`twai_frame_t` 实体及其 :cpp:member:`twai_frame_t::buffer` 指向的内存必须保持有效。可通过以下方式得知传输完成：
+
+- 调用 :cpp:func:`twai_node_transmit_wait_all_done` 函数等待所有传输完成。
+- 注册 :cpp:member:`twai_event_callbacks_t::on_tx_done` 事件回调函数，在传输完成时接收通知。
+
+以下代码展示了如何发送一条典型的数据帧报文：
 
 .. code:: c
 
@@ -200,7 +205,7 @@ TWAI 驱动支持在中断服务程序 (ISR) 中发送报文。这对于需要�
     }
 
 .. note::
-    在 ISR 中调用 :cpp:func:`twai_node_transmit` 时，``timeout`` 参数将被忽略，函数不会阻塞。如果发送队列已满，函数将立即返回错误。应用程序需要自行处理队列已满的情况。
+    在 ISR 中调用 :cpp:func:`twai_node_transmit` 时，``timeout`` 参数将被忽略，函数不会阻塞。如果发送队列已满，函数将立即返回错误。应用程序需要自行处理队列已满的情况。同样，``twai_frame_t`` 及其 ``buffer`` 指向的内存必须在 **该传输** 完成之前保持有效。通过 :cpp:member:`twai_tx_done_event_data_t::done_tx_frame` 指针可得知该次完成的报文。
 
 位时序自定义
 -------------
@@ -311,7 +316,7 @@ TWAI控制器能够检测由于总线干扰产生的/损坏的不符合帧格式
 - **被动错误:** 当 TEC 或 REC 中的一个大于或等于 128 时，节点处于被动错误状态。仍可以参与总线通信，但在检测到错误时，只能发送一次 **被动错误标志**。
 - **离线:** 当 **TEC** 大于或等于 256 时，节点进入离线状态。离线的节点相当于断开连接，不会对总线产生任何影响。节点将保持离线状态，直到软件触发恢复操作。
 
-软件可随时使用函数 :cpp:func:`twai_node_get_info` 获取节点状态。或当控制器检测到错误时，会产生 :cpp:member:`twai_event_callbacks_t::on_error` 回调，可通过传参中的错误数据查看错误原因。
+软件可随时在 task 中使用函数 :cpp:func:`twai_node_get_info` 获取节点状态。或当控制器检测到错误时，会产生 :cpp:member:`twai_event_callbacks_t::on_error` 回调，可通过传参中的错误数据查看错误原因。
 
 当错误导致节点状态变化时，会进入 :cpp:member:`twai_event_callbacks_t::on_state_change` 回调，可在回调中查看节点的状态变化。若节点已经离线且需要恢复，需要在task中调用 :cpp:func:`twai_node_recover`。 **但注意，控制器不会立即恢复** ，需要在检测到 129 次连续 11 个隐性位后才会自动重新连接到总线。
 
