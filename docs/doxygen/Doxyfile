@@ -167,6 +167,7 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_hal_ana_conv/include/hal/adc_types.h \
     $(PROJECT_PATH)/components/esp_hal_ana_conv/include/hal/dac_types.h \
     $(PROJECT_PATH)/components/esp_hal_ana_conv/include/hal/temperature_sensor_types.h \
+    $(PROJECT_PATH)/components/esp_hal_emac/include/hal/eth_types.h \
     $(PROJECT_PATH)/components/esp_hal_gpio/include/hal/gpio_types.h \
     $(PROJECT_PATH)/components/esp_hal_gpio/include/hal/rtc_io_types.h \
     $(PROJECT_PATH)/components/esp_hal_gpio/include/hal/sdm_types.h \
@@ -178,6 +179,7 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_hal_lcd/include/hal/lcd_types.h \
     $(PROJECT_PATH)/components/esp_hal_ledc/include/hal/ledc_types.h \
     $(PROJECT_PATH)/components/esp_hal_parlio/include/hal/parlio_types.h \
+    $(PROJECT_PATH)/components/esp_hal_mcpwm/include/hal/mcpwm_types.h \
     $(PROJECT_PATH)/components/esp_hal_mspi/include/hal/esp_flash_err.h \
     $(PROJECT_PATH)/components/esp_hal_mspi/include/hal/spi_flash_types.h \
     $(PROJECT_PATH)/components/esp_hal_pcnt/include/hal/pcnt_types.h \
@@ -270,10 +272,8 @@ INPUT = \
     $(PROJECT_PATH)/components/freertos/FreeRTOS-Kernel/include/freertos/task.h \
     $(PROJECT_PATH)/components/freertos/FreeRTOS-Kernel/include/freertos/timers.h \
     $(PROJECT_PATH)/components/hal/include/hal/color_types.h \
-    $(PROJECT_PATH)/components/hal/include/hal/mcpwm_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/sdio_slave_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/efuse_hal.h \
-    $(PROJECT_PATH)/components/hal/include/hal/eth_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/lp_core_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/sd_types.h \
     $(PROJECT_PATH)/components/heap/include/esp_heap_caps_init.h \

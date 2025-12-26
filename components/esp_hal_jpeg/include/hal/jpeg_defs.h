@@ -13,7 +13,6 @@
 extern "C" {
 #endif
 
-
 /*
  * @brief Enum to define JPEG marker codes
  */
@@ -72,7 +71,6 @@ typedef enum {
     JPEG_M_TEM = 0xFF01,        ///< Temporary use in arithmetic coding
     JPEG_M_INV = 0xFFFF,        ///< Invalid marker
 } __attribute__((packed)) jpeg_marker_code_t;
-
 
 #ifdef __cplusplus
 }

@@ -371,7 +371,6 @@ void i2s_hal_tdm_enable_rx_channel(i2s_hal_context_t *hal);
  */
 #define i2s_hal_rx_reset_fifo(hal)              i2s_ll_rx_reset_fifo((hal)->dev)
 
-
 #if !SOC_GDMA_SUPPORTED
 /**
  * @brief Enable I2S TX DMA
