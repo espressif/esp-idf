@@ -1,7 +1,0 @@
-/* SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
- *
- * SPDX-License-Identifier: Apache-2.0
- */
-#pragma once
-
-#define IDF_PERFORMANCE_MAX_ADC_ONESHOT_STD_ATTEN3                              3

@@ -4,10 +4,6 @@
  */
 #pragma once
 
-#if __has_include("freertos_performance_esp32p4.h")
-#include "freertos_performance_esp32p4.h"
-#endif
-
 #ifndef IDF_PERFORMANCE_MAX_FREERTOS_SPINLOCK_CYCLES_PER_OP
 #define IDF_PERFORMANCE_MAX_FREERTOS_SPINLOCK_CYCLES_PER_OP                     215
 #endif
@@ -27,4 +23,17 @@
 
 #ifndef IDF_PERFORMANCE_MAX_SCHEDULING_TIME
 #define IDF_PERFORMANCE_MAX_SCHEDULING_TIME                                     2000
+#endif
+
+// Chip-Specific Data
+#if CONFIG_IDF_TARGET_ESP32P4
+/* Spinlock performance on esp32p4 is slower. */
+#undef IDF_PERFORMANCE_MAX_FREERTOS_SPINLOCK_CYCLES_PER_OP
+#define IDF_PERFORMANCE_MAX_FREERTOS_SPINLOCK_CYCLES_PER_OP                     400
+#undef IDF_PERFORMANCE_MAX_FREERTOS_SPINLOCK_CYCLES_PER_OP_UNICORE
+#define IDF_PERFORMANCE_MAX_FREERTOS_SPINLOCK_CYCLES_PER_OP_UNICORE             150
+
+/* Solicited yields (portYIELD() or taskYIELD()) take longer on esp32p4. TODO: IDF-2809 */
+#undef IDF_PERFORMANCE_MAX_SCHEDULING_TIME
+#define IDF_PERFORMANCE_MAX_SCHEDULING_TIME                                     3200
 #endif

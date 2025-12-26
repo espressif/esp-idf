@@ -4,24 +4,84 @@
  */
 #pragma once
 
-#if __has_include("adc_performance_esp32.h")
-#include "adc_performance_esp32.h"
-#elif __has_include("adc_performance_esp32s2.h")
-#include "adc_performance_esp32s2.h"
-#elif __has_include("adc_performance_esp32s3.h")
-#include "adc_performance_esp32s3.h"
-#elif __has_include("adc_performance_esp32c2.h")
-#include "adc_performance_esp32c2.h"
-#elif __has_include("adc_performance_esp32c3.h")
-#include "adc_performance_esp32c3.h"
-#elif __has_include("adc_performance_esp32c5.h")
-#include "adc_performance_esp32c5.h"
-#elif __has_include("adc_performance_esp32c6.h")
-#include "adc_performance_esp32c6.h"
-#elif __has_include("adc_performance_esp32c61.h")
-#include "adc_performance_esp32c61.h"
-#elif __has_include("adc_performance_esp32h2.h")
-#include "adc_performance_esp32h2.h"
-#elif __has_include("adc_performance_esp32p4.h")
-#include "adc_performance_esp32p4.h"
+// Chip-Specific Data
+#if CONFIG_IDF_TARGET_ESP32
+#define IDF_PERFORMANCE_MAX_ADC_CONTINUOUS_STD_ATTEN3_NO_FILTER                 3
+#define IDF_PERFORMANCE_MAX_ADC_ONESHOT_STD_ATTEN3                              3
+
+#elif CONFIG_IDF_TARGET_ESP32S2
+#define IDF_PERFORMANCE_MAX_ADC_CONTINUOUS_STD_ATTEN3_NO_FILTER                 3
+#define IDF_PERFORMANCE_MAX_ADC_CONTINUOUS_STD_ATTEN3_FILTER_2                  3
+#define IDF_PERFORMANCE_MAX_ADC_CONTINUOUS_STD_ATTEN3_FILTER_4                  3
+#define IDF_PERFORMANCE_MAX_ADC_CONTINUOUS_STD_ATTEN3_FILTER_8                  3
+#define IDF_PERFORMANCE_MAX_ADC_CONTINUOUS_STD_ATTEN3_FILTER_16                 3
+#define IDF_PERFORMANCE_MAX_ADC_CONTINUOUS_STD_ATTEN3_FILTER_64                 3
+#define IDF_PERFORMANCE_MAX_ADC_ONESHOT_STD_ATTEN3                              6
+
+#elif CONFIG_IDF_TARGET_ESP32S3
+#define IDF_PERFORMANCE_MAX_ADC_CONTINUOUS_STD_ATTEN3_NO_FILTER                 4
+#define IDF_PERFORMANCE_MAX_ADC_CONTINUOUS_STD_ATTEN3_FILTER_2                  4
+#define IDF_PERFORMANCE_MAX_ADC_CONTINUOUS_STD_ATTEN3_FILTER_4                  4
+#define IDF_PERFORMANCE_MAX_ADC_CONTINUOUS_STD_ATTEN3_FILTER_8                  4
+#define IDF_PERFORMANCE_MAX_ADC_CONTINUOUS_STD_ATTEN3_FILTER_16                 4
+#define IDF_PERFORMANCE_MAX_ADC_CONTINUOUS_STD_ATTEN3_FILTER_64                 4
+#define IDF_PERFORMANCE_MAX_ADC_ONESHOT_STD_ATTEN3                              4
+
+#elif CONFIG_IDF_TARGET_ESP32C2
+#define IDF_PERFORMANCE_MAX_ADC_ONESHOT_STD_ATTEN3                              3
+
+#elif CONFIG_IDF_TARGET_ESP32C3
+#define IDF_PERFORMANCE_MAX_ADC_CONTINUOUS_STD_ATTEN3_NO_FILTER                 5
+#define IDF_PERFORMANCE_MAX_ADC_CONTINUOUS_STD_ATTEN3_FILTER_2                  5
+#define IDF_PERFORMANCE_MAX_ADC_CONTINUOUS_STD_ATTEN3_FILTER_4                  5
+#define IDF_PERFORMANCE_MAX_ADC_CONTINUOUS_STD_ATTEN3_FILTER_8                  5
+#define IDF_PERFORMANCE_MAX_ADC_CONTINUOUS_STD_ATTEN3_FILTER_16                 5
+#define IDF_PERFORMANCE_MAX_ADC_CONTINUOUS_STD_ATTEN3_FILTER_64                 5
+#define IDF_PERFORMANCE_MAX_ADC_ONESHOT_STD_ATTEN3                              5
+
+#elif CONFIG_IDF_TARGET_ESP32C5
+#define IDF_PERFORMANCE_MAX_ADC_CONTINUOUS_STD_ATTEN3_NO_FILTER                 5
+#define IDF_PERFORMANCE_MAX_ADC_CONTINUOUS_STD_ATTEN3_FILTER_2                  5
+#define IDF_PERFORMANCE_MAX_ADC_CONTINUOUS_STD_ATTEN3_FILTER_4                  5
+#define IDF_PERFORMANCE_MAX_ADC_CONTINUOUS_STD_ATTEN3_FILTER_8                  5
+#define IDF_PERFORMANCE_MAX_ADC_CONTINUOUS_STD_ATTEN3_FILTER_16                 5
+#define IDF_PERFORMANCE_MAX_ADC_CONTINUOUS_STD_ATTEN3_FILTER_64                 5
+#define IDF_PERFORMANCE_MAX_ADC_ONESHOT_STD_ATTEN3                              5
+
+#elif CONFIG_IDF_TARGET_ESP32C6
+#define IDF_PERFORMANCE_MAX_ADC_CONTINUOUS_STD_ATTEN3_NO_FILTER                 10
+#define IDF_PERFORMANCE_MAX_ADC_CONTINUOUS_STD_ATTEN3_FILTER_2                  10
+#define IDF_PERFORMANCE_MAX_ADC_CONTINUOUS_STD_ATTEN3_FILTER_4                  10
+#define IDF_PERFORMANCE_MAX_ADC_CONTINUOUS_STD_ATTEN3_FILTER_8                  10
+#define IDF_PERFORMANCE_MAX_ADC_CONTINUOUS_STD_ATTEN3_FILTER_16                 10
+#define IDF_PERFORMANCE_MAX_ADC_CONTINUOUS_STD_ATTEN3_FILTER_64                 10
+#define IDF_PERFORMANCE_MAX_ADC_ONESHOT_STD_ATTEN3                              10
+
+#elif CONFIG_IDF_TARGET_ESP32C61
+#define IDF_PERFORMANCE_MAX_ADC_CONTINUOUS_STD_ATTEN3_NO_FILTER                 5
+#define IDF_PERFORMANCE_MAX_ADC_CONTINUOUS_STD_ATTEN3_FILTER_2                  5
+#define IDF_PERFORMANCE_MAX_ADC_CONTINUOUS_STD_ATTEN3_FILTER_4                  5
+#define IDF_PERFORMANCE_MAX_ADC_CONTINUOUS_STD_ATTEN3_FILTER_8                  5
+#define IDF_PERFORMANCE_MAX_ADC_CONTINUOUS_STD_ATTEN3_FILTER_16                 5
+#define IDF_PERFORMANCE_MAX_ADC_CONTINUOUS_STD_ATTEN3_FILTER_64                 5
+#define IDF_PERFORMANCE_MAX_ADC_ONESHOT_STD_ATTEN3                              5
+
+#elif CONFIG_IDF_TARGET_ESP32H2
+#define IDF_PERFORMANCE_MAX_ADC_CONTINUOUS_STD_ATTEN3_NO_FILTER                 10
+#define IDF_PERFORMANCE_MAX_ADC_CONTINUOUS_STD_ATTEN3_FILTER_2                  10
+#define IDF_PERFORMANCE_MAX_ADC_CONTINUOUS_STD_ATTEN3_FILTER_4                  10
+#define IDF_PERFORMANCE_MAX_ADC_CONTINUOUS_STD_ATTEN3_FILTER_8                  10
+#define IDF_PERFORMANCE_MAX_ADC_CONTINUOUS_STD_ATTEN3_FILTER_16                 10
+#define IDF_PERFORMANCE_MAX_ADC_CONTINUOUS_STD_ATTEN3_FILTER_64                 10
+#define IDF_PERFORMANCE_MAX_ADC_ONESHOT_STD_ATTEN3                              10
+
+#elif CONFIG_IDF_TARGET_ESP32P4
+#define IDF_PERFORMANCE_MAX_ADC_CONTINUOUS_STD_ATTEN3_NO_FILTER                 10
+#define IDF_PERFORMANCE_MAX_ADC_CONTINUOUS_STD_ATTEN3_FILTER_2                  10
+#define IDF_PERFORMANCE_MAX_ADC_CONTINUOUS_STD_ATTEN3_FILTER_4                  10
+#define IDF_PERFORMANCE_MAX_ADC_CONTINUOUS_STD_ATTEN3_FILTER_8                  10
+#define IDF_PERFORMANCE_MAX_ADC_CONTINUOUS_STD_ATTEN3_FILTER_16                 10
+#define IDF_PERFORMANCE_MAX_ADC_CONTINUOUS_STD_ATTEN3_FILTER_64                 10
+#define IDF_PERFORMANCE_MAX_ADC_ONESHOT_STD_ATTEN3                              10
+
 #endif
