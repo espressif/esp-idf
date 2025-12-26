@@ -18,6 +18,9 @@
 #include "esp_private/cache_utils.h"
 #include "esp_private/spi_common_internal.h"
 #include "esp_private/esp_clk.h"
+#include "esp_private/sleep_cpu.h"
+#include "esp_private/esp_sleep_internal.h"
+#include "esp_private/esp_pmu.h"
 #include "esp_heap_caps.h"
 #include "esp_clk_tree.h"
 #include "esp_log.h"
@@ -1769,3 +1772,60 @@ static void test_iram_slave_normal(void)
 TEST_CASE_MULTIPLE_DEVICES("SPI_Master:IRAM_safe", "[spi_ms]", test_master_iram, test_iram_slave_normal);
 #endif
 #endif  //p4 slave support
+
+#if !CONFIG_IDF_TARGET_ESP32P4    // TODO: IDF-7528, IDF-7529
+TEST_CASE("test_spi_master_sleep_retention", "[spi]")
+{
+    // Prepare a TOP PD sleep
+    TEST_ESP_OK(esp_sleep_enable_timer_wakeup(1 * 1000 * 1000));
+#if SOC_PM_SUPPORT_CPU_PD
+    TEST_ESP_OK(sleep_cpu_configure(true));
+#endif
+
+    spi_device_handle_t dev_handle;
+    spi_bus_config_t buscfg = SPI_BUS_TEST_DEFAULT_CONFIG();
+    spi_device_interface_config_t devcfg = SPI_DEVICE_TEST_DEFAULT_CONFIG();
+    buscfg.flags |= SPICOMMON_BUSFLAG_GPIO_PINS;
+    buscfg.flags |= SPICOMMON_BUSFLAG_SLP_ALLOW_PD;
+    uint8_t send[16] = "hello spi x\n";
+    uint8_t recv[16];
+    spi_transaction_t trans_cfg = {
+        .length = 8 * sizeof(send),
+        .tx_buffer = send,
+        .rx_buffer = recv,
+    };
+
+    for (int periph = SPI2_HOST; periph < SPI_HOST_MAX; periph ++) {
+        for (int test_dma = 0; test_dma <= 1; test_dma ++) {
+            int use_dma = SPI_DMA_DISABLED;
+#if SOC_GDMA_SUPPORT_SLEEP_RETENTION    // TODO: IDF-11317 test dma on esp32 and s2
+            use_dma = test_dma ? SPI_DMA_CH_AUTO : SPI_DMA_DISABLED;
+#endif
+            printf("Retention on GPSPI%d with dma: %d\n", periph + 1, use_dma);
+            TEST_ESP_OK(spi_bus_initialize(periph, &buscfg, use_dma));
+            // set spi "self-loop" after bus initialized
+            spitest_gpio_output_sel(buscfg.miso_io_num, FUNC_GPIO, spi_periph_signal[periph].spid_out);
+            TEST_ESP_OK(spi_bus_add_device(periph, &devcfg, &dev_handle));
+
+            for (uint8_t cnt = 0; cnt < 3; cnt ++) {
+                printf("Going into sleep...\n");
+                TEST_ESP_OK(esp_light_sleep_start());
+                printf("Waked up!\n");
+
+                memset(recv, 0, sizeof(recv));
+                send[10] = cnt + 'A';
+                TEST_ESP_OK(spi_device_transmit(dev_handle, &trans_cfg));
+                printf("%s", recv);
+                spitest_cmp_or_dump(trans_cfg.tx_buffer, trans_cfg.rx_buffer, sizeof(send));
+            }
+
+            TEST_ESP_OK(spi_bus_remove_device(dev_handle));
+            TEST_ESP_OK(spi_bus_free(periph));
+        }
+    }
+
+#if SOC_PM_SUPPORT_CPU_PD
+    TEST_ESP_OK(sleep_cpu_configure(false));
+#endif
+}
+#endif  // !CONFIG_IDF_TARGET_ESP32P4
