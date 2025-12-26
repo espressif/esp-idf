@@ -199,7 +199,6 @@ esp_err_t esp_efuse_rtc_calib_get_tsens_val(float* tsens_cal)
     const esp_efuse_desc_t** cal_temp_efuse;
     cal_temp_efuse = ESP_EFUSE_TEMPERATURE_SENSOR;
     int cal_temp_size = esp_efuse_get_field_size(cal_temp_efuse);
-    assert(cal_temp_size == 9);
 
     uint32_t cal_temp = 0;
     esp_err_t err = esp_efuse_read_field_blob(cal_temp_efuse, &cal_temp, cal_temp_size);

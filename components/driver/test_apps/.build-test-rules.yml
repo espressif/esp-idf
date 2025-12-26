@@ -60,10 +60,6 @@ components/driver/test_apps/legacy_rmt_driver:
 components/driver/test_apps/legacy_rtc_temp_driver:
   disable:
     - if: SOC_TEMP_SENSOR_SUPPORTED != 1
-  disable_test:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: p4 rev3 migration # TODO: IDF-14834
 
 components/driver/test_apps/legacy_sigma_delta_driver:
   disable:
