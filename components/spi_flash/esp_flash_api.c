@@ -767,7 +767,7 @@ esp_err_t IRAM_ATTR esp_flash_erase_region(esp_flash_t *chip, uint32_t start, ui
     if (len == 0) {
         return ESP_OK;
     }
-    if (len > chip->size - start) {
+    if (start > chip->size || len > chip->size - start) {
         return ESP_ERR_INVALID_ARG;
     }
     return rom_esp_flash_erase_region(chip, start, len);
@@ -780,7 +780,7 @@ esp_err_t IRAM_ATTR esp_flash_erase_region(esp_flash_t *chip, uint32_t start, ui
     if (err != ESP_OK) {
         return err;
     }
-    if (len > chip->size - start) {
+    if (start > chip->size || len > chip->size - start) {
         return ESP_ERR_INVALID_ARG;
     }
     return rom_esp_flash_erase_region(chip, start, len);
@@ -1537,7 +1537,7 @@ esp_err_t IRAM_ATTR esp_flash_write_encrypted(esp_flash_t *chip, uint32_t addres
     if (err != ESP_OK) {
         return err;
     }
-    if (length > chip->size - address) {
+    if (buffer == NULL || address > chip->size || length > chip->size - address) {
         return ESP_ERR_INVALID_ARG;
     }
     return rom_esp_flash_write_encrypted(chip, address, buffer, length);
