@@ -52,6 +52,17 @@
 extern void btm_process_cancel_complete(UINT8 status, UINT8 mode);
 extern void btm_ble_test_command_complete(UINT8 *p);
 
+#if (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
+// BLE Channel Sounding parameter validation macros per BLE spec
+#define BTM_BLE_CS_MAX_STEPS_REPORTED               0xA0  // Range: 0x00 to 0xA0 (0 to 160)
+#endif // (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
+
+#if (BLE_FEAT_CTE_EN == TRUE)
+// BLE CTE parameter validation macros per BLE spec
+#define BTM_BLE_CTE_MAX_SAMPLE_COUNT                0x52  // Maximum sample count per BLE spec: 0x52 (82)
+#endif // (BLE_FEAT_CTE_EN == TRUE)
+
+
 /********************************************************************************/
 /*              L O C A L    F U N C T I O N     P R O T O T Y P E S            */
 /********************************************************************************/
@@ -2910,6 +2921,7 @@ static void btu_ble_big_create_complete_evt(UINT8 *p)
 {
     HCI_TRACE_DEBUG("%s", __func__);
     tBTM_BLE_BIG_CREATE_CMPL big_cmpl = {0};
+    UINT8 num_bis;
 
     if (!p) {
         HCI_TRACE_ERROR("%s, Invalid params.", __func__);
@@ -2927,8 +2939,16 @@ static void btu_ble_big_create_complete_evt(UINT8 *p)
     STREAM_TO_UINT8(big_cmpl.irc, p);
     STREAM_TO_UINT16(big_cmpl.max_pdu, p);
     STREAM_TO_UINT16(big_cmpl.iso_interval, p);
-    STREAM_TO_UINT8(big_cmpl.num_bis, p);
-    for (uint8_t i = 0; i < big_cmpl.num_bis; i++)
+    STREAM_TO_UINT8(num_bis, p);
+
+    // Validate num_bis to prevent buffer overflow
+    if (num_bis > BLE_ISO_BIS_MAX_COUNT) {
+        HCI_TRACE_ERROR("%s, num_bis %d exceeds BLE_ISO_BIS_MAX_COUNT %d", __func__, num_bis, BLE_ISO_BIS_MAX_COUNT);
+        num_bis = BLE_ISO_BIS_MAX_COUNT;
+    }
+    big_cmpl.num_bis = num_bis;
+
+    for (uint8_t i = 0; i < num_bis; i++)
     {
         STREAM_TO_UINT16(big_cmpl.bis_handle[i], p);
         // only 12 bits meaningful
@@ -2977,6 +2997,7 @@ void btu_ble_create_big_sync_cmd_status(UINT8 status)
 static void btu_ble_big_sync_establish_evt(UINT8 *p)
 {
     tBTM_BLE_BIG_SYNC_ESTAB_CMPL big_estb = {0};
+    UINT8 num_bis;
 
     if (!p) {
         HCI_TRACE_ERROR("%s, Invalid params.", __func__);
@@ -2992,8 +3013,16 @@ static void btu_ble_big_sync_establish_evt(UINT8 *p)
     STREAM_TO_UINT8(big_estb.irc, p);
     STREAM_TO_UINT16(big_estb.max_pdu, p);
     STREAM_TO_UINT16(big_estb.iso_interval, p);
-    STREAM_TO_UINT8(big_estb.num_bis, p);
-    for (uint8_t i = 0; i < big_estb.num_bis; i++)
+    STREAM_TO_UINT8(num_bis, p);
+
+    // Validate num_bis to prevent buffer overflow
+    if (num_bis > BLE_ISO_BIS_MAX_COUNT) {
+        HCI_TRACE_ERROR("%s, num_bis %d exceeds BLE_ISO_BIS_MAX_COUNT %d", __func__, num_bis, BLE_ISO_BIS_MAX_COUNT);
+        num_bis = BLE_ISO_BIS_MAX_COUNT;
+    }
+    big_estb.num_bis = num_bis;
+
+    for (uint8_t i = 0; i < num_bis; i++)
     {
         STREAM_TO_UINT16(big_estb.bis_handle[i], p);
     }
@@ -3049,6 +3078,7 @@ static void btu_ble_biginfo_adv_report_evt(UINT8 *p)
 static void btu_ble_cte_connless_iq_report_evt(UINT8 *p)
 {
     tBTM_BLE_CTE_CONNLESS_IQ_REPORT_EVT connless_iq_rpt = {0};
+    UINT8 sample_count;
 
     if (!p) {
         HCI_TRACE_ERROR("%s, Invalid params.", __func__);
@@ -3063,14 +3093,21 @@ static void btu_ble_cte_connless_iq_report_evt(UINT8 *p)
     STREAM_TO_UINT8(connless_iq_rpt.slot_dur, p);
     STREAM_TO_UINT8(connless_iq_rpt.pkt_status, p);
     STREAM_TO_UINT16(connless_iq_rpt.periodic_evt_counter, p);
-    STREAM_TO_UINT8(connless_iq_rpt.sample_count, p);
+    STREAM_TO_UINT8(sample_count, p);
 
-    for (uint8_t i = 0; i < connless_iq_rpt.sample_count; i++)
+    // Validate sample_count to prevent buffer overflow
+    if (sample_count > BTM_BLE_CTE_MAX_SAMPLE_COUNT) {
+        HCI_TRACE_ERROR("%s, sample_count %d exceeds maximum %d", __func__, sample_count, BTM_BLE_CTE_MAX_SAMPLE_COUNT);
+        sample_count = BTM_BLE_CTE_MAX_SAMPLE_COUNT;
+    }
+    connless_iq_rpt.sample_count = sample_count;
+
+    for (uint8_t i = 0; i < sample_count; i++)
     {
         STREAM_TO_UINT8(connless_iq_rpt.i_sample[i], p);
     }
 
-    for (uint8_t i = 0; i < connless_iq_rpt.sample_count; i++)
+    for (uint8_t i = 0; i < sample_count; i++)
     {
         STREAM_TO_UINT8(connless_iq_rpt.q_sample[i], p);
     }
@@ -3083,6 +3120,7 @@ static void btu_ble_cte_connless_iq_report_evt(UINT8 *p)
 static void btu_ble_cte_conn_iq_report_evt(UINT8 *p)
 {
     tBTM_BLE_CTE_CONN_IQ_REPORT_EVT conn_iq_rpt = {0};
+    UINT8 sample_count;
 
     if (!p) {
         HCI_TRACE_ERROR("%s, Invalid params.", __func__);
@@ -3098,14 +3136,21 @@ static void btu_ble_cte_conn_iq_report_evt(UINT8 *p)
     STREAM_TO_UINT8(conn_iq_rpt.slot_dur, p);
     STREAM_TO_UINT8(conn_iq_rpt.pkt_status, p);
     STREAM_TO_UINT16(conn_iq_rpt.conn_evt_counter, p);
-    STREAM_TO_UINT8(conn_iq_rpt.sample_count, p);
+    STREAM_TO_UINT8(sample_count, p);
 
-    for (uint8_t i = 0; i < conn_iq_rpt.sample_count; i++)
+    // Validate sample_count to prevent buffer overflow
+    if (sample_count > BTM_BLE_CTE_MAX_SAMPLE_COUNT) {
+        HCI_TRACE_ERROR("%s, sample_count %d exceeds maximum %d", __func__, sample_count, BTM_BLE_CTE_MAX_SAMPLE_COUNT);
+        sample_count = BTM_BLE_CTE_MAX_SAMPLE_COUNT;
+    }
+    conn_iq_rpt.sample_count = sample_count;
+
+    for (uint8_t i = 0; i < sample_count; i++)
     {
         STREAM_TO_UINT8(conn_iq_rpt.i_sample[i], p);
     }
 
-    for (uint8_t i = 0; i < conn_iq_rpt.sample_count; i++)
+    for (uint8_t i = 0; i < sample_count; i++)
     {
         STREAM_TO_UINT8(conn_iq_rpt.q_sample[i], p);
     }
@@ -3216,6 +3261,7 @@ static void btu_ble_pa_response_report_evt(UINT8 *p)
     STREAM_TO_UINT8(pa_rsp_rpt_evt.tx_status, p);
     STREAM_TO_UINT8(pa_rsp_rpt_evt.num_rsp, p);
 
+    // num_rsp is UINT8, range 0x00 to 0xFF (0 to 255), no need to validate
     if (pa_rsp_rpt_evt.num_rsp) {
         pa_rsp_rpt_evt.rsp_data_info = osi_malloc(pa_rsp_rpt_evt.num_rsp * sizeof(tBTM_BLE_PA_RSP_DATA_INFO));
         if (pa_rsp_rpt_evt.rsp_data_info)
@@ -3228,17 +3274,21 @@ static void btu_ble_pa_response_report_evt(UINT8 *p)
                 STREAM_TO_UINT8(pa_rsp_rpt_evt.rsp_data_info[i].rsp_slot, p);
                 STREAM_TO_UINT8(pa_rsp_rpt_evt.rsp_data_info[i].data_status, p);
                 STREAM_TO_UINT8(pa_rsp_rpt_evt.rsp_data_info[i].data_len, p);
+                // data_len is UINT8, range 0x00 to 0xFF (0 to 255), no need to validate
                 if (pa_rsp_rpt_evt.rsp_data_info[i].data_len) {
                     pa_rsp_rpt_evt.rsp_data_info[i].data = osi_malloc(pa_rsp_rpt_evt.rsp_data_info[i].data_len);
                     if (pa_rsp_rpt_evt.rsp_data_info[i].data) {
                         STREAM_TO_ARRAY(pa_rsp_rpt_evt.rsp_data_info[i].data, p, pa_rsp_rpt_evt.rsp_data_info[i].data_len);
                     } else {
-                        HCI_TRACE_ERROR("%s, no enough memory.", __func__);
+                        HCI_TRACE_ERROR("%s, no enough memory for data_len %d at index %d", __func__, pa_rsp_rpt_evt.rsp_data_info[i].data_len, i);
+                        pa_rsp_rpt_evt.rsp_data_info[i].data_len = 0;
                     }
+                } else {
+                    pa_rsp_rpt_evt.rsp_data_info[i].data = NULL;
                 }
             }
         } else {
-            HCI_TRACE_ERROR("%s, no memory.", __func__);
+            HCI_TRACE_ERROR("%s, no memory for rsp_data_info", __func__);
         }
     }
 
@@ -3398,7 +3448,15 @@ static void btu_ble_cs_subevt_result_evt(UINT8 *p)
     STREAM_TO_UINT8(subevt_result.subevent_done_status, p);
     STREAM_TO_UINT8(subevt_result.abort_reason, p);
     STREAM_TO_UINT8(subevt_result.num_ant_paths, p);
-    STREAM_TO_UINT8(subevt_result.num_steps_reported, p);
+    UINT8 num_steps_reported;
+    STREAM_TO_UINT8(num_steps_reported, p);
+
+    // Validate num_steps_reported per BLE spec: Range 0x00 to 0xA0 (0 to 160)
+    if (num_steps_reported > BTM_BLE_CS_MAX_STEPS_REPORTED) {
+        HCI_TRACE_ERROR("%s, num_steps_reported %d exceeds maximum %d", __func__, num_steps_reported, BTM_BLE_CS_MAX_STEPS_REPORTED);
+        num_steps_reported = BTM_BLE_CS_MAX_STEPS_REPORTED;
+    }
+    subevt_result.num_steps_reported = num_steps_reported;
 
     subevt_result.step_info = osi_malloc(subevt_result.num_steps_reported * sizeof(tBTM_BLE_CS_STEP_INFO));
     if (subevt_result.step_info) {
@@ -3407,6 +3465,7 @@ static void btu_ble_cs_subevt_result_evt(UINT8 *p)
             STREAM_TO_UINT8(subevt_result.step_info[i].step_mode, p);
             STREAM_TO_UINT8(subevt_result.step_info[i].step_channel, p);
             STREAM_TO_UINT8(subevt_result.step_info[i].step_data_len, p);
+            // step_data_len is UINT8, range 0x00 to 0xFF (0 to 255), no need to validate
             subevt_result.step_info[i].data = osi_malloc(subevt_result.step_info[i].step_data_len);
             if (subevt_result.step_info[i].data) {
                 STREAM_TO_ARRAY(subevt_result.step_info[i].data, p, subevt_result.step_info[i].step_data_len);
@@ -3446,7 +3505,15 @@ static void btu_ble_cs_subevt_result_continue_evt(UINT8 *p)
     STREAM_TO_UINT8(subevt_continue_result.subevt_done_status, p);
     STREAM_TO_UINT8(subevt_continue_result.abort_reason, p);
     STREAM_TO_UINT8(subevt_continue_result.num_ant_paths, p);
-    STREAM_TO_UINT8(subevt_continue_result.num_steps_reported, p);
+    UINT8 num_steps_reported;
+    STREAM_TO_UINT8(num_steps_reported, p);
+
+    // Validate num_steps_reported per BLE spec: Range 0x00 to 0xA0 (0 to 160)
+    if (num_steps_reported > BTM_BLE_CS_MAX_STEPS_REPORTED) {
+        HCI_TRACE_ERROR("%s, num_steps_reported %d exceeds maximum %d", __func__, num_steps_reported, BTM_BLE_CS_MAX_STEPS_REPORTED);
+        num_steps_reported = BTM_BLE_CS_MAX_STEPS_REPORTED;
+    }
+    subevt_continue_result.num_steps_reported = num_steps_reported;
 
     subevt_continue_result.step_info = osi_malloc(subevt_continue_result.num_steps_reported * sizeof(tBTM_BLE_CS_STEP_INFO));
     if (subevt_continue_result.step_info) {
@@ -3454,6 +3521,7 @@ static void btu_ble_cs_subevt_result_continue_evt(UINT8 *p)
             STREAM_TO_UINT8(subevt_continue_result.step_info[i].step_mode, p);
             STREAM_TO_UINT8(subevt_continue_result.step_info[i].step_channel, p);
             STREAM_TO_UINT8(subevt_continue_result.step_info[i].step_data_len, p);
+            // step_data_len is UINT8, range 0x00 to 0xFF (0 to 255), no need to validate
             subevt_continue_result.step_info[i].data = osi_malloc(subevt_continue_result.step_info[i].step_data_len);
             if (subevt_continue_result.step_info[i].data) {
                 STREAM_TO_ARRAY(subevt_continue_result.step_info[i].data, p, subevt_continue_result.step_info[i].step_data_len);
