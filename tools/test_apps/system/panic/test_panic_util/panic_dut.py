@@ -141,7 +141,7 @@ class PanicTestDut(IdfDut):
                 else:
                     raise ValueError(f'Unsupported input type: {type(pattern).__name__}')
 
-    def _call_espcoredump(self, extra_args: list[str], output_file_name: str, max_retries: int = 3) -> None:
+    def _call_espcoredump(self, extra_args: List[str], output_file_name: str, max_retries: int = 3) -> None:
         # no "with" here, since we need the file to be open for later inspection by the test case
         if not self.coredump_output:
             self.coredump_output = open(output_file_name, 'w')
