@@ -22,7 +22,7 @@ if(CONFIG_TEST_MEMPROT)
     endif()
 endif()
 
-if(NOT CONFIG_TEST_MEMPROT AND NOT CONFIG_ESP_COREDUMP_CAPTURE_DRAM)
+if(NOT CONFIG_TEST_MEMPROT AND NOT CONFIG_ESP_COREDUMP_ENABLE)
     # Enable UBSAN checks
     #
     # shift-base sanitizer is disabled due to the following pattern found in register header files:
@@ -39,10 +39,6 @@ if(NOT CONFIG_TEST_MEMPROT AND NOT CONFIG_ESP_COREDUMP_CAPTURE_DRAM)
     # due to RAM size limitations.
     set(ubsan_components main esp_system spi_flash
         esp_common esp_hw_support soc hal freertos)
-
-    if(CONFIG_ESP_COREDUMP_ENABLE AND NOT CONFIG_IDF_TARGET_ESP32S2)
-        list(APPEND ubsan_components espcoredump)
-    endif()
 
     if(CONFIG_IDF_TARGET_ESP32S2)
         # due to the ram limitation, freertos is removed from esp32s2 built
