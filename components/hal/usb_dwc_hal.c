@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -109,6 +109,21 @@ static void set_defaults(usb_dwc_hal_context_t *hal)
         hbstlen = 1;    //Set AHB burst to INCR to workaround hardware errata
     }
 #endif //CONFIG_IDF_TARGET_ESP32S2 && CONFIG_ESP32S2_REV_MIN_FULL < 100
+#if CONFIG_IDF_TARGET_ESP32P4
+    /*
+     * ESP32P4-specific initialization: Clear USB PHY suspend state set during system boot.
+     *
+     * During system initialization (see clk_gate_ll.h:periph_ll_clk_gate_set_default), the USB PHY
+     * is forced into suspend mode before disabling clocks to prevent USB leakage current and ensure
+     * proper power management.
+     *
+     * When initializing the USB DWC HAL, we need to restore the USB PHY to normal operation by:
+     *   1. Clearing GOTGCTL.BvalidOvEn (disable override, allow hardware to detect session validity)
+     *   2. Clearing PCGCCTL.StopPclk (resume PHY clock for normal operation)
+     */
+    usb_dwc_ll_enable_bvalid_override(hal->dev, false);
+    usb_dwc_ll_set_stoppclk(hal->dev, false);
+#endif // CONFIG_IDF_TARGET_ESP32P4
     usb_dwc_ll_gahbcfg_set_hbstlen(hal->dev, hbstlen);  //Set AHB burst mode
     //GUSBCFG register
     usb_dwc_ll_gusbcfg_dis_hnp_cap(hal->dev);       //Disable HNP
