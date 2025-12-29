@@ -572,8 +572,8 @@ int wps_enrollee_process_msg_frag(struct wpabuf **buf, int tot_len, u8 *frag_dat
     }
 
     if (*buf == NULL) {
-        if (0 == (flag & WPS_MSG_FLAG_LEN) || tot_len < frag_len) {
-            wpa_printf(MSG_ERROR, "fun:%s. line:%d, flag error:%02x", __FUNCTION__, __LINE__, flag);
+        if (frag_len < 0 || tot_len < frag_len) {
+            wpa_printf(MSG_ERROR, "WPS: Invalid first fragment length");
             return ESP_FAIL;
         }
 
@@ -587,7 +587,9 @@ int wps_enrollee_process_msg_frag(struct wpabuf **buf, int tot_len, u8 *frag_dat
     }
 
     if (flag & WPS_MSG_FLAG_LEN) {
-        wpa_printf(MSG_ERROR, "fun:%s. line:%d, flag error:%02x", __FUNCTION__, __LINE__, flag);
+        wpa_printf(MSG_ERROR, "WPS: %s: Invalid fragment flag: 0x%02x", __func__, flag);
+        wpabuf_free(*buf);
+        *buf = NULL;
         return ESP_FAIL;
     }
 
@@ -615,6 +617,11 @@ int wps_process_wps_mX_req(u8 *ubuf, int len, enum wps_process_res *res)
         return ESP_FAIL;
     }
 
+    if (len < (int)(sizeof(struct eap_expand) + 1)) {
+        wpa_printf(MSG_ERROR, "WPS: Truncated EAP-Expanded header");
+        return ESP_FAIL;
+    }
+
     expd = (struct eap_expand *) ubuf;
     wpa_printf(MSG_DEBUG, "wps process mX req: len %d, tlen %d", len, tlen);
 
@@ -634,7 +641,11 @@ int wps_process_wps_mX_req(u8 *ubuf, int len, enum wps_process_res *res)
 
     flag = *(u8 *)(ubuf + sizeof(struct eap_expand));
     if (flag & WPS_MSG_FLAG_LEN) {
-        tbuf = ubuf + sizeof(struct eap_expand) + 1 + 2;//two bytes total length
+        if (len < (int)(sizeof(struct eap_expand) + 1 + 2)) {
+            wpa_printf(MSG_ERROR, "WPS: Missing total length field");
+            return ESP_FAIL;
+        }
+        tbuf = ubuf + sizeof(struct eap_expand) + 1 + 2; // includes 2-byte total length
         frag_len = len - (sizeof(struct eap_expand) + 1 + 2);
         be_tot_len = *(u16 *)(ubuf + sizeof(struct eap_expand) + 1);
         tlen = ((be_tot_len & 0xff) << 8) | ((be_tot_len >> 8) & 0xff);
@@ -644,11 +655,21 @@ int wps_process_wps_mX_req(u8 *ubuf, int len, enum wps_process_res *res)
         tlen = frag_len;
     }
 
+    if (frag_len < 0 || tlen < 0 || ((flag & WPS_MSG_FLAG_LEN) && tlen < frag_len)) {
+        wpa_printf(MSG_ERROR, "WPS: Invalid fragment sizes");
+        if (wps_buf) {
+            wpabuf_free(wps_buf);
+            wps_buf = NULL;
+        }
+        return ESP_FAIL;
+    }
+
+    if (tlen > 50000) {
+        wpa_printf(MSG_ERROR, "EAP-WSC: Invalid Message Length");
+        return ESP_FAIL;
+    }
     if ((flag & WPS_MSG_FLAG_MORE) || wps_buf != NULL) {//frag msg
-        if (tlen > 50000) {
-            wpa_printf(MSG_ERROR, "EAP-WSC: Invalid Message Length");
-            return ESP_FAIL;
-	}
+
         wpa_printf(MSG_DEBUG, "rx frag msg id:%d, flag:%d, frag_len: %d, tot_len: %d, be_tot_len:%d", sm->current_identifier, flag, frag_len, tlen, be_tot_len);
         if (ESP_OK != wps_enrollee_process_msg_frag(&wps_buf, tlen, tbuf, frag_len, flag)) {
             if (wps_buf) {

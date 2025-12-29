@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -265,31 +265,6 @@ cleanup:
     mbedtls_mpi_free(&tmp);
     mbedtls_mpi_free(&exp);
     return res;
-}
-
-int crypto_bignum_to_string(const struct crypto_bignum *a,
-                         u8 *buf, size_t buflen, size_t padlen)
-{
-    int num_bytes, offset;
-    size_t outlen;
-
-    if (padlen > buflen) {
-        return -1;
-    }
-
-    num_bytes = mbedtls_mpi_size((mbedtls_mpi *) a);
-
-    if (padlen > (size_t) num_bytes) {
-        offset = padlen - num_bytes;
-    } else {
-        offset = 0;
-    }
-
-    os_memset(buf, 0, offset);
-    mbedtls_mpi_write_string((mbedtls_mpi *) a, 16, (char *)(buf + offset),
-                                mbedtls_mpi_size((mbedtls_mpi *)a), &outlen);
-
-    return outlen;
 }
 
 int crypto_bignum_addmod(const struct crypto_bignum *a,
