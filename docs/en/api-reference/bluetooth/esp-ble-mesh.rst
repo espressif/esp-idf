@@ -228,3 +228,12 @@ Composition and Metadata
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. include-build-file:: inc/esp_ble_mesh_cm_data_api.inc
+
+Device Firmware Update
+
+.. include-build-file:: inc/esp_ble_mesh_dfu_model_api.inc
+
+Device Firmware Slots
+
+.. include-build-file:: inc/esp_ble_mesh_dfu_slot_api.inc
+
