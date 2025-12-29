@@ -412,7 +412,7 @@ The table below shows the best throughput results gained in Espressif's lab and 
 .. _How-to-improve-Wi-Fi-performance:
 
 How to Improve Wi-Fi Performance
-----------------------------------
+--------------------------------
 
 The performance of {IDF_TARGET_NAME} Wi-Fi is affected by many parameters, and there are mutual constraints between each parameter. A proper configuration cannot only improve performance, but also increase available memory for applications and improve stability.
 

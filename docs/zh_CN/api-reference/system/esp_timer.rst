@@ -34,6 +34,7 @@ FreeRTOS 有其单独的软件定时器，但分辨率比 ESP 定时器低得多
 ESP 定时器 API 提供：
 
 - 一次性和周期性定时器
+- 相对定时和绝对定时
 - 多种分发回调函数的方法
 - 处理过期回调函数
 - 计数器位宽：{IDF_TARGET_HR_TIMER_Resolution} 位
