@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  */
@@ -305,12 +305,6 @@ TEST_CASE("lcd_panel_i80_io_test", "[lcd]")
             .dc_data_level = 1,
         },
     };
-    esp_lcd_panel_handle_t panel_handle = NULL;
-    esp_lcd_panel_dev_config_t panel_config = {
-        .reset_gpio_num = TEST_LCD_RST_GPIO,
-        .rgb_ele_order = LCD_RGB_ELEMENT_ORDER_RGB,
-        .bits_per_pixel = 16,
-    };
 
     printf("testing bus-width=16bit, cmd/param bit-width=8bit\r\n");
     bus_config.bus_width = 16;
@@ -318,14 +312,12 @@ TEST_CASE("lcd_panel_i80_io_test", "[lcd]")
     io_config.lcd_cmd_bits = 8;
     io_config.lcd_param_bits = 8;
     TEST_ESP_OK(esp_lcd_new_panel_io_i80(i80_bus, &io_config, &io_handle));
-    TEST_ESP_OK(esp_lcd_new_panel_st7789(io_handle, &panel_config, &panel_handle));
 
     esp_lcd_panel_io_tx_param(io_handle, 0x1A, NULL, 0);
     esp_lcd_panel_io_tx_param(io_handle, 0x1B, (uint8_t[]) {
         0x11, 0x22, 0x33
     }, 3);
     esp_lcd_panel_io_tx_param(io_handle, 0x1C, NULL, 0);
-    TEST_ESP_OK(esp_lcd_panel_del(panel_handle));
     TEST_ESP_OK(esp_lcd_panel_io_del(io_handle));
     TEST_ESP_OK(esp_lcd_del_i80_bus(i80_bus));
 
@@ -335,13 +327,11 @@ TEST_CASE("lcd_panel_i80_io_test", "[lcd]")
     io_config.lcd_cmd_bits = 16;
     io_config.lcd_param_bits = 16;
     TEST_ESP_OK(esp_lcd_new_panel_io_i80(i80_bus, &io_config, &io_handle));
-    TEST_ESP_OK(esp_lcd_new_panel_nt35510(io_handle, &panel_config, &panel_handle));
     esp_lcd_panel_io_tx_param(io_handle, 0x1A01, NULL, 0);
     esp_lcd_panel_io_tx_param(io_handle, 0x1B02, (uint16_t[]) {
         0x11, 0x22, 0x33
     }, 6);
     esp_lcd_panel_io_tx_param(io_handle, 0x1C03, NULL, 0);
-    TEST_ESP_OK(esp_lcd_panel_del(panel_handle));
     TEST_ESP_OK(esp_lcd_panel_io_del(io_handle));
     TEST_ESP_OK(esp_lcd_del_i80_bus(i80_bus));
 
@@ -351,13 +341,11 @@ TEST_CASE("lcd_panel_i80_io_test", "[lcd]")
     io_config.lcd_cmd_bits = 8;
     io_config.lcd_param_bits = 8;
     TEST_ESP_OK(esp_lcd_new_panel_io_i80(i80_bus, &io_config, &io_handle));
-    TEST_ESP_OK(esp_lcd_new_panel_st7789(io_handle, &panel_config, &panel_handle));
     esp_lcd_panel_io_tx_param(io_handle, 0x1A, NULL, 0);
     esp_lcd_panel_io_tx_param(io_handle, 0x1B, (uint8_t[]) {
         0x11, 0x22, 0x33
     }, 3);
     esp_lcd_panel_io_tx_param(io_handle, 0x1C, NULL, 0);
-    TEST_ESP_OK(esp_lcd_panel_del(panel_handle));
     TEST_ESP_OK(esp_lcd_panel_io_del(io_handle));
     TEST_ESP_OK(esp_lcd_del_i80_bus(i80_bus));
 
@@ -367,18 +355,16 @@ TEST_CASE("lcd_panel_i80_io_test", "[lcd]")
     io_config.lcd_cmd_bits = 16;
     io_config.lcd_param_bits = 16;
     TEST_ESP_OK(esp_lcd_new_panel_io_i80(i80_bus, &io_config, &io_handle));
-    TEST_ESP_OK(esp_lcd_new_panel_nt35510(io_handle, &panel_config, &panel_handle));
     esp_lcd_panel_io_tx_param(io_handle, 0x1A01, NULL, 0);
     esp_lcd_panel_io_tx_param(io_handle, 0x1B02, (uint16_t[]) {
         0x11, 0x22, 0x33
     }, 6);
     esp_lcd_panel_io_tx_param(io_handle, 0x1C03, NULL, 0);
-    TEST_ESP_OK(esp_lcd_panel_del(panel_handle));
     TEST_ESP_OK(esp_lcd_panel_io_del(io_handle));
     TEST_ESP_OK(esp_lcd_del_i80_bus(i80_bus));
 }
 
-TEST_CASE("lcd_panel_with_i80_interface_(st7789, 8bits)", "[lcd]")
+TEST_CASE("lcd_panel_with_i80_interface (st7789, 8bits)", "[lcd]")
 {
 #define TEST_IMG_SIZE (100 * 100 * sizeof(uint16_t))
     uint8_t *img = heap_caps_malloc(TEST_IMG_SIZE, MALLOC_CAP_DMA);

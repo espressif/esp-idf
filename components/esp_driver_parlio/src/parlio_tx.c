@@ -154,7 +154,7 @@ static esp_err_t parlio_tx_unit_init_dma(parlio_tx_unit_t *tx_unit, const parlio
 
     // configure DMA transfer parameters
     gdma_transfer_config_t trans_cfg = {
-        .max_data_burst_size = config->dma_burst_size ? config->dma_burst_size : 16, // Enable DMA burst transfer for better performance,
+        .max_data_burst_size = config->dma_burst_size ? config->dma_burst_size : 32, // Enable DMA burst transfer for better performance,
         .access_ext_mem = true, // support transmit PSRAM buffer
     };
     ESP_RETURN_ON_ERROR(gdma_config_transfer(tx_unit->dma_chan, &trans_cfg), TAG, "config DMA transfer failed");
