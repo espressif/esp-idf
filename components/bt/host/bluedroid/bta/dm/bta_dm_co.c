@@ -63,7 +63,15 @@ void bta_dm_co_security_param_init(void)
     bte_appl_cfg.ble_min_key_size = BTM_BLE_MIN_KEY_SIZE;
     bte_appl_cfg.ble_accept_auth_enable = BTM_BLE_ONLY_ACCEPT_SPECIFIED_SEC_AUTH_DISABLE;
     bte_appl_cfg.oob_support = BTM_BLE_OOB_DISABLE;
-};
+
+    APPL_TRACE_DEBUG("%s: auth_req=%u, io_cap=%u, init_key=%u, resp_key=%u, "
+                    "max_key_size=%u, min_key_size=%u, accept_auth=%u, oob=%u",
+                    __func__,
+                    bte_appl_cfg.ble_auth_req, bte_appl_cfg.ble_io_cap,
+                    bte_appl_cfg.ble_init_key, bte_appl_cfg.ble_resp_key,
+                    bte_appl_cfg.ble_max_key_size, bte_appl_cfg.ble_min_key_size,
+                    bte_appl_cfg.ble_accept_auth_enable, bte_appl_cfg.oob_support);
+}
 #endif
 
 #if (defined CLASSIC_BT_INCLUDED && CLASSIC_BT_INCLUDED == TRUE)
@@ -379,6 +387,7 @@ void bta_dm_co_ble_set_io_cap(UINT8 ble_io_cap)
 #if (SMP_INCLUDED == TRUE)
     if(ble_io_cap < BTM_IO_CAP_MAX ) {
         bte_appl_cfg.ble_io_cap = ble_io_cap;
+        APPL_TRACE_DEBUG("%s: ble_io_cap set to %u", __func__, ble_io_cap);
     } else {
         APPL_TRACE_ERROR("%s error:Invalid io cap value.",__func__);
     }
@@ -389,22 +398,25 @@ void bta_dm_co_ble_set_auth_req(UINT8 ble_auth_req)
 {
 #if (SMP_INCLUDED == TRUE)
     bte_appl_cfg.ble_auth_req = ble_auth_req;
-#endif  ///SMP_INCLUDED == TRUE
+    APPL_TRACE_DEBUG("%s: ble_auth_req set to %u", __func__, ble_auth_req);
+#endif
 }
 
 void bta_dm_co_ble_set_init_key_req(UINT8 init_key)
 {
 #if (SMP_INCLUDED == TRUE)
-   init_key &= 0x0f;  // 4~7bit reservd, only used the 0~3bit
+   init_key &= 0x0f;  // 4~7bit reserved, only used the 0~3bit
    bte_appl_cfg.ble_init_key = init_key;
-#endif  ///SMP_INCLUDED == TRUE
+   APPL_TRACE_DEBUG("%s: init_key set to 0x%x", __func__, init_key);
+#endif
 }
 
 void bta_dm_co_ble_set_rsp_key_req(UINT8 rsp_key)
 {
 #if (SMP_INCLUDED == TRUE)
-   rsp_key &= 0x0f;  // 4~7bit reservd, only used the 0~3bit
+   rsp_key &= 0x0f;  // 4~7bit reserved, only used the 0~3bit
    bte_appl_cfg.ble_resp_key = rsp_key;
+   APPL_TRACE_DEBUG("%s: rsp_key set to 0x%x", __func__, rsp_key);
 #endif  ///SMP_INCLUDED == TRUE
 }
 
@@ -413,6 +425,7 @@ void bta_dm_co_ble_set_max_key_size(UINT8 ble_key_size)
 #if (SMP_INCLUDED == TRUE)
     if(ble_key_size >= bte_appl_cfg.ble_min_key_size && ble_key_size <= BTM_BLE_MAX_KEY_SIZE) {
         bte_appl_cfg.ble_max_key_size = ble_key_size;
+        APPL_TRACE_DEBUG("%s: max_key_size set to %d", __func__, ble_key_size);
     } else {
         APPL_TRACE_ERROR("%s error:Invalid key size value, key_size =%d",__func__, ble_key_size);
     }
@@ -424,6 +437,7 @@ void bta_dm_co_ble_set_min_key_size(UINT8 ble_key_size)
 #if (SMP_INCLUDED == TRUE)
     if(ble_key_size >= BTM_BLE_MIN_KEY_SIZE && ble_key_size <= bte_appl_cfg.ble_max_key_size) {
         bte_appl_cfg.ble_min_key_size = ble_key_size;
+        APPL_TRACE_DEBUG("%s: min_key_size set to %u", __func__, ble_key_size);
     } else {
         APPL_TRACE_ERROR("%s error:Invalid key size value, key_size =%d",__func__, ble_key_size);
     }
@@ -437,6 +451,7 @@ void bta_dm_co_ble_set_accept_auth_enable(UINT8 enable)
         enable = BTM_BLE_ONLY_ACCEPT_SPECIFIED_SEC_AUTH_ENABLE;
     }
     bte_appl_cfg.ble_accept_auth_enable = enable;
+    APPL_TRACE_DEBUG("%s: accept_auth_enable set to %u", __func__, enable);
 #endif  ///SMP_INCLUDED == TRUE
 }
 
@@ -464,6 +479,7 @@ void bta_dm_co_ble_oob_support(UINT8 enable)
     } else {
         bte_appl_cfg.oob_support = BTM_BLE_OOB_DISABLE;
     }
+    APPL_TRACE_DEBUG("%s: oob_support set to %u", __func__, bte_appl_cfg.oob_support);
 #endif  ///SMP_INCLUDED == TRUE
 }
 

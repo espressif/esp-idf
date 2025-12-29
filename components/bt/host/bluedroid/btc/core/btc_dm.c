@@ -784,6 +784,7 @@ void btc_dm_sec_cb_handler(btc_msg_t *msg)
     ble_msg->pid = BTC_PID_GAP_BLE;
     // tBTA_SERVICE_MASK service_mask;
     BTC_TRACE_DEBUG("btc_dm_upstreams_cback  ev: %d\n", msg->act);
+    BTC_TRACE_DEBUG("%s act %d", __func__, msg->act);
 
     switch (msg->act) {
     case BTA_DM_ENABLE_EVT: {

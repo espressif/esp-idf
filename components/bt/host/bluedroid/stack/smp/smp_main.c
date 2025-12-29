@@ -388,7 +388,7 @@ static const UINT8 smp_master_wait_dhk_check_table[][SMP_SM_NUM_COLS] = {
 
 static const UINT8 smp_master_dhk_check_table[][SMP_SM_NUM_COLS] = {
     /*                          Event                  Action                 Next State */
-    /* locally calculated peer dhkey check is ready -> compare it withs DHKey Check actually received from peer */
+    /* locally calculated peer dhkey check is ready -> compare it with DHKey Check actually received from peer */
     /* SC_KEY_READY         */{SMP_MATCH_DHKEY_CHECKS, SMP_SM_NO_ACTION, SMP_STATE_DHK_CHECK},
     /* locally calculated peer dhkey check is ready -> calculate STK, go to sending */
     /* HCI LE Start Encryption command */
@@ -580,7 +580,7 @@ static const UINT8 smp_slave_wait_dhk_check_table[][SMP_SM_NUM_COLS] = {
 static const UINT8 smp_slave_dhk_check_table[][SMP_SM_NUM_COLS] = {
     /*                          Event                  Action                 Next State */
 
-    /* locally calculated peer dhkey check is ready -> compare it withs DHKey Check */
+    /* locally calculated peer dhkey check is ready -> compare it with DHKey Check */
     /* actually received from peer */
     /* SC_KEY_READY         */{SMP_MATCH_DHKEY_CHECKS, SMP_SM_NO_ACTION, SMP_STATE_DHK_CHECK},
 
@@ -771,6 +771,8 @@ void smp_sm_event(tSMP_CB *p_cb, tSMP_EVENT event, void *p_data)
     /* execute action functions */
     for (i = 0; i < SMP_NUM_ACTIONS; i++) {
         if ((action = state_table[entry - 1][i]) != SMP_SM_NO_ACTION && smp_sm_action[action] != NULL) {
+            SMP_TRACE_DEBUG("smp action %d for state %s, event %s",
+                            action, smp_get_state_name(curr_state), smp_get_event_name(event));
             (*smp_sm_action[action])(p_cb, (tSMP_INT_DATA *)p_data);
         } else {
             break;

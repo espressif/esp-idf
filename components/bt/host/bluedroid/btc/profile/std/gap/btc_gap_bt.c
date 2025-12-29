@@ -1063,7 +1063,9 @@ void btc_gap_bt_arg_deep_free(btc_msg_t *msg)
 void btc_gap_bt_call_handler(btc_msg_t *msg)
 {
     btc_gap_bt_args_t *arg = (btc_gap_bt_args_t *)msg->arg;
-    BTC_TRACE_DEBUG("%s act %d\n", __func__, msg->act);
+
+    BTC_TRACE_DEBUG("%s act %d", __func__, msg->act);
+
     switch (msg->act) {
     case BTC_GAP_BT_ACT_SET_SCAN_MODE: {
         btc_bt_set_scan_mode(arg->set_scan_mode.c_mode, arg->set_scan_mode.d_mode);
