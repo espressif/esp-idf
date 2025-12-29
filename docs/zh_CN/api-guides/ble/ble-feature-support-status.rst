@@ -195,7 +195,7 @@
       - Enhanced Attribute Protocol
       - |NA|
       - |unsupported|
-      - |developing202412|
+      - |experimental|
     * -
       - LE Power Control
       - .. only:: esp32 or esp32c2
@@ -224,7 +224,7 @@
             |unsupported|
         .. only:: esp32c6 or esp32c2 or esp32h2 or esp32c5
 
-           |supported|
+            |supported|
       - .. only:: esp32 or esp32c3 or esp32s3
 
             |unsupported|
@@ -290,9 +290,39 @@
       - LE GATT Security Levels Characteristic
       - |NA|
       - |unsupported|
-      - |developing202412|
+      - |experimental|
     * -
       - Periodic Advertising with Responses
+      - |unsupported|
+      - |unsupported|
+      - |unsupported|
+    * - .. centered:: |6.0|
+      - Channel Sounding
+      - |unsupported|
+      - |unsupported|
+      - |unsupported|
+    * -
+      - LL Extended Feature Set
+      - |unsupported|
+      - |unsupported|
+      - |unsupported|
+    * -
+      - Decision-Based Advertising Filtering
+      - |unsupported|
+      - |unsupported|
+      - |unsupported|
+    * -
+      - Enhancements for ISOAL
+      - |unsupported|
+      - |unsupported|
+      - |unsupported|
+    * -
+      - Monitoring Advertisers
+      - |unsupported|
+      - |unsupported|
+      - |unsupported|
+    * -
+      - Frame Space Update
       - |unsupported|
       - |unsupported|
       - |unsupported|
@@ -336,3 +366,4 @@
 .. |5.2| replace:: `5.2 <https://www.bluetooth.com/specifications/specs/core-specification-5-2/>`__
 .. |5.3| replace:: `5.3 <https://www.bluetooth.com/specifications/specs/core-specification-5-3/>`__
 .. |5.4| replace:: `5.4 <https://www.bluetooth.com/specifications/specs/core-specification-5-4/>`__
+.. |6.0| replace:: `6.0 <https://www.bluetooth.com/specifications/specs/core-specification-6-0/>`__
