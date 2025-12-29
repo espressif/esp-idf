@@ -81,30 +81,30 @@ static const char *state2str(int state)
 {
     switch (state) {
     case BLE_MESH_LPN_DISABLED:
-        return "disabled";
+        return "Disabled";
     case BLE_MESH_LPN_CLEAR:
-        return "clear";
+        return "Clear";
     case BLE_MESH_LPN_TIMER:
-        return "timer";
+        return "Timer";
     case BLE_MESH_LPN_ENABLED:
-        return "enabled";
+        return "Enabled";
     case BLE_MESH_LPN_REQ_WAIT:
-        return "req wait";
+        return "ReqWait";
     case BLE_MESH_LPN_WAIT_OFFER:
-        return "wait offer";
+        return "WaitOffer";
     case BLE_MESH_LPN_ESTABLISHED:
-        return "established";
+        return "Established";
     case BLE_MESH_LPN_RECV_DELAY:
-        return "recv delay";
+        return "RecvDelay";
     case BLE_MESH_LPN_WAIT_UPDATE:
-        return "wait update";
+        return "WaitUpdate";
     case BLE_MESH_LPN_OFFER_RECV:
-        return "offer recv";
+        return "OfferRecv";
     default:
-        return "(unknown)";
+        return "(Unknown)";
     }
 }
-#endif
+#endif /* !CONFIG_BLE_MESH_NO_LOG */
 
 static inline void lpn_set_state(int state)
 {
@@ -120,9 +120,9 @@ static inline void group_zero(bt_mesh_atomic_t *target)
     for (i = 0; i < ARRAY_SIZE(bt_mesh.lpn.added); i++) {
         bt_mesh_atomic_set(&target[i], 0);
     }
-#else
+#else /* CONFIG_BLE_MESH_LPN_GROUPS > 32 */
     bt_mesh_atomic_set(target, 0);
-#endif
+#endif /* CONFIG_BLE_MESH_LPN_GROUPS > 32 */
 }
 
 static inline void group_set(bt_mesh_atomic_t *target, bt_mesh_atomic_t *source)
@@ -133,9 +133,9 @@ static inline void group_set(bt_mesh_atomic_t *target, bt_mesh_atomic_t *source)
     for (i = 0; i < ARRAY_SIZE(bt_mesh.lpn.added); i++) {
         (void)bt_mesh_atomic_or(&target[i], bt_mesh_atomic_get(&source[i]));
     }
-#else
+#else /* CONFIG_BLE_MESH_LPN_GROUPS > 32 */
     (void)bt_mesh_atomic_or(target, bt_mesh_atomic_get(source));
-#endif
+#endif /* CONFIG_BLE_MESH_LPN_GROUPS > 32 */
 }
 
 static inline void group_clear(bt_mesh_atomic_t *target, bt_mesh_atomic_t *source)
@@ -146,9 +146,9 @@ static inline void group_clear(bt_mesh_atomic_t *target, bt_mesh_atomic_t *sourc
     for (i = 0; i < ARRAY_SIZE(bt_mesh.lpn.added); i++) {
         (void)bt_mesh_atomic_and(&target[i], ~bt_mesh_atomic_get(&source[i]));
     }
-#else
+#else /* CONFIG_BLE_MESH_LPN_GROUPS > 32 */
     (void)bt_mesh_atomic_and(target, ~bt_mesh_atomic_get(source));
-#endif
+#endif /* CONFIG_BLE_MESH_LPN_GROUPS > 32 */
 }
 
 static void clear_friendship(bool force, bool disable);
@@ -159,6 +159,8 @@ static void friend_clear_sent(int err, void *user_data)
 {
     struct bt_mesh_lpn *lpn = &bt_mesh.lpn;
 
+    BT_DBG("FrndClearSent, Err %d", err);
+
     /* We're switching away from Low Power behavior, so permanently
      * enable scanning.
      */
@@ -168,6 +170,8 @@ static void friend_clear_sent(int err, void *user_data)
     }
 
     lpn->req_attempts++;
+
+    BT_DBG("ReqAttempts %u", lpn->req_attempts);
 
     if (err) {
         BT_ERR("Sending Friend Clear failed (err %d)", err);
@@ -206,6 +210,8 @@ static int send_friend_clear(void)
         .lpn_counter = sys_cpu_to_be16(bt_mesh.lpn.counter),
     };
 
+    BT_DBG("SendFrndClear");
+
     return bt_mesh_ctl_send(&tx, TRANS_CTL_OP_FRIEND_CLEAR, &req,
                             sizeof(req), &clear_sent_cb, NULL);
 }
@@ -215,10 +221,12 @@ static void clear_friendship(bool force, bool disable)
     struct bt_mesh_cfg_srv *cfg = bt_mesh_cfg_get();
     struct bt_mesh_lpn *lpn = &bt_mesh.lpn;
 
-    BT_DBG("force %u disable %u", force, disable);
+    BT_DBG("ClearFriendship, Force %u Disable %u", force, disable);
 
     if (!force && lpn->established && !lpn->clear_success &&
         lpn->req_attempts < CLEAR_ATTEMPTS) {
+        BT_DBG("SendFrndClear, ReqAttempts %u", lpn->req_attempts);
+
         send_friend_clear();
         lpn->disable = disable;
         return;
@@ -253,7 +261,7 @@ static void clear_friendship(bool force, bool disable)
         bt_mesh_restore_directed_forwarding_state(bt_mesh.sub[0].net_idx,
                                                   lpn->old_directed_forwarding);
     }
-#endif
+#endif /* CONFIG_BLE_MESH_DF_SRV */
 
     lpn->frnd = BLE_MESH_ADDR_UNASSIGNED;
     lpn->fsn = 0U;
@@ -306,6 +314,8 @@ static void friend_req_sent(uint16_t duration, int err, void *user_data)
         return;
     }
 
+    BT_DBG("FrndReqSent, duration %u", duration);
+
     lpn->adv_duration = duration;
 
     if (IS_ENABLED(CONFIG_BLE_MESH_LPN_ESTABLISHMENT)) {
@@ -349,6 +359,8 @@ static int send_friend_req(struct bt_mesh_lpn *lpn)
         .lpn_counter = sys_cpu_to_be16(lpn->counter),
     };
 
+    BT_DBG("SendFrndReq, NetIdx 0x%04x", ctx.net_idx);
+
     return bt_mesh_ctl_send(&tx, TRANS_CTL_OP_FRIEND_REQ, &req,
                             sizeof(req), &friend_req_sent_cb, NULL);
 }
@@ -357,7 +369,7 @@ static void req_sent(uint16_t duration, int err, void *user_data)
 {
     struct bt_mesh_lpn *lpn = &bt_mesh.lpn;
 
-    BT_DBG("req 0x%02x duration %u err %d state %s",
+    BT_DBG("ReqSent, Req 0x%02x Duration %u Err %d State %s",
            lpn->sent_req, duration, err, state2str(lpn->state));
 
     if (err) {
@@ -372,6 +384,9 @@ static void req_sent(uint16_t duration, int err, void *user_data)
 
     if (lpn->established || IS_ENABLED(CONFIG_BLE_MESH_LPN_ESTABLISHMENT)) {
         lpn_set_state(BLE_MESH_LPN_RECV_DELAY);
+
+        BT_DBG("RecvDelay %u ScanLatency %u", LPN_RECV_DELAY, SCAN_LATENCY);
+
         /* We start scanning a bit early to eliminate risk of missing
          * response data due to HCI and other latencies.
          */
@@ -379,6 +394,9 @@ static void req_sent(uint16_t duration, int err, void *user_data)
                               LPN_RECV_DELAY - SCAN_LATENCY);
     } else {
         lpn_set_state(BLE_MESH_LPN_OFFER_RECV);
+
+        BT_DBG("RecvDelay %u RecvWin %u", LPN_RECV_DELAY, lpn->recv_win);
+
         /**
          * Friend Update is replied by Friend Node with TTL set to 0 and Network
          * Transmit set to 30ms which will cause the packet easy to be missed.
@@ -416,7 +434,7 @@ static int send_friend_poll(void)
     uint8_t fsn = lpn->fsn;
     int err = 0;
 
-    BT_DBG("lpn->sent_req 0x%02x", lpn->sent_req);
+    BT_DBG("SendFrndPoll, Req 0x%02x ", lpn->sent_req);
 
     if (lpn->sent_req) {
         if (lpn->sent_req != TRANS_CTL_OP_FRIEND_POLL) {
@@ -438,6 +456,8 @@ static int send_friend_poll(void)
 
 void bt_mesh_lpn_disable(bool force)
 {
+    BT_DBG("LPNDisable, Force %u State 0x%02x", force, bt_mesh.lpn.state);
+
     if (bt_mesh.lpn.state == BLE_MESH_LPN_DISABLED) {
         return;
     }
@@ -448,6 +468,8 @@ void bt_mesh_lpn_disable(bool force)
 int bt_mesh_lpn_set(bool enable, bool force)
 {
     struct bt_mesh_lpn *lpn = &bt_mesh.lpn;
+
+    BT_DBG("LPNSet, Enable %u Force %u State 0x%02x", enable, force, lpn->state);
 
     if (enable) {
         if (lpn->state != BLE_MESH_LPN_DISABLED) {
@@ -479,7 +501,7 @@ int bt_mesh_lpn_set(bool enable, bool force)
         send_friend_req(lpn);
     } else {
         if (IS_ENABLED(CONFIG_BLE_MESH_LPN_AUTO) &&
-                lpn->state == BLE_MESH_LPN_TIMER) {
+            lpn->state == BLE_MESH_LPN_TIMER) {
             k_delayed_work_cancel(&lpn->timer);
             lpn_set_state(BLE_MESH_LPN_DISABLED);
         } else {
@@ -492,7 +514,7 @@ int bt_mesh_lpn_set(bool enable, bool force)
 
 static void friend_response_received(struct bt_mesh_lpn *lpn)
 {
-    BT_DBG("lpn->sent_req 0x%02x", lpn->sent_req);
+    BT_DBG("FrndRspRecv, Req 0x%02x Fsn %u", lpn->sent_req, lpn->fsn);
 
     if (lpn->sent_req == TRANS_CTL_OP_FRIEND_POLL) {
         lpn->fsn++;
@@ -509,6 +531,8 @@ void bt_mesh_lpn_msg_received(struct bt_mesh_net_rx *rx)
 {
     struct bt_mesh_lpn *lpn = &bt_mesh.lpn;
 
+    BT_DBG("LPNMsgRecv, Req 0x%02x State 0x%02x", lpn->sent_req, lpn->state);
+
     if (lpn->state == BLE_MESH_LPN_TIMER) {
         BT_DBG("Restarting establishment timer");
         k_delayed_work_submit(&lpn->timer, LPN_AUTO_TIMEOUT);
@@ -522,8 +546,6 @@ void bt_mesh_lpn_msg_received(struct bt_mesh_net_rx *rx)
 
     friend_response_received(lpn);
 
-    BT_DBG("Requesting more messages from Friend");
-
     send_friend_poll();
 }
 
@@ -536,6 +558,8 @@ int bt_mesh_lpn_friend_offer(struct bt_mesh_net_rx *rx,
     struct friend_cred *cred = NULL;
     uint16_t frnd_counter = 0U;
     int err = 0;
+
+    BT_DBG("LPNFrndOffer");
 
     if (buf->len < sizeof(*msg)) {
         BT_WARN("Too short Friend Offer");
@@ -554,9 +578,9 @@ int bt_mesh_lpn_friend_offer(struct bt_mesh_net_rx *rx,
 
     frnd_counter = sys_be16_to_cpu(msg->frnd_counter);
 
-    BT_INFO("recv_win %u queue_size %u sub_list_size %u rssi %d counter %u",
-           msg->recv_win, msg->queue_size, msg->sub_list_size, msg->rssi,
-           frnd_counter);
+    BT_INFO("Frnd 0x%04x RecvWin %u QueueSize %u SubListSize %u FrndCounter %u Rssi %d",
+            rx->ctx.addr, msg->recv_win, msg->queue_size,
+            msg->sub_list_size, frnd_counter, msg->rssi);
 
     lpn->frnd = rx->ctx.addr;
 
@@ -575,6 +599,8 @@ int bt_mesh_lpn_friend_offer(struct bt_mesh_net_rx *rx,
 
     err = send_friend_poll();
     if (err) {
+        BT_ERR("SendFrndPollFailed, Err %d", err);
+
         friend_cred_clear(cred);
         lpn->frnd = BLE_MESH_ADDR_UNASSIGNED;
         lpn->recv_win = 0U;
@@ -598,6 +624,8 @@ int bt_mesh_lpn_friend_clear_cfm(struct bt_mesh_net_rx *rx,
     struct bt_mesh_lpn *lpn = &bt_mesh.lpn;
     uint16_t addr = 0U, counter = 0U;
 
+    BT_DBG("LPNFrndClearCFM");
+
     if (buf->len < sizeof(*msg)) {
         BT_WARN("Too short Friend Clear Confirm");
         return -EINVAL;
@@ -611,7 +639,7 @@ int bt_mesh_lpn_friend_clear_cfm(struct bt_mesh_net_rx *rx,
     addr = sys_be16_to_cpu(msg->lpn_addr);
     counter = sys_be16_to_cpu(msg->lpn_counter);
 
-    BT_DBG("LPNAddress 0x%04x LPNCounter 0x%04x", addr, counter);
+    BT_DBG("LPN 0x%04x Counter 0x%04x", addr, counter);
 
     if (addr != bt_mesh_primary_addr() || counter != lpn->counter) {
         BT_WARN("Invalid parameters in Friend Clear Confirm");
@@ -630,8 +658,11 @@ static void lpn_group_add(uint16_t group)
     uint16_t *free_slot = NULL;
     int i;
 
+    BT_DBG("LPNGroupAdd, Addr 0x%04x", group);
+
     for (i = 0; i < ARRAY_SIZE(lpn->groups); i++) {
         if (lpn->groups[i] == group) {
+            BT_DBG("ClearLPNToRemove");
             bt_mesh_atomic_clear_bit(lpn->to_remove, i);
             return;
         }
@@ -655,10 +686,13 @@ static void lpn_group_del(uint16_t group)
     struct bt_mesh_lpn *lpn = &bt_mesh.lpn;
     int i;
 
+    BT_DBG("LPNGroupDel, Addr 0x%04x", group);
+
     for (i = 0; i < ARRAY_SIZE(lpn->groups); i++) {
         if (lpn->groups[i] == group) {
             if (bt_mesh_atomic_test_bit(lpn->added, i) ||
                 bt_mesh_atomic_test_bit(lpn->pending, i)) {
+                BT_DBG("Set LPNToRemove");
                 bt_mesh_atomic_set_bit(lpn->to_remove, i);
                 lpn->groups_changed = 1U;
             } else {
@@ -676,9 +710,9 @@ static inline int group_popcount(bt_mesh_atomic_t *target)
     for (i = 0; i < ARRAY_SIZE(bt_mesh.lpn.added); i++) {
         count += popcount(bt_mesh_atomic_get(&target[i]));
     }
-#else
+#else /* CONFIG_BLE_MESH_LPN_GROUPS > 32 */
     return popcount(bt_mesh_atomic_get(target));
-#endif
+#endif /* CONFIG_BLE_MESH_LPN_GROUPS > 32 */
 }
 
 static bool sub_update(uint8_t op)
@@ -703,7 +737,7 @@ static bool sub_update(uint8_t op)
     struct bt_mesh_ctl_friend_sub req = {0};
     size_t i = 0U, g = 0U;
 
-    BT_DBG("op 0x%02x sent_req 0x%02x", op, lpn->sent_req);
+    BT_DBG("SubUpdate, OP 0x%02x Req 0x%02x ", op, lpn->sent_req);
 
     if (lpn->sent_req) {
         return false;
@@ -725,7 +759,8 @@ static bool sub_update(uint8_t op)
         }
 
         if (added_count + g >= lpn->queue_size) {
-            BT_WARN("Friend Queue Size exceeded");
+            BT_WARN("FrndQueueExceeded, Added %u G %u Size %u",
+                    added_count, g, lpn->queue_size);
             break;
         }
 
@@ -744,6 +779,8 @@ static bool sub_update(uint8_t op)
 
     req.xact = lpn->xact_next++;
 
+    BT_DBG("Xact %u G %u", req.xact, g);
+
     if (bt_mesh_ctl_send(&tx, op, &req, 1 + g * 2,
                          &req_sent_cb, NULL) < 0) {
         group_zero(lpn->pending);
@@ -752,20 +789,27 @@ static bool sub_update(uint8_t op)
 
     lpn->xact_pending = req.xact;
     lpn->sent_req = op;
+
     return true;
 }
 
 static void update_timeout(struct bt_mesh_lpn *lpn)
 {
+    BT_DBG("UpdateTimeout");
+
     if (lpn->established) {
         BT_WARN("No response from Friend during ReceiveWindow");
+
         bt_mesh_scan_disable();
+
         lpn_set_state(BLE_MESH_LPN_ESTABLISHED);
         k_delayed_work_submit(&lpn->timer, POLL_RETRY_TIMEOUT);
     } else {
         if (IS_ENABLED(CONFIG_BLE_MESH_LPN_ESTABLISHMENT)) {
             bt_mesh_scan_disable();
         }
+
+        BT_DBG("ReqAttempts %u", lpn->req_attempts);
 
         if (lpn->req_attempts < FIRST_POLL_ATTEMPTS) {
             BT_WARN("Retrying first Friend Poll");
@@ -784,7 +828,7 @@ static void lpn_timeout(struct k_work *work)
 {
     struct bt_mesh_lpn *lpn = &bt_mesh.lpn;
 
-    BT_DBG("state: %s", state2str(lpn->state));
+    BT_DBG("LPNTimeout, State: %s", state2str(lpn->state));
 
     switch (lpn->state) {
     case BLE_MESH_LPN_DISABLED:
@@ -830,6 +874,8 @@ static void lpn_timeout(struct k_work *work)
         clear_friendship(true, false);
         break;
     case BLE_MESH_LPN_ESTABLISHED:
+        BT_DBG("ReqAttempts %u vs. %u", lpn->req_attempts, REQ_ATTEMPTS(lpn));
+
         if (lpn->req_attempts < REQ_ATTEMPTS(lpn)) {
             uint8_t req = lpn->sent_req;
 
@@ -867,11 +913,13 @@ static void lpn_timeout(struct k_work *work)
 
 void bt_mesh_lpn_group_add(uint16_t group)
 {
-    BT_DBG("group 0x%04x", group);
+    BT_DBG("LPNGroupAdd, Addr 0x%04x", group);
 
     lpn_group_add(group);
 
     if (!bt_mesh_lpn_established() || bt_mesh.lpn.sent_req) {
+        BT_INFO("Established %u Req 0x%02x",
+                bt_mesh_lpn_established(), bt_mesh.lpn.sent_req);
         return;
     }
 
@@ -882,6 +930,8 @@ void bt_mesh_lpn_group_del(uint16_t *groups, size_t group_count)
 {
     int i;
 
+    BT_DBG("LPNGroupDel, GroupCount %u", group_count);
+
     for (i = 0; i < group_count; i++) {
         if (groups[i] != BLE_MESH_ADDR_UNASSIGNED) {
             BT_DBG("group 0x%04x", groups[i]);
@@ -890,6 +940,8 @@ void bt_mesh_lpn_group_del(uint16_t *groups, size_t group_count)
     }
 
     if (!bt_mesh_lpn_established() || bt_mesh.lpn.sent_req) {
+        BT_INFO("Established %u Req 0x%02x",
+                bt_mesh_lpn_established(), bt_mesh.lpn.sent_req);
         return;
     }
 
@@ -900,6 +952,7 @@ static int32_t poll_timeout(struct bt_mesh_lpn *lpn)
 {
     /* If we're waiting for segment acks keep polling at high freq */
     if (bt_mesh_tx_in_progress()) {
+        BT_DBG("PollTimeout, Max %u", POLL_TIMEOUT_MAX(lpn));
         return MIN(POLL_TIMEOUT_MAX(lpn), K_SECONDS(1));
     }
 
@@ -909,7 +962,7 @@ static int32_t poll_timeout(struct bt_mesh_lpn *lpn)
                                 POLL_TIMEOUT_MAX(lpn));
     }
 
-    BT_DBG("Poll Timeout is %ums", lpn->poll_timeout);
+    BT_DBG("PollTimeout %u", lpn->poll_timeout);
 
     return lpn->poll_timeout;
 }
@@ -920,12 +973,15 @@ int bt_mesh_lpn_friend_sub_cfm(struct bt_mesh_net_rx *rx,
     struct bt_mesh_ctl_friend_sub_confirm *msg = (void *)buf->data;
     struct bt_mesh_lpn *lpn = &bt_mesh.lpn;
 
+    BT_DBG("LPNFrndSubCFM");
+
     if (buf->len < sizeof(*msg)) {
         BT_WARN("Too short Friend Subscription Confirm");
         return -EINVAL;
     }
 
-    BT_DBG("xact 0x%02x", msg->xact);
+    BT_DBG("Xact %u Req 0x%02x GroupsChanged %u PendingPoll %u",
+           msg->xact, lpn->sent_req, lpn->groups_changed, lpn->pending_poll);
 
     if (!lpn->sent_req) {
         BT_WARN("No pending subscription list message");
@@ -987,10 +1043,15 @@ int bt_mesh_lpn_friend_update(struct bt_mesh_net_rx *rx,
     struct bt_mesh_subnet *sub = rx->sub;
     uint32_t iv_index = 0U;
 
+    BT_DBG("LPNFrndUpdate");
+
     if (buf->len < sizeof(*msg)) {
         BT_WARN("Too short Friend Update");
         return -EINVAL;
     }
+
+    BT_DBG("Req 0x%02x KrPhase %u Established %u",
+           lpn->sent_req, sub->kr_phase, lpn->established);
 
     if (lpn->sent_req != TRANS_CTL_OP_FRIEND_POLL) {
         BT_WARN("Unexpected friend update");
@@ -1034,8 +1095,7 @@ int bt_mesh_lpn_friend_update(struct bt_mesh_net_rx *rx,
         }
 
         /* Set initial poll timeout */
-        lpn->poll_timeout = MIN(POLL_TIMEOUT_MAX(lpn),
-                                POLL_TIMEOUT_INIT);
+        lpn->poll_timeout = MIN(POLL_TIMEOUT_MAX(lpn), POLL_TIMEOUT_INIT);
 
         /* If the Low Power node supports directed forwarding functionality when
          * the friendship is established in a subnet, the Low Power node shall
@@ -1046,18 +1106,16 @@ int bt_mesh_lpn_friend_update(struct bt_mesh_net_rx *rx,
          */
 #if CONFIG_BLE_MESH_DF_SRV
         lpn->old_directed_forwarding = bt_mesh_get_and_disable_directed_forwarding_state(sub);
-#endif
+#endif /* CONFIG_BLE_MESH_DF_SRV */
     }
 
     friend_response_received(lpn);
 
     iv_index = sys_be32_to_cpu(msg->iv_index);
 
-    BT_INFO("flags 0x%02x iv_index 0x%08x md %u", msg->flags, iv_index,
-           msg->md);
+    BT_INFO("Flags 0x%02x IVIndex 0x%08lx MD %u", msg->flags, iv_index, msg->md);
 
-    if (bt_mesh_kr_update(sub, BLE_MESH_KEY_REFRESH(msg->flags),
-                          rx->new_key)) {
+    if (bt_mesh_kr_update(sub, BLE_MESH_KEY_REFRESH(msg->flags), rx->new_key)) {
         bt_mesh_net_secure_beacon_update(sub);
     }
 
@@ -1086,11 +1144,11 @@ int bt_mesh_lpn_friend_update(struct bt_mesh_net_rx *rx,
 
 int bt_mesh_lpn_poll(void)
 {
+    BT_DBG("LPNPoll, Established %u", bt_mesh.lpn.established);
+
     if (!bt_mesh.lpn.established) {
         return -EAGAIN;
     }
-
-    BT_DBG("Requesting more messages");
 
     return send_friend_poll();
 }
@@ -1103,6 +1161,8 @@ void bt_mesh_lpn_set_cb(void (*cb)(uint16_t friend_addr, bool established))
 int bt_mesh_lpn_init(void)
 {
     struct bt_mesh_lpn *lpn = &bt_mesh.lpn;
+
+    BT_DBG("LPNInit");
 
     k_delayed_work_init(&lpn->timer, lpn_timeout);
 
@@ -1129,6 +1189,8 @@ int bt_mesh_lpn_init(void)
 int bt_mesh_lpn_deinit(void)
 {
     struct bt_mesh_lpn *lpn = &bt_mesh.lpn;
+
+    BT_DBG("LPNDeinit");
 
     bt_mesh_lpn_disable(true);
 

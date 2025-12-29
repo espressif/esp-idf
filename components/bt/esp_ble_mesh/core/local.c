@@ -22,14 +22,17 @@ static struct bt_mesh_model *find_model(uint16_t elem_addr, uint16_t cid, uint16
 {
     struct bt_mesh_elem *elem = NULL;
 
+    BT_DBG("FindModelLocal");
+    BT_DBG("ElemAddr 0x%04x CID 0x%04x ID 0x%04x", elem_addr, cid, mod_id);
+
     if (!BLE_MESH_ADDR_IS_UNICAST(elem_addr)) {
-        BT_ERR("Invalid unicast address 0x%04x", elem_addr);
+        BT_ERR("InvalidUnicastAddr 0x%04x", elem_addr);
         return NULL;
     }
 
     elem = bt_mesh_elem_find(elem_addr);
     if (elem == NULL) {
-        BT_ERR("No element found, addr 0x%04x", elem_addr);
+        BT_ERR("NoElemFound 0x%04x", elem_addr);
         return NULL;
     }
 
@@ -46,19 +49,23 @@ int bt_mesh_model_subscribe_group_addr(uint16_t elem_addr, uint16_t cid,
     struct bt_mesh_model *model = NULL;
     int i;
 
+    BT_DBG("ModelSubGroupAddrLocal");
+    BT_DBG("ElemAddr 0x%04x CID 0x%04x ID 0x%04x GroupAddr 0x%04x",
+           elem_addr, cid, mod_id, group_addr);
+
     model = find_model(elem_addr, cid, mod_id);
     if (model == NULL) {
-        BT_ERR("Subscribe, model not found, cid 0x%04x, mod_id 0x%04x", cid, mod_id);
+        BT_ERR("ModelNotFound, CID 0x%04x ID 0x%04x", cid, mod_id);
         return -ENODEV;
     }
 
     if (!BLE_MESH_ADDR_IS_GROUP(group_addr)) {
-        BT_ERR("Subscribe, not a group address 0x%04x", group_addr);
+        BT_ERR("NotGroupAddr 0x%04x", group_addr);
         return -EINVAL;
     }
 
     if (bt_mesh_model_find_group(model, group_addr)) {
-        BT_INFO("Group address 0x%04x already exists", group_addr);
+        BT_INFO("GroupAddrExist 0x%04x", group_addr);
         return 0;
     }
 
@@ -74,12 +81,11 @@ int bt_mesh_model_subscribe_group_addr(uint16_t elem_addr, uint16_t cid,
                 bt_mesh_lpn_group_add(group_addr);
             }
 
-            BT_INFO("Subscribe group address 0x%04x", group_addr);
             return 0;
         }
     }
 
-    BT_ERR("Subscribe, model sub is full!");
+    BT_ERR("ModelSubFull");
     return -ENOMEM;
 }
 
@@ -89,20 +95,24 @@ int bt_mesh_model_unsubscribe_group_addr(uint16_t elem_addr, uint16_t cid,
     struct bt_mesh_model *model = NULL;
     uint16_t *match = NULL;
 
+    BT_DBG("ModelUnsubGroupAddrLocal");
+    BT_DBG("ElemAddr 0x%04x CID 0x%04x ID 0x%04x GroupAddr 0x%04x",
+           elem_addr, cid, mod_id, group_addr);
+
     model = find_model(elem_addr, cid, mod_id);
     if (model == NULL) {
-        BT_ERR("Unsubscribe, model not found, cid 0x%04x, mod_id 0x%04x", cid, mod_id);
+        BT_ERR("ModelNotFound, CID 0x%04x ID 0x%04x", cid, mod_id);
         return -ENODEV;
     }
 
     if (!BLE_MESH_ADDR_IS_GROUP(group_addr)) {
-        BT_ERR("Unsubscribe, not a group address 0x%04x", group_addr);
+        BT_ERR("NotGroupAddr 0x%04x", group_addr);
         return -EINVAL;
     }
 
     match = bt_mesh_model_find_group(model, group_addr);
     if (match == NULL) {
-        BT_WARN("Group address 0x%04x not exists", group_addr);
+        BT_WARN("GroupAddrExist 0x%04x", group_addr);
         return -EEXIST;
     }
 
@@ -116,7 +126,6 @@ int bt_mesh_model_unsubscribe_group_addr(uint16_t elem_addr, uint16_t cid,
         bt_mesh_lpn_group_del(&group_addr, 1);
     }
 
-    BT_INFO("Unsubscribe group address 0x%04x", group_addr);
     return 0;
 }
 
@@ -126,20 +135,24 @@ int bt_mesh_enable_directed_forwarding(uint16_t net_idx, bool directed_forwardin
 {
     struct bt_mesh_subnet *sub = NULL;
 
+    BT_DBG("EnableDFLocal, NetIdx 0x%04x DF %u DFRelay %u",
+           net_idx, directed_forwarding, directed_forwarding_relay);
+
     if (net_idx > 0xFFF) {
-        BT_ERR("Invalid NetKeyIndex 0x%04x", net_idx);
+        BT_ERR("InvalidNetIdx 0x%04x", net_idx);
         return -EINVAL;
     }
 
     sub = bt_mesh_subnet_get(net_idx);
     if (!sub) {
-        BT_ERR("NetKey 0x%04x not exists", net_idx);
+        BT_ERR("NetIdxNotExist 0x%04x", net_idx);
         return -EINVAL;
     }
 
     if (directed_forwarding == BLE_MESH_DIRECTED_FORWARDING_DISABLED &&
         directed_forwarding_relay == BLE_MESH_DIRECTED_RELAY_ENABLED) {
-        BT_ERR("Invalid Config directed forwarding: %d, directed forwarding relay: %d", directed_forwarding, directed_forwarding_relay);
+        BT_ERR("InvalidDFConfig %u/%u",
+               directed_forwarding, directed_forwarding_relay);
         return -EINVAL;
     }
 
@@ -155,14 +168,16 @@ const uint8_t *bt_mesh_node_get_local_net_key(uint16_t net_idx)
 {
     struct bt_mesh_subnet *sub = NULL;
 
+    BT_DBG("NodeGetNetKeyLocal, NetIdx 0x%04x", net_idx);
+
     if (net_idx > 0xFFF) {
-        BT_ERR("Invalid NetKeyIndex 0x%04x", net_idx);
+        BT_ERR("InvalidNetIdx 0x%04x", net_idx);
         return NULL;
     }
 
     sub = bt_mesh_subnet_get(net_idx);
     if (!sub) {
-        BT_ERR("NetKey 0x%04x not exists", net_idx);
+        BT_ERR("NetIdxNotExist 0x%04x", net_idx);
         return NULL;
     }
 
@@ -173,14 +188,16 @@ const uint8_t *bt_mesh_node_get_local_app_key(uint16_t app_idx)
 {
     struct bt_mesh_app_key *key = NULL;
 
+    BT_DBG("NodeGetAppKeyLocal, AppIdx 0x%04x", app_idx);
+
     if (app_idx > 0xFFF) {
-        BT_ERR("Invalid AppKeyIndex 0x%04x", app_idx);
+        BT_ERR("InvalidAppIdx 0x%04x", app_idx);
         return NULL;
     }
 
     key = bt_mesh_app_key_get(app_idx);
     if (!key) {
-        BT_ERR("AppKey 0x%04x not exists", app_idx);
+        BT_ERR("AppIdxNotExist 0x%04x", app_idx);
         return NULL;
     }
 
@@ -193,19 +210,21 @@ int bt_mesh_node_local_net_key_add(uint16_t net_idx, const uint8_t net_key[16])
     int err = 0;
     int i;
 
+    BT_DBG("NodeAddNetKeyLocal, NetIdx 0x%04x", net_idx);
+
     if (net_idx > 0xFFF || net_key == NULL) {
         BT_ERR("%s, Invalid parameter", __func__);
         return -EINVAL;
     }
 
     if (!bt_mesh_is_provisioned()) {
-        BT_ERR("Not provisioned, failed to add NetKey");
+        BT_ERR("NotProvisioned");
         return -EIO;
     }
 
     sub = bt_mesh_subnet_get(net_idx);
     if (sub) {
-        BT_WARN("NetKey 0x%04x already exists", net_idx);
+        BT_WARN("NetIdxExist 0x%04x", net_idx);
         return -EEXIST;
     }
 
@@ -215,7 +234,7 @@ int bt_mesh_node_local_net_key_add(uint16_t net_idx, const uint8_t net_key[16])
                 memcmp(bt_mesh.sub[i].keys[0].net, net_key, 16) == 0) ||
                 (bt_mesh.sub[i].kr_flag == true &&
                 memcmp(bt_mesh.sub[i].keys[1].net, net_key, 16) == 0)) {
-                BT_WARN("Key value %s already exists", bt_hex(net_key, 16));
+                BT_WARN("NetKeyValExist %s", bt_hex(net_key, 16));
                 return -EEXIST;
             }
         }
@@ -229,13 +248,13 @@ int bt_mesh_node_local_net_key_add(uint16_t net_idx, const uint8_t net_key[16])
     }
 
     if (sub == NULL) {
-        BT_ERR("NetKey is full!");
+        BT_ERR("NetKeyFull");
         return -ENOMEM;
     }
 
     err = bt_mesh_net_keys_create(&sub->keys[0], net_key);
     if (err) {
-        BT_ERR("Failed to create keys for NetKey 0x%04x", net_idx);
+        BT_ERR("NetKeyCreateFail 0x%04x", net_idx);
         return -EIO;
     }
 
@@ -249,7 +268,6 @@ int bt_mesh_node_local_net_key_add(uint16_t net_idx, const uint8_t net_key[16])
     }
 
     if (IS_ENABLED(CONFIG_BLE_MESH_SETTINGS)) {
-        BT_DBG("Storing NetKey persistently");
         bt_mesh_store_subnet(sub);
     }
 
@@ -264,24 +282,26 @@ int bt_mesh_node_local_app_key_add(uint16_t net_idx, uint16_t app_idx,
 {
     struct bt_mesh_app_key *key = NULL;
 
+    BT_DBG("NodeAddAppKeyLocal, NetIdx 0x%04x AppIdx 0x%04x", net_idx, app_idx);
+
     if (net_idx > 0xFFF || app_idx > 0xFFF || app_key == NULL) {
         BT_ERR("%s, Invalid parameter", __func__);
         return -EINVAL;
     }
 
     if (!bt_mesh_is_provisioned()) {
-        BT_ERR("Not provisioned, failed to add AppKey");
+        BT_ERR("NotProvisioned");
         return -EIO;
     }
 
     if (bt_mesh_subnet_get(net_idx) == NULL) {
-        BT_ERR("Subnet 0x%04x not exists", net_idx);
+        BT_ERR("NetIdxNotExist 0x%04x", net_idx);
         return -EIO;
     }
 
     key = bt_mesh_app_key_get(app_idx);
     if (key) {
-        BT_WARN("AppKey 0x%04x already exists", app_idx);
+        BT_WARN("AppIdxExist 0x%04x", app_idx);
         return -EEXIST;
     }
 
@@ -291,7 +311,7 @@ int bt_mesh_node_local_app_key_add(uint16_t net_idx, uint16_t app_idx,
                 memcmp(bt_mesh.app_keys[i].keys[0].val, app_key, 16) == 0) ||
                 (bt_mesh.app_keys[i].updated == true &&
                 memcmp(bt_mesh.app_keys[i].keys[1].val, app_key, 16) == 0)) {
-                BT_WARN("Key value %s already exists", bt_hex(app_key, 16));
+                BT_WARN("AppKeyValExist %s", bt_hex(app_key, 16));
                 return -EEXIST;
             }
         }
@@ -302,7 +322,7 @@ int bt_mesh_node_local_app_key_add(uint16_t net_idx, uint16_t app_idx,
         struct bt_mesh_app_keys *keys = &key->keys[0];
 
         if (bt_mesh_app_id(app_key, &keys->id)) {
-            BT_ERR("Failed to generate AID");
+            BT_ERR("GenAIDFail");
             return -EIO;
         }
 
@@ -312,15 +332,12 @@ int bt_mesh_node_local_app_key_add(uint16_t net_idx, uint16_t app_idx,
         memcpy(keys->val, app_key, 16);
 
         if (IS_ENABLED(CONFIG_BLE_MESH_SETTINGS)) {
-            BT_DBG("Storing AppKey persistently");
             bt_mesh_store_app_key(key);
         }
 
-        BT_INFO("Add AppKey 0x%04x, NetKeyIndex 0x%04x", app_idx, net_idx);
         return 0;
     }
 
-    BT_ERR("AppKey is full!");
     return -ENOMEM;
 }
 
@@ -330,25 +347,29 @@ int bt_mesh_node_bind_app_key_to_model(uint16_t elem_addr, uint16_t mod_id,
     struct bt_mesh_model *model = NULL;
     int i;
 
+    BT_DBG("NodeBindAppKeyLocal");
+    BT_DBG("ElemAddr 0x%04x CID 0x%04x ID 0x%04x AppIdx 0x%04x",
+           elem_addr, cid, mod_id, app_idx);
+
     if (!bt_mesh_is_provisioned()) {
-        BT_ERR("Not provisioned, failed to bind AppKey");
+        BT_ERR("NotProvisioned");
         return -EIO;
     }
 
     model = find_model(elem_addr, cid, mod_id);
     if (model == NULL) {
-        BT_ERR("Bind, model(id 0x%04x, cid 0x%04x) not found", mod_id, cid);
+        BT_ERR("ModelNotFound, ID 0x%04x CID 0x%04x", mod_id, cid);
         return -ENODEV;
     }
 
     if (bt_mesh_app_key_get(app_idx) == NULL) {
-        BT_ERR("Bind, AppKey 0x%03x not exists", app_idx);
+        BT_ERR("AppIdxNotExist 0x%04x", app_idx);
         return -ENODEV;
     }
 
     for (i = 0; i < ARRAY_SIZE(model->keys); i++) {
         if (model->keys[i] == app_idx) {
-            BT_WARN("Already bound to AppKey 0x%04x", app_idx);
+            BT_WARN("AppIdxBound 0x%04x", app_idx);
             return -EALREADY;
         }
     }
@@ -356,16 +377,16 @@ int bt_mesh_node_bind_app_key_to_model(uint16_t elem_addr, uint16_t mod_id,
     for (i = 0; i < ARRAY_SIZE(model->keys); i++) {
         if (model->keys[i] == BLE_MESH_KEY_UNUSED) {
             model->keys[i] = app_idx;
+
             if (IS_ENABLED(CONFIG_BLE_MESH_SETTINGS)) {
                 bt_mesh_store_mod_bind(model);
             }
 
-            BT_INFO("Model(id 0x%04x, cid 0x%04x) bound to AppKey 0x%04x", mod_id, cid, app_idx);
             return 0;
         }
     }
 
-    BT_ERR("Model bound is full!");
+    BT_ERR("ModelBindFull");
     return -ENOMEM;
 }
 #endif /* CONFIG_BLE_MESH_NODE */

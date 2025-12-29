@@ -396,11 +396,11 @@ void ble_mesh_5_gap_callback(tBTA_DM_BLE_5_GAP_EVENT event,
             goto transfer_to_user;
         }
 #if CONFIG_BLE_MESH_SUPPORT_MULTI_ADV
-        ble_mesh_adv_task_wakeup(ADV_TASK_ADV_INST_EVT(params->adv_term.adv_handle));
+        bt_mesh_adv_task_wakeup(ADV_TASK_ADV_INST_EVT(params->adv_term.adv_handle));
 #else /* CONFIG_BLE_MESH_SUPPORT_MULTI_ADV */
         if (params->adv_term.status == 0x43 ||  /* Limit reached */
             params->adv_term.status == 0x3C) {  /* Advertising timeout */
-            ble_mesh_adv_task_wakeup(ADV_TASK_MESH_ADV_INST_EVT);
+            bt_mesh_adv_task_wakeup(ADV_TASK_MESH_ADV_INST_EVT);
         }
 #if CONFIG_BLE_MESH_SUPPORT_BLE_ADV
         /**
@@ -423,7 +423,7 @@ void ble_mesh_5_gap_callback(tBTA_DM_BLE_5_GAP_EVENT event,
                 * could lead to resource contention issues.
                 */
             bt_mesh_unset_ble_adv_running();
-            ble_mesh_adv_task_wakeup(ADV_TASK_MESH_ADV_INST_EVT);
+            bt_mesh_adv_task_wakeup(ADV_TASK_MESH_ADV_INST_EVT);
         }
 #endif /* CONFIG_BLE_MESH_SUPPORT_BLE_ADV */
 #endif /* CONFIG_BLE_MESH_SUPPORT_MULTI_ADV */
@@ -655,7 +655,7 @@ static void bt_mesh_scan_result_callback(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARC
 static struct {
     bool set;
     tBTA_DM_BLE_GAP_EXT_ADV_PARAMS param;
-} last_param[BLE_MESH_ADV_INS_TYPES_NUM];
+} last_param[BLE_MESH_ADV_INST_TYPES_NUM];
 
 int bt_le_ext_adv_start(const uint8_t inst_id,
                         const struct bt_mesh_adv_param *param,
@@ -1615,7 +1615,7 @@ int bt_mesh_gatts_service_register(struct bt_mesh_gatt_service *svc)
                 svc->attrs[i].handle = char_handle - 1;
                 svc->attrs[i + 1].handle =  char_handle;
                 BT_DBG("Add characteristic, uuid 0x%04x, handle %d, perm %d, properties %d",
-                        BLE_MESH_UUID_16(gatts_chrc->uuid)->val, char_handle, svc->attrs[i + 1].perm, gatts_chrc->properties);
+                       BLE_MESH_UUID_16(gatts_chrc->uuid)->val, char_handle, svc->attrs[i + 1].perm, gatts_chrc->properties);
                 break;
             }
             case BLE_MESH_UUID_GATT_CEP_VAL:
@@ -1803,7 +1803,7 @@ uint16_t bt_mesh_gattc_get_service_uuid(struct bt_mesh_conn *conn)
 
 int bt_mesh_gattc_conn_create(const bt_mesh_addr_t *addr, uint16_t service_uuid)
 {
-    tBTA_BLE_CONN_PARAMS  conn_1m_param = {0};
+    tBTA_BLE_CONN_PARAMS conn_1m_param = {0};
     uint8_t zero[6] = {0};
     int i;
 
@@ -1872,9 +1872,10 @@ int bt_mesh_gattc_conn_create(const bt_mesh_addr_t *addr, uint16_t service_uuid)
     conn_1m_param.max_ce_len = 0;
 
     BTA_GATTC_Enh_Open(bt_mesh_gattc_if, bt_mesh_gattc_info[i].addr.val,
-                   bt_mesh_gattc_info[i].addr.type, true, BTA_GATT_TRANSPORT_LE, TRUE, BLE_ADDR_UNKNOWN_TYPE,
-                   BTA_BLE_PHY_1M_MASK, &conn_1m_param, NULL, NULL);
-#else
+                       bt_mesh_gattc_info[i].addr.type, true,
+                       BTA_GATT_TRANSPORT_LE, TRUE, BLE_ADDR_UNKNOWN_TYPE,
+                       BTA_BLE_PHY_1M_MASK, &conn_1m_param, NULL, NULL);
+#else /* CONFIG_BLE_MESH_USE_BLE_50 */
     /* Min_interval: 15ms
      * Max_interval: 15ms
      * Slave_latency: 0x0
@@ -1886,9 +1887,10 @@ int bt_mesh_gattc_conn_create(const bt_mesh_addr_t *addr, uint16_t service_uuid)
     conn_1m_param.supervision_timeout = 0x64;
 
     BTA_GATTC_Enh_Open(bt_mesh_gattc_if, bt_mesh_gattc_info[i].addr.val,
-                   bt_mesh_gattc_info[i].addr.type, true, BTA_GATT_TRANSPORT_LE, FALSE, BLE_ADDR_UNKNOWN_TYPE,
-                   BTA_BLE_PHY_1M_MASK, &conn_1m_param, NULL, NULL);
-#endif
+                       bt_mesh_gattc_info[i].addr.type, true,
+                       BTA_GATT_TRANSPORT_LE, FALSE, BLE_ADDR_UNKNOWN_TYPE,
+                       BTA_BLE_PHY_1M_MASK, &conn_1m_param, NULL, NULL);
+#endif /* CONFIG_BLE_MESH_USE_BLE_50 */
 
     return 0;
 }

@@ -993,16 +993,16 @@ static int gap_event_cb(struct ble_gap_event *event, void *arg)
         return 0;
 
     case BLE_GAP_EVENT_ADV_COMPLETE:
-        BT_DBG("advertise complete; reason=%d",
-               event->adv_complete.reason);
+        BT_DBG("advertise complete; reason=%d", event->adv_complete.reason);
+
 #if CONFIG_BLE_MESH_USE_BLE_50
 #if CONFIG_BLE_MESH_SUPPORT_MULTI_ADV
-        ble_mesh_adv_task_wakeup(ADV_TASK_ADV_INST_EVT(event->adv_complete.instance));
+        bt_mesh_adv_task_wakeup(ADV_TASK_ADV_INST_EVT(event->adv_complete.instance));
 #else /* CONFIG_BLE_MESH_SUPPORT_MULTI_ADV */
         assert(CONFIG_BLE_MESH_ADV_INST_ID == event->adv_complete.instance);
         /* Limit Reached (0x43) and Advertising Timeout (0x3C) will cause BLE_HS_ETIMEOUT to be set. */
         if (event->adv_complete.reason == BLE_HS_ETIMEOUT) {
-            ble_mesh_adv_task_wakeup(ADV_TASK_ADV_INST_EVT(event->adv_complete.instance));
+            bt_mesh_adv_task_wakeup(ADV_TASK_ADV_INST_EVT(event->adv_complete.instance));
         }
 #if CONFIG_BLE_MESH_SUPPORT_BLE_ADV
         /**
@@ -1020,12 +1020,12 @@ static int gap_event_cb(struct ble_gap_event *event, void *arg)
          */
         if (bt_mesh_is_ble_adv_running() &&
             event->adv_complete.reason == 0) {
-           /* The unset operation must be performed before waking up the
-            * adv task; performing the unset after waking up the adv task
-            * could lead to resource contention issues.
-            */
+            /* The unset operation must be performed before waking up the
+             * adv task; performing the unset after waking up the adv task
+             * could lead to resource contention issues.
+             */
             bt_mesh_unset_ble_adv_running();
-            ble_mesh_adv_task_wakeup(ADV_TASK_ADV_INST_EVT(event->adv_complete.instance));
+            bt_mesh_adv_task_wakeup(ADV_TASK_ADV_INST_EVT(event->adv_complete.instance));
         }
 #endif /* CONFIG_BLE_MESH_SUPPORT_BLE_ADV */
 #endif /* CONFIG_BLE_MESH_SUPPORT_MULTI_ADV */
@@ -1124,12 +1124,12 @@ static int gap_event_cb(struct ble_gap_event *event, void *arg)
         BT_DBG("Provisioner advertise complete; reason=%d",
                event->adv_complete.reason);
 #if CONFIG_BLE_MESH_SUPPORT_MULTI_ADV
-        ble_mesh_adv_task_wakeup(ADV_TASK_ADV_INST_EVT(event->adv_complete.instance));
+        bt_mesh_adv_task_wakeup(ADV_TASK_ADV_INST_EVT(event->adv_complete.instance));
 #else /* CONFIG_BLE_MESH_SUPPORT_MULTI_ADV */
         assert(CONFIG_BLE_MESH_ADV_INST_ID == event->adv_complete.instance);
         /* Limit Reached (0x43) and Advertising Timeout (0x3C) will cause BLE_HS_ETIMEOUT to be set. */
         if (event->adv_complete.reason == BLE_HS_ETIMEOUT) {
-            ble_mesh_adv_task_wakeup(ADV_TASK_ADV_INST_EVT(CONFIG_BLE_MESH_ADV_INST_ID));
+            bt_mesh_adv_task_wakeup(ADV_TASK_ADV_INST_EVT(CONFIG_BLE_MESH_ADV_INST_ID));
         }
 #if CONFIG_BLE_MESH_SUPPORT_BLE_ADV
         /**
@@ -1152,7 +1152,7 @@ static int gap_event_cb(struct ble_gap_event *event, void *arg)
             * could lead to resource contention issues.
             */
             bt_mesh_unset_ble_adv_running();
-            ble_mesh_adv_task_wakeup(ADV_TASK_ADV_INST_EVT(CONFIG_BLE_MESH_ADV_INST_ID));
+            bt_mesh_adv_task_wakeup(ADV_TASK_ADV_INST_EVT(CONFIG_BLE_MESH_ADV_INST_ID));
         }
 #endif /* CONFIG_BLE_MESH_SUPPORT_BLE_ADV */
 #endif /* CONFIG_BLE_MESH_SUPPORT_MULTI_ADV */
@@ -1167,7 +1167,7 @@ static int gap_event_cb(struct ble_gap_event *event, void *arg)
 static struct {
     bool set;
     struct ble_gap_ext_adv_params param;
-} last_param[BLE_MESH_ADV_INS_TYPES_NUM];
+} last_param[BLE_MESH_ADV_INST_TYPES_NUM];
 
 int bt_le_ext_adv_start(const uint8_t inst_id,
                         const struct bt_mesh_adv_param *param,
@@ -2516,8 +2516,7 @@ void bt_mesh_gatt_init(void)
     static bool init = false;
 
     if (init == false) {
-
-        __ASSERT(g_gatts_svcs_add, "func bt_mesh_gatts_svcs_add should be called before mesh init");
+        assert(g_gatts_svcs_add);
 
         ble_gatts_svc_set_visibility(prov_svc_start_handle, 1);
         ble_gatts_svc_set_visibility(proxy_svc_start_handle, 0);
