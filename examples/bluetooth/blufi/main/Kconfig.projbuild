@@ -33,4 +33,23 @@ menu "Example Configuration"
             bool "WAPI PSK"
     endchoice
 
+    config EXAMPLE_BLUFI_BLE_SMP_ENABLE
+        bool "Enable BLE SMP support in BLUFI"
+        depends on BT_BLUEDROID_ENABLED
+        select BT_BLUFI_BLE_SMP_ENABLE
+        select BT_BLE_SMP_ENABLE
+        default n
+        help
+            Enable BLE Security Manager Protocol (SMP) for BLUFI.
+            Currently, this feature is only supported with the Bluedroid host.
+
+            If enabled:
+            - BLUFI will configure SMP security parameters such as
+            IO capabilities, authentication mode, and key size.
+            - After a BLE connection is established, BLUFI will
+            proactively initiate a security request.
+            - Only after the BLE pairing is successfully completed,
+            BLUFI can proceed with Wi-Fi provisioning.
+            - If the user rejects pairing or inputs an incorrect passkey,
+            BLUFI will not start Wi-Fi provisioning.
 endmenu
