@@ -121,7 +121,7 @@ def test_wifi_getting_started_esp32c2eco4_xtal_26mhz(dut: tuple[IdfDut, IdfDut])
     [
         (
             2,
-            'esp32c3eco7',
+            'c3eco7',
             f'{os.path.join(os.path.dirname(__file__), "softAP")}|{os.path.join(os.path.dirname(__file__), "station")}',
         ),
     ],
