@@ -677,4 +677,13 @@ menu "Wi-Fi"
             Select this configuration to free dynamic buffers during WiFi enterprise connection.
             This will enable chip to reduce heap consumption during WiFi enterprise connection.
 
+    config ESP_WIFI_MODEM_RF_FLAG_UPDATE_DEBUG
+        bool "Enable debug assertions for modem RF flag update"
+        depends on ESP_WIFI_ENHANCED_LIGHT_SLEEP
+        default n
+        help
+            Enable debug assertions to verify modem RF flag update operations.
+            This option enables assert checks to verify that modem RF power state
+            is correctly cleared before pmu sleep.
+
 endmenu # Wi-Fi

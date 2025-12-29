@@ -1195,6 +1195,10 @@ config SOC_PM_RETENTION_HAS_CLOCK_BUG
     bool
     default y
 
+config SOC_PM_MODEM_RF_FLAG_UPDATE_WORKAROUND
+    bool
+    default y
+
 config SOC_PM_PAU_LINK_NUM
     int
     default 4

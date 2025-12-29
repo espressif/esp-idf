@@ -216,7 +216,10 @@ static esp_err_t wifi_deinit_internal(void)
 #if CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP
     esp_wifi_internal_modem_state_configure(false);
     esp_pm_unregister_skip_light_sleep_callback(sleep_modem_wifi_modem_state_skip_light_sleep);
+#if ESP_MODEM_RF_FLAG_UPDATE_CB_REQUIRED
+    esp_unregister_mac_bb_pd_callback(esp_phy_modem_rf_flag_update);
 #endif
+#endif /* CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP */
     esp_phy_modem_deinit();
 
     s_wifi_inited = false;
@@ -401,6 +404,12 @@ esp_err_t esp_wifi_init(const wifi_init_config_t *config)
         if (sleep_modem_wifi_modem_state_enabled()) {
             esp_pm_register_skip_light_sleep_callback(sleep_modem_wifi_modem_state_skip_light_sleep);
             esp_wifi_internal_modem_state_configure(true); /* require WiFi to enable automatically receives the beacon */
+#if ESP_MODEM_RF_FLAG_UPDATE_CB_REQUIRED
+            if (esp_register_mac_bb_pd_callback(esp_phy_modem_rf_flag_update) != ESP_OK) {
+                ESP_LOGE(TAG, "Failed to register modem RF flag update callback");
+                goto _deinit;
+            }
+#endif
         }
 #endif
 #if CONFIG_IDF_TARGET_ESP32

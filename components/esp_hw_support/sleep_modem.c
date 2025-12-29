@@ -44,7 +44,7 @@ static _lock_t s_modem_prepare_lock;
 #endif // SOC_PM_RETENTION_HAS_CLOCK_BUG && CONFIG_MAC_BB_PD
 
 #if CONFIG_MAC_BB_PD
-#define MAC_BB_POWER_DOWN_CB_NO     (3)
+#define MAC_BB_POWER_DOWN_CB_NO     (4)
 #define MAC_BB_POWER_UP_CB_NO       (3)
 
 static DRAM_ATTR mac_bb_power_down_cb_t s_mac_bb_power_down_cb[MAC_BB_POWER_DOWN_CB_NO];

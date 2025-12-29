@@ -54,6 +54,11 @@
 extern wifi_mac_time_update_cb_t s_wifi_mac_time_update_cb;
 #endif
 
+#if SOC_PM_SUPPORT_PMU_MODEM_STATE && CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP
+extern void pm_mac_modem_clear_rf_power_state(void);
+extern bool pm_mac_modem_rf_already_enabled(void);
+#endif
+
 static const char* TAG = "phy_init";
 
 static _lock_t s_phy_access_lock;
@@ -285,6 +290,18 @@ static inline void phy_digital_regs_load(void)
 }
 #endif // SOC_PM_MODEM_RETENTION_BY_BACKUPDMA
 
+#if SOC_PM_SUPPORT_PMU_MODEM_STATE && CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP && ESP_MODEM_RF_FLAG_UPDATE_CB_REQUIRED
+void IRAM_ATTR esp_phy_modem_rf_flag_update(void)
+{
+    if (pm_mac_modem_rf_already_enabled()) {
+#if CONFIG_ESP_WIFI_MODEM_RF_FLAG_UPDATE_DEBUG
+        assert(0);
+#endif
+        pm_mac_modem_clear_rf_power_state();
+    }
+}
+#endif
+
 void esp_phy_enable(esp_phy_modem_t modem)
 {
     _lock_acquire(&s_phy_access_lock);
@@ -302,7 +319,6 @@ void esp_phy_enable(esp_phy_modem_t modem)
             s_is_phy_calibrated = true;
         } else {
 #if SOC_PM_SUPPORT_PMU_MODEM_STATE && CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP
-            extern bool pm_mac_modem_rf_already_enabled(void);
             if (!pm_mac_modem_rf_already_enabled()) {
                 if (sleep_modem_wifi_modem_state_enabled() && sleep_modem_wifi_modem_link_done()) {
                     sleep_modem_wifi_do_phy_retention(true);
@@ -363,7 +379,6 @@ void esp_phy_disable(esp_phy_modem_t modem)
         phy_digital_regs_store();
 #endif
 #if SOC_PM_SUPPORT_PMU_MODEM_STATE && CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP
-        extern void pm_mac_modem_clear_rf_power_state(void);
         pm_mac_modem_clear_rf_power_state();
         if (sleep_modem_wifi_modem_state_enabled()) {
             sleep_modem_wifi_do_phy_retention(false);
