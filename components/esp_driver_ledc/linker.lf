@@ -7,7 +7,7 @@ entries:
         ledc: _ledc_update_duty (noflash)
 
 [mapping:ledc_hal]
-archive: libhal.a
+archive: libesp_hal_ledc.a
 entries:
     if SOC_LEDC_SUPPORTED = y:
         ledc_hal_iram (noflash)
