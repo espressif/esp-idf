@@ -105,6 +105,7 @@ static esp_err_t i2s_std_set_clock(i2s_chan_handle_t handle, const i2s_std_clk_c
     handle->sclk_hz = clk_info.sclk;
     handle->origin_mclk_hz = ((uint64_t)clk_info.sclk * ret_mclk_div.denominator) / tmp_div;
     handle->curr_mclk_hz = handle->origin_mclk_hz;
+    handle->bclk_hz = clk_info.bclk;
 
     ESP_LOGD(TAG, "Clock division info: [sclk] %"PRIu32" Hz [mdiv] %"PRIu32" %"PRIu32"/%"PRIu32" [mclk] %"PRIu32" Hz [bdiv] %d [bclk] %"PRIu32" Hz",
              clk_info.sclk, ret_mclk_div.integer, ret_mclk_div.numerator, ret_mclk_div.denominator, handle->origin_mclk_hz, clk_info.bclk_div, clk_info.bclk);
@@ -112,13 +113,24 @@ static esp_err_t i2s_std_set_clock(i2s_chan_handle_t handle, const i2s_std_clk_c
     return ret;
 }
 
+static i2s_std_slot_config_t s_i2s_std_normalize_slot_config(const i2s_std_slot_config_t *slot_cfg)
+{
+    i2s_std_slot_config_t normalized_slot_cfg = *slot_cfg;
+    /* 1. Normalize the slot bit width */
+    normalized_slot_cfg.slot_bit_width = (int)normalized_slot_cfg.slot_bit_width < (int)normalized_slot_cfg.data_bit_width ?
+                                         normalized_slot_cfg.data_bit_width : normalized_slot_cfg.slot_bit_width;
+
+    return normalized_slot_cfg;
+}
+
 static esp_err_t i2s_std_set_slot(i2s_chan_handle_t handle, const i2s_std_slot_config_t *slot_cfg)
 {
+    i2s_std_slot_config_t norm_slot_cfg = s_i2s_std_normalize_slot_config(slot_cfg);
     /* Update the total slot num and active slot num */
     handle->total_slot = 2;
-    handle->active_slot = slot_cfg->slot_mode == I2S_SLOT_MODE_MONO ? 1 : 2;
+    handle->active_slot = norm_slot_cfg.slot_mode == I2S_SLOT_MODE_MONO ? 1 : 2;
 
-    uint32_t buf_size = i2s_get_buf_size(handle, slot_cfg->data_bit_width, handle->dma.frame_num);
+    uint32_t buf_size = i2s_get_buf_size(handle, norm_slot_cfg.data_bit_width, handle->dma.frame_num);
     ESP_RETURN_ON_FALSE(buf_size != 0, ESP_ERR_INVALID_ARG, TAG, "invalid data_bit_width");
     /* The DMA buffer need to re-allocate if the buffer size changed */
     if (handle->dma.buf_size != buf_size) {
@@ -137,18 +149,15 @@ static esp_err_t i2s_std_set_slot(i2s_chan_handle_t handle, const i2s_std_slot_c
     portENTER_CRITICAL(&g_i2s.spinlock);
     /* Configure the hardware to apply STD format */
     if (handle->dir == I2S_DIR_TX) {
-        i2s_hal_std_set_tx_slot(&(handle->controller->hal), is_slave, (i2s_hal_slot_config_t *)slot_cfg);
+        i2s_hal_std_set_tx_slot(&(handle->controller->hal), is_slave, (i2s_hal_slot_config_t *)&norm_slot_cfg);
     } else {
-        i2s_hal_std_set_rx_slot(&(handle->controller->hal), is_slave, (i2s_hal_slot_config_t *)slot_cfg);
+        i2s_hal_std_set_rx_slot(&(handle->controller->hal), is_slave, (i2s_hal_slot_config_t *)&norm_slot_cfg);
     }
     portEXIT_CRITICAL(&g_i2s.spinlock);
 
     /* Update the mode info: slot configuration */
     i2s_std_config_t *std_cfg = (i2s_std_config_t *)(handle->mode_info);
     memcpy(&(std_cfg->slot_cfg), slot_cfg, sizeof(i2s_std_slot_config_t));
-    /* Update the slot bit width to the actual slot bit width */
-    std_cfg->slot_cfg.slot_bit_width = (int)std_cfg->slot_cfg.slot_bit_width < (int)std_cfg->slot_cfg.data_bit_width ?
-                                       std_cfg->slot_cfg.data_bit_width : std_cfg->slot_cfg.slot_bit_width;
 
     return ESP_OK;
 }
@@ -244,9 +253,8 @@ static esp_err_t s_i2s_channel_try_to_constitude_std_duplex(i2s_chan_handle_t ha
         /* Judge if the two channels can constitute full-duplex */
         if (!handle->controller->full_duplex) {
             i2s_std_config_t curr_cfg = *std_cfg;
-            /* Override the slot bit width to the actual slot bit width */
-            curr_cfg.slot_cfg.slot_bit_width = (int)curr_cfg.slot_cfg.slot_bit_width < (int)curr_cfg.slot_cfg.data_bit_width ?
-                                               curr_cfg.slot_cfg.data_bit_width : curr_cfg.slot_cfg.slot_bit_width;
+            i2s_std_slot_config_t norm_slot_cfg = s_i2s_std_normalize_slot_config(&(std_cfg->slot_cfg));
+            memcpy(&curr_cfg.slot_cfg, &norm_slot_cfg, sizeof(i2s_std_slot_config_t));
             /* Compare the hardware configurations of the two channels, constitute the full-duplex if they are the same */
             if (memcmp(another_handle->mode_info, &curr_cfg, sizeof(i2s_std_config_t)) == 0) {
                 handle->controller->full_duplex = true;

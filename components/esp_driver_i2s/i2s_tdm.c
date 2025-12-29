@@ -102,6 +102,7 @@ static esp_err_t i2s_tdm_set_clock(i2s_chan_handle_t handle, const i2s_tdm_clk_c
     handle->sclk_hz = clk_info.sclk;
     handle->origin_mclk_hz = ((uint64_t)clk_info.sclk * ret_mclk_div.denominator) / tmp_div;
     handle->curr_mclk_hz = handle->origin_mclk_hz;
+    handle->bclk_hz = clk_info.bclk;
 
     ESP_LOGD(TAG, "Clock division info: [sclk] %"PRIu32" Hz [mdiv] %"PRIu32" %"PRIu32"/%"PRIu32" [mclk] %"PRIu32" Hz [bdiv] %d [bclk] %"PRIu32" Hz",
              clk_info.sclk, ret_mclk_div.integer, ret_mclk_div.numerator, ret_mclk_div.denominator, handle->origin_mclk_hz, clk_info.bclk_div, clk_info.bclk);
@@ -109,20 +110,39 @@ static esp_err_t i2s_tdm_set_clock(i2s_chan_handle_t handle, const i2s_tdm_clk_c
     return ret;
 }
 
+static i2s_tdm_slot_config_t s_i2s_tdm_normalize_slot_config(const i2s_tdm_slot_config_t *slot_cfg)
+{
+    i2s_tdm_slot_config_t normalized_slot_cfg = *slot_cfg;
+    uint32_t max_slot_num = 32 - __builtin_clz(normalized_slot_cfg.slot_mask);
+    /* 1. Normalize the ws width */
+    normalized_slot_cfg.ws_width = normalized_slot_cfg.ws_width == I2S_TDM_AUTO_WS_WIDTH ?
+                                   normalized_slot_cfg.total_slot * normalized_slot_cfg.slot_bit_width / 2 : normalized_slot_cfg.ws_width;
+
+    /* 2. Normalize the total slot number */
+    normalized_slot_cfg.total_slot = normalized_slot_cfg.total_slot < max_slot_num ? max_slot_num : normalized_slot_cfg.total_slot;
+    // At least two slots in a frame if not using PCM short format
+    normalized_slot_cfg.total_slot = ((normalized_slot_cfg.total_slot < 2) && (normalized_slot_cfg.ws_width != 1)) ? 2 : normalized_slot_cfg.total_slot;
+
+    /* 3. Normalize the slot bit width */
+    normalized_slot_cfg.slot_bit_width = normalized_slot_cfg.slot_bit_width == I2S_SLOT_BIT_WIDTH_AUTO ?
+                                         normalized_slot_cfg.data_bit_width : normalized_slot_cfg.slot_bit_width;
+    return normalized_slot_cfg;
+}
+
 static esp_err_t i2s_tdm_set_slot(i2s_chan_handle_t handle, const i2s_tdm_slot_config_t *slot_cfg)
 {
     ESP_RETURN_ON_FALSE(slot_cfg->slot_mask, ESP_ERR_INVALID_ARG, TAG, "At least one channel should be enabled");
+
+    i2s_tdm_slot_config_t norm_slot_cfg = s_i2s_tdm_normalize_slot_config(slot_cfg);
     /* Update the total slot num and active slot num */
-    handle->active_slot = slot_cfg->slot_mode == I2S_SLOT_MODE_MONO ? 1 : __builtin_popcount(slot_cfg->slot_mask);
-    uint32_t max_slot_num = 32 - __builtin_clz(slot_cfg->slot_mask);
-    handle->total_slot = slot_cfg->total_slot < max_slot_num ? max_slot_num : slot_cfg->total_slot;
+    handle->active_slot = norm_slot_cfg.slot_mode == I2S_SLOT_MODE_MONO ? 1 : __builtin_popcount(norm_slot_cfg.slot_mask);
+    handle->total_slot = norm_slot_cfg.total_slot;
     // At least two slots in a frame if not using PCM short format
-    handle->total_slot = ((handle->total_slot < 2) && (slot_cfg->ws_width != 1)) ? 2 : handle->total_slot;
-    uint32_t slot_bits = slot_cfg->slot_bit_width == I2S_SLOT_BIT_WIDTH_AUTO ? slot_cfg->data_bit_width : slot_cfg->slot_bit_width;
+    uint32_t slot_bits = norm_slot_cfg.slot_bit_width;
     ESP_RETURN_ON_FALSE(handle->total_slot * slot_bits <= I2S_LL_SLOT_FRAME_BIT_MAX, ESP_ERR_INVALID_ARG, TAG,
                         "total slots(%"PRIu32") * slot_bit_width(%"PRIu32") exceeds the maximum %d",
                         handle->total_slot, slot_bits, (int)I2S_LL_SLOT_FRAME_BIT_MAX);
-    uint32_t buf_size = i2s_get_buf_size(handle, slot_cfg->data_bit_width, handle->dma.frame_num);
+    uint32_t buf_size = i2s_get_buf_size(handle, norm_slot_cfg.data_bit_width, handle->dma.frame_num);
     ESP_RETURN_ON_FALSE(buf_size != 0, ESP_ERR_INVALID_ARG, TAG, "invalid data_bit_width");
     /* The DMA buffer need to re-allocate if the buffer size changed */
     if (handle->dma.buf_size != buf_size) {
@@ -149,10 +169,7 @@ static esp_err_t i2s_tdm_set_slot(i2s_chan_handle_t handle, const i2s_tdm_slot_c
 
     /* Update the mode info: slot configuration */
     i2s_tdm_config_t *tdm_cfg = (i2s_tdm_config_t *)(handle->mode_info);
-    memcpy(&(tdm_cfg->slot_cfg), slot_cfg, sizeof(i2s_tdm_slot_config_t));
-    /* Update the slot bit width to the actual slot bit width */
-    tdm_cfg->slot_cfg.slot_bit_width = (int)tdm_cfg->slot_cfg.slot_bit_width < (int)tdm_cfg->slot_cfg.data_bit_width ?
-                                       tdm_cfg->slot_cfg.data_bit_width : tdm_cfg->slot_cfg.slot_bit_width;
+    memcpy(&(tdm_cfg->slot_cfg), &norm_slot_cfg, sizeof(i2s_tdm_slot_config_t));
 
     return ESP_OK;
 }
@@ -248,9 +265,8 @@ static void s_i2s_channel_try_to_constitude_tdm_duplex(i2s_chan_handle_t handle,
     if (another_handle && another_handle->state >= I2S_CHAN_STATE_READY) {
         if (!handle->controller->full_duplex) {
             i2s_tdm_config_t curr_cfg = *tdm_cfg;
-            /* Override the slot bit width to the actual slot bit width */
-            curr_cfg.slot_cfg.slot_bit_width = (int)curr_cfg.slot_cfg.slot_bit_width < (int)curr_cfg.slot_cfg.data_bit_width ?
-                                               curr_cfg.slot_cfg.data_bit_width : curr_cfg.slot_cfg.slot_bit_width;
+            i2s_tdm_slot_config_t norm_slot_cfg = s_i2s_tdm_normalize_slot_config(&(tdm_cfg->slot_cfg));
+            memcpy(&curr_cfg.slot_cfg, &norm_slot_cfg, sizeof(i2s_tdm_slot_config_t));
             /* Compare the hardware configurations of the two channels, constitute the full-duplex if they are the same */
             if (memcmp(another_handle->mode_info, &curr_cfg, sizeof(i2s_tdm_config_t)) == 0) {
                 handle->controller->full_duplex = true;
