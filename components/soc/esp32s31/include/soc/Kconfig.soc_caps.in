@@ -141,13 +141,9 @@ config SOC_GPIO_PORT
 
 config SOC_GPIO_PIN_COUNT
     int
-    default 63
+    default 62
 
 config SOC_GPIO_SUPPORT_PIN_HYS_FILTER
-    bool
-    default y
-
-config SOC_GPIO_SUPPORT_RTC_INDEPENDENT
     bool
     default y
 
@@ -163,17 +159,13 @@ config SOC_LP_IO_CLOCK_IS_INDEPENDENT
     bool
     default y
 
-config SOC_GPIO_VALID_GPIO_MASK
-    hex
-    default 0x7FFFFFFFFFFFFFFF
-
 config SOC_GPIO_IN_RANGE_MAX
     int
-    default 62
+    default 61
 
 config SOC_GPIO_OUT_RANGE_MAX
     int
-    default 62
+    default 61
 
 config SOC_GPIO_DEEP_SLEEP_WAKE_VALID_GPIO_MASK
     int
@@ -183,17 +175,17 @@ config SOC_GPIO_DEEP_SLEEP_WAKE_SUPPORTED_PIN_CNT
     int
     default 8
 
+config SOC_GPIO_SUPPORT_FORCE_HOLD
+    bool
+    default y
+
 config SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP
     bool
     default y
 
-config SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK
-    hex
-    default 0x7FFFFFFFFFFFFF00
-
-config SOC_GPIO_SUPPORT_FORCE_HOLD
-    bool
-    default y
+config SOC_RTCIO_PIN_COUNT
+    int
+    default 8
 
 config SOC_MMU_PERIPH_NUM
     int

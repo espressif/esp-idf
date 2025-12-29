@@ -44,7 +44,6 @@ typedef enum {
     GPIO_NUM_26 = 26,   /*!< GPIO26, input and output */
     GPIO_NUM_27 = 27,   /*!< GPIO27, input and output */
     GPIO_NUM_28 = 28,   /*!< GPIO28, input and output */
-    GPIO_NUM_29 = 29,   /*!< GPIO29, input and output */
     GPIO_NUM_30 = 30,   /*!< GPIO30, input and output */
     GPIO_NUM_31 = 31,   /*!< GPIO31, input and output */
     GPIO_NUM_32 = 32,   /*!< GPIO32, input and output */
@@ -56,7 +55,6 @@ typedef enum {
     GPIO_NUM_38 = 38,   /*!< GPIO38, input and output */
     GPIO_NUM_39 = 39,   /*!< GPIO39, input and output */
     GPIO_NUM_40 = 40,   /*!< GPIO40, input and output */
-    GPIO_NUM_41 = 41,   /*!< GPIO41, input and output */
     GPIO_NUM_42 = 42,   /*!< GPIO42, input and output */
     GPIO_NUM_43 = 43,   /*!< GPIO43, input and output */
     GPIO_NUM_44 = 44,   /*!< GPIO44, input and output */
@@ -77,7 +75,6 @@ typedef enum {
     GPIO_NUM_59 = 59,   /*!< GPIO59, input and output */
     GPIO_NUM_60 = 60,   /*!< GPIO60, input and output */
     GPIO_NUM_61 = 61,   /*!< GPIO61, input and output */
-    GPIO_NUM_62 = 62,   /*!< GPIO62, input and output */
     GPIO_NUM_MAX,
 } gpio_num_t;
 
