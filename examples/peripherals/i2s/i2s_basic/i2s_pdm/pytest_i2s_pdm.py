@@ -24,8 +24,6 @@ def test_i2s_pdm_tx_example(dut: Dut) -> None:
     dut.expect(r'i2s_common: tx channel is registered on I2S0 successfully', timeout=5)
     dut.expect(r'i2s_common: DMA malloc info: dma_desc_num = ([0-9]+), '
                r'dma_desc_buf_size = dma_frame_num \* slot_num \* data_bit_width = ([0-9]+)', timeout=5)
-    dut.expect(r'i2s_pdm: Clock division info: \[sclk\] ([0-9]+) Hz '
-               r'\[mdiv\] ([0-9]+) \[mclk\] ([0-9]+) Hz \[bdiv\] ([0-9]+) \[bclk\] ([0-9]+) Hz', timeout=5)
     dut.expect(r'i2s_pdm: The tx channel on I2S0 has been initialized to PDM TX mode successfully', timeout=5)
     dut.expect(r'i2s_common: i2s tx channel enabled', timeout=5)
     dut.expect(r'Playing bass `twinkle twinkle little star`', timeout=5)

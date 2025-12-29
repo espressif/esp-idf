@@ -89,10 +89,21 @@ typedef struct {
     i2s_role_t          role;               /*!< I2S role, I2S_ROLE_MASTER or I2S_ROLE_SLAVE */
     i2s_dir_t           dir;                /*!< I2S channel direction */
     i2s_comm_mode_t     mode;               /*!< I2S channel communication mode */
+    bool                is_enabled;         /*!< I2S channel is enabled or not */
     i2s_chan_handle_t   pair_chan;          /*!< I2S pair channel handle in duplex mode, always NULL in simplex mode */
     uint32_t            total_dma_buf_size; /*!< Total size of all the allocated DMA buffers
                                              *   - 0 if the channel has not been initialized
                                              *   - non-zero if the channel has been initialized
+                                             */
+    i2s_clock_src_t     clk_src;            /*!< Clock source of I2S */
+    uint32_t            sclk_hz;            /*!< Source clock frequency */
+    uint32_t            mclk_hz;            /*!< MCLK frequency */
+    uint32_t            bclk_hz;            /*!< BCLK frequency */
+    const void          *mode_cfg;          /*!< Mode configuration, it need to be casted to the corresponding type according to the communication mode
+                                             *   - I2S_COMM_MODE_STD: i2s_std_config_t*
+                                             *   - I2S_COMM_MODE_TDM: i2s_tdm_config_t*
+                                             *   - I2S_COMM_MODE_PDM + I2S_DIR_RX: i2s_pdm_rx_config_t*
+                                             *   - I2S_COMM_MODE_PDM + I2S_DIR_TX: i2s_pdm_tx_config_t*
                                              */
 } i2s_chan_info_t;
 
