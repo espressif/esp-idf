@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,7 +12,8 @@
 extern "C" {
 #endif
 
-#define ETS_DIGEST_LEN 32 /* SHA-256, bytes */
+#define ETS_DIGEST_SHA256_LEN 32 /* SHA-256, bytes */
+#define ETS_DIGEST_SHA384_LEN 48 /* SHA-384, bytes */
 
 typedef enum {
     ECDSA_CURVE_P192 = 1,
