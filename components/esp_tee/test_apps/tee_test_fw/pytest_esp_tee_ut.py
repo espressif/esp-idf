@@ -51,7 +51,7 @@ REE_ISOLATION_TEST_EXC_RSN: dict[str, str] = {
     ('IROM-W1'): 'Store access fault',
     ('DROM-R1'): 'Load access fault',
     ('DROM-W1'): 'Store access fault',
-    ('MMU-spillover'): 'Cache error',
+    ('MMU-spillover'): 'Illegal instruction',
 }
 
 TEE_APM_VIOLATION_EXC_CHK = ['eFuse', 'MMU', 'SWDT/BOD', 'AES', 'HMAC', 'DS', 'SHA PCR', 'ECC PCR']
@@ -160,9 +160,9 @@ def test_esp_tee_isolation_checks(dut: IdfDut) -> None:
             continue
         dut.expect_exact('Press ENTER to see the list of tests')
         dut.write(f'"Test REE-TEE isolation: {test}"')
-        # NOTE: For ESP32-C5 and C61, the MMU-spillover test fails gracefully without raising panic
-        if dut.target in {'esp32c5', 'esp32c61'} and test == 'MMU-spillover':
-            dut.expect_exact('Failed MMU operation, rebooting!')
+        # NOTE: For ESP32-H2, the MMU-spillover test triggers a Cache error panic
+        if dut.target in {'esp32h2'} and test == 'MMU-spillover':
+            dut.expect('Cache error', timeout=30)
             continue
         else:
             actual_exc = dut.expect(r'Core ([01]) panic\'ed \(([^)]+)\)', timeout=30).group(2).decode()

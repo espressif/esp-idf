@@ -3152,6 +3152,7 @@ typedef struct {
     volatile spi_mem_s_date_reg_t mem_date;
 } spi_mem_s_dev_t;
 
+extern spi_mem_s_dev_t SPIMEM2;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(spi_mem_s_dev_t) == 0x400, "Invalid size of spi_mem_s_dev_t structure");

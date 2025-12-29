@@ -144,19 +144,24 @@ if(NOT non_os_build)
     endif()
 
     if(NOT CONFIG_APP_BUILD_TYPE_PURE_RAM_APP)
-        list(APPEND srcs "mspi_timing_tuning/mspi_timing_tuning.c")
+        list(APPEND srcs "mspi/mspi_timing_tuning/mspi_timing_tuning.c")
         if(CONFIG_SOC_MEMSPI_TIMING_TUNING_BY_MSPI_DELAY AND NOT CONFIG_IDF_TARGET_ESP32S3)
-            if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/mspi_timing_tuning/tuning_scheme_impl/mspi_timing_by_mspi_delay.c")
-                list(APPEND srcs "mspi_timing_tuning/tuning_scheme_impl/mspi_timing_by_mspi_delay.c")
+            set(mspi_delay_file
+                "${CMAKE_CURRENT_LIST_DIR}/mspi/mspi_timing_tuning/tuning_scheme_impl/mspi_timing_by_mspi_delay.c"
+            )
+            if(EXISTS "${mspi_delay_file}")
+                list(APPEND srcs "mspi/mspi_timing_tuning/tuning_scheme_impl/mspi_timing_by_mspi_delay.c")
             endif()
         endif()
 
         if(CONFIG_SOC_MEMSPI_TIMING_TUNING_BY_DQS)
-            list(APPEND srcs "mspi_timing_tuning/tuning_scheme_impl/mspi_timing_by_dqs.c")
+            list(APPEND srcs "mspi/mspi_timing_tuning/tuning_scheme_impl/mspi_timing_by_dqs.c")
         endif()
         if(CONFIG_SOC_MEMSPI_TIMING_TUNING_BY_FLASH_DELAY)
-            list(APPEND srcs "mspi_timing_tuning/tuning_scheme_impl/mspi_timing_by_flash_delay.c")
+            list(APPEND srcs "mspi/mspi_timing_tuning/tuning_scheme_impl/mspi_timing_by_flash_delay.c")
         endif()
+
+        list(APPEND srcs "mspi/mspi_intr/mspi_intr.c")
     endif()
 
     if(CONFIG_SOC_RTC_FAST_MEM_SUPPORTED AND CONFIG_ESP_ROM_SUPPORT_DEEP_SLEEP_WAKEUP_STUB)
@@ -179,15 +184,15 @@ else()
     if(ESP_TEE_BUILD)
         list(APPEND srcs "esp_clk.c" "hw_random.c")
         if(CONFIG_SECURE_TEE_EXT_FLASH_MEMPROT_SPI1)
-            list(APPEND srcs "mspi_timing_tuning/mspi_timing_tuning.c")
+            list(APPEND srcs "mspi/mspi_timing_tuning/mspi_timing_tuning.c")
             if(CONFIG_SOC_MEMSPI_TIMING_TUNING_BY_MSPI_DELAY)
-                list(APPEND srcs "mspi_timing_tuning/tuning_scheme_impl/mspi_timing_by_mspi_delay.c")
+                list(APPEND srcs "mspi/mspi_timing_tuning/tuning_scheme_impl/mspi_timing_by_mspi_delay.c")
             endif()
             if(CONFIG_SOC_MEMSPI_TIMING_TUNING_BY_DQS)
-                list(APPEND srcs "mspi_timing_tuning/tuning_scheme_impl/mspi_timing_by_dqs.c")
+                list(APPEND srcs "mspi/mspi_timing_tuning/tuning_scheme_impl/mspi_timing_by_dqs.c")
             endif()
             if(CONFIG_SOC_MEMSPI_TIMING_TUNING_BY_FLASH_DELAY)
-                list(APPEND srcs "mspi_timing_tuning/tuning_scheme_impl/mspi_timing_by_flash_delay.c")
+                list(APPEND srcs "mspi/mspi_timing_tuning/tuning_scheme_impl/mspi_timing_by_flash_delay.c")
             endif()
         endif()
     endif()
@@ -198,7 +203,8 @@ endif()
 
 set(public_include_dirs "include" "include/soc"
                         "dma/include" "ldo/include" "debug_probe/include" "etm/include"
-                        "mspi_timing_tuning/include" "mspi_timing_tuning/tuning_scheme_impl/include"
+                        "mspi/mspi_timing_tuning/include" "mspi/mspi_timing_tuning/tuning_scheme_impl/include"
+                        "mspi/mspi_intr/include"
                         "power_supply/include" "modem/include")
 
 if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/include/soc/${target}")
@@ -223,12 +229,12 @@ idf_component_register(SRCS ${srcs}
                        PRIV_INCLUDE_DIRS port/include include/esp_private
                        REQUIRES ${requires}
                        PRIV_REQUIRES "${priv_requires}"
-                       LDFRAGMENTS linker.lf dma/linker.lf ldo/linker.lf mspi_timing_tuning/linker.lf)
+                       LDFRAGMENTS linker.lf dma/linker.lf ldo/linker.lf mspi/linker.lf)
 
 idf_build_get_property(target IDF_TARGET)
 add_subdirectory(port/${target})
 if(CONFIG_SOC_SPI_MEM_SUPPORT_TIMING_TUNING)
-    add_subdirectory(mspi_timing_tuning/port/${target})
+    add_subdirectory(mspi/mspi_timing_tuning/port/${target})
 endif()
 add_subdirectory(lowpower)
 

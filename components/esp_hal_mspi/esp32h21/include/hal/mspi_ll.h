@@ -30,6 +30,9 @@
 extern "C" {
 #endif
 
+#define MSPI_LL_PERIPH_NUM                            2
+#define MSPI_LL_INTR_SHARED                           1
+
 //Timing tuning not applied, and flash has its own clock source. Can change flash clock source
 #define MSPI_TIMING_LL_FLASH_CLK_SRC_CHANGEABLE       1
 

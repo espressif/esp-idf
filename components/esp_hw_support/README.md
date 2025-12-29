@@ -85,3 +85,126 @@ There may be multiple GDMA instances on a chip, some is attached to the AHB bus 
 Some high-performance peripherals, such as MIPI, require DMA to provide more functions, such as hardware handshake mechanism, address growth mode, out-of-order transmission and so on. Therefore, a new DMA controller, called `DW_GDMA` was born. The prefix *DW* is taken from *DesignWare*.
 
 Please note that the specific DMA controller to be used for peripherals is determined by the specific chip. It is possible that, on chip A, SPI works with AHB GDMA, while on chip B, SPI works with AXI GDMA.
+
+
+## MSPI Interrupt Logic - Chip Differences Analysis
+
+### 1. Overview
+
+This document describes the implementation differences of MSPI interrupt handling mechanism across different chips in ESP-IDF.
+
+#### Related Files
+
+| File | Description |
+|------|-------------|
+| `components/esp_hw_support/mspi/mspi_intr/mspi_intr.c` | Shared MSPI interrupt management |
+| `components/esp_psram/system_layer/esp_psram_mspi.c` | PSRAM specific interrupt handling |
+
+---
+
+### 2. Architecture Design
+
+The MSPI interrupt system is divided into two modes based on chip characteristics:
+
+| Mode             | Description                                      |
+|------------------|--------------------------------------------------|
+| **Shared IRQ**   | Flash and PSRAM share a single MSPI IRQ source   |
+| **Separate IRQ** | Flash and PSRAM have independent MSPI IRQs       |
+
+#### Architecture Diagrams
+
+##### 2.1 Shared IRQ Mode
+
+```
+                    ┌──────────────────────────────────────┐
+                    │           MSPI Hardware IRQ          │
+                    └──────────────────┬───────────────────┘
+                                       │
+                                       ▼
+                    ┌──────────────────────────────────────┐
+                    │      mspi_isr_handler()              │
+                    │      [mspi_intr.c]                   │
+                    │                                      │
+                    │  1. mspi_ll_get_intr_raw()           │
+                    │  2. mspi_ll_clear_intr()             │
+                    │  3. Check error events and log       │
+                    └──────────────────┬───────────────────┘
+                                       │
+                    ┌──────────────────┴───────────────────┐
+                    │                                      │
+                    ▼                                      ▼
+            ┌───────────────────┐              ┌───────────────────┐
+            │  s_isr.psram_isr  │              │  s_isr.flash_isr  │
+            │  (PSRAM handler)  │              │  (Flash handler)  │
+            └─────────┬─────────┘              └─────────┬─────────┘
+                      │                                  │
+                      └────────────┬─────────────────────┘
+                                   ▼
+                      ┌─────────────────────────┐
+                      │ abort() if fatal error  │
+                      └─────────────────────────┘
+```
+
+##### 2.2 Separate IRQ Mode
+
+```
+    ┌─────────────────────┐               ┌─────────────────────┐
+    │   Flash MSPI IRQ    │               │   PSRAM MSPI IRQ    │
+    └──────────┬──────────┘               └──────────┬──────────┘
+               │                                     │
+               ▼                                     ▼
+    ┌─────────────────────────────┐     ┌─────────────────────────────┐
+    │ [Reserved]                  │     │ mspi_psram_isr_handler_     │
+    │                             │     │ wrapper()                   │
+    │ To be registered by flash   │     │ [esp_psram_mspi.c]          │
+    │ driver or system component  │     │                             │
+    │                             │     │ 1. psram_ctrlr_ll_get_      │
+    │ Events to handle:           │     │    intr_raw()               │
+    │ - MSPI0 CPU read events     │     │ 2. psram_ctrlr_ll_clear_    │
+    │ - MSPI1 ESP-Flash driver    │     │    intr()                   │
+    │   events                    │     │ 3. mspi_psram_isr_handler() │
+    │                             │     │ 4. abort() if fatal error   │
+    └─────────────────────────────┘     └─────────────────────────────┘
+```
+
+---
+
+### 3. API Reference
+
+#### 3.1 mspi_intr.c
+
+This file (and these APIs) is only available on MSPI_LL_INTR_SHARED chips
+
+```c
+/**
+ * @brief Register MSPI ISR
+ * @param isr Pointer to structure containing psram_isr and flash_isr
+ * @return ESP_OK on success
+ */
+esp_err_t esp_mspi_register_isr(mspi_isr_t *isr);
+
+/**
+ * @brief Unregister MSPI ISR
+ * @return ESP_OK on success
+ */
+esp_err_t esp_mspi_unregister_isr(void);
+```
+
+#### 3.2 esp_psram_mspi.c
+
+- On MSPI_LL_INTR_SHARED chips, this file registers PSRAM specific ISR to the shared MSPI dispatcher (in mspi_intr.c)
+- On !MSPI_LL_INTR_SHARED chips, this file registers PSRAM own ISR via interrupt allocator
+
+```c
+/**
+ * @brief Register PSRAM MSPI ISR
+ * @return ESP_OK on success
+ */
+esp_err_t esp_psram_mspi_register_isr(void);
+
+/**
+ * @brief Unregister PSRAM MSPI ISR
+ * @return ESP_OK on success
+ */
+esp_err_t esp_psram_mspi_unregister_isr(void);
+```

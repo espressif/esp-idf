@@ -30,12 +30,17 @@
 #include "hal/assert.h"
 #include "soc/soc.h"
 #include "soc/spi_mem_reg.h"
+#include "soc/spi_mem_struct.h"
 #include "soc/io_mux_reg.h"
 #include "soc/syscon_struct.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#define MSPI_LL_PERIPH_NUM                            2
+#define MSPI_TIMING_LL_MSPI_ID_0                      0
+#define MSPI_TIMING_LL_MSPI_ID_1                      1
 
 #define ARRAY_SIZE(arr) (sizeof((arr))/sizeof(*(arr)))
 #define MSPI_TIMING_LL_FLASH_OCT_MASK                 (SPI_MEM_FCMD_OCT | SPI_MEM_FADDR_OCT | SPI_MEM_FDIN_OCT | SPI_MEM_FDOUT_OCT)
@@ -50,6 +55,8 @@ extern "C" {
 #define MSPI_TIMING_LL_CORE_CLOCK_MHZ_DEFAULT         80
 
 #define MSPI_TIMING_LL_FLASH_CPU_CLK_SRC_BINDED       1
+#define MSPI_LL_INTR_SHARED                           1
+#define MSPI_LL_EVENT_MASK                            0
 
 typedef enum {
     MSPI_TIMING_LL_FLASH_OPI_MODE = BIT(0),
@@ -560,6 +567,46 @@ static inline void mspi_ll_set_flash_protection_access(uint8_t spi_num, uint32_t
     default:
         HAL_ASSERT(false);
     }
+}
+
+/**
+ * @brief Enable/Disable MSPI controller interrupt
+ *
+ * @param mspi_id     mspi_id
+ * @param intr_mask   interrupt mask
+ * @param enable      enable / disable
+ */
+__attribute__((always_inline))
+static inline void mspi_ll_enable_intr(uint8_t spi_num, uint32_t intr_mask, bool enable)
+{
+    if (enable) {
+        SPIMEM0.int_ena.val |= intr_mask;
+    } else {
+        SPIMEM0.int_ena.val &= ~intr_mask;
+    }
+}
+
+/**
+ * @brief Clear MSPI controller interrupt
+ *
+ * @param mspi_id     mspi_id
+ * @param intr_mask   interrupt mask
+ */
+__attribute__((always_inline))
+static inline void mspi_ll_clear_intr(uint8_t spi_num, uint32_t intr_mask)
+{
+    SPIMEM0.int_clr.val = intr_mask;
+}
+
+/**
+ * @brief Get MSPI controller interrupt raw
+ *
+ * @param mspi_id     mspi_id
+ */
+__attribute__((always_inline))
+static inline uint32_t mspi_ll_get_intr_raw(uint8_t spi_num)
+{
+    return SPIMEM0.int_raw.val;
 }
 
 #ifdef __cplusplus

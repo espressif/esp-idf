@@ -43,6 +43,7 @@
 extern "C" {
 #endif
 
+#define MSPI_LL_PERIPH_NUM                            4
 #define MSPI_TIMING_LL_MSPI_ID_0                      0
 #define MSPI_TIMING_LL_MSPI_ID_1                      1
 
@@ -59,7 +60,25 @@ extern "C" {
 #define MSPI_TIMING_LL_FLASH_FAST_MODE_MASK           (SPI_MEM_C_FASTRD_MODE)
 #define MSPI_TIMING_LL_FLASH_SLOW_MODE_MASK           0
 
+#define MSPI_LL_ADDR_INT_SUPPORTED                    1
+#define MSPI_LL_PMS_INT_SUPPORTED                     1
+#define MSPI_LL_ECC_INT_SUPPORTED                     1
+#define MSPI_LL_FLASH_THRESH_INT_SUPPORTED            1
+#define MSPI_LL_EVENT_SLV_ST_END                      (1<<3)
+#define MSPI_LL_EVENT_MST_ST_END                      (1<<4)
+#define MSPI_LL_EVENT_ECC_ERR                         (1<<5)
+#define MSPI_LL_EVENT_PMS_REJECT                      (1<<6)
+#define MSPI_LL_EVENT_AXI_RADDR_ERR                   (1<<7)
+#define MSPI_LL_EVENT_AXI_WR_FLASH_ERR                (1<<8)
+#define MSPI_LL_EVENT_AXI_WADDR_ERR                   (1<<9)
+#define MSPI_LL_EVENT_RX_TRANS_OVF                    (1<<26)
+#define MSPI_LL_EVENT_TX_TRANS_UDF                    (1<<27)
+#define MSPI_LL_EVENT_MASK                            (MSPI_LL_EVENT_ECC_ERR | MSPI_LL_EVENT_PMS_REJECT | MSPI_LL_EVENT_AXI_RADDR_ERR | \
+                                                      MSPI_LL_EVENT_AXI_WR_FLASH_ERR | MSPI_LL_EVENT_AXI_WADDR_ERR | MSPI_LL_EVENT_RX_TRANS_OVF | \
+                                                      MSPI_LL_EVENT_TX_TRANS_UDF)
+
 #define MSPI_LL_AXI_DISABLE_SUPPORTED                 1
+#define MSPI_LL_INTR_EVENT_SUPPORTED                  1
 
 /**
  * MSPI DQS ID
@@ -634,6 +653,46 @@ static inline uint32_t mspi_timing_ll_get_invalid_dqs_mask(uint8_t spi_num)
     } else {
         HAL_ASSERT(false);
     }
+}
+
+/**
+ * @brief Enable/Disable MSPI controller interrupt
+ *
+ * @param mspi_id     mspi_id
+ * @param intr_mask   interrupt mask
+ * @param enable      enable / disable
+ */
+__attribute__((always_inline))
+static inline void mspi_ll_enable_intr(uint8_t spi_num, uint32_t intr_mask, bool enable)
+{
+    if (enable) {
+        SPIMEM0.int_ena.val |= intr_mask;
+    } else {
+        SPIMEM0.int_ena.val &= ~intr_mask;
+    }
+}
+
+/**
+ * @brief Clear MSPI controller interrupt
+ *
+ * @param mspi_id     mspi_id
+ * @param intr_mask   interrupt mask
+ */
+__attribute__((always_inline))
+static inline void mspi_ll_clear_intr(uint8_t spi_num, uint32_t intr_mask)
+{
+    SPIMEM0.int_clr.val = intr_mask;
+}
+
+/**
+ * @brief Get MSPI controller interrupt raw
+ *
+ * @param mspi_id     mspi_id
+ */
+__attribute__((always_inline))
+static inline uint32_t mspi_ll_get_intr_raw(uint8_t spi_num)
+{
+    return SPIMEM0.int_raw.val;
 }
 
 /**
