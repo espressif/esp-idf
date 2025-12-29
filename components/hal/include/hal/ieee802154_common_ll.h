@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -470,8 +470,8 @@ static inline void ieee802154_ll_set_security_key(uint8_t *security_key)
 
 static inline void ieee802154_ll_disable_coex(void)
 {
-    IEEE802154.pti.pti = 1;
-    IEEE802154.pti.hw_ack_pti = 1;
+    IEEE802154.pti.pti = 3;
+    IEEE802154.pti.hw_ack_pti = 3;
 }
 
 static inline void ieee802154_ll_clear_debug_cnt(uint32_t clear_bits)
