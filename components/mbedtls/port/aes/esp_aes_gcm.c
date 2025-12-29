@@ -21,8 +21,6 @@
 #include "esp_aes_internal.h"
 #include "hal/aes_hal.h"
 
-#include "mbedtls/gcm.h"
-
 #include "esp_heap_caps.h"
 #include "esp_log.h"
 #include "soc/soc_caps.h"

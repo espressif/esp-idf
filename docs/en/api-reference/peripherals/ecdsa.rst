@@ -134,7 +134,8 @@ The ECDSA peripheral in Mbed TLS stack is integrated by overriding the ECDSA sig
 
 For a particular TLS context, additional APIs have been supplied to populate certain fields (e.g., private key ctx) to differentiate routing to hardware. ESP-TLS layer integrates these APIs internally and hence no additional work is required at the application layer. However, for custom use-cases please refer to API details below.
 
+
 API Reference
 -------------
 
-.. include-build-file:: inc/ecdsa_alt.inc
+.. include-build-file:: inc/psa_crypto_driver_esp_ecdsa_contexts.inc

@@ -4,7 +4,7 @@ idf_build_get_property(esp_tee_build ESP_TEE_BUILD)
 
 if(esp_tee_build)
     include(${COMPONENT_DIR}/esp_tee/esp_tee_mbedtls.cmake)
-    return()
+return()
 
 elseif(BOOTLOADER_BUILD)   # TODO: IDF-11673
     if(CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL_BOOTLOADER)
@@ -415,47 +415,28 @@ if(CONFIG_MBEDTLS_HARDWARE_GCM OR CONFIG_MBEDTLS_HARDWARE_AES)
     endif()
 endif()
 
-if(CONFIG_MBEDTLS_HARDWARE_ECC)
-    target_sources(builtin PRIVATE "${COMPONENT_DIR}/port/ecc/esp_ecc.c"
-                                       "${COMPONENT_DIR}/port/ecc/ecc_alt.c")
-    include_directories("${COMPONENT_DIR}/tf-psa-crypto/drivers/builtin/include/mbedtls")
+if(CONFIG_SOC_ECC_SUPPORTED)
+    target_sources(builtin PRIVATE "${COMPONENT_DIR}/port/ecc/esp_ecc.c")
+    if(CONFIG_MBEDTLS_HARDWARE_ECC)
+        target_sources(builtin PRIVATE "${COMPONENT_DIR}/port/ecc/ecc_alt.c")
+        include_directories("${COMPONENT_DIR}/tf-psa-crypto/drivers/builtin/include/mbedtls")
+    endif()
 endif()
 
-if(CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN OR
-CONFIG_MBEDTLS_HARDWARE_ECDSA_VERIFY OR CONFIG_MBEDTLS_TEE_SEC_STG_ECDSA_SIGN)
-    target_sources(builtin PRIVATE "${COMPONENT_DIR}/port/ecdsa/ecdsa_alt.c")
-
-    set(WRAP_FUNCTIONS_SIGN
-        mbedtls_ecdsa_sign
-        mbedtls_ecdsa_sign_restartable
-        mbedtls_ecdsa_write_signature
-        mbedtls_ecdsa_write_signature_restartable)
-
-    set(WRAP_FUNCTIONS_VERIFY
-        mbedtls_ecdsa_verify
-        mbedtls_ecdsa_verify_restartable
-        mbedtls_ecdsa_read_signature
-        mbedtls_ecdsa_read_signature_restartable)
-
+if(CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN OR CONFIG_MBEDTLS_HARDWARE_ECDSA_VERIFY OR CONFIG_MBEDTLS_TEE_SEC_STG_ECDSA_SIGN)
+    # ESP_ECDSA_DRIVER_ENABLED needs to be public because users would use OPAQUE key contexts in their applications.
+    target_compile_definitions(tfpsacrypto PUBLIC ESP_ECDSA_DRIVER_ENABLED)
     if(CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN OR CONFIG_MBEDTLS_TEE_SEC_STG_ECDSA_SIGN)
-        foreach(wrap ${WRAP_FUNCTIONS_SIGN})
-            target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=${wrap}")
-        endforeach()
-
-        if(CONFIG_SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE)
-            target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=mbedtls_ecdsa_sign_det_ext")
-            target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=mbedtls_ecdsa_sign_det_restartable")
-        endif()
+        target_compile_definitions(tfpsacrypto PRIVATE ESP_ECDSA_SIGN_DRIVER_ENABLED)
     endif()
-
     if(CONFIG_MBEDTLS_HARDWARE_ECDSA_VERIFY)
-        foreach(wrap ${WRAP_FUNCTIONS_VERIFY})
-            target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=${wrap}")
-        endforeach()
+        target_compile_definitions(tfpsacrypto PRIVATE ESP_ECDSA_VERIFY_DRIVER_ENABLED)
     endif()
-
+    target_sources(tfpsacrypto PRIVATE "${COMPONENT_DIR}/port/psa_driver/esp_ecdsa/psa_crypto_driver_esp_ecdsa.c")
+    target_include_directories(tfpsacrypto PUBLIC "${COMPONENT_DIR}/port/psa_driver/include")
+    target_link_libraries(tfpsacrypto PRIVATE idf::efuse)
     if(CONFIG_MBEDTLS_TEE_SEC_STG_ECDSA_SIGN)
-        target_link_libraries(builtin PRIVATE idf::tee_sec_storage)
+        target_link_libraries(tfpsacrypto PRIVATE idf::tee_sec_storage)
     endif()
 endif()
 
@@ -508,10 +489,6 @@ if(CONFIG_PM_ENABLE)
     target_link_libraries(tfpsacrypto PRIVATE idf::esp_pm)
 endif()
 
-if(CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN OR CONFIG_MBEDTLS_HARDWARE_ECDSA_VERIFY)
-    target_link_libraries(builtin PRIVATE idf::efuse)
-endif()
-
 target_link_libraries(${COMPONENT_LIB} ${linkage_type} ${mbedtls_targets})
 
 # Ensure PSA crypto initialization is included in the build
@@ -529,7 +506,7 @@ function(builtin_optional_deps component_name)
 endfunction()
 
 if(CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN_CONSTANT_TIME_CM)
-    builtin_optional_deps(esp_timer idf::esp_timer)
+    target_link_libraries(tfpsacrypto PRIVATE idf::esp_timer)
 endif()
 
 # # Link esp-cryptoauthlib to mbedtls

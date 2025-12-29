@@ -26,7 +26,7 @@ ESP-IDF v6.0 已升级至 Mbed TLS v4.0，**PSA Crypto 成为主要加密接口*
 
 - **重大变更**：在 Mbed TLS v4.0 中，**大多数传统加密 API 已被移除**，PSA Crypto 成为主要接口。如果应用直接使用传统的 ``mbedtls_*`` 加密原语，则无法直接兼容，需迁移到 PSA Crypto API。
 - **重大变更**：在执行任何加密操作之前（包括解析密钥/证书或启动 TLS 握手等操作），必须调用 ``psa_crypto_init()``。ESP-IDF 在常规启动过程中会初始化 PSA，因此大多数应用保持兼容；但对于早于常规启动流程运行的代码，需显式调用 ``psa_crypto_init()``。
-- **新增 API**：新增 ``esp_ecdsa_free_pk_context(mbedtls_pk_context *key_ctx)``，参见 ``ecdsa/ecdsa_alt.h``。如果应用使用 ``esp_ecdsa_set_pk_context()`` 初始化包含硬件 ECDSA 密钥的 PK 上下文，应使用 ``esp_ecdsa_free_pk_context()`` 进行释放。在基于 PSA 的 Mbed TLS v4.x 中，``mbedtls_pk_free()`` 无法释放此种情况下手动创建的密钥对结构。
+- **重大变更**：``esp_ecdsa_load_pubkey()``、``esp_ecdsa_privkey_load_mpi()``、``esp_ecdsa_privkey_load_pk_context()``、``esp_ecdsa_set_pk_context()``、``esp_ecdsa_tee_load_pubkey()`` 和 ``esp_ecdsa_tee_set_pk_context()`` 已被弃用并移除。旧的 ``esp_ecdsa_pk_conf_t`` 配置已被 ``esp_ecdsa_opaque_key_t`` 取代，后者支持由 ECDSA 硬件提供的不透明密钥。应用程序可以配置该结构体并通过 ``psa_import_key()`` 导入，从而使用标准 PSA Crypto API 启用所有 ECDSA 操作。
 - **重大变更**：原需应用提供 RNG 回调（``f_rng``、``p_rng``）的 API，在 Mbed TLS v4.0 中已改为使用 PSA RNG。使用旧函数原型的代码将无法直接兼容，需要更新为新的 API 定义（例如 X.509 写入 API、SSL cookie 设置以及 SSL ticket 设置）。
 - **重大变更**：TLS 1.2 / DTLS 1.2 的互操作性可能受到影响，因为 Mbed TLS v4.0 移除了对基于有限域 DHE、无前向保密的 RSA 密钥交换（以及静态 ECDH）的支持。如果对等端需要使用已移除的密码套件，TLS 连接将不兼容并可能失败；需相应更新服务器或客户端的密码套件配置。
 - **重大变更**：证书或对等端中使用的椭圆曲线位数小于 250 位（例如 secp192r1/secp224r1）已不再受支持。

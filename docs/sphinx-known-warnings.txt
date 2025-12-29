@@ -184,16 +184,6 @@ If declarator-id:
     struct esp_cam_ctlr_csi_config_t
     --------------------------------^
 
-ecdsa_alt.inc:line: WARNING: Error in declarator or parameters-and-qualifiers
-If pointer to member declarator:
-  Invalid C++ declaration: Expected identifier in nested name. [error at 25]
-    union esp_ecdsa_pk_conf_t
-    -------------------------^
-If declarator-id:
-  Invalid C++ declaration: Expected identifier in nested name. [error at 25]
-    union esp_ecdsa_pk_conf_t
-    -------------------------^
-
 i2c_master.inc:line: WARNING: Duplicate C++ declaration, also defined at api-reference/peripherals/i2c:line.
 Declaration is '.. cpp:member:: uint8_t * data'.
 isp_types.inc:line: WARNING: Error in declarator or parameters-and-qualifiers
