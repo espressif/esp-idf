@@ -387,10 +387,10 @@ class IperfTestUtility(object):
                         self.dut.write('iperf -s -u -i 1 -t {}'.format(TEST_TIME))
                         # wait until DUT TCP server created
                         try:
-                            self.dut.expect('Socket bound', timeout=5)
+                            self.dut.expect('Socket created', timeout=5)
                         except pexpect.TIMEOUT:
                             # compatible with old iperf example binary
-                            logging.info('create iperf udp server fail')
+                            logging.info('No "Socket created" confirmation received after starting UDP server')
                         process = subprocess.Popen(
                             ['iperf', '-c', dut_ip, '-u', '-b', str(bw_limit) + 'm', '-t', str(TEST_TIME), '-f', 'm'],
                             stdout=f,
@@ -412,10 +412,10 @@ class IperfTestUtility(object):
                         )  # 4 sec for each bw step instance start/stop
                         # wait until DUT TCP server created
                         try:
-                            self.dut.expect('Socket bound', timeout=5)
+                            self.dut.expect('Socket created', timeout=5)
                         except pexpect.TIMEOUT:
                             # compatible with old iperf example binary
-                            logging.info('create iperf udp server fail')
+                            logging.info('No "Socket created" confirmation received after starting UDP server')
                         for bandwidth in range(start_bw, stop_bw, step):
                             process = subprocess.Popen(
                                 [
