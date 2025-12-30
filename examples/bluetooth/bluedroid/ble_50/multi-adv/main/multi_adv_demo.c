@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
  * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
+=======
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
+>>>>>>> 0770fb4638e... refactor(examples/bluedroid): Replace hardcoded ADV type values with macros
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -108,37 +112,37 @@ esp_ble_gap_ext_adv_params_t ext_adv_params_coded = {
 };
 
 static uint8_t raw_adv_data_1m[] = {
-        0x02, 0x01, 0x06,
-        0x02, 0x0a, 0xeb,
-        0x11, 0x09, 'E', 'S', 'P', '_', 'M', 'U', 'L', 'T', 'I', '_', 'A',
+        0x02, ESP_BLE_AD_TYPE_FLAG, 0x06,
+        0x02, ESP_BLE_AD_TYPE_TX_PWR, 0xeb,
+        0x11, ESP_BLE_AD_TYPE_NAME_CMPL, 'E', 'S', 'P', '_', 'M', 'U', 'L', 'T', 'I', '_', 'A',
         'D', 'V', '_', '1', 'M'
 };
 
 static uint8_t raw_scan_rsp_data_2m[] = {
-        0x02, 0x01, 0x06,
-        0x02, 0x0a, 0xeb,
-        0x11, 0x09, 'E', 'S', 'P', '_', 'M', 'U', 'L', 'T', 'I', '_', 'A',
+        0x02, ESP_BLE_AD_TYPE_FLAG, 0x06,
+        0x02, ESP_BLE_AD_TYPE_TX_PWR, 0xeb,
+        0x11, ESP_BLE_AD_TYPE_NAME_CMPL, 'E', 'S', 'P', '_', 'M', 'U', 'L', 'T', 'I', '_', 'A',
         'D', 'V', '_', '2', 'M'
 };
 
 static uint8_t legacy_adv_data[] = {
-        0x02, 0x01, 0x06,
-        0x02, 0x0a, 0xeb,
-        0x14, 0x09, 'E', 'S', 'P', '_', 'M', 'U', 'L', 'T', 'I', '_', 'A',
+        0x02, ESP_BLE_AD_TYPE_FLAG, 0x06,
+        0x02, ESP_BLE_AD_TYPE_TX_PWR, 0xeb,
+        0x14, ESP_BLE_AD_TYPE_NAME_CMPL, 'E', 'S', 'P', '_', 'M', 'U', 'L', 'T', 'I', '_', 'A',
         'D', 'V', '_', 'C', 'O', 'D', 'E', 'D'
 };
 
 static uint8_t legacy_scan_rsp_data[] = {
-        0x02, 0x01, 0x06,
-        0x02, 0x0a, 0xeb,
-        0x15, 0x09, 'E', 'S', 'P', '_', 'M', 'U', 'L', 'T', 'I', '_', 'A',
+        0x02, ESP_BLE_AD_TYPE_FLAG, 0x06,
+        0x02, ESP_BLE_AD_TYPE_TX_PWR, 0xeb,
+        0x15, ESP_BLE_AD_TYPE_NAME_CMPL, 'E', 'S', 'P', '_', 'M', 'U', 'L', 'T', 'I', '_', 'A',
         'D', 'V', '_', 'L', 'E', 'G', 'A', 'C', 'Y'
 };
 
 static uint8_t raw_scan_rsp_data_coded[] = {
-        0x02, 0x01, 0x06,
-        0x02, 0x0a, 0xeb,
-        0x14, 0x09, 'E', 'S', 'P', '_', 'M', 'U', 'L', 'T', 'I', '_', 'A',
+        0x02, ESP_BLE_AD_TYPE_FLAG, 0x06,
+        0x02, ESP_BLE_AD_TYPE_TX_PWR, 0xeb,
+        0x14, ESP_BLE_AD_TYPE_NAME_CMPL, 'E', 'S', 'P', '_', 'M', 'U', 'L', 'T', 'I', '_', 'A',
         'D', 'V', '_', 'C', 'O', 'D', 'E', 'D'
 };
 
