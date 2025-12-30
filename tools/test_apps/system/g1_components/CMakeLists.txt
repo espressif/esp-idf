@@ -22,6 +22,7 @@ set(esp_hal_components
     esp_hal_usb
     esp_hal_wdt
     esp_hal_pmu
+    esp_hal_rtc_timer
 )
 set(COMPONENTS ${g0_components} ${g1_components} ${esp_hal_components} main)
 

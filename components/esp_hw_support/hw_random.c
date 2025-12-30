@@ -19,9 +19,7 @@
 #include "esp_private/startup_internal.h"
 #endif
 
-#if SOC_LP_TIMER_SUPPORTED
-#include "hal/lp_timer_hal.h"
-#endif
+#include "hal/rtc_timer_hal.h"
 
 #if SOC_RNG_CLOCK_IS_INDEPENDENT
 #include "hal/lp_clkrst_ll.h"
@@ -74,21 +72,16 @@ uint32_t IRAM_ATTR esp_random(void)
     static uint32_t last_ccount = 0;
     uint32_t ccount;
     uint32_t result = 0;
-#if SOC_LP_TIMER_SUPPORTED
     for (size_t i = 0; i < sizeof(result); i++) {
         do {
             ccount = esp_cpu_get_cycle_count();
             result ^= REG_READ(WDEV_RND_REG);
         } while (ccount - last_ccount < cpu_to_apb_freq_ratio * APB_CYCLE_WAIT_NUM);
-        uint32_t current_rtc_timer_counter = (lp_timer_hal_get_cycle_count() & 0xFF);
+#if SOC_RTC_TIMER_SUPPORTED
+        uint32_t current_rtc_timer_counter = (rtc_timer_hal_get_cycle_count(0) & 0xFF);
         result ^= (current_rtc_timer_counter << (i * 8));
-    }
-#else
-    do {
-        ccount = esp_cpu_get_cycle_count();
-        result ^= REG_READ(WDEV_RND_REG);
-    } while (ccount - last_ccount < cpu_to_apb_freq_ratio * APB_CYCLE_WAIT_NUM);
 #endif
+    }
     last_ccount = ccount;
     return result ^ REG_READ(WDEV_RND_REG);
 }

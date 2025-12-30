@@ -19,8 +19,8 @@
 #include "hal/lp_i2s_ll.h"
 #endif
 
-#if SOC_LP_TIMER_SUPPORTED
-#include "hal/lp_timer_ll.h"
+#if SOC_RTC_TIMER_V2_SUPPORTED
+#include "hal/rtc_timer_ll.h"
 #endif
 
 #include "esp_cpu.h"
@@ -82,13 +82,13 @@ void ulp_lp_core_update_wakeup_cause(void)
     }
 #endif /* SOC_ETM_SUPPORTED */
 
-#if SOC_LP_TIMER_SUPPORTED
+#if SOC_RTC_TIMER_V2_SUPPORTED
     if ((lp_core_ll_get_wakeup_source() & LP_CORE_LL_WAKEUP_SOURCE_LP_TIMER) \
-            && (lp_timer_ll_get_lp_intr_raw(&LP_TIMER) & LP_TIMER_MAIN_TIMER_LP_INT_RAW)) {
+            && (rtc_timer_ll_get_intr_raw(&LP_TIMER, 1) & LP_TIMER_MAIN_TIMER_LP_INT_RAW)) {
         lp_wakeup_cause |= LP_CORE_LL_WAKEUP_SOURCE_LP_TIMER;
-        lp_timer_ll_clear_lp_intsts_mask(&LP_TIMER, LP_TIMER_MAIN_TIMER_LP_INT_CLR);
+        rtc_timer_ll_clear_alarm_intr_status(&LP_TIMER, 1);
     }
-#endif /* SOC_LP_TIMER_SUPPORTED */
+#endif /* SOC_RTC_TIMER_V2_SUPPORTED */
 
 }
 
@@ -196,15 +196,15 @@ void ulp_lp_core_sw_intr_from_hp_clear(void)
     pmu_ll_lp_clear_sw_intr_status(&PMU);
 }
 
-#if SOC_LP_TIMER_SUPPORTED
+#if SOC_RTC_TIMER_V2_SUPPORTED
 void ulp_lp_core_lp_timer_intr_enable(bool enable)
 {
-    lp_timer_ll_lp_alarm_intr_enable(&LP_TIMER, enable);
+    rtc_timer_ll_alarm_intr_enable(&LP_TIMER, 1, enable);
 }
 
 void ulp_lp_core_lp_timer_intr_clear(void)
 {
-    lp_timer_ll_clear_lp_alarm_intr_status(&LP_TIMER);
+    rtc_timer_ll_clear_alarm_intr_status(&LP_TIMER, 1);
 }
 #endif
 

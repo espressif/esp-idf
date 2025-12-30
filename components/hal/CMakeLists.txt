@@ -19,10 +19,6 @@ if(CONFIG_SOC_EFUSE_SUPPORTED)
     list(APPEND srcs "efuse_hal.c" "${target}/efuse_hal.c")
 endif()
 
-if(CONFIG_SOC_LP_TIMER_SUPPORTED)
-    list(APPEND srcs "lp_timer_hal.c")
-endif()
-
 if(CONFIG_SOC_KEY_MANAGER_SUPPORTED)
     list(APPEND srcs "key_mgr_hal.c")
     list(APPEND srcs "huk_hal.c")

@@ -243,7 +243,7 @@ static void start_freq(soc_rtc_slow_clk_src_t required_src, uint32_t start_delay
             printf("PASS. Time measurement...");
         }
         uint32_t fail_measure = 0;
-#if SOC_LP_TIMER_SUPPORTED
+#if SOC_RTC_TIMER_V2_SUPPORTED
         uint64_t clk_rtc_time;
         for (int j = 0; j < 3; ++j) {
             clk_rtc_time = esp_clk_rtc_time();
@@ -334,7 +334,7 @@ TEST_CASE("Test starting 'External 32kHz XTAL' on the board without it.", "[rtc_
 #endif // !defined(CONFIG_IDF_CI_BUILD) || !CONFIG_SPIRAM_BANKSWITCH_ENABLE
 #endif // SOC_CLK_XTAL32K_SUPPORTED
 
-#if SOC_LP_TIMER_SUPPORTED
+#if SOC_RTC_TIMER_V2_SUPPORTED
 TEST_CASE("Test rtc clk calibration compensation", "[rtc_clk]")
 {
     int64_t t1 = esp_rtc_get_time_us();

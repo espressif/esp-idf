@@ -8,7 +8,7 @@
 #include <assert.h>
 #include "esp32p4/rom/ets_sys.h"
 #include "soc/rtc.h"
-#include "hal/lp_timer_hal.h"
+#include "hal/rtc_timer_hal.h"
 #include "hal/clk_tree_ll.h"
 #include "hal/timg_ll.h"
 #include "soc/hp_sys_clkrst_reg.h"
@@ -213,7 +213,7 @@ uint64_t rtc_time_slowclk_to_us(uint64_t rtc_cycles, uint32_t period)
 
 uint64_t rtc_time_get(void)
 {
-    return lp_timer_hal_get_cycle_count();
+    return rtc_timer_hal_get_cycle_count(0);
 }
 
 uint32_t rtc_clk_freq_cal(uint32_t cal_val)

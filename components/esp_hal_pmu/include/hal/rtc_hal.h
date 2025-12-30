@@ -10,7 +10,9 @@
 #include "soc/soc_caps.h"
 #include "hal/gpio_types.h"
 
-#if SOC_IS(ESP32) || SOC_IS(ESP32C2) || SOC_IS(ESP32C3) || SOC_IS(ESP32S2) || SOC_IS(ESP32S3)
+#if SOC_PMU_SUPPORTED || SOC_IS(ESP32S31) // TODO: ["ESP32S31"] IDF-14653
+#include "hal/pmu_ll.h"
+#else
 #include "hal/rtc_cntl_ll.h"
 #endif
 
@@ -20,10 +22,6 @@
 
 #if SOC_LP_AON_SUPPORTED
 #include "hal/lp_aon_ll.h"
-#endif
-
-#if SOC_PM_EXT1_WAKEUP_BY_PMU
-#include "hal/pmu_ll.h"
 #endif
 
 #ifdef __cplusplus
@@ -83,31 +81,20 @@ typedef struct rtc_cntl_sleep_retent {
 #endif // SOC_PM_SUPPORT_EXT1_WAKEUP
 
 #if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP && (SOC_RTCIO_PIN_COUNT == 0) && SOC_DEEP_SLEEP_SUPPORTED
-
 #define rtc_hal_gpio_get_wakeup_status()                  rtc_cntl_ll_gpio_get_wakeup_status()
-
 #define rtc_hal_gpio_clear_wakeup_status()                rtc_cntl_ll_gpio_clear_wakeup_status()
-
 #endif
-
-#define rtc_hal_set_wakeup_timer(ticks)                   rtc_cntl_ll_set_wakeup_timer(ticks)
 
 void * rtc_cntl_hal_dma_link_init(void *elem, void *buff, int size, void *next);
 
 #if SOC_PM_SUPPORT_CPU_PD
-
 void rtc_cntl_hal_enable_cpu_retention(void *addr);
-
 void rtc_cntl_hal_disable_cpu_retention(void *addr);
-
 #endif
 
 #if SOC_PM_SUPPORT_TAGMEM_PD
-
 void rtc_cntl_hal_enable_tagmem_retention(void *addr);
-
 void rtc_cntl_hal_disable_tagmem_retention(void *addr);
-
 #endif
 
 /*

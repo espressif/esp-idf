@@ -65,7 +65,7 @@ if(CONFIG_ULP_COPROC_TYPE_LP_CORE)
         list(APPEND srcs "lp_core/lp_core_i2c.c")
     endif()
 
-    if(CONFIG_SOC_LP_TIMER_SUPPORTED)
+    if(CONFIG_SOC_RTC_TIMER_V2_SUPPORTED)
         list(APPEND srcs "lp_core/shared/ulp_lp_core_lp_timer_shared.c")
     endif()
 
@@ -98,5 +98,5 @@ idf_component_register(
     SRCS ${srcs}
     INCLUDE_DIRS ${includes}
     REQUIRES esp_adc esp_driver_gpio esp_driver_uart esp_driver_i2s
-             esp_hal_i2c esp_hal_touch_sens esp_hal_gpspi esp_hal_pmu
+             esp_hal_i2c esp_hal_touch_sens esp_hal_gpspi esp_hal_pmu esp_hal_rtc_timer
 )

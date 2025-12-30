@@ -119,7 +119,7 @@ config SOC_PMU_SUPPORTED
     bool
     default y
 
-config SOC_LP_TIMER_SUPPORTED
+config SOC_RTC_TIMER_V2_SUPPORTED
     bool
     default y
 

@@ -22,7 +22,7 @@
 extern "C" {
 #endif
 
-// TODO: ["ESP32S31"] IDF-14653
+// TODO: ["ESP32S31"] IDF-14642
 
 #ifdef __cplusplus
 }

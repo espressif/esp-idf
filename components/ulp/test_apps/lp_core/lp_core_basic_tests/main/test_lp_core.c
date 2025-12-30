@@ -13,7 +13,7 @@
 #include "lp_core_test_app_counter.h"
 #include "lp_core_test_app_isr.h"
 
-#if SOC_LP_TIMER_SUPPORTED
+#if SOC_RTC_TIMER_V2_SUPPORTED
 #include "lp_core_test_app_set_timer_wakeup.h"
 #endif
 
@@ -295,7 +295,7 @@ TEST_CASE("LP core can be stopped and and started again from main CPU", "[ulp]")
     }
 }
 
-#if SOC_LP_TIMER_SUPPORTED
+#if SOC_RTC_TIMER_V2_SUPPORTED
 TEST_CASE("LP core can schedule next wake-up time by itself", "[ulp]")
 {
     int64_t start, test_duration;
@@ -342,7 +342,7 @@ TEST_CASE("LP core gpio tests", "[ulp]")
 }
 #endif //SOC_RTCIO_PIN_COUNT > 0
 
-#endif //SOC_LP_TIMER_SUPPORTED
+#endif // SOC_RTC_TIMER_V2_SUPPORTED
 
 #define ISR_TEST_ITERATIONS 100
 #define IO_TEST_PIN 0
