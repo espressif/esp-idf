@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -362,12 +362,16 @@ static void auto_io_gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_
     case ESP_GATTS_WRITE_EVT:
         ESP_LOGI(GATTS_TAG, "Characteristic write, value len %u, value ", param->write.len);
         ESP_LOG_BUFFER_HEX(GATTS_TAG, param->write.value, param->write.len);
-        if (param->write.value[0]) {
-            ESP_LOGI(GATTS_TAG, "LED ON!");
-            led_on();
+        if (param->write.len > 0) {
+            if (param->write.value[0]) {
+                ESP_LOGI(GATTS_TAG, "LED ON!");
+                led_on();
+            } else {
+                ESP_LOGI(GATTS_TAG, "LED OFF!");
+                led_off();
+            }
         } else {
-            ESP_LOGI(GATTS_TAG, "LED OFF!");
-            led_off();
+            ESP_LOGW(GATTS_TAG, "Empty write data received");
         }
         example_write_event_env(gatts_if, param);
         break;
