@@ -93,7 +93,7 @@ If none of our chip series meet your needs, please contact `customer support tea
     * -
       - Enhanced Attribute Protocol
       - |unsupported|
-      - |developing202412|
+      - |experimental|
     * -
       - LE Power Control
       - |unsupported|
@@ -121,9 +121,33 @@ If none of our chip series meet your needs, please contact `customer support tea
     * -
       - LE GATT Security Levels Characteristic
       - |unsupported|
-      - |developing202412|
+      - |experimental|
     * -
       - Periodic Advertising with Responses
+      - |unsupported|
+      - |unsupported|
+    * - .. centered:: |6.0|
+      - Channel Sounding
+      - |unsupported|
+      - |unsupported|
+    * -
+      - LL Extended Feature Set
+      - |unsupported|
+      - |unsupported|
+    * -
+      - Decision-Based Advertising Filtering
+      - |unsupported|
+      - |unsupported|
+    * -
+      - Enhancements for ISOAL
+      - |unsupported|
+      - |unsupported|
+    * -
+      - Monitoring Advertisers
+      - |unsupported|
+      - |unsupported|
+    * -
+      - Frame Space Update
       - |unsupported|
       - |unsupported|
 
@@ -157,3 +181,4 @@ You are encouraged to consult with our `customer support team <https://www.espre
 .. |5.2| replace:: `5.2 <https://www.bluetooth.com/specifications/specs/core-specification-5-2/>`__
 .. |5.3| replace:: `5.3 <https://www.bluetooth.com/specifications/specs/core-specification-5-3/>`__
 .. |5.4| replace:: `5.4 <https://www.bluetooth.com/specifications/specs/core-specification-5-4/>`__
+.. |6.0| replace:: `6.0 <https://www.bluetooth.com/specifications/specs/core-specification-6-0/>`__
