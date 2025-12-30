@@ -32,7 +32,7 @@ ic_ebuf_recycle_rx = 0x40000b40;
 ic_ebuf_recycle_tx = 0x40000b44;
 ic_reset_rx_ba = 0x40000b48;
 ic_ebuf_alloc = 0x40000b4c;
-ic_reset_extra_softap_rx_ba = 0x40000b50;
+//ic_reset_extra_softap_rx_ba = 0x40000b50;
 ieee80211_align_eb = 0x40000b54;
 ieee80211_ampdu_reorder = 0x40000b58;
 ieee80211_ampdu_start_age_timer = 0x40000b5c;
@@ -68,7 +68,7 @@ wifi_is_started = 0x40000bd0;
 /*sta_input = 0x40000bd4;*/
 //sta_rx_eapol = 0x40000bd8;
 //sta_reset_beacon_timeout = 0x40000bdc;
-sta_get_beacon_timeout = 0x40000be0;
+//sta_get_beacon_timeout = 0x40000be0;
 ampdu_process_multicast_address_qos_frame = 0x40000be4;
 /* Data (.data, .bss, .rodata) */
 net80211_funcs = 0x4085ffac;

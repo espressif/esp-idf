@@ -722,6 +722,15 @@ void nan_ndp_resp_timeout_process(void *p)
 }
 #endif /* CONFIG_ESP_WIFI_NAN_SYNC_ENABLE */
 
+#if CONFIG_IDF_TARGET_ESP32C5
+#if CONFIG_ESP32C5_REV_MIN_FULL <= 100
+void esp32c5_eco3_rom_ptr_init(void)
+{
+    /* Do not remove, stub to overwrite weak link in Wi-Fi Lib */
+}
+#endif
+#endif
+
 #if CONFIG_IDF_TARGET_ESP32C2
 #if CONFIG_ESP32C2_REV_MIN_FULL < 200
 void esp32c2_eco4_rom_ptr_init(void)
