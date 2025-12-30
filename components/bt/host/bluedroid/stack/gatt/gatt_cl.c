@@ -554,7 +554,13 @@ void gatt_process_error_rsp(tGATT_TCB *p_tcb, tGATT_CLCB *p_clcb, UINT8 op_code,
     tGATT_VALUE  *p_attr = (tGATT_VALUE *)p_clcb->p_attr_buf;
 
     UNUSED(op_code);
-    UNUSED(len);
+
+    /* Fix: Validate minimum length (opcode:1 + handle:2 + reason:1 = 4 bytes) */
+    if (len < 4) {
+        GATT_TRACE_ERROR("invalid error rsp len: %d", len);
+        gatt_end_operation(p_clcb, GATT_INVALID_PDU, NULL);
+        return;
+    }
 
     GATT_TRACE_DEBUG("%s", __func__);
     STREAM_TO_UINT8(opcode, p);
@@ -798,6 +804,14 @@ void gatt_process_read_by_type_rsp (tGATT_TCB *p_tcb, tGATT_CLCB *p_clcb, UINT8 
 
     if (op_code == GATT_RSP_READ_BY_GRP_TYPE) {
         handle_len = 4;
+    }
+
+    /* Check value_len is sufficient before subtraction to prevent underflow */
+    if (value_len < handle_len) {
+        GATT_TRACE_ERROR("gatt_process_read_by_type_rsp: value_len(%d) < handle_len(%d), invalid response",
+                         value_len, handle_len);
+        gatt_end_operation(p_clcb, GATT_INVALID_PDU, NULL);
+        return;
     }
 
     value_len -= handle_len; /* subtract the handle pairs bytes */

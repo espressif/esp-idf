@@ -69,9 +69,15 @@ osi_sem_take(osi_sem_t *sem, uint32_t timeout)
     return ret;
 }
 
-// Deallocates a semaphore
+/** Deallocates a semaphore
+ * @param sem the semaphore to delete
+ * Note: Safe to call with NULL or uninitialized semaphore (IDFGH-16853)
+ */
 void osi_sem_free(osi_sem_t *sem)
 {
+    if (sem == NULL || *sem == NULL) {
+        return;
+    }
     vSemaphoreDelete(*sem);
     *sem = NULL;
 }

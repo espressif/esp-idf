@@ -101,7 +101,7 @@ const static esp_ble_conn_params_t phy_1m_conn_params = {
     .interval_min = BLE_PREF_CONN_ITVL_MS * 1000 / 1250,
     .interval_max = BLE_PREF_CONN_ITVL_MS * 1000 / 1250,
     .latency = 0,
-    .supervision_timeout = 600,
+    .supervision_timeout = ESP_BLE_GAP_SUPERVISION_TIMEOUT_MS(6000),
     .min_ce_len = BLE_PREF_CE_LEN,
     .max_ce_len = BLE_PREF_CE_LEN,
 };
@@ -113,7 +113,7 @@ const static esp_ble_conn_params_t phy_2m_conn_params = {
     .interval_min = BLE_PREF_CONN_ITVL_MS * 1000 / 1250,
     .interval_max = BLE_PREF_CONN_ITVL_MS * 1000 / 1250,
     .latency = 0,
-    .supervision_timeout = 600,
+    .supervision_timeout = ESP_BLE_GAP_SUPERVISION_TIMEOUT_MS(6000),
     .min_ce_len = BLE_PREF_CE_LEN,
     .max_ce_len = BLE_PREF_CE_LEN,
 };
@@ -124,7 +124,7 @@ const static esp_ble_conn_params_t phy_coded_conn_params = {
     .interval_min = BLE_PREF_CONN_ITVL_MS * 1000 / 1250,
     .interval_max = BLE_PREF_CONN_ITVL_MS * 1000 / 1250,
     .latency = 0,
-    .supervision_timeout = 600,
+    .supervision_timeout = ESP_BLE_GAP_SUPERVISION_TIMEOUT_MS(6000),
     .min_ce_len = BLE_PREF_CE_LEN,
     .max_ce_len = BLE_PREF_CE_LEN,
 };
@@ -160,8 +160,8 @@ struct gatts_profile_inst
 
 #if (BLE50_SUPPORTED == 0)
 esp_ble_adv_params_t legacy_adv_params = {
-    .adv_int_min = 0x20,
-    .adv_int_max = 0x20,
+    .adv_int_min = ESP_BLE_GAP_ADV_ITVL_MS(20),
+    .adv_int_max = ESP_BLE_GAP_ADV_ITVL_MS(20),
     .adv_type = ADV_TYPE_IND,
     .own_addr_type = BLE_ADDR_TYPE_RANDOM,
     .channel_map = ADV_CHNL_ALL,
@@ -171,8 +171,8 @@ esp_ble_adv_params_t legacy_adv_params = {
 #else
 esp_ble_gap_ext_adv_params_t ext_adv_params = {
     .type = ESP_BLE_GAP_SET_EXT_ADV_PROP_CONNECTABLE,
-    .interval_min = 0x20,
-    .interval_max = 0x20,
+    .interval_min = ESP_BLE_GAP_ADV_ITVL_MS(20),
+    .interval_max = ESP_BLE_GAP_ADV_ITVL_MS(20),
     .channel_map = ADV_CHNL_ALL,
     .filter_policy = ADV_FILTER_ALLOW_SCAN_ANY_CON_ANY,
     .primary_phy = ESP_BLE_GAP_PHY_1M,

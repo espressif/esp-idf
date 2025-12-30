@@ -6,6 +6,49 @@
 This is the demo used to test the BLE throughput, this demo should used with throughput server demo together.
 The throughput of BLE can up to 720-767 Kbps between to ESP32 board.
 
+## Flow Diagram
+
+```
+    ┌──────────────┐                                    ┌──────────────┐
+    │  Throughput  │                                    │  Throughput  │
+    │    Client    │                                    │    Server    │
+    └──────┬───────┘                                    └──────┬───────┘
+           │                                                   │
+           │  ─────────── Connection Setup ───────────         │
+           │                                                   │
+           │  1. Scan for "THROUGHPUT_DEMO"                    │  Advertising
+           │ ───────────────────────────────────────────────>  │
+           │                                                   │
+           │  2. Connect                                       │
+           │ ───────────────────────────────────────────────>  │
+           │                                                   │
+           │  3. MTU Exchange (517 bytes)                      │
+           │ <────────────────────────────────────────────────>│
+           │                                                   │
+           │  4. Enable Notification                           │
+           │ ───────────────────────────────────────────────>  │
+           │                                                   │
+           │  ─────────── Throughput Test ───────────          │
+           │                                                   │
+           │  Mode 1: Notify Test (Server → Client)            │
+           │ <═══════════════════════════════════════════════  │
+           │  Continuous notifications (514 bytes/packet)      │
+           │                                                   │
+           │  Mode 2: Write Test (Client → Server)             │
+           │ ═══════════════════════════════════════════════>  │
+           │  Continuous writes (514 bytes/packet)             │
+           │                                                   │
+           │  ─────────── Statistics ───────────               │
+           │                                                   │
+           │  Calculate: Bytes/s, bits/s                       │
+           │  Expected: 600-767 Kbps                           │
+           │                                                   │
+    ┌──────┴───────┐                                    ┌──────┴───────┐
+    │  Throughput  │                                    │  Throughput  │
+    │    Client    │                                    │    Server    │
+    └──────────────┘                                    └──────────────┘
+```
+
 ## How to Use Example
 
 Before project configuration and build, be sure to set the correct chip target using:
