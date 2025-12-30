@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -131,6 +131,17 @@ void isp_hal_ae_window_config(isp_hal_context_t *hal, const isp_window_t *window
  *      - false     Invalid arg
  */
 bool isp_hal_awb_set_window_range(isp_hal_context_t *hal, const isp_window_t *win);
+
+/**
+ * @brief   Set the subwindow range of the AWB
+ *
+ * @param[in] hal   Context of the HAL layer
+ * @param[in] win   Pointer to the subwindow of the AWB
+ * @return
+ *      - true      Set success
+ *      - false     Invalid arg
+ */
+bool isp_hal_awb_set_subwindow_range(isp_hal_context_t *hal, const isp_window_t *win);
 
 /**
  * @brief   Set the luminance range of the white patch
