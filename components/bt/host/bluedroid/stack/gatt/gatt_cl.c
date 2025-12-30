@@ -800,6 +800,14 @@ void gatt_process_read_by_type_rsp (tGATT_TCB *p_tcb, tGATT_CLCB *p_clcb, UINT8 
         handle_len = 4;
     }
 
+    /* Check value_len is sufficient before subtraction to prevent underflow */
+    if (value_len < handle_len) {
+        GATT_TRACE_ERROR("gatt_process_read_by_type_rsp: value_len(%d) < handle_len(%d), invalid response",
+                         value_len, handle_len);
+        gatt_end_operation(p_clcb, GATT_INVALID_PDU, NULL);
+        return;
+    }
+
     value_len -= handle_len; /* subtract the handle pairs bytes */
     len -= 1;
 
