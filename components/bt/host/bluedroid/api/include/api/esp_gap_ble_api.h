@@ -283,6 +283,27 @@ typedef uint8_t esp_gap_ble_channels[ESP_GAP_BLE_CHANNELS_LEN];
 
 #define VENDOR_HCI_CMD_MASK                    (0x3F << 10) /**!< 0xFC00 */
 
+/**
+ * @brief BLE time interval conversion macros
+ *
+ * These macros convert time values in milliseconds to BLE interval units.
+ *
+ * - Advertising interval: unit is 0.625ms (range: 20ms to 10240ms)
+ * - Connection interval: unit is 1.25ms (range: 7.5ms to 4000ms)
+ * - Scan interval/window: unit is 0.625ms
+ * - Periodic advertising interval: unit is 1.25ms
+ * - Supervision timeout: unit is 10ms (range: 100ms to 32000ms)
+ *
+ * @note If the input value is not an exact multiple of the unit, the result will be rounded to the nearest value.
+ *       For example, ESP_BLE_GAP_ADV_ITVL_MS(25) = 40 (25ms / 0.625ms = 40), but ESP_BLE_GAP_ADV_ITVL_MS(25.5) = 40 (rounded).
+ */
+#define ESP_BLE_GAP_ADV_ITVL_MS(t)             ((uint16_t)((t) * 1000 / 625))      /*!< Convert advertising interval from ms to 0.625ms units. If input is not a multiple of 0.625ms, it will be rounded to the nearest value. */
+#define ESP_BLE_GAP_SCAN_ITVL_MS(t)             ((uint16_t)((t) * 1000 / 625))      /*!< Convert scan interval from ms to 0.625ms units. If input is not a multiple of 0.625ms, it will be rounded to the nearest value. */
+#define ESP_BLE_GAP_SCAN_WIN_MS(t)              ((uint16_t)((t) * 1000 / 625))      /*!< Convert scan window from ms to 0.625ms units. If input is not a multiple of 0.625ms, it will be rounded to the nearest value. */
+#define ESP_BLE_GAP_CONN_ITVL_MS(t)             ((uint16_t)((t) * 1000 / 1250))     /*!< Convert connection interval from ms to 1.25ms units. If input is not a multiple of 1.25ms, it will be rounded to the nearest value. */
+#define ESP_BLE_GAP_PERIODIC_ADV_ITVL_MS(t)     ((uint16_t)((t) * 1000 / 1250))     /*!< Convert periodic advertising interval from ms to 1.25ms units. If input is not a multiple of 1.25ms, it will be rounded to the nearest value. */
+#define ESP_BLE_GAP_SUPERVISION_TIMEOUT_MS(t)   ((uint16_t)((t) / 10))              /*!< Convert supervision timeout from ms to 10ms units. If input is not a multiple of 10ms, it will be rounded to the nearest value. */
+
 /* relate to BTM_BLE_AD_TYPE_xxx in stack/btm_ble_api.h */
 /// The type of advertising data(not adv_type)
 typedef enum {

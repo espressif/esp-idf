@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -58,8 +58,8 @@ static SemaphoreHandle_t test_sem = NULL;
 
 esp_ble_gap_ext_adv_params_t ext_adv_params_2M = {
     .type = ESP_BLE_GAP_SET_EXT_ADV_PROP_NONCONN_NONSCANNABLE_UNDIRECTED,
-    .interval_min = 0x30,
-    .interval_max = 0x30,
+    .interval_min = ESP_BLE_GAP_ADV_ITVL_MS(30),
+    .interval_max = ESP_BLE_GAP_ADV_ITVL_MS(30),
     .channel_map = ADV_CHNL_ALL,
     .filter_policy = ADV_FILTER_ALLOW_SCAN_ANY_CON_ANY,
     .primary_phy = ESP_BLE_GAP_PHY_1M,
@@ -72,8 +72,8 @@ esp_ble_gap_ext_adv_params_t ext_adv_params_2M = {
 };
 
 static esp_ble_gap_periodic_adv_params_t periodic_adv_params = {
-    .interval_min = 0x40, // 80 ms interval
-    .interval_max = 0x40,
+    .interval_min = ESP_BLE_GAP_PERIODIC_ADV_ITVL_MS(80),
+    .interval_max = ESP_BLE_GAP_PERIODIC_ADV_ITVL_MS(80),
     .properties = 0, // Do not include TX power
 };
 

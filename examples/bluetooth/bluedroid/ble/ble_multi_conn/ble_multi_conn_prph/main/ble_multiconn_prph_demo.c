@@ -68,8 +68,8 @@ static esp_ble_gap_ext_adv_t ext_adv[1] = {
 
 esp_ble_gap_ext_adv_params_t ext_adv_params = {
     .type = ESP_BLE_GAP_SET_EXT_ADV_PROP_CONNECTABLE,
-    .interval_min = 0x20,
-    .interval_max = 0x20,
+    .interval_min = ESP_BLE_GAP_ADV_ITVL_MS(20),
+    .interval_max = ESP_BLE_GAP_ADV_ITVL_MS(20),
     .channel_map = ADV_CHNL_ALL,
     .filter_policy = ADV_FILTER_ALLOW_SCAN_ANY_CON_ANY,
     .primary_phy = ESP_BLE_GAP_PHY_1M,
@@ -82,8 +82,8 @@ esp_ble_gap_ext_adv_params_t ext_adv_params = {
 };
 #else
 static esp_ble_adv_params_t legacy_adv_params = {
-    .adv_int_min = 0x20,
-    .adv_int_max = 0x40,
+    .adv_int_min = ESP_BLE_GAP_ADV_ITVL_MS(20),
+    .adv_int_max = ESP_BLE_GAP_ADV_ITVL_MS(40),
     .adv_type = ADV_TYPE_IND,
     .own_addr_type = BLE_ADDR_TYPE_RANDOM,
     .channel_map = ADV_CHNL_ALL,
