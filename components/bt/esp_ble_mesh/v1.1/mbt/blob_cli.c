@@ -18,6 +18,8 @@
 
 #if CONFIG_BLE_MESH_BLOB_CLI
 
+#define CHUNK_SIZE_MAX BLOB_TX_CHUNK_SIZE
+
 #define TARGETS_FOR_EACH(cli, target)                                          \
         SYS_SLIST_FOR_EACH_CONTAINER((sys_slist_t *)&(cli)->inputs->targets,   \
                                      target, n)
@@ -49,7 +51,8 @@ _Static_assert((BLOB_BLOCK_STATUS_MSG_MAXLEN + BLE_MESH_MODEL_OP_LEN(BT_MESH_BLO
                 BLE_MESH_MIC_SHORT) <= BLE_MESH_RX_SDU_MAX,
                "The BLOB Block Status message does not fit into the maximum incoming SDU size.");
 
-NET_BUF_SIMPLE_DEFINE_STATIC(chunk_buf, BLE_MESH_TX_SDU_MAX);
+NET_BUF_SIMPLE_DEFINE_STATIC(chunk_buf, BLOB_CHUNK_SDU_LEN(CHUNK_SIZE_MAX));
+static bool chunk_sending;
 
 struct block_status {
     enum bt_mesh_blob_status status;
@@ -591,6 +594,12 @@ static int tx(struct bt_mesh_blob_cli *cli, uint16_t addr,
         .addr = addr,
         .send_ttl = cli->inputs->ttl,
     };
+
+    if (chunk_sending) {
+        memcpy(&ctx.enh, &cli->xfer->chunk_enh_params,
+               sizeof(bt_mesh_msg_enh_params_t));
+    }
+
     int err;
 
     err = bt_mesh_model_send((struct bt_mesh_model *)cli->mod, &ctx, buf, &end_cb, cli);
@@ -614,6 +623,10 @@ static void send_start(uint16_t duration, int err, void *cb_data)
 static void send_end(int err, void *user_data)
 {
     struct bt_mesh_blob_cli *cli = user_data;
+
+    if (chunk_sending) {
+        chunk_sending = false;
+    }
 
     if (!cli->tx.ctx.is_inited) {
         return;
@@ -642,7 +655,12 @@ static void xfer_start_tx(struct bt_mesh_blob_cli *cli, uint16_t dst)
     net_buf_simple_add_le64(&buf, cli->xfer->id);
     net_buf_simple_add_le32(&buf, cli->xfer->size);
     net_buf_simple_add_u8(&buf, cli->xfer->block_size_log);
+#if CONFIG_BLE_MESH_LONG_PACKET
+    /* todo: could let user select methold */
+    net_buf_simple_add_le16(&buf, BLE_MESH_EXT_TX_SDU_MAX);
+#else
     net_buf_simple_add_le16(&buf, BLE_MESH_TX_SDU_MAX);
+#endif
 
     tx(cli, dst, &buf);
 }
@@ -959,6 +977,8 @@ static void chunk_send(struct bt_mesh_blob_cli *cli)
            chunk_size(cli->xfer, &cli->block, cli->chunk_idx));
 
     cli->state = BT_MESH_BLOB_CLI_STATE_BLOCK_SEND;
+    chunk_sending = true;
+
     blob_cli_broadcast(cli, &ctx);
 }
 
