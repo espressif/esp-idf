@@ -132,7 +132,6 @@ if BLE_LOG_ENABLED
 
             config BLE_LOG_TS_TRIGGER_ESP_TIMER
                 bool "BLE Log Timestamp Synchronization trigger - ESP Timer"
-                select ESP_TIMER_SUPPORTS_ISR_DISPATCH_METHOD
                 help
                     ESP Timer based periodic TS trigger
 
@@ -141,6 +140,15 @@ if BLE_LOG_ENABLED
                 help
                     Task Event based TS trigger (Light Sleep Test Compatibility)
         endchoice
+
+        config BLE_LOG_TS_TRIGGER_ESP_TIMER_ISR_DISPATCH_METHOD
+            bool "Utilize ISR dispatch method for ESP Timer as Timestamp Synchronization trigger"
+            default n
+            select ESP_TIMER_SUPPORTS_ISR_DISPATCH_METHOD
+            select GPIO_CTRL_FUNC_IN_IRAM
+            depends on BLE_LOG_TS_TRIGGER_ESP_TIMER
+            help
+                Utilize ISR dispatch method for ESP Timer as Timestamp Synchronization trigger
     endif
 
     choice BLE_LOG_PRPH_CHOICE
