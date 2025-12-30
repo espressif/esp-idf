@@ -3,6 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <math.h>
 #include "esp_lcd_mipi_dsi.h"
 #include "esp_clk_tree.h"
 #include "mipi_dsi_priv.h"
@@ -19,7 +20,7 @@ esp_err_t esp_lcd_new_dsi_bus(const esp_lcd_dsi_bus_config_t *bus_config, esp_lc
                         ESP_ERR_INVALID_ARG, TAG, "invalid number of data lanes %d", bus_config->num_data_lanes);
     ESP_RETURN_ON_FALSE(bus_config->lane_bit_rate_mbps >= MIPI_DSI_LL_MIN_PHY_MBPS &&
                         bus_config->lane_bit_rate_mbps <= MIPI_DSI_LL_MAX_PHY_MBPS, ESP_ERR_INVALID_ARG, TAG,
-                        "invalid lane bit rate %"PRIu32, bus_config->lane_bit_rate_mbps);
+                        "invalid lane bit rate %.2f", bus_config->lane_bit_rate_mbps);
 
     // we don't use an bus allocator here, because different DSI bus uses different PHY.
     // And each PHY has its own associated PINs, which is not changeable.
@@ -114,9 +115,9 @@ esp_err_t esp_lcd_new_dsi_bus(const esp_lcd_dsi_bus_config_t *bus_config, esp_lc
     mipi_dsi_host_ll_enable_tx_eotp(hal->host, true, false);
 
     // Set the divider to get the Time Out clock, clock source is the high-speed byte clock
-    mipi_dsi_host_ll_set_timeout_clock_division(hal->host, bus_config->lane_bit_rate_mbps / 8 / MIPI_DSI_DEFAULT_TIMEOUT_CLOCK_FREQ_MHZ);
+    mipi_dsi_host_ll_set_timeout_clock_division(hal->host, (uint32_t)roundf(bus_config->lane_bit_rate_mbps / 8.0f / MIPI_DSI_DEFAULT_TIMEOUT_CLOCK_FREQ_MHZ));
     // Set the divider to get the TX Escape clock, clock source is the high-speed byte clock
-    mipi_dsi_host_ll_set_escape_clock_division(hal->host, bus_config->lane_bit_rate_mbps / 8 / MIPI_DSI_DEFAULT_ESCAPE_CLOCK_FREQ_MHZ);
+    mipi_dsi_host_ll_set_escape_clock_division(hal->host, (uint32_t)roundf(bus_config->lane_bit_rate_mbps / 8.0f / MIPI_DSI_DEFAULT_ESCAPE_CLOCK_FREQ_MHZ));
     // set the timeout intervals to zero, means to disable the timeout mechanism
     mipi_dsi_host_ll_set_timeout_count(hal->host, 0, 0, 0, 0, 0, 0, 0);
     // DSI host will wait indefinitely for a read response from the DSI device
