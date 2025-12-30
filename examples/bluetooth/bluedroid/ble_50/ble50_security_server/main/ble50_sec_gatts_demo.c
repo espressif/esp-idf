@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -41,9 +41,9 @@
 static uint16_t profile_handle_table[HRS_IDX_NB];
 
 static uint8_t ext_adv_raw_data[] = {
-        0x02, 0x01, 0x06,
-        0x02, 0x0a, 0xeb, 0x03, 0x03, 0xab, 0xcd,
-        0x11, 0X09, 'E', 'S', 'P', '_', 'B', 'L', 'E', '5', '0', '_', 'S', 'E', 'R', 'V', 'E', 'R',
+        0x02, ESP_BLE_AD_TYPE_FLAG, 0x06,
+        0x02, ESP_BLE_AD_TYPE_TX_PWR, 0xeb, 0x03, ESP_BLE_AD_TYPE_16SRV_CMPL, 0xab, 0xcd,
+        0x11, ESP_BLE_AD_TYPE_NAME_CMPL, 'E', 'S', 'P', '_', 'B', 'L', 'E', '5', '0', '_', 'S', 'E', 'R', 'V', 'E', 'R',
 };
 
 static esp_ble_gap_ext_adv_t ext_adv[1] = {
