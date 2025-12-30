@@ -142,7 +142,7 @@ idf.py set-target <chip_name>
 
 ### GATT Server Attribute Table
 
-  charactertistic|UUID|Permissions
+  characteristic|UUID|Permissions
   :-:|:-:|:-:
   SPP_DATA_RECV_CHAR|0xABF1|READ&WRITE_NR
   SPP_DATA_NOTIFY_CHAR|0xABF2|READ&NOTIFY
@@ -160,7 +160,7 @@ See the [Getting Started Guide](https://idf.espressif.com/) for full steps to co
 
 ## Example Output
 
-The spp cilent will auto connect to the spp server, do service search, exchange MTU size and register notification.
+The spp client will auto connect to the spp server, do service search, exchange MTU size and register notification.
 
 ### Client
 
