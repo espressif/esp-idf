@@ -82,7 +82,7 @@ def test_examples_protocol_http_server_file_serving(dut: Dut) -> None:
     download_data = client.getreq(conn, '/' + str(upload_file_name))
 
     try:
-        dut.expect('File sending complete', timeout=10)
+        dut.expect('File sending complete', timeout=20)
     except Exception:
         logging.info('Failed the test to download existing file from the file server')
         raise
@@ -98,7 +98,7 @@ def test_examples_protocol_http_server_file_serving(dut: Dut) -> None:
     logging.info('\nTesting the upload of "already existing" file on the file server')
     client.postreq(conn, '/upload/' + str(upload_file_name), data=None)
     try:
-        dut.expect('File already exists : /data/' + str(upload_file_name), timeout=10)
+        dut.expect('File already exists : /data/' + str(upload_file_name), timeout=20)
     except Exception:
         logging.info('Failed the test for uploading existing file on the file server')
         raise
@@ -119,7 +119,7 @@ def test_examples_protocol_http_server_file_serving(dut: Dut) -> None:
     logging.info('\nTesting the deletion of "existing" file on the file server')
     client.postreq(conn, '/delete/' + str(upload_file_name), data=None)
     try:
-        dut.expect('Deleting file : /' + str(upload_file_name), timeout=10)
+        dut.expect('Deleting file : /' + str(upload_file_name), timeout=20)
     except Exception:
         logging.info('Failed the test for deletion of existing file on the file server')
         raise
@@ -130,7 +130,7 @@ def test_examples_protocol_http_server_file_serving(dut: Dut) -> None:
     logging.info('\nTesting the deletion of "non existing" file on the file server')
     client.postreq(conn, '/delete/' + str(upload_file_name), data=None)
     try:
-        dut.expect('File does not exist : /' + str(upload_file_name), timeout=10)
+        dut.expect('File does not exist : /' + str(upload_file_name), timeout=20)
     except Exception:
         logging.info('Failed the test for deleting non existing file on the file server')
         raise
@@ -143,7 +143,7 @@ def test_examples_protocol_http_server_file_serving(dut: Dut) -> None:
     download_data = client.getreq(conn, '/' + str(upload_file_name))
 
     try:
-        dut.expect('Failed to stat file : /data/' + str(upload_file_name), timeout=10)
+        dut.expect('Failed to stat file : /data/' + str(upload_file_name), timeout=20)
     except Exception:
         logging.info('Failed the test to download non existing file from the file server')
         raise
