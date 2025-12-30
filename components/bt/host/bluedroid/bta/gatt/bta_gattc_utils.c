@@ -528,6 +528,79 @@ BOOLEAN bta_gattc_enqueue(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
                 APPL_TRACE_ERROR("%s(), line = %d, alloc fail, no memory.", __func__, __LINE__);
                 return FALSE;
             }
+        } else if (p_data->hdr.event == BTA_GATTC_API_SEARCH_EVT) {
+            /*
+             * Fix for Use-After-Free (UAF) bug in service search with filter_uuid.
+             *
+             * Problem Description:
+             * ====================
+             * In BTA_GATTC_ServiceSearchRequest(), memory is allocated as:
+             *   [tBTA_GATTC_API_SEARCH structure][tBT_UUID data]
+             *
+             * The p_srvc_uuid pointer points to the tBT_UUID data located right after
+             * the structure:
+             *   p_buf->p_srvc_uuid = (tBT_UUID *)(p_buf + 1);
+             *
+             * When this command is enqueued (e.g., during DISCOVER_ST state), the original
+             * code only performed a shallow copy:
+             *   - Only sizeof(tBTA_GATTC_DATA) was allocated for cmd_data
+             *   - memcpy copied the pointer VALUE (not the pointed data)
+             *   - After the original message is freed by bta_sys_event(), the p_srvc_uuid
+             *     pointer becomes a dangling pointer pointing to freed memory
+             *
+             * Memory layout before fix:
+             *
+             *   Original (p_data):                    Copy (cmd_data):
+             *   +------------------+----------+       +------------------+
+             *   | API_SEARCH       | tBT_UUID |       | API_SEARCH       |
+             *   | p_srvc_uuid: --------►      |       | p_srvc_uuid: --------► (dangling!)
+             *   +------------------+----------+       +------------------+
+             *                           ↑
+             *                      After free(), this memory may be
+             *                      overwritten by other allocations
+             *
+             * Solution:
+             * =========
+             * For BTA_GATTC_API_SEARCH_EVT with non-NULL p_srvc_uuid, we need to:
+             *   1. Allocate extra space for tBT_UUID
+             *   2. Copy the structure
+             *   3. Update p_srvc_uuid to point to the new location
+             *   4. Copy the tBT_UUID data
+             *
+             * Memory layout after fix:
+             *
+             *   Copy (cmd_data):
+             *   +------------------+----------+
+             *   | API_SEARCH       | tBT_UUID |
+             *   | p_srvc_uuid: --------►      |  (points to its own copy)
+             *   +------------------+----------+
+             */
+            if (p_data->api_search.p_srvc_uuid != NULL) {
+                /* Allocate space for structure + UUID data (deep copy) */
+                len = sizeof(tBTA_GATTC_DATA) + sizeof(tBT_UUID);
+                if ((cmd_data = (tBTA_GATTC_DATA *)osi_malloc(len)) != NULL) {
+                    memset(cmd_data, 0, len);
+                    /* Copy the structure */
+                    memcpy(cmd_data, p_data, sizeof(tBTA_GATTC_DATA));
+                    /* Update pointer to point to the space after the structure */
+                    cmd_data->api_search.p_srvc_uuid = (tBT_UUID *)(cmd_data + 1);
+                    /* Copy the UUID data */
+                    memcpy(cmd_data->api_search.p_srvc_uuid,
+                           p_data->api_search.p_srvc_uuid, sizeof(tBT_UUID));
+                } else {
+                    APPL_TRACE_ERROR("%s(), line = %d, alloc fail, no memory.", __func__, __LINE__);
+                    return FALSE;
+                }
+            } else {
+                /* p_srvc_uuid is NULL, no extra space needed (search all services) */
+                if ((cmd_data = (tBTA_GATTC_DATA *)osi_malloc(sizeof(tBTA_GATTC_DATA))) != NULL) {
+                    memset(cmd_data, 0, sizeof(tBTA_GATTC_DATA));
+                    memcpy(cmd_data, p_data, sizeof(tBTA_GATTC_DATA));
+                } else {
+                    APPL_TRACE_ERROR("%s(), line = %d, alloc fail, no memory.", __func__, __LINE__);
+                    return FALSE;
+                }
+            }
         } else {
             if ((cmd_data = (tBTA_GATTC_DATA *)osi_malloc(sizeof(tBTA_GATTC_DATA))) != NULL) {
                 memset(cmd_data, 0, sizeof(tBTA_GATTC_DATA));
