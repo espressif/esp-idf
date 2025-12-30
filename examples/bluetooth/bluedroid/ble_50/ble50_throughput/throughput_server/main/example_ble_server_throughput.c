@@ -112,8 +112,8 @@ static esp_ble_gap_ext_adv_t ext_adv[1] = {
 
 esp_ble_gap_ext_adv_params_t ext_adv_params = {
     .type = ESP_BLE_GAP_SET_EXT_ADV_PROP_CONNECTABLE,
-    .interval_min = 0x20,
-    .interval_max = 0x20,
+    .interval_min = ESP_BLE_GAP_ADV_ITVL_MS(20),
+    .interval_max = ESP_BLE_GAP_ADV_ITVL_MS(20),
     .channel_map = ADV_CHNL_ALL,
     .filter_policy = ADV_FILTER_ALLOW_SCAN_ANY_CON_ANY,
     .primary_phy = ESP_BLE_GAP_PHY_1M,
