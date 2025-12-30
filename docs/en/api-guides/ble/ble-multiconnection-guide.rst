@@ -10,6 +10,9 @@ The following table provides an overview of the maximum number of concurrent con
 
 In this document, the maximum number of connections refers to the maximum number of simultaneous active connections that the device can maintain, whether operating as a central or peripheral.
 
+Host SDKconfig
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 .. table:: Maximum Concurrent Connections by ESP Bluetooth LE Host
 
    +---------------+-----------------------------+------------------------------+---------------------+
@@ -21,6 +24,37 @@ In this document, the maximum number of connections refers to the maximum number
    +---------------+-----------------------------+------------------------------+---------------------+
    | ESP-NimBLE    | |max_nimble_connections|    |   |nimble_connection_num|    |   |nimble_example|  |
    +---------------+-----------------------------+------------------------------+---------------------+
+
+
+Controller SDKconfig
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. only:: esp32
+
+   - :ref:`BTDM_CTRL_BLE_MAX_CONN <CONFIG_BTDM_CTRL_BLE_MAX_CONN>`
+
+   The configuration option **BTDM_CTRL_BLE_MAX_CONN** specifies the maximum number of Bluetooth LE connections that the controller can support concurrently. This value must match the maximum number of connections configured on the Host side, as defined in the table above.
+
+.. only:: esp32c3 or esp32s3
+
+   - :ref:`BT_CTRL_BLE_MAX_ACT <CONFIG_BT_CTRL_BLE_MAX_ACT>`
+
+   The configuration option **BT_CTRL_BLE_MAX_ACT** defines the maximum number of Bluetooth LE activities that the controller can handle simultaneously. Each Bluetooth LE activity consumes one resource, including:
+
+   - Connections
+   - Advertising
+   - Scanning
+   - Periodic sync
+
+   Therefore, this parameter should be configured as follows:
+
+   **Maximum connections + required advertising, scanning and periodic sync instances**
+
+   **Example:** If the Host supports up to 8 connections, and the application requires 1 advertising instance and 1 scanning instance concurrently, set **BT_CTRL_BLE_MAX_ACT** to 10 (8 + 1 + 1).
+
+.. only:: not esp32 and not esp32c3 and not esp32s3
+
+   - No controller-related SDK configuration is required.
 
 
 Note
