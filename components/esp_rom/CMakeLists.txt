@@ -332,8 +332,10 @@ else() # Regular app build
         rom_linker_script("coexist")
         rom_linker_script("net80211")
         rom_linker_script("pp")
+        if(CONFIG_ESP32C61_REV_MIN_FULL GREATER_EQUAL 101)
+            rom_linker_script("eco4")
+        endif()
     endif()
-
 
     if(CONFIG_ESP_ROM_HAS_NEWLIB AND NOT target STREQUAL "esp32" AND NOT target STREQUAL "esp32s2")
         # ESP32 and S2 are a bit different, keep them as special cases in the target specific include section
