@@ -519,7 +519,7 @@ static esp_err_t bootloader_flash_read_allow_decrypt(size_t src_addr, void *dest
             Cache_Read_Enable(0);
 #else
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
-            cache_ll_invalidate_addr(CACHE_LL_LEVEL_ALL, CACHE_TYPE_ALL, CACHE_LL_ID_ALL, FLASH_MMAP_VADDR, actual_mapped_len);
+            cache_ll_invalidate_addr(CACHE_LL_LEVEL_ALL, CACHE_TYPE_ALL, CACHE_LL_ID_ALL, FLASH_READ_VADDR, actual_mapped_len);
 #endif
 #if !ESP_TEE_BUILD
             cache_hal_enable(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
