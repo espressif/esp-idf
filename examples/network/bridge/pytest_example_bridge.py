@@ -11,8 +11,11 @@ import subprocess
 import time
 from concurrent.futures import Future
 from concurrent.futures import ThreadPoolExecutor
+from typing import Generator
 from typing import List
+from typing import Match
 from typing import Optional
+from typing import Tuple
 from typing import Union
 
 import netifaces
@@ -276,28 +279,38 @@ def send_brcast_msg_endnode_to_host(endnode: EndnodeSsh, host_brcast_ip: str, te
     return nc_host_out
 
 
-@pytest.mark.eth_w5500
-@pytest.mark.parametrize(
-    'config',
-    [
-        'w5500',
-    ],
-    indirect=True,
-)
-@idf_parametrize('target', ['esp32'], indirect=['target'])
-def test_esp_eth_bridge(dut: Dut, dev_user: str, dev_password: str) -> None:
+def get_legacy_host_name_match() -> Optional[Match[str]]:
+    host_name = socket.gethostname()
+    regex = r'ethVM-(\d+)-(\d+)'
+    host_name_match = re.search(regex, host_name, re.DOTALL)
+    return host_name_match
+
+
+def get_host_info() -> Tuple[int, int]:
+    # Get switch configuration info from the hostname (legacy runners)
+    sw_info = get_legacy_host_name_match()
+    if sw_info is not None:
+        sw_num = int(sw_info.group(1))
+        port_num = int(sw_info.group(2))
+        return sw_num, port_num
+    else:
+        # Get switch configuration info from the IP address of the `switch` interface (new runners)
+        switch_if_ip = get_host_ip_by_interface('switch', netifaces.AF_INET)
+        # Parse IP address: x.y.<sw_num>.<port_num>
+        ip_parts = switch_if_ip.split('.')
+        if len(ip_parts) == 4:
+            sw_num = int(ip_parts[2])
+            port_num = int(ip_parts[3])
+            return sw_num, port_num
+        else:
+            raise RuntimeError('Unexpected switch IP address')
+
+
+def eth_bridge_test(dut: Dut, dev_user: str, dev_password: str) -> None:
     # ------------------------------ #
     # Pre-test testbed configuration #
     # ------------------------------ #
-    # Get switch configuration info from the hostname
-    host_name = socket.gethostname()
-    regex = r'ethVM-(\d+)-(\d+)'
-    sw_info = re.search(regex, host_name, re.DOTALL)
-    if sw_info is None:
-        raise RuntimeError('Unexpected hostname')
-
-    sw_num = int(sw_info.group(1))
-    port_num = int(sw_info.group(2))
+    sw_num, port_num = get_host_info()
     port_num_endnode = int(port_num) + 1  # endnode address is always + 1 to the host
 
     endnode = EndnodeSsh(f'10.10.{sw_num}.{port_num_endnode}', ETHVM_ENDNODE_USER)
@@ -333,7 +346,10 @@ def test_esp_eth_bridge(dut: Dut, dev_user: str, dev_password: str) -> None:
     host_ip = get_host_ip_by_interface(host_if, netifaces.AF_INET)
     logging.info('Host IP %s', host_ip)
 
-    endnode_if = host_if  # endnode is a clone of the host
+    if get_legacy_host_name_match() is not None:
+        endnode_if = host_if  # endnode is a clone of the host (legacy runners)
+    else:
+        endnode_if = 'dut_p2'  # interface name connected to the second port of the DUT (new runners)
     # Endnode MAC
     endnode_mac = get_endnode_mac_by_interface(endnode, endnode_if)
     logging.info('Endnode MAC %s', endnode_mac)
@@ -355,12 +371,12 @@ def test_esp_eth_bridge(dut: Dut, dev_user: str, dev_password: str) -> None:
     # TEST Objective 1: Ping the devices on the network
     # --------------------------------------------------
     # ping bridge
-    ping_test = subprocess.call(f'ping {br_ip} -c 2', shell=True)
+    ping_test = subprocess.call(['ping', br_ip, '-c', '2'])
     if ping_test != 0:
         raise RuntimeError('ESP bridge is not reachable')
 
     # ping the end nodes of the network
-    ping_test = subprocess.call(f'ping {endnode_ip} -c 2', shell=True)
+    ping_test = subprocess.call(['ping', endnode_ip, '-c', '2'])
     if ping_test != 0:
         raise RuntimeError('End node is not reachable')
 
@@ -529,13 +545,13 @@ def test_esp_eth_bridge(dut: Dut, dev_user: str, dev_password: str) -> None:
     logging.info('Drop `Endnode` MAC')
     dut.write('add --addr=' + endnode_mac + ' -d')
     dut.expect_exact('Bridge Config OK!')
-    ping_test = subprocess.call(f'ping {endnode_ip} -c 2', shell=True)
+    ping_test = subprocess.call(['ping', endnode_ip, '-c', '2'])
     if ping_test == 0:
         raise RuntimeError('End node should not be reachable')
     logging.info('Remove Drop `Endnode` MAC entry')
     dut.write('remove --addr=' + endnode_mac)
     dut.expect_exact('Bridge Config OK!')
-    ping_test = subprocess.call(f'ping {endnode_ip} -c 2', shell=True)
+    ping_test = subprocess.call(['ping', endnode_ip, '-c', '2'])
     if ping_test != 0:
         raise RuntimeError('End node is not reachable')
 
@@ -568,9 +584,9 @@ def test_esp_eth_bridge(dut: Dut, dev_user: str, dev_password: str) -> None:
 
     # Remove ARP record from Test host computer. ARP is broadcasted, hence Bridge port does not reply to a request since
     # it does not receive it (no forward to Bridge port). As a result, Bridge is not pingable.
-    subprocess.call(f'sudo arp -d {br_ip}', shell=True)
-    subprocess.call('arp -a', shell=True)
-    ping_test = subprocess.call(f'ping {br_ip} -c 2', shell=True)
+    subprocess.call(['sudo', 'arp', '-d', br_ip])
+    subprocess.call(['arp', '-a'])
+    ping_test = subprocess.call(['ping', br_ip, '-c', '2'])
     if ping_test == 0:
         raise RuntimeError('Bridge should not be reachable')
 
@@ -580,7 +596,7 @@ def test_esp_eth_bridge(dut: Dut, dev_user: str, dev_password: str) -> None:
     dut.expect_exact('Bridge Config OK!')
     dut.write('add --addr=ff:ff:ff:ff:ff:ff -p 1 -c')
     dut.expect_exact('Bridge Config OK!')
-    ping_test = subprocess.call(f'ping {br_ip} -c 2', shell=True)
+    ping_test = subprocess.call(['ping', br_ip, '-c', '2'])
     if ping_test != 0:
         raise RuntimeError('Bridge is not reachable')
 
@@ -591,3 +607,28 @@ def test_esp_eth_bridge(dut: Dut, dev_user: str, dev_password: str) -> None:
 
     endnode.close()
     switch1.close()
+
+
+@pytest.fixture(scope='session', autouse=True)
+def setup_test_environment() -> Generator[None, None, None]:
+    # Fixture code to run before any tests in the session
+    # make sure dut_p2 is down (only for new runners)
+    if get_legacy_host_name_match() is None:
+        subprocess.call(['sudo', 'ip', 'link', 'set', 'down', 'dev', 'dut_p2'])
+
+    yield  # Tests run here
+
+    # Optional teardown after all tests...
+
+
+@pytest.mark.eth_w5500
+@pytest.mark.parametrize(
+    'config',
+    [
+        'w5500',
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', ['esp32'], indirect=['target'])
+def test_esp_eth_bridge(dut: Dut, dev_user: str, dev_password: str) -> None:
+    eth_bridge_test(dut, dev_user, dev_password)
