@@ -27,6 +27,24 @@ examples/bluetooth/bluedroid/ble:
   depends_filepatterns:
     - examples/bluetooth/bluedroid/ble/pytest_ble_test.py
 
+examples/bluetooth/bluedroid/ble/ble_acl_latency/cent:
+  <<: *bt_default_depends
+  disable:
+    - if: SOC_BLE_SUPPORTED != 1
+  enable:
+    - if: IDF_TARGET in ["esp32", "esp32c2", "esp32c3", "esp32c5", "esp32c6", "esp32c61", "esp32h2", "esp32s3"]
+      temporary: true
+      reason: only enable build jobs for tested targets
+
+examples/bluetooth/bluedroid/ble/ble_acl_latency/periph:
+  <<: *bt_default_depends
+  disable:
+    - if: SOC_BLE_SUPPORTED != 1
+  enable:
+    - if: IDF_TARGET in ["esp32", "esp32c2", "esp32c3", "esp32c5", "esp32c6", "esp32c61", "esp32h2", "esp32s3"]
+      temporary: true
+      reason: only enable build jobs for tested targets
+
 examples/bluetooth/bluedroid/ble/ble_hid_device_demo:
   <<: *bt_default_depends
   disable:
