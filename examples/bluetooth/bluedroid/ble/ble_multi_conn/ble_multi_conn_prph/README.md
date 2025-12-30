@@ -7,6 +7,45 @@
 
 **This example relies on the BLE controller. Please use the chip modules listed under Supported Targets.**
 
+## Flow Diagram
+
+```
+    ┌──────────────────────────────────────────────────────────────────────────┐
+    │                    BLE Multi-Connection Peripheral                       │
+    └──────────────────────────────────────────────────────────────────────────┘
+
+    ┌───────────────────┐         ┌───────────────────┐
+    │  Multi-Conn Prph  │         │     Centrals      │
+    │   (GATT Server)   │         │  (1, 2, 3, ...)   │
+    └─────────┬─────────┘         └─────────┬─────────┘
+              │                             │
+              │  1. Initialize GATT Server  │
+              │  2. Create Service          │
+              │  3. Set Random Address      │
+              │  4. Start Advertising       │
+              │                             │
+              │  ─────────── Connection Loop ───────────
+              │                             │
+              │       Central 1 connects    │
+              │ <───────────────────────────│
+              │                             │
+              │  5. Stop Advertising        │
+              │  6. Connection Established  │
+              │  7. Change Random Address   │
+              │  8. Restart Advertising     │
+              │                             │
+              │       Central 2 connects    │
+              │ <───────────────────────────│
+              │                             │
+              │  ... Repeat for each Central ...
+              │                             │
+              ▼                             │
+    ┌───────────────────────────────────────────────────────────────────────┐
+    │         Maintain multiple connections simultaneously                  │
+    │              (Limited by CONFIG_BT_ACL_CONNECTIONS)                   │
+    └───────────────────────────────────────────────────────────────────────┘
+```
+
 ## How to Use Example
 
 Before project configuration and build, be sure to set the correct chip target using:
