@@ -98,8 +98,8 @@ esp_attr_value_t gatts_initial_char_val = {
 };
 
 static esp_ble_adv_params_t adv_params = {
-    .adv_int_min        = 0x060,
-    .adv_int_max        = 0x060,
+    .adv_int_min        = ESP_BLE_GAP_ADV_ITVL_MS(60),
+    .adv_int_max        = ESP_BLE_GAP_ADV_ITVL_MS(60),
     .adv_type           = ADV_TYPE_IND,
     .own_addr_type      = BLE_ADDR_TYPE_RPA_PUBLIC,
     .channel_map        = ADV_CHNL_ALL,
