@@ -243,6 +243,8 @@ struct bt_mesh_dfu_cli_xfer_blob_params {
     uint8_t block_size_log;
     /** Base chunk size. May be smaller for the last chunk. */
     uint16_t chunk_size;
+    /* Enhanced parameters for message context in blob chunks  */
+    bt_mesh_msg_enh_params_t chunk_enh_params;
 };
 
 /** Firmware Update Client transfer parameters: */
