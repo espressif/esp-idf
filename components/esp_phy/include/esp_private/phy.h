@@ -13,6 +13,7 @@ extern "C" {
 #endif
 
 #define ESP_CAL_DATA_CHECK_FAIL 1
+#define ESP_MODEM_RF_FLAG_UPDATE_CB_REQUIRED (SOC_PM_MODEM_RF_FLAG_UPDATE_WORKAROUND || CONFIG_ESP_WIFI_MODEM_RF_FLAG_UPDATE_DEBUG)
 
 typedef enum {
     PHY_I2C_MST_CMD_TYPE_OFF = 0,
@@ -191,6 +192,17 @@ void phy_track_pll(void);
  */
 void phy_wakeup_from_modem_state_extra_init(void);
 #endif
+
+#if SOC_PM_SUPPORT_PMU_MODEM_STATE && CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP && ESP_MODEM_RF_FLAG_UPDATE_CB_REQUIRED
+/**
+ * @brief Update modem RF flag
+ *
+ * This function is called as a callback during MAC/BB power down operations.
+ * It checks if modem RF is already enabled and clears the RF power state accordingly.
+ */
+void esp_phy_modem_rf_flag_update(void);
+#endif
+
 #ifdef __cplusplus
 }
 #endif
