@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -249,12 +249,61 @@ esp_err_t esp_timer_restart_at(esp_timer_handle_t timer, uint64_t period_us, uin
  * This function stops the timer previously started using esp_timer_start_once()
  * or esp_timer_start_periodic().
  *
+ * This function disarms the timer (prevents future callbacks) but does NOT
+ * preempt an already-dispatched or currently-running callback.
+ *
+ * For a hard guarantee that no callback is running or will run after stop,
+ * use esp_timer_stop_blocking() or poll esp_timer_is_active() until it returns false.
+ *
  * @param timer timer handle created using esp_timer_create()
  * @return
  *      - ESP_OK on success
  *      - ESP_ERR_INVALID_STATE if the timer is not running
  */
 esp_err_t esp_timer_stop(esp_timer_handle_t timer);
+
+/**
+ * @brief Stop a running timer and wait for any in-flight callback to complete
+ *
+ * This function disarms the timer (prevents future callbacks). If the timer callback is
+ * currently executing, it waits for the callback to finish, taking into account the specified waiting time.
+ *
+ * If this function returns ESP_OK, the caller is guaranteed that the timer is disarmed and
+ * no callback is executing after the function returns (see the calling-context rules below).
+ *
+ * @note Behavior depends on calling context:
+ *       - **User task context (normal case)**: Disarms the timer and waits up to timeout_ticks
+ *         for any in-flight callback to complete. Returns ESP_OK when no callback is running,
+ *         or ESP_ERR_TIMEOUT if the callback didn't finish in time.
+ *
+ *       - **ISR context**: Never blocks. Disarms the timer and returns immediately.
+ *         If the timer callback may still be running, returns ESP_ERR_NOT_FINISHED.
+ *
+ *       - **Callback context**: Disarms the timer and returns immediately. Blocking from a callback
+ *         would delay the esp_timer task and distort timing of other TASK-dispatch timers.
+ *         Return value depends on the stopped timer state and the currently running callback:
+ *         - Returns ESP_OK when the stop request is issued from the stopped timer’s own callback
+ *           (the callback will complete naturally after it returns).
+ *         - Returns ESP_ERR_NOT_FINISHED when stopping an ISR-dispatch timer from a foreign callback
+ *           (i.e., the currently running callback belongs to another timer). In this case the caller
+ *           cannot safely wait for ISR context to complete, so it is informed that the callback may
+ *           still be running.
+ *
+ * If ESP_ERR_NOT_FINISHED is returned, it means that the timer is disarmed, but its callback
+ * may is still running or will run soon. In this case, you can wait for the callback to complete
+ * using esp_timer_is_active().
+ *
+ * @param timer Timer handle created using esp_timer_create()
+ * @param timeout_ticks Maximum time to wait for callback completion, in FreeRTOS ticks.
+ *                      Use portMAX_DELAY to wait indefinitely.
+ * @return
+ *      - ESP_OK on success (timer is disarmed, no callback is running or will run)
+ *      - ESP_ERR_TIMEOUT if the callback didn't complete within timeout_ticks
+ *      - ESP_ERR_INVALID_ARG if the timer handle is invalid
+ *      - ESP_ERR_INVALID_STATE if esp_timer is not initialized
+ *      - ESP_ERR_NOT_FINISHED if the callback may still be running (e.g., ISR context, or TIMER_TASK while an ISR callback is in-flight)
+ */
+esp_err_t esp_timer_stop_blocking(esp_timer_handle_t timer, uint32_t timeout_ticks);
 
 /**
  * @brief Delete an esp_timer instance

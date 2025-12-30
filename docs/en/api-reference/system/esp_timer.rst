@@ -215,7 +215,8 @@ The general procedure to create, start, stop, and delete a timer is as follows:
 
 3. Stop the timer
 
-    - To stop the running timer, call the function :cpp:func:`esp_timer_stop`.
+    - To stop the running timer, call the function :cpp:func:`esp_timer_stop`. But it does not guarantee that after this call, the callback will not be running one or more times. To check if the callback is not running after stopping the timer, you can use :cpp:func:`esp_timer_is_active`. Another approach is to use a blocking stop API.
+    - Blocking the timer stop operation until any in-flight callback completes can be done using :cpp:func:`esp_timer_stop_blocking`.
 
 4. Delete the timer
 
