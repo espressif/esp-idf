@@ -10,10 +10,13 @@
 
 在本文档中，最大连接数指设备作为中心设备或外围设备时，能够同时维持的最大连接数量。
 
+主机 (Host) SDKconfig
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 .. table:: ESP 低功耗蓝牙主机支持的最大连接数
 
    +---------------+-----------------------------+------------------------------+---------------------+
-   | 主机（Host）  |        最大连接个数         |          SDKconfig           |        示例         |
+   | 主机 (Host)   |        最大连接个数         |          SDKconfig           |        示例         |
    +===============+=============================+==============================+=====================+
    |               |                             | |bluedroid_enable_config|    |                     |
    | ESP-Bluedroid | |max_bluedroid_connections| |                              | |bluedroid_example| |
@@ -21,6 +24,37 @@
    +---------------+-----------------------------+------------------------------+---------------------+
    | ESP-NimBLE    | |max_nimble_connections|    |   |nimble_connection_num|    |   |nimble_example|  |
    +---------------+-----------------------------+------------------------------+---------------------+
+
+
+控制器 (Controller) SDKconfig
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. only:: esp32
+
+   - :ref:`BTDM_CTRL_BLE_MAX_CONN <CONFIG_BTDM_CTRL_BLE_MAX_CONN>`
+
+   配置项 **BTDM_CTRL_BLE_MAX_CONN** 用于指定控制器 (Controller) 可同时支持的最大低功耗蓝牙连接数。该值必须与上表中主机端配置的最大连接数保持一致。
+
+.. only:: esp32c3 or esp32s3
+
+   - :ref:`BT_CTRL_BLE_MAX_ACT <CONFIG_BT_CTRL_BLE_MAX_ACT>`
+
+   配置项 **BT_CTRL_BLE_MAX_ACT** 用于定义控制器 (Controller) 可同时处理的最大 Bluetooth LE 活动数。每个 Bluetooth LE 活动都会占用一个资源，包括：
+
+   - 连接
+   - 广播
+   - 扫描
+   - 周期性同步
+
+   因此，该参数应按以下方式配置：
+
+   **最大连接数 + 所需的广播、扫描及周期性同步实例数量**
+
+   **示例：** 如果主机 (Host) 配置为支持最多 8 个连接，且应用需要同时运行 1 个广播实例和 1 个扫描实例，建议将 **BT_CTRL_BLE_MAX_ACT** 设置为 10。
+
+.. only:: not esp32 and not esp32c3 and not esp32s3
+
+   - 无需进行控制器 (Controller) 相关的 SDK 配置。
 
 
 注意
